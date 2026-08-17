@@ -1,5 +1,5 @@
 // 师傅端统一接口对接层。
-// 契约: api/openapi/worker.yaml;假数据: api/mock/worker/server.js(http://127.0.0.1:8091)。
+// 契约: api/openapi/worker.yaml;假数据: api/mock/combined.js(http://127.0.0.1:8091)。
 // 用 window.API 暴露,页面直接调用;后端就绪后仅改 BASE 即可切换到真实网关。
 (function (global) {
   'use strict';

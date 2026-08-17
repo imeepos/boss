@@ -1,7 +1,7 @@
 # 师傅端页面对接 API 约定(所有改造页面必须遵守)
 
 > 契约: `api/openapi/worker.yaml`(拆分于 `api/openapi/worker/*.yaml`)
-> 假数据: `api/mock/worker/server.js`,已运行于 http://127.0.0.1:8091,前缀 `/api/worker/v1`
+> 假数据: `api/mock/combined.js`,已运行于 http://127.0.0.1:8091,前缀 `/api/worker/v1`
 > 对接层: `docs/worker/api.js`,页面引入后使用 `window.API.*`
 
 ## 硬性规则

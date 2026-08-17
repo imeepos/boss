@@ -25,7 +25,7 @@ function pick(items, query) {
 
 // /ports 统计卡 + 清单(status: IDLE/RESERVED/USED/DISABLED)
 const ports = [
-  { portCode: 'P-001-01', quadCode: 'P-SPL03-01', parentName: 'OLT-01 · SPL-03', address: '望京·X小区·3栋', status: 'IDLE', statusLabel: '空闲', statusClass: 'tag-green', orderId: '' },
+  { portCode: 'P-001-01', quadCode: 'P-SPL03-01', parentName: 'OLT-01 · SPL-03', address: '望京·X小区·2栋', status: 'USED', statusLabel: '在用', statusClass: 'tag-blue', orderId: 'ORD-20250817-009' },
   { portCode: 'P-001-02', quadCode: 'P-SPL03-07', parentName: 'OLT-01 · SPL-03', address: '望京·X小区·3栋', status: 'RESERVED', statusLabel: '预占', statusClass: 'tag-orange', orderId: 'ORD-20250817-001' },
   { portCode: 'P-001-03', quadCode: 'P-SPL03-03', parentName: 'OLT-01 · SPL-03', address: '望京·X小区·3栋', status: 'USED', statusLabel: '在用', statusClass: 'tag-blue', orderId: 'ORD-20250816-018' },
 ];
@@ -39,8 +39,9 @@ const portChanges = [
 // 端口预占记录(状态 预占中/已超时/已释放)
 const reserves = [
   { reserveId: 'RSV-0001', portCode: 'P-SPL03-07', splitterName: 'SPL-03', orderId: 'ORD-20250817-001', reservedAt: '10:20', expireAt: '12:20', status: 'RESERVED', statusLabel: '预占中', statusClass: 'tag-blue', action: '释放' },
-  { reserveId: 'RSV-0002', portCode: 'P-SPL01-09', splitterName: 'SPL-01', orderId: 'ORD-20250817-002', reservedAt: '09:05', expireAt: '11:05', status: 'TIMEOUT', statusLabel: '已超时', statusClass: 'tag-red', action: '释放' },
+  { reserveId: 'RSV-0002', portCode: 'P-SPL01-09', splitterName: 'SPL-01', orderId: 'ORD-20250817-002', reservedAt: '09:05', expireAt: '11:05', status: 'RESERVED', statusLabel: '预占中', statusClass: 'tag-blue', action: '释放' },
   { reserveId: 'RSV-0003', portCode: 'P-SPL02-03', splitterName: 'SPL-02', orderId: 'ORD-20250816-018', reservedAt: '昨日', expireAt: '—', status: 'RELEASED', statusLabel: '已释放', statusClass: 'tag-gray', action: '详情' },
+  { reserveId: 'RSV-0004', portCode: 'P-SPL04-05', splitterName: 'SPL-04', orderId: 'ORD-20250816-021', reservedAt: '08-15 09:00', expireAt: '08-15 11:00', status: 'TIMEOUT', statusLabel: '已超时', statusClass: 'tag-red', action: '释放' },
 ];
 
 // 跨区域调配单(状态 待审批/已批准/已驳回/已完成;类型 PORT/ASSET/DEVICE)

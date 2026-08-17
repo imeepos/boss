@@ -2,7 +2,7 @@ paths:
   /quad-links:
     get:
       tags: [Quad]
-      summary: 四码合一关联查询(资产/用户/端口/地址任一码反查)
+      summary: 四码合一关联查询(资产/客户/端口/地址任一码反查,见 docs/contract/fields.md 5.1)
       operationId: queryQuadLinks
       parameters:
         - name: code
@@ -24,9 +24,9 @@ paths:
                       type: object
                       properties:
                         assetCode: { type: string }
-                        userCode: { type: string }
+                        customerCode: { type: string, description: 客户域编码,取值为客户认证账号 LOID(与 worker 端一致) }
                         portCode: { type: string }
-                        addressCode: { type: string }
+                        addrCode: { type: string }
                         status: { type: string, enum: [LINKED, CONFLICT, UNLINKED] }
 
   /quad-conflicts:

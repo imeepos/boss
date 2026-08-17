@@ -45,7 +45,7 @@ function route(method, pathname) {
     if (p.startsWith('bills/')) return data.billDetail;
     if (p.startsWith('payments/')) {
       const payNo = p.split('/')[1].replace(/\/receipt$/, '');
-      return data.receipts[payNo] || data.receipts['PAY20250817001'];
+      return data.receipts[payNo] || data.receipts['PAY20250725001'];
     }
     if (p.startsWith('faults/')) return data.faultDetail;
     if (p.startsWith('plans/')) {

@@ -56,8 +56,8 @@
         var html = '';
         for (var i = 0; i < r.items.length; i++) {
           var q = r.items[i];
-          html += '<tr><td>' + esc(q.assetCode) + '</td><td>' + esc(q.userCode) + '</td><td>' + esc(q.portCode)
-            + '</td><td>' + esc(q.addressCode) + '</td><td>' + tag(ST_TAG[q.status] || 'tag-gray', q.statusLabel || q.status) + '</td></tr>';
+          html += '<tr><td>' + esc(q.assetCode) + '</td><td>' + esc(q.customerCode) + '</td><td>' + esc(q.portCode)
+            + '</td><td>' + esc(q.addrCode) + '</td><td>' + tag(ST_TAG[q.status] || 'tag-gray', q.statusLabel || q.status) + '</td></tr>';
         }
         document.getElementById('rows').innerHTML = html || '<tr><td colspan="5">无匹配记录</td></tr>';
       })

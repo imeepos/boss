@@ -45,3 +45,5 @@
 - 原 `user.yaml` 中同一 path 的 GET/POST 分块已合并为单一路径,multi-method 不再重复声明。
 
 字段与状态枚举一律以 `docs/contract/{terms,fields,domain-map}.md` 为准。
+
+三端 mock 数据的跨端逻辑关系(订单/工单/客户/端口/资产/账单同值口径)见 `api/DATA-ALIGNMENT.md`,改 mock 前必读。

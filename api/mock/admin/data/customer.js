@@ -7,6 +7,11 @@ const customers = [
   { customerId: 1, name: '王先生', phone: '138****1234', idType: '身份证', idNo: '110***********1234', realNameStatus: '已实名', serviceStatus: '在网' },
   { customerId: 2, name: '吴女士', phone: '139****5678', idType: '身份证', idNo: '110***********5678', realNameStatus: '已实名', serviceStatus: '欠费' },
   { customerId: 3, name: '孙先生', phone: '137****9012', idType: '—', idNo: '—', realNameStatus: '待补登', serviceStatus: '在网' },
+  { customerId: 4, name: '赵女士', phone: '136****3456', idType: '身份证', idNo: '110***********3456', realNameStatus: '已实名', serviceStatus: '在网' },
+  { customerId: 5, name: '郑先生', phone: '135****7890', idType: '身份证', idNo: '110***********7890', realNameStatus: '已实名', serviceStatus: '在网' },
+  { customerId: 6, name: '周女士', phone: '133****2468', idType: '身份证', idNo: '110***********2468', realNameStatus: '待补登', serviceStatus: '在网' },
+  { customerId: 7, name: '刘女士', phone: '132****1357', idType: '身份证', idNo: '110***********1357', realNameStatus: '已实名', serviceStatus: '停机' },
+  { customerId: 8, name: '陈先生', phone: '138****7788', idType: '身份证', idNo: '110***********7788', realNameStatus: '已实名', serviceStatus: '在网' },
 ];
 
 const verifyLogs = [

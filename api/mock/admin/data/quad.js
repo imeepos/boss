@@ -3,11 +3,12 @@
 
 const ok = { code: 0, message: 'success' };
 
-// 四码合一: 资产/用户/端口/地址(quad.yaml 字段 assetCode/userCode/portCode/addressCode)
+// 四码合一: 资产/客户/端口/地址(fields.md 5.1:第二码为客户域,非系统账号;字段与 worker 端一致
+// assetCode/customerCode/portCode/addrCode,用户码取值=客户认证账号 LOID)
 const links = [
-  { assetCode: 'EPC-0001', userCode: 'LOID-88A1', portCode: 'P-SPL03-07', addressCode: 'A-3-501', status: 'LINKED', statusLabel: '一致' },
-  { assetCode: 'EPC-0002', userCode: 'LOID-88A2', portCode: 'P-SPL04-02', addressCode: 'A-5-302', status: 'CONFLICT', statusLabel: '冲突' },
-  { assetCode: 'EPC-0003', userCode: 'LOID-88A3', portCode: 'P-SPL02-03', addressCode: 'A-1-101', status: 'LINKED', statusLabel: '一致' },
+  { assetCode: 'EPC-0001', customerCode: 'LOID-88A1', portCode: 'P-SPL03-07', addrCode: 'A-3-501', status: 'LINKED', statusLabel: '一致' },
+  { assetCode: 'EPC-0002', customerCode: 'LOID-88A2', portCode: 'P-SPL04-02', addrCode: 'A-5-302', status: 'CONFLICT', statusLabel: '冲突' },
+  { assetCode: 'EPC-0003', customerCode: 'LOID-88A3', portCode: 'P-SPL02-03', addrCode: 'A-1-101', status: 'LINKED', statusLabel: '一致' },
 ];
 
 const conflicts = [
@@ -26,7 +27,7 @@ module.exports = {
   'GET /quad-links': ({ query }) => {
     const code = query.code || '';
     const items = code
-      ? links.filter((x) => [x.assetCode, x.userCode, x.portCode, x.addressCode].some((c) => c.indexOf(code) >= 0))
+      ? links.filter((x) => [x.assetCode, x.customerCode, x.portCode, x.addrCode].some((c) => c.indexOf(code) >= 0))
       : links;
     return { items };
   },

@@ -43,7 +43,7 @@
 <script>
 // 计费账单数据渲染(契约: GET /bills,含 stats 汇总)
 (function () {
-  var STATUS_TAG = { '已缴': 'tag-green', '已缴清': 'tag-green', '欠费': 'tag-orange', '逾期': 'tag-red' };
+  var STATUS_TAG = { '已缴': 'tag-green', '已缴清': 'tag-green', '未缴': 'tag-orange', '欠费': 'tag-orange', '逾期': 'tag-red' };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {

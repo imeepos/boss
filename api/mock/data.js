@@ -255,16 +255,6 @@ module.exports = {
   },
 
   receipts: {
-    'PAY20250817001': {
-      receiptNo: 'OR-20250817-0001',
-      customerName: '王先生',
-      phoneMasked: '138****1234',
-      amount: 158,
-      period: '2025-08',
-      payMethod: '微信支付',
-      paidAt: '2025-08-17 10:12',
-      payNo: 'PAY20250817001',
-    },
     'PAY20250725001': {
       receiptNo: 'OR-20250725-0001',
       customerName: '王先生',
@@ -297,7 +287,6 @@ module.exports = {
     title: '王先生',
     taxNo: null,
     availablePeriods: [
-      { billNo: 'BILL-202508', period: '2025-08', productName: '1000M 极速宽带', periodRange: '08-01 ~ 08-31', amount: 158, status: 'PAID', statusLabel: '已缴' },
       { billNo: 'BILL-202507', period: '2025-07', productName: '1000M 极速宽带', periodRange: '07-01 ~ 07-31', amount: 158, status: 'PAID', statusLabel: '已缴' },
     ],
     records: [
@@ -307,15 +296,15 @@ module.exports = {
 
   faults: {
     items: [
-      { ticketNo: 'TKT-20250817-012', faultType: 'no_internet', faultTypeLabel: '单户断网（紧急 SLA）', address: '望京X · 10栋 · 1801', createdAt: '2025-08-17 09:40', status: 'PROCESSING', statusLabel: '处理中' },
+      { ticketNo: 'TKT-20250817-015', faultType: 'no_internet', faultTypeLabel: '单户断网（紧急 SLA）', address: '望京X · 3栋 · 501', createdAt: '2025-08-17 09:40', status: 'PROCESSING', statusLabel: '处理中' },
       { ticketNo: 'TKT-20250730-005', faultType: 'slow', faultTypeLabel: '网速慢', address: '望京X · 3栋 · 501', createdAt: '2025-07-30 15:02', status: 'RESOLVED', statusLabel: '已解决' },
     ],
   },
 
   faultDetail: {
-    fault: { ticketNo: 'TKT-20250817-012', faultType: 'no_internet', faultTypeLabel: '单户断网（紧急 SLA≤4h）', address: '望京X · 10栋 · 1801', createdAt: '2025-08-17 09:40', status: 'PROCESSING', statusLabel: '处理中' },
+    fault: { ticketNo: 'TKT-20250817-015', faultType: 'no_internet', faultTypeLabel: '单户断网（紧急 SLA≤4h）', address: '望京X · 3栋 · 501', createdAt: '2025-08-17 09:40', status: 'PROCESSING', statusLabel: '处理中' },
     technicianName: '张师傅',
-    technicianPhoneMasked: '138****7788',
+    technicianPhoneMasked: '138****8899',
     sla: '≤4h',
     timeline: [
       { step: 1, title: '报障', result: 'DONE', meta: '09:40 · 已自动关联资产/端口' },
@@ -348,7 +337,7 @@ module.exports = {
     phoneMasked: '138****1234',
     onlineStatus: '服务在线 · 网络正常',
     hasUnread: true,
-    plan: { planId: 'PLAN-1000', name: '1000M 家庭宽带', monthlyFee: 199, contractEnd: '2026-08', status: 'ACTIVE', installAddress: '望京X · 3栋 · 501' },
+    plan: { planId: 'PLAN-1000', name: '1000M 极速宽带', monthlyFee: 199, contractEnd: '2026-08', status: 'ACTIVE', installAddress: '望京X · 3栋 · 501' },
     currentBill: 158,
     balance: 42,
     contractEnd: '2026-08',

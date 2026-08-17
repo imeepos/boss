@@ -4,7 +4,7 @@
 const ok = { code: 0, message: 'success' };
 
 const payments = [
-  { paymentId: 1, payNo: 'PAY-0001', customerName: '王先生', amount: '¥299', method: '微信', paidAt: '2025-08-16 14:20', voucher: '查看' },
+  { paymentId: 1, payNo: 'PAY20250725001', customerName: '王先生', amount: '¥158', method: '微信', paidAt: '2025-07-25 10:12', voucher: '查看' },
   { paymentId: 2, payNo: 'PAY-0002', customerName: '李女士', amount: '¥199', method: '支付宝', paidAt: '2025-08-16 10:05', voucher: '查看' },
 ];
 
@@ -29,7 +29,7 @@ module.exports = {
   'GET /bills': () => ({
     stats: { receivable: '¥1,286,400', received: '¥1,103,215', arrearsCount: '1,024' },
     items: [
-      { billId: 1, billNo: 'BILL-202508-0001', customerName: '王先生', period: '2025-08', amount: '¥299', status: '已缴' },
+      { billId: 1, billNo: 'BILL-202508-0001', customerName: '王先生', period: '2025-08', amount: '¥158', status: '未缴' },
       { billId: 2, billNo: 'BILL-202508-0002', customerName: '吴女士', period: '2025-08', amount: '¥199', status: '欠费' },
       { billId: 3, billNo: 'BILL-202507-0341', customerName: '孙先生', period: '2025-07', amount: '¥199', status: '已缴清' },
     ],
@@ -42,7 +42,7 @@ module.exports = {
     items: [
       { customerId: 2, customerName: '吴女士', arrearsAmount: '¥199', arrearsDays: '12 天', status: '已停机', netStatus: '已停服' },
       { customerId: 3, customerName: '孙先生', arrearsAmount: '¥398', arrearsDays: '已缴清', status: '已复机', netStatus: '在线' },
-      { customerId: 4, customerName: '周女士', arrearsAmount: '¥199', arrearsDays: '3 天', status: '正常', netStatus: '在线' },
+      { customerId: 6, customerName: '周女士', arrearsAmount: '¥199', arrearsDays: '3 天', status: '正常', netStatus: '在线' },
     ],
   }),
 

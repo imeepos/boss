@@ -30,11 +30,12 @@ function repairStages() {
 }
 
 const quad = { assetCode: 'EPC-0001', customerCode: 'LOID-88A1', portCode: 'P-SPL03-07', addrCode: 'A-3-501', status: 'LINKED', matched: true };
+const repairQuad = { assetCode: 'EPC-0088', customerCode: 'LOID-88A7', portCode: 'P-SPL05-03', addrCode: 'A-10-1801', status: 'LINKED', matched: true };
+const dismantleQuad = { assetCode: 'EPC-0110', customerCode: 'LOID-88B2', portCode: 'P-SPL03-01', addrCode: 'A-2-902', status: 'LINKED', matched: true };
 
 const tickets = {
   doing: [
-    { ticketNo: 'ORD-20250817-001', type: 'INSTALL', typeLabel: '1000M 安装', address: '望京X · 3栋501', distanceKm: 2.1, scheduleSlot: '今天 10:00-12:00', stage: 8, stageTotal: 12, status: 'SCAN_PENDING', statusLabel: '待扫码绑定', slaLeftMinutes: null },
-    { ticketNo: 'ORD-20250817-002', type: 'INSTALL', typeLabel: '500M 安装', address: '望京X · 5栋302', distanceKm: 3.4, scheduleSlot: '今天 14:00-16:00', stage: 7, stageTotal: 12, status: 'ACCEPTED', statusLabel: '已接单', slaLeftMinutes: null },
+    { ticketNo: 'ORD-20250817-001', type: 'INSTALL', typeLabel: '1000M 安装', address: '望京X · 3栋501', distanceKm: 2.1, scheduleSlot: '今天 10:00-12:00', stage: 9, stageTotal: 12, status: 'SCAN_PENDING', statusLabel: '待扫码绑定', slaLeftMinutes: null },
     { ticketNo: 'TKT-20250817-012', type: 'REPAIR', typeLabel: '断网抢修', address: '望京X · 10栋1801', distanceKm: 1.8, scheduleSlot: '', stage: 4, stageTotal: 6, status: 'DOING', statusLabel: '修复中', slaLeftMinutes: 52 },
   ],
   todo: [
@@ -69,17 +70,17 @@ const installDetail = {
 const repairDetail = {
   ticketNo: 'TKT-20250817-012', bizNo: 'TKT-20250817-012', status: 'DOING', statusLabel: '紧急 · 断网',
   product: '', customerName: '陈先生', customerPhoneMasked: '138****7788',
-  address: '望京X · 10栋 · 1801', splitterPort: 'SPL-05-02 · PON 3口', preBindTag: 'EPC-0088',
+  address: '望京X · 10栋 · 1801', splitterPort: 'SPL-05-03 · PON 3口', preBindTag: 'EPC-0088',
   faultTypeLabel: '单户断网（紧急 SLA ≤4h）', reportedAt: '今天 09:40（已受理）', slaLeftMinutes: 52,
   remoteDiagnosis: '疑似光猫离线，光功率 -18.6 dBm（偏低），建议现场复核。',
-  stages: repairStages(), quad: quad, riskCheck: { blacklistHit: false, graylistHit: false },
+  stages: repairStages(), quad: repairQuad, riskCheck: { blacklistHit: false, graylistHit: false },
 };
 
 const dismantleDetail = {
   ticketNo: 'ORD-20250817-009', bizNo: 'ORD-20250817-009', status: 'DOING', statusLabel: '拆机',
   product: '', customerName: '刘女士', customerPhoneMasked: '138****5678',
   address: '望京X · 2栋 · 902', splitterPort: '', preBindTag: 'EPC-0110',
-  stages: [], quad: quad, riskCheck: { blacklistHit: false, graylistHit: false },
+  stages: [], quad: dismantleQuad, riskCheck: { blacklistHit: false, graylistHit: false },
 };
 
 module.exports = {
@@ -90,7 +91,7 @@ module.exports = {
 
   home: {
     workerName: '张师傅', groupName: '装机一组', phoneMasked: '138****8899',
-    today: { accepted: 3, finished: 2, doing: 2, todo: 1 },
+    today: { accepted: 2, finished: 2, doing: 2, todo: 1 },
     ongoing: tickets.doing,
   },
 
@@ -111,7 +112,7 @@ module.exports = {
     provisionLog: { template: 'GPON-1000M-v3', preResult: '成功 · 08-17 09:18', onsiteResult: '成功 · 自动' },
   },
 
-  activation: { ticketNo: 'ORD-20250817-001', loid: 'LOID-88A1', status: 'PENDING', statusLabel: '未生效', lastTry: '08-17 10:32 · 回调超时' },
+  activation: { ticketNo: 'ORD-20250817-001', loid: 'LOID-88A1', status: 'PENDING', statusLabel: '未生效', lastTry: '待扫码绑定(环节9)完成后触发' },
   activationDone: { ticketNo: 'ORD-20250817-001', loid: 'LOID-88A1', status: 'SUCCESS', statusLabel: '已生效', lastTry: '08-17 11:02 · 激活成功' },
 
   charge: { ticketNo: 'ORD-20250817-001', amountDue: 199, amountDesc: '首月', payMethods: ['扫码支付', '现金', 'POS'] },
@@ -151,7 +152,7 @@ module.exports = {
   },
 
   measure: { opticalPowerDbm: -16.2, opticalPowerLabel: '正常', downloadMbps: 942, uploadMbps: 96, packetLossRate: 0 },
-  resources: { idlePorts: 3, nearestSplitter: 'SPL-03-07', idlePonPorts: ['P7', 'P9', 'P11'] },
+  resources: { idlePorts: 3, nearestSplitter: 'SPL-03-07', idlePonPorts: ['P9', 'P11', 'P13'] },
 
   profile: {
     workerId: 1024, name: '张师傅', groupName: '装机一组', staffNo: 'WK-1024', phoneMasked: '138****8899',
@@ -178,7 +179,6 @@ module.exports = {
   schedule: {
     month: '2025-08', busyDays: [5, 6, 10, 17, 30], today: [
       { time: '10:00', ticketNo: 'ORD-20250817-001', address: '3栋501' },
-      { time: '14:00', ticketNo: 'ORD-20250817-002', address: '5栋302' },
       { time: '16:00', ticketNo: 'ORD-20250817-003', address: '12栋906' },
     ],
   },
@@ -197,7 +197,7 @@ module.exports = {
   messages: {
     items: [
       { level: 'err', title: '台风应急', content: '台风后批量复测任务已下发，请核对受影响客户清单', sentAt: '08-16 18:00', read: false },
-      { level: 'warn', title: '超时预警', content: 'ORD-20250817-002 已上门超时 25 分钟', sentAt: '08-17 10:30', read: false },
+      { level: 'warn', title: '超时预警', content: 'TKT-20250817-012 抢修单 SLA 剩余不足 1 小时，请尽快到场处理', sentAt: '08-17 10:30', read: false },
       { level: 'err', title: '改派通知', content: '新单 TKT-20250817-005 抢修已分派给您', sentAt: '08-17 09:45', read: false },
       { level: 'ok', title: '配置下发', content: '全部预下发成功', sentAt: '08-17 09:18', read: true },
       { level: 'warn', title: '标签电量', content: 'EPC-0023 电量低，请携备用', sentAt: '08-17 08:00', read: true },
