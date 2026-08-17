@@ -45,6 +45,9 @@ export class Address {
   @Column({ type: 'bigint', nullable: true, comment: '父节点id(派生:反查path父节点,应用层不手填)' })
   parentId?: number | null;
 
+  @Column({ type: 'geography', nullable: true, comment: 'GIS坐标点(GEOGRAPHY(POINT)),阶段8 GIS预留;DDL由migrations建列' })
+  geom?: string | null;
+
   /** 所属经营区域(楼栋级挂城市区域,固化地址→区域硬关联;客户/资产/端口经此继承区域) */
   @ManyToOne(() => Region, (r) => r.addresses, { nullable: true })
   @JoinColumn({ name: 'region_id' })
