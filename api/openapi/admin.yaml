@@ -1,0 +1,150 @@
+openapi: 3.0.3
+info:
+  title: BOSS 管理后台(admin 端) REST API
+  version: 1.0.0
+  description: |
+    管理后台(admin 端,对应 docs/admin/*.html 全量页面)对外 REST 契约。
+    权威字段/状态枚举见 docs/contract/{terms,fields,domain-map}.md;
+    本文件为 APISIX 路由与假数据 mock(api/mock/admin)的单一事实源。
+    接口按域拆分至 admin/ 目录,本文件仅做聚合(内联 $ref)。
+    前缀 /api/admin/v1,与用户端 /api/v1、师傅端 /api/worker/v1 隔离。
+    响应约定:业务数据直接平铺返回(列表统一 { items: [...] });
+    写操作成功返回 { code: 0, message: 'success' };失败返回非 0 code。
+servers:
+  - url: /api/admin/v1
+    description: 管理后台接口前缀(经 APISIX 网关 /api/admin/v1)
+
+tags:
+  - name: Auth
+    description: 登录 / 当前用户 / 退出
+  - name: Dashboard
+    description: 工作台(统计卡 + 订单状态分布 + 待办 + 趋势)
+  - name: Sys
+    description: 基础配置(账号/地址层级/业务参数/审计日志/数据导入)
+  - name: Org
+    description: 组织与权限(法人/部门/岗位/区域/菜单权限/数据权限)
+  - name: Customer
+    description: 客户档案 + 产品资费(CRM + PROD 域)
+  - name: Billing
+    description: 计费账务(出账/缴费/欠费停复机/渠道对账)
+  - name: Asset
+    description: 资产与标签(台账/生命周期/电子标签/盘点/更换单)
+  - name: Oss
+    description: 网络资源(端口/预占/调配/OLT/认证账号/扩容)
+  - name: Order
+    description: 订单与工单(订单 12 环节/派单/拆机/报障/激活回调)
+  - name: Quad
+    description: 四码合一(关联查询/对账告警/扫码记录)
+  - name: Provision
+    description: 配置下发(任务/模板/日志)
+  - name: Alarm
+    description: 告警中心(含批量复测)
+  - name: Aaa
+    description: 认证与话单日志
+  - name: Intel
+    description: GIS 联动 / 经营分析 / 报告中心
+
+paths:
+  # ---------- Auth ----------
+  /auth/login: { $ref: './admin/auth.yaml#/paths/~1auth~1login' }
+  /auth/logout: { $ref: './admin/auth.yaml#/paths/~1auth~1logout' }
+  /auth/me: { $ref: './admin/auth.yaml#/paths/~1auth~1me' }
+
+  # ---------- Dashboard ----------
+  /dashboard: { $ref: './admin/dashboard.yaml#/paths/~1dashboard' }
+
+  # ---------- Sys(基础配置) ----------
+  /accounts: { $ref: './admin/sys.yaml#/paths/~1accounts' }
+  /accounts/{accountId}: { $ref: './admin/sys.yaml#/paths/~1accounts~1{accountId}' }
+  /roles: { $ref: './admin/sys.yaml#/paths/~1roles' }
+  /addresses: { $ref: './admin/sys.yaml#/paths/~1addresses' }
+  /params: { $ref: './admin/sys.yaml#/paths/~1params' }
+  /params/{key}: { $ref: './admin/sys.yaml#/paths/~1params~1{key}' }
+  /audit-logs: { $ref: './admin/sys.yaml#/paths/~1audit-logs' }
+  /import-tasks: { $ref: './admin/sys.yaml#/paths/~1import-tasks' }
+
+  # ---------- Org(组织与权限) ----------
+  /legal-entities: { $ref: './admin/org.yaml#/paths/~1legal-entities' }
+  /legal-entities/{legalEntityId}: { $ref: './admin/org.yaml#/paths/~1legal-entities~1{legalEntityId}' }
+  /departments: { $ref: './admin/org.yaml#/paths/~1departments' }
+  /posts: { $ref: './admin/org.yaml#/paths/~1posts' }
+  /regions: { $ref: './admin/org.yaml#/paths/~1regions' }
+  /menu-perms: { $ref: './admin/org.yaml#/paths/~1menu-perms' }
+  /data-scopes: { $ref: './admin/org.yaml#/paths/~1data-scopes' }
+
+  # ---------- Customer(CRM + PROD) ----------
+  /customers: { $ref: './admin/customer.yaml#/paths/~1customers' }
+  /customers/{customerId}/verify-logs: { $ref: './admin/customer.yaml#/paths/~1customers~1{customerId}~1verify-logs' }
+  /products: { $ref: './admin/customer.yaml#/paths/~1products' }
+  /products/{productId}/price-history: { $ref: './admin/customer.yaml#/paths/~1products~1{productId}~1price-history' }
+
+  # ---------- Billing ----------
+  /bills: { $ref: './admin/billing.yaml#/paths/~1bills' }
+  /payments: { $ref: './admin/billing.yaml#/paths/~1payments' }
+  /arrears: { $ref: './admin/billing.yaml#/paths/~1arrears' }
+  /arrears/{customerId}/stop: { $ref: './admin/billing.yaml#/paths/~1arrears~1{customerId}~1stop' }
+  /arrears/{customerId}/resume: { $ref: './admin/billing.yaml#/paths/~1arrears~1{customerId}~1resume' }
+  /stop-resume-tasks: { $ref: './admin/billing.yaml#/paths/~1stop-resume-tasks' }
+  /stop-resume-tasks/{taskId}/retry: { $ref: './admin/billing.yaml#/paths/~1stop-resume-tasks~1{taskId}~1retry' }
+  /reconciliations: { $ref: './admin/billing.yaml#/paths/~1reconciliations' }
+  /reconciliations/{batchNo}/settle: { $ref: './admin/billing.yaml#/paths/~1reconciliations~1{batchNo}~1settle' }
+
+  # ---------- Asset ----------
+  /assets: { $ref: './admin/asset.yaml#/paths/~1assets' }
+  /assets/{assetCode}/lifecycle: { $ref: './admin/asset.yaml#/paths/~1assets~1{assetCode}~1lifecycle' }
+  /tags: { $ref: './admin/asset.yaml#/paths/~1tags' }
+  /stocktakes: { $ref: './admin/asset.yaml#/paths/~1stocktakes' }
+  /stocktakes/{taskId}/diff-handle: { $ref: './admin/asset.yaml#/paths/~1stocktakes~1{taskId}~1diff-handle' }
+  /replacements: { $ref: './admin/asset.yaml#/paths/~1replacements' }
+
+  # ---------- Oss ----------
+  /ports: { $ref: './admin/oss.yaml#/paths/~1ports' }
+  /ports/{portCode}/change-history: { $ref: './admin/oss.yaml#/paths/~1ports~1{portCode}~1change-history' }
+  /reserves: { $ref: './admin/oss.yaml#/paths/~1reserves' }
+  /reserves/{reserveId}/release: { $ref: './admin/oss.yaml#/paths/~1reserves~1{reserveId}~1release' }
+  /transfers: { $ref: './admin/oss.yaml#/paths/~1transfers' }
+  /transfers/{transferNo}/approve: { $ref: './admin/oss.yaml#/paths/~1transfers~1{transferNo}~1approve' }
+  /transfers/{transferNo}/reject: { $ref: './admin/oss.yaml#/paths/~1transfers~1{transferNo}~1reject' }
+  /olt-devices: { $ref: './admin/oss.yaml#/paths/~1olt-devices' }
+  /lo-accounts: { $ref: './admin/oss.yaml#/paths/~1lo-accounts' }
+  /expansions: { $ref: './admin/oss.yaml#/paths/~1expansions' }
+
+  # ---------- Order ----------
+  /orders: { $ref: './admin/order.yaml#/paths/~1orders' }
+  /orders/{orderNo}: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}' }
+  /dispatch/pool: { $ref: './admin/order.yaml#/paths/~1dispatch~1pool' }
+  /dispatch/pool/{ticketNo}/assign: { $ref: './admin/order.yaml#/paths/~1dispatch~1pool~1{ticketNo}~1assign' }
+  /dispatch/my-tickets: { $ref: './admin/order.yaml#/paths/~1dispatch~1my-tickets' }
+  /dispatch/transfers: { $ref: './admin/order.yaml#/paths/~1dispatch~1transfers' }
+  /dispatch/tickets/{ticketNo}/transfer: { $ref: './admin/order.yaml#/paths/~1dispatch~1tickets~1{ticketNo}~1transfer' }
+  /dismantles: { $ref: './admin/order.yaml#/paths/~1dismantles' }
+  /complaints: { $ref: './admin/order.yaml#/paths/~1complaints' }
+  /complaints/{ticketNo}/close: { $ref: './admin/order.yaml#/paths/~1complaints~1{ticketNo}~1close' }
+  /activation-callbacks: { $ref: './admin/order.yaml#/paths/~1activation-callbacks' }
+  /activation-callbacks/{callbackId}/retry: { $ref: './admin/order.yaml#/paths/~1activation-callbacks~1{callbackId}~1retry' }
+
+  # ---------- Quad ----------
+  /quad-links: { $ref: './admin/quad.yaml#/paths/~1quad-links' }
+  /quad-conflicts: { $ref: './admin/quad.yaml#/paths/~1quad-conflicts' }
+  /quad-conflicts/{conflictNo}/resolve: { $ref: './admin/quad.yaml#/paths/~1quad-conflicts~1{conflictNo}~1resolve' }
+  /scan-logs: { $ref: './admin/quad.yaml#/paths/~1scan-logs' }
+
+  # ---------- Provision ----------
+  /provision-tasks: { $ref: './admin/provision.yaml#/paths/~1provision-tasks' }
+  /provision-tasks/{taskNo}/retry: { $ref: './admin/provision.yaml#/paths/~1provision-tasks~1{taskNo}~1retry' }
+  /provision-templates: { $ref: './admin/provision.yaml#/paths/~1provision-templates' }
+  /provision-logs: { $ref: './admin/provision.yaml#/paths/~1provision-logs' }
+
+  # ---------- Alarm ----------
+  /alarms: { $ref: './admin/alarm.yaml#/paths/~1alarms' }
+  /alarms/{alarmId}/ack: { $ref: './admin/alarm.yaml#/paths/~1alarms~1{alarmId}~1ack' }
+  /alarms/batch-retest: { $ref: './admin/alarm.yaml#/paths/~1alarms~1batch-retest' }
+
+  # ---------- Aaa ----------
+  /aaa-logs: { $ref: './admin/aaa.yaml#/paths/~1aaa-logs' }
+
+  # ---------- Intel ----------
+  /gis/address-links: { $ref: './admin/intel.yaml#/paths/~1gis~1address-links' }
+  /analytics/overview: { $ref: './admin/intel.yaml#/paths/~1analytics~1overview' }
+  /reports: { $ref: './admin/intel.yaml#/paths/~1reports' }
+  /reports/{reportId}/send: { $ref: './admin/intel.yaml#/paths/~1reports~1{reportId}~1send' }

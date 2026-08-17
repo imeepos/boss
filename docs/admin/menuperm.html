@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">菜单权限</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -34,24 +34,10 @@
       </div>
 
       <div class="card">
-        <div class="card-title">角色 × 菜单组可见性 <span class="extra">✓=可见 · 空=隐藏</span></div>
+        <div class="card-title">角色 × 菜单组可见性 <span class="extra"><img src="icons/check.svg" alt="" style="width:12px;height:12px;vertical-align:-1px;">=可见 · 空=隐藏</span></div>
         <table class="tbl">
-          <thead><tr><th>菜单组</th><th>系统管理员</th><th>装维师傅</th><th>资产管理员</th><th>资源运维管理员</th><th>业务运营/客服</th><th>经营分析</th><th>客户</th></tr></thead>
-          <tbody>
-            <tr><td>运营总览</td><td>✓</td><td></td><td></td><td></td><td></td><td>✓</td><td></td></tr>
-            <tr><td>基础配置</td><td>✓</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr><td>组织与权限</td><td>✓</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            <tr><td>客户与资费</td><td>✓</td><td></td><td></td><td></td><td>✓</td><td></td><td></td></tr>
-            <tr><td>计费与账务</td><td>✓</td><td></td><td></td><td></td><td>✓</td><td></td><td></td></tr>
-            <tr><td>资产与标签</td><td>✓</td><td></td><td>✓</td><td></td><td></td><td></td><td></td></tr>
-            <tr><td>网络资源</td><td>✓</td><td></td><td></td><td>✓</td><td></td><td></td><td></td></tr>
-            <tr><td>订单与工单</td><td>✓</td><td>✓</td><td></td><td></td><td>✓</td><td></td><td></td></tr>
-            <tr><td>四码合一</td><td>✓</td><td>✓</td><td></td><td>✓</td><td></td><td></td><td></td></tr>
-            <tr><td>配置下发</td><td>✓</td><td>✓</td><td></td><td>✓</td><td></td><td></td><td></td></tr>
-            <tr><td>告警中心</td><td>✓</td><td></td><td></td><td>✓</td><td></td><td></td><td></td></tr>
-            <tr><td>认证计费</td><td>✓</td><td></td><td></td><td>✓</td><td></td><td></td><td></td></tr>
-            <tr><td>数字孪生与经营</td><td>✓</td><td></td><td></td><td></td><td></td><td>✓</td><td></td></tr>
-          </tbody>
+          <thead id="matrixHead"><tr><th>菜单组</th></tr></thead>
+          <tbody id="matrixBody"></tbody>
         </table>
       </div>
 
@@ -59,17 +45,44 @@
         <div class="card-title">三层权限模型 <span class="extra">正交 · 取交集</span></div>
         <table class="tbl">
           <thead><tr><th>权限层</th><th>载体</th><th>语义</th><th>落地</th></tr></thead>
-          <tbody>
-            <tr><td>菜单权限</td><td>role → menu</td><td>角色可见哪些菜单/入口</td><td>本页 + `role_permissions`(menu:*)</td></tr>
-            <tr><td>功能权限</td><td>role → perm code</td><td>菜单内可执行的操作（增删改查）</td><td>`role_permissions`(perm:*) + Authz</td></tr>
-            <tr><td>数据权限</td><td>account → org</td><td>可见哪些组织的数据范围</td><td>`datascope.html` + HasDataScope</td></tr>
-          </tbody>
+          <tbody id="modelBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+var CHECK = '<img src="icons/check.svg" alt="" style="width:14px;height:14px;display:block;">';
+function renderMatrix(matrix) {
+  var cols = matrix.roleColumns || [];
+  var head = '<tr><th>菜单组</th>' + cols.map(function (c) {
+    return '<th>' + esc(c.name) + '</th>';
+  }).join('') + '</tr>';
+  document.getElementById('matrixHead').innerHTML = head;
+  var body = (matrix.rows || []).map(function (r) {
+    return '<tr><td>' + esc(r.menu) + '</td>' + cols.map(function (c) {
+      return '<td>' + (r.visible.indexOf(c.code) >= 0 ? CHECK : '') + '</td>';
+    }).join('') + '</tr>';
+  }).join('');
+  document.getElementById('matrixBody').innerHTML = body;
+}
+function renderModel(model) {
+  document.getElementById('modelBody').innerHTML = (model.layers || []).map(function (l) {
+    return '<tr><td>' + esc(l.layer) + '</td><td>' + esc(l.carrier) + '</td><td>' + esc(l.semantic) + '</td><td>' + esc(l.landing) + '</td></tr>';
+  }).join('');
+}
+API.org.menuPerms().then(function (r) {
+  renderMatrix(r.matrix);
+  renderModel(r.model);
+}).catch(function (err) { alert('加载失败：' + err.message); });
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

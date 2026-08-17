@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">扩容申请</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,77 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="申请单号/区域/小区">
-        <select class="input" style="width:160px"><option>全部状态</option><option>待审批</option><option>实施中</option><option>已完成</option></select>
+        <input class="input" id="kw" style="width:220px" placeholder="申请单号/区域/小区">
+        <select class="input" id="st" style="width:160px"><option>全部状态</option><option>待审批</option><option>实施中</option><option>已完成</option></select>
         <span class="spacer"></span>
-        <button class="btn btn-primary">+ 新建扩容申请</button>
+        <button class="btn btn-primary" id="createBtn">+ 新建扩容申请</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>申请单</th><th>区域</th><th>预期端口数</th><th>原因</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>EXP-20250817-001</td><td>望京X·3栋</td><td>128</td><td>端口利用率 92%</td><td><span class="tag tag-orange">待审批</span></td><td><a href="#">审批</a></td></tr>
-            <tr><td>EXP-20250814-002</td><td>望京Y小区</td><td>512</td><td>高潜扩容热区</td><td><span class="tag tag-blue">实施中</span></td><td><a href="#">详情</a></td></tr>
-            <tr><td>EXP-20250810-003</td><td>望京Z</td><td>256</td><td>投资回报率高</td><td><span class="tag tag-green">已完成</span></td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="expBody"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function renderList(items) {
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var e = items[i];
+    html += '<tr><td>' + esc(e.expansionNo) + '</td><td>' + esc(e.region) + '</td><td>' + esc(e.expectedPorts) +
+      '</td><td>' + esc(e.reason) +
+      '</td><td><span class="tag ' + esc(e.statusClass) + '">' + esc(e.statusLabel) + '</span></td>' +
+      '<td><a href="#" data-no="' + esc(e.expansionNo) + '" data-act="' + esc(e.action) + '">' + esc(e.action) + '</a></td></tr>';
+  }
+  document.getElementById('expBody').innerHTML = html;
+  bindRowActions();
+}
+function approveExpansion(no) {
+  API.post('/expansions', { expansionNo: no, action: 'approve' })
+    .then(function (r) { alert('扩容申请 ' + no + ' 审批: ' + r.message); loadList(); })
+    .catch(function (e) { alert('审批失败: ' + e.message); });
+}
+function bindRowActions() {
+  var links = document.getElementById('expBody').getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    links[i].onclick = function (e) {
+      e.preventDefault();
+      var act = this.getAttribute('data-act');
+      var no = this.getAttribute('data-no');
+      if (act === '审批') approveExpansion(no);
+      else alert('扩容申请 ' + no + ': ' + act);
+    };
+  }
+}
+function loadList() {
+  var st = document.getElementById('st').value;
+  API.oss.expansions(document.getElementById('kw').value, st === '全部状态' ? '' : st)
+    .then(function (d) { renderList(d.items); })
+    .catch(function (e) { alert('加载扩容申请失败: ' + e.message); });
+}
+function bindToolbar() {
+  document.getElementById('kw').oninput = loadList;
+  document.getElementById('st').onchange = loadList;
+  document.getElementById('createBtn').onclick = function () {
+    API.post('/expansions', { region: '', expectedPorts: 0, reason: '手工新建' })
+      .then(function (r) { alert('新建扩容申请: ' + r.message); loadList(); })
+      .catch(function (e) { alert('新建失败: ' + e.message); });
+  };
+}
+function init() {
+  loadList();
+  bindToolbar();
+}
+init();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

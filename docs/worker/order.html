@@ -15,68 +15,34 @@
   </div>
 
   <div class="card">
-    <div class="c-title">ORD-20250817-001 <span class="tag tag-blue">待扫码绑定</span></div>
-    <div class="kv"><span class="k">产品</span><span class="v">1000M 极速宽带（有线）· ¥199/月</span></div>
-    <div class="kv"><span class="k">客户</span><span class="v">王先生 · 138****1234</span></div>
-    <div class="kv"><span class="k">安装地址</span><span class="v">望京X · 3栋 · 501</span></div>
-    <div class="kv"><span class="k">分光器/端口</span><span class="v">SPL-03-07 · PON 7口</span></div>
-    <div class="kv"><span class="k">预绑定标签</span><span class="v">EPC-0001</span></div>
-    <div class="kv"><span class="k">预约时间</span><span class="v">今天 10:00-12:00</span></div>
+    <div class="c-title" id="oc-title">工单</div>
+    <div id="oc-fields"></div>
   </div>
 
   <div class="card" style="display:flex;gap:10px;">
-    <a class="btn" style="flex:1;" href="tel:1381234" onclick="return confirm('即将拨打客户 138****1234，确认拨号？')">联系客户</a>
+    <a class="btn" style="flex:1;" id="btn-call" href="tel:" onclick="return confirm('即将拨打客户，确认拨号？')">联系客户</a>
     <a class="btn" style="flex:1;" href="navi.html">一键导航</a>
     <a class="btn" style="flex:1;" href="checkin.html">到点签到</a>
   </div>
 
   <div class="card">
-    <div class="c-title">装维进度（12 环节）<span class="more">8/12 已完成 · 含合同收费</span></div>
-    <div class="timeline">
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">1 用户下单</div><div class="meta">08-17 09:02 · 完成</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">2 资源核查</div><div class="meta">08-17 09:05 · 有空闲端口 · 3m</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">3 端口预占</div><div class="meta">08-17 09:09 · 4m</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">4 合同收费</div><div class="meta">08-17 09:11 · 已收款 · 2m</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">5 标签预绑定</div><div class="meta">08-17 09:12 · EPC-0001 · 3m</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">6 创建认证账号</div><div class="meta">08-17 09:15 · 3m</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">7 预下发配置</div><div class="meta">08-17 09:18 · 成功 · 3m</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">8 派单</div><div class="meta">08-17 09:20 · 张师傅已接单 · 2m</div></div></div>
-      <div class="tl-item"><div class="rail"><span class="node doing"></span><span class="line"></span></div>
-        <div class="body"><div class="t">9 扫码绑定</div><div class="meta">进行中 · 请现场扫描光猫电子标签</div></div></div>
-      <div class="tl-item"><div class="rail"><span class="node"></span><span class="line"></span></div>
-        <div class="body"><div class="t">10 激活用户</div><div class="meta">待扫码绑定完成后触发</div></div></div>
-      <div class="tl-item"><div class="rail"><span class="node"></span><span class="line"></span></div>
-        <div class="body"><div class="t">11 激活回调</div><div class="meta">待处理</div></div></div>
-      <div class="tl-item"><div class="rail"><span class="node"></span></div>
-        <div class="body"><div class="t">12 更新 GIS 地图</div><div class="meta">待处理</div></div></div>
-    </div>
+    <div class="c-title" id="tl-title">装维进度</div>
+    <div class="timeline" id="tl-body"></div>
+    <div id="tl-err" class="notice" style="display:none;margin-top:12px;">进度加载失败，请刷新重试。</div>
     <div style="display:flex;gap:10px;margin-top:12px;">
-      <button class="btn" style="flex:1;" onclick="alert('已回退至上一完成环节，可重新执行。')">回退上一环节</button>
-      <button class="btn" style="flex:1;" onclick="alert('已重新触发当前失败环节，请稍候查看结果。')">重试失败环节</button>
+      <button class="btn" style="flex:1;" onclick="doRollback()">回退上一环节</button>
+      <button class="btn" style="flex:1;" onclick="doRetry()">重试失败环节</button>
     </div>
   </div>
 
   <div class="card">
     <div class="c-title">预绑定四码对照 <span class="more">一致性校验</span></div>
-    <div class="quad">
-      <div class="qm ok"><div class="lb">资产码</div><div class="vc">EPC-0001</div><div class="st">已预绑定</div></div>
-      <div class="qm ok"><div class="lb">用户码</div><div class="vc">LOID-88A1</div><div class="st">已关联</div></div>
-      <div class="qm ok"><div class="lb">端口码</div><div class="vc">P-SPL03-07</div><div class="st">已预占</div></div>
-      <div class="qm ok"><div class="lb">地址码</div><div class="vc">A-3-501</div><div class="st">已挂接</div></div>
-    </div>
+    <div class="quad" id="quad-body"></div>
   </div>
 
   <div class="card">
     <div class="c-title">风控校验 <span class="more">名单拦截</span></div>
-    <div class="kv"><span class="k">黑/灰名单</span><span class="v" style="color:var(--success);">未命中，可正常装维</span></div>
+    <div class="kv"><span class="k">黑/灰名单</span><span class="v" id="risk-val" style="color:var(--success);">校验中…</span></div>
     <div class="notice" style="margin-bottom:0;">若命中风控名单，此单将自动拦截或转人工审核，操作全程留痕。</div>
   </div>
 
@@ -94,6 +60,100 @@
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+(function () {
+  var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+  var ES = { DONE: 'done', DOING: 'doing', PENDING: '' };
+
+  function fix(n, d) { if (n === undefined || n === null || n === '') return d; return n; }
+
+  function tagCls(st) {
+    if (st === 'DOING') return 'tag-red';
+    if (st === 'DONE') return 'tag-green';
+    return 'tag-blue';
+  }
+
+  function tlItem(s) {
+    var cls = 'tl-item ' + ES[s.result];
+    var node = ES[s.result] ? 'node ' + ES[s.result] : 'node';
+    var rail = '<span class="' + node + '"></span><span class="line"></span>';
+    var meta = fix(s.note, '');
+    if (s.finishedAt) meta = s.finishedAt + (meta ? ' · ' + meta : '');
+    return '<div class="' + cls + '"><div class="rail">' + rail + '</div>'
+      + '<div class="body"><div class="t">' + s.stage + ' ' + s.name + '</div><div class="meta">' + meta + '</div></div></div>';
+  }
+
+  function doneCount(stages) {
+    var n = 0;
+    (stages || []).forEach(function (s) { if (s.result === 'DONE') n++; });
+    return n;
+  }
+
+  function field(k, v) { return '<div class="kv"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>'; }
+
+  function quadCell(lb, vc, st) {
+    return '<div class="qm ok"><div class="lb">' + lb + '</div><div class="vc">' + vc + '</div><div class="st">' + st + '</div></div>';
+  }
+
+  function showErr() {
+    document.getElementById('oc-title').textContent = NO;
+    document.getElementById('oc-fields').innerHTML = '<div class="notice">工单加载失败，请刷新重试。</div>';
+    document.getElementById('tl-title').textContent = '装维进度';
+    document.getElementById('tl-err').style.display = '';
+  }
+
+  function renderDetail(d) {
+    document.getElementById('oc-title').innerHTML = fix(d.ticketNo, NO) + ' <span class="tag ' + tagCls(d.status) + '">' + fix(d.statusLabel, '') + '</span>';
+    var fields = '';
+    fields += field('产品', fix(d.product, '-'));
+    fields += field('客户', fix(d.customerName, '-') + ' · ' + fix(d.customerPhoneMasked, '-'));
+    fields += field('安装地址', fix(d.address, '-'));
+    fields += field('分光器/端口', fix(d.splitterPort, '-'));
+    fields += field('预绑定标签', fix(d.preBindTag, '-'));
+    fields += field('预约时间', fix(d.scheduleSlot, '-'));
+    document.getElementById('oc-fields').innerHTML = fields;
+    document.getElementById('btn-call').setAttribute('href', 'tel:' + (d.customerPhoneMasked || '').replace(/\*/g, ''));
+    renderTimeline(d.stages, d.stageTotal);
+    renderQuad(d.quad);
+    renderRisk(d.riskCheck);
+  }
+
+  function renderTimeline(stages, total) {
+    var list = stages || [];
+    var done = doneCount(list);
+    document.getElementById('tl-title').innerHTML = '装维进度（' + (total || list.length) + ' 环节）<span class="more">' + done + '/' + (total || list.length) + ' 已完成</span>';
+    document.getElementById('tl-body').innerHTML = list.map(tlItem).join('');
+  }
+
+  function renderQuad(q) {
+    q = q || {};
+    var ok = q.matched !== false;
+    var status = ('status:' + (q.status || '')).toUpperCase();
+    var stText = ok ? '已通过校验' : (status.indexOf('CONFLICT') >= 0 ? '不一致 · 需核实' : '待校验');
+    var html = quadCell('资产码', fix(q.assetCode, '-'), stText)
+      + quadCell('用户码', fix(q.customerCode, '-'), stText)
+      + quadCell('端口码', fix(q.portCode, '-'), stText)
+      + quadCell('地址码', fix(q.addrCode, '-'), stText);
+    document.getElementById('quad-body').innerHTML = html;
+  }
+
+  function renderRisk(rk) {
+    rk = rk || {};
+    var el = document.getElementById('risk-val');
+    if (rk.blacklistHit || rk.graylistHit) { el.textContent = '已命中，自动拦截或转人工审核'; el.style.color = 'var(--err)'; }
+    else { el.textContent = '未命中，可正常装维'; el.style.color = 'var(--success)'; }
+  }
+
+  function act(method, okMsg) {
+    method(NO).then(function (r) { alert((r && r.message) || okMsg); }).catch(function () { alert('操作失败，请重试。'); });
+  }
+  window.doRollback = function () { act(API.ticket.rollback, '已回退上一环节'); };
+  window.doRetry = function () { act(API.ticket.retry, '已重试失败环节'); };
+
+  API.ticket.detail(NO).then(renderDetail).catch(showErr);
+})();
+</script>
 </body>
 </html>

@@ -16,23 +16,42 @@
 
   <div class="card">
     <div class="c-title">开票信息 <span class="more" onclick="location.href='security.html'">维护</span></div>
-    <div class="cell"><div class="main"><div class="t">抬头类型</div></div><div class="right">个人</div></div>
-    <div class="cell"><div class="main"><div class="t">发票抬头</div></div><div class="right">王先生</div></div>
-    <div class="cell"><div class="main"><div class="t">税号</div></div><div class="right">—</div></div>
+    <div class="cell"><div class="main"><div class="t">抬头类型</div></div><div class="right" id="iv-type">—</div></div>
+    <div class="cell"><div class="main"><div class="t">发票抬头</div></div><div class="right" id="iv-title">—</div></div>
+    <div class="cell"><div class="main"><div class="t">税号</div></div><div class="right" id="iv-taxno">—</div></div>
   </div>
 
   <div class="card">
     <div class="c-title">可开票账期</div>
-    <div class="cell"><div class="main"><div class="t">2025-08 账期</div><div class="d">¥158.00 · 已缴</div></div><div class="right"><button class="btn btn-primary">申请开票</button></div></div>
-    <div class="cell"><div class="main"><div class="t">2025-07 账期</div><div class="d">¥158.00 · 已缴</div></div><div class="right"><button class="btn">已开票</button></div></div>
+    <div id="iv-periods"></div>
   </div>
 
   <div class="card">
     <div class="c-title">开票记录</div>
-    <div class="cell"><div class="main"><div class="t">2025-07 账期 · ¥158.00</div><div class="d">2025-07-26 开票</div></div><div class="right"><a href="#">下载 PDF</a></div></div>
+    <div id="iv-records"></div>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function periodCell(b, issued) {
+    var btn = issued ? '<button class="btn">已开票</button>' : '<button class="btn btn-primary" onclick="apply(\'' + b.billNo + '\')">申请开票</button>';
+    return '<div class="cell"><div class="main"><div class="t">' + b.period + ' 账期</div><div class="d">¥' + b.amount.toFixed(2) + ' · 已缴</div></div><div class="right">' + btn + '</div></div>';
+  }
+  function recordCell(r) {
+    return '<div class="cell"><div class="main"><div class="t">' + r.period + ' 账期 · ¥' + r.amount.toFixed(2) + '</div><div class="d">' + r.issuedAt + ' 开票</div></div><div class="right"><a href="' + r.pdfUrl + '">下载 PDF</a></div></div>';
+  }
+  function apply(billNo) {
+    API.invoice.apply(billNo).then(function () { alert('已提交开票申请'); });
+  }
+  API.invoice.list().then(function (d) {
+    document.getElementById('iv-type').textContent = d.titleType;
+    document.getElementById('iv-title').textContent = d.title;
+    document.getElementById('iv-taxno').textContent = d.taxNo || '—';
+    document.getElementById('iv-periods').innerHTML = (d.availablePeriods || []).map(function (b, i) { return periodCell(b, i === (d.availablePeriods.length - 1)); }).join('');
+    document.getElementById('iv-records').innerHTML = (d.records || []).map(recordCell).join('');
+  }).catch(function () {});
+</script>
 </body>
 </html>

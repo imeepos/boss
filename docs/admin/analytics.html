@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">经营分析</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,12 +24,12 @@
       </div>
 
       <div class="toolbar">
-        <select class="input" style="width:160px">
-          <option>品牌：全部</option><option>LEG-A 主品牌·企业</option>
+        <select class="input" style="width:160px" id="brandSel">
+          <option value="">品牌：全部</option><option>LEG-A 主品牌·企业</option>
           <option>LEG-B 家庭宽带</option><option>LEG-C 批发品牌</option>
         </select>
-        <select class="input" style="width:160px">
-          <option>区域：全部</option><option>吕宋大区</option>
+        <select class="input" style="width:160px" id="regionSel">
+          <option value="">区域：全部</option><option>吕宋大区</option>
           <option>比萨扬大区</option><option>棉兰老大区</option>
         </select>
         <span class="spacer"></span>
@@ -40,13 +40,7 @@
         <div class="card">
           <div class="card-title">五大核心指标</div>
           <table class="tbl">
-            <tbody>
-              <tr><td>端口利用率</td><td style="font-weight:700;">72.3%</td></tr>
-              <tr><td>装机转化率</td><td style="font-weight:700;">41.8%</td></tr>
-              <tr><td>单用户维护成本</td><td style="font-weight:700;">¥6.4/月</td></tr>
-              <tr><td>资产健康度评分</td><td style="font-weight:700;">86.2</td></tr>
-              <tr><td>区域投资回报率</td><td style="font-weight:700;">23.5%</td></tr>
-            </tbody>
+            <tbody id="kpiRows"></tbody>
           </table>
         </div>
         <div class="card">
@@ -58,13 +52,8 @@
       <div class="card">
         <div class="card-title">品牌×区域交叉汇总 <span class="extra">LEG-B 跨大区经营 · 下钻到区</span></div>
         <table class="tbl">
-          <thead><tr><th>品牌</th><th>吕宋大区</th><th>比萨扬大区</th><th>棉兰老大区</th><th>合并营收</th></tr></thead>
-          <tbody>
-            <tr><td>LEG-A 主品牌·企业</td><td>¥8.2M</td><td>—</td><td>—</td><td>¥8.2M</td></tr>
-            <tr><td>LEG-B 家庭宽带</td><td>¥5.4M</td><td>—</td><td>¥3.1M</td><td>¥8.5M</td></tr>
-            <tr><td>LEG-C 批发品牌</td><td>—</td><td>¥2.7M</td><td>—</td><td>¥2.7M</td></tr>
-            <tr style="font-weight:700;"><td>合计</td><td>¥13.6M</td><td>¥2.7M</td><td>¥3.1M</td><td>¥19.4M</td></tr>
-          </tbody>
+          <thead id="matrixHead"></thead>
+          <tbody id="matrixRows"></tbody>
         </table>
       </div>
 
@@ -72,17 +61,68 @@
         <div class="card-title">维护一张表 · 待替换设备优先级清单</div>
         <table class="tbl">
           <thead><tr><th>设备</th><th>健康度</th><th>故障次数</th><th>使用年限</th><th>替换建议</th></tr></thead>
-          <tbody>
-            <tr><td>OLT-15</td><td>41</td><td>23</td><td>6 年</td><td><span class="tag tag-red">立即替换</span></td></tr>
-            <tr><td>分光器-208</td><td>55</td><td>12</td><td>5 年</td><td><span class="tag tag-orange">优先级高</span></td></tr>
-            <tr><td>OLT-33</td><td>67</td><td>8</td><td>4 年</td><td><span class="tag tag-gray">观察</span></td></tr>
-          </tbody>
+          <tbody id="replaceRows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 经营分析渲染(契约: GET /analytics/overview，region/brand 作为 query 参数)
+(function () {
+  var SUGGEST_TAG = { '立即替换': 'tag-red', '优先级高': 'tag-orange', '观察': 'tag-gray' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function renderKpis(kpis) {
+    document.getElementById('kpiRows').innerHTML = kpis.map(function (k) {
+      return '<tr><td>' + esc(k.label) + '</td><td style="font-weight:700;">' + esc(k.value) + '</td></tr>';
+    }).join('');
+  }
+
+  function renderMatrix(m) {
+    document.getElementById('matrixHead').innerHTML = '<tr><th>品牌</th>'
+      + m.regions.map(function (r) { return '<th>' + esc(r) + '</th>'; }).join('')
+      + '<th>合并营收</th></tr>';
+    document.getElementById('matrixRows').innerHTML = m.rows.map(function (row, i) {
+      var bold = i === m.rows.length - 1 ? ' style="font-weight:700;"' : '';
+      return '<tr' + bold + '><td>' + esc(row.brand) + '</td>'
+        + m.regions.map(function (r) { return '<td>' + esc(row.values[r]) + '</td>'; }).join('')
+        + '<td>' + esc(row.total) + '</td></tr>';
+    }).join('');
+  }
+
+  function renderReplace(list) {
+    document.getElementById('replaceRows').innerHTML = list.map(function (r) {
+      return '<tr><td>' + esc(r.device) + '</td><td>' + esc(r.health) + '</td><td>'
+        + esc(r.faultCount) + '</td><td>' + esc(r.years) + '</td><td><span class="tag '
+        + (SUGGEST_TAG[r.suggestion] || 'tag-gray') + '">' + esc(r.suggestion) + '</span></td></tr>';
+    }).join('');
+  }
+
+  function load() {
+    API.intel.analytics(
+      document.getElementById('regionSel').value,
+      document.getElementById('brandSel').value
+    ).then(function (d) {
+      renderKpis(d.kpis);
+      renderMatrix(d.brandRegionMatrix);
+      renderReplace(d.replaceList);
+    });
+  }
+
+  document.getElementById('brandSel').onchange = load;
+  document.getElementById('regionSel').onchange = load;
+
+  load();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

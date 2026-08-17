@@ -1,0 +1,109 @@
+paths:
+  /bills:
+    get:
+      tags: [Billing]
+      summary: 出账管理(统计卡 + 账单列表)
+      operationId: listBills
+      responses:
+        '200':
+          description: 账单列表(含 stats 汇总)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    type: object
+                    properties:
+                      receivable: { type: number, description: 本月应收 }
+                      received: { type: number, description: 已收 }
+                      arrearsCount: { type: integer, description: 欠费用户数 }
+                  items: { type: array, items: { type: object } }
+
+  /payments:
+    get:
+      tags: [Billing]
+      summary: 缴费记录列表
+      operationId: listPayments
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /arrears:
+    get:
+      tags: [Billing]
+      summary: 欠费停复机列表(统计卡 + 明细)
+      operationId: listArrears
+      responses:
+        '200':
+          description: 欠费列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats: { type: object }
+                  items: { type: array, items: { type: object } }
+
+  /arrears/{customerId}/stop:
+    post:
+      tags: [Billing]
+      summary: 欠费停机(生成停机任务)
+      operationId: stopArrearsCustomer
+      parameters:
+        - { name: customerId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /arrears/{customerId}/resume:
+    post:
+      tags: [Billing]
+      summary: 欠费复机
+      operationId: resumeArrearsCustomer
+      parameters:
+        - { name: customerId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /stop-resume-tasks:
+    get:
+      tags: [Billing]
+      summary: 停复机执行状态列表(网络侧结果)
+      operationId: listStopResumeTasks
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /stop-resume-tasks/{taskId}/retry:
+    post:
+      tags: [Billing]
+      summary: 失败任务重试
+      operationId: retryStopResumeTask
+      parameters:
+        - { name: taskId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /reconciliations:
+    get:
+      tags: [Billing]
+      summary: 缴费渠道对账批次列表
+      operationId: listReconciliations
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /reconciliations/{batchNo}/settle:
+    post:
+      tags: [Billing]
+      summary: 差异挂起批次平账
+      operationId: settleReconciliation
+      parameters:
+        - { name: batchNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

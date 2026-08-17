@@ -1,0 +1,53 @@
+paths:
+  /auth/sms-code:
+    post:
+      tags: [Auth]
+      summary: 发送登录验证码
+      operationId: sendWorkerSmsCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 师傅登录(验证码/工号密码)
+      operationId: workerLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, mode]
+              properties:
+                phone: { type: string }
+                mode: { type: string, enum: [sms, password] }
+                smsCode: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  workerId: { type: integer }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 退出登录
+      operationId: workerLogout
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

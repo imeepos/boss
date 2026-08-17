@@ -15,25 +15,39 @@
   </div>
 
   <div class="card">
-    <div class="c-title">2025-08 账期 <span class="tag tag-orange">未缴</span></div>
-    <div class="cell"><div class="main"><div class="t">1000M 极速宽带套餐费</div><div class="d">08-01 ~ 08-31</div></div><div class="right">¥199.00</div></div>
-    <div class="cell"><div class="main"><div class="t">IPTV 高清电视</div><div class="d">08-01 ~ 08-31</div></div><div class="right">¥10.00</div></div>
-    <div class="cell"><div class="main"><div class="t">全屋 WiFi</div><div class="d">08-01 ~ 08-31</div></div><div class="right">¥15.00</div></div>
-    <div class="cell"><div class="main"><div class="t">合约减免</div><div class="d">首年立减</div></div><div class="right" style="color:var(--success);">-¥66.00</div></div>
-    <div class="cell" style="border-top:1px solid var(--line);"><div class="main"><div class="t" style="font-weight:700;">合计应缴</div></div><div class="right amount" style="font-size:16px;">¥158.00</div></div>
+    <div class="c-title" id="b-title">加载中…</div>
+    <div id="b-items"></div>
+    <div class="cell" style="border-top:1px solid var(--line);"><div class="main"><div class="t" style="font-weight:700;">合计应缴</div></div><div class="right amount" style="font-size:16px;" id="b-total">¥—</div></div>
   </div>
 
   <div class="card">
-    <div class="c-title">自动缴费 <span class="tag tag-gray">未开通</span></div>
+    <div class="c-title">自动缴费 <span class="tag tag-gray" id="b-autopay">未开通</span></div>
     <div class="muted" style="font-size:12.5px;margin-bottom:12px;">开通后每月账期自动扣款，避免忘记缴费导致停机。</div>
     <button class="btn-block ghost" onclick="location.href='payresult.html'">开通微信自动缴费</button>
   </div>
 
   <div style="margin:12px 14px 0;">
-    <button class="btn-block" onclick="location.href='pay.html'">立即缴费 ¥158.00</button>
+    <button class="btn-block" id="b-pay-btn" onclick="location.href='pay.html'">立即缴费</button>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var billNo = new URLSearchParams(location.search).get('no') || 'BILL-202508';
+  function itemCell(it, isNeg) {
+    return '<div class="cell"><div class="main"><div class="t">' + it.name + '</div><div class="d">' + it.range + '</div></div>'
+      + '<div class="right"' + (isNeg ? ' style="color:var(--success);"' : '') + '>' + (it.amount < 0 ? '-¥' + (-it.amount).toFixed(2) : '¥' + it.amount.toFixed(2)) + '</div></div>';
+  }
+  API.bill.detail(billNo).then(function (d) {
+    var b = d.bill || {};
+    var tag = b.status === 'PAID' ? 'tag-green' : 'tag-orange';
+    document.getElementById('b-title').innerHTML = b.period + ' 账期 <span class="tag ' + tag + '">' + b.statusLabel + '</span>';
+    document.getElementById('b-items').innerHTML = (d.items || []).map(itemCell).join('');
+    document.getElementById('b-total').textContent = '¥' + d.totalDue.toFixed(2);
+    document.getElementById('b-autopay').textContent = d.autoPayEnabled ? '已开通' : '未开通';
+    document.getElementById('b-pay-btn').textContent = '立即缴费 ¥' + d.totalDue.toFixed(2);
+  }).catch(function () {});
+</script>
 </body>
 </html>

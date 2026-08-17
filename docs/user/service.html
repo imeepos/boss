@@ -17,31 +17,53 @@
 <body>
 <div class="app" style="padding-bottom:90px;">
   <div class="topbar">
-    <a class="back" href="home.html">&lsquo;</a>
+    <a class="back" href="home.html">&lsaquo;</a>
     <div class="t">在线客服</div>
     <span class="act" onclick="location.href='help.html'">帮助中心</span>
   </div>
 
   <div class="card">
     <div class="c-title">智能客服 <span class="tag tag-green">在线</span></div>
-    <div class="chat">
+    <div class="chat" id="chat">
       <div class="bubble bot">您好，我是智能客服小维。可为您解答账单、套餐、报障等问题，输入「人工」可转接人工坐席。</div>
-      <div class="bubble me">家里宽带无法上网</div>
-      <div class="bubble bot">已为您检测到当前服务在线正常。建议先自助排障：检查光猫指示灯，重启光猫与路由器。是否需要转报修？</div>
     </div>
     <div class="chat-input">
-      <input type="text" placeholder="输入你的问题…">
-      <button class="btn btn-primary">发送</button>
+      <input type="text" id="input" placeholder="输入你的问题…" onkeydown="if(event.key==='Enter')send()">
+      <button class="btn btn-primary" onclick="send()">发送</button>
     </div>
   </div>
 
   <div class="card">
     <div class="c-title">常见问题 <span class="more" onclick="location.href='help.html'">更多</span></div>
-    <div class="cell"><div class="main"><div class="t">如何修改套餐？</div></div><div class="right">›</div></div>
-    <div class="cell"><div class="main"><div class="t">如何开具电子发票？</div></div><div class="right">›</div></div>
+    <div id="faq"></div>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function bubble(cls, text) {
+    var d = document.createElement('div');
+    d.className = 'bubble ' + cls;
+    d.textContent = text;
+    return d;
+  }
+  function send() {
+    var input = document.getElementById('input');
+    var msg = input.value.trim();
+    if (!msg) return;
+    document.getElementById('chat').appendChild(bubble('me', msg));
+    input.value = '';
+    API.service.chat(msg).then(function (r) {
+      document.getElementById('chat').appendChild(bubble('bot', r.reply));
+      if (r.toHuman) document.getElementById('chat').appendChild(bubble('bot', '正在为您转接人工坐席…'));
+    });
+  }
+  API.service.faq().then(function (d) {
+    document.getElementById('faq').innerHTML = (d.items || []).map(function (f) {
+      return '<div class="cell"><div class="main"><div class="t">' + f.question + '</div></div><div class="right">›</div></div>';
+    }).join('');
+  });
+</script>
 </body>
 </html>

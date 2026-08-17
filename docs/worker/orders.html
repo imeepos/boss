@@ -12,7 +12,7 @@
   <div class="topbar">
     <a class="back" href="home.html">&lsaquo;</a>
     <div class="t">工单列表</div>
-    <span class="act" onclick="alert('已刷新，工单为最新状态。')">刷新</span>
+    <span class="act" onclick="loadPanel()">刷新</span>
   </div>
 
   <div class="seg" id="seg">
@@ -22,120 +22,90 @@
     <a data-k="all" href="javascript:;">全部</a>
   </div>
 
-  <div class="card" data-panel="doing">
-    <div class="c-title">进行中工单 <span class="more">3 单</span></div>
-
-    <a class="cell" href="order.html">
-      <div class="main">
-        <div class="t">ORD-20250817-001 · 1000M 安装</div>
-        <div class="d">望京X · 3栋501</div>
-        <div class="d">预约：今天 10:00-12:00</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-blue">待扫码绑定</span>
-        <div style="margin-top:4px">8/12 环节</div>
-      </div>
-    </a>
-
-    <a class="cell" href="order.html">
-      <div class="main">
-        <div class="t">ORD-20250817-002 · 500M 安装</div>
-        <div class="d">望京X · 5栋302</div>
-        <div class="d">预约：今天 14:00-16:00</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-orange">已接单</span>
-        <div style="margin-top:4px">7/12 环节</div>
-      </div>
-    </a>
-
-    <a class="cell" href="repair.html">
-      <div class="main">
-        <div class="t">TKT-20250817-012 · 断网抢修</div>
-        <div class="d">望京X · 10栋1801</div>
-        <div class="d">SLA 剩余 0h52m（紧急）</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-red">修复中</span>
-        <div style="margin-top:4px">4/6 环节</div>
-      </div>
-    </a>
-  </div>
-
-  <div class="card" data-panel="todo" style="display:none;">
-    <div class="c-title">待领取工单 <span class="more">2 单</span></div>
-
-    <div class="cell">
-      <div class="main">
-        <div class="t">ORD-20250817-003 · 300M 安装</div>
-        <div class="d">望京X · 12栋906 · 距您 1.7km</div>
-        <div class="d">空闲端口已预占 · 标签已预绑定</div>
-      </div>
-      <div class="right">
-        <button class="btn btn-primary" style="padding:6px 12px;" onclick="takeOrder(this, '003')">领取</button>
-      </div>
-    </div>
-
-    <div class="cell">
-      <div class="main">
-        <div class="t">ORD-20250817-004 · 宽带变更</div>
-        <div class="d">望京X · 3栋501 · 距您 4.0km</div>
-        <div class="d">空闲端口已预占 · 标签已预绑定</div>
-      </div>
-      <div class="right">
-        <button class="btn btn-primary" style="padding:6px 12px;" onclick="takeOrder(this, '004')">领取</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="card" data-panel="done" style="display:none;">
-    <div class="c-title">已完成 · 今日</div>
-    <a class="cell" href="order.html">
-      <div class="main">
-        <div class="t">ORD-20250817-000 · 1000M 安装</div>
-        <div class="d">望京X · 1栋303</div>
-      </div>
-      <div class="right"><span class="tag tag-green">已激活</span></div>
-    </a>
-  </div>
-
-  <div class="card" data-panel="all" style="display:none;">
-    <div class="c-title">全部工单 <span class="more"><a href="history.html">历史工单 &rsaquo;</a></span></div>
-    <a class="cell" href="order.html"><div class="main"><div class="t">ORD-20250817-001 · 1000M 安装</div><div class="d">望京X · 3栋501</div></div><div class="right"><span class="tag tag-blue">待扫码绑定</span></div></a>
-    <a class="cell" href="order.html"><div class="main"><div class="t">ORD-20250817-002 · 500M 安装</div><div class="d">望京X · 5栋302</div></div><div class="right"><span class="tag tag-orange">已接单</span></div></a>
-    <a class="cell" href="repair.html"><div class="main"><div class="t">TKT-20250817-012 · 断网抢修</div><div class="d">望京X · 10栋1801</div></div><div class="right"><span class="tag tag-red">修复中</span></div></a>
-    <a class="cell" href="order.html"><div class="main"><div class="t">ORD-20250817-003 · 300M 安装</div><div class="d">望京X · 12栋906</div></div><div class="right"><span class="tag tag-orange">待领取</span></div></a>
-    <a class="cell" href="order.html"><div class="main"><div class="t">ORD-20250817-004 · 宽带变更</div><div class="d">望京X · 3栋501</div></div><div class="right"><span class="tag tag-orange">待领取</span></div></a>
-    <a class="cell" href="order.html"><div class="main"><div class="t">ORD-20250817-000 · 1000M 安装</div><div class="d">望京X · 1栋303</div></div><div class="right"><span class="tag tag-green">已激活</span></div></a>
+  <div class="card">
+    <div class="c-title" id="panel-title">进行中工单</div>
+    <div id="panel-list"></div>
   </div>
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
 <script>
 (function () {
+  var CUR = 'doing';
+  var TITLES = { doing: '进行中工单', todo: '待领取工单', done: '已完成 · 今日', all: '全部工单' };
+
+  function fix(n, d) { if (n === undefined || n === null) return d; return n; }
+
+  function orderType(no) {
+    return (no && (no.indexOf('TKT') === 0 || no.indexOf('EMG') === 0)) ? 'repair.html' : 'order.html';
+  }
+
+  function tagCls(st) {
+    if (st === 'SCAN_PENDING') return 'tag-blue';
+    if (st === 'ACCEPTED' || st === 'TODO') return 'tag-orange';
+    if (st === 'DOING') return 'tag-red';
+    if (st === 'DONE') return 'tag-green';
+    return 'tag-blue';
+  }
+
+  function cell(it) {
+    var no = fix(it.ticketNo, '');
+    var d = fix(it.address, '');
+    if (it.distanceKm !== undefined && it.distanceKm !== null) d += ' · 距您 ' + it.distanceKm + 'km';
+    var d2 = '';
+    if (it.scheduleSlot) d2 = '<div class="d">预约：' + it.scheduleSlot + '</div>';
+    else if (it.slaLeftMinutes !== null && it.slaLeftMinutes !== undefined) d2 = '<div class="d">SLA 剩余 ' + it.slaLeftMinutes + 'm（紧急）</div>';
+    if (it.note) d2 += '<div class="d">' + it.note + '</div>';
+    var right = '<div class="right"><span class="tag ' + tagCls(it.status) + '">' + fix(it.statusLabel, '') + '</span>';
+    if (it.stageTotal !== undefined && it.stageTotal !== null) {
+      right += '<div style="margin-top:4px">' + fix(it.stage, '-') + '/' + it.stageTotal + ' 环节</div>';
+    }
+    right += '</div>';
+    var html = '<a class="cell" href="' + orderType(no) + '?no=' + encodeURIComponent(no) + '">'
+      + '<div class="main"><div class="t">' + no + ' · ' + fix(it.typeLabel, '') + '</div><div class="d">' + d + '</div>' + d2 + '</div>'
+      + right + '</a>';
+    if (it.status === 'TODO') {
+      html = '<div class="cell"><div class="main"><div class="t">' + no + ' · ' + fix(it.typeLabel, '') + '</div><div class="d">' + d + '</div>' + d2 + '</div>'
+        + '<div class="right"><button class="btn btn-primary" style="padding:6px 12px;" onclick="takeOrder(this, \'' + no + '\')">领取</button></div></div>';
+    }
+    return html;
+  }
+
+  function showUser() { document.getElementById('panel-title').textContent = TITLES[CUR]; }
+
+  function loadPanel() {
+    document.getElementById('panel-title').textContent = TITLES[CUR] + ' · 加载中…';
+    API.ticket.list(CUR === 'all' ? '' : CUR).then(function (r) {
+      var items = (r && r.items) || [];
+      document.getElementById('panel-title').textContent = TITLES[CUR] + ' (' + items.length + ' 单)';
+      document.getElementById('panel-list').innerHTML = items.map(cell).join('');
+    }).catch(function () {
+      document.getElementById('panel-title').textContent = TITLES[CUR];
+      document.getElementById('panel-list').innerHTML = '<div class="notice">工单加载失败，请刷新重试。</div>';
+    });
+  }
+
   var seg = document.getElementById('seg');
-  if (!seg) return;
   seg.addEventListener('click', function (e) {
     var a = e.target.closest('a');
     if (!a) return;
-    var k = a.getAttribute('data-k');
-    seg.querySelectorAll('a').forEach(function (x) {
-      x.classList.toggle('active', x === a);
-    });
-    document.querySelectorAll('[data-panel]').forEach(function (p) {
-      var show = !k || p.getAttribute('data-panel') === k;
-      p.style.display = show ? '' : 'none';
-    });
+    CUR = a.getAttribute('data-k');
+    seg.querySelectorAll('a').forEach(function (x) { x.classList.toggle('active', x === a); });
+    loadPanel();
   });
-})();
 
-function takeOrder(btn, no) {
-  if (!confirm('确认领取工单 ORD-20250817-' + no + ' ?')) return;
-  btn.textContent = '已领取';
-  btn.disabled = true;
-  btn.classList.remove('btn-primary');
-}
+  window.takeOrder = function (btn, no) {
+    if (!confirm('确认领取工单 ' + no + ' ?')) return;
+    API.ticket.accept(no).then(function (r) {
+      alert((r && r.message) || '已领取');
+      loadPanel();
+    }).catch(function () { alert('领取失败，请重试。'); });
+  };
+
+  loadPanel();
+})();
 </script>
 </body>
 </html>

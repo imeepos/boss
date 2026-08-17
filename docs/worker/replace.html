@@ -15,17 +15,15 @@
   </div>
 
   <div class="card">
-    <div class="c-title">ORD-20250817-001</div>
-    <div class="kv"><span class="k">待换设备</span><span class="v">光猫 EPC-0002（故障）</span></div>
-    <div class="kv"><span class="k">换件类型</span><span class="v">故障调换 · 旧件返修</span></div>
+    <div class="c-title" id="r-title">换件</div>
+    <div class="kv"><span class="k">待换设备</span><span class="v" id="r-old">--</span></div>
+    <div class="kv"><span class="k">换件类型</span><span class="v" id="r-type">--</span></div>
   </div>
 
   <div class="card">
     <div class="c-title">换件流程 <span class="more">扫码强制</span></div>
-    <div class="kv"><span class="k">1 扫旧件</span><span class="v" style="color:var(--success);">EPC-0002 已识别</span></div>
-    <div class="kv"><span class="k">2 扫新件</span><span class="v"><a href="scan.html">待扫码</a></span></div>
-    <div class="kv"><span class="k">3 登记</span><span class="v">未完成</span></div>
-    <button class="btn-green btn-block" style="margin-top:10px;" onclick="alert('换件登记完成，旧件转返修，新件沿用绑定。')">完成换件</button>
+    <div id="r-steps"></div>
+    <button class="btn-green btn-block" style="margin-top:10px;" id="r-submit">完成换件</button>
     <a class="btn btn-block ghost" style="margin-top:8px;" href="retire.html">旧件回收 / 返库登记</a>
   </div>
 
@@ -35,6 +33,40 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+var data = null;
+
+function showErr(e) {
+  var msg = (e && e.message) ? e.message : '网络异常';
+  alert('加载失败：' + msg);
+}
+
+function render(replace) {
+  data = replace;
+  document.getElementById('r-title').textContent = replace.ticketNo;
+  document.getElementById('r-old').textContent = replace.oldEpc + '（' + (replace.oldEpcStatus || '故障') + '）';
+  document.getElementById('r-type').textContent = replace.replaceType;
+
+  var steps = replace.steps || [];
+  var html = steps.map(function (s, i) {
+    var num = i + 1;
+    var style = s.status === 'DONE' ? 'color:var(--success);' : '';
+    return '<div class="kv"><span class="k">' + num + ' ' + s.name + '</span><span class="v" style="' + style + '">' + (s.note || s.status) + '</span></div>';
+  }).join('');
+  document.getElementById('r-steps').innerHTML = html;
+}
+
+API.asset.replace(NO).then(render).catch(showErr);
+
+document.getElementById('r-submit').addEventListener('click', function () {
+  if (!data) { alert('请先加载换件信息'); return; }
+  API.asset.submitReplace(NO, data.oldEpc, data.newEpc || '').then(function (r) {
+    alert((r && r.message) || '换件登记完成，旧件转返修，新件沿用绑定。');
+  }).catch(showErr);
+});
+</script>
 <script src="nav.js"></script>
 </body>
 </html>

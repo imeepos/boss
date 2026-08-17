@@ -14,19 +14,15 @@
     <span class="act" onclick="location.href='products.html'">对比</span>
   </div>
 
-  <div class="card" style="border:1px solid var(--primary);">
-    <div class="c-title">1000M 极速宽带 <span class="tag tag-orange">¥199/月</span></div>
-    <div class="muted" style="font-size:12.5px;margin-bottom:12px;">下行 1000M / 上行 50M · 含光猫 + 路由器 + IPTV · 合约 24 个月</div>
-    <div class="cell"><div class="main"><div class="t">安装费</div></div><div class="right">首装 ¥0</div></div>
-    <div class="cell"><div class="main"><div class="t">光猫 / 路由器</div></div><div class="right">含设备 · 押金 ¥0</div></div>
-    <div class="cell"><div class="main"><div class="t">IPTV</div></div><div class="right">200+ 频道</div></div>
-    <div class="cell"><div class="main"><div class="t">合约期</div></div><div class="right">24 个月 · 到期自动续约</div></div>
+  <div class="card" style="border:1px solid var(--primary);" id="detail-card">
+    <div class="c-title" id="p-title">加载中…</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:12px;" id="p-desc">—</div>
+    <div id="p-specs"></div>
   </div>
 
   <div class="card">
     <div class="c-title">套餐对比 <span class="more">同档可选</span></div>
-    <div class="cell"><div class="main"><div class="t">300M 畅享宽带</div><div class="d">¥99/月 · 含光猫</div></div><div class="right"><button class="btn">查看</button></div></div>
-    <div class="cell"><div class="main"><div class="t">500M 畅享宽带</div><div class="d">¥129/月 · 光猫 + 路由器</div></div><div class="right"><button class="btn">查看</button></div></div>
+    <div id="p-compare"></div>
   </div>
 
   <div class="card">
@@ -35,10 +31,39 @@
   </div>
 
   <div style="margin:12px 14px 0;">
-    <button class="btn-block" onclick="location.href='order.html'">立即办理 ¥199/月</button>
+    <button class="btn-block" id="p-cta" onclick="orderNow()">立即办理</button>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var currentId = getQuery('id') || 'P-1000';
+  var product = null;
+  function getQuery(k) {
+    return new URLSearchParams(location.search).get(k);
+  }
+  function specCell(s) {
+    return '<div class="cell"><div class="main"><div class="t">' + s.label + '</div></div><div class="right">' + s.value + '</div></div>';
+  }
+  function cmpCell(p) {
+    return '<div class="cell"><div class="main"><div class="t">' + p.name + '</div><div class="d">'
+      + p.description + '</div></div><div class="right"><button class="btn" onclick="location.href=\'product.html?id=' + p.productId + '\'">查看</button></div></div>';
+  }
+  function orderNow() {
+    API.order.submit({ productId: currentId, addressId: 'ADDR-001' }).then(function (o) {
+      location.href = 'order.html?no=' + encodeURIComponent(o.orderNo);
+    });
+  }
+
+  API.product.detail(currentId).then(function (d) {
+    product = d.product;
+    document.getElementById('p-title').innerHTML = product.name + ' <span class="tag tag-orange">¥' + product.monthlyFee + '/月</span>';
+    document.getElementById('p-desc').textContent = product.description;
+    document.getElementById('p-specs').innerHTML = (d.specs || []).map(specCell).join('');
+    document.getElementById('p-compare').innerHTML = (d.compare || []).map(cmpCell).join('');
+    document.getElementById('p-cta').textContent = '立即办理 ¥' + product.monthlyFee + '/月';
+  }).catch(function () {});
+</script>
 </body>
 </html>

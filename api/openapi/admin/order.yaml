@@ -1,0 +1,189 @@
+paths:
+  /orders:
+    get:
+      tags: [Order]
+      summary: 订单列表(12 环节跟踪;status: PENDING/RESERVED/INSTALLING/DONE)
+      operationId: listOrders
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200':
+          description: 订单列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        orderNo: { type: string }
+                        customer: { type: string }
+                        product: { type: string }
+                        address: { type: string }
+                        stage: { type: integer, minimum: 1, maximum: 12 }
+                        stageLabel: { type: string }
+                        status: { type: string, enum: [PENDING, RESERVED, INSTALLING, DONE] }
+                        statusLabel: { type: string }
+                        ops: { type: array, items: { type: string }, description: 可用操作(跟踪/变更/退订) }
+    post:
+      tags: [Order]
+      summary: 新建订单(客服代客下单,进入环节 1)
+      operationId: createOrder
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /orders/{orderNo}:
+    get:
+      tags: [Order]
+      summary: 订单详情(含 12 环节时间轴: 完成时间/耗时/重试/结果)
+      operationId: getOrder
+      parameters:
+        - { name: orderNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: 订单详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { type: object }
+                  timeline:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        stageNo: { type: integer }
+                        stageName: { type: string }
+                        finishedAt: { type: string }
+                        duration: { type: string }
+                        retryCount: { type: integer }
+                        result: { type: string, enum: [DONE, DOING, WAIT] }
+
+  /dispatch/pool:
+    get:
+      tags: [Order]
+      summary: 调度工作台·跨区工单池
+      operationId: listDispatchPool
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /dispatch/pool/{ticketNo}/assign:
+    post:
+      tags: [Order]
+      summary: 工单指派(候选师傅)
+      operationId: assignTicket
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [masterId]
+              properties:
+                masterId: { type: integer }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /dispatch/my-tickets:
+    get:
+      tags: [Order]
+      summary: 装维师傅视图·我的工单
+      operationId: listMyTickets
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /dispatch/transfers:
+    get:
+      tags: [Order]
+      summary: 改派/转单处理列表
+      operationId: listDispatchTransfers
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /dispatch/tickets/{ticketNo}/transfer:
+    post:
+      tags: [Order]
+      summary: 工单转派
+      operationId: transferTicket
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [toMasterId, reason]
+              properties:
+                toMasterId: { type: integer }
+                reason: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /dismantles:
+    get:
+      tags: [Order]
+      summary: 拆机单列表(待扫码/已解绑/已拆机)
+      operationId: listDismantles
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Order]
+      summary: 新建拆机单
+      operationId: createDismantle
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /complaints:
+    get:
+      tags: [Order]
+      summary: 报障与投诉工单(CS 客服域)
+      operationId: listComplaints
+      parameters:
+        - name: type
+          in: query
+          schema: { type: string, enum: [NETWORK_FAULT, TARIFF_DISPUTE, SERVICE_COMPLAINT] }
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /complaints/{ticketNo}/close:
+    post:
+      tags: [Order]
+      summary: 投诉办结
+      operationId: closeComplaint
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /activation-callbacks:
+    get:
+      tags: [Order]
+      summary: 激活回调日志(订单第 11 环节)
+      operationId: listActivationCallbacks
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /activation-callbacks/{callbackId}/retry:
+    post:
+      tags: [Order]
+      summary: 回调重试
+      operationId: retryActivationCallback
+      parameters:
+        - { name: callbackId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

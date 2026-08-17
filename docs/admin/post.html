@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">岗位管理</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -34,16 +34,7 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>岗位代码</th><th>岗位</th><th>所属部门</th><th>绑定角色（功能权限）</th><th>数据范围</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>field_tech</td><td>装维师傅</td><td>装维调度部</td><td><span class="tag tag-blue">technician</span></td><td>派单辖区</td><td><a href="#">编辑</a></td></tr>
-            <tr><td>dispatcher</td><td>装维调度员</td><td>装维调度部</td><td><span class="tag tag-blue">technician</span></td><td>跨区工单池</td><td><a href="#">编辑</a></td></tr>
-            <tr><td>agent</td><td>客服坐席</td><td>客服部</td><td><span class="tag tag-green">ops</span></td><td>本部门队列</td><td><a href="#">编辑</a></td></tr>
-            <tr><td>cashier</td><td>财务收款员</td><td>财务部</td><td><span class="tag tag-green">ops</span></td><td>最小化视图</td><td><a href="#">编辑</a></td></tr>
-            <tr><td>credit</td><td>信用专员</td><td>财务部</td><td><span class="tag tag-orange">analyst</span></td><td>本公司欠费</td><td><a href="#">编辑</a></td></tr>
-            <tr><td>region_mgr</td><td>区域经理</td><td>市场经营部</td><td><span class="tag tag-orange">analyst</span></td><td>本经营区域</td><td><a href="#">编辑</a></td></tr>
-            <tr><td>key_acct</td><td>大客户经理</td><td>市场经营部</td><td><span class="tag tag-green">ops</span></td><td>本公司客户</td><td><a href="#">编辑</a></td></tr>
-            <tr><td>noc_engineer</td><td>网络运维工程师</td><td>网络运维部</td><td><span class="tag tag-gray">resource_admin</span></td><td>本公司资源</td><td><a href="#">编辑</a></td></tr>
-          </tbody>
+          <tbody id="postBody"></tbody>
         </table>
       </div>
 
@@ -53,16 +44,61 @@
         但数据各自隔离 → 权限 = 功能(角色) ∪ 数据(子公司/区域)。（A08）</div>
         <table class="tbl">
           <thead><tr><th>岗位</th><th>复用的角色</th><th>LEG-A 数据域</th><th>LEG-B 数据域</th></tr></thead>
-          <tbody>
-            <tr><td>客服坐席 agent</td><td>ops</td><td>LEG-A 客户/工单</td><td>LEG-B 客户/工单（互不可见）</td></tr>
-            <tr><td>装维师傅 field_tech</td><td>technician</td><td>LEG-A 派单</td><td>LEG-B 派单（互不可见）</td></tr>
-          </tbody>
+          <tbody id="reuseBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
+function postRowHtml(p) {
+  return '<tr>' +
+    '<td>' + esc(p.code) + '</td>' +
+    '<td>' + esc(p.name) + '</td>' +
+    '<td>' + esc(p.deptName) + '</td>' +
+    '<td>' + tag(p.roleTag, p.roleCode) + '</td>' +
+    '<td>' + esc(p.scopeName) + '</td>' +
+    '<td><a href="#">编辑</a></td>' +
+  '</tr>';
+}
+function reuseRowHtml(r) {
+  return '<tr><td>' + esc(r.post) + '</td><td>' + esc(r.roleCode) + '</td><td>' + esc(r.domainA) + '</td><td>' + esc(r.domainB) + '</td></tr>';
+}
+function render(items, reuses) {
+  document.getElementById('postBody').innerHTML = items.map(postRowHtml).join('');
+  document.getElementById('reuseBody').innerHTML = (reuses || []).map(reuseRowHtml).join('');
+}
+var allPosts = [], allReuses = [];
+API.org.posts().then(function (r) {
+  allPosts = r.items;
+  allReuses = r.reuses || [];
+  render(allPosts, allReuses);
+}).catch(function (err) { alert('加载失败：' + err.message); });
+// toolbar 前端过滤:部门下拉 + 岗位代码/名称关键字
+(function bindToolbar() {
+  var sel = document.querySelector('.toolbar select');
+  var kw = document.querySelector('.toolbar input[placeholder="搜索岗位代码/名称"]');
+  function onch() {
+    var items = allPosts.filter(function (p) {
+      var okDept = !sel || sel.selectedIndex <= 0 || p.deptName === sel.value;
+      var k = kw ? kw.value.trim() : '';
+      var okKw = !k || p.code.indexOf(k) >= 0 || p.name.indexOf(k) >= 0;
+      return okDept && okKw;
+    });
+    render(items, allReuses);
+  }
+  if (sel) sel.onchange = onch;
+  if (kw) kw.oninput = onch;
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

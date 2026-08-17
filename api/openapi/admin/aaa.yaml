@@ -1,0 +1,13 @@
+paths:
+  /aaa-logs:
+    get:
+      tags: [Aaa]
+      summary: AAA 话单与认证日志(类型: 话单/认证成功/认证失败)
+      operationId: listAaaLogs
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - name: type
+          in: query
+          schema: { type: string, enum: [CDR, AUTH_OK, AUTH_FAIL] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

@@ -1,0 +1,56 @@
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 管理后台登录(账号密码)
+      operationId: adminLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  accountId: { type: integer }
+                  realName: { type: string }
+                  roleName: { type: string }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 退出登录
+      operationId: adminLogout
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: 当前登录用户信息(header 展示)
+      operationId: adminMe
+      responses:
+        '200':
+          description: 当前用户
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId: { type: integer }
+                  username: { type: string }
+                  realName: { type: string }
+                  roleName: { type: string }
+                  legalEntityName: { type: string }
+                  regionScope: { type: string, description: 区域数据范围(空=全集团) }

@@ -15,8 +15,8 @@
   </div>
 
   <div class="card">
-    <div class="c-title">ORD-20250817-001 <span class="tag tag-green">扫码一致</span></div>
-    <div class="quad">
+    <div class="c-title" id="ticket-no">ORD-20250817-001 <span class="tag tag-green">扫码一致</span></div>
+    <div class="quad" id="quad-rows">
       <div class="qm ok"><div class="lb">资产码</div><div class="vc">EPC-0001</div><div class="st">一致</div></div>
       <div class="qm ok"><div class="lb">用户码</div><div class="vc">LOID-88A1</div><div class="st">一致</div></div>
       <div class="qm ok"><div class="lb">端口码</div><div class="vc">P-SPL03-07</div><div class="st">一致</div></div>
@@ -27,31 +27,72 @@
 
   <div class="card">
     <div class="c-title">装维结果</div>
-    <div class="kv"><span class="k">光猫通电</span><span class="v" style="color:var(--success);">正常</span></div>
-    <div class="kv"><span class="k">光功率</span><span class="v">-16.2 dBm（正常范围）</span></div>
-    <div class="kv"><span class="k">配置下发</span><span class="v" style="color:var(--success);">已完成 · 现场零手工配置</span></div>
-    <div class="kv"><span class="k">LOID 认证</span><span class="v" style="color:var(--success);">通过</span></div>
+    <div class="kv"><span class="k">光猫通电</span><span class="v" id="check-power" style="color:var(--success);">-</span></div>
+    <div class="kv"><span class="k">光功率</span><span class="v" id="check-optical">-</span></div>
+    <div class="kv"><span class="k">配置下发</span><span class="v" id="check-provision" style="color:var(--success);">-</span></div>
+    <div class="kv"><span class="k">LOID 认证</span><span class="v" id="check-loid" style="color:var(--success);">-</span></div>
   </div>
 
   <div class="card">
     <div class="c-title">配置下发日志 <span class="more"><a href="#" onclick="alert('下发明细：模板 v3 预下发 09:18 成功。');return false;">明细</a></span></div>
-    <div class="kv"><span class="k">模板</span><span class="v">GPON-1000M-v3</span></div>
-    <div class="kv"><span class="k">预下发</span><span class="v" style="color:var(--success);">成功 · 08-17 09:18</span></div>
-    <div class="kv"><span class="k">现场下发</span><span class="v" style="color:var(--success);">成功 · 自动</span></div>
+    <div class="kv"><span class="k">模板</span><span class="v" id="log-template">-</span></div>
+    <div class="kv"><span class="k">预下发</span><span class="v" id="log-pre" style="color:var(--success);">-</span></div>
+    <div class="kv"><span class="k">现场下发</span><span class="v" id="log-onsite" style="color:var(--success);">-</span></div>
   </div>
 
   <div class="card">
     <div class="c-title">现场备注</div>
-    <textarea rows="3" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+    <textarea id="remark" rows="3" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;
       font-family:inherit;font-size:14px;resize:none;" placeholder="选填：现场特殊情况说明"></textarea>
   </div>
 
   <div class="card" style="display:flex;gap:10px;">
-    <button class="btn" style="flex:1;" onclick="location.href='scanabnormal.html'">异常上报</button>
-    <button class="btn-green btn-block" style="flex:1;" onclick="location.href='sign.html'">提交并签收</button>
+    <button class="btn" style="flex:1;" onclick="goto('scanabnormal.html')">异常上报</button>
+    <button class="btn-green btn-block" style="flex:1;" onclick="submit()">提交并签收</button>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function set(id, text) { document.getElementById(id).textContent = text || '-'; }
+function goto(page) { location.href = page + '?no=' + NO; }
+
+function quadCell(code, lb) {
+  return '<div class="qm ok"><div class="lb">' + lb + '</div><div class="vc">' + code
+    + '</div><div class="st">一致</div></div>';
+}
+
+function renderReport(d) {
+  set('ticket-no', d.ticketNo);
+  var q = d.quad || {};
+  document.getElementById('quad-rows').innerHTML =
+    quadCell(q.assetCode, '资产码') + quadCell(q.customerCode, '用户码')
+    + quadCell(q.portCode, '端口码') + quadCell(q.addrCode, '地址码');
+  var c = d.checks || {};
+  set('check-power', c.powerOn ? '正常' : '异常');
+  set('check-optical', (c.opticalPowerDbm || c.opticalPowerDbm === 0 ? c.opticalPowerDbm + ' dBm（正常范围）' : '-'));
+  set('check-provision', c.provisionDone ? '已完成 · 现场零手工配置' : '未完成');
+  set('check-loid', c.loidAuthPassed ? '通过' : '未通过');
+  var p = d.provisionLog || {};
+  set('log-template', p.template);
+  set('log-pre', p.preResult);
+  set('log-onsite', p.onsiteResult);
+}
+
+function submit() {
+  var remark = document.getElementById('remark').value;
+  API.scan.submitReport(NO, remark).then(function (d) {
+    alert(d.message || '装维结果已提交');
+    location.href = 'sign.html?no=' + NO;
+  }).catch(function (e) {
+    alert('提交失败：' + (e && e.message ? e.message : e));
+  });
+}
+
+API.scan.report(NO).then(renderReport).catch(function (e) { alert('加载失败：' + e.message); });
+</script>
 </body>
 </html>

@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">经营区域</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -32,17 +32,7 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>层级路径</th><th>名称</th><th>级别</th><th>父级</th><th>下级数</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>root</td><td>集团</td><td>集团</td><td>—</td><td>3</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>root.luzon</td><td>吕宋大区</td><td>大区</td><td>集团</td><td>1</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>root.luzon.ncr</td><td>首都大区省</td><td>省</td><td>吕宋大区</td><td>2</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>root.luzon.ncr.manila</td><td>马尼拉市</td><td>城市</td><td>首都大区省</td><td>0</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>root.visayas</td><td>比萨扬大区</td><td>大区</td><td>集团</td><td>1</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>root.visayas.cebu</td><td>宿务省</td><td>省</td><td>比萨扬大区</td><td>1</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>root.mindanao</td><td>棉兰老大区</td><td>大区</td><td>集团</td><td>1</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>root.mindanao.davao</td><td>达沃省</td><td>省</td><td>棉兰老大区</td><td>1</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>root.mindanao.davao.city</td><td>达沃市</td><td>城市</td><td>达沃省</td><td>0</td><td><a href="#">下钻</a></td></tr>
-          </tbody>
+          <tbody id="regionBody"></tbody>
         </table>
       </div>
 
@@ -51,16 +41,56 @@
         <div class="desc" style="margin-bottom:10px">账号的 `region_scope` 绑定到某区域子树；GIS/经营指标/资源/订单按区域图层化，跨区访问被数据权限拦截。（A01/A02）</div>
         <table class="tbl">
           <thead><tr><th>区域</th><th>可触达经营数据</th><th>越权表现</th></tr></thead>
-          <tbody>
-            <tr><td>root.luzon</td><td>吕宋区订单/资源/GIS 图层</td><td>查比萨扬 → 空结果 + 审计</td></tr>
-            <tr><td>root.visayas</td><td>比萨扬区订单/资源/GIS 图层</td><td>查吕宋 → 空结果 + 审计</td></tr>
-          </tbody>
+          <tbody id="regionScopeBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function regionRowHtml(r) {
+  return '<tr>' +
+    '<td>' + esc(r.path) + '</td>' +
+    '<td>' + esc(r.name) + '</td>' +
+    '<td>' + esc(r.levelLabel) + '</td>' +
+    '<td>' + esc(r.parentName) + '</td>' +
+    '<td>' + esc(r.childCount) + '</td>' +
+    '<td><a href="#">下钻</a></td>' +
+  '</tr>';
+}
+function scopeRowHtml(s) {
+  return '<tr><td>' + esc(s.region) + '</td><td>' + esc(s.visibleData) + '</td><td>' + esc(s.denyHint) + '</td></tr>';
+}
+function render(items, scopes) {
+  document.getElementById('regionBody').innerHTML = items.map(regionRowHtml).join('');
+  document.getElementById('regionScopeBody').innerHTML = (scopes || []).map(scopeRowHtml).join('');
+}
+var allRegions = [], allScopes = [];
+API.org.regions().then(function (r) {
+  allRegions = r.items;
+  allScopes = r.scopes || [];
+  render(allRegions, allScopes);
+}).catch(function (err) { alert('加载失败：' + err.message); });
+// toolbar 前端过滤:区域名称/路径关键字
+(function bindToolbar() {
+  var kw = document.querySelector('.toolbar input[placeholder="搜索区域名称/路径"]');
+  if (!kw) return;
+  kw.oninput = function () {
+    var k = kw.value.trim();
+    var items = allRegions.filter(function (r) {
+      return !k || r.name.indexOf(k) >= 0 || r.path.indexOf(k) >= 0;
+    });
+    render(items, allScopes);
+  };
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

@@ -18,6 +18,7 @@
   .lg-extra{display:flex;justify-content:space-between;font-size:12.5px;margin:8px 0 18px;color:var(--muted);}
   .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:18px 0;}
   .divider:before,.divider:after{content:"";flex:1;height:1px;background:var(--line);}
+  .err{color:var(--err);font-size:12.5px;min-height:16px;margin:0 0 6px;}
 </style>
 </head>
 <body>
@@ -27,29 +28,64 @@
     <p class="sub">宽带办理 · 账单缴费 · 故障报修</p>
     <div class="field">
       <label>手机号</label>
-      <input type="tel" placeholder="请输入手机号" value="138****1234">
+      <input type="tel" id="phone" placeholder="请输入手机号" value="13800001234">
     </div>
     <div class="seg" style="margin:0 0 16px;">
-      <a class="active">验证码登录</a>
-      <a>密码登录</a>
+      <a id="tab-sms" class="active" onclick="switchMode('sms')">验证码登录</a>
+      <a id="tab-pwd" onclick="switchMode('password')">密码登录</a>
     </div>
-    <div class="field">
+    <div class="field" id="sms-field">
       <label>验证码</label>
       <div class="code-row">
-        <input type="text" placeholder="6 位验证码">
-        <button class="code-btn">获取验证码</button>
+        <input type="text" id="sms-code" placeholder="6 位验证码">
+        <button type="button" class="code-btn" id="sms-btn" onclick="sendCode()">获取验证码</button>
       </div>
+    </div>
+    <div class="field" id="pwd-field" style="display:none;">
+      <label>密码</label>
+      <input type="password" id="password" placeholder="请输入登录密码">
     </div>
     <div class="lg-extra">
       <label><input type="checkbox" checked> 已阅读并同意<a href="agreement.html">《用户协议》</a></label>
       <a href="forgot.html">忘记密码</a>
     </div>
-    <button class="btn-block" onclick="location.href='home.html'">登录</button>
+    <div class="err" id="err"></div>
+    <button class="btn-block" onclick="login()">登录</button>
     <div class="divider">还没有账号</div>
     <button class="btn-block ghost" onclick="location.href='register.html'">自助注册</button>
     <div class="divider">其他登录方式</div>
     <button class="btn-block ghost">本机号码一键登录</button>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+  var mode = 'sms';
+  function switchMode(m) {
+    mode = m;
+    document.getElementById('tab-sms').className = m === 'sms' ? 'active' : '';
+    document.getElementById('tab-pwd').className = m === 'password' ? 'active' : '';
+    document.getElementById('sms-field').style.display = m === 'sms' ? '' : 'none';
+    document.getElementById('pwd-field').style.display = m === 'password' ? '' : 'none';
+  }
+  function phone() { return document.getElementById('phone').value.trim(); }
+  function showErr(msg) { document.getElementById('err').textContent = msg || ''; }
+
+  function sendCode() {
+    if (!phone()) { showErr('请输入手机号'); return; }
+    API.auth.smsCode(phone(), 'login').then(function () {
+      showErr('验证码已发送(演示环境任意 6 位)');
+    }).catch(function () { showErr('验证码发送失败'); });
+  }
+
+  function login() {
+    showErr('');
+    var credential = mode === 'sms' ? document.getElementById('sms-code').value.trim() : document.getElementById('password').value;
+    if (!phone() || !credential) { showErr('请输入手机号与' + (mode === 'sms' ? '验证码' : '密码')); return; }
+    API.auth.login(phone(), mode, credential).then(function (d) {
+      API.setToken(d.token);
+      location.href = 'home.html';
+    }).catch(function () { showErr('登录失败，请重试'); });
+  }
+</script>
 </body>
 </html>

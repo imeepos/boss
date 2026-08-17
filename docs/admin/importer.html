@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">数据导入中心</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -32,16 +32,61 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>任务</th><th>类型</th><th>总量/成功/失败</th><th>差异项</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>IMP-031</td><td>地址层级</td><td>12000 / 11980 / 20</td><td>20</td><td><span class="tag tag-orange">待核对</span></td><td><a href="#">核对纠错</a></td></tr>
-            <tr><td>IMP-032</td><td>资产台账</td><td>5000 / 4985 / 15</td><td>15</td><td><span class="tag tag-green">已完成</span></td><td><a href="#">详情</a></td></tr>
-            <tr><td>IMP-030</td><td>客户档案</td><td>8000 / 8000 / 0</td><td>0</td><td><span class="tag tag-green">已完成</span></td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="taskBody"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
+function rowHtml(t) {
+  return '<tr>' +
+    '<td>' + esc(t.taskNo) + '</td>' +
+    '<td>' + esc(t.type) + '</td>' +
+    '<td>' + esc(t.total) + ' / ' + esc(t.success) + ' / ' + esc(t.failed) + '</td>' +
+    '<td>' + esc(t.diffCount) + '</td>' +
+    '<td>' + tag(t.statusTag, t.status) + '</td>' +
+    '<td><a href="#">' + esc(t.action) + '</a></td>' +
+  '</tr>';
+}
+function render(items) {
+  document.getElementById('taskBody').innerHTML = items.map(rowHtml).join('');
+}
+var allTasks = [];
+API.sys.importTasks().then(function (r) {
+  allTasks = r.items;
+  render(allTasks);
+}).catch(function (err) { alert('加载失败：' + err.message); });
+// toolbar 前端过滤:类型 + 任务名/文件名关键字
+(function bindToolbar() {
+  var sel = document.querySelector('.toolbar select');
+  var kw = document.querySelector('.toolbar input[placeholder="任务名/文件名"]');
+  function onch() {
+    var items = allTasks.filter(function (t) {
+      var okType = !sel || sel.selectedIndex <= 0 || t.type === sel.value;
+      var okKw = !kw || !kw.value.trim() || t.taskNo.indexOf(kw.value.trim()) >= 0 || t.type.indexOf(kw.value.trim()) >= 0;
+      return okType && okKw;
+    });
+    render(items);
+  }
+  if (sel) sel.onchange = onch;
+  if (kw) kw.oninput = onch;
+})();
+// 新建导入任务 -> POST /import-tasks
+var createBtn = document.querySelector('.toolbar .btn-primary');
+if (createBtn) createBtn.onclick = function () {
+  API.sys.createImportTask({ source: 'upload' }).then(function (r) {
+    alert('导入任务已创建：' + r.message);
+  }).catch(function (err) { alert('创建失败：' + err.message); });
+};
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

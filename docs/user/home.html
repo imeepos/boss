@@ -10,21 +10,21 @@
 <div class="app">
 
   <div class="home-head">
-    <div class="hi">王先生 <span style="font-size:13px;font-weight:400;opacity:.85;">138****1234</span>
-      <a href="messages.html" style="color:#fff;font-size:18px;position:relative;">✉<span style="position:absolute;top:-6px;right:-8px;width:8px;height:8px;border-radius:50%;background:var(--err);"></span></a>
+    <div class="hi" id="hi-name">加载中… <span id="hi-phone" style="font-size:13px;font-weight:400;opacity:.85;"></span>
+      <a href="messages.html" style="color:#fff;font-size:18px;position:relative;">✉<span id="unread-dot" style="position:absolute;top:-6px;right:-8px;width:8px;height:8px;border-radius:50%;background:var(--err);display:none;"></span></a>
     </div>
-    <div class="st-line"><span class="dot"></span> 服务在线 · 网络正常</div>
+    <div class="st-line"><span class="dot"></span> <span id="online-status">服务在线 · 网络正常</span></div>
   </div>
 
   <div class="status-card">
     <div class="row">
-      <a class="plan" href="myplan.html" style="color:inherit;">1000M 家庭宽带 <small>｜ 融合套餐</small></a>
+      <a class="plan" href="myplan.html" style="color:inherit;" id="plan-name">—</a>
       <span class="tag tag-green">在网</span>
     </div>
     <div class="net">
-      <span>本月账单<a href="bills.html" style="color:inherit;"><b>¥158</b></a></span>
-      <span>套餐余额<a href="topup.html" style="color:inherit;"><b>¥42</b></a></span>
-      <span>合约到期<b>2026-08</b></span>
+      <span>本月账单<a href="bills.html" style="color:inherit;"><b id="current-bill">¥—</b></a></span>
+      <span>套餐余额<a href="topup.html" style="color:inherit;"><b id="balance">¥—</b></a></span>
+      <span>合约到期<b id="contract-end">—</b></span>
     </div>
   </div>
 
@@ -41,32 +41,44 @@
 
   <div class="card">
     <div class="c-title">进行中订单 <a class="more" href="orders.html">全部</a></div>
-    <a class="cell" href="order.html">
-      <div class="main">
-        <div class="t">ORD-20250817-001 · 1000M 安装</div>
-        <div class="d">望京X · 3栋501</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-blue">装维中</span>
-        <div style="margin-top:4px">扫码绑定 9/12</div>
-      </div>
-    </a>
+    <div id="ongoing-orders"></div>
   </div>
 
   <div class="card">
     <div class="c-title">我的服务 <span class="more">在线状态</span></div>
-    <div class="cell">
-      <div class="main"><div class="t">宽带上网</div><div class="d">LOID 认证 · 带宽 1000M</div></div>
-      <div class="right"><span class="tag tag-green">正常</span></div>
-    </div>
-    <div class="cell">
-      <div class="main"><div class="t">IPTV 电视</div><div class="d">增值服务 · 高清频道</div></div>
-      <div class="right"><span class="tag tag-green">正常</span></div>
-    </div>
+    <div id="services"></div>
   </div>
 
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function orderCell(o) {
+    return '<a class="cell" href="order.html?no=' + encodeURIComponent(o.orderNo) + '">'
+      + '<div class="main"><div class="t">' + o.orderNo + ' · ' + o.productName + '</div>'
+      + '<div class="d">' + o.address + '</div></div>'
+      + '<div class="right"><span class="tag tag-blue">' + o.statusLabel + '</span>'
+      + '<div style="margin-top:4px">' + o.stageLabel + ' ' + o.stage + '/12</div></div></a>';
+  }
+  function serviceCell(s) {
+    return '<div class="cell"><div class="main"><div class="t">' + s.name + '</div>'
+      + '<div class="d">' + s.desc + '</div></div>'
+      + '<div class="right"><span class="tag tag-green">' + s.statusLabel + '</span></div></div>';
+  }
+
+  API.misc.home().then(function (d) {
+    document.getElementById('hi-name').firstChild.textContent = d.customerName + ' ';
+    document.getElementById('hi-phone').textContent = d.phoneMasked;
+    document.getElementById('online-status').textContent = d.onlineStatus;
+    document.getElementById('plan-name').innerHTML = d.plan.name + ' <small>｜ 融合套餐</small>';
+    document.getElementById('current-bill').textContent = '¥' + d.currentBill;
+    document.getElementById('balance').textContent = '¥' + d.balance;
+    document.getElementById('contract-end').textContent = d.contractEnd;
+    if (d.hasUnread) document.getElementById('unread-dot').style.display = '';
+    document.getElementById('ongoing-orders').innerHTML = (d.ongoingOrders || []).map(orderCell).join('');
+    document.getElementById('services').innerHTML = (d.services || []).map(serviceCell).join('');
+  }).catch(function () { /* 假数据不可达时静默,保留骨架 */ });
+</script>
 </body>
 </html>

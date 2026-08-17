@@ -9,27 +9,27 @@
 <body>
 <div class="app">
   <div class="topbar">
-    <a class="back" href="report.html">&lsaquo;</a>
+    <a class="back" id="back-link" href="report.html">&lsaquo;</a>
     <div class="t">电子签收</div>
     <span class="act">回执</span>
   </div>
 
   <div class="card">
-    <div class="c-title">ORD-20250817-001</div>
+    <div class="c-title" id="ticket-no">ORD-20250817-001</div>
     <div class="kv"><span class="k">装维结果</span><span class="v" style="color:var(--success);">四项确认完成</span></div>
-    <div class="kv"><span class="k">收款</span><span class="v" style="color:var(--success);">已到账 ¥199</span></div>
+    <div class="kv"><span class="k">收款</span><span class="v" id="charge-amount" style="color:var(--success);">加载中…</span></div>
   </div>
 
   <div class="card" style="text-align:center;">
     <div class="c-title" style="justify-content:center;">请客户签字确认</div>
     <div class="sign-pad">客户电子手写签名区</div>
     <button class="btn btn-block ghost" onclick="alert('已回退，请重签。')">清除重签</button>
-    <button class="btn-green btn-block" style="margin-top:8px;" onclick="alert('签收成功，激活完成，工单流转为完成。')">确认签收并激活</button>
+    <button class="btn-green btn-block" style="margin-top:8px;" onclick="sign()">确认签收并激活</button>
   </div>
 
   <div class="card" style="display:flex;gap:10px;">
-    <a class="btn" style="flex:1;" href="charge.html">现场收款</a>
-    <a class="btn" style="flex:1;" href="report.html">返回上报</a>
+    <a class="btn" style="flex:1;" id="charge-link" href="charge.html">现场收款</a>
+    <a class="btn" style="flex:1;" id="report-link" href="report.html">返回上报</a>
   </div>
 
   <div class="card">
@@ -38,6 +38,31 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function set(id, text) { document.getElementById(id).textContent = text || '-'; }
+
+function renderCharge(d) {
+  set('ticket-no', d.ticketNo);
+  set('charge-amount', '已到账 ¥' + d.amountDue);
+  document.getElementById('charge-link').href = 'charge.html?no=' + NO;
+  document.getElementById('report-link').href = 'report.html?no=' + NO;
+  document.getElementById('back-link').href = 'report.html?no=' + NO;
+}
+
+function sign() {
+  API.scan.sign(NO, 'handwritten').then(function (d) {
+    alert(d.message || '签收成功');
+    location.href = 'orders.html';
+  }).catch(function (e) {
+    alert('签收失败：' + (e && e.message ? e.message : e));
+  });
+}
+
+API.scan.charge(NO).then(renderCharge).catch(function (e) { alert('加载失败：' + e.message); });
+</script>
 </body>
 </html>

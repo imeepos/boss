@@ -1,0 +1,397 @@
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Ok:
+      type: object
+      properties:
+        code: { type: integer, example: 0 }
+        message: { type: string, example: 'success' }
+
+    Profile:
+      type: object
+      properties:
+        customerId: { type: integer, format: int64 }
+        name: { type: string, example: '王先生' }
+        phoneMasked: { type: string, example: '138****1234' }
+        realName:
+          type: object
+          properties:
+            nameMasked: { type: string, example: '王**' }
+            idType: { type: string, example: '身份证' }
+            idNoMasked: { type: string, example: '110***********1234' }
+            status: { type: string, enum: [VERIFIED, PENDING] }
+        addresses:
+          type: array
+          items: { $ref: '#/components/schemas/AddressInfo' }
+        plan: { $ref: '#/components/schemas/Plan' }
+
+    Plan:
+      type: object
+      properties:
+        planId: { type: string }
+        name: { type: string, example: '1000M 极速宽带' }
+        monthlyFee: { type: number, example: 199.0 }
+        contractEnd: { type: string, example: '2026-08' }
+        status: { type: string, example: ACTIVE }
+        installAddress: { type: string }
+
+    Security:
+      type: object
+      properties:
+        realNameStatus: { type: string, enum: [VERIFIED, PENDING] }
+        nameMasked: { type: string }
+        idNoMasked: { type: string }
+        verifyAt: { type: string }
+        passwordUpdatedAt: { type: string }
+        phoneMasked: { type: string }
+
+    VerifyStatus:
+      type: object
+      properties:
+        status: { type: string, enum: [VERIFIED, PENDING] }
+        nameMasked: { type: string }
+        idNoMasked: { type: string }
+        verifyAt: { type: string }
+        records:
+          type: array
+          items:
+            type: object
+            properties:
+              method: { type: string }
+              time: { type: string }
+              result: { type: string, enum: [PASS, FAIL] }
+
+    VerifySubmit:
+      type: object
+      properties:
+        idType: { type: string }
+        name: { type: string }
+        idNo: { type: string }
+
+    NotifySettings:
+      type: object
+      properties:
+        business:
+          type: object
+          additionalProperties: { type: boolean }
+        marketing:
+          type: object
+          additionalProperties: { type: boolean }
+        channels:
+          type: object
+          additionalProperties: { type: boolean }
+
+    Product:
+      type: object
+      properties:
+        productId: { type: string }
+        category: { type: string, enum: [broadband, fusion, addon] }
+        name: { type: string, example: '300M 畅享宽带' }
+        bandwidth: { type: string, example: '300M' }
+        monthlyFee: { type: number, example: 99.0 }
+        description: { type: string }
+        contractMonths: { type: integer, example: 12 }
+        featured: { type: boolean }
+
+    Addon:
+      type: object
+      properties:
+        addonId: { type: string }
+        name: { type: string, example: 'IPTV 高清电视' }
+        monthlyFee: { type: number, example: 10.0 }
+        description: { type: string }
+        subscribed: { type: boolean }
+
+    ProductDetail:
+      type: object
+      properties:
+        product: { $ref: '#/components/schemas/Product' }
+        specs:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              value: { type: string }
+        compare:
+          type: array
+          items: { $ref: '#/components/schemas/Product' }
+
+    OrderSummary:
+      type: object
+      properties:
+        orderNo: { type: string, example: 'ORD-20250817-001' }
+        status: { type: string, enum: [PENDING, RESERVED, INSTALLING, DONE, CANCELLED] }
+        statusLabel: { type: string, example: '装维中' }
+        productName: { type: string }
+        address: { type: string }
+        stage: { type: integer, example: 9 }
+        stageLabel: { type: string, example: '扫码绑定' }
+        estimateFinish: { type: string }
+        canRate: { type: boolean }
+
+    OrderDetail:
+      type: object
+      properties:
+        order: { $ref: '#/components/schemas/OrderSummary' }
+        submitedAt: { type: string }
+        technicianName: { type: string }
+        technicianPhoneMasked: { type: string }
+        stageLabel: { type: string }
+        completedStage: { type: integer }
+        timeline:
+          type: array
+          items: { $ref: '#/components/schemas/StageTimeline' }
+
+    StageTimeline:
+      type: object
+      properties:
+        stage: { type: integer }
+        title: { type: string }
+        result: { type: string, enum: [DONE, DOING, PENDING] }
+        meta: { type: string }
+
+    CancelPreview:
+      type: object
+      properties:
+        unpaidBills:
+          type: array
+          items: { $ref: '#/components/schemas/Bill' }
+        penalty: { type: number, example: 716.4 }
+        penaltyDesc: { type: string }
+
+    RateInfo:
+      type: object
+      properties:
+        orderNo: { type: string }
+        productName: { type: string }
+        address: { type: string }
+        finishedAt: { type: string }
+
+    Bill:
+      type: object
+      properties:
+        billNo: { type: string }
+        period: { type: string, example: '2025-08' }
+        productName: { type: string }
+        periodRange: { type: string, example: '08-01 ~ 08-31' }
+        amount: { type: number, example: 158.0 }
+        status: { type: string, enum: [UNPAID, PAID, OVERDUE] }
+        statusLabel: { type: string, example: '未缴' }
+
+    BillDetail:
+      type: object
+      properties:
+        bill: { $ref: '#/components/schemas/Bill' }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              range: { type: string }
+              amount: { type: number }
+        totalDue: { type: number }
+        autoPayEnabled: { type: boolean }
+
+    PaymentResult:
+      type: object
+      properties:
+        payNo: { type: string, example: 'PAY20250817001' }
+        amount: { type: number }
+        billPeriod: { type: string }
+        payMethod: { type: string }
+        status: { type: string, example: SUCCESS }
+
+    PaymentRecord:
+      type: object
+      properties:
+        payNo: { type: string }
+        amount: { type: number }
+        period: { type: string }
+        payMethod: { type: string }
+        paidAt: { type: string }
+
+    Receipt:
+      type: object
+      properties:
+        receiptNo: { type: string, example: 'OR-20250817-0001' }
+        customerName: { type: string }
+        phoneMasked: { type: string }
+        amount: { type: number }
+        period: { type: string }
+        payMethod: { type: string }
+        paidAt: { type: string }
+        payNo: { type: string }
+
+    Balance:
+      type: object
+      properties:
+        balance: { type: number, example: 42.0 }
+        denominations: { type: array, items: { type: integer } }
+
+    InvoiceOverview:
+      type: object
+      properties:
+        titleType: { type: string, example: '个人' }
+        title: { type: string, example: '王先生' }
+        taxNo: { type: string, nullable: true }
+        availablePeriods:
+          type: array
+          items: { $ref: '#/components/schemas/Bill' }
+        records:
+          type: array
+          items:
+            type: object
+            properties:
+              period: { type: string }
+              amount: { type: number }
+              issuedAt: { type: string }
+              pdfUrl: { type: string }
+
+    Fault:
+      type: object
+      properties:
+        ticketNo: { type: string, example: 'TKT-20250817-012' }
+        faultType: { type: string }
+        faultTypeLabel: { type: string }
+        address: { type: string }
+        createdAt: { type: string }
+        status: { type: string }
+        statusLabel: { type: string }
+
+    FaultDetail:
+      type: object
+      properties:
+        fault: { $ref: '#/components/schemas/Fault' }
+        technicianName: { type: string }
+        technicianPhoneMasked: { type: string }
+        sla: { type: string, example: '≤4h' }
+        timeline:
+          type: array
+          items:
+            type: object
+            properties:
+              step: { type: integer }
+              title: { type: string }
+              result: { type: string, enum: [DONE, DOING, PENDING] }
+              meta: { type: string }
+
+    Complaint:
+      type: object
+      properties:
+        complaintId: { type: string }
+        type: { type: string }
+        typeLabel: { type: string }
+        relOrderNo: { type: string }
+        description: { type: string }
+        status: { type: string }
+        statusLabel: { type: string }
+        createdAt: { type: string }
+
+    Faq:
+      type: object
+      properties:
+        id: { type: string }
+        question: { type: string }
+        answer: { type: string }
+
+    Home:
+      type: object
+      properties:
+        customerName: { type: string }
+        phoneMasked: { type: string }
+        onlineStatus: { type: string, example: '服务在线 · 网络正常' }
+        hasUnread: { type: boolean }
+        plan: { $ref: '#/components/schemas/Plan' }
+        currentBill: { type: number }
+        balance: { type: number }
+        contractEnd: { type: string }
+        ongoingOrders:
+          type: array
+          items: { $ref: '#/components/schemas/OrderSummary' }
+        services:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              desc: { type: string }
+              status: { type: string }
+              statusLabel: { type: string }
+
+    Message:
+      type: object
+      properties:
+        messageId: { type: string }
+        category: { type: string }
+        title: { type: string }
+        content: { type: string }
+        tag: { type: string }
+        tagLevel: { type: string, enum: [balance, bill, fault, promo, info] }
+        createdAt: { type: string }
+        read: { type: boolean }
+
+    Coupon:
+      type: object
+      properties:
+        couponId: { type: string }
+        amount: { type: number }
+        threshold: { type: number }
+        title: { type: string }
+        expireAt: { type: string }
+        status: { type: string, enum: [available, used, expired] }
+
+    Usage:
+      type: object
+      properties:
+        periodLabel: { type: string }
+        used: { type: number }
+        unit: { type: string, example: 'GB' }
+        quota: { type: number }
+        percent: { type: integer }
+        dailyAvg: { type: number }
+        forecastRemain: { type: number }
+        detail:
+          type: object
+          properties:
+            down: { type: number }
+            up: { type: number }
+            iptvNote: { type: string }
+        online:
+          type: object
+          properties:
+            duration: { type: string }
+            lastOnlineAt: { type: string }
+
+    AddressInfo:
+      type: object
+      properties:
+        addressId: { type: string }
+        label: { type: string }
+        isDefault: { type: boolean }
+        contact: { type: string }
+        phoneMasked: { type: string }
+        community: { type: string }
+        building: { type: string }
+        door: { type: string }
+
+    DiySection:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        desc: { type: string }
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              title: { type: string }
+              desc: { type: string }
+

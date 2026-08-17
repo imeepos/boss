@@ -1,0 +1,268 @@
+paths:
+  /orders:
+    get:
+      tags: [Order]
+      summary: 我的订单列表(可按标签过滤)
+      operationId: listOrders
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [all, in_progress, done, cancelled] }
+          description: 标签过滤
+      responses:
+        '200':
+          description: 订单列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/OrderSummary' }
+
+    post:
+      tags: [Order]
+      summary: 下单(环节1 submitOrder)
+      operationId: submitOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, addressId]
+              properties:
+                productId: { type: string }
+                addressId: { type: string }
+                channelId: { type: string }
+      responses:
+        '200':
+          description: 下单成功
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/OrderSummary' }
+
+  /orders/{orderNo}:
+    get:
+      tags: [Order]
+      summary: 订单详情(含 12 环节时间轴)
+      operationId: getOrder
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 订单详情
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/OrderDetail' }
+
+  /orders/{orderNo}/cancel:
+    post:
+      tags: [Order]
+      summary: 取消订单(释放预占端口)
+      operationId: cancelOrder
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 已取消
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /orders/{orderNo}/urge:
+    post:
+      tags: [Order]
+      summary: 催单
+      operationId: urgeOrder
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 已催单
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /orders/{orderNo}/change-address:
+    post:
+      tags: [Order]
+      summary: 变更安装地址
+      operationId: changeOrderAddress
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [addressId]
+              properties:
+                addressId: { type: string }
+      responses:
+        '200':
+          description: 已变更
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /plans/{planId}/change:
+    post:
+      tags: [Order]
+      summary: 改套餐(生成变更单)
+      operationId: changePlan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetPlanId, effectiveMode]
+              properties:
+                targetPlanId: { type: string }
+                effectiveMode: { type: string, enum: [immediate, scheduled] }
+                staticIp: { type: boolean, default: false }
+      responses:
+        '200':
+          description: 变更单已生成
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/OrderSummary' }
+
+  /plans/{planId}/move:
+    post:
+      tags: [Order]
+      summary: 迁址移机(生成迁址工单)
+      operationId: moveAddress
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [community, building, door]
+              properties:
+                community: { type: string }
+                building: { type: string }
+                door: { type: string }
+                expectDate: { type: string, format: date }
+      responses:
+        '200':
+          description: 迁址工单已生成
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/OrderSummary' }
+
+  /plans/{planId}/cancel:
+    get:
+      tags: [Order]
+      summary: 退订拆机预检(待结清款项/违约金)
+      operationId: getCancelPreview
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 退订预检
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/CancelPreview' }
+
+    post:
+      tags: [Order]
+      summary: 确认退订拆机
+      operationId: cancelPlan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  enum: [leave_area, switch_operator, cost, other]
+      responses:
+        '200':
+          description: 拆机单已生成
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/OrderSummary' }
+
+  /orders/{orderNo}/rate:
+    get:
+      tags: [Order]
+      summary: 评价详情(待评价订单)
+      operationId: getRate
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 待评价信息
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/RateInfo' }
+
+    post:
+      tags: [Order]
+      summary: 提交服务评价
+      operationId: submitRate
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attitude, quality, stars]
+              properties:
+                stars: { type: integer, minimum: 1, maximum: 5 }
+                attitude: { type: integer, minimum: 1, maximum: 5 }
+                quality: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: string }
+      responses:
+        '200':
+          description: 已提交
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+

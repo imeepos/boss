@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">子公司/法人</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -32,11 +32,7 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>法人编码</th><th>法人名称</th><th>品牌</th><th>经营区域</th><th>部门数</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>LEG-A</td><td>主品牌·企业</td><td><span class="tag tag-blue">主品牌</span></td><td>吕宋大区</td><td>5</td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
-            <tr><td>LEG-B</td><td>家庭宽带</td><td><span class="tag tag-orange">家庭宽带</span></td><td>吕宋 + 棉兰老</td><td>5</td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
-            <tr><td>LEG-C</td><td>批发品牌</td><td><span class="tag tag-gray">批发</span></td><td>比萨扬大区</td><td>5</td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
-          </tbody>
+          <tbody id="leBody"></tbody>
         </table>
       </div>
 
@@ -44,17 +40,61 @@
         <div class="card-title">品牌×区域交叉经营 <span class="extra">跨大区经营的公司在此标注</span></div>
         <table class="tbl">
           <thead><tr><th>法人</th><th>大区</th><th>可触达数据范围</th></tr></thead>
-          <tbody>
-            <tr><td>LEG-B 家庭宽带</td><td>吕宋大区 + 棉兰老大区</td><td>两个大区的客户/订单/资产合并</td></tr>
-            <tr><td>LEG-A 主品牌·企业</td><td>吕宋大区</td><td>单一地区</td></tr>
-            <tr><td>LEG-C 批发品牌</td><td>比萨扬大区</td><td>单一地区</td></tr>
-          </tbody>
+          <tbody id="crossBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
+// api.js 未覆盖 org 写接口,这里经统一网关直发 PUT
+function req(method, path, body) {
+  var opt = { method: method, headers: { 'Content-Type': 'application/json' } };
+  var tk = API.token();
+  if (tk) opt.headers['Authorization'] = 'Bearer ' + tk;
+  if (body !== undefined) opt.body = JSON.stringify(body);
+  return fetch(API.config.base + path, opt).then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+function leRowHtml(e) {
+  return '<tr>' +
+    '<td>' + esc(e.code) + '</td>' +
+    '<td>' + esc(e.name) + '</td>' +
+    '<td>' + tag(e.brandTag, e.brandName) + '</td>' +
+    '<td>' + esc(e.regionName) + '</td>' +
+    '<td>' + esc(e.deptCount) + '</td>' +
+    '<td>' + tag(e.statusTag, e.statusLabel) + '</td>' +
+    '<td><a href="#" data-id="' + e.legalEntityId + '" data-act="edit">编辑</a> <a href="#" data-id="' + e.legalEntityId + '" data-act="stop">停用</a></td>' +
+  '</tr>';
+}
+function crossRowHtml(c) {
+  return '<tr><td>' + esc(c.legalEntity) + '</td><td>' + esc(c.region) + '</td><td>' + esc(c.scope) + '</td></tr>';
+}
+API.org.legalEntities().then(function (r) {
+  document.getElementById('leBody').innerHTML = r.items.map(leRowHtml).join('');
+  document.getElementById('crossBody').innerHTML = (r.crossRegions || []).map(crossRowHtml).join('');
+}).catch(function (err) { alert('加载失败：' + err.message); });
+document.getElementById('leBody').onclick = function (e) {
+  var el = e.target || e.srcElement;
+  if (el.tagName !== 'A') return;
+  e.preventDefault();
+  var id = el.getAttribute('data-id');
+  var body = el.getAttribute('data-act') === 'stop' ? { status: 0 } : {};
+  req('PUT', '/legal-entities/' + id, body).then(function (r) {
+    alert('操作成功：' + r.message);
+  }).catch(function (err) { alert('操作失败：' + err.message); });
+};
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

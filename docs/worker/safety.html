@@ -17,7 +17,7 @@
   <div class="card">
     <div class="c-title">作业类型</div>
     <div class="fld">
-      <select>
+      <select id="workType">
         <option selected>高空作业（爬杆/登高）</option>
         <option>带电作业</option>
         <option>密闭/井道作业</option>
@@ -28,11 +28,11 @@
 
   <div class="card">
     <div class="c-title">安全确认清单</div>
-    <div class="fld"><label><input type="checkbox"> 安全帽 / 绝缘鞋已佩戴</label></div>
-    <div class="fld"><label><input type="checkbox"> 安全带 / 防坠措施已就位</label></div>
-    <div class="fld"><label><input type="checkbox"> 作业区域已围挡警示</label></div>
-    <div class="fld"><label><input type="checkbox"> 已告知客户作业风险</label></div>
-    <button class="btn-green btn-block" onclick="alert('安全确认已上报留痕。')">提交安全确认</button>
+    <div class="fld"><label><input type="checkbox" class="ck"> 安全帽 / 绝缘鞋已佩戴</label></div>
+    <div class="fld"><label><input type="checkbox" class="ck"> 安全带 / 防坠措施已就位</label></div>
+    <div class="fld"><label><input type="checkbox" class="ck"> 作业区域已围挡警示</label></div>
+    <div class="fld"><label><input type="checkbox" class="ck"> 已告知客户作业风险</label></div>
+    <button class="btn-green btn-block" onclick="submit()">提交安全确认</button>
   </div>
 
   <div class="card">
@@ -41,6 +41,26 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+function collect() {
+  var list = [];
+  var boxes = document.querySelectorAll('.ck');
+  for (var i = 0; i < boxes.length; i++) {
+    if (boxes[i].checked) list.push(boxes[i].parentNode.textContent.trim());
+  }
+  return list;
+}
+
+function submit() {
+  var workType = document.getElementById('workType').value;
+  API.misc.safetyCheck(workType, collect()).then(function (r) {
+    alert(r.message || '安全确认已上报留痕');
+  }).catch(function (e) {
+    alert('上报失败：' + e.message);
+  });
+}
+</script>
 </body>
 </html>

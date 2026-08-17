@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">审计日志</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head"><h2>审计日志</h2><div class="desc">操作审计 · 按人/时间/类型查询 · 分区存储</div></div>
@@ -28,17 +28,57 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>时间</th><th>操作人</th><th>类型</th><th>操作内容</th><th>IP</th></tr></thead>
-          <tbody>
-            <tr><td>2025-08-17 10:32:11</td><td>admin</td><td><span class="tag tag-blue">权限变更</span></td><td>修改角色权限</td><td>10.0.0.12</td></tr>
-            <tr><td>2025-08-17 09:15:44</td><td>asset01</td><td><span class="tag tag-green">数据变更</span></td><td>资产盘点导入</td><td>10.0.0.23</td></tr>
-            <tr><td>2025-08-17 08:40:02</td><td>oss01</td><td><span class="tag tag-orange">状态变更</span></td><td>端口故障上报</td><td>10.0.0.31</td></tr>
-          </tbody>
+          <tbody id="logBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
+function rowHtml(l) {
+  return '<tr>' +
+    '<td>' + esc(l.time) + '</td>' +
+    '<td>' + esc(l.operator) + '</td>' +
+    '<td>' + tag(l.typeTag, l.type) + '</td>' +
+    '<td>' + esc(l.action) + '</td>' +
+    '<td>' + esc(l.ip) + '</td>' +
+  '</tr>';
+}
+function render(items) {
+  document.getElementById('logBody').innerHTML = items.map(rowHtml).join('');
+}
+// toolbar 前端过滤:操作人关键字 + 操作类型
+function filterAndRender(all, kw, type) {
+  var items = all.filter(function (l) {
+    var okKw = !kw || l.operator.indexOf(kw) >= 0 || l.action.indexOf(kw) >= 0;
+    var okType = !type || type === '操作类型：全部' || l.type === type;
+    return okKw && okType;
+  });
+  render(items);
+}
+var allLogs = [];
+API.sys.auditLogs().then(function (r) {
+  allLogs = r.items;
+  render(allLogs);
+}).catch(function (err) { alert('加载失败：' + err.message); });
+(function bindToolbar() {
+  var kwInput = document.querySelector('.toolbar input[placeholder="操作人"]');
+  var typeSel = document.querySelector('.toolbar select');
+  function onch() {
+    filterAndRender(allLogs, kwInput.value.trim(), typeSel.value);
+  }
+  if (kwInput) kwInput.oninput = onch;
+  if (typeSel) typeSel.onchange = onch;
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

@@ -1,0 +1,58 @@
+paths:
+  /quad-links:
+    get:
+      tags: [Quad]
+      summary: 四码合一关联查询(资产/用户/端口/地址任一码反查)
+      operationId: queryQuadLinks
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+          description: 任一码(资产 EPC/用户/端口/地址码)
+      responses:
+        '200':
+          description: 四码关联关系
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        assetCode: { type: string }
+                        userCode: { type: string }
+                        portCode: { type: string }
+                        addressCode: { type: string }
+                        status: { type: string, enum: [LINKED, CONFLICT, UNLINKED] }
+
+  /quad-conflicts:
+    get:
+      tags: [Quad]
+      summary: 四码对账冲突/告警列表
+      operationId: listQuadConflicts
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /quad-conflicts/{conflictNo}/resolve:
+    post:
+      tags: [Quad]
+      summary: 冲突处理
+      operationId: resolveQuadConflict
+      parameters:
+        - { name: conflictNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /scan-logs:
+    get:
+      tags: [Quad]
+      summary: 扫码绑定记录(订单第 9 环节,预绑定 vs 现场扫码校验)
+      operationId: listScanLogs
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

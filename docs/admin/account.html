@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">账号与权限</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -32,20 +32,66 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>子公司</th><th>部门</th><th>岗位</th><th>数据范围</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>admin</td><td>系统管理员</td><td><span class="tag tag-blue">系统管理员</span></td><td>集团</td><td>—</td><td>—</td><td><span class="tag tag-green">全集团</span></td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">禁用</a></td></tr>
-            <tr><td>agent-a01</td><td>陈客服</td><td><span class="tag tag-green">业务运营/客服</span></td><td>LEG-A</td><td>客服部</td><td>客服坐席</td><td><span class="tag tag-orange">本部门</span></td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">禁用</a></td></tr>
-            <tr><td>agent-b01</td><td>王客服</td><td><span class="tag tag-green">业务运营/客服</span></td><td>LEG-B</td><td>客服部</td><td>客服坐席</td><td><span class="tag tag-orange">本部门</span></td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">禁用</a></td></tr>
-            <tr><td>asset01</td><td>张资产</td><td><span class="tag tag-gray">资产管理员</span></td><td>LEG-A</td><td>网络运维部</td><td>—</td><td><span class="tag tag-orange">本公司</span></td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">禁用</a></td></tr>
-            <tr><td>oss01</td><td>李运维</td><td><span class="tag tag-orange">资源运维管理员</span></td><td>LEG-B</td><td>网络运维部</td><td>网络运维工程师</td><td><span class="tag tag-orange">本公司资源</span></td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">禁用</a></td></tr>
-            <tr><td>rmgr-luzon</td><td>刘经理</td><td><span class="tag tag-orange">经营分析</span></td><td>—</td><td>市场经营部</td><td>区域经理</td><td><span class="tag tag-orange">吕宋大区</span></td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">禁用</a></td></tr>
-          </tbody>
+          <tbody id="accountBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+// api.js 未覆盖 PUT/DELETE,这里经统一网关直发
+function req(method, path, body) {
+  var opt = { method: method, headers: { 'Content-Type': 'application/json' } };
+  var tk = API.token();
+  if (tk) opt.headers['Authorization'] = 'Bearer ' + tk;
+  if (body !== undefined) opt.body = JSON.stringify(body);
+  return fetch(API.config.base + path, opt).then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
+function rowHtml(a) {
+  return '<tr>' +
+    '<td>' + esc(a.username) + '</td>' +
+    '<td>' + esc(a.realName) + '</td>' +
+    '<td>' + tag(a.roleTag, a.roleName) + '</td>' +
+    '<td>' + esc(a.legalEntityName) + '</td>' +
+    '<td>' + esc(a.deptName) + '</td>' +
+    '<td>' + esc(a.postName) + '</td>' +
+    '<td>' + tag(a.scopeTag, a.scopeName) + '</td>' +
+    '<td>' + tag(a.statusTag, a.statusLabel) + '</td>' +
+    '<td><a href="#" data-id="' + a.accountId + '" data-act="edit">编辑</a> <a href="#" data-id="' + a.accountId + '" data-act="disable">禁用</a></td>' +
+  '</tr>';
+}
+function render(items) {
+  document.getElementById('accountBody').innerHTML = items.map(rowHtml).join('');
+}
+function bindOps() {
+  document.getElementById('accountBody').onclick = function (e) {
+    var el = e.target || e.srcElement;
+    if (el.tagName !== 'A') return;
+    e.preventDefault();
+    var id = el.getAttribute('data-id');
+    var act = el.getAttribute('data-act');
+    var p = act === 'disable'
+      ? req('PUT', '/accounts/' + id, { status: 0 })
+      : req('PUT', '/accounts/' + id, {});
+    p.then(function (r) { alert('操作成功：' + r.message); })
+     .catch(function (err) { alert('操作失败：' + err.message); });
+  };
+}
+API.sys.accounts().then(function (r) { render(r.items); })
+  .catch(function (err) { alert('加载失败：' + err.message); });
+bindOps();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

@@ -1,0 +1,144 @@
+paths:
+  /faults:
+    get:
+      tags: [CustomerService]
+      summary: 报修记录列表
+      operationId: listFaults
+      responses:
+        '200':
+          description: 报修记录
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Fault' }
+
+    post:
+      tags: [CustomerService]
+      summary: 提交报修
+      operationId: submitFault
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [faultType, address, description]
+              properties:
+                faultType:
+                  type: string
+                  enum: [no_internet, slow, ont_fault, other]
+                address: { type: string }
+                description: { type: string }
+                contact: { type: string }
+      responses:
+        '200':
+          description: 报修单已生成
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Fault' }
+
+  /faults/{ticketNo}:
+    get:
+      tags: [CustomerService]
+      summary: 报修详情(报障 6 环节时间轴)
+      operationId: getFault
+      parameters:
+        - name: ticketNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 报修详情
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/FaultDetail' }
+
+  /complaints:
+    get:
+      tags: [CustomerService]
+      summary: 我的投诉列表
+      operationId: listComplaints
+      responses:
+        '200':
+          description: 投诉列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Complaint' }
+
+    post:
+      tags: [CustomerService]
+      summary: 提交投诉/建议
+      operationId: submitComplaint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, description]
+              properties:
+                type:
+                  type: string
+                  enum: [attitude, quality, billing, suggestion, other]
+                relOrderNo: { type: string }
+                description: { type: string }
+                contact: { type: string }
+      responses:
+        '200':
+          description: 已受理
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /service/chat:
+    post:
+      tags: [CustomerService]
+      summary: 智能客服对话
+      operationId: chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string }
+      responses:
+        '200':
+          description: 客服回复
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply: { type: string }
+                  toHuman: { type: boolean }
+
+  /service/faq:
+    get:
+      tags: [CustomerService]
+      summary: 常见问题
+      operationId: listFaq
+      responses:
+        '200':
+          description: 常见问题列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Faq' }
+

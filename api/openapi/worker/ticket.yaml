@@ -1,0 +1,239 @@
+# 工单域:列表/详情/流转/任务池。字段对齐 docs/contract/{terms,fields}.md。
+paths:
+  /home:
+    get:
+      tags: [Home]
+      summary: 工作台首页(今日业绩 + 进行中工单)
+      operationId: getWorkerHome
+      responses:
+        '200':
+          description: 首页聚合
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Home' }
+
+  /tickets:
+    get:
+      tags: [Ticket]
+      summary: 我的工单列表(按状态筛选)
+      operationId: listTickets
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [doing, todo, done, all], default: all }
+      responses:
+        '200':
+          description: 工单列表
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/TicketList' }
+
+  /tickets/history:
+    get:
+      tags: [Ticket]
+      summary: 历史工单(按月筛选)
+      operationId: listTicketHistory
+      parameters:
+        - name: period
+          in: query
+          schema: { type: string, enum: [month, last-month, all], default: month }
+      responses:
+        '200':
+          description: 历史工单列表
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/TicketList' }
+
+  /tickets/{ticketNo}:
+    get:
+      tags: [Ticket]
+      summary: 工单详情(新装 12 环节 / 报障 6 环节时间轴 + 四码对照 + 风控)
+      operationId: getTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 工单详情
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/TicketDetail' }
+
+  /tickets/{ticketNo}/accept:
+    post:
+      tags: [Ticket]
+      summary: 领取待处理工单(先到先得)
+      operationId: acceptTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/checkin:
+    post:
+      tags: [Ticket]
+      summary: 到点签到(环节 9,≤100m GPS 校验,SLA 计时起点)
+      operationId: checkinTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lat: { type: number }
+                lng: { type: number }
+      responses:
+        '200':
+          description: 签到结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkedInAt: { type: string, example: '10:05' }
+
+  /tickets/{ticketNo}/navi:
+    get:
+      tags: [Ticket]
+      summary: 一键导航信息(地址/距离/入口)
+      operationId: getTicketNavi
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 导航信息
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Navi' }
+
+  /tickets/{ticketNo}/transfer:
+    post:
+      tags: [Ticket]
+      summary: 转单/改派(留空转派对象=退回调度池)
+      operationId: transferTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+                targetWorkerId: { type: integer, nullable: true }
+                remark: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/reschedule:
+    post:
+      tags: [Ticket]
+      summary: 预约改约/爽约登记(二次短信确认并重计 SLA)
+      operationId: rescheduleTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newDate, newSlot, reason]
+              properties:
+                newDate: { type: string, example: '08-18' }
+                newSlot: { type: string, example: '14:00-16:00' }
+                reason: { type: string }
+                remark: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/rollback:
+    post:
+      tags: [Ticket]
+      summary: 回退至上一完成环节(留痕)
+      operationId: rollbackTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/retry:
+    post:
+      tags: [Ticket]
+      summary: 重新触发当前失败环节
+      operationId: retryTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/complaint:
+    post:
+      tags: [Ticket]
+      summary: 现场投诉登记(转客服回访闭环)
+      operationId: submitComplaint
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category, content]
+              properties:
+                category: { type: string, example: 预约时间延误 }
+                content: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/repair-report:
+    post:
+      tags: [Ticket]
+      summary: 修复结果上报(系统自动复核网络恢复)
+      operationId: reportRepair
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                result: { type: string, enum: [FIXED, UNFIXED], default: FIXED }
+                remark: { type: string }
+      responses:
+        '200':
+          description: 上报结果(含自动复核结论)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviewPassed: { type: boolean }
+                  status: { type: string, enum: [CLOSED, PROCESSING] }
+
+  /hall:
+    get:
+      tags: [Hall]
+      summary: 任务池(跨区公开可抢工单)
+      operationId: listHall
+      responses:
+        '200':
+          description: 可抢工单列表
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/TicketList' }
+
+  /hall/{ticketNo}/grab:
+    post:
+      tags: [Hall]
+      summary: 抢单(先到先得,成功后进入我的工单)
+      operationId: grabTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

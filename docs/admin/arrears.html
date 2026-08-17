@@ -15,30 +15,66 @@
   <div class="main">
     <header class="header">
       <div class="crumb">欠费停复机</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head"><h2>欠费停复机</h2><div class="desc">欠费停机 / 缴费复机 · 状态同步网络侧</div></div>
 
       <div class="grid g-3" style="margin-bottom:16px;">
-        <div class="stat"><div class="label">欠费用户</div><div class="val">1,024</div></div>
-        <div class="stat"><div class="label">已停机</div><div class="val">386</div></div>
-        <div class="stat"><div class="label">待停机</div><div class="val">128</div></div>
+        <div class="stat"><div class="label">欠费用户</div><div class="val" id="stArrears"></div></div>
+        <div class="stat"><div class="label">已停机</div><div class="val" id="stStopped"></div></div>
+        <div class="stat"><div class="label">待停机</div><div class="val" id="stPending"></div></div>
       </div>
       <div class="card">
         <table class="tbl">
-          <thead><tr><th>客户</th><th>欠费金额</th><th>欠费天数</th><th>状态</th><th>网络侧</th></tr></thead>
-          <tbody>
-            <tr><td>吴女士</td><td>¥199</td><td>12 天</td><td><span class="tag tag-red">已停机</span></td><td><span class="tag tag-gray">已停服</span></td></tr>
-            <tr><td>孙先生</td><td>¥398</td><td>已缴清</td><td><span class="tag tag-green">已复机</span></td><td>在线</td></tr>
-            <tr><td>周女士</td><td>¥199</td><td>3 天</td><td><span class="tag tag-blue">正常</span></td><td>在线</td></tr>
-          </tbody>
+          <thead><tr><th>客户</th><th>欠费金额</th><th>欠费天数</th><th>状态</th><th>网络侧</th><th>操作</th></tr></thead>
+          <tbody id="rows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 欠费停复机数据渲染(契约: GET /arrears, POST /arrears/{customerId}/stop|resume)
+(function () {
+  var STATUS_TAG = { '已停机': 'tag-red', '已复机': 'tag-green', '正常': 'tag-blue' };
+  var NET_TAG = { '已停服': 'tag-gray' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + esc(v) + '</span>'; }
+  function fail(e) { alert('加载失败: ' + e.message); }
+
+  API.billing.arrears().then(function (d) {
+    document.getElementById('stArrears').textContent = d.stats.arrearsCount;
+    document.getElementById('stStopped').textContent = d.stats.stoppedCount;
+    document.getElementById('stPending').textContent = d.stats.pendingCount;
+    document.getElementById('rows').innerHTML = d.items.map(function (r) {
+      var op = r.status === '已停机'
+        ? '<a href="#" data-act="resume" data-id="' + r.customerId + '">复机</a>'
+        : '<a href="#" data-act="stop" data-id="' + r.customerId + '">停机</a>';
+      return '<tr><td>' + esc(r.customerName) + '</td><td>' + esc(r.arrearsAmount) + '</td><td>' + esc(r.arrearsDays)
+        + '</td><td>' + tag(STATUS_TAG[r.status] || '', r.status)
+        + '</td><td>' + tag(NET_TAG[r.netStatus] || '', r.netStatus)
+        + '</td><td>' + op + '</td></tr>';
+    }).join('');
+  }).catch(fail);
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
+    ev.preventDefault();
+    var id = a.getAttribute('data-id');
+    var call = a.getAttribute('data-act') === 'stop' ? API.billing.stop(id) : API.billing.resume(id);
+    call.then(function (r) { alert('操作成功: ' + r.message); }).catch(fail);
+  });
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

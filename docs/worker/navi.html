@@ -9,16 +9,16 @@
 <body>
 <div class="app">
   <div class="topbar">
-    <a class="back" href="order.html">&lsaquo;</a>
+    <a class="back" href="orders.html">&lsaquo;</a>
     <div class="t">一键导航</div>
-    <span class="act">距您 2.1km</span>
+    <span class="act" id="topDist">距您 --</span>
   </div>
 
   <div class="card">
-    <div class="c-title">ORD-20250817-001 · 目的地</div>
-    <div class="kv"><span class="k">地址</span><span class="v">望京X · 3栋 · 501</span></div>
-    <div class="kv"><span class="k">距离</span><span class="v">2.1km · 约 8 分钟</span></div>
-    <div class="kv"><span class="k">入口</span><span class="v">东门进 · 3栋1单元</span></div>
+    <div class="c-title" id="ticketTitle">加载中…</div>
+    <div class="kv"><span class="k">地址</span><span class="v" id="naviAddress">--</span></div>
+    <div class="kv"><span class="k">距离</span><span class="v" id="naviDistance">--</span></div>
+    <div class="kv"><span class="k">入口</span><span class="v" id="naviEntrance">--</span></div>
   </div>
 
   <div class="card" style="text-align:center;">
@@ -28,6 +28,7 @@
       <div class="hint muted">已按实时路况规划最优路线</div>
     </div>
     <button class="btn-primary btn-block" onclick="alert('已拉起地图应用导航（示意）。')">开始导航</button>
+    <div id="tip" class="hint muted" style="display:none;"></div>
   </div>
 
   <div class="card">
@@ -36,6 +37,29 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function showTip(msg) {
+  var el = document.getElementById('tip');
+  el.textContent = msg;
+  el.style.display = (msg ? 'block' : 'none');
+}
+
+function renderNavi(n) {
+  document.getElementById('ticketTitle').textContent = NO + ' · 目的地';
+  document.getElementById('naviAddress').textContent = n.address || '--';
+  document.getElementById('naviDistance').textContent = (n.distanceKm || 0) + 'km · 约 ' + (n.etaMinutes || 0) + ' 分钟';
+  document.getElementById('naviEntrance').textContent = n.entrance || '--';
+  document.getElementById('topDist').textContent = '距您 ' + (n.distanceKm || 0) + 'km';
+}
+
+API.ticket.navi(NO).then(renderNavi).catch(function (e) {
+  document.getElementById('ticketTitle').textContent = NO + ' · 目的地';
+  showTip('导航信息加载失败：' + (e && e.message) + '，请重试。');
+});
+</script>
 </body>
 </html>

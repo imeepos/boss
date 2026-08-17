@@ -16,35 +16,51 @@
 
   <div class="card">
     <div class="c-title">原安装地址</div>
-    <div class="cell"><div class="main"><div class="t">望京X · 3栋 · 501</div><div class="d">在用 · 1000M 极速宽带</div></div><div class="right"><span class="tag tag-green">在用</span></div></div>
+    <div class="cell"><div class="main"><div class="t" id="old-addr">—</div><div class="d" id="old-plan">—</div></div><div class="right"><span class="tag tag-green">在用</span></div></div>
   </div>
 
   <div class="card">
     <div class="c-title">新安装地址</div>
     <div class="field">
       <label>小区 / 楼盘</label>
-      <input type="text" placeholder="请输入新小区名">
+      <input type="text" id="community" placeholder="请输入新小区名">
     </div>
     <div class="field">
       <label>楼栋</label>
-      <input type="text" placeholder="楼栋号">
+      <input type="text" id="building" placeholder="楼栋号">
     </div>
     <div class="field">
       <label>门牌号</label>
-      <input type="text" placeholder="单元/房间号">
+      <input type="text" id="door" placeholder="单元/房间号">
     </div>
     <div class="field">
       <label>期望移机时间</label>
-      <input type="date">
+      <input type="date" id="date">
     </div>
     <div class="muted" style="font-size:12px;">提交后系统将自动做资源核查，如有空闲端口即生成迁址工单并派单。</div>
   </div>
 
   <div style="margin:12px 14px 0;">
-    <button class="btn-block" onclick="location.href='order.html'">提交迁址申请 · 生成迁址工单 ORD-20250817-008</button>
+    <button class="btn-block" onclick="submit()">提交迁址申请</button>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  API.profile.get().then(function (d) {
+    var p = d.plan || {};
+    document.getElementById('old-addr').textContent = p.installAddress || '望京X · 3栋 · 501';
+    document.getElementById('old-plan').textContent = '在用 · ' + p.name;
+  });
+  function submit() {
+    API.plan.move('PLAN-1000', {
+      community: document.getElementById('community').value,
+      building: document.getElementById('building').value,
+      door: document.getElementById('door').value,
+      expectDate: document.getElementById('date').value,
+    }).then(function (o) { location.href = 'order.html?no=' + encodeURIComponent(o.orderNo); });
+  }
+</script>
 </body>
 </html>

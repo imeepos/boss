@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">报障与投诉</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,8 +24,8 @@
       </div>
 
       <div class="toolbar">
-        <select class="input" style="width:140px"><option>类型：全部</option><option>网络故障</option><option>资费投诉</option><option>服务投诉</option></select>
-        <select class="input" style="width:140px"><option>状态：全部</option><option>待处理</option><option>处理中</option><option>已办结</option></select>
+        <select class="input" style="width:140px" id="tp"><option value="">类型：全部</option><option value="NETWORK_FAULT">网络故障</option><option value="TARIFF_DISPUTE">资费投诉</option><option value="SERVICE_COMPLAINT">服务投诉</option></select>
+        <select class="input" style="width:140px" id="st"><option value="">状态：全部</option><option value="PENDING">待处理</option><option value="PROCESSING">处理中</option><option value="DONE">已办结</option></select>
         <span class="spacer"></span>
         <span class="tag tag-orange">待处理：23 件</span>
       </div>
@@ -33,17 +33,59 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>工单号</th><th>客户</th><th>类型</th><th>内容</th><th>受理人</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>TKT-20250817-012</td><td>陈先生</td><td><span class="tag tag-blue">网络故障</span></td><td>单户断网（紧急 SLA≤4h）</td><td>客服张</td><td><span class="tag tag-orange">处理中</span></td><td><a href="#">跟进</a></td></tr>
-            <tr><td>CP-20250817-02</td><td>吴女士</td><td><span class="tag tag-orange">资费投诉</span></td><td>账单金额异议</td><td>—</td><td><span class="tag tag-red">待处理</span></td><td><a href="#">受理</a></td></tr>
-            <tr><td>CP-20250816-09</td><td>李女士</td><td><span class="tag tag-gray">服务投诉</span></td><td>装维师傅态度</td><td>客服王</td><td><span class="tag tag-green">已办结</span></td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+(function () {
+  var TYPE_TAG = { NETWORK_FAULT: 'tag-blue', TARIFF_DISPUTE: 'tag-orange', SERVICE_COMPLAINT: 'tag-gray' };
+  var ST_TAG = { PENDING: 'tag-red', PROCESSING: 'tag-orange', DONE: 'tag-green' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
+
+  function load() {
+    API.order.complaints(document.getElementById('st').value, document.getElementById('tp').value)
+      .then(function (r) {
+        var html = '';
+        for (var i = 0; i < r.items.length; i++) {
+          var c = r.items[i];
+          html += '<tr><td>' + esc(c.ticketNo) + '</td><td>' + esc(c.customer) + '</td><td>' + tag(TYPE_TAG[c.type] || 'tag-blue', c.typeLabel)
+            + '</td><td>' + esc(c.content) + '</td><td>' + esc(c.acceptor) + '</td><td>' + tag(ST_TAG[c.status] || 'tag-blue', c.statusLabel)
+            + '</td><td><a href="#" class="op" data-no="' + esc(c.ticketNo) + '" data-close="' + (c.status !== 'DONE' ? '1' : '') + '">' + esc(c.op) + '</a></td></tr>';
+        }
+        document.getElementById('rows').innerHTML = html || '<tr><td colspan="7">无数据</td></tr>';
+      })
+      .catch(function (e) { alert('工单加载失败: ' + e.message); });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A') return;
+    ev.preventDefault();
+    var no = a.getAttribute('data-no');
+    if (a.getAttribute('data-close')) {
+      API.order.closeComplaint(no)
+        .then(function (r) { alert('工单 ' + no + ' 办结: ' + r.message); load(); })
+        .catch(function (e) { alert('办结失败: ' + e.message); });
+    } else {
+      alert('工单 ' + no + ' 详情: 演示操作');
+    }
+  });
+
+  document.getElementById('tp').addEventListener('change', load);
+  document.getElementById('st').addEventListener('change', load);
+
+  load();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

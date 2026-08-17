@@ -17,18 +17,18 @@
   <div class="card" style="text-align:center;padding:32px 16px;">
     <div style="font-size:44px;line-height:1;">✓</div>
     <div style="font-size:18px;font-weight:700;margin:12px 0 4px;">支付成功</div>
-    <div class="muted" style="font-size:13px;">¥158.00 · 2025-08 账期</div>
+    <div class="muted" style="font-size:13px;" id="amount-line">¥—</div>
     <div class="cell" style="margin-top:20px;text-align:left;">
-      <div class="main"><div class="t">支付方式</div></div><div class="right">微信支付</div>
+      <div class="main"><div class="t">支付方式</div></div><div class="right" id="pay-method">—</div>
     </div>
     <div class="cell" style="text-align:left;">
-      <div class="main"><div class="t">交易单号</div></div><div class="right">PAY20250817001</div>
+      <div class="main"><div class="t">交易单号</div></div><div class="right" id="pay-no">—</div>
     </div>
     <div class="cell" style="text-align:left;">
       <div class="main"><div class="t">到账状态</div></div><div class="right"><span class="tag tag-green">已到账 · 复机已生效</span></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:20px;">
-      <button class="btn" style="flex:1;" onclick="location.href='receipt.html'">查看凭证</button>
+      <button class="btn" style="flex:1;" id="receipt-btn" onclick="gotoReceipt()">查看凭证</button>
       <button class="btn btn-primary" style="flex:1;" onclick="location.href='home.html'">返回首页</button>
     </div>
   </div>
@@ -37,5 +37,23 @@
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var payNo = new URLSearchParams(location.search).get('no');
+  if (payNo) {
+    document.getElementById('pay-no').textContent = payNo;
+    API.payment.receipt(payNo).then(function (r) {
+      document.getElementById('amount-line').textContent = '¥' + r.amount.toFixed(2) + ' · ' + r.period + ' 账期';
+      document.getElementById('pay-method').textContent = r.payMethod;
+    }).catch(function () {
+      document.getElementById('amount-line').textContent = '¥158.00 · 2025-08 账期';
+      document.getElementById('pay-method').textContent = '微信支付';
+    });
+  }
+  function gotoReceipt() {
+    if (payNo) location.href = 'receipt.html?no=' + encodeURIComponent(payNo);
+    else location.href = 'receipt.html';
+  }
+</script>
 </body>
 </html>

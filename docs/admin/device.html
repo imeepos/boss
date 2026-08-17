@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">OLT 设备监控</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -23,27 +23,58 @@
         <div class="desc">OLT 在线状态、光功率、丢包率、告警</div>
       </div>
 
-      <div class="grid g-4" style="margin-bottom:16px;">
-        <div class="stat"><div class="label">OLT 总数</div><div class="val">86</div></div>
-        <div class="stat"><div class="label">在线</div><div class="val">82</div></div>
-        <div class="stat"><div class="label">离线</div><div class="val">4</div></div>
-        <div class="stat"><div class="label">活跃告警</div><div class="val">17</div></div>
-      </div>
+      <div class="grid g-4" style="margin-bottom:16px;" id="stats"></div>
       <div class="card">
         <div class="card-title">设备状态</div>
         <table class="tbl">
           <thead><tr><th>设备</th><th>地址</th><th>状态</th><th>光功率(dBm)</th><th>丢包率</th><th>告警</th></tr></thead>
-          <tbody>
-            <tr><td>OLT-01</td><td>望京机房</td><td><span class="tag tag-green">在线</span></td><td>-18.2</td><td>0.01%</td><td>无</td></tr>
-            <tr><td>OLT-02</td><td>望京机房</td><td><span class="tag tag-green">在线</span></td><td>-18.6</td><td>0.03%</td><td>无</td></tr>
-            <tr><td>OLT-15</td><td>朝阳机房</td><td><span class="tag tag-red">离线</span></td><td>—</td><td>—</td><td><span class="tag tag-red">3 条</span></td></tr>
-          </tbody>
+          <tbody id="devBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function renderStats(stats) {
+  var html = '';
+  html += '<div class="stat"><div class="label">OLT 总数</div><div class="val">' + esc(stats.total) + '</div></div>';
+  html += '<div class="stat"><div class="label">在线</div><div class="val">' + esc(stats.online) + '</div></div>';
+  html += '<div class="stat"><div class="label">离线</div><div class="val">' + esc(stats.offline) + '</div></div>';
+  html += '<div class="stat"><div class="label">活跃告警</div><div class="val">' + esc(stats.activeAlarms) + '</div></div>';
+  document.getElementById('stats').innerHTML = html;
+}
+function alarmCell(d) {
+  return d.alarmClass
+    ? '<span class="tag ' + esc(d.alarmClass) + '">' + esc(d.alarmLabel) + '</span>'
+    : esc(d.alarmLabel);
+}
+function renderDevices(items) {
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var d = items[i];
+    html += '<tr><td>' + esc(d.deviceName) + '</td><td>' + esc(d.address) +
+      '</td><td><span class="tag ' + esc(d.statusClass) + '">' + esc(d.statusLabel) + '</span></td>' +
+      '<td>' + esc(d.opticalPower) + '</td><td>' + esc(d.packetLoss) + '</td><td>' + alarmCell(d) + '</td></tr>';
+  }
+  document.getElementById('devBody').innerHTML = html;
+}
+function loadDevices() {
+  API.oss.oltDevices()
+    .then(function (d) { renderStats(d.stats); renderDevices(d.items); })
+    .catch(function (e) { alert('加载 OLT 设备失败: ' + e.message); });
+}
+function init() {
+  loadDevices();
+}
+init();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

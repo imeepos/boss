@@ -14,43 +14,45 @@
     <span class="act"></span>
   </div>
 
-  <div class="seg">
-    <a class="active">全部</a>
-    <a>进行中</a>
-    <a>已完成</a>
-    <a>已取消</a>
+  <div class="seg" id="tabs">
+    <a class="active" onclick="filterList('')">全部</a>
+    <a onclick="filterList('in_progress')">进行中</a>
+    <a onclick="filterList('done')">已完成</a>
+    <a onclick="filterList('cancelled')">已取消</a>
   </div>
 
-  <a class="card" href="order.html" style="display:block;color:inherit;">
-    <div class="row" style="display:flex;justify-content:space-between;align-items:center;">
-      <b>ORD-20250817-001</b>
-      <span class="tag tag-blue">装维中</span>
-    </div>
-    <div class="muted" style="font-size:12.5px;margin:6px 0;">1000M 极速宽带 · 望京X · 3栋501</div>
-    <div class="muted" style="font-size:12px;">当前环节：扫码绑定（9/12） · 预计 08-17 完成</div>
-  </a>
-
-  <a class="card" href="order.html" style="display:block;color:inherit;">
-    <div class="row" style="display:flex;justify-content:space-between;align-items:center;">
-      <b>ORD-20250817-002</b>
-      <span class="tag tag-orange">已预占</span>
-    </div>
-    <div class="muted" style="font-size:12.5px;margin:6px 0;">500M 畅享宽带 · 望京X · 5栋302</div>
-    <div class="muted" style="font-size:12px;">当前环节：端口预占（3/12）</div>
-  </a>
-
-  <a class="card" href="order.html" style="display:block;color:inherit;">
-    <div class="row" style="display:flex;justify-content:space-between;align-items:center;">
-      <b>ORD-20250816-018</b>
-      <span class="tag tag-green">已完成</span>
-    </div>
-    <div class="muted" style="font-size:12.5px;margin:6px 0;">300M 畅享宽带 · 望京Y · 1栋101</div>
-    <div class="muted" style="font-size:12px;">已激活 · 全程 12 环节 · 08-11 完成</div>
-    <button class="btn btn-primary" style="margin-top:10px;" onclick="event.preventDefault();location.href='rate.html';">去评价</button>
-  </a>
+  <div id="order-list"></div>
 
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function cell(o) {
+    var statusTag = { INSTALLING: 'tag-blue', RESERVED: 'tag-orange', DONE: 'tag-green', PENDING: 'tag-blue', CANCELLED: 'tag-gray' }[o.status] || 'tag-gray';
+    var rateBtn = o.canRate ? '<button class="btn btn-primary" style="margin-top:10px;" onclick="event.preventDefault();event.stopPropagation();location.href=\'rate.html?no=' + o.orderNo + '\'">去评价</button>' : '';
+    return '<a class="card" href="order.html?no=' + encodeURIComponent(o.orderNo) + '" style="display:block;color:inherit;">'
+      + '<div class="row" style="display:flex;justify-content:space-between;align-items:center;"><b>' + o.orderNo + '</b>'
+      + '<span class="tag ' + statusTag + '">' + o.statusLabel + '</span></div>'
+      + '<div class="muted" style="font-size:12.5px;margin:6px 0;">' + o.productName + ' · ' + o.address + '</div>'
+      + '<div class="muted" style="font-size:12px;">当前环节：' + o.stageLabel + '（' + o.stage + '/12）'
+      + (o.estimateFinish ? ' · 预计 ' + o.estimateFinish : (o.status === 'DONE' ? ' · 全程 12 环节完成' : '')) + '</div>'
+      + rateBtn + '</a>';
+  }
+  function filterList(k) {
+    document.querySelectorAll('#tabs a').forEach(function (a, i) { a.className = (['', 'in_progress', 'done', 'cancelled'][i] === k) ? 'active' : ''; });
+    render(k);
+  }
+  function render(k) {
+    API.order.list().then(function (d) {
+      var items = d.items || [];
+      if (k === 'in_progress') items = items.filter(function (o) { return o.status !== 'DONE' && o.status !== 'CANCELLED'; });
+      if (k === 'done') items = items.filter(function (o) { return o.status === 'DONE'; });
+      if (k === 'cancelled') items = items.filter(function (o) { return o.status === 'CANCELLED'; });
+      document.getElementById('order-list').innerHTML = items.map(cell).join('') || '<div class="muted" style="text-align:center;margin:20px;">暂无订单</div>';
+    });
+  }
+  render('');
+</script>
 </body>
 </html>

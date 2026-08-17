@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">计费账单</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,25 +24,45 @@
       </div>
 
       <div class="grid g-3" style="margin-bottom:16px;">
-        <div class="stat"><div class="label">本月应收</div><div class="val">¥1,286,400</div></div>
-        <div class="stat"><div class="label">已收</div><div class="val">¥1,103,215</div></div>
-        <div class="stat"><div class="label">欠费用户</div><div class="val">1,024</div></div>
+        <div class="stat"><div class="label">本月应收</div><div class="val" id="stReceivable"></div></div>
+        <div class="stat"><div class="label">已收</div><div class="val" id="stReceived"></div></div>
+        <div class="stat"><div class="label">欠费用户</div><div class="val" id="stArrears"></div></div>
       </div>
       <div class="card">
         <div class="card-title">账单列表</div>
         <table class="tbl">
           <thead><tr><th>账单号</th><th>客户</th><th>账期</th><th>金额</th><th>状态</th></tr></thead>
-          <tbody>
-            <tr><td>BILL-202508-0001</td><td>王先生</td><td>2025-08</td><td>¥299</td><td><span class="tag tag-green">已缴</span></td></tr>
-            <tr><td>BILL-202508-0002</td><td>吴女士</td><td>2025-08</td><td>¥199</td><td><span class="tag tag-orange">欠费</span></td></tr>
-            <tr><td>BILL-202507-0341</td><td>孙先生</td><td>2025-07</td><td>¥199</td><td><span class="tag tag-green">已缴清</span></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 计费账单数据渲染(契约: GET /bills,含 stats 汇总)
+(function () {
+  var STATUS_TAG = { '已缴': 'tag-green', '已缴清': 'tag-green', '欠费': 'tag-orange', '逾期': 'tag-red' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  API.billing.bills().then(function (d) {
+    document.getElementById('stReceivable').textContent = d.stats.receivable;
+    document.getElementById('stReceived').textContent = d.stats.received;
+    document.getElementById('stArrears').textContent = d.stats.arrearsCount;
+    document.getElementById('rows').innerHTML = d.items.map(function (r) {
+      return '<tr><td>' + esc(r.billNo) + '</td><td>' + esc(r.customerName) + '</td><td>' + esc(r.period)
+        + '</td><td>' + esc(r.amount) + '</td><td><span class="tag ' + (STATUS_TAG[r.status] || '')
+        + '">' + esc(r.status) + '</span></td></tr>';
+    }).join('');
+  }).catch(function (e) { alert('加载失败: ' + e.message); });
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

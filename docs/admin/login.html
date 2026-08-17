@@ -35,7 +35,7 @@
       <label>密码</label>
       <input type="password" placeholder="请输入密码" value="123456">
     </div>
-    <button class="login-btn" onclick="location.href='dashboard.html'">登 录</button>
+    <button class="login-btn" id="loginBtn">登 录</button>
 
     <div class="roles">
       <div class="r-title">7 类角色（点击切换演示）</div>
@@ -51,5 +51,20 @@
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function doLogin() {
+  var u = document.querySelector('.field input[type="text"]').value.trim();
+  var p = document.querySelector('.field input[type="password"]').value;
+  if (!u || !p) { alert('请输入账号和密码'); return; }
+  API.auth.login(u, p).then(function (r) {
+    API.setToken(r.token);
+    location.href = 'dashboard.html';
+  }).catch(function (err) {
+    alert('登录失败：' + err.message);
+  });
+}
+document.getElementById('loginBtn').onclick = doLogin;
+</script>
 </body>
 </html>

@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">拆机管理</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,61 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="拆机单号/客户/地址">
-        <select class="input" style="width:160px"><option>全部状态</option><option>待扫码</option><option>已解绑</option><option>已拆机</option></select>
+        <input class="input" style="width:220px" id="kw" placeholder="拆机单号/客户/地址">
+        <select class="input" style="width:160px" id="st"><option value="">全部状态</option><option value="WAIT_SCAN">待扫码</option><option value="UNBOUND">已解绑</option><option value="DISMANTLED">已拆机</option></select>
         <span class="spacer"></span>
-        <button class="btn btn-primary">+ 新建拆机单</button>
+        <button class="btn btn-primary" id="btn-new">+ 新建拆机单</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>拆机单号</th><th>客户</th><th>光猫/端口</th><th>扫码状态</th><th>当前环节</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>ORD-20250817-009</td><td>刘女士</td><td>EPC-0110 / P-SPL03-01</td><td><span class="tag tag-orange">待扫码</span></td><td>扫码解绑(未完成则拦截)</td><td><a href="#">处理</a></td></tr>
-            <tr><td>ORD-20250816-004</td><td>吴女士</td><td>EPC-0004 / P-SPL02-02</td><td><span class="tag tag-green">已解绑</span></td><td>端口已释放</td><td><a href="#">详情</a></td></tr>
-            <tr><td>ORD-20250816-002</td><td>郑先生</td><td>EPC-0002 / P-SPL01-01</td><td><span class="tag tag-gray">已拆机</span></td><td>完成</td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+(function () {
+  var ST_TAG = { WAIT_SCAN: 'tag-orange', UNBOUND: 'tag-green', DISMANTLED: 'tag-gray' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
+
+  function load() {
+    API.order.dismantles(document.getElementById('kw').value.trim(), document.getElementById('st').value)
+      .then(function (r) {
+        var html = '';
+        for (var i = 0; i < r.items.length; i++) {
+          var d = r.items[i];
+          html += '<tr><td>' + esc(d.dismantleNo) + '</td><td>' + esc(d.customer) + '</td><td>' + esc(d.assetCode) + ' / ' + esc(d.portCode)
+            + '</td><td>' + tag(ST_TAG[d.scanStatus] || 'tag-blue', d.scanStatusLabel) + '</td><td>' + esc(d.stageLabel)
+            + '</td><td><a href="#" class="op" data-no="' + esc(d.dismantleNo) + '">' + esc(d.op) + '</a></td></tr>';
+        }
+        document.getElementById('rows').innerHTML = html || '<tr><td colspan="6">无数据</td></tr>';
+      })
+      .catch(function (e) { alert('拆机单加载失败: ' + e.message); });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A') return;
+    ev.preventDefault();
+    alert('拆机单 ' + a.getAttribute('data-no') + ' ' + a.innerHTML + ': 演示操作');
+  });
+
+  document.getElementById('btn-new').onclick = function () {
+    API.post('/dismantles', {}).then(function (r) { alert('新建拆机单: ' + r.message); load(); });
+  };
+  document.getElementById('kw').addEventListener('input', load);
+  document.getElementById('st').addEventListener('change', load);
+
+  load();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">产品资费</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head"><h2>产品资费</h2><div class="desc">宽带产品、带宽套餐、增值服务的配置/发布/下架/调价</div></div>
@@ -28,11 +28,7 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>产品</th><th>带宽</th><th>月费</th><th>生效时间</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>家庭宽带 500M</td><td>500M</td><td>¥99</td><td>2025-08-01</td><td><span class="tag tag-green">在售</span></td><td><a href="#">调价</a> <a href="#">价格历史</a></td></tr>
-            <tr><td>家庭宽带 1000M</td><td>1000M</td><td>¥199</td><td>2025-08-01</td><td><span class="tag tag-green">在售</span></td><td><a href="#">调价</a> <a href="#">价格历史</a></td></tr>
-            <tr><td>政企专线 100M</td><td>100M</td><td>¥500</td><td>2025-09-01</td><td><span class="tag tag-gray">待发布</span></td><td><a href="#">调价</a> <a href="#">价格历史</a></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
 
@@ -40,17 +36,64 @@
         <div class="card-title">价格历史 / 调价记录</div>
         <table class="tbl">
           <thead><tr><th>产品</th><th>原价</th><th>新价</th><th>生效时间</th><th>调价人</th><th>状态</th></tr></thead>
-          <tbody>
-            <tr><td>家庭宽带 500M</td><td>¥89</td><td>¥99</td><td>2025-08-01 00:00</td><td>ops01</td><td><span class="tag tag-green">已生效</span></td></tr>
-            <tr><td>家庭宽带 1000M</td><td>¥189</td><td>¥199</td><td>2025-08-01 00:00</td><td>ops01</td><td><span class="tag tag-green">已生效</span></td></tr>
-            <tr><td>政企专线 100M</td><td>¥480</td><td>¥500</td><td>2025-09-01 00:00</td><td>ops02</td><td><span class="tag tag-blue">待生效</span></td></tr>
-          </tbody>
+          <tbody id="historyRows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 产品资费数据渲染(契约: GET /products, GET/POST /products/{productId}/price-history)
+(function () {
+  var STATUS_TAG = { '在售': 'tag-green', '待发布': 'tag-gray', '已下架': 'tag-gray' };
+  var HIST_TAG = { '已生效': 'tag-green', '待生效': 'tag-blue' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + esc(v) + '</span>'; }
+  function fail(e) { alert('加载失败: ' + e.message); }
+
+  function loadHistory(productId) {
+    API.customer.priceHistory(productId).then(function (d) {
+      document.getElementById('historyRows').innerHTML = d.items.map(function (r) {
+        return '<tr><td>' + esc(r.productName) + '</td><td>' + esc(r.oldPrice) + '</td><td>' + esc(r.newPrice)
+          + '</td><td>' + esc(r.effectiveAt) + '</td><td>' + esc(r.operator)
+          + '</td><td>' + tag(HIST_TAG[r.status] || '', r.status) + '</td></tr>';
+      }).join('');
+    }).catch(fail);
+  }
+
+  API.customer.products().then(function (d) {
+    document.getElementById('rows').innerHTML = d.items.map(function (r) {
+      return '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.bandwidth) + '</td><td>' + esc(r.monthlyFee)
+        + '</td><td>' + esc(r.effectiveAt) + '</td><td>' + tag(STATUS_TAG[r.status] || '', r.status)
+        + '</td><td><a href="#" data-act="price" data-id="' + r.productId + '" data-name="' + esc(r.name)
+        + '">调价</a> <a href="#" data-act="history" data-id="' + r.productId + '">价格历史</a></td></tr>';
+    }).join('');
+    if (d.items.length) loadHistory(d.items[0].productId);
+  }).catch(fail);
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
+    ev.preventDefault();
+    var id = a.getAttribute('data-id');
+    if (a.getAttribute('data-act') === 'history') { loadHistory(id); return; }
+    var name = a.getAttribute('data-name');
+    var input = prompt('请输入 ' + name + ' 的新月费(数字):');
+    if (input === null) return;
+    API.customer.changePrice(id, Number(input)).then(function (r) {
+      alert('调价提交成功: ' + r.message);
+      loadHistory(id);
+    }).catch(fail);
+  });
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

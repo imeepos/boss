@@ -15,20 +15,53 @@
   </div>
 
   <div class="seg">
-    <a class="active" href="javascript:;">本月</a>
-    <a href="javascript:;">上月</a>
-    <a href="javascript:;">全部</a>
+    <a class="active" data-period="month" href="javascript:;">本月</a>
+    <a data-period="last-month" href="javascript:;">上月</a>
+    <a data-period="all" href="javascript:;">全部</a>
   </div>
 
-  <div class="card">
-    <div class="c-title">本月 · 46 单</div>
-    <a class="cell" href="order.html"><div class="main"><div class="t">ORD-20250816-011 · 500M 安装</div><div class="d">望京X · 6栋701 · 08-16</div></div><div class="right"><span class="tag tag-green">已激活</span></div></a>
-    <a class="cell" href="order.html"><div class="main"><div class="t">ORD-20250816-010 · 300M 安装</div><div class="d">望京X · 9栋305 · 08-16</div></div><div class="right"><span class="tag tag-green">已激活</span></div></a>
-    <a class="cell" href="order.html"><div class="main"><div class="t">ORD-20250815-008 · 拆机</div><div class="d">望京X · 2栋902 · 08-15</div></div><div class="right"><span class="tag tag-green">已拆机</span></div></a>
-  </div>
+  <div class="card" id="listCard"></div>
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+var periodLabels = { 'month': '本月', 'last-month': '上月', 'all': '全部' };
+
+function render(d, period) {
+  var items = d.items || [];
+  var title = periodLabels[period] + ' · ' + (items.length || d.totalCount) + ' 单';
+  var html = '<div class="c-title">' + title + '</div>';
+  items.forEach(function (it) {
+    html += '<a class="cell" href="order.html?no=' + it.ticketNo + '">' +
+      '<div class="main"><div class="t">' + it.ticketNo + ' · ' + it.typeLabel + '</div>' +
+      '<div class="d">' + it.address + ' · ' + it.finishedAt + '</div></div>' +
+      '<div class="right"><span class="tag tag-green">' + it.statusLabel + '</span></div></a>';
+  });
+  document.getElementById('listCard').innerHTML = html;
+}
+
+function load(period) {
+  var segs = document.querySelectorAll('.seg a');
+  for (var i = 0; i < segs.length; i++) {
+    segs[i].className = segs[i].getAttribute('data-period') === period ? 'active' : '';
+  }
+  API.ticket.history(period).then(function (d) {
+    render(d, period);
+  }).catch(function (e) {
+    alert('历史工单加载失败：' + e.message);
+  });
+}
+
+var segs = document.querySelectorAll('.seg a');
+for (var j = 0; j < segs.length; j++) {
+  segs[j].addEventListener('click', function () {
+    load(this.getAttribute('data-period'));
+  });
+}
+
+load('month');
+</script>
 </body>
 </html>

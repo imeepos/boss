@@ -1,0 +1,118 @@
+paths:
+  /profile:
+    get:
+      tags: [Profile]
+      summary: 我的(首页个人中心聚合)
+      operationId: getProfile
+      responses:
+        '200':
+          description: 个人信息聚合
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Profile' }
+
+  /profile/security:
+    get:
+      tags: [Profile]
+      summary: 账号安全信息
+      operationId: getSecurity
+      responses:
+        '200':
+          description: 安全信息
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Security' }
+
+  /profile/security/password:
+    put:
+      tags: [Profile]
+      summary: 修改登录密码
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [oldPassword, newPassword]
+              properties:
+                oldPassword: { type: string }
+                newPassword: { type: string, minLength: 10 }
+      responses:
+        '200':
+          description: 已修改
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /profile/security/phone:
+    put:
+      tags: [Profile]
+      summary: 更换绑定手机号
+      operationId: changePhone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newPhone, smsCode]
+              properties:
+                newPhone: { type: string }
+                smsCode: { type: string }
+      responses:
+        '200':
+          description: 已更换
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /profile/notify-settings:
+    get:
+      tags: [Profile]
+      summary: 通知订阅设置
+      operationId: getNotifySettings
+      responses:
+        '200':
+          description: 订阅设置
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/NotifySettings' }
+
+    put:
+      tags: [Profile]
+      summary: 保存通知订阅设置
+      operationId: saveNotifySettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: './schemas.yaml#/components/schemas/NotifySettings' }
+      responses:
+        '200':
+          description: 已保存
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /profile/language:
+    put:
+      tags: [Profile]
+      summary: 切换界面语言
+      operationId: setLanguage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [language]
+              properties:
+                language: { type: string, enum: [zh, en, fil], example: zh }
+      responses:
+        '200':
+          description: 已切换
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+

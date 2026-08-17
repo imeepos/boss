@@ -16,21 +16,21 @@
 
   <div class="card" style="text-align:center;">
     <div style="font-size:15px;font-weight:700;margin-bottom:4px;">电子缴费凭证</div>
-    <div class="muted" style="font-size:12px;">OR-20250817-0001</div>
+    <div class="muted" style="font-size:12px;" id="receipt-no">—</div>
     <div class="cell" style="margin-top:16px;text-align:left;">
-      <div class="main"><div class="t">客户</div></div><div class="right">王先生 · 138****1234</div>
+      <div class="main"><div class="t">客户</div></div><div class="right" id="r-customer">—</div>
     </div>
     <div class="cell" style="text-align:left;">
-      <div class="main"><div class="t">缴费金额</div></div><div class="right amount">¥158.00</div>
+      <div class="main"><div class="t">缴费金额</div></div><div class="right amount" id="r-amount">¥—</div>
     </div>
     <div class="cell" style="text-align:left;">
-      <div class="main"><div class="t">对应账期</div></div><div class="right">2025-08</div>
+      <div class="main"><div class="t">对应账期</div></div><div class="right" id="r-period">—</div>
     </div>
     <div class="cell" style="text-align:left;">
-      <div class="main"><div class="t">支付方式 / 时间</div></div><div class="right">微信支付 · 2025-08-17 10:12</div>
+      <div class="main"><div class="t">支付方式 / 时间</div></div><div class="right" id="r-method">—</div>
     </div>
     <div class="cell" style="text-align:left;">
-      <div class="main"><div class="t">交易单号</div></div><div class="right">PAY20250817001</div>
+      <div class="main"><div class="t">交易单号</div></div><div class="right" id="r-payno">—</div>
     </div>
   </div>
 
@@ -40,5 +40,17 @@
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var payNo = new URLSearchParams(location.search).get('no') || 'PAY20250817001';
+  API.payment.receipt(payNo).then(function (r) {
+    document.getElementById('receipt-no').textContent = r.receiptNo;
+    document.getElementById('r-customer').textContent = r.customerName + ' · ' + r.phoneMasked;
+    document.getElementById('r-amount').textContent = '¥' + r.amount.toFixed(2);
+    document.getElementById('r-period').textContent = r.period;
+    document.getElementById('r-method').textContent = r.payMethod + ' · ' + r.paidAt;
+    document.getElementById('r-payno').textContent = r.payNo;
+  }).catch(function () {});
+</script>
 </body>
 </html>

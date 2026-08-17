@@ -1,0 +1,52 @@
+paths:
+  /provision-tasks:
+    get:
+      tags: [Provision]
+      summary: 配置下发任务(统计卡 + 任务列表)
+      operationId: listProvisionTasks
+      responses:
+        '200':
+          description: 下发任务
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats: { type: object }
+                  items: { type: array, items: { type: object } }
+
+  /provision-tasks/{taskNo}/retry:
+    post:
+      tags: [Provision]
+      summary: 失败任务重试
+      operationId: retryProvisionTask
+      parameters:
+        - { name: taskNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /provision-templates:
+    get:
+      tags: [Provision]
+      summary: 配置模板列表(设备类型/参数)
+      operationId: listProvisionTemplates
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Provision]
+      summary: 新建/复制配置模板
+      operationId: createProvisionTemplate
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /provision-logs:
+    get:
+      tags: [Provision]
+      summary: 配置下发日志(成功/失败/回滚成功)
+      operationId: listProvisionLogs
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

@@ -1,0 +1,126 @@
+paths:
+  /accounts:
+    get:
+      tags: [Sys]
+      summary: 账号与角色列表
+      operationId: listAccounts
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Sys]
+      summary: 新建账号
+      operationId: createAccount
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /accounts/{accountId}:
+    put:
+      tags: [Sys]
+      summary: 编辑账号(角色/部门/岗位/数据范围/启停)
+      operationId: updateAccount
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [Sys]
+      summary: 删除账号
+      operationId: deleteAccount
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /roles:
+    get:
+      tags: [Sys]
+      summary: 角色列表(7 角色码见 fields.md 1.2)
+      operationId: listRoles
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /addresses:
+    get:
+      tags: [Sys]
+      summary: 地址层级树(ltree 物化路径,见 ADR-002)
+      operationId: listAddresses
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /params:
+    get:
+      tags: [Sys]
+      summary: 业务参数列表
+      operationId: listParams
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /params/{key}:
+    put:
+      tags: [Sys]
+      summary: 修改业务参数
+      operationId: updateParam
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /audit-logs:
+    get:
+      tags: [Sys]
+      summary: 审计日志(操作类型:状态变更/数据变更/权限变更)
+      operationId: listAuditLogs
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - name: type
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /import-tasks:
+    get:
+      tags: [Sys]
+      summary: 数据导入任务列表(地址/客户/端口/资产台账)
+      operationId: listImportTasks
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Sys]
+      summary: 新建导入任务(上传文件)
+      operationId: createImportTask
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

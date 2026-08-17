@@ -15,15 +15,11 @@
   </div>
 
   <div class="card">
-    <input type="text" placeholder="检索 FAQ / SOP" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;">
+    <input type="text" id="kw" placeholder="检索 FAQ / SOP" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;">
   </div>
 
-  <div class="card">
+  <div class="card" id="listCard">
     <div class="c-title">高频 SOP</div>
-    <a class="cell" href="#"><div class="main"><div class="t">光猫红灯/无法注册</div><div class="d">LOID 认证失败排查</div></div><div class="right">&rsaquo;</div></a>
-    <a class="cell" href="#"><div class="main"><div class="t">光功率偏低</div><div class="d">分光比与接头损耗排查</div></div><div class="right">&rsaquo;</div></a>
-    <a class="cell" href="#"><div class="main"><div class="t">测速不达标</div><div class="d">线路/终端/WiFi 分段定位</div></div><div class="right">&rsaquo;</div></a>
-    <a class="cell" href="#"><div class="main"><div class="t">扫码绑定四码不一致</div><div class="d">换机/重绑处理</div></div><div class="right">&rsaquo;</div></a>
   </div>
 
   <div class="card">
@@ -32,6 +28,37 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+var all = [];
+
+function render(items) {
+  var html = '<div class="c-title">高频 SOP</div>';
+  items.forEach(function (f) {
+    html += '<a class="cell" href="#"><div class="main"><div class="t">' + f.title + '</div>' +
+      '<div class="d">' + f.summary + '</div></div><div class="right">&rsaquo;</div></a>';
+  });
+  document.getElementById('listCard').innerHTML = html || '<div class="notice">未找到相关 SOP</div>';
+}
+
+function filter() {
+  var kw = document.getElementById('kw').value.trim();
+  if (!all.length) return;
+  if (!kw) { render(all); return; }
+  render(all.filter(function (f) {
+    return f.title.indexOf(kw) !== -1 || f.summary.indexOf(kw) !== -1;
+  }));
+}
+
+API.misc.faq().then(function (d) {
+  all = d.items || [];
+  render(all);
+}).catch(function (e) {
+  alert('排障手册加载失败：' + e.message);
+});
+
+document.getElementById('kw').addEventListener('input', filter);
+</script>
 </body>
 </html>

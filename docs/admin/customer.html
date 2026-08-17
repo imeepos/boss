@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">客户管理</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -25,16 +25,12 @@
 
       <div class="toolbar">
         <button class="btn btn-primary">+ 新增客户</button>
-        <input class="input" style="width:220px" placeholder="姓名/电话/地址">
+        <input class="input" id="kw" style="width:220px" placeholder="姓名/电话/地址">
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>客户</th><th>联系电话</th><th>证件类型</th><th>证件号码</th><th>实名状态</th><th>服务状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>王先生</td><td>138****1234</td><td>身份证</td><td>110***********1234</td><td><span class="tag tag-green">已实名</span></td><td><span class="tag tag-green">在网</span></td><td><a href="#">详情</a></td></tr>
-            <tr><td>吴女士</td><td>139****5678</td><td>身份证</td><td>110***********5678</td><td><span class="tag tag-green">已实名</span></td><td><span class="tag tag-orange">欠费</span></td><td><a href="#">详情</a></td></tr>
-            <tr><td>孙先生</td><td>137****9012</td><td>—</td><td>—</td><td><span class="tag tag-red">待补登</span></td><td><span class="tag tag-green">在网</span></td><td><a href="#">详情</a> <a href="#">补登实名</a></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
 
@@ -42,17 +38,63 @@
         <div class="card-title">实名核验记录</div>
         <table class="tbl">
           <thead><tr><th>客户</th><th>核验方式</th><th>核验时间</th><th>结果</th><th>操作人</th></tr></thead>
-          <tbody>
-            <tr><td>王先生</td><td>证件 + 人像比对</td><td>2025-08-01 10:12</td><td><span class="tag tag-green">通过</span></td><td>ops01</td></tr>
-            <tr><td>吴女士</td><td>证件 OCR</td><td>2025-07-28 15:40</td><td><span class="tag tag-green">通过</span></td><td>ops01</td></tr>
-            <tr><td>孙先生</td><td>—</td><td>—</td><td><span class="tag tag-gray">未核验</span></td><td>—</td></tr>
-          </tbody>
+          <tbody id="verifyRows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 客户管理数据渲染(契约: GET /customers, GET /customers/{customerId}/verify-logs)
+(function () {
+  var REAL_TAG = { '已实名': 'tag-green', '待补登': 'tag-red' };
+  var SVC_TAG = { '在网': 'tag-green', '欠费': 'tag-orange', '停机': 'tag-gray' };
+  var RESULT_TAG = { '通过': 'tag-green', '未核验': 'tag-gray' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + esc(v) + '</span>'; }
+  function fail(e) { alert('加载失败: ' + e.message); }
+
+  function render(rows) {
+    document.getElementById('rows').innerHTML = rows.map(function (r) {
+      var ops = '<a href="#">详情</a>';
+      if (r.realNameStatus === '待补登') ops += ' <a href="#">补登实名</a>';
+      return '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.phone) + '</td><td>' + esc(r.idType)
+        + '</td><td>' + esc(r.idNo) + '</td><td>' + tag(REAL_TAG[r.realNameStatus] || '', r.realNameStatus)
+        + '</td><td>' + tag(SVC_TAG[r.serviceStatus] || '', r.serviceStatus)
+        + '</td><td>' + ops + '</td></tr>';
+    }).join('');
+  }
+
+  function loadVerifyLogs(customerId) {
+    API.customer.verifyLogs(customerId).then(function (d) {
+      document.getElementById('verifyRows').innerHTML = d.items.map(function (r) {
+        return '<tr><td>' + esc(r.customerName) + '</td><td>' + esc(r.method) + '</td><td>' + esc(r.verifiedAt)
+          + '</td><td>' + tag(RESULT_TAG[r.result] || '', r.result) + '</td><td>' + esc(r.operator) + '</td></tr>';
+      }).join('');
+    }).catch(fail);
+  }
+
+  API.customer.list().then(function (d) {
+    render(d.items);
+    if (d.items.length) loadVerifyLogs(d.items[0].customerId);
+  }).catch(fail);
+
+  var kw = document.getElementById('kw'), timer = null;
+  kw.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      API.customer.list(kw.value.trim()).then(function (d) { render(d.items); }).catch(fail);
+    }, 200);
+  });
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

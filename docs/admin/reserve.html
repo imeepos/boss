@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">预占与释放</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,85 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="端口/订单号">
-        <select class="input" style="width:160px"><option>全部状态</option><option>预占中</option><option>已超时</option><option>已释放</option></select>
+        <input class="input" id="kw" style="width:220px" placeholder="端口/订单号">
+        <select class="input" id="st" style="width:160px"><option>全部状态</option><option>预占中</option><option>已超时</option><option>已释放</option></select>
         <span class="spacer"></span>
-        <button class="btn btn-primary">批量释放超时项</button>
+        <button class="btn btn-primary" id="batchBtn">批量释放超时项</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>端口编码</th><th>分光器</th><th>占用订单</th><th>预占时间</th><th>到期时间</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>P-SPL03-07</td><td>SPL-03</td><td>ORD-20250817-001</td><td>10:20</td><td>12:20</td><td><span class="tag tag-blue">预占中</span></td><td><a href="#">释放</a></td></tr>
-            <tr><td>P-SPL01-09</td><td>SPL-01</td><td>ORD-20250817-002</td><td>09:05</td><td>11:05</td><td><span class="tag tag-red">已超时</span></td><td><a href="#">释放</a></td></tr>
-            <tr><td>P-SPL02-03</td><td>SPL-02</td><td>ORD-20250816-018</td><td>昨日</td><td>—</td><td><span class="tag tag-gray">已释放</span></td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="rsvBody"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+var allItems = [];
+function renderList(items) {
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var r = items[i];
+    html += '<tr><td>' + esc(r.portCode) + '</td><td>' + esc(r.splitterName) + '</td><td>' + esc(r.orderId) +
+      '</td><td>' + esc(r.reservedAt) + '</td><td>' + esc(r.expireAt) +
+      '</td><td><span class="tag ' + esc(r.statusClass) + '">' + esc(r.statusLabel) + '</span></td>' +
+      '<td><a href="#" data-id="' + esc(r.reserveId) + '" data-act="' + esc(r.action) + '">' + esc(r.action) + '</a></td></tr>';
+  }
+  document.getElementById('rsvBody').innerHTML = html;
+  bindRowActions();
+}
+function release(id) {
+  API.oss.releaseReserve(id)
+    .then(function (r) { alert('释放预占 ' + id + ': ' + r.message); loadList(); })
+    .catch(function (e) { alert('释放失败: ' + e.message); });
+}
+function bindRowActions() {
+  var links = document.getElementById('rsvBody').getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    links[i].onclick = function (e) {
+      e.preventDefault();
+      var act = this.getAttribute('data-act');
+      var id = this.getAttribute('data-id');
+      if (act === '释放') release(id);
+      else alert('预占记录 ' + id + ': ' + act);
+    };
+  }
+}
+function loadList() {
+  var st = document.getElementById('st').value;
+  API.oss.reserves(document.getElementById('kw').value, st === '全部状态' ? '' : st)
+    .then(function (d) { allItems = d.items; renderList(d.items); })
+    .catch(function (e) { alert('加载预占记录失败: ' + e.message); });
+}
+function bindToolbar() {
+  document.getElementById('kw').oninput = loadList;
+  document.getElementById('st').onchange = loadList;
+  document.getElementById('batchBtn').onclick = function () {
+    var timeouts = allItems.filter(function (r) { return r.status === 'TIMEOUT'; });
+    if (!timeouts.length) { alert('无超时预占项'); return; }
+    var done = 0;
+    for (var i = 0; i < timeouts.length; i++) {
+      API.oss.releaseReserve(timeouts[i].reserveId).then(function (r) {
+        done++;
+        alert('批量释放: ' + r.message);
+        if (done >= timeouts.length) loadList();
+      });
+    }
+  };
+}
+function init() {
+  loadList();
+  bindToolbar();
+}
+init();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

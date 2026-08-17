@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">部门管理</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -34,13 +34,7 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>部门</th><th>所属子公司</th><th>职能</th><th>岗位数</th><th>工单队列</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>装维调度部</td><td>LEG-A 主品牌·企业</td><td><span class="tag tag-blue">调度</span></td><td>2</td><td>跨区工单池</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
-            <tr><td>客服部</td><td>LEG-A 主品牌·企业</td><td><span class="tag tag-green">客服</span></td><td>1</td><td>客服工单队列</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
-            <tr><td>财务部</td><td>LEG-B 家庭宽带</td><td><span class="tag tag-orange">财务</span></td><td>2</td><td>现金台队列</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
-            <tr><td>网络运维部</td><td>LEG-C 批发品牌</td><td><span class="tag tag-gray">运维</span></td><td>1</td><td>告警值班队列</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
-            <tr><td>市场经营部</td><td>LEG-A 主品牌·企业</td><td><span class="tag tag-blue">经营</span></td><td>2</td><td>经营看板分发</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
-          </tbody>
+          <tbody id="deptBody"></tbody>
         </table>
       </div>
 
@@ -49,16 +43,60 @@
         <div class="desc" style="margin-bottom:10px">同子公司内，部门即最小数据可见单元；跨部门取他部门工单会被拦截并审计留痕（A05/A06）。</div>
         <table class="tbl">
           <thead><tr><th>部门</th><th>可见数据</th><th>越权拦截</th></tr></thead>
-          <tbody>
-            <tr><td>客服部</td><td>本部门工单队列</td><td>他部门工单 → 无权限提示</td></tr>
-            <tr><td>财务部</td><td>姓名/账单号/余额/金额（最小化）</td><td>客户其他档案 → 隐藏</td></tr>
-          </tbody>
+          <tbody id="deptScopeBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
+function deptRowHtml(d) {
+  return '<tr>' +
+    '<td>' + esc(d.name) + '</td>' +
+    '<td>' + esc(d.legalEntityName) + '</td>' +
+    '<td>' + tag(d.funcTag, d.funcLabel) + '</td>' +
+    '<td>' + esc(d.postCount) + '</td>' +
+    '<td>' + esc(d.queueName) + '</td>' +
+    '<td><a href="#">编辑</a> <a href="#">停用</a></td>' +
+  '</tr>';
+}
+function scopeRowHtml(s) {
+  return '<tr><td>' + esc(s.deptName) + '</td><td>' + esc(s.visibleData) + '</td><td>' + esc(s.denyHint) + '</td></tr>';
+}
+function render(items, scopes) {
+  document.getElementById('deptBody').innerHTML = items.map(deptRowHtml).join('');
+  document.getElementById('deptScopeBody').innerHTML = (scopes || []).map(scopeRowHtml).join('');
+}
+var allDepts = [], allScopes = [];
+API.org.departments().then(function (r) {
+  allDepts = r.items;
+  allScopes = r.scopes || [];
+  render(allDepts, allScopes);
+}).catch(function (err) { alert('加载失败：' + err.message); });
+// toolbar 前端过滤:子公司下拉 + 部门名关键字
+(function bindToolbar() {
+  var sel = document.querySelector('.toolbar select');
+  var kw = document.querySelector('.toolbar input[placeholder="搜索部门名称"]');
+  function onch() {
+    var items = allDepts.filter(function (d) {
+      var okLe = !sel || sel.selectedIndex <= 0 || d.legalEntityName === sel.value;
+      var okKw = !kw || !kw.value.trim() || d.name.indexOf(kw.value.trim()) >= 0;
+      return okLe && okKw;
+    });
+    render(items, allScopes);
+  }
+  if (sel) sel.onchange = onch;
+  if (kw) kw.oninput = onch;
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

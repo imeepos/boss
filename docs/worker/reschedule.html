@@ -9,35 +9,41 @@
 <body>
 <div class="app">
   <div class="topbar">
-    <a class="back" href="order.html">&lsaquo;</a>
+    <a class="back" href="orders.html">&lsaquo;</a>
     <div class="t">预约改约</div>
     <span class="act">爽约登记</span>
   </div>
 
-  <div class="card">
-    <div class="c-title">ORD-20250817-001</div>
-    <div class="kv"><span class="k">原预约</span><span class="v">今天 10:00-12:00</span></div>
-    <div class="kv"><span class="k">客户</span><span class="v">王先生 · 138****1234</span></div>
+  <div class="card" id="ticketCard">
+    <div class="c-title" id="ticketTitle">加载中…</div>
+    <div class="kv"><span class="k">原预约</span><span class="v" id="ticketSlot">--</span></div>
+    <div class="kv"><span class="k">客户</span><span class="v" id="ticketCustomer">--</span></div>
   </div>
 
   <div class="card">
     <div class="fld">
       <label>新预约日期</label>
-      <select><option>今天 08-17</option><option selected>明天 08-18</option><option>后天 08-19</option></select>
+      <select id="newDate"><option>今天 08-17</option><option>明天 08-18</option><option>后天 08-19</option></select>
     </div>
     <div class="fld">
       <label>新预约时段</label>
-      <select><option>09:00-11:00</option><option selected>14:00-16:00</option><option>16:00-18:00</option></select>
+      <select id="newSlot"><option>09:00-11:00</option><option>14:00-16:00</option><option>16:00-18:00</option></select>
     </div>
     <div class="fld">
       <label>变更原因</label>
-      <select><option>客户要求改期</option><option selected>客户不在家（爽约）</option><option>师傅排期冲突</option><option>天气/交通延误</option></select>
+      <select id="reason">
+        <option>客户要求改期</option>
+        <option>客户不在家（爽约）</option>
+        <option>师傅排期冲突</option>
+        <option>天气/交通延误</option>
+      </select>
     </div>
     <div class="fld">
       <label>备注（选填）</label>
-      <textarea rows="2" placeholder="特殊情况说明"></textarea>
+      <textarea id="remark" rows="2" placeholder="特殊情况说明"></textarea>
     </div>
-    <button class="btn-primary btn-block" onclick="alert('改约申请已提交，客户将收到短信确认。')">提交改约</button>
+    <button class="btn-primary btn-block" onclick="submitReschedule()">提交改约</button>
+    <div id="tip" class="hint muted" style="display:none;"></div>
   </div>
 
   <div class="card">
@@ -46,6 +52,41 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function showTip(msg) {
+  var el = document.getElementById('tip');
+  el.textContent = msg;
+  el.style.display = (msg ? 'block' : 'none');
+}
+
+function renderTicket(d) {
+  document.getElementById('ticketTitle').textContent = d.ticketNo;
+  document.getElementById('ticketSlot').textContent = d.scheduleSlot || '--';
+  document.getElementById('ticketCustomer').textContent = (d.customerName || '') + ' · ' + (d.customerPhoneMasked || '');
+}
+
+API.ticket.detail(NO).then(renderTicket).catch(function (e) {
+  document.getElementById('ticketTitle').textContent = NO;
+  showTip('工单信息加载失败：' + (e && e.message) + '，可继续操作。');
+});
+
+function submitReschedule() {
+  var newDate = document.getElementById('newDate').value;
+  var newSlot = document.getElementById('newSlot').value;
+  var reason = document.getElementById('reason').value;
+  var remark = document.getElementById('remark').value.trim();
+  showTip('提交中…');
+  API.ticket.reschedule(NO, newDate, newSlot, reason, remark).then(function (r) {
+    alert(r.message || '改约申请已提交，客户将收到短信确认。');
+    location.href = 'orders.html';
+  }).catch(function (e) {
+    showTip('提交失败：' + (e && e.message) + '，请重试。');
+  });
+}
+</script>
 </body>
 </html>

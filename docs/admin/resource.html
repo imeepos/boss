@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">资源管理</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -23,21 +23,12 @@
         <div class="desc">端口台账、核查、预占状态管理</div>
       </div>
 
-      <div class="grid g-4" style="margin-bottom:16px;">
-        <div class="stat"><div class="label">端口总数</div><div class="val">96,340</div></div>
-        <div class="stat"><div class="label">空闲</div><div class="val">18,720</div></div>
-        <div class="stat"><div class="label">预占</div><div class="val">2,156</div></div>
-        <div class="stat"><div class="label">禁用</div><div class="val">1,043</div></div>
-      </div>
+      <div class="grid g-4" style="margin-bottom:16px;" id="stats"></div>
       <div class="card">
         <div class="card-title">端口台账</div>
         <table class="tbl">
           <thead><tr><th>端口编号</th><th>四码端口码</th><th>所属 OLT/分光器</th><th>地址</th><th>状态</th><th>占用订单</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>P-001-01</td><td>P-SPL03-01</td><td>OLT-01 · SPL-03</td><td>望京·X小区·3栋</td><td><span class="tag tag-green">空闲</span></td><td>—</td><td><a href="#">变更历史</a></td></tr>
-            <tr><td>P-001-02</td><td>P-SPL03-07</td><td>OLT-01 · SPL-03</td><td>望京·X小区·3栋</td><td><span class="tag tag-orange">预占</span></td><td>ORD-20250817-001</td><td><a href="#">变更历史</a></td></tr>
-            <tr><td>P-001-03</td><td>P-SPL03-03</td><td>OLT-01 · SPL-03</td><td>望京·X小区·3栋</td><td><span class="tag tag-blue">在用</span></td><td>ORD-20250816-018</td><td><a href="#">变更历史</a></td></tr>
-          </tbody>
+          <tbody id="portBody"></tbody>
         </table>
       </div>
 
@@ -45,17 +36,74 @@
         <div class="card-title">端口变更历史</div>
         <table class="tbl">
           <thead><tr><th>端口编号</th><th>时间</th><th>变更前</th><th>变更后</th><th>触发来源</th><th>操作人</th></tr></thead>
-          <tbody>
-            <tr><td>P-001-02</td><td>2025-08-17 09:09</td><td>空闲</td><td>预占</td><td>订单端口预占</td><td>oss01</td></tr>
-            <tr><td>P-001-03</td><td>2025-08-10 15:22</td><td>预占</td><td>在用</td><td>扫码激活</td><td>tech07</td></tr>
-            <tr><td>P-001-01</td><td>2025-08-09 10:05</td><td>禁用</td><td>空闲</td><td>修复恢复启用</td><td>oss01</td></tr>
-          </tbody>
+          <tbody id="historyBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function renderStats(stats) {
+  var html = '';
+  html += '<div class="stat"><div class="label">端口总数</div><div class="val">' + esc(stats.total) + '</div></div>';
+  html += '<div class="stat"><div class="label">空闲</div><div class="val">' + esc(stats.idle) + '</div></div>';
+  html += '<div class="stat"><div class="label">预占</div><div class="val">' + esc(stats.reserved) + '</div></div>';
+  html += '<div class="stat"><div class="label">禁用</div><div class="val">' + esc(stats.disabled) + '</div></div>';
+  document.getElementById('stats').innerHTML = html;
+}
+function renderPorts(items) {
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var p = items[i];
+    html += '<tr><td>' + esc(p.portCode) + '</td><td>' + esc(p.quadCode) + '</td><td>' + esc(p.parentName) +
+      '</td><td>' + esc(p.address) + '</td><td><span class="tag ' + esc(p.statusClass) + '">' + esc(p.statusLabel) +
+      '</span></td><td>' + esc(p.orderId || '—') +
+      '</td><td><a href="#" class="hist-link" data-code="' + esc(p.portCode) + '">变更历史</a></td></tr>';
+  }
+  document.getElementById('portBody').innerHTML = html;
+  bindHistoryLinks();
+}
+function renderHistory(items) {
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var h = items[i];
+    html += '<tr><td>' + esc(h.portCode) + '</td><td>' + esc(h.time) + '</td><td>' + esc(h.fromStatus) +
+      '</td><td>' + esc(h.toStatus) + '</td><td>' + esc(h.source) + '</td><td>' + esc(h.operator) + '</td></tr>';
+  }
+  document.getElementById('historyBody').innerHTML = html;
+}
+function bindHistoryLinks() {
+  var links = document.getElementById('portBody').getElementsByClassName('hist-link');
+  for (var i = 0; i < links.length; i++) {
+    links[i].onclick = function (e) {
+      e.preventDefault();
+      var code = this.getAttribute('data-code');
+      loadHistory(code);
+    };
+  }
+}
+function loadHistory(code) {
+  API.oss.portChangeHistory(code)
+    .then(function (d) { renderHistory(d.items); })
+    .catch(function (e) { alert('加载变更历史失败: ' + e.message); });
+}
+function loadPorts() {
+  API.oss.ports()
+    .then(function (d) { renderStats(d.stats); renderPorts(d.items); loadHistory(d.items[0].portCode); })
+    .catch(function (e) { alert('加载端口台账失败: ' + e.message); });
+}
+function init() {
+  loadPorts();
+}
+init();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

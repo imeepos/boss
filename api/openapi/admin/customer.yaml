@@ -1,0 +1,62 @@
+paths:
+  /customers:
+    get:
+      tags: [Customer]
+      summary: 客户档案列表(含实名状态)
+      operationId: listCustomers
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /customers/{customerId}/verify-logs:
+    get:
+      tags: [Customer]
+      summary: 客户实名核验记录
+      operationId: listCustomerVerifyLogs
+      parameters:
+        - { name: customerId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /products:
+    get:
+      tags: [Customer]
+      summary: 产品资费列表
+      operationId: listProducts
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Customer]
+      summary: 新建产品
+      operationId: createProduct
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /products/{productId}/price-history:
+    get:
+      tags: [Customer]
+      summary: 产品价格历史/调价记录
+      operationId: listProductPriceHistory
+      parameters:
+        - { name: productId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Customer]
+      summary: 产品调价
+      operationId: changeProductPrice
+      parameters:
+        - { name: productId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newPrice]
+              properties:
+                newPrice: { type: number }
+                effectiveAt: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

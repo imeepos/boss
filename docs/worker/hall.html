@@ -15,39 +15,8 @@
   </div>
 
   <div class="card">
-    <div class="c-title">可抢工单 <span class="more">4 单</span></div>
-
-    <div class="cell">
-      <div class="main">
-        <div class="t">EMG-20250817-001 · 台风批量复测</div>
-        <div class="d">望京X片区 · 受影响 23 户 · 距您 0.8km</div>
-      </div>
-      <div class="right"><button class="btn btn-primary" style="padding:6px 12px;" onclick="this.textContent='已抢';this.disabled=true;this.classList.remove('btn-primary');this.parentNode.parentNode.querySelector('.main .t').innerHTML='<a href=repair.html>EMG-20250817-001 · 台风批量复测</a>';">抢单</button></div>
-    </div>
-
-    <div class="cell">
-      <div class="main">
-        <div class="t">TKT-20250817-006 · 抢修</div>
-        <div class="d">望京X · 8栋 · 断网 · 距您 1.2km</div>
-      </div>
-      <div class="right"><button class="btn btn-primary" style="padding:6px 12px;" onclick="this.textContent='已抢';this.disabled=true;this.classList.remove('btn-primary');this.parentNode.parentNode.querySelector('.main .t').innerHTML='<a href=repair.html>TKT-20250817-006 · 抢修</a>';">抢单</button></div>
-    </div>
-
-    <div class="cell">
-      <div class="main">
-        <div class="t">ORD-20250817-007 · 新装</div>
-        <div class="d">望京X · 15栋 · 距您 2.8km</div>
-      </div>
-      <div class="right"><button class="btn btn-primary" style="padding:6px 12px;" onclick="this.textContent='已抢';this.disabled=true;this.classList.remove('btn-primary');">抢单</button></div>
-    </div>
-
-    <div class="cell">
-      <div class="main">
-        <div class="t">ORD-20250817-008 · 变更</div>
-        <div class="d">望京X · 4栋 · 距您 3.5km</div>
-      </div>
-      <div class="right"><button class="btn btn-primary" style="padding:6px 12px;" onclick="this.textContent='已抢';this.disabled=true;this.classList.remove('btn-primary');">抢单</button></div>
-    </div>
+    <div class="c-title" id="hall-title">可抢工单</div>
+    <div id="hall-list"></div>
   </div>
 
   <div class="card">
@@ -56,6 +25,53 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+(function () {
+  function fix(n, d) { if (n === undefined || n === null) return d; return n; }
+
+  function orderType(no) {
+    return (no && no.indexOf('EMG') === 0) ? 'repair.html' : 'order.html';
+  }
+
+  function cell(it) {
+    var no = fix(it.ticketNo, '');
+    var d = fix(it.address, '');
+    if (it.distanceKm !== undefined && it.distanceKm !== null) d += ' · 距您 ' + it.distanceKm + 'km';
+    return '<div class="cell"><div class="main"><div class="t" id="h-' + no + '">' + no + ' · ' + fix(it.typeLabel, '') + '</div><div class="d">' + d + '</div></div>'
+      + '<div class="right"><button class="btn btn-primary" style="padding:6px 12px;" data-no="' + no + '">抢单</button></div></div>';
+  }
+
+  function load() {
+    document.getElementById('hall-title').textContent = '可抢工单 · 加载中…';
+    API.hall.list().then(function (r) {
+      var items = (r && r.items) || [];
+      document.getElementById('hall-title').textContent = '可抢工单 (' + items.length + ' 单)';
+      document.getElementById('hall-list').innerHTML = items.map(cell).join('');
+    }).catch(function () {
+      document.getElementById('hall-title').textContent = '可抢工单';
+      document.getElementById('hall-list').innerHTML = '<div class="notice">任务池加载失败，请刷新重试。</div>';
+    });
+  }
+
+  var list = document.getElementById('hall-list');
+  list.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-no]');
+    if (!btn) return;
+    var no = btn.getAttribute('data-no');
+    API.hall.grab(no).then(function (r) {
+      alert((r && r.message) || '抢单成功');
+      btn.textContent = '已抢';
+      btn.disabled = true;
+      btn.classList.remove('btn-primary');
+      var t = document.getElementById('h-' + no);
+      if (t) t.innerHTML = '<a href="' + orderType(no) + '?no=' + encodeURIComponent(no) + '">' + no + ' · ' + t.textContent.split('·').slice(1).join('·').trim() + '</a>';
+    }).catch(function () { alert('抢单失败，请重试。'); });
+  });
+
+  load();
+})();
+</script>
 </body>
 </html>

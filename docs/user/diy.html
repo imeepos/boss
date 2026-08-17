@@ -16,21 +16,31 @@
 
   <div class="card">
     <div class="c-title">请选择故障现象</div>
-    <a class="cell" href="#s1"><div class="main"><div class="t">无法上网</div><div class="d">光猫灯异常 / 完全断网</div></div><div class="right">›</div></a>
-    <a class="cell" href="#s2"><div class="main"><div class="t">网速慢</div><div class="d">视频卡顿 / 下载缓慢</div></div><div class="right">›</div></a>
-    <a class="cell" href="#s3"><div class="main"><div class="t">IPTV 无信号</div><div class="d">电视黑屏 / 无频道</div></div><div class="right">›</div></a>
-    <a class="cell" href="#s4"><div class="main"><div class="t">光猫告警</div><div class="d">红灯 / 闪烁异常</div></div><div class="right">›</div></a>
+    <div id="symptom-list"></div>
   </div>
 
-  <div class="card" id="s1">
-    <div class="c-title">无法上网 · 引导排查</div>
-    <div class="cell"><div class="main"><div class="t">1 检查光猫指示灯</div><div class="d">LOS 红灯说明光纤未接通，需报修</div></div></div>
-    <div class="cell"><div class="main"><div class="t">2 重启光猫与路由器</div><div class="d">断电 30 秒后重新上电</div></div></div>
-    <div class="cell"><div class="main"><div class="t">3 检查认证状态</div><div class="d">确认账号未欠费停机</div></div></div>
-    <button class="btn-block ghost" style="margin-top:12px;" onclick="location.href='fault.html'">仍未解决 · 转人工报修</button>
-  </div>
+  <div id="sections"></div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function symptomCell(s) {
+    return '<a class="cell" href="#' + s.id + '"><div class="main"><div class="t">' + s.title + '</div><div class="d">' + s.desc + '</div></div><div class="right">›</div></a>';
+  }
+  function stepCell(st) {
+    return '<div class="cell"><div class="main"><div class="t">' + st.title + '</div><div class="d">' + st.desc + '</div></div></div>';
+  }
+  function sectionCard(s) {
+    return '<div class="card" id="' + s.id + '"><div class="c-title">' + s.title + ' · 引导排查</div>'
+      + (s.steps || []).map(stepCell).join('')
+      + '<button class="btn-block ghost" style="margin-top:12px;" onclick="location.href=\'fault.html\'">仍未解决 · 转人工报修</button></div>';
+  }
+  API.misc.diySteps().then(function (d) {
+    var items = d.items || [];
+    document.getElementById('symptom-list').innerHTML = items.map(symptomCell).join('');
+    document.getElementById('sections').innerHTML = items.map(sectionCard).join('');
+  });
+</script>
 </body>
 </html>

@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">扫码绑定记录</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,23 +24,59 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="订单号/标签/资产码">
-        <select class="input" style="width:140px"><option>全部结果</option><option>绑定成功</option><option>绑定拒绝</option></select>
+        <input class="input" style="width:220px" id="kw" placeholder="订单号/标签/资产码">
+        <select class="input" style="width:140px" id="rs"><option value="">全部结果</option><option value="MATCH">绑定成功</option><option value="MISMATCH">绑定拒绝</option></select>
         <span class="spacer"></span>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>订单号</th><th>师傅</th><th>扫码标签</th><th>预绑定标签</th><th>校验结果</th><th>时间</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>ORD-20250817-001</td><td>张师傅</td><td>EPC-0001</td><td>EPC-0001</td><td><span class="tag tag-green">一致</span></td><td>10:40</td><td><a href="#">详情</a></td></tr>
-            <tr><td>ORD-20250816-019</td><td>陈师傅</td><td>EPC-0019</td><td>EPC-0018</td><td><span class="tag tag-red">拒绝(不一致)</span></td><td>09:20</td><td><a href="#">详情</a></td></tr>
-            <tr><td>ORD-20250816-020</td><td>李师傅</td><td>EPC-0020</td><td>EPC-0020</td><td><span class="tag tag-green">一致</span></td><td>08:55</td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+(function () {
+  var ST_TAG = { MATCH: 'tag-green', MISMATCH: 'tag-red' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
+
+  function load() {
+    API.quad.scanLogs(document.getElementById('kw').value.trim())
+      .then(function (r) {
+        var rs = document.getElementById('rs').value;
+        var items = rs ? r.items.filter(function (x) { return x.result === rs; }) : r.items;
+        var html = '';
+        for (var i = 0; i < items.length; i++) {
+          var s = items[i];
+          html += '<tr><td>' + esc(s.orderNo) + '</td><td>' + esc(s.master) + '</td><td>' + esc(s.scannedTag) + '</td><td>' + esc(s.preboundTag)
+            + '</td><td>' + tag(ST_TAG[s.result] || 'tag-gray', s.resultLabel) + '</td><td>' + esc(s.time)
+            + '</td><td><a href="#" class="op" data-no="' + esc(s.orderNo) + '">详情</a></td></tr>';
+        }
+        document.getElementById('rows').innerHTML = html || '<tr><td colspan="7">无数据</td></tr>';
+      })
+      .catch(function (e) { alert('扫码记录加载失败: ' + e.message); });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A') return;
+    ev.preventDefault();
+    alert('订单 ' + a.getAttribute('data-no') + ' 扫码详情: 演示操作');
+  });
+
+  document.getElementById('kw').addEventListener('input', load);
+  document.getElementById('rs').addEventListener('change', load);
+
+  load();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

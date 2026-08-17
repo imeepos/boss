@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">下发日志</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,78 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="任务号/光猫/OLT">
-        <select class="input" style="width:140px"><option>全部结果</option><option>成功</option><option>失败</option><option>回滚成功</option></select>
+        <input class="input" style="width:220px" placeholder="任务号/光猫/OLT" id="kwInput">
+        <select class="input" style="width:140px" id="resultSel"><option value="">全部结果</option><option>成功</option><option>失败</option><option>回滚成功</option></select>
         <span class="spacer"></span>
-        <button class="btn btn-primary">重试失败项</button>
+        <button class="btn btn-primary" id="btnRetryAll">重试失败项</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>任务号</th><th>设备</th><th>模板</th><th>结果</th><th>重试</th><th>时间</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>PRV-1001</td><td>EPC-0001</td><td>GPON-1000M-v3</td><td><span class="tag tag-green">成功</span></td><td>0</td><td>10:42</td><td><a href="#">详情</a></td></tr>
-            <tr><td>PRV-1002</td><td>OLT-02</td><td>OLT-VLAN-v2</td><td><span class="tag tag-red">失败</span></td><td>2</td><td>09:15</td><td><a href="#">重试</a> <a href="#">回滚</a></td></tr>
-            <tr><td>PRV-1003</td><td>EPC-0003</td><td>GPON-500M-v2</td><td><span class="tag tag-orange">回滚成功</span></td><td>1</td><td>08:40</td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="logRows"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 下发日志渲染(契约: GET /provision-logs, POST /provision-tasks/{taskNo}/retry)
+(function () {
+  var RESULT_TAG = { '成功': 'tag-green', '失败': 'tag-red', '回滚成功': 'tag-orange' };
+  var rows = [];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function ops(r) {
+    if (r.result === '失败') {
+      return '<a href="#" data-retry="' + esc(r.taskNo) + '">重试</a> <a href="#" data-rollback="' + esc(r.taskNo) + '">回滚</a>';
+    }
+    return '<a href="#" data-detail="' + esc(r.taskNo) + '">详情</a>';
+  }
+
+  function render(items) {
+    rows = items;
+    document.getElementById('logRows').innerHTML = items.map(function (r) {
+      return '<tr><td>' + esc(r.taskNo) + '</td><td>' + esc(r.device) + '</td><td>' + esc(r.template)
+        + '</td><td><span class="tag ' + (RESULT_TAG[r.result] || 'tag-gray') + '">' + esc(r.result)
+        + '</span></td><td>' + esc(r.retries) + '</td><td>' + esc(r.time) + '</td><td>' + ops(r) + '</td></tr>';
+    }).join('');
+  }
+
+  function retryTask(taskNo) {
+    API.post('/provision-tasks/' + encodeURIComponent(taskNo) + '/retry').then(function (res) {
+      alert(res.code === 0 ? '任务 ' + taskNo + ' 已重新下发' : '重试失败');
+    });
+  }
+
+  function load() {
+    API.provision.logs(document.getElementById('kwInput').value.trim(), document.getElementById('resultSel').value)
+      .then(function (d) { render(d.items); });
+  }
+
+  document.getElementById('logRows').onclick = function (e) {
+    var t = e.target.getAttribute('data-retry');
+    var d = e.target.getAttribute('data-detail');
+    var rb = e.target.getAttribute('data-rollback');
+    if (t) { retryTask(t); return false; }
+    if (rb) { alert('回滚请求已提交: ' + rb); return false; }
+    if (d) { alert('任务详情: ' + d); return false; }
+  };
+  document.getElementById('btnRetryAll').onclick = function () {
+    rows.filter(function (r) { return r.result === '失败'; })
+      .forEach(function (r) { retryTask(r.taskNo); });
+  };
+  document.getElementById('kwInput').oninput = load;
+  document.getElementById('resultSel').onchange = load;
+
+  load();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

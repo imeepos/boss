@@ -1,0 +1,124 @@
+# 杂项域:消息/公告/排障手册/联系调度/安全上报。
+paths:
+  /messages:
+    get:
+      tags: [Misc]
+      summary: 消息中心(应急/超时预警/改派/下发/标签电量)
+      operationId: listMessages
+      responses:
+        '200':
+          description: 消息列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Message' }
+
+  /messages/read-all:
+    post:
+      tags: [Misc]
+      summary: 全部标记已读
+      operationId: readAllMessages
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /messages/clear:
+    post:
+      tags: [Misc]
+      summary: 清空已读消息
+      operationId: clearMessages
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /notices:
+    get:
+      tags: [Misc]
+      summary: 服务公告(安全/物料/功能)
+      operationId: listNotices
+      responses:
+        '200':
+          description: 公告列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Notice' }
+
+  /help/faq:
+    get:
+      tags: [Misc]
+      summary: 排障手册 SOP 检索(中/英/菲,装维与客服共用)
+      operationId: searchFaq
+      parameters:
+        - name: keyword
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: SOP 列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Faq' }
+
+  /service/messages:
+    get:
+      tags: [Misc]
+      summary: 联系调度会话消息
+      operationId: listServiceMessages
+      responses:
+        '200':
+          description: 会话消息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        from: { type: string, enum: [dispatcher, worker] }
+                        content: { type: string }
+    post:
+      tags: [Misc]
+      summary: 发送消息给调度(可转人工)
+      operationId: sendServiceMessage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /safety/checks:
+    post:
+      tags: [Misc]
+      summary: 安全作业确认上报(高风险作业先确认留痕)
+      operationId: submitSafetyCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workType, checklist]
+              properties:
+                workType: { type: string, example: 高空作业（爬杆/登高） }
+                checklist: { type: array, items: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

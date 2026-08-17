@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">地址层级</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head"><h2>地址层级</h2><div class="desc">市级→区级→街道→小区→楼栋 五级统一地址基准 · 支持存量导入</div></div>
@@ -29,17 +29,33 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>层级路径</th><th>名称</th><th>级别</th><th>下级数量</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>bj</td><td>北京</td><td>市</td><td>16</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>bj.chaoyang</td><td>朝阳区</td><td>区</td><td>24</td><td><a href="#">下钻</a></td></tr>
-            <tr><td>bj.chaoyang.wangjing</td><td>望京街道</td><td>街道</td><td>12</td><td><a href="#">下钻</a></td></tr>
-          </tbody>
+          <tbody id="addrBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function rowHtml(a) {
+  return '<tr>' +
+    '<td>' + esc(a.path) + '</td>' +
+    '<td>' + esc(a.name) + '</td>' +
+    '<td>' + esc(a.levelLabel) + '</td>' +
+    '<td>' + esc(a.childCount) + '</td>' +
+    '<td><a href="#">下钻</a></td>' +
+  '</tr>';
+}
+API.sys.addresses().then(function (r) {
+  document.getElementById('addrBody').innerHTML = r.items.map(rowHtml).join('');
+}).catch(function (err) { alert('加载失败：' + err.message); });
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

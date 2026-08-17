@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">话单与认证日志</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,63 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="LOID/账号">
-        <select class="input" style="width:140px"><option>认证成功</option><option>认证失败</option><option>话单</option></select>
+        <input class="input" style="width:220px" placeholder="LOID/账号" id="kwInput">
+        <select class="input" style="width:140px" id="typeSel"><option value="">全部类型</option><option value="AUTH_OK">认证成功</option><option value="AUTH_FAIL">认证失败</option><option value="CDR">话单</option></select>
         <span class="spacer"></span>
-        <button class="btn btn-primary">补单</button>
+        <button class="btn btn-primary" id="btnMend">补单</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>LOID</th><th>类型</th><th>结果</th><th>时长/流量</th><th>入账状态</th><th>时间</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>LOID-88A1</td><td>认证</td><td><span class="tag tag-green">成功</span></td><td>—</td><td>—</td><td>10:46</td><td><a href="#">详情</a></td></tr>
-            <tr><td>LOID-88A4</td><td>认证</td><td><span class="tag tag-red">失败</span></td><td>—</td><td>—</td><td>10:30</td><td><a href="#">详情</a></td></tr>
-            <tr><td>LOID-88A1</td><td>话单</td><td><span class="tag tag-green">正常</span></td><td>3.2GB / 2h</td><td><span class="tag tag-orange">未入账</span></td><td>10:00</td><td><a href="#">补单</a></td></tr>
-          </tbody>
+          <tbody id="logRows"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// AAA 日志渲染(契约: GET /aaa-logs)
+(function () {
+  var RESULT_TAG = { '成功': 'tag-green', '失败': 'tag-red', '正常': 'tag-green' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function billingCell(v) {
+    return v === '未入账' ? '<span class="tag tag-orange">未入账</span>' : esc(v);
+  }
+
+  function render(items) {
+    document.getElementById('logRows').innerHTML = items.map(function (r) {
+      return '<tr><td>' + esc(r.loid) + '</td><td>' + esc(r.typeLabel)
+        + '</td><td><span class="tag ' + (RESULT_TAG[r.result] || 'tag-gray') + '">' + esc(r.result)
+        + '</span></td><td>' + esc(r.usage) + '</td><td>' + billingCell(r.billing) + '</td><td>'
+        + esc(r.time) + '</td><td><a href="#" data-detail="' + esc(r.logId) + '">详情</a></td></tr>';
+    }).join('');
+  }
+
+  function load() {
+    API.aaa.logs(document.getElementById('kwInput').value.trim(), document.getElementById('typeSel').value)
+      .then(function (d) { render(d.items); });
+  }
+
+  document.getElementById('logRows').onclick = function (e) {
+    var id = e.target.getAttribute('data-detail');
+    if (id) { alert('日志详情 #' + id); return false; }
+  };
+  document.getElementById('btnMend').onclick = function () {
+    alert('补单请求已提交');
+  };
+  document.getElementById('kwInput').oninput = load;
+  document.getElementById('typeSel').onchange = load;
+
+  load();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

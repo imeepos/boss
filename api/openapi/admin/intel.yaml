@@ -1,0 +1,59 @@
+paths:
+  /gis/address-links:
+    get:
+      tags: [Intel]
+      summary: 地址层级码(ltree)→ GIS 实体联动清单
+      operationId: listGisAddressLinks
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /analytics/overview:
+    get:
+      tags: [Intel]
+      summary: 经营分析总览(五大核心指标 + 品牌×区域交叉 + 维护一张表)
+      operationId: getAnalyticsOverview
+      parameters:
+        - name: region
+          in: query
+          schema: { type: string, description: 大区(吕宋/比萨扬/棉兰老) }
+        - name: brand
+          in: query
+          schema: { type: string, description: 品牌(LEG-A/B/C) }
+      responses:
+        '200':
+          description: 经营分析聚合数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kpis: { type: array, items: { type: object } }
+                  brandRegionMatrix: { type: object }
+                  replaceList: { type: array, items: { type: object } }
+
+  /reports:
+    get:
+      tags: [Intel]
+      summary: 经营分析报告列表(日/周/月/季度)
+      operationId: listReports
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Intel]
+      summary: 生成报告
+      operationId: createReport
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /reports/{reportId}/send:
+    post:
+      tags: [Intel]
+      summary: 报告推送
+      operationId: sendReport
+      parameters:
+        - { name: reportId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

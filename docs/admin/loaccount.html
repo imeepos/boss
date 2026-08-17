@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">认证账号</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,67 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="LOID/客户/地址">
-        <select class="input" style="width:140px"><option>全部状态</option><option>在服</option><option>停机</option><option>待激活</option></select>
+        <input class="input" id="kw" style="width:220px" placeholder="LOID/客户/地址">
+        <select class="input" id="st" style="width:140px"><option>全部状态</option><option>在服</option><option>停机</option><option>待激活</option></select>
         <span class="spacer"></span>
-        <button class="btn btn-primary">+ 新建认证账号</button>
+        <button class="btn btn-primary" id="createBtn">+ 新建认证账号</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>LOID</th><th>客户</th><th>产品/带宽</th><th>QoS 模板</th><th>认证状态</th><th>最近认证</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>LOID-88A1</td><td>王先生</td><td>1000M</td><td>QoS-VIP</td><td><span class="tag tag-green">在服</span></td><td>2 分钟前</td><td><a href="#">详情</a></td></tr>
-            <tr><td>LOID-88A5</td><td>吴女士</td><td>1000M</td><td>QoS-STD</td><td><span class="tag tag-orange">停机</span></td><td>昨日</td><td><a href="#">复机</a></td></tr>
-            <tr><td>LOID-88A3</td><td>孙先生</td><td>300M</td><td>QoS-STD</td><td><span class="tag tag-green">在服</span></td><td>—</td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="loBody"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function renderList(items) {
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var a = items[i];
+    html += '<tr><td>' + esc(a.loid) + '</td><td>' + esc(a.customerName) + '</td><td>' + esc(a.productBandwidth) +
+      '</td><td>' + esc(a.qosTemplate) +
+      '</td><td><span class="tag ' + esc(a.statusClass) + '">' + esc(a.statusLabel) + '</span></td>' +
+      '<td>' + esc(a.lastAuth) + '</td><td><a href="#" data-loid="' + esc(a.loid) + '">' + esc(a.action) + '</a></td></tr>';
+  }
+  document.getElementById('loBody').innerHTML = html;
+  bindRowActions();
+}
+function bindRowActions() {
+  var links = document.getElementById('loBody').getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    links[i].onclick = function (e) {
+      e.preventDefault();
+      alert('认证账号 ' + this.getAttribute('data-loid') + ': ' + this.innerHTML);
+    };
+  }
+}
+function loadList() {
+  var st = document.getElementById('st').value;
+  API.oss.loAccounts(document.getElementById('kw').value, st === '全部状态' ? '' : st)
+    .then(function (d) { renderList(d.items); })
+    .catch(function (e) { alert('加载认证账号失败: ' + e.message); });
+}
+function bindToolbar() {
+  document.getElementById('kw').oninput = loadList;
+  document.getElementById('st').onchange = loadList;
+  document.getElementById('createBtn').onclick = function () {
+    alert('新建认证账号:LOID 由 AAA 域开户流程生成');
+  };
+}
+function init() {
+  loadList();
+  bindToolbar();
+}
+init();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

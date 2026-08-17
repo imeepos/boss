@@ -15,29 +15,16 @@
   </div>
 
   <div class="card">
-    <div class="c-title">TKT-20250817-012 <span class="tag tag-blue">处理中</span></div>
-    <div class="cell"><div class="main"><div class="t">故障类型</div></div><div class="right">单户断网（紧急 SLA≤4h）</div></div>
-    <div class="cell"><div class="main"><div class="t">故障地址</div></div><div class="right">望京X · 10栋 · 1801</div></div>
-    <div class="cell"><div class="main"><div class="t">报修时间</div></div><div class="right">2025-08-17 09:40</div></div>
-    <div class="cell"><div class="main"><div class="t">受理师傅</div></div><div class="right">张师傅 · 138****7788</div></div>
+    <div class="c-title" id="f-title">加载中…</div>
+    <div class="cell"><div class="main"><div class="t">故障类型</div></div><div class="right" id="f-type">—</div></div>
+    <div class="cell"><div class="main"><div class="t">故障地址</div></div><div class="right" id="f-addr">—</div></div>
+    <div class="cell"><div class="main"><div class="t">报修时间</div></div><div class="right" id="f-time">—</div></div>
+    <div class="cell"><div class="main"><div class="t">受理师傅</div></div><div class="right" id="f-tech">—</div></div>
   </div>
 
   <div class="card">
     <div class="c-title">处理进度（报障 6 环节）</div>
-    <div class="timeline">
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">1 报障</div><div class="meta">09:40 · 已自动关联资产/端口</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">2 诊断</div><div class="meta">09:42 · 远程诊断入工单</div></div></div>
-      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
-        <div class="body"><div class="t">3 派单</div><div class="meta">09:45 · 张师傅已接单 · SLA 计时</div></div></div>
-      <div class="tl-item"><div class="rail"><span class="node doing"></span><span class="line"></span></div>
-        <div class="body"><div class="t">4 修复</div><div class="meta">进行中 · 到场处理并上报结果</div></div></div>
-      <div class="tl-item"><div class="rail"><span class="node"></span><span class="line"></span></div>
-        <div class="body"><div class="t">5 复核</div><div class="meta">系统自动验证网络恢复</div></div></div>
-      <div class="tl-item"><div class="rail"><span class="node"></span></div>
-        <div class="body"><div class="t">6 回访</div><div class="meta">满意度调查+回填</div></div></div>
-    </div>
+    <div class="timeline" id="f-timeline"></div>
   </div>
 
   <div class="card" style="display:flex;gap:10px;">
@@ -47,5 +34,26 @@
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var ticketNo = new URLSearchParams(location.search).get('no') || 'TKT-20250817-012';
+  function nodeCss(r) { return r === 'DONE' ? 'node done' : (r === 'DOING' ? 'node doing' : 'node'); }
+  function tlItem(t, i, total) {
+    var itemCls = t.result === 'DONE' ? 'tl-item done' : 'tl-item';
+    var line = i < total - 1 ? '<span class="line"></span>' : '';
+    return '<div class="' + itemCls + '"><div class="rail"><span class="' + nodeCss(t.result) + '"></span>' + line + '</div>'
+      + '<div class="body"><div class="t">' + t.step + ' ' + t.title + '</div><div class="meta">' + t.meta + '</div></div></div>';
+  }
+  API.fault.detail(ticketNo).then(function (d) {
+    var f = d.fault || {};
+    document.getElementById('f-title').innerHTML = f.ticketNo + ' <span class="tag tag-blue">' + f.statusLabel + '</span>';
+    document.getElementById('f-type').textContent = f.faultTypeLabel || '—';
+    document.getElementById('f-addr').textContent = f.address || '—';
+    document.getElementById('f-time').textContent = f.createdAt || '—';
+    document.getElementById('f-tech').textContent = (d.technicianName || '—') + (d.technicianPhoneMasked ? ' · ' + d.technicianPhoneMasked : '');
+    var tl = d.timeline || [];
+    document.getElementById('f-timeline').innerHTML = tl.map(function (t, i) { return tlItem(t, i, tl.length); }).join('');
+  }).catch(function () {});
+</script>
 </body>
 </html>

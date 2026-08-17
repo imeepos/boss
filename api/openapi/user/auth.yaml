@@ -1,0 +1,147 @@
+paths:
+  /auth/sms-code:
+    post:
+      tags: [Auth]
+      summary: 发送短信验证码
+      operationId: sendSmsCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, scene]
+              properties:
+                phone: { type: string, example: '138****1234' }
+                scene:
+                  type: string
+                  enum: [login, register, reset]
+                  example: login
+      responses:
+        '200':
+          description: 发送成功
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 验证码/密码登录
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, mode]
+              properties:
+                phone: { type: string, example: '138****1234' }
+                mode: { type: string, enum: [sms, password], example: sms }
+                smsCode: { type: string, example: '123456' }
+                password: { type: string }
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token: { type: string, example: 'eyJhbGciOi...' }
+                  customerId: { type: integer, format: int64, example: 1 }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: 自助注册
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, smsCode, password]
+              properties:
+                phone: { type: string }
+                smsCode: { type: string }
+                password: { type: string, minLength: 10 }
+      responses:
+        '200':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token: { type: string }
+                  customerId: { type: integer, format: int64 }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: 找回密码
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, smsCode, newPassword]
+              properties:
+                phone: { type: string }
+                smsCode: { type: string }
+                newPassword: { type: string, minLength: 10 }
+      responses:
+        '200':
+          description: 重置成功
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 退出登录
+      operationId: logout
+      responses:
+        '200':
+          description: 已退出
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /auth/verify:
+    get:
+      tags: [Auth]
+      summary: 实名认证状态与核验记录
+      operationId: getVerify
+      responses:
+        '200':
+          description: 实名信息
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/VerifyStatus' }
+
+    post:
+      tags: [Auth]
+      summary: 发起(重新)实名核验
+      operationId: submitVerify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './schemas.yaml#/components/schemas/VerifySubmit'
+
+      responses:
+        '200':
+          description: 已提交审核
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+

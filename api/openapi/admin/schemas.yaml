@@ -1,0 +1,34 @@
+# 公共响应组件(admin 端)
+components:
+  responses:
+    Ok:
+      description: 操作成功
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code: { type: integer, example: 0 }
+              message: { type: string, example: success }
+    List:
+      description: 列表(统一 items 包装)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items: { type: object }
+
+  parameters:
+    keyword:
+      name: keyword
+      in: query
+      schema: { type: string }
+      description: 关键字搜索(单号/客户/编码等,按页面占位提示)
+    status:
+      name: status
+      in: query
+      schema: { type: string }
+      description: 状态过滤(枚举见 docs/contract/terms.md 第 3/4 节)

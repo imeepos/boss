@@ -9,20 +9,20 @@
 <body>
 <div class="app">
   <div class="topbar">
-    <a class="back" href="order.html">&lsaquo;</a>
+    <a class="back" href="orders.html">&lsaquo;</a>
     <div class="t">投诉登记</div>
     <span class="act">安抚</span>
   </div>
 
   <div class="card">
-    <div class="c-title">ORD-20250817-001 · 王先生</div>
+    <div class="c-title" id="ticketTitle">加载中…</div>
     <div class="kv"><span class="k">投诉类型</span><span class="v">现场服务类</span></div>
   </div>
 
   <div class="card">
     <div class="fld">
       <label>投诉分类</label>
-      <select>
+      <select id="category">
         <option selected>预约时间延误</option>
         <option>服务态度</option>
         <option>安装质量</option>
@@ -32,9 +32,10 @@
     </div>
     <div class="fld">
       <label>现场情况</label>
-      <textarea rows="3" placeholder="记录客户诉求与安抚情况"></textarea>
+      <textarea id="content" rows="3" placeholder="记录客户诉求与安抚情况"></textarea>
     </div>
-    <button class="btn btn-block ghost" onclick="alert('投诉已登记，转客服回访闭环。')">提交登记</button>
+    <button class="btn btn-block ghost" onclick="submitComplaint()">提交登记</button>
+    <div id="tip" class="hint muted" style="display:none;"></div>
   </div>
 
   <div class="card">
@@ -43,6 +44,38 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function showTip(msg) {
+  var el = document.getElementById('tip');
+  el.textContent = msg;
+  el.style.display = (msg ? 'block' : 'none');
+}
+
+function renderTicket(d) {
+  document.getElementById('ticketTitle').textContent = d.ticketNo + ' · ' + (d.customerName || '');
+}
+
+API.ticket.detail(NO).then(renderTicket).catch(function (e) {
+  document.getElementById('ticketTitle').textContent = NO;
+  showTip('工单信息加载失败：' + (e && e.message) + '，可继续登记。');
+});
+
+function submitComplaint() {
+  var category = document.getElementById('category').value;
+  var content = document.getElementById('content').value.trim();
+  if (!content) { showTip('请填写现场情况。'); return; }
+  showTip('提交中…');
+  API.ticket.complaint(NO, category, content).then(function (r) {
+    alert(r.message || '投诉已登记，转客服回访闭环。');
+    location.href = 'orders.html';
+  }).catch(function (e) {
+    showTip('提交失败：' + (e && e.message) + '，请重试。');
+  });
+}
+</script>
 </body>
 </html>

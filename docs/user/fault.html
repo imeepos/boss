@@ -23,36 +23,52 @@
     <div class="c-title">我要报修</div>
     <div class="field">
       <label>故障类型</label>
-      <select><option>无法上网</option><option>网速慢</option><option>光猫故障</option><option>其他</option></select>
+      <select id="fault-type"><option value="no_internet">无法上网</option><option value="slow">网速慢</option><option value="ont_fault">光猫故障</option><option value="other">其他</option></select>
     </div>
     <div class="field">
       <label>故障地址</label>
-      <input type="text" value="望京X · 3栋 · 501">
+      <input type="text" id="fault-address" value="望京X · 3栋 · 501">
     </div>
     <div class="field">
       <label>故障描述</label>
-      <textarea rows="3" placeholder="请描述故障现象"></textarea>
+      <textarea rows="3" id="fault-desc" placeholder="请描述故障现象"></textarea>
     </div>
     <div class="field">
       <label>联系方式</label>
-      <input type="tel" value="138****1234">
+      <input type="tel" id="fault-contact" value="13800001234">
     </div>
-    <button class="btn-block" onclick="location.href='faultdetail.html'">提交报修</button>
+    <button class="btn-block" onclick="submit()">提交报修</button>
   </div>
 
   <div class="card">
     <div class="c-title">报修记录</div>
-    <a class="cell" href="faultdetail.html" style="color:inherit;">
-      <div class="main"><div class="t">单户断网（紧急 SLA）</div><div class="d">TKT-20250817-012 · 2025-08-17 09:40</div></div>
-      <div class="right"><span class="tag tag-blue">处理中</span></div>
-    </a>
-    <a class="cell" href="faultdetail.html" style="color:inherit;">
-      <div class="main"><div class="t">网速慢</div><div class="d">2025-07-30 15:02</div></div>
-      <div class="right"><span class="tag tag-green">已解决</span></div>
-    </a>
+    <div id="records"></div>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function cell(f) {
+    var tag = f.status === 'RESOLVED' ? 'tag-green' : 'tag-blue';
+    return '<a class="cell" href="faultdetail.html?no=' + encodeURIComponent(f.ticketNo) + '" style="color:inherit;">'
+      + '<div class="main"><div class="t">' + f.faultTypeLabel + '</div><div class="d">' + f.ticketNo + ' · ' + f.createdAt + '</div></div>'
+      + '<div class="right"><span class="tag ' + tag + '">' + f.statusLabel + '</span></div></a>';
+  }
+  API.fault.list().then(function (d) {
+    document.getElementById('records').innerHTML = (d.items || []).map(cell).join('');
+  });
+  function submit() {
+    var payload = {
+      faultType: document.getElementById('fault-type').value,
+      address: document.getElementById('fault-address').value,
+      description: document.getElementById('fault-desc').value,
+      contact: document.getElementById('fault-contact').value,
+    };
+    API.fault.submit(payload).then(function (f) {
+      location.href = 'faultdetail.html?no=' + encodeURIComponent(f.ticketNo);
+    });
+  }
+</script>
 </body>
 </html>

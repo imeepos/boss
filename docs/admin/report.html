@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">报告中心</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,70 @@
       </div>
 
       <div class="toolbar">
-        <select class="input" style="width:140px"><option>日</option><option>周</option><option>月</option><option>季度</option></select>
-        <input class="input" style="width:220px" placeholder="报告标题">
+        <select class="input" style="width:140px" id="periodSel"><option>日</option><option>周</option><option>月</option><option>季度</option></select>
+        <input class="input" style="width:220px" placeholder="报告标题" id="kwInput">
         <span class="spacer"></span>
-        <button class="btn btn-primary">+ 手动生成</button>
+        <button class="btn btn-primary" id="btnGen">+ 手动生成</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>报告</th><th>周期</th><th>生成时间</th><th>推送对象</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>2025-08-17 经营日报</td><td>日</td><td>08:00</td><td>经营分析组</td><td><span class="tag tag-green">已推送</span></td><td><a href="#">查看</a></td></tr>
-            <tr><td>2025-08 第3周 周报</td><td>周</td><td>周一 09:00</td><td>经营分析组/管理层</td><td><span class="tag tag-green">已推送</span></td><td><a href="#">查看</a></td></tr>
-            <tr><td>2025-08 月度报告</td><td>月</td><td>—</td><td>管理层</td><td><span class="tag tag-orange">生成中</span></td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="reportRows"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 报告中心渲染(契约: GET/POST /reports, POST /reports/{reportId}/send)
+(function () {
+  var STATUS_TAG = { '已推送': 'tag-green', '生成中': 'tag-orange' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function render(items) {
+    document.getElementById('reportRows').innerHTML = items.map(function (r) {
+      var op = r.status === '生成中'
+        ? '<a href="#" data-send="' + r.reportId + '">详情</a>'
+        : '<a href="#" data-view="' + r.reportId + '">查看</a>';
+      return '<tr><td>' + esc(r.title) + '</td><td>' + esc(r.period) + '</td><td>'
+        + esc(r.generatedAt) + '</td><td>' + esc(r.audience) + '</td><td><span class="tag '
+        + (STATUS_TAG[r.status] || 'tag-gray') + '">' + esc(r.status) + '</span></td><td>' + op + '</td></tr>';
+    }).join('');
+  }
+
+  function load() {
+    API.intel.reports(document.getElementById('kwInput').value.trim()).then(function (d) {
+      render(d.items);
+    });
+  }
+
+  document.getElementById('reportRows').onclick = function (e) {
+    var send = e.target.getAttribute('data-send');
+    var view = e.target.getAttribute('data-view');
+    if (send) {
+      API.intel.sendReport(send).then(function (res) {
+        alert(res.code === 0 ? '报告 #' + send + ' 推送成功' : '推送失败');
+      });
+      return false;
+    }
+    if (view) { alert('查看报告 #' + view); return false; }
+  };
+  document.getElementById('btnGen').onclick = function () {
+    API.post('/reports', { period: document.getElementById('periodSel').value }).then(function (res) {
+      alert(res.code === 0 ? '报告生成任务已提交' : '生成失败');
+    });
+  };
+  document.getElementById('kwInput').oninput = load;
+
+  load();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

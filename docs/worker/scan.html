@@ -14,12 +14,12 @@
     <span class="act" id="net-state">在线</span>
   </div>
 
-  <div class="card">
-    <div class="c-title">ORD-20250817-001 <span class="tag tag-blue">待扫码绑定</span></div>
-    <div class="kv"><span class="k">预绑定标签</span><span class="v">EPC-0001</span></div>
-    <div class="kv"><span class="k">客户</span><span class="v">王先生 · 138****1234</span></div>
-    <div class="kv"><span class="k">安装地址</span><span class="v">望京X · 3栋 · 501</span></div>
-    <div class="kv"><span class="k">分光器/端口</span><span class="v">SPL-03-07 · PON 7口</span></div>
+  <div class="card" id="info-card">
+    <div class="c-title" id="ticket-no">加载中… <span class="tag tag-blue" id="ticket-status">待扫码绑定</span></div>
+    <div class="kv"><span class="k">预绑定标签</span><span class="v" id="pre-bind-tag">-</span></div>
+    <div class="kv"><span class="k">客户</span><span class="v" id="customer">-</span></div>
+    <div class="kv"><span class="k">安装地址</span><span class="v" id="address">-</span></div>
+    <div class="kv"><span class="k">分光器/端口</span><span class="v" id="port">-</span></div>
   </div>
 
   <div class="card" style="text-align:center;" id="scan-card">
@@ -29,28 +29,28 @@
       <div class="hint">将取景框对准光猫机身电子标签</div>
       <div class="hint muted">支持 LF / HF / UHF 频段 · 弱网自动离线缓存</div>
     </div>
-    <button class="btn-primary btn-block" onclick="showResult('ok')">模拟扫码</button>
-    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="showResult('bad')">模拟「不符」</button>
-    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="showResult('offline')">模拟「弱网离线」</button>
+    <button class="btn-primary btn-block" onclick="doBind('EPC-0001', false)">模拟扫码</button>
+    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="doBind('EPC-9999', false)">模拟「不符」</button>
+    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="doBind('EPC-0001', true)">模拟「弱网离线」</button>
   </div>
 
   <div class="card" style="display:none;" id="result-ok">
     <div class="c-title">扫码结果 <span class="tag tag-green">一致</span></div>
-    <div class="notice" style="margin-top:0;">四码校验一致，绑定已通过，请确认装维完成情况。</div>
-    <button class="btn-green btn-block" style="margin-top:12px;" onclick="location.href='report.html'">继续结果上报</button>
+    <div class="notice" style="margin-top:0;" id="msg-ok">-</div>
+    <button class="btn-green btn-block" style="margin-top:12px;" onclick="goto('report.html')">继续结果上报</button>
   </div>
 
   <div class="card" style="display:none;" id="result-bad">
     <div class="c-title">扫码结果 <span class="tag tag-red">不一致</span></div>
-    <div class="notice red" style="margin-top:0;">扫码标签与此单预绑定标签不符，绑定已被系统拒绝。请核实换机或重绑。</div>
-    <button class="btn btn-block" style="margin-top:12px;" onclick="location.href='replace.html'">换件登记</button>
-    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="location.href='scanabnormal.html'">异常上报</button>
+    <div class="notice red" style="margin-top:0;" id="msg-bad">-</div>
+    <button class="btn btn-block" style="margin-top:12px;" onclick="goto('replace.html')">换件登记</button>
+    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="goto('scanabnormal.html')">异常上报</button>
   </div>
 
   <div class="card" style="display:none;" id="result-offline">
     <div class="c-title">网络状态 <span class="tag tag-orange">弱网离线</span></div>
-    <div class="notice" style="margin-top:0;">当前无网络，扫码结果已本地缓存，联网后将自动同步，不会丢失。</div>
-    <button class="btn btn-block" style="margin-top:12px;" onclick="location.href='scan.html'">重新扫码</button>
+    <div class="notice" style="margin-top:0;" id="msg-offline">-</div>
+    <button class="btn btn-block" style="margin-top:12px;" onclick="goto('scan.html')">重新扫码</button>
   </div>
 
   <div class="card">
@@ -60,15 +60,43 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
 <script>
-function showResult(kind) {
-  document.getElementById('scan-card').style.display = 'none';
-  document.getElementById('result-ok').style.display = kind === 'ok' ? '' : 'none';
-  document.getElementById('result-bad').style.display = kind === 'bad' ? '' : 'none';
-  document.getElementById('result-offline').style.display = kind === 'offline' ? '' : 'none';
-  if (kind === 'offline') document.getElementById('net-state').textContent = '弱网';
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function set(id, text) { document.getElementById(id).textContent = text || '-'; }
+function goto(page) { location.href = page.indexOf('?') >= 0 ? page : page + '?no=' + NO; }
+
+function renderInfo(d) {
+  set('ticket-no', d.ticketNo);
+  set('ticket-status', d.statusLabel);
+  set('pre-bind-tag', d.preBindTag);
+  set('customer', (d.customerName || '') + ' · ' + (d.customerPhoneMasked || ''));
+  set('address', d.address);
+  set('port', d.splitterPort);
 }
+
+function showCard(kind) {
+  ['ok', 'bad', 'offline'].forEach(function (k) {
+    document.getElementById('result-' + k).style.display = (k === kind) ? '' : 'none';
+  });
+}
+
+function showResult(d) {
+  document.getElementById('scan-card').style.display = 'none';
+  if (d.result === 'MATCH') { set('msg-ok', d.message); showCard('ok'); }
+  else if (d.result === 'MISMATCH') { set('msg-bad', d.message); showCard('bad'); }
+  else { set('msg-offline', d.message); document.getElementById('net-state').textContent = '弱网'; showCard('offline'); }
+}
+
+function doBind(epc, offline) {
+  API.scan.bind(NO, epc, offline).then(showResult).catch(function (e) {
+    alert('扫码失败：' + (e && e.message ? e.message : e));
+  });
+}
+
+API.ticket.detail(NO).then(renderInfo).catch(function (e) { alert('加载工单失败：' + e.message); });
 </script>
 </body>
 </html>

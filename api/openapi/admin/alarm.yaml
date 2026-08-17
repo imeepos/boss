@@ -1,0 +1,47 @@
+paths:
+  /alarms:
+    get:
+      tags: [Alarm]
+      summary: 告警列表(级别: 严重/警告/提示)
+      operationId: listAlarms
+      parameters:
+        - name: level
+          in: query
+          schema: { type: string, enum: [CRITICAL, WARNING, INFO] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /alarms/{alarmId}/ack:
+    post:
+      tags: [Alarm]
+      summary: 告警确认/受理
+      operationId: ackAlarm
+      parameters:
+        - { name: alarmId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /alarms/batch-retest:
+    post:
+      tags: [Alarm]
+      summary: 台风应急·批量复测(按片区下发范围)
+      operationId: batchRetestAlarms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scope]
+              properties:
+                scope: { type: string, description: 下发范围(片区/区域) }
+      responses:
+        '200':
+          description: 批量复测受理
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  taskNo: { type: string, description: 批量复测任务号 }

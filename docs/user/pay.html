@@ -16,28 +16,56 @@
 
   <div class="card">
     <div class="muted" style="font-size:12.5px;">缴费金额</div>
-    <div class="amount" style="font-size:26px;font-weight:700;margin:4px 0 12px;">¥158.00</div>
-    <div class="muted" style="font-size:12px;margin-bottom:14px;">账期 2025-08 · 1000M 极速宽带</div>
+    <div class="amount" style="font-size:26px;font-weight:700;margin:4px 0 12px;" id="amount">¥—</div>
+    <div class="muted" style="font-size:12px;margin-bottom:14px;" id="period">账期 —</div>
     <div class="c-title" style="font-size:13.5px;color:var(--muted);">支付方式</div>
-    <div class="cell"><div class="main"><div class="t">微信支付</div></div><div class="right"><input type="radio" name="pay" checked></div></div>
-    <div class="cell"><div class="main"><div class="t">支付宝</div></div><div class="right"><input type="radio" name="pay"></div></div>
-    <div class="cell"><div class="main"><div class="t">银行卡</div></div><div class="right"><input type="radio" name="pay"></div></div>
-    <button class="btn-block" style="margin-top:14px;" onclick="location.href='payresult.html'">确认支付 ¥158.00</button>
+    <div class="cell"><div class="main"><div class="t">微信支付</div></div><div class="right"><input type="radio" name="pay" value="wechat" checked></div></div>
+    <div class="cell"><div class="main"><div class="t">支付宝</div></div><div class="right"><input type="radio" name="pay" value="alipay"></div></div>
+    <div class="cell"><div class="main"><div class="t">银行卡</div></div><div class="right"><input type="radio" name="pay" value="card"></div></div>
+    <button class="btn-block" style="margin-top:14px;" id="confirm-btn" onclick="pay()">确认支付</button>
   </div>
 
   <div class="card">
     <div class="c-title">缴费记录 <span class="more" onclick="location.href='invoice.html'">开发票</span></div>
-    <div class="cell">
-      <div class="main"><div class="t">¥158 · 2025-07 账期</div><div class="d">微信支付 · 2025-07-25 10:12</div></div>
-      <div class="right"><a href="receipt.html">凭证</a></div>
-    </div>
-    <div class="cell">
-      <div class="main"><div class="t">¥129 · 2025-06 账期</div><div class="d">支付宝 · 2025-06-24 09:40</div></div>
-      <div class="right"><a href="receipt.html">凭证</a></div>
-    </div>
+    <div id="records"></div>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var currentAmount = 0;
+  var currentBillNo = null;
+  var currentPeriod = null;
+
+  function recCell(r) {
+    var receipt = r.payMethod ? '<a href="receipt.html?no=' + encodeURIComponent(r.payNo) + '">凭证</a>' : '';
+    return '<div class="cell"><div class="main"><div class="t">¥' + r.amount + ' · ' + r.period + ' 账期</div>'
+      + '<div class="d">' + r.payMethod + ' · ' + r.paidAt + '</div></div><div class="right">' + receipt + '</div></div>';
+  }
+
+  // 一次性聚合:取当前应缴账单 + 缴费记录
+  API.bill.list().then(function (d) {
+    var unpaid = (d.items || []).filter(function (b) { return b.status === 'UNPAID'; });
+    var target = unpaid[0];
+    currentAmount = target ? target.amount : 0;
+    currentBillNo = target ? target.billNo : null;
+    currentPeriod = target ? target.period : '—';
+    document.getElementById('amount').textContent = '¥' + currentAmount.toFixed(2);
+    document.getElementById('period').textContent = '账期 ' + currentPeriod + ' · ' + (target ? target.productName : '');
+    document.getElementById('confirm-btn').textContent = '确认支付 ¥' + currentAmount.toFixed(2);
+  });
+
+  API.payment.list().then(function (d) {
+    document.getElementById('records').innerHTML = (d.items || []).map(recCell).join('');
+  });
+
+  function pay() {
+    var method = document.querySelector('input[name="pay"]:checked').value;
+    API.payment.create({ billNo: currentBillNo, amount: currentAmount, payMethod: method }).then(function (d) {
+      location.href = 'payresult.html?no=' + encodeURIComponent(d.payNo);
+    });
+  }
+</script>
 </body>
 </html>

@@ -1,0 +1,104 @@
+# 师傅个人域:我的/绩效/排期/接单设置/满意度。
+paths:
+  /profile:
+    get:
+      tags: [Profile]
+      summary: 我的(个人信息 + 本月累计)
+      operationId: getWorkerProfile
+      responses:
+        '200':
+          description: 师傅信息
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/WorkerProfile' }
+
+  /performance:
+    get:
+      tags: [Profile]
+      summary: 绩效明细(提成/排名/评分)
+      operationId: getPerformance
+      parameters:
+        - name: period
+          in: query
+          schema: { type: string, example: '2025-08' }
+      responses:
+        '200':
+          description: 绩效
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Performance' }
+
+  /schedule:
+    get:
+      tags: [Profile]
+      summary: 排期日历(月度标记 + 今日排期)
+      operationId: getSchedule
+      parameters:
+        - name: month
+          in: query
+          schema: { type: string, example: '2025-08' }
+      responses:
+        '200':
+          description: 排期
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Schedule' }
+
+  /schedule/clock:
+    post:
+      tags: [Profile]
+      summary: 工时打卡(上班/下班)
+      operationId: clock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: { type: string, enum: [IN, OUT] }
+      responses:
+        '200':
+          description: 打卡结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clockedAt: { type: string, example: '09:00' }
+
+  /settings:
+    get:
+      tags: [Profile]
+      summary: 接单设置
+      operationId: getSettings
+      responses:
+        '200':
+          description: 接单设置
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Settings' }
+    put:
+      tags: [Profile]
+      summary: 保存接单设置(停接单不影响进行中工单)
+      operationId: saveSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: './schemas.yaml#/components/schemas/Settings' }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /feedbacks:
+    get:
+      tags: [Profile]
+      summary: 满意度反馈(回访/评分/低分复核)
+      operationId: listFeedbacks
+      responses:
+        '200':
+          description: 满意度聚合
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Feedbacks' }

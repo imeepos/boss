@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">订单管理</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,22 +24,15 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="订单号/客户">
-        <select class="input" style="width:140px"><option>全部状态</option><option>待核查</option><option>已预占</option><option>装维中</option><option>已完成</option></select>
+        <input class="input" style="width:220px" id="kw" placeholder="订单号/客户">
+        <select class="input" style="width:140px" id="st"><option value="">全部状态</option><option value="PENDING">待核查</option><option value="RESERVED">已预占</option><option value="INSTALLING">装维中</option><option value="DONE">已完成</option></select>
         <span class="spacer"></span>
-        <button class="btn btn-primary">+ 新建订单</button>
+        <button class="btn btn-primary" id="btn-new">+ 新建订单</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>订单号</th><th>客户</th><th>产品</th><th>地址</th><th>当前环节</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>ORD-20250817-001</td><td>王先生</td><td>1000M</td><td>望京X·3栋501</td><td>扫码绑定(9/12)</td><td><span class="tag tag-orange">装维中</span></td><td><a href="#">跟踪</a> <a href="#">变更</a></td></tr>
-            <tr><td>ORD-20250817-002</td><td>赵女士</td><td>500M</td><td>望京X·5栋302</td><td>端口预占(3/12)</td><td><span class="tag tag-blue">已预占</span></td><td><a href="#">跟踪</a> <a href="#">变更</a> <a href="#">退订</a></td></tr>
-            <tr><td>ORD-20250817-003</td><td>郑先生</td><td>300M</td><td>望京X·12栋906</td><td>待领取(8/12)</td><td><span class="tag tag-orange">装维中</span></td><td><a href="#">跟踪</a> <a href="#">变更</a></td></tr>
-            <tr><td>ORD-20250817-004</td><td>王先生</td><td>宽带变更</td><td>望京X·3栋501</td><td>变更(待领取)</td><td><span class="tag tag-orange">装维中</span></td><td><a href="#">跟踪</a> <a href="#">退订</a></td></tr>
-            <tr><td>ORD-20250817-008</td><td>王先生</td><td>迁址移机</td><td>望京X·4栋</td><td>迁址工单</td><td><span class="tag tag-orange">装维中</span></td><td><a href="#">跟踪</a></td></tr>
-            <tr><td>ORD-20250816-018</td><td>孙先生</td><td>300M</td><td>望京Y·1栋101</td><td>已完成(12/12)</td><td><span class="tag tag-green">已完成</span></td><td><a href="#">跟踪</a></td></tr>
-          </tbody>
+          <tbody id="order-rows"></tbody>
         </table>
       </div>
 
@@ -47,26 +40,82 @@
         <div class="card-title">环节时间轴 <span class="extra">12 环节 · 耗时 / 回退重试</span></div>
         <table class="tbl">
           <thead><tr><th>环节</th><th>完成时间</th><th>耗时</th><th>重试</th><th>结果</th></tr></thead>
-          <tbody>
-            <tr><td>1 下单登记</td><td>08-17 09:02</td><td>—</td><td>—</td><td><span class="tag tag-green">完成</span></td></tr>
-            <tr><td>2 资源核查</td><td>08-17 09:05</td><td>3m</td><td>0</td><td><span class="tag tag-green">完成</span></td></tr>
-            <tr><td>3 端口预占</td><td>08-17 09:09</td><td>4m</td><td>1</td><td><span class="tag tag-green">完成</span></td></tr>
-            <tr><td>4 合同收费</td><td>08-17 09:11</td><td>2m</td><td>0</td><td><span class="tag tag-green">完成</span></td></tr>
-            <tr><td>5 标签预绑定</td><td>08-17 09:12</td><td>3m</td><td>0</td><td><span class="tag tag-green">完成</span></td></tr>
-            <tr><td>6 建认证账号</td><td>08-17 09:15</td><td>3m</td><td>0</td><td><span class="tag tag-green">完成</span></td></tr>
-            <tr><td>7 预下发</td><td>08-17 09:18</td><td>3m</td><td>0</td><td><span class="tag tag-green">完成</span></td></tr>
-            <tr><td>8 派单</td><td>08-17 09:20</td><td>2m</td><td>0</td><td><span class="tag tag-green">完成</span></td></tr>
-            <tr><td>9 扫码绑定</td><td>08-17 10:40</td><td>1h20m</td><td>2</td><td><span class="tag tag-orange">进行中</span></td></tr>
-            <tr><td>10 激活</td><td>—</td><td>—</td><td>—</td><td><span class="tag">待执行</span></td></tr>
-            <tr><td>11 激活回调</td><td>—</td><td>—</td><td>—</td><td><span class="tag">待执行</span></td></tr>
-            <tr><td>12 更新 GIS</td><td>—</td><td>—</td><td>—</td><td><span class="tag">待执行</span></td></tr>
-          </tbody>
+          <tbody id="timeline-rows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+(function () {
+  var STATUS_TAG = { PENDING: 'tag-blue', RESERVED: 'tag-blue', INSTALLING: 'tag-orange', DONE: 'tag-green' };
+  var RESULT_TAG = { DONE: ['tag-green', '完成'], DOING: ['tag-orange', '进行中'], WAIT: ['tag', '待执行'] };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
+
+  function renderOrders(items) {
+    var html = '';
+    for (var i = 0; i < items.length; i++) {
+      var o = items[i];
+      var ops = '';
+      for (var j = 0; j < o.ops.length; j++) {
+        var name = o.ops[j];
+        ops += ' <a href="#" data-op="' + esc(name) + '" data-no="' + esc(o.orderNo) + '">' + esc(name) + '</a>';
+      }
+      html += '<tr><td>' + esc(o.orderNo) + '</td><td>' + esc(o.customer) + '</td><td>' + esc(o.product) + '</td><td>' + esc(o.address)
+        + '</td><td>' + esc(o.stageLabel) + '</td><td>' + tag(STATUS_TAG[o.status] || 'tag-blue', o.statusLabel) + '</td><td>' + ops + '</td></tr>';
+    }
+    document.getElementById('order-rows').innerHTML = html || '<tr><td colspan="7">无数据</td></tr>';
+  }
+
+  function renderTimeline(tl) {
+    var html = '';
+    for (var i = 0; i < tl.length; i++) {
+      var t = tl[i];
+      var meta = RESULT_TAG[t.result] || RESULT_TAG.WAIT;
+      html += '<tr><td>' + t.stageNo + ' ' + esc(t.stageName) + '</td><td>' + esc(t.finishedAt) + '</td><td>' + esc(t.duration)
+        + '</td><td>' + esc(t.retryCount) + '</td><td>' + tag(meta[0], meta[1]) + '</td></tr>';
+    }
+    document.getElementById('timeline-rows').innerHTML = html;
+  }
+
+  function load() {
+    API.order.list(document.getElementById('kw').value.trim(), document.getElementById('st').value)
+      .then(function (r) { renderOrders(r.items); })
+      .catch(function (e) { alert('订单加载失败: ' + e.message); });
+  }
+
+  function track(orderNo) {
+    API.order.detail(orderNo)
+      .then(function (r) { renderTimeline(r.timeline); })
+      .catch(function (e) { alert('时间轴加载失败: ' + e.message); });
+  }
+
+  document.querySelector('.content').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op');
+    var no = a.getAttribute('data-no');
+    if (op === '跟踪') { track(no); return; }
+    alert('订单 ' + no + ' ' + op + ': 演示操作');
+  });
+
+  document.getElementById('btn-new').onclick = function () {
+    API.post('/orders', {}).then(function (r) { alert('新建订单: ' + r.message); load(); });
+  };
+  document.getElementById('kw').addEventListener('input', load);
+  document.getElementById('st').addEventListener('change', load);
+
+  load();
+  track('ORD-20250817-001');
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

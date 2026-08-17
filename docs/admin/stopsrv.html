@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">停复机执行</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,64 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="账号/客户/LOID">
-        <select class="input" style="width:140px"><option>全部状态</option><option>停机成功</option><option>复机成功</option><option>执行失败</option></select>
+        <input class="input" id="kw" style="width:220px" placeholder="账号/客户/LOID">
+        <select class="input" id="st" style="width:140px"><option>全部状态</option><option>停机成功</option><option>复机成功</option><option>执行失败</option></select>
         <span class="spacer"></span>
         <button class="btn btn-primary">重试失败项</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>客户</th><th>LOID</th><th>动作</th><th>触发原因</th><th>网络侧结果</th><th>执行时间</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>吴女士</td><td>LOID-88A5</td><td>停机</td><td>欠费达阈值</td><td><span class="tag tag-green">生效</span></td><td>08:00</td><td><a href="#">详情</a></td></tr>
-            <tr><td>孙先生</td><td>LOID-88A3</td><td>复机</td><td>缴费入账</td><td><span class="tag tag-green">生效</span></td><td>09:30</td><td><a href="#">详情</a></td></tr>
-            <tr><td>李女士</td><td>LOID-88A4</td><td>停机</td><td>欠费达阈值</td><td><span class="tag tag-red">失败</span></td><td>10:10</td><td><a href="#">重试</a></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 停复机执行状态数据渲染(契约: GET /stop-resume-tasks, POST /stop-resume-tasks/{taskId}/retry)
+(function () {
+  var RESULT_TAG = { '生效': 'tag-green', '失败': 'tag-red' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function fail(e) { alert('加载失败: ' + e.message); }
+
+  function load() {
+    API.billing.stopResumeTasks(kw.value.trim(), st.value).then(function (d) {
+      document.getElementById('rows').innerHTML = d.items.map(function (r) {
+        var op = r.netResult === '失败'
+          ? '<a href="#" data-act="retry" data-id="' + esc(r.taskId) + '">重试</a>'
+          : '<a href="#">详情</a>';
+        return '<tr><td>' + esc(r.customerName) + '</td><td>' + esc(r.loid) + '</td><td>' + esc(r.action)
+          + '</td><td>' + esc(r.reason) + '</td><td><span class="tag ' + (RESULT_TAG[r.netResult] || '')
+          + '">' + esc(r.netResult) + '</span></td><td>' + esc(r.executedAt) + '</td><td>' + op + '</td></tr>';
+      }).join('');
+    }).catch(fail);
+  }
+
+  var kw = document.getElementById('kw'), st = document.getElementById('st'), timer = null;
+  kw.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(load, 200);
+  });
+  st.addEventListener('change', load);
+  load();
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
+    ev.preventDefault();
+    API.billing.retryStopResume(a.getAttribute('data-id')).then(function (r) {
+      alert('重试已提交: ' + r.message);
+    }).catch(fail);
+  });
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

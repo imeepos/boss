@@ -25,6 +25,7 @@ a{color:var(--primary);text-decoration:none;}
 .menu-item:hover{background:rgba(255,255,255,.06);color:#fff;}
 .menu-item.active{background:var(--primary);color:#fff;}
 .menu-item .ico{width:16px;text-align:center;opacity:.85;}
+.menu-item .ico img{width:14px;height:14px;display:block;margin:0 auto;}
 
 /* 两级折叠菜单 */
 .mgroup{margin-bottom:2px;}
@@ -32,6 +33,7 @@ a{color:var(--primary);text-decoration:none;}
 .mg-title:hover{background:rgba(255,255,255,.06);color:#fff;}
 .mg-title .ico{width:16px;text-align:center;opacity:.85;}
 .mg-title .arrow{margin-left:auto;font-size:11px;transition:transform .2s;color:rgba(255,255,255,.4);}
+.mg-title .ico img{width:16px;height:16px;display:block;}
 .mg-items{display:none;padding:2px 0 4px;}
 .mg-items .menu-item{padding-left:38px;font-size:13px;}
 .mgroup.open .mg-items{display:block;}
@@ -41,6 +43,7 @@ a{color:var(--primary);text-decoration:none;}
 .header{height:52px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:10;}
 .header .crumb{font-size:14px;font-weight:600;}
 .header .right{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--muted);}
+.header .right .ico img{width:18px;height:18px;display:block;cursor:pointer;}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;}
 
 /* 内容区 */

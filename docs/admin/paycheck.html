@@ -15,31 +15,73 @@
   <div class="main">
     <header class="header">
       <div class="crumb">渠道对账</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head"><h2>缴费渠道对账</h2><div class="desc">线上/线下渠道入账汇总 · 差异挂起 · 人工平账</div></div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="对账批次/渠道">
-        <select class="input" style="width:160px"><option>全部状态</option><option>待对账</option><option>差异挂起</option><option>已平账</option></select>
+        <input class="input" id="kw" style="width:220px" placeholder="对账批次/渠道">
+        <select class="input" id="st" style="width:160px"><option>全部状态</option><option>待对账</option><option>差异挂起</option><option>已平账</option></select>
         <span class="spacer"></span>
         <button class="btn btn-primary">发起对账</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>对账批次</th><th>渠道</th><th>渠道金额</th><th>系统金额</th><th>差异</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>PC-20250816-05</td><td>微信</td><td>¥1,284,320</td><td>¥1,284,320</td><td>¥0</td><td><span class="tag tag-green">已平账</span></td><td><a href="#">详情</a></td></tr>
-            <tr><td>PC-20250816-04</td><td>支付宝</td><td>¥862,005</td><td>¥861,905</td><td>¥-100</td><td><span class="tag tag-red">差异挂起</span></td><td><a href="#">核对</a></td></tr>
-            <tr><td>PC-20250815-09</td><td>线下营业厅</td><td>¥215,600</td><td>¥215,600</td><td>¥0</td><td><span class="tag tag-green">已平账</span></td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+// 渠道对账数据渲染(契约: GET /reconciliations, POST /reconciliations/{batchNo}/settle)
+(function () {
+  var STATUS_TAG = { '已平账': 'tag-green', '差异挂起': 'tag-red', '待对账': 'tag-orange' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function fail(e) { alert('加载失败: ' + e.message); }
+
+  function load() {
+    API.billing.reconciliations(kw.value.trim(), st.value).then(function (d) {
+      document.getElementById('rows').innerHTML = d.items.map(function (r) {
+        var op = r.status === '差异挂起'
+          ? '<a href="#" data-act="settle" data-id="' + esc(r.batchNo) + '">核对</a>'
+          : '<a href="#">详情</a>';
+        return '<tr><td>' + esc(r.batchNo) + '</td><td>' + esc(r.channel) + '</td><td>' + esc(r.channelAmount)
+          + '</td><td>' + esc(r.systemAmount) + '</td><td>' + esc(r.diff)
+          + '</td><td><span class="tag ' + (STATUS_TAG[r.status] || '') + '">' + esc(r.status)
+          + '</span></td><td>' + op + '</td></tr>';
+      }).join('');
+    }).catch(fail);
+  }
+
+  var kw = document.getElementById('kw'), st = document.getElementById('st'), timer = null;
+  kw.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(load, 200);
+  });
+  st.addEventListener('change', load);
+  load();
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
+    ev.preventDefault();
+    API.billing.settle(a.getAttribute('data-id')).then(function (r) {
+      alert('平账已提交: ' + r.message);
+      load();
+    }).catch(fail);
+  });
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

@@ -1,0 +1,132 @@
+paths:
+  /ports:
+    get:
+      tags: [Oss]
+      summary: 端口台账(统计卡 + 清单,status: IDLE/RESERVED/USED/DISABLED)
+      operationId: listPorts
+      responses:
+        '200':
+          description: 端口台账
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats: { type: object }
+                  items: { type: array, items: { type: object } }
+
+  /ports/{portCode}/change-history:
+    get:
+      tags: [Oss]
+      summary: 端口变更历史(变更前后/触发来源)
+      operationId: listPortChangeHistory
+      parameters:
+        - { name: portCode, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /reserves:
+    get:
+      tags: [Oss]
+      summary: 端口预占记录(预占中/已超时/已释放)
+      operationId: listReserves
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /reserves/{reserveId}/release:
+    post:
+      tags: [Oss]
+      summary: 手动释放预占
+      operationId: releaseReserve
+      parameters:
+        - { name: reserveId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /transfers:
+    get:
+      tags: [Oss]
+      summary: 跨区域调配单(资产/端口/设备,归属变更台账)
+      operationId: listTransfers
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/status'
+        - name: type
+          in: query
+          schema: { type: string, enum: [ASSET, PORT, DEVICE] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Oss]
+      summary: 新建调配申请
+      operationId: createTransfer
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /transfers/{transferNo}/approve:
+    post:
+      tags: [Oss]
+      summary: 调配审批通过
+      operationId: approveTransfer
+      parameters:
+        - { name: transferNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /transfers/{transferNo}/reject:
+    post:
+      tags: [Oss]
+      summary: 调配审批驳回
+      operationId: rejectTransfer
+      parameters:
+        - { name: transferNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /olt-devices:
+    get:
+      tags: [Oss]
+      summary: OLT 设备监控(统计卡 + 状态/丢包率/光功率/告警)
+      operationId: listOltDevices
+      responses:
+        '200':
+          description: OLT 设备列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats: { type: object }
+                  items: { type: array, items: { type: object } }
+
+  /lo-accounts:
+    get:
+      tags: [Oss]
+      summary: 认证账号 LOID 列表(AAA 域,挂 oss 页面)
+      operationId: listLoAccounts
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /expansions:
+    get:
+      tags: [Oss]
+      summary: 扩容申请单列表
+      operationId: listExpansions
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Oss]
+      summary: 新建扩容申请
+      operationId: createExpansion
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

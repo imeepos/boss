@@ -11,40 +11,64 @@
   <div class="topbar">
     <a class="back" href="home.html">&lsaquo;</a>
     <div class="t">排期日历</div>
-    <span class="act">2025-08</span>
+    <span class="act" id="monthLbl">2025-08</span>
   </div>
 
-  <div class="card">
-    <div class="cal">
-      <div class="h">一</div><div class="h">二</div><div class="h">三</div><div class="h">四</div><div class="h">五</div><div class="h">六</div><div class="h">日</div>
-      <div class="d"></div><div class="d"></div><div class="d"></div><div class="d"></div>
-      <div class="d">1</div><div class="d">2</div><div class="d">3</div>
-      <div class="d">4</div><div class="d todo">5</div><div class="d todo">6</div><div class="d">7</div>
-      <div class="d">8</div><div class="d">9</div><div class="d todo">10</div>
-      <div class="d">11</div><div class="d">12</div><div class="d">13</div><div class="d">14</div>
-      <div class="d">15</div><div class="d">16</div><div class="d today">17</div>
-      <div class="d">18</div><div class="d">19</div><div class="d">20</div><div class="d">21</div>
-      <div class="d">22</div><div class="d">23</div><div class="d">24</div><div class="d">25</div>
-      <div class="d">26</div><div class="d">27</div><div class="d">28</div><div class="d">29</div>
-      <div class="d todo">30</div><div class="d">31</div>
-    </div>
-  </div>
+  <div class="card" id="calCard"></div>
 
-  <div class="card">
-    <div class="c-title">今日排期 <span class="more">3 单</span></div>
-    <div class="kv"><span class="k">10:00</span><span class="v">ORD-20250817-001 · 3栋501</span></div>
-    <div class="kv"><span class="k">14:00</span><span class="v">ORD-20250817-002 · 5栋302</span></div>
-    <div class="kv"><span class="k">16:00</span><span class="v">ORD-20250817-003 · 12栋906</span></div>
+  <div class="card" id="todayCard">
+    <div class="c-title">今日排期</div>
   </div>
 
   <div class="card">
     <div class="c-title">工时打卡</div>
-    <button class="btn btn-block" onclick="alert('上班打卡成功。')">上班打卡</button>
-    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="alert('下班打卡成功。')">下班打卡</button>
+    <button class="btn btn-block" onclick="clock('IN')">上班打卡</button>
+    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="clock('OUT')">下班打卡</button>
   </div>
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+function renderCal(month, busy) {
+  var days = ['一', '二', '三', '四', '五', '六', '日'];
+  var html = '<div class="cal">';
+  days.forEach(function (h) { html += '<div class="h">' + h + '</div>'; });
+  var total = 31;
+  for (var i = 1; i <= total; i++) {
+    var cls = 'd';
+    if (busy.indexOf(i) !== -1) cls += ' todo';
+    html += '<div class="' + cls + '">' + i + '</div>';
+  }
+  html += '</div>';
+  document.getElementById('calCard').innerHTML = html;
+  document.getElementById('monthLbl').textContent = month;
+}
+
+function renderToday(items) {
+  var html = '<div class="c-title">今日排期 <span class="more">' + items.length + ' 单</span></div>';
+  items.forEach(function (it) {
+    html += '<div class="kv"><span class="k">' + it.time + '</span>' +
+      '<span class="v">' + it.ticketNo + ' · ' + it.address + '</span></div>';
+  });
+  document.getElementById('todayCard').innerHTML = html;
+}
+
+function clock(type) {
+  API.profile.clock(type).then(function (r) {
+    alert((type === 'IN' ? '上班打卡成功' : '下班打卡成功') + '：' + r.clockedAt);
+  }).catch(function (e) {
+    alert('打卡失败：' + e.message);
+  });
+}
+
+API.profile.schedule().then(function (d) {
+  renderCal(d.month, d.busyDays);
+  renderToday(d.today);
+}).catch(function (e) {
+  alert('排期加载失败：' + e.message);
+});
+</script>
 </body>
 </html>

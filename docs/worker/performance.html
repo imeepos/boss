@@ -11,10 +11,10 @@
   <div class="topbar">
     <a class="back" href="profile.html">&lsaquo;</a>
     <div class="t">绩效明细</div>
-    <span class="act">2025-08</span>
+    <span class="act" id="periodLbl">2025-08</span>
   </div>
 
-  <div class="stats-card" style="margin-top:14px;">
+  <div class="stats-card" style="margin-top:14px;" id="summaryCard">
     <div class="row"><span class="title">本月绩效</span><span class="date">2025-08</span></div>
     <div class="stats">
       <div><div class="v blue">46</div><div class="k">完成</div></div>
@@ -23,23 +23,57 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="commissionCard">
     <div class="c-title">提成明细</div>
-    <div class="kv"><span class="k">装机提成</span><span class="v">46 × ¥30 = ¥1380</span></div>
-    <div class="kv"><span class="k">抢修提成</span><span class="v">12 × ¥20 = ¥240</span></div>
-    <div class="kv"><span class="k">满意度奖励</span><span class="v">+¥120</span></div>
-    <div class="kv"><span class="k">合计</span><span class="v" style="color:var(--primary);font-weight:700;">¥1740</span></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="rankingCard">
     <div class="c-title">小组排名</div>
-    <div class="kv"><span class="k">张师傅（本人）</span><span class="v">#1</span></div>
-    <div class="kv"><span class="k">李师傅</span><span class="v">#2</span></div>
-    <div class="kv"><span class="k">王师傅</span><span class="v">#3</span></div>
   </div>
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+function renderSummary(d) {
+  document.getElementById('periodLbl').textContent = d.period;
+  var s = d.summary;
+  document.getElementById('summaryCard').innerHTML =
+    '<div class="row"><span class="title">本月绩效</span><span class="date">' + d.period + '</span></div>' +
+    '<div class="stats">' +
+    '<div><div class="v blue">' + s.finished + '</div><div class="k">完成</div></div>' +
+    '<div><div class="v green">' + s.onTimeRate + '%</div><div class="k">按时率</div></div>' +
+    '<div><div class="v orange">' + s.score + '</div><div class="k">评分</div></div>' +
+    '</div>';
+}
+
+function renderCommissions(items, total) {
+  var html = '<div class="c-title">提成明细</div>';
+  items.forEach(function (c) {
+    html += '<div class="kv"><span class="k">' + c.name + '</span>' +
+      '<span class="v">' + (c.formula ? c.formula + ' = ' : '') + '¥' + c.amount + '</span></div>';
+  });
+  html += '<div class="kv"><span class="k">合计</span>' +
+    '<span class="v" style="color:var(--primary);font-weight:700;">¥' + total + '</span></div>';
+  document.getElementById('commissionCard').innerHTML = html;
+}
+
+function renderRanking(items) {
+  var html = '<div class="c-title">小组排名</div>';
+  items.forEach(function (r) {
+    html += '<div class="kv"><span class="k">' + r.name + '</span><span class="v">#' + r.rank + '</span></div>';
+  });
+  document.getElementById('rankingCard').innerHTML = html;
+}
+
+API.profile.performance().then(function (d) {
+  renderSummary(d);
+  renderCommissions(d.commissions, d.totalAmount);
+  renderRanking(d.ranking);
+}).catch(function (e) {
+  alert('绩效加载失败：' + e.message);
+});
+</script>
 </body>
 </html>

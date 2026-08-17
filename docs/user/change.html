@@ -16,32 +16,58 @@
 
   <div class="card">
     <div class="c-title">当前套餐</div>
-    <div class="cell"><div class="main"><div class="t">1000M 极速宽带</div><div class="d">¥199/月 · 合约至 2026-08</div></div><div class="right"><span class="tag tag-green">在网</span></div></div>
+    <div class="cell"><div class="main"><div class="t" id="cur-name">—</div><div class="d" id="cur-desc">—</div></div><div class="right"><span class="tag tag-green">在网</span></div></div>
   </div>
 
   <div class="card">
     <div class="c-title">选择新套餐</div>
-    <div class="cell"><div class="main"><div class="t">500M 畅享宽带</div><div class="d">¥129/月 · 降档</div></div><div class="right"><input type="radio" name="plan"></div></div>
-    <div class="cell"><div class="main"><div class="t">1000M 极速宽带</div><div class="d">¥199/月 · 续约</div></div><div class="right"><input type="radio" name="plan"></div></div>
-    <div class="cell"><div class="main"><div class="t">2000M 光速宽带</div><div class="d">¥299/月 · 升档（含全屋 WiFi + 云盘）</div></div><div class="right"><input type="radio" name="plan" checked></div></div>
+    <div id="plan-options"></div>
   </div>
 
   <div class="card">
     <div class="c-title">生效方式</div>
-    <div class="cell"><div class="main"><div class="t">即时生效</div><div class="d">当月按新旧价按日折算</div></div><div class="right"><input type="radio" name="eff" checked></div></div>
-    <div class="cell"><div class="main"><div class="t">预约生效</div><div class="d">次月 1 日生效，当月按原价</div></div><div class="right"><input type="radio" name="eff"></div></div>
+    <div class="cell"><div class="main"><div class="t">即时生效</div><div class="d">当月按新旧价按日折算</div></div><div class="right"><input type="radio" name="eff" value="immediate" checked></div></div>
+    <div class="cell"><div class="main"><div class="t">预约生效</div><div class="d">次月 1 日生效，当月按原价</div></div><div class="right"><input type="radio" name="eff" value="scheduled"></div></div>
   </div>
 
   <div class="card">
     <div class="c-title">静态 IP 申请 <span class="tag tag-gray">可选</span></div>
-    <div class="cell"><div class="main"><div class="t">公网静态 IPv4</div><div class="d">¥30/月 · 需审批，1~2 个工作日</div></div><div class="right"><input type="checkbox"></div></div>
+    <div class="cell"><div class="main"><div class="t">公网静态 IPv4</div><div class="d">¥30/月 · 需审批，1~2 个工作日</div></div><div class="right"><input type="checkbox" id="static-ip"></div></div>
   </div>
 
   <div style="margin:12px 14px 0;">
-    <button class="btn-block" onclick="location.href='payresult.html'">提交变更申请 · 生成变更单 ORD-20250817-004</button>
+    <button class="btn-block" onclick="submit()">提交变更申请</button>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var selectedPlan = null;
+  API.profile.get().then(function (d) {
+    var p = d.plan || {};
+    document.getElementById('cur-name').textContent = p.name;
+    document.getElementById('cur-desc').textContent = '¥' + p.monthlyFee + '/月 · 合约至 ' + p.contractEnd;
+  });
+  API.product.list().then(function (d) {
+    var seen = {};
+    document.getElementById('plan-options').innerHTML = (d.items || []).map(function (p) {
+      var tag = p.monthlyFee > 199 ? '升档（含全屋 WiFi + 云盘）' : (p.productId === 'P-1000' ? '续约' : '降档');
+      var checked = p.productId === 'P-2000' || p.monthlyFee === 299 ? 'checked' : '';
+      if (!selectedPlan && checked) selectedPlan = p.productId;
+      return '<div class="cell"><div class="main"><div class="t">' + p.name + '</div><div class="d">¥' + p.monthlyFee + '/月 · ' + tag + '</div></div>'
+        + '<div class="right"><input type="radio" name="plan" value="' + p.productId + '" ' + checked + ' onchange="selectedPlan=this.value"></div></div>';
+    }).join('');
+  });
+  function submit() {
+    var eff = document.querySelector('input[name="eff"]:checked').value;
+    var target = selectedPlan || (document.querySelector('input[name="plan"]:checked') || {}).value || 'P-1000';
+    API.plan.change('PLAN-1000', {
+      targetPlanId: target,
+      effectiveMode: eff,
+      staticIp: document.getElementById('static-ip').checked,
+    }).then(function (o) { location.href = 'order.html?no=' + encodeURIComponent(o.orderNo); });
+  }
+</script>
 </body>
 </html>

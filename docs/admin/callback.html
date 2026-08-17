@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">激活回调</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -24,24 +24,71 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="订单号/回调 ID">
-        <select class="input" style="width:140px"><option>全部状态</option><option>成功</option><option>失败</option><option>重试中</option></select>
+        <input class="input" style="width:220px" id="kw" placeholder="订单号/回调 ID">
+        <select class="input" style="width:140px" id="st"><option value="">全部状态</option><option value="SUCCESS">成功</option><option value="FAILED">失败</option><option value="RETRYING">重试中</option></select>
         <span class="spacer"></span>
-        <button class="btn btn-primary">重试失败项</button>
+        <button class="btn btn-primary" id="btn-retry">重试失败项</button>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>回调 ID</th><th>订单号</th><th>来源</th><th>结果</th><th>重试次数</th><th>时间</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>CB-8841</td><td>ORD-20250817-001</td><td>aaa</td><td><span class="tag tag-red">失败</span></td><td>1</td><td>10:32</td><td><a href="#">重试</a></td></tr>
-            <tr><td>CB-8842</td><td>ORD-20250816-018</td><td>order</td><td><span class="tag tag-red">失败</span></td><td>2</td><td>09:12</td><td><a href="#">重试</a></td></tr>
-            <tr><td>CB-8843</td><td>ORD-20250816-021</td><td>aaa</td><td><span class="tag tag-orange">重试中</span></td><td>1</td><td>08:50</td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+(function () {
+  var ST_TAG = { SUCCESS: 'tag-green', FAILED: 'tag-red', RETRYING: 'tag-orange' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
+
+  function load() {
+    API.order.callbacks(document.getElementById('kw').value.trim(), document.getElementById('st').value)
+      .then(function (r) {
+        var html = '';
+        for (var i = 0; i < r.items.length; i++) {
+          var c = r.items[i];
+          html += '<tr><td>' + esc(c.callbackId) + '</td><td>' + esc(c.orderNo) + '</td><td>' + esc(c.source)
+            + '</td><td>' + tag(ST_TAG[c.result] || 'tag-blue', c.resultLabel) + '</td><td>' + esc(c.retryCount)
+            + '</td><td>' + esc(c.time)
+            + '</td><td><a href="#" class="op" data-id="' + esc(c.callbackId) + '" data-retry="' + (c.result === 'FAILED' ? '1' : '') + '">' + esc(c.op) + '</a></td></tr>';
+        }
+        document.getElementById('rows').innerHTML = html || '<tr><td colspan="7">无数据</td></tr>';
+      })
+      .catch(function (e) { alert('回调日志加载失败: ' + e.message); });
+  }
+
+  function retry(id) {
+    API.order.retryCallback(id)
+      .then(function (r) { alert('回调 ' + id + ' 重试: ' + r.message); load(); })
+      .catch(function (e) { alert('重试失败: ' + e.message); });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A') return;
+    ev.preventDefault();
+    if (a.getAttribute('data-retry')) retry(a.getAttribute('data-id'));
+    else alert('回调 ' + a.getAttribute('data-id') + ' 详情: 演示操作');
+  });
+
+  document.getElementById('btn-retry').onclick = function () {
+    var first = document.querySelector('#rows a[data-retry="1"]');
+    if (first) retry(first.getAttribute('data-id'));
+    else alert('无失败项');
+  };
+  document.getElementById('kw').addEventListener('input', load);
+  document.getElementById('st').addEventListener('change', load);
+
+  load();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

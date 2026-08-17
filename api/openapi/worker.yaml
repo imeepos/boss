@@ -1,0 +1,104 @@
+openapi: 3.0.3
+info:
+  title: BOSS 师傅端(装维门户) REST API
+  version: 1.0.0
+  description: |
+    师傅端(worker 端,对应 docs/worker/*.html 全量页面)对外 REST 契约。
+    权威字段/状态枚举见 docs/contract/{terms,fields,domain-map}.md;
+    本文件为 APISIX 路由与假数据 mock 的单一事实源。
+    接口按域拆分至 worker/ 目录,本文件仅做聚合(内联 $ref)。
+    前缀 /api/worker/v1 与用户端 /api/v1 隔离,避免网关路由冲突。
+servers:
+  - url: /api/worker/v1
+    description: 师傅端接口前缀(经 APISIX 网关 /api/worker/v1)
+
+tags:
+  - name: Auth
+    description: 登录 / 验证码 / 退出
+  - name: Home
+    description: 工作台首页(今日业绩 + 进行中工单)
+  - name: Ticket
+    description: 工单列表 / 详情(12 环节·报障 6 环节) / 领取 / 转单 / 改约 / 签到 / 导航
+  - name: Hall
+    description: 任务池(跨区公开可抢工单)
+  - name: ScanBind
+    description: 扫码绑定(环节 9) / 异常上报 / 拍摄取证 / 结果上报 / 激活(环节 10) / 电子签收 / 现场收款
+  - name: Asset
+    description: 拆机 / 换件 / 旧件回收 / 领料借还 / 维护清单 / 现场工具测速
+  - name: Profile
+    description: 我的 / 绩效 / 排期日历 / 接单设置 / 满意度反馈
+  - name: Misc
+    description: 消息 / 公告 / 排障手册 / 联系调度 / 安全上报
+
+paths:
+  # ---------- Auth ----------
+  /auth/sms-code: { $ref: './worker/auth.yaml#/paths/~1auth~1sms-code' }
+  /auth/login: { $ref: './worker/auth.yaml#/paths/~1auth~1login' }
+  /auth/logout: { $ref: './worker/auth.yaml#/paths/~1auth~1logout' }
+
+  # ---------- Home ----------
+  /home: { $ref: './worker/ticket.yaml#/paths/~1home' }
+
+  # ---------- Ticket ----------
+  /tickets: { $ref: './worker/ticket.yaml#/paths/~1tickets' }
+  /tickets/history: { $ref: './worker/ticket.yaml#/paths/~1tickets~1history' }
+  /tickets/{ticketNo}: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}' }
+  /tickets/{ticketNo}/accept: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1accept' }
+  /tickets/{ticketNo}/checkin: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1checkin' }
+  /tickets/{ticketNo}/navi: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1navi' }
+  /tickets/{ticketNo}/transfer: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1transfer' }
+  /tickets/{ticketNo}/reschedule: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1reschedule' }
+  /tickets/{ticketNo}/rollback: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1rollback' }
+  /tickets/{ticketNo}/retry: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1retry' }
+  /tickets/{ticketNo}/complaint: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1complaint' }
+  /tickets/{ticketNo}/repair-report: { $ref: './worker/ticket.yaml#/paths/~1tickets~1{ticketNo}~1repair-report' }
+
+  # ---------- Hall ----------
+  /hall: { $ref: './worker/ticket.yaml#/paths/~1hall' }
+  /hall/{ticketNo}/grab: { $ref: './worker/ticket.yaml#/paths/~1hall~1{ticketNo}~1grab' }
+
+  # ---------- ScanBind ----------
+  /tickets/{ticketNo}/scan-bind: { $ref: './worker/scan.yaml#/paths/~1tickets~1{ticketNo}~1scan-bind' }
+  /tickets/{ticketNo}/scan-abnormal: { $ref: './worker/scan.yaml#/paths/~1tickets~1{ticketNo}~1scan-abnormal' }
+  /tickets/{ticketNo}/photos: { $ref: './worker/scan.yaml#/paths/~1tickets~1{ticketNo}~1photos' }
+  /tickets/{ticketNo}/report: { $ref: './worker/scan.yaml#/paths/~1tickets~1{ticketNo}~1report' }
+  /tickets/{ticketNo}/activation: { $ref: './worker/scan.yaml#/paths/~1tickets~1{ticketNo}~1activation' }
+  /tickets/{ticketNo}/activate: { $ref: './worker/scan.yaml#/paths/~1tickets~1{ticketNo}~1activate' }
+  /tickets/{ticketNo}/sign: { $ref: './worker/scan.yaml#/paths/~1tickets~1{ticketNo}~1sign' }
+  /tickets/{ticketNo}/charge: { $ref: './worker/scan.yaml#/paths/~1tickets~1{ticketNo}~1charge' }
+
+  # ---------- Asset ----------
+  /tickets/{ticketNo}/dismantle/scan: { $ref: './worker/asset.yaml#/paths/~1tickets~1{ticketNo}~1dismantle~1scan' }
+  /tickets/{ticketNo}/replace: { $ref: './worker/asset.yaml#/paths/~1tickets~1{ticketNo}~1replace' }
+  /assets/{epc}/return: { $ref: './worker/asset.yaml#/paths/~1assets~1{epc}~1return' }
+  /materials: { $ref: './worker/asset.yaml#/paths/~1materials' }
+  /materials/{itemId}/out: { $ref: './worker/asset.yaml#/paths/~1materials~1{itemId}~1out' }
+  /materials/tools: { $ref: './worker/asset.yaml#/paths/~1materials~1tools' }
+  /materials/tools/{toolId}/borrow: { $ref: './worker/asset.yaml#/paths/~1materials~1tools~1{toolId}~1borrow' }
+  /materials/tools/{toolId}/give-back: { $ref: './worker/asset.yaml#/paths/~1materials~1tools~1{toolId}~1give-back' }
+  /maintenance: { $ref: './worker/asset.yaml#/paths/~1maintenance' }
+  /tickets/{ticketNo}/measure: { $ref: './worker/asset.yaml#/paths/~1tickets~1{ticketNo}~1measure' }
+  /tickets/{ticketNo}/resources: { $ref: './worker/asset.yaml#/paths/~1tickets~1{ticketNo}~1resources' }
+
+  # ---------- Profile ----------
+  /profile: { $ref: './worker/profile.yaml#/paths/~1profile' }
+  /performance: { $ref: './worker/profile.yaml#/paths/~1performance' }
+  /schedule: { $ref: './worker/profile.yaml#/paths/~1schedule' }
+  /schedule/clock: { $ref: './worker/profile.yaml#/paths/~1schedule~1clock' }
+  /settings: { $ref: './worker/profile.yaml#/paths/~1settings' }
+  /feedbacks: { $ref: './worker/profile.yaml#/paths/~1feedbacks' }
+
+  # ---------- Misc ----------
+  /messages: { $ref: './worker/misc.yaml#/paths/~1messages' }
+  /messages/read-all: { $ref: './worker/misc.yaml#/paths/~1messages~1read-all' }
+  /messages/clear: { $ref: './worker/misc.yaml#/paths/~1messages~1clear' }
+  /notices: { $ref: './worker/misc.yaml#/paths/~1notices' }
+  /help/faq: { $ref: './worker/misc.yaml#/paths/~1help~1faq' }
+  /service/messages: { $ref: './worker/misc.yaml#/paths/~1service~1messages' }
+  /safety/checks: { $ref: './worker/misc.yaml#/paths/~1safety~1checks' }
+
+components:
+  securitySchemes:
+    $ref: './worker/schemas.yaml#/components/securitySchemes'
+  schemas:
+    $ref: './worker/schemas.yaml#/components/schemas'

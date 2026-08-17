@@ -14,11 +14,7 @@
     <span class="act">全部</span>
   </div>
 
-  <div class="card">
-    <a class="cell" href="#"><div class="main"><div class="t">台风季弱电井防水作业提示</div><div class="d">08-16 · 安全作业提醒</div></div><div class="right">&rsaquo;</div></a>
-    <a class="cell" href="#"><div class="main"><div class="t">本周 GPU 千兆套餐物料配发说明</div><div class="d">08-15 · 物料公告</div></div><div class="right">&rsaquo;</div></a>
-    <a class="cell" href="#"><div class="main"><div class="t">扫码绑定弱网离线功能上线</div><div class="d">08-14 · 功能公告</div></div><div class="right">&rsaquo;</div></a>
-  </div>
+  <div class="card" id="listCard"></div>
 
   <div class="card">
     <div class="notice">公告与消息中心联动，重要通告同步推送到师傅端。</div>
@@ -26,6 +22,24 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+function render(items) {
+  var html = '';
+  items.forEach(function (n) {
+    html += '<a class="cell" href="#"><div class="main"><div class="t">' + n.title + '</div>' +
+      '<div class="d">' + n.publishedAt + ' · ' + n.category + '</div></div>' +
+      '<div class="right">&rsaquo;</div></a>';
+  });
+  document.getElementById('listCard').innerHTML = html || '<div class="notice">暂无公告</div>';
+}
+
+API.misc.notices().then(function (d) {
+  render(d.items);
+}).catch(function (e) {
+  alert('公告加载失败：' + e.message);
+});
+</script>
 </body>
 </html>

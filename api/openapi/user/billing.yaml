@@ -1,0 +1,164 @@
+paths:
+  /bills:
+    get:
+      tags: [Billing]
+      summary: 我的账单列表
+      operationId: listBills
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [recent, paid, unpaid] }
+      responses:
+        '200':
+          description: 账单列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currentDue:
+                    type: number
+                    example: 158.0
+                  currentPeriod: { type: string, example: '2025-08' }
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Bill' }
+
+  /bills/{billNo}:
+    get:
+      tags: [Billing]
+      summary: 账单明细
+      operationId: getBill
+      parameters:
+        - name: billNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 账单明细
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/BillDetail' }
+
+  /payments:
+    post:
+      tags: [Billing]
+      summary: 发起缴费(生成支付单)
+      operationId: createPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [billNo, amount, payMethod]
+              properties:
+                billNo: { type: string }
+                amount: { type: number }
+                payMethod: { type: string, enum: [wechat, alipay, card] }
+      responses:
+        '200':
+          description: 支付单已生成
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/PaymentResult' }
+
+    get:
+      tags: [Billing]
+      summary: 缴费记录
+      operationId: listPayments
+      responses:
+        '200':
+          description: 缴费记录
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/PaymentRecord' }
+
+  /payments/{payNo}/receipt:
+    get:
+      tags: [Billing]
+      summary: 缴费凭证
+      operationId: getReceipt
+      parameters:
+        - name: payNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 缴费凭证
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Receipt' }
+
+  /topups:
+    get:
+      tags: [Billing]
+      summary: 余额信息
+      operationId: getBalance
+      responses:
+        '200':
+          description: 账户余额
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Balance' }
+
+    post:
+      tags: [Billing]
+      summary: 余额充值
+      operationId: topup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, payMethod]
+              properties:
+                amount: { type: number }
+                payMethod: { type: string, enum: [wechat, alipay, card, prepaid] }
+      responses:
+        '200':
+          description: 充值成功
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/PaymentResult' }
+
+  /invoices:
+    get:
+      tags: [Billing]
+      summary: 电子发票(开票信息 + 可开票账期 + 记录)
+      operationId: listInvoices
+      responses:
+        '200':
+          description: 发票聚合
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/InvoiceOverview' }
+
+    post:
+      tags: [Billing]
+      summary: 申请开票
+      operationId: applyInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [billNo]
+              properties:
+                billNo: { type: string }
+      responses:
+        '200':
+          description: 已申请
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+

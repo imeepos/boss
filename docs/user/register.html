@@ -15,6 +15,8 @@
   .code-row input{flex:1;}
   .code-btn{width:110px;flex-shrink:0;border:1px solid var(--primary);color:var(--primary);
     background:#fff;border-radius:8px;font-size:12.5px;cursor:pointer;}
+  .lg-extra{display:flex;justify-content:space-between;font-size:12.5px;margin:8px 0 18px;color:var(--muted);}
+  .err{color:var(--err);font-size:12.5px;min-height:16px;margin:0 0 6px;}
 </style>
 </head>
 <body>
@@ -24,29 +26,49 @@
     <p class="sub">手机号注册 · 注册即享宽带自助服务</p>
     <div class="field">
       <label>手机号</label>
-      <input type="tel" placeholder="请输入手机号">
+      <input type="tel" id="phone" placeholder="请输入手机号">
     </div>
     <div class="field">
       <label>验证码</label>
       <div class="code-row">
-        <input type="text" placeholder="6 位验证码">
-        <button class="code-btn">获取验证码</button>
+        <input type="text" id="sms-code" placeholder="6 位验证码">
+        <button type="button" class="code-btn" onclick="sendCode()">获取验证码</button>
       </div>
     </div>
     <div class="field">
       <label>设置密码（≥10 位，含大小写与数字）</label>
-      <input type="password" placeholder="请设置登录密码">
+      <input type="password" id="pwd" placeholder="请设置登录密码">
     </div>
     <div class="field">
       <label>确认密码</label>
-      <input type="password" placeholder="请再次输入密码">
+      <input type="password" id="pwd2" placeholder="请再次输入密码">
     </div>
-    <div class="lg-extra" style="display:flex;justify-content:space-between;font-size:12.5px;margin:8px 0 18px;color:var(--muted);">
+    <div class="lg-extra">
       <label><input type="checkbox" checked> 已阅读并同意<a href="agreement.html">《用户协议》</a></label>
       <a href="login.html">已有账号，去登录</a>
     </div>
-    <button class="btn-block" onclick="location.href='home.html'">注册并登录</button>
+    <div class="err" id="err"></div>
+    <button class="btn-block" onclick="register()">注册并登录</button>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+  function el(id) { return document.getElementById(id); }
+  function err(m) { el('err').textContent = m || ''; }
+  function sendCode() {
+    if (!el('phone').value.trim()) { err('请输入手机号'); return; }
+    API.auth.smsCode(el('phone').value.trim(), 'register').then(function () { err('验证码已发送'); });
+  }
+  function register() {
+    err('');
+    var p = el('phone').value.trim(), c = el('sms-code').value.trim(), pwd = el('pwd').value, pwd2 = el('pwd2').value;
+    if (!p || !c || !pwd) { err('请填写完整'); return; }
+    if (pwd !== pwd2) { err('两次密码不一致'); return; }
+    API.auth.register(p, c, pwd).then(function (d) {
+      API.setToken(d.token);
+      location.href = 'home.html';
+    }).catch(function () { err('注册失败'); });
+  }
+</script>
 </body>
 </html>

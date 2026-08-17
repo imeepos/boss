@@ -1,0 +1,189 @@
+# 资产域:拆机解绑/换件/旧件回收/领料借还/维护清单/现场工具。
+paths:
+  /tickets/{ticketNo}/dismantle/scan:
+    post:
+      tags: [Asset]
+      summary: 拆机扫码解绑(强制,未解绑拆机被系统拦截)
+      operationId: dismantleScan
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [epc]
+              properties:
+                epc: { type: string }
+      responses:
+        '200':
+          description: 解绑结果(端口释放)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unbound: { type: boolean }
+                  portReleased: { type: boolean }
+
+  /tickets/{ticketNo}/replace:
+    get:
+      tags: [Asset]
+      summary: 换件登记预取(旧件/新件/流程步骤)
+      operationId: getReplace
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 换件信息
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Replace' }
+    post:
+      tags: [Asset]
+      summary: 完成换件(旧件返修,新件沿用绑定,四码自动迁移)
+      operationId: submitReplace
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldEpc: { type: string }
+                newEpc: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /assets/{epc}/return:
+    post:
+      tags: [Asset]
+      summary: 旧件返库登记(返修件与拆机件分流,扫码留痕)
+      operationId: returnAsset
+      parameters:
+        - name: epc
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /materials:
+    get:
+      tags: [Asset]
+      summary: 今日领用清单(含已回收统计)
+      operationId: listMaterials
+      responses:
+        '200':
+          description: 领用清单
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Materials' }
+
+  /materials/{itemId}/out:
+    post:
+      tags: [Asset]
+      summary: 领料扫码出库
+      operationId: materialOut
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /materials/tools:
+    get:
+      tags: [Asset]
+      summary: 工具借还状态
+      operationId: listTools
+      responses:
+        '200':
+          description: 工具列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Tool' }
+
+  /materials/tools/{toolId}/borrow:
+    post:
+      tags: [Asset]
+      summary: 工具借用登记
+      operationId: borrowTool
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /materials/tools/{toolId}/give-back:
+    post:
+      tags: [Asset]
+      summary: 工具归还登记
+      operationId: giveBackTool
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /maintenance:
+    get:
+      tags: [Asset]
+      summary: 维护清单(按健康度/故障率/年限排序的待替换设备)
+      operationId: listMaintenance
+      responses:
+        '200':
+          description: 维护清单
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/MaintenanceItem' }
+
+  /tickets/{ticketNo}/measure:
+    get:
+      tags: [Asset]
+      summary: 现场测速/光功率/丢包(重新测速同此接口)
+      operationId: measure
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 测量结果
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Measure' }
+
+  /tickets/{ticketNo}/resources:
+    get:
+      tags: [Asset]
+      summary: 片区资源查询(空闲端口/最近分光器/PON 空闲口)
+      operationId: queryResources
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 资源信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  idlePorts: { type: integer }
+                  nearestSplitter: { type: string, example: SPL-03-07 }
+                  idlePonPorts: { type: array, items: { type: string } }

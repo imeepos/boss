@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">业务参数</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -27,16 +27,10 @@
         <div class="card-title">业务参数配置 <span class="extra">热更新 · 即时生效</span></div>
         <table class="tbl">
           <thead><tr><th style="width:220px;">参数</th><th>值</th><th>说明</th></tr></thead>
-          <tbody>
-            <tr><td>欠费停机阈值</td><td><input class="input" style="width:120px" value="30 天"></td><td>欠费达到阈值自动停机</td></tr>
-            <tr><td>端口预占有效期</td><td><input class="input" style="width:120px" value="24 小时"></td><td>超时自动释放端口</td></tr>
-            <tr><td>四码对账周期</td><td><input class="input" style="width:120px" value="每日"></td><td>自动核对四码关系</td></tr>
-            <tr><td>报告生成周期</td><td><input class="input" style="width:120px" value="周报"></td><td>经营分析报告自动生成</td></tr>
-            <tr><td>复机恢复时限</td><td><input class="input" style="width:120px" value="5 分钟"></td><td>缴费后网络侧恢复时限</td></tr>
-          </tbody>
+          <tbody id="paramBody"></tbody>
         </table>
         <div style="margin-top:14px;">
-          <button class="btn btn-primary">保存</button>
+          <button class="btn btn-primary" id="saveBtn">保存</button>
           <button class="btn">重置</button>
         </div>
       </div>
@@ -44,6 +38,36 @@
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function rowHtml(p) {
+  return '<tr>' +
+    '<td>' + esc(p.label) + '</td>' +
+    '<td><input class="input" style="width:120px" data-key="' + esc(p.key) + '" value="' + esc(p.value) + '"></td>' +
+    '<td>' + esc(p.desc) + '</td>' +
+  '</tr>';
+}
+function render(items) {
+  document.getElementById('paramBody').innerHTML = items.map(rowHtml).join('');
+}
+API.sys.params().then(function (r) { render(r.items); })
+  .catch(function (err) { alert('加载失败：' + err.message); });
+document.getElementById('saveBtn').onclick = function () {
+  var inputs = document.querySelectorAll('#paramBody input[data-key]');
+  var jobs = [];
+  for (var i = 0; i < inputs.length; i++) {
+    jobs.push(API.sys.updateParam(inputs[i].getAttribute('data-key'), inputs[i].value));
+  }
+  Promise.all(jobs).then(function (rs) {
+    alert('保存成功：' + rs.length + ' 项参数已更新');
+  }).catch(function (err) { alert('保存失败：' + err.message); });
+};
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

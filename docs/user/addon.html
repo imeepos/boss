@@ -16,31 +16,36 @@
 
   <div class="card">
     <div class="c-title">可订购增值服务</div>
-    <div class="cell">
-      <div class="main"><div class="t">IPTV 高清电视</div><div class="d">¥10/月 · 200+ 频道</div></div>
-      <div class="right"><button class="btn btn-primary">订购</button></div>
-    </div>
-    <div class="cell">
-      <div class="main"><div class="t">全屋 WiFi</div><div class="d">¥15/月 · 信号覆盖</div></div>
-      <div class="right"><button class="btn btn-primary">订购</button></div>
-    </div>
-    <div class="cell">
-      <div class="main"><div class="t">云盘存储</div><div class="d">¥8/月 · 500GB</div></div>
-      <div class="right"><button class="btn btn-primary">订购</button></div>
-    </div>
-    <div class="cell">
-      <div class="main"><div class="t">家庭安全看护</div><div class="d">¥20/月 · 摄像头云存储</div></div>
-      <div class="right"><button class="btn btn-primary">订购</button></div>
-    </div>
+    <div id="avail"></div>
   </div>
 
   <div class="card">
     <div class="c-title">已订购 <span class="more">生效中</span></div>
-    <div class="cell"><div class="main"><div class="t">IPTV 高清电视</div><div class="d">2023-05-11 订购 · ¥10/月</div></div><div class="right"><button class="btn">退订</button></div></div>
-    <div class="cell"><div class="main"><div class="t">全屋 WiFi</div><div class="d">2025-02-01 订购 · ¥15/月</div></div><div class="right"><button class="btn">退订</button></div></div>
+    <div id="subscribed"></div>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function availCell(a) {
+    return '<div class="cell"><div class="main"><div class="t">' + a.name + '</div><div class="d">' + a.description + '</div></div>'
+      + '<div class="right"><button class="btn btn-primary" onclick="subscribe(\'' + a.addonId + '\')">订购</button></div></div>';
+  }
+  function subCell(a) {
+    return '<div class="cell"><div class="main"><div class="t">' + a.name + '</div><div class="d">' + a.description + '</div></div>'
+      + '<div class="right"><button class="btn" onclick="unsubscribe(\'' + a.addonId + '\')">退订</button></div></div>';
+  }
+  function subscribe(id) {
+    API.addon.subscribe(id).then(function () { alert('已订购'); location.reload(); });
+  }
+  function unsubscribe(id) {
+    API.addon.unsubscribe(id).then(function () { alert('已退订'); location.reload(); });
+  }
+  API.addon.list().then(function (d) {
+    document.getElementById('avail').innerHTML = (d.available || []).map(availCell).join('');
+    document.getElementById('subscribed').innerHTML = (d.subscribed || []).map(subCell).join('');
+  });
+</script>
 </body>
 </html>

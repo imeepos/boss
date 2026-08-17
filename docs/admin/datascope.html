@@ -15,7 +15,7 @@
   <div class="main">
     <header class="header">
       <div class="crumb">数据权限</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head">
@@ -32,14 +32,7 @@
       <div class="card">
         <table class="tbl">
           <thead><tr><th>账号</th><th>角色（功能）</th><th>子公司</th><th>部门</th><th>岗位</th><th>数据范围</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>admin</td><td><span class="tag tag-blue">系统管理员</span></td><td>集团</td><td>—</td><td>—</td><td><span class="tag tag-green">全集团</span></td><td><a href="#">编辑</a></td></tr>
-            <tr><td>agent-a01</td><td><span class="tag tag-green">业务运营/客服</span></td><td>LEG-A</td><td>客服部</td><td>客服坐席</td><td><span class="tag tag-orange">本部门</span></td><td><a href="#">编辑</a></td></tr>
-            <tr><td>agent-b01</td><td><span class="tag tag-green">业务运营/客服</span></td><td>LEG-B</td><td>客服部</td><td>客服坐席</td><td><span class="tag tag-orange">本部门</span></td><td><a href="#">编辑</a></td></tr>
-            <tr><td>cashier-a01</td><td><span class="tag tag-green">业务运营/客服</span></td><td>LEG-A</td><td>财务部</td><td>财务收款员</td><td><span class="tag tag-orange">最小化视图</span></td><td><a href="#">编辑</a></td></tr>
-            <tr><td>rmgr-luzon</td><td><span class="tag tag-orange">经营分析</span></td><td>—</td><td>市场经营部</td><td>区域经理</td><td><span class="tag tag-orange">吕宋大区</span></td><td><a href="#">编辑</a></td></tr>
-            <tr><td>noc-b01</td><td><span class="tag tag-gray">资源运维管理员</span></td><td>LEG-B</td><td>网络运维部</td><td>网络运维工程师</td><td><span class="tag tag-orange">本公司资源</span></td><td><a href="#">编辑</a></td></tr>
-          </tbody>
+          <tbody id="scopeBody"></tbody>
         </table>
       </div>
 
@@ -48,18 +41,58 @@
         <div class="desc" style="margin-bottom:10px">数据范围快照写 Redis，授权变更即时生效；越权访问被拒并记录到审计日志（A01~A09）。</div>
         <table class="tbl">
           <thead><tr><th>数据范围类型</th><th>判定依据</th><th>示例</th></tr></thead>
-          <tbody>
-            <tr><td>全集团</td><td>region_scope 为空 + 不限子公司</td><td>总部/审计/管理员</td></tr>
-            <tr><td>限经营区域子树</td><td>region_scope 绑定 path</td><td>区域经理只看吕宋</td></tr>
-            <tr><td>限子公司</td><td>legal_entity_id</td><td>LEG-A 客服看不到 LEG-B 客户</td></tr>
-            <tr><td>限部门</td><td>dept_id</td><td>坐席只看本部门队列</td></tr>
-          </tbody>
+          <tbody id="strategyBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
+function scopeRowHtml(s) {
+  return '<tr>' +
+    '<td>' + esc(s.username) + '</td>' +
+    '<td>' + tag(s.roleTag, s.roleName) + '</td>' +
+    '<td>' + esc(s.legalEntityName) + '</td>' +
+    '<td>' + esc(s.deptName) + '</td>' +
+    '<td>' + esc(s.postName) + '</td>' +
+    '<td>' + tag(s.scopeTag, s.scopeName) + '</td>' +
+    '<td><a href="#">编辑</a></td>' +
+  '</tr>';
+}
+function strategyRowHtml(s) {
+  return '<tr><td>' + esc(s.scopeType) + '</td><td>' + esc(s.basis) + '</td><td>' + esc(s.example) + '</td></tr>';
+}
+function render(items, strategies) {
+  document.getElementById('scopeBody').innerHTML = items.map(scopeRowHtml).join('');
+  document.getElementById('strategyBody').innerHTML = (strategies || []).map(strategyRowHtml).join('');
+}
+var allScopes = [], allStrategies = [];
+API.org.dataScopes().then(function (r) {
+  allScopes = r.items;
+  allStrategies = r.strategies || [];
+  render(allScopes, allStrategies);
+}).catch(function (err) { alert('加载失败：' + err.message); });
+// toolbar 前端过滤:账号关键字
+(function bindToolbar() {
+  var kw = document.querySelector('.toolbar input[placeholder="搜索账号"]');
+  if (!kw) return;
+  kw.oninput = function () {
+    var k = kw.value.trim();
+    var items = allScopes.filter(function (s) {
+      return !k || s.username.indexOf(k) >= 0 || s.roleName.indexOf(k) >= 0;
+    });
+    render(items, allStrategies);
+  };
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

@@ -1,0 +1,199 @@
+# 扫码绑定闭环:扫码(环节9)/异常/取证/上报/激活(环节10)/签收/现场收款。
+paths:
+  /tickets/{ticketNo}/scan-bind:
+    post:
+      tags: [ScanBind]
+      summary: 扫码绑定(环节 9,实物光猫标签与预绑定核对)
+      operationId: scanBind
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [epc]
+              properties:
+                epc: { type: string, example: EPC-0001 }
+                offline: { type: boolean, default: false, description: 弱网离线缓存补传 }
+      responses:
+        '200':
+          description: 四码校验结果
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/ScanResult' }
+
+  /tickets/{ticketNo}/scan-abnormal:
+    post:
+      tags: [ScanBind]
+      summary: 扫码异常上报(强制节点,转调度复核,禁止手工绕过)
+      operationId: reportScanAbnormal
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [abnormalType, description]
+              properties:
+                abnormalType: { type: string }
+                physicalTagNo: { type: string, description: 实物标签号(手工录入将强制标记) }
+                description: { type: string }
+                photoIds: { type: array, items: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/photos:
+    get:
+      tags: [ScanBind]
+      summary: 工单取证照片列表
+      operationId: listPhotos
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 照片列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Photo' }
+    post:
+      tags: [ScanBind]
+      summary: 拍照取证上传(自动关联当前工单,弱网自动缓存)
+      operationId: uploadPhoto
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scene: { type: string, example: 光猫标签污损 / 现场环境 }
+      responses:
+        '200':
+          description: 上传结果
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Photo' }
+
+  /tickets/{ticketNo}/report:
+    get:
+      tags: [ScanBind]
+      summary: 装维结果上报预取(四码一致 + 检测项 + 配置下发日志)
+      operationId: getReport
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 上报页预取数据
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/InstallReport' }
+    post:
+      tags: [ScanBind]
+      summary: 提交装维结果上报(环节 10)
+      operationId: submitReport
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remark: { type: string, description: 现场备注(选填) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/activation:
+    get:
+      tags: [ScanBind]
+      summary: 激活状态(LOID / 激活结果 / 上次尝试)
+      operationId: getActivation
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 激活状态
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Activation' }
+
+  /tickets/{ticketNo}/activate:
+    post:
+      tags: [ScanBind]
+      summary: 重新激活(环节 10,失败可反复重试,连续失败转告警派单)
+      operationId: activate
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 激活结果
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Activation' }
+
+  /tickets/{ticketNo}/sign:
+    post:
+      tags: [ScanBind]
+      summary: 客户电子签收(留痕回执,工单流转为完成)
+      operationId: signTicket
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signatureData: { type: string, description: 手写签名数据 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/charge:
+    get:
+      tags: [ScanBind]
+      summary: 现场收款预取(应收金额/方式)
+      operationId: getCharge
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      responses:
+        '200':
+          description: 应收信息
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Charge' }
+    post:
+      tags: [ScanBind]
+      summary: 确认现场收款(即时更新账务,同步生成电子收据)
+      operationId: submitCharge
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/TicketNo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, payMethod]
+              properties:
+                amount: { type: number }
+                payMethod: { type: string, enum: [QR, CASH, POS] }
+      responses:
+        '200':
+          description: 收款结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payNo: { type: string }
+                  receiptUrl: { type: string }

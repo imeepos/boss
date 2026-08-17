@@ -1,0 +1,153 @@
+paths:
+  /home:
+    get:
+      tags: [Misc]
+      summary: 首页聚合(在线状态/套餐卡片/进行中订单/我的服务/消息红点)
+      operationId: getHome
+      responses:
+        '200':
+          description: 首页聚合数据
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Home' }
+
+  /messages:
+    get:
+      tags: [Misc]
+      summary: 消息中心列表(可按分类过滤)
+      operationId: listMessages
+      parameters:
+        - name: category
+          in: query
+          schema: { type: string, enum: [all, billing, balance, fault, promo] }
+      responses:
+        '200':
+          description: 消息列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Message' }
+
+  /messages/read-all:
+    post:
+      tags: [Misc]
+      summary: 全部标为已读
+      operationId: readAllMessages
+      responses:
+        '200':
+          description: 已全部已读
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /coupons:
+    get:
+      tags: [Misc]
+      summary: 优惠券列表(可用/已使用/已过期)
+      operationId: listCoupons
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [available, used, expired] }
+      responses:
+        '200':
+          description: 优惠券列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/Coupon' }
+                  inviteLink: { type: string }
+
+  /usage:
+    get:
+      tags: [Misc]
+      summary: 网络用量(本周期/上月/近 6 月)
+      operationId: getUsage
+      parameters:
+        - name: period
+          in: query
+          schema: { type: string, enum: [current, last, six_month] }
+      responses:
+        '200':
+          description: 用量数据
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Usage' }
+
+  /addresses:
+    get:
+      tags: [Misc]
+      summary: 家庭地址列表
+      operationId: listAddresses
+      responses:
+        '200':
+          description: 地址列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/AddressInfo' }
+
+    post:
+      tags: [Misc]
+      summary: 新增家庭地址
+      operationId: createAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: './schemas.yaml#/components/schemas/AddressInfo' }
+      responses:
+        '200':
+          description: 已保存
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /diy/steps:
+    get:
+      tags: [Misc]
+      summary: 自助排障引导
+      operationId: getDiySteps
+      responses:
+        '200':
+          description: 排障步骤
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/DiySection' }
+
+  /agreement:
+    get:
+      tags: [Misc]
+      summary: 用户协议与隐私政策
+      operationId: getAgreement
+      responses:
+        '200':
+          description: 协议内容
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userAgreement:
+                    type: array
+                    items: { type: string }
+                  privacyPolicy:
+                    type: array
+                    items: { type: string }

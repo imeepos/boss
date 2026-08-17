@@ -1,0 +1,98 @@
+paths:
+  /legal-entities:
+    get:
+      tags: [Org]
+      summary: 子公司/法人列表(品牌×区域交叉经营)
+      operationId: listLegalEntities
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Org]
+      summary: 新建法人
+      operationId: createLegalEntity
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /legal-entities/{legalEntityId}:
+    put:
+      tags: [Org]
+      summary: 编辑法人
+      operationId: updateLegalEntity
+      parameters:
+        - { name: legalEntityId, in: path, required: true, schema: { type: integer } }
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /departments:
+    get:
+      tags: [Org]
+      summary: 部门列表(含数据范围/工单队列/越权拦截)
+      operationId: listDepartments
+      parameters:
+        - name: legalEntityId
+          in: query
+          schema: { type: integer }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /posts:
+    get:
+      tags: [Org]
+      summary: 岗位列表(同名岗位跨子公司复用)
+      operationId: listPosts
+      parameters:
+        - name: deptId
+          in: query
+          schema: { type: integer }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /regions:
+    get:
+      tags: [Org]
+      summary: 经营区域树(level: 1集团 2大区 3省 4城市)
+      operationId: listRegions
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /menu-perms:
+    get:
+      tags: [Org]
+      summary: 菜单权限矩阵(三层权限模型 + 角色×菜单组可见性)
+      operationId: getMenuPerms
+      responses:
+        '200':
+          description: 权限矩阵
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  model:
+                    type: object
+                    description: 三层权限模型说明(角色/菜单/数据)
+                  matrix:
+                    type: object
+                    properties:
+                      roleColumns:
+                        type: array
+                        items: { type: object }
+                      rows:
+                        type: array
+                        items: { type: object }
+
+  /data-scopes:
+    get:
+      tags: [Org]
+      summary: 数据权限清单(账号级授权策略)
+      operationId: listDataScopes
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

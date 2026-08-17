@@ -14,44 +14,59 @@
     <span class="act">新增</span>
   </div>
 
-  <div class="card">
-    <div class="cell">
-      <div class="main"><div class="t">望京X · 3栋 · 501</div><div class="d">默认安装地址 · 王先生 · 138****1234</div></div>
-      <div class="right"><span class="tag tag-green">默认</span></div>
-    </div>
-    <div class="cell">
-      <div class="main"><div class="t">望京Y · 1栋 · 101</div><div class="d">备用地址 · 王先生 · 138****1234</div></div>
-      <div class="right"><span class="tag tag-gray">备用</span></div>
-    </div>
-  </div>
+  <div class="card" id="addr-list"></div>
 
   <div class="card">
     <div class="c-title">新增地址</div>
     <div class="field">
       <label>小区 / 楼盘</label>
-      <input type="text" placeholder="请输入小区名">
+      <input type="text" id="community" placeholder="请输入小区名">
     </div>
     <div class="field">
       <label>楼栋</label>
-      <input type="text" placeholder="楼栋号">
+      <input type="text" id="building" placeholder="楼栋号">
     </div>
     <div class="field">
       <label>门牌号</label>
-      <input type="text" placeholder="单元/房间号">
+      <input type="text" id="door" placeholder="单元/房间号">
     </div>
     <div class="field">
       <label>联系人 / 电话</label>
       <div style="display:flex;gap:8px;">
-        <input type="text" placeholder="联系人" style="flex:1;">
-        <input type="tel" placeholder="联系电话" style="flex:1.4;">
+        <input type="text" id="contact" placeholder="联系人" style="flex:1;">
+        <input type="tel" id="phone" placeholder="联系电话" style="flex:1.4;">
       </div>
     </div>
-    <button class="btn-block">保存地址</button>
+    <button class="btn-block" onclick="save()">保存地址</button>
   </div>
 
   <div class="muted" style="text-align:center;font-size:12px;margin:0 14px;">地址须挂接到小区/楼栋层级，用于资源核查与装维上门。</div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function cell(a) {
+    return '<div class="cell"><div class="main"><div class="t">' + a.label + '</div>'
+      + '<div class="d">' + (a.isDefault ? '默认安装地址' : '备用地址') + ' · ' + a.contact + ' · ' + a.phoneMasked + '</div></div>'
+      + '<div class="right"><span class="tag ' + (a.isDefault ? 'tag-green">默认' : 'tag-gray">备用') + '</span></div></div>';
+  }
+  API.misc.addresses().then(function (d) {
+    document.getElementById('addr-list').innerHTML = (d.items || []).map(cell).join('');
+  }).catch(function () {
+    API.profile.get().then(function (d) {
+      document.getElementById('addr-list').innerHTML = (d.addresses || []).map(cell).join('');
+    });
+  });
+  function save() {
+    var payload = {
+      community: document.getElementById('community').value,
+      building: document.getElementById('building').value,
+      door: document.getElementById('door').value,
+      contact: document.getElementById('contact').value,
+    };
+    API.misc.createAddress(payload).then(function () { alert('已保存'); location.reload(); });
+  }
+</script>
 </body>
 </html>

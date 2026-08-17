@@ -14,37 +14,46 @@
     <span class="act"></span>
   </div>
 
-  <div class="seg">
-    <a class="active">可用</a>
-    <a>已使用</a>
-    <a>已过期</a>
+  <div class="seg" id="tabs">
+    <a class="active" onclick="filterList('available')">可用</a>
+    <a onclick="filterList('used')">已使用</a>
+    <a onclick="filterList('expired')">已过期</a>
   </div>
 
-  <div class="card" style="border-left:4px solid var(--primary);">
-    <div class="row" style="display:flex;justify-content:space-between;align-items:center;">
-      <div><b style="font-size:18px;">¥40</b> <span class="muted" style="font-size:12px;">满 100 可用</span></div>
-      <span class="tag tag-blue">可用</span>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:6px;">1000M 套餐首月立减 · 有效期至 2025-08-31</div>
-    <button class="btn btn-primary" style="margin-top:10px;" onclick="location.href='products.html'">去使用</button>
-  </div>
-
-  <div class="card" style="border-left:4px solid var(--warn);">
-    <div class="row" style="display:flex;justify-content:space-between;align-items:center;">
-      <div><b style="font-size:18px;">¥20</b> <span class="muted" style="font-size:12px;">充值券</span></div>
-      <span class="tag tag-orange">可用</span>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:6px;">余额充值满 200 减 20 · 有效期至 2025-09-30</div>
-    <button class="btn btn-primary" style="margin-top:10px;" onclick="location.href='topup.html'">去使用</button>
-  </div>
+  <div id="coupon-list"></div>
 
   <div class="card">
     <div class="c-title">邀请好友</div>
     <div class="muted" style="font-size:12.5px;margin-bottom:12px;">邀请好友办理宽带，双方各得 ¥50 优惠券。</div>
-    <button class="btn-block ghost">复制邀请链接</button>
+    <button class="btn-block ghost" onclick="copyInvite()">复制邀请链接</button>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var inviteLink = '';
+  function card(c) {
+    var hint = c.threshold > 0 ? '<span class="muted" style="font-size:12px;">满 ' + c.threshold + ' 可用</span>' : '';
+    return '<div class="card" style="border-left:4px solid var(--primary);">'
+      + '<div class="row" style="display:flex;justify-content:space-between;align-items:center;">'
+      + '<div><b style="font-size:18px;">¥' + c.amount + '</b> ' + hint + '</div>'
+      + '<span class="tag tag-blue">可用</span></div>'
+      + '<div class="muted" style="font-size:12px;margin-top:6px;">' + c.title + ' · 有效期至 ' + c.expireAt + '</div>'
+      + '<button class="btn btn-primary" style="margin-top:10px;" onclick="location.href=\'products.html\'">去使用</button></div>';
+  }
+  function filterList(k) {
+    document.querySelectorAll('#tabs a').forEach(function (a, i) { a.className = (['available', 'used', 'expired'][i] === k) ? 'active' : ''; });
+  }
+  function copyInvite() {
+    if (inviteLink && navigator.clipboard) {
+      navigator.clipboard.writeText(inviteLink).then(function () { alert('已复制邀请链接'); });
+    } else { alert('邀请链接：' + (inviteLink || '生成中…')); }
+  }
+  API.misc.coupons().then(function (d) {
+    inviteLink = d.inviteLink;
+    document.getElementById('coupon-list').innerHTML = (d.items || []).map(card).join('');
+  });
+</script>
 </body>
 </html>

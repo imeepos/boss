@@ -11,21 +11,23 @@
   <div class="topbar">
     <a class="back" href="profile.html">&lsaquo;</a>
     <div class="t">接单设置</div>
-    <span class="act">保存</span>
+    <span class="act" onclick="save()">保存</span>
   </div>
 
   <div class="card">
-    <div class="kv"><span class="k">接单状态</span><span class="v"><button class="btn btn-primary" style="padding:5px 10px;" onclick="this.textContent=this.textContent==='在线接单'?'已停接单':'在线接单';">在线接单</button></span></div>
-    <div class="kv"><span class="k">接单半径</span><span class="v">5 km</span></div>
-    <div class="kv"><span class="k">接单类型</span><span class="v">新装 / 变更 / 抢修</span></div>
+    <div class="kv"><span class="k">接单状态</span>
+      <span class="v"><button class="btn btn-primary" id="onlineBtn" style="padding:5px 10px;" onclick="toggleOnline()">在线接单</button></span>
+    </div>
+    <div class="kv"><span class="k">接单半径</span><span class="v" id="radiusLbl">5 km</span></div>
+    <div class="kv"><span class="k">接单类型</span><span class="v" id="typesLbl">新装 / 变更 / 抢修</span></div>
   </div>
 
   <div class="card">
     <div class="c-title">能接单类型</div>
-    <div class="fld"><label><input type="checkbox" checked> 新装宽带</label></div>
-    <div class="fld"><label><input type="checkbox" checked> 宽带变更</label></div>
-    <div class="fld"><label><input type="checkbox" checked> 拆机</label></div>
-    <div class="fld"><label><input type="checkbox"> 抢修（需资质）</label></div>
+    <div class="fld"><label><input type="checkbox" id="t-xin" checked> 新装宽带</label></div>
+    <div class="fld"><label><input type="checkbox" id="t-bian" checked> 宽带变更</label></div>
+    <div class="fld"><label><input type="checkbox" id="t-chai" checked> 拆机</label></div>
+    <div class="fld"><label><input type="checkbox" id="t-qiang"> 抢修（需资质）</label></div>
   </div>
 
   <div class="card">
@@ -34,6 +36,52 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+var online = true;
+
+function render(d) {
+  online = d.online;
+  document.getElementById('onlineBtn').textContent = online ? '在线接单' : '已停接单';
+  document.getElementById('radiusLbl').textContent = d.radiusKm + ' km';
+  var bad = d.acceptTypes || [];
+  document.getElementById('typesLbl').textContent = bad.join(' / ') || '未设置';
+  document.getElementById('t-xin').checked = bad.indexOf('新装宽带') !== -1;
+  document.getElementById('t-bian').checked = bad.indexOf('宽带变更') !== -1;
+  document.getElementById('t-chai').checked = bad.indexOf('拆机') !== -1;
+  document.getElementById('t-qiang').checked = bad.indexOf('抢修') !== -1;
+}
+
+function toggleOnline() {
+  online = !online;
+  document.getElementById('onlineBtn').textContent = online ? '在线接单' : '已停接单';
+}
+
+function collectTypes() {
+  var list = [];
+  var map = [
+    ['t-xin', '新装宽带'], ['t-bian', '宽带变更'],
+    ['t-chai', '拆机'], ['t-qiang', '抢修'],
+  ];
+  map.forEach(function (p) {
+    if (document.getElementById(p[0]).checked) list.push(p[1]);
+  });
+  return list;
+}
+
+function save() {
+  var s = { online: online, radiusKm: 5, acceptTypes: collectTypes() };
+  API.profile.saveSettings(s).then(function (r) {
+    alert(r.message || '接单设置已保存');
+  }).catch(function (e) {
+    alert('保存失败：' + e.message);
+  });
+}
+
+API.profile.settings().then(render).catch(function (e) {
+  alert('接单设置加载失败：' + e.message);
+});
+</script>
 </body>
 </html>

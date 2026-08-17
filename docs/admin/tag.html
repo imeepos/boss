@@ -15,29 +15,66 @@
   <div class="main">
     <header class="header">
       <div class="crumb">电子标签</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head"><h2>电子标签</h2><div class="desc">电子标签台账 · 频段选择 · 与资产一一对应</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新建标签</button>
-        <select class="input" style="width:140px"><option>频段：全部</option><option>UHF</option><option>HF</option><option>LF</option></select>
+        <button class="btn btn-primary" id="createBtn">+ 新建标签</button>
+        <select class="input" id="band" style="width:140px"><option>频段：全部</option><option>UHF</option><option>HF</option><option>LF</option></select>
       </div>
       <div class="card">
         <table class="tbl">
           <thead><tr><th>标签编号</th><th>EPC 码</th><th>频段</th><th>绑定资产</th><th>电量</th><th>状态</th></tr></thead>
-          <tbody>
-            <tr><td>TAG-0001</td><td>EPC-0001</td><td>UHF</td><td>A-20250001 光猫</td><td>86%</td><td><span class="tag tag-green">已绑定</span></td></tr>
-            <tr><td>TAG-0002</td><td>EPC-0002</td><td>UHF</td><td>A-20250002 分光器</td><td>72%</td><td><span class="tag tag-green">已绑定</span></td></tr>
-            <tr><td>TAG-0100</td><td>EPC-0100</td><td>HF</td><td>—</td><td>100%</td><td><span class="tag tag-gray">未绑定</span></td></tr>
-          </tbody>
+          <tbody id="tagBody"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function renderTags(items) {
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var t = items[i];
+    html += '<tr><td>' + esc(t.tagNo) + '</td><td>' + esc(t.epcCode) + '</td><td>' + esc(t.band) +
+      '</td><td>' + esc(t.boundAsset) + '</td><td>' + esc(t.battery) +
+      '</td><td><span class="tag ' + esc(t.statusClass) + '">' + esc(t.statusLabel) + '</span></td></tr>';
+  }
+  document.getElementById('tagBody').innerHTML = html;
+}
+function loadTags() {
+  API.asset.tags()
+    .then(function (d) { renderTags(d.items); })
+    .catch(function (e) { alert('加载标签失败: ' + e.message); });
+}
+function bindToolbar() {
+  document.getElementById('createBtn').onclick = function () {
+    alert('新建标签:请走资产入库流程绑定 EPC');
+  };
+  document.getElementById('band').onchange = function () {
+    var band = this.value;
+    API.asset.tags().then(function (d) {
+      var items = band === '频段：全部' ? d.items
+        : d.items.filter(function (t) { return t.band === band; });
+      renderTags(items);
+    });
+  };
+}
+function init() {
+  loadTags();
+  bindToolbar();
+}
+init();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

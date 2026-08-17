@@ -14,41 +14,55 @@
     <span class="act"></span>
   </div>
 
-  <div class="seg">
-    <a class="active">宽带套餐</a>
-    <a>融合套餐</a>
-    <a>增值服务</a>
+  <div class="seg" id="cats">
+    <a class="active" onclick="filter('broadband')">宽带套餐</a>
+    <a onclick="filter('fusion')">融合套餐</a>
+    <a onclick="filter('addon')">增值服务</a>
   </div>
 
-  <div class="card">
-    <div class="c-title"><a href="product.html" style="color:inherit;">300M 畅享宽带</a> <span class="tag tag-blue">¥99/月</span></div>
-    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">下行 300M · 含光猫 · 合约 12 个月</div>
-    <button class="btn" onclick="location.href='product.html'">详情</button>
-    <button class="btn btn-primary" onclick="location.href='order.html'">立即办理</button>
-  </div>
-
-  <div class="card">
-    <div class="c-title"><a href="product.html" style="color:inherit;">500M 畅享宽带</a> <span class="tag tag-blue">¥129/月</span></div>
-    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">下行 500M · 含光猫 + 路由器 · 合约 12 个月</div>
-    <button class="btn" onclick="location.href='product.html'">详情</button>
-    <button class="btn btn-primary" onclick="location.href='order.html'">立即办理</button>
-  </div>
-
-  <div class="card" style="border:1px solid var(--primary);">
-    <div class="c-title"><a href="product.html" style="color:inherit;">1000M 极速宽带</a> <span class="tag tag-orange">¥199/月</span></div>
-    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">下行 1000M · 含光猫 + 路由器 + IPTV · 合约 24 个月</div>
-    <button class="btn" onclick="location.href='product.html'">详情</button>
-    <button class="btn btn-primary" onclick="location.href='order.html'">立即办理</button>
-  </div>
+  <div id="product-cards"></div>
 
   <div class="card">
     <div class="c-title">增值服务 <span class="more"><a href="addon.html">全部</a></span></div>
-    <div class="cell"><div class="main"><div class="t">IPTV 高清电视</div><div class="d">¥10/月 · 200+ 频道</div></div><button class="btn" onclick="location.href='addon.html'">订购</button></div>
-    <div class="cell"><div class="main"><div class="t">全屋 WiFi</div><div class="d">¥15/月 · 信号覆盖</div></div><button class="btn" onclick="location.href='addon.html'">订购</button></div>
+    <div id="addon-cells"></div>
   </div>
 
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function pCard(p) {
+    var fee = '¥' + p.monthlyFee + '/月';
+    var tag = p.featured ? 'tag-orange' : 'tag-blue';
+    return '<div class="card"' + (p.featured ? ' style="border:1px solid var(--primary);"' : '') + '>'
+      + '<div class="c-title"><a href="product.html?id=' + p.productId + '" style="color:inherit;">' + p.name + '</a> <span class="tag ' + tag + '">' + fee + '</span></div>'
+      + '<div class="muted" style="font-size:12.5px;margin-bottom:10px;">' + p.description + '</div>'
+      + '<button class="btn" onclick="location.href=\'product.html?id=' + p.productId + '\'">详情</button>'
+      + '<button class="btn btn-primary" onclick="buy(\'' + p.productId + '\')">立即办理</button></div>';
+  }
+  function aCell(a) {
+    return '<div class="cell"><div class="main"><div class="t">' + a.name + '</div>'
+      + '<div class="d">' + a.description + '</div></div>'
+      + '<button class="btn" onclick="location.href=\'addon.html\'">订购</button></div>';
+  }
+  function buy(productId) {
+    var addr = { addressId: 'ADDR-001' }; // 演示:取默认地址
+    API.order.submit({ productId: productId, addressId: addr.addressId }).then(function (o) {
+      location.href = 'order.html?no=' + encodeURIComponent(o.orderNo);
+    });
+  }
+  function filter(cat) {
+    document.querySelectorAll('#cats a').forEach(function (a, i) {
+      a.className = (['broadband', 'fusion', 'addon'][i] === cat) ? 'active' : '';
+    });
+  }
+
+  API.product.list().then(function (d) {
+    var ps = (d.items || []).filter(function (p) { return p.category === 'broadband'; });
+    document.getElementById('product-cards').innerHTML = ps.map(pCard).join('');
+    document.getElementById('addon-cells').innerHTML = (d.addons || []).map(aCell).join('');
+  }).catch(function () {});
+</script>
 </body>
 </html>

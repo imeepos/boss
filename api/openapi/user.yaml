@@ -1,0 +1,88 @@
+openapi: 3.0.3
+info:
+  title: BOSS 用户端(客户门户) REST API
+  version: 1.0.0
+  description: |
+    客户门户(user 端,对应 docs/user/*.html 全量页面)对外 REST 契约。
+    权威字段/状态枚举见 docs/contract/{terms,fields,domain-map}.md;
+    本文件为 APISIX 路由与假数据 mock 的单一事实源。
+    接口按域拆分至 user/ 目录,本文件仅做聚合(内联 $ref)。
+servers:
+  - url: /api/v1
+    description: 用户端接口前缀(经 APISIX 网关 /api/v1)
+
+tags:
+  - name: Auth
+    description: 登录 / 注册 / 验证码 / 找回密码 / 实名认证
+  - name: Profile
+    description: 我的 / 账号安全 / 通知订阅 / 语言
+  - name: Product
+    description: 产品套餐 / 套餐详情 / 增值服务
+  - name: Order
+    description: 我的订单 / 订单详情(12 环节) / 评价
+  - name: Billing
+    description: 账单 / 账单明细 / 缴费 / 充值 / 凭证 / 电子发票
+  - name: CustomerService
+    description: 故障报修 / 投诉建议 / 智能客服
+  - name: Misc
+    description: 消息 / 优惠券 / 用量 / 地址 / 自助排障 / 协议
+
+paths:
+  # ---------- Auth ----------
+  /auth/sms-code: { $ref: './user/auth.yaml#/paths/~1auth~1sms-code' }
+  /auth/login: { $ref: './user/auth.yaml#/paths/~1auth~1login' }
+  /auth/register: { $ref: './user/auth.yaml#/paths/~1auth~1register' }
+  /auth/reset-password: { $ref: './user/auth.yaml#/paths/~1auth~1reset-password' }
+  /auth/logout: { $ref: './user/auth.yaml#/paths/~1auth~1logout' }
+  /auth/verify: { $ref: './user/auth.yaml#/paths/~1auth~1verify' }
+  # ---------- Profile ----------
+  /profile: { $ref: './user/profile.yaml#/paths/~1profile' }
+  /profile/security: { $ref: './user/profile.yaml#/paths/~1profile~1security' }
+  /profile/security/password: { $ref: './user/profile.yaml#/paths/~1profile~1security~1password' }
+  /profile/security/phone: { $ref: './user/profile.yaml#/paths/~1profile~1security~1phone' }
+  /profile/notify-settings: { $ref: './user/profile.yaml#/paths/~1profile~1notify-settings' }
+  /profile/language: { $ref: './user/profile.yaml#/paths/~1profile~1language' }
+  # ---------- Product ----------
+  /products: { $ref: './user/product.yaml#/paths/~1products' }
+  /products/{productId}: { $ref: './user/product.yaml#/paths/~1products~1{productId}' }
+  /addons: { $ref: './user/product.yaml#/paths/~1addons' }
+  /addons/{addonId}/subscribe: { $ref: './user/product.yaml#/paths/~1addons~1{addonId}~1subscribe' }
+  /addons/{addonId}/unsubscribe: { $ref: './user/product.yaml#/paths/~1addons~1{addonId}~1unsubscribe' }
+  # ---------- Order ----------
+  /orders: { $ref: './user/order.yaml#/paths/~1orders' }
+  /orders/{orderNo}: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}' }
+  /orders/{orderNo}/cancel: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}~1cancel' }
+  /orders/{orderNo}/urge: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}~1urge' }
+  /orders/{orderNo}/change-address: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}~1change-address' }
+  /plans/{planId}/change: { $ref: './user/order.yaml#/paths/~1plans~1{planId}~1change' }
+  /plans/{planId}/move: { $ref: './user/order.yaml#/paths/~1plans~1{planId}~1move' }
+  /plans/{planId}/cancel: { $ref: './user/order.yaml#/paths/~1plans~1{planId}~1cancel' }
+  /orders/{orderNo}/rate: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}~1rate' }
+  # ---------- Billing ----------
+  /bills: { $ref: './user/billing.yaml#/paths/~1bills' }
+  /bills/{billNo}: { $ref: './user/billing.yaml#/paths/~1bills~1{billNo}' }
+  /payments: { $ref: './user/billing.yaml#/paths/~1payments' }
+  /payments/{payNo}/receipt: { $ref: './user/billing.yaml#/paths/~1payments~1{payNo}~1receipt' }
+  /topups: { $ref: './user/billing.yaml#/paths/~1topups' }
+  /invoices: { $ref: './user/billing.yaml#/paths/~1invoices' }
+  # ---------- CustomerService ----------
+  /faults: { $ref: './user/customer-service.yaml#/paths/~1faults' }
+  /faults/{ticketNo}: { $ref: './user/customer-service.yaml#/paths/~1faults~1{ticketNo}' }
+  /complaints: { $ref: './user/customer-service.yaml#/paths/~1complaints' }
+  /service/chat: { $ref: './user/customer-service.yaml#/paths/~1service~1chat' }
+  /service/faq: { $ref: './user/customer-service.yaml#/paths/~1service~1faq' }
+  # ---------- Misc ----------
+  /home: { $ref: './user/misc.yaml#/paths/~1home' }
+  /messages: { $ref: './user/misc.yaml#/paths/~1messages' }
+  /messages/read-all: { $ref: './user/misc.yaml#/paths/~1messages~1read-all' }
+  /coupons: { $ref: './user/misc.yaml#/paths/~1coupons' }
+  /usage: { $ref: './user/misc.yaml#/paths/~1usage' }
+  /addresses: { $ref: './user/misc.yaml#/paths/~1addresses' }
+  /diy/steps: { $ref: './user/misc.yaml#/paths/~1diy~1steps' }
+  /agreement: { $ref: './user/misc.yaml#/paths/~1agreement' }
+
+components:
+  securitySchemes:
+    $ref: './user/schemas.yaml#/components/securitySchemes'
+  schemas:
+    $ref: './user/schemas.yaml#/components/schemas'

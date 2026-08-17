@@ -15,30 +15,54 @@
   </div>
 
   <div class="card">
-    <div class="c-title">订单 ORD-20250816-018</div>
-    <div class="muted" style="font-size:12.5px;margin-bottom:12px;">300M 畅享宽带 · 望京Y · 1栋101 · 08-11 完成</div>
+    <div class="c-title" id="r-order">订单 —</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:12px;" id="r-desc">—</div>
     <div class="c-title" style="text-align:center;justify-content:center;gap:6px;margin:14px 0;">
-      <span style="font-size:26px;color:var(--warn);">★★★★★</span>
+      <span style="font-size:26px;color:var(--warn);" id="stars" onclick="pickStar(event)">★★★★★</span>
     </div>
     <div class="muted" style="text-align:center;font-size:12px;margin-bottom:16px;">请对本次装维服务评分（1~5 星）</div>
 
     <div class="field">
       <label>装维师傅服务态度</label>
-      <select><option>5 分 · 非常满意</option><option>4 分 · 满意</option><option>3 分 · 一般</option><option>2 分 · 不满意</option><option>1 分 · 很不满意</option></select>
+      <select id="attitude"><option value="5">5 分 · 非常满意</option><option value="4">4 分 · 满意</option><option value="3">3 分 · 一般</option><option value="2">2 分 · 不满意</option><option value="1">1 分 · 很不满意</option></select>
     </div>
     <div class="field">
       <label>装维质量与速度</label>
-      <select><option>5 分 · 非常满意</option><option>4 分 · 满意</option><option>3 分 · 一般</option><option>2 分 · 不满意</option><option>1 分 · 很不满意</option></select>
+      <select id="quality"><option value="5">5 分 · 非常满意</option><option value="4">4 分 · 满意</option><option value="3">3 分 · 一般</option><option value="2">2 分 · 不满意</option><option value="1">1 分 · 很不满意</option></select>
     </div>
     <div class="field">
       <label>评价留言（选填）</label>
-      <textarea rows="3" placeholder="分享你的装维体验"></textarea>
+      <textarea rows="3" id="comment" placeholder="分享你的装维体验"></textarea>
     </div>
-    <button class="btn-block" onclick="location.href='orders.html'">提交评价</button>
+    <button class="btn-block" onclick="submit()">提交评价</button>
     <div class="muted" style="font-size:12px;margin-top:10px;">评分低于 3 分将自动升级主管复核并回访。</div>
   </div>
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  var orderNo = new URLSearchParams(location.search).get('no');
+  var starVal = 5;
+  function pickStar(e) {
+    var rect = e.target.getBoundingClientRect();
+    starVal = Math.max(1, Math.min(5, Math.ceil((e.clientX - rect.left) / rect.width * 5)));
+    document.getElementById('stars').textContent = '★★★★★'.slice(0, starVal) + '☆☆☆☆☆'.slice(0, 5 - starVal);
+  }
+  API.order.rate(orderNo || 'ORD-20250816-018').then(function (d) {
+    document.getElementById('r-order').textContent = '订单 ' + d.orderNo;
+    document.getElementById('r-desc').textContent = d.productName + ' · ' + d.address + ' · ' + d.finishedAt + ' 完成';
+  }).catch(function () {
+    document.getElementById('r-order').textContent = '订单 ORD-20250816-018';
+  });
+  function submit() {
+    API.order.submitRate(orderNo || 'ORD-20250816-018', {
+      stars: starVal,
+      attitude: Number(document.getElementById('attitude').value),
+      quality: Number(document.getElementById('quality').value),
+      comment: document.getElementById('comment').value,
+    }).then(function () { location.href = 'orders.html'; });
+  }
+</script>
 </body>
 </html>

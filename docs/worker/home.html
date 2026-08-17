@@ -10,82 +10,34 @@
 <div class="app">
 
   <div class="home-head">
-    <div class="hi">张师傅 <span style="font-size:13px;font-weight:400;opacity:.85;">装机一组 · 138****8899</span>
+    <div class="hi" id="worker-name">工人 <span id="worker-sub" style="font-size:13px;font-weight:400;opacity:.85;"></span>
       <a href="profile.html" style="color:#fff;font-size:18px;">◉</a>
     </div>
-    <div class="st-line"><span class="dot"></span> 今日接单 3 · 进行中 2 · 待处理 1</div>
+    <div class="st-line" id="worker-today"><span class="dot"></span> 今日接单 - · 进行中 - · 待处理 -</div>
   </div>
 
   <div class="stats-card">
-    <div class="row"><span class="title">今日业绩</span><span class="date">2025-08-17</span></div>
+    <div class="row"><span class="title">今日业绩</span><span class="date" id="stats-date">-</span></div>
     <div class="stats">
-      <div><div class="v blue">3</div><div class="k">接单</div></div>
-      <div><div class="v green">2</div><div class="k">已完成</div></div>
-      <div><div class="v orange">1</div><div class="k">进行中</div></div>
+      <div><div class="v blue" id="stat-accepted">-</div><div class="k">接单</div></div>
+      <div><div class="v green" id="stat-finished">-</div><div class="k">已完成</div></div>
+      <div><div class="v orange" id="stat-doing">-</div><div class="k">进行中</div></div>
     </div>
   </div>
 
   <div class="card">
-    <div class="c-title">进行中工单 <a class="more" href="orders.html">全部</a></div>
-    <a class="cell" href="order.html">
-      <div class="main">
-        <div class="t">ORD-20250817-001 · 1000M 安装</div>
-        <div class="d">望京X · 3栋501 · 距您 2.1km</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-blue">待扫码绑定</span>
-        <div style="margin-top:4px">扫码绑定 9/12</div>
-      </div>
-    </a>
-    <a class="cell" href="order.html">
-      <div class="main">
-        <div class="t">ORD-20250817-002 · 500M 安装</div>
-        <div class="d">望京X · 5栋302 · 距您 3.4km</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-orange">已接单</span>
-        <div style="margin-top:4px">派单 8/12</div>
-      </div>
-    </a>
-    <a class="cell" href="repair.html">
-      <div class="main">
-        <div class="t">TKT-20250817-012 · 断网抢修</div>
-        <div class="d">望京X · 10栋1801 · 距您 1.8km</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-red">紧急 · 剩余 0h52m</span>
-        <div style="margin-top:4px">修复 4/6</div>
-      </div>
-    </a>
+    <div class="c-title" id="ongoing-title">进行中工单 <a class="more" href="orders.html">全部</a></div>
+    <div id="ongoing-list"></div>
   </div>
 
   <div class="card">
     <div class="c-title">待领取工单 <a class="more" href="orders.html">更多</a></div>
-    <a class="cell" href="orders.html">
-      <div class="main">
-        <div class="t">ORD-20250817-003 · 300M 安装</div>
-        <div class="d">望京X · 12栋906 · 距您 1.7km</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-orange">待领取</span>
-      </div>
-    </a>
-    <a class="cell" href="orders.html">
-      <div class="main">
-        <div class="t">ORD-20250817-004 · 宽带变更</div>
-        <div class="d">望京X · 3栋501 · 距您 4.0km</div>
-      </div>
-      <div class="right">
-        <span class="tag tag-orange">待领取</span>
-      </div>
-    </a>
+    <div id="todo-list"></div>
   </div>
 
   <div class="card">
-    <div class="c-title">今日提醒 <span class="more"><a href="messages.html">消息中心</a></span></div>
-    <div class="kv"><span class="k">超时预警</span><span class="v" style="color:var(--err);"><a href="#" onclick="alert('ORd-002 已上门超时 25 分钟，请尽快联系客户。');return false;">1 单即将超时</a></span></div>
-    <div class="kv"><span class="k">标签电量</span><span class="v"><a href="#" onclick="alert('EPC-0023 电量 12%，请携备用标签。');return false;">EPC-0023 电量低</a></span></div>
-    <div class="kv"><span class="k">配置下发</span><span class="v" style="color:var(--success);">全部预下发成功</span></div>
+    <div class="c-title" id="notice-title">今日提醒 <span class="more"><a href="messages.html">消息中心</a></span></div>
+    <div id="notice-list"></div>
   </div>
 
   <div class="card">
@@ -104,6 +56,78 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+(function () {
+  var ES = { DONE: 'done', DOING: 'doing', PENDING: '' };
+
+  function fix(n, d) { if (n === undefined || n === null) return d; return n; }
+
+  function orderType(no) {
+    return (no && (no.indexOf('TKT') === 0 || no.indexOf('EMG') === 0)) ? 'repair.html' : 'order.html';
+  }
+
+  function tagCls(st) {
+    if (st === 'SCAN_PENDING') return 'tag-blue';
+    if (st === 'ACCEPTED' || st === 'TODO') return 'tag-orange';
+    if (st === 'DOING') return 'tag-red';
+    if (st === 'DONE') return 'tag-green';
+    return 'tag-blue';
+  }
+
+  function cell(it) {
+    var no = fix(it.ticketNo, '');
+    var sub = '';
+    var title = no + ' · ' + fix(it.typeLabel, '');
+    var d = fix(it.address, '');
+    if (it.distanceKm !== undefined && it.distanceKm !== null) d += ' · 距您 ' + it.distanceKm + 'km';
+    var right = '<div class="right"><span class="tag ' + tagCls(it.status) + '">' + fix(it.statusLabel, '') + '</span>';
+    if (it.stageTotal !== undefined && it.stageTotal !== null) {
+      right += '<div style="margin-top:4px">' + fix(it.stage, '-') + '/' + it.stageTotal + ' 环节</div>';
+    }
+    right += '</div>';
+    return '<a class="cell" href="' + orderType(no) + '?no=' + encodeURIComponent(no) + '">'
+      + '<div class="main"><div class="t">' + title + '</div><div class="d">' + d + '</div></div>'
+      + right + '</a>';
+  }
+
+  function show(id, s) { document.getElementById(id).innerHTML = s; }
+
+  function err() {
+    show('ongoing-list', '<div class="notice">数据加载失败，请刷新重试。</div>');
+    show('todo-list', '<div class="notice">数据加载失败，请刷新重试。</div>');
+    show('notice-list', '<div class="notice">消息加载失败，请刷新重试。</div>');
+  }
+
+  function render(d) {
+    document.getElementById('worker-name').innerHTML = fix(d.workerName, '工人') + ' <span id="worker-sub" style="font-size:13px;font-weight:400;opacity:.85;">' + fix(d.groupName, '') + ' · ' + fix(d.phoneMasked, '') + '</span>';
+    var t = d.today || {};
+    document.getElementById('worker-today').innerHTML = '<span class="dot"></span> 今日接单 ' + fix(t.accepted, '-') + ' · 进行中 ' + fix(t.doing, '-') + ' · 待处理 ' + fix(t.todo, '-');
+    document.getElementById('stat-accepted').textContent = fix(t.accepted, '-');
+    document.getElementById('stat-finished').textContent = fix(t.finished, '-');
+    document.getElementById('stat-doing').textContent = fix(t.doing, '-');
+    var ong = d.ongoing || [];
+    document.getElementById('ongoing-title').innerHTML = '进行中工单 (' + ong.length + ') <a class="more" href="orders.html">全部</a>';
+    show('ongoing-list', ong.map(cell).join(''));
+    document.getElementById('stats-date').textContent = new Date().toISOString().slice(0, 10).replace(/-/g, '-');
+  }
+
+  function showMsg(errMsg) { document.getElementById('notice-list').innerHTML = '<div class="notice">' + errMsg + '</div>'; }
+
+  function loadMessages() {
+    API.misc.messages().then(function (m) {
+      var items = (m && m.items) || [];
+      if (!items.length) { showMsg('暂无提醒'); return; }
+      show('notice-list', items.slice(0, 3).map(function (x) {
+        return '<div class="kv"><span class="k">' + x.title + '</span><span class="v">' + x.content + '</span></div>';
+      }).join(''));
+    }).catch(function () { showMsg('消息加载失败，请刷新重试。'); });
+  }
+
+  API.home.get().then(render).catch(err);
+  loadMessages();
+})();
+</script>
 </body>
 </html>

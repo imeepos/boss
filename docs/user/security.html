@@ -15,21 +15,21 @@
   </div>
 
   <div class="card">
-    <div class="c-title">实名认证 <span class="tag tag-green">已实名</span><a class="more" href="verify.html">核验详情</a></div>
-    <div class="cell"><div class="main"><div class="t">姓名</div></div><div class="right">王**</div></div>
-    <div class="cell"><div class="main"><div class="t">证件号码</div></div><div class="right">110***********1234</div></div>
-    <div class="cell"><div class="main"><div class="t">认证时间</div></div><div class="right">2023-05-11</div></div>
+    <div class="c-title">实名认证 <span class="tag tag-green" id="s-rn-status">已实名</span><a class="more" href="verify.html">核验详情</a></div>
+    <div class="cell"><div class="main"><div class="t">姓名</div></div><div class="right" id="s-name">—</div></div>
+    <div class="cell"><div class="main"><div class="t">证件号码</div></div><div class="right" id="s-idno">—</div></div>
+    <div class="cell"><div class="main"><div class="t">认证时间</div></div><div class="right" id="s-verifyat">—</div></div>
     <div class="muted" style="font-size:12px;margin-top:8px;">实名信息用于办理入网与停机复机，一经核验不可在线变更，如需变更请携证件至营业厅。</div>
   </div>
 
   <div class="card">
     <div class="c-title">登录密码</div>
     <div class="cell">
-      <div class="main"><div class="t">登录密码</div><div class="d">上次修改 2025-01-03</div></div>
+      <div class="main"><div class="t">登录密码</div><div class="d">上次修改 <span id="s-pwdupdated">—</span></div></div>
       <div class="right"><button class="btn" onclick="location.href='forgot.html'">修改</button></div>
     </div>
     <div class="cell">
-      <div class="main"><div class="t">绑定手机号</div><div class="d">138****1234</div></div>
+      <div class="main"><div class="t">绑定手机号</div><div class="d" id="s-phone">—</div></div>
       <div class="right"><button class="btn">更换</button></div>
     </div>
   </div>
@@ -43,5 +43,16 @@
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  API.profile.security().then(function (s) {
+    document.getElementById('s-rn-status').textContent = s.realNameStatus === 'VERIFIED' ? '已实名' : '待补登';
+    document.getElementById('s-name').textContent = s.nameMasked || '—';
+    document.getElementById('s-idno').textContent = s.idNoMasked || '—';
+    document.getElementById('s-verifyat').textContent = s.verifyAt || '—';
+    document.getElementById('s-pwdupdated').textContent = s.passwordUpdatedAt || '—';
+    document.getElementById('s-phone').textContent = s.phoneMasked || '—';
+  }).catch(function () {});
+</script>
 </body>
 </html>

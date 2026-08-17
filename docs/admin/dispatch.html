@@ -15,15 +15,15 @@
   <div class="main">
     <header class="header">
       <div class="crumb">派单管理</div>
-      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
       <div class="page-head"><h2>派单管理</h2><div class="desc">工单分配 · 装维师傅进度跟踪 · 调度工作台（调度岗 / 师傅岗分离）</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新建派单</button>
+        <button class="btn btn-primary" id="btn-new">+ 新建派单</button>
         <select class="input" style="width:150px"><option>岗位视图：调度工作台</option><option>装维师傅视图</option></select>
-        <select class="input" style="width:140px"><option>状态：全部</option><option>待接单</option><option>施工中</option><option>已完成</option></select>
+        <select class="input" style="width:140px" id="st"><option value="">状态：全部</option><option value="PENDING">待接单</option><option value="WORKING">施工中</option><option value="DONE">已完成</option></select>
         <span class="spacer"></span>
         <span class="tag tag-blue">调度岗：跨区工单池 · 按技能/区域分派</span>
       </div>
@@ -32,11 +32,7 @@
         <div class="card-title">调度工作台 · 跨区工单池 <span class="extra">装维调度员岗位视图</span></div>
         <table class="tbl">
           <thead><tr><th>工单号</th><th>来源单</th><th>区域</th><th>技能要求</th><th>候选师傅</th><th>分派范围</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>WO-20250817-05</td><td>ORD-20250817-003</td><td>吕宋大区</td><td>光纤熔接</td><td>李师傅 / 王师傅</td><td>跨区</td><td><a href="#">分派</a></td></tr>
-            <tr><td>WO-20250817-06</td><td>TKT-20250817-005</td><td>比萨扬大区</td><td>抢修</td><td>王师傅 · 抢修组</td><td>本区</td><td><a href="#">分派</a></td></tr>
-            <tr><td>WO-20250817-07</td><td>TKT-20250817-006</td><td>棉兰老大区</td><td>线路排障</td><td>赵师傅 / 孙师傅</td><td>跨区</td><td><a href="#">分派</a></td></tr>
-          </tbody>
+          <tbody id="pool-rows"></tbody>
         </table>
       </div>
 
@@ -44,11 +40,7 @@
         <div class="card-title">装维师傅视图 · 我的工单 <span class="extra">一人一岗 · 只可见派给自己的工单</span></div>
         <table class="tbl">
           <thead><tr><th>工单号</th><th>订单号</th><th>师傅</th><th>地址</th><th>状态</th><th>耗时</th></tr></thead>
-          <tbody>
-            <tr><td>WO-20250817-01</td><td>ORD-20250817-001</td><td>张师傅</td><td>望京X·3栋501</td><td><span class="tag tag-orange">施工中</span></td><td>35min</td></tr>
-            <tr><td>WO-20250817-02</td><td>ORD-20250817-002</td><td>王师傅</td><td>望京X·5栋302</td><td><span class="tag tag-blue">待接单</span></td><td>—</td></tr>
-            <tr><td>WO-20250816-18</td><td>ORD-20250816-018</td><td>张师傅</td><td>望京Y·1栋101</td><td><span class="tag tag-green">已完成</span></td><td>28min</td></tr>
-          </tbody>
+          <tbody id="my-rows"></tbody>
         </table>
       </div>
 
@@ -56,16 +48,88 @@
         <div class="card-title">改派 / 转单处理 <span class="extra">承接师傅端「转单/改派」与「退回调度池」</span></div>
         <table class="tbl">
           <thead><tr><th>订单号</th><th>原接单师傅</th><th>转单原因</th><th>转派去向</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>ORD-20250817-001</td><td>张师傅</td><td>现场无法处理（需其他专业）</td><td>退回调度中心</td><td><span class="tag tag-orange">待重新派单</span></td><td><a href="#">重新分派</a></td></tr>
-            <tr><td>ORD-20250817-003</td><td>李师傅</td><td>跨片区/无资源</td><td>王师傅 · 抢修组</td><td><span class="tag tag-blue">已改派</span></td><td><a href="#">详情</a></td></tr>
-          </tbody>
+          <tbody id="transfer-rows"></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+<script src="api.js"></script>
+<script>
+(function () {
+  var ST_TAG = { PENDING: 'tag-blue', WORKING: 'tag-orange', DONE: 'tag-green', WAIT_REASSIGN: 'tag-orange', REASSIGNED: 'tag-blue' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
+  function setRows(id, html, cols) {
+    document.getElementById(id).innerHTML = html || '<tr><td colspan="' + cols + '">无数据</td></tr>';
+  }
+
+  function loadPool() {
+    API.order.dispatchPool().then(function (r) {
+      var html = '';
+      for (var i = 0; i < r.items.length; i++) {
+        var t = r.items[i];
+        html += '<tr><td>' + esc(t.ticketNo) + '</td><td>' + esc(t.sourceNo) + '</td><td>' + esc(t.region) + '</td><td>' + esc(t.skill)
+          + '</td><td>' + esc(t.candidates) + '</td><td>' + esc(t.scope)
+          + '</td><td><a href="#" class="op-assign" data-no="' + esc(t.ticketNo) + '">分派</a></td></tr>';
+      }
+      setRows('pool-rows', html, 7);
+    });
+  }
+
+  function loadMyTickets(st) {
+    API.order.myTickets().then(function (r) {
+      var items = st ? r.items.filter(function (x) { return x.status === st; }) : r.items;
+      var html = '';
+      for (var i = 0; i < items.length; i++) {
+        var t = items[i];
+        html += '<tr><td>' + esc(t.ticketNo) + '</td><td>' + esc(t.orderNo) + '</td><td>' + esc(t.master) + '</td><td>' + esc(t.address)
+          + '</td><td>' + tag(ST_TAG[t.status] || 'tag-blue', t.statusLabel) + '</td><td>' + esc(t.duration) + '</td></tr>';
+      }
+      setRows('my-rows', html, 6);
+    });
+  }
+
+  function loadTransfers() {
+    API.order.dispatchTransfers().then(function (r) {
+      var html = '';
+      for (var i = 0; i < r.items.length; i++) {
+        var t = r.items[i];
+        var op = t.status === 'WAIT_REASSIGN'
+          ? '<a href="#" class="op-transfer" data-no="' + esc(t.orderNo) + '">重新分派</a>'
+          : '<a href="#" class="op-detail">详情</a>';
+        html += '<tr><td>' + esc(t.orderNo) + '</td><td>' + esc(t.fromMaster) + '</td><td>' + esc(t.reason) + '</td><td>' + esc(t.toTarget)
+          + '</td><td>' + tag(ST_TAG[t.status] || 'tag-blue', t.statusLabel) + '</td><td>' + op + '</td></tr>';
+      }
+      setRows('transfer-rows', html, 6);
+    });
+  }
+
+  document.querySelector('.content').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A') return;
+    ev.preventDefault();
+    if (a.className === 'op-assign') {
+      API.post('/dispatch/pool/' + a.getAttribute('data-no') + '/assign', { masterId: 1 })
+        .then(function (r) { alert('工单 ' + a.getAttribute('data-no') + ' 分派: ' + r.message); });
+    } else if (a.className === 'op-transfer') {
+      API.post('/dispatch/tickets/' + a.getAttribute('data-no') + '/transfer', { toMasterId: 2, reason: '调度重新分派' })
+        .then(function (r) { alert('工单 ' + a.getAttribute('data-no') + ' 转派: ' + r.message); loadTransfers(); });
+    }
+  });
+
+  document.getElementById('btn-new').onclick = function () { alert('新建派单: 演示操作'); };
+  document.getElementById('st').addEventListener('change', function () { loadMyTickets(this.value); });
+
+  loadPool();
+  loadMyTickets('');
+  loadTransfers();
+})();
+</script>
 <script src="menu.js"></script>
 </body>
 </html>

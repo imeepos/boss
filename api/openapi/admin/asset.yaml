@@ -1,0 +1,80 @@
+paths:
+  /assets:
+    get:
+      tags: [Asset]
+      summary: 资产台账(统计卡 + 清单,status: IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED)
+      operationId: listAssets
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200':
+          description: 资产清单
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats: { type: object }
+                  items: { type: array, items: { type: object } }
+
+  /assets/{assetCode}/lifecycle:
+    get:
+      tags: [Asset]
+      summary: 资产生命周期时间轴/流转记录
+      operationId: listAssetLifecycle
+      parameters:
+        - { name: assetCode, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /tags:
+    get:
+      tags: [Asset]
+      summary: 电子标签列表(status: UNBOUND/BOUND/DISABLED)
+      operationId: listTags
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /stocktakes:
+    get:
+      tags: [Asset]
+      summary: 盘点任务列表
+      operationId: listStocktakes
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Asset]
+      summary: 发起盘点任务
+      operationId: createStocktake
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /stocktakes/{taskId}/diff-handle:
+    post:
+      tags: [Asset]
+      summary: 盘点差异项处理
+      operationId: handleStocktakeDiff
+      parameters:
+        - { name: taskId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /replacements:
+    get:
+      tags: [Asset]
+      summary: 设备更换单列表
+      operationId: listReplacements
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - $ref: './schemas.yaml#/components/parameters/status'
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Asset]
+      summary: 新建设备更换单
+      operationId: createReplacement
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

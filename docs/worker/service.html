@@ -14,10 +14,7 @@
     <span class="act" onclick="alert('已转人工。')">转人工</span>
   </div>
 
-  <div class="card" style="min-height:260px;">
-    <div class="msg-banner ok" style="align-self:flex-end;">已为您接通调度中心，此单可支持改派/咨询。</div>
-    <div class="msg-banner warn">ORD-20250817-001 关联工单，可快捷转单。</div>
-  </div>
+  <div class="card" id="chatCard" style="min-height:260px;"></div>
 
   <div class="card" style="display:flex;gap:10px;">
     <a class="btn" style="flex:1;" href="tel:10086">拨号</a>
@@ -26,6 +23,24 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="api.js"></script>
 <script src="nav.js"></script>
+<script>
+function render(items) {
+  var html = '';
+  items.forEach(function (m) {
+    var cls = m.from === 'worker' ? 'warn' : 'ok';
+    var align = m.from === 'worker' ? 'align-self:flex-end;' : '';
+    html += '<div class="msg-banner ' + cls + '" style="' + align + '">' + m.content + '</div>';
+  });
+  document.getElementById('chatCard').innerHTML = html || '<div class="notice">暂无会话</div>';
+}
+
+API.misc.serviceMessages().then(function (d) {
+  render(d.items);
+}).catch(function (e) {
+  alert('会话加载失败：' + e.message);
+});
+</script>
 </body>
 </html>

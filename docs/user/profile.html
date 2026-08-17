@@ -11,28 +11,27 @@
   <div class="home-head" style="padding-bottom:24px;">
     <div class="hi" style="align-items:center;gap:12px;">
       <span style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.25);
-        display:inline-flex;align-items:center;justify-content:center;font-size:20px;">王</span>
-      <span>王先生<span style="display:block;font-size:12.5px;font-weight:400;opacity:.85;">138****1234</span></span>
+        display:inline-flex;align-items:center;justify-content:center;font-size:20px;" id="avatar">王</span>
+      <span id="hi-name">加载中…<span id="hi-phone" style="display:block;font-size:12.5px;font-weight:400;opacity:.85;"></span></span>
     </div>
   </div>
 
   <div class="card">
     <div class="c-title">实名信息 <a class="more" href="security.html">账号安全</a></div>
-    <a class="cell" href="verify.html" style="color:inherit;"><div class="main"><div class="t">姓名</div></div><div class="right">王**</div></a>
-    <a class="cell" href="verify.html" style="color:inherit;"><div class="main"><div class="t">证件</div></div><div class="right">身份证 110***********1234</div></a>
-    <a class="cell" href="verify.html" style="color:inherit;"><div class="main"><div class="t">核验记录</div></div><div class="right">已实名 · ›</div></a>
+    <a class="cell" href="verify.html" style="color:inherit;"><div class="main"><div class="t">姓名</div></div><div class="right" id="real-name-masked">—</div></a>
+    <a class="cell" href="verify.html" style="color:inherit;"><div class="main"><div class="t">证件</div></div><div class="right" id="real-id-masked">—</div></a>
+    <a class="cell" href="verify.html" style="color:inherit;"><div class="main"><div class="t">核验记录</div></div><div class="right" id="real-status">— · ›</div></a>
   </div>
 
   <div class="card">
     <div class="c-title">家庭地址 <a class="more" href="address.html">管理</a></div>
-    <a class="cell" href="address.html" style="color:inherit;"><div class="main"><div class="t">默认安装地址</div><div class="d">望京X · 3栋 · 501</div></div><div class="right"><span class="tag tag-green">在用</span></div></a>
-    <a class="cell" href="address.html" style="color:inherit;"><div class="main"><div class="t">备用地址</div><div class="d">望京Y · 1栋 · 101</div></div><div class="right"><span class="tag tag-gray">未用</span></div></a>
+    <div id="addresses"></div>
   </div>
 
   <div class="card">
     <div class="c-title">我的套餐 <a class="more" href="myplan.html">详情</a></div>
     <a class="cell" href="myplan.html" style="color:inherit;">
-      <div class="main"><div class="t">1000M 极速宽带</div><div class="d">¥199/月 · 合约至 2026-08</div></div>
+      <div class="main"><div class="t" id="plan-name">—</div><div class="d" id="plan-desc">—</div></div>
       <div class="right"><span class="tag tag-green">在网</span></div>
     </a>
   </div>
@@ -60,19 +59,54 @@
   <div class="card">
     <div class="c-title">语言 / Language <span class="tag tag-gray">中/EN/菲</span></div>
     <div class="seg" style="margin:0;">
-      <a class="active">中文</a>
-      <a>English</a>
-      <a>Filipino</a>
+      <a class="active" onclick="setLang('zh')">中文</a>
+      <a onclick="setLang('en')">English</a>
+      <a onclick="setLang('fil')">Filipino</a>
     </div>
     <div class="muted" style="font-size:12px;margin-top:8px;">界面三语由品牌/区域默认语言配置驱动，切换后 3 秒内生效。</div>
   </div>
 
   <div class="card" style="text-align:center;">
-    <button class="btn" style="width:100%;" onclick="location.href='login.html'">退出登录</button>
+    <button class="btn" style="width:100%;" onclick="logout()">退出登录</button>
   </div>
 
   <div id="tabbar"></div>
 </div>
 <script src="nav.js"></script>
+<script src="api.js"></script>
+<script>
+  function addrCell(a) {
+    return '<a class="cell" href="address.html" style="color:inherit;"><div class="main"><div class="t">'
+      + a.label + '</div><div class="d">' + (a.isDefault ? '默认安装地址' : '备用地址') + '</div></div>'
+      + '<div class="right"><span class="tag ' + (a.isDefault ? 'tag-green">在用' : 'tag-gray">未用') + '</span></div></a>';
+  }
+  function setLang(lang) {
+    API.profile.setLanguage(lang).then(function () {
+      document.querySelectorAll('.seg a').forEach(function (a, i) {
+        a.className = (['zh', 'en', 'fil'][i] === lang) ? 'active' : '';
+      });
+    });
+  }
+  function logout() {
+    API.auth.logout().finally(function () {
+      API.setToken('');
+      location.href = 'login.html';
+    });
+  }
+
+  API.profile.get().then(function (d) {
+    document.getElementById('avatar').textContent = (d.name || '王').charAt(0);
+    document.getElementById('hi-name').firstChild.textContent = d.name || '';
+    document.getElementById('hi-phone').textContent = d.phoneMasked || '';
+    var rn = d.realName || {};
+    document.getElementById('real-name-masked').textContent = rn.nameMasked || '—';
+    document.getElementById('real-id-masked').textContent = (rn.idType || '') + ' ' + (rn.idNoMasked || '');
+    document.getElementById('real-status').textContent = (rn.status === 'VERIFIED' ? '已实名' : '待补登') + ' · ›';
+    document.getElementById('addresses').innerHTML = (d.addresses || []).map(addrCell).join('');
+    var pl = d.plan || {};
+    document.getElementById('plan-name').textContent = pl.name || '—';
+    document.getElementById('plan-desc').textContent = '¥' + (pl.monthlyFee || '—') + '/月 · 合约至 ' + (pl.contractEnd || '—');
+  }).catch(function () {});
+</script>
 </body>
 </html>
