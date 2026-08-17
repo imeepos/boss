@@ -355,3 +355,39 @@ func TestPGStore_Login(t *testing.T) {
 		}
 	})
 }
+
+// TestPGStore_ImportAddresses 契约:批量导入,level/parent_id 由 path 派生。
+func TestPGStore_ImportAddresses(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	// 顶层节点 bj(无父):直接 insert
+	mock.ExpectExec(`INSERT INTO addresses`).
+		WithArgs("bj", int8(1), "北京市", nil).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// 子节点 bj.chaoyang:查父 + insert
+	mock.ExpectQuery(`SELECT id FROM addresses WHERE path`).
+		WithArgs("bj").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
+	mock.ExpectExec(`INSERT INTO addresses`).
+		WithArgs("bj.chaoyang", int8(2), "朝阳区", int64(1)).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+	s := NewPGStore(mock)
+	imported, err := s.ImportAddresses(context.Background(), []AddressRow{
+		{Path: "bj", Name: "北京市"},
+		{Path: "bj.chaoyang", Name: "朝阳区"},
+	})
+	if err != nil {
+		t.Fatalf("ImportAddresses: %v", err)
+	}
+	if imported != 2 {
+		t.Fatalf("imported=%d, want 2", imported)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}

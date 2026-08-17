@@ -210,6 +210,38 @@ func (s *PGStore) ListAddresses(ctx context.Context, parentID int64) ([]Address,
 	return out, rows.Err()
 }
 
+// ImportAddresses 批量导入地址;level 与 parent_id 由 path 派生(应用层算,不手填)。
+// 约束:子节点导入前父节点必须已存在(ltree 前缀父路径反查)。
+func (s *PGStore) ImportAddresses(ctx context.Context, rows []AddressRow) (int, error) {
+	imported := 0
+	for _, r := range rows {
+		level := int8(len(strings.Split(r.Path, ".")))
+		parentPath := parentOf(r.Path)
+		var parentID int64
+		if parentPath != "" {
+			err := s.db.QueryRow(ctx,
+				`SELECT id FROM addresses WHERE path = $1::ltree`, parentPath).Scan(&parentID)
+			if errors.Is(err, pgx.ErrNoRows) {
+				return imported, fmt.Errorf("user: import address %q: parent %q not found", r.Path, parentPath)
+			}
+			if err != nil {
+				return imported, fmt.Errorf("user: import address lookup parent: %w", err)
+			}
+		}
+		var parentArg any
+		if parentPath != "" {
+			parentArg = parentID
+		}
+		if _, err := s.db.Exec(ctx,
+			`INSERT INTO addresses(path, level, name, parent_id) VALUES($1::ltree, $2, $3, $4)`,
+			r.Path, level, r.Name, parentArg); err != nil {
+			return imported, fmt.Errorf("user: import address insert: %w", err)
+		}
+		imported++
+	}
+	return imported, nil
+}
+
 // HasPermission 功能权限判定:账号角色是否绑定该权限码。
 // 生产走 Redis RBAC 快照;此处为 PG 直查兜底(快照未命中时回源)。
 func (s *PGStore) HasPermission(ctx context.Context, accountID int64, permCode string) (bool, error) {
