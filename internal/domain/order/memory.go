@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -120,6 +121,35 @@ func (s *MemoryService) Track(ctx context.Context, orderID int64) (*Order, []Sta
 	logs := make([]StageLog, len(s.logs[orderID]))
 	copy(logs, s.logs[orderID])
 	return cloneOrder(o), logs, nil
+}
+
+// List 订单列表(内存实现:无客户/产品/地址名,只回基础字段)。
+func (s *MemoryService) List(ctx context.Context, q OrderQuery) ([]OrderListItem, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]OrderListItem, 0)
+	for _, o := range s.m {
+		if q.Status != "" && o.Status != q.Status {
+			continue
+		}
+		if q.Keyword != "" && !strings.Contains(o.OrderNo, q.Keyword) {
+			continue
+		}
+		out = append(out, OrderListItem{OrderNo: o.OrderNo, Stage: o.Stage, Status: o.Status, CreatedAt: o.CreatedAt})
+	}
+	return out, nil
+}
+
+// GetByNo 按订单号查订单;未命中返回 ErrOrderNotFound。
+func (s *MemoryService) GetByNo(ctx context.Context, orderNo string) (*Order, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, o := range s.m {
+		if o.OrderNo == orderNo {
+			return cloneOrder(o), nil
+		}
+	}
+	return nil, ErrOrderNotFound
 }
 
 // advanceLocked 推进一个环节(调用方须持锁);逻辑与 PGStore.advance 一致。

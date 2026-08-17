@@ -43,6 +43,10 @@ type OrderService interface {
 	Cancel(ctx context.Context, orderID int64) error
 	Release(ctx context.Context, orderID int64) error
 
+	// List 订单列表读模型(listOrders);GetByNo 按订单号寻址(getOrder)。
+	List(ctx context.Context, q OrderQuery) ([]OrderListItem, error)
+	GetByNo(ctx context.Context, orderNo string) (*Order, error)
+
 	// Track 跟踪(order.html 时间轴):返回订单 + 环节日志。
 	Track(ctx context.Context, orderID int64) (*Order, []StageLog, error)
 }
