@@ -69,7 +69,28 @@
 | migrations `addresses.parent_id` 物化列 vs TS 实体 `parentId` 派生列 | 均已补 `parentId`，语义一致（派生，应用层不手填） | 保持 |
 | migrations `addresses.geom` vs TS `geom` | 已补 `geom(geography)`，阶段8 GIS 预留 | 保持 |
 
-## 5. 销项规则
+## 5. 跨层命名映射（实体关系模型 ↔ mock 视图 ↔ 页面列）
+
+> `api/mock/db.js` 是「关系型事实库」，三端视图由它**扁平化派生**（外键冗余成快照列），
+> 故字段名与 TypeORM 实体（62 表关系模型）存在**视图导向命名差**，属设计使然、非漂移。
+> 语义对齐（状态枚举/单号口径/引用完整/未收费不派单/四码与 GIS 时点）由 `node api/mock/selfcheck.js` 固化，全绿即对齐成立。
+> 本表只固化「概念 ↔ 实体字段 ↔ mock 字段 ↔ 页面列」的映射，避免把命名差误判为漂移。
+
+| 概念 | DB/实体 | mock db.js | 页面列 | 说明 |
+|:-----|:--------|:-----------|:-------|:-----|
+| 资产台账编码 | `assets.asset_code` | `assetNo` | asset.html「资产编码」 | 同名异名，值一致 `A-2025xxxx` |
+| 四码资产码(EPC) | `tags.epc_code` | `epc`(四码视图用 `assetCode`) | tag/quad「资产码」 | 实体在 tags，mock 冗余到 assets；**注意 `assetCode` 双义：实体=台账编码、四码=EPC** |
+| 端口编码 | `ports.port_code` | `portNo`(物理 `P-001-01`) | resource.html「端口编号」 | mock `portNo` 是物理端口号，≠ 实体 `port_code` |
+| 四码端口码 | `ports.quad_code` | `quadCode` | 四码「端口码」 | 一致 `P-SPLxx-yy` |
+| 产品 | `product_offers.offer_id` | `productId`/`products` | product.html「产品资费」 | API 资源名 `products`，实体表名 `product_offers` |
+| 认证账号 | `lo_accounts` | `loids`/`loid` | loaccount.html | API 用业务名 LOID |
+| 报障工单 | `complaints` | `repairTickets` | complaint.html | API 用业务名 repairTicket（TKT-\*）；投诉 CP-\* 同挂该域 |
+| 账单/缴费 | `bills`/`payments` | `bills`/`payments` | billing/payment | 一致 |
+
+> 裁定：`assetCode` 一词在实体层=台账编码、在四码/EPC 上下文=电子标签码，二者是不同对象。
+> 四码对账用 EPC（`tags.epc_code`），资产台账用 `assets.asset_code`，桥接靠 `tags`（见 cross-end-linkage §四）。
+
+## 6. 销项规则
 
 1. 新缺口按「类别字母 + 序号」登记（A=实体缺字段/缺表、B=命名、D=枚举、G=Go 漂移、E=缺实体）。
 2. 字段/状态/术语冲突一律先查 `terms.md`，再回写 `enums.ts` + 实体 + `fields.md`。
