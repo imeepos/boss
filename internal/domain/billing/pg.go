@@ -1,0 +1,115 @@
+package billing
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+)
+
+// ErrNotFound 记录不存在。
+var ErrNotFound = errors.New("billing: not found")
+
+// dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
+type dbtx interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+// PGStore 是 BillingService 接口的 PostgreSQL 实现(阶段5)。
+type PGStore struct {
+	db dbtx
+}
+
+// NewPGStore 构造 PGStore;db 传 *pgxpool.Pool 或测试 mock。
+func NewPGStore(db dbtx) *PGStore {
+	return &PGStore{db: db}
+}
+
+const billCols = `id, bill_no, customer_id, customer_name, legal_entity_id, legal_entity_name, region_id, region_name, period, amount, status`
+
+// ListBills 列出账单;customerID=0 返回全部,否则按客户过滤。
+func (s *PGStore) ListBills(ctx context.Context, customerID int64) ([]Bill, error) {
+	rows, err := s.db.Query(ctx,
+		`SELECT `+billCols+` FROM bills WHERE ($1 = 0 OR customer_id = $1) ORDER BY id`, customerID)
+	if err != nil {
+		return nil, fmt.Errorf("billing: list bills: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Bill, 0)
+	for rows.Next() {
+		var b Bill
+		if err := rows.Scan(&b.BillID, &b.BillNo, &b.CustomerID, &b.CustomerName, &b.LegalEntityID, &b.LegalEntityName,
+			&b.RegionID, &b.RegionName, &b.Period, &b.Amount, &b.Status); err != nil {
+			return nil, fmt.Errorf("billing: scan bill: %w", err)
+		}
+		out = append(out, b)
+	}
+	return out, rows.Err()
+}
+
+// CreateBill 新建账单,返回自增 id。
+func (s *PGStore) CreateBill(ctx context.Context, b Bill) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO bills(bill_no, customer_id, customer_name, legal_entity_id, legal_entity_name, region_id, region_name, period, amount, status)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+		b.BillNo, b.CustomerID, b.CustomerName, b.LegalEntityID, b.LegalEntityName,
+		b.RegionID, b.RegionName, b.Period, b.Amount, b.Status).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("billing: create bill: %w", err)
+	}
+	return id, nil
+}
+
+// GetBill 按 id 查账单;未命中返回 ErrNotFound。
+func (s *PGStore) GetBill(ctx context.Context, id int64) (*Bill, error) {
+	var b Bill
+	err := s.db.QueryRow(ctx, `SELECT `+billCols+` FROM bills WHERE id = $1`, id).
+		Scan(&b.BillID, &b.BillNo, &b.CustomerID, &b.CustomerName, &b.LegalEntityID, &b.LegalEntityName,
+			&b.RegionID, &b.RegionName, &b.Period, &b.Amount, &b.Status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("billing: get bill: %w", err)
+	}
+	return &b, nil
+}
+
+const paymentCols = `id, pay_no, bill_id, amount, method, status`
+
+// ListPayments 列出缴费流水;billID=0 返回全部,否则按账单过滤。
+func (s *PGStore) ListPayments(ctx context.Context, billID int64) ([]Payment, error) {
+	rows, err := s.db.Query(ctx,
+		`SELECT `+paymentCols+` FROM payments WHERE ($1 = 0 OR bill_id = $1) ORDER BY id`, billID)
+	if err != nil {
+		return nil, fmt.Errorf("billing: list payments: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Payment, 0)
+	for rows.Next() {
+		var p Payment
+		if err := rows.Scan(&p.ID, &p.PayNo, &p.BillID, &p.Amount, &p.Method, &p.Status); err != nil {
+			return nil, fmt.Errorf("billing: scan payment: %w", err)
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// CreatePayment 新建缴费流水,返回自增 id。
+func (s *PGStore) CreatePayment(ctx context.Context, p Payment) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO payments(pay_no, bill_id, amount, method, status)
+		VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		p.PayNo, p.BillID, p.Amount, p.Method, p.Status).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("billing: create payment: %w", err)
+	}
+	return id, nil
+}
