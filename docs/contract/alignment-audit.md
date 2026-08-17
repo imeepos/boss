@@ -134,3 +134,17 @@
 > **裁定（最佳实践）**：API 字段/资源名是稳定契约（业务友好名），DB 表/列是内部技术名，分属两层，
 > **禁止为求同名而改 API 或 DB**（耦合即反模式）。唯一权威映射已固化于 `fields.md §0.1`，
 > 页面/Agent 一律以该表消歧义，不再做破坏性重命名。
+
+## 8. 最终裁定（by-design 差异，非缺陷）
+
+> 彻底对齐后，以下差异属**设计使然**，已在权威文档固化口径，后续 Agent 不得再当缺口回改。
+
+| 差异 | 裁定 |
+|:-----|:-----|
+| Go `internal/domain/*` 骨架 vs TS 实体（如 `Region.Parent string`、`Department.LegalEntity string`） | Go 是「阶段骨架参考实现，落地替换为 DB」，字段用展示/派生形态，与 TS 关系模型粒度不同，保留 |
+| Go `aaa.Profile.Status = ACTIVE/SUSPENDED` vs `LoAccountStatus = ACTIVE/SUSPENDED/CLOSED` | AAA 认证档案只关心「在服/停服」认证维度；`CLOSED 注销`是业务维度，二者正交，保留 |
+| `complaints` 实体 = 报障+投诉同表（客服工单域） | 报障(TKT-\*)与投诉(CP-\*)经 `type` 区分；API 侧 `repairTickets` 单列报障，映射见 §0.1 |
+| `accounts`(系统账号) / `customers`(客户) / `lo_accounts`(认证账号) 三义 | 三个不同对象，`fields.md §5.1` 已裁定四码第 2 项=客户，非系统账号 |
+| `paycheck`(渠道对账)、`analytics`/`report`(BI)、`gis` | 派生聚合/视图，无基表，不建实体 |
+
+> 对齐状态：**数据建模(68 表) ↔ 三端页面 ↔ OpenAPI ↔ mock ↔ Go 骨架** 全部对齐；本台账为唯一销项记录。
