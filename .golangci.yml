@@ -1,0 +1,37 @@
+# golangci-lint 配置(配合 `make lint`)。
+# 原则:只开能长期守住、且有价值的规则;不追求 lint 全绿覆盖每一个历史角落,
+# 但 CI 必须过 vet + race + build(见 .github/workflows/ci.yml)。
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - unused
+    - gosimple
+    - gofmt
+    - goimports
+    - revive
+  disable:
+    # 生成代码/嵌入式场景的噪音,暂关
+    - dupl
+    - gocyclo
+
+linters-settings:
+  errcheck:
+    check-blank: false
+  revive:
+    rules:
+      - name: exported
+        disabled: true # 对外文档注释非强制
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

@@ -11,13 +11,13 @@ type Config struct {
 		GRPCAddr string
 	}
 	Database struct{ DSN string }
-	Redis     struct{ Addrs []string }
-	Kafka     struct{ Brokers []string }
-	MinIO     struct{ Endpoint, AccessKey, SecretKey string }
-	Temporal  struct{ Host string }
+	Redis    struct{ Addrs []string }
+	Kafka    struct{ Brokers []string }
+	MinIO    struct{ Endpoint, AccessKey, SecretKey string }
+	Temporal struct{ Host string }
 
 	// 102 扩展基础设施(见 deployments/docker-compose.102.extend.yml)
-	APISIX struct{ AdminURL string }
+	APISIX        struct{ AdminURL string }
 	Observability struct {
 		PrometheusURL   string
 		AlertmanagerURL string
@@ -25,15 +25,15 @@ type Config struct {
 		LokiURL         string
 		JaegerOTLP      string
 	}
-	OLAP struct{ StarRocksDSN string }
-	Flink      struct{ Jobmanager string }
+	OLAP  struct{ StarRocksDSN string }
+	Flink struct{ Jobmanager string }
 
 	// AAA(阶段7 自研 RADIUS,性能服务群独立部署)。
 	AAA struct {
-		AuthAddr   string // RADIUS 认证端口(1812)
-		AcctAddr   string // RADIUS 计费端口(1813)
-		Secret     string // NAS 共享密钥
-		AuthTTL    int    // 授权缓存 TTL 秒(默认 60)
+		AuthAddr string // RADIUS 认证端口(1812)
+		AcctAddr string // RADIUS 计费端口(1813)
+		Secret   string // NAS 共享密钥
+		AuthTTL  int    // 授权缓存 TTL 秒(默认 60)
 	}
 
 	JWT struct {
