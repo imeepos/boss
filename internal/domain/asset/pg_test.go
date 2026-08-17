@@ -1,0 +1,212 @@
+package asset
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/pashagolub/pgxmock/v4"
+)
+
+func TestPGStore_ListBatches(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT id, legal_entity_id, code, name FROM asset_batches ORDER BY id`).
+		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "code", "name"}).
+			AddRow(int64(1), int64(1), "RK-202607-01", "7月光猫批次").
+			AddRow(int64(2), int64(1), "RK-202608-01", "8月光猫批次"))
+
+	s := NewPGStore(mock)
+	got, err := s.ListBatches(context.Background())
+	if err != nil {
+		t.Fatalf("ListBatches: %v", err)
+	}
+	if len(got) != 2 || got[0].Code != "RK-202607-01" {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_CreateBatch(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`INSERT INTO asset_batches`).
+		WithArgs(int64(1), "RK-202609-01", "9月光猫批次").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+
+	s := NewPGStore(mock)
+	id, err := s.CreateBatch(context.Background(), AssetBatch{LegalEntityID: 1, Code: "RK-202609-01", Name: "9月光猫批次"})
+	if err != nil {
+		t.Fatalf("CreateBatch: %v", err)
+	}
+	if id != 3 {
+		t.Fatalf("id=%d, want 3", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_ListTags(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT id, legal_entity_id, tag_no, epc_code, band, COALESCE\(bound_asset_id, 0\), status, battery`).
+		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "tag_no", "epc_code", "band", "bound_asset_id", "status", "battery"}).
+			AddRow(int64(1), int64(1), "TAG-0001", "EPC-0001", "UHF", int64(0), "UNBOUND", "86%").
+			AddRow(int64(2), int64(1), "TAG-0002", "EPC-0002", "UHF", int64(10), "BOUND", "90%"))
+
+	s := NewPGStore(mock)
+	got, err := s.ListTags(context.Background())
+	if err != nil {
+		t.Fatalf("ListTags: %v", err)
+	}
+	if len(got) != 2 || got[0].BoundAssetID != 0 || got[1].Status != "BOUND" {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_CreateTag(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	// bound_asset_id=0 → nil
+	mock.ExpectQuery(`INSERT INTO tags`).
+		WithArgs(int64(1), "TAG-0003", "EPC-0003", "UHF", nil, "UNBOUND", "95%").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+
+	s := NewPGStore(mock)
+	id, err := s.CreateTag(context.Background(), Tag{
+		LegalEntityID: 1, TagNo: "TAG-0003", EpcCode: "EPC-0003", Band: "UHF", Status: "UNBOUND", Battery: "95%",
+	})
+	if err != nil {
+		t.Fatalf("CreateTag: %v", err)
+	}
+	if id != 3 {
+		t.Fatalf("id=%d, want 3", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_ListAssets(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status"}
+	mock.ExpectQuery(`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name`).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(0), int64(0), int64(0), "", "光猫", "IN_STOCK"))
+
+	s := NewPGStore(mock)
+	got, err := s.ListAssets(context.Background())
+	if err != nil {
+		t.Fatalf("ListAssets: %v", err)
+	}
+	if len(got) != 1 || got[0].AssetCode != "A-20260001" || got[0].Status != "IN_STOCK" {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_CreateAsset(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	// tag/address/region = 0 → nil
+	mock.ExpectQuery(`INSERT INTO assets`).
+		WithArgs("A-20260002", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
+
+	s := NewPGStore(mock)
+	id, err := s.CreateAsset(context.Background(), Asset{
+		AssetCode: "A-20260002", BatchID: 1, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
+		Type: "ONU", Status: "IN_STOCK",
+	})
+	if err != nil {
+		t.Fatalf("CreateAsset: %v", err)
+	}
+	if id != 2 {
+		t.Fatalf("id=%d, want 2", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_GetAsset(t *testing.T) {
+	t.Run("命中", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status"}
+		mock.ExpectQuery(`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name`).
+			WithArgs(int64(1)).
+			WillReturnRows(mock.NewRows(cols).
+				AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(2), int64(100), int64(11), "马尼拉市", "光猫", "DEPLOYED"))
+
+		s := NewPGStore(mock)
+		a, err := s.GetAsset(context.Background(), 1)
+		if err != nil {
+			t.Fatalf("GetAsset: %v", err)
+		}
+		if a.AssetCode != "A-20260001" || a.TagID != 2 || a.Status != "DEPLOYED" {
+			t.Fatalf("a=%+v", a)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("未命中", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT id, asset_code`).
+			WithArgs(int64(99)).
+			WillReturnError(pgx.ErrNoRows)
+
+		s := NewPGStore(mock)
+		_, err = s.GetAsset(context.Background(), 99)
+		if !errors.Is(err, ErrNotFound) {
+			t.Fatalf("err=%v, want ErrNotFound", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+}

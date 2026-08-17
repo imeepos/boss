@@ -1,0 +1,6 @@
+-- 阶段3 回滚:删除资产域。
+BEGIN;
+DROP TABLE IF EXISTS assets;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS asset_batches;
+COMMIT;
