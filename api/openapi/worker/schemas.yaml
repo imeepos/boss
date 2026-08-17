@@ -325,7 +325,7 @@ components:
     Message:
       type: object
       properties:
-        level: { type: string, enum: [err, warn, ok] }
+        level: { type: string, enum: [INFO, WARN, URGENT] }
         title: { type: string, example: 超时预警 }
         content: { type: string }
         sentAt: { type: string, example: 08-17 10:30 }

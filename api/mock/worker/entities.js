@@ -27,13 +27,13 @@ const workerFeedbacks = [
   { feedbackId: 'fb2', workerId: 1024, ticketNo: 'TKT-20250730-005', customerName: '李女士', score: 2.0, comment: '已转复核', needReview: true },
 ];
 
-// —— 师傅消息(workerMessages): 调度/系统下发,level err/warn/ok ——
+// —— 师傅消息(workerMessages): 调度/系统下发,level INFO/WARN/URGENT ——
 const workerMessages = [
-  { messageId: 'wm1', workerId: 1024, level: 'err', title: '台风应急', content: '台风后批量复测任务已下发，请核对受影响客户清单', sentAt: '08-16 18:00', read: false },
-  { messageId: 'wm2', workerId: 1024, level: 'warn', title: '超时预警', content: 'TKT-20250817-012 抢修单 SLA 剩余不足 1 小时，请尽快到场处理', sentAt: '08-17 10:30', read: false },
-  { messageId: 'wm3', workerId: 1024, level: 'err', title: '改派通知', content: '新单 TKT-20250817-005 抢修已分派给您', sentAt: '08-17 09:45', read: false },
-  { messageId: 'wm4', workerId: 1024, level: 'ok', title: '配置下发', content: '全部预下发成功', sentAt: '08-17 09:18', read: true },
-  { messageId: 'wm5', workerId: 1024, level: 'warn', title: '标签电量', content: 'EPC-0023 电量低，请携备用', sentAt: '08-17 08:00', read: true },
+  { messageId: 'wm1', workerId: 1024, level: 'URGENT', title: '台风应急', content: '台风后批量复测任务已下发，请核对受影响客户清单', sentAt: '08-16 18:00', read: false },
+  { messageId: 'wm2', workerId: 1024, level: 'WARN', title: '超时预警', content: 'TKT-20250817-012 抢修单 SLA 剩余不足 1 小时，请尽快到场处理', sentAt: '08-17 10:30', read: false },
+  { messageId: 'wm3', workerId: 1024, level: 'URGENT', title: '改派通知', content: '新单 TKT-20250817-005 抢修已分派给您', sentAt: '08-17 09:45', read: false },
+  { messageId: 'wm4', workerId: 1024, level: 'INFO', title: '配置下发', content: '全部预下发成功', sentAt: '08-17 09:18', read: true },
+  { messageId: 'wm5', workerId: 1024, level: 'WARN', title: '标签电量', content: 'EPC-0023 电量低，请携备用', sentAt: '08-17 08:00', read: true },
 ];
 
 // —— 公告(workerNotices): admin 发布/下架,active 控制师傅端可见 ——

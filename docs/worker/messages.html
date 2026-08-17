@@ -28,7 +28,7 @@
 function render(items) {
   var html = '';
   items.forEach(function (m) {
-    html += '<div class="msg-banner ' + m.level + '"><b>' + m.title + '</b> ' +
+    html += '<div class="msg-banner ' + (m.level || '').toLowerCase() + '"><b>' + m.title + '</b> ' +
       m.content + ' · ' + m.sentAt + '</div>';
   });
   document.getElementById('listCard').innerHTML = html || '<div class="notice">暂无消息</div>';

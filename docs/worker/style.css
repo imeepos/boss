@@ -165,8 +165,8 @@ a{color:var(--primary);text-decoration:none;}
 .msg-banner{display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;
   margin-bottom:10px;font-size:13px;}
 .msg-banner.warn{background:#fff7e6;border:1px solid #ffd591;color:#d46b08;}
-.msg-banner.err{background:#fff1f0;border:1px solid #ffa39e;color:#cf1322;}
-.msg-banner.ok{background:#f6ffed;border:1px solid #b7eb8f;color:#389e0d;}
+.msg-banner.urgent{background:#fff1f0;border:1px solid #ffa39e;color:#cf1322;}
+.msg-banner.info{background:#f6ffed;border:1px solid #b7eb8f;color:#389e0d;}
 
 /* 签收画布 */
 .sign-pad{border:1px dashed var(--primary-2);border-radius:12px;height:180px;margin:4px 0 8px;

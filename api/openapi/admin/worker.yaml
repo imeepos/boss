@@ -96,7 +96,7 @@ paths:
               required: [title]
               properties:
                 workerId: { type: integer }
-                level: { type: string, enum: [info, warn, err, ok] }
+                level: { type: string, enum: [INFO, WARN, URGENT] }
                 title: { type: string }
                 content: { type: string }
       responses:

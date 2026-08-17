@@ -38,8 +38,9 @@
 | RESERVED | 已预占 | 端口已锁定 | 3 端口预占完成 |
 | INSTALLING | 装维中 | 派单后装维作业 | 8 派单 → 10 激活 |
 | DONE | 已完成 | 激活回调后 | 11 激活回调完成 |
+| CANCELLED | 已取消 | 订单取消/退订（任一未完成环节前） | — |
 
-> 环节序号(1-12)与订单状态(PENDING/RESERVED/INSTALLING/DONE)是两套正交枚举：环节表达"进行到第几步"，状态表达"订单当前状态"。禁止混用。
+> 环节序号(1-12)与订单状态(PENDING/RESERVED/INSTALLING/DONE/CANCELLED)是两套正交枚举：环节表达"进行到第几步"，状态表达"订单当前状态"。禁止混用。
 
 ## 4. 通用状态枚举
 
@@ -49,6 +50,11 @@
 | 资产 asset.status | IN_STOCK / DEPLOYED / MAINTENANCE / SCRAPPED | 生命周期状态 |
 | 四码 quad_link | LINKED / CONFLICT / UNLINKED | 一致性对账用 |
 | 标签 tag.status | UNBOUND / BOUND / DISABLED | 电子标签 |
+| 报障 complaint.status | OPEN / PROCESSING / CLOSED | 受理中 / 处理中 / 已关闭 |
+| 扫码 scan_log.result | MATCH / MISMATCH / OFFLINE_CACHED | 一致 / 不一致 / 离线缓存 |
+| 激活回调 result | PENDING / SUCCESS / FAILED | 待触发 / 成功 / 失败 |
+| 消息 level | INFO / WARN / URGENT | 信息 / 警告 / 紧急 |
+| 缴费 method | wechat / alipay / card / cash | 微信 / 支付宝 / 银行卡 / 现金 |
 
 ## 5. 关键术语
 

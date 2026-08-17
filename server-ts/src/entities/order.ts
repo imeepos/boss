@@ -3,7 +3,7 @@ import {
   Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index,
   OneToMany, OneToOne,
 } from 'typeorm';
-import type { OrderStatus, TicketStatus, StageResult, TaskStatus } from '../enums.js';
+import type { OrderStatus, TicketStatus, StageResult, TaskStatus, ComplaintStatus, ScanResult, ActivationResult } from '../enums.js';
 import { Customer, ProductOffer } from './customer.js';
 import { Address } from './geo.js';
 import { WorkerGroup } from './org.js';
@@ -218,8 +218,8 @@ export class ScanLog {
   @Column({ type: 'bigint', comment: '被扫标签id(tags表)' })
   tagId!: number;
 
-  @Column({ type: 'varchar', length: 16, comment: '比对结果:MATCH一致/MISMATCH不一致' })
-  result!: string;
+  @Column({ type: 'varchar', length: 16, comment: '比对结果:MATCH一致/MISMATCH不一致/OFFLINE_CACHED离线缓存' })
+  result!: ScanResult;
 }
 
 @Entity('activation_callbacks', { comment: 'L5激活回调:订单第11环节的系统间回执' })
@@ -231,8 +231,8 @@ export class ActivationCallback {
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 
-  @Column({ type: 'varchar', length: 16, comment: '回调结果:SUCCESS成功/FAILED失败' })
-  result!: string;
+  @Column({ type: 'varchar', length: 16, comment: '回调结果:PENDING待触发/SUCCESS成功/FAILED失败' })
+  result!: ActivationResult;
 
   @Column({ type: 'smallint', default: 0, comment: '重试次数' })
   retries!: number;
@@ -293,6 +293,6 @@ export class Complaint {
   @Column({ type: 'varchar', length: 32, comment: '报障类型,如网速慢/断网' })
   type!: string;
 
-  @Column({ type: 'varchar', length: 16, default: 'OPEN', comment: '状态:OPEN受理中/CLOSED已关闭' })
-  status!: string;
+  @Column({ type: 'varchar', length: 16, default: 'OPEN', comment: '状态:OPEN受理中/PROCESSING处理中/CLOSED已关闭' })
+  status!: ComplaintStatus;
 }

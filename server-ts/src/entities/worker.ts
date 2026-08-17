@@ -2,7 +2,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index, OneToMany, OneToOne,
 } from 'typeorm';
-import type { BillStatus, PaymentStatus, TaskStatus } from '../enums.js';
+import type { BillStatus, PaymentStatus, TaskStatus, MessageLevel, PaymentMethod } from '../enums.js';
 import { WorkerGroup } from './org.js';
 import { Customer } from './customer.js';
 import { DispatchTicket } from './order.js';
@@ -469,8 +469,8 @@ export class Payment {
   @Column({ type: 'numeric', precision: 12, scale: 2, comment: '缴费金额' })
   amount!: number;
 
-  @Column({ type: 'varchar', length: 16, comment: '缴费方式:微信/支付宝/现金/银行' })
-  method!: string;
+  @Column({ type: 'varchar', length: 16, comment: '缴费方式:wechat微信/alipay支付宝/card银行卡/cash现金' })
+  method!: PaymentMethod;
 
   @Column({ type: 'varchar', length: 16, comment: '状态:SUCCESS成功/FAILED失败/REFUNDED已退款' })
   status!: PaymentStatus;
@@ -580,8 +580,8 @@ export class WorkerMessage {
   @JoinColumn({ name: 'worker_id' })
   worker!: Worker;
 
-  @Column({ type: 'varchar', length: 8, comment: '级别:INFO/WARN/URGENT' })
-  level!: string;
+  @Column({ type: 'varchar', length: 8, comment: '级别:INFO信息/WARN警告/URGENT紧急' })
+  level!: MessageLevel;
 
   @Column({ type: 'varchar', length: 128, comment: '消息标题' })
   title!: string;

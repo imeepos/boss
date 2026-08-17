@@ -13,7 +13,7 @@ export type ProductStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE';
 export type RealNameStatus = 'VERIFIED' | 'PENDING';
 export type ServiceStatus = 'ACTIVE' | 'ARREARS' | 'SUSPENDED';
 
-export type OrderStatus = 'PENDING' | 'RESERVED' | 'INSTALLING' | 'DONE';
+export type OrderStatus = 'PENDING' | 'RESERVED' | 'INSTALLING' | 'DONE' | 'CANCELLED';
 
 export type BillStatus = 'UNPAID' | 'PAID' | 'OVERDUE';
 export type PaymentStatus = 'SUCCESS' | 'FAILED' | 'REFUNDED';
@@ -33,3 +33,9 @@ export type TicketStatus = 'PENDING' | 'DOING' | 'DONE' | 'CANCELED';
 export type StageResult = 'PENDING' | 'DOING' | 'DONE';
 
 export type TaskStatus = 'PENDING' | 'DOING' | 'DONE' | 'FAILED';
+
+export type ComplaintStatus = 'OPEN' | 'PROCESSING' | 'CLOSED';
+export type ScanResult = 'MATCH' | 'MISMATCH' | 'OFFLINE_CACHED';
+export type ActivationResult = 'PENDING' | 'SUCCESS' | 'FAILED';
+export type MessageLevel = 'INFO' | 'WARN' | 'URGENT';
+export type PaymentMethod = 'wechat' | 'alipay' | 'card' | 'cash';

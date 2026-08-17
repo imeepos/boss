@@ -105,21 +105,19 @@
 - 核心状态枚举：订单 `PENDING/RESERVED/INSTALLING/DONE`（admin）、四码 `LINKED/CONFLICT/UNLINKED`、标签 `UNBOUND/BOUND/DISABLED`、实名 `VERIFIED/PENDING`、账单 `UNPAID/PAID/OVERDUE`、环节 `DONE/DOING/PENDING`（user 端）。
 - 字段名：`assetCode`/`portCode`/`quadCode`（admin asset/oss/quad）、实名核验 `result: PASS/FAIL`。
 
-### 7.2 已修复 ✅（本次）
+### 7.2 已收敛 ✅（本轮一并收敛）
 
-- admin `order.yaml` 环节结果 `WAIT → PENDING`（对齐 `StageResult`），同步 mock 视图与 `docs/admin/order.html` 显示标签；`selfcheck` 仍全绿。
+- 环节结果 `WAIT → PENDING`（admin order.yaml + mock 视图 + order.html）。
+- 订单状态补 `CANCELLED`（terms.md §3 + enums.ts OrderStatus）。
+- 报障补 `PROCESSING`、扫码补 `OFFLINE_CACHED`、激活回调补 `PENDING`（enums.ts 新增 `ComplaintStatus`/`ScanResult`/`ActivationResult` + 实体回写）。
+- 消息级别统一 `INFO/WARN/URGENT`（openapi 2 处 + mock worker/entities + messages.html + style.css）。
+- 缴费方式统一 `wechat/alipay/card/cash`（openapi user/billing + `PaymentMethod` 枚举 + 实体）。
 
-### 7.3 待裁定（枚举扩展/显示值分歧）
+### 7.3 保留（派生态，非冲突）
 
-| # | 位置 | openapi | 实体/terms | 裁定方向 |
-|:-:|------|---------|-----------|---------|
-| 1 | user/schemas.yaml `status` | +`CANCELLED` | OrderStatus 4 态 | terms.md 是否补「已取消」态 |
-| 2 | worker/ticket.yaml `status` | `PROCESSING/CLOSED` | Complaint `OPEN/CLOSED` | 报障「处理中」态是否入实体 |
-| 3 | worker/schemas.yaml 扫码 `result` | +`OFFLINE_CACHED` | `MATCH/MISMATCH` | 师傅离线缓存态 |
-| 4 | worker/schemas.yaml 激活 `status` | +`PENDING` | `SUCCESS/FAILED` | 回调「待触发」态 |
-| 5 | worker/schemas + admin/worker 消息 `level` | `err/warn/ok/info` | `INFO/WARN/URGENT` | 统一消息级别枚举 |
-| 6 | user/billing.yaml `method` | `wechat/alipay/card` | 微信/支付宝/现金/银行 | 缴费方式补齐现金/银行 |
-| 7 | worker/schemas.yaml 工单 `status` | `TODO/ACCEPTED/SCAN_PENDING/DOING/DONE` | TicketStatus `PENDING/DOING/DONE/CANCELED` | 师傅端派生态（可保留） |
+| # | 位置 | openapi | 实体 | 说明 |
+|:-:|------|---------|------|------|
+| 7 | worker/schemas.yaml 工单 `status` | `TODO/ACCEPTED/SCAN_PENDING/DOING/DONE` | TicketStatus `PENDING/DOING/DONE/CANCELED` | 师傅端工单派生态（由订单 stage 派生），保留 |
 
 ### 7.4 字段名/资源名分歧（API 描述性 vs 实体简洁）
 

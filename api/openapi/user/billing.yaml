@@ -56,7 +56,7 @@ paths:
               properties:
                 billNo: { type: string }
                 amount: { type: number }
-                payMethod: { type: string, enum: [wechat, alipay, card] }
+                payMethod: { type: string, enum: [wechat, alipay, card, cash] }
       responses:
         '200':
           description: 支付单已生成
