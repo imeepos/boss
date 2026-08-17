@@ -25,7 +25,8 @@ import (
 // 依赖倒置(见 docs/ADR-001):域之间只经接口依赖;本层把「接口 → 实现」绑定。
 // 增量装配(见 docs/architecture-review.md 发现 3.4):每个阶段只构造已实现的域服务。
 type Application struct {
-	User user.Service
+	User      user.Service
+	OrgLedger user.OrgLedgerService
 
 	Customer       customer.CustomerService
 	Product        customer.ProductService
@@ -93,9 +94,11 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res)
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
+	usr := user.NewPGStoreWithSecret(pool, []byte(cfg.JWT.Secret))
 
 	return &Application{
-		User: user.NewPGStoreWithSecret(pool, []byte(cfg.JWT.Secret)),
+		User:      usr,
+		OrgLedger: usr,
 
 		Customer:       cust,
 		Product:        cust,
