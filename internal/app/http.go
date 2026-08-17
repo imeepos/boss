@@ -86,4 +86,5 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerDeviceRoutes(authed, a)
 	registerProvisionRoutes(authed, a)
 	registerQuadlinkRoutes(authed, a)
+	registerWorkerRoutes(authed, a)
 }

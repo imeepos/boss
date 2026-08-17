@@ -7,25 +7,25 @@ import (
 
 // Group 师傅班组(运营主体自定义组织,公司内 code 唯一)。
 type Group struct {
-	ID            int64
-	LegalEntityID int64
-	Code          string
-	Name          string
-	LeaderID      int64 // 0=无组长
-	LeaderName    string
+	ID            int64  `json:"id"`
+	LegalEntityID int64  `json:"legalEntityId"`
+	Code          string `json:"code"`
+	Name          string `json:"name"`
+	LeaderID      int64  `json:"leaderId"` // 0=无组长
+	LeaderName    string `json:"leaderName"`
 }
 
 // Worker 装维师傅(归属班组,服务区域须落班组公司经营区域)。
 type Worker struct {
-	ID       int64
-	StaffNo  string
-	Name     string
-	GroupID  int64
-	RegionID int64
-	Phone    string
-	Status   int16      // 1在职 0离职
-	JoinedAt time.Time
-	LeftAt   *time.Time // nil=在职
+	ID       int64      `json:"id"`
+	StaffNo  string     `json:"staffNo"`
+	Name     string     `json:"name"`
+	GroupID  int64      `json:"groupId"`
+	RegionID int64      `json:"regionId"`
+	Phone    string     `json:"phone"`
+	Status   int16      `json:"status"` // 1在职 0离职
+	JoinedAt time.Time  `json:"joinedAt"`
+	LeftAt   *time.Time `json:"leftAt,omitempty"` // nil=在职
 }
 
 // WorkerService 师傅域服务口(阶段2):班组/师傅。

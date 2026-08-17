@@ -4,47 +4,47 @@ import "context"
 
 // Performance 师傅绩效(一行=师傅该月在该班组该区域的一段贡献)。
 type Performance struct {
-	ID              int64
-	WorkerID        int64
-	GroupID         int64
-	GroupName       string
-	LegalEntityID   int64
-	LegalEntityName string
-	RegionID        int64
-	RegionName      string
-	Period          string // 2026-08
-	Finished        int32
-	OnTimeRate      int16
-	Score           float64
+	ID              int64   `json:"id"`
+	WorkerID        int64   `json:"workerId"`
+	GroupID         int64   `json:"groupId"`
+	GroupName       string  `json:"groupName"`
+	LegalEntityID   int64   `json:"legalEntityId"`
+	LegalEntityName string  `json:"legalEntityName"`
+	RegionID        int64   `json:"regionId"`
+	RegionName      string  `json:"regionName"`
+	Period          string  `json:"period"` // 2026-08
+	Finished        int32   `json:"finished"`
+	OnTimeRate      int16   `json:"onTimeRate"`
+	Score           float64 `json:"score"`
 }
 
 // Commission 师傅佣金(按月×班组×区域计提)。
 type Commission struct {
-	ID              int64
-	WorkerID        int64
-	GroupID         int64
-	GroupName       string
-	LegalEntityID   int64
-	LegalEntityName string
-	RegionID        int64
-	RegionName      string
-	Period          string
-	Formula         string
-	Amount          float64
+	ID              int64   `json:"id"`
+	WorkerID        int64   `json:"workerId"`
+	GroupID         int64   `json:"groupId"`
+	GroupName       string  `json:"groupName"`
+	LegalEntityID   int64   `json:"legalEntityId"`
+	LegalEntityName string  `json:"legalEntityName"`
+	RegionID        int64   `json:"regionId"`
+	RegionName      string  `json:"regionName"`
+	Period          string  `json:"period"`
+	Formula         string  `json:"formula"`
+	Amount          float64 `json:"amount"`
 }
 
 // Schedule 师傅考勤(按月×班组×区域统计)。
 type Schedule struct {
-	ID              int64
-	WorkerID        int64
-	GroupID         int64
-	GroupName       string
-	LegalEntityID   int64
-	LegalEntityName string
-	RegionID        int64
-	RegionName      string
-	Month           string
-	BusyDays        int16
+	ID              int64  `json:"id"`
+	WorkerID        int64  `json:"workerId"`
+	GroupID         int64  `json:"groupId"`
+	GroupName       string `json:"groupName"`
+	LegalEntityID   int64  `json:"legalEntityId"`
+	LegalEntityName string `json:"legalEntityName"`
+	RegionID        int64  `json:"regionId"`
+	RegionName      string `json:"regionName"`
+	Month           string `json:"month"`
+	BusyDays        int16  `json:"busyDays"`
 }
 
 // WorkerFactService 师傅月度事实域服务口(阶段2)。
