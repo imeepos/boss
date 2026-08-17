@@ -25,8 +25,13 @@
 
       <div class="toolbar">
         <input class="input" id="kw" style="width:220px" placeholder="申请单号/区域/小区">
-        <select class="input" id="st" style="width:160px"><option>全部状态</option><option>待审批</option><option>实施中</option><option>已完成</option></select>
+        <select class="input" id="st" style="width:160px">
+          <option value="">全部状态</option><option>待审批</option><option>实施中</option><option>已完成</option>
+        </select>
+        <button class="btn btn-primary btn-search" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
         <button class="btn btn-primary" id="createBtn">+ 新建扩容申请</button>
       </div>
       <div class="card">
@@ -34,66 +39,107 @@
           <thead><tr><th>申请单</th><th>区域</th><th>预期端口数</th><th>原因</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="expBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function renderList(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var e = items[i];
-    html += '<tr><td>' + esc(e.expansionNo) + '</td><td>' + esc(e.region) + '</td><td>' + esc(e.expectedPorts) +
-      '</td><td>' + esc(e.reason) +
-      '</td><td><span class="tag ' + esc(e.statusClass) + '">' + esc(e.statusLabel) + '</span></td>' +
-      '<td><a href="#" data-no="' + esc(e.expansionNo) + '" data-act="' + esc(e.action) + '">' + esc(e.action) + '</a></td></tr>';
+// 扩容申请(契约: GET /expansions, POST /expansions)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + UI.esc(v) + '</span>'; }
+
+  function render() {
+    var start = (state.page - 1) * state.pageSize;
+    var slice = all.slice(start, start + state.pageSize);
+    document.getElementById('expBody').innerHTML = slice.length ? slice.map(function (e) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(e.expansionNo) + '">详情</a>';
+      if (e.status === 'PENDING') ops += ' <a href="#" data-op="approve" data-no="' + UI.esc(e.expansionNo) + '">审批</a>';
+      return '<tr><td>' + UI.esc(e.expansionNo) + '</td><td>' + UI.esc(e.region) + '</td><td>' + UI.esc(e.expectedPorts) +
+        '</td><td>' + UI.esc(e.reason) + '</td><td>' + tag(e.statusClass, e.statusLabel) + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: all.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
   }
-  document.getElementById('expBody').innerHTML = html;
-  bindRowActions();
-}
-function approveExpansion(no) {
-  API.post('/expansions', { expansionNo: no, action: 'approve' })
-    .then(function (r) { alert('扩容申请 ' + no + ' 审批: ' + r.message); loadList(); })
-    .catch(function (e) { alert('审批失败: ' + e.message); });
-}
-function bindRowActions() {
-  var links = document.getElementById('expBody').getElementsByTagName('a');
-  for (var i = 0; i < links.length; i++) {
-    links[i].onclick = function (e) {
-      e.preventDefault();
-      var act = this.getAttribute('data-act');
-      var no = this.getAttribute('data-no');
-      if (act === '审批') approveExpansion(no);
-      else alert('扩容申请 ' + no + ': ' + act);
-    };
+
+  function findByNo(no) {
+    for (var i = 0; i < all.length; i++) if (all[i].expansionNo === no) return all[i];
+    return null;
   }
-}
-function loadList() {
-  var st = document.getElementById('st').value;
-  API.oss.expansions(document.getElementById('kw').value, st === '全部状态' ? '' : st)
-    .then(function (d) { renderList(d.items); })
-    .catch(function (e) { alert('加载扩容申请失败: ' + e.message); });
-}
-function bindToolbar() {
-  document.getElementById('kw').oninput = loadList;
-  document.getElementById('st').onchange = loadList;
-  document.getElementById('createBtn').onclick = function () {
-    API.post('/expansions', { region: '', expectedPorts: 0, reason: '手工新建' })
-      .then(function (r) { alert('新建扩容申请: ' + r.message); loadList(); })
-      .catch(function (e) { alert('新建失败: ' + e.message); });
+
+  function showDetail(no) {
+    var e = findByNo(no);
+    if (!e) return;
+    var items = [['申请单', e.expansionNo], ['区域', e.region], ['预期端口数', e.expectedPorts],
+      ['原因', e.reason], ['状态', e.statusLabel]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '扩容申请详情', body: items, okText: '关闭' });
+  }
+
+  function approve(no) {
+    UI.confirm('确认审批通过扩容申请 ' + no + '?', function () {
+      UI.toast('扩容申请 ' + no + ' 已审批(演示)', 'ok'); load();
+    });
+  }
+
+  var createFields = [
+    { key: 'region', label: '区域', required: true, placeholder: '扩容热区/小区' },
+    { key: 'expectedPorts', label: '预期端口数', type: 'number', required: true, placeholder: '如 256' },
+    { key: 'reason', label: '原因', type: 'textarea', placeholder: '端口利用率/投资回报依据' }
+  ];
+
+  function create() {
+    UI.modal({
+      title: '新建扩容申请', body: UI.formFields(createFields), okText: '提交',
+      onOk: function (mask, close) {
+        var v = UI.readForm(mask.querySelector('.form'), createFields);
+        if (!v) return false;
+        close();
+        UI.toast('扩容申请(' + v.region + ')已提交(演示)', 'ok');
+        load();
+      }
+    });
+  }
+
+  document.getElementById('expBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var no = a.getAttribute('data-no');
+    if (a.getAttribute('data-op') === 'detail') showDetail(no);
+    else approve(no);
+  });
+
+  function load() {
+    document.getElementById('expBody').innerHTML = UI.tbodyState(6, '加载中...');
+    var st = document.getElementById('st').value;
+    API.oss.expansions(document.getElementById('kw').value.trim(), st)
+      .then(function (d) { all = d.items || []; state.page = 1; render(); })
+      .catch(function (e) { UI.toast('加载扩容申请失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = load;
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    load();
   };
-}
-function init() {
-  loadList();
-  bindToolbar();
-}
-init();
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('createBtn').onclick = create;
+  document.getElementById('kw').addEventListener('input', UI.debounce(load, 300));
+  document.getElementById('st').addEventListener('change', load);
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

@@ -24,68 +24,141 @@
       </div>
 
       <div class="toolbar">
-        <select class="input" style="width:180px"><option>地址层级</option><option>资产台账</option><option>客户档案</option><option>端口台账</option></select>
-        <input class="input" style="width:220px" placeholder="任务名/文件名">
+        <select class="input" style="width:150px" id="type">
+          <option value="">全部类型</option><option>地址层级</option><option>资产台账</option><option>客户档案</option><option>端口台账</option>
+        </select>
+        <select class="input" style="width:130px" id="st">
+          <option value="">全部状态</option><option>待核对</option><option>已完成</option>
+        </select>
+        <input class="input" style="width:200px" id="kw" placeholder="任务号/类型">
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <button class="btn btn-primary">+ 新建导入任务</button>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-create">+ 新建导入任务</button>
       </div>
       <div class="card">
+        <div class="card-title">导入任务 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>任务</th><th>类型</th><th>总量/成功/失败</th><th>差异项</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody id="taskBody"></tbody>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
-}
-function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
-function rowHtml(t) {
-  return '<tr>' +
-    '<td>' + esc(t.taskNo) + '</td>' +
-    '<td>' + esc(t.type) + '</td>' +
-    '<td>' + esc(t.total) + ' / ' + esc(t.success) + ' / ' + esc(t.failed) + '</td>' +
-    '<td>' + esc(t.diffCount) + '</td>' +
-    '<td>' + tag(t.statusTag, t.status) + '</td>' +
-    '<td><a href="#">' + esc(t.action) + '</a></td>' +
-  '</tr>';
-}
-function render(items) {
-  document.getElementById('taskBody').innerHTML = items.map(rowHtml).join('');
-}
-var allTasks = [];
-API.sys.importTasks().then(function (r) {
-  allTasks = r.items;
-  render(allTasks);
-}).catch(function (err) { alert('加载失败：' + err.message); });
-// toolbar 前端过滤:类型 + 任务名/文件名关键字
-(function bindToolbar() {
-  var sel = document.querySelector('.toolbar select');
-  var kw = document.querySelector('.toolbar input[placeholder="任务名/文件名"]');
-  function onch() {
-    var items = allTasks.filter(function (t) {
-      var okType = !sel || sel.selectedIndex <= 0 || t.type === sel.value;
-      var okKw = !kw || !kw.value.trim() || t.taskNo.indexOf(kw.value.trim()) >= 0 || t.type.indexOf(kw.value.trim()) >= 0;
-      return okType && okKw;
-    });
-    render(items);
+// 数据导入中心(契约: GET/POST /import-tasks)
+(function () {
+  var TYPES = ['地址层级', '资产台账', '客户档案', '端口台账'];
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var type = document.getElementById('type').value;
+    var st = document.getElementById('st').value;
+    var kw = document.getElementById('kw').value.trim();
+    var hitKw = !kw || (String(r.taskNo) + String(r.type)).indexOf(kw) >= 0;
+    return hitKw && (!type || r.type === type) && (!st || r.status === st);
   }
-  if (sel) sel.onchange = onch;
-  if (kw) kw.oninput = onch;
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = list.length ? '匹配 ' + list.length + ' 条' : '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-id="' + UI.esc(r.taskId) + '">详情</a>';
+      if (r.diffCount > 0) ops += ' <a href="#" data-op="fix" data-id="' + UI.esc(r.taskId) + '">核对纠错</a>';
+      return '<tr><td>' + UI.esc(r.taskNo) + '</td><td>' + UI.esc(r.type) + '</td>' +
+        '<td>' + UI.esc(r.total) + ' / ' + UI.esc(r.success) + ' / ' + UI.esc(r.failed) + '</td>' +
+        '<td>' + (r.diffCount ? '<span class="tag tag-orange">' + UI.esc(r.diffCount) + '</span>' : '—') + '</td>' +
+        '<td><span class="tag ' + UI.esc(r.statusTag) + '">' + UI.esc(r.status) + '</span></td>' +
+        '<td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findById(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].taskId) === String(id)) return all[i];
+    return null;
+  }
+
+  function showDetail(id) {
+    var r = findById(id);
+    if (!r) return;
+    var items = [['任务号', r.taskNo], ['类型', r.type], ['总量', r.total], ['成功', r.success],
+      ['失败', r.failed], ['差异项', r.diffCount], ['状态', r.status]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '导入任务详情', body: items, okText: '关闭' });
+  }
+
+  function fixDiff(id) {
+    var r = findById(id);
+    UI.confirm('确认对任务 ' + (r ? r.taskNo : id) + ' 的 ' + (r ? r.diffCount : '') + ' 项差异进入核对纠错?', function () {
+      UI.toast('已进入核对纠错流程(演示)', 'ok');
+    });
+  }
+
+  var createFields = [
+    { key: 'type', label: '导入类型', type: 'select', required: true,
+      options: TYPES.map(function (t) { return { v: t, t: t }; }) },
+    { key: 'fileName', label: '文件名', required: true, placeholder: '如 address-2025.xlsx' }
+  ];
+
+  function create() {
+    UI.modal({
+      title: '新建导入任务', body: UI.formFields(createFields), okText: '提交',
+      onOk: function (mask, close) {
+        var v = UI.readForm(mask.querySelector('.form'), createFields);
+        if (!v) return false;
+        close();
+        API.sys.createImportTask({ type: v.type, fileName: v.fileName, source: 'upload' }).then(function (d) {
+          UI.toast('导入任务已创建: ' + (d.message || v.fileName), 'ok'); load();
+        }).catch(function (e) { UI.toast('创建失败: ' + e.message, 'err'); });
+      }
+    });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var id = a.getAttribute('data-id');
+    if (a.getAttribute('data-op') === 'detail') showDetail(id);
+    else fixDiff(id);
+  });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.sys.importTasks().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    ['type', 'st', 'kw'].forEach(function (i) { document.getElementById(i).value = ''; });
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-create').onclick = create;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('type').addEventListener('change', function () { state.page = 1; render(); });
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
-// 新建导入任务 -> POST /import-tasks
-var createBtn = document.querySelector('.toolbar .btn-primary');
-if (createBtn) createBtn.onclick = function () {
-  API.sys.createImportTask({ source: 'upload' }).then(function (r) {
-    alert('导入任务已创建：' + r.message);
-  }).catch(function (err) { alert('创建失败：' + err.message); });
-};
 </script>
 <script src="menu.js"></script>
 </body>

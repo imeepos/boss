@@ -105,5 +105,54 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
 .page-head h2{margin:0 0 4px;font-size:18px;}
 .page-head .desc{color:var(--muted);font-size:13px;}
 
+/* ===== 弹框 ===== */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.modal{background:#fff;border-radius:10px;width:92%;max-width:520px;box-shadow:0 12px 40px rgba(0,0,0,.18);overflow:hidden;}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);font-weight:600;font-size:15px;}
+.modal-head .modal-x{cursor:pointer;color:var(--muted);font-size:18px;line-height:1;}
+.modal-head .modal-x:hover{color:var(--err);}
+.modal-body{padding:16px 18px;max-height:64vh;overflow-y:auto;}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid var(--line);}
+
+/* ===== 表单 ===== */
+.form .form-item{margin-bottom:12px;display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;}
+.form .form-item label{font-size:13px;color:var(--muted);text-align:right;}
+.form .form-item .req{color:var(--err);font-style:normal;}
+.form textarea.input{resize:vertical;}
+
+/* ===== Toast ===== */
+.toast-box{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:1100;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:#fff;border:1px solid var(--line);border-left:3px solid var(--primary);border-radius:6px;padding:8px 16px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.1);opacity:1;transition:opacity .4s;}
+.toast-ok{border-left-color:var(--success);}
+.toast-err{border-left-color:var(--err);}
+.toast.out{opacity:0;}
+
+/* ===== 分页增强 ===== */
+.pagination .page-size{width:70px;padding:4px 6px;}
+.pagination .pg-btns{display:inline-flex;align-items:center;gap:8px;}
+.pagination .pg-cur{color:var(--ink);}
+.pagination button[disabled]{opacity:.45;cursor:not-allowed;}
+
+/* 表格状态单元格 */
+.tbl-state{text-align:center;color:var(--muted);padding:28px 0 !important;}
+
+/* ===== AntD 风下钻详情面板(非弹框;dp- 前缀命名空间,避免与页内样式冲突) ===== */
+.dp-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:0 0 8px;margin-bottom:16px;}
+.dp-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);}
+.dp-head .dp-back{cursor:pointer;color:var(--primary);font-size:13px;}
+.dp-head h3{margin:0;font-size:16px;}
+.dp-body{padding:16px 18px;}
+/* 描述列表 Descriptions */
+.dp-desc{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+.dp-desc .dp-item{display:grid;grid-template-columns:110px 1fr;border-bottom:1px solid var(--line);font-size:13px;}
+.dp-desc .dp-item:nth-last-child(-n+2){border-bottom:none;}
+.dp-desc .dp-label{background:#fafafa;color:var(--muted);padding:9px 12px;}
+.dp-desc .dp-value{padding:9px 12px;}
+@media(max-width:720px){.dp-desc{grid-template-columns:1fr;}.dp-desc .dp-item:nth-last-child(-n+2){border-bottom:1px solid var(--line);}}
+/* 页内 Tabs */
+.dp-tabs{display:flex;gap:24px;border-bottom:1px solid var(--line);margin-bottom:14px;}
+.dp-tabs .dp-tab{padding:8px 2px;cursor:pointer;color:var(--muted);font-size:13.5px;border-bottom:2px solid transparent;}
+.dp-tabs .dp-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600;}
+
 /* 登录页特殊 */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f0f1a 0%,#1a2b4a 60%,#1f3a5f 100%);}

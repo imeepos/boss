@@ -24,16 +24,24 @@
       </div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新建子公司</button>
-        <input class="input" style="width:220px" placeholder="搜索编码/名称">
+        <input class="input" style="width:220px" id="kw" placeholder="搜索编码/名称">
+        <select class="input" style="width:120px" id="st">
+          <option value="">全部状态</option><option>启用</option><option>停用</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
         <span class="tag tag-blue">品牌隔离：客户/订单/账务/资产互不可见</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-new">+ 新建子公司</button>
       </div>
       <div class="card">
+        <div class="card-title">法人列表</div>
         <table class="tbl">
           <thead><tr><th>法人编码</th><th>法人名称</th><th>品牌</th><th>经营区域</th><th>部门数</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="leBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -47,53 +55,124 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+// 子公司/法人: 筛选/分页/详情/新建编辑表单/停用演示(契约: GET /legal-entities)
+(function () {
+  var all = [], cross = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(cls, text) { return '<span class="tag ' + UI.esc(cls) + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(e) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(e.code) + String(e.name)).indexOf(kw) >= 0;
+    return hitKw && (!st || e.statusLabel === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('leBody').innerHTML = slice.length ? slice.map(function (e) {
+      return '<tr><td>' + UI.esc(e.code) + '</td><td>' + UI.esc(e.name) + '</td><td>' + tag(e.brandTag, e.brandName)
+        + '</td><td>' + UI.esc(e.regionName) + '</td><td>' + UI.esc(e.deptCount) + '</td><td>' + tag(e.statusTag, e.statusLabel)
+        + '</td><td><a href="#" data-op="detail" data-id="' + e.legalEntityId + '">详情</a>'
+        + ' <a href="#" data-op="edit" data-id="' + e.legalEntityId + '">编辑</a>'
+        + ' <a href="#" data-op="stop" data-id="' + e.legalEntityId + '">停用</a></td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findRow(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].legalEntityId) === String(id)) return all[i];
+    return null;
+  }
+
+  function detail(id) {
+    var e = findRow(id);
+    if (!e) return;
+    var rows = [['法人编码', e.code], ['法人名称', e.name], ['品牌', e.brandName], ['经营区域', e.regionName],
+      ['部门数', e.deptCount], ['状态', e.statusLabel]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '法人详情', body: rows, okText: '关闭' });
+  }
+
+  function formFieldsOf(e) {
+    return [
+      { key: 'code', label: '法人编码', required: true, value: e ? e.code : '', placeholder: '如 LEG-D' },
+      { key: 'name', label: '法人名称', required: true, value: e ? e.name : '' },
+      { key: 'brandName', label: '品牌', value: e ? e.brandName : '' },
+      { key: 'regionName', label: '经营区域', value: e ? e.regionName : '' },
+      { key: 'status', label: '状态', type: 'select', value: e ? e.statusLabel : '启用',
+        options: [{ v: '启用', t: '启用' }, { v: '停用', t: '停用' }] },
+    ];
+  }
+
+  function save(e) {
+    var fields = formFieldsOf(e);
+    var m = UI.modal({
+      title: e ? '编辑子公司' : '新建子公司', body: UI.formFields(fields), okText: '保存',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, fields);
+        if (!v) return false;
+        close();
+        UI.toast((e ? '已保存子公司 ' : '已新建子公司 ') + v.name + '(演示)', 'ok');
+      }
+    });
+    return m;
+  }
+
+  function stop(id) {
+    var e = findRow(id);
+    UI.confirm('确认停用子公司 ' + (e ? e.name : id) + '? 停用后其数据仍保留但不可新增业务。', function () {
+      UI.toast('已停用: ' + (e ? e.name : id) + '(演示)', 'ok');
+    });
+  }
+
+  document.getElementById('leBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') detail(id);
+    else if (op === 'edit') save(findRow(id));
+    else if (op === 'stop') stop(id);
   });
-}
-function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
-// api.js 未覆盖 org 写接口,这里经统一网关直发 PUT
-function req(method, path, body) {
-  var opt = { method: method, headers: { 'Content-Type': 'application/json' } };
-  var tk = API.token();
-  if (tk) opt.headers['Authorization'] = 'Bearer ' + tk;
-  if (body !== undefined) opt.body = JSON.stringify(body);
-  return fetch(API.config.base + path, opt).then(function (r) {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
-  });
-}
-function leRowHtml(e) {
-  return '<tr>' +
-    '<td>' + esc(e.code) + '</td>' +
-    '<td>' + esc(e.name) + '</td>' +
-    '<td>' + tag(e.brandTag, e.brandName) + '</td>' +
-    '<td>' + esc(e.regionName) + '</td>' +
-    '<td>' + esc(e.deptCount) + '</td>' +
-    '<td>' + tag(e.statusTag, e.statusLabel) + '</td>' +
-    '<td><a href="#" data-id="' + e.legalEntityId + '" data-act="edit">编辑</a> <a href="#" data-id="' + e.legalEntityId + '" data-act="stop">停用</a></td>' +
-  '</tr>';
-}
-function crossRowHtml(c) {
-  return '<tr><td>' + esc(c.legalEntity) + '</td><td>' + esc(c.region) + '</td><td>' + esc(c.scope) + '</td></tr>';
-}
-API.org.legalEntities().then(function (r) {
-  document.getElementById('leBody').innerHTML = r.items.map(leRowHtml).join('');
-  document.getElementById('crossBody').innerHTML = (r.crossRegions || []).map(crossRowHtml).join('');
-}).catch(function (err) { alert('加载失败：' + err.message); });
-document.getElementById('leBody').onclick = function (e) {
-  var el = e.target || e.srcElement;
-  if (el.tagName !== 'A') return;
-  e.preventDefault();
-  var id = el.getAttribute('data-id');
-  var body = el.getAttribute('data-act') === 'stop' ? { status: 0 } : {};
-  req('PUT', '/legal-entities/' + id, body).then(function (r) {
-    alert('操作成功：' + r.message);
-  }).catch(function (err) { alert('操作失败：' + err.message); });
-};
+
+  function load() {
+    document.getElementById('leBody').innerHTML = UI.tbodyState(7, '加载中...');
+    API.org.legalEntities().then(function (r) {
+      all = r.items || [];
+      cross = r.crossRegions || [];
+      document.getElementById('crossBody').innerHTML = cross.length ? cross.map(function (c) {
+        return '<tr><td>' + UI.esc(c.legalEntity) + '</td><td>' + UI.esc(c.region) + '</td><td>' + UI.esc(c.scope) + '</td></tr>';
+      }).join('') : UI.tbodyState(3, '无匹配数据');
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-new').onclick = function () { save(null); };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

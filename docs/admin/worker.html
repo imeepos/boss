@@ -5,12 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>师傅管理 · BOSS 管理后台</title>
 <link rel="stylesheet" href="style.css">
-<style>
-  .stat-row { display: flex; gap: 16px; margin-bottom: 16px; }
-  .stat { flex: 1; background: #fff; border: 1px solid #e6eaf0; border-radius: 10px; padding: 14px 18px; }
-  .stat b { display: block; font-size: 22px; margin-top: 4px; }
-  .stat span { color: #7a8699; font-size: 12px; }
-</style>
 </head>
 <body>
 <div class="layout">
@@ -29,76 +23,156 @@
         <div class="desc">师傅台账与在线/接单管理 · 点击姓名进入师傅详情（绩效/提成/评价/消息/物料/回收/排期聚合）</div>
       </div>
 
-      <div class="stat-row">
-        <div class="stat"><span>在册师傅</span><b id="stTotal">—</b></div>
-        <div class="stat"><span>在线</span><b id="stOnline">—</b></div>
-        <div class="stat"><span>离线</span><b id="stOffline">—</b></div>
-        <div class="stat"><span>公告 / FAQ</span><b><a href="worker-ops.html" id="stOps">内容运营 →</a></b></div>
+      <div class="grid g-4" style="margin-bottom:16px;">
+        <div class="stat"><div class="label">在册师傅</div><div class="val" id="stTotal">—</div></div>
+        <div class="stat"><div class="label">在线</div><div class="val" id="stOnline">—</div></div>
+        <div class="stat"><div class="label">离线</div><div class="val" id="stOffline">—</div></div>
+        <div class="stat"><div class="label">内容运营</div><div class="val"><a href="worker-ops.html">公告/FAQ →</a></div></div>
       </div>
 
       <div class="toolbar">
         <input class="input" id="kw" style="width:220px" placeholder="姓名/工号/班组">
+        <select class="input" id="st" style="width:120px">
+          <option value="">全部状态</option><option value="在线">在线</option><option value="离线">离线</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <a class="btn" href="worker-ops.html">师傅端内容运营（公告/FAQ/健康/抢单池）</a>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn" id="btn-export">导出台账</button>
+        <button class="btn btn-primary" id="btn-msg">下发消息</button>
       </div>
+
       <div class="card">
+        <div class="card-title">师傅列表 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>工号</th><th>姓名</th><th>班组</th><th>电话</th><th>状态</th><th>司龄</th><th>在途工单</th><th>月完成</th><th>准时率</th><th>评分</th><th>接单设置</th><th>操作</th></tr></thead>
-          <tbody id="workerBody"></tbody>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
+
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+// 师傅台账:筛选/分页/详情弹框/在线停启(契约: GET /workers, PUT /workers/{id}/settings)
+(function () {
+  var COLS = 12;
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-function renderStats(d) {
-  document.getElementById('stTotal').textContent = d.stats.total;
-  document.getElementById('stOnline').textContent = d.stats.online;
-  document.getElementById('stOffline').textContent = d.stats.total - d.stats.online;
-}
+  function matches(w) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (w.staffNo + w.name + w.groupName).indexOf(kw) >= 0;
+    return hitKw && (!st || w.onlineLabel === st);
+  }
 
-function renderRows(items) {
-  document.getElementById('workerBody').innerHTML = items.map(function (w) {
-    return '<tr>'
-      + '<td>' + esc(w.staffNo) + '</td>'
-      + '<td><a href="worker-detail.html?workerId=' + w.workerId + '">' + esc(w.name) + '</a></td>'
-      + '<td>' + esc(w.groupName) + '</td>'
-      + '<td>' + esc(w.phoneMasked) + '</td>'
-      + '<td><span class="tag ' + esc(w.onlineClass) + '">' + esc(w.onlineLabel) + '</span></td>'
-      + '<td>' + esc(w.serveYears) + ' 年</td>'
-      + '<td>' + esc(w.doingCount) + '</td>'
-      + '<td>' + esc(w.monthFinished) + '</td>'
-      + '<td>' + esc(w.onTimeRate) + '%</td>'
-      + '<td>' + esc(w.score) + '</td>'
-      + '<td>' + esc(w.radiusKm) + 'km / ' + esc(w.acceptTypes) + '</td>'
-      + '<td><a href="#" data-id="' + w.workerId + '" data-online="' + (w.online ? '1' : '') + '">'
-      + (w.online ? '置离线' : '置在线') + '</a> · <a href="worker-detail.html?workerId=' + w.workerId + '">详情</a></td>'
-      + '</tr>';
-  }).join('');
-  Array.prototype.forEach.call(document.getElementById('workerBody').querySelectorAll('a[data-id]'), function (a) {
-    a.onclick = function (e) {
-      e.preventDefault();
-      API.worker.saveSettings(this.getAttribute('data-id'), { online: !this.getAttribute('data-online') })
-        .then(load);
-    };
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = list.length ? '' : '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (w) {
+      var detail = 'worker-detail.html?workerId=' + w.workerId;
+      return '<tr><td>' + UI.esc(w.staffNo) + '</td>'
+        + '<td><a href="' + detail + '">' + UI.esc(w.name) + '</a></td>'
+        + '<td>' + UI.esc(w.groupName) + '</td><td>' + UI.esc(w.phoneMasked) + '</td>'
+        + '<td><span class="tag ' + UI.esc(w.onlineClass) + '">' + UI.esc(w.onlineLabel) + '</span></td>'
+        + '<td>' + UI.esc(w.serveYears) + ' 年</td><td>' + UI.esc(w.doingCount) + '</td>'
+        + '<td>' + UI.esc(w.monthFinished) + '</td><td>' + UI.esc(w.onTimeRate) + '%</td>'
+        + '<td>' + UI.esc(w.score) + '</td><td>' + UI.esc(w.radiusKm) + 'km / ' + UI.esc(w.acceptTypes) + '</td>'
+        + '<td><a href="#" data-op="detail" data-id="' + w.workerId + '">详情</a> · '
+        + '<a href="#" data-op="toggle" data-id="' + w.workerId + '" data-online="' + (w.online ? '1' : '') + '">'
+        + (w.online ? '置离线' : '置在线') + '</a></td></tr>';
+    }).join('') : UI.tbodyState(COLS, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function showDetail(id) {
+    var w = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].workerId) === String(id)) w = all[i];
+    if (!w) return;
+    var rows = [
+      ['工号', w.staffNo], ['姓名', w.name], ['班组', w.groupName], ['电话', w.phoneMasked],
+      ['状态', w.onlineLabel], ['司龄', w.serveYears + ' 年'], ['在途工单', w.doingCount], ['月完成', w.monthFinished],
+      ['准时率', w.onTimeRate + '%'], ['评分', w.score], ['接单设置', w.radiusKm + 'km / ' + w.acceptTypes],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '师傅详情', body: rows, okText: '关闭' });
+  }
+
+  function toggle(id, online) {
+    UI.confirm('确认将该师傅置为' + (online ? '在线' : '离线') + '?', function () {
+      API.worker.saveSettings(id, { online: !online }).then(function () {
+        UI.toast('已更新接单状态', 'ok');
+        load();
+      }).catch(function (e) { UI.toast('操作失败: ' + e.message, 'err'); });
+    });
+  }
+
+  function sendMsg() {
+    var fields = [
+      { key: 'title', label: '消息标题', required: true, placeholder: '如: 调度通知' },
+      { key: 'content', label: '消息内容', type: 'textarea', required: true, placeholder: '下发给全部师傅' },
+    ];
+    UI.modal({
+      title: '下发消息(全体师傅)', body: UI.formFields(fields), okText: '下发',
+      onOk: function (m, close) {
+        var v = UI.readForm(m, fields);
+        if (!v) return false;
+        return API.worker.sendMessage({ level: 'info', title: v.title, content: v.content }).then(function () {
+          UI.toast('消息已下发(演示)', 'ok'); close();
+        });
+      }
+    });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') showDetail(id);
+    else if (op === 'toggle') toggle(id, !!a.getAttribute('data-online'));
   });
-}
 
-function load() {
-  API.worker.list(document.getElementById('kw').value).then(function (d) {
-    renderStats(d);
-    renderRows(d.items);
-  }).catch(function (e) { alert('加载师傅列表失败: ' + e.message); });
-}
-document.getElementById('kw').oninput = load;
-load();
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(COLS, '加载中...');
+    API.worker.list().then(function (d) {
+      all = d.items || [];
+      document.getElementById('stTotal').textContent = d.stats.total;
+      document.getElementById('stOnline').textContent = d.stats.online;
+      document.getElementById('stOffline').textContent = d.stats.total - d.stats.online;
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载师傅列表失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('btn-msg').onclick = sendMsg;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

@@ -29,12 +29,13 @@
     <p class="sub">BOSS 管理后台 · 统一登录</p>
     <div class="field">
       <label>账号</label>
-      <input type="text" placeholder="请输入账号" value="admin">
+      <input type="text" id="loginUser" placeholder="请输入账号" value="admin">
     </div>
     <div class="field">
       <label>密码</label>
-      <input type="password" placeholder="请输入密码" value="123456">
+      <input type="password" id="loginPass" placeholder="请输入密码" value="123456">
     </div>
+    <div class="field-err" id="loginErr" style="display:none;color:#e5484d;font-size:13px;margin:-8px 0 12px;"></div>
     <button class="login-btn" id="loginBtn">登 录</button>
 
     <div class="roles">
@@ -51,20 +52,42 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function doLogin() {
-  var u = document.querySelector('.field input[type="text"]').value.trim();
-  var p = document.querySelector('.field input[type="password"]').value;
-  if (!u || !p) { alert('请输入账号和密码'); return; }
-  API.auth.login(u, p).then(function (r) {
-    API.setToken(r.token);
-    location.href = 'dashboard.html';
-  }).catch(function (err) {
-    alert('登录失败：' + err.message);
-  });
-}
-document.getElementById('loginBtn').onclick = doLogin;
+// 登录:必填校验 + 行内错误提示 + 接口错误 toast,回车提交
+(function () {
+  var btn = document.getElementById('loginBtn');
+  var errBox = document.getElementById('loginErr');
+
+  function showErr(msg) {
+    errBox.textContent = msg;
+    errBox.style.display = msg ? 'block' : 'none';
+  }
+
+  function doLogin() {
+    var u = document.getElementById('loginUser').value.trim();
+    var p = document.getElementById('loginPass').value;
+    if (!u) { showErr('请输入账号'); document.getElementById('loginUser').focus(); return; }
+    if (!p) { showErr('请输入密码'); document.getElementById('loginPass').focus(); return; }
+    showErr('');
+    btn.disabled = true;
+    btn.textContent = '登录中...';
+    API.auth.login(u, p).then(function (r) {
+      API.setToken(r.token);
+      location.href = 'dashboard.html';
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = '登 录';
+      showErr('登录失败：' + err.message);
+      UI.toast('登录失败：' + err.message, 'err');
+    });
+  }
+
+  btn.onclick = doLogin;
+  document.getElementById('loginPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+})();
 </script>
 </body>
 </html>

@@ -25,54 +25,121 @@
 
       <div class="toolbar">
         <input class="input" style="width:220px" id="kw" placeholder="订单号/标签/资产码">
-        <select class="input" style="width:140px" id="rs"><option value="">全部结果</option><option value="MATCH">绑定成功</option><option value="MISMATCH">绑定拒绝</option></select>
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部结果</option><option value="MATCH">绑定成功</option><option value="MISMATCH">绑定拒绝</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-export">导出记录</button>
       </div>
       <div class="card">
+        <div class="card-title">扫码绑定记录 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>订单号</th><th>师傅</th><th>扫码标签</th><th>预绑定标签</th><th>校验结果</th><th>时间</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
+// 扫码绑定记录:筛选/分页/详情/换机重绑演示(契约: GET /scan-logs,结果 MATCH/MISMATCH;订单第 9 环节)
 (function () {
   var ST_TAG = { MATCH: 'tag-green', MISMATCH: 'tag-red' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || [r.orderNo, r.scannedTag, r.preboundTag, r.master].some(function (v) {
+      return String(v || '').indexOf(kw) >= 0;
+    });
+    return hitKw && (!st || r.result === st);
   }
-  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
 
-  function load() {
-    API.quad.scanLogs(document.getElementById('kw').value.trim())
-      .then(function (r) {
-        var rs = document.getElementById('rs').value;
-        var items = rs ? r.items.filter(function (x) { return x.result === rs; }) : r.items;
-        var html = '';
-        for (var i = 0; i < items.length; i++) {
-          var s = items[i];
-          html += '<tr><td>' + esc(s.orderNo) + '</td><td>' + esc(s.master) + '</td><td>' + esc(s.scannedTag) + '</td><td>' + esc(s.preboundTag)
-            + '</td><td>' + tag(ST_TAG[s.result] || 'tag-gray', s.resultLabel) + '</td><td>' + esc(s.time)
-            + '</td><td><a href="#" class="op" data-no="' + esc(s.orderNo) + '">详情</a></td></tr>';
-        }
-        document.getElementById('rows').innerHTML = html || '<tr><td colspan="7">无数据</td></tr>';
-      })
-      .catch(function (e) { alert('扫码记录加载失败: ' + e.message); });
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(r.orderNo) + '">详情</a>';
+      if (r.result === 'MISMATCH') {
+        ops += ' <a href="#" data-op="rebind" data-no="' + UI.esc(r.orderNo) + '">换机重绑</a>';
+      }
+      return '<tr><td>' + UI.esc(r.orderNo) + '</td><td>' + UI.esc(r.master) + '</td><td>' + UI.esc(r.scannedTag)
+        + '</td><td>' + UI.esc(r.preboundTag) + '</td><td>' + tag(ST_TAG[r.result] || 'tag-gray', r.resultLabel || r.result)
+        + '</td><td>' + UI.esc(r.time) + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    var mm = list.filter(function (r) { return r.result === 'MISMATCH'; }).length;
+    document.getElementById('row-hint').textContent = list.length ? '拒绝 ' + mm + ' 笔' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findByNo(no) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].orderNo) === String(no)) return all[i];
+    return null;
+  }
+
+  function showDetail(no) {
+    var r = findByNo(no);
+    if (!r) return;
+    var rows = [
+      ['订单号', r.orderNo], ['师傅', r.master], ['扫码标签', r.scannedTag],
+      ['预绑定标签', r.preboundTag], ['校验结果', r.resultLabel || r.result], ['时间', r.time],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '扫码绑定详情', body: rows, okText: '关闭' });
+  }
+
+  function rebind(no) {
+    UI.confirm('确认对订单 ' + no + ' 发起换机重绑?', function () {
+      UI.toast('换机重绑请求已提交(演示)', 'ok');
+    });
   }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A') return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    alert('订单 ' + a.getAttribute('data-no') + ' 扫码详情: 演示操作');
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else if (op === 'rebind') rebind(no);
   });
 
-  document.getElementById('kw').addEventListener('input', load);
-  document.getElementById('rs').addEventListener('change', load);
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(7, '加载中...');
+    API.quad.scanLogs(document.getElementById('kw').value.trim()).then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
 
   load();
 })();

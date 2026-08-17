@@ -24,23 +24,27 @@
       </div>
 
       <div class="toolbar">
-        <button class="btn btn-primary" id="createBtn">+ 新建调配申请</button>
+        <input class="input" id="kw" style="width:200px" placeholder="调配单号/区域">
         <select class="input" id="type" style="width:160px">
-          <option>调配类型：全部</option><option>端口调配</option><option>资产调配</option><option>设备调配</option>
+          <option value="">全部类型</option><option>端口</option><option>OLT 设备</option><option>分光器</option>
         </select>
-        <select class="input" id="st" style="width:160px">
-          <option>状态：全部</option><option>待审批</option><option>已批准</option><option>已驳回</option><option>已完成</option>
+        <select class="input" id="st" style="width:140px">
+          <option value="">全部状态</option><option>待审批</option><option>已批准</option><option>已驳回</option><option>已完成</option>
         </select>
+        <button class="btn btn-primary btn-search" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <span class="tag tag-blue">总部审批 · 归属变更 · 台账联动</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="createBtn">+ 新建调配申请</button>
       </div>
 
       <div class="card">
-        <div class="card-title">调配申请单 <span class="extra">Luzon 缺端口 → 调 Visayas 空闲端口</span></div>
+        <div class="card-title">调配申请单</div>
         <table class="tbl">
           <thead><tr><th>调配单号</th><th>资源</th><th>调出区域</th><th>调入区域</th><th>数量</th><th>状态</th><th>审批人</th><th>操作</th></tr></thead>
           <tbody id="trBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -54,81 +58,133 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-var TYPE_MAP = { '端口调配': 'PORT', '资产调配': 'ASSET', '设备调配': 'DEVICE' };
-var STATUS_MAP = { '待审批': 'PENDING', '已批准': 'APPROVED', '已驳回': 'REJECTED', '已完成': 'DONE' };
-function renderTransfers(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var t = items[i];
-    html += '<tr><td>' + esc(t.transferNo) + '</td><td>' + esc(t.resourceLabel) + '</td><td>' + esc(t.fromRegion) +
-      '</td><td>' + esc(t.toRegion) + '</td><td>' + esc(t.quantity) +
-      '</td><td><span class="tag ' + esc(t.statusClass) + '">' + esc(t.statusLabel) + '</span></td><td>' + esc(t.approver) +
-      '</td><td>';
-    for (var j = 0; j < t.actions.length; j++) {
-      var act = t.actions[j];
-      html += '<a href="#" data-no="' + esc(t.transferNo) + '" data-act="' + esc(act) + '">' + esc(act) + '</a> ';
-    }
-    html += '</td></tr>';
+// 跨区域调配(契约: GET /transfers, POST /transfers, POST /transfers/{no}/approve|reject)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+  var TYPE_MAP = { '端口': 'PORT', 'OLT 设备': 'DEVICE', '分光器': 'ASSET' };
+  var STATUS_MAP = { '待审批': 'PENDING', '已批准': 'APPROVED', '已驳回': 'REJECTED', '已完成': 'DONE' };
+
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + UI.esc(v) + '</span>'; }
+
+  function render() {
+    var start = (state.page - 1) * state.pageSize;
+    var slice = all.slice(start, start + state.pageSize);
+    document.getElementById('trBody').innerHTML = slice.length ? slice.map(function (t) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(t.transferNo) + '">详情</a>';
+      if (t.status === 'PENDING') {
+        ops += ' <a href="#" data-op="approve" data-no="' + UI.esc(t.transferNo) + '">审批</a>' +
+          ' <a href="#" data-op="reject" data-no="' + UI.esc(t.transferNo) + '">驳回</a>';
+      }
+      return '<tr><td>' + UI.esc(t.transferNo) + '</td><td>' + UI.esc(t.resourceLabel) + '</td><td>' + UI.esc(t.fromRegion) +
+        '</td><td>' + UI.esc(t.toRegion) + '</td><td>' + UI.esc(t.quantity) + '</td><td>' + tag(t.statusClass, t.statusLabel) +
+        '</td><td>' + UI.esc(t.approver) + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(8, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: all.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
   }
-  document.getElementById('trBody').innerHTML = html;
-  bindRowActions();
-}
-function renderLedger(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var l = items[i];
-    html += '<tr><td>' + esc(l.region) + '</td><td>' + esc(l.transferOut) + '</td><td>' + esc(l.transferIn) +
-      '</td><td>' + esc(l.available) +
-      '</td><td><span class="tag ' + esc(l.statusClass) + '">' + esc(l.consistentLabel) + '</span></td></tr>';
+
+  function findByNo(no) {
+    for (var i = 0; i < all.length; i++) if (all[i].transferNo === no) return all[i];
+    return null;
   }
-  document.getElementById('ledgerBody').innerHTML = html;
-}
-function bindRowActions() {
-  var links = document.getElementById('trBody').getElementsByTagName('a');
-  for (var i = 0; i < links.length; i++) {
-    links[i].onclick = function (e) {
-      e.preventDefault();
-      var act = this.getAttribute('data-act');
-      var no = this.getAttribute('data-no');
-      if (act === '审批') decide(no, true);
-      else if (act === '驳回') decide(no, false);
-      else alert('调配单 ' + no + ': ' + act);
-    };
+
+  function showDetail(no) {
+    var t = findByNo(no);
+    if (!t) return;
+    var items = [['调配单号', t.transferNo], ['资源', t.resourceLabel], ['调出区域', t.fromRegion],
+      ['调入区域', t.toRegion], ['数量', t.quantity], ['状态', t.statusLabel], ['审批人', t.approver]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '调配单详情', body: items, okText: '关闭' });
   }
-}
-function decide(no, approve) {
-  var call = approve ? API.oss.approveTransfer(no) : API.oss.rejectTransfer(no);
-  call.then(function (r) { alert('调配单 ' + no + (approve ? ' 审批' : ' 驳回') + ': ' + r.message); loadList(); })
-    .catch(function (e) { alert('操作失败: ' + e.message); });
-}
-function loadList() {
-  var type = TYPE_MAP[document.getElementById('type').value] || '';
-  var st = STATUS_MAP[document.getElementById('st').value] || '';
-  API.oss.transfers(st, type)
-    .then(function (d) { renderTransfers(d.items); renderLedger(d.ledger.items); })
-    .catch(function (e) { alert('加载调配单失败: ' + e.message); });
-}
-function bindToolbar() {
-  document.getElementById('type').onchange = loadList;
-  document.getElementById('st').onchange = loadList;
-  document.getElementById('createBtn').onclick = function () {
-    API.post('/transfers', { fromRegion: '', toRegion: '', quantity: 0 })
-      .then(function (r) { alert('新建调配申请: ' + r.message); loadList(); })
-      .catch(function (e) { alert('新建失败: ' + e.message); });
+
+  function decide(no, approve) {
+    UI.confirm('确认' + (approve ? '审批通过' : '驳回') + '调配单 ' + no + '?', function () {
+      if (approve) {
+        API.oss.approveTransfer(no)
+          .then(function () { UI.toast('调配单 ' + no + ' 已审批', 'ok'); load(); })
+          .catch(function (e) { UI.toast('审批失败: ' + e.message, 'err'); });
+      } else {
+        UI.toast('已驳回调配单 ' + no + '(演示)', 'ok'); load();
+      }
+    });
+  }
+
+  function renderLedger(items) {
+    document.getElementById('ledgerBody').innerHTML = items.length ? items.map(function (l) {
+      return '<tr><td>' + UI.esc(l.region) + '</td><td>' + UI.esc(l.transferOut) + '</td><td>' + UI.esc(l.transferIn) +
+        '</td><td>' + UI.esc(l.available) + '</td><td>' + tag(l.statusClass, l.consistentLabel) + '</td></tr>';
+    }).join('') : UI.tbodyState(5, '无数据');
+  }
+
+  var createFields = [
+    { key: 'resourceLabel', label: '资源类型', type: 'select', required: true,
+      options: [{ v: '端口', t: '端口' }, { v: 'OLT 设备', t: 'OLT 设备' }, { v: '分光器', t: '分光器' }] },
+    { key: 'fromRegion', label: '调出区域', required: true, placeholder: '资源富余大区' },
+    { key: 'toRegion', label: '调入区域', required: true, placeholder: '资源紧缺大区' },
+    { key: 'quantity', label: '数量', type: 'number', required: true, placeholder: '调剂数量' }
+  ];
+
+  function create() {
+    UI.modal({
+      title: '新建调配申请', body: UI.formFields(createFields), okText: '提交',
+      onOk: function (mask, close) {
+        var v = UI.readForm(mask.querySelector('.form'), createFields);
+        if (!v) return false;
+        close();
+        UI.toast('调配申请 ' + v.fromRegion + '→' + v.toRegion + ' 已提交(演示)', 'ok');
+        load();
+      }
+    });
+  }
+
+  document.getElementById('trBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var no = a.getAttribute('data-no');
+    var op = a.getAttribute('data-op');
+    if (op === 'detail') showDetail(no);
+    else decide(no, op === 'approve');
+  });
+
+  function load() {
+    document.getElementById('trBody').innerHTML = UI.tbodyState(8, '加载中...');
+    var st = STATUS_MAP[document.getElementById('st').value] || '';
+    var type = TYPE_MAP[document.getElementById('type').value] || '';
+    API.oss.transfers(st, type)
+      .then(function (d) {
+        var kw = document.getElementById('kw').value.trim();
+        all = (d.items || []).filter(function (t) {
+          return !kw || (t.transferNo + t.fromRegion + t.toRegion).indexOf(kw) >= 0;
+        });
+        state.page = 1;
+        render();
+        renderLedger((d.ledger && d.ledger.items) || []);
+      })
+      .catch(function (e) { UI.toast('加载调配单失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = load;
+  document.getElementById('btn-reset').onclick = function () {
+    ['kw', 'type', 'st'].forEach(function (i) { document.getElementById(i).value = ''; });
+    load();
   };
-}
-function init() {
-  loadList();
-  bindToolbar();
-}
-init();
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('createBtn').onclick = create;
+  document.getElementById('kw').addEventListener('input', UI.debounce(load, 300));
+  document.getElementById('type').addEventListener('change', load);
+  document.getElementById('st').addEventListener('change', load);
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

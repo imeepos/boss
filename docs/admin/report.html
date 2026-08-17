@@ -25,65 +25,129 @@
 
       <div class="toolbar">
         <select class="input" style="width:140px" id="periodSel"><option>日</option><option>周</option><option>月</option><option>季度</option></select>
-        <input class="input" style="width:220px" placeholder="报告标题" id="kwInput">
+        <input class="input" style="width:220px" placeholder="报告标题" id="kw">
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-refresh">刷新</button>
         <span class="spacer"></span>
         <button class="btn btn-primary" id="btnGen">+ 手动生成</button>
       </div>
       <div class="card">
+        <div class="card-title">报告列表 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>报告</th><th>周期</th><th>生成时间</th><th>推送对象</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody id="reportRows"></tbody>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 报告中心渲染(契约: GET/POST /reports, POST /reports/{reportId}/send)
+// 报告中心(契约: GET/POST /reports, POST /reports/{reportId}/send)
 (function () {
   var STATUS_TAG = { '已推送': 'tag-green', '生成中': 'tag-orange' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var period = document.getElementById('periodSel').value;
+    return (!kw || String(r.title || '').indexOf(kw) >= 0) && (!period || r.period === period);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var op = r.status === '生成中'
+        ? '<a href="#" data-op="detail" data-id="' + UI.esc(r.reportId) + '">详情</a>'
+        : '<a href="#" data-op="detail" data-id="' + UI.esc(r.reportId) + '">查看</a>'
+          + ' <a href="#" data-op="send" data-id="' + UI.esc(r.reportId) + '">推送</a>';
+      return '<tr><td>' + UI.esc(r.title) + '</td><td>' + UI.esc(r.period) + '</td><td>'
+        + UI.esc(r.generatedAt) + '</td><td>' + UI.esc(r.audience) + '</td><td>'
+        + tag(STATUS_TAG[r.status] || 'tag-gray', r.status) + '</td><td>' + op + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    document.getElementById('row-hint').textContent = list.length ? '共 ' + list.length + ' 份' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
 
-  function render(items) {
-    document.getElementById('reportRows').innerHTML = items.map(function (r) {
-      var op = r.status === '生成中'
-        ? '<a href="#" data-send="' + r.reportId + '">详情</a>'
-        : '<a href="#" data-view="' + r.reportId + '">查看</a>';
-      return '<tr><td>' + esc(r.title) + '</td><td>' + esc(r.period) + '</td><td>'
-        + esc(r.generatedAt) + '</td><td>' + esc(r.audience) + '</td><td><span class="tag '
-        + (STATUS_TAG[r.status] || 'tag-gray') + '">' + esc(r.status) + '</span></td><td>' + op + '</td></tr>';
-    }).join('');
+  function findById(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].reportId) === String(id)) return all[i];
+    return null;
   }
+
+  function showDetail(id) {
+    var r = findById(id);
+    if (!r) return;
+    var rows = [
+      ['报告', r.title], ['周期', r.period], ['生成时间', r.generatedAt],
+      ['推送对象', r.audience], ['状态', r.status],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '报告详情', body: rows, okText: '关闭' });
+  }
+
+  function sendReport(id) {
+    UI.confirm('推送报告 #' + id + ' 到指定对象?', function () {
+      API.intel.sendReport(id).then(function (res) {
+        if (res.code === 0) { UI.toast('报告 #' + id + ' 推送成功', 'ok'); load(); }
+        else UI.toast('推送失败', 'err');
+      }).catch(function (e) { UI.toast('推送失败: ' + e.message, 'err'); });
+    });
+  }
+
+  function gen() {
+    var fields = [
+      { key: 'period', label: '周期', type: 'select', value: document.getElementById('periodSel').value,
+        options: [{ v: '日', t: '日' }, { v: '周', t: '周' }, { v: '月', t: '月' }, { v: '季度', t: '季度' }], required: true },
+      { key: 'title', label: '报告标题', placeholder: '可空，默认按周期自动命名' },
+    ];
+    UI.modal({
+      title: '手动生成报告', body: UI.formFields(fields), okText: '生成',
+      onOk: function (mask) {
+        var v = UI.readForm(mask, fields);
+        if (!v) return false;
+        return API.post('/reports', v).then(function (res) {
+          if (res.code === 0) { UI.toast('报告生成任务已提交', 'ok'); load(); return true; }
+          UI.toast('生成失败', 'err'); return false;
+        });
+      }
+    });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') showDetail(id);
+    else if (op === 'send') sendReport(id);
+  });
 
   function load() {
-    API.intel.reports(document.getElementById('kwInput').value.trim()).then(function (d) {
-      render(d.items);
-    });
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.intel.reports(document.getElementById('kw').value.trim()).then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
   }
 
-  document.getElementById('reportRows').onclick = function (e) {
-    var send = e.target.getAttribute('data-send');
-    var view = e.target.getAttribute('data-view');
-    if (send) {
-      API.intel.sendReport(send).then(function (res) {
-        alert(res.code === 0 ? '报告 #' + send + ' 推送成功' : '推送失败');
-      });
-      return false;
-    }
-    if (view) { alert('查看报告 #' + view); return false; }
-  };
-  document.getElementById('btnGen').onclick = function () {
-    API.post('/reports', { period: document.getElementById('periodSel').value }).then(function (res) {
-      alert(res.code === 0 ? '报告生成任务已提交' : '生成失败');
-    });
-  };
-  document.getElementById('kwInput').oninput = load;
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btnGen').onclick = gen;
+  document.getElementById('kw').addEventListener('input', UI.debounce(load, 300));
+  document.getElementById('periodSel').addEventListener('change', function () { state.page = 1; render(); });
 
   load();
 })();

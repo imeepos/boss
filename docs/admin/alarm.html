@@ -21,81 +21,176 @@
       <div class="page-head"><h2>告警中心</h2><div class="desc">跨域告警汇聚 · 设备/四码/配置等异常</div></div>
 
       <div class="toolbar">
-        <select class="input" style="width:140px" id="levelSel"><option value="">级别：全部</option><option value="CRITICAL">严重</option><option value="WARNING">警告</option><option value="INFO">提示</option></select>
+        <input class="input" style="width:220px" id="kw" placeholder="来源/内容关键字">
+        <select class="input" style="width:140px" id="levelSel">
+          <option value="">级别：全部</option><option value="CRITICAL">严重</option>
+          <option value="WARNING">警告</option><option value="INFO">提示</option>
+        </select>
+        <select class="input" style="width:140px" id="st">
+          <option value="">状态：全部</option><option value="PENDING">未确认</option><option value="ACKED">已确认</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-refresh">刷新</button>
         <span class="spacer"></span>
-        <span class="tag tag-red">未处理严重告警：5</span>
+        <span class="tag tag-red" id="critHint">未处理严重告警：-</span>
       </div>
       <div class="card">
+        <div class="card-title">告警列表 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
-          <thead><tr><th>级别</th><th>来源</th><th>内容</th><th>时间</th><th>操作</th></tr></thead>
-          <tbody id="alarmRows"></tbody>
+          <thead><tr><th>级别</th><th>来源</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
         <div class="card-title">台风应急 · 批量复测 <span class="extra">MON-004 应急任务下发</span></div>
         <table class="tbl">
           <thead><tr><th>任务号</th><th>片区</th><th>受影响客户</th><th>下发范围</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            <tr><td>EMG-20250817-001</td><td>望京X片区</td><td>23 户</td><td>跨区公开抢单</td><td><span class="tag tag-orange">进行中</span></td><td><a href="#" id="emgSend">下发</a> <a href="#" id="emgList">清单</a></td></tr>
-          </tbody>
+          <tbody id="emgRows"></tbody>
         </table>
       </div>
-
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 告警中心渲染(契约: GET /alarms, POST /alarms/{alarmId}/ack, POST /alarms/batch-retest)
+// 告警中心(契约: GET /alarms, POST /alarms/{alarmId}/ack, POST /alarms/batch-retest)
 (function () {
   var LEVEL_TAG = { CRITICAL: 'tag-red', WARNING: 'tag-orange', INFO: 'tag-blue' };
+  var ST_TAG = { PENDING: 'tag-orange', ACKED: 'tag-green' };
+  var EMG = [{ taskNo: 'EMG-20250817-001', zone: '望京X片区', customers: 23, scope: '跨区公开抢单', statusLabel: '进行中' }];
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var lv = document.getElementById('levelSel').value;
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || [r.source, r.content].some(function (v) {
+      return String(v || '').indexOf(kw) >= 0;
+    });
+    return hitKw && (!lv || r.level === lv) && (!st || (r.status || 'PENDING') === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-id="' + UI.esc(r.alarmId) + '">详情</a>';
+      if ((r.status || 'PENDING') === 'PENDING') {
+        ops += ' <a href="#" data-op="ack" data-id="' + UI.esc(r.alarmId) + '">确认</a>';
+      }
+      return '<tr><td>' + tag(LEVEL_TAG[r.level] || 'tag-gray', r.levelLabel || r.level)
+        + '</td><td>' + UI.esc(r.source) + '</td><td>' + UI.esc(r.content) + '</td><td>'
+        + tag(ST_TAG[r.status || 'PENDING'] || 'tag-gray', r.statusLabel || '未确认') + '</td><td>'
+        + UI.esc(r.time) + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    var crit = list.filter(function (r) { return r.level === 'CRITICAL' && (r.status || 'PENDING') === 'PENDING'; }).length;
+    document.getElementById('critHint').textContent = '未处理严重告警：' + crit;
+    document.getElementById('row-hint').textContent = list.length ? '共 ' + list.length + ' 条' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
 
-  function render(items) {
-    document.getElementById('alarmRows').innerHTML = items.map(function (r) {
-      return '<tr><td><span class="tag ' + (LEVEL_TAG[r.level] || 'tag-gray') + '">' + esc(r.levelLabel)
-        + '</span></td><td>' + esc(r.source) + '</td><td>' + esc(r.content) + '</td><td>' + esc(r.time)
-        + '</td><td><a href="#" data-dispatch="' + esc(r.alarmId) + '">派单处理</a> <a href="#" data-ack="'
-        + esc(r.alarmId) + '">确认</a></td></tr>';
+  function findById(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].alarmId) === String(id)) return all[i];
+    return null;
+  }
+
+  function showDetail(id) {
+    var r = findById(id);
+    if (!r) return;
+    var rows = [
+      ['告警编号', r.alarmId], ['级别', r.levelLabel || r.level], ['来源', r.source],
+      ['内容', r.content], ['状态', r.statusLabel || '未确认'], ['时间', r.time],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '告警详情', body: rows, okText: '关闭' });
+  }
+
+  function ackAlarm(id) {
+    UI.confirm('确认告警 ' + id + ' ?', function () {
+      API.alarm.ack(id).then(function (res) {
+        if (res.code === 0) { UI.toast('告警 ' + id + ' 已确认', 'ok'); load(); }
+        else UI.toast('确认失败', 'err');
+      }).catch(function (e) { UI.toast('确认失败: ' + e.message, 'err'); });
+    });
+  }
+
+  function renderEmg() {
+    document.getElementById('emgRows').innerHTML = EMG.map(function (r) {
+      return '<tr><td>' + UI.esc(r.taskNo) + '</td><td>' + UI.esc(r.zone) + '</td><td>'
+        + UI.esc(r.customers) + ' 户</td><td>' + UI.esc(r.scope) + '</td><td>'
+        + tag('tag-orange', r.statusLabel) + '</td><td><a href="#" data-op="emgSend" data-zone="'
+        + UI.esc(r.zone) + '">下发</a> <a href="#" data-op="emgList" data-zone="' + UI.esc(r.zone)
+        + '" data-n="' + UI.esc(r.customers) + '">清单</a></td></tr>';
     }).join('');
   }
 
-  function load() {
-    API.alarm.list(document.getElementById('levelSel').value).then(function (d) {
-      render(d.items);
+  function batchRetest(zone) {
+    var fields = [
+      { key: 'scope', label: '复测范围', value: zone, required: true },
+      { key: 'remark', label: '备注', type: 'textarea', placeholder: '应急说明(可空)' },
+    ];
+    UI.modal({
+      title: '批量复测下发', body: UI.formFields(fields), okText: '下发',
+      onOk: function (mask, close) {
+        var v = UI.readForm(mask, fields);
+        if (!v) return false;
+        return API.alarm.batchRetest(v.scope).then(function (res) {
+          if (res.code === 0) { UI.toast('批量复测已受理，任务号: ' + (res.taskNo || '-'), 'ok'); return true; }
+          UI.toast('下发失败', 'err'); return false;
+        });
+      }
     });
   }
 
-  document.getElementById('alarmRows').onclick = function (e) {
-    var ack = e.target.getAttribute('data-ack');
-    var dis = e.target.getAttribute('data-dispatch');
-    if (ack) {
-      API.alarm.ack(ack).then(function (res) {
-        alert(res.code === 0 ? '告警 ' + ack + ' 已确认' : '确认失败');
-      });
-      return false;
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') showDetail(id);
+    else if (op === 'ack') ackAlarm(id);
+  });
+  document.getElementById('emgRows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), zone = a.getAttribute('data-zone');
+    if (op === 'emgSend') batchRetest(zone);
+    else if (op === 'emgList') {
+      UI.modal({ title: '受影响客户清单', body: '<div class="form-item"><label>片区</label><div>'
+        + UI.esc(zone) + '</div></div><div class="form-item"><label>受影响客户</label><div>'
+        + UI.esc(a.getAttribute('data-n')) + ' 户</div></div>', okText: '关闭' });
     }
-    if (dis) { alert('已派单处理: ' + dis); return false; }
-  };
-  document.getElementById('levelSel').onchange = load;
+  });
 
-  document.getElementById('emgSend').onclick = function () {
-    API.alarm.batchRetest('望京X片区').then(function (res) {
-      alert(res.code === 0 ? '批量复测已受理，任务号: ' + res.taskNo : '下发失败');
-    });
-    return false;
-  };
-  document.getElementById('emgList').onclick = function () {
-    alert('受影响客户清单: 望京X片区 23 户');
-    return false;
-  };
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.alarm.list(document.getElementById('levelSel').value).then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
 
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('levelSel').addEventListener('change', load);
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  renderEmg();
   load();
 })();
 </script>

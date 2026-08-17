@@ -24,62 +24,125 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" id="kw" style="width:220px" placeholder="账号/客户/LOID">
-        <select class="input" id="st" style="width:140px"><option>全部状态</option><option>停机成功</option><option>复机成功</option><option>执行失败</option></select>
+        <input class="input" style="width:220px" id="kw" placeholder="账号/客户/LOID">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>停机成功</option><option>复机成功</option><option>执行失败</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <button class="btn btn-primary">重试失败项</button>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-retry-all">重试失败项</button>
       </div>
       <div class="card">
+        <div class="card-title">执行记录 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>客户</th><th>LOID</th><th>动作</th><th>触发原因</th><th>网络侧结果</th><th>执行时间</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 停复机执行状态数据渲染(契约: GET /stop-resume-tasks, POST /stop-resume-tasks/{taskId}/retry)
+// 停复机执行:筛选/分页/详情/失败重试真调用(契约: GET /stop-resume-tasks, POST /stop-resume-tasks/{taskId}/retry)
 (function () {
   var RESULT_TAG = { '生效': 'tag-green', '失败': 'tag-red' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function statusOf(r) {
+    if (r.netResult === '失败') return '执行失败';
+    return r.action === '复机' ? '复机成功' : '停机成功';
+  }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.customerName) + String(r.loid) + String(r.taskId)).indexOf(kw) >= 0;
+    return hitKw && (!st || statusOf(r) === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-id="' + UI.esc(r.taskId) + '">详情</a>';
+      if (r.netResult === '失败') {
+        ops += ' <a href="#" data-op="retry" data-id="' + UI.esc(r.taskId) + '">重试</a>';
+      }
+      return '<tr><td>' + UI.esc(r.customerName) + '</td><td>' + UI.esc(r.loid) + '</td><td>' + UI.esc(r.action)
+        + '</td><td>' + UI.esc(r.reason) + '</td><td><span class="tag ' + (RESULT_TAG[r.netResult] || 'tag-gray') + '">'
+        + UI.esc(r.netResult) + '</span></td><td>' + UI.esc(r.executedAt) + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
-  function fail(e) { alert('加载失败: ' + e.message); }
 
-  function load() {
-    API.billing.stopResumeTasks(kw.value.trim(), st.value).then(function (d) {
-      document.getElementById('rows').innerHTML = d.items.map(function (r) {
-        var op = r.netResult === '失败'
-          ? '<a href="#" data-act="retry" data-id="' + esc(r.taskId) + '">重试</a>'
-          : '<a href="#">详情</a>';
-        return '<tr><td>' + esc(r.customerName) + '</td><td>' + esc(r.loid) + '</td><td>' + esc(r.action)
-          + '</td><td>' + esc(r.reason) + '</td><td><span class="tag ' + (RESULT_TAG[r.netResult] || '')
-          + '">' + esc(r.netResult) + '</span></td><td>' + esc(r.executedAt) + '</td><td>' + op + '</td></tr>';
-      }).join('');
-    }).catch(fail);
+  function showDetail(id) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].taskId) === String(id)) r = all[i];
+    if (!r) return;
+    var rows = [
+      ['任务号', r.taskId], ['客户', r.customerName], ['LOID', r.loid],
+      ['动作', r.action], ['触发原因', r.reason], ['网络侧结果', r.netResult], ['执行时间', r.executedAt],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '执行详情', body: rows, okText: '关闭' });
   }
 
-  var kw = document.getElementById('kw'), st = document.getElementById('st'), timer = null;
-  kw.addEventListener('input', function () {
-    clearTimeout(timer);
-    timer = setTimeout(load, 200);
-  });
-  st.addEventListener('change', load);
-  load();
+  function retry(id) {
+    UI.confirm('确认重试停复机任务 ' + id + '?', function () {
+      API.billing.retryStopResume(id).then(function (r) {
+        UI.toast('重试已提交: ' + (r.message || 'success'), 'ok');
+        load();
+      }).catch(function (e) { UI.toast('重试失败: ' + e.message, 'err'); });
+    });
+  }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    API.billing.retryStopResume(a.getAttribute('data-id')).then(function (r) {
-      alert('重试已提交: ' + r.message);
-    }).catch(fail);
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') showDetail(id);
+    else retry(id);
   });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(7, '加载中...');
+    API.billing.stopResumeTasks().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-retry-all').onclick = function () {
+    UI.confirm('确认批量重试全部执行失败项?', function () {
+      UI.toast('批量重试已提交(演示)', 'ok');
+    });
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

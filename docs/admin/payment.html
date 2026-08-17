@@ -21,48 +21,105 @@
       <div class="page-head"><h2>缴费管理</h2><div class="desc">在线缴费、缴费记录、缴费凭证</div></div>
 
       <div class="toolbar">
-        <input class="input" id="kw" style="width:220px" placeholder="客户/账单号">
+        <input class="input" style="width:220px" id="kw" placeholder="客户/缴费单号">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部方式</option><option>现金</option><option>扫码</option><option>余额</option><option>银行卡</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
         <span class="tag tag-green">支付渠道已对接</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-export">导出缴费流水</button>
       </div>
       <div class="card">
+        <div class="card-title">缴费流水 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
-          <thead><tr><th>缴费单号</th><th>客户</th><th>金额</th><th>方式</th><th>时间</th><th>凭证</th></tr></thead>
+          <thead><tr><th>缴费单号</th><th>客户</th><th>金额</th><th>方式</th><th>时间</th><th>凭证</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 缴费管理数据渲染(契约: GET /payments)
+// 缴费管理:筛选/分页/凭证详情(契约: GET /payments)
 (function () {
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.payNo) + String(r.customerName)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.method === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.payNo) + '</td><td>' + UI.esc(r.customerName) + '</td><td>' + UI.esc(r.amount)
+        + '</td><td>' + UI.esc(r.method) + '</td><td>' + UI.esc(r.paidAt)
+        + '</td><td><a href="#" data-op="detail" data-no="' + UI.esc(r.payNo) + '">查看</a></td>'
+        + '<td><a href="#" data-op="detail" data-no="' + UI.esc(r.payNo) + '">详情</a></td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
-  function fail(e) { alert('加载失败: ' + e.message); }
 
-  function render(rows) {
-    document.getElementById('rows').innerHTML = rows.map(function (r) {
-      return '<tr><td>' + esc(r.payNo) + '</td><td>' + esc(r.customerName) + '</td><td>' + esc(r.amount)
-        + '</td><td>' + esc(r.method) + '</td><td>' + esc(r.paidAt)
-        + '</td><td><a href="#">' + esc(r.voucher) + '</a></td></tr>';
+  function showDetail(no) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].payNo) === String(no)) r = all[i];
+    if (!r) return;
+    var rows = [
+      ['缴费单号', r.payNo], ['客户', r.customerName], ['金额', r.amount],
+      ['方式', r.method], ['时间', r.paidAt], ['凭证', r.voucher],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
     }).join('');
+    UI.modal({ title: '缴费详情', body: rows, okText: '关闭' });
   }
 
-  API.billing.payments().then(function (d) { render(d.items); }).catch(fail);
-
-  var kw = document.getElementById('kw'), timer = null;
-  kw.addEventListener('input', function () {
-    clearTimeout(timer);
-    timer = setTimeout(function () {
-      API.billing.payments(kw.value.trim()).then(function (d) { render(d.items); }).catch(fail);
-    }, 200);
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    showDetail(a.getAttribute('data-no'));
   });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(7, '加载中...');
+    API.billing.payments().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

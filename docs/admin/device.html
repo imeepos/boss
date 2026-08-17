@@ -24,56 +24,123 @@
       </div>
 
       <div class="grid g-4" style="margin-bottom:16px;" id="stats"></div>
+
+      <div class="toolbar">
+        <input class="input" id="kw" style="width:220px" placeholder="设备名/地址">
+        <select class="input" id="st" style="width:140px">
+          <option value="">全部状态</option><option>在线</option><option>离线</option>
+        </select>
+        <button class="btn btn-primary btn-search" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-export">导出设备报表</button>
+      </div>
       <div class="card">
         <div class="card-title">设备状态</div>
         <table class="tbl">
-          <thead><tr><th>设备</th><th>地址</th><th>状态</th><th>光功率(dBm)</th><th>丢包率</th><th>告警</th></tr></thead>
+          <thead><tr><th>设备</th><th>地址</th><th>状态</th><th>光功率(dBm)</th><th>丢包率</th><th>告警</th><th>操作</th></tr></thead>
           <tbody id="devBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function renderStats(stats) {
-  var html = '';
-  html += '<div class="stat"><div class="label">OLT 总数</div><div class="val">' + esc(stats.total) + '</div></div>';
-  html += '<div class="stat"><div class="label">在线</div><div class="val">' + esc(stats.online) + '</div></div>';
-  html += '<div class="stat"><div class="label">离线</div><div class="val">' + esc(stats.offline) + '</div></div>';
-  html += '<div class="stat"><div class="label">活跃告警</div><div class="val">' + esc(stats.activeAlarms) + '</div></div>';
-  document.getElementById('stats').innerHTML = html;
-}
-function alarmCell(d) {
-  return d.alarmClass
-    ? '<span class="tag ' + esc(d.alarmClass) + '">' + esc(d.alarmLabel) + '</span>'
-    : esc(d.alarmLabel);
-}
-function renderDevices(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var d = items[i];
-    html += '<tr><td>' + esc(d.deviceName) + '</td><td>' + esc(d.address) +
-      '</td><td><span class="tag ' + esc(d.statusClass) + '">' + esc(d.statusLabel) + '</span></td>' +
-      '<td>' + esc(d.opticalPower) + '</td><td>' + esc(d.packetLoss) + '</td><td>' + alarmCell(d) + '</td></tr>';
+// OLT 设备监控(契约: GET /olt-devices)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + UI.esc(v) + '</span>'; }
+
+  function renderStats(stats) {
+    var html = '';
+    [['OLT 总数', stats.total], ['在线', stats.online], ['离线', stats.offline], ['活跃告警', stats.activeAlarms]]
+      .forEach(function (x) {
+        html += '<div class="stat"><div class="label">' + UI.esc(x[0]) + '</div><div class="val">' + UI.esc(x[1]) + '</div></div>';
+      });
+    document.getElementById('stats').innerHTML = html;
   }
-  document.getElementById('devBody').innerHTML = html;
-}
-function loadDevices() {
-  API.oss.oltDevices()
-    .then(function (d) { renderStats(d.stats); renderDevices(d.items); })
-    .catch(function (e) { alert('加载 OLT 设备失败: ' + e.message); });
-}
-function init() {
-  loadDevices();
-}
-init();
+
+  function alarmCell(d) {
+    return d.alarmClass ? tag(d.alarmClass, d.alarmLabel) : UI.esc(d.alarmLabel);
+  }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (r.deviceName + r.address).indexOf(kw) >= 0;
+    return hitKw && (!st || r.statusLabel === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('devBody').innerHTML = slice.length ? slice.map(function (d) {
+      return '<tr><td>' + UI.esc(d.deviceName) + '</td><td>' + UI.esc(d.address) + '</td><td>' + tag(d.statusClass, d.statusLabel) +
+        '</td><td>' + UI.esc(d.opticalPower) + '</td><td>' + UI.esc(d.packetLoss) + '</td><td>' + alarmCell(d) +
+        '</td><td><a href="#" data-op="detail" data-name="' + UI.esc(d.deviceName) + '">详情</a></td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findByName(name) {
+    for (var i = 0; i < all.length; i++) if (all[i].deviceName === name) return all[i];
+    return null;
+  }
+
+  function showDetail(name) {
+    var d = findByName(name);
+    if (!d) return;
+    var items = [['设备', d.deviceName], ['地址', d.address], ['状态', d.statusLabel],
+      ['光功率(dBm)', d.opticalPower], ['丢包率', d.packetLoss], ['告警', d.alarmLabel]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '设备详情', body: items, okText: '关闭' });
+  }
+
+  document.getElementById('devBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    showDetail(a.getAttribute('data-name'));
+  });
+
+  function load() {
+    document.getElementById('devBody').innerHTML = UI.tbodyState(7, '加载中...');
+    API.oss.oltDevices().then(function (d) {
+      renderStats(d.stats || {});
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载 OLT 设备失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出设备报表 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

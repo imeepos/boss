@@ -20,57 +20,133 @@
     <div class="content">
       <div class="page-head"><h2>对账与告警</h2><div class="desc">四码关系自动核对 · 冲突告警限期处理</div></div>
 
+      <div class="grid g-3" style="margin-bottom:16px;">
+        <div class="stat"><div class="label">冲突总数</div><div class="val" id="stTotal">—</div></div>
+        <div class="stat"><div class="label">今日新增</div><div class="val" id="stToday">—</div></div>
+        <div class="stat"><div class="label">处理时限</div><div class="val">4 小时</div></div>
+      </div>
+
       <div class="toolbar">
-        <button class="btn btn-primary" id="btn-check">立即对账</button>
+        <input class="input" style="width:220px" id="kw" placeholder="冲突编号/关联码">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部类型</option>
+          <option>资产码与端口码不一致</option><option>用户码关联地址漂移</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <span class="tag tag-red">冲突 2 笔 · 处理时限 4 小时</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-check">立即对账</button>
       </div>
       <div class="card">
+        <div class="card-title">冲突列表 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>冲突编号</th><th>关联码</th><th>冲突类型</th><th>发现时间</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
+// 对账与告警:冲突筛选/分页/详情/处理(契约: GET /quad-conflicts, POST /quad-conflicts/{no}/resolve)
 (function () {
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.conflictNo) + String(r.code)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.conflictType === st);
   }
 
-  function load() {
-    API.quad.conflicts()
-      .then(function (r) {
-        var html = '';
-        for (var i = 0; i < r.items.length; i++) {
-          var c = r.items[i];
-          html += '<tr><td>' + esc(c.conflictNo) + '</td><td>' + esc(c.code) + '</td><td>' + esc(c.conflictType)
-            + '</td><td>' + esc(c.foundAt)
-            + '</td><td><a href="#" class="op-resolve" data-no="' + esc(c.conflictNo) + '">处理</a></td></tr>';
-        }
-        document.getElementById('rows').innerHTML = html || '<tr><td colspan="5">无冲突</td></tr>';
-      })
-      .catch(function (e) { alert('冲突列表加载失败: ' + e.message); });
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.conflictNo) + '</td><td>' + UI.esc(r.code) + '</td><td>' + UI.esc(r.conflictType)
+        + '</td><td>' + UI.esc(r.foundAt)
+        + '</td><td><a href="#" data-op="detail" data-no="' + UI.esc(r.conflictNo) + '">详情</a>'
+        + ' <a href="#" data-op="resolve" data-no="' + UI.esc(r.conflictNo) + '">处理</a></td></tr>';
+    }).join('') : UI.tbodyState(5, '无匹配数据');
+    document.getElementById('row-hint').textContent = list.length ? '待处理 ' + list.length + ' 笔' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findByNo(no) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].conflictNo) === String(no)) return all[i];
+    return null;
+  }
+
+  function showDetail(no) {
+    var r = findByNo(no);
+    if (!r) return;
+    var rows = [
+      ['冲突编号', r.conflictNo], ['关联码', r.code],
+      ['冲突类型', r.conflictType], ['发现时间', r.foundAt],
+      ['状态', '待处理(时限 4 小时)'],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '冲突详情', body: rows, okText: '关闭' });
+  }
+
+  function resolve(no) {
+    UI.confirm('确认标记冲突 ' + no + ' 为已处理?', function () {
+      API.quad.resolveConflict(no).then(function (r) {
+        UI.toast('冲突 ' + no + ' 处理: ' + (r.message || 'success'), 'ok');
+        load();
+      }).catch(function (e) { UI.toast('处理失败: ' + e.message, 'err'); });
+    });
   }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A') return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    var no = a.getAttribute('data-no');
-    API.quad.resolveConflict(no)
-      .then(function (r) { alert('冲突 ' + no + ' 处理: ' + r.message); load(); })
-      .catch(function (e) { alert('处理失败: ' + e.message); });
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else if (op === 'resolve') resolve(no);
   });
 
-  document.getElementById('btn-check').onclick = function () {
-    load();
-    alert('已触发立即对账');
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(5, '加载中...');
+    API.quad.conflicts().then(function (d) {
+      all = d.items || [];
+      var today = new Date().toISOString().slice(0, 10);
+      var todayN = all.filter(function (r) { return String(r.foundAt || '').indexOf(today) === 0; }).length;
+      document.getElementById('stTotal').textContent = all.length;
+      document.getElementById('stToday').textContent = todayN;
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
   };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-check').onclick = function () {
+    UI.confirm('确认立即触发一次全量四码对账?', function () {
+      UI.toast('已触发立即对账', 'ok');
+      load();
+    });
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
 
   load();
 })();

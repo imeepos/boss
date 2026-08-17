@@ -21,65 +21,123 @@
       <div class="page-head"><h2>缴费渠道对账</h2><div class="desc">线上/线下渠道入账汇总 · 差异挂起 · 人工平账</div></div>
 
       <div class="toolbar">
-        <input class="input" id="kw" style="width:220px" placeholder="对账批次/渠道">
-        <select class="input" id="st" style="width:160px"><option>全部状态</option><option>待对账</option><option>差异挂起</option><option>已平账</option></select>
+        <input class="input" style="width:220px" id="kw" placeholder="对账批次/渠道">
+        <select class="input" style="width:160px" id="st">
+          <option value="">全部状态</option><option>待对账</option><option>差异挂起</option><option>已平账</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <button class="btn btn-primary">发起对账</button>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-launch">发起对账</button>
       </div>
       <div class="card">
+        <div class="card-title">对账批次 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>对账批次</th><th>渠道</th><th>渠道金额</th><th>系统金额</th><th>差异</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 渠道对账数据渲染(契约: GET /reconciliations, POST /reconciliations/{batchNo}/settle)
+// 渠道对账:筛选/分页/详情/差异平账真调用(契约: GET /reconciliations, POST /reconciliations/{batchNo}/settle)
 (function () {
   var STATUS_TAG = { '已平账': 'tag-green', '差异挂起': 'tag-red', '待对账': 'tag-orange' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.batchNo) + String(r.channel)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.status === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(r.batchNo) + '">详情</a>';
+      if (r.status === '差异挂起' || r.status === '待对账') {
+        ops += ' <a href="#" data-op="settle" data-no="' + UI.esc(r.batchNo) + '">核对平账</a>';
+      }
+      return '<tr><td>' + UI.esc(r.batchNo) + '</td><td>' + UI.esc(r.channel) + '</td><td>' + UI.esc(r.channelAmount)
+        + '</td><td>' + UI.esc(r.systemAmount) + '</td><td>' + UI.esc(r.diff)
+        + '</td><td><span class="tag ' + (STATUS_TAG[r.status] || 'tag-gray') + '">' + UI.esc(r.status)
+        + '</span></td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
-  function fail(e) { alert('加载失败: ' + e.message); }
 
-  function load() {
-    API.billing.reconciliations(kw.value.trim(), st.value).then(function (d) {
-      document.getElementById('rows').innerHTML = d.items.map(function (r) {
-        var op = r.status === '差异挂起'
-          ? '<a href="#" data-act="settle" data-id="' + esc(r.batchNo) + '">核对</a>'
-          : '<a href="#">详情</a>';
-        return '<tr><td>' + esc(r.batchNo) + '</td><td>' + esc(r.channel) + '</td><td>' + esc(r.channelAmount)
-          + '</td><td>' + esc(r.systemAmount) + '</td><td>' + esc(r.diff)
-          + '</td><td><span class="tag ' + (STATUS_TAG[r.status] || '') + '">' + esc(r.status)
-          + '</span></td><td>' + op + '</td></tr>';
-      }).join('');
-    }).catch(fail);
+  function showDetail(no) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].batchNo) === String(no)) r = all[i];
+    if (!r) return;
+    var rows = [
+      ['对账批次', r.batchNo], ['渠道', r.channel], ['渠道金额', r.channelAmount],
+      ['系统金额', r.systemAmount], ['差异', r.diff], ['状态', r.status],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '对账详情', body: rows, okText: '关闭' });
   }
 
-  var kw = document.getElementById('kw'), st = document.getElementById('st'), timer = null;
-  kw.addEventListener('input', function () {
-    clearTimeout(timer);
-    timer = setTimeout(load, 200);
-  });
-  st.addEventListener('change', load);
-  load();
+  function settle(no) {
+    UI.confirm('确认对批次 ' + no + ' 提交人工平账?', function () {
+      API.billing.settle(no).then(function (r) {
+        UI.toast('平账已提交: ' + (r.message || 'success'), 'ok');
+        load();
+      }).catch(function (e) { UI.toast('平账失败: ' + e.message, 'err'); });
+    });
+  }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    API.billing.settle(a.getAttribute('data-id')).then(function (r) {
-      alert('平账已提交: ' + r.message);
-      load();
-    }).catch(fail);
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else settle(no);
   });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(7, '加载中...');
+    API.billing.reconciliations().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-launch').onclick = function () {
+    UI.confirm('确认按当前渠道生成新对账批次?', function () {
+      UI.toast('对账批次已发起(演示)', 'ok');
+      load();
+    });
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

@@ -25,8 +25,13 @@
 
       <div class="toolbar">
         <input class="input" id="kw" style="width:220px" placeholder="端口/订单号">
-        <select class="input" id="st" style="width:160px"><option>全部状态</option><option>预占中</option><option>已超时</option><option>已释放</option></select>
+        <select class="input" id="st" style="width:160px">
+          <option value="">全部状态</option><option>预占中</option><option>已超时</option><option>已释放</option>
+        </select>
+        <button class="btn btn-primary btn-search" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
         <button class="btn btn-primary" id="batchBtn">批量释放超时项</button>
       </div>
       <div class="card">
@@ -34,74 +39,105 @@
           <thead><tr><th>端口编码</th><th>分光器</th><th>占用订单</th><th>预占时间</th><th>到期时间</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="rsvBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-var allItems = [];
-function renderList(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var r = items[i];
-    html += '<tr><td>' + esc(r.portCode) + '</td><td>' + esc(r.splitterName) + '</td><td>' + esc(r.orderId) +
-      '</td><td>' + esc(r.reservedAt) + '</td><td>' + esc(r.expireAt) +
-      '</td><td><span class="tag ' + esc(r.statusClass) + '">' + esc(r.statusLabel) + '</span></td>' +
-      '<td><a href="#" data-id="' + esc(r.reserveId) + '" data-act="' + esc(r.action) + '">' + esc(r.action) + '</a></td></tr>';
+// 预占与释放(契约: GET /reserves, POST /reserves/{reserveId}/release)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + UI.esc(v) + '</span>'; }
+
+  function render() {
+    var start = (state.page - 1) * state.pageSize;
+    var slice = all.slice(start, start + state.pageSize);
+    document.getElementById('rsvBody').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-id="' + UI.esc(r.reserveId) + '">详情</a>';
+      if (r.status !== 'RELEASED') ops += ' <a href="#" data-op="release" data-id="' + UI.esc(r.reserveId) + '">释放</a>';
+      return '<tr><td>' + UI.esc(r.portCode) + '</td><td>' + UI.esc(r.splitterName) + '</td><td>' + UI.esc(r.orderId) +
+        '</td><td>' + UI.esc(r.reservedAt) + '</td><td>' + UI.esc(r.expireAt) + '</td><td>' + tag(r.statusClass, r.statusLabel) +
+        '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: all.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
   }
-  document.getElementById('rsvBody').innerHTML = html;
-  bindRowActions();
-}
-function release(id) {
-  API.oss.releaseReserve(id)
-    .then(function (r) { alert('释放预占 ' + id + ': ' + r.message); loadList(); })
-    .catch(function (e) { alert('释放失败: ' + e.message); });
-}
-function bindRowActions() {
-  var links = document.getElementById('rsvBody').getElementsByTagName('a');
-  for (var i = 0; i < links.length; i++) {
-    links[i].onclick = function (e) {
-      e.preventDefault();
-      var act = this.getAttribute('data-act');
-      var id = this.getAttribute('data-id');
-      if (act === '释放') release(id);
-      else alert('预占记录 ' + id + ': ' + act);
-    };
+
+  function findById(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].reserveId) === String(id)) return all[i];
+    return null;
   }
-}
-function loadList() {
-  var st = document.getElementById('st').value;
-  API.oss.reserves(document.getElementById('kw').value, st === '全部状态' ? '' : st)
-    .then(function (d) { allItems = d.items; renderList(d.items); })
-    .catch(function (e) { alert('加载预占记录失败: ' + e.message); });
-}
-function bindToolbar() {
-  document.getElementById('kw').oninput = loadList;
-  document.getElementById('st').onchange = loadList;
-  document.getElementById('batchBtn').onclick = function () {
-    var timeouts = allItems.filter(function (r) { return r.status === 'TIMEOUT'; });
-    if (!timeouts.length) { alert('无超时预占项'); return; }
-    var done = 0;
-    for (var i = 0; i < timeouts.length; i++) {
-      API.oss.releaseReserve(timeouts[i].reserveId).then(function (r) {
-        done++;
-        alert('批量释放: ' + r.message);
-        if (done >= timeouts.length) loadList();
+
+  function showDetail(id) {
+    var r = findById(id);
+    if (!r) return;
+    var items = [['预占编号', r.reserveId], ['端口编码', r.portCode], ['分光器', r.splitterName],
+      ['占用订单', r.orderId], ['预占时间', r.reservedAt], ['到期时间', r.expireAt], ['状态', r.statusLabel]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '预占详情', body: items, okText: '关闭' });
+  }
+
+  function release(id) {
+    UI.confirm('确认强制释放预占 ' + id + '?', function () {
+      API.oss.releaseReserve(id)
+        .then(function () { UI.toast('已释放 ' + id, 'ok'); load(); })
+        .catch(function (e) { UI.toast('释放失败: ' + e.message, 'err'); });
+    });
+  }
+
+  function batchRelease() {
+    var timeouts = all.filter(function (r) { return r.status === 'TIMEOUT'; });
+    if (!timeouts.length) { UI.toast('无超时预占项', 'err'); return; }
+    UI.confirm('确认批量释放 ' + timeouts.length + ' 条超时预占?', function () {
+      var left = timeouts.length;
+      timeouts.forEach(function (r) {
+        API.oss.releaseReserve(r.reserveId).then(function () {
+          left--;
+          if (left <= 0) { UI.toast('批量释放完成', 'ok'); load(); }
+        }).catch(function (e) { UI.toast('释放失败: ' + e.message, 'err'); });
       });
-    }
+    });
+  }
+
+  document.getElementById('rsvBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var id = a.getAttribute('data-id');
+    if (a.getAttribute('data-op') === 'detail') showDetail(id);
+    else release(id);
+  });
+
+  function load() {
+    document.getElementById('rsvBody').innerHTML = UI.tbodyState(7, '加载中...');
+    var st = document.getElementById('st').value;
+    API.oss.reserves(document.getElementById('kw').value.trim(), st)
+      .then(function (d) { all = d.items || []; state.page = 1; render(); })
+      .catch(function (e) { UI.toast('加载预占记录失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = load;
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    load();
   };
-}
-function init() {
-  loadList();
-  bindToolbar();
-}
-init();
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('batchBtn').onclick = batchRelease;
+  document.getElementById('kw').addEventListener('input', UI.debounce(load, 300));
+  document.getElementById('st').addEventListener('change', load);
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

@@ -24,43 +24,186 @@
       </div>
 
       <div class="grid g-3" style="margin-bottom:16px;">
-        <div class="stat"><div class="label">本月应收</div><div class="val" id="stReceivable"></div></div>
-        <div class="stat"><div class="label">已收</div><div class="val" id="stReceived"></div></div>
-        <div class="stat"><div class="label">欠费用户</div><div class="val" id="stArrears"></div></div>
+        <div class="stat"><div class="label">本月应收</div><div class="val" id="stReceivable">—</div></div>
+        <div class="stat"><div class="label">已收</div><div class="val" id="stReceived">—</div></div>
+        <div class="stat"><div class="label">欠费用户</div><div class="val" id="stArrears">—</div></div>
       </div>
-      <div class="card">
-        <div class="card-title">账单列表</div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" id="kw" placeholder="账单号/客户">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>已缴</option><option>已缴清</option><option>未缴</option><option>欠费</option><option>逾期</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn" id="btn-gen">批量出账</button>
+        <button class="btn btn-primary" id="btn-export">导出账单</button>
+      </div>
+
+      <div class="card" id="list-card">
+        <div class="card-title">账单列表 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
-          <thead><tr><th>账单号</th><th>客户</th><th>账期</th><th>金额</th><th>状态</th></tr></thead>
+          <thead><tr><th>账单号</th><th>客户</th><th>账期</th><th>金额</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
+      </div>
+
+      <!-- 账单下钻详情:非弹框,体现从属关系(账单→客户) -->
+      <div class="dp-panel" id="dp-panel" style="display:none">
+        <div class="dp-head">
+          <span class="back" id="dp-back">← 返回列表</span>
+          <h3 id="dp-title">账单详情</h3>
+        </div>
+        <div class="dp-body">
+          <div class="tabs">
+            <span class="dp-tab active" data-dptab="base">基本信息</span>
+            <span class="dp-tab" data-dptab="customer">所属客户</span>
+          </div>
+          <div id="dp-tab-base" class="dp-desc"></div>
+          <div id="dp-tab-customer" style="display:none" class="dp-desc"></div>
+        </div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 计费账单数据渲染(契约: GET /bills,含 stats 汇总)
+// 计费账单:筛选/分页/详情弹框/催缴确认(契约: GET /bills,含 stats 汇总)
 (function () {
   var STATUS_TAG = { '已缴': 'tag-green', '已缴清': 'tag-green', '未缴': 'tag-orange', '欠费': 'tag-orange', '逾期': 'tag-red' };
+  var all = [];      // 全量数据(页面侧筛选+分片)
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.billNo) + String(r.customerName)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.status === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = list.length ? '' : '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(r.billNo) + '">详情</a>';
+      if (r.status === '欠费' || r.status === '逾期' || r.status === '未缴') {
+        ops += ' <a href="#" data-op="urge" data-no="' + UI.esc(r.billNo) + '">催缴</a>';
+      }
+      return '<tr><td>' + UI.esc(r.billNo) + '</td><td>' + UI.esc(r.customerName) + '</td><td>' + UI.esc(r.period)
+        + '</td><td>' + UI.esc(r.amount) + '</td><td>' + tag(STATUS_TAG[r.status] || 'tag-gray', r.status)
+        + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配账单');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
 
-  API.billing.bills().then(function (d) {
-    document.getElementById('stReceivable').textContent = d.stats.receivable;
-    document.getElementById('stReceived').textContent = d.stats.received;
-    document.getElementById('stArrears').textContent = d.stats.arrearsCount;
-    document.getElementById('rows').innerHTML = d.items.map(function (r) {
-      return '<tr><td>' + esc(r.billNo) + '</td><td>' + esc(r.customerName) + '</td><td>' + esc(r.period)
-        + '</td><td>' + esc(r.amount) + '</td><td><span class="tag ' + (STATUS_TAG[r.status] || '')
-        + '">' + esc(r.status) + '</span></td></tr>';
+  // 下钻详情面板(非弹框):基本信息 + 所属客户(从属关系)
+  function descHtml(pairs) {
+    return pairs.map(function (x) {
+      return '<div class="d-item"><div class="d-label">' + UI.esc(x[0]) + '</div><div class="d-value">' + UI.esc(x[1] == null ? '—' : x[1]) + '</div></div>';
     }).join('');
-  }).catch(function (e) { alert('加载失败: ' + e.message); });
+  }
+
+  function showDetail(no) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].billNo) === String(no)) r = all[i];
+    if (!r) return;
+    document.getElementById('dp-title').textContent = '账单详情 · ' + r.billNo;
+    document.getElementById('dp-tab-base').innerHTML = descHtml([
+      ['账单号', r.billNo], ['账期', r.period], ['金额', r.amount], ['状态', r.status],
+    ]);
+    document.getElementById('dp-tab-customer').innerHTML = descHtml([
+      ['客户', r.customerName], ['客户ID', r.customerId || '—'],
+      ['服务状态', r.customerServiceStatus || '—'], ['联系电话', r.customerPhone || '—'],
+    ]);
+    document.getElementById('list-card').style.display = 'none';
+    document.getElementById('dp-panel').style.display = '';
+  }
+
+  function backToList() {
+    document.getElementById('dp-panel').style.display = 'none';
+    document.getElementById('list-card').style.display = '';
+  }
+
+  document.getElementById('dp-back').onclick = backToList;
+  document.querySelectorAll('#dp-panel .dp-tab').forEach(function (t) {
+    t.onclick = function () {
+      document.querySelectorAll('#dp-panel .dp-tab').forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      document.getElementById('dp-tab-base').style.display = t.getAttribute('data-dptab') === 'base' ? '' : 'none';
+      document.getElementById('dp-tab-customer').style.display = t.getAttribute('data-dptab') === 'customer' ? '' : 'none';
+    };
+  });
+
+  function urge(no) {
+    UI.confirm('确认对账单 ' + no + ' 发起催缴通知?', function () {
+      UI.toast('已发送催缴通知: ' + no, 'ok');
+    });
+  }
+
+  document.querySelector('.card').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else if (op === 'urge') urge(no);
+  });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.billing.bills().then(function (d) {
+      all = d.items || [];
+      document.getElementById('stReceivable').textContent = d.stats.receivable;
+      document.getElementById('stReceived').textContent = d.stats.received;
+      document.getElementById('stArrears').textContent = d.stats.arrearsCount;
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-gen').onclick = function () {
+    var fields = [
+      { key: 'period', label: '账期', type: 'select', required: true,
+        options: [{ v: '2026-08', t: '2026-08' }, { v: '2026-07', t: '2026-07' }, { v: '2026-06', t: '2026-06' }] },
+      { key: 'scope', label: '出账范围', type: 'select', required: true,
+        options: [{ v: 'ALL', t: '全部在网客户' }, { v: 'ACTIVE', t: '仅 ACTIVE 客户' }, { v: 'REGION', t: '按区域' }] },
+    ];
+    UI.modal({
+      title: '批量出账', body: UI.formFields(fields), okText: '开始出账',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, fields);
+        if (!v) return false;
+        UI.toast('已提交出账任务: ' + v.period + ' 范围 ' + v.scope + '(演示)', 'ok');
+      }
+    });
+  };
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

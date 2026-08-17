@@ -8,13 +8,10 @@
 </head>
 <body>
 <div class="layout">
-  <!-- 侧栏 -->
   <aside class="sider">
     <div class="logo"><span class="mark">B</span> 装维运营平台</div>
     <nav class="menu" id="menu"></nav>
   </aside>
-
-  <!-- 主区 -->
   <div class="main">
     <header class="header">
       <div class="crumb">工作台</div>
@@ -31,28 +28,36 @@
         <div class="desc">装维全流程运营总览 · 数据实时更新</div>
       </div>
 
-      <!-- 统计卡 -->
+      <div class="toolbar">
+        <input class="input" style="width:220px" id="kw" placeholder="待办事项/来源关键字">
+        <select class="input" style="width:140px" id="st">
+          <option value="">状态：全部</option><option value="PENDING">待处理</option><option value="DONE">已完成</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+      </div>
+
       <div class="grid g-4" style="margin-bottom:16px;" id="stats"></div>
 
-      <!-- 订单状态分布 + 待办 -->
       <div class="grid g-2">
         <div class="card">
-          <div class="card-title">订单状态分布 <span class="extra">查看全部 →</span></div>
+          <div class="card-title">订单状态分布 <span class="extra">点击行查看</span></div>
           <table class="tbl">
             <thead><tr><th>状态</th><th>数量</th><th>占比</th></tr></thead>
             <tbody id="statusDist"></tbody>
           </table>
         </div>
         <div class="card">
-          <div class="card-title">我的待办</div>
+          <div class="card-title">我的待办 <span class="extra" id="row-hint"></span></div>
           <table class="tbl">
-            <thead><tr><th>事项</th><th>来源</th><th>时间</th></tr></thead>
+            <thead><tr><th>事项</th><th>来源</th><th>时间</th><th>操作</th></tr></thead>
             <tbody id="todos"></tbody>
           </table>
+          <div class="pagination" id="pager"></div>
         </div>
       </div>
 
-      <!-- 趋势占位 -->
       <div class="card">
         <div class="card-title">近 7 日装机趋势（示意）</div>
         <div style="height:160px;display:flex;align-items:flex-end;gap:12px;padding:10px 0;" id="trendBars"></div>
@@ -62,44 +67,117 @@
   </div>
 </div>
 
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
 // 工作台数据渲染(契约: GET /dashboard)
 (function () {
   var STATUS_TAG = { PENDING: 'tag-blue', RESERVED: 'tag-orange', INSTALLING: 'tag-orange', DONE: 'tag-green' };
+  var todos = [];
+  var distCache = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-    });
-  }
+  function esc(s) { return UI.esc(s); }
 
-  API.dashboard.get().then(function (d) {
-    document.getElementById('stats').innerHTML = d.stats.map(function (s) {
+  function renderStats(stats) {
+    document.getElementById('stats').innerHTML = stats.map(function (s) {
       return '<div class="stat"><div class="label">' + esc(s.label) + '</div><div class="val">'
         + esc(s.value) + '</div><div class="delta ' + esc(s.trend) + '">' + esc(s.delta) + '</div></div>';
     }).join('');
+  }
 
-    document.getElementById('statusDist').innerHTML = d.orderStatusDist.map(function (r) {
+  function renderStatusDist(rows) {
+    distCache = rows;
+    document.getElementById('statusDist').innerHTML = rows.length ? rows.map(function (r) {
       return '<tr><td><span class="tag ' + (STATUS_TAG[r.status] || '') + '">' + esc(r.statusLabel)
-        + '</span></td><td>' + r.count + '</td><td>' + esc(r.percent) + '</td></tr>';
-    }).join('');
+        + '</span></td><td>' + esc(r.count) + '</td><td>' + esc(r.percent)
+        + '</td><td><a href="#" data-op="st" data-status="' + esc(r.status) + '">查看</a></td></tr>';
+    }).join('') : UI.tbodyState(3, '无数据');
+  }
 
-    document.getElementById('todos').innerHTML = d.todos.items.map(function (t) {
-      return '<tr><td>' + esc(t.subject) + '</td><td>' + esc(t.source) + '</td><td>' + esc(t.time) + '</td></tr>';
-    }).join('');
+  function todoMatches(t) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || [t.subject, t.source].some(function (v) { return String(v || '').indexOf(kw) >= 0; });
+    return hitKw && (!st || (t.status || 'PENDING') === st);
+  }
 
-    var max = Math.max.apply(null, d.trend.values);
-    document.getElementById('trendBars').innerHTML = d.trend.values.map(function (v) {
+  function renderTodos() {
+    var list = todos.filter(todoMatches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('todos').innerHTML = slice.length ? slice.map(function (t, i) {
+      return '<tr><td>' + esc(t.subject) + '</td><td>' + esc(t.source) + '</td><td>' + esc(t.time)
+        + '</td><td><a href="#" data-op="todo" data-idx="' + (todos.indexOf(t)) + '">详情</a></td></tr>';
+    }).join('') : UI.tbodyState(4, '无匹配数据');
+    document.getElementById('row-hint').textContent = list.length ? '共 ' + list.length + ' 条' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; renderTodos(); }
+    });
+  }
+
+  function renderTrend(trend) {
+    var max = Math.max.apply(null, trend.values);
+    document.getElementById('trendBars').innerHTML = trend.values.map(function (v) {
       return '<div style="flex:1;height:' + Math.round((v / max) * 100)
-        + '%;background:#1677ff;border-radius:4px 4px 0 0;" title="' + v + '"></div>';
+        + '%;background:#1677ff;border-radius:4px 4px 0 0;" title="' + esc(v) + '"></div>';
     }).join('');
-    document.getElementById('trendDays').innerHTML = d.trend.days.map(function (day) {
+    document.getElementById('trendDays').innerHTML = trend.days.map(function (day) {
       return '<span style="flex:1;text-align:center;">' + esc(day) + '</span>';
     }).join('');
-  }).catch(function (e) {
-    document.getElementById('stats').innerHTML = '<div class="card">加载失败: ' + esc(e.message) + '</div>';
+  }
+
+  function showTodoDetail(t) {
+    var rows = [
+      ['事项', t.subject], ['来源', t.source], ['时间', t.time], ['状态', t.statusLabel || '待处理'],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '待办详情', body: rows, okText: '关闭' });
+  }
+
+  function showStatusDetail(st, dist) {
+    var row = null;
+    for (var i = 0; i < dist.length; i++) if (dist[i].status === st) row = dist[i];
+    if (!row) return;
+    var rows = [
+      ['状态', row.statusLabel || row.status], ['数量', row.count], ['占比', row.percent],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '订单状态详情', body: rows, okText: '关闭' });
+  }
+
+  function load() {
+    document.getElementById('todos').innerHTML = UI.tbodyState(4, '加载中...');
+    API.dashboard.get().then(function (d) {
+      renderStats(d.stats);
+      renderStatusDist(d.orderStatusDist);
+      todos = (d.todos && d.todos.items) || [];
+      state.page = 1;
+      renderTodos();
+      renderTrend(d.trend);
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; renderTodos(); };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; renderTodos(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; renderTodos(); });
+  document.body.addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    if (a.getAttribute('data-op') === 'todo') {
+      var t = todos[parseInt(a.getAttribute('data-idx'), 10)];
+      if (t) showTodoDetail(t);
+    } else if (a.getAttribute('data-op') === 'st') {
+      showStatusDetail(a.getAttribute('data-status'), distCache);
+    }
   });
+  load();
 })();
 </script>
 <script src="menu.js"></script>

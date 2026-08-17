@@ -24,13 +24,16 @@
       </div>
 
       <div class="toolbar">
-        <select class="input" style="width:180px">
-          <option>角色：系统管理员</option><option>装维师傅</option><option>资产管理员</option>
-          <option>资源运维管理员</option><option>业务运营/客服</option><option>经营分析人员</option><option>客户</option>
+        <input class="input" style="width:200px" id="kw" placeholder="搜索菜单组">
+        <select class="input" style="width:180px" id="role">
+          <option value="">全部角色</option>
         </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <button class="btn btn-primary">保存变更</button>
-        <button class="btn">重置</button>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn" id="btn-edit">调整可见性</button>
+        <button class="btn btn-primary" id="btn-save">保存变更</button>
       </div>
 
       <div class="card">
@@ -39,6 +42,7 @@
           <thead id="matrixHead"><tr><th>菜单组</th></tr></thead>
           <tbody id="matrixBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -52,36 +56,122 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+// 菜单权限: 角色筛选/分页/行查看/调整可见性表单(契约: GET /menu-perms)
+(function () {
+  var CHECK = '<img src="icons/check.svg" alt="" style="width:14px;height:14px;display:block;">';
+  var matrix = { roleColumns: [], rows: [] };
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var role = document.getElementById('role').value;
+    return (!kw || String(r.menu).indexOf(kw) >= 0) && (!role || r.visible.indexOf(role) >= 0);
+  }
+
+  function render() {
+    var cols = matrix.roleColumns || [];
+    var list = (matrix.rows || []).filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('matrixHead').innerHTML = '<tr><th>菜单组</th>' + cols.map(function (c) {
+      return '<th>' + UI.esc(c.name) + '</th>';
+    }).join('') + '<th>操作</th></tr>';
+    document.getElementById('matrixBody').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.menu) + '</td>' + cols.map(function (c) {
+        return '<td>' + (r.visible.indexOf(c.code) >= 0 ? CHECK : '') + '</td>';
+      }).join('') + '<td><a href="#" data-op="detail" data-menu="' + UI.esc(r.menu) + '">查看</a></td></tr>';
+    }).join('') : UI.tbodyState(cols.length + 2, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function roleName(code) {
+    var cols = matrix.roleColumns || [];
+    for (var i = 0; i < cols.length; i++) if (cols[i].code === code) return cols[i].name;
+    return code;
+  }
+
+  function detail(menu) {
+    var rows = (matrix.rows || []).filter(function (r) { return r.menu === menu; });
+    if (!rows.length) return;
+    var names = rows[0].visible.map(roleName);
+    var body = '<div class="form-item"><label>菜单组</label><div>' + UI.esc(menu) + '</div></div>' +
+      '<div class="form-item"><label>可见角色</label><div>' + UI.esc(names.join('、') || '无') + '</div></div>';
+    UI.modal({ title: '菜单可见性', body: body, okText: '关闭' });
+  }
+
+  function edit() {
+    var roleOpts = (matrix.roleColumns || []).map(function (c) {
+      return { v: c.code, t: c.name };
+    });
+    var fields = [
+      { key: 'menu', label: '菜单组', required: true, placeholder: '如 计费与账务' },
+      { key: 'role', label: '角色', type: 'select', required: true, options: roleOpts },
+      { key: 'visible', label: '可见性', type: 'select', value: '1',
+        options: [{ v: '1', t: '可见' }, { v: '0', t: '隐藏' }] },
+    ];
+    UI.modal({
+      title: '调整可见性', body: UI.formFields(fields), okText: '保存',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, fields);
+        if (!v) return false;
+        close();
+        UI.toast('已设置 ' + v.menu + ' 对 ' + roleName(v.role) + (v.visible === '1' ? ' 可见' : ' 隐藏') + '(演示)', 'ok');
+      }
+    });
+  }
+
+  document.getElementById('matrixBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    detail(a.getAttribute('data-menu'));
   });
-}
-var CHECK = '<img src="icons/check.svg" alt="" style="width:14px;height:14px;display:block;">';
-function renderMatrix(matrix) {
-  var cols = matrix.roleColumns || [];
-  var head = '<tr><th>菜单组</th>' + cols.map(function (c) {
-    return '<th>' + esc(c.name) + '</th>';
-  }).join('') + '</tr>';
-  document.getElementById('matrixHead').innerHTML = head;
-  var body = (matrix.rows || []).map(function (r) {
-    return '<tr><td>' + esc(r.menu) + '</td>' + cols.map(function (c) {
-      return '<td>' + (r.visible.indexOf(c.code) >= 0 ? CHECK : '') + '</td>';
-    }).join('') + '</tr>';
-  }).join('');
-  document.getElementById('matrixBody').innerHTML = body;
-}
-function renderModel(model) {
-  document.getElementById('modelBody').innerHTML = (model.layers || []).map(function (l) {
-    return '<tr><td>' + esc(l.layer) + '</td><td>' + esc(l.carrier) + '</td><td>' + esc(l.semantic) + '</td><td>' + esc(l.landing) + '</td></tr>';
-  }).join('');
-}
-API.org.menuPerms().then(function (r) {
-  renderMatrix(r.matrix);
-  renderModel(r.model);
-}).catch(function (err) { alert('加载失败：' + err.message); });
+
+  function renderModel(model) {
+    document.getElementById('modelBody').innerHTML = (model.layers || []).map(function (l) {
+      return '<tr><td>' + UI.esc(l.layer) + '</td><td>' + UI.esc(l.carrier) + '</td><td>' + UI.esc(l.semantic) + '</td><td>' + UI.esc(l.landing) + '</td></tr>';
+    }).join('');
+  }
+
+  function load() {
+    document.getElementById('matrixBody').innerHTML = UI.tbodyState(2, '加载中...');
+    API.org.menuPerms().then(function (r) {
+      matrix = r.matrix || { roleColumns: [], rows: [] };
+      renderModel(r.model || {});
+      var sel = document.getElementById('role');
+      sel.innerHTML = '<option value="">全部角色</option>' + (matrix.roleColumns || []).map(function (c) {
+        return '<option value="' + UI.esc(c.code) + '">' + UI.esc(c.name) + '</option>';
+      }).join('');
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('role').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-edit').onclick = edit;
+  document.getElementById('btn-save').onclick = function () {
+    UI.confirm('确认保存当前菜单可见性配置? 变更对在线会话即时生效。', function () {
+      UI.toast('菜单权限已保存(演示)', 'ok');
+    });
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('role').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

@@ -26,55 +26,126 @@
       <div class="toolbar">
         <input class="input" style="width:220px" id="kw" placeholder="拆机单号/客户/地址">
         <select class="input" style="width:160px" id="st"><option value="">全部状态</option><option value="WAIT_SCAN">待扫码</option><option value="UNBOUND">已解绑</option><option value="DISMANTLED">已拆机</option></select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
         <button class="btn btn-primary" id="btn-new">+ 新建拆机单</button>
       </div>
       <div class="card">
+        <div class="card-title">拆机单列表</div>
         <table class="tbl">
           <thead><tr><th>拆机单号</th><th>客户</th><th>光猫/端口</th><th>扫码状态</th><th>当前环节</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
+// 拆机管理:筛选/分页/详情弹框/新建表单(契约: GET /dismantles)
 (function () {
   var ST_TAG = { WAIT_SCAN: 'tag-orange', UNBOUND: 'tag-green', DISMANTLED: 'tag-gray' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(d) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hay = String(d.dismantleNo) + String(d.customer) + String(d.address || '');
+    return (!kw || hay.indexOf(kw) >= 0) && (!st || d.scanStatus === st);
   }
-  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
 
-  function load() {
-    API.order.dismantles(document.getElementById('kw').value.trim(), document.getElementById('st').value)
-      .then(function (r) {
-        var html = '';
-        for (var i = 0; i < r.items.length; i++) {
-          var d = r.items[i];
-          html += '<tr><td>' + esc(d.dismantleNo) + '</td><td>' + esc(d.customer) + '</td><td>' + esc(d.assetCode) + ' / ' + esc(d.portCode)
-            + '</td><td>' + tag(ST_TAG[d.scanStatus] || 'tag-blue', d.scanStatusLabel) + '</td><td>' + esc(d.stageLabel)
-            + '</td><td><a href="#" class="op" data-no="' + esc(d.dismantleNo) + '">' + esc(d.op) + '</a></td></tr>';
-        }
-        document.getElementById('rows').innerHTML = html || '<tr><td colspan="6">无数据</td></tr>';
-      })
-      .catch(function (e) { alert('拆机单加载失败: ' + e.message); });
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (d) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(d.dismantleNo) + '">详情</a>';
+      if (d.op) ops += ' <a href="#" data-op="act" data-no="' + UI.esc(d.dismantleNo) + '" data-act="' + UI.esc(d.op) + '">' + UI.esc(d.op) + '</a>';
+      return '<tr><td>' + UI.esc(d.dismantleNo) + '</td><td>' + UI.esc(d.customer) + '</td><td>' + UI.esc(d.assetCode) + ' / ' + UI.esc(d.portCode)
+        + '</td><td>' + tag(ST_TAG[d.scanStatus] || 'tag-blue', d.scanStatusLabel) + '</td><td>' + UI.esc(d.stageLabel)
+        + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findRow(no) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].dismantleNo) === String(no)) return all[i];
+    return null;
+  }
+
+  function showDetail(no) {
+    var d = findRow(no);
+    if (!d) return;
+    var rows = [
+      ['拆机单号', d.dismantleNo], ['客户', d.customer],
+      ['光猫/端口', d.assetCode + ' / ' + d.portCode],
+      ['扫码状态', d.scanStatusLabel], ['当前环节', d.stageLabel],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '拆机单详情', body: rows, okText: '关闭' });
+  }
+
+  function act(no, actName) {
+    UI.confirm('确认对拆机单 ' + no + ' 执行「' + actName + '」?', function () {
+      UI.toast('拆机单 ' + no + ' ' + actName + '(演示)', 'ok');
+    });
+  }
+
+  function openNew() {
+    var fields = [
+      { key: 'customer', label: '客户', required: true },
+      { key: 'assetCode', label: '光猫编码', required: true, placeholder: '待解绑资产' },
+      { key: 'address', label: '地址', required: true },
+      { key: 'remark', label: '备注', type: 'textarea' },
+    ];
+    UI.modal({
+      title: '新建拆机单', body: UI.formFields(fields), okText: '提交',
+      onOk: function (m, close) {
+        var v = UI.readForm(m, fields);
+        if (!v) return false;
+        close();
+        UI.toast('新建拆机单(演示): ' + v.customer, 'ok');
+      }
+    });
   }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A') return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    alert('拆机单 ' + a.getAttribute('data-no') + ' ' + a.innerHTML + ': 演示操作');
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else act(no, a.getAttribute('data-act'));
   });
 
-  document.getElementById('btn-new').onclick = function () {
-    API.post('/dismantles', {}).then(function (r) { alert('新建拆机单: ' + r.message); load(); });
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.order.dismantles('', '').then(function (r) {
+      all = r.items || []; state.page = 1; render();
+    }).catch(function (e) { UI.toast('拆机单加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = ''; document.getElementById('st').value = '';
+    state.page = 1; render();
   };
-  document.getElementById('kw').addEventListener('input', load);
-  document.getElementById('st').addEventListener('change', load);
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-new').onclick = openNew;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
 
   load();
 })();

@@ -24,16 +24,24 @@
       </div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新增区域</button>
-        <input class="input" style="width:220px" placeholder="搜索区域名称/路径">
+        <input class="input" style="width:220px" id="kw" placeholder="搜索区域名称/路径">
+        <select class="input" style="width:120px" id="lv">
+          <option value="">全部级别</option><option>集团</option><option>大区</option><option>省</option><option>城市</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
         <span class="tag tag-blue">路径唯一权威：ltree path</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-new">+ 新增区域</button>
       </div>
       <div class="card">
+        <div class="card-title">区域树</div>
         <table class="tbl">
           <thead><tr><th>层级路径</th><th>名称</th><th>级别</th><th>父级</th><th>下级数</th><th>操作</th></tr></thead>
           <tbody id="regionBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -48,47 +56,114 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
-}
-function regionRowHtml(r) {
-  return '<tr>' +
-    '<td>' + esc(r.path) + '</td>' +
-    '<td>' + esc(r.name) + '</td>' +
-    '<td>' + esc(r.levelLabel) + '</td>' +
-    '<td>' + esc(r.parentName) + '</td>' +
-    '<td>' + esc(r.childCount) + '</td>' +
-    '<td><a href="#">下钻</a></td>' +
-  '</tr>';
-}
-function scopeRowHtml(s) {
-  return '<tr><td>' + esc(s.region) + '</td><td>' + esc(s.visibleData) + '</td><td>' + esc(s.denyHint) + '</td></tr>';
-}
-function render(items, scopes) {
-  document.getElementById('regionBody').innerHTML = items.map(regionRowHtml).join('');
-  document.getElementById('regionScopeBody').innerHTML = (scopes || []).map(scopeRowHtml).join('');
-}
-var allRegions = [], allScopes = [];
-API.org.regions().then(function (r) {
-  allRegions = r.items;
-  allScopes = r.scopes || [];
-  render(allRegions, allScopes);
-}).catch(function (err) { alert('加载失败：' + err.message); });
-// toolbar 前端过滤:区域名称/路径关键字
-(function bindToolbar() {
-  var kw = document.querySelector('.toolbar input[placeholder="搜索区域名称/路径"]');
-  if (!kw) return;
-  kw.oninput = function () {
-    var k = kw.value.trim();
-    var items = allRegions.filter(function (r) {
-      return !k || r.name.indexOf(k) >= 0 || r.path.indexOf(k) >= 0;
+// 经营区域: 筛选/分页/详情/下钻/新增表单(契约: GET /regions)
+(function () {
+  var all = [], scopes = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var lv = document.getElementById('lv').value;
+    var hitKw = !kw || String(r.name).indexOf(kw) >= 0 || String(r.path).indexOf(kw) >= 0;
+    return hitKw && (!lv || r.levelLabel === lv);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('regionBody').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.path) + '</td><td>' + UI.esc(r.name) + '</td><td>' + UI.esc(r.levelLabel)
+        + '</td><td>' + UI.esc(r.parentName) + '</td><td>' + UI.esc(r.childCount)
+        + '</td><td><a href="#" data-op="detail" data-id="' + r.regionId + '">详情</a>'
+        + ' <a href="#" data-op="drill" data-id="' + r.regionId + '">下钻</a></td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
-    render(items, allScopes);
+  }
+
+  function findRow(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].regionId) === String(id)) return all[i];
+    return null;
+  }
+
+  function detail(id) {
+    var r = findRow(id);
+    if (!r) return;
+    var rows = [['层级路径', r.path], ['名称', r.name], ['级别', r.levelLabel],
+      ['父级', r.parentName], ['下级数', r.childCount]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '区域详情', body: rows, okText: '关闭' });
+  }
+
+  function drill(id) {
+    var r = findRow(id);
+    if (!r) return;
+    document.getElementById('kw').value = r.path;
+    state.page = 1;
+    render();
+    UI.toast('已下钻到子树: ' + r.path, 'ok');
+  }
+
+  function create() {
+    var fields = [
+      { key: 'name', label: '区域名称', required: true, placeholder: '如 甲米地省' },
+      { key: 'path', label: '层级路径', required: true, placeholder: '如 root.luzon.cavite' },
+      { key: 'level', label: '级别', type: 'select', value: '城市',
+        options: [{ v: '集团', t: '集团' }, { v: '大区', t: '大区' }, { v: '省', t: '省' }, { v: '城市', t: '城市' }] },
+    ];
+    UI.modal({
+      title: '新增区域', body: UI.formFields(fields), okText: '保存',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, fields);
+        if (!v) return false;
+        close();
+        UI.toast('已新增区域: ' + v.path + '(演示)', 'ok');
+      }
+    });
+  }
+
+  document.getElementById('regionBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') detail(id);
+    else if (op === 'drill') drill(id);
+  });
+
+  function load() {
+    document.getElementById('regionBody').innerHTML = UI.tbodyState(6, '加载中...');
+    API.org.regions().then(function (r) {
+      all = r.items || [];
+      scopes = r.scopes || [];
+      document.getElementById('regionScopeBody').innerHTML = scopes.length ? scopes.map(function (s) {
+        return '<tr><td>' + UI.esc(s.region) + '</td><td>' + UI.esc(s.visibleData) + '</td><td>' + UI.esc(s.denyHint) + '</td></tr>';
+      }).join('') : UI.tbodyState(3, '无匹配数据');
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('lv').value = '';
+    state.page = 1; render();
   };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-new').onclick = create;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('lv').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

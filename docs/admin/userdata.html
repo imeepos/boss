@@ -21,12 +21,22 @@
       <div class="page-head"><h2>用户端配置</h2><div class="desc">用户端全局配置项：增值服务目录 / FAQ 知识库 / 自助排障指南 / 协议版本 / 邀请有礼 / 充值面额 / 产品卖点。用户维度数据请进「用户列表 → 用户详情」</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary" id="btnFaq">新增 FAQ</button>
-        <button class="btn" id="btnAddon">新增增值服务</button>
+        <input class="input" style="width:220px" id="kw" placeholder="名称/问题/标题">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>在售</option><option>已下架</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btnAddon">新增增值服务</button>
+        <button class="btn" id="btnFaq">新增 FAQ</button>
+        <button class="btn" id="btn-export">导出</button>
       </div>
 
       <div class="card"><h3>增值服务目录</h3>
         <table class="tbl"><thead><tr><th>编号</th><th>名称</th><th>月费</th><th>说明</th><th>订购数</th><th>状态</th><th>操作</th></tr></thead><tbody id="rowsAddons"></tbody></table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card"><h3>FAQ 知识库（active 控制用户端可见）</h3>
@@ -47,76 +57,178 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
 // 用户端配置(契约: /addons /user-faqs /diy-guides /agreements /invite-config /topup-denominations /product-specs)
 (function () {
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function tag(label, cls) { return '<span class="tag ' + (cls || 'tag-gray') + '">' + UI.esc(label) + '</span>'; }
+  function fill(id, html, cols, listName) {
+    document.getElementById(id).innerHTML = html || UI.tbodyState(cols, listName ? '无匹配' + listName + '数据' : '无匹配数据');
+  }
+  function hitKw() {
+    var kw = document.getElementById('kw').value.trim();
+    return function (r, keys) {
+      if (!kw) return true;
+      return keys.some(function (k) { return String(r[k] || '').indexOf(kw) >= 0; });
+    };
+  }
+  var data = { addons: [], faqs: [], diys: [], agrs: [], cfg: '' };
+  var state = { page: 1, pageSize: 10 };
+
+  function renderAddons() {
+    var st = document.getElementById('st').value;
+    var kw = hitKw();
+    var list = data.addons.filter(function (r) { return kw(r, ['name', 'description']) && (!st || r.status === st); });
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    fill('rowsAddons', slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.addonId) + '</td><td>' + UI.esc(r.name) + '</td><td>' + UI.esc(r.monthlyFee) + '</td><td>' + UI.esc(r.description)
+        + '</td><td>' + r.subscribedCount + '</td><td>' + tag(r.status, r.status === '在售' ? 'tag-green' : 'tag-gray')
+        + '</td><td><a href="#" data-op="addon-detail" data-id="' + UI.esc(r.addonId) + '">详情</a>'
+        + ' <a href="#" data-op="addon-toggle" data-id="' + UI.esc(r.addonId) + '">上架/下架</a></td></tr>';
+    }).join('') : null, 7, '增值服务');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; renderAddons(); }
     });
   }
-  function fill(id, html) { document.getElementById(id).innerHTML = html; }
-  function tag(label, cls) { return '<span class="tag ' + (cls || 'tag-gray') + '">' + esc(label) + '</span>'; }
-  function bindToggle(tbodyId, attr, prefix, suffix) {
-    var links = document.getElementById(tbodyId).getElementsByTagName('a');
-    for (var i = 0; i < links.length; i++) {
-      links[i].onclick = function () {
-        API.put(prefix + this.getAttribute(attr) + suffix, {}).then(function () { location.reload(); });
-        return false;
-      };
-    }
+
+  function renderFaqs() {
+    var kw = hitKw();
+    fill('rowsFaqs', data.faqs.filter(function (r) { return kw(r, ['question', 'answer']); }).map(function (r) {
+      return '<tr><td>' + UI.esc(r.faqId) + '</td><td>' + UI.esc(r.question) + '</td><td>' + UI.esc(r.answer) + '</td><td>' + tag(r.status, r.statusClass)
+        + '</td><td><a href="#" data-op="faq-toggle" data-id="' + UI.esc(r.faqId) + '">启用/停用</a></td></tr>';
+    }).join('') || null, 5, 'FAQ');
   }
 
-  API.get('/addons').then(function (d) {
-    fill('rowsAddons', d.items.map(function (r) {
-      return '<tr><td>' + esc(r.addonId) + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.monthlyFee) + '</td><td>' + esc(r.description)
-        + '</td><td>' + r.subscribedCount + '</td><td>' + tag(r.status, r.status === '在售' ? 'tag-green' : 'tag-gray')
-        + '</td><td><a href="#" data-addon="' + esc(r.addonId) + '">上架/下架</a></td></tr>';
-    }).join(''));
-    bindToggle('rowsAddons', 'data-addon', '/addons/', '/toggle');
-  });
+  function renderDiys() {
+    var kw = hitKw();
+    fill('rowsDiys', data.diys.filter(function (r) { return kw(r, ['title', 'desc']); }).map(function (r) {
+      return '<tr><td>' + UI.esc(r.guideId) + '</td><td>' + UI.esc(r.title) + '</td><td>' + UI.esc(r.desc) + '</td><td>' + r.stepCount + '</td><td>' + tag(r.status, r.statusClass)
+        + '</td><td><a href="#" data-op="diy-toggle" data-id="' + UI.esc(r.guideId) + '">启用/停用</a></td></tr>';
+    }).join('') || null, 6, '指南');
+  }
 
-  API.get('/user-faqs').then(function (d) {
-    fill('rowsFaqs', d.items.map(function (r) {
-      return '<tr><td>' + esc(r.faqId) + '</td><td>' + esc(r.question) + '</td><td>' + esc(r.answer) + '</td><td>' + tag(r.status, r.statusClass)
-        + '</td><td><a href="#" data-faq="' + esc(r.faqId) + '">启用/停用</a></td></tr>';
-    }).join(''));
-    bindToggle('rowsFaqs', 'data-faq', '/user-faqs/', '/toggle');
-  });
+  function renderAgrs() {
+    fill('rowsAgrs', data.agrs.map(function (r) {
+      return '<tr><td>' + UI.esc(r.agreementId) + '</td><td>' + UI.esc(r.typeLabel) + '</td><td>' + UI.esc(r.version) + '</td><td>' + r.clauseCount
+        + '</td><td>' + UI.esc(r.effectiveAt) + '</td><td>' + tag(r.status, r.statusClass) + '</td></tr>';
+    }).join('') || null, 6, '协议');
+  }
 
-  API.get('/diy-guides').then(function (d) {
-    fill('rowsDiys', d.items.map(function (r) {
-      return '<tr><td>' + esc(r.guideId) + '</td><td>' + esc(r.title) + '</td><td>' + esc(r.desc) + '</td><td>' + r.stepCount + '</td><td>' + tag(r.status, r.statusClass)
-        + '</td><td><a href="#" data-diy="' + esc(r.guideId) + '">启用/停用</a></td></tr>';
-    }).join(''));
-    bindToggle('rowsDiys', 'data-diy', '/diy-guides/', '/toggle');
-  });
+  function renderAll() { renderAddons(); renderFaqs(); renderDiys(); renderAgrs(); }
 
-  API.get('/agreements').then(function (d) {
-    fill('rowsAgr', d.items.map(function (r) {
-      return '<tr><td>' + esc(r.agreementId) + '</td><td>' + esc(r.typeLabel) + '</td><td>' + esc(r.version) + '</td><td>' + r.clauseCount
-        + '</td><td>' + esc(r.effectiveAt) + '</td><td>' + tag(r.status, r.statusClass) + '</td></tr>';
-    }).join(''));
-  });
-
-  Promise.all([API.get('/invite-config'), API.get('/topup-denominations'), API.get('/product-specs')]).then(function (rs) {
-    var html = rs[0].items.map(function (r) {
-      return '<tr><td>邀请有礼</td><td>' + esc(r.link) + '</td><td>' + esc(r.rewardDesc) + '</td></tr>';
+  function addonDetail(id) {
+    var r = data.addons.filter(function (x) { return String(x.addonId) === String(id); })[0];
+    if (!r) return;
+    var items = [['编号', r.addonId], ['名称', r.name], ['月费', r.monthlyFee], ['说明', r.description],
+      ['订购数', r.subscribedCount], ['状态', r.status]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
     }).join('');
-    html += '<tr><td>充值面额</td><td>' + rs[1].items.map(function (r) { return '¥' + r.amount; }).join(' / ') + '</td><td>用户端充值页展示配置</td></tr>';
-    html += rs[2].items.map(function (r) {
-      return '<tr><td>产品卖点 · ' + esc(r.productName) + '</td><td>' + r.specs.map(function (s) { return esc(s.label) + ': ' + esc(s.value); }).join('；') + '</td><td>商品详情页规格项</td></tr>';
-    }).join('');
-    fill('rowsCfg', html);
+    UI.modal({ title: '增值服务详情', body: items, okText: '关闭' });
+  }
+
+  function toggle(prefix, id, suffix, msg) {
+    UI.confirm(msg, function () {
+      API.put(prefix + id + suffix, {}).then(function () {
+        UI.toast('操作成功', 'ok');
+        load();
+      }).catch(function (e) { UI.toast('操作失败: ' + e.message, 'err'); });
+    });
+  }
+
+  var addonFields = [
+    { key: 'name', label: '名称', required: true, placeholder: '增值服务名称' },
+    { key: 'monthlyFee', label: '月费', type: 'number', required: true, placeholder: '数字' },
+    { key: 'description', label: '说明', type: 'textarea', placeholder: '用户端展示说明' }
+  ];
+  var faqFields = [
+    { key: 'question', label: '问题', required: true, placeholder: '常见问题' },
+    { key: 'answer', label: '答案', type: 'textarea', required: true, placeholder: '标准答案' }
+  ];
+
+  function createAddon() {
+    UI.modal({
+      title: '新增增值服务', body: UI.formFields(addonFields), okText: '提交',
+      onOk: function (mask, close) {
+        var v = UI.readForm(mask.querySelector('.form'), addonFields);
+        if (!v) return false;
+        v.monthlyFee = Number(v.monthlyFee);
+        API.post('/addons', v).then(function () {
+          close(); UI.toast('新增成功', 'ok'); load();
+        }).catch(function (e) { UI.toast('新增失败: ' + e.message, 'err'); });
+        return false;
+      }
+    });
+  }
+
+  function createFaq() {
+    UI.modal({
+      title: '新增 FAQ', body: UI.formFields(faqFields), okText: '提交',
+      onOk: function (mask, close) {
+        var v = UI.readForm(mask.querySelector('.form'), faqFields);
+        if (!v) return false;
+        API.post('/user-faqs', v).then(function () {
+          close(); UI.toast('新增成功', 'ok'); load();
+        }).catch(function (e) { UI.toast('新增失败: ' + e.message, 'err'); });
+        return false;
+      }
+    });
+  }
+
+  document.body.addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'addon-detail') addonDetail(id);
+    else if (op === 'addon-toggle') toggle('/addons/', id, '/toggle', '确认上/下架该增值服务?');
+    else if (op === 'faq-toggle') toggle('/user-faqs/', id, '/toggle', '确认启/停用该 FAQ?');
+    else if (op === 'diy-toggle') toggle('/diy-guides/', id, '/toggle', '确认启/停用该排障指南?');
   });
 
-  document.getElementById('btnFaq').onclick = function () {
-    API.post('/user-faqs', { question: '新常见问题？', answer: '由管理后台维护' }).then(function () { location.reload(); });
+  function load() {
+    [['rowsAddons', 7], ['rowsFaqs', 5], ['rowsDiys', 6], ['rowsAgrs', 6], ['rowsCfg', 3]].forEach(function (x) {
+      document.getElementById(x[0]).innerHTML = UI.tbodyState(x[1], '加载中...');
+    });
+    API.get('/addons').then(function (d) { data.addons = d.items || []; renderAddons(); })
+      .catch(function (e) { UI.toast('增值服务加载失败: ' + e.message, 'err'); });
+    API.get('/user-faqs').then(function (d) { data.faqs = d.items || []; renderFaqs(); })
+      .catch(function (e) { UI.toast('FAQ 加载失败: ' + e.message, 'err'); });
+    API.get('/diy-guides').then(function (d) { data.diys = d.items || []; renderDiys(); })
+      .catch(function (e) { UI.toast('排障指南加载失败: ' + e.message, 'err'); });
+    API.get('/agreements').then(function (d) { data.agrs = d.items || []; renderAgrs(); })
+      .catch(function (e) { UI.toast('协议加载失败: ' + e.message, 'err'); });
+    Promise.all([API.get('/invite-config'), API.get('/topup-denominations'), API.get('/product-specs')]).then(function (rs) {
+      var html = rs[0].items.map(function (r) {
+        return '<tr><td>邀请有礼</td><td>' + UI.esc(r.link) + '</td><td>' + UI.esc(r.rewardDesc) + '</td></tr>';
+      }).join('');
+      html += '<tr><td>充值面额</td><td>' + rs[1].items.map(function (r) { return '¥' + r.amount; }).join(' / ') + '</td><td>用户端充值页展示配置</td></tr>';
+      html += rs[2].items.map(function (r) {
+        return '<tr><td>产品卖点 · ' + UI.esc(r.productName) + '</td><td>' + r.specs.map(function (s) { return UI.esc(s.label) + ': ' + UI.esc(s.value); }).join('；') + '</td><td>商品详情页规格项</td></tr>';
+      }).join('');
+      fill('rowsCfg', html || null, 3, '配置');
+    }).catch(function (e) { UI.toast('运营配置加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; renderAll(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; renderAll();
   };
-  document.getElementById('btnAddon').onclick = function () {
-    API.post('/addons', { name: '新增值服务', monthlyFee: 10, description: '管理后台新增' }).then(function () { location.reload(); });
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btnFaq').onclick = createFaq;
+  document.getElementById('btnAddon').onclick = createAddon;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出增值服务目录 ' + data.addons.length + ' 条(演示)', 'ok');
   };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; renderAll(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; renderAddons(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

@@ -32,6 +32,12 @@
           <option value="">区域：全部</option><option>吕宋大区</option>
           <option>比萨扬大区</option><option>棉兰老大区</option>
         </select>
+        <input class="input" style="width:200px" id="kw" placeholder="设备关键字">
+        <select class="input" style="width:140px" id="st">
+          <option value="">建议：全部</option><option value="NOW">立即替换</option><option value="HIGH">优先级高</option><option value="WATCH">观察</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-refresh">刷新</button>
         <span class="spacer"></span>
         <span class="tag tag-blue">品牌隔离 · 跨层汇总 = 明细之和</span>
       </div>
@@ -58,65 +64,107 @@
       </div>
 
       <div class="card">
-        <div class="card-title">维护一张表 · 待替换设备优先级清单</div>
+        <div class="card-title">维护一张表 · 待替换设备优先级清单 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
-          <thead><tr><th>设备</th><th>健康度</th><th>故障次数</th><th>使用年限</th><th>替换建议</th></tr></thead>
+          <thead><tr><th>设备</th><th>健康度</th><th>故障次数</th><th>使用年限</th><th>替换建议</th><th>操作</th></tr></thead>
           <tbody id="replaceRows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
-
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 经营分析渲染(契约: GET /analytics/overview，region/brand 作为 query 参数)
+// 经营分析(契约: GET /analytics/overview，region/brand 作为 query 参数)
 (function () {
   var SUGGEST_TAG = { '立即替换': 'tag-red', '优先级高': 'tag-orange', '观察': 'tag-gray' };
+  var SUGGEST_CODE = { '立即替换': 'NOW', '优先级高': 'HIGH', '观察': 'WATCH' };
+  var replaceList = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-    });
-  }
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
 
   function renderKpis(kpis) {
-    document.getElementById('kpiRows').innerHTML = kpis.map(function (k) {
-      return '<tr><td>' + esc(k.label) + '</td><td style="font-weight:700;">' + esc(k.value) + '</td></tr>';
-    }).join('');
+    document.getElementById('kpiRows').innerHTML = kpis.length ? kpis.map(function (k) {
+      return '<tr><td>' + UI.esc(k.label) + '</td><td style="font-weight:700;">' + UI.esc(k.value) + '</td></tr>';
+    }).join('') : UI.tbodyState(2, '无数据');
   }
 
   function renderMatrix(m) {
     document.getElementById('matrixHead').innerHTML = '<tr><th>品牌</th>'
-      + m.regions.map(function (r) { return '<th>' + esc(r) + '</th>'; }).join('')
+      + m.regions.map(function (r) { return '<th>' + UI.esc(r) + '</th>'; }).join('')
       + '<th>合并营收</th></tr>';
-    document.getElementById('matrixRows').innerHTML = m.rows.map(function (row, i) {
+    document.getElementById('matrixRows').innerHTML = m.rows.length ? m.rows.map(function (row, i) {
       var bold = i === m.rows.length - 1 ? ' style="font-weight:700;"' : '';
-      return '<tr' + bold + '><td>' + esc(row.brand) + '</td>'
-        + m.regions.map(function (r) { return '<td>' + esc(row.values[r]) + '</td>'; }).join('')
-        + '<td>' + esc(row.total) + '</td></tr>';
-    }).join('');
+      return '<tr' + bold + '><td>' + UI.esc(row.brand) + '</td>'
+        + m.regions.map(function (r) { return '<td>' + UI.esc(row.values[r]) + '</td>'; }).join('')
+        + '<td>' + UI.esc(row.total) + '</td></tr>';
+    }).join('') : UI.tbodyState(m.regions.length + 2, '无数据');
   }
 
-  function renderReplace(list) {
-    document.getElementById('replaceRows').innerHTML = list.map(function (r) {
-      return '<tr><td>' + esc(r.device) + '</td><td>' + esc(r.health) + '</td><td>'
-        + esc(r.faultCount) + '</td><td>' + esc(r.years) + '</td><td><span class="tag '
-        + (SUGGEST_TAG[r.suggestion] || 'tag-gray') + '">' + esc(r.suggestion) + '</span></td></tr>';
-    }).join('');
+  function replMatches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    return (!kw || String(r.device || '').indexOf(kw) >= 0)
+      && (!st || SUGGEST_CODE[r.suggestion] === st);
   }
+
+  function renderReplace() {
+    var list = replaceList.filter(replMatches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('replaceRows').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.device) + '</td><td>' + UI.esc(r.health) + '</td><td>'
+        + UI.esc(r.faultCount) + '</td><td>' + UI.esc(r.years) + '</td><td>'
+        + tag(SUGGEST_TAG[r.suggestion] || 'tag-gray', r.suggestion)
+        + '</td><td><a href="#" data-op="detail" data-idx="' + (replaceList.indexOf(r)) + '">查看</a></td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    document.getElementById('row-hint').textContent = list.length ? '共 ' + list.length + ' 台' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; renderReplace(); }
+    });
+  }
+
+  function showDetail(r) {
+    var rows = [
+      ['设备', r.device], ['健康度', r.health], ['故障次数', r.faultCount],
+      ['使用年限', r.years], ['替换建议', r.suggestion],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '设备维护详情', body: rows, okText: '关闭' });
+  }
+
+  document.getElementById('replaceRows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || a.getAttribute('data-op') !== 'detail') return;
+    ev.preventDefault();
+    var r = replaceList[parseInt(a.getAttribute('data-idx'), 10)];
+    if (r) showDetail(r);
+  });
 
   function load() {
+    document.getElementById('replaceRows').innerHTML = UI.tbodyState(6, '加载中...');
     API.intel.analytics(
       document.getElementById('regionSel').value,
       document.getElementById('brandSel').value
     ).then(function (d) {
-      renderKpis(d.kpis);
-      renderMatrix(d.brandRegionMatrix);
-      renderReplace(d.replaceList);
-    });
+      renderKpis(d.kpis || []);
+      renderMatrix(d.brandRegionMatrix || { regions: [], rows: [] });
+      replaceList = d.replaceList || [];
+      state.page = 1;
+      renderReplace();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
   }
 
+  document.getElementById('btn-search').onclick = function () { state.page = 1; renderReplace(); };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; renderReplace(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; renderReplace(); });
   document.getElementById('brandSel').onchange = load;
   document.getElementById('regionSel').onchange = load;
 

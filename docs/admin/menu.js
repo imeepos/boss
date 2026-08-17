@@ -79,30 +79,29 @@
     ]},
   ];
 
-  var container = document.getElementById('menu');
-  if (!container) return;
+  var container = $('#menu');
+  if (!container.length) return;
 
   var path = location.pathname.split('/').pop() || 'dashboard.html';
-  var cur = path.replace('.html', '');
 
   var html = '';
-  groups.forEach(function (g) {
+  $.each(groups, function (_, g) {
     var hasActive = g.items.some(function (it) { return it.href === path; });
     // 含当前页的分组默认展开
-    var open = hasActive ? ' open' : '';
-    var groupCls = 'mgroup' + open;
-    html += '<div class="' + groupCls + '">';
-    html += '<div class="mg-title" onclick="this.parentNode.classList.toggle(\'open\')">'
-          + (g.ico ? '<span class="ico"><img src="' + g.ico + '" alt=""></span>' : '') + g.label
-          + '<span class="arrow">⌄</span></div>';
+    html += '<div class="mgroup' + (hasActive ? ' open' : '') + '">';
+    html += '<div class="mg-title">' +
+          (g.ico ? '<span class="ico"><img src="' + g.ico + '" alt=""></span>' : '') + g.label +
+          '<span class="arrow">⌄</span></div>';
     html += '<div class="mg-items">';
-    g.items.forEach(function (it) {
+    $.each(g.items, function (_, it) {
       var cls = it.href === path ? 'menu-item active' : 'menu-item';
-      html += '<a class="' + cls + '" href="' + it.href + '">'
-            + '<span class="ico"><img src="icons/items/' + it.key + '.svg" alt=""></span>'
-            + it.label + '</a>';
+      html += '<a class="' + cls + '" href="' + it.href + '">' +
+            '<span class="ico"><img src="icons/items/' + it.key + '.svg" alt=""></span>' +
+            it.label + '</a>';
     });
     html += '</div></div>';
   });
-  container.innerHTML = html;
+  container.html(html);
+  // 分组折叠切换
+  container.on('click', '.mg-title', function () { $(this).parent('.mgroup').toggleClass('open'); });
 })();

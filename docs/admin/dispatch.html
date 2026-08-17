@@ -21,11 +21,14 @@
       <div class="page-head"><h2>派单管理</h2><div class="desc">工单分配 · 装维师傅进度跟踪 · 调度工作台（调度岗 / 师傅岗分离）</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary" id="btn-new">+ 新建派单</button>
-        <select class="input" style="width:150px"><option>岗位视图：调度工作台</option><option>装维师傅视图</option></select>
+        <input class="input" style="width:200px" id="kw" placeholder="工单号/订单号/区域">
         <select class="input" style="width:140px" id="st"><option value="">状态：全部</option><option value="PENDING">待接单</option><option value="WORKING">施工中</option><option value="DONE">已完成</option></select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
         <span class="tag tag-blue">调度岗：跨区工单池 · 按技能/区域分派</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-new">+ 新建派单</button>
       </div>
 
       <div class="card">
@@ -34,6 +37,7 @@
           <thead><tr><th>工单号</th><th>来源单</th><th>区域</th><th>技能要求</th><th>候选师傅</th><th>分派范围</th><th>操作</th></tr></thead>
           <tbody id="pool-rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -55,78 +59,149 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
+// 派单管理:工单池分页筛选/分派演示/我的工单/转单处理(契约: GET /dispatch/pool|my-tickets|transfers)
 (function () {
   var ST_TAG = { PENDING: 'tag-blue', WORKING: 'tag-orange', DONE: 'tag-green', WAIT_REASSIGN: 'tag-orange', REASSIGNED: 'tag-blue' };
+  var pool = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+  function setRows(id, html, cols, text) {
+    document.getElementById(id).innerHTML = html || UI.tbodyState(cols, text || '无匹配数据');
   }
-  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
-  function setRows(id, html, cols) {
-    document.getElementById(id).innerHTML = html || '<tr><td colspan="' + cols + '">无数据</td></tr>';
+
+  function matches(t) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hay = String(t.ticketNo) + String(t.sourceNo) + String(t.region);
+    return (!kw || hay.indexOf(kw) >= 0) && (!st || t.status === st);
+  }
+
+  function renderPool() {
+    var list = pool.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    setRows('pool-rows', slice.map(function (t) {
+      return '<tr><td>' + UI.esc(t.ticketNo) + '</td><td>' + UI.esc(t.sourceNo) + '</td><td>' + UI.esc(t.region) + '</td><td>' + UI.esc(t.skill)
+        + '</td><td>' + UI.esc(t.candidates) + '</td><td>' + UI.esc(t.scope)
+        + '</td><td><a href="#" data-op="detail" data-idx="' + pool.indexOf(t) + '">详情</a>'
+        + ' <a href="#" data-op="assign" data-no="' + UI.esc(t.ticketNo) + '">分派</a></td></tr>';
+    }).join(''), 7);
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; renderPool(); }
+    });
   }
 
   function loadPool() {
+    document.getElementById('pool-rows').innerHTML = UI.tbodyState(7, '加载中...');
     API.order.dispatchPool().then(function (r) {
-      var html = '';
-      for (var i = 0; i < r.items.length; i++) {
-        var t = r.items[i];
-        html += '<tr><td>' + esc(t.ticketNo) + '</td><td>' + esc(t.sourceNo) + '</td><td>' + esc(t.region) + '</td><td>' + esc(t.skill)
-          + '</td><td>' + esc(t.candidates) + '</td><td>' + esc(t.scope)
-          + '</td><td><a href="#" class="op-assign" data-no="' + esc(t.ticketNo) + '">分派</a></td></tr>';
-      }
-      setRows('pool-rows', html, 7);
-    });
+      pool = r.items || []; state.page = 1; renderPool();
+    }).catch(function (e) { UI.toast('工单池加载失败: ' + e.message, 'err'); });
   }
 
-  function loadMyTickets(st) {
+  function loadMyTickets() {
+    var st = document.getElementById('st').value;
+    setRows('my-rows', UI.tbodyState(6, '加载中...'));
     API.order.myTickets().then(function (r) {
-      var items = st ? r.items.filter(function (x) { return x.status === st; }) : r.items;
-      var html = '';
-      for (var i = 0; i < items.length; i++) {
-        var t = items[i];
-        html += '<tr><td>' + esc(t.ticketNo) + '</td><td>' + esc(t.orderNo) + '</td><td>' + esc(t.master) + '</td><td>' + esc(t.address)
-          + '</td><td>' + tag(ST_TAG[t.status] || 'tag-blue', t.statusLabel) + '</td><td>' + esc(t.duration) + '</td></tr>';
-      }
-      setRows('my-rows', html, 6);
-    });
+      var items = (r.items || []).filter(function (x) { return !st || x.status === st; });
+      setRows('my-rows', items.map(function (t) {
+        return '<tr><td>' + UI.esc(t.ticketNo) + '</td><td>' + UI.esc(t.orderNo) + '</td><td>' + UI.esc(t.master) + '</td><td>' + UI.esc(t.address)
+          + '</td><td>' + tag(ST_TAG[t.status] || 'tag-blue', t.statusLabel) + '</td><td>' + UI.esc(t.duration) + '</td></tr>';
+      }).join(''), 6);
+    }).catch(function (e) { UI.toast('我的工单加载失败: ' + e.message, 'err'); });
   }
 
   function loadTransfers() {
+    setRows('transfer-rows', UI.tbodyState(6, '加载中...'));
     API.order.dispatchTransfers().then(function (r) {
-      var html = '';
-      for (var i = 0; i < r.items.length; i++) {
-        var t = r.items[i];
-        var op = t.status === 'WAIT_REASSIGN'
-          ? '<a href="#" class="op-transfer" data-no="' + esc(t.orderNo) + '">重新分派</a>'
-          : '<a href="#" class="op-detail">详情</a>';
-        html += '<tr><td>' + esc(t.orderNo) + '</td><td>' + esc(t.fromMaster) + '</td><td>' + esc(t.reason) + '</td><td>' + esc(t.toTarget)
+      setRows('transfer-rows', (r.items || []).map(function (t) {
+        var op = '<a href="#" data-op="tdetail" data-no="' + UI.esc(t.orderNo) + '">详情</a>';
+        if (t.status === 'WAIT_REASSIGN') {
+          op += ' <a href="#" data-op="reassign" data-no="' + UI.esc(t.orderNo) + '">重新分派</a>';
+        }
+        return '<tr><td>' + UI.esc(t.orderNo) + '</td><td>' + UI.esc(t.fromMaster) + '</td><td>' + UI.esc(t.reason) + '</td><td>' + UI.esc(t.toTarget)
           + '</td><td>' + tag(ST_TAG[t.status] || 'tag-blue', t.statusLabel) + '</td><td>' + op + '</td></tr>';
+      }).join(''), 6);
+    }).catch(function (e) { UI.toast('转单记录加载失败: ' + e.message, 'err'); });
+  }
+
+  function showPoolDetail(idx) {
+    var t = pool[idx];
+    if (!t) return;
+    var rows = [
+      ['工单号', t.ticketNo], ['来源单', t.sourceNo], ['区域', t.region],
+      ['技能要求', t.skill], ['候选师傅', t.candidates], ['分派范围', t.scope],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '工单详情', body: rows, okText: '关闭' });
+  }
+
+  function assign(no) {
+    var fields = [{ key: 'master', label: '指派师傅', required: true, placeholder: '师傅工号/姓名' }];
+    UI.modal({
+      title: '分派工单 ' + no, body: UI.formFields(fields), okText: '分派',
+      onOk: function (m, close) {
+        var v = UI.readForm(m, fields);
+        if (!v) return false;
+        close();
+        UI.toast('工单 ' + no + ' 已分派给 ' + v.master + '(演示)', 'ok');
       }
-      setRows('transfer-rows', html, 6);
+    });
+  }
+
+  function reassign(no) {
+    UI.confirm('确认对工单 ' + no + ' 执行调度重新分派?', function () {
+      UI.toast('工单 ' + no + ' 重新分派(演示)', 'ok');
+      loadTransfers();
+    });
+  }
+
+  function openNew() {
+    var fields = [
+      { key: 'orderNo', label: '订单号', required: true, placeholder: '如 ORD-20250817-001' },
+      { key: 'region', label: '区域', required: true },
+      { key: 'skill', label: '技能要求' },
+    ];
+    UI.modal({
+      title: '新建派单', body: UI.formFields(fields), okText: '提交',
+      onOk: function (m, close) {
+        var v = UI.readForm(m, fields);
+        if (!v) return false;
+        close();
+        UI.toast('新建派单(演示): ' + v.orderNo, 'ok');
+      }
     });
   }
 
   document.querySelector('.content').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A') return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    if (a.className === 'op-assign') {
-      API.post('/dispatch/pool/' + a.getAttribute('data-no') + '/assign', { masterId: 1 })
-        .then(function (r) { alert('工单 ' + a.getAttribute('data-no') + ' 分派: ' + r.message); });
-    } else if (a.className === 'op-transfer') {
-      API.post('/dispatch/tickets/' + a.getAttribute('data-no') + '/transfer', { toMasterId: 2, reason: '调度重新分派' })
-        .then(function (r) { alert('工单 ' + a.getAttribute('data-no') + ' 转派: ' + r.message); loadTransfers(); });
-    }
+    var op = a.getAttribute('data-op');
+    if (op === 'detail') showPoolDetail(parseInt(a.getAttribute('data-idx'), 10));
+    else if (op === 'assign') assign(a.getAttribute('data-no'));
+    else if (op === 'reassign') reassign(a.getAttribute('data-no'));
+    else if (op === 'tdetail') UI.modal({ title: '转单详情', body: '<div class="form-item"><label>订单号</label><div>' + UI.esc(a.getAttribute('data-no')) + '</div></div>', okText: '关闭' });
   });
 
-  document.getElementById('btn-new').onclick = function () { alert('新建派单: 演示操作'); };
-  document.getElementById('st').addEventListener('change', function () { loadMyTickets(this.value); });
+  document.getElementById('btn-search').onclick = function () { state.page = 1; renderPool(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = ''; document.getElementById('st').value = '';
+    state.page = 1; renderPool(); loadMyTickets();
+  };
+  document.getElementById('btn-refresh').onclick = function () { loadPool(); loadMyTickets(); loadTransfers(); };
+  document.getElementById('btn-new').onclick = openNew;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; renderPool(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; renderPool(); loadMyTickets(); });
 
   loadPool();
-  loadMyTickets('');
+  loadMyTickets();
   loadTransfers();
 })();
 </script>

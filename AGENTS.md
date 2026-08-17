@@ -16,3 +16,7 @@
 - 不要使用emoji图标
 - 读文件请使用Read工具
 - 编辑文件前请务必先读取文件
+
+
+## 已知环境事实
+brew 和 graphviz 都在 /opt/homebrew/bin

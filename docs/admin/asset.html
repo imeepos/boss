@@ -24,12 +24,26 @@
       </div>
 
       <div class="grid g-4" style="margin-bottom:16px;" id="stats"></div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" id="kw" placeholder="资产编码/标签编号/EPC">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>待领用</option><option>正常</option><option>维修中</option><option>已报废</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-export">导出台账</button>
+      </div>
+
       <div class="card">
         <div class="card-title">资产清单</div>
         <table class="tbl">
-          <thead><tr><th>资产编码</th><th>标签编号</th><th>EPC 码</th><th>类型</th><th>入库批次</th><th>位置</th><th>生命周期</th><th>状态</th></tr></thead>
+          <thead><tr><th>资产编码</th><th>标签编号</th><th>EPC 码</th><th>类型</th><th>入库批次</th><th>位置</th><th>生命周期</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="assetBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -43,58 +57,107 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function tag(label, cls) {
-  return cls ? '<span class="tag ' + cls + '">' + esc(label) + '</span>' : esc(label);
-}
-function renderStats(stats) {
-  var html = '';
-  html += '<div class="stat"><div class="label">资产总数</div><div class="val">' + esc(stats.total) + '</div><div class="delta up">' + esc(stats.totalDelta) + '</div></div>';
-  html += '<div class="stat"><div class="label">在库</div><div class="val">' + esc(stats.inStock) + '</div></div>';
-  html += '<div class="stat"><div class="label">在用</div><div class="val">' + esc(stats.deployed) + '</div></div>';
-  html += '<div class="stat"><div class="label">维修/报废</div><div class="val">' + esc(stats.maintenance) + '</div></div>';
-  document.getElementById('stats').innerHTML = html;
-}
-function renderAssets(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var a = items[i];
-    html += '<tr><td>' + esc(a.assetCode) + '</td><td>' + esc(a.tagNo) + '</td><td>' + esc(a.epcCode) +
-      '</td><td>' + esc(a.type) + '</td><td>' + esc(a.batchNo) + '</td><td>' + esc(a.location) +
-      '</td><td>' + esc(a.lifecycle) + '</td><td>' + tag(a.statusLabel, a.statusClass) + '</td></tr>';
+// 资产台账:筛选/分页/详情弹框(契约: GET /assets,含 stats;状态枚举见 terms.md 第 4 节)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(label, cls) {
+    return cls ? '<span class="tag ' + cls + '">' + UI.esc(label) + '</span>' : UI.esc(label);
   }
-  document.getElementById('assetBody').innerHTML = html;
-}
-function renderLifecycle(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var r = items[i];
-    html += '<tr><td>' + esc(r.assetCode) + '</td><td>' + esc(r.time) + '</td><td>' + esc(r.action) +
-      '</td><td>' + esc(r.fromState) + '</td><td>' + esc(r.toState) + '</td><td>' + esc(r.operator) + '</td></tr>';
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.assetCode) + String(r.tagNo) + String(r.epcCode)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.statusLabel === st);
   }
-  document.getElementById('lifecycleBody').innerHTML = html;
-}
-function loadAssets() {
-  API.asset.list()
-    .then(function (d) { renderStats(d.stats); renderAssets(d.items); })
-    .catch(function (e) { alert('加载资产失败: ' + e.message); });
-}
-function loadLifecycle() {
-  API.asset.lifecycle('A-20250001')
-    .then(function (d) { renderLifecycle(d.items); })
-    .catch(function (e) { alert('加载生命周期失败: ' + e.message); });
-}
-function init() {
-  loadAssets();
-  loadLifecycle();
-}
-init();
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('assetBody').innerHTML = slice.length ? slice.map(function (a) {
+      return '<tr><td>' + UI.esc(a.assetCode) + '</td><td>' + UI.esc(a.tagNo) + '</td><td>' + UI.esc(a.epcCode)
+        + '</td><td>' + UI.esc(a.type) + '</td><td>' + UI.esc(a.batchNo) + '</td><td>' + UI.esc(a.location)
+        + '</td><td>' + UI.esc(a.lifecycle) + '</td><td>' + tag(a.statusLabel, a.statusClass)
+        + '</td><td><a href="#" data-op="detail" data-code="' + UI.esc(a.assetCode) + '">详情</a></td></tr>';
+    }).join('') : UI.tbodyState(9, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function showDetail(code) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].assetCode) === String(code)) r = all[i];
+    if (!r) return;
+    var rows = [
+      ['资产编码', r.assetCode], ['标签编号', r.tagNo], ['EPC 码', r.epcCode],
+      ['类型', r.type], ['入库批次', r.batchNo], ['位置', r.location],
+      ['生命周期', r.lifecycle], ['状态', r.statusLabel],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '资产详情', body: rows, okText: '关闭' });
+  }
+
+  function renderStats(stats) {
+    var html = '';
+    html += '<div class="stat"><div class="label">资产总数</div><div class="val">' + UI.esc(stats.total) + '</div><div class="delta up">' + UI.esc(stats.totalDelta) + '</div></div>';
+    html += '<div class="stat"><div class="label">在库</div><div class="val">' + UI.esc(stats.inStock) + '</div></div>';
+    html += '<div class="stat"><div class="label">在用</div><div class="val">' + UI.esc(stats.deployed) + '</div></div>';
+    html += '<div class="stat"><div class="label">维修/报废</div><div class="val">' + UI.esc(stats.maintenance) + '</div></div>';
+    document.getElementById('stats').innerHTML = html;
+  }
+
+  function renderLifecycle(items) {
+    document.getElementById('lifecycleBody').innerHTML = items.length ? items.map(function (r) {
+      return '<tr><td>' + UI.esc(r.assetCode) + '</td><td>' + UI.esc(r.time) + '</td><td>' + UI.esc(r.action)
+        + '</td><td>' + UI.esc(r.fromState) + '</td><td>' + UI.esc(r.toState) + '</td><td>' + UI.esc(r.operator) + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无流转记录');
+  }
+
+  function load() {
+    document.getElementById('assetBody').innerHTML = UI.tbodyState(9, '加载中...');
+    document.getElementById('lifecycleBody').innerHTML = UI.tbodyState(6, '加载中...');
+    API.asset.list().then(function (d) {
+      all = d.items || [];
+      renderStats(d.stats);
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载资产失败: ' + e.message, 'err'); });
+    API.asset.lifecycle('A-20250001')
+      .then(function (d) { renderLifecycle(d.items || []); })
+      .catch(function (e) { UI.toast('加载生命周期失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('assetBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || a.getAttribute('data-op') !== 'detail') return;
+    ev.preventDefault();
+    showDetail(a.getAttribute('data-code'));
+  });
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

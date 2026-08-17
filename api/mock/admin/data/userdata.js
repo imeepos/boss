@@ -1,8 +1,6 @@
 // 假数据 —— 用户端数据管理(契约: api/openapi/admin/userdata.yaml)。
-// 产品化结构: /users 用户列表 + /users/{customerId} 用户详情聚合;
-// 其余端点为用户域实体表的管理视图(账户/地址簿/套餐/增值服务/订阅/FAQ/消息/
-// 优惠券/流量/排障指南/协议/余额/发票/投诉/实名记录)。
-// 列表一律由 db 派生并 join 客户名;写操作直接改 db 事实库,用户端视图随之更新。
+// 产品化结构: /users 用户列表 + /users/{customerId} 用户详情聚合(含概述统计 stats/近期动态 recent);
+// 其余端点为用户域实体表的管理视图。列表由 db 派生;写操作直接改 db 事实库。
 'use strict';
 
 const db = require('../../db.js');

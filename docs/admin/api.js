@@ -53,6 +53,8 @@
     setToken: setToken,
     get: get,
     post: post,
+    put: put,
+    del: del,
 
     auth: {
       login: function (u, p) { return post('/auth/login', { username: u, password: p }); },

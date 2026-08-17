@@ -25,75 +25,139 @@
 
       <div class="toolbar">
         <input class="input" id="kw" style="width:220px" placeholder="更换单号/设备/资产码">
-        <select class="input" id="st" style="width:160px"><option>全部状态</option><option>待派单</option><option>维修中</option><option>已更换</option></select>
+        <select class="input" id="st" style="width:160px">
+          <option value="">全部状态</option><option>待派单</option><option>维修中</option><option>已更换</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <button class="btn btn-primary" id="createBtn">+ 新建更换单</button>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-create">新建更换单</button>
       </div>
+
       <div class="card">
+        <div class="card-title">更换单列表</div>
         <table class="tbl">
           <thead><tr><th>更换单</th><th>设备</th><th>健康度/故障</th><th>优先级</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="rplBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function renderList(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var r = items[i];
-    html += '<tr><td>' + esc(r.replacementNo) + '</td><td>' + esc(r.device) + '</td><td>' + esc(r.issue) +
-      '</td><td><span class="tag ' + esc(r.priorityClass) + '">' + esc(r.priority) + '</span>' +
-      '</td><td><span class="tag ' + esc(r.statusClass) + '">' + esc(r.statusLabel) + '</span></td>' +
-      '<td><a href="#" data-no="' + esc(r.replacementNo) + '" data-act="' + esc(r.action) + '">' + esc(r.action) + '</a></td></tr>';
+// 设备更换单:筛选/分页/详情/新建/派单(契约: GET/POST /replacements;状态 待派单/维修中/已更换)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.replacementNo) + String(r.device) + String(r.issue)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.statusLabel === st);
   }
-  document.getElementById('rplBody').innerHTML = html;
-  bindRowActions();
-}
-function dispatchReplacement(no) {
-  API.post('/replacements', { replacementNo: no, action: 'dispatch' })
-    .then(function (r) { alert('更换单 ' + no + ' 派单: ' + r.message); loadList(); })
-    .catch(function (e) { alert('派单失败: ' + e.message); });
-}
-function bindRowActions() {
-  var links = document.getElementById('rplBody').getElementsByTagName('a');
-  for (var i = 0; i < links.length; i++) {
-    links[i].onclick = function (e) {
-      e.preventDefault();
-      var act = this.getAttribute('data-act');
-      var no = this.getAttribute('data-no');
-      if (act === '派单') dispatchReplacement(no);
-      else alert('更换单 ' + no + ': ' + act);
-    };
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rplBody').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(r.replacementNo) + '">详情</a>';
+      if (r.statusLabel === '待派单') {
+        ops += ' <a href="#" data-op="dispatch" data-no="' + UI.esc(r.replacementNo) + '">派单</a>';
+      }
+      return '<tr><td>' + UI.esc(r.replacementNo) + '</td><td>' + UI.esc(r.device) + '</td><td>' + UI.esc(r.issue)
+        + '</td><td><span class="tag ' + UI.esc(r.priorityClass) + '">' + UI.esc(r.priority) + '</span>'
+        + '</td><td><span class="tag ' + UI.esc(r.statusClass) + '">' + UI.esc(r.statusLabel) + '</span></td>'
+        + '<td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
   }
-}
-function loadList() {
-  var st = document.getElementById('st').value;
-  API.asset.replacements(document.getElementById('kw').value, st === '全部状态' ? '' : st)
-    .then(function (d) { renderList(d.items); })
-    .catch(function (e) { alert('加载更换单失败: ' + e.message); });
-}
-function bindToolbar() {
-  document.getElementById('kw').oninput = loadList;
-  document.getElementById('st').onchange = loadList;
-  document.getElementById('createBtn').onclick = function () {
-    API.post('/replacements', { device: '', reason: '手工新建' })
-      .then(function (r) { alert('新建更换单: ' + r.message); loadList(); })
-      .catch(function (e) { alert('新建失败: ' + e.message); });
+
+  function showDetail(no) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].replacementNo) === String(no)) r = all[i];
+    if (!r) return;
+    var rows = [
+      ['更换单', r.replacementNo], ['设备', r.device], ['健康度/故障', r.issue],
+      ['优先级', r.priority], ['状态', r.statusLabel],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '更换单详情', body: rows, okText: '关闭' });
+  }
+
+  var createFields = [
+    { key: 'device', label: '设备', required: true, placeholder: '如 EPC-0023（光猫）' },
+    { key: 'reason', label: '更换原因', required: true, placeholder: '如 健康度低于阈值' },
+    { key: 'priority', label: '优先级', type: 'select', value: '中', options: [
+      { v: '高', t: '高' }, { v: '中', t: '中' }, { v: '低', t: '低' }
+    ] },
+  ];
+
+  function showCreate() {
+    UI.modal({
+      title: '新建更换单', body: UI.formFields(createFields), okText: '提交',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, createFields);
+        if (!v) return false;
+        API.post('/replacements', v).then(function (r) {
+          close();
+          UI.toast('新建更换单成功: ' + ((r && r.message === 'success') ? v.device : (r && r.message) || ''), 'ok');
+          load();
+        }).catch(function (e) { UI.toast('新建失败: ' + e.message, 'err'); });
+        return false;
+      }
+    });
+  }
+
+  function dispatch(no) {
+    UI.confirm('确认对更换单 ' + no + ' 发起派单?', function () {
+      API.post('/replacements', { replacementNo: no, action: 'dispatch' }).then(function () {
+        UI.toast('更换单 ' + no + ' 已派单', 'ok');
+        load();
+      }).catch(function (e) { UI.toast('派单失败: ' + e.message, 'err'); });
+    });
+  }
+
+  document.getElementById('rplBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else if (op === 'dispatch') dispatch(no);
+  });
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
   };
-}
-function init() {
-  loadList();
-  bindToolbar();
-}
-init();
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-create').onclick = showCreate;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  function load() {
+    document.getElementById('rplBody').innerHTML = UI.tbodyState(6, '加载中...');
+    API.asset.replacements().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载更换单失败: ' + e.message, 'err'); });
+  }
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

@@ -24,18 +24,23 @@
       </div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新建部门</button>
-        <select class="input" style="width:180px">
-          <option>全部子公司</option><option>LEG-A 主品牌·企业</option>
-          <option>LEG-B 家庭宽带</option><option>LEG-C 批发品牌</option>
+        <input class="input" style="width:200px" id="kw" placeholder="搜索部门名称">
+        <select class="input" style="width:200px" id="le">
+          <option value="">全部子公司</option>
         </select>
-        <input class="input" style="width:200px" placeholder="搜索部门名称">
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-new">+ 新建部门</button>
       </div>
       <div class="card">
+        <div class="card-title">部门列表</div>
         <table class="tbl">
           <thead><tr><th>部门</th><th>所属子公司</th><th>职能</th><th>岗位数</th><th>工单队列</th><th>操作</th></tr></thead>
           <tbody id="deptBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -50,51 +55,111 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
-}
-function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
-function deptRowHtml(d) {
-  return '<tr>' +
-    '<td>' + esc(d.name) + '</td>' +
-    '<td>' + esc(d.legalEntityName) + '</td>' +
-    '<td>' + tag(d.funcTag, d.funcLabel) + '</td>' +
-    '<td>' + esc(d.postCount) + '</td>' +
-    '<td>' + esc(d.queueName) + '</td>' +
-    '<td><a href="#">编辑</a> <a href="#">停用</a></td>' +
-  '</tr>';
-}
-function scopeRowHtml(s) {
-  return '<tr><td>' + esc(s.deptName) + '</td><td>' + esc(s.visibleData) + '</td><td>' + esc(s.denyHint) + '</td></tr>';
-}
-function render(items, scopes) {
-  document.getElementById('deptBody').innerHTML = items.map(deptRowHtml).join('');
-  document.getElementById('deptScopeBody').innerHTML = (scopes || []).map(scopeRowHtml).join('');
-}
-var allDepts = [], allScopes = [];
-API.org.departments().then(function (r) {
-  allDepts = r.items;
-  allScopes = r.scopes || [];
-  render(allDepts, allScopes);
-}).catch(function (err) { alert('加载失败：' + err.message); });
-// toolbar 前端过滤:子公司下拉 + 部门名关键字
-(function bindToolbar() {
-  var sel = document.querySelector('.toolbar select');
-  var kw = document.querySelector('.toolbar input[placeholder="搜索部门名称"]');
-  function onch() {
-    var items = allDepts.filter(function (d) {
-      var okLe = !sel || sel.selectedIndex <= 0 || d.legalEntityName === sel.value;
-      var okKw = !kw || !kw.value.trim() || d.name.indexOf(kw.value.trim()) >= 0;
-      return okLe && okKw;
-    });
-    render(items, allScopes);
+// 部门管理: 筛选/分页/详情/新建编辑表单(契约: GET /departments)
+(function () {
+  var all = [], scopes = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(cls, text) { return '<span class="tag ' + UI.esc(cls) + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(d) {
+    var kw = document.getElementById('kw').value.trim();
+    var le = document.getElementById('le').value;
+    return (!kw || String(d.name).indexOf(kw) >= 0) && (!le || d.legalEntityName === le);
   }
-  if (sel) sel.onchange = onch;
-  if (kw) kw.oninput = onch;
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('deptBody').innerHTML = slice.length ? slice.map(function (d) {
+      return '<tr><td>' + UI.esc(d.name) + '</td><td>' + UI.esc(d.legalEntityName) + '</td><td>' + tag(d.funcTag, d.funcLabel)
+        + '</td><td>' + UI.esc(d.postCount) + '</td><td>' + UI.esc(d.queueName)
+        + '</td><td><a href="#" data-op="detail" data-id="' + d.deptId + '">详情</a>'
+        + ' <a href="#" data-op="edit" data-id="' + d.deptId + '">编辑</a></td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findRow(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].deptId) === String(id)) return all[i];
+    return null;
+  }
+
+  function detail(id) {
+    var d = findRow(id);
+    if (!d) return;
+    var rows = [['部门', d.name], ['所属子公司', d.legalEntityName], ['职能', d.funcLabel],
+      ['岗位数', d.postCount], ['工单队列', d.queueName]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '部门详情', body: rows, okText: '关闭' });
+  }
+
+  function save(d) {
+    var fields = [
+      { key: 'name', label: '部门名称', required: true, value: d ? d.name : '' },
+      { key: 'legalEntityName', label: '所属子公司', required: true, value: d ? d.legalEntityName : '', placeholder: '如 LEG-A 主品牌·企业' },
+      { key: 'queueName', label: '工单队列', value: d ? d.queueName : '' },
+    ];
+    UI.modal({
+      title: d ? '编辑部门' : '新建部门', body: UI.formFields(fields), okText: '保存',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, fields);
+        if (!v) return false;
+        close();
+        UI.toast((d ? '已保存部门 ' : '已新建部门 ') + v.name + '(演示)', 'ok');
+      }
+    });
+  }
+
+  document.getElementById('deptBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') detail(id);
+    else if (op === 'edit') save(findRow(id));
+  });
+
+  function load() {
+    document.getElementById('deptBody').innerHTML = UI.tbodyState(6, '加载中...');
+    API.org.departments().then(function (r) {
+      all = r.items || [];
+      scopes = r.scopes || [];
+      var sel = document.getElementById('le');
+      var les = [];
+      all.forEach(function (d) { if (les.indexOf(d.legalEntityName) < 0) les.push(d.legalEntityName); });
+      sel.innerHTML = '<option value="">全部子公司</option>' + les.map(function (n) {
+        return '<option>' + UI.esc(n) + '</option>';
+      }).join('');
+      document.getElementById('deptScopeBody').innerHTML = scopes.length ? scopes.map(function (s) {
+        return '<tr><td>' + UI.esc(s.deptName) + '</td><td>' + UI.esc(s.visibleData) + '</td><td>' + UI.esc(s.denyHint) + '</td></tr>';
+      }).join('') : UI.tbodyState(3, '无匹配数据');
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('le').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-new').onclick = function () { save(null); };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('le').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

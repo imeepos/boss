@@ -21,15 +21,25 @@
       <div class="page-head"><h2>产品资费</h2><div class="desc">宽带产品、带宽套餐、增值服务的配置/发布/下架/调价</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新建产品</button>
+        <input class="input" style="width:220px" id="kw" placeholder="产品名/带宽">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>在售</option><option>待发布</option><option>已下架</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <button class="btn">发布</button>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-create">+ 新建产品</button>
+        <button class="btn" id="btn-export">导出</button>
       </div>
+
       <div class="card">
+        <div class="card-title">产品列表</div>
         <table class="tbl">
           <thead><tr><th>产品</th><th>带宽</th><th>月费</th><th>生效时间</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -43,55 +53,142 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 产品资费数据渲染(契约: GET /products, GET/POST /products/{productId}/price-history)
+// 产品资费(契约: GET /products, GET/POST /products/{productId}/price-history;新建/发布无接口,confirm+演示兜底)
 (function () {
   var STATUS_TAG = { '在售': 'tag-green', '待发布': 'tag-gray', '已下架': 'tag-gray' };
   var HIST_TAG = { '已生效': 'tag-green', '待生效': 'tag-blue' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + UI.esc(v) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.name) + String(r.bandwidth)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.status === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.name) + '</td><td>' + UI.esc(r.bandwidth) + '</td><td>' + UI.esc(r.monthlyFee)
+        + '</td><td>' + UI.esc(r.effectiveAt) + '</td><td>' + tag(STATUS_TAG[r.status] || 'tag-gray', r.status)
+        + '</td><td><a href="#" data-act="detail" data-id="' + UI.esc(r.productId) + '">详情</a>'
+        + ' <a href="#" data-act="price" data-id="' + UI.esc(r.productId) + '">调价</a>'
+        + ' <a href="#" data-act="history" data-id="' + UI.esc(r.productId) + '">价格历史</a></td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
-  function tag(cls, v) { return '<span class="tag ' + cls + '">' + esc(v) + '</span>'; }
-  function fail(e) { alert('加载失败: ' + e.message); }
 
-  function loadHistory(productId) {
-    API.customer.priceHistory(productId).then(function (d) {
-      document.getElementById('historyRows').innerHTML = d.items.map(function (r) {
-        return '<tr><td>' + esc(r.productName) + '</td><td>' + esc(r.oldPrice) + '</td><td>' + esc(r.newPrice)
-          + '</td><td>' + esc(r.effectiveAt) + '</td><td>' + esc(r.operator)
-          + '</td><td>' + tag(HIST_TAG[r.status] || '', r.status) + '</td></tr>';
-      }).join('');
-    }).catch(fail);
+  function findById(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].productId) === String(id)) return all[i];
+    return null;
   }
 
-  API.customer.products().then(function (d) {
-    document.getElementById('rows').innerHTML = d.items.map(function (r) {
-      return '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.bandwidth) + '</td><td>' + esc(r.monthlyFee)
-        + '</td><td>' + esc(r.effectiveAt) + '</td><td>' + tag(STATUS_TAG[r.status] || '', r.status)
-        + '</td><td><a href="#" data-act="price" data-id="' + r.productId + '" data-name="' + esc(r.name)
-        + '">调价</a> <a href="#" data-act="history" data-id="' + r.productId + '">价格历史</a></td></tr>';
+  function showDetail(id) {
+    var r = findById(id);
+    if (!r) return;
+    var items = [['产品', r.name], ['带宽', r.bandwidth], ['月费', r.monthlyFee],
+      ['生效时间', r.effectiveAt], ['状态', r.status]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
     }).join('');
-    if (d.items.length) loadHistory(d.items[0].productId);
-  }).catch(fail);
+    UI.modal({ title: '产品详情', body: items, okText: '关闭' });
+  }
+
+  function changePrice(id) {
+    var r = findById(id);
+    var fields = [{ key: 'newPrice', label: '新月费', type: 'number', required: true,
+      value: r ? r.monthlyFee : '', placeholder: '数字' }];
+    UI.modal({
+      title: '调价 · ' + (r ? r.name : id), body: UI.formFields(fields), okText: '提交',
+      onOk: function (mask, close) {
+        var v = UI.readForm(mask.querySelector('.form'), fields);
+        if (!v) return false;
+        API.customer.changePrice(id, Number(v.newPrice)).then(function (res) {
+          close();
+          UI.toast((res && res.message) || '调价提交成功', 'ok');
+          loadHistory(id);
+          load();
+        }).catch(function (e) { UI.toast('调价失败: ' + e.message, 'err'); });
+        return false;
+      }
+    });
+  }
+
+  function create() {
+    var fields = [
+      { key: 'name', label: '产品', required: true, placeholder: '如 500M 家庭宽带' },
+      { key: 'bandwidth', label: '带宽', required: true, placeholder: '300M/500M/1000M' },
+      { key: 'monthlyFee', label: '月费', type: 'number', required: true, placeholder: '数字' }
+    ];
+    UI.modal({
+      title: '新建产品', body: UI.formFields(fields), okText: '提交',
+      onOk: function (mask, close) {
+        var v = UI.readForm(mask.querySelector('.form'), fields);
+        if (!v) return false;
+        close();
+        UI.toast('新建产品已提交(演示): ' + v.name, 'ok');
+      }
+    });
+  }
+
+  function loadHistory(productId) {
+    document.getElementById('historyRows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.customer.priceHistory(productId).then(function (d) {
+      document.getElementById('historyRows').innerHTML = (d.items || []).length ? d.items.map(function (r) {
+        return '<tr><td>' + UI.esc(r.productName) + '</td><td>' + UI.esc(r.oldPrice) + '</td><td>' + UI.esc(r.newPrice)
+          + '</td><td>' + UI.esc(r.effectiveAt) + '</td><td>' + UI.esc(r.operator)
+          + '</td><td>' + tag(HIST_TAG[r.status] || 'tag-gray', r.status) + '</td></tr>';
+      }).join('') : UI.tbodyState(6, '无匹配数据');
+    }).catch(function (e) { UI.toast('调价记录加载失败: ' + e.message, 'err'); });
+  }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
     if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
     ev.preventDefault();
     var id = a.getAttribute('data-id');
-    if (a.getAttribute('data-act') === 'history') { loadHistory(id); return; }
-    var name = a.getAttribute('data-name');
-    var input = prompt('请输入 ' + name + ' 的新月费(数字):');
-    if (input === null) return;
-    API.customer.changePrice(id, Number(input)).then(function (r) {
-      alert('调价提交成功: ' + r.message);
-      loadHistory(id);
-    }).catch(fail);
+    var act = a.getAttribute('data-act');
+    if (act === 'history') loadHistory(id);
+    else if (act === 'price') changePrice(id);
+    else showDetail(id);
   });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.customer.products().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+      if (all.length) loadHistory(all[0].productId);
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-create').onclick = create;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

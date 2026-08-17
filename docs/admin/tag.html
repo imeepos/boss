@@ -21,59 +21,129 @@
       <div class="page-head"><h2>电子标签</h2><div class="desc">电子标签台账 · 频段选择 · 与资产一一对应</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary" id="createBtn">+ 新建标签</button>
-        <select class="input" id="band" style="width:140px"><option>频段：全部</option><option>UHF</option><option>HF</option><option>LF</option></select>
+        <input class="input" style="width:220px" id="kw" placeholder="标签编号/EPC/绑定资产">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>未绑定</option><option>已绑定</option><option>已停用</option>
+        </select>
+        <select class="input" style="width:140px" id="band">
+          <option value="">频段：全部</option><option>UHF</option><option>HF</option><option>LF</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-create">新建标签</button>
       </div>
+
       <div class="card">
+        <div class="card-title">标签列表 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
-          <thead><tr><th>标签编号</th><th>EPC 码</th><th>频段</th><th>绑定资产</th><th>电量</th><th>状态</th></tr></thead>
+          <thead><tr><th>标签编号</th><th>EPC 码</th><th>频段</th><th>绑定资产</th><th>电量</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="tagBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function renderTags(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var t = items[i];
-    html += '<tr><td>' + esc(t.tagNo) + '</td><td>' + esc(t.epcCode) + '</td><td>' + esc(t.band) +
-      '</td><td>' + esc(t.boundAsset) + '</td><td>' + esc(t.battery) +
-      '</td><td><span class="tag ' + esc(t.statusClass) + '">' + esc(t.statusLabel) + '</span></td></tr>';
+// 电子标签:筛选/分页/详情+新建弹框(契约: GET /tags;状态 UNBOUND/BOUND/DISABLED 见 terms.md 第 4 节)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(t) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var band = document.getElementById('band').value;
+    var hitKw = !kw || (String(t.tagNo) + String(t.epcCode) + String(t.boundAsset)).indexOf(kw) >= 0;
+    return hitKw && (!st || t.statusLabel === st) && (!band || t.band === band);
   }
-  document.getElementById('tagBody').innerHTML = html;
-}
-function loadTags() {
-  API.asset.tags()
-    .then(function (d) { renderTags(d.items); })
-    .catch(function (e) { alert('加载标签失败: ' + e.message); });
-}
-function bindToolbar() {
-  document.getElementById('createBtn').onclick = function () {
-    alert('新建标签:请走资产入库流程绑定 EPC');
-  };
-  document.getElementById('band').onchange = function () {
-    var band = this.value;
-    API.asset.tags().then(function (d) {
-      var items = band === '频段：全部' ? d.items
-        : d.items.filter(function (t) { return t.band === band; });
-      renderTags(items);
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('tagBody').innerHTML = slice.length ? slice.map(function (t) {
+      return '<tr><td>' + UI.esc(t.tagNo) + '</td><td>' + UI.esc(t.epcCode) + '</td><td>' + UI.esc(t.band)
+        + '</td><td>' + UI.esc(t.boundAsset) + '</td><td>' + UI.esc(t.battery)
+        + '</td><td><span class="tag ' + UI.esc(t.statusClass) + '">' + UI.esc(t.statusLabel) + '</span></td>'
+        + '<td><a href="#" data-op="detail" data-no="' + UI.esc(t.tagNo) + '">详情</a></td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
+  }
+
+  function showDetail(no) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].tagNo) === String(no)) r = all[i];
+    if (!r) return;
+    var rows = [
+      ['标签编号', r.tagNo], ['EPC 码', r.epcCode], ['频段', r.band],
+      ['绑定资产', r.boundAsset], ['电量', r.battery], ['状态', r.statusLabel],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '标签详情', body: rows, okText: '关闭' });
+  }
+
+  var createFields = [
+    { key: 'tagNo', label: '标签编号', required: true, placeholder: '如 TAG-20250001' },
+    { key: 'epcCode', label: 'EPC 码', required: true, placeholder: '96bit EPC' },
+    { key: 'band', label: '频段', type: 'select', value: 'UHF', options: [{ v: 'UHF', t: 'UHF' }, { v: 'HF', t: 'HF' }, { v: 'LF', t: 'LF' }] },
+  ];
+
+  function showCreate() {
+    var m = UI.modal({
+      title: '新建标签', body: UI.formFields(createFields), okText: '提交',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, createFields);
+        if (!v) return false;
+        UI.confirm('新建标签 ' + v.tagNo + '(走资产入库流程绑定 EPC)?', function () {
+          UI.toast('新建标签演示: ' + v.tagNo + ' 已登记入库流程', 'ok');
+        });
+      }
+    });
+    return m;
+  }
+
+  document.getElementById('tagBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || a.getAttribute('data-op') !== 'detail') return;
+    ev.preventDefault();
+    showDetail(a.getAttribute('data-no'));
+  });
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    document.getElementById('band').value = '';
+    state.page = 1; render();
   };
-}
-function init() {
-  loadTags();
-  bindToolbar();
-}
-init();
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-create').onclick = showCreate;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  ['st', 'band'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', function () { state.page = 1; render(); });
+  });
+
+  function load() {
+    document.getElementById('tagBody').innerHTML = UI.tbodyState(7, '加载中...');
+    API.asset.tags().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载标签失败: ' + e.message, 'err'); });
+  }
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

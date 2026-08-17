@@ -11,7 +11,9 @@ const DATA_DIR = path.join(__dirname, '../admin/data');
 // 合并 data/*.js 的路由表 -> Map { 'GET /accounts': handler }
 function loadRoutes() {
   const routes = new Map();
-  for (const f of fs.readdirSync(DATA_DIR).filter((n) => n.endsWith('.js')).sort()) {
+  // seed.js 是数据基座(非路由表),跳过
+  const files = fs.readdirSync(DATA_DIR).filter((n) => n.endsWith('.js') && n !== 'seed.js').sort();
+  for (const f of files) {
     const mod = require(path.join(DATA_DIR, f));
     for (const key of Object.keys(mod)) {
       if (routes.has(key)) throw new Error('duplicate route in mock data: ' + key);

@@ -21,40 +21,114 @@
       <div class="page-head"><h2>地址层级</h2><div class="desc">市级→区级→街道→小区→楼栋 五级统一地址基准 · 支持存量导入</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新增层级</button>
-        <button class="btn">批量导入</button>
+        <input class="input" style="width:220px" id="kw" placeholder="路径/名称/区域">
+        <select class="input" style="width:120px" id="lv">
+          <option value="">全部级别</option><option>市</option><option>区</option><option>街道</option><option>小区</option><option>楼栋</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn" id="btn-import">批量导入</button>
         <span class="tag tag-blue">路径唯一权威：ltree path</span>
       </div>
       <div class="card">
+        <div class="card-title">地址列表 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
-          <thead><tr><th>层级路径</th><th>名称</th><th>级别</th><th>下级数量</th><th>操作</th></tr></thead>
-          <tbody id="addrBody"></tbody>
+          <thead><tr><th>层级路径</th><th>名称</th><th>级别</th><th>下级数量</th><th>所属区域</th><th>操作</th></tr></thead>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+// 地址层级(契约: GET /addresses;字段: docs/contract/fields.md §1.5 path/level/name)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var lv = document.getElementById('lv').value;
+    var hitKw = !kw || (String(r.path) + String(r.name) + String(r.regionName || '')).indexOf(kw) >= 0;
+    return hitKw && (!lv || r.levelLabel === lv);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = list.length ? '匹配 ' + list.length + ' 条' : '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.path) + '</td><td>' + UI.esc(r.name) + '</td>' +
+        '<td><span class="tag tag-blue">' + UI.esc(r.levelLabel) + '</span></td>' +
+        '<td>' + UI.esc(r.childCount) + '</td><td>' + UI.esc(r.regionName || '—') + '</td>' +
+        '<td><a href="#" data-op="detail" data-id="' + UI.esc(r.addressId) + '">详情</a></td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findById(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].addressId) === String(id)) return all[i];
+    return null;
+  }
+
+  function showDetail(id) {
+    var r = findById(id);
+    if (!r) return;
+    var items = [['层级路径', r.path], ['名称', r.name], ['级别', r.levelLabel + ' (level=' + r.level + ')'],
+      ['下级数量', r.childCount], ['所属区域', r.regionName || '—']].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '地址详情', body: items, okText: '关闭' });
+  }
+
+  // 批量导入走数据导入中心(import-tasks,类型=地址层级)
+  function importBatch() {
+    UI.confirm('批量导入地址层级将跳转数据导入中心流程,确认创建导入任务?', function () {
+      API.sys.createImportTask({ type: '地址层级', source: 'batch' }).then(function () {
+        UI.toast('地址层级导入任务已创建,请到数据导入中心核对', 'ok');
+      }).catch(function (e) { UI.toast('创建失败: ' + e.message, 'err'); });
+    });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || a.getAttribute('data-op') !== 'detail') return;
+    ev.preventDefault();
+    showDetail(a.getAttribute('data-id'));
   });
-}
-function rowHtml(a) {
-  return '<tr>' +
-    '<td>' + esc(a.path) + '</td>' +
-    '<td>' + esc(a.name) + '</td>' +
-    '<td>' + esc(a.levelLabel) + '</td>' +
-    '<td>' + esc(a.childCount) + '</td>' +
-    '<td><a href="#">下钻</a></td>' +
-  '</tr>';
-}
-API.sys.addresses().then(function (r) {
-  document.getElementById('addrBody').innerHTML = r.items.map(rowHtml).join('');
-}).catch(function (err) { alert('加载失败：' + err.message); });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.sys.addresses().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    ['kw', 'lv'].forEach(function (i) { document.getElementById(i).value = ''; });
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-import').onclick = importBatch;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('lv').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

@@ -24,12 +24,26 @@
       </div>
 
       <div class="grid g-4" style="margin-bottom:16px;" id="stats"></div>
+
+      <div class="toolbar">
+        <input class="input" id="kw" style="width:220px" placeholder="端口编号/四码/地址">
+        <select class="input" id="st" style="width:140px">
+          <option value="">全部状态</option><option>空闲</option><option>预占</option><option>在用</option><option>禁用</option>
+        </select>
+        <button class="btn btn-primary btn-search" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-export">导出台账</button>
+      </div>
+
       <div class="card">
         <div class="card-title">端口台账</div>
         <table class="tbl">
           <thead><tr><th>端口编号</th><th>四码端口码</th><th>所属 OLT/分光器</th><th>地址</th><th>状态</th><th>占用订单</th><th>操作</th></tr></thead>
           <tbody id="portBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -43,66 +57,113 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function renderStats(stats) {
-  var html = '';
-  html += '<div class="stat"><div class="label">端口总数</div><div class="val">' + esc(stats.total) + '</div></div>';
-  html += '<div class="stat"><div class="label">空闲</div><div class="val">' + esc(stats.idle) + '</div></div>';
-  html += '<div class="stat"><div class="label">预占</div><div class="val">' + esc(stats.reserved) + '</div></div>';
-  html += '<div class="stat"><div class="label">禁用</div><div class="val">' + esc(stats.disabled) + '</div></div>';
-  document.getElementById('stats').innerHTML = html;
-}
-function renderPorts(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var p = items[i];
-    html += '<tr><td>' + esc(p.portCode) + '</td><td>' + esc(p.quadCode) + '</td><td>' + esc(p.parentName) +
-      '</td><td>' + esc(p.address) + '</td><td><span class="tag ' + esc(p.statusClass) + '">' + esc(p.statusLabel) +
-      '</span></td><td>' + esc(p.orderId || '—') +
-      '</td><td><a href="#" class="hist-link" data-code="' + esc(p.portCode) + '">变更历史</a></td></tr>';
+// 资源管理(契约: GET /ports, GET /ports/{portCode}/change-history)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + UI.esc(v) + '</span>'; }
+
+  function renderStats(stats) {
+    var html = '';
+    [['端口总数', stats.total], ['空闲', stats.idle], ['预占', stats.reserved], ['禁用', stats.disabled]]
+      .forEach(function (x) {
+        html += '<div class="stat"><div class="label">' + UI.esc(x[0]) + '</div><div class="val">' + UI.esc(x[1]) + '</div></div>';
+      });
+    document.getElementById('stats').innerHTML = html;
   }
-  document.getElementById('portBody').innerHTML = html;
-  bindHistoryLinks();
-}
-function renderHistory(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var h = items[i];
-    html += '<tr><td>' + esc(h.portCode) + '</td><td>' + esc(h.time) + '</td><td>' + esc(h.fromStatus) +
-      '</td><td>' + esc(h.toStatus) + '</td><td>' + esc(h.source) + '</td><td>' + esc(h.operator) + '</td></tr>';
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (r.portCode + r.quadCode + r.parentName + r.address).indexOf(kw) >= 0;
+    return hitKw && (!st || r.statusLabel === st);
   }
-  document.getElementById('historyBody').innerHTML = html;
-}
-function bindHistoryLinks() {
-  var links = document.getElementById('portBody').getElementsByClassName('hist-link');
-  for (var i = 0; i < links.length; i++) {
-    links[i].onclick = function (e) {
-      e.preventDefault();
-      var code = this.getAttribute('data-code');
-      loadHistory(code);
-    };
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('portBody').innerHTML = slice.length ? slice.map(function (p) {
+      return '<tr><td>' + UI.esc(p.portCode) + '</td><td>' + UI.esc(p.quadCode) + '</td><td>' + UI.esc(p.parentName) +
+        '</td><td>' + UI.esc(p.address) + '</td><td>' + tag(p.statusClass, p.statusLabel) + '</td><td>' + UI.esc(p.orderId || '—') +
+        '</td><td><a href="#" data-op="detail" data-code="' + UI.esc(p.portCode) + '">详情</a> ' +
+        '<a href="#" data-op="hist" data-code="' + UI.esc(p.portCode) + '">变更历史</a></td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
   }
-}
-function loadHistory(code) {
-  API.oss.portChangeHistory(code)
-    .then(function (d) { renderHistory(d.items); })
-    .catch(function (e) { alert('加载变更历史失败: ' + e.message); });
-}
-function loadPorts() {
-  API.oss.ports()
-    .then(function (d) { renderStats(d.stats); renderPorts(d.items); loadHistory(d.items[0].portCode); })
-    .catch(function (e) { alert('加载端口台账失败: ' + e.message); });
-}
-function init() {
-  loadPorts();
-}
-init();
+
+  function findByCode(code) {
+    for (var i = 0; i < all.length; i++) if (all[i].portCode === code) return all[i];
+    return null;
+  }
+
+  function showDetail(code) {
+    var p = findByCode(code);
+    if (!p) return;
+    var items = [['端口编号', p.portCode], ['四码端口码', p.quadCode], ['所属 OLT/分光器', p.parentName],
+      ['地址', p.address], ['状态', p.statusLabel], ['占用订单', p.orderId || '—']].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '端口详情', body: items, okText: '关闭' });
+  }
+
+  function renderHistory(items) {
+    document.getElementById('historyBody').innerHTML = items.length ? items.map(function (h) {
+      return '<tr><td>' + UI.esc(h.portCode) + '</td><td>' + UI.esc(h.time) + '</td><td>' + UI.esc(h.fromStatus) +
+        '</td><td>' + UI.esc(h.toStatus) + '</td><td>' + UI.esc(h.source) + '</td><td>' + UI.esc(h.operator) + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无数据');
+  }
+
+  function loadHistory(code) {
+    document.getElementById('historyBody').innerHTML = UI.tbodyState(6, '加载中...');
+    API.oss.portChangeHistory(code)
+      .then(function (d) { renderHistory(d.items || []); })
+      .catch(function (e) { UI.toast('加载变更历史失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('portBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var code = a.getAttribute('data-code');
+    if (a.getAttribute('data-op') === 'detail') showDetail(code);
+    else loadHistory(code);
+  });
+
+  function load() {
+    document.getElementById('portBody').innerHTML = UI.tbodyState(7, '加载中...');
+    API.oss.ports().then(function (d) {
+      renderStats(d.stats || {});
+      all = d.items || [];
+      state.page = 1;
+      render();
+      if (all.length) loadHistory(all[0].portCode);
+    }).catch(function (e) { UI.toast('加载端口台账失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出端口台账 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

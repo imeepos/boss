@@ -24,16 +24,24 @@
       </div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新增授权</button>
-        <input class="input" style="width:220px" placeholder="搜索账号">
+        <input class="input" style="width:220px" id="kw" placeholder="搜索账号/角色">
+        <select class="input" style="width:150px" id="scope">
+          <option value="">全部数据范围</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
         <span class="tag tag-blue">越权访问 → 拒绝 + 审计留痕</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-new">+ 新增授权</button>
       </div>
       <div class="card">
+        <div class="card-title">授权列表</div>
         <table class="tbl">
           <thead><tr><th>账号</th><th>角色（功能）</th><th>子公司</th><th>部门</th><th>岗位</th><th>数据范围</th><th>操作</th></tr></thead>
           <tbody id="scopeBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -48,49 +56,118 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
-}
-function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
-function scopeRowHtml(s) {
-  return '<tr>' +
-    '<td>' + esc(s.username) + '</td>' +
-    '<td>' + tag(s.roleTag, s.roleName) + '</td>' +
-    '<td>' + esc(s.legalEntityName) + '</td>' +
-    '<td>' + esc(s.deptName) + '</td>' +
-    '<td>' + esc(s.postName) + '</td>' +
-    '<td>' + tag(s.scopeTag, s.scopeName) + '</td>' +
-    '<td><a href="#">编辑</a></td>' +
-  '</tr>';
-}
-function strategyRowHtml(s) {
-  return '<tr><td>' + esc(s.scopeType) + '</td><td>' + esc(s.basis) + '</td><td>' + esc(s.example) + '</td></tr>';
-}
-function render(items, strategies) {
-  document.getElementById('scopeBody').innerHTML = items.map(scopeRowHtml).join('');
-  document.getElementById('strategyBody').innerHTML = (strategies || []).map(strategyRowHtml).join('');
-}
-var allScopes = [], allStrategies = [];
-API.org.dataScopes().then(function (r) {
-  allScopes = r.items;
-  allStrategies = r.strategies || [];
-  render(allScopes, allStrategies);
-}).catch(function (err) { alert('加载失败：' + err.message); });
-// toolbar 前端过滤:账号关键字
-(function bindToolbar() {
-  var kw = document.querySelector('.toolbar input[placeholder="搜索账号"]');
-  if (!kw) return;
-  kw.oninput = function () {
-    var k = kw.value.trim();
-    var items = allScopes.filter(function (s) {
-      return !k || s.username.indexOf(k) >= 0 || s.roleName.indexOf(k) >= 0;
+// 数据权限: 筛选/分页/详情/新增编辑表单(契约: GET /data-scopes)
+(function () {
+  var all = [], strategies = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(cls, text) { return '<span class="tag ' + UI.esc(cls) + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(s) {
+    var kw = document.getElementById('kw').value.trim();
+    var sc = document.getElementById('scope').value;
+    var hitKw = !kw || String(s.username).indexOf(kw) >= 0 || String(s.roleName).indexOf(kw) >= 0;
+    return hitKw && (!sc || s.scopeName === sc);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('scopeBody').innerHTML = slice.length ? slice.map(function (s) {
+      return '<tr><td>' + UI.esc(s.username) + '</td><td>' + tag(s.roleTag, s.roleName) + '</td><td>' + UI.esc(s.legalEntityName)
+        + '</td><td>' + UI.esc(s.deptName) + '</td><td>' + UI.esc(s.postName) + '</td><td>' + tag(s.scopeTag, s.scopeName)
+        + '</td><td><a href="#" data-op="detail" data-id="' + s.accountId + '">详情</a>'
+        + ' <a href="#" data-op="edit" data-id="' + s.accountId + '">编辑</a></td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
-    render(items, allStrategies);
+  }
+
+  function findRow(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].accountId) === String(id)) return all[i];
+    return null;
+  }
+
+  function detail(id) {
+    var s = findRow(id);
+    if (!s) return;
+    var rows = [['账号', s.username], ['角色（功能）', s.roleName], ['子公司', s.legalEntityName], ['部门', s.deptName],
+      ['岗位', s.postName], ['数据范围', s.scopeName]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '授权详情', body: rows, okText: '关闭' });
+  }
+
+  function distinctScopeNames() {
+    var names = [];
+    all.forEach(function (x) { if (names.indexOf(x.scopeName) < 0) names.push(x.scopeName); });
+    return names;
+  }
+
+  function save(s) {
+    var scopeOpts = distinctScopeNames().map(function (n) { return { v: n, t: n }; });
+    var fields = [
+      { key: 'username', label: '账号', required: true, value: s ? s.username : '', placeholder: '如 agent-a02' },
+      { key: 'legalEntityName', label: '子公司', value: s ? s.legalEntityName : '', placeholder: '如 LEG-A' },
+      { key: 'deptName', label: '部门', value: s ? s.deptName : '' },
+      { key: 'scopeName', label: '数据范围', type: 'select', required: true, value: s ? s.scopeName : '', options: scopeOpts },
+    ];
+    UI.modal({
+      title: s ? '编辑授权' : '新增授权', body: UI.formFields(fields), okText: '保存',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, fields);
+        if (!v) return false;
+        close();
+        UI.toast((s ? '已保存授权 ' : '已新增授权 ') + v.username + ' → ' + v.scopeName + '(演示)', 'ok');
+      }
+    });
+  }
+
+  document.getElementById('scopeBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') detail(id);
+    else if (op === 'edit') save(findRow(id));
+  });
+
+  function load() {
+    document.getElementById('scopeBody').innerHTML = UI.tbodyState(7, '加载中...');
+    API.org.dataScopes().then(function (r) {
+      all = r.items || [];
+      strategies = r.strategies || [];
+      var sel = document.getElementById('scope');
+      sel.innerHTML = '<option value="">全部数据范围</option>' + distinctScopeNames().map(function (n) {
+        return '<option>' + UI.esc(n) + '</option>';
+      }).join('');
+      document.getElementById('strategyBody').innerHTML = strategies.length ? strategies.map(function (x) {
+        return '<tr><td>' + UI.esc(x.scopeType) + '</td><td>' + UI.esc(x.basis) + '</td><td>' + UI.esc(x.example) + '</td></tr>';
+      }).join('') : UI.tbodyState(3, '无匹配数据');
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('scope').value = '';
+    state.page = 1; render();
   };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-new').onclick = function () { save(null); };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('scope').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

@@ -24,64 +24,122 @@
       </div>
 
       <div class="toolbar">
+        <input class="input" style="width:200px" id="kw" placeholder="工单号/客户/内容">
         <select class="input" style="width:140px" id="tp"><option value="">类型：全部</option><option value="NETWORK_FAULT">网络故障</option><option value="TARIFF_DISPUTE">资费投诉</option><option value="SERVICE_COMPLAINT">服务投诉</option></select>
         <select class="input" style="width:140px" id="st"><option value="">状态：全部</option><option value="PENDING">待处理</option><option value="PROCESSING">处理中</option><option value="DONE">已办结</option></select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <span class="tag tag-orange">待处理：23 件</span>
+        <span class="tag tag-orange">待处理：<span id="pending-count">—</span> 件</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-export">导出</button>
       </div>
 
       <div class="card">
+        <div class="card-title">工单列表</div>
         <table class="tbl">
           <thead><tr><th>工单号</th><th>客户</th><th>类型</th><th>内容</th><th>受理人</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
+// 报障与投诉:筛选/分页/详情弹框/办结真调用(契约: GET /complaints, POST /complaints/{no}/close)
 (function () {
   var TYPE_TAG = { NETWORK_FAULT: 'tag-blue', TARIFF_DISPUTE: 'tag-orange', SERVICE_COMPLAINT: 'tag-gray' };
   var ST_TAG = { PENDING: 'tag-red', PROCESSING: 'tag-orange', DONE: 'tag-green' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(c) {
+    var kw = document.getElementById('kw').value.trim();
+    var tp = document.getElementById('tp').value;
+    var st = document.getElementById('st').value;
+    var hay = String(c.ticketNo) + String(c.customer) + String(c.content);
+    return (!kw || hay.indexOf(kw) >= 0) && (!tp || c.type === tp) && (!st || c.status === st);
   }
-  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
 
-  function load() {
-    API.order.complaints(document.getElementById('st').value, document.getElementById('tp').value)
-      .then(function (r) {
-        var html = '';
-        for (var i = 0; i < r.items.length; i++) {
-          var c = r.items[i];
-          html += '<tr><td>' + esc(c.ticketNo) + '</td><td>' + esc(c.customer) + '</td><td>' + tag(TYPE_TAG[c.type] || 'tag-blue', c.typeLabel)
-            + '</td><td>' + esc(c.content) + '</td><td>' + esc(c.acceptor) + '</td><td>' + tag(ST_TAG[c.status] || 'tag-blue', c.statusLabel)
-            + '</td><td><a href="#" class="op" data-no="' + esc(c.ticketNo) + '" data-close="' + (c.status !== 'DONE' ? '1' : '') + '">' + esc(c.op) + '</a></td></tr>';
-        }
-        document.getElementById('rows').innerHTML = html || '<tr><td colspan="7">无数据</td></tr>';
-      })
-      .catch(function (e) { alert('工单加载失败: ' + e.message); });
+  function render() {
+    var list = all.filter(matches);
+    document.getElementById('pending-count').textContent = all.filter(function (c) { return c.status === 'PENDING'; }).length;
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (c) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(c.ticketNo) + '">详情</a>';
+      if (c.status !== 'DONE') ops += ' <a href="#" data-op="close" data-no="' + UI.esc(c.ticketNo) + '">办结</a>';
+      return '<tr><td>' + UI.esc(c.ticketNo) + '</td><td>' + UI.esc(c.customer) + '</td><td>' + tag(TYPE_TAG[c.type] || 'tag-blue', c.typeLabel)
+        + '</td><td>' + UI.esc(c.content) + '</td><td>' + UI.esc(c.acceptor) + '</td><td>' + tag(ST_TAG[c.status] || 'tag-blue', c.statusLabel)
+        + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findRow(no) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].ticketNo) === String(no)) return all[i];
+    return null;
+  }
+
+  function showDetail(no) {
+    var c = findRow(no);
+    if (!c) return;
+    var rows = [
+      ['工单号', c.ticketNo], ['客户', c.customer], ['类型', c.typeLabel],
+      ['内容', c.content], ['受理人', c.acceptor], ['状态', c.statusLabel],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '工单详情', body: rows, okText: '关闭' });
+  }
+
+  function close(no) {
+    UI.confirm('确认办结工单 ' + no + '?', function () {
+      API.order.closeComplaint(no).then(function (r) {
+        UI.toast('工单 ' + no + ' 已办结: ' + (r.message || 'ok'), 'ok');
+        load();
+      }).catch(function (e) { UI.toast('办结失败: ' + e.message, 'err'); });
+    });
   }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A') return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    var no = a.getAttribute('data-no');
-    if (a.getAttribute('data-close')) {
-      API.order.closeComplaint(no)
-        .then(function (r) { alert('工单 ' + no + ' 办结: ' + r.message); load(); })
-        .catch(function (e) { alert('办结失败: ' + e.message); });
-    } else {
-      alert('工单 ' + no + ' 详情: 演示操作');
-    }
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else if (op === 'close') close(no);
   });
 
-  document.getElementById('tp').addEventListener('change', load);
-  document.getElementById('st').addEventListener('change', load);
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(7, '加载中...');
+    API.order.complaints('', '').then(function (r) {
+      all = r.items || []; state.page = 1; render();
+    }).catch(function (e) { UI.toast('工单加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = ''; document.getElementById('tp').value = ''; document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('tp').addEventListener('change', function () { state.page = 1; render(); });
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
 
   load();
 })();

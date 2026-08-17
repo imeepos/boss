@@ -6,36 +6,27 @@
 <title>师傅详情 · BOSS 管理后台</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  /* —— 详情头部(Ant Design 风格) —— */
   .detail-head { background: #fff; border: 1px solid #f0f0f0; border-radius: 8px; padding: 20px 24px 16px; margin-bottom: 14px; }
   .dh-top { display: flex; align-items: center; }
   .dh-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #4096ff, #1677ff); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 600; flex: none; margin-right: 18px; box-shadow: 0 2px 8px rgba(22,119,255,.25); }
   .dh-title { font-size: 20px; font-weight: 600; color: rgba(0,0,0,.88); margin-right: 10px; }
-  .dh-sub { font-size: 13px; color: rgba(0,0,0,.45); margin-right: 12px; }
-  .dh-actions { margin-left: auto; display: flex; gap: 8px; }
+  .dh-sub { font-size: 13px; color: rgba(0,0,0,.45); margin-right: 12px; } .dh-actions { margin-left: auto; display: flex; gap: 8px; }
   .ant-tag { display: inline-block; height: 22px; line-height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; border: 1px solid transparent; }
-  .ant-tag.success { color: #389e0d; background: #f6ffed; border-color: #b7eb8f; }
-  .ant-tag.default { color: rgba(0,0,0,.45); background: #fafafa; border-color: #d9d9d9; }
+  .ant-tag.success { color: #389e0d; background: #f6ffed; border-color: #b7eb8f; } .ant-tag.default { color: rgba(0,0,0,.45); background: #fafafa; border-color: #d9d9d9; }
   .ant-btn { height: 32px; padding: 4px 15px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid #d9d9d9; background: #fff; color: rgba(0,0,0,.88); transition: all .2s; }
-  .ant-btn:hover { border-color: #4096ff; color: #4096ff; }
-  .ant-btn.primary { background: #1677ff; border-color: #1677ff; color: #fff; }
+  .ant-btn:hover { border-color: #4096ff; color: #4096ff; } .ant-btn.primary { background: #1677ff; border-color: #1677ff; color: #fff; }
   .ant-btn.primary:hover { background: #4096ff; border-color: #4096ff; }
   .dh-desc { display: flex; flex-wrap: wrap; border-top: 1px solid #f0f0f0; margin-top: 16px; padding-top: 14px; }
   .dh-item { margin: 4px 32px 4px 0; }
-  .dh-item .label { font-size: 13px; color: rgba(0,0,0,.45); margin-right: 8px; }
-  .dh-item .label::after { content: ':'; margin-left: 2px; color: rgba(0,0,0,.45); }
+  .dh-item .label { font-size: 13px; color: rgba(0,0,0,.45); margin-right: 8px; } .dh-item .label::after { content: ':'; margin-left: 2px; color: rgba(0,0,0,.45); }
   .dh-item .value { font-size: 13px; color: rgba(0,0,0,.88); }
-
   .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 14px; }
   .stat { background: #fff; border: 1px solid #f0f0f0; border-radius: 8px; padding: 12px 16px; }
-  .stat b { display: block; font-size: 20px; margin-top: 4px; color: rgba(0,0,0,.88); }
-  .stat span { color: rgba(0,0,0,.45); font-size: 12px; }
+  .stat b { display: block; font-size: 20px; margin-top: 4px; color: rgba(0,0,0,.88); } .stat span { color: rgba(0,0,0,.45); font-size: 12px; }
   .tabs { display: flex; gap: 8px; border-bottom: 1px solid #f0f0f0; margin-bottom: 14px; }
   .tabs button { border: 0; background: none; padding: 10px 4px; margin: 0 8px; font-size: 14px; color: rgba(0,0,0,.65); cursor: pointer; border-bottom: 2px solid transparent; }
   .tabs button.active { color: #1677ff; border-bottom-color: #1677ff; font-weight: 600; }
-  .tabpanel { display: none; }
-  .tabpanel.active { display: block; }
-  .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .tabpanel { display: none; } .tabpanel.active { display: block; } .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .card h3 { margin: 0 0 10px; font-size: 14px; }
   .chip { display: inline-block; background: #f0f5ff; color: #1677ff; border: 1px solid #adc6ff; border-radius: 4px; padding: 2px 8px; margin: 0 6px 6px 0; font-size: 12px; }
   tr.self-row td { background: #f0f5ff; }
@@ -54,6 +45,7 @@
       <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
+      <div class="toolbar"><a class="btn" href="worker.html">← 返回师傅列表</a><span class="spacer"></span><button class="btn" id="btnReload">刷新</button></div>
       <div class="detail-head" id="headcard"></div>
       <div class="stats" id="statGrid"></div>
 
@@ -149,13 +141,12 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+// 师傅详情:档案/绩效/评价/消息/物料/回收/排期/调度会话聚合(契约: GET /workers/{id} 及 /worker-* 子资源)
+var esc = UI.esc;
 function fill(id, rows, cells, rowClass) {
   document.getElementById(id).innerHTML = rows.map(function (r) {
     var cls = rowClass && rowClass(r) ? ' class="self-row"' : '';
@@ -166,16 +157,10 @@ function hit(row, kw) {
   if (!kw) return true;
   return Object.keys(row).some(function (k) { return String(row[k] == null ? '' : row[k]).indexOf(kw) >= 0; });
 }
-function bindActs(containerId, handler) {
-  Array.prototype.forEach.call(document.getElementById(containerId).querySelectorAll('a[data-id]'), function (a) {
-    a.onclick = function (e) { e.preventDefault(); handler(a.getAttribute('data-id')); };
-  });
-}
+function kw(key) { var el = document.querySelector('[data-search="' + key + '"]'); return el ? el.value.trim() : ''; }
 
 var WID = Number(new URLSearchParams(location.search).get('workerId') || 1024);
 var S = { worker: null, perf: [], comm: [], fb: [], msg: [], mat: [], tool: [], ret: [], sch: [], sm: [], fbOnlyReview: false };
-
-// —— 头部档案 + 概述统计 ——
 function renderHead() {
   var w = S.worker;
   if (!w) return;
@@ -200,10 +185,13 @@ function renderHead() {
     + items.map(function (x) { return '<div class="dh-item"><span class="label">' + x[0] + '</span><span class="value">' + esc(x[1]) + '</span></div>'; }).join('')
     + '</div>';
   document.getElementById('toggleBtn').onclick = function () {
-    API.worker.saveSettings(WID, { online: !w.online }).then(loadAll);
+    API.worker.saveSettings(WID, { online: !w.online }).then(function () { UI.toast('已更新接单状态', 'ok'); loadAll(); })
+      .catch(function (e) { UI.toast('操作失败: ' + e.message, 'err'); });
   };
   document.getElementById('msgQuickBtn').onclick = function () {
-    API.worker.sendMessage({ workerId: WID, level: 'info', title: '调度通知', content: '请及时更新工单进度' }).then(loadAll);
+    API.worker.sendMessage({ workerId: WID, level: 'info', title: '调度通知', content: '请及时更新工单进度' })
+      .then(function () { UI.toast('消息已下发', 'ok'); loadAll(); })
+      .catch(function (e) { UI.toast('下发失败: ' + e.message, 'err'); });
   };
   var myPerf = S.perf.find(function (r) { return r.workerId === WID; }) || {};
   var commTotal = S.comm.reduce(function (s, c) { return s + c.amount; }, 0);
@@ -216,8 +204,6 @@ function renderHead() {
     ['排期月份', sch.month], ['忙日天数', sch.busyDays.length + ' 天'], ['借用工具', S.tool.filter(function (t) { return t.borrowed; }).length],
   ].map(function (x) { return '<div class="stat"><span>' + x[0] + '</span><b>' + esc(x[1]) + '</b></div>'; }).join('');
 }
-
-// —— 各 Tab 渲染(均带检索) ——
 function renderTabs() {
   fill('perfBody', S.perf.filter(function (r) { return hit(r, kw('perf')); }),
     function (r) { return [r.rank, esc(r.workerName), esc(r.groupName), r.finished, r.onTimeRate + '%', r.score]; },
@@ -228,7 +214,7 @@ function renderTabs() {
   fill('fbBody', fbs, function (f) {
     return [esc(f.customerName), esc(f.ticketNo), f.score, esc(f.comment),
       '<span class="tag ' + esc(f.needReviewClass) + '">' + esc(f.needReviewLabel) + '</span>',
-      f.needReview ? '<a href="#" data-id="' + esc(f.feedbackId) + '">复核</a>' : ''];
+      f.needReview ? '<a href="#" data-act="review" data-id="' + esc(f.feedbackId) + '">复核</a>' : ''];
   });
   var mr = document.getElementById('msgRead').value;
   fill('msgBody', S.msg.filter(function (m) { return hit(m, kw('msg')) && (!mr || m.readLabel === mr); }),
@@ -242,19 +228,33 @@ function renderTabs() {
     function (r) {
       return [esc(r.epc), esc(r.assetNo), esc(r.reason),
         '<span class="tag ' + esc(r.statusClass) + '">' + esc(r.statusLabel) + '</span>',
-        r.status === 'PENDING' ? '<a href="#" data-id="' + esc(r.returnId) + '">确认返库</a>' : ''];
+        r.status === 'PENDING' ? '<a href="#" data-act="return" data-id="' + esc(r.returnId) + '">确认返库</a>' : ''];
     });
   var sch = S.sch[0] || { month: '—', busyDays: [] };
   document.getElementById('schChips').innerHTML = '<span class="desc" style="margin-right:8px">' + esc(sch.month) + '</span>'
     + sch.busyDays.map(function (d) { return '<span class="chip">' + d + ' 日</span>'; }).join('');
   fill('smBody', S.sm.filter(function (m) { return hit(m, kw('sm')); }),
     function (m) { return [esc(m.from), esc(m.content)]; });
-  bindActs('fbBody', function (id) { API.worker.reviewFeedback(id).then(loadAll); });
-  bindActs('retBody', function (id) { API.worker.confirmReturn(id).then(loadAll); });
 }
-function kw(key) { var el = document.querySelector('[data-search="' + key + '"]'); return el ? el.value.trim() : ''; }
+document.querySelector('.content').addEventListener('click', function (ev) {
+  var a = ev.target;
+  if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
+  ev.preventDefault();
+  var id = a.getAttribute('data-id');
+  var p = a.getAttribute('data-act') === 'review' ? API.worker.reviewFeedback(id) : API.worker.confirmReturn(id);
+  p.then(function () { UI.toast('操作成功', 'ok'); loadAll(); })
+    .catch(function (e) { UI.toast('操作失败: ' + e.message, 'err'); });
+});
+function loadingState() {
+  ['perfBody', 'commBody', 'fbBody', 'msgBody', 'matBody', 'toolBody', 'retBody', 'smBody'].forEach(function (id) {
+    var cols = document.getElementById(id).closest('table').querySelectorAll('thead th').length;
+    document.getElementById(id).innerHTML = UI.tbodyState(cols, '加载中...');
+  });
+  document.getElementById('schChips').innerHTML = '<span class="desc">加载中...</span>';
+}
 
 function loadAll() {
+  loadingState();
   Promise.all([
     API.worker.detail(WID), API.worker.performances(WID), API.worker.commissions(WID),
     API.worker.feedbacks(WID), API.worker.messages(WID), API.worker.materials(WID),
@@ -265,10 +265,9 @@ function loadAll() {
     document.title = S.worker.name + ' · 师傅详情 · BOSS 管理后台';
     renderHead();
     renderTabs();
-  }).catch(function (e) { alert('加载师傅详情失败: ' + e.message); });
+  }).catch(function (e) { UI.toast('加载师傅详情失败: ' + e.message, 'err'); });
 }
 
-// —— 交互绑定: tab 切换 / 检索 / 写操作 ——
 Array.prototype.forEach.call(document.querySelectorAll('#tabs button'), function (b) {
   b.onclick = function () {
     Array.prototype.forEach.call(document.querySelectorAll('#tabs button'), function (x) { x.classList.remove('active'); });
@@ -281,13 +280,18 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-search]'), functio
 document.getElementById('msgRead').onchange = renderTabs;
 document.getElementById('retStatus').onchange = renderTabs;
 document.getElementById('fbOnlyReview').onclick = function () { S.fbOnlyReview = !S.fbOnlyReview; renderTabs(); };
+document.getElementById('btnReload').onclick = loadAll;
 document.getElementById('msgBtn').onclick = function () {
   var t = document.getElementById('msgTitle').value.trim() || '调度通知';
-  API.worker.sendMessage({ workerId: WID, level: 'info', title: t, content: '请及时更新工单进度' }).then(loadAll);
+  API.worker.sendMessage({ workerId: WID, level: 'info', title: t, content: '请及时更新工单进度' })
+    .then(function () { UI.toast('消息已下发', 'ok'); loadAll(); })
+    .catch(function (e) { UI.toast('下发失败: ' + e.message, 'err'); });
 };
 document.getElementById('smBtn').onclick = function () {
   var c = document.getElementById('smContent').value.trim() || '调度指令：请回复当前工单进度';
-  API.post('/service-messages', { workerId: WID, content: c }).then(loadAll);
+  API.post('/service-messages', { workerId: WID, content: c })
+    .then(function () { UI.toast('调度消息已下发', 'ok'); loadAll(); })
+    .catch(function (e) { UI.toast('下发失败: ' + e.message, 'err'); });
 };
 loadAll();
 </script>

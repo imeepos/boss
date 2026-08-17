@@ -21,57 +21,131 @@
       <div class="page-head"><h2>配置模板</h2><div class="desc">配置模板管理（text/template）</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary" id="btnCreate">+ 新建模板</button>
+        <input class="input" style="width:220px" id="kw" placeholder="模板编号/模板名">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部设备类型</option><option>光猫</option><option>OLT</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-new">新建模板</button>
       </div>
       <div class="card">
+        <div class="card-title">模板列表 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>模板编号</th><th>模板</th><th>设备类型</th><th>参数</th><th>更新时间</th><th>操作</th></tr></thead>
-          <tbody id="tplRows"></tbody>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 配置模板数据渲染(契约: GET/POST /provision-templates)
+// 配置模板:筛选/分页/详情/编辑复制/新建(契约: GET/POST /provision-templates)
 (function () {
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.templateNo) + String(r.name)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.deviceType === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.templateNo) + '</td><td>' + UI.esc(r.name) + '</td><td>' + UI.esc(r.deviceType)
+        + '</td><td>' + UI.esc(r.params) + '</td><td>' + UI.esc(r.updatedAt)
+        + '</td><td><a href="#" data-op="detail" data-no="' + UI.esc(r.templateNo) + '">详情</a>'
+        + ' <a href="#" data-op="edit" data-no="' + UI.esc(r.templateNo) + '">编辑</a></td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    document.getElementById('row-hint').textContent = list.length ? '共 ' + list.length + ' 个模板' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
 
-  function renderRows(items) {
-    document.getElementById('tplRows').innerHTML = items.map(function (r, i) {
-      return '<tr><td>' + esc(r.templateNo) + '</td><td>' + esc(r.name) + '</td><td>'
-        + esc(r.deviceType) + '</td><td>' + esc(r.params) + '</td><td>' + esc(r.updatedAt)
-        + '</td><td><a href="#" data-i="' + i + '">编辑</a></td></tr>';
+  function findByNo(no) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].templateNo) === String(no)) return all[i];
+    return null;
+  }
+
+  function showDetail(no) {
+    var r = findByNo(no);
+    if (!r) return;
+    var rows = [
+      ['模板编号', r.templateNo], ['模板', r.name], ['设备类型', r.deviceType],
+      ['参数', r.params], ['更新时间', r.updatedAt],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
     }).join('');
-    var links = document.getElementById('tplRows').getElementsByTagName('a');
-    for (var j = 0; j < links.length; j++) {
-      links[j].onclick = function () {
-        var tpl = items[Number(this.getAttribute('data-i'))];
-        API.post('/provision-templates', { sourceTemplateNo: tpl.templateNo, name: tpl.name }).then(function (res) {
-          alert('模板 ' + tpl.templateNo + ' 复制' + (res.code === 0 ? '成功' : '失败'));
-        });
-        return false;
-      };
-    }
+    UI.modal({ title: '模板详情', body: rows, okText: '关闭' });
   }
 
-  document.getElementById('btnCreate').onclick = function () {
-    API.post('/provision-templates', { name: '新建模板' }).then(function (res) {
-      alert(res.code === 0 ? '模板创建成功' : '模板创建失败');
+  function showEdit(no) {
+    var r = no ? findByNo(no) : null;
+    var fields = [
+      { key: 'name', label: '模板名', required: true, value: r ? r.name : '', placeholder: '如: 光猫预配置模板(1000M)' },
+      { key: 'deviceType', label: '设备类型', type: 'select', required: true, value: r ? r.deviceType : '光猫',
+        options: [{ v: '光猫', t: '光猫' }, { v: 'OLT', t: 'OLT' }] },
+      { key: 'params', label: '参数', type: 'textarea', value: r ? r.params : '', placeholder: '如: LOID/带宽模板' },
+    ];
+    UI.modal({
+      title: no ? '编辑模板(保存为副本)' : '新建模板', body: UI.formFields(fields), okText: '保存',
+      onOk: function (m) {
+        var v = UI.readForm(m.el.querySelector('form'), fields);
+        if (!v) return false;
+        var body = no ? { sourceTemplateNo: no, name: v.name, deviceType: v.deviceType, params: v.params }
+          : { name: v.name, deviceType: v.deviceType, params: v.params };
+        API.post('/provision-templates', body).then(function (res) {
+          UI.toast('模板 ' + v.name + ' 保存' + (res.code === 0 ? '成功' : '失败'), res.code === 0 ? 'ok' : 'err');
+          load();
+        }).catch(function (e) { UI.toast('保存失败: ' + e.message, 'err'); });
+      }
     });
-  };
+  }
 
-  API.provision.templates().then(function (d) {
-    renderRows(d.items);
-  }).catch(function (e) {
-    document.getElementById('tplRows').innerHTML = '<tr><td colspan="6">加载失败: ' + esc(e.message) + '</td></tr>';
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else if (op === 'edit') showEdit(no);
   });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.provision.templates().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-new').onclick = function () { showEdit(null); };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

@@ -21,49 +21,152 @@
       <div class="page-head"><h2>配置下发</h2><div class="desc">配置自动下发 · 失败重试留痕</div></div>
 
       <div class="grid g-3" style="margin-bottom:16px;" id="stats"></div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" id="kw" placeholder="任务号/设备">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>成功</option><option>失败</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-new">新建下发任务</button>
+      </div>
       <div class="card">
+        <div class="card-title">下发任务 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
-          <thead><tr><th>任务号</th><th>设备</th><th>模板</th><th>状态</th><th>重试次数</th></tr></thead>
-          <tbody id="taskRows"></tbody>
+          <thead><tr><th>任务号</th><th>设备</th><th>模板</th><th>状态</th><th>重试次数</th><th>操作</th></tr></thead>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 配置下发数据渲染(契约: GET /provision-tasks)
+// 配置下发:筛选/分页/详情/失败重试/新建任务(契约: GET /provision-tasks, POST /provision-tasks/{taskNo}/retry)
 (function () {
   var STATUS_TAG = { '成功': 'tag-green', '失败': 'tag-red' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(r.taskNo) + String(r.device) + String(r.template)).indexOf(kw) >= 0;
+    return hitKw && (!st || r.status === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(r.taskNo) + '">详情</a>';
+      if (r.status === '失败') {
+        ops += ' <a href="#" data-op="retry" data-no="' + UI.esc(r.taskNo) + '">重试</a>';
+      }
+      return '<tr><td>' + UI.esc(r.taskNo) + '</td><td>' + UI.esc(r.device) + '</td><td>' + UI.esc(r.template)
+        + '</td><td>' + tag(STATUS_TAG[r.status] || 'tag-gray', r.status) + '</td><td>' + UI.esc(r.retries)
+        + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    var fail = list.filter(function (r) { return r.status === '失败'; }).length;
+    document.getElementById('row-hint').textContent = list.length ? '失败待重试 ' + fail + ' 笔' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
 
-  function renderStats(stats) {
-    document.getElementById('stats').innerHTML = stats.map(function (s) {
-      return '<div class="stat"><div class="label">' + esc(s.label)
-        + '</div><div class="val">' + esc(s.value) + '</div></div>';
-    }).join('');
+  function findByNo(no) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].taskNo) === String(no)) return all[i];
+    return null;
   }
 
-  function renderRows(items) {
-    document.getElementById('taskRows').innerHTML = items.map(function (r) {
-      return '<tr><td>' + esc(r.taskNo) + '</td><td>' + esc(r.device) + '</td><td>'
-        + esc(r.template) + '</td><td><span class="tag ' + (STATUS_TAG[r.status] || 'tag-gray') + '">'
-        + esc(r.status) + '</span></td><td>' + esc(r.retries) + '</td></tr>';
+  function showDetail(no) {
+    var r = findByNo(no);
+    if (!r) return;
+    var rows = [
+      ['任务号', r.taskNo], ['设备', r.device], ['模板', r.template],
+      ['状态', r.status], ['重试次数', r.retries],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
     }).join('');
+    UI.modal({ title: '下发任务详情', body: rows, okText: '关闭' });
   }
 
-  API.provision.tasks().then(function (d) {
-    renderStats(d.stats);
-    renderRows(d.items);
-  }).catch(function (e) {
-    document.getElementById('taskRows').innerHTML = '<tr><td colspan="5">加载失败: ' + esc(e.message) + '</td></tr>';
+  function retry(no) {
+    UI.confirm('确认重试下发任务 ' + no + '?', function () {
+      API.post('/provision-tasks/' + encodeURIComponent(no) + '/retry').then(function (res) {
+        UI.toast('任务 ' + no + ' 已重新下发', 'ok');
+        load();
+      }).catch(function (e) { UI.toast('重试失败: ' + e.message, 'err'); });
+    });
+  }
+
+  function showCreate() {
+    var fields = [
+      { key: 'device', label: '设备', required: true, placeholder: '光猫 EPC 码或 OLT 编号' },
+      { key: 'template', label: '模板', type: 'select', required: true, options: [
+        { v: 'GPON-1000M-v3', t: 'GPON-1000M-v3' }, { v: 'GPON-500M-v2', t: 'GPON-500M-v2' }, { v: 'OLT-VLAN-v2', t: 'OLT-VLAN-v2' },
+      ] },
+      { key: 'remark', label: '备注', type: 'textarea' },
+    ];
+    UI.modal({
+      title: '新建下发任务', body: UI.formFields(fields), okText: '提交',
+      onOk: function (m, close) {
+        var v = UI.readForm(m.el.querySelector('form'), fields);
+        if (!v) return false;
+        UI.toast('下发任务已创建: ' + v.device + '(演示)', 'ok');
+      }
+    });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), no = a.getAttribute('data-no');
+    if (op === 'detail') showDetail(no);
+    else if (op === 'retry') retry(no);
   });
+
+  function renderStats(stats) {
+    document.getElementById('stats').innerHTML = (stats || []).map(function (s) {
+      return '<div class="stat"><div class="label">' + UI.esc(s.label)
+        + '</div><div class="val">' + UI.esc(s.value) + '</div></div>';
+    }).join('');
+  }
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.provision.tasks().then(function (d) {
+      all = d.items || [];
+      renderStats(d.stats);
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-new').onclick = showCreate;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

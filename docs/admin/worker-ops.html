@@ -28,19 +28,26 @@
         <div class="desc">非按师傅维度的师傅端数据：公告 · FAQ 知识库 · 设备健康观察 · 抢单池任务（改动即时生效于师傅端）</div>
       </div>
 
+      <div class="toolbar">
+        <input class="input" id="kw" style="width:220px" placeholder="公告/FAQ/设备/单号 关键字">
+        <select class="input" id="st" style="width:130px">
+          <option value="">全部状态</option><option value="发布中">发布中</option><option value="已下架">已下架</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="noticeBtn">发布公告</button>
+      </div>
+
       <div class="wgrid">
         <div class="card">
           <h3>公告管理（下架即从师傅端消失）</h3>
-          <div class="toolbar" style="margin-bottom:8px">
-            <button class="btn btn-primary" id="noticeBtn">发布公告</button>
-          </div>
           <table class="tbl"><thead><tr><th>公告</th><th>分类</th><th>发布日</th><th>状态</th><th>操作</th></tr></thead><tbody id="noticeBody"></tbody></table>
+          <div class="pagination" id="noticePager"></div>
         </div>
         <div class="card">
           <h3>FAQ 知识库</h3>
-          <div class="toolbar" style="margin-bottom:8px">
-            <button class="btn btn-primary" id="faqBtn">新增 FAQ</button>
-          </div>
           <table class="tbl"><thead><tr><th>条目</th><th>摘要</th><th>状态</th><th>操作</th></tr></thead><tbody id="faqBody"></tbody></table>
         </div>
         <div class="card">
@@ -55,57 +62,130 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function fill(id, rows, cells) {
-  document.getElementById(id).innerHTML = rows.map(function (r) {
-    return '<tr>' + cells(r).map(function (h) { return '<td>' + h + '</td>'; }).join('') + '</tr>';
-  }).join('');
-}
-function bindActs(containerId, handler) {
-  Array.prototype.forEach.call(document.getElementById(containerId).querySelectorAll('a[data-id]'), function (a) {
-    a.onclick = function (e) { e.preventDefault(); handler(a.getAttribute('data-id')); };
-  });
-}
+// 师傅端内容运营:公告/FAQ 增改与上下架,健康观察/抢单池只读(契约: /notices /faqs /device-maintenances /hall-items)
+(function () {
+  var S = { notices: [], faqs: [], mnts: [], halls: [], page: 1, pageSize: 10 };
 
-function loadAll() {
-  API.worker.notices().then(function (d) {
-    fill('noticeBody', d.items, function (n) {
-      return [esc(n.title), esc(n.category), esc(n.publishedAt),
-        '<span class="tag ' + esc(n.activeClass) + '">' + esc(n.activeLabel) + '</span>',
-        '<a href="#" data-id="' + esc(n.noticeId) + '">上架/下架</a>'];
+  function kw() { return document.getElementById('kw').value.trim(); }
+  function st() { return document.getElementById('st').value; }
+  function hitText(r) { var k = kw(); return !k || JSON.stringify(r).indexOf(k) >= 0; }
+
+  function fill(id, rows, cells) {
+    document.getElementById(id).innerHTML = rows.length ? rows.map(function (r) {
+      return '<tr>' + cells(r).map(function (h) { return '<td>' + h + '</td>'; }).join('') + '</tr>';
+    }).join('') : UI.tbodyState(cells({}).length, '无匹配数据');
+  }
+
+  function render() {
+    var notices = S.notices.filter(function (n) { return hitText(n) && (!st() || n.activeLabel === st()); });
+    var start = (S.page - 1) * S.pageSize;
+    fill('noticeBody', notices.slice(start, start + S.pageSize), function (n) {
+      return [UI.esc(n.title), UI.esc(n.category), UI.esc(n.publishedAt),
+        '<span class="tag ' + UI.esc(n.activeClass) + '">' + UI.esc(n.activeLabel) + '</span>',
+        '<a href="#" data-kind="notice" data-op="detail" data-id="' + UI.esc(n.noticeId) + '">查看</a> · '
+        + '<a href="#" data-kind="notice" data-op="toggle" data-id="' + UI.esc(n.noticeId) + '">上架/下架</a>'];
     });
-    bindActs('noticeBody', function (id) { API.worker.toggleNotice(id).then(loadAll); });
-  });
-  API.worker.faqs().then(function (d) {
-    fill('faqBody', d.items, function (f) {
-      return [esc(f.title), esc(f.summary), '<span class="tag ' + esc(f.activeClass) + '">' + esc(f.activeLabel) + '</span>',
-        '<a href="#" data-id="' + esc(f.faqId) + '">启用/停用</a>'];
+    UI.paginate(document.getElementById('noticePager'), {
+      total: notices.length, page: S.page, pageSize: S.pageSize,
+      onChange: function (p, ps) { S.page = p; S.pageSize = ps; render(); }
     });
-    bindActs('faqBody', function (id) { API.worker.toggleFaq(id).then(loadAll); });
-  });
-  API.worker.maintenances().then(function (d) {
-    fill('mntBody', d.items, function (m) {
-      return [esc(m.deviceNo), esc(m.deviceType), m.healthScore, m.faultCount, m.ageYears + ' 年', esc(m.reason || '—'),
-        '<span class="tag ' + esc(m.priorityClass) + '">' + esc(m.priorityLabel) + '</span>'];
+    fill('faqBody', S.faqs.filter(function (f) { return hitText(f) && (!st() || f.activeLabel === st()); }), function (f) {
+      return [UI.esc(f.title), UI.esc(f.summary),
+        '<span class="tag ' + UI.esc(f.activeClass) + '">' + UI.esc(f.activeLabel) + '</span>',
+        '<a href="#" data-kind="faq" data-op="detail" data-id="' + UI.esc(f.faqId) + '">查看</a> · '
+        + '<a href="#" data-kind="faq" data-op="toggle" data-id="' + UI.esc(f.faqId) + '">启用/停用</a>'];
     });
+    fill('mntBody', S.mnts.filter(hitText), function (m) {
+      return [UI.esc(m.deviceNo), UI.esc(m.deviceType), m.healthScore, m.faultCount, m.ageYears + ' 年', UI.esc(m.reason || '—'),
+        '<span class="tag ' + UI.esc(m.priorityClass) + '">' + UI.esc(m.priorityLabel) + '</span>'];
+    });
+    fill('hallBody', S.halls.filter(hitText), function (h) {
+      return [UI.esc(h.ticketNo), UI.esc(h.typeLabel), UI.esc(h.address), UI.esc(h.source)];
+    });
+  }
+
+  function showNotice(id) {
+    var n = S.notices.find(function (x) { return String(x.noticeId) === String(id); });
+    if (!n) return;
+    var rows = [['公告', n.title], ['分类', n.category], ['发布日', n.publishedAt], ['状态', n.activeLabel]]
+      .map(function (x) { return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>'; }).join('');
+    UI.modal({ title: '公告详情', body: rows, okText: '关闭' });
+  }
+
+  function showFaq(id) {
+    var f = S.faqs.find(function (x) { return String(x.faqId) === String(id); });
+    if (!f) return;
+    var rows = [['条目', f.title], ['摘要', f.summary], ['状态', f.activeLabel]]
+      .map(function (x) { return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>'; }).join('');
+    UI.modal({ title: 'FAQ 详情', body: rows, okText: '关闭' });
+  }
+
+  function toggle(kind, id) {
+    var act = kind === 'notice' ? API.worker.toggleNotice(id) : API.worker.toggleFaq(id);
+    var text = kind === 'notice' ? '切换公告上架/下架' : '切换 FAQ 启用/停用';
+    UI.confirm('确认' + text + '?', function () {
+      act.then(function () { UI.toast('已更新', 'ok'); loadAll(); })
+        .catch(function (e) { UI.toast('操作失败: ' + e.message, 'err'); });
+    });
+  }
+
+  function publishNotice() {
+    var fields = [
+      { key: 'title', label: '公告标题', required: true, placeholder: '如: 系统维护通知' },
+      { key: 'category', label: '分类', type: 'select', value: '功能公告', options: [
+        { v: '功能公告', t: '功能公告' }, { v: '运营公告', t: '运营公告' }, { v: '紧急通知', t: '紧急通知' }] },
+      { key: 'content', label: '内容', type: 'textarea', placeholder: '公告正文' },
+    ];
+    UI.modal({
+      title: '发布公告', body: UI.formFields(fields), okText: '发布',
+      onOk: function (m, close) {
+        var v = UI.readForm(m, fields);
+        if (!v) return false;
+        return API.worker.publishNotice({ title: v.title, category: v.category, content: v.content }).then(function () {
+          UI.toast('公告已发布', 'ok'); close(); loadAll();
+        });
+      }
+    });
+  }
+
+  document.querySelector('.wgrid').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var kind = a.getAttribute('data-kind'), op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'toggle') toggle(kind, id);
+    else if (kind === 'notice') showNotice(id);
+    else showFaq(id);
   });
-  API.worker.hallItems().then(function (d) {
-    fill('hallBody', d.items, function (h) { return [esc(h.ticketNo), esc(h.typeLabel), esc(h.address), esc(h.source)]; });
-  });
-}
-document.getElementById('noticeBtn').onclick = function () {
-  API.worker.publishNotice({ title: '新公告（后台发布）', category: '功能公告' }).then(loadAll);
-};
-document.getElementById('faqBtn').onclick = function () {
-  API.worker.createFaq({ title: '新 FAQ 条目', summary: '待补充排查步骤' }).then(loadAll);
-};
-loadAll();
+
+  function loadAll() {
+    ['noticeBody', 'faqBody', 'mntBody', 'hallBody'].forEach(function (id) {
+      document.getElementById(id).innerHTML = UI.tbodyState(id === 'noticeBody' ? 5 : id === 'faqBody' ? 4 : id === 'mntBody' ? 7 : 4, '加载中...');
+    });
+    Promise.all([API.worker.notices(), API.worker.faqs(), API.worker.maintenances(), API.worker.hallItems()])
+      .then(function (r) {
+        S.notices = r[0].items || []; S.faqs = r[1].items || [];
+        S.mnts = r[2].items || []; S.halls = r[3].items || [];
+        render();
+      }).catch(function (e) { UI.toast('加载内容运营数据失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { S.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = ''; document.getElementById('st').value = '';
+    S.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = loadAll;
+  document.getElementById('noticeBtn').onclick = publishNotice;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { S.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { S.page = 1; render(); });
+
+  loadAll();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

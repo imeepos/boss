@@ -24,50 +24,131 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:320px" id="code" placeholder="输入任一码反查四码关系">
-        <button class="btn btn-primary" id="btn-query">查询</button>
+        <input class="input" style="width:240px" id="kw" placeholder="输入任一码反查四码关系">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option value="LINKED">已关联</option>
+          <option value="CONFLICT">冲突</option><option value="UNLINKED">未关联</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <span class="tag tag-orange">今日对账冲突：2 笔待处理</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-export">导出关联</button>
       </div>
+      <span class="tag tag-orange" id="conflict-hint" style="margin-bottom:12px;display:inline-block">今日对账冲突：待核实</span>
       <div class="card">
-        <div class="card-title">四码关联关系</div>
+        <div class="card-title">四码关联关系 <span class="extra"></span></div>
         <table class="tbl">
-          <thead><tr><th>资产码</th><th>用户码</th><th>端口码</th><th>地址码</th><th>关联状态</th></tr></thead>
+          <thead><tr><th>资产码</th><th>用户码</th><th>端口码</th><th>地址码</th><th>关联状态</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
+// 四码合一:任一码反查/状态筛选/分页/详情/冲突核销演示(契约: GET /quad-links,状态 LINKED/CONFLICT/UNLINKED)
 (function () {
   var ST_TAG = { LINKED: 'tag-green', CONFLICT: 'tag-red', UNLINKED: 'tag-gray' };
+  var ST_LABEL = { LINKED: '已关联', CONFLICT: '冲突', UNLINKED: '未关联' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || [r.assetCode, r.customerCode, r.portCode, r.addrCode].some(function (c) {
+      return String(c || '').indexOf(kw) >= 0;
+    });
+    return hitKw && (!st || r.status === st);
   }
-  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var code = r.assetCode + '|' + r.portCode;
+      var ops = '<a href="#" data-op="detail" data-code="' + UI.esc(code) + '">详情</a>';
+      if (r.status === 'CONFLICT') {
+        ops += ' <a href="#" data-op="resolve" data-code="' + UI.esc(code) + '">核销冲突</a>';
+      }
+      return '<tr><td>' + UI.esc(r.assetCode) + '</td><td>' + UI.esc(r.customerCode) + '</td><td>' + UI.esc(r.portCode)
+        + '</td><td>' + UI.esc(r.addrCode) + '</td><td>' + tag(ST_TAG[r.status] || 'tag-gray', r.statusLabel || ST_LABEL[r.status] || r.status)
+        + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findByCode(code) {
+    var p = String(code).split('|');
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].assetCode === p[0] && all[i].portCode === p[1]) return all[i];
+    }
+    return null;
+  }
+
+  function showDetail(code) {
+    var r = findByCode(code);
+    if (!r) return;
+    var rows = [
+      ['资产码', r.assetCode], ['用户码', r.customerCode], ['端口码', r.portCode],
+      ['地址码', r.addrCode], ['关联状态', r.statusLabel || ST_LABEL[r.status] || r.status],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '四码关联详情', body: rows, okText: '关闭' });
+  }
+
+  function resolve(code) {
+    UI.confirm('确认核销该冲突关联(资产码 ' + code.split('|')[0] + ')?', function () {
+      UI.toast('冲突核销请求已提交(演示)', 'ok');
+    });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), code = a.getAttribute('data-code');
+    if (op === 'detail') showDetail(code);
+    else if (op === 'resolve') resolve(code);
+  });
 
   function load() {
-    API.quad.links(document.getElementById('code').value.trim())
-      .then(function (r) {
-        var html = '';
-        for (var i = 0; i < r.items.length; i++) {
-          var q = r.items[i];
-          html += '<tr><td>' + esc(q.assetCode) + '</td><td>' + esc(q.customerCode) + '</td><td>' + esc(q.portCode)
-            + '</td><td>' + esc(q.addrCode) + '</td><td>' + tag(ST_TAG[q.status] || 'tag-gray', q.statusLabel || q.status) + '</td></tr>';
-        }
-        document.getElementById('rows').innerHTML = html || '<tr><td colspan="5">无匹配记录</td></tr>';
-      })
-      .catch(function (e) { alert('四码查询失败: ' + e.message); });
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    var kw = document.getElementById('kw').value.trim();
+    API.quad.links(kw).then(function (d) {
+      all = d.items || [];
+      var n = all.filter(function (r) { return r.status === 'CONFLICT'; }).length;
+      document.getElementById('conflict-hint').textContent = '冲突关联：' + n + ' 笔待处理';
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
   }
 
-  document.getElementById('btn-query').onclick = load;
-  document.getElementById('code').addEventListener('keydown', function (ev) {
-    if (ev.keyCode === 13) load();
-  });
+  document.getElementById('btn-search').onclick = load;
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; load();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
 
   load();
 })();

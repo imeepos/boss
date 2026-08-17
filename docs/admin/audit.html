@@ -21,62 +21,110 @@
       <div class="page-head"><h2>审计日志</h2><div class="desc">操作审计 · 按人/时间/类型查询 · 分区存储</div></div>
 
       <div class="toolbar">
-        <input class="input" style="width:180px" placeholder="操作人">
-        <select class="input" style="width:150px"><option>操作类型：全部</option><option>数据变更</option><option>状态变更</option><option>权限变更</option></select>
-        <input class="input" style="width:160px" type="date">
+        <input class="input" style="width:180px" id="kw" placeholder="操作人/操作内容">
+        <select class="input" style="width:150px" id="type">
+          <option value="">操作类型：全部</option><option>数据变更</option><option>状态变更</option><option>权限变更</option>
+        </select>
+        <input class="input" style="width:160px" type="date" id="date">
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn" id="btn-export">导出</button>
       </div>
       <div class="card">
+        <div class="card-title">审计记录 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
-          <thead><tr><th>时间</th><th>操作人</th><th>类型</th><th>操作内容</th><th>IP</th></tr></thead>
-          <tbody id="logBody"></tbody>
+          <thead><tr><th>时间</th><th>操作人</th><th>类型</th><th>操作内容</th><th>IP</th><th>操作</th></tr></thead>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
-}
-function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
-function rowHtml(l) {
-  return '<tr>' +
-    '<td>' + esc(l.time) + '</td>' +
-    '<td>' + esc(l.operator) + '</td>' +
-    '<td>' + tag(l.typeTag, l.type) + '</td>' +
-    '<td>' + esc(l.action) + '</td>' +
-    '<td>' + esc(l.ip) + '</td>' +
-  '</tr>';
-}
-function render(items) {
-  document.getElementById('logBody').innerHTML = items.map(rowHtml).join('');
-}
-// toolbar 前端过滤:操作人关键字 + 操作类型
-function filterAndRender(all, kw, type) {
-  var items = all.filter(function (l) {
-    var okKw = !kw || l.operator.indexOf(kw) >= 0 || l.action.indexOf(kw) >= 0;
-    var okType = !type || type === '操作类型：全部' || l.type === type;
-    return okKw && okType;
-  });
-  render(items);
-}
-var allLogs = [];
-API.sys.auditLogs().then(function (r) {
-  allLogs = r.items;
-  render(allLogs);
-}).catch(function (err) { alert('加载失败：' + err.message); });
-(function bindToolbar() {
-  var kwInput = document.querySelector('.toolbar input[placeholder="操作人"]');
-  var typeSel = document.querySelector('.toolbar select');
-  function onch() {
-    filterAndRender(allLogs, kwInput.value.trim(), typeSel.value);
+// 审计日志(契约: GET /audit-logs;字段: docs/contract/fields.md §1.6 account_id/action/target_type)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var type = document.getElementById('type').value;
+    var date = document.getElementById('date').value;
+    var hitKw = !kw || (String(r.operator) + String(r.action)).indexOf(kw) >= 0;
+    var hitType = !type || r.type === type;
+    var hitDate = !date || String(r.time).indexOf(date) === 0;
+    return hitKw && hitType && hitDate;
   }
-  if (kwInput) kwInput.oninput = onch;
-  if (typeSel) typeSel.onchange = onch;
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = list.length ? '匹配 ' + list.length + ' 条' : '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.time) + '</td><td>' + UI.esc(r.operator) + '</td>' +
+        '<td><span class="tag ' + UI.esc(r.typeTag) + '">' + UI.esc(r.type) + '</span></td>' +
+        '<td>' + UI.esc(r.action) + '</td><td>' + UI.esc(r.ip) + '</td>' +
+        '<td><a href="#" data-op="detail" data-id="' + UI.esc(r.logId) + '">详情</a></td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findById(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].logId) === String(id)) return all[i];
+    return null;
+  }
+
+  function showDetail(id) {
+    var r = findById(id);
+    if (!r) return;
+    var items = [['时间', r.time], ['操作人', r.operator], ['类型', r.type], ['操作内容', r.action],
+      ['IP', r.ip], ['日志ID', r.logId]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '审计日志详情', body: items, okText: '关闭' });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || a.getAttribute('data-op') !== 'detail') return;
+    ev.preventDefault();
+    showDetail(a.getAttribute('data-id'));
+  });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.sys.auditLogs().then(function (d) {
+      all = d.items || [];
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    ['kw', 'type', 'date'].forEach(function (i) { document.getElementById(i).value = ''; });
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + all.filter(matches).length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('type').addEventListener('change', function () { state.page = 1; render(); });
+  document.getElementById('date').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

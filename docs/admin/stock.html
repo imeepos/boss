@@ -21,58 +21,139 @@
       <div class="page-head"><h2>盘点管理</h2><div class="desc">按区域/小区/楼栋批量盘点 · 差异清单处理</div></div>
 
       <div class="toolbar">
-        <button class="btn btn-primary" id="createBtn">+ 新建盘点任务</button>
+        <input class="input" style="width:220px" id="kw" placeholder="盘点任务/范围">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>处理中</option><option>已完成</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <span class="tag tag-orange" id="diffTag">当前差异：12 项待处理</span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-create">新建盘点任务</button>
       </div>
+
       <div class="card">
+        <div class="card-title">盘点任务 <span class="extra"><span class="tag tag-orange" id="diffTag"></span></span></div>
         <table class="tbl">
-          <thead><tr><th>盘点任务</th><th>范围</th><th>进度</th><th>差异项</th><th>状态</th></tr></thead>
+          <thead><tr><th>盘点任务</th><th>范围</th><th>进度</th><th>差异项</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="taskBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function renderTasks(items) {
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var t = items[i];
-    html += '<tr><td>' + esc(t.taskId) + '</td><td>' + esc(t.scope) + '</td><td>' + esc(t.progress) +
-      '</td><td>' + esc(t.diffCount) +
-      '</td><td><span class="tag ' + esc(t.statusClass) + '">' + esc(t.statusLabel) + '</span></td></tr>';
+// 盘点任务:筛选/分页/新建/详情/差异处理(契约: GET /stocktakes, POST /stocktakes, POST /stocktakes/{taskId}/diff-handle)
+(function () {
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function matches(t) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || (String(t.taskId) + String(t.scope)).indexOf(kw) >= 0;
+    return hitKw && (!st || t.statusLabel === st);
   }
-  document.getElementById('taskBody').innerHTML = html;
-}
-function loadStocktakes() {
-  API.asset.stocktakes()
-    .then(function (d) {
-      renderTasks(d.items);
-      document.getElementById('diffTag').innerHTML =
-        '当前差异：' + esc(d.pendingDiffCount) + ' 项待处理';
-    })
-    .catch(function (e) { alert('加载盘点任务失败: ' + e.message); });
-}
-function bindCreate() {
-  document.getElementById('createBtn').onclick = function () {
-    API.post('/stocktakes', { scope: '望京X小区' })
-      .then(function (r) { alert('新建盘点任务: ' + r.message); loadStocktakes(); })
-      .catch(function (e) { alert('新建失败: ' + e.message); });
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('taskBody').innerHTML = slice.length ? slice.map(function (t) {
+      var ops = '<a href="#" data-op="detail" data-id="' + UI.esc(t.taskId) + '">详情</a>';
+      if (t.diffCount > 0) {
+        ops += ' <a href="#" data-op="diff" data-id="' + UI.esc(t.taskId) + '">处理差异</a>';
+      }
+      return '<tr><td>' + UI.esc(t.taskId) + '</td><td>' + UI.esc(t.scope) + '</td><td>' + UI.esc(t.progress)
+        + '</td><td>' + UI.esc(t.diffCount)
+        + '</td><td><span class="tag ' + UI.esc(t.statusClass) + '">' + UI.esc(t.statusLabel) + '</span></td>'
+        + '<td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function showDetail(id) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].taskId) === String(id)) r = all[i];
+    if (!r) return;
+    var rows = [
+      ['盘点任务', r.taskId], ['范围', r.scope], ['进度', r.progress],
+      ['差异项', r.diffCount], ['状态', r.statusLabel],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '盘点任务详情', body: rows, okText: '关闭' });
+  }
+
+  var createFields = [
+    { key: 'scope', label: '盘点范围', required: true, placeholder: '如 望京X小区/3号楼' },
+    { key: 'remark', label: '备注', type: 'textarea', placeholder: '选填' },
+  ];
+
+  function showCreate() {
+    UI.modal({
+      title: '新建盘点任务', body: UI.formFields(createFields), okText: '提交',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, createFields);
+        if (!v) return false;
+        API.post('/stocktakes', { scope: v.scope, remark: v.remark }).then(function (r) {
+          close();
+          UI.toast('新建盘点任务成功: ' + (r && r.message === 'success' ? v.scope : (r && r.message) || v.scope), 'ok');
+          load();
+        }).catch(function (e) { UI.toast('新建失败: ' + e.message, 'err'); });
+        return false;
+      }
+    });
+  }
+
+  function handleDiff(id) {
+    UI.confirm('确认处理盘点任务 ' + id + ' 的差异清单?', function () {
+      API.post('/stocktakes/' + id + '/diff-handle').then(function () {
+        UI.toast('差异处理已提交: ' + id, 'ok');
+        load();
+      }).catch(function (e) { UI.toast('差异处理失败: ' + e.message, 'err'); });
+    });
+  }
+
+  document.getElementById('taskBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') showDetail(id);
+    else if (op === 'diff') handleDiff(id);
+  });
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
   };
-}
-function init() {
-  loadStocktakes();
-  bindCreate();
-}
-init();
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-create').onclick = showCreate;
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  function load() {
+    document.getElementById('taskBody').innerHTML = UI.tbodyState(6, '加载中...');
+    API.asset.stocktakes().then(function (d) {
+      all = d.items || [];
+      document.getElementById('diffTag').textContent = '当前差异：' + (d.pendingDiffCount || 0) + ' 项待处理';
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载盘点任务失败: ' + e.message, 'err'); });
+  }
+
+  load();
+})();
 </script>
 <script src="menu.js"></script>
 </body>

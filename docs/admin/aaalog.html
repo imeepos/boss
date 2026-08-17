@@ -24,59 +24,126 @@
       </div>
 
       <div class="toolbar">
-        <input class="input" style="width:220px" placeholder="LOID/账号" id="kwInput">
-        <select class="input" style="width:140px" id="typeSel"><option value="">全部类型</option><option value="AUTH_OK">认证成功</option><option value="AUTH_FAIL">认证失败</option><option value="CDR">话单</option></select>
+        <input class="input" style="width:220px" placeholder="LOID/账号" id="kw">
+        <select class="input" style="width:140px" id="typeSel">
+          <option value="">全部类型</option><option value="AUTH_OK">认证成功</option>
+          <option value="AUTH_FAIL">认证失败</option><option value="CDR">话单</option>
+        </select>
+        <select class="input" style="width:140px" id="st">
+          <option value="">入账：全部</option><option value="BILLED">已入账</option><option value="UNBILLED">未入账</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-refresh">刷新</button>
         <span class="spacer"></span>
         <button class="btn btn-primary" id="btnMend">补单</button>
       </div>
       <div class="card">
+        <div class="card-title">AAA 日志 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>LOID</th><th>类型</th><th>结果</th><th>时长/流量</th><th>入账状态</th><th>时间</th><th>操作</th></tr></thead>
-          <tbody id="logRows"></tbody>
+          <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// AAA 日志渲染(契约: GET /aaa-logs)
+// AAA 日志(契约: GET /aaa-logs; 补单走 POST /aaa-logs/mend)
 (function () {
   var RESULT_TAG = { '成功': 'tag-green', '失败': 'tag-red', '正常': 'tag-green' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var tp = document.getElementById('typeSel').value;
+    var st = document.getElementById('st').value;
+    var hitKw = !kw || [r.loid].some(function (v) { return String(v || '').indexOf(kw) >= 0; });
+    var unbilled = r.billing === '未入账';
+    return hitKw && (!tp || r.type === tp) && (!st || (st === 'UNBILLED') === unbilled);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      return '<tr><td>' + UI.esc(r.loid) + '</td><td>' + UI.esc(r.typeLabel)
+        + '</td><td>' + tag(RESULT_TAG[r.result] || 'tag-gray', r.result) + '</td><td>'
+        + UI.esc(r.usage) + '</td><td>' + (r.billing === '未入账' ? tag('tag-orange', '未入账') : UI.esc(r.billing))
+        + '</td><td>' + UI.esc(r.time)
+        + '</td><td><a href="#" data-op="detail" data-id="' + UI.esc(r.logId) + '">详情</a></td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    var un = list.filter(function (r) { return r.billing === '未入账'; }).length;
+    document.getElementById('row-hint').textContent = list.length ? '未入账 ' + un + ' 条' : '';
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
 
-  function billingCell(v) {
-    return v === '未入账' ? '<span class="tag tag-orange">未入账</span>' : esc(v);
+  function findById(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].logId) === String(id)) return all[i];
+    return null;
   }
 
-  function render(items) {
-    document.getElementById('logRows').innerHTML = items.map(function (r) {
-      return '<tr><td>' + esc(r.loid) + '</td><td>' + esc(r.typeLabel)
-        + '</td><td><span class="tag ' + (RESULT_TAG[r.result] || 'tag-gray') + '">' + esc(r.result)
-        + '</span></td><td>' + esc(r.usage) + '</td><td>' + billingCell(r.billing) + '</td><td>'
-        + esc(r.time) + '</td><td><a href="#" data-detail="' + esc(r.logId) + '">详情</a></td></tr>';
+  function showDetail(id) {
+    var r = findById(id);
+    if (!r) return;
+    var rows = [
+      ['日志编号', r.logId], ['LOID', r.loid], ['类型', r.typeLabel || r.type],
+      ['结果', r.result], ['时长/流量', r.usage], ['入账状态', r.billing], ['时间', r.time],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
     }).join('');
+    UI.modal({ title: 'AAA 日志详情', body: rows, okText: '关闭' });
   }
+
+  function mend() {
+    var fields = [
+      { key: 'loid', label: 'LOID', required: true, placeholder: '待补单的 LOID' },
+      { key: 'period', label: '账期', required: true, placeholder: '如 2026-08' },
+      { key: 'reason', label: '补单原因', type: 'textarea', placeholder: '必填说明' },
+    ];
+    UI.modal({
+      title: 'AAA 补单', body: UI.formFields(fields), okText: '提交',
+      onOk: function (mask) {
+        var v = UI.readForm(mask, fields);
+        if (!v) return false;
+        return API.post('/aaa-logs/mend', v).then(function (res) {
+          if (res.code === 0) { UI.toast('补单请求已提交', 'ok'); load(); return true; }
+          UI.toast('补单失败', 'err'); return false;
+        });
+      }
+    });
+  }
+
+  document.getElementById('rows').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    if (a.getAttribute('data-op') === 'detail') showDetail(a.getAttribute('data-id'));
+  });
 
   function load() {
-    API.aaa.logs(document.getElementById('kwInput').value.trim(), document.getElementById('typeSel').value)
-      .then(function (d) { render(d.items); });
+    document.getElementById('rows').innerHTML = UI.tbodyState(7, '加载中...');
+    API.aaa.logs(document.getElementById('kw').value.trim(), document.getElementById('typeSel').value)
+      .then(function (d) { all = d.items || []; state.page = 1; render(); })
+      .catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
   }
 
-  document.getElementById('logRows').onclick = function (e) {
-    var id = e.target.getAttribute('data-detail');
-    if (id) { alert('日志详情 #' + id); return false; }
-  };
-  document.getElementById('btnMend').onclick = function () {
-    alert('补单请求已提交');
-  };
-  document.getElementById('kwInput').oninput = load;
-  document.getElementById('typeSel').onchange = load;
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btnMend').onclick = mend;
+  document.getElementById('kw').addEventListener('input', UI.debounce(load, 300));
+  document.getElementById('typeSel').addEventListener('change', load);
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
 
   load();
 })();

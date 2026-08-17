@@ -6,16 +6,38 @@
 <title>用户详情 · BOSS 管理后台</title>
 <link rel="stylesheet" href="style.css">
 <style>
+/* —— 详情头部(与师傅详情 worker-detail.html 同风格) —— */
+.detail-head { background: #fff; border: 1px solid #f0f0f0; border-radius: 8px; padding: 20px 24px 16px; margin-bottom: 14px; }
+.dh-top { display: flex; align-items: center; }
+.dh-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #4096ff, #1677ff); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 600; flex: none; margin-right: 18px; box-shadow: 0 2px 8px rgba(22,119,255,.25); }
+.dh-title { font-size: 20px; font-weight: 600; color: rgba(0,0,0,.88); margin-right: 10px; }
+.dh-sub { font-size: 13px; color: rgba(0,0,0,.45); margin-right: 12px; }
+.dh-actions { margin-left: auto; display: flex; gap: 8px; }
+.ant-tag { display: inline-block; height: 22px; line-height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; border: 1px solid transparent; }
+.ant-tag.success { color: #389e0d; background: #f6ffed; border-color: #b7eb8f; }
+.ant-tag.warning { color: #d48806; background: #fffbe6; border-color: #ffe58f; }
+.ant-tag.error { color: #cf1322; background: #fff1f0; border-color: #ffa39e; }
+.ant-tag.default { color: rgba(0,0,0,.45); background: #fafafa; border-color: #d9d9d9; }
+.ant-btn { height: 32px; padding: 4px 15px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid #d9d9d9; background: #fff; color: rgba(0,0,0,.88); transition: all .2s; }
+.ant-btn:hover { border-color: #4096ff; color: #4096ff; }
+.ant-btn.primary { background: #1677ff; border-color: #1677ff; color: #fff; }
+.ant-btn.primary:hover { background: #4096ff; border-color: #4096ff; }
+.dh-desc { display: flex; flex-wrap: wrap; border-top: 1px solid #f0f0f0; margin-top: 16px; padding-top: 14px; }
+.dh-item { margin: 4px 32px 4px 0; }
+.dh-item .label { font-size: 13px; color: rgba(0,0,0,.45); margin-right: 8px; }
+.dh-item .label::after { content: ':'; margin-left: 2px; color: rgba(0,0,0,.45); }
+.dh-item .value { font-size: 13px; color: rgba(0,0,0,.88); }
+
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 14px; }
+.stat { background: #fff; border: 1px solid #f0f0f0; border-radius: 8px; padding: 12px 16px; }
+.stat b { display: block; font-size: 20px; margin-top: 4px; color: rgba(0,0,0,.88); }
+.stat span { color: rgba(0,0,0,.45); font-size: 12px; }
+.stat .sub { display: block; color: rgba(0,0,0,.45); font-size: 12px; margin-top: 2px; }
+@media (max-width: 1100px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+
 .tabs{display:flex;gap:4px;border-bottom:1px solid #d9e2ec;margin-bottom:16px;flex-wrap:wrap}
 .tabs button{padding:8px 14px;border:none;background:none;cursor:pointer;font-size:13px;color:#52606d;border-bottom:2px solid transparent}
 .tabs button.active{color:#1b6ef3;border-bottom-color:#1b6ef3;font-weight:600}
-.kv{display:flex;flex-wrap:wrap;gap:6px 24px;font-size:13px}
-.kv div{min-width:180px}.kv b{color:#52606d;font-weight:400;margin-right:6px}
-.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:8px}
-.stat{border:1px solid #d9e2ec;border-radius:8px;padding:12px 14px}
-.stat .num{font-size:22px;font-weight:700;color:#102a43}
-.stat .lbl{font-size:12px;color:#52606d;margin-top:2px}
-.stat .sub{font-size:12px;color:#7b8794;margin-top:2px}
 </style>
 </head>
 <body>
@@ -30,9 +52,12 @@
       <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
-      <div class="page-head"><h2 id="hdName">用户详情</h2><div class="desc" id="hdDesc">该用户在用户端可见的全部数据（后端聚合单一接口）</div></div>
+      <div class="page-head" style="display:flex;align-items:flex-start;gap:12px">
+        <button class="btn" id="btnBack">返回</button>
+        <div><h2 id="hdName">用户详情</h2><div class="desc" id="hdDesc">该用户在用户端可见的全部数据（后端聚合单一接口）</div></div>
+      </div>
 
-      <div class="card"><div class="kv" id="kvHead"></div></div>
+      <div class="detail-head" id="headcard"></div>
 
       <div class="tabs" id="tabs">
         <button data-t="overview" class="active">概述</button>
@@ -87,7 +112,9 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
 // 用户详情(契约: GET /users/{customerId} 聚合接口)
 (function () {
@@ -107,7 +134,6 @@
   }
 
   var TYPE_TAG = { '订单': 'tag-blue', '缴费': 'tag-green', '报障': 'tag-orange', '投诉': 'tag-gray' };
-
   // 概述: 历史记录统计卡片 + 近期动态
   function renderOverview(d) {
     var s = d.stats || {};
@@ -126,7 +152,7 @@
       { num: contract.remainMonths != null ? contract.remainMonths + ' 个月' : '—', lbl: '合约剩余', sub: contract.contractEnd ? '到期 ' + contract.contractEnd : '无生效套餐' },
     ];
     document.getElementById('statGrid').innerHTML = cards.map(function (k) {
-      return '<div class="stat"><div class="num">' + esc(k.num) + '</div><div class="lbl">' + esc(k.lbl) + '</div><div class="sub">' + esc(k.sub) + '</div></div>';
+      return '<div class="stat"><span>' + esc(k.lbl) + '</span><b>' + esc(k.num) + '</b><span class="sub">' + esc(k.sub) + '</span></div>';
     }).join('');
     fill('tbRecent', rows(d.recent, function (r) {
       return '<tr><td>' + esc(r.at) + '</td><td>' + tag(r.type, TYPE_TAG[r.type]) + '</td><td>' + esc(r.no)
@@ -134,15 +160,58 @@
     }));
   }
 
+  // 服务状态 → ant-tag 色(与师傅详情 onlineLabel 同风格)
+  var SERVICE_TAG = { '在网': 'success', '欠费': 'warning', '停机': 'error' };
+
+  // 详情头部: 头像 + 标题 + 状态标签 + 快捷操作 + 描述项(与师傅详情同风格)
+  function renderHead(d) {
+    var c = d.customer;
+    var plan = d.plans.filter(function (p) { return p.status === 'ACTIVE'; })[0] || {};
+    var onNet = (d.stats || {}).onNet || {};
+    var items = [
+      ['登录名', c.username || '—'], ['手机号', c.phoneMasked], ['证件', c.idType + ' ' + c.idNoMasked],
+      ['实名状态', c.realNameLabel], ['在用套餐', plan.productName || '—'],
+      ['合约到期', plan.contractEnd || '—'], ['余额', '¥' + d.balance.balance],
+      ['在网时长', onNet.months ? onNet.months + ' 个月' : '—'],
+      ['注册时间', c.registeredAt || '—'],
+    ];
+    document.getElementById('headcard').innerHTML =
+      '<div class="dh-top">'
+      + '<div class="dh-avatar">' + esc(c.name.slice(0, 1)) + '</div>'
+      + '<div><div style="display:flex;align-items:center">'
+      + '<span class="dh-title">' + esc(c.name) + '</span>'
+      + '<span class="ant-tag ' + (SERVICE_TAG[c.serviceLabel] || 'default') + '">' + esc(c.serviceLabel) + '</span>'
+      + '<span class="ant-tag ' + (c.realNameStatus === 'VERIFIED' ? 'success' : 'warning') + '">' + esc(c.realNameLabel) + '</span>'
+      + '<span class="dh-sub" style="margin-left:10px">用户 #' + c.customerId + ' · 在途 ' + d.orders.filter(function (o) { return o.stage > 0 && o.stage < 12; }).length + ' 单 · 未读消息 ' + ((d.stats || {}).messages || {}).unread + ' 条</span>'
+      + '</div></div>'
+      + '<div class="dh-actions">'
+      + '<button class="ant-btn" id="btnTopup">余额充值 ¥50</button>'
+      + '<button class="ant-btn primary" id="btnMsgQuick">下发消息</button>'
+      + '</div>'
+      + '</div>'
+      + '<div class="dh-desc">'
+      + items.map(function (x) { return '<div class="dh-item"><span class="label">' + x[0] + '</span><span class="value">' + esc(x[1]) + '</span></div>'; }).join('')
+      + '</div>';
+    document.getElementById('btnTopup').onclick = function () {
+      UI.confirm('确认为用户 ' + c.name + ' 充值余额 ¥50?', function () {
+        API.post('/user-balances/' + c.customerId + '/adjust', { delta: 50 }).then(function () {
+          UI.toast('充值成功', 'ok'); load();
+        }).catch(function (e) { UI.toast('充值失败: ' + e.message, 'err'); });
+      });
+    };
+    document.getElementById('btnMsgQuick').onclick = function () {
+      UI.confirm('确认向用户 ' + c.name + ' 下发一条运营通知消息?', function () {
+        API.post('/user-messages', { customerId: c.customerId, category: 'billing', title: '运营通知', content: '来自管理后台的用户消息' }).then(function () {
+          UI.toast('消息已下发', 'ok'); load();
+        }).catch(function (e) { UI.toast('下发失败: ' + e.message, 'err'); });
+      });
+    };
+  }
+
   function render(d) {
     var c = d.customer;
     document.getElementById('hdName').textContent = '用户详情 · ' + c.name + ' (#' + c.customerId + ')';
-    document.getElementById('kvHead').innerHTML =
-      '<div><b>姓名</b>' + esc(c.name) + '</div><div><b>手机号</b>' + esc(c.phoneMasked) + '</div>'
-      + '<div><b>登录名</b>' + esc(c.username || '—') + '</div><div><b>证件</b>' + esc(c.idType) + ' ' + esc(c.idNoMasked) + '</div>'
-      + '<div><b>实名</b>' + esc(c.realNameLabel) + '</div><div><b>服务状态</b>' + esc(c.serviceLabel) + '</div>'
-      + '<div><b>余额</b>¥' + d.balance.balance + '</div><div><b>在途订单</b>' + d.orders.filter(function (o) { return o.stage > 0 && o.stage < 12; }).length + ' 单</div>';
-
+    renderHead(d);
     renderOverview(d);
 
     fill('tbAccount', rows([c], function (r) {
@@ -211,9 +280,20 @@
     });
   };
 
-  API.get('/users/' + customerId).then(render).catch(function (e) {
-    document.getElementById('hdDesc').textContent = '加载失败: ' + e.message;
-  });
+  function load() {
+    document.getElementById('hdDesc').textContent = '加载中...';
+    var tbIds = ['tbRecent', 'tbAccount', 'tbPlans', 'tbAddons', 'tbAddr', 'tbOrders', 'tbFaults', 'tbBills', 'tbPays', 'tbInv', 'tbBal', 'tbUsage', 'tbMsgs', 'tbCoupons', 'tbCps', 'tbNotify'];
+    tbIds.forEach(function (id) { fill(id, null); });
+    ['statGrid', 'headcard'].forEach(function (id) { document.getElementById(id).textContent = '加载中...'; });
+    API.get('/users/' + customerId).then(function (d) {
+      render(d);
+    }).catch(function (e) {
+      document.getElementById('hdDesc').textContent = '加载失败: ' + e.message;
+      UI.toast('用户详情加载失败: ' + e.message, 'err');
+    });
+  }
+  document.getElementById('btnBack').onclick = function () { history.back(); };
+  load();
 })();
 </script>
 <script src="menu.js"></script>

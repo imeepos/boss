@@ -26,65 +26,130 @@
       <div class="toolbar">
         <input class="input" style="width:220px" id="kw" placeholder="订单号/回调 ID">
         <select class="input" style="width:140px" id="st"><option value="">全部状态</option><option value="SUCCESS">成功</option><option value="FAILED">失败</option><option value="RETRYING">重试中</option></select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
         <span class="spacer"></span>
-        <button class="btn btn-primary" id="btn-retry">重试失败项</button>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn" id="btn-retry-all">重试全部失败</button>
+        <button class="btn btn-primary" id="btn-export">导出日志</button>
       </div>
       <div class="card">
+        <div class="card-title">回调日志</div>
         <table class="tbl">
           <thead><tr><th>回调 ID</th><th>订单号</th><th>来源</th><th>结果</th><th>重试次数</th><th>时间</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
+// 激活回调:筛选/分页/详情弹框/失败项重试真调用(契约: GET /activation-callbacks, POST /activation-callbacks/{id}/retry)
 (function () {
   var ST_TAG = { SUCCESS: 'tag-green', FAILED: 'tag-red', RETRYING: 'tag-orange' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function tag(cls, text) { return '<span class="tag ' + cls + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(c) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    var hay = String(c.callbackId) + String(c.orderNo);
+    return (!kw || hay.indexOf(kw) >= 0) && (!st || c.result === st);
   }
-  function tag(cls, text) { return '<span class="tag ' + cls + '">' + esc(text) + '</span>'; }
 
-  function load() {
-    API.order.callbacks(document.getElementById('kw').value.trim(), document.getElementById('st').value)
-      .then(function (r) {
-        var html = '';
-        for (var i = 0; i < r.items.length; i++) {
-          var c = r.items[i];
-          html += '<tr><td>' + esc(c.callbackId) + '</td><td>' + esc(c.orderNo) + '</td><td>' + esc(c.source)
-            + '</td><td>' + tag(ST_TAG[c.result] || 'tag-blue', c.resultLabel) + '</td><td>' + esc(c.retryCount)
-            + '</td><td>' + esc(c.time)
-            + '</td><td><a href="#" class="op" data-id="' + esc(c.callbackId) + '" data-retry="' + (c.result === 'FAILED' ? '1' : '') + '">' + esc(c.op) + '</a></td></tr>';
-        }
-        document.getElementById('rows').innerHTML = html || '<tr><td colspan="7">无数据</td></tr>';
-      })
-      .catch(function (e) { alert('回调日志加载失败: ' + e.message); });
+  function filtered() { return all.filter(matches); }
+
+  function render() {
+    var list = filtered();
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (c) {
+      var ops = '<a href="#" data-op="detail" data-id="' + UI.esc(c.callbackId) + '">详情</a>';
+      if (c.result === 'FAILED') ops += ' <a href="#" data-op="retry" data-id="' + UI.esc(c.callbackId) + '">重试</a>';
+      return '<tr><td>' + UI.esc(c.callbackId) + '</td><td>' + UI.esc(c.orderNo) + '</td><td>' + UI.esc(c.source)
+        + '</td><td>' + tag(ST_TAG[c.result] || 'tag-blue', c.resultLabel) + '</td><td>' + UI.esc(c.retryCount)
+        + '</td><td>' + UI.esc(c.time) + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(7, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findRow(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].callbackId) === String(id)) return all[i];
+    return null;
+  }
+
+  function showDetail(id) {
+    var c = findRow(id);
+    if (!c) return;
+    var rows = [
+      ['回调 ID', c.callbackId], ['订单号', c.orderNo], ['来源', c.source],
+      ['结果', c.resultLabel], ['重试次数', c.retryCount], ['时间', c.time],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '回调详情', body: rows, okText: '关闭' });
   }
 
   function retry(id) {
-    API.order.retryCallback(id)
-      .then(function (r) { alert('回调 ' + id + ' 重试: ' + r.message); load(); })
-      .catch(function (e) { alert('重试失败: ' + e.message); });
+    UI.confirm('确认对回调 ' + id + ' 发起重试?', function () {
+      API.order.retryCallback(id).then(function (r) {
+        UI.toast('回调 ' + id + ' 重试: ' + (r.message || 'ok'), 'ok');
+        load();
+      }).catch(function (e) { UI.toast('重试失败: ' + e.message, 'err'); });
+    });
+  }
+
+  function retryAllFailed() {
+    var failed = all.filter(function (c) { return c.result === 'FAILED'; });
+    if (!failed.length) { UI.toast('无失败项', 'err'); return; }
+    UI.confirm('共 ' + failed.length + ' 条失败回调,确认全部重试?', function () {
+      var ids = failed.map(function (c) { return c.callbackId; });
+      var chain = Promise.resolve();
+      ids.forEach(function (id) {
+        chain = chain.then(function () { return API.order.retryCallback(id); });
+      });
+      chain.then(function () { UI.toast('已重试 ' + ids.length + ' 条失败回调', 'ok'); load(); })
+        .catch(function (e) { UI.toast('批量重试失败: ' + e.message, 'err'); load(); });
+    });
   }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A') return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    if (a.getAttribute('data-retry')) retry(a.getAttribute('data-id'));
-    else alert('回调 ' + a.getAttribute('data-id') + ' 详情: 演示操作');
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') showDetail(id);
+    else if (op === 'retry') retry(id);
   });
 
-  document.getElementById('btn-retry').onclick = function () {
-    var first = document.querySelector('#rows a[data-retry="1"]');
-    if (first) retry(first.getAttribute('data-id'));
-    else alert('无失败项');
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(7, '加载中...');
+    API.order.callbacks('', '').then(function (r) {
+      all = r.items || []; state.page = 1; render();
+    }).catch(function (e) { UI.toast('回调日志加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = ''; document.getElementById('st').value = '';
+    state.page = 1; render();
   };
-  document.getElementById('kw').addEventListener('input', load);
-  document.getElementById('st').addEventListener('change', load);
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-retry-all').onclick = retryAllFailed;
+  document.getElementById('btn-export').onclick = function () {
+    UI.toast('已导出当前筛选结果 ' + filtered().length + ' 条(演示)', 'ok');
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
 
   load();
 })();

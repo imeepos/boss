@@ -21,58 +21,136 @@
       <div class="page-head"><h2>欠费停复机</h2><div class="desc">欠费停机 / 缴费复机 · 状态同步网络侧</div></div>
 
       <div class="grid g-3" style="margin-bottom:16px;">
-        <div class="stat"><div class="label">欠费用户</div><div class="val" id="stArrears"></div></div>
-        <div class="stat"><div class="label">已停机</div><div class="val" id="stStopped"></div></div>
-        <div class="stat"><div class="label">待停机</div><div class="val" id="stPending"></div></div>
+        <div class="stat"><div class="label">欠费用户</div><div class="val" id="stArrears">—</div></div>
+        <div class="stat"><div class="label">已停机</div><div class="val" id="stStopped">—</div></div>
+        <div class="stat"><div class="label">待停机</div><div class="val" id="stPending">—</div></div>
       </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" id="kw" placeholder="客户名称">
+        <select class="input" style="width:140px" id="st">
+          <option value="">全部状态</option><option>已停机</option><option>已复机</option><option>正常</option>
+        </select>
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-batch-stop">批量停机</button>
+      </div>
+
       <div class="card">
+        <div class="card-title">欠费客户 <span class="extra" id="row-hint"></span></div>
         <table class="tbl">
           <thead><tr><th>客户</th><th>欠费金额</th><th>欠费天数</th><th>状态</th><th>网络侧</th><th>操作</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-// 欠费停复机数据渲染(契约: GET /arrears, POST /arrears/{customerId}/stop|resume)
+// 欠费停复机:筛选/分页/详情/停复机真调用(契约: GET /arrears, POST /arrears/{customerId}/stop|resume)
 (function () {
   var STATUS_TAG = { '已停机': 'tag-red', '已复机': 'tag-green', '正常': 'tag-blue' };
-  var NET_TAG = { '已停服': 'tag-gray' };
+  var NET_TAG = { '已停服': 'tag-gray', '在线': 'tag-green' };
+  var all = [];
+  var state = { page: 1, pageSize: 10 };
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  function tag(cls, v) { return '<span class="tag ' + cls + '">' + UI.esc(v) + '</span>'; }
+
+  function matches(r) {
+    var kw = document.getElementById('kw').value.trim();
+    var st = document.getElementById('st').value;
+    return (!kw || String(r.customerName).indexOf(kw) >= 0) && (!st || r.status === st);
+  }
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('row-hint').textContent = '';
+    document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
+      var ops = '<a href="#" data-op="detail" data-id="' + UI.esc(r.customerId) + '">详情</a> ';
+      ops += r.status === '已停机'
+        ? '<a href="#" data-op="resume" data-id="' + UI.esc(r.customerId) + '">复机</a>'
+        : '<a href="#" data-op="stop" data-id="' + UI.esc(r.customerId) + '">停机</a>';
+      return '<tr><td>' + UI.esc(r.customerName) + '</td><td>' + UI.esc(r.arrearsAmount) + '</td><td>' + UI.esc(r.arrearsDays)
+        + '</td><td>' + tag(STATUS_TAG[r.status] || 'tag-gray', r.status)
+        + '</td><td>' + tag(NET_TAG[r.netStatus] || 'tag-gray', r.netStatus)
+        + '</td><td>' + ops + '</td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
     });
   }
-  function tag(cls, v) { return '<span class="tag ' + cls + '">' + esc(v) + '</span>'; }
-  function fail(e) { alert('加载失败: ' + e.message); }
 
-  API.billing.arrears().then(function (d) {
-    document.getElementById('stArrears').textContent = d.stats.arrearsCount;
-    document.getElementById('stStopped').textContent = d.stats.stoppedCount;
-    document.getElementById('stPending').textContent = d.stats.pendingCount;
-    document.getElementById('rows').innerHTML = d.items.map(function (r) {
-      var op = r.status === '已停机'
-        ? '<a href="#" data-act="resume" data-id="' + r.customerId + '">复机</a>'
-        : '<a href="#" data-act="stop" data-id="' + r.customerId + '">停机</a>';
-      return '<tr><td>' + esc(r.customerName) + '</td><td>' + esc(r.arrearsAmount) + '</td><td>' + esc(r.arrearsDays)
-        + '</td><td>' + tag(STATUS_TAG[r.status] || '', r.status)
-        + '</td><td>' + tag(NET_TAG[r.netStatus] || '', r.netStatus)
-        + '</td><td>' + op + '</td></tr>';
+  function showDetail(id) {
+    var r = null;
+    for (var i = 0; i < all.length; i++) if (String(all[i].customerId) === String(id)) r = all[i];
+    if (!r) return;
+    var rows = [
+      ['客户', r.customerName], ['欠费金额', r.arrearsAmount], ['欠费天数', r.arrearsDays],
+      ['状态', r.status], ['网络侧', r.netStatus],
+    ].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
     }).join('');
-  }).catch(fail);
+    UI.modal({ title: '欠费详情', body: rows, okText: '关闭' });
+  }
+
+  function stopResume(id, act) {
+    var label = act === 'stop' ? '停机' : '复机';
+    UI.confirm('确认对客户 #' + id + ' 执行' + label + '?', function () {
+      var call = act === 'stop' ? API.billing.stop(id) : API.billing.resume(id);
+      call.then(function (r) {
+        UI.toast(label + '已提交: ' + (r.message || 'success'), 'ok');
+        load();
+      }).catch(function (e) { UI.toast(label + '失败: ' + e.message, 'err'); });
+    });
+  }
 
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
-    if (a.tagName !== 'A' || !a.getAttribute('data-act')) return;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
     ev.preventDefault();
-    var id = a.getAttribute('data-id');
-    var call = a.getAttribute('data-act') === 'stop' ? API.billing.stop(id) : API.billing.resume(id);
-    call.then(function (r) { alert('操作成功: ' + r.message); }).catch(fail);
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') showDetail(id);
+    else stopResume(id, op);
   });
+
+  function load() {
+    document.getElementById('rows').innerHTML = UI.tbodyState(6, '加载中...');
+    API.billing.arrears().then(function (d) {
+      all = d.items || [];
+      document.getElementById('stArrears').textContent = d.stats.arrearsCount;
+      document.getElementById('stStopped').textContent = d.stats.stoppedCount;
+      document.getElementById('stPending').textContent = d.stats.pendingCount;
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('st').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-batch-stop').onclick = function () {
+    UI.confirm('确认对全部待停机客户批量执行停机?', function () {
+      UI.toast('批量停机已提交(演示)', 'ok');
+    });
+  };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('st').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>

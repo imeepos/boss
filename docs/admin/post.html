@@ -24,18 +24,23 @@
       </div>
 
       <div class="toolbar">
-        <button class="btn btn-primary">+ 新建岗位</button>
-        <select class="input" style="width:180px">
-          <option>全部部门</option><option>装维调度部</option><option>客服部</option>
-          <option>财务部</option><option>网络运维部</option><option>市场经营部</option>
+        <input class="input" style="width:200px" id="kw" placeholder="搜索岗位代码/名称">
+        <select class="input" style="width:180px" id="dept">
+          <option value="">全部部门</option>
         </select>
-        <input class="input" style="width:180px" placeholder="搜索岗位代码/名称">
+        <button class="btn btn-primary" id="btn-search">查询</button>
+        <button class="btn" id="btn-reset">重置</button>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-refresh">刷新</button>
+        <button class="btn btn-primary" id="btn-new">+ 新建岗位</button>
       </div>
       <div class="card">
+        <div class="card-title">岗位列表</div>
         <table class="tbl">
           <thead><tr><th>岗位代码</th><th>岗位</th><th>所属部门</th><th>绑定角色（功能权限）</th><th>数据范围</th><th>操作</th></tr></thead>
           <tbody id="postBody"></tbody>
         </table>
+        <div class="pagination" id="pager"></div>
       </div>
 
       <div class="card">
@@ -51,52 +56,114 @@
     </div>
   </div>
 </div>
+<script src="jquery.min.js"></script>
 <script src="api.js"></script>
+<script src="common.js"></script>
 <script>
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
-}
-function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text) + '</span>'; }
-function postRowHtml(p) {
-  return '<tr>' +
-    '<td>' + esc(p.code) + '</td>' +
-    '<td>' + esc(p.name) + '</td>' +
-    '<td>' + esc(p.deptName) + '</td>' +
-    '<td>' + tag(p.roleTag, p.roleCode) + '</td>' +
-    '<td>' + esc(p.scopeName) + '</td>' +
-    '<td><a href="#">编辑</a></td>' +
-  '</tr>';
-}
-function reuseRowHtml(r) {
-  return '<tr><td>' + esc(r.post) + '</td><td>' + esc(r.roleCode) + '</td><td>' + esc(r.domainA) + '</td><td>' + esc(r.domainB) + '</td></tr>';
-}
-function render(items, reuses) {
-  document.getElementById('postBody').innerHTML = items.map(postRowHtml).join('');
-  document.getElementById('reuseBody').innerHTML = (reuses || []).map(reuseRowHtml).join('');
-}
-var allPosts = [], allReuses = [];
-API.org.posts().then(function (r) {
-  allPosts = r.items;
-  allReuses = r.reuses || [];
-  render(allPosts, allReuses);
-}).catch(function (err) { alert('加载失败：' + err.message); });
-// toolbar 前端过滤:部门下拉 + 岗位代码/名称关键字
-(function bindToolbar() {
-  var sel = document.querySelector('.toolbar select');
-  var kw = document.querySelector('.toolbar input[placeholder="搜索岗位代码/名称"]');
-  function onch() {
-    var items = allPosts.filter(function (p) {
-      var okDept = !sel || sel.selectedIndex <= 0 || p.deptName === sel.value;
-      var k = kw ? kw.value.trim() : '';
-      var okKw = !k || p.code.indexOf(k) >= 0 || p.name.indexOf(k) >= 0;
-      return okDept && okKw;
-    });
-    render(items, allReuses);
+// 岗位管理: 筛选/分页/详情/新建编辑表单(契约: GET /posts)
+(function () {
+  var all = [], reuses = [];
+  var state = { page: 1, pageSize: 10 };
+
+  function tag(cls, text) { return '<span class="tag ' + UI.esc(cls) + '">' + UI.esc(text) + '</span>'; }
+
+  function matches(p) {
+    var kw = document.getElementById('kw').value.trim();
+    var dept = document.getElementById('dept').value;
+    var hitKw = !kw || String(p.code).indexOf(kw) >= 0 || String(p.name).indexOf(kw) >= 0;
+    return hitKw && (!dept || p.deptName === dept);
   }
-  if (sel) sel.onchange = onch;
-  if (kw) kw.oninput = onch;
+
+  function render() {
+    var list = all.filter(matches);
+    var start = (state.page - 1) * state.pageSize;
+    var slice = list.slice(start, start + state.pageSize);
+    document.getElementById('postBody').innerHTML = slice.length ? slice.map(function (p) {
+      return '<tr><td>' + UI.esc(p.code) + '</td><td>' + UI.esc(p.name) + '</td><td>' + UI.esc(p.deptName)
+        + '</td><td>' + tag(p.roleTag, p.roleCode) + '</td><td>' + UI.esc(p.scopeName)
+        + '</td><td><a href="#" data-op="detail" data-id="' + p.postId + '">详情</a>'
+        + ' <a href="#" data-op="edit" data-id="' + p.postId + '">编辑</a></td></tr>';
+    }).join('') : UI.tbodyState(6, '无匹配数据');
+    UI.paginate(document.getElementById('pager'), {
+      total: list.length, page: state.page, pageSize: state.pageSize,
+      onChange: function (p, ps) { state.page = p; state.pageSize = ps; render(); }
+    });
+  }
+
+  function findRow(id) {
+    for (var i = 0; i < all.length; i++) if (String(all[i].postId) === String(id)) return all[i];
+    return null;
+  }
+
+  function detail(id) {
+    var p = findRow(id);
+    if (!p) return;
+    var rows = [['岗位代码', p.code], ['岗位', p.name], ['所属部门', p.deptName],
+      ['绑定角色', p.roleCode], ['数据范围', p.scopeName]].map(function (x) {
+      return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
+    }).join('');
+    UI.modal({ title: '岗位详情', body: rows, okText: '关闭' });
+  }
+
+  function save(p) {
+    var fields = [
+      { key: 'code', label: '岗位代码', required: true, value: p ? p.code : '', placeholder: '如 agent' },
+      { key: 'name', label: '岗位名称', required: true, value: p ? p.name : '' },
+      { key: 'deptName', label: '所属部门', required: true, value: p ? p.deptName : '' },
+      { key: 'roleCode', label: '绑定角色', value: p ? p.roleCode : '', placeholder: '如 ops/technician/analyst' },
+      { key: 'scopeName', label: '数据范围', value: p ? p.scopeName : '' },
+    ];
+    UI.modal({
+      title: p ? '编辑岗位' : '新建岗位', body: UI.formFields(fields), okText: '保存',
+      onOk: function (root, close) {
+        var v = UI.readForm(root, fields);
+        if (!v) return false;
+        close();
+        UI.toast((p ? '已保存岗位 ' : '已新建岗位 ') + v.name + '(演示)', 'ok');
+      }
+    });
+  }
+
+  document.getElementById('postBody').addEventListener('click', function (ev) {
+    var a = ev.target;
+    if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
+    ev.preventDefault();
+    var op = a.getAttribute('data-op'), id = a.getAttribute('data-id');
+    if (op === 'detail') detail(id);
+    else if (op === 'edit') save(findRow(id));
+  });
+
+  function load() {
+    document.getElementById('postBody').innerHTML = UI.tbodyState(6, '加载中...');
+    API.org.posts().then(function (r) {
+      all = r.items || [];
+      reuses = r.reuses || [];
+      var sel = document.getElementById('dept');
+      var depts = [];
+      all.forEach(function (p) { if (depts.indexOf(p.deptName) < 0) depts.push(p.deptName); });
+      sel.innerHTML = '<option value="">全部部门</option>' + depts.map(function (n) {
+        return '<option>' + UI.esc(n) + '</option>';
+      }).join('');
+      document.getElementById('reuseBody').innerHTML = reuses.length ? reuses.map(function (x) {
+        return '<tr><td>' + UI.esc(x.post) + '</td><td>' + UI.esc(x.roleCode) + '</td><td>' + UI.esc(x.domainA) + '</td><td>' + UI.esc(x.domainB) + '</td></tr>';
+      }).join('') : UI.tbodyState(4, '无匹配数据');
+      state.page = 1;
+      render();
+    }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
+  }
+
+  document.getElementById('btn-search').onclick = function () { state.page = 1; render(); };
+  document.getElementById('btn-reset').onclick = function () {
+    document.getElementById('kw').value = '';
+    document.getElementById('dept').value = '';
+    state.page = 1; render();
+  };
+  document.getElementById('btn-refresh').onclick = load;
+  document.getElementById('btn-new').onclick = function () { save(null); };
+  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; render(); }, 300));
+  document.getElementById('dept').addEventListener('change', function () { state.page = 1; render(); });
+
+  load();
 })();
 </script>
 <script src="menu.js"></script>
