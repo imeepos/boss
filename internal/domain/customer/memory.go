@@ -8,8 +8,8 @@ import (
 // MemoryService 阶段2骨架参考实现:进程内 map,仅供单测与协议链路验证。
 // 阶段2落地替换为 DB(repo)。Create 按递增 id 分配,并发安全。
 type MemoryService struct {
-	mu sync.RWMutex
-	m  map[int64]Customer
+	mu  sync.RWMutex
+	m   map[int64]Customer
 	seq int64
 }
 

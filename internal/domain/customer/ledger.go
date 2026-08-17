@@ -16,20 +16,20 @@ type CustomerHistory struct {
 	RegionID          int64
 	RegionName        string
 	Reason            string
-	OperatorAccountID int64       // 0=空
+	OperatorAccountID int64 // 0=空
 	EffectiveFrom     time.Time
-	EffectiveTo       *time.Time  // nil=至今
+	EffectiveTo       *time.Time // nil=至今
 }
 
 // ProductPriceHistory 产品调价台账(基础月费每次调整)。
 type ProductPriceHistory struct {
-	ID                int64
-	OfferID           int64
-	OldMonthlyFee     float64
-	NewMonthlyFee     float64
-	EffectiveAt       time.Time
-	Reason            string
-	OperatorAccountID int64 // 0=空
+	ID                int64     `json:"id"`
+	OfferID           int64     `json:"offerId"`
+	OldMonthlyFee     float64   `json:"oldMonthlyFee"`
+	NewMonthlyFee     float64   `json:"newMonthlyFee"`
+	EffectiveAt       time.Time `json:"effectiveAt"`
+	Reason            string    `json:"reason"`
+	OperatorAccountID int64     `json:"operatorAccountId"` // 0=空
 }
 
 // RegionPriceHistory 区域调价台账(区域月费每次调整)。

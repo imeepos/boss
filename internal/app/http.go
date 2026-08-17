@@ -79,4 +79,5 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerOrgRoutes(authed, a)
 	registerOrderRoutes(authed, a)
 	registerBillingRoutes(authed, a)
+	registerCustomerRoutes(authed, a)
 }

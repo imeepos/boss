@@ -36,9 +36,9 @@ func TestMemoryServiceList(t *testing.T) {
 	_, _ = s.Create(context.Background(), Customer{Name: "吴女士", ServiceStatus: "ARREARS"})
 
 	tests := []struct {
-		name   string
-		q      CustomerQuery
-		wantN  int
+		name  string
+		q     CustomerQuery
+		wantN int
 	}{
 		{"全部", CustomerQuery{}, 2},
 		{"按关键字", CustomerQuery{NameKeyword: "王"}, 1},
