@@ -7,26 +7,26 @@ import (
 
 // ResourceAssignment 设备归属台账(每次归属公司/区域/地址的时间段)。
 type ResourceAssignment struct {
-	ID                int64
-	ResourceID        int64
-	LegalEntityID     int64
-	LegalEntityName   string
-	AddressID         int64 // 0=空
-	AddressName       string
-	RegionID          int64 // 0=空
-	RegionName        string
-	Reason            string
-	OperatorAccountID int64 // 0=空
-	EffectiveFrom     time.Time
-	EffectiveTo       *time.Time // nil=至今
+	ID                int64      `json:"id"`
+	ResourceID        int64      `json:"resourceId"`
+	LegalEntityID     int64      `json:"legalEntityId"`
+	LegalEntityName   string     `json:"legalEntityName"`
+	AddressID         int64      `json:"addressId"` // 0=空
+	AddressName       string     `json:"addressName"`
+	RegionID          int64      `json:"regionId"` // 0=空
+	RegionName        string     `json:"regionName"`
+	Reason            string     `json:"reason"`
+	OperatorAccountID int64      `json:"operatorAccountId"` // 0=空
+	EffectiveFrom     time.Time  `json:"effectiveFrom"`
+	EffectiveTo       *time.Time `json:"effectiveTo,omitempty"` // nil=至今
 }
 
 // QosTemplate QoS 模板(挂公司,LO 账号生效载体)。
 type QosTemplate struct {
-	ID            int64
-	LegalEntityID int64
-	Code          string // QoS-VIP
-	Name          string // VIP
+	ID            int64  `json:"id"`
+	LegalEntityID int64  `json:"legalEntityId"`
+	Code          string `json:"code"` // QoS-VIP
+	Name          string `json:"name"` // VIP
 }
 
 // ResourceAssignService 网络资源归属台账域服务口(阶段4)。

@@ -7,41 +7,41 @@ import (
 
 // Transfer 资源调拨单(设备跨区域调拨)。
 type Transfer struct {
-	ID              int64
-	TransferNo      string
-	ResourceID      int64
-	LegalEntityID   int64
-	LegalEntityName string
-	FromRegionID    int64
-	ToRegionID      int64
-	Status          string // PENDING/DOING/DONE
+	ID              int64  `json:"id"`
+	TransferNo      string `json:"transferNo"`
+	ResourceID      int64  `json:"resourceId"`
+	LegalEntityID   int64  `json:"legalEntityId"`
+	LegalEntityName string `json:"legalEntityName"`
+	FromRegionID    int64  `json:"fromRegionId"`
+	ToRegionID      int64  `json:"toRegionId"`
+	Status          string `json:"status"` // PENDING/DOING/DONE
 }
 
 // Expansion 扩容单(公司对目标区域的端口扩容需求)。
 type Expansion struct {
-	ID            int64
-	LegalEntityID int64
-	ExpansionNo   string
-	RegionID      int64
-	ExpectedPorts int32
-	Status        string // PENDING/DOING/DONE
+	ID            int64  `json:"id"`
+	LegalEntityID int64  `json:"legalEntityId"`
+	ExpansionNo   string `json:"expansionNo"`
+	RegionID      int64  `json:"regionId"`
+	ExpectedPorts int32  `json:"expectedPorts"`
+	Status        string `json:"status"` // PENDING/DOING/DONE
 }
 
 // ReserveRecord 端口预占记录(预占/释放流水)。
 type ReserveRecord struct {
-	ID      int64
-	PortID  int64
-	OrderID int64
-	Status  string // HELD/RELEASED/CONSUMED
+	ID      int64  `json:"id"`
+	PortID  int64  `json:"portId"`
+	OrderID int64  `json:"orderId"`
+	Status  string `json:"status"` // HELD/RELEASED/CONSUMED
 }
 
 // PortChangeHistory 端口状态变更历史。
 type PortChangeHistory struct {
-	ID        int64
-	PortID    int64
-	Status    string // IDLE/RESERVED/USED/DISABLED
-	OrderID   int64  // 0=空
-	ChangedAt time.Time
+	ID        int64     `json:"id"`
+	PortID    int64     `json:"portId"`
+	Status    string    `json:"status"`  // IDLE/RESERVED/USED/DISABLED
+	OrderID   int64     `json:"orderId"` // 0=空
+	ChangedAt time.Time `json:"changedAt"`
 }
 
 // ResourceSubService 网络资源子表域服务口(阶段4)。
