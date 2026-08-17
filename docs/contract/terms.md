@@ -58,6 +58,8 @@
 | 缴费 method | wechat / alipay / card / cash | 微信 / 支付宝 / 银行卡 / 现金 |
 | 告警 alarm.level | CRITICAL / WARNING / INFO | 严重 / 警告 / 提示 |
 | 告警 alarm.status | OPEN / ACKED / CLOSED | 待处理 / 已确认 / 已关闭 |
+| 话单 cdr.billing_status | UNBILLED / BILLED | 未入账 / 已入账 |
+| 认证日志 auth_log.result | SUCCESS / FAILED | 成功 / 失败 |
 
 ## 5. 关键术语
 

@@ -42,3 +42,6 @@ export type PaymentMethod = 'wechat' | 'alipay' | 'card' | 'cash';
 
 export type AlarmLevel = 'CRITICAL' | 'WARNING' | 'INFO';
 export type AlarmStatus = 'OPEN' | 'ACKED' | 'CLOSED';
+
+export type CdrBillingStatus = 'UNBILLED' | 'BILLED';
+export type AuthResult = 'SUCCESS' | 'FAILED';
