@@ -5,7 +5,17 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ymm-001/boss/internal/domain/aaa"
+	"github.com/ymm-001/boss/internal/domain/asset"
+	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/domain/device"
+	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/provision"
+	"github.com/ymm-001/boss/internal/domain/quadlink"
+	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
 )
@@ -13,16 +23,59 @@ import (
 // Application 持有各域服务的装配结果,是模块化单体依赖绑定的唯一入口。
 //
 // 依赖倒置(见 docs/ADR-001):域之间只经接口依赖;本层把「接口 → 实现」绑定。
-// 增量装配(见 docs/architecture-review.md 发现 3.4):每个阶段只构造已实现的域服务,未实现域字段保持零值。
+// 增量装配(见 docs/architecture-review.md 发现 3.4):每个阶段只构造已实现的域服务。
 type Application struct {
 	User user.Service
-	// 后续域随阶段实现并注入(阶段 2-9)。
+
+	Customer       customer.CustomerService
+	Product        customer.ProductService
+	CustomerLedger customer.CustomerLedgerService
+	RealName       customer.RealNameService
+
+	Billing billing.BillingService
+	Arrears billing.ArrearsService
+
+	Resource       resource.ResourceService
+	ResourceSub    resource.ResourceSubService
+	ResourceAssign resource.ResourceAssignService
+
+	Order       order.OrderService
+	WorkOrder   order.WorkOrderService
+	OrderLedger order.OrderLedgerService
+	Channel     order.ChannelService
+
+	Device device.DeviceService
+	Alarm  device.AlarmService
+
+	Aaa       aaa.AaaService
+	Provision provision.ProvisionService
+	QuadLink  quadlink.QuadLinkService
+	Asset     asset.AssetService
+
+	Worker       worker.WorkerService
+	WorkerLedger worker.WorkerLedgerService
+	WorkerFact   worker.WorkerFactService
+	WorkerEvent  worker.WorkerEventService
 }
 
 // ErrNotImplemented 域尚未接入装配时返回,便于调用方降级/提示。
 var ErrNotImplemented = errors.New("app: domain service not wired yet")
 
-// New 装配依赖:打开 PG → 应用迁移 → 构造 user 域 PGStore。
+// customerLookup 把 customer.CustomerService.Get 适配为 order.CustomerLookup.Exists。
+type customerLookup struct{ svc customer.CustomerService }
+
+func (c customerLookup) Exists(ctx context.Context, id int64) (bool, error) {
+	_, err := c.svc.Get(ctx, id)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, customer.ErrCustomerNotFound) {
+		return false, nil
+	}
+	return false, err
+}
+
+// New 装配依赖:打开 PG → 应用迁移 → 构造各域 PGStore。
 // migrationsDir 为 migrations/*.up.sql 所在目录(通常相对工作目录为 "migrations")。
 func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Application, error) {
 	pool, err := database.Open(ctx, cfg.Database.DSN)
@@ -33,7 +86,45 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		pool.Close()
 		return nil, fmt.Errorf("app: migrate: %w", err)
 	}
+
+	cust := customer.NewPGStore(pool)
+	bill := billing.NewPGStore(pool)
+	res := resource.NewPGStore(pool)
+	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res)
+	dev := device.NewPGStore(pool)
+	wrk := worker.NewPGStore(pool)
+
 	return &Application{
 		User: user.NewPGStoreWithSecret(pool, []byte(cfg.JWT.Secret)),
+
+		Customer:       cust,
+		Product:        cust,
+		CustomerLedger: cust,
+		RealName:       cust,
+
+		Billing: bill,
+		Arrears: bill,
+
+		Resource:       res,
+		ResourceSub:    res,
+		ResourceAssign: res,
+
+		Order:       ord,
+		WorkOrder:   ord,
+		OrderLedger: ord,
+		Channel:     ord,
+
+		Device: dev,
+		Alarm:  dev,
+
+		Aaa:       aaa.NewPGStore(pool),
+		Provision: provision.NewPGStore(pool),
+		QuadLink:  quadlink.NewPGStore(pool),
+		Asset:     asset.NewPGStore(pool),
+
+		Worker:       wrk,
+		WorkerLedger: wrk,
+		WorkerFact:   wrk,
+		WorkerEvent:  wrk,
 	}, nil
 }

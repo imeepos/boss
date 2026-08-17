@@ -39,4 +39,6 @@ type ResourceService interface {
 	CreatePort(ctx context.Context, p Port) (int64, error)
 	// ReservePort 端口预占:仅 IDLE 可预占为 RESERVED,并挂订单;失败返回 ErrPortNotAvailable。
 	ReservePort(ctx context.Context, portID, orderID int64) error
+	// Check 资源核查(环节2):目标地址是否有空闲端口;options 为空闲端口码列表。
+	Check(ctx context.Context, addressID int64) (available bool, options []string, err error)
 }
