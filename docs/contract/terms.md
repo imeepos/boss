@@ -52,7 +52,8 @@
 | 标签 tag.status | UNBOUND / BOUND / DISABLED | 电子标签 |
 | 报障 complaint.status | OPEN / PROCESSING / CLOSED | 受理中 / 处理中 / 已关闭 |
 | 扫码 scan_log.result | MATCH / MISMATCH / OFFLINE_CACHED | 一致 / 不一致 / 离线缓存 |
-| 激活回调 result | PENDING / SUCCESS / FAILED | 待触发 / 成功 / 失败 |
+| 激活回调 result | SUCCESS / FAILED | 成功 / 失败（RETRYING 重试中为展示态，由 FAILED+重试派生） |
+| 激活(环节10) status | PENDING / SUCCESS / FAILED | 待激活 / 成功 / 失败（师傅端视图，非回调结果） |
 | 消息 level | INFO / WARN / URGENT | 信息 / 警告 / 紧急 |
 | 缴费 method | wechat / alipay / card / cash | 微信 / 支付宝 / 银行卡 / 现金 |
 

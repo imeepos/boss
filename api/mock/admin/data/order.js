@@ -25,12 +25,12 @@ const orders = db.orders
     };
   });
 
-// 时间轴: db.timelineOf 映射为 admin 列(shape: stageNo/stageName/finishedAt/duration/retryCount/result)
+// 时间轴: db.timelineOf 映射为 admin 列(shape: stage/name/finishedAt/duration/retries/result)
 function buildTimeline(orderNo) {
   const o = db.byOrder(orderNo) || db.orders[0];
   return db.timelineOf(o).map((s) => ({
-    stageNo: s.stage, stageName: s.name, finishedAt: s.finishedAt || '—',
-    duration: s.duration || '—', retryCount: s.stage === 9 ? o.scanRetries : 0,
+    stage: s.stage, name: s.name, finishedAt: s.finishedAt || '—',
+    duration: s.duration || '—', retries: s.stage === 9 ? o.scanRetries : 0,
     result: s.result,
   }));
 }
@@ -88,9 +88,9 @@ const complaints = db.repairTickets
 
 // 激活回调: 仅 stage≥11 的订单才应有回调记录(ORD-20250817-000 历史失败已重试成功)
 const callbacks = [
-  { callbackId: 'CB-8841', orderNo: 'ORD-20250817-000', source: 'aaa', result: 'FAILED', resultLabel: '失败', retryCount: 1, time: '10:32', op: '重试' },
-  { callbackId: 'CB-8842', orderNo: 'ORD-20250816-018', source: 'order', result: 'FAILED', resultLabel: '失败', retryCount: 2, time: '09:12', op: '重试' },
-  { callbackId: 'CB-8843', orderNo: 'ORD-20250816-021', source: 'aaa', result: 'RETRYING', resultLabel: '重试中', retryCount: 1, time: '08:50', op: '详情' },
+  { callbackId: 'CB-8841', orderNo: 'ORD-20250817-000', source: 'aaa', result: 'FAILED', resultLabel: '失败', retries: 1, time: '10:32', op: '重试' },
+  { callbackId: 'CB-8842', orderNo: 'ORD-20250816-018', source: 'order', result: 'FAILED', resultLabel: '失败', retries: 2, time: '09:12', op: '重试' },
+  { callbackId: 'CB-8843', orderNo: 'ORD-20250816-021', source: 'aaa', result: 'RETRYING', resultLabel: '重试中', retries: 1, time: '08:50', op: '详情' },
 ];
 
 module.exports = {

@@ -109,9 +109,11 @@
 
 - 环节结果 `WAIT → PENDING`（admin order.yaml + mock 视图 + order.html）。
 - 订单状态补 `CANCELLED`（terms.md §3 + enums.ts OrderStatus）。
-- 报障补 `PROCESSING`、扫码补 `OFFLINE_CACHED`、激活回调补 `PENDING`（enums.ts 新增 `ComplaintStatus`/`ScanResult`/`ActivationResult` + 实体回写）。
+- 报障补 `PROCESSING`、扫码补 `OFFLINE_CACHED`（enums.ts 新增 `ComplaintStatus`/`ScanResult` + 实体回写）。
+- 激活回调 `ActivationResult = SUCCESS/FAILED`（`RETRYING` 重试中为展示态）；激活(环节10) `PENDING/SUCCESS/FAILED` 为师傅端视图，二者已区分。
 - 消息级别统一 `INFO/WARN/URGENT`（openapi 2 处 + mock worker/entities + messages.html + style.css）。
 - 缴费方式统一 `wechat/alipay/card/cash`（openapi user/billing + `PaymentMethod` 枚举 + 实体）。
+- 环节时间轴字段名 `stageNo/stageName/retryCount → stage/name/retries`（openapi + mock 视图 + order.html + callback.html）。
 
 ### 7.3 保留（派生态，非冲突）
 
@@ -123,8 +125,6 @@
 
 | 概念 | openapi | 实体 |
 |------|---------|------|
-| 环节号/环节名 | `stageNo`/`stageName` | `stage`/`name` |
-| 环节重试 | `retryCount` | `retries` |
 | 产品 | `productId`/`products` | `offerId`/`product_offers` |
 | 认证账号 | `loid`/`lo-accounts` | `lo_accounts` |
 | 报障工单 | `repairTickets` | `complaints` |

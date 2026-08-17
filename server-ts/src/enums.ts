@@ -36,6 +36,6 @@ export type TaskStatus = 'PENDING' | 'DOING' | 'DONE' | 'FAILED';
 
 export type ComplaintStatus = 'OPEN' | 'PROCESSING' | 'CLOSED';
 export type ScanResult = 'MATCH' | 'MISMATCH' | 'OFFLINE_CACHED';
-export type ActivationResult = 'PENDING' | 'SUCCESS' | 'FAILED';
+export type ActivationResult = 'SUCCESS' | 'FAILED';
 export type MessageLevel = 'INFO' | 'WARN' | 'URGENT';
 export type PaymentMethod = 'wechat' | 'alipay' | 'card' | 'cash';

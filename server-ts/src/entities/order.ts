@@ -231,7 +231,7 @@ export class ActivationCallback {
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 
-  @Column({ type: 'varchar', length: 16, comment: '回调结果:PENDING待触发/SUCCESS成功/FAILED失败' })
+  @Column({ type: 'varchar', length: 16, comment: '回调结果:SUCCESS成功/FAILED失败(RETRYING重试中为展示态,由FAILED+重试派生)' })
   result!: ActivationResult;
 
   @Column({ type: 'smallint', default: 0, comment: '重试次数' })

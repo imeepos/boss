@@ -94,8 +94,8 @@
   function renderTimeline(tl) {
     document.getElementById('timeline-rows').innerHTML = (tl || []).map(function (t) {
       var meta = RESULT_TAG[t.result] || RESULT_TAG.WAIT;
-      return '<tr><td>' + UI.esc(t.stageNo + ' ' + t.stageName) + '</td><td>' + UI.esc(t.finishedAt) + '</td><td>' + UI.esc(t.duration)
-        + '</td><td>' + UI.esc(t.retryCount) + '</td><td>' + tag(meta[0], meta[1]) + '</td></tr>';
+      return '<tr><td>' + UI.esc(t.stage + ' ' + t.name) + '</td><td>' + UI.esc(t.finishedAt) + '</td><td>' + UI.esc(t.duration)
+        + '</td><td>' + UI.esc(t.retries) + '</td><td>' + tag(meta[0], meta[1]) + '</td></tr>';
     }).join('') || UI.tbodyState(5, '暂无环节数据');
   }
 

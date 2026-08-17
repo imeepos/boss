@@ -58,11 +58,11 @@ paths:
                     items:
                       type: object
                       properties:
-                        stageNo: { type: integer }
-                        stageName: { type: string }
+                        stage: { type: integer }
+                        name: { type: string }
                         finishedAt: { type: string }
                         duration: { type: string }
-                        retryCount: { type: integer }
+                        retries: { type: integer }
                         result: { type: string, enum: [DONE, DOING, PENDING] }
 
   /dispatch/pool:

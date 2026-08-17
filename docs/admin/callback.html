@@ -73,7 +73,7 @@
       var ops = '<a href="#" data-op="detail" data-id="' + UI.esc(c.callbackId) + '">详情</a>';
       if (c.result === 'FAILED') ops += ' <a href="#" data-op="retry" data-id="' + UI.esc(c.callbackId) + '">重试</a>';
       return '<tr><td>' + UI.esc(c.callbackId) + '</td><td>' + UI.esc(c.orderNo) + '</td><td>' + UI.esc(c.source)
-        + '</td><td>' + tag(ST_TAG[c.result] || 'tag-blue', c.resultLabel) + '</td><td>' + UI.esc(c.retryCount)
+        + '</td><td>' + tag(ST_TAG[c.result] || 'tag-blue', c.resultLabel) + '</td><td>' + UI.esc(c.retries)
         + '</td><td>' + UI.esc(c.time) + '</td><td>' + ops + '</td></tr>';
     }).join('') : UI.tbodyState(7, '无匹配数据');
     UI.paginate(document.getElementById('pager'), {
@@ -92,7 +92,7 @@
     if (!c) return;
     var rows = [
       ['回调 ID', c.callbackId], ['订单号', c.orderNo], ['来源', c.source],
-      ['结果', c.resultLabel], ['重试次数', c.retryCount], ['时间', c.time],
+      ['结果', c.resultLabel], ['重试次数', c.retries], ['时间', c.time],
     ].map(function (x) {
       return '<div class="form-item"><label>' + UI.esc(x[0]) + '</label><div>' + UI.esc(x[1]) + '</div></div>';
     }).join('');
