@@ -4,7 +4,7 @@ import {
   OneToMany, OneToOne,
 } from 'typeorm';
 import type { OrderStatus, TicketStatus, StageResult, TaskStatus, ComplaintStatus, ScanResult, ActivationResult } from '../enums.js';
-import { Customer, ProductOffer } from './customer.js';
+import { Customer, ProductOffer, Channel } from './customer.js';
 import { Address } from './geo.js';
 import { WorkerGroup } from './org.js';
 import { Worker } from './worker.js';
@@ -31,6 +31,13 @@ export class Order {
 
   @Column({ type: 'varchar', length: 128, comment: '产品名称快照:产品改名/调价不改历史订单' })
   offerName!: string;
+
+  @ManyToOne(() => Channel, { nullable: false })
+  @JoinColumn({ name: 'channel_id' })
+  channel!: Channel;
+
+  @Column({ type: 'varchar', length: 64, comment: '渠道名快照:渠道改名不改历史订单(REQ-ORD-006 必填不可改)' })
+  channelName!: string;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, comment: '成交价快照:下单时生效价(区域价优先),账单金额以此为准' })
   priceSnapshot!: number;

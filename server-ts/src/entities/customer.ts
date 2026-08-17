@@ -262,3 +262,19 @@ export class RealNameVerification {
   @Column({ type: 'varchar', length: 64, nullable: true, comment: '操作人姓名快照:改名不改历史' })
   operatorName?: string | null;
 }
+
+@Entity('channels', { comment: 'L1渠道目录:下单来源(营业厅/线上/代理商),REQ-ORD-006 必填不可改' })
+@Index(['code'], { unique: true })
+export class Channel {
+  @PrimaryGeneratedColumn({ comment: '主键' })
+  id!: number;
+
+  @Column({ type: 'varchar', length: 32, unique: true, comment: '渠道编码,如HALL营业厅/ONLINE线上/AGENT代理商' })
+  code!: string;
+
+  @Column({ type: 'varchar', length: 64, comment: '渠道名称' })
+  name!: string;
+
+  @Column({ type: 'varchar', length: 16, default: 'ACTIVE', comment: '状态:ACTIVE启用/DISABLED停用' })
+  status!: string;
+}

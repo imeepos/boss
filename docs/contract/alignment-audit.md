@@ -56,7 +56,7 @@
 
 | 项 | 页面 | 归属域 | 说明 |
 |:---|:-----|:-------|:-----|
-| 渠道 `channels` | order/dispatch 下单渠道 | CH 渠道经销商 | REQ-ORD-006 必填；`ChannelID` 已保留占位 |
+| ~~渠道 `channels`~~ | order/dispatch 下单渠道 | CH 渠道经销商 | ✅ 已落地：`Channel` 实体 + `Order.channel` FK + fields.md + Go 注释 + mock channels 表 |
 | 告警 `alarms` | alarm.html | MON 网络监控告警 | 待建 |
 | 设备监控指标（光功率/丢包率） | device.html | MON | 设备身份复用 `resources`，监控指标待建 |
 | 话单 CDR | aaalog.html | AAA 认证计费 | Go `aaa/billing/cdr.go` 已有，TS 未建 |

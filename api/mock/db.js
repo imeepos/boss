@@ -60,6 +60,13 @@ const products = [
   { productId: 'P-BIZ-100', category: 'biz', name: '政企专线 100M', bandwidth: '100M', monthlyFee: 500, contractMonths: 12, description: '上下行对等 · SLA 保障', featured: false, status: 'DRAFT' },
 ];
 
+// —— 渠道目录(channels): 下单来源,REQ-ORD-006 必填不可改 ——
+const channels = [
+  { channelId: 'HALL', name: '营业厅', status: 'ACTIVE' },
+  { channelId: 'ONLINE', name: '线上渠道', status: 'ACTIVE' },
+  { channelId: 'AGENT', name: '代理商', status: 'ACTIVE' },
+];
+
 // —— 装维师傅(workers) ——
 const workers = [
   { workerId: 1024, name: '张师傅', phoneMasked: '138****8899', groupName: '装机一组', staffNo: 'WK-1024' },
@@ -227,7 +234,7 @@ const workerEntities = require('./worker/entities.js');
 const userEntities = require('./user/entities.js');
 
 module.exports = {
-  customers, products, workers, ports, assets, loids, orders, repairTickets, bills, payments,
+  customers, products, channels, workers, ports, assets, loids, orders, repairTickets, bills, payments,
   regions, addresses, regionOfAddr,
   STAGE_NAMES, STATUS_LABEL, statusOfStage,
   byCustomer, byProduct, byWorker, byOrder, portOf, quads, timelineOf,
@@ -243,7 +250,7 @@ module.exports = {
 
 // —— uuid 主键表挂载: 种子行原地补 uuid,数组引用不变,三端派生视图零改动 ——
 // CRUD 走 admin 路由 /api/admin/v1/crud/{table},主键一律 uuid;地区/地址同表同权管理。
-const TABLE_NAMES = ['customers', 'products', 'workers', 'ports', 'assets', 'loids', 'orders', 'repairTickets', 'bills', 'payments', 'regions', 'addresses',
+const TABLE_NAMES = ['customers', 'products', 'channels', 'workers', 'ports', 'assets', 'loids', 'orders', 'repairTickets', 'bills', 'payments', 'regions', 'addresses',
   'workerProfiles', 'workerCommissions', 'workerFeedbacks', 'workerMessages', 'workerNotices', 'workerFaqs',
   'workerMaterials', 'workerTools', 'assetReturns', 'deviceMaintenances', 'hallExtras', 'serviceMessages', 'workerSchedules',
   'userAccounts', 'userAddresses', 'userPlans', 'addonCatalog', 'addonSubscriptions', 'notifyPrefs',

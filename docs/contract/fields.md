@@ -144,6 +144,7 @@
 |:---------|:-------|:--------------|:----------|
 | 订单号 | `OrderNo` | order_no | 如 ORD-20250817-001 |
 | 客户 | `CustomerID` | customer_id | BIGINT → customers |
+| 渠道 | `ChannelID` | channel_id | BIGINT → channels（REQ-ORD-006 必填不可改） |
 | 产品 | `OfferID` | offer_id | BIGINT → product_offers |
 | 地址 | `AddressID` | address_id | BIGINT → addresses |
 | 当前环节 | `Stage` | stage | 1~12（见 terms.md 第 1 节） |

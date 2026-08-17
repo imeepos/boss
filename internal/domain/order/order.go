@@ -12,7 +12,7 @@ type Order struct {
 	AddressID     int64
 	Stage         int8   // 1~12(见 terms.md 第 1 节)
 	Status        string // PENDING / RESERVED / INSTALLING / DONE
-	ChannelID     int64  // 渠道,REQ-ORD-006 必填不可改(CH 域待建,暂以占位 ID)
+	ChannelID     int64  // 渠道 → channels,REQ-ORD-006 必填不可改
 	LegalEntityID int64  // 品牌=运营主体(legal_entities, 品牌隔离最小单元)
 	RegionPath    string
 	CreatedAt     time.Time
@@ -33,7 +33,7 @@ type SubmitReq struct {
 	CustomerID    int64
 	OfferID       int64
 	AddressID     int64
-	ChannelID     int64 // 必填,不可改(CH 域待建,暂以占位 ID)
+	ChannelID     int64 // 必填,不可改(→ channels)
 	LegalEntityID int64 // 品牌=运营主体(legal_entities)
 	RegionPath    string
 }
