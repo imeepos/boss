@@ -35,7 +35,7 @@ func newSvc(custIDs ...int64) (*MemoryService, *stubChecker) {
 
 func TestSubmitOk(t *testing.T) {
 	s, _ := newSvc(1)
-	o, err := s.Submit(context.Background(), SubmitReq{CustomerID: 1, ProductID: 10, AddressID: 100, ChannelID: 5})
+	o, err := s.Submit(context.Background(), SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
 	if err != nil {
 		t.Fatalf("Submit err = %v", err)
 	}
@@ -63,7 +63,7 @@ func TestSubmitChannelRequired(t *testing.T) {
 
 func TestReserveTransitions(t *testing.T) {
 	s, checker := newSvc(1)
-	o, _ := s.Submit(context.Background(), SubmitReq{CustomerID: 1, ProductID: 10, AddressID: 100, ChannelID: 5})
+	o, _ := s.Submit(context.Background(), SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
 
 	if err := s.Reserve(context.Background(), o.ID); err != nil {
 		t.Fatalf("Reserve err = %v", err)
@@ -85,7 +85,7 @@ func TestCheckResourceNoResource(t *testing.T) {
 	checker := &stubChecker{available: false, options: []string{"扩容", "跨区调配"}}
 	s := NewMemoryService(cust, checker)
 
-	o, _ := s.Submit(context.Background(), SubmitReq{CustomerID: 1, ProductID: 10, AddressID: 100, ChannelID: 5})
+	o, _ := s.Submit(context.Background(), SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
 	if err := s.CheckResource(context.Background(), o.ID); err != nil {
 		t.Fatalf("CheckResource err = %v", err)
 	}

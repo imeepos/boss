@@ -13,7 +13,7 @@ type Customer struct {
 	RealNameStatus string // VERIFIED / PENDING
 	ServiceStatus  string // ACTIVE / ARREARS / SUSPENDED
 	AddressID      int64
-	BrandID        int64  // 品牌横切维度
+	LegalEntityID  int64  // 归属运营主体(品牌=legal_entities)
 	RegionPath     string // 区域 ltree 路径
 	CreatedAt      time.Time
 }

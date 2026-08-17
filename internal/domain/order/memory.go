@@ -53,17 +53,17 @@ func (s *MemoryService) Submit(ctx context.Context, req SubmitReq) (*Order, erro
 	defer s.mu.Unlock()
 	s.seq++
 	o := &Order{
-		ID:         s.seq,
-		OrderNo:    fmt.Sprintf("ORD-%s-%03d", time.Now().Format("20060102"), s.seq),
-		CustomerID: req.CustomerID,
-		ProductID:  req.ProductID,
-		AddressID:  req.AddressID,
-		Stage:      1,
-		Status:     "PENDING",
-		ChannelID:  req.ChannelID,
-		BrandID:    req.BrandID,
-		RegionPath: req.RegionPath,
-		CreatedAt:  time.Now(),
+		ID:            s.seq,
+		OrderNo:       fmt.Sprintf("ORD-%s-%03d", time.Now().Format("20060102"), s.seq),
+		CustomerID:    req.CustomerID,
+		OfferID:       req.OfferID,
+		AddressID:     req.AddressID,
+		Stage:         1,
+		Status:        "PENDING",
+		ChannelID:     req.ChannelID,
+		LegalEntityID: req.LegalEntityID,
+		RegionPath:    req.RegionPath,
+		CreatedAt:     time.Now(),
 	}
 	s.m[o.ID] = o
 	s.appendLogLocked(o.ID, 1, "DOING")
