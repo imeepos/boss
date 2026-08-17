@@ -1,11 +1,16 @@
 // 师傅端统一接口对接层。
-// 契约: api/openapi/worker.yaml;经 APISIX 网关访问真实后端(前缀 /api/worker/v1)。
+// 契约: api/openapi/worker.yaml;假数据: api/mock/worker/server.js(http://127.0.0.1:8091)。
 // 用 window.API 暴露,页面直接调用;后端就绪后仅改 BASE 即可切换到真实网关。
 (function (global) {
   'use strict';
 
-  // 默认同源走 APISIX 网关前缀;跨环境时通过 API_BASE_URL 显式指定完整地址。
-  var DEFAULT_BASE = '/api/worker/v1';
+  var DEFAULT_BASE = (function () {
+    var host = (typeof location !== 'undefined' && location.hostname) || '';
+    if (host && host !== 'localhost' && host !== '127.0.0.1') {
+      return 'http://' + host + ':8091/api/worker/v1';
+    }
+    return 'http://127.0.0.1:8091/api/worker/v1';
+  })();
   var BASE = (global.API_BASE_URL || DEFAULT_BASE);
   var TOKEN_KEY = 'boss_worker_token';
 

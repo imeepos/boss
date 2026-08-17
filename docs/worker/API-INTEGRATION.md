@@ -1,7 +1,7 @@
 # 师傅端页面对接 API 约定(所有改造页面必须遵守)
 
 > 契约: `api/openapi/worker.yaml`(拆分于 `api/openapi/worker/*.yaml`)
-> 后端: 经 APISIX 网关访问真实后端,前缀 `/api/worker/v1`
+> 假数据: `api/mock/worker/server.js`,已运行于 http://127.0.0.1:8091,前缀 `/api/worker/v1`
 > 对接层: `docs/worker/api.js`,页面引入后使用 `window.API.*`
 
 ## 硬性规则
@@ -34,7 +34,7 @@
 - `API.misc.messages()` / `.readAll()` / `.clear()` / `.notices()` / `.faq(keyword)` / `.serviceMessages()` / `.sendServiceMessage(content)` / `.safetyCheck(workType,checklist)`
 - `API.auth.login/smsCode/logout`
 
-## 关键字段
+## 关键字段(与 mock 返回一致)
 
 - 工单项: `ticketNo/typeLabel/address/distanceKm/scheduleSlot/stage/stageTotal/status/statusLabel/slaLeftMinutes/note/finishedAt`
 - 工单详情: `product/customerName/customerPhoneMasked/splitterPort/preBindTag/scheduleSlot/faultTypeLabel/reportedAt/slaLeftMinutes/remoteDiagnosis/stages[{stage,name,result,finishedAt,note}]/quad{assetCode,customerCode,portCode,addrCode}/riskCheck{blacklistHit}`
