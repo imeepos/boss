@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>师傅端内容运营 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .wgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; }
+  @media (max-width: 1100px) { .wgrid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb"><a href="worker.html">订单与工单 / 师傅管理</a> / 内容运营</div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>师傅端内容运营</h2>
+        <div class="desc">非按师傅维度的师傅端数据：公告 · FAQ 知识库 · 设备健康观察 · 抢单池任务（改动即时生效于师傅端）</div>
+      </div>
+
+      <div class="wgrid">
+        <div class="card">
+          <h3>公告管理（下架即从师傅端消失）</h3>
+          <div class="toolbar" style="margin-bottom:8px">
+            <button class="btn btn-primary" id="noticeBtn">发布公告</button>
+          </div>
+          <table class="tbl"><thead><tr><th>公告</th><th>分类</th><th>发布日</th><th>状态</th><th>操作</th></tr></thead><tbody id="noticeBody"></tbody></table>
+        </div>
+        <div class="card">
+          <h3>FAQ 知识库</h3>
+          <div class="toolbar" style="margin-bottom:8px">
+            <button class="btn btn-primary" id="faqBtn">新增 FAQ</button>
+          </div>
+          <table class="tbl"><thead><tr><th>条目</th><th>摘要</th><th>状态</th><th>操作</th></tr></thead><tbody id="faqBody"></tbody></table>
+        </div>
+        <div class="card">
+          <h3>设备健康观察（师傅端主动运维）</h3>
+          <table class="tbl"><thead><tr><th>设备</th><th>类型</th><th>健康度</th><th>故障</th><th>年限</th><th>原因</th><th>优先级</th></tr></thead><tbody id="mntBody"></tbody></table>
+        </div>
+        <div class="card">
+          <h3>抢单池（师傅端可抢任务）</h3>
+          <table class="tbl"><thead><tr><th>单号</th><th>类型</th><th>地址/范围</th><th>来源</th></tr></thead><tbody id="hallBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function fill(id, rows, cells) {
+  document.getElementById(id).innerHTML = rows.map(function (r) {
+    return '<tr>' + cells(r).map(function (h) { return '<td>' + h + '</td>'; }).join('') + '</tr>';
+  }).join('');
+}
+function bindActs(containerId, handler) {
+  Array.prototype.forEach.call(document.getElementById(containerId).querySelectorAll('a[data-id]'), function (a) {
+    a.onclick = function (e) { e.preventDefault(); handler(a.getAttribute('data-id')); };
+  });
+}
+
+function loadAll() {
+  API.worker.notices().then(function (d) {
+    fill('noticeBody', d.items, function (n) {
+      return [esc(n.title), esc(n.category), esc(n.publishedAt),
+        '<span class="tag ' + esc(n.activeClass) + '">' + esc(n.activeLabel) + '</span>',
+        '<a href="#" data-id="' + esc(n.noticeId) + '">上架/下架</a>'];
+    });
+    bindActs('noticeBody', function (id) { API.worker.toggleNotice(id).then(loadAll); });
+  });
+  API.worker.faqs().then(function (d) {
+    fill('faqBody', d.items, function (f) {
+      return [esc(f.title), esc(f.summary), '<span class="tag ' + esc(f.activeClass) + '">' + esc(f.activeLabel) + '</span>',
+        '<a href="#" data-id="' + esc(f.faqId) + '">启用/停用</a>'];
+    });
+    bindActs('faqBody', function (id) { API.worker.toggleFaq(id).then(loadAll); });
+  });
+  API.worker.maintenances().then(function (d) {
+    fill('mntBody', d.items, function (m) {
+      return [esc(m.deviceNo), esc(m.deviceType), m.healthScore, m.faultCount, m.ageYears + ' 年', esc(m.reason || '—'),
+        '<span class="tag ' + esc(m.priorityClass) + '">' + esc(m.priorityLabel) + '</span>'];
+    });
+  });
+  API.worker.hallItems().then(function (d) {
+    fill('hallBody', d.items, function (h) { return [esc(h.ticketNo), esc(h.typeLabel), esc(h.address), esc(h.source)]; });
+  });
+}
+document.getElementById('noticeBtn').onclick = function () {
+  API.worker.publishNotice({ title: '新公告（后台发布）', category: '功能公告' }).then(loadAll);
+};
+document.getElementById('faqBtn').onclick = function () {
+  API.worker.createFaq({ title: '新 FAQ 条目', summary: '待补充排查步骤' }).then(loadAll);
+};
+loadAll();
+</script>
+<script src="menu.js"></script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>师傅详情 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* —— 详情头部(Ant Design 风格) —— */
+  .detail-head { background: #fff; border: 1px solid #f0f0f0; border-radius: 8px; padding: 20px 24px 16px; margin-bottom: 14px; }
+  .dh-top { display: flex; align-items: center; }
+  .dh-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #4096ff, #1677ff); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 600; flex: none; margin-right: 18px; box-shadow: 0 2px 8px rgba(22,119,255,.25); }
+  .dh-title { font-size: 20px; font-weight: 600; color: rgba(0,0,0,.88); margin-right: 10px; }
+  .dh-sub { font-size: 13px; color: rgba(0,0,0,.45); margin-right: 12px; }
+  .dh-actions { margin-left: auto; display: flex; gap: 8px; }
+  .ant-tag { display: inline-block; height: 22px; line-height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; border: 1px solid transparent; }
+  .ant-tag.success { color: #389e0d; background: #f6ffed; border-color: #b7eb8f; }
+  .ant-tag.default { color: rgba(0,0,0,.45); background: #fafafa; border-color: #d9d9d9; }
+  .ant-btn { height: 32px; padding: 4px 15px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid #d9d9d9; background: #fff; color: rgba(0,0,0,.88); transition: all .2s; }
+  .ant-btn:hover { border-color: #4096ff; color: #4096ff; }
+  .ant-btn.primary { background: #1677ff; border-color: #1677ff; color: #fff; }
+  .ant-btn.primary:hover { background: #4096ff; border-color: #4096ff; }
+  .dh-desc { display: flex; flex-wrap: wrap; border-top: 1px solid #f0f0f0; margin-top: 16px; padding-top: 14px; }
+  .dh-item { margin: 4px 32px 4px 0; }
+  .dh-item .label { font-size: 13px; color: rgba(0,0,0,.45); margin-right: 8px; }
+  .dh-item .label::after { content: ':'; margin-left: 2px; color: rgba(0,0,0,.45); }
+  .dh-item .value { font-size: 13px; color: rgba(0,0,0,.88); }
+
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 14px; }
+  .stat { background: #fff; border: 1px solid #f0f0f0; border-radius: 8px; padding: 12px 16px; }
+  .stat b { display: block; font-size: 20px; margin-top: 4px; color: rgba(0,0,0,.88); }
+  .stat span { color: rgba(0,0,0,.45); font-size: 12px; }
+  .tabs { display: flex; gap: 8px; border-bottom: 1px solid #f0f0f0; margin-bottom: 14px; }
+  .tabs button { border: 0; background: none; padding: 10px 4px; margin: 0 8px; font-size: 14px; color: rgba(0,0,0,.65); cursor: pointer; border-bottom: 2px solid transparent; }
+  .tabs button.active { color: #1677ff; border-bottom-color: #1677ff; font-weight: 600; }
+  .tabpanel { display: none; }
+  .tabpanel.active { display: block; }
+  .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; }
+  .chip { display: inline-block; background: #f0f5ff; color: #1677ff; border: 1px solid #adc6ff; border-radius: 4px; padding: 2px 8px; margin: 0 6px 6px 0; font-size: 12px; }
+  tr.self-row td { background: #f0f5ff; }
+  @media (max-width: 1100px) { .stats { grid-template-columns: repeat(3, 1fr); } .panel-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb"><a href="worker.html">订单与工单 / 师傅管理</a> / 师傅详情</div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="detail-head" id="headcard"></div>
+      <div class="stats" id="statGrid"></div>
+
+      <div class="tabs" id="tabs">
+        <button data-tab="perf" class="active">工单绩效</button>
+        <button data-tab="fb">客户评价</button>
+        <button data-tab="msg">消息记录</button>
+        <button data-tab="asset">物料与工具</button>
+        <button data-tab="ret">旧件回收</button>
+        <button data-tab="sch">排期</button>
+        <button data-tab="sm">调度会话</button>
+      </div>
+
+      <div class="tabpanel active" data-panel="perf">
+        <div class="panel-grid">
+          <div class="card">
+            <div class="toolbar"><input class="input" data-search="perf" style="width:200px" placeholder="检索姓名/班组"><span class="spacer"></span></div>
+            <h3>月度绩效排名（本人高亮）</h3>
+            <table class="tbl"><thead><tr><th>名次</th><th>姓名</th><th>班组</th><th>完成</th><th>准时率</th><th>评分</th></tr></thead><tbody id="perfBody"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="toolbar"><input class="input" data-search="comm" style="width:200px" placeholder="检索提成项"><span class="spacer"></span></div>
+            <h3>提成结算</h3>
+            <table class="tbl"><thead><tr><th>账期</th><th>项</th><th>公式</th><th>金额</th><th>合计</th></tr></thead><tbody id="commBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-panel="fb">
+        <div class="card">
+          <div class="toolbar"><input class="input" data-search="fb" style="width:220px" placeholder="检索客户/单号/评语"><span class="spacer"></span><button class="btn" id="fbOnlyReview">只看待复核</button></div>
+          <table class="tbl"><thead><tr><th>客户</th><th>单号</th><th>评分</th><th>评语</th><th>状态</th><th>操作</th></tr></thead><tbody id="fbBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-panel="msg">
+        <div class="card">
+          <div class="toolbar">
+            <input class="input" data-search="msg" style="width:220px" placeholder="检索标题/内容">
+            <select class="input" id="msgRead" style="width:120px"><option value="">全部状态</option><option value="未读">未读</option><option value="已读">已读</option></select>
+            <span class="spacer"></span>
+            <input class="input" id="msgTitle" style="width:180px" placeholder="消息标题">
+            <button class="btn btn-primary" id="msgBtn">下发消息</button>
+          </div>
+          <table class="tbl"><thead><tr><th>级别</th><th>标题</th><th>内容</th><th>时间</th><th>状态</th></tr></thead><tbody id="msgBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-panel="asset">
+        <div class="panel-grid">
+          <div class="card">
+            <div class="toolbar"><input class="input" data-search="mat" style="width:200px" placeholder="检索物料/规格"><span class="spacer"></span></div>
+            <h3>随车物料</h3>
+            <table class="tbl"><thead><tr><th>物料</th><th>数量</th><th>规格</th><th>状态</th></tr></thead><tbody id="matBody"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="toolbar"><input class="input" data-search="tool" style="width:200px" placeholder="检索工具"><span class="spacer"></span></div>
+            <h3>工具借用</h3>
+            <table class="tbl"><thead><tr><th>工具</th><th>状态</th></tr></thead><tbody id="toolBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-panel="ret">
+        <div class="card">
+          <div class="toolbar">
+            <input class="input" data-search="ret" style="width:220px" placeholder="检索 EPC/原因">
+            <select class="input" id="retStatus" style="width:120px"><option value="">全部状态</option><option value="待返库">待返库</option><option value="已返库">已返库</option></select>
+            <span class="spacer"></span>
+          </div>
+          <table class="tbl"><thead><tr><th>EPC</th><th>资产</th><th>原因</th><th>状态</th><th>操作</th></tr></thead><tbody id="retBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-panel="sch">
+        <div class="card">
+          <div class="toolbar"><span class="desc">月度忙日（师傅端排期日历数据源）</span><span class="spacer"></span></div>
+          <div id="schChips"></div>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-panel="sm">
+        <div class="card">
+          <div class="toolbar">
+            <input class="input" data-search="sm" style="width:220px" placeholder="检索会话内容">
+            <span class="spacer"></span>
+            <input class="input" id="smContent" style="width:200px" placeholder="下发内容">
+            <button class="btn btn-primary" id="smBtn">调度下发</button>
+          </div>
+          <table class="tbl"><thead><tr><th>方向</th><th>内容</th></tr></thead><tbody id="smBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function fill(id, rows, cells, rowClass) {
+  document.getElementById(id).innerHTML = rows.map(function (r) {
+    var cls = rowClass && rowClass(r) ? ' class="self-row"' : '';
+    return '<tr' + cls + '>' + cells(r).map(function (h) { return '<td>' + h + '</td>'; }).join('') + '</tr>';
+  }).join('');
+}
+function hit(row, kw) {
+  if (!kw) return true;
+  return Object.keys(row).some(function (k) { return String(row[k] == null ? '' : row[k]).indexOf(kw) >= 0; });
+}
+function bindActs(containerId, handler) {
+  Array.prototype.forEach.call(document.getElementById(containerId).querySelectorAll('a[data-id]'), function (a) {
+    a.onclick = function (e) { e.preventDefault(); handler(a.getAttribute('data-id')); };
+  });
+}
+
+var WID = Number(new URLSearchParams(location.search).get('workerId') || 1024);
+var S = { worker: null, perf: [], comm: [], fb: [], msg: [], mat: [], tool: [], ret: [], sch: [], sm: [], fbOnlyReview: false };
+
+// —— 头部档案 + 概述统计 ——
+function renderHead() {
+  var w = S.worker;
+  if (!w) return;
+  var items = [
+    ['工号', w.staffNo], ['班组', w.groupName], ['联系电话', w.phoneMasked],
+    ['司龄', w.serveYears + ' 年'], ['接单半径', w.radiusKm + ' km'], ['接单类型', w.acceptTypes],
+  ];
+  document.getElementById('headcard').innerHTML =
+    '<div class="dh-top">'
+    + '<div class="dh-avatar">' + esc(w.name.slice(0, 1)) + '</div>'
+    + '<div><div style="display:flex;align-items:center">'
+    + '<span class="dh-title">' + esc(w.name) + '</span>'
+    + '<span class="ant-tag ' + (w.online ? 'success' : 'default') + '">' + esc(w.onlineLabel) + '</span>'
+    + '<span class="dh-sub" style="margin-left:10px">' + esc(w.groupName) + ' · 在途 ' + w.doingCount + ' 单</span>'
+    + '</div></div>'
+    + '<div class="dh-actions">'
+    + '<button class="ant-btn" id="toggleBtn">' + (w.online ? '置为离线' : '置为在线') + '</button>'
+    + '<button class="ant-btn primary" id="msgQuickBtn">下发消息</button>'
+    + '</div>'
+    + '</div>'
+    + '<div class="dh-desc">'
+    + items.map(function (x) { return '<div class="dh-item"><span class="label">' + x[0] + '</span><span class="value">' + esc(x[1]) + '</span></div>'; }).join('')
+    + '</div>';
+  document.getElementById('toggleBtn').onclick = function () {
+    API.worker.saveSettings(WID, { online: !w.online }).then(loadAll);
+  };
+  document.getElementById('msgQuickBtn').onclick = function () {
+    API.worker.sendMessage({ workerId: WID, level: 'info', title: '调度通知', content: '请及时更新工单进度' }).then(loadAll);
+  };
+  var myPerf = S.perf.find(function (r) { return r.workerId === WID; }) || {};
+  var commTotal = S.comm.reduce(function (s, c) { return s + c.amount; }, 0);
+  var retPending = S.ret.filter(function (r) { return r.status === 'PENDING'; }).length;
+  var sch = S.sch[0] || { month: '—', busyDays: [] };
+  document.getElementById('statGrid').innerHTML = [
+    ['在途工单', w.doingCount], ['月完成', myPerf.finished], ['准时率', (myPerf.onTimeRate != null ? myPerf.onTimeRate + '%' : '—')],
+    ['客户评分', myPerf.score], ['月提成', '¥' + commTotal], ['绩效排名', myPerf.rank ? '第 ' + myPerf.rank + ' 名' : '—'],
+    ['消息条数', S.msg.length], ['待回收', retPending], ['差评待复核', S.fb.filter(function (f) { return f.needReview; }).length],
+    ['排期月份', sch.month], ['忙日天数', sch.busyDays.length + ' 天'], ['借用工具', S.tool.filter(function (t) { return t.borrowed; }).length],
+  ].map(function (x) { return '<div class="stat"><span>' + x[0] + '</span><b>' + esc(x[1]) + '</b></div>'; }).join('');
+}
+
+// —— 各 Tab 渲染(均带检索) ——
+function renderTabs() {
+  fill('perfBody', S.perf.filter(function (r) { return hit(r, kw('perf')); }),
+    function (r) { return [r.rank, esc(r.workerName), esc(r.groupName), r.finished, r.onTimeRate + '%', r.score]; },
+    function (r) { return r.workerId === WID; });
+  fill('commBody', S.comm.filter(function (r) { return hit(r, kw('comm')); }),
+    function (c) { return [esc(c.period), esc(c.name), esc(c.formula || '—'), '¥' + c.amount, c.totalAmount ? '¥' + c.totalAmount : '']; });
+  var fbs = S.fb.filter(function (f) { return hit(f, kw('fb')) && (!S.fbOnlyReview || f.needReview); });
+  fill('fbBody', fbs, function (f) {
+    return [esc(f.customerName), esc(f.ticketNo), f.score, esc(f.comment),
+      '<span class="tag ' + esc(f.needReviewClass) + '">' + esc(f.needReviewLabel) + '</span>',
+      f.needReview ? '<a href="#" data-id="' + esc(f.feedbackId) + '">复核</a>' : ''];
+  });
+  var mr = document.getElementById('msgRead').value;
+  fill('msgBody', S.msg.filter(function (m) { return hit(m, kw('msg')) && (!mr || m.readLabel === mr); }),
+    function (m) { return [esc(m.level), esc(m.title), esc(m.content), esc(m.sentAt), esc(m.readLabel)]; });
+  fill('matBody', S.mat.filter(function (m) { return hit(m, kw('mat')); }),
+    function (m) { return [esc(m.name), m.qty, esc(m.spec), esc(m.outBoundLabel)]; });
+  fill('toolBody', S.tool.filter(function (t) { return hit(t, kw('tool')); }),
+    function (t) { return [esc(t.name), esc(t.borrowedLabel)]; });
+  var rs = document.getElementById('retStatus').value;
+  fill('retBody', S.ret.filter(function (r) { return hit(r, kw('ret')) && (!rs || r.statusLabel === rs); }),
+    function (r) {
+      return [esc(r.epc), esc(r.assetNo), esc(r.reason),
+        '<span class="tag ' + esc(r.statusClass) + '">' + esc(r.statusLabel) + '</span>',
+        r.status === 'PENDING' ? '<a href="#" data-id="' + esc(r.returnId) + '">确认返库</a>' : ''];
+    });
+  var sch = S.sch[0] || { month: '—', busyDays: [] };
+  document.getElementById('schChips').innerHTML = '<span class="desc" style="margin-right:8px">' + esc(sch.month) + '</span>'
+    + sch.busyDays.map(function (d) { return '<span class="chip">' + d + ' 日</span>'; }).join('');
+  fill('smBody', S.sm.filter(function (m) { return hit(m, kw('sm')); }),
+    function (m) { return [esc(m.from), esc(m.content)]; });
+  bindActs('fbBody', function (id) { API.worker.reviewFeedback(id).then(loadAll); });
+  bindActs('retBody', function (id) { API.worker.confirmReturn(id).then(loadAll); });
+}
+function kw(key) { var el = document.querySelector('[data-search="' + key + '"]'); return el ? el.value.trim() : ''; }
+
+function loadAll() {
+  Promise.all([
+    API.worker.detail(WID), API.worker.performances(WID), API.worker.commissions(WID),
+    API.worker.feedbacks(WID), API.worker.messages(WID), API.worker.materials(WID),
+    API.worker.tools(WID), API.worker.assetReturns(WID), API.worker.schedules(WID), API.worker.serviceMessages(WID),
+  ]).then(function (r) {
+    S.worker = r[0]; S.perf = r[1].items; S.comm = r[2].items; S.fb = r[3].items;
+    S.msg = r[4].items; S.mat = r[5].items; S.tool = r[6].items; S.ret = r[7].items; S.sch = r[8].items; S.sm = r[9].items;
+    document.title = S.worker.name + ' · 师傅详情 · BOSS 管理后台';
+    renderHead();
+    renderTabs();
+  }).catch(function (e) { alert('加载师傅详情失败: ' + e.message); });
+}
+
+// —— 交互绑定: tab 切换 / 检索 / 写操作 ——
+Array.prototype.forEach.call(document.querySelectorAll('#tabs button'), function (b) {
+  b.onclick = function () {
+    Array.prototype.forEach.call(document.querySelectorAll('#tabs button'), function (x) { x.classList.remove('active'); });
+    Array.prototype.forEach.call(document.querySelectorAll('.tabpanel'), function (x) { x.classList.remove('active'); });
+    b.classList.add('active');
+    document.querySelector('[data-panel="' + b.getAttribute('data-tab') + '"]').classList.add('active');
+  };
+});
+Array.prototype.forEach.call(document.querySelectorAll('[data-search]'), function (i) { i.oninput = renderTabs; });
+document.getElementById('msgRead').onchange = renderTabs;
+document.getElementById('retStatus').onchange = renderTabs;
+document.getElementById('fbOnlyReview').onclick = function () { S.fbOnlyReview = !S.fbOnlyReview; renderTabs(); };
+document.getElementById('msgBtn').onclick = function () {
+  var t = document.getElementById('msgTitle').value.trim() || '调度通知';
+  API.worker.sendMessage({ workerId: WID, level: 'info', title: t, content: '请及时更新工单进度' }).then(loadAll);
+};
+document.getElementById('smBtn').onclick = function () {
+  var c = document.getElementById('smContent').value.trim() || '调度指令：请回复当前工单进度';
+  API.post('/service-messages', { workerId: WID, content: c }).then(loadAll);
+};
+loadAll();
+</script>
+<script src="menu.js"></script>
+</body>
+</html>

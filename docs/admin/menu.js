@@ -23,6 +23,8 @@
     { id: 'bss', label: '客户与资费', ico: 'icons/bss.svg', items: [
       { key: 'customer', label: '客户档案', href: 'customer.html' },
       { key: 'product',  label: '产品资费', href: 'product.html' },
+      { key: 'user',     label: '用户列表', href: 'user.html' },
+      { key: 'userdata', label: '用户端配置', href: 'userdata.html' },
     ]},
     { id: 'billing', label: '计费与账务', ico: 'icons/billing.svg', items: [
       { key: 'billing',  label: '出账管理',   href: 'billing.html' },
@@ -47,6 +49,8 @@
     ]},
     { id: 'boss', label: '订单与工单', ico: 'icons/boss.svg', items: [
       { key: 'order',    label: '订单管理', href: 'order.html' },
+      { key: 'worker',   label: '师傅管理', href: 'worker.html' },
+      { key: 'worker-ops', label: '师傅端内容', href: 'worker-ops.html' },
       { key: 'dispatch', label: '派单管理', href: 'dispatch.html' },
       { key: 'dismantle',label: '拆机管理', href: 'dismantle.html' },
       { key: 'complaint',label: '报障与投诉', href: 'complaint.html' },

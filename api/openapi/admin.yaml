@@ -43,6 +43,10 @@ tags:
     description: 认证与话单日志
   - name: Intel
     description: GIS 联动 / 经营分析 / 报告中心
+  - name: Userdata
+    description: 用户端数据管理(账户/地址簿/套餐订购/增值服务/通知订阅/FAQ/消息/优惠券/流量/排障指南/协议/余额/发票/投诉/实名记录/卖点与账单明细配置)
+  - name: Worker
+    description: 师傅管理(档案与接单设置/绩效提成/评价/消息/公告/FAQ/物料工具/旧件回收/设备健康/抢单池/调度会话/排期)
 
 paths:
   # ---------- Auth ----------
@@ -122,6 +126,64 @@ paths:
   /complaints/{ticketNo}/close: { $ref: './admin/order.yaml#/paths/~1complaints~1{ticketNo}~1close' }
   /activation-callbacks: { $ref: './admin/order.yaml#/paths/~1activation-callbacks' }
   /activation-callbacks/{callbackId}/retry: { $ref: './admin/order.yaml#/paths/~1activation-callbacks~1{callbackId}~1retry' }
+
+  # ---------- Worker(师傅管理) ----------
+  /workers: { $ref: './admin/worker.yaml#/paths/~1workers' }
+  /workers/{workerId}: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}' }
+  /workers/{workerId}/settings: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1settings' }
+  /worker-performances: { $ref: './admin/worker.yaml#/paths/~1worker-performances' }
+  /worker-commissions: { $ref: './admin/worker.yaml#/paths/~1worker-commissions' }
+  /worker-feedbacks: { $ref: './admin/worker.yaml#/paths/~1worker-feedbacks' }
+  /worker-feedbacks/{feedbackId}/review: { $ref: './admin/worker.yaml#/paths/~1worker-feedbacks~1{feedbackId}~1review' }
+  /worker-messages: { $ref: './admin/worker.yaml#/paths/~1worker-messages' }
+  /notices: { $ref: './admin/worker.yaml#/paths/~1notices' }
+  /notices/{noticeId}/toggle: { $ref: './admin/worker.yaml#/paths/~1notices~1{noticeId}~1toggle' }
+  /faqs: { $ref: './admin/worker.yaml#/paths/~1faqs' }
+  /faqs/{faqId}/toggle: { $ref: './admin/worker.yaml#/paths/~1faqs~1{faqId}~1toggle' }
+  /worker-materials: { $ref: './admin/worker.yaml#/paths/~1worker-materials' }
+  /worker-tools: { $ref: './admin/worker.yaml#/paths/~1worker-tools' }
+  /asset-returns: { $ref: './admin/worker.yaml#/paths/~1asset-returns' }
+  /asset-returns/{returnId}/confirm: { $ref: './admin/worker.yaml#/paths/~1asset-returns~1{returnId}~1confirm' }
+  /device-maintenances: { $ref: './admin/worker.yaml#/paths/~1device-maintenances' }
+  /hall-items: { $ref: './admin/worker.yaml#/paths/~1hall-items' }
+  /service-messages: { $ref: './admin/worker.yaml#/paths/~1service-messages' }
+  /worker-schedules: { $ref: './admin/worker.yaml#/paths/~1worker-schedules' }
+
+  # ---------- Userdata(用户端数据管理) ----------
+  /users: { $ref: './admin/userdata.yaml#/paths/~1users' }
+  /users/{customerId}: { $ref: './admin/userdata.yaml#/paths/~1users~1{customerId}' }
+  /users/{customerId}/account: { $ref: './admin/userdata.yaml#/paths/~1users~1{customerId}~1account' }
+  /user-accounts: { $ref: './admin/userdata.yaml#/paths/~1user-accounts' }
+  /user-addresses: { $ref: './admin/userdata.yaml#/paths/~1user-addresses' }
+  /user-plans: { $ref: './admin/userdata.yaml#/paths/~1user-plans' }
+  /addons: { $ref: './admin/userdata.yaml#/paths/~1addons' }
+  /addons/{addonId}/toggle: { $ref: './admin/userdata.yaml#/paths/~1addons~1{addonId}~1toggle' }
+  /addon-subscriptions: { $ref: './admin/userdata.yaml#/paths/~1addon-subscriptions' }
+  /user-notify-settings: { $ref: './admin/userdata.yaml#/paths/~1user-notify-settings' }
+  /user-notify-settings/{customerId}: { $ref: './admin/userdata.yaml#/paths/~1user-notify-settings~1{customerId}' }
+  /user-faqs: { $ref: './admin/userdata.yaml#/paths/~1user-faqs' }
+  /user-faqs/{faqId}/toggle: { $ref: './admin/userdata.yaml#/paths/~1user-faqs~1{faqId}~1toggle' }
+  /user-messages: { $ref: './admin/userdata.yaml#/paths/~1user-messages' }
+  /user-messages/read-all: { $ref: './admin/userdata.yaml#/paths/~1user-messages~1read-all' }
+  /coupons: { $ref: './admin/userdata.yaml#/paths/~1coupons' }
+  /coupons/{couponId}/disable: { $ref: './admin/userdata.yaml#/paths/~1coupons~1{couponId}~1disable' }
+  /invite-config: { $ref: './admin/userdata.yaml#/paths/~1invite-config' }
+  /user-usages: { $ref: './admin/userdata.yaml#/paths/~1user-usages' }
+  /diy-guides: { $ref: './admin/userdata.yaml#/paths/~1diy-guides' }
+  /diy-guides/{guideId}/toggle: { $ref: './admin/userdata.yaml#/paths/~1diy-guides~1{guideId}~1toggle' }
+  /agreements: { $ref: './admin/userdata.yaml#/paths/~1agreements' }
+  /agreements/{agreementId}: { $ref: './admin/userdata.yaml#/paths/~1agreements~1{agreementId}' }
+  /user-balances: { $ref: './admin/userdata.yaml#/paths/~1user-balances' }
+  /user-balances/{customerId}/adjust: { $ref: './admin/userdata.yaml#/paths/~1user-balances~1{customerId}~1adjust' }
+  /topup-denominations: { $ref: './admin/userdata.yaml#/paths/~1topup-denominations' }
+  /topup-denominations/{denomId}: { $ref: './admin/userdata.yaml#/paths/~1topup-denominations~1{denomId}' }
+  /user-invoices: { $ref: './admin/userdata.yaml#/paths/~1user-invoices' }
+  /user-complaints: { $ref: './admin/userdata.yaml#/paths/~1user-complaints' }
+  /user-complaints/{complaintId}/close: { $ref: './admin/userdata.yaml#/paths/~1user-complaints~1{complaintId}~1close' }
+  /user-verify-records: { $ref: './admin/userdata.yaml#/paths/~1user-verify-records' }
+  /product-specs: { $ref: './admin/userdata.yaml#/paths/~1product-specs' }
+  /product-specs/{productId}: { $ref: './admin/userdata.yaml#/paths/~1product-specs~1{productId}' }
+  /user-bill-items: { $ref: './admin/userdata.yaml#/paths/~1user-bill-items' }
 
   # ---------- Quad ----------
   /quad-links: { $ref: './admin/quad.yaml#/paths/~1quad-links' }

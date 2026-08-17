@@ -1,0 +1,233 @@
+# userdata.yaml —— 用户端数据管理(契约补充)
+# 管理对象为用户端(user)用到的全部专属数据,实体存于 api/mock/user/entities.js,
+# 经 db.js 聚合;通用 uuid CRUD 见 /crud/{table}。列表响应复用 schemas.yaml List。
+# 产品化结构: /users 用户列表 + /users/{customerId} 用户详情聚合(单接口返回该用户
+# 在用户端可见的全部数据);其余端点为用户域实体表与全局配置的管理视图。
+paths:
+  /users:
+    get:
+      tags: [Userdata]
+      summary: 用户列表(客户主档 join 账户/套餐/余额/欠费/在途业务,keyword 过滤)
+      parameters: [{ $ref: './schemas.yaml#/components/parameters/keyword' }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /users/{customerId}:
+    get:
+      tags: [Userdata]
+      summary: 用户详情聚合(customer/notify/balance/usage/addresses/plans/addons/orders/faults/bills/payments/invoices/messages/coupons/complaints/verifyRecords)
+      parameters: [{ name: customerId, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /users/{customerId}/account:
+    put:
+      tags: [Userdata]
+      summary: 修改用户账户设置(自动缴费开关)
+      parameters: [{ name: customerId, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-accounts:
+    get:
+      tags: [Userdata]
+      summary: 用户账户列表(登录名/注册/密码更新/自动缴费)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-addresses:
+    get:
+      tags: [Userdata]
+      summary: 用户地址簿(addrCode 外键安装地址体系)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post: { summary: 新增地址簿条目, responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }, tags: [Userdata] }
+  /user-plans:
+    get:
+      tags: [Userdata]
+      summary: 套餐订购关系(productId 外键产品资费)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post: { summary: 新建订购关系, responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }, tags: [Userdata] }
+  /addons:
+    get:
+      tags: [Userdata]
+      summary: 增值服务目录(在售/下架/订购数)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post: { summary: 新增增值服务, responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }, tags: [Userdata] }
+  /addons/{addonId}/toggle:
+    put:
+      tags: [Userdata]
+      summary: 上架/下架增值服务
+      parameters: [{ name: addonId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /addon-subscriptions:
+    get:
+      tags: [Userdata]
+      summary: 增值服务订购记录
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post: { summary: 订购/退订(action=unsubscribe), responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }, tags: [Userdata] }
+  /user-notify-settings:
+    get:
+      tags: [Userdata]
+      summary: 通知订阅设置(业务/营销/渠道)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-notify-settings/{customerId}:
+    put:
+      tags: [Userdata]
+      summary: 修改通知订阅
+      parameters: [{ name: customerId, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-faqs:
+    get:
+      tags: [Userdata]
+      summary: 用户 FAQ 知识库(active 控制用户端可见)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post: { summary: 新增 FAQ, responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }, tags: [Userdata] }
+  /user-faqs/{faqId}/toggle:
+    put:
+      tags: [Userdata]
+      summary: 启用/停用 FAQ
+      parameters: [{ name: faqId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-messages:
+    get:
+      tags: [Userdata]
+      summary: 用户消息列表(keyword 过滤)
+      parameters: [{ $ref: './schemas.yaml#/components/parameters/keyword' }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post: { summary: 给用户下发消息(营销/提醒), responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }, tags: [Userdata] }
+  /user-messages/read-all:
+    put:
+      tags: [Userdata]
+      summary: 标记用户消息全部已读
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /coupons:
+    get:
+      tags: [Userdata]
+      summary: 优惠券列表
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post: { summary: 发放优惠券, responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }, tags: [Userdata] }
+  /coupons/{couponId}/disable:
+    put:
+      tags: [Userdata]
+      summary: 停发优惠券
+      parameters: [{ name: couponId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /invite-config:
+    get:
+      tags: [Userdata]
+      summary: 邀请有礼配置(邀请链接/奖励)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-usages:
+    get:
+      tags: [Userdata]
+      summary: 流量使用记录(月度口径)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /diy-guides:
+    get:
+      tags: [Userdata]
+      summary: 自助排障指南列表
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /diy-guides/{guideId}/toggle:
+    put:
+      tags: [Userdata]
+      summary: 启用/停用排障指南
+      parameters: [{ name: guideId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /agreements:
+    get:
+      tags: [Userdata]
+      summary: 协议版本(用户协议/隐私政策)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /agreements/{agreementId}:
+    put:
+      tags: [Userdata]
+      summary: 更新协议条款/版本
+      parameters: [{ name: agreementId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-balances:
+    get:
+      tags: [Userdata]
+      summary: 账户余额(低于预警线标记)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-balances/{customerId}/adjust:
+    post:
+      tags: [Userdata]
+      summary: 余额调整(delta 正充负扣)
+      parameters: [{ name: customerId, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /topup-denominations:
+    get:
+      tags: [Userdata]
+      summary: 充值面额配置
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /topup-denominations/{denomId}:
+    put:
+      tags: [Userdata]
+      summary: 调整充值面额
+      parameters: [{ name: denomId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-invoices:
+    get:
+      tags: [Userdata]
+      summary: 电子发票记录(仅已缴账期)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post: { summary: 开票(billNo 须为已缴账单), responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }, tags: [Userdata] }
+  /user-complaints:
+    get:
+      tags: [Userdata]
+      summary: 用户投诉列表(计费争议等非报障类)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-complaints/{complaintId}/close:
+    post:
+      tags: [Userdata]
+      summary: 办结投诉
+      parameters: [{ name: complaintId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-verify-records:
+    get:
+      tags: [Userdata]
+      summary: 实名核验过程记录
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /product-specs:
+    get:
+      tags: [Userdata]
+      summary: 产品卖点配置(商品详情规格项)
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /product-specs/{productId}:
+    put:
+      tags: [Userdata]
+      summary: 更新产品卖点
+      parameters: [{ name: productId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /user-bill-items:
+    get:
+      tags: [Userdata]
+      summary: 账单明细项配置(billNo 外键账单)
+      parameters: [{ name: billNo, in: query, schema: { type: string } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

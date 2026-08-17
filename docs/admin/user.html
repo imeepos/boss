@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户列表 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">客户与资费 / 用户列表</div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>用户列表</h2><div class="desc">用户端注册用户总览：账户 / 套餐 / 余额 / 欠费 / 在途业务，点击行进入用户详情</div></div>
+
+      <div class="toolbar">
+        <input id="kw" placeholder="搜索姓名 / 手机号 / 登录名 / 套餐" style="padding:6px 10px;border:1px solid #d9e2ec;border-radius:6px;width:260px">
+        <button class="btn" id="btnSearch">查询</button>
+      </div>
+
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>用户ID</th><th>姓名</th><th>手机号</th><th>登录名</th><th>实名</th><th>服务状态</th><th>在用套餐</th><th>余额</th><th>欠费账单</th><th>在途业务</th><th>注册时间</th><th>操作</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="api.js"></script>
+<script>
+// 用户列表(契约: GET /users, keyword 过滤)
+(function () {
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function tag(label, cls) { return '<span class="tag ' + cls + '">' + esc(label) + '</span>'; }
+  var SERVICE_TAG = { '在网': 'tag-green', '欠费': 'tag-orange', '停机': 'tag-red' };
+
+  function render(items) {
+    if (!items.length) {
+      document.getElementById('rows').innerHTML = '<tr><td colspan="12">无匹配用户</td></tr>';
+      return;
+    }
+    document.getElementById('rows').innerHTML = items.map(function (r) {
+      return '<tr><td>' + r.customerId + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.phoneMasked)
+        + '</td><td>' + esc(r.username) + '</td><td>' + esc(r.realName) + '</td>'
+        + '<td>' + tag(r.service, SERVICE_TAG[r.service] || 'tag-gray') + '</td>'
+        + '<td>' + esc(r.productName) + '</td><td>' + esc(r.balance) + '</td>'
+        + '<td>' + (r.unpaidCount ? tag(r.unpaidCount + ' 笔', 'tag-orange') : '—') + '</td>'
+        + '<td>' + (r.ongoingCount ? r.ongoingCount + ' 单' : '—') + '</td>'
+        + '<td>' + esc(r.registeredAt) + '</td>'
+        + '<td><a href="user-detail.html?customerId=' + r.customerId + '">详情</a></td></tr>';
+    }).join('');
+  }
+
+  function load() {
+    API.get('/users', { keyword: document.getElementById('kw').value.trim() || undefined }).then(function (d) {
+      render(d.items);
+    }).catch(function (e) {
+      document.getElementById('rows').innerHTML = '<tr><td colspan="12">加载失败: ' + esc(e.message) + '</td></tr>';
+    });
+  }
+
+  document.getElementById('btnSearch').onclick = load;
+  document.getElementById('kw').onkeydown = function (ev) { if (ev.key === 'Enter') load(); };
+  load();
+})();
+</script>
+<script src="menu.js"></script>
+</body>
+</html>

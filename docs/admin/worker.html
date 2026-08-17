@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>师傅管理 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .stat-row { display: flex; gap: 16px; margin-bottom: 16px; }
+  .stat { flex: 1; background: #fff; border: 1px solid #e6eaf0; border-radius: 10px; padding: 14px 18px; }
+  .stat b { display: block; font-size: 22px; margin-top: 4px; }
+  .stat span { color: #7a8699; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">订单与工单 / 师傅管理</div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>师傅管理</h2>
+        <div class="desc">师傅台账与在线/接单管理 · 点击姓名进入师傅详情（绩效/提成/评价/消息/物料/回收/排期聚合）</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><span>在册师傅</span><b id="stTotal">—</b></div>
+        <div class="stat"><span>在线</span><b id="stOnline">—</b></div>
+        <div class="stat"><span>离线</span><b id="stOffline">—</b></div>
+        <div class="stat"><span>公告 / FAQ</span><b><a href="worker-ops.html" id="stOps">内容运营 →</a></b></div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" id="kw" style="width:220px" placeholder="姓名/工号/班组">
+        <span class="spacer"></span>
+        <a class="btn" href="worker-ops.html">师傅端内容运营（公告/FAQ/健康/抢单池）</a>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>工号</th><th>姓名</th><th>班组</th><th>电话</th><th>状态</th><th>司龄</th><th>在途工单</th><th>月完成</th><th>准时率</th><th>评分</th><th>接单设置</th><th>操作</th></tr></thead>
+          <tbody id="workerBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="api.js"></script>
+<script>
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function renderStats(d) {
+  document.getElementById('stTotal').textContent = d.stats.total;
+  document.getElementById('stOnline').textContent = d.stats.online;
+  document.getElementById('stOffline').textContent = d.stats.total - d.stats.online;
+}
+
+function renderRows(items) {
+  document.getElementById('workerBody').innerHTML = items.map(function (w) {
+    return '<tr>'
+      + '<td>' + esc(w.staffNo) + '</td>'
+      + '<td><a href="worker-detail.html?workerId=' + w.workerId + '">' + esc(w.name) + '</a></td>'
+      + '<td>' + esc(w.groupName) + '</td>'
+      + '<td>' + esc(w.phoneMasked) + '</td>'
+      + '<td><span class="tag ' + esc(w.onlineClass) + '">' + esc(w.onlineLabel) + '</span></td>'
+      + '<td>' + esc(w.serveYears) + ' 年</td>'
+      + '<td>' + esc(w.doingCount) + '</td>'
+      + '<td>' + esc(w.monthFinished) + '</td>'
+      + '<td>' + esc(w.onTimeRate) + '%</td>'
+      + '<td>' + esc(w.score) + '</td>'
+      + '<td>' + esc(w.radiusKm) + 'km / ' + esc(w.acceptTypes) + '</td>'
+      + '<td><a href="#" data-id="' + w.workerId + '" data-online="' + (w.online ? '1' : '') + '">'
+      + (w.online ? '置离线' : '置在线') + '</a> · <a href="worker-detail.html?workerId=' + w.workerId + '">详情</a></td>'
+      + '</tr>';
+  }).join('');
+  Array.prototype.forEach.call(document.getElementById('workerBody').querySelectorAll('a[data-id]'), function (a) {
+    a.onclick = function (e) {
+      e.preventDefault();
+      API.worker.saveSettings(this.getAttribute('data-id'), { online: !this.getAttribute('data-online') })
+        .then(load);
+    };
+  });
+}
+
+function load() {
+  API.worker.list(document.getElementById('kw').value).then(function (d) {
+    renderStats(d);
+    renderRows(d.items);
+  }).catch(function (e) { alert('加载师傅列表失败: ' + e.message); });
+}
+document.getElementById('kw').oninput = load;
+load();
+</script>
+<script src="menu.js"></script>
+</body>
+</html>

@@ -153,6 +153,32 @@
       reports: function (kw) { return get('/reports', { keyword: kw }); },
       sendReport: function (id) { return post('/reports/' + id + '/send'); },
     },
+    // 师傅管理: 师傅端用到的全部数据的后台管理入口
+    worker: {
+      list: function (kw) { return get('/workers', { keyword: kw }); },
+      detail: function (id) { return get('/workers/' + id); },
+      saveSettings: function (id, body) { return put('/workers/' + id + '/settings', body); },
+      performances: function (workerId) { return get('/worker-performances', { workerId: workerId }); },
+      commissions: function (workerId) { return get('/worker-commissions', { workerId: workerId }); },
+      feedbacks: function (workerId) { return get('/worker-feedbacks', { workerId: workerId }); },
+      reviewFeedback: function (id) { return post('/worker-feedbacks/' + id + '/review'); },
+      messages: function (workerId) { return get('/worker-messages', { workerId: workerId }); },
+      sendMessage: function (body) { return post('/worker-messages', body); },
+      notices: function () { return get('/notices'); },
+      publishNotice: function (body) { return post('/notices', body); },
+      toggleNotice: function (id) { return put('/notices/' + id + '/toggle'); },
+      faqs: function () { return get('/faqs'); },
+      createFaq: function (body) { return post('/faqs', body); },
+      toggleFaq: function (id) { return put('/faqs/' + id + '/toggle'); },
+      materials: function (workerId) { return get('/worker-materials', { workerId: workerId }); },
+      tools: function (workerId) { return get('/worker-tools', { workerId: workerId }); },
+      assetReturns: function (workerId) { return get('/asset-returns', { workerId: workerId }); },
+      confirmReturn: function (id) { return post('/asset-returns/' + id + '/confirm'); },
+      maintenances: function () { return get('/device-maintenances'); },
+      hallItems: function () { return get('/hall-items'); },
+      serviceMessages: function (workerId) { return get('/service-messages', { workerId: workerId }); },
+      schedules: function (workerId) { return get('/worker-schedules', { workerId: workerId }); },
+    },
   };
 
   global.API = API;

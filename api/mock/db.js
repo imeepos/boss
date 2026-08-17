@@ -222,20 +222,34 @@ function timelineOf(order) {
 // 定义于 worker/entities.js,经本库聚合为单一事实源,admin 端管理、师傅端派生。
 const workerEntities = require('./worker/entities.js');
 
+// —— 用户域实体(账户/地址簿/套餐/增值服务/订阅/FAQ/消息/优惠券/流量/排障/协议/余额/发票/投诉) ——
+// 定义于 user/entities.js,经本库聚合为单一事实源,admin 端管理、用户端派生。
+const userEntities = require('./user/entities.js');
+
 module.exports = {
   customers, products, workers, ports, assets, loids, orders, repairTickets, bills, payments,
   regions, addresses, regionOfAddr,
   STAGE_NAMES, STATUS_LABEL, statusOfStage,
   byCustomer, byProduct, byWorker, byOrder, portOf, quads, timelineOf,
   ...workerEntities,
+  ...userEntities,
   byWorkerProfile: (id) => workerEntities.workerProfiles.find((p) => p.workerId === id) || {},
+  byPlanOf: (customerId) => userEntities.userPlans.find((p) => p.customerId === customerId && p.status === 'ACTIVE'),
+  byAddon: (id) => userEntities.addonCatalog.find((a) => a.addonId === id) || {},
+  byBalanceOf: (customerId) => userEntities.balances.find((b) => b.customerId === customerId) || { balance: 0 },
+  byUsageOf: (customerId, period) => userEntities.usageRecords.find((u) => u.customerId === customerId && u.period === period),
+  notifyOf: (customerId) => userEntities.notifyPrefs.find((n) => n.customerId === customerId),
 };
 
 // —— uuid 主键表挂载: 种子行原地补 uuid,数组引用不变,三端派生视图零改动 ——
 // CRUD 走 admin 路由 /api/admin/v1/crud/{table},主键一律 uuid;地区/地址同表同权管理。
 const TABLE_NAMES = ['customers', 'products', 'workers', 'ports', 'assets', 'loids', 'orders', 'repairTickets', 'bills', 'payments', 'regions', 'addresses',
   'workerProfiles', 'workerCommissions', 'workerFeedbacks', 'workerMessages', 'workerNotices', 'workerFaqs',
-  'workerMaterials', 'workerTools', 'assetReturns', 'deviceMaintenances', 'hallExtras', 'serviceMessages', 'workerSchedules'];
+  'workerMaterials', 'workerTools', 'assetReturns', 'deviceMaintenances', 'hallExtras', 'serviceMessages', 'workerSchedules',
+  'userAccounts', 'userAddresses', 'userPlans', 'addonCatalog', 'addonSubscriptions', 'notifyPrefs',
+  'userFaqs', 'userMessages', 'coupons', 'inviteConfig', 'usageRecords', 'diyGuides', 'agreements',
+  'balances', 'topupDenominations', 'userInvoices', 'userComplaints', 'userVerifyRecords',
+  'productSpecs', 'userBillItems'];
 const tables = {};
 for (const name of TABLE_NAMES) tables[name] = createTable(name, module.exports[name]);
 module.exports.tables = tables;

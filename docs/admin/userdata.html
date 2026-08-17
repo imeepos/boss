@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户端配置 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">客户与资费 / 用户端配置</div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>用户端配置</h2><div class="desc">用户端全局配置项：增值服务目录 / FAQ 知识库 / 自助排障指南 / 协议版本 / 邀请有礼 / 充值面额 / 产品卖点。用户维度数据请进「用户列表 → 用户详情」</div></div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary" id="btnFaq">新增 FAQ</button>
+        <button class="btn" id="btnAddon">新增增值服务</button>
+      </div>
+
+      <div class="card"><h3>增值服务目录</h3>
+        <table class="tbl"><thead><tr><th>编号</th><th>名称</th><th>月费</th><th>说明</th><th>订购数</th><th>状态</th><th>操作</th></tr></thead><tbody id="rowsAddons"></tbody></table>
+      </div>
+
+      <div class="card"><h3>FAQ 知识库（active 控制用户端可见）</h3>
+        <table class="tbl"><thead><tr><th>编号</th><th>问题</th><th>答案</th><th>状态</th><th>操作</th></tr></thead><tbody id="rowsFaqs"></tbody></table>
+      </div>
+
+      <div class="card"><h3>自助排障指南</h3>
+        <table class="tbl"><thead><tr><th>编号</th><th>标题</th><th>说明</th><th>步骤数</th><th>状态</th><th>操作</th></tr></thead><tbody id="rowsDiys"></tbody></table>
+      </div>
+
+      <div class="card"><h3>协议版本</h3>
+        <table class="tbl"><thead><tr><th>编号</th><th>类型</th><th>版本</th><th>条款数</th><th>生效时间</th><th>状态</th></tr></thead><tbody id="rowsAgr"></tbody></table>
+      </div>
+
+      <div class="card"><h3>邀请有礼 / 充值面额 / 产品卖点</h3>
+        <table class="tbl"><thead><tr><th>配置项</th><th>内容</th><th>说明</th></tr></thead><tbody id="rowsCfg"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="api.js"></script>
+<script>
+// 用户端配置(契约: /addons /user-faqs /diy-guides /agreements /invite-config /topup-denominations /product-specs)
+(function () {
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function fill(id, html) { document.getElementById(id).innerHTML = html; }
+  function tag(label, cls) { return '<span class="tag ' + (cls || 'tag-gray') + '">' + esc(label) + '</span>'; }
+  function bindToggle(tbodyId, attr, prefix, suffix) {
+    var links = document.getElementById(tbodyId).getElementsByTagName('a');
+    for (var i = 0; i < links.length; i++) {
+      links[i].onclick = function () {
+        API.put(prefix + this.getAttribute(attr) + suffix, {}).then(function () { location.reload(); });
+        return false;
+      };
+    }
+  }
+
+  API.get('/addons').then(function (d) {
+    fill('rowsAddons', d.items.map(function (r) {
+      return '<tr><td>' + esc(r.addonId) + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.monthlyFee) + '</td><td>' + esc(r.description)
+        + '</td><td>' + r.subscribedCount + '</td><td>' + tag(r.status, r.status === '在售' ? 'tag-green' : 'tag-gray')
+        + '</td><td><a href="#" data-addon="' + esc(r.addonId) + '">上架/下架</a></td></tr>';
+    }).join(''));
+    bindToggle('rowsAddons', 'data-addon', '/addons/', '/toggle');
+  });
+
+  API.get('/user-faqs').then(function (d) {
+    fill('rowsFaqs', d.items.map(function (r) {
+      return '<tr><td>' + esc(r.faqId) + '</td><td>' + esc(r.question) + '</td><td>' + esc(r.answer) + '</td><td>' + tag(r.status, r.statusClass)
+        + '</td><td><a href="#" data-faq="' + esc(r.faqId) + '">启用/停用</a></td></tr>';
+    }).join(''));
+    bindToggle('rowsFaqs', 'data-faq', '/user-faqs/', '/toggle');
+  });
+
+  API.get('/diy-guides').then(function (d) {
+    fill('rowsDiys', d.items.map(function (r) {
+      return '<tr><td>' + esc(r.guideId) + '</td><td>' + esc(r.title) + '</td><td>' + esc(r.desc) + '</td><td>' + r.stepCount + '</td><td>' + tag(r.status, r.statusClass)
+        + '</td><td><a href="#" data-diy="' + esc(r.guideId) + '">启用/停用</a></td></tr>';
+    }).join(''));
+    bindToggle('rowsDiys', 'data-diy', '/diy-guides/', '/toggle');
+  });
+
+  API.get('/agreements').then(function (d) {
+    fill('rowsAgr', d.items.map(function (r) {
+      return '<tr><td>' + esc(r.agreementId) + '</td><td>' + esc(r.typeLabel) + '</td><td>' + esc(r.version) + '</td><td>' + r.clauseCount
+        + '</td><td>' + esc(r.effectiveAt) + '</td><td>' + tag(r.status, r.statusClass) + '</td></tr>';
+    }).join(''));
+  });
+
+  Promise.all([API.get('/invite-config'), API.get('/topup-denominations'), API.get('/product-specs')]).then(function (rs) {
+    var html = rs[0].items.map(function (r) {
+      return '<tr><td>邀请有礼</td><td>' + esc(r.link) + '</td><td>' + esc(r.rewardDesc) + '</td></tr>';
+    }).join('');
+    html += '<tr><td>充值面额</td><td>' + rs[1].items.map(function (r) { return '¥' + r.amount; }).join(' / ') + '</td><td>用户端充值页展示配置</td></tr>';
+    html += rs[2].items.map(function (r) {
+      return '<tr><td>产品卖点 · ' + esc(r.productName) + '</td><td>' + r.specs.map(function (s) { return esc(s.label) + ': ' + esc(s.value); }).join('；') + '</td><td>商品详情页规格项</td></tr>';
+    }).join('');
+    fill('rowsCfg', html);
+  });
+
+  document.getElementById('btnFaq').onclick = function () {
+    API.post('/user-faqs', { question: '新常见问题？', answer: '由管理后台维护' }).then(function () { location.reload(); });
+  };
+  document.getElementById('btnAddon').onclick = function () {
+    API.post('/addons', { name: '新增值服务', monthlyFee: 10, description: '管理后台新增' }).then(function () { location.reload(); });
+  };
+})();
+</script>
+<script src="menu.js"></script>
+</body>
+</html>

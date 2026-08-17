@@ -1,6 +1,6 @@
 # 三端 mock 数据逻辑对齐(api/DATA-ALIGNMENT)
 
-> 版本 V1.1(2026-08-17)。本文件记录用户端/师傅端/管理后台三份 mock 数据与 openapi 契约的
+> 版本 V1.2(2026-08-17)。本文件记录用户端/师傅端/管理后台三份 mock 数据与 openapi 契约的
 > **统一事实基线**与对齐修正清单。字段/状态/术语权威源仍为 `docs/contract/{terms,fields,domain-map}.md`,
 > 与本文件冲突时以契约为准。
 
@@ -51,6 +51,14 @@ order(stage=12) ─→ gis 同步
 
 ## 3. 本次修正清单
 
+> V1.2 追加(师傅域全量后台管理): 师傅端用到的**全部**数据(工单/四码/激活/收款/绩效提成/评价/
+> 消息/公告/FAQ/物料/工具/旧件回收/设备健康/抢单池/调度会话/排期/接单设置)一律入库
+> `api/mock/worker/entities.js`(经 `db.js` 聚合,加入 `TABLE_NAMES` 可 CRUD),师傅端视图
+> `worker/data.js` 全量派生(实体视图用 getter,admin 改动即时生效);admin 端新增
+> `api/mock/admin/data/worker.js` 路由 + `docs/admin/worker.html`「师傅管理」页 + 契约
+> `api/openapi/admin/worker.yaml`,菜单挂"订单与工单"分组。selfcheck 第 16/17 节固化
+> 师傅域引用完整性与 admin 覆盖不变量。
+
 | # | 文件 | 修正 |
 |:--|:-----|:-----|
 | 1 | `api/mock/data.js` | 王先生报修单改为 TKT-20250817-015(3栋501),师傅电话改 138****8899(原 7788 为陈先生号码) |
@@ -74,3 +82,13 @@ order(stage=12) ─→ gis 同步
 2. 改完必须跑 `node api/mock/selfcheck.js`,退出码非 0 视为破坏对齐。
 3. 新增订单必须声明:客户(customerId)、环节(stage)、端口/标签/LOID 归属,并检查是否触发第 2 节口径(派单前置、GIS、回调时点)。
 4. 环节名展示标签允许各端有措辞差异(如"创建账号"vs"创建认证账号"),但环节序号与 12 环节顺序以 terms.md 为准,禁止增删改序。
+5. **用户端数据一律后端管理(V1.2 新增)**:用户端用到的全部数据必须在 admin 端可管理,不得有遗漏。用户域实体
+   (账户/地址簿/套餐订购/增值服务目录与订购/通知订阅/FAQ/消息/优惠券/邀请配置/流量/自助排障指南/协议/
+   余额/充值面额/电子发票/投诉/实名记录/产品卖点/账单明细项)统一定义于 `api/mock/user/entities.js`,
+   经 `db.js` 聚合并挂 uuid CRUD;admin 端按产品化结构管理:用户列表 `GET /users` + 用户详情聚合
+   `GET /users/{customerId}`(单接口返回该用户在用户端可见的全部数据,页面 `docs/admin/user.html` →
+   `user-detail.html?customerId=X` 分 Tab 聚合),全局配置(增值服务目录/FAQ/排障指南/协议/邀请/充值面额/
+   产品卖点)在 `docs/admin/userdata.html`(用户端配置);管理视图与写操作见 `api/mock/admin/data/userdata.js`
+   (契约 `api/openapi/admin/userdata.yaml`,聚合入口 `api/openapi/admin.yaml`),
+   用户端视图由 `api/mock/data.js` 派生,selfcheck 第 18~22 组固化"引用完整/发票口径/两端同源/admin 可管理/详情聚合同源"不变量。
+   其余用户端数据(客户档案/产品资费/订单/账单/缴费/报障)沿用既有 admin 域(customer/billing/order)。

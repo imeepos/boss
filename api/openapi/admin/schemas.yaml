@@ -20,6 +20,11 @@ components:
               items:
                 type: array
                 items: { type: object }
+    Item:
+      description: 单条记录(平铺对象;未命中返回 404)
+      content:
+        application/json:
+          schema: { type: object }
 
   parameters:
     keyword:

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户详情 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.tabs{display:flex;gap:4px;border-bottom:1px solid #d9e2ec;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{padding:8px 14px;border:none;background:none;cursor:pointer;font-size:13px;color:#52606d;border-bottom:2px solid transparent}
+.tabs button.active{color:#1b6ef3;border-bottom-color:#1b6ef3;font-weight:600}
+.kv{display:flex;flex-wrap:wrap;gap:6px 24px;font-size:13px}
+.kv div{min-width:180px}.kv b{color:#52606d;font-weight:400;margin-right:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:8px}
+.stat{border:1px solid #d9e2ec;border-radius:8px;padding:12px 14px}
+.stat .num{font-size:22px;font-weight:700;color:#102a43}
+.stat .lbl{font-size:12px;color:#52606d;margin-top:2px}
+.stat .sub{font-size:12px;color:#7b8794;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">客户与资费 / <a href="user.html">用户列表</a> / 用户详情</div>
+      <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2 id="hdName">用户详情</h2><div class="desc" id="hdDesc">该用户在用户端可见的全部数据（后端聚合单一接口）</div></div>
+
+      <div class="card"><div class="kv" id="kvHead"></div></div>
+
+      <div class="tabs" id="tabs">
+        <button data-t="overview" class="active">概述</button>
+        <button data-t="account">账户与安全</button>
+        <button data-t="plan">套餐与增值服务</button>
+        <button data-t="addr">地址簿</button>
+        <button data-t="biz">订单与报障</button>
+        <button data-t="bill">账单 · 缴费 · 发票</button>
+        <button data-t="asset">余额与流量</button>
+        <button data-t="msg">消息与优惠券</button>
+        <button data-t="svc">投诉与通知订阅</button>
+      </div>
+
+      <div class="card" id="pane-overview">
+        <h3>历史记录统计</h3>
+        <div class="stats" id="statGrid"></div>
+        <h3>近期动态</h3>
+        <table class="tbl"><thead><tr><th>时间</th><th>类型</th><th>单号</th><th>内容</th><th>结果</th></tr></thead><tbody id="tbRecent"></tbody></table>
+      </div>
+
+      <div class="card" id="pane-account" style="display:none"><h3>账户与实名</h3><table class="tbl"><thead><tr><th>登录名</th><th>注册时间</th><th>密码更新</th><th>自动缴费</th><th>实名状态</th><th>核验时间</th></tr></thead><tbody id="tbAccount"></tbody></table>
+        <h3>实名核验记录</h3><table class="tbl"><thead><tr><th>方式</th><th>时间</th><th>结果</th></tr></thead><tbody id="tbVerify"></tbody></table>
+      </div>
+
+      <div class="card" id="pane-plan" style="display:none"><h3>套餐订购</h3><table class="tbl"><thead><tr><th>订购号</th><th>套餐</th><th>月费</th><th>合约到期</th><th>状态</th></tr></thead><tbody id="tbPlans"></tbody></table>
+        <h3>增值服务订购</h3><table class="tbl"><thead><tr><th>订购号</th><th>名称</th><th>月费</th><th>订购时间</th><th>状态</th></tr></thead><tbody id="tbAddons"></tbody></table>
+      </div>
+
+      <div class="card" id="pane-addr" style="display:none"><h3>地址簿</h3><table class="tbl"><thead><tr><th>编号</th><th>地址码</th><th>地址</th><th>联系人</th><th>电话</th><th>默认</th></tr></thead><tbody id="tbAddr"></tbody></table>
+      </div>
+
+      <div class="card" id="pane-biz" style="display:none"><h3>订单</h3><table class="tbl"><thead><tr><th>订单号</th><th>业务类型</th><th>地址</th><th>环节</th><th>状态</th></tr></thead><tbody id="tbOrders"></tbody></table>
+        <h3>报障工单</h3><table class="tbl"><thead><tr><th>工单号</th><th>故障类型</th><th>报障时间</th><th>状态</th></tr></thead><tbody id="tbFaults"></tbody></table>
+      </div>
+
+      <div class="card" id="pane-bill" style="display:none"><h3>账单</h3><table class="tbl"><thead><tr><th>账单号</th><th>账期</th><th>金额</th><th>状态</th></tr></thead><tbody id="tbBills"></tbody></table>
+        <h3>缴费流水</h3><table class="tbl"><thead><tr><th>流水号</th><th>金额</th><th>账期</th><th>方式</th><th>时间</th></tr></thead><tbody id="tbPays"></tbody></table>
+        <h3>电子发票</h3><table class="tbl"><thead><tr><th>发票号</th><th>账期</th><th>金额</th><th>抬头</th><th>开具时间</th></tr></thead><tbody id="tbInv"></tbody></table>
+      </div>
+
+      <div class="card" id="pane-asset" style="display:none"><h3>余额</h3><table class="tbl"><thead><tr><th>余额</th><th>预警线</th><th>更新时间</th></tr></thead><tbody id="tbBal"></tbody></table>
+        <h3>流量使用</h3><table class="tbl"><thead><tr><th>账期</th><th>已用</th><th>配额</th><th>日均</th><th>在线时长</th><th>末次在线</th></tr></thead><tbody id="tbUsage"></tbody></table>
+      </div>
+
+      <div class="card" id="pane-msg" style="display:none"><h3>站内消息</h3><table class="tbl"><thead><tr><th>编号</th><th>分类</th><th>标题</th><th>内容</th><th>时间</th><th>已读</th></tr></thead><tbody id="tbMsgs"></tbody></table>
+        <h3>优惠券</h3><table class="tbl"><thead><tr><th>编号</th><th>名称</th><th>面额</th><th>门槛</th><th>到期</th><th>状态</th></tr></thead><tbody id="tbCoupons"></tbody></table>
+      </div>
+
+      <div class="card" id="pane-svc" style="display:none"><h3>投诉</h3><table class="tbl"><thead><tr><th>编号</th><th>类型</th><th>状态</th><th>创建时间</th><th>处理人</th></tr></thead><tbody id="tbCps"></tbody></table>
+        <h3>通知订阅</h3><table class="tbl"><thead><tr><th>业务通知</th><th>营销通知</th><th>渠道</th></tr></thead><tbody id="tbNotify"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="api.js"></script>
+<script>
+// 用户详情(契约: GET /users/{customerId} 聚合接口)
+(function () {
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function fill(id, html) { document.getElementById(id).innerHTML = html || '<tr><td colspan="9">—</td></tr>'; }
+  function tag(label, cls) { return '<span class="tag ' + (cls || 'tag-gray') + '">' + esc(label) + '</span>'; }
+  var CAT = { balance: '余额', billing: '账单', fault: '故障', promo: '营销' };
+  var BIZ = { INSTALL: '新装', CHANGE: '宽带变更', MOVE: '迁址', DISMANTLE: '拆机' };
+  var customerId = new URLSearchParams(location.search).get('customerId') || '1';
+
+  function rows(list, fn) {
+    return (list || []).map(fn).join('') || '<tr><td colspan="9">暂无数据</td></tr>';
+  }
+
+  var TYPE_TAG = { '订单': 'tag-blue', '缴费': 'tag-green', '报障': 'tag-orange', '投诉': 'tag-gray' };
+
+  // 概述: 历史记录统计卡片 + 近期动态
+  function renderOverview(d) {
+    var s = d.stats || {};
+    var onNet = s.onNet || {};
+    var contract = s.contract || {};
+    var cards = [
+      { num: (s.orders || {}).total || 0, lbl: '历史订单', sub: '完成 ' + ((s.orders || {}).completed || 0) + ' · 在途 ' + ((s.orders || {}).ongoing || 0) },
+      { num: (s.faults || {}).total || 0, lbl: '历史报障', sub: '已解决 ' + ((s.faults || {}).resolved || 0) },
+      { num: '¥' + ((s.payments || {}).totalAmount || 0), lbl: '累计缴费', sub: ((s.payments || {}).count || 0) + ' 笔流水' },
+      { num: onNet.months ? onNet.months + ' 个月' : '—', lbl: '在网时长', sub: onNet.since ? '自 ' + onNet.since : '无账户记录' },
+      { num: onNet.avgMonthlySpend != null ? '¥' + onNet.avgMonthlySpend : '—', lbl: '月均消费', sub: '按累计缴费口径' },
+      { num: (s.bills || {}).unpaidAmount ? '¥' + s.bills.unpaidAmount : '¥0', lbl: '未缴金额', sub: '账单 ' + ((s.bills || {}).total || 0) + ' 期' },
+      { num: (s.coupons || {}).available || 0, lbl: '可用优惠券', sub: '累计 ' + ((s.coupons || {}).total || 0) + ' 张' },
+      { num: (s.complaints || {}).total || 0, lbl: '历史投诉', sub: '已解决 ' + ((s.complaints || {}).resolved || 0) },
+      { num: (s.messages || {}).unread || 0, lbl: '未读消息', sub: '累计 ' + ((s.messages || {}).total || 0) + ' 条' },
+      { num: contract.remainMonths != null ? contract.remainMonths + ' 个月' : '—', lbl: '合约剩余', sub: contract.contractEnd ? '到期 ' + contract.contractEnd : '无生效套餐' },
+    ];
+    document.getElementById('statGrid').innerHTML = cards.map(function (k) {
+      return '<div class="stat"><div class="num">' + esc(k.num) + '</div><div class="lbl">' + esc(k.lbl) + '</div><div class="sub">' + esc(k.sub) + '</div></div>';
+    }).join('');
+    fill('tbRecent', rows(d.recent, function (r) {
+      return '<tr><td>' + esc(r.at) + '</td><td>' + tag(r.type, TYPE_TAG[r.type]) + '</td><td>' + esc(r.no)
+        + '</td><td>' + esc(r.desc) + '</td><td>' + esc(r.result) + '</td></tr>';
+    }));
+  }
+
+  function render(d) {
+    var c = d.customer;
+    document.getElementById('hdName').textContent = '用户详情 · ' + c.name + ' (#' + c.customerId + ')';
+    document.getElementById('kvHead').innerHTML =
+      '<div><b>姓名</b>' + esc(c.name) + '</div><div><b>手机号</b>' + esc(c.phoneMasked) + '</div>'
+      + '<div><b>登录名</b>' + esc(c.username || '—') + '</div><div><b>证件</b>' + esc(c.idType) + ' ' + esc(c.idNoMasked) + '</div>'
+      + '<div><b>实名</b>' + esc(c.realNameLabel) + '</div><div><b>服务状态</b>' + esc(c.serviceLabel) + '</div>'
+      + '<div><b>余额</b>¥' + d.balance.balance + '</div><div><b>在途订单</b>' + d.orders.filter(function (o) { return o.stage > 0 && o.stage < 12; }).length + ' 单</div>';
+
+    renderOverview(d);
+
+    fill('tbAccount', rows([c], function (r) {
+      return '<tr><td>' + esc(r.username) + '</td><td>' + esc(r.registeredAt) + '</td><td>' + esc(r.passwordUpdatedAt)
+        + '</td><td>' + (r.autoPayEnabled ? '已开通' : '未开通') + '</td><td>' + esc(r.realNameLabel) + '</td><td>' + esc(r.verifyAt || '—') + '</td></tr>';
+    }));
+    fill('tbVerify', rows(d.verifyRecords, function (r) {
+      return '<tr><td>' + esc(r.method) + '</td><td>' + esc(r.time) + '</td><td>' + esc(r.result) + '</td></tr>';
+    }));
+    fill('tbPlans', rows(d.plans, function (r) {
+      return '<tr><td>' + esc(r.planId) + '</td><td>' + esc(r.productName) + '</td><td>¥' + r.monthlyFee + '</td><td>' + esc(r.contractEnd) + '</td><td>' + esc(r.statusLabel) + '</td></tr>';
+    }));
+    fill('tbAddons', rows(d.addons, function (r) {
+      return '<tr><td>' + esc(r.subId) + '</td><td>' + esc(r.addonName) + '</td><td>¥' + r.monthlyFee + '</td><td>' + esc(r.subscribedAt) + '</td><td>' + esc(r.status === 'ACTIVE' ? '生效中' : '已退订') + '</td></tr>';
+    }));
+    fill('tbAddr', rows(d.addresses, function (r) {
+      return '<tr><td>' + esc(r.addressId) + '</td><td>' + esc(r.addrCode) + '</td><td>' + esc(r.community + ' · ' + r.building + ' · ' + r.door)
+        + '</td><td>' + esc(r.contact) + '</td><td>' + esc(r.phoneMasked) + '</td><td>' + (r.isDefault ? '默认' : '—') + '</td></tr>';
+    }));
+    fill('tbOrders', rows(d.orders, function (r) {
+      return '<tr><td>' + esc(r.orderNo) + '</td><td>' + esc(BIZ[r.bizType] || r.bizType) + '</td><td>' + esc(r.addrLabel) + '</td><td>' + r.stage + '/12</td><td>' + tag(r.statusLabel, r.statusLabel === '已完成' ? 'tag-green' : 'tag-blue') + '</td></tr>';
+    }));
+    fill('tbFaults', rows(d.faults, function (r) {
+      return '<tr><td>' + esc(r.ticketNo) + '</td><td>' + esc(r.faultTypeLabel) + '</td><td>' + esc(r.reportedAt) + '</td><td>' + tag(r.status === 'PROCESSING' ? '处理中' : '已解决', r.status === 'PROCESSING' ? 'tag-orange' : 'tag-green') + '</td></tr>';
+    }));
+    fill('tbBills', rows(d.bills, function (r) {
+      return '<tr><td>' + esc(r.billNo) + '</td><td>' + esc(r.period) + '</td><td>¥' + r.amount + '</td><td>' + tag(r.statusLabel, r.status === 'PAID' ? 'tag-green' : 'tag-orange') + '</td></tr>';
+    }));
+    fill('tbPays', rows(d.payments, function (r) {
+      return '<tr><td>' + esc(r.payNo) + '</td><td>¥' + r.amount + '</td><td>' + esc(r.period) + '</td><td>' + esc(r.method) + '</td><td>' + esc(r.paidAt) + '</td></tr>';
+    }));
+    fill('tbInv', rows(d.invoices, function (r) {
+      return '<tr><td>' + esc(r.invoiceId) + '</td><td>' + esc(r.period) + '</td><td>¥' + r.amount + '</td><td>' + esc(r.titleType + ' · ' + r.title) + '</td><td>' + esc(r.issuedAt) + '</td></tr>';
+    }));
+    fill('tbBal', rows([d.balance], function (r) {
+      return '<tr><td>¥' + r.balance + '</td><td>¥' + r.lowThreshold + '</td><td>' + esc(r.updatedAt) + '</td></tr>';
+    }));
+    fill('tbUsage', rows(d.usage ? [d.usage] : [], function (r) {
+      return '<tr><td>' + esc(r.period) + '</td><td>' + r.used + r.unit + '</td><td>' + r.quota + r.unit + '</td><td>' + r.dailyAvg + r.unit + '/天</td><td>' + esc(r.onlineDuration) + '</td><td>' + esc(r.lastOnlineAt) + '</td></tr>';
+    }));
+    fill('tbMsgs', rows(d.messages, function (r) {
+      return '<tr><td>' + esc(r.messageId) + '</td><td>' + esc(CAT[r.category] || r.category) + '</td><td>' + esc(r.title) + '</td><td>' + esc(r.content) + '</td><td>' + esc(r.createdAt) + '</td><td>' + (r.read ? '已读' : '未读') + '</td></tr>';
+    }));
+    fill('tbCoupons', rows(d.coupons, function (r) {
+      return '<tr><td>' + esc(r.couponId) + '</td><td>' + esc(r.title) + '</td><td>¥' + r.amount + '</td><td>满 ¥' + r.threshold + '</td><td>' + esc(r.expireAt) + '</td><td>' + tag(r.statusLabel, r.active ? 'tag-green' : 'tag-gray') + '</td></tr>';
+    }));
+    fill('tbCps', rows(d.complaints, function (r) {
+      return '<tr><td>' + esc(r.complaintId) + '</td><td>' + esc(r.typeLabel) + '</td><td>' + tag(r.statusLabel, r.status === 'RESOLVED' ? 'tag-green' : 'tag-orange') + '</td><td>' + esc(r.createdAt) + '</td><td>' + esc(r.handler) + '</td></tr>';
+    }));
+    fill('tbNotify', rows(d.notify ? [d.notify] : [], function (r) {
+      var b = r.business, m = r.marketing, ch = r.channels;
+      var mk = [m.promo && '优惠活动', m.planRecommend && '套餐推荐'].filter(Boolean).join(' / ') || '—';
+      return '<tr><td>' + [b.bill && '账单', b.suspendResume && '停复机', b.faultNotice && '故障', b.installProgress && '装维进度'].filter(Boolean).join(' / ') + '</td>'
+        + '<td>' + mk + '</td>'
+        + '<td>' + [ch.inApp && '站内', ch.sms && '短信', ch.push && '推送'].filter(Boolean).join(' / ') + '</td></tr>';
+    }));
+  }
+
+  var tabs = document.getElementById('tabs');
+  tabs.onclick = function (ev) {
+    var btn = ev.target.closest('button');
+    if (!btn) return;
+    tabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b === btn); });
+    ['overview', 'account', 'plan', 'addr', 'biz', 'bill', 'asset', 'msg', 'svc'].forEach(function (t) {
+      document.getElementById('pane-' + t).style.display = t === btn.getAttribute('data-t') ? '' : 'none';
+    });
+  };
+
+  API.get('/users/' + customerId).then(render).catch(function (e) {
+    document.getElementById('hdDesc').textContent = '加载失败: ' + e.message;
+  });
+})();
+</script>
+<script src="menu.js"></script>
+</body>
+</html>

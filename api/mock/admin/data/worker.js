@@ -137,5 +137,5 @@ module.exports = {
     db.serviceMessages.push(row);
     return { created: true, row };
   },
-  'GET /worker-schedules': () => ({ items: db.workerSchedules.map((s) => ({ ...s, workerName: db.byWorker(s.workerId).name, busyDaysLabel: s.busyDays.join('、') })) }),
+  'GET /worker-schedules': ({ query }) => ({ items: pick(db.workerSchedules.map((s) => ({ ...s, workerName: db.byWorker(s.workerId).name, busyDaysLabel: s.busyDays.join('、') })), query) }),
 };
