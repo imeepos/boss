@@ -9,7 +9,7 @@ import (
 )
 
 // TestPGStore_Integration 端到端验证「Open → Migrate → 查询」,需真实 PostgreSQL。
-// 运行: BOSS_PG_TEST_DSN="host=localhost port=15432 user=boss password=boss dbname=boss sslmode=disable" go test ./internal/domain/user/ -run TestPGStore_Integration -v
+// 运行: BOSS_PG_TEST_DSN="host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable" go test ./internal/domain/user/ -run TestPGStore_Integration -v
 // 未设置 DSN 时跳过(纯单测不依赖外部 PG)。
 func TestPGStore_Integration(t *testing.T) {
 	dsn := os.Getenv("BOSS_PG_TEST_DSN")
