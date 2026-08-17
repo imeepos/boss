@@ -59,4 +59,36 @@ func registerOrgRoutes(g *gin.RouterGroup, a *Application) {
 		}
 		respond(c, apitypes.CodeOK, list)
 	})
+
+	g.GET("/addresses", requirePerm(a.User, "menu:address"), func(c *gin.Context) {
+		list, err := a.User.ListAddresses(c.Request.Context(), queryInt64(c, "parentId"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, list)
+	})
+
+	g.POST("/addresses/import", requirePerm(a.User, "menu:importer"), func(c *gin.Context) {
+		var req struct {
+			Rows []struct {
+				Path string `json:"path" binding:"required"`
+				Name string `json:"name" binding:"required"`
+			} `json:"rows" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		rows := make([]user.AddressRow, 0, len(req.Rows))
+		for _, r := range req.Rows {
+			rows = append(rows, user.AddressRow{Path: r.Path, Name: r.Name})
+		}
+		imported, err := a.User.ImportAddresses(c.Request.Context(), rows)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"imported": imported})
+	})
 }

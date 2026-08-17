@@ -243,10 +243,10 @@ func TestPGStore_HasDataScope(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		scope   []any // legal_entity_id, dept_id, post_id, region_scope
-		owner   DataScope
-		want    bool
+		name  string
+		scope []any // legal_entity_id, dept_id, post_id, region_scope
+		owner DataScope
+		want  bool
 	}{
 		{"全集团放行", []any{int64(0), int64(0), int64(0), ""}, DataScope{LegalEntityID: 2, DeptID: 5, PostID: 7, RegionScope: "root.luzon"}, true},
 		{"子公司不匹配", []any{int64(1), int64(0), int64(0), ""}, DataScope{LegalEntityID: 2}, false},
@@ -389,5 +389,31 @@ func TestPGStore_ImportAddresses(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+// TestPGStore_GetProfile 契约:联表返回用户信息(角色名/公司名);未命中 ErrNotFound。
+func TestPGStore_GetProfile(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT a.id, a.username, a.real_name, r.code, r.name, COALESCE\(le.name, ''\), COALESCE\(a.region_scope`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"id", "username", "real_name", "code", "name", "legal_entity_name", "region_scope"}).
+			AddRow(int64(1), "boss", "老板", "sysadmin", "系统管理员", "主品牌·企业", "root.luzon"))
+
+	s := NewPGStore(mock)
+	p, err := s.GetProfile(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("GetProfile: %v", err)
+	}
+	if p.RealName != "老板" || p.RoleName != "系统管理员" || p.LegalEntityName != "主品牌·企业" {
+		t.Fatalf("p=%+v", p)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
 	}
 }

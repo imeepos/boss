@@ -65,6 +65,17 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	// 需要鉴权的路由组:登录后经 JWT 认证;RBAC 逐接口注入 permCode。
 	authed := api.Group("")
 	authed.Use(middleware.Authn(mgr))
+
+	authed.GET("/auth/me", func(c *gin.Context) {
+		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
+		p, err := a.User.GetProfile(c.Request.Context(), claims.AccountID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, p)
+	})
+
 	registerOrgRoutes(authed, a)
 	registerOrderRoutes(authed, a)
 	registerBillingRoutes(authed, a)

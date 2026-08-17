@@ -174,6 +174,26 @@ func (s *PGStore) GetDataScope(ctx context.Context, accountID int64) (DataScope,
 	return ds, nil
 }
 
+// GetProfile 读取当前用户信息(联表角色名/公司名,承接 /auth/me);未命中返回 ErrNotFound。
+func (s *PGStore) GetProfile(ctx context.Context, accountID int64) (*Profile, error) {
+	var p Profile
+	err := s.db.QueryRow(ctx, `
+		SELECT a.id, a.username, a.real_name, r.code, r.name,
+		       COALESCE(le.name, ''), COALESCE(a.region_scope::text, '')
+		FROM accounts a
+		JOIN roles r ON a.role_id = r.id
+		LEFT JOIN legal_entities le ON a.legal_entity_id = le.id
+		WHERE a.id = $1`, accountID).
+		Scan(&p.AccountID, &p.Username, &p.RealName, &p.RoleCode, &p.RoleName, &p.LegalEntityName, &p.RegionScope)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("user: get profile: %w", err)
+	}
+	return &p, nil
+}
+
 // ListAddresses 列出地址层级;parentID=0 返回顶层,否则返回该父节点下的子节点。
 func (s *PGStore) ListAddresses(ctx context.Context, parentID int64) ([]Address, error) {
 	rows, err := s.db.Query(ctx, `

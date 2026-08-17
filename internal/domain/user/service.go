@@ -13,6 +13,17 @@ type LoginResult struct {
 	RoleName  string // 角色名(展示)
 }
 
+// Profile 当前登录用户信息(承接 /auth/me header 展示)。
+type Profile struct {
+	AccountID       int64  `json:"accountId"`
+	Username        string `json:"username"`
+	RealName        string `json:"realName"`
+	RoleCode        string `json:"roleCode"`
+	RoleName        string `json:"roleName"`
+	LegalEntityName string `json:"legalEntityName"`
+	RegionScope     string `json:"regionScope"` // 空=全集团
+}
+
 type Service interface {
 	Login(ctx context.Context, username, password string) (*LoginResult, error)
 
@@ -30,13 +41,14 @@ type Service interface {
 	ListDepartments(ctx context.Context, legalEntityID int64) ([]Department, error)
 	ListPosts(ctx context.Context, deptID int64) ([]Post, error)
 	GetDataScope(ctx context.Context, accountID int64) (DataScope, error)
+	GetProfile(ctx context.Context, accountID int64) (*Profile, error)
 }
 
 type Address struct {
-	ID       int64
-	ParentID int64
-	Level    int8 // 1市 2区 3街道 4小区 5楼栋
-	Name     string
+	ID       int64  `json:"id"`
+	ParentID int64  `json:"parentId"`
+	Level    int8   `json:"level"` // 1市 2区 3街道 4小区 5楼栋
+	Name     string `json:"name"`
 }
 
 type AddressRow struct {

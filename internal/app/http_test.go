@@ -44,6 +44,9 @@ func (f *fakeUser) ListPosts(context.Context, int64) ([]user.Post, error) { retu
 func (f *fakeUser) GetDataScope(context.Context, int64) (user.DataScope, error) {
 	return user.DataScope{}, nil
 }
+func (f *fakeUser) GetProfile(context.Context, int64) (*user.Profile, error) {
+	return &user.Profile{AccountID: 1, Username: "boss", RealName: "老板", RoleName: "系统管理员"}, nil
+}
 
 func newTestRouter(f *fakeUser, mgr *auth.Manager) *gin.Engine {
 	gin.SetMode(gin.TestMode)
