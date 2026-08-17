@@ -7,14 +7,14 @@ import (
 
 // Alarm 网络告警(网络设备/四码对账/认证异常)。
 type Alarm struct {
-	ID         int64
-	AlarmNo    string // ALM-001
-	Level      string // CRITICAL/WARNING/INFO
-	Source     string // device/quadlink/aaa
-	Content    string
-	ResourceID int64 // 0=空(软引用 resources.id)
-	Status     string // OPEN/ACKED/CLOSED
-	CreatedAt  time.Time
+	ID         int64     `json:"id"`
+	AlarmNo    string    `json:"alarmNo"` // ALM-001
+	Level      string    `json:"level"`   // CRITICAL/WARNING/INFO
+	Source     string    `json:"source"`  // device/quadlink/aaa
+	Content    string    `json:"content"`
+	ResourceID int64     `json:"resourceId"` // 0=空(软引用 resources.id)
+	Status     string    `json:"status"`     // OPEN/ACKED/CLOSED
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 // AlarmService 网络监控告警域服务口(阶段7,MON)。
