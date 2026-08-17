@@ -161,3 +161,28 @@ func TestPGStore_CreatePayment(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+// TestPGStore_GenerateBills 契约:按账期为在网客户批量出账,金额=产品基础月费,幂等。
+func TestPGStore_GenerateBills(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectExec(`INSERT INTO bills`).
+		WithArgs("2026-08").
+		WillReturnResult(pgxmock.NewResult("INSERT", 3))
+
+	s := NewPGStore(mock)
+	n, err := s.GenerateBills(context.Background(), "2026-08")
+	if err != nil {
+		t.Fatalf("GenerateBills: %v", err)
+	}
+	if n != 3 {
+		t.Fatalf("generated=%d, want 3", n)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}

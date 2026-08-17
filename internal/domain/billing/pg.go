@@ -113,3 +113,22 @@ func (s *PGStore) CreatePayment(ctx context.Context, p Payment) (int64, error) {
 	}
 	return id, nil
 }
+
+// GenerateBills 出账:为在网客户按账期批量生成账单,幂等(ON CONFLICT DO NOTHING)。
+// 金额=产品基础月费;区域调价覆盖待 lo_account 补 region_path 后接入(见 data-model 缺口注释)。
+func (s *PGStore) GenerateBills(ctx context.Context, period string) (int, error) {
+	tag, err := s.db.Exec(ctx, `
+		INSERT INTO bills(bill_no, customer_id, customer_name, legal_entity_id, legal_entity_name, region_id, region_name, period, amount, status)
+		SELECT 'BILL-' || $1 || '-' || la.customer_id,
+		       la.customer_id, COALESCE(c.name, ''), la.legal_entity_id, la.legal_entity_name,
+		       la.region_id, la.region_name, $1, po.monthly_fee, 'UNPAID'
+		FROM lo_accounts la
+		JOIN customers c ON la.customer_id = c.id
+		JOIN product_offers po ON la.offer_id = po.id
+		WHERE la.status = 'ACTIVE' AND c.service_status = 'ACTIVE'
+		ON CONFLICT (customer_id, period) DO NOTHING`, period)
+	if err != nil {
+		return 0, fmt.Errorf("billing: generate bills: %w", err)
+	}
+	return int(tag.RowsAffected()), nil
+}

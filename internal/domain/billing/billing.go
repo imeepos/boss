@@ -34,4 +34,7 @@ type BillingService interface {
 	GetBill(ctx context.Context, id int64) (*Bill, error)
 	ListPayments(ctx context.Context, billID int64) ([]Payment, error)
 	CreatePayment(ctx context.Context, p Payment) (int64, error)
+	// GenerateBills 出账:为在网客户按账期批量生成账单(金额=产品基础月费成交价快照),幂等。
+	// 返回本次新生成账单数。区域调价覆盖(region_offers)待 lo_account 补齐 region_path 后接入。
+	GenerateBills(ctx context.Context, period string) (int, error)
 }
