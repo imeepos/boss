@@ -1,0 +1,4 @@
+BEGIN;
+DROP TABLE IF EXISTS stop_resume_tasks;
+DROP TABLE IF EXISTS arrears;
+COMMIT;
