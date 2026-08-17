@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -75,8 +77,19 @@ func (a *Application) appendStopResume(c *gin.Context, customerID int64, action 
 	if err != nil {
 		return err
 	}
+	// W6 停复机即时生效:任务留痕 + LO 账号状态原子迁移(停机在线无网/缴费即恢复)。
+	var transit func(context.Context, int64) error
+	taskStatus := "DONE"
+	if action == "STOP" {
+		transit = a.Aaa.SuspendLoAccount
+	} else {
+		transit = a.Aaa.ResumeLoAccount
+	}
+	if err := transit(c.Request.Context(), lo.ID); err != nil {
+		taskStatus = "FAILED" // 非法迁移(重复停机等)记录失败任务,不中断响应
+	}
 	_, err = a.Arrears.AppendStopResumeTask(c.Request.Context(), billing.StopResumeTask{
-		CustomerID: customerID, LoAccountID: lo.ID, Action: action, Status: "PENDING",
+		CustomerID: customerID, LoAccountID: lo.ID, Action: action, Status: taskStatus,
 	})
 	return err
 }

@@ -5,6 +5,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,7 +18,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/ymm-001/boss/internal/domain/aaa"
+	aaabilling "github.com/ymm-001/boss/internal/domain/aaa/billing"
 	"github.com/ymm-001/boss/internal/domain/asset"
+	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/pkg/auth"
@@ -246,6 +250,71 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			t.Fatalf("reconcile rep=%+v", rep)
 		}
 	})
+
+	t.Run("W6_AAA_停复机即时生效_话单入账", func(t *testing.T) {
+		authz := aaa.NewPGAuthorizer(pool)
+		customerID, err := a.Customer.Create(ctx, customer.Customer{
+			Name: "E2E-AAA客户", Phone: "09171111111", IdType: "身份证", IdNo: "E2E-AAA",
+			RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE",
+			AddressID: s.addressID, LegalEntityID: 1, RegionID: s.regionID, RegionName: s.regionName,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		loid := "E2E-LOID-" + orderNo6(customerID)
+		loID, err := a.Aaa.CreateLoAccount(ctx, aaa.LoAccount{
+			Loid: loid, CustomerID: customerID, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
+			OfferID: s.offerID, Status: "ACTIVE",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// 认证达标:ACTIVE 放行并下发套餐带宽。
+		d, err := authz.Decide(ctx, loid)
+		if err != nil || !d.Authorize {
+			t.Fatalf("decide=%+v err=%v", d, err)
+		}
+		if d.Bandwidth != "300M" {
+			t.Fatalf("bandwidth=%s, want 300M(套餐)", d.Bandwidth)
+		}
+		// 停机即时生效:HTTP STOP → SUSPENDED → 认证拒绝。
+		if w := postOKStatus(t, ts, token, "/api/v1/arrears/"+fmt.Sprint(customerID)+"/stop"); w != 200 {
+			t.Fatalf("stop http=%d", w)
+		}
+		if _, err := authz.Decide(ctx, loid); !errors.Is(err, aaa.ErrSuspended) {
+			t.Fatalf("停机后 err=%v, want ErrSuspended", err)
+		}
+		// 缴费复机:HTTP RESUME → ACTIVE → 认证恢复。
+		if w := postOKStatus(t, ts, token, "/api/v1/arrears/"+fmt.Sprint(customerID)+"/resume"); w != 200 {
+			t.Fatalf("resume http=%d", w)
+		}
+		if d, err := authz.Decide(ctx, loid); err != nil || !d.Authorize {
+			t.Fatalf("复机后 decide=%+v err=%v", d, err)
+		}
+		// 话单入账:PGEmitter 落库可查。
+		em := aaabilling.NewPGEmitter(a.Aaa.(*aaa.PGStore))
+		if err := em.Emit(ctx, aaabilling.CDR{
+			LOID: loid, AcctStatus: 2, SessionID: "S-E2E", SessionTime: 600,
+			InputOctets: 1024, OutputOctets: 2048, NASIP: "10.0.0.1",
+		}); err != nil {
+			t.Fatal(err)
+		}
+		cdrs, err := a.Aaa.ListCdrs(ctx, loid)
+		if err != nil || len(cdrs) == 0 {
+			t.Fatalf("cdrs=%d err=%v", len(cdrs), err)
+		}
+		if cdrs[0].BillingStatus != "UNBILLED" {
+			t.Fatalf("billingStatus=%s", cdrs[0].BillingStatus)
+		}
+		_ = loID
+	})
+}
+
+// postOKStatus 带登录态 POST,仅断言 HTTP 200。
+func postOKStatus(t *testing.T, ts *httptest.Server, token, path string) int {
+	t.Helper()
+	code, _ := scanPost(t, ts, token, path, "")
+	return code
 }
 
 // orderNo6 订单 id → 6 位尾(测试单号唯一化)。

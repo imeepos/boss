@@ -55,4 +55,8 @@ type AaaService interface {
 
 	AppendAuthLog(ctx context.Context, l AuthLog) (int64, error)
 	ListAuthLogs(ctx context.Context, loid string) ([]AuthLog, error)
+
+	// SuspendLoAccount/ResumeLoAccount 停复机即时生效(状态迁移,仅合法前置态可迁)。
+	SuspendLoAccount(ctx context.Context, loAccountID int64) error
+	ResumeLoAccount(ctx context.Context, loAccountID int64) error
 }

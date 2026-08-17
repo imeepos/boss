@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"time"
 )
 
@@ -34,6 +35,7 @@ type Config struct {
 		AcctAddr string // RADIUS 计费端口(1813)
 		Secret   string // NAS 共享密钥
 		AuthTTL  int    // 授权缓存 TTL 秒(默认 60)
+		CDRTopic string // 话单 Kafka topic
 	}
 
 	JWT struct {
@@ -60,6 +62,8 @@ func Load() *Config {
 	c.AAA.AcctAddr = getenv("BOSS_AAA_ACCT_ADDR", ":1813")
 	c.AAA.Secret = getenv("BOSS_AAA_SECRET", "boss-aaa-secret")
 	c.AAA.AuthTTL = 60
+	c.Kafka.Brokers = getlist("BOSS_KAFKA_BROKERS", []string{"192.168.0.102:29092"})
+	c.AAA.CDRTopic = getenv("BOSS_AAA_CDR_TOPIC", "boss-cdr")
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
 	c.JWT.TTL = 24 * time.Hour
 	return c
@@ -70,4 +74,18 @@ func getenv(k, def string) string {
 		return v
 	}
 	return def
+}
+
+func getlist(k string, def []string) []string {
+	v := os.Getenv(k)
+	if v == "" {
+		return def
+	}
+	out := []string{}
+	for _, p := range strings.Split(v, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
