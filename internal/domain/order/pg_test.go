@@ -84,11 +84,11 @@ func TestPGStore_Reserve(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT status FROM orders`).
+		mock.ExpectQuery(`SELECT stage, status FROM orders`).
 			WithArgs(int64(1)).
-			WillReturnRows(mock.NewRows([]string{"status"}).AddRow("PENDING"))
-		mock.ExpectExec(`UPDATE orders SET status`).
-			WithArgs(int64(1), "RESERVED").
+			WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(2), "PENDING"))
+		mock.ExpectExec(`UPDATE orders SET stage`).
+			WithArgs(int64(1), int8(3), "RESERVED").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectExec(`INSERT INTO order_stages`).
 			WithArgs(int64(1), int8(3), "DONE").
@@ -109,9 +109,9 @@ func TestPGStore_Reserve(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT status FROM orders`).
+		mock.ExpectQuery(`SELECT stage, status FROM orders`).
 			WithArgs(int64(1)).
-			WillReturnRows(mock.NewRows([]string{"status"}).AddRow("RESERVED"))
+			WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(2), "RESERVED"))
 
 		s := NewPGStore(mock, stubExists{})
 		err = s.Reserve(context.Background(), 1)

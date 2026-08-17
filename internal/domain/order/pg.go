@@ -77,24 +77,9 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 	return o, nil
 }
 
-// Reserve 端口预占(环节3):状态机 PENDING→RESERVED。
+// Reserve 端口预占(环节3):经工作流推进 stage=3 且 status PENDING→RESERVED。
 func (s *PGStore) Reserve(ctx context.Context, orderID int64) error {
-	var status string
-	err := s.db.QueryRow(ctx, `SELECT status FROM orders WHERE id = $1`, orderID).Scan(&status)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrOrderNotFound
-	}
-	if err != nil {
-		return fmt.Errorf("order: reserve select: %w", err)
-	}
-	next, err := transition(status, "reserve")
-	if err != nil {
-		return err // ErrIllegalTransition
-	}
-	if _, err := s.db.Exec(ctx, `UPDATE orders SET status = $2 WHERE id = $1`, orderID, next); err != nil {
-		return fmt.Errorf("order: reserve update: %w", err)
-	}
-	return s.appendStage(ctx, orderID, 3, "DONE")
+	return s.advance(ctx, orderID, "reservePort")
 }
 
 // Track 跟踪:返回订单 + 环节时间轴。

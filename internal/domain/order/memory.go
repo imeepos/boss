@@ -102,21 +102,11 @@ func (s *MemoryService) CheckResource(ctx context.Context, orderID int64) error 
 	return nil
 }
 
-// Reserve 端口预占(环节3):状态机 PENDING→RESERVED。
+// Reserve 端口预占(环节3):经工作流推进 stage=3 且 status PENDING→RESERVED。
 func (s *MemoryService) Reserve(ctx context.Context, orderID int64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	o, ok := s.m[orderID]
-	if !ok {
-		return ErrOrderNotFound
-	}
-	next, err := transition(o.Status, "reserve")
-	if err != nil {
-		return err
-	}
-	o.Status = next
-	s.appendLogLocked(orderID, 3, "DONE")
-	return nil
+	return s.advanceLocked(orderID, "reservePort")
 }
 
 // Track 返回订单副本与环节日志副本。
@@ -130,6 +120,89 @@ func (s *MemoryService) Track(ctx context.Context, orderID int64) (*Order, []Sta
 	logs := make([]StageLog, len(s.logs[orderID]))
 	copy(logs, s.logs[orderID])
 	return cloneOrder(o), logs, nil
+}
+
+// advanceLocked 推进一个环节(调用方须持锁);逻辑与 PGStore.advance 一致。
+func (s *MemoryService) advanceLocked(orderID int64, event string) error {
+	step, ok := workflowByEvent[event]
+	if !ok {
+		return fmt.Errorf("order: unknown event %q", event)
+	}
+	o, ok := s.m[orderID]
+	if !ok {
+		return ErrOrderNotFound
+	}
+	if o.Stage != step.stage-1 {
+		return ErrIllegalTransition
+	}
+	if step.statusEvent != "" {
+		ns, err := transition(o.Status, step.statusEvent)
+		if err != nil {
+			return err
+		}
+		o.Status = ns
+	}
+	o.Stage = step.stage
+	s.appendLogLocked(orderID, step.stage, "DONE")
+	return nil
+}
+
+// 环节 4~12(与 PGStore 同名,经同一工作流表推进)。
+func (s *MemoryService) ChargeContract(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "chargeContract")
+}
+func (s *MemoryService) ApplyTag(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "applyTag")
+}
+func (s *MemoryService) CreateUserProfile(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "createUserProfile")
+}
+func (s *MemoryService) PreConfigOLT(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "preConfigOLT")
+}
+func (s *MemoryService) DispatchOrder(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "dispatchOrder")
+}
+func (s *MemoryService) ScanBind(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "scanBind")
+}
+func (s *MemoryService) ActivateUser(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "activateUser")
+}
+func (s *MemoryService) NotifyActivation(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "notifyActivation")
+}
+func (s *MemoryService) UpdateMap(ctx context.Context, orderID int64) error {
+	return s.adv(orderID, "updateMap")
+}
+
+// Cancel 取消订单;Release 端口释放(预占回滚)。
+func (s *MemoryService) Cancel(ctx context.Context, orderID int64) error {
+	return s.transitionStatusLocked(orderID, "cancel")
+}
+func (s *MemoryService) Release(ctx context.Context, orderID int64) error {
+	return s.transitionStatusLocked(orderID, "release")
+}
+
+func (s *MemoryService) adv(orderID int64, event string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.advanceLocked(orderID, event)
+}
+
+func (s *MemoryService) transitionStatusLocked(orderID int64, event string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	o, ok := s.m[orderID]
+	if !ok {
+		return ErrOrderNotFound
+	}
+	next, err := transition(o.Status, event)
+	if err != nil {
+		return err
+	}
+	o.Status = next
+	return nil
 }
 
 // appendLogLocked 写环节日志(调用方须持锁)。

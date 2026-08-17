@@ -65,15 +65,19 @@ func TestReserveTransitions(t *testing.T) {
 	s, checker := newSvc(1)
 	o, _ := s.Submit(context.Background(), SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
 
+	// 环节2 资源核查通过后,环节3 才可预占。
+	if err := s.CheckResource(context.Background(), o.ID); err != nil {
+		t.Fatalf("CheckResource err = %v", err)
+	}
 	if err := s.Reserve(context.Background(), o.ID); err != nil {
 		t.Fatalf("Reserve err = %v", err)
 	}
 	got, _, _ := s.Track(context.Background(), o.ID)
-	if got.Status != "RESERVED" {
-		t.Fatalf("status = %q, want RESERVED", got.Status)
+	if got.Status != "RESERVED" || got.Stage != 3 {
+		t.Fatalf("status=%q stage=%d, want RESERVED/3", got.Status, got.Stage)
 	}
 
-	// 第二次 Reserve:RESERVED→reserve 无定义,应拒非法流转。
+	// 第二次 Reserve:stage 已=3,顺序守卫拒绝(环节不可重复)。
 	if err := s.Reserve(context.Background(), o.ID); err != ErrIllegalTransition {
 		t.Fatalf("err = %v, want ErrIllegalTransition", err)
 	}

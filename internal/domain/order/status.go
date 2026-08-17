@@ -2,11 +2,17 @@ package order
 
 import "github.com/ymm-001/boss/internal/pkg/statemachine"
 
-// 订单状态迁移最少集(后续环节按 terms.md 第 1 节逐步补 defs)。
+// 订单状态迁移表(terms.md §3):status 是「订单当前状态」的正交维度。
 // 单事实源(ADR-003):所有 Status 迁移必须过 statemachine.Transition,不许直接改字段。
 var orderStatusDefs = []statemachine.Def{
 	{From: "PENDING", Event: "reserve", To: "RESERVED"},
 	{From: "RESERVED", Event: "release", To: "PENDING"},
+	{From: "RESERVED", Event: "install", To: "INSTALLING"},
+	{From: "INSTALLING", Event: "done", To: "DONE"},
+	// 取消:任一未完成状态可取消(terms.md §3 CANCELLED)。
+	{From: "PENDING", Event: "cancel", To: "CANCELLED"},
+	{From: "RESERVED", Event: "cancel", To: "CANCELLED"},
+	{From: "INSTALLING", Event: "cancel", To: "CANCELLED"},
 }
 
 // orderSM 订单状态机实例(仅本包内使用)。

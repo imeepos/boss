@@ -1,0 +1,119 @@
+package order
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// advance 推进一个环节:顺序守卫(stage 必须等于上一环节)+ status 迁移(经 orderSM)+ 环节日志。
+// 单事实源:所有环节推进都必须过此原语,禁止直接改 stage/status。
+func (s *PGStore) advance(ctx context.Context, orderID int64, event string) error {
+	step, ok := workflowByEvent[event]
+	if !ok {
+		return fmt.Errorf("order: unknown event %q", event)
+	}
+	var stage int8
+	var status string
+	err := s.db.QueryRow(ctx, `SELECT stage, status FROM orders WHERE id = $1`, orderID).Scan(&stage, &status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrOrderNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("order: advance select: %w", err)
+	}
+	if stage != step.stage-1 {
+		return ErrIllegalTransition
+	}
+	nextStatus := status
+	if step.statusEvent != "" {
+		ns, err := transition(status, step.statusEvent)
+		if err != nil {
+			return err
+		}
+		nextStatus = ns
+	}
+	if _, err := s.db.Exec(ctx, `UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, step.stage, nextStatus); err != nil {
+		return fmt.Errorf("order: advance update: %w", err)
+	}
+	return s.appendStage(ctx, orderID, step.stage, "DONE")
+}
+
+// 环节 4~12(terms.md §1)。各环节目前是「人工确认」推进;自动化在阶段7 经同一状态机升级。
+
+// ChargeContract 环节4 合同收费(未收费不派单的硬约束由顺序守卫保证:dispatch 需 stage=7)。
+func (s *PGStore) ChargeContract(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "chargeContract")
+}
+
+// ApplyTag 环节5 标签预绑定。
+func (s *PGStore) ApplyTag(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "applyTag")
+}
+
+// CreateUserProfile 环节6 创建认证账号。
+func (s *PGStore) CreateUserProfile(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "createUserProfile")
+}
+
+// PreConfigOLT 环节7 预下发配置。
+func (s *PGStore) PreConfigOLT(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "preConfigOLT")
+}
+
+// DispatchOrder 环节8 派单(status: RESERVED→INSTALLING)。
+func (s *PGStore) DispatchOrder(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "dispatchOrder")
+}
+
+// ScanBind 环节9 扫码绑定。
+func (s *PGStore) ScanBind(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "scanBind")
+}
+
+// ActivateUser 环节10 激活。
+func (s *PGStore) ActivateUser(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "activateUser")
+}
+
+// NotifyActivation 环节11 激活回调(status: INSTALLING→DONE)。
+func (s *PGStore) NotifyActivation(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "notifyActivation")
+}
+
+// UpdateMap 环节12 更新 GIS。
+func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
+	return s.advance(ctx, orderID, "updateMap")
+}
+
+// Cancel 取消订单:任一未完成状态可取消(status→CANCELLED),不动环节序号。
+func (s *PGStore) Cancel(ctx context.Context, orderID int64) error {
+	return s.transitionStatus(ctx, orderID, "cancel")
+}
+
+// Release 端口释放:RESERVED→PENDING(超时/取消的预占回滚),不动环节序号。
+func (s *PGStore) Release(ctx context.Context, orderID int64) error {
+	return s.transitionStatus(ctx, orderID, "release")
+}
+
+// transitionStatus 只做 status 迁移(不改 stage,不写环节日志)。
+func (s *PGStore) transitionStatus(ctx context.Context, orderID int64, event string) error {
+	var status string
+	err := s.db.QueryRow(ctx, `SELECT status FROM orders WHERE id = $1`, orderID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrOrderNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("order: status select: %w", err)
+	}
+	next, err := transition(status, event)
+	if err != nil {
+		return err
+	}
+	if _, err := s.db.Exec(ctx, `UPDATE orders SET status = $2 WHERE id = $1`, orderID, next); err != nil {
+		return fmt.Errorf("order: status update: %w", err)
+	}
+	return nil
+}
