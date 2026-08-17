@@ -43,6 +43,7 @@ type ScanLog struct {
 // WorkOrderService 订单工单/报障/扫码域服务口(阶段5 子表)。
 type WorkOrderService interface {
 	ListDispatchTickets(ctx context.Context) ([]DispatchTicket, error)
+	GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*DispatchTicket, error)
 	CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error)
 	ListComplaints(ctx context.Context) ([]Complaint, error)
 	CreateComplaint(ctx context.Context, c Complaint) (int64, error)

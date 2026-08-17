@@ -2,7 +2,10 @@ package order
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // idOrNil 把 0 归一为 NULL(可空外键约定:0=空)。
@@ -81,6 +84,25 @@ func (s *PGStore) CreateComplaint(ctx context.Context, c Complaint) (int64, erro
 		return 0, fmt.Errorf("order: create complaint: %w", err)
 	}
 	return id, nil
+}
+
+// GetDispatchTicketByNo 按工单号寻址(扫码闭环入口:ticketNo → orderID)。
+func (s *PGStore) GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*DispatchTicket, error) {
+	var t DispatchTicket
+	err := s.db.QueryRow(ctx, `
+		SELECT id, ticket_no, order_id, COALESCE(worker_id, 0), COALESCE(worker_name, ''),
+		       COALESCE(group_id, 0), COALESCE(group_name, ''), COALESCE(region_id, 0), COALESCE(region_name, ''),
+		       legal_entity_id, legal_entity_name, status
+		FROM dispatch_tickets WHERE ticket_no = $1`, ticketNo).
+		Scan(&t.TicketID, &t.TicketNo, &t.OrderID, &t.WorkerID, &t.WorkerName,
+			&t.GroupID, &t.GroupName, &t.RegionID, &t.RegionName, &t.LegalEntityID, &t.LegalEntityName, &t.Status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrOrderNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("order: get dispatch ticket: %w", err)
+	}
+	return &t, nil
 }
 
 // ListScanLogs 列出扫码绑定记录;orderID=0 返回全部,否则按订单过滤。

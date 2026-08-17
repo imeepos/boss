@@ -1,0 +1,74 @@
+// boss/quadlink/v1 —— 四码合一服务契约(师傅端→服务端,阶段6/W5)。
+// 语义:扫码绑定校验(不一致拒)、拆机必扫码、四码反查、对账。
+syntax = "proto3";
+
+package boss.quadlink.v1;
+
+import "api/proto/boss/common/v1/common.proto";
+
+option go_package = "github.com/ymm-001/boss/api/proto/boss/quadlink/v1;quadlinkv1";
+
+// QuadLinkService 四码合一服务。
+service QuadLinkService {
+  // ScanBind 扫码绑定(环节9):实物 EPC ↔ 预绑定核对;不一致返回 CODE_SCAN_MISMATCH。
+  rpc ScanBind(ScanBindRequest) returns (ScanBindResponse);
+  // DismantleScan 拆机扫码解绑(强制):不扫码返回 CODE_INVALID_PARAM,不一致返回 CODE_SCAN_MISMATCH。
+  rpc DismantleScan(DismantleScanRequest) returns (DismantleScanResponse);
+  // Query 任一码反查四码(资产/客户/端口/地址任一 ID)。
+  rpc Query(QueryRequest) returns (QuadLink);
+  // Reconcile 四码对账任务(定时触发):成员缺失置 CONFLICT。
+  rpc Reconcile(ReconcileRequest) returns (ReconcileReport);
+}
+
+message ScanBindRequest {
+  string ticket_no = 1; // 派单工单号(→ orderID)
+  string epc = 2;       // 实物电子标签 EPC
+  int64 worker_id = 3;  // 装维师傅
+  string worker_name = 4;
+  bool offline = 5; // 弱网离线缓存补传
+}
+
+message ScanBindResponse {
+  boss.common.v1.Code code = 1;
+  string result = 2; // MATCH / MISMATCH / OFFLINE_CACHED
+  bool stage_advanced = 3; // MATCH 时是否推进环节9
+}
+
+message DismantleScanRequest {
+  string ticket_no = 1;
+  string epc = 2;
+}
+
+message DismantleScanResponse {
+  boss.common.v1.Code code = 1;
+  bool unlinked = 2;
+}
+
+message QueryRequest {
+  oneof key {
+    int64 asset_id = 1;
+    int64 customer_id = 2;
+    int64 port_id = 3;
+    int64 address_id = 4;
+  }
+}
+
+message QuadLink {
+  int64 id = 1;
+  int64 asset_id = 2;
+  int64 customer_id = 3;
+  int64 port_id = 4;
+  int64 address_id = 5;
+  int64 legal_entity_id = 6;
+  string legal_entity_name = 7;
+  string status = 8; // LINKED / CONFLICT / UNLINKED
+}
+
+message ReconcileRequest {}
+
+message ReconcileReport {
+  int32 total = 1;
+  int32 linked = 2;
+  int32 conflict = 3;
+  int32 unlinked = 4;
+}

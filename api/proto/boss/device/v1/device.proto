@@ -1,0 +1,40 @@
+// boss/device/v1 —— 设备指标上报契约(collector→server,阶段7/W7)。
+// 语义:OLT/ONU 指标批量上报、Trap 告警实时推送。
+syntax = "proto3";
+
+package boss.device.v1;
+
+import "api/proto/boss/common/v1/common.proto";
+
+option go_package = "github.com/ymm-001/boss/api/proto/boss/device/v1;devicev1";
+
+// DeviceIngestService 设备采集上报服务。
+service DeviceIngestService {
+  // ReportMetrics SNMP 周期指标批量上报。
+  rpc ReportMetrics(ReportMetricsRequest) returns (OpResponse);
+  // ReportTrap Trap 告警实时上报(触发告警规则)。
+  rpc ReportTrap(Trap) returns (OpResponse);
+}
+
+message ReportMetricsRequest {
+  repeated MetricSample samples = 1;
+}
+
+message MetricSample {
+  string resource_code = 1; // OLT-01 / ONU-...
+  map<string, double> gauges = 2; // cpu / mem /光功率/丢包率
+  int64 collected_at = 3;         // unix 秒
+}
+
+message Trap {
+  string resource_code = 1;
+  string oid = 2;
+  map<string, string> vars = 3;
+  int64 trapped_at = 4;
+  string severity = 5; // INFO / WARNING / CRITICAL
+}
+
+message OpResponse {
+  boss.common.v1.Code code = 1;
+  int32 accepted = 2;
+}

@@ -1,0 +1,57 @@
+// boss/aaa/v1 —— AAA 联动契约(billing→aaa,阶段7/W6)。
+// 语义:停复机即时生效、授权查询(LOID/QoS)、实时话单入账。
+syntax = "proto3";
+
+package boss.aaa.v1;
+
+import "api/proto/boss/common/v1/common.proto";
+
+option go_package = "github.com/ymm-001/boss/api/proto/boss/aaa/v1;aaav1";
+
+// AaaService AAA 联动服务。
+service AaaService {
+  // Suspend 停机(欠费):在线会话下线,拒绝后续认证。
+  rpc Suspend(SuspendRequest) returns (OpResponse);
+  // Resume 复机(缴费):恢复认证授权。
+  rpc Resume(ResumeRequest) returns (OpResponse);
+  // GetAuthorization 授权查询(LOID → 带宽/QoS/状态)。
+  rpc GetAuthorization(GetAuthorizationRequest) returns (Authorization);
+  // EmitCDR 实时话单入账(RADIUS Acct → Kafka → billing 的服务内直连形态)。
+  rpc EmitCDR(CDR) returns (OpResponse);
+}
+
+message SuspendRequest {
+  int64 lo_account_id = 1;
+  string reason = 2; // ARREARS / MANUAL
+}
+
+message ResumeRequest {
+  int64 lo_account_id = 1;
+}
+
+message OpResponse {
+  boss.common.v1.Code code = 1;
+  bool effective = 2; // 是否已即时生效
+}
+
+message GetAuthorizationRequest {
+  string loid = 1;
+}
+
+message Authorization {
+  boss.common.v1.Code code = 1;
+  string status = 2;      // ACTIVE / SUSPENDED
+  string bandwidth = 3;   // 如 300M/150M
+  string qos_template = 4;
+}
+
+message CDR {
+  string loid = 1;
+  int64 lo_account_id = 2;
+  string session_id = 3;
+  string event_type = 4; // Start / Interim-Update / Stop
+  uint64 input_octets = 5;
+  uint64 output_octets = 6;
+  int64 started_at = 7;  // unix 秒
+  int64 finished_at = 8; // unix 秒,Stop 时有效
+}

@@ -22,4 +22,13 @@ type QuadLinkService interface {
 	GetByCustomer(ctx context.Context, customerID int64) (*QuadLink, error)
 	GetByPort(ctx context.Context, portID int64) (*QuadLink, error)
 	GetByAddress(ctx context.Context, addressID int64) (*QuadLink, error)
+
+	// VerifyScan 扫码绑定(环节9 强制):实物 EPC ↔ 预绑定资产核对;不一致返回 ErrScanMismatch。
+	VerifyScan(ctx context.Context, req ScanReq) (string, error)
+	// UnbindRequireScan 拆机必扫码:不扫码(ErrScanRequired)/不一致(ErrScanMismatch)均拒;一致则解绑。
+	UnbindRequireScan(ctx context.Context, orderID int64, scannedEPC string) error
+	// Reconcile 四码对账任务:成员缺失置 CONFLICT,返回状态统计。
+	Reconcile(ctx context.Context) (*ReconcileReport, error)
+	// ResolveConflict 冲突人工处理:CONFLICT → UNLINKED(非冲突态拒)。
+	ResolveConflict(ctx context.Context, linkID int64) error
 }

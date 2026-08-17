@@ -41,7 +41,7 @@ check: test lint
 proto:
 	protoc --go_out=. --go_opt=module=$(MODULE) \
 	       --go-grpc_out=. --go-grpc_opt=module=$(MODULE) \
-	       api/proto/.../*.proto
+	       api/proto/boss/*/v1/*.proto
 
 ## 构建全部部署物
 docker-build:

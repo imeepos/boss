@@ -160,3 +160,30 @@ func TestPGStore_AppendScanLog(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+// GetDispatchTicketByNo 扫码闭环入口:ticketNo → 工单(含 orderID)。
+func TestPGStore_GetDispatchTicketByNo(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`FROM dispatch_tickets`).
+		WithArgs("TIC-1").
+		WillReturnRows(mock.NewRows([]string{"id", "ticket_no", "order_id", "worker_id", "worker_name",
+			"group_id", "group_name", "region_id", "region_name", "legal_entity_id", "legal_entity_name", "status"}).
+			AddRow(int64(1), "TIC-1", int64(7), int64(2), "张师傅", int64(0), "", int64(0), "", int64(1), "主品牌", "DOING"))
+
+	s := NewPGStore(mock, stubExists{ok: true})
+	tk, err := s.GetDispatchTicketByNo(context.Background(), "TIC-1")
+	if err != nil {
+		t.Fatalf("GetDispatchTicketByNo: %v", err)
+	}
+	if tk.OrderID != 7 || tk.WorkerID != 2 {
+		t.Fatalf("tk=%+v", tk)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}

@@ -1,0 +1,41 @@
+// boss/provision/v1 —— 配置下发契约(order→provisioner,阶段7/W7-W8)。
+// 语义:模板/任务下发、失败重试、环节自动化(6/7/10/11)。
+syntax = "proto3";
+
+package boss.provision.v1;
+
+import "api/proto/boss/common/v1/common.proto";
+
+option go_package = "github.com/ymm-001/boss/api/proto/boss/provision/v1;provisionv1";
+
+// ProvisionService 配置下发服务。
+service ProvisionService {
+  // EnqueueTask 下发任务入队(环节7 preConfigOLT / 环节10 激活 / 环节11 通知)。
+  rpc EnqueueTask(Task) returns (OpResponse);
+  // RetryTask 失败重试(留痕:重试次数计入任务日志)。
+  rpc RetryTask(RetryTaskRequest) returns (OpResponse);
+  // GetTask 任务状态查询(轮询/回调校验)。
+  rpc GetTask(GetTaskRequest) returns (Task);
+}
+
+message Task {
+  int64 order_id = 1;
+  string task_no = 2;
+  string stage_event = 3; // preConfigOLT / activateUser / notifyActivation
+  string template_code = 4;
+  map<string, string> params = 5;
+}
+
+message RetryTaskRequest {
+  string task_no = 1;
+}
+
+message GetTaskRequest {
+  string task_no = 1;
+}
+
+message OpResponse {
+  boss.common.v1.Code code = 1;
+  string task_no = 2;
+  string status = 3; // PENDING / DOING / DONE / FAILED
+}
