@@ -4,29 +4,30 @@ server:
   grpc_addr: ":9090"
 
 database:
-  dsn: "host=localhost port=5432 user=boss password=boss dbname=boss sslmode=disable"
+  # 102 服务器私有仓库版基础设施(见 deployments/docker-compose.102.yml)
+  dsn: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
 
 redis:
-  addrs: ["localhost:6379"]
+  addrs: ["192.168.0.102:26379"]
 
 kafka:
-  brokers: ["localhost:9092"]
+  brokers: ["192.168.0.102:29092"]
 
 nacos:
   # 业务参数热更新(欠费阈值、预占有效期等)
   enabled: false
-  server: "localhost:8848"
+  server: "192.168.0.102:18848"
 
 minio:
-  endpoint: "localhost:9000"
+  endpoint: "192.168.0.102:29000"
   access_key: boss
   secret_key: boss12345
 
 temporal:
-  host: "localhost:7233"
+  host: "192.168.0.102:17233"
 
 victoriametrics:
-  url: "http://localhost:8428"
+  url: "http://192.168.0.102:18428"
 
 jwt:
   secret: "change-me"

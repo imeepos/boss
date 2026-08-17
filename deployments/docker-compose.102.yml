@@ -1,0 +1,84 @@
+# 102 服务器部署版:镜像全部走私有仓库 192.168.0.102:5000
+# 访问入口:PG :25432  Redis :26379  Kafka :29092  Nacos :18848
+#           MinIO :29000(控制台29001) Temporal :17233  VM :18428
+name: boss-infra
+
+services:
+  postgres:
+    image: 192.168.0.102:5000/boss/postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: boss
+      POSTGRES_PASSWORD: boss
+      POSTGRES_DB: boss
+    ports: ["25432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U boss"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: 192.168.0.102:5000/boss/redis:7
+    restart: unless-stopped
+    ports: ["26379:6379"]
+
+  kafka:
+    image: 192.168.0.102:5000/boss/kafka:3.7.0
+    restart: unless-stopped
+    ports: ["29092:9092"]
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.0.102:29092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      CLUSTER_ID: "boss-infra-cluster-001"
+
+  nacos:
+    image: 192.168.0.102:5000/boss/nacos:v2.3.2
+    restart: unless-stopped
+    ports: ["18848:8848"]
+    environment:
+      MODE: standalone
+
+  minio:
+    image: 192.168.0.102:5000/boss/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports: ["29000:9000", "29001:9001"]
+    environment:
+      MINIO_ROOT_USER: boss
+      MINIO_ROOT_PASSWORD: boss12345
+    volumes: [miniodata:/data]
+
+  temporal:
+    image: 192.168.0.102:5000/boss/temporal:1.24
+    restart: unless-stopped
+    ports: ["17233:7233"]
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: boss
+      POSTGRES_PWD: boss
+      POSTGRES_SEEDS: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  victoriametrics:
+    image: 192.168.0.102:5000/boss/victoriametrics:v1.102.0
+    restart: unless-stopped
+    ports: ["18428:8428"]
+    volumes: [vmdata:/victoria-metrics-data]
+
+volumes:
+  pgdata:
+  miniodata:
+  vmdata:

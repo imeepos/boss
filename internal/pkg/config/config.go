@@ -26,7 +26,7 @@ func Load() *Config {
 	c := &Config{}
 	c.Server.HTTPAddr = getenv("BOSS_HTTP_ADDR", ":8080")
 	c.Server.GRPCAddr = getenv("BOSS_GRPC_ADDR", ":9090")
-	c.Database.DSN = getenv("BOSS_PG_DSN", "host=localhost port=5432 user=boss password=boss dbname=boss sslmode=disable")
+	c.Database.DSN = getenv("BOSS_PG_DSN", "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable")
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
 	return c
 }
