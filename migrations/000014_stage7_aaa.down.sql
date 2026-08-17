@@ -1,0 +1,6 @@
+-- 阶段7 回滚:删除 AAA。
+BEGIN;
+DROP TABLE IF EXISTS auth_logs;
+DROP TABLE IF EXISTS cdrs;
+DROP TABLE IF EXISTS lo_accounts;
+COMMIT;
