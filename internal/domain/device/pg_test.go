@@ -53,7 +53,7 @@ func TestPGStore_AppendMetric(t *testing.T) {
 	opt := -18.6
 	pkt := 0.03
 	mock.ExpectQuery(`INSERT INTO device_metrics`).
-		WithArgs(int64(11), &opt, &pkt, "ONLINE").
+		WithArgs(int64(11), &opt, &pkt, "ONLINE", pgxmock.AnyArg()).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 
 	s := NewPGStore(mock)

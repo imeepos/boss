@@ -42,4 +42,11 @@ type ProvisionService interface {
 	CreateTask(ctx context.Context, t Task) (int64, error)
 	ListLogs(ctx context.Context, taskID int64) ([]Log, error)
 	AppendLog(ctx context.Context, l Log) (int64, error)
+
+	// ExecuteTask 执行下发:PENDING→DOING→DONE + SUCCESS 留痕(设备协议交互由 provisioner 执行)。
+	ExecuteTask(ctx context.Context, taskID int64) error
+	// FailTask 失败:→FAILED + 原因留痕。
+	FailTask(ctx context.Context, taskID int64, reason string) error
+	// RetryTask 失败重试:FAILED→PENDING + 重试计数留痕。
+	RetryTask(ctx context.Context, taskID int64, retries int16) error
 }

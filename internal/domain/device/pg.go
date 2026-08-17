@@ -1,6 +1,8 @@
 package device
 
 import (
+	"time"
+
 	"context"
 	"fmt"
 
@@ -58,10 +60,14 @@ func (s *PGStore) ListMetrics(ctx context.Context, resourceID int64) ([]DeviceMe
 // AppendMetric 追加设备指标,返回自增 id。
 func (s *PGStore) AppendMetric(ctx context.Context, m DeviceMetric) (int64, error) {
 	var id int64
+	ts := m.CollectedAt
+	if ts.IsZero() {
+		ts = time.Now()
+	}
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO device_metrics(resource_id, optical_power, packet_loss, status)
-		VALUES($1,$2,$3,$4) RETURNING id`,
-		m.ResourceID, m.OpticalPower, m.PacketLoss, m.Status).Scan(&id)
+		INSERT INTO device_metrics(resource_id, optical_power, packet_loss, status, collected_at)
+		VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		m.ResourceID, m.OpticalPower, m.PacketLoss, m.Status, ts).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("device: append metric: %w", err)
 	}

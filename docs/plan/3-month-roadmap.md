@@ -20,7 +20,8 @@
 | **W4 端到端集成测试（真实 PG）** | ✅ 完成 | e2e 全流程/取消/端口释放/审计留痕(`internal/app/e2e_pg_integration_test.go`);阶段3/4 台账写侧 handler 补齐(盘点/差异/换新/调拨审批/扩容/手动释放预占,对齐 oss/asset.yaml);PG=192.168.0.102:25432 |
 | 二期 W5（四码扫码闭环+gRPC契约） | ✅ 完成 | quadlink 写侧(VerifyScan/UnbindRequireScan/Reconcile/ResolveConflict)+worker 扫码 handler+admin 对账;gRPC 契约 quadlink/aaa/device/provision v1 已生成 |
 | 二期 W6（AAA 停复机+话单） | ✅ 完成 | PGAuthorizer(LOID→套餐带宽/QoS)+Suspend/Resume 即时生效(停机在线无网)+话单双写(PG落库+Kafka boss-cdr)+cmd/aaa PG 装配 |
-| 二期 W7–W8（下发/采集/自动化） | ❌ 未开始 | |
+| 二期 W7（下发/采集/告警） | ✅ 完成 | provision Execute/Fail/Retry(留痕计数)+provisioner 守护进程;device Collector(指标入库+丢包越限 CRITICAL 告警)+collector 入口;修复 AppendMetric 漏 collected_at |
+| 二期 W8（环节自动化+Kafka 链路） | ❌ 未开始 | |
 | 三期 W9–W12（GIS/分析/压测/上线） | ❌ 未开始 | |
 
 **剩余 3 个月焦点（阶段已前置完成，剩余为业务自动化 + 集成 + 闭环验收）**：

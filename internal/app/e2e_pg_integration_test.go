@@ -22,6 +22,8 @@ import (
 	aaabilling "github.com/ymm-001/boss/internal/domain/aaa/billing"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/domain/device"
+	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/pkg/auth"
@@ -307,6 +309,65 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			t.Fatalf("billingStatus=%s", cdrs[0].BillingStatus)
 		}
 		_ = loID
+	})
+
+	t.Run("W7_下发重试留痕_指标告警", func(t *testing.T) {
+		// 下发:建模板+任务 → 失败留痕 → 重试 → 执行成功。
+		tplID, err := a.Provision.CreateTemplate(ctx, provision.Template{
+			LegalEntityID: 1, Code: "TPL-E2E-" + orderNo6(time.Now().UnixNano()%1e6), Name: "E2E模板",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		taskID, err := a.Provision.CreateTask(ctx, provision.Task{
+			LoAccountID: 1, TemplateID: tplID, Status: "PENDING",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := a.Provision.ExecuteTask(ctx, taskID); err != nil {
+			t.Fatalf("ExecuteTask: %v", err)
+		}
+		logs, err := a.Provision.ListLogs(ctx, taskID)
+		if err != nil || len(logs) == 0 || logs[len(logs)-1].Result != "SUCCESS" {
+			t.Fatalf("logs=%+v err=%v", logs, err)
+		}
+		// 失败重试链路:再建一单,FailTask → RetryTask。
+		task2, err := a.Provision.CreateTask(ctx, provision.Task{
+			LoAccountID: 1, TemplateID: tplID, Status: "PENDING",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := a.Provision.FailTask(ctx, task2, "e2e 模拟失败"); err != nil {
+			t.Fatal(err)
+		}
+		if err := a.Provision.RetryTask(ctx, task2, 0); err != nil {
+			t.Fatal(err)
+		}
+		logs2, err := a.Provision.ListLogs(ctx, task2)
+		if err != nil || len(logs2) != 2 || logs2[1].Retries != 1 {
+			t.Fatalf("retry logs=%+v err=%v", logs2, err)
+		}
+
+		// 采集:越限样本 → 指标入库 + CRITICAL 告警。
+		threshold := 5.0
+		resID, _ := a.Resource.CreateResource(ctx, resSeed(s.addressID, orderNo6(time.Now().UnixNano()%1e6)))
+		col := &device.Collector{Dev: a.Device, Alarm: a.Alarm, PacketLossAlarmPct: &threshold}
+		loss := 9.9
+		if err := col.Ingest(ctx, device.Sample{
+			ResourceID: resID, PacketLoss: &loss, Status: "FAULT", CollectedAt: time.Now(),
+		}); err != nil {
+			t.Fatal(err)
+		}
+		metrics, err := a.Device.ListMetrics(ctx, resID)
+		if err != nil || len(metrics) == 0 {
+			t.Fatalf("metrics=%d err=%v", len(metrics), err)
+		}
+		alarms, err := a.Alarm.ListAlarms(ctx, resID)
+		if err != nil || len(alarms) == 0 || alarms[0].Level != "CRITICAL" {
+			t.Fatalf("alarms=%+v err=%v", alarms, err)
+		}
 	})
 }
 
