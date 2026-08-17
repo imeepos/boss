@@ -64,6 +64,20 @@ type Replacement struct {
 	Status          string // PENDING/DOING/DONE/FAILED
 }
 
+// AssetAssignment 资产持有台账(每次领用/部署/归还的时间段,历史不随当前值漂移)。
+type AssetAssignment struct {
+	ID                int64
+	AssetID           int64
+	WorkerID          int64 // 0=空
+	WorkerName        string
+	AddressID         int64 // 0=空
+	AddressName       string
+	Reason            string
+	OperatorAccountID int64      // 0=空
+	EffectiveFrom     time.Time
+	EffectiveTo       *time.Time // nil=至今
+}
+
 // Stocktake 盘点任务(按区域盘点资产,输出差异)。
 type Stocktake struct {
 	ID            int64
@@ -90,4 +104,7 @@ type AssetService interface {
 	CreateReplacement(ctx context.Context, r Replacement) (int64, error)
 	ListStocktakes(ctx context.Context) ([]Stocktake, error)
 	CreateStocktake(ctx context.Context, s Stocktake) (int64, error)
+
+	ListAssignments(ctx context.Context, assetID int64) ([]AssetAssignment, error)
+	AssignAsset(ctx context.Context, a AssetAssignment) (int64, error)
 }

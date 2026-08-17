@@ -369,3 +369,64 @@ func TestPGStore_CreateStocktake(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+func TestPGStore_ListAssignments(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{"id", "asset_id", "worker_id", "worker_name", "address_id", "address_name", "reason", "operator_account_id", "effective_from", "effective_to"}
+	mock.ExpectQuery(`SELECT id, asset_id, COALESCE\(worker_id, 0\)`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(1), int64(1), int64(1024), "张师傅", int64(100), "望京X", "领用", int64(9), ts, ts).
+			AddRow(int64(2), int64(1), int64(1024), "张师傅", int64(100), "望京X", "归还", int64(9), ts, nil))
+
+	s := NewPGStore(mock)
+	got, err := s.ListAssignments(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("ListAssignments: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("len=%d, want 2", len(got))
+	}
+	if got[0].EffectiveTo == nil {
+		t.Fatal("got[0].EffectiveTo nil, want non-nil")
+	}
+	if got[1].EffectiveTo != nil {
+		t.Fatal("got[1].EffectiveTo non-nil, want nil(至今)")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_AssignAsset(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	var nilTime *time.Time
+	mock.ExpectQuery(`INSERT INTO asset_assignments`).
+		WithArgs(int64(1), int64(1024), "张师傅", int64(100), "望京X", "领用", int64(9), ts, nilTime).
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+
+	s := NewPGStore(mock)
+	id, err := s.AssignAsset(context.Background(), AssetAssignment{
+		AssetID: 1, WorkerID: 1024, WorkerName: "张师傅", AddressID: 100, AddressName: "望京X",
+		Reason: "领用", OperatorAccountID: 9, EffectiveFrom: ts, EffectiveTo: nil,
+	})
+	if err != nil {
+		t.Fatalf("AssignAsset: %v", err)
+	}
+	if id != 3 {
+		t.Fatalf("id=%d, want 3", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}

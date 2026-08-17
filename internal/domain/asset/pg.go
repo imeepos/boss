@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ErrNotFound 记录不存在。
@@ -252,6 +253,50 @@ func (s *PGStore) CreateStocktake(ctx context.Context, st Stocktake) (int64, err
 		st.LegalEntityID, st.Scope, st.Progress, st.DiffCount, st.Status).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("asset: create stocktake: %w", err)
+	}
+	return id, nil
+}
+
+// ListAssignments 列出资产持有台账,按生效时间升序。
+func (s *PGStore) ListAssignments(ctx context.Context, assetID int64) ([]AssetAssignment, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, asset_id, COALESCE(worker_id, 0), COALESCE(worker_name, ''),
+		       COALESCE(address_id, 0), COALESCE(address_name, ''),
+		       COALESCE(reason, ''), COALESCE(operator_account_id, 0),
+		       effective_from, effective_to
+		FROM asset_assignments WHERE asset_id = $1 ORDER BY effective_from, id`, assetID)
+	if err != nil {
+		return nil, fmt.Errorf("asset: list assignments: %w", err)
+	}
+	defer rows.Close()
+	out := make([]AssetAssignment, 0)
+	for rows.Next() {
+		var a AssetAssignment
+		var effTo pgtype.Timestamptz
+		if err := rows.Scan(&a.ID, &a.AssetID, &a.WorkerID, &a.WorkerName, &a.AddressID, &a.AddressName,
+			&a.Reason, &a.OperatorAccountID, &a.EffectiveFrom, &effTo); err != nil {
+			return nil, fmt.Errorf("asset: scan assignment: %w", err)
+		}
+		if effTo.Valid {
+			t := effTo.Time
+			a.EffectiveTo = &t
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// AssignAsset 记录一次持有(领用/部署),返回自增 id。
+func (s *PGStore) AssignAsset(ctx context.Context, a AssetAssignment) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO asset_assignments(asset_id, worker_id, worker_name, address_id, address_name,
+		                              reason, operator_account_id, effective_from, effective_to)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+		a.AssetID, idOrNil(a.WorkerID), a.WorkerName, idOrNil(a.AddressID), a.AddressName,
+		a.Reason, idOrNil(a.OperatorAccountID), a.EffectiveFrom, a.EffectiveTo).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("asset: assign asset: %w", err)
 	}
 	return id, nil
 }
