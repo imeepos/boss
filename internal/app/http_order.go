@@ -82,6 +82,9 @@ func registerOrderRoutes(g *gin.RouterGroup, a *Application) {
 			respondErr(c, err)
 			return
 		}
+		a.recordAudit(c, "数据变更", "order", o.OrderNo, map[string]any{
+			"customerId": req.CustomerID, "offerId": req.OfferID, "channelId": req.ChannelID,
+		})
 		respond(c, apitypes.CodeOK, gin.H{"id": o.ID, "orderNo": o.OrderNo, "stage": o.Stage, "status": o.Status})
 	})
 

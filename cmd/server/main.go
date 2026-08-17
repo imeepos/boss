@@ -25,4 +25,6 @@ func main() {
 	if err := server.Run(r, cfg.Server.HTTPAddr); err != nil {
 		log.Fatalf("server: %v", err)
 	}
+	// 优雅退出后,排空异步审计队列并关闭连接池。
+	a.Close()
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/internal/pkg/audit"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
 )
@@ -57,6 +58,18 @@ type Application struct {
 	WorkerLedger worker.WorkerLedgerService
 	WorkerFact   worker.WorkerFactService
 	WorkerEvent  worker.WorkerEventService
+
+	Audit audit.Writer // 关键操作审计(异步写,见 pkg/audit)
+
+	// close 释放资源钩子(异步审计 writer + PG 池),由 cmd 层在优雅退出时调用。
+	close func()
+}
+
+// Close 释放装配持有的资源(异步审计排空 + 连接池关闭);幂等。
+func (a *Application) Close() {
+	if a.close != nil {
+		a.close()
+	}
 }
 
 // ErrNotImplemented 域尚未接入装配时返回,便于调用方降级/提示。
@@ -95,8 +108,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
+	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
 
-	return &Application{
+	app := &Application{
 		User:      usr,
 		OrgLedger: usr,
 
@@ -129,5 +143,12 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		WorkerLedger: wrk,
 		WorkerFact:   wrk,
 		WorkerEvent:  wrk,
-	}, nil
+	}
+
+	app.Audit = aw
+	app.close = func() {
+		aw.Close() // 排空审计队列
+		pool.Close()
+	}
+	return app, nil
 }
