@@ -14,7 +14,8 @@ type Customer struct {
 	ServiceStatus  string // ACTIVE / ARREARS / SUSPENDED
 	AddressID      int64
 	LegalEntityID  int64  // 归属运营主体(品牌=legal_entities)
-	RegionPath     string // 区域 ltree 路径
+	RegionID       int64  // 地址所在经营区域快照(regions.id)
+	RegionName     string // 区域名快照:改名不改历史
 	CreatedAt      time.Time
 }
 
