@@ -1,6 +1,9 @@
 // 假数据 —— 资产与标签(契约: api/openapi/admin/asset.yaml)。
-// 状态枚举见 docs/contract/terms.md 第 4 节;数据逐行搬运自 docs/admin/{asset,tag,stock,replace}.html。
+// 状态枚举见 docs/contract/terms.md 第 4 节;资产/标签由 db.js 派生(客户占用与订单一致),
+// 盘点/更换为流程样例。
 'use strict';
+
+const db = require('../../db.js');
 
 const ok = { code: 0, message: 'success' };
 
@@ -20,11 +23,12 @@ function pick(items, query) {
 }
 
 // /assets 统计卡 + 清单(status: IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED)
-const assets = [
-  { assetCode: 'A-20250001', tagNo: 'TAG-0001', epcCode: 'EPC-0001', type: '光猫', batchNo: 'RK-202507-01', location: '望京·X小区·3栋', lifecycle: '在用', status: 'DEPLOYED', statusLabel: '正常', statusClass: 'tag-green' },
-  { assetCode: 'A-20250002', tagNo: 'TAG-0002', epcCode: 'EPC-0002', type: '分光器', batchNo: 'RK-202506-03', location: '望京·X小区·弱电井2', lifecycle: '维修', status: 'MAINTENANCE', statusLabel: '维修中', statusClass: 'tag-orange' },
-  { assetCode: 'A-20250003', tagNo: 'TAG-0003', epcCode: 'EPC-0003', type: '光猫', batchNo: 'RK-202508-02', location: '仓库', lifecycle: '在库', status: 'IN_STOCK', statusLabel: '待领用', statusClass: 'tag-gray' },
-];
+const ASSET_ST = { DEPLOYED: ['正常', 'tag-green'], MAINTENANCE: ['维修中', 'tag-orange'], IN_STOCK: ['待领用', 'tag-gray'], SCRAPPED: ['已报废', 'tag-gray'] };
+const assets = db.assets.map((a) => ({
+  assetCode: a.assetNo, tagNo: a.tagNo, epcCode: a.epc, type: a.type, batchNo: a.batchNo,
+  location: a.location, lifecycle: a.lifecycle, status: a.status,
+  statusLabel: ASSET_ST[a.status][0], statusClass: ASSET_ST[a.status][1],
+}));
 
 const lifecycle = [
   { assetCode: 'A-20250001', time: '2025-07-15 09:20', action: '入库', fromState: '—', toState: '在库', operator: 'asset01' },
@@ -33,12 +37,15 @@ const lifecycle = [
   { assetCode: 'A-20250003', time: '2025-08-14 16:42', action: '入库', fromState: '—', toState: '在库', operator: 'asset01' },
 ];
 
-// 电子标签(status: UNBOUND/BOUND/DISABLED)
-const tags = [
-  { tagNo: 'TAG-0001', epcCode: 'EPC-0001', band: 'UHF', boundAsset: 'A-20250001 光猫', battery: '86%', status: 'BOUND', statusLabel: '已绑定', statusClass: 'tag-green' },
-  { tagNo: 'TAG-0002', epcCode: 'EPC-0002', band: 'UHF', boundAsset: 'A-20250002 分光器', battery: '72%', status: 'BOUND', statusLabel: '已绑定', statusClass: 'tag-green' },
-  { tagNo: 'TAG-0100', epcCode: 'EPC-0100', band: 'HF', boundAsset: '—', battery: '100%', status: 'UNBOUND', statusLabel: '未绑定', statusClass: 'tag-gray' },
-];
+// 电子标签(status: UNBOUND/BOUND/DISABLED): 由 db.assets 派生
+const tags = db.assets.map((a, i) => ({
+  tagNo: a.tagNo, epcCode: a.epc, band: 'UHF',
+  boundAsset: a.status === 'IN_STOCK' ? '—' : a.assetNo + ' ' + a.type,
+  battery: ['86%', '72%', '91%', '100%'][i] || '100%',
+  status: a.status === 'IN_STOCK' ? 'UNBOUND' : 'BOUND',
+  statusLabel: a.status === 'IN_STOCK' ? '未绑定' : '已绑定',
+  statusClass: a.status === 'IN_STOCK' ? 'tag-gray' : 'tag-green',
+})).concat([{ tagNo: 'TAG-0100', epcCode: 'EPC-0100', band: 'HF', boundAsset: '—', battery: '100%', status: 'UNBOUND', statusLabel: '未绑定', statusClass: 'tag-gray' }]);
 
 // 盘点任务
 const stocktakes = [
@@ -48,7 +55,7 @@ const stocktakes = [
 
 // 设备更换单(优先级 高/中/低,状态 待派单/维修中/已更换)
 const replacements = [
-  { replacementNo: 'RPL-20250817-001', device: 'EPC-0002（光猫）', issue: '健康度 35 / 掉线3次', priority: '高', priorityClass: 'tag-red', status: 'PENDING_DISPATCH', statusLabel: '待派单', statusClass: 'tag-orange', action: '派单' },
+  { replacementNo: 'RPL-20250817-001', device: 'EPC-0023（光猫）', issue: '健康度 31 / 掉线 5 次', priority: '高', priorityClass: 'tag-red', status: 'PENDING_DISPATCH', statusLabel: '待派单', statusClass: 'tag-orange', action: '派单' },
   { replacementNo: 'RPL-20250814-003', device: 'SPL-03-11（分光器）', issue: '光功率异常', priority: '中', priorityClass: 'tag-orange', status: 'REPAIRING', statusLabel: '维修中', statusClass: 'tag-blue', action: '详情' },
   { replacementNo: 'RPL-20250811-002', device: 'EPC-0003（光猫）', issue: '使用年限 6 年', priority: '已完成', priorityClass: 'tag-gray', status: 'REPLACED', statusLabel: '已更换', statusClass: 'tag-green', action: '详情' },
 ];

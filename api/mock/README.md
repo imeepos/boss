@@ -12,10 +12,12 @@ node api/mock/combined.js   # 三合一,默认 0.0.0.0:8090,MOCK_PORT 覆盖
 
 ## 结构
 
+- `db.js` —— 三端共享的关系型事实库(客户/订单/工单/端口/资产/LOID/账单外键关联),单一事实源
+- `selfcheck.js` —— 关系不变量自检(`node api/mock/selfcheck.js`),改 db 后必须全绿
 - `combined.js` —— 唯一入口,三前缀聚合:
-  - `/api/v1` 用户端(路由 `routes/user.js`,数据 `data.js`)
-  - `/api/worker/v1` 师傅端(路由 `routes/worker.js`,数据 `worker/data.js`)
-  - `/api/admin/v1` 管理后台(路由 `routes/admin.js`,数据 `admin/data/*.js` 按域拆分,新增域只需加 data 文件)
+  - `/api/v1` 用户端(路由 `routes/user.js`,视图 `data.js` 由 db 派生)
+  - `/api/worker/v1` 师傅端(路由 `routes/worker.js`,视图 `worker/data.js` 由 db 派生)
+  - `/api/admin/v1` 管理后台(路由 `routes/admin.js`,视图 `admin/data/*.js` 由 db 派生,新增域只需加 data 文件)
   - 静态托管:`/` → docs/user,`/worker/` → docs/worker,`/admin/` → docs/admin
 - `lib/http.js` —— CORS / 请求体 / JSON 响应 / 静态文件(防穿越)
 - JSON 字段统一 lowerCamelCase;调试用 `GET /api/admin/v1/_routes` 列出全部 admin 路由

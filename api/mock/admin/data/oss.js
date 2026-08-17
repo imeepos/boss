@@ -1,7 +1,9 @@
 // 假数据 —— 网络资源 Oss(契约: api/openapi/admin/oss.yaml)。
-// 端口状态枚举 IDLE/RESERVED/USED/DISABLED(docs/contract/terms.md 第 4 节);
-// 数据逐行搬运自 docs/admin/{resource,reserve,transfer,device,loaccount,expand}.html。
+// 端口/预占/认证账号由 db.js 派生;调配/扩容/OLT 为流程样例。
+// 端口状态枚举 IDLE/RESERVED/USED/DISABLED(docs/contract/terms.md 第 4 节)。
 'use strict';
+
+const db = require('../../db.js');
 
 const ok = { code: 0, message: 'success' };
 
@@ -14,35 +16,40 @@ function hit(item, keyword) {
 function pick(items, query) {
   let out = items;
   if (query && query.keyword) out = out.filter((it) => hit(it, query.keyword));
-  if (query && query.status) {
-    out = out.filter((it) => it.status === query.status || it.statusLabel === query.status);
-  }
-  if (query && query.type) {
-    out = out.filter((it) => it.resourceCode === query.type || it.resourceLabel === query.type);
-  }
+  if (query && query.status) out = out.filter((it) => it.status === query.status || it.statusLabel === query.status);
+  if (query && query.type) out = out.filter((it) => it.resourceCode === query.type || it.resourceLabel === query.type);
   return out;
 }
 
-// /ports 统计卡 + 清单(status: IDLE/RESERVED/USED/DISABLED)
-const ports = [
-  { portCode: 'P-001-01', quadCode: 'P-SPL03-01', parentName: 'OLT-01 · SPL-03', address: '望京·X小区·2栋', status: 'USED', statusLabel: '在用', statusClass: 'tag-blue', orderId: 'ORD-20250817-009' },
-  { portCode: 'P-001-02', quadCode: 'P-SPL03-07', parentName: 'OLT-01 · SPL-03', address: '望京·X小区·3栋', status: 'RESERVED', statusLabel: '预占', statusClass: 'tag-orange', orderId: 'ORD-20250817-001' },
-  { portCode: 'P-001-03', quadCode: 'P-SPL03-03', parentName: 'OLT-01 · SPL-03', address: '望京·X小区·3栋', status: 'USED', statusLabel: '在用', statusClass: 'tag-blue', orderId: 'ORD-20250816-018' },
-];
+// 地址码 → 机房展示名(db.ports.addrCode)
+const ADDR_LABEL = { 'A-3': '望京·X小区·3栋', 'A-2': '望京·X小区·2栋', 'A-1': '望京Y小区·1栋', 'A-5': '望京·X小区·5栋', 'A-12': '望京·X小区·12栋' };
+function addrLabelOf(addrCode) { return ADDR_LABEL[addrCode.slice(0, 3)] || '望京·X小区'; }
+const PORT_ST = { IDLE: ['空闲', 'tag-green'], RESERVED: ['预占', 'tag-orange'], USED: ['在用', 'tag-blue'], DISABLED: ['禁用', 'tag-gray'] };
+
+// 端口: db.ports 全量(orderId 反向占用与订单一致)
+const ports = db.ports.map((p) => ({
+  portCode: p.portNo, quadCode: p.quadCode, parentName: p.parentName, address: addrLabelOf(p.addrCode),
+  status: p.status, statusLabel: PORT_ST[p.status][0], statusClass: PORT_ST[p.status][1], orderId: p.orderId || '',
+}));
 
 const portChanges = [
   { portCode: 'P-001-02', time: '2025-08-17 09:09', fromStatus: '空闲', toStatus: '预占', source: '订单端口预占', operator: 'oss01' },
   { portCode: 'P-001-03', time: '2025-08-10 15:22', fromStatus: '预占', toStatus: '在用', source: '扫码激活', operator: 'tech07' },
-  { portCode: 'P-001-01', time: '2025-08-09 10:05', fromStatus: '禁用', toStatus: '空闲', source: '修复恢复启用', operator: 'oss01' },
+  { portCode: 'P-001-04', time: '2025-08-17 08:45', fromStatus: '空闲', toStatus: '预占', source: '订单端口预占', operator: 'oss01' },
 ];
 
-// 端口预占记录(状态 预占中/已超时/已释放)
-const reserves = [
-  { reserveId: 'RSV-0001', portCode: 'P-SPL03-07', splitterName: 'SPL-03', orderId: 'ORD-20250817-001', reservedAt: '10:20', expireAt: '12:20', status: 'RESERVED', statusLabel: '预占中', statusClass: 'tag-blue', action: '释放' },
-  { reserveId: 'RSV-0002', portCode: 'P-SPL01-09', splitterName: 'SPL-01', orderId: 'ORD-20250817-002', reservedAt: '09:05', expireAt: '11:05', status: 'RESERVED', statusLabel: '预占中', statusClass: 'tag-blue', action: '释放' },
-  { reserveId: 'RSV-0003', portCode: 'P-SPL02-03', splitterName: 'SPL-02', orderId: 'ORD-20250816-018', reservedAt: '昨日', expireAt: '—', status: 'RELEASED', statusLabel: '已释放', statusClass: 'tag-gray', action: '详情' },
-  { reserveId: 'RSV-0004', portCode: 'P-SPL04-05', splitterName: 'SPL-04', orderId: 'ORD-20250816-021', reservedAt: '08-15 09:00', expireAt: '08-15 11:00', status: 'TIMEOUT', statusLabel: '已超时', statusClass: 'tag-red', action: '释放' },
-];
+// 预占记录: db.ports RESERVED 派生(时间与 portChanges 变更史一致) + 历史(已释放/超时)样例
+const RESERVE_TIMES = [['09:09', '11:09'], ['09:05', '11:05'], ['08:45', '10:45']];
+const reserves = db.ports
+  .filter((p) => p.status === 'RESERVED')
+  .map((p, i) => ({
+    reserveId: 'RSV-000' + (i + 1), portCode: p.quadCode, splitterName: p.parentName.split('· ')[1],
+    orderId: p.orderId, reservedAt: RESERVE_TIMES[i][0], expireAt: RESERVE_TIMES[i][1], status: 'RESERVED', statusLabel: '预占中', statusClass: 'tag-blue', action: '释放',
+  }))
+  .concat([
+    { reserveId: 'RSV-0003', portCode: 'P-SPL02-03', splitterName: 'SPL-02', orderId: 'ORD-20250816-018', reservedAt: '昨日', expireAt: '—', status: 'RELEASED', statusLabel: '已释放', statusClass: 'tag-gray', action: '详情' },
+    { reserveId: 'RSV-0004', portCode: 'P-SPL04-05', splitterName: 'SPL-04', orderId: 'ORD-20250816-021', reservedAt: '08-15 09:00', expireAt: '08-15 11:00', status: 'TIMEOUT', statusLabel: '已超时', statusClass: 'tag-red', action: '释放' },
+  ]);
 
 // 跨区域调配单(状态 待审批/已批准/已驳回/已完成;类型 PORT/ASSET/DEVICE)
 const transfers = [
@@ -65,12 +72,15 @@ const oltDevices = [
   { deviceName: 'OLT-15', address: '朝阳机房', status: 'OFFLINE', statusLabel: '离线', statusClass: 'tag-red', opticalPower: '—', packetLoss: '—', alarmLabel: '3 条', alarmClass: 'tag-red' },
 ];
 
-// 认证账号 LOID(认证状态 在服/停机/待激活)
-const loAccounts = [
-  { loid: 'LOID-88A1', customerName: '王先生', productBandwidth: '1000M', qosTemplate: 'QoS-VIP', status: 'ACTIVE', statusLabel: '在服', statusClass: 'tag-green', lastAuth: '2 分钟前', action: '详情' },
-  { loid: 'LOID-88A5', customerName: '吴女士', productBandwidth: '1000M', qosTemplate: 'QoS-STD', status: 'SUSPENDED', statusLabel: '停机', statusClass: 'tag-orange', lastAuth: '昨日', action: '复机' },
-  { loid: 'LOID-88A3', customerName: '孙先生', productBandwidth: '300M', qosTemplate: 'QoS-STD', status: 'ACTIVE', statusLabel: '在服', statusClass: 'tag-green', lastAuth: '—', action: '详情' },
-];
+// 认证账号 LOID: db.loids join customers(排除未激活)
+const loAccounts = db.loids
+  .filter((l) => l.status !== 'PENDING')
+  .map((l) => ({
+    loid: l.loid, customerName: db.byCustomer(l.customerId).name, productBandwidth: l.bandwidth,
+    qosTemplate: l.qos, status: l.status, statusLabel: l.statusLabel,
+    statusClass: l.status === 'ACTIVE' ? 'tag-green' : 'tag-orange',
+    lastAuth: l.status === 'ACTIVE' ? '2 分钟前' : '昨日', action: l.status === 'ACTIVE' ? '详情' : '复机',
+  }));
 
 // 扩容申请单(状态 待审批/实施中/已完成)
 const expansions = [

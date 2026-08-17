@@ -1,17 +1,34 @@
 // 假数据 —— 计费账单/缴费/欠费停复机/渠道对账(契约: api/openapi/admin/billing.yaml)。
+// 账单与缴费由 db.js 派生;欠费/停复机/对账为流程样例(customerId 与 db.customers 对齐)。
 'use strict';
+
+const db = require('../../db.js');
 
 const ok = { code: 0, message: 'success' };
 
-const payments = [
-  { paymentId: 1, payNo: 'PAY20250725001', customerName: '王先生', amount: '¥158', method: '微信', paidAt: '2025-07-25 10:12', voucher: '查看' },
-  { paymentId: 2, payNo: 'PAY-0002', customerName: '李女士', amount: '¥199', method: '支付宝', paidAt: '2025-08-16 10:05', voucher: '查看' },
+// 账单: db.bills join customers
+const billItems = db.bills.map((b) => ({
+  billId: db.bills.indexOf(b) + 1, billNo: b.billNo, customerName: db.byCustomer(b.customerId).name,
+  period: b.period, amount: '¥' + b.amount, status: b.statusLabel,
+}));
+
+// 缴费流水: db.payments join customers
+const payments = db.payments.map((p) => ({
+  paymentId: db.payments.indexOf(p) + 1, payNo: p.payNo, customerName: db.byCustomer(p.customerId).name,
+  amount: '¥' + p.amount, method: p.method.replace('支付', ''), paidAt: p.paidAt, voucher: '查看',
+}));
+
+// 欠费客户(样例;customerId 引用 db.customers)
+const arrearsItems = [
+  { customerId: 2, customerName: '吴女士', arrearsAmount: '¥199', arrearsDays: '12 天', status: '已停机', netStatus: '已停服' },
+  { customerId: 3, customerName: '孙先生', arrearsAmount: '¥398', arrearsDays: '已缴清', status: '已复机', netStatus: '在线' },
+  { customerId: 6, customerName: '周女士', arrearsAmount: '¥199', arrearsDays: '3 天', status: '正常', netStatus: '在线' },
 ];
 
 const stopResumeTasks = [
   { taskId: 'T-0001', customerName: '吴女士', loid: 'LOID-88A5', action: '停机', reason: '欠费达阈值', netResult: '生效', executedAt: '08:00' },
   { taskId: 'T-0002', customerName: '孙先生', loid: 'LOID-88A3', action: '复机', reason: '缴费入账', netResult: '生效', executedAt: '09:30' },
-  { taskId: 'T-0003', customerName: '李女士', loid: 'LOID-88A4', action: '停机', reason: '欠费达阈值', netResult: '失败', executedAt: '10:10' },
+  { taskId: 'T-0003', customerName: '周女士', loid: 'LOID-88A4', action: '停机', reason: '欠费达阈值', netResult: '失败', executedAt: '10:10' },
 ];
 
 const reconciliations = [
@@ -28,22 +45,14 @@ function byKeyword(rows, kw, fields) {
 module.exports = {
   'GET /bills': () => ({
     stats: { receivable: '¥1,286,400', received: '¥1,103,215', arrearsCount: '1,024' },
-    items: [
-      { billId: 1, billNo: 'BILL-202508-0001', customerName: '王先生', period: '2025-08', amount: '¥158', status: '未缴' },
-      { billId: 2, billNo: 'BILL-202508-0002', customerName: '吴女士', period: '2025-08', amount: '¥199', status: '欠费' },
-      { billId: 3, billNo: 'BILL-202507-0341', customerName: '孙先生', period: '2025-07', amount: '¥199', status: '已缴清' },
-    ],
+    items: billItems,
   }),
 
   'GET /payments': ({ query }) => ({ items: byKeyword(payments, query.keyword, ['payNo', 'customerName']) }),
 
   'GET /arrears': () => ({
     stats: { arrearsCount: '1,024', stoppedCount: '386', pendingCount: '128' },
-    items: [
-      { customerId: 2, customerName: '吴女士', arrearsAmount: '¥199', arrearsDays: '12 天', status: '已停机', netStatus: '已停服' },
-      { customerId: 3, customerName: '孙先生', arrearsAmount: '¥398', arrearsDays: '已缴清', status: '已复机', netStatus: '在线' },
-      { customerId: 6, customerName: '周女士', arrearsAmount: '¥199', arrearsDays: '3 天', status: '正常', netStatus: '在线' },
-    ],
+    items: arrearsItems,
   }),
 
   'POST /arrears/{customerId}/stop': ok,

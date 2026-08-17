@@ -1,14 +1,19 @@
 // 假数据 —— GIS/经营分析/报告(契约: api/openapi/admin/intel.yaml)。
+// GIS 地址关联由 db.orders 派生(同步仅发生在订单第 12 环节之后)。
 'use strict';
+
+const db = require('../../db.js');
 
 const ok = { code: 0, message: 'success' };
 
-// GIS 同步仅发生在订单第 12 环节(更新GIS)之后,未完成订单一律"待同步"
-const addressLinks = [
-  { addressCode: 'A-1-101', pathLabel: '望京Y · 1栋 · 101', orderNo: 'ORD-20250816-018', epcCode: 'EPC-0003', syncStatus: '已同步' },
-  { addressCode: 'A-3-501', pathLabel: '望京X · 3栋 · 501', orderNo: 'ORD-20250817-001', epcCode: 'EPC-0001', syncStatus: '待同步' },
-  { addressCode: 'A-12-906', pathLabel: '望京X · 12栋 · 906', orderNo: 'ORD-20250817-003', epcCode: 'EPC-0012', syncStatus: '待同步' },
-];
+const addressLinks = db.orders
+  .filter((o) => !o.archived && o.bizType !== 'DISMANTLE' && o.addrCode)
+  .sort((a, b) => (b.stage >= 12 ? 1 : 0) - (a.stage >= 12 ? 1 : 0)) // 已完成(已同步)优先展示
+  .slice(0, 4)
+  .map((o) => ({
+    addressCode: o.addrCode, pathLabel: o.addrLabel, orderNo: o.orderNo, epcCode: o.preBindTag || '—',
+    syncStatus: o.stage >= 12 ? '已同步' : '待同步',
+  }));
 
 const kpis = [
   { key: 'portUsage', label: '端口利用率', value: '72.3%' },

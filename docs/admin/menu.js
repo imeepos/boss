@@ -83,7 +83,7 @@
 
   var html = '';
   groups.forEach(function (g) {
-    var hasActive = g.items.some(function (it) { return it.key === cur; });
+    var hasActive = g.items.some(function (it) { return it.href === path; });
     // 含当前页的分组默认展开
     var open = hasActive ? ' open' : '';
     var groupCls = 'mgroup' + open;
@@ -93,7 +93,7 @@
           + '<span class="arrow">⌄</span></div>';
     html += '<div class="mg-items">';
     g.items.forEach(function (it) {
-      var cls = it.key === cur ? 'menu-item active' : 'menu-item';
+      var cls = it.href === path ? 'menu-item active' : 'menu-item';
       html += '<a class="' + cls + '" href="' + it.href + '">'
             + '<span class="ico"><img src="icons/items/' + it.key + '.svg" alt=""></span>'
             + it.label + '</a>';

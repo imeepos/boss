@@ -1,8 +1,28 @@
 # 三端 mock 数据逻辑对齐(api/DATA-ALIGNMENT)
 
-> 版本 V1.0(2026-08-17)。本文件记录用户端/师傅端/管理后台三份 mock 数据与 openapi 契约的
+> 版本 V1.1(2026-08-17)。本文件记录用户端/师傅端/管理后台三份 mock 数据与 openapi 契约的
 > **统一事实基线**与对齐修正清单。字段/状态/术语权威源仍为 `docs/contract/{terms,fields,domain-map}.md`,
 > 与本文件冲突时以契约为准。
+
+## 0. 关系型事实库(V1.1 新增)
+
+数据是关系型的,不是孤立记录。三端实体一律存于 **`api/mock/db.js` 单一事实库**,以外键关联:
+
+```
+customer ─┬─→ order ─┬─→ port(占用/预占)
+          │          ├─→ tagEpc(预绑定) ──→ asset
+          │          ├─→ loid(认证账号)
+          │          └─→ worker(派单)
+          ├─→ bill ─→ payment ─→ receipt
+          └─→ repairTicket(报障 6 环节) ─→ port/tag/loid/worker
+order(stage≥9) ─→ quad(四码: asset/loid/port/addr)
+order(stage=12) ─→ gis 同步
+```
+
+- 三端视图(`api/mock/data.js`、`api/mock/worker/data.js`、`api/mock/admin/data/*.js`)**只做形状映射,
+  不再各自持有实体数据**;改 db 一处,三端自动一致。
+- **`api/mock/selfcheck.js`** 固化了 100+ 条关系不变量(引用完整性/未收费不派单/四码时点/GIS 时点/
+  端口占用一致/账单三端同口径等),`node api/mock/selfcheck.js` 全绿即对齐成立,改数据后必须重跑。
 
 ## 1. 统一事实基线(叙事时间 2025-08-17 10:40)
 
@@ -50,6 +70,7 @@
 
 ## 4. 维护规则
 
-1. 新增/修改任一端 mock 数据时,先对照第 1 节事实基线;跨端共享实体(订单/工单/客户/端口/资产/LOID/账单)必须三端同值。
-2. 新增订单必须声明:客户(customerId)、环节(stage)、状态(status)、端口/标签/LOID 归属,并检查是否触发第 2 节口径(派单前置、GIS、回调时点)。
-3. 环节名展示标签允许各端有措辞差异(如"创建账号"vs"创建认证账号"),但环节序号与 12 环节顺序以 terms.md 为准,禁止增删改序。
+1. **改实体先改 `db.js`**,三端视图随派生自动一致;禁止在视图文件手抄实体数据。
+2. 改完必须跑 `node api/mock/selfcheck.js`,退出码非 0 视为破坏对齐。
+3. 新增订单必须声明:客户(customerId)、环节(stage)、端口/标签/LOID 归属,并检查是否触发第 2 节口径(派单前置、GIS、回调时点)。
+4. 环节名展示标签允许各端有措辞差异(如"创建账号"vs"创建认证账号"),但环节序号与 12 环节顺序以 terms.md 为准,禁止增删改序。
