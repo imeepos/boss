@@ -1,20 +1,11 @@
 // 用户端统一接口对接层。
-// 契约: api/openapi/user.yaml;假数据: api/mock/server.js(http://127.0.0.1:8090)。
+// 契约: api/openapi/user.yaml;经 APISIX 网关访问真实后端(前缀 /api/v1)。
 // 用 window.API 暴露,页面直接调用;后端就绪后仅改 BASE 即可切换到真实网关。
 (function (global) {
   'use strict';
 
-  // 默认取"页面所在主机"的 hostname 拼接口地址:
-  // 本机打开 -> location.hostname 为空 -> 回退 127.0.0.1;
-  // 局域网另一台设备打开 -> location.hostname 就是那台设备的 IP/主机名 -> 直连其上的 mock。
-  // 也可通过 API_BASE_URL 显式指定(如 'http://192.168.0.15:8090/api/v1')。
-  var DEFAULT_BASE = (function () {
-    var host = (typeof location !== 'undefined' && location.hostname) || '';
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'http://' + host + ':8090/api/v1';
-    }
-    return 'http://127.0.0.1:8090/api/v1';
-  })();
+  // 默认同源走 APISIX 网关前缀;跨环境时通过 API_BASE_URL 显式指定完整地址。
+  var DEFAULT_BASE = '/api/v1';
   var BASE = (global.API_BASE_URL || DEFAULT_BASE);
   var TOKEN_KEY = 'boss_user_token';
 

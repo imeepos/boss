@@ -5,7 +5,7 @@ info:
   description: |
     师傅端(worker 端,对应 docs/worker/*.html 全量页面)对外 REST 契约。
     权威字段/状态枚举见 docs/contract/{terms,fields,domain-map}.md;
-    本文件为 APISIX 路由与假数据 mock 的单一事实源。
+    本文件为 APISIX 路由的单一事实源。
     接口按域拆分至 worker/ 目录,本文件仅做聚合(内联 $ref)。
     前缀 /api/worker/v1 与用户端 /api/v1 隔离,避免网关路由冲突。
 servers:

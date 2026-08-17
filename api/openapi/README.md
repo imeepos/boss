@@ -18,8 +18,6 @@
 | `user/misc.yaml` | Misc | 消息 / 优惠券 / 用量 / 地址 / 自助排障 / 协议 |
 | `user/schemas.yaml` | — | 全部共享 `components.schemas` 与 `securitySchemes` |
 
-- `mock/` —— 按 `user.yaml` 契约的假数据 mock 服务,见 `api/mock/README.md`(mock 零依赖手工路由,不解析 yaml,拆分不影响)。
-
 ## 师傅端(装维门户)
 
 - `worker.yaml` —— 聚合入口,servers 前缀 `/api/worker/v1`(与用户端 `/api/v1` 隔离)。
@@ -34,8 +32,6 @@
 | `worker/profile.yaml` | Profile | 我的 / 绩效 / 排期 / 接单设置 / 满意度 |
 | `worker/misc.yaml` | Misc | 消息 / 公告 / 排障手册 / 联系调度 / 安全上报 |
 | `worker/schemas.yaml` | — | 全部共享 `components.schemas` 与 `securitySchemes` |
-
-- `mock/worker/` —— 按 `worker.yaml` 契约的假数据 mock 服务(端口 8091),页面 `docs/worker/api.js`,对接约定 `docs/worker/API-INTEGRATION.md`。
 
 ## 拆分约定
 
