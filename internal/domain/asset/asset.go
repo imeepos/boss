@@ -104,6 +104,8 @@ type AssetService interface {
 	CreateReplacement(ctx context.Context, r Replacement) (int64, error)
 	ListStocktakes(ctx context.Context) ([]Stocktake, error)
 	CreateStocktake(ctx context.Context, s Stocktake) (int64, error)
+	// HandleStocktakeDiff 盘点差异项处理:处理完任务置 DONE。
+	HandleStocktakeDiff(ctx context.Context, taskID int64) error
 
 	ListAssignments(ctx context.Context, assetID int64) ([]AssetAssignment, error)
 	AssignAsset(ctx context.Context, a AssetAssignment) (int64, error)

@@ -17,7 +17,7 @@
 | W3 出账（含区域调价覆盖）+ 审计异步写 | ✅ 完成 | `GenerateBills` + `pkg/audit` |
 | **CI 质量门禁** | ✅ 完成 | `.github/workflows/ci.yml` + `make lint/check` |
 | D5 可观测（trace/日志/Prometheus/审计） | ⚠️ 部分 | 审计已落地；trace/指标未挂 |
-| **W4 端到端集成测试（真实 PG）** | ⚠️ 主体完成 | e2e 全流程/取消/端口释放/审计留痕已覆盖(`internal/app/e2e_pg_integration_test.go`);PG=192.168.0.102:25432;阶段3/4 台账 CRUD handler 补齐待做 |
+| **W4 端到端集成测试（真实 PG）** | ✅ 完成 | e2e 全流程/取消/端口释放/审计留痕(`internal/app/e2e_pg_integration_test.go`);阶段3/4 台账写侧 handler 补齐(盘点/差异/换新/调拨审批/扩容/手动释放预占,对齐 oss/asset.yaml);PG=192.168.0.102:25432 |
 | 二期 W5–W8（四码/AAA/下发/采集） | ❌ 未开始 | |
 | 三期 W9–W12（GIS/分析/压测/上线） | ❌ 未开始 | |
 

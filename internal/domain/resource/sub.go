@@ -54,4 +54,10 @@ type ResourceSubService interface {
 	AppendReserveRecord(ctx context.Context, r ReserveRecord) (int64, error)
 	ListPortHistory(ctx context.Context, portID int64) ([]PortChangeHistory, error)
 	AppendPortHistory(ctx context.Context, h PortChangeHistory) (int64, error)
+
+	// ApproveTransfer/RejectTransfer 调拨审批(仅 PENDING 可审;驳回→DONE 终态)。
+	ApproveTransfer(ctx context.Context, transferNo string) error
+	RejectTransfer(ctx context.Context, transferNo string) error
+	// ReleaseReserve 手动释放预占(oss.yaml releaseReserve):回收端口 + 记录置 RELEASED。
+	ReleaseReserve(ctx context.Context, reserveID int64) error
 }

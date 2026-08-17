@@ -6,6 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/ymm-001/boss/internal/domain/asset"
+	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/pkg/audit"
 	"github.com/ymm-001/boss/internal/pkg/auth"
@@ -23,8 +27,16 @@ func respondErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, user.ErrUnauthorized):
 		respond(c, apitypes.CodeUnauthorized, nil)
-	case errors.Is(err, user.ErrNotFound):
+	case errors.Is(err, user.ErrNotFound),
+		errors.Is(err, resource.ErrNotFound),
+		errors.Is(err, asset.ErrNotFound),
+		errors.Is(err, customer.ErrCustomerNotFound),
+		errors.Is(err, order.ErrOrderNotFound):
 		respond(c, apitypes.CodeNotFound, nil)
+	case errors.Is(err, resource.ErrIllegalTransition),
+		errors.Is(err, resource.ErrPortNotAvailable),
+		errors.Is(err, order.ErrIllegalTransition):
+		respond(c, apitypes.CodeInvalidParam, nil)
 	default:
 		respond(c, apitypes.CodeInternal, nil)
 	}

@@ -257,6 +257,19 @@ func (s *PGStore) CreateStocktake(ctx context.Context, st Stocktake) (int64, err
 	return id, nil
 }
 
+// HandleStocktakeDiff 盘点差异项处理(asset.yaml handleStocktakeDiff):差异处理完任务置 DONE。
+func (s *PGStore) HandleStocktakeDiff(ctx context.Context, taskID int64) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE stocktakes SET status = 'DONE' WHERE id = $1 AND status = 'DOING'`, taskID)
+	if err != nil {
+		return fmt.Errorf("asset: handle stocktake diff: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // ListAssignments 列出资产持有台账,按生效时间升序。
 func (s *PGStore) ListAssignments(ctx context.Context, assetID int64) ([]AssetAssignment, error) {
 	rows, err := s.db.Query(ctx, `
