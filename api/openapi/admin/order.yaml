@@ -63,7 +63,7 @@ paths:
                         finishedAt: { type: string }
                         duration: { type: string }
                         retryCount: { type: integer }
-                        result: { type: string, enum: [DONE, DOING, WAIT] }
+                        result: { type: string, enum: [DONE, DOING, PENDING] }
 
   /dispatch/pool:
     get:

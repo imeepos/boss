@@ -59,7 +59,7 @@
 // 订单管理:筛选/分页/详情弹框/12环节时间轴(契约: GET /orders, GET /orders/{no})
 (function () {
   var STATUS_TAG = { PENDING: 'tag-blue', RESERVED: 'tag-blue', INSTALLING: 'tag-orange', DONE: 'tag-green' };
-  var RESULT_TAG = { DONE: ['tag-green', '完成'], DOING: ['tag-orange', '进行中'], WAIT: ['tag', '待执行'] };
+  var RESULT_TAG = { DONE: ['tag-green', '完成'], DOING: ['tag-orange', '进行中'], PENDING: ['tag', '待执行'] };
   var all = [];
   var state = { page: 1, pageSize: 10 };
 

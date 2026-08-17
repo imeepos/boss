@@ -31,7 +31,7 @@ function buildTimeline(orderNo) {
   return db.timelineOf(o).map((s) => ({
     stageNo: s.stage, stageName: s.name, finishedAt: s.finishedAt || '—',
     duration: s.duration || '—', retryCount: s.stage === 9 ? o.scanRetries : 0,
-    result: s.result === 'PENDING' ? 'WAIT' : s.result,
+    result: s.result,
   }));
 }
 

@@ -95,3 +95,42 @@
 1. 新缺口按「类别字母 + 序号」登记（A=实体缺字段/缺表、B=命名、D=枚举、G=Go 漂移、E=缺实体）。
 2. 字段/状态/术语冲突一律先查 `terms.md`，再回写 `enums.ts` + 实体 + `fields.md`。
 3. 页面新增列时，同步在 `fields.md` 登记英文字段名与枚举。
+
+## 7. OpenAPI 接口规范 ↔ DB 设计 对齐检查
+
+> 检查 `api/openapi/`（admin/user/worker 三端，38 文件）与 62 表实体 + `terms.md`/`enums.ts` 的对齐。
+
+### 7.1 已对齐 ✅
+
+- 核心状态枚举：订单 `PENDING/RESERVED/INSTALLING/DONE`（admin）、四码 `LINKED/CONFLICT/UNLINKED`、标签 `UNBOUND/BOUND/DISABLED`、实名 `VERIFIED/PENDING`、账单 `UNPAID/PAID/OVERDUE`、环节 `DONE/DOING/PENDING`（user 端）。
+- 字段名：`assetCode`/`portCode`/`quadCode`（admin asset/oss/quad）、实名核验 `result: PASS/FAIL`。
+
+### 7.2 已修复 ✅（本次）
+
+- admin `order.yaml` 环节结果 `WAIT → PENDING`（对齐 `StageResult`），同步 mock 视图与 `docs/admin/order.html` 显示标签；`selfcheck` 仍全绿。
+
+### 7.3 待裁定（枚举扩展/显示值分歧）
+
+| # | 位置 | openapi | 实体/terms | 裁定方向 |
+|:-:|------|---------|-----------|---------|
+| 1 | user/schemas.yaml `status` | +`CANCELLED` | OrderStatus 4 态 | terms.md 是否补「已取消」态 |
+| 2 | worker/ticket.yaml `status` | `PROCESSING/CLOSED` | Complaint `OPEN/CLOSED` | 报障「处理中」态是否入实体 |
+| 3 | worker/schemas.yaml 扫码 `result` | +`OFFLINE_CACHED` | `MATCH/MISMATCH` | 师傅离线缓存态 |
+| 4 | worker/schemas.yaml 激活 `status` | +`PENDING` | `SUCCESS/FAILED` | 回调「待触发」态 |
+| 5 | worker/schemas + admin/worker 消息 `level` | `err/warn/ok/info` | `INFO/WARN/URGENT` | 统一消息级别枚举 |
+| 6 | user/billing.yaml `method` | `wechat/alipay/card` | 微信/支付宝/现金/银行 | 缴费方式补齐现金/银行 |
+| 7 | worker/schemas.yaml 工单 `status` | `TODO/ACCEPTED/SCAN_PENDING/DOING/DONE` | TicketStatus `PENDING/DOING/DONE/CANCELED` | 师傅端派生态（可保留） |
+
+### 7.4 字段名/资源名分歧（API 描述性 vs 实体简洁）
+
+| 概念 | openapi | 实体 |
+|------|---------|------|
+| 环节号/环节名 | `stageNo`/`stageName` | `stage`/`name` |
+| 环节重试 | `retryCount` | `retries` |
+| 产品 | `productId`/`products` | `offerId`/`product_offers` |
+| 认证账号 | `loid`/`lo-accounts` | `lo_accounts` |
+| 报障工单 | `repairTickets` | `complaints` |
+| 实名核验 | `verify-logs` | `real_name_verifications` |
+| 调拨类型 | `ASSET/PORT/DEVICE` | 仅 `resource_id` |
+
+> 裁定：字段名分歧属「API 描述性命名 vs 实体简洁命名」，改 API 属破坏性变更；建议在 openapi README 增「字段 ↔ DB 列」映射表，或逐步归一（优先 `productId→offerId`，与 fields.md B3 一致）。
