@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
@@ -209,4 +210,162 @@ func TestPGStore_GetAsset(t *testing.T) {
 			t.Fatalf("unmet: %v", err)
 		}
 	})
+}
+
+var ts = time.Date(2025, 8, 17, 10, 0, 0, 0, time.UTC)
+
+func TestPGStore_ListLifecycles(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{"id", "asset_id", "status", "address_id", "address_name", "worker_id", "worker_name", "changed_at"}
+	mock.ExpectQuery(`SELECT id, asset_id, status, COALESCE\(address_id, 0\)`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(1), int64(1), "IN_STOCK", int64(0), "", int64(0), "", ts).
+			AddRow(int64(2), int64(1), "DEPLOYED", int64(100), "望京X", int64(1024), "张师傅", ts))
+
+	s := NewPGStore(mock)
+	got, err := s.ListLifecycles(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("ListLifecycles: %v", err)
+	}
+	if len(got) != 2 || got[1].Status != "DEPLOYED" || got[1].WorkerName != "张师傅" {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_AppendLifecycle(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`INSERT INTO asset_lifecycles`).
+		WithArgs(int64(1), "DEPLOYED", int64(100), "望京X", int64(1024), "张师傅", ts).
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+
+	s := NewPGStore(mock)
+	id, err := s.AppendLifecycle(context.Background(), AssetLifecycle{
+		AssetID: 1, Status: "DEPLOYED", AddressID: 100, AddressName: "望京X", WorkerID: 1024, WorkerName: "张师傅", ChangedAt: ts,
+	})
+	if err != nil {
+		t.Fatalf("AppendLifecycle: %v", err)
+	}
+	if id != 3 {
+		t.Fatalf("id=%d, want 3", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_ListReplacements(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{"id", "replacement_no", "asset_id", "legal_entity_id", "legal_entity_name", "reason", "priority", "status"}
+	mock.ExpectQuery(`SELECT id, replacement_no, asset_id, legal_entity_id, legal_entity_name, reason, priority, status FROM replacements`).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(1), "RPL-20260817-001", int64(5), int64(1), "主品牌·企业", "光猫故障", "HIGH", "PENDING"))
+
+	s := NewPGStore(mock)
+	got, err := s.ListReplacements(context.Background())
+	if err != nil {
+		t.Fatalf("ListReplacements: %v", err)
+	}
+	if len(got) != 1 || got[0].ReplacementNo != "RPL-20260817-001" {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_CreateReplacement(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`INSERT INTO replacements`).
+		WithArgs("RPL-20260817-002", int64(6), int64(1), "主品牌·企业", "光猫故障", "MEDIUM", "PENDING").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
+
+	s := NewPGStore(mock)
+	id, err := s.CreateReplacement(context.Background(), Replacement{
+		ReplacementNo: "RPL-20260817-002", AssetID: 6, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
+		Reason: "光猫故障", Priority: "MEDIUM", Status: "PENDING",
+	})
+	if err != nil {
+		t.Fatalf("CreateReplacement: %v", err)
+	}
+	if id != 2 {
+		t.Fatalf("id=%d, want 2", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_ListStocktakes(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{"id", "legal_entity_id", "scope", "progress", "diff_count", "status"}
+	mock.ExpectQuery(`SELECT id, legal_entity_id, scope, progress, diff_count, status FROM stocktakes`).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(1), int64(1), "root.luzon", int16(80), int32(3), "DOING"))
+
+	s := NewPGStore(mock)
+	got, err := s.ListStocktakes(context.Background())
+	if err != nil {
+		t.Fatalf("ListStocktakes: %v", err)
+	}
+	if len(got) != 1 || got[0].DiffCount != 3 {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_CreateStocktake(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`INSERT INTO stocktakes`).
+		WithArgs(int64(1), "root.luzon.ncr", int16(0), int32(0), "DOING").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
+
+	s := NewPGStore(mock)
+	id, err := s.CreateStocktake(context.Background(), Stocktake{
+		LegalEntityID: 1, Scope: "root.luzon.ncr", Progress: 0, DiffCount: 0, Status: "DOING",
+	})
+	if err != nil {
+		t.Fatalf("CreateStocktake: %v", err)
+	}
+	if id != 2 {
+		t.Fatalf("id=%d, want 2", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
 }

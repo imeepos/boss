@@ -156,3 +156,102 @@ func (s *PGStore) GetAsset(ctx context.Context, id int64) (*Asset, error) {
 	}
 	return &a, nil
 }
+
+// ListLifecycles 列出资产状态轨迹,按变更时间升序。
+func (s *PGStore) ListLifecycles(ctx context.Context, assetID int64) ([]AssetLifecycle, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, asset_id, status, COALESCE(address_id, 0), COALESCE(address_name, ''),
+		       COALESCE(worker_id, 0), COALESCE(worker_name, ''), changed_at
+		FROM asset_lifecycles WHERE asset_id = $1 ORDER BY changed_at, id`, assetID)
+	if err != nil {
+		return nil, fmt.Errorf("asset: list lifecycles: %w", err)
+	}
+	defer rows.Close()
+	out := make([]AssetLifecycle, 0)
+	for rows.Next() {
+		var l AssetLifecycle
+		if err := rows.Scan(&l.ID, &l.AssetID, &l.Status, &l.AddressID, &l.AddressName, &l.WorkerID, &l.WorkerName, &l.ChangedAt); err != nil {
+			return nil, fmt.Errorf("asset: scan lifecycle: %w", err)
+		}
+		out = append(out, l)
+	}
+	return out, rows.Err()
+}
+
+// AppendLifecycle 记录一次状态/位置变更,返回自增 id。
+func (s *PGStore) AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO asset_lifecycles(asset_id, status, address_id, address_name, worker_id, worker_name, changed_at)
+		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		l.AssetID, l.Status, idOrNil(l.AddressID), l.AddressName, idOrNil(l.WorkerID), l.WorkerName, l.ChangedAt).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("asset: append lifecycle: %w", err)
+	}
+	return id, nil
+}
+
+// ListReplacements 列出全部换新单。
+func (s *PGStore) ListReplacements(ctx context.Context) ([]Replacement, error) {
+	rows, err := s.db.Query(ctx,
+		`SELECT id, replacement_no, asset_id, legal_entity_id, legal_entity_name, reason, priority, status
+		 FROM replacements ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("asset: list replacements: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Replacement, 0)
+	for rows.Next() {
+		var r Replacement
+		if err := rows.Scan(&r.ID, &r.ReplacementNo, &r.AssetID, &r.LegalEntityID, &r.LegalEntityName, &r.Reason, &r.Priority, &r.Status); err != nil {
+			return nil, fmt.Errorf("asset: scan replacement: %w", err)
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+// CreateReplacement 新建换新单,返回自增 id。
+func (s *PGStore) CreateReplacement(ctx context.Context, r Replacement) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO replacements(replacement_no, asset_id, legal_entity_id, legal_entity_name, reason, priority, status)
+		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		r.ReplacementNo, r.AssetID, r.LegalEntityID, r.LegalEntityName, r.Reason, r.Priority, r.Status).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("asset: create replacement: %w", err)
+	}
+	return id, nil
+}
+
+// ListStocktakes 列出全部盘点任务。
+func (s *PGStore) ListStocktakes(ctx context.Context) ([]Stocktake, error) {
+	rows, err := s.db.Query(ctx,
+		`SELECT id, legal_entity_id, scope, progress, diff_count, status FROM stocktakes ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("asset: list stocktakes: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Stocktake, 0)
+	for rows.Next() {
+		var st Stocktake
+		if err := rows.Scan(&st.ID, &st.LegalEntityID, &st.Scope, &st.Progress, &st.DiffCount, &st.Status); err != nil {
+			return nil, fmt.Errorf("asset: scan stocktake: %w", err)
+		}
+		out = append(out, st)
+	}
+	return out, rows.Err()
+}
+
+// CreateStocktake 新建盘点任务,返回自增 id。
+func (s *PGStore) CreateStocktake(ctx context.Context, st Stocktake) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO stocktakes(legal_entity_id, scope, progress, diff_count, status)
+		VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		st.LegalEntityID, st.Scope, st.Progress, st.DiffCount, st.Status).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("asset: create stocktake: %w", err)
+	}
+	return id, nil
+}

@@ -1,6 +1,9 @@
 package asset
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // AssetBatch 入库批次(公司采购行为,资产经此归属公司)。
 type AssetBatch struct {
@@ -37,7 +40,41 @@ type Asset struct {
 	Status          string // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
 }
 
-// AssetService 资产域服务口(阶段3):入库批次/电子标签/资产台账。
+// AssetLifecycle 资产状态轨迹(每次状态/位置变更一行,历史不随当前状态漂移)。
+type AssetLifecycle struct {
+	ID          int64
+	AssetID     int64
+	Status      string
+	AddressID   int64 // 0=空
+	AddressName string
+	WorkerID    int64 // 0=空
+	WorkerName  string
+	ChangedAt   time.Time
+}
+
+// Replacement 换新单(故障资产换新流程)。
+type Replacement struct {
+	ID              int64
+	ReplacementNo   string
+	AssetID         int64
+	LegalEntityID   int64
+	LegalEntityName string
+	Reason          string
+	Priority        string // HIGH/MEDIUM/LOW
+	Status          string // PENDING/DOING/DONE/FAILED
+}
+
+// Stocktake 盘点任务(按区域盘点资产,输出差异)。
+type Stocktake struct {
+	ID            int64
+	LegalEntityID int64
+	Scope         string
+	Progress      int16 // 0~100
+	DiffCount     int32
+	Status        string // DOING/DONE
+}
+
+// AssetService 资产域服务口(阶段3):入库批次/电子标签/资产台账/状态轨迹/换新/盘点。
 type AssetService interface {
 	ListBatches(ctx context.Context) ([]AssetBatch, error)
 	CreateBatch(ctx context.Context, b AssetBatch) (int64, error)
@@ -46,4 +83,11 @@ type AssetService interface {
 	ListAssets(ctx context.Context) ([]Asset, error)
 	CreateAsset(ctx context.Context, a Asset) (int64, error)
 	GetAsset(ctx context.Context, id int64) (*Asset, error)
+
+	ListLifecycles(ctx context.Context, assetID int64) ([]AssetLifecycle, error)
+	AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64, error)
+	ListReplacements(ctx context.Context) ([]Replacement, error)
+	CreateReplacement(ctx context.Context, r Replacement) (int64, error)
+	ListStocktakes(ctx context.Context) ([]Stocktake, error)
+	CreateStocktake(ctx context.Context, s Stocktake) (int64, error)
 }
