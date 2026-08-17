@@ -19,6 +19,7 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/audit"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
+	"github.com/ymm-001/boss/internal/pkg/events"
 )
 
 // Application 持有各域服务的装配结果,是模块化单体依赖绑定的唯一入口。
@@ -60,6 +61,11 @@ type Application struct {
 	WorkerEvent  worker.WorkerEventService
 
 	Audit audit.Writer // 关键操作审计(异步写,见 pkg/audit)
+
+	// Automation W8 环节自动编排(6/7/10/11 自动);事件经 Kafka 状态变更链路发布。
+	Automation *Automation
+	// pubEvents 事件发布器(Kafka;未配置时 Noop);Close 时释放连接。
+	pubEvents events.Publisher
 
 	// close 释放资源钩子(异步审计 writer + PG 池),由 cmd 层在优雅退出时调用。
 	close func()
@@ -146,8 +152,23 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 
 	app.Audit = aw
+
+	// W8:Kafka 状态变更链路(brokers 可用即接,否则降级 Noop)。
+	var pub events.Publisher = events.Noop{}
+	var closePub func()
+	if len(cfg.Kafka.Brokers) > 0 {
+		kp := events.NewKafkaPublisher(cfg.Kafka.Brokers, cfg.Events.Topic)
+		pub = kp
+		closePub = func() { _ = kp.Close() }
+	}
+	app.pubEvents = pub
+	app.Automation = NewAutomation(app.Order, pub)
+
 	app.close = func() {
 		aw.Close() // 排空审计队列
+		if closePub != nil {
+			closePub()
+		}
 		pool.Close()
 	}
 	return app, nil

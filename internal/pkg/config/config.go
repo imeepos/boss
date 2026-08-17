@@ -14,6 +14,7 @@ type Config struct {
 	Database struct{ DSN string }
 	Redis    struct{ Addrs []string }
 	Kafka    struct{ Brokers []string }
+	Events   struct{ Topic string } // 状态变更事件 topic
 	MinIO    struct{ Endpoint, AccessKey, SecretKey string }
 	Temporal struct{ Host string }
 
@@ -64,6 +65,7 @@ func Load() *Config {
 	c.AAA.AuthTTL = 60
 	c.Kafka.Brokers = getlist("BOSS_KAFKA_BROKERS", []string{"192.168.0.102:29092"})
 	c.AAA.CDRTopic = getenv("BOSS_AAA_CDR_TOPIC", "boss-cdr")
+	c.Events.Topic = getenv("BOSS_EVENTS_TOPIC", "boss-order-events")
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
 	c.JWT.TTL = 24 * time.Hour
 	return c

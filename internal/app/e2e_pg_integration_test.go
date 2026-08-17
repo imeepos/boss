@@ -23,6 +23,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/device"
+	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/resource"
@@ -367,6 +368,110 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		alarms, err := a.Alarm.ListAlarms(ctx, resID)
 		if err != nil || len(alarms) == 0 || alarms[0].Level != "CRITICAL" {
 			t.Fatalf("alarms=%+v err=%v", alarms, err)
+		}
+	})
+
+	t.Run("W8_下单到激活全自动_人工只收费扫码", func(t *testing.T) {
+		pub := &capPub{}
+		m := NewAutomation(a.Order, pub)
+		// 独立客户(quad_links.customer_id 唯一,不能与其它子测试共用种子客户)。
+		custID, err := a.Customer.Create(ctx, customer.Customer{
+			Name: "E2E-W8客户", Phone: "09172222222", IdType: "身份证", IdNo: "E2E-W8",
+			RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE",
+			AddressID: s.addressID, LegalEntityID: 1, RegionID: s.regionID, RegionName: s.regionName,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		o0, err := a.Order.Submit(ctx, order.SubmitReq{
+			CustomerID: custID, OfferID: s.offerID, AddressID: s.addressID,
+			ChannelID: s.channelID, LegalEntityID: 1, RegionPath: "root.luzon.ncr.manila",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		orderID := o0.ID
+		// 独立地址+设备+端口(quad_links.address_id/port_id 唯一)。
+		suffix := orderNo6(time.Now().UnixNano() % 1e6)
+		var w8Addr int64
+		if err := pool.QueryRow(ctx,
+			`INSERT INTO addresses(path, level, name) VALUES($1, 1, $2) RETURNING id`,
+			"w8"+suffix, "W8测试市").Scan(&w8Addr); err != nil {
+			t.Fatal(err)
+		}
+		w8Res, err := a.Resource.CreateResource(ctx, resSeed(w8Addr, suffix))
+		if err != nil {
+			t.Fatal(err)
+		}
+		w8Port, err := a.Resource.CreatePort(ctx, portSeed(w8Res, &e2eSeed{
+			addressID: w8Addr, regionID: s.regionID, regionName: s.regionName,
+		}, suffix, 1))
+		if err != nil {
+			t.Fatal(err)
+		}
+		auto := []func(context.Context, int64) error{
+			a.Order.CheckResource, a.Order.Reserve, a.Order.ChargeContract,
+		}
+		for _, step := range auto { // 人工:收费
+			if err := step(ctx, orderID); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := a.Resource.ReservePort(ctx, w8Port, orderID); err != nil {
+			t.Fatal(err)
+		}
+		// 自动段一(5-8)+人工扫码(9,走 VerifyScan)+自动段二(10-12)。
+		if err := m.AutoPreScan(ctx, orderID); err != nil {
+			t.Fatalf("AutoPreScan: %v", err)
+		}
+		o, _, err := a.Order.Track(ctx, orderID)
+		if err != nil || o.Stage != 8 {
+			t.Fatalf("preScan stage=%d err=%v", o.Stage, err)
+		}
+		// 人工扫码:建资产/标签/四码。
+		batchID, err := a.Asset.CreateBatch(ctx, asset.AssetBatch{LegalEntityID: 1,
+			Code: "RK-W8-" + orderNo6(orderID), Name: "W8批次"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assetID, err := a.Asset.CreateAsset(ctx, asset.Asset{
+			LegalEntityID: 1, LegalEntityName: "主品牌·企业", BatchID: batchID,
+			AssetCode: "A-W8-" + orderNo6(orderID), Type: "ONU", Status: "IN_STOCK",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		epc := "EPC-W8-" + orderNo6(orderID)
+		if _, err := a.Asset.CreateTag(ctx, asset.Tag{
+			LegalEntityID: 1, TagNo: "T-W8-" + orderNo6(orderID), EpcCode: epc, Band: "UHF",
+			BoundAssetID: assetID, Status: "BOUND", Battery: "OK",
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := a.QuadLink.CreateLink(ctx, quadlink.QuadLink{
+			AssetID: assetID, CustomerID: custID, PortID: w8Port,
+			AddressID: w8Addr, LegalEntityID: 1, LegalEntityName: "主品牌·企业", Status: "UNLINKED",
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if res, err := a.QuadLink.VerifyScan(ctx, quadlink.ScanReq{
+			OrderID: orderID, WorkerID: 1, WorkerName: "E2E", ScannedEPC: epc,
+		}); err != nil || res != "MATCH" {
+			t.Fatalf("scan res=%s err=%v", res, err)
+		}
+		if err := a.Order.ScanBind(ctx, orderID); err != nil {
+			t.Fatal(err)
+		}
+		// 自动段二:10-12 全自动到 DONE。
+		if err := m.AutoPostScan(ctx, orderID); err != nil {
+			t.Fatalf("AutoPostScan: %v", err)
+		}
+		o, _, err = a.Order.Track(ctx, orderID)
+		if err != nil || o.Stage != 12 || o.Status != "DONE" {
+			t.Fatalf("final stage=%d status=%s err=%v", o.Stage, o.Status, err)
+		}
+		if len(pub.got) != 7 { // 4(段一)+3(段二) 条状态变更事件
+			t.Fatalf("events=%d, want 7", len(pub.got))
 		}
 	})
 }
