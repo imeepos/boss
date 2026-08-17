@@ -296,6 +296,17 @@
 
 > 追溯补充：`order_stages` 冗余 `operator_account_id` + `operator_name`（环节执行人）；`scan_logs` 冗余 `worker_name`（扫码师傅）。`region_price_histories` 为区域调价台账（与 `product_price_histories` 同构）。
 
+## 8A. 对齐三端页面补齐的实体（server-ts）
+
+> 为消除「页面有列、实体缺失」的缺口补的实体，字段名沿用 TS 实体，DB 列经 SnakeNamingStrategy 转 snake_case。
+
+| 实体 | 承接页 | 关键列 |
+|:-----|:-------|:-------|
+| provision_logs | admin/provlog.html 下发日志 | task_id/resource_id/template_id/result/retries/created_at |
+| real_name_verifications | admin/customer.html 实名核验 | customer_id/method/verified_at/result/operator_account_id/operator_name |
+
+> 仍缺实体、但按 domain-map 属「待建域」或派生视图的页面（本期不臆造）：`settings.html`→`biz_params`（migrations 已建表，TS 实体已补 `BizParam`）、`device.html`→资源监控指标（MON 待建）、`alarm.html`→告警（MON 待建）、`aaalog.html`→话单 CDR（AAA，Go `aaa/billing/cdr.go`）、`paycheck.html`→渠道对账（派生聚合，非基表）。
+
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。
