@@ -39,3 +39,6 @@ export type ScanResult = 'MATCH' | 'MISMATCH' | 'OFFLINE_CACHED';
 export type ActivationResult = 'SUCCESS' | 'FAILED';
 export type MessageLevel = 'INFO' | 'WARN' | 'URGENT';
 export type PaymentMethod = 'wechat' | 'alipay' | 'card' | 'cash';
+
+export type AlarmLevel = 'CRITICAL' | 'WARNING' | 'INFO';
+export type AlarmStatus = 'OPEN' | 'ACKED' | 'CLOSED';

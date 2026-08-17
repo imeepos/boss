@@ -321,8 +321,10 @@
 |:-----|:-------|:-------|
 | provision_logs | admin/provlog.html 下发日志 | task_id/resource_id/template_id/result/retries/created_at |
 | real_name_verifications | admin/customer.html 实名核验 | customer_id/method/verified_at/result/operator_account_id/operator_name |
+| channels | order/dispatch 下单渠道 | code/name/status（REQ-ORD-006 必填不可改） |
+| alarms | admin/alarm.html 告警 | alarm_no/level/source/content/status |
 
-> 仍缺实体、但按 domain-map 属「待建域」或派生视图的页面（本期不臆造）：`settings.html`→`biz_params`（migrations 已建表，TS 实体已补 `BizParam`）、`device.html`→资源监控指标（MON 待建）、`alarm.html`→告警（MON 待建）、`aaalog.html`→话单 CDR（AAA，Go `aaa/billing/cdr.go`）、`paycheck.html`→渠道对账（派生聚合，非基表）。
+> 仍缺实体、但按 domain-map 属「待建域」或派生视图的页面（本期不臆造）：`settings.html`→`biz_params`（migrations 已建表，TS 实体已补 `BizParam`）、`device.html`→资源监控指标（MON 待建）、`aaalog.html`→话单 CDR（AAA，Go `aaa/billing/cdr.go`）、`paycheck.html`→渠道对账（派生聚合，非基表）。
 
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 

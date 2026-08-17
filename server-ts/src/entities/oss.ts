@@ -2,7 +2,7 @@
 import {
   Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index, OneToMany, OneToOne,
 } from 'typeorm';
-import type { PortStatus, ResourceStatus, LoAccountStatus, TaskStatus } from '../enums.js';
+import type { PortStatus, ResourceStatus, LoAccountStatus, TaskStatus, AlarmLevel, AlarmStatus } from '../enums.js';
 import { LegalEntity } from './org.js';
 import { Address } from './geo.js';
 import { Customer, ProductOffer } from './customer.js';
@@ -340,5 +340,33 @@ export class ProvisionLog {
   retries!: number;
 
   @Column({ type: 'timestamptz', comment: '下发时间' })
+  createdAt!: Date;
+}
+
+@Entity('alarms', { comment: 'L5告警:网络设备/四码对账等异常告警(MON域)' })
+@Index(['level', 'createdAt'])
+export class Alarm {
+  @PrimaryGeneratedColumn({ comment: '主键' })
+  id!: number;
+
+  @Column({ type: 'varchar', length: 32, unique: true, comment: '告警号,如ALM-001' })
+  alarmNo!: string;
+
+  @Column({ type: 'varchar', length: 16, comment: '级别:CRITICAL严重/WARNING警告/INFO提示' })
+  level!: AlarmLevel;
+
+  @Column({ type: 'varchar', length: 32, comment: '来源:device设备/quadlink四码/aaa认证等' })
+  source!: string;
+
+  @Column({ type: 'varchar', length: 255, comment: '告警内容' })
+  content!: string;
+
+  @Column({ type: 'bigint', nullable: true, comment: '关联设备id(resources表,软引用)' })
+  resourceId?: number | null;
+
+  @Column({ type: 'varchar', length: 16, default: 'OPEN', comment: '状态:OPEN待处理/ACKED已确认/CLOSED已关闭' })
+  status!: AlarmStatus;
+
+  @Column({ type: 'timestamptz', comment: '告警时间' })
   createdAt!: Date;
 }

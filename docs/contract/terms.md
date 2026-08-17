@@ -56,6 +56,8 @@
 | 激活(环节10) status | PENDING / SUCCESS / FAILED | 待激活 / 成功 / 失败（师傅端视图，非回调结果） |
 | 消息 level | INFO / WARN / URGENT | 信息 / 警告 / 紧急 |
 | 缴费 method | wechat / alipay / card / cash | 微信 / 支付宝 / 银行卡 / 现金 |
+| 告警 alarm.level | CRITICAL / WARNING / INFO | 严重 / 警告 / 提示 |
+| 告警 alarm.status | OPEN / ACKED / CLOSED | 待处理 / 已确认 / 已关闭 |
 
 ## 5. 关键术语
 
