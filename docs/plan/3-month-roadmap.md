@@ -16,6 +16,7 @@
 | D4 | 编排引擎降级路径 | 一期**不上 Temporal**，用「状态机 + outbox + 后台 worker」闭环；保留接口位 | ADR-003「代价/备选」；避免双轨漂移 |
 | D5 | 横切先挂上 | trace（OpenTelemetry）+ 结构化日志 + Prometheus 指标 + 审计异步写，从 W1 起不后补 | `internal/pkg/{middleware,audit}` |
 | D6 | 参数定值 | 下表 `[X]` 参数全部给定默认值，存 `biz_params`/Nacos 可调，验收按默认值 | 见 §2 |
+| D7 | 序列化约定 | 领域 struct 直接带 `json` 标签对齐 OpenAPI camelCase；模块化单体不另建 DTO 层（避免映射爆炸），未来拆微服务时再引跨进程 DTO | 本轮 org 域已落地 |
 
 ---
 

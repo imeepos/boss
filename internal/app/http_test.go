@@ -16,23 +16,27 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// fakeUser 桩 user.Service:仅登录逻辑可配置,其余方法返回零值。
+// fakeUser 桩 user.Service:登录/权限/组织列表可配置,其余方法返回零值。
 type fakeUser struct {
 	loginRes *user.LoginResult
 	loginErr error
+	permOk   bool
+	entities []user.LegalEntity
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
 	return f.loginRes, f.loginErr
 }
-func (f *fakeUser) HasPermission(context.Context, int64, string) (bool, error) { return false, nil }
+func (f *fakeUser) HasPermission(context.Context, int64, string) (bool, error) { return f.permOk, nil }
 func (f *fakeUser) HasDataScope(context.Context, int64, user.DataScope) (bool, error) {
 	return false, nil
 }
 func (f *fakeUser) ListAddresses(context.Context, int64) ([]user.Address, error)    { return nil, nil }
 func (f *fakeUser) ImportAddresses(context.Context, []user.AddressRow) (int, error) { return 0, nil }
 func (f *fakeUser) ListRegions(context.Context, string) ([]user.Region, error)      { return nil, nil }
-func (f *fakeUser) ListLegalEntities(context.Context) ([]user.LegalEntity, error)   { return nil, nil }
+func (f *fakeUser) ListLegalEntities(context.Context) ([]user.LegalEntity, error) {
+	return f.entities, nil
+}
 func (f *fakeUser) ListDepartments(context.Context, int64) ([]user.Department, error) {
 	return nil, nil
 }

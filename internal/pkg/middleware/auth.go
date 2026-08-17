@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -30,16 +31,16 @@ func Authn(m *auth.Manager) gin.HandlerFunc {
 }
 
 // PermChecker 权限快照查询(实现走 Redis/DB,权限变更即时生效)。
-type PermChecker func(accountID int64, permCode string) (bool, error)
+type PermChecker func(ctx context.Context, accountID int64, permCode string) (bool, error)
 
 // DataScopeChecker 数据范围判定:资源属主组织是否落在账号数据范围内。
-type DataScopeChecker func(accountID int64, owner any) (bool, error)
+type DataScopeChecker func(ctx context.Context, accountID int64, owner any) (bool, error)
 
 // Authz RBAC 授权:越权访问被拒绝并提示(阶段1验收项)。
 func Authz(check PermChecker, permCode string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := c.MustGet(CtxClaims).(*auth.Claims)
-		ok, err := check(claims.AccountID, permCode)
+		ok, err := check(c.Request.Context(), claims.AccountID, permCode)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "permission check failed"})
 			return
@@ -56,7 +57,7 @@ func Authz(check PermChecker, permCode string) gin.HandlerFunc {
 func DataAuthz(check DataScopeChecker, owner any) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := c.MustGet(CtxClaims).(*auth.Claims)
-		ok, err := check(claims.AccountID, owner)
+		ok, err := check(c.Request.Context(), claims.AccountID, owner)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "data scope check failed"})
 			return
