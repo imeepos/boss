@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE lo_accounts DROP COLUMN IF EXISTS region_path;
+COMMIT;

@@ -19,10 +19,10 @@ func TestPGStore_ListLoAccounts(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "loid", "customer_id", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "offer_id", "qos_template_id", "status"}
-	mock.ExpectQuery(`SELECT id, loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, offer_id, qos_template_id, status FROM lo_accounts`).
+	cols := []string{"id", "loid", "customer_id", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "region_path", "offer_id", "qos_template_id", "status"}
+	mock.ExpectQuery(`SELECT id, loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, COALESCE\(region_path,''\), offer_id, qos_template_id, status FROM lo_accounts`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "LOID-88A1", int64(1), int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(3), int64(1), "ACTIVE"))
+			AddRow(int64(1), "LOID-88A1", int64(1), int64(1), "主品牌·企业", int64(11), "马尼拉市", "root.luzon.ncr.manila", int64(3), int64(1), "ACTIVE"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListLoAccounts(context.Background())
@@ -45,7 +45,7 @@ func TestPGStore_CreateLoAccount(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO lo_accounts`).
-		WithArgs("LOID-88A2", int64(4), int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(2), int64(1), "ACTIVE").
+		WithArgs("LOID-88A2", int64(4), int64(1), "主品牌·企业", int64(11), "马尼拉市", nil, int64(2), int64(1), "ACTIVE").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)
@@ -72,11 +72,11 @@ func TestPGStore_GetLoAccountByLoid(t *testing.T) {
 		}
 		defer mock.Close()
 
-		cols := []string{"id", "loid", "customer_id", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "offer_id", "qos_template_id", "status"}
+		cols := []string{"id", "loid", "customer_id", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "region_path", "offer_id", "qos_template_id", "status"}
 		mock.ExpectQuery(`SELECT id, loid, customer_id`).
 			WithArgs("LOID-88A1").
 			WillReturnRows(mock.NewRows(cols).
-				AddRow(int64(1), "LOID-88A1", int64(1), int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(3), int64(1), "ACTIVE"))
+				AddRow(int64(1), "LOID-88A1", int64(1), int64(1), "主品牌·企业", int64(11), "马尼拉市", "", int64(3), int64(1), "ACTIVE"))
 
 		s := NewPGStore(mock)
 		a, err := s.GetLoAccountByLoid(context.Background(), "LOID-88A1")
@@ -222,11 +222,11 @@ func TestPGStore_GetLoAccountByCustomer(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "loid", "customer_id", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "offer_id", "qos_template_id", "status"}
+	cols := []string{"id", "loid", "customer_id", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "region_path", "offer_id", "qos_template_id", "status"}
 	mock.ExpectQuery(`SELECT id, loid, customer_id`).
 		WithArgs(int64(9)).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "LOID-88A1", int64(9), int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(3), int64(1), "ACTIVE"))
+			AddRow(int64(1), "LOID-88A1", int64(9), int64(1), "主品牌·企业", int64(11), "马尼拉市", "", int64(3), int64(1), "ACTIVE"))
 
 	s := NewPGStore(mock)
 	a, err := s.GetLoAccountByCustomer(context.Background(), 9)

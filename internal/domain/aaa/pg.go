@@ -26,7 +26,7 @@ func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
 }
 
-const loAccountCols = `id, loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, offer_id, qos_template_id, status`
+const loAccountCols = `id, loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, COALESCE(region_path,''), offer_id, qos_template_id, status`
 
 // ListLoAccounts 列出全部 LO 账号。
 func (s *PGStore) ListLoAccounts(ctx context.Context) ([]LoAccount, error) {
@@ -38,7 +38,7 @@ func (s *PGStore) ListLoAccounts(ctx context.Context) ([]LoAccount, error) {
 	out := make([]LoAccount, 0)
 	for rows.Next() {
 		var a LoAccount
-		if err := rows.Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.OfferID, &a.QosTemplateID, &a.Status); err != nil {
+		if err := rows.Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status); err != nil {
 			return nil, fmt.Errorf("aaa: scan lo_account: %w", err)
 		}
 		out = append(out, a)
@@ -50,20 +50,28 @@ func (s *PGStore) ListLoAccounts(ctx context.Context) ([]LoAccount, error) {
 func (s *PGStore) CreateLoAccount(ctx context.Context, a LoAccount) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO lo_accounts(loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, offer_id, qos_template_id, status)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-		a.Loid, a.CustomerID, a.LegalEntityID, a.LegalEntityName, a.RegionID, a.RegionName, a.OfferID, a.QosTemplateID, a.Status).Scan(&id)
+		INSERT INTO lo_accounts(loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, region_path, offer_id, qos_template_id, status)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+		a.Loid, a.CustomerID, a.LegalEntityID, a.LegalEntityName, a.RegionID, a.RegionName, nilIfEmpty(a.RegionPath), a.OfferID, a.QosTemplateID, a.Status).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("aaa: create lo_account: %w", err)
 	}
 	return id, nil
 }
 
+// nilIfEmpty 空串归 NULL(region_path 可空)。
+func nilIfEmpty(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
 // GetLoAccountByLoid 按 LOID 查账号;未命中返回 ErrNotFound。
 func (s *PGStore) GetLoAccountByLoid(ctx context.Context, loid string) (*LoAccount, error) {
 	var a LoAccount
 	err := s.db.QueryRow(ctx, `SELECT `+loAccountCols+` FROM lo_accounts WHERE loid = $1`, loid).
-		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.OfferID, &a.QosTemplateID, &a.Status)
+		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -77,7 +85,7 @@ func (s *PGStore) GetLoAccountByLoid(ctx context.Context, loid string) (*LoAccou
 func (s *PGStore) GetLoAccountByCustomer(ctx context.Context, customerID int64) (*LoAccount, error) {
 	var a LoAccount
 	err := s.db.QueryRow(ctx, `SELECT `+loAccountCols+` FROM lo_accounts WHERE customer_id = $1`, customerID).
-		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.OfferID, &a.QosTemplateID, &a.Status)
+		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

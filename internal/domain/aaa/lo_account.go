@@ -14,6 +14,7 @@ type LoAccount struct {
 	LegalEntityName string `json:"legalEntityName"`
 	RegionID        int64  `json:"regionId"`
 	RegionName      string `json:"regionName"`
+	RegionPath      string `json:"regionPath"` // 区域 ltree 路径快照,空=未挂区域(承接区域调价覆盖)
 	OfferID         int64  `json:"offerId"`
 	QosTemplateID   int64  `json:"qosTemplateId"`
 	Status          string `json:"status"` // ACTIVE/SUSPENDED/CLOSED
