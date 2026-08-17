@@ -47,6 +47,7 @@ type AaaService interface {
 	ListLoAccounts(ctx context.Context) ([]LoAccount, error)
 	CreateLoAccount(ctx context.Context, a LoAccount) (int64, error)
 	GetLoAccountByLoid(ctx context.Context, loid string) (*LoAccount, error)
+	GetLoAccountByCustomer(ctx context.Context, customerID int64) (*LoAccount, error)
 
 	AppendCdr(ctx context.Context, c CdrRecord) (int64, error)
 	ListCdrs(ctx context.Context, loid string) ([]CdrRecord, error)

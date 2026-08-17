@@ -108,6 +108,32 @@ func TestPGStore_ListStopResumeTasks(t *testing.T) {
 	}
 }
 
+// TestPGStore_ListArrears 契约:欠费列表联表返回客户名,按金额倒序。
+func TestPGStore_ListArrears(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT ar.customer_id, COALESCE\(c.name`).
+		WillReturnRows(mock.NewRows([]string{"customer_id", "customer", "amount", "days", "status"}).
+			AddRow(int64(1), "王先生", 299.00, int32(30), "催收中").
+			AddRow(int64(2), "李女士", 99.00, int32(10), "催收中"))
+
+	s := NewPGStore(mock)
+	got, err := s.ListArrears(context.Background())
+	if err != nil {
+		t.Fatalf("ListArrears: %v", err)
+	}
+	if len(got) != 2 || got[0].CustomerName != "王先生" || got[0].Amount != 299.00 {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
 // TestPGStore_AppendStopResumeTask 契约:追加停复机流水并返回自增 id。
 func TestPGStore_AppendStopResumeTask(t *testing.T) {
 	mock, err := pgxmock.NewPool()

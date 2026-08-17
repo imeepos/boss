@@ -38,6 +38,27 @@ func (s *PGStore) UpsertArrears(ctx context.Context, a Arrears) (int64, error) {
 	return id, nil
 }
 
+// ListArrears 欠费列表读模型(联表客户名,按欠费金额倒序)。
+func (s *PGStore) ListArrears(ctx context.Context) ([]ArrearsItem, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT ar.customer_id, COALESCE(c.name,''), ar.amount, ar.days, ar.status
+		FROM arrears ar LEFT JOIN customers c ON ar.customer_id = c.id
+		ORDER BY ar.amount DESC`)
+	if err != nil {
+		return nil, fmt.Errorf("billing: list arrears: %w", err)
+	}
+	defer rows.Close()
+	out := make([]ArrearsItem, 0)
+	for rows.Next() {
+		var it ArrearsItem
+		if err := rows.Scan(&it.CustomerID, &it.CustomerName, &it.Amount, &it.Days, &it.Status); err != nil {
+			return nil, fmt.Errorf("billing: scan arrears: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 // ListStopResumeTasks 列出停复机流水;customerID=0 返回全部。
 func (s *PGStore) ListStopResumeTasks(ctx context.Context, customerID int64) ([]StopResumeTask, error) {
 	rows, err := s.db.Query(ctx,

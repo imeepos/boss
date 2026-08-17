@@ -213,3 +213,30 @@ func TestPGStore_ListAuthLogs(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+// TestPGStore_GetLoAccountByCustomer 契约:按客户查 1:1 LO 账号;未命中 ErrNotFound。
+func TestPGStore_GetLoAccountByCustomer(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{"id", "loid", "customer_id", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "offer_id", "qos_template_id", "status"}
+	mock.ExpectQuery(`SELECT id, loid, customer_id`).
+		WithArgs(int64(9)).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(1), "LOID-88A1", int64(9), int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(3), int64(1), "ACTIVE"))
+
+	s := NewPGStore(mock)
+	a, err := s.GetLoAccountByCustomer(context.Background(), 9)
+	if err != nil {
+		t.Fatalf("GetLoAccountByCustomer: %v", err)
+	}
+	if a.Loid != "LOID-88A1" || a.CustomerID != 9 {
+		t.Fatalf("a=%+v", a)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}

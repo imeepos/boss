@@ -67,4 +67,5 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	authed.Use(middleware.Authn(mgr))
 	registerOrgRoutes(authed, a)
 	registerOrderRoutes(authed, a)
+	registerBillingRoutes(authed, a)
 }

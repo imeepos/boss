@@ -73,6 +73,20 @@ func (s *PGStore) GetLoAccountByLoid(ctx context.Context, loid string) (*LoAccou
 	return &a, nil
 }
 
+// GetLoAccountByCustomer 按客户查 LO 账号(客户 1:1);未命中返回 ErrNotFound。
+func (s *PGStore) GetLoAccountByCustomer(ctx context.Context, customerID int64) (*LoAccount, error) {
+	var a LoAccount
+	err := s.db.QueryRow(ctx, `SELECT `+loAccountCols+` FROM lo_accounts WHERE customer_id = $1`, customerID).
+		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.OfferID, &a.QosTemplateID, &a.Status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("aaa: get lo_account by customer: %w", err)
+	}
+	return &a, nil
+}
+
 const cdrCols = `id, loid, COALESCE(username, ''), acct_status, COALESCE(session_id, ''), session_time, input_octets, output_octets, COALESCE(nas_ip, ''), billing_status, started_at`
 
 // AppendCdr 追加话单,返回自增 id。
