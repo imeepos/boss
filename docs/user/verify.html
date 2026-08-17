@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实名认证 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .upload{display:flex;gap:10px;}
+  .up-box{flex:1;height:88px;border:1px dashed var(--line);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;background:#fafafa;}
+  .steps{display:flex;gap:6px;margin-bottom:14px;}
+  .step{flex:1;text-align:center;font-size:12px;color:var(--muted);position:relative;padding-top:20px;}
+  .step:before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:14px;height:14px;border-radius:50%;background:#d9d9d9;}
+  .step.on{color:var(--ink);font-weight:600;}
+  .step.on:before{background:var(--primary);}
+  .step.done{color:var(--success);}
+  .step.done:before{background:var(--success);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="security.html">&lsaquo;</a>
+    <div class="t">实名认证</div>
+    <span class="act" onclick="location.href='help.html'">帮助</span>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="tag tag-green" style="font-size:13px;padding:2px 12px;">已实名</div>
+    <div style="font-size:15px;font-weight:700;margin:8px 0 2px;">王**</div>
+    <div class="muted" style="font-size:12px;">身份证 110***********1234 · 2023-05-11 核验通过</div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">核验流程</div>
+    <div class="steps">
+      <div class="step done">填写信息</div>
+      <div class="step done">证件上传</div>
+      <div class="step done">人像比对</div>
+      <div class="step done">审核通过</div>
+    </div>
+    <div class="muted" style="font-size:12.5px;line-height:1.7;">办理入网、停机复机等业务须完成实名核验；核验方式为「证件 + 人像比对」。证件信息一经核验不可在线变更，证件过期换证需重新核验。</div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">证件信息</div>
+    <div class="field">
+      <label>证件类型</label>
+      <select disabled><option>身份证</option></select>
+    </div>
+    <div class="field">
+      <label>姓名</label>
+      <input type="text" value="王**" disabled>
+    </div>
+    <div class="field">
+      <label>证件号码</label>
+      <input type="text" value="110***********1234" disabled>
+    </div>
+    <div class="field">
+      <label>证件照片（正反面）</label>
+      <div class="upload">
+        <div class="up-box">正面已上传</div>
+        <div class="up-box">反面已上传</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">核验记录</div>
+    <div class="cell"><div class="main"><div class="t">证件 + 人像比对</div><div class="d">2023-05-11 10:12</div></div><div class="right"><span class="tag tag-green">通过</span></div></div>
+    <div class="cell"><div class="main"><div class="t">证件 OCR</div><div class="d">2023-05-11 10:08</div></div><div class="right"><span class="tag tag-green">通过</span></div></div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">证件已过期或信息需变更？</div>
+    <button class="btn" style="width:100%;" onclick="alert('重新核验需上传新证件并人像比对，提交后 1 个工作日内审核。')">重新核验</button>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>故障报修 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">故障报修</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="quick" style="grid-template-columns:repeat(2,1fr);margin:12px 14px;">
+    <a class="q" href="diy.html"><span class="ic ic-blue">检</span>自助排障</a>
+    <a class="q" href="service.html"><span class="ic ic-green">客</span>在线客服</a>
+  </div>
+
+  <div class="card">
+    <div class="c-title">我要报修</div>
+    <div class="field">
+      <label>故障类型</label>
+      <select><option>无法上网</option><option>网速慢</option><option>光猫故障</option><option>其他</option></select>
+    </div>
+    <div class="field">
+      <label>故障地址</label>
+      <input type="text" value="望京X · 3栋 · 501">
+    </div>
+    <div class="field">
+      <label>故障描述</label>
+      <textarea rows="3" placeholder="请描述故障现象"></textarea>
+    </div>
+    <div class="field">
+      <label>联系方式</label>
+      <input type="tel" value="138****1234">
+    </div>
+    <button class="btn-block" onclick="location.href='faultdetail.html'">提交报修</button>
+  </div>
+
+  <div class="card">
+    <div class="c-title">报修记录</div>
+    <a class="cell" href="faultdetail.html" style="color:inherit;">
+      <div class="main"><div class="t">单户断网（紧急 SLA）</div><div class="d">TKT-20250817-012 · 2025-08-17 09:40</div></div>
+      <div class="right"><span class="tag tag-blue">处理中</span></div>
+    </a>
+    <a class="cell" href="faultdetail.html" style="color:inherit;">
+      <div class="main"><div class="t">网速慢</div><div class="d">2025-07-30 15:02</div></div>
+      <div class="right"><span class="tag tag-green">已解决</span></div>
+    </a>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

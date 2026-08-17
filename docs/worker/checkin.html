@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>签到 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="order.html">&lsaquo;</a>
+    <div class="t">到点签到</div>
+    <span class="act">环节 9</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001</div>
+    <div class="kv"><span class="k">安装地址</span><span class="v">望京X · 3栋 · 501</span></div>
+    <div class="kv"><span class="k">当前定位</span><span class="v" style="color:var(--success);">已定位（误差 30m）</span></div>
+    <div class="kv"><span class="k">签到范围</span><span class="v">≤ 100m</span></div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="scan-frame" style="padding:50px 16px;">
+      <div class="glyph">◉</div>
+      <div class="hint">您已到达客户位置附近</div>
+      <div class="hint muted">签到将记录到达时间，用于 SLA 计时</div>
+    </div>
+    <button class="btn-green btn-block" onclick="alert('签到成功，已记录到达时间 10:05。')">确认签到</button>
+  </div>
+
+  <div class="card">
+    <div class="notice">师傅须在客户地址 100 米范围内方可签到，签到后才能扫码绑定。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

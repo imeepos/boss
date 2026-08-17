@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>现场工具 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="order.html">&lsaquo;</a>
+    <div class="t">现场工具</div>
+    <span class="act">零手工配置</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001</div>
+    <div class="kv"><span class="k">光功率</span><span class="v" style="color:var(--success);">-16.2 dBm（正常）</span></div>
+    <div class="kv"><span class="k">下载测速</span><span class="v">942 Mbps</span></div>
+    <div class="kv"><span class="k">上传测速</span><span class="v">96 Mbps</span></div>
+    <div class="kv"><span class="k">丢包率</span><span class="v" style="color:var(--success);">0%</span></div>
+    <button class="btn btn-block" style="margin-top:10px;" onclick="alert('重新测速（示意）。')">重新测速</button>
+  </div>
+
+  <div class="card">
+    <div class="c-title">资源查询</div>
+    <div class="kv"><span class="k">片区空闲端口</span><span class="v">3 个</span></div>
+    <div class="kv"><span class="k">最近分光器</span><span class="v">SPL-03-07</span></div>
+    <div class="kv"><span class="k">PON 空闲口</span><span class="v">P7 / P9 / P11</span></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">台账自查</div>
+    <div class="notice" style="margin-top:0;">扫码核对该区域资产台账，差异将自动生成清单上报。</div>
+    <button class="btn btn-block ghost" onclick="alert('台账核对无差异。')">扫码核对</button>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

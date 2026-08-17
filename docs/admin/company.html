@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>子公司/法人 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">子公司/法人</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>子公司/法人</h2>
+        <div class="desc">品牌隔离的最小隔离单元 · 跨子公司数据互不可见（REQ-BRAND-001）</div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建子公司</button>
+        <input class="input" style="width:220px" placeholder="搜索编码/名称">
+        <span class="spacer"></span>
+        <span class="tag tag-blue">品牌隔离：客户/订单/账务/资产互不可见</span>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>法人编码</th><th>法人名称</th><th>品牌</th><th>经营区域</th><th>部门数</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>LEG-A</td><td>主品牌·企业</td><td><span class="tag tag-blue">主品牌</span></td><td>吕宋大区</td><td>5</td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
+            <tr><td>LEG-B</td><td>家庭宽带</td><td><span class="tag tag-orange">家庭宽带</span></td><td>吕宋 + 棉兰老</td><td>5</td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
+            <tr><td>LEG-C</td><td>批发品牌</td><td><span class="tag tag-gray">批发</span></td><td>比萨扬大区</td><td>5</td><td><span class="tag tag-green">启用</span></td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">品牌×区域交叉经营 <span class="extra">跨大区经营的公司在此标注</span></div>
+        <table class="tbl">
+          <thead><tr><th>法人</th><th>大区</th><th>可触达数据范围</th></tr></thead>
+          <tbody>
+            <tr><td>LEG-B 家庭宽带</td><td>吕宋大区 + 棉兰老大区</td><td>两个大区的客户/订单/资产合并</td></tr>
+            <tr><td>LEG-A 主品牌·企业</td><td>吕宋大区</td><td>单一地区</td></tr>
+            <tr><td>LEG-C 批发品牌</td><td>比萨扬大区</td><td>单一地区</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

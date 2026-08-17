@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>扫码异常上报 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="scan.html">&lsaquo;</a>
+    <div class="t">扫码异常上报</div>
+    <span class="act">强制节点</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001</div>
+    <div class="kv"><span class="k">场景</span><span class="v">扫码绑定异常</span></div>
+    <div class="kv"><span class="k">预绑定标签</span><span class="v">EPC-0001</span></div>
+  </div>
+
+  <div class="card">
+    <div class="fld">
+      <label>异常类型</label>
+      <select>
+        <option selected>标签无法读取（污损/损坏）</option>
+        <option>扫码结果与预绑定不一致</option>
+        <option>光猫无标签/被替换</option>
+        <option>扫码枪/手机 NFC 故障</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label>实物标签号（如可读）</label>
+      <input type="text" placeholder="选填，手工录入将强制标记">
+    </div>
+    <div class="fld">
+      <label>现场描述</label>
+      <textarea rows="3" placeholder="描述现场异常情况"></textarea>
+    </div>
+    <a class="btn btn-block" style="margin-bottom:10px;" href="photo.html">拍照取证</a>
+    <button class="btn-green btn-block" onclick="alert('异常已上报，转调度复核，不可用手工数据替代扫码。')">提交异常</button>
+  </div>
+
+  <div class="card">
+    <div class="notice red">扫码是绑定强制节点：异常须上报并转调度复核，禁止以手工录入绕过扫码。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

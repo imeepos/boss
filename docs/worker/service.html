@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>联系调度 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="order.html">&lsaquo;</a>
+    <div class="t">联系调度</div>
+    <span class="act" onclick="alert('已转人工。')">转人工</span>
+  </div>
+
+  <div class="card" style="min-height:260px;">
+    <div class="msg-banner ok" style="align-self:flex-end;">已为您接通调度中心，此单可支持改派/咨询。</div>
+    <div class="msg-banner warn">ORD-20250817-001 关联工单，可快捷转单。</div>
+  </div>
+
+  <div class="card" style="display:flex;gap:10px;">
+    <a class="btn" style="flex:1;" href="tel:10086">拨号</a>
+    <button class="btn btn-primary" style="flex:1;" onclick="location.href='transfer.html'">转单/改派</button>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

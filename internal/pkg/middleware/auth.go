@@ -32,6 +32,9 @@ func Authn(m *auth.Manager) gin.HandlerFunc {
 // PermChecker 权限快照查询(实现走 Redis/DB,权限变更即时生效)。
 type PermChecker func(accountID int64, permCode string) (bool, error)
 
+// DataScopeChecker 数据范围判定:资源属主组织是否落在账号数据范围内。
+type DataScopeChecker func(accountID int64, owner any) (bool, error)
+
 // Authz RBAC 授权:越权访问被拒绝并提示(阶段1验收项)。
 func Authz(check PermChecker, permCode string) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -43,6 +46,23 @@ func Authz(check PermChecker, permCode string) gin.HandlerFunc {
 		}
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"code": 403, "msg": "no permission: " + permCode})
+			return
+		}
+		c.Next()
+	}
+}
+
+// DataAuthz 数据范围授权:超出账号数据范围的组织访问被拒绝并提示(阶段1扩展验收项)。
+func DataAuthz(check DataScopeChecker, owner any) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		claims := c.MustGet(CtxClaims).(*auth.Claims)
+		ok, err := check(claims.AccountID, owner)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "data scope check failed"})
+			return
+		}
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"code": 403, "msg": "out of data scope"})
 			return
 		}
 		c.Next()

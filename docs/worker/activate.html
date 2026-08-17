@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>激活 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="report.html">&lsaquo;</a>
+    <div class="t">激活用户</div>
+    <span class="act">环节 10/12</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001</div>
+    <div class="kv"><span class="k">LOID</span><span class="v">LOID-88A1</span></div>
+    <div class="kv"><span class="k">激活状态</span><span class="v" style="color:var(--warn);">未生效</span></div>
+    <div class="kv"><span class="k">上次尝试</span><span class="v">08-17 10:32 · 回调超时</span></div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="scan-frame">
+      <div class="glyph">↻</div>
+      <div class="hint">激活回调未返回成功</div>
+      <div class="hint muted">请确认光猫在线后重试激活</div>
+    </div>
+    <button class="btn-green btn-block" onclick="alert('激活成功，订单将流转为完成。')">重新激活</button>
+  </div>
+
+  <div class="card">
+    <div class="notice">激活失败不丢数据，可反复重试；连续失败将自动转告警派单。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全上报 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">安全作业上报</div>
+    <span class="act">护具确认</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">作业类型</div>
+    <div class="fld">
+      <select>
+        <option selected>高空作业（爬杆/登高）</option>
+        <option>带电作业</option>
+        <option>密闭/井道作业</option>
+        <option>常规入户</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">安全确认清单</div>
+    <div class="fld"><label><input type="checkbox"> 安全帽 / 绝缘鞋已佩戴</label></div>
+    <div class="fld"><label><input type="checkbox"> 安全带 / 防坠措施已就位</label></div>
+    <div class="fld"><label><input type="checkbox"> 作业区域已围挡警示</label></div>
+    <div class="fld"><label><input type="checkbox"> 已告知客户作业风险</label></div>
+    <button class="btn-green btn-block" onclick="alert('安全确认已上报留痕。')">提交安全确认</button>
+  </div>
+
+  <div class="card">
+    <div class="notice">高风险作业须先完成安全确认方可开始，确认记录留痕可追溯。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

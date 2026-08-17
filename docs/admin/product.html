@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产品资费 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">产品资费</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>产品资费</h2><div class="desc">宽带产品、带宽套餐、增值服务的配置/发布/下架/调价</div></div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建产品</button>
+        <span class="spacer"></span>
+        <button class="btn">发布</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>产品</th><th>带宽</th><th>月费</th><th>生效时间</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>家庭宽带 500M</td><td>500M</td><td>¥99</td><td>2025-08-01</td><td><span class="tag tag-green">在售</span></td><td><a href="#">调价</a> <a href="#">价格历史</a></td></tr>
+            <tr><td>家庭宽带 1000M</td><td>1000M</td><td>¥199</td><td>2025-08-01</td><td><span class="tag tag-green">在售</span></td><td><a href="#">调价</a> <a href="#">价格历史</a></td></tr>
+            <tr><td>政企专线 100M</td><td>100M</td><td>¥500</td><td>2025-09-01</td><td><span class="tag tag-gray">待发布</span></td><td><a href="#">调价</a> <a href="#">价格历史</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">价格历史 / 调价记录</div>
+        <table class="tbl">
+          <thead><tr><th>产品</th><th>原价</th><th>新价</th><th>生效时间</th><th>调价人</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>家庭宽带 500M</td><td>¥89</td><td>¥99</td><td>2025-08-01 00:00</td><td>ops01</td><td><span class="tag tag-green">已生效</span></td></tr>
+            <tr><td>家庭宽带 1000M</td><td>¥189</td><td>¥199</td><td>2025-08-01 00:00</td><td>ops01</td><td><span class="tag tag-green">已生效</span></td></tr>
+            <tr><td>政企专线 100M</td><td>¥480</td><td>¥500</td><td>2025-09-01 00:00</td><td>ops02</td><td><span class="tag tag-blue">待生效</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

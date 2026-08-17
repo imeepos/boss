@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>维护清单 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">维护清单</div>
+    <span class="act">维护一张表</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">待替换设备优先级 <span class="more">3 台</span></div>
+
+    <div class="cell">
+      <div class="main">
+        <div class="t">EPC-0023 · 光猫</div>
+        <div class="d">健康度 31 · 故障 5 次 · 在网 4 年</div>
+      </div>
+      <div class="right"><span class="tag tag-red">强替换</span></div>
+    </div>
+
+    <div class="cell">
+      <div class="main">
+        <div class="t">SPL-03-07 · 分光器</div>
+        <div class="d">健康度 45 · 信号衰减 · 3 年</div>
+      </div>
+      <div class="right"><span class="tag tag-orange">建议替换</span></div>
+    </div>
+
+    <div class="cell">
+      <div class="main">
+        <div class="t">OLT-01 · PON 9口</div>
+        <div class="d">健康度 58 · 丢包率偏高</div>
+      </div>
+      <div class="right"><span class="tag tag-orange">观察</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="notice">清单按健康度/故障率/使用年限综合排序，评分规则公开可解释。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

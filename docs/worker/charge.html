@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>现场收款 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="order.html">&lsaquo;</a>
+    <div class="t">现场收款</div>
+    <span class="act">凭证</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001</div>
+    <div class="kv"><span class="k">应收</span><span class="v">¥199（首月）</span></div>
+    <div class="kv"><span class="k">收款方式</span><span class="v">到付现金 / 扫码</span></div>
+  </div>
+
+  <div class="card">
+    <div class="fld">
+      <label>实收金额</label>
+      <input type="text" value="199" placeholder="¥">
+    </div>
+    <div class="fld">
+      <label>支付方式</label>
+      <select>
+        <option selected>扫码支付</option>
+        <option>现金</option>
+        <option>POS</option>
+      </select>
+    </div>
+    <button class="btn-green btn-block" onclick="location.href='sign.html'">确认收款并签收</button>
+  </div>
+
+  <div class="card">
+    <div class="notice">收款到账即时更新账务，缴费凭证同步生成电子收据。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

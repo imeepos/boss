@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投诉登记 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="order.html">&lsaquo;</a>
+    <div class="t">投诉登记</div>
+    <span class="act">安抚</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001 · 王先生</div>
+    <div class="kv"><span class="k">投诉类型</span><span class="v">现场服务类</span></div>
+  </div>
+
+  <div class="card">
+    <div class="fld">
+      <label>投诉分类</label>
+      <select>
+        <option selected>预约时间延误</option>
+        <option>服务态度</option>
+        <option>安装质量</option>
+        <option>收费争议</option>
+        <option>其他</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label>现场情况</label>
+      <textarea rows="3" placeholder="记录客户诉求与安抚情况"></textarea>
+    </div>
+    <button class="btn btn-block ghost" onclick="alert('投诉已登记，转客服回访闭环。')">提交登记</button>
+  </div>
+
+  <div class="card">
+    <div class="notice">现场投诉即时登记，转客服回访，形成闭环；师傅可同步说明现场处理情况。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

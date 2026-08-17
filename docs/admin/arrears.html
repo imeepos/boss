@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>欠费停复机 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">欠费停复机</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>欠费停复机</h2><div class="desc">欠费停机 / 缴费复机 · 状态同步网络侧</div></div>
+
+      <div class="grid g-3" style="margin-bottom:16px;">
+        <div class="stat"><div class="label">欠费用户</div><div class="val">1,024</div></div>
+        <div class="stat"><div class="label">已停机</div><div class="val">386</div></div>
+        <div class="stat"><div class="label">待停机</div><div class="val">128</div></div>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>客户</th><th>欠费金额</th><th>欠费天数</th><th>状态</th><th>网络侧</th></tr></thead>
+          <tbody>
+            <tr><td>吴女士</td><td>¥199</td><td>12 天</td><td><span class="tag tag-red">已停机</span></td><td><span class="tag tag-gray">已停服</span></td></tr>
+            <tr><td>孙先生</td><td>¥398</td><td>已缴清</td><td><span class="tag tag-green">已复机</span></td><td>在线</td></tr>
+            <tr><td>周女士</td><td>¥199</td><td>3 天</td><td><span class="tag tag-blue">正常</span></td><td>在线</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

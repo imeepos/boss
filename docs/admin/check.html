@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对账与告警 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">对账与告警</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>对账与告警</h2><div class="desc">四码关系自动核对 · 冲突告警限期处理</div></div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">立即对账</button>
+        <span class="spacer"></span>
+        <span class="tag tag-red">冲突 2 笔 · 处理时限 4 小时</span>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>冲突编号</th><th>关联码</th><th>冲突类型</th><th>发现时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>CF-001</td><td>EPC-0002</td><td>资产码与端口码不一致</td><td>2025-08-17 02:00</td><td><a href="#">处理</a></td></tr>
+            <tr><td>CF-002</td><td>LOID-88A2</td><td>用户码关联地址漂移</td><td>2025-08-17 02:00</td><td><a href="#">处理</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

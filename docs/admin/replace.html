@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备更换单 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">设备更换单</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>设备更换单</h2>
+        <div class="desc">维护一张表 → 待替换设备优先级 → 更换单闭环</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" placeholder="更换单号/设备/资产码">
+        <select class="input" style="width:160px"><option>全部状态</option><option>待派单</option><option>维修中</option><option>已更换</option></select>
+        <span class="spacer"></span>
+        <button class="btn btn-primary">+ 新建更换单</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>更换单</th><th>设备</th><th>健康度/故障</th><th>优先级</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>RPL-20250817-001</td><td>EPC-0002（光猫）</td><td>健康度 35 / 掉线3次</td><td><span class="tag tag-red">高</span></td><td><span class="tag tag-orange">待派单</span></td><td><a href="#">派单</a></td></tr>
+            <tr><td>RPL-20250814-003</td><td>SPL-03-11（分光器）</td><td>光功率异常</td><td><span class="tag tag-orange">中</span></td><td><span class="tag tag-blue">维修中</span></td><td><a href="#">详情</a></td></tr>
+            <tr><td>RPL-20250811-002</td><td>EPC-0003（光猫）</td><td>使用年限 6 年</td><td><span class="tag tag-gray">已完成</span></td><td><span class="tag tag-green">已更换</span></td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

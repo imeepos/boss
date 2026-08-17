@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>装维全流程一体化平台 · 总体架构</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --panel:#ffffff; --line:#d8dee8; --ink:#1f2937; --muted:#7c8494;
+    --blue:#2563eb; --blue-bg:#eaf1fe; --blue-bd:#bcd0f7;
+    --green:#059669; --green-bg:#e7f5ef; --green-bd:#b6e2d0;
+    --amber:#d97706; --amber-bg:#fdf3e3; --amber-bd:#f2d8a8;
+    --purple:#7c3aed; --purple-bg:#f1ebfd; --purple-bd:#d8c8f5;
+    --red:#dc2626; --red-bg:#fdeaea; --red-bd:#f5c2c2;
+    --cyan:#0891b2; --cyan-bg:#e6f5f9; --cyan-bd:#b6e2ec;
+    --slate:#475569; --slate-bg:#eef1f6; --slate-bd:#cdd6e2;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);}
+  .page{max-width:1260px;margin:0 auto;padding:32px 28px;}
+
+  /* 标题区 */
+  .hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;}
+  .hdr h1{font-size:23px;margin:0;letter-spacing:.5px;}
+  .hdr .tag{font-size:12.5px;color:var(--muted);}
+  .hdr .badge{display:inline-block;margin-top:6px;font-size:12px;color:var(--blue);background:var(--blue-bg);border:1px solid var(--blue-bd);padding:3px 10px;border-radius:20px;}
+
+  /* 分层区 */
+  .layer{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px;position:relative;}
+  .layer-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .layer-num{font-size:12px;font-weight:700;color:#fff;background:var(--slate);border-radius:6px;padding:2px 8px;letter-spacing:.5px;}
+  .layer-title{font-size:14px;font-weight:700;}
+  .layer-sub{font-size:12px;color:var(--muted);}
+
+  /* 层内 body */
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;}
+
+  /* 通用节点 */
+  .node{border-radius:9px;padding:9px 12px;font-size:12.5px;line-height:1.35;min-width:96px;text-align:center;transition:none;}
+  .node .t{font-weight:700;font-size:13px;}
+  .node .d{color:var(--ink);font-size:11px;margin-top:2px;opacity:.82;}
+
+  .n-gw{background:var(--slate-bg);border:1px solid var(--slate-bd);}
+  .n-acc{background:var(--blue-bg);border:1px solid var(--blue-bd);}
+  .n-biz{background:var(--green-bg);border:1px solid var(--green-bd);}
+  .n-perf{background:var(--amber-bg);border:1px solid var(--amber-bd);}
+  .n-int{background:var(--purple-bg);border:1px solid var(--purple-bd);}
+  .n-share{background:var(--cyan-bg);border:1px solid var(--cyan-bd);}
+  .n-data{background:var(--red-bg);border:1px solid var(--red-bd);}
+  .n-ops{background:var(--slate-bg);border:1px solid var(--slate-bd);}
+
+  /* 分组容器 */
+  .group{border:1px dashed var(--line);border-radius:10px;padding:10px;background:#fbfcfe;}
+  .group > .g-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .group-body{display:flex;gap:8px;flex-wrap:wrap;}
+
+  /* 数据层专用：图标 + 描述并排 */
+  .datastore{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:112px;flex:1;}
+  .ds-cyl{width:64px;height:54px;border-radius:9px 9px 14px 14px;position:relative;border:1.5px solid;background:linear-gradient(#fff,#f1f5f9);}
+  .ds-cyl::before{content:"";position:absolute;top:8px;left:-2px;width:calc(100% + 4px);height:12px;border-radius:50%;background:inherit;border:1.5px solid;border-color:inherit;box-sizing:border-box;}
+  .ds-pg{border-color:#b91c1c;}.ds-rd{border-color:#dc2626;}.ds-kf{border-color:#c2410c;}
+  .ds-mo{border-color:#9a3412;}.ds-vm{border-color:#be123c;}.ds-dr{border-color:#e11d48;}
+  .datastore .t{font-size:12px;font-weight:700;text-align:center;}
+  .datastore .d{font-size:10.5px;color:var(--muted);text-align:center;margin-top:-4px;}
+
+  /* 连线图例 */
+  .legend{margin-top:16px;display:flex;gap:24px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center;}
+  .legend .l-item{display:flex;align-items:center;gap:6px;}
+  .l-line{height:0;width:34px;border-top:2px solid;}
+  .l-solid{border-color:var(--blue);}
+  .l-dash{border-top-style:dashed;border-color:var(--green);}
+  .l-arrow{width:34px;border-top:2px solid var(--amber);position:relative;}
+  .l-arrow::after{content:"";position:absolute;right:-1px;top:-4px;border:4px solid transparent;border-left-color:var(--amber);}
+
+  .mainflow{margin-top:14px;background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--ink);}
+  .mainflow b{color:var(--blue);}
+  .arrowstep{display:inline-block;margin:0 6px;color:var(--blue);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 标题 -->
+  <div class="hdr">
+    <div>
+      <h1>装维全流程一体化平台 · 总体架构</h1>
+      <span class="badge">Go · 模块化微服务 · 一套技术栈走通 9 阶段</span>
+    </div>
+    <div class="tag">V1.0 · 立项技术方案</div>
+  </div>
+
+  <!-- 主业务闭环 -->
+  <div class="mainflow">
+    <b>核心业务闭环（12 环节）</b>
+    <span class="arrowstep">→</span>用户下单
+    <span class="arrowstep">→</span>资源核查
+    <span class="arrowstep">→</span>端口预占
+    <span class="arrowstep">→</span>合同收费
+    <span class="arrowstep">→</span>标签预绑定
+    <span class="arrowstep">→</span>创建认证账号
+    <span class="arrowstep">→</span>预下发配置
+    <span class="arrowstep">→</span>派单
+    <span class="arrowstep">→</span>扫码绑定
+    <span class="arrowstep">→</span>激活用户
+    <span class="arrowstep">→</span>激活回调
+    <span class="arrowstep">→</span>更新 GIS
+  </div>
+
+  <!-- ① 接入层 -->
+  <div class="layer">
+    <div class="layer-head"><span class="layer-num">①</span><span class="layer-title">接入层</span><span class="layer-sub">四类终端统一入口</span></div>
+    <div class="row">
+      <div class="node n-acc"><div class="t">管理后台</div><div class="d">React · AntD Pro</div></div>
+      <div class="node n-acc"><div class="t">师傅端</div><div class="d">uni-app · H5/小程序</div></div>
+      <div class="node n-acc"><div class="t">用户端</div><div class="d">查询 / 缴费 / 报障</div></div>
+      <div class="node n-acc"><div class="t">GIS 大屏</div><div class="d">Cesium · 3D Tiles</div></div>
+    </div>
+  </div>
+
+  <!-- ② 网关层 -->
+  <div class="layer">
+    <div class="layer-head"><span class="layer-num">②</span><span class="layer-title">网关层</span><span class="layer-sub">统一鉴权 · 限流 · 路由 · 即时生效</span></div>
+    <div class="row">
+      <div class="node n-gw" style="flex:1;"><div class="t">API 网关 — APISIX</div><div class="d">JWT 鉴权 / RBAC 权限快照 / 动态路由 / WebSocket 推送</div></div>
+    </div>
+  </div>
+
+  <!-- ③ 服务层 -->
+  <div class="layer">
+    <div class="layer-head"><span class="layer-num">③</span><span class="layer-title">微服务层</span><span class="layer-sub">按能力域边界拆分为 12 个服务 · 边界即演进边界</span></div>
+
+    <!-- 业务服务群 -->
+    <div class="group" style="margin-bottom:10px;">
+      <div class="g-title"><span style="width:10px;height:10px;background:var(--green);border-radius:3px;display:inline-block;"></span>业务服务群（模块化单体 → 可拆）</div>
+      <div class="group-body">
+        <div class="node n-biz"><div class="t">account</div><div class="d">登录/权限/审计/地址层级</div></div>
+        <div class="node n-biz"><div class="t">customer</div><div class="d">客户档案/产品资费</div></div>
+        <div class="node n-biz"><div class="t">billing</div><div class="d">出账/缴费/欠费停复机</div></div>
+        <div class="node n-biz"><div class="t">asset</div><div class="d">台账/电子标签/生命周期/盘点</div></div>
+        <div class="node n-biz"><div class="t">resource</div><div class="d">端口台账/核查/预占</div></div>
+        <div class="node n-biz"><div class="t">order</div><div class="d">订单 · 12 环节编排</div></div>
+        <div class="node n-biz"><div class="t">quadlink</div><div class="d">四码合一/对账</div></div>
+      </div>
+    </div>
+
+    <!-- 性能服务群 -->
+    <div class="group" style="margin-bottom:10px;">
+      <div class="g-title"><span style="width:10px;height:10px;background:var(--amber);border-radius:3px;display:inline-block;"></span>性能服务群（独立部署 · 高吞吐）</div>
+      <div class="group-body">
+        <div class="node n-perf"><div class="t">aaa</div><div class="d">LOID 认证/授权/话单</div></div>
+        <div class="node n-perf"><div class="t">device</div><div class="d">OLT 监控/SNMP/Trap</div></div>
+        <div class="node n-perf"><div class="t">provision</div><div class="d">配置模板/下发/重试</div></div>
+      </div>
+    </div>
+
+    <!-- 数据智能群 -->
+    <div class="group">
+      <div class="g-title"><span style="width:10px;height:10px;background:var(--purple);border-radius:3px;display:inline-block;"></span>数据智能群（只读聚合 · 离线分析）</div>
+      <div class="group-body">
+        <div class="node n-int"><div class="t">gis</div><div class="d">八级钻取/实时联动</div></div>
+        <div class="node n-int"><div class="t">analytics</div><div class="d">五大指标/热力图/报告</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 共享支撑层 -->
+  <div class="layer">
+    <div class="layer-head"><span class="layer-num">④</span><span class="layer-title">共享支撑层</span><span class="layer-sub">跨服务复用 · 非独立部署</span></div>
+    <div class="row">
+      <div class="node n-share"><div class="t">auth</div><div class="d">JWT 签发/校验</div></div>
+      <div class="node n-share"><div class="t">audit</div><div class="d">操作审计/分区表</div></div>
+      <div class="node n-share"><div class="t">statemachine</div><div class="d">状态机 · 单一事实源</div></div>
+      <div class="node n-share"><div class="t">lock</div><div class="d">redsync 分布式锁</div></div>
+      <div class="node n-share"><div class="t">config</div><div class="d">配置加载/热更新</div></div>
+      <div class="node n-share" style="border-color:var(--blue);"><div class="t">Temporal</div><div class="d">订单编排/Saga 补偿</div></div>
+    </div>
+  </div>
+
+  <!-- ⑤ 数据层 -->
+  <div class="layer">
+    <div class="layer-head"><span class="layer-num">⑤</span><span class="layer-title">数据与中间件层</span><span class="layer-sub">各服务按需选型 · 数据自治</span></div>
+    <div class="row">
+      <div class="datastore"><div class="ds-cyl ds-pg"></div><div class="t">PostgreSQL 16</div><div class="d">业务台账 · ltree · 分区审计</div></div>
+      <div class="datastore"><div class="ds-cyl ds-rd"></div><div class="t">Redis Cluster</div><div class="d">会话/权限快照/预占锁</div></div>
+      <div class="datastore"><div class="ds-cyl ds-kf"></div><div class="t">Kafka</div><div class="d">事件/话单/下发队列</div></div>
+      <div class="datastore"><div class="ds-cyl ds-mo"></div><div class="t">MinIO</div><div class="d">凭证/报告/导入文件</div></div>
+      <div class="datastore"><div class="ds-cyl ds-vm"></div><div class="t">VictoriaMetrics</div><div class="d">OLT 时序指标</div></div>
+      <div class="datastore"><div class="ds-cyl ds-dr"></div><div class="t">Apache Doris</div><div class="d">OLAP 分析/下钻</div></div>
+    </div>
+  </div>
+
+  <!-- ⑥ 运维层 -->
+  <div class="layer">
+    <div class="layer-head"><span class="layer-num">⑥</span><span class="layer-title">运维与可观测</span><span class="layer-sub">精简 · 生产级保障</span></div>
+    <div class="row">
+      <div class="node n-ops"><div class="t">Nacos</div><div class="d">配置中心/注册发现</div></div>
+      <div class="node n-ops"><div class="t">Prometheus</div><div class="d">指标/告警</div></div>
+      <div class="node n-ops"><div class="t">Loki</div><div class="d">日志聚合</div></div>
+      <div class="node n-ops"><div class="t">OpenTelemetry</div><div class="d">链路追踪</div></div>
+      <div class="node n-ops"><div class="t">K8s + Helm</div><div class="d">容器编排/部署</div></div>
+    </div>
+  </div>
+
+  <!-- 图例 -->
+  <div class="legend">
+    <span style="font-weight:700;color:var(--ink);">图例</span>
+    <span class="l-item"><span class="l-line l-dash"></span> 服务间关键调用链</span>
+    <span class="l-item"><span class="l-line l-arrow"></span> 异步事件流（Kafka）</span>
+    <span class="l-item"><span class="l-line l-solid"></span> 数据读写</span>
+  </div>
+
+</div>
+</body>
+</html>

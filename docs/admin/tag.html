@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子标签 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">电子标签</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>电子标签</h2><div class="desc">电子标签台账 · 频段选择 · 与资产一一对应</div></div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建标签</button>
+        <select class="input" style="width:140px"><option>频段：全部</option><option>UHF</option><option>HF</option><option>LF</option></select>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>标签编号</th><th>EPC 码</th><th>频段</th><th>绑定资产</th><th>电量</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>TAG-0001</td><td>EPC-0001</td><td>UHF</td><td>A-20250001 光猫</td><td>86%</td><td><span class="tag tag-green">已绑定</span></td></tr>
+            <tr><td>TAG-0002</td><td>EPC-0002</td><td>UHF</td><td>A-20250002 分光器</td><td>72%</td><td><span class="tag tag-green">已绑定</span></td></tr>
+            <tr><td>TAG-0100</td><td>EPC-0100</td><td>HF</td><td>—</td><td>100%</td><td><span class="tag tag-gray">未绑定</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

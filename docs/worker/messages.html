@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>消息 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">消息中心</div>
+    <span class="act" onclick="alert('全部标记已读。')">全部已读</span>
+  </div>
+
+  <div class="card">
+    <div class="msg-banner err"><b>台风应急</b> 台风后批量复测任务已下发，请核对受影响客户清单 · 08-16 18:00</div>
+    <div class="msg-banner warn"><b>超时预警</b> ORD-20250817-002 已上门超时 25 分钟 · 08-17 10:30</div>
+    <div class="msg-banner err"><b>改派通知</b> 新单 TKT-20250817-005 抢修已分派给您 · 08-17 09:45</div>
+    <div class="msg-banner ok"><b>配置下发</b> 全部预下发成功 · 08-17 09:18</div>
+    <div class="msg-banner warn"><b>标签电量</b> EPC-0023 电量低，请携备用 · 08-17 08:00</div>
+  </div>
+
+  <div class="card">
+    <button class="btn btn-block ghost" onclick="alert('已清空已读消息。')">清空已读</button>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

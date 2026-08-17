@@ -10,10 +10,12 @@ import (
 var ErrInvalidToken = errors.New("invalid token")
 
 // Claims JWT 载荷:账号ID + 角色,权限校验走 RBAC 快照(不塞进 token,保证权限变更即时生效)。
+// KeyID 预留未来多密钥轮换(见 docs/architecture-review.md 发现 2.2);本轮单密钥时为空。
 type Claims struct {
 	AccountID int64  `json:"aid"`
 	Username  string `json:"usr"`
 	RoleCode  string `json:"role"`
+	KeyID     string `json:"kid,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -48,11 +50,19 @@ func (m *Manager) Verify(tokenStr string) (*Claims, error) {
 		}
 		return m.secret, nil
 	})
-	if err != nil || !t.Valid {
+	if err != nil {
 		return nil, ErrInvalidToken
 	}
 	c, ok := t.Claims.(*Claims)
 	if !ok {
+		return nil, ErrInvalidToken
+	}
+	// jwt v5 已在校验时运行默认 validator(校验 exp/nbf/iat),t.Valid 为结果;
+	// 这里再显式校验 issuer,不放过非本系统签发的 token(发现 2.2)。
+	if !t.Valid {
+		return nil, ErrInvalidToken
+	}
+	if c.Issuer != "" && c.Issuer != "boss" {
 		return nil, ErrInvalidToken
 	}
 	return c, nil

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>激活回调 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">激活回调</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>激活回调日志</h2>
+        <div class="desc">激活结果回传 · 订单流转完成判据</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" placeholder="订单号/回调 ID">
+        <select class="input" style="width:140px"><option>全部状态</option><option>成功</option><option>失败</option><option>重试中</option></select>
+        <span class="spacer"></span>
+        <button class="btn btn-primary">重试失败项</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>回调 ID</th><th>订单号</th><th>来源</th><th>结果</th><th>重试次数</th><th>时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>CB-8841</td><td>ORD-20250817-001</td><td>aaa</td><td><span class="tag tag-red">失败</span></td><td>1</td><td>10:32</td><td><a href="#">重试</a></td></tr>
+            <tr><td>CB-8842</td><td>ORD-20250816-018</td><td>order</td><td><span class="tag tag-red">失败</span></td><td>2</td><td>09:12</td><td><a href="#">重试</a></td></tr>
+            <tr><td>CB-8843</td><td>ORD-20250816-021</td><td>aaa</td><td><span class="tag tag-orange">重试中</span></td><td>1</td><td>08:50</td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

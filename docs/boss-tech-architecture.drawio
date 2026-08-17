@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" name="BOSS技术架构" version="26.0.0">
+  <diagram id="boss-tech-arch" name="BOSS技术架构">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1100" math="0" shadow="0" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="BOSS 综合业务支撑平台 · 技术架构" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="15" width="800" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Go 模块化单体 · 26 能力域打包 · 边界即微服务演进边界" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontColor=#7c8494;" vertex="1" parent="1">
+          <mxGeometry x="550" y="55" width="800" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- 接入层 -->
+        <mxCell id="t_ui" value="接入层" style="swimlane;startSize=30;fillColor=#f5f7fa;strokeColor=#cbd5e1;fontStyle=1;fontSize=14;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="1820" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="ui_mgmt" value="管理后台" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="t_ui"><mxGeometry x="40" y="45" width="200" height="42" as="geometry" /></mxCell>
+        <mxCell id="ui_wk" value="师傅端" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="t_ui"><mxGeometry x="270" y="45" width="160" height="42" as="geometry" /></mxCell>
+        <mxCell id="ui_usr" value="用户端/门户" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="t_ui"><mxGeometry x="460" y="45" width="160" height="42" as="geometry" /></mxCell>
+        <mxCell id="ui_gis" value="GIS 大屏" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="t_ui"><mxGeometry x="650" y="45" width="160" height="42" as="geometry" /></mxCell>
+        <mxCell id="ui_dlr" value="经销商/批发门户" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="t_ui"><mxGeometry x="840" y="45" width="180" height="42" as="geometry" /></mxCell>
+        <mxCell id="ui_gw" value="API 网关 · APISIX" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_ui"><mxGeometry x="1100" y="45" width="300" height="42" as="geometry" /></mxCell>
+        <mxCell id="ui_ws" value="推送 · WS/SSE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_ui"><mxGeometry x="1430" y="45" width="200" height="42" as="geometry" /></mxCell>
+
+        <!-- 服务层 -->
+        <mxCell id="t_svc" value="服务层 · Go 模块化单体（26 能力域）" style="swimlane;startSize=30;fillColor=#e7f5ef;strokeColor=#059669;fontStyle=1;fontSize=14;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="1820" height="300" as="geometry" />
+        </mxCell>
+
+        <mxCell id="svc_group" value="业务域（按能力域分组打包）" style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontStyle=1;fontColor=#059669;" vertex="1" parent="t_svc">
+          <mxGeometry x="30" y="45" width="400" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_bss" value="商业支撑 BSS（11 域）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="t_svc"><mxGeometry x="30" y="78" width="320" height="48" as="geometry" /></mxCell>
+        <mxCell id="svc_oss" value="网络支撑 OSS（5 域）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="t_svc"><mxGeometry x="380" y="78" width="320" height="48" as="geometry" /></mxCell>
+        <mxCell id="svc_int" value="数据智能（2 域）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="t_svc"><mxGeometry x="730" y="78" width="300" height="48" as="geometry" /></mxCell>
+        <mxCell id="svc_xg" value="横切支撑（6 域）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_svc"><mxGeometry x="1060" y="78" width="300" height="48" as="geometry" /></mxCell>
+
+        <mxCell id="svc_perf" value="性能服务群（独立部署）" style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontStyle=1;fontColor=#d97706;" vertex="1" parent="t_svc">
+          <mxGeometry x="30" y="145" width="400" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_aaa" value="aaa" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_svc"><mxGeometry x="30" y="178" width="140" height="40" as="geometry" /></mxCell>
+        <mxCell id="svc_collect" value="collector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_svc"><mxGeometry x="200" y="178" width="150" height="40" as="geometry" /></mxCell>
+        <mxCell id="svc_prov" value="provisioner" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_svc"><mxGeometry x="380" y="178" width="150" height="40" as="geometry" /></mxCell>
+        <mxCell id="svc_gis" value="gis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="t_svc"><mxGeometry x="560" y="178" width="150" height="40" as="geometry" /></mxCell>
+        <mxCell id="svc_report" value="report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="t_svc"><mxGeometry x="740" y="178" width="150" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="svc_orch" value="编排 · Temporal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_svc"><mxGeometry x="1000" y="178" width="220" height="40" as="geometry" /></mxCell>
+        <mxCell id="svc_sm" value="状态机（唯一权威）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="t_svc"><mxGeometry x="1250" y="178" width="220" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="svc_shared" value="共享支撑" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="t_svc"><mxGeometry x="30" y="235" width="220" height="44" as="geometry" /></mxCell>
+        <mxCell id="svc_contract" value="契约治理" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="t_svc"><mxGeometry x="280" y="235" width="220" height="44" as="geometry" /></mxCell>
+        <mxCell id="svc_migrate" value="数据迁移" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="t_svc"><mxGeometry x="530" y="235" width="220" height="44" as="geometry" /></mxCell>
+        <mxCell id="svc_hl" value="高并发路径 · sqlc 手写 SQL + 行锁" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="t_svc"><mxGeometry x="780" y="235" width="340" height="44" as="geometry" /></mxCell>
+        <mxCell id="svc_audit" value="审计/锁/中间件" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="t_svc"><mxGeometry x="1150" y="235" width="320" height="44" as="geometry" /></mxCell>
+
+        <!-- 中间件层 -->
+        <mxCell id="t_mw" value="中间件层" style="swimlane;startSize=30;fillColor=#fdf3e3;strokeColor=#d97706;fontStyle=1;fontSize=14;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="570" width="1820" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="mw_kafka" value="Kafka" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="t_mw"><mxGeometry x="50" y="45" width="240" height="42" as="geometry" /></mxCell>
+        <mxCell id="mw_redis" value="Redis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="t_mw"><mxGeometry x="320" y="45" width="240" height="42" as="geometry" /></mxCell>
+        <mxCell id="mw_nacos" value="Nacos / etcd" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="t_mw"><mxGeometry x="590" y="45" width="240" height="42" as="geometry" /></mxCell>
+        <mxCell id="mw_minio" value="MinIO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="t_mw"><mxGeometry x="860" y="45" width="220" height="42" as="geometry" /></mxCell>
+        <mxCell id="mw_ext" value="外部集成" style="rounded=1;dashed=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="t_mw"><mxGeometry x="1120" y="45" width="320" height="42" as="geometry" /></mxCell>
+
+        <!-- 数据层 -->
+        <mxCell id="t_data" value="数据层" style="swimlane;startSize=30;fillColor=#e6f5f9;strokeColor=#0891b2;fontStyle=1;fontSize=14;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="700" width="1820" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="d_pg" value="PostgreSQL 16" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="t_data"><mxGeometry x="80" y="35" width="280" height="55" as="geometry" /></mxCell>
+        <mxCell id="d_vm" value="VictoriaMetrics" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="t_data"><mxGeometry x="420" y="35" width="280" height="55" as="geometry" /></mxCell>
+        <mxCell id="d_doris" value="Apache Doris" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="t_data"><mxGeometry x="760" y="35" width="280" height="55" as="geometry" /></mxCell>
+        <mxCell id="d_obs" value="可观测 · K8s" style="rounded=0;dashed=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" vertex="1" parent="t_data"><mxGeometry x="1100" y="35" width="660" height="55" as="geometry" /></mxCell>
+
+        <!-- 横切 -->
+        <mxCell id="t_xg" value="横切能力" style="swimlane;startSize=30;horizontal=0;fillColor=#eef1f6;strokeColor=#475569;fontStyle=1;fontSize=14;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="830" width="1820" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="xg_lan" value="三语" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="t_xg"><mxGeometry x="40" y="45" width="240" height="40" as="geometry" /></mxCell>
+        <mxCell id="xg_comp" value="合规" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="t_xg"><mxGeometry x="320" y="45" width="240" height="40" as="geometry" /></mxCell>
+        <mxCell id="xg_cons" value="一致性" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_xg"><mxGeometry x="600" y="45" width="240" height="40" as="geometry" /></mxCell>
+        <mxCell id="xg_portal" value="门户/通知" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="t_xg"><mxGeometry x="880" y="45" width="240" height="40" as="geometry" /></mxCell>
+        <mxCell id="xg_nf" value="高可用 · 灾备" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="t_xg"><mxGeometry x="1160" y="45" width="260" height="40" as="geometry" /></mxCell>
+
+        <!-- 图例 -->
+        <mxCell id="legend" value="图例" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="960" width="1820" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" value="" style="rounded=0;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="legend"><mxGeometry x="20" y="32" width="30" height="16" as="geometry" /></mxCell>
+        <mxCell id="lg1t" value="接入/前端" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="legend"><mxGeometry x="60" y="30" width="90" height="20" as="geometry" /></mxCell>
+        <mxCell id="lg2" value="" style="rounded=0;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="legend"><mxGeometry x="170" y="32" width="30" height="16" as="geometry" /></mxCell>
+        <mxCell id="lg2t" value="业务域/共享" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="legend"><mxGeometry x="210" y="30" width="100" height="20" as="geometry" /></mxCell>
+        <mxCell id="lg3" value="" style="rounded=0;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="legend"><mxGeometry x="340" y="32" width="30" height="16" as="geometry" /></mxCell>
+        <mxCell id="lg3t" value="性能/编排/网关" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="legend"><mxGeometry x="380" y="30" width="120" height="20" as="geometry" /></mxCell>
+        <mxCell id="lg4" value="" style="rounded=0;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="legend"><mxGeometry x="530" y="32" width="30" height="16" as="geometry" /></mxCell>
+        <mxCell id="lg4t" value="中间件" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="legend"><mxGeometry x="570" y="30" width="80" height="20" as="geometry" /></mxCell>
+        <mxCell id="lg5" value="" style="shape=cylinder3;html=1;fillColor=#d5e8d4;strokeColor=#82b366;size=8;" vertex="1" parent="legend"><mxGeometry x="680" y="28" width="30" height="20" as="geometry" /></mxCell>
+        <mxCell id="lg5t" value="数据" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="legend"><mxGeometry x="720" y="30" width="70" height="20" as="geometry" /></mxCell>
+        <mxCell id="lg6" value="" style="rounded=0;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="legend"><mxGeometry x="820" y="32" width="30" height="16" as="geometry" /></mxCell>
+        <mxCell id="lg6t" value="合规" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="legend"><mxGeometry x="860" y="30" width="70" height="20" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

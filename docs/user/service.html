@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在线客服 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .chat{display:flex;flex-direction:column;gap:10px;padding:12px 0;}
+  .bubble{max-width:78%;padding:10px 12px;border-radius:10px;font-size:13.5px;line-height:1.5;}
+  .bot{background:#f0f4f8;align-self:flex-start;border-top-left-radius:2px;}
+  .me{background:var(--primary);color:#fff;align-self:flex-end;border-top-right-radius:2px;}
+  .chat-input{display:flex;gap:8px;margin-top:10px;}
+  .chat-input input{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;}
+</style>
+</head>
+<body>
+<div class="app" style="padding-bottom:90px;">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsquo;</a>
+    <div class="t">在线客服</div>
+    <span class="act" onclick="location.href='help.html'">帮助中心</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">智能客服 <span class="tag tag-green">在线</span></div>
+    <div class="chat">
+      <div class="bubble bot">您好，我是智能客服小维。可为您解答账单、套餐、报障等问题，输入「人工」可转接人工坐席。</div>
+      <div class="bubble me">家里宽带无法上网</div>
+      <div class="bubble bot">已为您检测到当前服务在线正常。建议先自助排障：检查光猫指示灯，重启光猫与路由器。是否需要转报修？</div>
+    </div>
+    <div class="chat-input">
+      <input type="text" placeholder="输入你的问题…">
+      <button class="btn btn-primary">发送</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">常见问题 <span class="more" onclick="location.href='help.html'">更多</span></div>
+    <div class="cell"><div class="main"><div class="t">如何修改套餐？</div></div><div class="right">›</div></div>
+    <div class="cell"><div class="main"><div class="t">如何开具电子发票？</div></div><div class="right">›</div></div>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files: []
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # 业务单体 /metrics(阶段1-6 落地后接入)
+  - job_name: boss-server
+    static_configs:
+      - targets: ["boss-server:8080"]
+
+  # OLT 指标时序库
+  - job_name: victoriametrics
+    static_configs:
+      - targets: ["victoriametrics:8428"]
+
+  # 网关指标
+  - job_name: apisix
+    static_configs:
+      - targets: ["apisix:9091"]

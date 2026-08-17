@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子签收 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="report.html">&lsaquo;</a>
+    <div class="t">电子签收</div>
+    <span class="act">回执</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001</div>
+    <div class="kv"><span class="k">装维结果</span><span class="v" style="color:var(--success);">四项确认完成</span></div>
+    <div class="kv"><span class="k">收款</span><span class="v" style="color:var(--success);">已到账 ¥199</span></div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="c-title" style="justify-content:center;">请客户签字确认</div>
+    <div class="sign-pad">客户电子手写签名区</div>
+    <button class="btn btn-block ghost" onclick="alert('已回退，请重签。')">清除重签</button>
+    <button class="btn-green btn-block" style="margin-top:8px;" onclick="alert('签收成功，激活完成，工单流转为完成。')">确认签收并激活</button>
+  </div>
+
+  <div class="card" style="display:flex;gap:10px;">
+    <a class="btn" style="flex:1;" href="charge.html">现场收款</a>
+    <a class="btn" style="flex:1;" href="report.html">返回上报</a>
+  </div>
+
+  <div class="card">
+    <div class="notice">签收回执留痕，作为工单完成与客户确认凭据；到付/现场收款见「现场收款」。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

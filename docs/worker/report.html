@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>结果上报 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="scan.html">&lsaquo;</a>
+    <div class="t">装维结果上报</div>
+    <span class="act">环节 10/12</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001 <span class="tag tag-green">扫码一致</span></div>
+    <div class="quad">
+      <div class="qm ok"><div class="lb">资产码</div><div class="vc">EPC-0001</div><div class="st">一致</div></div>
+      <div class="qm ok"><div class="lb">用户码</div><div class="vc">LOID-88A1</div><div class="st">一致</div></div>
+      <div class="qm ok"><div class="lb">端口码</div><div class="vc">P-SPL03-07</div><div class="st">一致</div></div>
+      <div class="qm ok"><div class="lb">地址码</div><div class="vc">A-3-501</div><div class="st">一致</div></div>
+    </div>
+    <div class="notice" style="margin-bottom:0;">四码校验一致，绑定已通过，请确认装维完成情况。</div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">装维结果</div>
+    <div class="kv"><span class="k">光猫通电</span><span class="v" style="color:var(--success);">正常</span></div>
+    <div class="kv"><span class="k">光功率</span><span class="v">-16.2 dBm（正常范围）</span></div>
+    <div class="kv"><span class="k">配置下发</span><span class="v" style="color:var(--success);">已完成 · 现场零手工配置</span></div>
+    <div class="kv"><span class="k">LOID 认证</span><span class="v" style="color:var(--success);">通过</span></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">配置下发日志 <span class="more"><a href="#" onclick="alert('下发明细：模板 v3 预下发 09:18 成功。');return false;">明细</a></span></div>
+    <div class="kv"><span class="k">模板</span><span class="v">GPON-1000M-v3</span></div>
+    <div class="kv"><span class="k">预下发</span><span class="v" style="color:var(--success);">成功 · 08-17 09:18</span></div>
+    <div class="kv"><span class="k">现场下发</span><span class="v" style="color:var(--success);">成功 · 自动</span></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">现场备注</div>
+    <textarea rows="3" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+      font-family:inherit;font-size:14px;resize:none;" placeholder="选填：现场特殊情况说明"></textarea>
+  </div>
+
+  <div class="card" style="display:flex;gap:10px;">
+    <button class="btn" style="flex:1;" onclick="location.href='scanabnormal.html'">异常上报</button>
+    <button class="btn-green btn-block" style="flex:1;" onclick="location.href='sign.html'">提交并签收</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

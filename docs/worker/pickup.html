@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>领料 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">领料 / 借还</div>
+    <span class="act">出库扫码</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">今日领用清单</div>
+    <div class="cell"><div class="main"><div class="t">光猫 ×2</div><div class="d">GPON 千兆 · 含标签</div></div><div class="right"><button class="btn btn-primary" style="padding:5px 10px;" onclick="alert('已扫码出库（示意）。')">扫码出库</button></div></div>
+    <div class="cell"><div class="main"><div class="t">机顶盒 ×1</div><div class="d">IPTV 4K</div></div><div class="right"><button class="btn btn-primary" style="padding:5px 10px;" onclick="alert('已扫码出库（示意）。')">扫码出库</button></div></div>
+    <div class="cell"><div class="main"><div class="t">光纤跳线 ×5</div><div class="d">SC/APC 2m</div></div><div class="right"><button class="btn btn-primary" style="padding:5px 10px;" onclick="alert('已扫码出库（示意）。')">扫码出库</button></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">工具借还</div>
+    <div class="kv"><span class="k">光功率计</span><span class="v"><a href="#" onclick="alert('已登记借用。');return false;">借用</a></span></div>
+    <div class="kv"><span class="k">光纤熔接机</span><span class="v"><a href="#" onclick="alert('已登记归还。');return false;">归还</a></span></div>
+  </div>
+
+  <div class="card">
+    <div class="notice">库存不足或安全库存预警时自动提醒，缺货将触发补货申请。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

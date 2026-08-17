@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产品套餐 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">产品套餐</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="seg">
+    <a class="active">宽带套餐</a>
+    <a>融合套餐</a>
+    <a>增值服务</a>
+  </div>
+
+  <div class="card">
+    <div class="c-title"><a href="product.html" style="color:inherit;">300M 畅享宽带</a> <span class="tag tag-blue">¥99/月</span></div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">下行 300M · 含光猫 · 合约 12 个月</div>
+    <button class="btn" onclick="location.href='product.html'">详情</button>
+    <button class="btn btn-primary" onclick="location.href='order.html'">立即办理</button>
+  </div>
+
+  <div class="card">
+    <div class="c-title"><a href="product.html" style="color:inherit;">500M 畅享宽带</a> <span class="tag tag-blue">¥129/月</span></div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">下行 500M · 含光猫 + 路由器 · 合约 12 个月</div>
+    <button class="btn" onclick="location.href='product.html'">详情</button>
+    <button class="btn btn-primary" onclick="location.href='order.html'">立即办理</button>
+  </div>
+
+  <div class="card" style="border:1px solid var(--primary);">
+    <div class="c-title"><a href="product.html" style="color:inherit;">1000M 极速宽带</a> <span class="tag tag-orange">¥199/月</span></div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">下行 1000M · 含光猫 + 路由器 + IPTV · 合约 24 个月</div>
+    <button class="btn" onclick="location.href='product.html'">详情</button>
+    <button class="btn btn-primary" onclick="location.href='order.html'">立即办理</button>
+  </div>
+
+  <div class="card">
+    <div class="c-title">增值服务 <span class="more"><a href="addon.html">全部</a></span></div>
+    <div class="cell"><div class="main"><div class="t">IPTV 高清电视</div><div class="d">¥10/月 · 200+ 频道</div></div><button class="btn" onclick="location.href='addon.html'">订购</button></div>
+    <div class="cell"><div class="main"><div class="t">全屋 WiFi</div><div class="d">¥15/月 · 信号覆盖</div></div><button class="btn" onclick="location.href='addon.html'">订购</button></div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

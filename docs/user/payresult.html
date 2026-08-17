@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>支付结果 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="bills.html">&lsaquo;</a>
+    <div class="t">支付结果</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="card" style="text-align:center;padding:32px 16px;">
+    <div style="font-size:44px;line-height:1;">✓</div>
+    <div style="font-size:18px;font-weight:700;margin:12px 0 4px;">支付成功</div>
+    <div class="muted" style="font-size:13px;">¥158.00 · 2025-08 账期</div>
+    <div class="cell" style="margin-top:20px;text-align:left;">
+      <div class="main"><div class="t">支付方式</div></div><div class="right">微信支付</div>
+    </div>
+    <div class="cell" style="text-align:left;">
+      <div class="main"><div class="t">交易单号</div></div><div class="right">PAY20250817001</div>
+    </div>
+    <div class="cell" style="text-align:left;">
+      <div class="main"><div class="t">到账状态</div></div><div class="right"><span class="tag tag-green">已到账 · 复机已生效</span></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn" style="flex:1;" onclick="location.href='receipt.html'">查看凭证</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="location.href='home.html'">返回首页</button>
+    </div>
+  </div>
+
+  <div class="muted" style="text-align:center;font-size:12px;margin:0 14px;">若未到账，30 分钟内未到将自动生成工单并人工跟进。</div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

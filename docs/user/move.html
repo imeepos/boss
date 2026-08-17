@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>迁址移机 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="myplan.html">&lsaquo;</a>
+    <div class="t">迁址移机</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">原安装地址</div>
+    <div class="cell"><div class="main"><div class="t">望京X · 3栋 · 501</div><div class="d">在用 · 1000M 极速宽带</div></div><div class="right"><span class="tag tag-green">在用</span></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">新安装地址</div>
+    <div class="field">
+      <label>小区 / 楼盘</label>
+      <input type="text" placeholder="请输入新小区名">
+    </div>
+    <div class="field">
+      <label>楼栋</label>
+      <input type="text" placeholder="楼栋号">
+    </div>
+    <div class="field">
+      <label>门牌号</label>
+      <input type="text" placeholder="单元/房间号">
+    </div>
+    <div class="field">
+      <label>期望移机时间</label>
+      <input type="date">
+    </div>
+    <div class="muted" style="font-size:12px;">提交后系统将自动做资源核查，如有空闲端口即生成迁址工单并派单。</div>
+  </div>
+
+  <div style="margin:12px 14px 0;">
+    <button class="btn-block" onclick="location.href='order.html'">提交迁址申请 · 生成迁址工单 ORD-20250817-008</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

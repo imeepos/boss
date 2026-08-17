@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>消息中心 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">消息中心</div>
+    <span class="act" onclick="location.href='notify.html'">订阅设置</span>
+  </div>
+
+  <div class="seg">
+    <a class="active">全部</a>
+    <a>账单缴费</a>
+    <a>余额预警</a>
+    <a>故障公告</a>
+    <a>优惠活动</a>
+  </div>
+
+  <div class="card">
+    <a class="cell" href="topup.html" style="color:inherit;">
+      <div class="main"><div class="t">余额预警</div><div class="d">账户余额 ¥5.00 低于 ¥50，请及时充值避免停机</div></div>
+      <div class="right"><span class="tag tag-orange">预警</span></div>
+    </a>
+    <a class="cell" href="topup.html" style="color:inherit;">
+      <div class="main"><div class="t">到期停机提醒</div><div class="d">账户余额不足，将于明日到期停机，充值后自动复机</div></div>
+      <div class="right"><span class="tag tag-orange">停机</span></div>
+    </a>
+    <a class="cell" href="bill.html" style="color:inherit;">
+      <div class="main"><div class="t">8 月账单已出账</div><div class="d">应缴 ¥158.00 · 账期 08-01 ~ 08-31</div></div>
+      <div class="right"><span class="tag tag-orange">未缴</span></div>
+    </a>
+    <a class="cell" href="order.html" style="color:inherit;">
+      <div class="main"><div class="t">装维进度更新</div><div class="d">订单 ORD-20250817-001 已进入「扫码绑定」环节</div></div>
+      <div class="right"><span class="tag tag-blue">新</span></div>
+    </a>
+    <a class="cell" href="faultdetail.html" style="color:inherit;">
+      <div class="main"><div class="t">故障公告</div><div class="d">望京X 片区 8-17 02:00~04:00 计划割接，可能短暂中断</div></div>
+      <div class="right"><span class="tag tag-gray">公告</span></div>
+    </a>
+    <a class="cell" href="coupon.html" style="color:inherit;">
+      <div class="main"><div class="t">夏日宽带优惠</div><div class="d">1000M 套餐首月立减 ¥40，点击领取</div></div>
+      <div class="right"><span class="tag tag-red">活动</span></div>
+    </a>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <button class="btn" style="width:100%;">全部标为已读</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

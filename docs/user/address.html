@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭地址 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="profile.html">&lsaquo;</a>
+    <div class="t">家庭地址管理</div>
+    <span class="act">新增</span>
+  </div>
+
+  <div class="card">
+    <div class="cell">
+      <div class="main"><div class="t">望京X · 3栋 · 501</div><div class="d">默认安装地址 · 王先生 · 138****1234</div></div>
+      <div class="right"><span class="tag tag-green">默认</span></div>
+    </div>
+    <div class="cell">
+      <div class="main"><div class="t">望京Y · 1栋 · 101</div><div class="d">备用地址 · 王先生 · 138****1234</div></div>
+      <div class="right"><span class="tag tag-gray">备用</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">新增地址</div>
+    <div class="field">
+      <label>小区 / 楼盘</label>
+      <input type="text" placeholder="请输入小区名">
+    </div>
+    <div class="field">
+      <label>楼栋</label>
+      <input type="text" placeholder="楼栋号">
+    </div>
+    <div class="field">
+      <label>门牌号</label>
+      <input type="text" placeholder="单元/房间号">
+    </div>
+    <div class="field">
+      <label>联系人 / 电话</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" placeholder="联系人" style="flex:1;">
+        <input type="tel" placeholder="联系电话" style="flex:1.4;">
+      </div>
+    </div>
+    <button class="btn-block">保存地址</button>
+  </div>
+
+  <div class="muted" style="text-align:center;font-size:12px;margin:0 14px;">地址须挂接到小区/楼栋层级，用于资源核查与装维上门。</div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

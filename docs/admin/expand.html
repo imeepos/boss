@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>扩容申请 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">扩容申请</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>扩容申请</h2>
+        <div class="desc">投资一张图 → 扩容决策 → 扩容申请单全流程</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" placeholder="申请单号/区域/小区">
+        <select class="input" style="width:160px"><option>全部状态</option><option>待审批</option><option>实施中</option><option>已完成</option></select>
+        <span class="spacer"></span>
+        <button class="btn btn-primary">+ 新建扩容申请</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>申请单</th><th>区域</th><th>预期端口数</th><th>原因</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>EXP-20250817-001</td><td>望京X·3栋</td><td>128</td><td>端口利用率 92%</td><td><span class="tag tag-orange">待审批</span></td><td><a href="#">审批</a></td></tr>
+            <tr><td>EXP-20250814-002</td><td>望京Y小区</td><td>512</td><td>高潜扩容热区</td><td><span class="tag tag-blue">实施中</span></td><td><a href="#">详情</a></td></tr>
+            <tr><td>EXP-20250810-003</td><td>望京Z</td><td>256</td><td>投资回报率高</td><td><span class="tag tag-green">已完成</span></td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

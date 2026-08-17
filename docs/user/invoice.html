@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子发票 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="bills.html">&lsaquo;</a>
+    <div class="t">电子发票</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">开票信息 <span class="more" onclick="location.href='security.html'">维护</span></div>
+    <div class="cell"><div class="main"><div class="t">抬头类型</div></div><div class="right">个人</div></div>
+    <div class="cell"><div class="main"><div class="t">发票抬头</div></div><div class="right">王先生</div></div>
+    <div class="cell"><div class="main"><div class="t">税号</div></div><div class="right">—</div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">可开票账期</div>
+    <div class="cell"><div class="main"><div class="t">2025-08 账期</div><div class="d">¥158.00 · 已缴</div></div><div class="right"><button class="btn btn-primary">申请开票</button></div></div>
+    <div class="cell"><div class="main"><div class="t">2025-07 账期</div><div class="d">¥158.00 · 已缴</div></div><div class="right"><button class="btn">已开票</button></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">开票记录</div>
+    <div class="cell"><div class="main"><div class="t">2025-07 账期 · ¥158.00</div><div class="d">2025-07-26 开票</div></div><div class="right"><a href="#">下载 PDF</a></div></div>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

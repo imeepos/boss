@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投诉建议 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="profile.html">&lsaquo;</a>
+    <div class="t">投诉与建议</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">我要投诉 / 建议</div>
+    <div class="field">
+      <label>类型</label>
+      <select><option>服务态度投诉</option><option>装维质量投诉</option><option>计费争议</option><option>业务建议</option><option>其他</option></select>
+    </div>
+    <div class="field">
+      <label>关联订单 / 报修单（选填）</label>
+      <input type="text" placeholder="如 ORD-20250817-001">
+    </div>
+    <div class="field">
+      <label>详细描述</label>
+      <textarea rows="4" placeholder="请描述问题经过与诉求"></textarea>
+    </div>
+    <div class="field">
+      <label>联系方式</label>
+      <input type="tel" value="138****1234">
+    </div>
+    <button class="btn-block">提交投诉</button>
+    <div class="muted" style="font-size:12px;margin-top:10px;">提交后 24 小时内受理，处理进度可在「消息中心」查询。</div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">我的投诉</div>
+    <div class="cell"><div class="main"><div class="t">计费争议 · 2025-07 账期</div><div class="d">2025-07-28</div></div><div class="right"><span class="tag tag-green">已解决</span></div></div>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

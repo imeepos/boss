@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>派单管理 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">派单管理</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>派单管理</h2><div class="desc">工单分配 · 装维师傅进度跟踪 · 调度工作台（调度岗 / 师傅岗分离）</div></div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建派单</button>
+        <select class="input" style="width:150px"><option>岗位视图：调度工作台</option><option>装维师傅视图</option></select>
+        <select class="input" style="width:140px"><option>状态：全部</option><option>待接单</option><option>施工中</option><option>已完成</option></select>
+        <span class="spacer"></span>
+        <span class="tag tag-blue">调度岗：跨区工单池 · 按技能/区域分派</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">调度工作台 · 跨区工单池 <span class="extra">装维调度员岗位视图</span></div>
+        <table class="tbl">
+          <thead><tr><th>工单号</th><th>来源单</th><th>区域</th><th>技能要求</th><th>候选师傅</th><th>分派范围</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>WO-20250817-05</td><td>ORD-20250817-003</td><td>吕宋大区</td><td>光纤熔接</td><td>李师傅 / 王师傅</td><td>跨区</td><td><a href="#">分派</a></td></tr>
+            <tr><td>WO-20250817-06</td><td>TKT-20250817-005</td><td>比萨扬大区</td><td>抢修</td><td>王师傅 · 抢修组</td><td>本区</td><td><a href="#">分派</a></td></tr>
+            <tr><td>WO-20250817-07</td><td>TKT-20250817-006</td><td>棉兰老大区</td><td>线路排障</td><td>赵师傅 / 孙师傅</td><td>跨区</td><td><a href="#">分派</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">装维师傅视图 · 我的工单 <span class="extra">一人一岗 · 只可见派给自己的工单</span></div>
+        <table class="tbl">
+          <thead><tr><th>工单号</th><th>订单号</th><th>师傅</th><th>地址</th><th>状态</th><th>耗时</th></tr></thead>
+          <tbody>
+            <tr><td>WO-20250817-01</td><td>ORD-20250817-001</td><td>张师傅</td><td>望京X·3栋501</td><td><span class="tag tag-orange">施工中</span></td><td>35min</td></tr>
+            <tr><td>WO-20250817-02</td><td>ORD-20250817-002</td><td>王师傅</td><td>望京X·5栋302</td><td><span class="tag tag-blue">待接单</span></td><td>—</td></tr>
+            <tr><td>WO-20250816-18</td><td>ORD-20250816-018</td><td>张师傅</td><td>望京Y·1栋101</td><td><span class="tag tag-green">已完成</span></td><td>28min</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">改派 / 转单处理 <span class="extra">承接师傅端「转单/改派」与「退回调度池」</span></div>
+        <table class="tbl">
+          <thead><tr><th>订单号</th><th>原接单师傅</th><th>转单原因</th><th>转派去向</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>ORD-20250817-001</td><td>张师傅</td><td>现场无法处理（需其他专业）</td><td>退回调度中心</td><td><span class="tag tag-orange">待重新派单</span></td><td><a href="#">重新分派</a></td></tr>
+            <tr><td>ORD-20250817-003</td><td>李师傅</td><td>跨片区/无资源</td><td>王师傅 · 抢修组</td><td><span class="tag tag-blue">已改派</span></td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

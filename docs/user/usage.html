@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网络用量 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">网络用量</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="seg">
+    <a class="active">本周期</a>
+    <a>上月</a>
+    <a>近 6 月</a>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="muted" style="font-size:12.5px;">本月已用流量（08-01 ~ 08-31）</div>
+    <div class="amount" style="font-size:30px;font-weight:700;margin:6px 0;">286.4 GB</div>
+    <div class="muted" style="font-size:12px;">套餐内含 1000 GB · 剩余 713.6 GB（71%）</div>
+    <div class="bar" style="height:8px;background:var(--line);border-radius:4px;margin:12px 0;overflow:hidden;">
+      <div style="width:29%;height:100%;background:var(--primary);"></div>
+    </div>
+    <div class="muted" style="font-size:12px;">日均 9.2 GB · 预计月底剩余 698 GB</div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">用量明细</div>
+    <div class="cell"><div class="main"><div class="t">下行流量</div></div><div class="right">248.1 GB</div></div>
+    <div class="cell"><div class="main"><div class="t">上行流量</div></div><div class="right">38.3 GB</div></div>
+    <div class="cell"><div class="main"><div class="t">IPTV 独立通道</div></div><div class="right">不计入流量</div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">在线状态</div>
+    <div class="cell"><div class="main"><div class="t">当前在线时长</div></div><div class="right">3 天 14 小时</div></div>
+    <div class="cell"><div class="main"><div class="t">最近一次上线</div></div><div class="right">2025-08-17 07:41</div></div>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

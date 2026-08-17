@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>计费账单 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">计费账单</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>计费账单</h2>
+        <div class="desc">出账管理 · 缴费/欠费见独立菜单</div>
+      </div>
+
+      <div class="grid g-3" style="margin-bottom:16px;">
+        <div class="stat"><div class="label">本月应收</div><div class="val">¥1,286,400</div></div>
+        <div class="stat"><div class="label">已收</div><div class="val">¥1,103,215</div></div>
+        <div class="stat"><div class="label">欠费用户</div><div class="val">1,024</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">账单列表</div>
+        <table class="tbl">
+          <thead><tr><th>账单号</th><th>客户</th><th>账期</th><th>金额</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>BILL-202508-0001</td><td>王先生</td><td>2025-08</td><td>¥299</td><td><span class="tag tag-green">已缴</span></td></tr>
+            <tr><td>BILL-202508-0002</td><td>吴女士</td><td>2025-08</td><td>¥199</td><td><span class="tag tag-orange">欠费</span></td></tr>
+            <tr><td>BILL-202507-0341</td><td>孙先生</td><td>2025-07</td><td>¥199</td><td><span class="tag tag-green">已缴清</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

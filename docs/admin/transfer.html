@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>跨区域调配 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">跨区域调配</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>跨区域调配</h2>
+        <div class="desc">跨大区资源调配申请与审批 · 归属变更 · 两区账实一致（REQ-REG-005）</div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建调配申请</button>
+        <select class="input" style="width:160px">
+          <option>调配类型：全部</option><option>端口调配</option><option>资产调配</option><option>设备调配</option>
+        </select>
+        <select class="input" style="width:160px">
+          <option>状态：全部</option><option>待审批</option><option>已批准</option><option>已驳回</option><option>已完成</option>
+        </select>
+        <span class="spacer"></span>
+        <span class="tag tag-blue">总部审批 · 归属变更 · 台账联动</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">调配申请单 <span class="extra">Luzon 缺端口 → 调 Visayas 空闲端口</span></div>
+        <table class="tbl">
+          <thead><tr><th>调配单号</th><th>资源</th><th>调出区域</th><th>调入区域</th><th>数量</th><th>状态</th><th>审批人</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>TR-20250817-01</td><td>端口</td><td>比萨扬大区（空闲）</td><td>吕宋大区（紧缺）</td><td>120</td><td><span class="tag tag-orange">待审批</span></td><td>—</td><td><a href="#">审批</a> <a href="#">驳回</a></td></tr>
+            <tr><td>TR-20250816-04</td><td>OLT 设备</td><td>棉兰老大区</td><td>吕宋大区</td><td>3</td><td><span class="tag tag-blue">已批准</span></td><td>admin</td><td><a href="#">执行</a></td></tr>
+            <tr><td>TR-20250815-02</td><td>分光器</td><td>吕宋大区</td><td>比萨扬大区</td><td>15</td><td><span class="tag tag-green">已完成</span></td><td>admin</td><td><a href="#">查看</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">归属变更台账 <span class="extra">总部汇总 = 各区域之和</span></div>
+        <table class="tbl">
+          <thead><tr><th>区域</th><th>调出</th><th>调入</th><th>当前可用</th><th>账实一致性</th></tr></thead>
+          <tbody>
+            <tr><td>吕宋大区</td><td>0</td><td>120</td><td>1,240</td><td><span class="tag tag-green">一致</span></td></tr>
+            <tr><td>比萨扬大区</td><td>120</td><td>0</td><td>2,180</td><td><span class="tag tag-green">一致</span></td></tr>
+            <tr><td>棉兰老大区</td><td>3</td><td>0</td><td>980</td><td><span class="tag tag-green">一致</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

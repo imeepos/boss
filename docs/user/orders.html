@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的订单 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">我的订单</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="seg">
+    <a class="active">全部</a>
+    <a>进行中</a>
+    <a>已完成</a>
+    <a>已取消</a>
+  </div>
+
+  <a class="card" href="order.html" style="display:block;color:inherit;">
+    <div class="row" style="display:flex;justify-content:space-between;align-items:center;">
+      <b>ORD-20250817-001</b>
+      <span class="tag tag-blue">装维中</span>
+    </div>
+    <div class="muted" style="font-size:12.5px;margin:6px 0;">1000M 极速宽带 · 望京X · 3栋501</div>
+    <div class="muted" style="font-size:12px;">当前环节：扫码绑定（9/12） · 预计 08-17 完成</div>
+  </a>
+
+  <a class="card" href="order.html" style="display:block;color:inherit;">
+    <div class="row" style="display:flex;justify-content:space-between;align-items:center;">
+      <b>ORD-20250817-002</b>
+      <span class="tag tag-orange">已预占</span>
+    </div>
+    <div class="muted" style="font-size:12.5px;margin:6px 0;">500M 畅享宽带 · 望京X · 5栋302</div>
+    <div class="muted" style="font-size:12px;">当前环节：端口预占（3/12）</div>
+  </a>
+
+  <a class="card" href="order.html" style="display:block;color:inherit;">
+    <div class="row" style="display:flex;justify-content:space-between;align-items:center;">
+      <b>ORD-20250816-018</b>
+      <span class="tag tag-green">已完成</span>
+    </div>
+    <div class="muted" style="font-size:12.5px;margin:6px 0;">300M 畅享宽带 · 望京Y · 1栋101</div>
+    <div class="muted" style="font-size:12px;">已激活 · 全程 12 环节 · 08-11 完成</div>
+    <button class="btn btn-primary" style="margin-top:10px;" onclick="event.preventDefault();location.href='rate.html';">去评价</button>
+  </a>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

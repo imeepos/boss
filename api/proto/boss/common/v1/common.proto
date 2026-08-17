@@ -1,0 +1,45 @@
+// boss/common/v1 —— 跨服务公共契约(错误码/分页/事件 envelope)。
+// 契约先行(见 docs/ADR-001 第4条、architecture-review 发现 2.1):
+//   - 每个跨服务域对应一个 proto 模块(syntax proto3, package 以 boss.<domain>.vN 命名);
+//   - 对外 REST 由 api/openapi 描述,APISIX 按两者生成路由,服务内 gRPC 复用同一语义;
+//   - 版本变更只加字段、不破坏已有字段编号,破坏性变更升 vN。
+syntax = "proto3";
+
+package boss.common.v1;
+
+option go_package = "github.com/ymm-001/boss/api/proto/boss/common/v1;commonv1";
+
+// Code 统一错误码,与服务端 pkg/apitypes.Code 数值对齐(跨语言共享语义)。
+enum Code {
+  CODE_OK = 0;
+  CODE_INTERNAL = 50000;
+  CODE_UNAUTHORIZED = 40100;
+  CODE_FORBIDDEN = 40300;
+  CODE_NOT_FOUND = 40400;
+  CODE_CONFLICT = 40900;
+  CODE_INVALID_PARAM = 42200;
+  CODE_RESOURCE_BUSY = 42300;
+  CODE_STATE_INVALID = 40910;
+  CODE_SCAN_MISMATCH = 40920;
+  CODE_DOWNSTREAM_ERR = 50200;
+}
+
+// Error 服务间统一错误对象;msg 面向人,detail 可承载结构化上下文。
+message Error {
+  Code code = 1;
+  string msg = 2;
+  map<string, string> detail = 3;
+}
+
+// PageRequest 通用分页请求。
+message PageRequest {
+  int32 page = 1;       // 1-based
+  int32 page_size = 2;  // 上限由服务端约定,超限时裁剪
+}
+
+// PageResponse 通用分页响应。
+message PageResponse {
+  int32 page = 1;
+  int32 page_size = 2;
+  int64 total = 3;
+}

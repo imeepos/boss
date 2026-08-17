@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工作台 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="home-head">
+    <div class="hi">张师傅 <span style="font-size:13px;font-weight:400;opacity:.85;">装机一组 · 138****8899</span>
+      <a href="profile.html" style="color:#fff;font-size:18px;">◉</a>
+    </div>
+    <div class="st-line"><span class="dot"></span> 今日接单 3 · 进行中 2 · 待处理 1</div>
+  </div>
+
+  <div class="stats-card">
+    <div class="row"><span class="title">今日业绩</span><span class="date">2025-08-17</span></div>
+    <div class="stats">
+      <div><div class="v blue">3</div><div class="k">接单</div></div>
+      <div><div class="v green">2</div><div class="k">已完成</div></div>
+      <div><div class="v orange">1</div><div class="k">进行中</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">进行中工单 <a class="more" href="orders.html">全部</a></div>
+    <a class="cell" href="order.html">
+      <div class="main">
+        <div class="t">ORD-20250817-001 · 1000M 安装</div>
+        <div class="d">望京X · 3栋501 · 距您 2.1km</div>
+      </div>
+      <div class="right">
+        <span class="tag tag-blue">待扫码绑定</span>
+        <div style="margin-top:4px">扫码绑定 9/12</div>
+      </div>
+    </a>
+    <a class="cell" href="order.html">
+      <div class="main">
+        <div class="t">ORD-20250817-002 · 500M 安装</div>
+        <div class="d">望京X · 5栋302 · 距您 3.4km</div>
+      </div>
+      <div class="right">
+        <span class="tag tag-orange">已接单</span>
+        <div style="margin-top:4px">派单 8/12</div>
+      </div>
+    </a>
+    <a class="cell" href="repair.html">
+      <div class="main">
+        <div class="t">TKT-20250817-012 · 断网抢修</div>
+        <div class="d">望京X · 10栋1801 · 距您 1.8km</div>
+      </div>
+      <div class="right">
+        <span class="tag tag-red">紧急 · 剩余 0h52m</span>
+        <div style="margin-top:4px">修复 4/6</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="c-title">待领取工单 <a class="more" href="orders.html">更多</a></div>
+    <a class="cell" href="orders.html">
+      <div class="main">
+        <div class="t">ORD-20250817-003 · 300M 安装</div>
+        <div class="d">望京X · 12栋906 · 距您 1.7km</div>
+      </div>
+      <div class="right">
+        <span class="tag tag-orange">待领取</span>
+      </div>
+    </a>
+    <a class="cell" href="orders.html">
+      <div class="main">
+        <div class="t">ORD-20250817-004 · 宽带变更</div>
+        <div class="d">望京X · 3栋501 · 距您 4.0km</div>
+      </div>
+      <div class="right">
+        <span class="tag tag-orange">待领取</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="c-title">今日提醒 <span class="more"><a href="messages.html">消息中心</a></span></div>
+    <div class="kv"><span class="k">超时预警</span><span class="v" style="color:var(--err);"><a href="#" onclick="alert('ORd-002 已上门超时 25 分钟，请尽快联系客户。');return false;">1 单即将超时</a></span></div>
+    <div class="kv"><span class="k">标签电量</span><span class="v"><a href="#" onclick="alert('EPC-0023 电量 12%，请携备用标签。');return false;">EPC-0023 电量低</a></span></div>
+    <div class="kv"><span class="k">配置下发</span><span class="v" style="color:var(--success);">全部预下发成功</span></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">快捷入口</div>
+    <div class="grid">
+      <a class="gitem" href="schedule.html"><b>排期</b><span>日程</span></a>
+      <a class="gitem" href="notice.html"><b>公告</b><span>通告</span></a>
+      <a class="gitem" href="hall.html"><b>任务池</b><span>抢单</span></a>
+      <a class="gitem" href="help.html"><b>手册</b><span>排障</span></a>
+      <a class="gitem" href="tool.html"><b>测速</b><span>工具</span></a>
+      <a class="gitem" href="pickup.html"><b>领料</b><span>出库</span></a>
+      <a class="gitem" href="safety.html"><b>安全</b><span>上报</span></a>
+      <a class="gitem" href="maintenance.html"><b>维护</b><span>清单</span></a>
+    </div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

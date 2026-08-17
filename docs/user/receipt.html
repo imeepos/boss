@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>缴费凭证 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="pay.html">&lsaquo;</a>
+    <div class="t">缴费凭证</div>
+    <span class="act" onclick="location.href='invoice.html'">开发票</span>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">电子缴费凭证</div>
+    <div class="muted" style="font-size:12px;">OR-20250817-0001</div>
+    <div class="cell" style="margin-top:16px;text-align:left;">
+      <div class="main"><div class="t">客户</div></div><div class="right">王先生 · 138****1234</div>
+    </div>
+    <div class="cell" style="text-align:left;">
+      <div class="main"><div class="t">缴费金额</div></div><div class="right amount">¥158.00</div>
+    </div>
+    <div class="cell" style="text-align:left;">
+      <div class="main"><div class="t">对应账期</div></div><div class="right">2025-08</div>
+    </div>
+    <div class="cell" style="text-align:left;">
+      <div class="main"><div class="t">支付方式 / 时间</div></div><div class="right">微信支付 · 2025-08-17 10:12</div>
+    </div>
+    <div class="cell" style="text-align:left;">
+      <div class="main"><div class="t">交易单号</div></div><div class="right">PAY20250817001</div>
+    </div>
+  </div>
+
+  <div style="margin:12px 14px 0;">
+    <button class="btn-block">下载凭证（PDF）</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

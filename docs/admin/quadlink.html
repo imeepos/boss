@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>四码合一 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">四码合一</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>四码合一</h2>
+        <div class="desc">四码关联查询 · 对账见独立菜单</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:320px" placeholder="输入任一码反查四码关系">
+        <button class="btn btn-primary">查询</button>
+        <span class="spacer"></span>
+        <span class="tag tag-orange">今日对账冲突：2 笔待处理</span>
+      </div>
+      <div class="card">
+        <div class="card-title">四码关联关系</div>
+        <table class="tbl">
+          <thead><tr><th>资产码</th><th>用户码</th><th>端口码</th><th>地址码</th><th>关联状态</th></tr></thead>
+          <tbody>
+            <tr><td>EPC-0001</td><td>LOID-88A1</td><td>P-SPL03-07</td><td>A-3-501</td><td><span class="tag tag-green">一致</span></td></tr>
+            <tr><td>EPC-0002</td><td>LOID-88A2</td><td>P-SPL04-02</td><td>A-5-302</td><td><span class="tag tag-red">冲突</span></td></tr>
+            <tr><td>EPC-0003</td><td>LOID-88A3</td><td>P-SPL02-03</td><td>A-1-101</td><td><span class="tag tag-green">一致</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

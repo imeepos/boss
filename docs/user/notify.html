@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通知订阅 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="messages.html">&lsaquo;</a>
+    <div class="t">通知订阅设置</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">业务通知 <span class="tag tag-blue">不可退订</span></div>
+    <div class="cell"><div class="main"><div class="t">账单 / 缴费提醒</div><div class="d">出账、到期、缴费成功</div></div><div class="right"><span class="tag tag-green">开启</span></div></div>
+    <div class="cell"><div class="main"><div class="t">停机 / 复机提醒</div><div class="d">欠费停机、缴费复机</div></div><div class="right"><span class="tag tag-green">开启</span></div></div>
+    <div class="cell"><div class="main"><div class="t">故障公告</div><div class="d">片区割接、计划维护</div></div><div class="right"><span class="tag tag-green">开启</span></div></div>
+    <div class="cell"><div class="main"><div class="t">装维进度</div><div class="d">订单环节变更、上门提醒</div></div><div class="right"><span class="tag tag-green">开启</span></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">营销通知 <span class="tag tag-gray">可退订</span></div>
+    <div class="cell"><div class="main"><div class="t">优惠活动推送</div><div class="d">每周最多 2 条</div></div><div class="right"><input type="checkbox" checked></div></div>
+    <div class="cell"><div class="main"><div class="t">套餐推荐</div><div class="d">升档 / 续约推荐</div></div><div class="right"><input type="checkbox"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">接收渠道</div>
+    <div class="cell"><div class="main"><div class="t">站内信</div></div><div class="right"><input type="checkbox" checked></div></div>
+    <div class="cell"><div class="main"><div class="t">短信</div></div><div class="right"><input type="checkbox" checked></div></div>
+    <div class="cell"><div class="main"><div class="t">应用推送</div></div><div class="right"><input type="checkbox" checked></div></div>
+  </div>
+
+  <button class="btn-block" style="margin:0 14px 20px;width:auto;">保存设置</button>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

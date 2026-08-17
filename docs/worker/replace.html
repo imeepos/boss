@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>换件登记 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="scan.html">&lsaquo;</a>
+    <div class="t">换件登记</div>
+    <span class="act">扫码强制</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001</div>
+    <div class="kv"><span class="k">待换设备</span><span class="v">光猫 EPC-0002（故障）</span></div>
+    <div class="kv"><span class="k">换件类型</span><span class="v">故障调换 · 旧件返修</span></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">换件流程 <span class="more">扫码强制</span></div>
+    <div class="kv"><span class="k">1 扫旧件</span><span class="v" style="color:var(--success);">EPC-0002 已识别</span></div>
+    <div class="kv"><span class="k">2 扫新件</span><span class="v"><a href="scan.html">待扫码</a></span></div>
+    <div class="kv"><span class="k">3 登记</span><span class="v">未完成</span></div>
+    <button class="btn-green btn-block" style="margin-top:10px;" onclick="alert('换件登记完成，旧件转返修，新件沿用绑定。')">完成换件</button>
+    <a class="btn btn-block ghost" style="margin-top:8px;" href="retire.html">旧件回收 / 返库登记</a>
+  </div>
+
+  <div class="card">
+    <div class="notice">维修调换规则：旧 CPE 故障返修，新 CPE 沿用原绑定，四码自动迁移。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

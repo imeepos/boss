@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>盘点管理 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">盘点管理</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>盘点管理</h2><div class="desc">按区域/小区/楼栋批量盘点 · 差异清单处理</div></div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建盘点任务</button>
+        <span class="spacer"></span>
+        <span class="tag tag-orange">当前差异：12 项待处理</span>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>盘点任务</th><th>范围</th><th>进度</th><th>差异项</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>PD-202508-01</td><td>望京X小区</td><td>86%</td><td>12</td><td><span class="tag tag-orange">处理中</span></td></tr>
+            <tr><td>PD-202508-02</td><td>望京Y小区</td><td>100%</td><td>0</td><td><span class="tag tag-green">已完成</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

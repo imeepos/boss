@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据权限 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">数据权限</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>数据权限</h2>
+        <div class="desc">数据范围授权（功能权限之外的约束）· 角色=功能权限，组织=数据范围</div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新增授权</button>
+        <input class="input" style="width:220px" placeholder="搜索账号">
+        <span class="spacer"></span>
+        <span class="tag tag-blue">越权访问 → 拒绝 + 审计留痕</span>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>账号</th><th>角色（功能）</th><th>子公司</th><th>部门</th><th>岗位</th><th>数据范围</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>admin</td><td><span class="tag tag-blue">系统管理员</span></td><td>集团</td><td>—</td><td>—</td><td><span class="tag tag-green">全集团</span></td><td><a href="#">编辑</a></td></tr>
+            <tr><td>agent-a01</td><td><span class="tag tag-green">业务运营/客服</span></td><td>LEG-A</td><td>客服部</td><td>客服坐席</td><td><span class="tag tag-orange">本部门</span></td><td><a href="#">编辑</a></td></tr>
+            <tr><td>agent-b01</td><td><span class="tag tag-green">业务运营/客服</span></td><td>LEG-B</td><td>客服部</td><td>客服坐席</td><td><span class="tag tag-orange">本部门</span></td><td><a href="#">编辑</a></td></tr>
+            <tr><td>cashier-a01</td><td><span class="tag tag-green">业务运营/客服</span></td><td>LEG-A</td><td>财务部</td><td>财务收款员</td><td><span class="tag tag-orange">最小化视图</span></td><td><a href="#">编辑</a></td></tr>
+            <tr><td>rmgr-luzon</td><td><span class="tag tag-orange">经营分析</span></td><td>—</td><td>市场经营部</td><td>区域经理</td><td><span class="tag tag-orange">吕宋大区</span></td><td><a href="#">编辑</a></td></tr>
+            <tr><td>noc-b01</td><td><span class="tag tag-gray">资源运维管理员</span></td><td>LEG-B</td><td>网络运维部</td><td>网络运维工程师</td><td><span class="tag tag-orange">本公司资源</span></td><td><a href="#">编辑</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">授权策略说明 <span class="extra">即时生效</span></div>
+        <div class="desc" style="margin-bottom:10px">数据范围快照写 Redis，授权变更即时生效；越权访问被拒并记录到审计日志（A01~A09）。</div>
+        <table class="tbl">
+          <thead><tr><th>数据范围类型</th><th>判定依据</th><th>示例</th></tr></thead>
+          <tbody>
+            <tr><td>全集团</td><td>region_scope 为空 + 不限子公司</td><td>总部/审计/管理员</td></tr>
+            <tr><td>限经营区域子树</td><td>region_scope 绑定 path</td><td>区域经理只看吕宋</td></tr>
+            <tr><td>限子公司</td><td>legal_entity_id</td><td>LEG-A 客服看不到 LEG-B 客户</td></tr>
+            <tr><td>限部门</td><td>dept_id</td><td>坐席只看本部门队列</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

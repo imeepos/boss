@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>停复机执行 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">停复机执行</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>停复机执行状态</h2>
+        <div class="desc">欠费停机 / 缴费复机 · 网络侧执行回执</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" placeholder="账号/客户/LOID">
+        <select class="input" style="width:140px"><option>全部状态</option><option>停机成功</option><option>复机成功</option><option>执行失败</option></select>
+        <span class="spacer"></span>
+        <button class="btn btn-primary">重试失败项</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>客户</th><th>LOID</th><th>动作</th><th>触发原因</th><th>网络侧结果</th><th>执行时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>吴女士</td><td>LOID-88A5</td><td>停机</td><td>欠费达阈值</td><td><span class="tag tag-green">生效</span></td><td>08:00</td><td><a href="#">详情</a></td></tr>
+            <tr><td>孙先生</td><td>LOID-88A3</td><td>复机</td><td>缴费入账</td><td><span class="tag tag-green">生效</span></td><td>09:30</td><td><a href="#">详情</a></td></tr>
+            <tr><td>李女士</td><td>LOID-88A4</td><td>停机</td><td>欠费达阈值</td><td><span class="tag tag-red">失败</span></td><td>10:10</td><td><a href="#">重试</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>岗位管理 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">岗位管理</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>岗位管理</h2>
+        <div class="desc">岗位（组织编制）与角色（功能权限）分离 · 一人一岗 · 岗位→角色绑定后可复用</div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建岗位</button>
+        <select class="input" style="width:180px">
+          <option>全部部门</option><option>装维调度部</option><option>客服部</option>
+          <option>财务部</option><option>网络运维部</option><option>市场经营部</option>
+        </select>
+        <input class="input" style="width:180px" placeholder="搜索岗位代码/名称">
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>岗位代码</th><th>岗位</th><th>所属部门</th><th>绑定角色（功能权限）</th><th>数据范围</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>field_tech</td><td>装维师傅</td><td>装维调度部</td><td><span class="tag tag-blue">technician</span></td><td>派单辖区</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>dispatcher</td><td>装维调度员</td><td>装维调度部</td><td><span class="tag tag-blue">technician</span></td><td>跨区工单池</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>agent</td><td>客服坐席</td><td>客服部</td><td><span class="tag tag-green">ops</span></td><td>本部门队列</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>cashier</td><td>财务收款员</td><td>财务部</td><td><span class="tag tag-green">ops</span></td><td>最小化视图</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>credit</td><td>信用专员</td><td>财务部</td><td><span class="tag tag-orange">analyst</span></td><td>本公司欠费</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>region_mgr</td><td>区域经理</td><td>市场经营部</td><td><span class="tag tag-orange">analyst</span></td><td>本经营区域</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>key_acct</td><td>大客户经理</td><td>市场经营部</td><td><span class="tag tag-green">ops</span></td><td>本公司客户</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>noc_engineer</td><td>网络运维工程师</td><td>网络运维部</td><td><span class="tag tag-gray">resource_admin</span></td><td>本公司资源</td><td><a href="#">编辑</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">同名岗位跨子公司复用 <span class="extra">岗位→角色分离的意义</span></div>
+        <div class="desc" style="margin-bottom:10px">LEG-A 与 LEG-B 各有「客服坐席」岗，复用同一角色码 `ops`，
+        但数据各自隔离 → 权限 = 功能(角色) ∪ 数据(子公司/区域)。（A08）</div>
+        <table class="tbl">
+          <thead><tr><th>岗位</th><th>复用的角色</th><th>LEG-A 数据域</th><th>LEG-B 数据域</th></tr></thead>
+          <tbody>
+            <tr><td>客服坐席 agent</td><td>ops</td><td>LEG-A 客户/工单</td><td>LEG-B 客户/工单（互不可见）</td></tr>
+            <tr><td>装维师傅 field_tech</td><td>technician</td><td>LEG-A 派单</td><td>LEG-B 派单（互不可见）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

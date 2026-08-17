@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>资产管理 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">资产管理</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>资产管理</h2>
+        <div class="desc">资产台账 · 生命周期 · 标签/盘点见独立菜单</div>
+      </div>
+
+      <div class="grid g-4" style="margin-bottom:16px;">
+        <div class="stat"><div class="label">资产总数</div><div class="val">48,521</div><div class="delta up">▲ 1.2%</div></div>
+        <div class="stat"><div class="label">在库</div><div class="val">12,430</div></div>
+        <div class="stat"><div class="label">在用</div><div class="val">33,208</div></div>
+        <div class="stat"><div class="label">维修/报废</div><div class="val">2,883</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">资产清单</div>
+        <table class="tbl">
+          <thead><tr><th>资产编码</th><th>标签编号</th><th>EPC 码</th><th>类型</th><th>入库批次</th><th>位置</th><th>生命周期</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>A-20250001</td><td>TAG-0001</td><td>EPC-0001</td><td>光猫</td><td>RK-202507-01</td><td>望京·X小区·3栋</td><td>在用</td><td><span class="tag tag-green">正常</span></td></tr>
+            <tr><td>A-20250002</td><td>TAG-0002</td><td>EPC-0002</td><td>分光器</td><td>RK-202506-03</td><td>望京·X小区·弱电井2</td><td>维修</td><td><span class="tag tag-orange">维修中</span></td></tr>
+            <tr><td>A-20250003</td><td>TAG-0003</td><td>EPC-0003</td><td>光猫</td><td>RK-202508-02</td><td>仓库</td><td>在库</td><td><span class="tag tag-gray">待领用</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">生命周期时间轴 / 流转记录</div>
+        <table class="tbl">
+          <thead><tr><th>资产编码</th><th>时间</th><th>事务</th><th>由</th><th>至</th><th>操作人</th></tr></thead>
+          <tbody>
+            <tr><td>A-20250001</td><td>2025-07-15 09:20</td><td>入库</td><td>—</td><td>在库</td><td>asset01</td></tr>
+            <tr><td>A-20250001</td><td>2025-07-20 14:05</td><td>领用</td><td>在库</td><td>在用</td><td>asset01</td></tr>
+            <tr><td>A-20250002</td><td>2025-08-10 11:30</td><td>状态变更</td><td>在用</td><td>故障</td><td>oss01</td></tr>
+            <tr><td>A-20250003</td><td>2025-08-14 16:42</td><td>入库</td><td>—</td><td>在库</td><td>asset01</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

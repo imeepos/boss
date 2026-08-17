@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>套餐详情 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="products.html">&lsaquo;</a>
+    <div class="t">套餐详情</div>
+    <span class="act" onclick="location.href='products.html'">对比</span>
+  </div>
+
+  <div class="card" style="border:1px solid var(--primary);">
+    <div class="c-title">1000M 极速宽带 <span class="tag tag-orange">¥199/月</span></div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:12px;">下行 1000M / 上行 50M · 含光猫 + 路由器 + IPTV · 合约 24 个月</div>
+    <div class="cell"><div class="main"><div class="t">安装费</div></div><div class="right">首装 ¥0</div></div>
+    <div class="cell"><div class="main"><div class="t">光猫 / 路由器</div></div><div class="right">含设备 · 押金 ¥0</div></div>
+    <div class="cell"><div class="main"><div class="t">IPTV</div></div><div class="right">200+ 频道</div></div>
+    <div class="cell"><div class="main"><div class="t">合约期</div></div><div class="right">24 个月 · 到期自动续约</div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">套餐对比 <span class="more">同档可选</span></div>
+    <div class="cell"><div class="main"><div class="t">300M 畅享宽带</div><div class="d">¥99/月 · 含光猫</div></div><div class="right"><button class="btn">查看</button></div></div>
+    <div class="cell"><div class="main"><div class="t">500M 畅享宽带</div><div class="d">¥129/月 · 光猫 + 路由器</div></div><div class="right"><button class="btn">查看</button></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">合约与说明</div>
+    <div class="muted" style="font-size:12.5px;line-height:1.7;">合约期内退订按未履约月份收取违约金；改套餐当月按新旧价按日折算（pro-rata）。</div>
+  </div>
+
+  <div style="margin:12px 14px 0;">
+    <button class="btn-block" onclick="location.href='order.html'">立即办理 ¥199/月</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

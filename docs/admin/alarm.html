@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>告警中心 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">告警中心</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>告警中心</h2><div class="desc">跨域告警汇聚 · 设备/四码/配置等异常</div></div>
+
+      <div class="toolbar">
+        <select class="input" style="width:140px"><option>级别：全部</option><option>严重</option><option>警告</option><option>提示</option></select>
+        <span class="spacer"></span>
+        <span class="tag tag-red">未处理严重告警：5</span>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>级别</th><th>来源</th><th>内容</th><th>时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-red">严重</span></td><td>device</td><td>OLT-15 离线</td><td>08:40</td><td><a href="#">派单处理</a> <a href="#">确认</a></td></tr>
+            <tr><td><span class="tag tag-orange">警告</span></td><td>device</td><td>OLT-02 光功率异常</td><td>09:12</td><td><a href="#">派单处理</a> <a href="#">关闭</a></td></tr>
+            <tr><td><span class="tag tag-orange">警告</span></td><td>quadlink</td><td>四码对账冲突 2 笔</td><td>10:32</td><td><a href="#">确认处理</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">台风应急 · 批量复测 <span class="extra">MON-004 应急任务下发</span></div>
+        <table class="tbl">
+          <thead><tr><th>任务号</th><th>片区</th><th>受影响客户</th><th>下发范围</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>EMG-20250817-001</td><td>望京X片区</td><td>23 户</td><td>跨区公开抢单</td><td><span class="tag tag-orange">进行中</span></td><td><a href="#">下发</a> <a href="#">清单</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>排期日历 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">排期日历</div>
+    <span class="act">2025-08</span>
+  </div>
+
+  <div class="card">
+    <div class="cal">
+      <div class="h">一</div><div class="h">二</div><div class="h">三</div><div class="h">四</div><div class="h">五</div><div class="h">六</div><div class="h">日</div>
+      <div class="d"></div><div class="d"></div><div class="d"></div><div class="d"></div>
+      <div class="d">1</div><div class="d">2</div><div class="d">3</div>
+      <div class="d">4</div><div class="d todo">5</div><div class="d todo">6</div><div class="d">7</div>
+      <div class="d">8</div><div class="d">9</div><div class="d todo">10</div>
+      <div class="d">11</div><div class="d">12</div><div class="d">13</div><div class="d">14</div>
+      <div class="d">15</div><div class="d">16</div><div class="d today">17</div>
+      <div class="d">18</div><div class="d">19</div><div class="d">20</div><div class="d">21</div>
+      <div class="d">22</div><div class="d">23</div><div class="d">24</div><div class="d">25</div>
+      <div class="d">26</div><div class="d">27</div><div class="d">28</div><div class="d">29</div>
+      <div class="d todo">30</div><div class="d">31</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">今日排期 <span class="more">3 单</span></div>
+    <div class="kv"><span class="k">10:00</span><span class="v">ORD-20250817-001 · 3栋501</span></div>
+    <div class="kv"><span class="k">14:00</span><span class="v">ORD-20250817-002 · 5栋302</span></div>
+    <div class="kv"><span class="k">16:00</span><span class="v">ORD-20250817-003 · 12栋906</span></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">工时打卡</div>
+    <button class="btn btn-block" onclick="alert('上班打卡成功。')">上班打卡</button>
+    <button class="btn btn-block ghost" style="margin-top:8px;" onclick="alert('下班打卡成功。')">下班打卡</button>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

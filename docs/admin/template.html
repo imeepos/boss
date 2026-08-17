@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配置模板 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">配置模板</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>配置模板</h2><div class="desc">配置模板管理（text/template）</div></div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建模板</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>模板编号</th><th>模板</th><th>设备类型</th><th>参数</th><th>更新时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>GPON-1000M-v3</td><td>光猫预配置模板（1000M）</td><td>光猫</td><td>LOID/带宽模板</td><td>2025-08-15</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>GPON-500M-v2</td><td>光猫预配置模板（500M）</td><td>光猫</td><td>LOID/带宽模板</td><td>2025-08-15</td><td><a href="#">编辑</a></td></tr>
+            <tr><td>OLT-VLAN-v2</td><td>OLT 端口下发模板</td><td>OLT</td><td>VLAN/QoS</td><td>2025-08-12</td><td><a href="#">编辑</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>下发日志 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">下发日志</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>配置下发日志</h2>
+        <div class="desc">每次下发成功/失败留痕 · 失败可重试/回滚</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" placeholder="任务号/光猫/OLT">
+        <select class="input" style="width:140px"><option>全部结果</option><option>成功</option><option>失败</option><option>回滚成功</option></select>
+        <span class="spacer"></span>
+        <button class="btn btn-primary">重试失败项</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>任务号</th><th>设备</th><th>模板</th><th>结果</th><th>重试</th><th>时间</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>PRV-1001</td><td>EPC-0001</td><td>GPON-1000M-v3</td><td><span class="tag tag-green">成功</span></td><td>0</td><td>10:42</td><td><a href="#">详情</a></td></tr>
+            <tr><td>PRV-1002</td><td>OLT-02</td><td>OLT-VLAN-v2</td><td><span class="tag tag-red">失败</span></td><td>2</td><td>09:15</td><td><a href="#">重试</a> <a href="#">回滚</a></td></tr>
+            <tr><td>PRV-1003</td><td>EPC-0003</td><td>GPON-500M-v2</td><td><span class="tag tag-orange">回滚成功</span></td><td>1</td><td>08:40</td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

@@ -10,3 +10,7 @@
 3. 高并发路径(端口预占)从第一天用 sqlc 手写 SQL + `SELECT ... FOR UPDATE` + DB 唯一约束,
    Redis 锁只做削峰(见技术栈方案 3.1)。
 4. 契约先行:服务间 gRPC(api/proto)、对外 REST(api/openapi),网关 APISIX 按契约生成路由。
+
+## 后续 ADR
+- [ADR-002](ADR-002-address-path-authoritative.md):地址层级以 ltree `path` 为唯一权威。
+- [ADR-003](ADR-003-statemachine-authoritative.md):状态机为唯一权威,Temporal 只做编排。

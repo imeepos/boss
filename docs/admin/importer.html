@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据导入中心 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">数据导入中心</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>数据导入中心</h2>
+        <div class="desc">地址/资产/客户/存量数据导入 · 可核对 · 可纠错（存量兼容）</div>
+      </div>
+
+      <div class="toolbar">
+        <select class="input" style="width:180px"><option>地址层级</option><option>资产台账</option><option>客户档案</option><option>端口台账</option></select>
+        <input class="input" style="width:220px" placeholder="任务名/文件名">
+        <span class="spacer"></span>
+        <button class="btn btn-primary">+ 新建导入任务</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>任务</th><th>类型</th><th>总量/成功/失败</th><th>差异项</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>IMP-031</td><td>地址层级</td><td>12000 / 11980 / 20</td><td>20</td><td><span class="tag tag-orange">待核对</span></td><td><a href="#">核对纠错</a></td></tr>
+            <tr><td>IMP-032</td><td>资产台账</td><td>5000 / 4985 / 15</td><td>15</td><td><span class="tag tag-green">已完成</span></td><td><a href="#">详情</a></td></tr>
+            <tr><td>IMP-030</td><td>客户档案</td><td>8000 / 8000 / 0</td><td>0</td><td><span class="tag tag-green">已完成</span></td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

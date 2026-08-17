@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .login-card{background:#fff;border-radius:12px;padding:44px 40px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+  .login-card h1{font-size:20px;margin:0 0 4px;text-align:center;}
+  .login-card .sub{color:#999;font-size:13px;text-align:center;margin:0 0 28px;}
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-size:13px;color:#555;margin-bottom:6px;}
+  .field input{width:100%;padding:10px 14px;border:1px solid #e5e7eb;border-radius:7px;font-size:14px;}
+  .field input:focus{outline:none;border-color:#1677ff;box-shadow:0 0 0 3px rgba(22,119,255,.12);}
+  .login-btn{width:100%;padding:11px;background:#1677ff;color:#fff;border:none;border-radius:7px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;}
+  .login-btn:hover{background:#4096ff;}
+  .roles{margin-top:22px;padding-top:16px;border-top:1px dashed #e5e7eb;}
+  .roles .r-title{font-size:12px;color:#999;margin-bottom:10px;}
+  .role-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .role-chip{font-size:12px;padding:3px 10px;border:1px solid #e5e7eb;border-radius:20px;color:#555;cursor:pointer;}
+  .role-chip:hover{border-color:#1677ff;color:#1677ff;}
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>装维全流程一体化平台</h1>
+    <p class="sub">BOSS 管理后台 · 统一登录</p>
+    <div class="field">
+      <label>账号</label>
+      <input type="text" placeholder="请输入账号" value="admin">
+    </div>
+    <div class="field">
+      <label>密码</label>
+      <input type="password" placeholder="请输入密码" value="123456">
+    </div>
+    <button class="login-btn" onclick="location.href='dashboard.html'">登 录</button>
+
+    <div class="roles">
+      <div class="r-title">7 类角色（点击切换演示）</div>
+      <div class="role-chips">
+        <span class="role-chip">系统管理员</span>
+        <span class="role-chip">资产管理员</span>
+        <span class="role-chip">资源运维管理员</span>
+        <span class="role-chip">业务运营/客服</span>
+        <span class="role-chip">经营分析人员</span>
+        <span class="role-chip">装维师傅</span>
+        <span class="role-chip">客户</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

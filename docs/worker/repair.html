@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>修复工单 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="orders.html">&lsaquo;</a>
+    <div class="t">修复工单</div>
+    <span class="act" onclick="location.href='service.html'">联系调度</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">TKT-20250817-012 <span class="tag tag-red">紧急 · 断网</span></div>
+    <div class="kv"><span class="k">故障类型</span><span class="v">单户断网（紧急 SLA ≤4h）</span></div>
+    <div class="kv"><span class="k">客户</span><span class="v">陈先生 · 138****7788</span></div>
+    <div class="kv"><span class="k">报障时间</span><span class="v">今天 09:40（已受理）</span></div>
+    <div class="kv"><span class="k">SLA 剩余</span><span class="v" style="color:var(--err);">0h 52m</span></div>
+    <div class="kv"><span class="k">地址</span><span class="v">望京X · 10栋 · 1801</span></div>
+    <div class="kv"><span class="k">分光器/端口</span><span class="v">SPL-05-02 · PON 3口</span></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">远程诊断 <span class="more">结果可查</span></div>
+    <div class="msg-banner ok">疑似光猫离线，光功率 -18.6 dBm（偏低），建议现场复核。</div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">修复流程 <span class="more">报障闭环</span></div>
+    <div class="timeline">
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">1 报障</div><div class="meta">09:40 · 自动关联资产/端口</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">2 诊断</div><div class="meta">09:42 · 远程诊断入工单</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">3 派单</div><div class="meta">09:45 · 张师傅已接单 · SLA 计时</div></div></div>
+      <div class="tl-item"><div class="rail"><span class="node doing"></span><span class="line"></span></div>
+        <div class="body"><div class="t">4 修复</div><div class="meta">进行中 · 到场处理并上报结果</div></div></div>
+      <div class="tl-item"><div class="rail"><span class="node"></span><span class="line"></span></div>
+        <div class="body"><div class="t">5 复核</div><div class="meta">系统自动验证网络恢复</div></div></div>
+      <div class="tl-item"><div class="rail"><span class="node"></span></div>
+        <div class="body"><div class="t">6 回访</div><div class="meta">满意度调查+回填</div></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="display:flex;gap:10px;">
+    <a class="btn" style="flex:1;" href="navi.html">一键导航</a>
+    <a class="btn" style="flex:1;" href="checkin.html">到点签到</a>
+    <a class="btn" style="flex:1;" href="tel:1387788" onclick="return confirm('即将拨打客户 138****7788，确认拨号？')">联系客户</a>
+  </div>
+
+  <div class="card" style="display:flex;gap:10px;">
+    <button class="btn" style="flex:1;" onclick="location.href='tool.html'">现场测速</button>
+    <button class="btn" style="flex:1;" onclick="reportRepair()">上报修复</button>
+  </div>
+
+  <div class="card">
+    <div class="notice">上报修复后系统自动复核网络是否恢复；未恢复将回「处理中」，恢复则关闭并触发满意度回访。</div>
+  </div>
+
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+<script>
+function reportRepair() {
+  alert('修复结果已上报，系统自动复核中……网络已恢复，工单关闭，24h 内将向客户发送满意度回访。');
+  location.href = 'orders.html';
+}
+</script>
+</body>
+</html>

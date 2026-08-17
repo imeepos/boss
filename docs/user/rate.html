@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>服务评价 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="orders.html">&lsaquo;</a>
+    <div class="t">服务评价</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">订单 ORD-20250816-018</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:12px;">300M 畅享宽带 · 望京Y · 1栋101 · 08-11 完成</div>
+    <div class="c-title" style="text-align:center;justify-content:center;gap:6px;margin:14px 0;">
+      <span style="font-size:26px;color:var(--warn);">★★★★★</span>
+    </div>
+    <div class="muted" style="text-align:center;font-size:12px;margin-bottom:16px;">请对本次装维服务评分（1~5 星）</div>
+
+    <div class="field">
+      <label>装维师傅服务态度</label>
+      <select><option>5 分 · 非常满意</option><option>4 分 · 满意</option><option>3 分 · 一般</option><option>2 分 · 不满意</option><option>1 分 · 很不满意</option></select>
+    </div>
+    <div class="field">
+      <label>装维质量与速度</label>
+      <select><option>5 分 · 非常满意</option><option>4 分 · 满意</option><option>3 分 · 一般</option><option>2 分 · 不满意</option><option>1 分 · 很不满意</option></select>
+    </div>
+    <div class="field">
+      <label>评价留言（选填）</label>
+      <textarea rows="3" placeholder="分享你的装维体验"></textarea>
+    </div>
+    <button class="btn-block" onclick="location.href='orders.html'">提交评价</button>
+    <div class="muted" style="font-size:12px;margin-top:10px;">评分低于 3 分将自动升级主管复核并回访。</div>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>部门管理 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">部门管理</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>部门管理</h2>
+        <div class="desc">组织内职能单元 · 挂靠子公司 · 部门数据范围 / 队列归属 / 部门绩效</div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary">+ 新建部门</button>
+        <select class="input" style="width:180px">
+          <option>全部子公司</option><option>LEG-A 主品牌·企业</option>
+          <option>LEG-B 家庭宽带</option><option>LEG-C 批发品牌</option>
+        </select>
+        <input class="input" style="width:200px" placeholder="搜索部门名称">
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>部门</th><th>所属子公司</th><th>职能</th><th>岗位数</th><th>工单队列</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>装维调度部</td><td>LEG-A 主品牌·企业</td><td><span class="tag tag-blue">调度</span></td><td>2</td><td>跨区工单池</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
+            <tr><td>客服部</td><td>LEG-A 主品牌·企业</td><td><span class="tag tag-green">客服</span></td><td>1</td><td>客服工单队列</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
+            <tr><td>财务部</td><td>LEG-B 家庭宽带</td><td><span class="tag tag-orange">财务</span></td><td>2</td><td>现金台队列</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
+            <tr><td>网络运维部</td><td>LEG-C 批发品牌</td><td><span class="tag tag-gray">运维</span></td><td>1</td><td>告警值班队列</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
+            <tr><td>市场经营部</td><td>LEG-A 主品牌·企业</td><td><span class="tag tag-blue">经营</span></td><td>2</td><td>经营看板分发</td><td><a href="#">编辑</a> <a href="#">停用</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">部门数据范围 <span class="extra">坐席/收款员只可见本部门队列</span></div>
+        <div class="desc" style="margin-bottom:10px">同子公司内，部门即最小数据可见单元；跨部门取他部门工单会被拦截并审计留痕（A05/A06）。</div>
+        <table class="tbl">
+          <thead><tr><th>部门</th><th>可见数据</th><th>越权拦截</th></tr></thead>
+          <tbody>
+            <tr><td>客服部</td><td>本部门工单队列</td><td>他部门工单 → 无权限提示</td></tr>
+            <tr><td>财务部</td><td>姓名/账单号/余额/金额（最小化）</td><td>客户其他档案 → 隐藏</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

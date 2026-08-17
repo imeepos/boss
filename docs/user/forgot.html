@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>找回密码 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .lg-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#0f1f3d,#1a2b4a 55%,#1677ff);}
+  .lg-card{background:#fff;border-radius:16px;padding:32px 24px;width:360px;margin:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .lg-card h1{font-size:20px;margin:0;text-align:center;}
+  .lg-card .sub{color:#999;font-size:12.5px;text-align:center;margin:6px 0 26px;}
+  .code-row{display:flex;gap:8px;}
+  .code-row input{flex:1;}
+  .code-btn{width:110px;flex-shrink:0;border:1px solid var(--primary);color:var(--primary);
+    background:#fff;border-radius:8px;font-size:12.5px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="lg-wrap">
+  <div class="lg-card">
+    <h1>找回密码</h1>
+    <p class="sub">短信验证码重置 · 重置后需重新登录</p>
+    <div class="field">
+      <label>手机号</label>
+      <input type="tel" placeholder="请输入注册手机号" value="138****1234">
+    </div>
+    <div class="field">
+      <label>验证码</label>
+      <div class="code-row">
+        <input type="text" placeholder="6 位验证码">
+        <button class="code-btn">获取验证码</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>新密码（≥10 位，含大小写与数字）</label>
+      <input type="password" placeholder="请设置新密码">
+    </div>
+    <div class="field">
+      <label>确认新密码</label>
+      <input type="password" placeholder="请再次输入新密码">
+    </div>
+    <button class="btn-block" onclick="location.href='login.html'">确认重置</button>
+    <div style="text-align:center;margin-top:14px;">
+      <a href="login.html" style="font-size:13px;">返回登录</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

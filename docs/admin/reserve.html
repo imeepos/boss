@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>预占与释放 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">预占与释放</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>端口预占与释放</h2>
+        <div class="desc">端口锁定/释放看板 · 超时自动释放 · 手工强制释放</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" placeholder="端口/订单号">
+        <select class="input" style="width:160px"><option>全部状态</option><option>预占中</option><option>已超时</option><option>已释放</option></select>
+        <span class="spacer"></span>
+        <button class="btn btn-primary">批量释放超时项</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>端口编码</th><th>分光器</th><th>占用订单</th><th>预占时间</th><th>到期时间</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>P-SPL03-07</td><td>SPL-03</td><td>ORD-20250817-001</td><td>10:20</td><td>12:20</td><td><span class="tag tag-blue">预占中</span></td><td><a href="#">释放</a></td></tr>
+            <tr><td>P-SPL01-09</td><td>SPL-01</td><td>ORD-20250817-002</td><td>09:05</td><td>11:05</td><td><span class="tag tag-red">已超时</span></td><td><a href="#">释放</a></td></tr>
+            <tr><td>P-SPL02-03</td><td>SPL-02</td><td>ORD-20250816-018</td><td>昨日</td><td>—</td><td><span class="tag tag-gray">已释放</span></td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

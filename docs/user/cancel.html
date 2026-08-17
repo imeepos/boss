@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>退订拆机 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="myplan.html">&lsaquo;</a>
+    <div class="t">退订拆机</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">退订须知</div>
+    <div class="muted" style="font-size:13px;line-height:1.8;">
+      <p>1. 合约期内退订，按未履约月份收取违约金，具体以结算页为准。</p>
+      <p>2. 拆机须装维师傅上门扫码解绑光猫设备（强制节点），请保持联系畅通。</p>
+      <p>3. 拆机完成后端口与账号同步释放，未缴账单需结清后方可完成。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">待结清款项</div>
+    <div class="cell"><div class="main"><div class="t">2025-08 账期</div><div class="d">¥158.00 · 未缴</div></div><div class="right"><span class="tag tag-orange">未缴</span></div></div>
+    <div class="cell"><div class="main"><div class="t">合约违约金</div><div class="d">剩余 12 个月 · ¥199 × 30%</div></div><div class="right">¥716.40</div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">退订原因</div>
+    <div class="field">
+      <select>
+        <option>迁离服务区</option>
+        <option>更换运营商</option>
+        <option>费用过高</option>
+        <option>其他</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="margin:12px 14px 0;">
+    <button class="btn-block" onclick="location.href='order.html'">确认退订 · 生成拆机单 ORD-20250817-009</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

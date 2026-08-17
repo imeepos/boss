@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的账单 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">我的账单</div>
+    <span class="act" onclick="location.href='invoice.html'">开发票</span>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="muted" style="font-size:12.5px;">当前应缴（2025-08 账期）</div>
+    <div class="amount" style="font-size:30px;font-weight:700;margin:6px 0;">¥158.00</div>
+    <button class="btn btn-primary" onclick="location.href='pay.html'">立即缴费</button>
+    <button class="btn" style="margin-left:8px;" onclick="location.href='topup.html'">余额充值</button>
+  </div>
+
+  <div class="seg">
+    <a class="active">近 6 期</a>
+    <a>已缴</a>
+    <a>未缴</a>
+  </div>
+
+  <div class="card">
+    <a class="cell" href="bill.html" style="color:inherit;">
+      <div class="main"><div class="t">2025-08 账期</div><div class="d">1000M 极速宽带 · 08-01 ~ 08-31</div></div>
+      <div class="right"><div class="amt amount">¥158</div><span class="tag tag-orange">未缴</span></div>
+    </a>
+    <a class="cell" href="bill.html" style="color:inherit;">
+      <div class="main"><div class="t">2025-07 账期</div><div class="d">1000M 极速宽带 · 07-01 ~ 07-31</div></div>
+      <div class="right"><div class="amt">¥158</div><span class="tag tag-green">已缴</span></div>
+    </a>
+    <a class="cell" href="bill.html" style="color:inherit;">
+      <div class="main"><div class="t">2025-06 账期</div><div class="d">500M 畅享宽带 · 06-01 ~ 06-30</div></div>
+      <div class="right"><div class="amt">¥129</div><span class="tag tag-green">已缴</span></div>
+    </a>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

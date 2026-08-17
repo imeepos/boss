@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工作台 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <!-- 侧栏 -->
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+
+  <!-- 主区 -->
+  <div class="main">
+    <header class="header">
+      <div class="crumb">工作台</div>
+      <div class="right">
+        <span>🔔</span>
+        <span>系统管理员</span>
+        <div class="avatar">管</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="page-head">
+        <h2>工作台</h2>
+        <div class="desc">装维全流程运营总览 · 数据实时更新</div>
+      </div>
+
+      <!-- 统计卡 -->
+      <div class="grid g-4" style="margin-bottom:16px;">
+        <div class="stat"><div class="label">今日新增订单</div><div class="val">128</div><div class="delta up">▲ 12.5% 较昨日</div></div>
+        <div class="stat"><div class="label">进行中工单</div><div class="val">342</div><div class="delta up">▲ 5.2%</div></div>
+        <div class="stat"><div class="label">待处理告警</div><div class="val">17</div><div class="delta down">▼ 3.1%</div></div>
+        <div class="stat"><div class="label">资产账实相符率</div><div class="val">98.6%</div><div class="delta up">▲ 0.4%</div></div>
+      </div>
+
+      <!-- 订单状态分布 + 待办 -->
+      <div class="grid g-2">
+        <div class="card">
+          <div class="card-title">订单状态分布 <span class="extra">查看全部 →</span></div>
+          <table class="tbl">
+            <thead><tr><th>状态</th><th>数量</th><th>占比</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tag tag-blue">待核查</span></td><td>52</td><td>15%</td></tr>
+              <tr><td><span class="tag tag-orange">已预占</span></td><td>86</td><td>25%</td></tr>
+              <tr><td><span class="tag tag-green">装维中</span></td><td>134</td><td>39%</td></tr>
+              <tr><td><span class="tag tag-gray">已完成</span></td><td>70</td><td>20%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">我的待办</div>
+          <table class="tbl">
+            <thead><tr><th>事项</th><th>来源</th><th>时间</th></tr></thead>
+            <tbody>
+              <tr><td>四码对账冲突 2 笔待处理</td><td>quadlink</td><td>10:32</td></tr>
+              <tr><td>端口预占超时 5 个待释放</td><td>resource</td><td>09:15</td></tr>
+              <tr><td>资产盘点差异 12 项</td><td>asset</td><td>昨日</td></tr>
+              <tr><td>OLT 光功率异常告警 3 条</td><td>device</td><td>08:40</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 趋势占位 -->
+      <div class="card">
+        <div class="card-title">近 7 日装机趋势（示意）</div>
+        <div style="height:160px;display:flex;align-items:flex-end;gap:12px;padding:10px 0;">
+          <div style="flex:1;height:60%;background:#1677ff;border-radius:4px 4px 0 0;"></div>
+          <div style="flex:1;height:75%;background:#1677ff;border-radius:4px 4px 0 0;"></div>
+          <div style="flex:1;height:52%;background:#1677ff;border-radius:4px 4px 0 0;"></div>
+          <div style="flex:1;height:88%;background:#1677ff;border-radius:4px 4px 0 0;"></div>
+          <div style="flex:1;height:70%;background:#1677ff;border-radius:4px 4px 0 0;"></div>
+          <div style="flex:1;height:82%;background:#1677ff;border-radius:4px 4px 0 0;"></div>
+          <div style="flex:1;height:95%;background:#1677ff;border-radius:4px 4px 0 0;"></div>
+        </div>
+        <div style="display:flex;gap:12px;font-size:11px;color:#999;">
+          <span style="flex:1;text-align:center;">周一</span><span style="flex:1;text-align:center;">周二</span>
+          <span style="flex:1;text-align:center;">周三</span><span style="flex:1;text-align:center;">周四</span>
+          <span style="flex:1;text-align:center;">周五</span><span style="flex:1;text-align:center;">周六</span>
+          <span style="flex:1;text-align:center;">周日</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="menu.js"></script>
+</body>
+</html>

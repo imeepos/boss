@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOSS 综合业务支撑平台 · 架构评审</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --panel:#fff; --line:#d8dee8; --ink:#1f2937; --muted:#7c8494;
+    --blue:#2563eb; --green:#059669; --amber:#d97706; --purple:#7c3aed; --red:#dc2626;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+  .page{max-width:1320px;margin:0 auto;padding:32px 24px;}
+  .hdr h1{font-size:26px;margin:0;}
+  .hdr .sub{color:var(--muted);font-size:13px;margin-top:6px;}
+  .badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:20px;background:#eaf1fe;color:var(--blue);border:1px solid #bcd0f7;margin-top:8px;margin-right:6px;}
+
+  h2{font-size:19px;margin:34px 0 10px;padding-left:10px;border-left:4px solid var(--blue);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;overflow:auto;}
+  .card img{width:100%;height:auto;display:block;border:1px solid #eee;border-radius:8px;}
+
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+  th{background:#f1f5f9;font-weight:600;}
+  code{background:#eef1f6;padding:1px 6px;border-radius:4px;font-size:12.5px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+  .chip{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;background:#fbfcfe;}
+  .chip b{display:block;font-size:13px;}
+  .chip .d{color:var(--muted);font-size:11px;}
+
+  .toc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:8px;}
+  .toc a{color:var(--blue);text-decoration:none;margin-right:14px;font-size:13px;}
+  .note{background:#fdf3e3;border:1px solid #f2d8a8;border-radius:8px;padding:10px 14px;font-size:13px;color:#7c5a12;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hdr">
+    <h1>BOSS 综合业务支撑平台 · 架构评审</h1>
+    <div class="sub">业务能力域架构 + 技术架构 · 依据《需求全案》第二/四/五/七篇 + 三端原型草稿</div>
+    <span class="badge">26 能力域</span>
+    <span class="badge">6 业务闭环</span>
+    <span class="badge">15 类角色</span>
+    <span class="badge">三端 + 经销商/批发门户</span>
+  </div>
+
+  <div class="toc">
+    <a href="#cap">① 能力域架构</a>
+    <a href="#tech">② 技术架构</a>
+    <a href="#contract">③ 域间契约</a>
+    <a href="#master">④ 主数据</a>
+  </div>
+
+  <div class="note">
+    本页为架构评审交付：图 1 表达「业务能力域」边界与分组（BSS/OSS/数据智能/横切）与 6 闭环；图 2 表达「技术架构」——模块化单体打包 26 域、边界即微服务演进边界、技术选型与横切能力。两图均可下载对应 <code>.drawio</code> / <code>.png</code> / <code>.svg</code> 源文件回编辑器。
+  </div>
+
+  <h2 id="cap">① 业务能力域架构</h2>
+  <div class="card"><img src="boss-architecture.svg" alt="能力域架构"></div>
+
+  <h2 id="tech">② 技术架构</h2>
+  <div class="card"><img src="boss-tech-architecture.svg" alt="技术架构"></div>
+
+  <h2 id="contract">③ 域间契约（CT-001~012）</h2>
+  <div class="card">
+    <table>
+      <tr><th>契约</th><th>业务流转</th><th>产生方</th><th>消费方</th></tr>
+      <tr><td>CT-001</td><td>客户建档</td><td>CRM</td><td>计费/订单/客服/门户</td></tr>
+      <tr><td>CT-002/003</td><td>订单-资源核查 / 端口预占</td><td>订单</td><td>资源</td></tr>
+      <tr><td>CT-004</td><td>订单-收费（未收费不派单）</td><td>订单</td><td>计费/支付</td></tr>
+      <tr><td>CT-005</td><td>收款-账务</td><td>支付</td><td>计费/税务/应收</td></tr>
+      <tr><td>CT-006</td><td>余额-服务状态（停复机即时生效）</td><td>计费</td><td>认证/客服</td></tr>
+      <tr><td>CT-007</td><td>出账-发票</td><td>计费</td><td>税务/应收</td></tr>
+      <tr><td>CT-008</td><td>告警-工单</td><td>监控</td><td>客服/装维</td></tr>
+      <tr><td>CT-009</td><td>资产-资源-客户（四码）</td><td>资产/资源</td><td>订单/客服/BI</td></tr>
+      <tr><td>CT-010</td><td>用量-批发计费</td><td>批发</td><td>计费/结算</td></tr>
+      <tr><td>CT-011</td><td>稽核-差异处理</td><td>RA</td><td>计费/支付/财务</td></tr>
+      <tr><td>CT-012</td><td>欺诈预警-拦截</td><td>FMS</td><td>CRM/渠道/订单</td></tr>
+    </table>
+  </div>
+
+  <h2 id="master">④ 主数据所有权矩阵（owner 单一权威）</h2>
+  <div class="card">
+    <table>
+      <tr><th>主数据</th><th>主权域</th><th>消费域</th><th>同步时延</th></tr>
+      <tr><td>客户主数据</td><td>CRM</td><td>计费/订单/客服/渠道/门户</td><td>[实时/5 分钟]</td></tr>
+      <tr><td>产品与价格</td><td>产品域</td><td>订单/计费/门户/渠道</td><td>[实时]</td></tr>
+      <tr><td>资产主数据</td><td>资产域</td><td>资源/订单/客服/BI</td><td>[15 分钟]</td></tr>
+      <tr><td>端口资源</td><td>资源域</td><td>订单/资产/客服/监控</td><td>[实时]</td></tr>
+      <tr><td>账务数据</td><td>计费域</td><td>税务/应收/支付/BI</td><td>[实时]</td></tr>
+      <tr><td>收款数据</td><td>支付域</td><td>计费/税务/应收</td><td>[实时]</td></tr>
+      <tr><td>工单数据</td><td>客服域</td><td>CRM/装维/监控</td><td>[实时]</td></tr>
+    </table>
+  </div>
+
+  <div class="note" style="margin-top:20px;">
+    交付文件：<code>boss-architecture.drawio / .png / .svg</code>、<code>boss-tech-architecture.drawio / .png / .svg</code>、本页 <code>architecture-review-v2.html</code>。.drawio 源可在 draw.io 桌面打开继续编辑；.png/.svg 已内嵌 XML（可回编辑）。
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配置下发 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">配置下发</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head"><h2>配置下发</h2><div class="desc">配置自动下发 · 失败重试留痕</div></div>
+
+      <div class="grid g-3" style="margin-bottom:16px;">
+        <div class="stat"><div class="label">今日下发</div><div class="val">1,286</div></div>
+        <div class="stat"><div class="label">成功</div><div class="val">1,271</div></div>
+        <div class="stat"><div class="label">失败待重试</div><div class="val">15</div></div>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>任务号</th><th>设备</th><th>模板</th><th>状态</th><th>重试次数</th></tr></thead>
+          <tbody>
+            <tr><td>PRV-1001</td><td>EPC-0001</td><td>GPON-1000M-v3</td><td><span class="tag tag-green">成功</span></td><td>0</td></tr>
+            <tr><td>PRV-1002</td><td>OLT-02</td><td>OLT-VLAN-v2</td><td><span class="tag tag-red">失败</span></td><td>3</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

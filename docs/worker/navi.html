@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>导航 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="order.html">&lsaquo;</a>
+    <div class="t">一键导航</div>
+    <span class="act">距您 2.1km</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001 · 目的地</div>
+    <div class="kv"><span class="k">地址</span><span class="v">望京X · 3栋 · 501</span></div>
+    <div class="kv"><span class="k">距离</span><span class="v">2.1km · 约 8 分钟</span></div>
+    <div class="kv"><span class="k">入口</span><span class="v">东门进 · 3栋1单元</span></div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="scan-frame" style="padding:60px 16px;">
+      <div class="glyph">▣</div>
+      <div class="hint">地图路线（示意）</div>
+      <div class="hint muted">已按实时路况规划最优路线</div>
+    </div>
+    <button class="btn-primary btn-block" onclick="alert('已拉起地图应用导航（示意）。')">开始导航</button>
+  </div>
+
+  <div class="card">
+    <div class="notice">弱网/无 GPS 时，可在角落手工标注坐标，确位置上图。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

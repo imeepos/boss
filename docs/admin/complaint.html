@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>报障与投诉 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">报障与投诉</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>报障与投诉</h2>
+        <div class="desc">客户报障记录 · 投诉处理 · 客服闭环</div>
+      </div>
+
+      <div class="toolbar">
+        <select class="input" style="width:140px"><option>类型：全部</option><option>网络故障</option><option>资费投诉</option><option>服务投诉</option></select>
+        <select class="input" style="width:140px"><option>状态：全部</option><option>待处理</option><option>处理中</option><option>已办结</option></select>
+        <span class="spacer"></span>
+        <span class="tag tag-orange">待处理：23 件</span>
+      </div>
+
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>工单号</th><th>客户</th><th>类型</th><th>内容</th><th>受理人</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>TKT-20250817-012</td><td>陈先生</td><td><span class="tag tag-blue">网络故障</span></td><td>单户断网（紧急 SLA≤4h）</td><td>客服张</td><td><span class="tag tag-orange">处理中</span></td><td><a href="#">跟进</a></td></tr>
+            <tr><td>CP-20250817-02</td><td>吴女士</td><td><span class="tag tag-orange">资费投诉</span></td><td>账单金额异议</td><td>—</td><td><span class="tag tag-red">待处理</span></td><td><a href="#">受理</a></td></tr>
+            <tr><td>CP-20250816-09</td><td>李女士</td><td><span class="tag tag-gray">服务投诉</span></td><td>装维师傅态度</td><td>客服王</td><td><span class="tag tag-green">已办结</span></td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

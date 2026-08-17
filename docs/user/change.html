@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>改套餐 / 服务变更 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="myplan.html">&lsaquo;</a>
+    <div class="t">改套餐</div>
+    <span class="act"></span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">当前套餐</div>
+    <div class="cell"><div class="main"><div class="t">1000M 极速宽带</div><div class="d">¥199/月 · 合约至 2026-08</div></div><div class="right"><span class="tag tag-green">在网</span></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">选择新套餐</div>
+    <div class="cell"><div class="main"><div class="t">500M 畅享宽带</div><div class="d">¥129/月 · 降档</div></div><div class="right"><input type="radio" name="plan"></div></div>
+    <div class="cell"><div class="main"><div class="t">1000M 极速宽带</div><div class="d">¥199/月 · 续约</div></div><div class="right"><input type="radio" name="plan"></div></div>
+    <div class="cell"><div class="main"><div class="t">2000M 光速宽带</div><div class="d">¥299/月 · 升档（含全屋 WiFi + 云盘）</div></div><div class="right"><input type="radio" name="plan" checked></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">生效方式</div>
+    <div class="cell"><div class="main"><div class="t">即时生效</div><div class="d">当月按新旧价按日折算</div></div><div class="right"><input type="radio" name="eff" checked></div></div>
+    <div class="cell"><div class="main"><div class="t">预约生效</div><div class="d">次月 1 日生效，当月按原价</div></div><div class="right"><input type="radio" name="eff"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">静态 IP 申请 <span class="tag tag-gray">可选</span></div>
+    <div class="cell"><div class="main"><div class="t">公网静态 IPv4</div><div class="d">¥30/月 · 需审批，1~2 个工作日</div></div><div class="right"><input type="checkbox"></div></div>
+  </div>
+
+  <div style="margin:12px 14px 0;">
+    <button class="btn-block" onclick="location.href='payresult.html'">提交变更申请 · 生成变更单 ORD-20250817-004</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

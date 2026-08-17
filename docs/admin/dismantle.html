@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拆机管理 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">拆机管理</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>拆机管理</h2>
+        <div class="desc">拆机必扫码（强制节点）· 扫码解绑 → 端口释放 → 资产解绑</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" placeholder="拆机单号/客户/地址">
+        <select class="input" style="width:160px"><option>全部状态</option><option>待扫码</option><option>已解绑</option><option>已拆机</option></select>
+        <span class="spacer"></span>
+        <button class="btn btn-primary">+ 新建拆机单</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>拆机单号</th><th>客户</th><th>光猫/端口</th><th>扫码状态</th><th>当前环节</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>ORD-20250817-009</td><td>刘女士</td><td>EPC-0110 / P-SPL03-01</td><td><span class="tag tag-orange">待扫码</span></td><td>扫码解绑(未完成则拦截)</td><td><a href="#">处理</a></td></tr>
+            <tr><td>ORD-20250816-004</td><td>吴女士</td><td>EPC-0004 / P-SPL02-02</td><td><span class="tag tag-green">已解绑</span></td><td>端口已释放</td><td><a href="#">详情</a></td></tr>
+            <tr><td>ORD-20250816-002</td><td>郑先生</td><td>EPC-0002 / P-SPL01-01</td><td><span class="tag tag-gray">已拆机</span></td><td>完成</td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

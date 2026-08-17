@@ -1,0 +1,163 @@
+# 102 服务器扩展基础设施:在 docker-compose.102.yml 基础上补齐。
+# 复用现有 boss-infra_default 网络,与已运行 PG/Redis/Kafka/Nacos/MinIO/Temporal/VM 互通。
+# 镜像统一走私有仓库 192.168.0.102:5000/boss/*(经 docker.m.daocloud.io 白名单镜像源 pull 后 tag 推送)。
+#
+# 新增访问入口:
+#   APISIX        网关 :29080   admin :29180   (元数据依赖 etcd :2379 内网)
+#   Prometheus    :19090    Alertmanager :19093    Grafana :19300(admin/boss12345)
+#   Loki          :19310    (Promtail 无端口,采集 /var/log)
+#   Jaeger        query :16686   collector :14268   OTLP :16831
+#   StarRocks     FE MySQL :29030   FE HTTP :29031   BE RPC :29040   BE HTTP :29041
+#   Flink         JM :18081(web)/18082(rpc)   TM :18083
+#
+# 说明:
+#   - Doris 未部署:daocloud 白名单镜像源不代理 apache/doris,改用同为 OLAP 的 StarRocks(阶段8/9 宽表/下钻)。
+#   - GeoServer 未部署:oscarfonts/geoserver 与 ghcr.io/geoservercloud 均不在白名单且直连被墙,
+#     阶段8 GIS 瓦片服务改用 Cesium ion 自托管 3D Tiles(技术栈方案既定备选)。
+name: boss-infra-extend
+
+services:
+  # ---------- 阶段1-5 必需:API 网关 ----------
+  apisix:
+    image: 192.168.0.102:5000/boss/apisix:3.10.0
+    container_name: boss-apisix
+    restart: unless-stopped
+    ports: ["29080:9080", "29180:9180"]
+    environment:
+      APISIX_DEPLOYMENT_ETCD_HOST: '["http://etcd:2379"]'
+    depends_on: [etcd]
+    networks: [boss]
+
+  etcd:
+    image: 192.168.0.102:5000/boss/etcd:3.5.16
+    container_name: boss-apisix-etcd
+    restart: unless-stopped
+    environment:
+      ETCD_NAME: apisix-etcd
+      ETCD_DATA_DIR: /etcd-data
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+      ALLOW_NONE_AUTHENTICATION: "yes"
+    volumes: [etcd_data:/etcd-data]
+    networks: [boss]
+
+  # ---------- 可观测:指标 ----------
+  prometheus:
+    image: 192.168.0.102:5000/boss/prometheus:3.4.0
+    container_name: boss-prometheus
+    restart: unless-stopped
+    ports: ["19090:9090"]
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom_data:/prometheus
+    networks: [boss]
+
+  alertmanager:
+    image: 192.168.0.102:5000/boss/alertmanager:0.28.0
+    container_name: boss-alertmanager
+    restart: unless-stopped
+    ports: ["19093:9093"]
+    volumes:
+      - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks: [boss]
+
+  grafana:
+    image: 192.168.0.102:5000/boss/grafana:11.5.2
+    container_name: boss-grafana
+    restart: unless-stopped
+    ports: ["19300:3000"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: boss12345
+    volumes: [grafana_data:/var/lib/grafana]
+    networks: [boss]
+
+  # ---------- 可观测:日志 ----------
+  loki:
+    image: 192.168.0.102:5000/boss/loki:3.3.2
+    container_name: boss-loki
+    restart: unless-stopped
+    ports: ["19310:3100"]
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./observability/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    networks: [boss]
+
+  promtail:
+    image: 192.168.0.102:5000/boss/promtail:3.3.2
+    container_name: boss-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./observability/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks: [boss]
+
+  # ---------- 可观测:链路 ----------
+  jaeger:
+    image: 192.168.0.102:5000/boss/jaeger:latest
+    container_name: boss-jaeger
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      SPAN_STORAGE_TYPE: memory
+    ports:
+      - "16686:16686"   # query UI
+      - "14268:14268"   # collector thrift compact
+      - "16831:4317"    # OTLP gRPC
+      - "16832:4318"    # OTLP HTTP
+    networks: [boss]
+
+  # ---------- 阶段8/9:OLAP ----------
+  starrocks:
+    image: 192.168.0.102:5000/boss/starrocks:latest
+    container_name: boss-starrocks
+    restart: unless-stopped
+    ports:
+      - "29030:9030"   # FE MySQL 查询
+      - "29031:8030"   # FE HTTP
+      - "29040:9060"   # BE RPC/心跳
+      - "29041:8040"   # BE HTTP
+    volumes: [starrocks_data:/data]
+    networks: [boss]
+
+  # ---------- 阶段9:实时计算 ----------
+  flink-jobmanager:
+    image: 192.168.0.102:5000/boss/flink:1.20.1-scala_2.12-java11
+    container_name: boss-flink-jobmanager
+    restart: unless-stopped
+    command: jobmanager
+    ports: ["18081:8081", "18082:6123"]
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        jobmanager.memory.process.size: 1024m
+    networks: [boss]
+
+  flink-taskmanager:
+    image: 192.168.0.102:5000/boss/flink:1.20.1-scala_2.12-java11
+    container_name: boss-flink-taskmanager
+    restart: unless-stopped
+    command: taskmanager
+    depends_on: [flink-jobmanager]
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        taskmanager.memory.process.size: 1024m
+    ports: ["18083:6123"]
+    networks: [boss]
+
+networks:
+  boss:
+    external: true
+    name: boss-infra_default
+
+volumes:
+  etcd_data:
+  prom_data:
+  grafana_data:
+  loki_data:
+  starrocks_data:

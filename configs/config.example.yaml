@@ -29,6 +29,33 @@ temporal:
 victoriametrics:
   url: "http://192.168.0.102:18428"
 
+# 102 服务器扩展基础设施(见 deployments/docker-compose.102.extend.yml)
+apisix:
+  # 网关 admin API(动态路由/上游;业务请求走 29080)
+  admin_url: "http://192.168.0.102:29180"
+
+observability:
+  prometheus_url: "http://192.168.0.102:19090"
+  alertmanager_url: "http://192.168.0.102:19093"
+  grafana_url: "http://192.168.0.102:19300"
+  loki_url: "http://192.168.0.102:19310"
+  # OTLP gRPC 上报地址(OpenTelemetry SDK 链路上报)
+  jaeger_otlp: "192.168.0.102:16831"
+
+olap:
+  # 阶段8/9 OLAP 宽表/下钻(StarRocks,MySQL 协议)
+  starrocks_dsn: "root@tcp(192.168.0.102:29030)/"
+
+flink:
+  jobmanager: "192.168.0.102:18082"
+
+# 阶段7 自研 Go RADIUS(cmd/aaa,独立部署;性能服务群)
+aaa:
+  auth_addr: ":1812"   # RADIUS 认证端口
+  acct_addr: ":1813"   # RADIUS 计费端口(话单入口)
+  secret: "boss-aaa-secret"   # NAS 共享密钥
+  auth_ttl: 60         # 授权缓存 TTL 秒(Redis,停复机秒级生效)
+
 jwt:
   secret: "change-me"
   ttl: 12h

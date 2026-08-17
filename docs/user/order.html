@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>订单详情 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="orders.html">&lsaquo;</a>
+    <div class="t">订单详情</div>
+    <span class="act" onclick="if(confirm('确认取消该订单？取消后将释放预占端口并关闭订单。'))location.href='orders.html'">取消</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">ORD-20250817-001 <span class="tag tag-blue">装维中</span></div>
+    <div class="cell"><div class="main"><div class="t">产品</div></div><div class="right">1000M 极速宽带 · ¥199/月</div></div>
+    <div class="cell"><div class="main"><div class="t">安装地址</div></div><div class="right">望京X · 3栋 · 501</div></div>
+    <div class="cell"><div class="main"><div class="t">下单时间</div></div><div class="right">2025-08-17 09:02</div></div>
+    <div class="cell"><div class="main"><div class="t">装维师傅</div></div><div class="right">张师傅 · 138****8899</div></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">装维进度（12 环节）<span class="more">8/12 已完成 · 含合同收费</span></div>
+    <div class="timeline">
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">1 用户下单</div><div class="meta">08-17 09:02 · 完成</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">2 资源核查</div><div class="meta">08-17 09:05 · 有空闲端口 · 3m</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">3 端口预占</div><div class="meta">08-17 09:09 · 4m</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">4 合同收费</div><div class="meta">08-17 09:11 · 已收款 ¥199 · 2m</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">5 标签预绑定</div><div class="meta">08-17 09:12 · 标签 EPC-0001 · 3m</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">6 创建认证账号</div><div class="meta">08-17 09:15 · 3m</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">7 预下发配置</div><div class="meta">08-17 09:18 · 3m</div></div></div>
+      <div class="tl-item done"><div class="rail"><span class="node done"></span><span class="line"></span></div>
+        <div class="body"><div class="t">8 派单</div><div class="meta">08-17 09:20 · 张师傅已接单 · 2m</div></div></div>
+      <div class="tl-item"><div class="rail"><span class="node doing"></span><span class="line"></span></div>
+        <div class="body"><div class="t">9 扫码绑定</div><div class="meta">进行中 · 师傅现场操作</div></div></div>
+      <div class="tl-item"><div class="rail"><span class="node"></span><span class="line"></span></div>
+        <div class="body"><div class="t">10 激活用户</div><div class="meta">待处理</div></div></div>
+      <div class="tl-item"><div class="rail"><span class="node"></span><span class="line"></span></div>
+        <div class="body"><div class="t">11 激活回调</div><div class="meta">待处理</div></div></div>
+      <div class="tl-item"><div class="rail"><span class="node"></span></div>
+        <div class="body"><div class="t">12 更新 GIS 地图</div><div class="meta">待处理</div></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="display:flex;gap:10px;">
+    <button class="btn" style="flex:1;" onclick="location.href='move.html'">变更地址</button>
+    <a class="btn" style="flex:1;" href="tel:1388899">联系师傅</a>
+    <button class="btn btn-primary" style="flex:1;" onclick="alert('已催单，装维师傅将尽快处理，进度更新见消息中心。')">催单</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>

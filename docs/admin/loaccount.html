@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>认证账号 · BOSS 管理后台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sider">
+    <div class="logo"><span class="mark">B</span> 装维运营平台</div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div class="main">
+    <header class="header">
+      <div class="crumb">认证账号</div>
+      <div class="right"><span>🔔</span><span>系统管理员</span><div class="avatar">管</div></div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <h2>认证账号（LOID）</h2>
+        <div class="desc">用户认证标识 LOID · 服务授权 · 状态联动</div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" style="width:220px" placeholder="LOID/客户/地址">
+        <select class="input" style="width:140px"><option>全部状态</option><option>在服</option><option>停机</option><option>待激活</option></select>
+        <span class="spacer"></span>
+        <button class="btn btn-primary">+ 新建认证账号</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>LOID</th><th>客户</th><th>产品/带宽</th><th>QoS 模板</th><th>认证状态</th><th>最近认证</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>LOID-88A1</td><td>王先生</td><td>1000M</td><td>QoS-VIP</td><td><span class="tag tag-green">在服</span></td><td>2 分钟前</td><td><a href="#">详情</a></td></tr>
+            <tr><td>LOID-88A5</td><td>吴女士</td><td>1000M</td><td>QoS-STD</td><td><span class="tag tag-orange">停机</span></td><td>昨日</td><td><a href="#">复机</a></td></tr>
+            <tr><td>LOID-88A3</td><td>孙先生</td><td>300M</td><td>QoS-STD</td><td><span class="tag tag-green">在服</span></td><td>—</td><td><a href="#">详情</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="menu.js"></script>
+</body>
+</html>

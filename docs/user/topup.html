@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>余额充值 · 装维平台用户端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">余额充值</div>
+    <span class="act" onclick="location.href='coupon.html'">使用优惠券</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">账户余额 <span class="tag tag-blue">¥42.00</span></div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:12px;">充值即时到账，可用于抵扣账单，到期自动结转。</div>
+    <div class="c-title" style="font-size:13.5px;color:var(--muted);">充值面额</div>
+    <div class="quick" style="grid-template-columns:repeat(3,1fr);margin:8px 0 14px;">
+      <a class="q" style="padding:10px 4px;">¥50</a>
+      <a class="q" style="padding:10px 4px;">¥100</a>
+      <a class="q" style="padding:10px 4px;">¥200</a>
+    </div>
+    <div class="field">
+      <label>自定义金额</label>
+      <input type="number" placeholder="最低 ¥1" value="100">
+    </div>
+    <div class="c-title" style="font-size:13.5px;color:var(--muted);">支付方式</div>
+    <div class="cell"><div class="main"><div class="t">微信支付</div></div><div class="right"><input type="radio" name="pay" checked></div></div>
+    <div class="cell"><div class="main"><div class="t">支付宝</div></div><div class="right"><input type="radio" name="pay"></div></div>
+    <div class="cell"><div class="main"><div class="t">银行卡</div></div><div class="right"><input type="radio" name="pay"></div></div>
+    <div class="cell"><div class="main"><div class="t">预付券</div></div><div class="right"><input type="radio" name="pay"></div></div>
+    <button class="btn-block" style="margin-top:14px;" onclick="location.href='payresult.html'">确认充值 ¥100.00</button>
+  </div>
+  <div id="tabbar"></div>
+</div>
+<script src="nav.js"></script>
+</body>
+</html>
