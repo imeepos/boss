@@ -17,6 +17,7 @@
 | D5 | 横切先挂上 | trace（OpenTelemetry）+ 结构化日志 + Prometheus 指标 + 审计异步写，从 W1 起不后补 | `internal/pkg/{middleware,audit}` |
 | D6 | 参数定值 | 下表 `[X]` 参数全部给定默认值，存 `biz_params`/Nacos 可调，验收按默认值 | 见 §2 |
 | D7 | 序列化约定 | 领域 struct 直接带 `json` 标签对齐 OpenAPI camelCase；模块化单体不另建 DTO 层（避免映射爆炸），未来拆微服务时再引跨进程 DTO | 本轮 org 域已落地 |
+| D8 | 端口预占互斥 | 数据库条件更新（`UPDATE ... WHERE status='IDLE'`）是**唯一权威**互斥原语；单表单行原子写无需 redsync；redsync 仅在跨域多步 Saga（订单+端口同事务）时引入，属编排层而非锁层 | 本轮 `ReserveFirstAvailable` 已落地 |
 
 ---
 

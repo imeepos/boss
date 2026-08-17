@@ -203,3 +203,50 @@ func TestPGStore_ReservePort(t *testing.T) {
 		}
 	})
 }
+
+// TestPGStore_ReserveFirstAvailable 契约:按地址预占一个空闲端口并返回 id;无空闲返回 ErrPortNotAvailable。
+func TestPGStore_ReserveFirstAvailable(t *testing.T) {
+	t.Run("有空闲", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`UPDATE ports SET status = 'RESERVED', order_id`).
+			WithArgs(int64(100), int64(1001)).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
+
+		s := NewPGStore(mock)
+		id, err := s.ReserveFirstAvailable(context.Background(), 100, 1001)
+		if err != nil {
+			t.Fatalf("ReserveFirstAvailable: %v", err)
+		}
+		if id != 7 {
+			t.Fatalf("id=%d, want 7", id)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("无空闲", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`UPDATE ports SET status = 'RESERVED', order_id`).
+			WithArgs(int64(200), int64(1001)).
+			WillReturnError(pgx.ErrNoRows)
+
+		s := NewPGStore(mock)
+		_, err = s.ReserveFirstAvailable(context.Background(), 200, 1001)
+		if !errors.Is(err, ErrPortNotAvailable) {
+			t.Fatalf("err=%v, want ErrPortNotAvailable", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+}

@@ -138,3 +138,25 @@ func (s *PGStore) ReservePort(ctx context.Context, portID, orderID int64) error 
 	}
 	return nil
 }
+
+// ReserveFirstAvailable 在目标地址找一个空闲端口并预占给订单,返回端口ID。
+// 原子性:单条 UPDATE 的 `AND status='IDLE'` 谓词保证并发下同一端口只被预占一次(数据库层面互斥,免 redsync)。
+func (s *PGStore) ReserveFirstAvailable(ctx context.Context, addressID, orderID int64) (int64, error) {
+	var portID int64
+	err := s.db.QueryRow(ctx, `
+		UPDATE ports SET status = 'RESERVED', order_id = $2
+		WHERE id = (
+			SELECT p.id FROM ports p JOIN resources r ON p.resource_id = r.id
+			WHERE r.address_id = $1 AND p.status = 'IDLE'
+			ORDER BY p.id LIMIT 1
+		)
+		AND status = 'IDLE'
+		RETURNING id`, addressID, orderID).Scan(&portID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, ErrPortNotAvailable
+	}
+	if err != nil {
+		return 0, fmt.Errorf("resource: reserve first available: %w", err)
+	}
+	return portID, nil
+}
