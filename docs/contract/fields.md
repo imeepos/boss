@@ -17,6 +17,22 @@
 
 > 现状依据：migrations 已用 snake_case（`real_name`/`legal_entity_id`），org.go struct 已用 PascalCase + ID 后缀（`LegalEntityID`），保持一致。
 
+### 0.1 跨层字段命名映射（API ↔ DB，权威口径）
+
+> API 字段/资源名是**稳定契约**，允许与 DB 表/列名不同：API 用业务友好名，DB 用技术名。
+> 下表是唯一权威映射，改任何一侧命名前必查；未列入者按 §0 规则（JSON/API 字段 = 实体字段 lowerCamelCase）。
+
+| 概念 | 页面列 | API 字段/资源 | 实体字段 | DB 表/列 |
+|:-----|:-------|:--------------|:---------|:---------|
+| 产品资费 | 产品资费 | `productId` / `products` | `offer` | `product_offers.offer_id` |
+| 认证账号 | LOID | `loid` / `loids`（路径 `/lo-accounts`） | `loid` | `lo_accounts.loid` |
+| 报障工单 | 报障 | `repairTickets` | （无独立） | `complaints`（报障+投诉，`type` 区分） |
+| 实名核验 | 实名核验 | `verify-logs` | （无独立） | `real_name_verifications` |
+| 调拨类型 | 类型 | `type`（`ASSET/PORT/DEVICE`） | （无独立） | `transfers.resource_id`（资产/端口维度待扩展） |
+
+> 规则：禁止为求「同名」而改 API 契约或 DB 表名（两者分属不同层，耦合即反模式）；
+> 新增跨层差异概念时在此登记，页面/Agent 一律以本表为准消歧义。
+
 ## 1. 阶段1 · 系统管理与组织（internal/domain/user，已定型）
 
 ### 1.1 accounts（账号）

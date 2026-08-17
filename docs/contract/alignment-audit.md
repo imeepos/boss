@@ -121,14 +121,16 @@
 |:-:|------|---------|------|------|
 | 7 | worker/schemas.yaml 工单 `status` | `TODO/ACCEPTED/SCAN_PENDING/DOING/DONE` | TicketStatus `PENDING/DOING/DONE/CANCELED` | 师傅端工单派生态（由订单 stage 派生），保留 |
 
-### 7.4 字段名/资源名分歧（API 描述性 vs 实体简洁）
+### 7.4 字段名/资源名分歧（API 业务名 vs DB 技术名）→ 已固化映射 ✅
 
-| 概念 | openapi | 实体 |
-|------|---------|------|
-| 产品 | `productId`/`products` | `offerId`/`product_offers` |
-| 认证账号 | `loid`/`lo-accounts` | `lo_accounts` |
-| 报障工单 | `repairTickets` | `complaints` |
-| 实名核验 | `verify-logs` | `real_name_verifications` |
-| 调拨类型 | `ASSET/PORT/DEVICE` | 仅 `resource_id` |
+| 概念 | openapi | 实体 | 裁决 |
+|------|---------|------|------|
+| 产品 | `productId`/`products` | `offerId`/`product_offers` | 保留 API 名，映射固化于 fields.md §0.1 |
+| 认证账号 | `loid`/`lo-accounts` | `lo_accounts` | `loid` 即实体字段，保留 |
+| 报障工单 | `repairTickets` | `complaints` | `repairTicket` 更贴切；`complaints` 为报障+投诉同表 |
+| 实名核验 | `verify-logs` | `real_name_verifications` | 保留 API 名 |
+| 调拨类型 | `ASSET/PORT/DEVICE` | 仅 `resource_id` | API 概念更宽，DB 待扩展 |
 
-> 裁定：字段名分歧属「API 描述性命名 vs 实体简洁命名」，改 API 属破坏性变更；建议在 openapi README 增「字段 ↔ DB 列」映射表，或逐步归一（优先 `productId→offerId`，与 fields.md B3 一致）。
+> **裁定（最佳实践）**：API 字段/资源名是稳定契约（业务友好名），DB 表/列是内部技术名，分属两层，
+> **禁止为求同名而改 API 或 DB**（耦合即反模式）。唯一权威映射已固化于 `fields.md §0.1`，
+> 页面/Agent 一律以该表消歧义，不再做破坏性重命名。
