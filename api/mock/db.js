@@ -4,6 +4,40 @@
 // 关系链: customer → order → (port / tagEpc / loid / worker) → quad → bill → payment
 'use strict';
 
+const { createTable } = require('./lib/store.js');
+
+// —— 区域树(regions): 权限/经营范围维度,org 页与调度/调配/经营矩阵共用 ——
+const regions = [
+  { regionId: 1, path: 'root', name: '集团', level: 1, levelLabel: '集团', parentName: '—', childCount: 3 },
+  { regionId: 2, path: 'root.luzon', name: '吕宋大区', level: 2, levelLabel: '大区', parentName: '集团', childCount: 1 },
+  { regionId: 3, path: 'root.luzon.ncr', name: '首都大区省', level: 3, levelLabel: '省', parentName: '吕宋大区', childCount: 2 },
+  { regionId: 4, path: 'root.luzon.ncr.manila', name: '马尼拉市', level: 4, levelLabel: '城市', parentName: '首都大区省', childCount: 0 },
+  { regionId: 5, path: 'root.visayas', name: '比萨扬大区', level: 2, levelLabel: '大区', parentName: '集团', childCount: 1 },
+  { regionId: 6, path: 'root.visayas.cebu', name: '宿务省', level: 3, levelLabel: '省', parentName: '比萨扬大区', childCount: 1 },
+  { regionId: 7, path: 'root.mindanao', name: '棉兰老大区', level: 2, levelLabel: '大区', parentName: '集团', childCount: 1 },
+  { regionId: 8, path: 'root.mindanao.davao', name: '达沃省', level: 3, levelLabel: '省', parentName: '棉兰老大区', childCount: 1 },
+  { regionId: 9, path: 'root.mindanao.davao.city', name: '达沃市', level: 4, levelLabel: '城市', parentName: '达沃省', childCount: 0 },
+];
+
+// 地址(北京街道体系) → 区域挂载: 两套体系并存,靠本映射外键打通
+const ADDR_REGION = [
+  { keywords: ['望京', '朝阳', 'A-'], regionName: '吕宋大区', regionPath: 'root.luzon' },
+  { keywords: ['宿务', 'C-'], regionName: '比萨扬大区', regionPath: 'root.visayas' },
+  { keywords: ['达沃', 'D-'], regionName: '棉兰老大区', regionPath: 'root.mindanao' },
+];
+function regionOfAddr(addr) {
+  const hit = ADDR_REGION.find((r) => r.keywords.some((k) => String(addr || '').indexOf(k) >= 0));
+  return hit ? hit.regionName : null;
+}
+
+// —— 地址库(addresses): 安装地址维度,统一维护(uuid CRUD),regionName 为指向 regions 的外键 ——
+const addresses = [
+  { addressId: 1, path: 'luzon.ncr.manila.chaoyang', name: '朝阳区', level: 2, levelLabel: '区', childCount: 24, regionName: '吕宋大区' },
+  { addressId: 2, path: 'luzon.ncr.manila.chaoyang.wangjing', name: '望京街道', level: 3, levelLabel: '街道', childCount: 12, regionName: '吕宋大区' },
+  { addressId: 3, path: 'visayas.cebu.c-treating', name: 'C小区', level: 3, levelLabel: '小区', childCount: 6, regionName: '比萨扬大区' },
+  { addressId: 4, path: 'mindanao.davao.city.d-plot', name: 'D小区', level: 3, levelLabel: '小区', childCount: 4, regionName: '棉兰老大区' },
+];
+
 // —— 客户(customers) ——
 const customers = [
   { customerId: 1, name: '王先生', phoneMasked: '138****1234', idType: '身份证', idNoMasked: '110***********1234', realNameStatus: 'VERIFIED', realNameLabel: '已实名', serviceStatus: 'ACTIVE', serviceLabel: '在网', verifyAt: '2023-05-11' },
@@ -14,6 +48,8 @@ const customers = [
   { customerId: 6, name: '周女士', phoneMasked: '133****2468', idType: '身份证', idNoMasked: '110***********2468', realNameStatus: 'PENDING', realNameLabel: '待补登', serviceStatus: 'ACTIVE', serviceLabel: '在网', verifyAt: null },
   { customerId: 7, name: '刘女士', phoneMasked: '132****1357', idType: '身份证', idNoMasked: '110***********1357', realNameStatus: 'VERIFIED', realNameLabel: '已实名', serviceStatus: 'SUSPENDED', serviceLabel: '停机', verifyAt: '2025-04-02' },
   { customerId: 8, name: '陈先生', phoneMasked: '138****7788', idType: '身份证', idNoMasked: '110***********7788', realNameStatus: 'VERIFIED', realNameLabel: '已实名', serviceStatus: 'ACTIVE', serviceLabel: '在网', verifyAt: '2025-03-15' },
+  { customerId: 9, name: '李女士', phoneMasked: '131****6824', idType: '身份证', idNoMasked: '110***********6824', realNameStatus: 'VERIFIED', realNameLabel: '已实名', serviceStatus: 'ACTIVE', serviceLabel: '在网', verifyAt: '2025-01-20' },
+  { customerId: 10, name: '何先生', phoneMasked: '139****3391', idType: '身份证', idNoMasked: '110***********3391', realNameStatus: 'VERIFIED', realNameLabel: '已实名', serviceStatus: 'ACTIVE', serviceLabel: '在网', verifyAt: '2025-02-18' },
 ];
 
 // —— 产品资费(products) ——
@@ -28,6 +64,10 @@ const products = [
 const workers = [
   { workerId: 1024, name: '张师傅', phoneMasked: '138****8899', groupName: '装机一组', staffNo: 'WK-1024' },
   { workerId: 1036, name: '王师傅', phoneMasked: '137****3366', groupName: '抢修组', staffNo: 'WK-1036' },
+  { workerId: 1037, name: '李师傅', phoneMasked: '136****1177', groupName: '装机二组', staffNo: 'WK-1037' },
+  { workerId: 1038, name: '赵师傅', phoneMasked: '135****5533', groupName: '装机二组', staffNo: 'WK-1038' },
+  { workerId: 1039, name: '孙师傅', phoneMasked: '133****9911', groupName: '抢修组', staffNo: 'WK-1039' },
+  { workerId: 1040, name: '陈师傅', phoneMasked: '132****4468', groupName: '装机一组', staffNo: 'WK-1040' },
 ];
 
 // —— 端口(ports): portNo=物理端口, quadCode=四码端口码, orderId 反向占用 ——
@@ -38,6 +78,13 @@ const ports = [
   { portNo: 'P-001-04', quadCode: 'P-SPL03-09', parentName: 'OLT-01 · SPL-03', addrCode: 'A-12-906', status: 'RESERVED', orderId: 'ORD-20250817-003' },
   { portNo: 'P-002-09', quadCode: 'P-SPL01-09', parentName: 'OLT-01 · SPL-01', addrCode: 'A-5-302', status: 'RESERVED', orderId: 'ORD-20250817-002' },
   { portNo: 'P-003-02', quadCode: 'P-SPL04-02', parentName: 'OLT-02 · SPL-04', addrCode: 'A-6-701', status: 'USED', orderId: 'ORD-20250816-011' },
+  // 报障/存量宽带占用: orderId 为空时由 usedBy(LOID) 说明占用方
+  { portNo: 'P-004-01', quadCode: 'P-SPL05-03', parentName: 'OLT-02 · SPL-05', addrCode: 'A-10-1801', status: 'USED', orderId: null, usedBy: 'LOID-88A7' },
+  { portNo: 'P-005-01', quadCode: 'P-SPL06-01', parentName: 'OLT-CBU-01 · SPL-06', addrCode: 'C-2-301', status: 'USED', orderId: null, usedBy: 'LOID-88C1' },
+  { portNo: 'P-006-01', quadCode: 'P-SPL07-01', parentName: 'OLT-DVO-01 · SPL-07', addrCode: 'D-1-502', status: 'USED', orderId: null, usedBy: 'LOID-88C2' },
+  // 历史拆机已释放
+  { portNo: 'P-001-05', quadCode: 'P-SPL02-02', parentName: 'OLT-01 · SPL-02', addrCode: 'A-7-201', status: 'IDLE', orderId: null },
+  { portNo: 'P-001-06', quadCode: 'P-SPL01-01', parentName: 'OLT-01 · SPL-01', addrCode: 'A-9-305', status: 'IDLE', orderId: null },
 ];
 
 // —— 资产/标签(assets): epc 即电子标签码,tagNo 冗余展示 ——
@@ -46,16 +93,30 @@ const assets = [
   { assetNo: 'A-20250002', tagNo: 'TAG-0002', epc: 'EPC-0002', type: '分光器', batchNo: 'RK-202506-03', location: '望京·X小区·弱电井2', lifecycle: '维修', status: 'MAINTENANCE', customerId: null },
   { assetNo: 'A-20250003', tagNo: 'TAG-0003', epc: 'EPC-0003', type: '光猫', batchNo: 'RK-202508-02', location: '望京·Y小区·1栋101', lifecycle: '在用', status: 'DEPLOYED', customerId: 3 },
   { assetNo: 'A-20250013', tagNo: 'TAG-0013', epc: 'EPC-0013', type: '光猫', batchNo: 'RK-202508-02', location: '仓库', lifecycle: '在库', status: 'IN_STOCK', customerId: null },
+  { assetNo: 'A-20250004', tagNo: 'TAG-0004', epc: 'EPC-0004', type: '光猫', batchNo: 'RK-202507-01', location: '望京·X小区·6栋203', lifecycle: '在用', status: 'DEPLOYED', customerId: 2 },
+  { assetNo: 'A-20250012', tagNo: 'TAG-0012', epc: 'EPC-0012', type: '光猫', batchNo: 'RK-202508-02', location: '仓库 · 预绑定 ORD-20250817-003', lifecycle: '在库', status: 'IN_STOCK', customerId: null },
+  { assetNo: 'A-20250006', tagNo: 'TAG-0018', epc: 'EPC-0018', type: '光猫', batchNo: 'RK-202506-01', location: '仓库', lifecycle: '在库', status: 'IN_STOCK', customerId: null },
+  { assetNo: 'A-20250007', tagNo: 'TAG-0019', epc: 'EPC-0019', type: '光猫', batchNo: 'RK-202506-01', location: '仓库', lifecycle: '在库', status: 'IN_STOCK', customerId: null },
+  { assetNo: 'A-20250008', tagNo: 'TAG-0023', epc: 'EPC-0023', type: '光猫', batchNo: 'RK-202504-02', location: '望京·X小区·8栋602', lifecycle: '在用', status: 'DEPLOYED', customerId: 4 },
+  { assetNo: 'A-20250009', tagNo: 'TAG-0088', epc: 'EPC-0088', type: '光猫', batchNo: 'RK-202505-01', location: '望京·X小区·10栋1801', lifecycle: '在用', status: 'DEPLOYED', customerId: 8 },
+  { assetNo: 'A-20250010', tagNo: 'TAG-0110', epc: 'EPC-0110', type: '光猫', batchNo: 'RK-202503-02', location: '望京·X小区·2栋902', lifecycle: '待回收', status: 'DEPLOYED', customerId: 7 },
+  { assetNo: 'A-20250011', tagNo: 'TAG-0089', epc: 'EPC-0089', type: '光猫', batchNo: 'RK-202507-02', location: '宿务·C小区·2栋301', lifecycle: '在用', status: 'DEPLOYED', customerId: 9 },
+  { assetNo: 'A-20250014', tagNo: 'TAG-0090', epc: 'EPC-0090', type: '光猫', batchNo: 'RK-202507-02', location: '达沃·D小区·1栋502', lifecycle: '在用', status: 'DEPLOYED', customerId: 10 },
+  { assetNo: 'A-20250015', tagNo: 'TAG-0100', epc: 'EPC-0100', type: '光猫', batchNo: 'RK-202508-03', location: '仓库', lifecycle: '在库', status: 'IN_STOCK', customerId: null },
 ];
 
 // —— 认证账号(loids): 客户上网认证账号,quad 用户码取值 ——
 const loids = [
   { loid: 'LOID-88A1', customerId: 1, bandwidth: '1000M', qos: 'QoS-VIP', status: 'ACTIVE', statusLabel: '在服' },
   { loid: 'LOID-88A3', customerId: 3, bandwidth: '300M', qos: 'QoS-STD', status: 'ACTIVE', statusLabel: '在服' },
-  { loid: 'LOID-88A4', customerId: 6, bandwidth: '300M', qos: 'QoS-STD', status: 'SUSPENDED', statusLabel: '停机' },
+  { loid: 'LOID-88A4', customerId: 6, bandwidth: '300M', qos: 'QoS-STD', status: 'ACTIVE', statusLabel: '在服' },
   { loid: 'LOID-88A5', customerId: 2, bandwidth: '1000M', qos: 'QoS-STD', status: 'SUSPENDED', statusLabel: '停机' },
   { loid: 'LOID-88A7', customerId: 8, bandwidth: '300M', qos: 'QoS-STD', status: 'ACTIVE', statusLabel: '在服' },
   { loid: 'LOID-88A9', customerId: 5, bandwidth: '300M', qos: 'QoS-STD', status: 'PENDING', statusLabel: '待激活' },
+  { loid: 'LOID-88A2', customerId: 4, bandwidth: '500M', qos: 'QoS-STD', status: 'ACTIVE', statusLabel: '在服' },
+  { loid: 'LOID-88B2', customerId: 7, bandwidth: '300M', qos: 'QoS-STD', status: 'ACTIVE', statusLabel: '在服' },
+  { loid: 'LOID-88C1', customerId: 9, bandwidth: '300M', qos: 'QoS-STD', status: 'ACTIVE', statusLabel: '在服' },
+  { loid: 'LOID-88C2', customerId: 10, bandwidth: '300M', qos: 'QoS-STD', status: 'ACTIVE', statusLabel: '在服' },
 ];
 
 // —— 12 环节(terms.md 第 1 节,禁止增删改序) ——
@@ -86,6 +147,8 @@ const orders = [
   { orderNo: 'ORD-20250816-011', customerId: 4, productId: 'P-500', bizType: 'INSTALL', addrCode: 'A-6-701', addrLabel: '望京X · 6栋701', stage: 12, workerId: 1024, finishedAt: '08-16', archived: true },
   { orderNo: 'ORD-20250816-010', customerId: 6, productId: 'P-300', bizType: 'INSTALL', addrCode: 'A-9-305', addrLabel: '望京X · 9栋305', stage: 12, workerId: 1024, finishedAt: '08-16', archived: true },
   { orderNo: 'ORD-20250815-008', customerId: 2, productId: 'P-300', bizType: 'DISMANTLE', addrCode: 'A-2-902', addrLabel: '望京X · 2栋902', stage: 0, workerId: 1024, finishedAt: '08-15', archived: true, scanStatus: 'DISMANTLED' },
+  // 历史扫码不一致样例(quad.js scan-logs MISMATCH 行)
+  { orderNo: 'ORD-20250816-019', customerId: 6, productId: 'P-300', bizType: 'INSTALL', addrCode: 'A-9-305', addrLabel: '望京X · 9栋305', stage: 9, workerId: 1040, preBindTag: 'EPC-0018', loid: 'LOID-88A4', portQuad: 'P-SPL01-01', splitterPort: null, scheduleSlot: null, submittedAt: '2025-08-16 14:00', scanRetries: 1, chargeAmount: 99, scanStatus: 'MISMATCH', archived: true },
 ];
 
 // —— 报障工单(repairTickets): 6 环节闭环 ——
@@ -93,6 +156,9 @@ const repairTickets = [
   { ticketNo: 'TKT-20250817-012', customerId: 8, addrCode: 'A-10-1801', addrLabel: '望京X · 10栋1801', faultType: 'no_internet', faultTypeLabel: '单户断网（紧急 SLA ≤4h）', stage: 4, stageTotal: 6, workerId: 1024, slaLeftMinutes: 52, preBindTag: 'EPC-0088', loid: 'LOID-88A7', portQuad: 'P-SPL05-03', splitterPort: 'SPL-05-03 · PON 3口', reportedAt: '2025-08-17 09:40', status: 'PROCESSING', diagnosis: '疑似光猫离线，光功率 -18.6 dBm（偏低），建议现场复核。' },
   { ticketNo: 'TKT-20250817-015', customerId: 1, addrCode: 'A-3-501', addrLabel: '望京X · 3栋501', faultType: 'no_internet', faultTypeLabel: '单户断网（紧急 SLA≤4h）', stage: 4, stageTotal: 6, workerId: 1024, slaLeftMinutes: 96, preBindTag: 'EPC-0001', loid: 'LOID-88A1', portQuad: 'P-SPL03-07', splitterPort: 'SPL-03-07 · PON 7口', reportedAt: '2025-08-17 09:40', status: 'PROCESSING', diagnosis: '远程诊断:路由器 WAN 口异常,建议上门。' },
   { ticketNo: 'TKT-20250730-005', customerId: 1, addrCode: 'A-3-501', addrLabel: '望京X · 3栋501', faultType: 'slow', faultTypeLabel: '网速慢', stage: 6, stageTotal: 6, workerId: 1024, slaLeftMinutes: null, preBindTag: 'EPC-0001', loid: 'LOID-88A1', portQuad: 'P-SPL03-07', splitterPort: 'SPL-03-07 · PON 7口', reportedAt: '2025-07-30 15:02', status: 'RESOLVED', diagnosis: '已解决' },
+  // 跨区报障(调度池 比萨扬/棉兰老 行的实体来源)
+  { ticketNo: 'TKT-20250817-005', customerId: 9, addrCode: 'C-2-301', addrLabel: '宿务C · 2栋301', faultType: 'no_internet', faultTypeLabel: '单户断网（紧急 SLA≤4h）', stage: 2, stageTotal: 6, workerId: null, slaLeftMinutes: 180, preBindTag: 'EPC-0089', loid: 'LOID-88C1', portQuad: 'P-SPL06-01', splitterPort: 'SPL-06-01 · PON 1口', reportedAt: '2025-08-17 09:30', status: 'PROCESSING', diagnosis: '区域光缆疑似受损,待派单排查。' },
+  { ticketNo: 'TKT-20250817-006', customerId: 10, addrCode: 'D-1-502', addrLabel: '达沃D · 1栋502', faultType: 'slow', faultTypeLabel: '网速慢', stage: 3, stageTotal: 6, workerId: null, slaLeftMinutes: 220, preBindTag: 'EPC-0090', loid: 'LOID-88C2', portQuad: 'P-SPL07-01', splitterPort: 'SPL-07-01 · PON 1口', reportedAt: '2025-08-17 08:50', status: 'PROCESSING', diagnosis: '线路老化导致衰减偏高,建议排障。' },
 ];
 
 // —— 账单(bills)/缴费(payments): 客户×账期 ——
@@ -102,6 +168,7 @@ const bills = [
   { billNo: 'BILL-202507', customerId: 1, period: '2025-07', amount: 158, status: 'PAID', statusLabel: '已缴' },
   { billNo: 'BILL-202506', customerId: 1, period: '2025-06', amount: 129, status: 'PAID', statusLabel: '已缴' },
   { billNo: 'BILL-202507-0341', customerId: 3, period: '2025-07', amount: 199, status: 'PAID', statusLabel: '已缴清' },
+  { billNo: 'BILL-202506-0341', customerId: 3, period: '2025-06', amount: 199, status: 'PAID', statusLabel: '已缴清' },
 ];
 const payments = [
   { payNo: 'PAY20250725001', customerId: 1, amount: 158, period: '2025-07', method: '微信支付', paidAt: '2025-07-25 10:12', billNo: 'BILL-202507' },
@@ -151,8 +218,26 @@ function timelineOf(order) {
   });
 }
 
+// —— 师傅域实体(档案扩展/绩效提成/评价/消息/公告/FAQ/物料工具/回收/健康/抢单池/排期) ——
+// 定义于 worker/entities.js,经本库聚合为单一事实源,admin 端管理、师傅端派生。
+const workerEntities = require('./worker/entities.js');
+
 module.exports = {
   customers, products, workers, ports, assets, loids, orders, repairTickets, bills, payments,
+  regions, addresses, regionOfAddr,
   STAGE_NAMES, STATUS_LABEL, statusOfStage,
   byCustomer, byProduct, byWorker, byOrder, portOf, quads, timelineOf,
+  ...workerEntities,
+  byWorkerProfile: (id) => workerEntities.workerProfiles.find((p) => p.workerId === id) || {},
 };
+
+// —— uuid 主键表挂载: 种子行原地补 uuid,数组引用不变,三端派生视图零改动 ——
+// CRUD 走 admin 路由 /api/admin/v1/crud/{table},主键一律 uuid;地区/地址同表同权管理。
+const TABLE_NAMES = ['customers', 'products', 'workers', 'ports', 'assets', 'loids', 'orders', 'repairTickets', 'bills', 'payments', 'regions', 'addresses',
+  'workerProfiles', 'workerCommissions', 'workerFeedbacks', 'workerMessages', 'workerNotices', 'workerFaqs',
+  'workerMaterials', 'workerTools', 'assetReturns', 'deviceMaintenances', 'hallExtras', 'serviceMessages', 'workerSchedules'];
+const tables = {};
+for (const name of TABLE_NAMES) tables[name] = createTable(name, module.exports[name]);
+module.exports.tables = tables;
+module.exports.TABLE_NAMES = TABLE_NAMES;
+

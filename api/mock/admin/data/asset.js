@@ -45,7 +45,7 @@ const tags = db.assets.map((a, i) => ({
   status: a.status === 'IN_STOCK' ? 'UNBOUND' : 'BOUND',
   statusLabel: a.status === 'IN_STOCK' ? '未绑定' : '已绑定',
   statusClass: a.status === 'IN_STOCK' ? 'tag-gray' : 'tag-green',
-})).concat([{ tagNo: 'TAG-0100', epcCode: 'EPC-0100', band: 'HF', boundAsset: '—', battery: '100%', status: 'UNBOUND', statusLabel: '未绑定', statusClass: 'tag-gray' }]);
+}));
 
 // 盘点任务
 const stocktakes = [

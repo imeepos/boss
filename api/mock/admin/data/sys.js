@@ -1,6 +1,8 @@
 // 假数据 —— 系统管理(契约: api/openapi/admin/sys.yaml;字段: docs/contract/fields.md §1)。
-// 数据逐行取自 docs/admin/{account,address,settings,audit,importer}.html 硬编码表格。
+// 地址库由 db.js addresses 统一维护(uuid CRUD,regionName 为区域外键);其余取自 docs/admin/*.html。
 'use strict';
+
+const db = require('../../db.js');
 
 var ok = { code: 0, message: 'success' };
 
@@ -35,11 +37,10 @@ var roles = [
   { roleId: 7, code: 'analyst', name: '经营分析', tag: 'tag-orange' },
 ];
 
-var addresses = [
-  { addressId: 1, path: 'bj', name: '北京', level: 1, levelLabel: '市', childCount: 16 },
-  { addressId: 2, path: 'bj.chaoyang', name: '朝阳区', level: 2, levelLabel: '区', childCount: 24 },
-  { addressId: 3, path: 'bj.chaoyang.wangjing', name: '望京街道', level: 3, levelLabel: '街道', childCount: 12 },
-];
+var addresses = db.addresses.map((a) => ({
+  addressId: a.addressId, path: a.path, name: a.name, level: a.level, levelLabel: a.levelLabel,
+  childCount: a.childCount, regionName: a.regionName,
+}));
 
 var params = [
   { key: 'arrear_stop_threshold', label: '欠费停机阈值', value: '30 天', desc: '欠费达到阈值自动停机' },

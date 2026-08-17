@@ -30,9 +30,13 @@ for (const o of db.orders) {
   if (o.workerId) check('order ' + o.orderNo + ' worker 存在', !!db.byWorker(o.workerId));
   if (o.portQuad) check('order ' + o.orderNo + ' port 存在', !!db.ports.find((p) => p.quadCode === o.portQuad));
 }
-// 2. 端口占用与订单状态一致: RESERVED/USED 必须指回存在的订单,且订单尚未拆机完成
+// 2. 端口占用与订单状态一致: RESERVED/USED 必须可解析(订单或 usedBy LOID),且订单尚未拆机完成
 for (const p of db.ports) {
   if (p.status === 'IDLE' || p.status === 'DISABLED') continue;
+  if (!p.orderId) {
+    check('port ' + p.quadCode + ' usedBy 认证账号存在', !!db.loids.find((l) => l.loid === p.usedBy));
+    continue;
+  }
   const o = db.byOrder(p.orderId);
   check('port ' + p.quadCode + ' 占用订单存在', !!o);
   if (o) check('port ' + p.quadCode + ' 与订单地址一致', o.addrCode === p.addrCode);
@@ -85,6 +89,33 @@ for (const l of db.loids) check('loid ' + l.loid + ' 客户在册', !!db.byCusto
 for (const r of get(adminOss, '/reserves').items.filter((x) => x.status === 'RESERVED')) check('预占 ' + r.reserveId + ' 订单存在', !!db.byOrder(r.orderId));
 // 12. 师傅端空闲口不与 db.ports 占用冲突(SPL-03 下已占用 P7/P3/P9)
 check('师傅端空闲口不含已占用口', !worker.resources.idlePonPorts.some((pon) => ['P7', 'P3', 'P9'].includes(pon)));
+// 13. 预绑标签/认证账号引用完整: 订单与报障单的 epc/loid 一律可解析
+for (const o of db.orders) {
+  if (o.preBindTag) check('order ' + o.orderNo + ' 预绑标签在册', !!db.assets.find((a) => a.epc === o.preBindTag));
+  if (o.loid) check('order ' + o.orderNo + ' 认证账号在册', !!db.loids.find((l) => l.loid === o.loid));
+}
+for (const t of db.repairTickets) {
+  check('ticket ' + t.ticketNo + ' 预绑标签在册', !!db.assets.find((a) => a.epc === t.preBindTag));
+  check('ticket ' + t.ticketNo + ' 认证账号在册', !!db.loids.find((l) => l.loid === t.loid));
+  check('ticket ' + t.ticketNo + ' 端口在册', !!db.ports.find((p) => p.quadCode === t.portQuad));
+}
+// 14. 地区自洽: 实体地址可解析到统一维护的区域树,地址库 regionName 为有效外键
+const regionNames = new Set(db.regions.map((r) => r.name));
+for (const list of [db.orders, db.repairTickets, db.ports]) {
+  for (const x of list) {
+    const rg = db.regionOfAddr(x.addrCode);
+    check((x.orderNo || x.ticketNo || x.quadCode) + ' 地址归属区域可解析', !!rg && regionNames.has(rg));
+  }
+}
+for (const a of db.addresses) check('address ' + a.name + ' regionName 外键有效', regionNames.has(a.regionName));
+// 15. 调度池引用完整: sourceNo 有实体,候选师傅在册
+for (const w of get(adminOrder, '/dispatch/pool').items) {
+  check('pool ' + w.ticketNo + ' sourceNo 存在', !!db.byOrder(w.sourceNo) || !!db.repairTickets.find((t) => t.ticketNo === w.sourceNo));
+  for (const n of (w.candidates || '').split(/[\/·]/)) {
+    const nm = n.trim().replace(' · ', '').trim();
+    if (nm && nm.endsWith('师傅')) check('pool 师傅 ' + nm + ' 在册', db.workers.some((k) => k.name === nm));
+  }
+}
 
 console.log(failed === 0 ? '\nALL CHECKS PASSED' : '\n' + failed + ' CHECKS FAILED');
 process.exit(failed === 0 ? 0 : 1);

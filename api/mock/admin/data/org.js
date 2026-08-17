@@ -1,16 +1,18 @@
 // 假数据 —— 组织管理(契约: api/openapi/admin/org.yaml;字段: docs/contract/fields.md §1.3/1.4)。
-// 数据逐行取自 docs/admin/{company,department,post,region,menuperm,datascope}.html 硬编码表格。
+// 区域树由 db.js regions 统一维护(uuid CRUD);其余逐行取自 docs/admin/*.html 硬编码表格。
 'use strict';
+
+const db = require('../../db.js');
 
 var ok = { code: 0, message: 'success' };
 
 var legalEntities = [
   { legalEntityId: 1, code: 'LEG-A', name: '主品牌·企业', brandName: '主品牌', brandTag: 'tag-blue',
-    regionName: '吕宋大区', deptCount: 5, status: 1, statusLabel: '启用', statusTag: 'tag-green' },
+    regionName: '吕宋大区', deptCount: 3, status: 1, statusLabel: '启用', statusTag: 'tag-green' },
   { legalEntityId: 2, code: 'LEG-B', name: '家庭宽带', brandName: '家庭宽带', brandTag: 'tag-orange',
-    regionName: '吕宋 + 棉兰老', deptCount: 5, status: 1, statusLabel: '启用', statusTag: 'tag-green' },
+    regionName: '吕宋 + 棉兰老', deptCount: 1, status: 1, statusLabel: '启用', statusTag: 'tag-green' },
   { legalEntityId: 3, code: 'LEG-C', name: '批发品牌', brandName: '批发', brandTag: 'tag-gray',
-    regionName: '比萨扬大区', deptCount: 5, status: 1, statusLabel: '启用', statusTag: 'tag-green' },
+    regionName: '比萨扬大区', deptCount: 1, status: 1, statusLabel: '启用', statusTag: 'tag-green' },
 ];
 
 // 品牌×区域交叉经营(company.html 第二张卡)
@@ -64,17 +66,10 @@ var postReuses = [
   { post: '装维师傅 field_tech', roleCode: 'technician', domainA: 'LEG-A 派单', domainB: 'LEG-B 派单（互不可见）' },
 ];
 
-var regions = [
-  { regionId: 1, path: 'root', name: '集团', level: 1, levelLabel: '集团', parentName: '—', childCount: 3 },
-  { regionId: 2, path: 'root.luzon', name: '吕宋大区', level: 2, levelLabel: '大区', parentName: '集团', childCount: 1 },
-  { regionId: 3, path: 'root.luzon.ncr', name: '首都大区省', level: 3, levelLabel: '省', parentName: '吕宋大区', childCount: 2 },
-  { regionId: 4, path: 'root.luzon.ncr.manila', name: '马尼拉市', level: 4, levelLabel: '城市', parentName: '首都大区省', childCount: 0 },
-  { regionId: 5, path: 'root.visayas', name: '比萨扬大区', level: 2, levelLabel: '大区', parentName: '集团', childCount: 1 },
-  { regionId: 6, path: 'root.visayas.cebu', name: '宿务省', level: 3, levelLabel: '省', parentName: '比萨扬大区', childCount: 1 },
-  { regionId: 7, path: 'root.mindanao', name: '棉兰老大区', level: 2, levelLabel: '大区', parentName: '集团', childCount: 1 },
-  { regionId: 8, path: 'root.mindanao.davao', name: '达沃省', level: 3, levelLabel: '省', parentName: '棉兰老大区', childCount: 1 },
-  { regionId: 9, path: 'root.mindanao.davao.city', name: '达沃市', level: 4, levelLabel: '城市', parentName: '达沃省', childCount: 0 },
-];
+var regions = db.regions.map((r) => ({
+  regionId: r.regionId, path: r.path, name: r.name, level: r.level, levelLabel: r.levelLabel,
+  parentName: r.parentName, childCount: r.childCount,
+}));
 
 // 区域数据范围(region.html 第二张卡)
 var regionScopes = [

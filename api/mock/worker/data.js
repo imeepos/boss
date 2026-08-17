@@ -1,5 +1,6 @@
-// mock data —— 师傅端视图。工单/四码/激活/收款一律由 db.js 派生(张师傅 workerId=1024),
-// 仅本端专属展示(绩效/消息/公告/FAQ)保留本地。字段对齐 api/openapi/worker/schemas.yaml。
+// mock data —— 师傅端视图。全部数据由 db.js 事实库派生(张师傅 workerId=1024):
+// 工单/四码/激活/收款/绩效/消息/公告/FAQ/物料/健康/抢单池/排期无一本地手抄,
+// 对应实体均可在 admin 端(worker.js 路由 + crud)管理。字段对齐 api/openapi/worker/schemas.yaml。
 'use strict';
 
 const db = require('../db.js');
@@ -41,11 +42,11 @@ const history = db.orders.filter((o) => o.archived && o.workerId === ME).map((o)
   address: o.addrLabel.replace(/ · /g, '·'), status: 'DONE', statusLabel: o.bizType === 'DISMANTLE' ? '已拆机' : '已激活', finishedAt: o.finishedAt,
 }));
 
-const hall = { items: [
-  { ticketNo: 'EMG-20250817-001', type: 'EMERGENCY', typeLabel: '台风批量复测', address: '望京X片区 · 受影响 23 户', distanceKm: 0.8, status: 'TODO', statusLabel: '可抢' },
-  { ticketNo: 'TKT-20250817-006', type: 'REPAIR', typeLabel: '抢修', address: '望京X · 8栋 · 断网', distanceKm: 1.2, status: 'TODO', statusLabel: '可抢' },
-  { ticketNo: 'ORD-20250817-007', type: 'INSTALL', typeLabel: '新装', address: '望京X · 15栋', distanceKm: 2.8, status: 'TODO', statusLabel: '可抢' },
-] };
+// —— 抢单池(hall): 未指派抢修单(db.repairTickets) + 应急/预告附加任务(db.hallExtras) ——
+const hall = { items: db.repairTickets
+  .filter((t) => !t.workerId && t.status === 'PROCESSING')
+  .map((t) => ({ ticketNo: t.ticketNo, type: 'REPAIR', typeLabel: '抢修', address: t.addrLabel, distanceKm: 1.5, status: 'TODO', statusLabel: '可抢' }))
+  .concat(db.hallExtras.map((x) => ({ ticketNo: x.ticketNo, type: x.type, typeLabel: x.typeLabel, address: x.address, distanceKm: x.distanceKm, status: 'TODO', statusLabel: '可抢' }))) };
 
 // —— 四码: 由 db.quads() 按单号反查 ——
 function quadOf(no) {
@@ -80,7 +81,7 @@ function detailOf(no) {
     splitterPort: t.splitterPort, preBindTag: t.preBindTag,
     faultTypeLabel: t.faultTypeLabel, reportedAt: t.reportedAt.slice(5) + '（已受理）', slaLeftMinutes: t.slaLeftMinutes,
     remoteDiagnosis: t.diagnosis,
-    stages: db.STAGE_NAMES.slice(0, 0).concat(['报障', '诊断', '派单', '修复', '复核', '回访']).map((name, i) => {
+    stages: ['报障', '诊断', '派单', '修复', '复核', '回访'].map((name, i) => {
       const n = i + 1;
       return { stage: n, name, result: n < t.stage ? 'DONE' : n === t.stage ? 'DOING' : 'PENDING', finishedAt: '', durationMinutes: null, note: REPAIR_NOTES[i] };
     }),
@@ -88,8 +89,21 @@ function detailOf(no) {
   };
 }
 
+// —— 师傅档案/绩效/设置/消息等: 全部取自 db 师傅域实体表 ——
+const me = db.byWorker(ME);
+const myProfile = db.byWorkerProfile(ME);
+const myMessages = db.workerMessages.filter((m) => m.workerId === ME);
+const myCommissions = db.workerCommissions.filter((c) => c.workerId === ME);
+const mySchedule = db.workerSchedules.find((s) => s.workerId === ME) || { month: '', busyDays: [] };
+
+// 绩效排名: 按 db.workerProfiles 月完成量派生
+const ranking = db.workerProfiles
+  .slice().sort((a, b) => b.month.finished - a.month.finished)
+  .map((p) => ({ name: db.byWorker(p.workerId).name + (p.workerId === ME ? '（本人）' : ''), rank: 0, self: p.workerId === ME }))
+  .map((r, i) => Object.assign(r, { rank: i + 1 }));
+
 const home = {
-  workerName: db.byWorker(ME).name, groupName: db.byWorker(ME).groupName, phoneMasked: db.byWorker(ME).phoneMasked,
+  workerName: me.name, groupName: me.groupName, phoneMasked: me.phoneMasked,
   today: { accepted: tickets.doing.length, finished: tickets.done.length + 0, doing: tickets.doing.length, todo: tickets.todo.length },
   ongoing: tickets.doing,
 };
@@ -97,7 +111,7 @@ const home = {
 module.exports = {
   quad: quad,
   tickets: tickets,
-  history: { items: history, totalCount: 46 },
+  history: { items: history, totalCount: myProfile.month.finished },
   hall: hall,
   home: home,
   installDetail: detailOf('ORD-20250817-001'),
@@ -114,51 +128,26 @@ module.exports = {
   replace: { ticketNo: 'ORD-20250817-001', oldEpc: 'EPC-0002', oldEpcStatus: '故障', replaceType: '故障调换 · 旧件返修', steps: [
     { name: '扫旧件', status: 'DONE', note: 'EPC-0002 已识别' }, { name: '扫新件', status: 'TODO', note: '待扫码' }, { name: '登记', status: 'TODO', note: '未完成' },
   ] },
-  materials: { items: [
-    { itemId: 'm1', name: '光猫', qty: 2, spec: 'GPON 千兆 · 含标签', outBound: false },
-    { itemId: 'm2', name: '机顶盒', qty: 1, spec: 'IPTV 4K', outBound: false },
-    { itemId: 'm3', name: '光纤跳线', qty: 5, spec: 'SC/APC 2m', outBound: false },
-  ], tools: [{ toolId: 't1', name: '光功率计', borrowed: false }, { toolId: 't2', name: '光纤熔接机', borrowed: true } ],
-    pendingReturn: [{ epc: 'EPC-0002', reason: '故障 · 返修（换件）' }, { epc: 'EPC-0110', reason: '拆机回收（ORD-20250817-009）' }],
-    returned: { repairCount: 3, dismantleCount: 12 } },
-  maintenance: { items: [
-    { deviceNo: 'EPC-0023', deviceType: '光猫', healthScore: 31, faultCount: 5, ageYears: 4, reason: '', priority: 'MUST_REPLACE', priorityLabel: '强替换' },
-    { deviceNo: 'SPL-03-07', deviceType: '分光器', healthScore: 45, faultCount: 0, ageYears: 3, reason: '信号衰减', priority: 'SUGGEST', priorityLabel: '建议替换' },
-    { deviceNo: 'OLT-01', deviceType: 'PON 9口', healthScore: 58, faultCount: 0, ageYears: 0, reason: '丢包率偏高', priority: 'WATCH', priorityLabel: '观察' },
-  ] },
+  materials: { items: db.workerMaterials.filter((m) => m.workerId === ME),
+    tools: db.workerTools.filter((t) => t.workerId === ME),
+    pendingReturn: db.assetReturns.filter((r) => r.workerId === ME && r.status === 'PENDING')
+      .map((r) => ({ epc: r.epc, reason: r.reason })),
+    returned: db.returnStats },
+  maintenance: { items: db.deviceMaintenances },
   measure: { opticalPowerDbm: -16.2, opticalPowerLabel: '正常', downloadMbps: 942, uploadMbps: 96, packetLossRate: 0 },
-  // 空闲口排除 db.ports 中 RESERVED/USED 的 PON 口
   // 空闲口: 从 db.ports 动态排除 SPL-03 下已占用(RESERVED/USED)的 PON 口
   resources: { idlePorts: 3, nearestSplitter: 'SPL-03-07', idlePonPorts: ['P7', 'P9', 'P11', 'P13', 'P15'].filter((pon) => !db.ports.some((p) => p.quadCode === 'P-SPL03-0' + pon.slice(1))) },
-  profile: { workerId: ME, name: db.byWorker(ME).name, groupName: db.byWorker(ME).groupName, staffNo: db.byWorker(ME).staffNo, phoneMasked: db.byWorker(ME).phoneMasked, online: true, serveYears: 3, month: { finished: 46, onTimeRate: 98, score: 4.9 } },
-  performance: { period: '2025-08', summary: { finished: 46, onTimeRate: 98, score: 4.9 }, commissions: [
-    { name: '装机提成', formula: '46 × ¥30', amount: 1380 }, { name: '抢修提成', formula: '12 × ¥20', amount: 240 }, { name: '满意度奖励', formula: '', amount: 120 },
-  ], totalAmount: 1740, ranking: [{ name: '张师傅（本人）', rank: 1, self: true }, { name: '李师傅', rank: 2, self: false }, { name: '王师傅', rank: 3, self: false }] },
-  schedule: { month: '2025-08', busyDays: [5, 6, 10, 17, 30], today: tickets.doing.concat(tickets.todo).filter((t) => t.scheduleSlot).map((t) => ({ time: (t.scheduleSlot.match(/\d{2}:\d{2}/) || [''])[0], ticketNo: t.ticketNo, address: t.address.replace(/^望京X · /, '') })) },
-  settings: { online: true, radiusKm: 5, acceptTypes: ['新装宽带', '宽带变更', '拆机'] },
-  feedbacks: { latest: { ticketNo: 'ORD-20250817-000', score: 5.0 }, monthAvgScore: 4.9, replyRate: 62, items: [
-    { customerName: '王先生', score: 5.0, comment: '服务态度好', needReview: false }, { customerName: '李女士', score: 2.0, comment: '已转复核', needReview: true },
-  ] },
-  messages: { items: [
-    { level: 'err', title: '台风应急', content: '台风后批量复测任务已下发，请核对受影响客户清单', sentAt: '08-16 18:00', read: false },
-    { level: 'warn', title: '超时预警', content: 'TKT-20250817-012 抢修单 SLA 剩余不足 1 小时，请尽快到场处理', sentAt: '08-17 10:30', read: false },
-    { level: 'err', title: '改派通知', content: '新单 TKT-20250817-005 抢修已分派给您', sentAt: '08-17 09:45', read: false },
-    { level: 'ok', title: '配置下发', content: '全部预下发成功', sentAt: '08-17 09:18', read: true },
-    { level: 'warn', title: '标签电量', content: 'EPC-0023 电量低，请携备用', sentAt: '08-17 08:00', read: true },
-  ] },
-  notices: { items: [
-    { noticeId: 'n1', title: '台风季弱电井防水作业提示', category: '安全作业提醒', publishedAt: '08-16' },
-    { noticeId: 'n2', title: '本周 GPU 千兆套餐物料配发说明', category: '物料公告', publishedAt: '08-15' },
-    { noticeId: 'n3', title: '扫码绑定弱网离线功能上线', category: '功能公告', publishedAt: '08-14' },
-  ] },
-  faq: { items: [
-    { faqId: 'f1', title: '光猫红灯/无法注册', summary: 'LOID 认证失败排查' },
-    { faqId: 'f2', title: '光功率偏低', summary: '分光比与接头损耗排查' },
-    { faqId: 'f3', title: '测速不达标', summary: '线路/终端/WiFi 分段定位' },
-    { faqId: 'f4', title: '扫码绑定四码不一致', summary: '换机/重绑处理' },
-  ] },
-  serviceMessages: { items: [
-    { from: 'dispatcher', content: '已为您接通调度中心，此单可支持改派/咨询。' },
-    { from: 'worker', content: 'ORD-20250817-001 关联工单，可快捷转单。' },
-  ] },
+  profile: { workerId: ME, name: me.name, groupName: me.groupName, staffNo: me.staffNo, phoneMasked: me.phoneMasked, online: myProfile.online, serveYears: myProfile.serveYears, month: myProfile.month },
+  performance: { period: myProfile.month.period, summary: myProfile.month, commissions: myCommissions.map((c) => ({ name: c.name, formula: c.formula, amount: c.amount })),
+    totalAmount: myCommissions.reduce((s, c) => s + c.amount, 0), ranking: ranking },
+  schedule: { month: mySchedule.month, busyDays: mySchedule.busyDays,
+    today: tickets.doing.concat(tickets.todo).filter((t) => t.scheduleSlot).map((t) => ({ time: (t.scheduleSlot.match(/\d{2}:\d{2}/) || [''])[0], ticketNo: t.ticketNo, address: t.address.replace(/^望京X · /, '') })) },
+  settings: { online: myProfile.online, radiusKm: myProfile.radiusKm, acceptTypes: myProfile.acceptTypes },
+  feedbacks: { latest: (() => { const f = db.workerFeedbacks[0]; return { ticketNo: f.ticketNo, score: f.score }; })(),
+    monthAvgScore: myProfile.month.score, replyRate: 62,
+    items: db.workerFeedbacks.filter((f) => f.workerId === ME).map((f) => ({ customerName: f.customerName, score: f.score, comment: f.comment, needReview: f.needReview })) },
+  messages: { items: myMessages.map((m) => ({ level: m.level, title: m.title, content: m.content, sentAt: m.sentAt, read: m.read })) },
+  notices: { items: db.workerNotices.filter((n) => n.active).map((n) => ({ noticeId: n.noticeId, title: n.title, category: n.category, publishedAt: n.publishedAt })) },
+  faq: { items: db.workerFaqs.filter((f) => f.active).map((f) => ({ faqId: f.faqId, title: f.title, summary: f.summary })) },
+  serviceMessages: { items: db.serviceMessages.filter((m) => m.workerId === ME).map((m) => ({ from: m.from, content: m.content })) },
 };

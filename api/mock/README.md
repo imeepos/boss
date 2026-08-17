@@ -12,7 +12,7 @@ node api/mock/combined.js   # 三合一,默认 0.0.0.0:8090,MOCK_PORT 覆盖
 
 ## 结构
 
-- `db.js` —— 三端共享的关系型事实库(客户/订单/工单/端口/资产/LOID/账单外键关联),单一事实源
+- `db.js` —— 三端共享的关系型事实库(客户/订单/工单/端口/资产/LOID/账单外键关联),单一事实源;主键统一 uuid(`lib/store.js`),支持真实增删改查:`/api/admin/v1/crud/{table}[/{uuid}]`(GET 列表/详情、POST 新建、PUT 更新、DELETE 删除,内存态重启即还原)
 - `selfcheck.js` —— 关系不变量自检(`node api/mock/selfcheck.js`),改 db 后必须全绿
 - `combined.js` —— 唯一入口,三前缀聚合:
   - `/api/v1` 用户端(路由 `routes/user.js`,视图 `data.js` 由 db 派生)
