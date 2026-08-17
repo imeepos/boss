@@ -71,6 +71,8 @@
 | — | `Name` | name | — |
 | — | `ParentID` | parent_id | 派生（=反查 path 父节点） |
 
+> 区域硬关联（TS 实体）：楼栋级地址挂 `region_id`（→ regions，经营区域）+ `region_name` 快照，固化「地址→经营区域」映射；客户/资产/端口/LO账号经此继承区域，杜绝「有地址无订单则不知属哪个区域」的孤儿。
+
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
@@ -81,6 +83,8 @@
 | 详情 | `Detail` | detail | JSONB |
 | IP | `IP` | ip | INET |
 | 参数 | `Key` / `Value` | key/value | value=JSONB |
+
+> 快照列（TS 实体）：`account_name`/`dept_name`/`legal_entity_name`，操作时冻结，调岗/调部门/改名不改历史日志；`account_id` 为弱引用（日志只读不 FK，账号删除不影响日志）。
 
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
@@ -96,15 +100,25 @@
 | 服务状态 | `ServiceStatus` | service_status | ACTIVE 在网 / ARREARS 欠费 / SUSPENDED 停机 |
 | 地址 | `AddressID` | address_id | BIGINT → addresses（挂接楼栋） |
 
-### 2.2 products（产品资费，源自 product.html）
+> 区域锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域），`legal_entity_id`（归属公司），按地区/企业统计客户；客户搬家/转品牌经 `customer_histories` 台账快照事发区域。
 
-| 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
-|:---------|:-------|:--------------|:----------|
-| 产品 | `Name` | name | — |
-| 带宽 | `Bandwidth` | bandwidth | 如 300M/500M/1000M |
-| 月费 | `MonthlyFee` | monthly_fee | NUMERIC |
-| 生效时间 | `EffectiveAt` | effective_at | 调价生效时间 |
-| 状态 | `Status` | status | DRAFT/PUBLISHED/OFFLINE（见全案 4.2 Product/Plan） |
+### 2.2 资费三级模型（源自 product.html；V1.1 修正：不同公司/区域产品与价格不同）
+
+| 实体 | 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
+|:-----|:---------|:-------|:--------------|:----------|
+| product_offers(公司产品) | 所属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities |
+| | 产品名称 | `Name` | name | **公司级名称,必填**(各公司叫法不同) |
+| | 带宽 | `Bandwidth` | bandwidth | 如 300M/500M/1000M(公司自定) |
+| | 基础月费 | `MonthlyFee` | monthly_fee | NUMERIC |
+| | 生效时间 | `EffectiveAt` | effective_at | 上架/调价生效 |
+| | 状态 | `Status` | status | DRAFT/PUBLISHED/OFFLINE |
+| region_offers(区域运营包) | 区域 | `RegionPath` | region_path | LTREE，须落在该公司经营区域 |
+| | 区域名称 | `Name` | name | 可空;展示名回退: 区域名→公司名 |
+| | 区域月费 | `MonthlyFee` | monthly_fee | 生效价覆盖基础价 |
+| orders(订单侧) | 成交价 | `PriceSnapshot` | price_snapshot | 下单时生效价快照 |
+
+> 计价规则：生效价 = 区域价(前缀匹配) ?? 公司基础价；展示名两级回退；订单只存快照。
+> 约束（seed 已校验）：未经营区域不得设区域价、不得下单；账单金额 = 快照价。
 
 ## 3. 阶段5 · 订单与计费（internal/domain/{order,billing}）
 
@@ -114,13 +128,14 @@
 |:---------|:-------|:--------------|:----------|
 | 订单号 | `OrderNo` | order_no | 如 ORD-20250817-001 |
 | 客户 | `CustomerID` | customer_id | BIGINT → customers |
-| 产品 | `ProductID` | product_id | BIGINT → products |
+| 产品 | `OfferID` | offer_id | BIGINT → product_offers |
 | 地址 | `AddressID` | address_id | BIGINT → addresses |
 | 当前环节 | `Stage` | stage | 1~12（见 terms.md 第 1 节） |
 | 状态 | `Status` | status | PENDING/RESERVED/INSTALLING/DONE（见 terms.md 第 3 节） |
-| 渠道 | `ChannelID` | channel_id | BIGINT → channels |
-| 品牌 | `BrandID` | brand_id | — |
 | 区域 | `RegionPath` | region_path | LTREE |
+| 成交价 | `PriceSnapshot` | price_snapshot | 下单时生效价快照（账单金额以此为准） |
+
+> 快照列（TS 实体）：`customer_name`（客户姓名）、`offer_name`（产品名），下单时冻结，改名/调价不影响历史订单（与 `price_snapshot` 同规则）。
 
 ### 3.2 order_stages（订单环节时间轴）
 
@@ -142,31 +157,38 @@
 | 金额 | `Amount` | amount | NUMERIC |
 | 状态 | `Status` | status | UNPAID/PAID/OVERDUE |
 
+> 快照列（TS 实体）：`customer_name`（客户姓名）、`legal_entity_id`/`legal_entity_name`（企业）、`region_id`/`region_name`（经营区域），账单生成时冻结，客户改名/转品牌/搬家不改历史账单。
+
 ## 4. 阶段3/4 · 资产与资源（internal/domain/{asset,resource}）
 
 ### 4.1 assets（资产台账，源自 asset.html + 全案 4.2 Asset）
 
 | 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
 |:---------|:-------|:--------------|:----------|
-| 资产编码 | `AssetNo` | asset_no | — |
-| 标签编号 | `TagNo` | tag_no | 电子标签 |
-| EPC 码 | `EpcCode` | epc_code | — |
-| 类型 | `Type` | type | — |
-| 入库批次 | `BatchNo` | batch_no | — |
-| 位置 | `Location` | location | — |
-| 生命周期 | `Lifecycle` | lifecycle | — |
+| 资产编码 | `AssetCode` | asset_code | 如 A-20260001 |
+| 绑定标签 | `TagID` | tag_id | BIGINT → tags（可空） |
+| 类型 | `Type` | type | 光猫/ONU/路由器等 |
+| 入库批次 | `BatchID` | batch_id | BIGINT → asset_batches |
+| 部署地址 | `AddressID` | address_id | BIGINT → addresses（可空，未部署为空） |
 | 状态 | `Status` | status | IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED（见 terms.md 第 4 节） |
+
+> 页面 asset.html 的「标签编号/EPC 码」经 `tag_id → tags` 反查展示，「位置」= `address_id`，「生命周期」= `status`。
+> 状态轨迹（TS 实体）：`asset_lifecycles`，资产每次状态/位置变更一行，含事发时 `address_id` + `address_name` 快照 + `changed_at`，历史不随当前状态漂移。
+> 区域/企业锚点（TS 实体）：`region_id`/`region_name`（部署地址所在经营区域，未部署为空）、`legal_entity_id`/`legal_entity_name`（企业），按地区/企业统计资产。
 
 ### 4.2 ports（端口，源自 resource.html + 全案 4.2 Port）
 
 | 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
 |:---------|:-------|:--------------|:----------|
-| 端口编号 | `PortNo` | port_no | — |
+| 端口编码 | `PortCode` | port_code | 如 P-SPL01-01 |
 | 四码端口码 | `QuadCode` | quad_code | — |
-| 所属 OLT/分光器 | `ParentID` | parent_id | BIGINT → resources |
+| 所属 OLT/分光器 | `ResourceID` | resource_id | BIGINT → resources |
 | 地址 | `AddressID` | address_id | BIGINT |
 | 状态 | `Status` | status | IDLE/RESERVED/USED/DISABLED（见 terms.md 第 4 节） |
 | 占用订单 | `OrderID` | order_id | BIGINT，RESERVED 时非空 |
+
+> 状态变更历史（TS 实体）：`port_change_history`，端口每次状态/占用变化一行（变更后 status + order_id 快照 + changed_at），历史不随当前状态漂移。
+> 区域/企业锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域）、`legal_entity_id`/`legal_entity_name`（所属设备企业），按地区/企业统计端口；`lo_accounts` 同挂 `region_id`/`region_name`（客户所在经营区域）。
 
 ## 5. 阶段6 · 四码合一（internal/domain/quadlink）
 
@@ -177,7 +199,7 @@
 | `AssetID` | asset_id | BIGINT → assets |
 | `CustomerID` | customer_id | BIGINT → customers（四码第 2 项=客户，非系统账号 user） |
 | `PortID` | port_id | BIGINT → ports |
-| `AddrID` | addr_id | BIGINT → addresses |
+| `AddressID` | address_id | BIGINT → addresses |
 | 状态 | `status` | LINKED/CONFLICT/UNLINKED（见 terms.md 第 4 节） |
 
 > 四列各建索引 + 唯一约束（见技术栈方案 3.3），任一码反查单表索引。
@@ -194,7 +216,87 @@
 | `updated_at` | TIMESTAMPTZ | 有变更流的实体才加 |
 | `brand_id` / `region_path` | — | 品牌区域横切维度，主数据实体按需带 |
 
-## 7. 字段字典的使用规则（写入 Agent 输入包）
+## 7. 师傅域（cross-domain worker，server-ts/src/entities/worker.ts）
+
+> 本节实体落在 server-ts（TypeORM），字段名用 TS 实体名，DB 列经 SnakeNamingStrategy 转 snake_case。
+
+### 7.1 worker_groups / workers（班组·师傅）
+
+`worker_groups`（班组）：
+
+| 字段名(TS实体) | DB 列 | 枚举/说明 |
+|:---------|:------|:----------|
+| `code` | code | 班组编码，公司内唯一（稳定标识，name 可改 code 不变） |
+| `name` | name | 班组名称（可改名） |
+| `legalEntity` | legal_entity_id | BIGINT → legal_entities |
+| `leader` | leader_id | BIGINT → workers（组长，可空） |
+| `leaderName` | leader_name | 组长姓名快照 |
+
+`workers`（师傅）：
+
+| 字段名(TS实体) | DB 列 | 枚举/说明 |
+|:---------|:------|:----------|
+| `staffNo` | staff_no | 工号，如 WK-1024（唯一） |
+| `name` | name | 师傅姓名 |
+| `group` | group_id | BIGINT → worker_groups（当前归属，可变更） |
+| `regionId` | region_id | 服务区域，须落班组公司经营区域 |
+| `phone` | phone | 联系电话（脱敏） |
+| `status` | status | 1在职 / 0离职 |
+| `joinedAt` | joined_at | 入职时间 |
+| `leftAt` | left_at | 离职时间，null=在职 |
+
+### 7.2 worker_group_memberships（班组归属台账，新增）
+
+换班组只新增行、不覆盖；历史归属与当前 `group` 解耦。
+
+| 字段名(TS实体) | DB 列 | 说明 |
+|:---------|:------|:-----|
+| `worker` | worker_id | BIGINT → workers |
+| `group` | group_id | BIGINT → worker_groups（仅导航） |
+| `groupName` | group_name | 班组名快照，改名不影响历史 |
+| `legalEntityId` | legal_entity_id | 班组所属公司快照（公司级历史归属） |
+| `regionId` | region_id | 当时服务区域快照（区域维度统计） |
+| `regionName` | region_name | 当时服务区域名快照 |
+| `reason` | reason | 调组原因（可追溯） |
+| `operatorAccountId` | operator_account_id | 操作人账号 id（谁执行的调组） |
+| `effectiveFrom` | effective_from | 归属生效时间 |
+| `effectiveTo` | effective_to | 归属结束时间，null=至今 |
+
+### 7.3 归属快照与月度粒度铁律
+
+1. **班组关系（双向）**：师傅事件级/月度级事实（`dispatch_tickets`/`worker_feedbacks`/`worker_materials`/`worker_tools`/`asset_returns`/`worker_performances`/`worker_commissions`/`worker_schedules`）均以 `@ManyToOne → worker_groups` 挂 `group`（FK 列 `group_id`），`WorkerGroup` 侧对应 `@OneToMany` 反向集合；另存 `group_name` 快照（`xxx_id` + `xxx_name` 冗余，见第 0 节）。冻结语义靠「事实行不可变 + `group_name` 快照」：班组改名不改历史，班组删除被 FK 阻止（应软删）。
+2. **月度粒度**：月度级事实（`worker_performances`/`worker_commissions`/`worker_schedules`）粒度必须为「师傅 × 月 × 班组 × 区域」，唯一键 `(worker_id, period, group_id, region_id)`；师傅月中调组/换区拆多行，一行=该月在该班组该区域的一段贡献。评「本月最佳班组」= `GROUP BY group_id`；「按地区统计」= `GROUP BY region_id`。
+3. **区域维度**：师傅事件级/月度级事实均冗余 `region_id` + `region_name` 快照（事发时服务区域），与 `group`/`legal_entity` 并列成师傅事实表的第三归属维度，支撑「按地区统计」。
+4. **归属口径（事发时）**：每单/每评价按发生那一刻的班组归属；工单跨班组时记「派单时班组」，评价跟随工单。
+5. `worker_settings`（当前接单设置）与 `worker_messages`（站内通知）不加快照，跟随当前班组。
+6. **姓名快照**：`dispatch_tickets`/`worker_feedbacks` 另存 `worker_name` 快照，师傅改名不改历史工单/评价。
+
+## 8. 归属台账实体（通用深度关联模式，六张）
+
+可变归属/状态 + 派生历史 → 配「台账」四件套：FK 双向 + `xxx_name` 快照 + 时间区间 + `reason`/`operator_account_id` 追溯。
+
+| 台账实体 | 主体 | 归属维度 | 除通用字段外的关键列 |
+|:---------|:-----|:---------|:----------|
+| `account_org_histories` | accounts | 公司/部门/岗位 | `legal_entity`/`dept`/`post`(FK) + 各自 name 快照 |
+| `customer_histories` | customers | 公司/地址 | `legal_entity`/`address`(FK) + name 快照 |
+| `product_price_histories` | product_offers | 价格 | `old_monthly_fee`/`new_monthly_fee`/`effective_at` |
+| `dispatch_transfers` | dispatch_tickets | 师傅(改派) | `from_worker`/`to_worker`(FK) + name 快照 + `transferred_at` |
+| `resource_assignments` | resources | 公司/区域/地址 | `legal_entity`/`address`(FK) + name 快照 + `region_id`/`region_name` |
+| `asset_assignments` | assets | 师傅/地址 | `worker`/`address`(FK) + name 快照 |
+
+> 通用字段：`effective_from` / `effective_to`(null=至今) / `reason` / `operator_account_id`；主体 `@ManyToOne` + `@OneToMany` 反向集合；归属维度 `@ManyToOne` + `xxx_name` 快照。
+
+### 8.1 企业锚点铁律（跨企业评估对比）
+
+凡归属到某企业的「业务主单/事实」记录，冗余 `legal_entity_id` + `legal_entity_name` 快照，冻结事发时企业，作为跨企业评估对比的 O(1) 锚点（不依赖易变的归属链：客户转品牌/师傅换班组/设备调拨）。
+
+已覆盖：`orders`/`dispatch_tickets`/`complaints`/`dismantles`/`bills`/`worker_performances`/`worker_commissions`/`worker_schedules`/`worker_materials`/`worker_tools`/`worker_feedbacks`/`asset_returns`/`assets`/`ports`/`lo_accounts`/`quad_links`/`replacements`/`transfers`。
+
+不覆盖：集团共享数据（`roles`/`permissions`/`regions`/`addresses`/`biz_params`，本就跨企业共享）；纯时间轴/日志子记录（`order_stages`/`scan_logs`/`reserve_records`/`port_change_history`/`asset_lifecycles`/`payments`，经父主单继承企业，防冗余爆炸）。
+
+> 追溯补充：`order_stages` 冗余 `operator_account_id` + `operator_name`（环节执行人）；`scan_logs` 冗余 `worker_name`（扫码师傅）。`region_price_histories` 为区域调价台账（与 `product_price_histories` 同构）。
+
+## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。
 2. 未定字段（本文件无该实体）时，字段名遵循第 0 节命名规则，并**回写本文件**补一节，避免下个 Agent 再猜。
