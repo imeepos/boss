@@ -58,7 +58,7 @@
 |:---|:-----|:-------|:-----|
 | ~~渠道 `channels`~~ | order/dispatch 下单渠道 | CH 渠道经销商 | ✅ 已落地：`Channel` 实体 + `Order.channel` FK + fields.md + Go 注释 + mock channels 表 |
 | ~~告警 `alarms`~~ | alarm.html | MON 网络监控告警 | ✅ 已落地：`Alarm` 实体 + AlarmLevel/AlarmStatus 枚举 + terms.md |
-| 设备监控指标（光功率/丢包率） | device.html | MON | 设备身份复用 `resources`，监控指标待建 |
+| ~~设备监控指标（光功率/丢包率）~~ | device.html | MON | ✅ 已落地：`device_metrics` + `device_maintenances` 实体 |
 | ~~话单 CDR~~ | aaalog.html | AAA 认证计费 | ✅ 已落地：`cdrs`(CallDetailRecord) + `auth_logs`(AuthLog) 实体 |
 | 渠道对账 | paycheck.html | BIL/PAY | 派生聚合（对 payments 的汇总），非基表 |
 

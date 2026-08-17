@@ -45,3 +45,5 @@ export type AlarmStatus = 'OPEN' | 'ACKED' | 'CLOSED';
 
 export type CdrBillingStatus = 'UNBILLED' | 'BILLED';
 export type AuthResult = 'SUCCESS' | 'FAILED';
+
+export type MaintenancePriority = 'MUST_REPLACE' | 'SUGGEST' | 'WATCH';

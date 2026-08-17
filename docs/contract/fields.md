@@ -325,8 +325,10 @@
 | alarms | admin/alarm.html 告警 | alarm_no/level/source/content/status |
 | cdrs | admin/aaalog.html 话单 | loid/session_time/input_output_octets/billing_status |
 | auth_logs | admin/aaalog.html 认证日志 | loid/result/created_at |
+| device_metrics | admin/device.html OLT 监控 | resource_id/optical_power/packet_loss/status |
+| device_maintenances | worker 设备健康 | device_no/health_score/fault_count/priority |
 
-> 仍缺实体、但按 domain-map 属「待建域」或派生视图的页面（本期不臆造）：`settings.html`→`biz_params`（migrations 已建表，TS 实体已补 `BizParam`）、`device.html`→资源监控指标（MON 待建）、`paycheck.html`→渠道对账（派生聚合，非基表）。
+> 仍缺实体、但按 domain-map 属「待建域」或派生视图的页面（本期不臆造）：`settings.html`→`biz_params`（migrations 已建表，TS 实体已补 `BizParam`）、`paycheck.html`→渠道对账（派生聚合，非基表）。
 
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 

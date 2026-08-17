@@ -60,6 +60,15 @@
 | 告警 alarm.status | OPEN / ACKED / CLOSED | 待处理 / 已确认 / 已关闭 |
 | 话单 cdr.billing_status | UNBILLED / BILLED | 未入账 / 已入账 |
 | 认证日志 auth_log.result | SUCCESS / FAILED | 成功 / 失败 |
+| 设备 resource.status | ONLINE / OFFLINE / FAULT | 在线 / 离线 / 故障 |
+| 认证账号 lo_account.status | ACTIVE / SUSPENDED / CLOSED | 在服 / 停服 / 注销 |
+| 产品 product_offer.status | DRAFT / PUBLISHED / OFFLINE | 草稿 / 在售 / 下架 |
+| 客户 service_status | ACTIVE / ARREARS / SUSPENDED | 在网 / 欠费 / 停机 |
+| 客户 real_name_status | VERIFIED / PENDING | 已实名 / 待补登 |
+| 派单工单 dispatch_ticket.status | PENDING / DOING / DONE / CANCELED | 待派 / 进行中 / 完成 / 取消 |
+| 任务 task.status | PENDING / DOING / DONE / FAILED | 待执行 / 进行中 / 完成 / 失败 |
+| 缴费流水 payment.status | SUCCESS / FAILED / REFUNDED | 成功 / 失败 / 已退款 |
+| 设备健康 priority | MUST_REPLACE / SUGGEST / WATCH | 必须更换 / 建议 / 观察 |
 
 ## 5. 关键术语
 
