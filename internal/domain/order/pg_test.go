@@ -25,6 +25,8 @@ func TestPGStore_Submit(t *testing.T) {
 		}
 		defer mock.Close()
 
+		mock.ExpectQuery(`SELECT 'ORD-'`).
+			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
 		mock.ExpectQuery(`INSERT INTO orders`).
 			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(1), "root.luzon").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))

@@ -41,6 +41,8 @@ type ResourceService interface {
 	ReservePort(ctx context.Context, portID, orderID int64) error
 	// ReserveFirstAvailable 在目标地址找一个空闲端口并预占给订单;返回端口ID;无空闲返回 ErrPortNotAvailable。
 	ReserveFirstAvailable(ctx context.Context, addressID, orderID int64) (int64, error)
+	// ReleasePortByOrder 端口释放(取消/超时回滚):回收挂在本订单上的 RESERVED 端口;无匹配返回 ErrPortNotAvailable。
+	ReleasePortByOrder(ctx context.Context, orderID int64) error
 	// Check 资源核查(环节2):目标地址是否有空闲端口;options 为空闲端口码列表。
 	Check(ctx context.Context, addressID int64) (available bool, options []string, err error)
 }

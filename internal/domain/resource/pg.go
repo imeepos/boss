@@ -160,3 +160,18 @@ func (s *PGStore) ReserveFirstAvailable(ctx context.Context, addressID, orderID 
 	}
 	return portID, nil
 }
+
+// ReleasePortByOrder 端口释放(取消/超时回滚预占):把挂在本订单上的 RESERVED 端口回收为 IDLE。
+// 只回收 RESERVED 态,不动已占用(USED)端口;无匹配行返回 ErrPortNotAvailable。
+func (s *PGStore) ReleasePortByOrder(ctx context.Context, orderID int64) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE ports SET status = 'IDLE', order_id = NULL
+		 WHERE order_id = $1 AND status = 'RESERVED'`, orderID)
+	if err != nil {
+		return fmt.Errorf("resource: release port by order: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrPortNotAvailable
+	}
+	return nil
+}

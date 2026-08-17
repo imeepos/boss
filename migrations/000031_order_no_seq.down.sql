@@ -1,0 +1,3 @@
+BEGIN;
+DROP SEQUENCE IF EXISTS order_no_seq;
+COMMIT;

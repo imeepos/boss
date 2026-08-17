@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync/atomic"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -24,7 +22,6 @@ type PGStore struct {
 	db      dbtx
 	cust    CustomerLookup  // 跨域:客户存在性校验
 	checker ResourceChecker // 跨域:资源核查(环节2)
-	seq     atomic.Int64    // 订单号序号(单进程内)
 }
 
 // NewPGStore 构造 PGStore;cust 由 app 装配层注入 customer 域实现。
@@ -52,9 +49,15 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 		return nil, fmt.Errorf("order: customer %d not found", req.CustomerID)
 	}
 
-	n := s.seq.Add(1)
+	// 订单号由数据库序列发号(migrations/000031):跨进程/重启不重复。
+	var orderNo string
+	if err := s.db.QueryRow(ctx,
+		`SELECT 'ORD-' || to_char(now(), 'YYYYMMDD') || '-' || lpad(nextval('order_no_seq')::text, 6, '0')`,
+	).Scan(&orderNo); err != nil {
+		return nil, fmt.Errorf("order: next order_no: %w", err)
+	}
 	o := &Order{
-		OrderNo:       fmt.Sprintf("ORD-%s-%06d", time.Now().Format("20060102"), n),
+		OrderNo:       orderNo,
 		CustomerID:    req.CustomerID,
 		OfferID:       req.OfferID,
 		AddressID:     req.AddressID,
