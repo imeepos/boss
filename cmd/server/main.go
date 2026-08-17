@@ -6,7 +6,9 @@ import (
 	"log"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/config"
+	"github.com/ymm-001/boss/internal/pkg/server"
 )
 
 func main() {
@@ -15,6 +17,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("wiring: %v", err)
 	}
-	_ = a
-	log.Println("boss-server: ready")
+
+	mgr := auth.NewManager(cfg.JWT.Secret, cfg.JWT.TTL)
+	r := server.New(server.Config{HTTPAddr: cfg.Server.HTTPAddr})
+	app.RegisterRoutes(r, a, mgr)
+
+	if err := server.Run(r, cfg.Server.HTTPAddr); err != nil {
+		log.Fatalf("server: %v", err)
+	}
 }

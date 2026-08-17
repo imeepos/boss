@@ -281,7 +281,7 @@ func TestPGStore_HasDataScope(t *testing.T) {
 	}
 }
 
-// TestPGStore_Login 契约:口令正确签发 token;错误/停用/不存在统一 ErrUnauthorized。
+// TestPGStore_Login 契约:口令正确返回认证身份;错误/停用/不存在统一 ErrUnauthorized。
 func TestPGStore_Login(t *testing.T) {
 	hash, err := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.MinCost)
 	if err != nil {
@@ -295,18 +295,18 @@ func TestPGStore_Login(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, password_hash, status FROM accounts`).
+		mock.ExpectQuery(`SELECT a.id, a.real_name, r.code, r.name, a.password_hash, a.status`).
 			WithArgs("boss").
-			WillReturnRows(mock.NewRows([]string{"id", "password_hash", "status"}).
-				AddRow(int64(1), string(hash), int16(1)))
+			WillReturnRows(mock.NewRows([]string{"id", "real_name", "code", "name", "password_hash", "status"}).
+				AddRow(int64(1), "老板", "sysadmin", "系统管理员", string(hash), int16(1)))
 
 		s := NewPGStore(mock)
-		token, err := s.Login(context.Background(), "boss", "secret")
+		res, err := s.Login(context.Background(), "boss", "secret")
 		if err != nil {
 			t.Fatalf("Login: %v", err)
 		}
-		if token == "" {
-			t.Fatal("token empty")
+		if res == nil || res.AccountID != 1 || res.Username != "boss" || res.RealName != "老板" || res.RoleCode != "sysadmin" || res.RoleName != "系统管理员" {
+			t.Fatalf("res=%+v", res)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet expectations: %v", err)
@@ -319,10 +319,10 @@ func TestPGStore_Login(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, password_hash, status FROM accounts`).
+		mock.ExpectQuery(`SELECT a.id, a.real_name, r.code, r.name, a.password_hash, a.status`).
 			WithArgs("boss").
-			WillReturnRows(mock.NewRows([]string{"id", "password_hash", "status"}).
-				AddRow(int64(1), string(hash), int16(1)))
+			WillReturnRows(mock.NewRows([]string{"id", "real_name", "code", "name", "password_hash", "status"}).
+				AddRow(int64(1), "老板", "sysadmin", "系统管理员", string(hash), int16(1)))
 
 		s := NewPGStore(mock)
 		_, err = s.Login(context.Background(), "boss", "wrong")
@@ -340,10 +340,10 @@ func TestPGStore_Login(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, password_hash, status FROM accounts`).
+		mock.ExpectQuery(`SELECT a.id, a.real_name, r.code, r.name, a.password_hash, a.status`).
 			WithArgs("boss").
-			WillReturnRows(mock.NewRows([]string{"id", "password_hash", "status"}).
-				AddRow(int64(1), string(hash), int16(0)))
+			WillReturnRows(mock.NewRows([]string{"id", "real_name", "code", "name", "password_hash", "status"}).
+				AddRow(int64(1), "老板", "sysadmin", "系统管理员", string(hash), int16(0)))
 
 		s := NewPGStore(mock)
 		_, err = s.Login(context.Background(), "boss", "secret")

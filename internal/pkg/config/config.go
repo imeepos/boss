@@ -61,6 +61,7 @@ func Load() *Config {
 	c.AAA.Secret = getenv("BOSS_AAA_SECRET", "boss-aaa-secret")
 	c.AAA.AuthTTL = 60
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
+	c.JWT.TTL = 24 * time.Hour
 	return c
 }
 

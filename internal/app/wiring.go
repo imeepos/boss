@@ -94,7 +94,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res)
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
-	usr := user.NewPGStoreWithSecret(pool, []byte(cfg.JWT.Secret))
+	usr := user.NewPGStore(pool)
 
 	return &Application{
 		User:      usr,

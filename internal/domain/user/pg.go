@@ -5,9 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
@@ -28,50 +26,38 @@ type dbtx interface {
 
 // PGStore 是 Service 接口的 PostgreSQL 实现(阶段1:组织/账号/数据范围)。
 type PGStore struct {
-	db        dbtx
-	jwtSecret []byte
+	db dbtx
 }
 
-// NewPGStore 构造 PGStore(默认 JWT 密钥,仅供测试/单机演示)。
+// NewPGStore 构造 PGStore;db 传 *pgxpool.Pool 或测试 mock。
+// JWT 签发/校验不在域内(D1:单事实源),由 app 层经 auth.Manager 处理。
 func NewPGStore(db dbtx) *PGStore {
-	return NewPGStoreWithSecret(db, []byte("change-me"))
+	return &PGStore{db: db}
 }
 
-// NewPGStoreWithSecret 构造 PGStore 并指定 JWT 密钥(生产从 config 注入)。
-func NewPGStoreWithSecret(db dbtx, secret []byte) *PGStore {
-	return &PGStore{db: db, jwtSecret: secret}
-}
-
-// Login 校验账号口令并签发 JWT;账号不存在/口令错误/停用统一返回 ErrUnauthorized。
-func (s *PGStore) Login(ctx context.Context, username, password string) (string, error) {
+// Login 校验账号口令,返回认证身份;账号不存在/口令错误/停用统一返回 ErrUnauthorized。
+func (s *PGStore) Login(ctx context.Context, username, password string) (*LoginResult, error) {
 	var id int64
-	var hash string
+	var realName, roleCode, roleName, hash string
 	var status int16
-	err := s.db.QueryRow(ctx,
-		`SELECT id, password_hash, status FROM accounts WHERE username = $1`, username).
-		Scan(&id, &hash, &status)
+	err := s.db.QueryRow(ctx, `
+		SELECT a.id, a.real_name, r.code, r.name, a.password_hash, a.status
+		FROM accounts a JOIN roles r ON a.role_id = r.id
+		WHERE a.username = $1`, username).
+		Scan(&id, &realName, &roleCode, &roleName, &hash, &status)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return "", ErrUnauthorized
+		return nil, ErrUnauthorized
 	}
 	if err != nil {
-		return "", fmt.Errorf("user: login query: %w", err)
+		return nil, fmt.Errorf("user: login query: %w", err)
 	}
 	if status != 1 {
-		return "", ErrUnauthorized
+		return nil, ErrUnauthorized
 	}
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {
-		return "", ErrUnauthorized
+		return nil, ErrUnauthorized
 	}
-	claims := jwt.MapClaims{
-		"sub": id,
-		"exp": time.Now().Add(24 * time.Hour).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString(s.jwtSecret)
-	if err != nil {
-		return "", fmt.Errorf("user: sign token: %w", err)
-	}
-	return signed, nil
+	return &LoginResult{AccountID: id, Username: username, RealName: realName, RoleCode: roleCode, RoleName: roleName}, nil
 }
 
 // ListLegalEntities 列出全部子公司/法人。

@@ -4,8 +4,17 @@ import "context"
 
 // Service 阶段1:账号/角色/权限/组织(子公司/部门/岗位/经营区域)/数据范围/区域地址层级。
 // 权限变更即时生效:RBAC 快照写 Redis,校验走快照;数据范围走服务端快照,避免 token 膨胀。
+// LoginResult 认证成功后的账号身份(不含 token;token 由 app 层经 auth.Manager 签发)。
+type LoginResult struct {
+	AccountID int64
+	Username  string // 登录名
+	RealName  string // 姓名快照(展示)
+	RoleCode  string // 角色码
+	RoleName  string // 角色名(展示)
+}
+
 type Service interface {
-	Login(ctx context.Context, username, password string) (token string, err error)
+	Login(ctx context.Context, username, password string) (*LoginResult, error)
 
 	// HasPermission 功能权限判定(RBAC 快照)。
 	HasPermission(ctx context.Context, accountID int64, permCode string) (bool, error)
