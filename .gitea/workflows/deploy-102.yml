@@ -12,9 +12,7 @@ jobs:
     steps:
       - name: Clone
         run: |
-          git clone --depth 1 "http://sker:${BOSS_PAT}@192.168.0.102:3001/sker/boss.git" .
-        env:
-          BOSS_PAT: ${{ secrets.BOSS_PAT }}
+          git clone --depth 1 "http://sker:${{ secrets.BOSS_PAT }}@192.168.0.102:3001/sker/boss.git" .
 
       - name: Build image
         run: docker build -f deployments/docker/server.Dockerfile -t 192.168.0.102:5000/boss/server:${GITHUB_SHA} -t 192.168.0.102:5000/boss/server:latest .
