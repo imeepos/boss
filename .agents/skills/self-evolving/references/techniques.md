@@ -124,3 +124,5 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - 场景:本机没装 postgresql 但装了 libpq(brew),psql 不在 PATH。命令:`export PATH=/opt/homebrew/opt/libpq/bin:$PATH && PGPASSWORD=boss psql -h 192.168.0.102 -p 25432 -U boss -d boss ...`;go 也同理 /opt/homebrew/bin。
 - 场景:验证测试自清理是否真闭环(单看 PASS 不够)。方法:BOSS_PG_TEST_DSN 指真库 `go test -run TestE2E... -v`(grep cleanup 看尽力而为日志),跑完 psql 按 `path::text ~ '^(e2e|w8|an[0-9]|g[0-9])'` 等前缀计数,残留必须为 0。
 - 场景:定位"垃圾数据从哪来"。方法:按 `split_part(path::text,'.',1)` 分组 + created_at 日期,前缀对 grep 测试文件(`grep -rn "E2E测试市\|分析楼栋\|g%d" internal --include=*_test.go`),十分钟内锁定污染源。
+- 场景:列表筛选需要 URL 可恢复但不能让 URL 变化覆盖即时交互。方法:首次 render 读取 `useQueryState/useQueryInt` 作为 `useState` 初值；事件处理器先更新本地 state，再调用 URL setter；不要在 render 中直接使用 query hook 返回值。
+- 场景:验证自定义下拉确实选中。方法:在真实目标应用 DOM 中点击触发器和 `[role=option]`，随后用 `console.log("VERIFY:"+JSON.stringify({label, search:location.search, filteredCount}))` 输出触发器文本、URL 和筛选结果；不要把宿主 GUI 的 DOM 当业务页面验证。

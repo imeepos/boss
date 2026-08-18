@@ -116,3 +116,10 @@
 - 原因:ListSubdivisions 的 SELECT 写 `d.osm_admin_level` 而未用 COALESCE，该列在 DB 定义为 SMALLINT（可空，无 NOT NULL 约束）。pgx 的 `Scan(&int16)` 遇到 NULL 值直接报错，该错误不属于 `ErrNoRows`/`ErrDuplicate` 等已知类型，落入 `respondErr` 的 `default` 分支返回 500。
 - 修法:把 `d.osm_admin_level` 改为 `COALESCE(d.osm_admin_level,0)`。同文件的 `GetSubdivision` 已经正确使用了 COALESCE，属于同一函数的遗漏。
 - 检视:排查 Go API 500 时，先看 SQL SELECT 的 nullable 列（SMALLINT/INTEGER/BIGINT 且无 NOT NULL）有没有 COALESCE 包裹——这是 pgx 最常被遗漏的扫描保护。
+
+## URL 查询参数与本地交互 state 互相覆盖 → 下拉/搜索值回弹
+
+- 症状:下拉可以展开，但点击选项后显示仍是旧值；搜索输入可能刚输入就回退；URL 变化后组件状态不稳定。
+- 原因:控件渲染直接使用 `useSearchParams` 派生值，交互更新 URL 触发父树重渲染，旧 query 值又覆盖刚设置的本地值；只改成本地 state 又会丢失刷新恢复能力。
+- 修法:采用“双轨状态”：首次挂载用 URL 初始化本地 state；交互只更新本地 state，同时通过独立 setter 写回 URL；不要让 URL 后续变化反向覆盖本地 state。下拉选项提交也应避免依赖全局 `mousedown` 收起顺序。
+- 检视:验证必须同时断言选中后的触发器文本、本地筛选结果和 `location.search`，仅检查 URL 或仅跑 build 不能证明控件可用。

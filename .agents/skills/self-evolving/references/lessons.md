@@ -64,3 +64,5 @@
 - 当 edit 工具修改后出现重复函数头/两行并一行时,原因是 new_string 与 old_string 范围不对称(顺手带了函数头/只删换行的 no-op);修复是 new_string 严格镜像 old_string 的边界,改完立刻 build。
 - 当怀疑库里是测试垃圾数据时,先确认迁移无种子(grep INSERT),再按 path 前缀分组+created_at 对到具体测试文件,最后查 pg_constraint 依赖图定删除顺序;共享库被集成测试污染的入口几乎都是 BOSS_PG_TEST_DSN 指向了共享库。
 - 当 Go API 返回 500 内部错误、且已确认非权限/参数问题（调用链走到 PG 实现层）时，第一步查 SQL SELECT 的 nullable 列有没有 COALESCE 包裹——pgx 的 `Scan(&int16)` 遇到 NULL 列会直接报错，不属于 `ErrNoRows` 等已知错误类型，落入 `respondErr` 的 `default` 分支返回 500。`GetSubdivision` 已正确使用 `COALESCE(osm_admin_level,0)`，但 `ListSubdivisions` 遗漏了。skill 没提前警告我。
+- 当列表筛选既要刷新恢复又要保证控件即时响应时，修复是 URL 只做首次初始化，交互更新本地 state 并通过独立 setter 同步 URL；不要把 `useSearchParams` 的实时值直接作为控件渲染源。skill 没提前警告我。
+- 当用户报告控件“点不中/选不中”时，修复是用真实页面 DOM 断言点击后的控件文本、筛选结果和 `location.search` 三者同时变化；build/test 只能证明代码可编译，不能证明交互链路。skill 没提前警告我。
