@@ -27,6 +27,9 @@ type Profile struct {
 type Service interface {
 	Login(ctx context.Context, username, password string) (*LoginResult, error)
 
+	// Register 自助注册(阶段1 基础功能):默认 ops 角色,成功后即可登录。
+	Register(ctx context.Context, username, password, realName string) (*LoginResult, error)
+
 	// HasPermission 功能权限判定(RBAC 快照)。
 	HasPermission(ctx context.Context, accountID int64, permCode string) (bool, error)
 	// HasDataScope 数据范围判定:资源属主组织是否落在账号数据范围内,越权拒并审计。

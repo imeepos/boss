@@ -28,6 +28,9 @@ type fakeUser struct {
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
 	return f.loginRes, f.loginErr
 }
+func (f *fakeUser) Register(context.Context, string, string, string) (*user.LoginResult, error) {
+	return &user.LoginResult{AccountID: 2, Username: "newbie", RealName: "新员工", RoleCode: "ops", RoleName: "业务运营/客服人员"}, nil
+}
 func (f *fakeUser) HasPermission(context.Context, int64, string) (bool, error) { return f.permOk, nil }
 func (f *fakeUser) HasDataScope(context.Context, int64, user.DataScope) (bool, error) {
 	return false, nil

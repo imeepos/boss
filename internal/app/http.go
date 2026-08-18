@@ -30,6 +30,10 @@ func respondErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, user.ErrUnauthorized):
 		respond(c, apitypes.CodeUnauthorized, nil)
+	case errors.Is(err, user.ErrUsernameTaken):
+		respond(c, apitypes.CodeConflict, nil)
+	case errors.Is(err, user.ErrInvalidInput):
+		respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
 		errors.Is(err, asset.ErrNotFound),
@@ -73,6 +77,13 @@ type loginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// registerReq 注册请求体(阶段1 基础功能;对齐 api/openapi/admin/auth.yaml)。
+type registerReq struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	RealName string `json:"realName" binding:"required"`
+}
+
 // RegisterRoutes 在 gin engine 上注册业务路由;mgr 为 JWT 单事实源签发器(D1)。
 func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	api := r.Group("/api/v1")
@@ -96,6 +107,27 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 			"token":     token,
 			"accountId": res.AccountID,
 			"realName":  res.RealName,
+			"roleName":  res.RoleName,
+		})
+	})
+
+	// 自助注册(阶段1 基础功能):默认 ops 角色,注册成功即可登录。
+	api.POST("/auth/register", func(c *gin.Context) {
+		var req registerReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		res, err := a.User.Register(c.Request.Context(), req.Username, req.Password, req.RealName)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{
+			"accountId": res.AccountID,
+			"username":  res.Username,
+			"realName":  res.RealName,
+			"roleCode":  res.RoleCode,
 			"roleName":  res.RoleName,
 		})
 	})
