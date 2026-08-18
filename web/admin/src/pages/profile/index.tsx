@@ -12,6 +12,9 @@ export default function ProfilePage() {
   if (pathname.endsWith('/overview')) return <OverviewSection profile={profile} />
   if (pathname.endsWith('/security')) return <SecuritySection />
   if (pathname.endsWith('/api-keys')) return <ApiKeySection />
+  if (pathname.endsWith('/permissions')) return <PermissionsSection profile={profile} />
+  if (pathname.endsWith('/work')) return <MyDataSection />
+  if (pathname.endsWith('/audit')) return <AuditSection />
   if (pathname.endsWith('/data')) return <MyDataSection />
   return <PersonalSection profile={profile} />
 }
@@ -53,6 +56,16 @@ function ApiKeySection() {
 function MyDataSection() {
   const t = useT(); const items = [[t.pages.profile.myData.orders, t.pages.profile.myData.ordersDesc], [t.pages.profile.myData.bills, t.pages.profile.myData.billsDesc], [t.pages.profile.myData.service, t.pages.profile.myData.serviceDesc], [t.pages.profile.myData.messages, t.pages.profile.myData.messagesDesc], [t.pages.profile.myData.audit, t.pages.profile.myData.auditDesc], [t.pages.profile.myData.permissions, t.pages.profile.myData.permissionsDesc]]
   return <div className="profile-content-page"><SectionTitle title={t.pages.profile.myData.title} desc={t.pages.profile.myData.desc} /><div className="profile-summary-grid"><Summary value="—" label={t.pages.profile.myData.orders} /><Summary value="—" label={t.pages.profile.myData.messages} /><Summary value="—" label={t.pages.profile.myData.bills} /></div><div className="profile-data-list">{items.map(([label, desc]) => <button key={label}><span><strong>{label}</strong><small>{desc}</small></span><i className="profile-chevron" /></button>)}</div></div>
+}
+
+function PermissionsSection({ profile }: { profile: Profile }) {
+  const t = useT()
+  return <div className="profile-content-page"><SectionTitle title={t.pages.profile.permissions.title} desc={t.pages.profile.permissions.desc} /><div className="profile-summary-grid"><Summary value={profile.roleName} label={t.pages.profile.permissions.role} /><Summary value={profile.legalEntityName || t.pages.profile.personal.unassigned} label={t.pages.profile.permissions.company} /><Summary value={profile.regionScope || t.pages.profile.personal.allScope} label={t.pages.profile.permissions.scope} /></div></div>
+}
+
+function AuditSection() {
+  const t = useT()
+  return <div className="profile-content-page"><SectionTitle title={t.pages.profile.audit.title} desc={t.pages.profile.audit.desc} /><div className="profile-data-list"><button><span><strong>{t.pages.profile.audit.empty}</strong><small>{t.pages.profile.audit.emptyDesc}</small></span></button></div></div>
 }
 
 function Summary({ value, label }: { value: string; label: string }) { return <div className="profile-summary"><strong>{value}</strong><span>{label}</span></div> }

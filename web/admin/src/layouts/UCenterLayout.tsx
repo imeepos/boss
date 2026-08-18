@@ -20,8 +20,10 @@ export function UCenterLayout({ profile }: { profile: Profile }) {
     ['overview', t.pages.profile.navigation.overview, t.pages.profile.navigation.overviewDesc, 'dashboard'],
     ['personal', t.pages.profile.navigation.personal, t.pages.profile.navigation.personalDesc, 'profile'],
     ['security', t.pages.profile.navigation.security, t.pages.profile.navigation.securityDesc, 'security'],
+    ['permissions', t.pages.profile.navigation.permissions, t.pages.profile.navigation.permissionsDesc, 'security'],
+    ['work', t.pages.profile.navigation.work, t.pages.profile.navigation.workDesc, 'data'],
     ['api-keys', t.pages.profile.navigation.apiKey, t.pages.profile.navigation.apiKeyDesc, 'key'],
-    ['data', t.pages.profile.navigation.myData, t.pages.profile.navigation.myDataDesc, 'data'],
+    ['audit', t.pages.profile.navigation.audit, t.pages.profile.navigation.auditDesc, 'data'],
   ]
   const logout = async () => { await adminLogout(); nav('/login', { replace: true }) }
   return (
