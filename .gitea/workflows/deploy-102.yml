@@ -22,6 +22,17 @@ jobs:
       - name: Push image
         run: docker push 192.168.0.102:5000/boss/server:${GITHUB_SHA} && docker push 192.168.0.102:5000/boss/server:latest
 
+      - name: Prepare app.env
+        # app.env 不入库(含密钥);CI 从样例生成,JWT 密钥优先取仓库 secret,兜底随机值。
+        # 注:随机兜底会使重启后 token 失效,正式环境请在 gitea 配 BOSS_JWT_SECRET。
+        run: |
+          cp deployments/app.env.example deployments/app.env
+          JWT="${BOSS_JWT_SECRET:-}"
+          [ -n "$JWT" ] || JWT="ci-$(head -c 32 /dev/urandom | base64 | tr -d '\n=')"
+          sed -i.bak "s|^BOSS_JWT_SECRET=.*|BOSS_JWT_SECRET=$JWT|" deployments/app.env && rm -f deployments/app.env.bak
+        env:
+          BOSS_JWT_SECRET: ${{ secrets.BOSS_JWT_SECRET }}
+
       - name: Deploy (compose up)
         run: |
           docker-compose -f deployments/docker-compose.102.app.yml -p boss-app up -d --remove-orphans
