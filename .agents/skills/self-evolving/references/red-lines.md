@@ -7,3 +7,5 @@
 - 禁止用假数据/mock 替代真实后端做开发验证，因为造假掩盖后端真实问题（用户明确驳回 mock 登录方案）；dev 免登录用真实 /auth/login 换来的 JWT 经 `?token=` 注入（scripts/dev-token.mjs）。
 - 禁止在需要定制观感的顶栏/工具栏里用原生 `<select>` 做语言等枚举切换器，因为 option 弹层由系统渲染无法用 CSS 定制（暗色主题下仍是系统白色），且方框样式与 ghost 图标按钮视觉割裂，被用户点名"不美观、与 antd pro 不符"。
 - 禁止改完布局 CSS（width/padding/flex/overflow）只跑 tsc/测试就交付，因为类型检查对视觉回归零覆盖——width:100%+padding 横向溢出（无 box-sizing 重置）就是这么漏出去的；必须目视或 CDP 截图确认。
+- 禁止 CI 部署时随机生成 JWT/密钥类 env 兜底,因为每次部署轮换会使全部登录 token 失效、用户被集体登出;必须 gitea repo secret 固定注入,未配置直接失败并提示配置位置。
+- 禁止把"healthz 返回 ok"当作"本次 CI 部署成功"的证据,因为部署在 compose up 前失败时旧容器仍在服务;必须核对 actions 日志或容器镜像 tag。

@@ -93,3 +93,39 @@ edit 失配没有（有"结尾换行"变体但没有"会话内多轮编辑后凭
 - 每个新 bash 调用一律先 `export PATH=/opt/homebrew/bin:$PATH`，brew 装的工具（go/docker/graphviz）全在那。
 - 给 Go 接口加方法时，同一 commit 里就补齐所有测试桩，编译报错清单就是桩清单。
 - 验证 compose env 合并用 `docker compose config | grep BOSS_`，输出为空先怀疑 PATH/命令没跑，再看业务。
+
+## 2026-08-18 /base/geo 增删改查检查（403 排查 + 远端库补迁移）
+
+**哪个坑浪费了最多时间？**
+geo 全部接口 403 `no permission: menu:geo`，但 /auth/me 确认 admin 就是 sysadmin。绕了一圈看 HasPermission 实现（纯 role_permissions 表 JOIN，sysadmin 无隐式全权）才想到查库：
+102 库 `schema_migrations` 只到 000037，缺 000038（geo 表）+ 000039（menu:geo 授权）。次要坑两个：
+`schema_migrations.version` 是 TEXT（'000037_alarm_retest'）不是 int，Scan 报错一轮；本机无 psql，用 /tmp 临时 go 程序 + pgx 直连 25432 完成查询和补迁移。
+另有一次 42200 是自己拼请求体格式错（timeZones 是 string[] 不是对象数组），看 Go struct 前先猜了格式。
+
+**这个 skill 有没有提前警告我？**
+没有。冒烟账号已有（techniques），但"403 → 先比 schema_migrations 与 migrations/ 目录"这条没有。
+
+**重来一次我会怎么做？**
+- sysadmin 被门禁拒（403）时，第一步就查 `SELECT max(version) FROM schema_migrations` 对比 `ls migrations/*.up.sql`，权限来自 role_permissions 显式行、迁移漏跑是首要嫌疑。
+- 手工补迁移：迁移文件是纯 SQL（含 BEGIN/COMMIT），pgx `Exec` 整文件执行即可，随后手动 INSERT schema_migrations 记录版本。
+- 测请求体先读后端 struct（geo.CountryAttrs 等），不凭直觉拼 JSON 字段类型。
+- geo 域的"删"= 软删除 is_active=false，测试数据留停用态即可，不物理删（契约 1.5.1）。
+
+---
+
+## 2026-08-18 · geo 全栈落地 + 102 CI 部署(接上轮,续踩新坑)
+
+**哪个坑浪费了最多时间?**
+- 迁移编号撞号:`ls migrations | head -60` 截断了列表,以为最新是 000030,新建了 000031_geo_intl;实际已有 000031_order_no_seq,真实最新是 000037(还有 000032~000037)。靠 grep 代码里 "migrations/000031" 的注释才发现,改名 000038 才避免撞号。
+- CI 部署 app.env 缺失:compose env_file 引用 app.env 但它被 .gitignore 刻意不入库,CI 全新 clone 必然缺文件,Deploy 步骤直接炸。第一次修还自作聪明用随机 JWT 兜底,被用户指出"部署肯定要固定 app.env"——随机 JWT 每次部署轮换,全部登录 token 失效。二次修复:强制走 gitea 仓库 secret,未配置即 fail fast。
+- healthz ok 的歧义:workflow 在 compose up 之前失败时,旧容器还在跑,curl healthz 依然 ok——我误判为"部署成功"。healthz 只能证明"有容器活着",不能证明"本次部署生效"。
+
+**这个 skill 有没有提前警告我?**
+- env_file 不入库会炸 CI 这条,上轮 lessons 里只写了"部署时 cp example 填写",没覆盖"无人值守 CI 拿不到这个文件"的场景。本轮已补。
+- 迁移编号检查、healthz 歧义,均无预警。
+
+**重来一次我会怎么做?**
+- 新增迁移前先 `ls migrations/*.up.sql | tail -5` 看真实最大编号,不信被截断的列表;代码注释里的迁移号(order/pg.go 提到 000031)也要 grep 交叉验证。
+- CI 里 compose 需要的密钥文件:一律 gitea repo secret 注入 + 缺失即失败,绝不随机兜底;固定密钥(BOSS_JWT_SECRET)配置一次永不轮换。
+- 验证 CI 部署是否真生效:看 actions 运行结果日志,或比对镜像 tag(GITHUB_SHA),healthz ok 只是必要条件。
+- 无 docker/psql 的本机验证 SQL:sqlglot(pip install --user)按 postgres 方言 parse 全文件,能拦语法错,拦不了约束语义,真实验证仍需 PG。

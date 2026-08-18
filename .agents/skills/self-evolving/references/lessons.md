@@ -23,3 +23,11 @@
 - 当给域 Service 接口（如 user.Service）追加方法时，修复是同一提交内同步补齐测试桩（fakeUser 等），编译错误清单就是桩清单。skill 没提前警告我。
 - 当初始化超管/首个账号时，修复是走「启动引导 + ON CONFLICT DO NOTHING」：密码只从环境变量注入、绝不写进迁移或种子文件、已存在不覆盖（防重启重置密码）。skill 没提前警告我。
 - 当部署 compose 需要密钥时，修复是 env_file 管 secrets（app.env 不入库，加 .gitignore），environment 段只留非密默认值；记住 compose 优先级 environment > env_file，要覆盖默认值得两处一起动。skill 没提前警告我。
+- 当 sysadmin 角色被菜单门禁拒（403 no permission:menu:x）时，修复是先查远端库 `schema_migrations` 最新版本对比 `ls migrations/*.up.sql`——本项目权限全是 role_permissions 显式行，sysadmin 无隐式全权，迁移漏跑（漏插权限/授权）是首要嫌疑。skill 没提前警告我。
+- 当手测 API 收到 42200 参数非法时，修复是先读后端请求 struct 再拼 JSON（如 geo attrs 的 timeZones 是 string[] 而非对象数组），不凭直觉猜字段类型。skill 没提前警告我。
+- 当本机没有 psql 却要查/改远端 PG 时，修复是 /tmp 临时 go 程序 + pgx 直连 DSN（configs/config.example.yaml 有现成连接串），迁移文件是纯 SQL 可整文件 Exec。skill 没提前警告我。
+- 当新增数据库迁移文件时,修复是先 `ls migrations/*.up.sql | tail -5` 确认真实最大编号——`ls | head` 截断列表曾让我险些撞号 000031(已被 order_no_seq 占用);代码注释里的迁移号(internal/domain/order/pg.go)也要 grep 交叉验证。
+- 当 CI 全新 clone 后 compose up 报 env file not found 时,修复是 workflow 里从 example 生成 env 文件、密钥从 gitea repo secret 注入、缺失即 fail fast——被 .gitignore 的文件在无人值守环境必然缺失。
+- 当验证 CI 部署结果时,修复是看 actions 日志或比对镜像 tag(GITHUB_SHA),curl healthz 只证明"有容器活着"——部署在 compose up 前失败时旧容器照常应答 ok。
+- 当本机无 docker/psql 而要验证 SQL 迁移时,修复是 sqlglot(pip install --user sqlglot)按 postgres 方言 parse 全文件拦语法错;约束语义仍需真实 PG。
+- 当 Go 工具链不在 PATH 时,修复是 export PATH=/opt/homebrew/bin:$PATH(AGENTS.md 已声明 brew 在此);go build 失败先查这个再怀疑代码。

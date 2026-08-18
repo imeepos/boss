@@ -44,6 +44,18 @@
 原因 → 项目全局无 `box-sizing:border-box` 重置，content-box 下实际宽 = 100%+48px；且滚动容器一轴为 auto 时另一轴 visible 被规范计算为 auto，横向溢出直接渲染成滚动条。
 修法 → styles.css 加 `*,*::before,*::after{box-sizing:border-box}`（已加），块级容器去掉冗余 `width:100%`（auto 本就撑满且含 padding）。布局 CSS 改动后必须目视/截图验证。
 
+## sysadmin 访问 /base/geo 全量 403 no permission:menu:geo
+
+症状 → admin（sysadmin）登录成功，/auth/me 角色正确，但 /api/v1/geo/* 全部 403。
+原因 → 102 库迁移只到 000037，缺 000038（geo 表+种子）与 000039（menu:geo 权限+sysadmin 授权）；HasPermission 只查 role_permissions 显式行，sysadmin 没有隐式全权。
+修法 → 对比 `SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1` 与 migrations 目录，漏跑的 .up.sql 用 pgx 整文件 Exec 后手动 INSERT schema_migrations 记录版本。
+
+## pgx 读 schema_migrations.version 报 cannot scan text into *int
+
+症状 → QueryRow(...).Scan(&intVar) 报 "cannot scan text (OID 25) in text format into *int"。
+原因 → 本项目 schema_migrations.version 是 TEXT（如 '000037_alarm_retest'），不是 golang-migrate 的整型。
+修法 → Scan 进 string。
+
 ## 深色表面上 button 文字不可见（span 换 button 后继承断裂）
 
 症状 → 顶栏姓名（深底）浅色主题下不可见，深色主题"看似正常"。
