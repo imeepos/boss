@@ -1,35 +1,33 @@
-// 广告素材轮播:登录/注册页左侧品牌区,规格对齐 visual-design-prompts.md §6.6。
+// 广告素材轮播:登录/注册页左侧品牌区,规格对齐 visual-design-prompts.md §6.6,文本走 i18n。
 import { useEffect, useState, type CSSProperties } from 'react'
 import adNetwork from '../assets/brand/ad-network.png'
 import adDashboard from '../assets/brand/ad-dashboard.png'
 import adService from '../assets/brand/ad-service.png'
 import { BRAND_GOLD } from './auth-shell'
-
-const ADS = [
-  { img: adNetwork, title: '全境组网 一点开通', sub: '光纤资源覆盖菲律宾全岛' },
-  { img: adDashboard, title: '经营看板 实时洞察', sub: '收入/工单/网络一屏总览' },
-  { img: adService, title: '装维直达 极速履约', sub: '工单派送全程可视' },
-]
+import { useT } from '../i18n'
 
 const INTERVAL_MS = 5000
 
+const AD_IMAGES = [adNetwork, adDashboard, adService]
+
 /** 广告卡:256×170,8px 圆角,金色指示器,5s 自动轮播。 */
 export function AdCarousel({ width = 256 }: { width?: number }) {
+  const t = useT()
   const [idx, setIdx] = useState(0)
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % ADS.length), INTERVAL_MS)
-    return () => clearInterval(t)
-  }, [])
-  const ad = ADS[idx]
+    const interval = setInterval(() => setIdx((i) => (i + 1) % t.ads.length), INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [t.ads.length])
+  const ad = t.ads[idx]
   return (
     <div style={{ ...boxStyle, width }}>
-      <img src={ad.img} alt={ad.title} style={imgStyle} />
+      <img src={AD_IMAGES[idx]} alt={ad.title} style={imgStyle} />
       <div style={captionStyle}>
         <span style={titleStyle}>{ad.title}</span>
         <span style={subStyle}>{ad.sub}</span>
       </div>
       <div style={dotsStyle}>
-        {ADS.map((_, i) => (
+        {t.ads.map((_, i) => (
           <span key={i} style={i === idx ? dotOnStyle : dotOffStyle} />
         ))}
       </div>

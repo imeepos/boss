@@ -1,4 +1,4 @@
-// 注册页:规格对齐 visual-design-prompts.md §3.4 注册页纵向参考 + §7 差异表。
+// 注册页:规格对齐 visual-design-prompts.md §3.4 注册页纵向参考 + §7 差异表,文本走 i18n。
 import { useState, type CSSProperties, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { adminLogin, adminRegister } from '../../api/auth'
@@ -6,11 +6,13 @@ import logoLine from '../../assets/brand/logo-mark-lineart.png'
 import ornamentShield from '../../assets/brand/ornament-shield.png'
 import { AuthShell, BrandAside, inputStyle, buttonStyle, BRAND_NAVY, BRAND_GOLD } from '../auth-shell'
 import { AdCarousel } from '../auth-ads'
+import { useT } from '../../i18n'
 
 const USERNAME_RE = /^[A-Za-z0-9_\-.]{3,64}$/
 
 export default function RegisterPage() {
   const nav = useNavigate()
+  const t = useT()
   const [form, setForm] = useState({ username: '', password: '', confirm: '', realName: '' })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -20,10 +22,10 @@ export default function RegisterPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!form.realName.trim()) return setError('请输入姓名')
-    if (!USERNAME_RE.test(form.username)) return setError('账号需 3-64 位,仅限字母/数字/_-.')
-    if (form.password.length < 6) return setError('密码不少于 6 位')
-    if (form.password !== form.confirm) return setError('两次输入的密码不一致')
+    if (!form.realName.trim()) return setError(t.auth.register.emptyName)
+    if (!USERNAME_RE.test(form.username)) return setError(t.auth.register.invalidUsername)
+    if (form.password.length < 6) return setError(t.auth.register.shortPassword)
+    if (form.password !== form.confirm) return setError(t.auth.register.mismatch)
     setBusy(true)
     setError('')
     try {
@@ -31,7 +33,7 @@ export default function RegisterPage() {
       await adminLogin(form.username, form.password)
       nav('/', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : '注册失败')
+      setError(err instanceof Error ? err.message : t.auth.register.fail)
     } finally {
       setBusy(false)
     }
@@ -40,33 +42,32 @@ export default function RegisterPage() {
   return (
     <AuthShell
       aside={
-        <BrandAside tip="注册即开通业务运营账号">
+        <BrandAside tip={t.auth.register.tip}>
           <AdCarousel />
         </BrandAside>
       }
     >
-      {/* 注册页表单:104px 起(比登录高 38px) */}
       <div style={regFormStyle}>
         <img src={logoLine} alt="Sphere Boss" style={logoStyle} />
-        <h2 style={titleStyle}>注册账号</h2>
-        <p style={subStyle}>创建 Sphere Boss 管理端账号</p>
+        <h2 style={titleStyle}>{t.auth.register.title}</h2>
+        <p style={subStyle}>{t.auth.register.subtitle}</p>
         <form onSubmit={onSubmit} style={{ marginTop: 8 }}>
-          <input placeholder="姓名" value={form.realName} onChange={set('realName')} style={inputStyle} />
+          <input placeholder={t.auth.register.namePlaceholder} value={form.realName} onChange={set('realName')} style={inputStyle} />
           <input
-            placeholder="账号(3-64 位,字母/数字/_/.)"
+            placeholder={t.auth.register.usernamePlaceholder}
             value={form.username}
             onChange={set('username')}
             style={inputStyle}
           />
           <input
-            placeholder="密码(不少于 6 位)"
+            placeholder={t.auth.register.passwordPlaceholder}
             type="password"
             value={form.password}
             onChange={set('password')}
             style={inputStyle}
           />
           <input
-            placeholder="确认密码"
+            placeholder={t.auth.register.confirmPlaceholder}
             type="password"
             value={form.confirm}
             onChange={set('confirm')}
@@ -74,14 +75,14 @@ export default function RegisterPage() {
           />
           {error && <div style={errStyle}>{error}</div>}
           <button type="submit" disabled={busy} style={{ ...buttonStyle, marginTop: 12 }}>
-            {busy ? '注册中…' : '注 册'}
+            {busy ? t.auth.register.submitting : t.auth.register.submit}
           </button>
         </form>
         <div style={linkRowStyle}>
           <img src={ornamentShield} alt="" style={shieldStyle} />
-          <span style={{ color: '#7C8799' }}>已有账号?</span>
+          <span style={{ color: '#7C8799' }}>{t.auth.register.hasAccount}</span>
           <Link to="/login" style={linkStyle}>
-            返回登录
+            {t.auth.register.toLogin}
           </Link>
         </div>
       </div>

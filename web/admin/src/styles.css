@@ -1,4 +1,4 @@
-/* 全局补充样式:Design Tokens + 登录页响应式 + 侧栏菜单项。 */
+/* 全局补充样式:Design Tokens + 登录页响应式(外壳样式见 layouts/shell.css)。 */
 
 /* 对齐 visual-design-prompts.md §10 */
 :root {
@@ -62,9 +62,4 @@ html, body, #root {
 @media (max-width: 768px) {
   .auth-aside { display: none; }
   .auth-panel { grid-template-columns: 1fr !important; }
-}
-
-.side-item.active {
-  background: #f0f6ff;
-  border-right: 2px solid #1677ff;
 }

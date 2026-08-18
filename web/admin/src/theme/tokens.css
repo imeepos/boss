@@ -1,0 +1,83 @@
+/* 外壳主题令牌:对照 docs/admin/design-spec.md §2(亮)/§3(暗),经 [data-theme] 切换。 */
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  /* 顶栏 */
+  --shell-topbar-bg: #0F1E3B;
+  --shell-topbar-border: transparent;
+  --shell-topbar-shadow: 0 2px 8px rgba(15, 30, 59, 0.12);
+  --shell-nav-text: rgba(255, 255, 255, 0.78);
+  --shell-nav-active: #FFFFFF;
+  --shell-nav-line: #D5A63A;
+  --shell-search-bg: rgba(255, 255, 255, 0.08);
+  --shell-search-bg-focus: rgba(255, 255, 255, 0.15);
+  /* 侧栏 */
+  --shell-side-bg: #FCFCFD;
+  --shell-side-border: #EFF1F5;
+  --shell-menu-text: #667085;
+  --shell-menu-icon: #8A96AA;
+  --shell-menu-hover-bg: #F4F5F7;
+  --shell-menu-active-bg: #FBF5E8;
+  --shell-menu-active-text: #172744;
+  --shell-group-title: #A6B1C3;
+  /* 内容区 */
+  --shell-content-bg: #F4F5F7;
+  --shell-content-text: #4E5664;
+  --shell-heading: #172744;
+  --shell-card-bg: #FFFFFF;
+  --shell-card-border: transparent;
+  --shell-card-shadow: 0 1px 3px rgba(15, 30, 59, 0.06);
+  --shell-crumb-text: #8A96AA;
+  /* 底栏 */
+  --shell-bottom-bg: #FCFCFD;
+  --shell-bottom-border: #EFF1F5;
+  --shell-bottom-text: #A6B1C3;
+  /* FAB */
+  --shell-fab-bg: #273F70;
+  --shell-fab-bg-hover: #1F355F;
+  --shell-fab-icon: #FFFFFF;
+  --shell-fab-shadow: 0 4px 16px rgba(15, 30, 59, 0.22);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  /* 顶栏 */
+  --shell-topbar-bg: #0A1528;
+  --shell-topbar-border: rgba(213, 166, 58, 0.12);
+  --shell-topbar-shadow: none;
+  --shell-nav-text: rgba(255, 255, 255, 0.72);
+  --shell-nav-active: #FFFFFF;
+  --shell-nav-line: #D5A63A;
+  --shell-search-bg: rgba(255, 255, 255, 0.06);
+  --shell-search-bg-focus: rgba(255, 255, 255, 0.12);
+  /* 侧栏 */
+  --shell-side-bg: #0F1E3B;
+  --shell-side-border: rgba(255, 255, 255, 0.06);
+  --shell-menu-text: #A6B1C3;
+  --shell-menu-icon: #738096;
+  --shell-menu-hover-bg: rgba(255, 255, 255, 0.04);
+  --shell-menu-active-bg: rgba(213, 166, 58, 0.08);
+  --shell-menu-active-text: #F7F8FC;
+  --shell-group-title: #738096;
+  /* 内容区 */
+  --shell-content-bg: #0A1528;
+  --shell-content-text: #A6B1C3;
+  --shell-heading: #F7F8FC;
+  --shell-card-bg: #10203F;
+  --shell-card-border: rgba(255, 255, 255, 0.06);
+  --shell-card-shadow: none;
+  --shell-crumb-text: #738096;
+  /* 底栏 */
+  --shell-bottom-bg: #0F1E3B;
+  --shell-bottom-border: rgba(255, 255, 255, 0.06);
+  --shell-bottom-text: #738096;
+  /* FAB */
+  --shell-fab-bg: #D5A63A;
+  --shell-fab-bg-hover: #BE8D25;
+  --shell-fab-icon: #0F1E3B;
+  --shell-fab-shadow: 0 4px 20px rgba(213, 166, 58, 0.28);
+}
+
+body {
+  background: var(--shell-content-bg, #F4F5F7);
+}

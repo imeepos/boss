@@ -1,10 +1,11 @@
-// 登录/注册共用外壳:全屏背景 + 双栏面板(左品牌 382px,右表单 438px)。
+// 登录/注册共用外壳:全屏背景 + 双栏面板(左品牌 382px,右表单 438px),文本走 i18n。
 // 规格对齐 visual-design-prompts.md §3。
 import type { CSSProperties, ReactNode } from 'react'
 import bgFull from '../assets/brand/login-bg-full.png'
 import logoMark from '../assets/brand/logo-mark-gradient.png'
 import ornamentRing from '../assets/brand/ornament-ring.png'
 import ornamentRibbon from '../assets/brand/ornament-ribbon.png'
+import { useT } from '../i18n'
 
 /* ── 品牌色(对齐 visual-design-prompts.md §2) ── */
 export const BRAND_NAVY = '#0F1E3B'
@@ -48,12 +49,13 @@ export const buttonStyle: CSSProperties = {
 
 /** 左侧品牌区(装饰 + Logo + 标题 + 广告位)。 */
 export function BrandAside({ children, tip }: { children?: ReactNode; tip?: string }) {
+  const t = useT()
   return (
     <aside className="auth-aside" style={asideStyle}>
       <img src={ornamentRing} alt="" style={ringStyle} />
       <img src={logoMark} alt="Sphere Boss" style={asideLogoStyle} />
       <h1 style={asideTitleStyle}>Sphere Boss</h1>
-      <p style={asideDescStyle}>BOSS 综合业务支撑平台</p>
+      <p style={asideDescStyle}>{t.common.tagline}</p>
       {tip && <p style={asideTipStyle}>{tip}</p>}
       {children}
       <img src={ornamentRibbon} alt="" style={ribbonStyle} />
@@ -63,6 +65,7 @@ export function BrandAside({ children, tip }: { children?: ReactNode; tip?: stri
 
 /** 登录/注册页外壳(全屏背景 + 820×564 面板)。 */
 export function AuthShell({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
+  const t = useT()
   return (
     <div style={{ ...pageStyle, backgroundImage: `url(${bgFull})` }}>
       <div className="auth-panel" style={panelStyle}>
@@ -71,7 +74,7 @@ export function AuthShell({ children, aside }: { children: ReactNode; aside?: Re
           <div style={formInnerStyle}>
             {children}
           </div>
-          <div style={footerStyle}>Sphere Boss · 综合业务支撑平台</div>
+          <div style={footerStyle}>{t.common.footer}</div>
         </section>
       </div>
     </div>
@@ -154,7 +157,7 @@ const formPaneStyle: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'flex-start',
   background: '#FCFCFD',
-  paddingTop: 104,  // register 页偏上;login 页内用 marginTop 微调
+  paddingTop: 104,
 }
 
 const formInnerStyle: CSSProperties = {

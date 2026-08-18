@@ -1,18 +1,22 @@
-// 403/404 错误页。
+// 403/404 错误页,文本走 i18n。
+import { useT } from '../../i18n'
+
 export function ForbiddenPage() {
+  const t = useT()
   return (
     <div style={{ textAlign: 'center', padding: 64 }}>
       <h1>403</h1>
-      <p>当前角色无权访问该页面(接口级权限由后端兜底拦截)。</p>
+      <p>{t.pages.error.forbidden}</p>
     </div>
   )
 }
 
 export function NotFoundPage() {
+  const t = useT()
   return (
     <div style={{ textAlign: 'center', padding: 64 }}>
       <h1>404</h1>
-      <p>页面不存在。</p>
+      <p>{t.pages.error.notFound}</p>
     </div>
   )
 }

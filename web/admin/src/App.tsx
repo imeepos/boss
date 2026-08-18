@@ -11,10 +11,13 @@ import { ForbiddenPage, NotFoundPage } from './pages/error'
 import { PlaceholderPage } from './pages/placeholder'
 import { MENU_GROUPS } from './router/menu.def'
 import { canAccess } from './router/role-menu'
+import { useT } from './i18n'
 
 /** 菜单页:越权直访 403;已接入页正式渲染,其余占位(A1 起逐页替换)。 */
-function MenuPage({ pageKey, label }: { pageKey: string; label: string }) {
+function MenuPage({ pageKey }: { pageKey: string }) {
+  const t = useT()
   const profile = useProfile()
+  const label = t.menu.items[pageKey] ?? pageKey
   if (!canAccess(profile.roleCode, pageKey)) return <ForbiddenPage />
   if (pageKey === 'dashboard') return <DashboardPage profile={profile} />
   if (pageKey === 'account') return <AccountListPage />
@@ -37,7 +40,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           {MENU_GROUPS.flatMap((g) => g.items).map((it) => (
-            <Route key={it.key} path={it.path} element={<MenuPage pageKey={it.key} label={it.label} />} />
+            <Route key={it.key} path={it.path} element={<MenuPage pageKey={it.key} />} />
           ))}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

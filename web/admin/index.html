@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sphere Boss · BOSS 综合业务支撑平台</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <script>
+      // 首屏前写入已存主题,避免暗色用户闪白
+      document.documentElement.dataset.theme =
+        localStorage.getItem('boss.theme') === 'dark' ? 'dark' : 'light'
+    </script>
   </head>
   <body>
     <div id="root"></div>

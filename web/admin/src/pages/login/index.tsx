@@ -1,4 +1,4 @@
-// 登录页:规格对齐 visual-design-prompts.md §3.4 登录页纵向参考。
+// 登录页:规格对齐 visual-design-prompts.md §3.4 登录页纵向参考,文本走 i18n。
 import { useState, type CSSProperties, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { adminLogin } from '../../api/auth'
@@ -6,9 +6,11 @@ import logoFull from '../../assets/brand/logo-mark-gradient.png'
 import ornamentShield from '../../assets/brand/ornament-shield.png'
 import { AuthShell, BrandAside, inputStyle, buttonStyle, BRAND_NAVY, BRAND_GOLD } from '../auth-shell'
 import { AdCarousel } from '../auth-ads'
+import { useT } from '../../i18n'
 
 export default function LoginPage() {
   const nav = useNavigate()
+  const t = useT()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,7 +19,7 @@ export default function LoginPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!username || !password) {
-      setError('请输入账号与密码')
+      setError(t.auth.login.emptyFields)
       return
     }
     setBusy(true)
@@ -26,7 +28,7 @@ export default function LoginPage() {
       await adminLogin(username, password)
       nav('/', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : '登录失败')
+      setError(err instanceof Error ? err.message : t.auth.login.fail)
     } finally {
       setBusy(false)
     }
@@ -40,20 +42,19 @@ export default function LoginPage() {
         </BrandAside>
       }
     >
-      {/* 登录页表单起始位置偏下:142px 起(register 104px) */}
       <div style={loginFormStyle}>
         <img src={logoFull} alt="Sphere Boss" style={logoStyle} />
-        <h2 style={titleStyle}>欢迎登录</h2>
-        <p style={subStyle}>请输入账号信息进入管理端</p>
+        <h2 style={titleStyle}>{t.auth.login.title}</h2>
+        <p style={subStyle}>{t.auth.login.subtitle}</p>
         <form onSubmit={onSubmit} style={{ marginTop: 12 }}>
           <input
-            placeholder="账号"
+            placeholder={t.auth.login.usernamePlaceholder}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={inputStyle}
           />
           <input
-            placeholder="密码"
+            placeholder={t.auth.login.passwordPlaceholder}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -61,14 +62,14 @@ export default function LoginPage() {
           />
           {error && <div style={errStyle}>{error}</div>}
           <button type="submit" disabled={busy} style={{ ...buttonStyle, marginTop: 12 }}>
-            {busy ? '登录中…' : '登 录'}
+            {busy ? t.auth.login.submitting : t.auth.login.submit}
           </button>
         </form>
         <div style={linkRowStyle}>
           <img src={ornamentShield} alt="" style={shieldStyle} />
-          <span style={{ color: '#7C8799' }}>还没有账号?</span>
+          <span style={{ color: '#7C8799' }}>{t.auth.login.noAccount}</span>
           <Link to="/register" style={linkStyle}>
-            立即注册
+            {t.auth.login.toRegister}
           </Link>
         </div>
       </div>
@@ -81,7 +82,7 @@ const loginFormStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  paddingTop: 38,  // 142 - 104 = 38
+  paddingTop: 38,
 }
 
 const logoStyle: CSSProperties = {

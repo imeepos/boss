@@ -1,0 +1,400 @@
+/* 外壳样式:布局骨架 + 顶栏/侧栏/内容区/FAB/底栏,颜色全部走 tokens.css 变量。 */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  font-family: var(--font-family-base);
+}
+
+.shell-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.mask-icon {
+  display: inline-block;
+  flex: none;
+  background: currentColor;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+  mask: var(--icon-url) center / contain no-repeat;
+}
+
+/* ── 顶栏 ─────────────────────────────── */
+.shell-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 56px;
+  padding: 0 16px;
+  flex: none;
+  color: #fff;
+  background: var(--shell-topbar-bg);
+  border-bottom: 1px solid var(--shell-topbar-border);
+  box-shadow: var(--shell-topbar-shadow);
+}
+
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding-right: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-family: var(--font-family-brand);
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.shell-brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 1px;
+}
+
+.shell-topnav {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.shell-topnav::-webkit-scrollbar { display: none; }
+
+.shell-topnav-item {
+  position: relative;
+  border: 0;
+  background: none;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--shell-nav-text);
+}
+
+.shell-topnav-item:hover { color: var(--shell-nav-active); }
+
+.shell-topnav-item.active { color: var(--shell-nav-active); }
+
+.shell-topnav-item.active::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: var(--shell-nav-line);
+}
+
+.shell-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.shell-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 17px;
+  color: rgba(255, 255, 255, 0.6);
+  background: var(--shell-search-bg);
+  transition: background 0.2s;
+}
+
+.shell-search:focus-within { background: var(--shell-search-bg-focus); }
+
+.shell-search input {
+  width: 180px;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: #fff;
+  font-size: 13px;
+}
+
+.shell-search input::placeholder { color: rgba(255, 255, 255, 0.45); }
+
+.shell-tools { display: flex; align-items: center; gap: 10px; }
+
+.shell-tool-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+}
+
+.shell-tool-btn:hover { background: var(--shell-search-bg-focus); color: #fff; }
+
+.shell-lang {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.shell-lang option { color: #333; }
+
+.shell-user { display: flex; align-items: center; gap: 8px; }
+
+.shell-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-brand-gold-500);
+  color: var(--color-brand-navy-950);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shell-user-name { font-size: 13px; white-space: nowrap; }
+
+.shell-logout {
+  border: 0;
+  background: none;
+  color: var(--color-brand-gold-300);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shell-logout:hover { color: var(--color-brand-gold-500); }
+
+.shell-drawer-btn {
+  display: none;
+  border: 0;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* ── 侧栏 ─────────────────────────────── */
+.shell-side {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  flex: none;
+  background: var(--shell-side-bg);
+  border-right: 1px solid var(--shell-side-border);
+  transition: width 0.2s ease;
+}
+
+.shell-side.collapsed { width: 64px; }
+
+.shell-side-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
+
+.shell-side-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 16px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--shell-group-title);
+}
+
+.shell-side-divider {
+  margin: 12px 16px;
+  border-top: 1px solid var(--shell-side-border);
+}
+
+.shell-side-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+  color: var(--shell-menu-text);
+}
+
+.shell-side-item .mask-icon { color: var(--shell-menu-icon); }
+
+.shell-side-item:hover {
+  background: var(--shell-menu-hover-bg);
+  color: var(--shell-menu-active-text);
+}
+
+.shell-side-item.active {
+  background: var(--shell-menu-active-bg);
+  color: var(--shell-menu-active-text);
+  font-weight: 600;
+}
+
+.shell-side-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--color-brand-gold-500);
+}
+
+.shell-side-item.active .mask-icon { color: var(--color-brand-gold-500); }
+
+.shell-side.collapsed .shell-side-item { justify-content: center; padding: 0; }
+
+.shell-side-collapse {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  flex: none;
+  border: 0;
+  border-top: 1px solid var(--shell-side-border);
+  background: none;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--shell-menu-icon);
+}
+
+.shell-side-collapse:hover { color: var(--shell-menu-active-text); }
+
+.shell-side.collapsed .shell-side-collapse { justify-content: center; padding: 0; }
+
+.shell-backdrop { display: none; }
+
+/* ── 内容区 ────────────────────────────── */
+.shell-main-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--shell-content-bg);
+}
+
+.shell-main {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px 24px 48px;
+  color: var(--shell-content-text);
+}
+
+.shell-main h1, .shell-main h2, .shell-main h3 { color: var(--shell-heading); }
+
+.shell-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--shell-crumb-text);
+}
+
+.shell-crumb a { color: inherit; text-decoration: none; }
+
+.shell-crumb a:hover { color: var(--color-brand-gold-500); }
+
+.shell-crumb-sep { color: var(--color-brand-gold-500); }
+
+.shell-crumb-current { color: var(--shell-heading); font-weight: 600; }
+
+/* ── FAB ──────────────────────────────── */
+.shell-fab {
+  position: fixed;
+  z-index: 20;
+  right: 32px;
+  bottom: 64px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  background: var(--shell-fab-bg);
+  color: var(--shell-fab-icon);
+  box-shadow: var(--shell-fab-shadow);
+  animation: shell-fab-in 240ms ease;
+}
+
+.shell-fab:hover { background: var(--shell-fab-bg-hover); }
+
+@keyframes shell-fab-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── 底栏 ─────────────────────────────── */
+.shell-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 16px;
+  flex: none;
+  font-size: 12px;
+  background: var(--shell-bottom-bg);
+  border-top: 1px solid var(--shell-bottom-border);
+  color: var(--shell-bottom-text);
+}
+
+/* ── 响应式:design-spec.md §5 ─────────── */
+@media (max-width: 1199px) {
+  .shell-side { width: 64px; }
+  .shell-side .shell-side-label,
+  .shell-side .shell-side-group-title span,
+  .shell-side .shell-side-collapse span { display: none; }
+  .shell-side .shell-side-group-title { justify-content: center; margin: 16px 0 4px; }
+  .shell-side .shell-side-item { justify-content: center; padding: 0; }
+  .shell-side .shell-side-collapse { justify-content: center; padding: 0; }
+}
+
+@media (max-width: 959px) {
+  .shell-drawer-btn { display: grid; place-items: center; }
+  .shell-side {
+    position: fixed;
+    z-index: 40;
+    top: 56px;
+    bottom: 32px;
+    left: 0;
+    width: 240px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  .shell-side.drawer-open { transform: translateX(0); }
+  .shell-side .shell-side-label,
+  .shell-side .shell-side-group-title span,
+  .shell-side .shell-side-collapse span { display: inline; }
+  .shell-side .shell-side-item { justify-content: flex-start; padding: 0 16px; }
+  .shell-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 30;
+    inset: 56px 0 32px;
+    background: rgba(15, 30, 59, 0.4);
+  }
+  .shell-search input { width: 110px; }
+  .shell-user-name { display: none; }
+}

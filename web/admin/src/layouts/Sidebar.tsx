@@ -1,55 +1,70 @@
-// 侧栏:按 roleCode 过滤 13 分组,两级折叠,当前路由高亮。
-import { useState } from 'react'
+// 侧栏:分组标题 + 平铺菜单项,240px/64px 折叠,移动端抽屉。规格见 design-spec.md §2.2/§3.2。
 import { NavLink } from 'react-router-dom'
-import { MENU_GROUPS } from '../router/menu.def'
-import { visibleGroupIds } from '../router/role-menu'
+import type { MenuGroup } from '../router/menu.def'
+import { useT } from '../i18n'
+import { CollapseIcon, MaskIcon } from './icons'
 
-export function Sidebar({ roleCode }: { roleCode: string }) {
-  const visible = new Set(visibleGroupIds(roleCode))
-  const firstOpen = MENU_GROUPS.find((g) => visible.has(g.id))?.id ?? 'overview'
-  const [open, setOpen] = useState<Set<string>>(new Set([firstOpen]))
+interface SidebarProps {
+  groups: MenuGroup[]
+  collapsed: boolean
+  drawerOpen: boolean
+  onToggleCollapse: () => void
+  onCloseDrawer: () => void
+}
 
-  const toggle = (id: string) => {
-    setOpen((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
+function SideGroup({ g, collapsed, onNavigate }: { g: MenuGroup; collapsed: boolean; onNavigate: () => void }) {
+  const t = useT()
   return (
-    <nav style={{ width: 208, background: '#fff', borderRight: '1px solid #e8e8e8', padding: '12px 0' }}>
-      {MENU_GROUPS.filter((g) => visible.has(g.id)).map((g) => (
-        <div key={g.id}>
-          <div
-            onClick={() => toggle(g.id)}
-            style={{ padding: '10px 16px', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
-          >
-            {g.label}
-          </div>
-          {open.has(g.id) && (
-            <div>
-              {g.items.map((it) => (
-                <NavLink
-                  key={it.key}
-                  to={it.path}
-                  className={({ isActive }) => (isActive ? 'side-item active' : 'side-item')}
-                  style={({ isActive }) => ({
-                    display: 'block',
-                    padding: '8px 16px 8px 28px',
-                    fontSize: 13,
-                    color: isActive ? '#1677ff' : '#333',
-                    textDecoration: 'none',
-                  })}
-                >
-                  {it.label}
-                </NavLink>
-              ))}
-            </div>
-          )}
+    <section className="shell-side-group">
+      {collapsed ? (
+        <div className="shell-side-divider" />
+      ) : (
+        <div className="shell-side-group-title">
+          <MaskIcon url={`/icons/${g.id}.svg`} size={14} />
+          <span>{t.menu.groups[g.id] ?? g.label}</span>
         </div>
-      ))}
-    </nav>
+      )}
+      {g.items.map((it) => {
+        const label = t.menu.items[it.key] ?? it.label
+        return (
+          <NavLink
+            key={it.key}
+            to={it.path}
+            title={label}
+            onClick={onNavigate}
+            className={({ isActive }) => (isActive ? 'shell-side-item active' : 'shell-side-item')}
+          >
+            <MaskIcon url={`/icons/items/${it.key}.svg`} />
+            {!collapsed && <span className="shell-side-label">{label}</span>}
+          </NavLink>
+        )
+      })}
+    </section>
+  )
+}
+
+export function Sidebar({ groups, collapsed, drawerOpen, onToggleCollapse, onCloseDrawer }: SidebarProps) {
+  const t = useT()
+  const cls = [
+    'shell-side',
+    collapsed ? 'collapsed' : '',
+    drawerOpen ? 'drawer-open' : '',
+  ].filter(Boolean).join(' ')
+  return (
+    <aside className={cls}>
+      <nav className="shell-side-nav">
+        {groups.map((g) => (
+          <SideGroup key={g.id} g={g} collapsed={collapsed} onNavigate={onCloseDrawer} />
+        ))}
+      </nav>
+      <button
+        className="shell-side-collapse"
+        onClick={onToggleCollapse}
+        title={collapsed ? t.shell.expandMenu : t.shell.collapseMenu}
+      >
+        <CollapseIcon collapsed={collapsed} />
+        {!collapsed && <span>{t.shell.collapseMenu}</span>}
+      </button>
+    </aside>
   )
 }

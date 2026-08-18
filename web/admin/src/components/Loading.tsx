@@ -1,3 +1,6 @@
+import { useT } from '../i18n'
+
 export function Loading() {
-  return <div style={{ padding: 48, textAlign: 'center', color: '#888' }}>加载中…</div>
+  const t = useT()
+  return <div style={{ padding: 48, textAlign: 'center', color: '#888' }}>{t.common.loading}</div>
 }

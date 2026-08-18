@@ -1,58 +1,54 @@
-// 框架布局:顶栏(档案/数据域)+ 侧栏(roleCode 过滤)+ 内容区 Outlet。
-import { Outlet, useNavigate } from 'react-router-dom'
-import type { ReactNode } from 'react'
-import { adminLogout, type Profile } from '../api/auth'
-import logoMark from '../assets/brand/logo-mark-navy.png'
+// 框架布局:顶栏 + 侧栏(折叠/抽屉)+ 面包屑 + 内容区 Outlet + FAB + 底栏。规格见 design-spec.md §1。
+import { useState, type ReactNode } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
+import type { Profile } from '../api/auth'
 import { ProfileContext } from './profile'
+import { TopBar } from './TopBar'
 import { Sidebar } from './Sidebar'
+import { Breadcrumb } from './Breadcrumb'
+import { BottomBar } from './BottomBar'
+import { Fab } from './Fab'
+import { MENU_GROUPS, KEY_BY_PATH, PAGE_BY_KEY } from '../router/menu.def'
+import { visibleGroupIds } from '../router/role-menu'
+import './shell.css'
 
 export function AdminLayout({ profile }: { profile: Profile; children?: ReactNode }) {
-  const nav = useNavigate()
+  const { pathname } = useLocation()
+  const [collapsed, setCollapsed] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  const visible = new Set(visibleGroupIds(profile.roleCode))
+  const groups = MENU_GROUPS.filter((g) => visible.has(g.id))
+  const activeKey = KEY_BY_PATH.get(pathname)
+  const activeGroupId = activeKey ? PAGE_BY_KEY.get(activeKey)?.groupId : undefined
+
   return (
     <ProfileContext.Provider value={profile}>
-      <div style={{ minHeight: '100vh', background: '#f5f6fa' }}>
-        <header
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '0 24px',
-            height: 56,
-            background: '#1f2d3d',
-            color: '#fff',
-          }}
-        >
-          <span style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 15, fontWeight: 600 }}>
-            <img
-              src={logoMark}
-              alt="Sphere Boss"
-              style={{ width: 26, height: 26, background: '#fff', borderRadius: 6, padding: 1 }}
-            />
-            Sphere Boss · BOSS 管理端
-          </span>
-          <span style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 13 }}>
-            <span>{profile.legalEntityName || '—'}</span>
-            <span>{profile.regionScope ? `数据域:${profile.regionScope}` : '数据域:全集团'}</span>
-            <span>
-              {profile.realName}({profile.roleName})
-            </span>
-            <a
-              onClick={async () => {
-                await adminLogout()
-                nav('/login', { replace: true })
-              }}
-              style={{ color: '#9cf', cursor: 'pointer' }}
-            >
-              退出
-            </a>
-          </span>
-        </header>
-        <div style={{ display: 'flex', minHeight: 'calc(100vh - 56px)' }}>
-          <Sidebar roleCode={profile.roleCode} />
-          <main style={{ flex: 1, padding: 24 }}>
-            <Outlet />
-          </main>
+      <div className="shell">
+        <TopBar
+          profile={profile}
+          groups={groups}
+          activeGroupId={activeGroupId}
+          onOpenDrawer={() => setDrawerOpen(true)}
+        />
+        <div className="shell-body">
+          <Sidebar
+            groups={groups}
+            collapsed={collapsed}
+            drawerOpen={drawerOpen}
+            onToggleCollapse={() => setCollapsed((v) => !v)}
+            onCloseDrawer={() => setDrawerOpen(false)}
+          />
+          {drawerOpen && <div className="shell-backdrop" onClick={() => setDrawerOpen(false)} />}
+          <div className="shell-main-wrap">
+            <main className="shell-main">
+              <Breadcrumb />
+              <Outlet />
+            </main>
+            <Fab />
+          </div>
         </div>
+        <BottomBar />
       </div>
     </ProfileContext.Provider>
   )
