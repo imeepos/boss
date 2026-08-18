@@ -46,6 +46,9 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool, dir string) error {
 		return fmt.Errorf("database: glob migrations: %w", err)
 	}
 	sort.Strings(files)
+	if len(files) == 0 {
+		return fmt.Errorf("database: no migrations found in %s (deploy image must ship migrations/)", dir)
+	}
 	for _, f := range files {
 		version := strings.TrimSuffix(filepath.Base(f), ".up.sql")
 		var n int
