@@ -41,3 +41,4 @@
 - 当用户嫌 gitea secret 配置麻烦时,修复是评估"内网私有仓库直接把 env 文件入库"(固定密钥+注释公网风险)——homelab 场景标准 secret 流程是过度设计,简单性优先;skill 之前推的 secret 方案被现场驳回。
 - 当 app.env 配了超管口令但登录仍 40100 时,修复是查该账号 created_at/real_name:历史遗留账号(如开发期手建的 admin)会被 EnsureSuperAdmin 的 ON CONFLICT DO NOTHING 正确跳过,口令不会同步——直接 UPDATE password_hash(bcrypt 新哈希)对齐即可。
 - 当 pgx/simple protocol 报 42P18 "could not determine data type of parameter $1" 时,修复是检查占位符编号:必须从 $1 连续编号($2 起头会报 $1 类型不明),必要时补 ::text 显式类型。
+- 当接手一个"页面已上线才补多语言"的任务时,修复是按"标题→表单字段标签→占位符→按钮/提示"清单全量扫硬编码,而不是只改用户点名的那两处标题(本次 geo 两个编辑抽屉:标题早已走 i18n,真缺的是抽屉内十几个字段标签)。

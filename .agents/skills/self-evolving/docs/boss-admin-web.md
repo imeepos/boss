@@ -41,6 +41,7 @@
 - 语言：`localStorage('boss.locale')`，三语言 zh-CN/en-US/ms-MY，新增文案须同步三个 locale 文件
 - URL 一次性覆盖（`src/lib/urlPrefs.ts`）：`?theme=`、`?lang=`、`?token=`（dev 限定）启动时写入 localStorage 后 replaceState 抹除；权威存储仍是 localStorage
 - 可视化验证：`.agents/skills/self-evolving/scripts/cdp-capture.mjs`（零依赖 CDP 截图）
+- 硬性规则（用户明令）：任何组件/页面必须同时考虑多主题与多语言——文案一律走 i18n（types.ts + 三份 locale 闭环），颜色一律走 `tokens.css` 变量/主题 token，禁止 JSX 内硬编码文案或色值；交付前 grep 裸字符串与裸色值
 
 ## geo 域速查（2026-08-18 查证）
 
