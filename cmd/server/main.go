@@ -10,8 +10,8 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/pkg/auth"
-	bosotel "github.com/ymm-001/boss/internal/pkg/otel"
 	"github.com/ymm-001/boss/internal/pkg/config"
+	bosotel "github.com/ymm-001/boss/internal/pkg/otel"
 	"github.com/ymm-001/boss/internal/pkg/server"
 )
 
