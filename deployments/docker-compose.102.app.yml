@@ -17,10 +17,6 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
-    logging:
-      driver: loki
-      options:
-        loki-url: "http://192.168.0.102:19310/loki/api/v1/push"
 
   report:
     image: 192.168.0.102:5000/boss/server:latest
