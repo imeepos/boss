@@ -65,6 +65,15 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /addresses/import:
+    post:
+      tags: [Sys]
+      summary: 地址批量导入(对齐 Go 实现 POST /addresses/import,permCode menu:importer)
+      operationId: importAddresses
+      requestBody: { content: { application/json: { schema: { type: array, items: { type: object } } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /params:
     get:
       tags: [Sys]

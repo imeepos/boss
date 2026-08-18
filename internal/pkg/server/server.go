@@ -24,10 +24,11 @@ type Config struct {
 // 健康检查端点 /healthz 供 K8s liveness/readiness 探活;业务路由由 app 层在此 engine 上注册。
 func New(cfg Config) *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Recovery())
+	r.Use(gin.Recovery(), PrometheusMiddleware())
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+	registerMetrics(r)
 	return r
 }
 

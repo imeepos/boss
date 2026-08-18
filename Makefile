@@ -1,7 +1,18 @@
 GO ?= go
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check proto docker-build
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check proto docker-build load
+
+## W11 压测:种子压测账号 → 起服务 → k6 → 摘服务(真实 PG 需 BOSS_DATABASE_DSN;端口可经 BOSS_HTTP_PORT 覆盖)
+load:
+	BOSS_LOAD_PASSWORD="Load-test-123" $(GO) run scripts/load/seed_account.go "$${BOSS_DATABASE_DSN:?BOSS_DATABASE_DSN 未设置}"
+	$(GO) build -o /tmp/boss-server ./cmd/server
+	PORT="$${BOSS_HTTP_PORT:-18080}"; \
+	BOSS_DATABASE_DSN="$${BOSS_DATABASE_DSN}" BOSS_HTTP_ADDR=":$$PORT" BOSS_GRPC_ADDR=":$$((PORT+1000))" /tmp/boss-server > /tmp/boss-server.log 2>&1 & \
+	  SERVER_PID=$$!; \
+	  for i in $$(seq 1 20); do curl -sf "http://127.0.0.1:$$PORT/healthz" >/dev/null && break; sleep 1; done; \
+	  k6 run -e BASE="http://127.0.0.1:$$PORT" scripts/load/api-load.js; \
+	  RC=$$?; kill $$SERVER_PID; exit $$RC
 
 ## 基础设施:PG/Redis/Kafka/Nacos/MinIO/Temporal/VM
 infra-up:

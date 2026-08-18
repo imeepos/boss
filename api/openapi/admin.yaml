@@ -65,6 +65,7 @@ paths:
   /accounts/{accountId}: { $ref: './admin/sys.yaml#/paths/~1accounts~1{accountId}' }
   /roles: { $ref: './admin/sys.yaml#/paths/~1roles' }
   /addresses: { $ref: './admin/sys.yaml#/paths/~1addresses' }
+  /addresses/import: { $ref: './admin/sys.yaml#/paths/~1addresses~1import' }
   /params: { $ref: './admin/sys.yaml#/paths/~1params' }
   /params/{key}: { $ref: './admin/sys.yaml#/paths/~1params~1{key}' }
   /audit-logs: { $ref: './admin/sys.yaml#/paths/~1audit-logs' }
@@ -107,6 +108,7 @@ paths:
   /replacements: { $ref: './admin/asset.yaml#/paths/~1replacements' }
 
   # ---------- Oss ----------
+  /resources: { $ref: './admin/oss.yaml#/paths/~1resources' }
   /ports: { $ref: './admin/oss.yaml#/paths/~1ports' }
   /ports/{portId}/change-history: { $ref: './admin/oss.yaml#/paths/~1ports~1{portId}~1change-history' }
   /reserves: { $ref: './admin/oss.yaml#/paths/~1reserves' }
@@ -136,6 +138,7 @@ paths:
   /activation-callbacks/{callbackId}/retry: { $ref: './admin/order.yaml#/paths/~1activation-callbacks~1{callbackId}~1retry' }
 
   # ---------- Worker(师傅管理) ----------
+  /worker-groups: { $ref: './admin/worker.yaml#/paths/~1worker-groups' }
   /workers: { $ref: './admin/worker.yaml#/paths/~1workers' }
   /workers/{workerId}: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}' }
   /workers/{workerId}/settings: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1settings' }

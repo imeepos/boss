@@ -1,4 +1,12 @@
 paths:
+  /resources:
+    get:
+      tags: [Oss]
+      summary: 网络资源清单(OSS/OLT/分光器;对齐 Go 实现 GET /resources,permCode menu:resource)
+      operationId: listResources
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /ports:
     get:
       tags: [Oss]

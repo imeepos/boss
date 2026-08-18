@@ -2,6 +2,13 @@
 # 实体单一事实源: api/mock/worker/entities.js(经 db.js 聚合);
 # 师傅端视图(api/mock/worker/data.js)由此派生,后台改动即时生效。
 paths:
+  /worker-groups:
+    get:
+      tags: [Worker]
+      summary: 师傅分组(对齐 Go 实现 GET /worker-groups,permCode menu:order)
+      operationId: listWorkerGroups
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
   /workers:
     get:
       tags: [Worker]
