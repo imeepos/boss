@@ -43,6 +43,23 @@ type Config struct {
 		Secret string
 		TTL    time.Duration
 	}
+
+	// Provisioner(阶段7 下发守护进程,债务偿还:真实 Telnet 执行器)。
+	Provisioner struct {
+		OLTAddr  string // OLT 管理地址 host:port
+		OLTUser  string
+		OLTPass  string
+		Interval time.Duration
+	}
+	// Collector(阶段7 采集器,债务偿还:真实 SNMP 采集源)。
+	Collector struct {
+		Targets       []string // "code@host:port,..."
+		Community     string
+		OpticalOID    string
+		PacketLossOID string
+		StatusOID     string
+		Interval      time.Duration
+	}
 }
 
 // Load 从环境变量读取;文件/Nacos 热更新在阶段1迭代中接入。
@@ -68,6 +85,18 @@ func Load() *Config {
 	c.Events.Topic = getenv("BOSS_EVENTS_TOPIC", "boss-order-events")
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
 	c.JWT.TTL = 24 * time.Hour
+
+	c.Provisioner.OLTAddr = getenv("BOSS_PROVISION_OLT_ADDR", "0")
+	c.Provisioner.OLTUser = getenv("BOSS_PROVISION_OLT_USER", "admin")
+	c.Provisioner.OLTPass = getenv("BOSS_PROVISION_OLT_PASS", "admin")
+	c.Provisioner.Interval = 5 * time.Second
+
+	c.Collector.Targets = getlist("BOSS_SNMP_TARGETS", nil)
+	c.Collector.Community = getenv("BOSS_SNMP_COMMUNITY", "public")
+	c.Collector.OpticalOID = getenv("BOSS_SNMP_OPTICAL_OID", "1.3.6.1.4.1.100.1")
+	c.Collector.PacketLossOID = getenv("BOSS_SNMP_PACKETLOSS_OID", "1.3.6.1.4.1.100.2")
+	c.Collector.StatusOID = getenv("BOSS_SNMP_STATUS_OID", "1.3.6.1.2.1.2.2.1.8")
+	c.Collector.Interval = 30 * time.Second
 	return c
 }
 
