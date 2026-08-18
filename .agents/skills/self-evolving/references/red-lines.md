@@ -14,6 +14,7 @@
 - 禁止在 UI 里用原生 <select> 新增下拉——option 弹层系统渲染无法随主题定制,已两次被用户点名;一律用 components/Dropdown.tsx(触发器+浮层 listbox+打勾+外部收起)。表单内遗留的原生 select 待逐步替换。
 - 禁止用文字字形(▾ ✓ × →)当图标——视觉重量不足且各平台渲染不一;一律描边 SVG。
 - 禁止在总结里声称"已适配/已验证"而没有对应验证动作(grep 令牌定义、双主题截图、build)——用户会信以为真,静默失败就是这样漏过去的。
+- 禁止把“新增 light/dark CSS 令牌 + typecheck/build 通过”当作表单多主题适配已完成，因为浏览器实际计算样式仍可能错误；必须在真实页面验证输入背景、文字、placeholder、边框、focus、只读态和按钮。
 - 禁止把 build/test 通过当作 UI 交互已验证——下拉/搜索问题必须在真实业务 DOM 中断言点击后的控件文本、筛选结果和 URL 同步，否则用户会再次发现“能展开但不能选中”。
 - 禁止自造设计体系结构(分页/表格/抽屉等)而不先取 antd 一手规范——antd GitHub components/<name>/index.zh-CN.md 是一手来源。
 - 禁止收尾总结后留未提交改动——"完成"的定义含 git commit;门禁四件套 = typecheck + test + build + commit(git status 必须干净),已 3 次靠用户提醒才提交。

@@ -361,3 +361,16 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - t.Cleanup 里用连接池时,资源释放必须同走 t.Cleanup(LIFO),不能 defer 与 t.Cleanup 混用。
 - 验证闭环 = BOSS_PG_TEST_DSN 指真库跑测试 + psql 按前缀计数残留为 0,缺一不可(单看测试 PASS 不够)。
 - edit 的 new_string 严格镜像 old_string 的范围边界,不顺手增删行。
+
+## 2026-08-19 用户中心表单多主题适配反思
+
+**哪个坑浪费了最多时间？**
+前一轮用户中心布局与菜单实验只做了 typecheck/test/build 和 HMR，没有做亮暗主题的真实页面验证；随后用户发现基本资料与安全设置的表单仍使用全局固定亮色输入令牌。修复时虽然补了 `[data-theme]` 主题令牌并通过门禁，但仍未完成双主题截图或 computed-style 断言。
+
+**这个 skill 有没有提前警告我？**
+有。前端索引、known-issues 和红线都明确要求每个 CSS 令牌先 grep 定义、主题改动做双主题截图或程序化验证；本次之前没有执行完整验证，因此属于重复犯错。另一个小问题是从 `web/admin` 子目录执行仓库根路径的 git add 失败，说明 worktree 操作应先确认 git 根目录与相对路径。
+
+**重来一次我会怎么做？**
+- 主题改动前先列出页面实际元素与每个 token 的 light/dark 值。
+- 修改后用全新 Chrome profile，分别设置 `boss.theme=light/dark`，在真实用户中心页面采集截图或用 `getComputedStyle` 断言输入框背景、文字、边框和按钮对比度。
+- 在 worktree 的仓库根目录执行 git add/commit，最后确认 `git status --short` 干净；总结只声明实际完成的验证。

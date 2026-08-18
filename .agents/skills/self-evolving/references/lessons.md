@@ -67,3 +67,5 @@
 - 当列表筛选既要刷新恢复又要保证控件即时响应时，修复是 URL 只做首次初始化，交互更新本地 state 并通过独立 setter 同步 URL；不要把 `useSearchParams` 的实时值直接作为控件渲染源。skill 没提前警告我。
 - 当用户报告控件“点不中/选不中”时，修复是用真实页面 DOM 断言点击后的控件文本、筛选结果和 `location.search` 三者同时变化；build/test 只能证明代码可编译，不能证明交互链路。skill 没提前警告我。
 - 当要制作个人中心或设置类页面时，修复是先调研 Ant Design Pro 一手范式并输出信息架构/状态清单，再采用“紧凑账号头部 + 左侧分区导航 + 右侧单任务内容面板”，不要先堆叠多张功能卡片。skill 没提前警告我。
+- 当用户要求多主题表单适配时，修复是先盘点表单的背景/文字/placeholder/边框/focus/按钮/只读态，再为 light/dark 各自定义语义令牌；typecheck/build 不能证明视觉正确，必须在真实页面做双主题 computed-style 或截图验证。skill 已有相关警告，但本次前一轮未执行。
+- 当在 worktree 的子目录执行 git add 时，修复是先用 `git rev-parse --show-toplevel` 确认仓库根目录，路径按根目录解析；门禁结束必须在根目录检查 `git status --short`。skill 没提前警告我。

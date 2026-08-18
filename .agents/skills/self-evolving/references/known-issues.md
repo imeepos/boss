@@ -117,6 +117,12 @@
 - 修法:把 `d.osm_admin_level` 改为 `COALESCE(d.osm_admin_level,0)`。同文件的 `GetSubdivision` 已经正确使用了 COALESCE，属于同一函数的遗漏。
 - 检视:排查 Go API 500 时，先看 SQL SELECT 的 nullable 列（SMALLINT/INTEGER/BIGINT 且无 NOT NULL）有没有 COALESCE 包裹——这是 pgx 最常被遗漏的扫描保护。
 
+## 主题令牌已补但表单视觉仍未确认
+
+症状 → typecheck/test/build 均通过，用户中心表单仍可能在某主题下显示错误的输入背景、文字或 focus 状态。
+原因 → CSS 门禁不覆盖视觉；只把固定亮色变量替换为主题变量，未在真实页面切换 light/dark 并读取 computed style 或截图对照，无法证明浏览器实际应用了正确令牌。
+修法 → 修改前盘点表单状态，grep 每个 `var(--x)` 的定义；修改后使用全新浏览器 profile，在真实用户中心页面分别验证 light/dark 的背景、文字、placeholder、边框、focus、只读态和按钮，再总结实际验证范围。
+
 ## URL 查询参数与本地交互 state 互相覆盖 → 下拉/搜索值回弹
 
 - 症状:下拉可以展开，但点击选项后显示仍是旧值；搜索输入可能刚输入就回退；URL 变化后组件状态不稳定。
