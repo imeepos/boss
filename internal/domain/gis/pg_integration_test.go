@@ -24,7 +24,7 @@ func TestGIS_DrillAndDetail_Integration(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-	if err := database.Migrate(ctx, pool, "../../migrations"); err != nil {
+	if err := database.Migrate(ctx, pool, "../../../migrations"); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	s := NewPGStore(pool)

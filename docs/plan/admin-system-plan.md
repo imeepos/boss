@@ -10,7 +10,7 @@
 | 项 | 现状 |
 |---|---|
 | 原型 | `docs/admin/` 共 13 分组 45 菜单页 + login 散页，jQuery 静态 HTML，`menu.js` 定义分组结构 |
-| 接口契约 | `api/openapi/admin.yaml` 聚合 + `api/openapi/admin/*.yaml` 按域拆分，前缀 `/api/admin/v1` |
+| 接口契约 | `api/openapi/admin.yaml` 聚合 + `api/openapi/admin/*.yaml` 按域拆分，前缀 `/api/v1`、envelope `{code,msg,data}`（V1.1 已对齐 Go 实现） |
 | Mock | `api/mock/combined.js`（:8092），与真实网关同路由形状 |
 | 后端 | Go 模块化单体已完成 12 域 REST handler（W1–W8），经 APISIX 暴露 |
 | 用户端/师傅端 | 另有 `/api/v1`、`/api/worker/v1`，与 admin 隔离 |
@@ -30,7 +30,7 @@
 | GIS | Cesium（阶段8 接入，独立懒加载 chunk） | 大屏联动 WS 推送增量 |
 | 实时 | WebSocket/SSE 订阅告警、订单状态、派单 | 复用网关中心化推送 |
 | 权限 | 后端 RBAC 接口驱动菜单（`/auth/me` 返回菜单树+数据域），前端仅渲染不做权限判断 | 对齐总方案"7 角色权限由后端驱动菜单" |
-| Mock 切换 | client 的 baseUrl 走环境变量：dev→:8092 mock，staging/prod→APISIX `/api/admin/v1` | 原型 `api.js` 同规则平移 |
+| 对接后端 | 直连 Go 后端（cmd/server :8080，前缀 `/api/v1`，envelope `{code,msg,data}`）；dev 走 Vite proxy，prod 走 APISIX 同源反代；**不对接 mock**（契约漂移以 Go 实现为准回改 admin.yaml） | 详见 `docs/plan/admin-a0-plan.md` T2 |
 | 测试 | Vitest + Testing Library（关键表单/权限渲染）；Playwright 冒烟（登录→下单→出账主链） | — |
 | 规范 | ESLint + Prettier + strict TS；单文件 ≤300 行、函数 ≤30 行、无 emoji（AGENTS.md 强制） | CI 复用现有 `make lint/check` 门禁思路 |
 

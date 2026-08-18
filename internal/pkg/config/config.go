@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -60,6 +61,16 @@ type Config struct {
 		StatusOID     string
 		Interval      time.Duration
 	}
+	// Analytics(阶段9 五大指标口径单价,可解释公式系数)。
+	Analytics struct {
+		MaintUnitCost float64 // 单次维护成本(元)
+		PortUnitCost  float64 // 单端口扩容成本(元)
+	}
+	// Report(阶段9 自动报告)。
+	Report struct {
+		Period   string        // daily/weekly/monthly/quarterly
+		Interval time.Duration // 生成巡检周期
+	}
 }
 
 // Load 从环境变量读取;文件/Nacos 热更新在阶段1迭代中接入。
@@ -97,7 +108,23 @@ func Load() *Config {
 	c.Collector.PacketLossOID = getenv("BOSS_SNMP_PACKETLOSS_OID", "1.3.6.1.4.1.100.2")
 	c.Collector.StatusOID = getenv("BOSS_SNMP_STATUS_OID", "1.3.6.1.2.1.2.2.1.8")
 	c.Collector.Interval = 30 * time.Second
+
+	c.Analytics.MaintUnitCost = getfloat("BOSS_MAINT_UNIT_COST", 50)
+	c.Analytics.PortUnitCost = getfloat("BOSS_PORT_UNIT_COST", 800)
+
+	c.Report.Period = getenv("BOSS_REPORT_PERIOD", "daily")
+	c.Report.Interval = 6 * time.Hour
 	return c
+}
+
+// getfloat 环境变量取浮点,缺省 d。
+func getfloat(k string, d float64) float64 {
+	if v := os.Getenv(k); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return f
+		}
+	}
+	return d
 }
 
 func getenv(k, def string) string {

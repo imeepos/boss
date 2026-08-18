@@ -2,7 +2,7 @@ paths:
   /orders:
     get:
       tags: [Order]
-      summary: 订单列表(12 环节跟踪;status: PENDING/RESERVED/INSTALLING/DONE)
+      summary: '订单列表(12 环节跟踪;status: PENDING/RESERVED/INSTALLING/DONE)'
       operationId: listOrders
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
@@ -40,7 +40,7 @@ paths:
   /orders/{orderNo}:
     get:
       tags: [Order]
-      summary: 订单详情(含 12 环节时间轴: 完成时间/耗时/重试/结果)
+      summary: '订单详情(含 12 环节时间轴: 完成时间/耗时/重试/结果)'
       operationId: getOrder
       parameters:
         - { name: orderNo, in: path, required: true, schema: { type: string } }

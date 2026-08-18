@@ -1,40 +1,64 @@
 paths:
-  /gis/address-links:
+  /gis/levels:
     get:
       tags: [Intel]
-      summary: 地址层级码(ltree)→ GIS 实体联动清单
-      operationId: listGisAddressLinks
+      summary: GIS 层级清单(八级钻取层级;对齐 Go 实现 GET /gis/levels,permCode menu:gis)
+      operationId: listGisLevels
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
-  /analytics/overview:
+  /gis/drill:
     get:
       tags: [Intel]
-      summary: 经营分析总览(五大核心指标 + 品牌×区域交叉 + 维护一张表)
-      operationId: getAnalyticsOverview
+      summary: GIS 下钻(按 level 逐级;对齐 Go 实现 GET /gis/drill,permCode menu:gis)
+      operationId: gisDrill
       parameters:
-        - name: region
-          in: query
-          schema: { type: string, description: 大区(吕宋/比萨扬/棉兰老) }
-        - name: brand
-          in: query
-          schema: { type: string, description: 品牌(LEG-A/B/C) }
+        - { name: level, in: query, required: true, schema: { type: integer } }
+        - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
-        '200':
-          description: 经营分析聚合数据
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  kpis: { type: array, items: { type: object } }
-                  brandRegionMatrix: { type: object }
-                  replaceList: { type: array, items: { type: object } }
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /gis/resources/{resourceId}/detail:
+    get:
+      tags: [Intel]
+      summary: GIS 实体详情(端口/设备/链路;对齐 Go 实现,permCode menu:gis)
+      operationId: getGisResourceDetail
+      parameters:
+        - { name: resourceId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /analytics/indicators:
+    get:
+      tags: [Intel]
+      summary: 经营分析核心指标(对齐 Go 实现 GET /analytics/indicators,permCode menu:analytics)
+      operationId: getAnalyticsIndicators
+      parameters:
+        - { name: region, in: query, schema: { type: string } }
+        - { name: brand, in: query, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /analytics/heatmap:
+    get:
+      tags: [Intel]
+      summary: 热力图聚合(区域×装机密度;对齐 Go 实现 GET /analytics/heatmap)
+      operationId: getAnalyticsHeatmap
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /analytics/maintenance:
+    get:
+      tags: [Intel]
+      summary: 维护一张表(装维质量;对齐 Go 实现 GET /analytics/maintenance)
+      operationId: getAnalyticsMaintenance
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /reports:
     get:
       tags: [Intel]
-      summary: 经营分析报告列表(日/周/月/季度)
+      summary: 经营分析报告列表(日/周/月/季度;对齐 Go 实现 GET /reports,permCode menu:report)
       operationId: listReports
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
@@ -42,16 +66,24 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Intel]
-      summary: 生成报告
+      summary: 生成报告(未实现:Go 后端暂未提供,报告由定时任务产出)
       operationId: createReport
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /reports/latest:
+    get:
+      tags: [Intel]
+      summary: 最新一期报告(对齐 Go 实现 GET /reports/latest)
+      operationId: getLatestReport
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
   /reports/{reportId}/send:
     post:
       tags: [Intel]
-      summary: 报告推送
+      summary: 报告推送(未实现:Go 后端暂未提供)
       operationId: sendReport
       parameters:
         - { name: reportId, in: path, required: true, schema: { type: integer } }

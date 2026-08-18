@@ -54,7 +54,7 @@ paths:
   /regions:
     get:
       tags: [Org]
-      summary: 经营区域树(level: 1集团 2大区 3省 4城市)
+      summary: '经营区域树(level: 1集团 2大区 3省 4城市)'
       operationId: listRegions
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
@@ -65,6 +65,9 @@ paths:
     get:
       tags: [Org]
       summary: 菜单权限矩阵(三层权限模型 + 角色×菜单组可见性)
+      description: |
+        未实现:Go 后端(internal/app)尚未提供本接口,前端 A0 不依赖;
+        菜单可见性暂由 /auth/me 的 roleCode 前端映射,待 /auth/menus 契约变更单落地后切换。
       operationId: getMenuPerms
       responses:
         '200':

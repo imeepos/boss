@@ -2,7 +2,7 @@ paths:
   /alarms:
     get:
       tags: [Alarm]
-      summary: 告警列表(级别: 严重/警告/提示)
+      summary: '告警列表(级别: 严重/警告/提示)'
       operationId: listAlarms
       parameters:
         - name: level

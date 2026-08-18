@@ -315,7 +315,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	t.Run("W7_下发重试留痕_指标告警", func(t *testing.T) {
 		// 下发:建模板+任务 → 失败留痕 → 重试 → 执行成功。
 		tplID, err := a.Provision.CreateTemplate(ctx, provision.Template{
-			LegalEntityID: 1, Code: "TPL-E2E-" + orderNo6(time.Now().UnixNano()%1e6), Name: "E2E模板",
+			LegalEntityID: 1, Code: "TPL-E2E-" + orderNo6(time.Now().UnixNano()%1e12), Name: "E2E模板",
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -353,7 +353,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 
 		// 采集:越限样本 → 指标入库 + CRITICAL 告警。
 		threshold := 5.0
-		resID, _ := a.Resource.CreateResource(ctx, resSeed(s.addressID, orderNo6(time.Now().UnixNano()%1e6)))
+		resID, _ := a.Resource.CreateResource(ctx, resSeed(s.addressID, orderNo6(time.Now().UnixNano()%1e12)))
 		col := &device.Collector{Dev: a.Device, Alarm: a.Alarm, PacketLossAlarmPct: &threshold}
 		loss := 9.9
 		if err := col.Ingest(ctx, device.Sample{
@@ -392,7 +392,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		}
 		orderID := o0.ID
 		// 独立地址+设备+端口(quad_links.address_id/port_id 唯一)。
-		suffix := orderNo6(time.Now().UnixNano() % 1e6)
+		suffix := orderNo6(time.Now().UnixNano() % 1e12)
 		var w8Addr int64
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO addresses(path, level, name) VALUES($1, 1, $2) RETURNING id`,

@@ -2,7 +2,7 @@ paths:
   /ports:
     get:
       tags: [Oss]
-      summary: 端口台账(统计卡 + 清单,status: IDLE/RESERVED/USED/DISABLED)
+      summary: '端口台账(统计卡 + 清单,status: IDLE/RESERVED/USED/DISABLED)'
       operationId: listPorts
       responses:
         '200':
@@ -15,13 +15,13 @@ paths:
                   stats: { type: object }
                   items: { type: array, items: { type: object } }
 
-  /ports/{portCode}/change-history:
+  /ports/{portId}/change-history:
     get:
       tags: [Oss]
-      summary: 端口变更历史(变更前后/触发来源)
+      summary: 端口变更历史(变更前后/触发来源;对齐 Go 实现 :portId)
       operationId: listPortChangeHistory
       parameters:
-        - { name: portCode, in: path, required: true, schema: { type: string } }
+        - { name: portId, in: path, required: true, schema: { type: integer } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -89,7 +89,7 @@ paths:
   /olt-devices:
     get:
       tags: [Oss]
-      summary: OLT 设备监控(统计卡 + 状态/丢包率/光功率/告警)
+      summary: OLT 设备监控(统计卡 + 状态/丢包率/光功率/告警;对应 Go /device/metrics 数据源)
       operationId: listOltDevices
       responses:
         '200':
@@ -101,6 +101,22 @@ paths:
                 properties:
                   stats: { type: object }
                   items: { type: array, items: { type: object } }
+
+  /device/metrics:
+    get:
+      tags: [Oss]
+      summary: 设备指标时序(对齐 Go 实现 GET /device/metrics,permCode menu:device)
+      operationId: listDeviceMetrics
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /device/maintenances:
+    get:
+      tags: [Oss]
+      summary: 设备维护记录(对齐 Go 实现 GET /device/maintenances,permCode menu:device)
+      operationId: listDeviceMaintenances
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /lo-accounts:
     get:
@@ -130,3 +146,11 @@ paths:
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /expansions/qos-templates:
+    get:
+      tags: [Oss]
+      summary: 扩容 QoS 模板(对齐 Go 实现 GET /expansions/qos-templates)
+      operationId: listExpansionQosTemplates
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

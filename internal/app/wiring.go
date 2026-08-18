@@ -7,6 +7,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
 	aaability "github.com/ymm-001/boss/internal/domain/aaa/billing"
+	"github.com/ymm-001/boss/internal/domain/analytics"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
@@ -15,6 +16,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
+	"github.com/ymm-001/boss/internal/domain/report"
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/domain/worker"
@@ -49,9 +51,11 @@ type Application struct {
 	OrderLedger order.OrderLedgerService
 	Channel     order.ChannelService
 
-	Device device.DeviceService
-	Alarm  device.AlarmService
-	Gis    gis.GISService
+	Device    device.DeviceService
+	Alarm     device.AlarmService
+	Gis       gis.GISService
+	Analytics analytics.AnalyticsService
+	Report    *report.ReportService
 
 	Aaa       aaa.AaaService
 	Provision provision.ProvisionService
@@ -146,9 +150,10 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		OrderLedger: ord,
 		Channel:     ord,
 
-		Device: dev,
-		Gis:    gis.NewPGStore(pool),
-		Alarm:  dev,
+		Device:    dev,
+		Gis:       gis.NewPGStore(pool),
+		Analytics: analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost),
+		Alarm:     dev,
 
 		Aaa:       aaastore,
 		Provision: provision.NewPGStore(pool),
@@ -162,6 +167,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 
 	app.Audit = aw
+
+	// 阶段9:经营分析 + 自动报告。
+	app.Report = &report.ReportService{Ana: app.Analytics, St: report.NewPGStore(pool)}
 
 	// 债务偿还:gRPC aaa/v1 依赖——授权器 + 话单投递(PG 落库必选,Kafka 可用时双写)。
 	app.AaaAuth = aaa.NewPGAuthorizer(pool)

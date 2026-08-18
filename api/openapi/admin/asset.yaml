@@ -2,7 +2,7 @@ paths:
   /assets:
     get:
       tags: [Asset]
-      summary: 资产台账(统计卡 + 清单,status: IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED)
+      summary: '资产台账(统计卡 + 清单,status: IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED)'
       operationId: listAssets
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
@@ -18,20 +18,36 @@ paths:
                   stats: { type: object }
                   items: { type: array, items: { type: object } }
 
-  /assets/{assetCode}/lifecycle:
+  /assets/{assetId}/lifecycle:
     get:
       tags: [Asset]
-      summary: 资产生命周期时间轴/流转记录
+      summary: 资产生命周期时间轴/流转记录(对齐 Go 实现 :assetId)
       operationId: listAssetLifecycle
       parameters:
-        - { name: assetCode, in: path, required: true, schema: { type: string } }
+        - { name: assetId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /assets/batches:
+    get:
+      tags: [Asset]
+      summary: 资产批次(对齐 Go 实现 GET /assets/batches)
+      operationId: listAssetBatches
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /assets/assignments:
+    get:
+      tags: [Asset]
+      summary: 资产装维指派(对齐 Go 实现 GET /assets/assignments)
+      operationId: listAssetAssignments
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /tags:
     get:
       tags: [Asset]
-      summary: 电子标签列表(status: UNBOUND/BOUND/DISABLED)
+      summary: '电子标签列表(status: UNBOUND/BOUND/DISABLED)'
       operationId: listTags
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }

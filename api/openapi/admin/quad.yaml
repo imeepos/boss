@@ -37,13 +37,61 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
-  /quad-conflicts/{conflictNo}/resolve:
+  /quad-conflicts/{id}/resolve:
     post:
       tags: [Quad]
-      summary: 冲突处理
+      summary: 冲突处理(对齐 Go 实现 POST /quad-conflicts/:id/resolve)
       operationId: resolveQuadConflict
       parameters:
-        - { name: conflictNo, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /quad-links/by-asset:
+    get:
+      tags: [Quad]
+      summary: 按资产码反查(对齐 Go 实现,permCode menu:quadlink)
+      operationId: queryQuadLinksByAsset
+      parameters:
+        - { name: assetId, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /quad-links/by-customer:
+    get:
+      tags: [Quad]
+      summary: 按客户码反查(对齐 Go 实现,permCode menu:quadlink)
+      operationId: queryQuadLinksByCustomer
+      parameters:
+        - { name: customerId, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /quad-links/by-port:
+    get:
+      tags: [Quad]
+      summary: 按端口码反查(对齐 Go 实现,permCode menu:quadlink)
+      operationId: queryQuadLinksByPort
+      parameters:
+        - { name: portId, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /quad-links/by-address:
+    get:
+      tags: [Quad]
+      summary: 按地址码反查(对齐 Go 实现,permCode menu:quadlink)
+      operationId: queryQuadLinksByAddress
+      parameters:
+        - { name: addrId, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /quad-links/reconcile:
+    post:
+      tags: [Quad]
+      summary: 四码对账(触发每日对账任务;对齐 Go 实现)
+      operationId: reconcileQuadLinks
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 

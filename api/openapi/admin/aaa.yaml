@@ -1,13 +1,20 @@
 paths:
-  /aaa-logs:
+  /cdrs:
     get:
       tags: [Aaa]
-      summary: AAA 话单与认证日志(类型: 话单/认证成功/认证失败)
-      operationId: listAaaLogs
+      summary: 'AAA 话单列表(对齐 Go 实现 GET /cdrs,permCode menu:aaalog)'
+      operationId: listCdrs
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
-        - name: type
-          in: query
-          schema: { type: string, enum: [CDR, AUTH_OK, AUTH_FAIL] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /auth-logs:
+    get:
+      tags: [Aaa]
+      summary: '认证日志(对齐 Go 实现 GET /auth-logs,permCode menu:aaalog)'
+      operationId: listAuthLogs
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }

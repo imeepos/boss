@@ -1,30 +1,39 @@
 # 公共响应组件(admin 端)
+# V1.1 对齐 Go 实现(internal/app/http.go respond):统一 envelope {code,msg,data},HTTP 恒 200。
+# 域文件 inline schema 均描述 data 负载;列表 data 为裸数组。
 components:
   responses:
     Ok:
-      description: 操作成功
+      description: 操作成功(code=0,data 由各接口定义或为空)
       content:
         application/json:
           schema:
             type: object
             properties:
               code: { type: integer, example: 0 }
-              message: { type: string, example: success }
+              msg: { type: string, example: ok }
     List:
-      description: 列表(统一 items 包装)
+      description: 列表(data 为裸数组;前端请求层适配 {items})
       content:
         application/json:
           schema:
             type: object
             properties:
-              items:
+              code: { type: integer, example: 0 }
+              msg: { type: string, example: ok }
+              data:
                 type: array
                 items: { type: object }
     Item:
-      description: 单条记录(平铺对象;未命中返回 404)
+      description: 单条记录(data 为平铺对象;未命中 code=404)
       content:
         application/json:
-          schema: { type: object }
+          schema:
+            type: object
+            properties:
+              code: { type: integer, example: 0 }
+              msg: { type: string, example: ok }
+              data: { type: object }
 
   parameters:
     keyword:

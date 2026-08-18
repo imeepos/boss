@@ -16,21 +16,27 @@ paths:
                 password: { type: string }
       responses:
         '200':
-          description: 登录成功
+          description: 登录成功(envelope;账号密码错误 code=401,见 apitypes)
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  token: { type: string }
-                  accountId: { type: integer }
-                  realName: { type: string }
-                  roleName: { type: string }
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      token: { type: string }
+                      accountId: { type: integer }
+                      realName: { type: string }
+                      roleName: { type: string }
 
   /auth/logout:
     post:
       tags: [Auth]
       summary: 退出登录
+      description: 未实现:Go 后端暂无该路由(token 无状态,前端清本地 token 即可)。
       operationId: adminLogout
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
@@ -38,19 +44,25 @@ paths:
   /auth/me:
     get:
       tags: [Auth]
-      summary: 当前登录用户信息(header 展示)
+      summary: 当前登录用户信息(header 展示;不含菜单树,菜单可见性由 roleCode 前端映射)
       operationId: adminMe
       responses:
         '200':
-          description: 当前用户
+          description: 当前用户(envelope)
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  accountId: { type: integer }
-                  username: { type: string }
-                  realName: { type: string }
-                  roleName: { type: string }
-                  legalEntityName: { type: string }
-                  regionScope: { type: string, description: 区域数据范围(空=全集团) }
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      accountId: { type: integer }
+                      username: { type: string }
+                      realName: { type: string }
+                      roleCode: { type: string, description: 角色码(RoleCode 枚举,见 server-ts/src/enums.ts) }
+                      roleName: { type: string }
+                      legalEntityName: { type: string }
+                      regionScope: { type: string, description: 区域数据范围(空=全集团) }

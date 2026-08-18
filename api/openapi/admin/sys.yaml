@@ -1,3 +1,5 @@
+# 对齐说明(V1.1):Go 后端当前仅实现 /addresses 与 /addresses/import(permCode menu:address/menu:importer);
+# /accounts /roles /params /audit-logs /import-tasks 尚未实现,前端消费前需确认后端交付。
 paths:
   /accounts:
     get:

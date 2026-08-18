@@ -1,18 +1,21 @@
 openapi: 3.0.3
 info:
   title: BOSS 管理后台(admin 端) REST API
-  version: 1.0.0
+  version: 1.1.0
   description: |
     管理后台(admin 端,对应 docs/admin/*.html 全量页面)对外 REST 契约。
     权威字段/状态枚举见 docs/contract/{terms,fields,domain-map}.md;
-    本文件为 APISIX 路由与假数据 mock(api/mock/admin)的单一事实源。
-    接口按域拆分至 admin/ 目录,本文件仅做聚合(内联 $ref)。
-    前缀 /api/admin/v1,与用户端 /api/v1、师傅端 /api/worker/v1 隔离。
-    响应约定:业务数据直接平铺返回(列表统一 { items: [...] });
-    写操作成功返回 { code: 0, message: 'success' };失败返回非 0 code。
+    本文件为 APISIX 路由的单一事实源;接口按域拆分至 admin/ 目录,本文件仅做聚合(内联 $ref)。
+    前缀 /api/v1(与 Go 实现 internal/app/http.go 对齐,三端共用前缀由网关分流;
+    APISIX 可另暴露 /api/admin/v1 别名,但契约以实现前缀为准)。
+    响应约定(对齐 pkg/apitypes 与 http.go respond;V1.1 起取代旧"平铺+{items}"约定):
+    1) 统一 envelope { code, msg, data },HTTP 状态恒 200,业务成败只看 code(0=成功)。
+    2) 域文件中的 inline response schema 一律描述 data 负载,不含 envelope 外壳。
+    3) 列表的 data 为裸数组(实现 respond(c, CodeOK, list);前端请求层适配 UI 所需 {items})。
+    4) code=401 未认证(清 token 跳登录),403 无权限,404 不存在;参数/状态非法等码见 pkg/apitypes。
 servers:
-  - url: /api/admin/v1
-    description: 管理后台接口前缀(经 APISIX 网关 /api/admin/v1)
+  - url: /api/v1
+    description: 管理后台接口前缀(Go cmd/server 直连;APISIX 网关同前缀转发)
 
 tags:
   - name: Auth
@@ -95,7 +98,9 @@ paths:
 
   # ---------- Asset ----------
   /assets: { $ref: './admin/asset.yaml#/paths/~1assets' }
-  /assets/{assetCode}/lifecycle: { $ref: './admin/asset.yaml#/paths/~1assets~1{assetCode}~1lifecycle' }
+  /assets/{assetId}/lifecycle: { $ref: './admin/asset.yaml#/paths/~1assets~1{assetId}~1lifecycle' }
+  /assets/batches: { $ref: './admin/asset.yaml#/paths/~1assets~1batches' }
+  /assets/assignments: { $ref: './admin/asset.yaml#/paths/~1assets~1assignments' }
   /tags: { $ref: './admin/asset.yaml#/paths/~1tags' }
   /stocktakes: { $ref: './admin/asset.yaml#/paths/~1stocktakes' }
   /stocktakes/{taskId}/diff-handle: { $ref: './admin/asset.yaml#/paths/~1stocktakes~1{taskId}~1diff-handle' }
@@ -103,15 +108,18 @@ paths:
 
   # ---------- Oss ----------
   /ports: { $ref: './admin/oss.yaml#/paths/~1ports' }
-  /ports/{portCode}/change-history: { $ref: './admin/oss.yaml#/paths/~1ports~1{portCode}~1change-history' }
+  /ports/{portId}/change-history: { $ref: './admin/oss.yaml#/paths/~1ports~1{portId}~1change-history' }
   /reserves: { $ref: './admin/oss.yaml#/paths/~1reserves' }
   /reserves/{reserveId}/release: { $ref: './admin/oss.yaml#/paths/~1reserves~1{reserveId}~1release' }
   /transfers: { $ref: './admin/oss.yaml#/paths/~1transfers' }
   /transfers/{transferNo}/approve: { $ref: './admin/oss.yaml#/paths/~1transfers~1{transferNo}~1approve' }
   /transfers/{transferNo}/reject: { $ref: './admin/oss.yaml#/paths/~1transfers~1{transferNo}~1reject' }
   /olt-devices: { $ref: './admin/oss.yaml#/paths/~1olt-devices' }
+  /device/metrics: { $ref: './admin/oss.yaml#/paths/~1device~1metrics' }
+  /device/maintenances: { $ref: './admin/oss.yaml#/paths/~1device~1maintenances' }
   /lo-accounts: { $ref: './admin/oss.yaml#/paths/~1lo-accounts' }
   /expansions: { $ref: './admin/oss.yaml#/paths/~1expansions' }
+  /expansions/qos-templates: { $ref: './admin/oss.yaml#/paths/~1expansions~1qos-templates' }
 
   # ---------- Order ----------
   /orders: { $ref: './admin/order.yaml#/paths/~1orders' }
@@ -188,7 +196,12 @@ paths:
   # ---------- Quad ----------
   /quad-links: { $ref: './admin/quad.yaml#/paths/~1quad-links' }
   /quad-conflicts: { $ref: './admin/quad.yaml#/paths/~1quad-conflicts' }
-  /quad-conflicts/{conflictNo}/resolve: { $ref: './admin/quad.yaml#/paths/~1quad-conflicts~1{conflictNo}~1resolve' }
+  /quad-conflicts/{id}/resolve: { $ref: './admin/quad.yaml#/paths/~1quad-conflicts~1{id}~1resolve' }
+  /quad-links/by-asset: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-asset' }
+  /quad-links/by-customer: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-customer' }
+  /quad-links/by-port: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-port' }
+  /quad-links/by-address: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-address' }
+  /quad-links/reconcile: { $ref: './admin/quad.yaml#/paths/~1quad-links~1reconcile' }
   /scan-logs: { $ref: './admin/quad.yaml#/paths/~1scan-logs' }
 
   # ---------- Provision ----------
@@ -203,10 +216,16 @@ paths:
   /alarms/batch-retest: { $ref: './admin/alarm.yaml#/paths/~1alarms~1batch-retest' }
 
   # ---------- Aaa ----------
-  /aaa-logs: { $ref: './admin/aaa.yaml#/paths/~1aaa-logs' }
+  /cdrs: { $ref: './admin/aaa.yaml#/paths/~1cdrs' }
+  /auth-logs: { $ref: './admin/aaa.yaml#/paths/~1auth-logs' }
 
   # ---------- Intel ----------
-  /gis/address-links: { $ref: './admin/intel.yaml#/paths/~1gis~1address-links' }
-  /analytics/overview: { $ref: './admin/intel.yaml#/paths/~1analytics~1overview' }
+  /gis/levels: { $ref: './admin/intel.yaml#/paths/~1gis~1levels' }
+  /gis/drill: { $ref: './admin/intel.yaml#/paths/~1gis~1drill' }
+  /gis/resources/{resourceId}/detail: { $ref: './admin/intel.yaml#/paths/~1gis~1resources~1{resourceId}~1detail' }
+  /analytics/indicators: { $ref: './admin/intel.yaml#/paths/~1analytics~1indicators' }
+  /analytics/heatmap: { $ref: './admin/intel.yaml#/paths/~1analytics~1heatmap' }
+  /analytics/maintenance: { $ref: './admin/intel.yaml#/paths/~1analytics~1maintenance' }
   /reports: { $ref: './admin/intel.yaml#/paths/~1reports' }
+  /reports/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1latest' }
   /reports/{reportId}/send: { $ref: './admin/intel.yaml#/paths/~1reports~1{reportId}~1send' }
