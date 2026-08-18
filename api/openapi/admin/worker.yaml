@@ -102,7 +102,6 @@ paths:
     post:
       tags: [Worker]
       summary: 下发消息(即时出现在师傅端消息中心)
-      description: （未实现 planned）
       operationId: sendWorkerMessage
       requestBody:
         content:

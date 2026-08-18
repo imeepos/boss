@@ -11,5 +11,8 @@ RUN set -e; for b in ${BINARIES}; do CGO_ENABLED=0 go build -o /out/boss-$b ./cm
 FROM alpine:3.20
 RUN adduser -D app && apk add --no-cache ca-certificates
 COPY --from=build /out/ /usr/local/bin/
+# migrations 必须随镜像走:server 启动按 migrations/ 目录幂等补迁(漏拷=静默停在旧版,102 曾停于 000041)。
+WORKDIR /app
+COPY migrations /app/migrations
 USER app
 ENTRYPOINT ["boss-server"]

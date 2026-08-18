@@ -193,3 +193,9 @@ func splitKV(s string) (k, v string, ok bool) {
 	}
 	return "", "", false
 }
+
+// isJSON 检查字节切片是否以 JSON 对象或数组开头。
+func isJSON(b []byte) bool {
+	b = bytes.TrimSpace(b)
+	return len(b) > 0 && (b[0] == '{' || b[0] == '[')
+}

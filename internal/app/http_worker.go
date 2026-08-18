@@ -3,6 +3,7 @@ package app
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -105,8 +106,12 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *Application) {
 	// 下发站内消息(即时出现在师傅端消息中心,worker.yaml POST /worker-messages)。
 	g.POST("/worker-messages", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
 		var req sendWorkerMessageReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.Title == "" {
+		if err := c.ShouldBindJSON(&req); err != nil || req.Title == "" || req.WorkerID <= 0 {
 			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if _, err := a.Worker.GetWorker(c.Request.Context(), req.WorkerID); err != nil {
+			respondErr(c, err)
 			return
 		}
 		level := req.Level
@@ -114,7 +119,7 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *Application) {
 			level = "INFO"
 		}
 		id, err := a.WorkerLedger.SendMessage(c.Request.Context(), worker.Message{
-			WorkerID: req.WorkerID, Level: level, Title: req.Title, Content: req.Content,
+			WorkerID: req.WorkerID, Level: level, Title: req.Title, Content: req.Content, SentAt: time.Now(),
 		})
 		if err != nil {
 			respondErr(c, err)

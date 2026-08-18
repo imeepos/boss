@@ -154,6 +154,7 @@ var routeCatalog = []routeEntry{
 	{"GET", "/worker-feedbacks", "反馈"},
 	{"GET", "/asset-returns", "资产回收"},
 	{"GET", "/worker-messages", "消息"},
+	{"POST", "/worker-messages", "下发消息"},
 	{"PUT", "/workers/:workerId/settings", "师傅设置"},
 	{"GET", "/notices", "公告列表"},
 	{"POST", "/notices", "发布公告"},
