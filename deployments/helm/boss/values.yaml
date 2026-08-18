@@ -31,9 +31,18 @@ worker:
     limits: { cpu: 200m, memory: 256Mi }
 
 env:
-  BOSS_DATABASE_DSN: ""        # 必填(外部注入)
-  BOSS_KAFKA_BROKERS: ""
+  BOSS_DATABASE_DSN: ""        # 必填(外部注入);postgresql.enabled=true 时可留空自动接线
+  BOSS_KAFKA_BROKERS: ""       # 留空且 kafka.enabled=true 时自动接线子 chart
   BOSS_EVENTS_TOPIC: boss-order-events
   BOSS_PROVISION_OLT_ADDR: "0" # 配置真实 OLT 后 Telnet 执行器生效
   BOSS_SNMP_TARGETS: ""
   BOSS_REPORT_PERIOD: daily
+
+# 依赖子 chart(默认外接既有基础设施;新集群置 true 自建并自动接线)。
+postgresql:
+  enabled: false
+  auth: { username: boss, password: boss, database: boss }
+redis:
+  enabled: false
+kafka:
+  enabled: false

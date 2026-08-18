@@ -1,0 +1,12 @@
+dependencies:
+- name: postgresql
+  repository: oci://docker.m.daocloud.io/bitnamicharts
+  version: 16.7.27
+- name: redis
+  repository: oci://docker.m.daocloud.io/bitnamicharts
+  version: 20.6.2
+- name: kafka
+  repository: oci://docker.m.daocloud.io/bitnamicharts
+  version: 31.3.1
+digest: sha256:edfbf0df716ebb145b31505a78fb8bd9c3c21bee4ef4e59fe701be98e1578cb3
+generated: "2026-08-17T22:16:53.96221-07:00"

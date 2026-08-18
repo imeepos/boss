@@ -2,5 +2,22 @@ apiVersion: v2
 name: boss
 description: BOSS 模块化单体(阶段12 W12 部署物:server + aaa/collector/provisioner/gis/report)
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "1.0.0"
+
+# 依赖:一键自带(bundled)或外接(external)。三项默认关闭——生产环境外接既有实例
+# (192.168.0.102 基础设施),新集群置 true 由子 chart 自建并自动接线 DSN/Brokers。
+# repository 走 daocloud 镜像源(直连 docker.io 超时,与基础设施白名单策略一致)。
+dependencies:
+  - name: postgresql
+    version: "16.7.27"
+    repository: oci://docker.m.daocloud.io/bitnamicharts
+    condition: postgresql.enabled
+  - name: redis
+    version: "20.6.2"
+    repository: oci://docker.m.daocloud.io/bitnamicharts
+    condition: redis.enabled
+  - name: kafka
+    version: "31.3.1"
+    repository: oci://docker.m.daocloud.io/bitnamicharts
+    condition: kafka.enabled

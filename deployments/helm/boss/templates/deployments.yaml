@@ -34,8 +34,19 @@ spec:
             - name: BOSS_GRPC_ADDR
               value: ":{{ $.Values.server.grpcPort }}"
             {{- range $k, $v := $.Values.env }}
+            {{- if $v }}
             - name: {{ $k }}
               value: {{ $v | quote }}
+            {{- end }}
+            {{- end }}
+            {{- /* 依赖自建时自动接线:显式 env 优先,子 chart 服务兜底 */}}
+            {{- if and $.Values.postgresql.enabled (not $.Values.env.BOSS_DATABASE_DSN) }}
+            - name: BOSS_DATABASE_DSN
+              value: "host={{ $.Release.Name }}-postgresql port=5432 user=boss password=boss dbname=boss sslmode=disable"
+            {{- end }}
+            {{- if and $.Values.kafka.enabled (not $.Values.env.BOSS_KAFKA_BROKERS) }}
+            - name: BOSS_KAFKA_BROKERS
+              value: "{{ $.Release.Name }}-kafka:9092"
             {{- end }}
           {{- if $c.probes }}
           readinessProbe:
