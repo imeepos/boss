@@ -1,6 +1,6 @@
-# 对齐说明(V1.3):Go 后端已实现 /accounts(GET/POST)、/accounts/{id}(PUT)、/roles(均 menu:account)、
-# /params(GET/PUT,menu:params)、/audit-logs(GET,menu:audit,items+operator 联查)与 /addresses(系列);
-# /import-tasks 尚未实现,前端消费前需确认后端交付。
+# 对齐说明(V1.4):Go 后端已实现 /accounts(GET/POST)、/accounts/{id}(PUT)、/roles(均 menu:account)、
+# /params(GET/PUT,menu:params)、/audit-logs(GET,menu:audit,items+operator 联查)、
+# /import-tasks(GET,menu:importer)、/api-keys(系列)与 /addresses(系列)。
 paths:
   /accounts:
     get:
@@ -232,22 +232,32 @@ paths:
   /import-tasks:
     get:
       tags: [Sys]
-      summary: 数据导入任务列表(地址/客户/端口/资产台账)（未实现 planned）
+      summary: 数据导入任务清单(permCode menu:importer;近 200 条倒序)
       operationId: listImportTasks
-      parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
-    post:
-      tags: [Sys]
-      summary: 新建导入任务(上传文件)（未实现 planned）
-      operationId: createImportTask
-      requestBody:
-        content:
-          application/json:
-            schema: { type: object }
-      responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '200':
+          description: data.items=[{id,kind,operator,imported,failed,detail,createdAt}]
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            kind: { type: string, description: addresses/geo }
+                            operator: { type: string, description: 操作人姓名联查 }
+                            imported: { type: integer }
+                            failed: { type: integer }
+                            detail: { type: string, description: JSON 明细(geo 子计数) }
+                            createdAt: { type: string }
 
   /api-keys:
     get:

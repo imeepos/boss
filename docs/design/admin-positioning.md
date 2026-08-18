@@ -51,7 +51,7 @@ admin 的"客户"是**企业内部人员**——装维师傅、客服坐席、�
 |:--|:--|:--|:--|:--|:--|
 | 业务规则要调（欠费阈值/预占有效期） | 财务/调度 | 业务参数热更 | base/params | GET/PUT /params | 已上线（本轮） |
 | 数据纠纷要查"谁改的" | 审计/管理层 | 审计日志查询 | base/audit | GET /audit-logs | 已上线（本轮，items+操作人联查） |
-| 批量地址/地理数据初始化 | 网络运维 | 数据导入中心 | base/importer | POST /addresses/import、/geo/import | 已上线（地址/geo；客户/端口/资产导入 planned） |
+| 批量地址/地理数据初始化 | 网络运维 | 数据导入中心(含任务记录) | base/importer | POST /addresses/import、/geo/import、GET /import-tasks | 已上线（任务历史本轮补齐） |
 
 ### D. 自动化凭证（SYS 域）
 
@@ -71,7 +71,7 @@ admin 的"客户"是**企业内部人员**——装维师傅、客服坐席、�
 1. ~~P0 审计日志后端~~ 已上线（V1.0 轮）。
 2. ~~P0 业务参数后端~~ 已上线（V1.0 轮）。
 3. ~~P1 API key 管理页~~ 已上线（org/apikey）。
-4. P2 导入任务清单 `GET /import-tasks`（客户/端口/资产批量导入）。
+4. ~~P2 导入任务清单 `GET /import-tasks`~~ 已上线（import_tasks 表 + 导入中心任务历史）。
 
 ## 5. 使用规则
 

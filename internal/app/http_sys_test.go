@@ -75,6 +75,14 @@ func TestSysRoutes(t *testing.T) {
 		}
 	})
 
+	t.Run("导入任务清单 有权限 200", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{permOk: true}, mgr)
+		w := getJSON(t, r, "/api/v1/import-tasks", token)
+		if w.Code != 200 {
+			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("业务参数 无权限 403", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: false}, mgr)
 		w := putAuth(t, r, "/api/v1/params/arrears.threshold", `{"value":"100"}`, token)

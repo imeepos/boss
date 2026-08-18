@@ -198,6 +198,10 @@ const msMY: Translations = {
       parseFail: 'JSON tidak sah',
       imported: '{count} baris diimport',
       loadFail: 'Import gagal',
+      tasksTitle: 'Rekod Tugas Import',
+      taskColumns: ['Tugas', 'Jenis', 'Pengendali', 'Baris', 'Gagal', 'Masa'],
+      taskKindAddr: 'Hierarki Alamat',
+      taskKindGeo: 'Data Geografi ISO',
     },
     account: {
       title: 'Akaun & Peranan',

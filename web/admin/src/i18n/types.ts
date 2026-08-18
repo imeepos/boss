@@ -139,6 +139,10 @@ export interface Translations {
       parseFail: string
       imported: string
       loadFail: string
+      tasksTitle: string
+      taskColumns: string[]
+      taskKindAddr: string
+      taskKindGeo: string
     }
     account: {
       title: string

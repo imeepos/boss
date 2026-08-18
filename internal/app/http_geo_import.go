@@ -31,6 +31,11 @@ func registerGeoImportRoute(g *gin.RouterGroup, a *Application) {
 			"countries": counts.Countries, "countryNames": counts.CountryNames,
 			"subdivisions": counts.Subdivisions, "subdivisionNames": counts.SubdivisionNames,
 		})
+		_ = a.User.RecordImportTask(c.Request.Context(), "geo", claimsAccountID(c),
+			counts.Countries+counts.Subdivisions, 0, map[string]any{
+				"countries": counts.Countries, "countryNames": counts.CountryNames,
+				"subdivisions": counts.Subdivisions, "subdivisionNames": counts.SubdivisionNames,
+			})
 		respond(c, apitypes.CodeOK, counts)
 	})
 }

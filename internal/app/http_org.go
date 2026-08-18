@@ -402,6 +402,7 @@ func registerOrgRoutes(g *gin.RouterGroup, a *Application) {
 			respondErr(c, err)
 			return
 		}
+		_ = a.User.RecordImportTask(c.Request.Context(), "addresses", claimsAccountID(c), int(imported), 0, nil)
 		respond(c, apitypes.CodeOK, gin.H{"imported": imported})
 	})
 }

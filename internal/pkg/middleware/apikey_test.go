@@ -76,6 +76,12 @@ func (f *fakeUserService) ListParams(ctx context.Context) ([]user.Param, error) 
 func (f *fakeUserService) UpdateParam(ctx context.Context, key, value string, updatedBy int64) error {
 	return nil
 }
+func (f *fakeUserService) RecordImportTask(ctx context.Context, kind string, operatorID int64, imported, failed int, detail map[string]any) error {
+	return nil
+}
+func (f *fakeUserService) ListImportTasks(ctx context.Context) ([]user.ImportTask, error) {
+	return nil, nil
+}
 func (f *fakeUserService) EnsureSuperAdmin(ctx context.Context, username, password, realName string) (bool, error) {
 	return false, nil
 }

@@ -85,6 +85,16 @@ func (a *Application) recordAudit(c *gin.Context, action, targetType, targetID s
 	})
 }
 
+// claimsAccountID 取当前请求账号 id(未认证返回 0)。
+func claimsAccountID(c *gin.Context) int64 {
+	if v, ok := c.Get(middleware.CtxClaims); ok {
+		if claims, ok := v.(*auth.Claims); ok {
+			return claims.AccountID
+		}
+	}
+	return 0
+}
+
 // loginReq 登录请求体(对齐 api/openapi/admin/auth.yaml)。
 type loginReq struct {
 	Username string `json:"username" binding:"required"`

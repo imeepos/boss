@@ -1,8 +1,9 @@
-// 数据导入中心:地址层级 + ISO 地理数据两个 JSON 导入面板(menu:importer;geo 面板另需 menu:geo)。
+// 数据导入中心:地址层级 + ISO 地理数据两个 JSON 导入面板 + 导入任务历史(menu:importer;geo 面板另需 menu:geo)。
 import { useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
+import { ImportTaskList } from './TaskList'
 import '../geo/geo.css'
 
 export default function ImporterPage() {
@@ -13,6 +14,7 @@ export default function ImporterPage() {
       <h2 className="geo-section-title">{im.title}</h2>
       <ImportPanel title={im.addrTitle} hint={im.addrHint} endpoint="/addresses/import" text={im} kind="array" />
       <ImportPanel title={im.geoTitle} hint={im.geoHint} endpoint="/geo/import" text={im} kind="object" />
+      <ImportTaskList />
     </div>
   )
 }

@@ -198,6 +198,10 @@ const zhCN: Translations = {
       parseFail: 'JSON 解析失败',
       imported: '已导入 {count} 条',
       loadFail: '导入失败',
+      tasksTitle: '导入任务记录',
+      taskColumns: ['任务', '类型', '操作人', '导入行数', '失败行数', '时间'],
+      taskKindAddr: '地址层级',
+      taskKindGeo: 'ISO 地理数据',
     },
     account: {
       title: '账号与角色',

@@ -6,8 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/pkg/audit"
-	"github.com/ymm-001/boss/internal/pkg/auth"
-	"github.com/ymm-001/boss/internal/pkg/middleware"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -46,6 +44,16 @@ func registerSysRoutes(g *gin.RouterGroup, a *Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
 
+	// 导入任务记录:数据导入中心历史清单(menu:importer)。
+	g.GET("/import-tasks", requirePerm(a.User, "menu:importer"), func(c *gin.Context) {
+		list, err := a.User.ListImportTasks(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	})
+
 	g.PUT("/params/:key", requirePerm(a.User, "menu:params"), func(c *gin.Context) {
 		var req struct {
 			Value string `json:"value" binding:"required"`
@@ -54,12 +62,7 @@ func registerSysRoutes(g *gin.RouterGroup, a *Application) {
 			respond(c, apitypes.CodeInvalidParam, nil)
 			return
 		}
-		var accountID int64
-		if v, ok := c.Get(middleware.CtxClaims); ok {
-			if claims, ok := v.(*auth.Claims); ok {
-				accountID = claims.AccountID
-			}
-		}
+		var accountID int64 = claimsAccountID(c)
 		if err := a.User.UpdateParam(c.Request.Context(), c.Param("key"), req.Value, accountID); err != nil {
 			respondErr(c, err)
 			return

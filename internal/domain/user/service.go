@@ -61,6 +61,9 @@ type Service interface {
 	// 业务参数热更(menu:params 保护)。
 	ListParams(ctx context.Context) ([]Param, error)
 	UpdateParam(ctx context.Context, key, value string, updatedBy int64) error
+	// 导入任务记录(menu:importer)。
+	RecordImportTask(ctx context.Context, kind string, operatorID int64, imported, failed int, detail map[string]any) error
+	ListImportTasks(ctx context.Context) ([]ImportTask, error)
 	CreateLegalEntity(ctx context.Context, e LegalEntity) (int64, error)
 	UpdateLegalEntity(ctx context.Context, id int64, e LegalEntity) error
 	ListMenuPermMatrix(ctx context.Context) (MenuPermMatrix, error)

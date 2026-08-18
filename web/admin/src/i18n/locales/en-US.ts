@@ -198,6 +198,10 @@ const enUS: Translations = {
       parseFail: 'Invalid JSON',
       imported: '{count} rows imported',
       loadFail: 'Import failed',
+      tasksTitle: 'Import Task History',
+      taskColumns: ['Task', 'Type', 'Operator', 'Rows', 'Failed', 'Time'],
+      taskKindAddr: 'Address Hierarchy',
+      taskKindGeo: 'ISO Geo Data',
     },
     account: {
       title: 'Accounts & Roles',

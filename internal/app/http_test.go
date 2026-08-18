@@ -103,6 +103,12 @@ func (f *fakeUser) ListParams(context.Context) ([]user.Param, error) {
 func (f *fakeUser) UpdateParam(context.Context, string, string, int64) error {
 	return nil
 }
+func (f *fakeUser) RecordImportTask(context.Context, string, int64, int, int, map[string]any) error {
+	return nil
+}
+func (f *fakeUser) ListImportTasks(context.Context) ([]user.ImportTask, error) {
+	return nil, nil
+}
 
 func newTestRouter(f *fakeUser, mgr *auth.Manager) *gin.Engine {
 	gin.SetMode(gin.TestMode)
