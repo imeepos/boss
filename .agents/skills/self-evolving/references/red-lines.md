@@ -15,3 +15,4 @@
 - 禁止用文字字形(▾ ✓ × →)当图标——视觉重量不足且各平台渲染不一;一律描边 SVG。
 - 禁止在总结里声称"已适配/已验证"而没有对应验证动作(grep 令牌定义、双主题截图、build)——用户会信以为真,静默失败就是这样漏过去的。
 - 禁止自造设计体系结构(分页/表格/抽屉等)而不先取 antd 一手规范——antd GitHub components/<name>/index.zh-CN.md 是一手来源。
+- 禁止收尾总结后留未提交改动——"完成"的定义含 git commit;门禁四件套 = typecheck + test + build + commit(git status 必须干净),已 3 次靠用户提醒才提交。

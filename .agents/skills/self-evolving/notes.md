@@ -253,3 +253,12 @@ lessons 里已有"编辑文件一律先 Read 工具,不用 bash cat 代替"这�
 - CSS 里每引用一个 var(--x),提交前 grep 确认 x 在 tokens.css/styles.css/组件令牌块中真的定义过;自研组件直接按 geo.css 模式自带 [data-theme] 双令牌块。
 - 图标一律描边 SVG(24/stroke 1.8-2/round/currentColor),禁止文字字形当图标。
 - 总结里写"X 已适配/已验证"之前,必须有对应的验证动作支撑(grep 令牌、双主题截图或 build);没有就写"未验证,请目测"。
+
+## 2026-08-18 会话收尾又忘提交(用户点名)
+
+**哪个坑浪费了最多时间?** 无技术坑,纯流程坑:geo 全会话改动(URL 状态/分页/下拉/主题修正)做完、门禁全绿、反思也做了,就是没 git commit,等用户点名。这是本会话第 3 次犯"完成后不提交"(前两次教训已在 lessons 里)。
+
+**这个 skill 有没有提前警告我?** lessons 里有两条,但 SKILL.md 高频红线区没有——按场景检索没做,收尾清单不存在。
+
+**重来一次我会怎么做?** 把"git status 干净"纳入收尾门禁:门禁从"typecheck+test+build"扩为"typecheck+test+build+commit";反思流程第 0 步先 git status,有产物先提交再反思。
+
