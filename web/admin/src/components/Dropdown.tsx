@@ -62,11 +62,13 @@ export function Dropdown({ value, options, onChange, ariaLabel, triggerStyle }: 
               role="option"
               aria-selected={o.value === value}
               className={o.value === value ? 'active' : ''}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={() => {
+              onMouseDown={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
                 onChange(o.value)
                 setOpen(false)
               }}
+              onClick={(e) => e.preventDefault()}
             >
               <span className="dd-option-label">{o.label}</span>
               <span className="dd-check" aria-hidden>{o.value === value && (
