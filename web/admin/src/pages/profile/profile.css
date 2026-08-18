@@ -1,4 +1,4 @@
-.profile-page { max-width: 1160px; margin: 0 auto; }
+.profile-page { width: 100%; }
 .overview-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr); gap: 16px; margin-top: 24px; }
 .overview-identity, .overview-status, .overview-summary > div { display: grid; gap: 7px; padding: 18px; border: 1px solid var(--shell-side-border); background: var(--shell-menu-hover-bg); }
 .overview-identity { display: flex; align-items: center; gap: 14px; }
