@@ -1,0 +1,6 @@
+apiVersion: v2
+name: boss
+description: BOSS 模块化单体(阶段12 W12 部署物:server + aaa/collector/provisioner/gis/report)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

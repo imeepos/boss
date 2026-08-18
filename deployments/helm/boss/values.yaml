@@ -1,0 +1,39 @@
+# BOSS 部署参数(阶段12)。DSN 等敏感项经 --set 或外部 Secret 注入,不落库。
+image:
+  repository: boss-server
+  tag: ""        # 缺省取 appVersion
+  pullPolicy: IfNotPresent
+
+# 组件开关:server 必启;其余按阶段灰度。
+components:
+  collector: true
+  provisioner: true
+  gis: true
+  report: true
+
+server:
+  replicas: 2
+  httpPort: 8080
+  grpcPort: 9090
+  resources:
+    requests: { cpu: 200m, memory: 256Mi }
+    limits: { cpu: "1", memory: 512Mi }
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    cpuTarget: 70
+
+worker:
+  replicas: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { cpu: 200m, memory: 256Mi }
+
+env:
+  BOSS_DATABASE_DSN: ""        # 必填(外部注入)
+  BOSS_KAFKA_BROKERS: ""
+  BOSS_EVENTS_TOPIC: boss-order-events
+  BOSS_PROVISION_OLT_ADDR: "0" # 配置真实 OLT 后 Telnet 执行器生效
+  BOSS_SNMP_TARGETS: ""
+  BOSS_REPORT_PERIOD: daily
