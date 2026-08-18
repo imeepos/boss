@@ -1,4 +1,6 @@
 # 102 自动部署:main 分支 push/merge 触发——构建全二进制镜像、推私有仓库、compose 拉起。
+# runs-on 标签由 102 gitea-runner 注册(docker://deploy-runner 镜像,含 git+docker CLI+compose);
+# runner docker_host 自动探测,宿主 /var/run/docker.sock 会挂进 job 容器,直接操控宿主 docker。
 name: deploy-102
 on:
   push:
@@ -6,11 +8,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    container:
-      image: 192.168.0.102:5000/boss/deploy-runner:latest
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
+    runs-on: deploy-102
     steps:
       - name: Clone
         run: |
