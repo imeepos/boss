@@ -225,6 +225,15 @@ const zhCN: Translations = {
       total: '共 {count} 条',
       loadFail: '加载失败',
     },
+    profile: {
+      title: '用户中心', activeAccount: '账号正常', save: '保存修改', cancel: '取消',
+      navigation: { title: '账户设置', personal: '基本资料', personalDesc: '姓名与联系方式', security: '安全设置', securityDesc: '密码与登录保护', apiKey: 'API Key', apiKeyDesc: '自动化访问凭证', myData: '我的业务数据', myDataDesc: '业务记录与权限' },
+      personal: { title: '基本资料', desc: '维护当前登录账号的可编辑资料', badge: '当前账号', username: '登录账号', realName: '姓名', phone: '手机号', phonePlaceholder: '请输入手机号', email: '邮箱', emailPlaceholder: '请输入邮箱', saved: '个人信息已保存（接口待接入）', role: '角色', company: '所属公司', dataScope: '数据范围', unassigned: '未分配', allScope: '全集团' },
+      password: { title: '安全设置', desc: '修改登录密码前需要验证旧密码', old: '旧密码', next: '新密码', confirm: '确认新密码', submit: '更新密码', passwordPending: '密码修改接口待接入' },
+      securityProtection: { title: '其他安全设置', loginProtection: '登录保护', loginHistory: '最近登录记录', pending: '接口待接入' },
+      apiKey: { title: 'API Key 管理', desc: '用于自动化调用，完整密钥只在创建成功时展示一次', placeholder: '占位设计', name: '名称', key: 'Key 前缀', lastUsed: '最近使用', status: '状态', namePlaceholder: '输入密钥用途，如 ci-pipeline-prod', create: '创建 Key', neverUsed: '从未使用', active: '启用', revoke: '撤销', securityTip: '安全提示：请勿将完整 Key 提交到代码仓库或分享给他人。' },
+      myData: { title: '我的业务数据', desc: '当前登录用户相关数据入口，按权限和数据范围展示', orders: '我的订单', ordersDesc: '订单与 12 个业务环节进度', bills: '我的账单', billsDesc: '账单、缴费与发票记录', service: '我的服务', serviceDesc: '客户、套餐与认证账号', messages: '消息通知', messagesDesc: '系统通知与待处理提醒', audit: '操作记录', auditDesc: '当前账号产生的审计日志', permissions: '权限范围', permissionsDesc: '角色、菜单权限与数据范围' },
+    },
     error: {
       forbidden: '当前角色无权访问该页面(接口级权限由后端兜底拦截)。',
       notFound: '页面不存在。',

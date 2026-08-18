@@ -225,6 +225,15 @@ const msMY: Translations = {
       total: '{count} jumlah',
       loadFail: 'Gagal memuatkan',
     },
+    profile: {
+      title: 'Pusat Pengguna', activeAccount: 'Akaun aktif', save: 'Simpan perubahan', cancel: 'Batal',
+      navigation: { title: 'Tetapan akaun', personal: 'Maklumat asas', personalDesc: 'Nama dan butiran hubungan', security: 'Keselamatan', securityDesc: 'Kata laluan dan perlindungan log masuk', apiKey: 'API key', apiKeyDesc: 'Kredensial automasi', myData: 'Data perniagaan saya', myDataDesc: 'Rekod dan kebenaran' },
+      personal: { title: 'Maklumat asas', desc: 'Urus butiran yang boleh diedit untuk akaun semasa', badge: 'Akaun semasa', username: 'Nama pengguna', realName: 'Nama', phone: 'Telefon', phonePlaceholder: 'Masukkan nombor telefon', email: 'E-mel', emailPlaceholder: 'Masukkan e-mel', saved: 'Profil disimpan (API belum tersedia)', role: 'Peranan', company: 'Syarikat', dataScope: 'Skop data', unassigned: 'Belum ditetapkan', allScope: 'Semua' },
+      password: { title: 'Keselamatan', desc: 'Kata laluan lama diperlukan sebelum menukarnya', old: 'Kata laluan lama', next: 'Kata laluan baharu', confirm: 'Sahkan kata laluan baharu', submit: 'Kemas kini', passwordPending: 'API kata laluan belum tersedia' },
+      securityProtection: { title: 'Tetapan keselamatan lain', loginProtection: 'Perlindungan log masuk', loginHistory: 'Aktiviti log masuk terkini', pending: 'API belum tersedia' },
+      apiKey: { title: 'Pengurusan API key', desc: 'Untuk automasi; kunci penuh hanya dipaparkan sekali selepas dicipta', placeholder: 'Reka bentuk sementara', name: 'Nama', key: 'Awalan key', lastUsed: 'Penggunaan terakhir', status: 'Status', namePlaceholder: 'Tujuan key, cth. ci-pipeline-prod', create: 'Cipta key', neverUsed: 'Belum digunakan', active: 'Aktif', revoke: 'Tarik balik', securityTip: 'Tip keselamatan: jangan masukkan key penuh ke repositori atau kongsikannya.' },
+      myData: { title: 'Data perniagaan saya', desc: 'Pintu masuk data berkaitan pengguna semasa mengikut kebenaran dan skop', orders: 'Pesanan saya', ordersDesc: 'Pesanan dan kemajuan 12 peringkat', bills: 'Bil saya', billsDesc: 'Bil, bayaran dan invois', service: 'Perkhidmatan saya', serviceDesc: 'Pelanggan, pelan dan akaun pengesahan', messages: 'Pemberitahuan', messagesDesc: 'Notis sistem dan peringatan', audit: 'Log aktiviti', auditDesc: 'Rekod audit akaun ini', permissions: 'Skop kebenaran', permissionsDesc: 'Peranan, menu dan skop data' },
+    },
     error: {
       forbidden: 'Anda tidak mempunyai kebenaran untuk mengakses halaman ini.',
       notFound: 'Halaman tidak dijumpai.',
