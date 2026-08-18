@@ -11,6 +11,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/device"
+	"github.com/ymm-001/boss/internal/domain/gis"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
@@ -50,6 +51,7 @@ type Application struct {
 
 	Device device.DeviceService
 	Alarm  device.AlarmService
+	Gis    gis.GISService
 
 	Aaa       aaa.AaaService
 	Provision provision.ProvisionService
@@ -145,6 +147,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Channel:     ord,
 
 		Device: dev,
+		Gis:    gis.NewPGStore(pool),
 		Alarm:  dev,
 
 		Aaa:       aaastore,

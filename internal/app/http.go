@@ -115,6 +115,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerAssetRoutes(authed, a)
 	registerAaaRoutes(authed, a)
 	registerDeviceRoutes(authed, a)
+	registerGisRoutes(authed, a)
 	registerProvisionRoutes(authed, a)
 	registerQuadlinkRoutes(authed, a)
 	registerWorkerRoutes(authed, a)
