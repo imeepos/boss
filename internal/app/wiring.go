@@ -41,6 +41,7 @@ type Application struct {
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
+	Recon   billing.ReconService
 
 	Resource       resource.ResourceService
 	ResourceSub    resource.ResourceSubService
@@ -71,6 +72,7 @@ type Application struct {
 	WorkerLedger worker.WorkerLedgerService
 	WorkerFact   worker.WorkerFactService
 	WorkerEvent  worker.WorkerEventService
+	WorkerNotice worker.WorkerNoticeService
 
 	Audit audit.Writer // 关键操作审计(异步写,见 pkg/audit)
 
@@ -130,8 +132,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表)。
-	var anaStore analytics.AnalyticsService =
-		analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)
+	var anaStore analytics.AnalyticsService = analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)
 	var closeOLAP func()
 	if cfg.Analytics.Backend == "starrocks" && cfg.OLAP.StarRocksDSN != "" {
 		sr, err := analytics.NewStarRocksStore(cfg.OLAP.StarRocksDSN, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)
@@ -157,6 +158,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 		Billing: bill,
 		Arrears: bill,
+		Recon:   bill,
 
 		Resource:       res,
 		ResourceSub:    res,
@@ -181,6 +183,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		WorkerLedger: wrk,
 		WorkerFact:   wrk,
 		WorkerEvent:  wrk,
+		WorkerNotice: wrk,
 	}
 
 	app.Audit = aw

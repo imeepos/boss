@@ -27,15 +27,15 @@ type ActivationCallback struct {
 
 // DispatchTransfer 派单改派台账(工单师傅每次改派)。
 type DispatchTransfer struct {
-	ID                int64
-	TicketID          int64
-	FromWorkerID      int64 // 0=空
-	FromWorkerName    string
-	ToWorkerID        int64 // 0=空
-	ToWorkerName      string
-	Reason            string
-	OperatorAccountID int64 // 0=空
-	TransferredAt     time.Time
+	ID                int64     `json:"id"`
+	TicketID          int64     `json:"ticketId"`
+	FromWorkerID      int64     `json:"fromWorkerId"` // 0=空
+	FromWorkerName    string    `json:"fromWorkerName"`
+	ToWorkerID        int64     `json:"toWorkerId"` // 0=空
+	ToWorkerName      string    `json:"toWorkerName"`
+	Reason            string    `json:"reason"`
+	OperatorAccountID int64     `json:"operatorAccountId"` // 0=空
+	TransferredAt     time.Time `json:"transferredAt"`
 }
 
 // OrderLedgerService 订单台账子表服务口(拆机/回调/改派)。

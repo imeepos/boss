@@ -7,10 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/domain/asset"
+	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/audit"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
@@ -31,11 +34,16 @@ func respondErr(c *gin.Context, err error) {
 		errors.Is(err, resource.ErrNotFound),
 		errors.Is(err, asset.ErrNotFound),
 		errors.Is(err, customer.ErrCustomerNotFound),
-		errors.Is(err, order.ErrOrderNotFound):
+		errors.Is(err, order.ErrOrderNotFound),
+		errors.Is(err, billing.ErrNotFound),
+		errors.Is(err, provision.ErrTaskNotFound),
+		errors.Is(err, worker.ErrNotFound):
 		respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, resource.ErrIllegalTransition),
 		errors.Is(err, resource.ErrPortNotAvailable),
-		errors.Is(err, order.ErrIllegalTransition):
+		errors.Is(err, order.ErrIllegalTransition),
+		errors.Is(err, provision.ErrIllegalTransition),
+		errors.Is(err, billing.ErrIllegalReconTransition):
 		respond(c, apitypes.CodeInvalidParam, nil)
 	default:
 		respond(c, apitypes.CodeInternal, nil)
@@ -106,8 +114,15 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 		respond(c, apitypes.CodeOK, p)
 	})
 
+	// 退出登录:token 无状态,前端清本地 token 即可(auth.yaml adminLogout)。
+	authed.POST("/auth/logout", func(c *gin.Context) {
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
 	registerOrgRoutes(authed, a)
 	registerOrderRoutes(authed, a)
+	registerDispatchRoutes(authed, a)
+	registerDashboardRoutes(authed, a)
 	registerBillingRoutes(authed, a)
 	registerCustomerRoutes(authed, a)
 	registerResourceRoutes(authed, a)

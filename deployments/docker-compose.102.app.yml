@@ -1,0 +1,33 @@
+# 102 服务器应用部署版:boss 业务进程,依赖 docker-compose.102.yml 基础设施。
+# 镜像走私有仓库 192.168.0.102:5000/boss/server;配置默认值即 102 基础设施(config.Load)。
+services:
+  server:
+    image: 192.168.0.102:5000/boss/server:latest
+    container_name: boss-server
+    restart: unless-stopped
+    ports:
+      - "28080:8080" # HTTP(/healthz /metrics /api)
+      - "29090:9090" # gRPC
+    environment:
+      BOSS_PG_DSN: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
+      BOSS_KAFKA_BROKERS: "192.168.0.102:29092"
+      BOSS_JWT_SECRET: "boss-demo-jwt-secret"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://192.168.0.102:19310/loki/api/v1/push"
+
+  report:
+    image: 192.168.0.102:5000/boss/server:latest
+    container_name: boss-report
+    entrypoint: ["boss-report"]
+    restart: unless-stopped
+    environment:
+      BOSS_PG_DSN: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
+      BOSS_KAFKA_BROKERS: "192.168.0.102:29092"
+      BOSS_REPORT_PERIOD: "daily"

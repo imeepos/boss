@@ -38,6 +38,9 @@ type Service interface {
 	// 组织实体(子公司/部门/岗位/经营区域)的只读查询与管理。
 	ListRegions(ctx context.Context, parentPath string) ([]Region, error)
 	ListLegalEntities(ctx context.Context) ([]LegalEntity, error)
+	CreateLegalEntity(ctx context.Context, e LegalEntity) (int64, error)
+	UpdateLegalEntity(ctx context.Context, id int64, e LegalEntity) error
+	ListMenuPermMatrix(ctx context.Context) (MenuPermMatrix, error)
 	ListDepartments(ctx context.Context, legalEntityID int64) ([]Department, error)
 	ListPosts(ctx context.Context, deptID int64) ([]Post, error)
 	GetDataScope(ctx context.Context, accountID int64) (DataScope, error)

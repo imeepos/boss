@@ -36,7 +36,7 @@ paths:
     post:
       tags: [Auth]
       summary: 退出登录
-      description: 退出登录（未实现 planned）(token 无状态,前端清本地 token 即可)。
+      description: 退出登录(token 无状态,前端清本地 token 即可)。
       operationId: adminLogout
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }

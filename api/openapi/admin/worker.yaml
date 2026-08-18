@@ -34,7 +34,6 @@ paths:
     put:
       tags: [Worker]
       summary: 修改接单设置(在线/半径/接单类型),即时生效于师傅端
-      description: （未实现 planned）
       operationId: saveWorkerSettings
       parameters:
         - { name: workerId, in: path, required: true, schema: { type: integer } }
@@ -123,14 +122,12 @@ paths:
     get:
       tags: [Worker]
       summary: 公告列表(含已下架)
-      description: （未实现 planned）
       operationId: listNotices
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Worker]
       summary: 发布公告(师傅端公告页即时可见)
-      description: （未实现 planned）
       operationId: publishNotice
       requestBody:
         content:
@@ -148,7 +145,6 @@ paths:
     put:
       tags: [Worker]
       summary: 公告上架/下架
-      description: （未实现 planned）
       operationId: toggleNotice
       parameters:
         - { name: noticeId, in: path, required: true, schema: { type: string } }

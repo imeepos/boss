@@ -1,8 +1,12 @@
 package app
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -97,4 +101,75 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *Application) {
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
+
+	// 修改接单设置(在线/半径/接单类型),师傅1:1 即时生效(worker.yaml /workers/{id}/settings)。
+	g.PUT("/workers/:workerId/settings", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
+		workerID, _ := strconv.ParseInt(c.Param("workerId"), 10, 64)
+		if _, err := a.Worker.GetWorker(c.Request.Context(), workerID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		var req workerSettingsReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if _, err := a.WorkerLedger.UpsertSettings(c.Request.Context(), worker.Settings{
+			WorkerID: workerID, Accepting: req.Online,
+			RadiusKm: req.RadiusKm, AcceptTypes: strings.Join(req.AcceptTypes, ","),
+		}); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	// 公告:列表(含已下架)/发布/上下架切换(worker.yaml /notices)。
+	g.GET("/notices", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
+		list, err := a.WorkerNotice.ListNotices(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	})
+
+	g.POST("/notices", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
+		var req publishNoticeReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		id, err := a.WorkerNotice.CreateNotice(c.Request.Context(), worker.Notice{
+			Title: req.Title, Category: req.Category, Active: true,
+		})
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "notice.publish", "notice", strconv.FormatInt(id, 10), nil)
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	})
+
+	g.PUT("/notices/:noticeId/toggle", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
+		noticeID, _ := strconv.ParseInt(c.Param("noticeId"), 10, 64)
+		if err := a.WorkerNotice.ToggleNotice(c.Request.Context(), noticeID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+}
+
+// workerSettingsReq 接单设置请求体(对齐 worker.yaml saveWorkerSettings)。
+type workerSettingsReq struct {
+	Online      bool     `json:"online"`
+	RadiusKm    int16    `json:"radiusKm"`
+	AcceptTypes []string `json:"acceptTypes"`
+}
+
+// publishNoticeReq 发布公告请求体(title 必填)。
+type publishNoticeReq struct {
+	Title    string `json:"title" binding:"required"`
+	Category string `json:"category"`
 }

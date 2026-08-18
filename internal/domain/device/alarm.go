@@ -22,4 +22,6 @@ type AlarmService interface {
 	ListAlarms(ctx context.Context, resourceID int64) ([]Alarm, error)
 	CreateAlarm(ctx context.Context, a Alarm) (int64, error)
 	UpdateAlarmStatus(ctx context.Context, id int64, status string) error
+	// AppendRetestTask 台风应急·批量复测受理(scope=片区),返回任务号 RT-YYYYMMDD-NNNN。
+	AppendRetestTask(ctx context.Context, scope string) (string, error)
 }

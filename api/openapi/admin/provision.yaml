@@ -11,7 +11,6 @@ paths:
     post:
       tags: [Provision]
       summary: 失败任务重试
-      description: （未实现 planned）
       operationId: retryProvisionTask
       parameters:
         - { name: taskNo, in: path, required: true, schema: { type: string } }

@@ -3,6 +3,7 @@ package device
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 // idOrNil 把 0 归一为 NULL(可空约定:0=空)。
@@ -53,4 +54,20 @@ func (s *PGStore) UpdateAlarmStatus(ctx context.Context, id int64, status string
 		return fmt.Errorf("device: update alarm status: %w", err)
 	}
 	return nil
+}
+
+// AppendRetestTask 受理批量复测:落任务行,任务号 RT-YYYYMMDD-NNNN(id 后 4 位)。
+func (s *PGStore) AppendRetestTask(ctx context.Context, scope string) (string, error) {
+	var id int64
+	err := s.db.QueryRow(ctx,
+		`INSERT INTO alarm_retest_tasks(task_no, scope) VALUES('','') RETURNING id`).Scan(&id)
+	if err != nil {
+		return "", fmt.Errorf("device: append retest task: %w", err)
+	}
+	taskNo := fmt.Sprintf("RT-%s-%04d", time.Now().Format("20060102"), id%10000)
+	if _, err := s.db.Exec(ctx,
+		`UPDATE alarm_retest_tasks SET task_no=$1 WHERE id=$2`, taskNo, id); err != nil {
+		return "", fmt.Errorf("device: set retest task no: %w", err)
+	}
+	return taskNo, nil
 }

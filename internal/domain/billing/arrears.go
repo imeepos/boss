@@ -36,4 +36,7 @@ type ArrearsService interface {
 	ListArrears(ctx context.Context) ([]ArrearsItem, error)
 	ListStopResumeTasks(ctx context.Context, customerID int64) ([]StopResumeTask, error)
 	AppendStopResumeTask(ctx context.Context, t StopResumeTask) (int64, error)
+	GetStopResumeTask(ctx context.Context, id int64) (*StopResumeTask, error)
+	// UpdateStopResumeStatus 重试结果回写(DONE/FAILED)。
+	UpdateStopResumeStatus(ctx context.Context, id int64, status string) error
 }

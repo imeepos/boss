@@ -4,18 +4,18 @@ import "context"
 
 // DispatchTicket 派单工单(订单1:1,指派师傅)。
 type DispatchTicket struct {
-	TicketID        int64
-	TicketNo        string
-	OrderID         int64
-	WorkerID        int64 // 0=未派
-	WorkerName      string
-	GroupID         int64 // 0=无
-	GroupName       string
-	RegionID        int64 // 0=无
-	RegionName      string
-	LegalEntityID   int64
-	LegalEntityName string
-	Status          string // PENDING/DOING/DONE/CANCELED
+	TicketID        int64  `json:"ticketId"`
+	TicketNo        string `json:"ticketNo"`
+	OrderID         int64  `json:"orderId"`
+	WorkerID        int64  `json:"workerId"` // 0=未派
+	WorkerName      string `json:"workerName"`
+	GroupID         int64  `json:"groupId"` // 0=无
+	GroupName       string `json:"groupName"`
+	RegionID        int64  `json:"regionId"` // 0=无
+	RegionName      string `json:"regionName"`
+	LegalEntityID   int64  `json:"legalEntityId"`
+	LegalEntityName string `json:"legalEntityName"`
+	Status          string `json:"status"` // PENDING/DOING/DONE/CANCELED
 }
 
 // Complaint 报障工单(客服域,客户报障与处理)。
@@ -44,6 +44,8 @@ type ScanLog struct {
 type WorkOrderService interface {
 	ListDispatchTickets(ctx context.Context) ([]DispatchTicket, error)
 	GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*DispatchTicket, error)
+	// AssignDispatchTicket 指派师傅(workerID/workerName 回填工单)。
+	AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error
 	CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error)
 	ListComplaints(ctx context.Context) ([]Complaint, error)
 	CreateComplaint(ctx context.Context, c Complaint) (int64, error)

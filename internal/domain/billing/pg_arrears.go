@@ -78,6 +78,34 @@ func (s *PGStore) ListStopResumeTasks(ctx context.Context, customerID int64) ([]
 	return out, rows.Err()
 }
 
+// GetStopResumeTask 按 id 查停复机任务;未命中返回 ErrNotFound。
+func (s *PGStore) GetStopResumeTask(ctx context.Context, id int64) (*StopResumeTask, error) {
+	var t StopResumeTask
+	err := s.db.QueryRow(ctx,
+		`SELECT id, customer_id, lo_account_id, action, status FROM stop_resume_tasks WHERE id=$1`, id).
+		Scan(&t.ID, &t.CustomerID, &t.LoAccountID, &t.Action, &t.Status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("billing: get stop resume: %w", err)
+	}
+	return &t, nil
+}
+
+// UpdateStopResumeStatus 回写停复机任务状态(重试结果落账)。
+func (s *PGStore) UpdateStopResumeStatus(ctx context.Context, id int64, status string) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE stop_resume_tasks SET status=$2 WHERE id=$1`, id, status)
+	if err != nil {
+		return fmt.Errorf("billing: update stop resume: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // AppendStopResumeTask 追加停复机流水,返回自增 id。
 func (s *PGStore) AppendStopResumeTask(ctx context.Context, t StopResumeTask) (int64, error) {
 	var id int64

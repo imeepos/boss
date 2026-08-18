@@ -34,8 +34,8 @@ paths:
   /alarms/batch-retest:
     post:
       tags: [Alarm]
-      summary: 台风应急·批量复测(按片区下发范围)（未实现 planned）
-      description: Go 后端未注册该路由（未实现 planned）
+      summary: 台风应急·批量复测(按片区下发范围)
+      description: 受理返回批量复测任务号 RT-YYYYMMDD-NNNN(envelope data:{taskNo,scope})
       operationId: batchRetestAlarms
       requestBody:
         content:

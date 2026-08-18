@@ -1,8 +1,6 @@
 package app
 
 import (
-	"context"
-
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -69,6 +67,57 @@ func registerBillingRoutes(g *gin.RouterGroup, a *Application) {
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
+
+	// 失败停复机任务重试:重放 LO 账号状态迁移,结果回写任务。
+	g.POST("/stop-resume-tasks/:taskId/retry", requirePerm(a.User, "menu:stopsrv"), func(c *gin.Context) {
+		taskID, _ := strconv.ParseInt(c.Param("taskId"), 10, 64)
+		task, err := a.Arrears.GetStopResumeTask(c.Request.Context(), taskID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if task.Status != "FAILED" {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		status := a.execStopResume(c, task.LoAccountID, task.Action)
+		if err := a.Arrears.UpdateStopResumeStatus(c.Request.Context(), taskID, status); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	// 缴费渠道对账批次列表 + 差异挂起批次平账(billing.yaml /reconciliations)。
+	g.GET("/reconciliations", requirePerm(a.User, "menu:paycheck"), func(c *gin.Context) {
+		list, err := a.Recon.ListReconciliations(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	})
+
+	g.POST("/reconciliations/:batchNo/settle", requirePerm(a.User, "menu:paycheck"), func(c *gin.Context) {
+		if err := a.Recon.SettleReconciliation(c.Request.Context(), c.Param("batchNo")); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "reconciliation.settle", "reconciliation", c.Param("batchNo"), nil)
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+}
+
+// execStopResume 对 LO 账号执行停/复机迁移,返回任务落账状态(DONE/FAILED)。
+func (a *Application) execStopResume(c *gin.Context, loID int64, action string) string {
+	transit := a.Aaa.ResumeLoAccount
+	if action == "STOP" {
+		transit = a.Aaa.SuspendLoAccount
+	}
+	if err := transit(c.Request.Context(), loID); err != nil {
+		return "FAILED"
+	}
+	return "DONE"
 }
 
 // appendStopResume 为客户生成停复机任务:查 LO 账号 → 追加任务(动作 STOP/RESUME)。
@@ -78,16 +127,7 @@ func (a *Application) appendStopResume(c *gin.Context, customerID int64, action 
 		return err
 	}
 	// W6 停复机即时生效:任务留痕 + LO 账号状态原子迁移(停机在线无网/缴费即恢复)。
-	var transit func(context.Context, int64) error
-	taskStatus := "DONE"
-	if action == "STOP" {
-		transit = a.Aaa.SuspendLoAccount
-	} else {
-		transit = a.Aaa.ResumeLoAccount
-	}
-	if err := transit(c.Request.Context(), lo.ID); err != nil {
-		taskStatus = "FAILED" // 非法迁移(重复停机等)记录失败任务,不中断响应
-	}
+	taskStatus := a.execStopResume(c, lo.ID, action)
 	_, err = a.Arrears.AppendStopResumeTask(c.Request.Context(), billing.StopResumeTask{
 		CustomerID: customerID, LoAccountID: lo.ID, Action: action, Status: taskStatus,
 	})

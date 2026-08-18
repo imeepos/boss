@@ -31,6 +31,11 @@ func (f *fakeBilling) GenerateBills(context.Context, string) (int, error)       
 type fakeArrears struct {
 	items    []billing.ArrearsItem
 	appended *billing.StopResumeTask
+	task     *billing.StopResumeTask // GetStopResumeTask 返回
+	updated  *struct {               // UpdateStopResumeStatus 落账
+		id     int64
+		status string
+	}
 }
 
 func (f *fakeArrears) GetArrears(context.Context, int64) (*billing.Arrears, error) { return nil, nil }
@@ -46,6 +51,35 @@ func (f *fakeArrears) ListStopResumeTasks(context.Context, int64) ([]billing.Sto
 func (f *fakeArrears) AppendStopResumeTask(ctx context.Context, t billing.StopResumeTask) (int64, error) {
 	f.appended = &t
 	return 1, nil
+}
+
+func (f *fakeArrears) GetStopResumeTask(context.Context, int64) (*billing.StopResumeTask, error) {
+	return f.task, nil
+}
+
+func (f *fakeArrears) UpdateStopResumeStatus(_ context.Context, id int64, status string) error {
+	f.updated = &struct {
+		id     int64
+		status string
+	}{id, status}
+	return nil
+}
+
+// fakeRecon 桩 billing.ReconService。
+type fakeRecon struct {
+	batches []billing.ReconBatch
+	settled string
+}
+
+func (f *fakeRecon) ListReconciliations(context.Context) ([]billing.ReconBatch, error) {
+	return f.batches, nil
+}
+func (f *fakeRecon) AppendReconciliation(context.Context, billing.ReconBatch) (int64, error) {
+	return 1, nil
+}
+func (f *fakeRecon) SettleReconciliation(_ context.Context, batchNo string) error {
+	f.settled = batchNo
+	return nil
 }
 
 // fakeAaa 桩 aaa.AaaService。
@@ -73,6 +107,96 @@ func newBillingRouter(b *fakeBilling, ar *fakeArrears, aa *fakeAaa, mgr *auth.Ma
 		User: &fakeUser{permOk: true}, Billing: b, Arrears: ar, Aaa: aa,
 	}, mgr)
 	return r
+}
+
+// postAuth 带鉴权令牌发起 POST。
+func postAuth(t *testing.T, r *gin.Engine, path, token string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, path, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w
+}
+
+// TestRetryStopResumeTask 契约:失败停复机任务重试,重放 LO 迁移并回写 DONE。
+func TestRetryStopResumeTask(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	ar := &fakeArrears{task: &billing.StopResumeTask{
+		ID: 7, CustomerID: 9, LoAccountID: 88, Action: "STOP", Status: "FAILED",
+	}}
+	r := newBillingRouter(&fakeBilling{}, ar, &fakeAaa{}, mgr)
+
+	w := postAuth(t, r, "/api/v1/stop-resume-tasks/7/retry", authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var body struct {
+		Code int `json:"code"`
+		Data struct {
+			OK bool `json:"ok"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Code != 0 || !body.Data.OK {
+		t.Fatalf("body=%+v", body)
+	}
+	if ar.updated == nil || ar.updated.id != 7 || ar.updated.status != "DONE" {
+		t.Fatalf("updated=%+v", ar.updated)
+	}
+}
+
+// TestRetryStopResumeTask_NotFailed 契约:非 FAILED 任务不可重试。
+func TestRetryStopResumeTask_NotFailed(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	ar := &fakeArrears{task: &billing.StopResumeTask{ID: 7, Action: "STOP", Status: "DONE"}}
+	r := newBillingRouter(&fakeBilling{}, ar, &fakeAaa{}, mgr)
+
+	w := postAuth(t, r, "/api/v1/stop-resume-tasks/7/retry", authToken(t, mgr))
+	var body struct {
+		Code int `json:"code"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+	if body.Code == 0 {
+		t.Fatalf("应拒绝非 FAILED 任务重试: %s", w.Body.String())
+	}
+}
+
+// TestReconciliationHandlers 契约:对账批次可查、差异挂起批次可平账。
+func TestReconciliationHandlers(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	rc := &fakeRecon{batches: []billing.ReconBatch{
+		{BatchNo: "PC-20250816-04", Channel: "支付宝", ChannelAmount: 862005, SystemAmount: 861905, Status: "DIFF_PENDING"},
+	}}
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	RegisterRoutes(r, &Application{
+		User: &fakeUser{permOk: true}, Recon: rc,
+	}, mgr)
+
+	w := getJSON(t, r, "/api/v1/reconciliations", authToken(t, mgr))
+	var list struct {
+		Code int `json:"code"`
+		Data struct {
+			Items []billing.ReconBatch `json:"items"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &list); err != nil {
+		t.Fatal(err)
+	}
+	if list.Code != 0 || len(list.Data.Items) != 1 || list.Data.Items[0].BatchNo != "PC-20250816-04" {
+		t.Fatalf("list=%+v", list)
+	}
+
+	w = postAuth(t, r, "/api/v1/reconciliations/PC-20250816-04/settle", authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if rc.settled != "PC-20250816-04" {
+		t.Fatalf("settled=%q", rc.settled)
+	}
 }
 
 // TestBillingListHandler 契约:欠费列表可查。

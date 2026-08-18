@@ -52,3 +52,22 @@ type DataScope struct {
 	PostID        int64  `json:"postId"`        // 0=不限岗位
 	RegionScope   string `json:"regionScope"`   // 空=全集团;非空=限该 path 子树
 }
+
+// MenuRoleCol 菜单权限矩阵的角色列。
+type MenuRoleCol struct {
+	RoleCode string `json:"roleCode"`
+	RoleName string `json:"roleName"`
+}
+
+// MenuPermRow 菜单权限矩阵的权限行(含持有该菜单的角色码)。
+type MenuPermRow struct {
+	Code  string   `json:"code"`
+	Name  string   `json:"name"`
+	Roles []string `json:"roles"`
+}
+
+// MenuPermMatrix 角色×菜单权限矩阵(三层权限模型的菜单层)。
+type MenuPermMatrix struct {
+	RoleColumns []MenuRoleCol `json:"roleColumns"`
+	Rows        []MenuPermRow `json:"rows"`
+}

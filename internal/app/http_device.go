@@ -8,6 +8,11 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
+// batchRetestReq 批量复测请求体(scope=下发范围,必填)。
+type batchRetestReq struct {
+	Scope string `json:"scope" binding:"required"`
+}
+
 // registerDeviceRoutes 注册设备监控/告警域路由(承接 alarm.yaml + device.html)。
 func registerDeviceRoutes(g *gin.RouterGroup, a *Application) {
 	g.GET("/alarms", requirePerm(a.User, "menu:alarm"), func(c *gin.Context) {
@@ -26,6 +31,22 @@ func registerDeviceRoutes(g *gin.RouterGroup, a *Application) {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	// 台风应急·批量复测:按片区受理,返回批量复测任务号(alarm.yaml batchRetestAlarms)。
+	g.POST("/alarms/batch-retest", requirePerm(a.User, "menu:alarm"), func(c *gin.Context) {
+		var req batchRetestReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		taskNo, err := a.Alarm.AppendRetestTask(c.Request.Context(), req.Scope)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "alarm.batch-retest", "alarm_retest", taskNo, map[string]any{"scope": req.Scope})
+		respond(c, apitypes.CodeOK, gin.H{"taskNo": taskNo, "scope": req.Scope})
 	})
 
 	g.GET("/device/metrics", requirePerm(a.User, "menu:device"), func(c *gin.Context) {

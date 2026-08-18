@@ -105,6 +105,20 @@ func (s *PGStore) GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*
 	return &t, nil
 }
 
+// AssignDispatchTicket 指派师傅:回填 worker_id/worker_name;未命中返回 ErrOrderNotFound。
+func (s *PGStore) AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error {
+	tag, err := s.db.Exec(ctx, `
+		UPDATE dispatch_tickets SET worker_id=$2, worker_name=$3 WHERE ticket_no=$1`,
+		ticketNo, workerID, workerName)
+	if err != nil {
+		return fmt.Errorf("order: assign dispatch ticket: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrOrderNotFound
+	}
+	return nil
+}
+
 // ListScanLogs 列出扫码绑定记录;orderID=0 返回全部,否则按订单过滤。
 func (s *PGStore) ListScanLogs(ctx context.Context, orderID int64) ([]ScanLog, error) {
 	rows, err := s.db.Query(ctx,

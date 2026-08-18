@@ -10,6 +10,12 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
+// legalEntityReq 法人新建/编辑请求体(code/name 必填)。
+type legalEntityReq struct {
+	Code string `json:"code" binding:"required"`
+	Name string `json:"name" binding:"required"`
+}
+
 // requirePerm 返回 RBAC 中间件:账号需持有 permCode 才可访问。
 // 列表端点按「菜单可见性」权限码门禁(menu:*),与 000003 种子对齐。
 func requirePerm(svc user.Service, permCode string) gin.HandlerFunc {
@@ -31,6 +37,54 @@ func registerOrgRoutes(g *gin.RouterGroup, a *Application) {
 			return
 		}
 		respond(c, apitypes.CodeOK, list)
+	})
+
+	// 法人写操作(org.yaml createLegalEntity/updateLegalEntity)。
+	g.POST("/legal-entities", requirePerm(a.User, "menu:company"), func(c *gin.Context) {
+		var req legalEntityReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		id, err := a.User.CreateLegalEntity(c.Request.Context(), user.LegalEntity{Code: req.Code, Name: req.Name})
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "org.create-legal-entity", "legal_entity", req.Code, nil)
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	})
+
+	g.PUT("/legal-entities/:legalEntityId", requirePerm(a.User, "menu:company"), func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("legalEntityId"), 10, 64)
+		var req legalEntityReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if err := a.User.UpdateLegalEntity(c.Request.Context(), id, user.LegalEntity{Code: req.Code, Name: req.Name}); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "org.update-legal-entity", "legal_entity", c.Param("legalEntityId"), nil)
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	// 菜单权限矩阵:三层权限模型的菜单层(角色×menu:* 权限)。
+	g.GET("/menu-perms", requirePerm(a.User, "menu:menuperm"), func(c *gin.Context) {
+		m, err := a.User.ListMenuPermMatrix(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{
+			"model": gin.H{"layers": []string{
+				"菜单权限 role→menu(本矩阵)",
+				"功能权限 role→perm code(RBAC 判定)",
+				"数据权限 account→org(数据范围)",
+			}},
+			"matrix": m,
+		})
 	})
 
 	g.GET("/departments", requirePerm(a.User, "menu:department"), func(c *gin.Context) {
