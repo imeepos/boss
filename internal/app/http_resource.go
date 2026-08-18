@@ -11,9 +11,10 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// genNo 生成台账单号(缺省时):前缀-日期-纳秒尾。
+// genNo 生成台账单号(缺省时):前缀-日期-纳秒尾(12 位熵,防跨轮持久库唯一号撞车)。
 func genNo(prefix string) string {
-	return fmt.Sprintf("%s-%s-%06d", prefix, time.Now().Format("20060102"), time.Now().UnixNano()%1e6)
+	now := time.Now()
+	return fmt.Sprintf("%s-%s-%012d", prefix, now.Format("20060102"), now.UnixNano()%1e12)
 }
 
 // registerResourceRoutes 注册网络资源域路由(承接 api/openapi/admin/oss.yaml)。

@@ -25,7 +25,7 @@
 | **二期 W5–W8 验收** | ✅ 达成 | 下单→激活全自动、人工只扫码/装维;停复机即时生效;话单入账;失败可重试留痕;告警实时 |
 | 二期债务：gRPC server 落地 | ✅ 完成 | quadlink/aaa/device/provision v1 四契约服务端实现（internal/app/grpc_*.go）+cmd/server 同进程起 gRPC（:9090）；provision_tasks 补 task_no/order_id/stage_event（迁移 000032）；修复 provision_logs.result 过短（迁移 000033）；真实 PG e2e 四服务全链路（扫码 MATCH 推进环节9/停复机即时/指标告警/入队重试） |
 | 二期债务：真实协议执行器 | ✅ 完成 | provisioner 换 TCP 行协议 TelnetExecutor（login/password/apply→OK，BOSS_PROVISION_OLT_*）；collector 换 gosnmp v2c SNMPPoller（OID 可配，BOSS_SNMP_*）；daemon+TELNET 真实 PG+loopback OLT 集成（成功 SUCCESS 留痕/失败 FAILED 留痕） |
-| 三期 W9–W12（GIS/分析/压测/上线） | 🚧 进行中 | |
+| 三期 W9–W12（GIS/分析/压测/上线） | 🚧 进行中 | W9 完成:internal/domain/gis 派生聚合域(八级下钻 Drill=市/区/街道/小区/楼栋/弱电井(OLT)/分光器(SPLITTER)/端口;LevelCounts 八级统计;ResourceDetail 合并最新指标/端口占用/关联用户);cmd/server 增 /gis/drill、/gis/levels、/gis/resources/:id/detail(menu:gis);cmd/gis 消费 boss-order-events 环节12(updateMap)触发地图同步;addresses.geom PostGIS 真实写入;真实 PG e2e 全过;顺手修 genNo 单号熵不足偶发唯一撞车 |
 
 **剩余 3 个月焦点（阶段已前置完成，剩余为业务自动化 + 集成 + 闭环验收）**：
 1. 一期收尾：真实 PG 集成测试 + 可观测补挂 + OpenAPI 一致性校验。
