@@ -49,7 +49,7 @@ func NewKafkaEmitter(brokers []string, topic string) *KafkaEmitter {
 	return &KafkaEmitter{w: &kafka.Writer{
 		Addr:         kafka.TCP(brokers...),
 		Topic:        topic,
-		Balancer:     &kafka.LeastBytes{},
+		Balancer:     &kafka.Hash{}, // 按 key(LOID/订单号)分区,保序
 		RequiredAcks: kafka.RequireOne,
 		BatchTimeout: 10 * time.Millisecond,
 	}}

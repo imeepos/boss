@@ -21,7 +21,7 @@
 | 二期 W5（四码扫码闭环+gRPC契约） | ✅ 完成 | quadlink 写侧(VerifyScan/UnbindRequireScan/Reconcile/ResolveConflict)+worker 扫码 handler+admin 对账;gRPC 契约 quadlink/aaa/device/provision v1 已生成 |
 | 二期 W6（AAA 停复机+话单） | ✅ 完成 | PGAuthorizer(LOID→套餐带宽/QoS)+Suspend/Resume 即时生效(停机在线无网)+话单双写(PG落库+Kafka boss-cdr)+cmd/aaa PG 装配 |
 | 二期 W7（下发/采集/告警） | ✅ 完成 | provision Execute/Fail/Retry(留痕计数)+provisioner 守护进程;device Collector(指标入库+丢包越限 CRITICAL 告警)+collector 入口;修复 AppendMetric 漏 collected_at |
-| 二期 W8（环节自动化+Kafka 链路） | ✅ 完成 | Automation 编排(6/7/10/11 自动,人工只收费/扫码)+pkg/events Kafka 状态变更事件(boss-order-events)+app 装配;e2e 验证下单→激活全自动(7 条事件) |
+| 二期 W8（环节自动化+Kafka 链路） | ✅ 完成 | Automation 编排(6/7/10/11 自动,人工只收费/扫码)+pkg/events Kafka 状态变更事件(boss-order-events)+app 装配;e2e 验证下单→激活全自动(7 条事件);Kafka 实链路 round-trip 已验(boss-cdr/boss-order-events,Hash 分区保序) |
 | **二期 W5–W8 验收** | ✅ 达成 | 下单→激活全自动、人工只扫码/装维;停复机即时生效;话单入账;失败可重试留痕;告警实时 |
 | 三期 W9–W12（GIS/分析/压测/上线） | ❌ 未开始 | |
 

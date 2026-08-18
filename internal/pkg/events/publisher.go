@@ -43,7 +43,7 @@ func NewKafkaPublisher(brokers []string, topic string) *KafkaPublisher {
 	return &KafkaPublisher{w: &kafka.Writer{
 		Addr:     kafka.TCP(brokers...),
 		Topic:    topic,
-		Balancer: &kafka.LeastBytes{},
+		Balancer: &kafka.Hash{}, // 按 key 分区保序
 	}, topic: topic}
 }
 

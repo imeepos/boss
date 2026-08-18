@@ -112,7 +112,7 @@
   }
 
   function renderAgrs() {
-    fill('rowsAgrs', data.agrs.map(function (r) {
+    fill('rowsAgr', data.agrs.map(function (r) {
       return '<tr><td>' + UI.esc(r.agreementId) + '</td><td>' + UI.esc(r.typeLabel) + '</td><td>' + UI.esc(r.version) + '</td><td>' + r.clauseCount
         + '</td><td>' + UI.esc(r.effectiveAt) + '</td><td>' + tag(r.status, r.statusClass) + '</td></tr>';
     }).join('') || null, 6, '协议');
@@ -190,7 +190,7 @@
   });
 
   function load() {
-    [['rowsAddons', 7], ['rowsFaqs', 5], ['rowsDiys', 6], ['rowsAgrs', 6], ['rowsCfg', 3]].forEach(function (x) {
+    [['rowsAddons', 7], ['rowsFaqs', 5], ['rowsDiys', 6], ['rowsAgr', 6], ['rowsCfg', 3]].forEach(function (x) {
       document.getElementById(x[0]).innerHTML = UI.tbodyState(x[1], '加载中...');
     });
     API.get('/addons').then(function (d) { data.addons = d.items || []; renderAddons(); })
