@@ -135,7 +135,7 @@ func (s *PGStore) withTx(ctx context.Context, fn func(tx dbtx) error) error {
 // ListSubdivisions 区划列表;countryCode 非空按国家过滤,locale 非空联译名(回落 code)。
 func (s *PGStore) ListSubdivisions(ctx context.Context, countryCode, locale string) ([]Subdivision, error) {
 	sql := `SELECT d.code, d.country_code, COALESCE(d.parent_code,''), d.level, d.category,
-		d.osm_admin_level, COALESCE(d.geonameid,0), d.is_active`
+		COALESCE(d.osm_admin_level,0), COALESCE(d.geonameid,0), d.is_active`
 	args := []any{}
 	where := ""
 	if countryCode != "" {
