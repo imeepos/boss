@@ -7,6 +7,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
 	aaability "github.com/ymm-001/boss/internal/domain/aaa/billing"
+	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/analytics"
 	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/domain/asset"
@@ -66,6 +67,7 @@ type Application struct {
 	QuadLink  quadlink.QuadLinkService
 	Asset     asset.AssetService
 	APIKey    apikey.Service
+	AI        ai.Service
 
 	// AaaAuth 授权查询(授权器,权威状态=lo_accounts);Cdr 话单投递(PG 落库 + Kafka 双写)。
 	// gRPC aaa/v1 GetAuthorization/EmitCDR 依赖,债务偿还:契约服务可在 cmd/server 内直连。
@@ -134,6 +136,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	usr := user.NewPGStore(pool)
 	aaastore := aaa.NewPGStore(pool)
 	akstore := apikey.NewPGStore(pool)
+	aisvc := ai.NewService(ai.NewPGStore(pool))
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表)。
@@ -185,6 +188,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		QuadLink:  quadlink.NewPGStore(pool),
 		Asset:     asset.NewPGStore(pool),
 		APIKey:    akstore,
+		AI:        aisvc,
 
 		Worker:       wrk,
 		WorkerLedger: wrk,

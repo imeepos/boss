@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
@@ -57,6 +58,11 @@ func respondErr(c *gin.Context, err error) {
 		errors.Is(err, provision.ErrIllegalTransition),
 		errors.Is(err, billing.ErrIllegalReconTransition):
 		respond(c, apitypes.CodeInvalidParam, nil)
+	case errors.Is(err, ai.ErrNotConfigured),
+		errors.Is(err, ai.ErrInvalidInput):
+		respond(c, apitypes.CodeInvalidParam, nil)
+	case errors.Is(err, ai.ErrDownstream):
+		respond(c, apitypes.CodeDownstreamErr, nil)
 	default:
 		respond(c, apitypes.CodeInternal, nil)
 	}
@@ -135,6 +141,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 
 	registerOrgRoutes(authed, a)
 	registerSysRoutes(authed, a)
+	registerAIRoutes(authed, a)
 	registerAPIKeyRoutes(authed, a)
 	registerOrderRoutes(authed, a)
 	registerDispatchRoutes(authed, a)

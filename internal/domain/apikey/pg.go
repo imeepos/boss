@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ErrNotFound 记录不存在或已停用。
@@ -74,18 +75,20 @@ func (s *PGStore) List(ctx context.Context) ([]APIKey, error) {
 	out := make([]APIKey, 0)
 	for rows.Next() {
 		var k APIKey
-		var lastUsed, expires, createdAt time.Time
+		var lastUsed, expires, createdAt pgtype.Timestamptz
 		if err := rows.Scan(&k.ID, &k.AccountID, &k.AccountName, &k.Name,
 			&k.Status, &lastUsed, &expires, &createdAt); err != nil {
 			return nil, fmt.Errorf("apikey: scan: %w", err)
 		}
-		if !lastUsed.IsZero() {
-			k.LastUsedAt = lastUsed.Format(time.RFC3339)
+		if lastUsed.Valid {
+			k.LastUsedAt = lastUsed.Time.Format(time.RFC3339)
 		}
-		if !expires.IsZero() {
-			k.ExpiresAt = expires.Format(time.RFC3339)
+		if expires.Valid {
+			k.ExpiresAt = expires.Time.Format(time.RFC3339)
 		}
-		k.CreatedAt = createdAt.Format(time.RFC3339)
+		if createdAt.Valid {
+			k.CreatedAt = createdAt.Time.Format(time.RFC3339)
+		}
 		out = append(out, k)
 	}
 	return out, rows.Err()

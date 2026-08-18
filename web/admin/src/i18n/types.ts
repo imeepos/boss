@@ -380,6 +380,50 @@ export interface Translations {
       close: string
       loadFail: string
     }
+    message: {
+      title: string
+      desc: string
+      tabWorker: string
+      tabNotice: string
+      refresh: string
+      cardTitle: string
+      matched: string
+      empty: string
+      loadFail: string
+      searchPlaceholder: string
+      workerIdPlaceholder: string
+      allLevels: string
+      allRead: string
+      read: string
+      unread: string
+      msgColumns: string[]
+      sendTitle: string
+      send: string
+      sending: string
+      sendLevel: string
+      sendTitlePlaceholder: string
+      sendContentPlaceholder: string
+      sendNeedWorker: string
+      sendNeedTitle: string
+      sent: string
+      sendFail: string
+      noticeColumns: string[]
+      noticeTitlePlaceholder: string
+      noticeCategoryPlaceholder: string
+      publish: string
+      published: string
+      publishFail: string
+      onShelf: string
+      offShelf: string
+      toggle: string
+      toggleFail: string
+      rangeText: string
+      prev: string
+      next: string
+      perPage: string
+      jump: string
+      pageUnit: string
+    }
     audit: {
       title: string
       desc: string

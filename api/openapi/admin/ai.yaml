@@ -1,0 +1,143 @@
+# AI 能力网关(internal/domain/ai):openai-go SDK 封装,apiKey/apiUrl 平台集中配置。
+# 配置存 biz_params(ai.openai.*),admin 热更即生效;全部接口 permCode menu:ai(初始仅 sysadmin)。
+# 错误码:42200=未配置/入参非法,50200=OpenAI 下游失败。
+paths:
+  /ai/openai/config:
+    get:
+      tags: [AI]
+      summary: OpenAI 集中配置视图(apiKey 脱敏;permCode menu:ai)
+      operationId: getAIOpenAIConfig
+      responses:
+        '200':
+          description: data={apiUrl,apiKeyMasked,model,configured}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { $ref: '#/components/schemas/AIOpenAIConfigView' }
+    put:
+      tags: [AI]
+      summary: 变更 OpenAI 集中配置(逐键更新,nil 跳过;permCode menu:ai;审计"数据变更")
+      operationId: updateAIOpenAIConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AIOpenAIConfigUpdate' }
+      responses:
+        '200':
+          description: data={ok:true};42200=apiUrl 非 http 前缀
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { type: object, properties: { ok: { type: boolean } } }
+  /ai/chat/completions:
+    post:
+      tags: [AI]
+      summary: 对话补全(封装 SDK Chat.Completions;permCode menu:ai;42200=未配置/消息为空,50200=下游失败)
+      operationId: aiChatCompletions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AIChatRequest' }
+      responses:
+        '200':
+          description: data={model,content,finishReason,usage}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { $ref: '#/components/schemas/AIChatResponse' }
+  /ai/embeddings:
+    post:
+      tags: [AI]
+      summary: 文本向量化(封装 SDK Embeddings;permCode menu:ai;输入数组与向量顺序一一对应)
+      operationId: aiEmbeddings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AIEmbeddingRequest' }
+      responses:
+        '200':
+          description: data={model,vectors,usage}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { $ref: '#/components/schemas/AIEmbeddingResponse' }
+components:
+  schemas:
+    AIOpenAIConfigView:
+      type: object
+      description: admin 可见配置视图,密钥脱敏(前 4 后 4)
+      properties:
+        apiUrl: { type: string, description: 需含 /v1,如 https://api.openai.com/v1 }
+        apiKeyMasked: { type: string, example: sk-t****3456, description: 空=未配置 }
+        model: { type: string, description: 默认模型,请求未指定 model 时兜底 }
+        configured: { type: boolean, description: apiUrl 与 apiKey 均就绪 }
+    AIOpenAIConfigUpdate:
+      type: object
+      description: 逐键变更;字段缺省(nil)=不修改
+      properties:
+        apiUrl: { type: string, nullable: true }
+        apiKey: { type: string, nullable: true }
+        model: { type: string, nullable: true }
+    AIChatRequest:
+      type: object
+      required: [messages]
+      properties:
+        model: { type: string, description: 空=平台默认模型(biz_params ai.openai.model) }
+        messages:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [role, content]
+            properties:
+              role: { type: string, enum: [system, user, assistant] }
+              content: { type: string }
+        temperature: { type: number, format: float }
+        maxTokens: { type: integer, format: int64 }
+    AIChatResponse:
+      type: object
+      properties:
+        model: { type: string }
+        content: { type: string, description: 首个 choice 文本 }
+        finishReason: { type: string, example: stop }
+        usage:
+          type: object
+          properties:
+            promptTokens: { type: integer, format: int64 }
+            completionTokens: { type: integer, format: int64 }
+            totalTokens: { type: integer, format: int64 }
+    AIEmbeddingRequest:
+      type: object
+      required: [input]
+      properties:
+        model: { type: string, description: 空=平台默认模型 }
+        input: { type: array, items: { type: string }, minItems: 1 }
+    AIEmbeddingResponse:
+      type: object
+      properties:
+        model: { type: string }
+        vectors: { type: array, items: { type: array, items: { type: number, format: double } } }
+        usage:
+          type: object
+          properties:
+            promptTokens: { type: integer, format: int64 }
+            totalTokens: { type: integer, format: int64 }

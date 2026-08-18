@@ -321,6 +321,31 @@
 5. `worker_settings`（当前接单设置）与 `worker_messages`（站内通知）不加快照，跟随当前班组。
 6. **姓名快照**：`dispatch_tickets`/`worker_feedbacks` 另存 `worker_name` 快照，师傅改名不改历史工单/评价。
 
+### 7.4 worker_messages / worker_notices（消息中心页 `/boss/message`）
+
+消息级别统一 `INFO/WARN/URGENT`（见 terms.md「消息 level」）。
+
+**worker_messages（师傅消息页签）**
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 级别 | `level` | level | INFO/WARN/URGENT |
+| 师傅 | `workerId` | worker_id | BIGINT → workers |
+| 标题 | `title` | title | 下发时必填 |
+| 内容 | `content` | content | |
+| 时间 | `sentAt` | sent_at | |
+| 状态 | `read` | read | 已读/未读 |
+
+**worker_notices（公告管理页签）**
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 标题 | `title` | title | 发布时必填 |
+| 分类 | `category` | category | |
+| 状态 | `active` | active | true=上架(师傅端可见)/false=已下架 |
+| 发布时间 | `publishedAt` | published_at | |
+| 操作 | — | — | 上下架切换 `PUT /notices/{id}/toggle` |
+
 ## 8. 归属台账实体（通用深度关联模式，六张）
 
 可变归属/状态 + 派生历史 → 配「台账」四件套：FK 双向 + `xxx_name` 快照 + 时间区间 + `reason`/`operator_account_id` 追溯。

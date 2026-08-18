@@ -99,7 +99,7 @@ export default function ApiKeyPage() {
               <tr key={r.id}>
                 <td>{r.name}</td>
                 <td>{r.accountName || `#${r.accountId}`}</td>
-                <td className="mono">{r.keyPrefix}…</td>
+                <td className="mono">{r.keyPrefix ? `${r.keyPrefix}…` : '—'}</td>
                 <td>{r.status === 1 ? t.pages.apikey.active : t.pages.apikey.revoked}</td>
                 <td>{r.lastUsedAt ? formatTime(r.lastUsedAt) : t.pages.apikey.neverUsed}</td>
                 <td>{formatTime(r.createdAt)}</td>

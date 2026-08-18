@@ -47,7 +47,8 @@
 | 结算互连 SET | SET | AG-17 | 待建 | — | 待建 | 待建 |
 | 忠诚度积分 LOY | LOY | AG-18 | 待建 | — | 待建 | 待建 |
 | 客户门户 | PORT | XG-04(组装) | 待建(前端) | — | user端(非admin) | — |
-| 消息通知 | NOT | XG-04(组装) | 待建 | — | 待建 | — |
+| 消息通知 | NOT | XG-04(组装) | `worker`(师傅侧消息/公告) | 阶段2 | boss | message |
+| AI 能力网关 | AI | （横切，平台级，非 21 域） | `ai` | 增量 | 无专用页（复用 base/settings 参数页） | ai.openai.* 配置经 /params 或 /ai/openai/config 热更 |
 
 > 注：`internal/domain/user` 承担 A 体系的 `系统管理` + `品牌区域(Region 部分)` 两类职责；
 > `internal/domain/billing` 承担 `计费账务` + `支付收款`；`internal/domain/device` 承担 `设备CPE` + `网络监控`。
