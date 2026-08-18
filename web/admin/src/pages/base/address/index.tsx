@@ -154,7 +154,7 @@ function AddressTree({ rows, childrenOf, expanded, depth, countryName, keyword,
       {rows.map((r) => {
         const kids = childrenOf[r.id]
         const open = expanded.has(r.id)
-        const leaf = kids !== undefined && kids.length === 0
+        const leaf = kids !== undefined ? kids.length === 0 : r.hasChildren === false
         return (
           <div key={r.id} className="addr-node">
             <div className="addr-row">

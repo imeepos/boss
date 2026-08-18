@@ -73,6 +73,7 @@ type Address struct {
 	Name        string `json:"name"`
 	CountryCode string `json:"countryCode"` // 所在树根的国家锚点(alpha-2,空=未挂接)
 	AdminCode   string `json:"adminCode"`   // 所在树根的一级行政区锚点(ISO 3166-2,可空)
+	HasChildren bool   `json:"hasChildren"` // 是否存在子级
 }
 
 type AddressRow struct {

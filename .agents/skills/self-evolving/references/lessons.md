@@ -66,3 +66,4 @@
 - 当 Go API 返回 500 内部错误、且已确认非权限/参数问题（调用链走到 PG 实现层）时，第一步查 SQL SELECT 的 nullable 列有没有 COALESCE 包裹——pgx 的 `Scan(&int16)` 遇到 NULL 列会直接报错，不属于 `ErrNoRows` 等已知错误类型，落入 `respondErr` 的 `default` 分支返回 500。`GetSubdivision` 已正确使用 `COALESCE(osm_admin_level,0)`，但 `ListSubdivisions` 遗漏了。skill 没提前警告我。
 - 当列表筛选既要刷新恢复又要保证控件即时响应时，修复是 URL 只做首次初始化，交互更新本地 state 并通过独立 setter 同步 URL；不要把 `useSearchParams` 的实时值直接作为控件渲染源。skill 没提前警告我。
 - 当用户报告控件“点不中/选不中”时，修复是用真实页面 DOM 断言点击后的控件文本、筛选结果和 `location.search` 三者同时变化；build/test 只能证明代码可编译，不能证明交互链路。skill 没提前警告我。
+- 当要制作个人中心或设置类页面时，修复是先调研 Ant Design Pro 一手范式并输出信息架构/状态清单，再采用“紧凑账号头部 + 左侧分区导航 + 右侧单任务内容面板”，不要先堆叠多张功能卡片。skill 没提前警告我。

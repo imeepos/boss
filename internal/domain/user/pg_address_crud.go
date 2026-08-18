@@ -118,7 +118,8 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 	like := "%" + kw + "%"
 	rows, err := s.db.Query(ctx, `
 		SELECT a.id, COALESCE(a.parent_id,0), a.level, a.name, a.path::text,
-		       COALESCE(r.country_code,''), COALESCE(r.admin_code,'')
+		       COALESCE(r.country_code,''), COALESCE(r.admin_code,''),
+		       EXISTS(SELECT 1 FROM addresses c WHERE c.parent_id = a.id)
 		FROM addresses a
 		JOIN addresses r ON r.path = subpath(a.path, 0, 1)
 		WHERE a.name ILIKE $1 OR a.path::text ILIKE $1
@@ -132,7 +133,7 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 	for rows.Next() {
 		var h hit
 		if err := rows.Scan(&h.ID, &h.ParentID, &h.Level, &h.Name, &h.path,
-			&h.CountryCode, &h.AdminCode); err != nil {
+			&h.CountryCode, &h.AdminCode, &h.HasChildren); err != nil {
 			return nil, fmt.Errorf("user: scan search hit: %w", err)
 		}
 		hits = append(hits, h)

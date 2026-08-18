@@ -1,7 +1,11 @@
 GO ?= go
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check proto docker-build load
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check proto docker-build load bossctl
+
+## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证)
+bossctl:
+	$(GO) build -ldflags="-s -w" -o bossctl ./cmd/bossctl
 
 ## W11 压测:种子压测账号 → 起服务 → k6 → 摘服务(真实 PG 需 BOSS_DATABASE_DSN;端口可经 BOSS_HTTP_PORT 覆盖)
 load:

@@ -16,6 +16,7 @@ export interface AddressRow {
   name: string
   countryCode: string
   adminCode: string
+  hasChildren?: boolean
 }
 
 export type { CountryRow }

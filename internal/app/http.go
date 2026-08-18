@@ -138,9 +138,10 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 		})
 	})
 
-	// 需要鉴权的路由组:登录后经 JWT 认证;RBAC 逐接口注入 permCode。
+	// 需要鉴权的路由组:先尝试 API key 免登录认证,再回退到 JWT 认证。
+	// API key 通过 X-API-Key 请求头传递,经哈希匹配数据库,注入绑定的账号身份,无需调用 /auth/login。
 	authed := api.Group("")
-	authed.Use(middleware.Authn(mgr))
+	authed.Use(middleware.APIKeyAuth(a.APIKey, a.User), middleware.Authn(mgr))
 
 	authed.GET("/auth/me", func(c *gin.Context) {
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
@@ -158,6 +159,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	})
 
 	registerOrgRoutes(authed, a)
+	registerAPIKeyRoutes(authed, a)
 	registerOrderRoutes(authed, a)
 	registerDispatchRoutes(authed, a)
 	registerDashboardRoutes(authed, a)

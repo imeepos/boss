@@ -173,8 +173,8 @@ export interface Translations {
       activeAccount: string
       save: string
       cancel: string
-      navigation: { title: string; overview: string; overviewDesc: string; personal: string; personalDesc: string; security: string; securityDesc: string; apiKey: string; apiKeyDesc: string; myData: string; myDataDesc: string; backAdmin: string }
-      overview: { title: string; desc: string; accountStatus: string; accountStatusDesc: string; quickAccess: string }
+      navigation: { title: string; overview: string; overviewDesc: string; personal: string; personalDesc: string; security: string; securityDesc: string; apiKey: string; apiKeyDesc: string; myData: string; myDataDesc: string; backAdmin: string; platformWorkspace: string; menu: string }
+      overview: { title: string; desc: string; accountStatus: string; accountStatusDesc: string; quickAccess: string; dispatch: string; dispatchDesc: string; order: string; orderDesc: string; complaint: string; complaintDesc: string; permissionSummary: string; dataScopeSummary: string }
       personal: { title: string; desc: string; badge: string; username: string; realName: string; phone: string; phonePlaceholder: string; email: string; emailPlaceholder: string; saved: string; role: string; company: string; dataScope: string; unassigned: string; allScope: string }
       password: { title: string; desc: string; old: string; next: string; confirm: string; submit: string; passwordPending: string }
       securityProtection: { title: string; loginProtection: string; loginHistory: string; pending: string }

@@ -193,9 +193,9 @@ func TestPGStore_ListAddresses(t *testing.T) {
 
 	mock.ExpectQuery(`SELECT a\.id, COALESCE\(a\.parent_id, 0\), a\.level, a\.name`).
 		WithArgs(int64(1)).
-		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "country_code", "admin_code"}).
-			AddRow(int64(2), int64(1), int8(2), "朝阳区", "CN", "CN-BJ").
-			AddRow(int64(3), int64(1), int8(2), "海淀区", "CN", "CN-BJ"))
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "country_code", "admin_code", "has_children"}).
+			AddRow(int64(2), int64(1), int8(2), "朝阳区", "CN", "CN-BJ", true).
+			AddRow(int64(3), int64(1), int8(2), "海淀区", "CN", "CN-BJ", false))
 
 	s := NewPGStore(mock)
 	got, err := s.ListAddresses(context.Background(), 1)

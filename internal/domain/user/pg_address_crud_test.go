@@ -64,8 +64,8 @@ func TestSearchAddresses(t *testing.T) {
 
 	mock.ExpectQuery(`LIMIT 20`).
 		WithArgs("%朝阳%").
-		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "country_code", "admin_code"}).
-			AddRow(int64(3), int64(2), int8(2), "朝阳区", "bj.chaoyang", "CN", "CN-BJ"))
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "country_code", "admin_code", "has_children"}).
+			AddRow(int64(3), int64(2), int8(2), "朝阳区", "bj.chaoyang", "CN", "CN-BJ", false))
 	mock.ExpectQuery(`= ANY`).
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path"}).

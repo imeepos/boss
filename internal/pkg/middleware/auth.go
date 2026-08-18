@@ -13,8 +13,13 @@ import (
 const CtxClaims = "boss.claims"
 
 // Authn JWT 认证:解析 Bearer token 并注入 claims。
+// 如果 claims 已被前序中间件(如 APIKeyAuth)设置,则跳过 JWT 校验。
 func Authn(m *auth.Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if _, ok := c.Get(CtxClaims); ok {
+			c.Next()
+			return
+		}
 		h := c.GetHeader("Authorization")
 		if !strings.HasPrefix(h, "Bearer ") {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "missing bearer token"})
