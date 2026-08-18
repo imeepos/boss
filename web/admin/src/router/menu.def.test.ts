@@ -33,7 +33,7 @@ describe('role-menu 可见性', () => {
   })
 
   it('每个 RoleCode 至少可见 overview(工作台兜底)', () => {
-    for (const role of ['customer', 'technician', 'asset_admin', 'resource_admin', 'ops', 'analyst', 'sysadmin'] as const) {
+    for (const role of ['asset_admin', 'resource_admin', 'ops', 'analyst', 'sysadmin'] as const) {
       expect(visibleGroupIds(role)).toContain('overview')
     }
   })

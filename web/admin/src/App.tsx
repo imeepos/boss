@@ -50,8 +50,10 @@ export default function App() {
           <Route path="overview" element={<ProfilePage />} />
           <Route path="personal" element={<ProfilePage />} />
           <Route path="security" element={<ProfilePage />} />
+          <Route path="permissions" element={<ProfilePage />} />
+          <Route path="work" element={<ProfilePage />} />
           <Route path="api-keys" element={<ProfilePage />} />
-          <Route path="data" element={<ProfilePage />} />
+          <Route path="audit" element={<ProfilePage />} />
         </Route>
         <Route
           path="/"

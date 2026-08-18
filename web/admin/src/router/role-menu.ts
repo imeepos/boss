@@ -2,9 +2,9 @@
 // 角色职责依据 server-ts/src/enums.ts RoleCode 与 domain-map.md 能力域。
 import { MENU_GROUPS, PAGE_BY_KEY, type MenuItem } from './menu.def'
 
+/** 后台 accounts 专用角色；customer/workers 属于其他端，不进入管理后台。 */
 export type RoleCode =
-  | 'customer' | 'technician' | 'asset_admin'
-  | 'resource_admin' | 'ops' | 'analyst' | 'sysadmin'
+  | 'asset_admin' | 'resource_admin' | 'ops' | 'analyst' | 'sysadmin'
 
 const OVERVIEW = 'overview'
 
@@ -14,8 +14,6 @@ export const ROLE_GROUPS: Record<RoleCode, string[]> = {
   ops: [OVERVIEW, 'bss', 'billing', 'boss', 'quad', 'alarm', 'aaa', 'intel', 'provision'],
   asset_admin: [OVERVIEW, 'ams'],
   resource_admin: [OVERVIEW, 'oss', 'provision', 'alarm'],
-  customer: [OVERVIEW, 'bss'],
-  technician: [OVERVIEW, 'boss', 'quad'],
   analyst: [OVERVIEW, 'intel', 'aaa'],
 }
 
