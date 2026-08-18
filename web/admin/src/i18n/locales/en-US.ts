@@ -227,7 +227,8 @@ const enUS: Translations = {
     },
     profile: {
       title: 'User Center', activeAccount: 'Account active', save: 'Save changes', cancel: 'Cancel',
-      navigation: { title: 'Account settings', personal: 'Basic information', personalDesc: 'Name and contact details', security: 'Security', securityDesc: 'Password and login protection', apiKey: 'API keys', apiKeyDesc: 'Automation credentials', myData: 'My business data', myDataDesc: 'Records and permissions' },
+      navigation: { title: 'Account settings', overview: 'Personal workspace', overviewDesc: 'Account overview and shortcuts', personal: 'Basic information', personalDesc: 'Name and contact details', security: 'Security', securityDesc: 'Password and login protection', apiKey: 'API keys', apiKeyDesc: 'Automation credentials', myData: 'My business data', myDataDesc: 'Records and permissions', backAdmin: 'Back to admin' },
+      overview: { title: 'Personal workspace', desc: 'Review account status, shortcuts and personal business data in one place.', accountStatus: 'Account status', accountStatusDesc: 'Current session is active', quickAccess: 'Quick access' },
       personal: { title: 'Basic information', desc: 'Maintain editable details for the signed-in account', badge: 'Current account', username: 'Username', realName: 'Name', phone: 'Phone', phonePlaceholder: 'Enter phone number', email: 'Email', emailPlaceholder: 'Enter email', saved: 'Profile saved (API pending)', role: 'Role', company: 'Company', dataScope: 'Data scope', unassigned: 'Unassigned', allScope: 'All' },
       password: { title: 'Security', desc: 'Your old password is required before changing it', old: 'Old password', next: 'New password', confirm: 'Confirm new password', submit: 'Update password', passwordPending: 'Password API pending' },
       securityProtection: { title: 'Other security settings', loginProtection: 'Login protection', loginHistory: 'Recent login activity', pending: 'API pending' },

@@ -168,7 +168,7 @@ function UserMenu({ profile }: { profile: Profile }) {
             <div className="shell-user-info-name">{profile.realName}</div>
             <div className="shell-user-info-role">{profile.roleName}</div>
           </div>
-          <button role="menuitem" onClick={() => setOpen(false)}>
+          <button role="menuitem" onClick={() => { setOpen(false); nav('/ucenter/overview') }}>
             <UserIcon />
             <span>{t.common.profile}</span>
           </button>

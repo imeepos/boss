@@ -227,7 +227,8 @@ const zhCN: Translations = {
     },
     profile: {
       title: '用户中心', activeAccount: '账号正常', save: '保存修改', cancel: '取消',
-      navigation: { title: '账户设置', personal: '基本资料', personalDesc: '姓名与联系方式', security: '安全设置', securityDesc: '密码与登录保护', apiKey: 'API Key', apiKeyDesc: '自动化访问凭证', myData: '我的业务数据', myDataDesc: '业务记录与权限' },
+      navigation: { title: '账户设置', overview: '个人工作台', overviewDesc: '账号概览与快捷入口', personal: '基本资料', personalDesc: '姓名与联系方式', security: '安全设置', securityDesc: '密码与登录保护', apiKey: 'API Key', apiKeyDesc: '自动化访问凭证', myData: '我的业务数据', myDataDesc: '业务记录与权限', backAdmin: '返回管理端' },
+      overview: { title: '个人工作台', desc: '集中查看账号状态、快捷入口和个人业务数据。', accountStatus: '账号状态', accountStatusDesc: '当前登录会话正常', quickAccess: '快捷入口' },
       personal: { title: '基本资料', desc: '维护当前登录账号的可编辑资料', badge: '当前账号', username: '登录账号', realName: '姓名', phone: '手机号', phonePlaceholder: '请输入手机号', email: '邮箱', emailPlaceholder: '请输入邮箱', saved: '个人信息已保存（接口待接入）', role: '角色', company: '所属公司', dataScope: '数据范围', unassigned: '未分配', allScope: '全集团' },
       password: { title: '安全设置', desc: '修改登录密码前需要验证旧密码', old: '旧密码', next: '新密码', confirm: '确认新密码', submit: '更新密码', passwordPending: '密码修改接口待接入' },
       securityProtection: { title: '其他安全设置', loginProtection: '登录保护', loginHistory: '最近登录记录', pending: '接口待接入' },
