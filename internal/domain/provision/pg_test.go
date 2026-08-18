@@ -2,9 +2,11 @@ package provision
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 )
 
@@ -65,16 +67,16 @@ func TestPGStore_ListTasks(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, lo_account_id, template_id, status FROM provision_tasks`).
-		WillReturnRows(mock.NewRows([]string{"id", "lo_account_id", "template_id", "status"}).
-			AddRow(int64(1), int64(88), int64(1), "DONE"))
+	mock.ExpectQuery(`SELECT id, task_no, order_id, stage_event, lo_account_id, template_id, status FROM provision_tasks`).
+		WillReturnRows(mock.NewRows([]string{"id", "task_no", "order_id", "stage_event", "lo_account_id", "template_id", "status"}).
+			AddRow(int64(1), "TASK-1", int64(9), "preConfigOLT", int64(88), int64(1), "DONE"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListTasks(context.Background())
 	if err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
-	if len(got) != 1 || got[0].Status != "DONE" {
+	if len(got) != 1 || got[0].Status != "DONE" || got[0].TaskNo != "TASK-1" {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -90,11 +92,14 @@ func TestPGStore_CreateTask(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO provision_tasks`).
-		WithArgs(int64(88), int64(1), "PENDING").
+		WithArgs("TASK-20260817-01", int64(9), "preConfigOLT", int64(88), int64(1), "PENDING").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)
-	id, err := s.CreateTask(context.Background(), Task{LoAccountID: 88, TemplateID: 1, Status: "PENDING"})
+	id, err := s.CreateTask(context.Background(), Task{
+		TaskNo: "TASK-20260817-01", OrderID: 9, StageEvent: "preConfigOLT",
+		LoAccountID: 88, TemplateID: 1, Status: "PENDING",
+	})
 	if err != nil {
 		t.Fatalf("CreateTask: %v", err)
 	}
@@ -104,6 +109,48 @@ func TestPGStore_CreateTask(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
 	}
+}
+
+func TestPGStore_GetTaskByNo(t *testing.T) {
+	t.Run("命中", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		cols := []string{"id", "task_no", "order_id", "stage_event", "lo_account_id", "template_id", "status"}
+		mock.ExpectQuery(`SELECT id, task_no, order_id, stage_event, lo_account_id, template_id, status FROM provision_tasks WHERE task_no = \$1`).
+			WithArgs("TASK-1").
+			WillReturnRows(mock.NewRows(cols).AddRow(int64(1), "TASK-1", int64(9), "preConfigOLT", int64(88), int64(1), "FAILED"))
+
+		s := NewPGStore(mock)
+		got, err := s.GetTaskByNo(context.Background(), "TASK-1")
+		if err != nil {
+			t.Fatalf("GetTaskByNo: %v", err)
+		}
+		if got.Status != "FAILED" || got.OrderID != 9 {
+			t.Fatalf("got=%+v", got)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("未命中", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id, task_no, order_id, stage_event, lo_account_id, template_id, status FROM provision_tasks WHERE task_no = \$1`).
+			WithArgs("TASK-NOPE").
+			WillReturnError(pgx.ErrNoRows)
+
+		s := NewPGStore(mock)
+		if _, err := s.GetTaskByNo(context.Background(), "TASK-NOPE"); !errors.Is(err, ErrTaskNotFound) {
+			t.Fatalf("err=%v", err)
+		}
+	})
 }
 
 func TestPGStore_ListLogs(t *testing.T) {

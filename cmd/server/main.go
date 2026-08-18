@@ -4,6 +4,9 @@ package main
 import (
 	"context"
 	"log"
+	"net"
+
+	"google.golang.org/grpc"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/pkg/auth"
@@ -22,9 +25,27 @@ func main() {
 	r := server.New(server.Config{HTTPAddr: cfg.Server.HTTPAddr})
 	app.RegisterRoutes(r, a, mgr)
 
+	// 债务偿还:同进程起 gRPC 服务间契约(quadlink/aaa/device/provision v1)。
+	grpcSrv := grpc.NewServer()
+	app.RegisterGRPC(grpcSrv, a)
+	go serveGRPC(cfg.Server.GRPCAddr, grpcSrv)
+
 	if err := server.Run(r, cfg.Server.HTTPAddr); err != nil {
 		log.Fatalf("server: %v", err)
 	}
-	// 优雅退出后,排空异步审计队列并关闭连接池。
+	// 优雅退出后,先停 gRPC 再排空异步审计队列并关闭连接池。
+	grpcSrv.GracefulStop()
 	a.Close()
+}
+
+// serveGRPC 在独立 goroutine 中启动 gRPC 监听;启动失败即退出。
+func serveGRPC(addr string, s *grpc.Server) {
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalf("grpc listen: %v", err)
+	}
+	log.Printf("boss-server grpc listening on %s", addr)
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("grpc serve: %v", err)
+	}
 }

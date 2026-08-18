@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
+	aaability "github.com/ymm-001/boss/internal/domain/aaa/billing"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
@@ -54,6 +55,11 @@ type Application struct {
 	Provision provision.ProvisionService
 	QuadLink  quadlink.QuadLinkService
 	Asset     asset.AssetService
+
+	// AaaAuth 授权查询(授权器,权威状态=lo_accounts);Cdr 话单投递(PG 落库 + Kafka 双写)。
+	// gRPC aaa/v1 GetAuthorization/EmitCDR 依赖,债务偿还:契约服务可在 cmd/server 内直连。
+	AaaAuth aaa.Authorizer
+	Cdr     aaability.Emitter
 
 	Worker       worker.WorkerService
 	WorkerLedger worker.WorkerLedgerService
@@ -114,6 +120,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
+	aaastore := aaa.NewPGStore(pool)
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
 
 	app := &Application{
@@ -140,7 +147,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Device: dev,
 		Alarm:  dev,
 
-		Aaa:       aaa.NewPGStore(pool),
+		Aaa:       aaastore,
 		Provision: provision.NewPGStore(pool),
 		QuadLink:  quadlink.NewPGStore(pool),
 		Asset:     asset.NewPGStore(pool),
@@ -152,6 +159,18 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 
 	app.Audit = aw
+
+	// 债务偿还:gRPC aaa/v1 依赖——授权器 + 话单投递(PG 落库必选,Kafka 可用时双写)。
+	app.AaaAuth = aaa.NewPGAuthorizer(pool)
+	cdrStore := aaability.NewPGEmitter(aaastore)
+	var cdr aaability.Emitter = cdrStore
+	var closeCDR func()
+	if len(cfg.Kafka.Brokers) > 0 {
+		ke := aaability.NewKafkaEmitter(cfg.Kafka.Brokers, cfg.AAA.CDRTopic)
+		cdr = &aaability.FanoutEmitter{Realtime: ke, Store: cdrStore}
+		closeCDR = func() { _ = ke.Close() }
+	}
+	app.Cdr = cdr
 
 	// W8:Kafka 状态变更链路(brokers 可用即接,否则降级 Noop)。
 	var pub events.Publisher = events.Noop{}
@@ -166,6 +185,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 	app.close = func() {
 		aw.Close() // 排空审计队列
+		if closeCDR != nil {
+			closeCDR()
+		}
 		if closePub != nil {
 			closePub()
 		}

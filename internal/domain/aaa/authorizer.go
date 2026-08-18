@@ -13,10 +13,11 @@ var ErrSuspended = errors.New("aaa: profile suspended")
 
 // Decision 一次授权决策结果(RADIUS Access-Accept 的属性来源)。
 type Decision struct {
-	LOID       string
-	Authorize  bool   // 是否放行
-	Bandwidth  string // 带宽模板属性
-	SessionTTL int    // Session-Timeout 属性
+	LOID        string
+	Authorize   bool   // 是否放行
+	Bandwidth   string // 带宽模板属性
+	QosTemplate string // QoS 模板编码(契约 aaa/v1 GetAuthorization 透出)
+	SessionTTL  int    // Session-Timeout 属性
 }
 
 // Authorizer 授权决策口。

@@ -2,7 +2,9 @@ package provision
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -57,7 +59,7 @@ func (s *PGStore) CreateTemplate(ctx context.Context, t Template) (int64, error)
 
 // ListTasks 列出全部下发任务。
 func (s *PGStore) ListTasks(ctx context.Context) ([]Task, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, lo_account_id, template_id, status FROM provision_tasks ORDER BY id`)
+	rows, err := s.db.Query(ctx, `SELECT id, task_no, order_id, stage_event, lo_account_id, template_id, status FROM provision_tasks ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("provision: list tasks: %w", err)
 	}
@@ -65,7 +67,7 @@ func (s *PGStore) ListTasks(ctx context.Context) ([]Task, error) {
 	out := make([]Task, 0)
 	for rows.Next() {
 		var t Task
-		if err := rows.Scan(&t.ID, &t.LoAccountID, &t.TemplateID, &t.Status); err != nil {
+		if err := rows.Scan(&t.ID, &t.TaskNo, &t.OrderID, &t.StageEvent, &t.LoAccountID, &t.TemplateID, &t.Status); err != nil {
 			return nil, fmt.Errorf("provision: scan task: %w", err)
 		}
 		out = append(out, t)
@@ -73,16 +75,34 @@ func (s *PGStore) ListTasks(ctx context.Context) ([]Task, error) {
 	return out, rows.Err()
 }
 
-// CreateTask 新建下发任务,返回自增 id。
+// CreateTask 新建下发任务,返回自增 id;task_no 为空时自动生成。
 func (s *PGStore) CreateTask(ctx context.Context, t Task) (int64, error) {
+	if t.TaskNo == "" {
+		t.TaskNo = fmt.Sprintf("TASK-%d", time.Now().UnixNano())
+	}
 	var id int64
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO provision_tasks(lo_account_id, template_id, status) VALUES($1,$2,$3) RETURNING id`,
-		t.LoAccountID, t.TemplateID, t.Status).Scan(&id)
+		`INSERT INTO provision_tasks(task_no, order_id, stage_event, lo_account_id, template_id, status)
+		 VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+		t.TaskNo, t.OrderID, t.StageEvent, t.LoAccountID, t.TemplateID, t.Status).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("provision: create task: %w", err)
 	}
 	return id, nil
+}
+
+// GetTaskByNo 按外部 task_no 寻址;未命中返回 ErrTaskNotFound。
+func (s *PGStore) GetTaskByNo(ctx context.Context, taskNo string) (*Task, error) {
+	var t Task
+	err := s.db.QueryRow(ctx, `SELECT id, task_no, order_id, stage_event, lo_account_id, template_id, status FROM provision_tasks WHERE task_no = $1`, taskNo).
+		Scan(&t.ID, &t.TaskNo, &t.OrderID, &t.StageEvent, &t.LoAccountID, &t.TemplateID, &t.Status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrTaskNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("provision: get task by no: %w", err)
+	}
+	return &t, nil
 }
 
 // ListLogs 列出下发日志;taskID=0 返回全部,否则按任务过滤。

@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE provision_logs ALTER COLUMN result TYPE VARCHAR(16);
+COMMIT;

@@ -14,8 +14,12 @@ type Template struct {
 }
 
 // Task 下发任务(按模板向 LO 账号下发配置)。
+// TaskNo/OrderID/StageEvent 对齐契约 provision/v1(债务偿还:任务外部寻址 + 来源订单/环节事件)。
 type Task struct {
 	ID          int64  `json:"id"`
+	TaskNo      string `json:"taskNo"`      // 外部稳定标识(EnqueueTask/GetTask/RetryTask 寻址)
+	OrderID     int64  `json:"orderId"`     // 来源订单(0=手工任务)
+	StageEvent  string `json:"stageEvent"`  // preConfigOLT/activateUser/notifyActivation
 	LoAccountID int64  `json:"loAccountId"` // 软引用 lo_accounts
 	TemplateID  int64  `json:"templateId"`
 	Status      string `json:"status"` // PENDING/DOING/DONE/FAILED
@@ -40,6 +44,8 @@ type ProvisionService interface {
 	CreateTemplate(ctx context.Context, t Template) (int64, error)
 	ListTasks(ctx context.Context) ([]Task, error)
 	CreateTask(ctx context.Context, t Task) (int64, error)
+	// GetTaskByNo 按外部 task_no 寻址(契约 provision/v1 GetTask/RetryTask)。
+	GetTaskByNo(ctx context.Context, taskNo string) (*Task, error)
 	ListLogs(ctx context.Context, taskID int64) ([]Log, error)
 	AppendLog(ctx context.Context, l Log) (int64, error)
 

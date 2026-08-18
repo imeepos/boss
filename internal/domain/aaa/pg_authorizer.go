@@ -42,12 +42,12 @@ func (s *PGAuthorizer) Decide(ctx context.Context, loid string) (Decision, error
 		return Decision{}, fmt.Errorf("aaa: decide: %w", err)
 	}
 	if Status(status) != StatusActive {
-		return Decision{LOID: loid, Authorize: false}, ErrSuspended
+		return Decision{LOID: loid, Authorize: false, QosTemplate: qos}, ErrSuspended
 	}
 	if bandwidth == "" {
 		bandwidth = qos
 	}
-	return Decision{LOID: loid, Authorize: true, Bandwidth: bandwidth, SessionTTL: defaultSessionTTL}, nil
+	return Decision{LOID: loid, Authorize: true, Bandwidth: bandwidth, QosTemplate: qos, SessionTTL: defaultSessionTTL}, nil
 }
 
 // SuspendLoAccount 停机(欠费/人工):ACTIVE→SUSPENDED;仅 ACTIVE 可停。
