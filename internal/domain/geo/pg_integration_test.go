@@ -43,6 +43,7 @@ func TestPGStore_Integration(t *testing.T) {
 	}
 	testCountryCRUD(ctx, t, s)
 	testSubdivisionCRUD(ctx, t, s)
+	testImport(ctx, t, s)
 }
 
 // testCountryCRUD 国家建/查/改/译名/属性/停用闭环。
@@ -129,5 +130,40 @@ func testSubdivisionCRUD(ctx context.Context, t *testing.T, s *PGStore) {
 	}
 	if err := s.UpdateSubdivision(ctx, "ZZ-404", Subdivision{}); err != ErrNotFound {
 		t.Fatalf("missing want ErrNotFound, got %v", err)
+	}
+}
+
+// testImport 批量导入:插入 + 幂等重放 + is_active 不被覆盖。
+func testImport(ctx context.Context, t *testing.T, s *PGStore) {
+	t.Helper()
+	data := ImportData{
+		Countries: []Country{{Alpha2: "ZZ", Alpha3: "ZZZ", NumericCode: "999",
+			ShortName: "Testland2", Status: "INDEPENDENT", ContinentCode: "AS"}},
+		CountryNames: []CountryNameRow{{CountryCode: "ZZ",
+			Name: CountryName{Locale: "zh-Hans", Name: "测试国2", NameType: "STANDARD"}}},
+		Subdivisions: []Subdivision{{Code: "ZZ-01", CountryCode: "ZZ",
+			Level: 1, Category: "province"}},
+		SubdivisionNames: []SubdivisionNameRow{{SubdivisionCode: "ZZ-01",
+			Name: SubdivisionName{Locale: "zh-Hans", Name: "测试省", NameType: "STANDARD"}}},
+	}
+	n, err := s.Import(ctx, data)
+	if err != nil || n.Countries != 1 || n.Subdivisions != 1 {
+		t.Fatalf("Import: %v counts=%+v", err, n)
+	}
+	// 幂等重放:同一载荷再次导入不报错、结果一致。
+	if _, err = s.Import(ctx, data); err != nil {
+		t.Fatalf("Import replay: %v", err)
+	}
+	d, err := s.GetCountry(ctx, "ZZ")
+	if err != nil || d.ShortName != "Testland2" || len(d.Names) != 1 {
+		t.Fatalf("post-import country mismatch: %+v err=%v", d, err)
+	}
+	// is_active 保留:导入前已停用,upsert 不应复活。
+	if d.IsActive {
+		t.Fatalf("import must not reactivate inactive country")
+	}
+	list, err := s.ListSubdivisions(ctx, "ZZ", "")
+	if err != nil || len(list) != 1 || list[0].Category != "province" {
+		t.Fatalf("post-import subdivision mismatch: %+v err=%v", list, err)
 	}
 }

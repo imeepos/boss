@@ -44,6 +44,7 @@ type geoNameReq struct {
 // registerGeoRoutes 注册国际地理基础数据维护路由(menu:geo 门禁,sysadmin)。
 func registerGeoRoutes(g *gin.RouterGroup, a *Application) {
 	perm := requirePerm(a.User, "menu:geo")
+	registerGeoImportRoute(g, a)
 
 	// 国家:列表/详情/新建/编辑/启停。
 	g.GET("/geo/countries", perm, func(c *gin.Context) {

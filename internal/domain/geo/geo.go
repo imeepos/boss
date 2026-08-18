@@ -77,7 +77,35 @@ type SubdivisionName struct {
 	NameType string `json:"nameType"` // STANDARD/SHORT/ALIAS/HISTORIC/PINYIN/ROMANIZED
 }
 
-// GeoService 地理基础数据维护接口(增删改查;停用为软删除)。
+// CountryNameRow 导入用译名行(带所属国家码)。
+type CountryNameRow struct {
+	CountryCode string      `json:"countryCode"`
+	Name        CountryName `json:"name"`
+}
+
+// SubdivisionNameRow 导入用区划译名行(带所属区划码)。
+type SubdivisionNameRow struct {
+	SubdivisionCode string          `json:"subdivisionCode"`
+	Name            SubdivisionName `json:"name"`
+}
+
+// ImportData 批量导入载荷:全量或增量 upsert,已有主键/唯一键则更新。
+type ImportData struct {
+	Countries        []Country            `json:"countries"`
+	CountryNames     []CountryNameRow     `json:"countryNames"`
+	Subdivisions     []Subdivision        `json:"subdivisions"`
+	SubdivisionNames []SubdivisionNameRow `json:"subdivisionNames"`
+}
+
+// ImportCounts 导入结果计数。
+type ImportCounts struct {
+	Countries        int `json:"countries"`
+	CountryNames     int `json:"countryNames"`
+	Subdivisions     int `json:"subdivisions"`
+	SubdivisionNames int `json:"subdivisionNames"`
+}
+
+// GeoService 地理基础数据维护接口(增删改查;停用为软删除;Import 批量 upsert)。
 type GeoService interface {
 	ListCountries(ctx context.Context, locale string) ([]Country, error)
 	GetCountry(ctx context.Context, alpha2 string) (*CountryDetail, error)
@@ -95,4 +123,6 @@ type GeoService interface {
 	SetSubdivisionActive(ctx context.Context, code string, active bool) error
 	AddSubdivisionName(ctx context.Context, code string, n SubdivisionName) error
 	RemoveSubdivisionName(ctx context.Context, code, locale, nameType string) error
+
+	Import(ctx context.Context, data ImportData) (ImportCounts, error)
 }
