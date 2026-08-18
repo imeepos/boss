@@ -104,3 +104,8 @@
 - 症状:下拉箭头/打勾看起来特别小、若有若无。
 - 原因:用字符 `▾`/`✓` + font-size 10px 冒充图标,字体字形笔画细,缩小后视觉重量远低于真图标。
 - 修法:描边 SVG(24 viewBox/stroke 1.8-2/round/width=height=14/currentColor),与项目菜单图标同规格。
+## 共享开发库(192.168.0.102:25432/boss)曾被集成测试污染(2026-08-19 已清)
+- 症状:addresses 表 276 条全是 e2e*/w8*/an*/g* 测试残留;customers 196/196、ports 275/275 全挂在垃圾地址上;另积累 97 个 e2e 账号/渠道/套餐。
+- 原因:e2e_pg_integration_test / analytics / gis 三个集成测试经 BOSS_PG_TEST_DSN 指向共享库且无自清理,每跑一次留一批时间戳后缀数据。
+- 修法:已全量清理(按 FK 依赖序);三个测试均已补自清理(e2e 走 t.Cleanup 模式匹配 ^(e2e|w8)[0-9]+$,analytics/gis 走 defer);已实证跑 e2e 后残留为 0。
+- 余险:今后若再把 BOSS_PG_TEST_DSN 指向共享库,自清理是唯一防线;建议测试用独立库。

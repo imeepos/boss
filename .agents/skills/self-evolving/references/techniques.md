@@ -120,3 +120,7 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - 场景:开工数据库/基础设施类任务前。手法:同样先 grep lessons.md 关键词(psql/DSN/PG/迁移)——本轮"临时 go + pgx 直连远端库"在 lesson 28 早有正解,没回看等于重新发明;另 grep configs/*.yaml 找现成 DSN,再问用户"库在哪",不要直接 brew 装本地 PG。
 - 场景:验证 SQL 迁移 down/up 双向可执行且不污染共享库。手法:/tmp 临时 go 程序 + pgx,脚本剥掉迁移文件内的 `BEGIN;`/`COMMIT;` 行,外层 conn.Begin() 依次 Exec(down 内容→断言行数→up 内容→断言行数)后 Commit;全程一个事务,中途任何错 Rollback 零副作用(2026-08-19 PH PSGC 43769 节点回环验证实例)。
 - 场景:核对"必须真实"的行政区划类数据。手法:三层校验——① 结构完整性(孤儿父节点=0、level=父+1、全节点有 en 名);② 总数对官方口径(PSA PSGC 2025-07:18 大区/82 省/150 市/1493 镇/42011 Barangay);③ 抽查易错点(宿务市 80 Barangay、BARMM 下 5 省、2024 新设 NIR 含 Bacolod)。
+- 场景:批量删数据/设计测试自清理,需要 FK 依赖拓扑序。命令:`SELECT conrelid::regclass || ' -> ' || confrelid::regclass FROM pg_constraint WHERE contype='f' AND confrelid IN ('addresses'::regclass, ...);` 逐层下钻(引用表→再被引用表),孙→子→父排删除序;自引用表(parent_id)按 level 自底向上分批删。
+- 场景:本机没装 postgresql 但装了 libpq(brew),psql 不在 PATH。命令:`export PATH=/opt/homebrew/opt/libpq/bin:$PATH && PGPASSWORD=boss psql -h 192.168.0.102 -p 25432 -U boss -d boss ...`;go 也同理 /opt/homebrew/bin。
+- 场景:验证测试自清理是否真闭环(单看 PASS 不够)。方法:BOSS_PG_TEST_DSN 指真库 `go test -run TestE2E... -v`(grep cleanup 看尽力而为日志),跑完 psql 按 `path::text ~ '^(e2e|w8|an[0-9]|g[0-9])'` 等前缀计数,残留必须为 0。
+- 场景:定位"垃圾数据从哪来"。方法:按 `split_part(path::text,'.',1)` 分组 + created_at 日期,前缀对 grep 测试文件(`grep -rn "E2E测试市\|分析楼栋\|g%d" internal --include=*_test.go`),十分钟内锁定污染源。
