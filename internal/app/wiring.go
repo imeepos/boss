@@ -129,6 +129,23 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	aaastore := aaa.NewPGStore(pool)
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
 
+	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表)。
+	var anaStore analytics.AnalyticsService =
+		analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)
+	var closeOLAP func()
+	if cfg.Analytics.Backend == "starrocks" && cfg.OLAP.StarRocksDSN != "" {
+		sr, err := analytics.NewStarRocksStore(cfg.OLAP.StarRocksDSN, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)
+		if err != nil {
+			return nil, fmt.Errorf("wiring: starrocks: %w", err)
+		}
+		if err := sr.Ping(ctx); err != nil {
+			_ = sr.Close()
+			return nil, fmt.Errorf("wiring: starrocks ping: %w", err)
+		}
+		anaStore = sr
+		closeOLAP = func() { _ = sr.Close() }
+	}
+
 	app := &Application{
 		User:      usr,
 		OrgLedger: usr,
@@ -152,7 +169,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 		Device:    dev,
 		Gis:       gis.NewPGStore(pool),
-		Analytics: analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost),
+		Analytics: anaStore,
 		Alarm:     dev,
 
 		Aaa:       aaastore,
@@ -201,6 +218,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		}
 		if closePub != nil {
 			closePub()
+		}
+		if closeOLAP != nil {
+			closeOLAP()
 		}
 		pool.Close()
 	}

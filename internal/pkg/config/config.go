@@ -65,6 +65,7 @@ type Config struct {
 	Analytics struct {
 		MaintUnitCost float64 // 单次维护成本(元)
 		PortUnitCost  float64 // 单端口扩容成本(元)
+		Backend       string  // pg | starrocks(OLAP 宽表)
 	}
 	// Report(阶段9 自动报告)。
 	Report struct {
@@ -112,6 +113,7 @@ func Load() *Config {
 
 	c.Analytics.MaintUnitCost = getfloat("BOSS_MAINT_UNIT_COST", 50)
 	c.Analytics.PortUnitCost = getfloat("BOSS_PORT_UNIT_COST", 800)
+	c.Analytics.Backend = getenv("BOSS_ANALYTICS_BACKEND", "pg")
 
 	c.Report.Period = getenv("BOSS_REPORT_PERIOD", "daily")
 	c.Report.PushTopic = getenv("BOSS_REPORT_PUSH_TOPIC", "boss-report-snapshots")
