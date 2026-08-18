@@ -7,6 +7,7 @@ const enUS: Translations = {
     tagline: 'BOSS Integrated Business Support Platform',
     footer: 'Sphere Boss · Integrated Business Support Platform',
     logout: 'Logout',
+    profile: 'Profile',
     loading: 'Loading…',
     dataScope: 'Data Scope:',
     dataScopeAll: 'Data Scope: All',

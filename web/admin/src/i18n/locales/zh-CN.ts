@@ -7,6 +7,7 @@ const zhCN: Translations = {
     tagline: 'BOSS 综合业务支撑平台',
     footer: 'Sphere Boss · 综合业务支撑平台',
     logout: '退出',
+    profile: '个人设置',
     loading: '加载中…',
     dataScope: '数据域:',
     dataScopeAll: '数据域:全集团',

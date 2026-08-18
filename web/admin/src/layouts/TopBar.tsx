@@ -1,5 +1,5 @@
 // 顶栏:品牌区 + 分组主导航 + 搜索/主题/通知/语言/用户工具区。规格见 design-spec.md §2.1/§3.1。
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Profile } from '../api/auth'
 import { adminLogout } from '../api/auth'
@@ -7,7 +7,7 @@ import type { MenuGroup } from '../router/menu.def'
 import logoMark from '../assets/brand/logo-mark-navy.png'
 import { useT, useLang, localeOptions } from '../i18n'
 import { useTheme } from '../theme/context'
-import { BellIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon } from './icons'
+import { BellIcon, CheckIcon, GlobeIcon, LogoutIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, UserIcon } from './icons'
 
 interface TopBarProps {
   profile: Profile
@@ -63,15 +63,106 @@ function SearchBox({ groups }: { groups: MenuGroup[] }) {
   )
 }
 
-function RightTools({ profile }: { profile: Profile }) {
+/** 语言切换:地球图标按钮 + 自定义下拉浮层,风格与其余工具按钮一致。 */
+function LangSwitch() {
+  const { locale, setLocale } = useLang()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDocClick = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [open])
+  return (
+    <div className="shell-lang" ref={rootRef}>
+      <button
+        className={open ? 'shell-tool-btn active' : 'shell-tool-btn'}
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title="Language"
+      >
+        <GlobeIcon />
+      </button>
+      {open && (
+        <div className="shell-lang-menu" role="listbox">
+          {localeOptions().map((opt) => (
+            <button
+              key={opt.value}
+              role="option"
+              aria-selected={opt.value === locale}
+              className={opt.value === locale ? 'active' : ''}
+              onClick={() => {
+                setLocale(opt.value as typeof locale)
+                setOpen(false)
+              }}
+            >
+              <span>{opt.label}</span>
+              {opt.value === locale && <CheckIcon />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** 用户区:头像+姓名可点击,下拉含个人设置/退出登录(antd Pro 惯例,退出不常驻顶栏)。 */
+function UserMenu({ profile }: { profile: Profile }) {
   const t = useT()
   const nav = useNavigate()
-  const { locale, setLocale } = useLang()
-  const { theme, toggleTheme } = useTheme()
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDocClick = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [open])
   const logout = async () => {
+    setOpen(false)
     await adminLogout()
     nav('/login', { replace: true })
   }
+  return (
+    <div className="shell-user" ref={rootRef}>
+      <button
+        className={open ? 'shell-user-btn active' : 'shell-user-btn'}
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title={`${profile.realName}(${profile.roleName})`}
+      >
+        <span className="shell-avatar">{profile.realName.slice(0, 1)}</span>
+      </button>
+      {open && (
+        <div className="shell-user-menu" role="menu">
+          <div className="shell-user-info">
+            <div className="shell-user-info-name">{profile.realName}</div>
+            <div className="shell-user-info-role">{profile.roleName}</div>
+          </div>
+          <button role="menuitem" onClick={() => setOpen(false)}>
+            <UserIcon />
+            <span>{t.common.profile}</span>
+          </button>
+          <button role="menuitem" className="danger" onClick={logout}>
+            <LogoutIcon />
+            <span>{t.common.logout}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RightTools({ profile }: { profile: Profile }) {
+  const t = useT()
+  const { theme, toggleTheme } = useTheme()
   return (
     <div className="shell-tools">
       <button
@@ -84,24 +175,8 @@ function RightTools({ profile }: { profile: Profile }) {
       <button className="shell-tool-btn" title={t.shell.notifications}>
         <BellIcon />
       </button>
-      <select
-        className="shell-lang"
-        value={locale}
-        onChange={(e) => setLocale(e.target.value as typeof locale)}
-      >
-        {localeOptions().map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <span className="shell-user" title={`${profile.realName}(${profile.roleName})`}>
-        <span className="shell-avatar">{profile.realName.slice(0, 1)}</span>
-        <span className="shell-user-name">{profile.realName}</span>
-      </span>
-      <button className="shell-logout" onClick={logout}>
-        {t.common.logout}
-      </button>
+      <LangSwitch />
+      <UserMenu profile={profile} />
     </div>
   )
 }

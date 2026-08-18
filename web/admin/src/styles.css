@@ -51,6 +51,9 @@
     "Inter", "Arial", "Helvetica Neue", sans-serif;
 }
 
+/* 全部 border-box:width 含 padding/border,避免 width:100%+padding 横向溢出 */
+*, *::before, *::after { box-sizing: border-box; }
+
 /* 去掉 UA 默认 8px 边距 */
 html, body, #root {
   margin: 0;

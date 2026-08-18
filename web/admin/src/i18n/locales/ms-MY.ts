@@ -7,6 +7,7 @@ const msMY: Translations = {
     tagline: 'Platform Sokongan Perniagaan Bersepadu BOSS',
     footer: 'Sphere Boss · Platform Sokongan Perniagaan Bersepadu',
     logout: 'Log Keluar',
+    profile: 'Profil',
     loading: 'Memuatkan…',
     dataScope: 'Skop Data:',
     dataScopeAll: 'Skop Data: Semua',

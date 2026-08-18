@@ -8,6 +8,7 @@ export interface Translations {
     tagline: string
     footer: string
     logout: string
+    profile: string
     loading: string
     dataScope: string
     dataScopeAll: string
