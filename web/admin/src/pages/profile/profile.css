@@ -38,15 +38,17 @@
 .profile-section-title h2 { margin: 0 0 6px; color: var(--shell-heading); font-size: 18px; font-weight: 600; }
 .profile-section-title p { margin: 0; color: var(--shell-content-text); font-size: 13px; }
 .profile-section-title-action { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
-.profile-section-title-action > button, .profile-form-actions button, .profile-modal-actions button { padding: 8px 16px; border: 1px solid var(--color-brand-blue-700); border-radius: 3px; color: #fff; background: var(--color-brand-blue-700); cursor: pointer; font: inherit; font-size: 13px; white-space: nowrap; }
-.profile-section-title-action > button:hover, .profile-form-actions button:hover, .profile-modal-actions button:hover { background: var(--color-brand-blue-800); }
+.profile-section-title-action > button, .profile-form-actions button, .profile-modal-actions button { padding: 8px 16px; border: 1px solid var(--shell-fab-bg); border-radius: 3px; color: var(--shell-fab-icon); background: var(--shell-fab-bg); cursor: pointer; font: inherit; font-size: 13px; white-space: nowrap; }
+.profile-section-title-action > button:hover, .profile-form-actions button:hover, .profile-modal-actions button:hover { background: var(--shell-fab-bg-hover); }
 .profile-form { display: grid; gap: 18px 24px; padding-top: 24px; }
 .profile-personal-form { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 760px; }
 .profile-password-form { max-width: 520px; }
 .profile-form label, .profile-modal label { display: grid; gap: 7px; color: var(--shell-content-text); font-size: 13px; }
-.profile-form input, .profile-modal input { width: 100%; min-height: 34px; padding: 7px 10px; border: 1px solid var(--color-border-default); border-radius: 3px; color: var(--color-text-input); background: var(--color-surface-input); font: inherit; }
-.profile-form input:focus, .profile-modal input:focus { outline: none; border-color: var(--color-border-focus); box-shadow: var(--shadow-focus); }
-.profile-form input[readonly] { color: var(--color-text-secondary); background: var(--color-surface-disabled); }
+.profile-form input, .profile-modal input { width: 100%; min-height: 34px; padding: 7px 10px; border: 1px solid var(--shell-input-border); border-radius: 3px; color: var(--shell-input-text); background: var(--shell-input-bg); font: inherit; transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease; }
+.profile-form input::placeholder, .profile-modal input::placeholder { color: var(--shell-input-placeholder); }
+.profile-form input:hover, .profile-modal input:hover { border-color: var(--shell-input-border-hover); }
+.profile-form input:focus, .profile-modal input:focus { outline: none; border-color: var(--shell-input-border-focus); box-shadow: var(--shell-input-focus-shadow); }
+.profile-form input[readonly] { color: var(--shell-crumb-text); background: var(--shell-input-disabled-bg); }
 .profile-readonly-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-column: 1 / -1; gap: 16px; padding: 16px; border: 1px solid var(--shell-side-border); background: var(--shell-menu-hover-bg); }
 .profile-readonly-field { display: grid; gap: 6px; }
 .profile-readonly-field span { color: var(--shell-content-text); font-size: 12px; }

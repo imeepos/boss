@@ -28,6 +28,15 @@
   --shell-card-border: transparent;
   --shell-card-shadow: 0 1px 3px rgba(15, 30, 59, 0.06);
   --shell-crumb-text: #8A96AA;
+  /* 表单 */
+  --shell-input-bg: #FFFFFF;
+  --shell-input-disabled-bg: #F3F5F8;
+  --shell-input-text: #4E5664;
+  --shell-input-placeholder: #737A86;
+  --shell-input-border: #D7DDE7;
+  --shell-input-border-hover: #B4BFCE;
+  --shell-input-border-focus: #31568F;
+  --shell-input-focus-shadow: 0 0 0 3px rgba(39, 63, 112, 0.14);
   /* 底栏 */
   --shell-bottom-bg: #FCFCFD;
   --shell-bottom-border: #EFF1F5;
@@ -67,6 +76,15 @@
   --shell-card-border: rgba(255, 255, 255, 0.06);
   --shell-card-shadow: none;
   --shell-crumb-text: #738096;
+  /* 表单 */
+  --shell-input-bg: #10203F;
+  --shell-input-disabled-bg: rgba(255, 255, 255, 0.06);
+  --shell-input-text: #F7F8FC;
+  --shell-input-placeholder: #738096;
+  --shell-input-border: rgba(255, 255, 255, 0.14);
+  --shell-input-border-hover: rgba(255, 255, 255, 0.28);
+  --shell-input-border-focus: #D5A63A;
+  --shell-input-focus-shadow: 0 0 0 3px rgba(213, 166, 58, 0.18);
   /* 底栏 */
   --shell-bottom-bg: #0F1E3B;
   --shell-bottom-border: rgba(255, 255, 255, 0.06);
