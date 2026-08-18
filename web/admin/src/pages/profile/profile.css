@@ -1,4 +1,6 @@
 .profile-page { max-width: 1160px; margin: 0 auto; }
+.profile-content-page { padding: 26px 32px 36px; border: 1px solid var(--shell-card-border); background: var(--shell-card-bg); box-shadow: var(--shell-card-shadow); }
+.profile-section-title h1 { margin: 0 0 6px; color: var(--shell-heading); font-size: 20px; font-weight: 600; }
 .profile-page-header { display: flex; align-items: center; gap: 16px; min-height: 96px; margin-bottom: 16px; padding: 18px 24px; border: 1px solid var(--shell-card-border); background: var(--shell-card-bg); box-shadow: var(--shell-card-shadow); }
 .profile-avatar { display: grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%; color: var(--color-brand-blue-900); background: var(--color-brand-gold-300); font-size: 22px; font-weight: 600; }
 .profile-heading { min-width: 0; flex: 1; }
