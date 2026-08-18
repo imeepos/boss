@@ -14,13 +14,14 @@ export function CountryPanel() {
   const [rows, setRows] = useState<CountryRow[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useQueryState('kw', '')
+  const [draftKeyword, setDraftKeyword] = useState(keyword)
   const [page, setPage] = useQueryInt('page', 1)
   const [pageSize, setPageSize] = useQueryInt('size', 20)
   const [form, setForm] = useState<CountryRow | null>(null)
   const [editing, setEditing] = useState(false)
   const [detail, setDetail] = useState<CountryDetailData | null>(null)
 
-  const search = (v: string) => { setKeyword(v); setPage(1) }
+  const search = (v: string) => { setDraftKeyword(v); setKeyword(v); setPage(1) }
   const resize = (v: number) => { setPageSize(v); setPage(1) }
 
   const load = useCallback(() => {
@@ -62,7 +63,7 @@ export function CountryPanel() {
           className="geo-input"
           style={{ width: 240 }}
           placeholder={g.searchPlaceholder}
-          value={keyword}
+          value={draftKeyword}
           onChange={(e) => search(e.target.value)}
         />
         <div className="spacer" />

@@ -37,6 +37,7 @@ export function SubdivisionPanel() {
   const [rows, setRows] = useState<SubdivRow[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useQueryState('kw', '')
+  const [draftKeyword, setDraftKeyword] = useState(keyword)
   const [page, setPage] = useQueryInt('page', 1)
   const [pageSize, setPageSize] = useQueryInt('size', 20)
   const [form, setForm] = useState<SubdivRow | null>(null)
@@ -44,7 +45,7 @@ export function SubdivisionPanel() {
   const [namesOf, setNamesOf] = useState<string | null>(null)
 
   const filterCountry = (v: string) => { setCountry(v); setPage(1) }
-  const search = (v: string) => { setKeyword(v); setPage(1) }
+  const search = (v: string) => { setDraftKeyword(v); setKeyword(v); setPage(1) }
   const resize = (v: number) => { setPageSize(v); setPage(1) }
 
   useEffect(() => {
@@ -94,7 +95,7 @@ export function SubdivisionPanel() {
           ]}
         />
         <input className="geo-input" style={{ width: 200 }} placeholder={g.searchPlaceholder}
-          value={keyword} onChange={(e) => search(e.target.value)} />
+          value={draftKeyword} onChange={(e) => search(e.target.value)} />
         <div className="spacer" />
         <button className="geo-btn geo-btn-primary"
           onClick={() => { setForm({ ...EMPTY, countryCode: country }); setEditing(false) }}>

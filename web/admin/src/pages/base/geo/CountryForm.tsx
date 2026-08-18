@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { Dropdown } from '../../../components/Dropdown'
 import './geo.css'
 
 export interface CountryRow {
@@ -102,18 +103,21 @@ function FormGrid({ form, editing, labels, onChange }: {
       ))}
       <div className="geo-field">
         <label><span className="req">*</span>{labels.continent}</label>
-        <select className="geo-select" value={form.continentCode}
-          onChange={(e) => onChange({ ...form, continentCode: e.target.value })}>
-          {CONTINENTS.map((c) => <option key={c}>{c}</option>)}
-        </select>
+        <Dropdown
+          value={form.continentCode}
+          ariaLabel={labels.continent}
+          onChange={(continentCode) => onChange({ ...form, continentCode })}
+          options={CONTINENTS.map((c) => ({ value: c, label: c }))}
+        />
       </div>
       <div className="geo-field">
         <label><span className="req">*</span>{labels.status}</label>
-        <select className="geo-select" value={form.status}
-          onChange={(e) => onChange({ ...form, status: e.target.value })}>
-          <option>INDEPENDENT</option>
-          <option>DISCONTINUED</option>
-        </select>
+        <Dropdown
+          value={form.status}
+          ariaLabel={labels.status}
+          onChange={(status) => onChange({ ...form, status })}
+          options={['INDEPENDENT', 'DISCONTINUED'].map((status) => ({ value: status, label: status }))}
+        />
       </div>
     </div>
   )
