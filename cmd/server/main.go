@@ -10,12 +10,23 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/pkg/auth"
+	bosotel "github.com/ymm-001/boss/internal/pkg/otel"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/server"
 )
 
 func main() {
 	cfg := config.Load()
+
+	// OTel→Jaeger(OTLP gRPC,如 192.168.0.102:16831);端点空则降级 noop。
+	shutdownOtel, err := bosotel.Setup(context.Background(), bosotel.Config{
+		Endpoint: cfg.Observability.JaegerOTLP, Service: "boss-server",
+	})
+	if err != nil {
+		log.Fatalf("otel setup: %v", err)
+	}
+	defer func() { _ = shutdownOtel(context.Background()) }()
+
 	a, err := app.New(context.Background(), cfg, "migrations")
 	if err != nil {
 		log.Fatalf("wiring: %v", err)

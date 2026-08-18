@@ -2,23 +2,12 @@ paths:
   /bills:
     get:
       tags: [Billing]
-      summary: 出账管理(统计卡 + 账单列表)
+      summary: 出账管理(账单列表)
       operationId: listBills
+      parameters:
+        - { name: customerId, in: query, schema: { type: integer, format: int64 }, description: 按客户过滤(0=全部) }
       responses:
-        '200':
-          description: 账单列表(含 stats 汇总)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  stats:
-                    type: object
-                    properties:
-                      receivable: { type: number, description: 本月应收 }
-                      received: { type: number, description: 已收 }
-                      arrearsCount: { type: integer, description: 欠费用户数 }
-                  items: { type: array, items: { type: object } }
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /payments:
     get:
@@ -26,25 +15,17 @@ paths:
       summary: 缴费记录列表
       operationId: listPayments
       parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - { name: billId, in: query, schema: { type: integer, format: int64 }, description: 按账单过滤(0=全部) }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /arrears:
     get:
       tags: [Billing]
-      summary: 欠费停复机列表(统计卡 + 明细)
+      summary: 欠费停复机列表(明细)
       operationId: listArrears
       responses:
-        '200':
-          description: 欠费列表
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  stats: { type: object }
-                  items: { type: array, items: { type: object } }
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /arrears/{customerId}/stop:
     post:
@@ -72,8 +53,7 @@ paths:
       summary: 停复机执行状态列表(网络侧结果)
       operationId: listStopResumeTasks
       parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
-        - $ref: './schemas.yaml#/components/parameters/status'
+        - { name: customerId, in: query, schema: { type: integer, format: int64 }, description: 按客户过滤(0=全部) }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -82,6 +62,7 @@ paths:
       tags: [Billing]
       summary: 失败任务重试
       operationId: retryStopResumeTask
+      description: （未实现 planned）
       parameters:
         - { name: taskId, in: path, required: true, schema: { type: string } }
       responses:
@@ -92,6 +73,7 @@ paths:
       tags: [Billing]
       summary: 缴费渠道对账批次列表
       operationId: listReconciliations
+      description: （未实现 planned）
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
         - $ref: './schemas.yaml#/components/parameters/status'
@@ -103,6 +85,7 @@ paths:
       tags: [Billing]
       summary: 差异挂起批次平账
       operationId: settleReconciliation
+      description: （未实现 planned）
       parameters:
         - { name: batchNo, in: path, required: true, schema: { type: string } }
       responses:

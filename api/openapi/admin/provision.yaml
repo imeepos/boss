@@ -2,23 +2,16 @@ paths:
   /provision-tasks:
     get:
       tags: [Provision]
-      summary: 配置下发任务(统计卡 + 任务列表)
+      summary: 配置下发任务列表(代码无 stats 汇总,仅 items)
       operationId: listProvisionTasks
       responses:
-        '200':
-          description: 下发任务
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  stats: { type: object }
-                  items: { type: array, items: { type: object } }
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /provision-tasks/{taskNo}/retry:
     post:
       tags: [Provision]
       summary: 失败任务重试
+      description: （未实现 planned）
       operationId: retryProvisionTask
       parameters:
         - { name: taskNo, in: path, required: true, schema: { type: string } }
@@ -35,6 +28,7 @@ paths:
     post:
       tags: [Provision]
       summary: 新建/复制配置模板
+      description: （未实现 planned）
       operationId: createProvisionTemplate
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:
@@ -46,7 +40,6 @@ paths:
       summary: 配置下发日志(成功/失败/回滚成功)
       operationId: listProvisionLogs
       parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
-        - $ref: './schemas.yaml#/components/parameters/status'
+        - { name: taskId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }

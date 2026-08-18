@@ -6,16 +6,20 @@ paths:
       operationId: listCustomers
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
+        - { name: phone, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
-  /customers/{customerId}/verify-logs:
+  /customers/{id}/verify-logs:
     get:
       tags: [Customer]
       summary: 客户实名核验记录
       operationId: listCustomerVerifyLogs
       parameters:
-        - { name: customerId, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 客户ID }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -24,6 +28,8 @@ paths:
       tags: [Customer]
       summary: 产品资费列表
       operationId: listProducts
+      parameters:
+        - { name: legalEntityId, in: query, schema: { type: integer, format: int64 }, description: 按法人过滤(0=全部) }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
@@ -34,21 +40,22 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
-  /products/{productId}/price-history:
+  /products/{id}/price-history:
     get:
       tags: [Customer]
       summary: 产品价格历史/调价记录
       operationId: listProductPriceHistory
       parameters:
-        - { name: productId, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 产品ID }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Customer]
       summary: 产品调价
       operationId: changeProductPrice
+      description: （未实现 planned）
       parameters:
-        - { name: productId, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 产品ID }
       requestBody:
         content:
           application/json:

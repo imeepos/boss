@@ -4,7 +4,7 @@ paths:
   /accounts:
     get:
       tags: [Sys]
-      summary: 账号与角色列表
+      summary: 账号与角色列表（未实现 planned）
       operationId: listAccounts
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
@@ -12,7 +12,7 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Sys]
-      summary: 新建账号
+      summary: 新建账号（未实现 planned）
       operationId: createAccount
       requestBody:
         content:
@@ -24,7 +24,7 @@ paths:
   /accounts/{accountId}:
     put:
       tags: [Sys]
-      summary: 编辑账号(角色/部门/岗位/数据范围/启停)
+      summary: 编辑账号(角色/部门/岗位/数据范围/启停)（未实现 planned）
       operationId: updateAccount
       parameters:
         - name: accountId
@@ -39,7 +39,7 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
     delete:
       tags: [Sys]
-      summary: 删除账号
+      summary: 删除账号（未实现 planned）
       operationId: deleteAccount
       parameters:
         - name: accountId
@@ -52,7 +52,7 @@ paths:
   /roles:
     get:
       tags: [Sys]
-      summary: 角色列表(7 角色码见 fields.md 1.2)
+      summary: 角色列表(7 角色码见 fields.md 1.2)（未实现 planned）
       operationId: listRoles
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
@@ -62,22 +62,60 @@ paths:
       tags: [Sys]
       summary: 地址层级树(ltree 物化路径,见 ADR-002)
       operationId: listAddresses
+      parameters:
+        - { name: parentId, in: query, schema: { type: integer, format: int64 }, description: 父地址ID层级过滤 }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: data 为裸数组(代码 respond(c,OK,list),非 {items} 包装)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { type: array, items: { type: object } }
 
   /addresses/import:
     post:
       tags: [Sys]
       summary: 地址批量导入(对齐 Go 实现 POST /addresses/import,permCode menu:importer)
       operationId: importAddresses
-      requestBody: { content: { application/json: { schema: { type: array, items: { type: object } } } } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rows]
+              properties:
+                rows:
+                  type: array
+                  items:
+                    type: object
+                    required: [path, name]
+                    properties:
+                      path: { type: string, description: ltree 物化路径 }
+                      name: { type: string }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '200':
+          description: data 含导入条数
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      imported: { type: integer }
 
   /params:
     get:
       tags: [Sys]
-      summary: 业务参数列表
+      summary: 业务参数列表（未实现 planned）
       operationId: listParams
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
@@ -85,7 +123,7 @@ paths:
   /params/{key}:
     put:
       tags: [Sys]
-      summary: 修改业务参数
+      summary: 修改业务参数（未实现 planned）
       operationId: updateParam
       parameters:
         - name: key
@@ -106,7 +144,7 @@ paths:
   /audit-logs:
     get:
       tags: [Sys]
-      summary: 审计日志(操作类型:状态变更/数据变更/权限变更)
+      summary: 审计日志(操作类型:状态变更/数据变更/权限变更)（未实现 planned）
       operationId: listAuditLogs
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
@@ -119,7 +157,7 @@ paths:
   /import-tasks:
     get:
       tags: [Sys]
-      summary: 数据导入任务列表(地址/客户/端口/资产台账)
+      summary: 数据导入任务列表(地址/客户/端口/资产台账)（未实现 planned）
       operationId: listImportTasks
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
@@ -127,7 +165,7 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Sys]
-      summary: 新建导入任务(上传文件)
+      summary: 新建导入任务(上传文件)（未实现 planned）
       operationId: createImportTask
       requestBody:
         content:

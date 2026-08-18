@@ -1,4 +1,5 @@
 # userdata.yaml —— 用户端数据管理(契约补充)
+# 本文件全部 42 个操作均未在 Go 后端实现（未实现 planned）。
 # 管理对象为用户端(user)用到的全部专属数据,实体存于 api/mock/user/entities.js,
 # 经 db.js 聚合;通用 uuid CRUD 见 /crud/{table}。列表响应复用 schemas.yaml List。
 # 产品化结构: /users 用户列表 + /users/{customerId} 用户详情聚合(单接口返回该用户

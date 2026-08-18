@@ -10,18 +10,12 @@ paths:
   /ports:
     get:
       tags: [Oss]
-      summary: '端口台账(统计卡 + 清单,status: IDLE/RESERVED/USED/DISABLED)'
+      summary: '端口台账(status: IDLE/RESERVED/USED/DISABLED;对齐 Go 实现 GET /ports,按 resourceId 过滤)'
       operationId: listPorts
+      parameters:
+        - { name: resourceId, in: query, required: false, schema: { type: integer, format: int64 } }
       responses:
-        '200':
-          description: 端口台账
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  stats: { type: object }
-                  items: { type: array, items: { type: object } }
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /ports/{portId}/change-history:
     get:
@@ -39,8 +33,7 @@ paths:
       summary: 端口预占记录(预占中/已超时/已释放)
       operationId: listReserves
       parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
-        - $ref: './schemas.yaml#/components/parameters/status'
+        - { name: portId, in: query, required: false, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -50,7 +43,7 @@ paths:
       summary: 手动释放预占
       operationId: releaseReserve
       parameters:
-        - { name: reserveId, in: path, required: true, schema: { type: string } }
+        - { name: reserveId, in: path, required: true, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
@@ -59,20 +52,37 @@ paths:
       tags: [Oss]
       summary: 跨区域调配单(资产/端口/设备,归属变更台账)
       operationId: listTransfers
-      parameters:
-        - $ref: './schemas.yaml#/components/parameters/status'
-        - name: type
-          in: query
-          schema: { type: string, enum: [ASSET, PORT, DEVICE] }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Oss]
-      summary: 新建调配申请
+      summary: 新建调配申请(对齐 Go 实现 POST /transfers,必填 resourceId/fromRegionId/toRegionId,transferNo/status 缺省自动补)
       operationId: createTransfer
-      requestBody: { content: { application/json: { schema: { type: object } } } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resourceId, fromRegionId, toRegionId]
+              properties:
+                resourceId: { type: integer, format: int64 }
+                fromRegionId: { type: integer, format: int64 }
+                toRegionId: { type: integer, format: int64 }
+                transferNo: { type: string }
+                status: { type: string }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '200':
+          description: 新建结果(data 含 id 与调配单号)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      transferNo: { type: string }
 
   /transfers/{transferNo}/approve:
     post:
@@ -94,27 +104,13 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
-  /olt-devices:
-    get:
-      tags: [Oss]
-      summary: OLT 设备监控(统计卡 + 状态/丢包率/光功率/告警;对应 Go /device/metrics 数据源)
-      operationId: listOltDevices
-      responses:
-        '200':
-          description: OLT 设备列表
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  stats: { type: object }
-                  items: { type: array, items: { type: object } }
-
   /device/metrics:
     get:
       tags: [Oss]
-      summary: 设备指标时序(对齐 Go 实现 GET /device/metrics,permCode menu:device)
+      summary: 设备指标时序(对齐 Go 实现 GET /device/metrics,permCode menu:device;原 /olt-devices 的 OLT 设备监控语义(状态/丢包率/光功率/告警)合并于此,按 resourceId 过滤)
       operationId: listDeviceMetrics
+      parameters:
+        - { name: resourceId, in: query, required: false, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -142,23 +138,43 @@ paths:
       tags: [Oss]
       summary: 扩容申请单列表
       operationId: listExpansions
-      parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
-        - $ref: './schemas.yaml#/components/parameters/status'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Oss]
-      summary: 新建扩容申请
+      summary: 新建扩容申请(对齐 Go 实现 POST /expansions,必填 legalEntityId/regionId,expansionNo/status 缺省自动补)
       operationId: createExpansion
-      requestBody: { content: { application/json: { schema: { type: object } } } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legalEntityId, regionId]
+              properties:
+                legalEntityId: { type: integer, format: int64 }
+                regionId: { type: integer, format: int64 }
+                expansionNo: { type: string }
+                status: { type: string }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '200':
+          description: 新建结果(data 含 id 与扩容单号)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      expansionNo: { type: string }
 
   /expansions/qos-templates:
     get:
       tags: [Oss]
       summary: 扩容 QoS 模板(对齐 Go 实现 GET /expansions/qos-templates)
       operationId: listExpansionQosTemplates
+      parameters:
+        - { name: legalEntityId, in: query, required: false, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }

@@ -4,14 +4,22 @@ paths:
       tags: [Org]
       summary: 子公司/法人列表(品牌×区域交叉经营)
       operationId: listLegalEntities
-      parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: data 为裸数组(代码 respond(c,OK,list),非 {items} 包装)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { type: array, items: { type: object } }
     post:
       tags: [Org]
       summary: 新建法人
       operationId: createLegalEntity
+      description: （未实现 planned）
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
@@ -21,6 +29,7 @@ paths:
       tags: [Org]
       summary: 编辑法人
       operationId: updateLegalEntity
+      description: （未实现 planned）
       parameters:
         - { name: legalEntityId, in: path, required: true, schema: { type: integer } }
       requestBody: { content: { application/json: { schema: { type: object } } } }
@@ -37,7 +46,16 @@ paths:
           in: query
           schema: { type: integer }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: data 为裸数组(代码 respond(c,OK,list),非 {items} 包装)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { type: array, items: { type: object } }
 
   /posts:
     get:
@@ -49,7 +67,16 @@ paths:
           in: query
           schema: { type: integer }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: data 为裸数组(代码 respond(c,OK,list),非 {items} 包装)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { type: array, items: { type: object } }
 
   /regions:
     get:
@@ -57,9 +84,18 @@ paths:
       summary: '经营区域树(level: 1集团 2大区 3省 4城市)'
       operationId: listRegions
       parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - { name: parentPath, in: query, schema: { type: string }, description: 父区域路径前缀过滤 }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: data 为裸数组(代码 respond(c,OK,list),非 {items} 包装)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { type: array, items: { type: object } }
 
   /menu-perms:
     get:
@@ -68,6 +104,7 @@ paths:
       description: |
         未实现:Go 后端(internal/app)尚未提供本接口,前端 A0 不依赖;
         菜单可见性暂由 /auth/me 的 roleCode 前端映射,待 /auth/menus 契约变更单落地后切换。
+        （未实现 planned）
       operationId: getMenuPerms
       responses:
         '200':
@@ -95,6 +132,7 @@ paths:
       tags: [Org]
       summary: 数据权限清单(账号级授权策略)
       operationId: listDataScopes
+      description: （未实现 planned）
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:

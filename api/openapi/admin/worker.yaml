@@ -15,7 +15,7 @@ paths:
       summary: 师傅台账(主档×接单设置×月绩效,含在途工单数)
       operationId: listWorkers
       parameters:
-        - { name: keyword, in: query, schema: { type: string } }
+        - { name: groupId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -23,6 +23,7 @@ paths:
     get:
       tags: [Worker]
       summary: 师傅详情
+      description: （未实现 planned）
       operationId: getWorker
       parameters:
         - { name: workerId, in: path, required: true, schema: { type: integer } }
@@ -33,6 +34,7 @@ paths:
     put:
       tags: [Worker]
       summary: 修改接单设置(在线/半径/接单类型),即时生效于师傅端
+      description: （未实现 planned）
       operationId: saveWorkerSettings
       parameters:
         - { name: workerId, in: path, required: true, schema: { type: integer } }
@@ -53,6 +55,8 @@ paths:
       tags: [Worker]
       summary: 月度绩效排名(完成量/准时率/评分)
       operationId: listWorkerPerformances
+      parameters:
+        - { name: workerId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -61,6 +65,8 @@ paths:
       tags: [Worker]
       summary: 提成结算明细
       operationId: listWorkerCommissions
+      parameters:
+        - { name: workerId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -69,6 +75,8 @@ paths:
       tags: [Worker]
       summary: 客户评价(差评待复核)
       operationId: listWorkerFeedbacks
+      parameters:
+        - { name: workerId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -76,6 +84,7 @@ paths:
     post:
       tags: [Worker]
       summary: 差评复核
+      description: （未实现 planned）
       operationId: reviewWorkerFeedback
       parameters:
         - { name: feedbackId, in: path, required: true, schema: { type: string } }
@@ -88,12 +97,13 @@ paths:
       summary: 消息下发记录
       operationId: listWorkerMessages
       parameters:
-        - { name: workerId, in: query, schema: { type: integer } }
+        - { name: workerId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Worker]
       summary: 下发消息(即时出现在师傅端消息中心)
+      description: （未实现 planned）
       operationId: sendWorkerMessage
       requestBody:
         content:
@@ -113,12 +123,14 @@ paths:
     get:
       tags: [Worker]
       summary: 公告列表(含已下架)
+      description: （未实现 planned）
       operationId: listNotices
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Worker]
       summary: 发布公告(师傅端公告页即时可见)
+      description: （未实现 planned）
       operationId: publishNotice
       requestBody:
         content:
@@ -136,6 +148,7 @@ paths:
     put:
       tags: [Worker]
       summary: 公告上架/下架
+      description: （未实现 planned）
       operationId: toggleNotice
       parameters:
         - { name: noticeId, in: path, required: true, schema: { type: string } }
@@ -146,12 +159,14 @@ paths:
     get:
       tags: [Worker]
       summary: FAQ 知识库(含停用)
+      description: （未实现 planned）
       operationId: listFaqs
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Worker]
       summary: 新增 FAQ
+      description: （未实现 planned）
       operationId: createFaq
       requestBody:
         content:
@@ -169,6 +184,7 @@ paths:
     put:
       tags: [Worker]
       summary: FAQ 启用/停用
+      description: （未实现 planned）
       operationId: toggleFaq
       parameters:
         - { name: faqId, in: path, required: true, schema: { type: string } }
@@ -180,6 +196,8 @@ paths:
       tags: [Worker]
       summary: 随车物料台账
       operationId: listWorkerMaterials
+      parameters:
+        - { name: workerId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -188,6 +206,8 @@ paths:
       tags: [Worker]
       summary: 工具借用台账
       operationId: listWorkerTools
+      parameters:
+        - { name: workerId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -196,6 +216,8 @@ paths:
       tags: [Worker]
       summary: 旧件待回收/返修登记(epc 挂资产台账)
       operationId: listAssetReturns
+      parameters:
+        - { name: workerId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -203,6 +225,7 @@ paths:
     post:
       tags: [Worker]
       summary: 确认返库
+      description: （未实现 planned）
       operationId: confirmAssetReturn
       parameters:
         - { name: returnId, in: path, required: true, schema: { type: string } }
@@ -213,6 +236,7 @@ paths:
     get:
       tags: [Worker]
       summary: 设备健康观察(师傅端主动运维列表)
+      description: （未实现 planned）
       operationId: listDeviceMaintenances
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
@@ -221,6 +245,7 @@ paths:
     get:
       tags: [Worker]
       summary: 抢单池任务(未指派抢修单 + 应急/预告附加任务)
+      description: （未实现 planned）
       operationId: listHallItems
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
@@ -229,12 +254,14 @@ paths:
     get:
       tags: [Worker]
       summary: 调度会话记录
+      description: （未实现 planned）
       operationId: listServiceMessages
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Worker]
       summary: 调度下发会话
+      description: （未实现 planned）
       operationId: sendServiceMessage
       requestBody:
         content:
@@ -252,5 +279,7 @@ paths:
       tags: [Worker]
       summary: 师傅月排期忙日
       operationId: listWorkerSchedules
+      parameters:
+        - { name: workerId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }

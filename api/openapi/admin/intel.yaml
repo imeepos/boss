@@ -13,8 +13,8 @@ paths:
       summary: GIS 下钻(按 level 逐级;对齐 Go 实现 GET /gis/drill,permCode menu:gis)
       operationId: gisDrill
       parameters:
-        - { name: level, in: query, required: true, schema: { type: integer } }
-        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - { name: level, in: query, required: true, schema: { type: integer, minimum: 1, maximum: 8 } }
+        - { name: parentId, in: query, required: false, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -33,9 +33,6 @@ paths:
       tags: [Intel]
       summary: 经营分析核心指标(对齐 Go 实现 GET /analytics/indicators,permCode menu:analytics)
       operationId: getAnalyticsIndicators
-      parameters:
-        - { name: region, in: query, schema: { type: string } }
-        - { name: brand, in: query, schema: { type: string } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
@@ -60,13 +57,11 @@ paths:
       tags: [Intel]
       summary: 经营分析报告列表(日/周/月/季度;对齐 Go 实现 GET /reports,permCode menu:report)
       operationId: listReports
-      parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Intel]
-      summary: 生成报告(未实现:Go 后端暂未提供,报告由定时任务产出)
+      summary: 生成报告(未实现:Go 后端暂未提供,报告由定时任务产出)（未实现 planned）
       operationId: createReport
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:
@@ -77,13 +72,15 @@ paths:
       tags: [Intel]
       summary: 最新一期报告(对齐 Go 实现 GET /reports/latest)
       operationId: getLatestReport
+      parameters:
+        - { name: period, in: query, schema: { type: string, default: daily } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
   /reports/{reportId}/send:
     post:
       tags: [Intel]
-      summary: 报告推送(未实现:Go 后端暂未提供)
+      summary: 报告推送(未实现:Go 后端暂未提供)（未实现 planned）
       operationId: sendReport
       parameters:
         - { name: reportId, in: path, required: true, schema: { type: integer } }

@@ -1,6 +1,6 @@
 # 公共响应组件(admin 端)
 # V1.1 对齐 Go 实现(internal/app/http.go respond):统一 envelope {code,msg,data},HTTP 恒 200。
-# 域文件 inline schema 均描述 data 负载;列表 data 为裸数组。
+# 域文件 inline schema 均描述 data 负载;列表 data 为 {items:[...]} 对象。
 components:
   responses:
     Ok:
@@ -13,7 +13,7 @@ components:
               code: { type: integer, example: 0 }
               msg: { type: string, example: ok }
     List:
-      description: 列表(data 为裸数组;前端请求层适配 {items})
+      description: 列表(data 为对象,含 items 数组)
       content:
         application/json:
           schema:
@@ -22,8 +22,11 @@ components:
               code: { type: integer, example: 0 }
               msg: { type: string, example: ok }
               data:
-                type: array
-                items: { type: object }
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { type: object }
     Item:
       description: 单条记录(data 为平铺对象;未命中 code=404)
       content:

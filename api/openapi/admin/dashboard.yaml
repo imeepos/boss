@@ -2,7 +2,7 @@ paths:
   /dashboard:
     get:
       tags: [Dashboard]
-      summary: 工作台聚合数据(统计卡+订单状态分布+待办+近7日趋势)
+      summary: 工作台聚合数据(统计卡+订单状态分布+待办+近7日趋势)（未实现 planned）
       operationId: getDashboard
       responses:
         '200':

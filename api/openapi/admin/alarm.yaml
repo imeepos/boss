@@ -5,9 +5,7 @@ paths:
       summary: '告警列表(级别: 严重/警告/提示)'
       operationId: listAlarms
       parameters:
-        - name: level
-          in: query
-          schema: { type: string, enum: [CRITICAL, WARNING, INFO] }
+        - { name: resourceId, in: query, schema: { type: integer, format: int64 }, description: 按资源 ID 过滤(代码读取 resourceId) }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -17,14 +15,27 @@ paths:
       summary: 告警确认/受理
       operationId: ackAlarm
       parameters:
-        - { name: alarmId, in: path, required: true, schema: { type: string } }
+        - { name: alarmId, in: path, required: true, schema: { type: integer, format: int64 } }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '200':
+          description: 告警确认(data 恒 {ok:true})
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean, example: true }
 
   /alarms/batch-retest:
     post:
       tags: [Alarm]
-      summary: 台风应急·批量复测(按片区下发范围)
+      summary: 台风应急·批量复测(按片区下发范围)（未实现 planned）
+      description: Go 后端未注册该路由（未实现 planned）
       operationId: batchRetestAlarms
       requestBody:
         content:

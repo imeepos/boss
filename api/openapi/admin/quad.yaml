@@ -2,14 +2,8 @@ paths:
   /quad-links:
     get:
       tags: [Quad]
-      summary: 四码合一关联查询(资产/客户/端口/地址任一码反查,见 docs/contract/fields.md 5.1)
+      summary: 四码合一关联查询(资产/客户/端口/地址任一码反查,见 docs/contract/fields.md 5.1;代码不读任何参数,返回全量)
       operationId: queryQuadLinks
-      parameters:
-        - name: code
-          in: query
-          required: true
-          schema: { type: string }
-          description: 任一码(资产 EPC/用户/端口/地址码)
       responses:
         '200':
           description: 四码关联关系
@@ -53,9 +47,9 @@ paths:
       summary: 按资产码反查(对齐 Go 实现,permCode menu:quadlink)
       operationId: queryQuadLinksByAsset
       parameters:
-        - { name: assetId, in: query, required: true, schema: { type: integer } }
+        - { name: assetId, in: query, required: true, schema: { type: integer, format: int64 } }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
   /quad-links/by-customer:
     get:
@@ -63,9 +57,9 @@ paths:
       summary: 按客户码反查(对齐 Go 实现,permCode menu:quadlink)
       operationId: queryQuadLinksByCustomer
       parameters:
-        - { name: customerId, in: query, required: true, schema: { type: integer } }
+        - { name: customerId, in: query, required: true, schema: { type: integer, format: int64 } }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
   /quad-links/by-port:
     get:
@@ -73,9 +67,9 @@ paths:
       summary: 按端口码反查(对齐 Go 实现,permCode menu:quadlink)
       operationId: queryQuadLinksByPort
       parameters:
-        - { name: portId, in: query, required: true, schema: { type: integer } }
+        - { name: portId, in: query, required: true, schema: { type: integer, format: int64 } }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
   /quad-links/by-address:
     get:
@@ -83,9 +77,9 @@ paths:
       summary: 按地址码反查(对齐 Go 实现,permCode menu:quadlink)
       operationId: queryQuadLinksByAddress
       parameters:
-        - { name: addrId, in: query, required: true, schema: { type: integer } }
+        - { name: addressId, in: query, required: true, schema: { type: integer, format: int64 } }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
   /quad-links/reconcile:
     post:
@@ -101,6 +95,6 @@ paths:
       summary: 扫码绑定记录(订单第 9 环节,预绑定 vs 现场扫码校验)
       operationId: listScanLogs
       parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - { name: orderId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
