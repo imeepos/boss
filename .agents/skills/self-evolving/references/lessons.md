@@ -53,3 +53,8 @@
 - 当任何新组件(分页 size changer、筛选器)需要下拉时,修复是复用 components/Dropdown.tsx(触发器+浮层 listbox+当前项打勾+点击外部收起);原生 <select> 的 option 弹层系统渲染、无法随主题定制,工具栏场景已被用户点名"奇怪"两次。skill 曾警告过顶栏场景,现推广到全部场景。
 - 当组件 CSS 引用 var(--xxx) 却始终呈现 fallback 颜色时,修复是先 grep 该令牌在 theme/tokens.css / styles.css / geo.css 里是否真的定义——本项目曾引用不存在的 --shell-bg/--shell-border(实际叫 --shell-card-bg/--shell-card-border),暗色主题下静默变白块;自研组件按 geo.css 模式自带 :root[data-theme='light'/'dark'] 两套组件级令牌最稳。
 - 当小图标(下拉箭头/打勾)显得异常小时,修复是别用文字字形(▾/✓)当图标——字体渲染笔画细、size 缩小后视觉更小;一律用描边 SVG(24 viewBox/stroke 1.8-2/round/currentColor),14px 显示即可与 antd 图标视觉重量一致。
+- 当本机没有数据库却要验证迁移时,修复是先 grep configs/ 找现成远端 DSN 并问用户库在哪(本项目真库在 192.168.0.102:25432),不要 brew 装本地 PG(10 分钟超时白等);skill 没提前警告我(lessons 28 其实已有正解,开工前没回看)。
+- 当 raw.githubusercontent 下载大文件(数 MB)反复断流时,修复是 `for i in $(seq 1 15); do curl -s --max-time 40 -C - -o f URL; python3 -c "import json;json.load(open('f'))" && break; done` 断点续传拼完——exit 0 不代表下完,完成判据是内容可 parse。
+- 当"数据必须真实"的任务要选开源数据集时,修复是先验新旧口径标志(如菲律宾行政区划:ARMM 是 2019 前旧称,现叫 BARMM;省数 81→82 含马京达瑙分省),再对照官方统计口径(PSA PSGC)核对总数,第一个搜到的镜像可能是多年前旧版。
+- 当要验证迁移可回滚且目标库是共享库时,修复是单事务 down→up 回环:脚本剥掉文件内 BEGIN/COMMIT,外层显式起事务依次 Exec 两个文件,down 后数行数、up 后回原量再 commit——零风险验证双向可执行+幂等。
+- 当多轮下载/安装等待中被打断或超时(工具 spawn ENOENT、SIGTERM)时,修复是直接原样重试一次再排查——本轮 spawn bash ENOENT 与 600s 超时重跑均自愈,先怀疑环境抖动再怀疑命令。

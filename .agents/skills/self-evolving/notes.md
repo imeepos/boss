@@ -262,3 +262,17 @@ lessons 里已有"编辑文件一律先 Read 工具,不用 bash cat 代替"这�
 
 **重来一次我会怎么做?** 把"git status 干净"纳入收尾门禁:门禁从"typecheck+test+build"扩为"typecheck+test+build+commit";反思流程第 0 步先 git status,有产物先提交再反思。
 
+## 2026-08-19 菲律宾行政区划 PSGC 内置任务反思
+
+**哪个坑浪费了最多时间?**
+两个:① raw.githubusercontent 下 7MB JSON 反复断流,裸 curl 一次次假完成(文件在增长但 json parse 永远失败),最后靠 `curl -C -` 断点续传循环十几轮才拼完整;② 本机没有 PG,我直接 `brew install postgresql@16` 装了 10 分钟超时——而项目的真库一直跑在 102(192.168.0.102:25432,configs/config.example.yaml 里明写着 DSN),用户一句话点破。另外第一个搜到的数据集(ciatph/psgc2)是 ARMM 时代的旧口径,差点直接用。
+
+**这个 skill 有没有提前警告我?**
+有,但我没在开工前回看:lesson 28"本机没有 psql 却要查/改远端 PG → /tmp 临时 go + pgx 直连"就是这次的正解,我等于重新发明了一遍。教训:**开基础设施/数据库类任务前,先 grep lessons.md 关键词(psql/DSN/PG),再决定装什么**。
+
+**重来一次我会怎么做?**
+- 动手装本地基础设施前,先 grep configs/ 找现成 DSN + 问用户"库在哪",homelab 项目几乎都有远端真库。
+- 大文件下载一律 `for + curl -C - + 每轮校验(curl 完成判据是内容可 parse,不是 exit 0)`。
+- "信息一定要真实"类数据任务:先看数据集的新旧口径标志(ARMM vs BARMM、省数 81 vs 82),再对照官方口径数字,不用第一个搜到的镜像。
+- 迁移可回滚性用"单事务 down→up 回环"验证:stripTx 去掉文件内 BEGIN/COMMIT,外层起事务跑完两个文件再 commit,对共享库零风险。
+
