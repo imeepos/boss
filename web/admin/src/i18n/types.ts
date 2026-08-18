@@ -123,6 +123,42 @@ export interface Translations {
         geonameId: string
       }
     }
+    address: {
+      title: string
+      expand: string
+      collapse: string
+      attach: string
+      unlinked: string
+      unlinkedAll: string
+      searchAll: string
+      noHit: string
+      addRoot: string
+      addChild: string
+      rename: string
+      delete: string
+      deleteConfirm: string
+      deleteFail: string
+      pathLabel: string
+      pathHint: string
+      nameLabel: string
+      country: string
+      adminCode: string
+      none: string
+      loadFail: string
+      saveFail: string
+      empty: string
+    }
+    importer: {
+      title: string
+      addrTitle: string
+      addrHint: string
+      geoTitle: string
+      geoHint: string
+      importBtn: string
+      parseFail: string
+      imported: string
+      loadFail: string
+    }
     account: {
       title: string
       searchPlaceholder: string

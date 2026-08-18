@@ -32,6 +32,8 @@ func respondErr(c *gin.Context, err error) {
 	case errors.Is(err, user.ErrUnauthorized):
 		respond(c, apitypes.CodeUnauthorized, nil)
 	case errors.Is(err, user.ErrUsernameTaken),
+		errors.Is(err, user.ErrDuplicate),
+		errors.Is(err, user.ErrConflict),
 		errors.Is(err, geo.ErrDuplicate):
 		respond(c, apitypes.CodeConflict, nil)
 	case errors.Is(err, user.ErrInvalidInput),

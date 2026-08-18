@@ -191,11 +191,11 @@ func TestPGStore_ListAddresses(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, COALESCE\(parent_id, 0\), level, name`).
+	mock.ExpectQuery(`SELECT a\.id, COALESCE\(a\.parent_id, 0\), a\.level, a\.name`).
 		WithArgs(int64(1)).
-		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name"}).
-			AddRow(int64(2), int64(1), int8(2), "朝阳区").
-			AddRow(int64(3), int64(1), int8(2), "海淀区"))
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "country_code", "admin_code"}).
+			AddRow(int64(2), int64(1), int8(2), "朝阳区", "CN", "CN-BJ").
+			AddRow(int64(3), int64(1), int8(2), "海淀区", "CN", "CN-BJ"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListAddresses(context.Background(), 1)
@@ -204,6 +204,9 @@ func TestPGStore_ListAddresses(t *testing.T) {
 	}
 	if len(got) != 2 || got[0].Name != "朝阳区" || got[1].ParentID != 1 {
 		t.Fatalf("got=%+v", got)
+	}
+	if got[0].CountryCode != "CN" || got[0].AdminCode != "CN-BJ" {
+		t.Fatalf("geo anchor not inherited: %+v", got[0])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)
@@ -364,22 +367,22 @@ func TestPGStore_ImportAddresses(t *testing.T) {
 	}
 	defer mock.Close()
 
-	// 顶层节点 bj(无父):直接 insert
+	// 顶层节点 bj(无父):直接 insert(带国家锚点)
 	mock.ExpectExec(`INSERT INTO addresses`).
-		WithArgs("bj", int8(1), "北京市", nil).
+		WithArgs("bj", int8(1), "北京市", nil, "CN", "CN-BJ").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	// 子节点 bj.chaoyang:查父 + insert
+	// 子节点 bj.chaoyang:查父 + insert(非根行锚点强制忽略为空串)
 	mock.ExpectQuery(`SELECT id FROM addresses WHERE path`).
 		WithArgs("bj").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
 	mock.ExpectExec(`INSERT INTO addresses`).
-		WithArgs("bj.chaoyang", int8(2), "朝阳区", int64(1)).
+		WithArgs("bj.chaoyang", int8(2), "朝阳区", int64(1), "", "").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 	s := NewPGStore(mock)
 	imported, err := s.ImportAddresses(context.Background(), []AddressRow{
-		{Path: "bj", Name: "北京市"},
-		{Path: "bj.chaoyang", Name: "朝阳区"},
+		{Path: "bj", Name: "北京市", CountryCode: "CN", AdminCode: "CN-BJ"},
+		{Path: "bj.chaoyang", Name: "朝阳区", CountryCode: "CN", AdminCode: "CN-BJ"},
 	})
 	if err != nil {
 		t.Fatalf("ImportAddresses: %v", err)

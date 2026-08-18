@@ -117,6 +117,7 @@ type GeoService interface {
 	ReplaceCountryAttrs(ctx context.Context, alpha2 string, attrs CountryAttrs) error
 
 	ListSubdivisions(ctx context.Context, countryCode, locale string) ([]Subdivision, error)
+	GetSubdivision(ctx context.Context, code string) (*Subdivision, error)
 	ListSubdivisionNames(ctx context.Context, code string) ([]SubdivisionName, error)
 	CreateSubdivision(ctx context.Context, s Subdivision) error
 	UpdateSubdivision(ctx context.Context, code string, s Subdivision) error

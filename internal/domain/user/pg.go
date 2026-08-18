@@ -194,13 +194,15 @@ func (s *PGStore) GetProfile(ctx context.Context, accountID int64) (*Profile, er
 	return &p, nil
 }
 
-// ListAddresses 列出地址层级;parentID=0 返回顶层,否则返回该父节点下的子节点。
+// ListAddresses 按 parentID 列子节点(parentID=0 顶层);锚点经树根 join 继承(迁移 000040)。
 func (s *PGStore) ListAddresses(ctx context.Context, parentID int64) ([]Address, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, COALESCE(parent_id, 0), level, name
-		FROM addresses
-		WHERE ($1 = 0 OR parent_id = $1)
-		ORDER BY path`, parentID)
+		SELECT a.id, COALESCE(a.parent_id, 0), a.level, a.name,
+		       COALESCE(r.country_code, ''), COALESCE(r.admin_code, '')
+		FROM addresses a
+		JOIN addresses r ON r.path = subpath(a.path, 0, 1)
+		WHERE ($1 = 0 OR a.parent_id = $1)
+		ORDER BY a.path`, parentID)
 	if err != nil {
 		return nil, fmt.Errorf("user: list addresses: %w", err)
 	}
@@ -208,7 +210,8 @@ func (s *PGStore) ListAddresses(ctx context.Context, parentID int64) ([]Address,
 	out := make([]Address, 0)
 	for rows.Next() {
 		var a Address
-		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name); err != nil {
+		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name,
+			&a.CountryCode, &a.AdminCode); err != nil {
 			return nil, fmt.Errorf("user: scan address: %w", err)
 		}
 		out = append(out, a)
@@ -239,8 +242,9 @@ func (s *PGStore) ImportAddresses(ctx context.Context, rows []AddressRow) (int, 
 			parentArg = parentID
 		}
 		if _, err := s.db.Exec(ctx,
-			`INSERT INTO addresses(path, level, name, parent_id) VALUES($1::ltree, $2, $3, $4)`,
-			r.Path, level, r.Name, parentArg); err != nil {
+			`INSERT INTO addresses(path, level, name, parent_id, country_code, admin_code)
+			VALUES($1::ltree, $2, $3, $4, NULLIF($5,''), NULLIF($6,''))`,
+			r.Path, level, r.Name, parentArg, r.geoCountry(level), r.geoAdmin(level)); err != nil {
 			return imported, fmt.Errorf("user: import address insert: %w", err)
 		}
 		imported++

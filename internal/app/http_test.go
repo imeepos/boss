@@ -40,6 +40,16 @@ func (f *fakeUser) HasDataScope(context.Context, int64, user.DataScope) (bool, e
 }
 func (f *fakeUser) ListAddresses(context.Context, int64) ([]user.Address, error)    { return nil, nil }
 func (f *fakeUser) ImportAddresses(context.Context, []user.AddressRow) (int, error) { return 0, nil }
+func (f *fakeUser) SetAddressGeo(context.Context, int64, string, string) error      { return nil }
+func (f *fakeUser) ListUnlinkedRoots(context.Context) ([]user.Address, error)       { return nil, nil }
+func (f *fakeUser) CreateAddress(context.Context, int64, string, string, string, string) (int64, error) {
+	return 0, nil
+}
+func (f *fakeUser) UpdateAddressName(context.Context, int64, string) error { return nil }
+func (f *fakeUser) DeleteAddress(context.Context, int64) error             { return nil }
+func (f *fakeUser) SearchAddresses(context.Context, string) ([]user.AddressHit, error) {
+	return nil, nil
+}
 func (f *fakeUser) ListRegions(context.Context, string) ([]user.Region, error)      { return nil, nil }
 func (f *fakeUser) ListLegalEntities(context.Context) ([]user.LegalEntity, error) {
 	return f.entities, nil

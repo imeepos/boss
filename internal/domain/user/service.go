@@ -40,6 +40,18 @@ type Service interface {
 
 	ListAddresses(ctx context.Context, parentID int64) ([]Address, error)
 	ImportAddresses(ctx context.Context, rows []AddressRow) (imported int, err error)
+	// SetAddressGeo 挂接国家/一级行政区锚点(仅 level=1 根节点,承接迁移 000040)。
+	SetAddressGeo(ctx context.Context, id int64, countryCode, adminCode string) error
+	// ListUnlinkedRoots 未挂国家的根节点清单(回填工作台)。
+	ListUnlinkedRoots(ctx context.Context) ([]Address, error)
+	// CreateAddress 新增节点:parentID=0 为根节点(可带锚点),label 为 path 段(小写字母数字)。
+	CreateAddress(ctx context.Context, parentID int64, label, name, countryCode, adminCode string) (int64, error)
+	// UpdateAddressName 改名(path 权威不可变,见 ADR-002)。
+	UpdateAddressName(ctx context.Context, id int64, name string) error
+	// DeleteAddress 删除叶节点;有子节点或被业务表引用则拒(ErrConflict)。
+	DeleteAddress(ctx context.Context, id int64) error
+	// SearchAddresses 关键字搜全树(名称/path/锚点),返回命中节点及其祖先链(前端自动展开用)。
+	SearchAddresses(ctx context.Context, kw string) ([]AddressHit, error)
 
 	// 组织实体(子公司/部门/岗位/经营区域)的只读查询与管理。
 	ListRegions(ctx context.Context, parentPath string) ([]Region, error)
@@ -55,14 +67,24 @@ type Service interface {
 }
 
 type Address struct {
-	ID       int64  `json:"id"`
-	ParentID int64  `json:"parentId"`
-	Level    int8   `json:"level"` // 1市 2区 3街道 4小区 5楼栋
-	Name     string `json:"name"`
+	ID          int64  `json:"id"`
+	ParentID    int64  `json:"parentId"`
+	Level       int8   `json:"level"` // 1市 2区 3街道 4小区 5楼栋
+	Name        string `json:"name"`
+	CountryCode string `json:"countryCode"` // 所在树根的国家锚点(alpha-2,空=未挂接)
+	AdminCode   string `json:"adminCode"`   // 所在树根的一级行政区锚点(ISO 3166-2,可空)
 }
 
 type AddressRow struct {
 	Path string // ltree 路径,如 bj.chaoyang.wangjing.xq1.ld2(唯一权威,见 docs/ADR-002)
 	Name string
 	// level 与 parent_id 为派生列,由服务侧按 nlevel(path)、subpath(path,0,-1) 反查计算,调用方无需提供。
+	CountryCode string // 可选,仅 level=1 根节点生效;非根行忽略
+	AdminCode   string // 可选,同上;须与国家前缀一致(DB CHECK 兜底)
+}
+
+// AddressHit 搜索命中:节点 + 根到父的祖先链(按 level 升序,前端逐层自动展开)。
+type AddressHit struct {
+	Node      Address   `json:"node"`
+	Ancestors []Address `json:"ancestors"`
 }

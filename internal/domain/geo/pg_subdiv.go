@@ -2,6 +2,7 @@ package geo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -164,6 +165,23 @@ func (s *PGStore) ListSubdivisions(ctx context.Context, countryCode, locale stri
 		out = append(out, d)
 	}
 	return out, rows.Err()
+}
+
+// GetSubdivision 单查区划(挂接校验用)。
+func (s *PGStore) GetSubdivision(ctx context.Context, code string) (*Subdivision, error) {
+	var d Subdivision
+	err := s.db.QueryRow(ctx, `SELECT code, country_code, COALESCE(parent_code,''),
+		level, category, COALESCE(osm_admin_level,0), COALESCE(geonameid,0), is_active, code
+		FROM geo_subdivision WHERE code = $1`, code).
+		Scan(&d.Code, &d.CountryCode, &d.ParentCode, &d.Level, &d.Category,
+			&d.OSMAdminLevel, &d.GeonameID, &d.IsActive, &d.DisplayName)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("geo: get subdivision: %w", err)
+	}
+	return &d, nil
 }
 
 // ListSubdivisionNames 区划译名列表(按 locale,name_type 排序)。
