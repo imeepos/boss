@@ -7,9 +7,17 @@ description: A self-evolving skill that grows through reflection on mistakes. Us
 
 > 没有预设知识。每一条经验都来自真实踩坑。你的任务：每次用完后反思，把教训喂回来。
 
+## ⚠️ 高频红线(重复犯过的坑,开工前必读)
+
+> 完整计数台账:`references/recidivism.md`。每次反思同步 +1;≥2 次的坑必须登在这里。
+
+1. **【已犯 3 次】编辑文件前必须用 read 工具读最新内容** —— bash 的 cat/sed 输出不算"已观察",edit 会直接拒绝;同一会话第二轮编辑凭记忆拼 old_string 必 not found。
+2. **【已犯 2 次】禁止用原生 `<select>` 新增下拉** —— option 弹层系统渲染无法随主题定制,已两次被用户点名;一律用 `web/admin/src/components/Dropdown.tsx`。
+3. **【性质最恶劣,已犯 1 次】禁止在总结里声称"已适配/已验证"而没有验证动作** —— 引用每个 CSS 令牌前 grep 它的定义;没双主题截图/build 支撑的适配声明一律写"未验证,请目测"。
+
 ## 1. 如何沉淀
 
-**每次完成任务后，花 5 分钟做三件事：**
+**每次完成任务后，花 5 分钟做四件事(第 4 步更新累犯台账)：**
 
 ### 反思
 
@@ -30,6 +38,11 @@ description: A self-evolving skill that grows through reflection on mistakes. Us
 | 犯了某个规则、付出代价 | `references/red-lines.md` —— "禁止 X，因为 Y" |
 | 发现一个排查技巧、工具、命令 | `references/techniques.md` —— 什么场景、怎么用 |
 | 上游文档/API 有误、无法在 skill 内修复 | 项目根 `ISSUE.md` |
+
+### 更新累犯台账
+
+同一坑再犯就给 `references/recidivism.md` 对应行 +1 并追加日期;新坑从 1 起登记。
+次数 ≥2 的坑必须同步登记到本文件顶部"高频红线"区(保持排序:次数多的在前)。
 
 ### 写 ISSUE.md
 
@@ -52,6 +65,7 @@ self-evolving/
 ├── docs/                 # 项目事实手册：查证过才写、散在代码里难找的知识
 │   └── boss-admin-web.md # boss admin 前端速查：冒烟账号、后端地址、门禁命令、主题/语言/localStorage 约定
 ├── references/           # 积累的经验（只增不改）
+│   ├── recidivism.md     # 累犯台账：每个坑的重复次数+日期；≥2 次登到本文件顶部高频红线区
 │   ├── lessons.md        # 通用经验，一句一条：当 X 发生时，修复是 Y
 │   ├── known-issues.md   # 已知问题：症状 → 原因 → 修法
 │   ├── red-lines.md      # 红线：禁止 X，因为 Y 发生过

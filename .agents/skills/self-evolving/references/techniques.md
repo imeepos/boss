@@ -113,3 +113,7 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 
 场景 → 无 docker 访问权,healthz/迁移版本都可能来自旧容器。
 怎么用 → 挑一个"只有新代码+新 env 才会产生"的可观测副作用当探针,如本次的"bootstrap 新建 admin 账号":/tmp 临时 go 程序 + pgx 直连查 accounts WHERE username='admin' 是否出现/created_at 是否刷新。比 curl 更硬,比镜像 tag 比对更省事。
+
+- 场景:自研组件要对齐 antd/Pro 规范。手法:`curl -sL https://raw.githubusercontent.com/ant-design/ant-design/master/components/<name>/index.zh-CN.md` 拿一手 API/设计说明(何时使用/默认值/Token),博客教程只做线索。
+- 场景:组件在某一主题下样式不对但无报错。手法:`grep -rn -- "--令牌名" src/theme/ src/styles.css src/pages/*/[页面].css` 确认令牌真的定义过——CSS 变量缺失静默走 fallback,是最典型的双主题静默失败。
+- 场景:开工写 UI 组件前。手法:先 grep references/lessons.md + red-lines.md 的相关关键词(select/图标/主题/分页),旧教训按场景检索,不凭记忆。

@@ -91,3 +91,16 @@
 症状 → app.env 的 BOSS_ADMIN_PASSWORD 配好、服务重启,admin 用该口令登录仍 40100。
 原因 → EnsureSuperAdmin 是 ON CONFLICT DO NOTHING:admin 账号在更早时间已存在(开发期手建,real_name=开发管理员),bootstrap 按设计跳过,密码保持旧值。
 修法 → pgx 直连 `UPDATE accounts SET password_hash=$1 WHERE username='admin'`(bcrypt 新哈希);或删号重启由 bootstrap 重建。口令对齐后 app.env 里保留同一值,保证口径一致。
+
+## CSS 引用不存在的令牌 → 暗色主题静默白块(2026-08-18 geo 下拉)
+
+- 症状:组件在亮色主题正常,暗色主题下触发器/浮层呈纯白,控制台无任何报错。
+- 原因:CSS 写了 `var(--shell-bg, #fff)`,但 tokens.css 里根本没有 `--shell-bg`(真实令牌是 `--shell-card-bg`/`--shell-card-border`);CSS 变量缺失不报错,静默走 fallback。
+- 修法:`grep -rn -- "--xxx" theme/ styles.css` 确认每个引用的令牌已定义;自研组件按 geo.css 模式自带 `:root[data-theme='light'/'dark']` 两套组件级令牌(如 --dd-bg/--pager-bg),不依赖记忆中的外壳令牌名。
+- 加重情节:总结里声称"全部走令牌、主题自适应"但未验证——凡是没 grep/没双主题截图支撑的适配声明都是假的。
+
+## 文字字形当图标 → 视觉过小(2026-08-18 geo 下拉箭头)
+
+- 症状:下拉箭头/打勾看起来特别小、若有若无。
+- 原因:用字符 `▾`/`✓` + font-size 10px 冒充图标,字体字形笔画细,缩小后视觉重量远低于真图标。
+- 修法:描边 SVG(24 viewBox/stroke 1.8-2/round/width=height=14/currentColor),与项目菜单图标同规格。

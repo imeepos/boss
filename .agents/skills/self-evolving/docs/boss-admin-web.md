@@ -60,3 +60,17 @@
 - 冒烟账号 admin 的 account_id=103（102 库）
 
 - 102 远程环境（CI 自动部署）：`http://192.168.0.102:28080`，账号 `admin / Boss-admin-2026`（sysadmin；口令权威=仓库 `deployments/app.env`，该文件已入库——内网私有仓库裁定，转公网前必须移出）。geo 维护页在 基础配置→国家与行政区划（menu:geo）。
+
+## 页面状态与分页约定（2026-08-18 geo 首例）
+
+- 列表页"刷新后条件不变"：`src/lib/useQueryState.ts`（useQueryState 字符串 / useQueryInt 正整数），底层 useSearchParams + replace 不产生历史；值为 fallback/空时删参保持 URL 干净
+- 分页组件：`src/components/Pagination.tsx`（i18n 文案由调用方传入，geo block 的 prev/next/perPage）
+- 语义区分：lib/urlPrefs.ts 是"一次性 URL 覆盖写 localStorage 后抹除"，与页面持久状态方案相反
+
+## 自研通用组件约定（2026-08-18 geo 分页/下拉沉淀）
+
+- `src/components/Dropdown.tsx`：全站唯一下拉实现（触发器 + 浮层 listbox + 描边 SVG 打勾 + 点击外部收起）；禁止新增原生 `<select>`；CountryForm 内两个遗留原生 select 待替换
+- `src/components/Pagination.tsx`：对齐 antd 规范（首末页恒显 + 当前±2 + 省略号、区间文案 rangeText、size changer、>10 页出现跳转、aria-current）；文案由调用方 i18n 传入（geo block 的 prev/next/perPage/rangeText/jumpText/pageUnit）
+- 图标规格：描边 SVG，viewBox 24 / stroke 1.8-2 / round cap / currentColor，显示 14px；禁止文字字形当图标
+- 主题：自研组件按 geo.css 模式自带 `:root[data-theme='light'/'dark']` 组件级令牌块；引用任何 var(--x) 前先 grep theme/tokens.css + styles.css 确认存在（曾引用不存在的 --shell-bg 静默翻车）
+- 可复用外壳令牌（双主题）：--shell-card-bg / --shell-card-border / --shell-content-text / --shell-group-title / --shell-menu-hover-bg / --shell-fab-bg（亮藏青/暗金）/ --shell-fab-bg-icon；focus 描边 --color-border-focus（styles.css，不分主题）

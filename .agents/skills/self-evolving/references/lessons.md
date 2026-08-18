@@ -44,3 +44,12 @@
 - 当接手一个"页面已上线才补多语言"的任务时,修复是按"标题→表单字段标签→占位符→按钮/提示"清单全量扫硬编码,而不是只改用户点名的那两处标题(本次 geo 两个编辑抽屉:标题早已走 i18n,真缺的是抽屉内十几个字段标签)。
 - 当收尾总结前发现工作区仍有未提交改动时,修复是先 git status 分辨哪些是本任务产物(含上轮遗漏),按功能分笔提交再回复用户;多任务改动交织在同文件时,合并为一笔但提交信息逐项列明。
 - 当同会话遗留了别的任务的未提交代码时(本次 geo 分页组件),修复是一并验证(typecheck)后随本任务补提交,不让工作区长期脏着。
+- 当 edit 报 "requires reading ... first" 时,修复是用 read 工具读目标文件(部分行也行)再重试;bash 的 cat/sed/grep 输出不算"已观察",edit 门禁只认 read 工具。skill 曾在 notes 提过但没喂进 lessons,现补上。
+- 当 react-router-dom v6(BrowserRouter)页面要"刷新/分享链接后搜索条件与分页不丢"时,修复是 useQueryState 封装 useSearchParams + setParams(...,{replace:true})(见 web/admin/src/lib/useQueryState.ts);与 lib/urlPrefs.ts(一次性覆盖写 localStorage 后抹参数)语义相反,别混用。
+- 当后台列表页要补分页时,修复是复用 web/admin/src/components/Pagination.tsx(总数/区间 + 每页 10/20/50/100 + 上下页,safePage 自动钳位);本项目此前无任何分页组件,geo 是首例。
+- 当给列表页加 URL 驱动的筛选状态时,修复是"筛选条件变化时同步 setPage(1)",否则翻到第 2 页再改关键词会出现空页。
+- 当 i18n 新增 key 需要同步 3 份 locale + types.ts 四处时,修复是 locale 用 python 脚本批量替换(count==1 断言防错位)、types.ts 用 edit,改完跑 pnpm typecheck 一次验闭环。
+- 当要自研组件对齐 antd/Pro 规范时,修复是先 curl ant-design GitHub 仓库的 components/<name>/index.zh-CN.md 拿一手 API/设计说明(比搜索博客准),按其默认值与语义实现(分页例:首末页恒显+当前±2+省略号、showTotal 区间文案、sizeChanger 10/20/50/100、quickJumper、单页不隐藏、aria-current)。skill 没提前警告我。
+- 当任何新组件(分页 size changer、筛选器)需要下拉时,修复是复用 components/Dropdown.tsx(触发器+浮层 listbox+当前项打勾+点击外部收起);原生 <select> 的 option 弹层系统渲染、无法随主题定制,工具栏场景已被用户点名"奇怪"两次。skill 曾警告过顶栏场景,现推广到全部场景。
+- 当组件 CSS 引用 var(--xxx) 却始终呈现 fallback 颜色时,修复是先 grep 该令牌在 theme/tokens.css / styles.css / geo.css 里是否真的定义——本项目曾引用不存在的 --shell-bg/--shell-border(实际叫 --shell-card-bg/--shell-card-border),暗色主题下静默变白块;自研组件按 geo.css 模式自带 :root[data-theme='light'/'dark'] 两套组件级令牌最稳。
+- 当小图标(下拉箭头/打勾)显得异常小时,修复是别用文字字形(▾/✓)当图标——字体渲染笔画细、size 缩小后视觉更小;一律用描边 SVG(24 viewBox/stroke 1.8-2/round/currentColor),14px 显示即可与 antd 图标视觉重量一致。
