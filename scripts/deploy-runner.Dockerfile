@@ -4,5 +4,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends docker.io \
     && rm -rf /var/lib/apt/lists/*
 COPY docker-compose-linux-x86_64 /usr/local/bin/docker-compose
 RUN chmod +x /usr/local/bin/docker-compose \
-    && mkdir -p /usr/libexec/docker/cli-plugins \
-    && ln -s /usr/local/bin/docker-compose /usr/libexec/docker/cli-plugins/docker-compose
+    && mkdir -p /usr/libexec/docker/cli-plugins /usr/local/lib/docker/cli-plugins /root/.docker/cli-plugins \
+    && for d in /usr/libexec/docker/cli-plugins /usr/local/lib/docker/cli-plugins /root/.docker/cli-plugins; \
+       do ln -sf /usr/local/bin/docker-compose $d/docker-compose; done
