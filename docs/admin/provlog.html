@@ -122,6 +122,15 @@
     });
   }
 
+  function retryAll(fails) {
+    Promise.all(fails.map(function (r) {
+      return API.post('/provision-tasks/' + encodeURIComponent(r.taskNo) + '/retry');
+    })).then(function () {
+      UI.toast('已批量重试 ' + fails.length + ' 笔失败任务', 'ok');
+      load();
+    }).catch(function (e) { UI.toast('批量重试失败: ' + e.message, 'err'); });
+  }
+
   document.getElementById('rows').addEventListener('click', function (ev) {
     var a = ev.target;
     if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;
@@ -153,7 +162,7 @@
     var fails = all.filter(function (r) { return r.result === '失败'; });
     if (!fails.length) { UI.toast('当前无失败项', 'ok'); return; }
     UI.confirm('确认批量重试 ' + fails.length + ' 笔失败任务?', function () {
-      fails.forEach(function (r) { retry(r.taskNo); });
+      retryAll(fails);
     });
   };
   document.getElementById('kw').addEventListener('input', UI.debounce(load, 300));

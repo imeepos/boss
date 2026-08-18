@@ -134,6 +134,7 @@
     var e = findRow(id);
     UI.confirm('确认停用子公司 ' + (e ? e.name : id) + '? 停用后其数据仍保留但不可新增业务。', function () {
       UI.toast('已停用: ' + (e ? e.name : id) + '(演示)', 'ok');
+      load();
     });
   }
 

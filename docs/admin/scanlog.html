@@ -27,6 +27,7 @@
         <input class="input" style="width:220px" id="kw" placeholder="订单号/标签/资产码">
         <select class="input" style="width:140px" id="st">
           <option value="">全部结果</option><option value="MATCH">绑定成功</option><option value="MISMATCH">绑定拒绝</option>
+          <option value="OFFLINE_CACHED">离线缓存</option>
         </select>
         <button class="btn btn-primary" id="btn-search">查询</button>
         <button class="btn" id="btn-reset">重置</button>
@@ -49,9 +50,9 @@
 <script src="api.js"></script>
 <script src="common.js"></script>
 <script>
-// 扫码绑定记录:筛选/分页/详情/换机重绑演示(契约: GET /scan-logs,结果 MATCH/MISMATCH;订单第 9 环节)
+// 扫码绑定记录:筛选/分页/详情/换机重绑演示(契约: GET /scan-logs,结果 MATCH/MISMATCH/OFFLINE_CACHED;订单第 9 环节)
 (function () {
-  var ST_TAG = { MATCH: 'tag-green', MISMATCH: 'tag-red' };
+  var ST_TAG = { MATCH: 'tag-green', MISMATCH: 'tag-red', OFFLINE_CACHED: 'tag-orange' };
   var all = [];
   var state = { page: 1, pageSize: 10 };
 

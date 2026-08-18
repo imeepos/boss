@@ -5,6 +5,8 @@ const path = require('path');
 const DIR = path.join(__dirname, '..', 'docs', 'admin');
 
 const files = fs.readdirSync(DIR).filter((f) => f.endsWith('.html'));
+// 详情页(tab 聚合的小数据集表格,非列表页)豁免分页规则
+const NO_PAGER_EXEMPT = new Set(['user-detail.html', 'worker-detail.html']);
 const report = [];
 
 for (const f of files) {
@@ -29,7 +31,7 @@ for (const f of files) {
   }
 
   // 3) 有表格但无分页容器/无 UI.paginate
-  if (/<table class="tbl"/.test(src) && !/UI\.paginate/.test(src)) {
+  if (!NO_PAGER_EXEMPT.has(f) && /<table class="tbl"/.test(src) && !/UI\.paginate/.test(src)) {
     issues.push('列表页缺少分页 UI.paginate');
   }
 

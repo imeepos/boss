@@ -113,6 +113,7 @@
   function resolve(code) {
     UI.confirm('确认核销该冲突关联(资产码 ' + code.split('|')[0] + ')?', function () {
       UI.toast('冲突核销请求已提交(演示)', 'ok');
+      load();
     });
   }
 

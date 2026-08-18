@@ -42,9 +42,9 @@
 
       <div class="grid g-2">
         <div class="card">
-          <div class="card-title">订单状态分布 <span class="extra">点击行查看</span></div>
+          <div class="card-title">订单状态分布 <span class="extra">点击查看详情</span></div>
           <table class="tbl">
-            <thead><tr><th>状态</th><th>数量</th><th>占比</th></tr></thead>
+            <thead><tr><th>状态</th><th>数量</th><th>占比</th><th>操作</th></tr></thead>
             <tbody id="statusDist"></tbody>
           </table>
         </div>
@@ -93,7 +93,7 @@
       return '<tr><td><span class="tag ' + (STATUS_TAG[r.status] || '') + '">' + esc(r.statusLabel)
         + '</span></td><td>' + esc(r.count) + '</td><td>' + esc(r.percent)
         + '</td><td><a href="#" data-op="st" data-status="' + esc(r.status) + '">查看</a></td></tr>';
-    }).join('') : UI.tbodyState(3, '无数据');
+    }).join('') : UI.tbodyState(4, '无数据');
   }
 
   function todoMatches(t) {

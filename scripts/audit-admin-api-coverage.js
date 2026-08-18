@@ -1,55 +1,64 @@
-// 核查 docs/admin 页面脚本中调用的 API 路径是否在 api/mock/routes/admin.js 中有对应路由。
+// 核查 docs/admin 页面/api.js 调用的 API 路径是否被 mock(api/mock/admin/data/*.js)覆盖。
 // 用法: node scripts/audit-admin-api-coverage.js
 const fs = require('fs');
 const path = require('path');
 const ADMIN = path.join(__dirname, '..', 'docs', 'admin');
-const routesSrc = fs.readFileSync(path.join(__dirname, '..', 'api', 'mock', 'routes', 'admin.js'), 'utf8');
+const adminRoute = require(path.join(__dirname, '..', 'api', 'mock', 'routes', 'admin.js'));
 
-// 收集 mock 路由(形如 r('GET', '/orders') 或 route('GET', ...))
-const routePaths = new Set();
-for (const m of routesSrc.matchAll(/['"`](\/[a-z0-9\-_/:.{}]+)['"]/gi)) {
-  routePaths.add(m[1]);
+const mockRoutes = adminRoute.route('GET', '_routes').routes; // ['GET /accounts', ...]
+
+// 收集 api.js 声明: method + path 模板
+const apiSrc = fs.readFileSync(path.join(ADMIN, 'api.js'), 'utf8');
+const declared = [];
+for (const m of apiSrc.matchAll(/\b(get|post|put|del)\(\s*((?:[^,()]|'[^']*')+?)\s*[,)]/g)) {
+  const p = tplOf(m[2]);
+  if (p) declared.push({ method: m[1].toUpperCase().replace('DEL', 'DELETE'), path: p });
 }
 
-// 收集 api.js 中声明的路径模板
-const apiSrc = fs.readFileSync(path.join(ADMIN, 'api.js'), 'utf8');
-const declared = new Set();
-for (const m of apiSrc.matchAll(/(?:get|post|put|del)\(\s*'([^']+)'/g)) declared.add(m[1]);
-
-// 收集页面中直接 API.get/post/put/del 调用的字面路径
-const pageCalls = new Set();
+// 页面内直调 API.get/post/put/del('...'),含 '.../' + x + '/suffix' 拼接
+const pageCalls = [];
 for (const f of fs.readdirSync(ADMIN).filter((x) => x.endsWith('.html'))) {
   const src = fs.readFileSync(path.join(ADMIN, f), 'utf8');
-  for (const m of src.matchAll(/API\.(?:get|post|put|del)\(\s*'([^']+)'/g)) {
-    pageCalls.add(m[1]);
+  for (const m of src.matchAll(/API\.(get|post|put|del)\(\s*((?:[^,()]|'[^']*')+?)\s*[,)]/g)) {
+    const p = tplOf(m[2]);
+    if (p) pageCalls.push({ method: m[1].toUpperCase().replace('DEL', 'DELETE'), path: p, file: f });
   }
 }
 
-function coverable(p) {
-  // 将 '/a/' + id + '/toggle' 之类的拼接与模板统一成段比较
-  const norm = p.replace(/'/g, '');
-  for (const r of routePaths) {
-    if (r === norm) return true;
-    // 前缀段匹配:模板含 :id 或 {id}
-    const rSeg = r.split('/').filter(Boolean);
-    const pSeg = norm.split('/').filter(Boolean);
-    if (rSeg.length !== pSeg.length) continue;
-    const ok = rSeg.every((s, i) => s === pSeg[i] || /^[:{]/.test(s));
-    if (ok) return true;
+
+// 将 '+ ' 拼接表达式(字符串字面量 + 变量)归一为 '/a/{}/b' 模板;无字面量返回 null。
+function tplOf(expr) {
+  const parts = expr.split('+').map((s) => s.trim()).filter(Boolean);
+  let out = '', lit = 0;
+  for (const part of parts) {
+    const m = part.match(/^'([^']*)'$/);
+    if (m) { out += m[1]; lit++; }
+    else out += '{}';
   }
-  return false;
+  return lit ? out : null;
 }
 
-const missing = [];
-for (const p of [...declared, ...pageCalls].sort()) {
-  if (!coverable(p)) missing.push(p);
+function covered(method, pathTemplate) {
+  // pathTemplate 中 {} 表示动态段
+  const want = pathTemplate.replace(/^\//, '').replace(/\/$/, '');
+  const wSeg = want.split('/').filter(Boolean);
+  for (const key of mockRoutes) {
+    const [m, raw] = key.split(' ');
+    if (m !== method) continue;
+    const rSeg = raw.replace(/^\//, '').replace(/\/$/, '').split('/').filter(Boolean);
+    if (rSeg.length !== wSeg.length) continue;
+    const ok = rSeg.every((s, i) => s === wSeg[i] || /^\{.+\}$/.test(s) || wSeg[i] === '{}');
+    if (ok) return key;
+  }
+  return null;
 }
-console.log('api.js 声明路径数:', declared.size);
-console.log('页面直调路径数:', pageCalls.size);
-console.log('mock 路由字面量数:', routePaths.size);
-if (missing.length) {
-  console.log('\n疑似未被 mock 覆盖的路径:');
-  missing.forEach((p) => console.log('  - ' + p));
-} else {
-  console.log('\n全部路径均有 mock 路由覆盖(按字面/段匹配)');
+
+let missing = 0;
+for (const c of [...declared, ...pageCalls]) {
+  const hit = covered(c.method, c.path);
+  if (!hit) {
+    missing++;
+    console.log(`缺路由: ${c.method} ${c.path}${c.file ? '  (' + c.file + ')' : ''}`);
+  }
 }
+console.log(`\nmock 路由数: ${mockRoutes.length};声明+页面调用数: ${declared.length + pageCalls.length};缺失: ${missing}`);

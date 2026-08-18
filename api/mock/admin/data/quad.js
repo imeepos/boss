@@ -26,6 +26,7 @@ const scanLogs = db.orders
   }))
   .concat([
     { orderNo: 'ORD-20250816-019', master: '陈师傅', scannedTag: 'EPC-0019', preboundTag: 'EPC-0018', result: 'MISMATCH', resultLabel: '拒绝(不一致)', time: '09:20' },
+    { orderNo: 'ORD-20250816-020', master: '刘师傅', scannedTag: 'EPC-0020', preboundTag: 'EPC-0020', result: 'OFFLINE_CACHED', resultLabel: '离线缓存', time: '09:35' },
   ]);
 
 module.exports = {

@@ -32,7 +32,7 @@
       <div class="toolbar">
         <input class="input" style="width:220px" id="kw" placeholder="账单号/客户">
         <select class="input" style="width:140px" id="st">
-          <option value="">全部状态</option><option>已缴</option><option>已缴清</option><option>未缴</option><option>欠费</option><option>逾期</option>
+          <option value="">全部状态</option><option>已缴</option><option>已缴清</option><option>未缴</option><option>欠费</option>
         </select>
         <button class="btn btn-primary" id="btn-search">查询</button>
         <button class="btn" id="btn-reset">重置</button>
@@ -76,7 +76,7 @@
 <script>
 // 计费账单:筛选/分页/详情弹框/催缴确认(契约: GET /bills,含 stats 汇总)
 (function () {
-  var STATUS_TAG = { '已缴': 'tag-green', '已缴清': 'tag-green', '未缴': 'tag-orange', '欠费': 'tag-orange', '逾期': 'tag-red' };
+  var STATUS_TAG = { '已缴': 'tag-green', '已缴清': 'tag-green', '未缴': 'tag-orange', '欠费': 'tag-orange' };
   var all = [];      // 全量数据(页面侧筛选+分片)
   var state = { page: 1, pageSize: 10 };
 
@@ -93,10 +93,10 @@
     var list = all.filter(matches);
     var start = (state.page - 1) * state.pageSize;
     var slice = list.slice(start, start + state.pageSize);
-    document.getElementById('row-hint').textContent = list.length ? '' : '';
+    document.getElementById('row-hint').textContent = '';
     document.getElementById('rows').innerHTML = slice.length ? slice.map(function (r) {
       var ops = '<a href="#" data-op="detail" data-no="' + UI.esc(r.billNo) + '">详情</a>';
-      if (r.status === '欠费' || r.status === '逾期' || r.status === '未缴') {
+      if (r.status === '欠费' || r.status === '未缴') {
         ops += ' <a href="#" data-op="urge" data-no="' + UI.esc(r.billNo) + '">催缴</a>';
       }
       return '<tr><td>' + UI.esc(r.billNo) + '</td><td>' + UI.esc(r.customerName) + '</td><td>' + UI.esc(r.period)
@@ -122,11 +122,10 @@
     if (!r) return;
     document.getElementById('dp-title').textContent = '账单详情 · ' + r.billNo;
     document.getElementById('dp-tab-base').innerHTML = descHtml([
-      ['账单号', r.billNo], ['账期', r.period], ['金额', r.amount], ['状态', r.status],
+      ['账单ID', r.billId], ['账单号', r.billNo], ['账期', r.period], ['金额', r.amount], ['状态', r.status],
     ]);
     document.getElementById('dp-tab-customer').innerHTML = descHtml([
-      ['客户', r.customerName], ['客户ID', r.customerId || '—'],
-      ['服务状态', r.customerServiceStatus || '—'], ['联系电话', r.customerPhone || '—'],
+      ['客户', r.customerName],
     ]);
     document.getElementById('list-card').style.display = 'none';
     document.getElementById('dp-panel').style.display = '';

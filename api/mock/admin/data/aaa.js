@@ -17,4 +17,12 @@ module.exports = {
     );
     return { items };
   },
+  'POST /aaa-logs/mend': ({ body }) => {
+    if (!body || !body.loid || !body.period) return { code: 1, message: 'loid/period 必填' };
+    logs.push({
+      logId: logs.length + 1, loid: body.loid, type: 'CDR', typeLabel: '话单',
+      result: '补单', usage: '—', billing: '待入账', time: body.period,
+    });
+    return { code: 0, message: 'ok' };
+  },
 };
