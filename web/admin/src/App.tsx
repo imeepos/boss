@@ -4,6 +4,7 @@ import { AdminLayout } from './layouts/AdminLayout'
 import { AuthGuard } from './layouts/AuthGuard'
 import { useProfile } from './layouts/profile'
 import LoginPage from './pages/login'
+import RegisterPage from './pages/register'
 import DashboardPage from './pages/dashboard'
 import AccountListPage from './pages/base/account'
 import { ForbiddenPage, NotFoundPage } from './pages/error'
@@ -25,6 +26,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/"
           element={

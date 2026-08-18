@@ -1,0 +1,70 @@
+/* 全局补充样式:Design Tokens + 登录页响应式 + 侧栏菜单项。 */
+
+/* 对齐 visual-design-prompts.md §10 */
+:root {
+  /* Brand */
+  --color-brand-navy-950: #0F1E3B;
+  --color-brand-navy-900: #10203F;
+  --color-brand-blue-900: #192C50;
+  --color-brand-blue-800: #1F355F;
+  --color-brand-blue-700: #273F70;
+  --color-brand-blue-300: #9CAAC3;
+  --color-brand-gold-600: #BE8D25;
+  --color-brand-gold-500: #D5A63A;
+  --color-brand-gold-300: #E5C985;
+  --color-brand-gold-50: #FBF5E8;
+  /* Surface */
+  --color-surface-primary: #FCFCFD;
+  --color-surface-input: #FFFFFF;
+  --color-surface-disabled: #F3F5F8;
+  --color-surface-dark: #0F1E3B;
+  /* Text */
+  --color-text-primary: #172744;
+  --color-text-secondary: #667085;
+  --color-text-tertiary: #8A96AA;
+  --color-text-muted: #A6B1C3;
+  --color-text-placeholder: #737A86;
+  --color-text-on-dark: #F7F8FC;
+  --color-text-link: #C69835;
+  --color-text-input: #4E5664;
+  /* Border */
+  --color-border-default: #D7DDE7;
+  --color-border-hover: #B4BFCE;
+  --color-border-focus: #31568F;
+  --color-border-error: #D94B4B;
+  /* Status */
+  --color-success: #2F8F63;
+  --color-danger: #D94B4B;
+  /* Radius */
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  /* Shadow */
+  --shadow-panel: 0 20px 52px rgba(15, 30, 59, 0.18);
+  --shadow-card: 0 8px 24px rgba(3, 13, 31, 0.18);
+  --shadow-focus: 0 0 0 3px rgba(39, 63, 112, 0.14);
+  /* Typography */
+  --font-family-base:
+    "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
+    "Helvetica Neue", Arial, sans-serif;
+  --font-family-brand:
+    "Inter", "Arial", "Helvetica Neue", sans-serif;
+}
+
+/* 去掉 UA 默认 8px 边距 */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* 窄屏隐藏左侧品牌插画 */
+@media (max-width: 768px) {
+  .auth-aside { display: none; }
+  .auth-panel { grid-template-columns: 1fr !important; }
+}
+
+.side-item.active {
+  background: #f0f6ff;
+  border-right: 2px solid #1677ff;
+}

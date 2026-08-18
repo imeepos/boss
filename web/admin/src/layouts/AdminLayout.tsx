@@ -2,6 +2,7 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { adminLogout, type Profile } from '../api/auth'
+import logoMark from '../assets/brand/logo-mark-navy.png'
 import { ProfileContext } from './profile'
 import { Sidebar } from './Sidebar'
 
@@ -21,7 +22,14 @@ export function AdminLayout({ profile }: { profile: Profile; children?: ReactNod
             color: '#fff',
           }}
         >
-          <span>BOSS 管理端</span>
+          <span style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 15, fontWeight: 600 }}>
+            <img
+              src={logoMark}
+              alt="Sphere Boss"
+              style={{ width: 26, height: 26, background: '#fff', borderRadius: 6, padding: 1 }}
+            />
+            Sphere Boss · BOSS 管理端
+          </span>
           <span style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 13 }}>
             <span>{profile.legalEntityName || '—'}</span>
             <span>{profile.regionScope ? `数据域:${profile.regionScope}` : '数据域:全集团'}</span>
