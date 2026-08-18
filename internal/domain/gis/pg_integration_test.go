@@ -94,6 +94,25 @@ func TestGIS_DrillAndDetail_Integration(t *testing.T) {
 		VALUES($1, $2, $3, $4, 1, '主品牌', 'LINKED')`, uniq, custID, portID, buildingID); err != nil {
 		t.Fatalf("quad link: %v", err)
 	}
+	// 自清理(defer 后注册先执行,早于 pool.Close):防共享库残留。
+	defer func() {
+		for _, q := range []string{
+			`DELETE FROM quad_links WHERE port_id = ` + fmt.Sprint(portID),
+			`DELETE FROM customers WHERE id = ` + fmt.Sprint(custID),
+			`DELETE FROM device_metrics WHERE resource_id = ` + fmt.Sprint(oltID),
+			`DELETE FROM ports WHERE id = ` + fmt.Sprint(portID),
+			`DELETE FROM resources WHERE code LIKE '%-GIS-` + suffix + `'`,
+			`DELETE FROM addresses WHERE path::text LIKE 'g1` + suffix + `%' AND level = 5`,
+			`DELETE FROM addresses WHERE path::text LIKE 'g1` + suffix + `%' AND level = 4`,
+			`DELETE FROM addresses WHERE path::text LIKE 'g1` + suffix + `%' AND level = 3`,
+			`DELETE FROM addresses WHERE path::text LIKE 'g1` + suffix + `%' AND level = 2`,
+			`DELETE FROM addresses WHERE path::text LIKE 'g1` + suffix + `%' AND level = 1`,
+		} {
+			if _, err := pool.Exec(ctx, q); err != nil {
+				t.Logf("gis cleanup(尽力而为): %v", err)
+			}
+		}
+	}()
 
 	t.Run("八级下钻层级分发", func(t *testing.T) {
 		l1, err := s.Drill(ctx, 1, 0)

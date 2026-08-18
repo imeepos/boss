@@ -66,7 +66,8 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer pool.Close()
+	// t.Cleanup 而非 defer:seedE2E 注册的数据自清理需在池关闭前执行(LIFO)。
+	t.Cleanup(pool.Close)
 
 	s := seedE2E(t, ctx, pool, a)
 

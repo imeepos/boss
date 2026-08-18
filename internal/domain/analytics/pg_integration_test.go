@@ -37,8 +37,25 @@ func TestAnalytics_Integration(t *testing.T) {
 		INSERT INTO addresses(path, level, name, geom)
 		VALUES(CAST($1 AS ltree), 5, '分析楼栋', ST_SetSRID(ST_MakePoint(121.0,31.0),4326))
 		RETURNING id`, path).Scan(&addrID); err != nil {
-		t.Fatal(err)
+		t.Fatalf("seed address: %v", err)
 	}
+	// 自清理(defer 后注册先执行,早于 pool.Close):防共享库残留。
+	defer func() {
+		for _, q := range []string{
+			`DELETE FROM ports WHERE address_id = ` + fmt.Sprint(addrID),
+			`DELETE FROM orders WHERE order_no = 'ORD-AN-` + suffix + `'`,
+			`DELETE FROM device_maintenances WHERE device_no LIKE 'OLT-AN%` + suffix + `'`,
+			`DELETE FROM addresses WHERE path::text LIKE 'an1` + suffix + `%' AND level = 5`,
+			`DELETE FROM addresses WHERE path::text LIKE 'an1` + suffix + `%' AND level = 4`,
+			`DELETE FROM addresses WHERE path::text LIKE 'an1` + suffix + `%' AND level = 3`,
+			`DELETE FROM addresses WHERE path::text LIKE 'an1` + suffix + `%' AND level = 2`,
+			`DELETE FROM addresses WHERE path::text LIKE 'an1` + suffix + `%' AND level = 1`,
+		} {
+			if _, err := pool.Exec(ctx, q); err != nil {
+				t.Logf("analytics cleanup(尽力而为): %v", err)
+			}
+		}
+	}()
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ports(port_code, quad_code, resource_id, legal_entity_id, legal_entity_name, address_id, region_id, region_name, status)
 		SELECT 'PA-'||$1||'-'||v.s, 'QA-'||$1||'-'||v.s, r.id, 1, '主品牌', $2, 1, '马尼拉', v.s

@@ -23,6 +23,7 @@ func seedE2E(t *testing.T, ctx context.Context, pool *pgxpool.Pool, a *Applicati
 	t.Helper()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1e12)
 	s := &e2eSeed{username: "e2e-" + suffix, password: "E2e-pass-123"}
+	registerE2ECleanup(t, ctx, pool, s, suffix)
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(s.password), bcrypt.MinCost)
 	if err != nil {
