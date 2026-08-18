@@ -49,7 +49,12 @@ export function Dropdown({ value, options, onChange, ariaLabel, triggerStyle }: 
         </span>
       </button>
       {open && (
-        <div className="dd-menu" role="listbox" aria-label={ariaLabel}>
+        <div
+          className="dd-menu"
+          role="listbox"
+          aria-label={ariaLabel}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           {options.map((o) => (
             <button
               key={o.value}
@@ -57,6 +62,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, triggerStyle }: 
               role="option"
               aria-selected={o.value === value}
               className={o.value === value ? 'active' : ''}
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={() => {
                 onChange(o.value)
                 setOpen(false)
