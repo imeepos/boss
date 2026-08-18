@@ -40,6 +40,7 @@ description: A self-evolving skill that grows through reflection on mistakes. Us
 | 犯了某个规则、付出代价 | `references/red-lines.md` —— "禁止 X，因为 Y" |
 | 发现一个排查技巧、工具、命令 | `references/techniques.md` —— 什么场景、怎么用 |
 | 上游文档/API 有误、无法在 skill 内修复 | 项目根 `ISSUE.md` |
+| 新经验已沉淀到 references 后 | 同步更新 `references/knowledge/` 分类索引，确保可被按场景检索到 |
 
 ### 更新累犯台账
 
@@ -71,7 +72,12 @@ self-evolving/
 │   ├── lessons.md        # 通用经验，一句一条：当 X 发生时，修复是 Y
 │   ├── known-issues.md   # 已知问题：症状 → 原因 → 修法
 │   ├── red-lines.md      # 红线：禁止 X，因为 Y 发生过
-│   └── techniques.md     # 排查技巧、工具、命令：什么场景 → 怎么用
+│   ├── techniques.md     # 排查技巧、工具、命令：什么场景 → 怎么用
+│   └── knowledge/        # 经验分类索引（按 前端/后端/实施 分门别类，原文不动）
+│       ├── README.md     # 分类说明 + 速查统计
+│       ├── 前端.md       # 前端经验索引
+│       ├── 后端.md       # 后端经验索引
+│       └── 实施.md       # 实施经验索引
 └── scripts/
     └── cdp-capture.mjs   # 零依赖 CDP 工具（Node>=22 + 系统 Chrome）：网页截图 + console/网络采集，
                           #   --eval 自动填表登录，--logs 输出 console 报错与失败请求响应体
@@ -85,7 +91,18 @@ self-evolving/
 - 一条经验一行/一段，不要合并
 - 经验过时了？在下面加一条新的纠正它，不要删旧的
 
-## 3. 反馈优先级
+## 3. 开工前必查（按场景检索）
+
+**写代码前，先浏览 `references/knowledge/` 对应分类的标题，确认有没有"已知的坑"。**
+
+- 写前端/UI/CSS/组件 → 看 `knowledge/前端.md`
+- 写 Go/数据库/API → 看 `knowledge/后端.md`
+- 部署/CI/环境配置 → 看 `knowledge/实施.md`
+- 不确定 → 看 `knowledge/README.md` 速查统计表
+
+每个分类文件末尾有"开工前 grep 关键词"，用这些词检索所有 references 文件。
+
+## 4. 反馈优先级
 
 最值钱的先写：
 

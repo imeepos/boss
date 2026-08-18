@@ -288,7 +288,19 @@ lessons 里已有"编辑文件一律先 Read 工具,不用 bash cat 代替"这�
 - 排查 Go API 500 时，先看 SQL SELECT 的 nullable 列有没有 COALESCE 包裹——这是 pgx 最常见的扫描错之一。
 - 如果 `GEO` 是 Go 后端，第一轮 grep 就限定 `internal/` 目录，不先搜 server-ts。
 
-## 2026-08-19 地址层级锚点闭环 + 共享库垃圾数据溯源反思
+## 2026-08-19 经验知识分类整理（前端/后端/实施）
+
+**做了什么？**
+把 accumulated 在 references/ 里的所有经验（lessons 66 条 + known-issues 19 条 + red-lines 18 条 + techniques 23 条）按"前端/后端/实施/通用"四类重做索引，每一条经验标注来源和要点，按场景分组。
+
+**产出：** `references/knowledge/README.md`（总说明 + 速查统计）+ `前端.md`（49 条）+ `后端.md`（24 条）+ `实施.md`（14 条）+ 每类末尾附"开工前 grep 关键词"。原文不动，只增索引。
+
+**关键决策：**
+- 分类原则：按"经验适用场景"而非"这个文件是什么"归类。一条经验可能跨类，优先归入最常使用的场景。
+- 通用类（编辑工具使用、流程规范、模型限制等）不单独建文件，分散在三类中按需列出，在总 README 统计表中体现。
+- 每条索引只保留"一句话要点"，原文细节在 references/ 原始文件里。
+
+**贯彻了 skill 的"references/ 只增不改"原则**——knowledge/ 是新目录，不碰任何现有文件。同时更新了 SKILL.md 的目录结构和"开工前必查"部分，要求后续每次喂经验后同步更新 knowledge/ 索引。
 
 **哪个坑浪费了最多时间?**
 e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 严格参数校验——六参数喂给只含 $1 的语句直接报 `unused argument`,整批 DELETE 全灭;② `t.Cleanup` 注册的清理跑在同测试 `defer pool.Close()` 之后,池已关,全批静默失败(只有 -v 看日志才发现);③ W8 子测试用 `orderNo6()` 自造独立后缀,按 seed suffix 精确匹配永远漏删 w8 树。另外 edit 工具两次构造失误:old_string 只含 SQL 而 new_string 顺手带了函数头 → 头部重复;一次"只想删个换行"的 no-op edit 把两行并成一行 → TS 语法错。
