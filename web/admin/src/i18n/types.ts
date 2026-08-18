@@ -93,6 +93,9 @@ export interface Translations {
       prev: string
       next: string
       perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
       names: string
       addName: string
       attrs: string

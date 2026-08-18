@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
 import { StatusTag } from './CountryPanel'
@@ -79,13 +80,19 @@ export function SubdivisionPanel() {
     <div className="geo-card">
       {error && <div className="geo-error" role="alert">{error}</div>}
       <div className="geo-toolbar">
-        <select className="geo-select" style={{ width: 180 }} value={country}
-          onChange={(e) => filterCountry(e.target.value)}>
-          <option value="">{g.filterCountry}</option>
-          {countries.map((c) => (
-            <option key={c.alpha2} value={c.alpha2}>{c.alpha2} {c.displayName}</option>
-          ))}
-        </select>
+        <Dropdown
+          value={country}
+          ariaLabel={g.filterCountry}
+          onChange={filterCountry}
+          triggerStyle={{ width: 180 }}
+          options={[
+            { value: '', label: g.filterCountry },
+            ...countries.map((c) => ({
+              value: c.alpha2,
+              label: `${c.alpha2} ${c.displayName}`,
+            })),
+          ]}
+        />
         <input className="geo-input" style={{ width: 200 }} placeholder={g.searchPlaceholder}
           value={keyword} onChange={(e) => search(e.target.value)} />
         <div className="spacer" />
@@ -98,8 +105,9 @@ export function SubdivisionPanel() {
         onToggle={toggle} onNames={(code) => setNamesOf(namesOf === code ? null : code)} />
       <div className="geo-footer">
         <Pagination page={safePage} pageSize={pageSize} total={filtered.length}
-          onPage={setPage} onSize={resize} totalText={g.total}
-          prevText={g.prev} nextText={g.next} perPageText={g.perPage} />
+          onPage={setPage} onSize={resize} rangeText={g.rangeText}
+          prevText={g.prev} nextText={g.next} perPageText={g.perPage}
+          jumpText={g.jumpText} pageUnitText={g.pageUnit} />
       </div>
       {form && <SubdivForm initial={form} editing={editing} country={country}
         onDone={() => { setForm(null); load() }} onCancel={() => setForm(null)} />}

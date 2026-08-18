@@ -74,8 +74,9 @@ export function CountryPanel() {
         onToggle={toggle} onDetail={openDetail} />
       <div className="geo-footer">
         <Pagination page={safePage} pageSize={pageSize} total={filtered.length}
-          onPage={setPage} onSize={resize} totalText={g.total}
-          prevText={g.prev} nextText={g.next} perPageText={g.perPage} />
+          onPage={setPage} onSize={resize} rangeText={g.rangeText}
+          prevText={g.prev} nextText={g.next} perPageText={g.perPage}
+          jumpText={g.jumpText} pageUnitText={g.pageUnit} />
       </div>
       {form && <CountryForm initial={form} editing={editing}
         onDone={() => { setForm(null); load() }} onCancel={() => setForm(null)} />}
