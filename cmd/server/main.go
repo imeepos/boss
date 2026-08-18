@@ -32,6 +32,18 @@ func main() {
 		log.Fatalf("wiring: %v", err)
 	}
 
+	// 超管引导:BOSS_ADMIN_PASSWORD 非空时幂等创建 sysadmin 账号(已存在则跳过,不覆盖)。
+	if cfg.Bootstrap.AdminPass != "" {
+		created, err := a.User.EnsureSuperAdmin(context.Background(),
+			cfg.Bootstrap.AdminUser, cfg.Bootstrap.AdminPass, "超级管理员")
+		if err != nil {
+			log.Fatalf("bootstrap super admin: %v", err)
+		}
+		if created {
+			log.Printf("bootstrap: super admin %q created", cfg.Bootstrap.AdminUser)
+		}
+	}
+
 	mgr := auth.NewManager(cfg.JWT.Secret, cfg.JWT.TTL)
 	r := server.New(server.Config{HTTPAddr: cfg.Server.HTTPAddr})
 	app.RegisterRoutes(r, a, mgr)

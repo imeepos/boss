@@ -12,6 +12,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/device"
+	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/gis"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/provision"
@@ -54,6 +55,7 @@ type Application struct {
 
 	Device    device.DeviceService
 	Alarm     device.AlarmService
+	Geo       geo.GeoService
 	Gis       gis.GISService
 	Analytics analytics.AnalyticsService
 	Report    *report.ReportService
@@ -170,6 +172,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Channel:     ord,
 
 		Device:    dev,
+		Geo:       geo.NewPGStore(pool),
 		Gis:       gis.NewPGStore(pool),
 		Analytics: anaStore,
 		Alarm:     dev,

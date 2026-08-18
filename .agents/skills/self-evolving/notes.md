@@ -80,3 +80,16 @@ edit 失配没有（有"结尾换行"变体但没有"会话内多轮编辑后凭
 
 
 
+
+## 2026-08-18 超管初始化 + docker compose env 管理
+
+**哪个坑浪费了最多时间？**
+不算大坑但有两个：一是 `go` 命令不在默认 PATH（在 /opt/homebrew/bin），首次构建失败后才发现，Makefile 已有 `GO ?= go` 约定但新 shell 每次都要重设 PATH；二是给 `user.Service` 接口加方法后忘了 fakeUser 测试桩要同步补，好在编译期立即暴露。另外 `docker compose config` 验证 env 合并时也因 PATH 问题第一轮无输出，容易被误判为命令失败。
+
+**这个 skill 有没有提前警告我？**
+没有。PATH 问题和接口-桩同步都是首次记录。
+
+**重来一次我会怎么做？**
+- 每个新 bash 调用一律先 `export PATH=/opt/homebrew/bin:$PATH`，brew 装的工具（go/docker/graphviz）全在那。
+- 给 Go 接口加方法时，同一 commit 里就补齐所有测试桩，编译报错清单就是桩清单。
+- 验证 compose env 合并用 `docker compose config | grep BOSS_`，输出为空先怀疑 PATH/命令没跑，再看业务。

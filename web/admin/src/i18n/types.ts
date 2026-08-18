@@ -69,6 +69,32 @@ export interface Translations {
     placeholder: {
       building: string
     }
+    geo: {
+      title: string
+      tabCountry: string
+      tabSubdiv: string
+      countryColumns: string[]
+      subdivColumns: string[]
+      add: string
+      edit: string
+      save: string
+      cancel: string
+      disable: string
+      enable: string
+      detail: string
+      active: string
+      inactive: string
+      total: string
+      loadFail: string
+      saveFail: string
+      filterCountry: string
+      names: string
+      addName: string
+      attrs: string
+      timeZones: string
+      currencies: string
+      callingCodes: string
+    }
     account: {
       title: string
       searchPlaceholder: string

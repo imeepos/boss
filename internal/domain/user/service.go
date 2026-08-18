@@ -30,6 +30,9 @@ type Service interface {
 	// Register 自助注册(阶段1 基础功能):默认 ops 角色,成功后即可登录。
 	Register(ctx context.Context, username, password, realName string) (*LoginResult, error)
 
+	// EnsureSuperAdmin 启动引导:幂等创建超级管理员(sysadmin),已存在则跳过不覆盖。
+	EnsureSuperAdmin(ctx context.Context, username, password, realName string) (created bool, err error)
+
 	// HasPermission 功能权限判定(RBAC 快照)。
 	HasPermission(ctx context.Context, accountID int64, permCode string) (bool, error)
 	// HasDataScope 数据范围判定:资源属主组织是否落在账号数据范围内,越权拒并审计。

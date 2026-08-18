@@ -45,6 +45,12 @@ type Config struct {
 		TTL    time.Duration
 	}
 
+	// Bootstrap 启动引导超管(SYS 域):AdminPass 非空才启用,空则跳过。
+	Bootstrap struct {
+		AdminUser string
+		AdminPass string
+	}
+
 	// Provisioner(阶段7 下发守护进程,债务偿还:真实 Telnet 执行器)。
 	Provisioner struct {
 		OLTAddr  string // OLT 管理地址 host:port
@@ -98,6 +104,8 @@ func Load() *Config {
 	c.Events.Topic = getenv("BOSS_EVENTS_TOPIC", "boss-order-events")
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
 	c.JWT.TTL = 24 * time.Hour
+	c.Bootstrap.AdminUser = getenv("BOSS_ADMIN_USERNAME", "admin")
+	c.Bootstrap.AdminPass = getenv("BOSS_ADMIN_PASSWORD", "")
 
 	c.Provisioner.OLTAddr = getenv("BOSS_PROVISION_OLT_ADDR", "0")
 	c.Provisioner.OLTUser = getenv("BOSS_PROVISION_OLT_USER", "admin")

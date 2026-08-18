@@ -1,5 +1,6 @@
 # env / secrets
 .env
+deployments/app.env
 *.local.yaml
 
 # go

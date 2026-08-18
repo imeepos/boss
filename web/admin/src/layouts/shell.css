@@ -279,38 +279,42 @@
 
 .shell-side.collapsed .shell-side-resizer { display: none; }
 
-/* 侧栏滚动条:默认隐藏,悬停导航区时显示;上下留白使滑块视觉更短 */
+/* 侧栏滚动:隐藏原生滚动条,由 React 渲染短滑块覆盖层(见 Sidebar.tsx) */
 .shell-side-nav {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px 0;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-width: none;
 }
 
-.shell-side-nav:hover { scrollbar-color: var(--shell-menu-icon) transparent; }
+.shell-side-nav::-webkit-scrollbar { display: none; }
 
-.shell-side-nav::-webkit-scrollbar { width: 4px; }
-
-.shell-side-nav::-webkit-scrollbar-track { background: transparent; }
-
-.shell-side-nav::-webkit-scrollbar-thumb {
-  border: 20px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  background-clip: padding-box;
+/* 自定义滑块:贴右缘,仅覆盖导航区(底部 44px 是折叠按钮),悬停侧栏或拖拽时显示 */
+.shell-side-scrollbar {
+  position: absolute;
+  top: 12px;
+  bottom: 56px;
+  right: 2px;
+  width: 4px;
+  z-index: 4;
 }
 
-.shell-side-nav:hover::-webkit-scrollbar-thumb {
+.shell-side-scrollbar-thumb {
+  position: absolute;
+  width: 4px;
+  min-height: 24px;
+  border-radius: 2px;
   background: var(--shell-menu-icon);
-  background-clip: padding-box;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.shell-side-nav:hover::-webkit-scrollbar-thumb:hover {
-  background: var(--shell-menu-active-text);
-  background-clip: padding-box;
-}
+.shell-side:hover .shell-side-scrollbar-thumb,
+.shell-side-scrollbar-thumb.dragging { opacity: 0.6; }
+
+.shell-side-scrollbar-thumb:hover,
+.shell-side-scrollbar-thumb.dragging { opacity: 1; }
 
 .shell-side-group-title {
   display: flex;

@@ -89,6 +89,30 @@
 
 > 区域硬关联（TS 实体）：楼栋级地址挂 `region_id`（→ regions，经营区域）+ `region_name` 快照，固化「地址→经营区域」映射；客户/资产/端口/LO账号经此继承区域，杜绝「有地址无订单则不知属哪个区域」的孤儿。
 
+### 1.5.1 geo_country / geo_subdivision（国际地理基础数据，迁移 000038）
+
+> 依据 ISO 3166-1/2 + UN M49 + CLDR；国家主键 = alpha-2，区划主键 = 完整 ISO 3166-2 码；停用码软删除保留。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 国家 | `Alpha2` | alpha2 | CHAR(2) 主键，如 PH/CN/US |
+| — | `Alpha3` | alpha3 | CHAR(3) 唯一，如 PHL |
+| — | `NumericCode` | numeric_code | CHAR(3) 唯一，=UN M49 |
+| 国家名 | `ShortName` | short_name | English short name |
+| — | `FullName` | full_name | 全称，可空 |
+| 状态 | `Status` | status | INDEPENDENT / DISCONTINUED |
+| 大洲 | `ContinentCode` | continent_code | AS/EU/NA/SA/AF/OC/AN |
+| — | `IsActive` | is_active | 停用码保留 false，不物理删除 |
+| 区划码 | `Code`(subdiv) | code | 'PH-NCR'/'CN-BJ'，自引用 parent_code 成树 |
+| 层级 | `Level`(subdiv) | level | 1~4，各国深度不同 |
+| 类别 | `Category` | category | state/province/region/municipality… |
+| 译名 | `Name`(i18n) | name | geo_country_i18n / geo_subdivision_i18n：`(code, locale, name_type)` |
+
+关联表（均一对多）：`country_time_zone(tz_name, IANA)`、`country_currency(currency, is_primary, minor_unit)`、`country_calling_code(calling_code, E.164)`。
+
+`addresses` 国际化挂接（迁移 000038，path 权威不变）：`CountryID → country_code`（→ geo_country，空=历史数据未挂）、`AdminCode → admin_code`（→ geo_subdivision，一级行政区锚点）。
+
+
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |

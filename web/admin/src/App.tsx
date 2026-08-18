@@ -7,6 +7,7 @@ import LoginPage from './pages/login'
 import RegisterPage from './pages/register'
 import DashboardPage from './pages/dashboard'
 import AccountListPage from './pages/base/account'
+import GeoPage from './pages/base/geo'
 import { ForbiddenPage, NotFoundPage } from './pages/error'
 import { PlaceholderPage } from './pages/placeholder'
 import { MENU_GROUPS } from './router/menu.def'
@@ -21,6 +22,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (!canAccess(profile.roleCode, pageKey)) return <ForbiddenPage />
   if (pageKey === 'dashboard') return <DashboardPage profile={profile} />
   if (pageKey === 'account') return <AccountListPage />
+  if (pageKey === 'geo') return <GeoPage />
   return <PlaceholderPage title={label} />
 }
 

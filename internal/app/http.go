@@ -9,6 +9,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/resource"
@@ -30,9 +31,11 @@ func respondErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, user.ErrUnauthorized):
 		respond(c, apitypes.CodeUnauthorized, nil)
-	case errors.Is(err, user.ErrUsernameTaken):
+	case errors.Is(err, user.ErrUsernameTaken),
+		errors.Is(err, geo.ErrDuplicate):
 		respond(c, apitypes.CodeConflict, nil)
-	case errors.Is(err, user.ErrInvalidInput):
+	case errors.Is(err, user.ErrInvalidInput),
+		errors.Is(err, errGeoInvalidParam):
 		respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
@@ -40,6 +43,7 @@ func respondErr(c *gin.Context, err error) {
 		errors.Is(err, customer.ErrCustomerNotFound),
 		errors.Is(err, order.ErrOrderNotFound),
 		errors.Is(err, billing.ErrNotFound),
+		errors.Is(err, geo.ErrNotFound),
 		errors.Is(err, provision.ErrTaskNotFound),
 		errors.Is(err, worker.ErrNotFound):
 		respond(c, apitypes.CodeNotFound, nil)
@@ -162,6 +166,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerAssetRoutes(authed, a)
 	registerAaaRoutes(authed, a)
 	registerDeviceRoutes(authed, a)
+	registerGeoRoutes(authed, a)
 	registerGisRoutes(authed, a)
 	registerAnalyticsRoutes(authed, a)
 	registerReportRoutes(authed, a)

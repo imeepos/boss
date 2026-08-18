@@ -88,15 +88,75 @@ function onResizeStart(e: ReactPointerEvent<HTMLDivElement>, width: number, setW
   target.addEventListener('pointercancel', up)
 }
 
+// 自定义短滑块:高度取可视占比但封顶 80px,无溢出时不渲染;支持拖拽滚动
+function ScrollThumb({ nav }: { nav: HTMLElement | null }) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [drag, setDrag] = useState(false)
+  const [m, setM] = useState({ ratio: 1, pos: 0 })
+  useEffect(() => {
+    if (!nav) return
+    const update = () => {
+      const range = nav.scrollHeight - nav.clientHeight
+      setM(range > 0 ? { ratio: nav.clientHeight / nav.scrollHeight, pos: nav.scrollTop / range } : { ratio: 1, pos: 0 })
+    }
+    update()
+    nav.addEventListener('scroll', update)
+    const ro = new ResizeObserver(update)
+    ro.observe(nav)
+    return () => {
+      nav.removeEventListener('scroll', update)
+      ro.disconnect()
+    }
+  }, [nav])
+  if (m.ratio >= 1) return null
+  const thumbH = Math.min(80, m.ratio * 100)
+  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const track = trackRef.current
+    if (!track || !nav) return
+    e.preventDefault()
+    const startY = e.clientY
+    const startTop = nav.scrollTop
+    const range = nav.scrollHeight - nav.clientHeight
+    const pxPerTrack = track.clientHeight * (1 - thumbH / 100)
+    const target = e.currentTarget
+    target.setPointerCapture(e.pointerId)
+    const move = (ev: PointerEvent) => {
+      if (pxPerTrack > 0) nav.scrollTop = startTop + ((ev.clientY - startY) / pxPerTrack) * range
+    }
+    const up = () => {
+      target.removeEventListener('pointermove', move)
+      target.removeEventListener('pointerup', up)
+      target.removeEventListener('pointercancel', up)
+    }
+    target.addEventListener('pointermove', move)
+    target.addEventListener('pointerup', up)
+    target.addEventListener('pointercancel', up)
+  }
+  return (
+    <div ref={trackRef} className="shell-side-scrollbar">
+      <div
+        className={`shell-side-scrollbar-thumb${drag ? ' dragging' : ''}`}
+        style={{ height: `${thumbH}%`, top: `${m.pos * (100 - thumbH)}%` }}
+        onPointerDown={(e) => {
+          setDrag(true)
+          onDown(e)
+        }}
+        onPointerUp={() => setDrag(false)}
+        onPointerCancel={() => setDrag(false)}
+      />
+    </div>
+  )
+}
+
 export function Sidebar({ groups, collapsed, drawerOpen, onToggleCollapse, onCloseDrawer }: SidebarProps) {
   const t = useT()
-  const navRef = useRef<HTMLElement>(null)
+  const [navEl, setNavEl] = useState<HTMLElement | null>(null)
   const [width, setWidth] = useState(loadWidth)
   const [dragging, setDragging] = useState(false)
   const { pathname } = useLocation()
   useEffect(() => {
-    if (navRef.current) scrollActiveIntoView(navRef.current)
-  }, [pathname, collapsed, groups])
+    if (navEl) scrollActiveIntoView(navEl)
+  }, [pathname, collapsed, groups, navEl])
   const cls = [
     'shell-side',
     collapsed ? 'collapsed' : '',
@@ -109,11 +169,12 @@ export function Sidebar({ groups, collapsed, drawerOpen, onToggleCollapse, onClo
   }
   return (
     <aside className={cls} style={{ ['--side-w' as string]: `${width}px` }}>
-      <nav ref={navRef} className="shell-side-nav">
+      <nav ref={setNavEl} className="shell-side-nav">
         {groups.map((g) => (
           <SideGroup key={g.id} g={g} collapsed={collapsed} onNavigate={onCloseDrawer} />
         ))}
       </nav>
+      <ScrollThumb nav={navEl} />
       <div
         className="shell-side-resizer"
         onPointerDown={(e) => {

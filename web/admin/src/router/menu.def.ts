@@ -18,6 +18,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   { id: 'base', label: '基础配置', items: [
     { key: 'account', label: '账号与角色', path: '/base/account' },
     { key: 'address', label: '地址层级', path: '/base/address' },
+    { key: 'geo', label: '国家与行政区划', path: '/base/geo' },
     { key: 'params', label: '业务参数', path: '/base/params' },
     { key: 'audit', label: '审计日志', path: '/base/audit' },
     { key: 'importer', label: '数据导入中心', path: '/base/importer' },

@@ -19,3 +19,7 @@
 - 当在深色/彩色表面放 button 时，修复是显式写 color 不指望继承（span 继承、button/input/select 不继承，UA 默认 buttontext 黑），否则深底黑字不可见。skill 没提前警告我。
 - 当用户报"某主题下颜色不对"时，修复是同时检查全部主题同位置——本例深浅主题顶栏同为深色，深色主题其实同病只是未被注意。skill 没提前警告我。
 - 当模型不支持读图（read_image 报错）时，修复是跳过自动核验继续推进修复，改用 --eval getComputedStyle 做程序化颜色验证，最后总结列出"请人类目测"清单（用户明确指示）。skill 没提前警告我。
+- 当在新 bash 会话里跑 go/docker 等命令报 command not found 时，修复是先 `export PATH=/opt/homebrew/bin:$PATH`（brew 工具全在此），不要结论"工具没装"。skill 之前未警告。
+- 当给域 Service 接口（如 user.Service）追加方法时，修复是同一提交内同步补齐测试桩（fakeUser 等），编译错误清单就是桩清单。skill 没提前警告我。
+- 当初始化超管/首个账号时，修复是走「启动引导 + ON CONFLICT DO NOTHING」：密码只从环境变量注入、绝不写进迁移或种子文件、已存在不覆盖（防重启重置密码）。skill 没提前警告我。
+- 当部署 compose 需要密钥时，修复是 env_file 管 secrets（app.env 不入库，加 .gitignore），environment 段只留非密默认值；记住 compose 优先级 environment > env_file，要覆盖默认值得两处一起动。skill 没提前警告我。
