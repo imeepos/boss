@@ -70,6 +70,16 @@ func registerOrgRoutes(g *gin.RouterGroup, a *Application) {
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 
+	// 账号列表:基础配置 · 账号与角色页(全量,账号量级小不分页)。
+	g.GET("/accounts", requirePerm(a.User, "menu:account"), func(c *gin.Context) {
+		rows, err := a.User.ListAccounts(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, rows)
+	})
+
 	// 菜单权限矩阵:三层权限模型的菜单层(角色×menu:* 权限)。
 	g.GET("/menu-perms", requirePerm(a.User, "menu:menuperm"), func(c *gin.Context) {
 		m, err := a.User.ListMenuPermMatrix(c.Request.Context())

@@ -5,6 +5,8 @@
 > 补实现进展：首批 planned 路由已落地并逐路由配 http/存储测试——billing `POST /stop-resume-tasks/{taskId}/retry`、`GET /reconciliations`、`POST /reconciliations/{batchNo}/settle`；provision `POST /provision-tasks/{taskNo}/retry`；worker `PUT /workers/{workerId}/settings`、`GET/POST /notices`、`PUT /notices/{noticeId}/toggle`。对应 yaml 已去除 planned 标注；其余清单条目仍待实现。
 >
 > 第二批 planned 路由已落地并逐路由配 http/存储测试——auth `POST /auth/logout`；alarm `POST /alarms/batch-retest`（新表 alarm_retest_tasks，任务号 RT-YYYYMMDD-NNNN）；order dispatch 段 `GET /dispatch/pool`、`POST /dispatch/pool/{ticketNo}/assign`、`GET /dispatch/my-tickets`、`GET /dispatch/transfers`、`POST /dispatch/tickets/{ticketNo}/transfer`（复用 dispatch_tickets/dispatch_transfers，新增 AssignDispatchTicket）。对应 yaml 已去除 planned 标注；其余清单条目仍待实现。
+>
+> 第三批 planned 路由已落地并逐路由配 http/存储测试——org `POST /legal-entities`、`PUT /legal-entities/{legalEntityId}`、`GET /menu-perms`（角色×menu:* 权限矩阵，pg array_agg 聚合）；dashboard `GET /dashboard`（聚合订单/工单/告警/四码在库数据：统计卡 + 状态分布 + 待办 + 近7日趋势）。对应 yaml 已去除 planned 标注；其余清单条目仍待实现。
 
 复核范围：`api/openapi/admin*.yaml`（含 `api/openapi/admin/*.yaml`）与 `internal/app/http*.go`，逐路由比对路径/参数/envelope。**一切以代码为准**。复核方法：4 组并行 agent 逐路由比对 + 人工抽查关键证据行（均已验证）。
 

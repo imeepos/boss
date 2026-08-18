@@ -19,7 +19,6 @@ paths:
       tags: [Org]
       summary: 新建法人
       operationId: createLegalEntity
-      description: （未实现 planned）
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
@@ -29,7 +28,6 @@ paths:
       tags: [Org]
       summary: 编辑法人
       operationId: updateLegalEntity
-      description: （未实现 planned）
       parameters:
         - { name: legalEntityId, in: path, required: true, schema: { type: integer } }
       requestBody: { content: { application/json: { schema: { type: object } } } }
@@ -101,10 +99,7 @@ paths:
     get:
       tags: [Org]
       summary: 菜单权限矩阵(三层权限模型 + 角色×菜单组可见性)
-      description: |
-        未实现:Go 后端(internal/app)尚未提供本接口,前端 A0 不依赖;
-        菜单可见性暂由 /auth/me 的 roleCode 前端映射,待 /auth/menus 契约变更单落地后切换。
-        （未实现 planned）
+      description: 角色×menu:* 权限矩阵(data:{model:{layers[3]},matrix:{roleColumns,rows}})。
       operationId: getMenuPerms
       responses:
         '200':

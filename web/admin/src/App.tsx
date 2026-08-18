@@ -5,16 +5,18 @@ import { AuthGuard } from './layouts/AuthGuard'
 import { useProfile } from './layouts/profile'
 import LoginPage from './pages/login'
 import DashboardPage from './pages/dashboard'
+import AccountListPage from './pages/base/account'
 import { ForbiddenPage, NotFoundPage } from './pages/error'
 import { PlaceholderPage } from './pages/placeholder'
 import { MENU_GROUPS } from './router/menu.def'
 import { canAccess } from './router/role-menu'
 
-/** 菜单页:越权直访 403;dashboard 正式,其余占位(A1 起逐页替换)。 */
+/** 菜单页:越权直访 403;已接入页正式渲染,其余占位(A1 起逐页替换)。 */
 function MenuPage({ pageKey, label }: { pageKey: string; label: string }) {
   const profile = useProfile()
   if (!canAccess(profile.roleCode, pageKey)) return <ForbiddenPage />
   if (pageKey === 'dashboard') return <DashboardPage profile={profile} />
+  if (pageKey === 'account') return <AccountListPage />
   return <PlaceholderPage title={label} />
 }
 

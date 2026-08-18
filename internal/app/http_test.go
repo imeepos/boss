@@ -22,6 +22,7 @@ type fakeUser struct {
 	loginErr error
 	permOk   bool
 	entities []user.LegalEntity
+	accounts []user.AccountRow
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -37,6 +38,15 @@ func (f *fakeUser) ListRegions(context.Context, string) ([]user.Region, error)  
 func (f *fakeUser) ListLegalEntities(context.Context) ([]user.LegalEntity, error) {
 	return f.entities, nil
 }
+func (f *fakeUser) CreateLegalEntity(context.Context, user.LegalEntity) (int64, error) {
+	return 1, nil
+}
+func (f *fakeUser) UpdateLegalEntity(context.Context, int64, user.LegalEntity) error {
+	return nil
+}
+func (f *fakeUser) ListMenuPermMatrix(context.Context) (user.MenuPermMatrix, error) {
+	return user.MenuPermMatrix{}, nil
+}
 func (f *fakeUser) ListDepartments(context.Context, int64) ([]user.Department, error) {
 	return nil, nil
 }
@@ -46,6 +56,9 @@ func (f *fakeUser) GetDataScope(context.Context, int64) (user.DataScope, error) 
 }
 func (f *fakeUser) GetProfile(context.Context, int64) (*user.Profile, error) {
 	return &user.Profile{AccountID: 1, Username: "boss", RealName: "老板", RoleName: "系统管理员"}, nil
+}
+func (f *fakeUser) ListAccounts(context.Context) ([]user.AccountRow, error) {
+	return f.accounts, nil
 }
 
 func newTestRouter(f *fakeUser, mgr *auth.Manager) *gin.Engine {
