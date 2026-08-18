@@ -18,6 +18,7 @@ import PostPage from './pages/org/post'
 import RegionPage from './pages/org/region'
 import MenuPermPage from './pages/org/menuperm'
 import DataScopePage from './pages/org/datascope'
+import ApiKeyPage from './pages/org/apikey'
 import ProfilePage from './pages/profile'
 import { ForbiddenPage, NotFoundPage } from './pages/error'
 import { PlaceholderPage } from './pages/placeholder'
@@ -44,6 +45,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'region') return <RegionPage />
   if (pageKey === 'menuperm') return <MenuPermPage />
   if (pageKey === 'datascope') return <DataScopePage />
+  if (pageKey === 'apikey') return <ApiKeyPage />
   return <PlaceholderPage title={label} />
 }
 

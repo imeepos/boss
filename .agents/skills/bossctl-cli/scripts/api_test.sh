@@ -90,9 +90,9 @@ test_get "订单列表" "/orders"
 
 # ====== 派单 ======
 echo "[dispatch] 派单"
-test_get "任务池" "/pool"
-test_get "我的工单" "/my-tickets"
-test_get "转单列表" "/transfers"
+test_get "任务池" "/dispatch/pool"
+test_get "我的工单" "/dispatch/my-tickets"
+test_get "转单列表" "/dispatch/transfers"
 
 # ====== 工作台 ======
 echo "[dashboard] 工作台"
@@ -100,7 +100,7 @@ test_get "运营总览" "/dashboard"
 
 # ====== 计费 ======
 echo "[billing] 计费"
-test_get "出账查询" "/billing"
+test_get "出账查询" "/bills"
 test_get "缴费记录" "/payments"
 test_get "欠费列表" "/arrears"
 test_get "停复机任务" "/stop-resume-tasks"
@@ -153,7 +153,7 @@ test_get "行政区划" "/geo/subdivisions"
 
 # ====== GIS ======
 echo "[gis] GIS"
-test_get "GIS 下钻" "/gis/drill"
+test_get "GIS 下钻" "/gis/drill" "level=1"
 test_get "GIS 层级" "/gis/levels"
 
 # ====== 经营分析 ======
@@ -176,10 +176,21 @@ test_get "下发日志" "/provision-logs"
 # ====== 四码 ======
 echo "[quadlink] 四码"
 test_get "四码关联列表" "/quad-links"
-test_get "按资产查询" "/quad-links/by-asset"
-test_get "按客户查询" "/quad-links/by-customer"
-test_get "按端口查询" "/quad-links/by-port"
-test_get "按地址查询" "/quad-links/by-address"
+# by-X 查询必须带 ID,缺失时应返回 422 参数非法(修复前返回 500 内部错误)
+test_quadlink_missing_param() {
+  local desc="$1" path="$2"
+  local result
+  result=$($BOSS --server "$SERVER" $AUTH call GET "$path" 2>&1)
+  if echo "$result" | grep -q "code=42200"; then
+    ok "$desc 缺失参数正确返回422"
+  else
+    fail "$desc 缺失参数: $result"
+  fi
+}
+test_quadlink_missing_param "按资产查询缺参" "/quad-links/by-asset"
+test_quadlink_missing_param "按客户查询缺参" "/quad-links/by-customer"
+test_quadlink_missing_param "按端口查询缺参" "/quad-links/by-port"
+test_quadlink_missing_param "按地址查询缺参" "/quad-links/by-address"
 
 # ====== 施工 ======
 echo "[worker] 施工"

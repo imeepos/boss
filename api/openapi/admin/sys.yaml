@@ -249,6 +249,67 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /api-keys:
+    get:
+      tags: [Sys]
+      summary: API key 清单(permCode menu:apikey;明文永不返回)
+      operationId: listApiKeys
+      responses:
+        '200':
+          description: data.items 为元数据数组(keyPrefix 前 8 位识别)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/APIKey' }
+    post:
+      tags: [Sys]
+      summary: 签发 API key(permCode menu:apikey;plainKey 仅此一次返回)
+      operationId: createApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountId, name]
+              properties:
+                accountId: { type: integer, description: 目标账号须存在且启用 }
+                name: { type: string, description: 用途说明,如 ci-pipeline-01 }
+      responses:
+        '200':
+          description: 签发成功(data.plainKey 明文仅此一次)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      accountId: { type: integer }
+                      name: { type: string }
+                      plainKey: { type: string, example: boss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx }
+
+  /api-keys/{id}:
+    delete:
+      tags: [Sys]
+      summary: 吊销 API key(软删,status=0;permCode menu:apikey)
+      operationId: revokeApiKey
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
 components:
   schemas:
     AccountRow:
@@ -294,3 +355,16 @@ components:
         detail: { type: string, description: JSON 文本 }
         ip: { type: string }
         createdAt: { type: string, format: date-time }
+    APIKey:
+      type: object
+      description: API key 元数据(internal/domain/apikey;明文永不出现)
+      properties:
+        id: { type: integer }
+        accountId: { type: integer }
+        accountName: { type: string }
+        name: { type: string, description: 用途说明 }
+        keyPrefix: { type: string, description: 密钥前 8 位 }
+        status: { type: integer, description: 1启用 0吊销 }
+        lastUsedAt: { type: string, description: ISO8601,空=从未使用 }
+        expiresAt: { type: string, description: ISO8601,空=永不过期 }
+        createdAt: { type: string }

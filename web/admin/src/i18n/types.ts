@@ -272,6 +272,27 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    apikey: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      columns: string[]
+      create: string
+      createTitle: string
+      saveFail: string
+      loadFail: string
+      fAccount: string
+      pAccount: string
+      fName: string
+      pName: string
+      eName: string
+      active: string
+      revoked: string
+      neverUsed: string
+      revoke: string
+      revokeConfirm: string
+      plainOnce: string
+    },
     region: {
       title: string
       desc: string

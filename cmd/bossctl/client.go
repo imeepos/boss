@@ -116,8 +116,17 @@ func (c *CLI) do(method, path string, data any, query map[string]string) (*apiRe
 		return nil, fmt.Errorf("read body: %w", err)
 	}
 
+	// 非 JSON 响应(如 404 HTML 页面)返回清晰错误
+	if resp.StatusCode != http.StatusOK && !isJSON(respBody) {
+		return nil, fmt.Errorf("服务器返回 %d (非 JSON 响应,可能路径不存在)", resp.StatusCode)
+	}
+
 	var ar apiResp
 	if err := json.Unmarshal(respBody, &ar); err != nil {
+		// 非 JSON = 路由不存在(如 Gin 的 404 HTML)
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, fmt.Errorf("404: 路径不存在(检查 bossctl routes 或 --server 地址)")
+		}
 		return nil, fmt.Errorf("parse response: %s: %w", string(respBody), err)
 	}
 	return &ar, nil

@@ -30,6 +30,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'region', label: '经营区域', path: '/org/region' },
     { key: 'menuperm', label: '菜单权限', path: '/org/menuperm' },
     { key: 'datascope', label: '数据权限', path: '/org/datascope' },
+    { key: 'apikey', label: 'API Key', path: '/org/apikey' },
   ]},
   { id: 'bss', label: '客户与资费', items: [
     { key: 'customer', label: '客户档案', path: '/bss/customer' },

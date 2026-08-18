@@ -42,15 +42,15 @@ var routeCatalog = []routeEntry{
 	{"POST", "/orders", "新建订单"},
 	{"GET", "/orders/:orderNo", "订单详情"},
 	// dispatch 派单
-	{"GET", "/pool", "任务池"},
-	{"POST", "/pool/:ticketNo/assign", "领取任务"},
-	{"GET", "/my-tickets", "我的工单"},
-	{"GET", "/transfers", "转单列表"},
-	{"POST", "/tickets/:ticketNo/transfer", "转单"},
+	{"GET", "/dispatch/pool", "任务池"},
+	{"POST", "/dispatch/pool/:ticketNo/assign", "领取任务"},
+	{"GET", "/dispatch/my-tickets", "我的工单"},
+	{"GET", "/dispatch/transfers", "转单列表(派单)"},
+	{"POST", "/dispatch/tickets/:ticketNo/transfer", "转单"},
 	// dashboard 工作台
 	{"GET", "/dashboard", "运营总览"},
 	// billing 计费
-	{"GET", "/billing", "出账查询"},
+	{"GET", "/bills", "出账查询"},
 	{"GET", "/payments", "缴费记录"},
 	{"GET", "/arrears", "欠费列表"},
 	{"GET", "/stop-resume-tasks", "停复机任务"},

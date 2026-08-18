@@ -54,7 +54,8 @@ function detailSummary(detail: string): string {
   }
 }
 
-function formatTime(iso: string): string {
+/** ISO 时间 → 展示文本(YYYY-MM-DD HH:mm:ss,去时区尾巴)。 */
+export function formatTime(iso: string): string {
   if (!iso) return ''
   return iso.replace('T', ' ').replace(/(\.\d+|Z|[+-]\d{2}:\d{2})$/, '')
 }

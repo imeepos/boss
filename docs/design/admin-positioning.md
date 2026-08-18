@@ -57,7 +57,7 @@ admin 的"客户"是**企业内部人员**——装维师傅、客服坐席、�
 
 | 场景 | 求助人 | admin 能力 | 页面 | 端点 | 现状 |
 |:--|:--|:--|:--|:--|:--|
-| 内部系统要 API 免登对接 | 网络运维/开发 | API key 签发/吊销（bossctl 即消费者） | —（无页面） | GET/POST /api-keys、revoke | **缺口：后端已上线，admin 无管理页面** |
+| 内部系统要 API 免登对接 | 网络运维/开发 | API key 签发/吊销（bossctl 即消费者） | org/apikey | GET/POST /api-keys、DELETE /:id | 已上线（签发/吊销/明文一次展示） |
 
 ## 3. 明确不属于 admin 的
 
@@ -70,7 +70,7 @@ admin 的"客户"是**企业内部人员**——装维师傅、客服坐席、�
 
 1. ~~P0 审计日志后端~~ 已上线（V1.0 轮）。
 2. ~~P0 业务参数后端~~ 已上线（V1.0 轮）。
-3. **P1 API key 管理页**——后端齐备（/api-keys GET/POST/revoke），补 admin 页面。
+3. ~~P1 API key 管理页~~ 已上线（org/apikey）。
 4. P2 导入任务清单 `GET /import-tasks`（客户/端口/资产批量导入）。
 
 ## 5. 使用规则

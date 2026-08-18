@@ -102,6 +102,28 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
 
+	// 下发站内消息(即时出现在师傅端消息中心,worker.yaml POST /worker-messages)。
+	g.POST("/worker-messages", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
+		var req sendWorkerMessageReq
+		if err := c.ShouldBindJSON(&req); err != nil || req.Title == "" {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		level := req.Level
+		if level == "" {
+			level = "INFO"
+		}
+		id, err := a.WorkerLedger.SendMessage(c.Request.Context(), worker.Message{
+			WorkerID: req.WorkerID, Level: level, Title: req.Title, Content: req.Content,
+		})
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "worker_message.send", "worker_message", strconv.FormatInt(id, 10), nil)
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	})
+
 	// 修改接单设置(在线/半径/接单类型),师傅1:1 即时生效(worker.yaml /workers/{id}/settings)。
 	g.PUT("/workers/:workerId/settings", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
 		workerID, _ := strconv.ParseInt(c.Param("workerId"), 10, 64)
@@ -172,4 +194,12 @@ type workerSettingsReq struct {
 type publishNoticeReq struct {
 	Title    string `json:"title" binding:"required"`
 	Category string `json:"category"`
+}
+
+// sendWorkerMessageReq 下发师傅消息请求体(title 必填;workerId=0 为全员广播语义由端上解释)。
+type sendWorkerMessageReq struct {
+	WorkerID int64  `json:"workerId"`
+	Level    string `json:"level"` // INFO/WARN/URGENT,空取 INFO
+	Title    string `json:"title" binding:"required"`
+	Content  string `json:"content"`
 }

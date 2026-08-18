@@ -78,6 +78,8 @@ paths:
   /departments/{deptId}: { $ref: './admin/org.yaml#/paths/~1departments~1{deptId}' }
   /posts: { $ref: './admin/org.yaml#/paths/~1posts' }
   /posts/{postId}: { $ref: './admin/org.yaml#/paths/~1posts~1{postId}' }
+  /api-keys: { $ref: './admin/sys.yaml#/paths/~1api-keys' }
+  /api-keys/{id}: { $ref: './admin/sys.yaml#/paths/~1api-keys~1{id}' }
   /regions: { $ref: './admin/org.yaml#/paths/~1regions' }
   /menu-perms: { $ref: './admin/org.yaml#/paths/~1menu-perms' }
   /data-scopes: { $ref: './admin/org.yaml#/paths/~1data-scopes' }
