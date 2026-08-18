@@ -19,6 +19,13 @@ jobs:
       - name: Build image
         run: docker build -f deployments/docker/server.Dockerfile -t 192.168.0.102:5000/boss/server:${GITHUB_SHA} -t 192.168.0.102:5000/boss/server:latest .
 
+      - name: Registry login
+        run: |
+          echo "${REG_PASS}" | docker login 192.168.0.102:5000 -u "${REG_USER}" --password-stdin
+        env:
+          REG_USER: ${{ secrets.REG_USER }}
+          REG_PASS: ${{ secrets.REG_PASS }}
+
       - name: Push image
         run: docker push 192.168.0.102:5000/boss/server:${GITHUB_SHA} && docker push 192.168.0.102:5000/boss/server:latest
 
