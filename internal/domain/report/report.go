@@ -42,6 +42,7 @@ type Store interface {
 type ReportService struct {
 	Ana analytics.AnalyticsService
 	St  Store
+	Nt  Notifier // 推送通道(可空,空则 Push 返回 ErrNoNotifier)
 }
 
 // Generate 生成一个周期的报告快照(幂等:同窗口覆盖)。

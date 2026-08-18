@@ -68,8 +68,9 @@ type Config struct {
 	}
 	// Report(阶段9 自动报告)。
 	Report struct {
-		Period   string        // daily/weekly/monthly/quarterly
-		Interval time.Duration // 生成巡检周期
+		Period    string        // daily/weekly/monthly/quarterly
+		Interval  time.Duration // 生成巡检周期
+		PushTopic string        // 快照推送 Kafka topic
 	}
 }
 
@@ -113,6 +114,7 @@ func Load() *Config {
 	c.Analytics.PortUnitCost = getfloat("BOSS_PORT_UNIT_COST", 800)
 
 	c.Report.Period = getenv("BOSS_REPORT_PERIOD", "daily")
+	c.Report.PushTopic = getenv("BOSS_REPORT_PUSH_TOPIC", "boss-report-snapshots")
 	c.Report.Interval = 6 * time.Hour
 	return c
 }
