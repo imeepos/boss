@@ -201,7 +201,7 @@ func (s *PGStore) ListAddresses(ctx context.Context, parentID int64) ([]Address,
 		       COALESCE(r.country_code, ''), COALESCE(r.admin_code, '')
 		FROM addresses a
 		JOIN addresses r ON r.path = subpath(a.path, 0, 1)
-		WHERE ($1 = 0 OR a.parent_id = $1)
+		WHERE CASE WHEN $1 = 0 THEN a.parent_id IS NULL ELSE a.parent_id = $1 END
 		ORDER BY a.path`, parentID)
 	if err != nil {
 		return nil, fmt.Errorf("user: list addresses: %w", err)

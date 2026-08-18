@@ -10,7 +10,8 @@ import '../geo/geo.css'
 
 export interface AddressRow {
   id: number
-  parentId: number
+  parentId?: number | null
+  path?: string
   level: number
   name: string
   countryCode: string

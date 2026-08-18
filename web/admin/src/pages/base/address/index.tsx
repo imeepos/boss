@@ -33,7 +33,7 @@ export default function AddressPage() {
   const loadRoots = useCallback(() => {
     const q = unlinked === '1' ? 'unlinked=1' : 'parentId=0'
     apiFetch<AddressRow[]>(`/addresses?${q}`)
-      .then((d) => { setRoots(d ?? []); setChildrenOf({}); setExpanded(new Set()) })
+      .then((d) => { setRoots(filterTopLevel(d ?? [])); setChildrenOf({}); setExpanded(new Set()) })
       .catch(() => setError(a.loadFail))
   }, [unlinked, a])
   useEffect(loadRoots, [loadRoots])
@@ -193,6 +193,20 @@ function AddressTree({ rows, childrenOf, expanded, depth, countryName, keyword,
 }
 
 // filterRows 本地关键字过滤(递归):命中节点保留整棵子树;未命中但已加载子孙命中则保留自身作路径。
+function filterTopLevel(rows: AddressRow[]): AddressRow[] {
+  const ids = new Set(rows.map((r) => r.id))
+  return rows.filter((r) => !hasParentInRows(r, ids, rows))
+}
+
+function hasParentInRows(row: AddressRow, ids: Set<number>, rows: AddressRow[]): boolean {
+  if (row.parentId != null) return ids.has(row.parentId)
+  if (!row.path) return false
+  const parts = row.path.split('.')
+  if (parts.length < 2) return false
+  const parentPath = parts.slice(0, -1).join('.')
+  return rows.some((candidate) => candidate.path === parentPath)
+}
+
 function filterRows(rows: AddressRow[], kw: string, childrenOf: Record<number, AddressRow[]>): AddressRow[] {
   if (!kw) return rows
   const k = kw.toLowerCase()
