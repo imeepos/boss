@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
+import { Pagination } from '../../../components/Pagination'
 import { CountryForm, type CountryRow, EMPTY } from './CountryForm'
 import { CountryDetail, type CountryDetailData } from './CountryDetail'
 import './geo.css'
@@ -11,10 +13,15 @@ export function CountryPanel() {
   const g = t.pages.geo
   const [rows, setRows] = useState<CountryRow[]>([])
   const [error, setError] = useState('')
-  const [keyword, setKeyword] = useState('')
+  const [keyword, setKeyword] = useQueryState('kw', '')
+  const [page, setPage] = useQueryInt('page', 1)
+  const [pageSize, setPageSize] = useQueryInt('size', 20)
   const [form, setForm] = useState<CountryRow | null>(null)
   const [editing, setEditing] = useState(false)
   const [detail, setDetail] = useState<CountryDetailData | null>(null)
+
+  const search = (v: string) => { setKeyword(v); setPage(1) }
+  const resize = (v: number) => { setPageSize(v); setPage(1) }
 
   const load = useCallback(() => {
     apiFetch<CountryRow[]>('/geo/countries')
@@ -43,6 +50,9 @@ export function CountryPanel() {
     ? rows.filter((r) =>
         [r.alpha2, r.alpha3, r.shortName, r.displayName].some((s) => s.toLowerCase().includes(kw)))
     : rows
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, pageCount)
+  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   return (
     <div className="geo-card">
@@ -53,16 +63,20 @@ export function CountryPanel() {
           style={{ width: 240 }}
           placeholder={g.searchPlaceholder}
           value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
+          onChange={(e) => search(e.target.value)}
         />
         <div className="spacer" />
         <button className="geo-btn geo-btn-primary" onClick={() => { setForm({ ...EMPTY }); setEditing(false) }}>
           + {g.add}
         </button>
       </div>
-      <CountryTable rows={filtered} onEdit={(r) => { setForm({ ...r }); setEditing(true) }}
+      <CountryTable rows={paged} onEdit={(r) => { setForm({ ...r }); setEditing(true) }}
         onToggle={toggle} onDetail={openDetail} />
-      <div className="geo-footer">{g.total.replace('{count}', String(filtered.length))}</div>
+      <div className="geo-footer">
+        <Pagination page={safePage} pageSize={pageSize} total={filtered.length}
+          onPage={setPage} onSize={resize} totalText={g.total}
+          prevText={g.prev} nextText={g.next} perPageText={g.perPage} />
+      </div>
       {form && <CountryForm initial={form} editing={editing}
         onDone={() => { setForm(null); load() }} onCancel={() => setForm(null)} />}
       {detail && (

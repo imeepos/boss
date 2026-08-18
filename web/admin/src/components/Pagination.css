@@ -1,0 +1,24 @@
+/* 分页条:与卡片化页脚对齐。 */
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 2px;
+  font-size: 13px;
+}
+.pager-info { color: var(--shell-group-title, #888); }
+.pager-size select {
+  padding: 3px 6px;
+  border: 1px solid var(--shell-border, #d9d9d9);
+  border-radius: 4px;
+  background: var(--shell-bg, #fff);
+}
+.pager-btn {
+  padding: 3px 10px;
+  border: 1px solid var(--shell-border, #d9d9d9);
+  border-radius: 4px;
+  background: var(--shell-bg, #fff);
+  cursor: pointer;
+}
+.pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.pager-page { min-width: 52px; text-align: center; }

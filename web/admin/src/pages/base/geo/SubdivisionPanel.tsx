@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { Pagination } from '../../../components/Pagination'
+import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
 import { StatusTag } from './CountryPanel'
 import type { CountryRow } from './CountryForm'
 import './geo.css'
@@ -30,13 +32,19 @@ export function SubdivisionPanel() {
   const t = useT()
   const g = t.pages.geo
   const [countries, setCountries] = useState<CountryRow[]>([])
-  const [country, setCountry] = useState('')
+  const [country, setCountry] = useQueryState('country', '')
   const [rows, setRows] = useState<SubdivRow[]>([])
   const [error, setError] = useState('')
-  const [keyword, setKeyword] = useState('')
+  const [keyword, setKeyword] = useQueryState('kw', '')
+  const [page, setPage] = useQueryInt('page', 1)
+  const [pageSize, setPageSize] = useQueryInt('size', 20)
   const [form, setForm] = useState<SubdivRow | null>(null)
   const [editing, setEditing] = useState(false)
   const [namesOf, setNamesOf] = useState<string | null>(null)
+
+  const filterCountry = (v: string) => { setCountry(v); setPage(1) }
+  const search = (v: string) => { setKeyword(v); setPage(1) }
+  const resize = (v: number) => { setPageSize(v); setPage(1) }
 
   useEffect(() => {
     apiFetch<CountryRow[]>('/geo/countries')
@@ -63,29 +71,36 @@ export function SubdivisionPanel() {
   const filtered = kw
     ? rows.filter((r) => [r.code, r.category, r.displayName].some((s) => s.toLowerCase().includes(kw)))
     : rows
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, pageCount)
+  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   return (
     <div className="geo-card">
       {error && <div className="geo-error" role="alert">{error}</div>}
       <div className="geo-toolbar">
         <select className="geo-select" style={{ width: 180 }} value={country}
-          onChange={(e) => setCountry(e.target.value)}>
+          onChange={(e) => filterCountry(e.target.value)}>
           <option value="">{g.filterCountry}</option>
           {countries.map((c) => (
             <option key={c.alpha2} value={c.alpha2}>{c.alpha2} {c.displayName}</option>
           ))}
         </select>
         <input className="geo-input" style={{ width: 200 }} placeholder={g.searchPlaceholder}
-          value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+          value={keyword} onChange={(e) => search(e.target.value)} />
         <div className="spacer" />
         <button className="geo-btn geo-btn-primary"
           onClick={() => { setForm({ ...EMPTY, countryCode: country }); setEditing(false) }}>
           + {g.add}
         </button>
       </div>
-      <SubdivTable rows={filtered} onEdit={(r) => { setForm({ ...r }); setEditing(true) }}
+      <SubdivTable rows={paged} onEdit={(r) => { setForm({ ...r }); setEditing(true) }}
         onToggle={toggle} onNames={(code) => setNamesOf(namesOf === code ? null : code)} />
-      <div className="geo-footer">{g.total.replace('{count}', String(filtered.length))}</div>
+      <div className="geo-footer">
+        <Pagination page={safePage} pageSize={pageSize} total={filtered.length}
+          onPage={setPage} onSize={resize} totalText={g.total}
+          prevText={g.prev} nextText={g.next} perPageText={g.perPage} />
+      </div>
       {form && <SubdivForm initial={form} editing={editing} country={country}
         onDone={() => { setForm(null); load() }} onCancel={() => setForm(null)} />}
       {namesOf && <SubdivNames code={namesOf} onClose={() => setNamesOf(null)} />}
@@ -156,11 +171,12 @@ function SubdivForm({ initial, editing, country, onDone, onCancel }: {
     }
   }
 
-  const texts: [keyof SubdivRow, string, boolean][] = [
-    ['code', 'ISO 3166-2 code', true],
-    ['countryCode', 'country (alpha-2)', true],
-    ['parentCode', 'parent code', false],
-    ['category', 'category', true],
+  // 字段标签来自 i18n geo.subdivFields。
+  const texts: [keyof typeof g.subdivFields, boolean][] = [
+    ['code', true],
+    ['countryCode', true],
+    ['parentCode', false],
+    ['category', true],
   ]
 
   return (
@@ -173,20 +189,20 @@ function SubdivForm({ initial, editing, country, onDone, onCancel }: {
         </>
       }>
       <div className="geo-form">
-        {texts.map(([k, label, req]) => (
+        {texts.map(([k, req]) => (
           <div key={k} className="geo-field full">
-            <label>{req && <span className="req">*</span>}{label}</label>
+            <label>{req && <span className="req">*</span>}{g.subdivFields[k]}</label>
             <input className="geo-input" disabled={editing && k === 'code'}
               value={form[k] as string}
               onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
           </div>
         ))}
-        <NumField label="level (1-4)" value={form.level}
+        <NumField label={g.subdivFields.level} value={form.level}
           onChange={(v) => setForm({ ...form, level: v })} />
-        <NumField label="osm_admin_level (2-10)" value={form.osmAdminLevel}
+        <NumField label={g.subdivFields.osmAdminLevel} value={form.osmAdminLevel}
           onChange={(v) => setForm({ ...form, osmAdminLevel: v })} />
         <div className="geo-field full">
-          <label>geonameid</label>
+          <label>{g.subdivFields.geonameId}</label>
           <input className="geo-input" type="number" value={form.geonameId}
             onChange={(e) => setForm({ ...form, geonameId: Number(e.target.value) })} />
         </div>

@@ -90,12 +90,35 @@ export interface Translations {
       filterCountry: string
       searchPlaceholder: string
       empty: string
+      prev: string
+      next: string
+      perPage: string
       names: string
       addName: string
       attrs: string
       timeZones: string
       currencies: string
       callingCodes: string
+      countryFields: {
+        alpha2: string
+        alpha3: string
+        numericCode: string
+        shortName: string
+        fullName: string
+        m49Region: string
+        postalRegex: string
+        continent: string
+        status: string
+      }
+      subdivFields: {
+        code: string
+        countryCode: string
+        parentCode: string
+        category: string
+        level: string
+        osmAdminLevel: string
+        geonameId: string
+      }
     }
     account: {
       title: string
