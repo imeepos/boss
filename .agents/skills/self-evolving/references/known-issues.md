@@ -109,3 +109,10 @@
 - 原因:e2e_pg_integration_test / analytics / gis 三个集成测试经 BOSS_PG_TEST_DSN 指向共享库且无自清理,每跑一次留一批时间戳后缀数据。
 - 修法:已全量清理(按 FK 依赖序);三个测试均已补自清理(e2e 走 t.Cleanup 模式匹配 ^(e2e|w8)[0-9]+$,analytics/gis 走 defer);已实证跑 e2e 后残留为 0。
 - 余险:今后若再把 BOSS_PG_TEST_DSN 指向共享库,自清理是唯一防线;建议测试用独立库。
+
+## pgx 可空列缺 COALESCE → Scan(&int16) 报错 → 500 内部错误(2026-08-18 geo/subdivisions)
+
+- 症状:GET /api/v1/geo/subdivisions 返回 `{"code":50000,"msg":"内部错误"}`，库里已有种子数据（osm_admin_level 非空），但其他场景下该字段为 NULL 时触发。
+- 原因:ListSubdivisions 的 SELECT 写 `d.osm_admin_level` 而未用 COALESCE，该列在 DB 定义为 SMALLINT（可空，无 NOT NULL 约束）。pgx 的 `Scan(&int16)` 遇到 NULL 值直接报错，该错误不属于 `ErrNoRows`/`ErrDuplicate` 等已知类型，落入 `respondErr` 的 `default` 分支返回 500。
+- 修法:把 `d.osm_admin_level` 改为 `COALESCE(d.osm_admin_level,0)`。同文件的 `GetSubdivision` 已经正确使用了 COALESCE，属于同一函数的遗漏。
+- 检视:排查 Go API 500 时，先看 SQL SELECT 的 nullable 列（SMALLINT/INTEGER/BIGINT 且无 NOT NULL）有没有 COALESCE 包裹——这是 pgx 最常被遗漏的扫描保护。

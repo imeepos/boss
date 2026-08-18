@@ -63,3 +63,4 @@
 - 当按精确后缀清理测试数据总有残留时,原因是同一测试的子场景常自造独立后缀(e2e 的 W8 用 orderNo6() 另起一个);修复是按测试专用命名模式匹配(^(e2e|w8)[0-9]+$),顺带覆盖历史残留。
 - 当 edit 工具修改后出现重复函数头/两行并一行时,原因是 new_string 与 old_string 范围不对称(顺手带了函数头/只删换行的 no-op);修复是 new_string 严格镜像 old_string 的边界,改完立刻 build。
 - 当怀疑库里是测试垃圾数据时,先确认迁移无种子(grep INSERT),再按 path 前缀分组+created_at 对到具体测试文件,最后查 pg_constraint 依赖图定删除顺序;共享库被集成测试污染的入口几乎都是 BOSS_PG_TEST_DSN 指向了共享库。
+- 当 Go API 返回 500 内部错误、且已确认非权限/参数问题（调用链走到 PG 实现层）时，第一步查 SQL SELECT 的 nullable 列有没有 COALESCE 包裹——pgx 的 `Scan(&int16)` 遇到 NULL 列会直接报错，不属于 `ErrNoRows` 等已知错误类型，落入 `respondErr` 的 `default` 分支返回 500。`GetSubdivision` 已正确使用 `COALESCE(osm_admin_level,0)`，但 `ListSubdivisions` 遗漏了。skill 没提前警告我。

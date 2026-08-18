@@ -276,6 +276,18 @@ lessons 里已有"编辑文件一律先 Read 工具,不用 bash cat 代替"这�
 - "信息一定要真实"类数据任务:先看数据集的新旧口径标志(ARMM vs BARMM、省数 81 vs 82),再对照官方口径数字,不用第一个搜到的镜像。
 - 迁移可回滚性用"单事务 down→up 回环"验证:stripTx 去掉文件内 BEGIN/COMMIT,外层起事务跑完两个文件再 commit,对共享库零风险。
 
+## 2026-08-18 · geo/subdivisions 500 修复：pgx 可空列缺 COALESCE 导致扫描报错
+
+**哪个坑浪费了最多时间？**
+没有大坑。唯一的弯路是首先在 server-ts（TypeScript 实体层）里搜 "subdivisions"，结果当然是空的——后端是 Go，路由在 `internal/app/http_geo.go`，SQL 实现层在 `internal/domain/geo/pg_subdiv.go`。从 curl 报错 → 路由 → 调用链 → 查 SQL 实现，这条路本身是对的，但第一轮 grep 偏向了 TS 层（因为刚做过前端任务），浪费了约 1 分钟。
+
+**这个 skill 有没有提前警告我？**
+没有。这属于"pgx 可空列扫描"的专门坑：`SELECT d.osm_admin_level` 返回 NULL（SMALLINT 可空），`Scan(&int16)` 直接报错，因为 pgx 的 zero-value 约定只适用于 `*int16` 指针，不适用于 `int16` 值类型。`GetSubdivision` 已正确用 `COALESCE(osm_admin_level,0)`，`ListSubdivisions` 遗漏了。
+
+**重来一次我会怎么做？**
+- 排查 Go API 500 时，先看 SQL SELECT 的 nullable 列有没有 COALESCE 包裹——这是 pgx 最常见的扫描错之一。
+- 如果 `GEO` 是 Go 后端，第一轮 grep 就限定 `internal/` 目录，不先搜 server-ts。
+
 ## 2026-08-19 地址层级锚点闭环 + 共享库垃圾数据溯源反思
 
 **哪个坑浪费了最多时间?**
