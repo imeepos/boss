@@ -30,6 +30,7 @@ type Query struct {
 type Entry struct {
 	ID         int64     `json:"id"`
 	AccountID  int64     `json:"accountId"`
+	Operator   string    `json:"operator"` // 操作人姓名(账号联查快照)
 	Action     string    `json:"action"`
 	TargetType string    `json:"targetType"`
 	TargetID   string    `json:"targetId"`

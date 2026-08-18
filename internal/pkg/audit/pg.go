@@ -46,19 +46,22 @@ func (w *PGWriter) Write(ctx context.Context, e Event) error {
 	return nil
 }
 
-// List 查询审计;按人/时间/类型过滤 + 分页(按 created_at 倒序)。
+// List 查询审计;按人/时间/类型过滤 + 分页(按 created_at 倒序);联出操作人姓名。
 func (w *PGWriter) List(ctx context.Context, q Query) ([]Entry, error) {
 	limit := q.Limit
 	if limit <= 0 {
 		limit = 1 << 30
 	}
 	rows, err := w.db.Query(ctx, `
-		SELECT id, account_id, action, target_type, COALESCE(target_id, ''), detail::text, COALESCE(ip::text, ''), created_at
-		FROM audit_logs
-		WHERE ($1 = 0 OR account_id = $1)
-		  AND ($2 = '' OR action = $2)
-		  AND ($3 = '' OR target_type = $3)
-		ORDER BY created_at DESC
+		SELECT l.id, l.account_id, l.action, l.target_type, COALESCE(l.target_id, ''),
+		       l.detail::text, COALESCE(l.ip::text, ''), l.created_at,
+		       COALESCE(a.real_name, '')
+		FROM audit_logs l
+		LEFT JOIN accounts a ON a.id = l.account_id
+		WHERE ($1 = 0 OR l.account_id = $1)
+		  AND ($2 = '' OR l.action = $2)
+		  AND ($3 = '' OR l.target_type = $3)
+		ORDER BY l.created_at DESC
 		LIMIT $4 OFFSET $5`,
 		q.AccountID, q.Action, q.TargetType, limit, q.Offset)
 	if err != nil {
@@ -68,7 +71,7 @@ func (w *PGWriter) List(ctx context.Context, q Query) ([]Entry, error) {
 	out := make([]Entry, 0)
 	for rows.Next() {
 		var en Entry
-		if err := rows.Scan(&en.ID, &en.AccountID, &en.Action, &en.TargetType, &en.TargetID, &en.Detail, &en.IP, &en.CreatedAt); err != nil {
+		if err := rows.Scan(&en.ID, &en.AccountID, &en.Action, &en.TargetType, &en.TargetID, &en.Detail, &en.IP, &en.CreatedAt, &en.Operator); err != nil {
 			return nil, fmt.Errorf("audit: scan: %w", err)
 		}
 		out = append(out, en)

@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { filterParams, type BizParam } from './logic'
+import { filterParams, paramLabel, type BizParam } from './logic'
 import './params.css'
 
 export default function ParamsPage() {
@@ -20,10 +20,11 @@ export default function ParamsPage() {
 
   const load = () => {
     setError('')
-    apiFetch<BizParam[]>('/params')
+    apiFetch<{ items: BizParam[] }>('/params')
       .then((d) => {
-        setOrigin(d ?? [])
-        setDraft(Object.fromEntries((d ?? []).map((p) => [p.key, p.value])))
+        const items = d?.items ?? []
+        setOrigin(items)
+        setDraft(Object.fromEntries(items.map((p) => [p.key, p.value])))
       })
       .catch((e) => setError(e instanceof Error ? e.message : t.pages.params.loadFail))
   }
@@ -90,7 +91,7 @@ export default function ParamsPage() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.key}>
-                  <td>{r.label}</td>
+                  <td>{paramLabel(r)}</td>
                   <td>
                     <input
                       className="ctl"
@@ -121,7 +122,7 @@ export default function ParamsPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>{t.pages.params.detailTitle}</h3>
             <dl>
-              <dt>{t.pages.params.colName}</dt><dd>{detailRow.label}</dd>
+              <dt>{t.pages.params.colName}</dt><dd>{paramLabel(detailRow)}</dd>
               <dt>Key</dt><dd>{detailRow.key}</dd>
               <dt>{t.pages.params.currentValue}</dt><dd>{draft[detailRow.key]}</dd>
               <dt>{t.pages.params.originValue}</dt><dd>{detailRow.value}</dd>

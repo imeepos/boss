@@ -1,5 +1,6 @@
-# 对齐说明(V1.2):Go 后端已实现 /accounts(GET/POST)、/accounts/{id}(PUT)、/roles(均 permCode menu:account)
-# 与 /addresses(系列);/params /audit-logs /import-tasks 尚未实现,前端消费前需确认后端交付。
+# 对齐说明(V1.3):Go 后端已实现 /accounts(GET/POST)、/accounts/{id}(PUT)、/roles(均 menu:account)、
+# /params(GET/PUT,menu:params)、/audit-logs(GET,menu:audit,items+operator 联查)与 /addresses(系列);
+# /import-tasks 尚未实现,前端消费前需确认后端交付。
 paths:
   /accounts:
     get:
@@ -146,15 +147,32 @@ paths:
   /params:
     get:
       tags: [Sys]
-      summary: 业务参数列表（未实现 planned）
+      summary: 业务参数清单(permCode menu:params;data.items=[{key,value,desc}])
       operationId: listParams
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
-
+        '200':
+          description: 全量业务参数(biz_params 表)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key: { type: string }
+                            value: { type: string, description: 标量文本(JSONB 去引号) }
+                            desc: { type: string }
   /params/{key}:
     put:
       tags: [Sys]
-      summary: 修改业务参数（未实现 planned）
+      summary: 修改业务参数(不存在则插入;permCode menu:params;审计"数据变更")
       operationId: updateParam
       parameters:
         - name: key
@@ -162,6 +180,7 @@ paths:
           required: true
           schema: { type: string }
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -175,15 +194,40 @@ paths:
   /audit-logs:
     get:
       tags: [Sys]
-      summary: 审计日志(操作类型:状态变更/数据变更/权限变更)（未实现 planned）
+      summary: 审计日志查询(按人/类型/目标类型过滤+分页;permCode menu:audit)
+      description: data.items 为 audit.Entry 数组(operator=操作人姓名联查);按 created_at 倒序,limit 缺省 100、上限 500。
       operationId: listAuditLogs
       parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
-        - name: type
+        - name: accountId
+          in: query
+          schema: { type: integer }
+        - name: action
+          in: query
+          schema: { type: string, description: 数据变更/状态变更/权限变更 }
+        - name: targetType
           in: query
           schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer }
+        - name: offset
+          in: query
+          schema: { type: integer }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: 审计条目(envelope;items 见 audit.Entry)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/AuditEntry' }
 
   /import-tasks:
     get:
@@ -237,3 +281,16 @@ components:
         postId: { type: integer, nullable: true }
         regionScope: { type: string, nullable: true, description: LTREE path,空=全集团 }
         status: { type: integer, nullable: true, description: 修改时可选,1启用 0停用 }
+    AuditEntry:
+      type: object
+      description: 审计条目(pkg/audit Entry;operator 为账号姓名联查快照)
+      properties:
+        id: { type: integer }
+        accountId: { type: integer }
+        operator: { type: string }
+        action: { type: string, description: 数据变更/状态变更/权限变更 }
+        targetType: { type: string, example: account }
+        targetId: { type: string }
+        detail: { type: string, description: JSON 文本 }
+        ip: { type: string }
+        createdAt: { type: string, format: date-time }

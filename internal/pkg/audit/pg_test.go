@@ -43,17 +43,17 @@ func TestPGWriter_List(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, account_id, action, target_type, COALESCE\(target_id, ''\), detail::text, COALESCE\(ip::text, ''\), created_at`).
+	mock.ExpectQuery(`SELECT l\.id, l\.account_id, l\.action, l\.target_type, COALESCE\(l\.target_id, ''\), l\.detail::text, COALESCE\(l\.ip::text, ''\), l\.created_at, COALESCE\(a\.real_name, ''\)`).
 		WithArgs(int64(1), "状态变更", "order", 1<<30, 0).
-		WillReturnRows(mock.NewRows([]string{"id", "account_id", "action", "target_type", "target_id", "detail", "ip", "created_at"}).
-			AddRow(int64(1), int64(1), "状态变更", "order", "ORD-1", `{"a":1}`, "", ts))
+		WillReturnRows(mock.NewRows([]string{"id", "account_id", "action", "target_type", "target_id", "detail", "ip", "created_at", "operator"}).
+			AddRow(int64(1), int64(1), "状态变更", "order", "ORD-1", `{"a":1}`, "", ts, "管理员"))
 
 	w := NewPGWriter(mock)
 	got, err := w.List(context.Background(), Query{AccountID: 1, Action: "状态变更", TargetType: "order"})
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
-	if len(got) != 1 || got[0].TargetID != "ORD-1" || got[0].Action != "状态变更" {
+	if len(got) != 1 || got[0].TargetID != "ORD-1" || got[0].Operator != "管理员" {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

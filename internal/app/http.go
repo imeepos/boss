@@ -134,6 +134,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	})
 
 	registerOrgRoutes(authed, a)
+	registerSysRoutes(authed, a)
 	registerAPIKeyRoutes(authed, a)
 	registerOrderRoutes(authed, a)
 	registerDispatchRoutes(authed, a)

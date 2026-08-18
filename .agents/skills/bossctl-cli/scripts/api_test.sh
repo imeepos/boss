@@ -18,16 +18,20 @@ if [ -n "$API_KEY" ]; then
   AUTH="--api-key $API_KEY"
 fi
 
-ok()   { echo "  PASS: $1"; ((PASS++)); }
-fail() { echo "  FAIL: $1"; ((FAIL++)); FAILURES="$FAILURES  - $1\n"; }
+ok()   { echo "  PASS: $1"; PASS=$((PASS+1)); }
+fail() { echo "  FAIL: $1"; FAIL=$((FAIL+1)); FAILURES="$FAILURES  - $1\n"; }
 
 # 测试 GET 端点
 test_get() {
-  local desc="$1" path="$2"
+  local desc="$1" path="$2" q="${3:-}"
   local code
-  code=$(BOSS_SERVER="$SERVER" $BOSS $AUTH call GET "$path" 2>&1 | head -1)
-  # 检查是否包含 code=0 或请求成功
-  if echo "$code" | grep -qE '"code":0|\{'; then
+  if [ -n "$q" ]; then
+    code=$($BOSS --server "$SERVER" $AUTH call GET "$path" --query "$q" 2>&1 | head -c 4096 || true)
+  else
+    code=$($BOSS --server "$SERVER" $AUTH call GET "$path" 2>&1 | head -c 4096 || true)
+  fi
+  # 检查响应是否以 JSON 对象或数组开头(成功)或包含错误信息
+  if echo "$code" | grep -qE '^\{|^\['; then
     ok "$desc ($path)"
   else
     fail "$desc ($path): $code"
@@ -38,7 +42,7 @@ test_get() {
 test_post() {
   local desc="$1" path="$2" body="$3"
   local result
-  result=$(BOSS_SERVER="$SERVER" $BOSS $AUTH call POST "$path" --data "$body" 2>&1)
+  result=$($BOSS --server "$SERVER" $AUTH call POST "$path" --data "$body" 2>&1)
   if echo "$result" | grep -qE '"code":0|"id":'; then
     ok "$desc ($path)"
   else
@@ -50,7 +54,7 @@ test_post() {
 test_not_found() {
   local desc="$1" path="$2"
   local result
-  result=$(BOSS_SERVER="$SERVER" $BOSS $AUTH call GET "$path" 2>&1)
+  result=$($BOSS --server "$SERVER" $AUTH call GET "$path" 2>&1)
   if echo "$result" | grep -qE "請求失敗|404|not found"; then
     ok "$desc ($path) 返回预期错误"
   else
@@ -78,7 +82,7 @@ test_get "部门列表" "/departments"
 test_get "岗位列表" "/posts"
 test_get "经营区域" "/regions"
 test_get "地址列表" "/addresses"
-test_get "地址搜索" "/addresses/search"
+test_get "地址搜索" "/addresses/search" "q=望京"
 
 # ====== 订单 ======
 echo "[order] 订单"

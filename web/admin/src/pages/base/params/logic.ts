@@ -1,10 +1,15 @@
-// 业务参数页纯逻辑:筛选(关键字命中 参数/说明/key;状态=已修改/未修改)。
+// 业务参数页纯逻辑:筛选(关键字命中 说明/key;状态=已修改/未修改)。
+// 契约形状: GET /params → {items:[{key,value,desc}]};label 展示取 desc||key。
 
 export interface BizParam {
   key: string
-  label: string
   value: string
   desc: string
+}
+
+/** 行展示名:优先说明,空则回退 key。 */
+export function paramLabel(p: BizParam): string {
+  return p.desc || p.key
 }
 
 export function filterParams(
@@ -15,7 +20,7 @@ export function filterParams(
 ): BizParam[] {
   const kw = keyword.trim()
   return all.filter((p) => {
-    const hitKw = !kw || [p.label, p.desc, p.key].some((s) => String(s).includes(kw))
+    const hitKw = !kw || [p.desc, p.key].some((s) => String(s).includes(kw))
     const dirty = (draft[p.key] ?? p.value) !== p.value
     const hitSt = !status || (status === 'changed' ? dirty : !dirty)
     return hitKw && hitSt

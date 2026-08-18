@@ -1,19 +1,10 @@
-// 审计日志页(A1):列名与交互照抄 docs/admin/audit.html 原型。
-// 契约: GET /audit-logs(sys.yaml;后端 planned,失败展示错误占位)。
+// 审计日志页:列名与交互照抄 docs/admin/audit.html 原型。
+// 契约: GET /audit-logs → {items:[audit.Entry]}(menu:audit 门禁)。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Pagination } from '../../../components/Pagination'
-import { filterAuditLogs } from './logic'
-
-export interface AuditLog {
-  logId: string
-  time: string
-  operator: string
-  type: string
-  action: string
-  ip: string
-}
+import { filterAuditLogs, toAuditLog, type AuditEntry, type AuditLog } from './logic'
 
 export default function AuditPage() {
   const t = useT()
@@ -28,8 +19,9 @@ export default function AuditPage() {
 
   const load = () => {
     setError('')
-    apiFetch<AuditLog[]>('/audit-logs')
-      .then((d) => setRows(d ?? []))
+    // 契约: GET /audit-logs → {items:[Entry]};Entry 见 pkg/audit,映射为页面行。
+    apiFetch<{ items: AuditEntry[] }>('/audit-logs')
+      .then((d) => setRows((d?.items ?? []).map(toAuditLog)))
       .catch((e) => setError(e instanceof Error ? e.message : t.pages.audit.loadFail))
   }
 

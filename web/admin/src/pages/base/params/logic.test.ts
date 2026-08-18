@@ -4,12 +4,12 @@ import { filterParams, type BizParam } from './logic'
 import { filterAuditLogs, type AuditLog } from '../audit/logic'
 
 const params: BizParam[] = [
-  { key: 'arrears.threshold', label: '欠费阈值', value: '100', desc: '欠费判定阈值' },
-  { key: 'reserve.ttl', label: '预占有效期', value: '48', desc: '端口预占小时数' },
+  { key: 'arrears.threshold', value: '100', desc: '欠费判定阈值' },
+  { key: 'reserve.ttl', value: '48', desc: '端口预占小时数' },
 ]
 
 describe('filterParams', () => {
-  it('关键字命中 参数/说明/key', () => {
+  it('关键字命中 说明/key', () => {
     expect(filterParams(params, {}, '欠费', '')).toHaveLength(1)
     expect(filterParams(params, {}, 'ttl', '')).toHaveLength(1)
     expect(filterParams(params, {}, '不存在', '')).toHaveLength(0)

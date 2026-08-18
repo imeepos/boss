@@ -97,6 +97,12 @@ func (f *fakeUser) CreatePost(context.Context, int64, string, string, []string) 
 func (f *fakeUser) UpdatePost(context.Context, int64, int64, string, string, []string) error {
 	return nil
 }
+func (f *fakeUser) ListParams(context.Context) ([]user.Param, error) {
+	return nil, nil
+}
+func (f *fakeUser) UpdateParam(context.Context, string, string, int64) error {
+	return nil
+}
 
 func newTestRouter(f *fakeUser, mgr *auth.Manager) *gin.Engine {
 	gin.SetMode(gin.TestMode)
