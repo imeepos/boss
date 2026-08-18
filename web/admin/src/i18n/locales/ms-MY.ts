@@ -156,6 +156,8 @@ const msMY: Translations = {
       loadFail: 'Gagal memuatkan',
       saveFail: 'Gagal menyimpan',
       filterCountry: 'Tapis mengikut negara',
+      searchPlaceholder: 'Cari kod atau nama',
+      empty: 'Tiada data',
       names: 'Nama berbilang bahasa',
       addName: 'Tambah nama',
       attrs: 'Atribut (zon waktu/mata wang/kod panggilan)',

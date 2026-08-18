@@ -156,6 +156,8 @@ const enUS: Translations = {
       loadFail: 'Failed to load',
       saveFail: 'Failed to save',
       filterCountry: 'Filter by country',
+      searchPlaceholder: 'Search code or name',
+      empty: 'No data',
       names: 'Localized names',
       addName: 'Add name',
       attrs: 'Attributes (timezone/currency/calling code)',

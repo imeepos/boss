@@ -71,6 +71,9 @@
 
 .shell-topnav-item {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 0;
   background: none;
   padding: 0 14px;
@@ -124,6 +127,7 @@
   background: none;
   color: #fff;
   font-size: 13px;
+  transition: width 0.2s ease;
 }
 
 .shell-search input::placeholder { color: rgba(255, 255, 255, 0.45); }

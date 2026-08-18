@@ -156,6 +156,8 @@ const zhCN: Translations = {
       loadFail: '加载失败',
       saveFail: '保存失败',
       filterCountry: '按国家筛选',
+      searchPlaceholder: '搜索代码/名称',
+      empty: '暂无数据',
       names: '多语言名称',
       addName: '添加译名',
       attrs: '关联属性(时区/货币/电话码)',

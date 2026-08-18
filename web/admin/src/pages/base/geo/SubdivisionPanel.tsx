@@ -1,9 +1,11 @@
-// 行政区划维护面板:按国家筛选 + 列表 + 新增/编辑 + 启停 + 译名维护。
+// 行政区划维护面板:卡片化列表 + 工具栏(国家筛选/搜索/主操作) + 抽屉式表单与译名。
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { btnPrimary, formBox, input, link, th, td } from './style'
-import type { CountryRow } from './CountryPanel'
+import { Drawer } from '../../../components/Drawer'
+import { StatusTag } from './CountryPanel'
+import type { CountryRow } from './CountryForm'
+import './geo.css'
 
 export interface SubdivRow {
   code: string
@@ -31,6 +33,7 @@ export function SubdivisionPanel() {
   const [country, setCountry] = useState('')
   const [rows, setRows] = useState<SubdivRow[]>([])
   const [error, setError] = useState('')
+  const [keyword, setKeyword] = useState('')
   const [form, setForm] = useState<SubdivRow | null>(null)
   const [editing, setEditing] = useState(false)
   const [namesOf, setNamesOf] = useState<string | null>(null)
@@ -49,19 +52,6 @@ export function SubdivisionPanel() {
 
   useEffect(load, [load])
 
-  const save = async () => {
-    if (!form) return
-    const path = editing ? `/geo/subdivisions/${form.code}` : '/geo/subdivisions'
-    try {
-      await apiFetch(path, { method: editing ? 'PUT' : 'POST', body: { ...form } })
-      setForm(null)
-      setEditing(false)
-      load()
-    } catch {
-      setError(g.saveFail)
-    }
-  }
-
   const toggle = async (row: SubdivRow) => {
     await apiFetch(`/geo/subdivisions/${row.code}/active`, {
       method: 'PUT', body: { active: !row.isActive },
@@ -69,92 +59,162 @@ export function SubdivisionPanel() {
     load()
   }
 
+  const kw = keyword.trim().toLowerCase()
+  const filtered = kw
+    ? rows.filter((r) => [r.code, r.category, r.displayName].some((s) => s.toLowerCase().includes(kw)))
+    : rows
+
   return (
-    <div>
-      {error && <div style={{ color: '#e54545' }}>{error}</div>}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <select value={country} onChange={(e) => setCountry(e.target.value)} style={input}>
+    <div className="geo-card">
+      {error && <div className="geo-error" role="alert">{error}</div>}
+      <div className="geo-toolbar">
+        <select className="geo-select" style={{ width: 180 }} value={country}
+          onChange={(e) => setCountry(e.target.value)}>
           <option value="">{g.filterCountry}</option>
-          {countries.map((c) => <option key={c.alpha2} value={c.alpha2}>{c.alpha2} {c.displayName}</option>)}
+          {countries.map((c) => (
+            <option key={c.alpha2} value={c.alpha2}>{c.alpha2} {c.displayName}</option>
+          ))}
         </select>
-        <button style={btnPrimary} onClick={() => { setForm({ ...EMPTY, countryCode: country }); setEditing(false) }}>
-          {g.add}
+        <input className="geo-input" style={{ width: 200 }} placeholder={g.searchPlaceholder}
+          value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+        <div className="spacer" />
+        <button className="geo-btn geo-btn-primary"
+          onClick={() => { setForm({ ...EMPTY, countryCode: country }); setEditing(false) }}>
+          + {g.add}
         </button>
       </div>
-      {form && (
-        <div style={formBox}>
-          {(
-            [
-              ['code', 'ISO 3166-2 code'],
-              ['countryCode', 'country(alpha-2)'],
-              ['parentCode', 'parent code'],
-              ['category', 'category'],
-            ] as const
-          ).map(([k, label]) => (
-            <input
-              key={k}
-              placeholder={label}
-              disabled={editing && k === 'code'}
-              value={form[k]}
-              onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-              style={input}
-            />
-          ))}
-          <input
-            type="number" min={1} max={4} placeholder="level"
-            value={form.level}
-            onChange={(e) => setForm({ ...form, level: Number(e.target.value) })}
-            style={input}
-          />
-          <input
-            type="number" min={2} max={10} placeholder="osm_admin_level"
-            value={form.osmAdminLevel}
-            onChange={(e) => setForm({ ...form, osmAdminLevel: Number(e.target.value) })}
-            style={input}
-          />
-          <input
-            type="number" placeholder="geonameid"
-            value={form.geonameId}
-            onChange={(e) => setForm({ ...form, geonameId: Number(e.target.value) })}
-            style={input}
-          />
-          <button style={btnPrimary} onClick={save}>{g.save}</button>
-          <button onClick={() => setForm(null)}>{g.cancel}</button>
-        </div>
-      )}
-      <table style={{ width: '100%', background: '#fff', borderCollapse: 'collapse', fontSize: 13 }}>
+      <SubdivTable rows={filtered} onEdit={(r) => { setForm({ ...r }); setEditing(true) }}
+        onToggle={toggle} onNames={(code) => setNamesOf(namesOf === code ? null : code)} />
+      <div className="geo-footer">{g.total.replace('{count}', String(filtered.length))}</div>
+      {form && <SubdivForm initial={form} editing={editing} country={country}
+        onDone={() => { setForm(null); load() }} onCancel={() => setForm(null)} />}
+      {namesOf && <SubdivNames code={namesOf} onClose={() => setNamesOf(null)} />}
+    </div>
+  )
+}
+
+// SubdivTable 区划列表(design-spec §4.2)。
+function SubdivTable({ rows, onEdit, onToggle, onNames }: {
+  rows: SubdivRow[]
+  onEdit: (r: SubdivRow) => void
+  onToggle: (r: SubdivRow) => void
+  onNames: (code: string) => void
+}) {
+  const g = useT().pages.geo
+  if (!rows.length) return <div className="geo-empty">{g.empty}</div>
+  return (
+    <div className="geo-table-wrap">
+      <table className="geo-table">
         <thead>
-          <tr>{g.subdivColumns.map((c) => <th key={c} style={th}>{c}</th>)}</tr>
+          <tr>{g.subdivColumns.map((c) => <th key={c}>{c}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.code}>
-              <td style={td}>{r.code}</td>
-              <td style={td}>{r.countryCode}</td>
-              <td style={td}>{r.parentCode || '—'}</td>
-              <td style={td}>{r.level}</td>
-              <td style={td}>{r.category}</td>
-              <td style={td}>{r.displayName}</td>
-              <td style={td}>{r.isActive ? g.active : g.inactive}</td>
-              <td style={td}>
-                <a style={link} onClick={() => { setForm({ ...r }); setEditing(true) }}>{g.edit}</a>
-                <a style={link} onClick={() => toggle(r)}>{r.isActive ? g.disable : g.enable}</a>
-                <a style={link} onClick={() => setNamesOf(namesOf === r.code ? null : r.code)}>
-                  {g.names}
-                </a>
+              <td className="num">{r.code}</td>
+              <td>{r.countryCode}</td>
+              <td>{r.parentCode || '—'}</td>
+              <td>{r.level}</td>
+              <td>{r.category}</td>
+              <td>{r.displayName}</td>
+              <td><StatusTag on={r.isActive} /></td>
+              <td>
+                <div className="geo-act">
+                  <button onClick={() => onEdit(r)}>{g.edit}</button><span className="sep">|</span>
+                  <button onClick={() => onToggle(r)}>{r.isActive ? g.disable : g.enable}</button><span className="sep">|</span>
+                  <button onClick={() => onNames(r.code)}>{g.names}</button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p style={{ color: '#888' }}>{g.total.replace('{count}', String(rows.length))}</p>
-      {namesOf && <SubdivNamesCard code={namesOf} />}
     </div>
   )
 }
 
-// SubdivNamesCard 区划译名维护(列表 + 添加/删除)。
-function SubdivNamesCard({ code }: { code: string }) {
+// SubdivForm 区划新建/编辑抽屉表单。
+function SubdivForm({ initial, editing, country, onDone, onCancel }: {
+  initial: SubdivRow
+  editing: boolean
+  country: string
+  onDone: () => void
+  onCancel: () => void
+}) {
+  const t = useT()
+  const g = t.pages.geo
+  const [form, setForm] = useState(initial)
+  const [error, setError] = useState('')
+
+  const save = async () => {
+    const path = editing ? `/geo/subdivisions/${form.code}` : '/geo/subdivisions'
+    try {
+      await apiFetch(path, { method: editing ? 'PUT' : 'POST', body: { ...form } })
+      onDone()
+    } catch {
+      setError(g.saveFail)
+    }
+  }
+
+  const texts: [keyof SubdivRow, string, boolean][] = [
+    ['code', 'ISO 3166-2 code', true],
+    ['countryCode', 'country (alpha-2)', true],
+    ['parentCode', 'parent code', false],
+    ['category', 'category', true],
+  ]
+
+  return (
+    <Drawer title={`${editing ? g.edit : g.add} · ${g.tabSubdiv}`} onClose={onCancel}
+      footer={
+        <>
+          {error && <span className="geo-error" style={{ margin: 0, marginRight: 'auto' }}>{error}</span>}
+          <button className="geo-btn" onClick={onCancel}>{g.cancel}</button>
+          <button className="geo-btn geo-btn-primary" onClick={save}>{g.save}</button>
+        </>
+      }>
+      <div className="geo-form">
+        {texts.map(([k, label, req]) => (
+          <div key={k} className="geo-field full">
+            <label>{req && <span className="req">*</span>}{label}</label>
+            <input className="geo-input" disabled={editing && k === 'code'}
+              value={form[k] as string}
+              onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
+          </div>
+        ))}
+        <NumField label="level (1-4)" value={form.level}
+          onChange={(v) => setForm({ ...form, level: v })} />
+        <NumField label="osm_admin_level (2-10)" value={form.osmAdminLevel}
+          onChange={(v) => setForm({ ...form, osmAdminLevel: v })} />
+        <div className="geo-field full">
+          <label>geonameid</label>
+          <input className="geo-input" type="number" value={form.geonameId}
+            onChange={(e) => setForm({ ...form, geonameId: Number(e.target.value) })} />
+        </div>
+      </div>
+      {editing && <p className="hint" style={{ marginTop: 12, fontSize: 12, color: 'var(--shell-group-title)' }}>
+        {g.filterCountry}: {country || form.countryCode}
+      </p>}
+    </Drawer>
+  )
+}
+
+// NumField 数字输入字段。
+function NumField({ label, value, onChange }: {
+  label: string
+  value: number
+  onChange: (v: number) => void
+}) {
+  return (
+    <div className="geo-field">
+      <label>{label}</label>
+      <input className="geo-input" type="number" value={value}
+        onChange={(e) => onChange(Number(e.target.value))} />
+    </div>
+  )
+}
+
+// SubdivNames 区划译名维护抽屉。
+function SubdivNames({ code, onClose }: { code: string; onClose: () => void }) {
   const t = useT()
   const g = t.pages.geo
   const [names, setNames] = useState<NameRow[]>([])
@@ -170,7 +230,7 @@ function SubdivNamesCard({ code }: { code: string }) {
   useEffect(load, [load])
 
   const add = async () => {
-    if (!name) return
+    if (!name.trim()) return
     await apiFetch(`/geo/subdivisions/${code}/names`, {
       method: 'POST', body: { locale, name, nameType: 'STANDARD' },
     }).catch(() => undefined)
@@ -184,19 +244,22 @@ function SubdivNamesCard({ code }: { code: string }) {
   }
 
   return (
-    <div style={{ ...formBox, flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-      <b>{code} {g.names}</b>
+    <Drawer title={`${g.names} · ${code}`} onClose={onClose}>
       {names.map((n) => (
-        <div key={n.locale + n.nameType}>
-          {n.locale} / {n.nameType} / {n.name}{' '}
-          <a style={link} onClick={() => remove(n.locale, n.nameType)}>x</a>
+        <div key={n.locale + n.nameType} className="geo-tag geo-tag-off"
+          style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, padding: '2px 8px' }}>
+          <span>{n.locale} · {n.nameType} · {n.name}</span>
+          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)' }}
+            onClick={() => remove(n.locale, n.nameType)}>×</button>
         </div>
       ))}
-      <div style={{ display: 'flex', gap: 6 }}>
-        <input style={input} value={locale} onChange={(e) => setLocale(e.target.value)} />
-        <input style={input} value={name} onChange={(e) => setName(e.target.value)} />
-        <button style={btnPrimary} onClick={add}>{g.addName}</button>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <input className="geo-input" style={{ width: 110 }} value={locale}
+          onChange={(e) => setLocale(e.target.value)} placeholder="locale" />
+        <input className="geo-input" style={{ flex: 1 }} value={name}
+          onChange={(e) => setName(e.target.value)} placeholder="name" />
+        <button className="geo-btn" onClick={add}>{g.addName}</button>
       </div>
-    </div>
+    </Drawer>
   )
 }

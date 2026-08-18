@@ -129,3 +129,71 @@ geo 全部接口 403 `no permission: menu:geo`，但 /auth/me 确认 admin 就�
 - CI 里 compose 需要的密钥文件:一律 gitea repo secret 注入 + 缺失即失败,绝不随机兜底;固定密钥(BOSS_JWT_SECRET)配置一次永不轮换。
 - 验证 CI 部署是否真生效:看 actions 运行结果日志,或比对镜像 tag(GITHUB_SHA),healthz ok 只是必要条件。
 - 无 docker/psql 的本机验证 SQL:sqlglot(pip install --user)按 postgres 方言 parse 全文件,能拦语法错,拦不了约束语义,真实验证仍需 PG。
+
+---
+
+## 2026-08-18 · geo 页 Ant Design Pro 化重构(双主题适配)
+
+**哪个坑浪费了最多时间?**
+- CDP --eval 第一版直接写顶层 `await`,SyntaxError 一轮才想起要包 async IIFE。
+- 给 detail 抽屉绑 onClose 时错绑成 onChanged(刷新回调),抽屉永远关不掉——写码自检发现,没浪费运行轮次但属设计失误。
+- CountryPanel 空态写出无意义 JSX(`{g.loadFail ? '' : ''}`),tsc 拦不住(合法语法),自检时才改掉。
+- 程序化验证第一版把结果挂 window.__verify,--logs 里根本没有(日志只收 console 事件,不收 window 状态),必须 console.log 出来。
+
+**这个 skill 有没有提前警告我?**
+- edit 前必须 Read:警告过,但本次 4 个 i18n 文件并行 edit 全被拒——bash grep 定位不算观察,多文件并行编辑前每个都要 Read。
+- 模型不能读图:警告过(直接复用"程序化验证"方案,这次零浪费)。
+- 顶层 await / window 状态不进 logs / 回调语义混用:均无预警。
+
+**重来一次我会怎么做?**
+- cdp-capture 的 --eval 一律先包 `(async()=>{...})()`,多步操作(登录→设主题→跳页→验证)合成一条链。
+- 程序化验证结果必须 `console.log("VERIFY:"+JSON.stringify(v))`,--logs 里 grep VERIFY 即得。
+- 抽屉/弹层组件的 props 设计:onClose(关)与 onChanged(数据变了要刷新)必须分开,写之前先想清楚父组件两个回调分别做什么。
+- 写完 JSX 片段立刻通读一遍再跑 tsc——tsc 只拦类型,拦不住语义废话。
+- 主题适配正解已验证:新页面样式全部走 --shell-*/--color-* 令牌 + 页级自定义令牌在 [data-theme] 块切换,零写死色值;主操作按钮复用 --shell-fab-bg(亮=品牌蓝/暗=品牌金)是现成的"每主题强调色"。
+
+---
+
+## 2026-08-18 · 历史记录盘点:经验 → 事实手册固化
+
+**做了什么?**
+通读六轮反思(notes + references),发现一类内容错位:geo API 语义、102 库架构事实、冒烟数据状态这类"查证过才知道的项目事实"散在 lessons/techniques 里,而按 skill 分工它们应进 docs/boss-admin-web.md 事实手册。已固化两个新章节:geo 域速查(API 前缀/软删除/attrs 请求体/locale 口径/停用态测试数据/前端样板位置)、102 库与权限架构(schema_migrations TEXT、role_permissions 显式行模型、DB 直连方式)。
+
+**历史暴露的复发性问题(跨会话统计):**
+- "bash 查看 ≠ Read 观察"已踩 4 次(2 次记录在案后仍复发),本条是红线但强度不够——批量并行编辑前应逐文件 Read,本次又中招一次。
+- PATH(/opt/homebrew/bin)问题出现 3 次;教训已有,靠肌肉记忆执行。
+- i18n 4 处同步(types+3 locale)已从"踩坑"变成"顺手做对",经验闭环生效的证据。
+
+**下次盘点的触发条件:** notes 累计 5 轮以上、或发现 references 里同一条经验被重复记录时,做一次"去错位"整理(经验归 references,项目事实归 docs)。
+
+## 2026-08-18 · 菜单图标补齐 + 顶栏搜索收展
+
+**哪个坑浪费了最多时间?**
+用户报"国家行政规划缺图标"后我先 grep 菜单定义,再 ls icons/items 才确认缺 geo.svg——顺序对、没浪费。但第二轮"顶部菜单也缺图标"暴露了关键盲区:我默认走"缺 SVG 资产"思路,ls 一看 13 个组图标全在,真正缺的是 TopNav 渲染代码根本没引用图标(侧栏有、顶栏无)。同一个"缺图标"症状,两轮病因不同:一轮是资产缺,一轮是渲染缺。
+
+**这个 skill 有没有提前警告我?**
+没有。"图标缺失先分清资产缺 vs 渲染缺"这条不存在;docs 事实手册也没记菜单图标体系(组图标 /icons/<id>.svg、项图标 /icons/items/<key>.svg、MaskIcon currentColor 自适应)。
+
+**重来一次我会怎么做?**
+- 收到"X 缺图标"类报障,第一步同时做两件事:`ls` 资源目录 + `grep` 渲染点,先判定"资产缺"还是"渲染缺",再动手。本次第二轮若直接先 ls 就能立刻定位。
+- 新增遮罩图标只需拷现有 SVG 规格(24 viewBox/stroke 1.8/round),颜色字段是死值无妨——mask 方案下 background:currentColor 决定实色。
+- 收展式搜索框:收起态直接复用 shell-tool-btn(与主题/通知/语言按钮同排同规格),展开态才是 shell-search 椭圆;Esc 全清收起、空值失焦收起、跳转成功收起,三种收起路径一次写全。
+
+---
+
+## 2026-08-18 · gitea secret 方案被驳 + admin 密码不生效排查
+
+**哪个坑浪费了最多时间?**
+- 我给的 gitea secret UI 配置方案被用户直接驳回("太麻烦了,为什么不用环境变量")——对内网 homelab,secret UI + 两条 secret + 手动重跑属于过度设计;直接把 app.env 入库(固定 JWT+超管口令)是用户想要的最简路径,而且完全成立。
+- admin 登录 40100 排查:app.env 口令配了、bootstrap 跑了,但 admin 是 08-17 就存在的开发账号(real_name=开发管理员),EnsureSuperAdmin 的 ON CONFLICT DO NOTHING 正确跳过了它——"已存在不覆盖"防重置密码的安全设计,反过来让口令对不上。最终直接 UPDATE password_hash 对齐。
+- pgx 手写探针连续两个参数坑:SQL 只写了 $2 没有 $1 → 42P18 "could not determine data type of parameter $1";参数占位必须从 $1 连续编号。
+
+**这个 skill 有没有提前警告我?**
+- "已存在不覆盖会导致 env 口令对既有账号无效"没有预警(上轮 lessons 只写了 bootstrap 幂等不覆盖是好事,没写它的反面)。
+- "判断部署是否真生效"上轮已沉淀(比对镜像/看日志),这次实际用了"admin 是否被新建"当探针,有效。
+- 42P18 参数编号坑无预警。
+
+**重来一次我会怎么做?**
+- 内网私有仓库 + 用户要简单:第一步就提"app.env 直接入库"选项并说清公网风险,让用户选,而不是默认上 secret UI 标准流程。
+- env 口令登录失败时,先查账号 created_at/real_name 判断是"新引导账号"还是"历史遗留账号",后者直接 UPDATE 哈希对齐,不折腾。
+- 手写 pgx SQL:占位符从 $1 连续编号;报 42P18 先查编号,再查 ::text 类型标注。

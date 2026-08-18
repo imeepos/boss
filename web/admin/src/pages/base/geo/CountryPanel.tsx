@@ -65,7 +65,13 @@ export function CountryPanel() {
       <div className="geo-footer">{g.total.replace('{count}', String(filtered.length))}</div>
       {form && <CountryForm initial={form} editing={editing}
         onDone={() => { setForm(null); load() }} onCancel={() => setForm(null)} />}
-      {detail && <CountryDetail data={detail} onChanged={() => openDetail(detail.alpha2)} />}
+      {detail && (
+        <CountryDetail
+          data={detail}
+          onChanged={() => openDetail(detail.alpha2)}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   )
 }

@@ -79,3 +79,37 @@ const set = (el, v) => {
 
 场景 → 新增 SQL 迁移 / gitea workflow 部署需要 env 密钥文件。
 怎么用 → 迁移编号:`ls migrations/*.up.sql | tail -5` 取真实最大号 +1;别信截断列表,也别与代码注释引用的编号冲突。CI 密钥:workflow 在 compose up 前加 Prepare 步骤,`cp app.env.example app.env` 后用 `sed` 注入 `${{ secrets.BOSS_JWT_SECRET }}`;secret 为空即 `exit 1` 并在日志里写明去仓库 Settings→Secrets 配置。部署是否生效:`docker ps` 看容器镜像 tag 是否等于 GITHUB_SHA,或直接看 actions 步骤状态。
+
+## boss admin 页面主题化改造样板(antd Pro 惯例 × 品牌令牌)
+
+场景 → 把写死亮色的 admin 页面重构成亮暗双主题 + antd Pro 布局(以 /base/geo 为样板)。
+怎么用 → 布局骨架:页头(20px 标题+12px 描述)→ antd 风格页签(文字+金色 2px 底指示线)→ geo-card 卡片(工具栏+表格+右对齐合计)。主题三原则:
+1. 零写死色值,一律 `--shell-*`(card/heading/content-text/side-border)与 `--color-*` 令牌;
+2. 页级新色(表头底/行 hover/输入框)在页面 css 里加 `:root[data-theme='light'/'dark']` 自定义 `--geo-*` 块,值照抄 docs/admin/design-spec.md §4.2;
+3. 主操作按钮复用 `--shell-fab-bg`(亮=品牌蓝/暗=品牌金),天然主题自适应。
+新建/编辑走右侧 Drawer(src/components/Drawer.tsx 通用件),表单用两列 grid+label+必填 `*`;状态列用语义 Tag(启用绿/停用灰)。i18n 加 key 记得 4 处同步(types.ts + 3 locale)。
+样板文件:web/admin/src/pages/base/geo/{index.tsx,CountryPanel.tsx,CountryForm.tsx,CountryDetail.tsx,SubdivisionPanel.tsx,geo.css}。
+
+## CDP 程序化主题/交互验证(模型不能读图时的替代)
+
+场景 → 页面改造后需验证双主题渲染与交互,但模型不支持 read_image。
+怎么用 → cdp-capture 一条 eval 链完成"登录→设主题→跳页→断言":
+
+```bash
+node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
+  http://localhost:5173/login /tmp/x.png --logs /tmp/x.json \
+  --eval '(async()=>{ /* native setter 填表登录 */ await sleep(1500);
+    localStorage.setItem("boss.theme","dark"); location.href="/base/geo" })()' \
+  --eval '(async()=>{ await sleep(2500);
+    const cs=(s,p)=>{const el=document.querySelector(s);return el?getComputedStyle(el)[p]:"(none)"};
+    /* 点开抽屉/页签等交互 */ await sleep(600);
+    console.log("VERIFY:"+JSON.stringify({theme:document.documentElement.dataset.theme, card:cs(".geo-card","backgroundColor"), ...}))
+  })()'
+```
+
+断言点:卡片/表头/文字/主按钮的计算色,`.length` 行数,`!!document.querySelector(".dvr-panel")` 弹层开合;结果靠 `console.log("VERIFY:...")` 进 --logs 再 grep;失败请求与 console error 同份日志可直接查。
+
+## 判断"本次部署真生效"的第三个探针
+
+场景 → 无 docker 访问权,healthz/迁移版本都可能来自旧容器。
+怎么用 → 挑一个"只有新代码+新 env 才会产生"的可观测副作用当探针,如本次的"bootstrap 新建 admin 账号":/tmp 临时 go 程序 + pgx 直连查 accounts WHERE username='admin' 是否出现/created_at 是否刷新。比 curl 更硬,比镜像 tag 比对更省事。

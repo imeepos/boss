@@ -7,7 +7,7 @@ import type { MenuGroup } from '../router/menu.def'
 import logoMark from '../assets/brand/logo-mark-navy.png'
 import { useT, useLang, localeOptions } from '../i18n'
 import { useTheme } from '../theme/context'
-import { BellIcon, CheckIcon, GlobeIcon, LogoutIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, UserIcon } from './icons'
+import { BellIcon, CheckIcon, GlobeIcon, LogoutIcon, MaskIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, UserIcon } from './icons'
 
 interface TopBarProps {
   profile: Profile
@@ -27,17 +27,28 @@ function TopNav({ groups, activeGroupId }: { groups: MenuGroup[]; activeGroupId?
           className={g.id === activeGroupId ? 'shell-topnav-item active' : 'shell-topnav-item'}
           onClick={() => nav(g.items[0].path)}
         >
-          {t.menu.groups[g.id] ?? g.label}
+          <MaskIcon url={`/icons/${g.id}.svg`} size={16} />
+          <span>{t.menu.groups[g.id] ?? g.label}</span>
         </button>
       ))}
     </nav>
   )
 }
 
+/** 顶栏搜索:默认仅一个工具按钮,点击展开输入框;清空失焦或 Esc 收起。 */
 function SearchBox({ groups }: { groups: MenuGroup[] }) {
   const t = useT()
   const nav = useNavigate()
+  const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const expand = () => {
+    setOpen(true)
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }
+  const collapse = () => {
+    if (!query) setOpen(false)
+  }
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
     const q = query.trim().toLowerCase()
@@ -48,14 +59,25 @@ function SearchBox({ groups }: { groups: MenuGroup[] }) {
     if (hit) {
       nav(hit.path)
       setQuery('')
+      inputRef.current?.blur()
     }
+  }
+  if (!open) {
+    return (
+      <button className="shell-tool-btn" onClick={expand} title={t.shell.searchPlaceholder} aria-label="search">
+        <SearchIcon size={18} />
+      </button>
+    )
   }
   return (
     <form className="shell-search" onSubmit={onSubmit} role="search">
       <SearchIcon />
       <input
+        ref={inputRef}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        onBlur={collapse}
+        onKeyDown={(e) => e.key === 'Escape' && (setQuery(''), setOpen(false))}
         placeholder={t.shell.searchPlaceholder}
         aria-label={t.shell.searchPlaceholder}
       />

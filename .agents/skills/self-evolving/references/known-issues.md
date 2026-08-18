@@ -61,3 +61,33 @@
 症状 → 顶栏姓名（深底）浅色主题下不可见，深色主题"看似正常"。
 原因 → `<span>` 会继承父级 color，`<button>` 不会——UA 样式默认 `color: buttontext`（黑），深色顶栏上黑字黑底。
 修法 → 深色/彩色表面上的 button 一律显式写 color；元素标签类型互换（span↔button/a）时把颜色继承列入自查。
+
+## cdp-capture --eval 报 SyntaxError: await is only valid in async functions
+
+症状 → --eval 里写 `await new Promise(...)` 报 "SyntaxError: await is only valid in async functions and the top level bodies of modules"。
+原因 → eval 代码以普通脚本形式执行，不是模块，顶层 await 不可用。
+修法 → 整段包 `(async()=>{ ... })()`；返回 Promise 会被脚本 await。
+
+## --logs 里找不到程序化验证结果
+
+症状 → 把验证对象挂 `window.__verify`，--logs JSON 里搜不到。
+原因 → --logs 只采集 console 事件/网络请求，window 状态不进日志。
+修法 → 验证结束显式 `console.log("VERIFY:"+JSON.stringify(v))`，再从日志 grep VERIFY。
+
+## 多文件并行 edit 全部被拒 "edit requires reading the file first"
+
+症状 → 用 bash grep/sed 定位到 4 个 i18n 文件的插入点后并行 edit，4 个全被拒。
+原因 → bash 输出的行不算 Read 工具的观察记录；并行批量编辑时更容易只 grep 不 Read。
+修法 → 每个 target 文件先 Read 目标片段（offset/limit 局部读即可），再并行 edit。
+
+## 语义废话 JSX 通过 tsc 但渲染无意义
+
+症状 → 空态写出 `{g.loadFail ? '' : ''}{rows.length===0 ? '— 0 —' : ''}` 这类条件恒假/重复判断的片段，tsc 不报错。
+原因 → tsc 只拦类型不拦语义；生成式写 JSX 时局部片段会"看似合理"。
+修法 → 写完每个 JSX 片段通读一遍条件与数据流再提交；抽成小组件（如 EmptyState）比内联三元更不易写废。
+
+## app.env 超管口令对既有 admin 不生效
+
+症状 → app.env 的 BOSS_ADMIN_PASSWORD 配好、服务重启,admin 用该口令登录仍 40100。
+原因 → EnsureSuperAdmin 是 ON CONFLICT DO NOTHING:admin 账号在更早时间已存在(开发期手建,real_name=开发管理员),bootstrap 按设计跳过,密码保持旧值。
+修法 → pgx 直连 `UPDATE accounts SET password_hash=$1 WHERE username='admin'`(bcrypt 新哈希);或删号重启由 bootstrap 重建。口令对齐后 app.env 里保留同一值,保证口径一致。

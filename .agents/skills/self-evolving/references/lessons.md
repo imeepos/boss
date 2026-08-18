@@ -31,3 +31,13 @@
 - 当验证 CI 部署结果时,修复是看 actions 日志或比对镜像 tag(GITHUB_SHA),curl healthz 只证明"有容器活着"——部署在 compose up 前失败时旧容器照常应答 ok。
 - 当本机无 docker/psql 而要验证 SQL 迁移时,修复是 sqlglot(pip install --user sqlglot)按 postgres 方言 parse 全文件拦语法错;约束语义仍需真实 PG。
 - 当 Go 工具链不在 PATH 时,修复是 export PATH=/opt/homebrew/bin:$PATH(AGENTS.md 已声明 brew 在此);go build 失败先查这个再怀疑代码。
+- 当 cdp-capture 的 --eval 需要多步操作或含 await 时,修复是整体包进 `(async()=>{ ... })()`(顶层 await 直接 SyntaxError),登录→设主题→跳页→验证合成一条链,中间用 setTimeout Promise 等渲染。skill 没提前警告我。
+- 当用 --logs 做程序化验证时,修复是结果必须 `console.log("VERIFY:"+JSON.stringify(v))` 再从日志里 grep VERIFY——挂在 window 上的状态不会出现在日志里(日志只收 console 事件)。skill 没提前警告我。
+- 当设计抽屉/弹层组件 props 时,修复是 onClose(关闭 UI)与 onChanged(数据变化要刷新)分开两个回调,绑错会让抽屉永远关不掉或刷新不了。skill 没提前警告我。
+- 当给后台页面写"每主题强调色"的主操作按钮时,修复是复用 --shell-fab-bg/--shell-fab-bg-hover/--shell-fab-icon 令牌(亮=品牌蓝、暗=品牌金),它是项目现成的主题自适应强调色,不必新造。skill 没提前警告我。
+- 当用户报"某菜单/按钮缺图标"时,修复是先同时 `ls` 资源目录 + `grep` 渲染点,判定"资产缺"(补 SVG)还是"渲染缺"(补引用)——同一症状两种病因,曾连续两轮分别是这两种。skill 没提前警告我。
+- 当新增菜单遮罩图标 SVG 时,修复是拷贝同目录现有图标的规格(24 viewBox/stroke 1.8/round cap),stroke 色值随意——mask 方案下实色由 background:currentColor 决定,与文件内颜色无关。skill 没提前警告我。
+- 当顶栏空间紧张要做收展式搜索框时,修复是收起态复用 shell-tool-btn(与相邻工具按钮同排同规格),展开态切回 shell-search 椭圆;Esc 全清收起/空值失焦收起/提交成功收起三路径一次写全。skill 没提前警告我。
+- 当用户嫌 gitea secret 配置麻烦时,修复是评估"内网私有仓库直接把 env 文件入库"(固定密钥+注释公网风险)——homelab 场景标准 secret 流程是过度设计,简单性优先;skill 之前推的 secret 方案被现场驳回。
+- 当 app.env 配了超管口令但登录仍 40100 时,修复是查该账号 created_at/real_name:历史遗留账号(如开发期手建的 admin)会被 EnsureSuperAdmin 的 ON CONFLICT DO NOTHING 正确跳过,口令不会同步——直接 UPDATE password_hash(bcrypt 新哈希)对齐即可。
+- 当 pgx/simple protocol 报 42P18 "could not determine data type of parameter $1" 时,修复是检查占位符编号:必须从 $1 连续编号($2 起头会报 $1 类型不明),必要时补 ::text 显式类型。

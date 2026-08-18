@@ -88,6 +88,8 @@ export interface Translations {
       loadFail: string
       saveFail: string
       filterCountry: string
+      searchPlaceholder: string
+      empty: string
       names: string
       addName: string
       attrs: string
