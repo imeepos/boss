@@ -10,7 +10,7 @@ import './geo.css'
 
 export default function GeoPage() {
   const t = useT()
-  const [urlTab] = useQueryState('tab', 'country')
+  const [urlTab, setUrlTab] = useQueryState('tab', 'country')
   const [tab, setTab] = useState<'country' | 'subdiv'>(
     urlTab === 'subdiv' ? 'subdiv' : 'country',
   )
@@ -35,7 +35,7 @@ export default function GeoPage() {
             role="tab"
             aria-selected={tab === key}
             className={`geo-tab${tab === key ? ' active' : ''}`}
-            onClick={() => setTab(key)}
+            onClick={() => { setTab(key); setUrlTab(key) }}
           >
             {label}
           </button>

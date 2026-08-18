@@ -13,19 +13,30 @@ export function CountryPanel() {
   const g = t.pages.geo
   const [rows, setRows] = useState<CountryRow[]>([])
   const [error, setError] = useState('')
-  const [urlKeyword] = useQueryState('kw', '')
+  const [urlKeyword, setUrlKeyword] = useQueryState('kw', '')
   const [keyword, setKeyword] = useState(urlKeyword)
   const [draftKeyword, setDraftKeyword] = useState(urlKeyword)
-  const [urlPage] = useQueryInt('page', 1)
+  const [urlPage, setUrlPage] = useQueryInt('page', 1)
   const [page, setPage] = useState(urlPage)
-  const [urlPageSize] = useQueryInt('size', 20)
+  const [urlPageSize, setUrlPageSize] = useQueryInt('size', 20)
   const [pageSize, setPageSize] = useState(urlPageSize)
   const [form, setForm] = useState<CountryRow | null>(null)
   const [editing, setEditing] = useState(false)
   const [detail, setDetail] = useState<CountryDetailData | null>(null)
 
-  const search = (v: string) => { setDraftKeyword(v); setKeyword(v); setPage(1) }
-  const resize = (v: number) => { setPageSize(v); setPage(1) }
+  const search = (v: string) => {
+    setDraftKeyword(v)
+    setKeyword(v)
+    setUrlKeyword(v)
+    setPage(1)
+    setUrlPage(1)
+  }
+  const resize = (v: number) => {
+    setPageSize(v)
+    setUrlPageSize(v)
+    setPage(1)
+    setUrlPage(1)
+  }
 
   const load = useCallback(() => {
     apiFetch<CountryRow[]>('/geo/countries')
@@ -78,7 +89,7 @@ export function CountryPanel() {
         onToggle={toggle} onDetail={openDetail} />
       <div className="geo-footer">
         <Pagination page={safePage} pageSize={pageSize} total={filtered.length}
-          onPage={setPage} onSize={resize} rangeText={g.rangeText}
+          onPage={(v) => { setPage(v); setUrlPage(v) }} onSize={resize} rangeText={g.rangeText}
           prevText={g.prev} nextText={g.next} perPageText={g.perPage}
           jumpText={g.jumpText} pageUnitText={g.pageUnit} />
       </div>
