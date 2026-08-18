@@ -132,3 +132,25 @@ func TestMenuPerms(t *testing.T) {
 		t.Fatalf("matrix=%+v", body.Data.Matrix)
 	}
 }
+
+// TestDataScopes 契约(org.yaml /data-scopes):返回账号数据范围清单,menu:datascope 门禁。
+func TestDataScopes(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	f := &fakeOrgAdmin{fakeUser: &fakeUser{permOk: true, accounts: []user.AccountRow{{
+		ID: 1, Username: "boss", RealName: "老板", RoleName: "系统管理员", RegionScope: "",
+	}}}}
+	r := newOrgAdminRouter(f, mgr)
+
+	w := getJSON(t, r, "/api/v1/data-scopes?keyword=boss", authToken(t, mgr))
+	var body struct {
+		Code int               `json:"code"`
+		Data []user.AccountRow `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != http.StatusOK || body.Code != 0 || len(body.Data) != 1 ||
+		body.Data[0].Username != "boss" {
+		t.Fatalf("status=%d code=%d rows=%+v", w.Code, body.Code, body.Data)
+	}
+}

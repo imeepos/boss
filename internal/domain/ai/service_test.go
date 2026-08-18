@@ -109,7 +109,7 @@ func TestService_ConfigView_MaskedAndHotUpdate(t *testing.T) {
 	// 换成错误 key 后调用应报下游错误(401 透传为 ErrDownstream)。
 	bad := "sk-wrong-key-0000"
 	_ = svc.UpdateConfig(context.Background(), ConfigUpdate{APIKey: &bad}, 1)
-	_, err = svc.ChatCompletion(context.Background(), ChatRequest{Messages: []ChatMessage{{Role: "user", Content: "hi"}}})
+	_, err = svc.ChatCompletion(context.Background(), ChatRequest{Model: "gpt-test", Messages: []ChatMessage{{Role: "user", Content: "hi"}}})
 	if !errors.Is(err, ErrDownstream) {
 		t.Fatalf("want ErrDownstream, got %v", err)
 	}
@@ -127,6 +127,21 @@ func TestService_Embeddings(t *testing.T) {
 	}
 	if len(res.Vectors) != 2 || res.Vectors[1][0] != 0.3 {
 		t.Fatalf("unexpected vectors: %+v", res.Vectors)
+	}
+}
+
+func TestService_NoModelAnywhere(t *testing.T) {
+	mock := newMockOpenAI(t)
+	url, key := mock.URL+"/v1", "sk-test-123456"
+	svc := NewService(&memStore{m: map[string]string{KeyAPIURL: url, KeyAPIKey: key}}) // 无默认模型
+	_, err := svc.ChatCompletion(context.Background(), ChatRequest{Messages: []ChatMessage{{Role: "user", Content: "hi"}}})
+	if !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("want ErrInvalidInput, got %v", err)
+	}
+	// 请求显式带 model 即可成功。
+	res, err := svc.ChatCompletion(context.Background(), ChatRequest{Model: "gpt-test", Messages: []ChatMessage{{Role: "user", Content: "hi"}}})
+	if err != nil || res.Content != "hello from mock" {
+		t.Fatalf("explicit model: res=%+v err=%v", res, err)
 	}
 }
 

@@ -5,7 +5,7 @@ BEGIN;
 INSERT INTO biz_params(key, value, description) VALUES
     ('ai.openai.apiUrl', '""', 'OpenAI 兼容服务地址,需含 /v1,如 https://api.openai.com/v1'),
     ('ai.openai.apiKey', '""', 'OpenAI 平台级密钥(仅 admin 可见明文,接口返回脱敏)'),
-    ('ai.openai.model',  '"gpt-4o-mini"', 'OpenAI 默认模型,请求未指定 model 时兜底')
+    ('ai.openai.model',  '""', 'OpenAI 默认模型;空=请求必须显式传 model(admin 按网关实际可用模型配置,如 gpt-5.4-mini)')
 ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO permissions (code, name) VALUES

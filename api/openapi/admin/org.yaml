@@ -219,7 +219,7 @@ paths:
       tags: [Org]
       summary: 数据权限清单(账号级授权策略)
       operationId: listDataScopes
-      description: （未实现 planned）
+      description: 账号数据范围清单,keyword 过滤账号/姓名/角色;menu:datascope 门禁
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:

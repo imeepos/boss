@@ -47,11 +47,19 @@ bossctl call GET /orders
 
 ## 认证方式
 
-### 1. API key 认证(推荐,免登录)
+### 1. API key 认证(推荐,免登录,三类主体)
 
-API key 与 BOSS 账号绑定,权限随账号角色走 RBAC。
+API key 与三类主体绑定(与三表登录边界对齐):
+- **account**(管理后台账号):注入完整 RBAC 身份,可访问全部管理接口
+- **worker**(师傅):扫码/工单接口取真实师傅身份;菜单门禁接口一律 403
+- **customer**(客户):下单/查询类身份;菜单门禁接口一律 403
 
 ```bash
+# 为主体签发密钥(需 sysadmin 身份)
+bossctl apikey create account/103 ops-main
+bossctl apikey create worker/5 field-test
+bossctl apikey create customer/100 home-user
+
 # 环境变量
 export BOSS_API_KEY=boss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 bossctl me
@@ -60,7 +68,23 @@ bossctl me
 bossctl --api-key boss_xxx call GET /orders
 ```
 
-### 2. JWT 认证(引导创建 API key 时使用)
+### 2. 身份档案(复合业务场景切换)
+
+复杂场景要不断切换身份(customer 下单 → admin 派单 → worker 上门 → admin 管理),
+把每种身份的 key 存为档案,用 `--as` 一键切换:
+
+```bash
+bossctl identity save customer --api-key boss_c1...
+bossctl identity save admin    --api-key boss_a1...
+bossctl identity save worker   --api-key boss_w1...
+
+bossctl --as customer call POST /orders --data '{"customerId":100,"offerId":1}'
+bossctl --as admin    call POST /dispatch/pool/TK-20250818-001/assign --data '{"masterId":5}'
+bossctl --as worker   call POST /tickets/TK-20250818-001/scan-bind --data '{"epc":"EPC-001"}'
+bossctl --as admin    call GET /orders/ORD-20250818-001
+```
+
+### 3. JWT 认证(引导创建 API key 时使用)
 
 ```bash
 # 登录后 JWT 自动缓存到 ~/.bossctl/token
@@ -69,7 +93,7 @@ bossctl login admin your-password
 
 ### 认证优先级
 
-`--api-key` > `--jwt` > `~/.bossctl/token` > 无认证(仅公开端点)
+`--as 身份名` > `--api-key` > `--jwt` > `~/.bossctl/token` > 无认证(仅公开端点)
 
 ## 命令参考
 
@@ -78,10 +102,16 @@ bossctl login admin your-password
 | `call METHOD PATH [--data JSON] [--query k=v]` | 调用任意 API 端点 |
 | `login USERNAME PASSWORD` | 登录获取 JWT |
 | `me` | 查看当前登录身份 |
-| `routes` | 列出所有 API 路由(121 个端点) |
+| `routes` | 列出所有 API 路由(125 个端点) |
 | `apikey list` | 列出 API key |
-| `apikey create <accountId> <name>` | 创建 API key |
+| `apikey create <account\|worker\|customer>/<id> <name>` | 为指定主体创建 API key |
 | `apikey revoke <id>` | 吊销 API key |
+| `identity save <name> --api-key KEY` | 保存身份档案(复合场景切换用) |
+| `identity list` | 列出身份档案 |
+| `identity remove <name>` | 删除身份档案 |
+| `ai config [--url URL] [--key KEY] [--model M]` | 查看/更新 OpenAI 集中配置(apiKey/apiUrl 平台统一管理) |
+| `ai chat [--model M] <文本>` | AI 对话补全 |
+| `ai embed [--model M] <文本...>` | 文本向量化(需网关支持 embedding 模型) |
 
 ### call 命令详解
 
@@ -118,13 +148,15 @@ bossctl routes | grep "orders"
 
 API key 认证依赖服务端已部署对应能力:
 
-1. 服务端数据库需有 `api_keys` 表(密钥哈希与账号绑定)
+1. 服务端数据库需有 `api_keys` 表(迁移 000042 + 000044,密钥经 subject_type/subject_ref 绑定三类主体)
 2. 服务端需启用 `X-API-Key` 认证中间件(优先于 JWT 校验)
 3. 首次 API key 需通过 JWT 登录后创建(需 `menu:apikey` 权限,默认仅 sysadmin 角色持有)
+4. 创建 worker/customer 主体密钥前,对应主体须已存在(悬空主体会被 401 拒绝)
 
 ## 安全约定
 
 - 密钥格式: `boss_<32hex>`,仅在创建时返回一次,丢失需重新创建
 - 服务端只存 SHA-256 哈希,明文永不落盘
-- 停用账号即停用其所有 API key
-- 推荐通过环境变量 `BOSS_API_KEY` 传递密钥,避免 shell 历史记录
+- worker/customer 主体的密钥不带菜单权限(RBAC 恒拒),只能访问其身份对应的接口
+- 停用主体即停用其所有 API key
+- 推荐通过环境变量 `BOSS_API_KEY` 或身份档案传递密钥,避免 shell 历史记录

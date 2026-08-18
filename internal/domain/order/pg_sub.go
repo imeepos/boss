@@ -86,6 +86,18 @@ func (s *PGStore) CreateComplaint(ctx context.Context, c Complaint) (int64, erro
 	return id, nil
 }
 
+// CloseComplaint 投诉办结(ticketNo 寻址,status→CLOSED);未命中返回 ErrOrderNotFound。
+func (s *PGStore) CloseComplaint(ctx context.Context, ticketNo string) error {
+	tag, err := s.db.Exec(ctx, `UPDATE complaints SET status='CLOSED' WHERE ticket_no=$1`, ticketNo)
+	if err != nil {
+		return fmt.Errorf("order: close complaint: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrOrderNotFound
+	}
+	return nil
+}
+
 // GetDispatchTicketByNo 按工单号寻址(扫码闭环入口:ticketNo → orderID)。
 func (s *PGStore) GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*DispatchTicket, error) {
 	var t DispatchTicket

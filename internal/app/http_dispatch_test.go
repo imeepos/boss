@@ -51,6 +51,9 @@ func (f *fakeDispatchOrder) ListComplaints(context.Context) ([]order.Complaint, 
 func (f *fakeDispatchOrder) CreateComplaint(context.Context, order.Complaint) (int64, error) {
 	return 0, nil
 }
+func (f *fakeDispatchOrder) CloseComplaint(context.Context, string) error {
+	return nil
+}
 func (f *fakeDispatchOrder) ListScanLogs(context.Context, int64) ([]order.ScanLog, error) {
 	return nil, nil
 }
@@ -75,6 +78,9 @@ func (f *fakeOrderLedger) ListActivationCallbacks(context.Context) ([]order.Acti
 }
 func (f *fakeOrderLedger) AppendActivationCallback(context.Context, order.ActivationCallback) (int64, error) {
 	return 0, nil
+}
+func (f *fakeOrderLedger) RetryActivationCallback(context.Context, int64) error {
+	return nil
 }
 func (f *fakeOrderLedger) ListDispatchTransfers(context.Context, int64) ([]order.DispatchTransfer, error) {
 	return f.transfers, nil

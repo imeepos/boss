@@ -5,6 +5,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -78,5 +79,28 @@ func registerReportRoutes(g *gin.RouterGroup, a *Application) {
 			"windowStart": snap.WindowStart, "windowEnd": snap.WindowEnd,
 			"createdAt": snap.CreatedAt, "payload": body,
 		})
+	})
+
+	// 报告推送:按 id 取快照 → Push(intel.yaml /reports/{reportId}/send)。
+	rp.POST("/reports/:reportId/send", func(c *gin.Context) {
+		id, err := strconv.ParseInt(c.Param("reportId"), 10, 64)
+		if err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		snap, err := a.Report.St.SnapshotByID(c.Request.Context(), id)
+		if err != nil {
+			if errors.Is(err, report.ErrNoSnapshot) {
+				respond(c, apitypes.CodeNotFound, nil)
+				return
+			}
+			respondErr(c, err)
+			return
+		}
+		if err := a.Report.Push(c.Request.Context(), snap); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 }

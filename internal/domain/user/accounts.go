@@ -50,3 +50,34 @@ func (s *PGStore) ListAccounts(ctx context.Context) ([]AccountRow, error) {
 	}
 	return out, rows.Err()
 }
+
+// ListDataScopes 账号数据范围清单(kw 模糊匹配账号/姓名/角色名;空=全量)。
+func (s *PGStore) ListDataScopes(ctx context.Context, kw string) ([]AccountRow, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT a.id, a.username, a.real_name, COALESCE(a.phone,''),
+		       r.code, r.name,
+		       COALESCE(le.name,''), COALESCE(d.name,''), COALESCE(p.name,''),
+		       COALESCE(a.region_scope::text,''), a.status
+		FROM accounts a
+		JOIN roles r ON r.id = a.role_id
+		LEFT JOIN legal_entities le ON le.id = a.legal_entity_id
+		LEFT JOIN departments d ON d.id = a.dept_id
+		LEFT JOIN posts p ON p.id = a.post_id
+		WHERE ($1 = '' OR a.username ILIKE '%' || $1 || '%'
+		       OR a.real_name ILIKE '%' || $1 || '%' OR r.name ILIKE '%' || $1 || '%')
+		ORDER BY a.id`, kw)
+	if err != nil {
+		return nil, fmt.Errorf("user: list data scopes: %w", err)
+	}
+	defer rows.Close()
+	out := make([]AccountRow, 0)
+	for rows.Next() {
+		var r AccountRow
+		if err := rows.Scan(&r.ID, &r.Username, &r.RealName, &r.Phone, &r.RoleCode, &r.RoleName,
+			&r.LegalEntityName, &r.DeptName, &r.PostName, &r.RegionScope, &r.Status); err != nil {
+			return nil, fmt.Errorf("user: scan data scope: %w", err)
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}

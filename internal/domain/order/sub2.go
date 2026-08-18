@@ -44,6 +44,8 @@ type OrderLedgerService interface {
 	CreateDismantle(ctx context.Context, d Dismantle) (int64, error)
 	ListActivationCallbacks(ctx context.Context) ([]ActivationCallback, error)
 	AppendActivationCallback(ctx context.Context, c ActivationCallback) (int64, error)
+	// RetryActivationCallback 回调重试(retries+1)。
+	RetryActivationCallback(ctx context.Context, id int64) error
 	ListDispatchTransfers(ctx context.Context, ticketID int64) ([]DispatchTransfer, error)
 	AppendDispatchTransfer(ctx context.Context, t DispatchTransfer) (int64, error)
 }

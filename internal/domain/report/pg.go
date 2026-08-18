@@ -57,6 +57,22 @@ func (s *PGStore) LatestSnapshot(ctx context.Context, period string) (*Snapshot,
 	return &snap, nil
 }
 
+// SnapshotByID 按主键取快照;未命中返回 ErrNoSnapshot。
+func (s *PGStore) SnapshotByID(ctx context.Context, id int64) (*Snapshot, error) {
+	var snap Snapshot
+	err := s.db.QueryRow(ctx, `
+		SELECT id, period, window_start, window_end, payload, created_at
+		FROM report_snapshots WHERE id = $1`, id).
+		Scan(&snap.ID, &snap.Period, &snap.WindowStart, &snap.WindowEnd, &snap.Payload, &snap.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNoSnapshot
+	}
+	if err != nil {
+		return nil, fmt.Errorf("report: by id: %w", err)
+	}
+	return &snap, nil
+}
+
 // ListSnapshots 全部快照(新→旧)。
 func (s *PGStore) ListSnapshots(ctx context.Context) ([]Snapshot, error) {
 	rows, err := s.db.Query(ctx, `

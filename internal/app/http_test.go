@@ -76,6 +76,9 @@ func (f *fakeUser) GetProfile(context.Context, int64) (*user.Profile, error) {
 func (f *fakeUser) ListAccounts(context.Context) ([]user.AccountRow, error) {
 	return f.accounts, nil
 }
+func (f *fakeUser) ListDataScopes(context.Context, string) ([]user.AccountRow, error) {
+	return f.accounts, nil
+}
 func (f *fakeUser) ListRoles(context.Context) ([]user.Role, error) {
 	return []user.Role{{Code: "ops", Name: "业务运营"}}, nil
 }

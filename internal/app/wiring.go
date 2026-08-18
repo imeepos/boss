@@ -13,6 +13,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
+	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/device"
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/gis"
@@ -41,6 +42,7 @@ type Application struct {
 	Product        customer.ProductService
 	CustomerLedger customer.CustomerLedgerService
 	RealName       customer.RealNameService
+	UserData       udcustomer.Service
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
@@ -163,6 +165,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Product:        cust,
 		CustomerLedger: cust,
 		RealName:       cust,
+		UserData:       udcustomer.NewPGStore(pool),
 
 		Billing: bill,
 		Arrears: bill,

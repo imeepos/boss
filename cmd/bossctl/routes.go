@@ -37,6 +37,11 @@ var routeCatalog = []routeEntry{
 	{"GET", "/api-keys", "API key 列表"},
 	{"POST", "/api-keys", "创建 API key"},
 	{"DELETE", "/api-keys/:id", "吊销 API key"},
+	// ai OpenAI 能力网关
+	{"GET", "/ai/openai/config", "OpenAI 集中配置视图(脱敏)"},
+	{"PUT", "/ai/openai/config", "变更 OpenAI 集中配置(热更)"},
+	{"POST", "/ai/chat/completions", "AI 对话补全"},
+	{"POST", "/ai/embeddings", "AI 文本向量化"},
 	// order 订单
 	{"GET", "/orders", "订单列表"},
 	{"POST", "/orders", "新建订单"},

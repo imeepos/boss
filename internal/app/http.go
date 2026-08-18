@@ -7,9 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/domain/ai"
+	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/provision"
@@ -50,7 +52,8 @@ func respondErr(c *gin.Context, err error) {
 		errors.Is(err, billing.ErrNotFound),
 		errors.Is(err, geo.ErrNotFound),
 		errors.Is(err, provision.ErrTaskNotFound),
-		errors.Is(err, worker.ErrNotFound):
+		errors.Is(err, worker.ErrNotFound),
+		errors.Is(err, userdata.ErrNotFound):
 		respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, resource.ErrIllegalTransition),
 		errors.Is(err, resource.ErrPortNotAvailable),
@@ -129,12 +132,20 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 		})
 	})
 
-	// 需要鉴权的路由组:先尝试 API key 免登录认证,再回退到 JWT 认证。
-	// API key 通过 X-API-Key 请求头传递,经哈希匹配数据库,注入绑定的账号身份,无需调用 /auth/login。
+	// 需要鉴权的路由组:先尝试 API key 免登录认证,再回退 JWT 认证。
+	// API key 与三类主体(account/worker/customer)绑定;account 注入完整 RBAC 身份,
+	// worker/customer 注入受限身份(菜单门禁 403,扫码接口经 Subject 识别)。
 	authed := api.Group("")
-	authed.Use(middleware.APIKeyAuth(a.APIKey, a.User), middleware.Authn(mgr))
+	authed.Use(middleware.APIKeyAuth(a.APIKey, apiKeySubjectResolver(a)), middleware.Authn(mgr))
 
 	authed.GET("/auth/me", func(c *gin.Context) {
+		// API key worker/customer 主体:返回主体身份(非账号,无 RBAC profile)
+		if s := middleware.SubjectFrom(c); s != nil && s.Type != apikey.SubjectAccount {
+			respond(c, apitypes.CodeOK, gin.H{
+				"subjectType": s.Type, "subjectRef": s.Ref, "name": s.Name,
+			})
+			return
+		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
 		p, err := a.User.GetProfile(c.Request.Context(), claims.AccountID)
 		if err != nil {
@@ -154,6 +165,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerAIRoutes(authed, a)
 	registerAPIKeyRoutes(authed, a)
 	registerOrderRoutes(authed, a)
+	registerOrderSubRoutes(authed, a)
 	registerDispatchRoutes(authed, a)
 	registerDashboardRoutes(authed, a)
 	registerBillingRoutes(authed, a)
@@ -170,4 +182,6 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerProvisionRoutes(authed, a)
 	registerQuadlinkRoutes(authed, a)
 	registerWorkerRoutes(authed, a)
+	registerUserdataRoutes(authed, a)
+	registerUserdataMoreRoutes(authed, a)
 }

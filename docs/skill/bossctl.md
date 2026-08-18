@@ -88,6 +88,9 @@ bossctl apikey revoke 5
 | `apikey list` | 列出 API key |
 | `apikey create <accountId> <name>` | 创建 API key |
 | `apikey revoke <id>` | 吊销 API key |
+| `ai config [--url URL] [--key KEY] [--model M]` | 查看/更新 OpenAI 集中配置(apiKey/apiUrl 平台统一管理) |
+| `ai chat [--model M] <文本>` | AI 对话补全 |
+| `ai embed [--model M] <文本...>` | 文本向量化(需网关支持 embedding 模型) |
 
 ### call 命令详解
 
@@ -262,7 +265,7 @@ BOSS_API_KEY_SALT=my-salt go build -o server ./cmd/server
 
 ### 路由发现
 
-`bossctl routes` 列出所有可用 API 路由(121 个端点),方便快速查找:
+`bossctl routes` 列出所有可用 API 路由(125 个端点),方便快速查找:
 
 ```bash
 bossctl routes | grep "orders"

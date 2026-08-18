@@ -58,12 +58,27 @@ func TestE2E_AIOpenAI_Integration(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-	if _, err := pool.Exec(ctx,
+	var accountID int64
+	if err := pool.QueryRow(ctx,
 		`INSERT INTO accounts(username, password_hash, real_name, role_id)
-		 SELECT $1, $2, 'AI测试员', id FROM roles WHERE code='sysadmin'`,
-		username, string(hash)); err != nil {
+		 SELECT $1, $2, 'AI测试员', id FROM roles WHERE code='sysadmin' RETURNING id`,
+		username, string(hash)).Scan(&accountID); err != nil {
 		t.Fatalf("seed account: %v", err)
 	}
+	// 账号自清理:biz_params.updated_by 有 FK 指向 accounts,先置空再删;
+	// 同时备份并清空 ai.openai.* 配置(保证"未配置"分支可测),结束时恢复原值。
+	var origURL, origKey, origModel string
+	_ = pool.QueryRow(ctx, `SELECT COALESCE(value::text,'""'),(SELECT COALESCE(value::text,'""') FROM biz_params WHERE key='ai.openai.apiKey'),(SELECT COALESCE(value::text,'""') FROM biz_params WHERE key='ai.openai.model') FROM biz_params WHERE key='ai.openai.apiUrl'`).Scan(&origURL, &origKey, &origModel)
+	_, _ = pool.Exec(ctx, `DELETE FROM biz_params WHERE key LIKE 'ai.openai.%'`)
+	t.Cleanup(func() {
+		cctx := context.Background()
+		_, _ = pool.Exec(cctx, `UPDATE biz_params SET updated_by=NULL WHERE updated_by=$1`, accountID)
+		_, _ = pool.Exec(cctx, `DELETE FROM accounts WHERE id=$1`, accountID)
+		_, _ = pool.Exec(cctx, `INSERT INTO biz_params(key,value) VALUES
+			('ai.openai.apiUrl',$1::jsonb),('ai.openai.apiKey',$2::jsonb),('ai.openai.model',$3::jsonb)
+			ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`,
+			origURL, origKey, origModel)
+	})
 
 	r := gin.New()
 	RegisterRoutes(r, a, auth.NewManager("e2e-secret", time.Hour))

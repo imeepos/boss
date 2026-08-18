@@ -36,6 +36,8 @@ type Store interface {
 	UpsertSnapshot(ctx context.Context, s *Snapshot) error
 	LatestSnapshot(ctx context.Context, period string) (*Snapshot, error)
 	ListSnapshots(ctx context.Context) ([]Snapshot, error)
+	// SnapshotByID 按主键取快照(报告推送入口);未命中返回 ErrNoSnapshot。
+	SnapshotByID(ctx context.Context, id int64) (*Snapshot, error)
 }
 
 // ReportService 报告服务(依赖分析域,接口隔离)。

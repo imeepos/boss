@@ -1,23 +1,35 @@
-// Package apikey 提供免登录 API key 管理:key 与账号绑定,权限随账号角色。
+// Package apikey 提供免登录 API key 管理:key 与三类主体(account/worker/customer)绑定。
+//
+// 主体模型(与迁移 000043 三表登录边界、000044 主体扩展对齐):
+//   - account  → accounts.id,注入完整 RBAC 身份,可访问全部管理接口
+//   - worker   → workers.id,注入师傅身份,用于扫码/工单类接口;不持有菜单权限
+//   - customer → customers.id,注入客户身份,用于下单/查询类接口;不持有菜单权限
 //
 // 安全原则:
 //   - 只存 sha256(key) 哈希,永不落明文;
 //   - 创建成功时返回完整密钥(仅一次),后续查询只返回元数据;
-//   - 停用账号即停用其所有 key(ON DELETE CASCADE + status 过滤)。
+//   - 停用主体即停用其所有 key(级联 + status 过滤)。
 package apikey
 
 import "context"
 
+// 主体类型枚举。
+const (
+	SubjectAccount  = "account"
+	SubjectWorker   = "worker"
+	SubjectCustomer = "customer"
+)
+
 // APIKey 元数据(不含明文密钥)。
 type APIKey struct {
 	ID          int64  `json:"id"`
-	AccountID   int64  `json:"accountId"`
-	AccountName string `json:"accountName,omitempty"` // 冗余展示,来自关联查询
-	Name        string `json:"name"`
-	KeyPrefix   string `json:"keyPrefix"`   // 密钥前 8 位(用于识别)
+	SubjectType string `json:"subjectType"` // account | worker | customer
+	SubjectRef  int64  `json:"subjectRef"`  // 主体表主键
+	SubjectName string `json:"subjectName"` // 冗余展示:账号名/师傅名/客户名
+	Name        string `json:"name"`        // 用途说明,如 ci-pipeline
+	KeyPrefix   string `json:"keyPrefix"`   // 密钥前 8 位
 	Status      int16  `json:"status"`      // 1启用 0停用
 	LastUsedAt  string `json:"lastUsedAt"`  // ISO8601,空=从未使用
-	ExpiresAt   string `json:"expiresAt"`   // ISO8601,空=永不过期
 	CreatedAt   string `json:"createdAt"`
 }
 
@@ -27,22 +39,32 @@ type CreateResult struct {
 	PlainKey string `json:"plainKey"` // 完整密钥,如 boss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 }
 
+// Subject Lookup 解析出的主体标识。
+type Subject struct {
+	Type string // account | worker | customer
+	Ref  int64  // 主体表主键
+}
+
 // Service 免登录 API key 管理接口。
 type Service interface {
-	// Create 为指定账号创建 API key。返回 CreateResult 包含完整密钥。
-	// name 为用途说明,如 "ci-pipeline-01"。
-	Create(ctx context.Context, accountID, createdBy int64, name string) (*CreateResult, error)
+	// Create 为指定主体创建 API key,返回完整密钥。
+	// subjectType ∈ {account, worker, customer};subjectRef 为主体表主键。
+	Create(ctx context.Context, subjectType string, subjectRef, createdBy int64, name string) (*CreateResult, error)
 
 	// List 列出所有 API key 元数据(不含明文密钥)。
 	List(ctx context.Context) ([]APIKey, error)
 
-	// Revoke 停用指定 API key(软删除,status=0)。
+	// Revoke 停用指定 API key(软删除)。
 	Revoke(ctx context.Context, id int64) error
 
-	// Lookup 通过密钥哈希查找绑定的账号ID;status=0 的 key 返回 ErrNotFound。
-	// 用于认证中间件。
-	Lookup(ctx context.Context, keyHash string) (accountID int64, err error)
+	// Lookup 通过密钥哈希查找绑定主体;status=0 的 key 返回 ErrNotFound。
+	Lookup(ctx context.Context, keyHash string) (*Subject, error)
 
-	// Touch 更新 last_used_at(认证成功时调用,尽力而为)。
+	// Touch 更新 last_used_at(尽力而为)。
 	Touch(ctx context.Context, keyHash string)
+}
+
+// ValidSubjectType 校验主体类型合法。
+func ValidSubjectType(t string) bool {
+	return t == SubjectAccount || t == SubjectWorker || t == SubjectCustomer
 }

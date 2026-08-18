@@ -34,8 +34,12 @@ func respondScanErr(c *gin.Context, err error) {
 	}
 }
 
-// workerFromClaims 从 JWT 取操作师傅(账号ID + 用户名)。
+// workerFromClaims 取操作师傅:API key worker 主体优先(复合场景测试),
+// 否则回退 JWT claims(账号ID + 用户名)。
 func workerFromClaims(c *gin.Context) (int64, string) {
+	if s := middleware.SubjectFrom(c); s != nil && s.Type == "worker" {
+		return s.Ref, s.Name
+	}
 	if v, ok := c.Get(middleware.CtxClaims); ok {
 		if claims, ok := v.(*auth.Claims); ok {
 			return claims.AccountID, claims.Username

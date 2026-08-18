@@ -1,6 +1,6 @@
 ---
 name: self-evolving
-description: A self-evolving skill that grows through reflection on mistakes. Use for any task where you want to accumulate experience over time — this skill starts empty and learns from every failure. After each session, you must reflect on what went wrong and feed it back into the skill so the next session is stronger.
+description: "**[MUST LOAD FIRST]** A self-evolving skill that grows through reflection on mistakes. Use for any task where you want to accumulate experience over time — this skill starts empty and learns from every failure. After each session, you must reflect on what went wrong and feed it back into the skill so the next session is stronger. This skill MUST be loaded at the START of every session before any other work begins, regardless of the task at hand — its high-frequency red lines prevent costly repeated mistakes that waste hours.
 ---
 
 # Self-Evolving Skill
@@ -16,6 +16,8 @@ description: A self-evolving skill that grows through reflection on mistakes. Us
 3. **【已犯 2 次】edit 的 new_string 必须与 old_string 范围严格对称** —— 不顺手带函数头/注释(会重复定义),不做"只删换行"的 no-op(会并行致语法错);改完立刻 build 验证。
 4. **【已犯 5 次】任务完成必须 git commit,`git status` 干净才算收尾** —— 门禁 = typecheck + test + build + commit;反思流程第 0 步先 `git status`,有产物先提交再反思。
 5. **【已犯 3 次】禁止在总结里声称"已适配/已验证"而没有验证动作** —— 引用每个 CSS 令牌前 grep 它的定义；UI 交互必须在真实业务 DOM 中断言点击后的控件文本、筛选结果和 URL；没有双主题截图/build 或真实点击断言时一律明确写"未验证"。
+6. **【已犯 1 次】禁止假设模型支持图像输入** —— Kimi-k3 不支持图像分析，需要图像分析时应使用专门的工具（如 cdp-capture.mjs + 代码审查）或明确说明"未验证"。
+7. **【已犯 1 次】禁止在未检查环境依赖时使用工具** —— 使用 Playwright/Puppeteer 等工具前必须先检查是否已安装，避免运行时报错浪费时间。
 
 ## 1. 如何沉淀
 
@@ -91,18 +93,58 @@ self-evolving/
 - 一条经验一行/一段，不要合并
 - 经验过时了？在下面加一条新的纠正它，不要删旧的
 
-## 3. 开工前必查（按场景检索）
+## 3. 浏览器截图与 UI 调试（必会工具）
+
+**首选 `cdp-capture.mjs`**，零依赖、功能最全。另一个 `browser-test/screenshot.mjs` 是 playwright 方案，功能弱且要下 ~100MB chromium，不要再用。
+
+### 何时用
+
+- 验证 UI 改动效果（双主题、响应式）
+- 排查前端报错（console / 网络失败）
+- 需要登录后才能看到的页面
+
+### 用法
+
+```bash
+# 基础截图
+node .agents/skills/self-evolving/scripts/cdp-capture.mjs <url> <out.png>
+
+# 截图 + 采集 console 报错和失败请求（排查首选）
+node .agents/skills/self-evolving/scripts/cdp-capture.mjs <url> <out.png> --logs out.json
+
+# 截图 + 自动填表登录（可重复多次 --eval）
+node .agents/skills/self-evolving/scripts/cdp-capture.mjs <url> <out.png> \
+  --eval "document.querySelector('#username').value='admin'" \
+  --eval "document.querySelector('#password').value='123456'" \
+  --eval "document.querySelector('button[type=submit]').click()"
+
+# 自定义视口和等待时间
+node .agents/skills/self-evolving/scripts/cdp-capture.mjs <url> <out.png> --width 1440 --height 900 --settle 3000
+```
+
+### 截图后
+
+用 `read_image` 工具读取截图文件，分析布局、样式、文字。
+
+### 依赖
+
+- Node >= 22
+- macOS 系统 Chrome（`/Applications/Google Chrome.app`）
+- 零 npm 依赖
+
+## 4. 开工前必查（按场景检索）
 
 **写代码前，先浏览 `references/knowledge/` 对应分类的标题，确认有没有"已知的坑"。**
 
 - 写前端/UI/CSS/组件 → 看 `knowledge/前端.md`
 - 写 Go/数据库/API → 看 `knowledge/后端.md`
 - 部署/CI/环境配置 → 看 `knowledge/实施.md`
+- 浏览器截图/UI 调试 → 用 `cdp-capture.mjs`（见第 3 节）
 - 不确定 → 看 `knowledge/README.md` 速查统计表
 
 每个分类文件末尾有"开工前 grep 关键词"，用这些词检索所有 references 文件。
 
-## 4. 反馈优先级
+## 5. 反馈优先级
 
 最值钱的先写：
 

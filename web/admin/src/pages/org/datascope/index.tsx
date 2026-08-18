@@ -1,5 +1,5 @@
 // 数据权限页:账号级数据范围清单。列名对齐原型(账号/角色(功能)/子公司/部门/岗位/数据范围/操作)。
-// 数据源: GET /accounts(账号行含 regionScope,空=全集团);/data-scopes 待后端提供,优先调用、失败回退 /accounts。
+// 数据源: GET /data-scopes(后端已实现,keyword 服务端过滤账号/姓名/角色);空 keyword=全量。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -19,9 +19,7 @@ export default function DataScopePage() {
 
   const load = () => {
     setError('')
-    // /data-scopes 为契约端点(org.yaml);后端落地前回退 /accounts 同构行。
-    apiFetch<ScopeRow[]>('/data-scopes')
-      .catch(() => apiFetch<ScopeRow[]>('/accounts'))
+    apiFetch<ScopeRow[]>('/data-scopes', { query: { keyword: keyword || undefined } })
       .then((d) => setRows(d ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : t.pages.datascope.loadFail))
   }

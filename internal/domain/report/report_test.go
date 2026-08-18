@@ -43,6 +43,14 @@ func (s *stubStore) LatestSnapshot(_ context.Context, period string) (*Snapshot,
 	return nil, ErrNoSnapshot
 }
 func (s *stubStore) ListSnapshots(context.Context) ([]Snapshot, error) { return s.saved, nil }
+func (s *stubStore) SnapshotByID(_ context.Context, id int64) (*Snapshot, error) {
+	for _, snap := range s.saved {
+		if snap.ID == id {
+			return &snap, nil
+		}
+	}
+	return nil, ErrNoSnapshot
+}
 
 func sampleIndicators() []analytics.Indicator {
 	return []analytics.Indicator{

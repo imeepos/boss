@@ -3,19 +3,21 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // apikey 管理 API key: apikey list|create|revoke
+// create 支持三类主体: account/<id> | worker/<id> | customer/<id>
 func (c *CLI) apikey(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("用法: bossctl apikey list|create <accountId> <name>|revoke <id>")
+		return fmt.Errorf("用法: bossctl apikey list|create <account|worker|customer>/<id> <name>|revoke <id>")
 	}
 	switch args[0] {
 	case "list":
 		return c.apiKeyList()
 	case "create":
 		if len(args) < 3 {
-			return fmt.Errorf("用法: bossctl apikey create <accountId> <name>")
+			return fmt.Errorf("用法: bossctl apikey create <account|worker|customer>/<id> <name>\n示例: bossctl apikey create worker/5 field-test")
 		}
 		return c.apiKeyCreate(args[1], args[2])
 	case "revoke":
@@ -26,6 +28,23 @@ func (c *CLI) apikey(args []string) error {
 	default:
 		return fmt.Errorf("未知 API key 命令: %s", args[0])
 	}
+}
+
+// parseSubject 解析 account/7 形式的主体标识。
+func parseSubject(s string) (string, int64, error) {
+	parts := strings.SplitN(s, "/", 2)
+	if len(parts) != 2 {
+		return "", 0, fmt.Errorf("主体格式应为 <account|worker|customer>/<id>,如 worker/5,收到 %q", s)
+	}
+	var ref int64
+	if _, err := fmt.Sscanf(parts[1], "%d", &ref); err != nil || ref <= 0 {
+		return "", 0, fmt.Errorf("主体 ID 非法: %q", parts[1])
+	}
+	switch parts[0] {
+	case "account", "worker", "customer":
+		return parts[0], ref, nil
+	}
+	return "", 0, fmt.Errorf("主体类型非法: %q(应为 account|worker|customer)", parts[0])
 }
 
 // apiKeyList 列出所有 API key。
@@ -41,9 +60,13 @@ func (c *CLI) apiKeyList() error {
 	return nil
 }
 
-// apiKeyCreate 创建 API key,返回完整密钥(仅此一次)。
-func (c *CLI) apiKeyCreate(accountID, name string) error {
-	body := map[string]any{"accountId": accountID, "name": name}
+// apiKeyCreate 为指定主体创建 API key,返回完整密钥(仅此一次)。
+func (c *CLI) apiKeyCreate(subject, name string) error {
+	subjType, ref, err := parseSubject(subject)
+	if err != nil {
+		return err
+	}
+	body := map[string]any{"subjectType": subjType, "subjectRef": ref, "name": name}
 	resp, err := c.do("POST", "/api/v1/api-keys", body, nil)
 	if err != nil {
 		return err
@@ -53,14 +76,17 @@ func (c *CLI) apiKeyCreate(accountID, name string) error {
 	}
 
 	var data struct {
-		PlainKey string `json:"plainKey"`
+		ID         int64  `json:"id"`
+		PlainKey   string `json:"plainKey"`
+		SubjectRef int64  `json:"subjectRef"`
 	}
 	if err := json.Unmarshal(resp.Data, &data); err != nil {
 		return fmt.Errorf("解析创建响应: %w", err)
 	}
-	fmt.Println("创建成功,请立即保存密钥(仅此一次返回):")
+	fmt.Printf("创建成功(%s 主体 #%d),请立即保存密钥(仅此一次返回):\n", subjType, data.SubjectRef)
 	fmt.Printf("  %s\n", data.PlainKey)
-	fmt.Println("使用: bossctl --api-key " + data.PlainKey + " me")
+	fmt.Printf("保存为身份: bossctl identity save %s-test --api-key %s\n", subjType, data.PlainKey)
+	fmt.Printf("使用身份:   bossctl --as %s-test me\n", subjType)
 	return nil
 }
 

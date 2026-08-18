@@ -27,7 +27,6 @@ paths:
     post:
       tags: [Provision]
       summary: 新建/复制配置模板
-      description: （未实现 planned）
       operationId: createProvisionTemplate
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:

@@ -49,6 +49,8 @@ type WorkOrderService interface {
 	CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error)
 	ListComplaints(ctx context.Context) ([]Complaint, error)
 	CreateComplaint(ctx context.Context, c Complaint) (int64, error)
+	// CloseComplaint 投诉办结(ticketNo 寻址,status→CLOSED)。
+	CloseComplaint(ctx context.Context, ticketNo string) error
 	ListScanLogs(ctx context.Context, orderID int64) ([]ScanLog, error)
 	AppendScanLog(ctx context.Context, l ScanLog) (int64, error)
 }

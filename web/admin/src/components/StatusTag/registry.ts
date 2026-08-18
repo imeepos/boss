@@ -17,7 +17,7 @@ export type StatusDomain =
   | 'order' | 'port' | 'asset' | 'bill' | 'payment' | 'service'
   | 'product' | 'quad' | 'tag' | 'resource' | 'loAccount' | 'ticket'
   | 'task' | 'complaint' | 'scan' | 'alarmLevel' | 'alarmStatus' | 'maintPriority'
-  | 'accountStatus' | 'message'
+  | 'accountStatus' | 'message' | 'realName' | 'recon' | 'reserve'
 
 type Registry = Partial<Record<StatusDomain, Record<string, TagMeta>>>
 
@@ -56,6 +56,19 @@ export const REGISTRY: Registry = {
     ACTIVE: { label: '在服', color: GREEN },
     ARREARS: { label: '欠费', color: RED },
     SUSPENDED: { label: '停机', color: GRAY },
+  },
+  realName: {
+    VERIFIED: { label: '已实名', color: GREEN },
+    PENDING: { label: '待补登', color: ORANGE },
+  },
+  recon: {
+    DIFF_PENDING: { label: '差异挂起', color: ORANGE },
+    SETTLED: { label: '已平账', color: GREEN },
+  },
+  reserve: {
+    HELD: { label: '预占中', color: ORANGE },
+    RELEASED: { label: '已释放', color: GRAY },
+    CONSUMED: { label: '已占用', color: BLUE },
   },
   product: {
     DRAFT: { label: '草稿', color: GRAY },

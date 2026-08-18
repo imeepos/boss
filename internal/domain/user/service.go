@@ -54,6 +54,8 @@ type Service interface {
 	ListRegions(ctx context.Context, parentPath string) ([]Region, error)
 	ListLegalEntities(ctx context.Context) ([]LegalEntity, error)
 	ListAccounts(ctx context.Context) ([]AccountRow, error)
+	// ListDataScopes 账号数据范围清单(menu:datascope 保护;kw 过滤账号/姓名/角色)。
+	ListDataScopes(ctx context.Context, kw string) ([]AccountRow, error)
 	ListRoles(ctx context.Context) ([]Role, error)
 	// CreateAccount/UpdateAccount 受权建号/改号(封闭模型,menu:account 保护)。
 	CreateAccount(ctx context.Context, in AccountInput) (int64, error)

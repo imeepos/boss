@@ -163,6 +163,16 @@ func registerOrgRoutes(g *gin.RouterGroup, a *Application) {
 		})
 	})
 
+	// 数据权限清单:账号级数据范围(org.yaml /data-scopes,kw 过滤账号/姓名/角色)。
+	g.GET("/data-scopes", requirePerm(a.User, "menu:datascope"), func(c *gin.Context) {
+		rows, err := a.User.ListDataScopes(c.Request.Context(), c.Query("keyword"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, rows)
+	})
+
 	g.GET("/departments", requirePerm(a.User, "menu:department"), func(c *gin.Context) {
 		list, err := a.User.ListDepartments(c.Request.Context(), queryInt64(c, "legalEntityId"))
 		if err != nil {

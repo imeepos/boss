@@ -1,8 +1,11 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 
+	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -15,6 +18,22 @@ func registerProvisionRoutes(g *gin.RouterGroup, a *Application) {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	})
+
+	// 新建/复制配置模板(provision.yaml createProvisionTemplate,原 planned)。
+	g.POST("/provision-templates", requirePerm(a.User, "menu:template"), func(c *gin.Context) {
+		var t provision.Template
+		if err := c.ShouldBindJSON(&t); err != nil || t.LegalEntityID == 0 || t.Code == "" || t.Name == "" {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		id, err := a.Provision.CreateTemplate(c.Request.Context(), t)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "数据变更", "provision_template", fmt.Sprint(id), map[string]any{"code": t.Code})
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
 	})
 
 	g.GET("/provision-tasks", requirePerm(a.User, "menu:provision"), func(c *gin.Context) {

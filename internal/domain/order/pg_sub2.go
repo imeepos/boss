@@ -69,6 +69,18 @@ func (s *PGStore) AppendActivationCallback(ctx context.Context, c ActivationCall
 	return id, nil
 }
 
+// RetryActivationCallback 回调重试:retries+1;未命中返回 ErrNotFound。
+func (s *PGStore) RetryActivationCallback(ctx context.Context, id int64) error {
+	tag, err := s.db.Exec(ctx, `UPDATE activation_callbacks SET retries = retries + 1 WHERE id=$1`, id)
+	if err != nil {
+		return fmt.Errorf("order: retry activation callback: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrOrderNotFound
+	}
+	return nil
+}
+
 // ListDispatchTransfers 列出改派台账;ticketID=0 返回全部,否则按工单过滤。
 func (s *PGStore) ListDispatchTransfers(ctx context.Context, ticketID int64) ([]DispatchTransfer, error) {
 	rows, err := s.db.Query(ctx, `

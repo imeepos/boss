@@ -25,6 +25,9 @@ func chatCompletion(ctx context.Context, cfg Config, req ChatRequest) (*ChatResp
 	if model == "" {
 		model = cfg.Model
 	}
+	if model == "" {
+		return nil, fmt.Errorf("%w: model 未指定且平台未配置默认模型", ErrInvalidInput)
+	}
 	params := openai.ChatCompletionNewParams{
 		Model:    openai.ChatModel(model),
 		Messages: toSDKMessages(req.Messages),
@@ -73,6 +76,9 @@ func embeddings(ctx context.Context, cfg Config, req EmbeddingRequest) (*Embeddi
 	model := req.Model
 	if model == "" {
 		model = cfg.Model
+	}
+	if model == "" {
+		return nil, fmt.Errorf("%w: model 未指定且平台未配置默认模型", ErrInvalidInput)
 	}
 	resp, err := newSDKClient(cfg).Embeddings.New(ctx, openai.EmbeddingNewParams{
 		Model: openai.EmbeddingModel(model),

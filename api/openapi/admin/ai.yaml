@@ -101,7 +101,7 @@ components:
       type: object
       required: [messages]
       properties:
-        model: { type: string, description: 空=平台默认模型(biz_params ai.openai.model) }
+        model: { type: string, description: 空=平台默认模型(biz_params ai.openai.model,亦空则 42200) }
         messages:
           type: array
           minItems: 1
