@@ -1,6 +1,6 @@
 # env / secrets
 .env
-deployments/app.env
+# deployments/app.env —— 内网私有仓库,固定密钥直接入库简化 CI(转公网前必须移回 ignore)
 *.local.yaml
 
 # go

@@ -22,21 +22,6 @@ jobs:
       - name: Push image
         run: docker push 192.168.0.102:5000/boss/server:${GITHUB_SHA} && docker push 192.168.0.102:5000/boss/server:latest
 
-      - name: Prepare app.env
-        # app.env 不入库(含密钥);固定密钥统一存 gitea 仓库 secret(部署设置→Secrets):
-        #   BOSS_JWT_SECRET   必配,固定 JWT 签名密钥(轮换会使全部 token 失效)
-        #   BOSS_ADMIN_PASSWORD 可选,首启引导 sysadmin(留空=跳过引导)
-        # 未配置 BOSS_JWT_SECRET 时直接失败,避免每次部署随机生成导致会话全失效。
-        run: |
-          [ -n "$BOSS_JWT_SECRET" ] || { echo "缺少 secret BOSS_JWT_SECRET:请在 gitea 仓库 Settings→Secrets 配置固定值"; exit 1; }
-          cp deployments/app.env.example deployments/app.env
-          sed -i.bak "s|^BOSS_JWT_SECRET=.*|BOSS_JWT_SECRET=$BOSS_JWT_SECRET|" deployments/app.env
-          [ -z "$BOSS_ADMIN_PASSWORD" ] || sed -i.bak2 "s|^BOSS_ADMIN_PASSWORD=.*|BOSS_ADMIN_PASSWORD=$BOSS_ADMIN_PASSWORD|" deployments/app.env
-          rm -f deployments/app.env.bak deployments/app.env.bak2
-        env:
-          BOSS_JWT_SECRET: ${{ secrets.BOSS_JWT_SECRET }}
-          BOSS_ADMIN_PASSWORD: ${{ secrets.BOSS_ADMIN_PASSWORD }}
-
       - name: Deploy (compose up)
         run: |
           docker-compose -f deployments/docker-compose.102.app.yml -p boss-app up -d --remove-orphans

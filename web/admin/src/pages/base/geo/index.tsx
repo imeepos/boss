@@ -1,8 +1,10 @@
-// 国家与行政区划维护页:双 Tab(国家/区划),字段口径 docs/contract/fields.md 1.5.1。
+// 国家与行政区划维护页:PageContainer 惯例(页头 + 页签)+ 卡片化面板。
+// 字段口径 docs/contract/fields.md 1.5.1;主题走 geo.css 令牌。
 import { useState } from 'react'
 import { useT } from '../../../i18n'
 import { CountryPanel } from './CountryPanel'
 import { SubdivisionPanel } from './SubdivisionPanel'
+import './geo.css'
 
 export default function GeoPage() {
   const t = useT()
@@ -10,8 +12,13 @@ export default function GeoPage() {
 
   return (
     <div>
-      <h2>{t.pages.geo.title}</h2>
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+      <div className="geo-page-head">
+        <div>
+          <h2 className="geo-page-title">{t.pages.geo.title}</h2>
+          <p className="geo-page-desc">ISO 3166-1 / ISO 3166-2 · CLDR · UN M49</p>
+        </div>
+      </div>
+      <nav className="geo-tabs" role="tablist">
         {(
           [
             ['country', t.pages.geo.tabCountry],
@@ -20,20 +27,15 @@ export default function GeoPage() {
         ).map(([key, label]) => (
           <button
             key={key}
+            role="tab"
+            aria-selected={tab === key}
+            className={`geo-tab${tab === key ? ' active' : ''}`}
             onClick={() => setTab(key)}
-            style={{
-              padding: '6px 14px',
-              border: '1px solid #d9d9d9',
-              borderRadius: 4,
-              background: tab === key ? '#1677ff' : '#fff',
-              color: tab === key ? '#fff' : '#333',
-              cursor: 'pointer',
-            }}
           >
             {label}
           </button>
         ))}
-      </div>
+      </nav>
       {tab === 'country' ? <CountryPanel /> : <SubdivisionPanel />}
     </div>
   )
