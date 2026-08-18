@@ -1,39 +1,6 @@
 paths:
-  /auth/register:
-    post:
-      tags: [Auth]
-      summary: 自助注册(阶段1 基础功能;默认 ops 角色)
-      operationId: adminRegister
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [username, password, realName]
-              properties:
-                username: { type: string, description: 3-64 位,字母/数字/_-. }
-                password: { type: string, description: 不少于 6 位 }
-                realName: { type: string }
-      responses:
-        '200':
-          description: 注册成功(envelope;用户名已存在 code=40900,入参不合法 code=42200)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code: { type: integer, example: 0 }
-                  msg: { type: string, example: ok }
-                  data:
-                    type: object
-                    properties:
-                      accountId: { type: integer }
-                      username: { type: string }
-                      realName: { type: string }
-                      roleCode: { type: string, example: ops }
-                      roleName: { type: string }
-
+  # 已移除 /auth/register:admin 端为封闭账号模型(契约 domain-map.md SYS 域),
+  # 账号由超管引导(EnsureSuperAdmin)或 org/account 受权流程创建;客户侧注册属用户端 PORT-007。
   /auth/login:
     post:
       tags: [Auth]

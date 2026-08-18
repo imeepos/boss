@@ -21,28 +21,9 @@ export interface Translations {
       passwordPlaceholder: string
       submit: string
       submitting: string
-      noAccount: string
-      toRegister: string
+      assignedByAdmin: string
       emptyFields: string
       fail: string
-    }
-    register: {
-      title: string
-      subtitle: string
-      namePlaceholder: string
-      usernamePlaceholder: string
-      passwordPlaceholder: string
-      confirmPlaceholder: string
-      submit: string
-      submitting: string
-      hasAccount: string
-      toLogin: string
-      emptyName: string
-      invalidUsername: string
-      shortPassword: string
-      mismatch: string
-      fail: string
-      tip: string
     }
   }
   ads: Array<{ title: string; sub: string }>
@@ -161,11 +142,244 @@ export interface Translations {
     }
     account: {
       title: string
+      desc: string
       searchPlaceholder: string
       columns: string[]
+      allRole: string
+      allStatus: string
+      statusOn: string
+      statusOff: string
+      detail: string
+      detailTitle: string
       edit: string
+      disable: string
+      disableConfirm: string
+      create: string
+      createTitle: string
+      editTitle: string
+      submitting: string
+      saveFail: string
+      empty: string
+      scopeAll: string
+      gBasic: string
+      gOrg: string
+      gScope: string
+      fUsername: string
+      fPassword: string
+      fRealName: string
+      fPhone: string
+      fRole: string
+      fLegalEntity: string
+      fDept: string
+      fPost: string
+      fRegionScope: string
+      pUsername: string
+      pPassword: string
+      pPasswordEdit: string
+      pRealName: string
+      pPhone: string
+      pRole: string
+      pAny: string
+      eUsername: string
+      ePassword: string
+      eRealName: string
+      ePhone: string
+      eRole: string
       allGroup: string
       total: string
+      loadFail: string
+    }
+    company: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      columns: string[]
+      add: string
+      edit: string
+      detail: string
+      save: string
+      cancel: string
+      codeLabel: string
+      nameLabel: string
+      codePlaceholder: string
+      namePlaceholder: string
+      requiredHint: string
+      total: string
+      empty: string
+      loadFail: string
+      saveFail: string
+      saved: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
+    department: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      allCompany: string
+      columns: string[]
+      detail: string
+      create: string
+      createTitle: string
+      editTitle: string
+      saveFail: string
+      fLegalEntity: string
+      pLegalEntity: string
+      fName: string
+      pName: string
+      eName: string
+      total: string
+      empty: string
+      loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
+    post: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      allDept: string
+      columns: string[]
+      detail: string
+      create: string
+      createTitle: string
+      editTitle: string
+      saveFail: string
+      fDept: string
+      pDept: string
+      fCode: string
+      pCode: string
+      eCode: string
+      fName: string
+      pName: string
+      eName: string
+      fRoles: string
+      total: string
+      empty: string
+      loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
+    region: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      allLevel: string
+      levelNames: string[]
+      columns: string[]
+      detail: string
+      drill: string
+      total: string
+      empty: string
+      loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
+    menuperm: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      allRole: string
+      menuColumn: string
+      actionColumn: string
+      modelTitle: string
+      modelLayerLabel: string
+      detailTitle: string
+      visibleRoles: string
+      noneRole: string
+      total: string
+      empty: string
+      loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
+    datascope: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      allScope: string
+      columns: string[]
+      detail: string
+      total: string
+      empty: string
+      loadFail: string
+      notImpl: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
+    params: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      allStatus: string
+      statusChanged: string
+      statusOrigin: string
+      refresh: string
+      cardTitle: string
+      hotUpdate: string
+      colName: string
+      colValue: string
+      colDesc: string
+      colOp: string
+      modified: string
+      detail: string
+      empty: string
+      save: string
+      saving: string
+      saved: string
+      saveFail: string
+      resetForm: string
+      detailTitle: string
+      currentValue: string
+      originValue: string
+      close: string
+      loadFail: string
+    }
+    audit: {
+      title: string
+      desc: string
+      searchPlaceholder: string
+      allTypes: string
+      types: string[]
+      refresh: string
+      cardTitle: string
+      matched: string
+      columns: string[]
+      detail: string
+      detailTitle: string
+      logId: string
+      empty: string
+      close: string
+      rangeText: string
+      prev: string
+      next: string
+      perPage: string
+      jump: string
+      pageUnit: string
       loadFail: string
     }
     profile: {

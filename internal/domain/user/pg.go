@@ -22,6 +22,7 @@ type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 // PGStore 是 Service 接口的 PostgreSQL 实现(阶段1:组织/账号/数据范围)。

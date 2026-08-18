@@ -29,19 +29,6 @@ export async function adminLogin(username: string, password: string): Promise<Lo
   return data
 }
 
-export interface RegisterResult {
-  accountId: number
-  username: string
-  realName: string
-  roleCode: string
-  roleName: string
-}
-
-/** 注册:创建 ops 角色账号(契约 /auth/register;40900=账号已存在)。 */
-export function adminRegister(username: string, password: string, realName: string): Promise<RegisterResult | null> {
-  return apiFetch<RegisterResult>('/auth/register', { method: 'POST', body: { username, password, realName } })
-}
-
 /** 当前账号档案(菜单可见性按 roleCode 驱动)。 */
 export function fetchMe(): Promise<Profile | null> {
   return apiFetch<Profile>('/auth/me')

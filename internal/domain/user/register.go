@@ -1,24 +1,22 @@
-// 注册(SYS 域,阶段1):创建 ops 角色账号,注册后即可登录。
+// 账号入参约束(SYS 域,阶段1):超管引导(EnsureSuperAdmin)与账号管理共用。
+// admin 端为封闭账号模型:自助注册已移除(契约裁定见 domain-map.md),账号仅经 org/account 受权流程创建。
 package user
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // ErrUsernameTaken 登录名已存在。
 var ErrUsernameTaken = errors.New("user: username taken")
 
-// ErrInvalidInput 注册入参不合法(长度/字符集)。
+// ErrInvalidInput 入参不合法(长度/字符集)。
 var ErrInvalidInput = errors.New("user: invalid input")
 
-// RegisterRules 注册入参约束,与前端校验保持一致。
+// AccountRules 账号入参约束,与前端校验保持一致。
 const (
 	UsernameMin = 3
 	UsernameMax = 64
@@ -26,31 +24,7 @@ const (
 	RealNameMax = 64
 )
 
-// Register 自助注册:默认角色 ops(业务运营),状态启用;成功即返回可登录身份。
-func (s *PGStore) Register(ctx context.Context, username, password, realName string) (*LoginResult, error) {
-	if err := validateRegister(username, password, realName); err != nil {
-		return nil, err
-	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, fmt.Errorf("user: bcrypt: %w", err)
-	}
-	var id int64
-	var roleName string
-	err = s.db.QueryRow(ctx, `
-		INSERT INTO accounts (username, password_hash, real_name, role_id)
-		SELECT $1, $2, $3, r.id FROM roles r WHERE r.code = 'ops'
-		RETURNING accounts.id, (SELECT name FROM roles WHERE code = 'ops')`,
-		username, string(hash), realName).Scan(&id, &roleName)
-	if isUniqueViolation(err) {
-		return nil, ErrUsernameTaken
-	}
-	if err != nil {
-		return nil, fmt.Errorf("user: register insert: %w", err)
-	}
-	return &LoginResult{AccountID: id, Username: username, RealName: realName, RoleCode: "ops", RoleName: roleName}, nil
-}
-
+// validateRegister 账号三项(登录名/密码/姓名)基础校验,引导建号复用。
 func validateRegister(username, password, realName string) error {
 	u, p, n := utf8.RuneCountInString(username), utf8.RuneCountInString(password), utf8.RuneCountInString(realName)
 	switch {

@@ -54,6 +54,50 @@ paths:
                   code: { type: integer }
                   msg: { type: string }
                   data: { type: array, items: { type: object } }
+    post:
+      tags: [Org]
+      summary: 新建部门(挂靠子公司,子公司内同名唯一;permCode menu:department)
+      operationId: createDepartment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legalEntityId, name]
+              properties:
+                legalEntityId: { type: integer }
+                name: { type: string, description: 64 位内 }
+      responses:
+        '200':
+          description: 新建成功(envelope,data.id;40900=子公司内同名)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data: { type: object, properties: { id: { type: integer } } }
+
+  /departments/{deptId}:
+    put:
+      tags: [Org]
+      summary: 编辑部门(改挂靠/改名;permCode menu:department)
+      operationId: updateDepartment
+      parameters:
+        - { name: deptId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legalEntityId, name]
+              properties:
+                legalEntityId: { type: integer }
+                name: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
   /posts:
     get:
@@ -75,6 +119,54 @@ paths:
                   code: { type: integer }
                   msg: { type: string }
                   data: { type: array, items: { type: object } }
+    post:
+      tags: [Org]
+      summary: 新建岗位(部门内 code 唯一;roles 全量绑定;permCode menu:post)
+      operationId: createPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deptId, code, name]
+              properties:
+                deptId: { type: integer }
+                code: { type: string, description: 2-64 位,小写字母开头 }
+                name: { type: string }
+                roles: { type: array, items: { type: string }, description: 功能角色码,未知码 42200 }
+      responses:
+        '200':
+          description: 新建成功(envelope,data.id)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data: { type: object, properties: { id: { type: integer } } }
+
+  /posts/{postId}:
+    put:
+      tags: [Org]
+      summary: 编辑岗位(改名/换部门/重绑角色;permCode menu:post)
+      operationId: updatePost
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deptId, code, name]
+              properties:
+                deptId: { type: integer }
+                code: { type: string }
+                name: { type: string }
+                roles: { type: array, items: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
   /regions:
     get:

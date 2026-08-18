@@ -1,85 +1,130 @@
 ---
 name: bossctl-cli
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: BOSS 业务平台 CLI 工具,用于操作全部 REST API 接口(121+ 端点),支持免登录 API key 认证。使用场景:自动化 CI/CD 流水线、日常运维脚本、API 调试与测试、批量数据操作。当用户要求 CLI 操作 API、免登录认证、或者提到 bossctl 时触发。
 ---
 
-# Bossctl Cli
+# bossctl CLI 工具使用指南
 
-## Overview
+## 使用二进制
 
-[TODO: 1-2 sentences explaining what this skill enables]
+技能内预编译了各平台二进制文件,位于 `assets/` 目录下:
 
-## Structuring This Skill
+```bash
+# 直接使用当前平台的二进制
+./assets/bossctl-darwin-arm64 --help
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+# 或复制到 PATH
+cp assets/bossctl-darwin-arm64 /usr/local/bin/bossctl
+bossctl --help
+```
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" -> "Reading" -> "Creating" -> "Editing"
-- Structure: ## Overview -> ## Workflow Decision Tree -> ## Step 1 -> ## Step 2...
+## 从源码构建
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" -> "Merge PDFs" -> "Split PDFs" -> "Extract Text"
-- Structure: ## Overview -> ## Quick Start -> ## Task Category 1 -> ## Task Category 2...
+技能包含构建脚本,可在任意平台重新编译:
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" -> "Colors" -> "Typography" -> "Features"
-- Structure: ## Overview -> ## Guidelines -> ## Specifications -> ## Usage...
+```bash
+# 当前平台
+./scripts/build.sh
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" -> numbered capability list
-- Structure: ## Overview -> ## Core Capabilities -> ### 1. Feature -> ### 2. Feature...
+# 交叉编译到其他平台
+GOOS=linux GOARCH=amd64 ./scripts/build.sh
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+# 构建产物在 assets/ 目录下
+```
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+## 快速开始
 
-## [TODO: Replace with the first main section based on chosen structure]
+```bash
+# 列出所有 API 路由
+bossctl routes
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+# 查看当前认证身份
+bossctl me
 
-## Resources (optional)
+# 调用 API
+bossctl call GET /orders
+```
 
-Create only the resource directories this skill actually needs. Delete this section if no resources are required.
+## 认证方式
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+### 1. API key 认证(推荐,免登录)
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+API key 与 BOSS 账号绑定,权限随账号角色走 RBAC。
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+```bash
+# 环境变量
+export BOSS_API_KEY=boss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+bossctl me
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Codex for patching or environment adjustments.
+# 命令行参数
+bossctl --api-key boss_xxx call GET /orders
+```
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
+### 2. JWT 认证(引导创建 API key 时使用)
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+```bash
+# 登录后 JWT 自动缓存到 ~/.bossctl/token
+bossctl login admin your-password
+```
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
+### 认证优先级
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
+`--api-key` > `--jwt` > `~/.bossctl/token` > 无认证(仅公开端点)
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
+## 命令参考
 
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
+| 命令 | 说明 |
+|------|------|
+| `call METHOD PATH [--data JSON] [--query k=v]` | 调用任意 API 端点 |
+| `login USERNAME PASSWORD` | 登录获取 JWT |
+| `me` | 查看当前登录身份 |
+| `routes` | 列出所有 API 路由(121 个端点) |
+| `apikey list` | 列出 API key |
+| `apikey create <accountId> <name>` | 创建 API key |
+| `apikey revoke <id>` | 吊销 API key |
 
----
+### call 命令详解
 
-**Not every skill requires all three types of resources.**
+```bash
+# GET 请求(查询参数)
+bossctl call GET /orders --query page=1 --query status=active
+
+# POST 请求(JSON body)
+bossctl call POST /orders --data '{"customerId":100,"productId":200}'
+
+# PUT/DELETE
+bossctl call PUT /legal-entities/1 --data '{"name":"新公司名"}'
+bossctl call DELETE /addresses/42
+
+# 路径自动补全(以下等价)
+bossctl call GET /orders        # 自动补全为 /api/v1/orders
+bossctl call GET /api/v1/orders # 完整路径
+```
+
+## API 路由发现
+
+```bash
+# 列出全部端点
+bossctl routes
+
+# 按方法过滤
+bossctl routes | grep "POST"
+
+# 按模块过滤
+bossctl routes | grep "orders"
+```
+
+## 服务端前置条件
+
+API key 认证依赖服务端已部署对应能力:
+
+1. 服务端数据库需有 `api_keys` 表(密钥哈希与账号绑定)
+2. 服务端需启用 `X-API-Key` 认证中间件(优先于 JWT 校验)
+3. 首次 API key 需通过 JWT 登录后创建(需 `menu:apikey` 权限,默认仅 sysadmin 角色持有)
+
+## 安全约定
+
+- 密钥格式: `boss_<32hex>`,仅在创建时返回一次,丢失需重新创建
+- 服务端只存 SHA-256 哈希,明文永不落盘
+- 停用账号即停用其所有 API key
+- 推荐通过环境变量 `BOSS_API_KEY` 传递密钥,避免 shell 历史记录

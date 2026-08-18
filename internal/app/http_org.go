@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,20 @@ import (
 type legalEntityReq struct {
 	Code string `json:"code" binding:"required"`
 	Name string `json:"name" binding:"required"`
+}
+
+// departmentReq 部门新建/编辑请求体(挂靠子公司,名称必填)。
+type departmentReq struct {
+	LegalEntityID int64  `json:"legalEntityId" binding:"required"`
+	Name          string `json:"name" binding:"required"`
+}
+
+// postReq 岗位新建/编辑请求体(部门内 code 唯一;roles 为功能角色码,可空)。
+type postReq struct {
+	DeptID int64    `json:"deptId" binding:"required"`
+	Code   string   `json:"code" binding:"required"`
+	Name   string   `json:"name" binding:"required"`
+	Roles  []string `json:"roles"`
 }
 
 // requirePerm 返回 RBAC 中间件:账号需持有 permCode 才可访问。
@@ -81,6 +96,56 @@ func registerOrgRoutes(g *gin.RouterGroup, a *Application) {
 		respond(c, apitypes.CodeOK, rows)
 	})
 
+	// 受权建号(封闭模型):上级分配角色/组织归属/数据范围。
+	g.POST("/accounts", requirePerm(a.User, "menu:account"), func(c *gin.Context) {
+		var req user.AccountInput
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		id, err := a.User.CreateAccount(c.Request.Context(), req)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "权限变更", "account", fmt.Sprint(id), map[string]any{
+			"username": req.Username, "roleCode": req.RoleCode, "op": "create",
+		})
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	})
+
+	// 受权改号:角色/组织/数据范围/启停/改密(密码留空不改)。
+	g.PUT("/accounts/:accountId", requirePerm(a.User, "menu:account"), func(c *gin.Context) {
+		id, err := strconv.ParseInt(c.Param("accountId"), 10, 64)
+		if err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		var req user.AccountInput
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if err := a.User.UpdateAccount(c.Request.Context(), id, req); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "权限变更", "account", c.Param("accountId"), map[string]any{
+			"username": req.Username, "roleCode": req.RoleCode, "op": "update",
+		})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	// 角色清单:建号表单数据源(fields.md 1.2,7 角色码)。
+	g.GET("/roles", requirePerm(a.User, "menu:account"), func(c *gin.Context) {
+		roles, err := a.User.ListRoles(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, roles)
+	})
+
 	// 菜单权限矩阵:三层权限模型的菜单层(角色×menu:* 权限)。
 	g.GET("/menu-perms", requirePerm(a.User, "menu:menuperm"), func(c *gin.Context) {
 		m, err := a.User.ListMenuPermMatrix(c.Request.Context())
@@ -107,6 +172,41 @@ func registerOrgRoutes(g *gin.RouterGroup, a *Application) {
 		respond(c, apitypes.CodeOK, list)
 	})
 
+	// 部门受权维护(建号前基础数据);menu:department 门禁。
+	g.POST("/departments", requirePerm(a.User, "menu:department"), func(c *gin.Context) {
+		var req departmentReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		id, err := a.User.CreateDepartment(c.Request.Context(), req.LegalEntityID, req.Name)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "数据变更", "department", fmt.Sprint(id), map[string]any{"name": req.Name, "op": "create"})
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	})
+
+	g.PUT("/departments/:deptId", requirePerm(a.User, "menu:department"), func(c *gin.Context) {
+		id, err := strconv.ParseInt(c.Param("deptId"), 10, 64)
+		if err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		var req departmentReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if err := a.User.UpdateDepartment(c.Request.Context(), id, req.LegalEntityID, req.Name); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "数据变更", "department", c.Param("deptId"), map[string]any{"name": req.Name, "op": "update"})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
 	g.GET("/posts", requirePerm(a.User, "menu:post"), func(c *gin.Context) {
 		list, err := a.User.ListPosts(c.Request.Context(), queryInt64(c, "deptId"))
 		if err != nil {
@@ -114,6 +214,41 @@ func registerOrgRoutes(g *gin.RouterGroup, a *Application) {
 			return
 		}
 		respond(c, apitypes.CodeOK, list)
+	})
+
+	// 岗位受权维护(建号前基础数据);menu:post 门禁;roles=功能角色码全量替换。
+	g.POST("/posts", requirePerm(a.User, "menu:post"), func(c *gin.Context) {
+		var req postReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		id, err := a.User.CreatePost(c.Request.Context(), req.DeptID, req.Code, req.Name, req.Roles)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "数据变更", "post", fmt.Sprint(id), map[string]any{"code": req.Code, "op": "create"})
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	})
+
+	g.PUT("/posts/:postId", requirePerm(a.User, "menu:post"), func(c *gin.Context) {
+		id, err := strconv.ParseInt(c.Param("postId"), 10, 64)
+		if err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		var req postReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if err := a.User.UpdatePost(c.Request.Context(), id, req.DeptID, req.Code, req.Name, req.Roles); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "数据变更", "post", c.Param("postId"), map[string]any{"code": req.Code, "op": "update"})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 
 	g.GET("/regions", requirePerm(a.User, "menu:region"), func(c *gin.Context) {

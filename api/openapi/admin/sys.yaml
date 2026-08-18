@@ -1,30 +1,46 @@
-# 对齐说明(V1.1):Go 后端当前仅实现 /addresses 与 /addresses/import(permCode menu:address/menu:importer);
-# /accounts /roles /params /audit-logs /import-tasks 尚未实现,前端消费前需确认后端交付。
+# 对齐说明(V1.2):Go 后端已实现 /accounts(GET/POST)、/accounts/{id}(PUT)、/roles(均 permCode menu:account)
+# 与 /addresses(系列);/params /audit-logs /import-tasks 尚未实现,前端消费前需确认后端交付。
 paths:
   /accounts:
     get:
       tags: [Sys]
-      summary: 账号与角色列表（未实现 planned）
+      summary: 账号与角色列表(裸数组;permCode menu:account)
       operationId: listAccounts
-      parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: data 为裸数组(respond(c,OK,list))
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { type: array, items: { $ref: '#/components/schemas/AccountRow' } }
     post:
       tags: [Sys]
-      summary: 新建账号（未实现 planned）
+      summary: 受权建号(封闭模型,上级分配;permCode menu:account;40900=账号已存在,42200=入参不合法)
       operationId: createAccount
       requestBody:
+        required: true
         content:
           application/json:
-            schema: { type: object }
+            schema: { $ref: '#/components/schemas/AccountInput' }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '200':
+          description: 建号成功(envelope,data.id=新账号 id)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data: { type: object, properties: { id: { type: integer } } }
 
   /accounts/{accountId}:
     put:
       tags: [Sys]
-      summary: 编辑账号(角色/部门/岗位/数据范围/启停)（未实现 planned）
+      summary: 受权改号(角色/组织/数据范围/启停/改密;密码留空不改;permCode menu:account)
       operationId: updateAccount
       parameters:
         - name: accountId
@@ -32,9 +48,10 @@ paths:
           required: true
           schema: { type: integer }
       requestBody:
+        required: true
         content:
           application/json:
-            schema: { type: object }
+            schema: { $ref: '#/components/schemas/AccountInput' }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
     delete:
@@ -52,10 +69,24 @@ paths:
   /roles:
     get:
       tags: [Sys]
-      summary: 角色列表(7 角色码见 fields.md 1.2)（未实现 planned）
+      summary: 角色列表(7 角色码见 fields.md 1.2;permCode menu:account)
       operationId: listRoles
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: data 为裸数组 [{code,name}]
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code: { type: string, example: ops }
+                        name: { type: string, example: 业务运营 }
 
   /addresses:
     get:
@@ -173,3 +204,36 @@ paths:
             schema: { type: object }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+components:
+  schemas:
+    AccountRow:
+      type: object
+      description: 账号列表行(fields.md 1.1;status 1启用 0停用;空字符串=不限/全集团)
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        realName: { type: string }
+        phone: { type: string }
+        roleCode: { type: string }
+        roleName: { type: string }
+        legalEntityName: { type: string }
+        deptName: { type: string }
+        postName: { type: string }
+        regionScope: { type: string, description: LTREE path,空=全集团 }
+        status: { type: integer }
+    AccountInput:
+      type: object
+      required: [username, realName, roleCode]
+      description: 建号/改号入参;新建必带 password;0/null 组织=不限,regionScope 空=全集团
+      properties:
+        username: { type: string, description: 3-64 位,字母/数字/_-. }
+        password: { type: string, description: 新建必填不少于 6 位;修改留空=不改 }
+        realName: { type: string }
+        phone: { type: string, description: 可选,3-32 位数字/加减空格 }
+        roleCode: { type: string, description: 7 角色码之一(fields.md 1.2) }
+        legalEntityId: { type: integer, nullable: true }
+        deptId: { type: integer, nullable: true }
+        postId: { type: integer, nullable: true }
+        regionScope: { type: string, nullable: true, description: LTREE path,空=全集团 }
+        status: { type: integer, nullable: true, description: 修改时可选,1启用 0停用 }

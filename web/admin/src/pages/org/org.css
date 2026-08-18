@@ -1,0 +1,131 @@
+/* org 组六页公共样式:复用 shell 主题令牌,布局对齐 geo 页(Ant Pro 惯例)。 */
+
+.org-page-head { margin-bottom: 16px; }
+.org-page-title { margin: 0; font-size: 20px; font-weight: 700; color: var(--shell-heading); }
+.org-page-desc { margin-top: 4px; font-size: 12px; color: var(--shell-crumb-text); }
+
+.org-card {
+  background: var(--shell-card-bg);
+  border: 1px solid var(--shell-card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shell-card-shadow);
+  margin-bottom: 16px;
+}
+.org-card-title { padding: 14px 16px 0; font-size: 15px; font-weight: 600; color: var(--shell-heading); }
+.org-card-extra { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--shell-group-title); }
+
+.org-toolbar { display: flex; align-items: center; gap: 8px; padding: 16px; flex-wrap: wrap; }
+.org-toolbar .spacer { flex: 1; }
+
+.org-input, .org-select {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: var(--shell-content-text);
+  background: var(--geo-input-bg, #fff);
+  border: 1px solid var(--geo-input-border, #d7dde7);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+.org-input:focus, .org-select:focus { border-color: var(--color-border-focus); }
+
+.org-btn {
+  height: 32px;
+  padding: 0 16px;
+  font-size: 13px;
+  color: var(--shell-content-text);
+  background: var(--geo-input-bg, #fff);
+  border: 1px solid var(--geo-input-border, #d7dde7);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.org-btn:hover { color: var(--shell-heading); border-color: var(--color-border-hover); }
+.org-btn-primary {
+  color: var(--shell-fab-icon);
+  background: var(--shell-fab-bg);
+  border: none;
+}
+.org-btn-primary:hover { background: var(--shell-fab-bg-hover); color: var(--shell-fab-icon); }
+
+.org-table-wrap { padding: 0 16px 16px; overflow-x: auto; }
+.org-table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--shell-content-text); }
+.org-table th {
+  height: 44px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--shell-group-title);
+  background: var(--geo-table-head-bg, #f8f9fb);
+  border-bottom: 1px solid var(--geo-table-border, #eff1f5);
+  white-space: nowrap;
+}
+.org-table td {
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--geo-table-border, #eff1f5);
+  white-space: nowrap;
+}
+.org-table tbody tr:hover td { background: var(--geo-row-hover, transparent); }
+.org-empty { padding: 32px 0; text-align: center; font-size: 13px; color: var(--shell-group-title); }
+
+.org-footer { display: flex; justify-content: flex-end; padding: 12px 16px; font-size: 12px; color: var(--shell-group-title); }
+
+.org-act { display: inline-flex; align-items: center; gap: 0; }
+.org-act button {
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--color-text-link);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.org-act button:hover { color: var(--color-brand-gold-600); text-decoration: underline; }
+.org-act .sep { color: var(--geo-divider, #eff1f5); }
+
+.org-error {
+  margin: 0 16px 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--color-danger);
+  background: rgba(217, 75, 75, 0.08);
+  border: 1px solid rgba(217, 75, 75, 0.25);
+  border-radius: var(--radius-sm);
+}
+
+.org-tag {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 22px;
+}
+.org-tag-on { color: var(--color-success); background: rgba(47, 143, 99, 0.1); border: 1px solid rgba(47, 143, 99, 0.35); }
+.org-tag-off { color: var(--shell-group-title); background: rgba(134, 144, 170, 0.1); border: 1px solid rgba(134, 144, 170, 0.35); }
+
+.org-form { display: flex; flex-direction: column; gap: 14px; }
+.org-field { display: flex; flex-direction: column; gap: 6px; }
+.org-field label { font-size: 12px; color: var(--shell-content-text); }
+.org-field label .req { color: var(--color-danger); margin-right: 2px; }
+.org-field .hint { font-size: 11px; color: var(--geo-input-placeholder, #a6b1c3); }
+
+.org-detail-list { display: flex; flex-direction: column; gap: 10px; }
+.org-detail-item { display: flex; gap: 12px; font-size: 13px; }
+.org-detail-item .k { width: 96px; flex: none; color: var(--shell-group-title); }
+.org-detail-item .v { color: var(--shell-content-text); word-break: break-all; }
+
+/* 岗位表单角色多选 chips */
+.post-roles { display: flex; flex-wrap: wrap; gap: 8px; }
+.post-role-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; font-size: 12px; cursor: pointer;
+  color: var(--shell-content-text);
+  background: var(--geo-input-bg, #fff);
+  border: 1px solid var(--geo-input-border, #d7dde7);
+  border-radius: 999px;
+}
+.post-role-chip:has(input:checked) {
+  color: var(--shell-fab-icon);
+  background: var(--shell-fab-bg);
+  border-color: var(--shell-fab-bg);
+}

@@ -76,6 +76,27 @@ func (f *fakeUser) GetProfile(context.Context, int64) (*user.Profile, error) {
 func (f *fakeUser) ListAccounts(context.Context) ([]user.AccountRow, error) {
 	return f.accounts, nil
 }
+func (f *fakeUser) ListRoles(context.Context) ([]user.Role, error) {
+	return []user.Role{{Code: "ops", Name: "业务运营"}}, nil
+}
+func (f *fakeUser) CreateAccount(context.Context, user.AccountInput) (int64, error) {
+	return 9, nil
+}
+func (f *fakeUser) UpdateAccount(context.Context, int64, user.AccountInput) error {
+	return nil
+}
+func (f *fakeUser) CreateDepartment(context.Context, int64, string) (int64, error) {
+	return 1, nil
+}
+func (f *fakeUser) UpdateDepartment(context.Context, int64, int64, string) error {
+	return nil
+}
+func (f *fakeUser) CreatePost(context.Context, int64, string, string, []string) (int64, error) {
+	return 1, nil
+}
+func (f *fakeUser) UpdatePost(context.Context, int64, int64, string, string, []string) error {
+	return nil
+}
 
 func newTestRouter(f *fakeUser, mgr *auth.Manager) *gin.Engine {
 	gin.SetMode(gin.TestMode)

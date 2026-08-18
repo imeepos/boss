@@ -22,25 +22,21 @@ type CLI struct {
 	cfg *config
 }
 
-// authHeader 返回认证请求头,API key 优先于 JWT。
-func (c *CLI) authHeader() string {
+// authHeaderValue 返回认证请求头名称和值。
+// API key: X-API-Key 头; JWT: Authorization: Bearer <token>。
+func (c *CLI) authHeaderValue() (name, value string) {
 	if c.cfg.APIKey != "" {
-		return "X-API-Key"
-	}
-	return "Bearer"
-}
-
-// authToken 返回认证令牌。
-func (c *CLI) authToken() string {
-	if c.cfg.APIKey != "" {
-		return c.cfg.APIKey
+		return "X-API-Key", c.cfg.APIKey
 	}
 	if c.cfg.JWT != "" {
-		return c.cfg.JWT
+		return "Authorization", "Bearer " + c.cfg.JWT
 	}
 	// 尝试从缓存文件读取 JWT
 	tok, _ := loadToken()
-	return tok
+	if tok != "" {
+		return "Authorization", "Bearer " + tok
+	}
+	return "", ""
 }
 
 // tokenFile 返回 JWT 缓存文件路径。
@@ -102,10 +98,8 @@ func (c *CLI) do(method, path string, data any, query map[string]string) (*apiRe
 	}
 
 	// 设置认证头
-	if tok := c.authToken(); tok != "" {
-		req.Header.Set(c.authHeader(), tok)
-	} else {
-		// 未配置认证,走无 auth 请求(如登录端点)
+	if name, value := c.authHeaderValue(); name != "" {
+		req.Header.Set(name, value)
 	}
 	if data != nil {
 		req.Header.Set("Content-Type", "application/json")

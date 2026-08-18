@@ -35,7 +35,9 @@
 
 ## 1. 阶段1 · 系统管理与组织（internal/domain/user，已定型）
 
-### 1.1 accounts（账号）
+### 1.1 accounts（后台账号）
+
+> 固定用途：仅承载管理后台登录用户。后台员工、运营人员、管理员统一使用本表；客户 App 和师傅端不得使用 `accounts` 登录。
 
 | 页面列名 | 字段名 | DB 列 | 类型/枚举 |
 |:---------|:-------|:------|:----------|
@@ -128,7 +130,9 @@
 
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
-### 2.1 customers（客户档案，源自 customer.html）
+### 2.1 customers（普通用户/客户主体，源自 customer.html）
+
+> 固定用途：普通个人/企业客户及其客户 App 登录主体。客户下单、查询订单、缴费、报障等均以本表客户身份为准；不得使用 `accounts` 登录后台。
 
 | 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
 |:---------|:-------|:--------------|:----------|
@@ -139,6 +143,8 @@
 | 实名状态 | `RealNameStatus` | real_name_status | VERIFIED 已实名 / PENDING 待补登 |
 | 服务状态 | `ServiceStatus` | service_status | ACTIVE 在网 / ARREARS 欠费 / SUSPENDED 停机 |
 | 地址 | `AddressID` | address_id | BIGINT → addresses（挂接楼栋） |
+| — | `PasswordHash` | password_hash | TEXT，客户 App 密码哈希；空值不可密码登录 |
+| 登录状态 | `AuthStatus` | auth_status | 1允许登录 / 0禁止登录 |
 
 > 区域锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域），`legal_entity_id`（归属公司），按地区/企业统计客户；客户搬家/转品牌经 `customer_histories` 台账快照事发区域。
 
@@ -273,11 +279,14 @@
 | `leader` | leader_id | BIGINT → workers（组长，可空） |
 | `leaderName` | leader_name | 组长姓名快照 |
 
-`workers`（师傅）：
+`workers`（安装师傅/师傅端用户）：
+
+> 固定用途：仅承载上门安装师傅及师傅端登录主体。师傅使用 `staffNo` 作为登录名，凭 `passwordHash` 登录师傅端；仅 `status=1`（在职）允许登录。不得使用 `accounts` 登录后台。
 
 | 字段名(TS实体) | DB 列 | 枚举/说明 |
 |:---------|:------|:----------|
-| `staffNo` | staff_no | 工号，如 WK-1024（唯一） |
+| `staffNo` | staff_no | 工号，如 WK-1024（唯一，师傅端登录名） |
+| `passwordHash` | password_hash | 师傅端密码哈希，仅存哈希，不存明文，可空（首次设置前不可登录） |
 | `name` | name | 师傅姓名 |
 | `group` | group_id | BIGINT → worker_groups（当前归属，可变更） |
 | `regionId` | region_id | 服务区域，须落班组公司经营区域 |

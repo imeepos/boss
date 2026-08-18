@@ -49,8 +49,26 @@ func (f *fakeUserService) GetProfile(ctx context.Context, accountID int64) (*use
 func (f *fakeUserService) Login(ctx context.Context, username, password string) (*user.LoginResult, error) {
 	return nil, nil
 }
-func (f *fakeUserService) Register(ctx context.Context, username, password, realName string) (*user.LoginResult, error) {
+func (f *fakeUserService) ListRoles(ctx context.Context) ([]user.Role, error) {
 	return nil, nil
+}
+func (f *fakeUserService) CreateAccount(ctx context.Context, in user.AccountInput) (int64, error) {
+	return 0, nil
+}
+func (f *fakeUserService) UpdateAccount(ctx context.Context, id int64, in user.AccountInput) error {
+	return nil
+}
+func (f *fakeUserService) CreateDepartment(ctx context.Context, legalEntityID int64, name string) (int64, error) {
+	return 0, nil
+}
+func (f *fakeUserService) UpdateDepartment(ctx context.Context, id, legalEntityID int64, name string) error {
+	return nil
+}
+func (f *fakeUserService) CreatePost(ctx context.Context, deptID int64, code, name string, roles []string) (int64, error) {
+	return 0, nil
+}
+func (f *fakeUserService) UpdatePost(ctx context.Context, id, deptID int64, code, name string, roles []string) error {
+	return nil
 }
 func (f *fakeUserService) EnsureSuperAdmin(ctx context.Context, username, password, realName string) (bool, error) {
 	return false, nil

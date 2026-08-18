@@ -5,12 +5,19 @@ import { UCenterLayout } from './layouts/UCenterLayout'
 import { AuthGuard } from './layouts/AuthGuard'
 import { useProfile } from './layouts/profile'
 import LoginPage from './pages/login'
-import RegisterPage from './pages/register'
 import DashboardPage from './pages/dashboard'
 import AccountListPage from './pages/base/account'
 import AddressPage from './pages/base/address'
 import GeoPage from './pages/base/geo'
 import ImporterPage from './pages/base/importer'
+import ParamsPage from './pages/base/params'
+import AuditPage from './pages/base/audit'
+import CompanyPage from './pages/org/company'
+import DepartmentPage from './pages/org/department'
+import PostPage from './pages/org/post'
+import RegionPage from './pages/org/region'
+import MenuPermPage from './pages/org/menuperm'
+import DataScopePage from './pages/org/datascope'
 import ProfilePage from './pages/profile'
 import { ForbiddenPage, NotFoundPage } from './pages/error'
 import { PlaceholderPage } from './pages/placeholder'
@@ -29,6 +36,14 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'address') return <AddressPage />
   if (pageKey === 'geo') return <GeoPage />
   if (pageKey === 'importer') return <ImporterPage />
+  if (pageKey === 'params') return <ParamsPage />
+  if (pageKey === 'audit') return <AuditPage />
+  if (pageKey === 'company') return <CompanyPage />
+  if (pageKey === 'department') return <DepartmentPage />
+  if (pageKey === 'post') return <PostPage />
+  if (pageKey === 'region') return <RegionPage />
+  if (pageKey === 'menuperm') return <MenuPermPage />
+  if (pageKey === 'datascope') return <DataScopePage />
   return <PlaceholderPage title={label} />
 }
 
@@ -37,7 +52,6 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/ucenter"
           element={

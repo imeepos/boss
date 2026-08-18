@@ -1,10 +1,10 @@
 // 登录页:规格对齐 visual-design-prompts.md §3.4 登录页纵向参考,文本走 i18n。
 import { useState, type CSSProperties, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { adminLogin } from '../../api/auth'
 import logoFull from '../../assets/brand/logo-mark-gradient.png'
 import ornamentShield from '../../assets/brand/ornament-shield.png'
-import { AuthShell, BrandAside, inputStyle, buttonStyle, BRAND_NAVY, BRAND_GOLD } from '../auth-shell'
+import { AuthShell, BrandAside, inputStyle, buttonStyle, BRAND_NAVY } from '../auth-shell'
 import { AdCarousel } from '../auth-ads'
 import { useT } from '../../i18n'
 
@@ -67,10 +67,7 @@ export default function LoginPage() {
         </form>
         <div style={linkRowStyle}>
           <img src={ornamentShield} alt="" style={shieldStyle} />
-          <span style={{ color: '#7C8799' }}>{t.auth.login.noAccount}</span>
-          <Link to="/register" style={linkStyle}>
-            {t.auth.login.toRegister}
-          </Link>
+          <span style={{ color: '#7C8799' }}>{t.auth.login.assignedByAdmin}</span>
         </div>
       </div>
     </AuthShell>
@@ -109,8 +106,3 @@ const linkRowStyle: CSSProperties = {
 }
 
 const shieldStyle: CSSProperties = { width: 14, height: 14 }
-
-const linkStyle: CSSProperties = {
-  color: BRAND_GOLD, fontWeight: 600, fontSize: 12, textDecoration: 'none',
-  transition: 'color 160ms',
-}

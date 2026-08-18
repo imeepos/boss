@@ -27,9 +27,6 @@ type Profile struct {
 type Service interface {
 	Login(ctx context.Context, username, password string) (*LoginResult, error)
 
-	// Register 自助注册(阶段1 基础功能):默认 ops 角色,成功后即可登录。
-	Register(ctx context.Context, username, password, realName string) (*LoginResult, error)
-
 	// EnsureSuperAdmin 启动引导:幂等创建超级管理员(sysadmin),已存在则跳过不覆盖。
 	EnsureSuperAdmin(ctx context.Context, username, password, realName string) (created bool, err error)
 
@@ -57,11 +54,20 @@ type Service interface {
 	ListRegions(ctx context.Context, parentPath string) ([]Region, error)
 	ListLegalEntities(ctx context.Context) ([]LegalEntity, error)
 	ListAccounts(ctx context.Context) ([]AccountRow, error)
+	ListRoles(ctx context.Context) ([]Role, error)
+	// CreateAccount/UpdateAccount 受权建号/改号(封闭模型,menu:account 保护)。
+	CreateAccount(ctx context.Context, in AccountInput) (int64, error)
+	UpdateAccount(ctx context.Context, id int64, in AccountInput) error
 	CreateLegalEntity(ctx context.Context, e LegalEntity) (int64, error)
 	UpdateLegalEntity(ctx context.Context, id int64, e LegalEntity) error
 	ListMenuPermMatrix(ctx context.Context) (MenuPermMatrix, error)
 	ListDepartments(ctx context.Context, legalEntityID int64) ([]Department, error)
 	ListPosts(ctx context.Context, deptID int64) ([]Post, error)
+	// 部门/岗位受权维护(建号前的基础数据写操作)。
+	CreateDepartment(ctx context.Context, legalEntityID int64, name string) (int64, error)
+	UpdateDepartment(ctx context.Context, id, legalEntityID int64, name string) error
+	CreatePost(ctx context.Context, deptID int64, code, name string, roles []string) (int64, error)
+	UpdatePost(ctx context.Context, id, deptID int64, code, name string, roles []string) error
 	GetDataScope(ctx context.Context, accountID int64) (DataScope, error)
 	GetProfile(ctx context.Context, accountID int64) (*Profile, error)
 }

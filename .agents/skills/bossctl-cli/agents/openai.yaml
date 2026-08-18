@@ -1,4 +1,4 @@
 interface:
   display_name: "BOSS CLI 工具"
   short_description: "BOSS 业务平台 CLI 工具,支持操作全部 REST API 接口,免登录 API key 认证"
-  default_prompt: "使用 bossctl CLI 工具操作 BOSS API"
+  default_prompt: "使用 $bossctl-cli 技能操作 BOSS API:调用 /orders 接口列出订单"
