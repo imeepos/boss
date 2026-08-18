@@ -20,3 +20,4 @@ coverage.*
 /logs/
 
 # keep pdf/md requirement docs out of source control? -> 保留需求文档,不忽略
+__pycache__/
