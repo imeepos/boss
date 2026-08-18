@@ -1,5 +1,6 @@
 # 多阶段构建:全部部署物二进制打进同一镜像,入口默认 server。
 FROM golang:1.25-alpine AS build
+ENV GOPROXY=https://goproxy.cn,direct
 WORKDIR /src
 COPY go.mod go.sum* ./
 RUN go mod download || true
