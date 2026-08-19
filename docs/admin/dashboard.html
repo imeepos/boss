@@ -5,6 +5,118 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>工作台 · BOSS 管理后台</title>
 <link rel="stylesheet" href="style.css">
+<style>
+/* 工作台专属样式 */
+.dashboard-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.dashboard-welcome h2 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--ink);
+}
+.dashboard-welcome .welcome-text {
+  font-size: 14px;
+  color: var(--muted);
+}
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.stat-icon.orders { background: #e6f7ff; color: #1890ff; }
+.stat-icon.workorders { background: #fff7e6; color: #fa8c16; }
+.stat-icon.warnings { background: #fff1f0; color: #ff4d4f; }
+.stat-icon.quadrate { background: #f6ffed; color: #52c41a; }
+
+.progress-bar {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.progress-fill.blue { background: #1890ff; }
+.progress-fill.green { background: #52c41a; }
+.progress-fill.orange { background: #fa8c16; }
+.progress-fill.red { background: #ff4d4f; }
+.progress-fill.purple { background: #722ed1; }
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.todo-item:last-child {
+  border-bottom: none;
+}
+.todo-time {
+  width: 60px;
+  font-size: 13px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.todo-content {
+  flex: 1;
+  font-size: 13px;
+  color: var(--ink);
+}
+.todo-badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+.todo-badge.order { background: #e6f7ff; color: #1890ff; }
+.todo-badge.workorder { background: #fff7e6; color: #fa8c16; }
+.todo-badge.warning { background: #fff1f0; color: #ff4d4f; }
+
+.chart-container {
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 20px 0;
+}
+.chart-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.chart-bar-value {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.chart-bar-fill {
+  width: 100%;
+  background: #1677ff;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+  min-height: 4px;
+}
+.chart-bar-date {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+</style>
 </head>
 <body>
 <div class="layout">
@@ -23,45 +135,37 @@
     </header>
 
     <div class="content">
-      <div class="page-head">
-        <h2>工作台</h2>
-        <div class="desc">装维全流程运营总览 · 数据实时更新</div>
+      <div class="dashboard-welcome">
+        <div>
+          <h2>工作台</h2>
+          <div class="welcome-text">欢迎，张明 (admin)</div>
+        </div>
+        <div>
+          <button class="btn" id="btn-refresh">刷新</button>
+        </div>
       </div>
 
-      <div class="toolbar">
-        <input class="input" style="width:220px" id="kw" placeholder="待办事项/来源关键字">
-        <select class="input" style="width:140px" id="st">
-          <option value="">状态：全部</option><option value="PENDING">待处理</option><option value="DONE">已完成</option>
-        </select>
-        <button class="btn btn-primary" id="btn-search">查询</button>
-        <span class="spacer"></span>
-        <button class="btn" id="btn-refresh">刷新</button>
-      </div>
+      <div class="grid g-4" style="margin-bottom:24px;" id="stats"></div>
 
-      <div class="grid g-4" style="margin-bottom:16px;" id="stats"></div>
-
-      <div class="grid g-2">
+      <div class="grid g-2" style="margin-bottom:24px;">
         <div class="card">
-          <div class="card-title">订单状态分布 <span class="extra">点击查看详情</span></div>
+          <div class="card-title">订单状态分布</div>
           <table class="tbl">
-            <thead><tr><th>状态</th><th>数量</th><th>占比</th><th>操作</th></tr></thead>
+            <thead><tr><th>状态</th><th>数量</th><th>占比</th><th>进度</th></tr></thead>
             <tbody id="statusDist"></tbody>
           </table>
         </div>
         <div class="card">
           <div class="card-title">我的待办 <span class="extra" id="row-hint"></span></div>
-          <table class="tbl">
-            <thead><tr><th>事项</th><th>来源</th><th>时间</th><th>操作</th></tr></thead>
-            <tbody id="todos"></tbody>
-          </table>
+          <div id="todos"></div>
           <div class="pagination" id="pager"></div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">近 7 日装机趋势（示意）</div>
-        <div style="height:160px;display:flex;align-items:flex-end;gap:12px;padding:10px 0;" id="trendBars"></div>
-        <div style="display:flex;gap:12px;font-size:11px;color:#999;" id="trendDays"></div>
+        <div class="card-title">近 7 日下单趋势</div>
+        <div class="chart-container" id="trendChart"></div>
+        <div style="display:flex;gap:12px;font-size:12px;color:#999;" id="trendDays"></div>
       </div>
     </div>
   </div>
@@ -73,34 +177,37 @@
 <script>
 // 工作台数据渲染(契约: GET /dashboard)
 (function () {
-  var STATUS_TAG = { PENDING: 'tag-blue', RESERVED: 'tag-orange', INSTALLING: 'tag-orange', DONE: 'tag-green' };
+  var STATUS_TAG = { PENDING: 'tag-blue', RESERVED: 'tag-orange', INSTALLING: 'tag-orange', DONE: 'tag-green', CANCELLED: 'tag-gray' };
+  var STATUS_PROGRESS = { PENDING: 'blue', RESERVED: 'orange', INSTALLING: 'orange', DONE: 'green', CANCELLED: 'red' };
   var todos = [];
   var distCache = [];
-  var state = { page: 1, pageSize: 10 };
+  var state = { page: 1, pageSize: 5 };
 
   function esc(s) { return UI.esc(s); }
 
   function renderStats(stats) {
-    document.getElementById('stats').innerHTML = stats.map(function (s) {
-      return '<div class="stat"><div class="label">' + esc(s.label) + '</div><div class="val">'
-        + esc(s.value) + '</div><div class="delta ' + esc(s.trend) + '">' + esc(s.delta) + '</div></div>';
+    var iconClasses = ['orders', 'workorders', 'warnings', 'quadrate'];
+    document.getElementById('stats').innerHTML = stats.map(function (s, i) {
+      return '<div class="stat">' +
+        '<div class="stat-icon ' + iconClasses[i] + '"></div>' +
+        '<div class="label">' + esc(s.label) + '</div>' +
+        '<div class="val">' + esc(s.value) + '</div>' +
+        '</div>';
     }).join('');
   }
 
   function renderStatusDist(rows) {
     distCache = rows;
     document.getElementById('statusDist').innerHTML = rows.length ? rows.map(function (r) {
-      return '<tr><td><span class="tag ' + (STATUS_TAG[r.status] || '') + '">' + esc(r.statusLabel)
-        + '</span></td><td>' + esc(r.count) + '</td><td>' + esc(r.percent)
-        + '</td><td><a href="#" data-op="st" data-status="' + esc(r.status) + '">查看</a></td></tr>';
+      var progressClass = STATUS_PROGRESS[r.status] || 'blue';
+      return '<tr><td><span class="tag ' + (STATUS_TAG[r.status] || '') + '">' + esc(r.statusLabel) +
+        '</span></td><td>' + esc(r.count) + '</td><td>' + esc(r.percent) + '</td>' +
+        '<td><div class="progress-bar"><div class="progress-fill ' + progressClass + '" style="width:' + esc(r.percent) + '"></div></div></td></tr>';
     }).join('') : UI.tbodyState(4, '无数据');
   }
 
   function todoMatches(t) {
-    var kw = document.getElementById('kw').value.trim();
-    var st = document.getElementById('st').value;
-    var hitKw = !kw || [t.subject, t.source].some(function (v) { return String(v || '').indexOf(kw) >= 0; });
-    return hitKw && (!st || (t.status || 'PENDING') === st);
+    return true; // Show all todos in dashboard
   }
 
   function renderTodos() {
@@ -108,9 +215,15 @@
     var start = (state.page - 1) * state.pageSize;
     var slice = list.slice(start, start + state.pageSize);
     document.getElementById('todos').innerHTML = slice.length ? slice.map(function (t, i) {
-      return '<tr><td>' + esc(t.subject) + '</td><td>' + esc(t.source) + '</td><td>' + esc(t.time)
-        + '</td><td><a href="#" data-op="todo" data-idx="' + (todos.indexOf(t)) + '">详情</a></td></tr>';
-    }).join('') : UI.tbodyState(4, '无匹配数据');
+      var time = t.time ? t.time.split(' ')[1] || t.time : '';
+      var badgeClass = 'order';
+      if (t.source === '告警中心') badgeClass = 'warning';
+      else if (t.source === '派单池') badgeClass = 'order';
+      return '<div class="todo-item">' +
+        '<div class="todo-time">' + esc(time) + '</div>' +
+        '<div class="todo-content">' + esc(t.subject) + '<span class="todo-badge ' + badgeClass + '">' + esc(t.source) + '</span></div>' +
+        '</div>';
+    }).join('') : '<div style="text-align:center;color:#999;padding:20px;">无待办事项</div>';
     document.getElementById('row-hint').textContent = list.length ? '共 ' + list.length + ' 条' : '';
     UI.paginate(document.getElementById('pager'), {
       total: list.length, page: state.page, pageSize: state.pageSize,
@@ -120,10 +233,15 @@
 
   function renderTrend(trend) {
     var max = Math.max.apply(null, trend.values);
-    document.getElementById('trendBars').innerHTML = trend.values.map(function (v) {
-      return '<div style="flex:1;height:' + Math.round((v / max) * 100)
-        + '%;background:#1677ff;border-radius:4px 4px 0 0;" title="' + esc(v) + '"></div>';
+    var container = document.getElementById('trendChart');
+    container.innerHTML = trend.values.map(function (v, i) {
+      var height = Math.max(4, Math.round((v / max) * 150));
+      return '<div class="chart-bar">' +
+        '<div class="chart-bar-value">' + v + '</div>' +
+        '<div class="chart-bar-fill" style="height:' + height + 'px;" title="' + v + ' 单"></div>' +
+        '</div>';
     }).join('');
+    
     document.getElementById('trendDays').innerHTML = trend.days.map(function (day) {
       return '<span style="flex:1;text-align:center;">' + esc(day) + '</span>';
     }).join('');
@@ -151,7 +269,7 @@
   }
 
   function load() {
-    document.getElementById('todos').innerHTML = UI.tbodyState(4, '加载中...');
+    document.getElementById('todos').innerHTML = '<div style="text-align:center;color:#999;padding:20px;">加载中...</div>';
     API.dashboard.get().then(function (d) {
       renderStats(d.stats);
       renderStatusDist(d.orderStatusDist);
@@ -162,10 +280,7 @@
     }).catch(function (e) { UI.toast('加载失败: ' + e.message, 'err'); });
   }
 
-  document.getElementById('btn-search').onclick = function () { state.page = 1; renderTodos(); };
   document.getElementById('btn-refresh').onclick = load;
-  document.getElementById('kw').addEventListener('input', UI.debounce(function () { state.page = 1; renderTodos(); }, 300));
-  document.getElementById('st').addEventListener('change', function () { state.page = 1; renderTodos(); });
   document.body.addEventListener('click', function (ev) {
     var a = ev.target;
     if (a.tagName !== 'A' || !a.getAttribute('data-op')) return;

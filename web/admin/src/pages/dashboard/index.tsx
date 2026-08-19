@@ -7,7 +7,7 @@ import { PageHead } from '../org/shared'
 import { fmtTime } from '../../lib/format'
 import '../org/org.css'
 
-interface StatCard { key: string; label: string; value: string; delta: string; trend: string }
+interface StatCard { key: string; label: string; value: string }
 interface StatusDist { status: string; statusLabel: string; count: number; percent: string }
 interface TodoItem { todoId: number; subject: string; source: string; time: string }
 interface DashboardData {
@@ -15,6 +15,19 @@ interface DashboardData {
   orderStatusDist: StatusDist[]
   todos: { items: TodoItem[] }
   trend: { days: string[]; values: number[] }
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: '#1677ff',
+  RESERVED: '#fa8c16',
+  INSTALLING: '#fa8c16',
+  DONE: '#52c41a',
+  CANCELLED: '#ff4d4f',
+}
+
+const TODO_BADGE_COLORS: Record<string, string> = {
+  '派单池': '#1677ff',
+  '告警中心': '#ff4d4f',
 }
 
 export default function DashboardPage({ profile }: { profile: Profile }) {
@@ -44,55 +57,137 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
         <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
       </div>
       {error ? <div className="org-card"><div className="org-error">{error}</div></div> : data && (
-        <div className="org-card">
-          <h3>{d.statTitle}</h3>
+        <>
+          {/* 统计卡片 */}
           <div className="dash-stats">
             {data.stats.map((s) => (
               <div key={s.key} className="dash-stat">
+                <div className="dash-stat-dot" style={{ background: getStatDotColor(s.key) }} />
                 <div className="dash-stat-label">{s.label}</div>
                 <div className="dash-stat-value">{s.value}</div>
-                {s.delta ? <div className={'dash-delta ' + s.trend}>{s.delta}</div> : null}
               </div>
             ))}
           </div>
 
-          <h3>{d.distTitle}</h3>
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr><th>{t.pages.dashboard.distTitle}</th><th>%</th></tr></thead>
-              <tbody>
-                {data.orderStatusDist.map((r) => (
-                  <tr key={r.status}>
-                    <td>{r.statusLabel}({r.count})</td>
-                    <td>
-                      <span className="dash-bar"><span style={{ width: r.percent }} /></span> {r.percent}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* 订单状态分布 + 待办事项 */}
+          <div className="dash-grid-2">
+            <div className="org-card">
+              <h3>订单状态分布</h3>
+              <div className="org-table-wrap">
+                <table className="org-table">
+                  <thead><tr><th>状态</th><th>数量</th><th>占比</th><th>进度</th></tr></thead>
+                  <tbody>
+                    {data.orderStatusDist.map((r) => (
+                      <tr key={r.status}>
+                        <td>
+                          <span className="dash-status-tag" style={{ 
+                            background: getStatusBg(r.status), 
+                            color: getStatusColor(r.status),
+                            borderColor: getStatusBorder(r.status)
+                          }}>
+                            {r.statusLabel}
+                          </span>
+                        </td>
+                        <td>{r.count}</td>
+                        <td>{r.percent}</td>
+                        <td>
+                          <div className="dash-progress">
+                            <div 
+                              className="dash-progress-fill" 
+                              style={{ 
+                                width: r.percent,
+                                background: STATUS_COLORS[r.status] || '#1677ff'
+                              }} 
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="org-card">
+              <h3>我的待办 <span className="dash-todo-count">共 {data.todos.items.length} 条</span></h3>
+              <div className="dash-todo-list">
+                {data.todos.items.map((it) => {
+                  const time = fmtTime(it.time).split(' ')[1] || fmtTime(it.time)
+                  const badgeColor = TODO_BADGE_COLORS[it.source] || '#1677ff'
+                  return (
+                    <div key={it.todoId} className="dash-todo-item">
+                      <div className="dash-todo-time">{time}</div>
+                      <div className="dash-todo-content">
+                        {it.subject}
+                        <span className="dash-todo-badge" style={{ background: badgeColor + '15', color: badgeColor }}>
+                          {it.source}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
-          <h3>{d.todoTitle}</h3>
-          {data.todos.items.length === 0 ? <p>{d.empty}</p> : (
-            <ul className="dash-todos">
-              {data.todos.items.map((it) => (
-                <li key={it.todoId}>{fmtTime(it.time)} · {it.subject}</li>
+          {/* 近7日趋势 */}
+          <div className="org-card">
+            <h3>近 7 日下单趋势</h3>
+            <div className="dash-trend">
+              {(data.trend.days ?? []).map((day, i) => (
+                <div key={day + i} className="dash-trend-col" title={`${day}: ${data.trend.values[i]}`}>
+                  <div className="dash-trend-value">{data.trend.values[i]}</div>
+                  <div className="dash-trend-bar" style={{ height: `${(data.trend.values[i] / maxTrend) * 100}%` }} />
+                  <span>{day.slice(5)}</span>
+                </div>
               ))}
-            </ul>
-          )}
-
-          <h3>{d.trendTitle}</h3>
-          <div className="dash-trend">
-            {(data.trend.days ?? []).map((day, i) => (
-              <div key={day + i} className="dash-trend-col" title={`${day}: ${data.trend.values[i]}`}>
-                <div className="dash-trend-bar" style={{ height: `${(data.trend.values[i] / maxTrend) * 100}%` }} />
-                <span>{day.slice(5)}</span>
-              </div>
-            ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )
+}
+
+function getStatDotColor(key: string): string {
+  const map: Record<string, string> = {
+    todayOrders: '#1890ff',
+    activeTickets: '#fa8c16',
+    pendingAlarms: '#ff4d4f',
+    assetConsistency: '#52c41a',
+  }
+  return map[key] || '#1890ff'
+}
+
+function getStatusBg(status: string): string {
+  const map: Record<string, string> = {
+    PENDING: '#e6f7ff',
+    RESERVED: '#fff7e6',
+    INSTALLING: '#fff7e6',
+    DONE: '#f6ffed',
+    CANCELLED: '#fff1f0',
+  }
+  return map[status] || '#f5f5f5'
+}
+
+function getStatusColor(status: string): string {
+  const map: Record<string, string> = {
+    PENDING: '#1890ff',
+    RESERVED: '#fa8c16',
+    INSTALLING: '#fa8c16',
+    DONE: '#52c41a',
+    CANCELLED: '#ff4d4f',
+  }
+  return map[status] || '#666'
+}
+
+function getStatusBorder(status: string): string {
+  const map: Record<string, string> = {
+    PENDING: '#91caff',
+    RESERVED: '#ffd591',
+    INSTALLING: '#ffd591',
+    DONE: '#b7eb8f',
+    CANCELLED: '#ffa39e',
+  }
+  return map[status] || '#d9d9d9'
 }
