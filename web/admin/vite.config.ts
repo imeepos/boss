@@ -10,8 +10,14 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // vendor 拆分:react 全家桶独立 chunk,业务改动不失效浏览器缓存。
-        manualChunks: { vendor: ['react', 'react-dom', 'react-router-dom'] },
+        // vendor 拆分:react 全家桶与 antd 体系各自独立 chunk,
+        // 业务改动不失效浏览器缓存(antd 体积大,单独缓存收益高)。
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined
+          if (/[\\/](antd|@ant-design|@rc-component|rc-[a-z-]+|@emotion|dayjs)[\\/]/.test(id)) return 'antd'
+          if (/[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) return 'vendor'
+          return undefined
+        },
       },
     },
   },
