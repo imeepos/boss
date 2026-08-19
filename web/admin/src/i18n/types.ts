@@ -24,6 +24,9 @@ export interface Translations {
       assignedByAdmin: string
       emptyFields: string
       fail: string
+      serverManage: string
+      serverNone: string
+      serverRequired: string
     }
   }
   ads: Array<{ title: string; sub: string }>
@@ -1133,6 +1136,38 @@ export interface Translations {
       originValue: string
       close: string
       loadFail: string
+    }
+    servers: {
+      title: string
+      desc: string
+      cardTitle: string
+      localOnly: string
+      colName: string
+      colUrl: string
+      colStatus: string
+      colOp: string
+      current: string
+      ready: string
+      manageTitle: string
+      gateHint: string
+      use: string
+      useConfirm: string
+      edit: string
+      delete: string
+      deleteConfirm: string
+      add: string
+      addTitle: string
+      editTitle: string
+      save: string
+      cancel: string
+      saved: string
+      deleted: string
+      namePlaceholder: string
+      urlPlaceholder: string
+      needName: string
+      needUrl: string
+      invalidUrl: string
+      empty: string
     }
     message: {
       title: string

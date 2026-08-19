@@ -1,7 +1,7 @@
-// 请求层单通道:dev 经 Vite 代理,prod 同源反代;baseUrl 固定 /api/v1(真实实现前缀)。
+// 请求层单通道:baseUrl 由服务端配置决定(默认环境=102 直连,后端已配置 CORS;
+// 登录页/基础配置-服务端配置页可切换,localStorage 记忆)。禁止再引入 vite 代理通道。
 import { ApiError, unwrap, type Envelope } from './envelope'
-
-const BASE = '/api/v1'
+import { apiBaseUrl } from '../lib/serverConfig'
 
 let authToken: string | null = null
 
@@ -31,7 +31,7 @@ export interface RequestOptions {
 
 /** 发起请求并解 envelope,返回 data 负载。 */
 export async function apiFetch<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T | null> {
-  const url = BASE + path + toQuery(opts.query)
+  const url = apiBaseUrl() + path + toQuery(opts.query)
   const headers: Record<string, string> = {}
   const token = getAuthToken()
   if (token) headers.Authorization = `Bearer ${token}`

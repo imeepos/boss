@@ -1,0 +1,13 @@
+/* 服务端配置页:复用 params.css 原子(ctl/btn/card/tbl/tag/modal),仅补页头与状态标签。 */
+@import '../params/params.css';
+
+.servers-page .page-head { margin-bottom: 16px; }
+.servers-page .page-head h2 { margin: 0; font-size: 20px; }
+.servers-page .page-desc { margin: 4px 0 0; color: #888; font-size: 12px; }
+.tag-blue { background: #e6f4ff; color: #1677ff; border: 1px solid #91caff; }
+.tag-green { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.servers-page .tbl td a, .server-manager .tbl td a { margin-right: 10px; }
+.servers-page .tbl td a.danger, .server-manager .tbl td a.danger { color: #e54545; }
+.server-manager { max-height: 80vh; overflow: auto; }
+.server-manager .page-desc { margin: 0 0 10px; color: #888; font-size: 12px; }
+.error-inline { display: block; margin-top: 4px; color: #e54545; font-size: 12px; }

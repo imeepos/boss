@@ -1,4 +1,5 @@
 // 登录页:规格对齐 visual-design-prompts.md §3.4 登录页纵向参考,文本走 i18n。
+// 服务端选择器在账号密码上方:不自动弹框;未配置时选择器提示并拦截提交,由用户点"管理服务端"手动配置。
 import { useState, type CSSProperties, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminLogin } from '../../api/auth'
@@ -7,6 +8,8 @@ import ornamentShield from '../../assets/brand/ornament-shield.png'
 import { AuthShell, BrandAside, inputStyle, buttonStyle, BRAND_NAVY } from '../auth-shell'
 import { AdCarousel } from '../auth-ads'
 import { useT } from '../../i18n'
+import { ServerManagerDialog } from '../../components/ServerManagerDialog'
+import { initialPickerState, pickServer, type ServerPickerState } from './serverPicker'
 
 export default function LoginPage() {
   const nav = useNavigate()
@@ -15,9 +18,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [picker, setPicker] = useState<ServerPickerState>(initialPickerState)
+  const [manageOpen, setManageOpen] = useState(false)
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (!picker.activeId) {
+      setError(t.auth.login.serverRequired)
+      return
+    }
     if (!username || !password) {
       setError(t.auth.login.emptyFields)
       return
@@ -34,6 +43,8 @@ export default function LoginPage() {
     }
   }
 
+  const onPick = (id: string) => setPicker({ ...picker, activeId: pickServer(id) })
+
   return (
     <AuthShell
       aside={
@@ -47,6 +58,18 @@ export default function LoginPage() {
         <h2 style={titleStyle}>{t.auth.login.title}</h2>
         <p style={subStyle}>{t.auth.login.subtitle}</p>
         <form onSubmit={onSubmit} style={{ marginTop: 12 }}>
+          <select
+            value={picker.activeId}
+            onChange={(e) => onPick(e.target.value)}
+            style={{ ...inputStyle, color: BRAND_NAVY }}
+            data-testid="server-select"
+          >
+            {!picker.servers.length && <option value="">{t.auth.login.serverNone}</option>}
+            {picker.servers.map((s) => (
+              <option key={s.id} value={s.id}>{s.name} ({s.baseUrl})</option>
+            ))}
+          </select>
+          <a onClick={() => setManageOpen(true)} style={addLinkStyle}>{t.auth.login.serverManage}</a>
           <input
             placeholder={t.auth.login.usernamePlaceholder}
             value={username}
@@ -70,6 +93,7 @@ export default function LoginPage() {
           <span style={{ color: '#7C8799' }}>{t.auth.login.assignedByAdmin}</span>
         </div>
       </div>
+      {manageOpen && <ServerManagerDialog onClose={() => { setManageOpen(false); setPicker(initialPickerState()) }} />}
     </AuthShell>
   )
 }
@@ -106,3 +130,7 @@ const linkRowStyle: CSSProperties = {
 }
 
 const shieldStyle: CSSProperties = { width: 14, height: 14 }
+
+const addLinkStyle: CSSProperties = {
+  display: 'block', marginBottom: 12, fontSize: 11, color: '#3D7EFF', cursor: 'pointer',
+}

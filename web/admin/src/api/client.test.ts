@@ -16,6 +16,7 @@ describe('apiFetch', () => {
     })
     expect(data).toEqual({ token: 't1' })
     const [url, init] = mock.mock.calls[0] as unknown as [string, RequestInit]
+    // 无 localStorage(测试环境)→ 无已配置服务端,相对前缀仅为兜死占位;实际 UI 有服务端门禁。
     expect(url).toBe('/api/v1/auth/login')
     expect(init.method).toBe('POST')
     expect(init.body).toBe(JSON.stringify({ username: 'a', password: 'b' }))

@@ -46,6 +46,26 @@
   --shell-fab-bg-hover: #1F355F;
   --shell-fab-icon: #FFFFFF;
   --shell-fab-shadow: 0 4px 16px rgba(15, 30, 59, 0.22);
+  /* shadcn 语义色(映射项目调色板,供 ui/* 组件引用) */
+  --background: #F4F5F7;
+  --foreground: #172744;
+  --card: #FFFFFF;
+  --card-foreground: #172744;
+  --popover: #FFFFFF;
+  --popover-foreground: #172744;
+  --primary: #273F70;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F4F5F7;
+  --secondary-foreground: #172744;
+  --muted: #F3F5F8;
+  --muted-foreground: #667085;
+  --accent: #F4F5F7;
+  --accent-foreground: #172744;
+  --destructive: #D94B4B;
+  --destructive-foreground: #FFFFFF;
+  --border: #D7DDE7;
+  --input: #D7DDE7;
+  --ring: #31568F;
 }
 
 :root[data-theme='dark'] {
@@ -94,6 +114,26 @@
   --shell-fab-bg-hover: #BE8D25;
   --shell-fab-icon: #0F1E3B;
   --shell-fab-shadow: 0 4px 20px rgba(213, 166, 58, 0.28);
+  /* shadcn 语义色(映射项目调色板,供 ui/* 组件引用) */
+  --background: #0A1528;
+  --foreground: #F7F8FC;
+  --card: #10203F;
+  --card-foreground: #F7F8FC;
+  --popover: #10203F;
+  --popover-foreground: #F7F8FC;
+  --primary: #D5A63A;
+  --primary-foreground: #0F1E3B;
+  --secondary: #1F355F;
+  --secondary-foreground: #F7F8FC;
+  --muted: #0F1E3B;
+  --muted-foreground: #A6B1C3;
+  --accent: #1F355F;
+  --accent-foreground: #F7F8FC;
+  --destructive: #D94B4B;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(255, 255, 255, 0.14);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #D5A63A;
 }
 
 body {

@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// dev 代理:/api → Go 后端(同源免 CORS)。目标可用 BOSS_API_TARGET 覆盖(默认 102 部署)。
+// 后端已配置 CORS,前端直连绝对接口地址(服务端配置页/登录页选择器,localStorage 记忆)。
+// 禁止再挂 /api 开发代理:请求通道唯一 = client.ts 的 apiBaseUrl()。
 // 注意：集成测试必须使用真实后端数据，不能使用 mock 服务器。
-const apiTarget = process.env.BOSS_API_TARGET ?? 'http://192.168.0.102:28080'
 
 export default defineConfig({
   plugins: [react()],
@@ -21,9 +21,6 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: {
-      '/api': { target: apiTarget, changeOrigin: true },
-    },
   },
   test: {
     environment: 'node',
