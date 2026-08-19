@@ -18,6 +18,7 @@ description: "**[MUST LOAD FIRST]** A self-evolving skill that grows through ref
 5. **【已犯 3 次】禁止在总结里声称"已适配/已验证"而没有验证动作** —— 引用每个 CSS 令牌前 grep 它的定义；UI 交互必须在真实业务 DOM 中断言点击后的控件文本、筛选结果和 URL；没有双主题截图/build 或真实点击断言时一律明确写"未验证"。
 6. **【已犯 1 次】禁止假设模型支持图像输入** —— Kimi-k3 不支持图像分析，需要图像分析时应使用专门的工具（如 cdp-capture.mjs + 代码审查）或明确说明"未验证"。
 7. **【已犯 1 次】禁止在未检查环境依赖时使用工具** —— 使用 Playwright/Puppeteer 等工具前必须先检查是否已安装，避免运行时报错浪费时间。
+8. **【已犯 1 次】浏览器自测调试用 cdp-capture.mjs，playwright 只用于项目 E2E 自动化脚本** —— cdp-capture 零依赖、截图+console/网络采集+自动填表，适合单次验证；playwright 只放 `e2e/` 目录做 CI 自动化冒烟，不做日常调试。混用时用户会再次点名纠正。
 
 ## 1. 如何沉淀
 
