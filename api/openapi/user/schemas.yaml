@@ -39,6 +39,8 @@ components:
         contractEnd: { type: string, example: '2026-08' }
         status: { type: string, example: ACTIVE }
         installAddress: { type: string }
+        currentBillAmount: { type: number, example: 199.0 }
+        currentBillDue: { type: string, example: '2026-08' }
 
     Security:
       type: object

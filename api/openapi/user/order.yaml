@@ -60,6 +60,28 @@ paths:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/OrderDetail' }
 
+  /orders/{orderNo}/technician-contact:
+    get:
+      tags: [Order]
+      summary: 装维师傅明文联系方式(派单工单回填,未派单 404)
+      operationId: orderTechnicianContact
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 师傅联系方式
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderNo: { type: string }
+                  name: { type: string }
+                  phone: { type: string }
+
   /orders/{orderNo}/cancel:
     post:
       tags: [Order]

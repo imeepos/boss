@@ -97,6 +97,40 @@ paths:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/Receipt' }
 
+  /payments/{payNo}/receipt.pdf:
+    get:
+      tags: [Billing]
+      summary: 缴费凭证 PDF 下载(application/pdf 附件)
+      operationId: getReceiptPdf
+      parameters:
+        - name: payNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: PDF 文件
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+
+  /invoices/{invoiceNo}/pdf:
+    get:
+      tags: [Billing]
+      summary: 电子发票 PDF 下载(application/pdf 附件)
+      operationId: getInvoicePdf
+      parameters:
+        - name: invoiceNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: PDF 文件
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+
   /topups:
     get:
       tags: [Billing]
@@ -129,6 +163,45 @@ paths:
           content:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/PaymentResult' }
+
+  /billing/auto-pay:
+    get:
+      tags: [Billing]
+      summary: 自动缴费开通状态
+      operationId: getAutoPay
+      responses:
+        '200':
+          description: 状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  autoPayEnabled: { type: boolean }
+
+    post:
+      tags: [Billing]
+      summary: 开通/关闭自动缴费
+      operationId: setAutoPay
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        '200':
+          description: 已更新
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  autoPayEnabled: { type: boolean }
 
   /invoices:
     get:

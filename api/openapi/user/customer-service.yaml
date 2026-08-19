@@ -58,6 +58,49 @@ paths:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/FaultDetail' }
 
+  /faults/{ticketNo}/urge:
+    post:
+      tags: [CustomerService]
+      summary: 报修催单(CHG 单号留痕 + 站内消息)
+      operationId: urgeFault
+      parameters:
+        - name: ticketNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 催单已受理
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  urgeNo: { type: string, example: 'CHG-1' }
+                  urgedAt: { type: string }
+
+  /faults/{ticketNo}/contact:
+    get:
+      tags: [CustomerService]
+      summary: 受理师傅明文联系方式(归属校验,未派单 404)
+      operationId: faultContact
+      parameters:
+        - name: ticketNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 师傅联系方式
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  technicianName: { type: string }
+                  technicianPhone: { type: string }
+
   /complaints:
     get:
       tags: [CustomerService]

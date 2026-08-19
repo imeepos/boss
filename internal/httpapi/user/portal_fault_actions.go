@@ -80,6 +80,9 @@ func portalOwnedFault(a *app.Application, c *gin.Context, cid int64) (order.Comp
 // portalTechnician 解析师傅明文联系方式:orderID>0 按订单派单,否则取客户最近已派工单;
 // 命中 worker_id 后从师傅域取明文电话(worker_name 为派单快照,电话不入快照)。
 func portalTechnician(a *app.Application, c *gin.Context, cid, orderID int64) (string, string, bool) {
+	if a.Worker == nil {
+		return "", "", false
+	}
 	tickets, err := a.WorkOrder.ListDispatchTickets(c.Request.Context())
 	if err != nil {
 		return "", "", false
@@ -104,7 +107,7 @@ func portalTechnician(a *app.Application, c *gin.Context, cid, orderID int64) (s
 			hit = t
 		}
 	}
-	if hit == nil || a.Worker == nil {
+	if hit == nil {
 		return "", "", false
 	}
 	w, err := a.Worker.GetWorker(c.Request.Context(), hit.WorkerID)
