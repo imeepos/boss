@@ -99,9 +99,28 @@ func registerPortalAuthRoutes(pub *gin.RouterGroup, a *app.Application, mgr *aut
 	pub.POST("/auth/login", func(c *gin.Context) {
 		var req struct {
 			Phone    string `json:"phone" binding:"required"`
-			Password string `json:"password" binding:"required"`
+			Mode     string `json:"mode" binding:"omitempty,oneof=sms password"`
+			SmsCode  string `json:"smsCode"`
+			Password string `json:"password"`
 		}
 		if !httpx.BindBody(c, &req) {
+			return
+		}
+		if req.Mode == "sms" {			if req.SmsCode == "" {
+				respond(c, apitypes.CodeInvalidParam, nil)
+				return
+			}
+			ok, err := a.Portal.ConsumeSms(c.Request.Context(), req.Phone, "login", req.SmsCode)
+			if err != nil {
+				respondErr(c, err)
+				return
+			}
+			if !ok {
+				respond(c, apitypes.CodeUnauthorized, nil)
+				return
+			}
+		} else if req.Password == "" {
+			respond(c, apitypes.CodeInvalidParam, nil)
 			return
 		}
 		acc, err := a.Portal.AccountByPhone(c.Request.Context(), req.Phone)
@@ -109,14 +128,16 @@ func registerPortalAuthRoutes(pub *gin.RouterGroup, a *app.Application, mgr *aut
 			respondErr(c, err)
 			return
 		}
-		ok, err := a.Portal.VerifyPassword(c.Request.Context(), req.Phone, req.Password)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if !ok {
-			respond(c, apitypes.CodeUnauthorized, nil)
-			return
+		if req.Mode != "sms" {
+			ok, err := a.Portal.VerifyPassword(c.Request.Context(), req.Phone, req.Password)
+			if err != nil {
+				respondErr(c, err)
+				return
+			}
+			if !ok {
+				respond(c, apitypes.CodeUnauthorized, nil)
+				return
+			}
 		}
 		token, err := signCustomerToken(mgr, acc.CustomerID, req.Phone)
 		if err != nil {

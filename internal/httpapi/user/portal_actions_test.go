@@ -158,6 +158,28 @@ func TestPortal_ReceiptAndInvoicePdf(t *testing.T) {
 	}
 }
 
+// TestPortal_SmsLogin 短信验证码登录:App 发 {phone,mode:"sms",smsCode}。
+func TestPortal_SmsLogin(t *testing.T) {
+	r, _ := newActionsRouter(&woWithDispatch{}, &fakeBilling{}, nil, nil, nil, nil, nil, nil)
+	_ = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/sms-code",
+		`{"phone":"13900005678","scene":"register"}`, "")
+	_ = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/register",
+		`{"phone":"13900005678","smsCode":"123456","password":"password-10x"}`, "")
+	_ = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/sms-code",
+		`{"phone":"13900005678","scene":"login"}`, "")
+
+	w := userPortalDo(r, http.MethodPost, "/api/user/v1/auth/login",
+		`{"phone":"13900005678","mode":"sms","smsCode":"123456"}`, "")
+	if code, data := userPortalCode(t, w); code != int(apitypes.CodeOK) || data["token"] == nil {
+		t.Fatalf("sms login resp=%s", w.Body.String())
+	}
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/login",
+		`{"phone":"13900005678","mode":"sms","smsCode":"000000"}`, "")
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeUnauthorized) {
+		t.Fatalf("bad sms code resp=%s", w.Body.String())
+	}
+}
+
 // TestPortal_AutoPay 自动缴费:GET 缺省关 → POST 开通 → GET 已开。
 func TestPortal_AutoPay(t *testing.T) {
 	cust, _ := actionCtx()

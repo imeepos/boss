@@ -490,3 +490,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 重来一次:排查"接口 404/路由缺失"时,第一动作 `lsof -nP -iTCP:<port> -sTCP:LISTEN`(用全路径 /usr/sbin/lsof)列出占用该端口的全部进程,确认是否双绑(IPv4+IPv6);必要时 `kill` 陈旧进程再测,而不是默认自己代码没注册路由。
 - 另一个坑:给测试写 fake 桩必须完整实现 Go 接口的全部方法。fakeTaxStub 只写了 ListInvoices,go vet 报缺 BackfillTaxNo/IssueInvoicesForPeriod/GetInvoice 等;fakeUserData 缺 ListUserVerifyRecords/ListProductSpecs 等,且 CreateUserPlan/CreateUserAddress 返回 (int64,error) 不是 error。教训:每次给新接口造 fake,先 `go vet` 让编译器列出全部缺失方法,一次性补全,别一个个撞。
 - 另一个坑:单测里调用返回两值的 helper(如 signCustomerToken 返回 (string,error)),`x :=` 编译错,要 `x, _ :=`。教训:Go 里任何 `:=` 单值赋值若目标函数返回多值,govet/compile 立即报,改 `_,err` 或 `v, _` 即可。
+
+## 2026-08-19 环境约束纠正:测试服务器只有 102,不要本机启动服务
+- 用户明令:测试服务器只有一个(102,192.168.0.102),提交后 gitea CI 自动部署;尽量不要本机启动 boss 服务做冒烟,本机配置低。
+- 哪个坑:上个任务我在本机 go run /tmp/boss-new 起了服务冒烟,还因此撞上端口被陈旧进程 IPv4/IPv6 双绑的假 404,空耗多轮。用户此刻直接亮明环境约束。
+- 重来一次:需要冒烟/联调后端 → 提交后等 102 自动部署,直接用 192.168.0.102:28080(部署地址)验证,不在本机起服务。

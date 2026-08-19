@@ -28,3 +28,4 @@
 | 端口被陈旧进程 IPv4/IPv6 双绑导致"假 404/假路由缺失"(lsof 不在默认 PATH 需用 /usr/sbin 全路径) | 1 | 2026-08-19(后端冒烟:orphan ./server-new 占 127.0.0.1:18080,curl 打偏) | 空耗多轮误判自己路由没注册 |
 | 测试 fake 桩未完整实现 Go 接口全部方法(go vet 报缺方法) | 1 | 2026-08-19(fakeTaxStub 只写 ListInvoices、fakeUserData 缺 ListUserVerifyRecords 等) | 编译期逐个撞,多轮修正 |
 | Go 单测 `:=` 单值赋给返回多值的 helper 编译错 | 1 | 2026-08-19(signCustomerToken 返回 (string,error),`tok :=` 报 mismatch) | 一轮编译错误 |
+| 本机启动 boss 服务做冒烟(测试服务器只有 102 一台,提交后自动部署,本机配置低) | 1 | 2026-08-19(本地 go run /tmp/boss-new 冒烟,撞端口双绑假 404,用户明令"尽量不要本机启动") | 浪费多轮;应等 102 自动部署后用部署地址验证 |

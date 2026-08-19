@@ -12,6 +12,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
@@ -49,7 +50,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrNotFound),
 		errors.Is(err, worker.ErrRegistrationNotFound),
 		errors.Is(err, worker.ErrRealNameNotFound),
-		errors.Is(err, userdata.ErrNotFound):
+		errors.Is(err, userdata.ErrNotFound),
+		errors.Is(err, portal.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, resource.ErrIllegalTransition),
 		errors.Is(err, resource.ErrPortNotAvailable),
