@@ -1,0 +1,277 @@
+package app
+
+// 用户端门户(客户门户)Auth 域:注册入口 + 客户 JWT + 短信码/注册/找回密码 + 门户状态存储。
+// 契约单一事实源:api/openapi/user.yaml(+user/{auth,profile,misc,...}.yaml),前缀 /api/v1。
+// 决策记录:docs/notes/adopted/2026-08-18-user-portal-customer-jwt.md。
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/pkg/auth"
+	"github.com/ymm-001/boss/internal/pkg/middleware"
+	"github.com/ymm-001/boss/pkg/apitypes"
+)
+
+// customerRole 客户 JWT/API key 的固定角色码;与 roles 表 7 角色码之一对齐。
+const customerRole = "customer"
+
+// portalCustomerIDBase 未关联 customers 主档的自助注册账号 ID 基数(隔离命名空间,避免与真实主档冲突)。
+const portalCustomerIDBase = int64(9_000_000_000)
+
+// signCustomerToken 客户 JWT 签发:复用 auth.Manager(同密钥/TTL),
+// AccountID=0(RBAC 恒拒,与 APIKeyAuth customer 主体同约定),客户身份编码于 Username "cust/<id>/<phone>"。
+func signCustomerToken(m *auth.Manager, customerID int64, phone string) (string, error) {
+	return m.Sign(0, fmt.Sprintf("cust/%d/%s", customerID, phone), customerRole)
+}
+
+// customerIDFromToken 从 claims 解回客户 ID;非客户 token 返回 0。
+func customerIDFromToken(claims *auth.Claims) int64 {
+	if claims == nil || claims.RoleCode != customerRole || claims.AccountID != 0 {
+		return 0
+	}
+	parts := strings.SplitN(claims.Username, "/", 3)
+	if len(parts) != 3 || parts[0] != "cust" {
+		return 0
+	}
+	id, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return 0
+	}
+	return id
+}
+
+// requireCustomer 客户鉴权守卫:从 API key Subject 或客户 JWT 取客户 ID;非客户身份 401。
+func requireCustomer(c *gin.Context) (int64, bool) {
+	if s := middleware.SubjectFrom(c); s != nil && s.Type == customerRole {
+		return s.Ref, true
+	}
+	v, ok := c.Get(middleware.CtxClaims)
+	if !ok {
+		respond(c, apitypes.CodeUnauthorized, nil)
+		return 0, false
+	}
+	claims, _ := v.(*auth.Claims)
+	id := customerIDFromToken(claims)
+	if id <= 0 {
+		respond(c, apitypes.CodeUnauthorized, nil)
+		return 0, false
+	}
+	return id, true
+}
+
+// ---- 门户进程内状态(短信码/密码/偏好/消息;DB 落库方案见任务报告"需商议的DB改动") ----
+
+type portalAccount struct {
+	CustomerID        int64
+	Phone             string
+	PasswordHash      string
+	PasswordUpdatedAt time.Time
+}
+
+type portalPrefs struct {
+	Notify   gin.H
+	Language string
+}
+
+type portalStore struct {
+	mu       sync.Mutex
+	sms      map[string]string // key: phone|scene → code
+	smsExp   map[string]time.Time
+	accounts map[string]*portalAccount // key: phone
+	prefs    map[int64]*portalPrefs
+	messages map[int64][]gin.H
+	bal      map[int64]float64
+	seq      int64
+}
+
+var portal = newPortalStore()
+
+func newPortalStore() *portalStore {
+	return &portalStore{
+		sms: map[string]string{}, smsExp: map[string]time.Time{},
+		accounts: map[string]*portalAccount{}, prefs: map[int64]*portalPrefs{},
+		messages: map[int64][]gin.H{}, bal: map[int64]float64{},
+	}
+}
+
+// portalSmsCodeGen 短信码生成器;测试可替换为定值。
+var portalSmsCodeGen = func() string {
+	return fmt.Sprintf("%06d", time.Now().UnixNano()%1_000_000)
+}
+
+func (s *portalStore) issueSms(phone, scene string) string {
+	code := "000000"
+	if portalSmsCodeGen != nil {
+		code = portalSmsCodeGen()
+	}
+	s.mu.Lock()
+	s.sms[phone+"|"+scene] = code
+	s.smsExp[phone+"|"+scene] = time.Now().Add(5 * time.Minute)
+	s.mu.Unlock()
+	return code
+}
+
+func (s *portalStore) checkSms(phone, scene, code string) bool {
+	key := phone + "|" + scene
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	want, ok := s.sms[key]
+	if !ok || time.Now().After(s.smsExp[key]) || code == "" || code != want {
+		return false
+	}
+	delete(s.sms, key)
+	delete(s.smsExp, key)
+	return true
+}
+
+func (s *portalStore) nextID() int64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.seq++
+	return portalCustomerIDBase + s.seq
+}
+
+func (s *portalStore) account(phone string) *portalAccount {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.accounts[phone]
+}
+
+func (s *portalStore) upsertAccount(phone, password string, customerID int64) *portalAccount {
+	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	acc := s.accounts[phone]
+	if acc == nil {
+		acc = &portalAccount{Phone: phone, CustomerID: customerID}
+		s.accounts[phone] = acc
+	}
+	acc.PasswordHash = string(hash)
+	acc.PasswordUpdatedAt = time.Now()
+	return acc
+}
+
+func (s *portalStore) verifyPassword(phone, password string) bool {
+	hash := func() string {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if acc := s.accounts[phone]; acc != nil {
+			return acc.PasswordHash
+		}
+		return ""
+	}()
+	return hash != "" && bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+}
+
+// ---- 注册入口 ----
+
+// registerUserPortalRoutes 用户端门户总入口:pub 公开端点 + uauth 客户鉴权组。
+// 与 admin 共享 /api/v1 路径树;同路径冲突端点(/auth/login)不在此注册,见任务报告矛盾清单。
+func registerUserPortalRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
+	pub := r.Group("/api/v1")
+	registerPortalAuthRoutes(pub, a, mgr)
+
+	uauth := r.Group("/api/v1")
+	uauth.Use(middleware.APIKeyAuth(a.APIKey, apiKeySubjectResolver(a)), middleware.Authn(mgr), portalCustomerOnly())
+	registerPortalProfileRoutes(uauth, a)
+	registerPortalMiscRoutes(uauth, a)
+	registerPortalOrderRoutes(uauth, a)
+	registerPortalBillingRoutes(uauth, a)
+	registerPortalServiceRoutes(uauth, a)
+}
+
+// portalCustomerOnly 非客户身份(含 admin JWT)一律 401,客户视角端点不与后台 RBAC 混用。
+func portalCustomerOnly() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if _, ok := requireCustomer(c); !ok {
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+// registerPortalAuthRoutes Auth 域公开端点(sms-code/register/reset-password)。
+func registerPortalAuthRoutes(pub *gin.RouterGroup, a *Application, mgr *auth.Manager) {
+	pub.POST("/auth/sms-code", func(c *gin.Context) {
+		var req struct {
+			Phone string `json:"phone" binding:"required"`
+			Scene string `json:"scene" binding:"required,oneof=login register reset"`
+		}
+		if !bindBody(c, &req) {
+			return
+		}
+		portal.issueSms(req.Phone, req.Scene)
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	pub.POST("/auth/register", func(c *gin.Context) {
+		var req struct {
+			Phone    string `json:"phone" binding:"required"`
+			SmsCode  string `json:"smsCode" binding:"required"`
+			Password string `json:"password" binding:"required,min=10"`
+		}
+		if !bindBody(c, &req) {
+			return
+		}
+		if !portal.checkSms(req.Phone, "register", req.SmsCode) {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		// 契约要求注册即返回 token+customerId;已有同名手机号客户则直接绑定,否则发隔离空间合成 ID(见报告)。
+		customerID := portal.nextID()
+		if list, err := a.Customer.List(c.Request.Context(), customer.CustomerQuery{Phone: req.Phone}); err == nil && len(list) > 0 {
+			customerID = list[0].ID
+		}
+		acc := portal.upsertAccount(req.Phone, req.Password, customerID)
+		token, err := signCustomerToken(mgr, acc.CustomerID, req.Phone)
+		if err != nil {
+			respond(c, apitypes.CodeInternal, nil)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"token": token, "customerId": acc.CustomerID})
+	})
+
+	pub.POST("/auth/reset-password", func(c *gin.Context) {
+		var req struct {
+			Phone       string `json:"phone" binding:"required"`
+			SmsCode     string `json:"smsCode" binding:"required"`
+			NewPassword string `json:"newPassword" binding:"required,min=10"`
+		}
+		if !bindBody(c, &req) {
+			return
+		}
+		if !portal.checkSms(req.Phone, "reset", req.SmsCode) {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		acc := portal.account(req.Phone)
+		if acc == nil {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
+		}
+		portal.upsertAccount(req.Phone, req.NewPassword, acc.CustomerID)
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+}
+
+// registerPortalProfileRoutes Profile 域(含 /auth/verify 实名;需客户身份,契约全局 bearerAuth)。
+func registerPortalProfileRoutes(g *gin.RouterGroup, a *Application) {
+	g.GET("/auth/verify", portalVerifyStatus(a))
+	g.POST("/auth/verify", portalVerifySubmit(a))
+	g.GET("/profile", portalProfile(a))
+	g.GET("/profile/security", portalSecurity(a))
+	g.PUT("/profile/security/password", portalChangePassword)
+	g.PUT("/profile/security/phone", portalChangePhone)
+	g.GET("/profile/notify-settings", portalGetNotify)
+	g.PUT("/profile/notify-settings", portalPutNotify)
+	g.PUT("/profile/language", portalPutLanguage)
+}
