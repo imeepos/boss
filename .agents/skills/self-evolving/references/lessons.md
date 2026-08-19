@@ -78,3 +78,6 @@
 - 当要给业务流选审核/操作账号时,修复是先 GET /menu-perms 查矩阵里目标权限码归属哪些角色(如 menu:dispatch -> ops/sysadmin/technician),再据此决定建号 roleCode——不要默认只有 sysadmin 能操作(2026-08-19)
 - 当 check-contract-sync A 报"路由已实现但契约未登记"、而子文件已加路径时,修复是往顶层 api/openapi/admin.yaml 补同路径的 `$ref` 行(~1 编码 /),正则只匹配同行带 $ref 的路径、不递归子文件(2026-08-19)
 - 当 go test 某包报编译错误而自己没改过那些文件时,修复是先 git status + stat 时间戳判断是否为并行 Agent 正在同工作区开发(未跟踪新文件+时间戳接近当前),识别为非自己回归,只验证自己领域包、不改他人正在写的文件(2026-08-19)
+- 当 POST /provision/ports 等「置备/联调」接口报 FK violation(50000 内部错误)时,修复是相关联的 FK 字段(resourceId/orderId 等)必须用**前面创建接口真正返回的 id**,不能凭 fixture/直觉写小整数(如用 resourceId:1 但真实资源是 228)——先看创建响应的返回 id 再拼后续请求(2026-08-19, 开网 CLI 模拟)
+- 当扫码绑定(VerifyScan)报 40920「扫码与预绑定不一致」时,修复是检查标签是否真的绑定了资产的 `bound_asset_id`:VerifyScan 查 `tags WHERE epc_code` 要求 `bound_asset_id != 0`,且 MATCH 需 `asset_id == link.AssetID`;正确顺序是**先建资产,再以 `boundAssetId`+`status:BOUND` 创建标签**(CreateAsset 不会回写 tags.bound_asset_id),创建时 status=UNBOUND 的标签永远扫码不 MATCH(2026-08-19, 开网 CLI 模拟)
+- 当要为 customer 主档保存"账号密码"时,修复是明确 BOSS 客户主档(customers)**没有登录口令**,鉴权全走 API key:`POST /api-keys` 支持 `subjectType: customer`(subjectRef=customers.id,名称必填),签出的 plainKey 可直接 `bossctl --api-key <key> call GET /auth/me` 以客户身份自证;客户主体密钥不带菜单权限(RBAC 恒拒),test-accounts.json 的 username/password 记 null、放 apiKey(2026-08-19, 开网 CLI 模拟)

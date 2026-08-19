@@ -129,3 +129,10 @@
 - 原因:控件渲染直接使用 `useSearchParams` 派生值，交互更新 URL 触发父树重渲染，旧 query 值又覆盖刚设置的本地值；只改成本地 state 又会丢失刷新恢复能力。
 - 修法:采用“双轨状态”：首次挂载用 URL 初始化本地 state；交互只更新本地 state，同时通过独立 setter 写回 URL；不要让 URL 后续变化反向覆盖本地 state。下拉选项提交也应避免依赖全局 `mousedown` 收起顺序。
 - 检视:验证必须同时断言选中后的触发器文本、本地筛选结果和 `location.search`，仅检查 URL 或仅跑 build 不能证明控件可用。
+
+## 扫码绑定永不 MATCH：标签未绑定资产 bound_asset_id(2026-08-19 开网 CLI 模拟)
+
+- 症状:按 flow 顺序创建资产且标签设了 tagId 关联、status=UNBOUND,扫码返回 `40920 扫码与预绑定不一致`,怎么扫都不 MATCH。
+- 原因:`VerifyScan`(pg_scan.go)的 MATCH 判定是 `tags WHERE epc_code` 必须 `bound_asset_id != 0` 且 `asset_id == link.AssetID`;`CreateAsset` **不会写回** `tags.bound_asset_id`(设计如此),所以"先建资产、建个 UNBOUND 标签"不等于标签绑上了资产。二者是独立表,关联靠标签侧显式填 `bound_asset_id`。
+- 修法:先建资产拿 assetId,再创建标签时显式填 `boundAssetId=<assetId>` + `status:"BOUND"`;或补 PATCH 把已有标签 bound_asset_id 指向资产。置备接口 `/provision/assets` 的 TagID 已放宽为可 0(让"资产先建、标签后绑"成立)。
+- 检视:核实 epc 对应的标签 `SELECT bound_asset_id,status FROM tags WHERE epc_code='...'`,必须是实际资产 id 而非 0。

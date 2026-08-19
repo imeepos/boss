@@ -165,3 +165,22 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 
 场景 → `go test ./internal/app/...` 报大量编译错误（重复声明 fakeX、API 签名不匹配、函数返回值数量不符），但自己没改过那些文件。
 怎么用 → 先 `git status --short`：未跟踪新文件（`??`）+ `stat -f "%Sm"` 时间戳接近当前时间 = 另一个并行 Agent 正在同一工作区同时开发。如 `internal/app/http_provision_seed_test.go` 与我的 worker 改动无关，是他人正在写的内容。识别为并行工作而非自己回归：对比文件时间戳、git 是否 tracked、错误是否涉及自己未碰过的包。**不要修改他人正在写的文件**——只验证自己的领域包（如 `go test ./internal/domain/worker/...`），在总结里如实说明 app 包被并行改动暂时阻塞。
+
+## 开网 12 环节 CLI 全流程置备蓝图（资源/端口/标签/四码/派单）
+
+场景 → 要完整走通「下单→核查→预占→收费→派单→上门→开户」12 环节并落到订单 DONE，缺置备数据(渠道/产品/资源/端口/资产批次/标签/资产/四码/派单)任何一环后续就 404/409。
+怎么用 → 按依赖序置备(可用 `POST /provision/...` 联调端点,menu:provision):
+1. 渠道 `POST /provision/channels`(code 唯一)→ 拿 chanId。
+2. 产品 `POST /products`(name/legalEntityId)→ 拿 offerId。
+3. 资源 `POST /provision/resources`(addressId/legalEntityId)→ 拿 resId(**FK 关联必须用真实返回 id**)。研磨 4. 端口 `POST /provision/ports`(resourceId=上一步 id,addressId)。
+4. 资产批次 `POST /provision/asset-batches`(code)→ 资产 `POST /provision/assets`(batchId)。
+5. **标签绑定资产**:`POST /provision/tags` 填 `boundAssetId=<assetId>`+`status:"BOUND"`(否则扫码 MATCH 不了,见 known-issues)。
+6. 四码 `POST /quad-links`(assetId/customerId/portId/addressId/legalEntityId)→ LINKED 状态由扫码驱动。
+7. 下单 `POST /orders`(customerId/offerId/addressId/channelId)。
+8. 推进:check-resource(2)→ reserve(3,自动占端口)→ charge(4,自动段 5-8)→ dispatch ticket + assign → scan-bind(9,需 EPC 对已绑资产)→ activate(10,自动段 11-12)→ 订单 stage 12/status DONE。
+验证:订单 timeline 12 环节全 DONE、`GET /orders/{orderNo}` 的 stage/status、`GET /quad-links` 四码 LINKED、scan_logs 有 MATCH 行。端口占后保持 RESERVED(order_id 非空)是契约常态,不必强行置 USED。
+
+## 为 customer/worker 主体签 API key 并绑定 bossctl 身份
+
+场景 → 要给某个客户/师傅(非 account)保存可用凭证,或让 bossctl 直接以该主体身份调用其专属接口。
+怎么用 → `POST /api-keys` 支持 `subjectType ∈ {account, worker, customer}` + `subjectRef=<主档 id>` + `name`;响应 `plainKey` 即明文密钥(只此一次返回)。`bossctl --api-key <plainKey> call GET /auth/me` 可自证身份(subjectType/subjectRef/name)。要长期用,把身份写进 `~/.bossctl/identities.json`(map: identity 名→key),之后 `bossctl --as <名> call ...`。注意 worker/customer 主体密钥**无菜单权限**(RBAC 恒拒),只能调其身份对应接口;customer 主档本无登录口令,此即默认鉴权方式。

@@ -424,3 +424,19 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - skill 有没有提前警告:没有针对"答应保存要当场落盘"的红线(现有红线 5 是"未验证不声称",这次是"答应了不执行",另一类);也没有 check-contract-sync 匹配机制的条目。
 - 重来一次:① 任何"会保存/已记录"的承诺当场 write + ls 验证,不拖到下一轮;② 契约 A 门禁先看 collectSpecPaths 源码+临时 DEBUG 确认匹配机制,不要凭 regex 直觉猜;③ 42200 一律先读请求 struct 类型,整数 id 不传字符串;④ 结束前 git status 识别并行 Agent 改动,不把自己的域测试与其编译阻塞混淆。
 - 沉淀:techniques #24(CLI 五步模拟业务流+账号落盘)、#25($ref 行匹配机制)、#26(并行 Agent 识别);lessons #76-80;knowledge/后端.md 索引已同步。
+
+## 2026-08-19 开网 CLI 全流程模拟(12 环节 → 订单 DONE)
+
+**哪个坑浪费了最多时间?**
+① 端口置备 50000:POST /provision/ports 我传 resourceId:1(fixture 直觉),但真实资源创建后是 id 228,FK 违反——置备类接口的 FK 关联必须取前面创建响应返回的真实 id。② 扫码绑定 40920「扫码与预绑定不一致」:按直觉"先建资产、建个 status=UNBOUND 的标签、再建资产时关联 tagId"以为就绑上了,实际 VerifyScan 的 MATCH 要求 `tags.bound_asset_id != 0` 且等于 quadlink.AssetID,而 CreateAsset 不回写 tags.bound_asset_id;正确顺序是**先建资产(无需 tagId),再以 boundAssetId 填实际资产 id + status:"BOUND" 创建标签**。这是全流程中最隐蔽、最费时的一环。
+
+**这个 skill 有没有提前警告我?**
+没有。skill 后端索引有 FK/42200/COALESCE 等"后端报错"类经验,但没有"联调/置备数据依赖序"和"双表关联必须显式绑、create 不回写"这类事实性坑。扫码 MATCH 的判定条件(读 pg_scan.go)与 CreateAsset 不绑标签(读 pg_write.go)都是靠源码追出来的,应先作为事实点沉淀。
+
+**重来一次我会怎么做?**
+- 置备接口互相关联时,先记录每个创建响应返回的 id(map: 渠道/资源/端口/批次/资产),再拼下一个请求——决不凭 fixture 猜 FK。
+- 涉及"标签↔资产"这类双表多对多/关联语义,先 grep 读两端写入代码(CreateAsset vs CreateTag)确认谁写 bound_asset_id,不假设"建 A 时会带上 B"。
+- 全流程模拟前先列出依赖序蓝图(techniques #27),缺一环先补置备再推进,避免走到 409/404 才回头。
+- 客户等非 account 主体的"账号凭证"=API key(subjectType=customer),sign 完立即写 identities.json + test-accounts.json 落盘,不口头承诺。
+
+**沉淀:** lessons #81-83;known-issues #20;techniques #27-28;knowledge/后端.md 索引与 README 计数已同步。
