@@ -81,9 +81,10 @@ self-evolving/
 │       ├── 后端.md       # 后端经验索引
 │       └── 实施.md       # 实施经验索引
 └── scripts/
-    └── cdp-capture.mjs   # 零依赖 CDP 工具（Node>=22 + 系统 Chrome）：网页截图 + console/网络采集，
-                          #   --eval 自动填表登录，--logs 输出 console 报错与失败请求响应体
-```
+    ├── cdp-capture.mjs       # 零依赖 CDP 工具（Node>=22 + 系统 Chrome）：网页截图 + console/网络采集，
+                              #   --eval 自动填表登录，--logs 输出 console 报错与失败请求响应体
+    ├── gpt-image-generate.mjs # 零依赖 gpt-image-2 页面设计稿生成（Node>=22 + .env）
+    └── .env                  # API 密钥（不要泄露！）
 
 项目根 `ISSUE.md`（在本 skill 之外）：上游文档/API 有误、skill 内修不了的问题清单。
 
@@ -132,7 +133,64 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs <url> <out.png> --widt
 - macOS 系统 Chrome（`/Applications/Google Chrome.app`）
 - 零 npm 依赖
 
-## 4. 开工前必查（按场景检索）
+## 4. 页面设计稿生成（gpt-image-2）
+
+**用 `gpt-image-generate.mjs` 调用 gpt-image-2 生成页面设计稿。** API key 在同目录 `.env`，不要泄露。
+
+### 何时用
+
+- 需求讨论阶段，快速出页面视觉稿
+- 对比多个设计方案（`--n 2` 一次出两张）
+- 给前端开发做参考图
+
+### 用法
+
+```bash
+# 基础生成（横版，适合仪表盘/列表页）
+node .agents/skills/self-evolving/scripts/gpt-image-generate.mjs \
+  -p "BOSS系统仪表盘，深色主题，左侧导航栏，顶部4个数据卡片，下方订单列表" \
+  -o ./designs/dashboard.png
+
+# 竖版（适合登录页/表单页）
+node .agents/skills/self-evolving/scripts/gpt-image-generate.mjs \
+  -p "登录页面，居中登录卡片，账号密码输入框，蓝色登录按钮" \
+  -o ./designs/login.png --size 1024x1536
+
+# 生成两张方案对比
+node .agents/skills/self-evolving/scripts/gpt-image-generate.mjs \
+  -p "订单详情页面，包含状态时间线、商品列表、费用明细" \
+  -o ./designs/order-detail.png --n 2
+```
+
+### 参数
+
+| 参数 | 默认值 | 说明 |
+|---|---|---|
+| `--prompt / -p` | （必填） | 图片描述，越详细效果越好 |
+| `--out / -o` | `./output.png` | 输出路径 |
+| `--size` | `1536x1024` | 横版；竖版用 `1024x1536`；方形用 `1024x1024` |
+| `--quality` | `auto` | `low`/`medium`/`high`/`auto`，high 很慢 |
+| `--n` | `1` | 生成张数 |
+| `--style` | `vivid` | `vivid`（鲜艳）或 `natural`（自然） |
+
+### 生成后
+
+用 `read_image` 读取生成的图片，分析设计细节，作为前端开发的参考。
+
+### Prompt 技巧
+
+- 用英文 prompt 效果更稳定，中文也可用
+- 描述具体：主题色、布局结构、组件类型、文字内容
+- 不需要写"高清"、"4K"等词，gpt-image-2 默认质量足够
+- 生成的是设计参考图，不是可直接使用的代码
+
+### 依赖
+
+- Node >= 22
+- 同目录 `.env` 中的 `OPENAI_API_KEY` 和 `OPENAI_BASE_URL`
+- 零 npm 依赖
+
+## 5. 开工前必查（按场景检索）
 
 **写代码前，先浏览 `references/knowledge/` 对应分类的标题，确认有没有"已知的坑"。**
 
@@ -140,11 +198,12 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs <url> <out.png> --widt
 - 写 Go/数据库/API → 看 `knowledge/后端.md`
 - 部署/CI/环境配置 → 看 `knowledge/实施.md`
 - 浏览器截图/UI 调试 → 用 `cdp-capture.mjs`（见第 3 节）
+- 页面设计稿生成 → 用 `gpt-image-generate.mjs`（见第 4 节）
 - 不确定 → 看 `knowledge/README.md` 速查统计表
 
 每个分类文件末尾有"开工前 grep 关键词"，用这些词检索所有 references 文件。
 
-## 5. 反馈优先级
+## 6. 反馈优先级
 
 最值钱的先写：
 

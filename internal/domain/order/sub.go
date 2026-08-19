@@ -20,24 +20,24 @@ type DispatchTicket struct {
 
 // Complaint 报障工单(客服域,客户报障与处理)。
 type Complaint struct {
-	ID              int64
-	TicketNo        string
-	CustomerID      int64
-	OrderID         int64 // 0=无关联订单
-	LegalEntityID   int64
-	LegalEntityName string
-	Type            string
-	Status          string // OPEN/PROCESSING/CLOSED
+	ID              int64  `json:"id"`
+	TicketNo        string `json:"ticketNo"`
+	CustomerID      int64  `json:"customerId"`
+	OrderID         int64  `json:"orderId"` // 0=无关联订单
+	LegalEntityID   int64  `json:"legalEntityId"`
+	LegalEntityName string `json:"legalEntityName"`
+	Type            string `json:"type"`
+	Status          string `json:"status"` // OPEN/PROCESSING/CLOSED
 }
 
 // ScanLog 扫码绑定记录(装维扫码与预绑定标签比对)。
 type ScanLog struct {
-	ID         int64
-	OrderID    int64
-	WorkerID   int64
-	WorkerName string
-	TagID      int64
-	Result     string // MATCH/MISMATCH/OFFLINE_CACHED
+	ID         int64  `json:"id"`
+	OrderID    int64  `json:"orderId"`
+	WorkerID   int64  `json:"workerId"`
+	WorkerName string `json:"workerName"`
+	TagID      int64  `json:"tagId"`
+	Result     string `json:"result"` // MATCH/MISMATCH/OFFLINE_CACHED
 }
 
 // WorkOrderService 订单工单/报障/扫码域服务口(阶段5 子表)。
