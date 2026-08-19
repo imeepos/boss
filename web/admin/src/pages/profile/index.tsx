@@ -1,9 +1,11 @@
 // 个人工作台内容页：各分区由 UCenterLayout 的独立路由承载。
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useProfile } from '../../layouts/profile'
 import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
+import { ApiError } from '../../api/envelope'
+import { toAuditLog, type AuditEntry, type AuditLog } from '../base/audit/logic'
 import { useT } from '../../i18n'
 import './profile.css'
 
@@ -65,9 +67,71 @@ function SecuritySection() {
 
 function SecurityRow({ label, value }: { label: string; value: string }) { return <div className="profile-security-row"><span>{label}</span><em>{value}</em><button aria-label={label}><i className="profile-chevron" /></button></div> }
 
+interface OwnKeyRow {
+  id: number
+  subjectType: string
+  subjectRef: number
+  name: string
+  keyPrefix: string
+  status: number
+  lastUsedAt: string
+  createdAt: string
+}
+
 function ApiKeySection() {
-  const t = useT(); const [keyName, setKeyName] = useState(''); const [modalOpen, setModalOpen] = useState(false)
-  return <div className="profile-content-page"><div className="profile-section-title profile-section-title-action"><div><h1>{t.pages.profile.apiKey.title}</h1><p>{t.pages.profile.apiKey.desc}</p></div><button onClick={() => setModalOpen(true)}>{t.pages.profile.apiKey.create}</button></div><div className="profile-key-table"><div className="profile-key-table-head"><span>{t.pages.profile.apiKey.name}</span><span>{t.pages.profile.apiKey.key}</span><span>{t.pages.profile.apiKey.lastUsed}</span><span>{t.pages.profile.apiKey.status}</span><span /></div><div className="profile-key-table-row"><strong>ci-pipeline-prod</strong><span>boss_••••••••</span><span>{t.pages.profile.apiKey.neverUsed}</span><span className="profile-key-active">{t.pages.profile.apiKey.active}</span><button className="profile-danger">{t.pages.profile.apiKey.revoke}</button></div></div><div className="profile-security-tip">{t.pages.profile.apiKey.securityTip}</div>{modalOpen && <div className="profile-modal-backdrop"><div className="profile-modal" role="dialog" aria-modal="true"><div className="profile-modal-head"><h2>{t.pages.profile.apiKey.create}</h2><button aria-label={t.pages.profile.cancel} onClick={() => setModalOpen(false)}><i className="profile-close-icon" /></button></div><label>{t.pages.profile.apiKey.name}<input value={keyName} onChange={(event) => setKeyName(event.target.value)} placeholder={t.pages.profile.apiKey.namePlaceholder} /></label><div className="profile-modal-actions"><button className="profile-secondary" onClick={() => setModalOpen(false)}>{t.pages.profile.cancel}</button><button onClick={() => setModalOpen(false)}>{t.pages.profile.apiKey.create}</button></div></div></div>}</div>
+  const t = useT()
+  const k = t.pages.profile.apiKey
+  const profile = useProfile()
+  const [rows, setRows] = useState<OwnKeyRow[]>([])
+  const [error, setError] = useState('')
+  const [denied, setDenied] = useState(false)
+  const [keyName, setKeyName] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [plainKey, setPlainKey] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const load = () => {
+    setError(''); setDenied(false)
+    apiFetch<{ items: OwnKeyRow[] }>('/api-keys')
+      .then((d) => setRows((d?.items ?? []).filter((r) => r.subjectType === 'account' && r.subjectRef === profile.accountId)))
+      .catch((e) => {
+        if (e instanceof ApiError && e.code === 403) setDenied(true)
+        else setError(e instanceof Error ? e.message : k.loadFail)
+      })
+  }
+  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const create = () => {
+    if (busy || !keyName.trim()) return
+    setBusy(true)
+    apiFetch<{ plainKey: string }>('/api-keys', {
+      method: 'POST',
+      body: { subjectType: 'account', subjectRef: profile.accountId, name: keyName.trim() },
+    })
+      .then((res) => { setModalOpen(false); setKeyName(''); setPlainKey(res?.plainKey ?? ''); load() })
+      .catch((e) => setError(e instanceof Error ? e.message : k.loadFail))
+      .finally(() => setBusy(false))
+  }
+
+  const revoke = (id: number) => {
+    if (busy) return
+    setBusy(true)
+    apiFetch(`/api-keys/${id}`, { method: 'DELETE' })
+      .then(load)
+      .catch((e) => setError(e instanceof Error ? e.message : k.loadFail))
+      .finally(() => setBusy(false))
+  }
+
+  return <div className="profile-content-page"><div className="profile-section-title profile-section-title-action"><div><h1>{k.title}</h1><p>{k.desc}</p></div><button onClick={() => { setPlainKey(''); setModalOpen(true) }}>{k.create}</button></div>
+    {denied ? <div className="profile-security-tip">{k.denied}</div> : error ? <div className="profile-security-tip">{error}</div> : (
+      <div className="profile-key-table"><div className="profile-key-table-head"><span>{k.name}</span><span>{k.key}</span><span>{k.lastUsed}</span><span>{k.status}</span><span /></div>
+        {rows.length === 0 && <div className="profile-key-table-row"><strong>{k.empty}</strong><span /><span /><span /><span /></div>}
+        {rows.map((r) => <div key={r.id} className="profile-key-table-row"><strong>{r.name}</strong><span>{r.keyPrefix ? `${r.keyPrefix}…` : '—'}</span><span>{r.lastUsedAt ? r.lastUsedAt : k.neverUsed}</span><span className={r.status === 1 ? 'profile-key-active' : ''}>{r.status === 1 ? k.active : t.pages.apikey.revoked}</span>{r.status === 1 ? <button className="profile-danger" disabled={busy} onClick={() => revoke(r.id)}>{k.revoke}</button> : <span />}</div>)}
+      </div>)}
+    <div className="profile-security-tip">{k.securityTip}</div>
+    {plainKey && <div className="apikey-plain-banner"><div>{t.pages.apikey.plainOnce}</div><code className="mono">{plainKey}</code><button onClick={() => setPlainKey('')}>{t.pages.company.cancel}</button></div>}
+    {modalOpen && <div className="profile-modal-backdrop"><div className="profile-modal" role="dialog" aria-modal="true"><div className="profile-modal-head"><h2>{k.create}</h2><button aria-label={t.pages.profile.cancel} onClick={() => setModalOpen(false)}><i className="profile-close-icon" /></button></div><label>{k.name}<input value={keyName} onChange={(event) => setKeyName(event.target.value)} placeholder={k.namePlaceholder} /></label><div className="profile-modal-actions"><button className="profile-secondary" onClick={() => setModalOpen(false)}>{t.pages.profile.cancel}</button><button disabled={busy || !keyName.trim()} onClick={create}>{k.create}</button></div></div></div>}
+  </div>
 }
 
 function MyDataSection() {
@@ -82,7 +146,31 @@ function PermissionsSection({ profile }: { profile: Profile }) {
 
 function AuditSection() {
   const t = useT()
-  return <div className="profile-content-page"><SectionTitle title={t.pages.profile.audit.title} desc={t.pages.profile.audit.desc} /><div className="profile-data-list"><button><span><strong>{t.pages.profile.audit.empty}</strong><small>{t.pages.profile.audit.emptyDesc}</small></span></button></div></div>
+  const a = t.pages.profile.audit
+  const profile = useProfile()
+  const [rows, setRows] = useState<AuditLog[]>([])
+  const [error, setError] = useState('')
+  const [denied, setDenied] = useState(false)
+
+  const load = () => {
+    setError(''); setDenied(false)
+    apiFetch<{ items: AuditEntry[] }>('/audit-logs', { query: { accountId: profile.accountId, limit: 20 } })
+      .then((d) => setRows((d?.items ?? []).map(toAuditLog)))
+      .catch((e) => {
+        if (e instanceof ApiError && e.code === 403) setDenied(true)
+        else setError(e instanceof Error ? e.message : a.loadFail)
+      })
+  }
+  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return <div className="profile-content-page"><SectionTitle title={a.title} desc={a.desc} />
+    {error && <div className="profile-security-tip">{error}</div>}
+    {denied && <div className="profile-security-tip">{a.loadFail}</div>}
+    {!error && !denied && <div className="profile-data-list">
+      {rows.length === 0 && <button><span><strong>{a.empty}</strong><small>{a.emptyDesc}</small></span></button>}
+      {rows.map((r) => <button key={r.logId}><span><strong>{r.time}</strong><small>{r.type} · {r.action} · {r.ip}</small></span></button>)}
+    </div>}
+  </div>
 }
 
 function Summary({ value, label }: { value: string; label: string }) { return <div className="profile-summary"><strong>{value}</strong><span>{label}</span></div> }
