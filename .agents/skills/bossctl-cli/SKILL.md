@@ -160,3 +160,23 @@ API key 认证依赖服务端已部署对应能力:
 - worker/customer 主体的密钥不带菜单权限(RBAC 恒拒),只能访问其身份对应的接口
 - 停用主体即停用其所有 API key
 - 推荐通过环境变量 `BOSS_API_KEY` 或身份档案传递密钥,避免 shell 历史记录
+
+## 测试账号存储(唯一事实源)
+
+**存储位置:本技能目录下的 `test-accounts.json`**
+(即 `.agents/skills/bossctl-cli/test-accounts.json`,与 SKILL.md 同级)
+
+- **用途**:沿用/复盘师傅注册→后台审核→实名认证等流程时,直接读取该 JSON 复用账号与 API key,无需重新建号。
+- **内容**:`admin`(总管理员)、`reviewer1`(审核人员,ops 角色持 menu:dispatch)、`workers[]`(每个注册的师傅,含 workerId/registrationId/API key)。
+- **约定**:
+  - 每次新建**任何**测试账号/师傅/审核人员,都必须把用户名、密码、API key、关联组织 ID 追加写入该 JSON(保持结构一致)。
+  - 密码与 API key 为敏感信息;该文件权限建议 `0600`,不要提交到公共仓库。
+  - 用 `--as <身份名>` 或 `--api-key <key>` 切换身份调用,详见上文"认证方式"。
+
+**示例用法(读取账号发起调用)**:
+
+```bash
+# 用 admin 创建 API key
+ADMIN_KEY=$(python3 -c "import json;print(json.load(open('.agents/skills/bossctl-cli/test-accounts.json'))['admin']['apiKeys'][0]['key'])")
+bossctl --api-key "$ADMIN_KEY" call POST /legal-entities --data '{"code":"DEMO","name":"演示企业"}'
+```

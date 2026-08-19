@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "description": "BOSS 业务平台测试账号库(师傅注册/审核/实名认证流程模拟)",
+    "server": "http://127.0.0.1:18080",
+    "storage_note": "本文件为测试账号唯一事实源;新增测试账号必须追加到此文件",
+    "last_updated": "2026-08-19T03:36:00Z"
+  },
+  "admin": {
+    "username": "admin",
+    "password": "admin123",
+    "realName": "开发管理员",
+    "accountId": 103,
+    "roleCode": "sysadmin",
+    "apiKeys": [
+      { "name": "ops-main", "key": "boss_a852c8434c1ae6370e454817dd6e497c" }
+    ],
+    "note": "总管理员;创建企业/部门/岗位/账号/班组/API key 全部依赖此账号(menu:account/menu:apikey)"
+  },
+  "reviewer1": {
+    "username": "reviewer1",
+    "password": "review123456",
+    "realName": "测试审核员",
+    "accountId": 149,
+    "roleCode": "ops",
+    "org": { "legalEntityId": 5, "legalEntityCode": "LEG-TEST", "deptId": 17, "deptName": "测试调度部", "postId": 26, "postCode": "verify_supervisor" },
+    "apiKeys": [
+      { "name": "reviewer-sim", "key": "boss_3ceab279f7ec2debaa2cf8913bcc3cfb" }
+    ],
+    "note": "审核人员(ops 角色持有 menu:dispatch);负责审核师傅注册与实名核验"
+  },
+  "workers": [
+    {
+      "workerId": 6,
+      "registrationId": 15,
+      "name": "王测试",
+      "phone": "13800001001",
+      "idCardNo": "110101199001011234",
+      "groupId": 11,
+      "groupCode": "GRP-TEST",
+      "regionId": 4,
+      "status": "APPROVED",
+      "realNameStatus": "PASS",
+      "apiKey": "boss_e209cfccd96540580980a48e5fa2af5f",
+      "note": "场景A正常流程:注册→审核通过→实名核验PASS"
+    },
+    {
+      "workerId": null,
+      "registrationId": 16,
+      "name": "李驳回",
+      "phone": "13800001002",
+      "idCardNo": "110101199002022345",
+      "groupId": 11,
+      "groupCode": "GRP-TEST",
+      "regionId": 4,
+      "status": "REJECTED",
+      "reviewNote": "身份证照片不清晰,请重新上传",
+      "realNameStatus": null,
+      "apiKey": null,
+      "note": "场景C驳回流程:注册→驳回(未生成worker主档)"
+    }
+  ]
+}
