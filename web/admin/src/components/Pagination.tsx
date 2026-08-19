@@ -1,9 +1,9 @@
 // 通用分页条,对齐 antd Pagination 规范:
 // 页码序列(首末恒显 + 当前页±2 + 省略号)、总数区间文案、每页条数、快速跳转。
 // 文案由调用方传入(i18n)。单页不隐藏,禁用态置灰(确定性)。
+// 样式:tailwind 原子类(原 Pagination.css 已删除)。
 import { useState } from 'react'
 import { Dropdown } from './Dropdown'
-import './Pagination.css'
 
 interface PaginationProps {
   page: number
@@ -23,6 +23,9 @@ interface PaginationProps {
 const SIZE_OPTIONS = [10, 20, 50, 100]
 const QUICK_JUMP_THRESHOLD = 10
 
+const PAGER_ITEM = 'h-7 min-w-7 cursor-pointer rounded-md border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-center leading-[26px] text-[var(--shell-content-text)] hover:border-[var(--shell-fab-bg)] hover:text-[var(--shell-fab-bg)] disabled:cursor-not-allowed disabled:opacity-40'
+const PAGER_ACTIVE = 'cursor-default border-[var(--shell-fab-bg)] bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)] hover:border-[var(--shell-fab-bg)] hover:text-[var(--shell-fab-icon)]'
+
 export function Pagination({
   page, pageSize, total, onPage, onSize, rangeText, prevText, nextText,
   perPageText, jumpText, pageUnitText,
@@ -32,23 +35,23 @@ export function Pagination({
   const from = total === 0 ? 0 : (current - 1) * pageSize + 1
   const to = Math.min(total, current * pageSize)
   return (
-    <nav className="pager" aria-label="pagination">
-      <span className="pager-total">
+    <nav className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-0 pt-3 pb-0.5 text-[13px]" aria-label="pagination">
+      <span className="text-[var(--shell-group-title)]">
         {rangeText
           .replace('{from}', String(from))
           .replace('{to}', String(to))
           .replace('{count}', String(total))}
       </span>
-      <div className="pager-controls">
-        <button className="pager-item" disabled={current <= 1} aria-label={prevText}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button className={PAGER_ITEM} disabled={current <= 1} aria-label={prevText}
           onClick={() => onPage(current - 1)}>{prevText}</button>
         {pageSequence(current, pages).map((p, i) =>
           p === '…' ? (
-            <span key={`e${i}`} className="pager-ellipsis">…</span>
+            <span key={`e${i}`} className="min-w-7 text-center text-[var(--shell-group-title)]">…</span>
           ) : (
             <button
               key={p}
-              className={`pager-item${p === current ? ' pager-item-active' : ''}`}
+              className={p === current ? `${PAGER_ITEM} ${PAGER_ACTIVE}` : PAGER_ITEM}
               aria-current={p === current ? 'page' : undefined}
               aria-label={`${pageUnitText} ${p}`}
               onClick={() => onPage(p)}
@@ -56,7 +59,7 @@ export function Pagination({
               {p}
             </button>
           ))}
-        <button className="pager-item" disabled={current >= pages} aria-label={nextText}
+        <button className={PAGER_ITEM} disabled={current >= pages} aria-label={nextText}
           onClick={() => onPage(current + 1)}>{nextText}</button>
         <SizeChanger pageSize={pageSize} onSize={onSize} perPageText={perPageText} />
         {pages > QUICK_JUMP_THRESHOLD && (
@@ -113,13 +116,13 @@ function QuickJumper({ pages, onPage, jumpText, pageUnitText }: {
     setValue('')
   }
   return (
-    <span className="pager-jumper">
+    <span className="inline-flex items-center gap-1.5">
       {jumpText}
-      <input value={value} aria-label={jumpText}
+      <input className="h-7 w-11 rounded-md border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-1.5 text-center text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={value} aria-label={jumpText}
         onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))}
         onKeyDown={(e) => e.key === 'Enter' && go()} />
       {pageUnitText}
-      <button className="pager-item" onClick={go}>Go</button>
+      <button className={PAGER_ITEM} onClick={go}>Go</button>
     </span>
   )
 }
