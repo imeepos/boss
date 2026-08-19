@@ -190,11 +190,68 @@ node .agents/skills/self-evolving/scripts/gpt-image-generate.mjs \
 - 同目录 `.env` 中的 `OPENAI_API_KEY` 和 `OPENAI_BASE_URL`
 - 零 npm 依赖
 
-## 5. 开工前必查（按场景检索）
+## 5. shadcn/ui 组件安装
+
+本项目使用定制设计系统（`tokens.css` + `[data-theme]`），官方 shadcn CLI 生成的组件默认引用 `hsl(var(--primary))` 等标准变量，与本项目 `--color-brand-*`/`--shell-*` 令牌体系不兼容。安装 shadcn-style 组件有两种方式。
+
+### 方式一：官方 CLI（可能不可用）
+
+```bash
+# 安装单个组件（自动确认 + 覆盖已有文件）
+npx shadcn@latest add button -y --overwrite
+
+# 安装多个组件
+npx shadcn@latest add button card input -y --overwrite
+```
+
+**已知问题：** 当前环境下官方 CLI 可能因 `ERR_PACKAGE_PATH_NOT_EXPORTED zod/v3` 报错无法启动。若超时或报错，直接走方式二。
+
+CLI 成功跑通后仍需手动修改：组件内的 `hsl(var(--*))` 引用需替换为项目实际令牌（如 `--color-brand-bg`、`--shell-card-bg` 等），并使用 `forwardRef` + `cn()` 包裹以兼容多主题。
+
+### 方式二：本地脚本（推荐）
+
+```bash
+# 安装组件（自动解析依赖、重写 import、安装 npm 依赖）
+node .agents/skills/self-evolving/scripts/shadcn.mjs add button
+
+# 安装多个组件 + 覆盖已有文件
+node .agents/skills/self-evolving/scripts/shadcn.mjs add button card --force
+
+# 仅预览不写入
+node .agents/skills/self-evolving/scripts/shadcn.mjs add button --dry-run
+
+# 列出 registry 全部可用组件
+node .agents/skills/self-evolving/scripts/shadcn.mjs list
+
+# 初始化 cn() 工具函数（src/lib/cn.ts）
+node .agents/skills/self-evolving/scripts/shadcn.mjs init
+```
+
+| 参数 | 说明 |
+|---|---|
+| `--root=<dir>` | 项目根目录，默认 CWD |
+| `--style=<name>` | registry 风格，默认读 `components.json` 的 `style` 字段 |
+| `--install=<tool>` | 包管理器：`pnpm`/`npm`/`yarn`/`bun`，默认 `pnpm` |
+| `--force` | 覆盖已有组件文件（不加则跳过已存在文件） |
+| `--skip-tokens` | 不合并 cssVars 到 `src/styles.css` |
+| `--dry-run` | 只打印计划动作，不实际写入 |
+
+### 安装后必做
+
+1. 检查组件 CSS 变量引用：`grep -rn -- "var(--" src/components/ui/<name>/` 确认每个令牌在 `tokens.css` 或主题块中有定义
+2. 运行门禁：`pnpm typecheck && pnpm test && pnpm build`
+3. 双主题目测：分别在 light/dark 下渲染组件，确认颜色正确
+
+### 组件选型
+
+需要新增组件时，先查 `references/knowledge/shadcn-components.md`（63 个组件按用途分类，标注已安装状态），确认是否已安装、用途是否匹配。
+
+## 6. 开工前必查（按场景检索）
 
 **写代码前，先浏览 `references/knowledge/` 对应分类的标题，确认有没有"已知的坑"。**
 
 - 写前端/UI/CSS/组件 → 看 `knowledge/前端.md`
+- 安装 shadcn 组件 → 用 `shadcn.mjs`（见第 5 节）
 - 写 Go/数据库/API → 看 `knowledge/后端.md`
 - 部署/CI/环境配置 → 看 `knowledge/实施.md`
 - 浏览器截图/UI 调试 → 用 `cdp-capture.mjs`（见第 3 节）
@@ -203,7 +260,7 @@ node .agents/skills/self-evolving/scripts/gpt-image-generate.mjs \
 
 每个分类文件末尾有"开工前 grep 关键词"，用这些词检索所有 references 文件。
 
-## 6. 反馈优先级
+## 7. 反馈优先级
 
 最值钱的先写：
 
