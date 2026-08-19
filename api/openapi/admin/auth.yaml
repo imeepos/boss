@@ -85,7 +85,60 @@ paths:
                       accountId: { type: integer }
                       username: { type: string }
                       realName: { type: string }
+                      phone: { type: string, description: 手机号(可空) }
                       roleCode: { type: string, description: 角色码(RoleCode 枚举,见 server-ts/src/enums.ts) }
                       roleName: { type: string }
                       legalEntityName: { type: string }
                       regionScope: { type: string, description: 区域数据范围(空=全集团) }
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: 自助改密(旧口令 bcrypt 校验;新口令最短 6 位;API key 主体拒绝)
+      operationId: adminChangePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [oldPassword, newPassword]
+              properties:
+                oldPassword: { type: string }
+                newPassword: { type: string, minLength: 6 }
+      responses:
+        '200':
+          description: envelope;旧口令错误 code=40100,参数非法 code=42200
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string }
+
+  /auth/profile:
+    put:
+      tags: [Auth]
+      summary: 自助改基本资料(仅 realName/phone;组织/角色仍走受权流程防自助提权)
+      operationId: adminUpdateSelfProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [realName]
+              properties:
+                realName: { type: string }
+                phone: { type: string, description: 空串清空 }
+      responses:
+        '200':
+          description: envelope;realName 缺失 code=42200
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string }
