@@ -1,8 +1,10 @@
 // Command check-contract-sync 契约同步机械门禁。
 // 三项检查,任一 fail 即退出码 1(CI/Makefile 接入点):
-//  A. Go 实际注册路由必须在 api/openapi/{admin,user,worker}.yaml 之一出现(实现超前契约=漂移)。
-//  B. json tag 必须 lowerCamelCase(fields.md §0 全局强制)。
-//  C. 非 test 的 .go 文件不得超过 300 行(AGENTS.md 红线),存量超标走 baseline 豁免。
+//
+//	A. Go 实际注册路由必须在 api/openapi/{admin,user,worker}.yaml 之一出现(实现超前契约=漂移)。
+//	B. json tag 必须 lowerCamelCase(fields.md §0 全局强制)。
+//	C. 非 test 的 .go 文件不得超过 300 行(AGENTS.md 红线),存量超标走 baseline 豁免。
+//
 // 已知且有意接受的差异登记在 check-contract-sync.baseline(本目录),新增差异即 fail,
 // 迫使每次漂移显式过账(改 baseline 或改契约)。
 package main
@@ -23,13 +25,25 @@ import (
 
 const repoRoot = "../.." // 相对本目录运行: go run ./scripts/check-contract-sync
 
+// resolveRoot 兼容两种调用位置:脚本目录(../..)与仓库根(.)。
+// 判据:候选目录下存在 internal/app 即视为仓库根。
+func resolveRoot(flagVal string) string {
+	for _, cand := range []string{flagVal, "."} {
+		if _, err := os.Stat(filepath.Join(cand, "internal", "app")); err == nil {
+			return cand
+		}
+	}
+	return flagVal
+}
+
 func main() {
 	root := flag.String("root", repoRoot, "repo root")
 	flag.Parse()
+	rootVal := resolveRoot(*root)
 	fails := 0
-	fails += checkRoutes(*root)
-	fails += checkJSONTags(*root)
-	fails += checkFileLen(*root)
+	fails += checkRoutes(rootVal)
+	fails += checkJSONTags(rootVal)
+	fails += checkFileLen(rootVal)
 	if fails > 0 {
 		fmt.Printf("check-contract-sync: %d 项失败\n", fails)
 		os.Exit(1)
