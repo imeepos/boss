@@ -36,48 +36,6 @@ func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
 }
 
-// ChangePassword 自助改密:校验旧口令 → bcrypt 新口令 → 更新;旧口令错返回 ErrUnauthorized。
-func (s *PGStore) ChangePassword(ctx context.Context, accountID int64, oldPassword, newPassword string) error {
-	var hash string
-	err := s.db.QueryRow(ctx, `SELECT password_hash FROM accounts WHERE id = $1`, accountID).Scan(&hash)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrUnauthorized
-	}
-	if err != nil {
-		return fmt.Errorf("user: change password query: %w", err)
-	}
-	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(oldPassword)) != nil {
-		return ErrUnauthorized
-	}
-	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("user: bcrypt: %w", err)
-	}
-	if _, err := s.db.Exec(ctx,
-		`UPDATE accounts SET password_hash = $2, updated_at = now() WHERE id = $1`, accountID, string(newHash)); err != nil {
-		return fmt.Errorf("user: change password update: %w", err)
-	}
-	return nil
-}
-
-// UpdateSelfProfile 自助改基本资料:仅 real_name/phone;空 phone 写 NULL。
-func (s *PGStore) UpdateSelfProfile(ctx context.Context, accountID int64, realName, phone string) error {
-	var ph *string
-	if phone != "" {
-		ph = &phone
-	}
-	tag, err := s.db.Exec(ctx,
-		`UPDATE accounts SET real_name = $2, phone = $3, updated_at = now() WHERE id = $1`,
-		accountID, realName, ph)
-	if err != nil {
-		return fmt.Errorf("user: update self profile: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return ErrUnauthorized
-	}
-	return nil
-}
-
 // Login 校验账号口令,返回认证身份;账号不存在/口令错误/停用统一返回 ErrUnauthorized。
 func (s *PGStore) Login(ctx context.Context, username, password string) (*LoginResult, error) {
 	var id int64
@@ -262,39 +220,6 @@ func (s *PGStore) ListAddresses(ctx context.Context, parentID int64) ([]Address,
 		out = append(out, a)
 	}
 	return out, rows.Err()
-}
-
-// ImportAddresses 批量导入地址;level 与 parent_id 由 path 派生(应用层算,不手填)。
-// 约束:子节点导入前父节点必须已存在(ltree 前缀父路径反查)。
-func (s *PGStore) ImportAddresses(ctx context.Context, rows []AddressRow) (int, error) {
-	imported := 0
-	for _, r := range rows {
-		level := int8(len(strings.Split(r.Path, ".")))
-		parentPath := parentOf(r.Path)
-		var parentID int64
-		if parentPath != "" {
-			err := s.db.QueryRow(ctx,
-				`SELECT id FROM addresses WHERE path = $1::ltree`, parentPath).Scan(&parentID)
-			if errors.Is(err, pgx.ErrNoRows) {
-				return imported, fmt.Errorf("user: import address %q: parent %q not found", r.Path, parentPath)
-			}
-			if err != nil {
-				return imported, fmt.Errorf("user: import address lookup parent: %w", err)
-			}
-		}
-		var parentArg any
-		if parentPath != "" {
-			parentArg = parentID
-		}
-		if _, err := s.db.Exec(ctx,
-			`INSERT INTO addresses(path, level, name, parent_id, country_code, admin_code)
-			VALUES($1::ltree, $2, $3, $4, NULLIF($5,''), NULLIF($6,''))`,
-			r.Path, level, r.Name, parentArg, r.geoCountry(level), r.geoAdmin(level)); err != nil {
-			return imported, fmt.Errorf("user: import address insert: %w", err)
-		}
-		imported++
-	}
-	return imported, nil
 }
 
 // HasPermission 功能权限判定:账号角色是否绑定该权限码。
