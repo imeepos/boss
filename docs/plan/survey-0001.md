@@ -10,9 +10,9 @@
 | S1 | `internal/domain/ai`、`apikey`、`geo`、`report`、`worker` 未列入 README 目录树 | 文档滞后 | KEEP+修：README 目录树补 5 域（已执行） |
 | S2 | `server-ts/`（TS 实体镜像）与 `web/admin` 并存 | 双物嫌疑 | KEEP：职责已裁定（note 2026-08-17），server-ts 不部署不连库；W2 门禁将其对账机械化后价值更高 |
 | S3 | 根目录 `需求提示词-*.md`、`技术栈方案-*.md`（原始输入） | 归档候选 | KEEP 暂缓：9 阶段未走完，仍是需求权威；阶段 9 后迁 docs/archive/ |
-| S4 | `internal/domain/asset/pg.go` 316 行、`user/pg.go` 309 行 | 超 300 红线 | 已进 check-contract-sync baseline 豁免，整改随下次域内改动顺手拆（读侧/写侧分文件） |
+| S4 | `internal/domain/asset/pg.go` 316 行、`user/pg.go` 309 行 | 超 300 红线 | ✅ 已拆：读/写侧分 pg.go + pg_write.go，baseline 豁免清零（commit 65203f3/0bbd896） |
 | S5 | `internal/domain/gis`、`analytics` 等阶段 8/9 域已有实现 | 提前生长 | KEEP：均有 pg 实现+集成测试,不是空壳；阶段推进时按 seam 模板继续 |
-| S6 | 仓库根 `boss-entities-er.*`（drawio 三格式） | 位置 | 暂缓：docs/contract/ 内已有 data-model 系列,二选一在下次文档清理时定,登记在案 |
+| S6 | 仓库根 `boss-entities-er.*`（drawio 三格式） | 位置 | ✅ 已裁决：data-model 系列为死图（管线未入库/停更 62 表/零引用）已删，boss-entities-er 为唯一活 ER 图（68 表） |
 
 ## 无强候选的证据
 
@@ -22,6 +22,6 @@
 
 ## 下次 survey 入口（2-4 周后）
 
-1. 对照本台账逐项复核 S3/S6；
+1. 对照本台账逐项复核 S3（9 阶段已走完，归档条件是否成熟）与 S6 已销项；
 2. web/admin 页面数 vs admin.yaml 路径数增长曲线；
-3. baseline 豁免清单是否清零（S4）。
+3. baseline 豁免清单是否清零（S4 已清零，复核后续是否有新增）。
