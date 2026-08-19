@@ -12,6 +12,9 @@ type Config struct {
 		HTTPAddr string
 		GRPCAddr string
 	}
+	CORS struct {
+		Origins []string
+	}
 	Database struct{ DSN string }
 	Redis    struct{ Addrs []string }
 	Kafka    struct{ Brokers []string }
@@ -86,6 +89,7 @@ func Load() *Config {
 	c := &Config{}
 	c.Server.HTTPAddr = getenv("BOSS_HTTP_ADDR", ":8080")
 	c.Server.GRPCAddr = getenv("BOSS_GRPC_ADDR", ":9090")
+	c.CORS.Origins = getlist("BOSS_CORS_ORIGINS", []string{"http://localhost:5173", "http://localhost:5174"})
 	c.Database.DSN = getenv("BOSS_PG_DSN", "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable")
 	c.APISIX.AdminURL = getenv("BOSS_APISIX_ADMIN", "http://192.168.0.102:29180")
 	c.Observability.PrometheusURL = getenv("BOSS_PROMETHEUS_URL", "http://192.168.0.102:19090")

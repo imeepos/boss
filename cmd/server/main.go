@@ -46,7 +46,10 @@ func main() {
 	}
 
 	mgr := auth.NewManager(cfg.JWT.Secret, cfg.JWT.TTL)
-	r := server.New(server.Config{HTTPAddr: cfg.Server.HTTPAddr})
+	r := server.New(server.Config{
+		HTTPAddr:    cfg.Server.HTTPAddr,
+		CORSOrigins: cfg.CORS.Origins,
+	})
 	httpapi.RegisterRoutes(r, a, mgr)
 
 	// 债务偿还:同进程起 gRPC 服务间契约(quadlink/aaa/device/provision v1)。

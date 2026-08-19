@@ -19,19 +19,44 @@ import (
 
 // Config 服务器装配入参(由 internal/pkg/config 展开后传入)。
 type Config struct {
-	HTTPAddr string
+	HTTPAddr    string
+	CORSOrigins []string
 }
 
 // New 构建一个具备健康检查与 recover 的 gin engine。
 // 健康检查端点 /healthz 供 K8s liveness/readiness 探活;业务路由由 app 层在此 engine 上注册。
 func New(cfg Config) *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Recovery(), middleware.TraceID(), middleware.AccessLog(), PrometheusMiddleware())
+	r.Use(gin.Recovery(), middleware.TraceID(), middleware.AccessLog(), PrometheusMiddleware(), cors(cfg.CORSOrigins))
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 	registerMetrics(r)
 	return r
+}
+
+func cors(origins []string) gin.HandlerFunc {
+	allowed := make(map[string]struct{}, len(origins))
+	for _, origin := range origins {
+		allowed[origin] = struct{}{}
+	}
+	return func(c *gin.Context) {
+		origin := c.GetHeader("Origin")
+		if _, ok := allowed[origin]; !ok {
+			c.Next()
+			return
+		}
+		c.Header("Access-Control-Allow-Origin", origin)
+		c.Header("Vary", "Origin")
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	}
 }
 
 // Run 启动 HTTP 并监听 OS 信号实现优雅退出。
