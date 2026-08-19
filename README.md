@@ -85,12 +85,20 @@ boss/
 │   ├── plan/                   # 计划与路线图
 │   ├── notes/                  # 决策记录(adopted/rejected)
 │   └── ...                     # 设计文档、评审、复盘
-├── web/                        # 前端应用
+├── web/                        # Web 前端应用
 │   ├── admin/                  # 管理端(React)
 │   ├── worker/                 # 师傅端
-│   ├── user/                   # 用户端(待建)
-│   └── shared/                 # 三端共享层
+│   ├── user/                   # 用户端
+│   └── shared/                 # Web 三端共享层
 │       └── server-ts/          # TS 实体镜像(枚举/实体类型)
+├── mobile/                     # 移动端应用
+│   ├── worker/                 # 师傅端
+│   │   ├── android/            # Android app
+│   │   └── ios/                # iOS app
+│   ├── user/                   # 用户端
+│   │   ├── android/            # Android app
+│   │   └── ios/                # iOS app
+│   └── shared/                 # 移动端共享层
 ├── Makefile
 └── go.mod
 ```

@@ -1,3 +1,0 @@
-# pnpm v11 构建脚本审批:esbuild postinstall 需下载平台二进制
-allowBuilds:
-  esbuild: true
