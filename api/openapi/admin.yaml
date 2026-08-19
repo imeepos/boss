@@ -247,6 +247,15 @@ paths:
   /provision-templates: { $ref: './admin/provision.yaml#/paths/~1provision-templates' }
   /provision-logs: { $ref: './admin/provision.yaml#/paths/~1provision-logs' }
 
+  # ---------- Provision Seed(联调置备) ----------
+  /provision/resources: { $ref: './admin/provision-seed.yaml#/paths/~1provision~1resources' }
+  /provision/ports: { $ref: './admin/provision-seed.yaml#/paths/~1provision~1ports' }
+  /provision/channels: { $ref: './admin/provision-seed.yaml#/paths/~1provision~1channels' }
+  /provision/asset-batches: { $ref: './admin/provision-seed.yaml#/paths/~1provision~1asset-batches' }
+  /provision/tags: { $ref: './admin/provision-seed.yaml#/paths/~1provision~1tags' }
+  /provision/assets: { $ref: './admin/provision-seed.yaml#/paths/~1provision~1assets' }
+  /provision/dispatch-tickets: { $ref: './admin/provision-seed.yaml#/paths/~1provision~1dispatch-tickets' }
+
   # ---------- Alarm ----------
   /alarms: { $ref: './admin/alarm.yaml#/paths/~1alarms' }
   /alarms/{alarmId}/ack: { $ref: './admin/alarm.yaml#/paths/~1alarms~1{alarmId}~1ack' }

@@ -1,0 +1,152 @@
+# 联调置备端点(CLI 开网全流程模拟/管理后台初始化数据用)。
+# 口径:先可观测后自动化——置备端点先落地,走通 12 环节后再收敛为自动化。
+paths:
+  /provision/resources:
+    post:
+      tags: [Provision]
+      summary: 置备网络资源(OLT/分光器,环节2 资源核查前置)
+      operationId: provisionResource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, type, addressId, legalEntityId]
+              properties:
+                code: { type: string, example: OLT-01 }
+                name: { type: string }
+                type: { type: string, enum: [OLT, SPLITTER] }
+                parentId: { type: integer, format: int64 }
+                addressId: { type: integer, format: int64 }
+                legalEntityId: { type: integer, format: int64 }
+                status: { type: string, enum: [ONLINE, OFFLINE, FAULT] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /provision/ports:
+    post:
+      tags: [Provision]
+      summary: 置备端口(挂分光器,IDLE 态进入资源池,环节3 预占前置)
+      operationId: provisionPort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [portCode, resourceId, addressId, legalEntityId]
+              properties:
+                portCode: { type: string, example: P-SPL01-01 }
+                quadCode: { type: string }
+                resourceId: { type: integer, format: int64 }
+                addressId: { type: integer, format: int64 }
+                legalEntityId: { type: integer, format: int64 }
+                regionId: { type: integer, format: int64 }
+                status: { type: string, enum: [IDLE, RESERVED, USED, DISABLED] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /provision/channels:
+    post:
+      tags: [Provision]
+      summary: 置备下单渠道(HALL营业厅/ONLINE线上/AGENT代理商)
+      operationId: provisionChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: { type: string, enum: [HALL, ONLINE, AGENT] }
+                name: { type: string }
+                status: { type: string, enum: [ACTIVE, DISABLED] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /provision/asset-batches:
+    post:
+      tags: [Provision]
+      summary: 置备资产入库批次
+      operationId: provisionAssetBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, legalEntityId]
+              properties:
+                code: { type: string, example: RK-202607-01 }
+                name: { type: string }
+                legalEntityId: { type: integer, format: int64 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /provision/tags:
+    post:
+      tags: [Provision]
+      summary: 置备电子标签(EPC 码,环节9 扫码比对源)
+      operationId: provisionTag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tagNo, epcCode, legalEntityId]
+              properties:
+                tagNo: { type: string }
+                epcCode: { type: string, example: EPC-0001 }
+                band: { type: string, example: UHF }
+                legalEntityId: { type: integer, format: int64 }
+                status: { type: string, enum: [UNBOUND, BOUND, DISABLED] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /provision/assets:
+    post:
+      tags: [Provision]
+      summary: 置备资产台账(绑定标签,供预绑定/扫码)
+      operationId: provisionAsset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetCode, batchId, tagId, legalEntityId]
+              properties:
+                assetCode: { type: string, example: A-20260001 }
+                batchId: { type: integer, format: int64 }
+                tagId: { type: integer, format: int64 }
+                legalEntityId: { type: integer, format: int64 }
+                type: { type: string, enum: [光猫, ONU, 路由器] }
+                status: { type: string, enum: [IN_STOCK, DEPLOYED, MAINTENANCE, SCRAPPED] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /provision/dispatch-tickets:
+    post:
+      tags: [Provision]
+      summary: 置备派单工单(环节8 派单后入池,再走指派)
+      operationId: provisionDispatchTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticketNo, orderId]
+              properties:
+                ticketNo: { type: string }
+                orderId: { type: integer, format: int64 }
+                workerId: { type: integer, format: int64 }
+                groupId: { type: integer, format: int64 }
+                regionId: { type: integer, format: int64 }
+                legalEntityId: { type: integer, format: int64 }
+                status: { type: string, enum: [PENDING, DOING, DONE, CANCELED] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

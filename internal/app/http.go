@@ -223,6 +223,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerAnalyticsRoutes(authed, a)
 	registerReportRoutes(authed, a)
 	registerProvisionRoutes(authed, a)
+	registerProvisionSeedRoutes(authed, a)
 	registerQuadlinkRoutes(authed, a)
 	registerWorkerRoutes(authed, a)
 	registerWorkerOnboardingRoutes(authed, a)
