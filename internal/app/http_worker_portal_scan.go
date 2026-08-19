@@ -99,7 +99,7 @@ func workerReportGetHandler(a *Application) gin.HandlerFunc {
 		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"ticketNo": tk.TicketNo, "quad": portalQuadH(a, c, ord.AddressID),
-			"checks": gin.H{"powerOn": true, "opticalPowerDbm": 0, "provisionDone": true, "loidAuthPassed": true},
+			"checks":       gin.H{"powerOn": true, "opticalPowerDbm": 0, "provisionDone": true, "loidAuthPassed": true},
 			"provisionLog": gin.H{"template": "", "preResult": "", "onsiteResult": ""},
 		})
 	}

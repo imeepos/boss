@@ -37,7 +37,7 @@ func (f *fakePortalWorkerSvc) GetWorker(_ context.Context, id int64) (*worker.Wo
 
 type fakePortalWorkOrder struct {
 	order.WorkOrderService
-	tickets []order.DispatchTicket
+	tickets  []order.DispatchTicket
 	assigned int64
 }
 

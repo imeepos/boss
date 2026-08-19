@@ -51,9 +51,9 @@ func assignTicketToMe(c *gin.Context, a *Application, ticketNo string, grab bool
 
 // workerTransferReq 转单请求;targetWorkerId 空=退回调度池。
 type workerTransferReq struct {
-	Reason        string `json:"reason" binding:"required"`
-	TargetWorkerID int64 `json:"targetWorkerId"`
-	Remark        string `json:"remark"`
+	Reason         string `json:"reason" binding:"required"`
+	TargetWorkerID int64  `json:"targetWorkerId"`
+	Remark         string `json:"remark"`
 }
 
 // workerTransferHandler 转单/改派:改派留台账(dispatch_transfers)。

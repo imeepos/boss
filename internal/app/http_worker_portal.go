@@ -44,9 +44,9 @@ func signWorkerToken(workerID int64, workerName string) (string, error) {
 	c := workerClaims{
 		WorkerID: workerID, WorkerName: workerName,
 		RegisteredClaims: jwt.RegisteredClaims{
-			IssuedAt: jwt.NewNumericDate(now),
+			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(cfg.JWT.TTL)),
-			Subject: "worker", Issuer: workerIssuer,
+			Subject:   "worker", Issuer: workerIssuer,
 		},
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString([]byte(cfg.JWT.Secret))
