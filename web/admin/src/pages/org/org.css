@@ -152,17 +152,22 @@
   border-radius: 8px;
   background: #fff;
 }
-.dash-stat-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.dash-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 12px;
+  font-size: 18px;
 }
 .dash-stat-label { font-size: 13px; color: var(--text-2, #86909c); margin-bottom: 8px; }
 .dash-stat-value { font-size: 24px; font-weight: 600; color: var(--text-1, #1d2129); }
 .dash-delta { font-size: 12px; margin-top: 2px; }
 .dash-delta.up { color: #e5484d; }
 .dash-delta.down { color: #30a46c; }
+.dash-delta.flat { color: var(--text-2, #86909c); }
 
 .dash-grid-2 {
   display: grid;
@@ -232,6 +237,33 @@
   padding: 1px 6px;
   border-radius: 4px;
   margin-left: 8px;
+}
+
+.dash-todo-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #e5e6eb);
+}
+.dash-todo-page-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border, #e5e6eb);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-1, #1d2129);
+  cursor: pointer;
+}
+.dash-todo-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dash-todo-page-info {
+  font-size: 12px;
+  color: var(--text-2, #86909c);
 }
 
 .dash-bar { display: inline-block; width: 120px; height: 8px; background: rgba(0,0,0,.08); border-radius: 4px; vertical-align: middle; }
