@@ -1,7 +1,7 @@
 // 通用自定义下拉:触发器按钮 + 浮层 listbox + 当前项打勾(antd Select 模式)。
 // 替代原生 <select>:系统渲染的 option 弹层无法定制,暗色主题下观感割裂。
+// 样式:tailwind 原子类(原 Dropdown.css 已删除),令牌走 shell-* 体系。
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import './Dropdown.css'
 
 export interface DropdownOption {
   value: string
@@ -31,17 +31,17 @@ export function Dropdown({ value, options, onChange, ariaLabel, triggerStyle }: 
 
   const current = options.find((o) => o.value === value)
   return (
-    <div className="dd" ref={rootRef} style={triggerStyle}>
+    <div className="relative inline-flex" ref={rootRef} style={triggerStyle}>
       <button
         type="button"
-        className="dd-trigger"
+        className="flex h-8 w-full cursor-pointer items-center justify-between gap-2 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] py-0 pr-1 pl-2.5 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
       >
-        <span className="dd-trigger-label">{current?.label ?? ariaLabel}</span>
-        <span className={`dd-caret${open ? ' open' : ''}`} aria-hidden>
+        <span className="truncate whitespace-nowrap">{current?.label ?? ariaLabel}</span>
+        <span className={`inline-flex text-[var(--shell-group-title)] transition-transform duration-150${open ? ' rotate-180' : ''}`} aria-hidden>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
             strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 9l6 6 6-6" />
@@ -50,7 +50,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, triggerStyle }: 
       </button>
       {open && (
         <div
-          className="dd-menu"
+          className="absolute left-0 top-[calc(100%+6px)] z-[1000] max-h-[264px] min-w-full overflow-y-auto rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] p-1 shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
           role="listbox"
           aria-label={ariaLabel}
           onMouseDown={(e) => e.stopPropagation()}
@@ -61,7 +61,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, triggerStyle }: 
               type="button"
               role="option"
               aria-selected={o.value === value}
-              className={o.value === value ? 'active' : ''}
+              className={'flex w-full cursor-pointer items-center justify-between gap-4 rounded-sm border-none bg-none px-2.5 py-1.5 text-left text-[13px] whitespace-nowrap text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]' + (o.value === value ? ' font-semibold text-[var(--shell-fab-bg)]' : '')}
               onMouseDown={(e) => {
                 e.stopPropagation()
                 e.preventDefault()
@@ -70,8 +70,8 @@ export function Dropdown({ value, options, onChange, ariaLabel, triggerStyle }: 
               }}
               onClick={(e) => e.preventDefault()}
             >
-              <span className="dd-option-label">{o.label}</span>
-              <span className="dd-check" aria-hidden>{o.value === value && (
+              <span className="truncate">{o.label}</span>
+              <span className="min-w-[14px] text-right" aria-hidden>{o.value === value && (
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
                   strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12.5l4.5 4.5L19 7.5" />
