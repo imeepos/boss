@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -15,9 +16,10 @@ import (
 )
 
 // fakeKeyService 模拟 apikey.Service(主体模型)。
+// touchN 用原子计数:Touch 由中间件后台 goroutine 触发,与测试主协程并发。
 type fakeKeyService struct {
 	lookup map[string]*apikey.Subject
-	touchN int
+	touchN atomic.Int64
 }
 
 func (f *fakeKeyService) Create(ctx context.Context, st string, ref, by int64, n string) (*apikey.CreateResult, error) {
@@ -31,7 +33,7 @@ func (f *fakeKeyService) Lookup(ctx context.Context, keyHash string) (*apikey.Su
 	}
 	return nil, apikey.ErrNotFound
 }
-func (f *fakeKeyService) Touch(ctx context.Context, keyHash string) { f.touchN++ }
+func (f *fakeKeyService) Touch(ctx context.Context, keyHash string) { f.touchN.Add(1) }
 
 // fakeResolver 模拟 app 层 SubjectResolver。
 func fakeResolver(ctx context.Context, subjType string, ref int64) (string, string, error) {
@@ -92,8 +94,8 @@ func TestAPIKeyAccountSubject(t *testing.T) {
 			t.Fatalf("body=%s 缺少 %s", body, want)
 		}
 	}
-	if keys.touchN != 1 {
-		t.Fatalf("touchN=%d want 1", keys.touchN)
+	if keys.touchN.Load() != 1 {
+		t.Fatalf("touchN=%d want 1", keys.touchN.Load())
 	}
 }
 
