@@ -5,6 +5,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead } from '../shared'
 import { ApiKeyFormDrawer, type ApiKeyFormValues } from './KeyForm'
+import { buildCreatePayload } from './payload'
 import { formatTime } from '../../base/audit/logic'
 import '../../base/account/account.css'
 import '../org.css'
@@ -47,8 +48,7 @@ export default function ApiKeyPage() {
     try {
       const res = await apiFetch<{ plainKey: string }>('/api-keys', {
         method: 'POST',
-        // 契约(http_apikey.go):主体三态绑定;本页签发账号主体。
-        body: { subjectType: 'account', subjectRef: form.accountId, name: form.name.trim() },
+        body: buildCreatePayload(form.accountId, form.name),
       })
       setForm(null)
       setPlainKey(res?.plainKey ?? '')
