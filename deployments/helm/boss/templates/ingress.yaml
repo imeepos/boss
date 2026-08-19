@@ -1,0 +1,30 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  labels:
+    app.kubernetes.io/name: boss
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    # cert-manager 自动签发/续期(TLS 决策见 docs/notes/adopted/2026-08-20-prod-domain-tls.md)
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer | quote }}
+    nginx.ingress.kubernetes.io/proxy-body-size: 8m
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  tls:
+    - hosts: ["{{ .Values.ingress.host }}"]
+      secretName: {{ .Values.ingress.tlsSecret | quote }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          # 三门户同域路径前缀(/api/admin|/api/user|/api/worker),server 单端口承接
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-server
+                port:
+                  number: {{ .Values.server.httpPort }}
+{{- end }}

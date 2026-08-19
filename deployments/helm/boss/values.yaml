@@ -38,6 +38,14 @@ env:
   BOSS_SNMP_TARGETS: ""
   BOSS_REPORT_PERIOD: daily
 
+# 生产入口(域名/TLS 决策见 docs/notes/adopted/2026-08-20-prod-domain-tls.md)。
+ingress:
+  enabled: false            # 生产置 true,暴露 boss.ymm.cn
+  className: nginx
+  host: boss.ymm.cn
+  clusterIssuer: letsencrypt-prod
+  tlsSecret: boss-ymm-cn-tls
+
 # 依赖子 chart(默认外接既有基础设施;新集群置 true 自建并自动接线)。
 postgresql:
   enabled: false
