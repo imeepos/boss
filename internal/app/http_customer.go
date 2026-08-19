@@ -2,6 +2,7 @@ package app
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -70,4 +71,33 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *Application) {
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
+
+	// 产品调价(worker.yaml POST /products/{id}/price-history):更新月费并追加台账。
+	prod.POST("/:id/price-history", func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		var req changeProductPriceReq
+		if err := c.ShouldBindJSON(&req); err != nil || req.NewPrice <= 0 {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		effectiveAt := req.EffectiveAt
+		if effectiveAt.IsZero() {
+			effectiveAt = time.Now()
+		}
+		historyID, err := a.Product.ChangeProductPrice(c.Request.Context(),
+			id, req.NewPrice, effectiveAt, req.Reason, claimsAccountID(c))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "product.change_price", "product_offer", strconv.FormatInt(id, 10), gin.H{"historyId": historyID})
+		respond(c, apitypes.CodeOK, gin.H{"id": historyID})
+	})
+}
+
+// changeProductPriceReq 产品调价请求体(对齐 customer.yaml changeProductPrice)。
+type changeProductPriceReq struct {
+	NewPrice    float64   `json:"newPrice"`
+	EffectiveAt time.Time `json:"effectiveAt"`
+	Reason      string    `json:"reason"`
 }

@@ -71,7 +71,7 @@ paths:
       operationId: adminMe
       responses:
         '200':
-          description: 当前用户(envelope)
+          description: 当前用户(envelope;账号主体返回完整 profile,API key worker/customer 主体返回 {subjectType,subjectRef,name})
           content:
             application/json:
               schema:
@@ -80,16 +80,24 @@ paths:
                   code: { type: integer, example: 0 }
                   msg: { type: string, example: ok }
                   data:
-                    type: object
-                    properties:
-                      accountId: { type: integer }
-                      username: { type: string }
-                      realName: { type: string }
-                      phone: { type: string, description: 手机号(可空) }
-                      roleCode: { type: string, description: 角色码(RoleCode 枚举,见 server-ts/src/enums.ts) }
-                      roleName: { type: string }
-                      legalEntityName: { type: string }
-                      regionScope: { type: string, description: 区域数据范围(空=全集团) }
+                    oneOf:
+                      - type: object
+                        description: 账号主体完整 profile
+                        properties:
+                          accountId: { type: integer }
+                          username: { type: string }
+                          realName: { type: string }
+                          phone: { type: string, description: 手机号(可空) }
+                          roleCode: { type: string, description: 角色码(RoleCode 枚举) }
+                          roleName: { type: string }
+                          legalEntityName: { type: string }
+                          regionScope: { type: string, description: 区域数据范围(空=全集团) }
+                      - type: object
+                        description: API key worker/customer 主体(非账号,无 RBAC profile)
+                        properties:
+                          subjectType: { type: string, enum: [worker, customer] }
+                          subjectRef: { type: integer, format: int64 }
+                          name: { type: string }
 
   /auth/change-password:
     post:

@@ -80,7 +80,7 @@ paths:
   /reports/{reportId}/send:
     post:
       tags: [Intel]
-      summary: 报告推送(未实现:Go 后端暂未提供)（未实现 planned）
+      summary: 报告推送(按 id 取快照→Push)
       operationId: sendReport
       parameters:
         - { name: reportId, in: path, required: true, schema: { type: integer } }

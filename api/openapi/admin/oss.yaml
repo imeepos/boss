@@ -125,11 +125,8 @@ paths:
   /lo-accounts:
     get:
       tags: [Oss]
-      summary: 认证账号 LOID 列表(AAA 域,挂 oss 页面)
+      summary: '认证账号 LOID 列表(AAA 域,挂 oss 页面;代码不读查询参数,返回全量)'
       operationId: listLoAccounts
-      parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
-        - $ref: './schemas.yaml#/components/parameters/status'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 

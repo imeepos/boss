@@ -21,7 +21,10 @@ func (f *fakeCustomer) List(context.Context, customer.CustomerQuery) ([]customer
 	return f.list, nil
 }
 
-type fakeProduct struct{ list []customer.ProductOffer }
+type fakeProduct struct {
+	list []customer.ProductOffer
+	changed *customer.ProductOffer // 记录最近一次调价入参
+}
 
 func (f *fakeProduct) ListProducts(context.Context, int64) ([]customer.ProductOffer, error) {
 	return f.list, nil
@@ -34,6 +37,10 @@ func (f *fakeProduct) ListRegionOffers(context.Context, int64) ([]customer.Regio
 }
 func (f *fakeProduct) CreateRegionOffer(context.Context, customer.RegionOffer) (int64, error) {
 	return 0, nil
+}
+func (f *fakeProduct) ChangeProductPrice(_ context.Context, offerID int64, newFee float64, _ time.Time, reason string, _ int64) (int64, error) {
+	f.changed = &customer.ProductOffer{ID: offerID, MonthlyFee: newFee}
+	return 11, nil
 }
 
 type fakeRealName struct{}
@@ -124,5 +131,20 @@ func TestProductListHandler(t *testing.T) {
 	}
 	if len(body.Data.Items) != 1 || body.Data.Items[0].Name != "500M宽带" || body.Data.Items[0].MonthlyFee != 129.00 {
 		t.Fatalf("body=%+v", body)
+	}
+}
+
+// TestChangeProductPrice 契约:产品调价更新月费并追加台账(worker.yaml POST /products/{id}/price-history)。
+func TestChangeProductPrice(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	p := &fakeProduct{}
+	r := newCustomerRouter(&fakeCustomer{}, p, mgr)
+
+	w := postBodyAuth(t, r, "/api/v1/products/1/price-history", `{"newPrice":169}`, authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if p.changed == nil || p.changed.ID != 1 || p.changed.MonthlyFee != 169 {
+		t.Fatalf("changed=%+v", p.changed)
 	}
 }

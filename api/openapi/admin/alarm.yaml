@@ -47,12 +47,16 @@ paths:
                 scope: { type: string, description: 下发范围(片区/区域) }
       responses:
         '200':
-          description: 批量复测受理
+          description: 批量复测受理(data:{taskNo,scope})
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  code: { type: integer }
-                  message: { type: string }
-                  taskNo: { type: string, description: 批量复测任务号 }
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      taskNo: { type: string, description: 批量复测任务号 RT-YYYYMMDD-NNNN }
+                      scope: { type: string, description: 下发范围 }

@@ -6,46 +6,51 @@ paths:
       operationId: getDashboard
       responses:
         '200':
-          description: 工作台数据
+          description: 工作台数据(data:{stats,orderStatusDist,todos,trend})
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  stats:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        key: { type: string, description: todayOrders/activeTickets/pendingAlarms/assetConsistency }
-                        label: { type: string }
-                        value: { type: string }
-                        delta: { type: string, description: 如 "▲ 12.5%" }
-                        trend: { type: string, enum: [up, down, flat] }
-                  orderStatusDist:
-                    type: array
-                    description: 订单状态分布(状态枚举见 terms.md 第 3 节)
-                    items:
-                      type: object
-                      properties:
-                        status: { type: string, enum: [PENDING, RESERVED, INSTALLING, DONE] }
-                        statusLabel: { type: string }
-                        count: { type: integer }
-                        percent: { type: string }
-                  todos:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
                     type: object
                     properties:
-                      items:
+                      stats:
                         type: array
                         items:
                           type: object
                           properties:
-                            todoId: { type: integer }
-                            subject: { type: string }
-                            source: { type: string }
-                            time: { type: string }
-                  trend:
-                    type: object
-                    properties:
-                      days: { type: array, items: { type: string } }
-                      values: { type: array, items: { type: integer } }
+                            key: { type: string, description: todayOrders/activeTickets/pendingAlarms/assetConsistency }
+                            label: { type: string }
+                            value: { type: string }
+                            delta: { type: string, description: 如 "▲ 12.5%" }
+                            trend: { type: string, enum: [up, down, flat] }
+                      orderStatusDist:
+                        type: array
+                        description: 订单状态分布(状态枚举见 terms.md 第 3 节)
+                        items:
+                          type: object
+                          properties:
+                            status: { type: string, enum: [PENDING, RESERVED, INSTALLING, DONE] }
+                            statusLabel: { type: string }
+                            count: { type: integer }
+                            percent: { type: string }
+                      todos:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                todoId: { type: integer }
+                                subject: { type: string }
+                                source: { type: string }
+                                time: { type: string }
+                      trend:
+                        type: object
+                        properties:
+                          days: { type: array, items: { type: string } }
+                          values: { type: array, items: { type: integer } }

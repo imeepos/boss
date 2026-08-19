@@ -1,0 +1,22 @@
+// FormField: form field wrapper with label + hint + error, replaces .org-field
+import type { ReactNode } from 'react'
+import { Label } from '../ui/label'
+
+export function FormField({
+  label, required, hint, error, children,
+}: {
+  label: string
+  required?: boolean
+  hint?: string
+  error?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label required={required}>{label}</Label>
+      {children}
+      {hint && <span className="text-[11px] text-[var(--shell-group-title)]">{hint}</span>}
+      {error && <span className="text-[11px] text-[var(--color-danger)]">{error}</span>}
+    </div>
+  )
+}

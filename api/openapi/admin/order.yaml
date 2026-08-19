@@ -133,7 +133,6 @@ paths:
       tags: [Order]
       summary: 拆机单列表(待扫码/已解绑/已拆机)
       operationId: listDismantles
-      description: （未实现 planned）
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
         - $ref: './schemas.yaml#/components/parameters/status'
@@ -143,7 +142,6 @@ paths:
       tags: [Order]
       summary: 新建拆机单
       operationId: createDismantle
-      description: （未实现 planned）
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
@@ -153,7 +151,6 @@ paths:
       tags: [Order]
       summary: 报障与投诉工单(CS 客服域)
       operationId: listComplaints
-      description: （未实现 planned）
       parameters:
         - name: type
           in: query
@@ -167,7 +164,6 @@ paths:
       tags: [Order]
       summary: 投诉办结
       operationId: closeComplaint
-      description: （未实现 planned）
       parameters:
         - { name: ticketNo, in: path, required: true, schema: { type: string } }
       responses:
@@ -178,7 +174,6 @@ paths:
       tags: [Order]
       summary: 激活回调日志(订单第 11 环节)
       operationId: listActivationCallbacks
-      description: （未实现 planned）
       parameters:
         - $ref: './schemas.yaml#/components/parameters/keyword'
         - $ref: './schemas.yaml#/components/parameters/status'
@@ -190,7 +185,6 @@ paths:
       tags: [Order]
       summary: 回调重试
       operationId: retryActivationCallback
-      description: （未实现 planned）
       parameters:
         - { name: callbackId, in: path, required: true, schema: { type: string } }
       responses:

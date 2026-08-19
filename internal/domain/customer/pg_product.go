@@ -2,7 +2,11 @@ package customer
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // ListProducts 列出产品;legalEntityID=0 返回全部,否则按公司过滤。
@@ -73,4 +77,38 @@ func (s *PGStore) CreateRegionOffer(ctx context.Context, r RegionOffer) (int64, 
 		return 0, fmt.Errorf("customer: create region offer: %w", err)
 	}
 	return id, nil
+}
+
+// ChangeProductPrice 产品调价:显式事务内 读旧月费→更新产品→追加调价台账,返回台账 id。
+func (s *PGStore) ChangeProductPrice(ctx context.Context, offerID int64, newFee float64, effectiveAt time.Time, reason string, operatorAccountID int64) (int64, error) {
+	tx, err := s.db.(beginner).Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("customer: begin price change: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var oldFee float64
+	if err := tx.QueryRow(ctx,
+		`SELECT monthly_fee FROM product_offers WHERE id=$1 FOR UPDATE`, offerID).Scan(&oldFee); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrProductNotFound
+		}
+		return 0, fmt.Errorf("customer: read product fee: %w", err)
+	}
+	if _, err := tx.Exec(ctx,
+		`UPDATE product_offers SET monthly_fee=$2, effective_at=$3, updated_at=now() WHERE id=$1`,
+		offerID, newFee, effectiveAt); err != nil {
+		return 0, fmt.Errorf("customer: update product fee: %w", err)
+	}
+	var historyID int64
+	if err := tx.QueryRow(ctx, `
+		INSERT INTO product_price_histories(offer_id, old_monthly_fee, new_monthly_fee, effective_at, reason, operator_account_id)
+		VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+		offerID, oldFee, newFee, effectiveAt, reason, idOrNil(operatorAccountID)).Scan(&historyID); err != nil {
+		return 0, fmt.Errorf("customer: append price history: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("customer: commit price change: %w", err)
+	}
+	return historyID, nil
 }

@@ -23,7 +23,6 @@ paths:
     get:
       tags: [Worker]
       summary: 师傅详情
-      description: （未实现 planned）
       operationId: getWorker
       parameters:
         - { name: workerId, in: path, required: true, schema: { type: integer } }
@@ -83,7 +82,6 @@ paths:
     post:
       tags: [Worker]
       summary: 差评复核
-      description: （未实现 planned）
       operationId: reviewWorkerFeedback
       parameters:
         - { name: feedbackId, in: path, required: true, schema: { type: string } }
@@ -220,7 +218,6 @@ paths:
     post:
       tags: [Worker]
       summary: 确认返库
-      description: （未实现 planned）
       operationId: confirmAssetReturn
       parameters:
         - { name: returnId, in: path, required: true, schema: { type: string } }

@@ -60,7 +60,7 @@ type AssetReturn struct {
 	RegionName      string `json:"regionName"`
 	AssetID         int64  `json:"assetId"`
 	Reason          string `json:"reason"`
-	Status          string `json:"status"` // PENDING/DONE
+	Status          string `json:"status"` // PENDING/RETURNED
 }
 
 // WorkerEventService 师傅事件事实域服务口(阶段2)。
@@ -71,6 +71,10 @@ type WorkerEventService interface {
 	AppendTool(ctx context.Context, t Tool) (int64, error)
 	ListFeedbacks(ctx context.Context, workerID int64) ([]Feedback, error)
 	AppendFeedback(ctx context.Context, f Feedback) (int64, error)
+	// ReviewFeedback 差评复核:need_review → false;未命中返回 ErrNotFound。
+	ReviewFeedback(ctx context.Context, feedbackID int64) error
 	ListAssetReturns(ctx context.Context, workerID int64) ([]AssetReturn, error)
 	AppendAssetReturn(ctx context.Context, r AssetReturn) (int64, error)
+	// ConfirmAssetReturn 确认返库:status PENDING → RETURNED;未命中或已返库返回 ErrNotFound。
+	ConfirmAssetReturn(ctx context.Context, returnID int64) error
 }

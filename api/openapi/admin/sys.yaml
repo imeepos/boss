@@ -96,6 +96,7 @@ paths:
       operationId: listAddresses
       parameters:
         - { name: parentId, in: query, schema: { type: integer, format: int64 }, description: 父地址ID层级过滤 }
+        - { name: unlinked, in: query, schema: { type: string }, description: 值为 1 时仅返回未挂接根节点 }
       responses:
         '200':
           description: data 为裸数组(代码 respond(c,OK,list),非 {items} 包装)
@@ -129,6 +130,8 @@ paths:
                     properties:
                       path: { type: string, description: ltree 物化路径 }
                       name: { type: string }
+                      countryCode: { type: string, description: 国家 alpha-2,可选 }
+                      adminCode: { type: string, description: 一级区划码,可选 }
       responses:
         '200':
           description: data 含导入条数
@@ -337,9 +340,10 @@ paths:
           application/json:
             schema:
               type: object
-              required: [accountId, name]
+              required: [subjectType, subjectRef, name]
               properties:
-                accountId: { type: integer, description: 目标账号须存在且启用 }
+                subjectType: { type: string, enum: [account, worker, customer], description: 主体类型 }
+                subjectRef: { type: integer, format: int64, description: 主体表主键 }
                 name: { type: string, description: 用途说明,如 ci-pipeline-01 }
       responses:
         '200':
@@ -354,7 +358,8 @@ paths:
                     type: object
                     properties:
                       id: { type: integer }
-                      accountId: { type: integer }
+                      subjectType: { type: string, enum: [account, worker, customer] }
+                      subjectRef: { type: integer, format: int64 }
                       name: { type: string }
                       plainKey: { type: string, example: boss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx }
 

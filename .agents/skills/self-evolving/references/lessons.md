@@ -69,3 +69,5 @@
 - 当要制作个人中心或设置类页面时，修复是先调研 Ant Design Pro 一手范式并输出信息架构/状态清单，再采用“紧凑账号头部 + 左侧分区导航 + 右侧单任务内容面板”，不要先堆叠多张功能卡片。skill 没提前警告我。
 - 当用户要求多主题表单适配时，修复是先盘点表单的背景/文字/placeholder/边框/focus/按钮/只读态，再为 light/dark 各自定义语义令牌；typecheck/build 不能证明视觉正确，必须在真实页面做双主题 computed-style 或截图验证。skill 已有相关警告，但本次前一轮未执行。
 - 当在 worktree 的子目录执行 git add 时，修复是先用 `git rev-parse --show-toplevel` 确认仓库根目录，路径按根目录解析；门禁结束必须在根目录检查 `git status --short`。skill 没提前警告我。
+- 当项目有定制设计系统（非 shadcn default theme）且需要 shadcn-style UI 组件时，修复是手动创建组件（参考 shadcn 编码模式：forwardRef + cn + cva），不走 `npx shadcn@latest add` CLI。原因：生成的组件使用 `hsl(var(--primary))` 等默认 CSS 变量，与项目现有的 `--color-brand-*`/`--shell-*` 设计令牌不兼容，手动改写的工作量不亚于直接写。skill 没提前警告我。
+- 当工具超时时，不要急着归因到网络。先做排除：① 去掉管道重试看真实输出；② 检查是否在等交互输入（加 `-y` 或 `--yes`）；③ 检查目标 URL 是否可直达（`curl -v` 看连接耗时）；④ 检查本地 registry 配置（`npm config get registry` / `pnpm config get registry`）。skill 没提前警告我。

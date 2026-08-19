@@ -390,3 +390,26 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 主题改动前先列出页面实际元素与每个 token 的 light/dark 值。
 - 修改后用全新 Chrome profile，分别设置 `boss.theme=light/dark`，在真实用户中心页面采集截图或用 `getComputedStyle` 断言输入框背景、文字、边框和按钮对比度。
 - 在 worktree 的仓库根目录执行 git add/commit，最后确认 `git status --short` 干净；总结只声明实际完成的验证。
+
+## 2026-08-19 · shadcn-style UI 组件安装反思（已修正归因）
+
+**哪个坑浪费了最多时间？**
+并不是网络问题，而是我下结论太快、没有做排除验证就归因到网络，这是反思要记的核心教训。
+
+**当时实际发生了什么：**
+- 第一次 `npx shadcn@latest add button -y 2>&1 | head -40` → 超时 30s 被 kill。`| head -40` 管道可能提前关闭导致 SIGPIPE，不是网络问题。
+- 第二次 `npx shadcn@latest add button 2>&1` → 超时 15s 被 kill。这次**没传 `-y`**，CLI 很可能在等待交互式选择（shadcn add 默认列出组件列表让用户选），不是网络问题。
+- `npm ping` 返回 `http://192.168.0.102:4873/`（私有 npm 镜像），`PONG 110ms` 说明镜像正常。
+- **没有做的事情：** 单独测 `curl https://ui.shadcn.com/r`、去掉管道重试、等更长时间看 CLI 真实输出。
+
+**正确结论：**
+- 超时更可能的原因是 CLI 在等交互输入（第二次没传 `-y`）或 `| head` 管道截断，不是网络不通。
+- 即使 CLI 跑通，生成的组件用 `hsl(var(--primary))` 等默认 CSS 变量，与本项目的 `--color-brand-*`/`--shell-*` 令牌体系不兼容——这个结论本身是对的，但网络原因说是错的。
+
+**这个 skill 有没有提前警告我？**
+没有。但"下结论前先做排除验证"这条本身应该成为红线。
+
+**重来一次我会怎么做？**
+- 工具超时时不急着归因到网络，先做排除：① 去掉管道重试看真实输出；② 检查是否在等交互输入（加 `-y`）；③ 检查目标 URL 是否可直达（`curl -v https://ui.shadcn.com/r`）；④ 检查本地 npm registry 配置（`npm config get registry`）。
+- 定制设计系统项目创建 shadcn-style 组件，正确流程是手动创建（forwardRef + cn + 项目 CSS 变量），不走 CLI add——不是因为网络，而是因为 CLI 生成代码不兼容定制令牌，手动写反而更快。
+- 所有故障归因必须在总结里写明"如何确定的"（具体命令 + 输出），不能只说"可能"。

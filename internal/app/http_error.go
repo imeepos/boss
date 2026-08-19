@@ -1,0 +1,66 @@
+package app
+
+import (
+	"errors"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/ymm-001/boss/internal/domain/ai"
+	"github.com/ymm-001/boss/internal/domain/asset"
+	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/domain/customer/userdata"
+	"github.com/ymm-001/boss/internal/domain/geo"
+	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/provision"
+	"github.com/ymm-001/boss/internal/domain/resource"
+	"github.com/ymm-001/boss/internal/domain/user"
+	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/pkg/apitypes"
+)
+
+// respondErr 领域错误 → 统一错误码。未知错误一律 500。
+func respondErr(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, user.ErrUnauthorized):
+		respond(c, apitypes.CodeUnauthorized, nil)
+	case errors.Is(err, user.ErrUsernameTaken),
+		errors.Is(err, user.ErrDuplicate),
+		errors.Is(err, user.ErrConflict),
+		errors.Is(err, geo.ErrDuplicate),
+		errors.Is(err, billing.ErrDuplicateInvoice):
+		respond(c, apitypes.CodeConflict, nil)
+	case errors.Is(err, user.ErrInvalidInput),
+		errors.Is(err, user.ErrRoleNotFound),
+		errors.Is(err, user.ErrFKViolation),
+		errors.Is(err, errGeoInvalidParam):
+		respond(c, apitypes.CodeInvalidParam, nil)
+	case errors.Is(err, user.ErrNotFound),
+		errors.Is(err, resource.ErrNotFound),
+		errors.Is(err, asset.ErrNotFound),
+		errors.Is(err, customer.ErrCustomerNotFound),
+		errors.Is(err, customer.ErrProductNotFound),
+		errors.Is(err, order.ErrOrderNotFound),
+		errors.Is(err, billing.ErrNotFound),
+		errors.Is(err, geo.ErrNotFound),
+		errors.Is(err, provision.ErrTaskNotFound),
+		errors.Is(err, worker.ErrNotFound),
+		errors.Is(err, userdata.ErrNotFound):
+		respond(c, apitypes.CodeNotFound, nil)
+	case errors.Is(err, resource.ErrIllegalTransition),
+		errors.Is(err, resource.ErrPortNotAvailable),
+		errors.Is(err, order.ErrIllegalTransition),
+		errors.Is(err, provision.ErrIllegalTransition),
+		errors.Is(err, billing.ErrIllegalReconTransition),
+		errors.Is(err, billing.ErrIllegalInvoiceTransition),
+		errors.Is(err, billing.ErrInvoiceNotTaxable):
+		respond(c, apitypes.CodeInvalidParam, nil)
+	case errors.Is(err, ai.ErrNotConfigured),
+		errors.Is(err, ai.ErrInvalidInput):
+		respond(c, apitypes.CodeInvalidParam, nil)
+	case errors.Is(err, ai.ErrDownstream):
+		respond(c, apitypes.CodeDownstreamErr, nil)
+	default:
+		respond(c, apitypes.CodeInternal, nil)
+	}
+}

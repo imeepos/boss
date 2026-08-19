@@ -16,6 +16,11 @@ type dbtx interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
+// beginner 显式事务入口;*pgxpool.Pool 与 pgxmock 均满足。
+type beginner interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+}
+
 // PGStore 是 CustomerService 接口的 PostgreSQL 实现(阶段2)。
 type PGStore struct {
 	db dbtx

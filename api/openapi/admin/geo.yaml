@@ -14,6 +14,23 @@ paths:
       tags: [Geo]
       summary: 新建国家
       operationId: createGeoCountry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [alpha2, alpha3, numericCode, shortName, status, continentCode]
+              properties:
+                alpha2: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 }
+                alpha3: { type: string, minLength: 3, maxLength: 3, description: ISO 3166-1 alpha-3 }
+                numericCode: { type: string, minLength: 3, maxLength: 3, description: ISO 3166-1 numeric }
+                shortName: { type: string, description: 短名 }
+                fullName: { type: string, description: 全名 }
+                status: { type: string, enum: [INDEPENDENT, DISCONTINUED] }
+                continentCode: { type: string, enum: [AS, EU, NA, SA, AF, OC, AN] }
+                m49Region: { type: string, description: UN M49 区域码 }
+                postalRegex: { type: string, description: 邮编正则 }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
   /geo/countries/{code}:
@@ -49,6 +66,23 @@ paths:
       summary: 更新国家关联属性(邮编/电话区号等)
       operationId: updateGeoCountryAttrs
       parameters: [ { $ref: '#/components/parameters/Code' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timeZones: { type: array, items: { type: string }, description: IANA 时区数组 }
+                currencies:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      currency: { type: string, description: ISO 4217 货币码 }
+                      isPrimary: { type: boolean }
+                      minorUnit: { type: integer, format: int16 }
+                callingCodes: { type: array, items: { type: string }, description: E.164 国家码 }
       responses: { '200': { $ref: '#/components/responses/Ok' } }
 
   /geo/countries/{code}/names:
@@ -57,6 +91,17 @@ paths:
       summary: 新增国家译名(locale+nameType 唯一)
       operationId: addGeoCountryName
       parameters: [ { $ref: '#/components/parameters/Code' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [locale, name, nameType]
+              properties:
+                locale: { type: string, description: 语言代码,如 zh-Hans/en }
+                name: { type: string, description: 译名 }
+                nameType: { type: string, enum: [STANDARD, SHORT, ALIAS, HISTORIC] }
       responses: { '200': { $ref: '#/components/responses/Ok' } }
 
   '/geo/countries/{code}/names/{locale}/{nameType}':
@@ -73,16 +118,31 @@ paths:
   /geo/subdivisions:
     get:
       tags: [Geo]
-      summary: 行政区划列表(countryCode/parentCode 过滤)
+      summary: 行政区划列表(country/locale 过滤)
       operationId: listGeoSubdivisions
       parameters:
-        - { name: countryCode, in: query, schema: { type: string } }
-        - { name: parentCode, in: query, schema: { type: string } }
+        - { name: country, in: query, schema: { type: string }, description: 国家码过滤(代码读取 country) }
+        - { name: locale, in: query, schema: { type: string }, description: 译名 locale 过滤(代码读取 locale) }
       responses: { '200': { $ref: '#/components/responses/Array' } }
     post:
       tags: [Geo]
       summary: 新建行政区划
       operationId: createGeoSubdivision
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, countryCode, level, category]
+              properties:
+                code: { type: string, description: ISO 3166-2 完整码,如 PH-NCR }
+                countryCode: { type: string, minLength: 2, maxLength: 2, description: 所属国家 alpha-2 }
+                parentCode: { type: string, description: 自引用父码,可空 }
+                level: { type: integer, format: int16, minimum: 1, maximum: 4 }
+                category: { type: string, description: state/province/region/municipality }
+                osmAdminLevel: { type: integer, format: int16, description: OSM 行政层级 2~10 }
+                geonameId: { type: integer, format: int64, description: GeoNames 挂接,0=未挂 }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
   /geo/subdivisions/{code}:
@@ -91,6 +151,20 @@ paths:
       summary: 编辑行政区划
       operationId: updateGeoSubdivision
       parameters: [ { $ref: '#/components/parameters/Code' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [countryCode, level, category]
+              properties:
+                countryCode: { type: string, minLength: 2, maxLength: 2 }
+                parentCode: { type: string }
+                level: { type: integer, format: int16, minimum: 1, maximum: 4 }
+                category: { type: string }
+                osmAdminLevel: { type: integer, format: int16 }
+                geonameId: { type: integer, format: int64 }
       responses: { '200': { $ref: '#/components/responses/Ok' } }
 
   /geo/subdivisions/{code}/active:
@@ -99,6 +173,15 @@ paths:
       summary: 行政区划启停
       operationId: setGeoSubdivisionActive
       parameters: [ { $ref: '#/components/parameters/Code' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: { type: boolean }
       responses: { '200': { $ref: '#/components/responses/Ok' } }
 
   /geo/subdivisions/{code}/names:
@@ -113,6 +196,17 @@ paths:
       summary: 新增行政区划译名
       operationId: addGeoSubdivisionName
       parameters: [ { $ref: '#/components/parameters/Code' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [locale, name, nameType]
+              properties:
+                locale: { type: string, description: 语言代码 }
+                name: { type: string, description: 译名 }
+                nameType: { type: string, enum: [STANDARD, SHORT, ALIAS, HISTORIC, PINYIN, ROMANIZED] }
       responses: { '200': { $ref: '#/components/responses/Ok' } }
 
   '/geo/subdivisions/{code}/names/{locale}/{nameType}':
@@ -131,6 +225,47 @@ paths:
       tags: [Geo]
       summary: 批量导入(单事务 upsert,译名/区划四类载荷;PSGC 内置见 migration)
       operationId: importGeo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                countries:
+                  type: array
+                  items:
+                    type: object
+                    description: Country 对象数组
+                countryNames:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      countryCode: { type: string }
+                      name:
+                        type: object
+                        properties:
+                          locale: { type: string }
+                          name: { type: string }
+                          nameType: { type: string }
+                subdivisions:
+                  type: array
+                  items:
+                    type: object
+                    description: Subdivision 对象数组
+                subdivisionNames:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      subdivisionCode: { type: string }
+                      name:
+                        type: object
+                        properties:
+                          locale: { type: string }
+                          name: { type: string }
+                          nameType: { type: string }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
 components:

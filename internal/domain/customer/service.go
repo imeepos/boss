@@ -8,6 +8,9 @@ import (
 // ErrCustomerNotFound 客户不存在。
 var ErrCustomerNotFound = errors.New("customer: not found")
 
+// ErrProductNotFound 产品不存在。
+var ErrProductNotFound = errors.New("customer: product not found")
+
 // CustomerService 客户域服务口(阶段2)。
 // 契约:CT-001 客户建档,成功后客户主数据对计费/订单/客服/门户可见(本切片仅发领域事件值,不接 Kafka)。
 type CustomerService interface {

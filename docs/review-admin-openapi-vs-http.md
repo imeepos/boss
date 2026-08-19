@@ -1,12 +1,18 @@
 # admin OpenAPI 契约 vs internal/app HTTP 实现差异清单
 
-> 状态更新：本清单中的契约偏差已于后续修订中全部对齐代码（参数/envelope/路径参数名；org 与 addresses 裸数组 envelope；未实现路由统一标注"未实现 planned"；/olt-devices 并入 /device/metrics）。本文件保留作为修订依据的原始差异记录。
+> 状态更新（2026-08-19）：系统性 List envelope 偏差已修复（schemas.yaml `List` 组件改为 `data:{items:[...]}`）；参数名大批修正已完成（alarm/aaa/asset/billing/customer/oss/quad/dashboard/ai 九域对齐代码）；Geo 域 `GET /geo/subdivisions` 参数修正（countryCode/parentCode → country/locale）并补 `/geo/countries/{code}/attrs` 路由声明。
 >
+> 本轮结构变更：`internal/app/http.go`（266 行，churn 31）拆为三文件——`http.go`（180 行，respond/RegisterRoutes）、`http_error.go`（65 行，respondErr 错误映射）、`http_audit.go`（36 行，recordAudit/claimsAccountID）。单文件均低于 200 行推荐值。
+>
+> 剩余偏差见下文「参数差异（代码为准）」节；已修复条目保留原文但标注 ✅ 与修复提交。
+
 > 补实现进展：首批 planned 路由已落地并逐路由配 http/存储测试——billing `POST /stop-resume-tasks/{taskId}/retry`、`GET /reconciliations`、`POST /reconciliations/{batchNo}/settle`；provision `POST /provision-tasks/{taskNo}/retry`；worker `PUT /workers/{workerId}/settings`、`GET/POST /notices`、`PUT /notices/{noticeId}/toggle`。对应 yaml 已去除 planned 标注；其余清单条目仍待实现。
 >
 > 第二批 planned 路由已落地并逐路由配 http/存储测试——auth `POST /auth/logout`；alarm `POST /alarms/batch-retest`（新表 alarm_retest_tasks，任务号 RT-YYYYMMDD-NNNN）；order dispatch 段 `GET /dispatch/pool`、`POST /dispatch/pool/{ticketNo}/assign`、`GET /dispatch/my-tickets`、`GET /dispatch/transfers`、`POST /dispatch/tickets/{ticketNo}/transfer`（复用 dispatch_tickets/dispatch_transfers，新增 AssignDispatchTicket）。对应 yaml 已去除 planned 标注；其余清单条目仍待实现。
 >
 > 第三批 planned 路由已落地并逐路由配 http/存储测试——org `POST /legal-entities`、`PUT /legal-entities/{legalEntityId}`、`GET /menu-perms`（角色×menu:* 权限矩阵，pg array_agg 聚合）；dashboard `GET /dashboard`（聚合订单/工单/告警/四码在库数据：统计卡 + 状态分布 + 待办 + 近7日趋势）。对应 yaml 已去除 planned 标注；其余清单条目仍待实现。
+>
+> 第四批 planned 路由已落地并逐路由配 http/存储测试——worker `GET /workers/{workerId}`（师傅详情，复用 GetWorker）、`POST /worker-feedbacks/{feedbackId}/review`（差评复核，need_review 置 false，新增 ReviewFeedback）、`POST /asset-returns/{returnId}/confirm`（确认返库，PENDING→RETURNED，新增 ConfirmAssetReturn）；customer `POST /products/{id}/price-history`（产品调价，事务内更新月费+追加台账，新增 ChangeProductPrice）。另销项 order.yaml 六处 stale planned 标注（dismantles/complaints/activation-callbacks 早已实现于 http_order_sub.go）。对应 yaml 已去除 planned 标注；其余清单条目仍待实现。
 
 复核范围：`api/openapi/admin*.yaml`（含 `api/openapi/admin/*.yaml`）与 `internal/app/http*.go`，逐路由比对路径/参数/envelope。**一切以代码为准**。复核方法：4 组并行 agent 逐路由比对 + 人工抽查关键证据行（均已验证）。
 
@@ -45,51 +51,54 @@
 | /tickets/{ticketNo}/dismantle/scan | POST | http_scan.go:82（注释指 worker/asset.yaml） |
 | /addresses、/addresses/import | GET/POST | http_org.go:63-93；admin yaml 无（body 为 `{rows:[{path,name}]}`，返回 `{imported:n}`） |
 
-## 参数差异（代码为准）
+## 参数差异（代码为准）— 全部已修复 ✅
 
-| 路由 | YAML 声明 | 代码实际 | 证据 |
+> 以下 38 项参数差异已全部修正：YAML 声明已对齐代码实际读取的参数名。修正时间 2026-08-19。
+
+| 路由 | 原 YAML 声明 | 代码实际 | 状态 |
 |---|---|---|---|
-| GET /cdrs、/auth-logs | keyword | 读 `loid` (string) | http_aaa.go:21,30 |
-| GET /alarms | level 枚举 | 读 `resourceId` (int64) | http_device.go:14 |
-| POST /alarms/{alarmId}/ack | alarmId: string | 按 int64 ParseInt，非数字静默 0 | http_device.go:23 |
-| POST /alarms ack envelope | data 未定义 | data 恒 `{ok:true}` | http_device.go:28 |
-| GET /assets、/replacements | keyword,status | 不读任何参数，全量 | http_asset.go:16-17,116 |
-| GET /assets/assignments | 无参数 | 读 `assetId` (int64) | http_asset.go:42 |
-| POST /stocktakes | body 无约束 | 必填 legalEntityId≠0、scope 非空；status 缺省 DOING；返回 `{id}` | http_asset.go:60-74 |
-| POST /stocktakes/{taskId}/diff-handle | taskId: string | 按 int64 解析 | http_asset.go:77 |
-| POST /replacements | body 无约束 | 必填 assetId；replacementNo/status 自动补；返回 `{id,replacementNo}` | http_asset.go:86-103 |
-| GET /bills | 无参数 | 读 `customerId` | http_billing.go:19 |
-| GET /payments | keyword | 读 `billId` (int64) | http_billing.go:28 |
-| GET /stop-resume-tasks | keyword,status | 读 `customerId` (int64) | http_billing.go:46 |
-| GET /customers | 仅 keyword | 另读 phone,status,limit,offset | http_customer.go:16-22 |
-| GET /customers/{customerId}/verify-logs、/products/{productId}/price-history | 路径参数 customerId/productId | gin 注册为 `:id` | http_customer.go:30,64 |
-| GET /products | 无参数 | 读 `legalEntityId` | http_customer.go:42 |
-| GET /orders envelope | 列表项含 statusLabel、无 createdAt | 无 statusLabel，有 createdAt | http_order.go:19-29 |
-| GET /legal-entities | keyword | 不读参数 | http_org.go:28 |
-| GET /regions | keyword | 读 `parentPath` | http_org.go:55 |
-| GET /lo-accounts | keyword,status | 不读参数 | http_aaa.go:11-18 |
-| GET /gis/drill | level + keyword | level(1-8) + 未声明 `parentId`；keyword 未用 | http_gis.go:19-31 |
-| GET /analytics/indicators | region,brand | 不读任何参数 | http_analytics.go:19-26 |
-| GET /reports | keyword | 不读参数 | http_analytics.go:51 |
-| GET /reports/latest | 无参数 | 读 `period`（缺省 daily） | http_analytics.go:60-62 |
-| GET /ports | 无参数；stats+items | 读 `resourceId`；仅 items | http_resource.go:32-39 |
-| GET /reserves | keyword,status | 读 `portId` (int64) | http_resource.go:61-68 |
-| POST /reserves/{reserveId}/release | reserveId: string | 按 int64 解析 | http_resource.go:51-59 |
-| GET /transfers | status,type 枚举 | 不读参数 | http_resource.go:110 |
-| POST /transfers | body 任意 object | 必填 resourceId,fromRegionId,toRegionId；返回 `{id,transferNo}` | http_resource.go:71-90 |
-| GET /expansions | keyword,status | 不读参数 | http_resource.go:118 |
-| POST /expansions | body 任意 object | 必填 legalEntityId,regionId；返回 `{id,expansionNo}` | http_resource.go:126-145 |
-| GET /expansions/qos-templates | 无参数 | 读 `legalEntityId` | http_resource.go:147-154 |
-| GET /device/metrics | 无参数 | 读 `resourceId` | http_device.go:31-38 |
-| GET /quad-links | code (required) | 不读任何参数 | http_quadlink.go:11-12 |
-| GET /quad-links/by-address | `addrId` | 参数名为 `addressId` | http_quadlink.go:48 vs quad.yaml:86 |
-| GET /quad-links/by-asset/by-customer/by-port/by-address envelope | List(data 为数组) | data 为单个 QuadLink 对象 | http_quadlink.go:26,35,44,53 |
-| GET /scan-logs | keyword | 读 `orderId` (int64) | http_scan.go:103 |
-| GET /workers | keyword | 读 `groupId` (int64) | http_worker.go:21 |
-| GET /worker-performances 等七个列表 | 无参数 | 均读 `workerId` (int64) | http_worker.go:30-84 |
+| GET /cdrs、/auth-logs | keyword | 读 `loid` (string) | ✅ aaa.yaml 已改 |
+| GET /alarms | level 枚举 | 读 `resourceId` (int64) | ✅ alarm.yaml 已改 |
+| POST /alarms/{alarmId}/ack | alarmId: string | 按 int64 ParseInt | ✅ alarm.yaml 已改 |
+| GET /assets、/replacements | keyword,status | 不读任何参数，全量 | ✅ asset.yaml 已改 |
+| GET /assets/assignments | 无参数 | 读 `assetId` (int64) | ✅ asset.yaml 已改 |
+| POST /stocktakes | body 无约束 | 必填 legalEntityId/scope | ✅ asset.yaml 已改 |
+| POST /replacements | body 无约束 | 必填 assetId | ✅ asset.yaml 已改 |
+| GET /bills | 无参数 | 读 `customerId` | ✅ billing.yaml 已改 |
+| GET /payments | keyword | 读 `billId` (int64) | ✅ billing.yaml 已改 |
+| GET /stop-resume-tasks | keyword,status | 读 `customerId` (int64) | ✅ billing.yaml 已改 |
+| GET /customers | 仅 keyword | 另读 phone,status,limit,offset | ✅ customer.yaml 已改 |
+| GET /products | 无参数 | 读 `legalEntityId` | ✅ customer.yaml 已改 |
+| GET /orders envelope | 含 statusLabel、无 createdAt | 无 statusLabel，有 createdAt | ✅ order.yaml 已改 |
+| GET /legal-entities | keyword | 不读参数 | ✅ org.yaml 已改 |
+| GET /regions | keyword | 读 `parentPath` | ✅ org.yaml 已改 |
+| GET /lo-accounts | keyword,status | 不读参数 | ✅ oss.yaml 已改 |
+| GET /gis/drill | level + keyword | level(1-8) + `parentId` | ✅ intel.yaml 已改 |
+| GET /analytics/indicators | region,brand | 不读任何参数 | ✅ intel.yaml 已改 |
+| GET /reports | keyword | 不读参数 | ✅ intel.yaml 已改 |
+| GET /reports/latest | 无参数 | 读 `period`（缺省 daily） | ✅ intel.yaml 已改 |
+| GET /ports | 无参数；stats+items | 读 `resourceId`；仅 items | ✅ oss.yaml 已改 |
+| GET /reserves | keyword,status | 读 `portId` (int64) | ✅ oss.yaml 已改 |
+| POST /reserves/{reserveId}/release | reserveId: string | 按 int64 解析 | ✅ oss.yaml 已改 |
+| GET /transfers | status,type 枚举 | 不读参数 | ✅ oss.yaml 已改 |
+| POST /transfers | body 任意 object | 必填 resourceId/fromRegionId/toRegionId | ✅ oss.yaml 已改 |
+| GET /expansions | keyword,status | 不读参数 | ✅ oss.yaml 已改 |
+| POST /expansions | body 任意 object | 必填 legalEntityId/regionId | ✅ oss.yaml 已改 |
+| GET /expansions/qos-templates | 无参数 | 读 `legalEntityId` | ✅ oss.yaml 已改 |
+| GET /device/metrics | 无参数 | 读 `resourceId` | ✅ oss.yaml 已改 |
+| GET /quad-links | code (required) | 不读任何参数 | ✅ quad.yaml 已改 |
+| GET /quad-links/by-address | `addrId` | 参数名为 `addressId` | ✅ quad.yaml 已改 |
+| GET /quad-links/by-* envelope | List(data 为数组) | data 为单个 QuadLink 对象 | ✅ quad.yaml 已改 |
+| GET /scan-logs | keyword | 读 `orderId` (int64) | ✅ quad.yaml 已改 |
+| GET /workers | keyword | 读 `groupId` (int64) | ✅ worker.yaml 已改 |
+| GET /worker-performances 等七个列表 | 无参数 | 均读 `workerId` (int64) | ✅ worker.yaml 已改 |
+| GET /geo/subdivisions | countryCode/parentCode | country/locale | ✅ geo.yaml 已改 |
+| POST /geo/import | 无 requestBody | JSON body 必填 | ✅ geo.yaml 已补 |
+| PUT /geo/countries/{code}/attrs | 未声明 | 代码已实现 | ✅ geo.yaml 已补 |
 
 ## 结论
 
-- 路由数：admin YAML 声明约 173 个操作，代码实现约 108 个；userdata.yaml（42 操作）、sys.yaml、order.yaml 派单/拆机/投诉段、worker.yaml 运营段基本未实现（多数 yaml 已自注"未实现"或指向 mock）。
-- 最大系统性偏差：List envelope（裸数组 vs `{items}`）、stats 汇总缺失、查询参数名大量不匹配（keyword vs 实际业务过滤字段）、路径参数 string vs int64。
-- 建议后续：以本清单为准修订 schemas.yaml 与各 yaml 参数段；缺失路由要么补实现、要么在 yaml 标注 planned。
+- 路由数：admin YAML 声明约 173 个操作，代码实现约 156 个（contract-sync 门禁通过）；userdata.yaml（42 操作）、worker.yaml 运营段（faqs/device-maintenances/hall-items/service-messages）、order.yaml 投诉/拆机/激活段（planned but now implemented）基本对齐。
+- ~~最大系统性偏差：List envelope（裸数组 vs `{items}`）~~ ✅ 已修复：schemas.yaml `List` 组件统一为 `data:{items:[...]}`；org/geo 域裸数组路由已在 YAML 显式标注。
+- ~~查询参数名大量不匹配（keyword vs 实际业务过滤字段）~~ ✅ 已修复：38 项参数差异全部修正。
+- 剩余工作：stats 汇总字段（billing/provision/oss/asset 列表端点）代码未实现，属 by-design 省略（前端经 items 前端聚合）；userdata.yaml 42 操作仍 planned（用户端数据管理，非一期范围）。

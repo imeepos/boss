@@ -1,5 +1,5 @@
 // org 组六页公共片段:页头、详情抽屉、分页文案装配。
-import type { ReactNode } from 'react'
+// 已迁移到 components/business/，此处保留兼容导出。
 import { Drawer } from '../../components/Drawer'
 import type { Translations } from '../../i18n/types'
 
@@ -53,6 +53,6 @@ export function DetailDrawer({
 }
 
 /** 空态行/块。 */
-export function Empty({ text }: { text: string }): ReactNode {
+export function Empty({ text }: { text: string }) {
   return <div className="org-empty">{text}</div>
 }

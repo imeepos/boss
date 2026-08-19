@@ -33,4 +33,6 @@ type ProductService interface {
 	CreateProduct(ctx context.Context, p ProductOffer) (int64, error)
 	ListRegionOffers(ctx context.Context, offerID int64) ([]RegionOffer, error)
 	CreateRegionOffer(ctx context.Context, r RegionOffer) (int64, error)
+	// ChangeProductPrice 产品调价:更新月费并追加调价台账,返回台账 id;产品不存在返回 ErrProductNotFound。
+	ChangeProductPrice(ctx context.Context, offerID int64, newFee float64, effectiveAt time.Time, reason string, operatorAccountID int64) (int64, error)
 }

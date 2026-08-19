@@ -5,7 +5,7 @@ import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
 import { PageHead } from '../org/shared'
 import { fmtTime } from '../../lib/format'
-import { Button } from 'antd'
+import { Button } from '../../components/Button'
 import './dashboard.css'
 
 interface StatCard { key: string; label: string; value: string; delta: string; trend: string }
@@ -61,7 +61,7 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
     <div className="dash-page">
       <PageHead title={d.title} desc={welcome} />
       <div className="dash-toolbar">
-        <Button type="primary" onClick={load} loading={busy}>刷新</Button>
+        <Button variant="primary" onClick={load} loading={busy}>刷新</Button>
       </div>
       {error ? (
         <div className="dash-error-msg">{error}</div>

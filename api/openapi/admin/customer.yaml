@@ -53,7 +53,6 @@ paths:
       tags: [Customer]
       summary: 产品调价
       operationId: changeProductPrice
-      description: （未实现 planned）
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 产品ID }
       requestBody:

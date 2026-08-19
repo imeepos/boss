@@ -130,3 +130,29 @@ func (s *PGStore) AppendAssetReturn(ctx context.Context, r AssetReturn) (int64, 
 	}
 	return id, nil
 }
+
+// ReviewFeedback 差评复核:need_review 置 false;未命中返回 ErrNotFound。
+func (s *PGStore) ReviewFeedback(ctx context.Context, feedbackID int64) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE worker_feedbacks SET need_review = false WHERE id = $1`, feedbackID)
+	if err != nil {
+		return fmt.Errorf("worker: review feedback: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// ConfirmAssetReturn 确认返库:status PENDING → RETURNED;未命中或已返库返回 ErrNotFound。
+func (s *PGStore) ConfirmAssetReturn(ctx context.Context, returnID int64) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE asset_returns SET status = 'RETURNED' WHERE id = $1 AND status = 'PENDING'`, returnID)
+	if err != nil {
+		return fmt.Errorf("worker: confirm asset return: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

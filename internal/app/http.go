@@ -1,25 +1,12 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/apikey"
-	"github.com/ymm-001/boss/internal/domain/asset"
-	"github.com/ymm-001/boss/internal/domain/billing"
-	"github.com/ymm-001/boss/internal/domain/customer"
-	"github.com/ymm-001/boss/internal/domain/customer/userdata"
-	"github.com/ymm-001/boss/internal/domain/geo"
-	"github.com/ymm-001/boss/internal/domain/order"
-	"github.com/ymm-001/boss/internal/domain/provision"
-	"github.com/ymm-001/boss/internal/domain/resource"
-	"github.com/ymm-001/boss/internal/domain/user"
-	"github.com/ymm-001/boss/internal/domain/worker"
-	"github.com/ymm-001/boss/internal/pkg/audit"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -28,78 +15,6 @@ import (
 // respond 统一响应 envelope:{code,msg,data};跨进程错误码对齐 pkg/apitypes(D3)。
 func respond(c *gin.Context, code apitypes.Code, data any) {
 	c.JSON(http.StatusOK, gin.H{"code": code, "msg": code.Message(), "data": data})
-}
-
-// respondErr 领域错误 → 统一错误码。未知错误一律 500。
-func respondErr(c *gin.Context, err error) {
-	switch {
-	case errors.Is(err, user.ErrUnauthorized):
-		respond(c, apitypes.CodeUnauthorized, nil)
-	case errors.Is(err, user.ErrUsernameTaken),
-		errors.Is(err, user.ErrDuplicate),
-		errors.Is(err, user.ErrConflict),
-		errors.Is(err, geo.ErrDuplicate),
-		errors.Is(err, billing.ErrDuplicateInvoice):
-		respond(c, apitypes.CodeConflict, nil)
-	case errors.Is(err, user.ErrInvalidInput),
-		errors.Is(err, user.ErrRoleNotFound),
-		errors.Is(err, user.ErrFKViolation),
-		errors.Is(err, errGeoInvalidParam):
-		respond(c, apitypes.CodeInvalidParam, nil)
-	case errors.Is(err, user.ErrNotFound),
-		errors.Is(err, resource.ErrNotFound),
-		errors.Is(err, asset.ErrNotFound),
-		errors.Is(err, customer.ErrCustomerNotFound),
-		errors.Is(err, order.ErrOrderNotFound),
-		errors.Is(err, billing.ErrNotFound),
-		errors.Is(err, geo.ErrNotFound),
-		errors.Is(err, provision.ErrTaskNotFound),
-		errors.Is(err, worker.ErrNotFound),
-		errors.Is(err, userdata.ErrNotFound):
-		respond(c, apitypes.CodeNotFound, nil)
-	case errors.Is(err, resource.ErrIllegalTransition),
-		errors.Is(err, resource.ErrPortNotAvailable),
-		errors.Is(err, order.ErrIllegalTransition),
-		errors.Is(err, provision.ErrIllegalTransition),
-		errors.Is(err, billing.ErrIllegalReconTransition),
-		errors.Is(err, billing.ErrIllegalInvoiceTransition),
-		errors.Is(err, billing.ErrInvoiceNotTaxable):
-		respond(c, apitypes.CodeInvalidParam, nil)
-	case errors.Is(err, ai.ErrNotConfigured),
-		errors.Is(err, ai.ErrInvalidInput):
-		respond(c, apitypes.CodeInvalidParam, nil)
-	case errors.Is(err, ai.ErrDownstream):
-		respond(c, apitypes.CodeDownstreamErr, nil)
-	default:
-		respond(c, apitypes.CodeInternal, nil)
-	}
-}
-
-// recordAudit 记录关键操作审计(异步、尽力而为);未装配审计 writer 时静默跳过。
-func (a *Application) recordAudit(c *gin.Context, action, targetType, targetID string, detail map[string]any) {
-	if a == nil || a.Audit == nil {
-		return
-	}
-	var accountID int64
-	if v, ok := c.Get(middleware.CtxClaims); ok {
-		if claims, ok := v.(*auth.Claims); ok {
-			accountID = claims.AccountID
-		}
-	}
-	_ = a.Audit.Write(c.Request.Context(), audit.Event{
-		AccountID: accountID, Action: action, TargetType: targetType, TargetID: targetID,
-		Detail: detail, IP: c.ClientIP(),
-	})
-}
-
-// claimsAccountID 取当前请求账号 id(未认证返回 0)。
-func claimsAccountID(c *gin.Context) int64 {
-	if v, ok := c.Get(middleware.CtxClaims); ok {
-		if claims, ok := v.(*auth.Claims); ok {
-			return claims.AccountID
-		}
-	}
-	return 0
 }
 
 // loginReq 登录请求体(对齐 api/openapi/admin/auth.yaml)。

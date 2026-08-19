@@ -2,8 +2,10 @@ package customer
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 )
 
@@ -116,6 +118,62 @@ func TestPGStore_CreateRegionOffer(t *testing.T) {
 	}
 	if id != 4 {
 		t.Fatalf("id=%d, want 4", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+// TestPGStore_ChangeProductPrice 契约:产品调价 事务内 更新月费并追加台账,返回台账 id。
+func TestPGStore_ChangeProductPrice(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT monthly_fee FROM product_offers WHERE id=\$1 FOR UPDATE`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"monthly_fee"}).AddRow(99.0))
+	mock.ExpectExec(`UPDATE product_offers SET monthly_fee=\$2, effective_at=\$3`).
+		WithArgs(int64(1), 129.0, fixedTime).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectQuery(`INSERT INTO product_price_histories`).
+		WithArgs(int64(1), 99.0, 129.0, fixedTime, "产品调价", nil).
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
+	mock.ExpectCommit()
+
+	s := NewPGStore(mock)
+	historyID, err := s.ChangeProductPrice(context.Background(), 1, 129.0, fixedTime, "产品调价", 0)
+	if err != nil {
+		t.Fatalf("ChangeProductPrice: %v", err)
+	}
+	if historyID != 11 {
+		t.Fatalf("historyID=%d, want 11", historyID)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+// TestPGStore_ChangeProductPriceNotFound 契约:产品不存在返回 ErrProductNotFound,事务回滚。
+func TestPGStore_ChangeProductPriceNotFound(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT monthly_fee FROM product_offers WHERE id=\$1 FOR UPDATE`).
+		WithArgs(int64(99)).
+		WillReturnError(pgx.ErrNoRows)
+	mock.ExpectRollback()
+
+	_, err = NewPGStore(mock).ChangeProductPrice(context.Background(), 99, 129.0, fixedTime, "产品调价", 0)
+	if !errors.Is(err, ErrProductNotFound) {
+		t.Fatalf("err=%v, want ErrProductNotFound", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)

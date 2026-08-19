@@ -31,6 +31,17 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
 
+	// 师傅详情(worker.yaml GET /workers/{workerId})。
+	g.GET("/workers/:workerId", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
+		workerID, _ := strconv.ParseInt(c.Param("workerId"), 10, 64)
+		w, err := a.Worker.GetWorker(c.Request.Context(), workerID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, w)
+	})
+
 	g.GET("/worker-performances", requirePerm(a.User, "menu:order"), func(c *gin.Context) {
 		list, err := a.WorkerFact.ListPerformances(c.Request.Context(), queryInt64(c, "workerId"))
 		if err != nil {
@@ -85,6 +96,17 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
 
+	// 差评复核(worker.yaml POST /worker-feedbacks/{feedbackId}/review)。
+	g.POST("/worker-feedbacks/:feedbackId/review", requirePerm(a.User, "menu:order"), func(c *gin.Context) {
+		feedbackID, _ := strconv.ParseInt(c.Param("feedbackId"), 10, 64)
+		if err := a.WorkerEvent.ReviewFeedback(c.Request.Context(), feedbackID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "worker_feedback.review", "worker_feedback", c.Param("feedbackId"), nil)
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
 	g.GET("/asset-returns", requirePerm(a.User, "menu:order"), func(c *gin.Context) {
 		list, err := a.WorkerEvent.ListAssetReturns(c.Request.Context(), queryInt64(c, "workerId"))
 		if err != nil {
@@ -92,6 +114,17 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *Application) {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	})
+
+	// 确认返库(worker.yaml POST /asset-returns/{returnId}/confirm)。
+	g.POST("/asset-returns/:returnId/confirm", requirePerm(a.User, "menu:order"), func(c *gin.Context) {
+		returnID, _ := strconv.ParseInt(c.Param("returnId"), 10, 64)
+		if err := a.WorkerEvent.ConfirmAssetReturn(c.Request.Context(), returnID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "asset_return.confirm", "asset_return", c.Param("returnId"), nil)
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 
 	g.GET("/worker-messages", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {

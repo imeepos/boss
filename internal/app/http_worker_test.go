@@ -17,11 +17,13 @@ import (
 
 // fakeWorkerOps 桩 worker 各服务口(仅接单设置/公告路由用到的方法落账)。
 type fakeWorkerOps struct {
-	w        *worker.Worker
-	settings *worker.Settings
-	notices  []worker.Notice
-	created  *worker.Notice
-	toggled  int64
+	w          *worker.Worker
+	settings   *worker.Settings
+	notices    []worker.Notice
+	created    *worker.Notice
+	toggled    int64
+	reviewed   int64
+	confirmed  int64
 }
 
 func (f *fakeWorkerOps) ListGroups(context.Context) ([]worker.Group, error) { return nil, nil }
@@ -97,6 +99,14 @@ func (f *fakeWorkerOps) ListAssetReturns(context.Context, int64) ([]worker.Asset
 }
 func (f *fakeWorkerOps) AppendAssetReturn(context.Context, worker.AssetReturn) (int64, error) {
 	return 0, nil
+}
+func (f *fakeWorkerOps) ReviewFeedback(_ context.Context, feedbackID int64) error {
+	f.reviewed = feedbackID
+	return nil
+}
+func (f *fakeWorkerOps) ConfirmAssetReturn(_ context.Context, returnID int64) error {
+	f.confirmed = returnID
+	return nil
 }
 func (f *fakeWorkerOps) ListNotices(context.Context) ([]worker.Notice, error) {
 	return f.notices, nil
@@ -192,5 +202,51 @@ func TestNoticeHandlers(t *testing.T) {
 	w = putAuth(t, r, "/api/v1/notices/1/toggle", "", authToken(t, mgr))
 	if w.Code != http.StatusOK || f.toggled != 1 {
 		t.Fatalf("status=%d toggled=%d", w.Code, f.toggled)
+	}
+}
+
+// TestWorkerDetail 契约:师傅详情按 id 返回单条(worker.yaml GET /workers/{workerId})。
+func TestWorkerDetail(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	f := &fakeWorkerOps{w: &worker.Worker{ID: 5, Name: "张师傅", StaffNo: "W-001"}}
+	r := newWorkerRouter(f, mgr)
+
+	w := getJSON(t, r, "/api/v1/workers/5", authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var got struct {
+		Code int           `json:"code"`
+		Data worker.Worker `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Code != 0 || got.Data.ID != 5 || got.Data.Name != "张师傅" {
+		t.Fatalf("got=%+v", got)
+	}
+}
+
+// TestReviewFeedback 契约:差评复核即时落账(worker.yaml POST /worker-feedbacks/{feedbackId}/review)。
+func TestReviewFeedback(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	f := &fakeWorkerOps{}
+	r := newWorkerRouter(f, mgr)
+
+	w := postBodyAuth(t, r, "/api/v1/worker-feedbacks/3/review", "", authToken(t, mgr))
+	if w.Code != http.StatusOK || f.reviewed != 3 {
+		t.Fatalf("status=%d reviewed=%d", w.Code, f.reviewed)
+	}
+}
+
+// TestConfirmAssetReturn 契约:确认返库即时落账(worker.yaml POST /asset-returns/{returnId}/confirm)。
+func TestConfirmAssetReturn(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	f := &fakeWorkerOps{}
+	r := newWorkerRouter(f, mgr)
+
+	w := postBodyAuth(t, r, "/api/v1/asset-returns/7/confirm", "", authToken(t, mgr))
+	if w.Code != http.StatusOK || f.confirmed != 7 {
+		t.Fatalf("status=%d confirmed=%d", w.Code, f.confirmed)
 	}
 }

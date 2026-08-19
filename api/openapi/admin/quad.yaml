@@ -6,22 +6,27 @@ paths:
       operationId: queryQuadLinks
       responses:
         '200':
-          description: 四码关联关系
+          description: 四码关联关系(data.items 为关联数组)
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  items:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        assetCode: { type: string }
-                        customerCode: { type: string, description: 客户域编码,取值为客户认证账号 LOID(与 worker 端一致) }
-                        portCode: { type: string }
-                        addrCode: { type: string }
-                        status: { type: string, enum: [LINKED, CONFLICT, UNLINKED] }
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            assetCode: { type: string }
+                            customerCode: { type: string, description: 客户域编码,取值为客户认证账号 LOID }
+                            portCode: { type: string }
+                            addrCode: { type: string }
+                            status: { type: string, enum: [LINKED, CONFLICT, UNLINKED] }
 
   /quad-conflicts:
     get:

@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v4"
@@ -216,5 +217,81 @@ func TestPGStore_AppendAssetReturn(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_ReviewFeedback 契约:差评复核将 need_review 置 false。
+func TestPGStore_ReviewFeedback(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectExec(`UPDATE worker_feedbacks SET need_review = false`).
+		WithArgs(int64(3)).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	if err := NewPGStore(mock).ReviewFeedback(context.Background(), 3); err != nil {
+		t.Fatalf("ReviewFeedback: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_ReviewFeedbackNotFound 契约:未命中差评返回 ErrNotFound。
+func TestPGStore_ReviewFeedbackNotFound(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectExec(`UPDATE worker_feedbacks SET need_review = false`).
+		WithArgs(int64(99)).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+
+	err = NewPGStore(mock).ReviewFeedback(context.Background(), 99)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("err=%v, want ErrNotFound", err)
+	}
+}
+
+// TestPGStore_ConfirmAssetReturn 契约:确认返库将 PENDING 置为 RETURNED。
+func TestPGStore_ConfirmAssetReturn(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectExec(`UPDATE asset_returns SET status = 'RETURNED'`).
+		WithArgs(int64(7)).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	if err := NewPGStore(mock).ConfirmAssetReturn(context.Background(), 7); err != nil {
+		t.Fatalf("ConfirmAssetReturn: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_ConfirmAssetReturnNotFound 契约:未命中或已返库返回 ErrNotFound。
+func TestPGStore_ConfirmAssetReturnNotFound(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectExec(`UPDATE asset_returns SET status = 'RETURNED'`).
+		WithArgs(int64(99)).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+
+	err = NewPGStore(mock).ConfirmAssetReturn(context.Background(), 99)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("err=%v, want ErrNotFound", err)
 	}
 }

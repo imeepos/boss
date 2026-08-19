@@ -16,7 +16,7 @@
 | W2 订单 12 环节状态机 + 端口预占互斥 | ✅ 完成 | `advance` 原语 + DB 原子互斥 |
 | W3 出账（含区域调价覆盖）+ 审计异步写 | ✅ 完成 | `GenerateBills` + `pkg/audit` |
 | **CI 质量门禁** | ✅ 完成 | `.github/workflows/ci.yml` + `make lint/check` |
-| D5 可观测（trace/日志/Prometheus/审计） | ⚠️ 部分 | 审计已落地；trace/指标未挂 |
+| D5 可观测（trace/日志/Prometheus/审计） | ✅ 完成 | TraceID 中间件(注入/透传/OTel span)+Prometheus RED 指标(/metrics)+OTel→Jaeger(OTLP)+审计异步写;metrics/trace 单测全绿 |
 | **W4 端到端集成测试（真实 PG）** | ✅ 完成 | e2e 全流程/取消/端口释放/审计留痕(`internal/app/e2e_pg_integration_test.go`);阶段3/4 台账写侧 handler 补齐(盘点/差异/换新/调拨审批/扩容/手动释放预占,对齐 oss/asset.yaml);PG=192.168.0.102:25432 |
 | 二期 W5（四码扫码闭环+gRPC契约） | ✅ 完成 | quadlink 写侧(VerifyScan/UnbindRequireScan/Reconcile/ResolveConflict)+worker 扫码 handler+admin 对账;gRPC 契约 quadlink/aaa/device/provision v1 已生成 |
 | 二期 W6（AAA 停复机+话单） | ✅ 完成 | PGAuthorizer(LOID→套餐带宽/QoS)+Suspend/Resume 即时生效(停机在线无网)+话单双写(PG落库+Kafka boss-cdr)+cmd/aaa PG 装配 |
@@ -28,7 +28,7 @@
 | 三期 W9–W12（GIS/分析/压测/上线） | ✅ 完成 | W9:GIS 派生聚合域八级下钻/统计/详情+cmd/gis 事件同步+PostGIS geom 实测。W10:analytics 五大指标(可解释)+热力图+维护一张表+report 周期自动报告(000034,幂等)。W11:/metrics RED 指标+k6 压测实测 9829 请求 0 失败、读 p95=8.55ms(阈值 500ms)。W12:Helm chart 落地(lint 过,5 Deployment+Service+HPA)、回滚演练(000034 down→up 全绿,业务零影响)、上线交接清单(docs/plan/launch-checklist.md)、整体回归 20 包全绿 |
 
 **剩余 3 个月焦点（阶段已前置完成，剩余为业务自动化 + 集成 + 闭环验收）**：
-1. 一期收尾：真实 PG 集成测试 + 可观测补挂 + OpenAPI 一致性校验。
+1. 一期收尾：真实 PG 集成测试 + OpenAPI 一致性校验。
 2. 二期：四码扫码强制 → AAA 实时计费 → 配置下发/OLT 采集 → 环节自动化。
 3. 三期：GIS 孪生 → 经营分析 → 压测/可观测收口 → 整体回归上线。
 

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* 全局补充样式:Design Tokens + 登录页响应式(外壳样式见 layouts/shell.css)。 */
 
 /* 对齐 visual-design-prompts.md §10 */
