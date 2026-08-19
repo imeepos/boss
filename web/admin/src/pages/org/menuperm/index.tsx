@@ -7,7 +7,6 @@ import { useT } from '../../../i18n'
 import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterMatrixRows, pageSlice, type MenuPermData, type MenuPermViewRow } from './matrix'
 import { Pagination } from '../../../components/Pagination'
-import '../org.css'
 
 export default function MenuPermPage() {
   const t = useT()
@@ -42,66 +41,66 @@ export default function MenuPermPage() {
   return (
     <div>
       <PageHead title={t.pages.menuperm.title} desc={t.pages.menuperm.desc} />
-      <div className="org-card" style={{ marginBottom: 16 }}>
-        <div className="org-card-title">{t.pages.menuperm.modelTitle}</div>
-        <div className="org-table-wrap">
-          <table className="org-table">
-            <thead><tr><th>{t.pages.menuperm.modelLayerLabel}</th></tr></thead>
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]" style={{ marginBottom: 16 }}>
+        <div className="px-4 pt-3.5 text-[15px] font-semibold text-[var(--shell-heading)]">{t.pages.menuperm.modelTitle}</div>
+        <div className="overflow-x-auto px-4 pb-4">
+          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.menuperm.modelLayerLabel}</th></tr></thead>
             <tbody>
               {(data.layers ?? []).map((l, i) => (
-                <tr key={l}><td>{i + 1}. {l}</td></tr>
+                <tr key={l}><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{i + 1}. {l}</td></tr>
               ))}
-              {!(data.layers ?? []).length && <tr><td><div className="org-empty">{t.pages.menuperm.empty}</div></td></tr>}
-              {error && <tr><td className="org-error" style={{ margin: 0 }}>{error}</td></tr>}
+              {!(data.layers ?? []).length && <tr><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.menuperm.empty}</div></td></tr>}
+              {error && <tr><td className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{error}</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
-      <div className="org-card">
-        <div className="org-toolbar">
-          <input className="org-input" placeholder={t.pages.menuperm.searchPlaceholder}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.menuperm.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-          <select className="org-select" value={role} onChange={(e) => { setRole(e.target.value); setPage(1) }}>
+          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={role} onChange={(e) => { setRole(e.target.value); setPage(1) }}>
             <option value="">{t.pages.menuperm.allRole}</option>
             {data.roleColumns.map((c) => (
               <option key={c.roleCode} value={c.roleCode}>{c.roleName}</option>
             ))}
           </select>
           <span className="spacer" />
-          <button className="org-btn" onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {!error && (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead>
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">
                 <tr>
-                  <th>{t.pages.menuperm.menuColumn}</th>
-                  {data.roleColumns.map((c) => <th key={c.roleCode}>{c.roleName}</th>)}
-                  <th>{t.pages.menuperm.actionColumn}</th>
+                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.menuperm.menuColumn}</th>
+                  {data.roleColumns.map((c) => <th key={c.roleCode} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c.roleName}</th>)}
+                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.menuperm.actionColumn}</th>
                 </tr>
               </thead>
               <tbody>
                 {slice.map((r) => (
                   <tr key={r.code}>
-                    <td>{r.name}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
                     {data.roleColumns.map((c) => (
-                      <td key={c.roleCode}>{r.roles.includes(c.roleCode) ? '✓' : ''}</td>
+                      <td key={c.roleCode} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.roles.includes(c.roleCode) ? '✓' : ''}</td>
                     ))}
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         <button onClick={() => setDetail(r)}>{t.pages.menuperm.detailTitle}</button>
                       </span>
                     </td>
                   </tr>
                 ))}
                 {!slice.length && (
-                  <tr><td colSpan={data.roleColumns.length + 2}><div className="org-empty">{t.pages.menuperm.empty}</div></td></tr>
+                  <tr><td colSpan={data.roleColumns.length + 2} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.menuperm.empty}</div></td></tr>
                 )}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.menuperm)} />
         </div>

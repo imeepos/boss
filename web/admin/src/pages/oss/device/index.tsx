@@ -7,7 +7,6 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type DeviceMetricRow, type MaintenanceRow, type ResourceRow } from '../types'
-import '../../org/org.css'
 
 export default function DevicePage() {
   const t = useT()
@@ -56,7 +55,7 @@ export default function DevicePage() {
   return (
     <div>
       <PageHead title={d.title} desc={d.desc} />
-      <div className="org-card">
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
           {(['metrics', 'maint'] as const).map((key) => (
             <button key={key} onClick={() => { setTab(key); setPage(1) }}
@@ -70,58 +69,58 @@ export default function DevicePage() {
           ))}
           <span className="spacer" />
           {tab === 'metrics' && (
-            <select className="org-select" value={resourceId ? String(resourceId) : ''}
+            <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={resourceId ? String(resourceId) : ''}
               onChange={(e) => { const v = Number(e.target.value) || 0; setResourceId(v); setPage(1); loadMetrics(v) }}>
               <option value="">{d.allDevice}</option>
               {devices.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.code})</option>)}
             </select>
           )}
-          <button className="org-btn" disabled={busy}
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy}
             onClick={() => (tab === 'metrics' ? loadMetrics(resourceId) : loadMaints())}>
             {t.pages.audit.refresh}
           </button>
         </div>
-        {error ? <div className="org-error">{error}</div> : tab === 'metrics' ? (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{d.metricColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'metrics' ? (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.metricColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {(slice as DeviceMetricRow[]).map((m) => (
                   <tr key={m.id}>
-                    <td>#{m.id}</td>
-                    <td>{deviceName(m.resourceId)}</td>
-                    <td><StatusTag domain="resource" value={m.status} /></td>
-                    <td>{fmtNum(m.opticalPower)}</td>
-                    <td>{fmtNum(m.packetLoss)}</td>
-                    <td>{fmtTime(m.collectedAt)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{m.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{deviceName(m.resourceId)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="resource" value={m.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtNum(m.opticalPower)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtNum(m.packetLoss)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(m.collectedAt)}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6}><div className="org-empty">{d.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         ) : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{d.maintColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.maintColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {(slice as MaintenanceRow[]).map((m) => (
                   <tr key={m.id}>
-                    <td>{m.deviceNo}</td>
-                    <td>{m.deviceType || '—'}</td>
-                    <td>{m.healthScore}</td>
-                    <td>{m.faultCount}</td>
-                    <td>{fmtNum(m.ageYears)}</td>
-                    <td><StatusTag domain="maintPriority" value={m.priority} /></td>
-                    <td>{m.reason || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.deviceNo}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.deviceType || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.healthScore}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.faultCount}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtNum(m.ageYears)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="maintPriority" value={m.priority} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.reason || '—'}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7}><div className="org-empty">{d.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(d)} />
         </div>

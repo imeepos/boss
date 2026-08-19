@@ -1,4 +1,4 @@
-// PageHead: page title + description, replaces .org-page-head
+// PageHead: page title + description, replaces .mb-4
 import type { ReactNode } from 'react'
 
 export function PageHead({ title, desc }: { title: string; desc: string }) {
@@ -20,12 +20,12 @@ export function pagerTexts(ns: {
   }
 }
 
-/** EmptyState: empty row/block, replaces .org-empty */
+/** EmptyState: empty row/block, replaces .py-8 text-center text-[13px] text-[var(--shell-group-title)] */
 export function EmptyState({ text }: { text: string }): ReactNode {
   return <div className="py-8 text-center text-xs text-[var(--shell-group-title)]">{text}</div>
 }
 
-/** ErrorBanner: error message block, replaces .org-error */
+/** ErrorBanner: error message block, replaces .mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)] */
 export function ErrorBanner({ message, className = '' }: { message: string; className?: string }) {
   return (
     <div className={`mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-xs text-[var(--color-danger)] ${className}`}>
@@ -34,7 +34,7 @@ export function ErrorBanner({ message, className = '' }: { message: string; clas
   )
 }
 
-/** ActionLinks: action buttons row with separator, replaces .org-act */
+/** ActionLinks: action buttons row with separator, replaces .inline-flex items-center */
 export function ActionLinks({ children }: { children: React.ReactNode }) {
   return <span className="inline-flex items-center gap-0">{children}</span>
 }
@@ -83,7 +83,7 @@ export function SearchBar({
   )
 }
 
-/** Toolbar button: replaces .org-btn */
+/** Toolbar button: replaces .h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] */
 export function ToolbarButton({
   onClick, disabled, children, primary,
 }: {

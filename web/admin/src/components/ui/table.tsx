@@ -1,4 +1,4 @@
-// Table: shadcn-style table, replaces .org-table
+// Table: shadcn-style table, replaces .w-full border-collapse text-[13px] text-[var(--shell-content-text)]
 import { type HTMLAttributes, type TdHTMLAttributes, type ThHTMLAttributes, forwardRef } from 'react'
 import { cn } from '../../lib/cn'
 

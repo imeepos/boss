@@ -1,4 +1,4 @@
-// Card: shadcn-style card container, replaces .org-card
+// Card: shadcn-style card container, replaces .mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]
 import { type HTMLAttributes, forwardRef } from 'react'
 import { cn } from '../../lib/cn'
 

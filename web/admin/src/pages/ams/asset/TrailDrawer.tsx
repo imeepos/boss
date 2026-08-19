@@ -39,47 +39,47 @@ export function AssetTrailDrawer({
 
   return (
     <Drawer title={`${a.lifecycleTitle} · ${asset.assetCode}`} onClose={onClose}
-      footer={<button className="org-btn org-btn-primary" onClick={onClose}>{t.pages.company.cancel}</button>}>
+      footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{t.pages.company.cancel}</button>}>
       <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
         {head('lifecycle', a.lifecycle)}
         {head('assignment', a.assignment)}
       </div>
-      {error ? <div className="org-error">{error}</div> : tab === 'lifecycle' ? (
-        <div className="org-table-wrap">
-          <table className="org-table">
-            <thead><tr>{a.lifecycleColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+      {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'lifecycle' ? (
+        <div className="overflow-x-auto px-4 pb-4">
+          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.lifecycleColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
             <tbody>
               {(lifecycle ?? []).map((r) => (
                 <tr key={r.id}>
-                  <td>{fmtTime(r.changedAt)}</td>
-                  <td><StatusTag domain="asset" value={r.status} /></td>
-                  <td>{r.addressName || (r.addressId ? `#${r.addressId}` : '—')}</td>
-                  <td>{r.workerName || (r.workerId ? `#${r.workerId}` : '—')}</td>
-                  <td>{r.workerName || '—'}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.changedAt)}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="asset" value={r.status} /></td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? `#${r.addressId}` : '—')}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? `#${r.workerId}` : '—')}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || '—'}</td>
                 </tr>
               ))}
               {lifecycle !== null && !lifecycle.length && (
-                <tr><td colSpan={5}><div className="org-empty">{a.empty}</div></td></tr>
+                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>
               )}
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="org-table-wrap">
-          <table className="org-table">
-            <thead><tr>{a.assignmentColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        <div className="overflow-x-auto px-4 pb-4">
+          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.assignmentColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
             <tbody>
               {(assignments ?? []).map((r) => (
                 <tr key={r.id}>
-                  <td>{r.workerName || (r.workerId ? `#${r.workerId}` : '—')}</td>
-                  <td>{r.addressName || (r.addressId ? `#${r.addressId}` : '—')}</td>
-                  <td>{r.reason || '—'}</td>
-                  <td>{fmtTime(r.effectiveFrom)}</td>
-                  <td>{r.effectiveTo ? fmtTime(r.effectiveTo) : '至今'}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? `#${r.workerId}` : '—')}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? `#${r.addressId}` : '—')}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.reason || '—'}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.effectiveFrom)}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.effectiveTo ? fmtTime(r.effectiveTo) : '至今'}</td>
                 </tr>
               ))}
               {assignments !== null && !assignments.length && (
-                <tr><td colSpan={5}><div className="org-empty">{a.empty}</div></td></tr>
+                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>
               )}
             </tbody>
           </table>

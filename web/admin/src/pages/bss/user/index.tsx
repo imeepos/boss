@@ -44,34 +44,34 @@ export default function UserListPage() {
   return (
     <div>
       <PageHead title={u.title} desc={u.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
-          <input className="org-input" placeholder={u.searchPlaceholder}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={u.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{u.columns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{u.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
               <tbody>
                 {slice.map((r) => (
                   <tr key={r.customerId}>
-                    <td>{r.customerId}</td>
-                    <td>{r.name}</td>
-                    <td>{r.phone}</td>
-                    <td>{r.loginName || '—'}</td>
-                    <td>{r.planName || '—'}</td>
-                    <td>{fmtTime(r.createdAt)}</td>
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.customerId}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.loginName || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.planName || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.createdAt)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         <button onClick={() => openDetail(r.customerId)}>{u.detail}</button>
                       </span>
                     </td>
                   </tr>
                 ))}
-                {slice.length === 0 && <tr><td colSpan={u.columns.length}>{u.empty}</td></tr>}
+                {slice.length === 0 && <tr><td colSpan={u.columns.length} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{u.empty}</td></tr>}
               </tbody>
             </table>
           </div>

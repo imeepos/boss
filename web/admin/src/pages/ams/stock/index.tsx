@@ -7,7 +7,6 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { pageSlice, type StocktakeRow } from '../types'
-import '../../org/org.css'
 
 export default function StockPage() {
   const t = useT()
@@ -77,39 +76,39 @@ export default function StockPage() {
   return (
     <div>
       <PageHead title={s.title} desc={s.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="org-btn org-btn-primary" onClick={() => setOpen(true)}>{s.create}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{s.create}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{s.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{s.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((r) => (
                   <tr key={r.id}>
-                    <td>#{r.id}</td>
-                    <td>{r.scope}</td>
-                    <td>{s.progress.replace('{n}', String(r.progress))}</td>
-                    <td>{r.diffCount}</td>
-                    <td><StatusTag domain="task" value={r.status} /></td>
-                    <td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{r.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.scope}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{s.progress.replace('{n}', String(r.progress))}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.diffCount}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={r.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {r.status === 'DOING' ? (
-                        <span className="org-act">
+                        <span className="inline-flex items-center">
                           <button disabled={busy} onClick={() => diffHandle(r.id)}>{s.diffHandle}</button>
                         </span>
                       ) : '—'}
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6}><div className="org-empty">{s.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{s.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(s)} />
         </div>
@@ -118,28 +117,28 @@ export default function StockPage() {
         <Drawer title={s.createTitle} onClose={() => setOpen(false)}
           footer={
             <>
-              <button className="org-btn" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
-              <button className="org-btn org-btn-primary" disabled={busy || !legalEntityId || !scopeOk} onClick={submit}>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !legalEntityId || !scopeOk} onClick={submit}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
               </button>
             </>
           }>
-          <div className="org-form">
-            <div className="org-field">
-              <label><span className="req">*</span>{s.fCompany}</label>
-              <select className="org-select" value={legalEntityId ? String(legalEntityId) : ''}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{s.fCompany}</label>
+              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={legalEntityId ? String(legalEntityId) : ''}
                 onChange={(e) => setLegalEntityId(Number(e.target.value) || 0)}>
                 <option value="">{s.pCompany}</option>
                 {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            <div className="org-field">
-              <label><span className="req">*</span>{s.fScope}</label>
-              <input className="org-input" value={scope} placeholder={s.pScope}
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{s.fScope}</label>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={scope} placeholder={s.pScope}
                 onChange={(e) => setScope(e.target.value)} />
               {!scopeOk && scope !== '' && <span className="text-[11px] text-[var(--color-danger)]">{s.eScope}</span>}
             </div>
-            {formError && <div className="org-error" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
         </Drawer>
       )}

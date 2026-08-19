@@ -8,7 +8,6 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type PortHistoryRow, type PortRow, type ResourceRow } from '../types'
-import '../../org/org.css'
 
 export default function ResourcePage() {
   const t = useT()
@@ -52,66 +51,66 @@ export default function ResourcePage() {
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
-          <select className="org-select" value={resourceId ? String(resourceId) : ''}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={resourceId ? String(resourceId) : ''}
             onChange={(e) => { const v = Number(e.target.value) || 0; setResourceId(v); setPage(1); loadPorts(v) }}>
             <option value="">{r.allDevice}</option>
             {devices.map((d) => <option key={d.id} value={d.id}>{d.name} ({d.code})</option>)}
           </select>
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={() => loadPorts(resourceId)}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => loadPorts(resourceId)}>
             {t.pages.audit.refresh}
           </button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{r.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((p) => (
                   <tr key={p.portId}>
-                    <td>{p.portCode}</td>
-                    <td>{p.quadCode || '—'}</td>
-                    <td>{deviceName(p.resourceId)}</td>
-                    <td>{p.addressId ? `#${p.addressId}` : '—'}</td>
-                    <td><StatusTag domain="port" value={p.status} /></td>
-                    <td>{p.orderId ? `#${p.orderId}` : '—'}</td>
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{p.portCode}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{p.quadCode || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{deviceName(p.resourceId)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{p.addressId ? `#${p.addressId}` : '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="port" value={p.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{p.orderId ? `#${p.orderId}` : '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         <button onClick={() => openHistory(p)}>{r.history}</button>
                       </span>
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7}><div className="org-empty">{r.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
         </div>
       </div>
       {history && (
         <Drawer title={`${r.historyTitle} · ${history.portCode}`} onClose={() => setHistory(null)}
-          footer={<button className="org-btn org-btn-primary" onClick={() => setHistory(null)}>
+          footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setHistory(null)}>
             {t.pages.company.cancel}
           </button>}>
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{r.historyColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.historyColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {(historyRows ?? []).map((h) => (
                   <tr key={h.id}>
-                    <td>{fmtTime(h.changedAt)}</td>
-                    <td><StatusTag domain="port" value={h.status} /></td>
-                    <td>{h.orderId ? `#${h.orderId}` : '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(h.changedAt)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="port" value={h.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{h.orderId ? `#${h.orderId}` : '—'}</td>
                   </tr>
                 ))}
                 {historyRows !== null && !historyRows.length && (
-                  <tr><td colSpan={3}><div className="org-empty">{r.empty}</div></td></tr>
+                  <tr><td colSpan={3} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>
                 )}
               </tbody>
             </table>

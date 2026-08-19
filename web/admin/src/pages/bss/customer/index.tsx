@@ -9,7 +9,6 @@ import { SERVICE_STATUSES, filterCustomers, pageSlice } from './filter'
 import type { CustomerRow } from './types'
 import { VerifyLogsDrawer } from './VerifyLogsDrawer'
 import { fmtTime } from '../../../lib/format'
-import '../../org/org.css'
 
 export default function CustomerPage() {
   const t = useT()
@@ -43,48 +42,48 @@ export default function CustomerPage() {
   return (
     <div>
       <PageHead title={c.title} desc={c.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
-          <input className="org-input" placeholder={c.searchPlaceholder}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={c.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-          <input className="org-input" placeholder={c.phonePlaceholder}
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={c.phonePlaceholder}
             value={phone} onChange={(e) => { setPhone(e.target.value); setPage(1) }} />
-          <select className="org-select" value={status}
+          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
             <option value="">{c.allStatus}</option>
             {SERVICE_STATUSES.map((s, i) => <option key={s} value={s}>{c.statusOptions[i]}</option>)}
           </select>
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{c.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{c.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.name}</td>
-                    <td>{r.phone}</td>
-                    <td>{r.idType || '—'}</td>
-                    <td>{r.idNo || '—'}</td>
-                    <td><StatusTag domain="realName" value={r.realNameStatus} /></td>
-                    <td><StatusTag domain="service" value={r.serviceStatus} /></td>
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.idType || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.idNo || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="realName" value={r.realNameStatus} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="service" value={r.serviceStatus} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         <button onClick={() => setDetail(r)}>{c.detail}</button>
-                        <span className="sep">|</span>
+                        <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setVerifyId(r)}>{c.verify}</button>
                       </span>
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7}><div className="org-empty">{c.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{c.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(c)} />
         </div>

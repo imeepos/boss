@@ -6,7 +6,6 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { cascadeReset, validateAccount, type AccountFormValues } from './form'
-import '../../org/org.css'
 
 const GROUP_TITLE_CLS = 'my-1.5 -mb-1 text-xs font-semibold tracking-wide text-[var(--shell-group-title)]'
 const ERR_CLS = 'text-[11px] text-[var(--color-danger)]'
@@ -65,36 +64,36 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
   const set = (patch: Partial<AccountFormValues>) => onChange({ ...values, ...patch })
 
   return (
-    <div className="org-form">
+    <div className="flex flex-col gap-3.5">
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gBasic}</div>
-      <div className="org-field">
-        <label><span className="req">*</span>{t.pages.account.fUsername}</label>
-        <input className="org-input" value={values.username} placeholder={t.pages.account.pUsername}
+      <div className="flex flex-col gap-1.5">
+        <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fUsername}</label>
+        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.username} placeholder={t.pages.account.pUsername}
           onChange={(e) => set({ username: e.target.value })} />
         {err('invalidUsername') && <span className={ERR_CLS}>{t.pages.account.eUsername}</span>}
       </div>
-      <div className="org-field">
-        <label><span className="req">*</span>{t.pages.account.fPassword}</label>
-        <input className="org-input" type="password" value={values.password}
+      <div className="flex flex-col gap-1.5">
+        <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fPassword}</label>
+        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="password" value={values.password}
           placeholder={values.id ? t.pages.account.pPasswordEdit : t.pages.account.pPassword}
           onChange={(e) => set({ password: e.target.value })} />
         {err('shortPassword') && <span className={ERR_CLS}>{t.pages.account.ePassword}</span>}
       </div>
-      <div className="org-field">
-        <label><span className="req">*</span>{t.pages.account.fRealName}</label>
-        <input className="org-input" value={values.realName} placeholder={t.pages.account.pRealName}
+      <div className="flex flex-col gap-1.5">
+        <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fRealName}</label>
+        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.realName} placeholder={t.pages.account.pRealName}
           onChange={(e) => set({ realName: e.target.value })} />
         {err('invalidRealName') && <span className={ERR_CLS}>{t.pages.account.eRealName}</span>}
       </div>
-      <div className="org-field">
+      <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fPhone}</label>
-        <input className="org-input" value={values.phone} placeholder={t.pages.account.pPhone}
+        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.phone} placeholder={t.pages.account.pPhone}
           onChange={(e) => set({ phone: e.target.value })} />
         {err('invalidPhone') && <span className={ERR_CLS}>{t.pages.account.ePhone}</span>}
       </div>
-      <div className="org-field">
-        <label><span className="req">*</span>{t.pages.account.fRole}</label>
-        <select className="org-select" value={values.roleCode} onChange={(e) => set({ roleCode: e.target.value })}>
+      <div className="flex flex-col gap-1.5">
+        <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fRole}</label>
+        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.roleCode} onChange={(e) => set({ roleCode: e.target.value })}>
           <option value="">{t.pages.account.pRole}</option>
           {roles.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -102,25 +101,25 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
       </div>
 
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gOrg}</div>
-      <div className="org-field">
+      <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fLegalEntity}</label>
-        <select className="org-select" value={values.legalEntityId ? String(values.legalEntityId) : ''}
+        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.legalEntityId ? String(values.legalEntityId) : ''}
           onChange={(e) => onChange(cascadeReset({ ...values, legalEntityId: Number(e.target.value) || 0 }, 'legalEntityId'))}>
           <option value="">{t.pages.account.pAny}</option>
           {legalEntities.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
-      <div className="org-field">
+      <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fDept}</label>
-        <select className="org-select" value={values.deptId ? String(values.deptId) : ''} disabled={!values.legalEntityId}
+        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.deptId ? String(values.deptId) : ''} disabled={!values.legalEntityId}
           onChange={(e) => onChange(cascadeReset({ ...values, deptId: Number(e.target.value) || 0 }, 'deptId'))}>
           <option value="">{t.pages.account.pAny}</option>
           {departments.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
-      <div className="org-field">
+      <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fPost}</label>
-        <select className="org-select" value={values.postId ? String(values.postId) : ''} disabled={!values.deptId}
+        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.postId ? String(values.postId) : ''} disabled={!values.deptId}
           onChange={(e) => set({ postId: Number(e.target.value) || 0 })}>
           <option value="">{t.pages.account.pAny}</option>
           {posts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -128,9 +127,9 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
       </div>
 
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gScope}</div>
-      <div className="org-field">
+      <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fRegionScope}</label>
-        <select className="org-select" value={values.regionScope} onChange={(e) => set({ regionScope: e.target.value })}>
+        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.regionScope} onChange={(e) => set({ regionScope: e.target.value })}>
           <option value="">{t.pages.account.scopeAll}</option>
           {regions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -157,14 +156,14 @@ export function AccountFormDrawer({
     <Drawer title={isEdit ? t.pages.account.editTitle : t.pages.account.createTitle} onClose={onClose}
       footer={
         <>
-          <button className="org-btn" onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className="org-btn org-btn-primary" disabled={busy} onClick={onSubmit}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={onSubmit}>
             {busy ? t.pages.account.submitting : t.pages.company.save}
           </button>
         </>
       }>
       <AccountForm values={values} onChange={onChange} errors={validateAccount(values, isEdit)} />
-      {submitError && <div className="org-error" style={{ marginTop: 12 }}>{submitError}</div>}
+      {submitError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ marginTop: 12 }}>{submitError}</div>}
     </Drawer>
   )
 }

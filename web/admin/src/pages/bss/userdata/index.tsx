@@ -38,38 +38,38 @@ export default function UserDataPage() {
   return (
     <div>
       <PageHead title={u.title} desc={u.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
           {TABS.map((d) => (
-            <button key={d.key} className={'org-btn' + (d.key === tab ? ' primary' : '')}
+            <button key={d.key} className={'h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]' + (d.key === tab ? ' primary' : '')}
               onClick={() => { setTab(d.key); if (!st[d.key]) load(d) }}>{u.tabs[d.key]}</button>
           ))}
           <span className="spacer" />
-          <button className="org-btn" disabled={state.busy} onClick={() => load(cur)}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={state.busy} onClick={() => load(cur)}>
             {t.pages.audit.refresh}
           </button>
         </div>
-        {notice ? <div className="org-error">{notice}</div> : null}
-        {state.error ? <div className="org-error">{state.error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr><th>ID</th><th>{u.nameCol}</th><th>{u.statusCol}</th><th>{u.opCol}</th></tr></thead>
+        {notice ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{notice}</div> : null}
+        {state.error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{state.error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">ID</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.nameCol}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.statusCol}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.opCol}</th></tr></thead>
               <tbody>
                 {state.rows.map((r) => (
                   <tr key={String(r.id)}>
-                    <td>{String(r.id)}</td>
-                    <td>{String(r.name ?? r.title ?? r.question ?? r.code ?? r.label ?? '—')}</td>
-                    <td>{String(r.status ?? (r.enabled ? u.on : u.off) ?? '—')}</td>
-                    <td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.id)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.name ?? r.title ?? r.question ?? r.code ?? r.label ?? '—')}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.status ?? (r.enabled ? u.on : u.off) ?? '—')}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {cur.action ? (
-                        <span className="org-act">
+                        <span className="inline-flex items-center">
                           <button onClick={() => act(cur, r)}>{cur.action === "disable" ? u.disable : u.toggle}</button>
                         </span>
                       ) : '—'}
                     </td>
                   </tr>
                 ))}
-                {state.rows.length === 0 && <tr><td colSpan={4}>{u.empty}</td></tr>}
+                {state.rows.length === 0 && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{u.empty}</td></tr>}
               </tbody>
             </table>
           </div>

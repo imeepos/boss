@@ -211,10 +211,3 @@ private fun QuickGrid(nav: Nav) {
         }
     }
 }
-
-private fun JSONArray?.toList(): List<JSONObject> {
-    if (this == null) return emptyList()
-    val out = ArrayList<JSONObject>(length())
-    for (i in 0 until length()) out.add(optJSONObject(i) ?: continue)
-    return out
-}

@@ -7,7 +7,6 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { pageSlice, PRIORITIES, type ReplacementRow } from '../types'
-import '../../org/org.css'
 
 export default function ReplacePage() {
   const t = useT()
@@ -60,32 +59,32 @@ export default function ReplacePage() {
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="org-btn org-btn-primary" onClick={() => setOpen(true)}>{r.create}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{r.create}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{r.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((x) => (
                   <tr key={x.id}>
-                    <td>{x.replacementNo || `#${x.id}`}</td>
-                    <td>#{x.assetId}</td>
-                    <td>{x.reason || '—'}</td>
-                    <td>{priorityLabel(x.priority)}</td>
-                    <td><StatusTag domain="task" value={x.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.replacementNo || `#${x.id}`}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{x.assetId}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.reason || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{priorityLabel(x.priority)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={5}><div className="org-empty">{r.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
         </div>
@@ -94,31 +93,31 @@ export default function ReplacePage() {
         <Drawer title={r.createTitle} onClose={() => setOpen(false)}
           footer={
             <>
-              <button className="org-btn" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
-              <button className="org-btn org-btn-primary" disabled={busy || !assetOk} onClick={submit}>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !assetOk} onClick={submit}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
               </button>
             </>
           }>
-          <div className="org-form">
-            <div className="org-field">
-              <label><span className="req">*</span>{r.fAsset}</label>
-              <input className="org-input" type="number" value={assetId} placeholder={r.pAsset}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fAsset}</label>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={assetId} placeholder={r.pAsset}
                 onChange={(e) => setAssetId(e.target.value)} />
               {!assetOk && assetId !== '' && <span className="text-[11px] text-[var(--color-danger)]">{r.eAsset}</span>}
             </div>
-            <div className="org-field">
+            <div className="flex flex-col gap-1.5">
               <label>{r.fReason}</label>
-              <input className="org-input" value={reason} placeholder={r.pReason}
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={reason} placeholder={r.pReason}
                 onChange={(e) => setReason(e.target.value)} />
             </div>
-            <div className="org-field">
+            <div className="flex flex-col gap-1.5">
               <label>{r.fPriority}</label>
-              <select className="org-select" value={priority} onChange={(e) => setPriority(e.target.value)}>
+              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={priority} onChange={(e) => setPriority(e.target.value)}>
                 {PRIORITIES.map((p, i) => <option key={p} value={p}>{r.priorities[i]}</option>)}
               </select>
             </div>
-            {formError && <div className="org-error" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
         </Drawer>
       )}

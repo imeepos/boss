@@ -7,7 +7,6 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice } from '../types'
 import type { AnalyticsMaintRow, HeatCellRow, IndicatorRow, RegionRoiRow } from '../types'
-import '../../org/org.css'
 
 export default function AnalyticsPage() {
   const t = useT()
@@ -52,7 +51,7 @@ export default function AnalyticsPage() {
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
-      <div className="org-card">
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
           {(['indicator', 'heatmap', 'maint'] as const).map((key) => (
             <button key={key} onClick={() => { setTab(key); setPage(1) }}
@@ -65,79 +64,79 @@ export default function AnalyticsPage() {
             </button>
           ))}
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : tab === 'indicator' ? (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{a.indicatorColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'indicator' ? (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.indicatorColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {indicators.map((x) => (
                   <tr key={x.key}>
-                    <td>{x.key}</td>
-                    <td>{x.name}</td>
-                    <td>{x.value}</td>
-                    <td style={{ maxWidth: 360 }}>{x.detail || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.key}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.name}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.value}</td>
+                    <td style={{ maxWidth: 360 }} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.detail || '—'}</td>
                   </tr>
                 ))}
-                {!indicators.length && <tr><td colSpan={4}><div className="org-empty">{a.empty}</div></td></tr>}
+                {!indicators.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
               </tbody>
             </table>
             <h4 style={{ margin: '16px 0 8px' }}>{a.roiColumns.join(' / ')}</h4>
-            <table className="org-table">
-              <thead><tr>{a.roiColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.roiColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {roi.map((x) => (
                   <tr key={x.regionId}>
-                    <td>{x.regionName || `#${x.regionId}`}</td>
-                    <td>{x.revenue.toFixed(2)}</td>
-                    <td>{x.investment.toFixed(2)}</td>
-                    <td>{x.roi.toFixed(2)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.regionName || `#${x.regionId}`}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.revenue.toFixed(2)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.investment.toFixed(2)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.roi.toFixed(2)}</td>
                   </tr>
                 ))}
-                {!roi.length && <tr><td colSpan={4}><div className="org-empty">{a.empty}</div></td></tr>}
+                {!roi.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         ) : tab === 'heatmap' ? (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{a.heatColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.heatColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {heatSlice.map((x) => (
                   <tr key={x.addressId}>
-                    <td>{x.name || `#${x.addressId}`}</td>
-                    <td>{x.portsTotal}</td>
-                    <td>{x.portsUsed}</td>
-                    <td>{(x.utilization * 100).toFixed(1)}%</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.name || `#${x.addressId}`}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.portsTotal}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.portsUsed}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{(x.utilization * 100).toFixed(1)}%</td>
                   </tr>
                 ))}
-                {!heatSlice.length && <tr><td colSpan={4}><div className="org-empty">{a.empty}</div></td></tr>}
+                {!heatSlice.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         ) : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{a.maintColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.maintColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {maintSlice.map((x) => (
                   <tr key={x.deviceNo}>
-                    <td>{x.deviceNo}</td>
-                    <td>{x.deviceType || '—'}</td>
-                    <td>{x.healthScore}</td>
-                    <td>{x.faultCount}</td>
-                    <td>{x.ageYears}</td>
-                    <td><StatusTag domain="maintPriority" value={x.priority} /></td>
-                    <td>{x.reason || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.deviceNo}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.deviceType || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.healthScore}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.faultCount}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.ageYears}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="maintPriority" value={x.priority} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.reason || '—'}</td>
                   </tr>
                 ))}
-                {!maintSlice.length && <tr><td colSpan={7}><div className="org-empty">{a.empty}</div></td></tr>}
+                {!maintSlice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={count} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
         </div>

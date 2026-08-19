@@ -7,7 +7,6 @@ import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterPosts, pageSlice, type PostRow } from './filter'
 import { PostFormDrawer, emptyPostForm, rowToPostForm, type PostFormValues } from './PostForm'
 import { Pagination } from '../../../components/Pagination'
-import '../org.css'
 
 export default function PostPage() {
   const t = useT()
@@ -52,42 +51,42 @@ export default function PostPage() {
   return (
     <div>
       <PageHead title={t.pages.post.title} desc={t.pages.post.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
-          <input className="org-input" placeholder={t.pages.post.searchPlaceholder}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.post.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
-          <button className="org-btn" onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="org-btn org-btn-primary" onClick={() => setForm(emptyPostForm())}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setForm(emptyPostForm())}>
             {t.pages.post.create}
           </button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{t.pages.post.columns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.post.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
               <tbody>
                 {slice.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.code}</td>
-                    <td>{r.name}</td>
-                    <td>{r.deptName}</td>
-                    <td>{(r.roles ?? []).join(', ') || '—'}</td>
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.code}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.deptName}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{(r.roles ?? []).join(', ') || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         <button onClick={() => setDetail(r)}>{t.pages.post.detail}</button>
-                        <span className="sep">|</span>
+                        <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setForm(rowToPostForm(r))}>{t.pages.account.edit}</button>
                       </span>
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={5}><div className="org-empty">{t.pages.post.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.post.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.post)} />
         </div>

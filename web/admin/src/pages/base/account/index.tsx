@@ -9,7 +9,6 @@ import { DetailDrawer } from '../../org/shared'
 import { filterAccounts, pageSlice, type AccountRow } from './list'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from './form'
 import { AccountFormDrawer } from './AccountForm'
-import '../../org/org.css'
 
 export default function AccountListPage() {
   const t = useT()
@@ -87,52 +86,52 @@ export default function AccountListPage() {
 
   return (
     <div>
-      <div className="org-page-head">
-        <h2 className="org-page-title">{t.pages.account.title}</h2>
-        <p className="org-page-desc">{t.pages.account.desc}</p>
+      <div className="mb-4">
+        <h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{t.pages.account.title}</h2>
+        <p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{t.pages.account.desc}</p>
       </div>
-      <div className="org-card">
-        <div className="org-toolbar">
-          <input className="org-input" placeholder={t.pages.account.searchPlaceholder}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.account.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-          <select className="org-select" value={role} onChange={(e) => { setRole(e.target.value); setPage(1) }}>
+          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={role} onChange={(e) => { setRole(e.target.value); setPage(1) }}>
             <option value="">{t.pages.account.allRole}</option>
             {roles.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          <select className="org-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
             <option value="">{t.pages.account.allStatus}</option>
             <option value="1">{t.pages.account.statusOn}</option>
             <option value="0">{t.pages.account.statusOff}</option>
           </select>
           <span className="spacer" />
-          <button className="org-btn" onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="org-btn org-btn-primary" onClick={() => setForm(emptyForm())}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setForm(emptyForm())}>
             {t.pages.account.create}
           </button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{t.pages.account.columns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.account.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
               <tbody>
                 {slice.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.username}</td>
-                    <td>{r.realName}</td>
-                    <td>{r.roleName}</td>
-                    <td>{r.legalEntityName || '—'}</td>
-                    <td>{r.deptName || '—'}</td>
-                    <td>{r.postName || '—'}</td>
-                    <td>{scopeText(r)}</td>
-                    <td><StatusTag domain="accountStatus" value={String(r.status)} /></td>
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.username}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.realName}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.roleName}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.legalEntityName || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.deptName || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.postName || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{scopeText(r)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="accountStatus" value={String(r.status)} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         <button onClick={() => setDetail(r)}>{t.pages.account.detail}</button>
-                        <span className="sep">|</span>
+                        <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setForm(rowToForm(r))}>{t.pages.account.edit}</button>
                         {r.status === 1 && (
                           <>
-                            <span className="sep">|</span>
+                            <span className="text-[var(--shell-side-border)]">|</span>
                             <button onClick={() => setConfirmDisable(r)}>{t.pages.account.disable}</button>
                           </>
                         )}
@@ -140,12 +139,12 @@ export default function AccountListPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={9}><div className="org-empty">{t.pages.account.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={9} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.account.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize}
             rangeText={t.pages.company.rangeText} prevText={t.pages.company.prev}
@@ -185,8 +184,8 @@ export default function AccountListPage() {
           <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5" onClick={(e) => e.stopPropagation()}>
             <p className="m-0 mb-4 text-sm text-[var(--shell-content-text)]">{t.pages.account.disableConfirm.replace('{name}', confirmDisable.username)}</p>
             <div className="flex justify-end gap-2">
-              <button className="org-btn" onClick={() => setConfirmDisable(null)}>{t.pages.company.cancel}</button>
-              <button className="org-btn org-btn-primary" disabled={busy} onClick={disable}>{t.pages.account.disable}</button>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setConfirmDisable(null)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={disable}>{t.pages.account.disable}</button>
             </div>
           </div>
         </div>

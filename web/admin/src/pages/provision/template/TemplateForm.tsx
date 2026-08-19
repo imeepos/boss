@@ -43,29 +43,29 @@ export function TemplateForm({
       onClose={onCancel}
       footer={
         <>
-          <button className="org-btn" onClick={onCancel}>{p.cancel}</button>
-          <button className="org-btn org-btn-primary" disabled={busy} onClick={save}>{p.save}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onCancel}>{p.cancel}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={save}>{p.save}</button>
         </>
       }
     >
-      {err && <div className="org-error" role="alert">{err}</div>}
-      <div className="org-form">
-        <div className="org-field">
-          <label><span className="req">*</span>{p.legalEntity}</label>
-          <select className="org-select" value={legalEntityId ? String(legalEntityId) : ''}
+      {err && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" role="alert">{err}</div>}
+      <div className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-1.5">
+          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.legalEntity}</label>
+          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={legalEntityId ? String(legalEntityId) : ''}
             onChange={(e) => setLegalEntityId(Number(e.target.value) || 0)}>
             <option value="">{p.legalEntityPlaceholder}</option>
             {entities.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.code})</option>)}
           </select>
         </div>
-        <div className="org-field">
-          <label><span className="req">*</span>{p.codeLabel}</label>
-          <input className="org-input" value={code} placeholder={p.codePlaceholder}
+        <div className="flex flex-col gap-1.5">
+          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.codeLabel}</label>
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={code} placeholder={p.codePlaceholder}
             onChange={(e) => setCode(e.target.value)} />
         </div>
-        <div className="org-field">
-          <label><span className="req">*</span>{p.nameLabel}</label>
-          <input className="org-input" value={name} placeholder={p.namePlaceholder}
+        <div className="flex flex-col gap-1.5">
+          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.nameLabel}</label>
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={name} placeholder={p.namePlaceholder}
             onChange={(e) => setName(e.target.value)} />
         </div>
       </div>

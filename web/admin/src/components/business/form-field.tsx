@@ -1,4 +1,4 @@
-// FormField: form field wrapper with label + hint + error, replaces .org-field
+// FormField: form field wrapper with label + hint + error, replaces .flex flex-col gap-1.5
 import type { ReactNode } from 'react'
 import { Label } from '../ui/label'
 

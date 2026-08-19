@@ -36,6 +36,8 @@ import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.Primary2
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import android.util.Log
+private const val TAG = "WorkerLogin"
 
 // 对齐 docs/worker/login.html:手机号 + 短信验证码登录
 @Composable
@@ -80,12 +82,17 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
             PrimaryButton("登录", enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                 if (phone.isBlank() || sms.isBlank()) { tip = "请输入手机号与验证码"; return@PrimaryButton }
                 busy = true
+                Log.d(TAG, "login start")
                 scope.launch {
                     try {
                         val r = AuthApi.login(phone.trim(), "sms", sms.trim())
+                        Log.d(TAG, "login ok token=${r.optString("token")}")
                         Api.setToken(r.optString("token"))
+                        Log.d(TAG, "setToken done")
                         onLoggedIn()
+                        Log.d(TAG, "onLoggedIn done")
                     } catch (e: Exception) {
+                        Log.d(TAG, "login fail ${e}")
                         tip = "登录失败:${e.message}"
                         busy = false
                     }

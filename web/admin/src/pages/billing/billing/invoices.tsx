@@ -51,29 +51,29 @@ export function InvoicePanel() {
   const actText = act?.kind === 'void' ? v.voidConfirm : act?.kind === 'reissue' ? v.reissueConfirm : v.backfillTip
 
   return (
-    <div className="org-card" style={{ marginTop: 12 }}>
-      <div className="org-toolbar">
+    <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]" style={{ marginTop: 12 }}>
+      <div className="flex flex-wrap items-center gap-2 p-4">
         <strong>{v.title}</strong>
-        <input className="org-input" type="number" placeholder={v.filterCustomer}
+        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={v.filterCustomer}
           value={customerId} onChange={(e) => { setCustomerId(e.target.value); setPage(1) }} />
         <span className="spacer" />
-        <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
       </div>
-      {error ? <div className="org-error">{error}</div> : (
-        <div className="org-table-wrap">
-          <table className="org-table">
-            <thead><tr>{v.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+      {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        <div className="overflow-x-auto px-4 pb-4">
+          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{v.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
             <tbody>
               {slice.map((r) => (
                 <tr key={r.id}>
-                  <td className="mono">{r.invoiceNo}</td>
-                  <td>{r.customerName || `#${r.customerId}`}</td>
-                  <td>{fmtFee(r.totalAmount)}</td>
-                  <td>{r.status}</td>
-                  <td>{r.taxJurisdiction || '—'}</td>
-                  <td>{r.taxNo || r.taxStatus}</td>
-                  <td>
-                    <span className="org-act">
+                  <td className="break-all rounded-sm bg-black/5 px-2 py-1.5 font-mono text-xs">{r.invoiceNo}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.customerName || `#${r.customerId}`}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.totalAmount)}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.status}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.taxJurisdiction || '—'}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.taxNo || r.taxStatus}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                    <span className="inline-flex items-center">
                       {r.status === 'ISSUED' && <button onClick={() => { setAct({ kind: 'void', row: r }); setInput(''); setActError('') }}>{v.voidBtn}</button>}
                       {r.status === 'ISSUED' && r.taxStatus !== 'ISSUED' && <button onClick={() => { setAct({ kind: 'backfill', row: r }); setInput(''); setActError('') }}>{v.backfillBtn}</button>}
                       {r.status === 'VOIDED' && <button onClick={() => { setAct({ kind: 'reissue', row: r }); setActError('') }}>{v.reissueBtn}</button>}
@@ -81,12 +81,12 @@ export function InvoicePanel() {
                   </td>
                 </tr>
               ))}
-              {!slice.length && <tr><td colSpan={7}><div className="org-empty">{v.empty}</div></td></tr>}
+              {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{v.empty}</div></td></tr>}
             </tbody>
           </table>
         </div>
       )}
-      <div className="org-footer">
+      <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
         <Pagination total={rows.length} page={page} pageSize={pageSize}
           onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.billPage)} />
       </div>
@@ -96,14 +96,14 @@ export function InvoicePanel() {
           <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5">
             <p>{actText}</p>
             {act.kind !== 'reissue' && (
-              <input className="org-input" value={input} autoFocus
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={input} autoFocus
                 placeholder={act.kind === 'void' ? v.voidReasonPh : v.taxNoPh}
                 onChange={(e) => setInput(e.target.value)} />
             )}
-            {actError && <p className="org-error" style={{ margin: '8px 0 0' }}>{actError}</p>}
+            {actError && <p className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: '8px 0 0' }}>{actError}</p>}
             <div className="mt-4 flex justify-end gap-2">
-              <button className="org-btn" onClick={() => setAct(null)}>{t.pages.company.cancel}</button>
-              <button className="org-btn org-btn-primary" disabled={busy || (act.kind !== 'reissue' && !input.trim())} onClick={run}>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setAct(null)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || (act.kind !== 'reissue' && !input.trim())} onClick={run}>
                 {busy ? t.pages.account.submitting : v.confirm}
               </button>
             </div>

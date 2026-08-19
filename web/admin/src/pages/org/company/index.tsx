@@ -7,7 +7,6 @@ import { Drawer } from '../../../components/Drawer'
 import { Pagination } from '../../../components/Pagination'
 import { PageHead, pagerTexts } from '../shared'
 import { filterLegalEntities, pageSlice, type LegalEntityRow } from './filter'
-import '../org.css'
 
 export default function CompanyPage() {
   const t = useT()
@@ -53,49 +52,49 @@ export default function CompanyPage() {
   return (
     <div>
       <PageHead title={t.pages.company.title} desc={t.pages.company.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
-          <input className="org-input" placeholder={t.pages.company.searchPlaceholder}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.company.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
-          <button className="org-btn org-btn-primary"
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]"
             onClick={() => setForm({ id: 0, code: '', name: '' })}>{t.pages.company.add}</button>
-          <button className="org-btn" onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{t.pages.company.columns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.company.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
               <tbody>
                 {slice.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.code}</td>
-                    <td>{r.name}</td>
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.code}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         <button onClick={() => setForm({ id: r.id, code: r.code, name: r.name })}>{t.pages.company.edit}</button>
-                        <span className="sep">|</span>
+                        <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setDetail(r)}>{t.pages.company.detail}</button>
                       </span>
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={3}><div className="org-empty">{t.pages.company.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={3} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.company.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.company)} />
         </div>
       </div>
       {detail && (
         <Drawer title={t.pages.company.detail} onClose={() => setDetail(null)}
-          footer={<button className="org-btn org-btn-primary" onClick={() => setDetail(null)}>{t.pages.company.cancel}</button>}>
-          <div className="org-detail-list">
-            <div className="org-detail-item"><span className="k">{t.pages.company.codeLabel}</span><span className="v">{detail.code}</span></div>
-            <div className="org-detail-item"><span className="k">{t.pages.company.nameLabel}</span><span className="v">{detail.name}</span></div>
+          footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setDetail(null)}>{t.pages.company.cancel}</button>}>
+          <div className="flex flex-col gap-2.5">
+            <div className="flex gap-3 text-[13px]"><span className="w-24 flex-none text-[var(--shell-group-title)]">{t.pages.company.codeLabel}</span><span className="break-all text-[var(--shell-content-text)]">{detail.code}</span></div>
+            <div className="flex gap-3 text-[13px]"><span className="w-24 flex-none text-[var(--shell-group-title)]">{t.pages.company.nameLabel}</span><span className="break-all text-[var(--shell-content-text)]">{detail.name}</span></div>
           </div>
         </Drawer>
       )}
@@ -103,22 +102,22 @@ export default function CompanyPage() {
         <Drawer title={form.id ? t.pages.company.edit : t.pages.company.add} onClose={() => setForm(null)}
           footer={
             <>
-              <button className="org-btn" onClick={() => setForm(null)}>{t.pages.company.cancel}</button>
-              <button className="org-btn org-btn-primary" disabled={busy} onClick={submit}>{t.pages.company.save}</button>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setForm(null)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>{t.pages.company.save}</button>
             </>
           }>
-          <div className="org-form">
-            <div className="org-field">
-              <label><span className="req">*</span>{t.pages.company.codeLabel}</label>
-              <input className="org-input" value={form.code} placeholder={t.pages.company.codePlaceholder}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.company.codeLabel}</label>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={form.code} placeholder={t.pages.company.codePlaceholder}
                 onChange={(e) => setForm({ ...form, code: e.target.value })} />
             </div>
-            <div className="org-field">
-              <label><span className="req">*</span>{t.pages.company.nameLabel}</label>
-              <input className="org-input" value={form.name} placeholder={t.pages.company.namePlaceholder}
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.company.nameLabel}</label>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={form.name} placeholder={t.pages.company.namePlaceholder}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
-            {formError && <div className="org-error" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
         </Drawer>
       )}

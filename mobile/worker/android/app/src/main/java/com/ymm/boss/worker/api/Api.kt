@@ -11,9 +11,9 @@ import java.net.URL
 class ApiException(val status: Int, message: String) : Exception(message)
 
 // 师傅端统一 HTTP 客户端,契约对齐 docs/worker/api.js。
-// 真实服务端基址(前缀 /api/worker/v1,mock 已移除):模拟器用 10.0.2.2,真机改为局域网 IP。
+// 默认对接 mock(8091,模拟器 10.0.2.2 访问宿主机);切真实服务端(28080)改 base 即可。
 object Api {
-    var base: String = "http://10.0.2.2:28080/api/worker/v1"
+    var base: String = "http://10.0.2.2:8091/api/worker/v1"
     private const val TOKEN_KEY = "boss_worker_token"
     private const val PREFS = "boss_worker"
     private lateinit var appContext: Context

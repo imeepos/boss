@@ -1,13 +1,39 @@
 # env / secrets
 .env
+.env.local
+.env.*.local
 # deployments/app.env —— 内网私有仓库,固定密钥直接入库简化 CI(转公网前必须移回 ignore)
+*.local
+*.local.*
 *.local.yaml
 
 # go
 /bin/
 *.test
 *.out
+*.prof
+*.coverprofile
 coverage.*
+
+# javascript / typescript
+node_modules/
+dist/
+.cache/
+.vite/
+coverage/
+playwright-report/
+test-results/
+
+# android / gradle
+.gradle/
+/build/
+/captures/
+.cxx/
+*.iml
+local.properties
+
+# rust / tauri
+/target/
 
 # ide
 .idea/
@@ -19,9 +45,15 @@ coverage.*
 # runtime
 /tmp/
 /logs/
+*.log
+
+# language caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
 
 # keep pdf/md requirement docs out of source control? -> 保留需求文档,不忽略
-__pycache__/
 
 # compiled binaries
 server

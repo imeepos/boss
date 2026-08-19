@@ -19,9 +19,9 @@ export function pagerTexts(ns: PagerNs) {
 /** 页头:标题 + 一行描述(契约口径)。 */
 export function PageHead({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="org-page-head">
-      <h2 className="org-page-title">{title}</h2>
-      <p className="org-page-desc">{desc}</p>
+    <div className="mb-4">
+      <h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{title}</h2>
+      <p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{desc}</p>
     </div>
   )
 }
@@ -37,14 +37,14 @@ export function DetailDrawer({
       title={title}
       onClose={onClose}
       footer={
-        <button className="org-btn org-btn-primary" onClick={onClose}>{closeText}</button>
+        <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{closeText}</button>
       }
     >
-      <div className="org-detail-list">
+      <div className="flex flex-col gap-2.5">
         {items.map((it) => (
-          <div key={it.k} className="org-detail-item">
-            <span className="k">{it.k}</span>
-            <span className="v">{it.v || '—'}</span>
+          <div key={it.k} className="flex gap-3 text-[13px]">
+            <span className="w-24 flex-none text-[var(--shell-group-title)]">{it.k}</span>
+            <span className="break-all text-[var(--shell-content-text)]">{it.v || '—'}</span>
           </div>
         ))}
       </div>
@@ -54,5 +54,5 @@ export function DetailDrawer({
 
 /** 空态行/块。 */
 export function Empty({ text }: { text: string }) {
-  return <div className="org-empty">{text}</div>
+  return <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{text}</div>
 }

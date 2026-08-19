@@ -8,7 +8,6 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type DispatchTicketRow, type DispatchTransferRow } from '../types'
-import '../../org/org.css'
 
 export default function DispatchPage() {
   const t = useT()
@@ -82,7 +81,7 @@ export default function DispatchPage() {
   return (
     <div>
       <PageHead title={d.title} desc={d.desc} />
-      <div className="org-card">
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
           {(['pool', 'mine', 'transfers'] as const).map((key) => (
             <button key={key} onClick={() => { setTab(key); setPage(1) }}
@@ -95,27 +94,27 @@ export default function DispatchPage() {
             </button>
           ))}
           {tab === 'mine' && (
-            <input className="org-input" type="number" style={{ width: 180 }} placeholder={d.filterWorker}
+            <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" style={{ width: 180 }} placeholder={d.filterWorker}
               value={workerFilter} onChange={(e) => { setWorkerFilter(e.target.value); setPage(1) }} />
           )}
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : tab !== 'transfers' ? (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{d.ticketColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab !== 'transfers' ? (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.ticketColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {(slice as DispatchTicketRow[]).map((x) => (
                   <tr key={x.ticketId}>
-                    <td>{x.ticketNo}</td>
-                    <td>#{x.orderId}</td>
-                    <td>{x.workerName || (x.workerId ? `#${x.workerId}` : '—')}</td>
-                    <td>{x.groupName || '—'}</td>
-                    <td>{x.regionName || '—'}</td>
-                    <td><StatusTag domain="ticket" value={x.status} /></td>
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.ticketNo}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{x.orderId}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.workerName || (x.workerId ? `#${x.workerId}` : '—')}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.groupName || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.regionName || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="ticket" value={x.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         {x.workerId === 0 ? (
                           <button disabled={busy} onClick={() => { setAct({ mode: 'assign', ticket: x }); setMasterId(''); setFormError('') }}>
                             {d.assign}
@@ -129,31 +128,31 @@ export default function DispatchPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7}><div className="org-empty">{d.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         ) : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{d.transferColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.transferColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {(slice as DispatchTransferRow[]).map((x) => (
                   <tr key={x.id}>
-                    <td>#{x.id}</td>
-                    <td>#{x.ticketId}</td>
-                    <td>{x.fromWorkerName || (x.fromWorkerId ? `#${x.fromWorkerId}` : '—')}</td>
-                    <td>{x.toWorkerName || (x.toWorkerId ? `#${x.toWorkerId}` : '—')}</td>
-                    <td>{x.reason || '—'}</td>
-                    <td>{fmtTime(x.transferredAt)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{x.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{x.ticketId}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.fromWorkerName || (x.fromWorkerId ? `#${x.fromWorkerId}` : '—')}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.toWorkerName || (x.toWorkerId ? `#${x.toWorkerId}` : '—')}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.reason || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.transferredAt)}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6}><div className="org-empty">{d.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={count} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(d)} />
         </div>
@@ -162,26 +161,26 @@ export default function DispatchPage() {
         <Drawer title={act.mode === 'assign' ? d.assign : d.transfer} onClose={() => setAct(null)}
           footer={
             <>
-              <button className="org-btn" onClick={() => setAct(null)}>{t.pages.company.cancel}</button>
-              <button className="org-btn org-btn-primary" disabled={busy} onClick={submit}>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setAct(null)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
               </button>
             </>
           }>
-          <div className="org-form">
-            <div className="org-field">
-              <label><span className="req">*</span>{d.fMaster}({act.ticket.ticketNo})</label>
-              <input className="org-input" type="number" value={masterId} placeholder={d.pMaster}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.fMaster}({act.ticket.ticketNo})</label>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={masterId} placeholder={d.pMaster}
                 onChange={(e) => setMasterId(e.target.value)} />
             </div>
             {act.mode === 'transfer' && (
-              <div className="org-field">
-                <label><span className="req">*</span>{d.fReason}</label>
-                <input className="org-input" value={reason} placeholder={d.pReason}
+              <div className="flex flex-col gap-1.5">
+                <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.fReason}</label>
+                <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={reason} placeholder={d.pReason}
                   onChange={(e) => setReason(e.target.value)} />
               </div>
             )}
-            {formError && <div className="org-error" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
         </Drawer>
       )}

@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { formatTime } from '../../base/audit/logic'
-import '../../org/org.css'
 
 export interface ImportTaskRow {
   id: number
@@ -30,29 +29,29 @@ export function ImportTaskList() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="org-table-wrap" style={{ margin: '0 16px 24px' }}>
-      <div className="org-toolbar" style={{ padding: '0 0 10px' }}>
+    <div className="overflow-x-auto px-4 pb-4" style={{ margin: '0 16px 24px' }}>
+      <div className="flex flex-wrap items-center gap-2 p-4" style={{ padding: '0 0 10px' }}>
         <h3 style={{ margin: 0, fontSize: 14 }}>{im.tasksTitle}</h3>
         <span className="spacer" />
-        <button className="org-btn" onClick={load}>{t.pages.audit.refresh}</button>
+        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
       </div>
-      <table className="org-table">
-        <thead><tr>{im.taskColumns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+      <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+        <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{im.taskColumns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.id}>
-              <td>{r.id}</td>
-              <td>{r.kind === 'geo' ? im.taskKindGeo : im.taskKindAddr}</td>
-              <td>{r.operator || '—'}</td>
-              <td>{r.imported}</td>
-              <td>{r.failed}</td>
-              <td>{formatTime(r.createdAt)}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.id}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.kind === 'geo' ? im.taskKindGeo : im.taskKindAddr}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.operator || '—'}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.imported}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.failed}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{formatTime(r.createdAt)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      {rows.length === 0 && !error && <div className="org-empty">{t.pages.company.empty}</div>}
-      {error && <div className="org-error">{error}</div>}
+      {rows.length === 0 && !error && <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.company.empty}</div>}
+      {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
     </div>
   )
 }

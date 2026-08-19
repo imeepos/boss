@@ -8,7 +8,6 @@ import { Pagination } from '../../components/Pagination'
 import { Drawer } from '../../components/Drawer'
 import { fmtTime } from '../../lib/format'
 import { pageSlice, type AlarmRow } from '../quad/types'
-import '../org/org.css'
 
 export default function AlarmPage() {
   const t = useT()
@@ -69,43 +68,43 @@ export default function AlarmPage() {
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
-          <input className="org-input" type="number" placeholder={a.filterResource}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={a.filterResource}
             value={resourceId} onChange={(e) => { setResourceId(e.target.value); setPage(1) }} />
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="org-btn org-btn-primary" onClick={() => setRetestOpen(true)}>{a.batchRetest}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setRetestOpen(true)}>{a.batchRetest}</button>
         </div>
         {hint && <div style={{ padding: '4px 12px', color: '#1677ff', fontSize: 13 }}>{hint}</div>}
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{a.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((x) => (
                   <tr key={x.id}>
-                    <td>{x.alarmNo || `#${x.id}`}</td>
-                    <td><StatusTag domain="alarmLevel" value={x.level} /></td>
-                    <td>{x.source}</td>
-                    <td>{x.content || '—'}</td>
-                    <td><StatusTag domain="alarmStatus" value={x.status} /></td>
-                    <td>{fmtTime(x.createdAt)}</td>
-                    <td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.alarmNo || `#${x.id}`}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="alarmLevel" value={x.level} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.source}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.content || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="alarmStatus" value={x.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.createdAt)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {x.status === 'OPEN' ? (
-                        <span className="org-act">
+                        <span className="inline-flex items-center">
                           <button disabled={busy} onClick={() => ack(x.id)}>{a.ack}</button>
                         </span>
                       ) : '—'}
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7}><div className="org-empty">{a.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
         </div>
@@ -114,16 +113,16 @@ export default function AlarmPage() {
         <Drawer title={a.batchRetest} onClose={() => setRetestOpen(false)}
           footer={
             <>
-              <button className="org-btn" onClick={() => setRetestOpen(false)}>{t.pages.company.cancel}</button>
-              <button className="org-btn org-btn-primary" disabled={busy || !scope.trim()} onClick={retest}>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setRetestOpen(false)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !scope.trim()} onClick={retest}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
               </button>
             </>
           }>
-          <div className="org-form">
-            <div className="org-field">
-              <label><span className="req">*</span>{a.fScope}</label>
-              <input className="org-input" value={scope} placeholder={a.pScope}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{a.fScope}</label>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={scope} placeholder={a.pScope}
                 onChange={(e) => setScope(e.target.value)} />
               {!scope.trim() && scope !== '' && <span className="text-[11px] text-[var(--color-danger)]">{a.eScope}</span>}
             </div>

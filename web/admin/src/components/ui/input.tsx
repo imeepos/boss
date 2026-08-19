@@ -1,4 +1,4 @@
-// Input: shadcn-style input, replaces .org-input
+// Input: shadcn-style input, replaces .h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]
 import { type InputHTMLAttributes, forwardRef } from 'react'
 import { cn } from '../../lib/cn'
 

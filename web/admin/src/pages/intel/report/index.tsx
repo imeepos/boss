@@ -7,7 +7,6 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
-import '../../org/org.css'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
 
@@ -60,66 +59,66 @@ export default function ReportPage() {
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
           {PERIODS.map((p, i) => (
-            <button key={p} className="org-btn" disabled={busy} onClick={() => viewLatest(p)}>
+            <button key={p} className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => viewLatest(p)}>
               {r.view} · {r.periods[i]}
             </button>
           ))}
-          <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           {notice && <span style={{ fontSize: 13, color: '#52c41a' }}>{notice}</span>}
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{r.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((x) => (
                   <tr key={x.id}>
-                    <td>#{x.id}</td>
-                    <td>{periodLabel(x.period)}</td>
-                    <td>{fmtTime(x.windowStart)}</td>
-                    <td>{fmtTime(x.windowEnd)}</td>
-                    <td>{fmtTime(x.createdAt)}</td>
-                    <td>
-                      <span className="org-act">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{x.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{periodLabel(x.period)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.windowStart)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.windowEnd)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.createdAt)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <span className="inline-flex items-center">
                         <button onClick={() => viewLatest(x.period)}>{r.view}</button>
                         <button disabled={busy} onClick={() => send(x)}>{r.send}</button>
                       </span>
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6}><div className="org-empty">{r.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
         </div>
       </div>
       {(view || viewError) && (
         <Drawer title={r.viewTitle} onClose={() => { setView(null); setViewError('') }}
-          footer={<button className="org-btn org-btn-primary" onClick={() => { setView(null); setViewError('') }}>
+          footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setView(null); setViewError('') }}>
             {t.pages.company.cancel}
           </button>}>
-          {viewError ? <div className="org-error">{viewError}</div> : !view ? (
-            <div className="org-empty">{r.viewEmpty}</div>
+          {viewError ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{viewError}</div> : !view ? (
+            <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.viewEmpty}</div>
           ) : (
-            <div className="org-detail-list">
-              <div className="org-detail-item"><span className="k">{r.generatedAtLabel}</span>
-                <span className="v">{fmtTime(view.generatedAt)}</span></div>
+            <div className="flex flex-col gap-2.5">
+              <div className="flex gap-3 text-[13px]"><span className="w-24 flex-none text-[var(--shell-group-title)]">{r.generatedAtLabel}</span>
+                <span className="break-all text-[var(--shell-content-text)]">{fmtTime(view.generatedAt)}</span></div>
               {view.indicators.map((x) => (
-                <div className="org-detail-item" key={x.key}>
-                  <span className="k">{x.name || x.key}</span><span className="v">{x.value} · {x.detail}</span>
+                <div className="flex gap-3 text-[13px]" key={x.key}>
+                  <span className="w-24 flex-none text-[var(--shell-group-title)]">{x.name || x.key}</span><span className="break-all text-[var(--shell-content-text)]">{x.value} · {x.detail}</span>
                 </div>
               ))}
               {view.conclusions && view.conclusions.length > 0 && (
-                <div className="org-detail-item"><span className="k">{r.conclusionsLabel}</span>
-                  <span className="v">{view.conclusions.map((c, i) => <div key={i}>{c}</div>)}</span></div>
+                <div className="flex gap-3 text-[13px]"><span className="w-24 flex-none text-[var(--shell-group-title)]">{r.conclusionsLabel}</span>
+                  <span className="break-all text-[var(--shell-content-text)]">{view.conclusions.map((c, i) => <div key={i}>{c}</div>)}</span></div>
               )}
             </div>
           )}

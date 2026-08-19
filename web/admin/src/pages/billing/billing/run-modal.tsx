@@ -41,13 +41,13 @@ export function BillingRunModal({ open, onClose, onDone }: {
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45">
       <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5">
         <p>{r.title}</p>
-        <input className="org-input" value={period} autoFocus placeholder={r.periodPh}
+        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={period} autoFocus placeholder={r.periodPh}
           onChange={(e) => setPeriod(e.target.value)} />
         {result && <p style={{ color: '#30a46c', margin: '8px 0 0' }}>{result}</p>}
-        {error && <p className="org-error" style={{ margin: '8px 0 0' }}>{error}</p>}
+        {error && <p className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: '8px 0 0' }}>{error}</p>}
         <div className="mt-4 flex justify-end gap-2">
-          <button className="org-btn" onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className="org-btn org-btn-primary" disabled={busy || !period.trim()} onClick={submit}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !period.trim()} onClick={submit}>
             {busy ? t.pages.account.submitting : t.pages.company.save}
           </button>
         </div>

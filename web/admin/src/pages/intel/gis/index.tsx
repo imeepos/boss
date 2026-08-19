@@ -7,7 +7,6 @@ import { Pagination } from '../../../components/Pagination'
 import { DetailDrawer } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type GisNode, type GisResourceDetail } from '../types'
-import '../../org/org.css'
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8] as const
 
@@ -47,41 +46,41 @@ export default function GisPage() {
   return (
     <div>
       <PageHead title={g.title} desc={g.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
-          <select className="org-select" value={level}
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={level}
             onChange={(e) => { const v = Number(e.target.value); setLevel(v); setParentId(0); setPage(1); load(v, 0) }}>
             {LEVELS.map((lv, i) => <option key={lv} value={lv}>{lv}. {g.levels[i]}</option>)}
           </select>
-          <input className="org-input" type="number" placeholder="parentId"
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder="parentId"
             value={parentId || ''} onChange={(e) => { setParentId(Number(e.target.value) || 0); setPage(1) }} />
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={() => load(level, parentId)}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(level, parentId)}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{g.drillColumns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{g.drillColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((n) => (
                   <tr key={n.id}>
-                    <td>#{n.id}</td>
-                    <td>{n.name}</td>
-                    <td>{n.level}. {g.levels[n.level - 1] ?? n.level}</td>
-                    <td>{n.count}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{n.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.name}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.level}. {g.levels[n.level - 1] ?? n.level}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.count}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={4}><div className="org-empty">{g.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{g.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={nodes.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(g)} />
         </div>
         <div style={{ padding: '8px 12px', fontSize: 13, color: '#888' }}>
-          <input className="org-input" type="number" style={{ width: 160 }} placeholder="resourceId (6/7 级)"
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" style={{ width: 160 }} placeholder="resourceId (6/7 级)"
             onChange={(e) => { const v = Number(e.target.value); if (v > 0) openDetail(v) }} />
         </div>
       </div>

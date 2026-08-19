@@ -43,16 +43,16 @@ export function ApiKeyFormDrawer({
     <Drawer title={t.pages.apikey.createTitle} onClose={onClose}
       footer={
         <>
-          <button className="org-btn" onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className="org-btn org-btn-primary" disabled={busy || !values.accountId || !nameOk} onClick={onSubmit}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !values.accountId || !nameOk} onClick={onSubmit}>
             {busy ? t.pages.account.submitting : t.pages.company.save}
           </button>
         </>
       }>
-      <div className="org-form">
-        <div className="org-field">
-          <label><span className="req">*</span>{t.pages.apikey.fAccount}</label>
-          <select className="org-select" value={values.accountId ? String(values.accountId) : ''}
+      <div className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-1.5">
+          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.apikey.fAccount}</label>
+          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.accountId ? String(values.accountId) : ''}
             onChange={(e) => onChange({ ...values, accountId: Number(e.target.value) || 0 })}>
             <option value="">{t.pages.apikey.pAccount}</option>
             {accounts.map((a) => (
@@ -60,13 +60,13 @@ export function ApiKeyFormDrawer({
             ))}
           </select>
         </div>
-        <div className="org-field">
-          <label><span className="req">*</span>{t.pages.apikey.fName}</label>
-          <input className="org-input" value={values.name} placeholder={t.pages.apikey.pName}
+        <div className="flex flex-col gap-1.5">
+          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.apikey.fName}</label>
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.name} placeholder={t.pages.apikey.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
           {!nameOk && values.name !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.apikey.eName}</span>}
         </div>
-        {submitError && <div className="org-error" style={{ margin: 0 }}>{submitError}</div>}
+        {submitError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{submitError}</div>}
       </div>
     </Drawer>
   )

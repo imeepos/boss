@@ -7,7 +7,6 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { pageSlice, type RegionRefRow, type TransferRow } from '../types'
-import '../../org/org.css'
 
 export default function TransferPage() {
   const t = useT()
@@ -83,41 +82,41 @@ export default function TransferPage() {
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      <div className="org-card">
-        <div className="org-toolbar">
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
-          <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="org-btn org-btn-primary" onClick={() => setOpen(true)}>{r.create}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{r.create}</button>
         </div>
-        {error ? <div className="org-error">{error}</div> : (
-          <div className="org-table-wrap">
-            <table className="org-table">
-              <thead><tr>{r.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((x) => (
                   <tr key={x.id}>
-                    <td>{x.transferNo || `#${x.id}`}</td>
-                    <td>#{x.resourceId}</td>
-                    <td>{regionName(x.fromRegionId)}</td>
-                    <td>{regionName(x.toRegionId)}</td>
-                    <td><StatusTag domain="task" value={x.status} /></td>
-                    <td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.transferNo || `#${x.id}`}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{x.resourceId}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{regionName(x.fromRegionId)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{regionName(x.toRegionId)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {x.status === 'PENDING' ? (
-                        <span className="org-act">
+                        <span className="inline-flex items-center">
                           <button disabled={busy} onClick={() => review(x.transferNo, 'approve')}>{r.approve}</button>
-                          <span className="sep">|</span>
+                          <span className="text-[var(--shell-side-border)]">|</span>
                           <button disabled={busy} onClick={() => review(x.transferNo, 'reject')}>{r.reject}</button>
                         </span>
                       ) : '—'}
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6}><div className="org-empty">{r.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>
         )}
-        <div className="org-footer">
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
         </div>
@@ -126,37 +125,37 @@ export default function TransferPage() {
         <Drawer title={r.createTitle} onClose={() => setOpen(false)}
           footer={
             <>
-              <button className="org-btn" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
-              <button className="org-btn org-btn-primary" disabled={busy || !resourceOk || !regionOk} onClick={submit}>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !resourceOk || !regionOk} onClick={submit}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
               </button>
             </>
           }>
-          <div className="org-form">
-            <div className="org-field">
-              <label><span className="req">*</span>{r.fResource}</label>
-              <input className="org-input" type="number" value={resourceId} placeholder={r.pResource}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fResource}</label>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={resourceId} placeholder={r.pResource}
                 onChange={(e) => setResourceId(e.target.value)} />
               {!resourceOk && resourceId !== '' && <span className="text-[11px] text-[var(--color-danger)]">{r.eResource}</span>}
             </div>
-            <div className="org-field">
-              <label><span className="req">*</span>{r.fFrom}</label>
-              <select className="org-select" value={fromRegionId ? String(fromRegionId) : ''}
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fFrom}</label>
+              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={fromRegionId ? String(fromRegionId) : ''}
                 onChange={(e) => setFromRegionId(Number(e.target.value) || 0)}>
                 <option value="">—</option>
                 {regions.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
               </select>
             </div>
-            <div className="org-field">
-              <label><span className="req">*</span>{r.fTo}</label>
-              <select className="org-select" value={toRegionId ? String(toRegionId) : ''}
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fTo}</label>
+              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={toRegionId ? String(toRegionId) : ''}
                 onChange={(e) => setToRegionId(Number(e.target.value) || 0)}>
                 <option value="">—</option>
                 {regions.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
               </select>
               {!regionOk && (fromRegionId !== 0 || toRegionId !== 0) && <span className="text-[11px] text-[var(--color-danger)]">{r.eRegion}</span>}
             </div>
-            {formError && <div className="org-error" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
         </Drawer>
       )}
