@@ -13,7 +13,10 @@ export function FormField({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label required={required}>{label}</Label>
+      <Label>
+        {label}
+        {required && <span className="ml-0.5 text-[var(--color-danger)]">*</span>}
+      </Label>
       {children}
       {hint && <span className="text-[11px] text-[var(--shell-group-title)]">{hint}</span>}
       {error && <span className="text-[11px] text-[var(--color-danger)]">{error}</span>}
