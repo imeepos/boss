@@ -12,12 +12,12 @@ export interface QuadLinkRow {
 }
 
 export interface ScanLogRow {
-  ID: number
-  OrderID: number
-  WorkerID: number
-  WorkerName: string
-  TagID: number
-  Result: string // MATCH/MISMATCH/OFFLINE_CACHED
+  id: number
+  orderId: number
+  workerId: number
+  workerName: string
+  tagId: number
+  result: string // MATCH/MISMATCH/OFFLINE_CACHED
 }
 
 export interface AlarmRow {

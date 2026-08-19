@@ -73,13 +73,13 @@ export default function DismantlePage() {
               <thead><tr>{d.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((x) => (
-                  <tr key={x.ID}>
-                    <td>{x.DismantleNo || `#${x.ID}`}</td>
-                    <td>#{x.OrderID}</td>
-                    <td>{x.LegalEntityName || `#${x.LegalEntityID}`}</td>
-                    <td>{x.AssetID ? `#${x.AssetID}` : '—'}</td>
-                    <td>{x.PortID ? `#${x.PortID}` : '—'}</td>
-                    <td><StatusTag domain="task" value={x.Status} /></td>
+                  <tr key={x.id}>
+                    <td>{x.dismantleNo || `#${x.id}`}</td>
+                    <td>#{x.orderId}</td>
+                    <td>{x.legalEntityName || `#${x.legalEntityId}`}</td>
+                    <td>{x.assetId ? `#${x.assetId}` : '—'}</td>
+                    <td>{x.portId ? `#${x.portId}` : '—'}</td>
+                    <td><StatusTag domain="task" value={x.status} /></td>
                   </tr>
                 ))}
                 {!slice.length && <tr><td colSpan={6}><div className="org-empty">{d.empty}</div></td></tr>}

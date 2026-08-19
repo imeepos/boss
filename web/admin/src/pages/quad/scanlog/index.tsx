@@ -1,4 +1,4 @@
-// 扫码绑定记录页:契约 GET /scan-logs?orderId(裸列表,无 json tag)。
+// 扫码绑定记录页:契约 GET /scan-logs?orderId。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -46,12 +46,12 @@ export default function ScanLogPage() {
               <thead><tr>{s.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((x) => (
-                  <tr key={x.ID}>
-                    <td>#{x.ID}</td>
-                    <td>#{x.OrderID}</td>
-                    <td>{x.WorkerName || (x.WorkerID ? `#${x.WorkerID}` : '—')}</td>
-                    <td>{x.TagID ? `#${x.TagID}` : '—'}</td>
-                    <td><StatusTag domain="scan" value={x.Result} /></td>
+                  <tr key={x.id}>
+                    <td>#{x.id}</td>
+                    <td>#{x.orderId}</td>
+                    <td>{x.workerName || (x.workerId ? `#${x.workerId}` : '—')}</td>
+                    <td>{x.tagId ? `#${x.tagId}` : '—'}</td>
+                    <td><StatusTag domain="scan" value={x.result} /></td>
                   </tr>
                 ))}
                 {!slice.length && <tr><td colSpan={5}><div className="org-empty">{s.empty}</div></td></tr>}

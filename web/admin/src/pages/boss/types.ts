@@ -1,5 +1,4 @@
 // 订单与工单域行类型:对齐 internal/domain/{order,worker} 与 http_order*.go。
-// 注:complaints/dismantles/activation-callbacks 后端结构体无 json tag,键为 Go 字段名。
 
 export interface OrderListRow {
   orderNo: string
@@ -70,34 +69,33 @@ export interface DispatchTransferRow {
   transferredAt: string
 }
 
-// 无 json tag 的 Go 结构体(键为 Go 字段名)。
 export interface ComplaintRow {
-  ID: number
-  TicketNo: string
-  CustomerID: number
-  OrderID: number
-  LegalEntityID: number
-  LegalEntityName: string
-  Type: string // NETWORK_FAULT/TARIFF_DISPUTE/SERVICE_COMPLAINT
-  Status: string // OPEN/PROCESSING/CLOSED
+  id: number
+  ticketNo: string
+  customerId: number
+  orderId: number
+  legalEntityId: number
+  legalEntityName: string
+  type: string // NETWORK_FAULT/TARIFF_DISPUTE/SERVICE_COMPLAINT
+  status: string // OPEN/PROCESSING/CLOSED
 }
 
 export interface DismantleRow {
-  ID: number
-  DismantleNo: string
-  OrderID: number
-  LegalEntityID: number
-  LegalEntityName: string
-  AssetID: number
-  PortID: number
-  Status: string // PENDING/DOING/DONE/FAILED
+  id: number
+  dismantleNo: string
+  orderId: number
+  legalEntityId: number
+  legalEntityName: string
+  assetId: number
+  portId: number
+  status: string // PENDING/DOING/DONE/FAILED
 }
 
 export interface ActivationCallbackRow {
-  ID: number
-  OrderID: number
-  Result: string // SUCCESS/FAILED
-  Retries: number
+  id: number
+  orderId: number
+  result: string // SUCCESS/FAILED
+  retries: number
 }
 
 export function pageSlice<T>(rows: T[], page: number, pageSize: number): T[] {

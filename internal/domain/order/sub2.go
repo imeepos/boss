@@ -7,22 +7,22 @@ import (
 
 // Dismantle 拆机单(回收资产释放端口)。
 type Dismantle struct {
-	ID              int64
-	DismantleNo     string
-	OrderID         int64
-	LegalEntityID   int64
-	LegalEntityName string
-	AssetID         int64
-	PortID          int64
-	Status          string // PENDING/DOING/DONE/FAILED
+	ID              int64  `json:"id"`
+	DismantleNo     string `json:"dismantleNo"`
+	OrderID         int64  `json:"orderId"`
+	LegalEntityID   int64  `json:"legalEntityId"`
+	LegalEntityName string `json:"legalEntityName"`
+	AssetID         int64  `json:"assetId"`
+	PortID          int64  `json:"portId"`
+	Status          string `json:"status"` // PENDING/DOING/DONE/FAILED
 }
 
 // ActivationCallback 激活回调(订单第11环节的系统间回执)。
 type ActivationCallback struct {
-	ID      int64
-	OrderID int64
-	Result  string // SUCCESS/FAILED
-	Retries int16
+	ID      int64  `json:"id"`
+	OrderID int64  `json:"orderId"`
+	Result  string `json:"result"` // SUCCESS/FAILED
+	Retries int16  `json:"retries"`
 }
 
 // DispatchTransfer 派单改派台账(工单师傅每次改派)。

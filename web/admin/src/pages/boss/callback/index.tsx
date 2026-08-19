@@ -55,15 +55,15 @@ export default function CallbackPage() {
               <thead><tr>{c.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((x) => (
-                  <tr key={x.ID}>
-                    <td>#{x.ID}</td>
-                    <td>#{x.OrderID}</td>
-                    <td>{x.Result === 'SUCCESS' ? 'SUCCESS' : x.Result}</td>
-                    <td>{x.Retries}</td>
+                  <tr key={x.id}>
+                    <td>#{x.id}</td>
+                    <td>#{x.orderId}</td>
+                    <td>{x.result === 'SUCCESS' ? 'SUCCESS' : x.result}</td>
+                    <td>{x.retries}</td>
                     <td>
-                      {x.Result === 'FAILED' ? (
+                      {x.result === 'FAILED' ? (
                         <span className="org-act">
-                          <button disabled={busy} onClick={() => retry(x.ID)}>{c.retry}</button>
+                          <button disabled={busy} onClick={() => retry(x.id)}>{c.retry}</button>
                         </span>
                       ) : '—'}
                     </td>

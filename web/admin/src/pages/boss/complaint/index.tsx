@@ -56,16 +56,16 @@ export default function ComplaintPage() {
               <thead><tr>{c.columns.map((x) => <th key={x}>{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((x) => (
-                  <tr key={x.ID}>
-                    <td>{x.TicketNo}</td>
-                    <td>#{x.CustomerID}</td>
-                    <td>{x.OrderID ? `#${x.OrderID}` : '—'}</td>
-                    <td>{c.types[x.Type] ?? x.Type}</td>
-                    <td><StatusTag domain="complaint" value={x.Status} /></td>
+                  <tr key={x.id}>
+                    <td>{x.ticketNo}</td>
+                    <td>#{x.customerId}</td>
+                    <td>{x.orderId ? `#${x.orderId}` : '—'}</td>
+                    <td>{c.types[x.type] ?? x.type}</td>
+                    <td><StatusTag domain="complaint" value={x.status} /></td>
                     <td>
-                      {x.Status !== 'CLOSED' ? (
+                      {x.status !== 'CLOSED' ? (
                         <span className="org-act">
-                          <button disabled={busy} onClick={() => close(x.TicketNo)}>{c.close}</button>
+                          <button disabled={busy} onClick={() => close(x.ticketNo)}>{c.close}</button>
                         </span>
                       ) : '—'}
                     </td>
