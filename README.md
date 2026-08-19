@@ -14,7 +14,7 @@
 | 缓存/锁 | Redis(redsync,端口预占互斥) |
 | 消息 | Kafka(话单、状态变更、GIS 联动、配置下发) |
 | 时序 | VictoriaMetrics(OLT 指标) |
-| OLAP | Apache Doris(阶段 8/9) |
+| OLAP | StarRocks(阶段 8/9) |
 | 对象存储 | MinIO |
 | 配置中心 | Nacos / etcd |
 | 迁移 | golang-migrate |
@@ -134,4 +134,4 @@ cd web/admin && pnpm install && pnpm dev
 | 6 四码合一 | internal/domain/quadlink + api/proto |
 | 7 业网融合 | cmd/{aaa,collector,provisioner} + internal/domain/{aaa,device,provision} |
 | 8 数字孪生 GIS | cmd/gis + internal/domain/gis |
-| 9 经营分析 | cmd/report + internal/domain/analytics + Doris |
+| 9 经营分析 | cmd/report + internal/domain/analytics + StarRocks |
