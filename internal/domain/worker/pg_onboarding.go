@@ -91,7 +91,7 @@ SELECT name, group_id, region_id, phone, submitted_at
 		return 0, fmt.Errorf("worker: approve reg read: %w", err)
 	}
 
-	staffNo := fmt.Sprintf("WK-%d", subAt.UnixNano()%100000)
+	staffNo := fmt.Sprintf("WK-%d", subAt.UnixNano())
 	var workerID int64
 	err = s.db.QueryRow(ctx, `
 INSERT INTO workers(staff_no, name, group_id, region_id, phone, status, joined_at, password_hash)
