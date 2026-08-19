@@ -1,5 +1,5 @@
 // 业务参数页(A1):列名与交互照抄 docs/admin/settings.html 原型。
-// 契约: GET /params、PUT /params/{key}(sys.yaml;后端 planned,失败展示错误占位)。
+// 契约: GET /params、PUT /params/{key}(sys.yaml;已上线,失败展示错误占位)。
 // 行内编辑 + 批量保存:值列 input,dirty 行标"已修改",保存时逐项 PUT。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
