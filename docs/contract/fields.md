@@ -128,6 +128,20 @@
 
 > 快照列（TS 实体）：`account_name`/`dept_name`/`legal_entity_name`，操作时冻结，调岗/调部门/改名不改历史日志；`account_id` 为弱引用（日志只读不 FK，账号删除不影响日志）。
 
+### 1.7 api_keys（免登录 API key，internal/domain/apikey，迁移 000042/000043/000045）
+
+> 固定用途：CLI/自动化（bossctl）免登录认证。key 与三类主体绑定（`subject_type` account/worker/customer，000043 三表登录边界 + 000044 主体扩展）；只存 sha256(key) 哈希，明文仅创建时返回一次（安全约定见迁移 000042 头注）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| — | `ID` | id | BIGSERIAL PK |
+| 名称 | `Name` | name | 用途说明，如 ci-pipeline / bossctl-local |
+| — | `KeyHash` | key_hash | CHAR(64) UNIQUE，sha256 十六进制，永不落明文 |
+| 状态 | `Status` | status | 1启用 / 0停用（停用即级联禁用该主体全部 key） |
+| 主体 | `SubjectType` / `SubjectRef` | subject_type / subject_ref | account→accounts.id / worker→workers.id / customer→customers.id |
+| — | `LastUsedAt` | last_used_at | 供审计/巡检 |
+| — | `ExpiresAt` | expires_at | 空=永不过期 |
+
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
 ### 2.1 customers（普通用户/客户主体，源自 customer.html）
@@ -405,6 +419,7 @@
 | auth_logs | admin/aaalog.html 认证日志 | loid/result/created_at |
 | device_metrics | admin/device.html OLT 监控 | resource_id/optical_power/packet_loss/status |
 | device_maintenances | worker 设备健康 | device_no/health_score/fault_count/priority |
+| report_snapshots | admin/report.html 报告中心 | period/window_start/window_end/payload（唯一键 `(period, window_start)`，同窗口幂等覆盖；payload=派生聚合全文） |
 
 > 仍缺实体、但按 domain-map 属「待建域」或派生视图的页面（本期不臆造）：`settings.html`→`biz_params`（migrations 已建表，TS 实体已补 `BizParam`）、`paycheck.html`→渠道对账（派生聚合，非基表）。
 
