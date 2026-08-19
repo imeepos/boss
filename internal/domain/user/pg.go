@@ -60,6 +60,24 @@ func (s *PGStore) ChangePassword(ctx context.Context, accountID int64, oldPasswo
 	return nil
 }
 
+// UpdateSelfProfile 自助改基本资料:仅 real_name/phone;空 phone 写 NULL。
+func (s *PGStore) UpdateSelfProfile(ctx context.Context, accountID int64, realName, phone string) error {
+	var ph *string
+	if phone != "" {
+		ph = &phone
+	}
+	tag, err := s.db.Exec(ctx,
+		`UPDATE accounts SET real_name = $2, phone = $3, updated_at = now() WHERE id = $1`,
+		accountID, realName, ph)
+	if err != nil {
+		return fmt.Errorf("user: update self profile: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrUnauthorized
+	}
+	return nil
+}
+
 // Login 校验账号口令,返回认证身份;账号不存在/口令错误/停用统一返回 ErrUnauthorized。
 func (s *PGStore) Login(ctx context.Context, username, password string) (*LoginResult, error) {
 	var id int64

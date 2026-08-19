@@ -111,6 +111,12 @@ type changePasswordReq struct {
 	NewPassword string `json:"newPassword" binding:"required,min=6"`
 }
 
+// selfProfileReq 自助改基本资料请求体:realName 必填,phone 可空(清空)。
+type selfProfileReq struct {
+	RealName string `json:"realName" binding:"required"`
+	Phone    string `json:"phone"`
+}
+
 // RegisterRoutes 在 gin engine 上注册业务路由;mgr 为 JWT 单事实源签发器(D1)。
 // admin 端为封闭账号模型:无自助注册,账号由超管引导(EnsureSuperAdmin)或 org/account 受权流程创建。
 func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
@@ -184,6 +190,26 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 			return
 		}
 		a.recordAudit(c, "权限变更", "account", fmt.Sprint(claims.AccountID), map[string]any{"op": "self-change-password"})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	// 自助改基本资料:仅 realName/phone;组织/角色仍走受权流程(menu:account)。
+	authed.PUT("/auth/profile", func(c *gin.Context) {
+		if middleware.SubjectFrom(c) != nil {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		var req selfProfileReq
+		if err := c.ShouldBindJSON(&req); err != nil || req.RealName == "" {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
+		if err := a.User.UpdateSelfProfile(c.Request.Context(), claims.AccountID, req.RealName, req.Phone); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "数据变更", "account", fmt.Sprint(claims.AccountID), map[string]any{"op": "self-update-profile"})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 

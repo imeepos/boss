@@ -73,3 +73,35 @@ func TestChangePasswordHandler(t *testing.T) {
 		}
 	})
 }
+
+func TestUpdateSelfProfileHandler(t *testing.T) {
+	mgr := auth.NewManager("test-secret", time.Hour)
+	token, _ := mgr.Sign(1, "boss", "sysadmin")
+
+	t.Run("成功", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{}, mgr)
+		body := `{"realName":"新名字","phone":"13800000000"}`
+		w := putJSONAuth(t, r, "/api/v1/auth/profile", body, token)
+		if envCode(t, w) != apitypes.CodeOK {
+			t.Fatalf("body=%s", w.Body.String())
+		}
+	})
+
+	t.Run("realName 缺失参数非法", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{}, mgr)
+		w := putJSONAuth(t, r, "/api/v1/auth/profile", `{"phone":"1"}`, token)
+		if envCode(t, w) != apitypes.CodeInvalidParam {
+			t.Fatalf("body=%s", w.Body.String())
+		}
+	})
+}
+
+func putJSONAuth(t *testing.T, r *gin.Engine, path, body, token string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPut, path, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w
+}
