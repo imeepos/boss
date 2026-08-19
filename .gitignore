@@ -58,3 +58,4 @@ __pycache__/
 # compiled binaries
 server
 server-new
+/bossctl
