@@ -171,43 +171,6 @@ func portalListPayments(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// portalListInvoices GET /invoices:电子发票聚合(开票信息 + 可开票账期 + 记录)。
-func portalListInvoices(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		title, taxNo := "", ""
-		if cust, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
-			title = cust.Name
-		}
-		bills, err := a.Billing.ListBills(c.Request.Context(), cid)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		periods := make([]gin.H, 0)
-		for _, b := range bills {
-			if b.Status == "PAID" {
-				periods = append(periods, portalBill(b, planProductName(a, c, cid)))
-			}
-		}
-		records := make([]gin.H, 0)
-		if a.Tax != nil {
-			if invs, err := a.Tax.ListInvoices(c.Request.Context(), cid); err == nil {
-				for _, inv := range invs {
-					records = append(records, gin.H{
-						"period": inv.BillNo, "amount": inv.TotalAmount,
-						"issuedAt": inv.IssuedAt, "pdfUrl": "",
-					})
-				}
-			}
-		}
-		respond(c, apitypes.CodeOK, gin.H{
-			"titleType": "个人", "title": title, "taxNo": taxNo,
-			"availablePeriods": periods, "records": records,
-		})
-	}
-}
-
 // portalBillDetail GET /bills/:billNo:我的账单明细(按客户过滤)。
 func portalBillDetail(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -288,26 +251,5 @@ func portalTopup(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, gin.H{
 			"payNo": payNo, "amount": req.Amount, "payMethod": req.PayMethod, "status": "SUCCESS",
 		})
-	}
-}
-
-// portalApplyInvoice POST /invoices:申请开票(校验账单归属;Tax 域客户侧开票流程见报告)。
-func portalApplyInvoice(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		var req struct {
-			BillNo string `json:"billNo" binding:"required"`
-		}
-		if !httpx.BindBody(c, &req) {
-			return
-		}
-		bills, _ := a.Billing.ListBills(c.Request.Context(), cid)
-		for _, b := range bills {
-			if b.BillNo == req.BillNo {
-				respond(c, apitypes.CodeOK, gin.H{"ok": true})
-				return
-			}
-		}
-		respond(c, apitypes.CodeNotFound, nil)
 	}
 }

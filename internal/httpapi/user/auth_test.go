@@ -34,15 +34,20 @@ func (f *userPortalCustSvc) List(_ context.Context, q customer.CustomerQuery) ([
 	return nil, nil
 }
 
-// userPortalWo 桩 WorkOrderService:CreateComplaint 记录入参。
+// userPortalWo 桩 WorkOrderService:CreateComplaint 记录入参,ListComplaints 返回可配置列表。
 type userPortalWo struct {
 	order.WorkOrderService
-	created []order.Complaint
+	created  []order.Complaint
+	complts  []order.Complaint
 }
 
 func (f *userPortalWo) CreateComplaint(_ context.Context, c order.Complaint) (int64, error) {
 	f.created = append(f.created, c)
 	return int64(len(f.created)), nil
+}
+
+func (f *userPortalWo) ListComplaints(context.Context) ([]order.Complaint, error) {
+	return f.complts, nil
 }
 
 func newUserPortalRouter(cust *customer.Customer, bills []billing.Bill, byNo *order.Order) (*gin.Engine, *auth.Manager, *userPortalWo) {

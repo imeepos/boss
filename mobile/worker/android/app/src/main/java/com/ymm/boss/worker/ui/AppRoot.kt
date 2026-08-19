@@ -5,10 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -18,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import com.ymm.boss.worker.ui.theme.Bg
 import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
@@ -37,7 +41,9 @@ private fun isTabRoot(s: Screen): Boolean = s in TABS.map { it.screen }
 @Composable
 fun AppRoot(loggedIn: Boolean) {
     val nav = remember { NavHost(if (loggedIn) Screen.Home else Screen.Login) }
-    Column(Modifier.fillMaxSize().background(Bg)) {
+    // 系统返回键:压栈页逐个弹出,栈底则退出
+    BackHandler(enabled = nav.stack.size > 1) { nav.pop() }
+    Column(Modifier.fillMaxSize().background(Bg).windowInsetsPadding(WindowInsets.safeDrawing)) {
         Box(Modifier.weight(1f)) {
             when (val cur = nav.current) {
                 is Screen.Login -> LoginScreen(onLoggedIn = { nav.reset(Screen.Home) })

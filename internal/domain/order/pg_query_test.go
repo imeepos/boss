@@ -18,9 +18,9 @@ func TestPGStore_List(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`SELECT o.order_no, COALESCE\(c.name`).
-		WithArgs("", "PENDING", 1<<30, 0).
-		WillReturnRows(mock.NewRows([]string{"order_no", "customer", "product", "address", "stage", "status", "created_at"}).
-			AddRow("ORD-20250817-001", "王先生", "100M宽带", "Manila", int8(3), "PENDING", ts))
+		WithArgs("", "PENDING", int64(0), 1<<30, 0).
+		WillReturnRows(mock.NewRows([]string{"order_no", "customer", "product", "address", "address_id", "stage", "status", "created_at"}).
+			AddRow("ORD-20250817-001", "王先生", "100M宽带", "Manila", int64(100), int8(3), "PENDING", ts))
 
 	s := NewPGStore(mock, stubExists{})
 	got, err := s.List(context.Background(), OrderQuery{Status: "PENDING"})
