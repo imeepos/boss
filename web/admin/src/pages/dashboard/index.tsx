@@ -7,7 +7,7 @@ import { PageHead } from '../org/shared'
 import { fmtTime } from '../../lib/format'
 import '../org/org.css'
 
-interface StatCard { key: string; label: string; value: string; delta: string; trend: string }
+interface StatCard { key: string; label: string; value: string }
 interface StatusDist { status: string; statusLabel: string; count: number; percent: string }
 interface TodoItem { todoId: number; subject: string; source: string; time: string }
 interface DashboardData {
@@ -16,8 +16,6 @@ interface DashboardData {
   todos: { items: TodoItem[] }
   trend: { days: string[]; values: number[] }
 }
-
-const TODO_PAGE_SIZE = 5
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: '#1677ff',
@@ -38,7 +36,6 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [todoPage, setTodoPage] = useState(1)
 
   const load = () => {
     setError('')
@@ -52,10 +49,6 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
 
   const welcome = d.welcome.replace('{name}', profile.realName).replace('{role}', profile.roleCode)
   const maxTrend = Math.max(1, ...(data?.trend.values ?? [1]))
-  
-  const todoItems = data?.todos.items ?? []
-  const totalTodoPages = Math.ceil(todoItems.length / TODO_PAGE_SIZE)
-  const pagedTodos = todoItems.slice((todoPage - 1) * TODO_PAGE_SIZE, todoPage * TODO_PAGE_SIZE)
 
   return (
     <div>
@@ -67,14 +60,11 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
         <>
           {/* 统计卡片 */}
           <div className="dash-stats">
-            {data.stats.map((s, i) => (
+            {data.stats.map((s) => (
               <div key={s.key} className="dash-stat">
-                <div className="dash-stat-icon" style={{ background: getStatIconBg(i), color: getStatIconColor(i) }}>
-                  {getStatIcon(i)}
-                </div>
+                <div className="dash-stat-dot" style={{ background: getStatDotColor(s.key) }} />
                 <div className="dash-stat-label">{s.label}</div>
                 <div className="dash-stat-value">{s.value}</div>
-                {s.delta ? <div className={'dash-delta ' + s.trend}>{s.delta}</div> : null}
               </div>
             ))}
           </div>
@@ -119,10 +109,10 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
             </div>
 
             <div className="org-card">
-              <h3>我的待办 <span className="dash-todo-count">共 {todoItems.length} 条</span></h3>
+              <h3>我的待办 <span className="dash-todo-count">共 {data.todos.items.length} 条</span></h3>
               <div className="dash-todo-list">
-                {pagedTodos.map((it) => {
-                  const time = it.time ? (fmtTime(it.time).split(' ')[1] || fmtTime(it.time)) : '--'
+                {data.todos.items.map((it) => {
+                  const time = fmtTime(it.time).split(' ')[1] || fmtTime(it.time)
                   const badgeColor = TODO_BADGE_COLORS[it.source] || '#1677ff'
                   return (
                     <div key={it.todoId} className="dash-todo-item">
@@ -137,25 +127,6 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                   )
                 })}
               </div>
-              {totalTodoPages > 1 && (
-                <div className="dash-todo-pager">
-                  <button 
-                    className="dash-todo-page-btn" 
-                    disabled={todoPage === 1}
-                    onClick={() => setTodoPage((p) => Math.max(1, p - 1))}
-                  >
-                    上一页
-                  </button>
-                  <span className="dash-todo-page-info">{todoPage} / {totalTodoPages}</span>
-                  <button 
-                    className="dash-todo-page-btn" 
-                    disabled={todoPage === totalTodoPages}
-                    onClick={() => setTodoPage((p) => Math.min(totalTodoPages, p + 1))}
-                  >
-                    下一页
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
