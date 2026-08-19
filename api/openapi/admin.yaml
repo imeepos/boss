@@ -97,7 +97,12 @@ paths:
   /data-scopes: { $ref: './admin/org.yaml#/paths/~1data-scopes' }
 
   # ---------- Customer(CRM + PROD) ----------
+  /customer-registrations: { $ref: './admin/customer.yaml#/paths/~1customer-registrations' }
+  /customer-registrations/{id}/approve: { $ref: './admin/customer.yaml#/paths/~1customer-registrations~1{id}~1approve' }
+  /customer-registrations/{id}/reject: { $ref: './admin/customer.yaml#/paths/~1customer-registrations~1{id}~1reject' }
   /customers: { $ref: './admin/customer.yaml#/paths/~1customers' }
+  /customers/{id}/real-name: { $ref: './admin/customer.yaml#/paths/~1customers~1{id}~1real-name' }
+  /customers/{id}/real-name/verify: { $ref: './admin/customer.yaml#/paths/~1customers~1{id}~1real-name~1verify' }
   /customers/{id}/verify-logs: { $ref: './admin/customer.yaml#/paths/~1customers~1{id}~1verify-logs' }
   /products: { $ref: './admin/customer.yaml#/paths/~1products' }
   /products/{id}/price-history: { $ref: './admin/customer.yaml#/paths/~1products~1{id}~1price-history' }
@@ -147,6 +152,9 @@ paths:
   # ---------- Order ----------
   /orders: { $ref: './admin/order.yaml#/paths/~1orders' }
   /orders/{orderNo}: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}' }
+  /orders/{orderNo}/check-resource: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}~1check-resource' }
+  /orders/{orderNo}/reserve: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}~1reserve' }
+  /orders/{orderNo}/charge: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}~1charge' }
   /dispatch/pool: { $ref: './admin/order.yaml#/paths/~1dispatch~1pool' }
   /dispatch/pool/{ticketNo}/assign: { $ref: './admin/order.yaml#/paths/~1dispatch~1pool~1{ticketNo}~1assign' }
   /dispatch/my-tickets: { $ref: './admin/order.yaml#/paths/~1dispatch~1my-tickets' }

@@ -23,6 +23,113 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /customers/{id}/real-name:
+    get:
+      tags: [Customer]
+      summary: 客户当前实名核验(最新一条;未提交 PENDING 报 40410)
+      operationId: getCustomerRealName
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 客户ID }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Customer]
+      summary: 提交客户实名核验资料(落 PENDING)
+      operationId: submitCustomerRealName
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 客户ID }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [realName, idCardNo, method]
+              properties:
+                realName: { type: string, description: 申报实名 }
+                idCardNo: { type: string, description: 证件号 }
+                method: { type: string, description: 人脸/证件OCR/人工/第三方 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /customers/{id}/real-name/verify:
+    post:
+      tags: [Customer]
+      summary: 后台核验客户实名(result=PASS/FAIL;PASS 同步 customers.real_name_status=VERIFIED)
+      operationId: verifyCustomerRealName
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 客户ID }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [result]
+              properties:
+                result: { type: string, enum: [PASS, FAIL] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /customer-registrations:
+    get:
+      tags: [Customer]
+      summary: 客户注册申请审核队列(status 过滤:空=全部;未审核在前)
+      operationId: listCustomerRegistrations
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [PENDING, APPROVED, REJECTED] } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Customer]
+      summary: 客户自助注册(公开端点,落 PENDING 申请)
+      operationId: submitCustomerRegistration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, phone, idCardNo, legalEntityId, addressId, regionId]
+              properties:
+                name: { type: string, description: 申报姓名 }
+                phone: { type: string, description: 联系电话 }
+                idCardNo: { type: string, description: 证件号 }
+                legalEntityId: { type: integer, format: int64 }
+                addressId: { type: integer, format: int64, description: 装机地址 }
+                regionId: { type: integer, format: int64, description: 经营区域 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /customer-registrations/{id}/approve:
+    post:
+      tags: [Customer]
+      summary: 审核通过:建 customers 主档并回填 customer_id
+      operationId: approveCustomerRegistration
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /customer-registrations/{id}/reject:
+    post:
+      tags: [Customer]
+      summary: 审核驳回(记审核意见,仅作用于 PENDING)
+      operationId: rejectCustomerRegistration
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note: { type: string, description: 审核意见(驳回必填) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /products:
     get:
       tags: [Customer]

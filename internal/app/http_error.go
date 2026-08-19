@@ -44,6 +44,8 @@ func respondErr(c *gin.Context, err error) {
 		errors.Is(err, billing.ErrNotFound),
 		errors.Is(err, geo.ErrNotFound),
 		errors.Is(err, provision.ErrTaskNotFound),
+		errors.Is(err, customer.ErrRegistrationNotFound),
+		errors.Is(err, customer.ErrRealNameNotFound),
 		errors.Is(err, worker.ErrNotFound),
 		errors.Is(err, worker.ErrRegistrationNotFound),
 		errors.Is(err, worker.ErrRealNameNotFound),
@@ -56,6 +58,8 @@ func respondErr(c *gin.Context, err error) {
 		errors.Is(err, billing.ErrIllegalReconTransition),
 		errors.Is(err, billing.ErrIllegalInvoiceTransition),
 		errors.Is(err, billing.ErrInvoiceNotTaxable),
+		errors.Is(err, customer.ErrRegistrationConflict),
+		errors.Is(err, customer.ErrRealNameConflict),
 		errors.Is(err, worker.ErrRegistrationConflict),
 		errors.Is(err, worker.ErrRealNameConflict):
 		respond(c, apitypes.CodeInvalidParam, nil)

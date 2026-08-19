@@ -1,5 +1,26 @@
 paths:
   /quad-links:
+    post:
+      tags: [Quad]
+      summary: 新建四码绑定(装维前预绑定:资产+客户+端口+地址,status 默认 UNLINKED)
+      operationId: createQuadLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetId, customerId, portId, addressId, legalEntityId]
+              properties:
+                assetId: { type: integer, format: int64 }
+                customerId: { type: integer, format: int64 }
+                portId: { type: integer, format: int64 }
+                addressId: { type: integer, format: int64 }
+                legalEntityId: { type: integer, format: int64 }
+                legalEntityName: { type: string }
+                status: { type: string, enum: [LINKED, CONFLICT, UNLINKED] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
     get:
       tags: [Quad]
       summary: 四码合一关联查询(资产/客户/端口/地址任一码反查,见 docs/contract/fields.md 5.1;代码不读任何参数,返回全量)

@@ -457,6 +457,43 @@
 | `operatorAccountId` | operator_account_id | BIGINT → accounts（核验人） |
 | `operatorName` | operator_name | 核验人姓名快照 |
 
+### 7.6 customer_registrations / customer_real_name_verifications（客户注册·审核·实名，onboarding 子域延伸）
+
+> 迁移 000051。注册申请与正式 `customers` 主档解耦：审核通过才建客户主档（下单需有效客户）；实名核验对标 §7.5 师傅子域。
+
+`customer_registrations`（客户自助注册申请，公开端点提交，后台 menu:customer 审核）：
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:------|:------|:----------|
+| `id` | id | BIGSERIAL PK |
+| `name` | name | 申报姓名 |
+| `phone` | phone | 联系电话（脱敏） |
+| `idCardNo` | id_card_no | 证件号（实名凭据，脱敏） |
+| `legalEntityId` | legal_entity_id | BIGINT → legal_entities（归属运营主体） |
+| `addressId` | address_id | BIGINT → addresses（装机地址） |
+| `regionId` | region_id | INTEGER → regions（经营区域快照） |
+| `status` | status | **PENDING 待审核 / APPROVED 已通过 / REJECTED 已驳回**（terms.md 通用枚举延伸） |
+| `reviewNote` | review_note | 审核意见（驳回必填） |
+| `reviewerAccountId` | reviewer_account_id | BIGINT → accounts（审核人） |
+| `customerId` | customer_id | BIGINT → customers（审核通过后建主档回填，空=未建） |
+| `submittedAt` | submitted_at | 提交时间 |
+| `reviewedAt` | reviewed_at | 审核时间，null=未审核 |
+
+`customer_real_name_verifications`（客户实名核验，与 `customers` 1:1 当前态；PASS 同步 `customers.real_name_status=VERIFIED`）：
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:------|:------|:----------|
+| `customerId` | customer_id | BIGINT → customers |
+| `method` | method | 人脸/证件OCR/人工/第三方 |
+| `realName` | real_name | 申报实名（核验基准） |
+| `idCardNo` | id_card_no | 证件号（脱敏） |
+| `result` | result | **PENDING 待核验 / PASS 通过 / FAIL 不通过**（terms.md `result` 枚举延伸） |
+| `verifiedAt` | verified_at | 核验时间 |
+| `operatorAccountId` | operator_account_id | BIGINT → accounts（核验人） |
+| `operatorName` | operator_name | 核验人姓名快照 |
+
+> 与 §8A `real_name_verifications`（历史核验留痕表）不同：本表保存**当前态**与 PENDING 流转，供核验闭环；通过后由 §8A 记历史。
+
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。

@@ -189,3 +189,44 @@ paths:
         - { name: callbackId, in: path, required: true, schema: { type: string } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  # ---------- 开网流程推进(CLI 模拟 / 联调用) ----------
+  /orders/{orderNo}/check-resource:
+    post:
+      tags: [Order]
+      summary: 环节2 资源核查:调资源域核查目标地址,推进 stage=2
+      operationId: checkOrderResource
+      parameters:
+        - { name: orderNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /orders/{orderNo}/reserve:
+    post:
+      tags: [Order]
+      summary: 环节3 端口预占:资源域占空闲端口并推进状态 PENDING→RESERVED
+      operationId: reserveOrderPort
+      parameters:
+        - { name: orderNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /orders/{orderNo}/charge:
+    post:
+      tags: [Order]
+      summary: 环节4 合同收费,并自动推进环节 5-8(标签预绑定/建档/预下发/派单)
+      operationId: chargeOrder
+      parameters:
+        - { name: orderNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tickets/{ticketNo}/activate:
+    post:
+      tags: [Order]
+      summary: 环节10 激活(上门扫码后),并自动推进环节 11-12(激活回调/更新GIS)→ DONE
+      operationId: activateTicket
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
