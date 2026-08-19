@@ -1,0 +1,72 @@
+/* Dashboard 组件: 使用 CSS 变量适配主题，布局与设计稿对齐 */
+.dash-page { padding: 0; }
+
+/* 工具栏 */
+.dash-toolbar { margin-bottom: 24px; display: flex; gap: 8px; align-items: center; }
+
+/* 错误提示 */
+.dash-error-msg { padding: 16px; border-radius: 8px; background: var(--token-color-error-bg, #fff1f0); color: var(--token-color-error, #f53f3f); }
+
+/* 统计卡片 - 四列响应式 */
+.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 1200px) { .dash-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .dash-stats { grid-template-columns: 1fr; } }
+.dash-stat-card {
+  padding: 20px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--shell-card-bg, #fff);
+  box-shadow: var(--shell-card-shadow, 0 1px 3px rgba(15, 30, 59, 0.06));
+}
+.dash-stat-label { font-size: 14px; color: var(--shell-content-text, #4e5664); margin-bottom: 8px; }
+.dash-stat-value { font-size: 28px; font-weight: 600; color: var(--shell-heading, #172744); line-height: 1.2; }
+.dash-delta { font-size: 13px; margin-top: 4px; }
+.dash-delta.up { color: var(--token-color-error, #f53f3f); }
+.dash-delta.down { color: var(--token-color-success, #30a46c); }
+.dash-delta.flat { color: var(--token-color-text-secondary, #8a96aa); }
+
+/* 两列布局: 订单状态分布 + 待办 */
+.dash-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+@media (max-width: 1200px) { .dash-grid-2 { grid-template-columns: 1fr; } }
+.dash-card { padding: 20px; border-radius: 8px; background: var(--shell-card-bg, #fff); border: 1px solid var(--shell-card-border, transparent); box-shadow: var(--shell-card-shadow, 0 1px 3px rgba(15,30,59,0.06)); }
+.dash-card-title { font-size: 16px; font-weight: 600; color: var(--shell-heading, #172744); margin: 0 0 16px 0; }
+
+/* 卡片头部(待办标题 + 分页) */
+.dash-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.dash-card-header .dash-card-title { margin: 0; }
+
+/* 表格 */
+.dash-table-wrap { overflow-x: auto; }
+.dash-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dash-table thead th { color: var(--token-color-text-secondary, #8a96aa); font-weight: 500; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--token-color-border, #e5e6eb); }
+.dash-table tbody td { padding: 10px 12px; color: var(--token-color-text, #4e5664); border-bottom: 1px solid var(--token-color-border, #e5e6eb); }
+.dash-table tbody tr:last-child td { border-bottom: none; }
+
+/* 状态标签 */
+.dash-status-tag { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 4px; border: 1px solid; font-weight: 500; }
+
+/* 进度条 */
+.dash-progress { height: 6px; background: var(--token-color-fill-tertiary, #f0f0f0); border-radius: 3px; overflow: hidden; min-width: 100px; }
+.dash-progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
+
+/* 待办列表 */
+.dash-todo-list { max-height: 320px; overflow-y: auto; }
+.dash-todo-item { display: flex; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--token-color-border, #e5e6eb); gap: 12px; }
+.dash-todo-item:last-child { border-bottom: none; }
+.dash-todo-time { width: 56px; font-size: 12px; color: var(--token-color-text-secondary, #8a96aa); flex-shrink: 0; }
+.dash-todo-content { flex: 1; }
+.dash-todo-text { font-size: 13px; color: var(--token-color-text, #4e5664); line-height: 1.5; }
+.dash-todo-badge { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-left: 6px; font-weight: 500; vertical-align: middle; }
+
+/* 分页 */
+.dash-pager { display: flex; align-items: center; gap: 8px; }
+.dash-pager-btn { padding: 2px 10px; font-size: 12px; border: 1px solid var(--token-color-border, #d9d9d9); border-radius: 4px; background: var(--token-color-fill-secondary, #fff); color: var(--token-color-text, #4e5664); cursor: pointer; }
+.dash-pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.dash-pager-info { font-size: 12px; color: var(--token-color-text-secondary, #8a96aa); }
+
+/* 趋势图 */
+.dash-trend { display: flex; align-items: flex-end; gap: 12px; height: 160px; padding: 20px 0; overflow-x: auto; }
+.dash-trend-col { flex: 1; min-width: 48px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+.dash-trend-value { font-size: 12px; color: var(--token-color-text-secondary, #8a96aa); margin-bottom: 8px; font-weight: 500; }
+.dash-trend-bar { width: 60%; max-width: 32px; background: var(--token-color-primary, #1677ff); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s ease; }
+.dash-trend-col span { font-size: 12px; color: var(--token-color-text-secondary, #8a96aa); margin-top: 8px; }

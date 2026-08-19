@@ -1,11 +1,12 @@
-// 工作台:GET /dashboard 聚合真实数据(统计卡/订单状态分布/待办/近7日趋势),纯 CSS 无图表库。
+// 工作台:GET /dashboard 聚合真实数据(统计卡/订单状态分布/待办/近7日趋势)
 import { useEffect, useState } from 'react'
 import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
 import { PageHead } from '../org/shared'
 import { fmtTime } from '../../lib/format'
-import '../org/org.css'
+import { Button } from 'antd'
+import './dashboard.css'
 
 interface StatCard { key: string; label: string; value: string; delta: string; trend: string }
 interface StatusDist { status: string; statusLabel: string; count: number; percent: string }
@@ -57,41 +58,50 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
   const pagedTodos = todoItems.slice((todoPage - 1) * TODO_PAGE_SIZE, todoPage * TODO_PAGE_SIZE)
 
   return (
-    <div>
+    <div className="dash-page">
       <PageHead title={d.title} desc={welcome} />
-      <div className="org-toolbar">
-        <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+      <div className="dash-toolbar">
+        <Button type="primary" onClick={load} loading={busy}>刷新</Button>
       </div>
-      {error ? <div className="org-card"><div className="org-error">{error}</div></div> : data && (
+      {error ? (
+        <div className="dash-error-msg">{error}</div>
+      ) : data ? (
         <>
-          {/* 统计卡片 */}
-          <div className="dash-stats">
+          <section className="dash-section dash-stats">
             {data.stats.map((s) => (
-              <div key={s.key} className="dash-stat">
-                <div className="dash-stat-dot" style={{ background: getStatDotColor(s.key) }} />
+              <div key={s.key} className="dash-stat-card">
                 <div className="dash-stat-label">{s.label}</div>
                 <div className="dash-stat-value">{s.value}</div>
                 {s.delta ? <div className={'dash-delta ' + s.trend}>{s.delta}</div> : null}
               </div>
             ))}
-          </div>
+          </section>
 
-          {/* 订单状态分布 + 待办事项 */}
-          <div className="dash-grid-2">
-            <div className="org-card">
-              <h3>{d.distTitle}</h3>
-              <div className="org-table-wrap">
-                <table className="org-table">
-                  <thead><tr><th>{d.colStatus}</th><th>{d.colCount}</th><th>{d.colPercent}</th><th>{d.colProgress}</th></tr></thead>
+          <section className="dash-section dash-grid-2">
+            <article className="dash-card">
+              <h3 className="dash-card-title">{d.distTitle}</h3>
+              <div className="dash-table-wrap">
+                <table className="dash-table">
+                  <thead>
+                    <tr>
+                      <th>{d.colStatus}</th>
+                      <th>{d.colCount}</th>
+                      <th>{d.colPercent}</th>
+                      <th>{d.colProgress}</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {data.orderStatusDist.map((r) => (
                       <tr key={r.status}>
                         <td>
-                          <span className="dash-status-tag" style={{ 
-                            background: getStatusBg(r.status), 
-                            color: getStatusColor(r.status),
-                            borderColor: getStatusBorder(r.status)
-                          }}>
+                          <span
+                            className="dash-status-tag"
+                            style={{
+                              background: getStatusBg(r.status),
+                              color: getStatusColor(r.status),
+                              borderColor: getStatusBorder(r.status),
+                            }}
+                          >
                             {r.statusLabel}
                           </span>
                         </td>
@@ -99,12 +109,12 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                         <td>{r.percent}</td>
                         <td>
                           <div className="dash-progress">
-                            <div 
-                              className="dash-progress-fill" 
-                              style={{ 
+                            <div
+                              className="dash-progress-fill"
+                              style={{
                                 width: r.percent,
-                                background: STATUS_COLORS[r.status] || '#1677ff'
-                              }} 
+                                background: STATUS_COLORS[r.status] || '#1677ff',
+                              }}
                             />
                           </div>
                         </td>
@@ -113,20 +123,50 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </article>
 
-            <div className="org-card">
-              <h3>{d.todoTitle} <span className="dash-todo-count">{d.todoCount.replace('{n}', String(todoItems.length))}</span></h3>
+            <article className="dash-card">
+              <div className="dash-card-header">
+                <h3 className="dash-card-title">{d.todoTitle}</h3>
+                {totalTodoPages > 1 && (
+                  <div className="dash-pager">
+                    <button
+                      type="button"
+                      className="dash-pager-btn"
+                      disabled={todoPage === 1}
+                      onClick={() => setTodoPage((p) => Math.max(1, p - 1))}
+                    >
+                      上一页
+                    </button>
+                    <span className="dash-pager-info">
+                      {todoPage} / {totalTodoPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="dash-pager-btn"
+                      disabled={todoPage === totalTodoPages}
+                      onClick={() => setTodoPage((p) => Math.min(totalTodoPages, p + 1))}
+                    >
+                      下一页
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="dash-todo-list">
                 {pagedTodos.map((it) => {
-                  const time = it.time ? (fmtTime(it.time).split(' ')[1] || fmtTime(it.time)) : '--'
+                  const time = it.time
+                    ? fmtTime(it.time).split(' ')[1] || fmtTime(it.time)
+                    : '--'
                   const badgeColor = TODO_BADGE_COLORS[it.source] || '#1677ff'
                   return (
                     <div key={it.todoId} className="dash-todo-item">
                       <div className="dash-todo-time">{time}</div>
                       <div className="dash-todo-content">
-                        {it.subject}
-                        <span className="dash-todo-badge" style={{ background: badgeColor + '15', color: badgeColor }}>
+                        <span className="dash-todo-text">{it.subject}</span>
+                        <span
+                          className="dash-todo-badge"
+                          style={{ background: badgeColor + '15', color: badgeColor }}
+                        >
                           {it.source}
                         </span>
                       </div>
@@ -134,74 +174,59 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                   )
                 })}
               </div>
-              {totalTodoPages > 1 && (
-                <div className="dash-todo-pager">
-                  <button className="dash-todo-page-btn" disabled={todoPage === 1} onClick={() => setTodoPage((p) => Math.max(1, p - 1))}>上一页</button>
-                  <span className="dash-todo-page-info">{todoPage} / {totalTodoPages}</span>
-                  <button className="dash-todo-page-btn" disabled={todoPage === totalTodoPages} onClick={() => setTodoPage((p) => Math.min(totalTodoPages, p + 1))}>下一页</button>
-                </div>
-              )}
-            </div>
-          </div>
+            </article>
+          </section>
 
-          {/* 近7日趋势 */}
-          <div className="org-card">
-            <h3>{d.trendTitle}</h3>
+          <section className="dash-section dash-card">
+            <h3 className="dash-card-title">{d.trendTitle}</h3>
             <div className="dash-trend">
               {(data.trend.days ?? []).map((day, i) => (
                 <div key={day + i} className="dash-trend-col" title={`${day}: ${data.trend.values[i]}`}>
                   <div className="dash-trend-value">{data.trend.values[i]}</div>
-                  <div className="dash-trend-bar" style={{ height: `${(data.trend.values[i] / maxTrend) * 100}%` }} />
+                  <div
+                    className="dash-trend-bar"
+                    style={{ height: `${(data.trend.values[i] / maxTrend) * 100}%` }}
+                  />
                   <span>{day.slice(5)}</span>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         </>
-      )}
+      ) : null}
     </div>
   )
 }
 
-function getStatDotColor(key: string): string {
-  const map: Record<string, string> = {
-    todayOrders: '#1890ff',
-    activeTickets: '#fa8c16',
-    pendingAlarms: '#ff4d4f',
-    assetConsistency: '#52c41a',
-  }
-  return map[key] || '#1890ff'
-}
-
 function getStatusBg(status: string): string {
   const map: Record<string, string> = {
-    PENDING: '#e6f7ff',
-    RESERVED: '#fff7e6',
-    INSTALLING: '#fff7e6',
-    DONE: '#f6ffed',
-    CANCELLED: '#fff1f0',
+    PENDING: 'var(--token-color-primary-bg, #e6f7ff)',
+    RESERVED: 'var(--token-color-warning-bg, #fff7e6)',
+    INSTALLING: 'var(--token-color-warning-bg, #fff7e6)',
+    DONE: 'var(--token-color-success-bg, #f6ffed)',
+    CANCELLED: 'var(--token-color-error-bg, #fff1f0)',
   }
-  return map[status] || '#f5f5f5'
+  return map[status] || 'var(--token-color-fill-tertiary, #f5f5f5)'
 }
 
 function getStatusColor(status: string): string {
   const map: Record<string, string> = {
-    PENDING: '#1890ff',
-    RESERVED: '#fa8c16',
-    INSTALLING: '#fa8c16',
-    DONE: '#52c41a',
-    CANCELLED: '#ff4d4f',
+    PENDING: 'var(--token-color-primary, #1677ff)',
+    RESERVED: 'var(--token-color-warning, #fa8c16)',
+    INSTALLING: 'var(--token-color-warning, #fa8c16)',
+    DONE: 'var(--token-color-success, #52c41a)',
+    CANCELLED: 'var(--token-color-error, #ff4d4f)',
   }
-  return map[status] || '#666'
+  return map[status] || 'var(--token-color-text, #666)'
 }
 
 function getStatusBorder(status: string): string {
   const map: Record<string, string> = {
-    PENDING: '#91caff',
-    RESERVED: '#ffd591',
-    INSTALLING: '#ffd591',
-    DONE: '#b7eb8f',
-    CANCELLED: '#ffa39e',
+    PENDING: 'var(--token-color-primary-border, #91caff)',
+    RESERVED: 'var(--token-color-warning-border, #ffd591)',
+    INSTALLING: 'var(--token-color-warning-border, #ffd591)',
+    DONE: 'var(--token-color-success-border, #b7eb8f)',
+    CANCELLED: 'var(--token-color-error-border, #ffa39e)',
   }
-  return map[status] || '#d9d9d9'
+  return map[status] || 'var(--token-color-border, #d9d9d9)'
 }
