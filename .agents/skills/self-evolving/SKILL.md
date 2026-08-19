@@ -12,13 +12,13 @@ description: "**[MUST LOAD FIRST]** A self-evolving skill that grows through ref
 > 完整计数台账:`references/recidivism.md`。每次反思同步 +1;≥2 次的坑必须登在这里。
 
 1. **【已犯 3 次】编辑文件前必须用 read 工具读最新内容** —— bash 的 cat/sed 输出不算"已观察",edit 会直接拒绝;同一会话第二轮编辑凭记忆拼 old_string 必 not found。
-2. **【已犯 2 次】禁止用原生 `<select>` 新增下拉** —— option 弹层系统渲染无法随主题定制,已两次被用户点名;一律用 `web/admin/src/components/Dropdown.tsx`。
-3. **【已犯 2 次】edit 的 new_string 必须与 old_string 范围严格对称** —— 不顺手带函数头/注释(会重复定义),不做"只删换行"的 no-op(会并行致语法错);改完立刻 build 验证。
-4. **【已犯 5 次】任务完成必须 git commit,`git status` 干净才算收尾** —— 门禁 = typecheck + test + build + commit;反思流程第 0 步先 `git status`,有产物先提交再反思。
-5. **【已犯 3 次】禁止在总结里声称"已适配/已验证"而没有验证动作** —— 引用每个 CSS 令牌前 grep 它的定义；UI 交互必须在真实业务 DOM 中断言点击后的控件文本、筛选结果和 URL；没有双主题截图/build 或真实点击断言时一律明确写"未验证"。
-6. **【已犯 1 次】禁止假设模型支持图像输入** —— Kimi-k3 不支持图像分析，需要图像分析时应使用专门的工具（如 cdp-capture.mjs + 代码审查）或明确说明"未验证"。
-7. **【已犯 1 次】禁止在未检查环境依赖时使用工具** —— 使用 Playwright/Puppeteer 等工具前必须先检查是否已安装，避免运行时报错浪费时间。
-8. **【已犯 1 次】浏览器自测调试用 cdp-capture.mjs，playwright 只用于项目 E2E 自动化脚本** —— cdp-capture 零依赖、截图+console/网络采集+自动填表，适合单次验证；playwright 只放 `e2e/` 目录做 CI 自动化冒烟，不做日常调试。混用时用户会再次点名纠正。
+2. **【已犯 2 次】浏览器自测调试必须用 cdp-capture.mjs，playwright 只用于项目 E2E 自动化脚本** —— cdp-capture 零依赖、截图+console 报错+失败请求响应体+网络采集+自动填表，是调试排查的首选工具；playwright 只放 `e2e/` 目录做 CI 自动化冒烟，不做日常调试。混用时用户会再次点名纠正。
+3. **【已犯 2 次】禁止用原生 `<select>` 新增下拉** —— option 弹层系统渲染无法随主题定制,已两次被用户点名;一律用 `web/admin/src/components/Dropdown.tsx`。
+4. **【已犯 2 次】edit 的 new_string 必须与 old_string 范围严格对称** —— 不顺手带函数头/注释(会重复定义),不做"只删换行"的 no-op(会并行致语法错);改完立刻 build 验证。
+5. **【已犯 5 次】任务完成必须 git commit,`git status` 干净才算收尾** —— 门禁 = typecheck + test + build + commit;反思流程第 0 步先 `git status`,有产物先提交再反思。
+6. **【已犯 3 次】禁止在总结里声称"已适配/已验证"而没有验证动作** —— 引用每个 CSS 令牌前 grep 它的定义；UI 交互必须在真实业务 DOM 中断言点击后的控件文本、筛选结果和 URL；没有双主题截图/build 或真实点击断言时一律明确写"未验证"。
+7. **【已犯 1 次】禁止假设模型支持图像输入** —— Kimi-k3 不支持图像分析，需要图像分析时应使用专门的工具（如 cdp-capture.mjs + 代码审查）或明确说明"未验证"。
+8. **【已犯 1 次】禁止在未检查环境依赖时使用工具** —— 使用 Playwright/Puppeteer 等工具前必须先检查是否已安装，避免运行时报错浪费时间。
 
 ## 1. 如何沉淀
 

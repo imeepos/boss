@@ -19,5 +19,5 @@
 | 按精确后缀清理测试数据,子测试自造独立后缀漏删 | 1 | 2026-08-19(W8 用 orderNo6() 另起后缀,w8 树永远清不掉) | 废一轮,靠 psql 残留计数才暴露 |
 | 模型不支持图像输入却尝试读图分析 | 1 | 2026-08-18(使用 read_image 读取截图失败) | 浪费时间尝试不支持的功能,需改用代码分析 |
 | 浏览器自动化工具缺失时未提前检查 | 1 | 2026-08-18(尝试使用 Playwright/Puppeteer 失败) | 应先检查环境依赖再选择工具 |
-| 浏览器操作测试误用 playwright 代替 cdp-capture.mjs | 1 | 2026-08-18(本次会话,用 playwright 而非 cdp-capture 做浏览器调试) | 用户再次强调:cdp-capture 是自测调试工具,playwright 仅用于项目 E2E 自动化脚本 |
+| 浏览器操作测试误用 playwright 代替 cdp-capture.mjs | 2 | 2026-08-18(本次会话,用 playwright 而非 cdp-capture 做浏览器调试), 2026-08-18(用户再次强调,升级至高频红线 #2) | 用户两轮点名纠正:cdp-capture 含 console 报错+失败请求响应体+网络采集,是调试排查首选;playwright 仅用于项目 E2E 自动化脚本 |
 | 承诺"会保存/已记录"但当场不落盘,被用户连催 | 1 | 2026-08-19(test-accounts.json 只口头答应,连催 4 轮才真正 write) | 浪费 4 轮,用户失去耐心;凡承诺保存必须当场 write+ls |
