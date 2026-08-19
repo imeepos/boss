@@ -143,7 +143,7 @@ private fun RepairActions(nav: NavHost, no: String, phone: String, onReport: () 
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 10.dp)) {
-            ActionBtn("现场测速", Modifier.weight(1f)) { nav.push(Screen.Tool) }
+            ActionBtn("现场测速", Modifier.weight(1f)) { nav.push(Screen.Tool(no)) }
             ActionBtn("上报修复", Modifier.weight(1f), primary = true, onClick = onReport)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 10.dp)) {

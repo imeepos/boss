@@ -52,7 +52,7 @@ fun ProfileScreen(nav: NavHost) {
         }
         Card(Modifier.padding(12.dp)) {
             SectionTitle("常用工具")
-            Cell("测速 / 光功率") { nav.push(Screen.Tool) }
+            Cell("测速 / 光功率") { nav.push(Screen.Tool()) }
             Cell("领料 / 借还") { nav.push(Screen.Pickup) }
             Cell("排障手册") { nav.push(Screen.Help) }
             Cell("联系调度") { nav.push(Screen.Service) }

@@ -41,7 +41,7 @@ private data class QuickItem(val title: String, val sub: String, val screen: Scr
 private val QUICK = listOf(
     QuickItem("排期", "日程", Screen.Schedule), QuickItem("公告", "通告", Screen.Notice),
     QuickItem("任务池", "抢单", Screen.Hall), QuickItem("手册", "排障", Screen.Help),
-    QuickItem("测速", "工具", Screen.Tool), QuickItem("领料", "出库", Screen.Pickup),
+    QuickItem("测速", "工具", Screen.Tool()), QuickItem("领料", "出库", Screen.Pickup),
     QuickItem("安全", "上报", Screen.Safety), QuickItem("维护", "清单", Screen.Maintenance),
 )
 

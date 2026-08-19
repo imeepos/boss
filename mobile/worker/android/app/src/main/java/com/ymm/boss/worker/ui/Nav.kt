@@ -37,7 +37,7 @@ sealed interface Screen {
     // 独立工具页(快捷入口/菜单可达)
     data object Hall : Screen          // 任务池
     data object Pickup : Screen        // 领料
-    data object Tool : Screen          // 测速工具
+    data class Tool(val no: String? = null) : Screen  // 测速工具(可携带工单号)
     data object Maintenance : Screen   // 维护清单
     data object Safety : Screen        // 安全上报
     data object Schedule : Screen      // 排期
