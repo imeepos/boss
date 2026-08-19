@@ -1,6 +1,6 @@
 // 个人工作台内容页：各分区由 UCenterLayout 的独立路由承载。
 import { useEffect, useState, type FormEvent } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useProfile } from '../../layouts/profile'
 import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
@@ -32,7 +32,7 @@ function OverviewSection({ profile }: { profile: Profile }) {
 }
 
 function OverviewLink({ title, desc, href }: { title: string; desc: string; href: string }) {
-  return <a className="overview-link" href={href}><strong>{title}</strong><span>{desc}</span><i className="profile-chevron" /></a>
+  return <Link className="overview-link" to={href}><strong>{title}</strong><span>{desc}</span><i className="profile-chevron" /></Link>
 }
 
 // 基本资料:自助可编辑仅 realName/phone(PUT /auth/profile);角色/公司/数据范围只读。
