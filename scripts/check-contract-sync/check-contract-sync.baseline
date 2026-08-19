@@ -4,5 +4,3 @@
 
 # ---- C. 超 300 行存量(08-18 体检发现,列入整改清单) ----
 # addresses 系列已拆 http_address.go,http_org.go 豁免已移除(2026-08-18)
-# asset/pg.go 316 行:资产仓储;整改=按 读侧/写侧 拆分
-len:internal/domain/asset/pg.go
