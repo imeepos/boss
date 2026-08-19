@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>领料 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">领料 / 借还</div>
+    <span class="act">出库扫码</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">今日领用清单</div>
+    <div id="pk-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">工具借还</div>
+    <div id="pk-tools"></div>
+  </div>
+
+  <div class="card">
+    <div class="notice">库存不足或安全库存预警时自动提醒，缺货将触发补货申请。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script>
+function showErr(e) {
+  var msg = (e && e.message) ? e.message : '网络异常';
+  alert('加载失败：' + msg);
+}
+
+function out(id) {
+  API.asset.materialOut(id).then(function (r) {
+    alert((r && r.message) || '已扫码出库。');
+    load();
+  }).catch(showErr);
+}
+
+function borrow(id) {
+  API.asset.borrowTool(id).then(function (r) {
+    alert((r && r.message) || '已登记借用。');
+    load();
+  }).catch(showErr);
+}
+
+function giveBack(id) {
+  API.asset.giveBackTool(id).then(function (r) {
+    alert((r && r.message) || '已登记归还。');
+    load();
+  }).catch(showErr);
+}
+
+function load() {
+  API.asset.materials().then(function (m) {
+    var items = m.items || [];
+    var list = items.map(function (it) {
+      var btn = it.outBound
+        ? '<button class="btn" disabled style="padding:5px 10px;">已出库</button>'
+        : '<button class="btn btn-primary" style="padding:5px 10px;" onclick="out(\'' + it.itemId + '\')">扫码出库</button>';
+      return '<div class="cell"><div class="main"><div class="t">' + it.name + ' ×' + it.qty + '</div>'
+        + '<div class="d">' + it.spec + '</div></div><div class="right">' + btn + '</div></div>';
+    }).join('');
+    document.getElementById('pk-list').innerHTML = list;
+
+    var tools = m.tools || [];
+    var toolHtml = tools.map(function (t) {
+      var act = t.borrowed
+        ? '<a href="#" onclick="giveBack(\'' + t.toolId + '\');return false;">归还</a>'
+        : '<a href="#" onclick="borrow(\'' + t.toolId + '\');return false;">借用</a>';
+      return '<div class="kv"><span class="k">' + t.name + '</span><span class="v">' + act + '</span></div>';
+    }).join('');
+    document.getElementById('pk-tools').innerHTML = toolHtml;
+  }).catch(showErr);
+}
+
+load();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

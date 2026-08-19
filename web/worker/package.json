@@ -1,0 +1,19 @@
+{
+  "name": "boss-worker-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BOSS 师傅端前端工程:Vite 多页应用,静态页面对接 /api/worker/v1(契约 api/openapi/worker.yaml)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "smoke": "bash scripts/smoke.sh"
+  },
+  "devDependencies": {
+    "vite": "^5.4.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拆机 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="orders.html">&lsaquo;</a>
+    <div class="t">拆机作业</div>
+    <span class="act">必扫码</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title" id="d-title">拆机</div>
+    <div class="kv"><span class="k">客户</span><span class="v" id="d-customer">--</span></div>
+    <div class="kv"><span class="k">地址</span><span class="v" id="d-address">--</span></div>
+    <div class="kv"><span class="k">在网光猫</span><span class="v" id="d-epc">--</span></div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="c-title" style="justify-content:center;">拆机必须扫码解绑</div>
+    <div class="scan-frame">
+      <div class="glyph">▣</div>
+      <div class="hint">扫描在网光猫标签完成解绑</div>
+      <div class="hint muted">未扫码解绑，拆机将被系统拦截</div>
+    </div>
+    <button class="btn-primary btn-block" id="d-scan">模拟扫码解绑</button>
+  </div>
+
+  <div class="card">
+    <div class="notice red">拆机必扫码：未完成扫码解绑不得执行拆机流程，系统强制拦截。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script>
+// 拆机单默认号；用 URL ?no= 覆盖
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-009';
+var preBindTag = '';
+
+function showErr(e) {
+  var msg = (e && e.message) ? e.message : '网络异常';
+  alert('加载失败：' + msg);
+}
+
+API.ticket.detail(NO).then(function (d) {
+  preBindTag = d.preBindTag || '';
+  document.getElementById('d-title').textContent = d.ticketNo + ' · ' + (d.statusLabel || '拆机');
+  document.getElementById('d-customer').textContent = d.customerName + ' · ' + d.customerPhoneMasked;
+  document.getElementById('d-address').textContent = d.address;
+  document.getElementById('d-epc').textContent = preBindTag || '--';
+}).catch(showErr);
+
+document.getElementById('d-scan').addEventListener('click', function () {
+  if (!preBindTag) { alert('未读取到在网光猫标签，请先加载工单'); return; }
+  API.asset.dismantleScan(NO, preBindTag).then(function (r) {
+    if (r && r.unbound && r.portReleased) alert('扫码解绑成功，端口已释放，可执行拆机。');
+    else alert((r && r.message) || '解绑失败，请重试。');
+  }).catch(showErr);
+});
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

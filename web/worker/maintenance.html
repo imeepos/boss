@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>维护清单 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">维护清单</div>
+    <span class="act">维护一张表</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">待替换设备优先级 <span class="more" id="mt-count">-- 台</span></div>
+    <div id="mt-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="notice">清单按健康度/故障率/使用年限综合排序，评分规则公开可解释。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script>
+function showErr(e) {
+  var msg = (e && e.message) ? e.message : '网络异常';
+  alert('加载失败：' + msg);
+}
+
+function tagClass(priority) {
+  if (priority === 'MUST_REPLACE') return 'tag-red';
+  if (priority === 'SUGGEST') return 'tag-orange';
+  return 'tag-orange';
+}
+
+API.asset.maintenance().then(function (m) {
+  var items = m.items || [];
+  document.getElementById('mt-count').textContent = items.length + ' 台';
+
+  var html = items.map(function (it) {
+    var desc = '健康度 ' + it.healthScore;
+    if (it.faultCount) desc += ' · 故障 ' + it.faultCount + ' 次';
+    if (it.ageYears) desc += ' · 在网 ' + it.ageYears + ' 年';
+    if (it.reason) desc += ' · ' + it.reason;
+    else if (it.faultCount) desc += '';
+    return '<div class="cell"><div class="main">'
+      + '<div class="t">' + it.deviceNo + ' · ' + it.deviceType + '</div>'
+      + '<div class="d">' + desc + '</div></div>'
+      + '<div class="right"><span class="tag ' + tagClass(it.priority) + '">' + it.priorityLabel + '</span></div></div>';
+  }).join('');
+  document.getElementById('mt-list').innerHTML = html;
+}).catch(showErr);
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

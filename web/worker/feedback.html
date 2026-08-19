@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>满意度反馈 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="profile.html">&lsaquo;</a>
+    <div class="t">满意度反馈</div>
+    <span class="act">回访</span>
+  </div>
+
+  <div class="card" id="summaryCard">
+    <div class="c-title">最近回访</div>
+  </div>
+
+  <div class="card" id="listCard">
+    <div class="c-title">客户反馈 <span class="more">低分需复核</span></div>
+  </div>
+
+  <div class="card">
+    <div class="notice">满意度 &lt; 3 分自动升级主管复核，避免争议。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+function renderSummary(d) {
+  document.getElementById('summaryCard').innerHTML =
+    '<div class="c-title">最近回访</div>' +
+    '<div class="kv"><span class="k">' + d.latest.ticketNo + '</span>' +
+    '<span class="v" style="color:var(--success);">' + d.latest.score + ' 分</span></div>' +
+    '<div class="kv"><span class="k">本月平均</span>' +
+    '<span class="v" style="color:var(--success);">' + d.monthAvgScore + ' 分</span></div>' +
+    '<div class="kv"><span class="k">评价回收率</span><span class="v">' + d.replyRate + '%</span></div>';
+}
+
+function renderItems(items) {
+  var html = '<div class="c-title">客户反馈 <span class="more">低分需复核</span></div>';
+  items.forEach(function (it) {
+    var color = it.needReview ? 'color:var(--err);' : '';
+    html += '<div class="kv"><span class="k">' + it.customerName + '</span>' +
+      '<span class="v" style="' + color + '">' + it.score + ' · ' + it.comment + '</span></div>';
+  });
+  document.getElementById('listCard').innerHTML = html;
+}
+
+API.profile.feedbacks().then(function (d) {
+  renderSummary(d);
+  renderItems(d.items);
+}).catch(function (e) {
+  alert('反馈加载失败：' + e.message);
+});
+</script>
+</body>
+</html>

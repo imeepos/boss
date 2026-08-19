@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>现场工具 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="order.html">&lsaquo;</a>
+    <div class="t">现场工具</div>
+    <span class="act">零手工配置</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title" id="tl-title">工单</div>
+    <div class="kv"><span class="k">光功率</span><span class="v" id="tl-power" style="color:var(--success);">--</span></div>
+    <div class="kv"><span class="k">下载测速</span><span class="v" id="tl-down">--</span></div>
+    <div class="kv"><span class="k">上传测速</span><span class="v" id="tl-up">--</span></div>
+    <div class="kv"><span class="k">丢包率</span><span class="v" id="tl-loss" style="color:var(--success);">--</span></div>
+    <button class="btn btn-block" style="margin-top:10px;" id="tl-respeed">重新测速</button>
+  </div>
+
+  <div class="card">
+    <div class="c-title">资源查询</div>
+    <div class="kv"><span class="k">片区空闲端口</span><span class="v" id="tl-ports">--</span></div>
+    <div class="kv"><span class="k">最近分光器</span><span class="v" id="tl-splitter">--</span></div>
+    <div class="kv"><span class="k">PON 空闲口</span><span class="v" id="tl-pon">--</span></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">台账自查</div>
+    <div class="notice" style="margin-top:0;">扫码核对该区域资产台账，差异将自动生成清单上报。</div>
+    <button class="btn btn-block ghost" onclick="alert('台账核对无差异。')">扫码核对</button>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function showErr(e) {
+  var msg = (e && e.message) ? e.message : '网络异常';
+  alert('加载失败：' + msg);
+}
+
+function renderMeasure(m) {
+  document.getElementById('tl-title').textContent = NO;
+  document.getElementById('tl-power').textContent = m.opticalPowerDbm + ' dBm（' + (m.opticalPowerLabel || '正常') + '）';
+  document.getElementById('tl-down').textContent = m.downloadMbps + ' Mbps';
+  document.getElementById('tl-up').textContent = m.uploadMbps + ' Mbps';
+  document.getElementById('tl-loss').textContent = m.packetLossRate + '%';
+}
+
+function loadMeasure() {
+  API.asset.measure(NO).then(renderMeasure).catch(showErr);
+}
+
+API.asset.resources(NO).then(function (r) {
+  document.getElementById('tl-ports').textContent = r.idlePorts + ' 个';
+  document.getElementById('tl-splitter').textContent = r.nearestSplitter;
+  document.getElementById('tl-pon').textContent = (r.idlePonPorts || []).join(' / ');
+}).catch(showErr);
+
+loadMeasure();
+document.getElementById('tl-respeed').addEventListener('click', loadMeasure);
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

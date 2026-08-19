@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工单 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">工单列表</div>
+    <span class="act" onclick="loadPanel()">刷新</span>
+  </div>
+
+  <div class="seg" id="seg">
+    <a data-k="doing" class="active" href="javascript:;">进行中</a>
+    <a data-k="todo" href="javascript:;">待领取</a>
+    <a data-k="done" href="javascript:;">已完成</a>
+    <a data-k="all" href="javascript:;">全部</a>
+  </div>
+
+  <div class="card">
+    <div class="c-title" id="panel-title">进行中工单</div>
+    <div id="panel-list"></div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+(function () {
+  var CUR = 'doing';
+  var TITLES = { doing: '进行中工单', todo: '待领取工单', done: '已完成 · 今日', all: '全部工单' };
+
+  function fix(n, d) { if (n === undefined || n === null) return d; return n; }
+
+  function orderType(no) {
+    return (no && (no.indexOf('TKT') === 0 || no.indexOf('EMG') === 0)) ? 'repair.html' : 'order.html';
+  }
+
+  function tagCls(st) {
+    if (st === 'SCAN_PENDING') return 'tag-blue';
+    if (st === 'ACCEPTED' || st === 'TODO') return 'tag-orange';
+    if (st === 'DOING') return 'tag-red';
+    if (st === 'DONE') return 'tag-green';
+    return 'tag-blue';
+  }
+
+  function cell(it) {
+    var no = fix(it.ticketNo, '');
+    var d = fix(it.address, '');
+    if (it.distanceKm !== undefined && it.distanceKm !== null) d += ' · 距您 ' + it.distanceKm + 'km';
+    var d2 = '';
+    if (it.scheduleSlot) d2 = '<div class="d">预约：' + it.scheduleSlot + '</div>';
+    else if (it.slaLeftMinutes !== null && it.slaLeftMinutes !== undefined) d2 = '<div class="d">SLA 剩余 ' + it.slaLeftMinutes + 'm（紧急）</div>';
+    if (it.note) d2 += '<div class="d">' + it.note + '</div>';
+    var right = '<div class="right"><span class="tag ' + tagCls(it.status) + '">' + fix(it.statusLabel, '') + '</span>';
+    if (it.stageTotal !== undefined && it.stageTotal !== null) {
+      right += '<div style="margin-top:4px">' + fix(it.stage, '-') + '/' + it.stageTotal + ' 环节</div>';
+    }
+    right += '</div>';
+    var html = '<a class="cell" href="' + orderType(no) + '?no=' + encodeURIComponent(no) + '">'
+      + '<div class="main"><div class="t">' + no + ' · ' + fix(it.typeLabel, '') + '</div><div class="d">' + d + '</div>' + d2 + '</div>'
+      + right + '</a>';
+    if (it.status === 'TODO') {
+      html = '<div class="cell"><div class="main"><div class="t">' + no + ' · ' + fix(it.typeLabel, '') + '</div><div class="d">' + d + '</div>' + d2 + '</div>'
+        + '<div class="right"><button class="btn btn-primary" style="padding:6px 12px;" onclick="takeOrder(this, \'' + no + '\')">领取</button></div></div>';
+    }
+    return html;
+  }
+
+  function showUser() { document.getElementById('panel-title').textContent = TITLES[CUR]; }
+
+  function loadPanel() {
+    document.getElementById('panel-title').textContent = TITLES[CUR] + ' · 加载中…';
+    API.ticket.list(CUR === 'all' ? '' : CUR).then(function (r) {
+      var items = (r && r.items) || [];
+      document.getElementById('panel-title').textContent = TITLES[CUR] + ' (' + items.length + ' 单)';
+      document.getElementById('panel-list').innerHTML = items.map(cell).join('');
+    }).catch(function () {
+      document.getElementById('panel-title').textContent = TITLES[CUR];
+      document.getElementById('panel-list').innerHTML = '<div class="notice">工单加载失败，请刷新重试。</div>';
+    });
+  }
+
+  var seg = document.getElementById('seg');
+  seg.addEventListener('click', function (e) {
+    var a = e.target.closest('a');
+    if (!a) return;
+    CUR = a.getAttribute('data-k');
+    seg.querySelectorAll('a').forEach(function (x) { x.classList.toggle('active', x === a); });
+    loadPanel();
+  });
+
+  window.takeOrder = function (btn, no) {
+    if (!confirm('确认领取工单 ' + no + ' ?')) return;
+    API.ticket.accept(no).then(function (r) {
+      alert((r && r.message) || '已领取');
+      loadPanel();
+    }).catch(function () { alert('领取失败，请重试。'); });
+  };
+
+  loadPanel();
+})();
+</script>
+</body>
+</html>

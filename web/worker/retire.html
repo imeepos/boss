@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旧件回收 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="replace.html">&lsaquo;</a>
+    <div class="t">旧件回收</div>
+    <span class="act">返库登记</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title">待回收旧件</div>
+    <div id="rt-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="c-title">已回收记录 <span class="more">本月</span></div>
+    <div class="kv"><span class="k">返修件</span><span class="v" id="rt-repair">-- 件</span></div>
+    <div class="kv"><span class="k">拆机回收</span><span class="v" id="rt-dismantle">-- 件</span></div>
+  </div>
+
+  <div class="card">
+    <div class="notice">旧件回收须扫码留痕，返修件与拆机件分流处理。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script>
+function showErr(e) {
+  var msg = (e && e.message) ? e.message : '网络异常';
+  alert('加载失败：' + msg);
+}
+
+function returnAsset(epc) {
+  API.asset.returnAsset(epc).then(function (r) {
+    alert((r && r.message) || '已登记返库。');
+    load();
+  }).catch(showErr);
+}
+
+function load() {
+  API.asset.materials().then(function (m) {
+    var items = m.pendingReturn || [];
+    var list = items.map(function (it) {
+      return '<div class="cell"><div class="main"><div class="t">光猫 ' + it.epc + '</div>'
+        + '<div class="d">' + it.reason + '</div></div>'
+        + '<div class="right"><button class="btn btn-primary" style="padding:5px 10px;" onclick="returnAsset(\'' + it.epc + '\')">返库</button></div></div>';
+    }).join('');
+    document.getElementById('rt-list').innerHTML = list || '<div class="kv"><span class="v">暂无待回收旧件</span></div>';
+
+    var returned = m.returned || {};
+    document.getElementById('rt-repair').textContent = (returned.repairCount || 0) + ' 件';
+    document.getElementById('rt-dismantle').textContent = (returned.dismantleCount || 0) + ' 件';
+  }).catch(showErr);
+}
+
+load();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

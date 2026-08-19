@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>激活 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" id="back-link" href="report.html">&lsaquo;</a>
+    <div class="t">激活用户</div>
+    <span class="act">环节 10/12</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title" id="ticket-no">ORD-20250817-001</div>
+    <div class="kv"><span class="k">LOID</span><span class="v" id="loid">-</span></div>
+    <div class="kv"><span class="k">激活状态</span><span class="v" id="status" style="color:var(--warn);">-</span></div>
+    <div class="kv"><span class="k">上次尝试</span><span class="v" id="last-try">-</span></div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="scan-frame">
+      <div class="glyph">↻</div>
+      <div class="hint">激活回调未返回成功</div>
+      <div class="hint muted">请确认光猫在线后重试激活</div>
+    </div>
+    <button class="btn-green btn-block" onclick="activate()">重新激活</button>
+  </div>
+
+  <div class="card">
+    <div class="notice">激活失败不丢数据，可反复重试；连续失败将自动转告警派单。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function set(id, text) { document.getElementById(id).textContent = text || '-'; }
+
+function render(d) {
+  set('ticket-no', d.ticketNo);
+  document.getElementById('back-link').href = 'report.html?no=' + NO;
+  set('loid', d.loid);
+  set('status', d.statusLabel);
+  set('last-try', d.lastTry);
+  var el = document.getElementById('status');
+  el.style.color = d.status === 'SUCCESS' ? 'var(--success)' : 'var(--warn)';
+}
+
+function activate() {
+  API.scan.activate(NO).then(function (d) {
+    render(d);
+    alert(d.statusLabel === '已生效' ? '激活成功' : '已提交激活');
+  }).catch(function (e) {
+    alert('激活失败：' + (e && e.message ? e.message : e));
+  });
+}
+
+API.scan.activation(NO).then(render).catch(function (e) { alert('加载失败：' + e.message); });
+</script>
+</body>
+</html>

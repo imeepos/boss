@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>消息 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">消息中心</div>
+    <span class="act" onclick="readAll()">全部已读</span>
+  </div>
+
+  <div class="card" id="listCard"></div>
+
+  <div class="card">
+    <button class="btn btn-block ghost" onclick="clearRead()">清空已读</button>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+function render(items) {
+  var html = '';
+  items.forEach(function (m) {
+    html += '<div class="msg-banner ' + (m.level || '').toLowerCase() + '"><b>' + m.title + '</b> ' +
+      m.content + ' · ' + m.sentAt + '</div>';
+  });
+  document.getElementById('listCard').innerHTML = html || '<div class="notice">暂无消息</div>';
+}
+
+function load() {
+  API.misc.messages().then(function (d) {
+    render(d.items);
+  }).catch(function (e) {
+    alert('消息加载失败：' + e.message);
+  });
+}
+
+function readAll() {
+  API.misc.readAll().then(function (r) {
+    alert(r.message || '全部标记已读');
+    load();
+  }).catch(function (e) {
+    alert('操作失败：' + e.message);
+  });
+}
+
+function clearRead() {
+  API.misc.clear().then(function (r) {
+    alert(r.message || '已清空已读消息');
+    load();
+  }).catch(function (e) {
+    alert('操作失败：' + e.message);
+  });
+}
+
+load();
+</script>
+</body>
+</html>

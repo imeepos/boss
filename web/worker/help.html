@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>排障手册 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">排障手册</div>
+    <span class="act">知识库</span>
+  </div>
+
+  <div class="card">
+    <input type="text" id="kw" placeholder="检索 FAQ / SOP" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;">
+  </div>
+
+  <div class="card" id="listCard">
+    <div class="c-title">高频 SOP</div>
+  </div>
+
+  <div class="card">
+    <div class="notice">知识库多语言（中/英/菲）可检索，装维与客服共用。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+var all = [];
+
+function render(items) {
+  var html = '<div class="c-title">高频 SOP</div>';
+  items.forEach(function (f) {
+    html += '<a class="cell" href="#"><div class="main"><div class="t">' + f.title + '</div>' +
+      '<div class="d">' + f.summary + '</div></div><div class="right">&rsaquo;</div></a>';
+  });
+  document.getElementById('listCard').innerHTML = html || '<div class="notice">未找到相关 SOP</div>';
+}
+
+function filter() {
+  var kw = document.getElementById('kw').value.trim();
+  if (!all.length) return;
+  if (!kw) { render(all); return; }
+  render(all.filter(function (f) {
+    return f.title.indexOf(kw) !== -1 || f.summary.indexOf(kw) !== -1;
+  }));
+}
+
+API.misc.faq().then(function (d) {
+  all = d.items || [];
+  render(all);
+}).catch(function (e) {
+  alert('排障手册加载失败：' + e.message);
+});
+
+document.getElementById('kw').addEventListener('input', filter);
+</script>
+</body>
+</html>

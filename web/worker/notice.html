@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公告 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="home.html">&lsaquo;</a>
+    <div class="t">服务公告</div>
+    <span class="act">全部</span>
+  </div>
+
+  <div class="card" id="listCard"></div>
+
+  <div class="card">
+    <div class="notice">公告与消息中心联动，重要通告同步推送到师傅端。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+function render(items) {
+  var html = '';
+  items.forEach(function (n) {
+    html += '<a class="cell" href="#"><div class="main"><div class="t">' + n.title + '</div>' +
+      '<div class="d">' + n.publishedAt + ' · ' + n.category + '</div></div>' +
+      '<div class="right">&rsaquo;</div></a>';
+  });
+  document.getElementById('listCard').innerHTML = html || '<div class="notice">暂无公告</div>';
+}
+
+API.misc.notices().then(function (d) {
+  render(d.items);
+}).catch(function (e) {
+  alert('公告加载失败：' + e.message);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>签到 · 装维平台师傅端</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="back" href="orders.html">&lsaquo;</a>
+    <div class="t">到点签到</div>
+    <span class="act">环节 9</span>
+  </div>
+
+  <div class="card">
+    <div class="c-title" id="ticketTitle">加载中…</div>
+    <div class="kv"><span class="k">安装地址</span><span class="v" id="ticketAddress">--</span></div>
+    <div class="kv"><span class="k">当前定位</span><span class="v" style="color:var(--success);">已定位（误差 30m）</span></div>
+    <div class="kv"><span class="k">签到范围</span><span class="v">≤ 100m</span></div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="scan-frame" style="padding:50px 16px;">
+      <div class="glyph">◉</div>
+      <div class="hint">您已到达客户位置附近</div>
+      <div class="hint muted">签到将记录到达时间，用于 SLA 计时</div>
+    </div>
+    <button class="btn-green btn-block" onclick="submitCheckin()">确认签到</button>
+    <div id="tip" class="hint muted" style="display:none;"></div>
+  </div>
+
+  <div class="card">
+    <div class="notice">师傅须在客户地址 100 米范围内方可签到，签到后才能扫码绑定。</div>
+  </div>
+
+  <div id="tabbar"></div>
+</div>
+<script src="api.js"></script>
+<script src="nav.js"></script>
+<script>
+var NO = new URLSearchParams(location.search).get('no') || 'ORD-20250817-001';
+
+function showTip(msg) {
+  var el = document.getElementById('tip');
+  el.textContent = msg;
+  el.style.display = (msg ? 'block' : 'none');
+}
+
+function renderTicket(d) {
+  document.getElementById('ticketTitle').textContent = d.ticketNo;
+  document.getElementById('ticketAddress').textContent = d.address || '--';
+}
+
+API.ticket.detail(NO).then(renderTicket).catch(function (e) {
+  document.getElementById('ticketTitle').textContent = NO;
+  showTip('工单信息加载失败：' + (e && e.message) + '。');
+});
+
+function submitCheckin() {
+  showTip('签到中…');
+  API.ticket.checkin(NO).then(function (r) {
+    alert('签到成功，已记录到达时间 ' + (r.checkedInAt || '') + '。');
+    location.href = 'order.html?no=' + NO;
+  }).catch(function (e) {
+    showTip('签到失败：' + (e && e.message) + '，请重试。');
+  });
+}
+</script>
+</body>
+</html>
