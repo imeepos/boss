@@ -75,3 +75,7 @@ class NavHost(initial: Screen) {
         stack = listOf(s)
     }
 }
+
+// 工单类型分流:TKT/EMG 前缀走修复工单(repair.html),其余走新装工单(order.html)
+fun ticketScreen(no: String): Screen =
+    if (no.startsWith("TKT") || no.startsWith("EMG")) Screen.Repair(no) else Screen.TicketDetail(no)

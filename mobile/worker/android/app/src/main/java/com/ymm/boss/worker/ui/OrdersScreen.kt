@@ -71,7 +71,7 @@ fun OrdersScreen(nav: NavHost) {
                         if (it0.optString("status") == "TODO") {
                             TicketCell(it0, rightExtra = { AcceptBtn { take(it0.optString("ticketNo")) } })
                         } else {
-                            TicketCell(it0, onClick = { nav.push(Screen.TicketDetail(it0.optString("ticketNo"))) })
+                            TicketCell(it0, onClick = { nav.push(ticketScreen(it0.optString("ticketNo"))) })
                         }
                     }
                 }

@@ -83,7 +83,7 @@ private fun HomeBody(nav: NavHost, d: JSONObject) {
         SectionTitle("进行中工单 (${ongoing.length()})", more = "全部") { nav.switchTab(Screen.Orders) }
         if (ongoing.length() == 0) Empty("暂无进行中工单")
         for (i in 0 until ongoing.length()) {
-            TicketCell(ongoing.optJSONObject(i), onClick = { nav.push(Screen.TicketDetail(ongoing.optJSONObject(i).optString("ticketNo"))) })
+            TicketCell(ongoing.optJSONObject(i), onClick = { nav.push(ticketScreen(ongoing.optJSONObject(i).optString("ticketNo"))) })
         }
     }
 }

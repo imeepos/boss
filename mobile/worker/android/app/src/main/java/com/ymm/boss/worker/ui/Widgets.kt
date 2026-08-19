@@ -184,6 +184,11 @@ fun Empty(text: String = "暂无数据") {
         modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 }
 
+// 轻提示(对齐 H5 草稿的 alert/Toast)
+fun toast(ctx: android.content.Context, msg: String) {
+    android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_SHORT).show()
+}
+
 val ScreenBg = Bg
 val WarnColor = Warn
 val SuccessColor = Success
