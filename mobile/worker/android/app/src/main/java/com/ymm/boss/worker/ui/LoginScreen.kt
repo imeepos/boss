@@ -86,13 +86,16 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
                 scope.launch {
                     try {
                         val r = AuthApi.login(phone.trim(), "sms", sms.trim())
-                        Log.d(TAG, "login ok token=${r.optString("token")}")
-                        Api.setToken(r.optString("token"))
-                        Log.d(TAG, "setToken done")
+                        // 真实后端 token 位于 data.token(与 mock 平铺结构不同)
+                        val tk = r.optJSONObject("data")?.optString("token").orEmpty()
+                        if (tk.isEmpty()) {
+                            tip = "登录响应缺少 token"
+                            busy = false
+                            return@launch
+                        }
+                        Api.setToken(tk)
                         onLoggedIn()
-                        Log.d(TAG, "onLoggedIn done")
                     } catch (e: Exception) {
-                        Log.d(TAG, "login fail ${e}")
                         tip = "登录失败:${e.message}"
                         busy = false
                     }
