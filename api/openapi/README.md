@@ -18,7 +18,6 @@
 | `user/misc.yaml` | Misc | 消息 / 优惠券 / 用量 / 地址 / 自助排障 / 协议 |
 | `user/schemas.yaml` | — | 全部共享 `components.schemas` 与 `securitySchemes` |
 
-- `mock/` —— 按 `user.yaml` 契约的假数据 mock 服务,见 `api/mock/README.md`(mock 零依赖手工路由,不解析 yaml,拆分不影响)。
 
 ## 师傅端(装维门户)
 
@@ -35,7 +34,6 @@
 | `worker/misc.yaml` | Misc | 消息 / 公告 / 排障手册 / 联系调度 / 安全上报 |
 | `worker/schemas.yaml` | — | 全部共享 `components.schemas` 与 `securitySchemes` |
 
-- `mock/worker/` —— 按 `worker.yaml` 契约的假数据 mock 服务(端口 8091),页面 `docs/worker/api.js`,对接约定 `docs/worker/API-INTEGRATION.md`。
 
 ## 拆分约定
 
@@ -46,4 +44,3 @@
 
 字段与状态枚举一律以 `docs/contract/{terms,fields,domain-map}.md` 为准。
 
-三端 mock 数据的跨端逻辑关系(订单/工单/客户/端口/资产/账单同值口径)见 `api/DATA-ALIGNMENT.md`,改 mock 前必读。

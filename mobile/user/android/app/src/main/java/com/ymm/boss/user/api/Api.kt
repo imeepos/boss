@@ -12,11 +12,11 @@ import java.net.URLEncoder
 
 /**
  * 用户端统一接口层,对齐 docs/user/api.js。
- * 契约: api/openapi/user.yaml;假数据: api/mock/combined.js。
- * 模拟器访问宿主机 mock 用 10.0.2.2;真机可用 adb reverse tcp:8090 tcp:8090 后改 127.0.0.1。
+ * 契约: api/openapi/user.yaml,前缀 /api/user/v1(真实服务端,mock 已移除)。
+ * 模拟器访问宿主机服务用 10.0.2.2;真机可 adb reverse tcp:28080 tcp:28080 后改 127.0.0.1。
  */
 object Api {
-    const val DEFAULT_BASE = "http://10.0.2.2:8090/api/v1"
+    const val DEFAULT_BASE = "http://10.0.2.2:28080/api/user/v1"
     private const val TOKEN_KEY = "boss_user_token"
 
     var base: String = DEFAULT_BASE

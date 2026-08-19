@@ -1,6 +1,5 @@
 # 师傅管理(Worker) —— 师傅端用到的全部数据的后台管理契约。
-# 实体单一事实源: api/mock/worker/entities.js(经 db.js 聚合);
-# 师傅端视图(api/mock/worker/data.js)由此派生,后台改动即时生效。
+# 实体单一事实源: migrations + internal/domain/worker(mock 已移除)。
 paths:
   /worker-groups:
     get:

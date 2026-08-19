@@ -3,20 +3,17 @@ package com.ymm.boss.worker
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
+import com.ymm.boss.worker.api.Api
+import com.ymm.boss.worker.ui.AppRoot
+import com.ymm.boss.worker.ui.theme.WorkerTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Api.init(this)
         setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Text(text = getString(R.string.app_name))
-                }
+            WorkerTheme {
+                AppRoot(loggedIn = Api.token().isNotEmpty())
             }
         }
     }

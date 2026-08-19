@@ -1,0 +1,11 @@
+// geo 集群共享 tailwind 类名:替代原 geo.css(令牌改走全局 shell-* 体系)。
+export const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
+export const TOOLBAR = 'flex flex-wrap items-center gap-2 p-4'
+export const SPACER = 'flex-1'
+export const TABLE_WRAP = 'overflow-x-auto px-4 pb-4'
+export const FOOTER = 'flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]'
+export const FORM = 'grid grid-cols-2 gap-3.5 gap-x-4'
+export const FIELD = 'flex flex-col gap-1.5'
+export const FIELD_FULL = 'col-span-full flex flex-col gap-1.5'
+export const LABEL = 'text-xs text-[var(--shell-content-text)]'
+export const REQ = 'mr-0.5 text-[var(--color-danger)]'

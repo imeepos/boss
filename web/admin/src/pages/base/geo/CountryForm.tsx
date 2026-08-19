@@ -4,7 +4,9 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
-import './geo.css'
+import { ToolbarButton } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
+import { FORM, FIELD, FIELD_FULL, LABEL, REQ } from './styles'
 
 export interface CountryRow {
   alpha2: string
@@ -68,9 +70,9 @@ export function CountryForm({ initial, editing, onDone, onCancel }: {
       onClose={onCancel}
       footer={
         <>
-          {error && <span className="geo-error" style={{ margin: 0, marginRight: 'auto' }}>{error}</span>}
-          <button className="geo-btn" onClick={onCancel}>{g.cancel}</button>
-          <button className="geo-btn geo-btn-primary" onClick={save}>{g.save}</button>
+          {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
+          <ToolbarButton onClick={onCancel}>{g.cancel}</ToolbarButton>
+          <ToolbarButton primary onClick={save}>{g.save}</ToolbarButton>
         </>
       }
     >
@@ -87,22 +89,21 @@ function FormGrid({ form, editing, labels, onChange }: {
   onChange: (f: CountryRow) => void
 }) {
   return (
-    <div className="geo-form">
+    <div className={FORM}>
       {TEXT_FIELDS.map(([k, req]) => (
-        <div key={k} className={`geo-field ${k === 'shortName' || k === 'fullName' ? 'full' : ''}`}>
-          <label>
-            {req && <span className="req">*</span>}{labels[k]}
+        <div key={k} className={k === 'shortName' || k === 'fullName' ? FIELD_FULL : FIELD}>
+          <label className={LABEL}>
+            {req && <span className={REQ}>*</span>}{labels[k]}
           </label>
-          <input
-            className="geo-input"
+          <Input
             disabled={editing && k === 'alpha2'}
             value={form[k] as string}
             onChange={(e) => onChange({ ...form, [k]: e.target.value })}
           />
         </div>
       ))}
-      <div className="geo-field">
-        <label><span className="req">*</span>{labels.continent}</label>
+      <div className={FIELD}>
+        <label className={LABEL}><span className={REQ}>*</span>{labels.continent}</label>
         <Dropdown
           value={form.continentCode}
           ariaLabel={labels.continent}
@@ -110,8 +111,8 @@ function FormGrid({ form, editing, labels, onChange }: {
           options={CONTINENTS.map((c) => ({ value: c, label: c }))}
         />
       </div>
-      <div className="geo-field">
-        <label><span className="req">*</span>{labels.status}</label>
+      <div className={FIELD}>
+        <label className={LABEL}><span className={REQ}>*</span>{labels.status}</label>
         <Dropdown
           value={form.status}
           ariaLabel={labels.status}

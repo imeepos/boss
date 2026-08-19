@@ -4,9 +4,13 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
 import { Pagination } from '../../../components/Pagination'
+import { ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
+import { Badge } from '../../../components/ui/badge'
+import { Input } from '../../../components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { CountryForm, type CountryRow, EMPTY } from './CountryForm'
 import { CountryDetail, type CountryDetailData } from './CountryDetail'
-import './geo.css'
+import { CARD, TOOLBAR, SPACER, TABLE_WRAP, FOOTER } from './styles'
 
 export function CountryPanel() {
   const t = useT()
@@ -70,24 +74,23 @@ export function CountryPanel() {
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   return (
-    <div className="geo-card">
-      {error && <div className="geo-error" role="alert">{error}</div>}
-      <div className="geo-toolbar">
-        <input
-          className="geo-input"
-          style={{ width: 240 }}
+    <div className={CARD}>
+      {error && <ErrorBanner role="alert" message={error} className="mt-3" />}
+      <div className={TOOLBAR}>
+        <Input
+          className="w-60"
           placeholder={g.searchPlaceholder}
           value={draftKeyword}
           onChange={(e) => search(e.target.value)}
         />
-        <div className="spacer" />
-        <button className="geo-btn geo-btn-primary" onClick={() => { setForm({ ...EMPTY }); setEditing(false) }}>
+        <div className={SPACER} />
+        <ToolbarButton primary onClick={() => { setForm({ ...EMPTY }); setEditing(false) }}>
           + {g.add}
-        </button>
+        </ToolbarButton>
       </div>
       <CountryTable rows={paged} onEdit={(r) => { setForm({ ...r }); setEditing(true) }}
         onToggle={toggle} onDetail={openDetail} />
-      <div className="geo-footer">
+      <div className={FOOTER}>
         <Pagination page={safePage} pageSize={pageSize} total={filtered.length}
           onPage={(v) => { setPage(v); setUrlPage(v) }} onSize={resize} rangeText={g.rangeText}
           prevText={g.prev} nextText={g.next} perPageText={g.perPage}
@@ -114,39 +117,50 @@ function CountryTable({ rows, onEdit, onToggle, onDetail }: {
   onDetail: (alpha2: string) => void
 }) {
   const g = useT().pages.geo
-  if (!rows.length) return <div className="geo-empty">{g.empty}</div>
+  if (!rows.length) return <EmptyState className="py-8" text={g.empty} />
   return (
-    <div className="geo-table-wrap">
-      <table className="geo-table">
-        <thead>
-          <tr>{g.countryColumns.map((c) => <th key={c}>{c}</th>)}</tr>
-        </thead>
-        <tbody>
+    <div className={TABLE_WRAP}>
+      <Table>
+        <TableHeader>
+          <TableRow>{g.countryColumns.map((c) => <TableHead key={c}>{c}</TableHead>)}</TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((r) => (
-            <tr key={r.alpha2}>
-              <td className="num">{r.alpha2}</td>
-              <td>{r.alpha3}</td>
-              <td>{r.numericCode}</td>
-              <td>{r.displayName}</td>
-              <td>{r.continentCode}</td>
-              <td><StatusTag on={r.isActive} /></td>
-              <td>
-                <div className="geo-act">
-                  <button onClick={() => onEdit(r)}>{g.edit}</button><span className="sep">|</span>
-                  <button onClick={() => onToggle(r)}>{r.isActive ? g.disable : g.enable}</button><span className="sep">|</span>
-                  <button onClick={() => onDetail(r.alpha2)}>{g.detail}</button>
-                </div>
-              </td>
-            </tr>
+            <TableRow key={r.alpha2}>
+              <TableCell className="font-semibold text-[var(--shell-heading)]">{r.alpha2}</TableCell>
+              <TableCell>{r.alpha3}</TableCell>
+              <TableCell>{r.numericCode}</TableCell>
+              <TableCell>{r.displayName}</TableCell>
+              <TableCell>{r.continentCode}</TableCell>
+              <TableCell><StatusTag on={r.isActive} /></TableCell>
+              <TableCell>
+                <span className="inline-flex items-center">
+                  <ActBtn label={g.edit} onClick={() => onEdit(r)} />
+                  <ActBtn label={r.isActive ? g.disable : g.enable} onClick={() => onToggle(r)} />
+                  <ActBtn label={g.detail} onClick={() => onDetail(r.alpha2)} last />
+                </span>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
+  )
+}
+
+function ActBtn({ label, onClick, last }: { label: string; onClick: () => void; last?: boolean }) {
+  return (
+    <>
+      {!last && <span className="text-[var(--shell-side-border)]">|</span>}
+      <button className="border-none bg-none px-1 text-[13px] text-[var(--color-text-link)] cursor-pointer hover:text-[var(--color-brand-gold-600)] hover:underline" onClick={onClick}>
+        {label}
+      </button>
+    </>
   )
 }
 
 // StatusTag 启用/停用语义标签。
 export function StatusTag({ on }: { on: boolean }) {
   const g = useT().pages.geo
-  return <span className={`geo-tag ${on ? 'geo-tag-on' : 'geo-tag-off'}`}>{on ? g.active : g.inactive}</span>
+  return <Badge variant={on ? 'success' : 'default'}>{on ? g.active : g.inactive}</Badge>
 }

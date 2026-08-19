@@ -3,8 +3,10 @@ import { useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { ToolbarButton } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
 import type { CountryRow } from './CountryForm'
-import './geo.css'
+import { FORM, FIELD, FIELD_FULL, LABEL } from './styles'
 
 export interface CountryDetailData extends CountryRow {
   names: { locale: string; name: string; nameType: string }[]
@@ -14,6 +16,8 @@ export interface CountryDetailData extends CountryRow {
     callingCodes: string[]
   }
 }
+
+const TAG_OFF = 'mb-1.5 inline-flex items-center justify-between rounded-[4px] border border-[color-mix(in_srgb,var(--shell-group-title)_35%,transparent)] bg-[color-mix(in_srgb,var(--shell-group-title)_10%,transparent)] px-2 py-0.5 text-xs leading-[22px] text-[var(--shell-group-title)]'
 
 export function CountryDetail({ data, onChanged, onClose }: {
   data: CountryDetailData
@@ -82,11 +86,11 @@ function DescGrid({ data }: { data: CountryDetailData }) {
     ['status', data.status], ['postal regex', data.postalRegex || '—'],
   ]
   return (
-    <div className="geo-form" style={{ marginBottom: 8 }}>
+    <div className={FORM + ' mb-2'}>
       {items.map(([k, v]) => (
-        <div key={k} className="geo-field">
-          <label>{k}</label>
-          <span style={{ fontSize: 13, color: 'var(--shell-heading)' }}>{v}</span>
+        <div key={k} className={FIELD}>
+          <label className={LABEL}>{k}</label>
+          <span className="text-[13px] text-[var(--shell-heading)]">{v}</span>
         </div>
       ))}
     </div>
@@ -102,22 +106,21 @@ function NamesSection(p: {
 }) {
   const g = useT().pages.geo
   return (
-    <section style={{ marginTop: 16 }}>
-      <h4 style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--shell-heading)' }}>{g.names}</h4>
+    <section className="mt-4">
+      <h4 className="m-0 mb-2 text-[13px] text-[var(--shell-heading)]">{g.names}</h4>
       {p.names.map((n) => (
-        <div key={n.locale + n.nameType} className="geo-tag geo-tag-off"
-          style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, padding: '2px 8px' }}>
+        <div key={n.locale + n.nameType} className={TAG_OFF}>
           <span>{n.locale} · {n.nameType} · {n.name}</span>
-          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)' }}
+          <button className="cursor-pointer border-none bg-none text-[var(--color-danger)]"
             onClick={() => p.onRemove(n.locale, n.nameType)}>×</button>
         </div>
       ))}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input className="geo-input" style={{ width: 110 }} value={p.locale}
+      <div className="flex gap-2">
+        <Input className="w-27" value={p.locale}
           onChange={(e) => p.setLocale(e.target.value)} placeholder="locale" />
-        <input className="geo-input" style={{ flex: 1 }} value={p.name}
+        <Input value={p.name}
           onChange={(e) => p.setName(e.target.value)} placeholder="name" />
-        <button className="geo-btn" onClick={p.onAdd}>{g.addName}</button>
+        <ToolbarButton onClick={p.onAdd}>{g.addName}</ToolbarButton>
       </div>
     </section>
   )
@@ -131,23 +134,23 @@ function AttrsSection(p: {
 }) {
   const g = useT().pages.geo
   return (
-    <section style={{ marginTop: 16 }}>
-      <h4 style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--shell-heading)' }}>{g.attrs}</h4>
-      <div className="geo-form">
-        <div className="geo-field full">
-          <label>{g.timeZones}</label>
-          <input className="geo-input" value={p.tz} onChange={(e) => p.setTz(e.target.value)} />
+    <section className="mt-4">
+      <h4 className="m-0 mb-2 text-[13px] text-[var(--shell-heading)]">{g.attrs}</h4>
+      <div className={FORM}>
+        <div className={FIELD_FULL}>
+          <label className={LABEL}>{g.timeZones}</label>
+          <Input value={p.tz} onChange={(e) => p.setTz(e.target.value)} />
         </div>
-        <div className="geo-field full">
-          <label>{g.callingCodes}</label>
-          <input className="geo-input" value={p.cc} onChange={(e) => p.setCc(e.target.value)} />
+        <div className={FIELD_FULL}>
+          <label className={LABEL}>{g.callingCodes}</label>
+          <Input value={p.cc} onChange={(e) => p.setCc(e.target.value)} />
         </div>
-        <div className="geo-field full">
-          <label>{g.currencies}</label>
-          <input className="geo-input" value={p.cur} onChange={(e) => p.setCur(e.target.value)} />
+        <div className={FIELD_FULL}>
+          <label className={LABEL}>{g.currencies}</label>
+          <Input value={p.cur} onChange={(e) => p.setCur(e.target.value)} />
         </div>
       </div>
-      <button className="geo-btn geo-btn-primary" style={{ marginTop: 12 }} onClick={p.onSave}>{g.save}</button>
+      <ToolbarButton primary onClick={p.onSave}>{g.save}</ToolbarButton>
     </section>
   )
 }

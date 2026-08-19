@@ -1,6 +1,6 @@
 # 数据从属关系总览（contract/data-relations）
 
-> 版本 V1.1（2026-08-17）｜权威源：migrations(阶段1)、api/openapi/admin.yaml、api/mock/admin/data、fields.md
+> 版本 V1.1（2026-08-17）｜权威源：migrations(阶段1)、api/openapi/admin.yaml、fields.md(mock 层已于 2026-08-19 移除)
 > 定位：锁死「谁包含谁、谁归属于谁」的完整实体关系清单。详情页设计、数据权限裁剪一律以本表为准。
 
 ## 0. 四条铁律
