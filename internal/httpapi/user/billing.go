@@ -20,10 +20,14 @@ func registerPortalBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/payments", portalListPayments(a))
 	g.POST("/payments", portalCreatePayment(a))
 	g.GET("/payments/:payNo/receipt", portalReceipt(a))
+	g.GET("/payments/:payNo/receipt.pdf", portalReceiptPdf(a))
+	g.GET("/billing/auto-pay", portalAutoPayGet(a))
+	g.POST("/billing/auto-pay", portalAutoPaySet(a))
 	g.GET("/topups", portalBalanceGet(a))
 	g.POST("/topups", portalTopup(a))
 	g.GET("/invoices", portalListInvoices(a))
 	g.POST("/invoices", portalApplyInvoice(a))
+	g.GET("/invoices/:invoiceNo/pdf", portalInvoicePdf(a))
 }
 
 // portalBillStatusLabel 账单状态中文标签。

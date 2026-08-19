@@ -22,13 +22,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.FaultApi
 import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
@@ -39,6 +46,7 @@ import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 // 对应草稿 docs/user/faultdetail.html:报修进度(no) + 报障 6 环节时间轴。
@@ -46,8 +54,9 @@ import org.json.JSONObject
 fun FaultDetailScreen(nav: Nav, no: String) {
     var detail by remember { mutableStateOf<JSONObject?>(null) }
     var loadErr by remember { mutableStateOf("") }
+    var reloadKey by remember { mutableStateOf(0) }
 
-    LaunchedEffect(no) {
+    LaunchedEffect(no, reloadKey) {
         try {
             detail = FaultApi.detail(no)
         } catch (e: Exception) { loadErr = "报修单加载失败" }
@@ -62,7 +71,7 @@ fun FaultDetailScreen(nav: Nav, no: String) {
             val fault = d.optJSONObject("fault") ?: JSONObject()
             InfoCard(fault, d)
             TimelineCard(d.optJSONArray("timeline").toObjList())
-            ActionsCard()
+            ActionsCard(no) { reloadKey++ }
         }
         Spacer(Modifier.height(12.dp))
     }
@@ -133,23 +142,45 @@ private fun TimelineItem(title: String, result: String, meta: String, isLast: Bo
     }
 }
 
-// TODO 契约仅有 GET /faults/{ticketNo},联系师傅与催单端点未定义,先按草稿摆按钮
+// 联系师傅:GET contact 取明文电话后拉起拨号盘(404 回落 toast);催单:POST urge 后重载详情。
 @Composable
-private fun ActionsCard() {
+private fun ActionsCard(no: String, onReload: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp)) {
         OutlinedButton(
-            onClick = {
-                // TODO 联系师傅:待端点
-            },
+            onClick = { scope.launch { contactTechnician(context, no) } },
             modifier = Modifier.weight(1f).height(42.dp),
         ) { Text("联系师傅", color = Palette.primary) }
         Spacer(Modifier.width(10.dp))
         Button(
-            onClick = {
-                // TODO 催单:待端点
-            },
+            onClick = { scope.launch { urge(context, no, onReload) } },
             colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
             modifier = Modifier.weight(1f).height(42.dp),
         ) { Text("催单", color = Color.White) }
     }
+}
+
+private suspend fun contactTechnician(context: Context, no: String) {
+    try {
+        val phone = FaultApi.contact(no).optString("technicianPhone")
+        if (phone.isBlank()) throw Api.HttpError(404, "empty phone")
+        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+    } catch (e: Exception) {
+        toast(context, "暂未指派师傅,无法获取联系电话")
+    }
+}
+
+private suspend fun urge(context: Context, no: String, onReload: () -> Unit) {
+    try {
+        FaultApi.urge(no)
+        toast(context, "已提交催单,请耐心等待")
+    } catch (e: Exception) {
+        toast(context, "催单失败,请稍后重试")
+    }
+    onReload()
+}
+
+private fun toast(context: Context, text: String) {
+    Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 }

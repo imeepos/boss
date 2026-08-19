@@ -38,6 +38,19 @@ object BillApi {
     /** GET /payments/{payNo}/receipt,返回 receiptNo/customerName/amount/period/payMethod/paidAt。 */
     suspend fun receipt(payNo: String): JSONObject = Api.get("/payments/$payNo/receipt")
 
+    /** GET /payments/{payNo}/receipt.pdf,认证下载凭证 PDF 字节。 */
+    suspend fun receiptPdf(payNo: String): ByteArray = Api.getBytes("/payments/$payNo/receipt.pdf")
+
+    /** GET /invoices/{invoiceNo}/pdf,认证下载发票 PDF 字节。 */
+    suspend fun invoicePdf(invoiceNo: String): ByteArray = Api.getBytes("/invoices/$invoiceNo/pdf")
+
+    /** GET /billing/auto-pay,返回 {autoPayEnabled}。 */
+    suspend fun autoPay(): JSONObject = Api.get("/billing/auto-pay")
+
+    /** POST /billing/auto-pay {enabled},返回 {ok, autoPayEnabled}。 */
+    suspend fun setAutoPay(enabled: Boolean): JSONObject =
+        Api.post("/billing/auto-pay", JSONObject().put("enabled", enabled))
+
     /** GET /topups,返回 balance/denominations。 */
     suspend fun balance(): JSONObject = Api.get("/topups")
 

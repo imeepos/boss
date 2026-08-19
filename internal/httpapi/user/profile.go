@@ -3,6 +3,7 @@ package userapi
 // 用户端门户 Profile 域:实名认证(/auth/verify) + 我的/账号安全/通知订阅/语言。
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -88,8 +89,86 @@ func portalProfile(a *app.Application) gin.HandlerFunc {
 			"customerId": v.ID, "name": v.Name, "phoneMasked": portalMaskPhone(v.Phone),
 			"realName": gin.H{"nameMasked": portalMaskName(v.Name), "idType": v.IdType,
 				"idNoMasked": portalMaskIDNo(v.IdNo), "status": v.RealNameStatus},
+			"plan": portalProfilePlan(a, c, v.ID),
 		})
 	}
+}
+
+// portalProfilePlan /profile 的 plan 聚合:当前套餐(user_plans + 产品价)
+// + 本月账单(最近未缴账单;无未缴返回 0 与空串,端上显示"—")。
+func portalProfilePlan(a *app.Application, c *gin.Context, cid int64) gin.H {
+	plan := gin.H{"planId": "", "name": "", "monthlyFee": 0, "contractEnd": "",
+		"status": "NONE", "installAddress": "", "currentBillAmount": 0, "currentBillDue": ""}
+	if row, ok := portalCurrentPlanRow(a, c, cid); ok {
+		pid := toInt64(row["productId"])
+		plan["planId"] = fmt.Sprintf("%d", pid)
+		plan["name"] = toStr(row["planName"])
+		plan["status"] = toStr(row["status"])
+		if p := portalProductByID(a, c, pid); p != nil {
+			plan["monthlyFee"] = p.MonthlyFee
+		}
+		plan["installAddress"] = portalDefaultAddress(a, c, cid)
+	}
+	if bills, err := a.Billing.ListBills(c.Request.Context(), cid); err == nil {
+		for _, b := range bills {
+			if b.Status != "PAID" && b.Period >= toStr(plan["currentBillDue"]) {
+				plan["currentBillAmount"] = b.Amount
+				plan["currentBillDue"] = b.Period
+			}
+		}
+	}
+	return plan
+}
+
+// portalCurrentPlanRow 客户当前套餐行(user_plans 最近一条)。
+func portalCurrentPlanRow(a *app.Application, c *gin.Context, cid int64) (map[string]any, bool) {
+	if a.UserData == nil {
+		return nil, false
+	}
+	rows, err := a.UserData.ListUserPlans(c.Request.Context())
+	if err != nil {
+		return nil, false
+	}
+	for _, r := range rows {
+		if toInt64(r["customerId"]) == cid {
+			return r, true
+		}
+	}
+	return nil, false
+}
+
+// portalDefaultAddress 默认地址明细(user_addresses is_default)。
+func portalDefaultAddress(a *app.Application, c *gin.Context, cid int64) string {
+	if a.UserData == nil {
+		return ""
+	}
+	rows, err := a.UserData.ListUserAddresses(c.Request.Context())
+	if err != nil {
+		return ""
+	}
+	for _, r := range rows {
+		if toInt64(r["customerId"]) == cid && toBool(r["isDefault"]) {
+			return toStr(r["detail"])
+		}
+	}
+	return ""
+}
+
+// portalProductByID 产品目录按 ID 寻址(目录未接入返回 nil)。
+func portalProductByID(a *app.Application, c *gin.Context, id int64) *customer.ProductOffer {
+	if a.Product == nil {
+		return nil
+	}
+	list, err := a.Product.ListProducts(c.Request.Context(), 0)
+	if err != nil {
+		return nil
+	}
+	for i := range list {
+		if list[i].ID == id {
+			return &list[i]
+		}
+	}
+	return nil
 }
 
 // portalSecurity GET /profile/security。

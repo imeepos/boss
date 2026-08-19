@@ -65,7 +65,7 @@ fun ProductsScreen(nav: Nav) {
         LazyColumn {
             item { if (err.isNotEmpty()) Notice(err, Palette.err) }
             items(products) { p -> ProductCard(p, nav) }
-            item { AddonCard(addons) }
+            item { AddonCard(addons, nav) }
             item { Spacer(Modifier.height(12.dp)) }
         }
     }
@@ -111,9 +111,9 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
 }
 
 @Composable
-private fun AddonCard(addons: List<JSONObject>) {
+private fun AddonCard(addons: List<JSONObject>, nav: Nav) {
     AppCard {
-        CardTitle("增值服务")
+        CardTitle("增值服务", more = "进入管理 >") { nav.push(Route.Addon) }
         if (addons.isEmpty()) Notice("暂无可订购增值服务")
         addons.forEach { a ->
             Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -124,7 +124,6 @@ private fun AddonCard(addons: List<JSONObject>) {
                 Text("¥${a.optString("monthlyFee")}/月", fontSize = 12.sp, color = Palette.muted)
             }
         }
-        // TODO 跳转增值服务独立页(Addon),待该页实现后接入订购/退订端点
     }
 }
 

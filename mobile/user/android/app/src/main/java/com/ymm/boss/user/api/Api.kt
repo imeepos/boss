@@ -1,11 +1,12 @@
 package com.ymm.boss.user.api
 
 import android.content.Context
-import android.content.SharedPreferences
+import com.ymm.boss.user.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -16,25 +17,19 @@ import java.net.URLEncoder
  * 模拟器访问宿主机服务用 10.0.2.2;真机可 adb reverse tcp:28080 tcp:28080 后改 127.0.0.1。
  */
 object Api {
-    const val DEFAULT_BASE = "http://10.0.2.2:28080/api/user/v1"
-    private const val TOKEN_KEY = "boss_user_token"
+    const val DEFAULT_BASE = BuildConfig.BOSS_BASE_URL
 
     var base: String = DEFAULT_BASE
         private set
 
-    private lateinit var prefs: SharedPreferences
-
     fun init(context: Context, baseOverride: String? = null) {
-        prefs = context.getSharedPreferences("boss_user", Context.MODE_PRIVATE)
+        TokenStore.init(context)
         if (!baseOverride.isNullOrBlank()) base = baseOverride
     }
 
-    fun token(): String = if (::prefs.isInitialized) prefs.getString(TOKEN_KEY, "") ?: "" else ""
+    fun token(): String = TokenStore.read()
 
-    fun setToken(t: String?) {
-        if (!::prefs.isInitialized) return
-        prefs.edit().apply { if (t.isNullOrBlank()) remove(TOKEN_KEY) else putString(TOKEN_KEY, t) }.apply()
-    }
+    fun setToken(t: String?) = TokenStore.write(t)
 
     class HttpError(val status: Int, message: String) : Exception(message)
 
@@ -42,6 +37,18 @@ object Api {
     suspend fun getArray(path: String): JSONArray = requestArray("GET", path, null)
     suspend fun post(path: String, body: JSONObject? = JSONObject()): JSONObject = request("POST", path, body ?: JSONObject())
     suspend fun put(path: String, body: JSONObject): JSONObject = request("PUT", path, body)
+
+    /** 认证下载二进制(带 Bearer 头),用于 PDF 凭证/发票,非 2xx 抛 HttpError。 */
+    suspend fun getBytes(path: String): ByteArray = withContext(Dispatchers.IO) {
+        val conn = open("GET", path, null)
+        try {
+            val code = conn.responseCode
+            if (code !in 200..299) throw HttpError(code, "HTTP $code")
+            val buf = ByteArrayOutputStream()
+            conn.inputStream.use { it.copyTo(buf) }
+            buf.toByteArray()
+        } finally { conn.disconnect() }
+    }
 
     private suspend fun request(method: String, path: String, body: JSONObject?): JSONObject =
         withContext(Dispatchers.IO) {

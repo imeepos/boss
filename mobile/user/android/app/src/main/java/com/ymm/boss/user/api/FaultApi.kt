@@ -20,6 +20,12 @@ object FaultApi {
 
     // GET /faults/{ticketNo} 报修详情(fault + technician + timeline)。
     suspend fun detail(ticketNo: String): JSONObject = Api.get("/faults/$ticketNo")
+
+    // POST /faults/{ticketNo}/urge 催单,返回 {ok, urgedAt}。
+    suspend fun urge(ticketNo: String): JSONObject = Api.post("/faults/$ticketNo/urge")
+
+    // GET /faults/{ticketNo}/contact 师傅明文联系方式 {technicianName, technicianPhone},未指派时 404。
+    suspend fun contact(ticketNo: String): JSONObject = Api.get("/faults/$ticketNo/contact")
 }
 
 // complaints 端点:我的投诉列表/提交投诉建议。

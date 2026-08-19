@@ -75,16 +75,38 @@ func portalGetOrder(a *app.Application) gin.HandlerFunc {
 				completed = int(s.Stage)
 			}
 		}
+		techName, techPhone, hasTech := portalTechnician(a, c, cid, o.ID)
+		if !hasTech {
+			techName, techPhone = "", ""
+		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"order": portalOrderSummary(o, productName(a, c, o.OfferID),
 				addressName(a, c, o.AddressID, ""), o.Status == "DONE"),
 			"submitedAt":            o.CreatedAt.Format(time.RFC3339),
-			"technicianName":        "",
-			"technicianPhoneMasked": "",
+			"technicianName":        techName,
+			"technicianPhoneMasked": portalMaskPhone(techPhone),
 			"stageLabel":            portalOrderStageLabel(o.Stage),
 			"completedStage":        completed,
 			"timeline":              portalOrderTimeline(stages),
 		})
+	}
+}
+
+// portalOrderTechnicianContact GET /orders/:orderNo/technician-contact:
+// 订单装维师傅明文联系方式(派单工单回填,归属校验)。
+func portalOrderTechnicianContact(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		o, ok := portalOwnedOrder(a, c, cid)
+		if !ok {
+			return
+		}
+		name, phone, ok := portalTechnician(a, c, cid, o.ID)
+		if !ok {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"orderNo": o.OrderNo, "name": name, "phone": phone})
 	}
 }
 

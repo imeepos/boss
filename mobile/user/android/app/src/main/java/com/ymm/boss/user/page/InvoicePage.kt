@@ -19,9 +19,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.BillApi
+import com.ymm.boss.user.util.PdfOpener
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
 import com.ymm.boss.user.ui.CellRow
@@ -106,6 +108,8 @@ private fun PeriodCell(b: JSONObject, issued: Boolean, onApply: (String) -> Unit
 
 @Composable
 private fun RecordsCard(d: JSONObject?) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val records = d?.optJSONArray("records").optList()
     AppCard {
         CardTitle("开票记录")
@@ -113,16 +117,27 @@ private fun RecordsCard(d: JSONObject?) {
             Text("暂无开票记录", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
         }
         records.forEach { r ->
+            val invoiceNo = r.optString("invoiceNo")
             CellRow(
                 title = "${r.optString("period")} 账期 · ¥" + "%.2f".format(r.optDouble("amount")),
                 desc = "${r.optString("issuedAt")} 开票",
                 right = {
                     Text("下载 PDF", fontSize = 13.sp, color = Palette.primary,
-                        modifier = Modifier.clickable { /* TODO 下载地址 pdfUrl 交系统浏览器打开 */ })
+                        modifier = Modifier.clickable {
+                            scope.launch { downloadInvoice(context, invoiceNo) }
+                        })
                 },
             )
         }
     }
+}
+
+// 认证下载 invoices/{invoiceNo}/pdf 到 cacheDir,经 FileProvider 交系统 PDF 查看器。
+private suspend fun downloadInvoice(context: android.content.Context, invoiceNo: String) {
+    val ok = invoiceNo.isNotBlank() &&
+        PdfOpener.openFromApi(context, "/invoices/$invoiceNo/pdf", "invoice-$invoiceNo.pdf")
+    val msg = if (ok) null else "发票下载失败,请稍后重试"
+    msg?.let { android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show() }
 }
 
 @Composable

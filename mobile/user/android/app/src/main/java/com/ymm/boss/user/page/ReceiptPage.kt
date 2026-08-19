@@ -16,13 +16,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Context
+import android.widget.Toast
 import com.ymm.boss.user.api.BillApi
+import com.ymm.boss.user.util.PdfOpener
+import kotlinx.coroutines.launch
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
@@ -37,6 +43,8 @@ import org.json.JSONObject
 fun ReceiptScreen(nav: Nav, payNo: String) {
     var r by remember { mutableStateOf<JSONObject?>(null) }
     var failed by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     LaunchedEffect(payNo) {
         try {
@@ -48,12 +56,18 @@ fun ReceiptScreen(nav: Nav, payNo: String) {
         TopBar("缴费凭证", onBack = { nav.pop() }, action = "开发票") { nav.push(Route.Invoice) }
         ReceiptCard(r, payNo, failed)
         Button(
-            onClick = { /* TODO 凭证 PDF 下载端点契约未提供 */ },
+            onClick = { scope.launch { downloadReceipt(context, payNo) } },
             colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp).height(44.dp),
         ) { Text("下载凭证(PDF)") }
         Spacer(Modifier.height(8.dp))
     }
+}
+
+// 认证下载 receipt.pdf 到 cacheDir,经 FileProvider 交系统 PDF 查看器。
+private suspend fun downloadReceipt(context: Context, payNo: String) {
+    val ok = PdfOpener.openFromApi(context, "/payments/$payNo/receipt.pdf", "receipt-$payNo.pdf")
+    if (!ok) Toast.makeText(context, "凭证下载失败,请稍后重试", Toast.LENGTH_SHORT).show()
 }
 
 @Composable

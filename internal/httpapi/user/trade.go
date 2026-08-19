@@ -25,6 +25,7 @@ func registerPortalOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/orders", portalListOrders(a))
 	g.POST("/orders", portalSubmitOrder(a))
 	g.GET("/orders/:orderNo", portalGetOrder(a))
+	g.GET("/orders/:orderNo/technician-contact", portalOrderTechnicianContact(a))
 	g.POST("/orders/:orderNo/cancel", portalOrderCancel(a))
 	g.POST("/orders/:orderNo/urge", portalOrderUrge(a))
 	g.POST("/orders/:orderNo/change-address", portalOrderChangeAddr(a))

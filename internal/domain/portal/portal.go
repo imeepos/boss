@@ -61,6 +61,10 @@ type Service interface {
 	Balance(ctx context.Context, customerID int64) (float64, error)
 	AdjustBalance(ctx context.Context, customerID int64, delta float64) error
 
+	// AutoPay/SetAutoPay 自动缴费开通状态(portal_billing_prefs 落库)。
+	AutoPay(ctx context.Context, customerID int64) (bool, error)
+	SetAutoPay(ctx context.Context, customerID int64, enabled bool) error
+
 	// NextNo 单号:kind ∈ PAY/CHG/TKT/MSG,返回 "<kind>-<自增>"。
 	NextNo(ctx context.Context, kind string) (string, error)
 }

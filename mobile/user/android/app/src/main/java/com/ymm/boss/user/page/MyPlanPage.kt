@@ -46,6 +46,7 @@ private data class PlanInfo(
     val monthlyFee: String = "—",
     val contractEnd: String = "—",
     val installAddress: String = "—",
+    val currentBill: String = "—",
 )
 
 @Composable
@@ -61,6 +62,7 @@ fun MyPlanScreen(nav: Nav) {
                 monthlyFee = "¥${p.optString("monthlyFee")}/月",
                 contractEnd = p.optString("contractEnd").ifBlank { "—" },
                 installAddress = p.optString("installAddress").ifBlank { "—" },
+                currentBill = currentBillText(p),
             )
         } catch (e: Exception) { err = "套餐信息加载失败,请稍后重试" }
     }
@@ -74,6 +76,14 @@ fun MyPlanScreen(nav: Nav) {
     }
 }
 
+// 本月账单:plan.currentBillAmount/currentBillDue,任一缺失显示 "—"。
+private fun currentBillText(p: JSONObject): String {
+    if (p.isNull("currentBillAmount")) return "—"
+    val amount = "¥" + "%.2f".format(p.optDouble("currentBillAmount"))
+    val due = p.optString("currentBillDue").takeUnless { it.isBlank() || p.isNull("currentBillDue") }
+    return if (due != null) "$amount · $due" else amount
+}
+
 @Composable
 private fun CurrentPlanCard(plan: PlanInfo) {
     AppCard(Modifier.border(1.dp, Palette.primary, RoundedCornerShape(12.dp))) {
@@ -85,8 +95,7 @@ private fun CurrentPlanCard(plan: PlanInfo) {
         CellRow("合约到期", right = { Text(plan.contractEnd, fontSize = 13.sp, color = Palette.ink) })
         CellRow("安装地址", right = { Text(plan.installAddress, fontSize = 13.sp, color = Palette.muted) })
         CellRow("账户状态", right = { Tag("正常", Palette.success) })
-        // TODO: /profile 的 Plan 未含本月账单字段,暂按草稿静态展示
-        CellRow("本月账单", right = { Text("— · 未缴", fontSize = 13.sp, color = Palette.warn) })
+        CellRow("本月账单", right = { Text(plan.currentBill, fontSize = 13.sp, color = Palette.warn) })
     }
 }
 

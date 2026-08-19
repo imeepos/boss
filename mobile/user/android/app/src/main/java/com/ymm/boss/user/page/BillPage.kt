@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.BillApi
+import kotlinx.coroutines.launch
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
 import com.ymm.boss.user.ui.CellRow
@@ -44,6 +46,7 @@ fun BillScreen(nav: Nav, no: String) {
     var total by remember { mutableStateOf(0.0) }
     var autoPay by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(no) {
         try {
@@ -51,14 +54,14 @@ fun BillScreen(nav: Nav, no: String) {
             bill = d.optJSONObject("bill")
             items = d.optJSONArray("items").optList()
             total = d.optDouble("totalDue", 0.0)
-            autoPay = d.optBoolean("autoPayEnabled")
+            autoPay = BillApi.autoPay().optBoolean("autoPayEnabled", d.optBoolean("autoPayEnabled"))
         } catch (e: Exception) { failed = true }
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("账单明细", onBack = { nav.pop() }, action = "开发票") { nav.push(Route.Invoice) }
         DetailCard(bill, items, total, failed)
-        AutoPayCard(autoPay)
+        AutoPayCard(autoPay) { enabled -> scope.launch { toggleAutoPay(enabled) { autoPay = it } } }
         Button(
             onClick = { nav.push(Route.Pay) },
             colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
@@ -94,15 +97,22 @@ private fun BillHeader(b: JSONObject) {
 }
 
 @Composable
-private fun AutoPayCard(autoPay: Boolean) {
+private fun AutoPayCard(autoPay: Boolean, onToggle: (Boolean) -> Unit) {
     AppCard {
         CardTitle("自动缴费")
         Tag(if (autoPay) "已开通" else "未开通", if (autoPay) Palette.success else Palette.muted)
         Notice("开通后每月账期自动扣款,避免忘记缴费导致停机。")
-        OutlinedButton(onClick = { /* TODO 自动缴费开通端点契约未提供 */ }) {
-            Text("开通微信自动缴费", color = Palette.primary)
+        OutlinedButton(onClick = { onToggle(!autoPay) }) {
+            Text(if (autoPay) "关闭自动缴费" else "开通微信自动缴费", color = Palette.primary)
         }
     }
+}
+
+// POST billing/auto-pay 切换开通状态;失败保持原状态并提示。
+private suspend fun toggleAutoPay(enabled: Boolean, apply: (Boolean) -> Unit) {
+    try {
+        apply(BillApi.setAutoPay(enabled).optBoolean("autoPayEnabled", enabled))
+    } catch (e: Exception) { apply(!enabled) }
 }
 
 @Composable

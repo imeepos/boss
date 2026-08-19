@@ -28,6 +28,9 @@ object OrderApi {
     // GET /orders/{orderNo} 订单详情(含 12 环节 timeline)。
     suspend fun detail(orderNo: String): JSONObject = Api.get("/orders/$orderNo")
 
+    // GET /orders/{orderNo}/technician-contact 装维师傅明文联系方式 {orderNo, name, phone}。
+    suspend fun technicianContact(orderNo: String): JSONObject = Api.get("/orders/$orderNo/technician-contact")
+
     suspend fun cancel(orderNo: String): JSONObject = Api.post("/orders/$orderNo/cancel")
 
     suspend fun urge(orderNo: String): JSONObject = Api.post("/orders/$orderNo/urge")

@@ -112,6 +112,17 @@ func toStr(v any) string {
 	return ""
 }
 
+// toBool map 值转 bool(PG bool 与 JSON bool 兼容)。
+func toBool(v any) bool {
+	switch b := v.(type) {
+	case bool:
+		return b
+	case string:
+		return b == "true" || b == "t"
+	}
+	return false
+}
+
 // portalID 契约字符串 ID → int64。
 func portalID(s string) int64 {
 	n, _ := strconv.ParseInt(s, 10, 64)

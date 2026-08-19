@@ -18,6 +18,7 @@ type memoryStore struct {
 	prefs    map[int64]*Prefs
 	messages map[int64][]Message
 	wallets  map[int64]float64
+	autopay  map[int64]bool
 	seq      map[string]int64
 	msgSeq   int64
 }
@@ -30,6 +31,7 @@ func NewMemory() Service {
 		prefs:    map[int64]*Prefs{},
 		messages: map[int64][]Message{},
 		wallets:  map[int64]float64{},
+		autopay:  map[int64]bool{},
 		seq:      map[string]int64{},
 	}
 }
@@ -196,4 +198,17 @@ func (s *memoryStore) NextNo(_ context.Context, kind string) (string, error) {
 	defer s.mu.Unlock()
 	s.seq[kind]++
 	return fmt.Sprintf("%s-%d", kind, s.seq[kind]), nil
+}
+
+func (s *memoryStore) AutoPay(_ context.Context, customerID int64) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.autopay[customerID], nil
+}
+
+func (s *memoryStore) SetAutoPay(_ context.Context, customerID int64, enabled bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.autopay[customerID] = enabled
+	return nil
 }

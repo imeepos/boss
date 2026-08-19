@@ -32,9 +32,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.OrderApi
 import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
@@ -141,11 +147,11 @@ private fun TimelineItem(t: JSONObject, isLast: Boolean) {
 @Composable
 private fun ActionBar(nav: Nav, no: String) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedButton(onClick = { nav.push(Route.Move(no)) }, modifier = Modifier.weight(1f)) { Text("变更地址", color = Palette.primary) }
         OutlinedButton(
-            // TODO 拨打装维师傅电话,契约仅提供脱敏号码,待补明文端点
-            onClick = { },
+            onClick = { scope.launch { dialTechnician(context, no) } },
             modifier = Modifier.weight(1f),
         ) { Text("联系师傅", color = Palette.primary) }
         Button(
@@ -153,6 +159,17 @@ private fun ActionBar(nav: Nav, no: String) {
             colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
             modifier = Modifier.weight(1f),
         ) { Text("催单") }
+    }
+}
+
+// 装维师傅明文电话走 GET orders/{orderNo}/technician-contact,取到后拉起拨号盘。
+private suspend fun dialTechnician(context: Context, no: String) {
+    try {
+        val phone = OrderApi.technicianContact(no).optString("phone")
+        if (phone.isBlank()) throw Api.HttpError(404, "empty phone")
+        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+    } catch (e: Exception) {
+        Toast.makeText(context, "暂无法获取师傅电话,请稍后重试", Toast.LENGTH_SHORT).show()
     }
 }
 
