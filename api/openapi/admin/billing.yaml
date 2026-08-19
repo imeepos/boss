@@ -87,3 +87,112 @@ paths:
         - { name: batchNo, in: path, required: true, schema: { type: string } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /billing-runs:
+    post:
+      tags: [Billing]
+      summary: 出账+自动开票(同账期不重复开票,失败账单返人工)
+      operationId: runBillingPeriod
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [period]
+              properties:
+                period: { type: string, example: "2026-08" }
+      responses:
+        '200':
+          description: envelope;data 含 bills(生成账单数)与 invoices(开票结果)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      bills: { type: integer }
+                      invoices: { type: object }
+
+  /invoices/{id}/void:
+    post:
+      tags: [Billing]
+      summary: 作废发票(编号保留不回收,VOID)
+      operationId: voidInvoice
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /invoices/{id}/reissue:
+    post:
+      tags: [Billing]
+      summary: 重开发票(原票 VOID 保留 + 新票新号,TAX-003)
+      operationId: reissueInvoice
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: envelope;data.invoice 为新发票
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      invoice: { type: object }
+
+  /invoices/{id}/tax-submit:
+    post:
+      tags: [Billing]
+      summary: 税局网关提交(按属地取网关;人工通道返回 42200 提示走回填)
+      operationId: taxSubmitInvoice
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: envelope;data.receipt 为税局回执
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      receipt: { type: object }
+
+  /invoices/{id}/tax-backfill:
+    post:
+      tags: [Billing]
+      summary: 人工通道回填税局票号(运营者在税局平台开具后登记)
+      operationId: taxBackfillInvoice
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [taxNo]
+              properties:
+                taxNo: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

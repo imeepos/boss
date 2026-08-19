@@ -105,6 +105,11 @@ paths:
   # ---------- Billing ----------
   /bills: { $ref: './admin/billing.yaml#/paths/~1bills' }
   /payments: { $ref: './admin/billing.yaml#/paths/~1payments' }
+  /billing-runs: { $ref: './admin/billing.yaml#/paths/~1billing-runs' }
+  /invoices/{id}/void: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1void' }
+  /invoices/{id}/reissue: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1reissue' }
+  /invoices/{id}/tax-submit: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-submit' }
+  /invoices/{id}/tax-backfill: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-backfill' }
   /arrears: { $ref: './admin/billing.yaml#/paths/~1arrears' }
   /arrears/{customerId}/stop: { $ref: './admin/billing.yaml#/paths/~1arrears~1{customerId}~1stop' }
   /arrears/{customerId}/resume: { $ref: './admin/billing.yaml#/paths/~1arrears~1{customerId}~1resume' }
