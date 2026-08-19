@@ -13,8 +13,8 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/customer"
-	"github.com/ymm-001/boss/internal/pkg/auth"
 	userapi "github.com/ymm-001/boss/internal/httpapi/user"
+	"github.com/ymm-001/boss/internal/pkg/auth"
 )
 
 // fakeCustOnboard 桩 OnboardingService / 实名核验接口。

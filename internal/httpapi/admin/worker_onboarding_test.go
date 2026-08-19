@@ -13,8 +13,8 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/worker"
-	"github.com/ymm-001/boss/internal/pkg/auth"
 	workerapi "github.com/ymm-001/boss/internal/httpapi/worker"
+	"github.com/ymm-001/boss/internal/pkg/auth"
 )
 
 // fakeOnboarding 桩 OnboardingService / RealNameService。

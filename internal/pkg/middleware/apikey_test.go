@@ -13,6 +13,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/pkg/auth"
+	"time"
 )
 
 // fakeKeyService 模拟 apikey.Service(主体模型)。
@@ -168,5 +169,36 @@ func TestAPIKeySubjectNotFound(t *testing.T) {
 
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("code=%d want 401 (subject gone)", w.Code)
+	}
+}
+
+// TestAuthn_AudMismatch 跨端 token(admin aud 打 user 端)必须 401,aud 防线单向精确匹配。
+func TestAuthn_AudMismatch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	m := auth.NewManager("s", time.Hour)
+	r := gin.New()
+	r.GET("/x", Authn(m, auth.AudUser), func(c *gin.Context) { c.Status(200) })
+
+	tok, _ := m.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest("GET", "/x", nil))
+	if w.Code != 401 {
+		t.Fatalf("no-token code=%d", w.Code)
+	}
+	w = httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/x", nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	r.ServeHTTP(w, req)
+	if w.Code != 401 {
+		t.Fatalf("admin-aud on user end code=%d", w.Code)
+	}
+
+	utok, _ := m.Sign(auth.AudUser, 0, "cust/7/138", "customer")
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/x", nil)
+	req.Header.Set("Authorization", "Bearer "+utok)
+	r.ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Fatalf("user-aud on user end code=%d", w.Code)
 	}
 }

@@ -145,8 +145,11 @@ func TestPortal_Unauthorized(t *testing.T) {
 	}
 	adminTok, _ := mgr.Sign(auth.AudAdmin, 1, "admin", "sysadmin")
 	w := userPortalDo(r, http.MethodGet, "/api/user/v1/profile", "", adminTok)
-	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeUnauthorized) {
-		t.Fatalf("admin token resp=%s", w.Body.String())
+	// admin token 在两道防线被拒:Authn aud 不匹配(HTTP 401)或 portalCustomerOnly(envelope 401)。
+	if w.Code != http.StatusUnauthorized {
+		if code, _ := userPortalCode(t, w); code != int(apitypes.CodeUnauthorized) {
+			t.Fatalf("admin token resp=%s", w.Body.String())
+		}
 	}
 }
 
