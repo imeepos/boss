@@ -229,4 +229,8 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerWorkerOnboardingRoutes(authed, a)
 	registerUserdataRoutes(authed, a)
 	registerUserdataMoreRoutes(authed, a)
+	registerUserdataGapRoutes(authed, a)
+
+	registerUserPortalRoutes(r, a, mgr)
+	registerWorkerPortalRoutes(r, a, mgr)
 }
