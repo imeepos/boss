@@ -12,9 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +39,7 @@ import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.StatusDot
 import com.ymm.boss.user.ui.Tag
+import org.json.JSONArray
 import org.json.JSONObject
 
 /** 对应草稿 docs/user/home.html:工作台聚合页。 */
@@ -73,8 +71,8 @@ fun HomeScreen(nav: Nav) {
                 balance = d.optString("balance", "—"),
                 contractEnd = d.optString("contractEnd", "—"),
                 hasUnread = d.optBoolean("hasUnread"),
-                ongoingOrders = d.optJSONArray("ongoingOrders")?.toIterable() ?: emptyList(),
-                services = d.optJSONArray("services")?.toIterable() ?: emptyList(),
+                ongoingOrders = d.optJSONArray("ongoingOrders").toList(),
+                services = d.optJSONArray("services").toList(),
             )
         } catch (e: Exception) { /* 假数据不可达时保留骨架,与草稿一致 */ }
     }
@@ -85,18 +83,14 @@ fun HomeScreen(nav: Nav) {
         QuickGrid(nav)
         AppCard {
             CardTitle("进行中订单", "全部") { nav.push(Route.Orders) }
-            if (data.ongoingOrders.isEmpty()) {
-                Text("暂无进行中订单", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
-            }
+            if (data.ongoingOrders.isEmpty()) EmptyHint("暂无进行中订单")
             data.ongoingOrders.forEach { o ->
                 OrderCell(o) { nav.push(Route.Order(o.optString("orderNo"))) }
             }
         }
         AppCard {
             CardTitle("我的服务", "在线状态")
-            if (data.services.isEmpty()) {
-                Text("暂无服务", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
-            }
+            if (data.services.isEmpty()) EmptyHint("暂无服务")
             data.services.forEach { s ->
                 CellRow(
                     title = s.optString("name"),
@@ -110,10 +104,16 @@ fun HomeScreen(nav: Nav) {
 }
 
 @Composable
+private fun EmptyHint(text: String) {
+    Text(text, fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
+}
+
+@Composable
 private fun HomeHead(data: HomeData, nav: Nav) {
     Column(
-        Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2)))
-            .padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 40.dp),
+        Modifier.fillMaxWidth()
+            .background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2)))
+            .padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 20.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -135,16 +135,13 @@ private fun HomeHead(data: HomeData, nav: Nav) {
 @Composable
 private fun StatusCard(data: HomeData, nav: Nav) {
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp).height(0.dp) // 占位,实际由偏移实现悬浮
-    ) {}
-    Column(
         Modifier
+            .padding(horizontal = 14.dp, vertical = 12.dp)
             .background(Palette.panel, RoundedCornerShape(12.dp))
             .padding(16.dp)
-            .fillMaxWidth()
-            .offsetY(),
+            .fillMaxWidth(),
     ) {
-        Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(data.planName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Palette.ink)
             Tag("在网", Palette.success)
         }
@@ -155,8 +152,6 @@ private fun StatusCard(data: HomeData, nav: Nav) {
         }
     }
 }
-
-private fun Modifier.offsetY(): Modifier = this.then(Modifier)
 
 @Composable
 private fun NetItem(label: String, value: String, onClick: (() -> Unit)? = null) {
@@ -175,7 +170,10 @@ private fun OrderCell(o: JSONObject, onClick: () -> Unit) {
         right = {
             Column(horizontalAlignment = Alignment.End) {
                 Tag(o.optString("statusLabel"), Palette.primary)
-                Text("${o.optString("stageLabel")} ${o.optString("stage")}/12", fontSize = 11.sp, color = Palette.muted, modifier = Modifier.padding(top = 4.dp))
+                Text(
+                    "${o.optString("stageLabel")} ${o.optString("stage")}/12",
+                    fontSize = 11.sp, color = Palette.muted, modifier = Modifier.padding(top = 4.dp),
+                )
             }
         },
     )
@@ -195,25 +193,28 @@ private fun QuickGrid(nav: Nav) {
         QuickEntry("消息", "信", Palette.success, Route.Messages),
         QuickEntry("客服", "服", Palette.purple, Route.Service),
     )
-    LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier fillMaxWidthPadded(), userScrollEnabled = false) {
-        items(entries) { e ->
-            Column(
-                Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { nav.push(e.route) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.size(40.dp).background(e.color, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                    Text(e.glyph, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp)) {
+        entries.chunked(4).forEach { row ->
+            Row(Modifier.fillMaxWidth()) {
+                row.forEach { e ->
+                    Column(
+                        Modifier.weight(1f).padding(vertical = 6.dp).clickable { nav.push(e.route) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(Modifier.size(40.dp).background(e.color, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                            Text(e.glyph, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Text(e.label, fontSize = 12.5.sp, color = Palette.ink, modifier = Modifier.padding(top = 6.dp))
+                    }
                 }
-                Text(e.label, fontSize = 12.5.sp, color = Palette.ink, modifier = Modifier.padding(top = 6.dp))
             }
         }
     }
 }
 
-private fun Modifier fillMaxWidthPadded(): Modifier = this.then(Modifier.padding(horizontal = 14.dp))
-
-private fun <T> org.json.JSONArray.toIterable(): List<T> {
-    val out = ArrayList<T>(length())
-    for (i in 0 until length()) @Suppress("UNCHECKED_CAST") { out.add(get(i) as T) }
+private fun JSONArray?.toList(): List<JSONObject> {
+    if (this == null) return emptyList()
+    val out = ArrayList<JSONObject>(length())
+    for (i in 0 until length()) out.add(optJSONObject(i) ?: continue)
     return out
 }

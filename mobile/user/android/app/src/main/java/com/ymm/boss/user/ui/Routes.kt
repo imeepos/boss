@@ -1,6 +1,6 @@
 package com.ymm.boss.user.ui
 
-/** 全部页面路由,与 docs/user/*.html 一一对应;详情页参数对应草稿 URL query。 */
+/** 全部页面路由,与 docs/user 下的草稿 html 一一对应;详情页参数对应草稿 URL query。 */
 sealed interface Route {
     data object Login : Route
     data object Register : Route
