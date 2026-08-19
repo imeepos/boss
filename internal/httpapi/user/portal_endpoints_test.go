@@ -152,6 +152,20 @@ type fakeTaxStub struct{ invs []billing.Invoice }
 func (f *fakeTaxStub) ListInvoices(context.Context, int64) ([]billing.Invoice, error) {
 	return f.invs, nil
 }
+func (f *fakeTaxStub) IssueInvoicesForPeriod(context.Context, string) (billing.InvoiceRunResult, error) {
+	return billing.InvoiceRunResult{}, nil
+}
+func (f *fakeTaxStub) VoidInvoice(context.Context, int64, string) error { return nil }
+func (f *fakeTaxStub) ReissueInvoice(context.Context, int64) (*billing.Invoice, error) {
+	return nil, nil
+}
+func (f *fakeTaxStub) GetInvoice(context.Context, int64) (*billing.Invoice, error) {
+	return nil, nil
+}
+func (f *fakeTaxStub) BackfillTaxNo(context.Context, int64, string) error { return nil }
+func (f *fakeTaxStub) MarkTaxResult(context.Context, int64, billing.TaxReceipt) error {
+	return nil
+}
 
 // newFullPortalRouter 装配全部门户域(含 UserData/Channel/Tax),供新端点单测。
 func newFullPortalRouter(cust *customer.Customer, ud *fakeUserData, ch *fakeChannelStub,
@@ -317,5 +331,16 @@ func TestPortal_Complaints(t *testing.T) {
 		t.Fatalf("complaints resp=%s", w.Body.String())
 	} else if items, _ := data["items"].([]any); len(items) != 1 {
 		t.Fatalf("complaints items=%v", data["items"])
+	}
+}
+
+// TestPortal_Logout:登出(无状态 JWT,返回 ok 即可)。
+func TestPortal_Logout(t *testing.T) {
+	cust := userPortalCust()
+	r, mgr, _ := newFullPortalRouter(cust, &fakeUserData{}, nil, nil, nil, nil, nil)
+	tok, _ := signCustomerToken(mgr, cust.ID, cust.Phone)
+	w := userPortalDo(r, http.MethodPost, "/api/user/v1/auth/logout", ``, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeOK) {
+		t.Fatalf("logout resp=%s", w.Body.String())
 	}
 }
