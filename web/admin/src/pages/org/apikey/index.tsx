@@ -47,7 +47,8 @@ export default function ApiKeyPage() {
     try {
       const res = await apiFetch<{ plainKey: string }>('/api-keys', {
         method: 'POST',
-        body: { accountId: form.accountId, name: form.name.trim() },
+        // 契约(http_apikey.go):主体三态绑定;本页签发账号主体。
+        body: { subjectType: 'account', subjectRef: form.accountId, name: form.name.trim() },
       })
       setForm(null)
       setPlainKey(res?.plainKey ?? '')
