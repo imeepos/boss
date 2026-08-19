@@ -445,3 +445,9 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:`gradle wrapper` 任务卡在 distribution url 校验(services.gradle.org 不可达)2 分钟超时才发现;改从本地 gradle 发行版 jar 里解出 gradle-wrapper.jar + 复用现成 gradlew 脚本绕过。
 - skill 有没有预警:红线 8(未检查环境依赖)部分预警——没料到机器无 JDK,临时 brew install openjdk@17 补上。
 - 重来一次:先查 JAVA_HOME/网络可达性再动手;wrapper 生成失败时直接 unzip gradle-wrapper-main-*.jar 取 jar。
+
+## 2026-08-19 tailwind+shadcn 重构 boss/web/admin(第1轮)
+
+- 哪个坑浪费最多时间:同一仓库存在并发提交者(另一个会话),我的 staged 文件两次被卷进对方的巨石提交(ffda8e3 事故 + 837a9f8 卷走 bss/user);第一次差点污染 90 文件的后端重构,靠 reset --soft + pathspec commit 挽回。
+- skill 有没有提前警告:没有。红线只说"任务完成必须 commit",没警告"git add 后别人可能抢先 commit 整个 index"。
+- 重来一次:多会话共享仓库时,一律 `git commit -m ... -- <显式pathspec>`(不经 index 提交),绝不裸 `git add`+`git commit`;提交前先 `git diff --cached --name-only` 确认 index 只有自己的文件。
