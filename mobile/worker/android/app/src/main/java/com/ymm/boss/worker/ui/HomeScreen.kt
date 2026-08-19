@@ -124,10 +124,10 @@ private fun NoticeList(msgs: Load<JSONObject>) {
 }
 
 @Composable
-fun KvRow(k: String, v: String) {
+fun KvRow(k: String, v: String, valueColor: Color = Ink) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(k, fontSize = 13.sp, color = Muted)
-        Text(v, fontSize = 13.sp, color = Ink, fontWeight = FontWeight.Medium)
+        Text(v, fontSize = 13.sp, color = valueColor, fontWeight = FontWeight.Medium)
     }
 }
 
