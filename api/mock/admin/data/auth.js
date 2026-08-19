@@ -11,10 +11,14 @@ module.exports = {
     roleName: 'sysadmin',
   }),
   'POST /auth/logout': ok,
+  // 自助改密/改资料:真实端点为 POST /auth/change-password、PUT /auth/profile(internal/app/http.go)。
+  'POST /auth/change-password': ok,
+  'PUT /auth/profile': ok,
   'GET /auth/me': {
     accountId: 1,
     username: 'admin',
     realName: '系统管理员',
+    phone: '13800000000',
     roleName: 'sysadmin',
     legalEntityName: 'LEG-A 主品牌·企业',
     regionScope: '',
