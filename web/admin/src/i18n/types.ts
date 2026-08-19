@@ -1090,7 +1090,6 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
-      notImpl: string
       prev: string
       next: string
       perPage: string

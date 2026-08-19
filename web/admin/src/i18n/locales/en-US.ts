@@ -1149,7 +1149,6 @@ const enUS: Translations = {
       total: '{count} total',
       empty: 'No data',
       loadFail: 'Failed to load',
-      notImpl: 'API not implemented (/data-scopes pending backend, error placeholder shown)',
       prev: 'Prev',
       next: 'Next',
       perPage: '/ page',

@@ -1149,7 +1149,6 @@ const zhCN: Translations = {
       total: '共 {count} 条',
       empty: '暂无数据',
       loadFail: '加载失败',
-      notImpl: '接口未实现(/data-scopes 待后端提供,当前为错误占位)',
       prev: '上一页',
       next: '下一页',
       perPage: '条/页',

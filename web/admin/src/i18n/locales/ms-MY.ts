@@ -1149,7 +1149,6 @@ const msMY: Translations = {
       total: '{count} jumlah',
       empty: 'Tiada data',
       loadFail: 'Gagal memuatkan',
-      notImpl: 'API belum dilaksanakan (/data-scopes menunggu bahagian belakang, ralat dipaparkan)',
       prev: 'Sebelum',
       next: 'Seterusnya',
       perPage: '/ halaman',
