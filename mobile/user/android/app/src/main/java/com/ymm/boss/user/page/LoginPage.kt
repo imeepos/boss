@@ -162,7 +162,10 @@ private fun doLogin(
     scope.launch {
         try {
             val r = UserApi.auth.login(phone, mode, credential)
-            Api.setToken(r.optString("token"))
+            // 真实后端 token 位于 data.token
+            val tk = r.optJSONObject("data")?.optString("token").orEmpty()
+            if (tk.isEmpty()) { onErr("登录响应缺少 token"); return@launch }
+            Api.setToken(tk)
             nav.resetTo(com.ymm.boss.user.ui.Route.Home)
         } catch (e: Exception) { onErr("登录失败，请重试") }
     }
