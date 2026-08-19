@@ -413,3 +413,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 工具超时时不急着归因到网络，先做排除：① 去掉管道重试看真实输出；② 检查是否在等交互输入（加 `-y`）；③ 检查目标 URL 是否可直达（`curl -v https://ui.shadcn.com/r`）；④ 检查本地 npm registry 配置（`npm config get registry`）。
 - 定制设计系统项目创建 shadcn-style 组件，正确流程是手动创建（forwardRef + cn + 项目 CSS 变量），不走 CLI add——不是因为网络，而是因为 CLI 生成代码不兼容定制令牌，手动写反而更快。
 - 所有故障归因必须在总结里写明"如何确定的"（具体命令 + 输出），不能只说"可能"。
+
+## 2026-08-18 推进项目进度(dsh-codebase-wisdom 会话)
+- 哪个坑浪费最多时间:Playwright getByText 撞侧边栏菜单+面包屑双副本,strict mode 连挂 2 条;读 error-context.md 的 page snapshot 后一次修对。
+- skill 有没有提前警告:self-evolving 红线 5(未验证不声称)促使我全程用真实后端断言,有效;但无 strict mode 相关经验条目。
+- 重来一次:写 e2e 断言页面标题直接用 getByRole('heading', ...) 起步,不先试 getByText。
