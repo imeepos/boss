@@ -1,14 +1,21 @@
 // 侧栏:分组标题 + 平铺菜单项,240px/64px 折叠,移动端抽屉;右缘手柄拖拽调宽并持久化。
-// 宽度经 CSS 变量 --side-w 注入,窄屏媒体查询仍可覆盖。规格见 design-spec.md §2.2/§3.2。
+// 样式:tailwind 原子类(cn 合并),窄屏断点走 max-[1199px]/max-[959px] 变体。
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import type { MenuGroup } from '../router/menu.def'
 import { useT } from '../i18n'
+import { cn } from '../lib/cn'
 import { CollapseIcon, MaskIcon } from './icons'
 
 const SIDE_MIN_W = 220
 const SIDE_MAX_W = 420
 const SIDE_W_KEY = 'admin.side-width'
+
+const SIDE_BASE = 'relative flex flex-none flex-col border-r border-[var(--shell-side-border)] bg-[var(--shell-side-bg)] transition-[width] duration-200 group w-[var(--side-w,240px)] max-[1199px]:w-16 max-[959px]:fixed max-[959px]:bottom-8 max-[959px]:left-0 max-[959px]:top-14 max-[959px]:z-40 max-[959px]:w-60 max-[959px]:-translate-x-full max-[959px]:transition-transform max-[959px]:duration-200'
+const SIDE_ITEM = 'relative flex h-11 items-center gap-2.5 px-4 text-sm whitespace-nowrap no-underline text-[var(--shell-menu-text)] hover:bg-[var(--shell-menu-hover-bg)] hover:text-[var(--shell-menu-active-text)] [&_.mask-icon]:text-[var(--shell-menu-icon)]'
+const SIDE_ITEM_ACTIVE = 'bg-[var(--shell-menu-active-bg)] font-semibold text-[var(--shell-menu-active-text)] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r-sm before:bg-[var(--color-brand-gold-500)] [&_.mask-icon]:text-[var(--color-brand-gold-500)]'
+const SIDE_COLLAPSE = 'flex h-11 flex-none cursor-pointer items-center gap-2 border-0 border-t border-[var(--shell-side-border)] bg-none px-5 text-[13px] text-[var(--shell-menu-icon)] hover:text-[var(--shell-menu-active-text)]'
+const LABEL = 'max-[1199px]:hidden max-[959px]:inline'
 
 function clampWidth(w: number) {
   return Math.min(SIDE_MAX_W, Math.max(SIDE_MIN_W, Math.round(w)))
@@ -30,13 +37,13 @@ interface SidebarProps {
 function SideGroup({ g, collapsed, onNavigate }: { g: MenuGroup; collapsed: boolean; onNavigate: () => void }) {
   const t = useT()
   return (
-    <section className="shell-side-group">
+    <section className="">
       {collapsed ? (
-        <div className="shell-side-divider" />
+        <div className="mx-4 my-3 border-t border-[var(--shell-side-border)]" />
       ) : (
-        <div className="shell-side-group-title">
+        <div className="mx-4 mt-4 mb-1 flex items-center gap-1.5 text-[11px] font-medium tracking-[2px] text-[var(--shell-group-title)] max-[1199px]:mx-0 max-[1199px]:justify-center max-[959px]:mx-4 max-[959px]:justify-start">
           <MaskIcon url={`/icons/${g.id}.svg`} size={14} />
-          <span>{t.menu.groups[g.id] ?? g.label}</span>
+          <span className={LABEL}>{t.menu.groups[g.id] ?? g.label}</span>
         </div>
       )}
       {g.items.map((it) => {
@@ -47,10 +54,10 @@ function SideGroup({ g, collapsed, onNavigate }: { g: MenuGroup; collapsed: bool
             to={it.path}
             title={label}
             onClick={onNavigate}
-            className={({ isActive }) => (isActive ? 'shell-side-item active' : 'shell-side-item')}
+            className={({ isActive }) => cn(SIDE_ITEM, isActive && SIDE_ITEM_ACTIVE, collapsed && 'justify-center px-0')}
           >
             <MaskIcon url={`/icons/items/${it.key}.svg`} />
-            {!collapsed && <span className="shell-side-label">{label}</span>}
+            {!collapsed && <span className={cn('overflow-hidden text-ellipsis', LABEL)}>{label}</span>}
           </NavLink>
         )
       })}
@@ -60,7 +67,7 @@ function SideGroup({ g, collapsed, onNavigate }: { g: MenuGroup; collapsed: bool
 
 // 激活菜单项滚动到视野中央:仅当目标在可视区外时才滚动,避免打断用户浏览
 function scrollActiveIntoView(nav: HTMLElement) {
-  const active = nav.querySelector<HTMLElement>('.shell-side-item.active')
+  const active = nav.querySelector<HTMLElement>('[aria-current=page]')
   if (!active) return
   const { scrollTop, clientHeight } = nav
   const top = active.offsetTop - nav.offsetTop
@@ -133,9 +140,9 @@ function ScrollThumb({ nav }: { nav: HTMLElement | null }) {
     target.addEventListener('pointercancel', up)
   }
   return (
-    <div ref={trackRef} className="shell-side-scrollbar">
+    <div ref={trackRef} className="absolute right-0.5 bottom-14 top-3 z-[4] w-1">
       <div
-        className={`shell-side-scrollbar-thumb${drag ? ' dragging' : ''}`}
+        className={cn('absolute min-h-6 w-1 rounded-sm bg-[var(--shell-menu-icon)] opacity-0 transition-opacity duration-150 group-hover:opacity-60 hover:opacity-100', drag && 'opacity-100')}
         style={{ height: `${thumbH}%`, top: `${m.pos * (100 - thumbH)}%` }}
         onPointerDown={(e) => {
           setDrag(true)
@@ -157,26 +164,27 @@ export function Sidebar({ groups, collapsed, drawerOpen, onToggleCollapse, onClo
   useEffect(() => {
     if (navEl) scrollActiveIntoView(navEl)
   }, [pathname, collapsed, groups, navEl])
-  const cls = [
-    'shell-side',
-    collapsed ? 'collapsed' : '',
-    drawerOpen ? 'drawer-open' : '',
-    dragging ? 'dragging' : '',
-  ].filter(Boolean).join(' ')
   const commitWidth = (w: number) => {
     setWidth(w)
     localStorage.setItem(SIDE_W_KEY, String(w))
   }
   return (
-    <aside className={cls} style={{ ['--side-w' as string]: `${width}px` }}>
-      <nav ref={setNavEl} className="shell-side-nav">
+    <aside
+      className={cn(SIDE_BASE, collapsed && 'w-16 max-[959px]:w-60', drawerOpen && 'max-[959px]:translate-x-0')}
+      style={{ ['--side-w' as string]: `${width}px` }}
+    >
+      <nav ref={setNavEl} className="flex-1 overflow-x-hidden overflow-y-auto px-0 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {groups.map((g) => (
           <SideGroup key={g.id} g={g} collapsed={collapsed} onNavigate={onCloseDrawer} />
         ))}
       </nav>
       <ScrollThumb nav={navEl} />
       <div
-        className="shell-side-resizer"
+        className={cn(
+          'absolute top-0 right-[-3px] z-[5] h-full w-1.5 cursor-col-resize rounded-sm hover:bg-[var(--color-brand-gold-500)] max-[1199px]:hidden',
+          dragging && 'bg-[var(--color-brand-gold-500)]',
+          collapsed && 'hidden',
+        )}
         onPointerDown={(e) => {
           setDragging(true)
           onResizeStart(e, width, setWidth)
@@ -188,12 +196,12 @@ export function Sidebar({ groups, collapsed, drawerOpen, onToggleCollapse, onClo
         onPointerCancel={() => setDragging(false)}
       />
       <button
-        className="shell-side-collapse"
+        className={cn(SIDE_COLLAPSE, collapsed && 'justify-center px-0')}
         onClick={onToggleCollapse}
         title={collapsed ? t.shell.expandMenu : t.shell.collapseMenu}
       >
         <CollapseIcon collapsed={collapsed} />
-        {!collapsed && <span>{t.shell.collapseMenu}</span>}
+        {!collapsed && <span className={LABEL}>{t.shell.collapseMenu}</span>}
       </button>
     </aside>
   )

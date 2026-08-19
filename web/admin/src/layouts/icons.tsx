@@ -114,6 +114,16 @@ export function CollapseIcon({ collapsed }: { collapsed: boolean }) {
 
 /** 遮罩图标:引用 public/icons 下原型 SVG,颜色随 currentColor(亮/暗/激活自适应)。 */
 export function MaskIcon({ url, size = 18 }: { url: string; size?: number }) {
-  const style = { '--icon-url': `url("${url}")`, width: size, height: size } as CSSProperties
-  return <span className="mask-icon" style={style} aria-hidden />
+  // mask 样式原在 shell.css .mask-icon,现内联(shell.css 已删除)。
+  const style = {
+    '--icon-url': `url("${url}")`,
+    width: size,
+    height: size,
+    display: 'inline-block',
+    flex: 'none',
+    background: 'currentColor',
+    WebkitMask: 'var(--icon-url) center / contain no-repeat',
+    mask: 'var(--icon-url) center / contain no-repeat',
+  } as CSSProperties
+  return <span style={style} aria-hidden />
 }
