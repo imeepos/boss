@@ -17,13 +17,13 @@ import (
 
 // fakeWorkerOps 桩 worker 各服务口(仅接单设置/公告路由用到的方法落账)。
 type fakeWorkerOps struct {
-	w          *worker.Worker
-	settings   *worker.Settings
-	notices    []worker.Notice
-	created    *worker.Notice
-	toggled    int64
-	reviewed   int64
-	confirmed  int64
+	w         *worker.Worker
+	settings  *worker.Settings
+	notices   []worker.Notice
+	created   *worker.Notice
+	toggled   int64
+	reviewed  int64
+	confirmed int64
 }
 
 func (f *fakeWorkerOps) ListGroups(context.Context) ([]worker.Group, error) { return nil, nil }

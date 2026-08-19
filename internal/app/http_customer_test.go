@@ -22,7 +22,7 @@ func (f *fakeCustomer) List(context.Context, customer.CustomerQuery) ([]customer
 }
 
 type fakeProduct struct {
-	list []customer.ProductOffer
+	list    []customer.ProductOffer
 	changed *customer.ProductOffer // 记录最近一次调价入参
 }
 
