@@ -243,7 +243,6 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *Application) {
 	})
 }
 
-
 // workerSettingsReq 接单设置请求体(对齐 worker.yaml saveWorkerSettings)。
 type workerSettingsReq struct {
 	Online      bool     `json:"online"`

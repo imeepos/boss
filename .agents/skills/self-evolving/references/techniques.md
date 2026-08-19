@@ -128,3 +128,40 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - 场景:验证自定义下拉确实选中。方法:在真实目标应用 DOM 中点击触发器和 `[role=option]`，随后用 `console.log("VERIFY:"+JSON.stringify({label, search:location.search, filteredCount}))` 输出触发器文本、URL 和筛选结果；不要把宿主 GUI 的 DOM 当业务页面验证。
 - 场景:给定制设计系统项目（非 shadcn default theme）创建 shadcn-style UI 组件。方法:不走 `npx shadcn@latest add` CLI（生成代码用默认 `hsl(var(--primary))` 等 CSS 变量，与定制令牌不兼容），而是手动创建——参考 shadcn 官方组件的编码模式（forwardRef + cn() + cva variant），tailwind 类名改用项目已有的 `--color-brand-*`/`--shell-*` CSS 变量。标准流程：`src/lib/cn.ts`（已有）→ `src/components/ui/<name>.tsx`（基础组件，forwardRef + cn + 项目令牌）→ `src/components/business/<name>.tsx`（组合业务模式）→ 验证。shadcn 官方源码地址：https://github.com/shadcn-ui/ui/tree/main/apps/www/registry/default/ui。
 - 场景:工具超时时排查原因。方法:不急着归因到网络，按顺序做排除：① 去掉管道（`| head`/`| grep`）重试看真实输出；② 检查是否在等交互输入（加 `-y`/`--yes` 或 `yes |`）；③ 检查目标 URL 是否可达（`curl -v --connect-timeout 5 <url>` 看连接耗时和 HTTP 状态码）；④ 检查 registry 配置（`npm config get registry` / `pnpm config get registry`）；⑤ 等足够长的时间确认不是慢而不是挂。
+
+## bossctl CLI 模拟端到端业务流（组织链 + 三场景 + 账号落盘）
+
+场景 → 用 CLI 工具完整模拟一条业务流（如"师傅注册→后台管理员审核→实名认证"），顺带验证接口可用性与数据关联，并让测试账号可复用。
+怎么用 → 以 admin(sysadmin) 为唯一起点，全程 bossctl `--api-key` 驱动，五步：
+
+1. **摸清接口**（动手前先查契约）：
+   - `bossctl routes` 看全部端点（按模块 grep）；
+   - 契约字段定义在 `api/openapi/admin/*.yaml`（如 `AccountInput` 的 roleCode/legalEntityId/deptId/postId）；42200 参数非法时先读请求 struct 再拼 JSON，整数 id 不要传字符串；
+   - 权限归属查 `GET /menu-perms`：在 matrix.rows 里搜目标权限码（如 `menu:dispatch -> ['ops','sysadmin','technician']`），据此选建号角色。
+
+2. **组织链数据**（审核人员来源，admin key 依次）：
+   - `POST /legal-entities {"code","name"}` 建企业；
+   - `POST /departments {"legalEntityId":<int>,"name"}` 建部门（int 传 id，字符串会 42200）；
+   - `POST /posts {"deptId":<int>,"code","name","roles":[...]}` 建岗位（roles 全量绑定，未知码 42200）；
+   - `POST /accounts {"username","password","realName","roleCode","legalEntityId","deptId","postId"}` 建审核账号（menu:account 仅 sysadmin 可建）；
+   - `POST /api-keys {"subjectType":"account","subjectRef":<accountId>,"name"}` 签 API key——plainKey **只在创建时返回一次**，立即记录。
+
+3. **业务侧关联数据**：`POST /worker-groups` 建班组 + `GET /regions` 找区域 id（师傅注册绑定 groupId+regionId）。
+
+4. **三场景验证**（同一流程三种结果）：
+   - 正常流：公开端点注册 → 审核员 approve → 生成主档 workerId → 提交实名 → verify PASS；
+   - 冲突流：对已 APPROVED 再 approve → 42200（不幂等，二次操作被拒）；
+   - 驳回流：注册 → reject 带意见 note（不生成主档）。
+   每次操作后 GET 回读确认状态落库（APPROVED/REJECTED/PASS）。
+
+5. **账号落盘 + 收尾**：所有产生的账号/密码/API key 当场写入 `.agents/skills/bossctl-cli/test-accounts.json` 并 `ls` 确认存在（不要只口头答应）；在 SKILL.md 写明存储位置。收尾跑 `go run ./scripts/check-contract-sync` 确认 A/B/C 全过 + `go test ./internal/domain/<域>/...`。
+
+## check-contract-sync A 门禁的真实匹配机制（$ref 行）
+
+场景 → A 检查报"路由已实现但契约未登记"，明明已在子文件 `api/openapi/admin/worker.yaml` 加了路径。
+怎么用 → 该检查读的是**顶层** `api/openapi/admin.yaml` 里的紧凑 `$ref` 行（`  /worker-groups: { $ref: './admin/worker.yaml#/paths/~1worker-groups' }`），正则 `^  (/[^:\s]+):\s*\{?\s*\$ref` 只匹配**同一行带 $ref** 的路径，不递归子文件。新增路由要**同时**在顶层 admin.yaml 加 `$ref` 行（`~1` 编码 `/`，`{id}` 原样保留），保持 2 空格缩进；子文件是"契约详情"，顶层是"登记清单"。验证手法：往 `scripts/check-contract-sync/main.go` 的 collectSpecPaths 加临时 `fmt.Printf("DEBUG MATCH...")` 跑一次看真实匹配，再 revert。
+
+## 并行 Agent 同工作区开发导致的编译失败识别
+
+场景 → `go test ./internal/app/...` 报大量编译错误（重复声明 fakeX、API 签名不匹配、函数返回值数量不符），但自己没改过那些文件。
+怎么用 → 先 `git status --short`：未跟踪新文件（`??`）+ `stat -f "%Sm"` 时间戳接近当前时间 = 另一个并行 Agent 正在同一工作区同时开发。如 `internal/app/http_provision_seed_test.go` 与我的 worker 改动无关，是他人正在写的内容。识别为并行工作而非自己回归：对比文件时间戳、git 是否 tracked、错误是否涉及自己未碰过的包。**不要修改他人正在写的文件**——只验证自己的领域包（如 `go test ./internal/domain/worker/...`），在总结里如实说明 app 包被并行改动暂时阻塞。

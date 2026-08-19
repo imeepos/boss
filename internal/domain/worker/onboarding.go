@@ -46,15 +46,15 @@ type Registration struct {
 
 // WorkerRealNameVerification 师傅实名核验(对标客户 real_name_verifications)。
 type WorkerRealNameVerification struct {
-	ID                 int64     `json:"id"`
-	WorkerID           int64     `json:"workerId"`
-	Method             string    `json:"method"`
-	RealName           string    `json:"realName"`
-	IDCardNo           string    `json:"idCardNo"`
-	Result             string    `json:"result"`
-	VerifiedAt         time.Time `json:"verifiedAt"`
-	OperatorAccountID  int64     `json:"operatorAccountId"`
-	OperatorName       string    `json:"operatorName"`
+	ID                int64     `json:"id"`
+	WorkerID          int64     `json:"workerId"`
+	Method            string    `json:"method"`
+	RealName          string    `json:"realName"`
+	IDCardNo          string    `json:"idCardNo"`
+	Result            string    `json:"result"`
+	VerifiedAt        time.Time `json:"verifiedAt"`
+	OperatorAccountID int64     `json:"operatorAccountId"`
+	OperatorName      string    `json:"operatorName"`
 }
 
 // OnboardingService 师傅注册 / 审核 子域服务口。

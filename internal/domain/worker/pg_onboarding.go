@@ -41,10 +41,10 @@ SELECT `+regCols+` FROM worker_registrations
 	for rows.Next() {
 		var r Registration
 		var (
-			reviewedAt       pgtype.Timestamptz
-			reviewerAccount  pgtype.Int8
-			workerID         pgtype.Int8
-			reviewNote       pgtype.Text
+			reviewedAt      pgtype.Timestamptz
+			reviewerAccount pgtype.Int8
+			workerID        pgtype.Int8
+			reviewNote      pgtype.Text
 		)
 		if err := rows.Scan(&r.ID, &r.Name, &r.Phone, &r.IDCardNo, &r.GroupID, &r.RegionID,
 			&r.Status, &reviewNote, &reviewerAccount, &workerID,

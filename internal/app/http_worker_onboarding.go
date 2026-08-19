@@ -66,11 +66,11 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *Application) {
 			return
 		}
 		id, err := a.WorkerRealName.SubmitRealName(c.Request.Context(), worker.WorkerRealNameVerification{
-			WorkerID:  workerID,
-			Method:    req.Method,
-			RealName:  req.RealName,
-			IDCardNo:  req.IDCardNo,
-			Result:    worker.RealNamePending,
+			WorkerID:   workerID,
+			Method:     req.Method,
+			RealName:   req.RealName,
+			IDCardNo:   req.IDCardNo,
+			Result:     worker.RealNamePending,
 			VerifiedAt: time.Now(),
 		})
 		if err != nil {
