@@ -3,6 +3,7 @@
 // 文案由调用方传入(i18n)。单页不隐藏,禁用态置灰(确定性)。
 // 样式:tailwind 原子类(原 Pagination.css 已删除)。
 import { useState } from 'react'
+import { cn } from '../lib/cn'
 import { Dropdown } from './Dropdown'
 
 interface PaginationProps {
@@ -51,7 +52,7 @@ export function Pagination({
           ) : (
             <button
               key={p}
-              className={p === current ? `${PAGER_ITEM} ${PAGER_ACTIVE}` : PAGER_ITEM}
+              className={cn(PAGER_ITEM, p === current && PAGER_ACTIVE)}
               aria-current={p === current ? 'page' : undefined}
               aria-label={`${pageUnitText} ${p}`}
               onClick={() => onPage(p)}
