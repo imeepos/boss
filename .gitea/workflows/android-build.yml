@@ -1,0 +1,40 @@
+# Android 构建门禁(gitea 侧):双 app assemble + 单测。
+# runner 为 docker 容器(无 KVM),connectedAndroidTest 不可行,UI 测试走
+# testDebugUnitTest;GitHub 侧 .github/workflows/ci.yml 另有模拟器 UI 门禁。
+name: android-build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  android:
+    runs-on: deploy-102
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [mobile/user/android, mobile/worker/android]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - name: Clone
+        run: |
+          git clone --depth 1 "http://sker:${GITHUB_TOKEN}@192.168.0.102:3001/sker/boss.git" .
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build + unit tests
+        run: |
+          ./gradlew :app:assembleDebug --no-daemon
+          ./gradlew :app:testDebugUnitTest :app:assembleRelease --no-daemon
