@@ -451,3 +451,14 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:同一仓库存在并发提交者(另一个会话),我的 staged 文件两次被卷进对方的巨石提交(ffda8e3 事故 + 837a9f8 卷走 bss/user);第一次差点污染 90 文件的后端重构,靠 reset --soft + pathspec commit 挽回。
 - skill 有没有提前警告:没有。红线只说"任务完成必须 commit",没警告"git add 后别人可能抢先 commit 整个 index"。
 - 重来一次:多会话共享仓库时,一律 `git commit -m ... -- <显式pathspec>`(不经 index 提交),绝不裸 `git add`+`git commit`;提交前先 `git diff --cached --name-only` 确认 index 只有自己的文件。
+
+## 2025-xx 报障组三页实现(user android)
+- 最大坑:为消除注释里的 "/*" 序列用 python 批量替换块注释,把 `onClick = { /* TODO */ },` 替成 `onClick = { // TODO },`,右花括号被注释吞掉造成语法错误。教训:对"代码行内联块注释"不能机械正则替换成 //,必须换行重排;批量改完必须逐处 grep `//.*}` 复核。
+- skill 是否预警:否(新增经验,已记入本条)。
+- 重来一次:先 grep 出所有内联块注释手工处理,其余单独成行的再批量替换。
+
+## 2026-08-19 三端 API 前缀分离 + 门户落库(httpapi 重构)
+- 哪个坑浪费最多时间:BSD sed 的 `\b` 边界符被静默忽略(替换零生效还报成功),`&` 在替换串里等于"整个匹配"(把 `mgr.Sign(` 换成 `mgr.Sign(auth.AudAdmin, .Sign(`)。两处都靠编译器报错才暴露,各耗一轮。教训:macOS 上正则替换一律用 python3 re,别用 sed -i 玩 \b 和 &;sed 只做最朴素的字面替换。
+- skill 有没有提前警告:没有。红线 2(编辑前 read)沾边但不覆盖。
+- 重来一次:批量跨包重命名先 `grep -rn` 列出全部匹配形态,再用 python 脚本替换 + 立即 go build 单包验证;一次 sed 换完就编译,别攒批。
+- 另一个坑:跨包搬文件后,方法(recordAudit/buildDashboard 等)不能定义在外部类型上,切函数时用脚本把 `a.name(` 同步换成 `name(a, `,漏一个编译期才现形。教训:先 grep 全部调用点再动手,换完 grep 复核调用点归零。
