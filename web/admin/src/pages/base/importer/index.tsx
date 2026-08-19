@@ -3,15 +3,19 @@ import { useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
+import { ToolbarButton } from '../../../components/business/page-head'
+import { Badge } from '../../../components/ui/badge'
 import { ImportTaskList } from './TaskList'
-import '../geo/geo.css'
+import { CARD } from '../geo/styles'
+
+const AREA_CLS = 'min-h-35 resize-y rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 py-2 font-mono text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]'
 
 export default function ImporterPage() {
   const t = useT()
   const im = t.pages.importer
   return (
-    <div className="geo-card">
-      <h2 className="geo-section-title">{im.title}</h2>
+    <div className={CARD}>
+      <h2 className="mx-4 mt-4 mb-3 text-base text-[var(--shell-content-text)]">{im.title}</h2>
       <ImportPanel title={im.addrTitle} hint={im.addrHint} endpoint="/addresses/import" text={im} kind="array" />
       <ImportPanel title={im.geoTitle} hint={im.geoHint} endpoint="/geo/import" text={im} kind="object" />
       <ImportTaskList />
@@ -58,18 +62,18 @@ function ImportPanel({ title, hint, endpoint, text, kind }: {
   }
 
   return (
-    <div className="geo-field full" style={{ margin: '0 16px 20px' }}>
-      <label style={{ fontSize: 14 }}>{title}</label>
-      <p className="hint" style={{ margin: '4px 0 8px', fontSize: 12 }}>{hint}</p>
-      <textarea className="geo-input addr-import-area" value={payload}
+    <div className="col-span-full mx-4 mb-5 flex flex-col gap-1.5">
+      <label className="text-sm text-[var(--shell-content-text)]">{title}</label>
+      <p className="m-0 mb-1 text-xs text-[var(--shell-input-placeholder)]">{hint}</p>
+      <textarea className={AREA_CLS} value={payload}
         placeholder='[{"path":"gz","name":"广州市","countryCode":"CN"}]'
         onChange={(e) => setPayload(e.target.value)} />
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8 }}>
-        <button className="geo-btn geo-btn-primary" disabled={!payload.trim()} onClick={run}>
+      <div className="mt-2 flex items-center gap-3">
+        <ToolbarButton primary disabled={!payload.trim()} onClick={run}>
           {text.importBtn}
-        </button>
-        {result && <span className="geo-tag geo-tag-on">{result}</span>}
-        {error && <span className="geo-error" style={{ margin: 0 }}>{error}</span>}
+        </ToolbarButton>
+        {result && <Badge variant="success">{result}</Badge>}
+        {error && <span className="text-xs text-[var(--color-danger)]">{error}</span>}
       </div>
     </div>
   )

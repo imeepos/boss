@@ -75,7 +75,7 @@ export function CountryPanel() {
 
   return (
     <div className={CARD}>
-      {error && <ErrorBanner role="alert" message={error} className="mt-3" />}
+      {error && <ErrorBanner message={error} className="mt-3" />}
       <div className={TOOLBAR}>
         <Input
           className="w-60"
@@ -117,7 +117,7 @@ function CountryTable({ rows, onEdit, onToggle, onDetail }: {
   onDetail: (alpha2: string) => void
 }) {
   const g = useT().pages.geo
-  if (!rows.length) return <EmptyState className="py-8" text={g.empty} />
+  if (!rows.length) return <EmptyState text={g.empty} />
   return (
     <div className={TABLE_WRAP}>
       <Table>

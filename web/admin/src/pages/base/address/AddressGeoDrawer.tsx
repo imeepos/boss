@@ -4,9 +4,10 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { ToolbarButton } from '../../../components/business/page-head'
 import type { CountryRow } from '../geo/CountryForm'
 import type { SubdivRow } from '../geo/SubdivisionPanel'
-import '../geo/geo.css'
+import { FORM, FIELD_FULL, LABEL, REQ } from '../geo/styles'
 
 export interface AddressRow {
   id: number
@@ -63,14 +64,14 @@ export function AddressGeoDrawer({ row, onDone, onCancel }: {
     <Drawer title={`${a.attach} · ${row.name}`} onClose={onCancel}
       footer={
         <>
-          {error && <span className="geo-error" style={{ margin: 0, marginRight: 'auto' }}>{error}</span>}
-          <button className="geo-btn" onClick={onCancel}>{g.cancel}</button>
-          <button className="geo-btn geo-btn-primary" disabled={!country} onClick={save}>{g.save}</button>
+          {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
+          <ToolbarButton onClick={onCancel}>{g.cancel}</ToolbarButton>
+          <ToolbarButton primary disabled={!country} onClick={save}>{g.save}</ToolbarButton>
         </>
       }>
-      <div className="geo-form">
-        <div className="geo-field full">
-          <label><span className="req">*</span>{a.country}</label>
+      <div className={FORM}>
+        <div className={FIELD_FULL}>
+          <label className={LABEL}><span className={REQ}>*</span>{a.country}</label>
           <Dropdown value={country} ariaLabel={a.country} onChange={setCountry}
             triggerStyle={{ width: '100%' }}
             options={[
@@ -78,8 +79,8 @@ export function AddressGeoDrawer({ row, onDone, onCancel }: {
               ...countries.map((c) => ({ value: c.alpha2, label: `${c.alpha2} ${c.displayName}` })),
             ]} />
         </div>
-        <div className="geo-field full">
-          <label>{a.adminCode}</label>
+        <div className={FIELD_FULL}>
+          <label className={LABEL}>{a.adminCode}</label>
           <Dropdown value={admin} ariaLabel={a.adminCode}
             onChange={setAdmin}
             triggerStyle={{ width: '100%' }}

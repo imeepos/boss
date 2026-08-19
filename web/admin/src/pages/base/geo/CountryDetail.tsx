@@ -150,7 +150,7 @@ function AttrsSection(p: {
           <Input value={p.cur} onChange={(e) => p.setCur(e.target.value)} />
         </div>
       </div>
-      <ToolbarButton primary onClick={p.onSave}>{g.save}</ToolbarButton>
+      <div className="mt-3"><ToolbarButton primary onClick={p.onSave}>{g.save}</ToolbarButton></div>
     </section>
   )
 }

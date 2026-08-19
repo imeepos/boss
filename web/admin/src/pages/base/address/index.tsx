@@ -3,9 +3,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
+import { ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
+import { Badge } from '../../../components/ui/badge'
+import { Input } from '../../../components/ui/input'
 import { AddressGeoDrawer, type AddressRow, type CountryRow } from './AddressGeoDrawer'
 import { AddressNodeDrawer } from './AddressNodeDrawer'
-import '../geo/geo.css'
+import { CARD, TOOLBAR, SPACER, ADDR_ROW, ADDR_TOGGLE, ADDR_NAME, ACT_BTN, SEP } from '../geo/styles'
 
 interface AddressHit { node: AddressRow; ancestors: AddressRow[] }
 
@@ -96,21 +99,21 @@ export default function AddressPage() {
   }
 
   return (
-    <div className="geo-card">
-      {error && <div className="geo-error" role="alert">{error}</div>}
-      <div className="geo-toolbar">
-        <input className="geo-input" style={{ width: 200 }} placeholder={t.pages.geo.searchPlaceholder}
+    <div className={CARD}>
+      {error && <ErrorBanner message={error} className="mt-3" />}
+      <div className={TOOLBAR}>
+        <Input className="w-50" placeholder={t.pages.geo.searchPlaceholder}
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') search() }} />
-        <button className="geo-btn" disabled={busy} onClick={search}>{a.searchAll}</button>
-        <div className="spacer" />
-        <button className={`geo-btn ${unlinked === '1' ? 'geo-btn-primary' : ''}`}
+        <ToolbarButton disabled={busy} onClick={search}>{a.searchAll}</ToolbarButton>
+        <div className={SPACER} />
+        <ToolbarButton primary={unlinked === '1'}
           onClick={() => setUnlinked(unlinked === '1' ? '' : '1')}>
           {unlinked === '1' ? a.unlinkedAll : a.unlinked}
-        </button>
-        <button className="geo-btn geo-btn-primary"
-          onClick={() => setNodeForm({ mode: 'create', parent: undefined })}>+ {a.addRoot}</button>
+        </ToolbarButton>
+        <ToolbarButton primary
+          onClick={() => setNodeForm({ mode: 'create', parent: undefined })}>+ {a.addRoot}</ToolbarButton>
       </div>
       <AddressTree rows={visible(roots)} childrenOf={childrenOf} expanded={expanded} depth={0}
         countryName={countryName} keyword={kw}
@@ -118,7 +121,7 @@ export default function AddressPage() {
         onAddChild={(r) => setNodeForm({ mode: 'create', parent: r })}
         onRename={(r) => setNodeForm({ mode: 'rename', row: r })}
         onDelete={remove} />
-      {roots.length === 0 && <div className="geo-empty">{a.empty}</div>}
+      {roots.length === 0 && <EmptyState text={a.empty} />}
       {nodeForm && (
         <AddressNodeDrawer mode={nodeForm.mode} parent={nodeForm.parent} row={nodeForm.row}
           onDone={() => { setNodeForm(null); loadRoots() }} onCancel={() => setNodeForm(null)} />
@@ -150,34 +153,32 @@ function AddressTree({ rows, childrenOf, expanded, depth, countryName, keyword,
   const a = t.pages.address
   if (rows.length === 0) return null
   return (
-    <div className="addr-tree" style={{ paddingLeft: depth * 20 }}>
+    <div className="mx-4 my-3 flex flex-col gap-0.5" style={{ paddingLeft: depth * 20 }}>
       {rows.map((r) => {
         const kids = childrenOf[r.id]
         const open = expanded.has(r.id)
         const leaf = kids !== undefined ? kids.length === 0 : r.hasChildren === false
         return (
-          <div key={r.id} className="addr-node">
-            <div className="addr-row">
+          <div key={r.id} className="flex flex-col">
+            <div className={ADDR_ROW}>
               {r.level < 5 && !leaf
-                ? <button className="addr-toggle" aria-label={open ? a.collapse : a.expand}
+                ? <button className={ADDR_TOGGLE} aria-label={open ? a.collapse : a.expand}
                   onClick={() => onToggle(r)}>{open ? '−' : '+'}</button>
-                : <span className="addr-toggle addr-dot">·</span>}
-              <span className="addr-name">{r.name}</span>
-              <span className="geo-tag">{r.level}</span>
-              <span className={`geo-tag ${r.countryCode ? '' : 'geo-tag-off'}`}>
-                {countryName(r.countryCode)}
+                : <span className={ADDR_TOGGLE + ' cursor-default border-none text-[var(--shell-group-title)]'}>·</span>}
+              <span className={ADDR_NAME}>{r.name}</span>
+              <Badge>{r.level}</Badge>
+              <Badge>{countryName(r.countryCode)}</Badge>
+              {r.adminCode && <Badge>{r.adminCode}</Badge>}
+              <div className={SPACER} />
+              <span className="inline-flex items-center">
+                {r.level === 1 && <button className={ACT_BTN} onClick={() => onAttach(r)}>{a.attach}</button>}
+                {r.level < 5 && <><span className={SEP}>|</span>
+                  <button className={ACT_BTN} onClick={() => onAddChild(r)}>{a.addChild}</button></>}
+                <span className={SEP}>|</span>
+                <button className={ACT_BTN} onClick={() => onRename(r)}>{a.rename}</button>
+                <span className={SEP}>|</span>
+                <button className={ACT_BTN} onClick={() => onDelete(r)}>{a.delete}</button>
               </span>
-              {r.adminCode && <span className="geo-tag">{r.adminCode}</span>}
-              <span className="spacer" />
-              <div className="geo-act">
-                {r.level === 1 && <button onClick={() => onAttach(r)}>{a.attach}</button>}
-                {r.level < 5 && <><span className="sep">|</span>
-                  <button onClick={() => onAddChild(r)}>{a.addChild}</button></>}
-                <span className="sep">|</span>
-                <button onClick={() => onRename(r)}>{a.rename}</button>
-                <span className="sep">|</span>
-                <button onClick={() => onDelete(r)}>{a.delete}</button>
-              </div>
             </div>
             {open && (
               <AddressTree rows={filterRows(kids ?? [], keyword, childrenOf)} childrenOf={childrenOf}

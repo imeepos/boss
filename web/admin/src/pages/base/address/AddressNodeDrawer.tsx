@@ -4,10 +4,12 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { ToolbarButton } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
 import type { CountryRow } from '../geo/CountryForm'
 import type { SubdivRow } from '../geo/SubdivisionPanel'
 import type { AddressRow } from './AddressGeoDrawer'
-import '../geo/geo.css'
+import { FORM, FIELD_FULL, LABEL, REQ, HINT } from '../geo/styles'
 
 export function AddressNodeDrawer({ mode, parent, row, onDone, onCancel }: {
   mode: 'create' | 'rename'
@@ -66,29 +68,29 @@ export function AddressNodeDrawer({ mode, parent, row, onDone, onCancel }: {
       onClose={onCancel}
       footer={
         <>
-          {error && <span className="geo-error" style={{ margin: 0, marginRight: 'auto' }}>{error}</span>}
-          <button className="geo-btn" onClick={onCancel}>{g.cancel}</button>
-          <button className="geo-btn geo-btn-primary" disabled={!valid} onClick={save}>{g.save}</button>
+          {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
+          <ToolbarButton onClick={onCancel}>{g.cancel}</ToolbarButton>
+          <ToolbarButton primary disabled={!valid} onClick={save}>{g.save}</ToolbarButton>
         </>
       }>
-      <div className="geo-form">
+      <div className={FORM}>
         {mode === 'create' && (
-          <div className="geo-field full">
-            <label><span className="req">*</span>{a.pathLabel}</label>
-            <input className="geo-input" value={label} placeholder="如 nanshan"
+          <div className={FIELD_FULL}>
+            <label className={LABEL}><span className={REQ}>*</span>{a.pathLabel}</label>
+            <Input value={label} placeholder="如 nanshan"
               onChange={(e) => setLabel(e.target.value.toLowerCase())} />
-            <span className="hint">{a.pathHint}{parent ? ` · ${parent.name}` : ''}</span>
+            <span className={HINT}>{a.pathHint}{parent ? ` · ${parent.name}` : ''}</span>
           </div>
         )}
-        <div className="geo-field full">
-          <label><span className="req">*</span>{a.nameLabel}</label>
-          <input className="geo-input" value={name}
+        <div className={FIELD_FULL}>
+          <label className={LABEL}><span className={REQ}>*</span>{a.nameLabel}</label>
+          <Input value={name}
             onChange={(e) => setName(e.target.value)} />
         </div>
         {isRoot && (
           <>
-            <div className="geo-field full">
-              <label>{a.country}</label>
+            <div className={FIELD_FULL}>
+              <label className={LABEL}>{a.country}</label>
               <Dropdown value={country} ariaLabel={a.country} onChange={setCountry}
                 triggerStyle={{ width: '100%' }}
                 options={[
@@ -96,8 +98,8 @@ export function AddressNodeDrawer({ mode, parent, row, onDone, onCancel }: {
                   ...countries.map((c) => ({ value: c.alpha2, label: `${c.alpha2} ${c.displayName}` })),
                 ]} />
             </div>
-            <div className="geo-field full">
-              <label>{a.adminCode}</label>
+            <div className={FIELD_FULL}>
+              <label className={LABEL}>{a.adminCode}</label>
               <Dropdown value={admin} ariaLabel={a.adminCode} onChange={setAdmin}
                 triggerStyle={{ width: '100%' }}
                 options={[

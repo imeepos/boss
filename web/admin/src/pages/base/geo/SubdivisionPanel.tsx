@@ -6,9 +6,12 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
+import { ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { StatusTag } from './CountryPanel'
 import type { CountryRow } from './CountryForm'
-import './geo.css'
+import { CARD, TOOLBAR, SPACER, TABLE_WRAP, FOOTER, FORM, FIELD, FIELD_FULL, LABEL, REQ } from './styles'
 
 export interface SubdivRow {
   code: string
@@ -28,6 +31,8 @@ const EMPTY: SubdivRow = {
   code: '', countryCode: '', parentCode: '', level: 1, category: 'region',
   osmAdminLevel: 4, geonameId: 0, isActive: true, displayName: '',
 }
+
+const TAG_OFF = 'mb-1.5 inline-flex items-center justify-between rounded-[4px] border border-[color-mix(in_srgb,var(--shell-group-title)_35%,transparent)] bg-[color-mix(in_srgb,var(--shell-group-title)_10%,transparent)] px-2 py-0.5 text-xs leading-[22px] text-[var(--shell-group-title)]'
 
 export function SubdivisionPanel() {
   const t = useT()
@@ -98,9 +103,9 @@ export function SubdivisionPanel() {
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   return (
-    <div className="geo-card">
-      {error && <div className="geo-error" role="alert">{error}</div>}
-      <div className="geo-toolbar">
+    <div className={CARD}>
+      {error && <ErrorBanner message={error} className="mt-3" />}
+      <div className={TOOLBAR}>
         <Dropdown
           value={country}
           ariaLabel={g.filterCountry}
@@ -114,17 +119,17 @@ export function SubdivisionPanel() {
             })),
           ]}
         />
-        <input className="geo-input" style={{ width: 200 }} placeholder={g.searchPlaceholder}
+        <Input className="w-50" placeholder={g.searchPlaceholder}
           value={draftKeyword} onChange={(e) => search(e.target.value)} />
-        <div className="spacer" />
-        <button className="geo-btn geo-btn-primary"
+        <div className={SPACER} />
+        <ToolbarButton primary
           onClick={() => { setForm({ ...EMPTY, countryCode: country }); setEditing(false) }}>
           + {g.add}
-        </button>
+        </ToolbarButton>
       </div>
       <SubdivTable rows={paged} onEdit={(r) => { setForm({ ...r }); setEditing(true) }}
         onToggle={toggle} onNames={(code) => setNamesOf(namesOf === code ? null : code)} />
-      <div className="geo-footer">
+      <div className={FOOTER}>
         <Pagination page={safePage} pageSize={pageSize} total={filtered.length}
           onPage={(v) => { setPage(v); setUrlPage(v) }} onSize={resize} rangeText={g.rangeText}
           prevText={g.prev} nextText={g.next} perPageText={g.perPage}
@@ -145,34 +150,36 @@ function SubdivTable({ rows, onEdit, onToggle, onNames }: {
   onNames: (code: string) => void
 }) {
   const g = useT().pages.geo
-  if (!rows.length) return <div className="geo-empty">{g.empty}</div>
+  if (!rows.length) return <EmptyState text={g.empty} />
   return (
-    <div className="geo-table-wrap">
-      <table className="geo-table">
-        <thead>
-          <tr>{g.subdivColumns.map((c) => <th key={c}>{c}</th>)}</tr>
-        </thead>
-        <tbody>
+    <div className={TABLE_WRAP}>
+      <Table>
+        <TableHeader>
+          <TableRow>{g.subdivColumns.map((c) => <TableHead key={c}>{c}</TableHead>)}</TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((r) => (
-            <tr key={r.code}>
-              <td className="num">{r.code}</td>
-              <td>{r.countryCode}</td>
-              <td>{r.parentCode || '—'}</td>
-              <td>{r.level}</td>
-              <td>{r.category}</td>
-              <td>{r.displayName}</td>
-              <td><StatusTag on={r.isActive} /></td>
-              <td>
-                <div className="geo-act">
-                  <button onClick={() => onEdit(r)}>{g.edit}</button><span className="sep">|</span>
-                  <button onClick={() => onToggle(r)}>{r.isActive ? g.disable : g.enable}</button><span className="sep">|</span>
-                  <button onClick={() => onNames(r.code)}>{g.names}</button>
-                </div>
-              </td>
-            </tr>
+            <TableRow key={r.code}>
+              <TableCell className="font-semibold text-[var(--shell-heading)]">{r.code}</TableCell>
+              <TableCell>{r.countryCode}</TableCell>
+              <TableCell>{r.parentCode || '—'}</TableCell>
+              <TableCell>{r.level}</TableCell>
+              <TableCell>{r.category}</TableCell>
+              <TableCell>{r.displayName}</TableCell>
+              <TableCell><StatusTag on={r.isActive} /></TableCell>
+              <TableCell>
+                <span className="inline-flex items-center">
+                  <button className="border-none bg-none px-1 text-[13px] text-[var(--color-text-link)] cursor-pointer hover:text-[var(--color-brand-gold-600)] hover:underline" onClick={() => onEdit(r)}>{g.edit}</button>
+                  <span className="text-[var(--shell-side-border)]">|</span>
+                  <button className="border-none bg-none px-1 text-[13px] text-[var(--color-text-link)] cursor-pointer hover:text-[var(--color-brand-gold-600)] hover:underline" onClick={() => onToggle(r)}>{r.isActive ? g.disable : g.enable}</button>
+                  <span className="text-[var(--shell-side-border)]">|</span>
+                  <button className="border-none bg-none px-1 text-[13px] text-[var(--color-text-link)] cursor-pointer hover:text-[var(--color-brand-gold-600)] hover:underline" onClick={() => onNames(r.code)}>{g.names}</button>
+                </span>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -212,16 +219,16 @@ function SubdivForm({ initial, editing, country, onDone, onCancel }: {
     <Drawer title={`${editing ? g.edit : g.add} · ${g.tabSubdiv}`} onClose={onCancel}
       footer={
         <>
-          {error && <span className="geo-error" style={{ margin: 0, marginRight: 'auto' }}>{error}</span>}
-          <button className="geo-btn" onClick={onCancel}>{g.cancel}</button>
-          <button className="geo-btn geo-btn-primary" onClick={save}>{g.save}</button>
+          {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
+          <ToolbarButton onClick={onCancel}>{g.cancel}</ToolbarButton>
+          <ToolbarButton primary onClick={save}>{g.save}</ToolbarButton>
         </>
       }>
-      <div className="geo-form">
+      <div className={FORM}>
         {texts.map(([k, req]) => (
-          <div key={k} className="geo-field full">
-            <label>{req && <span className="req">*</span>}{g.subdivFields[k]}</label>
-            <input className="geo-input" disabled={editing && k === 'code'}
+          <div key={k} className={FIELD_FULL}>
+            <label className={LABEL}>{req && <span className={REQ}>*</span>}{g.subdivFields[k]}</label>
+            <Input disabled={editing && k === 'code'}
               value={form[k] as string}
               onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
           </div>
@@ -230,13 +237,13 @@ function SubdivForm({ initial, editing, country, onDone, onCancel }: {
           onChange={(v) => setForm({ ...form, level: v })} />
         <NumField label={g.subdivFields.osmAdminLevel} value={form.osmAdminLevel}
           onChange={(v) => setForm({ ...form, osmAdminLevel: v })} />
-        <div className="geo-field full">
-          <label>{g.subdivFields.geonameId}</label>
-          <input className="geo-input" type="number" value={form.geonameId}
+        <div className={FIELD_FULL}>
+          <label className={LABEL}>{g.subdivFields.geonameId}</label>
+          <Input type="number" value={form.geonameId}
             onChange={(e) => setForm({ ...form, geonameId: Number(e.target.value) })} />
         </div>
       </div>
-      {editing && <p className="hint" style={{ marginTop: 12, fontSize: 12, color: 'var(--shell-group-title)' }}>
+      {editing && <p className="mt-3 text-xs text-[var(--shell-group-title)]">
         {g.filterCountry}: {country || form.countryCode}
       </p>}
     </Drawer>
@@ -250,9 +257,9 @@ function NumField({ label, value, onChange }: {
   onChange: (v: number) => void
 }) {
   return (
-    <div className="geo-field">
-      <label>{label}</label>
-      <input className="geo-input" type="number" value={value}
+    <div className={FIELD}>
+      <label className={LABEL}>{label}</label>
+      <Input type="number" value={value}
         onChange={(e) => onChange(Number(e.target.value))} />
     </div>
   )
@@ -291,19 +298,18 @@ function SubdivNames({ code, onClose }: { code: string; onClose: () => void }) {
   return (
     <Drawer title={`${g.names} · ${code}`} onClose={onClose}>
       {names.map((n) => (
-        <div key={n.locale + n.nameType} className="geo-tag geo-tag-off"
-          style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, padding: '2px 8px' }}>
+        <div key={n.locale + n.nameType} className={TAG_OFF}>
           <span>{n.locale} · {n.nameType} · {n.name}</span>
-          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)' }}
+          <button className="cursor-pointer border-none bg-none text-[var(--color-danger)]"
             onClick={() => remove(n.locale, n.nameType)}>×</button>
         </div>
       ))}
-      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-        <input className="geo-input" style={{ width: 110 }} value={locale}
+      <div className="mt-3 flex gap-2">
+        <Input className="w-27" value={locale}
           onChange={(e) => setLocale(e.target.value)} placeholder="locale" />
-        <input className="geo-input" style={{ flex: 1 }} value={name}
+        <Input value={name}
           onChange={(e) => setName(e.target.value)} placeholder="name" />
-        <button className="geo-btn" onClick={add}>{g.addName}</button>
+        <ToolbarButton onClick={add}>{g.addName}</ToolbarButton>
       </div>
     </Drawer>
   )
