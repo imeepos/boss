@@ -26,4 +26,6 @@
 | 2026-08-18 | 菲律宾行政区划以 migration 全量内置 | adopted/2026-08-18-psgc-builtin-migration.md |
 | 2026-08-18 | 发票 ARN 发号采用行锁计数表（非 PG SEQUENCE） | adopted/2026-08-18-tax-invoice-arn-numbering.md |
 | 2026-08-18 | 发票税务属地：多属地网关并存，系统发票无独立法定效力 | adopted/2026-08-18-tax-jurisdiction-china-shudian.md |
-| 2026-08-19 | 师傅端前端=web/worker Vite MPA 收编草稿，API 同源 /api/worker/v1 | adopted/2026-08-19-worker-web-vite-mpa.md |
+| 2026-08-19 | 师傅端前端=web/desktop Vite MPA 收编草稿，API 同源 /api/worker/v1 | adopted/2026-08-19-desktop-worker-web-vite-mpa.md |
+| 2026-08-19 | 管理端桌面客户端=Tauri 2 壳内嵌 admin dist，/api 壳内反代 | adopted/2026-08-19-desktop-tauri-wrap-admin.md |
+| 2026-08-19 | 移动端 Android=Kotlin+Compose 双 app 独立 Gradle 工程 | adopted/2026-08-19-mobile-android-init.md |
