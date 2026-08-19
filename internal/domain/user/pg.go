@@ -36,6 +36,30 @@ func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
 }
 
+// ChangePassword 自助改密:校验旧口令 → bcrypt 新口令 → 更新;旧口令错返回 ErrUnauthorized。
+func (s *PGStore) ChangePassword(ctx context.Context, accountID int64, oldPassword, newPassword string) error {
+	var hash string
+	err := s.db.QueryRow(ctx, `SELECT password_hash FROM accounts WHERE id = $1`, accountID).Scan(&hash)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrUnauthorized
+	}
+	if err != nil {
+		return fmt.Errorf("user: change password query: %w", err)
+	}
+	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(oldPassword)) != nil {
+		return ErrUnauthorized
+	}
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("user: bcrypt: %w", err)
+	}
+	if _, err := s.db.Exec(ctx,
+		`UPDATE accounts SET password_hash = $2, updated_at = now() WHERE id = $1`, accountID, string(newHash)); err != nil {
+		return fmt.Errorf("user: change password update: %w", err)
+	}
+	return nil
+}
+
 // Login 校验账号口令,返回认证身份;账号不存在/口令错误/停用统一返回 ErrUnauthorized。
 func (s *PGStore) Login(ctx context.Context, username, password string) (*LoginResult, error) {
 	var id int64

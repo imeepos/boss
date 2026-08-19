@@ -27,6 +27,9 @@ type Profile struct {
 type Service interface {
 	Login(ctx context.Context, username, password string) (*LoginResult, error)
 
+	// ChangePassword 自助改密:校验旧口令后更新;旧口令错误返回 ErrUnauthorized。
+	ChangePassword(ctx context.Context, accountID int64, oldPassword, newPassword string) error
+
 	// EnsureSuperAdmin 启动引导:幂等创建超级管理员(sysadmin),已存在则跳过不覆盖。
 	EnsureSuperAdmin(ctx context.Context, username, password, realName string) (created bool, err error)
 

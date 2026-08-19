@@ -18,11 +18,12 @@ import (
 
 // fakeUser 桩 user.Service:登录/权限/组织列表可配置,其余方法返回零值。
 type fakeUser struct {
-	loginRes *user.LoginResult
-	loginErr error
-	permOk   bool
-	entities []user.LegalEntity
-	accounts []user.AccountRow
+	loginRes  *user.LoginResult
+	loginErr  error
+	permOk    bool
+	entities  []user.LegalEntity
+	accounts  []user.AccountRow
+	changeErr error
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -34,7 +35,8 @@ func (f *fakeUser) Register(context.Context, string, string, string) (*user.Logi
 func (f *fakeUser) EnsureSuperAdmin(context.Context, string, string, string) (bool, error) {
 	return false, nil
 }
-func (f *fakeUser) HasPermission(context.Context, int64, string) (bool, error) { return f.permOk, nil }
+func (f *fakeUser) ChangePassword(context.Context, int64, string, string) error { return f.changeErr }
+func (f *fakeUser) HasPermission(context.Context, int64, string) (bool, error)  { return f.permOk, nil }
 func (f *fakeUser) HasDataScope(context.Context, int64, user.DataScope) (bool, error) {
 	return false, nil
 }
@@ -50,7 +52,7 @@ func (f *fakeUser) DeleteAddress(context.Context, int64) error             { ret
 func (f *fakeUser) SearchAddresses(context.Context, string) ([]user.AddressHit, error) {
 	return nil, nil
 }
-func (f *fakeUser) ListRegions(context.Context, string) ([]user.Region, error)      { return nil, nil }
+func (f *fakeUser) ListRegions(context.Context, string) ([]user.Region, error) { return nil, nil }
 func (f *fakeUser) ListLegalEntities(context.Context) ([]user.LegalEntity, error) {
 	return f.entities, nil
 }

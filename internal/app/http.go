@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -104,6 +105,12 @@ type loginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// changePasswordReq 自助改密请求体:旧口令校验 + 新口令最短 6 位。
+type changePasswordReq struct {
+	OldPassword string `json:"oldPassword" binding:"required"`
+	NewPassword string `json:"newPassword" binding:"required,min=6"`
+}
+
 // RegisterRoutes 在 gin engine 上注册业务路由;mgr 为 JWT 单事实源签发器(D1)。
 // admin 端为封闭账号模型:无自助注册,账号由超管引导(EnsureSuperAdmin)或 org/account 受权流程创建。
 func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
@@ -157,6 +164,26 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 
 	// 退出登录:token 无状态,前端清本地 token 即可(auth.yaml adminLogout)。
 	authed.POST("/auth/logout", func(c *gin.Context) {
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	// 自助改密:校验旧口令后更新;API key 主体无账号概念,拒绝。
+	authed.POST("/auth/change-password", func(c *gin.Context) {
+		if middleware.SubjectFrom(c) != nil {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		var req changePasswordReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
+		if err := a.User.ChangePassword(c.Request.Context(), claims.AccountID, req.OldPassword, req.NewPassword); err != nil {
+			respondErr(c, err)
+			return
+		}
+		a.recordAudit(c, "权限变更", "account", fmt.Sprint(claims.AccountID), map[string]any{"op": "self-change-password"})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 
