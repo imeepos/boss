@@ -1,6 +1,6 @@
 // 个人工作台内容页：各分区由 UCenterLayout 的独立路由承载。
 import { useEffect, useState, type FormEvent } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useProfile } from '../../layouts/profile'
 import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
@@ -134,9 +134,18 @@ function ApiKeySection() {
   </div>
 }
 
+// 我的工作:快捷入口跳转对应页面(计数聚合后端无对应端点,不展示假数字)。
 function MyDataSection() {
-  const t = useT(); const items = [[t.pages.profile.myData.orders, t.pages.profile.myData.ordersDesc], [t.pages.profile.myData.bills, t.pages.profile.myData.billsDesc], [t.pages.profile.myData.service, t.pages.profile.myData.serviceDesc], [t.pages.profile.myData.messages, t.pages.profile.myData.messagesDesc], [t.pages.profile.myData.audit, t.pages.profile.myData.auditDesc], [t.pages.profile.myData.permissions, t.pages.profile.myData.permissionsDesc]]
-  return <div className="profile-content-page"><SectionTitle title={t.pages.profile.myData.title} desc={t.pages.profile.myData.desc} /><div className="profile-summary-grid"><Summary value="—" label={t.pages.profile.myData.orders} /><Summary value="—" label={t.pages.profile.myData.messages} /><Summary value="—" label={t.pages.profile.myData.bills} /></div><div className="profile-data-list">{items.map(([label, desc]) => <button key={label}><span><strong>{label}</strong><small>{desc}</small></span><i className="profile-chevron" /></button>)}</div></div>
+  const t = useT(); const navigate = useNavigate()
+  const items: Array<[string, string, string]> = [
+    [t.pages.profile.myData.orders, t.pages.profile.myData.ordersDesc, '/boss/order'],
+    [t.pages.profile.myData.bills, t.pages.profile.myData.billsDesc, '/billing/billing'],
+    [t.pages.profile.myData.service, t.pages.profile.myData.serviceDesc, '/boss/complaint'],
+    [t.pages.profile.myData.messages, t.pages.profile.myData.messagesDesc, '/boss/message'],
+    [t.pages.profile.myData.audit, t.pages.profile.myData.auditDesc, '/ucenter/audit'],
+    [t.pages.profile.myData.permissions, t.pages.profile.myData.permissionsDesc, '/ucenter/permissions'],
+  ]
+  return <div className="profile-content-page"><SectionTitle title={t.pages.profile.myData.title} desc={t.pages.profile.myData.desc} /><div className="profile-data-list">{items.map(([label, desc, href]) => <button key={label} onClick={() => navigate(href)}><span><strong>{label}</strong><small>{desc}</small></span><i className="profile-chevron" /></button>)}</div></div>
 }
 
 function PermissionsSection({ profile }: { profile: Profile }) {
