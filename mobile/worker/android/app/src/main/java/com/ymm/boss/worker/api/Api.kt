@@ -1,6 +1,7 @@
 package com.ymm.boss.worker.api
 
 import android.content.Context
+import com.ymm.boss.worker.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -10,17 +11,13 @@ import java.net.URL
 
 class ApiException(val status: Int, message: String) : Exception(message)
 
-// 师傅端统一 HTTP 客户端,契约对齐 docs/worker/api.js。
-// 对接真实服务端(192.168.0.102:28080);切回本机 mock 改回 10.0.2.2:8091 即可。
 object Api {
-    var base: String = "http://192.168.0.102:28080/api/worker/v1"
+    var base: String = BuildConfig.BOSS_BASE_URL
     private const val TOKEN_KEY = "boss_worker_token"
     private const val PREFS = "boss_worker"
     private lateinit var appContext: Context
 
-    fun init(ctx: Context) {
-        appContext = ctx.applicationContext
-    }
+    fun init(ctx: Context) { appContext = ctx.applicationContext }
 
     fun token(): String = prefs().getString(TOKEN_KEY, "") ?: ""
 
@@ -66,8 +63,6 @@ object Api {
                     ?.bufferedReader()?.readText() ?: ""
                 if (code !in 200..299) throw ApiException(code, "HTTP $code")
                 text
-            } finally {
-                conn.disconnect()
-            }
+            } finally { conn.disconnect() }
         }
 }

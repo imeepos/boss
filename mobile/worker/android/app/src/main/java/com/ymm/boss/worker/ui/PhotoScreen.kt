@@ -18,16 +18,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ymm.boss.worker.api.ScanApi
+import com.ymm.boss.worker.util.PhotoCapture
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 
-// 拍照取证(对齐 docs/worker/photo.html):照片列表 + 现场取证上传
 @Composable
 fun PhotoScreen(nav: NavHost, no: String) {
     var refresh by remember { mutableStateOf(0) }
     val state by loadOnce(no, refresh) { ScanApi.photos(no) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    var capturing by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("拍照取证", onBack = { nav.pop() })
@@ -46,13 +47,16 @@ fun PhotoScreen(nav: NavHost, no: String) {
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    PrimaryButton("拍照上传", modifier = Modifier.fillMaxWidth()) {
+                    PrimaryButton(text = if (capturing) "拍照中…" else "拍照上传", enabled = !capturing, modifier = Modifier.fillMaxWidth()) {
+                        capturing = true
                         scope.launch {
                             try {
+                                val photo = PhotoCapture.createOutputFile(ctx)
+                                if (photo == null) { toast(ctx, "无法创建拍照文件"); capturing = false; return@launch }
                                 ScanApi.uploadPhoto(no, "现场取证")
-                                toast(ctx, "上传成功")
-                                refresh++
+                                toast(ctx, "上传成功"); refresh++
                             } catch (e: Exception) { toast(ctx, "上传失败：${e.message}") }
+                            capturing = false
                         }
                     }
                     Notice("拍照并上传，自动关联当前工单；弱网自动缓存上传。")

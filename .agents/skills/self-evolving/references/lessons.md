@@ -93,3 +93,4 @@
 - 当为 Go 接口造测试 fake 时,让 go vet 一次性列出全部缺失方法再批量补,不要撞一个补一个。2026-08-19。
 - 当单测 `:=` 赋值报 mismatch 时,目标函数返回多值就改成 `v, _ :=`。2026-08-19。
 - 当 Android App(targetSdk 35+) 页内返回键点不到/系统返回直接退出时,修复是根布局加 windowInsetsPadding(WindowInsets.safeDrawing) 让顶栏避开状态栏(edge-to-edge 默认绘制到屏幕顶端,顶部~90px 触控被状态栏吃掉),并给自维护导航栈配 BackHandler(enabled=stack.size>1){pop()};症状:uiautomator 显示按钮 bounds 正常但 input tap 无响应(2026-08-19 worker App)
+- 当需要冒烟/联调后端时,修复是等 102 服务器在提交后自动部署,直接用部署地址验证——本机只有一台测试服务器(102)且本机配置低,不要在本地 go run 起服务(2026-08-19 用户明令;本地起服务还撞端口双绑假 404)。

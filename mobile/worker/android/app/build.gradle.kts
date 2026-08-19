@@ -1,8 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
+
+fun bossBaseUrl(default: String): String =
+    (project.findProperty("bossBaseUrl") as? String)?.takeIf { it.isNotBlank() } ?: default
+
+val keystoreProperties = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val hasReleaseKeystore = keystoreProperties.getProperty("storeFile") != null
 
 android {
     namespace = "com.ymm.boss.worker"
@@ -16,14 +27,34 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            if (hasReleaseKeystore) {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://10.0.2.2:28080/api/worker/v1")}\"")
+        }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("https://boss.ymm.cn/api/worker/v1")}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release")
+            else signingConfigs.getByName("debug")
         }
+    }
+    buildFeatures {
+        buildConfig = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -49,4 +80,19 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
+
+    // CameraX 相机
+    implementation(libs.androidx.camerax.core)
+    implementation(libs.androidx.camerax.camera2)
+    implementation(libs.androidx.camerax.lifecycle)
+    implementation(libs.androidx.camerax.view)
+
+    // ML Kit 条码扫描
+    implementation(libs.mlkit.barcode.scanning)
+
+    // 定位签到
+    implementation(libs.play.services.location)
+
+    // Guava (CameraX ListenableFuture)
+    implementation(libs.guava.android)
 }

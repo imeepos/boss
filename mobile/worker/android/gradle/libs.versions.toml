@@ -9,6 +9,10 @@ coroutines = "1.10.2"
 junit = "4.13.2"
 junitExt = "1.2.1"
 espressoCore = "3.6.1"
+camerax = "1.6.0"
+mlkitBarcode = "17.3.0"
+playServicesLocation = "21.3.0"
+guava = "33.4.0-android"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,6 +28,21 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
+# CameraX
+androidx-camerax-core = { group = "androidx.camera", name = "camera-core", version.ref = "camerax" }
+androidx-camerax-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
+androidx-camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
+androidx-camerax-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+
+# ML Kit 条码扫描
+mlkit-barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlkitBarcode" }
+
+# 定位签到
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+
+# Guava (CameraX ListenableFuture 依赖)
+guava-android = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
