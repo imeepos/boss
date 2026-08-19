@@ -29,7 +29,7 @@ describe('serverPicker', () => {
     const local = r2.servers.find((it) => it.name === '本机')!
     expect(pickServer(local.id)).toBe(local.id)
     expect(initialPickerState().activeId).toBe(local.id)
-    expect(apiBaseUrl()).toBe('http://127.0.0.1:28080/api/v1')
+    expect(apiBaseUrl()).toBe('http://127.0.0.1:28080/api/admin/v1')
     expect(activeServer()?.name).toBe('本机')
   })
 })

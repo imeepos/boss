@@ -14,7 +14,7 @@ export interface ServerDraft {
 
 const LIST_KEY = 'boss.servers'
 const ACTIVE_KEY = 'boss.server.active'
-export const API_PREFIX = '/api/v1'
+export const API_PREFIX = '/api/admin/v1'
 
 const storage = (): Storage | null =>
   typeof localStorage === 'undefined' ? null : localStorage
@@ -59,7 +59,7 @@ export function activeServer(): ServerConfig | null {
   return id ? (readStored().find((it) => it.id === id) ?? null) : null
 }
 
-/** 请求基址:生效配置 baseUrl(去尾斜杠)+ /api/v1;未配置时相对前缀仅为兜死占位(UI 门禁拦在前)。 */
+/** 请求基址:生效配置 baseUrl(去尾斜杠)+ /api/admin/v1;未配置时相对前缀仅为兜死占位(UI 门禁拦在前)。 */
 export function apiBaseUrl(): string {
   const base = activeServer()?.baseUrl
   return base ? `${base.replace(/\/+$/, '')}${API_PREFIX}` : API_PREFIX

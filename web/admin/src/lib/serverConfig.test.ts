@@ -28,7 +28,7 @@ describe('serverConfig', () => {
     stubLocalStorage()
     expect(listServers()).toEqual([])
     expect(activeServer()).toBeNull()
-    expect(apiBaseUrl()).toBe('/api/v1')
+    expect(apiBaseUrl()).toBe('/api/admin/v1')
   })
 
   it('upsert 新增 + 启用 → apiBaseUrl 直连绝对地址(去尾斜杠)', () => {
@@ -36,7 +36,7 @@ describe('serverConfig', () => {
     const r = upsertServer({ name: '内网102', baseUrl: ' http://192.168.0.102:28080/ ' })
     if (!r.ok) throw new Error('should pass')
     setActiveServerId(r.servers[0].id)
-    expect(apiBaseUrl()).toBe('http://192.168.0.102:28080/api/v1')
+    expect(apiBaseUrl()).toBe('http://192.168.0.102:28080/api/admin/v1')
   })
 
   it('upsert 编辑保持 id 与 active;校验失败不落库', () => {
@@ -48,7 +48,7 @@ describe('serverConfig', () => {
     const edit = upsertServer({ id, name: 'a2', baseUrl: 'http://a:2' })
     if (!edit.ok) throw new Error('should pass')
     expect(edit.servers[0]).toEqual({ id, name: 'a2', baseUrl: 'http://a:2' })
-    expect(apiBaseUrl()).toBe('http://a:2/api/v1')
+    expect(apiBaseUrl()).toBe('http://a:2/api/admin/v1')
     expect(upsertServer({ name: 'b', baseUrl: '' })).toEqual({ ok: false, error: 'url' })
     expect(upsertServer({ name: 'b', baseUrl: 'not-a-url' })).toEqual({ ok: false, error: 'url' })
     expect(upsertServer({ name: 'a2', baseUrl: 'http://x:1' })).toEqual({ ok: false, error: 'name' })
@@ -64,7 +64,7 @@ describe('serverConfig', () => {
     const del = removeServer(id)
     expect(del.activeCleared).toBe(true)
     expect(activeServer()).toBeNull()
-    expect(apiBaseUrl()).toBe('/api/v1')
+    expect(apiBaseUrl()).toBe('/api/admin/v1')
   })
 
   it('active 指向不存在项 → activeServer 为 null', () => {
@@ -78,7 +78,7 @@ describe('serverConfig', () => {
 
   it('无 localStorage 环境不抛错', () => {
     expect(listServers()).toEqual([])
-    expect(apiBaseUrl()).toBe('/api/v1')
+    expect(apiBaseUrl()).toBe('/api/admin/v1')
   })
 
   it('newServerId 唯一', () => {
