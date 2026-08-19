@@ -77,7 +77,7 @@ export interface ReportPayload {
   generatedAt: string
   indicators: IndicatorRow[]
   regionROI: RegionRoiRow[]
-  heatmap: HeatCellRow[]
+  heatmapTop: HeatCellRow[]
   maintenance: AnalyticsMaintRow[]
-  conclusion?: string
+  conclusions?: string[]
 }

@@ -166,7 +166,7 @@ export default function AccountListPage() {
             { k: t.pages.account.columns[4], v: detail.deptName },
             { k: t.pages.account.columns[5], v: detail.postName },
             { k: t.pages.account.columns[6], v: scopeText(detail) },
-            { k: t.pages.account.fPhone, v: detail.phone ?? '—' },
+            { k: t.pages.account.fPhone, v: detail.phone || '—' },
           ]}
         />
       )}

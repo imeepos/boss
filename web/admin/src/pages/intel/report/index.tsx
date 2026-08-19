@@ -117,9 +117,9 @@ export default function ReportPage() {
                   <span className="k">{x.name || x.key}</span><span className="v">{x.value} · {x.detail}</span>
                 </div>
               ))}
-              {view.conclusion && (
-                <div className="org-detail-item"><span className="k">conclusion</span>
-                  <span className="v">{view.conclusion}</span></div>
+              {view.conclusions && view.conclusions.length > 0 && (
+                <div className="org-detail-item"><span className="k">conclusions</span>
+                  <span className="v">{view.conclusions.map((c, i) => <div key={i}>{c}</div>)}</span></div>
               )}
             </div>
           )}
