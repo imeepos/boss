@@ -1,6 +1,7 @@
 package com.ymm.boss.worker.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -33,10 +35,14 @@ import com.ymm.boss.worker.ui.theme.Primary2
 import org.json.JSONObject
 import java.time.LocalDate
 
-// 快捷入口(对齐 home.html 宫格;目标页未开发前仅展示)
+// 快捷入口(对齐 home.html 宫格:排期/公告/任务池/手册/测速/领料/安全/维护)
+private data class QuickItem(val title: String, val sub: String, val screen: Screen)
+
 private val QUICK = listOf(
-    "排期" to "日程", "公告" to "通告", "任务池" to "抢单", "手册" to "排障",
-    "测速" to "工具", "领料" to "出库", "安全" to "上报", "维护" to "清单",
+    QuickItem("排期", "日程", Screen.Schedule), QuickItem("公告", "通告", Screen.Notice),
+    QuickItem("任务池", "抢单", Screen.Hall), QuickItem("手册", "排障", Screen.Help),
+    QuickItem("测速", "工具", Screen.Tool), QuickItem("领料", "出库", Screen.Pickup),
+    QuickItem("安全", "上报", Screen.Safety), QuickItem("维护", "清单", Screen.Maintenance),
 )
 
 // 工作台(对齐 docs/worker/home.html)
@@ -55,7 +61,7 @@ fun HomeScreen(nav: NavHost) {
             is Load.Ok -> HomeBody(nav, s.data)
         }
         NoticeList(msgs)
-        QuickGrid()
+        QuickGrid(nav)
     }
 }
 
@@ -126,18 +132,20 @@ fun KvRow(k: String, v: String) {
 }
 
 @Composable
-private fun QuickGrid() {
+private fun QuickGrid(nav: NavHost) {
     Card(Modifier.padding(12.dp)) {
         SectionTitle("快捷入口")
         QUICK.chunked(4).forEach { row ->
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.forEach { (b, s) ->
+                row.forEach { it0 ->
                     Column(Modifier.weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
                         .background(Color(0xFFFAFAFA), RoundedCornerShape(10.dp))
+                        .clickable { nav.push(it0.screen) }
                         .padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(b, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Ink)
-                        Text(s, fontSize = 11.sp, color = Muted)
+                        Text(it0.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Ink)
+                        Text(it0.sub, fontSize = 11.sp, color = Muted)
                     }
                 }
             }

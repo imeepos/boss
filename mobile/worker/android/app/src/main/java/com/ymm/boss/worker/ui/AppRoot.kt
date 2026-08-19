@@ -19,10 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.ui.theme.Bg
-import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Line
-import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.Muted
+import com.ymm.boss.worker.ui.theme.Primary
 
 // 底部 Tab(对齐 nav.js:工作台/工单/我的)
 private data class Tab(val screen: Screen, val label: String, val glyph: String)
@@ -46,6 +45,36 @@ fun AppRoot(loggedIn: Boolean) {
                 is Screen.Orders -> OrdersScreen(nav)
                 is Screen.Profile -> ProfileScreen(nav)
                 is Screen.TicketDetail -> TicketDetailScreen(nav, cur.no)
+                is Screen.Repair -> PlaceholderScreen(nav, "修复工单", cur.no)
+                is Screen.Scan -> PlaceholderScreen(nav, "扫码绑定", cur.no)
+                is Screen.Photo -> PlaceholderScreen(nav, "拍照上传", cur.no)
+                is Screen.ScanAbnormal -> PlaceholderScreen(nav, "扫码异常", cur.no)
+                is Screen.Report -> PlaceholderScreen(nav, "完工上报", cur.no)
+                is Screen.Activate -> PlaceholderScreen(nav, "激活", cur.no)
+                is Screen.Charge -> PlaceholderScreen(nav, "收费确认", cur.no)
+                is Screen.Sign -> PlaceholderScreen(nav, "客户签字", cur.no)
+                is Screen.Checkin -> PlaceholderScreen(nav, "到点签到", cur.no)
+                is Screen.Navi -> PlaceholderScreen(nav, "一键导航", cur.no)
+                is Screen.Transfer -> PlaceholderScreen(nav, "转单", cur.no)
+                is Screen.Reschedule -> PlaceholderScreen(nav, "改约", cur.no)
+                is Screen.Complaint -> PlaceholderScreen(nav, "报障", cur.no)
+                is Screen.Dismantle -> PlaceholderScreen(nav, "拆机", cur.no)
+                is Screen.Replace -> PlaceholderScreen(nav, "换机", cur.no)
+                is Screen.Retire -> PlaceholderScreen(nav, "退网", cur.no)
+                is Screen.Hall -> PlaceholderScreen(nav, "任务池")
+                is Screen.Pickup -> PlaceholderScreen(nav, "领料")
+                is Screen.Tool -> PlaceholderScreen(nav, "测速工具")
+                is Screen.Maintenance -> PlaceholderScreen(nav, "维护清单")
+                is Screen.Safety -> PlaceholderScreen(nav, "安全上报")
+                is Screen.Schedule -> PlaceholderScreen(nav, "排期")
+                is Screen.Performance -> PlaceholderScreen(nav, "绩效明细")
+                is Screen.History -> PlaceholderScreen(nav, "历史工单")
+                is Screen.Messages -> PlaceholderScreen(nav, "消息中心")
+                is Screen.Notice -> PlaceholderScreen(nav, "服务公告")
+                is Screen.Help -> PlaceholderScreen(nav, "排障手册")
+                is Screen.Service -> PlaceholderScreen(nav, "联系调度")
+                is Screen.Settings -> PlaceholderScreen(nav, "接单设置")
+                is Screen.Feedback -> PlaceholderScreen(nav, "帮助反馈")
             }
         }
         if (isTabRoot(nav.current)) TabBar(nav)
