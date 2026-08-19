@@ -206,6 +206,26 @@
 
 > 快照列（TS 实体）：`customer_name`（客户姓名）、`legal_entity_id`/`legal_entity_name`（企业）、`region_id`/`region_name`（经营区域），账单生成时冻结，客户改名/转品牌/搬家不改历史账单。
 
+### 3.4 invoices（发票，源自 billing 域 TAX/AG-04，CT-007 出账→开票）
+
+| 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
+|:---------|:-------|:--------------|:----------|
+| 发票号 | `InvoiceNo` | invoice_no | ARN 连续编号 `INV-00000001`，作废保留不回收（TAX-004） |
+| 账单号 | `BillNo` | bill_no / bill_id | 同一账单仅一张在发票（部分唯一索引 `WHERE status='ISSUED'`） |
+| 客户 | `CustomerID` | customer_id | `customer_name` 快照同 bills |
+| 抬头 | `Title` | title | 默认同客户名 |
+| 净额 | `NetAmount` | net_amount | =账单金额（不含税） |
+| 税率 | `VatRate` | vat_rate | 默认 0.12（TAX-001） |
+| 税额 | `VatAmount` | vat_amount | = ROUND(net×rate, 2)（GEN-006） |
+| 合计 | `TotalAmount` | total_amount | = 净额 + 税额（TAX-002） |
+| 状态 | `Status` | status | ISSUED 已生成 / VOIDED 已作废（`void_reason`/`voided_at` 留痕） |
+| 税务属地 | `TaxJurisdiction` | tax_jurisdiction | CN 中国数电票 / PH 菲律宾 BIR / 空=未定（000049） |
+| 税务通道 | `TaxChannel` | tax_channel | manual 人工回填 / leqi（预留）/ bir_eis（预留） |
+| 税务状态 | `TaxStatus` | tax_status | PENDING 待开具 / SUBMITTED 已提交 / ISSUED 已开具 / FAILED 失败（`tax_fail_reason` 留痕） |
+| 税局票号 | `TaxNo` | tax_no | CN 数电票 20 位 / PH BIR 回执号；回填后方为有效票据 |
+
+> ARN 发号：`arn_sequences` 计数表（`doc_type` INVOICE/RECEIPT 各一序列），事务内 `UPDATE..RETURNING` 原子占号、行锁串行、回滚号回退（决策 note：2026-08-18-tax-invoice-arn-numbering）。链路：收款 `POST /payments`（流水+账单 PAID 同事务）→ 出账+自动开票 `POST /billing-runs`（幂等，失败账单入 `failedIds`）→ 作废/重开 `POST /invoices/:id/{void,reissue}`。
+
 ## 4. 阶段3/4 · 资产与资源（internal/domain/{asset,resource}）
 
 ### 4.1 assets（资产台账，源自 asset.html + 全案 4.2 Asset）

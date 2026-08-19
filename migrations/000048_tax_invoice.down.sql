@@ -1,0 +1,4 @@
+BEGIN;
+DROP TABLE IF EXISTS invoices;
+DROP TABLE IF EXISTS arn_sequences;
+COMMIT;

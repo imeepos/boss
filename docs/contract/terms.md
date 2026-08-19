@@ -68,6 +68,8 @@
 | 派单工单 dispatch_ticket.status | PENDING / DOING / DONE / CANCELED | 待派 / 进行中 / 完成 / 取消 |
 | 任务 task.status | PENDING / DOING / DONE / FAILED | 待执行 / 进行中 / 完成 / 失败 |
 | 缴费流水 payment.status | SUCCESS / FAILED / REFUNDED | 成功 / 失败 / 已退款 |
+| 发票 invoice.status | ISSUED / VOIDED | 已生成 / 已作废（编号保留不回收，TAX-004） |
+| 发票 invoice.tax_status | PENDING / SUBMITTED / ISSUED / FAILED | 税局网关状态：待开具 / 已提交 / 已开具（税局票号回填）/ 失败可重试；与 invoice.status 正交 |
 | 设备健康 priority | MUST_REPLACE / SUGGEST / WATCH | 必须更换 / 建议 / 观察 |
 
 ## 5. 关键术语
@@ -79,6 +81,7 @@
 | 扫码绑定 | 装维现场扫码，实物光猫与预绑定核对 | 不一致→换机/重绑 |
 | 四码合一 | 资产/用户/端口/地址 四码唯一关联 | 任一码反查单表索引 |
 | 未收费不派单 | 4 合同收费未成功，禁止进入 8 派单 | 硬约束，全案 REQ-CL-001 |
+| ARN | 对外单据（发票/收据）连续编号，发票 INV-、收据 OR- 各自成序列 | 占号行锁串行、回滚号回退；作废 VOID 保留编号不回收（TAX-004）。Amended 2026-08-18：降格为**内部流水号**，法定票号以税局回执（tax_no）为准（多属地网关，见 adopted note） |
 
 ## 附录 A：需按 12 环节修正的历史文件位置
 

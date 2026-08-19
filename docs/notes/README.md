@@ -24,3 +24,4 @@
 | 2026-08-18 | app.env 固定密钥直接入库 | adopted/2026-08-18-app-env-in-repo.md |
 | 2026-08-18 | geo 与 gis 分立两个域 | adopted/2026-08-18-geo-vs-gis-split.md |
 | 2026-08-18 | 菲律宾行政区划以 migration 全量内置 | adopted/2026-08-18-psgc-builtin-migration.md |
+| 2026-08-18 | 发票 ARN 发号采用行锁计数表（非 PG SEQUENCE） | adopted/2026-08-18-tax-invoice-arn-numbering.md |

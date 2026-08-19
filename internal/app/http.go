@@ -38,7 +38,8 @@ func respondErr(c *gin.Context, err error) {
 	case errors.Is(err, user.ErrUsernameTaken),
 		errors.Is(err, user.ErrDuplicate),
 		errors.Is(err, user.ErrConflict),
-		errors.Is(err, geo.ErrDuplicate):
+		errors.Is(err, geo.ErrDuplicate),
+		errors.Is(err, billing.ErrDuplicateInvoice):
 		respond(c, apitypes.CodeConflict, nil)
 	case errors.Is(err, user.ErrInvalidInput),
 		errors.Is(err, user.ErrRoleNotFound),
@@ -60,7 +61,9 @@ func respondErr(c *gin.Context, err error) {
 		errors.Is(err, resource.ErrPortNotAvailable),
 		errors.Is(err, order.ErrIllegalTransition),
 		errors.Is(err, provision.ErrIllegalTransition),
-		errors.Is(err, billing.ErrIllegalReconTransition):
+		errors.Is(err, billing.ErrIllegalReconTransition),
+		errors.Is(err, billing.ErrIllegalInvoiceTransition),
+		errors.Is(err, billing.ErrInvoiceNotTaxable):
 		respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, ai.ErrNotConfigured),
 		errors.Is(err, ai.ErrInvalidInput):
@@ -244,6 +247,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerDispatchRoutes(authed, a)
 	registerDashboardRoutes(authed, a)
 	registerBillingRoutes(authed, a)
+	registerTaxRoutes(authed, a)
 	registerCustomerRoutes(authed, a)
 	registerResourceRoutes(authed, a)
 	registerScanRoutes(authed, a)

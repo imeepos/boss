@@ -47,6 +47,9 @@ type Application struct {
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
 	Recon   billing.ReconService
+	Tax     billing.TaxService
+	// TaxGateway 税局网关注册表(CN 数电票/PH BIR eIS);nil=全人工模式(回填票号)。
+	TaxGateway *billing.TaxGatewayRegistry
 
 	Resource       resource.ResourceService
 	ResourceSub    resource.ResourceSubService
@@ -170,6 +173,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Billing: bill,
 		Arrears: bill,
 		Recon:   bill,
+		Tax:     bill,
 
 		Resource:       res,
 		ResourceSub:    res,

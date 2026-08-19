@@ -25,6 +25,7 @@ func (f *fakeBilling) ListPayments(context.Context, int64) ([]billing.Payment, e
 	return nil, nil
 }
 func (f *fakeBilling) CreatePayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
+func (f *fakeBilling) RecordPayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
 func (f *fakeBilling) GenerateBills(context.Context, string) (int, error)            { return 0, nil }
 
 // fakeArrears 桩 billing.ArrearsService。

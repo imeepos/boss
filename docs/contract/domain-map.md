@@ -27,7 +27,7 @@
 | 订单与销售 | ORD | AG-02 | `order` | 阶段5 | boss | order/dispatch/dismantle |
 | 计费与账务 | BIL | AG-03 | `billing` | 阶段5 | billing | billing/payment/arrears/stopsrv/paycheck |
 | 支付与收款 | PAY | AG-04 | `billing`(收款部分) | 阶段5 | billing | payment/paycheck |
-| 发票与税务 | TAX | AG-04 | 待建 | — | billing | （无专用页，入 billing） |
+| 发票与税务 | TAX | AG-04 | `billing`(TAX 部分) | 阶段5 | billing | （无专用页，入 billing；发票列表/作废入 billing.html） |
 | 认证授权 AAA | AAA | AG-05 | `aaa` | 阶段7 | aaa | aaalog |
 | 资产管理 AMS | AMS | AG-06 | `asset` | 阶段3 | ams | asset/tag/stock/replace |
 | 网络资源 OSS | OSS | AG-06 | `resource` | 阶段4 | oss | resource/reserve/transfer/expand |
