@@ -160,6 +160,27 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 
+	// 滑动续期:token 仍有效时换发新 token(TTL 重置),实现"一次登录、活跃期免二次登录"。
+	// 角色取 DB 最新快照(权限/角色变更即时生效);API key 主体无账号概念,不参与续期。
+	authed.POST("/auth/refresh", func(c *gin.Context) {
+		if middleware.SubjectFrom(c) != nil {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
+		p, err := a.User.GetProfile(c.Request.Context(), claims.AccountID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		token, err := mgr.Sign(p.AccountID, p.Username, p.RoleCode)
+		if err != nil {
+			respond(c, apitypes.CodeInternal, nil)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"token": token})
+	})
+
 	registerOrgRoutes(authed, a)
 	registerSysRoutes(authed, a)
 	registerAIRoutes(authed, a)

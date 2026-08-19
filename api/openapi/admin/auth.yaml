@@ -43,6 +43,27 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: 滑动续期(token 仍有效时换发新 token,TTL 重置)
+      description: 需 Bearer token;角色取 DB 最新快照。活跃期定时调用即可免二次登录。
+      operationId: adminRefresh
+      responses:
+        '200':
+          description: 新 token(envelope)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      token: { type: string }
+
   /auth/me:
     get:
       tags: [Auth]

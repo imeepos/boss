@@ -34,6 +34,13 @@ export function fetchMe(): Promise<Profile | null> {
   return apiFetch<Profile>('/auth/me')
 }
 
+/** 滑动续期:token 仍有效时换新 token,失败(401)由调用方登出。 */
+export async function refreshAuthToken(): Promise<void> {
+  const data = await apiFetch<{ token: string }>('/auth/refresh', { method: 'POST' })
+  if (!data?.token) throw new Error('续期响应缺少 token')
+  setAuthToken(data.token)
+}
+
 /** 登出:清本地态;后端登出失败不阻断。 */
 export async function adminLogout(): Promise<void> {
   try {

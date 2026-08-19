@@ -103,7 +103,7 @@ func Load() *Config {
 	c.AAA.CDRTopic = getenv("BOSS_AAA_CDR_TOPIC", "boss-cdr")
 	c.Events.Topic = getenv("BOSS_EVENTS_TOPIC", "boss-order-events")
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
-	c.JWT.TTL = 24 * time.Hour
+	c.JWT.TTL = getdur("BOSS_JWT_TTL", 7*24*time.Hour)
 	c.Bootstrap.AdminUser = getenv("BOSS_ADMIN_USERNAME", "admin")
 	c.Bootstrap.AdminPass = getenv("BOSS_ADMIN_PASSWORD", "")
 
@@ -127,6 +127,16 @@ func Load() *Config {
 	c.Report.PushTopic = getenv("BOSS_REPORT_PUSH_TOPIC", "boss-report-snapshots")
 	c.Report.Interval = 6 * time.Hour
 	return c
+}
+
+// getdur 环境变量取时长(如 720h/30m),缺省 d。
+func getdur(k string, d time.Duration) time.Duration {
+	if v := os.Getenv(k); v != "" {
+		if t, err := time.ParseDuration(v); err == nil && t > 0 {
+			return t
+		}
+	}
+	return d
 }
 
 // getfloat 环境变量取浮点,缺省 d。

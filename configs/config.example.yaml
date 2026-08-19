@@ -58,4 +58,4 @@ aaa:
 
 jwt:
   secret: "change-me"
-  ttl: 12h
+  ttl: 168h   # 实际经环境变量 BOSS_JWT_TTL 生效(默认 7d);配合 /auth/refresh 滑动续期实现长会话
