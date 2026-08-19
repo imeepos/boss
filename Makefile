@@ -1,7 +1,8 @@
-GO ?= go
+GO ?= $(or $(shell command -v go 2>/dev/null),/opt/homebrew/bin/go)
+GOFMT ?= $(or $(shell command -v gofmt 2>/dev/null),/opt/homebrew/bin/gofmt)
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check proto docker-build load bossctl
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check proto docker-build load bossctl
 
 ## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证)
 bossctl:
@@ -45,7 +46,7 @@ lint:
 	@if command -v golangci-lint >/dev/null 2>&1; then \
 		golangci-lint run ./...; \
 	else \
-		$(GO) vet ./... && test -z "$$(gofmt -l .)"; \
+		$(GO) vet ./... && test -z "$$($(GOFMT) -l .)"; \
 	fi
 
 ## check:CI 等价门禁(本地一键复现 .github/workflows/ci.yml)
@@ -55,6 +56,12 @@ check: test lint contract-sync
 ## 契约同步门禁:路由<->OpenAPI 对账 + json tag 命名 + 文件行数红线
 contract-sync:
 	$(GO) run ./scripts/check-contract-sync -root .
+
+## 管理端 Web 门禁:类型检查、单测、生产构建
+web-admin-check:
+	pnpm --dir web/admin typecheck
+	pnpm --dir web/admin test
+	pnpm --dir web/admin build
 
 ## 从 proto 生成 gRPC 代码
 proto:
