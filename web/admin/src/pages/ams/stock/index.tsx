@@ -137,7 +137,7 @@ export default function StockPage() {
               <label><span className="req">*</span>{s.fScope}</label>
               <input className="org-input" value={scope} placeholder={s.pScope}
                 onChange={(e) => setScope(e.target.value)} />
-              {!scopeOk && scope !== '' && <span className="acc-err">{s.eScope}</span>}
+              {!scopeOk && scope !== '' && <span className="text-[11px] text-[var(--color-danger)]">{s.eScope}</span>}
             </div>
             {formError && <div className="org-error" style={{ margin: 0 }}>{formError}</div>}
           </div>

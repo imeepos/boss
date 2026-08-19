@@ -105,7 +105,7 @@ export default function ReplacePage() {
               <label><span className="req">*</span>{r.fAsset}</label>
               <input className="org-input" type="number" value={assetId} placeholder={r.pAsset}
                 onChange={(e) => setAssetId(e.target.value)} />
-              {!assetOk && assetId !== '' && <span className="acc-err">{r.eAsset}</span>}
+              {!assetOk && assetId !== '' && <span className="text-[11px] text-[var(--color-danger)]">{r.eAsset}</span>}
             </div>
             <div className="org-field">
               <label>{r.fReason}</label>

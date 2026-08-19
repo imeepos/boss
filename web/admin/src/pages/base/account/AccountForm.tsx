@@ -7,7 +7,9 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { cascadeReset, validateAccount, type AccountFormValues } from './form'
 import '../../org/org.css'
-import './account.css'
+
+const GROUP_TITLE_CLS = 'my-1.5 -mb-1 text-xs font-semibold tracking-wide text-[var(--shell-group-title)]'
+const ERR_CLS = 'text-[11px] text-[var(--color-danger)]'
 
 interface Option { value: string; label: string }
 
@@ -64,31 +66,31 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
 
   return (
     <div className="org-form">
-      <div className="acc-group-title">{t.pages.account.gBasic}</div>
+      <div className={GROUP_TITLE_CLS}>{t.pages.account.gBasic}</div>
       <div className="org-field">
         <label><span className="req">*</span>{t.pages.account.fUsername}</label>
         <input className="org-input" value={values.username} placeholder={t.pages.account.pUsername}
           onChange={(e) => set({ username: e.target.value })} />
-        {err('invalidUsername') && <span className="acc-err">{t.pages.account.eUsername}</span>}
+        {err('invalidUsername') && <span className={ERR_CLS}>{t.pages.account.eUsername}</span>}
       </div>
       <div className="org-field">
         <label><span className="req">*</span>{t.pages.account.fPassword}</label>
         <input className="org-input" type="password" value={values.password}
           placeholder={values.id ? t.pages.account.pPasswordEdit : t.pages.account.pPassword}
           onChange={(e) => set({ password: e.target.value })} />
-        {err('shortPassword') && <span className="acc-err">{t.pages.account.ePassword}</span>}
+        {err('shortPassword') && <span className={ERR_CLS}>{t.pages.account.ePassword}</span>}
       </div>
       <div className="org-field">
         <label><span className="req">*</span>{t.pages.account.fRealName}</label>
         <input className="org-input" value={values.realName} placeholder={t.pages.account.pRealName}
           onChange={(e) => set({ realName: e.target.value })} />
-        {err('invalidRealName') && <span className="acc-err">{t.pages.account.eRealName}</span>}
+        {err('invalidRealName') && <span className={ERR_CLS}>{t.pages.account.eRealName}</span>}
       </div>
       <div className="org-field">
         <label>{t.pages.account.fPhone}</label>
         <input className="org-input" value={values.phone} placeholder={t.pages.account.pPhone}
           onChange={(e) => set({ phone: e.target.value })} />
-        {err('invalidPhone') && <span className="acc-err">{t.pages.account.ePhone}</span>}
+        {err('invalidPhone') && <span className={ERR_CLS}>{t.pages.account.ePhone}</span>}
       </div>
       <div className="org-field">
         <label><span className="req">*</span>{t.pages.account.fRole}</label>
@@ -96,10 +98,10 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
           <option value="">{t.pages.account.pRole}</option>
           {roles.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        {err('roleRequired') && <span className="acc-err">{t.pages.account.eRole}</span>}
+        {err('roleRequired') && <span className={ERR_CLS}>{t.pages.account.eRole}</span>}
       </div>
 
-      <div className="acc-group-title">{t.pages.account.gOrg}</div>
+      <div className={GROUP_TITLE_CLS}>{t.pages.account.gOrg}</div>
       <div className="org-field">
         <label>{t.pages.account.fLegalEntity}</label>
         <select className="org-select" value={values.legalEntityId ? String(values.legalEntityId) : ''}
@@ -125,7 +127,7 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
         </select>
       </div>
 
-      <div className="acc-group-title">{t.pages.account.gScope}</div>
+      <div className={GROUP_TITLE_CLS}>{t.pages.account.gScope}</div>
       <div className="org-field">
         <label>{t.pages.account.fRegionScope}</label>
         <select className="org-select" value={values.regionScope} onChange={(e) => set({ regionScope: e.target.value })}>

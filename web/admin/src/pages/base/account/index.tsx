@@ -10,7 +10,6 @@ import { filterAccounts, pageSlice, type AccountRow } from './list'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from './form'
 import { AccountFormDrawer } from './AccountForm'
 import '../../org/org.css'
-import './account.css'
 
 export default function AccountListPage() {
   const t = useT()
@@ -182,10 +181,10 @@ export default function AccountListPage() {
       />
 
       {confirmDisable && (
-        <div className="acc-confirm-mask" onClick={() => setConfirmDisable(null)}>
-          <div className="acc-confirm" onClick={(e) => e.stopPropagation()}>
-            <p>{t.pages.account.disableConfirm.replace('{name}', confirmDisable.username)}</p>
-            <div className="acc-confirm-actions">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45" onClick={() => setConfirmDisable(null)}>
+          <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5" onClick={(e) => e.stopPropagation()}>
+            <p className="m-0 mb-4 text-sm text-[var(--shell-content-text)]">{t.pages.account.disableConfirm.replace('{name}', confirmDisable.username)}</p>
+            <div className="flex justify-end gap-2">
               <button className="org-btn" onClick={() => setConfirmDisable(null)}>{t.pages.company.cancel}</button>
               <button className="org-btn org-btn-primary" disabled={busy} onClick={disable}>{t.pages.account.disable}</button>
             </div>

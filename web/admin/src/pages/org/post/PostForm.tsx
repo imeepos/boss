@@ -81,13 +81,13 @@ export function PostFormDrawer({
           <label><span className="req">*</span>{t.pages.post.fCode}</label>
           <input className="org-input" value={values.code} placeholder={t.pages.post.pCode}
             onChange={(e) => onChange({ ...values, code: e.target.value })} />
-          {!codeOk && values.code !== '' && <span className="acc-err">{t.pages.post.eCode}</span>}
+          {!codeOk && values.code !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.post.eCode}</span>}
         </div>
         <div className="org-field">
           <label><span className="req">*</span>{t.pages.post.fName}</label>
           <input className="org-input" value={values.name} placeholder={t.pages.post.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
-          {!nameOk && values.name !== '' && <span className="acc-err">{t.pages.post.eName}</span>}
+          {!nameOk && values.name !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.post.eName}</span>}
         </div>
         <div className="org-field">
           <label>{t.pages.post.fRoles}</label>

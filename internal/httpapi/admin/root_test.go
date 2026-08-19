@@ -142,7 +142,7 @@ func TestLoginHandler(t *testing.T) {
 			AccountID: 1, Username: "boss", RealName: "老板", RoleCode: "sysadmin", RoleName: "系统管理员",
 		}}
 		r := newTestRouter(f, mgr)
-		w := postJSON(t, r, "/api/v1/auth/login", `{"username":"boss","password":"secret"}`)
+		w := postJSON(t, r, "/api/admin/v1/auth/login", `{"username":"boss","password":"secret"}`)
 
 		if w.Code != http.StatusOK {
 			t.Fatalf("status=%d", w.Code)
@@ -170,7 +170,7 @@ func TestLoginHandler(t *testing.T) {
 	t.Run("认证失败", func(t *testing.T) {
 		f := &fakeUser{loginErr: user.ErrUnauthorized}
 		r := newTestRouter(f, mgr)
-		w := postJSON(t, r, "/api/v1/auth/login", `{"username":"boss","password":"bad"}`)
+		w := postJSON(t, r, "/api/admin/v1/auth/login", `{"username":"boss","password":"bad"}`)
 
 		var body struct {
 			Code int32 `json:"code"`
@@ -186,7 +186,7 @@ func TestLoginHandler(t *testing.T) {
 	t.Run("参数缺失", func(t *testing.T) {
 		f := &fakeUser{}
 		r := newTestRouter(f, mgr)
-		w := postJSON(t, r, "/api/v1/auth/login", `{"username":"boss"}`)
+		w := postJSON(t, r, "/api/admin/v1/auth/login", `{"username":"boss"}`)
 
 		var body struct {
 			Code int32 `json:"code"`

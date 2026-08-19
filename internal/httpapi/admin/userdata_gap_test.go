@@ -85,8 +85,8 @@ func newGapRouter(ud *fakeUserdata, fu *fakeUser, wl *fakeWorkerLedger) *gin.Eng
 	gin.SetMode(gin.TestMode)
 	mgr := auth.NewManager("s", time.Hour)
 	r := gin.New()
-	authed := r.Group("/api/v1")
-	authed.Use(middleware.Authn(mgr))
+	authed := r.Group("/api/admin/v1")
+	authed.Use(middleware.Authn(mgr, auth.AudAdmin))
 	app := &app.Application{
 		User: fu, UserData: ud, Device: fakeGapDevice{}, WorkerLedger: wl,
 		Report: &report.ReportService{Ana: fakeAnalyticsGap{}, St: &fakeReportStore{}},
@@ -108,15 +108,15 @@ func TestUserdataGapEndpoints_HappyPath(t *testing.T) {
 		method, path, body string
 		wantCalled         string
 	}{
-		{"GET", "/api/v1/faqs", "", ""},
-		{"POST", "/api/v1/faqs", `{"title":"如何缴费?","summary":"App内自助缴费"}`, ""},
-		{"PUT", "/api/v1/faqs/FAQ-01/toggle", "", "FAQ-01"},
-		{"GET", "/api/v1/device-maintenances", "", ""},
-		{"GET", "/api/v1/hall-items", "", ""},
-		{"GET", "/api/v1/service-messages?workerId=3", "", ""},
-		{"POST", "/api/v1/service-messages", `{"workerId":3,"content":"请尽快上门"}`, ""},
-		{"POST", "/api/v1/reports", `{"period":"weekly"}`, ""},
-		{"DELETE", "/api/v1/accounts/5", "", ""},
+		{"GET", "/api/admin/v1/faqs", "", ""},
+		{"POST", "/api/admin/v1/faqs", `{"title":"如何缴费?","summary":"App内自助缴费"}`, ""},
+		{"PUT", "/api/admin/v1/faqs/FAQ-01/toggle", "", "FAQ-01"},
+		{"GET", "/api/admin/v1/device-maintenances", "", ""},
+		{"GET", "/api/admin/v1/hall-items", "", ""},
+		{"GET", "/api/admin/v1/service-messages?workerId=3", "", ""},
+		{"POST", "/api/admin/v1/service-messages", `{"workerId":3,"content":"请尽快上门"}`, ""},
+		{"POST", "/api/admin/v1/reports", `{"period":"weekly"}`, ""},
+		{"DELETE", "/api/admin/v1/accounts/5", "", ""},
 	}
 	for _, tc := range cases {
 		w := doReq(t, r, tc.method, tc.path, tk, tc.body)
@@ -136,7 +136,7 @@ func TestUserdataGapAccountNotFound(t *testing.T) {
 	r := newGapRouter(ud, fu, &fakeWorkerLedger{})
 	mgr := auth.NewManager("s", time.Hour)
 
-	w := doReq(t, r, "DELETE", "/api/v1/accounts/404", authToken(t, mgr), "")
+	w := doReq(t, r, "DELETE", "/api/admin/v1/accounts/404", authToken(t, mgr), "")
 	if w.Code != 200 {
 		t.Fatalf("status=%d", w.Code)
 	}

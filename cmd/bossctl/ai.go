@@ -50,7 +50,7 @@ func (c *CLI) aiConfig(args []string) error {
 		}
 	}
 	if len(upd) == 0 {
-		resp, err := c.do("GET", "/api/v1/ai/openai/config", nil, nil)
+		resp, err := c.do("GET", "/api/admin/v1/ai/openai/config", nil, nil)
 		if err != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ func (c *CLI) aiConfig(args []string) error {
 		printJSON(resp.Data)
 		return nil
 	}
-	resp, err := c.do("PUT", "/api/v1/ai/openai/config", upd, nil)
+	resp, err := c.do("PUT", "/api/admin/v1/ai/openai/config", upd, nil)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (c *CLI) aiChat(args []string) error {
 	if model != "" {
 		body["model"] = model
 	}
-	resp, err := c.do("POST", "/api/v1/ai/chat/completions", body, nil)
+	resp, err := c.do("POST", "/api/admin/v1/ai/chat/completions", body, nil)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (c *CLI) aiEmbed(args []string) error {
 	if model != "" {
 		body["model"] = model
 	}
-	resp, err := c.do("POST", "/api/v1/ai/embeddings", body, nil)
+	resp, err := c.do("POST", "/api/admin/v1/ai/embeddings", body, nil)
 	if err != nil {
 		return err
 	}

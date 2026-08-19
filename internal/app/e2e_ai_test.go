@@ -110,7 +110,7 @@ func TestE2E_AIOpenAI_Integration(t *testing.T) {
 	}
 
 	// 未配置时业务接口应报 42200。
-	if out := do("POST", "/api/v1/ai/chat/completions", `{"messages":[{"role":"user","content":"hi"}]}`); codeOf(out) != float64(apitypes.CodeInvalidParam) {
+	if out := do("POST", "/api/admin/v1/ai/chat/completions", `{"messages":[{"role":"user","content":"hi"}]}`); codeOf(out) != float64(apitypes.CodeInvalidParam) {
 		t.Fatalf("unconfigured chat: %v", out)
 	}
 
@@ -124,18 +124,18 @@ func TestE2E_AIOpenAI_Integration(t *testing.T) {
 
 	// admin 集中配置(脱敏落库 biz_params)。
 	upd := `{"apiUrl":"` + apiURL + `","apiKey":"` + apiKey + `","model":"` + model + `"}`
-	if out := do("PUT", "/api/v1/ai/openai/config", upd); codeOf(out) != 0 {
+	if out := do("PUT", "/api/admin/v1/ai/openai/config", upd); codeOf(out) != 0 {
 		t.Fatalf("update config: %v", out)
 	}
 
 	// 配置视图:configured=true 且密钥脱敏。
-	view := do("GET", "/api/v1/ai/openai/config", "")
+	view := do("GET", "/api/admin/v1/ai/openai/config", "")
 	if codeOf(view) != 0 || view["data"].(map[string]any)["configured"] != true {
 		t.Fatalf("config view: %v", view)
 	}
 
 	// 业务调用:请求方不带任何密钥。
-	out := do("POST", "/api/v1/ai/chat/completions", `{"messages":[{"role":"user","content":"reply with exactly: ok"}]}`)
+	out := do("POST", "/api/admin/v1/ai/chat/completions", `{"messages":[{"role":"user","content":"reply with exactly: ok"}]}`)
 	if codeOf(out) != 0 {
 		t.Fatalf("chat completions: %v", out)
 	}

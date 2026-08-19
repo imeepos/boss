@@ -15,9 +15,9 @@ func (c *CLI) call(args []string) error {
 	method := strings.ToUpper(positional[0])
 	path := positional[1]
 
-	// 自动补全 /api/v1 前缀
+	// 自动补全 /api/admin/v1 前缀
 	if !strings.HasPrefix(path, "/api/") {
-		path = "/api/v1" + path
+		path = "/api/admin/v1" + path
 	}
 
 	resp, err := c.do(method, path, data, query)
@@ -35,7 +35,7 @@ func (c *CLI) call(args []string) error {
 
 // me 查看当前身份: bossctl me
 func (c *CLI) me() error {
-	resp, err := c.do("GET", "/api/v1/auth/me", nil, nil)
+	resp, err := c.do("GET", "/api/admin/v1/auth/me", nil, nil)
 	if err != nil {
 		return err
 	}

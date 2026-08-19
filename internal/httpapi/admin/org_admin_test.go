@@ -53,7 +53,7 @@ func TestCreateLegalEntity(t *testing.T) {
 	f := &fakeOrgAdmin{fakeUser: &fakeUser{permOk: true}}
 	r := newOrgAdminRouter(f, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/legal-entities", `{"code":"LEG-D","name":"D 公司"}`, authToken(t, mgr))
+	w := postBodyAuth(t, r, "/api/admin/v1/legal-entities", `{"code":"LEG-D","name":"D 公司"}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}
@@ -77,7 +77,7 @@ func TestCreateLegalEntityMissingName(t *testing.T) {
 	f := &fakeOrgAdmin{fakeUser: &fakeUser{permOk: true}}
 	r := newOrgAdminRouter(f, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/legal-entities", `{"code":"LEG-D"}`, authToken(t, mgr))
+	w := postBodyAuth(t, r, "/api/admin/v1/legal-entities", `{"code":"LEG-D"}`, authToken(t, mgr))
 	var body struct {
 		Code int `json:"code"`
 	}
@@ -93,7 +93,7 @@ func TestUpdateLegalEntity(t *testing.T) {
 	f := &fakeOrgAdmin{fakeUser: &fakeUser{permOk: true}}
 	r := newOrgAdminRouter(f, mgr)
 
-	w := putAuth(t, r, "/api/v1/legal-entities/7", `{"code":"LEG-D","name":"D 集团"}`, authToken(t, mgr))
+	w := putAuth(t, r, "/api/admin/v1/legal-entities/7", `{"code":"LEG-D","name":"D 集团"}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}
@@ -111,7 +111,7 @@ func TestMenuPerms(t *testing.T) {
 	}}
 	r := newOrgAdminRouter(f, mgr)
 
-	w := getJSON(t, r, "/api/v1/menu-perms", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/menu-perms", authToken(t, mgr))
 	var body struct {
 		Code int `json:"code"`
 		Data struct {
@@ -142,7 +142,7 @@ func TestDataScopes(t *testing.T) {
 	}}}}
 	r := newOrgAdminRouter(f, mgr)
 
-	w := getJSON(t, r, "/api/v1/data-scopes?keyword=boss", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/data-scopes?keyword=boss", authToken(t, mgr))
 	var body struct {
 		Code int               `json:"code"`
 		Data []user.AccountRow `json:"data"`

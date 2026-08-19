@@ -12,9 +12,10 @@ import (
 
 const CtxClaims = "boss.claims"
 
-// Authn JWT 认证:解析 Bearer token 并注入 claims。
+// Authn JWT 认证:解析 Bearer token 并注入 claims;端标识 aud 精确匹配
+// (auth.AudAdmin/AudUser),跨端 token 一律 401。师傅端走独立 issuer,不经此中间件。
 // 如果 claims 已被前序中间件(如 APIKeyAuth)设置,则跳过 JWT 校验。
-func Authn(m *auth.Manager) gin.HandlerFunc {
+func Authn(m *auth.Manager, aud string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if _, ok := c.Get(CtxClaims); ok {
 			c.Next()
@@ -28,6 +29,10 @@ func Authn(m *auth.Manager) gin.HandlerFunc {
 		claims, err := m.Verify(strings.TrimPrefix(h, "Bearer "))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "invalid token"})
+			return
+		}
+		if claims.Aud != aud {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "token audience mismatch"})
 			return
 		}
 		c.Set(CtxClaims, claims)

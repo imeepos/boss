@@ -67,7 +67,7 @@ export function ProductFormDrawer({
           <label><span className="req">*</span>{p.fName}</label>
           <input className="org-input" value={values.name} placeholder={p.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
-          {!nameOk && values.name !== '' && <span className="acc-err">{p.eName}</span>}
+          {!nameOk && values.name !== '' && <span className="text-[11px] text-[var(--color-danger)]">{p.eName}</span>}
         </div>
         <div className="org-field">
           <label>{p.fBandwidth}</label>
@@ -78,7 +78,7 @@ export function ProductFormDrawer({
           <label><span className="req">*</span>{p.fFee}</label>
           <input className="org-input" value={values.monthlyFee} placeholder="0.00"
             onChange={(e) => onChange({ ...values, monthlyFee: e.target.value })} />
-          {!feeOk && values.monthlyFee !== '' && <span className="acc-err">{p.eFee}</span>}
+          {!feeOk && values.monthlyFee !== '' && <span className="text-[11px] text-[var(--color-danger)]">{p.eFee}</span>}
         </div>
         <div className="org-field">
           <label>{p.fStatus}</label>

@@ -49,7 +49,7 @@ func parseSubject(s string) (string, int64, error) {
 
 // apiKeyList 列出所有 API key。
 func (c *CLI) apiKeyList() error {
-	resp, err := c.do("GET", "/api/v1/api-keys", nil, nil)
+	resp, err := c.do("GET", "/api/admin/v1/api-keys", nil, nil)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (c *CLI) apiKeyCreate(subject, name string) error {
 		return err
 	}
 	body := map[string]any{"subjectType": subjType, "subjectRef": ref, "name": name}
-	resp, err := c.do("POST", "/api/v1/api-keys", body, nil)
+	resp, err := c.do("POST", "/api/admin/v1/api-keys", body, nil)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (c *CLI) apiKeyCreate(subject, name string) error {
 
 // apiKeyRevoke 吊销(停用)API key。
 func (c *CLI) apiKeyRevoke(id string) error {
-	resp, err := c.do("DELETE", "/api/v1/api-keys/"+id, nil, nil)
+	resp, err := c.do("DELETE", "/api/admin/v1/api-keys/"+id, nil, nil)
 	if err != nil {
 		return err
 	}

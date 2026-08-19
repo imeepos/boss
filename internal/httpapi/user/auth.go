@@ -1,7 +1,7 @@
 package userapi
 
 // 用户端门户(客户门户)Auth 域:注册入口 + 客户 JWT + 短信码/注册/找回密码 + 门户状态存储。
-// 契约单一事实源:api/openapi/user.yaml(+user/{auth,profile,misc,...}.yaml),前缀 /api/v1。
+// 契约单一事实源:api/openapi/user.yaml(+user/{auth,profile,misc,...}.yaml),前缀 /api/user/v1。
 // 决策记录:docs/notes/adopted/2026-08-18-user-portal-customer-jwt.md。
 
 import (
@@ -31,7 +31,7 @@ const portalCustomerIDBase = int64(9_000_000_000)
 // signCustomerToken 客户 JWT 签发:复用 auth.Manager(同密钥/TTL),
 // AccountID=0(RBAC 恒拒,与 APIKeyAuth customer 主体同约定),客户身份编码于 Username "cust/<id>/<phone>"。
 func signCustomerToken(m *auth.Manager, customerID int64, phone string) (string, error) {
-	return m.Sign(0, fmt.Sprintf("cust/%d/%s", customerID, phone), customerRole)
+	return m.Sign(auth.AudUser, 0, fmt.Sprintf("cust/%d/%s", customerID, phone), customerRole)
 }
 
 // customerIDFromToken 从 claims 解回客户 ID;非客户 token 返回 0。
@@ -175,14 +175,14 @@ func (s *portalStore) verifyPassword(phone, password string) bool {
 
 // ---- 注册入口 ----
 
-// registerUserPortalRoutes 用户端门户总入口:pub 公开端点 + uauth 客户鉴权组。
-// 与 admin 共享 /api/v1 路径树;同路径冲突端点(/auth/login)不在此注册,见任务报告矛盾清单。
+// Register 用户端门户总入口:pub 公开端点 + uauth 客户鉴权组;前缀 /api/user/v1 与 admin 隔离。
 func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
-	pub := r.Group("/api/v1")
+	pub := r.Group("/api/user/v1")
+	registerCustomerSelfRegistration(pub, a)
 	registerPortalAuthRoutes(pub, a, mgr)
 
-	uauth := r.Group("/api/v1")
-	uauth.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr), portalCustomerOnly())
+	uauth := r.Group("/api/user/v1")
+	uauth.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudUser), portalCustomerOnly())
 	registerPortalProfileRoutes(uauth, a)
 	registerPortalMiscRoutes(uauth, a)
 	registerPortalOrderRoutes(uauth, a)

@@ -111,11 +111,3 @@ func registerCustomerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 }
 
 // customerRegistrationReq 客户注册申请请求体。
-type customerRegistrationReq struct {
-	Name          string `json:"name" binding:"required"`
-	Phone         string `json:"phone" binding:"required"`
-	IDCardNo      string `json:"idCardNo" binding:"required"`
-	LegalEntityID int64  `json:"legalEntityId" binding:"required"`
-	AddressID     int64  `json:"addressId" binding:"required"`
-	RegionID      int64  `json:"regionId" binding:"required"`
-}

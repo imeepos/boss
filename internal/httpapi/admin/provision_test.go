@@ -60,7 +60,7 @@ func TestRetryProvisionTask(t *testing.T) {
 	r := gin.New()
 	Register(r, &app.Application{User: &fakeUser{permOk: true}, Provision: f}, mgr)
 
-	w := postAuth(t, r, "/api/v1/provision-tasks/PT-3/retry", authToken(t, mgr))
+	w := postAuth(t, r, "/api/admin/v1/provision-tasks/PT-3/retry", authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}

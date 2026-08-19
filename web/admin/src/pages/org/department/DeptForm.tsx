@@ -65,7 +65,7 @@ export function DeptFormDrawer({
           <label><span className="req">*</span>{t.pages.department.fName}</label>
           <input className="org-input" value={values.name} placeholder={t.pages.department.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
-          {!nameOk && values.name !== '' && <span className="acc-err">{t.pages.department.eName}</span>}
+          {!nameOk && values.name !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.department.eName}</span>}
         </div>
         {submitError && <div className="org-error" style={{ margin: 0 }}>{submitError}</div>}
       </div>

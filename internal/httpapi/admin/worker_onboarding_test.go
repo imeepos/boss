@@ -14,6 +14,7 @@ import (
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
+	workerapi "github.com/ymm-001/boss/internal/httpapi/worker"
 )
 
 // fakeOnboarding 桩 OnboardingService / RealNameService。
@@ -66,12 +67,14 @@ func newOnboardingTestRouter(f *fakeOnboarding) (*gin.Engine, *auth.Manager) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	mgr := auth.NewManager("test-secret", time.Hour)
-	Register(r, &app.Application{
+	ja := &app.Application{
 		User:             &fakeUser{permOk: true},
 		Worker:           &fakeWorkerOps{},
 		WorkerOnboarding: f,
 		WorkerRealName:   f,
-	}, mgr)
+	}
+	Register(r, ja, mgr)
+	workerapi.Register(r, ja, mgr)
 	return r, mgr
 }
 
@@ -80,7 +83,7 @@ func TestWorkerOnboarding_PublicSubmit(t *testing.T) {
 	r, _ := newOnboardingTestRouter(f)
 
 	// 公开端点:无认证头也应 200。
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/worker-registrations",
+	req := httptest.NewRequest(http.MethodPost, "/api/worker/v1/worker-registrations",
 		strings.NewReader(`{"name":"王师傅","phone":"13800000001","idCardNo":"110101199001011234","groupId":6,"regionId":4}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -107,7 +110,7 @@ func TestWorkerOnboarding_ApproveAndVerify(t *testing.T) {
 	tok := authToken(t, mgr)
 
 	// 审核通过
-	w := postBodyAuth(t, r, "/api/v1/worker-registrations/5/approve", `{}`, tok)
+	w := postBodyAuth(t, r, "/api/admin/v1/worker-registrations/5/approve", `{}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("approve code=%d body=%s", w.Code, w.Body.String())
 	}
@@ -116,7 +119,7 @@ func TestWorkerOnboarding_ApproveAndVerify(t *testing.T) {
 	}
 
 	// 提交实名
-	w = postBodyAuth(t, r, "/api/v1/workers/9/real-name",
+	w = postBodyAuth(t, r, "/api/admin/v1/workers/9/real-name",
 		`{"realName":"王师傅","idCardNo":"110101199001011234","method":"证件OCR"}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("realname submit code=%d body=%s", w.Code, w.Body.String())
@@ -126,7 +129,7 @@ func TestWorkerOnboarding_ApproveAndVerify(t *testing.T) {
 	}
 
 	// 后台核验
-	w = postBodyAuth(t, r, "/api/v1/workers/9/real-name/verify", `{"result":"PASS"}`, tok)
+	w = postBodyAuth(t, r, "/api/admin/v1/workers/9/real-name/verify", `{"result":"PASS"}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("verify code=%d body=%s", w.Code, w.Body.String())
 	}
@@ -140,7 +143,7 @@ func TestWorkerOnboarding_Reject(t *testing.T) {
 	r, mgr := newOnboardingTestRouter(f)
 	tok := authToken(t, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/worker-registrations/8/reject", `{"note":"证件存疑"}`, tok)
+	w := postBodyAuth(t, r, "/api/admin/v1/worker-registrations/8/reject", `{"note":"证件存疑"}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("reject code=%d body=%s", w.Code, w.Body.String())
 	}

@@ -2,6 +2,9 @@
 // 阻断模式(blocking)用于"无任何配置"时的强制门禁;非阻断用于登录页"管理服务端"入口。
 import { useState } from 'react'
 import { useT } from '../i18n'
+import { Badge } from './ui/badge'
+import { ToolbarButton } from './business/page-head'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './ui/table'
 import {
   activeServerId,
   listServers,
@@ -10,7 +13,6 @@ import {
   upsertServer,
   type ServerDraft,
 } from '../lib/serverConfig'
-import '../pages/base/servers/servers.css'
 
 export interface ServerManagerDialogProps {
   /** 阻断模式:无关闭按钮,启用任一服务端后回调 onApply。 */
@@ -19,6 +21,9 @@ export interface ServerManagerDialogProps {
   /** 启用服务端后回调(阻断门禁用它放行;非阻断方自行刷新选择器状态)。 */
   onApply?: (activeId: string) => void
 }
+
+const INPUT_CLS = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]'
+const ACT_CLS = 'mr-2.5 border-none bg-none px-0 text-xs text-[var(--color-text-link)] cursor-pointer hover:underline'
 
 export function ServerManagerDialog({ blocking, onClose, onApply }: ServerManagerDialogProps) {
   const t = useT()
@@ -66,63 +71,65 @@ export function ServerManagerDialog({ blocking, onClose, onApply }: ServerManage
   }
 
   return (
-    <div className="modal-mask">
-      <div className="modal server-manager" style={{ width: 520 }} onClick={(e) => e.stopPropagation()}>
-        <h3>{t.pages.servers.manageTitle}</h3>
-        {blocking && <p className="page-desc">{t.pages.servers.gateHint}</p>}
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>{t.pages.servers.colName}</th>
-              <th>{t.pages.servers.colUrl}</th>
-              <th style={{ width: 90 }}>{t.pages.servers.colStatus}</th>
-              <th style={{ width: 170 }}>{t.pages.servers.colOp}</th>
-            </tr>
-          </thead>
-          <tbody>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45">
+      <div className="max-h-[80vh] w-130 overflow-auto rounded-md bg-[var(--shell-card-bg)] p-5 shadow-[var(--shadow-panel)]" onClick={(e) => e.stopPropagation()}>
+        <h3 className="mb-3 text-base font-semibold text-[var(--shell-heading)]">{t.pages.servers.manageTitle}</h3>
+        {blocking && <p className="mb-2.5 text-xs text-[var(--shell-crumb-text)]">{t.pages.servers.gateHint}</p>}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t.pages.servers.colName}</TableHead>
+              <TableHead>{t.pages.servers.colUrl}</TableHead>
+              <TableHead className="w-22">{t.pages.servers.colStatus}</TableHead>
+              <TableHead className="w-42">{t.pages.servers.colOp}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {items.map((it) => (
-              <tr key={it.id}>
-                <td>{it.name}</td>
-                <td>{it.baseUrl}</td>
-                <td>{active === it.id ? <span className="tag tag-blue">{t.pages.servers.current}</span> : <span className="tag">{t.pages.servers.ready}</span>}</td>
-                <td>
-                  {active !== it.id && <a onClick={() => use(it.id)}>{t.pages.servers.use}</a>}
-                  <a onClick={() => { setErrors({}); setEditing({ id: it.id, name: it.name, baseUrl: it.baseUrl }) }}>{t.pages.servers.edit}</a>
-                  <a className="danger" onClick={() => del(it.id)}>{t.pages.servers.delete}</a>
-                </td>
-              </tr>
+              <TableRow key={it.id}>
+                <TableCell>{it.name}</TableCell>
+                <TableCell>{it.baseUrl}</TableCell>
+                <TableCell>
+                  {active === it.id
+                    ? <Badge variant="info">{t.pages.servers.current}</Badge>
+                    : <Badge>{t.pages.servers.ready}</Badge>}
+                </TableCell>
+                <TableCell>
+                  {active !== it.id && <button className={ACT_CLS} onClick={() => use(it.id)}>{t.pages.servers.use}</button>}
+                  <button className={ACT_CLS} onClick={() => { setErrors({}); setEditing({ id: it.id, name: it.name, baseUrl: it.baseUrl }) }}>{t.pages.servers.edit}</button>
+                  <button className={ACT_CLS + ' text-[var(--color-danger)]'} onClick={() => del(it.id)}>{t.pages.servers.delete}</button>
+                </TableCell>
+              </TableRow>
             ))}
-            {!items.length && <tr><td colSpan={4} className="empty">{t.pages.servers.empty}</td></tr>}
-          </tbody>
-        </table>
-        <div className="params-actions">
-          <button className="btn btn-primary" onClick={() => { setErrors({}); setEditing({ name: '', baseUrl: '' }) }}>
+            {!items.length && <TableRow><TableCell colSpan={4} className="py-6 text-center text-xs text-[var(--shell-group-title)]">{t.pages.servers.empty}</TableCell></TableRow>}
+          </TableBody>
+        </Table>
+        <div className="mt-3.5 flex items-center gap-2">
+          <ToolbarButton primary onClick={() => { setErrors({}); setEditing({ name: '', baseUrl: '' }) }}>
             {t.pages.servers.add}
-          </button>
-          {!blocking && <button className="btn" onClick={onClose}>{t.pages.servers.cancel}</button>}
+          </ToolbarButton>
+          {!blocking && <ToolbarButton onClick={() => onClose?.()}>{t.pages.servers.cancel}</ToolbarButton>}
         </div>
         {editing && (
-          <div style={{ marginTop: 12 }}>
-            <h4 style={{ margin: '0 0 8px' }}>{editing.id ? t.pages.servers.editTitle : t.pages.servers.addTitle}</h4>
+          <div className="mt-3">
+            <h4 className="mb-2 m-0 font-semibold text-[var(--shell-heading)]">{editing.id ? t.pages.servers.editTitle : t.pages.servers.addTitle}</h4>
             <input
-              className="ctl"
-              style={{ width: '100%', marginBottom: 6 }}
+              className={INPUT_CLS + ' mb-1.5'}
               placeholder={t.pages.servers.namePlaceholder}
               value={editing.name}
               onChange={(e) => setEditing({ ...editing, name: e.target.value })}
             />
-            {errors.name && <div className="error-inline">{errText('name')}</div>}
+            {errors.name && <div className="mb-1 block text-xs text-[var(--color-danger)]">{errText('name')}</div>}
             <input
-              className="ctl"
-              style={{ width: '100%', marginBottom: 6 }}
+              className={INPUT_CLS + ' mb-1.5'}
               placeholder={t.pages.servers.urlPlaceholder}
               value={editing.baseUrl}
               onChange={(e) => setEditing({ ...editing, baseUrl: e.target.value })}
             />
-            {errors.baseUrl && <div className="error-inline">{errText('baseUrl')}</div>}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" onClick={submit}>{t.pages.servers.save}</button>
-              <button className="btn" onClick={() => { setEditing(null); setErrors({}) }}>{t.pages.servers.cancel}</button>
+            {errors.baseUrl && <div className="mb-1 block text-xs text-[var(--color-danger)]">{errText('baseUrl')}</div>}
+            <div className="flex gap-2">
+              <ToolbarButton primary onClick={submit}>{t.pages.servers.save}</ToolbarButton>
+              <ToolbarButton onClick={() => { setEditing(null); setErrors({}) }}>{t.pages.servers.cancel}</ToolbarButton>
             </div>
           </div>
         )}

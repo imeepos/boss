@@ -63,13 +63,13 @@ func scanRouter(fq *fakeQuadlink, fw *fakeWorkOrder, fo *fakeOrderScan) *gin.Eng
 	r := gin.New()
 	mgr := auth.NewManager("test-secret", time.Hour)
 	a := &app.Application{User: &fakeUser{permOk: true}, QuadLink: fq, WorkOrder: fw, Order: fo}
-	g := r.Group("/api/v1", middleware.Authn(mgr))
+	g := r.Group("/api/admin/v1", middleware.Authn(mgr, auth.AudAdmin))
 	registerScanRoutes(g, a)
 	return r
 }
 
 func scanDo(r *gin.Engine, method, path, body string) (*httptest.ResponseRecorder, string) {
-	tok, _ := auth.NewManager("test-secret", time.Hour).Sign(2, "张师傅", "technician")
+	tok, _ := auth.NewManager("test-secret", time.Hour).Sign(auth.AudAdmin, 2, "张师傅", "technician")
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+tok)
@@ -88,7 +88,7 @@ func TestScanBindHandler(t *testing.T) {
 	t.Run("MATCH → 推进环节9", func(t *testing.T) {
 		fq, fo := &fakeQuadlink{verifyRes: "MATCH"}, &fakeOrderScan{}
 		_, body := scanDo(scanRouter(fq, &fakeWorkOrder{ticket: ticket()}, fo), http.MethodPost,
-			"/api/v1/tickets/TIC-1/scan-bind", `{"epc":"EPC-OK"}`)
+			"/api/admin/v1/tickets/TIC-1/scan-bind", `{"epc":"EPC-OK"}`)
 		if !strings.Contains(body, `"MATCH"`) {
 			t.Fatalf("body=%s", body)
 		}
@@ -103,7 +103,7 @@ func TestScanBindHandler(t *testing.T) {
 	t.Run("MISMATCH → 40920 且不推进", func(t *testing.T) {
 		fq, fo := &fakeQuadlink{verifyRes: "MISMATCH", verifyErr: quadlink.ErrScanMismatch}, &fakeOrderScan{}
 		_, body := scanDo(scanRouter(fq, &fakeWorkOrder{ticket: ticket()}, fo), http.MethodPost,
-			"/api/v1/tickets/TIC-1/scan-bind", `{"epc":"EPC-BAD"}`)
+			"/api/admin/v1/tickets/TIC-1/scan-bind", `{"epc":"EPC-BAD"}`)
 		if !strings.Contains(body, `"code":40920`) {
 			t.Fatalf("body=%s", body)
 		}
@@ -115,7 +115,7 @@ func TestScanBindHandler(t *testing.T) {
 	t.Run("拆机不扫码 → 拦截", func(t *testing.T) {
 		fq := &fakeQuadlink{unbindErr: quadlink.ErrScanRequired}
 		_, body := scanDo(scanRouter(fq, &fakeWorkOrder{ticket: ticket()}, &fakeOrderScan{}), http.MethodPost,
-			"/api/v1/tickets/TIC-1/dismantle/scan", `{"epc":""}`)
+			"/api/admin/v1/tickets/TIC-1/dismantle/scan", `{"epc":""}`)
 		if !strings.Contains(body, `"code":42200`) {
 			t.Fatalf("body=%s", body)
 		}
@@ -123,7 +123,7 @@ func TestScanBindHandler(t *testing.T) {
 
 	t.Run("工单不存在 → 40400", func(t *testing.T) {
 		_, body := scanDo(scanRouter(&fakeQuadlink{}, &fakeWorkOrder{}, &fakeOrderScan{}), http.MethodPost,
-			"/api/v1/tickets/TIC-X/scan-bind", `{"epc":"EPC"}`)
+			"/api/admin/v1/tickets/TIC-X/scan-bind", `{"epc":"EPC"}`)
 		if !strings.Contains(body, `"code":40400`) {
 			t.Fatalf("body=%s", body)
 		}

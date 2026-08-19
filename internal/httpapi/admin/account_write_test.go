@@ -13,11 +13,11 @@ import (
 
 func TestAccountWriteHandlers(t *testing.T) {
 	mgr := auth.NewManager("test-secret", time.Hour)
-	token, _ := mgr.Sign(1, "boss", "sysadmin")
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
 
 	t.Run("建号 无权限 403", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: false}, mgr)
-		w := postBodyAuth(t, r, "/api/v1/accounts", `{"username":"u1"}`, token)
+		w := postBodyAuth(t, r, "/api/admin/v1/accounts", `{"username":"u1"}`, token)
 		if w.Code != 403 {
 			t.Fatalf("status=%d want 403", w.Code)
 		}
@@ -25,7 +25,7 @@ func TestAccountWriteHandlers(t *testing.T) {
 
 	t.Run("建号 成功返回 id", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
-		w := postBodyAuth(t, r, "/api/v1/accounts",
+		w := postBodyAuth(t, r, "/api/admin/v1/accounts",
 			`{"username":"ops_wang","password":"secret1","realName":"王五","roleCode":"ops"}`, token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
@@ -46,7 +46,7 @@ func TestAccountWriteHandlers(t *testing.T) {
 
 	t.Run("改号 成功", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
-		w := putAuth(t, r, "/api/v1/accounts/9",
+		w := putAuth(t, r, "/api/admin/v1/accounts/9",
 			`{"username":"ops_wang","realName":"王五","roleCode":"ops","status":0}`, token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
@@ -55,7 +55,7 @@ func TestAccountWriteHandlers(t *testing.T) {
 
 	t.Run("改号 非法 id 参数错误", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
-		w := putAuth(t, r, "/api/v1/accounts/abc", `{}`, token)
+		w := putAuth(t, r, "/api/admin/v1/accounts/abc", `{}`, token)
 		var env struct {
 			Code int `json:"code"`
 		}
@@ -67,7 +67,7 @@ func TestAccountWriteHandlers(t *testing.T) {
 
 	t.Run("角色清单", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
-		w := getJSON(t, r, "/api/v1/roles", token)
+		w := getJSON(t, r, "/api/admin/v1/roles", token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d", w.Code)
 		}

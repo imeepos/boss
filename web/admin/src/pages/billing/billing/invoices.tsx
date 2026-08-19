@@ -92,8 +92,8 @@ export function InvoicePanel() {
       </div>
 
       {act && (
-        <div className="acc-confirm-mask">
-          <div className="acc-confirm">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45">
+          <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5">
             <p>{actText}</p>
             {act.kind !== 'reissue' && (
               <input className="org-input" value={input} autoFocus
@@ -101,7 +101,7 @@ export function InvoicePanel() {
                 onChange={(e) => setInput(e.target.value)} />
             )}
             {actError && <p className="org-error" style={{ margin: '8px 0 0' }}>{actError}</p>}
-            <div className="acc-confirm-actions">
+            <div className="mt-4 flex justify-end gap-2">
               <button className="org-btn" onClick={() => setAct(null)}>{t.pages.company.cancel}</button>
               <button className="org-btn org-btn-primary" disabled={busy || (act.kind !== 'reissue' && !input.trim())} onClick={run}>
                 {busy ? t.pages.account.submitting : v.confirm}

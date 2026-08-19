@@ -7,7 +7,6 @@ import { PageHead } from '../shared'
 import { ApiKeyFormDrawer, type ApiKeyFormValues } from './KeyForm'
 import { buildCreatePayload } from './payload'
 import { formatTime } from '../../base/audit/logic'
-import '../../base/account/account.css'
 import '../org.css'
 
 export interface ApiKeyRow {
@@ -138,10 +137,10 @@ export default function ApiKeyPage() {
       )}
 
       {revokeId > 0 && (
-        <div className="acc-confirm-mask">
-          <div className="acc-confirm">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45">
+          <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5">
             <p>{t.pages.apikey.revokeConfirm}</p>
-            <div className="acc-confirm-actions">
+            <div className="flex justify-end gap-2">
               <button className="org-btn" onClick={() => setRevokeId(0)}>{t.pages.company.cancel}</button>
               <button className="org-btn org-btn-primary" disabled={busy} onClick={revoke}>
                 {busy ? t.pages.account.submitting : t.pages.apikey.revoke}

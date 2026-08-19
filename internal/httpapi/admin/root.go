@@ -7,8 +7,6 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/apikey"
-	"github.com/ymm-001/boss/internal/domain/customer"
-	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
@@ -37,52 +35,8 @@ type selfProfileReq struct {
 // admin 端为封闭账号模型:无自助注册,账号由超管引导(EnsureSuperAdmin)或 org/account 受权流程创建。
 // admin 端为封闭账号模型:无自助注册,账号由超管引导(EnsureSuperAdmin)或 org/account 受权流程创建。
 func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
-	api := r.Group("/api/v1")
+	api := r.Group("/api/admin/v1")
 
-	// 师傅自助注册:公开端点(师傅端尚未登录,对标客户自助建档)。
-	api.POST("/worker-registrations", func(c *gin.Context) {
-		var req workerRegistrationReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" || req.Phone == "" ||
-			req.IDCardNo == "" || req.GroupID <= 0 || req.RegionID <= 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
-			return
-		}
-		id, err := a.WorkerOnboarding.Submit(c.Request.Context(), worker.Registration{
-			Name:     req.Name,
-			Phone:    req.Phone,
-			IDCardNo: req.IDCardNo,
-			GroupID:  req.GroupID,
-			RegionID: req.RegionID,
-		})
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": worker.RegStatusPending})
-	})
-
-	// 客户自助注册:公开端点(对标师傅自助注册;审核前不入 customers 主档)。
-	api.POST("/customer-registrations", func(c *gin.Context) {
-		var req customerRegistrationReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" || req.Phone == "" ||
-			req.IDCardNo == "" || req.LegalEntityID <= 0 || req.AddressID <= 0 || req.RegionID <= 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
-			return
-		}
-		id, err := a.CustomerOnboarding.Submit(c.Request.Context(), customer.Registration{
-			Name:          req.Name,
-			Phone:         req.Phone,
-			IDCardNo:      req.IDCardNo,
-			LegalEntityID: req.LegalEntityID,
-			AddressID:     req.AddressID,
-			RegionID:      req.RegionID,
-		})
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": customer.RegStatusPending})
-	})
 	api.POST("/auth/login", func(c *gin.Context) {
 		var req loginReq
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -94,7 +48,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 			respondErr(c, err)
 			return
 		}
-		token, err := mgr.Sign(res.AccountID, res.Username, res.RoleCode)
+		token, err := mgr.Sign(auth.AudAdmin, res.AccountID, res.Username, res.RoleCode)
 		if err != nil {
 			respond(c, apitypes.CodeInternal, nil)
 			return
@@ -111,7 +65,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	// API key 与三类主体(account/worker/customer)绑定;account 注入完整 RBAC 身份,
 	// worker/customer 注入受限身份(菜单门禁 403,扫码接口经 Subject 识别)。
 	authed := api.Group("")
-	authed.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr))
+	authed.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudAdmin))
 
 	authed.GET("/auth/me", func(c *gin.Context) {
 		// API key worker/customer 主体:返回主体身份(非账号,无 RBAC profile)
@@ -188,7 +142,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 			respondErr(c, err)
 			return
 		}
-		token, err := mgr.Sign(p.AccountID, p.Username, p.RoleCode)
+		token, err := mgr.Sign(auth.AudAdmin, p.AccountID, p.Username, p.RoleCode)
 		if err != nil {
 			respond(c, apitypes.CodeInternal, nil)
 			return

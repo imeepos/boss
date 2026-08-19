@@ -10,7 +10,7 @@ type routeEntry struct {
 }
 
 // routeCatalog 全部 API 路由目录(来源: internal/app/http_*.go)。
-// 前缀统一为 /api/v1。路径参数用 :name 表示,调用时替换为实际值。
+// 前缀统一为 /api/admin/v1。路径参数用 :name 表示,调用时替换为实际值。
 var routeCatalog = []routeEntry{
 	// auth
 	{"POST", "/auth/login", "账号登录,获取 JWT"},
@@ -168,7 +168,7 @@ var routeCatalog = []routeEntry{
 
 // routes 列出 API 路由目录: bossctl routes
 func (c *CLI) routes() {
-	fmt.Println("BOSS API 路由目录(前缀 /api/v1,路径参数以 :name 表示)")
+	fmt.Println("BOSS API 路由目录(前缀 /api/admin/v1,路径参数以 :name 表示)")
 	fmt.Println("用法: bossctl call METHOD PATH [--data JSON] [--query k=v]")
 	fmt.Println("示例: bossctl call GET /orders --query page=1")
 	fmt.Println()

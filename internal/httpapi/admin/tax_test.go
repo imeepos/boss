@@ -83,7 +83,7 @@ func TestBillingRunHandler(t *testing.T) {
 	tx := &fakeTax{runResult: billing.InvoiceRunResult{Issued: 3, FailedIDs: []int64{}}}
 	r := newTaxRouter(b, tx, mgr)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/billing-runs",
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/v1/billing-runs",
 		strings.NewReader(`{"period":"2026-08"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+authToken(t, mgr))
@@ -119,7 +119,7 @@ func TestInvoiceListAndVoidHandler(t *testing.T) {
 	}}
 	r := newTaxRouter(&fakeBillingRun{}, tx, mgr)
 
-	w := getJSON(t, r, "/api/v1/invoices", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/invoices", authToken(t, mgr))
 	var list struct {
 		Code int `json:"code"`
 		Data struct {
@@ -133,7 +133,7 @@ func TestInvoiceListAndVoidHandler(t *testing.T) {
 		t.Fatalf("list=%+v", list)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/invoices/11/void",
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/v1/invoices/11/void",
 		strings.NewReader(`{"reason":"客户要求重开"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+authToken(t, mgr))
@@ -159,7 +159,7 @@ func TestRecordPaymentHandler(t *testing.T) {
 		Tax:     &fakeTax{},
 	}, mgr)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/payments",
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/v1/payments",
 		strings.NewReader(`{"payNo":"PAY-20260818-001","billId":1,"amount":999,"method":"wechat"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+authToken(t, mgr))
@@ -193,7 +193,7 @@ func TestTaxBackfillHandler(t *testing.T) {
 		User: &fakeUser{permOk: true}, Billing: &fakeBillingRun{}, Tax: &fakeTax{},
 	}, mgr)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/invoices/11/tax-backfill",
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/v1/invoices/11/tax-backfill",
 		strings.NewReader(`{"taxNo":"24122000000012345678"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+authToken(t, mgr))
@@ -213,7 +213,7 @@ func TestTaxSubmitHandler_NoGateway(t *testing.T) {
 		User: &fakeUser{permOk: true}, Billing: &fakeBillingRun{}, Tax: &fakeTax{},
 	}, mgr)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/invoices/11/tax-submit", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/v1/invoices/11/tax-submit", nil)
 	req.Header.Set("Authorization", "Bearer "+authToken(t, mgr))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)

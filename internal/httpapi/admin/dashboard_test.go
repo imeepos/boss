@@ -68,7 +68,7 @@ func TestDashboard(t *testing.T) {
 		}},
 	}, mgr)
 
-	w := getJSON(t, r, "/api/v1/dashboard", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/dashboard", authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}

@@ -41,7 +41,7 @@ func TestBatchRetest(t *testing.T) {
 		User: &fakeUser{permOk: true}, Alarm: al, Device: &fakeDevice{},
 	}, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/alarms/batch-retest", `{"scope":"马尼拉东区"}`, authToken(t, mgr))
+	w := postBodyAuth(t, r, "/api/admin/v1/alarms/batch-retest", `{"scope":"马尼拉东区"}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}
@@ -70,7 +70,7 @@ func TestLogout(t *testing.T) {
 	r := gin.New()
 	Register(r, &app.Application{User: &fakeUser{permOk: true}}, mgr)
 
-	w := postAuth(t, r, "/api/v1/auth/logout", authToken(t, mgr))
+	w := postAuth(t, r, "/api/admin/v1/auth/logout", authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d", w.Code)
 	}

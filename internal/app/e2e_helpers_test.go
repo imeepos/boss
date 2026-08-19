@@ -93,7 +93,7 @@ func seedE2E(t *testing.T, ctx context.Context, pool *pgxpool.Pool, a *app.Appli
 func loginE2E(t *testing.T, ts *httptest.Server, s *e2eSeed) string {
 	t.Helper()
 	body, _ := json.Marshal(map[string]string{"username": s.username, "password": s.password})
-	resp, err := http.Post(ts.URL+"/api/v1/auth/login", "application/json", bytes.NewReader(body))
+	resp, err := http.Post(ts.URL+"/api/admin/v1/auth/login", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,7 @@ func submitOrderE2E(t *testing.T, ts *httptest.Server, token string, s *e2eSeed)
 		"CustomerID": s.customerID, "OfferID": s.offerID, "AddressID": s.addressID,
 		"ChannelID": s.channelID, "LegalEntityID": 1, "RegionPath": "root.luzon.ncr.manila",
 	})
-	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/orders", bytes.NewReader(body))
+	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/admin/v1/orders", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)

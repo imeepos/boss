@@ -13,12 +13,12 @@ import (
 
 func TestAccountsListHandler(t *testing.T) {
 	mgr := auth.NewManager("test-secret", time.Hour)
-	token, _ := mgr.Sign(1, "boss", "sysadmin")
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
 
 	t.Run("无权限 403", func(t *testing.T) {
 		f := &fakeUser{permOk: false}
 		r := newTestRouter(f, mgr)
-		w := getJSON(t, r, "/api/v1/accounts", token)
+		w := getJSON(t, r, "/api/admin/v1/accounts", token)
 		if w.Code != 403 {
 			t.Fatalf("status=%d want 403", w.Code)
 		}
@@ -29,7 +29,7 @@ func TestAccountsListHandler(t *testing.T) {
 			{ID: 1, Username: "admin", RealName: "管理员", RoleCode: "sysadmin", RoleName: "系统管理员", Status: 1},
 		}}
 		r := newTestRouter(f, mgr)
-		w := getJSON(t, r, "/api/v1/accounts", token)
+		w := getJSON(t, r, "/api/admin/v1/accounts", token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 		}

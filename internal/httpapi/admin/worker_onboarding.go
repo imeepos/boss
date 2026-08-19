@@ -122,13 +122,6 @@ type workerGroupCreateReq struct {
 }
 
 // workerRegistrationReq 师傅注册申请请求体。
-type workerRegistrationReq struct {
-	Name     string `json:"name" binding:"required"`
-	Phone    string `json:"phone" binding:"required"`
-	IDCardNo string `json:"idCardNo" binding:"required"`
-	GroupID  int64  `json:"groupId" binding:"required"`
-	RegionID int64  `json:"regionId" binding:"required"`
-}
 
 // workerReviewReq 审核驳回请求体(note 选填,建议必填)。
 type workerReviewReq struct {

@@ -75,13 +75,13 @@ func TestProvisionSeedAll(t *testing.T) {
 	tok := authToken(t, mgr)
 
 	cases := []struct{ path, body string }{
-		{"/api/v1/provision/resources", `{"code":"OLT-01","name":"OLT","type":"OLT","addressId":288,"legalEntityId":1}`},
-		{"/api/v1/provision/ports", `{"portCode":"P-01","resourceId":1,"addressId":288,"legalEntityId":1}`},
-		{"/api/v1/provision/channels", `{"code":"HALL","name":"营业厅","status":"ACTIVE"}`},
-		{"/api/v1/provision/asset-batches", `{"code":"RK-01","name":"批次","legalEntityId":1}`},
-		{"/api/v1/provision/tags", `{"tagNo":"T1","epcCode":"EPC-1","legalEntityId":1}`},
-		{"/api/v1/provision/assets", `{"assetCode":"A-01","batchId":1,"tagId":1,"legalEntityId":1}`},
-		{"/api/v1/provision/dispatch-tickets", `{"ticketNo":"TK-1","orderId":333}`},
+		{"/api/admin/v1/provision/resources", `{"code":"OLT-01","name":"OLT","type":"OLT","addressId":288,"legalEntityId":1}`},
+		{"/api/admin/v1/provision/ports", `{"portCode":"P-01","resourceId":1,"addressId":288,"legalEntityId":1}`},
+		{"/api/admin/v1/provision/channels", `{"code":"HALL","name":"营业厅","status":"ACTIVE"}`},
+		{"/api/admin/v1/provision/asset-batches", `{"code":"RK-01","name":"批次","legalEntityId":1}`},
+		{"/api/admin/v1/provision/tags", `{"tagNo":"T1","epcCode":"EPC-1","legalEntityId":1}`},
+		{"/api/admin/v1/provision/assets", `{"assetCode":"A-01","batchId":1,"tagId":1,"legalEntityId":1}`},
+		{"/api/admin/v1/provision/dispatch-tickets", `{"ticketNo":"TK-1","orderId":333}`},
 	}
 	for _, tc := range cases {
 		w := postBodyAuth(t, r, tc.path, tc.body, tok)
@@ -101,7 +101,7 @@ func TestProvisionSeed_Invalid(t *testing.T) {
 	r, mgr := newProvSeedRouter(f, auth.NewManager("s", time.Hour))
 	tok := authToken(t, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/provision/dispatch-tickets", `{"ticketNo":"TK-1"}`, tok)
+	w := postBodyAuth(t, r, "/api/admin/v1/provision/dispatch-tickets", `{"ticketNo":"TK-1"}`, tok)
 	var resp struct {
 		Code int `json:"code"`
 	}

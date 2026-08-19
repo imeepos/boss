@@ -110,12 +110,12 @@ func TestPortal_RegisterAndProfile(t *testing.T) {
 	portalSmsCodeGen = func() string { return "123456" }
 	defer func() { portalSmsCodeGen = nil }()
 
-	w := userPortalDo(r, http.MethodPost, "/api/v1/auth/sms-code",
+	w := userPortalDo(r, http.MethodPost, "/api/user/v1/auth/sms-code",
 		`{"phone":"13800001234","scene":"register"}`, "")
 	if code, _ := userPortalCode(t, w); code != 0 {
 		t.Fatalf("sms-code resp=%s", w.Body.String())
 	}
-	w = userPortalDo(r, http.MethodPost, "/api/v1/auth/register",
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/register",
 		`{"phone":"13800001234","smsCode":"123456","password":"password-10x"}`, "")
 	code, data := userPortalCode(t, w)
 	if code != 0 || data["customerId"] != float64(7) {
@@ -125,7 +125,7 @@ func TestPortal_RegisterAndProfile(t *testing.T) {
 	if tok == "" {
 		t.Fatalf("register no token")
 	}
-	w = userPortalDo(r, http.MethodGet, "/api/v1/profile", "", tok)
+	w = userPortalDo(r, http.MethodGet, "/api/user/v1/profile", "", tok)
 	if code, data := userPortalCode(t, w); code != 0 || data["name"] != "王先生" {
 		t.Fatalf("profile resp=%s", w.Body.String())
 	}
@@ -140,11 +140,11 @@ func TestPortal_RegisterAndProfile(t *testing.T) {
 func TestPortal_Unauthorized(t *testing.T) {
 	cust := userPortalCust()
 	r, mgr, _ := newUserPortalRouter(cust, nil, nil)
-	if w := userPortalDo(r, http.MethodGet, "/api/v1/profile", "", ""); w.Code != http.StatusUnauthorized {
+	if w := userPortalDo(r, http.MethodGet, "/api/user/v1/profile", "", ""); w.Code != http.StatusUnauthorized {
 		t.Fatalf("no-token code=%d", w.Code)
 	}
-	adminTok, _ := mgr.Sign(1, "admin", "sysadmin")
-	w := userPortalDo(r, http.MethodGet, "/api/v1/profile", "", adminTok)
+	adminTok, _ := mgr.Sign(auth.AudAdmin, 1, "admin", "sysadmin")
+	w := userPortalDo(r, http.MethodGet, "/api/user/v1/profile", "", adminTok)
 	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeUnauthorized) {
 		t.Fatalf("admin token resp=%s", w.Body.String())
 	}
@@ -158,11 +158,11 @@ func TestPortal_BillAndOrderScope(t *testing.T) {
 	r, mgr, _ := newUserPortalRouter(cust, bills, ord)
 	tok, _ := signCustomerToken(mgr, 7, "13800001234")
 
-	w := userPortalDo(r, http.MethodGet, "/api/v1/bills/B-2026-08-7", "", tok)
+	w := userPortalDo(r, http.MethodGet, "/api/user/v1/bills/B-2026-08-7", "", tok)
 	if code, data := userPortalCode(t, w); code != 0 || data["bill"] == nil {
 		t.Fatalf("bill resp=%s", w.Body.String())
 	}
-	w = userPortalDo(r, http.MethodPost, "/api/v1/orders/ORD-1/cancel", "", tok)
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/orders/ORD-1/cancel", "", tok)
 	if code, _ := userPortalCode(t, w); code != 40400 {
 		t.Fatalf("foreign order resp=%s", w.Body.String())
 	}

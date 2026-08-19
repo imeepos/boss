@@ -105,6 +105,7 @@ func portalWorker(c *gin.Context) (int64, string) {
 func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	_ = mgr
 	pub := r.Group("/api/worker/v1")
+	registerWorkerSelfRegistration(pub, a)
 	registerWorkerPortalAuth(pub, a)
 	wauth := r.Group("/api/worker/v1", workerAuth())
 	registerWorkerPortalTicketRoutes(wauth, a)

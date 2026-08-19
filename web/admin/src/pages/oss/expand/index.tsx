@@ -139,7 +139,7 @@ export default function ExpandPage() {
               <label><span className="req">*</span>{e.fPorts}</label>
               <input className="org-input" type="number" value={expectedPorts} placeholder="0"
                 onChange={(ev) => setExpectedPorts(ev.target.value)} />
-              {!portsOk && expectedPorts !== '' && <span className="acc-err">{e.ePorts}</span>}
+              {!portsOk && expectedPorts !== '' && <span className="text-[11px] text-[var(--color-danger)]">{e.ePorts}</span>}
             </div>
             {formError && <div className="org-error" style={{ margin: 0 }}>{formError}</div>}
           </div>

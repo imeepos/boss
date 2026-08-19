@@ -78,14 +78,14 @@ func ledgerRouter(fr *fakeResourceSub, fa *fakeAsset) *gin.Engine {
 	r := gin.New()
 	a := &app.Application{User: &fakeUser{permOk: true}, ResourceSub: fr, Asset: fa}
 	mgr := auth.NewManager("test-secret", time.Hour)
-	g := r.Group("/api/v1", middleware.Authn(mgr)) // 真实 JWT,与 RegisterRoutes 同构
+	g := r.Group("/api/admin/v1", middleware.Authn(mgr, auth.AudAdmin)) // 真实 JWT,与 RegisterRoutes 同构
 	registerResourceRoutes(g, a)
 	registerAssetRoutes(g, a)
 	return r
 }
 
 func doJSON(r *gin.Engine, method, path, body string) *httptest.ResponseRecorder {
-	tok, _ := auth.NewManager("test-secret", time.Hour).Sign(1, "boss", "sysadmin")
+	tok, _ := auth.NewManager("test-secret", time.Hour).Sign(auth.AudAdmin, 1, "boss", "sysadmin")
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+tok)
@@ -100,7 +100,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 	t.Run("POST /transfers 建单+默认单号", func(t *testing.T) {
 		fr := &fakeResourceSub{}
 		eng := ledgerRouter(fr, &fakeAsset{})
-		w := doJSON(eng, http.MethodPost, "/api/v1/transfers",
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/transfers",
 			`{"resourceId":2,"legalEntityId":1,"legalEntityName":"主品牌","fromRegionId":11,"toRegionId":13}`)
 		var out struct {
 			Code int `json:"code"`
@@ -120,10 +120,10 @@ func TestLedgerWriteHandlers(t *testing.T) {
 	t.Run("approve/reject 调拨", func(t *testing.T) {
 		fr := &fakeResourceSub{}
 		eng := ledgerRouter(fr, &fakeAsset{})
-		if w := doJSON(eng, http.MethodPost, "/api/v1/transfers/TRF-1/approve", ""); w.Code != 200 {
+		if w := doJSON(eng, http.MethodPost, "/api/admin/v1/transfers/TRF-1/approve", ""); w.Code != 200 {
 			t.Fatal(w.Code)
 		}
-		if w := doJSON(eng, http.MethodPost, "/api/v1/transfers/TRF-1/reject", ""); w.Code != 200 {
+		if w := doJSON(eng, http.MethodPost, "/api/admin/v1/transfers/TRF-1/reject", ""); w.Code != 200 {
 			t.Fatal(w.Code)
 		}
 		if fr.approved != "TRF-1" || fr.rejected != "TRF-1" {
@@ -134,7 +134,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 	t.Run("release 预占不存在→40400", func(t *testing.T) {
 		fr := &fakeResourceSub{releaseErr: resource.ErrNotFound}
 		eng := ledgerRouter(fr, &fakeAsset{})
-		w := doJSON(eng, http.MethodPost, "/api/v1/reserves/9/release", "")
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/reserves/9/release", "")
 		var out struct {
 			Code int `json:"code"`
 		}
@@ -146,7 +146,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 
 	t.Run("POST /expansions 建单", func(t *testing.T) {
 		eng := ledgerRouter(&fakeResourceSub{}, &fakeAsset{})
-		w := doJSON(eng, http.MethodPost, "/api/v1/expansions",
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/expansions",
 			`{"legalEntityId":1,"regionId":13,"expectedPorts":48}`)
 		var out struct {
 			Code int `json:"code"`
@@ -160,7 +160,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 	t.Run("POST /stocktakes + diff-handle", func(t *testing.T) {
 		fa := &fakeAsset{}
 		eng := ledgerRouter(&fakeResourceSub{}, fa)
-		w := doJSON(eng, http.MethodPost, "/api/v1/stocktakes", `{"legalEntityId":1,"scope":"root.luzon"}`)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes", `{"legalEntityId":1,"scope":"root.luzon"}`)
 		var out struct {
 			Code int `json:"code"`
 		}
@@ -171,7 +171,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 		if fa.stocktake == nil || fa.stocktake.Status != "DOING" {
 			t.Fatalf("stocktake=%+v", fa.stocktake)
 		}
-		doJSON(eng, http.MethodPost, "/api/v1/stocktakes/5/diff-handle", "")
+		doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/5/diff-handle", "")
 		if fa.diffTaskID != 5 {
 			t.Fatalf("diffTaskID=%d", fa.diffTaskID)
 		}
@@ -180,7 +180,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 	t.Run("POST /replacements 建单+默认单号", func(t *testing.T) {
 		fa := &fakeAsset{}
 		eng := ledgerRouter(&fakeResourceSub{}, fa)
-		w := doJSON(eng, http.MethodPost, "/api/v1/replacements", `{"assetId":7,"reason":"光衰"}`)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/replacements", `{"assetId":7,"reason":"光衰"}`)
 		var out struct {
 			Code int `json:"code"`
 			Data struct {

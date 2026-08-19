@@ -8,8 +8,8 @@ info:
     本文件为 APISIX 路由与假数据 mock 的单一事实源。
     接口按域拆分至 user/ 目录,本文件仅做聚合(内联 $ref)。
 servers:
-  - url: /api/v1
-    description: 用户端接口前缀(经 APISIX 网关 /api/v1)
+  - url: /api/user/v1
+    description: 用户端接口前缀(与 admin/worker 分离,JWT aud=user)
 
 tags:
   - name: Auth

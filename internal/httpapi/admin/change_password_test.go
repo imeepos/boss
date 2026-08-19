@@ -40,12 +40,12 @@ func postJSONAuth(t *testing.T, r *gin.Engine, path, body, token string) *httpte
 
 func TestChangePasswordHandler(t *testing.T) {
 	mgr := auth.NewManager("test-secret", time.Hour)
-	token, _ := mgr.Sign(1, "boss", "sysadmin")
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
 	body := `{"oldPassword":"old123","newPassword":"new123456"}`
 
 	t.Run("成功", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{}, mgr)
-		if w := postJSONAuth(t, r, "/api/v1/auth/change-password", body, token); envCode(t, w) != apitypes.CodeOK {
+		if w := postJSONAuth(t, r, "/api/admin/v1/auth/change-password", body, token); envCode(t, w) != apitypes.CodeOK {
 			t.Fatalf("body=%s", w.Body.String())
 		}
 	})
@@ -53,7 +53,7 @@ func TestChangePasswordHandler(t *testing.T) {
 	t.Run("旧口令错误未授权", func(t *testing.T) {
 		f := &fakeUser{changeErr: user.ErrUnauthorized}
 		r := newTestRouter(f, mgr)
-		if w := postJSONAuth(t, r, "/api/v1/auth/change-password", body, token); envCode(t, w) != apitypes.CodeUnauthorized {
+		if w := postJSONAuth(t, r, "/api/admin/v1/auth/change-password", body, token); envCode(t, w) != apitypes.CodeUnauthorized {
 			t.Fatalf("body=%s", w.Body.String())
 		}
 	})
@@ -61,14 +61,14 @@ func TestChangePasswordHandler(t *testing.T) {
 	t.Run("新口令过短参数非法", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{}, mgr)
 		short := `{"oldPassword":"old123","newPassword":"abc"}`
-		if w := postJSONAuth(t, r, "/api/v1/auth/change-password", short, token); envCode(t, w) != apitypes.CodeInvalidParam {
+		if w := postJSONAuth(t, r, "/api/admin/v1/auth/change-password", short, token); envCode(t, w) != apitypes.CodeInvalidParam {
 			t.Fatalf("body=%s", w.Body.String())
 		}
 	})
 
 	t.Run("未认证 401", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{}, mgr)
-		if w := postJSONAuth(t, r, "/api/v1/auth/change-password", body, "bad-token"); w.Code != 401 {
+		if w := postJSONAuth(t, r, "/api/admin/v1/auth/change-password", body, "bad-token"); w.Code != 401 {
 			t.Fatalf("status=%d", w.Code)
 		}
 	})
@@ -76,12 +76,12 @@ func TestChangePasswordHandler(t *testing.T) {
 
 func TestUpdateSelfProfileHandler(t *testing.T) {
 	mgr := auth.NewManager("test-secret", time.Hour)
-	token, _ := mgr.Sign(1, "boss", "sysadmin")
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
 
 	t.Run("成功", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{}, mgr)
 		body := `{"realName":"新名字","phone":"13800000000"}`
-		w := putJSONAuth(t, r, "/api/v1/auth/profile", body, token)
+		w := putJSONAuth(t, r, "/api/admin/v1/auth/profile", body, token)
 		if envCode(t, w) != apitypes.CodeOK {
 			t.Fatalf("body=%s", w.Body.String())
 		}
@@ -89,7 +89,7 @@ func TestUpdateSelfProfileHandler(t *testing.T) {
 
 	t.Run("realName 缺失参数非法", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{}, mgr)
-		w := putJSONAuth(t, r, "/api/v1/auth/profile", `{"phone":"1"}`, token)
+		w := putJSONAuth(t, r, "/api/admin/v1/auth/profile", `{"phone":"1"}`, token)
 		if envCode(t, w) != apitypes.CodeInvalidParam {
 			t.Fatalf("body=%s", w.Body.String())
 		}

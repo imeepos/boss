@@ -27,12 +27,12 @@ func getJSON(t *testing.T, r *gin.Engine, path, token string) *httptest.Response
 // TestOrgListHandler 契约:组织列表需登录(RBAC 菜单权限码),越权/未登录被拒。
 func TestOrgListHandler(t *testing.T) {
 	mgr := auth.NewManager("test-secret", time.Hour)
-	token, _ := mgr.Sign(1, "boss", "sysadmin")
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
 
 	t.Run("未登录", func(t *testing.T) {
 		f := &fakeUser{}
 		r := newTestRouter(f, mgr)
-		w := getJSON(t, r, "/api/v1/legal-entities", "")
+		w := getJSON(t, r, "/api/admin/v1/legal-entities", "")
 		if w.Code != http.StatusUnauthorized {
 			t.Fatalf("status=%d, want 401", w.Code)
 		}
@@ -41,7 +41,7 @@ func TestOrgListHandler(t *testing.T) {
 	t.Run("无权限", func(t *testing.T) {
 		f := &fakeUser{permOk: false}
 		r := newTestRouter(f, mgr)
-		w := getJSON(t, r, "/api/v1/legal-entities", token)
+		w := getJSON(t, r, "/api/admin/v1/legal-entities", token)
 		if w.Code != http.StatusForbidden {
 			t.Fatalf("status=%d, want 403", w.Code)
 		}
@@ -53,7 +53,7 @@ func TestOrgListHandler(t *testing.T) {
 			entities: []user.LegalEntity{{ID: 1, Code: "LEG-A", Name: "主品牌"}},
 		}
 		r := newTestRouter(f, mgr)
-		w := getJSON(t, r, "/api/v1/legal-entities", token)
+		w := getJSON(t, r, "/api/admin/v1/legal-entities", token)
 
 		if w.Code != http.StatusOK {
 			t.Fatalf("status=%d, want 200", w.Code)

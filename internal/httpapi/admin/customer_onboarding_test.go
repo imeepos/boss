@@ -14,6 +14,7 @@ import (
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/pkg/auth"
+	userapi "github.com/ymm-001/boss/internal/httpapi/user"
 )
 
 // fakeCustOnboard 桩 OnboardingService / 实名核验接口。
@@ -72,12 +73,14 @@ func newCustOnboardRouter(f *fakeCustOnboard) (*gin.Engine, *auth.Manager) {
 	gin.SetMode(gin.TestMode)
 	mgr := auth.NewManager("s", time.Hour)
 	r := gin.New()
-	Register(r, &app.Application{
+	ja := &app.Application{
 		User:               &fakeUser{permOk: true},
 		CustomerOnboarding: f,
 		CustomerRealName:   f,
 		RealName:           f,
-	}, mgr)
+	}
+	Register(r, ja, mgr)
+	userapi.Register(r, ja, mgr)
 	return r, mgr
 }
 
@@ -87,7 +90,7 @@ func TestCustomerOnboarding_PublicSubmit(t *testing.T) {
 	r, _ := newCustOnboardRouter(f)
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/customer-registrations",
+	req := httptest.NewRequest(http.MethodPost, "/api/user/v1/customer-registrations",
 		strings.NewReader(`{"name":"张先生","phone":"13800001234","idCardNo":"110101199001011234","legalEntityId":1,"addressId":100,"regionId":4}`))
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
@@ -110,7 +113,7 @@ func TestCustomerOnboarding_ApproveRejectVerify(t *testing.T) {
 	tok := authToken(t, mgr)
 
 	// 审核通过 → 建客户主档
-	w := postBodyAuth(t, r, "/api/v1/customer-registrations/5/approve", `{}`, tok)
+	w := postBodyAuth(t, r, "/api/admin/v1/customer-registrations/5/approve", `{}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("approve code=%d body=%s", w.Code, w.Body.String())
 	}
@@ -119,7 +122,7 @@ func TestCustomerOnboarding_ApproveRejectVerify(t *testing.T) {
 	}
 
 	// 提交实名 → 落 PENDING
-	w = postBodyAuth(t, r, "/api/v1/customers/88/real-name",
+	w = postBodyAuth(t, r, "/api/admin/v1/customers/88/real-name",
 		`{"realName":"张先生","idCardNo":"110101199001011234","method":"证件OCR"}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("realname submit code=%d body=%s", w.Code, w.Body.String())
@@ -129,7 +132,7 @@ func TestCustomerOnboarding_ApproveRejectVerify(t *testing.T) {
 	}
 
 	// 后台核验 PASS
-	w = postBodyAuth(t, r, "/api/v1/customers/88/real-name/verify", `{"result":"PASS"}`, tok)
+	w = postBodyAuth(t, r, "/api/admin/v1/customers/88/real-name/verify", `{"result":"PASS"}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("verify code=%d body=%s", w.Code, w.Body.String())
 	}
@@ -138,7 +141,7 @@ func TestCustomerOnboarding_ApproveRejectVerify(t *testing.T) {
 	}
 
 	// 审核驳回
-	w = postBodyAuth(t, r, "/api/v1/customer-registrations/8/reject", `{"note":"地址信息存疑"}`, tok)
+	w = postBodyAuth(t, r, "/api/admin/v1/customer-registrations/8/reject", `{"note":"地址信息存疑"}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("reject code=%d body=%s", w.Code, w.Body.String())
 	}
@@ -153,7 +156,7 @@ func TestCustomerOnboarding_InvalidVerify(t *testing.T) {
 	r, mgr := newCustOnboardRouter(f)
 	tok := authToken(t, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/customers/1/real-name/verify", `{"result":"MAYBE"}`, tok)
+	w := postBodyAuth(t, r, "/api/admin/v1/customers/1/real-name/verify", `{"result":"MAYBE"}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("code=%d", w.Code)
 	}
@@ -170,7 +173,7 @@ func TestCustomerOnboarding_InvalidVerify(t *testing.T) {
 func TestCustomerOnboarding_List(t *testing.T) {
 	f := &fakeCustOnboard{list: []customer.Registration{{ID: 1, Name: "张先生", Status: customer.RegStatusPending}}}
 	r, mgr := newCustOnboardRouter(f)
-	w := getJSON(t, r, "/api/v1/customer-registrations?status=PENDING", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/customer-registrations?status=PENDING", authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("code=%d body=%s", w.Code, w.Body.String())
 	}
@@ -191,7 +194,7 @@ func TestCustomerOnboarding_ApproveConflict(t *testing.T) {
 	f := &fakeCustOnboard{}
 	f.apxErr = customer.ErrRegistrationConflict
 	r, mgr := newCustOnboardRouter(f)
-	w := postBodyAuth(t, r, "/api/v1/customer-registrations/5/approve", `{}`, authToken(t, mgr))
+	w := postBodyAuth(t, r, "/api/admin/v1/customer-registrations/5/approve", `{}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("code=%d", w.Code)
 	}

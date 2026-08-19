@@ -137,7 +137,7 @@ export default function TransferPage() {
               <label><span className="req">*</span>{r.fResource}</label>
               <input className="org-input" type="number" value={resourceId} placeholder={r.pResource}
                 onChange={(e) => setResourceId(e.target.value)} />
-              {!resourceOk && resourceId !== '' && <span className="acc-err">{r.eResource}</span>}
+              {!resourceOk && resourceId !== '' && <span className="text-[11px] text-[var(--color-danger)]">{r.eResource}</span>}
             </div>
             <div className="org-field">
               <label><span className="req">*</span>{r.fFrom}</label>
@@ -154,7 +154,7 @@ export default function TransferPage() {
                 <option value="">—</option>
                 {regions.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
               </select>
-              {!regionOk && (fromRegionId !== 0 || toRegionId !== 0) && <span className="acc-err">{r.eRegion}</span>}
+              {!regionOk && (fromRegionId !== 0 || toRegionId !== 0) && <span className="text-[11px] text-[var(--color-danger)]">{r.eRegion}</span>}
             </div>
             {formError && <div className="org-error" style={{ margin: 0 }}>{formError}</div>}
           </div>

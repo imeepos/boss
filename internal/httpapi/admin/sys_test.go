@@ -31,11 +31,11 @@ func (f *fakeAudit) List(ctx context.Context, q audit.Query) ([]audit.Entry, err
 
 func TestSysRoutes(t *testing.T) {
 	mgr := auth.NewManager("test-secret", time.Hour)
-	token, _ := mgr.Sign(1, "boss", "sysadmin")
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
 
 	t.Run("审计日志 无权限 403", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: false}, mgr)
-		w := getJSON(t, r, "/api/v1/audit-logs", token)
+		w := getJSON(t, r, "/api/admin/v1/audit-logs", token)
 		if w.Code != 403 {
 			t.Fatalf("status=%d want 403", w.Code)
 		}
@@ -48,7 +48,7 @@ func TestSysRoutes(t *testing.T) {
 			CreatedAt: time.Date(2026, 8, 18, 10, 0, 0, 0, time.UTC),
 		}}
 		r := newTestRouterWithAudit(&fakeUser{permOk: true}, &fakeAudit{entries: entries}, mgr)
-		w := getJSON(t, r, "/api/v1/audit-logs", token)
+		w := getJSON(t, r, "/api/admin/v1/audit-logs", token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 		}
@@ -66,11 +66,11 @@ func TestSysRoutes(t *testing.T) {
 
 	t.Run("业务参数 清单与热更", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
-		w := getJSON(t, r, "/api/v1/params", token)
+		w := getJSON(t, r, "/api/admin/v1/params", token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d", w.Code)
 		}
-		w2 := putAuth(t, r, "/api/v1/params/arrears.threshold", `{"value":"100"}`, token)
+		w2 := putAuth(t, r, "/api/admin/v1/params/arrears.threshold", `{"value":"100"}`, token)
 		if w2.Code != 200 {
 			t.Fatalf("status=%d body=%s", w2.Code, w2.Body.String())
 		}
@@ -78,7 +78,7 @@ func TestSysRoutes(t *testing.T) {
 
 	t.Run("导入任务清单 有权限 200", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
-		w := getJSON(t, r, "/api/v1/import-tasks", token)
+		w := getJSON(t, r, "/api/admin/v1/import-tasks", token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 		}
@@ -86,7 +86,7 @@ func TestSysRoutes(t *testing.T) {
 
 	t.Run("业务参数 无权限 403", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: false}, mgr)
-		w := putAuth(t, r, "/api/v1/params/arrears.threshold", `{"value":"100"}`, token)
+		w := putAuth(t, r, "/api/admin/v1/params/arrears.threshold", `{"value":"100"}`, token)
 		if w.Code != 403 {
 			t.Fatalf("status=%d want 403", w.Code)
 		}

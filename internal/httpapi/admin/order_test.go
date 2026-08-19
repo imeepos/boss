@@ -65,7 +65,7 @@ func newOrderRouter(f *fakeOrder, u *fakeUser, mgr *auth.Manager) *gin.Engine {
 
 func authToken(t *testing.T, mgr *auth.Manager) string {
 	t.Helper()
-	tok, err := mgr.Sign(1, "boss", "sysadmin")
+	tok, err := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestOrderListHandler(t *testing.T) {
 		{OrderNo: "ORD-1", Customer: "王先生", Product: "100M", Address: "Manila", Stage: 3, Status: "PENDING"},
 	}}
 	r := newOrderRouter(f, &fakeUser{permOk: true}, mgr)
-	w := getJSON(t, r, "/api/v1/orders", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/orders", authToken(t, mgr))
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d", w.Code)
@@ -105,7 +105,7 @@ func TestOrderCreateHandler(t *testing.T) {
 	f := &fakeOrder{submitted: &order.Order{ID: 7, OrderNo: "ORD-7", Stage: 1, Status: "PENDING"}}
 	r := newOrderRouter(f, &fakeUser{permOk: true}, mgr)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/orders",
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/v1/orders",
 		strings.NewReader(`{"customerId":1,"offerId":10,"addressId":100,"channelId":5,"legalEntityId":1}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+authToken(t, mgr))
@@ -143,7 +143,7 @@ func TestOrderDetailHandler(t *testing.T) {
 		},
 	}
 	r := newOrderRouter(f, &fakeUser{permOk: true}, mgr)
-	w := getJSON(t, r, "/api/v1/orders/ORD-7", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/orders/ORD-7", authToken(t, mgr))
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d", w.Code)

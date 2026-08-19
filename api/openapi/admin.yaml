@@ -6,15 +6,15 @@ info:
     管理后台(admin 端,对应 docs/admin/*.html 全量页面)对外 REST 契约。
     权威字段/状态枚举见 docs/contract/{terms,fields,domain-map}.md;
     本文件为 APISIX 路由的单一事实源;接口按域拆分至 admin/ 目录,本文件仅做聚合(内联 $ref)。
-    前缀 /api/v1(与 Go 实现 internal/app/http.go 对齐,三端共用前缀由网关分流;
-    APISIX 可另暴露 /api/admin/v1 别名,但契约以实现前缀为准)。
+    前缀 /api/admin/v1(与 Go 实现 internal/httpapi/admin 对齐,三端前缀分离见 note 2026-08-19-api-three-portal-prefix;
+    三端独立账号体系与鉴权,JWT aud=admin。)。
     响应约定(对齐 pkg/apitypes 与 http.go respond;V1.1 起取代旧"平铺+{items}"约定):
     1) 统一 envelope { code, msg, data },HTTP 状态恒 200,业务成败只看 code(0=成功)。
     2) 域文件中的 inline response schema 一律描述 data 负载,不含 envelope 外壳。
     3) 列表的 data 为裸数组(实现 respond(c, CodeOK, list);前端请求层适配 UI 所需 {items})。
     4) code=401 未认证(清 token 跳登录),403 无权限,404 不存在;参数/状态非法等码见 pkg/apitypes。
 servers:
-  - url: /api/v1
+  - url: /api/admin/v1
     description: 管理后台接口前缀(Go cmd/server 直连;APISIX 网关同前缀转发)
 
 tags:

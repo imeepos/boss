@@ -107,13 +107,13 @@ export default function DismantlePage() {
               <label><span className="req">*</span>{d.fOrder}</label>
               <input className="org-input" type="number" value={orderId}
                 onChange={(e) => setOrderId(e.target.value)} />
-              {!orderOk && orderId !== '' && <span className="acc-err">{d.eOrder}</span>}
+              {!orderOk && orderId !== '' && <span className="text-[11px] text-[var(--color-danger)]">{d.eOrder}</span>}
             </div>
             <div className="org-field">
               <label>{d.fAsset}</label>
               <input className="org-input" type="number" value={assetId}
                 onChange={(e) => setAssetId(e.target.value)} />
-              {!idOk(assetId) && <span className="acc-err">{d.eOrder}</span>}
+              {!idOk(assetId) && <span className="text-[11px] text-[var(--color-danger)]">{d.eOrder}</span>}
             </div>
             <div className="org-field">
               <label>{d.fPort}</label>

@@ -126,7 +126,7 @@ func TestDispatchPool(t *testing.T) {
 	}}
 	r := newDispatchRouter(wo, &fakeOrderLedger{}, &fakeWorkerSvc{}, mgr)
 
-	w := getJSON(t, r, "/api/v1/dispatch/pool", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/dispatch/pool", authToken(t, mgr))
 	var body struct {
 		Code int `json:"code"`
 		Data struct {
@@ -148,7 +148,7 @@ func TestAssignTicket(t *testing.T) {
 	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅"}}
 	r := newDispatchRouter(wo, &fakeOrderLedger{}, ws, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/dispatch/pool/TK-1/assign", `{"masterId":5}`, authToken(t, mgr))
+	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/pool/TK-1/assign", `{"masterId":5}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}
@@ -167,7 +167,7 @@ func TestMyTickets(t *testing.T) {
 	}}
 	r := newDispatchRouter(wo, &fakeOrderLedger{}, &fakeWorkerSvc{}, mgr)
 
-	w := getJSON(t, r, "/api/v1/dispatch/my-tickets?workerId=5", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/dispatch/my-tickets?workerId=5", authToken(t, mgr))
 	var body struct {
 		Data struct {
 			Items []order.DispatchTicket `json:"items"`
@@ -191,7 +191,7 @@ func TestTransferTicket(t *testing.T) {
 	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅"}}
 	r := newDispatchRouter(wo, ol, ws, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/dispatch/tickets/TK-3/transfer",
+	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/tickets/TK-3/transfer",
 		`{"toMasterId":6,"reason":"跨区改派"}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
@@ -213,7 +213,7 @@ func TestDispatchTransfers(t *testing.T) {
 	}}
 	r := newDispatchRouter(&fakeDispatchOrder{}, ol, &fakeWorkerSvc{}, mgr)
 
-	w := getJSON(t, r, "/api/v1/dispatch/transfers", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/dispatch/transfers", authToken(t, mgr))
 	var body struct {
 		Data struct {
 			Items []order.DispatchTransfer `json:"items"`

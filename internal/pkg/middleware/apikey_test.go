@@ -53,7 +53,7 @@ func newAPIKeyRouter(keys apikey.Service) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	authed := r.Group("/api/v1")
-	authed.Use(APIKeyAuth(keys, fakeResolver), Authn(nil))
+	authed.Use(APIKeyAuth(keys, fakeResolver), Authn(nil, auth.AudAdmin))
 	authed.GET("/whoami", func(c *gin.Context) {
 		out := gin.H{}
 		if v, ok := c.Get(CtxClaims); ok {
@@ -140,7 +140,7 @@ func TestAPIKeyMissingFallsThroughToJWT(t *testing.T) {
 	keys := &fakeKeyService{lookup: map[string]*apikey.Subject{}}
 	r := newAPIKeyRouter(keys)
 
-	// 无 API key → 回退 JWT,Authn(nil) 无 Bearer → 401
+	// 无 API key → 回退 JWT,Authn(nil, auth.AudAdmin) 无 Bearer → 401
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/whoami", nil)
 	r.ServeHTTP(w, req)

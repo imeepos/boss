@@ -16,6 +16,7 @@ import (
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/internal/pkg/auth"
 )
 
 type fakePortalWorkerSvc struct {
@@ -118,7 +119,7 @@ func TestWorkerTokenRoundTripAndAdminIsolation(t *testing.T) {
 
 func mustAdminToken(t *testing.T) string {
 	t.Helper()
-	tok, err := newWorkerJWTManager().Sign(1, "admin", "sysadmin") // 同密钥,issuer=boss
+	tok, err := newWorkerJWTManager().Sign(auth.AudAdmin, 1, "admin", "sysadmin") // 同密钥,issuer=boss
 	if err != nil {
 		t.Fatal(err)
 	}

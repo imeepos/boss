@@ -69,48 +69,48 @@ func TestUserdataEndpoints_HappyPath(t *testing.T) {
 		method, path, body string
 		wantCalled         string // 写路径目标 id 断言(可选)
 	}{
-		{"GET", "/api/v1/users", "", ""},
-		{"GET", "/api/v1/users/9", "", ""},
-		{"PUT", "/api/v1/users/9/account", `{"autoPay":true}`, ""},
-		{"GET", "/api/v1/user-accounts", "", ""},
-		{"GET", "/api/v1/user-addresses", "", ""},
-		{"POST", "/api/v1/user-addresses", `{"customerId":9,"addrCode":"PH-MNL","contact":"王先生","phone":"138","detail":"XX路1号"}`, ""},
-		{"GET", "/api/v1/user-plans", "", ""},
-		{"POST", "/api/v1/user-plans", `{"customerId":9,"productId":3,"planName":"融合套餐"}`, ""},
-		{"GET", "/api/v1/addons", "", ""},
-		{"POST", "/api/v1/addons", `{"name":"加速包","price":1000}`, ""},
-		{"PUT", "/api/v1/addons/ADD-01/toggle", "", "ADD-01"},
-		{"GET", "/api/v1/addon-subscriptions", "", ""},
-		{"POST", "/api/v1/addon-subscriptions", `{"customerId":9,"addonId":"ADD-01","action":"subscribe"}`, ""},
-		{"GET", "/api/v1/user-notify-settings", "", ""},
-		{"PUT", "/api/v1/user-notify-settings/9", `{"business":true,"marketing":false,"channel":"sms"}`, ""},
-		{"GET", "/api/v1/user-faqs", "", ""},
-		{"POST", "/api/v1/user-faqs", `{"category":"billing","question":"如何开发票?","answer":"自助开具","active":true}`, ""},
-		{"PUT", "/api/v1/user-faqs/FAQ-01/toggle", "", "FAQ-01"},
-		{"GET", "/api/v1/user-messages", "", ""},
-		{"POST", "/api/v1/user-messages", `{"customerId":9,"title":"缴费提醒","content":"请及时缴费"}`, ""},
-		{"PUT", "/api/v1/user-messages/read-all", `{"customerId":9}`, ""},
-		{"GET", "/api/v1/coupons", "", ""},
-		{"POST", "/api/v1/coupons", `{"customerId":9,"name":"立减券","amount":1000}`, ""},
-		{"PUT", "/api/v1/coupons/CPN-01/disable", "", "CPN-01"},
-		{"GET", "/api/v1/invite-config", "", ""},
-		{"GET", "/api/v1/user-usages", "", ""},
-		{"GET", "/api/v1/diy-guides", "", ""},
-		{"PUT", "/api/v1/diy-guides/G-01/toggle", "", "G-01"},
-		{"GET", "/api/v1/agreements", "", ""},
-		{"PUT", "/api/v1/agreements/AG-01", `{"type":"privacy","version":"v2","content":"..."}`, "AG-01"},
-		{"GET", "/api/v1/user-balances", "", ""},
-		{"POST", "/api/v1/user-balances/9/adjust", `{"delta":-300}`, ""},
-		{"GET", "/api/v1/topup-denominations", "", ""},
-		{"PUT", "/api/v1/topup-denominations/D-50", `{"amount":5000,"bonus":200,"active":true}`, "D-50"},
-		{"GET", "/api/v1/user-invoices", "", ""},
-		{"POST", "/api/v1/user-invoices", `{"customerId":9,"billNo":"BILL-1","invoiceNo":"INV-1","title":"个人"}`, ""},
-		{"GET", "/api/v1/user-complaints", "", ""},
-		{"POST", "/api/v1/user-complaints/CM-01/close", "", "CM-01"},
-		{"GET", "/api/v1/user-verify-records", "", ""},
-		{"GET", "/api/v1/product-specs", "", ""},
-		{"PUT", "/api/v1/product-specs/P-01", `{"highlights":"千兆","specs":"上下行对等"}`, "P-01"},
-		{"GET", "/api/v1/user-bill-items?billNo=BILL-1", "", ""},
+		{"GET", "/api/admin/v1/users", "", ""},
+		{"GET", "/api/admin/v1/users/9", "", ""},
+		{"PUT", "/api/admin/v1/users/9/account", `{"autoPay":true}`, ""},
+		{"GET", "/api/admin/v1/user-accounts", "", ""},
+		{"GET", "/api/admin/v1/user-addresses", "", ""},
+		{"POST", "/api/admin/v1/user-addresses", `{"customerId":9,"addrCode":"PH-MNL","contact":"王先生","phone":"138","detail":"XX路1号"}`, ""},
+		{"GET", "/api/admin/v1/user-plans", "", ""},
+		{"POST", "/api/admin/v1/user-plans", `{"customerId":9,"productId":3,"planName":"融合套餐"}`, ""},
+		{"GET", "/api/admin/v1/addons", "", ""},
+		{"POST", "/api/admin/v1/addons", `{"name":"加速包","price":1000}`, ""},
+		{"PUT", "/api/admin/v1/addons/ADD-01/toggle", "", "ADD-01"},
+		{"GET", "/api/admin/v1/addon-subscriptions", "", ""},
+		{"POST", "/api/admin/v1/addon-subscriptions", `{"customerId":9,"addonId":"ADD-01","action":"subscribe"}`, ""},
+		{"GET", "/api/admin/v1/user-notify-settings", "", ""},
+		{"PUT", "/api/admin/v1/user-notify-settings/9", `{"business":true,"marketing":false,"channel":"sms"}`, ""},
+		{"GET", "/api/admin/v1/user-faqs", "", ""},
+		{"POST", "/api/admin/v1/user-faqs", `{"category":"billing","question":"如何开发票?","answer":"自助开具","active":true}`, ""},
+		{"PUT", "/api/admin/v1/user-faqs/FAQ-01/toggle", "", "FAQ-01"},
+		{"GET", "/api/admin/v1/user-messages", "", ""},
+		{"POST", "/api/admin/v1/user-messages", `{"customerId":9,"title":"缴费提醒","content":"请及时缴费"}`, ""},
+		{"PUT", "/api/admin/v1/user-messages/read-all", `{"customerId":9}`, ""},
+		{"GET", "/api/admin/v1/coupons", "", ""},
+		{"POST", "/api/admin/v1/coupons", `{"customerId":9,"name":"立减券","amount":1000}`, ""},
+		{"PUT", "/api/admin/v1/coupons/CPN-01/disable", "", "CPN-01"},
+		{"GET", "/api/admin/v1/invite-config", "", ""},
+		{"GET", "/api/admin/v1/user-usages", "", ""},
+		{"GET", "/api/admin/v1/diy-guides", "", ""},
+		{"PUT", "/api/admin/v1/diy-guides/G-01/toggle", "", "G-01"},
+		{"GET", "/api/admin/v1/agreements", "", ""},
+		{"PUT", "/api/admin/v1/agreements/AG-01", `{"type":"privacy","version":"v2","content":"..."}`, "AG-01"},
+		{"GET", "/api/admin/v1/user-balances", "", ""},
+		{"POST", "/api/admin/v1/user-balances/9/adjust", `{"delta":-300}`, ""},
+		{"GET", "/api/admin/v1/topup-denominations", "", ""},
+		{"PUT", "/api/admin/v1/topup-denominations/D-50", `{"amount":5000,"bonus":200,"active":true}`, "D-50"},
+		{"GET", "/api/admin/v1/user-invoices", "", ""},
+		{"POST", "/api/admin/v1/user-invoices", `{"customerId":9,"billNo":"BILL-1","invoiceNo":"INV-1","title":"个人"}`, ""},
+		{"GET", "/api/admin/v1/user-complaints", "", ""},
+		{"POST", "/api/admin/v1/user-complaints/CM-01/close", "", "CM-01"},
+		{"GET", "/api/admin/v1/user-verify-records", "", ""},
+		{"GET", "/api/admin/v1/product-specs", "", ""},
+		{"PUT", "/api/admin/v1/product-specs/P-01", `{"highlights":"千兆","specs":"上下行对等"}`, "P-01"},
+		{"GET", "/api/admin/v1/user-bill-items?billNo=BILL-1", "", ""},
 	}
 	for _, tc := range cases {
 		w := doReq(t, r, tc.method, tc.path, tk, tc.body)
@@ -126,7 +126,7 @@ func TestUserdataDetail_Aggregate(t *testing.T) {
 	ud := &fakeUserdata{row: map[string]any{"customerId": 9, "name": "王先生", "addresses": []map[string]any{}}}
 	r := newUserdataRouter(ud, mgr)
 
-	w := getJSON(t, r, "/api/v1/users/9", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/users/9", authToken(t, mgr))
 	data := assertOK(t, w)
 	if data["name"] != "王先生" {
 		t.Fatalf("data=%+v", data)
@@ -137,7 +137,7 @@ func TestUserdata_NotFound(t *testing.T) {
 	mgr := auth.NewManager("s", time.Hour)
 	r := newUserdataRouter(&fakeUserdata{row: map[string]any{}}, mgr)
 
-	w := doReq(t, r, http.MethodPut, "/api/v1/addons/ADD-404/toggle", authToken(t, mgr), "")
+	w := doReq(t, r, http.MethodPut, "/api/admin/v1/addons/ADD-404/toggle", authToken(t, mgr), "")
 	var body struct {
 		Code int `json:"code"`
 	}

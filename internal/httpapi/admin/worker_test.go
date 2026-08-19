@@ -159,7 +159,7 @@ func TestSaveWorkerSettings(t *testing.T) {
 	f := &fakeWorkerOps{w: &worker.Worker{ID: 5, Name: "张师傅"}}
 	r := newWorkerRouter(f, mgr)
 
-	w := putAuth(t, r, "/api/v1/workers/5/settings",
+	w := putAuth(t, r, "/api/admin/v1/workers/5/settings",
 		`{"online":true,"radiusKm":30,"acceptTypes":["INSTALL","REPAIR"]}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
@@ -178,7 +178,7 @@ func TestNoticeHandlers(t *testing.T) {
 	}}
 	r := newWorkerRouter(f, mgr)
 
-	w := getJSON(t, r, "/api/v1/notices", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/notices", authToken(t, mgr))
 	var list struct {
 		Code int `json:"code"`
 		Data struct {
@@ -192,7 +192,7 @@ func TestNoticeHandlers(t *testing.T) {
 		t.Fatalf("list=%+v", list)
 	}
 
-	w = postBodyAuth(t, r, "/api/v1/notices", `{"title":"物料配发说明","category":"物料公告"}`, authToken(t, mgr))
+	w = postBodyAuth(t, r, "/api/admin/v1/notices", `{"title":"物料配发说明","category":"物料公告"}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}
@@ -200,7 +200,7 @@ func TestNoticeHandlers(t *testing.T) {
 		t.Fatalf("created=%+v", f.created)
 	}
 
-	w = putAuth(t, r, "/api/v1/notices/1/toggle", "", authToken(t, mgr))
+	w = putAuth(t, r, "/api/admin/v1/notices/1/toggle", "", authToken(t, mgr))
 	if w.Code != http.StatusOK || f.toggled != 1 {
 		t.Fatalf("status=%d toggled=%d", w.Code, f.toggled)
 	}
@@ -212,7 +212,7 @@ func TestWorkerDetail(t *testing.T) {
 	f := &fakeWorkerOps{w: &worker.Worker{ID: 5, Name: "张师傅", StaffNo: "W-001"}}
 	r := newWorkerRouter(f, mgr)
 
-	w := getJSON(t, r, "/api/v1/workers/5", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/workers/5", authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}
@@ -234,7 +234,7 @@ func TestReviewFeedback(t *testing.T) {
 	f := &fakeWorkerOps{}
 	r := newWorkerRouter(f, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/worker-feedbacks/3/review", "", authToken(t, mgr))
+	w := postBodyAuth(t, r, "/api/admin/v1/worker-feedbacks/3/review", "", authToken(t, mgr))
 	if w.Code != http.StatusOK || f.reviewed != 3 {
 		t.Fatalf("status=%d reviewed=%d", w.Code, f.reviewed)
 	}
@@ -246,7 +246,7 @@ func TestConfirmAssetReturn(t *testing.T) {
 	f := &fakeWorkerOps{}
 	r := newWorkerRouter(f, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/asset-returns/7/confirm", "", authToken(t, mgr))
+	w := postBodyAuth(t, r, "/api/admin/v1/asset-returns/7/confirm", "", authToken(t, mgr))
 	if w.Code != http.StatusOK || f.confirmed != 7 {
 		t.Fatalf("status=%d confirmed=%d", w.Code, f.confirmed)
 	}

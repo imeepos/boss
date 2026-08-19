@@ -134,12 +134,12 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 
 	t.Run("台账写侧_调拨审批_释放预占", func(t *testing.T) {
 		// 调拨:建单→审批→驳回第二条。
-		no1 := postOK(t, ts, token, "/api/v1/transfers",
+		no1 := postOK(t, ts, token, "/api/admin/v1/transfers",
 			fmt.Sprintf(`{"resourceId":1,"legalEntityId":1,"legalEntityName":"主品牌","fromRegionId":11,"toRegionId":13}`), "transferNo")
-		postOK(t, ts, token, "/api/v1/transfers/"+no1+"/approve", "", "")
-		no2 := postOK(t, ts, token, "/api/v1/transfers",
+		postOK(t, ts, token, "/api/admin/v1/transfers/"+no1+"/approve", "", "")
+		no2 := postOK(t, ts, token, "/api/admin/v1/transfers",
 			`{"resourceId":1,"legalEntityId":1,"legalEntityName":"主品牌","fromRegionId":11,"toRegionId":14}`, "transferNo")
-		postOK(t, ts, token, "/api/v1/transfers/"+no2+"/reject", "", "")
+		postOK(t, ts, token, "/api/admin/v1/transfers/"+no2+"/reject", "", "")
 		for _, tc := range []struct{ no, want string }{{no1, "DOING"}, {no2, "DONE"}} {
 			var st string
 			if err := pool.QueryRow(ctx, `SELECT status FROM transfers WHERE transfer_no=$1`, tc.no).Scan(&st); err != nil {
@@ -160,7 +160,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		postOK(t, ts, token, fmt.Sprintf("/api/v1/reserves/%d/release", recID), "", "")
+		postOK(t, ts, token, fmt.Sprintf("/api/admin/v1/reserves/%d/release", recID), "", "")
 		var portSt, recSt string
 		if err := pool.QueryRow(ctx, `SELECT status FROM ports WHERE id=$1`, portID).Scan(&portSt); err != nil {
 			t.Fatal(err)
@@ -220,7 +220,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			t.Fatal(err)
 		}
 		// 不一致 → 拒(40920),环节不推进。
-		_, body := scanPost(t, ts, token, "/api/v1/tickets/TIC-X/scan-bind", `{"epc":"EPC-WRONG"}`)
+		_, body := scanPost(t, ts, token, "/api/admin/v1/tickets/TIC-X/scan-bind", `{"epc":"EPC-WRONG"}`)
 		if !strings.Contains(body, `"code":40920`) && !strings.Contains(body, `"code":40400`) {
 			t.Fatalf("body=%s", body)
 		}
@@ -231,7 +231,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			 VALUES($1,$2,1,'主品牌·企业','DOING')`, tno, orderID); err != nil {
 			t.Fatal(err)
 		}
-		_, body = scanPost(t, ts, token, "/api/v1/tickets/"+tno+"/scan-bind", `{"epc":"`+epc+`"}`)
+		_, body = scanPost(t, ts, token, "/api/admin/v1/tickets/"+tno+"/scan-bind", `{"epc":"`+epc+`"}`)
 		if !strings.Contains(body, `"MATCH"`) {
 			t.Fatalf("scan-bind body=%s", body)
 		}
@@ -243,7 +243,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			t.Fatalf("stage=%d, want 9(扫码后推进)", o.Stage)
 		}
 		// 拆机不扫码 → 拦截(42200)。
-		_, body = scanPost(t, ts, token, "/api/v1/tickets/"+tno+"/dismantle/scan", `{"epc":""}`)
+		_, body = scanPost(t, ts, token, "/api/admin/v1/tickets/"+tno+"/dismantle/scan", `{"epc":""}`)
 		if !strings.Contains(body, `"code":42200`) {
 			t.Fatalf("dismantle body=%s", body)
 		}
@@ -284,14 +284,14 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			t.Fatalf("bandwidth=%s, want 300M(套餐)", d.Bandwidth)
 		}
 		// 停机即时生效:HTTP STOP → SUSPENDED → 认证拒绝。
-		if w := postOKStatus(t, ts, token, "/api/v1/arrears/"+fmt.Sprint(customerID)+"/stop"); w != 200 {
+		if w := postOKStatus(t, ts, token, "/api/admin/v1/arrears/"+fmt.Sprint(customerID)+"/stop"); w != 200 {
 			t.Fatalf("stop http=%d", w)
 		}
 		if _, err := authz.Decide(ctx, loid); !errors.Is(err, aaa.ErrSuspended) {
 			t.Fatalf("停机后 err=%v, want ErrSuspended", err)
 		}
 		// 缴费复机:HTTP RESUME → ACTIVE → 认证恢复。
-		if w := postOKStatus(t, ts, token, "/api/v1/arrears/"+fmt.Sprint(customerID)+"/resume"); w != 200 {
+		if w := postOKStatus(t, ts, token, "/api/admin/v1/arrears/"+fmt.Sprint(customerID)+"/resume"); w != 200 {
 			t.Fatalf("resume http=%d", w)
 		}
 		if d, err := authz.Decide(ctx, loid); err != nil || !d.Authorize {

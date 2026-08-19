@@ -99,7 +99,7 @@ func TestCustomerListHandler(t *testing.T) {
 		{ID: 1, Name: "王先生", Phone: "13800001111", RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE"},
 	}}
 	r := newCustomerRouter(c, &fakeProduct{}, mgr)
-	w := getJSON(t, r, "/api/v1/customers", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/customers", authToken(t, mgr))
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d", w.Code)
@@ -125,7 +125,7 @@ func TestProductListHandler(t *testing.T) {
 		{ID: 1, LegalEntityID: 1, Name: "500M宽带", Bandwidth: "500M", MonthlyFee: 129.00, Status: "PUBLISHED"},
 	}}
 	r := newCustomerRouter(&fakeCustomer{}, p, mgr)
-	w := getJSON(t, r, "/api/v1/products", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/products", authToken(t, mgr))
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d", w.Code)
@@ -150,7 +150,7 @@ func TestChangeProductPrice(t *testing.T) {
 	p := &fakeProduct{}
 	r := newCustomerRouter(&fakeCustomer{}, p, mgr)
 
-	w := postBodyAuth(t, r, "/api/v1/products/1/price-history", `{"newPrice":169}`, authToken(t, mgr))
+	w := postBodyAuth(t, r, "/api/admin/v1/products/1/price-history", `{"newPrice":169}`, authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}

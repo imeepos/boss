@@ -38,14 +38,14 @@ export function BillingRunModal({ open, onClose, onDone }: {
   }
 
   return (
-    <div className="acc-confirm-mask">
-      <div className="acc-confirm">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45">
+      <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5">
         <p>{r.title}</p>
         <input className="org-input" value={period} autoFocus placeholder={r.periodPh}
           onChange={(e) => setPeriod(e.target.value)} />
         {result && <p style={{ color: '#30a46c', margin: '8px 0 0' }}>{result}</p>}
         {error && <p className="org-error" style={{ margin: '8px 0 0' }}>{error}</p>}
-        <div className="acc-confirm-actions">
+        <div className="mt-4 flex justify-end gap-2">
           <button className="org-btn" onClick={onClose}>{t.pages.company.cancel}</button>
           <button className="org-btn org-btn-primary" disabled={busy || !period.trim()} onClick={submit}>
             {busy ? t.pages.account.submitting : t.pages.company.save}

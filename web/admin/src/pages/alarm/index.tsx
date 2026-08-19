@@ -125,7 +125,7 @@ export default function AlarmPage() {
               <label><span className="req">*</span>{a.fScope}</label>
               <input className="org-input" value={scope} placeholder={a.pScope}
                 onChange={(e) => setScope(e.target.value)} />
-              {!scope.trim() && scope !== '' && <span className="acc-err">{a.eScope}</span>}
+              {!scope.trim() && scope !== '' && <span className="text-[11px] text-[var(--color-danger)]">{a.eScope}</span>}
             </div>
           </div>
         </Drawer>

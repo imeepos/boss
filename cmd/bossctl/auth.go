@@ -14,7 +14,7 @@ func (c *CLI) login(args []string) error {
 	username, password := args[0], args[1]
 
 	body := map[string]string{"username": username, "password": password}
-	resp, err := c.do("POST", "/api/v1/auth/login", body, nil)
+	resp, err := c.do("POST", "/api/admin/v1/auth/login", body, nil)
 	if err != nil {
 		return err
 	}

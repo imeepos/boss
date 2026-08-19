@@ -129,7 +129,7 @@ func TestRetryStopResumeTask(t *testing.T) {
 	}}
 	r := newBillingRouter(&fakeBilling{}, ar, &fakeAaa{}, mgr)
 
-	w := postAuth(t, r, "/api/v1/stop-resume-tasks/7/retry", authToken(t, mgr))
+	w := postAuth(t, r, "/api/admin/v1/stop-resume-tasks/7/retry", authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}
@@ -156,7 +156,7 @@ func TestRetryStopResumeTask_NotFailed(t *testing.T) {
 	ar := &fakeArrears{task: &billing.StopResumeTask{ID: 7, Action: "STOP", Status: "DONE"}}
 	r := newBillingRouter(&fakeBilling{}, ar, &fakeAaa{}, mgr)
 
-	w := postAuth(t, r, "/api/v1/stop-resume-tasks/7/retry", authToken(t, mgr))
+	w := postAuth(t, r, "/api/admin/v1/stop-resume-tasks/7/retry", authToken(t, mgr))
 	var body struct {
 		Code int `json:"code"`
 	}
@@ -178,7 +178,7 @@ func TestReconciliationHandlers(t *testing.T) {
 		User: &fakeUser{permOk: true}, Recon: rc,
 	}, mgr)
 
-	w := getJSON(t, r, "/api/v1/reconciliations", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/reconciliations", authToken(t, mgr))
 	var list struct {
 		Code int `json:"code"`
 		Data struct {
@@ -192,7 +192,7 @@ func TestReconciliationHandlers(t *testing.T) {
 		t.Fatalf("list=%+v", list)
 	}
 
-	w = postAuth(t, r, "/api/v1/reconciliations/PC-20250816-04/settle", authToken(t, mgr))
+	w = postAuth(t, r, "/api/admin/v1/reconciliations/PC-20250816-04/settle", authToken(t, mgr))
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 	}
@@ -208,7 +208,7 @@ func TestBillingListHandler(t *testing.T) {
 		{CustomerID: 1, CustomerName: "王先生", Amount: 299.00, Days: 30, Status: "催收中"},
 	}}
 	r := newBillingRouter(&fakeBilling{}, ar, &fakeAaa{}, mgr)
-	w := getJSON(t, r, "/api/v1/arrears", authToken(t, mgr))
+	w := getJSON(t, r, "/api/admin/v1/arrears", authToken(t, mgr))
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("status=%d", w.Code)
@@ -234,7 +234,7 @@ func TestStopResumeHandler(t *testing.T) {
 	aa := &fakeAaa{lo: &aaa.LoAccount{ID: 88, CustomerID: 9, Loid: "LOID-9"}}
 	r := newBillingRouter(&fakeBilling{}, ar, aa, mgr)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/arrears/9/stop", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/v1/arrears/9/stop", nil)
 	req.Header.Set("Authorization", "Bearer "+authToken(t, mgr))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)

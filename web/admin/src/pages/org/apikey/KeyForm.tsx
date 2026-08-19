@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
-import '../../base/account/account.css'
 
 export interface ApiKeyFormValues {
   accountId: number
@@ -65,7 +64,7 @@ export function ApiKeyFormDrawer({
           <label><span className="req">*</span>{t.pages.apikey.fName}</label>
           <input className="org-input" value={values.name} placeholder={t.pages.apikey.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
-          {!nameOk && values.name !== '' && <span className="acc-err">{t.pages.apikey.eName}</span>}
+          {!nameOk && values.name !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.apikey.eName}</span>}
         </div>
         {submitError && <div className="org-error" style={{ margin: 0 }}>{submitError}</div>}
       </div>
