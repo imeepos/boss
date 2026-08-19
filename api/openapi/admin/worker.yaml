@@ -9,6 +9,123 @@ paths:
       operationId: listWorkerGroups
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Worker]
+      summary: 新建班组(legalEntityId+code+name 唯一)
+      operationId: createWorkerGroup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                legalEntityId: { type: integer }
+                code: { type: string }
+                name: { type: string }
+                leaderId: { type: integer }
+                leaderName: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  # 师傅注册 / 审核 / 实名认证 子域(迁移 000050)。
+  /worker-registrations:
+    get:
+      tags: [Worker]
+      summary: 注册审核队列(按 status 过滤,空=全部)
+      operationId: listWorkerRegistrations
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Worker]
+      summary: 师傅自助注册(公开端点,无需登录)
+      operationId: submitWorkerRegistration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                phone: { type: string }
+                idCardNo: { type: string }
+                groupId: { type: integer }
+                regionId: { type: integer }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /worker-registrations/{id}/approve:
+    post:
+      tags: [Worker]
+      summary: 审核通过(建 workers 主档 + 回填 worker_id)
+      operationId: approveWorkerRegistration
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /worker-registrations/{id}/reject:
+    post:
+      tags: [Worker]
+      summary: 审核驳回(记 reviewNote)
+      operationId: rejectWorkerRegistration
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /workers/{workerId}/real-name:
+    get:
+      tags: [Worker]
+      summary: 师傅实名核验结果
+      operationId: getWorkerRealName
+      parameters:
+        - { name: workerId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+    post:
+      tags: [Worker]
+      summary: 提交实名认证资料
+      operationId: submitWorkerRealName
+      parameters:
+        - { name: workerId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                realName: { type: string }
+                idCardNo: { type: string }
+                method: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /workers/{workerId}/real-name/verify:
+    post:
+      tags: [Worker]
+      summary: 后台实名核验(PASS/FAIL)
+      operationId: verifyWorkerRealName
+      parameters:
+        - { name: workerId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                result: { type: string, enum: [PASS, FAIL] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /workers:
     get:
       tags: [Worker]

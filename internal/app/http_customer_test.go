@@ -51,6 +51,15 @@ func (f *fakeRealName) ListVerifications(context.Context, int64) ([]customer.Rea
 func (f *fakeRealName) AppendVerification(context.Context, customer.RealNameVerification) (int64, error) {
 	return 0, nil
 }
+func (f *fakeRealName) SubmitRealName(context.Context, customer.CustomerRealNameVerification) (int64, error) {
+	return 0, nil
+}
+func (f *fakeRealName) GetLatest(context.Context, int64) (*customer.CustomerRealNameVerification, error) {
+	return nil, customer.ErrRealNameNotFound
+}
+func (f *fakeRealName) Verify(context.Context, int64, string, string, int64) error {
+	return nil
+}
 
 type fakeLedger struct{}
 

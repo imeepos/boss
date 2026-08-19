@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/domain/apikey"
+	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
@@ -61,6 +62,29 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": worker.RegStatusPending})
+	})
+
+	// 客户自助注册:公开端点(对标师傅自助注册;审核前不入 customers 主档)。
+	api.POST("/customer-registrations", func(c *gin.Context) {
+		var req customerRegistrationReq
+		if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" || req.Phone == "" ||
+			req.IDCardNo == "" || req.LegalEntityID <= 0 || req.AddressID <= 0 || req.RegionID <= 0 {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		id, err := a.CustomerOnboarding.Submit(c.Request.Context(), customer.Registration{
+			Name:          req.Name,
+			Phone:         req.Phone,
+			IDCardNo:      req.IDCardNo,
+			LegalEntityID: req.LegalEntityID,
+			AddressID:     req.AddressID,
+			RegionID:      req.RegionID,
+		})
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": customer.RegStatusPending})
 	})
 	api.POST("/auth/login", func(c *gin.Context) {
 		var req loginReq
@@ -182,11 +206,13 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerAPIKeyRoutes(authed, a)
 	registerOrderRoutes(authed, a)
 	registerOrderSubRoutes(authed, a)
+	registerOrderWorkflowRoutes(authed, a)
 	registerDispatchRoutes(authed, a)
 	registerDashboardRoutes(authed, a)
 	registerBillingRoutes(authed, a)
 	registerTaxRoutes(authed, a)
 	registerCustomerRoutes(authed, a)
+	registerCustomerOnboardingRoutes(authed, a)
 	registerResourceRoutes(authed, a)
 	registerScanRoutes(authed, a)
 	registerAssetRoutes(authed, a)

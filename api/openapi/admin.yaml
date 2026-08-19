@@ -160,9 +160,14 @@ paths:
 
   # ---------- Worker(师傅管理) ----------
   /worker-groups: { $ref: './admin/worker.yaml#/paths/~1worker-groups' }
+  /worker-registrations: { $ref: './admin/worker.yaml#/paths/~1worker-registrations' }
+  /worker-registrations/{id}/approve: { $ref: './admin/worker.yaml#/paths/~1worker-registrations~1{id}~1approve' }
+  /worker-registrations/{id}/reject: { $ref: './admin/worker.yaml#/paths/~1worker-registrations~1{id}~1reject' }
   /workers: { $ref: './admin/worker.yaml#/paths/~1workers' }
   /workers/{workerId}: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}' }
   /workers/{workerId}/settings: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1settings' }
+  /workers/{workerId}/real-name: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1real-name' }
+  /workers/{workerId}/real-name/verify: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1real-name~1verify' }
   /worker-performances: { $ref: './admin/worker.yaml#/paths/~1worker-performances' }
   /worker-commissions: { $ref: './admin/worker.yaml#/paths/~1worker-commissions' }
   /worker-feedbacks: { $ref: './admin/worker.yaml#/paths/~1worker-feedbacks' }

@@ -44,6 +44,10 @@ type Application struct {
 	RealName       customer.RealNameService
 	UserData       udcustomer.Service
 
+	// 客户注册 / 审核 / 实名认证 子域(迁移 000051)。
+	CustomerOnboarding customer.OnboardingService
+	CustomerRealName   customer.RealNameService
+
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
 	Recon   billing.ReconService
@@ -173,6 +177,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		CustomerLedger: cust,
 		RealName:       cust,
 		UserData:       udcustomer.NewPGStore(pool),
+
+		CustomerOnboarding: cust,
+		CustomerRealName:   cust,
 
 		Billing: bill,
 		Arrears: bill,
