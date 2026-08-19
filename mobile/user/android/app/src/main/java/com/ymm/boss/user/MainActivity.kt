@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
 fun AppRoot() {
     val nav = remember { Nav(if (Api.token().isNotEmpty()) Route.Home else Route.Login) }
     Surface(Modifier.fillMaxSize()) {
-        PageScaffold(nav, tabKeyOf(nav.current), nav.current !is Route.Login) {
+        PageScaffold(nav, tabKeyOf(nav.current), tabKeyOf(nav.current).isNotEmpty()) {
             RouteScreen(nav.current, nav)
         }
     }
