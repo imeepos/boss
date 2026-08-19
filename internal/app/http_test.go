@@ -35,9 +35,9 @@ func (f *fakeUser) Register(context.Context, string, string, string) (*user.Logi
 func (f *fakeUser) EnsureSuperAdmin(context.Context, string, string, string) (bool, error) {
 	return false, nil
 }
-func (f *fakeUser) ChangePassword(context.Context, int64, string, string) error { return f.changeErr }
+func (f *fakeUser) ChangePassword(context.Context, int64, string, string) error    { return f.changeErr }
 func (f *fakeUser) UpdateSelfProfile(context.Context, int64, string, string) error { return nil }
-func (f *fakeUser) HasPermission(context.Context, int64, string) (bool, error)  { return f.permOk, nil }
+func (f *fakeUser) HasPermission(context.Context, int64, string) (bool, error)     { return f.permOk, nil }
 func (f *fakeUser) HasDataScope(context.Context, int64, user.DataScope) (bool, error) {
 	return false, nil
 }
