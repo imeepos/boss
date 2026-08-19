@@ -29,3 +29,6 @@ docs/worker 原样收编(ES5、无框架、无构建期转译),仅重构对接�
 - 草稿与对接约定:docs/worker/API-INTEGRATION.md
 - 契约:api/openapi/worker.yaml(拆分 api/openapi/worker/*.yaml)
 - mock:api/mock/combined.js(/api/worker/v1 前缀)
+
+> Amended 2026-08-19: web/worker 路径整体迁移为 web/desktop(Tauri 壳收编草稿),
+> 见 2026-08-19-desktop-worker-web-vite-mpa.md。API 前缀 /api/worker/v1 不变。
