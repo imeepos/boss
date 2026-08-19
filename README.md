@@ -87,18 +87,18 @@ boss/
 │   └── ...                     # 设计文档、评审、复盘
 ├── web/                        # Web 前端应用
 │   ├── admin/                  # 管理端(React)
-│   ├── worker/                 # 师傅端
-│   ├── user/                   # 用户端
-│   └── shared/                 # Web 三端共享层
+│   ├── desktop/                # 管理端桌面客户端(Tauri)
+│   └── shared/                 # Web 共享层
 │       └── server-ts/          # TS 实体镜像(枚举/实体类型)
 ├── mobile/                     # 移动端应用
-│   ├── worker/                 # 师傅端
+│   ├── worker/                 # 师傅端独立 app
 │   │   ├── android/            # Android app
-│   │   └── ios/                # iOS app
-│   ├── user/                   # 用户端
-│   │   ├── android/            # Android app
-│   │   └── ios/                # iOS app
-│   └── shared/                 # 移动端共享层
+│   │   ├── ios/                # iOS app
+│   │   └── h5/                 # H5 app
+│   └── user/                   # 用户端独立 app
+│       ├── android/            # Android app
+│       ├── ios/                # iOS app
+│       └── h5/                 # H5 app
 ├── Makefile
 └── go.mod
 ```

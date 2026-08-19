@@ -29,3 +29,4 @@
 | 2026-08-19 | 师傅端前端=web/desktop Vite MPA 收编草稿，API 同源 /api/worker/v1 | adopted/2026-08-19-desktop-worker-web-vite-mpa.md |
 | 2026-08-19 | 管理端桌面客户端=Tauri 2 壳内嵌 admin dist，/api 壳内反代 | adopted/2026-08-19-desktop-tauri-wrap-admin.md |
 | 2026-08-19 | 移动端 Android=Kotlin+Compose 双 app 独立 Gradle 工程 | adopted/2026-08-19-mobile-android-init.md |
+| 2026-08-19 | admin API=CORS 直连绝对地址，移除 Vite 代理与壳内反代 | adopted/2026-08-19-admin-api-direct-cors.md |

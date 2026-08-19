@@ -440,3 +440,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 客户等非 account 主体的"账号凭证"=API key(subjectType=customer),sign 完立即写 identities.json + test-accounts.json 落盘,不口头承诺。
 
 **沉淀:** lessons #81-83;known-issues #20;techniques #27-28;knowledge/后端.md 索引与 README 计数已同步。
+
+## 2026-08-19 初始化 mobile user/worker Android 工程
+- 哪个坑浪费最多时间:`gradle wrapper` 任务卡在 distribution url 校验(services.gradle.org 不可达)2 分钟超时才发现;改从本地 gradle 发行版 jar 里解出 gradle-wrapper.jar + 复用现成 gradlew 脚本绕过。
+- skill 有没有预警:红线 8(未检查环境依赖)部分预警——没料到机器无 JDK,临时 brew install openjdk@17 补上。
+- 重来一次:先查 JAVA_HOME/网络可达性再动手;wrapper 生成失败时直接 unzip gradle-wrapper-main-*.jar 取 jar。

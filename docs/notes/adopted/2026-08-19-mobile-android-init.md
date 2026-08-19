@@ -1,5 +1,7 @@
 # 移动端 Android 初始化:Kotlin + Compose 双 app 独立工程(2026-08-19)
 
+> Amended 2026-08-19: 当前目录先保持 `mobile/user` 与 `mobile/worker` 各自独立，不预建 `mobile/shared`；未来确有共享能力时另立决策。
+
 ## 决策
 mobile/user/android 与 mobile/worker/android 各自初始化为完全独立的 Gradle 工程,
 不建 monorepo 复合构建(composite build),不共享 module:
