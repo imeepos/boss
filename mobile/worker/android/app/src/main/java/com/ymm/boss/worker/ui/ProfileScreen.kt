@@ -46,22 +46,22 @@ fun ProfileScreen(nav: NavHost) {
         }
         Card(Modifier.padding(12.dp)) {
             SectionTitle("账户")
-            Cell("绩效明细", "提成 · 排名 · 服务评分") { nav.push(Screen.Performance) }
-            Cell("历史工单") { nav.push(Screen.History) }
-            Cell("消息通知") { nav.push(Screen.Messages) }
+            Cell("绩效明细", "提成 · 排名 · 服务评分", onClick = { nav.push(Screen.Performance) })
+            Cell("历史工单", onClick = { nav.push(Screen.History) })
+            Cell("消息通知", onClick = { nav.push(Screen.Messages) })
         }
         Card(Modifier.padding(12.dp)) {
             SectionTitle("常用工具")
-            Cell("测速 / 光功率") { nav.push(Screen.Tool()) }
-            Cell("领料 / 借还") { nav.push(Screen.Pickup) }
-            Cell("排障手册") { nav.push(Screen.Help) }
-            Cell("联系调度") { nav.push(Screen.Service) }
+            Cell("测速 / 光功率", onClick = { nav.push(Screen.Tool()) })
+            Cell("领料 / 借还", onClick = { nav.push(Screen.Pickup) })
+            Cell("排障手册", onClick = { nav.push(Screen.Help) })
+            Cell("联系调度", onClick = { nav.push(Screen.Service) })
         }
         Card(Modifier.padding(12.dp)) {
             SectionTitle("设置")
-            Cell("接单设置") { nav.push(Screen.Settings) }
-            Cell("服务公告") { nav.push(Screen.Notice) }
-            Cell("帮助与反馈") { nav.push(Screen.Feedback) }
+            Cell("接单设置", onClick = { nav.push(Screen.Settings) })
+            Cell("服务公告", onClick = { nav.push(Screen.Notice) })
+            Cell("帮助与反馈", onClick = { nav.push(Screen.Feedback) })
             Text("退出登录", fontSize = 14.sp, color = Color(0xFFCF1322),
                 modifier = Modifier.fillMaxWidth()
                     .clickable {
