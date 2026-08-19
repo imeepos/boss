@@ -90,7 +90,12 @@ make migrate-up
 
 # 3. 运行业务单体
 make run
+
+# 4. admin 前端(可选;默认代理到 102 部署,BOSS_API_TARGET 可覆盖)
+cd web/admin && pnpm install && pnpm dev
 ```
+
+前端门禁(与 CI admin-web job 同构):`pnpm typecheck && pnpm test && pnpm build`,详见 `web/admin/README.md`。
 
 ## 基础设施清单(102 服务器)
 
