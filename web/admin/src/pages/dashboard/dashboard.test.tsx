@@ -28,7 +28,7 @@ vi.mock('../../i18n', () => ({
 }))
 
 // Mock PageHead
-vi.mock('../org/shared', () => ({
+vi.mock('../../components/business/page-head', () => ({
   PageHead: ({ title, desc }: { title: string; desc: string }) => (
     <div>
       <h1>{title}</h1>

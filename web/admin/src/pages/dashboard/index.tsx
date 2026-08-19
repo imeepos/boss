@@ -1,12 +1,13 @@
 // 工作台:GET /dashboard 聚合真实数据(统计卡/订单状态分布/待办/近7日趋势)
+// 样式:tailwind 原子类 + ui/button + business/page-head,已移除 dashboard.css。
 import { useEffect, useState } from 'react'
 import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
-import { PageHead } from '../org/shared'
+import { PageHead } from '../../components/business/page-head'
+import { Button } from '../../components/ui/button'
+import { StatusTag } from '../../components/StatusTag'
 import { fmtTime } from '../../lib/format'
-import { Button } from '../../components/Button'
-import './dashboard.css'
 
 interface StatCard { key: string; label: string; value: string; delta: string; trend: string }
 interface StatusDist { status: string; statusLabel: string; count: number; percent: string }
@@ -18,20 +19,13 @@ interface DashboardData {
   trend: { days: string[]; values: number[] }
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: '#1677ff',
-  RESERVED: '#fa8c16',
-  INSTALLING: '#fa8c16',
-  DONE: '#52c41a',
-  CANCELLED: '#ff4d4f',
-}
-
-const TODO_BADGE_COLORS: Record<string, string> = {
-  '派单池': '#1677ff',
-  '告警中心': '#ff4d4f',
-}
-
 const TODO_PAGE_SIZE = 5
+
+const TREND_CLASS = {
+  up: 'text-[var(--color-danger)]',
+  down: 'text-[var(--color-success)]',
+  flat: 'text-muted-foreground',
+} as const
 
 export default function DashboardPage({ profile }: { profile: Profile }) {
   const t = useT()
@@ -58,64 +52,54 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
   const pagedTodos = todoItems.slice((todoPage - 1) * TODO_PAGE_SIZE, todoPage * TODO_PAGE_SIZE)
 
   return (
-    <div className="dash-page">
+    <div>
       <PageHead title={d.title} desc={welcome} />
-      <div className="dash-toolbar">
-        <Button variant="primary" onClick={load} loading={busy}>刷新</Button>
+      <div className="mb-6 flex items-center gap-2">
+        <Button size="sm" disabled={busy} onClick={load}>{t.pages.audit.refresh}</Button>
       </div>
       {error ? (
-        <div className="dash-error-msg">{error}</div>
+        <div className="mb-4 rounded-md border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
       ) : data ? (
         <>
-          <section className="dash-section dash-stats">
+          <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {data.stats.map((s) => (
-              <div key={s.key} className="dash-stat-card">
-                <div className="dash-stat-label">{s.label}</div>
-                <div className="dash-stat-value">{s.value}</div>
-                {s.delta ? <div className={'dash-delta ' + s.trend}>{s.delta}</div> : null}
+              <div
+                key={s.key}
+                className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]"
+              >
+                <div className="mb-2 text-sm text-[var(--shell-content-text)]">{s.label}</div>
+                <div className="text-[28px] font-semibold leading-tight text-[var(--shell-heading)]">{s.value}</div>
+                {s.delta ? <div className={'mt-1 text-[13px] ' + (TREND_CLASS[s.trend as keyof typeof TREND_CLASS] ?? TREND_CLASS.flat)}>{s.delta}</div> : null}
               </div>
             ))}
           </section>
 
-          <section className="dash-section dash-grid-2">
-            <article className="dash-card">
-              <h3 className="dash-card-title">{d.distTitle}</h3>
-              <div className="dash-table-wrap">
-                <table className="dash-table">
+          <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <article className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]">
+              <h3 className="mb-4 text-base font-semibold text-[var(--shell-heading)]">{d.distTitle}</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-[13px]">
                   <thead>
                     <tr>
-                      <th>{d.colStatus}</th>
-                      <th>{d.colCount}</th>
-                      <th>{d.colPercent}</th>
-                      <th>{d.colProgress}</th>
+                      <th className="border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">{d.colStatus}</th>
+                      <th className="border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">{d.colCount}</th>
+                      <th className="border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">{d.colPercent}</th>
+                      <th className="border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">{d.colProgress}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.orderStatusDist.map((r) => (
                       <tr key={r.status}>
-                        <td>
-                          <span
-                            className="dash-status-tag"
-                            style={{
-                              background: getStatusBg(r.status),
-                              color: getStatusColor(r.status),
-                              borderColor: getStatusBorder(r.status),
-                            }}
-                          >
-                            {r.statusLabel}
-                          </span>
+                        <td className="border-b border-border px-3 py-2.5 text-[var(--shell-content-text)]">
+                          <StatusTag domain="order" value={r.status} />
                         </td>
-                        <td>{r.count}</td>
-                        <td>{r.percent}</td>
-                        <td>
-                          <div className="dash-progress">
-                            <div
-                              className="dash-progress-fill"
-                              style={{
-                                width: r.percent,
-                                background: STATUS_COLORS[r.status] || '#1677ff',
-                              }}
-                            />
+                        <td className="border-b border-border px-3 py-2.5 text-[var(--shell-content-text)]">{r.count}</td>
+                        <td className="border-b border-border px-3 py-2.5 text-[var(--shell-content-text)]">{r.percent}</td>
+                        <td className="border-b border-border px-3 py-2.5">
+                          <div className="h-1.5 min-w-[100px] overflow-hidden rounded-sm bg-muted">
+                            <div className="h-full rounded-sm bg-primary transition-[width] duration-300" style={{ width: r.percent }} />
                           </div>
                         </td>
                       </tr>
@@ -125,48 +109,30 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
               </div>
             </article>
 
-            <article className="dash-card">
-              <div className="dash-card-header">
-                <h3 className="dash-card-title">{d.todoTitle}</h3>
+            <article className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{d.todoTitle}</h3>
                 {totalTodoPages > 1 && (
-                  <div className="dash-pager">
-                    <button
-                      type="button"
-                      className="dash-pager-btn"
-                      disabled={todoPage === 1}
-                      onClick={() => setTodoPage((p) => Math.max(1, p - 1))}
-                    >
-                      上一页
-                    </button>
-                    <span className="dash-pager-info">
-                      {todoPage} / {totalTodoPages}
-                    </span>
-                    <button
-                      type="button"
-                      className="dash-pager-btn"
-                      disabled={todoPage === totalTodoPages}
-                      onClick={() => setTodoPage((p) => Math.min(totalTodoPages, p + 1))}
-                    >
-                      下一页
-                    </button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" disabled={todoPage === 1} onClick={() => setTodoPage((p) => Math.max(1, p - 1))}>
+                      {t.pages.company.prev}
+                    </Button>
+                    <span className="text-xs text-muted-foreground">{todoPage} / {totalTodoPages}</span>
+                    <Button variant="outline" size="sm" disabled={todoPage === totalTodoPages} onClick={() => setTodoPage((p) => Math.min(totalTodoPages, p + 1))}>
+                      {t.pages.company.next}
+                    </Button>
                   </div>
                 )}
               </div>
-              <div className="dash-todo-list">
+              <div className="max-h-[320px] overflow-y-auto">
                 {pagedTodos.map((it) => {
-                  const time = it.time
-                    ? fmtTime(it.time).split(' ')[1] || fmtTime(it.time)
-                    : '--'
-                  const badgeColor = TODO_BADGE_COLORS[it.source] || '#1677ff'
+                  const time = it.time ? fmtTime(it.time).split(' ')[1] || fmtTime(it.time) : '--'
                   return (
-                    <div key={it.todoId} className="dash-todo-item">
-                      <div className="dash-todo-time">{time}</div>
-                      <div className="dash-todo-content">
-                        <span className="dash-todo-text">{it.subject}</span>
-                        <span
-                          className="dash-todo-badge"
-                          style={{ background: badgeColor + '15', color: badgeColor }}
-                        >
+                    <div key={it.todoId} className="flex items-start gap-3 border-b border-border py-2.5 last:border-b-0">
+                      <div className="w-14 flex-shrink-0 text-xs text-muted-foreground">{time}</div>
+                      <div className="flex-1">
+                        <span className="text-[13px] leading-relaxed text-[var(--shell-content-text)]">{it.subject}</span>
+                        <span className="ml-1.5 inline-block rounded-sm bg-primary/10 px-1.5 py-px text-[11px] font-medium align-middle text-primary">
                           {it.source}
                         </span>
                       </div>
@@ -177,17 +143,17 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
             </article>
           </section>
 
-          <section className="dash-section dash-card">
-            <h3 className="dash-card-title">{d.trendTitle}</h3>
-            <div className="dash-trend">
+          <section className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]">
+            <h3 className="mb-4 text-base font-semibold text-[var(--shell-heading)]">{d.trendTitle}</h3>
+            <div className="flex h-40 items-end gap-3 overflow-x-auto py-5">
               {(data.trend.days ?? []).map((day, i) => (
-                <div key={day + i} className="dash-trend-col" title={`${day}: ${data.trend.values[i]}`}>
-                  <div className="dash-trend-value">{data.trend.values[i]}</div>
+                <div key={day + i} className="flex h-full min-w-12 flex-col items-center justify-end gap-2" title={`${day}: ${data.trend.values[i]}`}>
+                  <div className="text-xs font-medium text-muted-foreground">{data.trend.values[i]}</div>
                   <div
-                    className="dash-trend-bar"
+                    className="min-h-1 w-3/5 max-w-8 rounded-t-sm bg-primary transition-[height] duration-300"
                     style={{ height: `${(data.trend.values[i] / maxTrend) * 100}%` }}
                   />
-                  <span>{day.slice(5)}</span>
+                  <span className="text-xs text-muted-foreground">{day.slice(5)}</span>
                 </div>
               ))}
             </div>
@@ -196,37 +162,4 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
       ) : null}
     </div>
   )
-}
-
-function getStatusBg(status: string): string {
-  const map: Record<string, string> = {
-    PENDING: 'var(--token-color-primary-bg, #e6f7ff)',
-    RESERVED: 'var(--token-color-warning-bg, #fff7e6)',
-    INSTALLING: 'var(--token-color-warning-bg, #fff7e6)',
-    DONE: 'var(--token-color-success-bg, #f6ffed)',
-    CANCELLED: 'var(--token-color-error-bg, #fff1f0)',
-  }
-  return map[status] || 'var(--token-color-fill-tertiary, #f5f5f5)'
-}
-
-function getStatusColor(status: string): string {
-  const map: Record<string, string> = {
-    PENDING: 'var(--token-color-primary, #1677ff)',
-    RESERVED: 'var(--token-color-warning, #fa8c16)',
-    INSTALLING: 'var(--token-color-warning, #fa8c16)',
-    DONE: 'var(--token-color-success, #52c41a)',
-    CANCELLED: 'var(--token-color-error, #ff4d4f)',
-  }
-  return map[status] || 'var(--token-color-text, #666)'
-}
-
-function getStatusBorder(status: string): string {
-  const map: Record<string, string> = {
-    PENDING: 'var(--token-color-primary-border, #91caff)',
-    RESERVED: 'var(--token-color-warning-border, #ffd591)',
-    INSTALLING: 'var(--token-color-warning-border, #ffd591)',
-    DONE: 'var(--token-color-success-border, #b7eb8f)',
-    CANCELLED: 'var(--token-color-error-border, #ffa39e)',
-  }
-  return map[status] || 'var(--token-color-border, #d9d9d9)'
 }
