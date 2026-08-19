@@ -283,9 +283,9 @@
 | `AddressID` | address_id | BIGINT → addresses |
 | 状态 | `status` | LINKED/CONFLICT/UNLINKED（见 terms.md 第 4 节） |
 
-> 四列各建索引 + 唯一约束（见技术栈方案 3.3），任一码反查单表索引。
+> 四列各建索引 + 唯一约束（见 docs/archive/技术栈方案-一步到位.md 3.3），任一码反查单表索引。
 > **口径裁定**：四码=资产-客户-端口-地址（全案 REQ-AMS-003/REQ-CONS-002 权威）。
-> 技术栈方案 3.3 原文写 `quad_link(asset_id, user_id, port_id, addr_id)`，`user_id` 系笔误，
+> 技术栈方案 3.3（docs/archive/技术栈方案-一步到位.md）原文写 `quad_link(asset_id, user_id, port_id, addr_id)`，`user_id` 系笔误，
 > 应为 `customer_id`（`user` 是系统账号域，`customer` 是客户域，二者不同，见 domain-map）。
 
 ## 6. 跨域通用列（所有实体强制）

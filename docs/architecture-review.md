@@ -1,7 +1,7 @@
 # 架构设计打磨记录（Architecture Review）
 
 > 目标：从 ≥3 个不同方向对模块化单体架构做系统性评审，每方向找出 ≥3 个升级优化点，并落地到实际产物。
-> 基线：`README.md`、`技术栈方案-一步到位.md`、`docs/ADR-001-monorepo.md`、`internal/`、`migrations/`、`deployments/`。
+> 基线：`README.md`、`docs/archive/技术栈方案-一步到位.md`、`docs/ADR-001-monorepo.md`、`internal/`、`migrations/`、`deployments/`。
 
 评审结论以「发现 → 决策 → 落地物」三步记录；每轮的决策只允许落到真实产物（代码 / SQL / 文档），不留空话。
 

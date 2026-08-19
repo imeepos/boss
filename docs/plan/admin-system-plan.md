@@ -1,6 +1,6 @@
 # 后台管理系统（admin 端）规划 · 技术栈与落地路线
 
-> 版本 V1.0｜权威源：`docs/contract/{terms,domain-map,fields}.md`、`docs/admin/menu.js`、`api/openapi/admin.yaml`、`技术栈方案-一步到位.md`
+> 版本 V1.0｜权威源：`docs/contract/{terms,domain-map,fields}.md`、`docs/admin/menu.js`、`api/openapi/admin.yaml`、`docs/archive/技术栈方案-一步到位.md`
 > 定位：管理后台前端工程的**唯一执行规划**。原型（`docs/admin/*.html`）是交互与字段的视觉契约，本文档回答"用什么栈、放哪里、分几步做"。
 
 ---
@@ -9,7 +9,7 @@
 
 | 项 | 现状 |
 |---|---|
-| 原型 | `docs/admin/` 共 13 分组 45 菜单页 + login 散页，jQuery 静态 HTML，`menu.js` 定义分组结构 |
+| 原型 | `docs/admin/` 共 13 分组 49 菜单页 + login 散页，jQuery 静态 HTML，`menu.js` 定义分组结构 |
 | 接口契约 | `api/openapi/admin.yaml` 聚合 + `api/openapi/admin/*.yaml` 按域拆分，前缀 `/api/v1`、envelope `{code,msg,data}`（V1.1 已对齐 Go 实现） |
 | Mock | `api/mock/combined.js`（:8092），与真实网关同路由形状 |
 | 后端 | Go 模块化单体已完成 12 域 REST handler（W1–W8），经 APISIX 暴露 |
@@ -17,7 +17,7 @@
 
 **结论：不需要新建接口或改契约，admin 前端是"纯消费端"工程**，原型→真实前端的映射是本规划的全部内容。
 
-## 二、技术栈（对齐《技术栈方案-一步到位.md》2.4）
+## 二、技术栈（对齐《docs/archive/技术栈方案-一步到位.md》2.4）
 
 | 层 | 选型 | 说明 |
 |---|---|---|
