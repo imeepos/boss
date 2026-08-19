@@ -110,7 +110,7 @@ export default function ReportPage() {
             <div className="org-empty">{r.viewEmpty}</div>
           ) : (
             <div className="org-detail-list">
-              <div className="org-detail-item"><span className="k">generatedAt</span>
+              <div className="org-detail-item"><span className="k">{r.generatedAtLabel}</span>
                 <span className="v">{fmtTime(view.generatedAt)}</span></div>
               {view.indicators.map((x) => (
                 <div className="org-detail-item" key={x.key}>
@@ -118,7 +118,7 @@ export default function ReportPage() {
                 </div>
               ))}
               {view.conclusions && view.conclusions.length > 0 && (
-                <div className="org-detail-item"><span className="k">conclusions</span>
+                <div className="org-detail-item"><span className="k">{r.conclusionsLabel}</span>
                   <span className="v">{view.conclusions.map((c, i) => <div key={i}>{c}</div>)}</span></div>
               )}
             </div>

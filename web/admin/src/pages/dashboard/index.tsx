@@ -72,10 +72,10 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
           {/* 订单状态分布 + 待办事项 */}
           <div className="dash-grid-2">
             <div className="org-card">
-              <h3>订单状态分布</h3>
+              <h3>{d.distTitle}</h3>
               <div className="org-table-wrap">
                 <table className="org-table">
-                  <thead><tr><th>状态</th><th>数量</th><th>占比</th><th>进度</th></tr></thead>
+                  <thead><tr><th>{d.colStatus}</th><th>{d.colCount}</th><th>{d.colPercent}</th><th>{d.colProgress}</th></tr></thead>
                   <tbody>
                     {data.orderStatusDist.map((r) => (
                       <tr key={r.status}>
@@ -109,7 +109,7 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
             </div>
 
             <div className="org-card">
-              <h3>我的待办 <span className="dash-todo-count">共 {data.todos.items.length} 条</span></h3>
+              <h3>{d.todoTitle} <span className="dash-todo-count">{d.todoCount.replace('{n}', String(data.todos.items.length))}</span></h3>
               <div className="dash-todo-list">
                 {data.todos.items.map((it) => {
                   const time = fmtTime(it.time).split(' ')[1] || fmtTime(it.time)
@@ -132,7 +132,7 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
 
           {/* 近7日趋势 */}
           <div className="org-card">
-            <h3>近 7 日下单趋势</h3>
+            <h3>{d.trendTitle}</h3>
             <div className="dash-trend">
               {(data.trend.days ?? []).map((day, i) => (
                 <div key={day + i} className="dash-trend-col" title={`${day}: ${data.trend.values[i]}`}>

@@ -50,6 +50,11 @@ export interface Translations {
       distTitle: string
       todoTitle: string
       trendTitle: string
+      colStatus: string
+      colCount: string
+      colPercent: string
+      colProgress: string
+      todoCount: string
       loadFail: string
       empty: string
     }
@@ -971,6 +976,8 @@ export interface Translations {
       sendFail: string
       viewTitle: string
       viewEmpty: string
+      generatedAtLabel: string
+      conclusionsLabel: string
       total: string
       empty: string
       loadFail: string
