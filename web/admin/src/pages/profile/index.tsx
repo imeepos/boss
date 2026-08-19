@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useProfile } from '../../layouts/profile'
 import type { Profile } from '../../api/auth'
+import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
 import './profile.css'
 
@@ -41,9 +42,25 @@ function PersonalSection({ profile }: { profile: Profile }) {
 function ReadOnlyField({ label, value }: { label: string; value: string }) { return <div className="profile-readonly-field"><span>{label}</span><strong>{value}</strong></div> }
 
 function SecuritySection() {
-  const t = useT(); const [saved, setSaved] = useState('')
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setSaved(t.pages.profile.password.passwordPending) }
-  return <div className="profile-content-page"><SectionTitle title={t.pages.profile.password.title} desc={t.pages.profile.password.desc} /><form className="profile-form profile-password-form" onSubmit={submit}><label>{t.pages.profile.password.old}<input type="password" required /></label><label>{t.pages.profile.password.next}<input type="password" required minLength={6} /></label><label>{t.pages.profile.password.confirm}<input type="password" required minLength={6} /></label><div className="profile-form-actions"><span>{saved}</span><button type="submit">{t.pages.profile.password.submit}</button></div></form><div className="profile-subsection"><h2>{t.pages.profile.securityProtection.title}</h2><SecurityRow label={t.pages.profile.securityProtection.loginProtection} value={t.pages.profile.securityProtection.pending} /><SecurityRow label={t.pages.profile.securityProtection.loginHistory} value={t.pages.profile.securityProtection.pending} /></div></div>
+  const t = useT()
+  const p = t.pages.profile.password
+  const [oldPw, setOldPw] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [msg, setMsg] = useState('')
+  const [ok, setOk] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (newPw !== confirmPw) { setOk(false); setMsg(p.mismatch); return }
+    setMsg('')
+    setBusy(true)
+    apiFetch('/auth/change-password', { method: 'POST', body: { oldPassword: oldPw, newPassword: newPw } })
+      .then(() => { setOk(true); setMsg(p.success); setOldPw(''); setNewPw(''); setConfirmPw('') })
+      .catch(() => { setOk(false); setMsg(p.fail) })
+      .finally(() => setBusy(false))
+  }
+  return <div className="profile-content-page"><SectionTitle title={p.title} desc={p.desc} /><form className="profile-form profile-password-form" onSubmit={submit}><label>{p.old}<input type="password" required value={oldPw} onChange={(e) => setOldPw(e.target.value)} /></label><label>{p.next}<input type="password" required minLength={6} value={newPw} onChange={(e) => setNewPw(e.target.value)} /></label><label>{p.confirm}<input type="password" required minLength={6} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} /></label><div className="profile-form-actions"><span style={ok ? { color: '#30a46c' } : { color: '#e5484d' }}>{msg}</span><button type="submit" disabled={busy}>{p.submit}</button></div></form><div className="profile-subsection"><h2>{t.pages.profile.securityProtection.title}</h2><SecurityRow label={t.pages.profile.securityProtection.loginProtection} value={t.pages.profile.securityProtection.pending} /><SecurityRow label={t.pages.profile.securityProtection.loginHistory} value={t.pages.profile.securityProtection.pending} /></div></div>
 }
 
 function SecurityRow({ label, value }: { label: string; value: string }) { return <div className="profile-security-row"><span>{label}</span><em>{value}</em><button aria-label={label}><i className="profile-chevron" /></button></div> }
