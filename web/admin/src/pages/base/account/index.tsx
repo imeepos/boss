@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Dropdown } from '../../../components/Dropdown'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { DetailDrawer } from '../../org/shared'
@@ -94,15 +95,22 @@ export default function AccountListPage() {
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.account.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={role} onChange={(e) => { setRole(e.target.value); setPage(1) }}>
-            <option value="">{t.pages.account.allRole}</option>
-            {roles.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">{t.pages.account.allStatus}</option>
-            <option value="1">{t.pages.account.statusOn}</option>
-            <option value="0">{t.pages.account.statusOff}</option>
-          </select>
+          <Dropdown
+            value={role}
+            options={[{ value: '', label: t.pages.account.allRole }, ...roles.map((r) => ({ value: r, label: r }))]}
+            onChange={(v) => { setRole(v); setPage(1) }}
+            ariaLabel={t.pages.account.allRole}
+          />
+          <Dropdown
+            value={status}
+            options={[
+              { value: '', label: t.pages.account.allStatus },
+              { value: '1', label: t.pages.account.statusOn },
+              { value: '0', label: t.pages.account.statusOff },
+            ]}
+            onChange={(v) => { setStatus(v); setPage(1) }}
+            ariaLabel={t.pages.account.allStatus}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setForm(emptyForm())}>

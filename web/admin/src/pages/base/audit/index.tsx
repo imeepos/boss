@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { filterAuditLogs, toAuditLog, type AuditEntry, type AuditLog } from './logic'
 
@@ -47,10 +48,12 @@ export default function AuditPage() {
           value={keyword}
           onChange={(e) => { setKeyword(e.target.value); setPage(1) }}
         />
-        <select style={ctl} value={type} onChange={(e) => { setType(e.target.value); setPage(1) }}>
-          <option value="">{t.pages.audit.allTypes}</option>
-          {t.pages.audit.types.map((ty) => <option key={ty} value={ty}>{ty}</option>)}
-        </select>
+        <Dropdown
+          value={type}
+          options={[{ value: '', label: t.pages.audit.allTypes }, ...t.pages.audit.types.map((ty) => ({ value: ty, label: ty }))]}
+          onChange={(v) => { setType(v); setPage(1) }}
+          ariaLabel={t.pages.audit.allTypes}
+        />
         <input style={ctl} type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1) }} />
         <span style={{ flex: 1 }} />
         <button style={btn} onClick={load}>{t.pages.audit.refresh}</button>

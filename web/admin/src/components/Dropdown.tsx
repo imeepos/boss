@@ -13,32 +13,34 @@ interface DropdownProps {
   options: DropdownOption[]
   onChange: (value: string) => void
   ariaLabel: string
+  disabled?: boolean
   triggerStyle?: CSSProperties
 }
 
-export function Dropdown({ value, options, onChange, ariaLabel, triggerStyle }: DropdownProps) {
+export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!open) return
+    if (!open || disabled) return
     const onDocClick = (e: MouseEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
-  }, [open])
+  }, [open, disabled])
 
   const current = options.find((o) => o.value === value)
   return (
     <div className="relative inline-flex" ref={rootRef} style={triggerStyle}>
       <button
         type="button"
-        className="flex h-8 w-full cursor-pointer items-center justify-between gap-2 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] py-0 pr-1 pl-2.5 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]"
-        onClick={() => setOpen((v) => !v)}
+        className={'flex h-8 w-full items-center justify-between gap-2 rounded-sm border py-0 pr-1 pl-2.5 text-[13px]' + (disabled ? ' cursor-not-allowed border-[var(--shell-input-border)] bg-[var(--shell-input-disabled-bg)] text-[var(--shell-input-placeholder)]' : ' cursor-pointer border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]')}
+        onClick={() => { if (!disabled) setOpen((v) => !v) }}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
+        disabled={disabled}
       >
         <span className="truncate whitespace-nowrap">{current?.label ?? ariaLabel}</span>
         <span className={`inline-flex text-[var(--shell-group-title)] transition-transform duration-150${open ? ' rotate-180' : ''}`} aria-hidden>

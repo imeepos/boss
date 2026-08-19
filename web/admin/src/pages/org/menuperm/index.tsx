@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Dropdown } from '../../../components/Dropdown'
 import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterMatrixRows, pageSlice, type MenuPermData, type MenuPermViewRow } from './matrix'
 import { Pagination } from '../../../components/Pagination'
@@ -60,12 +61,12 @@ export default function MenuPermPage() {
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.menuperm.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={role} onChange={(e) => { setRole(e.target.value); setPage(1) }}>
-            <option value="">{t.pages.menuperm.allRole}</option>
-            {data.roleColumns.map((c) => (
-              <option key={c.roleCode} value={c.roleCode}>{c.roleName}</option>
-            ))}
-          </select>
+          <Dropdown
+            value={role}
+            options={[{ value: '', label: t.pages.menuperm.allRole }, ...data.roleColumns.map((c) => ({ value: c.roleCode, label: c.roleName }))]}
+            onChange={(v) => { setRole(v); setPage(1) }}
+            ariaLabel={t.pages.menuperm.allRole}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
         </div>

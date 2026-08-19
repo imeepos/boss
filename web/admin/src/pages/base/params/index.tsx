@@ -4,14 +4,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Dropdown } from '../../../components/Dropdown'
 import { PageHead, ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
 import { Card } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { filterParams, paramLabel, type BizParam } from './logic'
-
-const SELECT_CLS = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-xs text-[var(--shell-input-text)] outline-none focus:border-[var(--shell-input-border-focus)]'
 
 export default function ParamsPage() {
   const t = useT()
@@ -73,11 +72,16 @@ export default function ParamsPage() {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
-        <select className={SELECT_CLS} value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">{t.pages.params.allStatus}</option>
-          <option value="changed">{t.pages.params.statusChanged}</option>
-          <option value="origin">{t.pages.params.statusOrigin}</option>
-        </select>
+        <Dropdown
+          value={status}
+          options={[
+            { value: '', label: t.pages.params.allStatus },
+            { value: 'changed', label: t.pages.params.statusChanged },
+            { value: 'origin', label: t.pages.params.statusOrigin },
+          ]}
+          onChange={(v) => setStatus(v)}
+          ariaLabel={t.pages.params.allStatus}
+        />
         <div className="flex-1" />
         <ToolbarButton onClick={load}>{t.pages.params.refresh}</ToolbarButton>
       </div>

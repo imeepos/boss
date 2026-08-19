@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { cascadeReset, validateAccount, type AccountFormValues } from './form'
 
@@ -93,46 +94,55 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
       </div>
       <div className="flex flex-col gap-1.5">
         <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fRole}</label>
-        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.roleCode} onChange={(e) => set({ roleCode: e.target.value })}>
-          <option value="">{t.pages.account.pRole}</option>
-          {roles.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <Dropdown
+          value={values.roleCode}
+          options={[{ value: '', label: t.pages.account.pRole }, ...roles]}
+          onChange={(v) => set({ roleCode: v })}
+          ariaLabel={t.pages.account.fRole}
+        />
         {err('roleRequired') && <span className={ERR_CLS}>{t.pages.account.eRole}</span>}
       </div>
 
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gOrg}</div>
       <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fLegalEntity}</label>
-        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.legalEntityId ? String(values.legalEntityId) : ''}
-          onChange={(e) => onChange(cascadeReset({ ...values, legalEntityId: Number(e.target.value) || 0 }, 'legalEntityId'))}>
-          <option value="">{t.pages.account.pAny}</option>
-          {legalEntities.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <Dropdown
+          value={values.legalEntityId ? String(values.legalEntityId) : ''}
+          options={[{ value: '', label: t.pages.account.pAny }, ...legalEntities]}
+          onChange={(v) => onChange(cascadeReset({ ...values, legalEntityId: Number(v) || 0 }, 'legalEntityId'))}
+          ariaLabel={t.pages.account.fLegalEntity}
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fDept}</label>
-        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.deptId ? String(values.deptId) : ''} disabled={!values.legalEntityId}
-          onChange={(e) => onChange(cascadeReset({ ...values, deptId: Number(e.target.value) || 0 }, 'deptId'))}>
-          <option value="">{t.pages.account.pAny}</option>
-          {departments.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <Dropdown
+          value={values.deptId ? String(values.deptId) : ''}
+          options={[{ value: '', label: t.pages.account.pAny }, ...departments]}
+          onChange={(v) => onChange(cascadeReset({ ...values, deptId: Number(v) || 0 }, 'deptId'))}
+          ariaLabel={t.pages.account.fDept}
+          disabled={!values.legalEntityId}
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fPost}</label>
-        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.postId ? String(values.postId) : ''} disabled={!values.deptId}
-          onChange={(e) => set({ postId: Number(e.target.value) || 0 })}>
-          <option value="">{t.pages.account.pAny}</option>
-          {posts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <Dropdown
+          value={values.postId ? String(values.postId) : ''}
+          options={[{ value: '', label: t.pages.account.pAny }, ...posts]}
+          onChange={(v) => set({ postId: Number(v) || 0 })}
+          ariaLabel={t.pages.account.fPost}
+          disabled={!values.deptId}
+        />
       </div>
 
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gScope}</div>
       <div className="flex flex-col gap-1.5">
         <label>{t.pages.account.fRegionScope}</label>
-        <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.regionScope} onChange={(e) => set({ regionScope: e.target.value })}>
-          <option value="">{t.pages.account.scopeAll}</option>
-          {regions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <Dropdown
+          value={values.regionScope}
+          options={[{ value: '', label: t.pages.account.scopeAll }, ...regions]}
+          onChange={(v) => set({ regionScope: v })}
+          ariaLabel={t.pages.account.fRegionScope}
+        />
       </div>
     </div>
   )

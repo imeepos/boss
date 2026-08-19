@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Dropdown } from '../../../components/Dropdown'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
@@ -113,9 +114,12 @@ export default function ReplacePage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label>{r.fPriority}</label>
-              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={priority} onChange={(e) => setPriority(e.target.value)}>
-                {PRIORITIES.map((p, i) => <option key={p} value={p}>{r.priorities[i]}</option>)}
-              </select>
+              <Dropdown
+                value={priority}
+                options={PRIORITIES.map((p, i) => ({ value: p, label: r.priorities[i] }))}
+                onChange={(v) => setPriority(v)}
+                ariaLabel={r.fPriority}
+              />
             </div>
             {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>

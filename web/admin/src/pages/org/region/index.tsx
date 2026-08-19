@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Dropdown } from '../../../components/Dropdown'
 import { PageHead, pagerTexts } from '../shared'
 import { buildRegionView, filterRegions, pageSlice, type RegionRow } from './tree'
 import { Pagination } from '../../../components/Pagination'
@@ -38,10 +39,12 @@ export default function RegionPage() {
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.region.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={level} onChange={(e) => { setLevel(e.target.value); setPage(1) }}>
-            <option value="">{t.pages.region.allLevel}</option>
-            {t.pages.region.levelNames.map((n, i) => <option key={n} value={String(i + 1)}>{n}</option>)}
-          </select>
+          <Dropdown
+            value={level}
+            options={[{ value: '', label: t.pages.region.allLevel }, ...t.pages.region.levelNames.map((n, i) => ({ value: String(i + 1), label: n }))]}
+            onChange={(v) => { setLevel(v); setPage(1) }}
+            ariaLabel={t.pages.region.allLevel}
+          />
           {drillPath && (
             <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => { setDrillPath(''); setPage(1) }}>
               {t.pages.region.drill}: {drillPath} ×
