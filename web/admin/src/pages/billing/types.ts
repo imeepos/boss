@@ -14,6 +14,26 @@ export interface BillRow {
   status: string // UNPAID/PAID/OVERDUE
 }
 
+// 契约:internal/domain/billing tax.go Invoice(GET /invoices → items)。
+export interface InvoiceRow {
+  id: number
+  invoiceNo: string // 内部流水号 INV-00000001
+  billId: number
+  billNo: string
+  customerId: number
+  customerName: string
+  netAmount: number
+  vatRate: number
+  vatAmount: number
+  totalAmount: number
+  status: string // ISSUED/VOIDED
+  taxJurisdiction: string // CN/PH,空=未定
+  taxChannel: string // manual/leqi/bir_eis
+  taxStatus: string // PENDING/SUBMITTED/ISSUED/FAILED
+  taxNo: string
+  issuedAt: string
+}
+
 export interface PaymentRow {
   id: number
   payNo: string

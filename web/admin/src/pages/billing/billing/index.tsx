@@ -6,6 +6,7 @@ import { DetailDrawer, PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type BillRow } from '../types'
+import { InvoicePanel } from './invoices'
 import { fmtFee } from '../../../lib/format'
 import '../../org/org.css'
 
@@ -73,6 +74,7 @@ export default function BillPage() {
             onPage={setPage} onSize={setPageSize} {...pagerTexts(b)} />
         </div>
       </div>
+      <InvoicePanel />
       {detail && (
         <DetailDrawer
           title={b.detail}

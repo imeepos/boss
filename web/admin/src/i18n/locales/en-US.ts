@@ -405,6 +405,7 @@ const enUS: Translations = {
       pageUnit: 'page',
     },
     billPage: {
+      invoice: { title: 'Invoices (TAX)', desc: 'Auto-issued on billing runs; manual channel backfills tax numbers', loadFail: 'Failed to load invoices', actFail: 'Action failed', filterCustomer: 'Filter by customer ID', empty: 'No invoices', columns: ['Invoice No', 'Customer', 'Total', 'Status', 'Jurisdiction', 'Tax No / Status', 'Actions'], voidBtn: 'Void', reissueBtn: 'Reissue', backfillBtn: 'Backfill', voidConfirm: 'Voiding keeps the number (no reuse). Reason:', reissueConfirm: 'Reissue voids the original and takes a new number. Continue?', backfillTip: 'Manual channel: enter the tax number issued on the tax platform:', voidReasonPh: 'Void reason', taxNoPh: 'Tax number', confirm: 'Confirm' },
       title: 'Billing',
       desc: 'Bills unique per customer × period · amount = order price snapshot · status unpaid/paid/overdue',
       filterCustomer: 'Filter by customer ID (0=all)',

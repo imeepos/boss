@@ -405,6 +405,7 @@ const zhCN: Translations = {
       pageUnit: '页',
     },
     billPage: {
+      invoice: { title: '发票(TAX)', desc: '出账自动开票;人工通道在税局平台开具后回填票号', loadFail: '发票加载失败', actFail: '操作失败', filterCustomer: '按客户ID过滤', empty: '暂无发票', columns: ['发票号', '客户', '价税合计', '状态', '属地', '税局票号/税务状态', '操作'], voidBtn: '作废', reissueBtn: '重开', backfillBtn: '回填票号', voidConfirm: '作废后编号保留不回收,确认作废?请填原因:', reissueConfirm: '重开将原票作废并占新号,确认?', backfillTip: '人工通道:在税局平台开具后登记税局票号:', voidReasonPh: '作废原因', taxNoPh: '税局票号', confirm: '确认' },
       title: '出账管理',
       desc: '账单(客户×账期唯一)· 金额=订单成交价快照 · 状态 未支付/已支付/已逾期',
       filterCustomer: '按客户ID过滤(0=全部)',
