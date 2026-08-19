@@ -33,3 +33,30 @@ jobs:
 
       - name: Contract sync gate
         run: go run ./scripts/check-contract-sync -root .
+
+  # Android 门禁:双 app(用户端/师傅端)assembleDebug+Release 与单测(UI 测试随 testDebugUnitTest)。
+  # 不跑 connectedAndroidTest(无模拟器);Release 签名缺 keystore.properties 时回退 debug key。
+  android:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [mobile/user/android, mobile/worker/android]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build + unit/UI tests
+        run: |
+          ./gradlew :app:assembleDebug --no-daemon
+          ./gradlew :app:testDebugUnitTest :app:assembleRelease --no-daemon
