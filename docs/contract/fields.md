@@ -423,6 +423,40 @@
 
 > 仍缺实体、但按 domain-map 属「待建域」或派生视图的页面（本期不臆造）：`settings.html`→`biz_params`（migrations 已建表，TS 实体已补 `BizParam`）、`paycheck.html`→渠道对账（派生聚合，非基表）。
 
+### 7.5 worker_registrations / worker_real_name_verifications（师傅注册·审核·实名，新增 onboarding 子域）
+
+> 迁移 000050。注册申请与正式 `workers` 主档解耦：待审核师傅不入 `workers`（登录主体仅限在职，见 §7.1）。
+
+`worker_registrations`（师傅注册申请，对标 customer 自助建档）：
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:------|:------|:----------|
+| `id` | id | BIGSERIAL PK |
+| `name` | name | 申报姓名 |
+| `phone` | phone | 联系电话（脱敏） |
+| `idCardNo` | id_card_no | 证件号（实名凭据，脱敏） |
+| `group` | group_id | BIGINT → worker_groups（注册目标班组） |
+| `regionId` | region_id | INTEGER → regions（服务区域） |
+| `status` | status | **PENDING 待审核 / APPROVED 已通过 / REJECTED 已驳回**（terms.md 通用枚举延伸） |
+| `reviewNote` | review_note | 审核意见（驳回必填） |
+| `reviewerAccountId` | reviewer_account_id | BIGINT → accounts（审核人） |
+| `workerId` | worker_id | BIGINT → workers（审核通过后建主档回填，空=未建） |
+| `submittedAt` | submitted_at | 提交时间 |
+| `reviewedAt` | reviewed_at | 审核时间，null=未审核 |
+
+`worker_real_name_verifications`（师傅实名核验，对标客户 `real_name_verifications` §8A）：
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:------|:------|:----------|
+| `workerId` | worker_id | BIGINT → workers（1:1 当前态） |
+| `method` | method | 人脸/证件OCR/人工/第三方 |
+| `realName` | real_name | 申报实名（核验基准） |
+| `idCardNo` | id_card_no | 证件号（脱敏） |
+| `result` | result | **PENDING 待核验 / PASS 通过 / FAIL 不通过**（terms.md `result` 枚举延伸） |
+| `verifiedAt` | verified_at | 核验时间 |
+| `operatorAccountId` | operator_account_id | BIGINT → accounts（核验人） |
+| `operatorName` | operator_name | 核验人姓名快照 |
+
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。

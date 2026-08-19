@@ -85,6 +85,10 @@ type Application struct {
 	WorkerEvent  worker.WorkerEventService
 	WorkerNotice worker.WorkerNoticeService
 
+	// 师傅注册 / 审核 / 实名认证 子域(迁移 000050)。
+	WorkerOnboarding worker.OnboardingService
+	WorkerRealName   worker.RealNameService
+
 	Audit audit.Writer // 关键操作审计(异步写,见 pkg/audit)
 
 	// Automation W8 环节自动编排(6/7/10/11 自动);事件经 Kafka 状态变更链路发布。
@@ -202,6 +206,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		WorkerFact:   wrk,
 		WorkerEvent:  wrk,
 		WorkerNotice: wrk,
+
+		WorkerOnboarding: wrk,
+		WorkerRealName:   wrk,
 	}
 
 	app.Audit = aw

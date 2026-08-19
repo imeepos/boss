@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/domain/apikey"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -39,6 +40,28 @@ type selfProfileReq struct {
 // admin 端为封闭账号模型:无自助注册,账号由超管引导(EnsureSuperAdmin)或 org/account 受权流程创建。
 func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	api := r.Group("/api/v1")
+
+	// 师傅自助注册:公开端点(师傅端尚未登录,对标客户自助建档)。
+	api.POST("/worker-registrations", func(c *gin.Context) {
+		var req workerRegistrationReq
+		if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" || req.Phone == "" ||
+			req.IDCardNo == "" || req.GroupID <= 0 || req.RegionID <= 0 {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		id, err := a.WorkerOnboarding.Submit(c.Request.Context(), worker.Registration{
+			Name:     req.Name,
+			Phone:    req.Phone,
+			IDCardNo: req.IDCardNo,
+			GroupID:  req.GroupID,
+			RegionID: req.RegionID,
+		})
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": worker.RegStatusPending})
+	})
 	api.POST("/auth/login", func(c *gin.Context) {
 		var req loginReq
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -176,6 +199,7 @@ func RegisterRoutes(r *gin.Engine, a *Application, mgr *auth.Manager) {
 	registerProvisionRoutes(authed, a)
 	registerQuadlinkRoutes(authed, a)
 	registerWorkerRoutes(authed, a)
+	registerWorkerOnboardingRoutes(authed, a)
 	registerUserdataRoutes(authed, a)
 	registerUserdataMoreRoutes(authed, a)
 }
