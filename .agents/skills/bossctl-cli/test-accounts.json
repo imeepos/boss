@@ -1,9 +1,9 @@
 {
   "meta": {
-    "description": "BOSS 业务平台测试账号库(师傅注册/审核/实名认证流程模拟)",
-    "server": "http://127.0.0.1:18080",
+    "description": "BOSS 业务平台测试账号库(师傅注册/审核/实名认证/开网全流程模拟)",
+    "server": "http://127.0.0.1:8080",
     "storage_note": "本文件为测试账号唯一事实源;新增测试账号必须追加到此文件",
-    "last_updated": "2026-08-19T03:36:00Z"
+    "last_updated": "2026-08-19T11:00:00Z"
   },
   "admin": {
     "username": "admin",
@@ -57,6 +57,26 @@
       "realNameStatus": null,
       "apiKey": null,
       "note": "场景C驳回流程:注册→驳回(未生成worker主档)"
+    }
+  ],
+  "customers": [
+    {
+      "customerId": 213,
+      "registrationId": 1,
+      "name": "采购经理·王",
+      "phone": "13900001234",
+      "idCardNo": "110101198811110011",
+      "legalEntityId": 1,
+      "addressId": 288,
+      "regionId": 4,
+      "status": "APPROVED",
+      "realNameStatus": "VERIFIED",
+      "serviceStatus": "ACTIVE",
+      "accountId": null,
+      "username": null,
+      "password": null,
+      "apiKey": "boss_a7c676b7d33083cffc00820664e1d539",
+      "note": "场景A正常流程:注册→后台审核通过→实名核验PASS;customer 主体无菜单权限(RBAC 恒拒),只能访问客户身份对应接口;账号/密码为 null 因 BOSS 客户主档无登录口令,鉴权用 API key"
     }
   ]
 }
