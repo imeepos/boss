@@ -18,3 +18,6 @@
 - 禁止把 build/test 通过当作 UI 交互已验证——下拉/搜索问题必须在真实业务 DOM 中断言点击后的控件文本、筛选结果和 URL 同步，否则用户会再次发现“能展开但不能选中”。
 - 禁止自造设计体系结构(分页/表格/抽屉等)而不先取 antd 一手规范——antd GitHub components/<name>/index.zh-CN.md 是一手来源。
 - 禁止收尾总结后留未提交改动——"完成"的定义含 git commit;门禁四件套 = typecheck + test + build + commit(git status 必须干净),已 3 次靠用户提醒才提交。
+- 禁止在机制层面证明前把复现的 bug 结论为"环境/工具怪象"(模拟器 input tap 怪、机型差异)——本会话因此放走真 bug 数轮,用户真机复现才回头;凡"不可能"行为一律先插桩拿调用栈 ground truth。
+- 禁止在并行 agent 共享的工作区里让已验证的修复停留在未提交状态——工作区会被 git checkout/clean 随时回退;验证通过的下一个小动作就是 commit。
+- 禁止自研 Compose 组件调用点用裸尾随lambda传点击动作(组件末位是 @Composable 插槽时必绑错)——动作一律 onClick = 命名参数显式传递。

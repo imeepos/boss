@@ -82,3 +82,10 @@
 - 当 POST /provision/ports 等「置备/联调」接口报 FK violation(50000 内部错误)时,修复是相关联的 FK 字段(resourceId/orderId 等)必须用**前面创建接口真正返回的 id**,不能凭 fixture/直觉写小整数(如用 resourceId:1 但真实资源是 228)——先看创建响应的返回 id 再拼后续请求(2026-08-19, 开网 CLI 模拟)
 - 当扫码绑定(VerifyScan)报 40920「扫码与预绑定不一致」时,修复是检查标签是否真的绑定了资产的 `bound_asset_id`:VerifyScan 查 `tags WHERE epc_code` 要求 `bound_asset_id != 0`,且 MATCH 需 `asset_id == link.AssetID`;正确顺序是**先建资产,再以 `boundAssetId`+`status:BOUND` 创建标签**(CreateAsset 不会回写 tags.bound_asset_id),创建时 status=UNBOUND 的标签永远扫码不 MATCH(2026-08-19, 开网 CLI 模拟)
 - 当要为 customer 主档保存"账号密码"时,修复是明确 BOSS 客户主档(customers)**没有登录口令**,鉴权全走 API key:`POST /api-keys` 支持 `subjectType: customer`(subjectRef=customers.id,名称必填),签出的 plainKey 可直接 `bossctl --api-key <key> call GET /auth/me` 以客户身份自证;客户主体密钥不带菜单权限(RBAC 恒拒),test-accounts.json 的 username/password 记 null、放 apiKey(2026-08-19, 开网 CLI 模拟)
+- 当 UI 出现"理论上不可能"的行为(一次点击多次跳转/事件穿透)时,修复是立即在关键函数加 Log.d(msg, Throwable) 打调用栈拿 ground truth——本会话空谈"Compose 事件不可能跨重组派发"数轮,真机复现+栈日志五分钟定位是渲染期执行。
+- 当自研 Compose 组件最后一个参数是 @Composable 渲染插槽(right/content)时,修复是动作回调用显式命名参数 onClick = 传,禁止裸尾随lambda——尾随lambda永远绑最后一位,且 () -> Unit 可静默赋给 @Composable 版本,编译器不拦。
+- 当"登录成功但所有请求 401"时,修复是先 `adb shell run-as <pkg> cat shared_prefs/*.xml` 看 token 是否落盘,再 curl 同端点对照——多半是响应信封解析错位(mock 平铺 vs 真实 {code,data} 嵌套)。
+- 当对接真实后端替换 mock 时,修复是先用 curl 打一遍关键端点核对响应结构(信封/字段层级),再写解析代码;mock 的平铺结构会掩盖信封差异。
+- 当与并行 agent 共享工作区/真机时,修复是修复一验证通过立即 git commit(未提交的工作区会被僵尸进程 git checkout 掉);装完 APK 用 `dumpsys package <pkg> | grep lastUpdateTime` 确认没被覆盖再下结论。
+- 当真机与电脑时间对不上时,修复是先 `adb shell date` 对时区差(本例手机慢 9 小时),再比对 lastUpdateTime——直接比数值会得出"我的安装没生效"的错误结论。
+- 当后端验证码只落库不发短信(未接短信网关)时,修复是发码接口 curl 触发后用临时 go+pgx 查 portal_sms_codes 表拿真码(5 分钟有效,一次性);测试师傅账号存 .agents/skills/bossctl-cli/test-accounts.json。

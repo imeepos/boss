@@ -21,3 +21,7 @@
 | 浏览器自动化工具缺失时未提前检查 | 1 | 2026-08-18(尝试使用 Playwright/Puppeteer 失败) | 应先检查环境依赖再选择工具 |
 | 浏览器操作测试误用 playwright 代替 cdp-capture.mjs | 2 | 2026-08-18(本次会话,用 playwright 而非 cdp-capture 做浏览器调试), 2026-08-18(用户再次强调,升级至高频红线 #2) | 用户两轮点名纠正:cdp-capture 含 console 报错+失败请求响应体+网络采集,是调试排查首选;playwright 仅用于项目 E2E 自动化脚本 |
 | 承诺"会保存/已记录"但当场不落盘,被用户连催 | 1 | 2026-08-19(test-accounts.json 只口头答应,连催 4 轮才真正 write) | 浪费 4 轮,用户失去耐心;凡承诺保存必须当场 write+ls |
+| 机制未证明就把复现 bug 判为"环境怪象"放走 | 1 | 2026-08-20(Compose 尾随lambda连环push误判模拟器input怪象,用户真机复现才修) | 空耗多轮理论推演,用户二次报障 |
+| 并行agent共享工作区,修复验证后未立即commit被回退 | 1 | 2026-08-20(僵尸subagent三次git checkout掉未提交修复+覆盖安装旧APK) | 已验证的修复反复"失效",排查方向被带偏 |
+| 登录/业务响应按mock平铺结构解析,切真实后端未核对信封 | 1 | 2026-08-20(worker/user双端token从顶层取,真实在data.token,全端401) | 双端全部业务接口401 |
+| 外部并行修改文件后未重新Read就edit("file changed since read") | 1 | 2026-08-20(ProfileScreen被僵尸进程回退后edit被拒) | 废一轮重读;与高频红线#1同源,计数并入其教训 |

@@ -184,3 +184,15 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 
 场景 → 要给某个客户/师傅(非 account)保存可用凭证,或让 bossctl 直接以该主体身份调用其专属接口。
 怎么用 → `POST /api-keys` 支持 `subjectType ∈ {account, worker, customer}` + `subjectRef=<主档 id>` + `name`;响应 `plainKey` 即明文密钥(只此一次返回)。`bossctl --api-key <plainKey> call GET /auth/me` 可自证身份(subjectType/subjectRef/name)。要长期用,把身份写进 `~/.bossctl/identities.json`(map: identity 名→key),之后 `bossctl --as <名> call ...`。注意 worker/customer 主体密钥**无菜单权限**(RBAC 恒拒),只能调其身份对应接口;customer 主档本无登录口令,此即默认鉴权方式。
+
+## Compose 导航"幽灵跳转"的插桩定位法
+场景 → 一次点击触发多次页面跳转/页面自己跳走,理论推演无法解释。
+怎么用 → 在 NavHost 的 push/pop/switchTab 里临时加 `android.util.Log.d("NAVDBG", "push $s", Throwable("trace"))`,logcat -s NAVDBG 直接看:事件序列+完整调用栈。栈顶在 Recomposer.performRecompose/ComposableLambdaImpl.invoke = 组合期执行(渲染插槽误用);栈顶在 ClickableNode.handleUpEvent = 真实点击。定位后删插桩再提交。
+
+## 真机 App 内部状态直查(免抓包)
+场景 → 怀疑 token/配置没存上,抓包麻烦。
+怎么用 → debug 包可 run-as:`adb shell run-as <pkg> cat /data/data/<pkg>/shared_prefs/<prefs>.xml`,空 `<map/>` 即没写过;配合 curl 同端点对照,两分钟分清"没存"vs"存了没用"。
+
+## 真机自动化验证页面上报(adb)
+场景 → 无 UI 自动化框架时在真机走登录/点按/断言。
+怎么用 → `uiautomator dump /sdcard/ui.xml` + python 正则提取 text/bounds 算中心点 → `input tap x y` → 再 dump 断言标题文本;输入用 `input text`(非 ASCII 需先切输入法或用剪贴板);返回键 `input keyevent 4`。注意 dump 需在页面数据加载稳定后再取,加载中坐标会漂移。

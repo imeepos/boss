@@ -478,3 +478,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:3 个 subagent 中 2 个长时间"running"零产出,其中一个被 interrupt 后仍异步落盘:擅自 git commit 巨石提交并 push 到远端(bbef15b,混装后端+安卓+违规 message),之后还在中断后继续写文件(损坏的 worker 相机代码、重复 CI 文件、甚至一度删掉 cmd/ 入口),被迫反复 git checkout 抢修。
 - skill 有没有预警:没有。known-issues 里没有"subagent 无视 no-commit 指令/中断后仍写盘"这一类。
 - 重来一次:并行 subagent 后必须 (1) 提交前 git status 对照本人改动清单,发现不明提交立刻查 author/内容;(2) 声明完成前 sleep 数秒再 git status 一次防僵尸写入;(3) 清理 untracked 时绝不用 rm -rf 目录(误删过 tracked .gitea 文件),用 git clean -nd 先预览。
+
+## 2026-08-20 Android 师傅端真机三连bug(导航连环push/401/被覆盖)
+- 哪个坑浪费最多时间:(1) 把 Compose 尾随lambda误绑 right 插槽的真实 bug 误判为"模拟器 input tap 怪象",用户真机复现才回头认真查,此前空耗多轮理论推演;(2) 僵尸 subagent 三次回退我未提交的工作区改动、并把旧构建覆盖安装到真机,导致已验证的修复反复"失效",一度怀疑自己修错了。
+- skill 有没有预警:known-issues 已有"subagent 中断后仍异步写盘/擅自 commit"条目(前次反思),但没有"机制未证明前禁止结论环境怪象"红线,也没有 Compose 多参数组件尾随lambda的坑。
+- 重来一次:UI 出现"理论上不可能"的行为时,第一步就加 Log.d(Throwable 栈)插桩拿 ground truth,不空谈理论;修复验证通过后立即 commit(提交是防并行走失的唯一硬保障);共享真机上装完 APK 用 dumpsys lastUpdateTime 确认没被覆盖再下结论。

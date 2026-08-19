@@ -141,3 +141,14 @@
 - 症状:list_agents 显示 ready,interrupt 已确认,但工作区仍不断出现新 diff;本地出现本人未做的 commit 且已 push。
 - 原因:子代理回合的文件写/ git 操作在 interrupt 生效前已排队执行。
 - 修法:interrupt 后 sleep 再 git status 复核;不明提交先 git show 查内容再决定 revert 或保留;清理 untracked 一律 git clean -nd 预览后执行,禁 rm -rf 整目录。
+
+## Compose 多参数组件尾随lambda绑到渲染插槽 → 组合期执行导航(2026-08-20 worker 我的页)
+- 症状:点底部Tab"我的"应进个人中心,却直接落到"满意度反馈",返回依次经过 服务公告→接单设置;模拟器与真机均复现;logcat 同毫秒内连发 8 个 push,调用栈全在 Recomposer.performRecompose→Cell。
+- 原因:Cell(title, desc, onClick, right: @Composable) 的末位参数是渲染插槽 right;调用点写 `Cell("历史工单") { nav.push(...) }`,尾随lambda绑定到 right 而非 onClick,组合期 `right?.invoke()` 把 push 当内容直接执行,页面上屏即连环压栈。`() -> Unit` 可赋给 `@Composable () -> Unit`,编译器不报错。
+- 修法:调用点显式命名 `onClick = { ... }`;若要组件层面根治,把 onClick 放最后一位(但需先审计既有 right 插槽用法,本项目 Hall/Pickup/Maintenance 等 8 处正确用了尾随lambda当 right,不能盲改)。排查利器:NavHost.push/switchTab 里临时 Log.d(tag, msg, Throwable()) 打调用栈。
+- 检视:自研 Compose 组件凡"最后一个参数是 @Composable lambda"的,调用点一律禁止裸尾随lambda传动作。
+
+## App 登录成功但全部业务请求 401(2026-08-20 worker/user 双端)
+- 症状:登录跳转正常,首页/个人中心/反馈全报"HTTP 401";curl 用同样端点+token 却全 200。
+- 原因:登录响应对接 mock 时是平铺 {token},真实后端是 {code,data:{token}};App 从顶层 optString("token") 取到空串,setToken("") 等于没存,Authorization 头永远不带。SharedPreferences 是空 map(run-as 读出)实锤。
+- 修法:从 data.token 取值且为空时报错不跳转;排查手法 `adb shell run-as <pkg> cat shared_prefs/*.xml` 直接看 token 落没落盘,比抓包快。

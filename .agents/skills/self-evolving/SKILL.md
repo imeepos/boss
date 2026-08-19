@@ -11,7 +11,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 
 > 完整计数台账:`references/recidivism.md`。每次反思同步 +1;≥2 次的坑必须登在这里。
 
-1. **【已犯 3 次】编辑文件前必须用 read 工具读最新内容** —— bash 的 cat/sed 输出不算"已观察",edit 会直接拒绝;同一会话第二轮编辑凭记忆拼 old_string 必 not found。
+1. **【已犯 4 次】编辑文件前必须用 read 工具读最新内容** —— bash 的 cat/sed 输出不算"已观察",edit 会直接拒绝;同一会话第二轮编辑凭记忆拼 old_string 必 not found;共享工作区文件可能被并行进程改掉,edit 报 file changed since read 也要重读。
 2. **【已犯 2 次】浏览器自测调试必须用 cdp-capture.mjs，playwright 只用于项目 E2E 自动化脚本** —— cdp-capture 零依赖、截图+console 报错+失败请求响应体+网络采集+自动填表，是调试排查的首选工具；playwright 只放 `e2e/` 目录做 CI 自动化冒烟，不做日常调试。混用时用户会再次点名纠正。
 3. **【已犯 2 次】禁止用原生 `<select>` 新增下拉** —— option 弹层系统渲染无法随主题定制,已两次被用户点名;一律用 `web/admin/src/components/Dropdown.tsx`。
 4. **【已犯 2 次】edit 的 new_string 必须与 old_string 范围严格对称** —— 不顺手带函数头/注释(会重复定义),不做"只删换行"的 no-op(会并行致语法错);改完立刻 build 验证。
