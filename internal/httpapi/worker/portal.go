@@ -117,7 +117,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 
 // registerWorkerPortalAuth 公开组:验证码/登录/退出(worker/auth.yaml)。
 func registerWorkerPortalAuth(g *gin.RouterGroup, a *app.Application) {
-	g.POST("/auth/sms-code", workerSmsCodeHandler)
+	g.POST("/auth/sms-code", workerSmsCodeHandler(a))
 	g.POST("/auth/login", workerLoginHandler(a))
 	g.POST("/auth/logout", func(c *gin.Context) {
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})

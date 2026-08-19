@@ -17,6 +17,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -56,6 +57,7 @@ func newUserPortalRouter(cust *customer.Customer, bills []billing.Bill, byNo *or
 		Order:            &fakeOrder{byNo: byNo},
 		Product:          &fakeProduct{},
 		WorkOrder:        wo,
+		Portal:           portal.NewMemory(),
 	}, mgr)
 	return r, mgr, wo
 }
@@ -107,9 +109,6 @@ func userPortalCode(t *testing.T, w *httptest.ResponseRecorder) (int, map[string
 func TestPortal_RegisterAndProfile(t *testing.T) {
 	cust := userPortalCust()
 	r, mgr, _ := newUserPortalRouter(cust, nil, nil)
-	portalSmsCodeGen = func() string { return "123456" }
-	defer func() { portalSmsCodeGen = nil }()
-
 	w := userPortalDo(r, http.MethodPost, "/api/user/v1/auth/sms-code",
 		`{"phone":"13800001234","scene":"register"}`, "")
 	if code, _ := userPortalCode(t, w); code != 0 {
@@ -274,4 +273,32 @@ func (f *fakeProduct) CreateRegionOffer(context.Context, customer.RegionOffer) (
 func (f *fakeProduct) ChangeProductPrice(_ context.Context, offerID int64, newFee float64, _ time.Time, reason string, _ int64) (int64, error) {
 	f.changed = &customer.ProductOffer{ID: offerID, MonthlyFee: newFee}
 	return 11, nil
+}
+
+// TestPortal_PasswordLogin 注册后账密登录闭环(/auth/login 前缀分离后可用)。
+func TestPortal_PasswordLogin(t *testing.T) {
+	cust := userPortalCust()
+	r, _, _ := newUserPortalRouter(cust, nil, nil)
+	// 注册
+	if w := userPortalDo(r, http.MethodPost, "/api/user/v1/auth/sms-code",
+		`{"phone":"13900005678","scene":"register"}`, ""); w.Code != http.StatusOK {
+		t.Fatalf("sms-code: %s", w.Body.String())
+	}
+	if w := userPortalDo(r, http.MethodPost, "/api/user/v1/auth/register",
+		`{"phone":"13900005678","smsCode":"123456","password":"password-10x"}`, ""); w.Code != http.StatusOK {
+		t.Fatalf("register: %s", w.Body.String())
+	}
+	// 账密登录
+	w := userPortalDo(r, http.MethodPost, "/api/user/v1/auth/login",
+		`{"phone":"13900005678","password":"password-10x"}`, "")
+	code, data := userPortalCode(t, w)
+	if code != 0 || data["customerId"] == nil {
+		t.Fatalf("login resp=%s", w.Body.String())
+	}
+	// 错密码 401
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/login",
+		`{"phone":"13900005678","password":"wrong-pass-99"}`, "")
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeUnauthorized) {
+		t.Fatalf("bad password resp=%s", w.Body.String())
+	}
 }

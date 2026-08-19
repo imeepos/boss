@@ -3,6 +3,7 @@ package userapi
 // 用户端门户客服域:报修/投诉/智能客服/常见问题。
 
 import (
+	"context"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,64 +16,134 @@ import (
 
 // registerPortalServiceRoutes 客服域:报修/投诉/智能客服/常见问题。
 func registerPortalServiceRoutes(g *gin.RouterGroup, a *app.Application) {
-	g.GET("/faults", portalListFaults)
-	g.POST("/faults", portalCreateFault)
-	g.GET("/faults/:ticketNo", portalFaultDetail)
+	g.GET("/faults", portalListFaults(a))
+	g.POST("/faults", portalCreateFault(a))
+	g.GET("/faults/:ticketNo", portalFaultDetail(a))
 	g.POST("/complaints", portalCreateComplaint(a))
 	g.POST("/service/chat", portalChat)
 	g.GET("/service/faq", portalFaq)
 }
 
-// portalFaults 报修进程内台账(TKT 单号);客服工单域对接见报告。
-var portalFaults = map[int64][]gin.H{}
-
-func portalListFaults(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	respond(c, apitypes.CodeOK, gin.H{"items": portalFaults[cid]})
+// portalFaultTypeLabel 报障类型 → 中文标签。
+var portalFaultTypeLabel = map[string]string{
+	"no_internet": "无法上网", "slow": "网速慢", "ont_fault": "光猫故障", "other": "其他",
 }
 
-// portalCreateFault POST /faults:生成报修单 + 站内消息。
-func portalCreateFault(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	var req struct {
-		FaultType   string `json:"faultType" binding:"required,oneof=no_internet slow ont_fault other"`
-		Address     string `json:"address" binding:"required"`
-		Description string `json:"description" binding:"required"`
-		Contact     string `json:"contact"`
-	}
-	if !httpx.BindBody(c, &req) {
-		return
-	}
-	f := gin.H{
-		"ticketNo": portal.payNo(), "faultType": req.FaultType,
-		"faultTypeLabel": map[string]string{"no_internet": "无法上网", "slow": "网速慢",
-			"ont_fault": "光猫故障", "other": "其他"}[req.FaultType],
-		"address": req.Address, "createdAt": time.Now(), "status": "OPEN", "statusLabel": "受理中",
-	}
-	portalFaults[cid] = append([]gin.H{f}, portalFaults[cid]...)
-	portal.putMessage(cid, gin.H{
-		"messageId": portal.payNo(), "category": "fault", "title": "报修已受理",
-		"content": req.Description, "tag": "报修", "tagLevel": "fault",
-		"createdAt": time.Now(), "read": false,
-	})
-	respond(c, apitypes.CodeOK, f)
-}
+// portalFaultTypeName 报障类型 → 工单域 type 值(admin 队列口径)。
+func portalFaultTypeName(t string) string { return "用户报障: " + t }
 
-func portalFaultDetail(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	for _, f := range portalFaults[cid] {
-		if f["ticketNo"] == c.Param("ticketNo") {
-			respond(c, apitypes.CodeOK, gin.H{"fault": f, "sla": "≤4h", "timeline": []gin.H{
-				{"step": 1, "title": "提交报修", "result": "DONE"},
-				{"step": 2, "title": "受理派单", "result": "DOING"},
-			}})
-			return
+// portalComplaintMeta 取客户归属运营主体(complaints.legal_entity 非空约束)。
+func portalComplaintMeta(ctx context.Context, a *app.Application, cid int64) (int64, string, error) {
+	cu, err := a.Customer.Get(ctx, cid)
+	if err != nil {
+		return 0, "", err
+	}
+	entities, err := a.User.ListLegalEntities(ctx)
+	if err != nil {
+		return 0, "", err
+	}
+	for _, e := range entities {
+		if e.ID == cu.LegalEntityID {
+			return cu.LegalEntityID, e.Name, nil
 		}
 	}
-	respond(c, apitypes.CodeNotFound, nil)
+	return cu.LegalEntityID, "", nil
 }
 
-// portalCreateComplaint POST /complaints:同步入客服工单域(admin 投诉队列可见)。
+// portalListFaults GET /faults:我的报修列表(工单域 complaints 按客户过滤)。
+func portalListFaults(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		list, err := a.WorkOrder.ListComplaints(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		items := make([]gin.H, 0)
+		for _, f := range list {
+			if f.CustomerID == cid {
+				items = append(items, gin.H{"ticketNo": f.TicketNo, "type": f.Type, "status": f.Status})
+			}
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": items})
+	}
+}
+
+// portalCreateFault POST /faults:报障入客服工单域(complaints 落库)+ 站内消息。
+func portalCreateFault(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		var req struct {
+			FaultType   string `json:"faultType" binding:"required,oneof=no_internet slow ont_fault other"`
+			Address     string `json:"address" binding:"required"`
+			Description string `json:"description" binding:"required"`
+			Contact     string `json:"contact"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		legID, legName, err := portalComplaintMeta(c.Request.Context(), a, cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		ticketNo, err := a.Portal.NextNo(c.Request.Context(), "TKT")
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if _, err := a.WorkOrder.CreateComplaint(c.Request.Context(), order.Complaint{
+			TicketNo: ticketNo, CustomerID: cid, LegalEntityID: legID, LegalEntityName: legName,
+			Type: portalFaultTypeName(req.FaultType), Status: "OPEN",
+		}); err != nil {
+			respondErr(c, err)
+			return
+		}
+		msgID, err := a.Portal.NextNo(c.Request.Context(), "MSG")
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if err := a.Portal.PutMessage(c.Request.Context(), cid, gin.H{
+			"messageId": msgID, "category": "fault", "title": "报修已受理",
+			"content": req.Description, "tag": "报修", "tagLevel": "fault",
+			"createdAt": time.Now(), "read": false,
+		}); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{
+			"ticketNo": ticketNo, "faultType": req.FaultType,
+			"faultTypeLabel": portalFaultTypeLabel[req.FaultType],
+			"address":        req.Address, "createdAt": time.Now(), "status": "OPEN", "statusLabel": "受理中",
+		})
+	}
+}
+
+// portalFaultDetail GET /faults/:ticketNo:我的报修详情(工单域寻址,归属校验)。
+func portalFaultDetail(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		list, err := a.WorkOrder.ListComplaints(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		for _, f := range list {
+			if f.TicketNo == c.Param("ticketNo") && f.CustomerID == cid {
+				respond(c, apitypes.CodeOK, gin.H{"fault": gin.H{
+					"ticketNo": f.TicketNo, "type": f.Type, "status": f.Status,
+				}, "sla": "≤4h", "timeline": []gin.H{
+					{"step": 1, "title": "提交报修", "result": "DONE"},
+					{"step": 2, "title": "受理派单", "result": "DOING"},
+				}})
+				return
+			}
+		}
+		respond(c, apitypes.CodeNotFound, nil)
+	}
+}
+
 func portalCreateComplaint(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
@@ -84,8 +155,19 @@ func portalCreateComplaint(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		_, err := a.WorkOrder.CreateComplaint(c.Request.Context(), order.Complaint{
-			CustomerID: cid, Type: "用户投诉: " + req.Type, Status: "OPEN",
+		legID, legName, err := portalComplaintMeta(c.Request.Context(), a, cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		ticketNo, err := a.Portal.NextNo(c.Request.Context(), "TKT")
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		_, err = a.WorkOrder.CreateComplaint(c.Request.Context(), order.Complaint{
+			TicketNo: ticketNo, CustomerID: cid, LegalEntityID: legID, LegalEntityName: legName,
+			Type: "用户投诉: " + req.Type, Status: "OPEN",
 		})
 		if err != nil {
 			respondErr(c, err)

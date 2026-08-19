@@ -101,9 +101,8 @@ func portalSecurity(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		acc := portal.account(v.Phone)
 		pwdAt := ""
-		if acc != nil {
+		if acc, err := a.Portal.AccountByPhone(c.Request.Context(), v.Phone); err == nil {
 			pwdAt = acc.PasswordUpdatedAt.Format(time.RFC3339)
 		}
 		respond(c, apitypes.CodeOK, gin.H{
@@ -114,66 +113,107 @@ func portalSecurity(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// portalChangePassword PUT /profile/security/password:校验旧密码 → 更新(进程内,见报告 DB 商议)。
-func portalChangePassword(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	var req struct {
-		OldPassword string `json:"oldPassword" binding:"required"`
-		NewPassword string `json:"newPassword" binding:"required,min=10"`
+// portalChangePassword PUT /profile/security/password:校验旧密码 → 更新(portal_accounts 落库)。
+func portalChangePassword(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		var req struct {
+			OldPassword string `json:"oldPassword" binding:"required"`
+			NewPassword string `json:"newPassword" binding:"required,min=10"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		acc, err := a.Portal.AccountByCustomer(c.Request.Context(), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		ok, err := a.Portal.VerifyPassword(c.Request.Context(), acc.Phone, req.OldPassword)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !ok {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		if _, err := a.Portal.UpsertAccount(c.Request.Context(), acc.Phone, req.NewPassword, cid); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
-	if !httpx.BindBody(c, &req) {
-		return
-	}
-	acc := portal.accountByCustomer(cid)
-	if acc == nil || !portal.verifyPassword(acc.Phone, req.OldPassword) {
-		respond(c, apitypes.CodeUnauthorized, nil)
-		return
-	}
-	portal.upsertAccount(acc.Phone, req.NewPassword, cid)
-	respond(c, apitypes.CodeOK, gin.H{"ok": true})
 }
 
-// portalChangePhone PUT /profile/security/phone:验证码换绑(新号 scene=login 码)。
-func portalChangePhone(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	var req struct {
-		NewPhone string `json:"newPhone" binding:"required"`
-		SmsCode  string `json:"smsCode" binding:"required"`
+// portalChangePhone PUT /profile/security/phone:验证码换绑(新号 scene=login 码,portal_accounts 落库)。
+func portalChangePhone(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		var req struct {
+			NewPhone string `json:"newPhone" binding:"required"`
+			SmsCode  string `json:"smsCode" binding:"required"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		ok, err := a.Portal.ConsumeSms(c.Request.Context(), req.NewPhone, "login", req.SmsCode)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !ok {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		if err := a.Portal.RebindPhone(c.Request.Context(), cid, req.NewPhone); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
-	if !httpx.BindBody(c, &req) {
-		return
-	}
-	if !portal.checkSms(req.NewPhone, "login", req.SmsCode) {
-		respond(c, apitypes.CodeUnauthorized, nil)
-		return
-	}
-	portal.rebindPhone(cid, req.NewPhone)
-	respond(c, apitypes.CodeOK, gin.H{"ok": true})
 }
 
-func portalGetNotify(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	respond(c, apitypes.CodeOK, portal.getPrefs(cid).Notify)
+func portalGetNotify(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		p, err := a.Portal.GetPrefs(c.Request.Context(), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, p.Notify)
+	}
 }
 
-func portalPutNotify(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	var body gin.H
-	if !httpx.BindBody(c, &body) {
-		return
+func portalPutNotify(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		var body gin.H
+		if !httpx.BindBody(c, &body) {
+			return
+		}
+		if err := a.Portal.SavePrefs(c.Request.Context(), cid, body, ""); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
-	portal.savePrefs(cid, body, "")
-	respond(c, apitypes.CodeOK, gin.H{"ok": true})
 }
 
-func portalPutLanguage(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	var req struct {
-		Language string `json:"language" binding:"required,oneof=zh en fil"`
+func portalPutLanguage(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		var req struct {
+			Language string `json:"language" binding:"required,oneof=zh en fil"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		if err := a.Portal.SavePrefs(c.Request.Context(), cid, nil, req.Language); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
-	if !httpx.BindBody(c, &req) {
-		return
-	}
-	portal.savePrefs(cid, nil, req.Language)
-	respond(c, apitypes.CodeOK, gin.H{"ok": true})
 }

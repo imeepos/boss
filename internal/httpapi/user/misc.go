@@ -15,8 +15,8 @@ import (
 // registerPortalMiscRoutes Misc 域:首页聚合/消息/优惠券/用量/自助排障/协议。
 func registerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/home", portalHome(a))
-	g.GET("/messages", portalListMessages)
-	g.POST("/messages/read-all", portalReadAllMessages)
+	g.GET("/messages", portalListMessages(a))
+	g.POST("/messages/read-all", portalReadAllMessages(a))
 	// TODO(契约冲突待商议): GET /api/v1/coupons 已由 admin userdata 占用(gin 静态路由不允许同路径双注册)。
 	// 用户端与 admin 共用 /api/v1 前缀下的重叠端点需网关分流或独立前缀裁决,见对账报告。
 	// g.GET("/coupons", portalCoupons)
@@ -51,31 +51,52 @@ func portalHome(a *app.Application) gin.HandlerFunc {
 				}
 			}
 		}
+		hasUnread, err := a.Portal.HasUnread(c.Request.Context(), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		bal, err := a.Portal.Balance(c.Request.Context(), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"customerName": name, "phoneMasked": phone, "onlineStatus": service,
-			"hasUnread": portal.hasUnread(cid), "currentBill": due,
-			"balance": portal.balance(cid), "ongoingOrders": []any{}, "services": []any{},
+			"hasUnread": hasUnread, "currentBill": due,
+			"balance": bal, "ongoingOrders": []any{}, "services": []any{},
 		})
 	}
 }
 
-func portalListMessages(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	_ = cid
-	cat := c.DefaultQuery("category", "all")
-	items := make([]gin.H, 0)
-	for _, m := range portal.msgs(cid) {
-		if cat == "all" || m["category"] == cat {
-			items = append(items, m)
+func portalListMessages(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		cat := c.DefaultQuery("category", "all")
+		msgs, err := a.Portal.Messages(c.Request.Context(), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
 		}
+		items := make([]gin.H, 0)
+		for _, m := range msgs {
+			if cat == "all" || m.Payload["category"] == cat {
+				items = append(items, gin.H{"read": m.Read, "createdAt": m.CreatedAt, "payload": m.Payload})
+			}
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": items})
 	}
-	respond(c, apitypes.CodeOK, gin.H{"items": items})
 }
 
-func portalReadAllMessages(c *gin.Context) {
-	cid, _ := requireCustomer(c)
-	portal.markAllRead(cid)
-	respond(c, apitypes.CodeOK, gin.H{"ok": true})
+func portalReadAllMessages(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		if err := a.Portal.MarkAllRead(c.Request.Context(), cid); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
 }
 
 func portalCoupons(c *gin.Context) {

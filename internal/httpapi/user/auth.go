@@ -8,11 +8,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/customer"
@@ -69,110 +66,6 @@ func requireCustomer(c *gin.Context) (int64, bool) {
 	return id, true
 }
 
-// ---- 门户进程内状态(短信码/密码/偏好/消息;DB 落库方案见任务报告"需商议的DB改动") ----
-
-type portalAccount struct {
-	CustomerID        int64
-	Phone             string
-	PasswordHash      string
-	PasswordUpdatedAt time.Time
-}
-
-type portalPrefs struct {
-	Notify   gin.H
-	Language string
-}
-
-type portalStore struct {
-	mu       sync.Mutex
-	sms      map[string]string // key: phone|scene → code
-	smsExp   map[string]time.Time
-	accounts map[string]*portalAccount // key: phone
-	prefs    map[int64]*portalPrefs
-	messages map[int64][]gin.H
-	bal      map[int64]float64
-	seq      int64
-}
-
-var portal = newPortalStore()
-
-func newPortalStore() *portalStore {
-	return &portalStore{
-		sms: map[string]string{}, smsExp: map[string]time.Time{},
-		accounts: map[string]*portalAccount{}, prefs: map[int64]*portalPrefs{},
-		messages: map[int64][]gin.H{}, bal: map[int64]float64{},
-	}
-}
-
-// portalSmsCodeGen 短信码生成器;测试可替换为定值。
-var portalSmsCodeGen = func() string {
-	return fmt.Sprintf("%06d", time.Now().UnixNano()%1_000_000)
-}
-
-func (s *portalStore) issueSms(phone, scene string) string {
-	code := "000000"
-	if portalSmsCodeGen != nil {
-		code = portalSmsCodeGen()
-	}
-	s.mu.Lock()
-	s.sms[phone+"|"+scene] = code
-	s.smsExp[phone+"|"+scene] = time.Now().Add(5 * time.Minute)
-	s.mu.Unlock()
-	return code
-}
-
-func (s *portalStore) checkSms(phone, scene, code string) bool {
-	key := phone + "|" + scene
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	want, ok := s.sms[key]
-	if !ok || time.Now().After(s.smsExp[key]) || code == "" || code != want {
-		return false
-	}
-	delete(s.sms, key)
-	delete(s.smsExp, key)
-	return true
-}
-
-func (s *portalStore) nextID() int64 {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.seq++
-	return portalCustomerIDBase + s.seq
-}
-
-func (s *portalStore) account(phone string) *portalAccount {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.accounts[phone]
-}
-
-func (s *portalStore) upsertAccount(phone, password string, customerID int64) *portalAccount {
-	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	acc := s.accounts[phone]
-	if acc == nil {
-		acc = &portalAccount{Phone: phone, CustomerID: customerID}
-		s.accounts[phone] = acc
-	}
-	acc.PasswordHash = string(hash)
-	acc.PasswordUpdatedAt = time.Now()
-	return acc
-}
-
-func (s *portalStore) verifyPassword(phone, password string) bool {
-	hash := func() string {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		if acc := s.accounts[phone]; acc != nil {
-			return acc.PasswordHash
-		}
-		return ""
-	}()
-	return hash != "" && bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
-}
-
 // ---- 注册入口 ----
 
 // Register 用户端门户总入口:pub 公开端点 + uauth 客户鉴权组;前缀 /api/user/v1 与 admin 隔离。
@@ -203,6 +96,36 @@ func portalCustomerOnly() gin.HandlerFunc {
 
 // registerPortalAuthRoutes Auth 域公开端点(sms-code/register/reset-password)。
 func registerPortalAuthRoutes(pub *gin.RouterGroup, a *app.Application, mgr *auth.Manager) {
+	pub.POST("/auth/login", func(c *gin.Context) {
+		var req struct {
+			Phone    string `json:"phone" binding:"required"`
+			Password string `json:"password" binding:"required"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		acc, err := a.Portal.AccountByPhone(c.Request.Context(), req.Phone)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		ok, err := a.Portal.VerifyPassword(c.Request.Context(), req.Phone, req.Password)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !ok {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		token, err := signCustomerToken(mgr, acc.CustomerID, req.Phone)
+		if err != nil {
+			respond(c, apitypes.CodeInternal, nil)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"token": token, "customerId": acc.CustomerID})
+	})
+
 	pub.POST("/auth/sms-code", func(c *gin.Context) {
 		var req struct {
 			Phone string `json:"phone" binding:"required"`
@@ -211,7 +134,10 @@ func registerPortalAuthRoutes(pub *gin.RouterGroup, a *app.Application, mgr *aut
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		portal.issueSms(req.Phone, req.Scene)
+		if err := a.Portal.IssueSms(c.Request.Context(), req.Phone, req.Scene); err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 
@@ -224,16 +150,29 @@ func registerPortalAuthRoutes(pub *gin.RouterGroup, a *app.Application, mgr *aut
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		if !portal.checkSms(req.Phone, "register", req.SmsCode) {
+		ok, err := a.Portal.ConsumeSms(c.Request.Context(), req.Phone, "register", req.SmsCode)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !ok {
 			respond(c, apitypes.CodeUnauthorized, nil)
 			return
 		}
-		// 契约要求注册即返回 token+customerId;已有同名手机号客户则直接绑定,否则发隔离空间合成 ID(见报告)。
-		customerID := portal.nextID()
+		// 契约要求注册即返回 token+customerId;已有同名手机号客户则直接绑定,否则发隔离空间合成 ID。
+		customerID, err := a.Portal.NextSyntheticCustomerID(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		if list, err := a.Customer.List(c.Request.Context(), customer.CustomerQuery{Phone: req.Phone}); err == nil && len(list) > 0 {
 			customerID = list[0].ID
 		}
-		acc := portal.upsertAccount(req.Phone, req.Password, customerID)
+		acc, err := a.Portal.UpsertAccount(c.Request.Context(), req.Phone, req.Password, customerID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		token, err := signCustomerToken(mgr, acc.CustomerID, req.Phone)
 		if err != nil {
 			respond(c, apitypes.CodeInternal, nil)
@@ -251,16 +190,24 @@ func registerPortalAuthRoutes(pub *gin.RouterGroup, a *app.Application, mgr *aut
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		if !portal.checkSms(req.Phone, "reset", req.SmsCode) {
+		ok, err := a.Portal.ConsumeSms(c.Request.Context(), req.Phone, "reset", req.SmsCode)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !ok {
 			respond(c, apitypes.CodeUnauthorized, nil)
 			return
 		}
-		acc := portal.account(req.Phone)
-		if acc == nil {
-			respond(c, apitypes.CodeNotFound, nil)
+		acc, err := a.Portal.AccountByPhone(c.Request.Context(), req.Phone)
+		if err != nil {
+			respondErr(c, err)
 			return
 		}
-		portal.upsertAccount(req.Phone, req.NewPassword, acc.CustomerID)
+		if _, err := a.Portal.UpsertAccount(c.Request.Context(), req.Phone, req.NewPassword, acc.CustomerID); err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 }
@@ -271,9 +218,9 @@ func registerPortalProfileRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/auth/verify", portalVerifySubmit(a))
 	g.GET("/profile", portalProfile(a))
 	g.GET("/profile/security", portalSecurity(a))
-	g.PUT("/profile/security/password", portalChangePassword)
-	g.PUT("/profile/security/phone", portalChangePhone)
-	g.GET("/profile/notify-settings", portalGetNotify)
-	g.PUT("/profile/notify-settings", portalPutNotify)
-	g.PUT("/profile/language", portalPutLanguage)
+	g.PUT("/profile/security/password", portalChangePassword(a))
+	g.PUT("/profile/security/phone", portalChangePhone(a))
+	g.GET("/profile/notify-settings", portalGetNotify(a))
+	g.PUT("/profile/notify-settings", portalPutNotify(a))
+	g.PUT("/profile/language", portalPutLanguage(a))
 }

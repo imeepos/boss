@@ -30,3 +30,4 @@
 | 2026-08-19 | 管理端桌面客户端=Tauri 2 壳内嵌 admin dist，/api 壳内反代 | adopted/2026-08-19-desktop-tauri-wrap-admin.md |
 | 2026-08-19 | 移动端 Android=Kotlin+Compose 双 app 独立 Gradle 工程 | adopted/2026-08-19-mobile-android-init.md |
 | 2026-08-19 | admin API=CORS 直连绝对地址，移除 Vite 代理与壳内反代 | adopted/2026-08-19-admin-api-direct-cors.md |
+| 2026-08-19 | 三端 API 前缀分离(admin/user/worker) + 门户状态落库 + mock 移除 | adopted/2026-08-19-api-three-portal-prefix.md |

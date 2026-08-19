@@ -1,5 +1,8 @@
 # 2026-08-18 用户端门户客户 JWT 方案
 
+> Amended 2026-08-19: 客户门户前缀已由 /api/v1 迁至 /api/user/v1,JWT 增加 aud=user
+> 端标识(见 2026-08-19-api-three-portal-prefix.md);本文件其余方案继续有效。
+
 ## 决策
 
 客户门户(/api/v1, api/openapi/user.yaml)的客户 JWT 复用 `auth.Manager` 签发(同密钥、同 TTL、同 issuer="boss"),

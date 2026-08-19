@@ -18,6 +18,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/gis"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/report"
@@ -43,6 +44,9 @@ type Application struct {
 	CustomerLedger customer.CustomerLedgerService
 	RealName       customer.RealNameService
 	UserData       udcustomer.Service
+
+	// Portal 用户端/师傅端门户状态(验证码/账号/偏好/消息/钱包/单号)。
+	Portal portal.Service
 
 	// 客户注册 / 审核 / 实名认证 子域(迁移 000051)。
 	CustomerOnboarding customer.OnboardingService
@@ -151,6 +155,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	akstore := apikey.NewPGStore(pool)
 	aisvc := ai.NewService(ai.NewPGStore(pool))
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
+	portalSvc := portal.NewPGStore(pool)
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表)。
 	var anaStore analytics.AnalyticsService = analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)
@@ -177,6 +182,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		CustomerLedger: cust,
 		RealName:       cust,
 		UserData:       udcustomer.NewPGStore(pool),
+		Portal:         portalSvc,
 
 		CustomerOnboarding: cust,
 		CustomerRealName:   cust,

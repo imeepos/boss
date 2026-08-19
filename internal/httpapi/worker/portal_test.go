@@ -15,6 +15,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 )
@@ -82,6 +83,7 @@ func portalTestRouter(t *testing.T, fw *fakePortalWorkOrder, fo *fakePortalOrder
 	r := gin.New()
 	a := &app.Application{
 		Worker: &fakePortalWorkerSvc{}, WorkOrder: fw, Order: fo,
+		Portal: portal.NewMemory(),
 	}
 	Register(r, a, newWorkerJWTManager())
 	return r
@@ -133,8 +135,14 @@ func TestPortalLoginAndTickets(t *testing.T) {
 	fo := &fakePortalOrder{}
 	r := portalTestRouter(t, fw, fo)
 
+	// 先发码(落 portal_sms_codes,内存替身固定 123456)
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/auth/sms-code",
+		`{"phone":"13800001234"}`, "")
+	if res["code"].(float64) != 0 {
+		t.Fatalf("sms-code failed: %v", res)
+	}
 	// 错验证码拒
-	res := portalWorkerDo(r, "POST", "/api/worker/v1/auth/login",
+	res = portalWorkerDo(r, "POST", "/api/worker/v1/auth/login",
 		`{"phone":"13800001234","mode":"sms","smsCode":"12"}`, "")
 	if res["code"].(float64) == 0 {
 		t.Fatalf("bad code should fail: %v", res)
