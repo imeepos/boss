@@ -1,6 +1,0 @@
-/* 用户详情抽屉:14 段聚合分区 */
-.user-detail details { border-bottom: 1px dashed var(--border, #e5e6eb); padding: 6px 0; }
-.user-detail summary { cursor: pointer; font-weight: 500; }
-.user-kv { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 4px 0 4px 12px; font-size: 12px; }
-.user-kv b { color: var(--text-2, #86909c); font-weight: 500; margin-right: 2px; }
-.user-muted { color: var(--text-2, #86909c); padding-left: 12px; }

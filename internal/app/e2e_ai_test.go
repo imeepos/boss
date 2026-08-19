@@ -1,4 +1,4 @@
-package app
+package app_test
 
 // AI 网关端到端集成测试(真实 PG + 可选真实 OpenAI 兼容服务):
 // admin 集中配置 apiKey/apiUrl → 业务接口无密钥调用 chat completions。
@@ -21,6 +21,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/httpapi"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
@@ -42,7 +44,7 @@ func TestE2E_AIOpenAI_Integration(t *testing.T) {
 
 	cfg := &config.Config{}
 	cfg.Database.DSN = dsn
-	a, err := New(ctx, cfg, "../../migrations")
+	a, err := app.New(ctx, cfg, "../../migrations")
 	if err != nil {
 		t.Fatalf("app.New: %v", err)
 	}
@@ -81,7 +83,7 @@ func TestE2E_AIOpenAI_Integration(t *testing.T) {
 	})
 
 	r := gin.New()
-	RegisterRoutes(r, a, auth.NewManager("e2e-secret", time.Hour))
+	httpapi.RegisterRoutes(r, a, auth.NewManager("e2e-secret", time.Hour))
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 

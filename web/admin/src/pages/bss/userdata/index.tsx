@@ -5,7 +5,6 @@ import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
 import { TABS, type Row, type TabDef } from './tabs'
-import '../user/user.css'
 
 type Loader = { rows: Row[]; error: string; busy: boolean }
 
@@ -75,7 +74,7 @@ export default function UserDataPage() {
             </table>
           </div>
         )}
-        <p className="user-muted">{u.total.replace('{count}', String(state.rows.length))} · {fmtTime(new Date().toISOString())}</p>
+        <p className="pl-3 text-xs text-[var(--shell-crumb-text)]">{u.total.replace('{count}', String(state.rows.length))} · {fmtTime(new Date().toISOString())}</p>
       </div>
     </div>
   )

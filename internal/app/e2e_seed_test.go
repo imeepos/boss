@@ -1,4 +1,4 @@
-package app
+package app_test
 
 // e2e 种子构造器:集中各域种子对象,保持 e2e 主测试文件聚焦流程。
 

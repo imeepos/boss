@@ -1,4 +1,4 @@
-package app
+package app_test
 
 // gRPC 服务端真实 PG 集成测试(债务偿还验收):quadlink/aaa/device/provision v1 契约全部可走通。
 // 运行: BOSS_PG_TEST_DSN="host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable" go test ./internal/app/ -run TestE2E_GRPC -v -count=1
@@ -19,6 +19,7 @@ import (
 	quadlinkv1 "github.com/ymm-001/boss/api/proto/boss/quadlink/v1"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/aaa"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/order"
@@ -42,7 +43,7 @@ type grpcE2ESeed struct {
 }
 
 // seedGRPCE2E 预置 gRPC 四服务所需全量数据:订单推至环节8 + 派单/四码/资产标签/LO账号/下发模板。
-func seedGRPCE2E(t *testing.T, ctx context.Context, a *Application, pool *pgxpool.Pool) *grpcE2ESeed {
+func seedGRPCE2E(t *testing.T, ctx context.Context, a *app.Application, pool *pgxpool.Pool) *grpcE2ESeed {
 	t.Helper()
 	s := seedE2E(t, ctx, pool, a)
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1e12)
@@ -156,7 +157,7 @@ func TestE2E_GRPC_Services_Integration(t *testing.T) {
 	ctx := context.Background()
 	cfg := &config.Config{}
 	cfg.Database.DSN = dsn
-	a, err := New(ctx, cfg, "../../migrations")
+	a, err := app.New(ctx, cfg, "../../migrations")
 	if err != nil {
 		t.Fatalf("app.New: %v", err)
 	}
@@ -169,7 +170,7 @@ func TestE2E_GRPC_Services_Integration(t *testing.T) {
 	defer pool.Close()
 
 	seed := seedGRPCE2E(t, ctx, a, pool)
-	conn := newBufConnServer(t, func(s *grpc.Server) { RegisterGRPC(s, a) })
+	conn := newBufConnServer(t, func(s *grpc.Server) { app.RegisterGRPC(s, a) })
 	aaaCli := aaav1.NewAaaServiceClient(conn)
 	devCli := devicev1.NewDeviceIngestServiceClient(conn)
 	provCli := provisionv1.NewProvisionServiceClient(conn)

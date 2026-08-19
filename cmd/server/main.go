@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/httpapi"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	bosotel "github.com/ymm-001/boss/internal/pkg/otel"
@@ -46,7 +47,7 @@ func main() {
 
 	mgr := auth.NewManager(cfg.JWT.Secret, cfg.JWT.TTL)
 	r := server.New(server.Config{HTTPAddr: cfg.Server.HTTPAddr})
-	app.RegisterRoutes(r, a, mgr)
+	httpapi.RegisterRoutes(r, a, mgr)
 
 	// 债务偿还:同进程起 gRPC 服务间契约(quadlink/aaa/device/provision v1)。
 	grpcSrv := grpc.NewServer()

@@ -1,4 +1,4 @@
-package app
+package app_test
 
 // e2e 辅助:种子、登录、HTTP 调用与审计轮询;主流程见 e2e_pg_integration_test.go。
 
@@ -16,10 +16,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/pkg/events"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
+	"net"
 )
 
 // 唯一性:username/路径/编码带纳秒后缀,可重复运行不冲突。
-func seedE2E(t *testing.T, ctx context.Context, pool *pgxpool.Pool, a *Application) *e2eSeed {
+type capPub struct {
+	events.Publisher
+	got []events.Event
+}
+
+func seedE2E(t *testing.T, ctx context.Context, pool *pgxpool.Pool, a *app.Application) *e2eSeed {
 	t.Helper()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1e12)
 	s := &e2eSeed{username: "e2e-" + suffix, password: "E2e-pass-123"}
@@ -176,4 +187,27 @@ func waitAudit(t *testing.T, ctx context.Context, pool *pgxpool.Pool, orderNo st
 		time.Sleep(100 * time.Millisecond)
 	}
 	t.Fatalf("订单 %s 无审计留痕", orderNo)
+}
+
+// bufconn 辅助与 package app 单测同形(app_test 与 package app 不能共享未导出符号)。
+const bufSize = 1024
+
+func newBufConnServer(t *testing.T, register func(*grpc.Server)) *grpc.ClientConn {
+	t.Helper()
+	lis := bufconn.Listen(bufSize)
+	srv := grpc.NewServer()
+	register(srv)
+	go func() { _ = srv.Serve(lis) }()
+	t.Cleanup(srv.Stop)
+
+	conn, err := grpc.NewClient("passthrough:///bufnet",
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
+			return lis.DialContext(ctx)
+		}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("grpc dial: %v", err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	return conn
 }

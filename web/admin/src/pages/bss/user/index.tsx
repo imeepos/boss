@@ -7,7 +7,6 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { filterUsers, pageSlice, type UserRow } from './filter'
-import './user.css'
 
 export default function UserListPage() {
   const t = useT()
@@ -85,17 +84,18 @@ export default function UserListPage() {
       {detail && (
       <Drawer title={`${u.detailTitle} #${detailId}`} onClose={() => setDetail(null)}>
         {detail && (
-          <div className="user-detail">
+          <div>
             {sections.map((k) => {
               const arr = detail[k] as Record<string, unknown>[]
               return (
-                <details key={k} open={sections.indexOf(k) < 4}>
-                  <summary>{u.sectionNames[k] ?? k}({arr.length})</summary>
-                  {arr.length === 0 ? <p className="user-muted">{u.empty}</p> : (
+                <details key={k} open={sections.indexOf(k) < 4}
+                  className="border-b border-dashed border-border py-1.5">
+                  <summary className="cursor-pointer font-medium">{u.sectionNames[k] ?? k}({arr.length})</summary>
+                  {arr.length === 0 ? <p className="pl-3 text-[var(--shell-crumb-text)]">{u.empty}</p> : (
                     arr.slice(0, 20).map((item, i) => (
-                      <div key={i} className="user-kv">
+                      <div key={i} className="flex flex-wrap gap-x-3.5 gap-y-1 py-1 pl-3 text-xs">
                         {Object.entries(item).map(([fk, fv]) => (
-                          <span key={fk}><b>{fk}</b>: {String(fv ?? '—')}</span>
+                          <span key={fk}><b className="mr-0.5 font-medium text-[var(--shell-crumb-text)]">{fk}</b>: {String(fv ?? '—')}</span>
                         ))}
                       </div>
                     ))

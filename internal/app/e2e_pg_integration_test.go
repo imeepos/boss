@@ -1,4 +1,4 @@
-package app
+package app_test
 
 // W4 端到端集成测试(真实 PG):一期验收 = 下单→激活全流程可走通 / 可取消 / 端口释放 / 全程留痕。
 // 运行: BOSS_PG_TEST_DSN="host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable" go test ./internal/app/ -run TestE2E -v -count=1
@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/aaa"
 	aaabilling "github.com/ymm-001/boss/internal/domain/aaa/billing"
 	"github.com/ymm-001/boss/internal/domain/asset"
@@ -27,6 +28,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/resource"
+	"github.com/ymm-001/boss/internal/httpapi"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
@@ -56,7 +58,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 
 	cfg := &config.Config{}
 	cfg.Database.DSN = dsn
-	a, err := New(ctx, cfg, "../../migrations")
+	a, err := app.New(ctx, cfg, "../../migrations")
 	if err != nil {
 		t.Fatalf("app.New: %v", err)
 	}
@@ -72,7 +74,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	s := seedE2E(t, ctx, pool, a)
 
 	r := gin.New()
-	RegisterRoutes(r, a, auth.NewManager("e2e-secret", time.Hour))
+	httpapi.RegisterRoutes(r, a, auth.NewManager("e2e-secret", time.Hour))
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -374,7 +376,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 
 	t.Run("W8_下单到激活全自动_人工只收费扫码", func(t *testing.T) {
 		pub := &capPub{}
-		m := NewAutomation(a.Order, pub)
+		m := app.NewAutomation(a.Order, pub)
 		// 独立客户(quad_links.customer_id 唯一,不能与其它子测试共用种子客户)。
 		custID, err := a.Customer.Create(ctx, customer.Customer{
 			Name: "E2E-W8客户", Phone: "09172222222", IdType: "身份证", IdNo: "E2E-W8",
