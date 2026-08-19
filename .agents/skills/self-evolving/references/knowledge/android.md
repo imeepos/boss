@@ -1,0 +1,48 @@
+# Android 经验索引
+
+> mobile/worker 与 mobile/user 两个 Android 端（Kotlin + Jetpack Compose）。开工前先扫一遍标题。
+
+---
+
+## 1. Compose 组件 / 导航
+
+| # | 来源 | 要点 |
+|---|------|------|
+| 1 | known-issues（2026-08-20） | Compose 尾随 lambda 绑渲染插槽 → 组合期执行导航：多参数组件末位是 `@Composable` 插槽（如 Cell 的 right）时，裸尾随 lambda 必绑错位且编译器不报错；动作一律 `onClick = {...}` 显式命名传 |
+| 2 | techniques（2026-08-20） | 导航幽灵跳转插桩法：push/switchTab 临时加 `Log.d(tag, msg, Throwable())`，栈顶在 `Recomposer.performRecompose` = 渲染期执行，在 `ClickableNode.handleUpEvent` = 真实点击；定位后删插桩再提交 |
+| 3 | lessons（2026-08-19） | edge-to-edge 下顶栏被状态栏遮挡致返回键点不到：根布局加 `windowInsetsPadding(WindowInsets.safeDrawing)`；自维护导航栈必须配 `BackHandler(enabled = stack.size > 1) { pop() }`，否则系统返回直接退出 App |
+
+## 2. 网络 / 登录 / 数据
+
+| # | 来源 | 要点 |
+|---|------|------|
+| 1 | known-issues（2026-08-20） | 登录成功但全部请求 401：mock 平铺 `{token}` vs 真实 `{code,data:{token}}` 信封，顶层取到空串 setToken 存空；先 run-as 读 shared_prefs 验 token 落盘，再 curl 同端点对照 |
+| 2 | lessons（2026-08-20） | 对接真实后端替换 mock 时，先 curl 关键端点核对响应结构（信封/字段层级）再写解析 |
+| 3 | lessons（2026-08-20） | 后端验证码只落库不发短信（未接网关）：curl 触发发码 → 临时 go+pgx 查 `portal_sms_codes` 拿真码（5 分钟有效一次性）；测试师傅账号在 `.agents/skills/bossctl-cli/test-accounts.json` |
+
+## 3. 真机 / adb 验证
+
+| # | 来源 | 要点 |
+|---|------|------|
+| 1 | techniques（2026-08-20） | 真机 adb 自动化验证：`uiautomator dump` 取 text/bounds 算中心点 → `input tap` → 再 dump 断言标题；返回键 `input keyevent 4`；数据加载稳定后再取坐标（加载中会漂移） |
+| 2 | techniques（2026-08-20） | 真机 App 内部状态直查（免抓包）：debug 包 `adb shell run-as <pkg> cat shared_prefs/<prefs>.xml`，空 `<map/>` 即没写过 |
+| 3 | lessons（2026-08-20） | 真机与电脑时间对不上先 `adb shell date` 对时区差（本例差 9 小时），再比对 `dumpsys package <pkg> | grep lastUpdateTime` 判断 APK 是否被覆盖安装 |
+| 4 | lessons（2026-08-20） | 并行 agent 共享真机：装完 APK 用 lastUpdateTime 确认没被覆盖再下结论 |
+
+## 4. 共享工作区协作（Android 端高发）
+
+| # | 来源 | 要点 |
+|---|------|------|
+| 1 | red-lines（2026-08-20） | 修复验证通过后立即 git commit——未提交的工作区会被并行僵尸进程 git checkout 回退 |
+| 2 | known-issues（2026-08-20 subagent 条目） | 僵尸 subagent 中断后仍写盘/擅自 commit+push/覆盖安装旧 APK，收尾前 sleep 后再 git status 复核 |
+
+## 5. 开工前 grep 关键词
+
+写 Android 代码前，用这些关键词检索 lessons.md + known-issues.md + red-lines.md + techniques.md：
+
+```
+Compose, 尾随lambda, onClick, right, 插槽, BackHandler, insets, statusBarsPadding,
+导航, push, pop, switchTab, 401, token, data.token, 信封, shared_prefs, run-as,
+uiautomator, input tap, keyevent, lastUpdateTime, 真机, adb, 验证码, sms-code,
+portal_sms_codes, emulator, 10.0.2.2, adb reverse
+```

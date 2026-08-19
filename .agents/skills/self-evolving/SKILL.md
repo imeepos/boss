@@ -76,7 +76,7 @@ self-evolving/
 │   ├── known-issues.md   # 已知问题：症状 → 原因 → 修法
 │   ├── red-lines.md      # 红线：禁止 X，因为 Y 发生过
 │   ├── techniques.md     # 排查技巧、工具、命令：什么场景 → 怎么用
-│   └── knowledge/        # 经验分类索引（按 前端/后端/实施 分门别类，原文不动）
+│   └── knowledge/        # 经验分类索引（按 前端/Android/后端/实施 分门别类，原文不动）
 │       ├── README.md     # 分类说明 + 速查统计
 │       ├── 前端.md       # 前端经验索引
 │       ├── 后端.md       # 后端经验索引
@@ -251,7 +251,8 @@ node .agents/skills/self-evolving/scripts/shadcn.mjs init
 
 **写代码前，先浏览 `references/knowledge/` 对应分类的标题，确认有没有"已知的坑"。**
 
-- 写前端/UI/CSS/组件 → 看 `knowledge/前端.md`
+- 写前端/UI/CSS/组件(web/h5) → 看 `knowledge/前端.md`
+- 写 Android(Kotlin/Compose/真机联调) → 看 `knowledge/android.md`
 - 安装 shadcn 组件 → 用 `shadcn.mjs`（见第 5 节）
 - 写 Go/数据库/API → 看 `knowledge/后端.md`
 - 部署/CI/环境配置 → 看 `knowledge/实施.md`
