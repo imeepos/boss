@@ -7,6 +7,14 @@ const apiTarget = process.env.BOSS_API_TARGET ?? 'http://192.168.0.102:28080'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        // vendor 拆分:react 全家桶独立 chunk,业务改动不失效浏览器缓存。
+        manualChunks: { vendor: ['react', 'react-dom', 'react-router-dom'] },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
