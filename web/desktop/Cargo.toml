@@ -1,0 +1,16 @@
+[package]
+name = "boss-desktop"
+version = "0.1.0"
+description = "BOSS 管理端桌面客户端(Tauri 壳,内嵌 web/admin 构建产物)"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

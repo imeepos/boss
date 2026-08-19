@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"主窗口基础权限(桌面壳不暴露额外 IPC)","local":true,"windows":["main"],"permissions":["core:default"]}}
