@@ -196,3 +196,7 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## 真机自动化验证页面上报(adb)
 场景 → 无 UI 自动化框架时在真机走登录/点按/断言。
 怎么用 → `uiautomator dump /sdcard/ui.xml` + python 正则提取 text/bounds 算中心点 → `input tap x y` → 再 dump 断言标题文本;输入用 `input text`(非 ASCII 需先切输入法或用剪贴板);返回键 `input keyevent 4`。注意 dump 需在页面数据加载稳定后再取,加载中坐标会漂移。
+
+- 场景:接口 404 / 自认为已注册的 gin 路由却 404。排查时第一动作用全路径 `lsof -nP -iTCP:<port> -sTCP:LISTEN`(macOS 的 lsof 在 /usr/sbin,默认 PATH 常没有)→ 列出占用该端口的全部进程;重点看是否 IPv4(127.0.0.1) 与 IPv6(*:port) 双绑同一端口。`curl 127.0.0.1:<port>` 走 IPv4 只命中 IPv4 监听者,若那是另一个陈旧进程,你会得到"假 404/假路由缺失"。发现是双绑时,`kill` 掉陈旧 IPv4 监听者,让 IPv6 wildcard 服务器也接收 IPv4 流量。2026-08-19 后端冒烟实证。
+- 场景:go vet 报"missing method"(做不到接口)。给测试 fake 桩补方法时,一次性 `go vet ./...` 让编译器罗列全部缺失方法签名,再批量补,别逐个撞。2026-08-19。
+- 场景:Go 单测 `x := helper(...)` 报"assignment mismatch"。凡是目标函数返回多值(如 auth.Sign 返回 (token,error)),一律 `x, _ := helper(...)`。2026-08-19。

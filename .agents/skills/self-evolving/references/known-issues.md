@@ -152,3 +152,4 @@
 - 症状:登录跳转正常,首页/个人中心/反馈全报"HTTP 401";curl 用同样端点+token 却全 200。
 - 原因:登录响应对接 mock 时是平铺 {token},真实后端是 {code,data:{token}};App 从顶层 optString("token") 取到空串,setToken("") 等于没存,Authorization 头永远不带。SharedPreferences 是空 map(run-as 读出)实锤。
 - 修法:从 data.token 取值且为空时报错不跳转;排查手法 `adb shell run-as <pkg> cat shared_prefs/*.xml` 直接看 token 落没落盘,比抓包快。
+- 症状:后端新起的服务 `curl 127.0.0.1:<port>/api/...` 全部 404,但 `/healthz` 返回 ok;启动日志里路由明明都注册了。原因:`lsof` 不在默认 PATH,真正占用该端口的另有其进程(本例一个孤儿 `./server-new` 绑在 127.0.0.1:18080 IPv4),而新服务器绑 `*:18080` IPv6;curl 走 IPv4 命中旧进程。修法:`/usr/sbin/lsof -nP -iTCP:<port> -sTCP:LISTEN` 看全部监听者,`kill` 陈旧 IPv4 监听者后重测。2026-08-19。

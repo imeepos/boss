@@ -89,3 +89,6 @@
 - 当与并行 agent 共享工作区/真机时,修复是修复一验证通过立即 git commit(未提交的工作区会被僵尸进程 git checkout 掉);装完 APK 用 `dumpsys package <pkg> | grep lastUpdateTime` 确认没被覆盖再下结论。
 - 当真机与电脑时间对不上时,修复是先 `adb shell date` 对时区差(本例手机慢 9 小时),再比对 lastUpdateTime——直接比数值会得出"我的安装没生效"的错误结论。
 - 当后端验证码只落库不发短信(未接短信网关)时,修复是发码接口 curl 触发后用临时 go+pgx 查 portal_sms_codes 表拿真码(5 分钟有效,一次性);测试师傅账号存 .agents/skills/bossctl-cli/test-accounts.json。
+- 当"已注册的路由返回 404 / 服务看起来没上新代码"时,大概率不是代码问题,先查端口是否被另一个进程用 IPv4/IPv6 双绑;curl 走 IPv4 会打偏。2026-08-19。
+- 当为 Go 接口造测试 fake 时,让 go vet 一次性列出全部缺失方法再批量补,不要撞一个补一个。2026-08-19。
+- 当单测 `:=` 赋值报 mismatch 时,目标函数返回多值就改成 `v, _ :=`。2026-08-19。

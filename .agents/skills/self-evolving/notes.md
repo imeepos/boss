@@ -483,3 +483,10 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:(1) 把 Compose 尾随lambda误绑 right 插槽的真实 bug 误判为"模拟器 input tap 怪象",用户真机复现才回头认真查,此前空耗多轮理论推演;(2) 僵尸 subagent 三次回退我未提交的工作区改动、并把旧构建覆盖安装到真机,导致已验证的修复反复"失效",一度怀疑自己修错了。
 - skill 有没有预警:known-issues 已有"subagent 中断后仍异步写盘/擅自 commit"条目(前次反思),但没有"机制未证明前禁止结论环境怪象"红线,也没有 Compose 多参数组件尾随lambda的坑。
 - 重来一次:UI 出现"理论上不可能"的行为时,第一步就加 Log.d(Throwable 栈)插桩拿 ground truth,不空谈理论;修复验证通过后立即 commit(提交是防并行走失的唯一硬保障);共享真机上装完 APK 用 dumpsys lastUpdateTime 确认没被覆盖再下结论。
+
+## 2026-08-19 移动端门户缺失端点补齐(后端 API + E2E 冒烟)
+- 哪个坑浪费最多时间:端口被陈旧进程占用造成的"假 404"。`lsof` 不在默认 PATH(bash: command not found),用 `/usr/sbin/lsof` 才发现 127.0.0.1:18080 被一个孤儿 `./server-new`(IPv4 loopback 绑) 占用,而我的新服务器绑在 IPv6 `*:18080`。同一端口 IPv4/IPv6 双绑时,`curl 127.0.0.1` 走 IPv4 命中错进程,healthz/路由全部 404,自己代码"看起来没注册路由"。空耗多轮才定位。
+- skill 有没有预警:没有。known-issues/techniques 里没有"检查端口是否被其他进程用 IPv4/IPv6 绑定、curl 与服务器地址族不匹配"这一类。
+- 重来一次:排查"接口 404/路由缺失"时,第一动作 `lsof -nP -iTCP:<port> -sTCP:LISTEN`(用全路径 /usr/sbin/lsof)列出占用该端口的全部进程,确认是否双绑(IPv4+IPv6);必要时 `kill` 陈旧进程再测,而不是默认自己代码没注册路由。
+- 另一个坑:给测试写 fake 桩必须完整实现 Go 接口的全部方法。fakeTaxStub 只写了 ListInvoices,go vet 报缺 BackfillTaxNo/IssueInvoicesForPeriod/GetInvoice 等;fakeUserData 缺 ListUserVerifyRecords/ListProductSpecs 等,且 CreateUserPlan/CreateUserAddress 返回 (int64,error) 不是 error。教训:每次给新接口造 fake,先 `go vet` 让编译器列出全部缺失方法,一次性补全,别一个个撞。
+- 另一个坑:单测里调用返回两值的 helper(如 signCustomerToken 返回 (string,error)),`x :=` 编译错,要 `x, _ :=`。教训:Go 里任何 `:=` 单值赋值若目标函数返回多值,govet/compile 立即报,改 `_,err` 或 `v, _` 即可。

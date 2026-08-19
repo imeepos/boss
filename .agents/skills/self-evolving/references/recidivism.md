@@ -25,3 +25,6 @@
 | 并行agent共享工作区,修复验证后未立即commit被回退 | 1 | 2026-08-20(僵尸subagent三次git checkout掉未提交修复+覆盖安装旧APK) | 已验证的修复反复"失效",排查方向被带偏 |
 | 登录/业务响应按mock平铺结构解析,切真实后端未核对信封 | 1 | 2026-08-20(worker/user双端token从顶层取,真实在data.token,全端401) | 双端全部业务接口401 |
 | 外部并行修改文件后未重新Read就edit("file changed since read") | 1 | 2026-08-20(ProfileScreen被僵尸进程回退后edit被拒) | 废一轮重读;与高频红线#1同源,计数并入其教训 |
+| 端口被陈旧进程 IPv4/IPv6 双绑导致"假 404/假路由缺失"(lsof 不在默认 PATH 需用 /usr/sbin 全路径) | 1 | 2026-08-19(后端冒烟:orphan ./server-new 占 127.0.0.1:18080,curl 打偏) | 空耗多轮误判自己路由没注册 |
+| 测试 fake 桩未完整实现 Go 接口全部方法(go vet 报缺方法) | 1 | 2026-08-19(fakeTaxStub 只写 ListInvoices、fakeUserData 缺 ListUserVerifyRecords 等) | 编译期逐个撞,多轮修正 |
+| Go 单测 `:=` 单值赋给返回多值的 helper 编译错 | 1 | 2026-08-19(signCustomerToken 返回 (string,error),`tok :=` 报 mismatch) | 一轮编译错误 |
