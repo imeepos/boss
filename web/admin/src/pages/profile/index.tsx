@@ -35,10 +35,23 @@ function OverviewLink({ title, desc, href }: { title: string; desc: string; href
   return <a className="overview-link" href={href}><strong>{title}</strong><span>{desc}</span><i className="profile-chevron" /></a>
 }
 
+// 基本资料:自助可编辑仅 realName/phone(PUT /auth/profile);角色/公司/数据范围只读。
 function PersonalSection({ profile }: { profile: Profile }) {
-  const t = useT(); const [saved, setSaved] = useState('')
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setSaved(t.pages.profile.personal.saved) }
-  return <div className="profile-content-page"><SectionTitle title={t.pages.profile.personal.title} desc={t.pages.profile.personal.desc} /><form className="profile-form profile-personal-form" onSubmit={submit}><label>{t.pages.profile.personal.username}<input value={profile.username} readOnly /></label><label>{t.pages.profile.personal.realName}<input defaultValue={profile.realName} /></label><label>{t.pages.profile.personal.phone}<input placeholder={t.pages.profile.personal.phonePlaceholder} /></label><label>{t.pages.profile.personal.email}<input type="email" placeholder={t.pages.profile.personal.emailPlaceholder} /></label><div className="profile-readonly-grid"><ReadOnlyField label={t.pages.profile.personal.role} value={profile.roleName} /><ReadOnlyField label={t.pages.profile.personal.company} value={profile.legalEntityName || t.pages.profile.personal.unassigned} /><ReadOnlyField label={t.pages.profile.personal.dataScope} value={profile.regionScope || t.pages.profile.personal.allScope} /></div><div className="profile-form-actions"><span>{saved}</span><button type="submit">{t.pages.profile.save}</button></div></form></div>
+  const t = useT()
+  const [realName, setRealName] = useState(profile.realName)
+  const [phone, setPhone] = useState(profile.phone ?? '')
+  const [msg, setMsg] = useState('')
+  const [ok, setOk] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setMsg(''); setBusy(true)
+    apiFetch('/auth/profile', { method: 'PUT', body: { realName: realName.trim(), phone: phone.trim() } })
+      .then(() => { setOk(true); setMsg(t.pages.profile.personal.saved) })
+      .catch(() => { setOk(false); setMsg(t.pages.profile.personal.saveFail) })
+      .finally(() => setBusy(false))
+  }
+  return <div className="profile-content-page"><SectionTitle title={t.pages.profile.personal.title} desc={t.pages.profile.personal.desc} /><form className="profile-form profile-personal-form" onSubmit={submit}><label>{t.pages.profile.personal.username}<input value={profile.username} readOnly /></label><label>{t.pages.profile.personal.realName}<input value={realName} required onChange={(e) => setRealName(e.target.value)} /></label><label>{t.pages.profile.personal.phone}<input value={phone} placeholder={t.pages.profile.personal.phonePlaceholder} onChange={(e) => setPhone(e.target.value)} /></label><div className="profile-readonly-grid"><ReadOnlyField label={t.pages.profile.personal.role} value={profile.roleName} /><ReadOnlyField label={t.pages.profile.personal.company} value={profile.legalEntityName || t.pages.profile.personal.unassigned} /><ReadOnlyField label={t.pages.profile.personal.dataScope} value={profile.regionScope || t.pages.profile.personal.allScope} /></div><div className="profile-form-actions"><span style={ok ? { color: '#30a46c' } : { color: '#e5484d' }}>{msg}</span><button type="submit" disabled={busy}>{t.pages.profile.save}</button></div></form></div>
 }
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) { return <div className="profile-readonly-field"><span>{label}</span><strong>{value}</strong></div> }

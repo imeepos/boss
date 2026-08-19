@@ -12,6 +12,7 @@ export interface Profile {
   accountId: number
   username: string
   realName: string
+  phone?: string
   roleCode: string
   roleName: string
   legalEntityName: string

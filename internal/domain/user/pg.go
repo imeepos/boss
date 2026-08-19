@@ -221,13 +221,14 @@ func (s *PGStore) GetDataScope(ctx context.Context, accountID int64) (DataScope,
 func (s *PGStore) GetProfile(ctx context.Context, accountID int64) (*Profile, error) {
 	var p Profile
 	err := s.db.QueryRow(ctx, `
-		SELECT a.id, a.username, a.real_name, r.code, r.name,
+		SELECT a.id, a.username, a.real_name, COALESCE(a.phone, ''),
+		       r.code, r.name,
 		       COALESCE(le.name, ''), COALESCE(a.region_scope::text, '')
 		FROM accounts a
 		JOIN roles r ON a.role_id = r.id
 		LEFT JOIN legal_entities le ON a.legal_entity_id = le.id
 		WHERE a.id = $1`, accountID).
-		Scan(&p.AccountID, &p.Username, &p.RealName, &p.RoleCode, &p.RoleName, &p.LegalEntityName, &p.RegionScope)
+		Scan(&p.AccountID, &p.Username, &p.RealName, &p.Phone, &p.RoleCode, &p.RoleName, &p.LegalEntityName, &p.RegionScope)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

@@ -18,6 +18,7 @@ type Profile struct {
 	AccountID       int64  `json:"accountId"`
 	Username        string `json:"username"`
 	RealName        string `json:"realName"`
+	Phone           string `json:"phone"`
 	RoleCode        string `json:"roleCode"`
 	RoleName        string `json:"roleName"`
 	LegalEntityName string `json:"legalEntityName"`

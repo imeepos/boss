@@ -403,17 +403,17 @@ func TestPGStore_GetProfile(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT a.id, a.username, a.real_name, r.code, r.name, COALESCE\(le.name, ''\), COALESCE\(a.region_scope`).
+	mock.ExpectQuery(`SELECT a.id, a.username, a.real_name, COALESCE\(a.phone, ''\), r.code, r.name, COALESCE\(le.name, ''\), COALESCE\(a.region_scope`).
 		WithArgs(int64(1)).
-		WillReturnRows(mock.NewRows([]string{"id", "username", "real_name", "code", "name", "legal_entity_name", "region_scope"}).
-			AddRow(int64(1), "boss", "老板", "sysadmin", "系统管理员", "主品牌·企业", "root.luzon"))
+		WillReturnRows(mock.NewRows([]string{"id", "username", "real_name", "phone", "code", "name", "legal_entity_name", "region_scope"}).
+			AddRow(int64(1), "boss", "老板", "13800000000", "sysadmin", "系统管理员", "主品牌·企业", "root.luzon"))
 
 	s := NewPGStore(mock)
 	p, err := s.GetProfile(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("GetProfile: %v", err)
 	}
-	if p.RealName != "老板" || p.RoleName != "系统管理员" || p.LegalEntityName != "主品牌·企业" {
+	if p.RealName != "老板" || p.Phone != "13800000000" || p.RoleName != "系统管理员" || p.LegalEntityName != "主品牌·企业" {
 		t.Fatalf("p=%+v", p)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
