@@ -1,6 +1,6 @@
 ---
 name: self-evolving
-description: "**[MUST LOAD FIRST]** A self-evolving skill that grows through reflection on mistakes. Use for any task where you want to accumulate experience over time — this skill starts empty and learns from every failure. After each session, you must reflect on what went wrong and feed it back into the skill so the next session is stronger. This skill MUST be loaded at the START of every session before any other work begins, regardless of the task at hand — its high-frequency red lines prevent costly repeated mistakes that waste hours.
+description: "MUST LOAD FIRST A self-evolving skill that grows through reflection on mistakes. Use for any task where you want to accumulate experience over time — this skill starts empty and learns from every failure. After each session, you must reflect on what went wrong and feed it back into the skill so the next session is stronger. This skill MUST be loaded at the START of every session before any other work begins, regardless of the task at hand — its high-frequency red lines prevent costly repeated mistakes that waste hours.
 ---
 
 # Self-Evolving Skill

@@ -10,8 +10,6 @@
 - `docs/contract/domain-map.md` —— 能力域/Agent/internal包/admin页面 四套命名对齐表
 - `docs/contract/fields.md` —— 页面列名 ↔ 字段名 ↔ 状态枚举 三列对齐，命名规则全局强制
 
-每个 Agent 开工第一行声明：【能力域】【Agent】【internal 包】【阶段】【页面】。
-
 编码要求：
 - 单个文件不要超过300行，推荐200行以内
 - 单个函数/方法不要超过30行，推荐20行以内
