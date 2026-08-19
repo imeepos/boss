@@ -405,6 +405,7 @@ const enUS: Translations = {
       pageUnit: 'page',
     },
     billPage: {
+      run: { btn: 'Run billing', title: 'Generate bills and auto-invoice for a period (idempotent):', periodPh: 'Period, e.g. 2026-08', result: '{bills} bills generated, {issued} invoices issued, {failed} failed (manual)', fail: 'Billing run failed' },
       invoice: { title: 'Invoices (TAX)', desc: 'Auto-issued on billing runs; manual channel backfills tax numbers', loadFail: 'Failed to load invoices', actFail: 'Action failed', filterCustomer: 'Filter by customer ID', empty: 'No invoices', columns: ['Invoice No', 'Customer', 'Total', 'Status', 'Jurisdiction', 'Tax No / Status', 'Actions'], voidBtn: 'Void', reissueBtn: 'Reissue', backfillBtn: 'Backfill', voidConfirm: 'Voiding keeps the number (no reuse). Reason:', reissueConfirm: 'Reissue voids the original and takes a new number. Continue?', backfillTip: 'Manual channel: enter the tax number issued on the tax platform:', voidReasonPh: 'Void reason', taxNoPh: 'Tax number', confirm: 'Confirm' },
       title: 'Billing',
       desc: 'Bills unique per customer × period · amount = order price snapshot · status unpaid/paid/overdue',

@@ -7,6 +7,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type BillRow } from '../types'
 import { InvoicePanel } from './invoices'
+import { BillingRunModal, INVOICES_REFRESH } from './run-modal'
 import { fmtFee } from '../../../lib/format'
 import '../../org/org.css'
 
@@ -19,6 +20,7 @@ export default function BillPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [detail, setDetail] = useState<BillRow | null>(null)
+  const [runOpen, setRunOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const load = () => {
@@ -43,6 +45,7 @@ export default function BillPage() {
           <input className="org-input" type="number" placeholder={b.filterCustomer}
             value={customerId} onChange={(e) => { setCustomerId(e.target.value); setPage(1) }} />
           <span className="spacer" />
+          <button className="org-btn org-btn-primary" onClick={() => setRunOpen(true)}>{b.run.btn}</button>
           <button className="org-btn" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {error ? <div className="org-error">{error}</div> : (
@@ -75,6 +78,7 @@ export default function BillPage() {
         </div>
       </div>
       <InvoicePanel />
+      <BillingRunModal open={runOpen} onClose={() => setRunOpen(false)} onDone={() => { load(); window.dispatchEvent(new CustomEvent(INVOICES_REFRESH)) }} />
       {detail && (
         <DetailDrawer
           title={b.detail}

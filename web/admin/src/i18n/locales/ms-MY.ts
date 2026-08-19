@@ -405,6 +405,7 @@ const msMY: Translations = {
       pageUnit: 'halaman',
     },
     billPage: {
+      run: { btn: 'Jalankan bil', title: 'Jana bil dan invois automatik untuk tempoh (idempoten):', periodPh: 'Tempoh, cth. 2026-08', result: '{bills} bil dijana, {issued} invois diterbitkan, {failed} gagal (manual)', fail: 'Kitaran bil gagal' },
       invoice: { title: 'Invois (TAX)', desc: 'Dikeluarkan automatik semasa kitaran bil; saluran manual mengisi semula no cukai', loadFail: 'Gagal memuatkan invois', actFail: 'Tindakan gagal', filterCustomer: 'Tapis mengikut ID pelanggan', empty: 'Tiada invois', columns: ['No Invois', 'Pelanggan', 'Jumlah', 'Status', 'Bidang kuasa', 'No Cukai / Status', 'Tindakan'], voidBtn: 'Batalkan', reissueBtn: 'Terbit semula', backfillBtn: 'Isi semula', voidConfirm: 'Pembatalan mengekalkan nombor (tidak diguna semula). Sebab:', reissueConfirm: 'Terbit semula membatalkan asal dan mengambil nombor baharu. Teruskan?', backfillTip: 'Saluran manual: masukkan no cukai yang dikeluarkan di platform cukai:', voidReasonPh: 'Sebab pembatalan', taxNoPh: 'No cukai', confirm: 'Sahkan' },
       title: 'Pengurusan Bil',
       desc: 'Bil unik setiap pelanggan × tempoh · jumlah = snapshot harga pesanan · status belum dibayar/dibayar/lewat',

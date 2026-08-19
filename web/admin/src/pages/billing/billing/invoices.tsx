@@ -7,6 +7,7 @@ import { Pagination } from '../../../components/Pagination'
 import { pagerTexts } from '../../org/shared'
 import { fmtFee } from '../../../lib/format'
 import type { InvoiceRow } from '../types'
+import { INVOICES_REFRESH } from './run-modal'
 import { pageSlice } from '../types'
 
 export function InvoicePanel() {
@@ -29,6 +30,11 @@ export function InvoicePanel() {
       .catch((e) => setError(e instanceof Error ? e.message : v.loadFail))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const refresh = () => load()
+    window.addEventListener(INVOICES_REFRESH, refresh)
+    return () => window.removeEventListener(INVOICES_REFRESH, refresh)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const run = () => {
     if (!act || busy) return

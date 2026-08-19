@@ -346,6 +346,7 @@ export interface Translations {
       pageUnit: string
     }
     billPage: {
+    run: { btn: string; title: string; periodPh: string; result: string; fail: string }
     invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonPh: string; taxNoPh: string; confirm: string }
       title: string
       desc: string
