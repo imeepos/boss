@@ -50,6 +50,14 @@ object Api {
         } finally { conn.disconnect() }
     }
 
+    /** 解信封 {code,msg,data}:code!=0 抛 HttpError,成功返回 data(缺省空对象)。 */
+    private fun unwrap(text: String): JSONObject {
+        val obj = JSONObject(text)
+        val code = obj.optInt("code", -1)
+        if (code != 0) throw HttpError(code, obj.optString("msg").ifBlank { "code $code" })
+        return obj.optJSONObject("data") ?: JSONObject()
+    }
+
     private suspend fun request(method: String, path: String, body: JSONObject?): JSONObject =
         withContext(Dispatchers.IO) {
             val conn = open(method, path, body)
@@ -57,7 +65,7 @@ object Api {
                 val code = conn.responseCode
                 val text = streamText(conn, code)
                 if (code !in 200..299) throw HttpError(code, "HTTP $code")
-                if (text.isBlank()) JSONObject() else JSONObject(text)
+                if (text.isBlank()) JSONObject() else unwrap(text)
             } finally { conn.disconnect() }
         }
 
@@ -68,7 +76,15 @@ object Api {
                 val code = conn.responseCode
                 val text = streamText(conn, code)
                 if (code !in 200..299) throw HttpError(code, "HTTP $code")
-                if (text.isBlank()) JSONArray() else JSONArray(text)
+                if (text.isBlank()) return@withContext JSONArray()
+                // 数组载荷包在信封 data 内:data 本身为数组,或 data.items
+                val obj = JSONObject(text)
+                if (obj.optInt("code", -1) != 0) throw HttpError(obj.optInt("code"), obj.optString("msg"))
+                when (val d = obj.opt("data")) {
+                    is JSONArray -> d
+                    is JSONObject -> d.optJSONArray("items") ?: JSONArray()
+                    else -> JSONArray()
+                }
             } finally { conn.disconnect() }
         }
 
