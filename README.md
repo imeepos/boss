@@ -67,6 +67,9 @@ boss/
 │   └── openapi/                # 对外 REST OpenAPI 3(APISIX 路由依据)
 ├── migrations/                 # golang-migrate SQL(up/down 成对)
 ├── deployments/                # 部署物
+│   ├── config.example.yaml     # 配置示例
+│   ├── app.env                 # 部署环境变量
+│   ├── app.env.example         # 环境变量示例
 │   ├── docker-compose.infra.yml # 本地全套基础设施(PG/Redis/Kafka/Nacos/...)
 │   ├── docker-compose.102.yml   # 102 服务器版基础 7 组件
 │   ├── docker-compose.102.extend.yml # 102 扩展:网关/可观测/OLAP/流计算(见下)
@@ -74,7 +77,20 @@ boss/
 │   ├── docker/                 # 各服务 Dockerfile
 │   └── helm/                   # K8s Helm chart
 ├── scripts/                    # dev/setup.sh、proto 生成、k6 压测
-├── docs/                       # 阶段设计文档、ADR、架构评审记录(architecture-review.md)
+├── docs/                       # 文档与决策记录
+│   ├── boss-entities-er.drawio # ER 关系图(源文件)
+│   ├── boss-entities-er.drawio.png
+│   ├── boss-entities-er.svg
+│   ├── contract/               # 契约文档(terms/domain-map/fields)
+│   ├── plan/                   # 计划与路线图
+│   ├── notes/                  # 决策记录(adopted/rejected)
+│   └── ...                     # 设计文档、评审、复盘
+├── web/                        # 前端应用
+│   ├── admin/                  # 管理端(React)
+│   ├── worker/                 # 师傅端
+│   ├── user/                   # 用户端(待建)
+│   └── shared/                 # 三端共享层
+│       └── server-ts/          # TS 实体镜像(枚举/实体类型)
 ├── Makefile
 └── go.mod
 ```

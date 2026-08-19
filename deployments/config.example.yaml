@@ -1,0 +1,61 @@
+# 复制为 config.yaml 并按环境调整;敏感项建议走环境变量/Nacos
+server:
+  http_addr: ":8080"
+  grpc_addr: ":9090"
+
+database:
+  # 102 服务器私有仓库版基础设施(见 deployments/docker-compose.102.yml)
+  dsn: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
+
+redis:
+  addrs: ["192.168.0.102:26379"]
+
+kafka:
+  brokers: ["192.168.0.102:29092"]
+
+nacos:
+  # 业务参数热更新(欠费阈值、预占有效期等)
+  enabled: false
+  server: "192.168.0.102:18848"
+
+minio:
+  endpoint: "192.168.0.102:29000"
+  access_key: boss
+  secret_key: boss12345
+
+temporal:
+  host: "192.168.0.102:17233"
+
+victoriametrics:
+  url: "http://192.168.0.102:18428"
+
+# 102 服务器扩展基础设施(见 deployments/docker-compose.102.extend.yml)
+apisix:
+  # 网关 admin API(动态路由/上游;业务请求走 29080)
+  admin_url: "http://192.168.0.102:29180"
+
+observability:
+  prometheus_url: "http://192.168.0.102:19090"
+  alertmanager_url: "http://192.168.0.102:19093"
+  grafana_url: "http://192.168.0.102:19300"
+  loki_url: "http://192.168.0.102:19310"
+  # OTLP gRPC 上报地址(OpenTelemetry SDK 链路上报)
+  jaeger_otlp: "192.168.0.102:16831"
+
+olap:
+  # 阶段8/9 OLAP 宽表/下钻(StarRocks,MySQL 协议)
+  starrocks_dsn: "root@tcp(192.168.0.102:29030)/"
+
+flink:
+  jobmanager: "192.168.0.102:18082"
+
+# 阶段7 自研 Go RADIUS(cmd/aaa,独立部署;性能服务群)
+aaa:
+  auth_addr: ":1812"   # RADIUS 认证端口
+  acct_addr: ":1813"   # RADIUS 计费端口(话单入口)
+  secret: "boss-aaa-secret"   # NAS 共享密钥
+  auth_ttl: 60         # 授权缓存 TTL 秒(Redis,停复机秒级生效)
+
+jwt:
+  secret: "change-me"
+  ttl: 168h   # 实际经环境变量 BOSS_JWT_TTL 生效(默认 7d);配合 /auth/refresh 滑动续期实现长会话
