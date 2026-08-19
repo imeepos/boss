@@ -79,3 +79,6 @@ class NavHost(initial: Screen) {
 // 工单类型分流:TKT/EMG 前缀走修复工单(repair.html),其余走新装工单(order.html)
 fun ticketScreen(no: String): Screen =
     if (no.startsWith("TKT") || no.startsWith("EMG")) Screen.Repair(no) else Screen.TicketDetail(no)
+
+// 无工单上下文页面的兜底工单号(对齐 H5 草稿默认值)
+const val FALLBACK_NO = "ORD-20250817-001"

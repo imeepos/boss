@@ -12,18 +12,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ymm.boss.worker.api.AssetApi
 import com.ymm.boss.worker.ui.theme.Success
-
-private val FALLBACK_NO = "ORD-20250817-001"
 
 // 现场工具(对齐 docs/worker/tool.html):测速/光功率 + 资源查询 + 台账自查
 @Composable
 fun ToolScreen(nav: NavHost, no: String?) {
     val ticketNo = no ?: FALLBACK_NO
     var refresh by remember { mutableStateOf(0) }
+    val ctx = LocalContext.current
     val measure by loadOnce(ticketNo, refresh) { AssetApi.measure(ticketNo) }
     val resources by loadOnce(ticketNo) { AssetApi.resources(ticketNo) }
 
@@ -65,7 +66,7 @@ fun ToolScreen(nav: NavHost, no: String?) {
             SectionTitle("台账自查")
             Notice("扫码核对该区域资产台账，差异将自动生成清单上报。")
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("扫码核对", modifier = Modifier.fillMaxWidth()) { toast2("台账核对无差异。") }
+            PrimaryButton("扫码核对", modifier = Modifier.fillMaxWidth()) { toast(ctx, "台账核对无差异。") }
         }
         Spacer(Modifier.height(12.dp))
     }

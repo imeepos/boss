@@ -56,7 +56,7 @@ fun OrdersScreen(nav: NavHost) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("工单列表", action = "刷新", onAction = { refresh++ })
-        SegRow(cur) { cur = it }
+        SegRow(cur, onSelect = { cur = it })
         if (tip.isNotEmpty()) { Text(tip, fontSize = 12.sp, color = Color(0xFFCF1322), modifier = Modifier.padding(horizontal = 14.dp)) }
         Card(Modifier.padding(12.dp)) {
             when (val s = state) {
@@ -92,12 +92,12 @@ private fun AcceptBtn(onTake: () -> Unit) {
 }
 
 @Composable
-fun SegRow(cur: String, onSelect: (String) -> Unit) {
+fun SegRow(cur: String, onSelect: (String) -> Unit, segs: List<Pair<String, String>> = SEGS) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)
         .clip(RoundedCornerShape(9.dp))
         .background(Color(0xFFEEF0F3))
         .padding(3.dp)) {
-        SEGS.forEach { (k, label) ->
+        segs.forEach { (k, label) ->
             val active = k == cur
             Text(label, fontSize = 13.sp,
                 color = if (active) Ink else Muted,
