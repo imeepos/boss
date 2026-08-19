@@ -1,7 +1,7 @@
 # 数据建模 ↔ 三端页面 对齐审计台账（contract/alignment-audit）
 
 > 版本 V1.0（2026-08-17）｜权威源：`terms.md` / `fields.md` / `domain-map.md` / migrations / `server-ts` 实体
-> 定位：把「数据建模（62 表）与 admin/user/worker 三端页面」的对齐状态固化为可销项清单。
+> 定位：把「数据建模（68 表）与 admin/user/worker 三端页面」的对齐状态固化为可销项清单。
 > 规则：字段/状态/术语以 `terms.md` 为准；页面列名 ↔ 字段名 ↔ 枚举以 `fields.md` 为准；已销项标 ✅ 并注明提交。
 
 ## 1. 结论
@@ -72,7 +72,7 @@
 ## 5. 跨层命名映射（实体关系模型 ↔ mock 视图 ↔ 页面列）
 
 > `api/mock/db.js` 是「关系型事实库」，三端视图由它**扁平化派生**（外键冗余成快照列），
-> 故字段名与 TypeORM 实体（62 表关系模型）存在**视图导向命名差**，属设计使然、非漂移。
+> 故字段名与 TypeORM 实体（68 表关系模型）存在**视图导向命名差**，属设计使然、非漂移。
 > 语义对齐（状态枚举/单号口径/引用完整/未收费不派单/四码与 GIS 时点）由 `node api/mock/selfcheck.js` 固化，全绿即对齐成立。
 > 本表只固化「概念 ↔ 实体字段 ↔ mock 字段 ↔ 页面列」的映射，避免把命名差误判为漂移。
 
@@ -98,7 +98,7 @@
 
 ## 7. OpenAPI 接口规范 ↔ DB 设计 对齐检查
 
-> 检查 `api/openapi/`（admin/user/worker 三端，38 文件）与 62 表实体 + `terms.md`/`enums.ts` 的对齐。
+> 检查 `api/openapi/`（admin/user/worker 三端，37 文件）与 68 表实体 + `terms.md`/`enums.ts` 的对齐。
 
 ### 7.1 已对齐 ✅
 
