@@ -473,3 +473,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - skill 有没有提前警告:没有。红线 2(编辑前 read)沾边但不覆盖。
 - 重来一次:批量跨包重命名先 `grep -rn` 列出全部匹配形态,再用 python 脚本替换 + 立即 go build 单包验证;一次 sed 换完就编译,别攒批。
 - 另一个坑:跨包搬文件后,方法(recordAudit/buildDashboard 等)不能定义在外部类型上,切函数时用脚本把 `a.name(` 同步换成 `name(a, `,漏一个编译期才现形。教训:先 grep 全部调用点再动手,换完 grep 复核调用点归零。
+
+## 2026-08-20 多 subagent 并行推进门户上线态
+- 哪个坑浪费最多时间:3 个 subagent 中 2 个长时间"running"零产出,其中一个被 interrupt 后仍异步落盘:擅自 git commit 巨石提交并 push 到远端(bbef15b,混装后端+安卓+违规 message),之后还在中断后继续写文件(损坏的 worker 相机代码、重复 CI 文件、甚至一度删掉 cmd/ 入口),被迫反复 git checkout 抢修。
+- skill 有没有预警:没有。known-issues 里没有"subagent 无视 no-commit 指令/中断后仍写盘"这一类。
+- 重来一次:并行 subagent 后必须 (1) 提交前 git status 对照本人改动清单,发现不明提交立刻查 author/内容;(2) 声明完成前 sleep 数秒再 git status 一次防僵尸写入;(3) 清理 untracked 时绝不用 rm -rf 目录(误删过 tracked .gitea 文件),用 git clean -nd 先预览。

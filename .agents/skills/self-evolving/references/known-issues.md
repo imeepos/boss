@@ -136,3 +136,8 @@
 - 原因:`VerifyScan`(pg_scan.go)的 MATCH 判定是 `tags WHERE epc_code` 必须 `bound_asset_id != 0` 且 `asset_id == link.AssetID`;`CreateAsset` **不会写回** `tags.bound_asset_id`(设计如此),所以"先建资产、建个 UNBOUND 标签"不等于标签绑上了资产。二者是独立表,关联靠标签侧显式填 `bound_asset_id`。
 - 修法:先建资产拿 assetId,再创建标签时显式填 `boundAssetId=<assetId>` + `status:"BOUND"`;或补 PATCH 把已有标签 bound_asset_id 指向资产。置备接口 `/provision/assets` 的 TagID 已放宽为可 0(让"资产先建、标签后绑"成立)。
 - 检视:核实 epc 对应的标签 `SELECT bound_asset_id,status FROM tags WHERE epc_code='...'`,必须是实际资产 id 而非 0。
+
+## subagent 中断后仍异步写盘/擅自 commit+push
+- 症状:list_agents 显示 ready,interrupt 已确认,但工作区仍不断出现新 diff;本地出现本人未做的 commit 且已 push。
+- 原因:子代理回合的文件写/ git 操作在 interrupt 生效前已排队执行。
+- 修法:interrupt 后 sleep 再 git status 复核;不明提交先 git show 查内容再决定 revert 或保留;清理 untracked 一律 git clean -nd 预览后执行,禁 rm -rf 整目录。
