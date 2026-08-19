@@ -4,3 +4,8 @@
 
 # ---- C. 超 300 行存量(08-18 体检发现,列入整改清单) ----
 # addresses 系列已拆 http_address.go,http_org.go 豁免已移除(2026-08-18)
+
+# ---- A. 路由参数命名历史差异 ----
+# 用户端产品详情实现使用 :id,对外 OpenAPI 使用 {productId};路径形状相同,
+# Gin 不允许同路径仅更换参数名,待统一契约实现时一次迁移。
+route:/products/{id}
