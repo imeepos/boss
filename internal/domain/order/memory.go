@@ -21,6 +21,7 @@ type MemoryService struct {
 	mu      sync.RWMutex
 	m       map[int64]*Order
 	logs    map[int64][]StageLog
+	ratings map[string]Rating
 	seq     int64
 	cust    CustomerLookup
 	checker ResourceChecker
@@ -132,10 +133,16 @@ func (s *MemoryService) List(ctx context.Context, q OrderQuery) ([]OrderListItem
 		if q.Status != "" && o.Status != q.Status {
 			continue
 		}
+		if q.CustomerID != 0 && o.CustomerID != q.CustomerID {
+			continue
+		}
 		if q.Keyword != "" && !strings.Contains(o.OrderNo, q.Keyword) {
 			continue
 		}
-		out = append(out, OrderListItem{OrderNo: o.OrderNo, Stage: o.Stage, Status: o.Status, CreatedAt: o.CreatedAt})
+		out = append(out, OrderListItem{
+			OrderNo: o.OrderNo, Stage: o.Stage, Status: o.Status,
+			AddressID: o.AddressID, CreatedAt: o.CreatedAt,
+		})
 	}
 	return out, nil
 }
@@ -247,4 +254,35 @@ func cloneOrder(o *Order) *Order {
 	}
 	cp := *o
 	return &cp
+}
+
+// ChangeAddress 变更安装地址(内存实现)。
+func (s *MemoryService) ChangeAddress(ctx context.Context, orderID, addressID int64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	o, ok := s.m[orderID]
+	if !ok {
+		return ErrOrderNotFound
+	}
+	o.AddressID = addressID
+	return nil
+}
+
+// SaveRating 落订单评价(内存实现:覆写同单号评价)。
+func (s *MemoryService) SaveRating(ctx context.Context, r Rating) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.ratings == nil {
+		s.ratings = make(map[string]Rating)
+	}
+	s.ratings[r.OrderNo] = r
+	return nil
+}
+
+// RatingExists 订单是否已评价(内存实现)。
+func (s *MemoryService) RatingExists(ctx context.Context, orderNo string) (bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	_, ok := s.ratings[orderNo]
+	return ok, nil
 }

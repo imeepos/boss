@@ -4,6 +4,7 @@ package userapi
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,9 +20,46 @@ func registerPortalServiceRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/faults", portalListFaults(a))
 	g.POST("/faults", portalCreateFault(a))
 	g.GET("/faults/:ticketNo", portalFaultDetail(a))
+	g.GET("/complaints", portalListComplaints(a))
 	g.POST("/complaints", portalCreateComplaint(a))
 	g.POST("/service/chat", portalChat)
 	g.GET("/service/faq", portalFaq)
+}
+
+// portalComplaintTypeLabel 投诉类型 → 中文标签。
+var portalComplaintTypeLabel = map[string]string{
+	"attitude": "服务态度", "quality": "服务质量", "billing": "计费问题",
+	"suggestion": "意见建议", "other": "其他",
+}
+
+// portalListComplaints GET /complaints:我的投诉列表(工单域 complaints 按客户过滤)。
+func portalListComplaints(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		list, err := a.WorkOrder.ListComplaints(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		items := make([]gin.H, 0)
+		for _, cp := range list {
+			if cp.CustomerID != cid {
+				continue
+			}
+			items = append(items, gin.H{
+				"complaintId": cp.TicketNo, "type": strings.TrimPrefix(cp.Type, "用户投诉: "),
+				"typeLabel": portalComplaintTypeLabel[strings.TrimPrefix(cp.Type, "用户投诉: ")],
+				"relOrderNo": "", "description": "", "status": cp.Status,
+				"statusLabel": portalComplaintStatusLabel[cp.Status], "createdAt": "",
+			})
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": items})
+	}
+}
+
+// portalComplaintStatusLabel 投诉状态 → 中文标签。
+var portalComplaintStatusLabel = map[string]string{
+	"OPEN": "受理中", "PROCESSING": "处理中", "CLOSED": "已关闭",
 }
 
 // portalFaultTypeLabel 报障类型 → 中文标签。

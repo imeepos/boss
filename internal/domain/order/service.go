@@ -49,4 +49,11 @@ type OrderService interface {
 
 	// Track 跟踪(order.html 时间轴):返回订单 + 环节日志。
 	Track(ctx context.Context, orderID int64) (*Order, []StageLog, error)
+
+	// ChangeAddress 变更安装地址(用户端 change-address)。
+	ChangeAddress(ctx context.Context, orderID, addressID int64) error
+
+	// SaveRating 落订单评价;RatingExists 判定已评价。
+	SaveRating(ctx context.Context, r Rating) error
+	RatingExists(ctx context.Context, orderNo string) (bool, error)
 }

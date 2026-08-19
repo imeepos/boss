@@ -6,20 +6,22 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // ---- Misc 域 ----
 
-// registerPortalMiscRoutes Misc 域:首页聚合/消息/优惠券/用量/自助排障/协议。
+// registerPortalMiscRoutes Misc 域:首页聚合/消息/优惠券/地址/用量/自助排障/协议。
 func registerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/home", portalHome(a))
 	g.GET("/messages", portalListMessages(a))
 	g.POST("/messages/read-all", portalReadAllMessages(a))
-	// TODO(契约冲突待商议): GET /api/v1/coupons 已由 admin userdata 占用(gin 静态路由不允许同路径双注册)。
-	// 用户端与 admin 共用 /api/v1 前缀下的重叠端点需网关分流或独立前缀裁决,见对账报告。
-	// g.GET("/coupons", portalCoupons)
+	// 用户端 /coupons 仅挂在 /api/user/v1(与 admin /api/admin/v1 前缀隔离,无路由冲突)。
+	g.GET("/coupons", portalListCoupons(a))
+	g.GET("/addresses", portalListAddresses(a))
+	g.POST("/addresses", portalCreateAddress(a))
 	g.GET("/usage", portalUsage)
 	g.GET("/diy/steps", func(c *gin.Context) {
 		respond(c, apitypes.CodeOK, gin.H{"items": portalDiySections})
@@ -30,6 +32,113 @@ func registerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 			"privacyPolicy": []string{"信息收集范围", "使用与共享", "保存期限与删除"},
 		})
 	})
+}
+
+// portalListCoupons GET /coupons?status=:我的优惠券(可从 userdata 券仓读取;未接入时降级静态)。
+func portalListCoupons(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		status := c.DefaultQuery("status", "available")
+		if a.UserData == nil {
+			respond(c, apitypes.CodeOK, gin.H{
+				"items": []gin.H{{
+					"couponId": "C-001", "amount": 20.0, "threshold": 100.0,
+					"title": "缴费满 100 减 20", "expireAt": "2026-12-31", "status": status,
+				}}, "inviteLink": "https://u.ymm.example/invite",
+			})
+			return
+		}
+		rows, err := a.UserData.ListCoupons(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		items := make([]gin.H, 0)
+		for _, r := range rows {
+			if toInt64(r["customerId"]) != cid {
+				continue
+			}
+			items = append(items, gin.H{
+				"couponId": toStr(r["couponId"]), "name": toStr(r["name"]),
+				"amount": float64(toInt64(r["amount"])) / 100, "threshold": 0.0,
+				"title": toStr(r["name"]), "expireAt": toStr(r["expireAt"]),
+				"status": couponStatus(toStr(r["status"]), status),
+			})
+		}
+		invite := ""
+		if cfg, err := a.UserData.GetInviteConfig(c.Request.Context()); err == nil && len(cfg) > 0 {
+			invite = toStr(cfg[0]["inviteLink"])
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": items, "inviteLink": invite})
+	}
+}
+
+// couponStatus DB 券状态 → 契约状态(available/used/expired)。
+func couponStatus(dbStatus, _ string) string {
+	switch dbStatus {
+	case "used", "expired":
+		return dbStatus
+	default:
+		return "available"
+	}
+}
+
+// portalListAddresses GET /addresses:我的家庭地址(契约 AddressInfo)。
+func portalListAddresses(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		rows, err := a.UserData.ListUserAddresses(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		items := make([]gin.H, 0)
+		for _, r := range rows {
+			if toInt64(r["customerId"]) != cid {
+				continue
+			}
+			items = append(items, gin.H{
+				"addressId": toStr(r["id"]), "label": toStr(r["detail"]),
+				"isDefault": r["isDefault"], "contact": toStr(r["contact"]),
+				"phoneMasked": httpx.MaskPhone(toStr(r["phone"])),
+				"community":   toStr(r["addrCode"]), "building": "", "door": "",
+			})
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": items})
+	}
+}
+
+// portalCreateAddress POST /addresses:新增家庭地址(user_addresses 落库)。
+func portalCreateAddress(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		var req struct {
+			Community string `json:"community" binding:"required"`
+			Building  string `json:"building"`
+			Door      string `json:"door"`
+			Contact   string `json:"contact" binding:"required"`
+			Phone     string `json:"phone"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		phone := req.Phone
+		if phone == "" {
+			if cust, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
+				phone = cust.Phone
+			}
+		}
+		if _, err := a.UserData.CreateUserAddress(c.Request.Context(), udcustomer.UserAddress{
+			CustomerID: cid, AddrCode: req.Community,
+			Contact: req.Contact, Phone: phone,
+			Detail:  req.Community + " " + req.Building + " " + req.Door,
+			IsDefault: false,
+		}); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
 }
 
 // portalHome GET /home:客户信息 + 未缴合计 + 消息红点(账单/订单详情聚合见报告)。
@@ -97,17 +206,6 @@ func portalReadAllMessages(a *app.Application) gin.HandlerFunc {
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
-}
-
-func portalCoupons(c *gin.Context) {
-	status := c.DefaultQuery("status", "available")
-	respond(c, apitypes.CodeOK, gin.H{
-		"items": []gin.H{{
-			"couponId": "C-001", "amount": 20.0, "threshold": 100.0,
-			"title": "缴费满 100 减 20", "expireAt": "2026-12-31", "status": status,
-		}},
-		"inviteLink": "https://portal.example/invite",
-	})
 }
 
 func portalUsage(c *gin.Context) {

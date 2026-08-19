@@ -216,6 +216,10 @@ func registerPortalAuthRoutes(pub *gin.RouterGroup, a *app.Application, mgr *aut
 func registerPortalProfileRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/auth/verify", portalVerifyStatus(a))
 	g.POST("/auth/verify", portalVerifySubmit(a))
+	g.POST("/auth/logout", func(c *gin.Context) {
+		// 无状态 JWT:服务端无需吊销,客户端删除本地 token 即完成登出。
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
 	g.GET("/profile", portalProfile(a))
 	g.GET("/profile/security", portalSecurity(a))
 	g.PUT("/profile/security/password", portalChangePassword(a))

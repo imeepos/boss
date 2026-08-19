@@ -253,6 +253,12 @@ func (f *fakeOrder) Track(ctx context.Context, id int64) (*order.Order, []order.
 	return f.byNo, f.trackLog, nil
 }
 
+func (f *fakeOrder) ChangeAddress(context.Context, int64, int64) error { return nil }
+func (f *fakeOrder) SaveRating(context.Context, order.Rating) error    { return nil }
+func (f *fakeOrder) RatingExists(context.Context, string) (bool, error) {
+	return false, nil
+}
+
 type fakeProduct struct {
 	list    []customer.ProductOffer
 	changed *customer.ProductOffer // 记录最近一次调价入参

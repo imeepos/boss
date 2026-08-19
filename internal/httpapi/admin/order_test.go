@@ -55,6 +55,11 @@ func (f *fakeOrder) GetByNo(ctx context.Context, no string) (*order.Order, error
 func (f *fakeOrder) Track(ctx context.Context, id int64) (*order.Order, []order.StageLog, error) {
 	return f.byNo, f.trackLog, nil
 }
+func (f *fakeOrder) ChangeAddress(context.Context, int64, int64) error { return nil }
+func (f *fakeOrder) SaveRating(context.Context, order.Rating) error    { return nil }
+func (f *fakeOrder) RatingExists(context.Context, string) (bool, error) {
+	return false, nil
+}
 
 func newOrderRouter(f *fakeOrder, u *fakeUser, mgr *auth.Manager) *gin.Engine {
 	gin.SetMode(gin.TestMode)

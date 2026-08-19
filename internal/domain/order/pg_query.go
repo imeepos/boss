@@ -8,23 +8,26 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// List 订单列表读模型:联表取客户/产品/地址名,按 keyword/status 过滤 + 分页。
+// List 订单列表读模型:联表取客户/产品/地址名,按 keyword/status/客户过滤 + 分页。
 func (s *PGStore) List(ctx context.Context, q OrderQuery) ([]OrderListItem, error) {
 	limit := q.Limit
 	if limit <= 0 {
 		limit = 1 << 30
 	}
 	rows, err := s.db.Query(ctx, `
-		SELECT o.order_no, COALESCE(c.name,''), COALESCE(p.name,''), COALESCE(a.name,''), o.stage, o.status, o.created_at
+		SELECT o.order_no, COALESCE(c.name,''), COALESCE(p.name,''),
+		       COALESCE(a.name, ua.detail, ''), o.address_id, o.stage, o.status, o.created_at
 		FROM orders o
 		LEFT JOIN customers c ON o.customer_id = c.id
 		LEFT JOIN product_offers p ON o.offer_id = p.id
 		LEFT JOIN addresses a ON o.address_id = a.id
+		LEFT JOIN user_addresses ua ON o.address_id = ua.id
 		WHERE ($1 = '' OR o.order_no ILIKE '%' || $1 || '%')
 		  AND ($2 = '' OR o.status = $2)
+		  AND ($3 = 0 OR o.customer_id = $3)
 		ORDER BY o.id DESC
-		LIMIT $3 OFFSET $4`,
-		q.Keyword, q.Status, limit, q.Offset)
+		LIMIT $4 OFFSET $5`,
+		q.Keyword, q.Status, q.CustomerID, limit, q.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("order: list: %w", err)
 	}
@@ -32,7 +35,8 @@ func (s *PGStore) List(ctx context.Context, q OrderQuery) ([]OrderListItem, erro
 	out := make([]OrderListItem, 0)
 	for rows.Next() {
 		var it OrderListItem
-		if err := rows.Scan(&it.OrderNo, &it.Customer, &it.Product, &it.Address, &it.Stage, &it.Status, &it.CreatedAt); err != nil {
+		if err := rows.Scan(&it.OrderNo, &it.Customer, &it.Product, &it.Address,
+			&it.AddressID, &it.Stage, &it.Status, &it.CreatedAt); err != nil {
 			return nil, fmt.Errorf("order: scan list item: %w", err)
 		}
 		out = append(out, it)
