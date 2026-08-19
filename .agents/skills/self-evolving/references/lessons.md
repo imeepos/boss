@@ -73,3 +73,8 @@
 - 当工具超时时，不要急着归因到网络。先做排除：① 去掉管道重试看真实输出；② 检查是否在等交互输入（加 `-y` 或 `--yes`）；③ 检查目标 URL 是否可直达（`curl -v` 看连接耗时）；④ 检查本地 registry 配置（`npm config get registry` / `pnpm config get registry`）。skill 没提前警告我。
 - Playwright 断言页面标题时,侧边栏菜单/面包屑/页内 h2 三处同文案会触发 strict mode violation:一律用 getByRole('heading') 而非 getByText(2026-08-18, e2e 冒烟首跑 2 失败均此因)
 - 跑前端 e2e 前先确认 vite proxy 的 BOSS_API_TARGET 指向真实后端(vite.config 默认 102:28080),playwright webServer.env 里覆盖才生效(2026-08-18)
+- 当用户反复强调"保存/记录账号密码 API key"时,修复是当场用 write 工具落盘 JSON 并 `ls` 确认存在,不要只口头答应"会保存"——本会话因只答应不执行被用户连催四次,浪费多轮(2026-08-19)
+- 当创建带组织绑定的资源(部门/岗位/账号)报 42200 时,修复是先读对应契约字段类型再拼 JSON:整数 id 传字符串必 42200(如 POST /departments 的 legalEntityId 必须整数);"先读后端请求 struct 再拼 JSON"适用于一切 42200(2026-08-19)
+- 当要给业务流选审核/操作账号时,修复是先 GET /menu-perms 查矩阵里目标权限码归属哪些角色(如 menu:dispatch -> ops/sysadmin/technician),再据此决定建号 roleCode——不要默认只有 sysadmin 能操作(2026-08-19)
+- 当 check-contract-sync A 报"路由已实现但契约未登记"、而子文件已加路径时,修复是往顶层 api/openapi/admin.yaml 补同路径的 `$ref` 行(~1 编码 /),正则只匹配同行带 $ref 的路径、不递归子文件(2026-08-19)
+- 当 go test 某包报编译错误而自己没改过那些文件时,修复是先 git status + stat 时间戳判断是否为并行 Agent 正在同工作区开发(未跟踪新文件+时间戳接近当前),识别为非自己回归,只验证自己领域包、不改他人正在写的文件(2026-08-19)

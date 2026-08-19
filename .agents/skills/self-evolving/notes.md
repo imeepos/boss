@@ -418,3 +418,9 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:Playwright getByText 撞侧边栏菜单+面包屑双副本,strict mode 连挂 2 条;读 error-context.md 的 page snapshot 后一次修对。
 - skill 有没有提前警告:self-evolving 红线 5(未验证不声称)促使我全程用真实后端断言,有效;但无 strict mode 相关经验条目。
 - 重来一次:写 e2e 断言页面标题直接用 getByRole('heading', ...) 起步,不先试 getByText。
+
+## 2026-08-19 bossctl CLI 模拟业务流 + 查询完善接口(bossctl-cli 会话)
+- 哪个坑浪费最多时间:① 用户反复强调"保存账号密码 API key"我却只口头答应、连续四轮没落盘,被用户连催"你倒是写呀",直到真正 write 才结束;② check-contract-sync A 门禁报"路由未登记"而子文件已加路径,以为是缩进问题,实际是读顶层 admin.yaml 的 `$ref` 行、不递归子文件,靠往 collectSpecPaths 加临时 DEBUG print 才定位;③ 建部门 42200 是因为 legalEntityId 传了字符串 "1" 而非整数 5。
+- skill 有没有提前警告:没有针对"答应保存要当场落盘"的红线(现有红线 5 是"未验证不声称",这次是"答应了不执行",另一类);也没有 check-contract-sync 匹配机制的条目。
+- 重来一次:① 任何"会保存/已记录"的承诺当场 write + ls 验证,不拖到下一轮;② 契约 A 门禁先看 collectSpecPaths 源码+临时 DEBUG 确认匹配机制,不要凭 regex 直觉猜;③ 42200 一律先读请求 struct 类型,整数 id 不传字符串;④ 结束前 git status 识别并行 Agent 改动,不把自己的域测试与其编译阻塞混淆。
+- 沉淀:techniques #24(CLI 五步模拟业务流+账号落盘)、#25($ref 行匹配机制)、#26(并行 Agent 识别);lessons #76-80;knowledge/后端.md 索引已同步。
