@@ -53,7 +53,12 @@ boss/
 │   │   ├── device/             # 阶段7:OLT 管理、指标、告警
 │   │   ├── provision/          # 阶段7:模板渲染、下发重试队列
 │   │   ├── gis/                # 阶段8:asset.changed 消费、实体同步
-│   │   └── analytics/          # 阶段9:五大指标、热力图、报告
+│   │   ├── analytics/          # 阶段9:五大指标、热力图、报告
+│   │   ├── ai/                 # OpenAI 能力网关(配置热更/chat/embeddings)
+│   │   ├── apikey/             # API key 免登录认证(三主体绑定)
+│   │   ├── geo/                # 国际地理基础数据(国家/行政区划/译名)
+│   │   ├── report/             # 经营分析报告
+│   │   └── worker/             # 师傅端(档案/抢单池/绩效)
 │   └── app/                    # 单体装配:wiring、路由注册、依赖注入
 ├── pkg/                        # 可被外部服务(aaa/collector)复用的公共库
 │   └── apitypes/               # 跨服务 DTO/错误码(仅跨进程契约;进程内 DTO 放 internal)

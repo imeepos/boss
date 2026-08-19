@@ -1,0 +1,154 @@
+# Geo 域:国际地理基础数据(国家/行政区划维护,menu:geo 门禁)。
+# 实现见 internal/app/http_geo.go、http_geo_import.go;决策见 docs/notes/adopted/2026-08-18-geo-vs-gis-split.md。
+# 响应统一 envelope {code,msg,data}(见 admin.yaml info.description);下述 data 负载用 dataSchema 复用。
+paths:
+  /geo/countries:
+    get:
+      tags: [Geo]
+      summary: 国家列表(locale 过滤译名)
+      operationId: listGeoCountries
+      parameters:
+        - { name: locale, in: query, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [Geo]
+      summary: 新建国家
+      operationId: createGeoCountry
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /geo/countries/{code}:
+    get:
+      tags: [Geo]
+      summary: 国家详情
+      operationId: getGeoCountry
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+    put:
+      tags: [Geo]
+      summary: 编辑国家
+      operationId: updateGeoCountry
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /geo/countries/{code}/active:
+    put:
+      tags: [Geo]
+      summary: 国家启停
+      operationId: setGeoCountryActive
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [active], properties: { active: { type: boolean } } }
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /geo/countries/{code}/attrs:
+    put:
+      tags: [Geo]
+      summary: 更新国家关联属性(邮编/电话区号等)
+      operationId: updateGeoCountryAttrs
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /geo/countries/{code}/names:
+    post:
+      tags: [Geo]
+      summary: 新增国家译名(locale+nameType 唯一)
+      operationId: addGeoCountryName
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  '/geo/countries/{code}/names/{locale}/{nameType}':
+    delete:
+      tags: [Geo]
+      summary: 删除国家译名
+      operationId: deleteGeoCountryName
+      parameters:
+        - { $ref: '#/components/parameters/Code' }
+        - { name: locale, in: path, required: true, schema: { type: string } }
+        - { name: nameType, in: path, required: true, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /geo/subdivisions:
+    get:
+      tags: [Geo]
+      summary: 行政区划列表(countryCode/parentCode 过滤)
+      operationId: listGeoSubdivisions
+      parameters:
+        - { name: countryCode, in: query, schema: { type: string } }
+        - { name: parentCode, in: query, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [Geo]
+      summary: 新建行政区划
+      operationId: createGeoSubdivision
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /geo/subdivisions/{code}:
+    put:
+      tags: [Geo]
+      summary: 编辑行政区划
+      operationId: updateGeoSubdivision
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /geo/subdivisions/{code}/active:
+    put:
+      tags: [Geo]
+      summary: 行政区划启停
+      operationId: setGeoSubdivisionActive
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /geo/subdivisions/{code}/names:
+    get:
+      tags: [Geo]
+      summary: 行政区划译名列表
+      operationId: listGeoSubdivisionNames
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [Geo]
+      summary: 新增行政区划译名
+      operationId: addGeoSubdivisionName
+      parameters: [ { $ref: '#/components/parameters/Code' } ]
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  '/geo/subdivisions/{code}/names/{locale}/{nameType}':
+    delete:
+      tags: [Geo]
+      summary: 删除行政区划译名
+      operationId: deleteGeoSubdivisionName
+      parameters:
+        - { $ref: '#/components/parameters/Code' }
+        - { name: locale, in: path, required: true, schema: { type: string } }
+        - { name: nameType, in: path, required: true, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /geo/import:
+    post:
+      tags: [Geo]
+      summary: 批量导入(单事务 upsert,译名/区划四类载荷;PSGC 内置见 migration)
+      operationId: importGeo
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+components:
+  parameters:
+    Code: { name: code, in: path, required: true, schema: { type: string } }
+  responses:
+    Ok:
+      description: envelope;data=null
+      content:
+        application/json:
+          schema: { type: object, properties: { code: { type: integer }, msg: { type: string }, data: { nullable: true } } }
+    Data:
+      description: envelope;data=单对象
+      content:
+        application/json:
+          schema: { type: object, properties: { code: { type: integer }, msg: { type: string }, data: { type: object } } }
+    Array:
+      description: envelope;data=裸数组
+      content:
+        application/json:
+          schema: { type: object, properties: { code: { type: integer }, msg: { type: string }, data: { type: array, items: { type: object } } } }

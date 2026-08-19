@@ -18,5 +18,19 @@
 - 编辑文件前请务必先读取文件
 
 
+## 决策记录制度（不可逆裁定当天过账）
+- 任何不可逆/难逆决策（密钥方案、域分合、ID/序列方案、内置数据方式）落地当天写一篇 dated note 到 `docs/notes/adopted/`，记 why + 放弃了什么；索引见 docs/notes/README.md。
+- 决策被推翻不改原文，加 `Amended` 指向新 note。
+- finding 编号沿用三套既有体系，不许散落聊天记录：
+  - 架构评审：`发现 N.M`（docs/architecture-review.md）
+  - 契约对账：`D/A/B/E/G#`（docs/contract/alignment-audit.md）
+  - 事后复盘：`docs/postmortem/000N-*`，随修复同提交，不事后补写。
+
+## 提交纪律（revert 可行是硬约束）
+- message 一律 `type(scope): subject`（feat/fix/refactor/docs/test/chore/style），正文写机理（why），不只写标题。
+- 一次提交 = 一个可独立陈述的变更；feat 带测试、fix 带回归、契约变更带 fields.md 同步，配套随主变更同提交。
+- 巨石提交仅限纯结构迁移（零行为变更）；行为变更禁止一锅端（不许 feat+fix+重构混装、不许多个不相关能力塞一个提交）。
+- 判断标准：这个提交能否被单独 revert 而不伤邻居？不能就拆。
+
 ## 已知环境事实
 brew 和 graphviz 都在 /opt/homebrew/bin

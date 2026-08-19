@@ -7,7 +7,7 @@ import { PageHead } from '../org/shared'
 import { fmtTime } from '../../lib/format'
 import '../org/org.css'
 
-interface StatCard { key: string; label: string; value: string }
+interface StatCard { key: string; label: string; value: string; delta: string; trend: string }
 interface StatusDist { status: string; statusLabel: string; count: number; percent: string }
 interface TodoItem { todoId: number; subject: string; source: string; time: string }
 interface DashboardData {
@@ -30,12 +30,15 @@ const TODO_BADGE_COLORS: Record<string, string> = {
   '告警中心': '#ff4d4f',
 }
 
+const TODO_PAGE_SIZE = 5
+
 export default function DashboardPage({ profile }: { profile: Profile }) {
   const t = useT()
   const d = t.pages.dashboard
   const [data, setData] = useState<DashboardData | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [todoPage, setTodoPage] = useState(1)
 
   const load = () => {
     setError('')
@@ -49,6 +52,9 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
 
   const welcome = d.welcome.replace('{name}', profile.realName).replace('{role}', profile.roleCode)
   const maxTrend = Math.max(1, ...(data?.trend.values ?? [1]))
+  const todoItems = data?.todos.items ?? []
+  const totalTodoPages = Math.ceil(todoItems.length / TODO_PAGE_SIZE)
+  const pagedTodos = todoItems.slice((todoPage - 1) * TODO_PAGE_SIZE, todoPage * TODO_PAGE_SIZE)
 
   return (
     <div>
@@ -65,6 +71,7 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                 <div className="dash-stat-dot" style={{ background: getStatDotColor(s.key) }} />
                 <div className="dash-stat-label">{s.label}</div>
                 <div className="dash-stat-value">{s.value}</div>
+                {s.delta ? <div className={'dash-delta ' + s.trend}>{s.delta}</div> : null}
               </div>
             ))}
           </div>
@@ -109,10 +116,10 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
             </div>
 
             <div className="org-card">
-              <h3>{d.todoTitle} <span className="dash-todo-count">{d.todoCount.replace('{n}', String(data.todos.items.length))}</span></h3>
+              <h3>{d.todoTitle} <span className="dash-todo-count">{d.todoCount.replace('{n}', String(todoItems.length))}</span></h3>
               <div className="dash-todo-list">
-                {data.todos.items.map((it) => {
-                  const time = fmtTime(it.time).split(' ')[1] || fmtTime(it.time)
+                {pagedTodos.map((it) => {
+                  const time = it.time ? (fmtTime(it.time).split(' ')[1] || fmtTime(it.time)) : '--'
                   const badgeColor = TODO_BADGE_COLORS[it.source] || '#1677ff'
                   return (
                     <div key={it.todoId} className="dash-todo-item">
@@ -127,6 +134,13 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                   )
                 })}
               </div>
+              {totalTodoPages > 1 && (
+                <div className="dash-todo-pager">
+                  <button className="dash-todo-page-btn" disabled={todoPage === 1} onClick={() => setTodoPage((p) => Math.max(1, p - 1))}>上一页</button>
+                  <span className="dash-todo-page-info">{todoPage} / {totalTodoPages}</span>
+                  <button className="dash-todo-page-btn" disabled={todoPage === totalTodoPages} onClick={() => setTodoPage((p) => Math.min(totalTodoPages, p + 1))}>下一页</button>
+                </div>
+              )}
             </div>
           </div>
 

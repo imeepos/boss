@@ -144,6 +144,54 @@ paths:
                     properties:
                       imported: { type: integer }
 
+  /addresses/{id}:
+    put:
+      tags: [Sys]
+      summary: 编辑地址节点(menu:address)
+      operationId: updateAddress
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [Sys]
+      summary: 删除地址节点(有子节点/引用时拒绝)
+      operationId: deleteAddress
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /addresses/{id}/geo:
+    put:
+      tags: [Sys]
+      summary: 设置地址国际锚点(countryCode 两位 + adminCode,经 geo 域校验)
+      operationId: setAddressGeo
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [countryCode]
+              properties:
+                countryCode: { type: string, minLength: 2, maxLength: 2 }
+                adminCode: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /addresses/search:
+    get:
+      tags: [Sys]
+      summary: 全树搜索(命中节点+祖先链,懒加载树展开用)
+      operationId: searchAddresses
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /params:
     get:
       tags: [Sys]

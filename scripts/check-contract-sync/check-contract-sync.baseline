@@ -1,0 +1,10 @@
+# check-contract-sync baseline:已知且有意接受的差异。
+# 规则:新增差异禁止进此文件;只有"存量债务 + 明确整改意图"才允许登记。
+# 每条必须有登记理由与整改方向。
+
+# ---- C. 超 300 行存量(08-18 体检发现,列入整改清单) ----
+# addresses 系列已拆 http_address.go,http_org.go 豁免已移除(2026-08-18)
+# asset/pg.go 316 行:资产仓储;整改=按 读侧/写侧 拆分
+len:internal/domain/asset/pg.go
+# user/pg.go 309 行:轻微超标;整改=随下次 user 域改动顺手拆
+len:internal/domain/user/pg.go

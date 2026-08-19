@@ -49,8 +49,12 @@ lint:
 	fi
 
 ## check:CI 等价门禁(本地一键复现 .github/workflows/ci.yml)
-check: test lint
+check: test lint contract-sync
 	$(GO) build ./...
+
+## 契约同步门禁:路由<->OpenAPI 对账 + json tag 命名 + 文件行数红线
+contract-sync:
+	$(GO) run ./scripts/check-contract-sync -root .
 
 ## 从 proto 生成 gRPC 代码
 proto:

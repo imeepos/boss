@@ -22,6 +22,8 @@ tags:
     description: 登录 / 当前用户 / 退出
   - name: Dashboard
     description: 工作台(统计卡 + 订单状态分布 + 待办 + 趋势)
+  - name: Geo
+    description: 国际地理基础数据(国家/行政区划/译名/批量导入)
   - name: Sys
     description: 基础配置(账号/地址层级/业务参数/审计日志/数据导入)
   - name: AI
@@ -68,6 +70,9 @@ paths:
   /roles: { $ref: './admin/sys.yaml#/paths/~1roles' }
   /addresses: { $ref: './admin/sys.yaml#/paths/~1addresses' }
   /addresses/import: { $ref: './admin/sys.yaml#/paths/~1addresses~1import' }
+  /addresses/{id}: { $ref: './admin/sys.yaml#/paths/~1addresses~1{id}' }
+  /addresses/{id}/geo: { $ref: './admin/sys.yaml#/paths/~1addresses~1{id}~1geo' }
+  /addresses/search: { $ref: './admin/sys.yaml#/paths/~1addresses~1search' }
   /params: { $ref: './admin/sys.yaml#/paths/~1params' }
   /params/{key}: { $ref: './admin/sys.yaml#/paths/~1params~1{key}' }
   /audit-logs: { $ref: './admin/sys.yaml#/paths/~1audit-logs' }
@@ -93,9 +98,9 @@ paths:
 
   # ---------- Customer(CRM + PROD) ----------
   /customers: { $ref: './admin/customer.yaml#/paths/~1customers' }
-  /customers/{customerId}/verify-logs: { $ref: './admin/customer.yaml#/paths/~1customers~1{customerId}~1verify-logs' }
+  /customers/{id}/verify-logs: { $ref: './admin/customer.yaml#/paths/~1customers~1{id}~1verify-logs' }
   /products: { $ref: './admin/customer.yaml#/paths/~1products' }
-  /products/{productId}/price-history: { $ref: './admin/customer.yaml#/paths/~1products~1{productId}~1price-history' }
+  /products/{id}/price-history: { $ref: './admin/customer.yaml#/paths/~1products~1{id}~1price-history' }
 
   # ---------- Billing ----------
   /bills: { $ref: './admin/billing.yaml#/paths/~1bills' }
@@ -243,3 +248,17 @@ paths:
   /reports: { $ref: './admin/intel.yaml#/paths/~1reports' }
   /reports/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1latest' }
   /reports/{reportId}/send: { $ref: './admin/intel.yaml#/paths/~1reports~1{reportId}~1send' }
+
+  # ---------- Geo(国际地理基础数据) ----------
+  /geo/countries: { $ref: './admin/geo.yaml#/paths/~1geo~1countries' }
+  /geo/countries/{code}: { $ref: './admin/geo.yaml#/paths/~1geo~1countries~1{code}' }
+  /geo/countries/{code}/active: { $ref: './admin/geo.yaml#/paths/~1geo~1countries~1{code}~1active' }
+  /geo/countries/{code}/attrs: { $ref: './admin/geo.yaml#/paths/~1geo~1countries~1{code}~1attrs' }
+  /geo/countries/{code}/names: { $ref: './admin/geo.yaml#/paths/~1geo~1countries~1{code}~1names' }
+  /geo/countries/{code}/names/{locale}/{nameType}: { $ref: './admin/geo.yaml#/paths/~1geo~1countries~1{code}~1names~1{locale}~1{nameType}' }
+  /geo/subdivisions: { $ref: './admin/geo.yaml#/paths/~1geo~1subdivisions' }
+  /geo/subdivisions/{code}: { $ref: './admin/geo.yaml#/paths/~1geo~1subdivisions~1{code}' }
+  /geo/subdivisions/{code}/active: { $ref: './admin/geo.yaml#/paths/~1geo~1subdivisions~1{code}~1active' }
+  /geo/subdivisions/{code}/names: { $ref: './admin/geo.yaml#/paths/~1geo~1subdivisions~1{code}~1names' }
+  /geo/subdivisions/{code}/names/{locale}/{nameType}: { $ref: './admin/geo.yaml#/paths/~1geo~1subdivisions~1{code}~1names~1{locale}~1{nameType}' }
+  /geo/import: { $ref: './admin/geo.yaml#/paths/~1geo~1import' }

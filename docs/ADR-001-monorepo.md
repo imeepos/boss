@@ -14,3 +14,6 @@
 ## 后续 ADR
 - [ADR-002](ADR-002-address-path-authoritative.md):地址层级以 ltree `path` 为唯一权威。
 - [ADR-003](ADR-003-statemachine-authoritative.md):状态机为唯一权威,Temporal 只做编排。
+
+## 相关日常决策（Agent Notes）
+日常不可逆裁定记录在 [notes/](notes/README.md),与本 ADR 同源互补。
