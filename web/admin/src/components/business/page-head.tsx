@@ -87,7 +87,7 @@ export function SearchBar({
 export function ToolbarButton({
   onClick, disabled, children, primary,
 }: {
-  onClick: () => void
+  onClick?: () => void
   disabled?: boolean
   children: React.ReactNode
   primary?: boolean
