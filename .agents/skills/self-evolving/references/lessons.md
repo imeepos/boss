@@ -140,3 +140,6 @@
 - 新增 admin 菜单项必须同时补 public/icons/items/<key>.svg(描边 #8b98a5, viewBox 24, stroke 1.8),否则侧栏该行无图标——menu.def.ts 的 key 就是文件名。
 - 2026-08-20 102: docker-clean.sh 的 `docker image prune -af` 会删掉"仅本地标签、从未 push"的镜像(如 boss/deploy-runner)和 registry 登录前依赖本地缓存的一切;清理脚本后必须验证 deploy-runner 等关键镜像可从 registry pull,且宿主要先 docker login 192.168.0.102:5000(凭据在 ~/boss/deploy-image/dotdocker/config.json)。
 当 X:mobile/user/android 下直接 ./gradlew 报 "Unable to locate a Java Runtime" 时,修复是 Y:export JAVA_HOME 为 /opt/homebrew/Cellar/openjdk@17 下 Contents/Home(同 scripts/build-install-user-android.sh)
+- pgx QueryExecModeSimpleProtocol 下把 []byte(json.Marshal 结果)直接当 jsonb 参数传,会被格式化成 "[123 34 ...]" 文本,PG 报 22P02 invalid input syntax for type json;jsonb 参数一律传 string(raw)(2026-08-20 portal SavePrefs/PutMessage 实锤)
+- Gitea CI(102)按 commit 构建镜像并自动重启 boss-server:本地 docker build 因镜像源 TLS 超时失败时,git push gitea 即等效部署(2026-08-20)
+- 多 subagent 并行改同一 Android 模块:按页面文件白名单分组+共享文件(Widgets/Theme)由主 agent 独占,5 agent 并行零冲突(2026-08-20)

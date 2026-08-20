@@ -700,3 +700,9 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最大坑:页面共享 Cell 的尾随 lambda 会绑定 right 插槽，改为多插槽组件时必须显式写 `right = {}`，否则视觉内容可能进入错误组合槽位。
 - skill 提前警告了吗:Android 经验已提醒 Compose 尾随 lambda，但本次仍在 TicketCell/History/Help/Notice 中发现同类风险。
 - 重来一次:先 grep 所有 `Cell(...) {` 并逐一确认插槽语义；接口联调先 curl 102 服务确认 401 与路径，再修复默认 base URL、定位失败禁止发送 0,0、数组端点从独立 API 加载。
+
+## 2026-08-20 全站二级页面对齐四 tab 基准(5+1 subagent)
+- 坑:多 agent 并行时各自跑 assembleDebug 会互相撞到对方的半编辑态文件短暂红屏;约定"别人文件报错等 1 分钟重试"即可,不要去改别人的文件。
+- 最值钱发现:pgx 简单协议 []byte→jsonb 22P02(POST /faults、PUT notify-settings 恒 50000),已修并实测;教训是"接口验证发现服务端 5xx 要 ssh 看 boss-server 日志实锤 SQLSTATE",不能只停留在报告。
+- 二轮复查抓到一轮漏网:3 个页面 TopBar 尾随 lambda 误绑 onAction 丢返回键、登录页死按钮、OrderCard 读不存在的 createdAt 字段——第一轮 5 个 agent 分工过细时跨文件模式问题(尾随 lambda)没人兜底,复查 agent 全局 grep 一次就全抓到。
+- 视觉验收没有图像模型时:uiautomator dump 断言文案/结构 + PIL 像素断言(头部 #006AE5、底 #F5F6F8)即可量化。
