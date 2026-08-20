@@ -165,7 +165,8 @@ paths:
 
     post:
       tags: [Auth]
-      summary: 发起(重新)实名核验
+      summary: 发起(重新)实名核验(落 PENDING;阿里云二要素通道启用时即时自动核验)
+      description: 通道配置后提交即判定(PASS/FAIL 并同步状态);通道未配置/调用失败保持 PENDING 走后台人工核验(fields.md §7.6,adopted/2026-08-24)。
       operationId: submitVerify
       requestBody:
         content:
@@ -175,8 +176,16 @@ paths:
 
       responses:
         '200':
-          description: 已提交审核
+          description: 已提交;result 为自动核验结论(通道未启用即 PENDING 等人工)
           content:
             application/json:
-              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean, example: true }
+                      result: { type: string, enum: [PASS, FAIL, PENDING] }
 

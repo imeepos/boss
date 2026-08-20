@@ -34,7 +34,8 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Customer]
-      summary: 提交客户实名核验资料(落 PENDING)
+      summary: 提交客户实名核验资料(落 PENDING;阿里云二要素通道启用时即时自动核验)
+      description: 通道配置后提交即判定(PASS/FAIL 并同步状态);通道未配置/调用失败保持 PENDING,走 /real-name/verify 人工核验(fields.md §7.6)。
       operationId: submitCustomerRealName
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 客户ID }
@@ -50,7 +51,19 @@ paths:
                 idCardNo: { type: string, description: 证件号 }
                 method: { type: string, description: 人脸/证件OCR/人工/第三方 }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+        '200':
+          description: envelope;data={id,result},result 为自动核验结论(通道未启用即 PENDING 等人工)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64, description: 核验记录 ID }
+                      result: { type: string, enum: [PASS, FAIL, PENDING] }
 
   /customers/{id}/real-name/verify:
     post:
