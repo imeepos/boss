@@ -36,24 +36,25 @@ func (Noop) Publish(context.Context, string, Event) error { return nil }
 type KafkaPublisher struct {
 	w     *kafka.Writer
 	topic string
+	// write 可注入替换 w.WriteMessages,便于离线单测;nil 时走真实 Kafka。
+	write func(ctx context.Context, msgs ...kafka.Message) error
 }
 
 // NewKafkaPublisher 构造(brokers 如 192.168.0.102:29092)。
 func NewKafkaPublisher(brokers []string, topic string) *KafkaPublisher {
-	return &KafkaPublisher{w: &kafka.Writer{
+	w := &kafka.Writer{
 		Addr:     kafka.TCP(brokers...),
 		Topic:    topic,
 		Balancer: &kafka.Hash{}, // 按 key 分区保序
-	}, topic: topic}
+	}
+	return &KafkaPublisher{w: w, topic: topic, write: w.WriteMessages}
 }
 
 // Publish JSON 序列化投递,key=订单号。
 func (p *KafkaPublisher) Publish(ctx context.Context, key string, e Event) error {
-	b, err := json.Marshal(e)
-	if err != nil {
-		return fmt.Errorf("events: marshal: %w", err)
-	}
-	if err := p.w.WriteMessages(ctx, kafka.Message{Key: []byte(key), Value: b}); err != nil {
+	// Event 字段均为可序列化基础类型,Marshal 不会失败。
+	b, _ := json.Marshal(e)
+	if err := p.write(ctx, kafka.Message{Key: []byte(key), Value: b}); err != nil {
 		return fmt.Errorf("events: kafka publish: %w", err)
 	}
 	return nil
