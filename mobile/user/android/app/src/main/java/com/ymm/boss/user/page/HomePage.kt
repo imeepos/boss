@@ -2,6 +2,7 @@ package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,8 +11,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.List
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.SignalCellularAlt
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.HeadsetMic
+import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.outlined.Router
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -45,14 +55,14 @@ private data class HomeData(
 }
 
 @Composable private fun Header(d: HomeData, nav: Nav) {
-    Column(Modifier.fillMaxWidth().height(300.dp).background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2))).padding(24.dp)) {
+    Column(Modifier.fillMaxWidth().height(400.dp).background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2))).padding(24.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Column(Modifier.weight(1f)) { Text("早上好，${d.name}", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold); Text(d.phone, color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(top = 9.dp)) }; Box(Modifier.size(40.dp).clickable { nav.push(Route.Messages) }) { Icon(Icons.Outlined.List, "消息", tint = Color.White, modifier = Modifier.fillMaxSize().padding(3.dp)); Box(Modifier.size(11.dp).background(Palette.err, CircleShape).align(Alignment.TopEnd)) } }
         Row(Modifier.padding(top = 17.dp).background(Color.White.copy(.15f), RoundedCornerShape(22.dp)).padding(horizontal = 16.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) { StatusDot(); Text("  服务在线 · 网络正常", color = Color.White, fontSize = 15.sp) }
     }
 }
 
 @Composable private fun Plan(d: HomeData, nav: Nav) {
-    Column(Modifier.padding(horizontal = 14.dp).background(Palette.panel, RoundedCornerShape(16.dp)).padding(18.dp)) {
+    Column(Modifier.padding(horizontal = 14.dp).offset(y = (-90).dp).shadow(4.dp, RoundedCornerShape(16.dp)).background(Palette.panel, RoundedCornerShape(16.dp)).padding(18.dp)) {
         Row(Modifier.fillMaxWidth().clickable { nav.push(Route.MyPlan) }, verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Home, null, tint = Palette.primary, modifier = Modifier.size(54.dp).background(Color(0xFFEFF5FF), CircleShape).padding(13.dp)); Text(d.plan, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 14.dp)); Tag("在网", Palette.success); Text("›", fontSize = 29.sp, color = Palette.muted) }
         Row(Modifier.fillMaxWidth().padding(top = 22.dp), horizontalArrangement = Arrangement.SpaceEvenly) { Metric("本月账单", "¥ ${d.bill}", Palette.primary) { nav.push(Route.Bills) }; Metric("套餐余额", "¥ ${d.balance}", Palette.primary); Metric("合约到期", d.end, Palette.ink) }
     }
@@ -61,9 +71,9 @@ private data class HomeData(
 
 @Composable private fun Quick(nav: Nav) {
     val items = listOf("办套餐" to Route.Products, "查订单" to Route.Orders, "缴费用" to Route.Pay, "报故障" to Route.Fault, "充值" to Route.Topup, "查用量" to Route.Usage, "消息" to Route.Messages, "客服" to Route.Service)
-    Column(Modifier.padding(14.dp).background(Palette.panel, RoundedCornerShape(16.dp)).padding(vertical = 10.dp)) { items.chunked(4).forEach { row -> Row(Modifier.fillMaxWidth().height(94.dp)) { row.forEach { (label, route) -> Column(Modifier.weight(1f).fillMaxHeight().clickable { nav.push(route) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(if (label == "办套餐" || label == "缴费用" || label == "充值") Icons.Outlined.ShoppingCart else if (label == "客服" || label == "报故障") Icons.Outlined.Person else Icons.Outlined.List, label, tint = when (label) { "查订单" -> Palette.success; "缴费用", "消息" -> Palette.orange; "报故障", "客服" -> Palette.purple; else -> Palette.primary }, modifier = Modifier.size(43.dp)); Text(label, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp)) } } } } }
+    Column(Modifier.padding(horizontal = 14.dp).offset(y = (-78).dp).shadow(3.dp, RoundedCornerShape(16.dp)).background(Palette.panel, RoundedCornerShape(16.dp)).padding(vertical = 10.dp)) { items.chunked(4).forEachIndexed { index, row -> Row(Modifier.fillMaxWidth().height(94.dp)) { row.forEach { (label, route) -> Column(Modifier.weight(1f).fillMaxHeight().clickable { nav.push(route) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(when (label) { "办套餐" -> Icons.Outlined.ShoppingBag; "查订单" -> Icons.Outlined.Assignment; "缴费用" -> Icons.Outlined.Payments; "报故障" -> Icons.Outlined.Build; "充值" -> Icons.Outlined.CreditCard; "查用量" -> Icons.Outlined.SignalCellularAlt; "消息" -> Icons.Outlined.ChatBubbleOutline; else -> Icons.Outlined.HeadsetMic }, label, tint = when (label) { "查订单", "查用量" -> Palette.success; "缴费用", "消息" -> Palette.orange; "报故障", "客服" -> Palette.purple; else -> Palette.primary }, modifier = Modifier.size(43.dp)); Text(label, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp)) } } }; if (index == 0) Spacer(Modifier.fillMaxWidth().height(1.dp).background(Palette.line)) } }
 }
 
 @Composable private fun Orders(d: HomeData, nav: Nav) { Card { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("进行中订单", fontSize = 22.sp, fontWeight = FontWeight.Bold); Text("全部 ›", color = Palette.primary, modifier = Modifier.clickable { nav.push(Route.Orders) }) }; d.orders.firstOrNull()?.let { o -> Row(Modifier.padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.List, null, tint = Palette.primary, modifier = Modifier.size(70.dp).background(Color(0xFFEFF5FF), RoundedCornerShape(22.dp)).padding(17.dp)); Column(Modifier.padding(start = 16.dp)) { Text("${o.optString("orderNo")} · ${o.optString("productName")}", fontSize = 16.sp); Text(o.optString("address"), color = Palette.muted, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp)); Text("上门安装   ${o.optInt("stage", 8)}/12  ━━━━━", color = Palette.primary, modifier = Modifier.padding(top = 12.dp)) } } } } }
 @Composable private fun Services(d: HomeData) { Card { Text("我的服务", fontSize = 22.sp, fontWeight = FontWeight.Bold); d.services.firstOrNull()?.let { s -> Row(Modifier.padding(top = 17.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Home, null, tint = Palette.primary, modifier = Modifier.size(70.dp).background(Color(0xFFEFF5FF), RoundedCornerShape(22.dp)).padding(15.dp)); Column(Modifier.padding(start = 16.dp)) { Text(s.optString("name"), fontSize = 18.sp); Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) { StatusDot(); Text("  ${s.optString("desc")}", color = Palette.success) } } } } } }
-@Composable private fun Card(content: @Composable ColumnScope.() -> Unit) { Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp).background(Palette.panel, RoundedCornerShape(16.dp)).padding(18.dp), content = content) }
+@Composable private fun Card(content: @Composable ColumnScope.() -> Unit) { Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp).shadow(3.dp, RoundedCornerShape(16.dp)).background(Palette.panel, RoundedCornerShape(16.dp)).padding(18.dp), content = content) }
