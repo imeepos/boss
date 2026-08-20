@@ -22,14 +22,15 @@ fun TicketCell(item: JSONObject, onClick: (() -> Unit)? = null,
         title = "$no · ${item.optString("typeLabel")}",
         desc = item.optString("address") + dist,
         onClick = onClick,
-    ) {
-        Column(horizontalAlignment = Alignment.End) {
+        right = {
+            Column(horizontalAlignment = Alignment.End) {
             StatusTag(item.optString("statusLabel"), item.optString("status"))
             if (!item.isNull("stageTotal")) {
                 Text("${item.optInt("stage", -1)}/${item.optInt("stageTotal")} 环节",
                     fontSize = 12.sp, color = Muted)
             }
-            rightExtra?.invoke()
-        }
-    }
+                rightExtra?.invoke()
+            }
+        },
+    )
 }

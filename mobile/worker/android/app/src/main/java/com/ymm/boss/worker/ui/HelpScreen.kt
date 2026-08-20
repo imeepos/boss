@@ -57,7 +57,8 @@ fun HelpScreen(nav: NavHost) {
                             title = it0.optString("title"),
                             desc = it0.optString("summary"),
                             onClick = { toast(ctx, it0.optString("content", it0.optString("summary"))) },
-                        ) { Text(">", fontSize = 14.sp, color = Muted) }
+                            right = { Text(">", fontSize = 14.sp, color = Muted) },
+                        )
                     }
                 }
             }

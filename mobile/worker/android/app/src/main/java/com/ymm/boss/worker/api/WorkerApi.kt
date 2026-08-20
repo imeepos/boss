@@ -45,7 +45,7 @@ object TicketApi {
 
     suspend fun navi(no: String): JSONObject = Api.get("/tickets/$no/navi")
 
-    suspend fun transfer(no: String, reason: String, targetId: String?, remark: String): JSONObject =
+    suspend fun transfer(no: String, reason: String, targetId: Long?, remark: String): JSONObject =
         Api.post("/tickets/$no/transfer", JSONObject().put("reason", reason)
             .put("targetWorkerId", targetId).put("remark", remark))
 

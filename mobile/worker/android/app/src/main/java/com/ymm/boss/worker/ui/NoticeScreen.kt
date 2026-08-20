@@ -42,7 +42,8 @@ fun NoticeScreen(nav: NavHost) {
                                 n.optString("category").takeIf { it.isNotEmpty() },
                             ).joinToString(" · "),
                             onClick = { toast(ctx, n.optString("content", "无详情")) },
-                        ) { Text(">", fontSize = 14.sp, color = Muted) }
+                            right = { Text(">", fontSize = 14.sp, color = Muted) },
+                        )
                     }
                 }
             }

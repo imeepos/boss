@@ -47,7 +47,8 @@ fun HistoryScreen(nav: NavHost) {
                                 it0.optString("finishedAt").takeIf { it.isNotEmpty() },
                             ).joinToString(" · "),
                             onClick = { nav.push(ticketScreen(it0.optString("ticketNo"))) },
-                        ) { StatusTag(it0.optString("statusLabel"), it0.optString("status")) }
+                            right = { StatusTag(it0.optString("statusLabel"), it0.optString("status")) },
+                        )
                     }
                 }
             }

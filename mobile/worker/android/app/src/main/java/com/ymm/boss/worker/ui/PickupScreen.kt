@@ -75,7 +75,8 @@ fun PickupScreen(nav: NavHost) {
                         }
                     }
                 }
-                val tools = m.data.optJSONArray("tools") ?: JSONArray()
+                val toolsState by loadOnce(refresh) { AssetApi.tools() }
+                val tools = (toolsState as? Load.Ok)?.data?.optJSONArray("items") ?: JSONArray()
                 Card(Modifier.padding(12.dp)) {
                     SectionTitle("工具借还", more = "${tools.length()} 件")
                     if (tools.length() == 0) Empty("暂无工具")

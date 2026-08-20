@@ -26,7 +26,7 @@ fun ToolScreen(nav: NavHost, no: String?) {
     var refresh by remember { mutableStateOf(0) }
     val ctx = LocalContext.current
     val measure by loadOnce(ticketNo, refresh) { AssetApi.measure(ticketNo) }
-    val resources by loadOnce(ticketNo) { AssetApi.resources(ticketNo) }
+    val resources by loadOnce(ticketNo, refresh) { AssetApi.resources(ticketNo) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("现场工具", onBack = { nav.pop() }, action = "刷新", onAction = { refresh++ })

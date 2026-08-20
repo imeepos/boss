@@ -58,13 +58,18 @@ fun CheckinScreen(nav: NavHost, no: String) {
                         scope.launch {
                             try {
                                 val loc = LocationHelper.getCurrentLocation(ctx)
-                                val (lat, lng) = if (loc != null) {
+                                val latLng = if (loc != null) {
                                     locationInfo = "定位成功: ${loc.lat}, ${loc.lng} (精度 ${loc.accuracy}m)"
                                     loc.lat to loc.lng
                                 } else {
-                                    locationInfo = "定位失败,使用默认坐标"
-                                    0.0 to 0.0
+                                    locationInfo = "定位失败，请打开定位权限后重试"
+                                    null
                                 }
+                                if (latLng == null) {
+                                    locating = false
+                                    return@launch
+                                }
+                                val (lat, lng) = latLng
                                 val r = TicketApi.checkin(no, lat, lng)
                                 toast(ctx, r.optString("message", "签到成功"))
                                 nav.pop()

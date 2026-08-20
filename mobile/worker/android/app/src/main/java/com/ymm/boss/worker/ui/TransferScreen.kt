@@ -71,7 +71,12 @@ fun TransferScreen(nav: NavHost, no: String) {
             PrimaryButton("确认转单", modifier = Modifier.fillMaxWidth()) {
                 scope.launch {
                     tip = try {
-                        val r = TicketApi.transfer(no, reason, target.ifBlank { null }, remark.trim())
+                        val targetId = target.trim().takeIf { it.isNotEmpty() }?.toLongOrNull()
+                        if (target.trim().isNotEmpty() && targetId == null) {
+                            tip = "转派对象请输入师傅 ID"
+                            return@launch
+                        }
+                        val r = TicketApi.transfer(no, reason, targetId, remark.trim())
                         toast(ctx, r.optString("message", "转单成功"))
                         nav.pop()
                         ""

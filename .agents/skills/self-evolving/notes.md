@@ -695,3 +695,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 坑:git add -p 分离 fix/style 提交时需先 `git diff --cached` 核对暂存 hunk,避免混装;本次顺利。
 - 教训:接口核对先行(sms-code→查库→login→verify/agreement 全部字段与页面解析一致),写 UI 前先 curl 真实响应省去返工。
 - git status 余留 ProductPage.kt 为并行 agent 改动,未触碰。
+
+## 2026-08-20 worker端剩余页面视觉与接口对齐
+- 最大坑:页面共享 Cell 的尾随 lambda 会绑定 right 插槽，改为多插槽组件时必须显式写 `right = {}`，否则视觉内容可能进入错误组合槽位。
+- skill 提前警告了吗:Android 经验已提醒 Compose 尾随 lambda，但本次仍在 TicketCell/History/Help/Notice 中发现同类风险。
+- 重来一次:先 grep 所有 `Cell(...) {` 并逐一确认插槽语义；接口联调先 curl 102 服务确认 401 与路径，再修复默认 base URL、定位失败禁止发送 0,0、数组端点从独立 API 加载。

@@ -40,7 +40,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://10.0.2.2:28080/api/worker/v1")}\"")
+            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://192.168.0.102:28080/api/worker/v1")}\"")
         }
         release {
             isMinifyEnabled = true

@@ -1,6 +1,5 @@
 package com.ymm.boss.worker.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,12 +14,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.api.AssetApi
-import com.ymm.boss.worker.ui.theme.Err
-import com.ymm.boss.worker.ui.theme.Warn
+import com.ymm.boss.worker.ui.theme.TagOrange
+import com.ymm.boss.worker.ui.theme.TagRed
 import org.json.JSONArray
 
 // 维护清单(对齐 docs/worker/maintenance.html):待替换设备优先级
@@ -51,16 +48,13 @@ fun MaintenanceScreen(nav: NavHost) {
                         Cell(
                             title = "${it0.optString("deviceNo")} · ${it0.optString("deviceType")}",
                             desc = parts.joinToString(" · "),
-                        ) {
-                            Text(it0.optString("priorityLabel"), fontSize = 12.sp,
-                                color = if (urgent) Err else Warn,
-                                modifier = Modifier
-                                    .background(
-                                        (if (urgent) Color(0xFFFFF1F0) else Color(0xFFFFF7E6)),
-                                        RoundedCornerShape(4.dp),
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 1.dp))
-                        }
+                            right = {
+                                StatusTag(
+                                    it0.optString("priorityLabel"),
+                                    color = if (urgent) TagRed else TagOrange,
+                                )
+                            },
+                        )
                     }
                 }
             }
