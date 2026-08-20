@@ -24,6 +24,7 @@ object Api {
 
     fun init(context: Context, baseOverride: String? = null) {
         TokenStore.init(context)
+        LangStore.init(context)
         if (!baseOverride.isNullOrBlank()) base = baseOverride
     }
 

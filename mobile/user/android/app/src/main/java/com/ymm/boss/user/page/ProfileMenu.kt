@@ -51,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.Api
+import com.ymm.boss.user.api.LangStore
 import com.ymm.boss.user.api.ProfileApi
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.AppCard
@@ -121,11 +122,18 @@ internal fun SettingsCard(nav: Nav) {
 /** 顶部语言下拉:渐变头上的半透明胶囊,选中后落 ProfileApi.setLanguage。 */
 @Composable
 internal fun LanguageDropdown(modifier: Modifier = Modifier) {
-    var lang by remember { mutableStateOf("zh") }
+    var lang by remember { mutableStateOf(LangStore.read()) }
     var expanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val options = listOf("zh" to "中文", "en" to "English", "fil" to "Filipino")
     val label = options.firstOrNull { it.first == lang }?.second ?: "中文"
+    fun select(key: String) {
+        lang = key
+        LangStore.write(key)
+        scope.launch {
+            try { ProfileApi.setLanguage(key) } catch (e: Exception) { } // 失败保留本地选中
+        }
+    }
     Box(modifier) {
         Row(
             Modifier
@@ -154,11 +162,8 @@ internal fun LanguageDropdown(modifier: Modifier = Modifier) {
                     trailingIcon = { if (lang == key) Icon(Icons.Filled.Check, contentDescription = null, tint = Palette.primary, modifier = Modifier.size(16.dp)) },
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                     onClick = {
-                        lang = key
                         expanded = false
-                        scope.launch {
-                            try { ProfileApi.setLanguage(key) } catch (e: Exception) { } // 失败保留本地选中
-                        }
+                        select(key)
                     },
                 )
                 if (i < options.lastIndex) HorizontalDivider(color = Palette.line, thickness = 0.5.dp)
