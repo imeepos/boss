@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.border
 
 /** 极简导航控制器:一个可组合 back stack,避免引入 navigation 依赖。 */
 class Nav(initial: Route) {
@@ -66,7 +67,7 @@ class Nav(initial: Route) {
 @Composable
 fun BottomTabBar(nav: Nav, currentKey: String, onSelect: (String) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().height(56.dp).background(Palette.panel),
+        Modifier.fillMaxWidth().height(64.dp).background(Palette.panel).border(1.dp, Palette.line),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Nav.TABS.forEach { (key, label) ->
@@ -79,7 +80,7 @@ fun BottomTabBar(nav: Nav, currentKey: String, onSelect: (String) -> Unit) {
                 Icon(
                     Nav.tabIcon(key, active), contentDescription = label,
                     tint = if (active) Palette.primary else Palette.subtle,
-                    modifier = Modifier.height(22.dp),
+                    modifier = Modifier.height(28.dp),
                 )
                 Text(label, color = if (active) Palette.primary else Palette.muted, fontSize = 12.sp, fontWeight = if (active) FontWeight.W600 else FontWeight.Normal)
             }
