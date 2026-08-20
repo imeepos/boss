@@ -82,19 +82,20 @@ fun ProfileScreen(nav: Nav) {
                 .height(with(density) { (infoPx + HeaderOverlapPx).toDp() })
                 .background(profileHeaderGradient()),
         )
-        // 滚动区整体从交点起带 16dp 顶部圆角裁剪:滚动到哪,哪个内容被圆角裁边,圆角恒在
-        Column(
+        // 滚动区包裹 Box:自交点起、顶部 16dp 圆角;内部 Column 只负责滚动,裁剪职责在 Box
+        Box(
             Modifier
                 .fillMaxSize()
                 .padding(top = with(density) { infoPx.toDp() })
-                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                .verticalScroll(rememberScrollState()),
+                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
         ) {
-            QuickEntriesCard(data, nav)
-            ServiceEntriesCard(nav, unread)
-            SettingsCard(nav)
-            LogoutCard(nav)
-            Spacer(Modifier.height(12.dp))
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                QuickEntriesCard(data, nav)
+                ServiceEntriesCard(nav, unread)
+                SettingsCard(nav)
+                LogoutCard(nav)
+                Spacer(Modifier.height(12.dp))
+            }
         }
         // 状态栏 scrim:内容滚到顶部时盖住内容,保持渐变底
         Box(
