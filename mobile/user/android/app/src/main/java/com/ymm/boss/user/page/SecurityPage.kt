@@ -49,7 +49,7 @@ fun SecurityScreen(nav: Nav) {
         try { data = ProfileApi.security() } catch (e: Exception) { data = null }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("账号安全") { nav.pop() }
+        TopBar("账号安全", onBack = { nav.pop() })
         RealNameCard(data, nav)
         PasswordCard(data)
         PhoneCard(data)

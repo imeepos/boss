@@ -31,6 +31,7 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PillTab
 import com.ymm.boss.user.ui.TopBar
 import org.json.JSONObject
 
@@ -47,7 +48,7 @@ fun UsageScreen(nav: Nav) {
         try { data = UserApi.misc.usage(period) } catch (e: Exception) { data = null }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("网络用量") { nav.pop() }
+        TopBar("网络用量", onBack = { nav.pop() })
         PeriodBar(period) { period = it }
         SummaryCard(data)
         DetailCard(data)
