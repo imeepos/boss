@@ -25,7 +25,8 @@ func (s *PGStore) ListUserAddresses(ctx context.Context) ([]map[string]any, erro
 
 func (s *PGStore) ListUserPlans(ctx context.Context) ([]map[string]any, error) {
 	return s.listMaps(ctx, `SELECT p.id, p.customer_id AS "customerId", p.product_id AS "productId",
-		p.plan_name AS "planName", p.status, p.effective_at AS "effectiveAt"
+		p.plan_name AS "planName", p.status, p.effective_at AS "effectiveAt",
+		p.contract_end AS "contractEnd"
 		FROM user_plans p ORDER BY p.id`)
 }
 
