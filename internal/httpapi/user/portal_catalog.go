@@ -23,7 +23,7 @@ func portalListProducts(a *app.Application) gin.HandlerFunc {
 		}
 		items := make([]gin.H, 0, len(list))
 		for _, p := range list {
-			if p.Status != "PUBLISHED" || (category != "" && category != "addon" && p.Category != category) {
+			if p.Status != "PUBLISHED" || (category != "" && p.Category != category) {
 				continue
 			}
 			items = append(items, gin.H{
