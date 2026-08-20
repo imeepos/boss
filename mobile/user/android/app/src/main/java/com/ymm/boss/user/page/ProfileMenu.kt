@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Help
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CurrencyYen
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.List
@@ -137,10 +140,19 @@ internal fun LanguageDropdown(modifier: Modifier = Modifier) {
             Text(label, color = Color.White, fontSize = 12.sp, lineHeight = 14.sp)
             Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "切换语言", tint = Color.White, modifier = Modifier.size(16.dp))
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { (key, name) ->
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(12.dp),
+            containerColor = Palette.panel,
+            tonalElevation = 0.dp,
+            shadowElevation = 4.dp,
+        ) {
+            options.forEachIndexed { i, (key, name) ->
                 DropdownMenuItem(
-                    text = { Text(name, fontSize = 13.sp, color = if (lang == key) Palette.primary else Palette.ink) },
+                    text = { Text(name, fontSize = 13.sp, lineHeight = 16.sp, color = if (lang == key) Palette.primary else Palette.ink) },
+                    trailingIcon = { if (lang == key) Icon(Icons.Filled.Check, contentDescription = null, tint = Palette.primary, modifier = Modifier.size(16.dp)) },
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                     onClick = {
                         lang = key
                         expanded = false
@@ -149,6 +161,7 @@ internal fun LanguageDropdown(modifier: Modifier = Modifier) {
                         }
                     },
                 )
+                if (i < options.lastIndex) HorizontalDivider(color = Palette.line, thickness = 0.5.dp)
             }
         }
     }
