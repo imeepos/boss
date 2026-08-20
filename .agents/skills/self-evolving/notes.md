@@ -627,3 +627,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最大时间坑: cdp-capture 每次运行用全新 profile,localStorage 种子(boss.servers/boss.token)跨运行丢失;必须在同一次运行里"种 localStorage → location.href 跳转 → 再 eval 断言"。skill 未警告。
 - 意外: 共享工作区有并行进程自动把我的改动 commit 掉(6973224/70bb996),收尾前必须 git log 核对而不是只看 status。
 - 重来一次: 先读 scripts/dev-token.mjs 是否还指向旧 API 前缀(/api/v1 已废),直接 curl 换 token 更稳。
+
+## 2026-08-20 短信配置页 + CORS 端口漂移修复
+- 哪个坑浪费最多时间: ①我本机自启后端(:28099)+vite 让用户自检,用户点名"不要本机自启服务,要用 102 部署"——上级叮嘱第 4 条早就写了对接 102:28080;②用户登录报跨域,根因是 vite 端口漂移到 5175 而 CORS 白名单写死 5173/5174。
+- skill 有没有预警: 上级叮嘱第 4 条有(我没遵守);CORS 端口漂移无预警,属新坑。
+- 重来一次: 改动完成直接 commit+push 触发 deploy-102 CI(部署唯一正道:push main→gitea→runner 构建镜像→compose up),再让用户在 102 上自检;CORS 涉及开发前端的一律按"本机源不限端口"设计,不枚举端口。

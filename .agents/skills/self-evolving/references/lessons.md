@@ -120,3 +120,6 @@
 - 短信验证码 5 分钟一次性:发给用户前提醒时效,报"登录失败"先查 portal_sms_codes 的 expires_at/used 再怀疑链路。
 - 当 cdp-capture 断言登录后页面但总是跳回 /login 时: 每次运行是新 profile,localStorage 种子不跨运行;单次运行内 seed→location.href→eval 三段式。
 - 共享工作区可能被并行进程自动 commit;验证收尾用 git log -- <file> 而非仅 git status。
+- 2026-08-20 部署唯一正道:push gitea main 触发 .gitea/workflows/deploy-102.yml(CI 构建镜像→推 192.168.0.102:5000→compose up 102:28080);无 102 ssh 权限,禁止本机自启后端对接。
+- 2026-08-20 CORS 白名单禁止枚举 vite 端口:vite dev 端口随占用漂移(5173→5175…),localhost/127.0.0.1 源应不限端口放行(internal/pkg/server/server.go originAllowed)。
+- 2026-08-20 共享工作区有并行会话:暂存区文件可能被别的会话一并 commit;代码就绪后立即自行提交,不留 staged 过夜。

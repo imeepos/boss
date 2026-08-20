@@ -163,3 +163,7 @@
 - 症状:脚本构建成功,安装阶段(select_device)死在 `mapfile: command not found`。
 - 原因:macOS 自带 bash 3.2 无 mapfile(bash 4+ 特性)。
 - 修法:直接手动 `adb -s <serial> install -r <apk>`;根治需把 mapfile 换成 while read 循环(未修,待办)。
+## git add 目录报 "ignored by .gitignore" 但文件已被跟踪
+症状: `git add internal/pkg/server/server.go` 报 paths ignored。
+原因: .gitignore 第 59 行裸词 `server` 匹配了 internal/pkg/server 目录名(本意是忽略构建产物 server 目录)。
+修法: 已跟踪文件不受 ignore 影响,忽略警告正常 add/commit 即可;新增文件若被误伤用 `git add -f` 或先改 .gitignore 为 `/server` 锚定根目录。
