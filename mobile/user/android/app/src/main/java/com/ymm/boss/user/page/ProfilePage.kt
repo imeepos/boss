@@ -64,21 +64,21 @@ fun ProfileScreen(nav: Nav) {
                 .count { !it.optBoolean("read") }
         } catch (e: Exception) { } // 无红点降级
     }
-    // 头部固定不滚动;卡片区在上方渐变头之上滚动(后绘者在上),首卡压头 32dp,同首页效果
+    // 头部固定且盖在内容之上(后绘者在上):滚动内容从头下穿过,状态栏始终在渐变底上,文字可读
     var headPx by remember { mutableStateOf(0) }
     val density = LocalDensity.current
     Box(Modifier.fillMaxSize()) {
-        ProfileHead(data, nav, Modifier.onSizeChanged { headPx = it.height })
-        val topPad = with(density) { headPx.toDp() } - 32.dp
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = topPad),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         ) {
+            Spacer(Modifier.height(with(density) { headPx.toDp() }))
             QuickEntriesCard(data, nav)
             ServiceEntriesCard(nav, unread)
             SettingsCard(nav)
             LogoutCard(nav)
             Spacer(Modifier.height(12.dp))
         }
+        ProfileHead(data, nav, Modifier.onSizeChanged { headPx = it.height })
     }
 }
 
@@ -91,7 +91,7 @@ private fun ProfileHead(data: JSONObject?, nav: Nav, modifier: Modifier = Modifi
             .fillMaxWidth()
             .background(profileHeaderGradient())
             .statusBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 52.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 20.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
