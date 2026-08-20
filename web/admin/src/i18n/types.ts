@@ -1137,6 +1137,78 @@ export interface Translations {
       close: string
       loadFail: string
     }
+    authconfig: {
+      title: string
+      desc: string
+      cnTitle: string
+      myTitle: string
+      fbTitle: string
+      enabled: string
+      disabled: string
+      pending: string
+      cnAppKey: string
+      cnAppSecret: string
+      cnPackage: string
+      cnTimeout: string
+      cnTimeoutHint: string
+      myProvider: string
+      providerOg: string
+      providerNone: string
+      mySmsProvider: string
+      myApiKey: string
+      myCountryCode: string
+      mySmsSign: string
+      fbSmsOnFail: string
+      fbBillingAlert: string
+      fbAutoRegister: string
+      fbPrivacyVersion: string
+      fbAgreementUrl: string
+      complianceNote: string
+      secretSet: string
+      save: string
+      saving: string
+      saved: string
+      saveFail: string
+      loadFail: string
+      retry: string
+      testBtn: string
+      testing: string
+      testOk: string
+      testFail: string
+      timeoutInvalid: string
+    }
+    smsconfig: {
+      title: string
+      desc: string
+      chTitle: string
+      tpTitle: string
+      enabledReady: string
+      disabled: string
+      pending: string
+      provider: string
+      providerHint: string
+      senderId: string
+      senderIdHint: string
+      accessKeyId: string
+      accessKeySecret: string
+      secretSet: string
+      tpCn: string
+      tpMy: string
+      tpHint: string
+      testPhonePh: string
+      phoneInvalid: string
+      envNote: string
+      save: string
+      saving: string
+      saved: string
+      saveFail: string
+      loadFail: string
+      retry: string
+      testBtn: string
+      testing: string
+      testOk: string
+      testFail: string
+    }
     servers: {
       title: string
       desc: string

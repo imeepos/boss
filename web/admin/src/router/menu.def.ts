@@ -21,6 +21,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'geo', label: '国家与行政区划', path: '/base/geo' },
     { key: 'params', label: '业务参数', path: '/base/params' },
     { key: 'authconfig', label: '认证配置', path: '/base/authconfig' },
+    { key: 'smsconfig', label: '短信配置', path: '/base/smsconfig' },
     { key: 'servers', label: '服务端配置', path: '/base/servers' },
     { key: 'audit', label: '审计日志', path: '/base/audit' },
     { key: 'importer', label: '数据导入中心', path: '/base/importer' },

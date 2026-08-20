@@ -320,6 +320,83 @@ paths:
                       latencyMs: { type: integer }
                       message: { type: string }
 
+  /sms-config:
+    get:
+      tags: [Sys]
+      summary: 短信配置全量(permCode menu:smsconfig;secret 只回 hasValue 掩码标记)
+      operationId: getSMSConfig
+      responses:
+        '200':
+          description: data.fields 以全 key(sms.accessKeyId 等)为索引;secret 字段 value 恒空
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      fields:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          properties:
+                            value: { type: string }
+                            hasValue: { type: boolean }
+  /sms-config/{group}:
+    put:
+      tags: [Sys]
+      summary: 分组部分更新(group∈channel/template;permCode menu:smsconfig;secret 空串=不修改,密文落库)
+      operationId: updateSMSConfig
+      parameters:
+        - { name: group, in: path, required: true, schema: { type: string, enum: [channel, template] } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [values]
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+                  description: 全 key map,如 {"sms.from":"YMM"};越组 key 42200
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+  /sms-config/channel/test:
+    post:
+      tags: [Sys]
+      summary: 通道自检(无 phone=完整性校验;带 phone=草稿合并配置后真实试发测试码,仅 +86/+60)
+      operationId: testSMSConfig
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+                phone: { type: string, description: 试发目标号码(E.164 或裸中国手机号) }
+      responses:
+        '200':
+          description: data={ok,latencyMs,message}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean }
+                      latencyMs: { type: integer }
+                      message: { type: string }
+
   /audit-logs:
     get:
       tags: [Sys]

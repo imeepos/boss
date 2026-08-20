@@ -159,20 +159,13 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	akstore := apikey.NewPGStore(pool)
 	aisvc := ai.NewService(ai.NewPGStore(pool))
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
-	// 验证码短信通道:凭据齐备走阿里云国际短信(+86/+60 统一),否则降级日志通道(仅开发)。
-	var smsSender sms.Sender = sms.NewLogSender()
-	if cfg.SMS.AccessKeyID != "" && cfg.SMS.AccessKeySecret != "" {
-		smsSender = sms.NewRouter(
-			sms.NewAliyunIntl(sms.AliyunIntlConfig{
-				AccessKeyID:     cfg.SMS.AccessKeyID,
-				AccessKeySecret: cfg.SMS.AccessKeySecret,
-				From:            cfg.SMS.From,
-			}),
-			nil, // 后续中国国内报备通道就绪后注入 ByRegion["86"]。
-			[]string{"86", "60"},
-		)
-	}
-	portalSvc := portal.NewPGStoreWithSender(pool, smsSender)
+	// 验证码短信通道:配置源=biz_params(后台短信配置页,60s 热生效),env 凭据兜底,
+	// 凭据齐备走阿里云国际短信(+86/+60 统一),否则降级日志通道(仅开发)。
+	portalSvc := portal.NewPGStoreWithSender(pool, sms.NewRouter(
+		sms.NewDynamic(smsConfigResolver(usr, cfg)),
+		nil, // 后续中国国内报备通道就绪后注入 ByRegion["86"]。
+		[]string{"86", "60"},
+	))
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表)。
 	var anaStore analytics.AnalyticsService = analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)

@@ -7,13 +7,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,23 +67,36 @@ fun ProfileScreen(nav: Nav) {
                 .count { !it.optBoolean("read") }
         } catch (e: Exception) { } // 无红点降级
     }
-    // 头部固定且盖在内容之上(后绘者在上):滚动内容从头下穿过,状态栏始终在渐变底上,文字可读
+    // 视觉错位:首卡上探 38dp(≈100px)压住渐变头,内容绘于头之上;状态栏区再覆一层
+    // 渐变 scrim(最后绘制)保证滚动到顶时状态栏文字始终在蓝底上可读
     var headPx by remember { mutableStateOf(0) }
     val density = LocalDensity.current
+    // 状态栏高度需在 ProfileHead(statusBarsPadding 会消费 insets)之前量取,否则 scrim 拿到 0
+    val statusBarDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(Modifier.fillMaxSize()) {
+        ProfileHead(data, nav, Modifier.onSizeChanged { headPx = it.height })
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         ) {
-            Spacer(Modifier.height(with(density) { headPx.toDp() }))
+            Spacer(Modifier.height((with(density) { headPx.toDp() } - HeaderOverlapDp).coerceAtLeast(0.dp)))
             QuickEntriesCard(data, nav)
             ServiceEntriesCard(nav, unread)
             SettingsCard(nav)
             LogoutCard(nav)
             Spacer(Modifier.height(12.dp))
         }
-        ProfileHead(data, nav, Modifier.onSizeChanged { headPx = it.height })
+        // 状态栏 scrim 最后绘制:内容滚到顶部时盖住内容,保持渐变底
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(statusBarDp)
+                .background(profileHeaderGradient()),
+        )
     }
 }
+
+/** 首卡压头高度:约 100px(本机 2.625px/dp ≈ 38dp)。 */
+private val HeaderOverlapDp = 38.dp
 
 @Composable
 private fun ProfileHead(data: JSONObject?, nav: Nav, modifier: Modifier = Modifier) {
@@ -91,7 +107,7 @@ private fun ProfileHead(data: JSONObject?, nav: Nav, modifier: Modifier = Modifi
             .fillMaxWidth()
             .background(profileHeaderGradient())
             .statusBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 20.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 40.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
