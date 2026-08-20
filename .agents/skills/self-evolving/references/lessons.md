@@ -143,3 +143,6 @@
 - pgx QueryExecModeSimpleProtocol 下把 []byte(json.Marshal 结果)直接当 jsonb 参数传,会被格式化成 "[123 34 ...]" 文本,PG 报 22P02 invalid input syntax for type json;jsonb 参数一律传 string(raw)(2026-08-20 portal SavePrefs/PutMessage 实锤)
 - Gitea CI(102)按 commit 构建镜像并自动重启 boss-server:本地 docker build 因镜像源 TLS 超时失败时,git push gitea 即等效部署(2026-08-20)
 - 多 subagent 并行改同一 Android 模块:按页面文件白名单分组+共享文件(Widgets/Theme)由主 agent 独占,5 agent 并行零冲突(2026-08-20)
+- 共享工作区提交前必看 `git diff --cached`:并行进程可能已把它的文件暂存进 index,直接 `git add 我的文件 && git commit` 会把 index 里别人的暂存一并卷入;混文件(如 openapi user.yaml)用 `git hash-object -w` + `git update-index --cacheinfo` 只暂存自己的 hunk(2026-08-23 stripe 接入踩过,reset --soft 重做)。
+- 契约命名门禁(check-contract-sync B)会扫描 json tag:解码外部渠道 snake_case 响应别用 struct tag,用 map[string]any 取字段。
+- 当门禁脚本输出"OK"但带计数时,先检查计数是否为 0 或异常小——扫描目录迁移后 0 条路由也能全绿,假阴性比 FAIL 更危险(2026-08-23 contract-sync A 扫旧目录 internal/app,22 条路由漂移无人发现)。
