@@ -44,6 +44,25 @@ object Api {
     suspend fun put(path: String, body: JSONObject = JSONObject()): JSONObject =
         request("PUT", path, body)
 
+    suspend fun upload(path: String, fileName: String, contentType: String, bytes: ByteArray): JSONObject =
+        withContext(Dispatchers.IO) {
+            val boundary = "----boss-${System.currentTimeMillis()}"
+            val conn = open("POST", path)
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+            conn.doOutput = true
+            try {
+                conn.outputStream.use { out ->
+                    out.write("--$boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\nContent-Type: $contentType\r\n\r\n".toByteArray())
+                    out.write(bytes)
+                    out.write("\r\n--$boundary--\r\n".toByteArray())
+                }
+                val code = conn.responseCode
+                val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.readText() ?: ""
+                if (code !in 200..299) throw ApiException(code, "HTTP $code")
+                unwrap(text)
+            } finally { conn.disconnect() }
+        }
+
     private fun open(method: String, path: String): HttpURLConnection {
         val conn = URL(base + path).openConnection() as HttpURLConnection
         conn.requestMethod = method

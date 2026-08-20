@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
@@ -19,7 +20,7 @@ func registerWorkerPortalScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/tickets/:ticketNo/photos", func(c *gin.Context) {
 		respond(c, apitypes.CodeOK, gin.H{"items": []gin.H{}})
 	})
-	g.POST("/tickets/:ticketNo/photos", workerPhotoUploadHandler)
+	g.POST("/tickets/:ticketNo/photos", workerPhotoUploadHandler(a))
 	g.GET("/tickets/:ticketNo/report", workerReportGetHandler(a))
 	g.POST("/tickets/:ticketNo/report", workerReportSubmitHandler(a))
 	g.GET("/tickets/:ticketNo/activation", workerActivationGetHandler(a))
@@ -75,11 +76,35 @@ func workerScanBindHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// workerPhotoUploadHandler 取证上传:无照片对象存储表,返回占位 Photo(缺口见报告)。
-func workerPhotoUploadHandler(c *gin.Context) {
-	respond(c, apitypes.CodeOK, gin.H{
-		"photoId": "PH-STUB", "fileName": "photo.jpg", "linked": true,
-	})
+// workerPhotoUploadHandler 取证上传:照片进入 MinIO,元数据登记后返回附件信息。
+func workerPhotoUploadHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tk, _, err := ticketOrder(c, a)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		fh, err := c.FormFile("file")
+		if err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		f, err := fh.Open()
+		if err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		defer f.Close()
+		at, err := a.Attachment.Upload(c.Request.Context(), &attachment.Attachment{
+			FileName: fh.Filename, ContentType: fh.Header.Get("Content-Type"),
+			UploaderType: attachment.UploaderWorker, UploaderID: tk.WorkerID,
+		}, f, fh.Size)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"photoId": at.ID, "fileName": at.FileName, "linked": true, "objectKey": at.ObjectKey})
+	}
 }
 
 // portalQuadH 按地址取四码对照视图(仅状态码;码值映射缺口见报告)。
@@ -185,6 +210,14 @@ type workerChargeReq struct {
 // workerChargePostHandler 确认收款:账务联动缺口见报告,先审计留痕。
 func workerChargePostHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		tk, _, err := ticketOrder(c, a)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !workerOwnedTicket(c, tk) {
+			return
+		}
 		var req workerChargeReq
 		if err := c.ShouldBindJSON(&req); err != nil {
 			respond(c, apitypes.CodeInvalidParam, nil)
@@ -193,7 +226,7 @@ func workerChargePostHandler(a *app.Application) gin.HandlerFunc {
 		httpx.RecordAudit(a, c, "数据变更", "worker_charge", c.Param("ticketNo"), map[string]any{
 			"amount": req.Amount, "payMethod": req.PayMethod,
 		})
-		respond(c, apitypes.CodeOK, gin.H{"payNo": "", "receiptUrl": ""})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "payNo": "", "receiptUrl": ""})
 	}
 }
 

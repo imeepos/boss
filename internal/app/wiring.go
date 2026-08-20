@@ -229,12 +229,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		AI:        aisvc,
 
 		Attachment: &attachment.Service{
-			St:  attachment.NewPGStore(pool),
-			Obj: attachment.NewMinIOStorage(),
-			Conf: attachment.MinIOConfig{
-				Endpoint: cfg.MinIO.Endpoint, AccessKey: cfg.MinIO.AccessKey,
-				SecretKey: cfg.MinIO.SecretKey, Bucket: cfg.MinIO.Bucket, UseSSL: cfg.MinIO.UseSSL,
-			},
+			St: attachment.NewPGStore(pool), Obj: attachment.NewMinIOStorage(),
+			Conf: minioFallback(cfg),
 		},
 
 		Worker:       wrk,
@@ -248,6 +244,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 
 	app.Audit = aw
+	app.Attachment.Resolve = minioConfigResolver(app.User, app.Attachment.Conf)
 	wireStripe(app, cfg) // 卡收单通道:密钥齐备才注册(见 wiring_stripe.go)
 
 	// 阶段9:经营分析 + 自动报告。

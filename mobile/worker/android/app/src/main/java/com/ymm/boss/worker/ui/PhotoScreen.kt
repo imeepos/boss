@@ -8,20 +8,43 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ymm.boss.worker.api.ScanApi
+import java.io.File
 import org.json.JSONArray
+import kotlinx.coroutines.launch
 
 @Composable
 fun PhotoScreen(nav: NavHost, no: String) {
     var refresh by remember { mutableStateOf(0) }
     val state by loadOnce(no, refresh) { ScanApi.photos(no) }
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var uploading by remember { mutableStateOf(false) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        uploading = true
+        scope.launch {
+            try {
+                val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                if (bytes == null) throw IllegalStateException("无法读取照片")
+                ScanApi.uploadPhoto(no, "evidence.jpg", ctx.contentResolver.getType(uri) ?: "image/jpeg", bytes)
+                refresh++
+                toast(ctx, "上传成功")
+            } catch (e: Exception) { toast(ctx, "上传失败：${e.message}") }
+            uploading = false
+        }
+    }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("拍照取证", onBack = { nav.pop() })
@@ -40,7 +63,10 @@ fun PhotoScreen(nav: NavHost, no: String) {
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    Notice("拍照上传通道尚未接入，请先在平台补充取证", red = true)
+                    PrimaryButton("选择照片并上传", enabled = !uploading, modifier = Modifier.fillMaxWidth()) {
+                        picker.launch("image/*")
+                    }
+                    Notice("照片将上传至后台配置的 MinIO 对象存储")
                 }
             }
         }

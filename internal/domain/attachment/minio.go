@@ -94,9 +94,10 @@ func (s *MinIOStorage) Put(ctx context.Context, cfg MinIOConfig, reader io.Reade
 
 // Service 附件上传服务:对象入 MinIO + 元数据入 PG。
 type Service struct {
-	St   Store
-	Obj  ObjectStorage
-	Conf MinIOConfig
+	St      Store
+	Obj     ObjectStorage
+	Conf    MinIOConfig
+	Resolve func(context.Context) (MinIOConfig, error)
 }
 
 // Upload 上传并登记;at 需已填 UploaderType/UploaderID。
@@ -104,7 +105,15 @@ func (s *Service) Upload(ctx context.Context, at *Attachment, reader io.Reader, 
 	if !ValidUploaderType(at.UploaderType) || at.UploaderID <= 0 {
 		return nil, ErrInvalidUploader
 	}
-	key, err := s.Obj.Put(ctx, s.Conf, reader, size, at.ContentType, at.FileName)
+	cfg := s.Conf
+	if s.Resolve != nil {
+		resolved, err := s.Resolve(ctx)
+		if err != nil {
+			return nil, err
+		}
+		cfg = resolved
+	}
+	key, err := s.Obj.Put(ctx, cfg, reader, size, at.ContentType, at.FileName)
 	if err != nil {
 		return nil, err
 	}

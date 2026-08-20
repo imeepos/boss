@@ -76,8 +76,8 @@ object ScanApi {
         Api.post("/tickets/$no/scan-abnormal", payload)
 
     suspend fun photos(no: String): JSONObject = Api.get("/tickets/$no/photos")
-    suspend fun uploadPhoto(no: String, scene: String): JSONObject =
-        Api.post("/tickets/$no/photos", JSONObject().put("scene", scene))
+    suspend fun uploadPhoto(no: String, fileName: String, contentType: String, bytes: ByteArray): JSONObject =
+        Api.upload("/tickets/$no/photos", fileName, contentType, bytes)
 
     suspend fun report(no: String): JSONObject = Api.get("/tickets/$no/report")
     suspend fun submitReport(no: String, remark: String): JSONObject =

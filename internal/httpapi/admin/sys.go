@@ -72,4 +72,7 @@ func registerSysRoutes(g *gin.RouterGroup, a *app.Application) {
 		httpx.RecordAudit(a, c, "数据变更", "biz_param", c.Param("key"), map[string]any{"value": req.Value})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
+
+	g.GET("/storage-config", requirePerm(a.User, "menu:params"), adminStorageConfigGet(a))
+	g.PUT("/storage-config", requirePerm(a.User, "menu:params"), adminStorageConfigPut(a))
 }
