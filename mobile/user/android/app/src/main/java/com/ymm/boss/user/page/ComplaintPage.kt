@@ -1,6 +1,7 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -150,8 +151,9 @@ private fun Chip(modifier: Modifier, label: String, on: Boolean, onClick: () -> 
         label, fontSize = 13.sp, textAlign = TextAlign.Center,
         color = if (on) Color.White else Palette.ink,
         modifier = modifier
-            .background(if (on) Palette.primary else Palette.bg, RoundedCornerShape(8.dp))
-            .clickable { onClick() }
+            .background(if (on) Palette.primary else Palette.panel, RoundedCornerShape(8.dp))
+            .border(1.dp, if (on) Palette.primary else Palette.line, RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
             .padding(vertical = 8.dp),
     )
 }
