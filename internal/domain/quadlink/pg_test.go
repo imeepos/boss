@@ -107,3 +107,29 @@ func TestPGStore_GetByAsset(t *testing.T) {
 		}
 	})
 }
+
+// 回归(000056 部分唯一索引): 同码多行历史时 getBy 必须取最新行(ORDER BY id DESC LIMIT 1)。
+func TestPGStore_GetByLatestLifecycle(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`WHERE customer_id = \$1 ORDER BY id DESC LIMIT 1`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(5), int64(105), int64(7), int64(205), int64(305), int64(1), "主品牌·企业", "LINKED"))
+
+	s := NewPGStore(mock)
+	q, err := s.GetByCustomer(context.Background(), 7)
+	if err != nil {
+		t.Fatalf("GetByCustomer: %v", err)
+	}
+	if q.ID != 5 {
+		t.Fatalf("id=%d, want 5(最新行)", q.ID)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}

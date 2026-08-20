@@ -63,9 +63,10 @@ func (s *PGStore) CreateLink(ctx context.Context, q QuadLink) (int64, error) {
 }
 
 // getBy 按四码之一反查(列名由调用方硬编码,非用户输入)。
+// 000056 后同一码可有多行历史(UNLINKED 保留),取最新一行的当前生命周期。
 func (s *PGStore) getBy(ctx context.Context, col string, val int64) (*QuadLink, error) {
 	var q QuadLink
-	err := s.db.QueryRow(ctx, `SELECT `+linkCols+` FROM quad_links WHERE `+col+` = $1`, val).
+	err := s.db.QueryRow(ctx, `SELECT `+linkCols+` FROM quad_links WHERE `+col+` = $1 ORDER BY id DESC LIMIT 1`, val).
 		Scan(&q.ID, &q.AssetID, &q.CustomerID, &q.PortID, &q.AddressID, &q.LegalEntityID, &q.LegalEntityName, &q.Status)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
