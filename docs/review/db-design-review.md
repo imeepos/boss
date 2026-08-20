@@ -22,6 +22,7 @@
 - 风险：双写不一致、报表口径分裂、运维排查需查两处。
 - 建议：裁定单一权威表（portal 为运行时态、user_* 为档案态亦需明示），写入 domain-map.md；其余表降级为视图或标注 deprecated。
 - **已裁定 2026-08-20**：portal 为唯一权威，见 docs/notes/adopted/2026-08-20-db-dualtrack-convergence.md。
+- **已落地 2026-08-20**：admin userdata 端点切权威表 + 停写回归测试（commit 38512b4）；user_invoices 开票走 billing 域为二阶段遗留。
 
 ### D2【高】三套客户账号体系 customer_id 口径不统一
 
@@ -52,6 +53,7 @@
   worker 侧命名又是 worker_real_name_verifications。
 - 建议：合并为统一 verifications（subject_type+subject_id），或明确废弃旧表并在 data-relations.md 标注 deprecated。
 - **已裁定 2026-08-20**：合并为统一 verifications(subject_type+subject_id)，旧表数据迁移后废弃。
+- **已落地 2026-08-20**：migrations/000059 + 三域改造（commit df155cd）。
 
 ### D6【低】reconciliation_batches 不挂 payments 行级
 
