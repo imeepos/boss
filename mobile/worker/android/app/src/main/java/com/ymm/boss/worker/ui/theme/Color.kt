@@ -6,6 +6,8 @@ import androidx.compose.ui.graphics.Color
 val Primary = Color(0xFF1677FF)
 val Primary2 = Color(0xFF69B1FF)
 val Bg = Color(0xFFF5F6F8)
+// Bg 的 ARGB 形式,供 SystemBarStyle(需要 Int 而非 Color)使用
+const val BgArgb = 0xFFF5F6F8.toInt()
 val Panel = Color(0xFFFFFFFF)
 val Line = Color(0xFFE8EAED)
 val Ink = Color(0xFF1F2329)
