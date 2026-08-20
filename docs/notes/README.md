@@ -34,3 +34,4 @@
 | 2026-08-19 | 移动端门户缺失端点补齐:评价/地址映射/第三方网关姿态 + 演示种子 | adopted/2026-08-19-user-portal-mobile-endpoints.md |
 | 2026-08-20 | 生产域名 boss.ymm.cn + ingress TLS(cert-manager)终结 | adopted/2026-08-20-prod-domain-tls.md |
 | 2026-08-20 | 真实短信/支付渠道:域内网关抽象,按属地选商,凭据未到不 vendor SDK | adopted/2026-08-20-sms-payment-channel.md |
+| 2026-08-20 | 数据库双轨收敛:portal 唯一权威/合成 ID 负数段/四码部分唯一索引/实名统一 verifications | adopted/2026-08-20-db-dualtrack-convergence.md |

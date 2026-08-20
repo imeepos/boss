@@ -21,12 +21,14 @@
   （user_accounts.auto_pay / portal_billing_prefs.auto_pay）。
 - 风险：双写不一致、报表口径分裂、运维排查需查两处。
 - 建议：裁定单一权威表（portal 为运行时态、user_* 为档案态亦需明示），写入 domain-map.md；其余表降级为视图或标注 deprecated。
+- **已裁定 2026-08-20**：portal 为唯一权威，见 docs/notes/adopted/2026-08-20-db-dualtrack-convergence.md。
 
 ### D2【高】三套客户账号体系 customer_id 口径不统一
 
 - customers（主档）、user_accounts（硬 FK）、portal_accounts（UNIQUE 软引用，隔离空间可合成 ID）。
 - portal_accounts 若用合成 ID 与真实 customers.id 同列混存，无任何约束防止撞号；合并隔离空间时不可迁移。
 - 建议：约定合成 ID 独立号段（如负数/超高位）并写进 data-relations.md §2.10；或建 portal↔customers 映射表。
+- **已裁定 2026-08-20**：合成 ID 一律负数段 + CHECK 约束，同上 note。
 
 ### D3【中】quad_links 四列 UNIQUE + UNLINKED 行不删除 → 复绑只能 UPDATE 原行
 
@@ -34,6 +36,7 @@
 - 新链路必须复用历史行 UPDATE，导致链路变迁无台账（何时解绑/复绑不可追溯）；若实现误走 INSERT 会撞 UNIQUE。
 - 建议：UNIQUE 改为「status='LINKED' 时的部分唯一索引」`CREATE UNIQUE INDEX ... WHERE status='LINKED'`，
   UNLINKED 行保留为历史；或补 quad_link_histories 台账。
+- **已裁定 2026-08-20**：采用部分唯一索引方案，UNLINKED 行即历史，不另建台账。
 
 ### D4【中】orders.channel_id / region_path 无索引
 
@@ -45,6 +48,7 @@
 - real_name_verifications(000026) 与 customer_real_name_verifications(000051) 并存，字段/用途相近；
   worker 侧命名又是 worker_real_name_verifications。
 - 建议：合并为统一 verifications（subject_type+subject_id），或明确废弃旧表并在 data-relations.md 标注 deprecated。
+- **已裁定 2026-08-20**：合并为统一 verifications(subject_type+subject_id)，旧表数据迁移后废弃。
 
 ### D6【低】reconciliation_batches 不挂 payments 行级
 
