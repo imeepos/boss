@@ -123,9 +123,6 @@ fun LoginScreen(nav: Nav) {
             Spacer(Modifier.height(18.dp))
             DividerText("还没有账号")
             OutlinedButton(onClick = { nav.push(com.ymm.boss.user.ui.Route.Register) }, modifier = Modifier.fillMaxWidth().height(44.dp)) { Text("自助注册", color = Palette.primary) }
-            Spacer(Modifier.height(14.dp))
-            DividerText("其他登录方式")
-            OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth().height(44.dp)) { Text("本机号码一键登录", color = Palette.primary) }
             Spacer(Modifier.height(24.dp))
         }
     }
