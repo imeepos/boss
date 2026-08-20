@@ -1,0 +1,163 @@
+# Android 设计稿 → 页面布局提示词：范式模板
+
+> 用途：拿到移动端视觉设计稿后按本模板填写，产出可直接交给编码 AI 生成 Compose 页面的提示词。
+> 与 Web 版的差异：px→dp/sp 换算、无 hover 只有按压涟漪、edge-to-edge insets、Material3 组件、真机 adb 验证。
+> Web 版见 `design-to-prompt-template.md`；两份模板 A–N 节编号对齐，可对照使用。
+
+---
+
+## 0. 使用流程
+
+1. **量取**：`read_image` 读设计稿，按第 2 节清单从宏观到微观提取；**先把 px 换算成 dp**。
+2. **填模板**：填第 1 节 `{{ }}` 占位符；设计稿只画了浅色的，深色主题节必须自己推演补全。
+3. **验证**：`./gradlew assembleDebug` + `adb install` + `uiautomator dump` 断言（见第 4 节），截图与设计稿并排比对。
+
+**换算规则（必做）**：
+- 设计稿标注 px ÷ 画布基准宽 × 160 = dp（如 1080px 稿：px ÷ 3 = dp；750px 稿：px ÷ 2 = dp）。
+- 文字字号一律用 sp；尺寸/间距/圆角一律用 dp；**提示词中禁止出现裸 px**。
+
+---
+
+## 1. 完整模板（复制即用）
+
+```markdown
+请根据设计稿用 Jetpack Compose 实现页面，规格如下：
+
+## A. 任务定位
+- 页面名称：{{ 如：订单详情页 }}
+- 页面类型：{{ 列表 / 表单 / 详情 / 底部Tab页 / 登录 }}
+- 所属端：{{ mobile/user / mobile/worker，禁止跨 app 复用页面 }}
+- 设计稿：{{ 附图路径；画布 {{1080×2400}}，换算系数 ÷{{3}} }}
+
+## B. 技术栈与硬约束
+- Kotlin + Jetpack Compose（BOM 2026.06.00）+ material3；minSdk 26
+- 颜色一律走 ui/theme 的 MaterialTheme.colorScheme / 项目色板常量，禁止页面内硬编码 Color(0xFF...)
+- 新增色值先落 ui/theme/Color.kt 并配深色值，双主题都要可读
+- 单文件 ≤300 行；composable 拆分到职责单一；不使用 emoji，图标用 material-icons 或 SVG→ImageVector
+- 交互动作一律 onClick = {...} 显式命名传参，禁止裸尾随 lambda（插槽绑错位不报错）
+
+## C. 画布基准与屏幕适配
+- 设计稿：{{ 1080×2400 px，即 360×800 dp 基准 }}
+- 适配策略：宽度用 fillMaxWidth + 权重（weight），禁止按固定宽写死；关键列表用 LazyColumn
+- 横屏/平板：{{ 简单自适应即可 / 需双栏 }}}
+
+## D. 整体骨架（Compose 结构树，必填）
+Screen
+├── Scaffold
+    ├── topBar：{{ TopAppBar（标题、返回按钮）}}
+    ├── bottomBar：{{ NavigationBar（4 个 Tab）/ 无 }}
+    └── content
+        ├── {{ 区块1：如 状态卡片（Column，内边距 16dp）}}
+        ├── {{ 区块2：如 LazyColumn 商品行（行高 56dp）}}
+        └── {{ 区块3：如 底部操作条（Row，主按钮占 weight(1f)）}}
+- edge-to-edge：根布局 windowInsetsPadding(WindowInsets.safeDrawing)，内容不被状态栏/导航栏遮挡
+
+## E. 区域精确规格
+| 区块 | 尺寸(dp) | 背景 | 圆角 | 内边距 | 排列 |
+|---|---|---|---|---|---|
+| {{ 区块名 }} | {{ 高 56 / fillMaxWidth }} | {{ colorScheme.surface }} | {{ 12dp }} | {{ 16dp }} | {{ Column/Row + 间距 }} |
+
+## F. 色板（浅色 + 深色成对）
+| 用途 | Color.kt 常量名 | 浅色值 | 深色值 |
+|---|---|---:|---:|
+| {{ 主色/背景/表面/边框/文字/状态色… }} | {{ BrandBlue700 }} | {{ #273F70 }} | {{ #9CB8E8 }} |
+
+## G. 字体层级
+| 层级 | sp/行高 | 字重 | 用途 |
+|---|---|---|---|
+| {{ 大标题/正文/辅助… }} | {{ 20sp/28sp }} | {{ Bold }} | {{ 页面标题 }} |
+
+- 用 MaterialTheme.typography 定制或直接指定；数字金额可用 FontFeature
+
+## H. 间距栅格
+- 4dp 栅格：{{ 4/8/12/16/24/32/48 }}；区块间 {{ 16dp }}，列表行内 {{ 12dp }}
+
+## I. 组件清单与规格
+| 组件 | 尺寸(dp) | 圆角 | 文字 | 备注 |
+|---|---|---|---|---|
+| {{ Button/TextField/Card/Tab… }} | {{ 高 48 }} | {{ 8dp }} | {{ 14sp }} | {{ 触控目标 ≥48×48dp }} |
+
+- 优先 material3 组件（Button/OutlinedTextField/Card/FilterChip）；缺口再自定义
+
+## J. 交互状态（移动端无 hover，重点是这些）
+- 按压：material3 组件自带涟漪；自定义可点区块手动 clip + clickable 加涟漪
+- 选中/未选中：{{ Tab、Chip 的选中色差 }}
+- 禁用：{{ 按钮 contentColor 用 colorScheme.onSurface 低透明 }}
+- 加载：{{ 顶部 LinearProgressIndicator / 居中 CircularProgressIndicator }}
+- 空态/错误态：{{ 图标 + 文案 + 重试按钮 }}
+- 滚动：{{ LazyColumn + nestedScroll；下拉刷新是否需要 }}
+- 返回：自维护导航栈必须配 BackHandler(enabled = stack.size > 1) { pop() }
+- 键盘：输入页 contentPadding + imePadding()，避免输入框被软键盘遮挡
+
+## K. 深色模式
+- 设计稿只画了浅色：深色按 F 节成对色值推演，MaterialTheme 跟随系统
+- 图片/插画：{{ 是否准备深色变体 }}；深色下对比度不足的辅助文字需提亮
+
+## L. 数据契约绑定
+- 字段对齐：{{ docs/contract/fields.md 关键字段 }}
+- 状态枚举对齐：{{ docs/contract/terms.md }}
+- API 响应：{code, data} 信封结构，解析前先 curl 核对真实响应再写模型
+- mock 数据：{{ 2-3 条真实形状的样例 }}
+
+## M. 资产清单
+| 资产 | 位置 | 密度 | 用途 |
+|---|---|---|---|
+| {{ logo_x.xml }} | res/drawable | 矢量优先 | {{ 品牌区 }} |
+
+规则：矢量图放 drawable（XML vector）；位图放 drawable-nodpi + 按宽度 dp 加载；禁止把大图塞进 APK 不压缩。
+
+## N. 验收清单
+1. {{ 如：详情卡片宽 fillMaxWidth、圆角 12dp、内边距 16dp }}
+2. {{ 所有可点区域 ≥48×48dp }}
+3. 浅色/深色主题下文字对比度均可读
+4. 真机返回键按预期 pop 而非退出 App
+5. 弱网/空数据/加载三态不塌布局
+```
+
+---
+
+## 2. 量取信息检查清单（Android 特有项加粗）
+
+1. **骨架**：底不底部 Tab？顶栏有无返回/动作按钮？→ 先定 Scaffold 结构
+2. **分区**：内容区几块？滚动还是固定？
+3. **px→dp 换算**：先问设计稿基准宽（1080/750/375），全部换算完再填
+4. **组件**：每块的 material3 对应物（Card/Button/Chip/TextField/Tab）
+5. **纵轴节奏**：区块间距、行高归一 4dp 栅格
+6. **字阶**：sp + 字重；标题/正文/辅助三档起步
+7. **色板**：**浅色 + 深色成对提取**；状态色（成功/警告/危险）齐全
+8. **触控**：**所有可点元素 ≥48×48dp**，设计稿画小了要在提示词里放大
+9. **状态**：按压/选中/禁用/加载/空/错误；**软键盘弹出后的布局**
+10. **insets**：状态栏、导航栏、输入法三处遮挡都要在 D 节声明处理方式
+
+---
+
+## 3. 本项目 Android 专用约束块（粘贴到 B 节）
+
+```markdown
+- 工程：mobile/user/android 或 mobile/worker/android（独立 Gradle 工程，不跨 app 复用页面实现）
+- 技术栈：Kotlin 2.1.21 + Compose BOM 2026.06.00 + material3；minSdk 26；JDK 17（/opt/homebrew/opt/openjdk@17）
+- 颜色落 ui/theme/Color.kt，主题走 ui/theme/Theme.kt 的 MaterialTheme.colorScheme
+- 列表字段/状态枚举先查 docs/contract/fields.md 与 docs/contract/terms.md，禁止自造字段名
+- onClick 显式命名传参；BackHandler 配自维护导航栈；根布局处理 WindowInsets.safeDrawing
+- 门禁：./gradlew assembleDebug 通过 + 真机 adb 安装验证；完成后 git commit
+```
+
+---
+
+## 4. 验证与迭代（区别于 Web 的 cdp-capture）
+
+```bash
+# 构建 + 安装
+./gradlew assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+# 截图与设计稿对比
+adb exec-out screencap -p > screen.png   # 然后用 read_image 对比
+
+# UI 断言（点前 dump 取坐标 → input tap → 再 dump 断言文本）
+adb shell uiautomator dump && adb shell input tap <x> <y>
+adb shell input keyevent 4   # 返回键
+```
+
+- 差异反馈同样写"应为 X 而非 Y"：`卡片圆角应为 12dp 而非 8dp；主按钮高度应为 48dp`。
+- 数据加载稳定后再取坐标（加载中 bounds 会漂移）。
+- 收敛后把定稿规格回写 `docs/design/`，范式对齐 `visual-design-prompts.md`。
