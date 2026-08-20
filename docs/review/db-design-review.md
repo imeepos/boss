@@ -29,6 +29,7 @@
 - portal_accounts 若用合成 ID 与真实 customers.id 同列混存，无任何约束防止撞号；合并隔离空间时不可迁移。
 - 建议：约定合成 ID 独立号段（如负数/超高位）并写进 data-relations.md §2.10；或建 portal↔customers 映射表。
 - **已裁定 2026-08-20**：合成 ID 一律负数段 + CHECK 约束，同上 note。
+- **已落地 2026-08-20**：migrations/000057 + pg/memory 双实现（commit b132243）。
 
 ### D3【中】quad_links 四列 UNIQUE + UNLINKED 行不删除 → 复绑只能 UPDATE 原行
 
@@ -37,11 +38,13 @@
 - 建议：UNIQUE 改为「status='LINKED' 时的部分唯一索引」`CREATE UNIQUE INDEX ... WHERE status='LINKED'`，
   UNLINKED 行保留为历史；或补 quad_link_histories 台账。
 - **已裁定 2026-08-20**：采用部分唯一索引方案，UNLINKED 行即历史，不另建台账。
+- **已落地 2026-08-20**：migrations/000056 + quadlink getBy 取最新行（commit 5097a1e）。
 
 ### D4【中】orders.channel_id / region_path 无索引
 
 - orders 仅有 customer/offer 索引；渠道维度下钻（channel_id）与数据权限裁剪（region_path ∈ scope 子树）都会全表扫。
 - 建议：`CREATE INDEX idx_orders_channel ON orders(channel_id)`、`CREATE INDEX idx_orders_region ON orders(region_path)`（或 text pattern opclass）。
+- **已落地 2026-08-20**：migrations/000058（commit a78156a）。
 
 ### D5【中】实名表双轨并存
 

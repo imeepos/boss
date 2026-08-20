@@ -118,7 +118,7 @@
 | asset_lifecycles ✚ | id | ▲asset_id(FK) | 资产 1:N 状态轨迹 |
 | asset_assignments ✚ | id | ▲asset_id(FK) ▲worker/address(软) | 资产归属台账 |
 | stocktakes ✚ / replacements ✚ | id | ▲legal_entity_id(FK) / ▲asset(软) | — |
-| quad_links ✚ | id | ▲asset ▲customer ▲port ▲address（四列各 UQ + 软引用）+ legal_entity 快照 | 四码 1:1 链路 |
+| quad_links ✚ | id | ▲asset ▲customer ▲port ▲address（四列软引用；000056 起唯一约束改为 `WHERE status IN('LINKED','CONFLICT')` 部分唯一索引，UNLINKED 行保留为链路历史）+ legal_entity 快照 | 四码 1:1 活跃链路，1:N 历史 |
 
 ### 2.7 网络资源·监控·开通·AAA（000009/13-15/22/25/28/30/32-33/37，全部✚）
 
@@ -172,7 +172,7 @@
 | 实体 | 主键 | 关系 |
 |:-----|:-----|:-----|
 | portal_sms_codes ✚ | (phone,scene) | 验证码，自过期 |
-| portal_accounts ✚ | phone | ▲customer_id(UQ **软**——隔离空间可合成 ID，不 FK) 1:1 |
+| portal_accounts ✚ | phone | ▲customer_id(UQ **软**——隔离空间合成 ID 取**负数段**，000057 CHECK 禁 0；真实 customers.id 恒正) 1:1 |
 | portal_prefs / portal_wallets / portal_billing_prefs ✚ | customer_id | ▲customers(软) 1:1 |
 | portal_messages ✚ | id | ▲customer_id(软)，payload JSONB |
 | portal_seq ✚ | kind | 门户单号序列 PAY/CHG/TKT/MSG/CUST |
