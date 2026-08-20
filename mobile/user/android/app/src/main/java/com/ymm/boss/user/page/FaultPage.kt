@@ -71,7 +71,7 @@ fun FaultScreen(nav: Nav) {
     LaunchedEffect(nav.refreshTick) { reload() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("故障报修") { nav.pop() }
+        TopBar("故障报修", onBack = { nav.pop() })
         QuickEntries(nav)
         FaultFormCard(scope, nav, form) { msg = it; reload() }
         Notice(msg, if (msg == "已受理") Palette.success else Palette.err)

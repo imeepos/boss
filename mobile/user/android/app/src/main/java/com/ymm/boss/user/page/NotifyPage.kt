@@ -65,7 +65,7 @@ fun NotifyScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("通知订阅设置") { nav.pop() }
+        TopBar("通知订阅设置", onBack = { nav.pop() })
         BusinessCard()
         MarketingCard(st) { st = it }
         ChannelCard(st) { st = it }

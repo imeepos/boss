@@ -65,7 +65,7 @@ fun ComplaintScreen(nav: Nav) {
     LaunchedEffect(nav.refreshTick) { reload() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("投诉与建议") { nav.pop() }
+        TopBar("投诉与建议", onBack = { nav.pop() })
         ComplaintFormCard(scope, form) { msg = it; reload() }
         Notice(msg, if (msg.startsWith("已提交")) Palette.success else Palette.err)
         AppCard {
