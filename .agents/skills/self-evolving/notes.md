@@ -524,3 +524,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:无,错误信息里 cwd 路径直接指认了 working-directory 配置。
 - skill 有没有提前警告:无此记录,已补 known-issues.md。
 - 重来一次:同样直读 workflow yml,定位 defaults 与 Clone 的先后矛盾。
+
+## 2026-12-XX 修复 mobile/user 首页"进行中订单"文字遮挡
+- 哪个坑浪费最多时间:并行进程在我验证期间把同一修复提交了(673f4b3),我的 commit 变成空提交 exit 1;先查 git log 再恐慌。
+- skill 有没有提前警告:部分。AppCard Box→Column 的机理记录已有,但共享工作区"提交前重查 git log"无红线。
+- 重来一次:commit 失败先 `git log --oneline -5` 确认是否被并行提交吞并;模拟器验证用 uiautomator dump + grep bounds 断言纵向区间不重叠,模型不支持读图时这是替代手段。
