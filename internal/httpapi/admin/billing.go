@@ -2,6 +2,8 @@ package adminapi
 
 import (
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -144,6 +146,34 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 		}
 		httpx.RecordAudit(a, c, "reconciliation.statement", "reconciliation", c.Param("batchNo"), nil)
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
+	// 自动对账:按渠道建当日批次(幂等)并从已配置源拉流水比对;manual 渠道只建批。
+	g.POST("/reconciliations/auto", requirePerm(a.User, "menu:paycheck"), func(c *gin.Context) {
+		if a.ReconAuto == nil {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
+		}
+		date := time.Now()
+		if d := c.Query("date"); d != "" {
+			parsed, err := time.ParseInLocation("2006-01-02", d, time.Local)
+			if err != nil {
+				respond(c, apitypes.CodeInvalidParam, nil)
+				return
+			}
+			date = parsed
+		}
+		channels := []string{"微信", "支付宝", "线下营业厅"} // 默认渠道目录(000035 注释口径)
+		if cs := c.Query("channels"); cs != "" {
+			channels = strings.Split(cs, ",")
+		}
+		results, err := a.ReconAuto.AutoReconcile(c.Request.Context(), date, channels)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "reconciliation.auto", "reconciliation", date.Format("2006-01-02"), nil)
+		respond(c, apitypes.CodeOK, gin.H{"date": date.Format("2006-01-02"), "items": results})
 	})
 }
 

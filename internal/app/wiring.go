@@ -55,6 +55,9 @@ type Application struct {
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
 	Recon   billing.ReconService
+	// ReconAuto 自动对账编排(渠道源注册表 ReconSources);admin POST /reconciliations/auto。
+	ReconAuto    *billing.AutoReconciler
+	ReconSources *billing.ChannelSourceRegistry
 	Tax     billing.TaxService
 	// TaxGateway 税局网关注册表(CN 数电票/PH BIR eIS);nil=全人工模式(回填票号)。
 	TaxGateway *billing.TaxGatewayRegistry
@@ -192,6 +195,10 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Recon:   bill,
 		Tax:     bill,
 
+		// 自动对账编排:渠道源注册表,真实渠道凭据到货后在此 Register。
+		ReconSources: billing.NewChannelSourceRegistry(),
+		ReconAuto:    nil, // New() 尾部装配(需要 Recon 就绪)
+
 		Resource:       res,
 		ResourceSub:    res,
 		ResourceAssign: res,
@@ -251,6 +258,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 	app.pubEvents = pub
 	app.Automation = NewAutomation(app.Order, pub)
+	app.ReconAuto = &billing.AutoReconciler{Recon: app.Recon, Sources: app.ReconSources}
 
 	stopPatrol := startPatrolLoop(app)
 	app.close = func() {
