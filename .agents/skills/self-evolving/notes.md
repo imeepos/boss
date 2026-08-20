@@ -519,3 +519,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:无大坑;工作区已有 AppCard Box→Column 修复但未提交(僵尸进程回退高危),根因是 Box 让卡片子元素全部叠在左上角。
 - skill 有没有提前警告:有,red-line"验证通过立即 commit"和 android.md 的叠印记录直接命中。
 - 重来一次:同样流程——构建(openjdk@17 需显式 export JAVA_HOME)→装模拟器→uiautomator dump→python 算 bounds 重叠→commit。
+
+## 2026-12-XX 修复 gitea android-build chdir 报错
+- 哪个坑浪费最多时间:无,错误信息里 cwd 路径直接指认了 working-directory 配置。
+- skill 有没有提前警告:无此记录,已补 known-issues.md。
+- 重来一次:同样直读 workflow yml,定位 defaults 与 Clone 的先后矛盾。
