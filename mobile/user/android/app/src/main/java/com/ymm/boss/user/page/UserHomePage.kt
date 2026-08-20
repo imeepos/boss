@@ -73,8 +73,12 @@ internal data class HomeOrder(
 internal data class HomeService(
     val name: String,
     val desc: String,
+    val status: String,
     val statusLabel: String,
 )
+
+/** 已生效增值服务:契约 ServiceStatus,ACTIVE 视为已生效。 */
+internal fun List<HomeService>.activeServices(): List<HomeService> = filter { it.status == "ACTIVE" }
 
 /** 订单状态中文,枚举对齐 docs/contract/terms.md 第 3 节。 */
 internal fun statusLabelOf(status: String): String = when (status) {
@@ -133,6 +137,7 @@ private fun parseServices(d: JSONObject): List<HomeService> {
         HomeService(
             name = s.optString("name"),
             desc = s.optString("desc"),
+            status = s.optString("status"),
             statusLabel = s.optString("statusLabel", "在网"),
         )
     }
@@ -192,7 +197,7 @@ private fun HomeContent(
         item { BroadbandCard(state = state, onOpen = onOpenService) }
         item { QuickActions(onAction = onAction) }
         item { OrderSection(state = state, onOpenOrders = onOpenOrders, onOpenOrder = onOpenOrder, onRetry = onRetry) }
-        item { MyServiceCard(service = state.services.firstOrNull(), onClick = onOpenService) }
+        item { ActiveServicesCard(services = state.services.activeServices(), onClick = onOpenService) }
         item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }

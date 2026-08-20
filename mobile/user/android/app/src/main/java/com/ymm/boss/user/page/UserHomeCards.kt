@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Router
@@ -33,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -122,7 +122,7 @@ internal fun BroadbandCard(state: HomeUiState, onOpen: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Router, contentDescription = null, tint = brandBlue(), modifier = Modifier.size(24.dp))
+                    Icon(Icons.Outlined.Home, contentDescription = null, tint = brandBlue(), modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         "家庭宽带 ${state.planName.ifEmpty { "--" }}",
@@ -263,8 +263,7 @@ internal fun OrderItem(order: HomeOrder, onOpen: (String) -> Unit) {
 }
 
 @Composable
-internal fun MyServiceCard(service: HomeService?, onClick: () -> Unit) {
-    val cardIcon: ImageVector = Icons.Outlined.Router
+internal fun ActiveServicesCard(services: List<HomeService>, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -272,34 +271,54 @@ internal fun MyServiceCard(service: HomeService?, onClick: () -> Unit) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-        onClick = onClick,
     ) {
-        if (service == null) {
-            Text(
-                "暂无在用服务", fontSize = 14.sp, color = auxText(),
-                modifier = Modifier.padding(16.dp),
-            )
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    cardIcon, contentDescription = null, tint = brandBlue(),
-                    modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape).padding(8.dp),
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("已生效增值服务", fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = brandBlue())
+            if (services.isEmpty()) {
+                Text(
+                    "暂无已生效增值服务", fontSize = 14.sp, color = auxText(),
+                    modifier = Modifier.padding(top = 12.dp),
                 )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("我的服务 · ${service.name}", fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        service.desc.ifEmpty { "查看套餐详情" }, fontSize = 14.sp, lineHeight = 16.sp,
-                        color = auxText(),
-                    )
+            } else {
+                services.forEachIndexed { index, service ->
+                    if (index > 0) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp)
+                                .height(1.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onClick),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Outlined.Router, contentDescription = null, tint = brandBlue(),
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                                .padding(8.dp),
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(service.name, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                service.desc.ifEmpty { "查看套餐详情" }, fontSize = 13.sp, lineHeight = 16.sp,
+                                color = auxText(), maxLines = 1,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val label = service.statusLabel.ifEmpty { "在网" }
+                        OnlineTag(label = label, active = label == "在网")
+                    }
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                val label = service.statusLabel.ifEmpty { "在网" }
-                OnlineTag(label = label, active = label == "在网")
             }
         }
     }
