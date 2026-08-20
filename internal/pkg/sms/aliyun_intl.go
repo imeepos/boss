@@ -65,27 +65,25 @@ func (s *aliyunIntl) Send(ctx context.Context, phone, code, _ string) error {
 		return fmt.Errorf("%w: +%s", ErrUnsupportedRegion, Region(phone))
 	}
 	body, err := s.call(ctx, map[string]string{
-		"Action":      "SendSMS",
-		"Version":     "2018-05-01",
-		"To":          phone,
-		"From":        s.from,
-		"Type":        "NONOTP",
-		"Message":     strings.ReplaceAll(tpl, "{code}", code),
-		"MessageTag":  Region(phone),
+		"Action":     "SendSMS",
+		"Version":    "2018-05-01",
+		"To":         phone,
+		"From":       s.from,
+		"Type":       "NONOTP",
+		"Message":    strings.ReplaceAll(tpl, "{code}", code),
+		"MessageTag": Region(phone),
 	})
 	if err != nil {
 		return fmt.Errorf("sms: aliyun intl: %w", err)
 	}
 	// 成功判定:ResponseCode == "OK"(阿里云国际 POP 风格 JSON 响应)。
-	var resp struct {
-		ResponseCode        string `json:"ResponseCode"`
-		ResponseDescription string `json:"ResponseDescription"`
-	}
+	// 外部协议键名非 lowerCamelCase,走 map 解码而非结构体 tag(契约门禁红线)。
+	var resp map[string]string
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return fmt.Errorf("sms: aliyun intl: bad response: %w", err)
 	}
-	if resp.ResponseCode != "OK" {
-		return fmt.Errorf("sms: aliyun intl: %s: %s", resp.ResponseCode, resp.ResponseDescription)
+	if resp["ResponseCode"] != "OK" {
+		return fmt.Errorf("sms: aliyun intl: %s: %s", resp["ResponseCode"], resp["ResponseDescription"])
 	}
 	return nil
 }
