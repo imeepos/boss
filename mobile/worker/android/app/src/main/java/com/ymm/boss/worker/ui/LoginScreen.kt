@@ -86,8 +86,8 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
                 scope.launch {
                     try {
                         val r = AuthApi.login(phone.trim(), "sms", sms.trim())
-                        // 真实后端 token 位于 data.token(与 mock 平铺结构不同)
-                        val tk = r.optJSONObject("data")?.optString("token").orEmpty()
+                        // Api 已解信封,r 即 data:{token,workerId}(契约 auth.yaml)
+                        val tk = r.optString("token")
                         if (tk.isEmpty()) {
                             tip = "登录响应缺少 token"
                             busy = false
@@ -103,7 +103,7 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
             }
         }
         Card(Modifier.padding(14.dp)) {
-            Notice("mock 环境任意验证码均可登录;登录后 token 由 Api 自动携带。")
+            Notice("登录需师傅手机号在职且验证码有效;登录后 token 由 Api 自动携带。")
         }
         if (tip.isNotEmpty()) Card(Modifier.padding(14.dp)) { Notice(tip, red = true) }
     }
