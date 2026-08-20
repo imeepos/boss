@@ -17,6 +17,9 @@ import (
 
 const prefix = "enc:v1:"
 
+// keyFn 密钥来源函数,可注入替换以便单测覆盖 newGCM 错误分支。
+var keyFn = Key
+
 // Key 从 env 派生 32 字节 AES 密钥。
 func Key() []byte {
 	secret := os.Getenv("BOSS_AUTH_SECRET_KEY")
@@ -68,7 +71,7 @@ func Open(s string) (string, error) {
 }
 
 func newGCM() (cipher.AEAD, error) {
-	block, err := aes.NewCipher(Key())
+	block, err := aes.NewCipher(keyFn())
 	if err != nil {
 		return nil, err
 	}
