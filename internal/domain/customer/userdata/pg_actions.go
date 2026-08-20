@@ -22,9 +22,13 @@ func defaultStr(s, def string) string {
 	return s
 }
 
+// Deprecated: 自动缴费权威态在 portal_billing_prefs;不再写 user_accounts.auto_pay(裁定 D1)。
 func (s *PGStore) UpdateUserAccount(ctx context.Context, customerID int64, u UserAccountUpdate) error {
-	return s.execAffected(ctx, "update user account",
-		`UPDATE user_accounts SET auto_pay = $2 WHERE customer_id = $1`, customerID, u.AutoPay)
+	_, err := s.db.Exec(ctx, `INSERT INTO portal_billing_prefs(customer_id, auto_pay_enabled)
+		VALUES($1, $2)
+		ON CONFLICT (customer_id) DO UPDATE SET auto_pay_enabled = $2, updated_at = now()`,
+		customerID, u.AutoPay)
+	return err
 }
 
 func (s *PGStore) CreateUserAddress(ctx context.Context, a UserAddress) (int64, error) {
@@ -67,12 +71,19 @@ func (s *PGStore) CreateAddonSubscription(ctx context.Context, sub AddonSubscrip
 	return id, nil
 }
 
+// Deprecated: 通知偏好权威态在 portal_prefs.notify;不再写 user_notify_settings(裁定 D1)。
 func (s *PGStore) UpdateNotifySettings(ctx context.Context, customerID int64, n NotifySetting) error {
-	return s.execAffected(ctx, "update notify settings", `
-		INSERT INTO user_notify_settings(customer_id, business, marketing, channel)
-		VALUES($1,$2,$3,$4)
-		ON CONFLICT (customer_id) DO UPDATE SET business = $2, marketing = $3, channel = $4`,
+	tag, err := s.db.Exec(ctx, `INSERT INTO portal_prefs(customer_id, notify)
+		VALUES($1, jsonb_build_object('business', $2, 'marketing', $3, 'channel', $4))
+		ON CONFLICT (customer_id) DO UPDATE SET notify = EXCLUDED.notify`,
 		customerID, n.Business, n.Marketing, defaultStr(n.Channel, "app"))
+	if err != nil {
+		return fmt.Errorf("userdata: update notify settings: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (s *PGStore) CreateUserFaq(ctx context.Context, f UserFaq) error {
@@ -86,14 +97,17 @@ func (s *PGStore) ToggleUserFaq(ctx context.Context, faqID string) error {
 		`UPDATE user_faqs SET active = NOT active WHERE faq_id = $1`, faqID)
 }
 
+// Deprecated: 消息权威态在 portal_messages;不再写 user_messages(裁定 D1)。
 func (s *PGStore) CreateUserMessage(ctx context.Context, m UserMessage) (int64, error) {
 	return s.insertReturning(ctx, "create user message", `
-		INSERT INTO user_messages(customer_id, type, title, content) VALUES($1,$2,$3,$4) RETURNING id`,
+		INSERT INTO portal_messages(customer_id, payload)
+		VALUES($1, jsonb_build_object('type', $2, 'title', $3, 'content', $4)) RETURNING id`,
 		m.CustomerID, defaultStr(m.Type, "notice"), m.Title, m.Content)
 }
 
+// Deprecated: 消息权威态在 portal_messages;不再写 user_messages(裁定 D1)。
 func (s *PGStore) MarkAllMessagesRead(ctx context.Context, customerID int64) error {
-	tag, err := s.db.Exec(ctx, `UPDATE user_messages SET read = TRUE WHERE customer_id = $1`, customerID)
+	tag, err := s.db.Exec(ctx, `UPDATE portal_messages SET read = TRUE WHERE customer_id = $1`, customerID)
 	if err != nil {
 		return fmt.Errorf("userdata: mark all read: %w", err)
 	}
@@ -126,11 +140,18 @@ func (s *PGStore) UpdateAgreement(ctx context.Context, agreementID string, a Agr
 		agreementID, a.Type, a.Version, a.Content, strOrNil(a.EffectiveAt))
 }
 
+// Deprecated: 余额权威态在 portal_wallets;不再写 user_balances(裁定 D1)。
 func (s *PGStore) AdjustUserBalance(ctx context.Context, customerID int64, delta int64) error {
-	return s.execAffected(ctx, "adjust user balance", `
-		INSERT INTO user_balances(customer_id, balance, warn_line) VALUES($1, $2, 0)
-		ON CONFLICT (customer_id) DO UPDATE SET balance = user_balances.balance + $2`,
+	tag, err := s.db.Exec(ctx, `INSERT INTO portal_wallets(customer_id, balance) VALUES($1, $2)
+		ON CONFLICT (customer_id) DO UPDATE SET balance = portal_wallets.balance + EXCLUDED.balance`,
 		customerID, delta)
+	if err != nil {
+		return fmt.Errorf("userdata: adjust user balance: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (s *PGStore) UpdateTopupDenomination(ctx context.Context, denomID string, d TopupDenomination) error {
@@ -139,15 +160,27 @@ func (s *PGStore) UpdateTopupDenomination(ctx context.Context, denomID string, d
 		denomID, d.Amount, d.Bonus, d.Active)
 }
 
-func (s *PGStore) CreateUserInvoice(ctx context.Context, inv UserInvoice) (int64, error) {
-	return s.insertReturning(ctx, "create user invoice", `
-		INSERT INTO user_invoices(customer_id, bill_no, invoice_no, amount, title) VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		inv.CustomerID, inv.BillNo, inv.InvoiceNo, inv.Amount, inv.Title)
+// ErrWriteStopped 写路径已按裁定 D1 停写,须改走对应权威域。
+var ErrWriteStopped = errWriteStopped{}
+
+type errWriteStopped struct{}
+
+func (errWriteStopped) Error() string {
+	return "userdata: 写路径已停用(裁定 D1,见 docs/notes/adopted/2026-08-20-db-dualtrack-convergence.md)"
 }
 
+// Deprecated: 发票权威态在 invoices(billing 域);user_invoices 停写。
+// 二阶段: 开票走 billing.TaxService(需 bill 归属校验与 ARN 发号,无法直插)。
+func (s *PGStore) CreateUserInvoice(ctx context.Context, inv UserInvoice) (int64, error) {
+	_ = inv
+	return 0, ErrWriteStopped
+}
+
+// Deprecated: 投诉权威态在 complaints(order 域);不再写 user_complaints(裁定 D1)。
+// 寻址兼容旧 complaint_id 字符串:按 complaints.id 文本或 ticket_no 命中。
 func (s *PGStore) CloseUserComplaint(ctx context.Context, complaintID string) error {
 	return s.execAffected(ctx, "close user complaint",
-		`UPDATE user_complaints SET status = 'CLOSED' WHERE complaint_id = $1`, complaintID)
+		`UPDATE complaints SET status = 'CLOSED' WHERE ticket_no = $1 OR id::text = $1`, complaintID)
 }
 
 func (s *PGStore) UpdateProductSpec(ctx context.Context, productID string, p ProductSpec) error {

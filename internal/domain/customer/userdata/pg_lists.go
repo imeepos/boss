@@ -3,12 +3,19 @@ package userdata
 import "context"
 
 // 用户端实体表/全局配置的只读管理视图(列名即 JSON 字段)。
+// 双胞胎表(余额/消息/通知偏好/发票/投诉)已按裁定 D1(2026-08-20)改为读权威表的薄适配层:
+// portal_wallets/portal_messages/portal_prefs/invoices/complaints,user_* 表不再被读。
 
+// Deprecated: autoPay 权威态在 portal_billing_prefs;user_accounts.auto_pay 列已停用。
 func (s *PGStore) ListUserAccounts(ctx context.Context) ([]map[string]any, error) {
 	return s.listMaps(ctx, `SELECT ua.id, ua.customer_id AS "customerId", c.name AS "customerName",
 		ua.login_name AS "loginName", ua.registered_at AS "registeredAt",
-		ua.password_updated_at AS "passwordUpdatedAt", ua.auto_pay AS "autoPay"
-		FROM user_accounts ua JOIN customers c ON c.id = ua.customer_id ORDER BY ua.id`)
+		ua.password_updated_at AS "passwordUpdatedAt",
+		COALESCE(bp.auto_pay_enabled, FALSE) AS "autoPay"
+		FROM user_accounts ua
+		JOIN customers c ON c.id = ua.customer_id
+		LEFT JOIN portal_billing_prefs bp ON bp.customer_id = ua.customer_id
+		ORDER BY ua.id`)
 }
 
 func (s *PGStore) ListUserAddresses(ctx context.Context) ([]map[string]any, error) {
@@ -33,10 +40,13 @@ func (s *PGStore) ListAddonSubscriptions(ctx context.Context) ([]map[string]any,
 		FROM addon_subscriptions s JOIN addons a ON a.addon_id = s.addon_id ORDER BY s.id`)
 }
 
+// Deprecated: 通知偏好权威态在 portal_prefs.notify;user_notify_settings 已停用。
 func (s *PGStore) ListNotifySettings(ctx context.Context) ([]map[string]any, error) {
-	return s.listMaps(ctx, `SELECT n.id, n.customer_id AS "customerId", c.name AS "customerName",
-		n.business, n.marketing, n.channel
-		FROM user_notify_settings n JOIN customers c ON c.id = n.customer_id ORDER BY n.id`)
+	return s.listMaps(ctx, `SELECT p.customer_id AS "customerId", c.name AS "customerName",
+		COALESCE((p.notify->>'business')::boolean, FALSE) AS business,
+		COALESCE((p.notify->>'marketing')::boolean, FALSE) AS marketing,
+		COALESCE(p.notify->>'channel', 'app') AS channel
+		FROM portal_prefs p JOIN customers c ON c.id = p.customer_id ORDER BY p.customer_id`)
 }
 
 func (s *PGStore) ListUserFaqs(ctx context.Context) ([]map[string]any, error) {
@@ -44,11 +54,15 @@ func (s *PGStore) ListUserFaqs(ctx context.Context) ([]map[string]any, error) {
 		FROM user_faqs ORDER BY faq_id`)
 }
 
+// Deprecated: 消息权威态在 portal_messages(payload JSONB);user_messages 已停用。
 func (s *PGStore) ListUserMessages(ctx context.Context, keyword string) ([]map[string]any, error) {
-	return s.listMaps(ctx, `SELECT id, customer_id AS "customerId", type, title, content, read,
-		created_at AS "createdAt" FROM user_messages
-		WHERE ($1 = '' OR title ILIKE '%' || $1 || '%' OR content ILIKE '%' || $1 || '%')
-		ORDER BY id DESC`, keyword)
+	return s.listMaps(ctx, `SELECT m.id, m.customer_id AS "customerId",
+		COALESCE(m.payload->>'type', 'notice') AS type,
+		m.payload->>'title' AS title, m.payload->>'content' AS content, m.read,
+		m.created_at AS "createdAt" FROM portal_messages m
+		WHERE ($1 = '' OR m.payload->>'title' ILIKE '%' || $1 || '%'
+			OR m.payload->>'content' ILIKE '%' || $1 || '%')
+		ORDER BY m.id DESC`, keyword)
 }
 
 func (s *PGStore) ListCoupons(ctx context.Context) ([]map[string]any, error) {
@@ -77,10 +91,11 @@ func (s *PGStore) ListAgreements(ctx context.Context) ([]map[string]any, error) 
 		effective_at AS "effectiveAt" FROM agreements ORDER BY agreement_id`)
 }
 
+// Deprecated: 余额权威态在 portal_wallets;user_balances 已停用(portal_wallets 无 warn_line,warnLine 恒 0)。
 func (s *PGStore) ListUserBalances(ctx context.Context) ([]map[string]any, error) {
-	return s.listMaps(ctx, `SELECT b.customer_id AS "customerId", c.name AS "customerName",
-		b.balance, b.warn_line AS "warnLine", (b.balance < b.warn_line) AS "lowWarn"
-		FROM user_balances b JOIN customers c ON c.id = b.customer_id ORDER BY b.customer_id`)
+	return s.listMaps(ctx, `SELECT w.customer_id AS "customerId", c.name AS "customerName",
+		w.balance::float8 AS balance, 0::bigint AS "warnLine", (w.balance < 0) AS "lowWarn"
+		FROM portal_wallets w JOIN customers c ON c.id = w.customer_id ORDER BY w.customer_id`)
 }
 
 func (s *PGStore) ListTopupDenominations(ctx context.Context) ([]map[string]any, error) {
@@ -88,14 +103,17 @@ func (s *PGStore) ListTopupDenominations(ctx context.Context) ([]map[string]any,
 		FROM topup_denominations ORDER BY amount`)
 }
 
+// Deprecated: 发票权威态在 invoices(billing 域);user_invoices 已停用。
 func (s *PGStore) ListUserInvoices(ctx context.Context) ([]map[string]any, error) {
-	return s.listMaps(ctx, `SELECT id, customer_id AS "customerId", bill_no AS "billNo",
-		invoice_no AS "invoiceNo", amount, title, status FROM user_invoices ORDER BY id DESC`)
+	return s.listMaps(ctx, `SELECT i.id, i.customer_id AS "customerId", i.bill_no AS "billNo",
+		i.invoice_no AS "invoiceNo", i.total_amount::float8 AS amount, i.title, i.status
+		FROM invoices i ORDER BY i.id DESC`)
 }
 
+// Deprecated: 投诉权威态在 complaints(order 域);user_complaints 已停用(content 以 ticket_no 代)。
 func (s *PGStore) ListUserComplaints(ctx context.Context) ([]map[string]any, error) {
-	return s.listMaps(ctx, `SELECT complaint_id AS "complaintId", customer_id AS "customerId",
-		type, content, status FROM user_complaints ORDER BY complaint_id`)
+	return s.listMaps(ctx, `SELECT cp.id::text AS "complaintId", cp.customer_id AS "customerId",
+		cp.type, cp.ticket_no AS content, cp.status FROM complaints cp ORDER BY cp.id`)
 }
 
 func (s *PGStore) ListUserVerifyRecords(ctx context.Context) ([]map[string]any, error) {

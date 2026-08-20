@@ -189,17 +189,12 @@ func registerUserdataMoreRoutes(g *gin.RouterGroup, a *app.Application) {
 	udList(g, a, "/user-invoices", "menu:userdata", func(c *gin.Context) ([]map[string]any, error) {
 		return ud.ListUserInvoices(c.Request.Context())
 	})
+	// POST /user-invoices 已按裁定 D1 停写:发票权威态在 billing 域 invoices 表
+	// (bill_id 强关联 + ARN 连续发号,无法按 billNo 直插);开票走 billing.TaxService 出账自动开票/重开。
 	g.POST("/user-invoices", requirePerm(a.User, "menu:userdata"), func(c *gin.Context) {
-		var inv userdata.UserInvoice
-		if !httpx.BindBody(c, &inv) {
-			return
-		}
-		id, err := ud.CreateUserInvoice(c.Request.Context(), inv)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"id": id})
+		respond(c, apitypes.CodeStateInvalid, gin.H{
+			"reason": "user_invoices 已停写(裁定 D1),开票请走 billing 域发票流程",
+		})
 	})
 
 	udList(g, a, "/user-complaints", "menu:userdata", func(c *gin.Context) ([]map[string]any, error) {

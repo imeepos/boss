@@ -161,11 +161,16 @@
 
 | 实体 | 主键 | 关系 |
 |:-----|:-----|:-----|
-| user_accounts ✚ user_addresses ✚ user_plans ✚ user_usages ✚ user_messages ✚ user_invoices ✚ user_complaints ✚ user_verify_records ✚ user_bill_items ✚ | id | ▲customer_id(FK)，门户用户侧聚合 |
-| user_notify_settings ✚ / user_balances ✚ | customer_id | ▲customers(1:1, FK) |
+| user_accounts ✚ user_addresses ✚ user_plans ✚ user_usages ✚ user_verify_records ✚ user_bill_items ✚ | id | ▲customer_id(FK)，门户用户侧聚合 |
+| ~~user_messages ✚~~ / ~~user_invoices ✚~~ / ~~user_complaints ✚~~ | id | ▲customer_id(FK)，**deprecated（裁定 D1，2026-08-20）**：双胞胎停用，读写走权威表 portal_messages / invoices / complaints |
+| ~~user_notify_settings ✚~~ / ~~user_balances ✚~~ | customer_id | ▲customers(1:1, FK)，**deprecated（裁定 D1）**：读写走 portal_prefs.notify / portal_wallets；user_accounts.auto_pay 列停用（走 portal_billing_prefs） |
 | addons ✚ / addon_subscriptions ✚ | id/addon_id | subscriptions ▲customer_id+addon_id(FK) |
 | coupons ✚ | coupon_id | ▲customer_id(可空 FK) |
 | user_faqs/invite_config/diy_guides/agreements/topup_denominations/product_specs ✚ | id | 全局目录，无外键 |
+
+> **裁定 D1 落地（2026-08-20）**：portal(portal_*) 为用户侧唯一权威运行态；userdata 域对双胞胎表
+> 降级为读权威表的薄适配层（`internal/domain/customer/userdata/`，方法已标 Deprecated），
+> user_invoices 写路径停写（发票开票走 billing 域 TaxService）。
 
 ### 2.10 门户 portal（000052-55，全部✚）
 
@@ -173,8 +178,8 @@
 |:-----|:-----|:-----|
 | portal_sms_codes ✚ | (phone,scene) | 验证码，自过期 |
 | portal_accounts ✚ | phone | ▲customer_id(UQ **软**——隔离空间合成 ID 取**负数段**，000057 CHECK 禁 0；真实 customers.id 恒正) 1:1 |
-| portal_prefs / portal_wallets / portal_billing_prefs ✚ | customer_id | ▲customers(软) 1:1 |
-| portal_messages ✚ | id | ▲customer_id(软)，payload JSONB |
+| portal_prefs / portal_wallets / portal_billing_prefs ✚ | customer_id | ▲customers(软) 1:1；**用户侧唯一权威运行态（裁定 D1）**：偏好/余额/自动缴费分别取代 user_notify_settings / user_balances / user_accounts.auto_pay |
+| portal_messages ✚ | id | ▲customer_id(软)，payload JSONB；取代 user_messages（裁定 D1） |
 | portal_seq ✚ | kind | 门户单号序列 PAY/CHG/TKT/MSG/CUST |
 
 > portal 域有意不建 FK：门户库可独立于 boss 主库部署（隔离空间），对账靠 customer_id 逻辑对齐。

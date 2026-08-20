@@ -122,8 +122,11 @@ type ProductSpec struct {
 type Service interface {
 	ListUsers(ctx context.Context, keyword string) ([]map[string]any, error)
 	GetUserDetail(ctx context.Context, customerID int64) (map[string]any, error)
+
+	// Deprecated: 自动缴费权威态在 portal 域(portal_billing_prefs);user_accounts.auto_pay 已停用。
 	UpdateUserAccount(ctx context.Context, customerID int64, u UserAccountUpdate) error
 
+	// Deprecated: autoPay 列权威态在 portal_billing_prefs。
 	ListUserAccounts(ctx context.Context) ([]map[string]any, error)
 	ListUserAddresses(ctx context.Context) ([]map[string]any, error)
 	CreateUserAddress(ctx context.Context, a UserAddress) (int64, error)
@@ -136,15 +139,26 @@ type Service interface {
 	ListAddonSubscriptions(ctx context.Context) ([]map[string]any, error)
 	CreateAddonSubscription(ctx context.Context, s AddonSubscription) (int64, error)
 
+	// Deprecated: 通知偏好权威态在 portal 域(portal_prefs.notify)。
 	ListNotifySettings(ctx context.Context) ([]map[string]any, error)
+
+	// Deprecated: 通知偏好权威态在 portal 域(portal_prefs.notify)。
 	UpdateNotifySettings(ctx context.Context, customerID int64, n NotifySetting) error
 
 	ListUserFaqs(ctx context.Context) ([]map[string]any, error)
 	CreateUserFaq(ctx context.Context, f UserFaq) error
 	ToggleUserFaq(ctx context.Context, faqID string) error
 
+	// 以下双胞胎方法已按裁定 D1(docs/notes/adopted/2026-08-20-db-dualtrack-convergence.md)降级为
+	// 读 portal_*/既有权威表的薄适配层,实现不再读写 user_* 双胞胎表;编译兼容保留签名。
+
+	// Deprecated: 消息权威态在 portal 域(portal_messages)。
 	ListUserMessages(ctx context.Context, keyword string) ([]map[string]any, error)
+
+	// Deprecated: 消息权威态在 portal 域(portal_messages)。
 	CreateUserMessage(ctx context.Context, m UserMessage) (int64, error)
+
+	// Deprecated: 消息权威态在 portal 域(portal_messages)。
 	MarkAllMessagesRead(ctx context.Context, customerID int64) error
 
 	ListCoupons(ctx context.Context) ([]map[string]any, error)
@@ -159,16 +173,25 @@ type Service interface {
 	ListAgreements(ctx context.Context) ([]map[string]any, error)
 	UpdateAgreement(ctx context.Context, agreementID string, a Agreement) error
 
+	// Deprecated: 余额权威态在 portal 域(portal_wallets)。
 	ListUserBalances(ctx context.Context) ([]map[string]any, error)
+
+	// Deprecated: 余额权威态在 portal 域(portal_wallets)。
 	AdjustUserBalance(ctx context.Context, customerID int64, delta int64) error
 
 	ListTopupDenominations(ctx context.Context) ([]map[string]any, error)
 	UpdateTopupDenomination(ctx context.Context, denomID string, d TopupDenomination) error
 
+	// Deprecated: 发票权威态在 billing 域(invoices);写路径已停写(ErrWriteStopped)。
 	ListUserInvoices(ctx context.Context) ([]map[string]any, error)
+
+	// Deprecated: 发票权威态在 billing 域(invoices);写路径已停写(ErrWriteStopped)。
 	CreateUserInvoice(ctx context.Context, inv UserInvoice) (int64, error)
 
+	// Deprecated: 投诉权威态在 order 域(complaints)。
 	ListUserComplaints(ctx context.Context) ([]map[string]any, error)
+
+	// Deprecated: 投诉权威态在 order 域(complaints)。
 	CloseUserComplaint(ctx context.Context, complaintID string) error
 
 	ListUserVerifyRecords(ctx context.Context) ([]map[string]any, error)

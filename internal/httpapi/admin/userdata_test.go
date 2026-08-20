@@ -104,7 +104,6 @@ func TestUserdataEndpoints_HappyPath(t *testing.T) {
 		{"GET", "/api/admin/v1/topup-denominations", "", ""},
 		{"PUT", "/api/admin/v1/topup-denominations/D-50", `{"amount":5000,"bonus":200,"active":true}`, "D-50"},
 		{"GET", "/api/admin/v1/user-invoices", "", ""},
-		{"POST", "/api/admin/v1/user-invoices", `{"customerId":9,"billNo":"BILL-1","invoiceNo":"INV-1","title":"个人"}`, ""},
 		{"GET", "/api/admin/v1/user-complaints", "", ""},
 		{"POST", "/api/admin/v1/user-complaints/CM-01/close", "", "CM-01"},
 		{"GET", "/api/admin/v1/user-verify-records", "", ""},
@@ -130,6 +129,22 @@ func TestUserdataDetail_Aggregate(t *testing.T) {
 	data := assertOK(t, w)
 	if data["name"] != "王先生" {
 		t.Fatalf("data=%+v", data)
+	}
+}
+
+// TestUserdataCreateInvoice_StoppedWrite 裁定 D1: POST /user-invoices 停写,返回非 0 code。
+func TestUserdataCreateInvoice_StoppedWrite(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	r := newUserdataRouter(&fakeUserdata{row: map[string]any{}}, mgr)
+
+	w := doReq(t, r, http.MethodPost, "/api/admin/v1/user-invoices", authToken(t, mgr),
+		`{"customerId":9,"billNo":"BILL-1","invoiceNo":"INV-1","title":"个人"}`)
+	var body struct {
+		Code int `json:"code"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &body)
+	if body.Code == 0 {
+		t.Fatalf("POST /user-invoices 应停写报错: %s", w.Body.String())
 	}
 }
 

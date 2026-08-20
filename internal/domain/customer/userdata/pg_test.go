@@ -100,7 +100,8 @@ func TestPGStore_AdjustUserBalance(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectExec(`INSERT INTO user_balances`).
+	// 裁定 D1: 余额权威态在 portal_wallets。
+	mock.ExpectExec(`INSERT INTO portal_wallets`).
 		WithArgs(int64(9), int64(-300)).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
