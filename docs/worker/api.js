@@ -1,15 +1,16 @@
 // 师傅端统一接口对接层。
-// 契约: api/openapi/worker.yaml;假数据: api/mock/combined.js(http://127.0.0.1:8091)。
-// 用 window.API 暴露,页面直接调用;后端就绪后仅改 BASE 即可切换到真实网关。
+// 契约: api/openapi/worker.yaml(统一信封 {code,msg,data},HTTP 恒 200)。
+// 用 window.API 暴露,页面直接调用;本层解信封后向页面返回 data 载荷(平铺业务对象)。
 (function (global) {
   'use strict';
 
+  // 真实服务端默认地址;APISIX 网关部署时改为同源相对路径('/api/worker/v1')。
   var DEFAULT_BASE = (function () {
     var host = (typeof location !== 'undefined' && location.hostname) || '';
     if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'http://' + host + ':8091/api/worker/v1';
+      return 'http://' + host + ':28080/api/worker/v1';
     }
-    return 'http://127.0.0.1:8091/api/worker/v1';
+    return 'http://127.0.0.1:28080/api/worker/v1';
   })();
   var BASE = (global.API_BASE_URL || DEFAULT_BASE);
   var TOKEN_KEY = 'boss_worker_token';
@@ -20,6 +21,15 @@
     else localStorage.removeItem(TOKEN_KEY);
   }
 
+  // 解统一信封 {code,msg,data}:code!=0 抛错,成功返回 data。
+  function unwrap(obj) {
+    if (obj && typeof obj === 'object' && 'code' in obj) {
+      if (obj.code !== 0) throw new Error(obj.msg || ('code ' + obj.code));
+      return obj.data !== undefined ? obj.data : {};
+    }
+    return obj;
+  }
+
   function request(method, path, body) {
     var opt = { method: method, headers: { 'Content-Type': 'application/json' } };
     var tk = token();
@@ -27,7 +37,7 @@
     if (body !== undefined) opt.body = JSON.stringify(body);
     return fetch(BASE + path, opt).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
+      return r.json().then(unwrap);
     });
   }
 

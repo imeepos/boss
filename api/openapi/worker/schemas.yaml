@@ -13,14 +13,16 @@ components:
 
   responses:
     Ok:
-      description: 操作成功
+      description: 统一信封(HTTP 恒 200,业务码在 code;对齐 pkg/apitypes 与 httpx.Respond)
       content:
         application/json:
           schema:
             type: object
+            required: [code, msg, data]
             properties:
-              code: { type: integer, example: 0 }
-              message: { type: string }
+              code: { type: integer, example: 0, description: 0=成功,非 0 见 pkg/apitypes 错误码 }
+              msg: { type: string, example: ok }
+              data: { description: 业务载荷(本文件各 schema 定义的是 data 内的形态) }
 
   schemas:
     Ticket:

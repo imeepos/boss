@@ -51,3 +51,32 @@ paths:
       operationId: workerLogout
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /worker-registrations:
+    post:
+      tags: [Auth]
+      summary: 师傅自助注册(提交后进 admin 审核队列,公开端点)
+      operationId: submitWorkerRegistration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, phone, idCardNo, groupId, regionId]
+              properties:
+                name: { type: string }
+                phone: { type: string }
+                idCardNo: { type: string }
+                groupId: { type: integer }
+                regionId: { type: integer }
+      responses:
+        '200':
+          description: 已提交待审核
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  status: { type: string, example: PENDING }

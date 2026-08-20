@@ -149,3 +149,30 @@
 | `paycheck`(渠道对账)、`analytics`/`report`(BI)、`gis` | 派生聚合/视图，无基表，不建实体 |
 
 > 对齐状态：**数据建模(68 表) ↔ 三端页面 ↔ OpenAPI ↔ mock ↔ Go 骨架** 全部对齐；本台账为唯一销项记录。
+
+## 9. REST 信封三方对齐（接口 ↔ 契约 ↔ 客户端，2026-08-19）
+
+> 背景：真实服务端(Go `httpx.Respond`)所有响应为 **HTTP 恒 200 + 统一信封 `{code,msg,data}`**
+> （错误码对齐 `pkg/apitypes`，D3 决策）；而 worker 端 OpenAPI 曾把业务 schema 写成响应根、
+> H5 `api.js` 透传 `r.json()`、师傅端 Android 直接把信封根当业务对象消费——三方只有路由对齐，载荷形态三方不一致。
+
+### 9.1 裁定（信封为运行时权威，客户端统一解信封）
+
+| 方 | 事实/处置 | 状态 |
+|:---|:---|:----:|
+| 接口（Go server） | HTTP 恒 200,`{code,msg,data}`,code!=0 即业务错误；实测 `curl /api/worker/v1/home` → `{"code":401,"msg":"missing bearer token"}` | 事实 |
+| 契约（OpenAPI） | `worker/schemas.yaml` `responses.Ok` 改为完整信封定义；各业务 schema 语义 = **data 内载荷形态** | ✅ 本节 |
+| H5（docs/worker/api.js） | `request()` 增 `unwrap`:code!=0 抛错,成功返回 `data`;页面继续消费平铺字段 | ✅ 本节 |
+| 师傅端 Android | `Api.kt` 增解信封(与用户端 Android `Api.unwrap` 同构);LoginScreen 去掉手动 `data.token` 补丁 | ✅ 815b97e |
+| 用户端 Android | 既有 `Api.unwrap` 已解信封,无需改动（先例） | ✅ 既有 |
+
+### 9.2 路由三方清点（对账当日事实）
+
+- 服务端 57 路由 = OpenAPI worker.yaml 56 + `POST /worker-registrations`（师傅自助注册,此前漏契约）→ 本节补入 `worker/auth.yaml` + 聚合 ✅
+- `docs/worker/api.js` 56 方法与 OpenAPI 56 路径一一对应；师傅端 Android `WorkerApi.kt` 与 api.js 一一对应。
+- mock(`api/mock/combined.js`,8091)已移除,docs 中残留引用已更新为真实服务端口 28080。
+
+### 9.3 后续 Agent 注意
+
+- 新增 worker/user 端点时,响应必须走 `respond()`/`httpx.Respond` 信封,OpenAPI 引用 `responses.Ok` 或内联 data 形态,**禁止**裸 return 业务对象。
+- 客户端(三端)一律在对接层解信封,页面/Composable 只见平铺业务对象。
