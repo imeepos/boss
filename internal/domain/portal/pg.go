@@ -57,8 +57,9 @@ func randDigits(n int) (string, error) {
 	return string(out), nil
 }
 
-// syntheticBase 合成客户 ID 基数(与真实 customers.id 隔离的命名空间)。
-const syntheticBase = int64(9_000_000_000)
+// syntheticID 合成客户 ID(负数段,与真实 customers.id 正数段物理隔离)。
+// 裁定 2026-08-20: 负数号段 + portal_accounts CHECK(customer_id<>0),防隔离空间合并撞号。
+func syntheticID(seq int64) int64 { return -seq }
 
 func (s *pgStore) NextSyntheticCustomerID(ctx context.Context) (int64, error) {
 	var last int64
@@ -68,12 +69,12 @@ func (s *pgStore) NextSyntheticCustomerID(ctx context.Context) (int64, error) {
 		if _, err := s.pool.Exec(ctx, `INSERT INTO portal_seq(kind, last) VALUES ('CUST', 1)`); err != nil {
 			return 0, err
 		}
-		return syntheticBase + 1, nil
+		return syntheticID(1), nil
 	}
 	if err != nil {
 		return 0, err
 	}
-	return syntheticBase + last, nil
+	return syntheticID(last), nil
 }
 
 func (s *pgStore) UpsertAccount(ctx context.Context, phone, password string, customerID int64) (*Account, error) {

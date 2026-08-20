@@ -40,7 +40,7 @@ type Service interface {
 	IssueSms(ctx context.Context, phone, scene string) error
 	ConsumeSms(ctx context.Context, phone, scene, code string) (bool, error)
 
-	// NextSyntheticCustomerID 未关联主档的注册账号发隔离空间合成 ID(>=9e9)。
+	// NextSyntheticCustomerID 未关联主档的注册账号发隔离空间合成 ID(负数段,见 000057 迁移)。
 	NextSyntheticCustomerID(ctx context.Context) (int64, error)
 
 	// UpsertAccount 创建/更新账号(password 明文入参,内部 bcrypt);改密同一入口。

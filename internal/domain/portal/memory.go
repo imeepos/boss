@@ -59,7 +59,7 @@ func (s *memoryStore) NextSyntheticCustomerID(_ context.Context) (int64, error) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.seq["CUST"]++
-	return syntheticBase + s.seq["CUST"], nil
+	return syntheticID(int64(s.seq["CUST"])), nil
 }
 
 func (s *memoryStore) UpsertAccount(_ context.Context, phone, password string, customerID int64) (*Account, error) {
