@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +23,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.ProfileApi
@@ -123,10 +126,14 @@ private fun ToggleCell(title: String, desc: String?, checked: Boolean, onChecked
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(vertical = 12.dp)) {
-            Text(title, fontSize = 14.sp, color = Palette.ink)
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.ink)
             if (!desc.isNullOrBlank()) Text(desc, fontSize = 12.sp, color = Palette.muted)
         }
-        Checkbox(checked = checked, onCheckedChange = onChecked)
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onChecked,
+            colors = CheckboxDefaults.colors(checkedColor = Palette.primary, checkmarkColor = Color.White),
+        )
     }
 }
 
