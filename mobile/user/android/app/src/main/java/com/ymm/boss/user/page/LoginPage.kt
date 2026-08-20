@@ -43,6 +43,7 @@ import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PillTab
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -132,17 +133,10 @@ fun LoginScreen(nav: Nav) {
 
 @Composable
 private fun ModeSegment(mode: String, onSelect: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+    // 与账单/消息中心筛选同款 PillTab plain 形态,不再自绘文字 tab
+    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf("sms" to "验证码登录", "password" to "密码登录").forEach { (k, label) ->
-            Text(
-                label,
-                fontSize = 13.5.sp,
-                fontWeight = if (mode == k) FontWeight.Bold else FontWeight.Normal,
-                color = if (mode == k) Palette.primary else Palette.muted,
-                modifier = Modifier
-                    .padding(end = 18.dp)
-                    .clickable { onSelect(k) },
-            )
+            PillTab(label, active = mode == k, onClick = { onSelect(k) }, plain = true)
         }
     }
 }
