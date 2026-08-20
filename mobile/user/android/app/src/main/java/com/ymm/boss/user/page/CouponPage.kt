@@ -1,9 +1,10 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +35,7 @@ import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PillTab
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
@@ -80,16 +82,13 @@ fun CouponScreen(nav: Nav) {
 
 @Composable
 private fun Tabs(current: String, onSelect: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         listOf("available" to "可用", "used" to "已使用", "expired" to "已过期").forEach { (key, label) ->
-            val active = key == current
-            Text(
-                label,
-                fontSize = 13.5.sp,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                color = if (active) Palette.primary else Palette.muted,
-                modifier = Modifier.padding(end = 18.dp).clickable { onSelect(key) },
-            )
+            PillTab(label, active = key == current, onClick = { onSelect(key) }, plain = true)
         }
     }
 }
@@ -102,10 +101,10 @@ private fun CouponCard(c: JSONObject, status: String, onUse: () -> Unit) {
             Box(Modifier.width(4.dp).height(72.dp).background(Palette.primary, RoundedCornerShape(2.dp)))
             Column(Modifier.padding(start = 12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("¥" + trimZero(c.optDouble("amount")), fontSize = 18.sp,
+                    Text("¥" + "%.2f".format(c.optDouble("amount")), fontSize = 18.sp,
                         fontWeight = FontWeight.Bold, color = Palette.ink)
                     if (threshold > 0) {
-                        Text("  满 " + trimZero(threshold) + " 可用", fontSize = 12.sp, color = Palette.muted)
+                        Text("  满 ¥" + "%.2f".format(threshold) + " 可用", fontSize = 12.sp, color = Palette.muted)
                     }
                     Spacer(Modifier.weight(1f))
                     Tag(statusLabel(status), if (status == "available") Palette.primary else Palette.muted)
@@ -118,6 +117,7 @@ private fun CouponCard(c: JSONObject, status: String, onUse: () -> Unit) {
                     Button(
                         onClick = onUse,
                         colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
                         modifier = Modifier.padding(top = 10.dp),
                     ) { Text("去使用", fontSize = 12.5.sp) }
                 }
@@ -129,9 +129,6 @@ private fun CouponCard(c: JSONObject, status: String, onUse: () -> Unit) {
 private fun statusLabel(status: String): String = when (status) {
     "available" -> "可用"; "used" -> "已使用"; "expired" -> "已过期"; else -> status
 }
-
-private fun trimZero(v: Double): String =
-    if (v == v.toLong().toDouble()) v.toLong().toString() else "%.2f".format(v)
 
 private fun org.json.JSONArray?.optList(): List<JSONObject> {
     if (this == null) return emptyList()
