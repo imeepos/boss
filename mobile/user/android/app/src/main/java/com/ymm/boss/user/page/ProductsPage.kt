@@ -95,17 +95,22 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
     val scope = rememberCoroutineScope()
     val id = p.optString("productId")
     AppCard {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink, modifier = Modifier.weight(1f))
-            Tag("¥${p.optString("monthlyFee")}/月", if (p.optBoolean("featured")) Palette.orange else Palette.primary)
-        }
-        Notice(p.optString("description"))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { nav.push(Route.Product(id)) }) { Text("详情", color = Palette.primary) }
-            Button(
-                onClick = { buyNow(scope, nav, id) },
-                colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            ) { Text("立即办理") }
+        // AppCard 是 Box,多子元素必须包 Column 否则叠在一起(标题压按钮)
+        Column(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink, modifier = Modifier.weight(1f))
+                Tag("¥${p.optString("monthlyFee")}/月", if (p.optBoolean("featured")) Palette.orange else Palette.primary)
+            }
+            if (p.optString("description").isNotEmpty()) {
+                Notice(p.optString("description"))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { nav.push(Route.Product(id)) }) { Text("详情", color = Palette.primary) }
+                Button(
+                    onClick = { buyNow(scope, nav, id) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
+                ) { Text("立即办理") }
+            }
         }
     }
 }
@@ -113,15 +118,17 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
 @Composable
 private fun AddonCard(addons: List<JSONObject>, nav: Nav) {
     AppCard {
-        CardTitle("增值服务", more = "进入管理 >") { nav.push(Route.Addon) }
-        if (addons.isEmpty()) Notice("暂无可订购增值服务")
-        addons.forEach { a ->
-            Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(a.optString("name"), fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.ink)
-                    Notice(a.optString("description"))
+        Column(Modifier.fillMaxWidth()) {
+            CardTitle("增值服务", more = "进入管理 >") { nav.push(Route.Addon) }
+            if (addons.isEmpty()) Notice("暂无可订购增值服务")
+            addons.forEach { a ->
+                Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(a.optString("name"), fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.ink)
+                        Notice(a.optString("description"))
+                    }
+                    Text("¥${a.optString("monthlyFee")}/月", fontSize = 12.sp, color = Palette.muted)
                 }
-                Text("¥${a.optString("monthlyFee")}/月", fontSize = 12.sp, color = Palette.muted)
             }
         }
     }

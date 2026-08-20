@@ -54,9 +54,11 @@ fun AddressScreen(nav: Nav) {
 @Composable
 private fun AddressListCard(items: List<JSONObject>) {
     AppCard {
-        CardTitle("地址列表")
-        if (items.isEmpty()) Text("暂无地址", fontSize = 12.5.sp, color = Palette.muted)
-        items.forEach { a -> AddressCell(a) }
+        Column(Modifier.fillMaxWidth()) {
+            CardTitle("地址列表")
+            if (items.isEmpty()) Text("暂无地址", fontSize = 12.5.sp, color = Palette.muted)
+            items.forEach { a -> AddressCell(a) }
+        }
     }
 }
 
@@ -69,18 +71,20 @@ private fun AddressFormCard(onSaved: suspend () -> Unit) {
     var contact by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     AppCard {
-        CardTitle("新增地址")
-        FieldLabel("小区 / 楼盘")
-        AddrInput(community, "请输入小区名") { community = it }
-        FieldLabel("楼栋")
-        AddrInput(building, "楼栋号") { building = it }
-        FieldLabel("门牌号")
-        AddrInput(door, "单元/房间号") { door = it }
-        FieldLabel("联系人")
-        AddrInput(contact, "联系人") { contact = it }
-        Notice(msg)
-        SaveAddressButton(scope, addressPayload(community, building, door, contact), onSaved) { text ->
-            msg = text
+        Column(Modifier.fillMaxWidth()) {
+            CardTitle("新增地址")
+            FieldLabel("小区 / 楼盘")
+            AddrInput(community, "请输入小区名") { community = it }
+            FieldLabel("楼栋")
+            AddrInput(building, "楼栋号") { building = it }
+            FieldLabel("门牌号")
+            AddrInput(door, "单元/房间号") { door = it }
+            FieldLabel("联系人")
+            AddrInput(contact, "联系人") { contact = it }
+            Notice(msg)
+            SaveAddressButton(scope, addressPayload(community, building, door, contact), onSaved) { text ->
+                msg = text
+            }
         }
     }
 }
