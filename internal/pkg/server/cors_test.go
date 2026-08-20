@@ -41,3 +41,26 @@ func TestCORSRejectsUnknownOrigin(t *testing.T) {
 		t.Fatalf("unexpected allow origin = %q", got)
 	}
 }
+
+func TestCORSLocalhostAnyPort(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := New(Config{CORSOrigins: []string{"http://localhost:5174"}})
+
+	for _, origin := range []string{"http://localhost:5175", "http://127.0.0.1:9999", "http://localhost:5173"} {
+		req := httptest.NewRequest(http.MethodPost, "/healthz", nil)
+		req.Header.Set("Origin", origin)
+		res := httptest.NewRecorder()
+		r.ServeHTTP(res, req)
+		if got := res.Header().Get("Access-Control-Allow-Origin"); got != origin {
+			t.Fatalf("allow origin = %q, want %q", got, origin)
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/healthz", nil)
+	req.Header.Set("Origin", "http://192.168.0.5:5173")
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+	if got := res.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("non-local ip should be rejected, got %q", got)
+	}
+}

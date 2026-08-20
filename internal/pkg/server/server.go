@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,7 +43,7 @@ func cors(origins []string) gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		if _, ok := allowed[origin]; !ok {
+		if !originAllowed(origin, allowed) {
 			c.Next()
 			return
 		}
@@ -57,6 +58,23 @@ func cors(origins []string) gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+// originAllowed 精确白名单命中即放行;开发本机源(localhost/127.0.0.1)不限端口——
+// vite 端口随占用漂移(5173→5175…),逐个枚举不可维护。
+func originAllowed(origin string, allowed map[string]struct{}) bool {
+	if _, ok := allowed[origin]; ok {
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	host := u.Hostname()
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return false
+	}
+	return host == "localhost" || host == "127.0.0.1" || host == "::1"
 }
 
 // Run 启动 HTTP 并监听 OS 信号实现优雅退出。
