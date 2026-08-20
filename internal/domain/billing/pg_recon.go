@@ -2,8 +2,10 @@ package billing
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -76,4 +78,133 @@ func (s *PGStore) GetReconciliation(ctx context.Context, batchNo string) (*Recon
 		return nil, fmt.Errorf("billing: get reconciliation: %w", err)
 	}
 	return &b, nil
+}
+
+// RecordChannelStatement 录入渠道侧流水并逐行比对:
+// 重写该批次 items(MATCH 行也落),重算双边总额与状态(不等=DIFF_PENDING,语义不变)。
+func (s *PGStore) RecordChannelStatement(ctx context.Context, batchID int64, rows []ChannelStatementRow) error {
+	b, err := s.getReconBatchByID(ctx, batchID)
+	if err != nil {
+		return err
+	}
+	if b.Status == "SETTLED" {
+		return ErrIllegalReconTransition
+	}
+	pays, err := s.loadDailyPayments(ctx, b.CreatedAt)
+	if err != nil {
+		return err
+	}
+	if err := s.replaceItems(ctx, batchID, CompareStatement(rows, pays)); err != nil {
+		return err
+	}
+	channelAmt, systemAmt := sumChannelRows(rows), sumPaymentRefs(pays)
+	status := "SETTLED"
+	if cents(channelAmt) != cents(systemAmt) {
+		status = "DIFF_PENDING"
+	}
+	if _, err := s.db.Exec(ctx, `
+		UPDATE reconciliation_batches SET channel_amount=$2, system_amount=$3, status=$4 WHERE id=$1`,
+		batchID, channelAmt, systemAmt, status); err != nil {
+		return fmt.Errorf("billing: record channel statement: %w", err)
+	}
+	return nil
+}
+
+// getReconBatchByID 按批次 id 查对账批次;未命中返回 ErrNotFound。
+func (s *PGStore) getReconBatchByID(ctx context.Context, batchID int64) (*ReconBatch, error) {
+	var b ReconBatch
+	err := s.db.QueryRow(ctx, `
+		SELECT id, batch_no, channel, channel_amount, system_amount, status, created_at, settled_at
+		FROM reconciliation_batches WHERE id=$1`, batchID).
+		Scan(&b.ID, &b.BatchNo, &b.Channel, &b.ChannelAmount, &b.SystemAmount, &b.Status, &b.CreatedAt, &b.SettledAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("billing: get recon batch by id: %w", err)
+	}
+	return &b, nil
+}
+
+// loadDailyPayments 系统侧比对范围:批次创建同日(批次号 PC-YYYYMMDD-NN 按日出批)的 SUCCESS 缴费。
+func (s *PGStore) loadDailyPayments(ctx context.Context, day time.Time) ([]PaymentRef, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, pay_no, amount FROM payments
+		WHERE status='SUCCESS'
+		  AND created_at >= date_trunc('day', $1::timestamptz)
+		  AND created_at < date_trunc('day', $1::timestamptz) + interval '1 day'
+		ORDER BY id`, day)
+	if err != nil {
+		return nil, fmt.Errorf("billing: load daily payments: %w", err)
+	}
+	defer rows.Close()
+	out := make([]PaymentRef, 0)
+	for rows.Next() {
+		var p PaymentRef
+		if err := rows.Scan(&p.ID, &p.PayNo, &p.Amount); err != nil {
+			return nil, fmt.Errorf("billing: scan payment ref: %w", err)
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// replaceItems 幂等重写批次明细:先清旧 items 再逐行插入。
+func (s *PGStore) replaceItems(ctx context.Context, batchID int64, items []ReconItem) error {
+	if _, err := s.db.Exec(ctx,
+		`DELETE FROM reconciliation_items WHERE batch_id=$1`, batchID); err != nil {
+		return fmt.Errorf("billing: clear recon items: %w", err)
+	}
+	for _, it := range items {
+		if _, err := s.db.Exec(ctx, `
+			INSERT INTO reconciliation_items(batch_id, payment_id, channel_ref, amount, diff_kind, note)
+			VALUES($1,$2,$3,$4,$5,$6)`,
+			batchID, it.PaymentID, it.ChannelRef, it.Amount, it.DiffKind, it.Note); err != nil {
+			return fmt.Errorf("billing: insert recon item: %w", err)
+		}
+	}
+	return nil
+}
+
+// ListReconciliationItems 批次行级明细,按 id 升序(差异定位用)。
+func (s *PGStore) ListReconciliationItems(ctx context.Context, batchID int64) ([]ReconItem, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, batch_id, payment_id, channel_ref, amount, diff_kind, note
+		FROM reconciliation_items WHERE batch_id=$1 ORDER BY id`, batchID)
+	if err != nil {
+		return nil, fmt.Errorf("billing: list recon items: %w", err)
+	}
+	defer rows.Close()
+	out := make([]ReconItem, 0)
+	for rows.Next() {
+		var it ReconItem
+		var payID sql.NullInt64
+		if err := rows.Scan(&it.ID, &it.BatchID, &payID, &it.ChannelRef,
+			&it.Amount, &it.DiffKind, &it.Note); err != nil {
+			return nil, fmt.Errorf("billing: scan recon item: %w", err)
+		}
+		if payID.Valid {
+			it.PaymentID = &payID.Int64
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
+// sumChannelRows 渠道侧流水金额合计。
+func sumChannelRows(rows []ChannelStatementRow) float64 {
+	var sum float64
+	for _, r := range rows {
+		sum += r.Amount
+	}
+	return sum
+}
+
+// sumPaymentRefs 系统侧缴费金额合计。
+func sumPaymentRefs(pays []PaymentRef) float64 {
+	var sum float64
+	for _, p := range pays {
+		sum += p.Amount
+	}
+	return sum
 }

@@ -69,8 +69,11 @@ func (f *fakeArrears) UpdateStopResumeStatus(_ context.Context, id int64, status
 
 // fakeRecon 桩 billing.ReconService。
 type fakeRecon struct {
-	batches []billing.ReconBatch
-	settled string
+	batches   []billing.ReconBatch
+	byBatchNo map[string]*billing.ReconBatch
+	items     map[int64][]billing.ReconItem
+	stated    int64
+	settled   string
 }
 
 func (f *fakeRecon) ListReconciliations(context.Context) ([]billing.ReconBatch, error) {
@@ -82,6 +85,19 @@ func (f *fakeRecon) AppendReconciliation(context.Context, billing.ReconBatch) (i
 func (f *fakeRecon) SettleReconciliation(_ context.Context, batchNo string) error {
 	f.settled = batchNo
 	return nil
+}
+func (f *fakeRecon) GetReconciliation(_ context.Context, batchNo string) (*billing.ReconBatch, error) {
+	if b, ok := f.byBatchNo[batchNo]; ok {
+		return b, nil
+	}
+	return nil, billing.ErrNotFound
+}
+func (f *fakeRecon) RecordChannelStatement(_ context.Context, batchID int64, _ []billing.ChannelStatementRow) error {
+	f.stated = batchID
+	return nil
+}
+func (f *fakeRecon) ListReconciliationItems(_ context.Context, batchID int64) ([]billing.ReconItem, error) {
+	return f.items[batchID], nil
 }
 
 // fakeAaa 桩 aaa.AaaService。
@@ -198,6 +214,42 @@ func TestReconciliationHandlers(t *testing.T) {
 	}
 	if rc.settled != "PC-20250816-04" {
 		t.Fatalf("settled=%q", rc.settled)
+	}
+}
+
+// TestReconciliationItemsHandlers 契约:批次行级明细可查(camelCase 字段)、渠道流水可按行录入比对。
+func TestReconciliationItemsHandlers(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	rc := &fakeRecon{
+		byBatchNo: map[string]*billing.ReconBatch{
+			"PC-20250816-04": {ID: 4, BatchNo: "PC-20250816-04", Status: "DIFF_PENDING"},
+		},
+		items: map[int64][]billing.ReconItem{4: {
+			{ID: 1, BatchID: 4, ChannelRef: "PAY-20250820-001", Amount: 299, DiffKind: billing.DiffAmountMismatch},
+		}},
+	}
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	Register(r, &app.Application{User: &fakeUser{permOk: true}, Recon: rc}, mgr)
+
+	w := getJSON(t, r, "/api/admin/v1/reconciliations/PC-20250816-04/items", authToken(t, mgr))
+	var body struct {
+		Code int `json:"code"`
+		Data struct {
+			Items []billing.ReconItem `json:"items"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Code != 0 || len(body.Data.Items) != 1 || body.Data.Items[0].DiffKind != billing.DiffAmountMismatch {
+		t.Fatalf("body=%s", w.Body.String())
+	}
+
+	w = postJSONAuth(t, r, "/api/admin/v1/reconciliations/PC-20250816-04/statement",
+		`{"rows":[{"channelRef":"PAY-20250820-001","amount":299}]}`, authToken(t, mgr))
+	if w.Code != http.StatusOK || rc.stated != 4 {
+		t.Fatalf("status=%d stated=%d body=%s", w.Code, rc.stated, w.Body.String())
 	}
 }
 

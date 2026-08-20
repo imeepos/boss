@@ -104,7 +104,8 @@
 | payments ✚ | id | ▲bill_id(FK) | 账单 1:N 缴费 |
 | arrears ✚ | id | ▲customer_id(FK UQ 1:1) | 客户 1:1 欠费态 |
 | stop_resume_tasks ✚ | id | ▲customer_id/loid(软) | — |
-| reconciliation_batches ✚ | id/UQ batch_no | 渠道对账（channel 字符串，不挂 FK） | — |
+| reconciliation_batches ✚ | id/UQ batch_no | 渠道对账（channel 字符串，不挂 FK） ■reconciliation_items | — |
+| reconciliation_items ✚ | id | ▲batch_id(FK CASCADE) ▲payment_id(软引用：渠道流水可无系统 payment，000060) | 批次 1:N 行级比对明细 |
 | arn_sequences ✚ | doc_type | 发票号序列（作废保留不回收） | — |
 | invoices ✚ | id/UQ invoice_no | ▲bill_id(FK) ▲customer_id(软+快照)；tax_* 列=税局网关回填（000049） | 账单 1:N 发票 |
 

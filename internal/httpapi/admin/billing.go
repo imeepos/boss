@@ -108,6 +108,43 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 		httpx.RecordAudit(a, c, "reconciliation.settle", "reconciliation", c.Param("batchNo"), nil)
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
+
+	// 渠道对账行级明细(D6 差异定位):批次下逐行 items,差异种类见 diffKind。
+	g.GET("/reconciliations/:batchNo/items", requirePerm(a.User, "menu:paycheck"), func(c *gin.Context) {
+		b, err := a.Recon.GetReconciliation(c.Request.Context(), c.Param("batchNo"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		items, err := a.Recon.ListReconciliationItems(c.Request.Context(), b.ID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": items})
+	})
+
+	// 渠道侧流水按行录入并自动比对生成 items(本期手工录入,自动拉流水不在范围)。
+	g.POST("/reconciliations/:batchNo/statement", requirePerm(a.User, "menu:paycheck"), func(c *gin.Context) {
+		b, err := a.Recon.GetReconciliation(c.Request.Context(), c.Param("batchNo"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		var body struct {
+			Rows []billing.ChannelStatementRow `json:"rows" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if err := a.Recon.RecordChannelStatement(c.Request.Context(), b.ID, body.Rows); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "reconciliation.statement", "reconciliation", c.Param("batchNo"), nil)
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
 }
 
 // execStopResume 对 LO 账号执行停/复机迁移,返回任务落账状态(DONE/FAILED)。
