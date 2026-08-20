@@ -84,19 +84,20 @@ private fun rememberQuickActions(): List<QuickAction> {
 private fun GridItem(action: QuickAction, modifier: Modifier = Modifier, onAction: (Route) -> Unit) {
     Column(
         modifier = modifier
-            .heightIn(min = 72.dp)
+            .heightIn(min = 60.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = { onAction(action.route) })
-            .padding(horizontal = 4.dp, vertical = 8.dp),
+            .padding(horizontal = 4.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(action.icon, contentDescription = action.label, tint = action.tint, modifier = Modifier.size(32.dp))
+        Icon(action.icon, contentDescription = action.label, tint = action.tint, modifier = Modifier.size(24.dp))
         Text(
-            action.label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal,
+            action.label, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.Normal,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
             textAlign = TextAlign.Center,
+            maxLines = 1,
         )
     }
 }

@@ -67,8 +67,9 @@ internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "${greetingFor(hour)}，${state.customerName.ifEmpty { "客户" }}",
-                    fontSize = 32.sp, lineHeight = 40.sp, fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold,
                     color = OnGradient,
+                    maxLines = 1,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
