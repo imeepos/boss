@@ -147,7 +147,7 @@ private fun sendCode(scope: kotlinx.coroutines.CoroutineScope, phone: String, on
     scope.launch {
         try {
             UserApi.auth.smsCode(phone, "login")
-            onDone("验证码已发送(演示环境任意 6 位)")
+            onDone("验证码已发送")
         } catch (e: Exception) { onDone("验证码发送失败") }
     }
 }
@@ -162,8 +162,8 @@ private fun doLogin(
     scope.launch {
         try {
             val r = UserApi.auth.login(phone, mode, credential)
-            // 真实后端 token 位于 data.token
-            val tk = r.optJSONObject("data")?.optString("token").orEmpty()
+            // Api.request 已解 {code,msg,data} 信封,这里直接取字段
+            val tk = r.optString("token")
             if (tk.isEmpty()) { onErr("登录响应缺少 token"); return@launch }
             Api.setToken(tk)
             nav.resetTo(com.ymm.boss.user.ui.Route.Home)
