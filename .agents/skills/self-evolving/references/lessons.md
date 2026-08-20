@@ -131,3 +131,6 @@
 - shell 链上 && adb install 在 build FAILED 时仍会执行到旧 APK 并报 Success;自动化里必须先判定 BUILD SUCCESSFUL 再 install。
 - UI 需求含空间词(内圆角/交点/遮挡)且第一次实现被打回时,第二次就问,选项按"卡片级/区域级/头部级"分层给,不要同层连猜。
 - 多会话共用工作区:自己的改动 build+验证通过后立刻 commit,否则会被并行会话的 git add -A 裹进无关提交。
+- "多页面视觉/行为保持一致"的需求,解法是抽共用组件+单点参数对象(PinnedHeaderSpec),不是各页调参后对比;组件一致则视觉必然一致,对比修补是无底洞。
+- 多会话共享仓库:pull 后先 assemble 一次确认基线可编译,再开始自己的改动;别人提交坏代码会阻塞你,最小修复(unlock)优于绕行。
+- 工具调用被打断(abort)后,该轮的 build/install/commit 可能悬空——继续工作前先 git status 核对。

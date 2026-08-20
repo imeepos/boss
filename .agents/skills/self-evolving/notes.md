@@ -638,3 +638,14 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - skill 有没有提前预警:没有。这是"UI 空间描述歧义"类坑:用户说"内圆角/交点",我按几何语义理解,用户指的是"滚动容器的裁剪边界"。
 - 重来一次:第 2 次猜错后就该用 ask_user_question,且选项要覆盖"卡片级/区域级/头部级"三个层级维度,而不是同层级猜形状;或者直接问"你期望滚动时什么东西在动、什么不动、圆角挂在谁身上"。
 - 其他沉淀:clip 裁剪必须配不透明可区分底色否则蓝对蓝不可见;空 Box 撑高度会塌缩(onSizeChanged 层要与视觉层同体);statusBarsPadding 会消费 insets 害 sibling scrim 拿 0 高度;build FAILED 后链上的 adb install 仍装旧包还报 Success(必须先 grep BUILD 再 install);首帧负 padding 直接闪退;并行会话会裹走未提交改动(改完立刻 commit)。
+
+## 2026-02 user-android 状态栏统一
+- 坑:本机无 JDK(/usr/libexec/java_home 报无 Java Runtime),gradle 编译门禁跑不了,只能静态检查+人工核对。
+- skill 提前警告了吗:docs 里提过门禁命令但没登记"无 JDK"这一环境事实。
+- 重来一次:先探明构建工具链可用性再动手;改动保持最小并 grep 清理残留引用(extendIntoStatusBar/statusBarsPadding)。
+
+## 2026-08-20 共用骨架组件收敛两页视觉(用户:"你就不要截图分析了 直接复用一个组件")
+- 最值钱的经验:用户一句话点破正解——"两个页面视觉一致"这类需求,正确解法是抽共用组件(PinnedGradientPage+PinnedHeaderSpec 单点几何参数),而不是两页各自调参再截图对比修补。我在对比修补上又烧了好几轮像素断言,方向就是错的。
+- 哪个坑:①并行会话提交了编译不过的代码(ea91bdf,WindowInsets.getHeight 不存在),阻塞我的 build,做了最小修复(asPaddingValues)解锁;②两次工具调用被打断(abort),4dp 上移的 build/install/commit 悬空,靠 git status 才发现收尾;③edit "file changed since read" 在并行环境下频繁出现,重读再改已是常态。
+- skill 有没有预警:红线1(读最新内容)有;并行会话提交坏代码无预警——多会话共享工作区时,pull 之后必须先 build 再继续自己的活。
+- 重来一次:听到"两页保持一致"就直接提组件化方案;开工前 git pull + 全量 build 确认基线是绿的。
