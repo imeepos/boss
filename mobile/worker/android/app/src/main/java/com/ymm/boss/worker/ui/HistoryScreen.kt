@@ -20,6 +20,12 @@ import org.json.JSONArray
 private val PERIODS = listOf("month" to "本月", "last-month" to "上月", "all" to "全部")
 private val PERIOD_NAMES = mapOf("month" to "本月", "last-month" to "上月", "all" to "全部")
 
+private fun historyStatus(status: String): String = when (status) {
+    "DONE" -> "已完成"
+    "CANCELLED", "CANCELED" -> "已取消"
+    else -> status.ifEmpty { "已完成" }
+}
+
 // 历史工单(对齐 docs/worker/history.html):本月/上月/全部 分段时间线
 @Composable
 fun HistoryScreen(nav: NavHost) {
@@ -41,13 +47,18 @@ fun HistoryScreen(nav: NavHost) {
                     for (i in 0 until items.length()) {
                         val it0 = items.optJSONObject(i)
                         Cell(
-                            title = "${it0.optString("ticketNo")} · ${it0.optString("typeLabel")}",
+                            title = "${it0.optString("ticketNo")} · ${it0.optString("typeLabel").ifEmpty { "新装" }}",
                             desc = listOfNotNull(
                                 it0.optString("address").takeIf { it.isNotEmpty() },
                                 it0.optString("finishedAt").takeIf { it.isNotEmpty() },
                             ).joinToString(" · "),
                             onClick = { nav.push(ticketScreen(it0.optString("ticketNo"))) },
-                            right = { StatusTag(it0.optString("statusLabel"), it0.optString("status")) },
+                            right = {
+                                StatusTag(
+                                    it0.optString("statusLabel").ifEmpty { historyStatus(it0.optString("status")) },
+                                    it0.optString("status"),
+                                )
+                            },
                         )
                     }
                 }

@@ -41,6 +41,7 @@ fun SafetyScreen(nav: NavHost) {
     var workType by remember { mutableStateOf(WORK_TYPES[0]) }
     var checked by remember { mutableStateOf(setOf<String>()) }
     var tip by remember { mutableStateOf("") }
+    var submitting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
 
@@ -63,7 +64,12 @@ fun SafetyScreen(nav: NavHost) {
                 }
             }
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("提交安全确认", modifier = Modifier.fillMaxWidth()) {
+            PrimaryButton("提交安全确认", enabled = !submitting, modifier = Modifier.fillMaxWidth()) {
+                if (checked.isEmpty()) {
+                    tip = "请先完成至少一项安全确认"
+                    return@PrimaryButton
+                }
+                submitting = true
                 scope.launch {
                     tip = try {
                         val list = JSONArray()
@@ -72,6 +78,7 @@ fun SafetyScreen(nav: NavHost) {
                         toast(ctx, r.optString("message", "安全确认已上报留痕"))
                         ""
                     } catch (e: Exception) { "上报失败：${e.message}" }
+                    submitting = false
                 }
             }
             if (tip.isNotEmpty()) Notice(tip, red = true)

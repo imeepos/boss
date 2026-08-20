@@ -39,29 +39,35 @@ private val ACCEPT_TYPES = listOf("新装宽带", "宽带变更", "拆机", "抢
 fun SettingsScreen(nav: NavHost) {
     val settings by loadOnce { ProfileApi.settings() }
     var online by remember { mutableStateOf(true) }
+    var radiusKm by remember { mutableStateOf(5) }
     var types by remember { mutableStateOf(setOf<String>()) }
     var tip by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
 
     LaunchedEffect(settings) {
         val d = (settings as? Load.Ok)?.data ?: return@LaunchedEffect
         online = d.optBoolean("online", true)
+        radiusKm = d.optInt("radiusKm", 5)
         types = (0 until (d.optJSONArray("acceptTypes")?.length() ?: 0))
             .map { d.optJSONArray("acceptTypes")!!.optString(it) }.toSet()
     }
 
     fun save() {
+        if (saving || settings !is Load.Ok) return
+        saving = true
         scope.launch {
             tip = try {
                 val list = JSONArray()
                 ACCEPT_TYPES.filter { it in types }.forEach { list.put(it) }
                 val r = ProfileApi.saveSettings(JSONObject().apply {
-                    put("online", online); put("radiusKm", 5); put("acceptTypes", list)
+                    put("online", online); put("radiusKm", radiusKm); put("acceptTypes", list)
                 })
                 toast(ctx, r.optString("message", "接单设置已保存"))
                 ""
             } catch (e: Exception) { "保存失败：${e.message}" }
+            saving = false
         }
     }
 
@@ -75,7 +81,7 @@ fun SettingsScreen(nav: NavHost) {
                         .background(if (online) Primary else Color(0xFF8C8C8C), RoundedCornerShape(6.dp))
                         .padding(horizontal = 10.dp, vertical = 5.dp))
             }
-            KvRow("接单半径", "5 km")
+            KvRow("接单半径", "$radiusKm km")
             KvRow("接单类型", if (types.isEmpty()) "未设置" else types.joinToString(" / "))
         }
         Card(Modifier.padding(12.dp)) {

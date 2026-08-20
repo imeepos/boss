@@ -39,16 +39,20 @@ import org.json.JSONArray
 @Composable
 fun ScheduleScreen(nav: NavHost) {
     var clockHint by remember { mutableStateOf("") }
+    var clocking by remember { mutableStateOf(false) }
     val state by loadOnce { ProfileApi.schedule() }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
 
     fun clock(type: String) {
+        if (clocking) return
+        clocking = true
         scope.launch {
             clockHint = try {
                 val r = ProfileApi.clock(type)
                 (if (type == "IN") "上班打卡成功" else "下班打卡成功") + "：" + r.optString("clockedAt")
             } catch (e: Exception) { "打卡失败：${e.message}" }
+            clocking = false
         }
     }
 
@@ -62,7 +66,7 @@ fun ScheduleScreen(nav: NavHost) {
             is Load.Ok -> {
                 val d = s.data
                 TopBar("排期日历", onBack = { nav.pop() }, action = d.optString("month", "-"))
-                CalendarCard(d.optJSONArray("busyDays"))
+                CalendarCard(d.optString("month", "-"), d.optJSONArray("busyDays"))
                 Card(Modifier.padding(12.dp)) {
                     val today = d.optJSONArray("today") ?: JSONArray()
                     SectionTitle("今日排期", more = "${today.length()} 单")
@@ -77,9 +81,9 @@ fun ScheduleScreen(nav: NavHost) {
                 }
                 Card(Modifier.padding(12.dp)) {
                     SectionTitle("工时打卡")
-                    PrimaryButton("上班打卡", modifier = Modifier.fillMaxWidth()) { clock("IN") }
+                    PrimaryButton("上班打卡", enabled = !clocking, modifier = Modifier.fillMaxWidth()) { clock("IN") }
                     Spacer(Modifier.height(8.dp))
-                    PrimaryButton("下班打卡", modifier = Modifier.fillMaxWidth()) { clock("OUT") }
+                    PrimaryButton("下班打卡", enabled = !clocking, modifier = Modifier.fillMaxWidth()) { clock("OUT") }
                     if (clockHint.isNotEmpty()) Notice(clockHint)
                 }
             }
@@ -89,8 +93,13 @@ fun ScheduleScreen(nav: NavHost) {
 }
 
 @Composable
-private fun CalendarCard(busyDays: JSONArray?) {
+private fun CalendarCard(month: String, busyDays: JSONArray?) {
     val busy = buildSet { for (i in 0 until (busyDays?.length() ?: 0)) add(busyDays?.optInt(i) ?: 0) }
+    val year = month.substringBefore("-").toIntOrNull() ?: java.time.LocalDate.now().year
+    val monthValue = month.substringAfter("-", "").toIntOrNull() ?: java.time.LocalDate.now().monthValue
+    val yearMonth = java.time.YearMonth.of(year, monthValue)
+    val firstOffset = yearMonth.atDay(1).dayOfWeek.value - 1
+    val totalCells = firstOffset + yearMonth.lengthOfMonth()
     Card(Modifier.padding(12.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
             listOf("一", "二", "三", "四", "五", "六", "日").forEach {
@@ -98,12 +107,13 @@ private fun CalendarCard(busyDays: JSONArray?) {
                     modifier = Modifier.weight(1f))
             }
         }
-        var day = 1
-        while (day <= 31) {
+        var cell = 0
+        while (cell < totalCells) {
             Row(Modifier.fillMaxWidth()) {
                 repeat(7) {
                     Box(Modifier.weight(1f).padding(3.dp), contentAlignment = Alignment.Center) {
-                        if (day <= 31) {
+                        val day = cell - firstOffset + 1
+                        if (cell >= firstOffset && day <= yearMonth.lengthOfMonth()) {
                             val mark = day in busy
                             Text("$day", fontSize = 12.sp,
                                 color = if (mark) Color.White else Ink,
@@ -113,7 +123,7 @@ private fun CalendarCard(busyDays: JSONArray?) {
                                 },
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         }
-                        day++
+                        cell++
                     }
                 }
             }

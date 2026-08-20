@@ -41,8 +41,8 @@ fun NoticeScreen(nav: NavHost) {
                                 n.optString("publishedAt").takeIf { it.isNotEmpty() },
                                 n.optString("category").takeIf { it.isNotEmpty() },
                             ).joinToString(" · "),
-                            onClick = { toast(ctx, n.optString("content", "无详情")) },
-                            right = { Text(">", fontSize = 14.sp, color = Muted) },
+                            onClick = { toast(ctx, "${n.optString("category")} · ${n.optString("publishedAt")}") },
+                            right = { Text("已发布", fontSize = 12.sp, color = Muted) },
                         )
                     }
                 }

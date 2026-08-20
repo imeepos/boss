@@ -71,14 +71,14 @@ fun MessagesScreen(nav: NavHost) {
 
 @Composable
 private fun MsgBanner(level: String, title: String, content: String, sentAt: String) {
-    val bg = when (level) {
-        "warn" -> Color(0xFFFFF7E6)
-        "error" -> Color(0xFFFFF1F0)
+    val bg = when (level.uppercase()) {
+        "WARN" -> Color(0xFFFFF7E6)
+        "URGENT" -> Color(0xFFFFF1F0)
         else -> Color(0xFFF0F5FF)
     }
-    val fg = when (level) {
-        "warn" -> Color(0xFFD46B08)
-        "error" -> Color(0xFFCF1322)
+    val fg = when (level.uppercase()) {
+        "WARN" -> Color(0xFFD46B08)
+        "URGENT" -> Color(0xFFCF1322)
         else -> Color(0xFF0958D9)
     }
     Column(Modifier.fillMaxWidth().background(bg, RoundedCornerShape(10.dp)).padding(12.dp)) {
