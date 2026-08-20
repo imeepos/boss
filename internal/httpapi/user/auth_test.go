@@ -37,8 +37,8 @@ func (f *userPortalCustSvc) List(_ context.Context, q customer.CustomerQuery) ([
 // userPortalWo 桩 WorkOrderService:CreateComplaint 记录入参,ListComplaints 返回可配置列表。
 type userPortalWo struct {
 	order.WorkOrderService
-	created  []order.Complaint
-	complts  []order.Complaint
+	created []order.Complaint
+	complts []order.Complaint
 }
 
 func (f *userPortalWo) CreateComplaint(_ context.Context, c order.Complaint) (int64, error) {

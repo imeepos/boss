@@ -57,9 +57,9 @@ func (f *fakeUserData) ListUserPlans(context.Context) ([]map[string]any, error) 
 func (f *fakeUserData) CreateUserPlan(context.Context, udcustomer.UserPlan) (int64, error) {
 	return 0, nil
 }
-func (f *fakeUserData) ListAddons(context.Context) ([]map[string]any, error)     { return f.addons, nil }
-func (f *fakeUserData) CreateAddon(context.Context, udcustomer.Addon) error     { return nil }
-func (f *fakeUserData) ToggleAddon(context.Context, string) error               { return nil }
+func (f *fakeUserData) ListAddons(context.Context) ([]map[string]any, error) { return f.addons, nil }
+func (f *fakeUserData) CreateAddon(context.Context, udcustomer.Addon) error  { return nil }
+func (f *fakeUserData) ToggleAddon(context.Context, string) error            { return nil }
 func (f *fakeUserData) ListAddonSubscriptions(context.Context) ([]map[string]any, error) {
 	return f.subs, nil
 }
@@ -97,7 +97,7 @@ func (f *fakeUserData) ListUserUsages(context.Context) ([]map[string]any, error)
 	return nil, nil
 }
 func (f *fakeUserData) ListDiyGuides(context.Context) ([]map[string]any, error) { return nil, nil }
-func (f *fakeUserData) ToggleDiyGuide(context.Context, string) error           { return nil }
+func (f *fakeUserData) ToggleDiyGuide(context.Context, string) error            { return nil }
 func (f *fakeUserData) ListAgreements(context.Context) ([]map[string]any, error) {
 	return nil, nil
 }

@@ -54,10 +54,10 @@ type AutoReconciler struct {
 
 // AutoReconcileResult 单渠道编排结果。
 type AutoReconcileResult struct {
-	Channel string     `json:"channel"`
-	BatchNo string     `json:"batchNo"`
-	Status  string     `json:"status"` // DIFF_PENDING / SETTLED / MANUAL_PENDING(建批待手工录入)
-	Skipped string     `json:"skipped,omitempty"` // 非空=该渠道本轮未比对,值为原因
+	Channel string `json:"channel"`
+	BatchNo string `json:"batchNo"`
+	Status  string `json:"status"`            // DIFF_PENDING / SETTLED / MANUAL_PENDING(建批待手工录入)
+	Skipped string `json:"skipped,omitempty"` // 非空=该渠道本轮未比对,值为原因
 }
 
 // AutoReconcile 对每个渠道:当日批次已存在则复用(幂等),否则建批;
