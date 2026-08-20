@@ -214,3 +214,4 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - 手法:先让用户硬刷新 + 确认访问地址(dev HMR/缓存/部署版本差异是首因);确认仍异常再元素级像素对比(CDP Page.captureScreenshot + getBoundingClientRect clip),不要一上来深挖代码。
 - 新增 migrations 文件后若镜像内服务读文件报 permission denied:write 工具默认 600,构建镜像前 `chmod 644`。
 - 102 后端部署链路:docker context 102-remote(ssh imeepos@192.168.0.102)本地 build → push 192.168.0.102:5000/boss/server → `docker compose -f deployments/docker-compose.102.app.yml up -d --force-recreate server`;迁移由 server 启动自动执行。
+- 本机无 JDK 也能编 Android:gradle 自带 JDK 在 ~/.gradle/jdks/eclipse_adoptium-17*/.../Contents/Home,`export JAVA_HOME=<该目录> ANDROID_HOME=~/Library/Android/sdk && ./gradlew compileDebugKotlin --rerun-tasks`;UP-TO-DATE 不算验证,必须 --rerun-tasks(2026-08-23 Stripe 支付页验证用)。
