@@ -1,19 +1,16 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -35,6 +32,7 @@ import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.BottomTabBar
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.auxText
 import com.ymm.boss.user.ui.brandBlue
 import org.json.JSONObject
 
@@ -91,7 +89,7 @@ internal fun parseHome(d: JSONObject): HomeUiState = HomeUiState(
     loading = false,
     customerName = d.optString("customerName"),
     phoneMasked = d.optString("phoneMasked"),
-    onlineStatus = d.optString("onlineStatus", "服务在线"),
+    onlineStatus = d.optString("onlineStatus", "网络正常"),
     planName = d.optJSONObject("plan")?.optString("name").orEmpty(),
     currentBill = yuan(d.optDouble("currentBill", Double.NaN)),
     balance = yuan(d.optDouble("balance", Double.NaN)),
@@ -148,7 +146,6 @@ fun UserHomeScreen(nav: Nav) {
             BottomTabBar(nav = nav, currentKey = "home", onSelect = { key -> nav.resetTo(Nav.tabRoute(key)) })
         },
     ) { padding ->
-        // 设计稿:首卡片上移压住渐变底部约 30dp(视觉错位重合),列表叠在渐变之上
         Box(modifier = Modifier.fillMaxSize()) {
             HomeHeader(state = state, onOpenMessages = { nav.push(Route.Messages) })
             HomeContent(
@@ -178,12 +175,11 @@ private fun HomeContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = 0.dp, end = 0.dp,
-            // 首卡顶边 = 渐变高度 220dp - 重合 32dp,其余卡片随之向下顺延
+            // 首卡顶边 = 渐变高度 180dp - 重合 32dp,其余卡片随之向下顺延
             top = HeaderHeightDp.dp - CardOverlapDp.dp,
             bottom = padding.calculateBottomPadding(),
         ),
     ) {
-        item { WelcomeCard(state = state) }
         item { BroadbandCard(state = state, onOpen = onOpenService) }
         item { QuickActions(onAction = onAction) }
         item { OrderSection(state = state, onOpenOrders = onOpenOrders, onOpenOrder = onOpenOrder, onRetry = onRetry) }

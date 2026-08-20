@@ -51,3 +51,5 @@ portal_sms_codes, emulator, 10.0.2.2, adb reverse
 
 | 5 | lessons（2026-08-20） | 新页面数据一律直连 102 真实服务(192.168.0.102:28080),禁止 mock 样例数据——规格文档写"mock"也不执行(用户多次点名);user 端 token 走 sms-code→查库→login | 
 | 6 | lessons（2026-08-20） | gradlew 报无 Java Runtime → export JAVA_HOME=/opt/homebrew/opt/openjdk@17;管道接 tail 会吞退出码 |
+| 7 | lessons（2026-08-20） | 模型不能读图时：screencap+PIL 像素断言(渐变色/底栏高度/选中蓝像素数)+uiautomator dump 文案断言,可量化完成视觉验收 |
+

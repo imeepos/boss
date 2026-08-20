@@ -5,74 +5,99 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
-import com.ymm.boss.user.ui.theme.AuxGray
-import com.ymm.boss.user.ui.theme.AuxGrayDark
-import com.ymm.boss.user.ui.theme.BrandBlue700
-import com.ymm.boss.user.ui.theme.BrandBlue700Dark
-import com.ymm.boss.user.ui.theme.GradientBlueEnd
-import com.ymm.boss.user.ui.theme.GradientBlueEndDark
-import com.ymm.boss.user.ui.theme.GradientBlueStart
-import com.ymm.boss.user.ui.theme.GradientBlueStartDark
-import com.ymm.boss.user.ui.theme.SuccessGreen
-import com.ymm.boss.user.ui.theme.SuccessGreenDark
+import androidx.compose.ui.graphics.Color
+import com.ymm.boss.user.ui.theme.ActionOrange
+import com.ymm.boss.user.ui.theme.ActionOrangeDark
+import com.ymm.boss.user.ui.theme.ActionPurple
+import com.ymm.boss.user.ui.theme.ActionPurpleDark
+import com.ymm.boss.user.ui.theme.BrandBlue
+import com.ymm.boss.user.ui.theme.BrandBlueDark
+import com.ymm.boss.user.ui.theme.BrandBlueGradientEnd
+import com.ymm.boss.user.ui.theme.BrandBlueGradientEndDark
+import com.ymm.boss.user.ui.theme.BrandBlueGradientStart
+import com.ymm.boss.user.ui.theme.BrandBlueGradientStartDark
+import com.ymm.boss.user.ui.theme.Green500
+import com.ymm.boss.user.ui.theme.Green500Dark
+import com.ymm.boss.user.ui.theme.NavigationBlue
+import com.ymm.boss.user.ui.theme.OnSurfaceDark
+import com.ymm.boss.user.ui.theme.OnSurfaceLight
+import com.ymm.boss.user.ui.theme.OnSurfaceVariantDark
+import com.ymm.boss.user.ui.theme.OnSurfaceVariantLight
 import com.ymm.boss.user.ui.theme.SurfaceDark
+import com.ymm.boss.user.ui.theme.SurfaceLight
 
-/** 色板对齐 docs/user/style.css 的 :root 令牌。 */
 object Palette {
-    val primary = Color(0xFF1677FF)
-    val primary2 = Color(0xFF69B1FF)
+    val primary = BrandBlue
+    val primary2 = BrandBlueGradientEnd
     val bg = Color(0xFFF5F6F8)
-    val panel = Color(0xFFFFFFFF)
+    val panel = SurfaceLight
     val line = Color(0xFFE8EAED)
-    val ink = Color(0xFF1C1C1C)
-    val muted = Color(0xFF8C8C8C)
+    val ink = OnSurfaceLight
+    val muted = OnSurfaceVariantLight
     val subtle = Color(0xFFB0B3B8)
-    val success = Color(0xFF52C41A)
-    val warn = Color(0xFFFAAD14)
-    val err = Color(0xFFFF4D4F)
-    val orange = Color(0xFFFA8C16)
-    val purple = Color(0xFF722ED1)
-    val dotOn = Color(0xFFA6E9A0)
-    val dotOff = Color(0xFFFFA39E)
+    val success = Green500
+    val warn = ActionOrange
+    val err = Color(0xFFFF3B30)
+    val orange = ActionOrange
+    val purple = ActionPurple
+    val dotOn = Green500
+    val dotOff = Color(0xFFFF3B30)
 }
 
 @Composable
 fun BossTheme(content: @Composable () -> Unit) {
-    val scheme = if (isSystemInDarkTheme()) {
-        darkColorScheme().copy( // 设计稿只画浅色,深色按 F 节成对色值推演
-            primary = SuccessGreenDark, tertiary = AuxGrayDark,
-            background = Color(0xFF1C1F26), surface = SurfaceDark,
-            onBackground = Color(0xFFE6E8EC), onSurface = Color(0xFFE6E8EC),
+    val dark = isSystemInDarkTheme()
+    val scheme = if (dark) {
+        darkColorScheme(
+            primary = BrandBlueDark,
+            secondary = Green500Dark,
+            tertiary = OnSurfaceVariantDark,
+            background = Color(0xFF101114),
+            surface = SurfaceDark,
+            surfaceVariant = Color(0xFF2C2C2E),
+            onBackground = OnSurfaceDark,
+            onSurface = OnSurfaceDark,
+            onSurfaceVariant = OnSurfaceVariantDark,
+            error = Color(0xFFFF6961),
         )
     } else {
         lightColorScheme(
-            primary = SuccessGreen, tertiary = AuxGray,
-            background = Palette.bg, surface = Palette.panel,
-            onBackground = Palette.ink, onSurface = Palette.ink,
-            error = Palette.err,
+            primary = BrandBlue,
+            secondary = Green500,
+            tertiary = OnSurfaceVariantLight,
+            background = Color(0xFFF5F6F8),
+            surface = SurfaceLight,
+            surfaceVariant = Color(0xFFE5E5EA),
+            onBackground = OnSurfaceLight,
+            onSurface = OnSurfaceLight,
+            onSurfaceVariant = OnSurfaceVariantLight,
+            error = Color(0xFFFF3B30),
         )
     }
     MaterialTheme(colorScheme = scheme, content = content)
 }
 
-/** 主色 BrandBlue700 的主题感知取值:浅色用深蓝、深色用提亮蓝,双主题均可读。 */
 @Composable
-fun brandBlue(): Color = if (isSystemInDarkTheme()) BrandBlue700Dark else BrandBlue700
+fun brandBlue(): Color = MaterialTheme.colorScheme.primary
 
-/** 成功/在网色:浅色 #4CAF50,深色 #81C784。 */
 @Composable
-fun successGreen(): Color = if (isSystemInDarkTheme()) SuccessGreenDark else SuccessGreen
+fun successGreen(): Color = MaterialTheme.colorScheme.secondary
 
-/** 辅助文字色:浅色 #757575,深色 #BDBDBD。 */
 @Composable
-fun auxText(): Color = if (isSystemInDarkTheme()) AuxGrayDark else AuxGray
+fun auxText(): Color = MaterialTheme.colorScheme.onSurfaceVariant
 
-/** 首页顶部渐变(约 45°,深蓝→浅蓝),深色用成对深色值。 */
 @Composable
 fun homeHeaderGradient(): Brush = if (isSystemInDarkTheme()) {
-    Brush.linearGradient(listOf(GradientBlueStartDark, GradientBlueEndDark))
+    Brush.linearGradient(listOf(BrandBlueGradientStartDark, BrandBlueGradientEndDark))
 } else {
-    Brush.linearGradient(listOf(GradientBlueStart, GradientBlueEnd))
+    Brush.linearGradient(listOf(BrandBlueGradientStart, BrandBlueGradientEnd))
 }
+
+@Composable
+fun actionOrange(): Color = if (isSystemInDarkTheme()) ActionOrangeDark else ActionOrange
+
+@Composable
+fun actionPurple(): Color = if (isSystemInDarkTheme()) ActionPurpleDark else ActionPurple
+
+val navigationBlue: Color get() = NavigationBlue

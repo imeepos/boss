@@ -13,12 +13,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.HeadsetMic
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Receipt
-import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,27 +31,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.actionOrange
+import com.ymm.boss.user.ui.actionPurple
 import com.ymm.boss.user.ui.brandBlue
 import com.ymm.boss.user.ui.successGreen
-
-/** 快捷功能宫格(设计稿 D+/E 节):4×2,容器圆角 16dp,图标蓝/绿/橙/紫,间距 12dp。 */
 
 private data class QuickAction(val label: String, val icon: ImageVector, val tint: Color, val route: Route)
 
 @Composable
 internal fun QuickActions(onAction: (Route) -> Unit) {
-    val actions = listOf(
-        QuickAction("办套餐", Icons.Outlined.ShoppingBag, brandBlue(), Route.Products),
-        QuickAction("查订单", Icons.Outlined.Assignment, brandBlue(), Route.Orders),
-        QuickAction("缴费用", Icons.Outlined.Payments, successGreen(), Route.Pay),
-        QuickAction("报故障", Icons.Outlined.Build, Palette.orange, Route.Fault),
-        QuickAction("查账单", Icons.Outlined.ReceiptLong, brandBlue(), Route.Bills),
-        QuickAction("开发票", Icons.Outlined.Receipt, successGreen(), Route.Invoice),
-        QuickAction("领优惠", Icons.Outlined.CardGiftcard, Palette.purple, Route.Coupon),
-        QuickAction("消息", Icons.Outlined.Notifications, Palette.orange, Route.Messages),
-    )
+    val actions = rememberQuickActions()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -70,7 +60,24 @@ internal fun QuickActions(onAction: (Route) -> Unit) {
     }
 }
 
-/** 单个宫格项:clip+clickable 自带涟漪,最小触达 48dp(验收 3)。 */
+@Composable
+private fun rememberQuickActions(): List<QuickAction> {
+    val blue = brandBlue()
+    val green = successGreen()
+    val orange = actionOrange()
+    val purple = actionPurple()
+    return listOf(
+        QuickAction("办套餐", Icons.Outlined.ShoppingBag, blue, Route.Products),
+        QuickAction("查订单", Icons.Outlined.Assignment, green, Route.Orders),
+        QuickAction("缴费", Icons.Outlined.Payments, orange, Route.Pay),
+        QuickAction("报故障", Icons.Outlined.Build, purple, Route.Fault),
+        QuickAction("充值", Icons.Outlined.TrendingUp, blue, Route.Topup),
+        QuickAction("查用量", Icons.Outlined.Router, green, Route.Usage),
+        QuickAction("消息", Icons.Outlined.Notifications, orange, Route.Messages),
+        QuickAction("客服", Icons.Outlined.HeadsetMic, purple, Route.Complaint),
+    )
+}
+
 @Composable
 private fun GridItem(action: QuickAction, modifier: Modifier = Modifier, onAction: (Route) -> Unit) {
     Column(
@@ -82,9 +89,9 @@ private fun GridItem(action: QuickAction, modifier: Modifier = Modifier, onActio
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(action.icon, contentDescription = action.label, tint = action.tint, modifier = Modifier.size(28.dp))
+        Icon(action.icon, contentDescription = action.label, tint = action.tint, modifier = Modifier.size(48.dp))
         Text(
-            action.label, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium,
+            action.label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Regular,
             color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 4.dp),
         )
     }

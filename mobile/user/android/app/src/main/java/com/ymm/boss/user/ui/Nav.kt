@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.user.ui.theme.NavigationBlue
 
 /** 极简导航控制器:一个可组合 back stack,避免引入 navigation 依赖。 */
 class Nav(initial: Route) {
@@ -76,7 +77,7 @@ fun BottomTabBar(nav: Nav, currentKey: String, onSelect: (String) -> Unit) {
     NavigationBar(
         modifier = Modifier.height(56.dp),
         windowInsets = WindowInsets(0.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = NavigationBlue,
         tonalElevation = 0.dp,
     ) {
         Nav.TABS.forEach { (key, label) ->
