@@ -33,11 +33,11 @@ fun AppRoot() {
     val nav = remember { Nav(if (Api.token().isNotEmpty()) Route.Home else Route.Login) }
     Surface(Modifier.fillMaxSize()) {
         val key = tabKeyOf(nav.current)
-        // 首页自带 Scaffold+NavigationBar 底栏,PageScaffold 不再重复渲染;
-        // 首页顶部渐变需延伸到状态栏后方,顶层不再吃掉顶部 insets
+        // 首页/我的自带渐变头,延伸到状态栏后方;其余页顶部为蓝色 TopBar
         val isHome = nav.current == Route.Home
+        val isProfile = nav.current == Route.Profile
         val showTabs = key.isNotEmpty() && !isHome
-        PageScaffold(nav, key, showTabs, extendIntoStatusBar = isHome) {
+        PageScaffold(nav, key, showTabs, extendIntoStatusBar = isHome || isProfile) {
             RouteScreen(nav.current, nav)
         }
     }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -80,6 +81,7 @@ private fun ProfileHead(data: JSONObject?, nav: Nav) {
     Box(
         Modifier.fillMaxWidth()
             .background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2)))
+            .statusBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 52.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
