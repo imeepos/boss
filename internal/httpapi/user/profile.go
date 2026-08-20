@@ -23,10 +23,12 @@ func portalMaskPhone(s string) string {
 	return s[:3] + "****" + s[len(s)-4:]
 }
 func portalMaskName(s string) string {
-	if s == "" {
+	// 按 rune 取首字:s[:1] 字节切片会把中文首字切成非法 UTF-8,JSON 序列化成 U+FFFD。
+	r := []rune(s)
+	if len(r) == 0 {
 		return ""
 	}
-	return s[:1] + "**"
+	return string(r[0]) + "**"
 }
 func portalMaskIDNo(s string) string {
 	if len(s) < 8 {
