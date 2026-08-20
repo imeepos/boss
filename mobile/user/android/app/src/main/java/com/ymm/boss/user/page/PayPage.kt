@@ -31,6 +31,7 @@ import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
 import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.CellRow
+import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
@@ -64,8 +65,8 @@ private fun PayFormCard(nav: Nav) {
     AppCard {
         val amount = target?.optDouble("amount") ?: 0.0
         AmountHead(amount, target)
-        Text("支付方式", fontSize = 13.5.sp, color = Palette.muted,
-            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+        Spacer(Modifier.height(8.dp))
+        FieldLabel("支付方式")
         MethodGroup(method) { method = it }
         if (err.isNotEmpty()) Text(err, fontSize = 12.5.sp, color = Palette.err)
         ConfirmButton(amount, target?.optString("billNo"), method, scope, nav) { err = it }
@@ -78,10 +79,12 @@ private suspend fun loadUnpaidBill(): JSONObject? =
 @Composable
 private fun AmountHead(amount: Double, target: JSONObject?) {
     val suffix = target?.let { " · ${it.optString("productName")}" } ?: ""
-    Text("缴费金额", fontSize = 12.5.sp, color = Palette.muted)
-    Text("¥" + "%.2f".format(amount), fontSize = 26.sp, fontWeight = FontWeight.Bold,
-        color = Palette.ink, modifier = Modifier.padding(vertical = 4.dp))
-    Text("账期 ${target?.optString("period") ?: "—"}$suffix", fontSize = 12.sp, color = Palette.muted)
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("缴费金额", fontSize = 12.5.sp, color = Palette.muted)
+        Text("¥" + "%.2f".format(amount), fontSize = 30.sp, fontWeight = FontWeight.Bold,
+            color = Palette.ink, modifier = Modifier.padding(vertical = 6.dp))
+        Text("账期 ${target?.optString("period") ?: "—"}$suffix", fontSize = 12.sp, color = Palette.muted)
+    }
 }
 
 @Composable

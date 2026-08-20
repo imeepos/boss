@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.BillApi
 import com.ymm.boss.user.ui.AppCard
+import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
@@ -82,7 +83,8 @@ private fun TopupFormCard(nav: Nav, balance: Double, denoms: List<Int>) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
         )
-        Text("支付方式", fontSize = 13.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+        Spacer(Modifier.height(12.dp))
+        FieldLabel("支付方式")
         MethodList(method) { method = it }
         if (err.isNotEmpty()) Text(err, fontSize = 12.5.sp, color = Palette.err)
         Button(
@@ -104,7 +106,7 @@ private fun BalanceHead(balance: Double) {
 
 @Composable
 private fun DenomRow(denoms: List<Int>, onPick: (String) -> Unit) {
-    Text("充值面额", fontSize = 13.5.sp, color = Palette.muted, modifier = Modifier.padding(bottom = 4.dp))
+    FieldLabel("充值面额")
     Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         denoms.take(3).forEach { n ->
             Text(
