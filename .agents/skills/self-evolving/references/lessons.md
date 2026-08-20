@@ -97,3 +97,4 @@
 - 当规格/设计稿要求"mock 数据"时,修复是仍按用户裁定拒绝 mock(2026-08-20 再次点名),直连 102 真实服务(192.168.0.102:28080)curl 取真数;user 端取 token 全流程:POST /auth/sms-code → go+pgx 查 102 库 portal_sms_codes(列: phone/scene/code/expires_at/used,注意无 created_at/expired_at) → POST /auth/login {mode:"sms"} 拿 data.token。
 - 当本机 gradlew 报 "Unable to locate a Java Runtime" 时,修复是 export JAVA_HOME=/opt/homebrew/opt/openjdk@17( brew openjdk@17 已装);且管道接 tail 会吞退出码,看 EXIT=${PIPESTATUS[0]}。
 - 下游编码 AI 无视觉能力时，"设计稿→提示词"模板必须强制转写与默认组件外观的差异（容器色/指示器/渐变/异形头部），只写组件名（如 NavigationBar）会让无视觉模型退回 material3 默认样式，视觉完全走样。
+- 写"设计稿→提示词"类模板时，占位符内禁止出现裸的具体数值/色值示例：填模板者可能不对照设计稿直接照抄，把臆造值当成真实规格。示例只给"要回答哪些维度"，数值必须标注"从设计稿量取后填入"。
