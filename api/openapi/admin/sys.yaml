@@ -465,6 +465,53 @@ paths:
                             detail: { type: string, description: JSON 明细(geo 子计数) }
                             createdAt: { type: string }
 
+  /attachments/upload:
+    post:
+      tags: [Sys]
+      summary: 附件上传(multipart/form-data,字段 file;单文件上限 32MB)
+      description: 上传者身份随主体类型落 attachments(account/worker/customer);API key 主体优先,否则 JWT 账号。
+      operationId: uploadAttachment
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200':
+          description: envelope;data 为附件登记记录
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data: { $ref: '#/components/schemas/Attachment' }
+
+  /attachments:
+    get:
+      tags: [Sys]
+      summary: 当前上传者附件列表(近 50 条)
+      description: 缺省按当前登录身份(API key 主体或 JWT 账号)过滤 uploaderType/uploaderId。
+      operationId: listAttachments
+      responses:
+        '200':
+          description: envelope;data.items 为附件
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Attachment' }
+
   /api-keys:
     get:
       tags: [Sys]
@@ -530,6 +577,19 @@ paths:
 
 components:
   schemas:
+    Attachment:
+      type: object
+      description: 附件登记记录(domain/attachment;三端通用)
+      properties:
+        id: { type: integer, format: int64 }
+        objectKey: { type: string, description: 存储对象键 }
+        fileName: { type: string }
+        contentType: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+        uploaderType: { type: string, description: account | worker | customer }
+        uploaderId: { type: integer, format: int64 }
+        createdAt: { type: string }
+
     AccountRow:
       type: object
       description: 账号列表行(fields.md 1.1;status 1启用 0停用;空字符串=不限/全集团)

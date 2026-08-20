@@ -122,3 +122,28 @@ paths:
                 checklist: { type: array, items: { type: string } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /attachments/upload:
+    post:
+      tags: [Misc]
+      summary: 附件上传(multipart/form-data,字段 file;单文件上限 32MB)
+      description: 上传者身份固定 worker + 当前师傅 ID。
+      operationId: uploadWorkerAttachment
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200':
+          description: envelope;data 为附件登记记录(id/objectKey/fileName/contentType/sizeBytes/uploaderType/uploaderId/createdAt)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data: { type: object }

@@ -95,4 +95,42 @@ paths:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
 
+
+  /products/{id}:
+    get:
+      tags: [Product]
+      summary: 产品详情(PUBLISHED 才可见)
+      operationId: getProductDetail
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 产品详情;未命中/未发布 code=404
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      product:
+                        type: object
+                        properties:
+                          productId: { type: string }
+                          category: { type: string }
+                          name: { type: string }
+                          bandwidth: { type: string }
+                          monthlyFee: { type: number }
+                          contractMonths: { type: integer }
+                          featured: { type: boolean }
+                      specs:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            label: { type: string }
+                            value: { type: string }
+                      compare: { type: array, items: {} }
   # ---------- Order ----------

@@ -86,3 +86,20 @@ paths:
         - { name: reportId, in: path, required: true, schema: { type: integer } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /db-patrol/orphans:
+    get:
+      tags: [Intel]
+      summary: 软引用孤儿巡检清单(只读报表,不阻断业务;对齐 Go 实现,permCode menu:report)
+      description: db-design-review D7:逐表扫描软引用悬空记录,发现项只读展示。
+      operationId: listDbPatrolOrphans
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /db-patrol/latest:
+    get:
+      tags: [Intel]
+      summary: 最新巡检快照(定时循环落 report_snapshots;无快照 code=404)
+      operationId: getLatestDbPatrol
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }

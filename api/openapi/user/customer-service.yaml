@@ -185,3 +185,55 @@ paths:
                     type: array
                     items: { $ref: './schemas.yaml#/components/schemas/Faq' }
 
+
+  /faults/{ticketNo}/urge:
+    post:
+      tags: [CustomerService]
+      summary: 报修催单(CHG 单号留痕 + 站内消息回执;CLOSED 工单 code=409)
+      operationId: urgeFault
+      parameters:
+        - name: ticketNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 催单受理
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean }
+                      urgeNo: { type: string, description: 催单号 CHG-YYYYMMDD-NNNN }
+                      urgedAt: { type: string, format: date-time }
+
+  /faults/{ticketNo}/contact:
+    get:
+      tags: [CustomerService]
+      summary: 受理师傅明文联系方式(归属校验;无已派师傅 code=404)
+      description: 报障工单无师傅字段,受理师傅=客户最近一张已派师傅的派单工单(装机/维修同人)。
+      operationId: getFaultContact
+      parameters:
+        - name: ticketNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 师傅联系方式
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      technicianName: { type: string }
+                      technicianPhone: { type: string }

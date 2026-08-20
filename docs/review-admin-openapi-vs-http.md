@@ -14,6 +14,8 @@
 >
 > 第四批 planned 路由已落地并逐路由配 http/存储测试——worker `GET /workers/{workerId}`（师傅详情，复用 GetWorker）、`POST /worker-feedbacks/{feedbackId}/review`（差评复核，need_review 置 false，新增 ReviewFeedback）、`POST /asset-returns/{returnId}/confirm`（确认返库，PENDING→RETURNED，新增 ConfirmAssetReturn）；customer `POST /products/{id}/price-history`（产品调价，事务内更新月费+追加台账，新增 ChangeProductPrice）。另销项 order.yaml 六处 stale planned 标注（dismantles/complaints/activation-callbacks 早已实现于 http_order_sub.go）。对应 yaml 已去除 planned 标注；其余清单条目仍待实现。
 
+> 第五批(2026-08-20):路由树已迁至 internal/httpapi/{admin,user,worker},contract-sync 门禁 A 检查跟随迁移并改为按端对账(三端路径可重名)。对账补齐 22+ 路由契约:admin(auth 自助三件套/auth-config/sms-config/invoices/对账三件套/db-patrol/scan 闭环/attachments)、user(自助注册/催单联系师傅/auto-pay/凭证发票 PDF/technician-contact/products 详情/attachments)、worker(attachments/upload)。`/reconciliations` 列表声明的 keyword/status 参数已删(代码不读参数,代码为准)。
+
 复核范围：`api/openapi/admin*.yaml`（含 `api/openapi/admin/*.yaml`）与 `internal/app/http*.go`，逐路由比对路径/参数/envelope。**一切以代码为准**。复核方法：4 组并行 agent 逐路由比对 + 人工抽查关键证据行（均已验证）。
 
 ## 系统性差异（影响所有列表路由）

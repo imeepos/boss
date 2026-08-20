@@ -97,6 +97,7 @@ paths:
   /help/faq: { $ref: './worker/misc.yaml#/paths/~1help~1faq' }
   /service/messages: { $ref: './worker/misc.yaml#/paths/~1service~1messages' }
   /safety/checks: { $ref: './worker/misc.yaml#/paths/~1safety~1checks' }
+  /attachments/upload: { $ref: './worker/misc.yaml#/paths/~1attachments~1upload' }
 
 components:
   securitySchemes:

@@ -81,6 +81,41 @@ paths:
                   token: { type: string }
                   customerId: { type: integer, format: int64 }
 
+  /customer-registrations:
+    post:
+      tags: [Auth]
+      summary: 客户自助注册资料提交(公开端点;审核前不入 customers 主档)
+      description: 提交后进入待审核(PENDING),由 admin 端 /customer-registrations/{id}/approve 审核开户。
+      operationId: submitCustomerRegistration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, phone, idCardNo, legalEntityId, addressId, regionId]
+              properties:
+                name: { type: string }
+                phone: { type: string }
+                idCardNo: { type: string }
+                legalEntityId: { type: integer, format: int64 }
+                addressId: { type: integer, format: int64 }
+                regionId: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: 受理结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      status: { type: string, example: PENDING }
+
   /auth/reset-password:
     post:
       tags: [Auth]

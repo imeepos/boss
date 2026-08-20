@@ -124,3 +124,43 @@ paths:
         - { name: orderId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /tickets/{ticketNo}/scan-bind:
+    post:
+      tags: [Quad]
+      summary: 扫码绑定(环节 9;admin 面向 API key worker 主体/账号代扫场景)
+      description: 与 worker 端 /tickets/{ticketNo}/scan-bind 同语义;实物光猫标签与预绑定核对,不一致 40920、未预绑定 40910。
+      operationId: adminScanBind
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [epc]
+              properties:
+                epc: { type: string, example: EPC-0001 }
+                offline: { type: boolean, default: false, description: 弱网离线缓存补传 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /tickets/{ticketNo}/dismantle/scan:
+    post:
+      tags: [Quad]
+      summary: 拆机扫码解绑(端口释放;未解绑拆机被系统拦截)
+      operationId: adminDismantleScan
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [epc]
+              properties:
+                epc: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

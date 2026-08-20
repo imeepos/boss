@@ -72,11 +72,99 @@ paths:
       tags: [Billing]
       summary: 缴费渠道对账批次列表
       operationId: listReconciliations
-      parameters:
-        - $ref: './schemas.yaml#/components/parameters/keyword'
-        - $ref: './schemas.yaml#/components/parameters/status'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /reconciliations/{batchNo}/items:
+    get:
+      tags: [Billing]
+      summary: 对账批次行级明细(D6 差异定位)
+      operationId: listReconciliationItems
+      parameters:
+        - { name: batchNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: envelope;data.items 为行级明细,渠道独有流水 paymentId 为 null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            batchId: { type: integer }
+                            paymentId: { type: integer, nullable: true, description: 软引用 payments;渠道独有流水为 null }
+                            channelRef: { type: string, description: 渠道流水号,与 pay_no 比对 }
+                            amount: { type: number }
+                            diffKind: { type: string, description: 差异种类(MATCH/MISSING_SYSTEM/MISSING_CHANNEL/AMOUNT_MISMATCH 等) }
+                            note: { type: string }
+
+  /reconciliations/{batchNo}/statement:
+    post:
+      tags: [Billing]
+      summary: 渠道侧流水录入并自动比对生成明细
+      description: 本期手工录入渠道流水(自动拉流水不在范围);重复录入整体替换明细。
+      operationId: recordReconciliationStatement
+      parameters:
+        - { name: batchNo, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rows]
+              properties:
+                rows:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [channelRef, amount]
+                    properties:
+                      channelRef: { type: string }
+                      amount: { type: number }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /reconciliations/auto:
+    post:
+      tags: [Billing]
+      summary: 自动对账(按渠道建当日批次并拉流水比对;幂等)
+      description: 当日批次已存在则复用;manual 渠道只建批待手工录入;单渠道失败不中断。
+      operationId: autoReconcile
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date }, description: 对账日,缺省今天 }
+        - { name: channels, in: query, schema: { type: string }, description: 逗号分隔渠道目录,缺省 微信,支付宝,线下营业厅 }
+      responses:
+        '200':
+          description: envelope;data.items 为逐渠道编排结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            channel: { type: string }
+                            batchNo: { type: string }
+                            status: { type: string, description: DIFF_PENDING / SETTLED / MANUAL_PENDING }
+                            skipped: { type: string, description: 非空=该渠道本轮未比对,值为原因 }
 
   /reconciliations/{batchNo}/settle:
     post:
@@ -116,6 +204,29 @@ paths:
                     properties:
                       bills: { type: integer }
                       invoices: { type: object }
+
+  /invoices:
+    get:
+      tags: [Billing]
+      summary: 发票列表(TAX 域)
+      operationId: listInvoices
+      parameters:
+        - { name: customerId, in: query, schema: { type: integer, format: int64 }, description: 按客户过滤 }
+      responses:
+        '200':
+          description: envelope;data.items 为发票(billing.Invoice,ISSUED/VOIDED)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Invoice' }
 
   /invoices/{id}/void:
     post:
@@ -196,3 +307,29 @@ paths:
                 taxNo: { type: string }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+components:
+  schemas:
+    Invoice:
+      type: object
+      description: 电子发票(billing.Invoice;业务状态 ISSUED/VOIDED 与税局网关状态正交)
+      properties:
+        id: { type: integer, format: int64 }
+        invoiceNo: { type: string, description: 内部流水号(原 ARN),如 INV-00000001 }
+        billId: { type: integer, format: int64 }
+        billNo: { type: string }
+        customerId: { type: integer, format: int64 }
+        customerName: { type: string, description: 快照 }
+        title: { type: string, description: 发票抬头,默认客户名 }
+        netAmount: { type: number, description: 不含税净额(=账单金额) }
+        vatRate: { type: number, description: 税率,如 0.12 }
+        vatAmount: { type: number }
+        totalAmount: { type: number }
+        status: { type: string, description: ISSUED/VOIDED }
+        voidReason: { type: string }
+        taxJurisdiction: { type: string, description: CN/PH,空=未定 }
+        taxChannel: { type: string, description: manual/leqi/bir_eis }
+        taxStatus: { type: string, description: PENDING/SUBMITTED/ISSUED/FAILED }
+        taxNo: { type: string, description: 税局票号,ISSUED 时非空 }
+        taxFailReason: { type: string }
+        issuedAt: { type: string, format: date-time }

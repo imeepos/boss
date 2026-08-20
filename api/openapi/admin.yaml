@@ -61,6 +61,10 @@ paths:
   /auth/logout: { $ref: './admin/auth.yaml#/paths/~1auth~1logout' }
   /auth/me: { $ref: './admin/auth.yaml#/paths/~1auth~1me' }
 
+  /auth/change-password: { $ref: './admin/auth.yaml#/paths/~1auth~1change-password' }
+  /auth/profile: { $ref: './admin/auth.yaml#/paths/~1auth~1profile' }
+  /auth/refresh: { $ref: './admin/auth.yaml#/paths/~1auth~1refresh' }
+
   # ---------- Dashboard ----------
   /dashboard: { $ref: './admin/dashboard.yaml#/paths/~1dashboard' }
 
@@ -77,6 +81,14 @@ paths:
   /params/{key}: { $ref: './admin/sys.yaml#/paths/~1params~1{key}' }
   /audit-logs: { $ref: './admin/sys.yaml#/paths/~1audit-logs' }
   /import-tasks: { $ref: './admin/sys.yaml#/paths/~1import-tasks' }
+  /auth-config: { $ref: './admin/sys.yaml#/paths/~1auth-config' }
+  /auth-config/{group}: { $ref: './admin/sys.yaml#/paths/~1auth-config~1{group}' }
+  /auth-config/{group}/test: { $ref: './admin/sys.yaml#/paths/~1auth-config~1{group}~1test' }
+  /sms-config: { $ref: './admin/sys.yaml#/paths/~1sms-config' }
+  /sms-config/{group}: { $ref: './admin/sys.yaml#/paths/~1sms-config~1{group}' }
+  /sms-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1sms-config~1channel~1test' }
+  /attachments: { $ref: './admin/sys.yaml#/paths/~1attachments' }
+  /attachments/upload: { $ref: './admin/sys.yaml#/paths/~1attachments~1upload' }
 
   # ---------- AI(OpenAI 能力网关) ----------
   /ai/openai/config: { $ref: './admin/ai.yaml#/paths/~1ai~1openai~1config' }
@@ -111,6 +123,7 @@ paths:
   /bills: { $ref: './admin/billing.yaml#/paths/~1bills' }
   /payments: { $ref: './admin/billing.yaml#/paths/~1payments' }
   /billing-runs: { $ref: './admin/billing.yaml#/paths/~1billing-runs' }
+  /invoices: { $ref: './admin/billing.yaml#/paths/~1invoices' }
   /invoices/{id}/void: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1void' }
   /invoices/{id}/reissue: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1reissue' }
   /invoices/{id}/tax-submit: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-submit' }
@@ -122,6 +135,9 @@ paths:
   /stop-resume-tasks/{taskId}/retry: { $ref: './admin/billing.yaml#/paths/~1stop-resume-tasks~1{taskId}~1retry' }
   /reconciliations: { $ref: './admin/billing.yaml#/paths/~1reconciliations' }
   /reconciliations/{batchNo}/settle: { $ref: './admin/billing.yaml#/paths/~1reconciliations~1{batchNo}~1settle' }
+  /reconciliations/{batchNo}/items: { $ref: './admin/billing.yaml#/paths/~1reconciliations~1{batchNo}~1items' }
+  /reconciliations/{batchNo}/statement: { $ref: './admin/billing.yaml#/paths/~1reconciliations~1{batchNo}~1statement' }
+  /reconciliations/auto: { $ref: './admin/billing.yaml#/paths/~1reconciliations~1auto' }
 
   # ---------- Asset ----------
   /assets: { $ref: './admin/asset.yaml#/paths/~1assets' }
@@ -165,6 +181,7 @@ paths:
   /complaints/{ticketNo}/close: { $ref: './admin/order.yaml#/paths/~1complaints~1{ticketNo}~1close' }
   /activation-callbacks: { $ref: './admin/order.yaml#/paths/~1activation-callbacks' }
   /activation-callbacks/{callbackId}/retry: { $ref: './admin/order.yaml#/paths/~1activation-callbacks~1{callbackId}~1retry' }
+  /tickets/{ticketNo}/activate: { $ref: './admin/order.yaml#/paths/~1tickets~1{ticketNo}~1activate' }
 
   # ---------- Worker(师傅管理) ----------
   /worker-groups: { $ref: './admin/worker.yaml#/paths/~1worker-groups' }
@@ -240,6 +257,8 @@ paths:
   /quad-links/by-address: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-address' }
   /quad-links/reconcile: { $ref: './admin/quad.yaml#/paths/~1quad-links~1reconcile' }
   /scan-logs: { $ref: './admin/quad.yaml#/paths/~1scan-logs' }
+  /tickets/{ticketNo}/scan-bind: { $ref: './admin/quad.yaml#/paths/~1tickets~1{ticketNo}~1scan-bind' }
+  /tickets/{ticketNo}/dismantle/scan: { $ref: './admin/quad.yaml#/paths/~1tickets~1{ticketNo}~1dismantle~1scan' }
 
   # ---------- Provision ----------
   /provision-tasks: { $ref: './admin/provision.yaml#/paths/~1provision-tasks' }
@@ -275,6 +294,8 @@ paths:
   /reports: { $ref: './admin/intel.yaml#/paths/~1reports' }
   /reports/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1latest' }
   /reports/{reportId}/send: { $ref: './admin/intel.yaml#/paths/~1reports~1{reportId}~1send' }
+  /db-patrol/orphans: { $ref: './admin/intel.yaml#/paths/~1db-patrol~1orphans' }
+  /db-patrol/latest: { $ref: './admin/intel.yaml#/paths/~1db-patrol~1latest' }
 
   # ---------- Geo(国际地理基础数据) ----------
   /geo/countries: { $ref: './admin/geo.yaml#/paths/~1geo~1countries' }

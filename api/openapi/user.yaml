@@ -32,6 +32,7 @@ paths:
   /auth/sms-code: { $ref: './user/auth.yaml#/paths/~1auth~1sms-code' }
   /auth/login: { $ref: './user/auth.yaml#/paths/~1auth~1login' }
   /auth/register: { $ref: './user/auth.yaml#/paths/~1auth~1register' }
+  /customer-registrations: { $ref: './user/auth.yaml#/paths/~1customer-registrations' }
   /auth/reset-password: { $ref: './user/auth.yaml#/paths/~1auth~1reset-password' }
   /auth/logout: { $ref: './user/auth.yaml#/paths/~1auth~1logout' }
   /auth/verify: { $ref: './user/auth.yaml#/paths/~1auth~1verify' }
@@ -44,6 +45,7 @@ paths:
   /profile/language: { $ref: './user/profile.yaml#/paths/~1profile~1language' }
   # ---------- Product ----------
   /products: { $ref: './user/product.yaml#/paths/~1products' }
+  /products/{id}: { $ref: './user/product.yaml#/paths/~1products~1{id}' }
   /products/{productId}: { $ref: './user/product.yaml#/paths/~1products~1{productId}' }
   /addons: { $ref: './user/product.yaml#/paths/~1addons' }
   /addons/{addonId}/subscribe: { $ref: './user/product.yaml#/paths/~1addons~1{addonId}~1subscribe' }
@@ -58,18 +60,24 @@ paths:
   /plans/{planId}/move: { $ref: './user/order.yaml#/paths/~1plans~1{planId}~1move' }
   /plans/{planId}/cancel: { $ref: './user/order.yaml#/paths/~1plans~1{planId}~1cancel' }
   /orders/{orderNo}/rate: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}~1rate' }
+  /orders/{orderNo}/technician-contact: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}~1technician-contact' }
   # ---------- Billing ----------
   /bills: { $ref: './user/billing.yaml#/paths/~1bills' }
   /bills/{billNo}: { $ref: './user/billing.yaml#/paths/~1bills~1{billNo}' }
   /payments: { $ref: './user/billing.yaml#/paths/~1payments' }
   /payments/stripe/intent: { $ref: './user/billing.yaml#/paths/~1payments~1stripe~1intent' }
   /payments/{payNo}/receipt: { $ref: './user/billing.yaml#/paths/~1payments~1{payNo}~1receipt' }
+  /payments/{payNo}/receipt.pdf: { $ref: './user/billing.yaml#/paths/~1payments~1{payNo}~1receipt.pdf' }
   /webhooks/stripe: { $ref: './user/billing.yaml#/paths/~1webhooks~1stripe' }
   /topups: { $ref: './user/billing.yaml#/paths/~1topups' }
   /invoices: { $ref: './user/billing.yaml#/paths/~1invoices' }
+  /invoices/{invoiceNo}/pdf: { $ref: './user/billing.yaml#/paths/~1invoices~1{invoiceNo}~1pdf' }
+  /billing/auto-pay: { $ref: './user/billing.yaml#/paths/~1billing~1auto-pay' }
   # ---------- CustomerService ----------
   /faults: { $ref: './user/customer-service.yaml#/paths/~1faults' }
   /faults/{ticketNo}: { $ref: './user/customer-service.yaml#/paths/~1faults~1{ticketNo}' }
+  /faults/{ticketNo}/urge: { $ref: './user/customer-service.yaml#/paths/~1faults~1{ticketNo}~1urge' }
+  /faults/{ticketNo}/contact: { $ref: './user/customer-service.yaml#/paths/~1faults~1{ticketNo}~1contact' }
   /complaints: { $ref: './user/customer-service.yaml#/paths/~1complaints' }
   /service/chat: { $ref: './user/customer-service.yaml#/paths/~1service~1chat' }
   /service/faq: { $ref: './user/customer-service.yaml#/paths/~1service~1faq' }
@@ -82,6 +90,7 @@ paths:
   /addresses: { $ref: './user/misc.yaml#/paths/~1addresses' }
   /diy/steps: { $ref: './user/misc.yaml#/paths/~1diy~1steps' }
   /agreement: { $ref: './user/misc.yaml#/paths/~1agreement' }
+  /attachments/upload: { $ref: './user/misc.yaml#/paths/~1attachments~1upload' }
 
 components:
   securitySchemes:
