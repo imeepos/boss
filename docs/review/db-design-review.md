@@ -10,6 +10,12 @@
 - 发现并已修正：coupons.customer_id 实为可空硬 FK（原文档/图误标软引用）。
 - 硬外键（REFERENCES）113 处，集中在组织/主档/同域子表；跨域主单全部软引用 + 快照列（口径见 data-relations.md §0.5）。
 
+## 迁移实跑验证（2026-08-20，PG 16 + PostGIS 3.4 临时容器）
+
+- 61 个 up 迁移按序全量应用，0 失败（122 表含分区；注意 postgres:16-alpine 无 postgis/ltree 扩展，验证需 postgis 镜像）。
+- D3 部分唯一索引语义实测：LINKED 占位 → 同码第二活跃行被 uq_quad_links_*_active 拒绝 → UNLINKED 释放槽位 → 复绑 INSERT 新行成功 → 历史行保留。
+- 000056-000060 五个 down 迁移在干净态全部可逆，down 后 re-up 无失败。000056.down 在存在同码多行历史时 UNIQUE 重建会失败（预期，历史行即设计产物）。
+
 ## 第 2 轮：设计问题评估
 
 按严重度排序；D# = design finding（编号沿用本文件，不与 D/A/B/E/G 契约编号混用）。
