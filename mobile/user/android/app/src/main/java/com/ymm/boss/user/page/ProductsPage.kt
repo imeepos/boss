@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
@@ -25,8 +26,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +33,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +42,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ymm.boss.user.api.OrderApi
 import com.ymm.boss.user.api.ProductApi
 import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
@@ -57,10 +54,7 @@ import com.ymm.boss.user.ui.PillTab
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.statusBarSolid
-import kotlinx.coroutines.launch
 import org.json.JSONObject
-
-private const val DEMO_ADDRESS_ID = "ADDR-001"
 
 // 对应设计稿 user-products-orders-profile.png 左屏(服务 tab):搜索 + 分类胶囊 + 产品卡。
 @Composable
@@ -145,7 +139,6 @@ private fun CategorySeg(current: String, onSelect: (String) -> Unit) {
 
 @Composable
 private fun ProductCard(p: JSONObject, nav: Nav) {
-    val scope = rememberCoroutineScope()
     val id = p.optString("productId")
     AppCard(Modifier.clickable { nav.push(Route.Product(id)) }) {
         Column(Modifier.fillMaxWidth()) {
@@ -169,14 +162,13 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
                         FeatureLine(Icons.Filled.CheckCircle, p.optString("description"))
                     }
                 }
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "查看详情",
+                    tint = Palette.muted,
+                    modifier = Modifier.padding(start = 4.dp).size(20.dp),
+                )
             }
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = { buyNow(scope, nav, id) },
-                colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth().height(44.dp),
-            ) { Text("立即办理", fontSize = 15.sp, fontWeight = FontWeight.W500) }
         }
     }
 }
@@ -219,14 +211,5 @@ private fun AddonCard(addons: List<JSONObject>, nav: Nav) {
                 }
             }
         }
-    }
-}
-
-private fun buyNow(scope: kotlinx.coroutines.CoroutineScope, nav: Nav, productId: String) {
-    scope.launch {
-        try {
-            val o = OrderApi.submit(productId, DEMO_ADDRESS_ID)
-            nav.push(Route.Order(o.optString("orderNo")))
-        } catch (e: Exception) { } // 下单失败静默,与草稿 catch 行为一致
     }
 }
