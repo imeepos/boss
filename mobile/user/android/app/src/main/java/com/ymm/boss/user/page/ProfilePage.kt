@@ -35,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +48,7 @@ import com.ymm.boss.user.ui.IconTile
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.profileHeaderGradient
 import org.json.JSONObject
 
 // 对应设计稿 user-products-orders-profile.png 右屏(我的 tab):渐变头 + 三入口 + 图标菜单。
@@ -82,7 +82,7 @@ private fun ProfileHead(data: JSONObject?, nav: Nav) {
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     Box(
         Modifier.fillMaxWidth()
-            .background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2)))
+            .background(profileHeaderGradient())
             .statusBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 52.dp),
     ) {

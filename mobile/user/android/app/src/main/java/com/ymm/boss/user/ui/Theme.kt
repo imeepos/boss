@@ -86,11 +86,20 @@ fun successGreen(): Color = MaterialTheme.colorScheme.secondary
 @Composable
 fun auxText(): Color = MaterialTheme.colorScheme.onSurfaceVariant
 
+/** 统一渐变基准(与"我的"页一致):BrandBlue → 渐变端色。 */
+@Composable
+fun profileHeaderGradient(): Brush = if (isSystemInDarkTheme()) {
+    Brush.linearGradient(listOf(BrandBlueDark, BrandBlueGradientEndDark))
+} else {
+    Brush.linearGradient(listOf(BrandBlue, BrandBlueGradientEnd))
+}
+
+/** 首页渐变:基准上仅起点略加深,保持同族不突兀。 */
 @Composable
 fun homeHeaderGradient(): Brush = if (isSystemInDarkTheme()) {
-    Brush.linearGradient(listOf(BrandBlueGradientStartDark, BrandBlueGradientEndDark))
+    Brush.linearGradient(listOf(Color(0xFF4E97EC), BrandBlueGradientEndDark))
 } else {
-    Brush.linearGradient(listOf(BrandBlueGradientStart, BrandBlueGradientEnd))
+    Brush.linearGradient(listOf(Color(0xFF006AE5), BrandBlueGradientEnd))
 }
 
 @Composable
