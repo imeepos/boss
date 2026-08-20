@@ -208,3 +208,7 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - Android 真机 UI 验证(模型不能看图时):`adb exec-out uiautomator dump /dev/tty` + python 正则抽 text/bounds,断言单行高度、列内边界、元素间距;配合 `input tap x y` 可点开下拉/切 tab 再 dump。注意部分 Compose 节点(渐变头)不暴露。
 - 本机工具链路径:go=/opt/homebrew/bin/go(默认 PATH 没有),JAVA_HOME=/opt/homebrew/opt/openjdk@17(gradle),adb=~/Library/Android/sdk/platform-tools/adb。bossctl 二进制全局 flag 是 -server 指定服务端地址。
 - 从服务端 PG 取短信验证码明文:PG 映射在 192.168.0.102:25432(boss/boss/boss,sslmode=disable),查 portal_sms_codes(phone,scene);用临时 go 脚本+pgx 直连。
+
+## 排查"用户说看不到但代码正常"的 UI 异常(2026-08-20)
+- 场景:DOM 断言 computedStyle/mask/尺寸全部正常,用户却报告图标 hover 才出现。
+- 手法:先让用户硬刷新 + 确认访问地址(dev HMR/缓存/部署版本差异是首因);确认仍异常再元素级像素对比(CDP Page.captureScreenshot + getBoundingClientRect clip),不要一上来深挖代码。

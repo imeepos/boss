@@ -43,7 +43,7 @@ func portalOrderSummary(o *order.Order, productName, address string, canRate boo
 	}
 }
 
-// statusFilter 契约标签 → 订单状态;in_progress 含 RESERVED/INSTALLING。
+// statusFilter 契约标签 → 订单状态(逗号分隔多值,terms.md §3);进行中含 PENDING/RESERVED/INSTALLING。
 func statusFilter(status string) string {
 	switch status {
 	case "done":
@@ -51,7 +51,7 @@ func statusFilter(status string) string {
 	case "cancelled":
 		return "CANCELLED"
 	case "in_progress":
-		return "INSTALLING"
+		return "PENDING,RESERVED,INSTALLING"
 	default:
 		return ""
 	}

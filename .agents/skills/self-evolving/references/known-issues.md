@@ -172,3 +172,8 @@
 - 症状:Box clip 顶部圆角像素断言"缺口存在"但用户说没圆角,只有静止时首卡自己的圆角。
 - 原因:滚动区透明,底下是同色渐变,蓝裁蓝不可见;且圆角挂在内容 Column 上时只有滚到顶才碰到。
 - 修法:滚动区 Box 加不透明 Palette.bg 底色,圆角轮廓即刻与渐变头分界;滚动中恒在。
+
+## dev-token.mjs 免登录脚本失效(404)
+- 症状:`node web/admin/scripts/dev-token.mjs` 报"登录请求失败(HTTP 404)"。
+- 原因:脚本按旧前缀请求 /auth/login,后端实际前缀是 /api/admin/v1。
+- 修法:绕过脚本,curl POST http://192.168.0.102:28080/api/admin/v1/auth/login (admin/admin123) 取 data.token,浏览器 localStorage 注入 boss.token/boss.servers/boss.server.active 后直访目标页。

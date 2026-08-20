@@ -134,3 +134,7 @@
 - "多页面视觉/行为保持一致"的需求,解法是抽共用组件+单点参数对象(PinnedHeaderSpec),不是各页调参后对比;组件一致则视觉必然一致,对比修补是无底洞。
 - 多会话共享仓库:pull 后先 assemble 一次确认基线可编译,再开始自己的改动;别人提交坏代码会阻塞你,最小修复(unlock)优于绕行。
 - 工具调用被打断(abort)后,该轮的 build/install/commit 可能悬空——继续工作前先 git status 核对。
+- 用户报告"UI 元素时有时无/悬停才出现"类异常,先让他硬刷新并确认访问地址(dev localhost / 102 部署 / 构建产物),再查代码;DOM 计算样式正常而用户看不到 = 客户端陈旧(HMR/缓存),不是代码 bug。
+- admin 免登录冒烟不写表单 eval:登录页是 placeholder 受控 input 无 id;直接 localStorage 注入 boss.token + boss.servers + boss.server.active(见 docs/boss-admin-web.md),再导航目标页。
+- 后端 API 前缀是 /api/admin/v1(不是 /api/v1);登录 POST /api/admin/v1/auth/login,信封 data.token。
+- 新增 admin 菜单项必须同时补 public/icons/items/<key>.svg(描边 #8b98a5, viewBox 24, stroke 1.8),否则侧栏该行无图标——menu.def.ts 的 key 就是文件名。

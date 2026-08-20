@@ -1,6 +1,7 @@
 
 # 无论任何任务 skill: `self-evolving` 总是需要遵守的
 > 技能文件地址：`.agents/skills/self-evolving/SKILL.md`
+> 安卓构建脚本： scripts/build-install-user-android.sh
 
 # 开工前必读（单一事实源，只读不猜）
 

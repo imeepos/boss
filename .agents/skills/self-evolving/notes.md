@@ -654,3 +654,15 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 坑:断言"本机无 JDK"被用户纠正。实际是 Homebrew openjdk@17 装在 /opt/homebrew/Cellar/openjdk@17/,只 grep /opt/homebrew 顶层没进 Cellar;/usr/bin/java 是 macOS stub 误导。
 - 修法:找 JDK 先看 ~/.gradle/daemon/*/daemon-*.out.log 里的 javaHome=(最快最准),再查 /opt/homebrew/Cellar。
 - 重来一次:gradle 项目报"无 Java Runtime"时,先查 daemon 日志的 javaHome 再下结论,不要只依赖 /usr/libexec/java_home。
+
+## 2026-08-20 admin 短信配置菜单图标缺失
+
+**哪个坑浪费了最多时间？**
+补图标本身 10 分钟（menu key → public/icons/items/<key>.svg 的映射 docs 里早有）。真正耗时的是用户随后报告"图标只有 hover 才出现"：我先 DOM 断言（mask/bg/尺寸全部正常）、再对比令牌、再查 102 部署资源、最后开始自写元素级 CDP 截图脚本——多轮深挖后用户回复"可以了 我看过了"，异常大概率是 dev HMR/缓存陈旧状态，一次硬刷新就能排除。另外 docs 里的免登录脚本 `web/admin/scripts/dev-token.mjs` 已失效（404：脚本登录路径是 /auth/login，实际前缀是 /api/admin/v1），SKILL 示例的 #username/#password 选择器也与真实登录页不符（登录页是 placeholder input 无 id）。
+
+**这个 skill 有没有提前警告我？**
+部分。knowledge 里明确记了"新增菜单项必须补 items/<key>.svg，geo 曾漏"，所以补图标一步到位；但没有警告"用户报告的 UI 异常先排除缓存/环境陈旧"，也没维护 dev-token.mjs 的失效状态。
+
+**重来一次我会怎么做？**
+- 用户报 UI 异常时，第一反问/第一动作是"硬刷新 + 确认看的是哪个地址（localhost dev / 102 部署）"，再动代码排查；DOM 断言正常而用户看到异常 = 大概率陈旧客户端。
+- 免登录优先直接注入 localStorage（boss.token + boss.servers + boss.server.active），不走登录页表单 eval，也不信未验证的辅助脚本。

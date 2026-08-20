@@ -9,7 +9,7 @@
 - 已部署后端：`http://192.168.0.102:28080`（vite dev 默认代理目标）
 - 本地联调覆盖：`cd web/admin && BOSS_API_TARGET=http://127.0.0.1:18080 pnpm dev`
 - mock 服务（`scripts/mock-admin.sh`，端口 8092）只有 user/worker 端登录，**不能**用于 admin 登录冒烟
-- **dev 免登录**：`node web/admin/scripts/dev-token.mjs` 真实 /auth/login 换 JWT，打印 `http://localhost:5173/?token=<jwt>`；token 是真实会话（不用假数据，能暴露后端问题），仅 dev 构建应用该参数；过期重跑脚本
+- **dev 免登录**：~~`node web/admin/scripts/dev-token.mjs`~~ **已失效(HTTP 404,脚本仍按旧前缀 /auth/login 请求,2026-08-20 查证)**。现用:`curl -s http://192.168.0.102:28080/api/admin/v1/auth/login -X POST -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin123"}'` 取 `data.token`,浏览器 localStorage 注入 `boss.token` + `boss.servers`(JSON 数组含 baseUrl) + `boss.server.active` 后直访目标页;登录页表单无 id/selector,不要走表单 eval
 
 ## 门禁
 
@@ -45,7 +45,7 @@
 
 ## geo 域速查（2026-08-18 查证）
 
-- 页面 `/base/geo`（国家+区划双页签）；API 前缀 `/api/v1/geo/*`，门禁 `menu:geo`（仅 sysadmin，迁移 000039 授予）
+- 页面 `/base/geo`（国家+区划双页签）；API 前缀 `/api/admin/v1/geo/*`（全站统一 `/api/admin/v1`，见 serverConfig.ts API_PREFIX），门禁 `menu:geo`（仅 sysadmin，迁移 000039 授予）
 - "删"= 软删除：`PUT /geo/{countries,subdivisions}/:code/active {"active":false}`，契约 fields.md 1.5.1 规定停用码保留不物理删
 - 国家关联属性整体替换：`PUT /geo/countries/:code/attrs`，请求体 `timeZones: string[]`、`callingCodes: string[]`、`currencies: {currency,isPrimary,minorUnit}[]`（字段类型以 `internal/domain/geo/geo.go` struct 为准）
 - 译名 locale 用 BCP-47 风格 `zh-Hans`/`en`（种子数据口径），不是 `zh-CN`

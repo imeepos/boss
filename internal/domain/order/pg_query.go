@@ -23,7 +23,7 @@ func (s *PGStore) List(ctx context.Context, q OrderQuery) ([]OrderListItem, erro
 		LEFT JOIN addresses a ON o.address_id = a.id
 		LEFT JOIN user_addresses ua ON o.address_id = ua.id
 		WHERE ($1 = '' OR o.order_no ILIKE '%' || $1 || '%')
-		  AND ($2 = '' OR o.status = $2)
+		  AND ($2 = '' OR o.status = ANY(string_to_array($2, ',')))
 		  AND ($3::bigint = 0 OR o.customer_id = $3)
 		ORDER BY o.id DESC
 		LIMIT $4 OFFSET $5`,

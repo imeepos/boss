@@ -45,3 +45,6 @@
 
 | 2026-08-20 | 多会话共享仓库,pull 后未先 build,被并行提交的坏代码(ea91bdf getHeight)阻塞 | 1 |
 | 2026-08-20 | 工具调用被打断后 build/install/commit 悬空,未先 git status 核对 | 1 |
+| 用户报告 UI 异常,未先排除客户端陈旧(HMR/缓存/看错地址)就深挖代码 | 1 | 2026-08-20(smsconfig 图标"hover 才出现",多轮 DOM/令牌/部署排查后用户硬刷新即好) | 空耗多轮排查一个不存在的 bug |
+| 使用 docs 里记录的辅助脚本前未验证其可用性(dev-token.mjs 已失效 404) | 1 | 2026-08-20(免登录脚本登录路径为旧 /auth/login) | 废一轮,应先 curl 验证端点再引用 |
+| 自写临时 CDP 脚本做浏览器调试而非用 cdp-capture.mjs | 1 | 2026-08-20(元素级 clip 截图自写 icon-check.mjs,被中断未跑成) | 与高频红线#2精神冲突;确需元素级截图应先扩展 cdp-capture 而非另起炉灶 |

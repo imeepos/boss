@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -130,7 +131,7 @@ func (s *MemoryService) List(ctx context.Context, q OrderQuery) ([]OrderListItem
 	defer s.mu.RUnlock()
 	out := make([]OrderListItem, 0)
 	for _, o := range s.m {
-		if q.Status != "" && o.Status != q.Status {
+		if q.Status != "" && !slices.Contains(strings.Split(q.Status, ","), o.Status) {
 			continue
 		}
 		if q.CustomerID != 0 && o.CustomerID != q.CustomerID {
