@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -72,6 +73,9 @@ func (c *CLI) identity(args []string) error {
 		if name == "" || key == "" {
 			return fmt.Errorf("用法: bossctl identity save <name> --api-key KEY")
 		}
+		if err := checkAPIKey(name, key); err != nil {
+			return err
+		}
 		ids[name] = key
 		if err := saveIdentities(ids); err != nil {
 			return err
@@ -125,9 +129,23 @@ func (c *CLI) applyIdentity(name string) error {
 	if !ok {
 		return fmt.Errorf("身份 %q 未保存;先执行: bossctl identity save %s --api-key KEY", name, name)
 	}
+	if err := checkAPIKey(name, key); err != nil {
+		return err
+	}
 	c.cfg.APIKey = key
 	return nil
 }
+
+// checkAPIKey 校验档案里的 key 形态(boss_ + 小写十六进制);历史档案曾被粘贴进
+// 换行/中文尾巴导致 "invalid header field value",加载时尽早报清楚而不是在 HTTP 层炸。
+func checkAPIKey(name, key string) error {
+	if !apiKeyPattern.MatchString(key) {
+		return fmt.Errorf("身份 %q 的 key 形态非法(应为 boss_+十六进制,疑似粘贴混入多余字符);重新保存: bossctl identity save %s --api-key KEY", name, name)
+	}
+	return nil
+}
+
+var apiKeyPattern = regexp.MustCompile(`^boss_[0-9a-f]+$`)
 
 // identitySaveArgs 从 identity save 子命令参数中取 <name> 与 --api-key 值。
 // (全局 flag 解析在首个位置参数处停止,子命令级 flag 需手工解析)
