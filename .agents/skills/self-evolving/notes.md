@@ -682,3 +682,7 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - skill 提前警告了吗:没有,已喂到 techniques。
 - 重来一次:构建镜像前统一 `chmod 644` 新增文件;docker build 偶发 "context canceled" 直接重跑即可。
 - 另发现 000047 迁移漏授 sysadmin 权限导致 userdata 域 403,迁移补授权是既有模式(000039/000042)。
+
+## 2026-08-20 订单分页 + 下拉刷新/上拉加载
+- 最耗时:验证部署时被镜像时间线迷惑(容器重建于新镜像构建前 10 秒,且并发 CI 任务 deploy 互相撞容器名留下 rename 残壳);判断部署是否生效必须 docker exec 进容器 strings 二进制符号,不能只看容器"Up (healthy)"。
+- 教训:连续 push 会并发跑多个 deploy job,compose up 互抢容器名;验完再 push,或 CI 侧需要串行化。
