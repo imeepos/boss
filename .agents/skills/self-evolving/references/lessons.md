@@ -118,3 +118,5 @@
 - Compose Text 直接挂 heightIn(min)+background 当按钮,文字不居中:最小高度交给外层 Box(contentAlignment=Center),Text 只做内容。
 - uiautomator dump 抓不到 Compose 渐变头等未暴露语义的文本(搜不到≠没渲染);能抓到的节点用 bounds 数值断言(单行/位置/间距)比截图靠谱,模型不支持看图时是首选验证法。
 - 短信验证码 5 分钟一次性:发给用户前提醒时效,报"登录失败"先查 portal_sms_codes 的 expires_at/used 再怀疑链路。
+- 当 cdp-capture 断言登录后页面但总是跳回 /login 时: 每次运行是新 profile,localStorage 种子不跨运行;单次运行内 seed→location.href→eval 三段式。
+- 共享工作区可能被并行进程自动 commit;验证收尾用 git log -- <file> 而非仅 git status。

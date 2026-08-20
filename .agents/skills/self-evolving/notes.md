@@ -622,3 +622,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间: go 不在 PATH(须 export PATH=/opt/homebrew/bin);NormalizeE164 裸号默认中国的启发式误吞 +1 美国号,测试抓住后才修。
 - skill 有没有预警: 无——可沉淀"E.164 归一化时显式 + 前缀必须命中支持区号,裸号默认区号只对无前缀输入生效"。
 - 重来一次: 先写归一化边界用例(带 + 的不支持区号)再写实现。
+
+## 2026-08-21 auth-config 页面(后端+前端+102 部署)
+- 最大时间坑: cdp-capture 每次运行用全新 profile,localStorage 种子(boss.servers/boss.token)跨运行丢失;必须在同一次运行里"种 localStorage → location.href 跳转 → 再 eval 断言"。skill 未警告。
+- 意外: 共享工作区有并行进程自动把我的改动 commit 掉(6973224/70bb996),收尾前必须 git log 核对而不是只看 status。
+- 重来一次: 先读 scripts/dev-token.mjs 是否还指向旧 API 前缀(/api/v1 已废),直接 curl 换 token 更稳。
