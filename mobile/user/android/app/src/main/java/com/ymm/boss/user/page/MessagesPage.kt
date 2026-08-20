@@ -1,6 +1,6 @@
 package com.ymm.boss.user.page
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,9 +20,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.ProfileApi
@@ -33,6 +33,7 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PillTab
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
@@ -56,7 +57,7 @@ fun MessagesScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("消息中心", { nav.pop() }, "订阅设置") { nav.push(Route.Notify) }
+        TopBar("消息中心", onBack = { nav.pop() }, action = "订阅设置", onAction = { nav.push(Route.Notify) })
         SegmentBar(category) { category = it }
         AppCard {
             if (items.isEmpty()) EmptyState("暂无消息")
@@ -86,15 +87,14 @@ private fun ReadAllButton(onDone: () -> Unit) {
 
 @Composable
 private fun SegmentBar(selected: String, onSelect: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)) {
+    // 与订单页 StatusSeg 同款 PillTab,消除私有文字 tab 样式
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         CATEGORIES.forEach { (key, label) ->
-            Text(
-                label,
-                fontSize = 13.sp,
-                fontWeight = if (selected == key) FontWeight.Bold else FontWeight.Normal,
-                color = if (selected == key) Palette.primary else Palette.muted,
-                modifier = Modifier.padding(end = 16.dp).clickable { onSelect(key) },
-            )
+            PillTab(label, active = selected == key, onClick = { onSelect(key) }, plain = true)
         }
     }
 }
