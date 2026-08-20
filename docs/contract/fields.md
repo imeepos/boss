@@ -165,6 +165,20 @@
 | AccessKey Secret | `realid.accessKeySecret` | secret,密文落库 |
 | 服务地址 | `realid.endpoint` | 空 = cloudauth.aliyuncs.com |
 
+### 1.6.3 minio.* 存储配置（接口 `/storage-config`，permCode `menu:params`）
+
+存储复用 `biz_params`（key 前缀 `minio.`，与 auth.*/realid.* 同一套加密/掩码约定）。运行时每次上传按当前配置解析（`internal/app/wiring_minio.go`，DB 配置非空覆盖 env `BOSS_MINIO_*` 兜底）；未配置时附件/照片上传不可用。
+
+| 页面字段 | key（API/DB 同名） | 枚举/说明 |
+|:--------|:-------------------|:----------|
+| 服务地址 | `minio.endpoint` | host:port，空 = env 兜底 |
+| AccessKey | `minio.accessKey` | — |
+| SecretKey | `minio.secretKey` | secret,密文落库；空串=不修改 |
+| 存储桶 | `minio.bucket` | 附件/照片对象桶 |
+| 启用 TLS | `minio.useSSL` | true/false |
+
+> 接口：`GET/PUT /storage-config`（sys.yaml；PUT values 仅接受上表五键，未知 key 42200）。
+
 ### 1.7 api_keys（免登录 API key，internal/domain/apikey，迁移 000042/000043/000045）
 
 > 固定用途：CLI/自动化（bossctl）免登录认证。key 与三类主体绑定（`subject_type` account/worker/customer，000043 三表登录边界 + 000044 主体扩展）；只存 sha256(key) 哈希，明文仅创建时返回一次（安全约定见迁移 000042 头注）。

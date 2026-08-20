@@ -397,6 +397,48 @@ paths:
                       latencyMs: { type: integer }
                       message: { type: string }
 
+  /storage-config:
+    get:
+      tags: [Sys]
+      summary: MinIO 存储配置全量(permCode menu:params;secret 只回 hasValue 掩码标记)
+      operationId: getStorageConfig
+      responses:
+        '200':
+          description: data.fields 以全 key(minio.endpoint/accessKey/secretKey/bucket/useSSL)为索引;secret 字段 value 恒空
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      fields:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          properties:
+                            value: { type: string }
+                            hasValue: { type: boolean }
+    put:
+      tags: [Sys]
+      summary: 部分更新(permCode menu:params;minio.secretKey 空串=不修改,密文落库;未知 key 42200)
+      operationId: updateStorageConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [values]
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+                  description: 全 key map,如 {"minio.bucket":"boss-attachments"};仅接受 minio.* 五键
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
   /realid-config:
     get:
       tags: [Sys]

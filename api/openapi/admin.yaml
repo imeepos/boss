@@ -90,6 +90,7 @@ paths:
   /realid-config: { $ref: './admin/sys.yaml#/paths/~1realid-config' }
   /realid-config/{group}: { $ref: './admin/sys.yaml#/paths/~1realid-config~1{group}' }
   /realid-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1realid-config~1channel~1test' }
+  /storage-config: { $ref: './admin/sys.yaml#/paths/~1storage-config' }
   /attachments: { $ref: './admin/sys.yaml#/paths/~1attachments' }
   /attachments/upload: { $ref: './admin/sys.yaml#/paths/~1attachments~1upload' }
 
