@@ -194,11 +194,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 		CustomerOnboarding: cust,
 		CustomerRealName:   cust,
-		// 实名二要素通道:凭据齐备走阿里云实人认证,否则 nil(人工核验兜底)。
-		RealID: realid.NewAliyunCloudauth(realid.AliyunCloudauthConfig{
-			AccessKeyID:     cfg.RealID.AccessKeyID,
-			AccessKeySecret: cfg.RealID.AccessKeySecret,
-		}),
+		// 实名二要素通道:biz_params(realid.*)优先/env 兜底,60s 热生效;未配置落 PENDING 人工核验。
+		RealID: realid.NewDynamic(realidConfigResolver(usr, cfg)),
 
 		Billing: bill,
 		Arrears: bill,

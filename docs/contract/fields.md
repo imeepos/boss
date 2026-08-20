@@ -153,6 +153,18 @@
 
 > 接口：`GET /auth-config`、`PUT /auth-config/{cn|my|fallback}`、`POST /auth-config/{group}/test`（permCode `menu:authconfig`，sys.yaml）。
 
+### 1.6.2 realid.* 实名核验配置（页面 `/base/realidconfig`「实名核验配置」，迁移 000069）
+
+存储复用 `biz_params`（key 前缀 `realid.`，与 auth.*/sms.* 同一套加密/掩码约定）。运行时由 realid.Dynamic 消费（60s 热生效）；未启用/未配置 → 实名提交落 PENDING 人工核验（客户档案 `POST /customers/{id}/real-name/verify` 不受影响）。
+
+| 页面字段 | key（API/DB 同名） | 枚举/说明 |
+|:--------|:-------------------|:----------|
+| 启用开关 | `realid.enabled` | true/false，默认 true |
+| 核验服务商 | `realid.provider` | aliyun_cloudauth（固定） |
+| AccessKey ID | `realid.accessKeyId` | — |
+| AccessKey Secret | `realid.accessKeySecret` | secret,密文落库 |
+| 服务地址 | `realid.endpoint` | 空 = cloudauth.aliyuncs.com |
+
 ### 1.7 api_keys（免登录 API key，internal/domain/apikey，迁移 000042/000043/000045）
 
 > 固定用途：CLI/自动化（bossctl）免登录认证。key 与三类主体绑定（`subject_type` account/worker/customer，000043 三表登录边界 + 000044 主体扩展）；只存 sha256(key) 哈希，明文仅创建时返回一次（安全约定见迁移 000042 头注）。

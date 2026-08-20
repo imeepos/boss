@@ -87,6 +87,9 @@ paths:
   /sms-config: { $ref: './admin/sys.yaml#/paths/~1sms-config' }
   /sms-config/{group}: { $ref: './admin/sys.yaml#/paths/~1sms-config~1{group}' }
   /sms-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1sms-config~1channel~1test' }
+  /realid-config: { $ref: './admin/sys.yaml#/paths/~1realid-config' }
+  /realid-config/{group}: { $ref: './admin/sys.yaml#/paths/~1realid-config~1{group}' }
+  /realid-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1realid-config~1channel~1test' }
   /attachments: { $ref: './admin/sys.yaml#/paths/~1attachments' }
   /attachments/upload: { $ref: './admin/sys.yaml#/paths/~1attachments~1upload' }
 

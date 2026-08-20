@@ -1209,6 +1209,37 @@ export interface Translations {
       testOk: string
       testFail: string
     }
+    realidconfig: {
+      title: string
+      desc: string
+      chTitle: string
+      enabledReady: string
+      disabled: string
+      pending: string
+      provider: string
+      providerHint: string
+      endpoint: string
+      endpointHint: string
+      endpointPh: string
+      accessKeyId: string
+      accessKeySecret: string
+      secretSet: string
+      testNamePh: string
+      testIdNoPh: string
+      nameInvalid: string
+      idNoInvalid: string
+      envNote: string
+      save: string
+      saving: string
+      saved: string
+      saveFail: string
+      loadFail: string
+      retry: string
+      testBtn: string
+      testing: string
+      testOk: string
+      testFail: string
+    }
     servers: {
       title: string
       desc: string

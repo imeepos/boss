@@ -155,6 +155,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerSysRoutes(authed, a)
 	registerAuthConfigRoutes(authed, a)
 	registerSMSConfigRoutes(authed, a)
+	registerRealIDConfigRoutes(authed, a)
 	registerAIRoutes(authed, a)
 	registerAPIKeyRoutes(authed, a)
 	registerOrderRoutes(authed, a)
