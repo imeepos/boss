@@ -47,7 +47,7 @@ internal fun QuickActions(onAction: (Route) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
