@@ -1209,6 +1209,28 @@ export interface Translations {
       testOk: string
       testFail: string
     }
+    storageconfig: {
+      title: string
+      desc: string
+      cardTitle: string
+      cardDesc: string
+      configured: string
+      notConfigured: string
+      endpoint: string
+      endpointHint: string
+      bucket: string
+      accessKey: string
+      secretKey: string
+      useSSL: string
+      enabled: string
+      disabled: string
+      save: string
+      saving: string
+      saved: string
+      saveFail: string
+      loadFail: string
+      retry: string
+    }
     realidconfig: {
       title: string
       desc: string
