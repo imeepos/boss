@@ -205,3 +205,6 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 
 场景 → 在 dsh 中发现某模型调用 read_image 失败或被判定不支持图像输入(对应高频红线 7"禁止假设模型支持图像输入")。
 怎么用 → 先检查配置文件 `~/.dsh/settings.yaml`:按 provider → models 找到对应 `id` 的模型条目,看 `input:` 字段是否正确声明了 `[ text, image ]`。缺 `image` 时 dsh 会直接不给该模型图像输入能力——是配置问题,不是模型本身不支持。改完配置重启会话生效。(2026-10 用户经验传授,已实证 settings.yaml 中各 provider 模型确有 `input: [ text, image ]` 字段)
+- Android 真机 UI 验证(模型不能看图时):`adb exec-out uiautomator dump /dev/tty` + python 正则抽 text/bounds,断言单行高度、列内边界、元素间距;配合 `input tap x y` 可点开下拉/切 tab 再 dump。注意部分 Compose 节点(渐变头)不暴露。
+- 本机工具链路径:go=/opt/homebrew/bin/go(默认 PATH 没有),JAVA_HOME=/opt/homebrew/opt/openjdk@17(gradle),adb=~/Library/Android/sdk/platform-tools/adb。bossctl 二进制全局 flag 是 -server 指定服务端地址。
+- 从服务端 PG 取短信验证码明文:PG 映射在 192.168.0.102:25432(boss/boss/boss,sslmode=disable),查 portal_sms_codes(phone,scene);用临时 go 脚本+pgx 直连。

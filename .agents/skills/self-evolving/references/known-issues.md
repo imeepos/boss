@@ -159,3 +159,7 @@
 症状 → job 第一步(Clone)即失败: `OCI runtime exec failed: chdir to cwd ("/workspace/.../<子目录>") set in config.json failed: no such file or directory`。
 原因 → 把 `defaults.run.working-directory` 设在 job 级且指向克隆后才存在的 matrix 子目录;docker 容器 runner 在 exec 前就要 chdir,克隆前目录不存在。
 修法 → 去掉 job 级 defaults,Clone 在仓库根执行,仅对克隆后的 run 步骤单独加 `working-directory:`。
+## build-install-user-android.sh 在 macOS 报 mapfile: command not found
+- 症状:脚本构建成功,安装阶段(select_device)死在 `mapfile: command not found`。
+- 原因:macOS 自带 bash 3.2 无 mapfile(bash 4+ 特性)。
+- 修法:直接手动 `adb -s <serial> install -r <apk>`;根治需把 mapfile 换成 while read 循环(未修,待办)。

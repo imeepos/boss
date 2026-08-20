@@ -43,6 +43,7 @@
 ```
 Compose, 尾随lambda, onClick, right, 插槽, BackHandler, insets, statusBarsPadding,
 导航, push, pop, switchTab, 401, token, data.token, 信封, shared_prefs, run-as,
+offset, 死间隙, heightIn, 居中, weight 列溢出, maxLines, bounds 断言, 下拉 DropdownMenu, LangStore,
 uiautomator, input tap, keyevent, lastUpdateTime, 真机, adb, 验证码, sms-code,
 portal_sms_codes, emulator, 10.0.2.2, adb reverse
 ```
@@ -52,4 +53,9 @@ portal_sms_codes, emulator, 10.0.2.2, adb reverse
 | 5 | lessons（2026-08-20） | 新页面数据一律直连 102 真实服务(192.168.0.102:28080),禁止 mock 样例数据——规格文档写"mock"也不执行(用户多次点名);user 端 token 走 sms-code→查库→login | 
 | 6 | lessons（2026-08-20） | gradlew 报无 Java Runtime → export JAVA_HOME=/opt/homebrew/opt/openjdk@17;管道接 tail 会吞退出码 |
 | 7 | lessons（2026-08-20） | 模型不能读图时：screencap+PIL 像素断言(渐变色/底栏高度/选中蓝像素数)+uiautomator dump 文案断言,可量化完成视觉验收 |
-
+| 8 | lessons（2026-08-20） | Compose Modifier.offset 只移视觉不缩布局槽,压卡要套整个容器,单卡套 offset 给后续卡留死间隙 |
+| 9 | lessons（2026-08-20） | Text 挂 heightIn(min) 当按钮文字不居中:最小高度给外层 Box(contentAlignment=Center) |
+| 10 | lessons（2026-08-20） | weight 均分列大字号数值必须按最长内容校验+maxLines=1,32sp 在三列必溢出变形 |
+| 11 | techniques（2026-08-20） | uiautomator dump 抓不到渐变头等未暴露语义的 Compose 文本;能抓到的用 bounds 数值断言单行/间距 |
+| 12 | techniques（2026-08-20） | 取服务端验证码明文:PG 192.168.0.102:25432 boss/boss,查 portal_sms_codes;5 分钟一次性 |
+| 13 | known-issues（2026-08-20） | build-install-user-android.sh mapfile 不兼容 macOS bash3.2,手动 adb install 绕过 |

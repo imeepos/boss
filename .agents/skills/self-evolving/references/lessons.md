@@ -114,3 +114,7 @@
 - 参考图风格锁定：单屏裁剪图远优于多屏拼图（拼图稀释信号）；sips -c H W --cropOffset y x 可零依赖裁剪。
 - 生图 prompt 粗粒度四层（用途/元素功能/核心风格/token色字体，~150词）效果优于逐dp微观详述——用户点名+五轮实测确认：越细越死板，dp标准归验收和spec，设计自由度留给模型；参考图（单屏裁剪）优先于文字描述。
 - 生图prompt首句必须先定场景："高保真UI设计稿+{手机|平板|PC}端+页面名+全屏预览(整图即屏幕,无边框无标注无水印)"，再跟四层要求——开篇不定场景模型会自加画板装饰。
+- Compose 的 Modifier.offset 只移视觉不缩布局槽:压卡/上移要用在"整个容器"上,套在单个卡片上会给后续元素留出原高度的死间隙(profile 快捷卡 32dp 空隙踩过)。
+- Compose Text 直接挂 heightIn(min)+background 当按钮,文字不居中:最小高度交给外层 Box(contentAlignment=Center),Text 只做内容。
+- uiautomator dump 抓不到 Compose 渐变头等未暴露语义的文本(搜不到≠没渲染);能抓到的节点用 bounds 数值断言(单行/位置/间距)比截图靠谱,模型不支持看图时是首选验证法。
+- 短信验证码 5 分钟一次性:发给用户前提醒时效,报"登录失败"先查 portal_sms_codes 的 expires_at/used 再怀疑链路。
