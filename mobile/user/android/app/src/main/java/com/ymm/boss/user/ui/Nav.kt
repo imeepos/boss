@@ -35,9 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ymm.boss.user.ui.theme.NavTabSelected
-import com.ymm.boss.user.ui.theme.NavTabUnselected
-import com.ymm.boss.user.ui.theme.NavigationBlue
 
 /** 极简导航控制器:一个可组合 back stack,避免引入 navigation 依赖。 */
 class Nav(initial: Route) {
@@ -79,7 +76,7 @@ fun BottomTabBar(nav: Nav, currentKey: String, onSelect: (String) -> Unit) {
     NavigationBar(
         modifier = Modifier.height(56.dp),
         windowInsets = WindowInsets(0.dp),
-        containerColor = NavigationBlue,
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
     ) {
         Nav.TABS.forEach { (key, label) ->
@@ -91,10 +88,10 @@ fun BottomTabBar(nav: Nav, currentKey: String, onSelect: (String) -> Unit) {
                 label = { Text(label, fontSize = 12.sp) },
                 colors = NavigationBarItemDefaults.colors(
                     indicatorColor = Color.Transparent,
-                    selectedIconColor = NavTabSelected,
-                    selectedTextColor = NavTabSelected,
-                    unselectedIconColor = NavTabUnselected,
-                    unselectedTextColor = NavTabUnselected,
+                    selectedIconColor = brandBlue(),
+                    selectedTextColor = brandBlue(),
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
             )
         }

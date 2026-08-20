@@ -19,7 +19,6 @@ import com.ymm.boss.user.ui.theme.BrandBlueGradientStart
 import com.ymm.boss.user.ui.theme.BrandBlueGradientStartDark
 import com.ymm.boss.user.ui.theme.Green500
 import com.ymm.boss.user.ui.theme.Green500Dark
-import com.ymm.boss.user.ui.theme.NavigationBlue
 import com.ymm.boss.user.ui.theme.OnSurfaceDark
 import com.ymm.boss.user.ui.theme.OnSurfaceLight
 import com.ymm.boss.user.ui.theme.OnSurfaceVariantDark
@@ -99,5 +98,3 @@ fun actionOrange(): Color = if (isSystemInDarkTheme()) ActionOrangeDark else Act
 
 @Composable
 fun actionPurple(): Color = if (isSystemInDarkTheme()) ActionPurpleDark else ActionPurple
-
-val navigationBlue: Color get() = NavigationBlue
