@@ -690,3 +690,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 ## 2026-08-20 首页图标+增值服务卡片
 - 坑:直接 gradlew 报无 Java Runtime,需按 scripts/build-install-user-android.sh 的 find_java_home 逻辑 export JAVA_HOME(/opt/homebrew/Cellar/openjdk@17)。skill 未提前警告,已顺手写入 knowledge/前端.md?否,写入 lessons。
 - 改动:Router->Home 图标;MyServiceCard 替换为 ActiveServicesCard 过滤 status==ACTIVE。
+
+## 2026-08-20 user端认证页视觉对齐(subagent)
+- 坑:git add -p 分离 fix/style 提交时需先 `git diff --cached` 核对暂存 hunk,避免混装;本次顺利。
+- 教训:接口核对先行(sms-code→查库→login→verify/agreement 全部字段与页面解析一致),写 UI 前先 curl 真实响应省去返工。
+- git status 余留 ProductPage.kt 为并行 agent 改动,未触碰。
