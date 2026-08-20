@@ -64,3 +64,5 @@ portal_sms_codes, emulator, 10.0.2.2, adb reverse
 | 15 | lessons（2026-08-20） | statusBarsPadding 消费 insets→后绘 sibling 取 statusBars 得 0,提前 asPaddingValues 量取;首帧负 padding 闪退,coerceAtLeast(0) |
 | 16 | lessons（2026-08-20） | UI 空间词(内圆角/交点)被打回一次后必须问,选项按卡片级/区域级/头部级分层 |
 | 17 | known-issues（2026-08-20） | build FAILED 后 && 链 adb install 装旧包报 Success;先判定 BUILD SUCCESSFUL 再 install |
+| 18 | lessons（2026-08-20） | 多页视觉一致=抽共用组件+单点参数对象(PinnedGradientPage/PinnedHeaderSpec),别各页调参对比修补 |
+| 19 | lessons（2026-08-20） | 多会话仓库:pull 后先 assemble 验基线绿;别人坏提交最小修复解锁 |
