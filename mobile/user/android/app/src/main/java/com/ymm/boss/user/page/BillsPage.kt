@@ -1,6 +1,5 @@
 package com.ymm.boss.user.page
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +31,7 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PillTab
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
@@ -55,7 +55,7 @@ fun BillsScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("我的账单", onBack = { nav.pop() }, action = "开发票") { nav.push(Route.Invoice) }
+        TopBar("我的账单", onBack = { nav.pop() }, action = "开发票", onAction = { nav.push(Route.Invoice) })
         DueCard(due, period, nav)
         FilterTabs(filter) { filter = it }
         AppCard {
@@ -92,18 +92,14 @@ private fun DueCard(due: Double, period: String, nav: Nav) {
 
 @Composable
 private fun FilterTabs(current: String, onSelect: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)) {
+    // 与消息中心/用量页同款 PillTab plain 形态,不再自绘文字 tab
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         listOf("" to "近 6 期", "paid" to "已缴", "unpaid" to "未缴").forEach { (key, label) ->
-            val active = key == current
-            Text(
-                label,
-                fontSize = 13.5.sp,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                color = if (active) Palette.primary else Palette.muted,
-                modifier = Modifier
-                    .padding(end = 18.dp)
-                    .clickable { onSelect(key) },
-            )
+            PillTab(label, active = key == current, onClick = { onSelect(key) }, plain = true)
         }
     }
 }
