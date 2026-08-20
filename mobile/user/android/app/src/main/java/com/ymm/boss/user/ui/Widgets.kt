@@ -37,7 +37,7 @@ fun AppCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 @Composable
 fun CardTitle(title: String, more: String? = null, onMore: (() -> Unit)? = null) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(title, fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink)
+        Text(title, fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink, modifier = Modifier.weight(1f))
         if (more != null) Text(more, fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.clickable { onMore?.invoke() })
     }
 }

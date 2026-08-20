@@ -1,14 +1,29 @@
 package com.ymm.boss.user.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.List
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
@@ -37,6 +52,14 @@ class Nav(initial: Route) {
         val TABS = listOf(
             "home" to "首页", "products" to "产品", "orders" to "订单", "profile" to "我的",
         )
+
+        /** tab 图标:选中实心、未选中描边(material-icons-core 随 material3 自带)。 */
+        fun tabIcon(key: String, active: Boolean) = when (key) {
+            "home" -> if (active) Icons.Filled.Home else Icons.Outlined.Home
+            "products" -> if (active) Icons.Filled.ShoppingCart else Icons.Outlined.ShoppingCart
+            "orders" -> if (active) Icons.Filled.List else Icons.Outlined.List
+            else -> if (active) Icons.Filled.Person else Icons.Outlined.Person
+        }
     }
 }
 
@@ -53,7 +76,11 @@ fun BottomTabBar(nav: Nav, currentKey: String, onSelect: (String) -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
             ) {
-                Text(if (active) "●" else "○", color = if (active) Palette.primary else Palette.subtle, fontSize = 14.sp)
+                Icon(
+                    Nav.tabIcon(key, active), contentDescription = label,
+                    tint = if (active) Palette.primary else Palette.subtle,
+                    modifier = Modifier.height(22.dp),
+                )
                 Text(label, color = if (active) Palette.primary else Palette.muted, fontSize = 12.sp, fontWeight = if (active) FontWeight.W600 else FontWeight.Normal)
             }
         }
@@ -62,7 +89,14 @@ fun BottomTabBar(nav: Nav, currentKey: String, onSelect: (String) -> Unit) {
 
 @Composable
 fun PageScaffold(nav: Nav, currentKey: String, showTabs: Boolean, content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxSize().background(Palette.bg)) {
+    // edge-to-edge 下必须避让系统栏:否则 TopBar 被状态栏遮挡、底栏被手势条压住
+    BackHandler(enabled = nav.size > 1) { nav.pop() }
+    Column(
+        Modifier.fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .imePadding()
+            .background(Palette.bg),
+    ) {
         Box(Modifier.weight(1f)) { content() }
         if (showTabs) {
             BottomTabBar(nav, currentKey) { key ->

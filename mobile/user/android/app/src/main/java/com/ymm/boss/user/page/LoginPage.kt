@@ -95,7 +95,7 @@ fun LoginScreen(nav: Nav) {
             }
 
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = agreed, onCheckedChange = { agreed = it })
                     Text("已阅读并同意《用户协议》", fontSize = 12.5.sp, color = Palette.muted)
                 }

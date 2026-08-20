@@ -96,7 +96,7 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
     val id = p.optString("productId")
     AppCard {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink)
+            Text(p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink, modifier = Modifier.weight(1f))
             Tag("¥${p.optString("monthlyFee")}/月", if (p.optBoolean("featured")) Palette.orange else Palette.primary)
         }
         Notice(p.optString("description"))

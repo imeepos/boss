@@ -88,7 +88,7 @@ private fun currentBillText(p: JSONObject): String {
 private fun CurrentPlanCard(plan: PlanInfo) {
     AppCard(Modifier.border(1.dp, Palette.primary, RoundedCornerShape(12.dp))) {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(plan.name, fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink)
+            Text(plan.name, fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink, modifier = Modifier.weight(1f))
             Tag("在网", Palette.success)
         }
         CellRow("月费", right = { Text(plan.monthlyFee, fontSize = 13.sp, color = Palette.ink) })

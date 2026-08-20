@@ -116,7 +116,7 @@ private fun HomeHead(data: HomeData, nav: Nav) {
             .padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 20.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 Text(data.customerName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(" ${data.phoneMasked}", color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
             }
@@ -142,7 +142,7 @@ private fun StatusCard(data: HomeData, nav: Nav) {
             .fillMaxWidth(),
     ) {
         Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(data.planName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Palette.ink)
+            Text(data.planName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Palette.ink, modifier = Modifier.weight(1f))
             Tag("在网", Palette.success)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
