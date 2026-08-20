@@ -157,7 +157,7 @@ func TestPGStore_SubmitRealName(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`INSERT INTO worker_real_name_verifications\(worker_id, method, real_name, id_card_no, result, verified_at\)`).
+	mock.ExpectQuery(`INSERT INTO verifications\(subject_type, subject_id, method, real_name, id_card_no, result, verified_at\)`).
 		WithArgs(int64(9), "证件OCR", "王师傅", "110101199001011234", RealNamePending, pgxmock.AnyArg()).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 
@@ -185,7 +185,7 @@ func TestPGStore_GetLatest(t *testing.T) {
 
 	cols := []string{"id", "worker_id", "method", "real_name", "id_card_no", "result", "verified_at", "operator_account_id", "operator_name"}
 	va := time.Date(2026, 8, 19, 8, 1, 0, 0, time.UTC)
-	mock.ExpectQuery(`SELECT id, worker_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name FROM worker_real_name_verifications`).
+	mock.ExpectQuery(`SELECT id, subject_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name FROM verifications`).
 		WithArgs(int64(9)).
 		WillReturnRows(mock.NewRows(cols).
 			AddRow(int64(3), int64(9), "证件OCR", "王师傅", "110101199001011234", RealNamePass, va, int64(103), "admin"))
@@ -210,7 +210,7 @@ func TestPGStore_GetLatestNotFound(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, worker_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name FROM worker_real_name_verifications`).
+	mock.ExpectQuery(`SELECT id, subject_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name FROM verifications`).
 		WithArgs(int64(9)).
 		WillReturnError(pgx.ErrNoRows)
 
@@ -228,7 +228,7 @@ func TestPGStore_Verify(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectExec(`UPDATE worker_real_name_verifications SET result=\$1, operator_account_id=\$2, operator_name=\$3, verified_at=now\(\)`).
+	mock.ExpectExec(`UPDATE verifications SET result=\$1, operator_account_id=\$2, operator_name=\$3, verified_at=now\(\)`).
 		WithArgs(RealNamePass, int64(103), "admin", int64(9), RealNamePending).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 

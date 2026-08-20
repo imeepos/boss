@@ -134,8 +134,8 @@ UPDATE worker_registrations
 func (s *PGStore) SubmitRealName(ctx context.Context, v WorkerRealNameVerification) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-INSERT INTO worker_real_name_verifications(worker_id, method, real_name, id_card_no, result, verified_at)
-VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+INSERT INTO verifications(subject_type, subject_id, method, real_name, id_card_no, result, verified_at)
+VALUES('worker',$1,$2,$3,$4,$5,$6) RETURNING id`,
 		v.WorkerID, v.Method, v.RealName, v.IDCardNo, v.Result, v.VerifiedAt).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("worker: submit real name: %w", err)
@@ -146,9 +146,9 @@ VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
 // GetLatestWorkerRealName 取师傅最新实名核验记录。
 func (s *PGStore) GetLatest(ctx context.Context, workerID int64) (*WorkerRealNameVerification, error) {
 	row := s.db.QueryRow(ctx, `
-SELECT id, worker_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name
- FROM worker_real_name_verifications
- WHERE worker_id = $1
+SELECT id, subject_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name
+ FROM verifications
+ WHERE subject_type = 'worker' AND subject_id = $1
  ORDER BY verified_at DESC
  LIMIT 1`, workerID)
 	var v WorkerRealNameVerification
@@ -174,9 +174,9 @@ SELECT id, worker_id, method, real_name, id_card_no, result, verified_at, operat
 // 采用原子更新(受影响行>0),避免并发双重通过。
 func (s *PGStore) Verify(ctx context.Context, workerID int64, result, operatorName string, operatorAccountID int64) error {
 	res, err := s.db.Exec(ctx, `
-UPDATE worker_real_name_verifications
+UPDATE verifications
  SET result=$1, operator_account_id=$2, operator_name=$3, verified_at=now()
- WHERE worker_id=$4 AND result=$5`,
+ WHERE subject_type='worker' AND subject_id=$4 AND result=$5`,
 		result, operatorAccountID, operatorName, workerID, RealNamePending)
 	if err != nil {
 		return fmt.Errorf("worker: verify real name: %w", err)

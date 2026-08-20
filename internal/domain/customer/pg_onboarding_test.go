@@ -80,7 +80,7 @@ func TestPGStore_Verify_PassSyncsStatus(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectExec(`UPDATE customer_real_name_verifications SET result=\$1, operator_account_id=\$2, operator_name=\$3, verified_at=now\(\) WHERE customer_id=\$4 AND result=\$5`).
+	mock.ExpectExec(`UPDATE verifications SET result=\$1, operator_account_id=\$2, operator_name=\$3, verified_at=now\(\) WHERE subject_type='customer' AND subject_id=\$4 AND result=\$5`).
 		WithArgs(RealNamePass, int64(1000), "admin", int64(88), RealNamePending).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	// PASS 同步 customers.real_name_status=VERIFIED

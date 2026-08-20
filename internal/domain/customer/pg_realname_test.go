@@ -15,7 +15,7 @@ func TestPGStore_ListVerifications(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, customer_id, method, verified_at, result, COALESCE\(operator_account_id, 0\), COALESCE\(operator_name, ''\)`).
+	mock.ExpectQuery(`SELECT id, subject_id, method, verified_at, result, COALESCE\(operator_account_id, 0\), COALESCE\(operator_name, ''\)`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{
 			"id", "customer_id", "method", "verified_at", "result", "operator_account_id", "operator_name",
@@ -42,7 +42,7 @@ func TestPGStore_AppendVerification(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`INSERT INTO real_name_verifications`).
+	mock.ExpectQuery(`INSERT INTO verifications\(subject_type, subject_id, method, verified_at, result, operator_account_id, operator_name\)`).
 		WithArgs(int64(1), "人脸", fixedTime, "PASS", nil, "张三").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
 

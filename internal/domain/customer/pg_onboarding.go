@@ -140,8 +140,8 @@ UPDATE customer_registrations
 func (s *PGStore) SubmitRealName(ctx context.Context, v CustomerRealNameVerification) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-INSERT INTO customer_real_name_verifications(customer_id, method, real_name, id_card_no, result)
-VALUES($1,$2,$3,$4,$5) RETURNING id`,
+INSERT INTO verifications(subject_type, subject_id, method, real_name, id_card_no, result)
+VALUES('customer',$1,$2,$3,$4,$5) RETURNING id`,
 		v.CustomerID, v.Method, v.RealName, v.IDCardNo, v.Result).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("customer: submit real name: %w", err)
@@ -152,9 +152,9 @@ VALUES($1,$2,$3,$4,$5) RETURNING id`,
 // GetLatest 取客户最新实名核验记录。
 func (s *PGStore) GetLatest(ctx context.Context, customerID int64) (*CustomerRealNameVerification, error) {
 	row := s.db.QueryRow(ctx, `
-SELECT id, customer_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name
- FROM customer_real_name_verifications
- WHERE customer_id = $1
+SELECT id, subject_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name
+ FROM verifications
+ WHERE subject_type = 'customer' AND subject_id = $1
  ORDER BY verified_at DESC
  LIMIT 1`, customerID)
 	var v CustomerRealNameVerification
@@ -180,9 +180,9 @@ SELECT id, customer_id, method, real_name, id_card_no, result, verified_at, oper
 // 采用原子更新(受影响行>0),避免并发双重通过。
 func (s *PGStore) Verify(ctx context.Context, customerID int64, result, operatorName string, operatorAccountID int64) error {
 	res, err := s.db.Exec(ctx, `
-UPDATE customer_real_name_verifications
+UPDATE verifications
  SET result=$1, operator_account_id=$2, operator_name=$3, verified_at=now()
- WHERE customer_id=$4 AND result=$5`,
+ WHERE subject_type='customer' AND subject_id=$4 AND result=$5`,
 		result, operatorAccountID, operatorName, customerID, RealNamePending)
 	if err != nil {
 		return fmt.Errorf("customer: verify real name: %w", err)

@@ -76,7 +76,7 @@
 |:-----|:-----|:-----|:-----|
 | customers ✚ | id | ▲legal_entity_id ▲address_id(FK) ■orders ■bills ■arrears ■lo_accounts(软) ◆quad_link ■user_* 全家 | 公司 1:N 客户 |
 | customer_registrations ✚ | id | ▲legal_entity_id/address_id(FK) ▲customer_id(通过后回填,sFK) ▲reviewer_account_id(sFK) | 注册审核队列 |
-| customer_real_name_verifications ✚ | id | ▲customer_id(FK)；real_name_verifications(000026) 为旧表并存 | 客户 1:N 实名 |
+| verifications ✚ | id | ▲subject_type('customer'/'worker') + subject_id(软)；000059 起统一实名表，吸收 000026/000050/000051 三张旧表（已迁移并 DROP） | 主体 1:N 实名轨迹 |
 | customer_histories ✚ | id | ▲customer_id/legal_entity_id/address_id(FK) | 客户归属台账 |
 | product_offers ✚ | id | ▲legal_entity_id(FK) ■price_history ■region_offers | — |
 | region_offers ✚ | id | ▲offer_id(FK) ■price_history | — |
@@ -150,7 +150,7 @@
 | worker_settings ✚ / worker_messages ✚ | id | ▲worker_id(FK, settings UQ 1:1) | — |
 | worker_notices ✚ | id | 全局公告 | — |
 | worker_registrations ✚ | id | ▲group_id(FK) ▲worker_id(通过后回填,软) ▲reviewer_account_id(软) | 入驻审核队列 |
-| worker_real_name_verifications ✚ | id | ▲worker_id(FK) | 师傅 1:N 实名 |
+| 师傅实名 | — | 统一走 verifications(subject_type='worker')，见 §2.3 | — |
 | worker_performances ✚ / worker_commissions ✚ / worker_schedules ✚ | id | ▲worker_id ▲group_id(FK)；UQ(worker,period,group) 月度粒度 | 师傅×月×班组 |
 | worker_materials ✚ / worker_tools ✚ / worker_feedbacks ✚ / asset_returns ✚ | id | ▲worker_id ▲group_id(FK)；asset_returns 另软挂 asset | 事件级事实 |
 

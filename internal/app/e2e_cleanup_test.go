@@ -44,7 +44,7 @@ func buildCleanupStmts(custID int64, chanCode, offerName, username string) []str
 		`DELETE FROM payments WHERE bill_id IN (SELECT id FROM bills WHERE customer_id IN ` + cust + `)`,
 		`DELETE FROM bills WHERE customer_id IN ` + cust,
 		`DELETE FROM arrears WHERE customer_id IN ` + cust,
-		`DELETE FROM real_name_verifications WHERE customer_id IN ` + cust,
+		`DELETE FROM verifications WHERE subject_type='customer' AND subject_id IN ` + cust,
 		// 端口/资源图谱(端口先删四码与变更史)
 		`DELETE FROM quad_links WHERE port_id IN (SELECT id FROM ports WHERE address_id IN ` + addr + `)`,
 		`DELETE FROM port_change_history WHERE port_id IN (SELECT id FROM ports WHERE address_id IN ` + addr + `)`,

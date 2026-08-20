@@ -44,7 +44,7 @@ type Registration struct {
 	ReviewedAt        *time.Time `json:"reviewedAt,omitempty"`
 }
 
-// WorkerRealNameVerification 师傅实名核验(对标客户 real_name_verifications)。
+// WorkerRealNameVerification 师傅实名核验(verifications 表 subject_type='worker')。
 type WorkerRealNameVerification struct {
 	ID                int64     `json:"id"`
 	WorkerID          int64     `json:"workerId"`
