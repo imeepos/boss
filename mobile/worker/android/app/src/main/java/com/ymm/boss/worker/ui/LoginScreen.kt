@@ -71,9 +71,13 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
                         .clickable(countdown <= 0) {
                             if (phone.isBlank()) { tip = "请先输入手机号"; return@clickable }
                             scope.launch {
-                                try { AuthApi.smsCode(phone.trim()) } catch (e: Exception) { tip = "验证码发送失败:${e.message}" }
-                                countdown = 60
-                                while (countdown > 0) { delay(1000); countdown-- }
+                                try {
+                                    AuthApi.smsCode(phone.trim())
+                                    countdown = 60
+                                    while (countdown > 0) { delay(1000); countdown-- }
+                                } catch (e: Exception) {
+                                    tip = "验证码发送失败:${e.message}"
+                                }
                             }
                         }
                         .padding(horizontal = 12.dp, vertical = 12.dp))

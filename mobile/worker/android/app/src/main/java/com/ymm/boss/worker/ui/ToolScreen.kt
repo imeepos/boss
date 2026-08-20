@@ -22,7 +22,7 @@ import com.ymm.boss.worker.ui.theme.Success
 // 现场工具(对齐 docs/worker/tool.html):测速/光功率 + 资源查询 + 台账自查
 @Composable
 fun ToolScreen(nav: NavHost, no: String?) {
-    val ticketNo = no ?: FALLBACK_NO
+    val ticketNo = no ?: ""
     var refresh by remember { mutableStateOf(0) }
     val ctx = LocalContext.current
     val measure by loadOnce(ticketNo, refresh) { AssetApi.measure(ticketNo) }
@@ -30,6 +30,10 @@ fun ToolScreen(nav: NavHost, no: String?) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("现场工具", onBack = { nav.pop() }, action = "刷新", onAction = { refresh++ })
+        if (ticketNo.isEmpty()) {
+            Card(Modifier.padding(12.dp)) { Notice("请从工单详情进入现场工具。", red = true) }
+            return@Column
+        }
         Card(Modifier.padding(12.dp)) {
             SectionTitle("工单 $ticketNo")
             when (val m = measure) {

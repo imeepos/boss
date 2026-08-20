@@ -66,6 +66,7 @@ fun CameraScanner(
     DisposableEffect(Unit) { onDispose { analyzerExecutor.shutdown(); scanner.close() } }
 }
 
+@Suppress("UnsafeOptInUsageError")
 private fun processImage(scanner: BarcodeScanner, proxy: ImageProxy, cb: ScanCallback) {
     val mediaImage = proxy.image ?: run { proxy.close(); return }
     val input = InputImage.fromMediaImage(mediaImage, proxy.imageInfo.rotationDegrees)

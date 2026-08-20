@@ -42,7 +42,7 @@ fun RetireScreen(nav: NavHost, no: String) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("旧件回收", onBack = { nav.pop() }, action = "返库登记")
+        TopBar("旧件回收", onBack = { nav.pop() })
         when (val s = state) {
             is Load.Loading -> Loading()
             is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("加载失败：${s.message}", red = true) }
@@ -78,8 +78,9 @@ fun RetireScreen(nav: NavHost, no: String) {
                 }
                 Card(Modifier.padding(12.dp)) {
                     SectionTitle("已回收记录", more = "本月")
-                    KvRow("返修件", "${s.data.optString("repairCount", "--")} 件")
-                    KvRow("拆机回收", "${s.data.optString("dismantleCount", "--")} 件")
+                    val returned = s.data.optJSONObject("returned")
+                    KvRow("返修件", "${returned?.optInt("repairCount", 0) ?: 0} 件")
+                    KvRow("拆机回收", "${returned?.optInt("dismantleCount", 0) ?: 0} 件")
                 }
                 Card(Modifier.padding(12.dp)) {
                     Notice("旧件回收须扫码留痕，返修件与拆机件分流处理。")

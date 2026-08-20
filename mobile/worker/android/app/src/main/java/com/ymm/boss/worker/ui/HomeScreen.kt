@@ -60,7 +60,7 @@ fun HomeScreen(nav: NavHost) {
             }
             is Load.Ok -> HomeBody(nav, s.data)
         }
-        NoticeList(msgs)
+        NoticeList(nav, msgs)
         QuickGrid(nav)
     }
 }
@@ -105,9 +105,9 @@ private fun Head(name: String, sub: String, statusLine: String) {
 }
 
 @Composable
-private fun NoticeList(msgs: Load<JSONObject>) {
+private fun NoticeList(nav: NavHost, msgs: Load<JSONObject>) {
     Card(Modifier.padding(12.dp)) {
-        SectionTitle("今日提醒", more = "消息中心")
+        SectionTitle("今日提醒", more = "消息中心", onMore = { nav.push(Screen.Messages) })
         when (msgs) {
             is Load.Loading -> Text("加载中…", fontSize = 13.sp, color = Muted)
             is Load.Fail -> Notice("消息加载失败，请刷新重试。")

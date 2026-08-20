@@ -31,7 +31,7 @@ fun HelpScreen(nav: NavHost) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("排障手册", onBack = { nav.pop() }, action = "知识库")
+        TopBar("排障手册", onBack = { nav.pop() })
         Card(Modifier.padding(12.dp)) {
             OutlinedTextField(value = kw, onValueChange = { kw = it },
                 placeholder = { Text("检索 FAQ / SOP") }, singleLine = true,

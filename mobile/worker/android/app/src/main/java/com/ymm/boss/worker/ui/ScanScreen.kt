@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.api.ScanApi
 import com.ymm.boss.worker.api.TicketApi
+import com.ymm.boss.worker.BuildConfig
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
@@ -58,7 +59,7 @@ fun ScanScreen(nav: NavHost, no: String) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("扫码绑定（环节 9）", onBack = { nav.pop() }, action = "在线")
+        TopBar("扫码绑定（环节 9）", onBack = { nav.pop() })
         when (val s = info) {
             is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("加载工单失败：${s.message}", red = true) }
             is Load.Ok -> InfoCard(s.data)
@@ -119,11 +120,13 @@ private fun ManualBindBox(epc: String, onInput: (String) -> Unit, onBind: (Strin
         Text("将取景框对准光猫机身电子标签", fontSize = 13.sp, color = Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         Text("支持 LF / HF / UHF 频段 · 弱网自动离线缓存", fontSize = 12.sp, color = Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            SimBtn("模拟扫码", Modifier.weight(1f), primary = true) { onBind("EPC-0001", false) }
-            SimBtn("模拟「不符」", Modifier.weight(1f)) { onBind("EPC-9999", false) }
+        if (BuildConfig.DEBUG) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SimBtn("模拟扫码", Modifier.weight(1f), primary = true) { onBind("EPC-0001", false) }
+                SimBtn("模拟「不符」", Modifier.weight(1f)) { onBind("EPC-9999", false) }
+            }
+            SimBtn("模拟「弱网离线」", Modifier.fillMaxWidth().padding(top = 8.dp)) { onBind("EPC-0001", true) }
         }
-        SimBtn("模拟「弱网离线」", Modifier.fillMaxWidth().padding(top = 8.dp)) { onBind("EPC-0001", true) }
     }
 }
 

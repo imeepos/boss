@@ -55,7 +55,7 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
             is Load.Ok -> {
                 val d = s.data
                 DetailCard(d)
-                LinkRow(d.optString("customerPhoneMasked").replace("*", ""),
+                LinkRow("",
                     onNavi = { nav.push(Screen.Navi(no)) },
                     onCheckin = { nav.push(Screen.Checkin(no)) })
                 TimelineCard(d, onRollback = {
@@ -100,7 +100,10 @@ private fun LinkRow(phone: String, onNavi: () -> Unit, onCheckin: () -> Unit) {
     val ctx = LocalContext.current
     Card(Modifier.padding(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ActionBtn("联系客户", Modifier.weight(1f)) { ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))) }
+            ActionBtn("联系客户", Modifier.weight(1f)) {
+                if (phone.isBlank()) toast(ctx, "号码已脱敏，请通过平台联系")
+                else ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+            }
             ActionBtn("一键导航", Modifier.weight(1f), onClick = onNavi)
             ActionBtn("到点签到", Modifier.weight(1f), onClick = onCheckin)
         }

@@ -21,6 +21,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +48,8 @@ fun RepairScreen(nav: NavHost, no: String) {
     val state by loadOnce(no) { TicketApi.detail(no) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    var reportResult by remember { mutableStateOf("FIXED") }
+    var reportRemark by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("修复工单", onBack = { nav.pop() }, action = "联系调度",
@@ -57,10 +62,25 @@ fun RepairScreen(nav: NavHost, no: String) {
                 RepairInfoCard(d)
                 DiagCard(d)
                 RepairTimeline(d)
-                RepairActions(nav, no, d.optString("customerPhoneMasked").replace("*", "")) {
+                Card(Modifier.padding(12.dp)) {
+                    SectionTitle("修复结果")
+                    OptionRow(listOf("已恢复" to "FIXED", "未恢复" to "UNFIXED").map { it.first },
+                        if (reportResult == "FIXED") "已恢复" else "未恢复") {
+                        reportResult = if (it == "已恢复") "FIXED" else "UNFIXED"
+                    }
+                    androidx.compose.material3.OutlinedTextField(
+                        value = reportRemark,
+                        onValueChange = { reportRemark = it },
+                        placeholder = { Text("补充现场处理说明") },
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                RepairActions(nav, no, "") {
+                    if (reportResult.isBlank()) return@RepairActions
                     scope.launch {
                         try {
-                            val r = TicketApi.repairReport(no, "FIXED", "")
+                            val r = TicketApi.repairReport(no, reportResult, reportRemark.trim())
                             toast(ctx, if (r.optBoolean("reviewPassed")) "网络已恢复，工单关闭，系统自动复核通过" else "结果已上报，系统复核中")
                             nav.pop()
                         } catch (e: Exception) { toast(ctx, "上报失败，请重试。") }
@@ -139,7 +159,8 @@ private fun RepairActions(nav: NavHost, no: String, phone: String, onReport: () 
             ActionBtn("一键导航", Modifier.weight(1f)) { nav.push(Screen.Navi(no)) }
             ActionBtn("到点签到", Modifier.weight(1f)) { nav.push(Screen.Checkin(no)) }
             ActionBtn("联系客户", Modifier.weight(1f)) {
-                ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+                if (phone.isBlank()) toast(ctx, "号码已脱敏，请通过平台联系")
+                else ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 10.dp)) {

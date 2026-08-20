@@ -41,7 +41,9 @@ fun OrdersScreen(nav: NavHost) {
     var cur by remember { mutableStateOf("doing") }
     var refresh by remember { mutableStateOf(0) }
     var tip by remember { mutableStateOf("") }
-    val state by loadOnce(cur, refresh) { TicketApi.list(if (cur == "all") null else cur) }
+    val state by loadOnce(cur, refresh) {
+        TicketApi.list(if (cur == "all") null else cur.uppercase())
+    }
     val scope = rememberCoroutineScope()
 
     fun take(no: String) {
