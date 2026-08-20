@@ -686,3 +686,7 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 ## 2026-08-20 订单分页 + 下拉刷新/上拉加载
 - 最耗时:验证部署时被镜像时间线迷惑(容器重建于新镜像构建前 10 秒,且并发 CI 任务 deploy 互相撞容器名留下 rename 残壳);判断部署是否生效必须 docker exec 进容器 strings 二进制符号,不能只看容器"Up (healthy)"。
 - 教训:连续 push 会并发跑多个 deploy job,compose up 互抢容器名;验完再 push,或 CI 侧需要串行化。
+
+## 2026-08-20 首页图标+增值服务卡片
+- 坑:直接 gradlew 报无 Java Runtime,需按 scripts/build-install-user-android.sh 的 find_java_home 逻辑 export JAVA_HOME(/opt/homebrew/Cellar/openjdk@17)。skill 未提前警告,已顺手写入 knowledge/前端.md?否,写入 lessons。
+- 改动:Router->Home 图标;MyServiceCard 替换为 ActiveServicesCard 过滤 status==ACTIVE。
