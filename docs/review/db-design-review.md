@@ -59,16 +59,19 @@
 
 - 对账批次只有渠道侧/系统侧总额对比，差异时无法定位到具体 payment 行。
 - 建议：加 reconciliation_items(batch_id, payment_id, diff_amount) 明细表（后续迭代）。
+- **已落地 2026-08-20**：migrations/000060 + 四类比对 + admin 路由（commit 9ff5f69）。
 
 ### D7【低】软引用无孤儿兜底任务
 
 - 113 硬 FK 之外的跨域软引用（orders.customer_id、lo_accounts.customer_id、reserve_records.order_id 等）
 - 无 DB 约束，删主档可留孤儿。建议：应用层定期孤儿检测（复用 report_snapshots 或 admin 巡检接口），先报表不阻断。
+- **已落地 2026-08-20**：GET /db-patrol/orphans 11 项巡检，只读不阻断（commit ba85172）。
 
 ### D8【低】worker 事件级事实表 group_id 快照口径需显式化
 
 - worker_materials/tools/feedbacks/asset_returns 均带 group_id FK；事件发生时师傅若正在换组，
 - 口径应为「事发时班组」（与工单一致）。已按此理解落文档；建议在 fields.md 7.2 补一句明确。
+- **已落地 2026-08-20**：fields.md 7.3 第 4 条已补事件级事实表口径（commit de0ed7a）。
 
 ## 维护约定
 
