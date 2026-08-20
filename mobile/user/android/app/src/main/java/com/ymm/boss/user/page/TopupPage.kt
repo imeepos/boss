@@ -58,7 +58,7 @@ fun TopupScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("余额充值", onBack = { nav.pop() }, action = "使用优惠券") { nav.push(Route.Coupon) }
+        TopBar("余额充值", onBack = { nav.pop() }, action = "使用优惠券", onAction = { nav.push(Route.Coupon) })
         TopupFormCard(nav, balance, denoms)
         Spacer(Modifier.height(12.dp))
     }

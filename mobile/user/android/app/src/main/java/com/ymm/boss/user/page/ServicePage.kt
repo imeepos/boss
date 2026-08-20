@@ -57,7 +57,7 @@ fun ServiceScreen(nav: Nav) {
     }
 
     Column {
-        TopBar("在线客服", onBack = { nav.pop() }, action = "帮助中心") { nav.push(Route.Help) }
+        TopBar("在线客服", onBack = { nav.pop() }, action = "帮助中心", onAction = { nav.push(Route.Help) })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).imePadding()) {
             AppCard {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

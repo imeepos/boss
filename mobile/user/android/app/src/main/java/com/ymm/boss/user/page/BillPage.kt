@@ -59,7 +59,7 @@ fun BillScreen(nav: Nav, no: String) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("账单明细", onBack = { nav.pop() }, action = "开发票") { nav.push(Route.Invoice) }
+        TopBar("账单明细", onBack = { nav.pop() }, action = "开发票", onAction = { nav.push(Route.Invoice) })
         DetailCard(bill, items, total, failed)
         AutoPayCard(autoPay) { enabled -> scope.launch { toggleAutoPay(enabled) { autoPay = it } } }
         Button(

@@ -65,7 +65,7 @@ fun FaultDetailScreen(nav: Nav, no: String) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("报修详情", { nav.pop() }, action = "评价") { nav.push(Route.Rate(no)) }
+        TopBar("报修详情", onBack = { nav.pop() }, action = "评价", onAction = { nav.push(Route.Rate(no)) })
         val d = detail
         if (d == null) {
             AppCard { CardTitle(if (loadErr.isBlank()) "加载中…" else loadErr) }

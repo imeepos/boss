@@ -24,7 +24,7 @@ import com.ymm.boss.user.ui.TopBar
 @Composable
 fun HelpScreen(nav: Nav) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("帮助中心", onBack = { nav.pop() }, action = "在线客服") { nav.push(Route.Service) }
+        TopBar("帮助中心", onBack = { nav.pop() }, action = "在线客服", onAction = { nav.push(Route.Service) })
         AppCard {
             CardTitle("热门问题")
             HotEntries(nav)

@@ -53,7 +53,7 @@ fun ReceiptScreen(nav: Nav, payNo: String) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("缴费凭证", onBack = { nav.pop() }, action = "开发票") { nav.push(Route.Invoice) }
+        TopBar("缴费凭证", onBack = { nav.pop() }, action = "开发票", onAction = { nav.push(Route.Invoice) })
         ReceiptCard(r, payNo, failed)
         Button(
             onClick = { scope.launch { downloadReceipt(context, payNo) } },

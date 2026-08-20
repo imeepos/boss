@@ -68,7 +68,7 @@ fun OrderScreen(nav: Nav, no: String) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("订单详情", onBack = { nav.pop() }, action = "取消") { showCancel = true }
+        TopBar("订单详情", onBack = { nav.pop() }, action = "取消", onAction = { showCancel = true })
         if (err.isNotEmpty()) ErrText(err)
         SummaryCard(detail?.optJSONObject("order"), detail)
         TimelineCard(detail, timeline)
