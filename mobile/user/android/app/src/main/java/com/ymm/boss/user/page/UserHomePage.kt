@@ -101,8 +101,8 @@ internal fun parseHome(d: JSONObject): HomeUiState = HomeUiState(
     services = parseServices(d),
 )
 
-/** 金额格式:无值返回 "--",有值保留两位小数(契约 L 节 89.00/120.00 形态)。 */
-private fun yuan(v: Double): String = if (v.isNaN()) "--" else String.format("¥%.2f", v)
+/** 金额格式:无值返回 "--",有值保留两位小数(契约 L 节 89.00/120.00 形态,不带货币符号)。 */
+private fun yuan(v: Double): String = if (v.isNaN()) "--" else String.format("%.2f", v)
 
 private fun parseOrders(d: JSONObject): List<HomeOrder> {
     val a = d.optJSONArray("ongoingOrders") ?: return emptyList()

@@ -155,11 +155,13 @@ private fun SubInfo(label: String, value: String, modifier: Modifier = Modifier)
         modifier = modifier.padding(vertical = 6.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal, color = auxText())
-        Spacer(modifier = Modifier.height(8.dp))
+        Text(label, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal, color = auxText())
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
-            value, fontSize = 32.sp, lineHeight = 40.sp, fontWeight = FontWeight.Bold,
+            value, fontSize = 20.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold,
             color = brandBlue(),
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }

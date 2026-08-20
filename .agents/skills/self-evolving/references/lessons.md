@@ -103,3 +103,4 @@
 - 动态插件沙箱里没有 setTimeout/setInterval：用 ctx.timeout 需 inject ["timer"]；宿主 console.log 外部读不到，探针结果用"失败即抛错 + cordis_inspect_self"回传。
 - gpt-image-2 图生图（/v1/images/edits）的 multipart 文件字段名是 `image`，不是 `image[]`；传错返回 400 "Missing required file field image"。（2025-08-20 实测）
 - bossctl 二进制全局 flag 是 `-server`(不是 --url/_base query);报 flag not defined 先看 -h。
+- 三等分 weight 列里的大字号数值(金额/日期)必须按最长内容校验宽度:maxLines=1 + softWrap=false + 字号留余量;32sp 在 1080p 下必溢出变形(首页账单卡片踩过)。

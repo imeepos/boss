@@ -74,8 +74,8 @@ class HomeLogicTest {
         assertTrue(s.hasUnread)
         assertEquals("1000M 极速宽带", s.planName)
         assertEquals("2026-08", s.contractEnd)
-        assertEquals("¥89.00", s.currentBill)
-        assertEquals("¥12.50", s.balance)
+        assertEquals("89.00", s.currentBill)
+        assertEquals("12.50", s.balance)
     }
 
     @Test
