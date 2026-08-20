@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -61,16 +62,16 @@ fun CancelScreen(nav: Nav, planId: String) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("退订拆机") { nav.pop() }
+        TopBar("退订拆机", onBack = { nav.pop() })
         if (err.isNotBlank()) Notice(err, Palette.err)
-        if (done.isNotBlank()) { DoneCard(done) { nav.pop() } } else {
+        if (done.isNotBlank()) { DoneCard(done, onBack = { nav.pop() }) } else {
             NoticeCard()
             UnpaidCard(unpaid, penalty, penaltyDesc)
-            ReasonCard(reason) { reason = it }
-            SubmitBar("确认退订 · 生成拆机单") {
+            ReasonCard(reason, onPick = { reason = it })
+            SubmitBar("确认退订 · 生成拆机单", onSubmit = {
                 submitCancel(scope, planId, reason,
                     onDone = { done = it }, onErr = { err = it })
-            }
+            })
         }
         Spacer(Modifier.height(16.dp))
     }
@@ -118,8 +119,14 @@ private fun UnpaidCard(unpaid: List<JSONObject>, penalty: String, penaltyDesc: S
         unpaid.forEach { b ->
             CellRow(
                 title = "${b.optString("period")} 账期",
-                desc = "¥%.2f".format(b.optDouble("amount")) + " · 未缴",
-                right = { Tag("未缴", Palette.orange) },
+                onClick = null,
+                right = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("¥%.2f".format(b.optDouble("amount")), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Palette.ink)
+                        Spacer(Modifier.width(8.dp))
+                        Tag("未缴", Palette.orange)
+                    }
+                },
             )
         }
         CellRow("合约违约金", penaltyDesc.ifBlank { "以结算页为准" }, right = {

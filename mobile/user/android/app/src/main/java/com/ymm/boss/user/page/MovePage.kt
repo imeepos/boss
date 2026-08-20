@@ -52,15 +52,16 @@ fun MoveScreen(nav: Nav, planId: String) {
     LaunchedEffect(nav.refreshTick) { loadOldAddress { oldAddr = it.first; oldPlan = it.second } }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("迁址移机") { nav.pop() }
+        TopBar("迁址移机", onBack = { nav.pop() })
         if (err.isNotBlank()) Notice(err, Palette.err)
-        if (done.isNotBlank()) { DoneCard(done) { nav.pop() } } else {
+        if (done.isNotBlank()) { DoneCard(done, onBack = { nav.pop() }) } else {
             MoveForm(oldAddr, oldPlan, community, building, door, expectDate,
                 onCommunity = { community = it }, onBuilding = { building = it },
-                onDoor = { door = it }, onDate = { expectDate = it }) {
-                submitMove(scope, planId, community, building, door, expectDate,
-                    onDone = { done = it }, onErr = { err = it })
-            }
+                onDoor = { door = it }, onDate = { expectDate = it },
+                onSubmit = {
+                    submitMove(scope, planId, community, building, door, expectDate,
+                        onDone = { done = it }, onErr = { err = it })
+                })
         }
         Spacer(Modifier.height(16.dp))
     }
@@ -121,12 +122,15 @@ private fun AddressFields(
         FieldLabel("小区 / 楼盘")
         OutlinedTextField(value = community, onValueChange = onCommunity, singleLine = true,
             placeholder = { Text("请输入新小区名") }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
         FieldLabel("楼栋")
         OutlinedTextField(value = building, onValueChange = onBuilding, singleLine = true,
             placeholder = { Text("楼栋号") }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
         FieldLabel("门牌号")
         OutlinedTextField(value = door, onValueChange = onDoor, singleLine = true,
             placeholder = { Text("单元/房间号") }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
         FieldLabel("期望移机时间")
         OutlinedTextField(value = expectDate, onValueChange = onDate, singleLine = true,
             placeholder = { Text("如 2025-09-01") },

@@ -6,8 +6,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,10 +44,19 @@ fun DiyScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("自助排障", onBack = { nav.pop() }, action = "在线客服") { nav.push(Route.Service) }
+        TopBar("自助排障", onBack = { nav.pop() }, action = "在线客服", onAction = { nav.push(Route.Service) })
         AppCard {
             CardTitle("请选择故障现象")
-            sections.forEach { s -> CellRow(title = s.optString("title"), desc = s.optString("desc"), right = { Text("›", color = Palette.subtle) }) }
+            sections.forEach { s ->
+                CellRow(title = s.optString("title"), desc = s.optString("desc"), right = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "查看引导",
+                        tint = Palette.subtle,
+                        modifier = Modifier.size(20.dp),
+                    )
+                })
+            }
             if (sections.isEmpty() && !failed) Notice("加载中…")
             if (failed) Notice("排障引导加载失败，请稍后重试")
         }
