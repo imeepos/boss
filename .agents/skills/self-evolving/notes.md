@@ -666,3 +666,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 **重来一次我会怎么做？**
 - 用户报 UI 异常时，第一反问/第一动作是"硬刷新 + 确认看的是哪个地址（localhost dev / 102 部署）"，再动代码排查；DOM 断言正常而用户看到异常 = 大概率陈旧客户端。
 - 免登录优先直接注入 localStorage（boss.token + boss.servers + boss.server.active），不走登录页表单 eval，也不信未验证的辅助脚本。
+
+## 2026-08-20 用户端账单 tab 测试数据 + in_progress 筛选修复
+- 最耗时:订单推到 DONE 被四码唯一约束(uq_quad_links_customer_active)卡住,先补资产/标签/quad_link 再扫码,还误删旧 LINKED 行需手工 UNLINK;102 上 docker-registry htpasswd 无明文,需新增 ci 用户重做 docker login。
+- 教训:102 的 docker-registry(htpasswd)与 act_runner(root daemon)认证是部署链路单点;镜像内迁移文件权限 600 会让容器以 app 用户启动即崩,Dockerfile 已加 chmod a+rX 兜底(commit 60b91ca)。
+- 重来一次:先读 server.Dockerfile 的 USER app 与源文件权限,再触发 CI。
