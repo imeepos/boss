@@ -153,11 +153,7 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
                         )
                         if (p.optBoolean("featured")) Tag("热门", Palette.success)
                     }
-                    PriceLine(p.optString("monthlyFee"))
-                    FeatureLine(Icons.Filled.Speed, p.optString("bandwidth").ifBlank { "高速带宽" })
-                    if (p.optInt("contractMonths") > 0) {
-                        FeatureLine(Icons.Filled.DateRange, "合约 ${p.optInt("contractMonths")} 个月")
-                    }
+                    MetaLine(p)
                     if (p.optString("description").isNotEmpty()) {
                         FeatureLine(Icons.Filled.CheckCircle, p.optString("description"))
                     }
@@ -174,11 +170,24 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
 }
 
 @Composable
-private fun PriceLine(fee: String) {
-    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp)) {
-        Text("¥", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
-        Text(fee, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
-        Text(" /月", fontSize = 12.sp, color = Palette.muted, modifier = Modifier.padding(bottom = 2.dp))
+private fun MetaLine(p: JSONObject) {
+    val contract = p.optInt("contractMonths")
+    val feats = buildList {
+        add(p.optString("bandwidth").ifBlank { "高速带宽" })
+        if (contract > 0) add("含合约${contract}个月")
+    }.joinToString(" · ")
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+    ) {
+        Icon(Icons.Filled.Speed, contentDescription = null, tint = Palette.subtle, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(feats, fontSize = 12.sp, color = Palette.muted, modifier = Modifier.weight(1f), maxLines = 1)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("¥", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
+            Text(p.optString("monthlyFee"), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
+            Text("/月", fontSize = 11.sp, color = Palette.muted, modifier = Modifier.padding(bottom = 1.dp))
+        }
     }
 }
 
