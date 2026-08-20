@@ -42,7 +42,9 @@ fun ChargeScreen(nav: NavHost, no: String) {
                 val amountDefault = if (due % 1.0 == 0.0) due.toInt().toString() else due.toString()
                 val methods = c.data.optJSONArray("payMethods")
                     ?.let { arr -> List(arr.length()) { arr.optString(it) } }
-                    ?: listOf("扫码支付", "现金", "POS")
+                    ?.filter { it.isNotBlank() }
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: listOf("QR", "CASH", "POS")
                 var amount by remember(due) { mutableStateOf(amountDefault) }
                 var method by remember(methods) { mutableStateOf(methods.firstOrNull() ?: "扫码支付") }
                 Card(Modifier.padding(12.dp)) {

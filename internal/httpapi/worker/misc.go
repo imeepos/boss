@@ -3,9 +3,12 @@ package workerapi
 // W 师傅端门户杂项域(worker/misc.yaml):消息/公告/排障手册/联系调度/安全上报。
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -19,11 +22,55 @@ func registerWorkerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/help/faq", func(c *gin.Context) {
 		respond(c, apitypes.CodeOK, gin.H{"items": []gin.H{}})
 	})
-	g.GET("/service/messages", func(c *gin.Context) {
-		respond(c, apitypes.CodeOK, gin.H{"items": []gin.H{}})
-	})
-	g.POST("/service/messages", workerAuditOK(a, "service-message-send"))
+	g.GET("/service/messages", workerServiceMessagesHandler(a))
+	g.POST("/service/messages", workerServiceMessageHandler(a))
 	g.POST("/safety/checks", workerSafetyCheckHandler(a))
+}
+
+type workerServiceMessageReq struct {
+	Content string `json:"content" binding:"required"`
+}
+
+func workerServiceMessagesHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		workerID, _ := portalWorker(c)
+		list, err := a.WorkerLedger.ListMessages(c.Request.Context(), workerID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		items := make([]gin.H, 0, len(list))
+		for _, m := range list {
+			if m.Title != "worker" && m.Title != "dispatcher" {
+				continue
+			}
+			from := "dispatcher"
+			if m.Title == "worker" {
+				from = "worker"
+			}
+			items = append(items, gin.H{"from": from, "content": m.Content, "sentAt": m.SentAt.Format("01-02 15:04")})
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": items})
+	}
+}
+
+func workerServiceMessageHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req workerServiceMessageReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		workerID, _ := portalWorker(c)
+		_, err := a.WorkerLedger.SendMessage(c.Request.Context(), worker.Message{
+			WorkerID: workerID, Level: "INFO", Title: "worker", Content: req.Content, SentAt: time.Now(),
+		})
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
 }
 
 // workerMessagesHandler 消息中心(level 枚举 INFO/WARN/URGENT)。
