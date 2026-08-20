@@ -8,9 +8,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -75,7 +79,10 @@ private suspend fun latestPayNo(): String =
 private fun ResultCard(nav: Nav, payNo: String, amountLine: String, payMethod: String) {
     AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("✓", fontSize = 44.sp, color = Palette.success)
+            Icon(
+                Icons.Filled.CheckCircle, contentDescription = "支付成功",
+                tint = Palette.success, modifier = Modifier.size(44.dp),
+            )
             Text("支付成功", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Palette.ink,
                 modifier = Modifier.padding(vertical = 4.dp))
             Text(amountLine, fontSize = 13.sp, color = Palette.muted)
