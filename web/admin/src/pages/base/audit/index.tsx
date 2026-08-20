@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
+import { DatePicker } from '../../../components/DatePicker'
 import { Pagination } from '../../../components/Pagination'
 import { filterAuditLogs, toAuditLog, type AuditEntry, type AuditLog } from './logic'
 
@@ -54,7 +55,13 @@ export default function AuditPage() {
           onChange={(v) => { setType(v); setPage(1) }}
           ariaLabel={t.pages.audit.allTypes}
         />
-        <input style={ctl} type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1) }} />
+        <DatePicker
+          value={date}
+          onChange={(v) => { setDate(v); setPage(1) }}
+          ariaLabel={t.pages.audit.datePicker.label}
+          placeholder={t.pages.audit.datePicker.placeholder}
+          labels={t.pages.audit.datePicker}
+        />
         <span style={{ flex: 1 }} />
         <button style={btn} onClick={load}>{t.pages.audit.refresh}</button>
       </div>

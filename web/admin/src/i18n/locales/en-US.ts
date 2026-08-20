@@ -1355,6 +1355,7 @@ const enUS: Translations = {
       searchPlaceholder: 'Operator/content',
       allTypes: 'Type: all',
       types: ['Data change', 'Status change', 'Permission change'],
+      datePicker: { label: 'Date', placeholder: 'Date: all', prevMonth: 'Previous month', nextMonth: 'Next month', today: 'Today', clear: 'Clear', weekdays: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] },
       refresh: 'Refresh',
       cardTitle: 'Audit Records',
       matched: '{count} matched',

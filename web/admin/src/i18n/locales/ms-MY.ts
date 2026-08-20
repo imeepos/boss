@@ -1355,6 +1355,7 @@ const msMY: Translations = {
       searchPlaceholder: 'Pengguna/kandungan',
       allTypes: 'Jenis: semua',
       types: ['Perubahan data', 'Perubahan status', 'Perubahan kebenaran'],
+      datePicker: { label: 'Tarikh', placeholder: 'Tarikh: semua', prevMonth: 'Bulan sebelumnya', nextMonth: 'Bulan berikutnya', today: 'Hari ini', clear: 'Kosongkan', weekdays: ['Ah', 'Is', 'Se', 'Ra', 'Kh', 'Ju', 'Sa'] },
       refresh: 'Segar semula',
       cardTitle: 'Rekod Audit',
       matched: '{count} sepadan',

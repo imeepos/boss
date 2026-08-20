@@ -1355,6 +1355,7 @@ const zhCN: Translations = {
       searchPlaceholder: '操作人/操作内容',
       allTypes: '操作类型:全部',
       types: ['数据变更', '状态变更', '权限变更'],
+      datePicker: { label: '日期', placeholder: '日期:全部', prevMonth: '上一月', nextMonth: '下一月', today: '今天', clear: '清除', weekdays: ['日', '一', '二', '三', '四', '五', '六'] },
       refresh: '刷新',
       cardTitle: '审计记录',
       matched: '匹配 {count} 条',

@@ -1291,6 +1291,7 @@ export interface Translations {
       searchPlaceholder: string
       allTypes: string
       types: string[]
+      datePicker: { label: string; placeholder: string; prevMonth: string; nextMonth: string; today: string; clear: string; weekdays: string[] }
       refresh: string
       cardTitle: string
       matched: string

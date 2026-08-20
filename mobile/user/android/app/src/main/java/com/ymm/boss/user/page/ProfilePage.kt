@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -82,12 +83,12 @@ fun ProfileScreen(nav: Nav) {
                 .height(with(density) { (infoPx + HeaderOverlapPx).toDp() })
                 .background(profileHeaderGradient()),
         )
-        // 滚动区包裹 Box:自交点起、顶部 16dp 圆角;自带不透明底色裁出圆角轮廓(渐变从角缺口透出),
-        // clip 保证滚动内容超出区域边界不可见——滚动中圆角恒在
+        // 滚动区包裹 Box:宽度与卡片一致(左右 14dp),顶部 16dp 圆角;卡片水平外边距归零贴齐区域
         Box(
             Modifier
                 .fillMaxSize()
                 .padding(top = with(density) { infoPx.toDp() })
+                .padding(horizontal = 14.dp)
                 .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                 .background(Palette.bg),
         ) {
@@ -182,7 +183,7 @@ private fun QuickEntriesCard(data: JSONObject?, nav: Nav) {
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     val addrCount = data?.optJSONArray("addresses")?.length() ?: 0
     val planName = data?.optJSONObject("plan")?.optString("name").orEmpty().ifBlank { "—" }
-    AppCard(Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth(), outer = PaddingValues(vertical = 6.dp)) {
             Row(Modifier.fillMaxWidth()) {
                 QuickEntry(Icons.Filled.GppGood, Palette.primary, "实名信息", if (verified) "已实名" else "待补登", Modifier.weight(1f)) {
                     nav.push(Route.Verify)

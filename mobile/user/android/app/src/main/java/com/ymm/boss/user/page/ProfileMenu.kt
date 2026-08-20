@@ -94,7 +94,7 @@ internal fun ServiceEntriesCard(nav: Nav, unread: Int) {
         MenuEntry("优惠券与活动", Icons.Filled.LocalOffer, Palette.orange, Route.Coupon),
         MenuEntry("电子发票", Icons.Filled.Receipt, Palette.primary, Route.Invoice),
     )
-    AppCard {
+    AppCard(outer = PaddingValues(vertical = 6.dp)) {
         CardTitle("我的服务")
         entries.forEach { e ->
             MenuRow(e.icon, e.tint, e.label, showDot = e.route == Route.Messages && unread > 0) {
@@ -113,7 +113,7 @@ internal fun SettingsCard(nav: Nav) {
         MenuEntry("帮助中心", Icons.AutoMirrored.Filled.Help, Palette.primary, Route.Help),
         MenuEntry("用户协议与隐私", Icons.Filled.Description, Palette.muted, Route.Agreement),
     )
-    AppCard {
+    AppCard(outer = PaddingValues(vertical = 6.dp)) {
         CardTitle("账号与设置")
         entries.forEach { e -> MenuRow(e.icon, e.tint, e.label) { nav.push(e.route) } }
     }
@@ -176,7 +176,7 @@ internal fun LanguageDropdown(modifier: Modifier = Modifier) {
 @Composable
 internal fun LogoutCard(nav: Nav) {
     val scope = rememberCoroutineScope()
-    AppCard {
+    AppCard(outer = PaddingValues(vertical = 6.dp)) {
         Row(
             Modifier.fillMaxWidth().height(44.dp).clickable {
                 scope.launch {
