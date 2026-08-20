@@ -740,3 +740,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 坑:102 上 POST /payments/stripe/checkout 一律 42200,误以为请求体绑定失败,排查了半小时;实际是 handler 在 BindBody 之前先查 PayGateway.Get("stripe"),102 未配 BOSS_STRIPE_API_KEY 即降级返回 CodeInvalidParam。
 - 重来:先读 handler 源码看校验顺序,再怀疑请求体。
 - 已登记 known-issues。
+
+## 2026-08-20 对账新增接口(realid/stripe/attachment/apikey)
+- 最大坑:共享工作区有并行进程在改 minio/wiring/storage-config,审计中途 build/contract-sync 突然红,先 `git status` 分辨归属再动手,别人的 WIP 不碰不提交。
+- skill 提前警告了:红线 #1(共享工作区文件可能被并行进程改掉)。
+- 重来一次:开审前先 `git status`,出现非本任务改动立即在总结中声明归属。
