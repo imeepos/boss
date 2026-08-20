@@ -82,12 +82,14 @@ fun ProfileScreen(nav: Nav) {
                 .height(with(density) { (infoPx + HeaderOverlapPx).toDp() })
                 .background(profileHeaderGradient()),
         )
-        // 滚动区包裹 Box:自交点起、顶部 16dp 圆角;内部 Column 只负责滚动,裁剪职责在 Box
+        // 滚动区包裹 Box:自交点起、顶部 16dp 圆角;自带不透明底色裁出圆角轮廓(渐变从角缺口透出),
+        // clip 保证滚动内容超出区域边界不可见——滚动中圆角恒在
         Box(
             Modifier
                 .fillMaxSize()
                 .padding(top = with(density) { infoPx.toDp() })
-                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                .background(Palette.bg),
         ) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 QuickEntriesCard(data, nav)
