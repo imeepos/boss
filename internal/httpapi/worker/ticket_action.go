@@ -196,9 +196,21 @@ type workerRepairReportReq struct {
 func workerRepairReportHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req workerRepairReportReq
-		_ = c.ShouldBindJSON(&req)
-		if req.Result == "" {
-			req.Result = "FIXED"
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if req.Result != "FIXED" && req.Result != "UNFIXED" {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !workerOwnedTicket(c, tk) {
+			return
 		}
 		if req.Result == "FIXED" {
 			if err := a.WorkOrder.CloseComplaint(c.Request.Context(), c.Param("ticketNo")); err != nil {
@@ -208,6 +220,6 @@ func workerRepairReportHandler(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeOK, gin.H{"reviewPassed": true, "status": "CLOSED"})
 			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"reviewPassed": false, "status": "PROCESSING"})
+		respond(c, apitypes.CodeOK, gin.H{"reviewPassed": false, "status": "PROCESSING", "remark": req.Remark})
 	}
 }
