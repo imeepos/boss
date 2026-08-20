@@ -139,7 +139,7 @@ private fun PhoneForm() {
             OutlinedButton(
                 onClick = {
                     scope.launch {
-                        try { UserApi.auth.smsCode(phone, "change_phone"); msg = "验证码已发送" }
+                        try { UserApi.auth.smsCode(phone, "login"); msg = "验证码已发送" }
                         catch (e: Exception) { msg = "验证码发送失败" }
                     }
                 },
