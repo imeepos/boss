@@ -649,3 +649,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑:①并行会话提交了编译不过的代码(ea91bdf,WindowInsets.getHeight 不存在),阻塞我的 build,做了最小修复(asPaddingValues)解锁;②两次工具调用被打断(abort),4dp 上移的 build/install/commit 悬空,靠 git status 才发现收尾;③edit "file changed since read" 在并行环境下频繁出现,重读再改已是常态。
 - skill 有没有预警:红线1(读最新内容)有;并行会话提交坏代码无预警——多会话共享工作区时,pull 之后必须先 build 再继续自己的活。
 - 重来一次:听到"两页保持一致"就直接提组件化方案;开工前 git pull + 全量 build 确认基线是绿的。
+
+## 2026-08 user-android JDK 误判纠正
+- 坑:断言"本机无 JDK"被用户纠正。实际是 Homebrew openjdk@17 装在 /opt/homebrew/Cellar/openjdk@17/,只 grep /opt/homebrew 顶层没进 Cellar;/usr/bin/java 是 macOS stub 误导。
+- 修法:找 JDK 先看 ~/.gradle/daemon/*/daemon-*.out.log 里的 javaHome=(最快最准),再查 /opt/homebrew/Cellar。
+- 重来一次:gradle 项目报"无 Java Runtime"时,先查 daemon 日志的 javaHome 再下结论,不要只依赖 /usr/libexec/java_home。
