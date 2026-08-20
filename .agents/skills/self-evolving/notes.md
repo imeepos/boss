@@ -588,3 +588,6 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑：无大坑。bossctl 二进制的 base URL 参数是 `-server` 而非 `--url`/`--query _base`，试错两次才找到。
 - skill 有没有提前警告：bossctl-cli SKILL.md 未写全局 flag 名，help 里有。已记入 lessons.md。
 - 重来一次：CLI 报 "flag provided but not defined" 时第一时间看 -h 的 flag 列表，不要猜参数名。
+
+## 2025-08-20 ui-proto 预设增加 spec.md 交付物
+- 无大坑；一次校验用裸 js-yaml 解析预设 YAML 报 unknown tag，原因是 loader 用自己的 entryListSchema 方言（!!js 标签），须用 cordis-plugin-include 导出的 schema 或直接 mount 校验。
