@@ -43,7 +43,7 @@ fun ForgotScreen(nav: Nav) {
 
     LaunchedEffect(countdown) { while (countdown > 0) { delay(1000); countdown-- } }
 
-    AuthCard("找回密码", "短信验证码重置 · 重置后需重新登录") {
+    AuthCard("找回密码", "短信验证码重置 · 重置后需重新登录", onBack = { nav.pop() }) {
         OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("手机号") },
             placeholder = { Text("请输入注册手机号") }, singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),

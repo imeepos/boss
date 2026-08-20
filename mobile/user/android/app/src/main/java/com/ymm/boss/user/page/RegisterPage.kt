@@ -3,15 +3,17 @@ package com.ymm.boss.user.page
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -28,8 +30,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -39,6 +39,7 @@ import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.TopBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -57,7 +58,7 @@ fun RegisterScreen(nav: Nav) {
 
     LaunchedEffect(countdown) { while (countdown > 0) { delay(1000); countdown-- } }
 
-    AuthCard("自助注册", "手机号注册 · 注册即享宽带自助服务") {
+    AuthCard("自助注册", "手机号注册 · 注册即享宽带自助服务", onBack = { nav.pop() }) {
         OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("手机号") },
             placeholder = { Text("请输入手机号") }, singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -120,18 +121,23 @@ private fun doRegister(
 
 // 以下为注册/找回两页共用的私有组件,各自文件内声明,避免改动共享 ui 包
 @Composable
-internal fun AuthCard(title: String, sub: String, content: @Composable () -> Unit) {
-    Box(
-        Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF0F1F3D), Color(0xFF1A2B4A), Palette.primary))),
-        contentAlignment = Alignment.Center,
-    ) {
+internal fun AuthCard(title: String, sub: String, onBack: (() -> Unit)? = null, content: @Composable () -> Unit) {
+    Column(Modifier.fillMaxSize().background(Palette.bg)) {
+        if (onBack != null) TopBar(title, onBack = onBack)
         Column(
-            Modifier.background(Color.White, RoundedCornerShape(16.dp)).padding(24.dp).fillMaxWidth(),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2329))
-            Text(sub, fontSize = 12.5.sp, color = Color(0xFF999999), modifier = Modifier.padding(top = 6.dp, bottom = 20.dp))
-            content()
+            Spacer(Modifier.height(20.dp))
+            Column(
+                Modifier.background(Palette.panel, RoundedCornerShape(12.dp)).padding(16.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Palette.ink)
+                Text(sub, fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 6.dp, bottom = 20.dp))
+                content()
+            }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }

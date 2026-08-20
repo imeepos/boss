@@ -27,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -151,7 +150,7 @@ private fun IdInfoCard(name: String, idNo: String) {
 @Composable
 private fun UploadBox(text: String, modifier: Modifier = Modifier) {
     Box(
-        modifier.height(88.dp).background(Color(0xFFFAFAFA), RoundedCornerShape(8.dp)),
+        modifier.height(88.dp).background(Palette.bg, RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center,
     ) { Text(text, fontSize = 12.sp, color = Palette.muted) }
 }

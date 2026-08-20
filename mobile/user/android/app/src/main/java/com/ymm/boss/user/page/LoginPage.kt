@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -31,7 +33,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,15 +63,22 @@ fun LoginScreen(nav: Nav) {
     }
 
     Box(
-        Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF0F1F3D), Color(0xFF1A2B4A), Palette.primary))),
-        contentAlignment = Alignment.Center,
+        Modifier.fillMaxSize().background(Palette.bg).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+        contentAlignment = Alignment.TopCenter,
     ) {
         Column(
-            Modifier.background(Color.White, RoundedCornerShape(16.dp)).padding(24.dp).fillMaxWidth(),
+            Modifier.background(Palette.panel, RoundedCornerShape(12.dp)).padding(16.dp).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("装维全流程 · 用户端", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2329))
-            Text("宽带办理 · 账单缴费 · 故障报修", fontSize = 12.5.sp, color = Color(0xFF999999), modifier = Modifier.padding(top = 6.dp, bottom = 22.dp))
+            Spacer(Modifier.height(24.dp))
+            Box(
+                Modifier.size(56.dp).background(Palette.primary, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Text("Boss", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+            Text("装维全流程 · 用户端", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Palette.ink,
+                modifier = Modifier.padding(top = 12.dp))
+            Text("宽带办理 · 账单缴费 · 故障报修", fontSize = 12.5.sp, color = Palette.muted,
+                modifier = Modifier.padding(top = 6.dp, bottom = 20.dp))
 
             OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("手机号") },
                 singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -117,6 +125,7 @@ fun LoginScreen(nav: Nav) {
             Spacer(Modifier.height(14.dp))
             DividerText("其他登录方式")
             OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth().height(44.dp)) { Text("本机号码一键登录", color = Palette.primary) }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
