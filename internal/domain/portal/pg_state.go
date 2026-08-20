@@ -45,9 +45,10 @@ func (s *pgStore) SavePrefs(ctx context.Context, customerID int64, notify map[st
 	if err != nil {
 		return err
 	}
+	// 简单协议下 []byte 会按文本格式化成 "[123 34 ...]" 导致 22P02,必须传 string。
 	_, err = s.pool.Exec(ctx, `INSERT INTO portal_prefs(customer_id, notify, language) VALUES ($1,$2,$3)
 		ON CONFLICT (customer_id) DO UPDATE SET notify=EXCLUDED.notify, language=EXCLUDED.language`,
-		customerID, raw, cur.Language)
+		customerID, string(raw), cur.Language)
 	return err
 }
 
@@ -79,7 +80,8 @@ func (s *pgStore) PutMessage(ctx context.Context, customerID int64, payload map[
 	if err != nil {
 		return err
 	}
-	_, err = s.pool.Exec(ctx, `INSERT INTO portal_messages(customer_id, payload) VALUES ($1,$2)`, customerID, raw)
+	// 同 SavePrefs:jsonb 参数传 string,不传 []byte(简单协议兼容)。
+	_, err = s.pool.Exec(ctx, `INSERT INTO portal_messages(customer_id, payload) VALUES ($1,$2)`, customerID, string(raw))
 	return err
 }
 
