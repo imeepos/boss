@@ -183,7 +183,8 @@ private fun QuickEntriesCard(data: JSONObject?, nav: Nav) {
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     val addrCount = data?.optJSONArray("addresses")?.length() ?: 0
     val planName = data?.optJSONObject("plan")?.optString("name").orEmpty().ifBlank { "—" }
-    AppCard(Modifier.fillMaxWidth(), outer = PaddingValues(vertical = 6.dp)) {
+    // 首卡紧贴滚动区顶(圆角由区域裁剪呈现),仅保留下间距
+    AppCard(Modifier.fillMaxWidth(), outer = PaddingValues(top = 0.dp, bottom = 6.dp)) {
             Row(Modifier.fillMaxWidth()) {
                 QuickEntry(Icons.Filled.GppGood, Palette.primary, "实名信息", if (verified) "已实名" else "待补登", Modifier.weight(1f)) {
                     nav.push(Route.Verify)
