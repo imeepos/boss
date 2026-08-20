@@ -4,16 +4,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,6 +37,7 @@ import com.ymm.boss.user.api.PlanApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
 import com.ymm.boss.user.ui.CellRow
+import com.ymm.boss.user.ui.IconTile
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
@@ -40,6 +47,7 @@ import com.ymm.boss.user.ui.TopBar
 import org.json.JSONObject
 
 // 对应草稿 docs/user/myplan.html:当前套餐、用量摘要、变更/移机/销号入口。
+// 视觉基准与四个 tab 页对齐:快捷入口用 IconTile(浅底同色图标),金额 Bold。
 private data class PlanInfo(
     val planId: String = "",
     val name: String = "加载中…",
@@ -68,11 +76,12 @@ fun MyPlanScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("我的套餐") { nav.pop() }
+        TopBar("我的套餐", onBack = { nav.pop() })
         if (err.isNotBlank()) Notice(err, Palette.err)
         CurrentPlanCard(plan)
         QuickEntries(nav, plan.planId)
         SuspendResumeCard(nav)
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -91,40 +100,50 @@ private fun CurrentPlanCard(plan: PlanInfo) {
             Text(plan.name, fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink, modifier = Modifier.weight(1f))
             Tag("在网", Palette.success)
         }
-        CellRow("月费", right = { Text(plan.monthlyFee, fontSize = 13.sp, color = Palette.ink) })
+        CellRow("月费", right = { AmountText(plan.monthlyFee) })
         CellRow("合约到期", right = { Text(plan.contractEnd, fontSize = 13.sp, color = Palette.ink) })
         CellRow("安装地址", right = { Text(plan.installAddress, fontSize = 13.sp, color = Palette.muted) })
         CellRow("账户状态", right = { Tag("正常", Palette.success) })
-        CellRow("本月账单", right = { Text(plan.currentBill, fontSize = 13.sp, color = Palette.warn) })
+        CellRow("本月账单", right = { AmountText(plan.currentBill, color = Palette.warn) })
     }
+}
+
+/** 金额一律 Bold,与基准页价格形态一致。 */
+@Composable
+private fun AmountText(text: String, color: Color = Palette.ink) {
+    Text(text, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = color)
 }
 
 @Composable
 private fun QuickEntries(nav: Nav, planId: String) {
-    val entries = listOf(
-        "改" to Palette.primary to ("改套餐" to { nav.push(Route.Change(planId)) }),
-        "增" to Palette.success to ("加购" to { nav.push(Route.Addon) }),
-        "迁" to Palette.orange to ("迁址" to { nav.push(Route.Move(planId)) }),
-        "退" to Palette.err to ("退订" to { nav.push(Route.Cancel(planId)) }),
+    val entries: List<Pair<Pair<ImageVector, Color>, Pair<String, () -> Unit>>> = listOf(
+        (Icons.Filled.SwapHoriz to Palette.primary) to ("改套餐" to { nav.push(Route.Change(planId)) }),
+        (Icons.Filled.AddCircle to Palette.success) to ("加购" to { nav.push(Route.Addon) }),
+        (Icons.AutoMirrored.Filled.Send to Palette.orange) to ("迁址" to { nav.push(Route.Move(planId)) }),
+        (Icons.Filled.Cancel to Palette.err) to ("退订" to { nav.push(Route.Cancel(planId)) }),
     )
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)
-            .background(Palette.panel, RoundedCornerShape(12.dp)).padding(vertical = 14.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp)
+            .background(Palette.panel, RoundedCornerShape(12.dp)).padding(vertical = 12.dp),
     ) {
-        entries.forEach { (glyphColor, labelAction) ->
-            val (glyph, color) = glyphColor
+        entries.forEach { (iconColor, labelAction) ->
+            val (icon, tint) = iconColor
             val (label, onClick) = labelAction
-            Column(
-                Modifier.weight(1f).clickable { onClick() },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Box(Modifier.size(38.dp).background(color, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                    Text(glyph, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-                Text(label, fontSize = 12.5.sp, color = Palette.ink)
-            }
+            QuickEntry(icon, tint, label, Modifier.weight(1f), onClick = onClick)
         }
+    }
+}
+
+/** 快捷入口形态与 ProfilePage.QuickEntry 一致:IconTile 40dp/12dp + 13sp W500 标签。 */
+@Composable
+private fun QuickEntry(
+    icon: ImageVector, tint: Color, label: String,
+    modifier: Modifier = Modifier, onClick: () -> Unit,
+) {
+    Column(modifier.clickable { onClick() }, horizontalAlignment = Alignment.CenterHorizontally) {
+        IconTile(icon, tint, size = 40.dp, corner = 12.dp)
+        Spacer(Modifier.height(8.dp))
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.W500, color = Palette.ink)
     }
 }
 
