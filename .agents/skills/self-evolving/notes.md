@@ -495,3 +495,13 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 用户明令:测试服务器只有一个(102,192.168.0.102),提交后 gitea CI 自动部署;尽量不要本机启动 boss 服务做冒烟,本机配置低。
 - 哪个坑:上个任务我在本机 go run /tmp/boss-new 起了服务冒烟,还因此撞上端口被陈旧进程 IPv4/IPv6 双绑的假 404,空耗多轮。用户此刻直接亮明环境约束。
 - 重来一次:需要冒烟/联调后端 → 提交后等 102 自动部署,直接用 192.168.0.102:28080(部署地址)验证,不在本机起服务。
+
+## 2026-05-25 worker 状态栏主题色对齐
+- 最大坑：无。本次顺利，但 edit 时误删了 Primary2（old_string 范围多带了一行），好在当轮发现立即补回并 build 验证——印证红线 4"new_string 与 old_string 严格对称"。
+- skill 帮助：knowledge/android.md 的 edge-to-edge 相关 lessons 直接给出方案方向；DEV-GUIDE 里的 JAVA_HOME 构建命令省了排查时间。
+- 复用经验：模型不支持图像输入时，验证 UI 用 PIL 像素采样代替肉眼截图，量化且更可信。
+
+## 2026-05-25 user 端 edge-to-edge 布局遮挡修复
+- 最大坑：git add 指定文件提交时,并行会话早已 stage 的文件(gen-er-drawio 等 5 个)被一起扫进"我的"提交(11 files),违反一提交一变更纪律;soft reset + restore --staged + stash 并行 WIP 后才干净提交 6 个文件。另:模拟器被 worker 僵尸进程抢前台,uiautomator dump 拿到的是 worker 页面,差点据其下错误结论——每轮 dump 前先 dumpsys activity 确认 topResumedActivity 是自己。
+- skill 帮助：knowledge/android.md #3 lesson 直接命中本任务核心方案(safeDrawing+BackHandler);worker 端 AppRoot 的 import 写法(saveDrawing 需单独 import)省了一次编译试错。
+- 复用经验：布局验证不必起后端——TokenStore 有明文迁移路径,push prefs xml + run-as cp 注入假 token 即进 Home 骨架页;uiautomator dump 的 bounds 坐标(标题 y>状态栏高度、底栏 y<屏高-手势区)可量化断言无遮挡。
