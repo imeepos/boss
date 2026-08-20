@@ -14,5 +14,7 @@ COPY --from=build /out/ /usr/local/bin/
 # migrations 必须随镜像走:server 启动按 migrations/ 目录幂等补迁(漏拷=静默停在旧版,102 曾停于 000041)。
 WORKDIR /app
 COPY migrations /app/migrations
+# 迁移文件源权限可能是 600(git/编辑器差异),容器以 app 用户运行必须可读,统一放开读权限。
+RUN chmod -R a+rX /app/migrations
 USER app
 ENTRYPOINT ["boss-server"]
