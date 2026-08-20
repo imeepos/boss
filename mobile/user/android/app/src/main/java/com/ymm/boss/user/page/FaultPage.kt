@@ -1,6 +1,7 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.HeadsetMic
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -27,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +41,7 @@ import com.ymm.boss.user.ui.CardTitle
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.FieldLabel
+import com.ymm.boss.user.ui.IconTile
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
@@ -147,8 +151,9 @@ private fun Chip(modifier: Modifier, label: String, on: Boolean, onClick: () -> 
         label, fontSize = 13.sp, textAlign = TextAlign.Center,
         color = if (on) Color.White else Palette.ink,
         modifier = modifier
-            .background(if (on) Palette.primary else Palette.bg, RoundedCornerShape(8.dp))
-            .clickable { onClick() }
+            .background(if (on) Palette.primary else Palette.panel, RoundedCornerShape(8.dp))
+            .border(1.dp, if (on) Palette.primary else Palette.line, RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
             .padding(vertical = 8.dp),
     )
 }
@@ -156,23 +161,22 @@ private fun Chip(modifier: Modifier, label: String, on: Boolean, onClick: () -> 
 @Composable
 private fun QuickEntries(nav: Nav) {
     val entries = listOf(
-        Triple("检", "自助排障", Route.Diy),
-        Triple("客", "在线客服", Route.Service),
+        Triple(Icons.Outlined.Build, "自助排障") { nav.push(Route.Diy) },
+        Triple(Icons.Outlined.HeadsetMic, "在线客服") { nav.push(Route.Service) },
     )
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        entries.forEachIndexed { i, (glyph, label, route) ->
+        entries.forEachIndexed { i, (icon, label, onClick) ->
             val color = if (i == 0) Palette.primary else Palette.success
             Row(
                 Modifier.weight(1f).background(Palette.panel, RoundedCornerShape(12.dp))
-                    .clickable { nav.push(route) }.padding(12.dp),
+                    .clickable(onClick = onClick).padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(glyph, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.background(color, RoundedCornerShape(8.dp)).padding(8.dp))
-                Text(label, fontSize = 13.5.sp, color = Palette.ink, modifier = Modifier.padding(start = 8.dp))
+                IconTile(icon, color, size = 36.dp, corner = 10.dp)
+                Text(label, fontSize = 13.sp, color = Palette.ink, modifier = Modifier.padding(start = 8.dp))
             }
         }
     }
