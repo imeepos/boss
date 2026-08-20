@@ -95,7 +95,7 @@ private fun ProgressBody(o: JSONObject) {
     if (o.optString("estimateFinish").isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
         Row(
-            Modifier.fillMaxWidth().background(Color(0xFFF0F6FF), RoundedCornerShape(8.dp)).padding(12.dp),
+            Modifier.fillMaxWidth().background(Palette.primary.copy(alpha = 0.08f), RoundedCornerShape(8.dp)).padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Filled.Person, contentDescription = null, tint = Palette.primary, modifier = Modifier.size(16.dp))
