@@ -52,6 +52,7 @@ internal data class HomeUiState(
     val contractEnd: String = "",
     val orders: List<HomeOrder> = emptyList(),
     val services: List<HomeService> = emptyList(),
+    val hasUnread: Boolean = false,
 )
 
 internal data class HomeOrder(
@@ -91,6 +92,7 @@ internal fun parseHome(d: JSONObject): HomeUiState = HomeUiState(
     customerName = d.optString("customerName"),
     phoneMasked = d.optString("phoneMasked"),
     onlineStatus = d.optString("onlineStatus", "服务在线"),
+    hasUnread = d.optBoolean("hasUnread", false),
     planName = d.optJSONObject("plan")?.optString("name").orEmpty(),
     currentBill = yuan(d.optDouble("currentBill", Double.NaN)),
     balance = yuan(d.optDouble("balance", Double.NaN)),

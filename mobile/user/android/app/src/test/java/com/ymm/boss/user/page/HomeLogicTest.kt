@@ -61,4 +61,29 @@ class HomeLogicTest {
         assertEquals("服务在线", s.onlineStatus)
         assertEquals("已预占", s.orders[0].statusLabel)
     }
+
+    @Test
+    fun `parseHome reads unread flag and plan fields`() {
+        val s = parseHome(
+            JSONObject(
+                """{"customerName":"王","hasUnread":true,
+                   "plan":{"name":"1000M 极速宽带"},"contractEnd":"2026-08",
+                   "currentBill":89.0,"balance":12.5}""",
+            ),
+        )
+        assertTrue(s.hasUnread)
+        assertEquals("1000M 极速宽带", s.planName)
+        assertEquals("2026-08", s.contractEnd)
+        assertEquals("¥89.00", s.currentBill)
+        assertEquals("¥12.50", s.balance)
+    }
+
+    @Test
+    fun `isOnline distinguishes normal and abnormal status`() {
+        assertTrue(isOnline(""))
+        assertTrue(isOnline("服务在线 · 网络正常"))
+        assertTrue(isOnline("服务在线"))
+        assertTrue(!isOnline("服务状态: SUSPENDED"))
+        assertTrue(!isOnline("在线异常"))
+    }
 }

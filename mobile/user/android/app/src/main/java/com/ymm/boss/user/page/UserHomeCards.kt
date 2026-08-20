@@ -85,14 +85,25 @@ internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
                     )
                 }
             }
-            Icon(
-                Icons.Outlined.Notifications, contentDescription = "消息通知",
-                tint = OnGradient, modifier = Modifier
-                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onOpenMessages)
-                    .padding(12.dp),
-            )
+            Box {
+                Icon(
+                    Icons.Outlined.Notifications, contentDescription = "消息通知",
+                    tint = OnGradient, modifier = Modifier
+                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onOpenMessages)
+                        .padding(12.dp),
+                )
+                if (state.hasUnread) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 8.dp, end = 8.dp)
+                            .size(8.dp)
+                            .background(Color(0xFFFF5252), CircleShape),
+                    )
+                }
+            }
         }
     }
 }
@@ -123,7 +134,8 @@ internal fun BroadbandCard(state: HomeUiState, onOpen: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                OnlineTag()
+                val online = isOnline(state.onlineStatus)
+                OnlineTag(label = if (online) "在网" else "状态异常", active = online)
             }
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -153,15 +165,25 @@ private fun SubInfo(label: String, value: String, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun OnlineTag() {
+private fun OnlineTag(label: String = "在网", active: Boolean = true) {
     Text(
-        "在网", fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium,
-        color = Color.White,
+        label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium,
+        color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier
-            .background(Green500, RoundedCornerShape(8.dp))
+            .background(
+                if (active) Green500 else MaterialTheme.colorScheme.surfaceVariant,
+                RoundedCornerShape(8.dp),
+            )
             .padding(horizontal = 10.dp, vertical = 3.dp)
             .heightIn(min = 24.dp),
     )
+}
+
+/** 在线判定:onlineStatus 含"在线"且不含异常字样视为正常;空串按默认在线处理。 */
+internal fun isOnline(onlineStatus: String): Boolean {
+    if (onlineStatus.isEmpty()) return true
+    if (!onlineStatus.contains("在线")) return false
+    return !onlineStatus.contains("异常") && !onlineStatus.contains("故障")
 }
 
 @Composable
@@ -275,7 +297,8 @@ internal fun MyServiceCard(service: HomeService?, onClick: () -> Unit) {
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                OnlineTag()
+                val label = service.statusLabel.ifEmpty { "在网" }
+                OnlineTag(label = label, active = label == "在网")
             }
         }
     }
