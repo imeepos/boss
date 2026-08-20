@@ -173,14 +173,14 @@ func portalHome(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		plan, services := portalHomePlan(a, c, cid)
+		plan := portalHomePlan(a, c, cid)
 		respond(c, apitypes.CodeOK, gin.H{
 			"customerName": name, "phoneMasked": phone, "onlineStatus": service,
 			"hasUnread": hasUnread, "currentBill": due,
 			"balance": bal, "plan": plan,
 			"contractEnd": toStr(plan["contractEnd"]),
 			"ongoingOrders": portalHomeOngoingOrders(a, c, cid),
-			"services":     services,
+			"services":     portalHomeServices(a, c),
 		})
 	}
 }
@@ -208,17 +208,16 @@ func portalHomeOngoingOrders(a *app.Application, c *gin.Context, cid int64) []gi
 	return items
 }
 
-// portalHomePlan 当前套餐(Home.plan) + 在用服务列表(user_plans ACTIVE 行)。
-func portalHomePlan(a *app.Application, c *gin.Context, cid int64) (gin.H, []gin.H) {
+// portalHomePlan 当前套餐(Home.plan),取 user_plans 行(ACTIVE 优先)。
+func portalHomePlan(a *app.Application, c *gin.Context, cid int64) gin.H {
 	plan := gin.H{"planId": "", "name": "", "monthlyFee": 0, "contractEnd": "",
 		"status": "NONE", "installAddress": ""}
-	services := []gin.H{}
 	if a.UserData == nil {
-		return plan, services
+		return plan
 	}
 	rows, err := a.UserData.ListUserPlans(c.Request.Context())
 	if err != nil {
-		return plan, services
+		return plan
 	}
 	for _, r := range rows {
 		if toInt64(r["customerId"]) != cid {
@@ -235,16 +234,34 @@ func portalHomePlan(a *app.Application, c *gin.Context, cid int64) (gin.H, []gin
 			"monthlyFee": fee, "contractEnd": toStr(r["contractEnd"]),
 			"status": status, "installAddress": portalDefaultAddress(a, c, cid),
 		}
-		services = append(services, gin.H{
-			"name": entry["name"],
-			"desc": portalHomeServiceDesc(fee),
-			"status": status, "statusLabel": portalHomeServiceLabel(status),
-		})
 		if status == "ACTIVE" || toStr(plan["status"]) == "NONE" {
 			plan = entry
 		}
 	}
-	return plan, services
+	return plan
+}
+
+// portalHomeServices 已生效增值服务:ListAddonSubscriptions 中 subscribe 的增值包(契约 ServiceStatus,ACTIVE=已生效)。
+func portalHomeServices(a *app.Application, c *gin.Context) []gin.H {
+	services := []gin.H{}
+	if a.UserData == nil {
+		return services
+	}
+	views, err := portalAddonViews(a, c)
+	if err != nil {
+		return services
+	}
+	for _, v := range views {
+		if sub, _ := v["subscribed"].(bool); !sub {
+			continue
+		}
+		fee, _ := v["monthlyFee"].(float64)
+		services = append(services, gin.H{
+			"name": v["name"], "desc": portalHomeServiceDesc(fee),
+			"status": "ACTIVE", "statusLabel": "已生效",
+		})
+	}
+	return services
 }
 
 // portalHomeServiceDesc 服务卡描述:有月费显示 ¥/月,否则空(端上回退"查看套餐详情")。
@@ -253,14 +270,6 @@ func portalHomeServiceDesc(fee float64) string {
 		return ""
 	}
 	return fmt.Sprintf("¥%.0f/月", fee)
-}
-
-// portalHomeServiceLabel 套餐状态 → 服务标签(ACTIVE=在网,其余原样展示)。
-func portalHomeServiceLabel(status string) string {
-	if status == "ACTIVE" {
-		return "在网"
-	}
-	return status
 }
 
 func portalListMessages(a *app.Application) gin.HandlerFunc {

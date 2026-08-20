@@ -313,8 +313,8 @@ internal fun ActiveServicesCard(services: List<HomeService>, onClick: () -> Unit
                             )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        val label = service.statusLabel.ifEmpty { "在网" }
-                        OnlineTag(label = label, active = label == "在网")
+                        val label = service.statusLabel.ifEmpty { "已生效" }
+                        OnlineTag(label = label, active = service.status == "ACTIVE")
                     }
                 }
             }
