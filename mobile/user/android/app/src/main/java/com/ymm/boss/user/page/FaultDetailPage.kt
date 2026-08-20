@@ -1,6 +1,7 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -119,25 +120,25 @@ private fun TimelineCard(timeline: List<JSONObject>) {
 
 @Composable
 private fun TimelineItem(title: String, result: String, meta: String, isLast: Boolean) {
-    Row(Modifier.fillMaxWidth().padding(top = 10.dp)) {
+    Row(Modifier.fillMaxWidth().padding(top = 12.dp)) {
         Column(Modifier.width(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             val color = when (result) {
                 "DONE" -> Palette.success
                 "DOING" -> Palette.primary
                 else -> Palette.subtle
             }
-            androidx.compose.foundation.layout.Box(
+            Box(
                 Modifier.size(10.dp).background(color, CircleShape),
             )
             if (!isLast) {
                 Column(
-                    Modifier.width(2.dp).height(30.dp)
+                    Modifier.width(2.dp).height(32.dp)
                         .background(if (result == "DONE") Palette.success else Palette.line),
                 ) {}
             }
         }
-        Column(Modifier.padding(start = 10.dp)) {
-            Text(title, fontSize = 13.5.sp, fontWeight = FontWeight.W500, color = Palette.ink)
+        Column(Modifier.padding(start = 12.dp)) {
+            Text(title, fontSize = 13.sp, fontWeight = FontWeight.W500, color = Palette.ink)
             if (meta.isNotBlank()) Text(meta, fontSize = 12.sp, color = Palette.muted)
         }
     }
@@ -153,7 +154,7 @@ private fun ActionsCard(no: String, onReload: () -> Unit) {
             onClick = { scope.launch { contactTechnician(context, no) } },
             modifier = Modifier.weight(1f).height(42.dp),
         ) { Text("联系师傅", color = Palette.primary) }
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(12.dp))
         Button(
             onClick = { scope.launch { urge(context, no, onReload) } },
             colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
