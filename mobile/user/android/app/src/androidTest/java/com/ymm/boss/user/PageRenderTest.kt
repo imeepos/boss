@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ymm.boss.user.page.FaultDetailScreen
+import com.ymm.boss.user.page.ProductScreen
 import com.ymm.boss.user.page.ReceiptScreen
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Route
@@ -35,5 +36,14 @@ class PageRenderTest {
         compose.setContent { ReceiptScreen(Nav(Route.Receipt("PAY-001")), "PAY-001") }
         compose.onNodeWithText("缴费凭证").assertIsDisplayed()
         compose.onNodeWithText("下载凭证(PDF)").assertIsDisplayed()
+    }
+
+    @Test
+    fun productDetailStacksCardsVertically() {
+        compose.setContent { ProductScreen(Nav(Route.Product("101")), "101") }
+        compose.onNodeWithText("套餐详情").assertIsDisplayed()
+        // AppCard 为 Column:详情/对比/合约三张卡的标题都应同时可见可点
+        compose.onNodeWithText("套餐对比").assertIsDisplayed()
+        compose.onNodeWithText("合约与说明").assertIsDisplayed()
     }
 }
