@@ -43,6 +43,14 @@ func (f *fakeDispatchOrder) AssignDispatchTicket(_ context.Context, no string, i
 	}{no, id, name}
 	return nil
 }
+func (f *fakeDispatchOrder) AssignPendingDispatchTicket(_ context.Context, no string, id int64, name string) error {
+	f.assigned = &struct {
+		ticketNo   string
+		workerID   int64
+		workerName string
+	}{no, id, name}
+	return nil
+}
 func (f *fakeDispatchOrder) CreateDispatchTicket(context.Context, order.DispatchTicket) (int64, error) {
 	return 0, nil
 }

@@ -16,7 +16,7 @@ func TestPatrolOrphans_Shape(t *testing.T) {
 	defer mock.Close()
 
 	for range orphanChecks {
-		mock.ExpectQuery(`SELECT count\(\*\), COALESCE\(array_agg`).
+		mock.ExpectQuery(`SELECT count\(\*\), COALESCE\(\(array_agg`).
 			WillReturnRows(pgxmock.NewRows([]string{"count", "ids"}).
 				AddRow(int64(0), []int64{}))
 	}
