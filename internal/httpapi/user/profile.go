@@ -56,7 +56,8 @@ func portalVerifyStatus(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// portalVerifySubmit POST /auth/verify:提交实名资料,落 PENDING 等后台核验。
+// portalVerifySubmit POST /auth/verify:提交实名资料,落 PENDING;
+// 二要素通道启用时即时自动核验(PASS/FAIL),否则等后台人工核验。
 func portalVerifySubmit(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
@@ -76,7 +77,9 @@ func portalVerifySubmit(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+		// 阿里云二要素自动核验(通道未配置时保持 PENDING 人工核验,见 app.AutoVerifyRealName)。
+		result := a.AutoVerifyRealName(c.Request.Context(), cid, req.Name, req.IdNo)
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "result": result})
 	}
 }
 

@@ -91,12 +91,17 @@ type Config struct {
 		AccessKeySecret string
 		From            string // 阿里云国际 SenderID
 	}
+	// RealID 实名二要素核验通道(阿里云实人认证 Id2MetaVerify;凭据为空时通道不注册,落 PENDING 走人工核验)。
+	RealID struct {
+		AccessKeyID     string
+		AccessKeySecret string
+	}
 	// Stripe 支付通道(卡收单;APIKey 为空时通道不注册,缴费走既有模拟直落账)。
 	Stripe struct {
-		APIKey       string // sk_... 密钥(引用不存值)
-		WebhookSec   string // endpoint signing secret(whsec_...)
-		Currency     string // 记账币种小写(如 php)
-		APIBaseURL   string // 覆盖 API 地址(测试/代理用,空=官方)
+		APIKey     string // sk_... 密钥(引用不存值)
+		WebhookSec string // endpoint signing secret(whsec_...)
+		Currency   string // 记账币种小写(如 php)
+		APIBaseURL string // 覆盖 API 地址(测试/代理用,空=官方)
 	}
 }
 
@@ -150,6 +155,9 @@ func Load() *Config {
 	c.SMS.AccessKeyID = getenv("BOSS_SMS_ALIYUN_AK_ID", "")
 	c.SMS.AccessKeySecret = getenv("BOSS_SMS_ALIYUN_AK_SECRET", "")
 	c.SMS.From = getenv("BOSS_SMS_ALIYUN_FROM", "")
+
+	c.RealID.AccessKeyID = getenv("BOSS_REALID_ALIYUN_AK_ID", "")
+	c.RealID.AccessKeySecret = getenv("BOSS_REALID_ALIYUN_AK_SECRET", "")
 
 	c.Stripe.APIKey = getenv("BOSS_STRIPE_API_KEY", "")
 	c.Stripe.WebhookSec = getenv("BOSS_STRIPE_WEBHOOK_SECRET", "")

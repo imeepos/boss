@@ -519,6 +519,7 @@
 | `operatorName` | operator_name | 核验人姓名快照 |
 
 > 与 §8A `real_name_verifications`（历史核验留痕表）不同：本表保存**当前态**与 PENDING 流转，供核验闭环；通过后由 §8A 记历史。
+> 2026-08-24 起支持阿里云二要素自动核验：通道配置后提交即判定，结论记录 operator_name=「阿里云二要素」、operator_account_id=0；通道未配置/调用失败保持 PENDING 走人工核验（adopted/2026-08-24-realid-channel-aliyun-cloudauth.md）。
 
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 

@@ -3,6 +3,7 @@ package adminapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/customer"
 	userapi "github.com/ymm-001/boss/internal/httpapi/user"
 	"github.com/ymm-001/boss/internal/pkg/auth"
+	"github.com/ymm-001/boss/internal/pkg/realid"
 )
 
 // fakeCustOnboard 桩 OnboardingService / 实名核验接口。
@@ -69,7 +71,7 @@ func (f *fakeCustOnboard) AppendVerification(context.Context, customer.RealNameV
 	return 0, nil
 }
 
-func newCustOnboardRouter(f *fakeCustOnboard) (*gin.Engine, *auth.Manager) {
+func newCustOnboardRouter(f *fakeCustOnboard, rid ...realid.Verifier) (*gin.Engine, *auth.Manager) {
 	gin.SetMode(gin.TestMode)
 	mgr := auth.NewManager("s", time.Hour)
 	r := gin.New()
@@ -78,6 +80,9 @@ func newCustOnboardRouter(f *fakeCustOnboard) (*gin.Engine, *auth.Manager) {
 		CustomerOnboarding: f,
 		CustomerRealName:   f,
 		RealName:           f,
+	}
+	if len(rid) > 0 {
+		ja.RealID = rid[0]
 	}
 	Register(r, ja, mgr)
 	userapi.Register(r, ja, mgr)
@@ -204,5 +209,79 @@ func TestCustomerOnboarding_ApproveConflict(t *testing.T) {
 	_ = json.Unmarshal(w.Body.Bytes(), &resp)
 	if resp.Code == 0 {
 		t.Fatalf("期望冲突错误码(非 0),resp=%+v", resp)
+	}
+}
+
+// fakeRealID 桩二要素核验通道。
+type fakeRealID struct {
+	decision string
+	err      error
+	calls    int
+}
+
+func (f *fakeRealID) Verify(_ context.Context, _, _ string) (string, error) {
+	f.calls++
+	return f.decision, f.err
+}
+
+// TestCustomerOnboarding_AutoRealID 二要素通道启用:提交即自动核验,结论落 verifications。
+func TestCustomerOnboarding_AutoRealID(t *testing.T) {
+	f := &fakeCustOnboard{}
+	rid := &fakeRealID{decision: realid.Pass}
+	r, mgr := newCustOnboardRouter(f, rid)
+	tok := authToken(t, mgr)
+
+	w := postBodyAuth(t, r, "/api/admin/v1/customers/88/real-name",
+		`{"realName":"张先生","idCardNo":"110101199001011234","method":"证件OCR"}`, tok)
+	if w.Code != http.StatusOK {
+		t.Fatalf("code=%d body=%s", w.Code, w.Body.String())
+	}
+	var resp struct {
+		Data struct {
+			Result string `json:"result"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &resp)
+	if resp.Data.Result != realid.Pass || rid.calls != 1 {
+		t.Fatalf("result=%s calls=%d", resp.Data.Result, rid.calls)
+	}
+	if len(f.rnVerify) != 1 || f.rnVerify[0].Result != customer.RealNamePass {
+		t.Fatalf("rnVerify=%+v", f.rnVerify)
+	}
+}
+
+// TestCustomerOnboarding_AutoRealIDFail 核验不一致 → FAIL;通道报错 → PENDING 人工兜底。
+func TestCustomerOnboarding_AutoRealIDFail(t *testing.T) {
+	f := &fakeCustOnboard{}
+	r, mgr := newCustOnboardRouter(f, &fakeRealID{decision: realid.Fail})
+	tok := authToken(t, mgr)
+	w := postBodyAuth(t, r, "/api/admin/v1/customers/88/real-name",
+		`{"realName":"张先生","idCardNo":"110101199001011234","method":"证件OCR"}`, tok)
+	var resp struct {
+		Data struct {
+			Result string `json:"result"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &resp)
+	if resp.Data.Result != realid.Fail || len(f.rnVerify) != 1 {
+		t.Fatalf("result=%s rnVerify=%+v", resp.Data.Result, f.rnVerify)
+	}
+
+	// 通道故障:不阻塞提交,保持 PENDING 且不落核验记录。
+	f2 := &fakeCustOnboard{}
+	r2, mgr2 := newCustOnboardRouter(f2, &fakeRealID{err: errors.New("boom")})
+	w2 := postBodyAuth(t, r2, "/api/admin/v1/customers/88/real-name",
+		`{"realName":"张先生","idCardNo":"110101199001011234","method":"证件OCR"}`, authToken(t, mgr2))
+	if w2.Code != http.StatusOK {
+		t.Fatalf("code=%d body=%s", w2.Code, w2.Body.String())
+	}
+	var resp2 struct {
+		Data struct {
+			Result string `json:"result"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal(w2.Body.Bytes(), &resp2)
+	if resp2.Data.Result != customer.RealNamePending || len(f2.rnVerify) != 0 {
+		t.Fatalf("result=%s rnVerify=%+v", resp2.Data.Result, f2.rnVerify)
 	}
 }

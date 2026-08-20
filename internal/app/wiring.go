@@ -30,6 +30,7 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
 	"github.com/ymm-001/boss/internal/pkg/events"
+	"github.com/ymm-001/boss/internal/pkg/realid"
 	"github.com/ymm-001/boss/internal/pkg/sms"
 	"github.com/ymm-001/boss/internal/pkg/stripe"
 )
@@ -54,6 +55,8 @@ type Application struct {
 	// 客户注册 / 审核 / 实名认证 子域(迁移 000051)。
 	CustomerOnboarding customer.OnboardingService
 	CustomerRealName   customer.RealNameService
+	// RealID 实名二要素自动核验通道(阿里云实人认证 Id2MetaVerify);nil=未配置,提交落 PENDING 人工核验。
+	RealID realid.Verifier
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
@@ -191,6 +194,11 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 		CustomerOnboarding: cust,
 		CustomerRealName:   cust,
+		// 实名二要素通道:凭据齐备走阿里云实人认证,否则 nil(人工核验兜底)。
+		RealID: realid.NewAliyunCloudauth(realid.AliyunCloudauthConfig{
+			AccessKeyID:     cfg.RealID.AccessKeyID,
+			AccessKeySecret: cfg.RealID.AccessKeySecret,
+		}),
 
 		Billing: bill,
 		Arrears: bill,

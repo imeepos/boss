@@ -38,3 +38,4 @@
 | 2026-08-21 | 认证配置 secret 存储:复用 biz_params + AES-256-GCM 密文,自检 v1 只做完整性校验 | adopted/2026-08-21-auth-config-secret-storage.md |
 | 2026-08-22 | 验证码短信落地:阿里云国际短信单通道起步(+86/+60),区号路由留国内通道注入口 | adopted/2026-08-22-sms-channel-aliyun-intl.md |
 | 2026-08-23 | Stripe 卡收单通道:发起建意图/回调验签落账,pay_no 幂等,密钥未配即降级 | adopted/2026-08-23-stripe-card-channel.md |
+| 2026-08-24 | 实名二要素自动核验:阿里云实人认证 Id2MetaVerify,提交即核验,凭据未配保持人工 | adopted/2026-08-24-realid-channel-aliyun-cloudauth.md |

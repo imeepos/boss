@@ -77,7 +77,9 @@ func registerCustomerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "result": customer.RealNamePending})
+		// 阿里云二要素自动核验;通道未配置时保持 PENDING 走下方人工核验端点。
+		result := a.AutoVerifyRealName(c.Request.Context(), customerID, req.RealName, req.IDCardNo)
+		respond(c, apitypes.CodeOK, gin.H{"id": id, "result": result})
 	})
 
 	g.GET("/customers/:id/real-name", requirePerm(a.User, "menu:customer"), func(c *gin.Context) {
