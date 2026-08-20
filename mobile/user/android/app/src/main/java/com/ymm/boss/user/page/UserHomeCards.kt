@@ -51,11 +51,11 @@ internal const val CardOverlapDp = 32
 @Composable
 internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
+    // 内容层:背景渐变由页面底部渐变层负责,这里只承载问候/手机号/状态/铃铛(最上层恒可见)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(HeaderHeightDp.dp)
-            .background(homeHeaderGradient()),
+            .height(HeaderHeightDp.dp),
     ) {
         Row(
             modifier = Modifier
@@ -114,7 +114,7 @@ internal fun BroadbandCard(state: HomeUiState, onOpen: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+            .padding(top = 0.dp, bottom = 4.dp), // 顶:贴齐滚动区,圆角由区域裁剪呈现
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
@@ -198,7 +198,7 @@ internal fun OrderCardShell(onOpenAll: () -> Unit, content: @Composable () -> Un
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+            .padding(top = 4.dp, bottom = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
@@ -273,7 +273,7 @@ internal fun MyServiceCard(service: HomeService?, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp),
+            .padding(top = 4.dp, bottom = 8.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),

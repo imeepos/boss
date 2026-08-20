@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,7 +26,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,6 +38,7 @@ import com.ymm.boss.user.ui.BottomTabBar
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.brandBlue
+import com.ymm.boss.user.ui.homeHeaderGradient
 import org.json.JSONObject
 
 // ---------- 数据模型:真实 /home 响应(契约 api/openapi/user/schemas.yaml Home) ----------
@@ -149,8 +153,15 @@ fun UserHomeScreen(nav: Nav) {
             BottomTabBar(nav = nav, currentKey = "home", onSelect = { key -> nav.resetTo(Nav.tabRoute(key)) })
         },
     ) { padding ->
+        // 与「我的」页同范式:渐变底固定 → 圆角滚动区(自头部下沿起) → 头部内容最上层恒可见
         Box(modifier = Modifier.fillMaxSize()) {
-            HomeHeader(state = state, onOpenMessages = { nav.push(Route.Messages) })
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // 渐变底比头部多留 16dp 尾巴,滚动区顶角圆角缺口透出渐变
+                    .height(HeaderHeightDp.dp + 16.dp)
+                    .background(homeHeaderGradient()),
+            )
             HomeContent(
                 state = state,
                 padding = padding,
@@ -160,6 +171,7 @@ fun UserHomeScreen(nav: Nav) {
                 onOpenOrder = { no -> nav.push(Route.Order(no)) },
                 onOpenService = { nav.push(Route.MyPlan) },
             )
+            HomeHeader(state = state, onOpenMessages = { nav.push(Route.Messages) })
         }
     }
 }
@@ -174,20 +186,25 @@ private fun HomeContent(
     onOpenOrder: (String) -> Unit,
     onOpenService: () -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 0.dp, end = 0.dp,
-            // 首卡顶边 = 渐变高度 180dp - 重合 32dp,其余卡片随之向下顺延
-            top = HeaderHeightDp.dp - CardOverlapDp.dp,
-            bottom = padding.calculateBottomPadding(),
-        ),
+    // 滚动区包裹 Box:自头部下沿(180dp)起、宽度与卡片一致(左右 16dp)、顶部 16dp 圆角 + 不透明底色
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = HeaderHeightDp.dp)
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        item { BroadbandCard(state = state, onOpen = onOpenService) }
-        item { QuickActions(onAction = onAction) }
-        item { OrderSection(state = state, onOpenOrders = onOpenOrders, onOpenOrder = onOpenOrder, onRetry = onRetry) }
-        item { MyServiceCard(service = state.services.firstOrNull(), onClick = onOpenService) }
-        item { Spacer(modifier = Modifier.height(16.dp)) }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
+        ) {
+            item { BroadbandCard(state = state, onOpen = onOpenService) }
+            item { QuickActions(onAction = onAction) }
+            item { OrderSection(state = state, onOpenOrders = onOpenOrders, onOpenOrder = onOpenOrder, onRetry = onRetry) }
+            item { MyServiceCard(service = state.services.firstOrNull(), onClick = onOpenService) }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
+        }
     }
 }
 
