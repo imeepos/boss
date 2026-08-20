@@ -34,7 +34,7 @@ const billCols = `id, bill_no, customer_id, customer_name, legal_entity_id, lega
 // ListBills 列出账单;customerID=0 返回全部,否则按客户过滤。
 func (s *PGStore) ListBills(ctx context.Context, customerID int64) ([]Bill, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT `+billCols+` FROM bills WHERE ($1 = 0 OR customer_id = $1) ORDER BY id`, customerID)
+		`SELECT `+billCols+` FROM bills WHERE ($1::bigint = 0 OR customer_id = $1) ORDER BY id`, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("billing: list bills: %w", err)
 	}

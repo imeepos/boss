@@ -20,7 +20,7 @@ func (s *PGStore) ListCustomerHistories(ctx context.Context, customerID int64) (
 	rows, err := s.db.Query(ctx, `
 		SELECT id, customer_id, legal_entity_id, legal_entity_name, address_id, address_name,
 		       region_id, region_name, COALESCE(reason, ''), COALESCE(operator_account_id, 0), effective_from, effective_to
-		FROM customer_histories WHERE ($1 = 0 OR customer_id = $1) ORDER BY effective_from, id`, customerID)
+		FROM customer_histories WHERE ($1::bigint = 0 OR customer_id = $1) ORDER BY effective_from, id`, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("customer: list histories: %w", err)
 	}

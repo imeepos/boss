@@ -10,7 +10,7 @@ func (s *PGStore) ListVerifications(ctx context.Context, customerID int64) ([]Re
 	rows, err := s.db.Query(ctx, `
 		SELECT id, customer_id, method, verified_at, result,
 		       COALESCE(operator_account_id, 0), COALESCE(operator_name, '')
-		FROM real_name_verifications WHERE ($1 = 0 OR customer_id = $1) ORDER BY verified_at, id`, customerID)
+		FROM real_name_verifications WHERE ($1::bigint = 0 OR customer_id = $1) ORDER BY verified_at, id`, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("customer: list verifications: %w", err)
 	}

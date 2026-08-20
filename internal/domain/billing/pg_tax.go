@@ -42,7 +42,7 @@ func scanInvoice(row pgx.Row) (*Invoice, error) {
 // ListInvoices 列出发票;customerID=0 返回全部,按开票时间倒序。
 func (s *PGStore) ListInvoices(ctx context.Context, customerID int64) ([]Invoice, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT `+invoiceCols+` FROM invoices WHERE ($1 = 0 OR customer_id = $1) ORDER BY id DESC`, customerID)
+		`SELECT `+invoiceCols+` FROM invoices WHERE ($1::bigint = 0 OR customer_id = $1) ORDER BY id DESC`, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("billing: list invoices: %w", err)
 	}

@@ -62,7 +62,7 @@ func (s *PGStore) ListArrears(ctx context.Context) ([]ArrearsItem, error) {
 // ListStopResumeTasks 列出停复机流水;customerID=0 返回全部。
 func (s *PGStore) ListStopResumeTasks(ctx context.Context, customerID int64) ([]StopResumeTask, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, customer_id, lo_account_id, action, status FROM stop_resume_tasks WHERE ($1 = 0 OR customer_id = $1) ORDER BY id`, customerID)
+		`SELECT id, customer_id, lo_account_id, action, status FROM stop_resume_tasks WHERE ($1::bigint = 0 OR customer_id = $1) ORDER BY id`, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("billing: list stop resume: %w", err)
 	}

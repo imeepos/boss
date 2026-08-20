@@ -2,6 +2,7 @@ package httpx
 
 import (
 	"errors"
+	"log"
 
 	"github.com/gin-gonic/gin"
 
@@ -71,6 +72,7 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, ai.ErrDownstream):
 		Respond(c, apitypes.CodeDownstreamErr, nil)
 	default:
+		log.Printf("httpx: unmapped error (code=%d): %v", apitypes.CodeInternal, err)
 		Respond(c, apitypes.CodeInternal, nil)
 	}
 }
