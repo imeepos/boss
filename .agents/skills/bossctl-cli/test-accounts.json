@@ -1,9 +1,9 @@
 {
   "meta": {
     "description": "BOSS 业务平台测试账号库(师傅注册/审核/实名认证/开网全流程模拟)",
-    "server": "http://127.0.0.1:8080",
+    "server": "http://192.168.0.102:28080",
     "storage_note": "本文件为测试账号唯一事实源;新增测试账号必须追加到此文件",
-    "last_updated": "2026-08-19T11:00:00Z"
+    "last_updated": "2026-08-20T16:48:29Z"
   },
   "admin": {
     "username": "admin",
@@ -12,7 +12,10 @@
     "accountId": 103,
     "roleCode": "sysadmin",
     "apiKeys": [
-      { "name": "ops-main", "key": "boss_a852c8434c1ae6370e454817dd6e497c" }
+      {
+        "name": "ops-main",
+        "key": "boss_a852c8434c1ae6370e454817dd6e497c"
+      }
     ],
     "note": "总管理员;创建企业/部门/岗位/账号/班组/API key 全部依赖此账号(menu:account/menu:apikey)"
   },
@@ -22,9 +25,19 @@
     "realName": "测试审核员",
     "accountId": 149,
     "roleCode": "ops",
-    "org": { "legalEntityId": 5, "legalEntityCode": "LEG-TEST", "deptId": 17, "deptName": "测试调度部", "postId": 26, "postCode": "verify_supervisor" },
+    "org": {
+      "legalEntityId": 5,
+      "legalEntityCode": "LEG-TEST",
+      "deptId": 17,
+      "deptName": "测试调度部",
+      "postId": 26,
+      "postCode": "verify_supervisor"
+    },
     "apiKeys": [
-      { "name": "reviewer-sim", "key": "boss_3ceab279f7ec2debaa2cf8913bcc3cfb" }
+      {
+        "name": "reviewer-sim",
+        "key": "boss_3ceab279f7ec2debaa2cf8913bcc3cfb"
+      }
     ],
     "note": "审核人员(ops 角色持有 menu:dispatch);负责审核师傅注册与实名核验"
   },
@@ -78,5 +91,28 @@
       "apiKey": "boss_a7c676b7d33083cffc00820664e1d539",
       "note": "场景A正常流程:注册→后台审核通过→实名核验PASS;customer 主体无菜单权限(RBAC 恒拒),只能访问客户身份对应接口;账号/密码为 null 因 BOSS 客户主档无登录口令,鉴权用 API key"
     }
-  ]
+  ],
+  "spotcheck": {
+    "description": "2026-08-20 契约对齐抽查所建 API key(account/customer/worker 三主体)",
+    "customer": {
+      "id": 213,
+      "phone": "13900001234",
+      "apiKeys": [
+        {
+          "name": "cli-cust-2",
+          "key": "boss_2cb10320ab8eee4fbdb4bbe30928fe02"
+        }
+      ]
+    },
+    "worker": {
+      "id": 6,
+      "phone": "13800001001",
+      "apiKeys": [
+        {
+          "name": "cli-worker-2",
+          "key": "boss_65374eb7be848a6fea54fb2876066dbc"
+        }
+      ]
+    }
+  }
 }
