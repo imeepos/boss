@@ -176,9 +176,12 @@ internal fun LanguageDropdown(modifier: Modifier = Modifier) {
 @Composable
 internal fun LogoutCard(nav: Nav) {
     val scope = rememberCoroutineScope()
-    AppCard(outer = PaddingValues(vertical = 6.dp)) {
+    AppCard(
+        outer = PaddingValues(vertical = 6.dp),
+        inner = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+    ) {
         Row(
-            Modifier.fillMaxWidth().height(44.dp).clickable {
+            Modifier.fillMaxWidth().height(40.dp).clickable {
                 scope.launch {
                     try { UserApi.auth.logout() } catch (e: Exception) { } // 端点失败也继续本地登出
                     Api.setToken(null)

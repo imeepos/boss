@@ -36,6 +36,7 @@ fun AppCard(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(12.dp),
     outer: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+    inner: PaddingValues = PaddingValues(16.dp),
     content: @Composable () -> Unit,
 ) {
     // Column 而非 Box:全部调用点的语义都是卡片内纵向堆叠,Box 会让
@@ -44,7 +45,7 @@ fun AppCard(
         modifier
             .padding(outer)
             .background(Palette.panel, shape)
-            .padding(16.dp)
+            .padding(inner)
     ) { content() }
 }
 
