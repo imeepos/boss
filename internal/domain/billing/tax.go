@@ -55,6 +55,10 @@ type TaxService interface {
 	// IssueInvoicesForPeriod 出账后自动开票:为该账期尚无在发票的账单逐张开票,
 	// 幂等(已开票跳过);单张失败不中断批次,失败账单进 FailedIDs(重跑即重试)。
 	IssueInvoicesForPeriod(ctx context.Context, period string) (InvoiceRunResult, error)
+	// IssueInvoiceForBill 门户按单开票:按 customerID+billNo 定位账单并校验归属,
+	// 未命中或不属于该客户返回 ErrNotFound。幂等:该账单已有非 VOIDED 发票时
+	// 直接返回已有票(不占新号);否则走与批量开票同一内核新开一张。
+	IssueInvoiceForBill(ctx context.Context, customerID int64, billNo string) (*Invoice, error)
 	// VoidInvoice 作废发票:编号保留不回收,记录原因(TAX-003)。
 	VoidInvoice(ctx context.Context, id int64, reason string) error
 	// ReissueInvoice 重开:原票 VOID 保留编号 + 新票新号,返回新票。

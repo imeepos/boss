@@ -66,7 +66,7 @@ func (s *PGStore) IssueInvoicesForPeriod(ctx context.Context, period string) (In
 	}
 	res := InvoiceRunResult{FailedIDs: []int64{}}
 	for _, id := range ids {
-		if _, err := s.IssueInvoiceForBill(ctx, id); err != nil {
+		if _, err := s.issueInvoiceForBillByID(ctx, id); err != nil {
 			if err == ErrDuplicateInvoice { // 并发下他人已开,幂等跳过
 				continue
 			}
@@ -100,8 +100,41 @@ func (s *PGStore) uninvoicedBillIDs(ctx context.Context, period string) ([]int64
 	return ids, rows.Err()
 }
 
-// IssueInvoiceForBill 为单张账单开票:显式事务内 查重→占号→插入,回滚号回退。
-func (s *PGStore) IssueInvoiceForBill(ctx context.Context, billID int64) (*Invoice, error) {
+// IssueInvoiceForBill 门户按单开票:customer+billNo 定位账单(归属校验),
+// 已开票幂等返回已有票;未命中/非归属返回 ErrNotFound。
+func (s *PGStore) IssueInvoiceForBill(ctx context.Context, customerID int64, billNo string) (*Invoice, error) {
+	var billID int64
+	err := s.db.QueryRow(ctx,
+		`SELECT id FROM bills WHERE customer_id = $1 AND bill_no = $2`, customerID, billNo).Scan(&billID)
+	if err == pgx.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("billing: locate bill: %w", err)
+	}
+	inv, err := s.issueInvoiceForBillByID(ctx, billID)
+	if err == ErrDuplicateInvoice { // 并发下他人已开,回读已有票
+		return s.activeInvoiceOfBill(ctx, billID)
+	}
+	return inv, err
+}
+
+// activeInvoiceOfBill 账单当前在发票(非 VOIDED,最新一张)。
+func (s *PGStore) activeInvoiceOfBill(ctx context.Context, billID int64) (*Invoice, error) {
+	inv, err := scanInvoice(s.db.QueryRow(ctx,
+		`SELECT `+invoiceCols+` FROM invoices WHERE bill_id = $1 AND status != 'VOIDED'
+		ORDER BY id DESC LIMIT 1`, billID))
+	if err == pgx.ErrNoRows {
+		return nil, ErrDuplicateInvoice
+	}
+	if err != nil {
+		return nil, fmt.Errorf("billing: load active invoice: %w", err)
+	}
+	return inv, nil
+}
+
+// issueInvoiceForBillByID 为单张账单开票:显式事务内 查重→占号→插入,回滚号回退。
+func (s *PGStore) issueInvoiceForBillByID(ctx context.Context, billID int64) (*Invoice, error) {
 	tx, err := s.db.(beginner).Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("billing: begin issue tx: %w", err)

@@ -37,7 +37,7 @@ func TestPGStore_IssueInvoiceForBill_TaxTC1(t *testing.T) {
 	expectIssueTx(t, mock, 1)
 	mock.ExpectCommit()
 
-	inv, err := NewPGStore(mock).IssueInvoiceForBill(context.Background(), 1)
+	inv, err := NewPGStore(mock).issueInvoiceForBillByID(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("issue: %v", err)
 	}
@@ -68,13 +68,77 @@ func TestPGStore_IssueInvoiceForBill_Duplicate(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"1"}).AddRow(int64(1)))
 	mock.ExpectRollback()
 
-	_, err = NewPGStore(mock).IssueInvoiceForBill(context.Background(), 9)
+	_, err = NewPGStore(mock).issueInvoiceForBillByID(context.Background(), 9)
 	if !errors.Is(err, ErrDuplicateInvoice) {
 		t.Fatalf("err=%v, want ErrDuplicateInvoice", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
 	}
+}
+
+// expectLocateBill 桩 customer+billNo 定位账单(归属校验)。
+func expectLocateBill(t *testing.T, mock pgxmock.PgxPoolIface, customerID int64, billNo string, billID int64) {
+	t.Helper()
+	mock.ExpectQuery(`SELECT id FROM bills`).WithArgs(customerID, billNo).
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(billID))
+}
+
+// TestPGStore_IssueInvoiceForBillByNo 门户按单开票:定位→复用开票内核。
+func TestPGStore_IssueInvoiceForBillByNo(t *testing.T) {
+	t.Run("新开", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		expectLocateBill(t, mock, 1, "BILL-202608-201", 7)
+		mock.ExpectBegin()
+		expectIssueTx(t, mock, 7)
+		mock.ExpectCommit()
+
+		inv, err := NewPGStore(mock).IssueInvoiceForBill(context.Background(), 1, "BILL-202608-201")
+		if err != nil {
+			t.Fatalf("issue: %v", err)
+		}
+		if inv.InvoiceNo != "INV-00000001" || inv.ID != 11 {
+			t.Fatalf("inv=%+v", inv)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("幂等返回已有票", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		expectLocateBill(t, mock, 1, "BILL-202608-201", 7)
+		mock.ExpectBegin()
+		mock.ExpectQuery(`SELECT 1 FROM invoices`).WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"1"}).AddRow(int64(1)))
+		mock.ExpectRollback()
+		mock.ExpectQuery(`SELECT id, invoice_no`).WithArgs(int64(7)).WillReturnRows(taxRows(mock))
+
+		inv, err := NewPGStore(mock).IssueInvoiceForBill(context.Background(), 1, "BILL-202608-201")
+		if err != nil {
+			t.Fatalf("issue: %v", err)
+		}
+		if inv.InvoiceNo != "INV-00000001" || inv.Status != "ISSUED" {
+			t.Fatalf("inv=%+v", inv)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("不存在或不属该客户", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id FROM bills`).WithArgs(int64(2), "NOPE").
+			WillReturnError(pgx.ErrNoRows)
+
+		if _, err := NewPGStore(mock).IssueInvoiceForBill(context.Background(), 2, "NOPE"); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("err=%v, want ErrNotFound", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
 }
 
 func TestPGStore_VoidInvoice(t *testing.T) {

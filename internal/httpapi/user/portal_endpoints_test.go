@@ -147,13 +147,28 @@ func (f *fakeChannelStub) GetChannel(context.Context, int64) (*order.Channel, er
 func (f *fakeChannelStub) CreateChannel(context.Context, order.Channel) (int64, error) { return 0, nil }
 
 // fakeTaxStub 桩 billing.TaxService。
-type fakeTaxStub struct{ invs []billing.Invoice }
+type fakeTaxStub struct {
+	invs      []billing.Invoice
+	issueResp *billing.Invoice
+	issueErr  error
+	issuedNo  []string
+}
 
 func (f *fakeTaxStub) ListInvoices(context.Context, int64) ([]billing.Invoice, error) {
 	return f.invs, nil
 }
 func (f *fakeTaxStub) IssueInvoicesForPeriod(context.Context, string) (billing.InvoiceRunResult, error) {
 	return billing.InvoiceRunResult{}, nil
+}
+func (f *fakeTaxStub) IssueInvoiceForBill(_ context.Context, _ int64, billNo string) (*billing.Invoice, error) {
+	f.issuedNo = append(f.issuedNo, billNo)
+	if f.issueErr != nil {
+		return nil, f.issueErr
+	}
+	if f.issueResp == nil {
+		f.issueResp = &billing.Invoice{ID: 11, InvoiceNo: "INV-00000001"}
+	}
+	return f.issueResp, nil
 }
 func (f *fakeTaxStub) VoidInvoice(context.Context, int64, string) error { return nil }
 func (f *fakeTaxStub) ReissueInvoice(context.Context, int64) (*billing.Invoice, error) {

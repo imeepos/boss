@@ -35,6 +35,9 @@ func (f *fakeTax) IssueInvoicesForPeriod(_ context.Context, period string) (bill
 	f.runPeriod = period
 	return f.runResult, nil
 }
+func (f *fakeTax) IssueInvoiceForBill(context.Context, int64, string) (*billing.Invoice, error) {
+	return nil, billing.ErrNotFound
+}
 func (f *fakeTax) VoidInvoice(_ context.Context, id int64, reason string) error {
 	f.voided = &struct {
 		id     int64

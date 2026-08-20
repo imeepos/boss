@@ -3,11 +3,13 @@ package userapi
 // 用户端门户发票域:电子发票聚合(开票信息 + 可开票账期 + 记录)与开票申请。
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/pdfgen"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -50,7 +52,8 @@ func portalListInvoices(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// portalApplyInvoice POST /invoices:申请开票(已缴账单才可开票;开票落税局后台回填票号)。
+// portalApplyInvoice POST /invoices:申请开票(已缴账单才可开票)。
+// 真正落 billing invoices 表;bill 不存在/非本人返回 CodeNotFound,重复申请幂等返回已有票。
 func portalApplyInvoice(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
@@ -60,14 +63,20 @@ func portalApplyInvoice(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		bills, _ := a.Billing.ListBills(c.Request.Context(), cid)
-		for _, b := range bills {
-			if b.BillNo == req.BillNo {
-				respond(c, apitypes.CodeOK, gin.H{"ok": true})
-				return
-			}
+		if a.Tax == nil {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
 		}
-		respond(c, apitypes.CodeNotFound, nil)
+		inv, err := a.Tax.IssueInvoiceForBill(c.Request.Context(), cid, req.BillNo)
+		if errors.Is(err, billing.ErrNotFound) {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
+		}
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "invoiceNo": inv.InvoiceNo, "invoiceId": inv.ID})
 	}
 }
 
