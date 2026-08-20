@@ -38,9 +38,11 @@ fun PageRefresh(nav: Nav, content: @Composable () -> Unit) {
         modifier = Modifier,
         contentAlignment = Alignment.TopStart,
         indicator = {
+            // indicator 插槽默认锚在 start,显式 TopCenter 让指示器水平居中出现。
             PullToRefreshDefaults.Indicator(
                 state = state,
                 isRefreshing = refreshing,
+                modifier = Modifier.align(Alignment.TopCenter),
                 containerColor = MaterialTheme.colorScheme.surface,
                 color = brandBlue(),
             )
