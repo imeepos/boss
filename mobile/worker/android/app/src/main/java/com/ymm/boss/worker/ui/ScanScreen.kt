@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,9 +49,13 @@ fun ScanScreen(nav: NavHost, no: String) {
     val info by loadOnce(no) { TicketApi.detail(no) }
     var result by remember { mutableStateOf<JSONObject?>(null) }
     var bindErr by remember { mutableStateOf("") }
-    var scanMode by remember { mutableStateOf(false) }
+    var scanMode by remember { mutableStateOf(true) }
     var epcInput by remember { mutableStateOf("") }
+    var cameraGranted by remember { mutableStateOf(false) }
     var cameraErr by remember { mutableStateOf("") }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> cameraGranted = granted; if (!granted) cameraErr = "需要相机权限才能扫码" }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
 
@@ -74,8 +81,17 @@ fun ScanScreen(nav: NavHost, no: String) {
             "OFFLINE_CACHED" -> ResultOffline(r.optString("message"))
             else -> {
                 if (scanMode) {
-                    CameraScanBox(cameraErr = { cameraErr = it }) { epc ->
-                        scanMode = false; epcInput = epc; doBind(epc, false)
+                    if (cameraGranted) {
+                        CameraScanBox(cameraErr = { cameraErr = it }) { epc ->
+                            scanMode = false; epcInput = epc; doBind(epc, false)
+                        }
+                    } else {
+                        Card(Modifier.padding(12.dp)) {
+                            Notice("扫码需要相机权限")
+                            PrimaryButton("授权相机", modifier = Modifier.fillMaxWidth()) {
+                                permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                            }
+                        }
                     }
                 } else {
                     ManualBindBox(epcInput, onInput = { epcInput = it }) { epc, offline -> doBind(epc, offline) }
@@ -117,7 +133,10 @@ private fun ManualBindBox(epc: String, onInput: (String) -> Unit, onBind: (Strin
         Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFFE6F4FF)).padding(vertical = 36.dp), contentAlignment = Alignment.Center) {
             Text("▣", fontSize = 52.sp, color = Primary, fontWeight = FontWeight.Bold)
         }
-        Text("将取景框对准光猫机身电子标签", fontSize = 13.sp, color = Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        OutlinedTextField(value = epc, onValueChange = onInput, label = { Text("EPC 标签编码") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        PrimaryButton("提交绑定", modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            onBind(epc.trim(), false)
+        }
         Text("支持 LF / HF / UHF 频段 · 弱网自动离线缓存", fontSize = 12.sp, color = Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
         if (BuildConfig.DEBUG) {
