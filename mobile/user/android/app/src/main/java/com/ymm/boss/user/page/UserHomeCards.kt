@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.ui.EmptyState
+import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.auxText
 import com.ymm.boss.user.ui.brandBlue
 import com.ymm.boss.user.ui.homeHeaderGradient
@@ -97,7 +98,7 @@ internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
                             .align(Alignment.TopEnd)
                             .padding(top = 8.dp, end = 8.dp)
                             .size(8.dp)
-                            .background(Color(0xFFFF5252), CircleShape),
+                            .background(Palette.err, CircleShape),
                     )
                 }
             }
