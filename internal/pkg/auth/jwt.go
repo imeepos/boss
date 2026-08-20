@@ -62,15 +62,10 @@ func (m *Manager) Verify(tokenStr string) (*Claims, error) {
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
-	c, ok := t.Claims.(*Claims)
-	if !ok {
-		return nil, ErrInvalidToken
-	}
-	// jwt v5 已在校验时运行默认 validator(校验 exp/nbf/iat),t.Valid 为结果;
-	// 这里再显式校验 issuer,不放过非本系统签发的 token(发现 2.2)。
-	if !t.Valid {
-		return nil, ErrInvalidToken
-	}
+	// ParseWithClaims 传入 *Claims 时返回的 Claims 恒为同一实例;
+	// jwt v5 校验失败(exp/nbf/iat/签名/算法)一律返回非 nil err,上方已拦截。
+	c := t.Claims.(*Claims)
+	// 显式校验 issuer,不放过非本系统签发的 token(发现 2.2)。
 	if c.Issuer != "" && c.Issuer != "boss" {
 		return nil, ErrInvalidToken
 	}
