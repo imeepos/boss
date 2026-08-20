@@ -169,17 +169,22 @@ private fun SubInfo(label: String, value: String, modifier: Modifier = Modifier)
 
 @Composable
 private fun OnlineTag(label: String = "在网", active: Boolean = true) {
-    Text(
-        label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium,
-        color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+    Box(
         modifier = Modifier
+            .heightIn(min = 24.dp)
             .background(
                 if (active) Green500 else MaterialTheme.colorScheme.surfaceVariant,
                 RoundedCornerShape(8.dp),
             )
-            .padding(horizontal = 10.dp, vertical = 3.dp)
-            .heightIn(min = 24.dp),
-    )
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label, fontSize = 12.sp, lineHeight = 12.sp, fontWeight = FontWeight.Medium,
+            color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+    }
 }
 
 /** 在线判定:onlineStatus 含"在线"且不含异常字样视为正常;空串按默认在线处理。 */
