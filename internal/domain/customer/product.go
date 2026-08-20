@@ -13,6 +13,7 @@ type ProductOffer struct {
 	Name          string    `json:"name"`
 	Bandwidth     string    `json:"bandwidth"`
 	MonthlyFee    float64   `json:"monthlyFee"` // NUMERIC(10,2)
+	Category      string    `json:"category"`   // broadband/fusion/addon(用户端契约枚举),空回退 broadband
 	EffectiveAt   time.Time `json:"effectiveAt"`
 	Status        string    `json:"status"` // DRAFT/PUBLISHED/OFFLINE
 }

@@ -17,11 +17,11 @@ func TestPGStore_ListProducts(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, legal_entity_id, name, bandwidth, monthly_fee, effective_at, status FROM product_offers`).
+	mock.ExpectQuery(`SELECT id, legal_entity_id, name, bandwidth, monthly_fee, category, effective_at, status FROM product_offers`).
 		WithArgs(int64(1)).
-		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "name", "bandwidth", "monthly_fee", "effective_at", "status"}).
-			AddRow(int64(1), int64(1), "300M 畅享宽带", "300M", 99.0, fixedTime, "PUBLISHED").
-			AddRow(int64(2), int64(1), "1000M 极速宽带", "1000M", 199.0, fixedTime, "PUBLISHED"))
+		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "name", "bandwidth", "monthly_fee", "category", "effective_at", "status"}).
+			AddRow(int64(1), int64(1), "300M 畅享宽带", "300M", 99.0, "broadband", fixedTime, "PUBLISHED").
+			AddRow(int64(2), int64(1), "1000M 极速宽带", "1000M", 199.0, "broadband", fixedTime, "PUBLISHED"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListProducts(context.Background(), 1)
@@ -45,7 +45,7 @@ func TestPGStore_CreateProduct(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO product_offers`).
-		WithArgs(int64(1), "500M 畅享宽带", "500M", 129.0, fixedTime, "DRAFT").
+		WithArgs(int64(1), "500M 畅享宽带", "500M", 129.0, "broadband", fixedTime, "DRAFT").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 
 	s := NewPGStore(mock)

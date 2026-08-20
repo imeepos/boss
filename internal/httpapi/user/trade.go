@@ -53,7 +53,7 @@ func portalProductDetail(a *app.Application) gin.HandlerFunc {
 		for _, p := range list {
 			if p.ID == id && p.Status == "PUBLISHED" {
 				respond(c, apitypes.CodeOK, gin.H{"product": gin.H{
-					"productId": strconv.FormatInt(p.ID, 10), "category": "broadband",
+					"productId": strconv.FormatInt(p.ID, 10), "category": p.Category,
 					"name": p.Name, "bandwidth": p.Bandwidth, "monthlyFee": p.MonthlyFee,
 					"contractMonths": 12, "featured": false,
 				}, "specs": []gin.H{{"label": "带宽", "value": p.Bandwidth}}, "compare": []any{}})

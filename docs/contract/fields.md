@@ -193,6 +193,7 @@
 |:-----|:---------|:-------|:--------------|:----------|
 | product_offers(公司产品) | 所属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities |
 | | 产品名称 | `Name` | name | **公司级名称,必填**(各公司叫法不同) |
+| | 分类 | `Category` | category | broadband/fusion/addon(用户端契约枚举,迁移 000066;空回退 broadband) |
 | | 带宽 | `Bandwidth` | bandwidth | 如 300M/500M/1000M(公司自定) |
 | | 基础月费 | `MonthlyFee` | monthly_fee | NUMERIC |
 | | 生效时间 | `EffectiveAt` | effective_at | 上架/调价生效 |

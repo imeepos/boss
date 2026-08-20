@@ -12,7 +12,7 @@ import (
 // ListProducts 列出产品;legalEntityID=0 返回全部,否则按公司过滤。
 func (s *PGStore) ListProducts(ctx context.Context, legalEntityID int64) ([]ProductOffer, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, legal_entity_id, name, bandwidth, monthly_fee, effective_at, status
+		SELECT id, legal_entity_id, name, bandwidth, monthly_fee, category, effective_at, status
 		FROM product_offers
 		WHERE ($1 = 0 OR legal_entity_id = $1)
 		ORDER BY id`, legalEntityID)
@@ -23,7 +23,7 @@ func (s *PGStore) ListProducts(ctx context.Context, legalEntityID int64) ([]Prod
 	out := make([]ProductOffer, 0)
 	for rows.Next() {
 		var p ProductOffer
-		if err := rows.Scan(&p.ID, &p.LegalEntityID, &p.Name, &p.Bandwidth, &p.MonthlyFee, &p.EffectiveAt, &p.Status); err != nil {
+		if err := rows.Scan(&p.ID, &p.LegalEntityID, &p.Name, &p.Bandwidth, &p.MonthlyFee, &p.Category, &p.EffectiveAt, &p.Status); err != nil {
 			return nil, fmt.Errorf("customer: scan product: %w", err)
 		}
 		out = append(out, p)
@@ -34,10 +34,14 @@ func (s *PGStore) ListProducts(ctx context.Context, legalEntityID int64) ([]Prod
 // CreateProduct 新建产品,返回自增 id。
 func (s *PGStore) CreateProduct(ctx context.Context, p ProductOffer) (int64, error) {
 	var id int64
+	category := p.Category
+	if category == "" {
+		category = "broadband"
+	}
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO product_offers(legal_entity_id, name, bandwidth, monthly_fee, effective_at, status)
-		VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
-		p.LegalEntityID, p.Name, p.Bandwidth, p.MonthlyFee, p.EffectiveAt, p.Status).Scan(&id)
+		INSERT INTO product_offers(legal_entity_id, name, bandwidth, monthly_fee, category, effective_at, status)
+		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		p.LegalEntityID, p.Name, p.Bandwidth, p.MonthlyFee, category, p.EffectiveAt, p.Status).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("customer: create product: %w", err)
 	}
