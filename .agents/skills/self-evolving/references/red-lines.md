@@ -22,3 +22,4 @@
 - 禁止在并行 agent 共享的工作区里让已验证的修复停留在未提交状态——工作区会被 git checkout/clean 随时回退;验证通过的下一个小动作就是 commit。
 - 禁止自研 Compose 组件调用点用裸尾随lambda传点击动作(组件末位是 @Composable 插槽时必绑错)——动作一律 onClick = 命名参数显式传递。
 - 禁止在本机启动 boss 服务(go run/built binary)做冒烟/联调,因为测试服务器只有一个(102 服务器,192.168.0.102),提交后 gitea CI 会自动部署,本机配置低且会与既有进程抢端口/IPv6 双绑造成假 404(用户明令 2026-08-19)。冒烟改走 102 部署后的地址,不在本机起服务。
+- 禁止在 102 上裸跑 `docker image prune -af`/`builder prune -af` 而不先核对"仅本地标签"镜像——2026-08-20 一次 prune 同时炸掉 boss-server(重建踩中迁移文件 600)和 CI(deploy-runner 镜像被删+宿主未 login registry),双故障叠加;清理前必须圈定关键镜像并确认 registry 可回拉、宿主已 login。

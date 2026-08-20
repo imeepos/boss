@@ -671,3 +671,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最耗时:订单推到 DONE 被四码唯一约束(uq_quad_links_customer_active)卡住,先补资产/标签/quad_link 再扫码,还误删旧 LINKED 行需手工 UNLINK;102 上 docker-registry htpasswd 无明文,需新增 ci 用户重做 docker login。
 - 教训:102 的 docker-registry(htpasswd)与 act_runner(root daemon)认证是部署链路单点;镜像内迁移文件权限 600 会让容器以 app 用户启动即崩,Dockerfile 已加 chmod a+rX 兜底(commit 60b91ca)。
 - 重来一次:先读 server.Dockerfile 的 USER app 与源文件权限,再触发 CI。
+
+## 2026-08-20 102 服务器事故:docker prune 引发 boss-server 重启循环 + CI 断链
+- 最耗时:两个独立故障叠加——(1) boss-server 因镜像内迁移文件 000066 root:root 600、容器以 uid=1000(app) 运行而 permission denied 崩溃重启 13 次;(2) CI job 拉不到 boss/deploy-runner:latest("no basic auth credentials")。都根源于 22:19 跑的 ~/docker-clean.sh(builder prune -af + image prune -af):前者触发重建踩中源文件权限坑,后者删掉了"仅本地标签、从未 push"的 deploy-runner 镜像,且宿主 docker 从未 login 过 registry(以前全靠本地缓存,从没暴露)。
+- skill 有没有预警:没有。registry 认证/本地镜像依赖是部署链路的隐形单点,skill 里无任何记录;教训已补进 lessons/known-issues/red-lines。
+- 重来一次:跑任何 docker prune 前先 `docker images` 圈出"仅本地标签"的关键镜像(deploy-runner 等)并确认 registry 有备份;清理后立刻验证 CI 全链路;宿主一次性 `docker login 192.168.0.102:5000`(凭据在 102:~/boss/deploy-image/dotdocker/config.json)。排查容器崩溃先看 `docker logs` + `docker run --rm --entrypoint sh <img> -c 'id; ls -la'` 直接验镜像内文件权限,别只盯容器状态。

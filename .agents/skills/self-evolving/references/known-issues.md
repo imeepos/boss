@@ -177,3 +177,8 @@
 - 症状:`node web/admin/scripts/dev-token.mjs` 报"登录请求失败(HTTP 404)"。
 - 原因:脚本按旧前缀请求 /auth/login,后端实际前缀是 /api/admin/v1。
 - 修法:绕过脚本,curl POST http://192.168.0.102:28080/api/admin/v1/auth/login (admin/admin123) 取 data.token,浏览器 localStorage 注入 boss.token/boss.servers/boss.server.active 后直访目标页。
+
+## docker prune 后 boss-server 重启循环 + CI 拉不到 runner 镜像
+- 症状:boss-server 反复重启(RestartCount 13),日志 "migrate: read 000066_product_category: permission denied";同时 CI 报拉 192.168.0.102:5000/boss/deploy-runner:latest "no basic auth credentials"。
+- 原因:~/docker-clean.sh 的 `docker builder prune -af; docker image prune -af`。(a) 重建镜像时构建上下文里迁移文件恰为 600,COPY 原样保留,容器 USER app 读不了;(b) prune 删掉仅本地标签的 deploy-runner 镜像,而宿主 docker 从未 login registry,一直靠本地缓存掩盖。
+- 修法:(a) server.Dockerfile COPY migrations 后加 `RUN chmod -R a+rX /app/migrations`(commit 60b91ca);(b) 宿主 `docker login 192.168.0.102:5000`(凭据 102:~/boss/deploy-image/dotdocker/config.json 的 auth base64)+ `docker pull` 恢复镜像,空提交重触发流水线。验证:`docker run --rm --entrypoint sh <img> -c 'ls -l /app/migrations'` 全 a+r,healthz ok。
