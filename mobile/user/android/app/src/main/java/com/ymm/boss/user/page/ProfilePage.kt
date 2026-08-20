@@ -85,13 +85,15 @@ fun ProfileScreen(nav: Nav) {
             LogoutCard(nav)
             Spacer(Modifier.height(12.dp))
         }
-        // 状态栏 scrim 最后绘制:内容滚到顶部时盖住内容,保持渐变底
+        // 状态栏 scrim:内容滚到顶部时盖住内容,保持渐变底
         Box(
             Modifier
                 .fillMaxWidth()
                 .height(statusBarDp)
                 .background(profileHeaderGradient()),
         )
+        // 用户信息层最后绘制:不论怎么滚动,头像/姓名/设置语言始终可见
+        ProfileHeadContent(data, nav)
     }
 }
 
@@ -100,14 +102,27 @@ private val HeaderOverlapDp = 38.dp
 
 @Composable
 private fun ProfileHead(data: JSONObject?, nav: Nav, modifier: Modifier = Modifier) {
-    val name = data?.optString("name").orEmpty().ifBlank { "加载中…" }
-    val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
+    // 仅渐变底 + 占位高度;用户信息由 ProfileHeadContent 最后绘制,滚动内容永远盖不住
     Box(
         modifier
             .fillMaxWidth()
             .background(profileHeaderGradient())
             .statusBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 40.dp),
+    ) { }
+}
+
+/** 用户信息层:自带渐变底 + 底部圆角,绘制在 scrim 之上,任何滚动状态可见可读。 */
+@Composable
+private fun ProfileHeadContent(data: JSONObject?, nav: Nav) {
+    val name = data?.optString("name").orEmpty().ifBlank { "加载中…" }
+    val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(profileHeaderGradient(), RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
+            .statusBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
