@@ -65,10 +65,13 @@ fun ProfileScreen(nav: Nav) {
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ProfileHead(data, nav)
-        QuickEntriesCard(data, nav)
-        ServiceEntriesCard(nav, unread)
-        SettingsCard(nav)
-        LogoutCard(nav)
+        // 渐变头预留 52dp 底距,卡片区整体上移 32dp 形成压卡;内部卡片间隔保持 AppCard 的 12dp
+        Column(Modifier.offset(y = (-32).dp)) {
+            QuickEntriesCard(data, nav)
+            ServiceEntriesCard(nav, unread)
+            SettingsCard(nav)
+            LogoutCard(nav)
+        }
         Spacer(Modifier.height(12.dp))
     }
 }
@@ -139,8 +142,7 @@ private fun QuickEntriesCard(data: JSONObject?, nav: Nav) {
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     val addrCount = data?.optJSONArray("addresses")?.length() ?: 0
     val planName = data?.optJSONObject("plan")?.optString("name").orEmpty().ifBlank { "—" }
-    Box(Modifier.offset(y = (-32).dp)) {
-        AppCard(Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth()) {
                 QuickEntry(Icons.Filled.GppGood, Palette.primary, "实名信息", if (verified) "已实名" else "待补登", Modifier.weight(1f)) {
                     nav.push(Route.Verify)
@@ -153,7 +155,6 @@ private fun QuickEntriesCard(data: JSONObject?, nav: Nav) {
                 }
             }
         }
-    }
 }
 
 @Composable
