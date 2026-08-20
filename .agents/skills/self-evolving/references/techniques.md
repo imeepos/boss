@@ -200,3 +200,8 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - 场景:接口 404 / 自认为已注册的 gin 路由却 404。排查时第一动作用全路径 `lsof -nP -iTCP:<port> -sTCP:LISTEN`(macOS 的 lsof 在 /usr/sbin,默认 PATH 常没有)→ 列出占用该端口的全部进程;重点看是否 IPv4(127.0.0.1) 与 IPv6(*:port) 双绑同一端口。`curl 127.0.0.1:<port>` 走 IPv4 只命中 IPv4 监听者,若那是另一个陈旧进程,你会得到"假 404/假路由缺失"。发现是双绑时,`kill` 掉陈旧 IPv4 监听者,让 IPv6 wildcard 服务器也接收 IPv4 流量。2026-08-19 后端冒烟实证。
 - 场景:go vet 报"missing method"(做不到接口)。给测试 fake 桩补方法时,一次性 `go vet ./...` 让编译器罗列全部缺失方法签名,再批量补,别逐个撞。2026-08-19。
 - 场景:Go 单测 `x := helper(...)` 报"assignment mismatch"。凡是目标函数返回多值(如 auth.Sign 返回 (token,error)),一律 `x, _ := helper(...)`。2026-08-19。
+
+## dsh 模型"不支持 read_image"先查配置再下结论
+
+场景 → 在 dsh 中发现某模型调用 read_image 失败或被判定不支持图像输入(对应高频红线 7"禁止假设模型支持图像输入")。
+怎么用 → 先检查配置文件 `~/.dsh/settings.yaml`:按 provider → models 找到对应 `id` 的模型条目,看 `input:` 字段是否正确声明了 `[ text, image ]`。缺 `image` 时 dsh 会直接不给该模型图像输入能力——是配置问题,不是模型本身不支持。改完配置重启会话生效。(2026-10 用户经验传授,已实证 settings.yaml 中各 provider 模型确有 `input: [ text, image ]` 字段)
