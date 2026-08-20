@@ -37,3 +37,12 @@ func (g stripeGateway) CreateIntent(ctx context.Context, payNo string, cents int
 	return billing.PayIntent{IntentID: it.ID, ClientSecret: it.ClientSecret,
 		AmountCents: it.AmountCents, Currency: it.Currency}, nil
 }
+
+func (g stripeGateway) CreateCheckout(ctx context.Context, payNo string, cents int64, meta map[string]string,
+	successURL, cancelURL string) (billing.PayCheckout, error) {
+	s, err := g.c.CreateCheckoutSession(ctx, payNo, cents, meta, successURL, cancelURL)
+	if err != nil {
+		return billing.PayCheckout{}, err
+	}
+	return billing.PayCheckout{SessionID: s.ID, URL: s.URL}, nil
+}

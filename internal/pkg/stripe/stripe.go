@@ -74,6 +74,39 @@ func (c *Client) CreateIntent(ctx context.Context, payNo string, amountCents int
 	}, nil
 }
 
+// CheckoutSession 托管收银台会话(免客户端 SDK:前端/Android 直接跳 url)。
+type CheckoutSession struct {
+	ID  string
+	URL string // 收银台跳转地址
+}
+
+// CreateCheckoutSession 创建 Checkout Session(mode=payment);metadata 透传至底层
+// PaymentIntent,支付完成的 payment_intent.succeeded 回调沿用同一落账链路。
+func (c *Client) CreateCheckoutSession(ctx context.Context, payNo string, amountCents int64,
+	metadata map[string]string, successURL, cancelURL string) (CheckoutSession, error) {
+	form := url.Values{}
+	form.Set("mode", "payment")
+	form.Set("success_url", successURL)
+	form.Set("cancel_url", cancelURL)
+	form.Set("line_items[0][quantity]", "1")
+	form.Set("line_items[0][price_data][currency]", c.Currency)
+	form.Set("line_items[0][price_data][unit_amount]", strconv.FormatInt(amountCents, 10))
+	form.Set("line_items[0][price_data][product_data][name]", "BOSS Bill "+payNo)
+	form.Set("metadata[pay_no]", payNo)
+	for k, v := range metadata {
+		form.Set("metadata["+k+"]", v)
+	}
+	body, err := c.postForm(ctx, "/v1/checkout/sessions", form, payNo)
+	if err != nil {
+		return CheckoutSession{}, err
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return CheckoutSession{}, fmt.Errorf("stripe: decode session: %w", err)
+	}
+	return CheckoutSession{ID: toStr(raw["id"]), URL: toStr(raw["url"])}, nil
+}
+
 func toStr(v any) string { s, _ := v.(string); return s }
 func toInt(v any) int64  { f, _ := v.(float64); return int64(f) }
 

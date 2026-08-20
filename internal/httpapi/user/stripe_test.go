@@ -33,6 +33,11 @@ func (f *fakeStripeGW) CreateIntent(_ context.Context, payNo string, cents int64
 	f.lastPayNo, f.lastCents, f.lastMeta = payNo, cents, meta
 	return billing.PayIntent{IntentID: "pi_t", ClientSecret: "pi_t_secret", AmountCents: cents, Currency: "php"}, nil
 }
+func (f *fakeStripeGW) CreateCheckout(_ context.Context, payNo string, cents int64, meta map[string]string,
+	_, _ string) (billing.PayCheckout, error) {
+	f.lastPayNo, f.lastCents, f.lastMeta = payNo, cents, meta
+	return billing.PayCheckout{SessionID: "cs_t", URL: "https://checkout.example/cs_t"}, nil
+}
 
 // settleBilling 桩 Billing:记录 RecordPayment/CreatePayment 落账入参。
 type settleBilling struct {
@@ -42,9 +47,11 @@ type settleBilling struct {
 	created  []billing.Payment
 }
 
-func (f *settleBilling) ListBills(context.Context, int64) ([]billing.Bill, error) { return f.bills, nil }
-func (f *settleBilling) CreateBill(context.Context, billing.Bill) (int64, error)  { return 0, nil }
-func (f *settleBilling) GetBill(context.Context, int64) (*billing.Bill, error)    { return nil, nil }
+func (f *settleBilling) ListBills(context.Context, int64) ([]billing.Bill, error) {
+	return f.bills, nil
+}
+func (f *settleBilling) CreateBill(context.Context, billing.Bill) (int64, error) { return 0, nil }
+func (f *settleBilling) GetBill(context.Context, int64) (*billing.Bill, error)   { return nil, nil }
 func (f *settleBilling) ListPayments(context.Context, int64) ([]billing.Payment, error) {
 	return f.pays, nil
 }
@@ -127,6 +134,33 @@ func TestStripeIntent(t *testing.T) {
 	w = userPortalDo(r2, http.MethodPost, "/api/user/v1/payments/stripe/intent", `{"billNo":"B-1","amount":99}`, tok)
 	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeInvalidParam) {
 		t.Fatalf("unconfigured gateway resp=%s", w.Body.String())
+	}
+}
+
+// TestStripeCheckout 契约:托管收银台端点返回跳转 url;已缴 409。
+func TestStripeCheckout(t *testing.T) {
+	cust := userPortalCust()
+	bill := &settleBilling{bills: []billing.Bill{
+		{BillID: 1, BillNo: "B-1", CustomerID: cust.ID, Amount: 99, Status: "UNPAID"},
+		{BillID: 2, BillNo: "B-2", CustomerID: cust.ID, Amount: 50, Status: "PAID"},
+	}}
+	gw := &fakeStripeGW{}
+	tok := stripeCustToken(cust.ID)
+	r := newStripeRouter(bill, gw, stripe.Webhook{Secret: "whsec_x"})
+	body := `{"billNo":"B-1","amount":99,"successUrl":"https://app.example/ok","cancelUrl":"https://app.example/cancel"}`
+
+	w := userPortalDo(r, http.MethodPost, "/api/user/v1/payments/stripe/checkout", body, tok)
+	code, data := userPortalCode(t, w)
+	if code != int(apitypes.CodeOK) || data["checkoutUrl"] != "https://checkout.example/cs_t" || data["payNo"] == nil {
+		t.Fatalf("checkout resp=%s", w.Body.String())
+	}
+	if gw.lastCents != 9900 || gw.lastMeta["bill_no"] != "B-1" {
+		t.Fatalf("gw cents=%d meta=%v", gw.lastCents, gw.lastMeta)
+	}
+	paid := `{"billNo":"B-2","amount":50,"successUrl":"https://a.example/ok","cancelUrl":"https://a.example/cancel"}`
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/payments/stripe/checkout", paid, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeConflict) {
+		t.Fatalf("paid bill resp=%s", w.Body.String())
 	}
 }
 

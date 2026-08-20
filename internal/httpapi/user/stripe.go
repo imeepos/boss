@@ -22,7 +22,55 @@ import (
 // registerStripeRoutes pub:回调(渠道服务器调用,无客户 JWT);uauth:发起收款。
 func registerStripeRoutes(pub, uauth *gin.RouterGroup, a *app.Application) {
 	uauth.POST("/payments/stripe/intent", portalStripeIntent(a))
+	uauth.POST("/payments/stripe/checkout", portalStripeCheckout(a))
 	pub.POST("/webhooks/stripe", stripeWebhook(a))
+}
+
+// portalStripeCheckout POST /payments/stripe/checkout {billNo,amount,successUrl,cancelUrl}:
+// 校验账单归属 → 建托管收银台会话 → 返回跳转 url(免客户端 SDK;落账同样等回调)。
+func portalStripeCheckout(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		gw := a.PayGateway.Get("stripe")
+		if gw == nil {
+			respond(c, apitypes.CodeInvalidParam, nil) // 通道未配置(无密钥)
+			return
+		}
+		var req struct {
+			BillNo     string  `json:"billNo" binding:"required"`
+			Amount     float64 `json:"amount" binding:"required,gt=0"`
+			SuccessURL string  `json:"successUrl" binding:"required,url"`
+			CancelURL  string  `json:"cancelUrl" binding:"required,url"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		b, ok := findBillByNo(a, c, cid, req.BillNo)
+		if !ok {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
+		}
+		if b.Status == "PAID" {
+			respond(c, apitypes.CodeConflict, nil)
+			return
+		}
+		payNo, err := a.Portal.NextNo(c.Request.Context(), "PAY")
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		co, err := gw.CreateCheckout(c.Request.Context(), payNo, toCents(req.Amount), map[string]string{
+			"bill_no": req.BillNo, "customer_id": strconv.FormatInt(cid, 10),
+		}, req.SuccessURL, req.CancelURL)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{
+			"payNo": payNo, "billNo": req.BillNo, "amount": req.Amount,
+			"checkoutUrl": co.URL, "sessionId": co.SessionID,
+		})
+	}
 }
 
 // portalStripeIntent POST /payments/stripe/intent {billNo,amount}:

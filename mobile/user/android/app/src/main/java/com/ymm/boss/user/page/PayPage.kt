@@ -93,8 +93,9 @@ private fun ConfirmButton(
     scope: kotlinx.coroutines.CoroutineScope, nav: Nav,
     onErr: (String) -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Button(
-        onClick = { doPay(scope, nav, billNo, amount, method, onErr) },
+        onClick = { doPay(context, scope, nav, billNo, amount, method, onErr) },
         enabled = billNo != null && amount > 0,
         colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
         modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(44.dp),
@@ -115,6 +116,7 @@ private fun MethodGroup(current: String, onSelect: (String) -> Unit) {
 }
 
 private fun doPay(
+    context: android.content.Context,
     scope: kotlinx.coroutines.CoroutineScope,
     nav: Nav, billNo: String?, amount: Double, method: String,
     onErr: (String) -> Unit,
@@ -122,9 +124,19 @@ private fun doPay(
     if (billNo == null) { onErr("暂无待缴账单"); return }
     scope.launch {
         try {
-            val r = BillApi.createPayment(billNo, amount, method)
-            BillApi.lastPayNo = r.optString("payNo")
-            nav.push(Route.PayResult)
+            if (method == "card") {
+                // Stripe 托管收银台:后端建会话,系统浏览器跳转支付,落账等 webhook 回调。
+                val r = BillApi.stripeCheckout(billNo, amount)
+                val url = r.optString("checkoutUrl")
+                if (url.isBlank()) { onErr("收银台创建失败,请重试"); return@launch }
+                context.startActivity(android.content.Intent(
+                    android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                BillApi.lastPayNo = r.optString("payNo")
+            } else {
+                val r = BillApi.createPayment(billNo, amount, method)
+                BillApi.lastPayNo = r.optString("payNo")
+                nav.push(Route.PayResult)
+            }
         } catch (e: Exception) { onErr("支付发起失败,请重试") }
     }
 }

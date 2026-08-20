@@ -112,6 +112,39 @@ paths:
         '409': { description: 账单已缴 }
         '400': { description: Stripe 通道未配置(无密钥)或参数非法 }
 
+  /payments/stripe/checkout:
+    post:
+      tags: [Billing]
+      summary: 发起 Stripe 托管收银台(免客户端 SDK,前端直接跳 checkoutUrl;落账等回调)
+      operationId: createStripeCheckout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [billNo, amount, successUrl, cancelUrl]
+              properties:
+                billNo: { type: string }
+                amount: { type: number }
+                successUrl: { type: string, format: uri }
+                cancelUrl: { type: string, format: uri }
+      responses:
+        '200':
+          description: 会话已创建
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payNo: { type: string, example: 'PAY-20260823-01' }
+                  billNo: { type: string }
+                  amount: { type: number, example: 158.0 }
+                  checkoutUrl: { type: string, format: uri }
+                  sessionId: { type: string, example: 'cs_xxx' }
+        '409': { description: 账单已缴 }
+        '400': { description: Stripe 通道未配置(无密钥)或参数非法 }
+
   /webhooks/stripe:
     post:
       tags: [Billing]

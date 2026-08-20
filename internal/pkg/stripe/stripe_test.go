@@ -58,6 +58,34 @@ func TestCreateIntentError(t *testing.T) {
 	}
 }
 
+// TestCreateCheckoutSession 契约:mode/success_url/line_items 单价与 metadata 透传。
+func TestCreateCheckoutSession(t *testing.T) {
+	var gotForm string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/checkout/sessions" {
+			t.Fatalf("path: %s", r.URL.Path)
+		}
+		buf := make([]byte, 8192)
+		n, _ := r.Body.Read(buf)
+		gotForm = string(buf[:n])
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"cs_1","url":"https://checkout.stripe.com/c/pay/cs_1"}`))
+	}))
+	defer srv.Close()
+	c := &Client{APIKey: "sk", BaseURL: srv.URL, Currency: "php", HTTP: srv.Client()}
+	s, err := c.CreateCheckoutSession(context.Background(), "PAY-3", 9900,
+		map[string]string{"bill_no": "B-1"}, "https://app.example/pay/ok", "https://app.example/pay/cancel")
+	if err != nil || s.ID != "cs_1" || !strings.Contains(s.URL, "cs_1") {
+		t.Fatalf("session: %+v err=%v", s, err)
+	}
+	for _, want := range []string{"mode=payment", "success_url=https%3A%2F%2Fapp.example%2Fpay%2Fok",
+		"cancel_url=", "unit_amount%5D=9900", "currency%5D=php", "metadata%5Bpay_no%5D=PAY-3", "metadata%5Bbill_no%5D=B-1"} {
+		if !strings.Contains(gotForm, want) {
+			t.Fatalf("form missing %s: %s", want, gotForm)
+		}
+	}
+}
+
 // TestNewEmptyKey 契约:无密钥返回 nil(装配层判空降级)。
 func TestNewEmptyKey(t *testing.T) {
 	if New("", "php") != nil {

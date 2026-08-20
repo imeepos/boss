@@ -19,6 +19,15 @@ type PaymentGateway interface {
 	Channel() string
 	// CreateIntent 发起收款;payNo 同时作为渠道幂等键与 metadata 回传字段。
 	CreateIntent(ctx context.Context, payNo string, amountCents int64, metadata map[string]string) (PayIntent, error)
+	// CreateCheckout 渠道托管收银台(免客户端 SDK,前端直接跳 URL);回调链路与 CreateIntent 同源。
+	CreateCheckout(ctx context.Context, payNo string, amountCents int64, metadata map[string]string,
+		successURL, cancelURL string) (PayCheckout, error)
+}
+
+// PayCheckout 托管收银台会话:url 交前端跳转。
+type PayCheckout struct {
+	SessionID string
+	URL       string
 }
 
 // PaymentGatewayRegistry 渠道→网关注册表;装配期注入,运行期只读。

@@ -32,6 +32,14 @@ object BillApi {
     suspend fun createPayment(billNo: String, amount: Double, payMethod: String): JSONObject =
         Api.post("/payments", JSONObject().put("billNo", billNo).put("amount", amount).put("payMethod", payMethod))
 
+    /** POST /payments/stripe/checkout {billNo,amount,successUrl,cancelUrl},返回 payNo/checkoutUrl(Stripe 托管收银台)。 */
+    suspend fun stripeCheckout(billNo: String, amount: Double): JSONObject = Api.post(
+        "/payments/stripe/checkout",
+        JSONObject().put("billNo", billNo).put("amount", amount)
+            .put("successUrl", Api.base + "/pay/stripe/done")
+            .put("cancelUrl", Api.base + "/pay/stripe/cancel"),
+    )
+
     /** GET /payments,返回 items(PaymentRecord)。 */
     suspend fun payments(): JSONArray = Api.getArray("/payments")
 

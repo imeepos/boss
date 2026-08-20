@@ -66,6 +66,7 @@ paths:
   /bills/{billNo}: { $ref: './user/billing.yaml#/paths/~1bills~1{billNo}' }
   /payments: { $ref: './user/billing.yaml#/paths/~1payments' }
   /payments/stripe/intent: { $ref: './user/billing.yaml#/paths/~1payments~1stripe~1intent' }
+  /payments/stripe/checkout: { $ref: './user/billing.yaml#/paths/~1payments~1stripe~1checkout' }
   /payments/{payNo}/receipt: { $ref: './user/billing.yaml#/paths/~1payments~1{payNo}~1receipt' }
   /payments/{payNo}/receipt.pdf: { $ref: './user/billing.yaml#/paths/~1payments~1{payNo}~1receipt.pdf' }
   /webhooks/stripe: { $ref: './user/billing.yaml#/paths/~1webhooks~1stripe' }
