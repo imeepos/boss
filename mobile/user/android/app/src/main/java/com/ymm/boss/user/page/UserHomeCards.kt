@@ -133,10 +133,9 @@ internal fun BroadbandCard(state: HomeUiState, onOpen: () -> Unit) {
                         "家庭宽带 ${state.planName.ifEmpty { "--" }}",
                         fontSize = 20.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
                     )
                 }
-                val online = isOnline(state.onlineStatus)
-                OnlineTag(label = if (online) "在网" else "状态异常", active = online)
             }
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
