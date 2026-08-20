@@ -144,11 +144,12 @@ private fun DividerText(text: String) {
 
 private fun sendCode(scope: kotlinx.coroutines.CoroutineScope, phone: String, onDone: (String) -> Unit) {
     if (phone.isBlank()) { onDone("请输入手机号"); return }
+    if (!Regex("^1\\d{10}$").matches(phone)) { onDone("手机号格式不正确"); return }
     scope.launch {
         try {
             UserApi.auth.smsCode(phone, "login")
             onDone("验证码已发送")
-        } catch (e: Exception) { onDone("验证码发送失败") }
+        } catch (e: Exception) { onDone(Api.friendlyMessage(e).let { "验证码发送失败：$it" }) }
     }
 }
 
@@ -167,6 +168,14 @@ private fun doLogin(
             if (tk.isEmpty()) { onErr("登录响应缺少 token"); return@launch }
             Api.setToken(tk)
             nav.resetTo(com.ymm.boss.user.ui.Route.Home)
-        } catch (e: Exception) { onErr("登录失败，请重试") }
+        } catch (e: Exception) { onErr(loginErrorMessage(e, mode)) }
     }
+}
+
+/** 登录场景错误细化:40100 按模式区分(验证码 vs 密码),其余按通用映射。 */
+internal fun loginErrorMessage(e: Exception, mode: String): String {
+    if (e is Api.HttpError && e.status == 40100) {
+        return if (mode == "sms") "验证码错误或已过期，请重新获取" else "手机号或密码不正确"
+    }
+    return Api.friendlyMessage(e)
 }

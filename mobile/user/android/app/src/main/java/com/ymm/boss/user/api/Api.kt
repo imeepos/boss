@@ -33,6 +33,32 @@ object Api {
 
     class HttpError(val status: Int, message: String) : Exception(message)
 
+    /**
+     * 异常 → 用户可读文案,对齐 pkg/apitypes/code.go 统一错误码。
+     * 登录等场景可对 40100(凭证无效)按上下文二次细化(HttpError.status 即信封 code)。
+     */
+    fun friendlyMessage(e: Exception): String = when {
+        e is HttpError && e.status >= 1000 -> when (e.status) {
+            40100 -> "凭证无效，请重新操作"
+            40300 -> "暂无权限，请联系客服"
+            40400 -> "账号不存在，请先注册"
+            40900, 40910, 40920 -> "操作冲突，请刷新后重试"
+            42200 -> "输入格式不正确，请检查后重填"
+            42300 -> "资源被占用，请稍后重试"
+            50000 -> "服务开小差了，请稍后重试"
+            50200 -> "服务暂不可用，请稍后重试"
+            else -> e.message?.ifBlank { null } ?: "请求失败(${e.status})"
+        }
+        e is HttpError -> when (e.status) { // HTTP 层错误(status < 1000)
+            401 -> "登录状态已失效，请重新登录"
+            404 -> "接口不存在，请更新 App"
+            in 500..599 -> "服务器异常，请稍后重试"
+            else -> "网络异常(HTTP ${e.status})"
+        }
+        e is java.io.IOException -> "网络连接失败，请检查网络"
+        else -> e.message?.ifBlank { null } ?: "操作失败，请重试"
+    }
+
     suspend fun get(path: String): JSONObject = request("GET", path, null)
     suspend fun getArray(path: String): JSONArray = requestArray("GET", path, null)
     suspend fun post(path: String, body: JSONObject? = JSONObject()): JSONObject = request("POST", path, body ?: JSONObject())
