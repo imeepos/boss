@@ -34,6 +34,15 @@ func portalTicketStatus(tk order.DispatchTicket, workerID int64) string {
 	}
 }
 
+func workerOwnedTicket(c *gin.Context, tk *order.DispatchTicket) bool {
+	workerID, _ := portalWorker(c)
+	if tk.WorkerID == workerID {
+		return true
+	}
+	respond(c, apitypes.CodeForbidden, nil)
+	return false
+}
+
 // portalTicketOf 派单工单 → Ticket 视图(worker/schemas.yaml Ticket)。
 func portalTicketOf(tk order.DispatchTicket, workerID int64) gin.H {
 	status := portalTicketStatus(tk, workerID)

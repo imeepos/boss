@@ -46,6 +46,9 @@ func workerDismantleScanHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !workerOwnedTicket(c, tk) {
+			return
+		}
 		if err := a.QuadLink.UnbindRequireScan(c.Request.Context(), tk.OrderID, req.EPC); err != nil {
 			httpx.RespondScanErr(c, err)
 			return

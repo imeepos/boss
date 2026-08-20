@@ -40,6 +40,10 @@ func assignTicketToMe(c *gin.Context, a *app.Application, ticketNo string, grab 
 		return
 	}
 	workerID, workerName := portalWorker(c)
+	if !grab && tk.WorkerID != workerID {
+		respond(c, apitypes.CodeForbidden, nil)
+		return
+	}
 	if tk.Status != "PENDING" || (grab && tk.WorkerID != 0) {
 		respond(c, apitypes.CodeStateInvalid, nil)
 		return
@@ -73,6 +77,9 @@ func workerTransferHandler(a *app.Application) gin.HandlerFunc {
 		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		if !workerOwnedTicket(c, tk) {
 			return
 		}
 		if err := transferTicket(c, a, tk, &req); err != nil {
@@ -122,6 +129,9 @@ func workerRetryHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !workerOwnedTicket(c, tk) {
+			return
+		}
 		list, err := a.OrderLedger.ListActivationCallbacks(c.Request.Context())
 		if err != nil {
 			respondErr(c, err)
@@ -158,6 +168,9 @@ func workerComplaintHandler(a *app.Application) gin.HandlerFunc {
 		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		if !workerOwnedTicket(c, tk) {
 			return
 		}
 		_, err = a.WorkOrder.CreateComplaint(c.Request.Context(), order.Complaint{

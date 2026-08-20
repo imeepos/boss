@@ -48,6 +48,9 @@ func workerScanBindHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !workerOwnedTicket(c, tk) {
+			return
+		}
 		workerID, workerName := portalWorker(c)
 		result, err := a.QuadLink.VerifyScan(c.Request.Context(), quadlink.ScanReq{
 			OrderID: tk.OrderID, WorkerID: workerID, WorkerName: workerName,
