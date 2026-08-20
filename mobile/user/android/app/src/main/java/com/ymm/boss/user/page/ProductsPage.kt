@@ -142,7 +142,7 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
     val id = p.optString("productId")
     AppCard(Modifier.clickable { nav.push(Route.Product(id)) }) {
         Column(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.Top) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 IconTile(Icons.Filled.Wifi, Palette.primary, size = 56.dp, corner = 12.dp)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
