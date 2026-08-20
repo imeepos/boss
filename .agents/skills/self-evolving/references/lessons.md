@@ -138,3 +138,4 @@
 - admin 免登录冒烟不写表单 eval:登录页是 placeholder 受控 input 无 id;直接 localStorage 注入 boss.token + boss.servers + boss.server.active(见 docs/boss-admin-web.md),再导航目标页。
 - 后端 API 前缀是 /api/admin/v1(不是 /api/v1);登录 POST /api/admin/v1/auth/login,信封 data.token。
 - 新增 admin 菜单项必须同时补 public/icons/items/<key>.svg(描边 #8b98a5, viewBox 24, stroke 1.8),否则侧栏该行无图标——menu.def.ts 的 key 就是文件名。
+- 2026-08-20 102: docker-clean.sh 的 `docker image prune -af` 会删掉"仅本地标签、从未 push"的镜像(如 boss/deploy-runner)和 registry 登录前依赖本地缓存的一切;清理脚本后必须验证 deploy-runner 等关键镜像可从 registry pull,且宿主要先 docker login 192.168.0.102:5000(凭据在 ~/boss/deploy-image/dotdocker/config.json)。
