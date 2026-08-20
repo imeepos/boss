@@ -103,13 +103,13 @@ fun Notice(text: String, color: Color = Palette.muted) {
     Text(text, fontSize = 12.5.sp, color = color, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
 }
 
-/** tab 页居中标题栏:白底 48dp,对应设计稿 products/orders 页头。 */
+/** tab 页居中标题栏:48dp,背景与首页/我的状态栏统一纯色,白字。 */
 @Composable
 fun TabHeader(title: String) {
     Box(
-        Modifier.fillMaxWidth().height(48.dp).background(Palette.panel),
+        Modifier.fillMaxWidth().height(48.dp).background(statusBarSolid()),
         contentAlignment = Alignment.Center,
-    ) { Text(title, fontSize = 16.sp, fontWeight = FontWeight.W600, color = Palette.ink) }
+    ) { Text(title, fontSize = 16.sp, fontWeight = FontWeight.W600, color = Color.White) }
 }
 
 /** 胶囊筛选 tab:选中实心主色,未选中白底描边(plain 时未选中无底色)。 */
