@@ -45,10 +45,14 @@ func portalVerifyStatus(a *app.Application) gin.HandlerFunc {
 			items = append(items, gin.H{"method": r.Method, "time": r.VerifiedAt, "result": r.Result})
 		}
 		status := "PENDING"
+		payload := gin.H{"status": status, "records": items}
 		if v, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
 			status = v.RealNameStatus
+			payload["nameMasked"] = portalMaskName(v.Name)
+			payload["idNoMasked"] = portalMaskIDNo(v.IdNo)
 		}
-		respond(c, apitypes.CodeOK, gin.H{"status": status, "records": items})
+		payload["status"] = status
+		respond(c, apitypes.CodeOK, payload)
 	}
 }
 

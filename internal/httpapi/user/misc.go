@@ -153,7 +153,11 @@ func portalListMessages(a *app.Application) gin.HandlerFunc {
 		items := make([]gin.H, 0)
 		for _, m := range msgs {
 			if cat == "all" || m.Payload["category"] == cat {
-				items = append(items, gin.H{"read": m.Read, "createdAt": m.CreatedAt, "payload": m.Payload})
+				item := gin.H{"read": m.Read, "createdAt": m.CreatedAt}
+				for key, value := range m.Payload {
+					item[key] = value
+				}
+				items = append(items, item)
 			}
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
