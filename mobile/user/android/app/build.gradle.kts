@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// -PbossBaseUrl=... 覆盖各构建类型默认值;debug 走模拟器宿主机,release 走生产域名。
+// -PbossBaseUrl=... 可覆盖默认值;移动端联调统一连接 192.168.0.102。
 fun bossBaseUrl(default: String): String =
     (project.findProperty("bossBaseUrl") as? String)?.takeIf { it.isNotBlank() } ?: default
 
@@ -42,11 +42,11 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://10.0.2.2:28080/api/user/v1")}\"")
+            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://192.168.0.102:28080/api/user/v1")}\"")
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("https://boss.ymm.cn/api/user/v1")}\"")
+            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://192.168.0.102:28080/api/user/v1")}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

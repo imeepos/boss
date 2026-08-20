@@ -14,7 +14,7 @@ import java.net.URLEncoder
 /**
  * 用户端统一接口层,对齐 docs/user/api.js。
  * 契约: api/openapi/user.yaml,前缀 /api/user/v1(真实服务端,mock 已移除)。
- * 模拟器访问宿主机服务用 10.0.2.2;真机可 adb reverse tcp:28080 tcp:28080 后改 127.0.0.1。
+ * 联调统一连接 192.168.0.102:28080;模拟器/真机均直连此地址。
  */
 object Api {
     const val DEFAULT_BASE = BuildConfig.BOSS_BASE_URL
