@@ -3,14 +3,14 @@
 > 内化自 boss 项目 docs/design/design-to-prompt-template-android.md（2025-12），跨项目可复用。
 > 用途：拿到移动端视觉设计稿后按本模板填写，产出可直接交给编码 AI 生成 Compose 页面的提示词。
 > 与 Web 版的差异：px→dp/sp 换算、无 hover 只有按压涟漪、edge-to-edge insets、Material3 组件、真机 adb 验证。
-> Web 版见 `design-to-prompt-web.md`；两份模板 A–N 节编号对齐，可对照使用。
 
 ---
 
 ## 0. 使用流程
 
 1. **量取**：`read_image` 读设计稿，按第 2 节清单从宏观到微观提取；**先把 px 换算成 dp**。
-2. **填模板**：填第 1 节 `{{ }}` 占位符；设计稿只画了浅色的，深色主题节必须自己推演补全。
+2. **视觉转写**：**下游编码 AI 没有视觉能力，提示词就是它看到的全部设计稿**。任何一个"看图才懂"的细节没写进提示词，实现时就必然丢失或退回 material3 默认样式。逐块自问：这块的形状/背景/颜色与默认组件有什么不同？不同就必须在 D+/E 节写死。
+3. **填模板**：填第 1 节 `{{ }}` 占位符；设计稿只画了浅色的，深色主题节必须自己推演补全。
 3. **验证**：`./gradlew assembleDebug` + `adb install` + `uiautomator dump` 断言（见第 4 节），截图与设计稿并排比对。
 
 **换算规则（必做）**：
@@ -31,27 +31,37 @@
 - 设计稿：{{ 附图路径；画布 {{1080×2400}}，换算系数 ÷{{3}} }}
 
 ## B. 技术栈与硬约束
-- Kotlin + Jetpack Compose（BOM 按项目实际）+ material3；minSdk 按项目实际
+- Kotlin + Jetpack Compose（BOM 2026.06.00）+ material3；minSdk 26
 - 颜色一律走 ui/theme 的 MaterialTheme.colorScheme / 项目色板常量，禁止页面内硬编码 Color(0xFF...)
 - 新增色值先落 ui/theme/Color.kt 并配深色值，双主题都要可读
 - 单文件 ≤300 行；composable 拆分到职责单一；不使用 emoji，图标用 material-icons 或 SVG→ImageVector
 - 交互动作一律 onClick = {...} 显式命名传参，禁止裸尾随 lambda（插槽绑错位不报错）
+- **视觉保真红线：禁止用组件默认外观替代设计稿样式**。凡设计稿与 material3 默认渲染不同之处（底栏形状、头部背景、异形容器、渐变），必须在 D+/E 节显式写死；提示词未描述的地方按 material3 默认处理
 
 ## C. 画布基准与屏幕适配
 - 设计稿：{{ 1080×2400 px，即 360×800 dp 基准 }}
 - 适配策略：宽度用 fillMaxWidth + 权重（weight），禁止按固定宽写死；关键列表用 LazyColumn
-- 横屏/平板：{{ 简单自适应即可 / 需双栏 }}
+- 横屏/平板：{{ 简单自适应即可 / 需双栏 }}}
 
 ## D. 整体骨架（Compose 结构树，必填）
 Screen
 ├── Scaffold
-    ├── topBar：{{ TopAppBar（标题、返回按钮）}}
-    ├── bottomBar：{{ NavigationBar（4 个 Tab）/ 无 }}
+    ├── topBar：{{ TopAppBar（标题、返回按钮）/ 无 —— 样式若非默认须在 D+ 节写死 }}
+    ├── bottomBar：{{ NavigationBar（4 个 Tab）/ 无 / 自定义底栏 —— 容器色、指示器、选中态样式必须引用 D+ 节，禁止照搬默认 }}
     └── content
         ├── {{ 区块1：如 状态卡片（Column，内边距 16dp）}}
         ├── {{ 区块2：如 LazyColumn 商品行（行高 56dp）}}
         └── {{ 区块3：如 底部操作条（Row，主按钮占 weight(1f)）}}
 - edge-to-edge：根布局 windowInsetsPadding(WindowInsets.safeDrawing)，内容不被状态栏/导航栏遮挡
+
+## D+. 特殊视觉元素转写（必填，无视觉模型的唯一信息源）
+
+> 此节描述**设计稿上与 material3 默认渲染不同的所有视觉细节**。逐项回答：形状（矩形/圆角/弧形切角/波浪）、背景（纯色/线性渐变角度与起止色/图片）、边界（描边/阴影/无边框）、装饰（圆点/插画/水印）。没有特殊元素也必须写"无特殊视觉元素，均为标准 Card 外观"，禁止留空跳过。
+> **填写规则：所有数值/色值必须从设计稿量取后填入，下方 {{ }} 内只给"要回答哪些问题"的维度提示，不是示例答案——维度提示中的具体数字一律不得照抄。**
+
+- {{ 元素1 顶部区域（若有）：背景是什么（纯色色值/渐变角度+起止色/图片）？什么形状（底部圆角多大/切角/波浪）？是否延伸到状态栏后方？文字什么颜色？与 TopAppBar 默认灰底的差异点 }}
+- {{ 元素2 底部导航栏（若有）：容器什么颜色？有无描边/阴影？有无胶囊指示器？选中/未选中态各自样式？高度多少？与 NavigationBar 默认样式的差异点 }}
+- {{ 元素3+ 其它异形/渐变/悬浮/叠层元素：位置、背景、层次关系（如某卡片上叠 marginTop -{{N}}dp）}}
 
 ## E. 区域精确规格
 | 区块 | 尺寸(dp) | 背景 | 圆角 | 内边距 | 排列 |
@@ -62,6 +72,8 @@ Screen
 | 用途 | Color.kt 常量名 | 浅色值 | 深色值 |
 |---|---|---:|---:|
 | {{ 主色/背景/表面/边框/文字/状态色… }} | {{ BrandBlue700 }} | {{ #273F70 }} | {{ #9CB8E8 }} |
+
+- 大面积色块（品牌头部、底栏背景）也必须在此登记色值，并在 E 节"背景"列引用；渐变写"角度 + 起止色常量名"
 
 ## G. 字体层级
 | 层级 | sp/行高 | 字重 | 用途 |
@@ -95,8 +107,8 @@ Screen
 - 图片/插画：{{ 是否准备深色变体 }}；深色下对比度不足的辅助文字需提亮
 
 ## L. 数据契约绑定
-- 字段对齐：{{ 项目的字段契约文档关键字段 }}
-- 状态枚举对齐：{{ 项目的状态枚举文档 }}
+- 字段对齐：{{ docs/contract/fields.md 关键字段 }}
+- 状态枚举对齐：{{ docs/contract/terms.md }}
 - API 响应：{code, data} 信封结构，解析前先 curl 核对真实响应再写模型
 - mock 数据：{{ 2-3 条真实形状的样例 }}
 
@@ -109,10 +121,12 @@ Screen
 
 ## N. 验收清单
 1. {{ 如：详情卡片宽 fillMaxWidth、圆角 12dp、内边距 16dp }}
-2. {{ 所有可点区域 ≥48×48dp }}
-3. 浅色/深色主题下文字对比度均可读
-4. 真机返回键按预期 pop 而非退出 App
-5. 弱网/空数据/加载三态不塌布局
+2. {{ D+ 节每条特殊视觉元素逐条对应：如 头部为深蓝渐变且延伸到状态栏后、底栏无胶囊指示器 }}
+3. 所有可点区域 ≥48×48dp
+4. 浅色/深色主题下文字对比度均可读
+5. 真机返回键按预期 pop 而非退出 App
+6. 弱网/空数据/加载三态不塌布局
+7. 真机截图与设计稿并排比对，差异以"应为 X 而非 Y"反馈迭代
 ```
 
 ---
@@ -120,6 +134,7 @@ Screen
 ## 2. 量取信息检查清单（Android 特有项加粗）
 
 1. **骨架**：底不底部 Tab？顶栏有无返回/动作按钮？→ 先定 Scaffold 结构
+2. **与默认组件逐项对比**：设计稿每个区块与 material3 默认渲染有什么不同（容器色/指示器/圆角/渐变/异形）？每一处不同都写进 D+ 节 —— **这是无视觉模型唯一能感知差异的途径**，漏一条实现就丢一处
 2. **分区**：内容区几块？滚动还是固定？
 3. **px→dp 换算**：先问设计稿基准宽（1080/750/375），全部换算完再填
 4. **组件**：每块的 material3 对应物（Card/Button/Chip/TextField/Tab）
@@ -132,18 +147,16 @@ Screen
 
 ---
 
-## 3. 项目专用约束块示例（粘贴到 B 节，按实际项目改写）
+## 3. 本项目 Android 专用约束块（粘贴到 B 节）
 
 ```markdown
 - 工程：mobile/user/android 或 mobile/worker/android（独立 Gradle 工程，不跨 app 复用页面实现）
-- 技术栈：Kotlin 2.1.21 + Compose BOM 2026.06.00 + material3；minSdk 26；JDK 17
+- 技术栈：Kotlin 2.1.21 + Compose BOM 2026.06.00 + material3；minSdk 26；JDK 17（/opt/homebrew/opt/openjdk@17）
 - 颜色落 ui/theme/Color.kt，主题走 ui/theme/Theme.kt 的 MaterialTheme.colorScheme
-- 列表字段/状态枚举先查项目契约文档，禁止自造字段名
+- 列表字段/状态枚举先查 docs/contract/fields.md 与 docs/contract/terms.md，禁止自造字段名
 - onClick 显式命名传参；BackHandler 配自维护导航栈；根布局处理 WindowInsets.safeDrawing
 - 门禁：./gradlew assembleDebug 通过 + 真机 adb 安装验证；完成后 git commit
 ```
-
-> 跨项目要点：B 节版本号、工程路径、契约文档位置按目标项目实际改写；行为红线（onClick 显式传参、BackHandler、insets）是通用的。
 
 ---
 
@@ -163,4 +176,4 @@ adb shell input keyevent 4   # 返回键
 
 - 差异反馈同样写"应为 X 而非 Y"：`卡片圆角应为 12dp 而非 8dp；主按钮高度应为 48dp`。
 - 数据加载稳定后再取坐标（加载中 bounds 会漂移）。
-- 收敛后把定稿规格回写到项目的设计文档目录。
+- 收敛后把定稿规格回写 `docs/design/`，范式对齐 `visual-design-prompts.md`。
