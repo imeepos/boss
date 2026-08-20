@@ -53,7 +53,10 @@ select_device() {
   [[ -n "$DEVICE" ]] && return
   local devices
   devices="$($adb devices | awk 'NR > 1 && $2 == "device" {print $1}')"
-  mapfile -t device_list <<<"$devices"
+  local device_list=()
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && device_list+=("$line")
+  done <<<"$devices"
   if [[ "${#device_list[@]}" -eq 1 ]]; then
     DEVICE="${device_list[0]}"
   elif [[ "${#device_list[@]}" -eq 0 ]]; then
@@ -62,7 +65,10 @@ select_device() {
   else
     local usb_devices
     usb_devices="$($adb devices -l | awk '/usb:/ && $2 == "device" {print $1}')"
-    mapfile -t usb_list <<<"$usb_devices"
+    local usb_list=()
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && usb_list+=("$line")
+    done <<<"$usb_devices"
     if [[ "${#usb_list[@]}" -eq 1 ]]; then
       DEVICE="${usb_list[0]}"
     else
