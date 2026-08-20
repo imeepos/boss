@@ -203,7 +203,7 @@ internal fun OrderCardShell(onOpenAll: () -> Unit, content: @Composable () -> Un
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -212,12 +212,12 @@ internal fun OrderCardShell(onOpenAll: () -> Unit, content: @Composable () -> Un
                 Text("进行中订单", fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = brandBlue())
                 Box(
                     modifier = Modifier
-                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .sizeIn(minWidth = 48.dp, minHeight = 36.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .clickable(onClick = onOpenAll),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("全部 >", fontSize = 14.sp, lineHeight = 16.sp, color = auxText())
+                    Text("全部 >", fontSize = 13.sp, lineHeight = 16.sp, color = auxText())
                 }
             }
             content()
