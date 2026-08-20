@@ -46,3 +46,5 @@ Compose, 尾随lambda, onClick, right, 插槽, BackHandler, insets, statusBarsPa
 uiautomator, input tap, keyevent, lastUpdateTime, 真机, adb, 验证码, sms-code,
 portal_sms_codes, emulator, 10.0.2.2, adb reverse
 ```
+
+> 拿到移动端设计稿要写 Compose 页面提示词时，先看 [prompt-templates.md](prompt-templates.md)（Android 版模板 + px→dp 换算规则）。

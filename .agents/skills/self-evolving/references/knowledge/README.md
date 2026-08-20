@@ -32,8 +32,10 @@
 | 文件 | 用途 | 说明 |
 |:-----|:-----|:-----|
 | [shadcn-components.md](shadcn-components.md) | shadcn/ui 组件选型 | 63 个组件按用途分类，标注已安装状态，含安装命令与注意事项 |
+| [prompt-templates.md](prompt-templates.md) | 提示词模板/指南 | 设计稿→页面布局提示词（Web 版 + Android 版）、DSH Goal objective 编写指南，索引原文路径与核心规则 |
 
 ### 开工前必查
 
 写什么代码前，先看一眼对应分类的标题，确认有没有"已知的坑"：web/h5 看 [前端](前端.md)，mobile 双端看 [Android](android.md)。详见各分类文件末尾的"开工前 grep 关键词"建议。
 需要选用 shadcn/ui 组件时，先看 [shadcn-components.md](shadcn-components.md) 确认是否已安装、用途是否匹配。
+要把设计稿变成页面提示词、或要建 Goal 写 objective 时，先看 [prompt-templates.md](prompt-templates.md)。
