@@ -84,6 +84,9 @@ func workerPhotoUploadHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !workerOwnedTicket(c, tk) {
+			return
+		}
 		fh, err := c.FormFile("file")
 		if err != nil {
 			respond(c, apitypes.CodeInvalidParam, nil)
