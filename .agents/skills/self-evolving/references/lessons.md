@@ -94,3 +94,5 @@
 - 当单测 `:=` 赋值报 mismatch 时,目标函数返回多值就改成 `v, _ :=`。2026-08-19。
 - 当 Android App(targetSdk 35+) 页内返回键点不到/系统返回直接退出时,修复是根布局加 windowInsetsPadding(WindowInsets.safeDrawing) 让顶栏避开状态栏(edge-to-edge 默认绘制到屏幕顶端,顶部~90px 触控被状态栏吃掉),并给自维护导航栈配 BackHandler(enabled=stack.size>1){pop()};症状:uiautomator 显示按钮 bounds 正常但 input tap 无响应(2026-08-19 worker App)
 - 当需要冒烟/联调后端时,修复是等 102 服务器在提交后自动部署,直接用部署地址验证——本机只有一台测试服务器(102)且本机配置低,不要在本地 go run 起服务(2026-08-19 用户明令;本地起服务还撞端口双绑假 404)。
+- 当规格/设计稿要求"mock 数据"时,修复是仍按用户裁定拒绝 mock(2026-08-20 再次点名),直连 102 真实服务(192.168.0.102:28080)curl 取真数;user 端取 token 全流程:POST /auth/sms-code → go+pgx 查 102 库 portal_sms_codes(列: phone/scene/code/expires_at/used,注意无 created_at/expired_at) → POST /auth/login {mode:"sms"} 拿 data.token。
+- 当本机 gradlew 报 "Unable to locate a Java Runtime" 时,修复是 export JAVA_HOME=/opt/homebrew/opt/openjdk@17( brew openjdk@17 已装);且管道接 tail 会吞退出码,看 EXIT=${PIPESTATUS[0]}。

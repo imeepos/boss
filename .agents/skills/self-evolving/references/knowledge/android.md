@@ -48,3 +48,6 @@ portal_sms_codes, emulator, 10.0.2.2, adb reverse
 ```
 
 > 拿到移动端设计稿要写 Compose 页面提示词时，先看 [prompt-templates.md](prompt-templates.md)（Android 版模板 + px→dp 换算规则）。
+
+| 5 | lessons（2026-08-20） | 新页面数据一律直连 102 真实服务(192.168.0.102:28080),禁止 mock 样例数据——规格文档写"mock"也不执行(用户多次点名);user 端 token 走 sms-code→查库→login | 
+| 6 | lessons（2026-08-20） | gradlew 报无 Java Runtime → export JAVA_HOME=/opt/homebrew/opt/openjdk@17;管道接 tail 会吞退出码 |

@@ -539,3 +539,9 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 内容:在 dsh 中发现模型不支持 read_image,先查 `~/.dsh/settings.yaml` 找对应 id 的模型,看 `input: [ text, image ]` 是否配置正确——可能是配置漏了 image,不是模型本身不支持。
 - 沉淀位置:techniques.md 新增条目 + knowledge/实施.md 索引(环境/工具链 #5) + README 统计 31→32。已 grep 实证 settings.yaml 各 provider 模型确有 input 字段。
 - 关联:高频红线 7(禁止假设模型不支持图像输入)的排查路径——先查配置再下结论。
+
+## 2026-08-20 UserHomeScreen(用户端首页按设计稿实现)
+- 最大的坑:差点按规格 L 节照单内置 mock 数据。用户点名"不要使用mock 我在self-evolving已经警告过多次"。skill 已有红线(red-lines #7 禁 mock)但没在开工前扫到"规格文档本身要求 mock"这种变体——教训:规格与用户裁定冲突时,用户裁定优先;数据一律先 curl 102。
+- skill 有没有提前警告我?有(red-lines #7、lessons #88),但我只在"对接替换 mock"场景想起它,没意识到"新写页面直接造 mock"同罪。
+- 重来一次:读到任何含 mock 字样的规格,第一步 curl 192.168.0.102:28080 真实端点;拿不到 token 就走 sms-code→portal_sms_codes→login 链路。
+- 次要坑:gradlew 无 JAVA_HOME 被管道 tail 吞了退出码,"build 通过"是假的;已沉淀 lessons。
