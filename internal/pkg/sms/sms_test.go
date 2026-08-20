@@ -55,3 +55,27 @@ func TestRouterRegionRouting(t *testing.T) {
 		t.Errorf("US err = %v; want ErrUnsupportedRegion", err)
 	}
 }
+
+func TestRouterUnsupportedAndNoDefault(t *testing.T) {
+	def := &fakeSender{}
+	// 区号可归一化但不在 supported 列表。
+	r := NewRouter(def, nil, []string{"86"})
+	err := r.Send(context.Background(), "+60123456789", "1", "login")
+	if !errors.Is(err, ErrUnsupportedRegion) {
+		t.Fatalf("err=%v, want ErrUnsupportedRegion", err)
+	}
+	// ByRegion 命中但 sender 为 nil → 走 Default。
+	r = NewRouter(def, map[string]Sender{"86": nil}, []string{"86"})
+	if err := r.Send(context.Background(), "13800138000", "1", "login"); err != nil {
+		t.Fatal(err)
+	}
+	if def.region != "86" {
+		t.Fatalf("routed=%q, want default", def.region)
+	}
+	// Default 为 nil 且无 ByRegion。
+	r = NewRouter(nil, nil, []string{"86"})
+	if err := r.Send(context.Background(), "13800138000", "1", "login"); err == nil ||
+		err.Error() != "sms: no sender configured" {
+		t.Fatalf("err=%v, want no sender configured", err)
+	}
+}

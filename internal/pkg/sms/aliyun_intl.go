@@ -88,6 +88,9 @@ func (s *aliyunIntl) Send(ctx context.Context, phone, code, _ string) error {
 	return nil
 }
 
+// aliyunEndpoint POP 入口(测试可注入非法 URL 触发构造失败分支)。
+var aliyunEndpoint = "https://dysmsapiintl.aliyuncs.com/"
+
 // call 签发 POP V1 RPC 请求(HMAC-SHA1)并返回响应体。
 func (s *aliyunIntl) call(ctx context.Context, params map[string]string) ([]byte, error) {
 	q := url.Values{}
@@ -119,7 +122,7 @@ func (s *aliyunIntl) call(ctx context.Context, params map[string]string) ([]byte
 	sig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		"https://dysmsapiintl.aliyuncs.com/", strings.NewReader(q.Encode()+"&Signature="+percentEncode(sig)))
+		aliyunEndpoint, strings.NewReader(q.Encode()+"&Signature="+percentEncode(sig)))
 	if err != nil {
 		return nil, err
 	}
