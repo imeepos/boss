@@ -65,27 +65,28 @@ func (s *aliyunCloudauth) Verify(ctx context.Context, name, idNo string) (string
 	if err != nil {
 		return "", fmt.Errorf("realid: aliyun cloudauth: %w", err)
 	}
-	// 外部协议键名非 lowerCamelCase,走 map 解码(契约门禁红线)。
-	var resp struct {
-		Code         string `json:"Code"`
-		Message      string `json:"Message"`
-		ResultObject struct {
-			BizCode string `json:"BizCode"`
-		} `json:"ResultObject"`
-	}
+	// 外部协议键名非 lowerCamelCase(PascalCase),契约门禁 B 禁止违约 json tag,
+	// 走 map 解码(与 stripe/sms 外部响应同口径)。
+	var resp map[string]any
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return "", fmt.Errorf("realid: aliyun cloudauth: bad response: %w", err)
 	}
-	if resp.Code != "200" {
-		return "", fmt.Errorf("realid: aliyun cloudauth: %s: %s", resp.Code, resp.Message)
+	code, _ := resp["Code"].(string)
+	if code != "200" {
+		msg, _ := resp["Message"].(string)
+		return "", fmt.Errorf("realid: aliyun cloudauth: %s: %s", code, msg)
 	}
-	switch resp.ResultObject.BizCode {
+	bizCode := ""
+	if ro, ok := resp["ResultObject"].(map[string]any); ok {
+		bizCode, _ = ro["BizCode"].(string)
+	}
+	switch bizCode {
 	case "1":
 		return Pass, nil
 	case "2", "3":
 		return Fail, nil
 	}
-	return "", fmt.Errorf("realid: aliyun cloudauth: unknown BizCode %q", resp.ResultObject.BizCode)
+	return "", fmt.Errorf("realid: aliyun cloudauth: unknown BizCode %q", bizCode)
 }
 
 // call 签发 POP V1 RPC 请求并返回响应体(同 sms 通道实现)。

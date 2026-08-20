@@ -8,6 +8,7 @@ info:
     本文件为 APISIX 路由与假数据 mock 的单一事实源。
     接口按域拆分至 worker/ 目录,本文件仅做聚合(内联 $ref)。
     前缀 /api/worker/v1 与用户端 /api/v1 隔离,避免网关路由冲突。
+    鉴权:workerJWT(Bearer)或 API key(X-API-Key,仅 worker 主体;AI OS/CLI 免登录场景)。
 servers:
   - url: /api/worker/v1
     description: 师傅端接口前缀(经 APISIX 网关 /api/worker/v1)

@@ -1,7 +1,12 @@
 # 师傅端通用组件。字段命名遵循 docs/contract/fields.md 第 0 节(lowerCamelCase)。
 components:
   securitySchemes:
-    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: workerJWT }
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: 免登录密钥(仅 worker 主体;account/customer 主体密钥在本端 401)
 
   parameters:
     TicketNo:

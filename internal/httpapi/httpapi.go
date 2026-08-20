@@ -19,7 +19,7 @@ import (
 //	端       前缀               JWT                 API key 主体
 //	admin   /api/admin/v1     aud=admin           account(全量 RBAC)/worker/customer(受限,扫码等场景)
 //	user    /api/user/v1      aud=user            customer(仅)
-//	worker  /api/worker/v1    issuer=boss-worker  (独立 claims,未接 API key)
+//	worker  /api/worker/v1    issuer=boss-worker  worker(仅;AI OS/CLI 免登录场景)
 func RegisterRoutes(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	adminapi.Register(r, a, mgr)
 	userapi.Register(r, a, mgr)

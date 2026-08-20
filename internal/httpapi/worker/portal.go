@@ -6,6 +6,8 @@ package workerapi
 // 复用同一密钥配置(config.JWT),issuer 固定 boss-worker 与 admin(boss)互不可冒充。
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -14,8 +16,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/config"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
+	"github.com/ymm-001/boss/internal/pkg/middleware"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -73,8 +78,20 @@ func verifyWorkerToken(tokenStr string) (*workerClaims, error) {
 }
 
 // workerAuth 师傅端鉴权中间件:注入 ctxPortalWorkerID/Name。
+// 鉴权链:APIKeyAuth 在前(见 Register);worker 主体密钥直接注入师傅身份,
+// 其余(account/customer 主体)一律 401——师傅端不与后台/客户身份混用。
 func workerAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if s := middleware.SubjectFrom(c); s != nil {
+			if s.Type != apikey.SubjectWorker {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "api key subject not allowed on worker portal"})
+				return
+			}
+			c.Set(ctxPortalWorkerID, s.Ref)
+			c.Set(ctxPortalWorkerName, s.Name)
+			c.Next()
+			return
+		}
 		h := c.GetHeader("Authorization")
 		if !strings.HasPrefix(h, "Bearer ") {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "missing bearer token"})
@@ -107,7 +124,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	pub := r.Group("/api/worker/v1")
 	registerWorkerSelfRegistration(pub, a)
 	registerWorkerPortalAuth(pub, a)
-	wauth := r.Group("/api/worker/v1", workerAuth())
+	wauth := r.Group("/api/worker/v1", middleware.APIKeyAuth(a.APIKey, workerSubjectResolver(a)), workerAuth())
 	registerWorkerPortalTicketRoutes(wauth, a)
 	registerWorkerPortalScanRoutes(wauth, a)
 	registerWorkerPortalAssetRoutes(wauth, a)
@@ -124,3 +141,17 @@ func registerWorkerPortalAuth(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 }
+
+// workerSubjectResolver 师傅端只认 worker 主体密钥;account/customer 主体
+// 在 API key 层即拒绝(401),不进入师傅身份域——师傅端不与后台/客户身份混用。
+func workerSubjectResolver(a *app.Application) middleware.SubjectResolver {
+	return func(ctx context.Context, subjType string, ref int64) (string, string, error) {
+		if subjType != apikey.SubjectWorker {
+			return "", "", errSubjectNotAllowed
+		}
+		return httpx.APIKeySubjectResolver(a)(ctx, subjType, ref)
+	}
+}
+
+// errSubjectNotAllowed 非 worker 主体访问师傅端。
+var errSubjectNotAllowed = errors.New("api key subject not allowed on worker portal")
