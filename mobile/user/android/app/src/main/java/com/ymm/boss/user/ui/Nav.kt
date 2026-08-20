@@ -50,7 +50,7 @@ class Nav(initial: Route) {
     companion object {
         /** 底部 tab:与 docs/user/nav.js 一致(首页/产品/订单/我的)。 */
         val TABS = listOf(
-            "home" to "首页", "products" to "产品", "orders" to "订单", "profile" to "我的",
+            "home" to "首页", "products" to "服务", "orders" to "账单", "profile" to "我的",
         )
 
         /** tab 图标:选中实心、未选中描边(material-icons-core 随 material3 自带)。 */
