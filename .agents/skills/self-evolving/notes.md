@@ -745,3 +745,13 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最大坑:共享工作区有并行进程在改 minio/wiring/storage-config,审计中途 build/contract-sync 突然红,先 `git status` 分辨归属再动手,别人的 WIP 不碰不提交。
 - skill 提前警告了:红线 #1(共享工作区文件可能被并行进程改掉)。
 - 重来一次:开审前先 `git status`,出现非本任务改动立即在总结中声明归属。
+
+## 2025-XX 单测覆盖率补齐(billing/sms 两包到100%)
+- 最大坑:无。唯一摩擦:gofmt 改写文件后 edit 报 "file changed since read",重读后重试即过——印证红线1。
+- 复用经验:不可达错误分支(json.Marshal 基本字段、硬编码合法 URL 的 NewRequest)用包级 var 注入口(marshalCDR / aliyunEndpoint / kafkaWriter 接口)做最小缝,行为零变更。
+- 用户明确"不要 git commit"时,skill 门禁的 commit 要求让位于用户指令。
+
+## 2025-XX 单测覆盖率补齐(关键边界优先)
+- 最大坑:并行代理生成的 pgx mock 测试与实际依赖签名/SQL 参数不一致，导致全仓编译或测试失败；为追求数字而引入不可维护测试反而降低质量。
+- skill 是否提前警告:共享工作区改动需先检查归属，红线覆盖了这一点；但没有替代“先确保测试可编译、再看覆盖率”的明确门禁。
+- 重来一次:先按包单独运行测试和 coverprofile，再提交可靠的边界用例；对真实数据库/对象存储优先使用稳定集成测试或只覆盖可离线模拟的错误边界，不为不可达分支修改生产代码。

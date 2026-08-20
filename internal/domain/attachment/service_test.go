@@ -2,6 +2,7 @@ package attachment
 
 import (
 	"context"
+	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -23,9 +24,17 @@ func (f *fakeStore) ListByUploader(context.Context, string, int64, int) ([]Attac
 	return nil, nil
 }
 
-type fakeObj struct{ key string }
+type fakeObj struct {
+	key string
+	err error
+	got MinIOConfig
+}
 
-func (f *fakeObj) Put(_ context.Context, _ MinIOConfig, _ io.Reader, _ int64, _, _ string) (string, error) {
+func (f *fakeObj) Put(_ context.Context, cfg MinIOConfig, _ io.Reader, _ int64, _, _ string) (string, error) {
+	f.got = cfg
+	if f.err != nil {
+		return "", f.err
+	}
 	return f.key, nil
 }
 
@@ -65,5 +74,30 @@ func TestValidUploaderType(t *testing.T) {
 	}
 	if ValidUploaderType("admin") {
 		t.Fatal("admin should be invalid")
+	}
+}
+
+func TestUploadResolveConfig(t *testing.T) {
+	obj := &fakeObj{key: "k"}
+	svc := &Service{St: &fakeStore{}, Obj: obj,
+		Resolve: func(context.Context) (MinIOConfig, error) { return MinIOConfig{Bucket: "resolved"}, nil }}
+	if _, err := svc.Upload(context.Background(), &Attachment{UploaderType: UploaderAccount, UploaderID: 1}, strings.NewReader("x"), 1); err != nil {
+		t.Fatalf("upload: %v", err)
+	}
+	if obj.got.Bucket != "resolved" {
+		t.Fatalf("resolved config not used: %+v", obj.got)
+	}
+
+	wantErr := errors.New("resolve boom")
+	svc.Resolve = func(context.Context) (MinIOConfig, error) { return MinIOConfig{}, wantErr }
+	if _, err := svc.Upload(context.Background(), &Attachment{UploaderType: UploaderAccount, UploaderID: 1}, strings.NewReader("x"), 1); !errors.Is(err, wantErr) {
+		t.Fatalf("resolve error should propagate: %v", err)
+	}
+}
+
+func TestUploadObjPutError(t *testing.T) {
+	svc := &Service{St: &fakeStore{}, Obj: &fakeObj{err: errors.New("put boom")}}
+	if _, err := svc.Upload(context.Background(), &Attachment{UploaderType: UploaderWorker, UploaderID: 2}, strings.NewReader("x"), 1); err == nil {
+		t.Fatal("obj put error should fail")
 	}
 }

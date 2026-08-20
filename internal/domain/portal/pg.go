@@ -73,10 +73,13 @@ func (s *pgStore) ConsumeSms(ctx context.Context, phone, scene, code string) (bo
 	return tag.RowsAffected() == 1, nil
 }
 
+// randReader 抽成变量仅为注入故障 reader(测试),生产行为不变。
+var randReader = rand.Reader
+
 func randDigits(n int) (string, error) {
 	out := make([]byte, n)
 	for i := range out {
-		v, err := rand.Int(rand.Reader, big.NewInt(10))
+		v, err := rand.Int(randReader, big.NewInt(10))
 		if err != nil {
 			return "", err
 		}
