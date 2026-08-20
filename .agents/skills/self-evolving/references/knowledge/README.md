@@ -32,7 +32,7 @@
 | 文件 | 用途 | 说明 |
 |:-----|:-----|:-----|
 | [shadcn-components.md](shadcn-components.md) | shadcn/ui 组件选型 | 63 个组件按用途分类，标注已安装状态，含安装命令与注意事项 |
-| [prompt-templates.md](prompt-templates.md) | 提示词模板/指南 | 设计稿→页面布局提示词（Web 版 + Android 版）、DSH Goal objective 编写指南，索引原文路径与核心规则 |
+| [prompt-templates.md](prompt-templates.md) | 提示词模板/指南 | 设计稿→页面布局提示词（Web 版 + Android 版）、DSH Goal objective 编写指南；全文内化在 knowledge/ 下，跨项目可复用 |
 
 ### 开工前必查
 
