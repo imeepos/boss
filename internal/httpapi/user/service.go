@@ -50,7 +50,7 @@ func portalListComplaints(a *app.Application) gin.HandlerFunc {
 			}
 			items = append(items, gin.H{
 				"complaintId": cp.TicketNo, "type": strings.TrimPrefix(cp.Type, "用户投诉: "),
-				"typeLabel": portalComplaintTypeLabel[strings.TrimPrefix(cp.Type, "用户投诉: ")],
+				"typeLabel":  portalComplaintTypeLabel[strings.TrimPrefix(cp.Type, "用户投诉: ")],
 				"relOrderNo": "", "description": "", "status": cp.Status,
 				"statusLabel": portalComplaintStatusLabel[cp.Status], "createdAt": "",
 			})
@@ -71,6 +71,14 @@ var portalFaultTypeLabel = map[string]string{
 
 // portalFaultTypeName 报障类型 → 工单域 type 值(admin 队列口径)。
 func portalFaultTypeName(t string) string { return "用户报障: " + t }
+
+func portalFaultTypeLabelFromStored(t string) string {
+	const prefix = "用户报障: "
+	if strings.HasPrefix(t, prefix) {
+		t = strings.TrimPrefix(t, prefix)
+	}
+	return portalFaultTypeLabel[t]
+}
 
 // portalComplaintMeta 取客户归属运营主体(complaints.legal_entity 非空约束)。
 func portalComplaintMeta(ctx context.Context, a *app.Application, cid int64) (int64, string, error) {
@@ -102,7 +110,10 @@ func portalListFaults(a *app.Application) gin.HandlerFunc {
 		items := make([]gin.H, 0)
 		for _, f := range list {
 			if f.CustomerID == cid {
-				items = append(items, gin.H{"ticketNo": f.TicketNo, "type": f.Type, "status": f.Status})
+				items = append(items, gin.H{
+					"ticketNo": f.TicketNo, "type": f.Type, "typeLabel": portalFaultTypeLabelFromStored(f.Type),
+					"status": f.Status, "statusLabel": portalComplaintStatusLabel[f.Status],
+				})
 			}
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
@@ -172,7 +183,8 @@ func portalFaultDetail(a *app.Application) gin.HandlerFunc {
 		for _, f := range list {
 			if f.TicketNo == c.Param("ticketNo") && f.CustomerID == cid {
 				respond(c, apitypes.CodeOK, gin.H{"fault": gin.H{
-					"ticketNo": f.TicketNo, "type": f.Type, "status": f.Status,
+					"ticketNo": f.TicketNo, "type": f.Type, "typeLabel": portalFaultTypeLabelFromStored(f.Type),
+					"status": f.Status, "statusLabel": portalComplaintStatusLabel[f.Status],
 				}, "sla": "≤4h", "timeline": []gin.H{
 					{"step": 1, "title": "提交报修", "result": "DONE"},
 					{"step": 2, "title": "受理派单", "result": "DOING"},

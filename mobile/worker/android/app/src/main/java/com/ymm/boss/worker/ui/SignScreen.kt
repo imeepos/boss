@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.json.JSONArray
 import com.ymm.boss.worker.api.ScanApi
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Line
@@ -90,10 +91,13 @@ fun SignScreen(nav: NavHost, no: String) {
                 strokes = emptyList(); stroke = emptyList()
             }
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("确认签收并激活", modifier = Modifier.fillMaxWidth()) {
+            PrimaryButton("确认签收并激活", enabled = strokes.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
                 scope.launch {
                     try {
-                        val r = ScanApi.sign(no, "handwritten")
+                        val signatureData = JSONArray(strokes.map { stroke ->
+                            JSONArray(stroke.map { point -> JSONArray(listOf(point.x, point.y)) })
+                        }).toString()
+                        val r = ScanApi.sign(no, signatureData)
                         toast(ctx, r.optString("message", "签收成功"))
                         nav.switchTab(Screen.Orders)
                     } catch (e: Exception) { toast(ctx, "签收失败：${e.message}") }
