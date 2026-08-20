@@ -591,3 +591,7 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 
 ## 2025-08-20 ui-proto 预设增加 spec.md 交付物
 - 无大坑；一次校验用裸 js-yaml 解析预设 YAML 报 unknown tag，原因是 loader 用自己的 entryListSchema 方言（!!js 标签），须用 cordis-plugin-include 导出的 schema 或直接 mount 校验。
+
+## 2025-08-20 ui-proto 预设加双 loop + 反馈台账
+- 无翻车。落地前先在 boss 项目实测勘察清单（tokens.css 114 个令牌可提取），证明清单维度可执行而不是纸面检查。
+- 经验：自反馈机制要落到"文件 + 强制时序"（FEEDBACK.md + 生成前必读）才有效，光写进 persona 会被后续上下文冲淡。
