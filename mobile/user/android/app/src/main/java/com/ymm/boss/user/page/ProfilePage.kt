@@ -68,7 +68,6 @@ fun ProfileScreen(nav: Nav) {
         QuickEntriesCard(data, nav)
         ServiceEntriesCard(nav, unread)
         SettingsCard(nav)
-        LanguageCard()
         LogoutCard(nav)
         Spacer(Modifier.height(12.dp))
     }
@@ -101,9 +100,22 @@ private fun ProfileHead(data: JSONObject?, nav: Nav) {
                 if (verified) VerifiedBadge()
             }
         }
+        SettingsAndLanguage(Modifier.align(Alignment.TopEnd), nav)
+    }
+}
+
+/** 顶部右上角:语言下拉 + 设置入口,同一行垂直居中。 */
+@Composable
+private fun SettingsAndLanguage(modifier: Modifier = Modifier, nav: Nav) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LanguageDropdown()
+        Spacer(Modifier.width(8.dp))
         Icon(
             Icons.Filled.Settings, contentDescription = "设置", tint = Color.White,
-            modifier = Modifier.align(Alignment.TopEnd).size(44.dp).clickable { nav.push(Route.Security) }.padding(10.dp),
+            modifier = Modifier.size(40.dp).clickable { nav.push(Route.Security) }.padding(10.dp),
         )
     }
 }

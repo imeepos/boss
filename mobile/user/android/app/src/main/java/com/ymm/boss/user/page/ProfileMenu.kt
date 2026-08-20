@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Help
@@ -21,13 +24,13 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CurrencyYen
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -111,32 +115,42 @@ internal fun SettingsCard(nav: Nav) {
     }
 }
 
+/** 顶部语言下拉:渐变头上的半透明胶囊,选中后落 ProfileApi.setLanguage。 */
 @Composable
-internal fun LanguageCard() {
+internal fun LanguageDropdown(modifier: Modifier = Modifier) {
     var lang by remember { mutableStateOf("zh") }
+    var expanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    AppCard {
-        CardTitle("语言 / Language", null)
-        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("zh" to "中文", "en" to "English", "fil" to "Filipino").forEach { (key, label) ->
-                Button(
+    val options = listOf("zh" to "中文", "en" to "English", "fil" to "Filipino")
+    val label = options.firstOrNull { it.first == lang }?.second ?: "中文"
+    Box(modifier) {
+        Row(
+            Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .background(Color.White.copy(alpha = 0.2f))
+                .clickable { expanded = true }
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Language, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(label, color = Color.White, fontSize = 12.sp, lineHeight = 14.sp)
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "切换语言", tint = Color.White, modifier = Modifier.size(16.dp))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (key, name) ->
+                DropdownMenuItem(
+                    text = { Text(name, fontSize = 13.sp, color = if (lang == key) Palette.primary else Palette.ink) },
                     onClick = {
                         lang = key
+                        expanded = false
                         scope.launch {
-                            try { ProfileApi.setLanguage(key) } catch (e: Exception) { } // 失败保留本地高亮
+                            try { ProfileApi.setLanguage(key) } catch (e: Exception) { } // 失败保留本地选中
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (lang == key) Palette.primary else Palette.panel,
-                        contentColor = if (lang == key) Color.White else Palette.muted,
-                    ),
-                ) { Text(label, fontSize = 12.5.sp) }
+                )
             }
         }
-        Text(
-            "界面三语由品牌/区域默认语言配置驱动,切换后 3 秒内生效。",
-            fontSize = 12.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp),
-        )
     }
 }
 
