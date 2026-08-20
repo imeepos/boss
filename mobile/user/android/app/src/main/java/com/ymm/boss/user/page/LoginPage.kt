@@ -99,7 +99,8 @@ fun LoginScreen(nav: Nav) {
                     Checkbox(checked = agreed, onCheckedChange = { agreed = it })
                     Text("已阅读并同意《用户协议》", fontSize = 12.5.sp, color = Palette.muted)
                 }
-                Text("忘记密码", fontSize = 12.5.sp, color = Palette.muted)
+                Text("忘记密码", fontSize = 12.5.sp, color = Palette.primary,
+                    modifier = Modifier.clickable { nav.push(com.ymm.boss.user.ui.Route.Forgot) })
             }
 
             Text(err, fontSize = 12.5.sp, color = Palette.err, modifier = Modifier.padding(bottom = 6.dp))

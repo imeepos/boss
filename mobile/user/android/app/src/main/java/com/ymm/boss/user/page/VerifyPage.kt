@@ -58,7 +58,7 @@ fun VerifyScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("实名认证", onBack = { nav.pop() }, action = "帮助") { nav.push(Route.Help) }
+        TopBar("实名认证", onBack = { nav.pop() }, action = "帮助", onAction = { nav.push(Route.Help) })
         VerifyBody(loading, data)
         Spacer(Modifier.height(12.dp))
     }
