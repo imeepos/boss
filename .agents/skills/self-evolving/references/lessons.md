@@ -107,3 +107,5 @@
 - 移动端生图 prompt 不写"可滚动/最小行高48dp/按钮44dp/边距16dp"等硬约束，gpt-image-2 会把所有区块塞进一屏并全面缩水（profile-v1 实测：行高24dp、卡片间距4dp、通栏大红退出按钮）。硬约束清单已固化为 ui-proto 预设 M5 元模板。
 - spec 的设计 token 表要和生图 prompt 同源：先写 spec 后生图时必须把 token 逐项翻译进 prompt，否则 spec 约束实现、图却另一套（profile-v1：spec 写了 44dp，图里 31dp）。
 - AI 设计稿"丑"的六大结构性根因：塞一屏/间距崩坏/组件样式混用/平台归属混乱/破坏性操作过重/小字低对比——评审时按这六类逐项打勾，不用自由心证。
+- 生图前先从项目基准页截图识图提取 UI-SPEC（token/组件/图标/平台特征），再按 spec 生图——盲写 prompt 生成的设计稿必然与项目风格漂移（profile v2/v3 教训：prompt 自造的 #1E3A8A 渐变和基准页 #0872F4→#1698FA 完全不同）。
+- boss 用户端基准页是 iOS 视觉语言（9:41/Home Indicator/四栏 Tab），新设计稿默认沿用 iOS 风格，禁止混 Android 元素；规范已固化在 designs/UI-SPEC.md。
