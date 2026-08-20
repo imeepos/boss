@@ -514,3 +514,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 ## 2026-08-20 五项数据库裁定落地
 - 最大的坑: subagent 长回合零落盘时,等待是浪费;interrupt 后接 send_message 强制检查点最有效,打断后其半成品(已落盘文件)可直接由主 agent 接管收尾。
 - 重来一次: subagent 超过 ~3 轮无文件增量就打断,而不是等到第 5 轮。
+
+## 2026-12-XX 修复 mobile/user 我的页文字遮挡
+- 哪个坑浪费最多时间:无大坑;工作区已有 AppCard Box→Column 修复但未提交(僵尸进程回退高危),根因是 Box 让卡片子元素全部叠在左上角。
+- skill 有没有提前警告:有,red-line"验证通过立即 commit"和 android.md 的叠印记录直接命中。
+- 重来一次:同样流程——构建(openjdk@17 需显式 export JAVA_HOME)→装模拟器→uiautomator dump→python 算 bounds 重叠→commit。
