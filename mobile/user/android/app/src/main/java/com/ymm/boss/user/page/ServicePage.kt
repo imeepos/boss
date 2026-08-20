@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.ServiceApi
@@ -60,7 +61,7 @@ fun ServiceScreen(nav: Nav) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).imePadding()) {
             AppCard {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("智能客服")
+                    Text("智能客服", fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink, modifier = Modifier.weight(1f))
                     Tag("在线", Palette.success)
                 }
                 msgs.forEach { Bubble(it) }
@@ -77,13 +78,14 @@ fun ServiceScreen(nav: Nav) {
 
 @Composable
 private fun Bubble(m: Msg) {
-    Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = if (m.fromMe) Arrangement.End else Arrangement.Start) {
+    Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = if (m.fromMe) Arrangement.End else Arrangement.Start) {
         Text(
-            m.text, fontSize = 13.5.sp,
+            m.text, fontSize = 13.sp,
             color = if (m.fromMe) Color.White else Palette.ink,
             modifier = Modifier
                 .fillMaxWidth(0.78f)
-                .background(if (m.fromMe) Palette.primary else Color(0xFFF0F4F8), RoundedCornerShape(10.dp))
+                // 对方气泡底色走 Palette.line 浅色语义,暗色主题下同色系不刺眼
+                .background(if (m.fromMe) Palette.primary else Palette.line, RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         )
     }
