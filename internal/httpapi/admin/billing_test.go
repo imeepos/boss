@@ -25,6 +25,10 @@ func (f *fakeBilling) GetBill(context.Context, int64) (*billing.Bill, error)    
 func (f *fakeBilling) ListPayments(context.Context, int64) ([]billing.Payment, error) {
 	return nil, nil
 }
+
+func (f *fakeBilling) ListPaymentsByCustomer(context.Context, int64) ([]billing.Payment, error) {
+	return nil, nil
+}
 func (f *fakeBilling) CreatePayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
 func (f *fakeBilling) RecordPayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
 func (f *fakeBilling) GenerateBills(context.Context, string) (int, error)            { return 0, nil }

@@ -184,10 +184,21 @@ func portalSecurity(a *app.Application) gin.HandlerFunc {
 		if acc, err := a.Portal.AccountByPhone(c.Request.Context(), v.Phone); err == nil {
 			pwdAt = acc.PasswordUpdatedAt.Format(time.RFC3339)
 		}
+		// verifyAt:契约要求返回;取最近一次 PASS 核验时间,未核验为空串。
+		verifyAt := ""
+		if vs, err := a.RealName.ListVerifications(c.Request.Context(), cid); err == nil {
+			for _, ver := range vs {
+				if ver.Result == "PASS" {
+					if at := ver.VerifiedAt.Format(time.RFC3339); at > verifyAt {
+						verifyAt = at
+					}
+				}
+			}
+		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"realNameStatus": v.RealNameStatus, "nameMasked": portalMaskName(v.Name),
 			"idNoMasked": portalMaskIDNo(v.IdNo), "passwordUpdatedAt": pwdAt,
-			"phoneMasked": portalMaskPhone(v.Phone),
+			"phoneMasked": portalMaskPhone(v.Phone), "verifyAt": verifyAt,
 		})
 	}
 }

@@ -149,30 +149,42 @@ func portalCreatePayment(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// portalListPayments GET /payments:我的缴费记录(跨账单聚合)。
+// portalListPayments GET /payments:我的缴费记录(缴费+充值,按客户聚合)。
 func portalListPayments(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
-		bills, err := a.Billing.ListBills(c.Request.Context(), cid)
+		pays, err := a.Billing.ListPaymentsByCustomer(c.Request.Context(), cid)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		items := make([]gin.H, 0)
-		for _, b := range bills {
-			pays, err := a.Billing.ListPayments(c.Request.Context(), b.BillID)
-			if err != nil {
-				continue
+		periodByBill := portalBillPeriods(a, c, cid)
+		items := make([]gin.H, 0, len(pays))
+		for _, p := range pays {
+			period := "余额充值"
+			if p.BillID != 0 {
+				period = periodByBill[p.BillID]
 			}
-			for _, p := range pays {
-				items = append(items, gin.H{
-					"payNo": p.PayNo, "amount": p.Amount, "period": b.Period,
-					"payMethod": p.Method, "paidAt": time.Now().Format(time.RFC3339),
-				})
-			}
+			items = append(items, gin.H{
+				"payNo": p.PayNo, "amount": p.Amount, "period": period,
+				"payMethod": p.Method, "paidAt": time.Now().Format(time.RFC3339),
+			})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
 	}
+}
+
+// portalBillPeriods 客户账单 billID → 账期映射(缴费流水回显账期用)。
+func portalBillPeriods(a *app.Application, c *gin.Context, cid int64) map[int64]string {
+	out := map[int64]string{}
+	bills, err := a.Billing.ListBills(c.Request.Context(), cid)
+	if err != nil {
+		return out
+	}
+	for _, b := range bills {
+		out[b.BillID] = b.Period
+	}
+	return out
 }
 
 // portalBillDetail GET /bills/:billNo:我的账单明细(按客户过滤)。
@@ -198,22 +210,28 @@ func portalBillDetail(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// portalReceipt GET /payments/:payNo/receipt:在我的缴费流水中找凭证。
+// portalReceipt GET /payments/:payNo/receipt:在我的缴费流水中找凭证(含充值)。
 func portalReceipt(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
-		bills, _ := a.Billing.ListBills(c.Request.Context(), cid)
-		for _, b := range bills {
-			pays, _ := a.Billing.ListPayments(c.Request.Context(), b.BillID)
-			for _, p := range pays {
-				if p.PayNo == c.Param("payNo") {
-					respond(c, apitypes.CodeOK, gin.H{
-						"receiptNo": "OR-" + p.PayNo, "amount": p.Amount,
-						"period": b.Period, "payMethod": p.Method, "status": p.Status,
-						"paidAt": time.Now().Format(time.RFC3339), "payNo": p.PayNo,
-					})
-					return
+		pays, err := a.Billing.ListPaymentsByCustomer(c.Request.Context(), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		periodByBill := portalBillPeriods(a, c, cid)
+		for _, p := range pays {
+			if p.PayNo == c.Param("payNo") {
+				period := "余额充值"
+				if p.BillID != 0 {
+					period = periodByBill[p.BillID]
 				}
+				respond(c, apitypes.CodeOK, gin.H{
+					"receiptNo": "OR-" + p.PayNo, "amount": p.Amount,
+					"period": period, "payMethod": p.Method, "status": p.Status,
+					"paidAt": time.Now().Format(time.RFC3339), "payNo": p.PayNo,
+				})
+				return
 			}
 		}
 		respond(c, apitypes.CodeNotFound, nil)
@@ -249,6 +267,14 @@ func portalTopup(a *app.Application) gin.HandlerFunc {
 		}
 		payNo, err := a.Portal.NextNo(c.Request.Context(), "PAY")
 		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		// 充值也落缴费流水(bill_id NULL + customer_id 归属),否则 /payments 与凭证端点查不到。
+		if _, err := a.Billing.CreatePayment(c.Request.Context(), billing.Payment{
+			PayNo: payNo, CustomerID: cid, Amount: req.Amount,
+			Method: req.PayMethod, Status: "SUCCESS",
+		}); err != nil {
 			respondErr(c, err)
 			return
 		}

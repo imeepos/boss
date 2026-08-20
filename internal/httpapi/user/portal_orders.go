@@ -71,6 +71,18 @@ func portalListOrders(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// portalOrderAddress 订单详情地址:优先复用列表读模型的联表地址(addresses/user_addresses),
+// 与 /orders 列表口径一致;联表也取不到时回退地址簿查名。
+func portalOrderAddress(a *app.Application, c *gin.Context, cid int64, o *order.Order) string {
+	rows, err := a.Order.List(c.Request.Context(), order.OrderQuery{
+		Keyword: o.OrderNo, CustomerID: cid, Limit: 1,
+	})
+	if err == nil && len(rows) > 0 && rows[0].Address != "" {
+		return rows[0].Address
+	}
+	return addressName(a, c, o.AddressID, "")
+}
+
 // portalGetOrder GET /orders/:orderNo:订单详情(含 12 环节时间轴)。
 func portalGetOrder(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -96,7 +108,7 @@ func portalGetOrder(a *app.Application) gin.HandlerFunc {
 		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"order": portalOrderSummary(o, productName(a, c, o.OfferID),
-				addressName(a, c, o.AddressID, ""), o.Status == "DONE"),
+				portalOrderAddress(a, c, cid, o), o.Status == "DONE"),
 			"submitedAt":            o.CreatedAt.Format(time.RFC3339),
 			"technicianName":        techName,
 			"technicianPhoneMasked": portalMaskPhone(techPhone),

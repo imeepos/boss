@@ -17,14 +17,15 @@ type Bill struct {
 	Status          string  `json:"status"` // UNPAID/PAID/OVERDUE
 }
 
-// Payment 缴费流水(针对账单的收款记录)。
+// Payment 缴费/充值流水(充值无账单,bill_id 为 NULL → BillID=0)。
 type Payment struct {
-	ID     int64   `json:"id"`
-	PayNo  string  `json:"payNo"`
-	BillID int64   `json:"billId"`
-	Amount float64 `json:"amount"`
-	Method string  `json:"method"` // wechat/alipay/card/cash
-	Status string  `json:"status"` // SUCCESS/FAILED/REFUNDED
+	ID         int64   `json:"id"`
+	PayNo      string  `json:"payNo"`
+	BillID     int64   `json:"billId"`
+	CustomerID int64   `json:"customerId"` // 充值流水归属;账单流水可缺省(按账单回查)
+	Amount     float64 `json:"amount"`
+	Method     string  `json:"method"` // wechat/alipay/card/cash
+	Status     string  `json:"status"` // SUCCESS/FAILED/REFUNDED
 }
 
 // BillingService 计费账务域服务口(阶段5):出账/缴费。
@@ -33,6 +34,8 @@ type BillingService interface {
 	CreateBill(ctx context.Context, b Bill) (int64, error)
 	GetBill(ctx context.Context, id int64) (*Bill, error)
 	ListPayments(ctx context.Context, billID int64) ([]Payment, error)
+	// ListPaymentsByCustomer 按客户聚合缴费+充值流水(customer_id 优先,账单归属兜底)。
+	ListPaymentsByCustomer(ctx context.Context, customerID int64) ([]Payment, error)
 	CreatePayment(ctx context.Context, p Payment) (int64, error)
 	// RecordPayment 收款落账:缴费流水 + 账单置 PAID 同事务,pay_no 唯一幂等。
 	RecordPayment(ctx context.Context, p Payment) (int64, error)

@@ -251,6 +251,7 @@ components:
           items:
             type: object
             properties:
+              invoiceNo: { type: string }
               period: { type: string }
               amount: { type: number }
               issuedAt: { type: string }

@@ -39,8 +39,9 @@ func portalListInvoices(a *app.Application) gin.HandlerFunc {
 			if invs, err := a.Tax.ListInvoices(c.Request.Context(), cid); err == nil {
 				for _, inv := range invs {
 					records = append(records, gin.H{
+						"invoiceNo": inv.InvoiceNo,
 						"period": inv.BillNo, "amount": inv.TotalAmount,
-						"issuedAt": inv.IssuedAt, "pdfUrl": "",
+						"issuedAt": inv.IssuedAt, "pdfUrl": "/api/user/v1/invoices/" + inv.InvoiceNo + "/pdf",
 					})
 				}
 			}

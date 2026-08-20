@@ -58,6 +58,10 @@ func (f *billingWithPays) ListPayments(context.Context, int64) ([]billing.Paymen
 	return f.pays, nil
 }
 
+func (f *billingWithPays) ListPaymentsByCustomer(context.Context, int64) ([]billing.Payment, error) {
+	return f.pays, nil
+}
+
 // newActionsRouter 装配动作端点专用桩。
 func newActionsRouter(wo *woWithDispatch, bill billing.BillingService, tax billing.TaxService,
 	prods []customer.ProductOffer, list []order.OrderListItem, byNo *order.Order,

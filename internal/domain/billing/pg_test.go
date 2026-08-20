@@ -118,7 +118,7 @@ func TestPGStore_ListPayments(t *testing.T) {
 	defer mock.Close()
 
 	cols := []string{"id", "pay_no", "bill_id", "amount", "method", "status"}
-	mock.ExpectQuery(`SELECT id, pay_no, bill_id, amount, method, status FROM payments`).
+	mock.ExpectQuery(`SELECT id, pay_no, COALESCE\(bill_id,0\), amount, method, status FROM payments`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows(cols).
 			AddRow(int64(1), "PAY-20260820-001", int64(1), 158.0, "wechat", "SUCCESS"))
@@ -144,7 +144,7 @@ func TestPGStore_CreatePayment(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO payments`).
-		WithArgs("PAY-20260820-002", int64(1), 158.0, "alipay", "SUCCESS").
+		WithArgs("PAY-20260820-002", int64(1), int64(0), 158.0, "alipay", "SUCCESS").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)

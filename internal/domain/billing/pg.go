@@ -80,7 +80,7 @@ func (s *PGStore) GetBill(ctx context.Context, id int64) (*Bill, error) {
 	return &b, nil
 }
 
-const paymentCols = `id, pay_no, bill_id, amount, method, status`
+const paymentCols = `id, pay_no, COALESCE(bill_id,0), amount, method, status`
 
 // ListPayments 列出缴费流水;billID=0 返回全部,否则按账单过滤。
 func (s *PGStore) ListPayments(ctx context.Context, billID int64) ([]Payment, error) {
@@ -101,17 +101,40 @@ func (s *PGStore) ListPayments(ctx context.Context, billID int64) ([]Payment, er
 	return out, rows.Err()
 }
 
-// CreatePayment 新建缴费流水,返回自增 id。
+// CreatePayment 新建缴费/充值流水,返回自增 id;billID=0(充值)落 NULL。
 func (s *PGStore) CreatePayment(ctx context.Context, p Payment) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO payments(pay_no, bill_id, amount, method, status)
-		VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		p.PayNo, p.BillID, p.Amount, p.Method, p.Status).Scan(&id)
+		INSERT INTO payments(pay_no, bill_id, customer_id, amount, method, status)
+		VALUES($1,NULLIF($2,0),NULLIF($3,0),$4,$5,$6) RETURNING id`,
+		p.PayNo, p.BillID, p.CustomerID, p.Amount, p.Method, p.Status).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("billing: create payment: %w", err)
 	}
 	return id, nil
+}
+
+// ListPaymentsByCustomer 按客户聚合流水:customer_id 直查,历史账单流水按 bills 归属兜底。
+func (s *PGStore) ListPaymentsByCustomer(ctx context.Context, customerID int64) ([]Payment, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT `+paymentCols+` FROM payments p
+		WHERE p.customer_id = $1
+		   OR (p.customer_id IS NULL AND EXISTS(
+		       SELECT 1 FROM bills b WHERE b.id = p.bill_id AND b.customer_id = $1))
+		ORDER BY p.id`, customerID)
+	if err != nil {
+		return nil, fmt.Errorf("billing: list payments by customer: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Payment, 0)
+	for rows.Next() {
+		var p Payment
+		if err := rows.Scan(&p.ID, &p.PayNo, &p.BillID, &p.Amount, &p.Method, &p.Status); err != nil {
+			return nil, fmt.Errorf("billing: scan payment: %w", err)
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
 }
 
 // GenerateBills 出账:为在网客户按账期批量生成账单,幂等(ON CONFLICT DO NOTHING)。
