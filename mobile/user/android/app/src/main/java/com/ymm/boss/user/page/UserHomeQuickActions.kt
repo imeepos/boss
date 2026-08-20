@@ -3,6 +3,7 @@ package com.ymm.boss.user.page
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.ui.Route
@@ -82,17 +84,19 @@ private fun rememberQuickActions(): List<QuickAction> {
 private fun GridItem(action: QuickAction, modifier: Modifier = Modifier, onAction: (Route) -> Unit) {
     Column(
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = 72.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = { onAction(action.route) })
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 4.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(action.icon, contentDescription = action.label, tint = action.tint, modifier = Modifier.size(48.dp))
+        Icon(action.icon, contentDescription = action.label, tint = action.tint, modifier = Modifier.size(32.dp))
         Text(
             action.label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 4.dp),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            textAlign = TextAlign.Center,
         )
     }
 }

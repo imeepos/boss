@@ -227,10 +227,13 @@ private fun ErrorHint(error: String, onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(error, fontSize = 14.sp, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
-        Text(
-            "点击重试", fontSize = 14.sp, fontWeight = FontWeight.Medium,
-            color = brandBlue(), textAlign = TextAlign.Center,
-            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).clickable(onClick = onRetry).padding(12.dp),
-        )
+        Box(
+            modifier = Modifier
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                .clickable(onClick = onRetry),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("点击重试", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = brandBlue())
+        }
     }
 }

@@ -181,14 +181,15 @@ internal fun OrderCardShell(onOpenAll: () -> Unit, content: @Composable () -> Un
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("进行中订单", fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = brandBlue())
-                Text(
-                    "全部 >", fontSize = 14.sp, lineHeight = 16.sp, color = auxText(),
+                Box(
                     modifier = Modifier
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable(onClick = onOpenAll)
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
-                )
+                        .clickable(onClick = onOpenAll),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("全部 >", fontSize = 14.sp, lineHeight = 16.sp, color = auxText())
+                }
             }
             content()
         }
