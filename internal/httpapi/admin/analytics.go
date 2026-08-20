@@ -60,6 +60,20 @@ func registerReportRoutes(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": findings})
 	})
 
+	// 最新巡检快照(定时循环落 report_snapshots);无快照 404。
+	rp.GET("/db-patrol/latest", func(c *gin.Context) {
+		p, err := a.Report.LatestPatrol(c.Request.Context())
+		if err != nil {
+			if errors.Is(err, report.ErrNoSnapshot) {
+				respond(c, apitypes.CodeNotFound, nil)
+				return
+			}
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, p)
+	})
+
 	rp.GET("/reports", func(c *gin.Context) {
 		list, err := a.Report.List(c.Request.Context())
 		if err != nil {

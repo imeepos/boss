@@ -252,7 +252,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	app.pubEvents = pub
 	app.Automation = NewAutomation(app.Order, pub)
 
+	stopPatrol := startPatrolLoop(app)
 	app.close = func() {
+		stopPatrol() // 巡检循环
 		aw.Close() // 排空审计队列
 		if closeCDR != nil {
 			closeCDR()
