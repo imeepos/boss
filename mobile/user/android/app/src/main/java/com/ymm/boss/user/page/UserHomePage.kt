@@ -1,8 +1,10 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -32,7 +34,6 @@ import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.BottomTabBar
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Route
-import com.ymm.boss.user.ui.auxText
 import com.ymm.boss.user.ui.brandBlue
 import org.json.JSONObject
 
@@ -89,7 +90,7 @@ internal fun parseHome(d: JSONObject): HomeUiState = HomeUiState(
     loading = false,
     customerName = d.optString("customerName"),
     phoneMasked = d.optString("phoneMasked"),
-    onlineStatus = d.optString("onlineStatus", "网络正常"),
+    onlineStatus = d.optString("onlineStatus", "服务在线"),
     planName = d.optJSONObject("plan")?.optString("name").orEmpty(),
     currentBill = yuan(d.optDouble("currentBill", Double.NaN)),
     balance = yuan(d.optDouble("balance", Double.NaN)),

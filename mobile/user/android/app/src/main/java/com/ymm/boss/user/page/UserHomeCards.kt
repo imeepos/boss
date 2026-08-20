@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -38,11 +37,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.auxText
 import com.ymm.boss.user.ui.brandBlue
 import com.ymm.boss.user.ui.homeHeaderGradient
-import com.ymm.boss.user.ui.successGreen
 import com.ymm.boss.user.ui.theme.Green500
 import com.ymm.boss.user.ui.theme.OnGradient
 import java.util.Calendar
@@ -83,7 +80,7 @@ internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
                     Box(modifier = Modifier.size(8.dp).background(Green500, CircleShape))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        "服务在线·${state.onlineStatus.ifEmpty { "网络正常" }}",
+                        state.onlineStatus.ifEmpty { "服务在线·网络正常" },
                         fontSize = 14.sp, lineHeight = 16.sp, color = OnGradient,
                     )
                 }
@@ -95,31 +92,6 @@ internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
                     .clip(CircleShape)
                     .clickable(onClick = onOpenMessages)
                     .padding(12.dp),
-            )
-        }
-    }
-}
-
-@Composable
-internal fun WelcomeCard(state: HomeUiState) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(modifier = Modifier.size(10.dp).background(successGreen(), CircleShape))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                state.onlineStatus.ifEmpty { "网络正常" },
-                fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -171,7 +143,7 @@ private fun SubInfo(label: String, value: String, modifier: Modifier = Modifier)
         modifier = modifier.padding(vertical = 6.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Regular, color = auxText())
+        Text(label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal, color = auxText())
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             value, fontSize = 32.sp, lineHeight = 40.sp, fontWeight = FontWeight.Bold,

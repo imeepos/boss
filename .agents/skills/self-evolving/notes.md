@@ -1,5 +1,17 @@
 # Notes
 
+## 2026-08-20 mobile/user 用户首页 Compose 视觉对齐
+
+**哪个坑浪费了最多时间？**
+首次编译暴露了两类直接问题：重写页面时漏掉 `Column`/`fillMaxWidth` import，以及把不存在的 `FontWeight.Regular` 当作枚举值使用；同时将默认在线文案改成了设计稿/既有单测要求的“服务在线”。
+
+**这个 skill 有没有提前警告我？**
+Android 索引提醒了 Compose 显式 `onClick`、edge-to-edge safeDrawing、契约字段和真实接口优先；但没有直接覆盖 Kotlin Compose 字体枚举和重写后 import 闭环，因此本次由编译门禁捕获。
+
+**重来一次我会怎么做？**
+大段重写后先立即运行 `compileDebugKotlin`，再进行视觉细化；先保留既有单测断言的默认值，新增视觉文案时通过组合展示而不是改变契约解析语义。最终必须在提交前复核所有改动文件行数、测试、APK 构建和 git status。
+
+
 ## 2026-08-18 web/admin app shell 任务反思
 
 **哪个坑浪费了最多时间？**

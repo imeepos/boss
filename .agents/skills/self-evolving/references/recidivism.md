@@ -13,6 +13,7 @@
 | i18n 加 key 只改 locale 漏改 types.ts | 1 | 2026-08-18(UserMenu profile key) | tsc TS2353 抓住,险些 |
 | 任务完成后忘记 git commit(工作区留脏) | 5 | 2026-08-18(geo 分页组件遗留到下任务), 2026-08-18(geo 多语言收尾发现交织改动), 2026-08-18(URL 状态+分页+下拉全会话未提交,用户点名), 2026-08-19(geo 批量导入完成未提交,用户点名), 2026-08-19(PSGC 迁移验证完直接总结,000041 未提交,反思第 0 步才补) | 用户需手动提醒,改动长期悬空 |
 | 开工前不检索 skill 既有教训,重新发明已有正解 | 1 | 2026-08-19(brew 装 PG 10 分钟超时,lesson 28 早有"pgx 直连远端库") | 白等一轮,差点真装本地 PG |
+| Compose 大段重写后漏 import / 使用不存在的 FontWeight 枚举 | 1 | 2026-08-20(用户首页视觉重写) | 首次 compileDebugKotlin 失败,修复后通过 |
 | edit 的 new_string 与 old_string 范围不对称(顺手带函数头/只删换行的 no-op) | 2 | 2026-08-19(pg.go ListAddresses 头部重复), 2026-08-19(address/index.tsx 两行并一行致 TS1005) | 各废一轮 build+定位 |
 | pgx 严格参数校验:占位符少于传参数直接 unused argument | 1 | 2026-08-19(e2e 清理六参数喂 $1 语句,整批 DELETE 全灭) | 废一轮全量验证 |
 | t.Cleanup 里用池而资源用 defer 释放,清理跑在池关闭后静默失败 | 1 | 2026-08-19(e2e cleanup 在 defer pool.Close 之后,仅 -v 日志可见) | 废一轮,残留假象误导排查 |

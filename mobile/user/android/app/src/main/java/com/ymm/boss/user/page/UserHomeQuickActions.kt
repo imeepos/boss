@@ -91,7 +91,7 @@ private fun GridItem(action: QuickAction, modifier: Modifier = Modifier, onActio
     ) {
         Icon(action.icon, contentDescription = action.label, tint = action.tint, modifier = Modifier.size(48.dp))
         Text(
-            action.label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Regular,
+            action.label, fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal,
             color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 4.dp),
         )
     }
