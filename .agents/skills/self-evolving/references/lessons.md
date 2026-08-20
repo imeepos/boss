@@ -104,3 +104,6 @@
 - gpt-image-2 图生图（/v1/images/edits）的 multipart 文件字段名是 `image`，不是 `image[]`；传错返回 400 "Missing required file field image"。（2025-08-20 实测）
 - bossctl 二进制全局 flag 是 `-server`(不是 --url/_base query);报 flag not defined 先看 -h。
 - 三等分 weight 列里的大字号数值(金额/日期)必须按最长内容校验宽度:maxLines=1 + softWrap=false + 字号留余量;32sp 在 1080p 下必溢出变形(首页账单卡片踩过)。
+- 移动端生图 prompt 不写"可滚动/最小行高48dp/按钮44dp/边距16dp"等硬约束，gpt-image-2 会把所有区块塞进一屏并全面缩水（profile-v1 实测：行高24dp、卡片间距4dp、通栏大红退出按钮）。硬约束清单已固化为 ui-proto 预设 M5 元模板。
+- spec 的设计 token 表要和生图 prompt 同源：先写 spec 后生图时必须把 token 逐项翻译进 prompt，否则 spec 约束实现、图却另一套（profile-v1：spec 写了 44dp，图里 31dp）。
+- AI 设计稿"丑"的六大结构性根因：塞一屏/间距崩坏/组件样式混用/平台归属混乱/破坏性操作过重/小字低对比——评审时按这六类逐项打勾，不用自由心证。
