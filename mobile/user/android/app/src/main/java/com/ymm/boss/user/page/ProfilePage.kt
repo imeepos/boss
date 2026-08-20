@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -35,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -63,25 +64,31 @@ fun ProfileScreen(nav: Nav) {
                 .count { !it.optBoolean("read") }
         } catch (e: Exception) { } // 无红点降级
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        ProfileHead(data, nav)
-        // 渐变头预留 52dp 底距,卡片区整体上移 32dp 形成压卡;内部卡片间隔保持 AppCard 的 12dp
-        Column(Modifier.offset(y = (-32).dp)) {
+    // 头部固定不滚动;卡片区在上方渐变头之上滚动(后绘者在上),首卡压头 32dp,同首页效果
+    var headPx by remember { mutableStateOf(0) }
+    val density = LocalDensity.current
+    Box(Modifier.fillMaxSize()) {
+        ProfileHead(data, nav, Modifier.onSizeChanged { headPx = it.height })
+        val topPad = with(density) { headPx.toDp() } - 32.dp
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = topPad),
+        ) {
             QuickEntriesCard(data, nav)
             ServiceEntriesCard(nav, unread)
             SettingsCard(nav)
             LogoutCard(nav)
+            Spacer(Modifier.height(12.dp))
         }
-        Spacer(Modifier.height(12.dp))
     }
 }
 
 @Composable
-private fun ProfileHead(data: JSONObject?, nav: Nav) {
+private fun ProfileHead(data: JSONObject?, nav: Nav, modifier: Modifier = Modifier) {
     val name = data?.optString("name").orEmpty().ifBlank { "加载中…" }
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     Box(
-        Modifier.fillMaxWidth()
+        modifier
+            .fillMaxWidth()
             .background(profileHeaderGradient())
             .statusBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 52.dp),

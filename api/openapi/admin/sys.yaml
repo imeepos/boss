@@ -242,6 +242,84 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /auth-config:
+    get:
+      tags: [Sys]
+      summary: 号码认证配置全量(permCode menu:authconfig;secret 只回 hasValue 掩码标记)
+      operationId: getAuthConfig
+      responses:
+        '200':
+          description: data.fields 以全 key(auth.cn.appKey 等)为索引;secret 字段 value 恒空
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      fields:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          properties:
+                            value: { type: string, description: 标量文本;secret 字段恒空串 }
+                            hasValue: { type: boolean, description: secret 字段是否已配置 }
+  /auth-config/{group}:
+    put:
+      tags: [Sys]
+      summary: 分组部分更新(group∈cn/my/fallback;permCode menu:authconfig;secret 空串=不修改,密文落库)
+      operationId: updateAuthConfig
+      parameters:
+        - { name: group, in: path, required: true, schema: { type: string, enum: [cn, my, fallback] } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [values]
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+                  description: 全 key map,如 {"auth.cn.appKey":"..."};越组 key 42200
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+  /auth-config/{group}/test:
+    post:
+      tags: [Sys]
+      summary: 连通性自检(v1=配置完整性校验;body 可携带草稿 values 合并校验)
+      operationId: testAuthConfig
+      parameters:
+        - { name: group, in: path, required: true, schema: { type: string, enum: [cn, my, fallback] } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        '200':
+          description: data={ok,latencyMs,message}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean }
+                      latencyMs: { type: integer }
+                      message: { type: string }
+
   /audit-logs:
     get:
       tags: [Sys]

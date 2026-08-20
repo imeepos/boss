@@ -11,6 +11,7 @@ import AddressPage from './pages/base/address'
 import GeoPage from './pages/base/geo'
 import ImporterPage from './pages/base/importer'
 import ParamsPage from './pages/base/params'
+import AuthConfigPage from './pages/base/authconfig'
 import ServersPage from './pages/base/servers'
 import AuditPage from './pages/base/audit'
 import CompanyPage from './pages/org/company'
@@ -77,6 +78,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'geo') return <GeoPage />
   if (pageKey === 'importer') return <ImporterPage />
   if (pageKey === 'params') return <ParamsPage />
+  if (pageKey === 'authconfig') return <AuthConfigPage />
   if (pageKey === 'servers') return <ServersPage />
   if (pageKey === 'audit') return <AuditPage />
   if (pageKey === 'company') return <CompanyPage />

@@ -35,4 +35,5 @@
 | 2026-08-20 | 生产域名 boss.ymm.cn + ingress TLS(cert-manager)终结 | adopted/2026-08-20-prod-domain-tls.md |
 | 2026-08-20 | 真实短信/支付渠道:域内网关抽象,按属地选商,凭据未到不 vendor SDK | adopted/2026-08-20-sms-payment-channel.md |
 | 2026-08-20 | 数据库双轨收敛:portal 唯一权威/合成 ID 负数段/四码部分唯一索引/实名统一 verifications | adopted/2026-08-20-db-dualtrack-convergence.md |
+| 2026-08-21 | 认证配置 secret 存储:复用 biz_params + AES-256-GCM 密文,自检 v1 只做完整性校验 | adopted/2026-08-21-auth-config-secret-storage.md |
 | 2026-08-22 | 验证码短信落地:阿里云国际短信单通道起步(+86/+60),区号路由留国内通道注入口 | adopted/2026-08-22-sms-channel-aliyun-intl.md |
