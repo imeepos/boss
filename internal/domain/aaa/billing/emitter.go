@@ -39,9 +39,15 @@ func (e *PGEmitter) Emit(ctx context.Context, cdr CDR) error {
 	return nil
 }
 
+// kafkaWriter kafka.Writer 最小写口(测试可替身)。
+type kafkaWriter interface {
+	WriteMessages(ctx context.Context, msgs ...kafka.Message) error
+	Close() error
+}
+
 // KafkaEmitter 话单实时投递(Kafka topic → Flink → Doris)。
 type KafkaEmitter struct {
-	w *kafka.Writer
+	w kafkaWriter
 }
 
 // NewKafkaEmitter 构造 Kafka 话单投递器(brokers 如 192.168.0.102:29092,topic 如 boss-cdr)。
@@ -55,9 +61,12 @@ func NewKafkaEmitter(brokers []string, topic string) *KafkaEmitter {
 	}}
 }
 
+// marshalCDR 测试可替换的序列化口(CDR 全基本字段,正常路径不可能失败)。
+var marshalCDR = json.Marshal
+
 // Emit JSON 序列化投递;value 即 CDR 全量。
 func (e *KafkaEmitter) Emit(ctx context.Context, cdr CDR) error {
-	b, err := json.Marshal(cdr)
+	b, err := marshalCDR(cdr)
 	if err != nil {
 		return fmt.Errorf("aaa/billing: kafka marshal: %w", err)
 	}
