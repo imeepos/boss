@@ -98,3 +98,4 @@
 - 当本机 gradlew 报 "Unable to locate a Java Runtime" 时,修复是 export JAVA_HOME=/opt/homebrew/opt/openjdk@17( brew openjdk@17 已装);且管道接 tail 会吞退出码,看 EXIT=${PIPESTATUS[0]}。
 - 下游编码 AI 无视觉能力时，"设计稿→提示词"模板必须强制转写与默认组件外观的差异（容器色/指示器/渐变/异形头部），只写组件名（如 NavigationBar）会让无视觉模型退回 material3 默认样式，视觉完全走样。
 - 写"设计稿→提示词"类模板时，占位符内禁止出现裸的具体数值/色值示例：填模板者可能不对照设计稿直接照抄，把臆造值当成真实规格。示例只给"要回答哪些维度"，数值必须标注"从设计稿量取后填入"。
+- (2026-08-20) 模型不支持图像输入时,Compose 视觉验收可 screencap 拉回本地后用 PIL 逐像素断言(渐变入状态栏/底栏高度 px=dp×density/选中 tab 蓝色像素数),比肉眼读图更可量化;配合 uiautomator dump 断言文案与 bounds。
