@@ -1,7 +1,10 @@
 package com.ymm.boss.user.page
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,11 +12,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SignalCellularAlt
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +39,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,21 +49,24 @@ import com.ymm.boss.user.api.ProductApi
 import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.IconTile
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PillTab
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.TabHeader
 import com.ymm.boss.user.ui.Tag
-import com.ymm.boss.user.ui.TopBar
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 private const val DEMO_ADDRESS_ID = "ADDR-001"
 
-// 对应草稿 docs/user/products.html:套餐列表 + 分类筛选 + 增值服务。tab 页。
+// 对应设计稿 user-products-orders-profile.png 左屏(服务 tab):搜索 + 分类胶囊 + 产品卡。
 @Composable
 fun ProductsScreen(nav: Nav) {
     var cat by remember { mutableStateOf("broadband") }
+    var query by remember { mutableStateOf("") }
     var products by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var addons by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var err by remember { mutableStateOf("") }
@@ -60,11 +80,18 @@ fun ProductsScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        TopBar("产品套餐")
+        TabHeader("产品套餐")
+        SearchField(query) { query = it }
         CategorySeg(cat) { cat = it }
+        val shown = products.filter {
+            query.isBlank() || it.optString("name").contains(query, true) ||
+                it.optString("bandwidth").contains(query, true) ||
+                it.optString("description").contains(query, true)
+        }
         LazyColumn {
             item { if (err.isNotEmpty()) Notice(err, Palette.err) }
-            items(products) { p -> ProductCard(p, nav) }
+            if (shown.isEmpty() && err.isEmpty()) item { Notice("未找到匹配的产品") }
+            items(shown) { p -> ProductCard(p, nav) }
             item { AddonCard(addons, nav) }
             item { Spacer(Modifier.height(12.dp)) }
         }
@@ -72,20 +99,42 @@ fun ProductsScreen(nav: Nav) {
 }
 
 @Composable
+private fun SearchField(value: String, onChange: (String) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp)
+            .background(Palette.panel, RoundedCornerShape(999.dp))
+            .border(1.dp, Palette.line, RoundedCornerShape(999.dp))
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Search, contentDescription = null, tint = Palette.subtle, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(8.dp))
+        BasicTextField(
+            value = value, onValueChange = onChange, singleLine = true,
+            textStyle = TextStyle(fontSize = 13.sp, color = Palette.ink),
+            cursorBrush = SolidColor(Palette.primary),
+            modifier = Modifier.weight(1f),
+            decorationBox = { inner ->
+                if (value.isEmpty()) Text("搜索产品或服务", fontSize = 13.sp, color = Palette.subtle)
+                inner()
+            },
+        )
+    }
+}
+
+@Composable
 private fun CategorySeg(current: String, onSelect: (String) -> Unit) {
     Row(
         Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        listOf("broadband" to "宽带套餐", "fusion" to "融合套餐", "addon" to "增值服务").forEach { (k, label) ->
-            val active = k == current
-            Text(
-                label, fontSize = 13.5.sp,
-                color = if (active) Palette.primary else Palette.muted,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                modifier = Modifier.clickable { onSelect(k) },
-            )
+        listOf(
+            Triple("broadband", "宽带", Icons.Filled.Wifi),
+            Triple("fusion", "5G", Icons.Filled.SignalCellularAlt),
+            Triple("addon", "增值服务", Icons.Filled.CardGiftcard),
+        ).forEach { (k, label, icon) ->
+            PillTab(label, active = k == current, onClick = { onSelect(k) }, icon = icon)
         }
     }
 }
@@ -94,24 +143,55 @@ private fun CategorySeg(current: String, onSelect: (String) -> Unit) {
 private fun ProductCard(p: JSONObject, nav: Nav) {
     val scope = rememberCoroutineScope()
     val id = p.optString("productId")
-    AppCard {
-        // AppCard 是 Box,多子元素必须包 Column 否则叠在一起(标题压按钮)
+    AppCard(Modifier.clickable { nav.push(Route.Product(id)) }) {
         Column(Modifier.fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink, modifier = Modifier.weight(1f))
-                Tag("¥${p.optString("monthlyFee")}/月", if (p.optBoolean("featured")) Palette.orange else Palette.primary)
+            Row(verticalAlignment = Alignment.Top) {
+                IconTile(Icons.Filled.Wifi, Palette.primary, size = 56.dp, corner = 12.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600,
+                            color = Palette.ink, modifier = Modifier.weight(1f),
+                        )
+                        if (p.optBoolean("featured")) Tag("热门", Palette.success)
+                    }
+                    PriceLine(p.optString("monthlyFee"))
+                    FeatureLine(Icons.Filled.Speed, p.optString("bandwidth").ifBlank { "高速带宽" })
+                    if (p.optInt("contractMonths") > 0) {
+                        FeatureLine(Icons.Filled.DateRange, "合约 ${p.optInt("contractMonths")} 个月")
+                    }
+                    if (p.optString("description").isNotEmpty()) {
+                        FeatureLine(Icons.Filled.CheckCircle, p.optString("description"))
+                    }
+                }
             }
-            if (p.optString("description").isNotEmpty()) {
-                Notice(p.optString("description"))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { nav.push(Route.Product(id)) }) { Text("详情", color = Palette.primary) }
-                Button(
-                    onClick = { buyNow(scope, nav, id) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-                ) { Text("立即办理") }
-            }
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { buyNow(scope, nav, id) },
+                colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+            ) { Text("立即办理", fontSize = 15.sp, fontWeight = FontWeight.W500) }
         }
+    }
+}
+
+@Composable
+private fun PriceLine(fee: String) {
+    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp)) {
+        Text("¥", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
+        Text(fee, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
+        Text(" /月", fontSize = 12.sp, color = Palette.muted, modifier = Modifier.padding(bottom = 2.dp))
+    }
+}
+
+@Composable
+private fun FeatureLine(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 3.dp)) {
+        Icon(icon, contentDescription = null, tint = Palette.subtle, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(text, fontSize = 12.sp, color = Palette.muted)
     }
 }
 
@@ -123,9 +203,13 @@ private fun AddonCard(addons: List<JSONObject>, nav: Nav) {
             if (addons.isEmpty()) Notice("暂无可订购增值服务")
             addons.forEach { a ->
                 Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconTile(Icons.Filled.CardGiftcard, Palette.purple, size = 36.dp)
+                    Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(a.optString("name"), fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.ink)
-                        Notice(a.optString("description"))
+                        if (a.optString("description").isNotEmpty()) {
+                            Text(a.optString("description"), fontSize = 12.sp, color = Palette.muted)
+                        }
                     }
                     Text("¥${a.optString("monthlyFee")}/月", fontSize = 12.sp, color = Palette.muted)
                 }
