@@ -74,12 +74,15 @@ fun ProfileScreen(nav: Nav) {
     // 状态栏高度需在 statusBarsPadding 消费之前量取,否则 scrim 拿到 0
     val statusBarDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(Modifier.fillMaxSize()) {
-        // 渐变底:高度 = 用户信息块 + 38dp 尾巴,首卡压在尾巴上
+        // 渐变底:高度 = 用户信息块 + 100px 尾巴,首卡压在尾巴上;尾巴底角 16dp 圆角收边
         Box(
             Modifier
                 .fillMaxWidth()
                 .height(with(density) { (infoPx + HeaderOverlapPx).toDp() })
-                .background(profileHeaderGradient()),
+                .background(
+                    profileHeaderGradient(),
+                    RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                ),
         )
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
