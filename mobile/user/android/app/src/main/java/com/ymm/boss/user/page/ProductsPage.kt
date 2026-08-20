@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -143,16 +144,20 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
     AppCard(Modifier.clickable { nav.push(Route.Product(id)) }) {
         Column(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconTile(Icons.Filled.Wifi, Palette.primary, size = 56.dp, corner = 12.dp)
-                Spacer(Modifier.width(12.dp))
+                Text(
+                    p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600,
+                    color = Palette.ink, modifier = Modifier.weight(1f),
+                )
+                if (p.optString("bandwidth").contains("500")) RecommendTag()
+                if (p.optBoolean("featured")) Tag("热门", Palette.success)
+                Spacer(Modifier.width(8.dp))
+                PricePill(p.optString("monthlyFee"))
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(Icons.Filled.Wifi, Palette.primary, size = 44.dp, corner = 10.dp)
+                Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600,
-                            color = Palette.ink, modifier = Modifier.weight(1f),
-                        )
-                        if (p.optBoolean("featured")) Tag("热门", Palette.success)
-                    }
                     MetaLine(p)
                     if (p.optString("description").isNotEmpty()) {
                         FeatureLine(Icons.Filled.CheckCircle, p.optString("description"))
@@ -169,6 +174,34 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
     }
 }
 
+/** 常用推荐标记:500M 档位打推荐标。 */
+@Composable
+private fun RecommendTag() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(end = 6.dp),
+    ) {
+        Icon(Icons.Filled.ThumbUp, contentDescription = null, tint = Palette.warn, modifier = Modifier.size(11.dp))
+        Spacer(Modifier.width(3.dp))
+        Text("推荐", fontSize = 11.sp, color = Palette.warn)
+    }
+}
+
+/** 右上角价格胶囊:品牌蓝浅底突出月费。 */
+@Composable
+private fun PricePill(fee: String) {
+    Row(
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier
+            .background(Palette.primary.copy(alpha = 0.12f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+    ) {
+        Text("¥", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
+        Text(fee, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
+        Text("/月", fontSize = 10.sp, color = Palette.primary, modifier = Modifier.padding(bottom = 1.dp))
+    }
+}
+
 @Composable
 private fun MetaLine(p: JSONObject) {
     val contract = p.optInt("contractMonths")
@@ -176,18 +209,10 @@ private fun MetaLine(p: JSONObject) {
         add(p.optString("bandwidth").ifBlank { "高速带宽" })
         if (contract > 0) add("含合约${contract}个月")
     }.joinToString(" · ")
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
-    ) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Filled.Speed, contentDescription = null, tint = Palette.subtle, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(6.dp))
         Text(feats, fontSize = 12.sp, color = Palette.muted, modifier = Modifier.weight(1f), maxLines = 1)
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text("¥", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
-            Text(p.optString("monthlyFee"), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
-            Text("/月", fontSize = 11.sp, color = Palette.muted, modifier = Modifier.padding(bottom = 1.dp))
-        }
     }
 }
 
