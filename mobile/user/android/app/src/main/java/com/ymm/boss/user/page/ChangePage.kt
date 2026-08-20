@@ -1,5 +1,6 @@
 package com.ymm.boss.user.page
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,16 +60,17 @@ fun ChangeScreen(nav: Nav, planId: String) {
     LaunchedEffect(nav.refreshTick) { loadOptions({ options = it }, { selected = it }, { err = "套餐列表加载失败" }) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("改套餐") { nav.pop() }
+        TopBar("改套餐", onBack = { nav.pop() })
         if (err.isNotBlank()) Notice(err, Palette.err)
-        if (done.isNotBlank()) { DoneCard(done) { nav.pop() } } else {
+        if (done.isNotBlank()) { DoneCard(done, onBack = { nav.pop() }) } else {
             ChangeBody(
                 curName, curDesc, options, selected, effMode, staticIp,
                 onSelect = { selected = it }, onEff = { effMode = it }, onIp = { staticIp = it },
-            ) {
-                submitChange(scope, planId, selected, effMode, staticIp,
-                    onDone = { done = it }, onErr = { err = it })
-            }
+                onSubmit = {
+                    submitChange(scope, planId, selected, effMode, staticIp,
+                        onDone = { done = it }, onErr = { err = it })
+                },
+            )
         }
         Spacer(Modifier.height(16.dp))
     }
@@ -131,11 +135,34 @@ private fun PlanOptionsCard(options: List<JSONObject>, selected: String, onSelec
             val pid = p.optString("productId")
             CellRow(
                 title = p.optString("name"),
-                desc = "¥${p.optString("monthlyFee")}/月 · ${p.optString("description")}",
+                desc = p.optString("description"),
                 onClick = { onSelect(pid) },
-                right = { RadioButton(selected = selected == pid, onClick = { onSelect(pid) }) },
+                right = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OptionPricePill(p.optString("monthlyFee"), recommended = p.optBoolean("featured"))
+                        Spacer(Modifier.width(6.dp))
+                        RadioButton(selected = selected == pid, onClick = { onSelect(pid) })
+                    }
+                },
             )
         }
+    }
+}
+
+/** 与 ProductsPage.PricePill 同形态(该处为 private 无法直接引用):推荐档橙底白字,普通档品牌蓝浅底。 */
+@Composable
+private fun OptionPricePill(fee: String, recommended: Boolean) {
+    val bg = if (recommended) Palette.warn else Palette.primary.copy(alpha = 0.12f)
+    val fg = if (recommended) androidx.compose.ui.graphics.Color.White else Palette.primary
+    Row(
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier
+            .background(bg, RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+    ) {
+        Text("¥", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = fg)
+        Text(fee, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = fg)
+        Text("/月", fontSize = 10.sp, color = fg, modifier = Modifier.padding(bottom = 1.dp))
     }
 }
 
