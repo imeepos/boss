@@ -1,7 +1,9 @@
 # 数据从属关系总览（contract/data-relations）
 
-> 版本 V1.1（2026-08-17）｜权威源：migrations(阶段1)、api/openapi/admin.yaml、fields.md(mock 层已于 2026-08-19 移除)
+> 版本 V1.2（2026-08-19）｜权威源：migrations/*.up.sql（55 个迁移，117 表，已全部对账）
 > 定位：锁死「谁包含谁、谁归属于谁」的完整实体关系清单。详情页设计、数据权限裁剪一律以本表为准。
+> 本版变更：⌛ 标记清零（mock 层实体全部落库）；补齐 geo/userdata/portal/税务/入驻/告警复测/对账/报表等 30+ 表；
+> ER 图改为脚本生成（`scripts/gen-er-drawio.mjs` → `docs/boss-entities-er.drawio`），不再手维护。
 
 ## 0. 四条铁律
 
@@ -13,164 +15,219 @@
    预置不可改的归属条件：这个市/客户/师傅/部门/子公司/岗位的数据）。
 4. **详情页 = 归属链可视化 + 多维度条件数据聚合**；下钻面板非弹框；取不到的数据显示 "—"，禁止臆造。
 
+## 0.5 引用完整性口径（V1.2 新增，重要）
+
+- **硬 FK（DDL REFERENCES）** 只存在于阶段1-4 的组织/主档表之间与同域强绑定子表（order_stages、payments、worker 事实表等）。
+- **软引用（无 FK，仅索引）** 是主流：orders/quad_links/lo_accounts/reserve_records/transfers/alarms/cdrs 等跨域主单
+  一律 `xxx_id + 快照列` 软引用。原因：跨域写路径解耦 + 快照口径（详见 §设计问题评估 docs/review/db-design-review.md）。
+- **读代码时判别**：字段注释 `→ 表名` 或本文 `sFK` = 软引用；`REFERENCES` = 硬 FK。
+
 ## 1. 分层总图
 
 ```
-权限主体层  roles ←→ permissions(权限码) ←→ accounts(账号, 挂 region_scope)
-组织展示层  legal_entities → departments → posts →(post_roles)→ accounts
-区域权限层  regions(LTREE 1集团/2大区/3省/4城市)
+权限主体层  roles ←→ permissions ←→ accounts(挂 region_scope) ；api_keys/import_tasks 挂 accounts
+组织展示层  legal_entities → departments → posts →(post_roles)→ accounts ；account_org_histories 台账
+地理层      geo_country → geo_subdivision(树) → addresses(锚 country/admin_code)
 地址挂接层  addresses(LTREE 1市/2区/3街道/4小区/5楼栋)
-客户业务层  customers → orders(12环节) → dispatch/dismantles/callbacks
-                        → bills → payments；arrears/stop-resume/reconciliations
-资产资源层  assets ↔ tags(标签)；quad_link(资产-客户-端口-地址)
-            resources(OLT/分光器) → ports → reserves；transfers/expansions/lo-accounts
-师傅执行层  workers → tickets/materials/tools/schedules/performances/commissions/feedbacks/returns
-日志流水层  audit_logs / aaa-logs / scan-logs / provision-logs（只读，挂操作主体）
+客户业务层  customers → orders(12环节) → dispatch/dismantles/callbacks/scan_logs/ratings
+                         → bills → payments → invoices(税局网关) ；arrears/stop-resume/reconciliations
+资产资源层  asset_batches → assets ↔ tags；quad_link(资产-客户-端口-地址 四码软引用)
+            resources(树) → ports → reserve_records/port_change_history；transfers/expansions/alarms
+师傅执行层  worker_groups → workers → tickets/materials/tools/schedules/performances/commissions/...
+            worker_registrations(入驻审核) → workers
+用户端层    user_*(20 表挂 customers) ；portal_*(7 表，customer_id 软挂隔离空间)
+日志流水层  audit_logs(分区)/auth_logs/cdrs/provision_logs/scan_logs（只读，挂操作主体）
 ```
 
-## 2. 实体关系清单（字段以 mock 实测 + fields.md 为准）
+## 2. 实体关系清单（权威源：migrations，全部✚已建库表）
 
-标记：▲父外键 ■子集合 ◆关联 ✚已建库表(migrations) ⌛mock先行库待建
+标记：▲父外键 ■子集合 ◆多对多/关联 ✚已建库表；FK=硬外键 sFK=软引用(无约束)
 
-### 2.1 权限与组织（internal/domain/user，阶段1，全部✚）
-
-| 实体 | 主键 | 关系 | 基数 |
-|:-----|:-----|:-----|:-----|
-| roles ✚ | id/code(7角色码) | ■permissions(经 role_permissions 多对多) | — |
-| permissions ✚ | code | ▲无父；被角色引用 | — |
-| accounts ✚ | id/username | ▲role_id ▲legal_entity_id? ▲dept_id? ▲post_id? ▲region_scope(LTREE权限) ■audit_logs | 组织 1:N 账号 |
-| legal_entities ✚ | id/code(LEG-A/B/C) | ■departments ◆cross_regions(跨区经营) | 集团 1:N 子公司 |
-| departments ✚ | id/name | ▲legal_entity_id ■posts | 子公司 1:N 部门 |
-| posts ✚ | id/code | ▲dept_id ◆roles(post_roles 多对多) ■accounts(在岗员工) | 部门 1:N 岗位 |
-| regions ✚ | id/path(LTREE) | ▲path 父节点(1集团→2大区→3省→4城市) | 树 |
-| addresses ✚ | id/path(LTREE) | ▲path 父节点(1市→5楼栋)；被 customers/ports 挂接 | 树 |
-| menu_perms ⌛ | — | 账号界面层：哪些菜单可见 | — |
-| data_scopes ⌛ | — | region_scope 管理入口 | — |
-| audit_logs ✚ | id | ▲account_id(弱引用,不FK) ◆account_name/dept_name/legal_entity_name(事发快照) ▲target_type/target_id（分区表按月） | 账号 1:N 日志 |
-| biz_params ✚ | key | 全局键值 | — |
-| import_tasks ⌛ | taskId | ▲account_id（谁建的导入任务） | — |
-
-### 2.2 客户与产品（internal/domain/customer，阶段2）
+### 2.1 权限与组织（migrations 000001-3/29/38-39/42/44，全部✚）
 
 | 实体 | 主键 | 关系 | 基数 |
 |:-----|:-----|:-----|:-----|
-| customers ⌛ | customerId | ▲legal_entity_id(归属公司) ▲address_id(挂楼栋) ■orders ■bills ■arrears ■lo_accounts ◆quad_link | 公司 1:N 客户 |
-| products ⌛ | productId | ■price_history(调价记录) ■orders | — |
-| 用户端档案(用户侧聚合) | customerId | ◆plans/balances/usages/invoices/messages/addresses/coupons/addon-subscriptions | 客户 1:N 各档案 |
+| roles ✚ | id/UQ code(7角色码) | ■permissions(经 role_permissions M:N) | — |
+| permissions ✚ | id/UQ code | ▲无父；被角色引用 | — |
+| accounts ✚ | id/username | ▲role_id(FK) ▲legal_entity_id?/dept_id?/post_id?(FK) ▲region_scope(LTREE权限) ■api_keys ■import_tasks ■audit_logs(弱引用) | 组织 1:N 账号 |
+| api_keys ✚ | id | ▲account_id(FK CASCADE) ▲created_by(sFK)；subject 扩展见 000045 | 账号 1:N 密钥 |
+| import_tasks ✚ | taskId | ▲operator_id(FK accounts) | 账号 1:N 导入任务 |
+| legal_entities ✚ | id/code | ■departments ■customers ■worker_groups ■product_offers... | 集团 1:N 子公司 |
+| departments ✚ | id | ▲legal_entity_id(FK) ■posts | 子公司 1:N 部门 |
+| posts ✚ | id | ▲dept_id(FK) ◆roles(post_roles M:N) | 部门 1:N 岗位 |
+| account_org_histories ✚ | id | ▲account_id/legal_entity_id?/dept_id?/post_id?(FK) | 账号归属台账 |
+| regions ✚ | id/path(LTREE) | 自引用树(1集团→4城市) | 树 |
+| audit_logs ✚ | id | ▲account_id(弱引用) ◆事发快照列 ▲target_type/target_id（按月分区） | 账号 1:N 日志 |
+| biz_params ✚ | key | 全局键值(AI 网关三键等) | — |
+| menu_perms / data_scopes | — | 已并入 permissions+region_scope，无独立表 | — |
 
-### 2.3 订单与工单（internal/domain/order，阶段5）
-
-| 实体 | 主键 | 关系 | 基数 |
-|:-----|:-----|:-----|:-----|
-| orders ⌛ | orderNo | ▲customer ▲product ▲address ▲region_path ■order_stages(12环节时间轴) ■dispatch ■dismantles ■callbacks ■reserves(端口占用) ◆scan-logs | 客户 1:N 订单 |
-| dispatch pool/my-tickets ⌛ | ticketNo | ▲orderNo ▲worker(master) ◆candidates(师傅候选) | 订单 1:1 工单 |
-| dispatch transfers ⌛ | orderNo | ▲orderNo ▲from_master/to_target | — |
-| dismantles ⌛ | dismantleNo | ▲customer ▲assetCode ▲portCode | — |
-| complaints ⌛ | ticketNo | ▲customer（客服域，跨域挂靠 boss 分组） | 客户 1:N 投诉 |
-| activation-callbacks ⌛ | callbackId | ▲orderNo（订单第11环节） | 订单 1:N 回调 |
-
-### 2.4 计费账务（internal/domain/billing，阶段5）
-
-| 实体 | 主键 | 关系 | 基数 |
-|:-----|:-----|:-----|:-----|
-| bills ⌛ | billNo | ▲customerId ■payments | 客户×账期 1:1 |
-| payments ⌛ | payNo | ▲customerId ◆billId | 账单 1:N 缴费 |
-| arrears ⌛ | customerId | ▲customerId（应收信用域） | 客户 1:1 欠费态 |
-| stop-resume-tasks ⌛ | taskId | ▲customerId ▲loid | — |
-| reconciliations ⌛ | batchNo | ▲channel（渠道对账） | — |
-
-### 2.5 资产与四码（internal/domain/{asset,quadlink}，阶段3/6）
-
-| 实体 | 主键 | 关系 | 基数 |
-|:-----|:-----|:-----|:-----|
-| assets ⌛ | assetCode | ▲batchNo(入库批次) ◆tags(经 tagNo/EPC 预绑定) ◆quad_link ■lifecycle(状态轨迹) | — |
-| tags ⌛ | tagNo/epcCode | ◆bound_asset(预绑定资产) | 资产 1:1 标签 |
-| quad_link ⌛ | — | ▲asset ▲customer ▲port ▲addr（四码，四列各索引+唯一） | 四码 1:1 链路 |
-| quad-conflicts ⌛ | conflictNo | ◆四码冲突单 | — |
-| scan-logs ⌛ | — | ▲orderNo ▲master(扫码师傅) ▲scanned_tag | 订单 1:N 扫码 |
-| stocktakes ⌛ | taskId | ▲scope(盘点范围) | — |
-| replacements ⌛ | replacementNo | ▲device(故障设备→换新) | — |
-
-### 2.6 网络资源（internal/domain/{resource,device}，阶段4/7）
-
-| 实体 | 主键 | 关系 | 基数 |
-|:-----|:-----|:-----|:-----|
-| resources(OLT/分光器) ⌛ | deviceName | ▲legal_entity ▲address ■ports | 公司 1:N 设备 |
-| ports ⌛ | portCode | ▲parent(OLT/分光器) ▲address ▲order_id(RESERVED时非空) ◆quad_code ■change-history ■reserves | 父资源 1:N 端口 |
-| reserves ⌛ | reserveId | ▲portCode ▲orderId | 端口 1:N 预占记录 |
-| transfers ⌛ | transferNo | ▲resourceCode ▲from_region/to_region | — |
-| expansions ⌛ | expansionNo | ▲region(扩容目标区域) | — |
-| lo-accounts ⌛ | loid | ▲customerName ▲productBandwidth ◆qos_template | 客户 1:1 LO 账号 |
-| olt-devices ⌛ | deviceName | ▲address ■alarms(设备健康) | — |
-
-### 2.7 师傅（跨 internal/worker，页面 worker*.html）
-
-| 实体 | 主键 | 关系 | 基数 |
-|:-----|:-----|:-----|:-----|
-| worker_groups ⌛ | id/code | ▲legal_entity(公司) ◆leader(组长,1个师傅) ■workers(当前成员) ■memberships(台账) ■tickets/performances/commissions/schedules/materials/tools/feedbacks/asset-returns(班组数据) | 公司 1:N 班组 |
-| workers ⌛ | workerId | ▲worker_group(班组→公司) ▲region(服务区域) ◆leader_of_groups(任组长的班组) ■memberships(归属台账) ■settings(1:1) ■tickets ■materials ■tools ■schedules ■performances ■commissions ■feedbacks ■messages ■asset-returns | 班组 1:N 师傅 |
-| worker_group_memberships ⌛ | id | ▲worker_id ▲group_id(仅导航) ◆group_name/legal_entity_id/region_id/region_name(事发快照) reason/operator_account_id(追溯) effective_from/effective_to(null=至今) | 师傅 1:N 归属台账(换班组只新增) |
-| worker_settings ⌛ | id | ▲worker(1:1) accepting/radiusKm/acceptTypes | 师傅 1:1 设置 |
-| worker_messages ⌛ | id | ▲worker level/title/read | 师傅 1:N 消息 |
-| worker-feedbacks ⌛ | feedbackId | ▲workerId ▲ticketNo ▲customerName | — |
-| asset-returns ⌛ | returnId | ▲workerId ▲epc/assetNo | — |
-| notices/faqs ⌛ | id | 全局（师傅端公告/FAQ） | — |
-
-> **归属关系与月度粒度铁律**：事件级/月度级事实均以 `@ManyToOne → worker_groups` 挂 `group`（FK `group_id`）+ `group_name` 快照，`WorkerGroup` 侧 `@OneToMany` 反向；
-> 月度级事实（performances/commissions/schedules）粒度=「师傅×月×班组」，唯一键 `(worker_id, period, group_id)`，月中调组拆多行；
-> 「本月最佳班组」= 按 `group_id` 聚合月度行。归属口径=事发时，工单记派单时班组；`worker_settings`/`worker_messages` 不加快照。台账见 fields.md 7.2。
-
-### 2.8 日志流水（只读，挂操作主体）
+### 2.2 地理与地址（000038/40/41，全部✚）
 
 | 实体 | 主键 | 关系 |
 |:-----|:-----|:-----|
-| audit_logs ✚ | id | ▲account_id ▲target_type/target_id |
-| aaa-logs ⌛ | logId | ▲认证账号(loid) |
-| provision tasks/templates/logs ⌛ | — | tasks ▲loid ◆template；logs ▲task |
+| geo_country ✚ / geo_country_i18n ✚ | alpha2 | ■subdivisions ■tz/currency/calling-code |
+| geo_subdivision ✚ / geo_subdivision_i18n ✚ | code | ▲country_code(FK) ▲parent_code(自引用树，深度因国而异)；000041 预置 PH PSGC |
+| country_time_zone / country_currency / country_calling_code ✚ | 复合 | ▲country_code(FK) |
+| addresses ✚ | id/path(LTREE) | ▲parent_id(软，派生列反查) ▲country_code/admin_code(FK geo，CHECK 约束锚定)；被 customers/ports/resources/orders 挂接 |
 
-### 2.9 归属台账（跨域通用深度关联）
+### 2.3 客户与产品（000004-5/23/26/51，全部✚）
 
-| 台账实体 | 主体 | 归属维度 | 反向集合 |
-|:---------|:-----|:---------|:---------|
-| account_org_histories ⌛ | accounts | 公司/部门/岗位 | Account.orgHistory |
-| customer_histories ⌛ | customers | 公司/地址 | Customer.history |
-| product_price_histories ⌛ | product_offers | 价格 | ProductOffer.priceHistory |
-| region_price_histories ⌛ | region_offers | 价格 | RegionOffer.priceHistory |
-| dispatch_transfers ⌛ | dispatch_tickets | 师傅(改派) | DispatchTicket.transfers |
-| resource_assignments ⌛ | resources | 公司/区域/地址 | Resource.assignments |
-| asset_assignments ⌛ | assets | 师傅/地址 | Asset.assignments |
+| 实体 | 主键 | 关系 | 基数 |
+|:-----|:-----|:-----|:-----|
+| customers ✚ | id | ▲legal_entity_id ▲address_id(FK) ■orders ■bills ■arrears ■lo_accounts(软) ◆quad_link ■user_* 全家 | 公司 1:N 客户 |
+| customer_registrations ✚ | id | ▲legal_entity_id/address_id(FK) ▲customer_id(通过后回填,sFK) ▲reviewer_account_id(sFK) | 注册审核队列 |
+| customer_real_name_verifications ✚ | id | ▲customer_id(FK)；real_name_verifications(000026) 为旧表并存 | 客户 1:N 实名 |
+| customer_histories ✚ | id | ▲customer_id/legal_entity_id/address_id(FK) | 客户归属台账 |
+| product_offers ✚ | id | ▲legal_entity_id(FK) ■price_history ■region_offers | — |
+| region_offers ✚ | id | ▲offer_id(FK) ■price_history | — |
+| channels ✚ | id/UQ code | 全局渠道目录；orders.channel_id 软引用 | — |
 
-> 通用：`effective_from`/`effective_to`(null=至今) + `reason` + `operator_account_id`；主体 `@ManyToOne` + `@OneToMany` 反向；归属维度 `@ManyToOne` + `xxx_name` 快照。
+### 2.4 订单与工单（000010/17-18/27/31/53，全部✚）
 
-> **企业锚点铁律**：归属到企业的业务事实/主单（orders/dispatch_tickets/complaints/bills/worker 各事实/assets/ports/lo_accounts）冗余 `legal_entity_id` + `legal_entity_name` 快照，跨企业对比 O(1) 锚点；集团共享数据与纯时间轴子记录不冗余（见 fields.md 8.1）。
+| 实体 | 主键 | 关系 | 基数 |
+|:-----|:-----|:-----|:-----|
+| orders ✚ | id/UQ order_no | ▲customer ▲offer ▲address ▲channel(全软引用+legal_entity快照+region_path) ■order_stages ■dispatch(1:1) ■dismantles ■callbacks ■scan-logs ■reserve_records ■ratings | 客户 1:N 订单 |
+| order_stages ✚ | id | ▲order_id(FK)；stage 1~12，状态机权威见 ADR-003 | 订单 1:12 环节 |
+| dispatch_tickets ✚ | id | ▲order_id(FK UQ 1:1) ▲worker_id ▲group_id(软) | 订单 1:1 工单 |
+| dispatch_transfers ✚ | id | ▲ticket_id(FK) ▲from/to_worker_id(软) | 工单 1:N 改派 |
+| dismantles ✚ | id | ▲order_id(FK) ▲asset/port(软) | — |
+| complaints ✚ | id | ▲customer_id(FK) ▲order_id(软) | 客户 1:N 投诉 |
+| activation_callbacks ✚ | id | ▲order_id(FK)（第11环节） | 订单 1:N 回调 |
+| scan_logs ✚ | id | ▲order_id(FK) ▲master/scanned_tag(软) | 订单 1:N 扫码 |
+| order_ratings ✚ | id | ▲customer_id(FK) ▲order_no(UQ 软) | 订单 1:1 评价(门户提交) |
+
+### 2.5 计费账务与税务（000011/24/35/48-49，全部✚）
+
+| 实体 | 主键 | 关系 | 基数 |
+|:-----|:-----|:-----|:-----|
+| bills ✚ | id/billNo | ▲customer_id(FK) ■payments ■invoices | 客户×账期 1:1 |
+| payments ✚ | id | ▲bill_id(FK) | 账单 1:N 缴费 |
+| arrears ✚ | id | ▲customer_id(FK UQ 1:1) | 客户 1:1 欠费态 |
+| stop_resume_tasks ✚ | id | ▲customer_id/loid(软) | — |
+| reconciliation_batches ✚ | id/UQ batch_no | 渠道对账（channel 字符串，不挂 FK） | — |
+| arn_sequences ✚ | doc_type | 发票号序列（作废保留不回收） | — |
+| invoices ✚ | id/UQ invoice_no | ▲bill_id(FK) ▲customer_id(软+快照)；tax_* 列=税局网关回填（000049） | 账单 1:N 发票 |
+
+### 2.6 资产与四码（000006-8/12，全部✚）
+
+| 实体 | 主键 | 关系 | 基数 |
+|:-----|:-----|:-----|:-----|
+| asset_batches ✚ | id | ▲legal_entity_id(FK) ■assets | — |
+| tags ✚ | id | ▲legal_entity_id(FK) ◆assets(预绑定 1:1) | — |
+| assets ✚ | id/UQ asset_code | ▲batch_id(FK) ▲tag_id/address_id(软) ■lifecycle ■assignments ◆quad_link | — |
+| asset_lifecycles ✚ | id | ▲asset_id(FK) | 资产 1:N 状态轨迹 |
+| asset_assignments ✚ | id | ▲asset_id(FK) ▲worker/address(软) | 资产归属台账 |
+| stocktakes ✚ / replacements ✚ | id | ▲legal_entity_id(FK) / ▲asset(软) | — |
+| quad_links ✚ | id | ▲asset ▲customer ▲port ▲address（四列各 UQ + 软引用）+ legal_entity 快照 | 四码 1:1 链路 |
+
+### 2.7 网络资源·监控·开通·AAA（000009/13-15/22/25/28/30/32-33/37，全部✚）
+
+| 实体 | 主键 | 关系 | 基数 |
+|:-----|:-----|:-----|:-----|
+| resources ✚ | id | ▲legal_entity_id/address_id(FK) ▲parent_id(自引用树,软) ■ports | 公司 1:N 设备 |
+| ports ✚ | id/UQ port_code | ▲resource_id/address_id(FK) ■change_history ■reserve_records ◆quad_link | 父资源 1:N 端口 |
+| port_change_history ✚ | id | ▲port_id(FK) ▲order_id(快照) | 端口 1:N 历史 |
+| reserve_records ✚ | id | ▲port_id ▲order_id(全软) | 端口 1:N 预占 |
+| resource_assignments ✚ | id | ▲resource_id/legal_entity_id(FK) ▲address_id(软) | 资源归属台账 |
+| transfers ✚ / expansions ✚ | id | ▲resource(软) / ▲legal_entity_id(FK) | — |
+| qos_templates ✚ | id | ▲legal_entity_id(FK)；lo_accounts 软引用 | — |
+| device_metrics ✚ / device_maintenances ✚ | id | ▲resource(软) | 设备健康 |
+| alarms ✚ | id/UQ alarm_no | ▲resource_id(软)；source=device/quadlink/aaa | — |
+| alarm_retest_tasks ✚ | id | ▲alarm(软) | 告警复测 |
+| lo_accounts ✚ | id/UQ loid | ▲customer_id(1:1 软) ▲offer_id ▲qos_template_id(软) + region/legal_entity 快照 | 客户 1:1 LO |
+| provision_templates ✚ | id | ▲legal_entity_id(FK) ■tasks | — |
+| provision_tasks ✚ | id | ▲template_id(FK) ▲loid(软) | — |
+| provision_logs ✚ | id | ▲task_id(软)；result 宽列见 000033 | 任务 1:N 日志 |
+| cdrs ✚ / auth_logs ✚ | id | ▲loid(软，无 customer 直连) | AAA 流水 |
+
+### 2.8 师傅（000016/19-21/36/50，全部✚）
+
+| 实体 | 主键 | 关系 | 基数 |
+|:-----|:-----|:-----|:-----|
+| worker_groups ✚ | id | ▲legal_entity_id(FK) ▲leader_id(软) ■workers ■全部事实表 | 公司 1:N 班组 |
+| workers ✚ | id | ▲group_id(FK) ■memberships ■settings(1:1) ■messages ■8 张事实表 | 班组 1:N 师傅 |
+| worker_group_memberships ✚ | id | ▲worker_id ▲group_id(FK) ◆group_name 等快照 | 师傅 1:N 归属台账 |
+| worker_settings ✚ / worker_messages ✚ | id | ▲worker_id(FK, settings UQ 1:1) | — |
+| worker_notices ✚ | id | 全局公告 | — |
+| worker_registrations ✚ | id | ▲group_id(FK) ▲worker_id(通过后回填,软) ▲reviewer_account_id(软) | 入驻审核队列 |
+| worker_real_name_verifications ✚ | id | ▲worker_id(FK) | 师傅 1:N 实名 |
+| worker_performances ✚ / worker_commissions ✚ / worker_schedules ✚ | id | ▲worker_id ▲group_id(FK)；UQ(worker,period,group) 月度粒度 | 师傅×月×班组 |
+| worker_materials ✚ / worker_tools ✚ / worker_feedbacks ✚ / asset_returns ✚ | id | ▲worker_id ▲group_id(FK)；asset_returns 另软挂 asset | 事件级事实 |
+
+> **归属关系与月度粒度铁律**：月度级事实粒度=「师傅×月×班组」，唯一键 `(worker_id, period, group_id)`，月中调组拆多行；
+> 归属口径=事发时，工单记派单时班组；`worker_settings`/`worker_messages` 不加快照。
+
+### 2.9 用户端 userdata（000046-47，全部✚，20+ 表）
+
+| 实体 | 主键 | 关系 |
+|:-----|:-----|:-----|
+| user_accounts ✚ user_addresses ✚ user_plans ✚ user_usages ✚ user_messages ✚ user_invoices ✚ user_complaints ✚ user_verify_records ✚ user_bill_items ✚ | id | ▲customer_id(FK)，门户用户侧聚合 |
+| user_notify_settings ✚ / user_balances ✚ | customer_id | ▲customers(1:1, FK) |
+| addons ✚ / addon_subscriptions ✚ | id/addon_id | subscriptions ▲customer_id+addon_id(FK) |
+| coupons ✚ | coupon_id | ▲customer_id(可空 FK) |
+| user_faqs/invite_config/diy_guides/agreements/topup_denominations/product_specs ✚ | id | 全局目录，无外键 |
+
+### 2.10 门户 portal（000052-55，全部✚）
+
+| 实体 | 主键 | 关系 |
+|:-----|:-----|:-----|
+| portal_sms_codes ✚ | (phone,scene) | 验证码，自过期 |
+| portal_accounts ✚ | phone | ▲customer_id(UQ **软**——隔离空间可合成 ID，不 FK) 1:1 |
+| portal_prefs / portal_wallets / portal_billing_prefs ✚ | customer_id | ▲customers(软) 1:1 |
+| portal_messages ✚ | id | ▲customer_id(软)，payload JSONB |
+| portal_seq ✚ | kind | 门户单号序列 PAY/CHG/TKT/MSG/CUST |
+
+> portal 域有意不建 FK：门户库可独立于 boss 主库部署（隔离空间），对账靠 customer_id 逻辑对齐。
+
+### 2.11 报表（000034）
+
+| 实体 | 主键 | 关系 |
+|:-----|:-----|:-----|
+| report_snapshots ✚ | id | UQ(period,window_start)；payload JSONB 全量快照，不挂业务 FK |
+
+### 2.12 归属台账（跨域通用模式）
+
+| 台账实体 | 主体 | 归属维度 |
+|:---------|:-----|:---------|
+| account_org_histories ✚ | accounts | 公司/部门/岗位 |
+| customer_histories ✚ | customers | 公司/地址 |
+| product_price_histories ✚ / region_price_histories ✚ | offers | 价格 |
+| dispatch_transfers ✚ | dispatch_tickets | 师傅(改派) |
+| resource_assignments ✚ | resources | 公司/区域/地址 |
+| asset_assignments ✚ | assets | 师傅/地址 |
+| worker_group_memberships ✚ | workers | 班组 |
+
+> 通用：`effective_from`/`effective_to`(null=至今) + `reason` + `operator_account_id`；主体硬 FK；归属维度 FK + `xxx_name` 快照。
+
+> **企业锚点铁律**：归属到企业的业务事实/主单冗余 `legal_entity_id` + `legal_entity_name` 快照，跨企业对比 O(1)；
+> 集团共享数据与纯时间轴子记录不冗余（见 fields.md 8.1）。
 
 ## 3. 归属维度枚举（下钻视角的"锁定条件"）
 
-| 维度 key | 含义 | 从哪个详情页下钻 | 命中的实体（extra 条件字段） |
-|:---------|:-----|:-----------------|:---------------------------|
-| region | 市/区/街道/小区/楼栋 | region/address 详情 | customers, ports, orders, expansions, transfers, workers |
-| customer | 某客户 | 客户详情 | orders, bills, payments, arrears, lo-accounts, quad_link, complaints |
-| worker | 某师傅 | 师傅详情 | tickets, materials, tools, schedules, performances, commissions, feedbacks, asset-returns |
-| legal_entity | 某子公司 | 子公司详情 | departments, accounts |
-| dept | 某部门 | 部门详情 | posts, accounts |
-| post | 某岗位 | 岗位详情 | accounts |
-| order | 某订单 | 订单详情 | order_stages, dispatch, callbacks, scan-logs, reserves, dismantles |
-| asset | 某资产 | 资产详情 | tags, lifecycle, quad_link |
-| port | 某端口 | 端口详情 | change-history, reserves, quad_link |
+| 维度 key | 含义 | 命中的实体（extra 条件字段） |
+|:---------|:-----|:---------------------------|
+| region | 市/区/街道/小区/楼栋 | customers, ports, orders, expansions, transfers, workers |
+| customer | 某客户 | orders, bills, payments, arrears, lo-accounts, quad_link, complaints, user_*, portal_* |
+| worker | 某师傅 | tickets, materials, tools, schedules, performances, commissions, feedbacks, asset-returns |
+| legal_entity | 某子公司 | departments, accounts, customers, worker_groups, product_offers |
+| dept / post | 部门/岗位 | posts, accounts |
+| order | 某订单 | order_stages, dispatch, callbacks, scan-logs, reserves, dismantles, ratings |
+| asset | 某资产 | tags, lifecycle, quad_link, assignments, asset_returns |
+| port | 某端口 | change-history, reserves, quad_link |
 
 ## 4. UI 经验沉淀（后续 agent 必读）
 
-1. **全局共享样式必须命名空间隔离**：style.css 组件类一律带前缀（`dp-` 下钻面板、`pg-` 分页、`modal-` 弹框），
-   禁止裸用 `.tabs/.desc/.detail-head` 等页内高频同名类。
-2. **弹框只用于表单**（新建/编辑/批量+必填校验）；**详情一律下钻**（dp-panel：返回+Tabs+描述列表）。
-3. **黄金模板**：列表 billing.html、详情 worker-detail.html（不动）；共享组件 common.js，禁止重复造轮子。
-4. **XSS 一律 UI.esc**；错误 UI.toast(err) 禁止裸 alert；不臆造接口（缺的写操作 confirm+toast('演示')）。
-5. 单文件 ≤300 行；列名/枚举对齐 fields.md；并行 agent 每批 ≤2 防限速。
-6. 恢复文件先分清 工作区/暂存区/HEAD 三层，确认"好版本"在哪层再还原。
+1. 全局共享样式必须命名空间隔离（`dp-`/`pg-`/`modal-` 前缀）。
+2. 弹框只用于表单；详情一律下钻面板。
+3. 黄金模板：列表 billing.html、详情 worker-detail.html；共享组件 common.js。
+4. XSS 一律 UI.esc；错误 UI.toast(err)；不臆造接口。
+5. 单文件 ≤300 行；列名/枚举对齐 fields.md。
+6. 恢复文件先分清 工作区/暂存区/HEAD 三层。
 
 ## 5. 使用规则
 
-1. 新增实体先查本表与 fields.md，已定外键照抄；未定的按铁律回写本表。
-2. 列表页过滤函数统一 `matches(row, extra)`：平铺 extra={}；下钻 extra={维度:值} 且 Tab 头显示锁定 tag。
-3. 下钻列表能力不缩水（三态/分页/行操作齐全，仅范围收窄）。
+1. 新增实体先查本表与 fields.md，已定外键照抄；未定的按铁律回写本表，并同步 `scripts/gen-er-drawio.mjs` 规格。
+2. ER 图不手改：改规格脚本 → `node scripts/gen-er-drawio.mjs` → draw.io.app 导出 png/svg。
+3. 列表页过滤函数统一 `matches(row, extra)`：平铺 extra={}；下钻 extra={维度:值} 且 Tab 头显示锁定 tag。
 4. 本表管数据关系，domain-map.md 管域边界，fields.md 管字段名——三者冲突时先在此对齐再改码。
+5. 设计问题与风险台账：docs/review/db-design-review.md（两轮评估结论）。
