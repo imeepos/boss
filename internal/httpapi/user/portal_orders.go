@@ -32,15 +32,28 @@ func portalOrderTimeline(stages []order.StageLog) []gin.H {
 	return out
 }
 
-// portalListOrders GET /orders?status=:我的订单列表(status: all/in_progress/done/cancelled)。
+// portalListOrders GET /orders?status=&page=&pageSize=:我的订单列表
+// (status: all/in_progress/done/cancelled;分页 page 从 1 起,pageSize 默认 10,多取 1 条判 hasMore)。
 func portalListOrders(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
 		status := c.DefaultQuery("status", "all")
-		list, err := a.Order.List(c.Request.Context(), order.OrderQuery{Status: statusFilter(status), CustomerID: cid})
+		page := portalPositiveQuery(c, "page", 1)
+		pageSize := portalPositiveQuery(c, "pageSize", 10)
+		if pageSize > 50 {
+			pageSize = 50
+		}
+		list, err := a.Order.List(c.Request.Context(), order.OrderQuery{
+			Status: statusFilter(status), CustomerID: cid,
+			Limit: pageSize + 1, Offset: (page - 1) * pageSize,
+		})
 		if err != nil {
 			respondErr(c, err)
 			return
+		}
+		hasMore := len(list) > pageSize
+		if hasMore {
+			list = list[:pageSize]
 		}
 		items := make([]gin.H, 0, len(list))
 		for _, item := range list {
@@ -52,7 +65,9 @@ func portalListOrders(a *app.Application) gin.HandlerFunc {
 				"estimateFinish": "", "canRate": item.Status == "DONE",
 			})
 		}
-		respond(c, apitypes.CodeOK, gin.H{"items": items})
+		respond(c, apitypes.CodeOK, gin.H{
+			"items": items, "page": page, "pageSize": pageSize, "hasMore": hasMore,
+		})
 	}
 }
 

@@ -9,6 +9,14 @@ paths:
           in: query
           schema: { type: string, enum: [all, in_progress, done, cancelled] }
           description: 标签过滤
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+          description: 页码,从 1 起
+        - name: pageSize
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+          description: 每页条数
       responses:
         '200':
           description: 订单列表
@@ -20,6 +28,9 @@ paths:
                   items:
                     type: array
                     items: { $ref: './schemas.yaml#/components/schemas/OrderSummary' }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  hasMore: { type: boolean }
 
     post:
       tags: [Order]

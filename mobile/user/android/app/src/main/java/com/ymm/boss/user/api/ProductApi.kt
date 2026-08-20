@@ -17,9 +17,18 @@ object ProductApi {
 // 订单域端点封装,契约 api/openapi/user/order.yaml。
 object OrderApi {
 
-    // GET /orders?status= 订单列表,status: all/in_progress/done/cancelled。
-    suspend fun list(status: String? = null): JSONObject =
-        Api.get("/orders" + Api.qs(mapOf("status" to status)))
+    // GET /orders?status=&page=&pageSize= 订单分页列表,status: all/in_progress/done/cancelled;
+    // 返回 items + page + pageSize + hasMore。
+    suspend fun list(status: String? = null, page: Int = 1, pageSize: Int = 10): JSONObject =
+        Api.get(
+            "/orders" + Api.qs(
+                mapOf(
+                    "status" to status,
+                    "page" to page.toString(),
+                    "pageSize" to pageSize.toString(),
+                )
+            )
+        )
 
     // POST /orders 下单(环节1 submitOrder),返回 OrderSummary 含 orderNo。
     suspend fun submit(productId: String, addressId: String): JSONObject =

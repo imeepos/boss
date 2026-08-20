@@ -128,3 +128,12 @@ func portalID(s string) int64 {
 	n, _ := strconv.ParseInt(s, 10, 64)
 	return n
 }
+
+// portalPositiveQuery 正整数 query 参数,非法/缺失回退 def。
+func portalPositiveQuery(c *gin.Context, key string, def int) int {
+	n, err := strconv.Atoi(c.Query(key))
+	if err != nil || n < 1 {
+		return def
+	}
+	return n
+}
