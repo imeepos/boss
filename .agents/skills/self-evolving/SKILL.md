@@ -179,7 +179,8 @@ node .agents/skills/self-evolving/scripts/gpt-image-generate.mjs \
 | `--size` | `1536x1024` | 横版；竖版用 `1024x1536`；方形用 `1024x1024` |
 | `--quality` | `auto` | `low`/`medium`/`high`/`auto`，high 很慢 |
 | `--n` | `1` | 生成张数 |
-| `--style` | `vivid` | `vivid`（鲜艳）或 `natural`（自然） |
+| `--style` | `vivid` | `vivid`（鲜艳）或 `natural`（自然），仅文生图生效 |
+| `--image / -i` | 无 | 参考图路径，可重复传或逗号分隔；传入后走图生图端点，用于在已有稿上迭代（保布局改配色/主题） |
 
 ### 生成后
 

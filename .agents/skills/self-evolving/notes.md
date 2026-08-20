@@ -572,3 +572,14 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑：skill 知识库里的模板副本(design-to-prompt-android.md)留有上次会话未提交的"填好"版本，含张先生/8/12等臆造设计细节，用户误以为主模板被污染。
 - skill 预警：无；且上次收尾没检查 git status 遗留了未提交改动。
 - 重来一次：模板副本一律从主模板同步生成(保头5行+主模板正文)，不留手填版本；收尾必须 status 干净。
+
+## 2025-08-20 创建 ui-proto 预设（gpt-image-2 原型设计师）
+- 哪个坑浪费最多时间：想在动态插件沙箱里用 setTimeout 做 mount 校验探针，被拒两次（沙箱禁 Node timers；ctx.timeout 需 inject timer）。
+- skill 有没有提前警告：cordis-plugin-development 文档有提，但我没先读就写，浪费一轮。
+- 重来一次：先查沙箱可用 API 再写探针；mount 校验优先用"失败即抛错"探针而非 console.log（宿主 stdout 在 bash 里读不到）。
+- 新经验：cordis 预设的 `!!js` 标签是 scalar-only，不能标记整个序列，要逐项 `!!js >-` 标记。
+
+## 2025-08-20 gpt-image-generate 增加参考图支持
+- 哪个坑：edit 端点 multipart 字段名按 OpenAI 文档写 `image[]`，实际代理返回 400 要求 `image`；另外我第一次重写脚本时在 loadEnv 里手滑留了一行垃圾代码。
+- skill 有没有提前警告：没有（上游 API 字段差异），已记入 lessons.md。
+- 重来一次：对接新端点先用最小请求探字段名，再写完整逻辑；重写文件后立刻 node 冒烟。
