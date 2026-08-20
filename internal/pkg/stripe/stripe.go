@@ -60,19 +60,22 @@ func (c *Client) CreateIntent(ctx context.Context, payNo string, amountCents int
 	if err != nil {
 		return Intent{}, err
 	}
-	var raw struct {
-		ID           string `json:"id"`
-		ClientSecret string `json:"client_secret"`
-		Status       string `json:"status"`
-		Amount       int64  `json:"amount"`
-		Currency     string `json:"currency"`
-	}
+	// 契约命名红线:不经 struct tag 解码渠道原始 snake_case 字段。
+	var raw map[string]any
 	if err := json.Unmarshal(body, &raw); err != nil {
 		return Intent{}, fmt.Errorf("stripe: decode intent: %w", err)
 	}
-	return Intent{ID: raw.ID, ClientSecret: raw.ClientSecret, Status: raw.Status,
-		AmountCents: raw.Amount, Currency: raw.Currency}, nil
+	return Intent{
+		ID:           toStr(raw["id"]),
+		ClientSecret: toStr(raw["client_secret"]),
+		Status:       toStr(raw["status"]),
+		AmountCents:  toInt(raw["amount"]),
+		Currency:     toStr(raw["currency"]),
+	}, nil
 }
+
+func toStr(v any) string { s, _ := v.(string); return s }
+func toInt(v any) int64  { f, _ := v.(float64); return int64(f) }
 
 // postForm 发 form-encoded POST 并读响应体;非 2xx 返回带状态码与正文的错误。
 func (c *Client) postForm(ctx context.Context, path string, form url.Values, idemKey string) ([]byte, error) {

@@ -80,6 +80,53 @@ paths:
                     type: array
                     items: { $ref: './schemas.yaml#/components/schemas/PaymentRecord' }
 
+  /payments/stripe/intent:
+    post:
+      tags: [Billing]
+      summary: 发起 Stripe 卡收款(生成 PaymentIntent,clientSecret 交前端渠道 SDK)
+      operationId: createStripeIntent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [billNo, amount]
+              properties:
+                billNo: { type: string }
+                amount: { type: number }
+      responses:
+        '200':
+          description: 意图已创建(落账等 Stripe 回调)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payNo: { type: string, example: 'PAY-20260822-01' }
+                  billNo: { type: string }
+                  amount: { type: number, example: 158.0 }
+                  clientSecret: { type: string, example: 'pi_xxx_secret' }
+                  intentId: { type: string, example: 'pi_xxx' }
+                  currency: { type: string, example: php }
+        '409': { description: 账单已缴 }
+        '400': { description: Stripe 通道未配置(无密钥)或参数非法 }
+
+  /webhooks/stripe:
+    post:
+      tags: [Billing]
+      summary: Stripe 渠道回调(渠道服务器调用;Stripe-Signature 验签后按 payNo 幂等落账)
+      operationId: stripeWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: 已接收(重投幂等) }
+        '400': { description: 验签失败或落账错误(Stripe 将重试) }
+        '503': { description: webhook 密钥未配置 }
+
   /payments/{payNo}/receipt:
     get:
       tags: [Billing]

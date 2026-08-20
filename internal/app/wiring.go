@@ -31,6 +31,7 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/database"
 	"github.com/ymm-001/boss/internal/pkg/events"
 	"github.com/ymm-001/boss/internal/pkg/sms"
+	"github.com/ymm-001/boss/internal/pkg/stripe"
 )
 
 // Application 持有各域服务的装配结果,是模块化单体依赖绑定的唯一入口。
@@ -60,7 +61,11 @@ type Application struct {
 	// ReconAuto 自动对账编排(渠道源注册表 ReconSources);admin POST /reconciliations/auto。
 	ReconAuto    *billing.AutoReconciler
 	ReconSources *billing.ChannelSourceRegistry
-	Tax          billing.TaxService
+	// PayGateway 支付渠道网关注册表(Stripe 卡收单);nil/未注册=模拟直落账(现状)。
+	PayGateway *billing.PaymentGatewayRegistry
+	// StripeWebhook Stripe 回调验签上下文;密钥未配置时 webhook 端点直接 503。
+	StripeWebhook stripe.Webhook
+	Tax           billing.TaxService
 	// TaxGateway 税局网关注册表(CN 数电票/PH BIR eIS);nil=全人工模式(回填票号)。
 	TaxGateway *billing.TaxGatewayRegistry
 
@@ -125,20 +130,6 @@ func (a *Application) Close() {
 
 // ErrNotImplemented 域尚未接入装配时返回,便于调用方降级/提示。
 var ErrNotImplemented = errors.New("app: domain service not wired yet")
-
-// customerLookup 把 customer.CustomerService.Get 适配为 order.CustomerLookup.Exists。
-type customerLookup struct{ svc customer.CustomerService }
-
-func (c customerLookup) Exists(ctx context.Context, id int64) (bool, error) {
-	_, err := c.svc.Get(ctx, id)
-	if err == nil {
-		return true, nil
-	}
-	if errors.Is(err, customer.ErrCustomerNotFound) {
-		return false, nil
-	}
-	return false, err
-}
 
 // New 装配依赖:打开 PG → 应用迁移 → 构造各域 PGStore。
 // migrationsDir 为 migrations/*.up.sql 所在目录(通常相对工作目录为 "migrations")。
@@ -252,6 +243,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 
 	app.Audit = aw
+	wireStripe(app, cfg) // 卡收单通道:密钥齐备才注册(见 wiring_stripe.go)
 
 	// 阶段9:经营分析 + 自动报告。
 	app.Report = &report.ReportService{Ana: app.Analytics, St: report.NewPGStore(pool)}

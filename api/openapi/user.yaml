@@ -62,7 +62,9 @@ paths:
   /bills: { $ref: './user/billing.yaml#/paths/~1bills' }
   /bills/{billNo}: { $ref: './user/billing.yaml#/paths/~1bills~1{billNo}' }
   /payments: { $ref: './user/billing.yaml#/paths/~1payments' }
+  /payments/stripe/intent: { $ref: './user/billing.yaml#/paths/~1payments~1stripe~1intent' }
   /payments/{payNo}/receipt: { $ref: './user/billing.yaml#/paths/~1payments~1{payNo}~1receipt' }
+  /webhooks/stripe: { $ref: './user/billing.yaml#/paths/~1webhooks~1stripe' }
   /topups: { $ref: './user/billing.yaml#/paths/~1topups' }
   /invoices: { $ref: './user/billing.yaml#/paths/~1invoices' }
   # ---------- CustomerService ----------

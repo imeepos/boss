@@ -82,6 +82,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerPortalBillingRoutes(uauth, a)
 	registerPortalServiceRoutes(uauth, a)
 	registerPortalAttachmentRoutes(uauth, a)
+	registerStripeRoutes(pub, uauth, a)
 }
 
 // portalCustomerOnly 非客户身份(含 admin JWT)一律 401,客户视角端点不与后台 RBAC 混用。

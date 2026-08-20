@@ -91,6 +91,13 @@ type Config struct {
 		AccessKeySecret string
 		From            string // 阿里云国际 SenderID
 	}
+	// Stripe 支付通道(卡收单;APIKey 为空时通道不注册,缴费走既有模拟直落账)。
+	Stripe struct {
+		APIKey       string // sk_... 密钥(引用不存值)
+		WebhookSec   string // endpoint signing secret(whsec_...)
+		Currency     string // 记账币种小写(如 php)
+		APIBaseURL   string // 覆盖 API 地址(测试/代理用,空=官方)
+	}
 }
 
 // Load 从环境变量读取;文件/Nacos 热更新在阶段1迭代中接入。
@@ -143,6 +150,11 @@ func Load() *Config {
 	c.SMS.AccessKeyID = getenv("BOSS_SMS_ALIYUN_AK_ID", "")
 	c.SMS.AccessKeySecret = getenv("BOSS_SMS_ALIYUN_AK_SECRET", "")
 	c.SMS.From = getenv("BOSS_SMS_ALIYUN_FROM", "")
+
+	c.Stripe.APIKey = getenv("BOSS_STRIPE_API_KEY", "")
+	c.Stripe.WebhookSec = getenv("BOSS_STRIPE_WEBHOOK_SECRET", "")
+	c.Stripe.Currency = getenv("BOSS_STRIPE_CURRENCY", "php")
+	c.Stripe.APIBaseURL = getenv("BOSS_STRIPE_API_BASE", "")
 
 	c.MinIO.Endpoint = getenv("BOSS_MINIO_ENDPOINT", "192.168.0.102:29000")
 	c.MinIO.AccessKey = getenv("BOSS_MINIO_ACCESS_KEY", "boss")
