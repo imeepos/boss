@@ -15,10 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         app: [mobile/user/android, mobile/worker/android]
-    defaults:
-      run:
-        working-directory: ${{ matrix.app }}
     steps:
+      # 注意:working-directory 只能用在 Clone 之后的步骤,
+      # 克隆前子目录不存在,容器 exec 会因 chdir 失败。
       - name: Clone
         run: |
           git clone --depth 1 "http://sker:${GITHUB_TOKEN}@192.168.0.102:3001/sker/boss.git" .
@@ -35,6 +34,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Build + unit tests
+        working-directory: ${{ matrix.app }}
         run: |
           ./gradlew :app:assembleDebug --no-daemon
           ./gradlew :app:testDebugUnitTest :app:assembleRelease --no-daemon
