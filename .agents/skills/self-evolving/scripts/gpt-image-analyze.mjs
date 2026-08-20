@@ -43,11 +43,13 @@ function parseArgs(argv) {
     prompt: '',
     system: 'You are a professional UI/UX design reviewer. Answer precisely and concretely in Chinese.',
     model: 'gpt-5.6-sol',
+    diff: false,
     envPath: resolve(__dirname, '.env'),
   }
   for (let i = 2; i < argv.length; i += 2) {
     const key = argv[i]?.replace(/^--/, '').replace(/^-/, '')
     const val = argv[i + 1]
+    if (key === 'diff') { args.diff = true; i--; continue }
     if (!val || val.startsWith('-')) { i--; continue }
     if (key === 'p' || key === 'prompt') args.prompt = val
     else if (key === 'i' || key === 'image')
@@ -67,6 +69,20 @@ function imagePart(path) {
   return { type: 'image_url', image_url: { url: `data:image/${ext};base64,${b64}` } }
 }
 
+const DIFF_SYSTEM = `You are a meticulous design QA reviewer. You receive exactly two images: the FIRST is the design mockup (设计稿), the SECOND is the implementation screenshot (实现稿). Compare the implementation against the design and answer in Chinese with exactly this structure:
+
+## 差异清单
+A markdown table with columns: 序号 | 维度 (布局/间距/圆角/颜色/字体层级/组件形态/状态缺失/内容) | 设计稿 | 实现稿 | 严重度 (高/中/低).
+Only list real, actionable deviations. Layout right or near-identical = not a deviation. Ignore trivial text placeholder differences unless they break layout. If there are no deviations, output "无显著差异" and skip the table.
+
+## 修复提示词
+A single fenced code block containing a prompt that can be sent directly to a frontend engineer or AI coding agent to fix ALL listed deviations: concrete CSS/component-level instructions (target element, current wrong state, expected state with values like hex/px), grouped by page region, ordered by severity. No greetings, no explanation outside the block.`
+
+function diffPrompt(extra) {
+  const base = '第一张图是设计稿，第二张图是实现稿。逐维度对比实现稿相对设计稿的偏差，按约定格式输出差异清单和修复提示词。'
+  return extra ? `${base}\n\n补充上下文：${extra}` : base
+}
+
 async function analyze(args) {
   const env = loadEnv(args.envPath)
   const apiKey = env.OPENAI_API_KEY
@@ -75,8 +91,12 @@ async function analyze(args) {
     console.error('Error: OPENAI_API_KEY not found in', args.envPath)
     process.exit(1)
   }
-  if (!args.prompt) {
-    console.error('Error: --prompt is required')
+  if (!args.prompt && !args.diff) {
+    console.error('Error: --prompt is required (or use --diff with two images)')
+    process.exit(2)
+  }
+  if (args.diff && args.images.length !== 2) {
+    console.error('Error: --diff requires exactly 2 images: first the design mockup, then the implementation screenshot')
     process.exit(2)
   }
   for (const p of args.images) {
@@ -88,7 +108,9 @@ async function analyze(args) {
     }
   }
 
-  const content = [{ type: 'text', text: args.prompt }, ...args.images.map(imagePart)]
+  const prompt = args.diff ? diffPrompt(args.prompt) : args.prompt
+  const system = args.diff ? DIFF_SYSTEM : args.system
+  const content = [{ type: 'text', text: prompt }, ...args.images.map(imagePart)]
   const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
@@ -98,7 +120,7 @@ async function analyze(args) {
     body: JSON.stringify({
       model: args.model,
       messages: [
-        { role: 'system', content: args.system },
+        { role: 'system', content: system },
         { role: 'user', content },
       ],
     }),
