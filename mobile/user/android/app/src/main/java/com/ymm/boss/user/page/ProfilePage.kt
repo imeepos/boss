@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
@@ -81,10 +82,14 @@ fun ProfileScreen(nav: Nav) {
                 .height(with(density) { (infoPx + HeaderOverlapPx).toDp() })
                 .background(profileHeaderGradient()),
         )
+        // 滚动区整体从交点起带 16dp 顶部圆角裁剪:滚动到哪,哪个内容被圆角裁边,圆角恒在
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            Modifier
+                .fillMaxSize()
+                .padding(top = with(density) { infoPx.toDp() })
+                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                .verticalScroll(rememberScrollState()),
         ) {
-            Spacer(Modifier.height(with(density) { infoPx.toDp() }))
             QuickEntriesCard(data, nav)
             ServiceEntriesCard(nav, unread)
             SettingsCard(nav)
@@ -174,10 +179,7 @@ private fun QuickEntriesCard(data: JSONObject?, nav: Nav) {
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     val addrCount = data?.optJSONArray("addresses")?.length() ?: 0
     val planName = data?.optJSONObject("plan")?.optString("name").orEmpty().ifBlank { "—" }
-    AppCard(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 12.dp, bottomEnd = 12.dp),
-    ) {
+    AppCard(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth()) {
                 QuickEntry(Icons.Filled.GppGood, Palette.primary, "实名信息", if (verified) "已实名" else "待补登", Modifier.weight(1f)) {
                     nav.push(Route.Verify)
