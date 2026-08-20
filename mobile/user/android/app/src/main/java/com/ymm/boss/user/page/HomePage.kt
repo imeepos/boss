@@ -57,30 +57,30 @@ private data class HomeData(
 }
 
 @Composable private fun Header(d: HomeData, nav: Nav) {
-    Box(Modifier.fillMaxWidth().height(400.dp).background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2)))) {
+    Box(Modifier.fillMaxWidth().height(120.dp).background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2)))) {
         Canvas(Modifier.fillMaxSize()) {
             val center = androidx.compose.ui.geometry.Offset(size.width * .84f, size.height * .88f)
             listOf(.26f, .36f, .47f).forEach { radius -> drawCircle(Color.White.copy(alpha = .14f), size.minDimension * radius, center, style = Stroke(2.dp.toPx())) }
         }
-        Column(Modifier.fillMaxWidth().padding(24.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Column(Modifier.weight(1f)) { Text("早上好，${d.name}", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold); Text(d.phone, color = Color.White, fontSize = 16.sp, modifier = Modifier.padding(top = 9.dp)) }; Box(Modifier.size(40.dp).clickable { nav.push(Route.Messages) }) { Icon(Icons.Outlined.List, "消息", tint = Color.White, modifier = Modifier.fillMaxSize().padding(3.dp)); Box(Modifier.size(11.dp).background(Palette.err, CircleShape).align(Alignment.TopEnd)) } }
-        Row(Modifier.padding(top = 17.dp).background(Color.White.copy(.15f), RoundedCornerShape(22.dp)).padding(horizontal = 16.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) { StatusDot(); Text("  服务在线 · 网络正常", color = Color.White, fontSize = 15.sp) }
+        Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Column(Modifier.weight(1f)) { Text("早上好，${d.name}", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold); Text(d.phone, color = Color.White, fontSize = 14.sp, modifier = Modifier.padding(top = 7.dp)) }; Box(Modifier.size(38.dp).clickable { nav.push(Route.Messages) }) { Icon(Icons.Outlined.List, "消息", tint = Color.White, modifier = Modifier.fillMaxSize().padding(3.dp)); Box(Modifier.size(10.dp).background(Palette.err, CircleShape).align(Alignment.TopEnd)) } }
+        Row(Modifier.padding(top = 3.dp).background(Color.White.copy(.15f), RoundedCornerShape(22.dp)).padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) { StatusDot(); Text("  服务在线 · 网络正常", color = Color.White, fontSize = 13.sp) }
         }
     }
 }
 
 @Composable private fun Plan(d: HomeData, nav: Nav) {
-    Column(Modifier.padding(horizontal = 14.dp).offset(y = (-90).dp).shadow(4.dp, RoundedCornerShape(16.dp)).background(Palette.panel, RoundedCornerShape(16.dp)).padding(18.dp)) {
-        Row(Modifier.fillMaxWidth().clickable { nav.push(Route.MyPlan) }, verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Home, null, tint = Palette.primary, modifier = Modifier.size(54.dp).background(Color(0xFFEFF5FF), CircleShape).padding(13.dp)); Text(d.plan, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 14.dp)); Tag("在网", Palette.success); Text("›", fontSize = 29.sp, color = Palette.muted) }
-        Row(Modifier.fillMaxWidth().padding(top = 22.dp), horizontalArrangement = Arrangement.SpaceEvenly) { Metric("本月账单", "¥ ${d.bill}", Palette.primary) { nav.push(Route.Bills) }; Divider(); Metric("套餐余额", "¥ ${d.balance}", Palette.primary); Divider(); Metric("合约到期", d.end, Palette.ink) }
+    Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp).offset(y = (-22).dp).shadow(4.dp, RoundedCornerShape(16.dp)).background(Palette.panel, RoundedCornerShape(16.dp)).padding(10.dp)) {
+        Row(Modifier.fillMaxWidth().clickable { nav.push(Route.MyPlan) }, verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Home, null, tint = Palette.primary, modifier = Modifier.size(44.dp).background(Color(0xFFEFF5FF), CircleShape).padding(10.dp)); Text(d.plan, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp)); Tag("在网", Palette.success); Text("›", fontSize = 25.sp, color = Palette.muted) }
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.SpaceEvenly) { Metric("本月账单", "¥ ${d.bill}", Palette.primary) { nav.push(Route.Bills) }; Divider(); Metric("套餐余额", "¥ ${d.balance}", Palette.primary); Divider(); Metric("合约到期", d.end, Palette.ink) }
     }
 }
-@Composable private fun Metric(a: String, b: String, c: Color, click: (() -> Unit)? = null) { Column(Modifier.clickable(enabled = click != null) { click?.invoke() }, horizontalAlignment = Alignment.CenterHorizontally) { Text(a, fontSize = 14.sp); Text(b, fontSize = 23.sp, fontWeight = FontWeight.Bold, color = c, modifier = Modifier.padding(top = 7.dp)) } }
-@Composable private fun Divider() { Spacer(Modifier.width(1.dp).height(54.dp).background(Palette.line)) }
+@Composable private fun Metric(a: String, b: String, c: Color, click: (() -> Unit)? = null) { Column(Modifier.clickable(enabled = click != null) { click?.invoke() }, horizontalAlignment = Alignment.CenterHorizontally) { Text(a, fontSize = 12.sp); Text(b, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c, modifier = Modifier.padding(top = 4.dp)) } }
+@Composable private fun Divider() { Spacer(Modifier.width(1.dp).height(42.dp).background(Palette.line)) }
 
 @Composable private fun Quick(nav: Nav) {
     val items = listOf("办套餐" to Route.Products, "查订单" to Route.Orders, "缴费用" to Route.Pay, "报故障" to Route.Fault, "充值" to Route.Topup, "查用量" to Route.Usage, "消息" to Route.Messages, "客服" to Route.Service)
-    Column(Modifier.padding(horizontal = 14.dp).offset(y = (-78).dp).shadow(3.dp, RoundedCornerShape(16.dp)).background(Palette.panel, RoundedCornerShape(16.dp)).padding(vertical = 10.dp)) { items.chunked(4).forEachIndexed { index, row -> Row(Modifier.fillMaxWidth().height(94.dp)) { row.forEachIndexed { column, (label, route) -> Column(Modifier.weight(1f).fillMaxHeight().clickable { nav.push(route) }.padding(horizontal = if (column == 0) 0.dp else 1.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(when (label) { "办套餐" -> Icons.Outlined.ShoppingBag; "查订单" -> Icons.Outlined.Assignment; "缴费用" -> Icons.Outlined.Payments; "报故障" -> Icons.Outlined.Build; "充值" -> Icons.Outlined.CreditCard; "查用量" -> Icons.Outlined.SignalCellularAlt; "消息" -> Icons.Outlined.ChatBubbleOutline; else -> Icons.Outlined.HeadsetMic }, label, tint = when (label) { "查订单", "查用量" -> Palette.success; "缴费用", "消息" -> Palette.orange; "报故障", "客服" -> Palette.purple; else -> Palette.primary }, modifier = Modifier.size(43.dp)); Text(label, fontSize = 15.sp, modifier = Modifier.padding(top = 8.dp)) } } }; if (index == 0) Spacer(Modifier.fillMaxWidth().height(1.dp).background(Palette.line)) } }
+    Column(Modifier.padding(horizontal = 14.dp, vertical = 4.dp).shadow(3.dp, RoundedCornerShape(16.dp)).background(Palette.panel, RoundedCornerShape(16.dp)).padding(vertical = 6.dp)) { items.chunked(4).forEachIndexed { index, row -> Row(Modifier.fillMaxWidth().height(68.dp)) { row.forEachIndexed { column, (label, route) -> Column(Modifier.weight(1f).fillMaxHeight().clickable { nav.push(route) }.padding(horizontal = if (column == 0) 0.dp else 1.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Icon(when (label) { "办套餐" -> Icons.Outlined.ShoppingBag; "查订单" -> Icons.Outlined.Assignment; "缴费用" -> Icons.Outlined.Payments; "报故障" -> Icons.Outlined.Build; "充值" -> Icons.Outlined.CreditCard; "查用量" -> Icons.Outlined.SignalCellularAlt; "消息" -> Icons.Outlined.ChatBubbleOutline; else -> Icons.Outlined.HeadsetMic }, label, tint = when (label) { "查订单", "查用量" -> Palette.success; "缴费用", "消息" -> Palette.orange; "报故障", "客服" -> Palette.purple; else -> Palette.primary }, modifier = Modifier.size(32.dp)); Text(label, fontSize = 11.sp, modifier = Modifier.padding(top = 3.dp)) } } }; if (index == 0) Spacer(Modifier.fillMaxWidth().height(1.dp).background(Palette.line)) } }
 }
 
 @Composable private fun Orders(d: HomeData, nav: Nav) {
@@ -88,9 +88,9 @@ private data class HomeData(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("进行中订单", fontSize = 20.sp, fontWeight = FontWeight.Bold); Text("全部 〉", color = Palette.primary, modifier = Modifier.clickable { nav.push(Route.Orders) }) }
         d.orders.firstOrNull()?.let { o ->
             Row(Modifier.padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Assignment, null, tint = Palette.primary, modifier = Modifier.size(70.dp).background(Color(0xFFEFF5FF), RoundedCornerShape(22.dp)).padding(17.dp))
+                Icon(Icons.Outlined.Assignment, null, tint = Palette.primary, modifier = Modifier.size(58.dp).background(Color(0xFFEFF5FF), RoundedCornerShape(18.dp)).padding(14.dp))
                 Column(Modifier.padding(start = 16.dp).weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) { Text("${o.optString("orderNo")} · ${o.optString("productName")}", fontSize = 15.sp, modifier = Modifier.weight(1f)); Tag("装维中", Palette.primary) }
+                    Row(verticalAlignment = Alignment.CenterVertically) { Text("${o.optString("orderNo")} · ${o.optString("productName")}", fontSize = 13.sp, maxLines = 1, modifier = Modifier.weight(1f)); Tag("装维中", Palette.primary) }
                     Row(Modifier.padding(top = 7.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.LocationOn, null, tint = Palette.muted, modifier = Modifier.size(16.dp)); Text(o.optString("address"), color = Palette.muted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp)) }
                     Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) { Text("上门安装", color = Palette.primary, fontSize = 14.sp); Text("  ${o.optInt("stage", 8)}/12", color = Palette.muted, fontSize = 12.sp); Spacer(Modifier.width(10.dp)); Box(Modifier.weight(1f).height(7.dp).background(Palette.line, RoundedCornerShape(5.dp))) { Box(Modifier.fillMaxWidth(o.optInt("stage", 8) / 12f).height(7.dp).background(Palette.primary, RoundedCornerShape(5.dp))) } }
                 }

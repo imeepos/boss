@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -21,6 +23,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Api.init(this)
         enableEdgeToEdge()
+        window.statusBarColor = com.ymm.boss.user.ui.Palette.primary.toArgb()
+        window.navigationBarColor = com.ymm.boss.user.ui.Palette.panel.toArgb()
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         setContent { BossTheme { AppRoot() } }
     }
 }
