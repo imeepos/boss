@@ -190,8 +190,8 @@ private fun HomeContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // 滚动区上移 19dp(≈50px)贴近头部内容;蓝色区总高不变(渐变底 199+16dp)
-            .padding(top = (HeaderHeightDp - 19).dp)
+            // 滚动区再上移 15dp(合计 34dp≈90px)贴近"服务在线"行;蓝色区总高不变(渐变底 199+16dp)
+            .padding(top = (HeaderHeightDp - 34).dp)
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
             .background(MaterialTheme.colorScheme.background),
