@@ -49,6 +49,7 @@ import com.ymm.boss.user.api.ProductApi
 import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.IconTile
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
@@ -67,7 +68,7 @@ fun ProductsScreen(nav: Nav) {
     var products by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var addons by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var err by remember { mutableStateOf("") }
-    LaunchedEffect(cat) {
+    LaunchedEffect(cat, nav.refreshTick) {
         try {
             val d = ProductApi.list(cat)
             products = d.optJSONArray("items").toObjList()
@@ -86,7 +87,7 @@ fun ProductsScreen(nav: Nav) {
         }
         LazyColumn {
             item { if (err.isNotEmpty()) Notice(err, Palette.err) }
-            if (shown.isEmpty() && err.isEmpty()) item { Notice("未找到匹配的产品") }
+            if (shown.isEmpty() && err.isEmpty()) item { EmptyState("未找到匹配的产品") }
             items(shown) { p -> ProductCard(p, nav) }
             if (cat == "addon") item { AddonCard(addons, nav) }
             item { Spacer(Modifier.height(12.dp)) }
@@ -235,7 +236,7 @@ private fun AddonCard(addons: List<JSONObject>, nav: Nav) {
     AppCard {
         Column(Modifier.fillMaxWidth()) {
             CardTitle("增值服务", more = "进入管理 >") { nav.push(Route.Addon) }
-            if (addons.isEmpty()) Notice("暂无可订购增值服务")
+            if (addons.isEmpty()) EmptyState("暂无可订购增值服务")
             addons.forEach { a ->
                 Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconTile(Icons.Filled.CardGiftcard, Palette.purple, size = 36.dp)

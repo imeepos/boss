@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
@@ -50,7 +51,7 @@ fun VerifyScreen(nav: Nav) {
     var data by remember { mutableStateOf<JSONObject?>(null) }
     var loading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try { data = AccountApi.verifyStatus() }
         catch (e: Exception) { data = null } // 拉取失败不白屏,按待实名骨架展示
         finally { loading = false }
@@ -159,7 +160,7 @@ private fun UploadBox(text: String, modifier: Modifier = Modifier) {
 private fun RecordsCard(records: List<JSONObject>) {
     AppCard {
         CardTitle("核验记录")
-        if (records.isEmpty()) Notice("暂无核验记录")
+        if (records.isEmpty()) EmptyState("暂无核验记录")
         records.forEach { r ->
             val pass = r.optString("result") == "PASS"
             Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {

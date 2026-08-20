@@ -30,6 +30,7 @@ import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.api.toObjectList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CellRow
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
@@ -47,7 +48,7 @@ private val CATEGORIES = listOf(
 fun MessagesScreen(nav: Nav) {
     var category by remember { mutableStateOf("") }
     var items by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
-    LaunchedEffect(category) {
+    LaunchedEffect(category, nav.refreshTick) {
         try {
             val d = UserApi.misc.messages(category.ifBlank { null })
             items = d.optJSONArray("items").toObjectList()
@@ -58,7 +59,7 @@ fun MessagesScreen(nav: Nav) {
         TopBar("消息中心", { nav.pop() }, "订阅设置") { nav.push(Route.Notify) }
         SegmentBar(category) { category = it }
         AppCard {
-            if (items.isEmpty()) Text("暂无消息", fontSize = 12.5.sp, color = Palette.muted)
+            if (items.isEmpty()) EmptyState("暂无消息")
             items.forEach { m -> MessageCell(m, nav) }
         }
         ReadAllButton { category = "" }

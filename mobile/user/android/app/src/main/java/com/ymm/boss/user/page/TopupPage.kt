@@ -48,7 +48,7 @@ fun TopupScreen(nav: Nav) {
     var balance by remember { mutableStateOf(0.0) }
     var denoms by remember { mutableStateOf<List<Int>>(emptyList()) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try {
             val d = BillApi.balance()
             balance = d.optDouble("balance", 0.0)

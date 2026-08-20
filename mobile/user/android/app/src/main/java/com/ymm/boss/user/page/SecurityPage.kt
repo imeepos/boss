@@ -45,7 +45,7 @@ import org.json.JSONObject
 @Composable
 fun SecurityScreen(nav: Nav) {
     var data by remember { mutableStateOf<JSONObject?>(null) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try { data = ProfileApi.security() } catch (e: Exception) { data = null }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {

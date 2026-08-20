@@ -43,7 +43,7 @@ private val PERIODS = listOf(
 fun UsageScreen(nav: Nav) {
     var period by remember { mutableStateOf("current") }
     var data by remember { mutableStateOf<JSONObject?>(null) }
-    LaunchedEffect(period) {
+    LaunchedEffect(period, nav.refreshTick) {
         try { data = UserApi.misc.usage(period) } catch (e: Exception) { data = null }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {

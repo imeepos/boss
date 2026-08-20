@@ -46,7 +46,7 @@ fun RateScreen(nav: Nav, no: String) {
     var quality by remember { mutableIntStateOf(5) }
     var comment by remember { mutableStateOf("") }
     var err by remember { mutableStateOf("") }
-    LaunchedEffect(no) {
+    LaunchedEffect(no, nav.refreshTick) {
         try {
             val d = OrderApi.rateInfo(no)
             info = "${d.optString("productName")} · ${d.optString("address")} · ${d.optString("finishedAt")} 完成"

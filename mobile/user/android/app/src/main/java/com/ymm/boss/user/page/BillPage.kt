@@ -48,7 +48,7 @@ fun BillScreen(nav: Nav, no: String) {
     var failed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(no) {
+    LaunchedEffect(no, nav.refreshTick) {
         try {
             val d = BillApi.billDetail(no)
             bill = d.optJSONObject("bill")

@@ -53,8 +53,8 @@ fun ChangeScreen(nav: Nav, planId: String) {
     var done by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) { loadCurrent { curName = it.first; curDesc = it.second } }
-    LaunchedEffect(Unit) { loadOptions({ options = it }, { selected = it }, { err = "套餐列表加载失败" }) }
+    LaunchedEffect(nav.refreshTick) { loadCurrent { curName = it.first; curDesc = it.second } }
+    LaunchedEffect(nav.refreshTick) { loadOptions({ options = it }, { selected = it }, { err = "套餐列表加载失败" }) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("改套餐") { nav.pop() }

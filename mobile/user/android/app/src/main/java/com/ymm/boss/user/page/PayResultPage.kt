@@ -47,7 +47,7 @@ fun PayResultScreen(nav: Nav) {
     var amountLine by remember { mutableStateOf("¥—") }
     var payMethod by remember { mutableStateOf("—") }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         if (payNo.isBlank()) {
             payNo = runCatching { latestPayNo() }.getOrNull() ?: ""
         }

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.ServiceApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
@@ -50,7 +51,7 @@ fun ServiceScreen(nav: Nav) {
     var input by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try { faqs = ServiceApi.faq().optJSONArray("items").toList() } catch (e: Exception) { /* 保留骨架 */ }
     }
 
@@ -66,7 +67,7 @@ fun ServiceScreen(nav: Nav) {
             }
             AppCard {
                 CardTitle("常见问题", "更多") { nav.push(Route.Help) }
-                if (faqs.isEmpty()) Text("暂无常见问题", fontSize = 12.5.sp, color = Palette.muted)
+                if (faqs.isEmpty()) EmptyState("暂无常见问题")
                 faqs.forEach { f -> CellRow(title = f.optString("question"), right = { Text("›", color = Palette.subtle) }) }
             }
         }

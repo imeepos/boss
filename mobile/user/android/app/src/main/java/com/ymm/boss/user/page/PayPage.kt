@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.BillApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
@@ -55,7 +56,7 @@ private fun PayFormCard(nav: Nav) {
     var err by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         target = runCatching { loadUnpaidBill() }.getOrNull()
         if (target == null) err = "账单加载失败"
     }
@@ -128,7 +129,7 @@ private fun doPay(
 @Composable
 private fun RecordsCard(nav: Nav) {
     var records by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try {
             records = BillApi.payments().optList()
         } catch (e: Exception) { /* 记录缺省为空 */ }
@@ -136,7 +137,7 @@ private fun RecordsCard(nav: Nav) {
     AppCard {
         CardTitle("缴费记录", "开发票") { nav.push(Route.Invoice) }
         if (records.isEmpty()) {
-            Text("暂无缴费记录", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
+            EmptyState("暂无缴费记录")
         }
         records.forEach { r -> RecordCell(r) { nav.push(Route.Receipt(r.optString("payNo"))) } }
     }

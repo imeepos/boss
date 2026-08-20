@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
@@ -37,7 +38,7 @@ fun AgreementScreen(nav: Nav) {
     var privacyPolicy by remember { mutableStateOf<List<String>>(emptyList()) }
     var failed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try {
             val d = AccountApi.agreement()
             userAgreement = toStringList(d.optJSONArray("userAgreement"))
@@ -70,7 +71,7 @@ private fun AgreementCard(title: String, paras: List<String>) {
     AppCard {
         CardTitle(title)
         if (paras.isEmpty()) {
-            Notice("暂无内容")
+            EmptyState("暂无内容")
             return@AppCard
         }
         paras.forEachIndexed { i, text ->

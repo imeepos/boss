@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.BillApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CellRow
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
@@ -44,7 +45,7 @@ fun BillsScreen(nav: Nav) {
     var items by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var filter by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try {
             val d = BillApi.bills()
             due = d.optDouble("currentDue", 0.0)
@@ -64,7 +65,7 @@ fun BillsScreen(nav: Nav) {
                 else -> items
             }
             if (shown.isEmpty()) {
-                Text("暂无账单", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
+                EmptyState("暂无账单")
             }
             shown.forEach { b -> BillCell(b) { nav.push(Route.Bill(b.optString("billNo"))) } }
         }

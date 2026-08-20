@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.PlanApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
@@ -48,7 +49,7 @@ fun AddonScreen(nav: Nav) {
             catch (e: Exception) { err = "增值服务加载失败,请稍后重试" }
         }
     }
-    LaunchedEffect(Unit) { reload() }
+    LaunchedEffect(nav.refreshTick) { reload() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("加购增值服务") { nav.pop() }
@@ -90,7 +91,7 @@ private fun AddonListCard(
     AppCard {
         Column(Modifier.fillMaxWidth()) {
             CardTitle(title)
-            if (list.isEmpty()) Notice(if (subscribed) "暂未订购增值服务" else "暂无可订购增值服务")
+            if (list.isEmpty()) EmptyState(if (subscribed) "暂未订购增值服务" else "暂无可订购增值服务")
             list.forEach { a -> AddonCell(a, subscribed) { onToggle(a.optString("addonId"), a.optString("name")) } }
         }
     }

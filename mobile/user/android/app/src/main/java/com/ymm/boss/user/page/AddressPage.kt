@@ -26,6 +26,7 @@ import com.ymm.boss.user.api.ProfileApi
 import com.ymm.boss.user.api.toObjectList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
@@ -40,7 +41,7 @@ import org.json.JSONObject
 @Composable
 fun AddressScreen(nav: Nav) {
     var items by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
-    LaunchedEffect(Unit) { items = loadAddresses() }
+    LaunchedEffect(nav.refreshTick) { items = loadAddresses() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("家庭地址管理", { nav.pop() })
@@ -56,7 +57,7 @@ private fun AddressListCard(items: List<JSONObject>) {
     AppCard {
         Column(Modifier.fillMaxWidth()) {
             CardTitle("地址列表")
-            if (items.isEmpty()) Text("暂无地址", fontSize = 12.5.sp, color = Palette.muted)
+            if (items.isEmpty()) EmptyState("暂无地址")
             items.forEach { a -> AddressCell(a) }
         }
     }

@@ -63,7 +63,7 @@ import org.json.JSONObject
 fun ProfileScreen(nav: Nav) {
     var data by remember { mutableStateOf<JSONObject?>(null) }
     var unread by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try { data = ProfileApi.get() } catch (e: Exception) { data = null }
         try {
             unread = UserApi.misc.messages().optJSONArray("items").toObjectList()

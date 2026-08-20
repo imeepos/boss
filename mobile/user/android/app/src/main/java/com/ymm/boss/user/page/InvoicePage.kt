@@ -26,6 +26,7 @@ import com.ymm.boss.user.api.BillApi
 import com.ymm.boss.user.util.PdfOpener
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
@@ -38,7 +39,7 @@ import org.json.JSONObject
 fun InvoiceScreen(nav: Nav) {
     var d by remember { mutableStateOf<JSONObject?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try {
             d = BillApi.invoices()
         } catch (e: Exception) { /* 骨架保留默认值 */ }
@@ -75,7 +76,7 @@ private fun AvailableCard(d: JSONObject?) {
         CardTitle("可开票账期")
         if (msg.isNotEmpty()) Text(msg, fontSize = 12.5.sp, color = Palette.primary)
         if (periods.isEmpty()) {
-            Text("暂无可开票账期", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
+            EmptyState("暂无可开票账期")
         }
         periods.forEach { b ->
             PeriodCell(b, b.optString("period") in issued) { billNo ->
@@ -114,7 +115,7 @@ private fun RecordsCard(d: JSONObject?) {
     AppCard {
         CardTitle("开票记录")
         if (records.isEmpty()) {
-            Text("暂无开票记录", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
+            EmptyState("暂无开票记录")
         }
         records.forEach { r ->
             val invoiceNo = r.optString("invoiceNo")

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.BillApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.Nav
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
@@ -46,7 +47,7 @@ fun CouponScreen(nav: Nav) {
     var inviteLink by remember { mutableStateOf("") }
     var msg by remember { mutableStateOf("") }
 
-    LaunchedEffect(status) {
+    LaunchedEffect(status, nav.refreshTick) {
         try {
             val d = BillApi.coupons(status)
             items = d.optJSONArray("items").optList()
@@ -59,8 +60,7 @@ fun CouponScreen(nav: Nav) {
 
         Tabs(status) { status = it }
         if (items.isEmpty()) {
-            Text("暂无优惠券", fontSize = 12.5.sp, color = Palette.muted,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+            EmptyState("暂无优惠券")
         }
         items.forEach { c -> CouponCard(c, status) { nav.push(Route.Products) } }
 

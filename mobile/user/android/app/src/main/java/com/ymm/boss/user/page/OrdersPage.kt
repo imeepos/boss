@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.OrderApi
 import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.Nav
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.PillTab
@@ -46,7 +46,6 @@ fun OrdersScreen(nav: Nav) {
     var page by remember { mutableIntStateOf(1) }
     var hasMore by remember { mutableStateOf(true) }
     var loading by remember { mutableStateOf(false) }
-    var refreshing by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf("") }
 
     suspend fun load(p: Int) {
@@ -62,11 +61,11 @@ fun OrdersScreen(nav: Nav) {
             if (p == 1) err = "订单加载失败,请稍后重试"
         } finally {
             loading = false
-            refreshing = false
         }
     }
 
-    LaunchedEffect(filter) { orders = emptyList(); hasMore = true; load(1) }
+    // 下拉刷新统一由 MainActivity 的 PageRefresh 驱动(nav.refreshTick),这里只重拉第 1 页。
+    LaunchedEffect(filter, nav.refreshTick) { orders = emptyList(); hasMore = true; load(1) }
 
     val listState = rememberLazyListState()
     val nearEnd by remember {
@@ -80,33 +79,25 @@ fun OrdersScreen(nav: Nav) {
         if (nearEnd && hasMore && !loading) load(page + 1)
     }
 
-    PullToRefreshBox(isRefreshing = refreshing, onRefresh = { refreshing = true }) {
-        LaunchedEffect(refreshing) { if (refreshing) load(1) }
-        Column(Modifier.fillMaxSize()) {
-            TabHeader("我的订单")
-            StatusSeg(filter) { filter = it }
-            LazyColumn(state = listState) {
-                item { if (err.isNotEmpty()) Notice(err, Palette.err) }
-                if (orders.isEmpty() && err.isEmpty() && !loading) item {
-                    Text(
-                        "暂无订单", fontSize = 12.5.sp, color = Palette.muted, textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-                    )
-                }
-                items(orders) { o -> OrderCard(o, nav) }
-                item {
-                    Text(
-                        when {
-                            loading && orders.isNotEmpty() -> "加载中..."
-                            hasMore -> ""
-                            else -> "没有更多订单了"
-                        },
-                        fontSize = 12.sp, color = Palette.subtle, textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    )
-                }
-                item { Spacer(Modifier.height(12.dp)) }
+    Column(Modifier.fillMaxSize()) {
+        TabHeader("我的订单")
+        StatusSeg(filter) { filter = it }
+        LazyColumn(state = listState) {
+            item { if (err.isNotEmpty()) Notice(err, Palette.err) }
+            if (orders.isEmpty() && err.isEmpty() && !loading) item { EmptyState("暂无订单") }
+            items(orders) { o -> OrderCard(o, nav) }
+            item {
+                Text(
+                    when {
+                        loading && orders.isNotEmpty() -> "加载中..."
+                        hasMore -> ""
+                        else -> "没有更多订单了"
+                    },
+                    fontSize = 12.sp, color = Palette.subtle, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                )
             }
+            item { Spacer(Modifier.height(12.dp)) }
         }
     }
 }

@@ -30,6 +30,7 @@ import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
 import com.ymm.boss.user.ui.CellRow
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
@@ -48,7 +49,7 @@ fun ProductScreen(nav: Nav, id: String) {
     var specs by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var compare by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var err by remember { mutableStateOf("") }
-    LaunchedEffect(id) {
+    LaunchedEffect(id, nav.refreshTick) {
         try {
             val d = ProductApi.detail(id)
             product = d.optJSONObject("product")
@@ -87,7 +88,7 @@ private fun DetailCard(product: JSONObject?, specs: List<JSONObject>) {
 private fun CompareCard(compare: List<JSONObject>, nav: Nav) {
     AppCard {
         CardTitle("套餐对比", "同档可选")
-        if (compare.isEmpty()) Notice("暂无可比套餐")
+        if (compare.isEmpty()) EmptyState("暂无可比套餐")
         compare.forEach { p ->
             CellRow(
                 title = p.optString("name"), desc = p.optString("description"),

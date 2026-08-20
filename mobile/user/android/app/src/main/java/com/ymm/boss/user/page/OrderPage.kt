@@ -60,7 +60,7 @@ fun OrderScreen(nav: Nav, no: String) {
     var timeline by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var err by remember { mutableStateOf("") }
     var showCancel by remember { mutableStateOf(false) }
-    LaunchedEffect(no) {
+    LaunchedEffect(no, nav.refreshTick) {
         try {
             detail = OrderApi.detail(no)
             timeline = detail?.optJSONArray("timeline").toObjList()

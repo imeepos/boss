@@ -40,6 +40,7 @@ import com.ymm.boss.user.api.FaultApi
 import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
@@ -56,7 +57,7 @@ fun FaultDetailScreen(nav: Nav, no: String) {
     var loadErr by remember { mutableStateOf("") }
     var reloadKey by remember { mutableStateOf(0) }
 
-    LaunchedEffect(no, reloadKey) {
+    LaunchedEffect(no, reloadKey, nav.refreshTick) {
         try {
             detail = FaultApi.detail(no)
         } catch (e: Exception) { loadErr = "报修单加载失败" }
@@ -107,7 +108,7 @@ private fun TimelineCard(timeline: List<JSONObject>) {
     AppCard {
         CardTitle("处理进度（报障 6 环节）")
         if (timeline.isEmpty()) {
-            Text("暂无进度", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(top = 8.dp))
+            EmptyState("暂无进度")
         }
         timeline.forEachIndexed { i, t ->
             val heading = t.optInt("step").let { if (it > 0) "$it " else "" } + t.optString("title")

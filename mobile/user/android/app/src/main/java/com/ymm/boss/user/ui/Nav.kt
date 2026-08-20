@@ -33,7 +33,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +49,12 @@ class Nav(initial: Route) {
     private val stack = mutableStateListOf(initial)
     val current: Route get() = stack.last()
     val size: Int get() = stack.size
+
+    /** 全局下拉刷新信号:PageRefresh 触发,各页面作为 LaunchedEffect key 重拉数据。 */
+    var refreshTick by mutableIntStateOf(0)
+        private set
+
+    fun requestRefresh() { refreshTick++ }
 
     fun push(route: Route) { stack.add(route) }
     fun replace(route: Route) { stack[stack.size - 1] = route }

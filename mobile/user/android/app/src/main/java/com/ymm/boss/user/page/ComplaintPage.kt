@@ -34,6 +34,7 @@ import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
 import com.ymm.boss.user.ui.CellRow
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
@@ -60,7 +61,7 @@ fun ComplaintScreen(nav: Nav) {
             }
         }
     }
-    LaunchedEffect(Unit) { reload() }
+    LaunchedEffect(nav.refreshTick) { reload() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("投诉与建议") { nav.pop() }
@@ -68,7 +69,7 @@ fun ComplaintScreen(nav: Nav) {
         Notice(msg, if (msg.startsWith("已提交")) Palette.success else Palette.err)
         AppCard {
             CardTitle("我的投诉")
-            if (items.isEmpty()) Notice("暂无投诉记录")
+            if (items.isEmpty()) EmptyState("暂无投诉记录")
             items.forEach { c ->
                 CellRow(
                     title = c.optString("typeLabel"),

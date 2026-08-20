@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.ui.BossTheme
 import com.ymm.boss.user.ui.Nav
+import com.ymm.boss.user.ui.PageRefresh
 import com.ymm.boss.user.ui.PageScaffold
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.RouteScreen
@@ -36,7 +37,7 @@ fun AppRoot() {
         val isHome = nav.current == Route.Home
         val showTabs = key.isNotEmpty() && !isHome
         PageScaffold(nav, key, showTabs) {
-            RouteScreen(nav.current, nav)
+            PageRefresh(nav) { RouteScreen(nav.current, nav) }
         }
     }
 }

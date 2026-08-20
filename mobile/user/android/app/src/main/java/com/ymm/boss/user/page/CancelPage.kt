@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.PlanApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
@@ -54,7 +55,7 @@ fun CancelScreen(nav: Nav, planId: String) {
     var done by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try { loadCancelPreview(planId, { unpaid = it.first; penalty = it.second; penaltyDesc = it.third }) }
         catch (e: Exception) { err = "退订预检加载失败,可稍后重试" }
     }
@@ -113,7 +114,7 @@ private fun NoticeCard() {
 private fun UnpaidCard(unpaid: List<JSONObject>, penalty: String, penaltyDesc: String) {
     AppCard {
         CardTitle("待结清款项")
-        if (unpaid.isEmpty()) Text("暂无未缴账单", fontSize = 12.5.sp, color = Palette.muted, modifier = Modifier.padding(vertical = 8.dp))
+        if (unpaid.isEmpty()) EmptyState("暂无未缴账单")
         unpaid.forEach { b ->
             CellRow(
                 title = "${b.optString("period")} 账期",

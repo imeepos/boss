@@ -36,6 +36,7 @@ import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
 import com.ymm.boss.user.ui.CellRow
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
@@ -63,7 +64,7 @@ fun FaultScreen(nav: Nav) {
             }
         }
     }
-    LaunchedEffect(Unit) { reload() }
+    LaunchedEffect(nav.refreshTick) { reload() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("故障报修") { nav.pop() }
@@ -72,7 +73,7 @@ fun FaultScreen(nav: Nav) {
         Notice(msg, if (msg == "已受理") Palette.success else Palette.err)
         AppCard {
             CardTitle("报修记录")
-            if (records.isEmpty()) Notice("暂无报修记录")
+            if (records.isEmpty()) EmptyState("暂无报修记录")
             records.forEach { f -> FaultCell(f) { nav.push(Route.FaultDetail(f.optString("ticketNo"))) } }
         }
         Spacer(Modifier.height(12.dp))

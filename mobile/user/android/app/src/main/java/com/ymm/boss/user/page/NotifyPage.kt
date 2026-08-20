@@ -56,7 +56,7 @@ fun NotifyScreen(nav: Nav) {
     var msg by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try { st = notifyStateFrom(ProfileApi.notifySettings()) }
         catch (e: Exception) { } // 加载失败用默认勾选,可保存覆盖
     }

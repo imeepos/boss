@@ -53,7 +53,7 @@ private data class PlanInfo(
 fun MyPlanScreen(nav: Nav) {
     var plan by remember { mutableStateOf(PlanInfo()) }
     var err by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try {
             val p = PlanApi.profile().optJSONObject("plan") ?: JSONObject()
             plan = PlanInfo(

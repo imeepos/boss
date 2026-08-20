@@ -46,7 +46,7 @@ fun ReceiptScreen(nav: Nav, payNo: String) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    LaunchedEffect(payNo) {
+    LaunchedEffect(payNo, nav.refreshTick) {
         try {
             r = BillApi.receipt(payNo)
         } catch (e: Exception) { failed = true }

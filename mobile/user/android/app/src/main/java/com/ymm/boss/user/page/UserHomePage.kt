@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.BottomTabBar
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.PinnedGradientPage
 import com.ymm.boss.user.ui.PinnedHeaderSpec
@@ -149,7 +150,7 @@ private fun parseServices(d: JSONObject): List<HomeService> {
 fun UserHomeScreen(nav: Nav) {
     var state by remember { mutableStateOf(HomeUiState()) }
     var reload by remember { mutableIntStateOf(0) }
-    LaunchedEffect(reload) {
+    LaunchedEffect(reload, nav.refreshTick) {
         state = runCatching { parseHome(UserApi.misc.home()) }
             .getOrElse { e -> state.copy(loading = false, error = "首页加载失败,请重试(${e.message ?: "网络异常"})") }
     }
@@ -214,7 +215,7 @@ private fun OrderSection(
         when {
             state.loading -> CenterHint { CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(24.dp)) }
             state.error.isNotEmpty() -> ErrorHint(error = state.error, onRetry = onRetry)
-            state.orders.isEmpty() -> EmptyHint(text = "暂无进行中订单")
+            state.orders.isEmpty() -> EmptyState("暂无进行中订单")
             else -> state.orders.take(2).forEach { o -> OrderItem(order = o, onOpen = onOpenOrder) }
         }
     }
@@ -223,14 +224,6 @@ private fun OrderSection(
 @Composable
 private fun CenterHint(content: @Composable () -> Unit) {
     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) { content() }
-}
-
-@Composable
-private fun EmptyHint(text: String) {
-    Text(
-        text, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), textAlign = TextAlign.Center,
-    )
 }
 
 @Composable

@@ -35,7 +35,7 @@ fun DiyScreen(nav: Nav) {
     var sections by remember { mutableStateOf(emptyList<JSONObject>()) }
     var failed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(nav.refreshTick) {
         try { sections = ServiceApi.diySteps().optJSONArray("items").toList() } catch (e: Exception) { failed = true }
     }
 

@@ -49,7 +49,7 @@ fun MoveScreen(nav: Nav, planId: String) {
     var done by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) { loadOldAddress { oldAddr = it.first; oldPlan = it.second } }
+    LaunchedEffect(nav.refreshTick) { loadOldAddress { oldAddr = it.first; oldPlan = it.second } }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("迁址移机") { nav.pop() }
