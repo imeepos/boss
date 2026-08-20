@@ -47,6 +47,12 @@ import java.util.Calendar
 
 /** 用户首页卡片组件,规格见设计稿 D+/E/I 节;颜色一律 colorScheme/色板常量。 */
 
+/** 渐变头部高度(含状态栏区域)。 */
+internal const val HeaderHeightDp = 220
+
+/** 首卡片与渐变底部的视觉重合量(设计稿量得约 30dp,取 4dp 栅格 32dp)。 */
+internal const val CardOverlapDp = 32
+
 /** 顶部蓝色渐变标题区:约 45° 渐变,延伸到状态栏后方,高约 220dp(含状态栏)。 */
 @Composable
 internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
@@ -54,7 +60,7 @@ internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(HeaderHeightDp.dp)
             .background(homeHeaderGradient()),
     ) {
         Row(
@@ -94,7 +100,7 @@ internal fun WelcomeCard(state: HomeUiState) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+            .padding(start = 16.dp, end = 16.dp)
             .heightIn(min = 80.dp)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
             .padding(16.dp),
@@ -142,16 +148,18 @@ internal fun BroadbandCard(state: HomeUiState, onOpen: () -> Unit) {
     }
 }
 
+/** 子信息项:设计稿无独立底色(随卡面),标签辅助灰、数值品牌蓝粗体。 */
 @Composable
 private fun SubInfo(label: String, value: String, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-            .padding(vertical = 10.dp, horizontal = 8.dp),
+        modifier = modifier.padding(vertical = 6.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(label, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, color = auxText())
-        Text(value, fontSize = 16.sp, lineHeight = 22.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
+        Text(
+            value, fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold,
+            color = brandBlue(), modifier = Modifier.padding(top = 2.dp),
+        )
     }
 }
 

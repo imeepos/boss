@@ -148,7 +148,8 @@ fun UserHomeScreen(nav: Nav) {
             BottomTabBar(nav = nav, currentKey = "home", onSelect = { key -> nav.resetTo(Nav.tabRoute(key)) })
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize()) {
+        // 设计稿:首卡片上移压住渐变底部约 30dp(视觉错位重合),列表叠在渐变之上
+        Box(modifier = Modifier.fillMaxSize()) {
             HomeHeader(state = state, onOpenMessages = { nav.push(Route.Messages) })
             HomeContent(
                 state = state,
@@ -173,7 +174,15 @@ private fun HomeContent(
     onOpenOrder: (String) -> Unit,
     onOpenService: () -> Unit,
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = padding) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 0.dp, end = 0.dp,
+            // 首卡顶边 = 渐变高度 220dp - 重合 32dp,其余卡片随之向下顺延
+            top = HeaderHeightDp.dp - CardOverlapDp.dp,
+            bottom = padding.calculateBottomPadding(),
+        ),
+    ) {
         item { WelcomeCard(state = state) }
         item { BroadbandCard(state = state, onOpen = onOpenService) }
         item { QuickActions(onAction = onAction) }
