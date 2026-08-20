@@ -84,6 +84,7 @@ fun ProfileScreen(nav: Nav) {
                 .background(profileHeaderGradient()),
         )
         // 滚动区包裹 Box:宽度与卡片一致(左右 14dp),顶部 16dp 圆角;卡片水平外边距归零贴齐区域
+        // 蓝色区总高不变:渐变底 = 信息块 + 150px 尾巴(尾巴加长 50px 补偿信息块回收的高度)
         Box(
             Modifier
                 .fillMaxSize()
@@ -113,7 +114,7 @@ fun ProfileScreen(nav: Nav) {
 }
 
 /** 首卡压住渐变尾巴的高度:约 100px,对齐首页 CardOverlap 的错位节奏。 */
-private val HeaderOverlapPx = 100
+private val HeaderOverlapPx = 150
 
 /** 用户信息层:自带渐变底,绘制在 scrim 之上,任何滚动状态可见可读;圆角交给滚动区首卡。 */
 @Composable
@@ -125,7 +126,7 @@ private fun ProfileHeadContent(data: JSONObject?, nav: Nav, modifier: Modifier =
             .fillMaxWidth()
             .background(profileHeaderGradient())
             .statusBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 33.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
