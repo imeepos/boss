@@ -123,3 +123,11 @@
 - 2026-08-20 部署唯一正道:push gitea main 触发 .gitea/workflows/deploy-102.yml(CI 构建镜像→推 192.168.0.102:5000→compose up 102:28080);无 102 ssh 权限,禁止本机自启后端对接。
 - 2026-08-20 CORS 白名单禁止枚举 vite 端口:vite dev 端口随占用漂移(5173→5175…),localhost/127.0.0.1 源应不限端口放行(internal/pkg/server/server.go originAllowed)。
 - 2026-08-20 共享工作区有并行会话:暂存区文件可能被别的会话一并 commit;代码就绪后立即自行提交,不留 staged 过夜。
+- Compose clip 圆角要可见,前提是被裁区域有与背景可区分的不透明底色;透明区域 clip 在同色背景上等于没裁(滚动区圆角蓝对蓝踩过)。
+- "滚动区域整体圆角且滚动中恒在"的标准实现:包裹 Box(padding 交点 + clip(顶部圆角) + 不透明 bg),内部 Column 只管 verticalScroll;不要依赖某张卡自己的圆角。
+- 空 Box 靠 padding 撑高度:内容移走后高度塌缩;量高度(onSizeChanged)的层必须就是视觉呈现层。
+- statusBarsPadding/windowInsetsPadding 会消费 insets,同 Box 内后绘 sibling 再取 statusBars 高度得 0;需提前在消费前量取(asPaddingValues 先算好)。
+- 首帧计算出的 padding 可能为负(测量前默认 0),Compose 负 padding 直接 IllegalArgumentException 闪退;一律 coerceAtLeast(0.dp) 或改用 Spacer。
+- shell 链上 && adb install 在 build FAILED 时仍会执行到旧 APK 并报 Success;自动化里必须先判定 BUILD SUCCESSFUL 再 install。
+- UI 需求含空间词(内圆角/交点/遮挡)且第一次实现被打回时,第二次就问,选项按"卡片级/区域级/头部级"分层给,不要同层连猜。
+- 多会话共用工作区:自己的改动 build+验证通过后立刻 commit,否则会被并行会话的 git add -A 裹进无关提交。

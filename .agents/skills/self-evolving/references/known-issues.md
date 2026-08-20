@@ -167,3 +167,8 @@
 症状: `git add internal/pkg/server/server.go` 报 paths ignored。
 原因: .gitignore 第 59 行裸词 `server` 匹配了 internal/pkg/server 目录名(本意是忽略构建产物 server 目录)。
 修法: 已跟踪文件不受 ignore 影响,忽略警告正常 add/commit 即可;新增文件若被误伤用 `git add -f` 或先改 .gitignore 为 `/server` 锚定根目录。
+
+## 「我的」页滚动区圆角:clip 了但视觉上看不到
+- 症状:Box clip 顶部圆角像素断言"缺口存在"但用户说没圆角,只有静止时首卡自己的圆角。
+- 原因:滚动区透明,底下是同色渐变,蓝裁蓝不可见;且圆角挂在内容 Column 上时只有滚到顶才碰到。
+- 修法:滚动区 Box 加不透明 Palette.bg 底色,圆角轮廓即刻与渐变头分界;滚动中恒在。

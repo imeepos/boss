@@ -44,6 +44,7 @@
 Compose, 尾随lambda, onClick, right, 插槽, BackHandler, insets, statusBarsPadding,
 导航, push, pop, switchTab, 401, token, data.token, 信封, shared_prefs, run-as,
 offset, 死间隙, heightIn, 居中, weight 列溢出, maxLines, bounds 断言, 下拉 DropdownMenu, LangStore,
+clip 圆角, 不透明底色, 滚动区裁剪, insets 消费, 负 padding 闪退, BUILD SUCCESSFUL 再 install,
 uiautomator, input tap, keyevent, lastUpdateTime, 真机, adb, 验证码, sms-code,
 portal_sms_codes, emulator, 10.0.2.2, adb reverse
 ```
@@ -59,3 +60,7 @@ portal_sms_codes, emulator, 10.0.2.2, adb reverse
 | 11 | techniques（2026-08-20） | uiautomator dump 抓不到渐变头等未暴露语义的 Compose 文本;能抓到的用 bounds 数值断言单行/间距 |
 | 12 | techniques（2026-08-20） | 取服务端验证码明文:PG 192.168.0.102:25432 boss/boss,查 portal_sms_codes;5 分钟一次性 |
 | 13 | known-issues（2026-08-20） | build-install-user-android.sh mapfile 不兼容 macOS bash3.2,手动 adb install 绕过 |
+| 14 | lessons（2026-08-20） | 滚动区整体圆角恒在:包裹 Box(padding 交点+clip 顶角+不透明底色),内部 Column 只滚动;clip 无底色则蓝对蓝不可见 |
+| 15 | lessons（2026-08-20） | statusBarsPadding 消费 insets→后绘 sibling 取 statusBars 得 0,提前 asPaddingValues 量取;首帧负 padding 闪退,coerceAtLeast(0) |
+| 16 | lessons（2026-08-20） | UI 空间词(内圆角/交点)被打回一次后必须问,选项按卡片级/区域级/头部级分层 |
+| 17 | known-issues（2026-08-20） | build FAILED 后 && 链 adb install 装旧包报 Success;先判定 BUILD SUCCESSFUL 再 install |
