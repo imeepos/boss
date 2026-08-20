@@ -164,6 +164,17 @@ func TestStripeCheckout(t *testing.T) {
 	}
 }
 
+// TestStripePayDone 回跳页:done/cancel 返回静态 HTML(收银台回跳不 404)。
+func TestStripePayDone(t *testing.T) {
+	r := newStripeRouter(&settleBilling{}, nil, stripe.Webhook{Secret: "whsec_x"})
+	for _, p := range []string{"/api/user/v1/pay/stripe/done", "/api/user/v1/pay/stripe/cancel"} {
+		w := userPortalDo(r, http.MethodGet, p, "", "")
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "缴费记录") {
+			t.Fatalf("pay done %s resp=%d", p, w.Code)
+		}
+	}
+}
+
 // TestStripeWebhook 契约:验签通过+succeeded 经 RecordPayment 落账;篡改签名 400;重投幂等。
 func TestStripeWebhook(t *testing.T) {
 	cust := userPortalCust()

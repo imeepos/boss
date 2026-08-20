@@ -24,6 +24,20 @@ func registerStripeRoutes(pub, uauth *gin.RouterGroup, a *app.Application) {
 	uauth.POST("/payments/stripe/intent", portalStripeIntent(a))
 	uauth.POST("/payments/stripe/checkout", portalStripeCheckout(a))
 	pub.POST("/webhooks/stripe", stripeWebhook(a))
+	registerStripePayDone(pub)
+}
+
+// registerStripePayDone 收银台回跳页(/pay/stripe/{done,cancel}):落账等 webhook 异步完成,
+// 静态提示回 App 查缴费记录,无业务逻辑。路由登记走契约门禁(check-contract-sync A)。
+func registerStripePayDone(pub *gin.RouterGroup) {
+	html := `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>支付结果</title><p style="font:15px/1.8 -apple-system,sans-serif;padding:40px 20px;text-align:center">
+支付处理中,请回到 App 在「缴费记录」查看结果。</p>`
+	for _, p := range []string{"/pay/stripe/done", "/pay/stripe/cancel"} {
+		pub.GET(p, func(c *gin.Context) {
+			c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+		})
+	}
 }
 
 // portalStripeCheckout POST /payments/stripe/checkout {billNo,amount,successUrl,cancelUrl}:

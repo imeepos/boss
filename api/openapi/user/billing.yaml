@@ -145,6 +145,22 @@ paths:
         '409': { description: 账单已缴 }
         '400': { description: Stripe 通道未配置(无密钥)或参数非法 }
 
+  /pay/stripe/done:
+    get:
+      tags: [Billing]
+      summary: 收银台支付回跳提示页(静态 HTML,结果以缴费记录为准)
+      operationId: stripePayDone
+      responses:
+        '200': { description: 静态提示页 }
+
+  /pay/stripe/cancel:
+    get:
+      tags: [Billing]
+      summary: 收银台取消回跳提示页(静态 HTML)
+      operationId: stripePayCancel
+      responses:
+        '200': { description: 静态提示页 }
+
   /webhooks/stripe:
     post:
       tags: [Billing]
