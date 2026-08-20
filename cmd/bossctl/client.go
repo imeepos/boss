@@ -149,6 +149,15 @@ func encodeQuery(q map[string]string) string {
 	return buf.String()
 }
 
+// decodeEnvelope 解析统一响应信封 {code,msg,data}。
+func decodeEnvelope(body []byte) (*apiResp, error) {
+	var ar apiResp
+	if err := json.Unmarshal(body, &ar); err != nil {
+		return nil, err
+	}
+	return &ar, nil
+}
+
 // printJSON 格式化输出 JSON。
 func printJSON(v any) {
 	b, _ := json.MarshalIndent(v, "", "  ")

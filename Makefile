@@ -2,11 +2,15 @@ GO ?= $(or $(shell command -v go 2>/dev/null),/opt/homebrew/bin/go)
 GOFMT ?= $(or $(shell command -v gofmt 2>/dev/null),/opt/homebrew/bin/gofmt)
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check proto docker-build load bossctl
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check proto docker-build load bossctl bossctl-routes
 
 ## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证)
 bossctl:
 	$(GO) build -ldflags="-s -w" -o bossctl ./cmd/bossctl
+
+## 由 api/openapi 重新生成 bossctl 三端路由目录(routes_*.go,契约变更后执行)
+bossctl-routes:
+	node scripts/gen-bossctl-routes.mjs
 
 ## W11 压测:种子压测账号 → 起服务 → k6 → 摘服务(真实 PG 需 BOSS_DATABASE_DSN;端口可经 BOSS_HTTP_PORT 覆盖)
 load:

@@ -99,10 +99,11 @@ bossctl login admin your-password
 
 | 命令 | 说明 |
 |------|------|
-| `call METHOD PATH [--data JSON] [--query k=v]` | 调用任意 API 端点 |
+| `call METHOD PATH [--data JSON] [--query k=v]` | 调用任意 API 端点;路径可带端前缀 `user:` / `worker:`(缺省 admin) |
 | `login USERNAME PASSWORD` | 登录获取 JWT |
-| `me` | 查看当前登录身份 |
-| `routes` | 列出所有 API 路由(125 个端点) |
+| `me` | 查看当前身份 |
+| `routes [admin\|user\|worker]` | 列出三端 API 路由(382 条,由 api/openapi 生成) |
+| `upload [--portal admin\|user\|worker] FILE` | 附件上传(multipart,字段 file,单文件 32MB) |
 | `apikey list` | 列出 API key |
 | `apikey create <account\|worker\|customer>/<id> <name>` | 为指定主体创建 API key |
 | `apikey revoke <id>` | 吊销 API key |
@@ -126,9 +127,11 @@ bossctl call POST /orders --data '{"customerId":100,"productId":200}'
 bossctl call PUT /legal-entities/1 --data '{"name":"新公司名"}'
 bossctl call DELETE /addresses/42
 
-# 路径自动补全(以下等价)
-bossctl call GET /orders        # 自动补全为 /api/v1/orders
-bossctl call GET /api/v1/orders # 完整路径
+# 路径端前缀与自动补全
+bossctl call GET /orders        # admin 端,自动补全为 /api/admin/v1/orders
+bossctl call GET user:/orders   # user 端,即 /api/v1/orders
+bossctl call GET worker:/home   # worker 端,即 /api/worker/v1/home
+bossctl call GET /api/v1/orders # 完整路径原样发送
 ```
 
 ## API 路由发现

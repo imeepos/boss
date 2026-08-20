@@ -13,12 +13,7 @@ func (c *CLI) call(args []string) error {
 
 	data, query, positional := queryFromArgs(args)
 	method := strings.ToUpper(positional[0])
-	path := positional[1]
-
-	// 自动补全 /api/admin/v1 前缀
-	if !strings.HasPrefix(path, "/api/") {
-		path = "/api/admin/v1" + path
-	}
+	path := resolvePath(positional[1])
 
 	resp, err := c.do(method, path, data, query)
 	if err != nil {
@@ -31,6 +26,19 @@ func (c *CLI) call(args []string) error {
 	}
 	printJSON(resp.Data)
 	return nil
+}
+
+// resolvePath 路径补全:完整路径原样;user:/x / worker:/x 换对应端前缀;裸路径补 admin 前缀。
+func resolvePath(p string) string {
+	for _, portal := range portalPrefixes {
+		if strings.HasPrefix(p, portal.Name+":") {
+			return portal.Prefix + strings.TrimPrefix(p, portal.Name+":")
+		}
+	}
+	if !strings.HasPrefix(p, "/api/") {
+		return "/api/admin/v1" + p
+	}
+	return p
 }
 
 // me 查看当前身份: bossctl me

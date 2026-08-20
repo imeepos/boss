@@ -58,7 +58,9 @@ func main() {
 	case "me":
 		err = cli.me()
 	case "routes":
-		cli.routes()
+		cli.routes(args)
+	case "upload":
+		err = cli.upload(args)
 	case "apikey":
 		err = cli.apikey(args)
 	case "identity":
@@ -88,9 +90,11 @@ func printHelp() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "命令:")
 	fmt.Fprintln(os.Stderr, "  call METHOD PATH [--data JSON] [--query k=v]  调用任意 API")
+	fmt.Fprintln(os.Stderr, "       路径端前缀: user:/orders、worker:/home(缺省 admin 端)")
 	fmt.Fprintln(os.Stderr, "  login USERNAME PASSWORD                        登录获取 JWT")
 	fmt.Fprintln(os.Stderr, "  me                                                查看当前身份")
-	fmt.Fprintln(os.Stderr, "  routes                                            列出 API 路由")
+	fmt.Fprintln(os.Stderr, "  routes [admin|user|worker]                        列出 API 路由(三端)")
+	fmt.Fprintln(os.Stderr, "  upload [--portal admin|user|worker] FILE       附件上传(multipart,32MB)")
 	fmt.Fprintln(os.Stderr, "  apikey list                                      列出 API key")
 	fmt.Fprintln(os.Stderr, "  apikey create <account|worker|customer>/<id> <name>  为主体创建 API key")
 	fmt.Fprintln(os.Stderr, "  apikey revoke <id>                               吊销 API key")
