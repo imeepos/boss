@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -165,7 +165,10 @@ private fun QuickEntriesCard(data: JSONObject?, nav: Nav) {
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     val addrCount = data?.optJSONArray("addresses")?.length() ?: 0
     val planName = data?.optJSONObject("plan")?.optString("name").orEmpty().ifBlank { "—" }
-    AppCard(Modifier.fillMaxWidth()) {
+    AppCard(
+        Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 12.dp, bottomEnd = 12.dp),
+    ) {
             Row(Modifier.fillMaxWidth()) {
                 QuickEntry(Icons.Filled.GppGood, Palette.primary, "实名信息", if (verified) "已实名" else "待补登", Modifier.weight(1f)) {
                     nav.push(Route.Verify)

@@ -31,13 +31,13 @@ import androidx.compose.ui.unit.sp
 /** 通用组件库,对应 docs/user/style.css 的 .card/.cell/.tag/.topbar/.notice。 */
 
 @Composable
-fun AppCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun AppCard(modifier: Modifier = Modifier, shape: RoundedCornerShape = RoundedCornerShape(12.dp), content: @Composable () -> Unit) {
     // Column 而非 Box:全部调用点的语义都是卡片内纵向堆叠,Box 会让
     // 多个子元素叠在左上角(真机已两次踩中文字/按钮叠印)。
     Column(
         modifier
             .padding(horizontal = 14.dp, vertical = 6.dp)
-            .background(Palette.panel, RoundedCornerShape(12.dp))
+            .background(Palette.panel, shape)
             .padding(16.dp)
     ) { content() }
 }
