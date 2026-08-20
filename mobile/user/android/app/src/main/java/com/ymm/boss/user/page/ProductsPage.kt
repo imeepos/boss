@@ -1,7 +1,6 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -55,8 +55,8 @@ import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.PillTab
 import com.ymm.boss.user.ui.Route
-import com.ymm.boss.user.ui.TabHeader
 import com.ymm.boss.user.ui.Tag
+import com.ymm.boss.user.ui.statusBarSolid
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -80,8 +80,7 @@ fun ProductsScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        TabHeader("产品套餐")
-        SearchField(query) { query = it }
+        ServiceSearchHeader(query) { query = it }
         CategorySeg(cat) { cat = it }
         val shown = products.filter {
             query.isBlank() || it.optString("name").contains(query, true) ||
@@ -98,27 +97,32 @@ fun ProductsScreen(nav: Nav) {
     }
 }
 
+/** 服务页 Header:无标题,搜索框直接嵌入 48dp 状态栏色顶栏(半透明白胶囊)。 */
 @Composable
-private fun SearchField(value: String, onChange: (String) -> Unit) {
+private fun ServiceSearchHeader(value: String, onChange: (String) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp)
-            .background(Palette.panel, RoundedCornerShape(999.dp))
-            .border(1.dp, Palette.line, RoundedCornerShape(999.dp))
-            .padding(horizontal = 14.dp, vertical = 9.dp),
+        Modifier.fillMaxWidth().background(statusBarSolid()).padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.Search, contentDescription = null, tint = Palette.subtle, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(8.dp))
-        BasicTextField(
-            value = value, onValueChange = onChange, singleLine = true,
-            textStyle = TextStyle(fontSize = 13.sp, color = Palette.ink),
-            cursorBrush = SolidColor(Palette.primary),
-            modifier = Modifier.weight(1f),
-            decorationBox = { inner ->
-                if (value.isEmpty()) Text("搜索产品或服务", fontSize = 13.sp, color = Palette.subtle)
-                inner()
-            },
-        )
+        Row(
+            Modifier.fillMaxWidth()
+                .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(999.dp))
+                .padding(horizontal = 14.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Search, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            BasicTextField(
+                value = value, onValueChange = onChange, singleLine = true,
+                textStyle = TextStyle(fontSize = 13.sp, color = Color.White),
+                cursorBrush = SolidColor(Color.White),
+                modifier = Modifier.weight(1f),
+                decorationBox = { inner ->
+                    if (value.isEmpty()) Text("搜索产品或服务", fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f))
+                    inner()
+                },
+            )
+        }
     }
 }
 
