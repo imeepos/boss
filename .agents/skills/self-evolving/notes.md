@@ -735,3 +735,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:contract-sync 门禁 A 还在扫旧目录 internal/app,输出"0 条路由全部有契约"却显示 OK——门禁形同虚设长达多轮,后台新加的 22 条路由全部漂移无人发现。另外与并行会话共用工作区,我先暂存再提交之间被并行 commit 卷走 index,首提失败需重暂存。
 - skill 有没有提前警告:部分。红线 5 只管"要提交",lessons 已有共享 index 教训,但"门禁显示 OK 却是空集"这种假阴性没有预警。
 - 重来一次:凡门禁输出计数,先看计数是否为 0/异常小再信 OK;共享工作区提交前 `git diff --cached --stat` 核对清单,提交失败立即重查 index。
+
+## 2026-08-20 验证用户端 Stripe 对接
+- 坑:102 上 POST /payments/stripe/checkout 一律 42200,误以为请求体绑定失败,排查了半小时;实际是 handler 在 BindBody 之前先查 PayGateway.Get("stripe"),102 未配 BOSS_STRIPE_API_KEY 即降级返回 CodeInvalidParam。
+- 重来:先读 handler 源码看校验顺序,再怀疑请求体。
+- 已登记 known-issues。
