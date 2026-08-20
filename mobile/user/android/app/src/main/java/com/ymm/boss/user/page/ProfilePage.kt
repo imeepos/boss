@@ -67,18 +67,24 @@ fun ProfileScreen(nav: Nav) {
                 .count { !it.optBoolean("read") }
         } catch (e: Exception) { } // 无红点降级
     }
-    // 视觉错位:首卡上探 38dp(≈100px)压住渐变头,内容绘于头之上;状态栏区再覆一层
-    // 渐变 scrim(最后绘制)保证滚动到顶时状态栏文字始终在蓝底上可读
-    var headPx by remember { mutableStateOf(0) }
+    // 层次(自下而上):渐变底(=用户信息高+38dp 尾巴) → 滚动卡片区(顶部圆角,首卡
+    // 起于用户信息块下沿,压住渐变尾巴形成错位) → 状态栏 scrim → 用户信息层(恒可见)
+    var infoPx by remember { mutableStateOf(0) }
     val density = LocalDensity.current
-    // 状态栏高度需在 ProfileHead(statusBarsPadding 会消费 insets)之前量取,否则 scrim 拿到 0
+    // 状态栏高度需在 statusBarsPadding 消费之前量取,否则 scrim 拿到 0
     val statusBarDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(Modifier.fillMaxSize()) {
-        ProfileHead(data, nav, Modifier.onSizeChanged { headPx = it.height })
+        // 渐变底:高度 = 用户信息块 + 38dp 尾巴,首卡压在尾巴上
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(with(density) { (infoPx + HeaderOverlapPx).toDp() })
+                .background(profileHeaderGradient()),
+        )
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         ) {
-            Spacer(Modifier.height((with(density) { headPx.toDp() } - HeaderOverlapDp).coerceAtLeast(0.dp)))
+            Spacer(Modifier.height(with(density) { infoPx.toDp() }))
             QuickEntriesCard(data, nav)
             ServiceEntriesCard(nav, unread)
             SettingsCard(nav)
@@ -93,34 +99,22 @@ fun ProfileScreen(nav: Nav) {
                 .background(profileHeaderGradient()),
         )
         // 用户信息层最后绘制:不论怎么滚动,头像/姓名/设置语言始终可见
-        ProfileHeadContent(data, nav)
+        ProfileHeadContent(data, nav, Modifier.onSizeChanged { infoPx = it.height })
     }
 }
 
-/** 首卡压头高度:约 100px(本机 2.625px/dp ≈ 38dp)。 */
-private val HeaderOverlapDp = 38.dp
+/** 首卡压住渐变尾巴的高度:约 100px,对齐首页 CardOverlap 的错位节奏。 */
+private val HeaderOverlapPx = 100
 
+/** 用户信息层:自带渐变底,绘制在 scrim 之上,任何滚动状态可见可读;圆角交给滚动区首卡。 */
 @Composable
-private fun ProfileHead(data: JSONObject?, nav: Nav, modifier: Modifier = Modifier) {
-    // 仅渐变底 + 占位高度;用户信息由 ProfileHeadContent 最后绘制,滚动内容永远盖不住
+private fun ProfileHeadContent(data: JSONObject?, nav: Nav, modifier: Modifier = Modifier) {
+    val name = data?.optString("name").orEmpty().ifBlank { "加载中…" }
+    val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     Box(
         modifier
             .fillMaxWidth()
             .background(profileHeaderGradient())
-            .statusBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 40.dp),
-    ) { }
-}
-
-/** 用户信息层:自带渐变底 + 底部圆角,绘制在 scrim 之上,任何滚动状态可见可读。 */
-@Composable
-private fun ProfileHeadContent(data: JSONObject?, nav: Nav) {
-    val name = data?.optString("name").orEmpty().ifBlank { "加载中…" }
-    val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .background(profileHeaderGradient(), RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
             .statusBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp),
     ) {
