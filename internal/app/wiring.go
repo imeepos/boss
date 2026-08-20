@@ -29,6 +29,7 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
 	"github.com/ymm-001/boss/internal/pkg/events"
+	"github.com/ymm-001/boss/internal/pkg/sms"
 )
 
 // Application 持有各域服务的装配结果,是模块化单体依赖绑定的唯一入口。
@@ -158,7 +159,20 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	akstore := apikey.NewPGStore(pool)
 	aisvc := ai.NewService(ai.NewPGStore(pool))
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
-	portalSvc := portal.NewPGStore(pool)
+	// 验证码短信通道:凭据齐备走阿里云国际短信(+86/+60 统一),否则降级日志通道(仅开发)。
+	var smsSender sms.Sender = sms.NewLogSender()
+	if cfg.SMS.AccessKeyID != "" && cfg.SMS.AccessKeySecret != "" {
+		smsSender = sms.NewRouter(
+			sms.NewAliyunIntl(sms.AliyunIntlConfig{
+				AccessKeyID:     cfg.SMS.AccessKeyID,
+				AccessKeySecret: cfg.SMS.AccessKeySecret,
+				From:            cfg.SMS.From,
+			}),
+			nil, // 后续中国国内报备通道就绪后注入 ByRegion["86"]。
+			[]string{"86", "60"},
+		)
+	}
+	portalSvc := portal.NewPGStoreWithSender(pool, smsSender)
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表)。
 	var anaStore analytics.AnalyticsService = analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)

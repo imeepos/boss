@@ -82,6 +82,12 @@ type Config struct {
 		Interval  time.Duration // 生成巡检周期
 		PushTopic string        // 快照推送 Kafka topic
 	}
+	// SMS 验证码短信通道(阿里云国际短信;凭据为空时降级日志通道)。
+	SMS struct {
+		AccessKeyID     string
+		AccessKeySecret string
+		From            string // 阿里云国际 SenderID
+	}
 }
 
 // Load 从环境变量读取;文件/Nacos 热更新在阶段1迭代中接入。
@@ -130,6 +136,10 @@ func Load() *Config {
 	c.Report.Period = getenv("BOSS_REPORT_PERIOD", "daily")
 	c.Report.PushTopic = getenv("BOSS_REPORT_PUSH_TOPIC", "boss-report-snapshots")
 	c.Report.Interval = 6 * time.Hour
+
+	c.SMS.AccessKeyID = getenv("BOSS_SMS_ALIYUN_AK_ID", "")
+	c.SMS.AccessKeySecret = getenv("BOSS_SMS_ALIYUN_AK_SECRET", "")
+	c.SMS.From = getenv("BOSS_SMS_ALIYUN_FROM", "")
 	return c
 }
 

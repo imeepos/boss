@@ -37,3 +37,6 @@
 - 2026-08-18-tax-jurisdiction-china-shudian.md(多属地网关并存)
 - 2026-08-19-user-portal-mobile-endpoints.md(§5 模拟姿态)
 - `internal/domain/billing/gateway.go`、`portal_sms_codes` 迁移
+
+> Amended 2026-08-22: 短信部分先行落地——中国(+86)/马来西亚(+60)现阶段统一走阿里云国际短信,
+> 区号路由留国内报备通道注入口,见 adopted/2026-08-22-sms-channel-aliyun-intl.md。本文其余裁定不变。

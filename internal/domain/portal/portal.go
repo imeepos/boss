@@ -11,6 +11,9 @@ import (
 // ErrNotFound 目标记录不存在(账号/偏好等)。
 var ErrNotFound = errors.New("portal: not found")
 
+// ErrSmsCooldown 同一手机号+场景 60 秒冷却内重复签发验证码。
+var ErrSmsCooldown = errors.New("portal: sms cooldown")
+
 // Account 门户账号:手机号登录,与 customers 主档(或合成 ID)1:1。
 type Account struct {
 	Phone             string

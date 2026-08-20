@@ -18,6 +18,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/internal/pkg/sms"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -71,6 +72,10 @@ func RespondErr(c *gin.Context, err error) {
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, ai.ErrDownstream):
 		Respond(c, apitypes.CodeDownstreamErr, nil)
+	case errors.Is(err, portal.ErrSmsCooldown):
+		Respond(c, apitypes.CodeResourceBusy, nil)
+	case errors.Is(err, sms.ErrUnsupportedRegion):
+		Respond(c, apitypes.CodeInvalidParam, nil)
 	default:
 		log.Printf("httpx: unmapped error (code=%d): %v", apitypes.CodeInternal, err)
 		Respond(c, apitypes.CodeInternal, nil)

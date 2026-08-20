@@ -10,26 +10,54 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/ymm-001/boss/internal/pkg/sms"
 )
 
 // pgStore 门户状态 PG 实现。
 type pgStore struct {
-	pool *pgxpool.Pool
+	pool   *pgxpool.Pool
+	sender sms.Sender // 验证码外发通道;nil 表示不外发(仅落库,旧测试路径)
 }
 
-// NewPGStore 构造门户状态存储。
+// NewPGStore 构造门户状态存储(不外发验证码,兼容旧装配)。
 func NewPGStore(pool *pgxpool.Pool) Service { return &pgStore{pool: pool} }
 
+// NewPGStoreWithSender 构造带短信通道的存储:IssueSms 落库后真实外发。
+func NewPGStoreWithSender(pool *pgxpool.Pool, sender sms.Sender) Service {
+	return &pgStore{pool: pool, sender: sender}
+}
+
 func (s *pgStore) IssueSms(ctx context.Context, phone, scene string) error {
+	// 冷却:同 phone+scene 60s 内重复签发直接拒绝,防刷。
+	var recent bool
+	err := s.pool.QueryRow(ctx,
+		`SELECT issued_at > now() - interval '60 seconds' FROM portal_sms_codes WHERE phone=$1 AND scene=$2`,
+		phone, scene).Scan(&recent)
+	if err != nil && !errors.Is(err, errNoRows) {
+		return err
+	}
+	if recent {
+		return ErrSmsCooldown
+	}
 	code, err := randDigits(6)
 	if err != nil {
 		return err
 	}
-	_, err = s.pool.Exec(ctx, `INSERT INTO portal_sms_codes(phone, scene, code, expires_at)
-		VALUES ($1,$2,$3, now() + interval '5 minutes')
-		ON CONFLICT (phone, scene) DO UPDATE SET code = EXCLUDED.code, expires_at = EXCLUDED.expires_at, used = FALSE`,
-		phone, scene, code)
-	return err
+	if _, err = s.pool.Exec(ctx, `INSERT INTO portal_sms_codes(phone, scene, code, expires_at, issued_at)
+		VALUES ($1,$2,$3, now() + interval '5 minutes', now())
+		ON CONFLICT (phone, scene) DO UPDATE SET code = EXCLUDED.code, expires_at = EXCLUDED.expires_at,
+			used = FALSE, issued_at = now()`,
+		phone, scene, code); err != nil {
+		return err
+	}
+	if s.sender == nil {
+		return nil
+	}
+	if err := s.sender.Send(ctx, phone, code, scene); err != nil {
+		return fmt.Errorf("portal: send sms: %w", err)
+	}
+	return nil
 }
 
 func (s *pgStore) ConsumeSms(ctx context.Context, phone, scene, code string) (bool, error) {
