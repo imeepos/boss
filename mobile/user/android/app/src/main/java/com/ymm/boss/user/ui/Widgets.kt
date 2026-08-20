@@ -167,3 +167,18 @@ fun IconTile(icon: ImageVector, tint: Color, size: Dp = 40.dp, corner: Dp = 10.d
 fun FieldLabel(text: String) {
     Text(text, fontSize = 13.sp, color = Palette.muted, modifier = Modifier.padding(bottom = 4.dp))
 }
+
+/** 价格胶囊:¥ + 金额 + /月,金额 16sp Bold;recommended 档橙底白字,普通档品牌蓝浅底。 */
+@Composable
+fun PricePill(fee: String, recommended: Boolean = false) {
+    val bg = if (recommended) Palette.warn else Palette.primary.copy(alpha = 0.12f)
+    val fg = if (recommended) Color.White else Palette.primary
+    Row(
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier.background(bg, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
+    ) {
+        Text("¥", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = fg)
+        Text(fee, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = fg)
+        Text("/月", fontSize = 10.sp, color = fg, modifier = Modifier.padding(bottom = 1.dp))
+    }
+}

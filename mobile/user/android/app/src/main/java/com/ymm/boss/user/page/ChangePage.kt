@@ -1,6 +1,5 @@
 package com.ymm.boss.user.page
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +34,7 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PricePill
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
 import kotlinx.coroutines.launch
@@ -139,30 +138,13 @@ private fun PlanOptionsCard(options: List<JSONObject>, selected: String, onSelec
                 onClick = { onSelect(pid) },
                 right = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        OptionPricePill(p.optString("monthlyFee"), recommended = p.optBoolean("featured"))
+                        PricePill(p.optString("monthlyFee"), recommended = p.optBoolean("featured"))
                         Spacer(Modifier.width(6.dp))
                         RadioButton(selected = selected == pid, onClick = { onSelect(pid) })
                     }
                 },
             )
         }
-    }
-}
-
-/** 与 ProductsPage.PricePill 同形态(该处为 private 无法直接引用):推荐档橙底白字,普通档品牌蓝浅底。 */
-@Composable
-private fun OptionPricePill(fee: String, recommended: Boolean) {
-    val bg = if (recommended) Palette.warn else Palette.primary.copy(alpha = 0.12f)
-    val fg = if (recommended) androidx.compose.ui.graphics.Color.White else Palette.primary
-    Row(
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier
-            .background(bg, RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        Text("¥", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = fg)
-        Text(fee, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = fg)
-        Text("/月", fontSize = 10.sp, color = fg, modifier = Modifier.padding(bottom = 1.dp))
     }
 }
 

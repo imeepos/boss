@@ -1,6 +1,5 @@
 package com.ymm.boss.user.page
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -41,6 +39,7 @@ import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PricePill
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.TopBar
 import kotlinx.coroutines.launch
@@ -86,7 +85,7 @@ private fun DetailCard(product: JSONObject?, specs: List<JSONObject>) {
                 modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(10.dp))
-            DetailPricePill(product?.optString("monthlyFee") ?: "—")
+            PricePill(product?.optString("monthlyFee") ?: "—")
         }
         Notice(product?.optString("description") ?: "—")
         specs.forEach { s ->
@@ -108,7 +107,7 @@ private fun CompareCard(compare: List<JSONObject>, nav: Nav) {
                 onClick = { nav.push(Route.Product(p.optString("productId"))) },
                 right = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        DetailPricePill(p.optString("monthlyFee"))
+                        PricePill(p.optString("monthlyFee"))
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -150,20 +149,5 @@ private fun CtaBar(nav: Nav, id: String, product: JSONObject?) {
             "立即办理 ¥${product?.optString("monthlyFee") ?: "—"}/月",
             fontSize = 14.sp, fontWeight = FontWeight.W500,
         )
-    }
-}
-
-/** 与 ProductsPage 的 PricePill 同形态(该处为 private 无法直接引用):普通档品牌蓝浅底。 */
-@Composable
-private fun DetailPricePill(fee: String) {
-    Row(
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier
-            .background(Palette.primary.copy(alpha = 0.12f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        Text("¥", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
-        Text(fee, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
-        Text("/月", fontSize = 10.sp, color = Palette.primary, modifier = Modifier.padding(bottom = 1.dp))
     }
 }
