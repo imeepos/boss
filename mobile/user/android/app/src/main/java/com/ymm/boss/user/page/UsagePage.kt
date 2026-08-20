@@ -1,7 +1,7 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,17 +57,16 @@ fun UsageScreen(nav: Nav) {
     }
 }
 
+// 周期筛选与账单 tab 状态胶囊同族:PillTab plain 形态,不再自绘文字 tab。
 @Composable
 private fun PeriodBar(selected: String, onSelect: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         PERIODS.forEach { (key, label) ->
-            Text(
-                label,
-                fontSize = 13.sp,
-                fontWeight = if (selected == key) FontWeight.Bold else FontWeight.Normal,
-                color = if (selected == key) Palette.primary else Palette.muted,
-                modifier = Modifier.padding(end = 16.dp).clickable { onSelect(key) },
-            )
+            PillTab(label, active = key == selected, onClick = { onSelect(key) }, plain = true)
         }
     }
 }
