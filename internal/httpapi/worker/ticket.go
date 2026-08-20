@@ -157,6 +157,11 @@ func workerTicketDetailHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		currentWorkerID, _ := portalWorker(c)
+		if tk.WorkerID != currentWorkerID {
+			respond(c, apitypes.CodeForbidden, nil)
+			return
+		}
 		ord, stages, err := a.Order.Track(c.Request.Context(), tk.OrderID)
 		if err != nil {
 			respondErr(c, err)
@@ -164,7 +169,7 @@ func workerTicketDetailHandler(a *app.Application) gin.HandlerFunc {
 		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"ticketNo": tk.TicketNo, "bizNo": ord.OrderNo,
-			"status": portalTicketStatus(*tk, tk.WorkerID), "statusLabel": "",
+			"status": portalTicketStatus(*tk, currentWorkerID), "statusLabel": "",
 			"stages": portalStages(stages), "quad": portalQuadH(a, c, ord.AddressID),
 			"riskCheck": gin.H{"blacklistHit": false, "graylistHit": false},
 		})

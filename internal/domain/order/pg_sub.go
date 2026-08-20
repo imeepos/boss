@@ -131,6 +131,21 @@ func (s *PGStore) AssignDispatchTicket(ctx context.Context, ticketNo string, wor
 	return nil
 }
 
+// AssignPendingDispatchTicket 仅在待派且未指派时抢占工单，保证先到先得。
+func (s *PGStore) AssignPendingDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error {
+	tag, err := s.db.Exec(ctx, `
+		UPDATE dispatch_tickets SET worker_id=$2, worker_name=$3
+		WHERE ticket_no=$1 AND status='PENDING' AND COALESCE(worker_id, 0)=0`,
+		ticketNo, workerID, workerName)
+	if err != nil {
+		return fmt.Errorf("order: claim dispatch ticket: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrOrderNotFound
+	}
+	return nil
+}
+
 // ListScanLogs 列出扫码绑定记录;orderID=0 返回全部,否则按订单过滤。
 func (s *PGStore) ListScanLogs(ctx context.Context, orderID int64) ([]ScanLog, error) {
 	rows, err := s.db.Query(ctx,

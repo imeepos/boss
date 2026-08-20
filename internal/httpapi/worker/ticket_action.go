@@ -44,7 +44,11 @@ func assignTicketToMe(c *gin.Context, a *app.Application, ticketNo string, grab 
 		respond(c, apitypes.CodeStateInvalid, nil)
 		return
 	}
-	if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), ticketNo, workerID, workerName); err != nil {
+	assign := a.WorkOrder.AssignDispatchTicket
+	if grab {
+		assign = a.WorkOrder.AssignPendingDispatchTicket
+	}
+	if err := assign(c.Request.Context(), ticketNo, workerID, workerName); err != nil {
 		respondErr(c, err)
 		return
 	}

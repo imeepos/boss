@@ -62,6 +62,11 @@ func (f *fakePortalWorkOrder) AssignDispatchTicket(_ context.Context, no string,
 	return nil
 }
 
+func (f *fakePortalWorkOrder) AssignPendingDispatchTicket(_ context.Context, no string, workerID int64, _ string) error {
+	f.assigned = workerID
+	return nil
+}
+
 type fakePortalOrder struct {
 	order.OrderService
 	activated int64
