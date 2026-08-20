@@ -61,7 +61,7 @@ internal fun OrderCard(o: JSONObject, nav: Nav) {
     AppCard(Modifier.clickable { nav.push(Route.Order(no)) }) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(no, fontSize = 14.sp, fontWeight = FontWeight.W600, color = Palette.ink)
-            Text(o.optString("createdAt"), fontSize = 12.sp, color = Palette.subtle)
+            Text(o.optString("stageLabel"), fontSize = 12.sp, color = Palette.subtle)
         }
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
