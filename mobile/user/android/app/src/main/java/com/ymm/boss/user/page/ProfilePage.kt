@@ -125,7 +125,7 @@ private fun ProfileHeadContent(data: JSONObject?, nav: Nav, modifier: Modifier =
             .fillMaxWidth()
             .background(profileHeaderGradient())
             .statusBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 33.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(

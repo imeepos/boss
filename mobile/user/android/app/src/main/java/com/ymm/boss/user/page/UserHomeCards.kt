@@ -44,7 +44,7 @@ import com.ymm.boss.user.ui.theme.Green500
 import com.ymm.boss.user.ui.theme.OnGradient
 import java.util.Calendar
 
-internal const val HeaderHeightDp = 180
+internal const val HeaderHeightDp = 199
 
 internal const val CardOverlapDp = 32
 
