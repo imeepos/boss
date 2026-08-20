@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -83,9 +82,11 @@ fun Tag(text: String, color: Color = Palette.primary) {
 
 @Composable
 fun TopBar(title: String, onBack: (() -> Unit)? = null, action: String? = null, onAction: (() -> Unit)? = null) {
+    // 背景与首页/服务/账单/我的四个 tab 头部及状态栏色带同源(statusBarSolid),
+    // 不再用 primary→primary2 渐变,消除状态栏与页面头部的接缝。
     Row(
         Modifier.fillMaxWidth().height(48.dp)
-            .background(Brush.linearGradient(listOf(Palette.primary, Palette.primary2)))
+            .background(statusBarSolid())
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
