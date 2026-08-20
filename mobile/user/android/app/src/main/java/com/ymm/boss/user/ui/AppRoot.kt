@@ -15,7 +15,7 @@ import com.ymm.boss.user.page.FaultDetailScreen
 import com.ymm.boss.user.page.FaultScreen
 import com.ymm.boss.user.page.ForgotScreen
 import com.ymm.boss.user.page.HelpScreen
-import com.ymm.boss.user.page.HomeScreen
+import com.ymm.boss.user.page.UserHomeScreen
 import com.ymm.boss.user.page.InvoiceScreen
 import com.ymm.boss.user.page.LoginScreen
 import com.ymm.boss.user.page.MessagesScreen
@@ -47,7 +47,7 @@ fun RouteScreen(route: Route, nav: Nav) {
         Route.Forgot -> ForgotScreen(nav)
         Route.Verify -> VerifyScreen(nav)
         Route.Agreement -> AgreementScreen(nav)
-        Route.Home -> HomeScreen(nav)
+        Route.Home -> UserHomeScreen(nav)
         Route.Products -> ProductsScreen(nav)
         is Route.Product -> ProductScreen(nav, route.id)
         Route.Orders -> OrdersScreen(nav)

@@ -34,7 +34,10 @@ class MainActivity : ComponentActivity() {
 fun AppRoot() {
     val nav = remember { Nav(if (Api.token().isNotEmpty()) Route.Home else Route.Login) }
     Surface(Modifier.fillMaxSize()) {
-        PageScaffold(nav, tabKeyOf(nav.current), tabKeyOf(nav.current).isNotEmpty()) {
+        val key = tabKeyOf(nav.current)
+        // 首页自带 Scaffold+NavigationBar 底栏,PageScaffold 不再重复渲染
+        val showTabs = key.isNotEmpty() && nav.current != Route.Home
+        PageScaffold(nav, key, showTabs) {
             RouteScreen(nav.current, nav)
         }
     }

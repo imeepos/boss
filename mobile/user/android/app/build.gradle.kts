@@ -82,6 +82,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20231013") // 本地单测用真 org.json(android.jar 里是抛异常的 stub)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
