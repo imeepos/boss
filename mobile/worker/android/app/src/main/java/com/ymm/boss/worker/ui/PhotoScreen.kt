@@ -10,25 +10,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ymm.boss.worker.api.ScanApi
-import com.ymm.boss.worker.util.PhotoCapture
-import kotlinx.coroutines.launch
 import org.json.JSONArray
 
 @Composable
 fun PhotoScreen(nav: NavHost, no: String) {
     var refresh by remember { mutableStateOf(0) }
     val state by loadOnce(no, refresh) { ScanApi.photos(no) }
-    val scope = rememberCoroutineScope()
-    val ctx = LocalContext.current
-    var capturing by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("拍照取证", onBack = { nav.pop() })
@@ -47,19 +40,7 @@ fun PhotoScreen(nav: NavHost, no: String) {
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    PrimaryButton(text = if (capturing) "拍照中…" else "拍照上传", enabled = !capturing, modifier = Modifier.fillMaxWidth()) {
-                        capturing = true
-                        scope.launch {
-                            try {
-                                val photo = PhotoCapture.createOutputFile(ctx)
-                                if (photo == null) { toast(ctx, "无法创建拍照文件"); capturing = false; return@launch }
-                                ScanApi.uploadPhoto(no, "现场取证")
-                                toast(ctx, "上传成功"); refresh++
-                            } catch (e: Exception) { toast(ctx, "上传失败：${e.message}") }
-                            capturing = false
-                        }
-                    }
-                    Notice("拍照并上传，自动关联当前工单；弱网自动缓存上传。")
+                    Notice("拍照上传通道尚未接入，请先在平台补充取证", red = true)
                 }
             }
         }
