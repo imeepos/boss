@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -23,8 +22,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Api.init(this)
         enableEdgeToEdge()
-        window.statusBarColor = com.ymm.boss.user.ui.Palette.primary.toArgb()
-        window.navigationBarColor = com.ymm.boss.user.ui.Palette.panel.toArgb()
+        // 系统栏保持透明 edge-to-edge:首页渐变延伸到状态栏后方,其余页顶部为蓝色 TopBar
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         setContent { BossTheme { AppRoot() } }
     }
@@ -35,9 +33,11 @@ fun AppRoot() {
     val nav = remember { Nav(if (Api.token().isNotEmpty()) Route.Home else Route.Login) }
     Surface(Modifier.fillMaxSize()) {
         val key = tabKeyOf(nav.current)
-        // 首页自带 Scaffold+NavigationBar 底栏,PageScaffold 不再重复渲染
-        val showTabs = key.isNotEmpty() && nav.current != Route.Home
-        PageScaffold(nav, key, showTabs) {
+        // 首页自带 Scaffold+NavigationBar 底栏,PageScaffold 不再重复渲染;
+        // 首页顶部渐变需延伸到状态栏后方,顶层不再吃掉顶部 insets
+        val isHome = nav.current == Route.Home
+        val showTabs = key.isNotEmpty() && !isHome
+        PageScaffold(nav, key, showTabs, extendIntoStatusBar = isHome) {
             RouteScreen(nav.current, nav)
         }
     }
