@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.auxText
 import com.ymm.boss.user.ui.brandBlue
 import com.ymm.boss.user.ui.homeHeaderGradient
@@ -275,10 +276,7 @@ internal fun ActiveServicesCard(services: List<HomeService>, onClick: () -> Unit
         Column(modifier = Modifier.padding(16.dp)) {
             Text("已生效增值服务", fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = brandBlue())
             if (services.isEmpty()) {
-                Text(
-                    "暂无已生效增值服务", fontSize = 14.sp, color = auxText(),
-                    modifier = Modifier.padding(top = 12.dp),
-                )
+                EmptyState("暂无已生效增值服务", modifier = Modifier.padding(top = 4.dp))
             } else {
                 services.forEachIndexed { index, service ->
                     if (index > 0) {

@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -101,6 +103,20 @@ fun StatusDot(on: Boolean = true) {
 @Composable
 fun Notice(text: String, color: Color = Palette.muted) {
     Text(text, fontSize = 12.5.sp, color = color, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
+}
+
+/** 统一空状态:图标 + 文字,水平垂直居中。 */
+@Composable
+fun EmptyState(text: String, modifier: Modifier = Modifier, icon: ImageVector = Icons.Outlined.Inbox) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = Palette.muted, modifier = Modifier.size(40.dp))
+        Spacer(Modifier.height(10.dp))
+        Text(text, fontSize = 13.sp, color = Palette.muted)
+    }
 }
 
 /** tab 页居中标题栏:48dp,背景与首页/我的状态栏统一纯色,白字。 */
