@@ -505,3 +505,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最大坑：git add 指定文件提交时,并行会话早已 stage 的文件(gen-er-drawio 等 5 个)被一起扫进"我的"提交(11 files),违反一提交一变更纪律;soft reset + restore --staged + stash 并行 WIP 后才干净提交 6 个文件。另:模拟器被 worker 僵尸进程抢前台,uiautomator dump 拿到的是 worker 页面,差点据其下错误结论——每轮 dump 前先 dumpsys activity 确认 topResumedActivity 是自己。
 - skill 帮助：knowledge/android.md #3 lesson 直接命中本任务核心方案(safeDrawing+BackHandler);worker 端 AppRoot 的 import 写法(saveDrawing 需单独 import)省了一次编译试错。
 - 复用经验：布局验证不必起后端——TokenStore 有明文迁移路径,push prefs xml + run-as cp 注入假 token 即进 Home 骨架页;uiautomator dump 的 bounds 坐标(标题 y>状态栏高度、底栏 y<屏高-手势区)可量化断言无遮挡。
+
+## 2026-08-19 数据库表结构对账+ER图脚本化
+- 最大的坑: 本机磁盘满导致 go build 链接失败("no space left on device"), 换 go vet 做类型门禁绕过; 环境(磁盘/依赖)失败要与代码失败分开判断。
+- skill 提前警告了吗: 红线5(门禁+commit)有效; 但没提示"纯文档变更可用 vet 替代 build"。
+- 重来一次: 提交前先看 git status, 发现非本任务文件(ProductsPage.kt 被并行进程修改)不代提交, 保留即可。
