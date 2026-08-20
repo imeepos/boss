@@ -53,6 +53,7 @@ import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.IconTile
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PinnedGradientPage
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.profileHeaderGradient
 import org.json.JSONObject
@@ -69,64 +70,32 @@ fun ProfileScreen(nav: Nav) {
                 .count { !it.optBoolean("read") }
         } catch (e: Exception) { } // 无红点降级
     }
-    // 层次(自下而上):渐变底(=用户信息高+38dp 尾巴) → 滚动卡片区(顶部圆角,首卡
-    // 起于用户信息块下沿,压住渐变尾巴形成错位) → 状态栏 scrim → 用户信息层(恒可见)
-    var infoPx by remember { mutableStateOf(0) }
-    val density = LocalDensity.current
-    // 状态栏高度需在 statusBarsPadding 消费之前量取,否则 scrim 拿到 0
-    val statusBarDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    Box(Modifier.fillMaxSize()) {
-        // 渐变底:高度 = 用户信息块 + 100px 尾巴,首卡压在尾巴上;交点圆角由首卡顶部圆角呈现
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(with(density) { (infoPx + HeaderOverlapPx).toDp() })
-                .background(profileHeaderGradient()),
-        )
-        // 滚动区包裹 Box:宽度与卡片一致(左右 14dp),顶部 16dp 圆角;卡片水平外边距归零贴齐区域
-        // 蓝色区总高不变:渐变底 = 信息块 + 150px 尾巴(尾巴加长 50px 补偿信息块回收的高度)
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(top = with(density) { infoPx.toDp() })
-                .padding(horizontal = 14.dp)
-                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                .background(Palette.bg),
-        ) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                QuickEntriesCard(data, nav)
-                ServiceEntriesCard(nav, unread)
-                SettingsCard(nav)
-                LogoutCard(nav)
-                Spacer(Modifier.height(12.dp))
-            }
+    // 与首页共用 PinnedGradientPage 骨架,几何参数完全一致;用户信息层填满头部槽位恒可见
+    PinnedGradientPage(
+        gradient = profileHeaderGradient(),
+        headerContent = { ProfileHeadContent(data, nav) },
+    ) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            QuickEntriesCard(data, nav)
+            ServiceEntriesCard(nav, unread)
+            SettingsCard(nav)
+            LogoutCard(nav)
+            Spacer(Modifier.height(12.dp))
         }
-        // 状态栏 scrim:内容滚到顶部时盖住内容,保持渐变底
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(statusBarDp)
-                .background(profileHeaderGradient()),
-        )
-        // 用户信息层最后绘制:不论怎么滚动,头像/姓名/设置语言始终可见
-        ProfileHeadContent(data, nav, Modifier.onSizeChanged { infoPx = it.height })
     }
 }
 
-/** 首卡压住渐变尾巴的高度:约 100px,对齐首页 CardOverlap 的错位节奏。 */
-private val HeaderOverlapPx = 150
-
-/** 用户信息层:自带渐变底,绘制在 scrim 之上,任何滚动状态可见可读;圆角交给滚动区首卡。 */
+/** 用户信息层:填满头部槽位垂直居中,背景渐变由骨架底层负责,任何滚动状态可见。 */
 @Composable
 private fun ProfileHeadContent(data: JSONObject?, nav: Nav, modifier: Modifier = Modifier) {
     val name = data?.optString("name").orEmpty().ifBlank { "加载中…" }
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
     Box(
         modifier
-            .fillMaxWidth()
-            .background(profileHeaderGradient())
+            .fillMaxSize()
             .statusBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -145,7 +114,7 @@ private fun ProfileHeadContent(data: JSONObject?, nav: Nav, modifier: Modifier =
                 if (verified) VerifiedBadge()
             }
         }
-        SettingsAndLanguage(Modifier.align(Alignment.TopEnd), nav)
+        SettingsAndLanguage(Modifier.align(Alignment.CenterEnd), nav)
     }
 }
 

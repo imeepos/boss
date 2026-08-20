@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.BottomTabBar
 import com.ymm.boss.user.ui.Nav
+import com.ymm.boss.user.ui.PinnedGradientPage
+import com.ymm.boss.user.ui.PinnedHeaderSpec
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.brandBlue
 import com.ymm.boss.user.ui.homeHeaderGradient
@@ -153,15 +155,13 @@ fun UserHomeScreen(nav: Nav) {
             BottomTabBar(nav = nav, currentKey = "home", onSelect = { key -> nav.resetTo(Nav.tabRoute(key)) })
         },
     ) { padding ->
-        // 与「我的」页同范式:渐变底固定 → 圆角滚动区(自头部下沿起) → 头部内容最上层恒可见
-        Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // 渐变底比头部多留 16dp 尾巴,滚动区顶角圆角缺口透出渐变
-                    .height(HeaderHeightDp.dp + 16.dp)
-                    .background(homeHeaderGradient()),
-            )
+        // 与「我的」页共用 PinnedGradientPage 骨架,几何参数完全一致
+        PinnedGradientPage(
+            gradient = homeHeaderGradient(),
+            headerContent = {
+                HomeHeader(state = state, onOpenMessages = { nav.push(Route.Messages) })
+            },
+        ) {
             HomeContent(
                 state = state,
                 padding = padding,
@@ -171,7 +171,6 @@ fun UserHomeScreen(nav: Nav) {
                 onOpenOrder = { no -> nav.push(Route.Order(no)) },
                 onOpenService = { nav.push(Route.MyPlan) },
             )
-            HomeHeader(state = state, onOpenMessages = { nav.push(Route.Messages) })
         }
     }
 }
@@ -186,26 +185,15 @@ private fun HomeContent(
     onOpenOrder: (String) -> Unit,
     onOpenService: () -> Unit,
 ) {
-    // 滚动区包裹 Box:自头部下沿(180dp)起、宽度与卡片一致(左右 16dp)、顶部 16dp 圆角 + 不透明底色
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            // 滚动区上移合计 46dp(≈120px)贴近"服务在线"行;蓝色区总高不变(渐变底 199+16dp)
-            .padding(top = (HeaderHeightDp - 46).dp)
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-            .background(MaterialTheme.colorScheme.background),
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
-        ) {
-            item { BroadbandCard(state = state, onOpen = onOpenService) }
-            item { QuickActions(onAction = onAction) }
-            item { OrderSection(state = state, onOpenOrders = onOpenOrders, onOpenOrder = onOpenOrder, onRetry = onRetry) }
-            item { MyServiceCard(service = state.services.firstOrNull(), onClick = onOpenService) }
-            item { Spacer(modifier = Modifier.height(16.dp)) }
-        }
+        item { BroadbandCard(state = state, onOpen = onOpenService) }
+        item { QuickActions(onAction = onAction) }
+        item { OrderSection(state = state, onOpenOrders = onOpenOrders, onOpenOrder = onOpenOrder, onRetry = onRetry) }
+        item { MyServiceCard(service = state.services.firstOrNull(), onClick = onOpenService) }
+        item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
 

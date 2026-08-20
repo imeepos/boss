@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -51,12 +52,8 @@ internal const val CardOverlapDp = 32
 @Composable
 internal fun HomeHeader(state: HomeUiState, onOpenMessages: () -> Unit) {
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
-    // 内容层:背景渐变由页面底部渐变层负责,这里只承载问候/手机号/状态/铃铛(最上层恒可见)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(HeaderHeightDp.dp),
-    ) {
+    // 内容层:填满 PinnedGradientPage 头部槽位(高度由骨架统一),背景渐变由骨架底层负责
+    Box(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
