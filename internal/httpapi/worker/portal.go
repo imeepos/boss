@@ -113,6 +113,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerWorkerPortalAssetRoutes(wauth, a)
 	registerWorkerPortalProfileRoutes(wauth, a)
 	registerWorkerPortalMiscRoutes(wauth, a)
+	registerWorkerPortalAttachmentRoutes(wauth, a)
 }
 
 // registerWorkerPortalAuth 公开组:验证码/登录/退出(worker/auth.yaml)。

@@ -183,5 +183,6 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerUserdataRoutes(authed, a)
 	registerUserdataMoreRoutes(authed, a)
 	registerUserdataGapRoutes(authed, a)
+	registerAttachmentRoutes(authed, a)
 
 }

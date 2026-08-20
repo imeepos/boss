@@ -19,7 +19,10 @@ type Config struct {
 	Redis    struct{ Addrs []string }
 	Kafka    struct{ Brokers []string }
 	Events   struct{ Topic string } // 状态变更事件 topic
-	MinIO    struct{ Endpoint, AccessKey, SecretKey string }
+	MinIO    struct {
+		Endpoint, AccessKey, SecretKey, Bucket string
+		UseSSL                                 bool
+	}
 	Temporal struct{ Host string }
 
 	// 102 扩展基础设施(见 deployments/docker-compose.102.extend.yml)
@@ -140,6 +143,12 @@ func Load() *Config {
 	c.SMS.AccessKeyID = getenv("BOSS_SMS_ALIYUN_AK_ID", "")
 	c.SMS.AccessKeySecret = getenv("BOSS_SMS_ALIYUN_AK_SECRET", "")
 	c.SMS.From = getenv("BOSS_SMS_ALIYUN_FROM", "")
+
+	c.MinIO.Endpoint = getenv("BOSS_MINIO_ENDPOINT", "192.168.0.102:29000")
+	c.MinIO.AccessKey = getenv("BOSS_MINIO_ACCESS_KEY", "boss")
+	c.MinIO.SecretKey = getenv("BOSS_MINIO_SECRET_KEY", "boss12345")
+	c.MinIO.Bucket = getenv("BOSS_MINIO_BUCKET", "boss-attachments")
+	c.MinIO.UseSSL = getenv("BOSS_MINIO_USE_SSL", "false") == "true"
 	return c
 }
 

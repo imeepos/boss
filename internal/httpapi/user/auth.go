@@ -81,6 +81,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerPortalOrderRoutes(uauth, a)
 	registerPortalBillingRoutes(uauth, a)
 	registerPortalServiceRoutes(uauth, a)
+	registerPortalAttachmentRoutes(uauth, a)
 }
 
 // portalCustomerOnly 非客户身份(含 admin JWT)一律 401,客户视角端点不与后台 RBAC 混用。
@@ -106,7 +107,8 @@ func registerPortalAuthRoutes(pub *gin.RouterGroup, a *app.Application, mgr *aut
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		if req.Mode == "sms" {			if req.SmsCode == "" {
+		if req.Mode == "sms" {
+			if req.SmsCode == "" {
 				respond(c, apitypes.CodeInvalidParam, nil)
 				return
 			}

@@ -11,6 +11,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/analytics"
 	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/domain/asset"
+	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
@@ -59,7 +60,7 @@ type Application struct {
 	// ReconAuto 自动对账编排(渠道源注册表 ReconSources);admin POST /reconciliations/auto。
 	ReconAuto    *billing.AutoReconciler
 	ReconSources *billing.ChannelSourceRegistry
-	Tax     billing.TaxService
+	Tax          billing.TaxService
 	// TaxGateway 税局网关注册表(CN 数电票/PH BIR eIS);nil=全人工模式(回填票号)。
 	TaxGateway *billing.TaxGatewayRegistry
 
@@ -85,6 +86,9 @@ type Application struct {
 	Asset     asset.AssetService
 	APIKey    apikey.Service
 	AI        ai.Service
+
+	// Attachment 附件上传(三端共用,对象入 MinIO,元数据入 attachments 表)。
+	Attachment *attachment.Service
 
 	// AaaAuth 授权查询(授权器,权威状态=lo_accounts);Cdr 话单投递(PG 落库 + Kafka 双写)。
 	// gRPC aaa/v1 GetAuthorization/EmitCDR 依赖,债务偿还:契约服务可在 cmd/server 内直连。
@@ -228,6 +232,15 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		APIKey:    akstore,
 		AI:        aisvc,
 
+		Attachment: &attachment.Service{
+			St:  attachment.NewPGStore(pool),
+			Obj: attachment.NewMinIOStorage(),
+			Conf: attachment.MinIOConfig{
+				Endpoint: cfg.MinIO.Endpoint, AccessKey: cfg.MinIO.AccessKey,
+				SecretKey: cfg.MinIO.SecretKey, Bucket: cfg.MinIO.Bucket, UseSSL: cfg.MinIO.UseSSL,
+			},
+		},
+
 		Worker:       wrk,
 		WorkerLedger: wrk,
 		WorkerFact:   wrk,
@@ -270,7 +283,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	stopPatrol := startPatrolLoop(app)
 	app.close = func() {
 		stopPatrol() // 巡检循环
-		aw.Close() // 排空审计队列
+		aw.Close()   // 排空审计队列
 		if closeCDR != nil {
 			closeCDR()
 		}
