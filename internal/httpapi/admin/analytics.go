@@ -50,6 +50,16 @@ func registerAnalyticsRoutes(g *gin.RouterGroup, a *app.Application) {
 func registerReportRoutes(g *gin.RouterGroup, a *app.Application) {
 	rp := g.Group("", requirePerm(a.User, "menu:report"))
 
+	// 软引用孤儿巡检(db-design-review D7):只读报表,不阻断业务。
+	rp.GET("/db-patrol/orphans", func(c *gin.Context) {
+		findings, err := a.Report.PatrolOrphans(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": findings})
+	})
+
 	rp.GET("/reports", func(c *gin.Context) {
 		list, err := a.Report.List(c.Request.Context())
 		if err != nil {
