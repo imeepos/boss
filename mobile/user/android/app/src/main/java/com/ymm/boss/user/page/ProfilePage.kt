@@ -96,10 +96,10 @@ private fun ProfileHeadContent(data: JSONObject?, nav: Nav, modifier: Modifier =
             .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
-        // 内容整体上移 12px(像素级,不随密度换算)
+        // 内容整体上移 12px + 4dp
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.offset { IntOffset(0, -12) },
+            modifier = Modifier.offset { IntOffset(0, -12) }.offset(y = (-4).dp),
         ) {
             Box(
                 Modifier.size(56.dp)
