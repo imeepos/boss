@@ -67,7 +67,7 @@ fun RateScreen(nav: Nav, no: String) {
                 placeholder = { Text("分享你的装维体验") },
                 minLines = 3, modifier = Modifier.fillMaxWidth(),
             )
-            if (err.isNotEmpty()) Text(err, fontSize = 12.sp, color = Palette.err, modifier = Modifier.padding(top = 6.dp))
+            if (err.isNotEmpty()) Text(err, fontSize = 12.sp, color = Palette.err, modifier = Modifier.padding(top = 8.dp))
             SubmitButton(nav, no, stars, attitude, quality, comment) { err = it }
             Notice("评分低于 3 分将自动升级主管复核并回访。")
         }
@@ -77,7 +77,7 @@ fun RateScreen(nav: Nav, no: String) {
 
 @Composable
 private fun StarRow(label: String, value: Int, onChange: (Int) -> Unit) {
-    Column(Modifier.padding(top = 10.dp)) {
+    Column(Modifier.padding(top = 12.dp)) {
         FieldLabel(label)
         Row {
             (1..5).forEach { i ->
@@ -86,10 +86,10 @@ private fun StarRow(label: String, value: Int, onChange: (Int) -> Unit) {
                     fontSize = 24.sp,
                     color = if (i <= value) Palette.warn else Palette.subtle,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onChange(i) }.padding(end = 6.dp),
+                    modifier = Modifier.clickable { onChange(i) }.padding(end = 8.dp),
                 )
             }
-            Text(scoreLabel(value), fontSize = 12.sp, color = Palette.muted, modifier = Modifier.padding(start = 6.dp, top = 8.dp))
+            Text(scoreLabel(value), fontSize = 12.sp, color = Palette.muted, modifier = Modifier.padding(start = 8.dp, top = 8.dp))
         }
     }
 }
@@ -114,6 +114,6 @@ private fun SubmitButton(
             }
         },
         colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-        modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(44.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp).height(44.dp),
     ) { Text("提交评价") }
 }

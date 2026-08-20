@@ -148,7 +148,7 @@ private fun TimelineItem(t: JSONObject, isLast: Boolean) {
 private fun ActionBar(nav: Nav, no: String) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(onClick = { nav.push(Route.Move(no)) }, modifier = Modifier.weight(1f)) { Text("变更地址", color = Palette.primary) }
         OutlinedButton(
             onClick = { scope.launch { dialTechnician(context, no) } },

@@ -44,10 +44,12 @@ fun AddressScreen(nav: Nav) {
     LaunchedEffect(nav.refreshTick) { items = loadAddresses() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("家庭地址管理", { nav.pop() })
+        TopBar("家庭地址管理", onBack = { nav.pop() })
         AddressListCard(items)
         AddressFormCard { items = loadAddresses() }
-        Notice("地址须挂接到小区/楼栋层级，用于资源核查与装维上门。")
+        Column(Modifier.padding(horizontal = 14.dp)) {
+            Notice("地址须挂接到小区/楼栋层级，用于资源核查与装维上门。")
+        }
         Spacer(Modifier.height(12.dp))
     }
 }

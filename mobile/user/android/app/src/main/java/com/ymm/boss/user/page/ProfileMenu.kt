@@ -69,10 +69,10 @@ private data class MenuEntry(val label: String, val icon: ImageVector, val tint:
 @Composable
 internal fun MenuRow(icon: ImageVector, tint: Color, label: String, showDot: Boolean = false, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 11.dp),
+        Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconTile(icon, tint, size = 36.dp)
+        IconTile(icon, tint, size = 40.dp, corner = 12.dp)
         Spacer(Modifier.width(12.dp))
         Text(label, fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.ink, modifier = Modifier.weight(1f))
         if (showDot) {
