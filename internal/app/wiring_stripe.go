@@ -4,6 +4,7 @@ package app
 
 import (
 	"context"
+	"time"
 
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/pkg/config"
@@ -22,6 +23,22 @@ func wireStripe(app *Application, cfg *config.Config) {
 		c.BaseURL = cfg.Stripe.APIBaseURL
 	}
 	app.PayGateway = billing.NewPaymentGatewayRegistry(stripeGateway{c: c})
+	app.ReconSources.Register("stripe", stripeSource{c: c}) // 自动对账渠道源
+}
+
+// stripeSource stripe.Client → billing.ChannelSource 适配(pay_no 对齐比对口径)。
+type stripeSource struct{ c *stripe.Client }
+
+func (s stripeSource) PullStatement(ctx context.Context, _ string, day time.Time) ([]billing.ChannelStatementRow, error) {
+	rows, err := s.c.ListDayStatements(ctx, day)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]billing.ChannelStatementRow, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, billing.ChannelStatementRow{ChannelRef: r.PayNo, Amount: r.Amount})
+	}
+	return out, nil
 }
 
 // stripeGateway stripe.Client → billing.PaymentGateway 适配(结构不同型,显式转换)。

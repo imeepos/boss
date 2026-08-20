@@ -86,6 +86,54 @@ func TestCreateCheckoutSession(t *testing.T) {
 	}
 }
 
+// TestListDayStatements 契约:按日窗口拉流水,仅取 charge 行,metadata.pay_no 对齐;
+// 分页 has_more 续拉。
+func TestListDayStatements(t *testing.T) {
+	var calls int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/balance_transactions" {
+			t.Fatalf("req: %s %s", r.Method, r.URL.Path)
+		}
+		if r.Header.Get("Authorization") != "Bearer sk" {
+			t.Fatalf("auth missing")
+		}
+		q := r.URL.Query()
+		body := `{"has_more":false,"data":[]}`
+		if calls == 1 {
+			if q.Get("expand[]") != "data.source.payment_intent" || q.Get("created[gte]") == "" {
+				t.Fatalf("page1 params: %v", q)
+			}
+			body = `{"has_more":true,"data":[
+				{"id":"txn_1","amount":9900,"source":{"object":"charge",
+				 "payment_intent":{"metadata":{"pay_no":"PAY-A"}}}},
+				{"id":"txn_2","amount":-100,"source":{"object":"fee"}},
+				{"id":"txn_3","amount":5000,"source":{"object":"charge","payment_intent":{"metadata":{}}}}
+			]}`
+		} else if q.Get("starting_after") != "txn_3" {
+			t.Fatalf("page2 cursor: %v", q)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+	c := &Client{APIKey: "sk", BaseURL: srv.URL, Currency: "php", HTTP: srv.Client()}
+
+	rows, err := c.ListDayStatements(context.Background(), time.Date(2026, 8, 23, 15, 0, 0, 0, time.FixedZone("CST", 8*3600)))
+	if err != nil {
+		t.Fatalf("ListDayStatements: %v", err)
+	}
+	if calls != 2 || len(rows) != 2 { // fee 行不入比对
+		t.Fatalf("calls=%d rows=%d", calls, len(rows))
+	}
+	if rows[0].PayNo != "PAY-A" || rows[0].Amount != 99 {
+		t.Fatalf("row0: %+v", rows[0])
+	}
+	if rows[1].PayNo != "" || rows[1].Amount != 50 {
+		t.Fatalf("rows: %+v", rows)
+	}
+}
+
 // TestNewEmptyKey 契约:无密钥返回 nil(装配层判空降级)。
 func TestNewEmptyKey(t *testing.T) {
 	if New("", "php") != nil {
