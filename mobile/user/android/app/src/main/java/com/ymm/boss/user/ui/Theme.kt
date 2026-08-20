@@ -102,6 +102,14 @@ fun homeHeaderGradient(): Brush = if (isSystemInDarkTheme()) {
     Brush.linearGradient(listOf(Color(0xFF006AE5), BrandBlueGradientEnd))
 }
 
+/** 固定状态栏色:所有页面统一,取首页渐变起点色,不透明、不随页面切换变化。 */
+@Composable
+fun statusBarSolid(): Color = if (isSystemInDarkTheme()) {
+    Color(0xFF4E97EC)
+} else {
+    Color(0xFF006AE5)
+}
+
 @Composable
 fun actionOrange(): Color = if (isSystemInDarkTheme()) ActionOrangeDark else ActionOrange
 

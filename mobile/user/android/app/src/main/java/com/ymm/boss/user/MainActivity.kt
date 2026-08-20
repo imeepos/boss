@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Api.init(this)
         enableEdgeToEdge()
-        // 系统栏保持透明 edge-to-edge:首页渐变延伸到状态栏后方,其余页顶部为蓝色 TopBar
+        // 状态栏区域由 PageScaffold 统一画固定纯色带(与首页一致,不透明),此处只保证图标为白色。
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         setContent { BossTheme { AppRoot() } }
     }
@@ -33,11 +33,9 @@ fun AppRoot() {
     val nav = remember { Nav(if (Api.token().isNotEmpty()) Route.Home else Route.Login) }
     Surface(Modifier.fillMaxSize()) {
         val key = tabKeyOf(nav.current)
-        // 首页/我的自带渐变头,延伸到状态栏后方;其余页顶部为蓝色 TopBar
         val isHome = nav.current == Route.Home
-        val isProfile = nav.current == Route.Profile
         val showTabs = key.isNotEmpty() && !isHome
-        PageScaffold(nav, key, showTabs, extendIntoStatusBar = isHome || isProfile) {
+        PageScaffold(nav, key, showTabs) {
             RouteScreen(nav.current, nav)
         }
     }

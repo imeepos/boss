@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -33,6 +34,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -103,22 +105,26 @@ fun PageScaffold(
     nav: Nav,
     currentKey: String,
     showTabs: Boolean,
-    extendIntoStatusBar: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     // edge-to-edge 下必须避让系统栏:否则 TopBar 被状态栏遮挡、底栏被手势条压住。
-    // extendIntoStatusBar=true 时只避让底部/横向,让页面自带渐变延伸到状态栏后方。
+    // 状态栏区域统一画固定纯色带(与首页一致,不透明、不随页面切换变化)。
     BackHandler(enabled = nav.size > 1) { nav.pop() }
     val base = Modifier.fillMaxSize().imePadding().background(Palette.bg)
-    val insetModifier = if (extendIntoStatusBar) {
-        base.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-    } else {
-        base.windowInsetsPadding(WindowInsets.safeDrawing)
-    }
-    Column(insetModifier) {
+        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+    Column(base) {
+        StatusBarBand()
         Box(Modifier.weight(1f)) { content() }
         if (showTabs) {
             BottomTabBar(nav, currentKey) { key -> nav.resetTo(Nav.tabRoute(key)) }
         }
     }
+}
+
+/** 固定状态栏色带:高度即状态栏 inset,背景色全页面统一为首页渐变起点色。 */
+@Composable
+private fun StatusBarBand() {
+    val density = LocalDensity.current
+    val height = with(density) { WindowInsets.statusBars.getHeight(this).toDp() }
+    Box(Modifier.fillMaxWidth().height(height).background(statusBarSolid()))
 }
