@@ -44,6 +44,9 @@ object PinnedHeaderSpec {
 
     /** 滚动区顶部圆角。 */
     val corner: Dp = 16.dp
+
+    /** 滚动区自头部下沿整体上提量(≈120px),收紧头部末行文字与卡片的空白。 */
+    val regionLift: Dp = 46.dp
 }
 
 /**
@@ -68,7 +71,7 @@ fun PinnedGradientPage(
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(top = headerHeight)
+                .padding(top = headerHeight - PinnedHeaderSpec.regionLift)
                 .padding(horizontal = PinnedHeaderSpec.sideMargin)
                 .clip(RoundedCornerShape(topStart = PinnedHeaderSpec.corner, topEnd = PinnedHeaderSpec.corner))
                 .background(Palette.bg),

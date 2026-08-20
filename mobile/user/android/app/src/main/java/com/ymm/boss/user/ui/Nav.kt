@@ -5,6 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -124,7 +127,6 @@ fun PageScaffold(
 /** 固定状态栏色带:高度即状态栏 inset,背景色全页面统一为首页渐变起点色。 */
 @Composable
 private fun StatusBarBand() {
-    val density = LocalDensity.current
-    val height = with(density) { WindowInsets.statusBars.getHeight(this).toDp() }
+    val height = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(Modifier.fillMaxWidth().height(height).background(statusBarSolid()))
 }
