@@ -230,7 +230,6 @@ internal fun OrderItem(order: HomeOrder, onOpen: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 4.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = { onOpen(order.orderNo) })
             .padding(vertical = 8.dp),
