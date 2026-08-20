@@ -583,3 +583,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑：edit 端点 multipart 字段名按 OpenAI 文档写 `image[]`，实际代理返回 400 要求 `image`；另外我第一次重写脚本时在 loadEnv 里手滑留了一行垃圾代码。
 - skill 有没有提前警告：没有（上游 API 字段差异），已记入 lessons.md。
 - 重来一次：对接新端点先用最小请求探字段名，再写完整逻辑；重写文件后立刻 node 冒烟。
+
+## 2026-08-19 用户端首页数据对账与修复
+- 哪个坑：无大坑。bossctl 二进制的 base URL 参数是 `-server` 而非 `--url`/`--query _base`，试错两次才找到。
+- skill 有没有提前警告：bossctl-cli SKILL.md 未写全局 flag 名，help 里有。已记入 lessons.md。
+- 重来一次：CLI 报 "flag provided but not defined" 时第一时间看 -h 的 flag 列表，不要猜参数名。

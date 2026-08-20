@@ -102,3 +102,4 @@
 - cordis 预设 YAML 的 `!!js` 标签只支持 scalar：标记数组必须逐项 `- !!js >- expr`，整表打 `!!js` 会 YAML 解析失败（schema kind: "scalar"）。
 - 动态插件沙箱里没有 setTimeout/setInterval：用 ctx.timeout 需 inject ["timer"]；宿主 console.log 外部读不到，探针结果用"失败即抛错 + cordis_inspect_self"回传。
 - gpt-image-2 图生图（/v1/images/edits）的 multipart 文件字段名是 `image`，不是 `image[]`；传错返回 400 "Missing required file field image"。（2025-08-20 实测）
+- bossctl 二进制全局 flag 是 `-server`(不是 --url/_base query);报 flag not defined 先看 -h。
