@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -86,7 +88,7 @@ fun ProductsScreen(nav: Nav) {
             item { if (err.isNotEmpty()) Notice(err, Palette.err) }
             if (shown.isEmpty() && err.isEmpty()) item { Notice("未找到匹配的产品") }
             items(shown) { p -> ProductCard(p, nav) }
-            item { AddonCard(addons, nav) }
+            if (cat == "addon") item { AddonCard(addons, nav) }
             item { Spacer(Modifier.height(12.dp)) }
         }
     }
@@ -148,10 +150,9 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
                     p.optString("name"), fontSize = 15.sp, fontWeight = FontWeight.W600,
                     color = Palette.ink, modifier = Modifier.weight(1f),
                 )
-                if (p.optString("bandwidth").contains("500")) RecommendTag()
                 if (p.optBoolean("featured")) Tag("热门", Palette.success)
-                Spacer(Modifier.width(8.dp))
-                PricePill(p.optString("monthlyFee"))
+                Spacer(Modifier.width(10.dp))
+                PricePill(p.optString("monthlyFee"), recommended = p.optString("bandwidth").contains("500"))
             }
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -174,31 +175,35 @@ private fun ProductCard(p: JSONObject, nav: Nav) {
     }
 }
 
-/** 常用推荐标记:500M 档位打推荐标。 */
+/** 右上角价格胶囊:推荐档橙色底+右上角拇指角标,普通档品牌蓝浅底。 */
 @Composable
-private fun RecommendTag() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(end = 6.dp),
-    ) {
-        Icon(Icons.Filled.ThumbUp, contentDescription = null, tint = Palette.warn, modifier = Modifier.size(11.dp))
-        Spacer(Modifier.width(3.dp))
-        Text("推荐", fontSize = 11.sp, color = Palette.warn)
-    }
-}
-
-/** 右上角价格胶囊:品牌蓝浅底突出月费。 */
-@Composable
-private fun PricePill(fee: String) {
-    Row(
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier
-            .background(Palette.primary.copy(alpha = 0.12f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        Text("¥", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
-        Text(fee, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Palette.primary)
-        Text("/月", fontSize = 10.sp, color = Palette.primary, modifier = Modifier.padding(bottom = 1.dp))
+private fun PricePill(fee: String, recommended: Boolean) {
+    val bg = if (recommended) Palette.warn else Palette.primary.copy(alpha = 0.12f)
+    val fg = if (recommended) Color.White else Palette.primary
+    Box {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier
+                .background(bg, RoundedCornerShape(8.dp))
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+        ) {
+            Text("¥", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = fg)
+            Text(fee, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = fg)
+            Text("/月", fontSize = 10.sp, color = fg, modifier = Modifier.padding(bottom = 1.dp))
+        }
+        if (recommended) {
+            Icon(
+                Icons.Filled.ThumbUp,
+                contentDescription = "推荐",
+                tint = Palette.warn,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 7.dp, y = (-7).dp)
+                    .background(Color.White, CircleShape)
+                    .padding(2.dp)
+                    .size(10.dp),
+            )
+        }
     }
 }
 
