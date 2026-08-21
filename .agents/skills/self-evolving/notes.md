@@ -803,3 +803,9 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最费时:cdp 验证登录门禁页面(reload 停在 /login 排查 3 轮)——skill 有 localStorage 注入配方但没写"必须从 /login 起步再 replace";已补进 lessons。
 - 踩坑:并行会话把我未提交的文件扫进它的 docs 提交;以后提交用明确文件清单。
 - 重来一次:改完立刻 commit,不留给并行进程捡漏。
+
+## 2026-08-20 ODN 无源物理层落地(goal round 2)
+- 最费时：迁移文件漏写 COMMIT——migrate 实现按"文件自带 BEGIN/COMMIT 整段执行"约定,漏 COMMIT 时 exec 成功+版本已记录但事务被回滚,表不存在且 migrate 幂等跳过,形成"已记录未生效"的脏状态,排查两轮才定位。
+- 新教训(候选红线)：本项目 migration 必须 BEGIN/COMMIT 成对;写入 schema_migrations 前应校验表确实存在。配套修复手段=核实后 delete 记录重放(000076/000079 两例)。
+- 另一坑:NOT NULL DEFAULT '' 列配 NULLIF($n,'') 必触发 23502——'' 语义列直接绑参,不要 NULLIF。
+- 集成测试要幂等:开头清理残留 + -count=2 验证。
