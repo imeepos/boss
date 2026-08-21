@@ -259,3 +259,11 @@ func (f *fakeWorkerOps) AppendClock(context.Context, worker.Attendance) (int64, 
 func (f *fakeWorkerOps) ListClocks(context.Context, int64, time.Time) ([]worker.Attendance, error) {
 	return nil, nil
 }
+
+func (f *fakeWorkerOps) AppendSafetyCheck(context.Context, worker.SafetyCheck) (int64, error) {
+	return 1, nil
+}
+
+func (f *fakeWorkerOps) ListSafetyChecks(context.Context, int64) ([]worker.SafetyCheck, error) {
+	return nil, nil
+}

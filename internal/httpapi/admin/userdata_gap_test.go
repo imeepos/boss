@@ -152,3 +152,11 @@ func (f *fakeWorkerLedger) AppendClock(context.Context, worker.Attendance) (int6
 func (f *fakeWorkerLedger) ListClocks(context.Context, int64, time.Time) ([]worker.Attendance, error) {
 	return nil, nil
 }
+
+func (f *fakeWorkerLedger) AppendSafetyCheck(context.Context, worker.SafetyCheck) (int64, error) {
+	return 1, nil
+}
+
+func (f *fakeWorkerLedger) ListSafetyChecks(context.Context, int64) ([]worker.SafetyCheck, error) {
+	return nil, nil
+}

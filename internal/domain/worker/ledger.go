@@ -50,6 +50,15 @@ type Attendance struct {
 	ClockedAt time.Time `json:"clockedAt"`
 }
 
+// SafetyCheck 安全作业确认留痕(作业类型 + 勾选项)。
+type SafetyCheck struct {
+	ID        int64     `json:"id"`
+	WorkerID  int64     `json:"workerId"`
+	WorkType  string    `json:"workType"`
+	Checklist []string  `json:"checklist"`
+	CheckedAt time.Time `json:"checkedAt"`
+}
+
 // WorkerLedgerService 师傅台账域服务口(阶段2):归属台账/接单设置/站内消息/考勤。
 type WorkerLedgerService interface {
 	ListMemberships(ctx context.Context, workerID int64) ([]Membership, error)
@@ -61,4 +70,7 @@ type WorkerLedgerService interface {
 	// AppendClock 追加打卡流水;ListClocks 按师傅+自然日取当日流水。
 	AppendClock(ctx context.Context, a Attendance) (int64, error)
 	ListClocks(ctx context.Context, workerID int64, day time.Time) ([]Attendance, error)
+	// AppendSafetyCheck 安全作业确认留痕;ListSafetyChecks 按师傅倒序。
+	AppendSafetyCheck(ctx context.Context, s SafetyCheck) (int64, error)
+	ListSafetyChecks(ctx context.Context, workerID int64) ([]SafetyCheck, error)
 }

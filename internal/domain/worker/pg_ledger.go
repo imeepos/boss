@@ -154,3 +154,36 @@ func (s *PGStore) ListClocks(ctx context.Context, workerID int64, day time.Time)
 	}
 	return out, rows.Err()
 }
+
+// AppendSafetyCheck 安全作业确认落库,返回自增 id。
+func (s *PGStore) AppendSafetyCheck(ctx context.Context, sc SafetyCheck) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO worker_safety_checks(worker_id, work_type, checklist, checked_at)
+		VALUES($1,$2,$3,$4) RETURNING id`, sc.WorkerID, sc.WorkType, sc.Checklist, sc.CheckedAt).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("worker: append safety check: %w", err)
+	}
+	return id, nil
+}
+
+// ListSafetyChecks 取师傅安全确认记录(倒序)。
+func (s *PGStore) ListSafetyChecks(ctx context.Context, workerID int64) ([]SafetyCheck, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, worker_id, work_type, checklist, checked_at
+		FROM worker_safety_checks WHERE ($1 = 0 OR worker_id = $1)
+		ORDER BY checked_at DESC, id DESC`, workerID)
+	if err != nil {
+		return nil, fmt.Errorf("worker: list safety checks: %w", err)
+	}
+	defer rows.Close()
+	out := make([]SafetyCheck, 0)
+	for rows.Next() {
+		var sc SafetyCheck
+		if err := rows.Scan(&sc.ID, &sc.WorkerID, &sc.WorkType, &sc.Checklist, &sc.CheckedAt); err != nil {
+			return nil, fmt.Errorf("worker: scan safety check: %w", err)
+		}
+		out = append(out, sc)
+	}
+	return out, rows.Err()
+}

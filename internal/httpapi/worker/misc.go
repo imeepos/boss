@@ -120,16 +120,24 @@ type workerSafetyCheckReq struct {
 	Checklist []string `json:"checklist" binding:"required"`
 }
 
-// workerSafetyCheckHandler 安全上报:无 safety_checks 表,审计留痕(缺口见报告)。
+// workerSafetyCheckHandler 安全上报:落 worker_safety_checks 结构化留痕(线上运营可检索)。
 func workerSafetyCheckHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		workerID, _ := portalWorker(c)
 		var req workerSafetyCheckReq
 		if err := c.ShouldBindJSON(&req); err != nil {
 			respond(c, apitypes.CodeInvalidParam, nil)
 			return
 		}
+		now := time.Now()
+		if _, err := a.WorkerLedger.AppendSafetyCheck(c.Request.Context(), worker.SafetyCheck{
+			WorkerID: workerID, WorkType: req.WorkType, Checklist: req.Checklist, CheckedAt: now,
+		}); err != nil {
+			respondErr(c, err)
+			return
+		}
 		httpx.RecordAudit(a, c, "数据变更", "worker_safety", req.WorkType,
 			map[string]any{"checklist": req.Checklist})
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "checkedAt": now.Format("01-02 15:04")})
 	}
 }
