@@ -1,7 +1,8 @@
 # 数据分层依赖模型（contract/data-layers）
 
-> 版本 V1.0（2026-08-17）｜依据：fields.md、data-relations.md + mock 数据实测审计（33 处矛盾，见附录）
+> 版本 V1.1（2026-08-21）｜依据：fields.md、data-relations.md V1.3（000089）+ mock 数据实测审计（33 处矛盾，见附录）
 > 定位：回答"哪些是基础数据、谁依赖谁"。构建模拟数据、写 seed、定初始化顺序一律按本层序。
+> V1.1 变更：补 L0 物料/工具主档与 geo 基础数据、L0.5 ODN 码表映射、L1b ODN 物理层；L5 补 payments 双挂与师傅新事实表。
 
 ## 0. 判定规则
 
@@ -21,6 +22,26 @@
 | legal_entities | id, code | 运营主体（与 regions 同层软关联 crossRegionIds=经营区域） |
 | roles / permissions | id/code | 权限体系（集团统一） |
 | biz_params | key | 全局参数 |
+| geo_country / geo_subdivision | alpha2 / code | ISO 3166 地理基础数据（subdivision 自引用树，PH PSGC 预置） |
+| material_items / material_tools | id/UQ code | 物料/工具全局主档（000073，MI-*/TL-*） |
+
+### L0.5 共享码表映射（依赖 L0 地理，集团共享）
+
+| 实体 | 依赖 | 说明 |
+|:-----|:-----|:-----|
+| odn_region_code | ▲geo_subdivision(psgc) | ODN 省码→PSGC 派生映射（000075，PHL001~） |
+| odn_city_code | ▲odn_region_code ▲geo_subdivision | ODN 城市前缀复合主键（000075） |
+
+### L1b ODN 无源物理层（依赖 L0.5，规范编码事实）
+
+| 实体 | 依赖 | 说明 |
+|:-----|:-----|:-----|
+| odn_grid | ▲odn_city_code | 网格分区 01~99（000078） |
+| odn_facility | ▲odn_city_code ▲odn_grid?(可空) | 无源设施 P/MH/TW/CLS/TBX（000078） |
+| odn_site | ▲odn_city_code | 局点 001~999（000081） |
+| odn_device | ▲odn_city_code ▲parent(树) ▲site?(可空) | 核心链路设备 SNW/OLT/ODF/...（000081） |
+| odn_cable_segment | ▲a/b_code(设施/设备码,软) | 光缆段落 UQ(a,b)（000079） |
+| odn_fiber | ▲odn_cable_segment | 纤芯 G01~99（000079） |
 
 ### L1 依赖运营主体（公司自定义数据）
 
@@ -73,7 +94,7 @@
 | dismantles | ▲order ▲asset ▲port | 拆机单 |
 | complaints | ▲customer | 报障工单 |
 | bills | ▲customer ×账期 | 账单 |
-| payments | ▲bill | 缴费流水 |
+| payments | ▲bill(可空,000068) ▲customer(000068) | 缴费流水（充值/无账单缴费可脱离账单） |
 | arrears | ▲customer | 欠费态 |
 | stop_resume_tasks | ▲customer ▲lo_account | 停复机任务 |
 | provision_tasks/logs | ▲lo_account ▲template | 配置下发 |
@@ -87,6 +108,8 @@
 | resource_assignments | ▲resource ▲legal_entity ▲address? | 设备归属台账(调拨) |
 | asset_assignments | ▲asset ▲worker? ▲address? | 资产持有台账(领用/部署/归还) |
 | worker_performances/commissions/schedules/materials/tools | ▲worker ▲group(FK, +group_name 快照) | 师傅域派生;月度三表粒度=师傅×月×班组(月中调组拆多行) |
+| worker_attendance/safety_checks/replace_logs | ▲worker | 师傅考勤/安检/换签流水（000071/72/74，事件级） |
+| attachments | ▲uploader_type+uploader_id(多态软) | 通用附件（000065，MinIO object_key） |
 | worker_feedbacks | ▲worker ▲ticket ▲customer | 评价 |
 | asset_returns | ▲worker ▲asset | 资产归还 |
 | asset_lifecycles | ▲asset ▲address? | 资产状态轨迹(每次状态/位置变更,快照地址名) |

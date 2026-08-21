@@ -1,9 +1,11 @@
 # 数据从属关系总览（contract/data-relations）
 
-> 版本 V1.2（2026-08-19）｜权威源：migrations/*.up.sql（55 个迁移，117 表，已全部对账）
+> 版本 V1.3（2026-08-21）｜权威源：migrations/*.up.sql（87 个迁移，130 张活表，已全部对账）
 > 定位：锁死「谁包含谁、谁归属于谁」的完整实体关系清单。详情页设计、数据权限裁剪一律以本表为准。
-> 本版变更：⌛ 标记清零（mock 层实体全部落库）；补齐 geo/userdata/portal/税务/入驻/告警复测/对账/报表等 30+ 表；
-> ER 图改为脚本生成（`scripts/gen-er-drawio.mjs` → `docs/boss-entities-er.drawio`），不再手维护。
+> V1.3 变更：补 000061-089——attachments、师傅考勤/安检/换签、物料工具主档、ODN 无源网络 8 表；
+> orders 加硬 FK（000076）、payments 双挂（000068）、customers.customer_code（000085）、quad_links 部分唯一改版（000086/000088）、
+> 工单/报障详情字段（000087）、师傅注册 group 可空（000089）。
+> ER 图由脚本生成（`scripts/gen-er-drawio.mjs` → `docs/boss-entities-er.drawio`），不再手维护。
 
 ## 0. 四条铁律
 
@@ -17,8 +19,9 @@
 
 ## 0.5 引用完整性口径（V1.2 新增，重要）
 
-- **硬 FK（DDL REFERENCES）** 只存在于阶段1-4 的组织/主档表之间与同域强绑定子表（order_stages、payments、worker 事实表等）。
-- **软引用（无 FK，仅索引）** 是主流：orders/quad_links/lo_accounts/reserve_records/transfers/alarms/cdrs 等跨域主单
+- **硬 FK（DDL REFERENCES）** 存在于：组织/主档表之间、同域强绑定子表（order_stages、worker 事实表等）、
+  orders.legal_entity_id/region_id（000076，下单快照）、payments.customer_id（000068）、ODN 域内部（000075-81 复合 FK 链）。
+- **软引用（无 FK，仅索引）** 是主流：orders 业务列/quad_links/lo_accounts/reserve_records/transfers/alarms/cdrs 等跨域主单
   一律 `xxx_id + 快照列` 软引用。原因：跨域写路径解耦 + 快照口径（详见 §设计问题评估 docs/review/db-design-review.md）。
 - **读代码时判别**：字段注释 `→ 表名` 或本文 `sFK` = 软引用；`REFERENCES` = 硬 FK。
 
@@ -36,6 +39,8 @@
 师傅执行层  worker_groups → workers → tickets/materials/tools/schedules/performances/commissions/...
             worker_registrations(入驻审核) → workers
 用户端层    user_*(20 表挂 customers) ；portal_*(7 表，customer_id 软挂隔离空间)
+ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/facility/site/device(树) ；cable_segment→fiber
+附件层      attachments(uploader 三主体多态软引用，MinIO object_key)
 日志流水层  audit_logs(分区)/auth_logs/cdrs/provision_logs/scan_logs（只读，挂操作主体）
 ```
 
@@ -52,6 +57,7 @@
 | accounts ✚ | id/username | ▲role_id(FK) ▲legal_entity_id?/dept_id?/post_id?(FK) ▲region_scope(LTREE权限) ■api_keys ■import_tasks ■audit_logs(弱引用) | 组织 1:N 账号 |
 | api_keys ✚ | id | ▲account_id(FK CASCADE) ▲created_by(sFK)；subject 扩展见 000045 | 账号 1:N 密钥 |
 | import_tasks ✚ | taskId | ▲operator_id(FK accounts) | 账号 1:N 导入任务 |
+| attachments ✚ | id | ▲uploader_type('account'/'worker'/'customer')+uploader_id(多态软引用，000065)；UQ object_key(MinIO)；被 verifications.id_card_front/back_id 引用(0=未传，000070) | 主体 1:N 附件 |
 | legal_entities ✚ | id/code | ■departments ■customers ■worker_groups ■product_offers... | 集团 1:N 子公司 |
 | departments ✚ | id | ▲legal_entity_id(FK) ■posts | 子公司 1:N 部门 |
 | posts ✚ | id | ▲dept_id(FK) ◆roles(post_roles M:N) | 部门 1:N 岗位 |
@@ -74,7 +80,7 @@
 
 | 实体 | 主键 | 关系 | 基数 |
 |:-----|:-----|:-----|:-----|
-| customers ✚ | id | ▲legal_entity_id ▲address_id(FK) ■orders ■bills ■arrears ■lo_accounts(软) ◆quad_link ■user_* 全家 | 公司 1:N 客户 |
+| customers ✚ | id | ▲legal_entity_id ▲address_id(FK) UQ customer_code(000085 触发器自动 C-00000001) ■orders ■bills ■arrears ■lo_accounts(软) ◆quad_link ■user_* 全家 | 公司 1:N 客户 |
 | customer_registrations ✚ | id | ▲legal_entity_id/address_id(FK) ▲customer_id(通过后回填,sFK) ▲reviewer_account_id(sFK) | 注册审核队列 |
 | verifications ✚ | id | ▲subject_type('customer'/'worker') + subject_id(软)；000059 起统一实名表，吸收 000026/000050/000051 三张旧表（已迁移并 DROP） | 主体 1:N 实名轨迹 |
 | customer_histories ✚ | id | ▲customer_id/legal_entity_id/address_id(FK) | 客户归属台账 |
@@ -82,16 +88,16 @@
 | region_offers ✚ | id | ▲offer_id(FK) ■price_history | — |
 | channels ✚ | id/UQ code | 全局渠道目录；orders.channel_id 软引用 | — |
 
-### 2.4 订单与工单（000010/17-18/27/31/53，全部✚）
+### 2.4 订单与工单（000010/17-18/27/31/53/76/87，全部✚）
 
 | 实体 | 主键 | 关系 | 基数 |
 |:-----|:-----|:-----|:-----|
-| orders ✚ | id/UQ order_no | ▲customer ▲offer ▲address ▲channel(全软引用+legal_entity快照+region_path) ■order_stages ■dispatch(1:1) ■dismantles ■callbacks ■scan-logs ■reserve_records ■ratings | 客户 1:N 订单 |
+| orders ✚ | id/UQ order_no | ▲customer ▲offer ▲address ▲channel(业务列软引用+legal_entity快照+region_path) ▲legal_entity_id/region_id(FK，000076 由安装地址推导、下单快照不可变；000077 未覆盖兜底平台总公司) ■order_stages ■dispatch(1:1) ■dismantles ■callbacks ■scan-logs ■reserve_records ■ratings | 客户 1:N 订单 |
 | order_stages ✚ | id | ▲order_id(FK)；stage 1~12，状态机权威见 ADR-003 | 订单 1:12 环节 |
-| dispatch_tickets ✚ | id | ▲order_id(FK UQ 1:1) ▲worker_id ▲group_id(软) | 订单 1:1 工单 |
+| dispatch_tickets ✚ | id | ▲order_id(FK UQ 1:1) ▲worker_id ▲group_id(软)；000087 加 schedule_slot/splitter_port/pre_bind_tag 详情列 | 订单 1:1 工单 |
 | dispatch_transfers ✚ | id | ▲ticket_id(FK) ▲from/to_worker_id(软) | 工单 1:N 改派 |
 | dismantles ✚ | id | ▲order_id(FK) ▲asset/port(软) | — |
-| complaints ✚ | id | ▲customer_id(FK) ▲order_id(软) | 客户 1:N 投诉 |
+| complaints ✚ | id | ▲customer_id(FK) ▲order_id(软)；000087 加 remote_diagnosis/sla_deadline/created_at | 客户 1:N 投诉 |
 | activation_callbacks ✚ | id | ▲order_id(FK)（第11环节） | 订单 1:N 回调 |
 | scan_logs ✚ | id | ▲order_id(FK) ▲master/scanned_tag(软) | 订单 1:N 扫码 |
 | order_ratings ✚ | id | ▲customer_id(FK) ▲order_no(UQ 软) | 订单 1:1 评价(门户提交) |
@@ -101,7 +107,7 @@
 | 实体 | 主键 | 关系 | 基数 |
 |:-----|:-----|:-----|:-----|
 | bills ✚ | id/billNo | ▲customer_id(FK) ■payments ■invoices | 客户×账期 1:1 |
-| payments ✚ | id | ▲bill_id(FK) | 账单 1:N 缴费 |
+| payments ✚ | id | ▲bill_id(FK **可空**，000068——充值/无账单缴费) ▲customer_id(FK，000068 冗余直挂，账单缺失时兜底) | 账单 0..1:N 缴费 |
 | arrears ✚ | id | ▲customer_id(FK UQ 1:1) | 客户 1:1 欠费态 |
 | stop_resume_tasks ✚ | id | ▲customer_id/loid(软) | — |
 | reconciliation_batches ✚ | id/UQ batch_no | 渠道对账（channel 字符串，不挂 FK） ■reconciliation_items | — |
@@ -119,7 +125,7 @@
 | asset_lifecycles ✚ | id | ▲asset_id(FK) | 资产 1:N 状态轨迹 |
 | asset_assignments ✚ | id | ▲asset_id(FK) ▲worker/address(软) | 资产归属台账 |
 | stocktakes ✚ / replacements ✚ | id | ▲legal_entity_id(FK) / ▲asset(软) | — |
-| quad_links ✚ | id | ▲asset ▲customer ▲port ▲address（四列软引用；000056 起唯一约束改为 `WHERE status IN('LINKED','CONFLICT')` 部分唯一索引，UNLINKED 行保留为链路历史）+ legal_entity 快照 | 四码 1:1 活跃链路，1:N 历史 |
+| quad_links ✚ | id | ▲asset(000086 起可空) ▲customer ▲port ▲address（四列软引用）；唯一约束演进：000056 `WHERE status IN('LINKED','CONFLICT')` 部分唯一 → 000086 四列各改 `WHERE xxx IS NOT NULL` 部分唯一 → 000088 customer 列降为普通索引（一客户多链路）；+ legal_entity 快照 | asset/port/address 各 0..1:1 活跃，customer 1:N，UNLINKED 行保留为历史 |
 
 ### 2.7 网络资源·监控·开通·AAA（000009/13-15/22/25/28/30/32-33/37，全部✚）
 
@@ -141,19 +147,23 @@
 | provision_logs ✚ | id | ▲task_id(软)；result 宽列见 000033 | 任务 1:N 日志 |
 | cdrs ✚ / auth_logs ✚ | id | ▲loid(软，无 customer 直连) | AAA 流水 |
 
-### 2.8 师傅（000016/19-21/36/50，全部✚）
+### 2.8 师傅（000016/19-21/36/50/71-74/89，全部✚）
 
 | 实体 | 主键 | 关系 | 基数 |
 |:-----|:-----|:-----|:-----|
 | worker_groups ✚ | id | ▲legal_entity_id(FK) ▲leader_id(软) ■workers ■全部事实表 | 公司 1:N 班组 |
-| workers ✚ | id | ▲group_id(FK) ■memberships ■settings(1:1) ■messages ■8 张事实表 | 班组 1:N 师傅 |
+| workers ✚ | id | ▲group_id(FK) ■memberships ■settings(1:1) ■messages ■事实表 | 班组 1:N 师傅 |
 | worker_group_memberships ✚ | id | ▲worker_id ▲group_id(FK) ◆group_name 等快照 | 师傅 1:N 归属台账 |
 | worker_settings ✚ / worker_messages ✚ | id | ▲worker_id(FK, settings UQ 1:1) | — |
 | worker_notices ✚ | id | 全局公告 | — |
-| worker_registrations ✚ | id | ▲group_id(FK) ▲worker_id(通过后回填,软) ▲reviewer_account_id(软) | 入驻审核队列 |
+| worker_registrations ✚ | id | ▲group_id(FK **可空**，000089——散师傅/平台直招不挂班组) ▲region_id(可空,000089) ▲worker_id(通过后回填,软) ▲reviewer_account_id(软) | 入驻审核队列 |
 | 师傅实名 | — | 统一走 verifications(subject_type='worker')，见 §2.3 | — |
 | worker_performances ✚ / worker_commissions ✚ / worker_schedules ✚ | id | ▲worker_id ▲group_id(FK)；UQ(worker,period,group) 月度粒度 | 师傅×月×班组 |
 | worker_materials ✚ / worker_tools ✚ / worker_feedbacks ✚ / asset_returns ✚ | id | ▲worker_id ▲group_id(FK)；asset_returns 另软挂 asset | 事件级事实 |
+| worker_attendance ✚ | id | ▲worker_id(FK,000071)；clock_type IN/OUT | 师傅 1:N 打卡 |
+| worker_safety_checks ✚ | id | ▲worker_id(FK,000072)；work_type + checklist TEXT[] | 师傅 1:N 安检 |
+| worker_replace_logs ✚ | id | ▲worker_id(FK,000074)；sFK ticket_no + old/new_epc | 师傅 1:N 换签 |
+| material_items ✚ / material_tools ✚ | id/UQ code(MI-*/TL-*) | 全局物料/工具主档(000073)；worker_materials.name / worker_tools.name 按编码对齐主档，无 FK | 全局目录 |
 
 > **归属关系与月度粒度铁律**：月度级事实粒度=「师傅×月×班组」，唯一键 `(worker_id, period, group_id)`，月中调组拆多行；
 > 归属口径=事发时，工单记派单时班组；`worker_settings`/`worker_messages` 不加快照。
@@ -191,7 +201,23 @@
 |:-----|:-----|:-----|
 | report_snapshots ✚ | id | UQ(period,window_start)；payload JSONB 全量快照，不挂业务 FK |
 
-### 2.12 归属台账（跨域通用模式）
+### 2.12 ODN 无源网络（000075/78/79/81，全部✚，internal/domain/odn）
+
+> 依据《Suniway ODN 地理空间编码规范》；PSGC 权威在 geo_subdivision 不动，ODN 码为派生映射
+> （裁定见 adopted note 2026-08-20-odn-geospatial-encoding-alignment）。域内复合 FK 链是全库最长的硬约束链。
+
+| 实体 | 主键 | 关系 | 基数 |
+|:-----|:-----|:-----|:-----|
+| odn_region_code ✚ | prv_code(PHL001) | ▲psgc_code(FK geo_subdivision) ■city_codes | 省 1:N 城市前缀 |
+| odn_city_code ✚ | (prv_code,city_prefix) | ▲prv_code(FK odn_region_code) ▲psgc_code(FK geo_subdivision) ■grids ■facilities ■sites ■devices | 城市 1:N 网格/设施/局点/设备 |
+| odn_grid ✚ | (prv,city,grid_code 1~99) | ▲(prv,city) 复合 FK odn_city_code ■facilities(P/MH) | 网格 1:N 设施 |
+| odn_facility ✚ | code(P/MH/TW/CLS/TBX+5位) | ▲(prv,city) 复合 FK ▲grid(复合 FK，TW/CLS/TBX 为 NULL 市域设施) ■cable_segments(A/B 端按码软引用) | 设施 1:N 光缆端 |
+| odn_cable_segment ✚ | id / UQ(a_code,b_code) | ▲a/b_code(软引用：设施码或核心设备码，CHECK 正则约束码型) ■fibers | 段落 1:N 纤芯 |
+| odn_fiber ✚ | (segment_id,g_no 1~99) | ▲segment_id(FK CASCADE) | 段落 1:99 纤芯 |
+| odn_site ✚ | (prv,city,site_no 1~999) | ▲(prv,city) 复合 FK odn_city_code ■devices(site_no) | 局点 1:N 设备 |
+| odn_device ✚ | id / UQ(prv,city,code)；SNW 全网唯一(部分索引) | ▲(prv,city) 复合 FK ▲parent_id(自引用树: ODB→OCC/SDB→ODB/PRT→SDB/TBP→PRT) ▲site_no(可空,市域设备) | 树 |
+
+### 2.13 归属台账（跨域通用模式）
 
 | 台账实体 | 主体 | 归属维度 |
 |:---------|:-----|:---------|

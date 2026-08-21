@@ -363,6 +363,20 @@
 
 > ARN 发号：`arn_sequences` 计数表（`doc_type` INVOICE/RECEIPT 各一序列），事务内 `UPDATE..RETURNING` 原子占号、行锁串行、回滚号回退（决策 note：2026-08-18-tax-invoice-arn-numbering）。链路：收款 `POST /payments`（流水+账单 PAID 同事务）→ 出账+自动开票 `POST /billing-runs`（幂等，失败账单入 `failedIds`）→ 作废/重开 `POST /invoices/:id/{void,reissue}`。
 
+### 3.5 payments（缴费流水，源自 payment.html；000068 双挂改版）
+
+| 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
+|:---------|:-------|:--------------|:----------|
+| 流水号 | `PayNo` | pay_no | — |
+| 客户 | `CustomerID` | customer_id | BIGINT → customers（000068 新增硬 FK，冗余直挂） |
+| 账单号 | `BillID` | bill_id | BIGINT → bills（000068 起**可空**：充值/预存无账单） |
+| 金额 | `Amount` | amount | NUMERIC |
+| 方式 | `Method` | method | wechat/alipay/card/cash（见 terms.md 第 4 节） |
+| 状态 | `Status` | status | SUCCESS/FAILED/REFUNDED |
+
+> 000068 起 payments 同时挂 `bill_id`(可空) 与 `customer_id`：账单缴费走 bill，充值类流水仅挂 customer；
+> 存量行已回填 customer_id（取 bill.customer_id）。
+
 ## 4. 阶段3/4 · 资产与资源（internal/domain/{asset,resource}）
 
 ### 4.1 assets（资产台账，源自 asset.html + 全案 4.2 Asset）
@@ -400,13 +414,15 @@
 
 | 字段名 | DB 列 | 枚举/说明 |
 |:-------|:------|:----------|
-| `AssetID` | asset_id | BIGINT → assets |
-| `CustomerID` | customer_id | BIGINT → customers（四码第 2 项=客户，非系统账号 user） |
+| `AssetID` | asset_id | BIGINT → assets（000086 起可空：纯端口链路/资产注销场景） |
+| `CustomerID` | customer_id | BIGINT → customers（四码第 2 项=客户，非系统账号 user；000088 起一客户可多链路） |
 | `PortID` | port_id | BIGINT → ports |
 | `AddressID` | address_id | BIGINT → addresses |
 | 状态 | `status` | LINKED/CONFLICT/UNLINKED（见 terms.md 第 4 节） |
 
-> 四列各建索引 + 唯一约束（见 docs/archive/技术栈方案-一步到位.md 3.3），任一码反查单表索引。
+> 四列各建索引，任一码反查单表索引。**唯一约束演进**（以 migrations 为权威）：000056 全表唯一改
+> `WHERE status IN('LINKED','CONFLICT')` 部分唯一 → 000086 四列各改 `WHERE xxx IS NOT NULL` 部分唯一（asset 可空）
+> → 000088 customer 列降为普通索引（一客户多链路）；asset/port/address 各保持至多一条非空活跃链路。
 > **口径裁定**：四码=资产-客户-端口-地址（全案 REQ-AMS-003/REQ-CONS-002 权威）。
 > 技术栈方案 3.3（docs/archive/技术栈方案-一步到位.md）原文写 `quad_link(asset_id, user_id, port_id, addr_id)`，`user_id` 系笔误，
 > 应为 `customer_id`（`user` 是系统账号域，`customer` 是客户域，二者不同，见 domain-map）。
