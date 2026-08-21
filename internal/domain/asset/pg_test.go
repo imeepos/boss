@@ -42,6 +42,11 @@ func TestPGStore_CreateBatch(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO asset_batches`).
 		WithArgs(int64(1), "RK-202609-01", "9月光猫批次").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
@@ -144,6 +149,15 @@ func TestPGStore_CreateAsset(t *testing.T) {
 	defer mock.Close()
 
 	// tag/address/region = 0 → nil
+	// FK validation: batch exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO assets`).
 		WithArgs("A-20260002", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))

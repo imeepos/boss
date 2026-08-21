@@ -8,7 +8,19 @@ import (
 )
 
 // CreateBatch 新建入库批次,返回自增 id。
+// 校验 legal_entity_id 存在性,防止孤儿批次。
 func (s *PGStore) CreateBatch(ctx context.Context, b AssetBatch) (int64, error) {
+	// 关联完整性校验
+	if b.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", b.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("asset: legal entity %d: %w", b.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx,
 		`INSERT INTO asset_batches(legal_entity_id, code, name) VALUES($1,$2,$3) RETURNING id`,
@@ -37,7 +49,28 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 // ListAssets 列出全部资产台账。
 
 // CreateAsset 新建资产,返回自增 id。
+// 校验 batch_id 和 legal_entity_id 存在性,防止孤儿资产。
 func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
+	// 关联完整性校验
+	if a.BatchID > 0 {
+		ok, err := s.exists(ctx, "asset_batches", a.BatchID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("asset: batch %d: %w", a.BatchID, ErrForeignKeyViolation)
+		}
+	}
+	if a.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", a.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("asset: legal entity %d: %w", a.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx,
 		`INSERT INTO assets(asset_code, batch_id, legal_entity_id, legal_entity_name,

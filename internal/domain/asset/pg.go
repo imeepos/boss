@@ -13,6 +13,9 @@ import (
 // ErrNotFound 记录不存在。
 var ErrNotFound = errors.New("asset: not found")
 
+// ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
+var ErrForeignKeyViolation = errors.New("asset: foreign key violation")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
@@ -28,6 +31,17 @@ type PGStore struct {
 // NewPGStore 构造 PGStore;db 传 *pgxpool.Pool 或测试 mock。
 func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
+}
+
+// exists 校验单表存在性(assets 无外键约束,关联完整性由本域应用层保证)。
+func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, error) {
+	var ok bool
+	err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM `+table+` WHERE id = $1)`, id).Scan(&ok)
+	if err != nil {
+		return false, fmt.Errorf("asset: check %s %d: %w", table, id, err)
+	}
+	return ok, nil
 }
 
 // idOrNil 把 0 归一为 NULL(可空外键约定:0=空)。

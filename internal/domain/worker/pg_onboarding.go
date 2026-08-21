@@ -15,7 +15,28 @@ const regCols = `id, name, phone, id_card_no, group_id, region_id, status,
  review_note, reviewer_account_id, worker_id, submitted_at, reviewed_at`
 
 // Submit 新建师傅注册申请(落 PENDING);submitted_at 由 DB 默认 now() 生成。
+// 校验 group_id 和 region_id 存在性,防止孤儿申请。
 func (s *PGStore) Submit(ctx context.Context, reg Registration) (int64, error) {
+	// 关联完整性校验
+	if reg.GroupID > 0 {
+		ok, err := s.exists(ctx, "worker_groups", reg.GroupID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("worker: group %d: %w", reg.GroupID, ErrForeignKeyViolation)
+		}
+	}
+	if reg.RegionID > 0 {
+		ok, err := s.exists(ctx, "regions", reg.RegionID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("worker: region %d: %w", reg.RegionID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 INSERT INTO worker_registrations(name, phone, id_card_no, group_id, region_id)

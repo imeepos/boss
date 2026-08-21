@@ -15,6 +15,9 @@ var ErrNotFound = errors.New("resource: not found")
 // ErrPortNotAvailable 端口非 IDLE,无法预占。
 var ErrPortNotAvailable = errors.New("resource: port not available")
 
+// ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
+var ErrForeignKeyViolation = errors.New("resource: foreign key violation")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)

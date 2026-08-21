@@ -32,7 +32,19 @@ func (s *PGStore) ListProducts(ctx context.Context, legalEntityID int64) ([]Prod
 }
 
 // CreateProduct 新建产品,返回自增 id。
+// 校验 legal_entity_id 存在性,防止孤儿产品。
 func (s *PGStore) CreateProduct(ctx context.Context, p ProductOffer) (int64, error) {
+	// 关联完整性校验
+	if p.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", p.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("customer: legal entity %d: %w", p.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	category := p.Category
 	if category == "" {
@@ -71,7 +83,19 @@ func (s *PGStore) ListRegionOffers(ctx context.Context, offerID int64) ([]Region
 }
 
 // CreateRegionOffer 新建区域运营包,返回自增 id。
+// 校验 offer_id 存在性,防止孤儿区域包。
 func (s *PGStore) CreateRegionOffer(ctx context.Context, r RegionOffer) (int64, error) {
+	// 关联完整性校验
+	if r.OfferID > 0 {
+		ok, err := s.exists(ctx, "product_offers", r.OfferID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("customer: offer %d: %w", r.OfferID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO region_offers(offer_id, region_path, name, monthly_fee, reason)

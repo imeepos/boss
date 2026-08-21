@@ -20,6 +20,15 @@ func TestPGStore_Create(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: address exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(100)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO customers`).
 		WithArgs("王先生", "13800001111", "身份证", "110101199001011234", "VERIFIED", "ACTIVE",
 			int64(100), int64(1), int64(11), "root.luzon.ncr.manila").

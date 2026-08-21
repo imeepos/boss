@@ -14,6 +14,19 @@ func TestPGStore_SubmitRegistration(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: address exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(100)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: region exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(4)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO customer_registrations\(name, phone, id_card_no, legal_entity_id, address_id, region_id\)`).
 		WithArgs("张先生", "13800001234", "110101199001011234", int64(1), int64(100), int64(4)).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))

@@ -44,6 +44,11 @@ func TestPGStore_CreateProduct(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO product_offers`).
 		WithArgs(int64(1), "500M 畅享宽带", "500M", 129.0, "broadband", fixedTime, "DRAFT").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
@@ -104,6 +109,11 @@ func TestPGStore_CreateRegionOffer(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
+
+	// FK validation: offer exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO region_offers`).
 		WithArgs(int64(1), "root.luzon.ncr", "区域特惠", 69.0, "").

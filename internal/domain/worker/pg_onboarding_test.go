@@ -17,6 +17,15 @@ func TestPGStore_Submit(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: group exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(6)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: region exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(4)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO worker_registrations\(name, phone, id_card_no, group_id, region_id\)`).
 		WithArgs("王师傅", "13800000001", "110101199001011234", int64(6), int64(4)).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))

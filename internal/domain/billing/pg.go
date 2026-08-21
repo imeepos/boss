@@ -12,6 +12,9 @@ import (
 // ErrNotFound 记录不存在。
 var ErrNotFound = errors.New("billing: not found")
 
+// ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
+var ErrForeignKeyViolation = errors.New("billing: foreign key violation")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
@@ -27,6 +30,17 @@ type PGStore struct {
 // NewPGStore 构造 PGStore;db 传 *pgxpool.Pool 或测试 mock。
 func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
+}
+
+// exists 校验单表存在性(bills/payments 无外键约束,关联完整性由本域应用层保证)。
+func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, error) {
+	var ok bool
+	err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM `+table+` WHERE id = $1)`, id).Scan(&ok)
+	if err != nil {
+		return false, fmt.Errorf("billing: check %s %d: %w", table, id, err)
+	}
+	return ok, nil
 }
 
 const billCols = `id, bill_no, customer_id, customer_name, legal_entity_id, legal_entity_name, region_id, region_name, period, amount, status`
@@ -52,7 +66,28 @@ func (s *PGStore) ListBills(ctx context.Context, customerID int64) ([]Bill, erro
 }
 
 // CreateBill 新建账单,返回自增 id。
+// 校验 customer_id 和 legal_entity_id 存在性,防止孤儿账单。
 func (s *PGStore) CreateBill(ctx context.Context, b Bill) (int64, error) {
+	// 关联完整性校验
+	if b.CustomerID > 0 {
+		ok, err := s.exists(ctx, "customers", b.CustomerID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("billing: customer %d: %w", b.CustomerID, ErrForeignKeyViolation)
+		}
+	}
+	if b.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", b.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("billing: legal entity %d: %w", b.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO bills(bill_no, customer_id, customer_name, legal_entity_id, legal_entity_name, region_id, region_name, period, amount, status)
@@ -102,7 +137,28 @@ func (s *PGStore) ListPayments(ctx context.Context, billID int64) ([]Payment, er
 }
 
 // CreatePayment 新建缴费/充值流水,返回自增 id;billID=0(充值)落 NULL。
+// 校验 bill_id(若非零)和 customer_id(若非零)存在性,防止孤儿流水。
 func (s *PGStore) CreatePayment(ctx context.Context, p Payment) (int64, error) {
+	// 关联完整性校验
+	if p.BillID > 0 {
+		ok, err := s.exists(ctx, "bills", p.BillID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("billing: bill %d: %w", p.BillID, ErrForeignKeyViolation)
+		}
+	}
+	if p.CustomerID > 0 {
+		ok, err := s.exists(ctx, "customers", p.CustomerID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("billing: customer %d: %w", p.CustomerID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO payments(pay_no, bill_id, customer_id, amount, method, status)
