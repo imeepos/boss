@@ -65,6 +65,31 @@ object Api {
     suspend fun post(path: String, body: JSONObject? = JSONObject()): JSONObject = request("POST", path, body ?: JSONObject())
     suspend fun put(path: String, body: JSONObject): JSONObject = request("PUT", path, body)
 
+    /** multipart 单文件上传(带 Bearer,字段名 file),返回信封 data;非 2xx 抛 HttpError。 */
+    suspend fun upload(path: String, fileName: String, contentType: String, bytes: ByteArray): JSONObject =
+        withContext(Dispatchers.IO) {
+            val boundary = "----boss${System.currentTimeMillis()}"
+            val conn = URL(base + path).openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.doOutput = true
+            conn.connectTimeout = 15000
+            conn.readTimeout = 30000
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+            token().takeIf { it.isNotEmpty() }?.let { conn.setRequestProperty("Authorization", "Bearer $it") }
+            java.io.DataOutputStream(conn.outputStream).use { out ->
+                out.writeBytes("--$boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\n")
+                out.writeBytes("Content-Type: $contentType\r\n\r\n")
+                out.write(bytes)
+                out.writeBytes("\r\n--$boundary--\r\n")
+            }
+            try {
+                val code = conn.responseCode
+                val text = streamText(conn, code)
+                if (code !in 200..299) throw HttpError(code, "HTTP $code")
+                if (text.isBlank()) JSONObject() else unwrap(text)
+            } finally { conn.disconnect() }
+    }
+
     /** 认证下载二进制(带 Bearer 头),用于 PDF 凭证/发票,非 2xx 抛 HttpError。 */
     suspend fun getBytes(path: String): ByteArray = withContext(Dispatchers.IO) {
         val conn = open("GET", path, null)
