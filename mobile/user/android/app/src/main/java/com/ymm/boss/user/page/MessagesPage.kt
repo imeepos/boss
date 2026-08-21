@@ -66,22 +66,7 @@ import org.json.JSONObject
 
 // 对应 docs/user/messages.html:消息中心,GET /messages?category= + POST /messages/read-all。
 // 设计稿:designs/messages-center-v1.png;规格:designs/messages-center-v1.spec.md。
-// 每项:key → label → icon → tint(未选中态胶囊图标色,与消息卡 IconTile 同色族)
-private val CATEGORIES = listOf(
-    CategoryUi("", "全部", Icons.Filled.Circle, Palette.primary),
-    CategoryUi("billing", "账单缴费", Icons.Filled.Circle, Palette.primary),
-    CategoryUi("balance", "余额预警", Icons.Filled.Circle, Palette.orange),
-    CategoryUi("fault", "故障公告", Icons.Filled.Circle, Palette.purple),
-    CategoryUi("promo", "优惠活动", Icons.Filled.Circle, Palette.err),
-)
-
-private data class CategoryUi(
-    val key: String,
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector?,
-    val iconTint: androidx.compose.ui.graphics.Color,
-)
-
+// 分类样式与 utility 全部抽到 MessageCategory.kt,本文件聚焦页面骨架与交互。
 @Composable
 fun MessagesScreen(nav: Nav) {
     var category by remember { mutableStateOf("") }
@@ -136,53 +121,91 @@ fun MessagesScreen(nav: Nav) {
         TopBar("消息中心", onBack = { nav.pop() }, action = "订阅设置", onAction = { nav.push(Route.Notify) })
         SegmentBar(category, totalUnread, unreadByCategory) { category = it }
         SummaryCard(total = items.size, unread = unread, loading = loading, nav = nav)
-        if (markErr != null) {
-            // 标已读失败横幅:全宽红底白字,3 秒自动消失,不抢占列表错误位。
-            AppCard(outer = PaddingValues(vertical = 6.dp), inner = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
-                Text(markErr!!, fontSize = 13.sp, color = Palette.err, modifier = Modifier.fillMaxWidth())
-            }
-        }
-        when {
-            loading -> LoadingState()
-            loadErr != null -> ErrorState(loadErr!!) {
-                category = category // 触发刷新
-            }
-            items.isEmpty() -> AppCard { EmptyState("暂无消息") }
-            else -> items.forEach { m ->
-                val msgId = m.optString("messageId")
-                MessageCard(
+        if (markErr != null) MarkErrBanner(markErr!!)
+        MessagesListBody(
+            loading = loading,
+            loadErr = loadErr,
+            items = items,
+            pendingMsgId = pendingMsgId,
+            onRetry = { category = category },
+            onCardClick = { m ->
+                nav.handleMessageTap(
                     m = m,
-                    loading = pendingMsgId == msgId,
-                    onClick = {
-                        // 已在处理任何卡片:去重,避免重复发请求/跳转
-                        if (pendingMsgId != null) return@MessageCard
-                        val wasRead = m.optBoolean("read")
-                        if (wasRead) {
-                            // 已读直接跳转,不调接口
-                            nav.push(routeOf(m.optString("category")))
-                            return@MessageCard
-                        }
-                        // 未读:先调 API(loading 显示在卡片上),成功后再跳转
-                        pendingMsgId = msgId
-                        scope.launch {
-                            val ok = try {
-                                ProfileApi.readMessage(msgId)
-                                true
-                            } catch (e: Exception) {
-                                android.util.Log.w("MessagesPage", "mark-read failed msgId=$msgId: ${e::class.simpleName} ${e.message}", e)
-                                markErr = "标记已读失败: ${e::class.simpleName}: ${e.message}"
-                                false
-                            }
-                            pendingMsgId = null
-                            if (ok) {
-                                nav.push(routeOf(m.optString("category")))
-                            }
-                        }
-                    },
+                    scope = scope,
+                    onPendingChange = { pendingMsgId = it },
+                    onMarkErr = { markErr = it },
                 )
-            }
-        }
+            },
+        )
         Spacer(Modifier.height(12.dp))
+    }
+}
+
+/** 标已读失败横幅:全宽红底白字,3 秒自动消失,不抢占列表错误位。 */
+@Composable
+private fun MarkErrBanner(text: String) {
+    AppCard(
+        outer = PaddingValues(vertical = 6.dp),
+        inner = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Text(text, fontSize = 13.sp, color = Palette.err, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+/** 列表主体:loading / error / empty / 列表四态。 */
+@Composable
+private fun MessagesListBody(
+    loading: Boolean,
+    loadErr: String?,
+    items: List<JSONObject>,
+    pendingMsgId: String?,
+    onRetry: () -> Unit,
+    onCardClick: (JSONObject) -> Unit,
+) {
+    when {
+        loading -> LoadingState()
+        loadErr != null -> ErrorState(loadErr, onRetry)
+        items.isEmpty() -> AppCard { EmptyState("暂无消息") }
+        else -> items.forEach { m ->
+            MessageCard(
+                m = m,
+                loading = pendingMsgId == m.optString("messageId"),
+                onClick = { onCardClick(m) },
+            )
+        }
+    }
+}
+
+/**
+ * 点击单条消息的行为:
+ *  - 已读 → 直接跳转详情
+ *  - 未读 → 先调 PUT /messages/{id}/read,成功后再跳转;失败显示顶部 markErr 横幅
+ */
+private fun Nav.handleMessageTap(
+    m: JSONObject,
+    scope: kotlinx.coroutines.CoroutineScope,
+    onPendingChange: (String?) -> Unit,
+    onMarkErr: (String) -> Unit,
+) {
+    val msgId = m.optString("messageId")
+    val wasRead = m.optBoolean("read")
+    if (wasRead) {
+        push(routeOf(m.optString("category")))
+        return
+    }
+    onPendingChange(msgId)
+    scope.launch {
+        val ok = try {
+            ProfileApi.readMessage(msgId)
+            true
+        } catch (e: Exception) {
+            android.util.Log.w("MessagesPage",
+                "mark-read failed msgId=$msgId: ${e::class.simpleName} ${e.message}", e)
+            onMarkErr("标记已读失败,请重试")
+            false
+        }
+        onPendingChange(null)
+        if (ok) push(routeOf(m.optString("category")))
     }
 }
 
@@ -288,13 +311,8 @@ private fun StatColumn(
 @Composable
 private fun MessageCard(m: JSONObject, loading: Boolean = false, onClick: () -> Unit) {
     val read = m.optBoolean("read")
-    val titleColor = if (read) Palette.muted else Palette.ink
-    val titleWeight = if (read) FontWeight.W500 else FontWeight.W600
     val contentColor = if (read) Palette.subtle else Palette.muted
-    val tagLevel = m.optString("tagLevel")
-    val tagText = m.optString("tag").ifBlank { categoryLabel(m.optString("category")) }
     val tint = colorOfCategory(m.optString("category"))
-    val icon = iconOfCategory(m.optString("category"))
 
     // 不同 category 视觉区分:
     //  - 未读 = 左 3dp × 全卡高 category 色边框 + 卡片底色用 category 色 4% 浅底
@@ -327,35 +345,7 @@ private fun MessageCard(m: JSONObject, loading: Boolean = false, onClick: () -> 
                 .weight(1f)
                 .padding(14.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconTile(icon, tint, size = 40.dp, corner = 12.dp)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    m.optString("title").ifBlank { "通知" },
-                    fontSize = 14.sp, fontWeight = titleWeight, color = titleColor,
-                    modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-                if (tagText.isNotBlank()) {
-                    Spacer(Modifier.width(8.dp))
-                    Tag(tagText, colorOfTag(tagLevel))
-                }
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    formatTime(m.optString("createdAt")),
-                    fontSize = 12.sp, color = Palette.muted,
-                )
-                if (loading) {
-                    Spacer(Modifier.width(6.dp))
-                    CircularProgressIndicator(
-                        strokeWidth = 1.5.dp,
-                        modifier = Modifier.size(12.dp),
-                        color = Palette.primary,
-                    )
-                } else if (!read) {
-                    Spacer(Modifier.width(6.dp))
-                    Box(Modifier.size(7.dp).background(tint, CircleShape))
-                }
-            }
+            MessageCardHeader(m = m, tint = tint, loading = loading)
             if (m.optString("content").isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
                 Text(
@@ -364,6 +354,47 @@ private fun MessageCard(m: JSONObject, loading: Boolean = false, onClick: () -> 
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+    }
+}
+
+/** 卡片头部:icon + 标题 + tag + 相对时间 + (loading OR 未读点) */
+@Composable
+private fun MessageCardHeader(m: JSONObject, tint: Color, loading: Boolean) {
+    val read = m.optBoolean("read")
+    val titleColor = if (read) Palette.muted else Palette.ink
+    val titleWeight = if (read) FontWeight.W500 else FontWeight.W600
+    val tagLevel = m.optString("tagLevel")
+    val tagText = m.optString("tag").ifBlank { categoryLabel(m.optString("category")) }
+    val icon = iconOfCategory(m.optString("category"))
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconTile(icon, tint, size = 40.dp, corner = 12.dp)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            m.optString("title").ifBlank { "通知" },
+            fontSize = 14.sp, fontWeight = titleWeight, color = titleColor,
+            modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        if (tagText.isNotBlank()) {
+            Spacer(Modifier.width(8.dp))
+            Tag(tagText, colorOfTag(tagLevel))
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            formatTime(m.optString("createdAt")),
+            fontSize = 12.sp, color = Palette.muted,
+        )
+        if (loading) {
+            Spacer(Modifier.width(6.dp))
+            CircularProgressIndicator(
+                strokeWidth = 1.5.dp,
+                modifier = Modifier.size(12.dp),
+                color = Palette.primary,
+            )
+        } else if (!read) {
+            Spacer(Modifier.width(6.dp))
+            Box(Modifier.size(7.dp).background(tint, CircleShape))
         }
     }
 }
@@ -390,62 +421,4 @@ private fun ErrorState(msg: String, onRetry: () -> Unit) {
             Text("点击重试", fontSize = 13.sp, color = Palette.primary)
         }
     }
-}
-
-private fun routeOf(category: String): Route = when (category) {
-    "balance" -> Route.Topup
-    "fault" -> Route.Fault
-    "promo" -> Route.Coupon
-    "billing" -> Route.Bills
-    else -> Route.Bills
-}
-
-private fun colorOfCategory(category: String): Color = when (category) {
-    "billing" -> Palette.primary
-    "balance" -> Palette.orange
-    "fault" -> Palette.purple
-    "promo" -> Palette.err
-    else -> Palette.muted
-}
-
-private fun iconOfCategory(category: String): ImageVector = when (category) {
-    "billing" -> Icons.Outlined.Receipt
-    "balance" -> Icons.Outlined.Notifications
-    "fault" -> Icons.Outlined.Build
-    "promo" -> Icons.Outlined.LocalOffer
-    else -> Icons.Outlined.Notifications
-}
-
-private fun colorOfTag(tagLevel: String): Color = when (tagLevel) {
-    "balance", "bill", "billing" -> Palette.orange
-    "promo" -> Palette.err
-    "fault" -> Palette.purple
-    "info" -> Palette.primary
-    else -> Palette.muted
-}
-
-private fun categoryLabel(category: String): String = when (category) {
-    "billing" -> "账单缴费"
-    "balance" -> "余额预警"
-    "fault" -> "故障公告"
-    "promo" -> "优惠活动"
-    else -> "通知"
-}
-
-// createdAt 为 ISO8601 字符串时转为相对时间;解析失败原样返回。
-private fun formatTime(raw: String): String {
-    if (raw.isBlank()) return ""
-    return try {
-        val instant = java.time.Instant.parse(raw)
-        val now = java.time.Instant.now()
-        val mins = java.time.Duration.between(instant, now).toMinutes()
-        when {
-            mins < 1 -> "刚刚"
-            mins < 60 -> "${mins}分钟前"
-            mins < 60 * 24 -> "${mins / 60}小时前"
-            mins < 60 * 24 * 7 -> "${mins / (60 * 24)}天前"
-            else -> java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
-                .format(java.time.format.DateTimeFormatter.ofPattern("MM-dd"))
-        }
-    } catch (e: Exception) { raw }
 }
