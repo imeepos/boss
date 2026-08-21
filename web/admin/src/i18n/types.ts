@@ -158,6 +158,7 @@ export interface Translations {
       saveFail: string
       empty: string
       retire: string
+      retireConfirm: string
       warn: string
       gridCode: string
       name: string

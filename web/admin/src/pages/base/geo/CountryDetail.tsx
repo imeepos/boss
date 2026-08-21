@@ -7,6 +7,7 @@ import { ToolbarButton } from '../../../components/business/page-head'
 import { Input } from '../../../components/ui/input'
 import type { CountryRow } from './CountryForm'
 import { FORM, FIELD, FIELD_FULL, LABEL } from './styles'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export interface CountryDetailData extends CountryRow {
   names: { locale: string; name: string; nameType: string }[]
@@ -26,6 +27,7 @@ export function CountryDetail({ data, onChanged, onClose }: {
 }) {
   const t = useT()
   const g = t.pages.geo
+  const confirmDialog = useConfirm()
   const [locale, setLocale] = useState('zh-Hans')
   const [name, setName] = useState('')
   const [tz, setTz] = useState(data.attrs.timeZones.join(', '))
@@ -43,6 +45,7 @@ export function CountryDetail({ data, onChanged, onClose }: {
   }
 
   const removeName = async (loc: string, nameType: string) => {
+    if (!(await confirmDialog(g.deleteNameConfirm, { danger: true }))) return
     await apiFetch(`/geo/countries/${data.alpha2}/names/${loc}/${nameType}`, { method: 'DELETE' })
     onChanged()
   }

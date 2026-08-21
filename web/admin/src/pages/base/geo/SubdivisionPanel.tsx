@@ -12,6 +12,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { StatusTag } from './CountryPanel'
 import type { CountryRow } from './CountryForm'
 import { CARD, TOOLBAR, SPACER, TABLE_WRAP, FOOTER, FORM, FIELD, FIELD_FULL, LABEL, REQ } from './styles'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export interface SubdivRow {
   code: string
@@ -269,6 +270,7 @@ function NumField({ label, value, onChange }: {
 function SubdivNames({ code, onClose }: { code: string; onClose: () => void }) {
   const t = useT()
   const g = t.pages.geo
+  const confirmDialog = useConfirm()
   const [names, setNames] = useState<NameRow[]>([])
   const [locale, setLocale] = useState('zh-Hans')
   const [name, setName] = useState('')
@@ -291,6 +293,7 @@ function SubdivNames({ code, onClose }: { code: string; onClose: () => void }) {
   }
 
   const remove = async (loc: string, nameType: string) => {
+    if (!(await confirmDialog(g.deleteNameConfirm, { danger: true }))) return
     await apiFetch(`/geo/subdivisions/${code}/names/${loc}/${nameType}`, { method: 'DELETE' })
     load()
   }

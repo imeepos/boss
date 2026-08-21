@@ -7,6 +7,7 @@ import { PageHead } from '../shared'
 import { ApiKeyFormDrawer, type ApiKeyFormValues } from './KeyForm'
 import { buildCreatePayload } from './payload'
 import { formatTime } from '../../base/audit/logic'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export interface ApiKeyRow {
   id: number
@@ -22,6 +23,7 @@ export interface ApiKeyRow {
 
 export default function ApiKeyPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const [rows, setRows] = useState<ApiKeyRow[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -29,7 +31,6 @@ export default function ApiKeyPage() {
   const [formError, setFormError] = useState('')
   const [plainKey, setPlainKey] = useState('')
   const [busy, setBusy] = useState(false)
-  const [revokeId, setRevokeId] = useState<number>(0)
 
   const load = () => {
     setError('')
@@ -58,16 +59,15 @@ export default function ApiKeyPage() {
     }
   }
 
-  const revoke = async () => {
-    if (!revokeId || busy) return
+  const revoke = async (id: number) => {
+    if (busy) return
+    if (!(await confirmDialog(t.pages.apikey.revokeConfirm, { danger: true }))) return
     setBusy(true)
     try {
-      await apiFetch(`/api-keys/${revokeId}`, { method: 'DELETE' })
-      setRevokeId(0)
+      await apiFetch(`/api-keys/${id}`, { method: 'DELETE' })
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : t.pages.apikey.loadFail)
-      setRevokeId(0)
     } finally {
       setBusy(false)
     }
@@ -105,7 +105,7 @@ export default function ApiKeyPage() {
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                   {r.status === 1 && (
                     <span className="inline-flex items-center">
-                      <button onClick={() => setRevokeId(r.id)}>{t.pages.apikey.revoke}</button>
+                      <button disabled={busy} onClick={() => revoke(r.id)}>{t.pages.apikey.revoke}</button>
                     </span>
                   )}
                 </td>
@@ -135,19 +135,6 @@ export default function ApiKeyPage() {
         </div>
       )}
 
-      {revokeId > 0 && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45">
-          <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5">
-            <p>{t.pages.apikey.revokeConfirm}</p>
-            <div className="flex justify-end gap-2">
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setRevokeId(0)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={revoke}>
-                {busy ? t.pages.account.submitting : t.pages.apikey.revoke}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

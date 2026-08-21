@@ -213,7 +213,7 @@ const zhCN: Translations = {
     odn: {
       title: 'ODN 无源网络', subtitle: '网格分区 · 基础设施 · 局点与核心链路设备',
       tabs: { grids: '网格分区', facilities: '基础设施', sites: '局点', devices: '核心设备' },
-      add: '新增', cancel: '取消', save: '保存', saving: '保存中…', loadFail: '加载失败', saveFail: '保存失败', empty: '暂无数据', retire: '退役', warn: '容量预警',
+      add: '新增', cancel: '取消', save: '保存', saving: '保存中…', loadFail: '加载失败', saveFail: '保存失败', empty: '暂无数据', retire: '退役', retireConfirm: '确认退役该 ODN 资源?退役后不可恢复。', warn: '容量预警',
       gridCode: '网格码', name: '名称', coverage: '覆盖区域', usage: '占用', status: '状态', actions: '操作', code: '编码', kind: '类型', nodeCode: 'NodeCode', siteNo: '局点序号', parentId: '上级 ID', deviceCode: '设备编码', deviceKind: '设备类型',
     },
     importer: {

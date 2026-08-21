@@ -11,6 +11,7 @@ import { useT } from '../../i18n'
 import { ToolbarButton } from '../../components/business/page-head'
 import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 const PAGE = 'border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6 shadow-[var(--shell-card-shadow)] md:p-8'
 const BOX = 'grid gap-[7px] border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] p-4.5'
@@ -188,6 +189,7 @@ interface OwnKeyRow {
 function ApiKeySection() {
   const t = useT()
   const k = t.pages.profile.apiKey
+  const confirmDialog = useConfirm()
   const profile = useProfile()
   const [rows, setRows] = useState<OwnKeyRow[]>([])
   const [error, setError] = useState('')
@@ -220,8 +222,9 @@ function ApiKeySection() {
       .finally(() => setBusy(false))
   }
 
-  const revoke = (id: number) => {
+  const revoke = async (id: number) => {
     if (busy) return
+    if (!(await confirmDialog(t.pages.profile.apiKey.revokeConfirm, { danger: true }))) return
     setBusy(true)
     apiFetch(`/api-keys/${id}`, { method: 'DELETE' })
       .then(load)

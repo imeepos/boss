@@ -5,6 +5,7 @@ import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
 const FIELD = 'flex flex-col gap-1'
@@ -27,6 +28,7 @@ function CityFilter({ prv, city, setPrv, setCity }: FilterProps) {
 export default function ODNPage() {
   const t = useT()
   const g = t.pages.odn
+  const confirmDialog = useConfirm()
   const [tab, setTab] = useState<Tab>('grids')
   const [prv, setPrv] = useState('PHL001')
   const [city, setCity] = useState('MNL')
@@ -57,6 +59,7 @@ export default function ODNPage() {
   }
 
   const retire = async (path: string) => {
+    if (!(await confirmDialog(g.retireConfirm, { danger: true }))) return
     setBusy(true); setError('')
     try { await apiFetch(path, { method: 'DELETE', query: { prvCode: prv, cityPrefix: city } }); await load() } catch { setError(g.saveFail) } finally { setBusy(false) }
   }
