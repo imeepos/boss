@@ -1,8 +1,7 @@
 # 102 服务器应用部署版:boss 业务进程,依赖 docker-compose.102.yml 基础设施。
-# 镜像走私有仓库 192.168.0.102:5000/boss/server;配置默认值即 102 基础设施(config.Load)。
-# 密钥(JWT/超管引导密码等)统一走 env 文件:cp app.env.example app.env 后填写,
-# environment 段只保留非密默认值(app.env 中的同名变量按 compose 规则会被 environment 覆盖,
-# 故需要覆盖默认值时取消 app.env 注释并同步清掉 environment 对应行)。
+# 镜像走私有仓库 192.168.0.102:5000/boss/server;全部配置内联 environment 段,
+# 不依赖 env_file——CI runner working_dir 与宿主机不一致会导致 env_file 读不到。
+# JWT 密钥固定不变,轮换会使全部登录 token 失效。
 services:
   server:
     image: 192.168.0.102:5000/boss/server:latest
@@ -11,11 +10,12 @@ services:
     ports:
       - "28080:8080" # HTTP(/healthz /metrics /api)
       - "29090:9090" # gRPC
-    env_file:
-      - app.env
     environment:
       BOSS_PG_DSN: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
       BOSS_KAFKA_BROKERS: "192.168.0.102:29092"
+      BOSS_JWT_SECRET: "sjb3jaoqhtWPAErtglyE2TqDiMc1j7oYXx5+IjmE+M5pdQ16V/Wrc5MUBIOZwYdt"
+      BOSS_ADMIN_USERNAME: "admin"
+      BOSS_ADMIN_PASSWORD: "admin123"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 15s
