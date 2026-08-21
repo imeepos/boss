@@ -102,6 +102,27 @@
      位图看着"塞得下"不代表物理机能塞下。
 - **再犯标记**：无（首犯）。
 
+### D5. 套餐详情页"对比为空"——后端硬编码假数据(2025-08-21 真机回归)
+- **触发**：用户装机看 product detail 页，发现"套餐对比"卡片显示"暂无可比套餐"EmptyState，
+  设计稿承诺的 2-3 个同类对比行完全没渲染。
+- **根因**：`internal/httpapi/user/trade.go::portalProductDetail` 把 `specs` 硬编码成 1 行
+  (`{"label":"带宽","value":p.Bandwidth}`)、`compare` 硬编码成 `[]any{}` 空数组——前端永远拿不到对比。
+  同样地 `description` 字段未返回,前端 `Notice("—")` 占位。
+  **前端开发完了,但后端是空壳**——这种"前后端分头写"的盲区,前一任务只校验了编译+render 冒烟,
+  没真发请求看响应。
+- **修法**:把详情 endpoint 改成从 `ProductOffer` 真实字段派生 specs/description/compare,
+  DB 未建模的字段(合约月数/安装费/设备/适用范围)按 category 规则文案占位。
+  compare = 同 category 下最多 3 个 PUBLISHED 同类产品(排除自己)。
+  新增 `TestPortal_ProductDetail` 注入 3 宽带 + 1 fusion + 1 草稿,
+  验证:6 项 specs 全有值 / description 非空 / compare 2 个(排除自己+排除 fusion)/
+  草稿产品 404。
+- **规则**(沉淀):
+  1. **写"详情/对比/列表"类页面前,必须先发真请求看后端实际响应**——不能看 schema / 看代码默认值就假设有数据。
+  2. **后端硬编码空数组/空字符串/硬编码占位值,前端拿到的就是空壳**——发现 empty data 必须顺着数据链路反查后端,
+     不能在前端加 fallback 文案了事(掩盖问题,用户更困惑)。
+  3. **新增 endpoint 必须配套测试验证派生逻辑**——`TestPortal_ProductDetail` 这一条堵的就是"硬编码占位永远跑过编译"。
+- **再犯标记**:无(首犯,新类型)。
+
 ## B. spec 完备性（提示词 / 注意事项遗漏）追加
 
 - 2025-08-20 profile v2-v7（用户反馈）：生图 prompt 写得越细效果越差。我把 dp 数值、行高、

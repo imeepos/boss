@@ -51,6 +51,12 @@ func (f *userPortalWo) ListComplaints(context.Context) ([]order.Complaint, error
 }
 
 func newUserPortalRouter(cust *customer.Customer, bills []billing.Bill, byNo *order.Order) (*gin.Engine, *auth.Manager, *userPortalWo) {
+	return newUserPortalRouterWithProducts(cust, bills, byNo, nil)
+}
+
+// newUserPortalRouterWithProducts 在 newUserPortalRouter 基础上支持注入产品目录列表。
+// tests/product detail 需要真实 PUBLISHED 产品列表验证 specs/compare 派生逻辑。
+func newUserPortalRouterWithProducts(cust *customer.Customer, bills []billing.Bill, byNo *order.Order, products []customer.ProductOffer) (*gin.Engine, *auth.Manager, *userPortalWo) {
 	gin.SetMode(gin.TestMode)
 	mgr := auth.NewManager("test-secret", time.Hour)
 	wo := &userPortalWo{}
@@ -60,12 +66,14 @@ func newUserPortalRouter(cust *customer.Customer, bills []billing.Bill, byNo *or
 		CustomerRealName: &fakeRealName{},
 		Billing:          &fakeBilling{bills: bills},
 		Order:            &fakeOrder{byNo: byNo},
-		Product:          &fakeProduct{},
+		Product:          &fakeProduct{list: products},
 		WorkOrder:        wo,
 		Portal:           portal.NewMemory(),
 	}, mgr)
 	return r, mgr, wo
 }
+
+// (none)
 
 func userPortalCust() *customer.Customer {
 	return &customer.Customer{ID: 7, Name: "王先生", Phone: "13800001234",
@@ -351,5 +359,66 @@ func TestPortal_VerifySubmitFlow(t *testing.T) {
 	if code, data := userPortalCode(t, w); code != 0 || data["phoneMasked"] != "138****1234" ||
 		data["latestResult"] == nil || data["rejectReason"] == nil {
 		t.Fatalf("status resp=%s", w.Body.String())
+	}
+}
+
+// TestPortal_ProductDetail 套餐详情:真实 PUBLISHED 产品必须返回非空 specs/description/compare,
+// 不再依赖前端文案占位——后端从 ProductOffer 派生,客户端契约字段齐备即可直接渲染。
+func TestPortal_ProductDetail(t *testing.T) {
+	cust := userPortalCust()
+	r, mgr, _ := newUserPortalRouterWithProducts(cust, nil, nil, []customer.ProductOffer{
+		{ID: 1, LegalEntityID: 1, Name: "300M 畅享宽带", Bandwidth: "300M", MonthlyFee: 99.00, Category: "broadband", Status: "PUBLISHED"},
+		{ID: 2, LegalEntityID: 1, Name: "500M 极速宽带", Bandwidth: "500M", MonthlyFee: 129.00, Category: "broadband", Status: "PUBLISHED"},
+		{ID: 3, LegalEntityID: 1, Name: "200M 入门宽带", Bandwidth: "200M", MonthlyFee: 79.00, Category: "broadband", Status: "PUBLISHED"},
+		{ID: 4, LegalEntityID: 1, Name: "5G 融合套餐", Bandwidth: "1Gbps", MonthlyFee: 199.00, Category: "fusion", Status: "PUBLISHED"},
+		{ID: 5, LegalEntityID: 1, Name: "草稿产品", Bandwidth: "1000M", MonthlyFee: 299.00, Category: "broadband", Status: "DRAFT"},
+	})
+	tok, _ := signCustomerToken(mgr, cust.ID, cust.Phone)
+
+	// 命中 PUBLISHED:6 项 specs 全有值、description 非空、compare 含同 category 候选且排除自己。
+	w := userPortalDo(r, http.MethodGet, "/api/user/v1/products/1", "", tok)
+	code, data := userPortalCode(t, w)
+	if code != 0 {
+		t.Fatalf("code=%d resp=%s", code, w.Body.String())
+	}
+	specs, _ := data["specs"].([]any)
+	if len(specs) != 5 {
+		t.Fatalf("specs len=%d want 5", len(specs))
+	}
+	for i, s := range specs {
+		m := s.(map[string]any)
+		if m["label"] == nil || m["value"] == nil {
+			t.Fatalf("spec[%d] missing label/value", i)
+		}
+	}
+	prod := data["product"].(map[string]any)
+	if prod["description"] == "" {
+		t.Fatalf("product.description empty, want derived text")
+	}
+	if prod["contractMonths"].(float64) != 12 {
+		t.Fatalf("contractMonths=%v want 12 for broadband", prod["contractMonths"])
+	}
+	if prod["featured"] != true {
+		t.Fatalf("featured=%v want true for fee=99", prod["featured"])
+	}
+	compare, _ := data["compare"].([]any)
+	if len(compare) != 2 {
+		t.Fatalf("compare len=%d want 2 (excludes self id=1 + excludes fusion)", len(compare))
+	}
+	for _, c := range compare {
+		cm := c.(map[string]any)
+		if cm["productId"] == "1" {
+			t.Fatalf("compare contains self id=1")
+		}
+		if cm["category"] != "broadband" {
+			t.Fatalf("compare contains non-broadband: %v", cm)
+		}
+	}
+
+	// 草稿产品 404:detail 只暴露 PUBLISHED,草稿不可见。
+	w = userPortalDo(r, http.MethodGet, "/api/user/v1/products/5", "", tok)
+	code, _ = userPortalCode(t, w)
+	if code != int(apitypes.CodeNotFound) {
+		t.Fatalf("draft code=%d resp=%s", code, w.Body.String())
 	}
 }
