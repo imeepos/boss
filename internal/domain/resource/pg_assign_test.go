@@ -102,6 +102,9 @@ func TestPGStore_CreateQosTemplate(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK 校验:legal entity 存在。
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM legal_entities WHERE id = \$1\)`).
+		WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO qos_templates`).
 		WithArgs(int64(1), "QoS-VIP", "VIP").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
