@@ -1,9 +1,12 @@
 package workerapi
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -49,6 +52,14 @@ func registerWorkerSelfRegistration(pub *gin.RouterGroup, a *app.Application) {
 		if err != nil {
 			respondErr(c, err)
 			return
+		}
+		// 后台待办提醒:师傅注册待审核(docs/plan/admin-notify-center.md §4)。
+		if a.Notify != nil {
+			_ = a.Notify.Emit(c.Request.Context(), notify.Input{
+				Category: notify.CategoryTodo, Level: notify.LevelWarn,
+				Title: "师傅注册待审核:" + req.Name, RefType: "worker_reg",
+				RefID: strconv.FormatInt(id, 10), Link: "/boss/worker-reg",
+			})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": worker.RegStatusPending})
 	})

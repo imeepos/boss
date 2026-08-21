@@ -1,6 +1,8 @@
 package adminapi
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -45,6 +47,8 @@ func registerTaxRoutes(g *gin.RouterGroup, a *app.Application) {
 			return
 		}
 		httpx.RecordAudit(a, c, "billing.run", "period", body.Period, gin.H{"bills": n, "issued": run.Issued})
+		emitTask(c.Request.Context(), a, refBilling, "run-"+body.Period,
+			"出账完成:"+body.Period+" "+strconv.Itoa(n)+" 张账单/"+strconv.Itoa(run.Issued)+" 张发票", linkBilling, false)
 		respond(c, apitypes.CodeOK, gin.H{"bills": n, "invoices": run})
 	})
 

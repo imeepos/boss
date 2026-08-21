@@ -2,6 +2,9 @@ package adminapi
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -37,6 +40,8 @@ func registerGeoImportRoute(g *gin.RouterGroup, a *app.Application) {
 				"countries": counts.Countries, "countryNames": counts.CountryNames,
 				"subdivisions": counts.Subdivisions, "subdivisionNames": counts.SubdivisionNames,
 			})
+		emitTask(c.Request.Context(), a, refImporter, "geo-"+fmt.Sprint(time.Now().Unix()),
+			"geo 导入完成:"+strconv.Itoa(int(counts.Countries+counts.Subdivisions))+" 行", linkImporter, false)
 		respond(c, apitypes.CodeOK, counts)
 	})
 }

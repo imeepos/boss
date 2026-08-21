@@ -5,6 +5,7 @@ package adminapi
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -125,6 +126,8 @@ func registerReportRoutes(g *gin.RouterGroup, a *app.Application) {
 			respondErr(c, err)
 			return
 		}
+		emitTask(c.Request.Context(), a, refReport, strconv.FormatInt(snap.ID, 10),
+			"报告已推送:"+snap.Period, linkReport, false)
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 }

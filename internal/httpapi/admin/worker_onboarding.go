@@ -1,6 +1,7 @@
 package adminapi
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -49,6 +50,7 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 		}
 		httpx.RecordAudit(a, c, "worker_registration.approve", "worker_registration", c.Param("id"),
 			gin.H{"workerId": workerID, "groupId": req.GroupID, "regionId": req.RegionID})
+		resolveTodo(c.Request.Context(), a, refWorkerReg, strconv.FormatInt(id, 10))
 		respond(c, apitypes.CodeOK, gin.H{"workerId": workerID, "status": worker.RegStatusApproved})
 	})
 
@@ -69,6 +71,7 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 		}
 		httpx.RecordAudit(a, c, "worker_registration.reject", "worker_registration", c.Param("id"),
 			gin.H{"note": req.Note})
+		resolveTodo(c.Request.Context(), a, refWorkerReg, strconv.FormatInt(id, 10))
 		respond(c, apitypes.CodeOK, gin.H{"status": worker.RegStatusRejected})
 	})
 

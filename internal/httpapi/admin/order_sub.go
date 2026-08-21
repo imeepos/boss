@@ -29,6 +29,7 @@ func registerOrderSubRoutes(g *gin.RouterGroup, a *app.Application) {
 			return
 		}
 		httpx.RecordAudit(a, c, "org.update", "complaint", c.Param("ticketNo"), map[string]any{"op": "close"})
+		resolveTodo(c.Request.Context(), a, refComplaint, c.Param("ticketNo"))
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 

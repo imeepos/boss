@@ -21,6 +21,8 @@ type Daemon struct {
 	exec Executor
 	// claim 前置:任务从 PENDING 占位为 DOING 由 ExecuteTask 首段完成,这里先执行后落账。
 	interval time.Duration
+	// OnDone 任务终态回调(成功/失败各一次);nil=不通知。wiring 层接 notify 域。
+	OnDone func(ctx context.Context, t Task, execErr error)
 }
 
 // NewDaemon 构造守护进程;interval 为轮询周期。
@@ -57,10 +59,21 @@ func (d *Daemon) tick(ctx context.Context) {
 			if failErr := d.svc.FailTask(ctx, t.ID, err.Error()); failErr != nil {
 				log.Printf("provision daemon: fail task %d: %v", t.ID, failErr)
 			}
+			d.notifyDone(ctx, t, err)
 			continue
 		}
 		if err := d.svc.ExecuteTask(ctx, t.ID); err != nil {
 			log.Printf("provision daemon: execute task %d: %v", t.ID, err)
+			continue
 		}
+		d.notifyDone(ctx, t, nil)
 	}
+}
+
+// notifyDone 触发终态回调;回调自身异常只记日志。
+func (d *Daemon) notifyDone(ctx context.Context, t Task, execErr error) {
+	if d.OnDone == nil {
+		return
+	}
+	d.OnDone(ctx, t, execErr)
 }

@@ -5,7 +5,9 @@ package adminapi
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -173,6 +175,8 @@ func registerAddressRoutes(g *gin.RouterGroup, a *app.Application) {
 			return
 		}
 		_ = a.User.RecordImportTask(c.Request.Context(), "addresses", httpx.ClaimsAccountID(c), int(imported), 0, nil)
+		emitTask(c.Request.Context(), a, refImporter, "addr-"+fmt.Sprint(time.Now().Unix()),
+			"地址导入完成:"+strconv.Itoa(int(imported))+" 行", linkImporter, false)
 		respond(c, apitypes.CodeOK, gin.H{"imported": imported})
 	})
 }
