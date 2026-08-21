@@ -171,7 +171,7 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 	s := NewPGStore(pool)
 	cleanup := func() {
 		pool.Exec(ctx, `DELETE FROM odn_device WHERE prv_code='PHL001' AND city_prefix='MNL'
-			AND code IN ('SNW990','OLT990','OCC990','ODB990','ODB990-2','SDB990')`)
+			AND code IN ('SNW990','OLT990','OLT991','OCC990','ODB990','ODB990-2','SDB990')`)
 		pool.Exec(ctx, `DELETE FROM odn_site WHERE prv_code='PHL001' AND city_prefix='MNL' AND site_no=998`)
 	}
 	cleanup()
@@ -191,6 +191,11 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 	if err := s.CreateDevice(ctx, Device{Code: "SNW990", Kind: DevSNW,
 		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 998}); err != nil {
 		t.Fatalf("CreateDevice SNW990: %v", err)
+	}
+	// E16:site_no 无 FK,域层守护——挂未备案局点必须拒绝。
+	if err := s.CreateDevice(ctx, Device{Code: "OLT991", Kind: DevOLT,
+		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 997}); err == nil {
+		t.Fatal("OLT 挂未备案局点 997 应拒绝(ErrSiteMissing)")
 	}
 	if err := s.CreateDevice(ctx, Device{Code: "OCC990", Kind: DevOCC,
 		PrvCode: "PHL001", CityPrefix: "MNL"}); err != nil {

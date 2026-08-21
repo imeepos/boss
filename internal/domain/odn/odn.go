@@ -20,6 +20,8 @@ var (
 	ErrGridFull = errors.New("odn: grid full")
 	// ErrRetired 编码已报废,永久锁定禁止复用(资产编码规范红线 2)。
 	ErrRetired = errors.New("odn: code retired")
+	// ErrSiteMissing 局点未备案或已退役(E16:site_no 无 FK,域层守护归属链)。
+	ErrSiteMissing = errors.New("odn: site not registered")
 )
 
 // Kind 基础设施类型(规范 4.2)。

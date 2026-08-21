@@ -73,6 +73,17 @@ func (s *PGStore) CreateDevice(ctx context.Context, d Device) error {
 func (s *PGStore) insertTopDevice(ctx context.Context, d Device) error {
 	var siteNo any
 	if d.SiteNo > 0 {
+		// E16:site_no 无 FK(复合主键无法单列 FK),域层校验局点已备案且在用。
+		var siteOK bool
+		err := s.db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM odn_site
+			WHERE prv_code=$1 AND city_prefix=$2 AND site_no=$3 AND status='ACTIVE')`,
+			d.PrvCode, d.CityPrefix, d.SiteNo).Scan(&siteOK)
+		if err != nil {
+			return fmt.Errorf("odn: check site: %w", err)
+		}
+		if !siteOK {
+			return fmt.Errorf("%w: %s %s/%03d", ErrSiteMissing, d.PrvCode, d.CityPrefix, d.SiteNo)
+		}
 		siteNo = d.SiteNo
 	}
 	_, err := s.db.Exec(ctx, `INSERT INTO odn_device (code, kind, prv_code, city_prefix, site_no, name)
