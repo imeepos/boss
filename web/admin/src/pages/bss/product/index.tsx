@@ -10,6 +10,7 @@ import type { ProductRow } from './types'
 import { fmtTime } from '../../../lib/format'
 import { fmtFee, PriceHistoryDrawer } from './PriceHistoryDrawer'
 import { emptyProductForm, ProductFormDrawer, type ProductFormValues } from './ProductForm'
+import { TableStateRow } from '../../../components/business'
 
 function pageSlice<T>(rows: T[], page: number, pageSize: number): T[] {
   return rows.slice((page - 1) * pageSize, page * pageSize)
@@ -109,7 +110,7 @@ export default function ProductPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{p.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={p.empty} />}
               </tbody>
             </table>
           </div>

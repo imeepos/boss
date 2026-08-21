@@ -8,6 +8,7 @@ import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { TableStateRow, EmptyState } from '../../../components/business'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
 
@@ -92,7 +93,7 @@ export default function ReportPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={r.empty} />}
               </tbody>
             </table>
           </div>
@@ -108,7 +109,7 @@ export default function ReportPage() {
             {t.pages.company.cancel}
           </button>}>
           {viewError ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{viewError}</div> : !view ? (
-            <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.viewEmpty}</div>
+            <EmptyState text={r.viewEmpty} />
           ) : (
             <div className="flex flex-col gap-2.5">
               <div className="flex gap-3 text-[13px]"><span className="w-24 flex-none text-[var(--shell-group-title)]">{r.generatedAtLabel}</span>

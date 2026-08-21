@@ -9,6 +9,7 @@ import { NoticesTab } from '../message/NoticesTab'
 import { pageSlice } from '../types'
 import type { DispatchTicketRow } from '../types'
 import type { MaintenanceRow } from '../../oss/types'
+import { TableStateRow } from '../../../components/business'
 
 export default function WorkerOpsPage() {
   const t = useT()
@@ -76,7 +77,7 @@ export default function WorkerOpsPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.reason || '—'}</td>
                   </tr>
                 ))}
-                {!maintSlice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{w.empty}</div></td></tr>}
+                {!maintSlice.length && <TableStateRow colSpan={7} text={w.empty} />}
               </tbody>
             </table>
           </div>
@@ -100,7 +101,7 @@ export default function WorkerOpsPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="ticket" value={x.status} /></td>
                   </tr>
                 ))}
-                {!hallSlice.length && <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{w.empty}</div></td></tr>}
+                {!hallSlice.length && <TableStateRow colSpan={5} text={w.empty} />}
               </tbody>
             </table>
           </div>

@@ -10,6 +10,7 @@ import { DetailDrawer } from '../../org/shared'
 import { filterAccounts, pageSlice, type AccountRow } from './list'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from './form'
 import { AccountFormDrawer } from './AccountForm'
+import { TableStateRow } from '../../../components/business'
 
 export default function AccountListPage() {
   const t = useT()
@@ -147,7 +148,7 @@ export default function AccountListPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={9} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.account.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={9} loading={busy} text={t.pages.account.empty} />}
               </tbody>
             </table>
           </div>

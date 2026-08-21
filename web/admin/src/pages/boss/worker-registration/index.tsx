@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { fmtTime } from '../../../lib/format'
+import { EmptyState } from '../../../components/business'
 
 interface WorkerRegistrationRow {
   id: number
@@ -123,7 +124,7 @@ export default function WorkerRegistrationPage() {
                 ))}
                 {!rows.length && (
                   <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                    <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{w.empty}</div>
+                    <EmptyState text={w.empty} />
                   </td></tr>
                 )}
               </tbody>

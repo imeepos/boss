@@ -7,6 +7,7 @@ import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterPosts, pageSlice, type PostRow } from './filter'
 import { PostFormDrawer, emptyPostForm, rowToPostForm, type PostFormValues } from './PostForm'
 import { Pagination } from '../../../components/Pagination'
+import { TableStateRow } from '../../../components/business'
 
 export default function PostPage() {
   const t = useT()
@@ -81,7 +82,7 @@ export default function PostPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.post.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={5} loading={busy} text={t.pages.post.empty} />}
               </tbody>
             </table>
           </div>

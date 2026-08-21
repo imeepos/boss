@@ -7,6 +7,7 @@ import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ProvisionTemplateRow } from '../types'
 import type { LegalEntityRow } from '../../org/company/filter'
 import { TemplateForm } from './TemplateForm'
+import { TableStateRow } from '../../../components/business'
 
 export default function ProvisionTemplatePage() {
   const t = useT()
@@ -59,7 +60,7 @@ export default function ProvisionTemplatePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.name}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{p.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={4} loading={busy} text={p.empty} />}
               </tbody>
             </table>
           </div>

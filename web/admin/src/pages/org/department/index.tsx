@@ -7,6 +7,7 @@ import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterDepartments, pageSlice, type DepartmentRow } from './filter'
 import { DeptFormDrawer, emptyDeptForm, rowToDeptForm, type DeptFormValues } from './DeptForm'
 import { Pagination } from '../../../components/Pagination'
+import { TableStateRow } from '../../../components/business'
 
 export default function DepartmentPage() {
   const t = useT()
@@ -79,7 +80,7 @@ export default function DepartmentPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={3} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.department.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={3} loading={busy} text={t.pages.department.empty} />}
               </tbody>
             </table>
           </div>

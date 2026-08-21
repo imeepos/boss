@@ -10,6 +10,7 @@ import { ResourcePicker } from '../../../components/ResourcePicker'
 import { pageSlice, type DismantleRow, type OrderListRow } from '../types'
 import type { AssetRow } from '../../ams/types'
 import type { PortRow } from '../../oss/types'
+import { TableStateRow } from '../../../components/business'
 
 export default function DismantlePage() {
   const t = useT()
@@ -83,7 +84,7 @@ export default function DismantlePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
               </tbody>
             </table>
           </div>

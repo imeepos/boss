@@ -6,6 +6,7 @@ import { PageHead, pagerTexts } from '../org/shared'
 import { Pagination } from '../../components/Pagination'
 import { fmtTime } from '../../lib/format'
 import { pageSlice, type AuthLogRow, type CdrRow } from '../quad/types'
+import { TableStateRow } from '../../components/business'
 
 export default function AaaLogPage() {
   const t = useT()
@@ -75,7 +76,7 @@ export default function AaaLogPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.startedAt)}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={a.empty} />}
               </tbody>
             </table>
           </div>
@@ -91,7 +92,7 @@ export default function AaaLogPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.createdAt)}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={3} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={3} loading={busy} text={a.empty} />}
               </tbody>
             </table>
           </div>

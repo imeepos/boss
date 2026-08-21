@@ -88,7 +88,19 @@ fun MessagesScreen(nav: Nav) {
     var items by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var loadErr by remember { mutableStateOf<String?>(null) }
+    // pendingMsgId:正在调用单条已读接口的 messageId,用于卡片显示 loading 与去重点击。
+    var pendingMsgId by remember { mutableStateOf<String?>(null) }
+    // markErr:点击标已读失败的瞬时错误(顶部红条 3 秒自动消失),不抢占列表错误位。
+    var markErr by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    // markErr 自动清除:出现后 3s 淡出,避免阻塞后续操作。
+    LaunchedEffect(markErr) {
+        if (markErr != null) {
+            kotlinx.coroutines.delay(3000)
+            markErr = null
+        }
+    }
 
     LaunchedEffect(category, nav.refreshTick) {
         loading = true
@@ -124,6 +136,12 @@ fun MessagesScreen(nav: Nav) {
         TopBar("消息中心", onBack = { nav.pop() }, action = "订阅设置", onAction = { nav.push(Route.Notify) })
         SegmentBar(category, totalUnread, unreadByCategory) { category = it }
         SummaryCard(total = items.size, unread = unread, loading = loading, nav = nav)
+        if (markErr != null) {
+            // 标已读失败横幅:全宽红底白字,3 秒自动消失,不抢占列表错误位。
+            AppCard(outer = PaddingValues(vertical = 6.dp), inner = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
+                Text(markErr!!, fontSize = 13.sp, color = Palette.err, modifier = Modifier.fillMaxWidth())
+            }
+        }
         when {
             loading -> LoadingState()
             loadErr != null -> ErrorState(loadErr!!) {
@@ -131,33 +149,35 @@ fun MessagesScreen(nav: Nav) {
             }
             items.isEmpty() -> AppCard { EmptyState("暂无消息") }
             else -> items.forEach { m ->
+                val msgId = m.optString("messageId")
                 MessageCard(
                     m = m,
+                    loading = pendingMsgId == msgId,
                     onClick = {
-                        val msgId = m.optString("messageId")
+                        // 已在处理任何卡片:去重,避免重复发请求/跳转
+                        if (pendingMsgId != null) return@MessageCard
                         val wasRead = m.optBoolean("read")
-                        // 乐观更新:立刻把这条本地标记为已读,UI 立即响应。
-                        if (!wasRead) {
-                            items = items.map {
-                                if (it.optString("messageId") == msgId) {
-                                    JSONObject(it.toString()).put("read", true)
-                                } else it
+                        if (wasRead) {
+                            // 已读直接跳转,不调接口
+                            nav.push(routeOf(m.optString("category")))
+                            return@MessageCard
+                        }
+                        // 未读:先调 API(loading 显示在卡片上),成功后再跳转
+                        pendingMsgId = msgId
+                        scope.launch {
+                            val ok = try {
+                                ProfileApi.readMessage(msgId)
+                                true
+                            } catch (e: Exception) {
+                                false
                             }
-                            // 后台异步调 API:成功保持已读,失败回滚到未读。
-                            scope.launch {
-                                try {
-                                    ProfileApi.readMessage(msgId)
-                                    nav.requestRefresh()
-                                } catch (e: Exception) {
-                                    items = items.map {
-                                        if (it.optString("messageId") == msgId) {
-                                            JSONObject(it.toString()).put("read", false)
-                                        } else it
-                                    }
-                                }
+                            pendingMsgId = null
+                            if (ok) {
+                                nav.push(routeOf(m.optString("category")))
+                            } else {
+                                markErr = "标记已读失败,请重试"
                             }
                         }
-                        nav.push(routeOf(m.optString("category")))
                     },
                 )
             }
@@ -266,7 +286,7 @@ private fun StatColumn(
 }
 
 @Composable
-private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
+private fun MessageCard(m: JSONObject, loading: Boolean = false, onClick: () -> Unit) {
     val read = m.optBoolean("read")
     val titleColor = if (read) Palette.muted else Palette.ink
     val titleWeight = if (read) FontWeight.W500 else FontWeight.W600
@@ -290,7 +310,7 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
             .padding(horizontal = 14.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(cardBg)
-            .clickable { onClick() },
+            .clickable(enabled = !loading) { onClick() },
         verticalAlignment = Alignment.Top,
     ) {
         if (!read) {
@@ -324,7 +344,14 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
                     formatTime(m.optString("createdAt")),
                     fontSize = 12.sp, color = Palette.muted,
                 )
-                if (!read) {
+                if (loading) {
+                    Spacer(Modifier.width(6.dp))
+                    CircularProgressIndicator(
+                        strokeWidth = 1.5.dp,
+                        modifier = Modifier.size(12.dp),
+                        color = Palette.primary,
+                    )
+                } else if (!read) {
                     Spacer(Modifier.width(6.dp))
                     Box(Modifier.size(7.dp).background(tint, CircleShape))
                 }

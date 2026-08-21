@@ -8,6 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type DeviceMetricRow, type MaintenanceRow, type ResourceRow } from '../types'
+import { TableStateRow } from '../../../components/business'
 
 export default function DevicePage() {
   const t = useT()
@@ -98,7 +99,7 @@ export default function DevicePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(m.collectedAt)}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
               </tbody>
             </table>
           </div>
@@ -118,7 +119,7 @@ export default function DevicePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.reason || '—'}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={d.empty} />}
               </tbody>
             </table>
           </div>

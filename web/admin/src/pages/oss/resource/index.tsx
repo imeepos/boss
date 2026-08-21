@@ -9,6 +9,7 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type PortHistoryRow, type PortRow, type ResourceRow } from '../types'
+import { TableStateRow, EmptyState } from '../../../components/business'
 
 export default function ResourcePage() {
   const t = useT()
@@ -86,7 +87,7 @@ export default function ResourcePage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={r.empty} />}
               </tbody>
             </table>
           </div>
@@ -113,7 +114,7 @@ export default function ResourcePage() {
                   </tr>
                 ))}
                 {historyRows !== null && !historyRows.length && (
-                  <tr><td colSpan={3} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>
+                  <tr><td colSpan={3} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={r.empty} /></td></tr>
                 )}
               </tbody>
             </table>

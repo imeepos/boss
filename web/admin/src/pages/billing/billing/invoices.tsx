@@ -11,6 +11,7 @@ import { fmtFee } from '../../../lib/format'
 import type { InvoiceRow } from '../types'
 import { INVOICES_REFRESH } from './run-modal'
 import { pageSlice } from '../types'
+import { TableStateRow } from '../../../components/business'
 
 export function InvoicePanel() {
   const t = useT()
@@ -91,7 +92,7 @@ export function InvoicePanel() {
                   </td>
                 </tr>
               ))}
-              {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{v.empty}</div></td></tr>}
+              {!slice.length && <TableStateRow colSpan={7} loading={busy} text={v.empty} />}
             </tbody>
           </table>
         </div>

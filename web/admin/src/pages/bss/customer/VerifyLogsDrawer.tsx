@@ -5,6 +5,7 @@ import { Drawer } from '../../../components/Drawer'
 import { useT } from '../../../i18n'
 import type { VerifyLogRow } from './types'
 import { fmtTime } from '../../../lib/format'
+import { EmptyState } from '../../../components/business'
 
 export function VerifyLogsDrawer({
   customerId, customerName, onClose,
@@ -38,7 +39,7 @@ export function VerifyLogsDrawer({
                 </tr>
               ))}
               {rows !== null && !rows.length && (
-                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{c.empty}</div></td></tr>
+                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={c.empty} /></td></tr>
               )}
             </tbody>
           </table>

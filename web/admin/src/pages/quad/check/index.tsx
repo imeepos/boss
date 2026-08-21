@@ -7,6 +7,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type QuadLinkRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { TableStateRow } from '../../../components/business'
 
 interface ReconReport { Total: number; Linked: number; Conflict: number; Unlinked: number }
 
@@ -95,7 +96,7 @@ export default function QuadCheckPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{c.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={c.empty} />}
               </tbody>
             </table>
           </div>

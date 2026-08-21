@@ -9,6 +9,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { pageSlice, PRIORITIES, type AssetRow, type ReplacementRow } from '../types'
+import { TableStateRow } from '../../../components/business'
 
 export default function ReplacePage() {
   const t = useT()
@@ -81,7 +82,7 @@ export default function ReplacePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={5} loading={busy} text={r.empty} />}
               </tbody>
             </table>
           </div>

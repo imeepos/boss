@@ -11,6 +11,7 @@ import { pageSlice, type DispatchTicketRow, type DispatchTransferRow } from '../
 import { WorkerPicker, type PickedWorker } from './WorkerPicker'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { searchWorkers } from '../../../api/pickers'
+import { TableStateRow } from '../../../components/business'
 
 export default function DispatchPage() {
   const t = useT()
@@ -140,7 +141,7 @@ export default function DispatchPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={d.empty} />}
               </tbody>
             </table>
           </div>
@@ -159,7 +160,7 @@ export default function DispatchPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.transferredAt)}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{d.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
               </tbody>
             </table>
           </div>

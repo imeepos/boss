@@ -8,6 +8,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { DetailDrawer } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type GisNode, type GisResourceDetail } from '../types'
+import { TableStateRow } from '../../../components/business'
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8] as const
 
@@ -73,7 +74,7 @@ export default function GisPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.count}</td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{g.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={4} loading={busy} text={g.empty} />}
               </tbody>
             </table>
           </div>

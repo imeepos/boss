@@ -10,6 +10,7 @@ import { Dropdown } from '../../components/Dropdown'
 import { Pagination } from '../../components/Pagination'
 import { StatusTag } from '../../components/StatusTag'
 import { useConfirm } from '../../components/ConfirmDialog'
+import { TableStateRow } from '../../components/business'
 import { downloadArchive, filterTables, formatBytes, formatTime, isBusyError, toJob, type BackupJobEntry } from './logic'
 
 const BTN = 'cursor-pointer rounded-md px-3 py-1.5 text-center text-[13px] font-medium leading-none border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] text-[var(--shell-content-text)] hover:border-[var(--shell-input-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
@@ -147,7 +148,7 @@ export default function BackupPage() {
                 </tr>
               ))}
               {rows.length === 0 && !error && (
-                <tr><td className={`${TD} py-8 text-center`} colSpan={b.columns.length}>{b.empty}</td></tr>
+                <TableStateRow colSpan={b.columns.length} text={b.empty} />
               )}
             </tbody>
           </table>

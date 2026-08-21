@@ -173,6 +173,8 @@ object Api {
     private fun open(method: String, path: String, body: JSONObject?): HttpURLConnection {
         val conn = URL(base + path).openConnection() as HttpURLConnection
         conn.requestMethod = method
+        // PUT/PATCH/POST 写 body 必须 setDoOutput(true),否则 outputStream 抛 ProtocolException。
+        if (body != null && method != "GET") conn.doOutput = true
         conn.connectTimeout = 8000
         conn.readTimeout = 8000
         conn.setRequestProperty("Content-Type", "application/json")

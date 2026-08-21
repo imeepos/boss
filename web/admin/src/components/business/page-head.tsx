@@ -1,6 +1,4 @@
 // PageHead: page title + description, replaces .mb-4
-import type { ReactNode } from 'react'
-
 export function PageHead({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="mb-4">
@@ -20,10 +18,8 @@ export function pagerTexts(ns: {
   }
 }
 
-/** EmptyState: empty row/block, replaces .py-8 text-center text-[13px] text-[var(--shell-group-title)] */
-export function EmptyState({ text }: { text: string }): ReactNode {
-  return <div className="py-8 text-center text-xs text-[var(--shell-group-title)]">{text}</div>
-}
+// EmptyState 统一由 feedback.tsx 提供(图标+文案),此处 re-export 兼容既有 import 路径。
+export { EmptyState } from './feedback'
 
 /** ErrorBanner: error message block, replaces .mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)] */
 export function ErrorBanner({ message, className = '' }: { message: string; className?: string }) {

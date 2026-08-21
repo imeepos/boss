@@ -6,6 +6,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { useT } from '../../../i18n'
 import { fmtTime } from '../../../lib/format'
 import type { AssetRow, AssignmentRow, LifecycleRow } from '../types'
+import { EmptyState } from '../../../components/business'
 
 export function AssetTrailDrawer({
   asset, onClose,
@@ -59,7 +60,7 @@ export function AssetTrailDrawer({
                 </tr>
               ))}
               {lifecycle !== null && !lifecycle.length && (
-                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>
+                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={a.empty} /></td></tr>
               )}
             </tbody>
           </table>
@@ -79,7 +80,7 @@ export function AssetTrailDrawer({
                 </tr>
               ))}
               {assignments !== null && !assignments.length && (
-                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>
+                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={a.empty} /></td></tr>
               )}
             </tbody>
           </table>

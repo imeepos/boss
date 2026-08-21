@@ -8,6 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { pageSlice, type ProvisionTaskRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { TableStateRow } from '../../../components/business'
 
 const STATUSES = ['PENDING', 'DOING', 'DONE', 'FAILED'] as const
 
@@ -83,7 +84,7 @@ export default function ProvisionTaskPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{p.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={p.empty} />}
               </tbody>
             </table>
           </div>

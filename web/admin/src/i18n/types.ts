@@ -77,25 +77,49 @@ export interface Translations {
     perPage: string
     jump: string
     pageUnit: string
+    fileCategory: {
+      all: string
+      image: string
+      audio: string
+      video: string
+      pdf: string
+      document: string
+      spreadsheet: string
+      archive: string
+      code: string
+      other: string
+    }
+    filterByType: string
+    filterScopeHint: string
+    downloadSelected: string
+    download: string
+    categoryBadgeTip: string
   }
   pages: {
     home: {
       navFeatures: string
+      navSolutions: string
       navContact: string
       login: string
       enterConsole: string
+      bookDemo: string
+      bookExclusive: string
+      learnMore: string
       heroBadge: string
       heroTitle: string
+      heroLine2: string
       heroSubtitle: string
-      heroCta: string
-      heroCtaAlt: string
       stats: Array<{ value: string; label: string }>
       featuresTitle: string
       featuresSubtitle: string
       features: Array<{ icon: string; title: string; desc: string }>
-      contactTitle: string
-      contactDesc: string
-      footer: string
+      casesTitle: string
+      casesSubtitle: string
+      cases: Array<{ icon: string; title: string; desc: string; metric: string }>
+      ctaBannerTitle: string
+      ctaBannerSubtitle: string
+      viewDetail: string
+      footerCopyright: string
     }
     dashboard: {
       title: string

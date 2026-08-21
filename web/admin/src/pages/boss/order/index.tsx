@@ -12,6 +12,7 @@ import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type CheckDetail, type OrderListRow, type TimelineRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { TableStateRow, EmptyState } from '../../../components/business'
 
 const STATUSES = ['PENDING', 'RESERVED', 'INSTALLING', 'DONE'] as const
 
@@ -135,7 +136,7 @@ export default function OrderPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{o.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={o.empty} />}
               </tbody>
             </table>
           </div>
@@ -186,7 +187,7 @@ export default function OrderPage() {
                   </tr>
                 ))}
                 {track !== null && !track.timeline.length && (
-                  <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{o.empty}</div></td></tr>
+                  <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={o.empty} /></td></tr>
                 )}
               </tbody>
             </table>

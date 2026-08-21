@@ -9,6 +9,7 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { pageSlice, type StocktakeRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { TableStateRow } from '../../../components/business'
 
 export default function StockPage() {
   const t = useT()
@@ -106,7 +107,7 @@ export default function StockPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{s.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={s.empty} />}
               </tbody>
             </table>
           </div>

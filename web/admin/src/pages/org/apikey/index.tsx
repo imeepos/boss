@@ -8,6 +8,7 @@ import { ApiKeyFormDrawer, type ApiKeyFormValues } from './KeyForm'
 import { buildCreatePayload } from './payload'
 import { formatTime } from '../../base/audit/logic'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { EmptyState } from '../../../components/business'
 
 export interface ApiKeyRow {
   id: number
@@ -113,7 +114,7 @@ export default function ApiKeyPage() {
             ))}
           </tbody>
         </table>
-        {shown.length === 0 && !error && <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.company.empty}</div>}
+        {shown.length === 0 && !error && <EmptyState text={t.pages.company.empty} />}
         {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
       </div>
 

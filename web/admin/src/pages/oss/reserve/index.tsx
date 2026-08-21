@@ -8,6 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { pageSlice, type ReserveRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { TableStateRow } from '../../../components/business'
 
 export default function ReservePage() {
   const t = useT()
@@ -85,7 +86,7 @@ export default function ReservePage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{r.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={5} loading={busy} text={r.empty} />}
               </tbody>
             </table>
           </div>

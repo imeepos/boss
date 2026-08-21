@@ -8,6 +8,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { PageHead, pagerTexts } from '../shared'
 import { buildRegionView, filterRegions, pageSlice, type RegionRow } from './tree'
 import { Pagination } from '../../../components/Pagination'
+import { TableStateRow } from '../../../components/business'
 
 interface EntityOption { id: number; name: string; isPlatform: boolean }
 
@@ -110,7 +111,7 @@ export default function RegionPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.region.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} text={t.pages.region.empty} />}
               </tbody>
             </table>
           </div>

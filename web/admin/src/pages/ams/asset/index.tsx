@@ -7,6 +7,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type AssetRow, type TagRow } from '../types'
 import { AssetTrailDrawer } from './TrailDrawer'
+import { TableStateRow } from '../../../components/business'
 
 export default function AssetPage() {
   const t = useT()
@@ -71,7 +72,7 @@ export default function AssetPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={8} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={8} loading={busy} text={a.empty} />}
               </tbody>
             </table>
           </div>

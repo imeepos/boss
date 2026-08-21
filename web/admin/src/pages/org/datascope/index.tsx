@@ -6,6 +6,7 @@ import { useT } from '../../../i18n'
 import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterDataScopes, pageSlice, type ScopeRow } from './filter'
 import { Pagination } from '../../../components/Pagination'
+import { TableStateRow } from '../../../components/business'
 
 export default function DataScopePage() {
   const t = useT()
@@ -58,7 +59,7 @@ export default function DataScopePage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.datascope.empty}</div></td></tr>}
+                {!slice.length && <TableStateRow colSpan={7} text={t.pages.datascope.empty} />}
               </tbody>
             </table>
           </div>

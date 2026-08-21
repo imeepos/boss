@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { formatTime } from '../../base/audit/logic'
+import { EmptyState } from '../../../components/business'
 
 export interface ImportTaskRow {
   id: number
@@ -50,7 +51,7 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
           ))}
         </tbody>
       </table>
-      {rows.length === 0 && !error && <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.company.empty}</div>}
+      {rows.length === 0 && !error && <EmptyState text={t.pages.company.empty} />}
       {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
     </div>
   )

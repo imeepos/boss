@@ -5,6 +5,7 @@ import { Drawer } from '../../../components/Drawer'
 import { useT } from '../../../i18n'
 import type { PriceHistoryRow } from './types'
 import { fmtTime } from '../../../lib/format'
+import { EmptyState } from '../../../components/business'
 
 export function PriceHistoryDrawer({
   productId, productName, onClose,
@@ -38,7 +39,7 @@ export function PriceHistoryDrawer({
                 </tr>
               ))}
               {rows !== null && !rows.length && (
-                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{p.noHistory}</div></td></tr>
+                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={p.noHistory} /></td></tr>
               )}
             </tbody>
           </table>

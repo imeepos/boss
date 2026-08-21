@@ -2,6 +2,7 @@
 // 已迁移到 components/business/，此处保留兼容导出。
 import { Drawer } from '../../components/Drawer'
 import type { Translations } from '../../i18n/types'
+import { EmptyState } from '../../components/business'
 
 type PagerNs = Pick<
   Translations['pages']['company'],
@@ -54,5 +55,5 @@ export function DetailDrawer({
 
 /** 空态行/块。 */
 export function Empty({ text }: { text: string }) {
-  return <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{text}</div>
+  return <EmptyState text={text} />
 }

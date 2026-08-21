@@ -8,6 +8,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterMatrixRows, pageSlice, type MenuPermData, type MenuPermViewRow } from './matrix'
 import { Pagination } from '../../../components/Pagination'
+import { EmptyState } from '../../../components/business'
 
 export default function MenuPermPage() {
   const t = useT()
@@ -51,7 +52,7 @@ export default function MenuPermPage() {
               {(data.layers ?? []).map((l, i) => (
                 <tr key={l}><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{i + 1}. {l}</td></tr>
               ))}
-              {!(data.layers ?? []).length && <tr><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.menuperm.empty}</div></td></tr>}
+              {!(data.layers ?? []).length && <tr><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={t.pages.menuperm.empty} /></td></tr>}
               {error && <tr><td className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{error}</td></tr>}
             </tbody>
           </table>
@@ -95,7 +96,7 @@ export default function MenuPermPage() {
                   </tr>
                 ))}
                 {!slice.length && (
-                  <tr><td colSpan={data.roleColumns.length + 2} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.menuperm.empty}</div></td></tr>
+                  <tr><td colSpan={data.roleColumns.length + 2} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={t.pages.menuperm.empty} /></td></tr>
                 )}
               </tbody>
             </table>

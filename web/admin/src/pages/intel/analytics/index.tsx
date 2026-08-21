@@ -7,6 +7,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice } from '../types'
 import type { AnalyticsMaintRow, HeatCellRow, IndicatorRow, RegionRoiRow } from '../types'
+import { TableStateRow } from '../../../components/business'
 
 export default function AnalyticsPage() {
   const t = useT()
@@ -79,7 +80,7 @@ export default function AnalyticsPage() {
                     <td style={{ maxWidth: 360 }} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.detail || '—'}</td>
                   </tr>
                 ))}
-                {!indicators.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
+                {!indicators.length && <TableStateRow colSpan={4} loading={busy} text={a.empty} />}
               </tbody>
             </table>
             <h4 style={{ margin: '16px 0 8px' }}>{a.roiColumns.join(' / ')}</h4>
@@ -94,7 +95,7 @@ export default function AnalyticsPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.roi.toFixed(2)}</td>
                   </tr>
                 ))}
-                {!roi.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
+                {!roi.length && <TableStateRow colSpan={4} loading={busy} text={a.empty} />}
               </tbody>
             </table>
           </div>
@@ -111,7 +112,7 @@ export default function AnalyticsPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{(x.utilization * 100).toFixed(1)}%</td>
                   </tr>
                 ))}
-                {!heatSlice.length && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
+                {!heatSlice.length && <TableStateRow colSpan={4} loading={busy} text={a.empty} />}
               </tbody>
             </table>
           </div>
@@ -131,7 +132,7 @@ export default function AnalyticsPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.reason || '—'}</td>
                   </tr>
                 ))}
-                {!maintSlice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{a.empty}</div></td></tr>}
+                {!maintSlice.length && <TableStateRow colSpan={7} loading={busy} text={a.empty} />}
               </tbody>
             </table>
           </div>
