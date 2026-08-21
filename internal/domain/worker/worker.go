@@ -41,7 +41,8 @@ func RegionMatched(workerRegionID, ticketRegionID int64) bool {
 type WorkerService interface {
 	ListGroups(ctx context.Context) ([]Group, error)
 	CreateGroup(ctx context.Context, g Group) (int64, error)
-	ListWorkers(ctx context.Context, groupID int64) ([]Worker, error)
+	// keyword 空=不过滤;命中姓名/工号/手机号任一(不区分大小写)。
+	ListWorkers(ctx context.Context, groupID int64, keyword string) ([]Worker, error)
 	CreateWorker(ctx context.Context, w Worker) (int64, error)
 	GetWorker(ctx context.Context, id int64) (*Worker, error)
 }

@@ -84,7 +84,7 @@ func workerLoginHandler(a *app.Application) gin.HandlerFunc {
 
 // findWorkerByPhone 按手机号找在职师傅;未命中/离职返回错误。
 func findWorkerByPhone(ctx context.Context, a *app.Application, phone string) (*worker.Worker, error) {
-	list, err := a.Worker.ListWorkers(ctx, 0)
+	list, err := a.Worker.ListWorkers(ctx, 0, "")
 	if err != nil {
 		return nil, err
 	}

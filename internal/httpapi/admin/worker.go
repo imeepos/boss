@@ -52,7 +52,7 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.GET("/workers", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		list, err := a.Worker.ListWorkers(c.Request.Context(), queryInt64(c, "groupId"))
+		list, err := a.Worker.ListWorkers(c.Request.Context(), queryInt64(c, "groupId"), c.Query("keyword"))
 		if err != nil {
 			respondErr(c, err)
 			return

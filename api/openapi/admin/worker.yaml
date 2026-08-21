@@ -132,6 +132,7 @@ paths:
       operationId: listWorkers
       parameters:
         - { name: groupId, in: query, schema: { type: integer, format: int64 } }
+        - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 

@@ -31,7 +31,7 @@ func (f *fakeWorkerOps) ListGroups(context.Context) ([]worker.Group, error) { re
 func (f *fakeWorkerOps) CreateGroup(context.Context, worker.Group) (int64, error) {
 	return 0, nil
 }
-func (f *fakeWorkerOps) ListWorkers(context.Context, int64) ([]worker.Worker, error) {
+func (f *fakeWorkerOps) ListWorkers(context.Context, int64, string) ([]worker.Worker, error) {
 	return nil, nil
 }
 func (f *fakeWorkerOps) CreateWorker(context.Context, worker.Worker) (int64, error) {

@@ -25,7 +25,7 @@ type fakePortalWorkerSvc struct {
 	region int64
 }
 
-func (f *fakePortalWorkerSvc) ListWorkers(context.Context, int64) ([]worker.Worker, error) {
+func (f *fakePortalWorkerSvc) ListWorkers(context.Context, int64, string) ([]worker.Worker, error) {
 	return []worker.Worker{{
 		ID: 7, StaffNo: "WK-1007", Name: "张师傅", GroupID: 1,
 		RegionID: 1, Phone: "13800001234", Status: 1, JoinedAt: time.Now(),

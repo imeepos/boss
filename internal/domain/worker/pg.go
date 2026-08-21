@@ -98,10 +98,13 @@ func (s *PGStore) CreateGroup(ctx context.Context, g Group) (int64, error) {
 
 const workerCols = `id, staff_no, name, group_id, region_id, phone, status, joined_at, left_at`
 
-// ListWorkers 列出师傅;groupID=0 返回全部,否则按班组过滤。
-func (s *PGStore) ListWorkers(ctx context.Context, groupID int64) ([]Worker, error) {
+// ListWorkers 列出师傅;groupID=0 返回全部,否则按班组过滤;keyword 命中姓名/工号/手机号。
+func (s *PGStore) ListWorkers(ctx context.Context, groupID int64, keyword string) ([]Worker, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT `+workerCols+` FROM workers WHERE ($1 = 0 OR group_id = $1) ORDER BY id`, groupID)
+		`SELECT `+workerCols+` FROM workers
+		WHERE ($1 = 0 OR group_id = $1)
+		  AND ($2 = '' OR name ILIKE '%' || $2 || '%' OR staff_no ILIKE '%' || $2 || '%' OR phone ILIKE '%' || $2 || '%')
+		ORDER BY id`, groupID, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("worker: list workers: %w", err)
 	}

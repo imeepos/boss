@@ -120,7 +120,7 @@ func (f *fakeWorkerSvc) ListGroups(context.Context) ([]worker.Group, error) { re
 func (f *fakeWorkerSvc) CreateGroup(context.Context, worker.Group) (int64, error) {
 	return 0, nil
 }
-func (f *fakeWorkerSvc) ListWorkers(context.Context, int64) ([]worker.Worker, error) {
+func (f *fakeWorkerSvc) ListWorkers(context.Context, int64, string) ([]worker.Worker, error) {
 	return nil, nil
 }
 func (f *fakeWorkerSvc) CreateWorker(context.Context, worker.Worker) (int64, error) {
