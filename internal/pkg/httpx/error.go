@@ -12,6 +12,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/geo"
+	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/provision"
@@ -54,6 +55,16 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrRealNameNotFound),
 		errors.Is(err, userdata.ErrNotFound),
 		errors.Is(err, portal.ErrNotFound):
+		Respond(c, apitypes.CodeNotFound, nil)
+	case errors.Is(err, odn.ErrDuplicate):
+		Respond(c, apitypes.CodeConflict, nil)
+	case errors.Is(err, odn.ErrInvalidCode),
+		errors.Is(err, odn.ErrGridMissing),
+		errors.Is(err, odn.ErrGridFull),
+		errors.Is(err, odn.ErrInvalidEndpoint),
+		errors.Is(err, odn.ErrSamePriority):
+		Respond(c, apitypes.CodeInvalidParam, nil)
+	case errors.Is(err, odn.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, resource.ErrIllegalTransition),
 		errors.Is(err, resource.ErrPortNotAvailable),

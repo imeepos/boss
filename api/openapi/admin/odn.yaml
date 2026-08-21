@@ -1,0 +1,160 @@
+# ODN 域:无源物理层(网格分区/电杆人井等设施/光缆段落,menu:odn 门禁)。
+# 实现见 internal/httpapi/admin/odn.go、odn_facility.go;规范《Suniway ODN 地理空间编码规范》V1.0。
+# 响应统一 envelope {code,msg,data};字段口径 docs/contract/fields.md 1.5.2~1.5.4。
+paths:
+  /odn/grids:
+    get:
+      tags: [ODN]
+      summary: 网格分区列表(含占用数与 >=80% 预警)
+      operationId: listOdnGrids
+      parameters:
+        - { name: prvCode, in: query, required: true, schema: { type: string, examples: [PHL001] } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string, examples: [MNL] } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 新建网格(备案,规范红线 2)
+      operationId: createOdnGrid
+      parameters:
+        - { name: prvCode, in: query, required: true, schema: { type: string } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gridCode, status]
+              properties:
+                gridCode: { type: integer, minimum: 1, maximum: 99, description: 网格码 01~99 }
+                name: { type: string, description: 网格名称 }
+                coverage: { type: string, description: 覆盖区域 }
+                status: { type: string, enum: [ACTIVE, RESERVED] }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/grids/{gridCode}:
+    put:
+      tags: [ODN]
+      summary: 编辑网格(RETIRED 不可改回)
+      operationId: updateOdnGrid
+      parameters:
+        - { name: gridCode, in: path, required: true, schema: { type: integer } }
+        - { name: prvCode, in: query, required: true, schema: { type: string } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                name: { type: string }
+                coverage: { type: string }
+                status: { type: string, enum: [ACTIVE, RESERVED, RETIRED] }
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+    delete:
+      tags: [ODN]
+      summary: 网格退役(须无在用设施)
+      operationId: retireOdnGrid
+      parameters:
+        - { name: gridCode, in: path, required: true, schema: { type: integer } }
+        - { name: prvCode, in: query, required: true, schema: { type: string } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /odn/facilities:
+    get:
+      tags: [ODN]
+      summary: 设施列表(kind/网格过滤)
+      operationId: listOdnFacilities
+      parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [P, MH, TW, CLS, TBX] } }
+        - { name: prvCode, in: query, schema: { type: string } }
+        - { name: cityPrefix, in: query, schema: { type: string } }
+        - { name: gridCode, in: query, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 新建设施(编码 5 位数字网格分区模式,红线 3;网格须已备案)
+      operationId: createOdnFacility
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, kind, prvCode, cityPrefix]
+              properties:
+                code: { type: string, examples: [P01001], description: '^(P|MH|TW|CLS|TBX)[0-9]{5}$' }
+                kind: { type: string, enum: [P, MH, TW, CLS, TBX] }
+                prvCode: { type: string, examples: [PHL001] }
+                cityPrefix: { type: string, examples: [MNL] }
+                gridCode: { type: integer, description: P/MH 必填且与编码网格段一致 }
+                name: { type: string }
+                lat: { type: number }
+                lng: { type: number }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/facilities/{code}:
+    get:
+      tags: [ODN]
+      summary: 设施详情
+      operationId: getOdnFacility
+      parameters: [ { name: code, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+    delete:
+      tags: [ODN]
+      summary: 设施报废(编码永久锁定禁止复用)
+      operationId: retireOdnFacility
+      parameters: [ { name: code, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /odn/segments:
+    get:
+      tags: [ODN]
+      summary: 光缆段落列表(endpoint 过滤含该端点的段落)
+      operationId: listOdnSegments
+      parameters:
+        - { name: endpoint, in: query, schema: { type: string, examples: [ODF001] } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 新建光缆段落(端点按规范 5.2 优先级定向,'--' 仅图纸不入库)
+      operationId: createOdnSegment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint1, endpoint2]
+              properties:
+                endpoint1: { type: string, examples: [ODF001] }
+                endpoint2: { type: string, examples: [OCC001] }
+                name: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/segments/{id}/fibers:
+    get:
+      tags: [ODN]
+      summary: 段落纤芯列表(G01~G99)
+      operationId: listOdnFibers
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 段落新增纤芯(同 G 号冲突 409)
+      operationId: addOdnFiber
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gNo]
+              properties:
+                gNo: { type: integer, minimum: 1, maximum: 99 }
+                kind: { type: string, description: 光缆型号 }
+      responses: { '200': { $ref: '#/components/responses/Ok' } }

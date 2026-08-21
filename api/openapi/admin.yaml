@@ -314,3 +314,11 @@ paths:
   /geo/subdivisions/{code}/names: { $ref: './admin/geo.yaml#/paths/~1geo~1subdivisions~1{code}~1names' }
   /geo/subdivisions/{code}/names/{locale}/{nameType}: { $ref: './admin/geo.yaml#/paths/~1geo~1subdivisions~1{code}~1names~1{locale}~1{nameType}' }
   /geo/import: { $ref: './admin/geo.yaml#/paths/~1geo~1import' }
+
+  # ---------- ODN(无源物理层) ----------
+  /odn/grids: { $ref: './admin/odn.yaml#/paths/~1odn~1grids' }
+  /odn/grids/{gridCode}: { $ref: './admin/odn.yaml#/paths/~1odn~1grids~1{gridCode}' }
+  /odn/facilities: { $ref: './admin/odn.yaml#/paths/~1odn~1facilities' }
+  /odn/facilities/{code}: { $ref: './admin/odn.yaml#/paths/~1odn~1facilities~1{code}' }
+  /odn/segments: { $ref: './admin/odn.yaml#/paths/~1odn~1segments' }
+  /odn/segments/{id}/fibers: { $ref: './admin/odn.yaml#/paths/~1odn~1segments~1{id}~1fibers' }

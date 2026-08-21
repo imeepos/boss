@@ -173,6 +173,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerAaaRoutes(authed, a)
 	registerDeviceRoutes(authed, a)
 	registerGeoRoutes(authed, a)
+	registerODNRoutes(authed, a)
 	registerGisRoutes(authed, a)
 	registerAnalyticsRoutes(authed, a)
 	registerReportRoutes(authed, a)

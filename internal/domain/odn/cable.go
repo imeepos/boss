@@ -1,7 +1,6 @@
 package odn
 
 import (
-	"context"
 	"errors"
 	"regexp"
 )
@@ -37,14 +36,6 @@ type Fiber struct {
 	SegmentID int64  `json:"segmentId"`
 	GNo       int16  `json:"gNo"` // 01~99
 	Kind      string `json:"kind"`
-}
-
-// CableService 光缆段落/纤芯域服务口(可并入 ODNService,独立口便于测试替换)。
-type CableService interface {
-	CreateSegment(ctx context.Context, code1, code2, name string) (*Segment, error)
-	ListSegments(ctx context.Context, endpoint string) ([]Segment, error)
-	AddFiber(ctx context.Context, segID int64, f Fiber) error
-	ListFibers(ctx context.Context, segID int64) ([]Fiber, error)
 }
 
 // OrderEndpoints 按规范 5.2 定向:返回 (A端, B端);同优先级报错。

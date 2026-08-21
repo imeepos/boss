@@ -132,6 +132,7 @@
 ### 1.5.3 odn_grid / odn_facility（ODN 无源物理层，迁移 000078，internal/domain/odn）
 
 > 依据《Suniway ODN 地理空间编码规范》V1.0 第 4 章。E6/E7/E9 落地；光缆段落/纤芯（E8）见本节末。
+> 管理面：`menu:odn` 权限（迁移 000080，sysadmin+resource_admin），REST `/odn/grids|facilities|segments`（契约 admin/odn.yaml）。
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
 |:---------|:-------|:------|:----------|

@@ -102,6 +102,12 @@ type ODNService interface {
 	GetFacility(ctx context.Context, code string) (*Facility, error)
 	CreateFacility(ctx context.Context, f Facility) error
 	RetireFacility(ctx context.Context, code string) error
+
+	// 光缆段落/纤芯(规范第 5 章)。
+	CreateSegment(ctx context.Context, code1, code2, name string) (*Segment, error)
+	ListSegments(ctx context.Context, endpoint string) ([]Segment, error)
+	AddFiber(ctx context.Context, segID int64, f Fiber) error
+	ListFibers(ctx context.Context, segID int64) ([]Fiber, error)
 }
 
 // GridRef 网格定位(城市 + 网格码)。
