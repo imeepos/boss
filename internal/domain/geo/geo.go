@@ -134,7 +134,7 @@ type GeoService interface {
 // AddressInfo 地址简要信息(四码 addrCode 展示用)。
 type AddressInfo struct {
 	ID    int64  `json:"id"`
-	Path  string `json:"path"`  // LTREE 路径如 root.luzon.ncr.manila
+	Path  string `json:"path"` // LTREE 路径如 root.luzon.ncr.manila
 	Name  string `json:"name"`
 	Level int    `json:"level"` // 1市 2区 3街道 4小区 5楼栋
 }

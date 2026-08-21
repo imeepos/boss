@@ -125,9 +125,9 @@ func portalQuadH(a *app.Application, c *gin.Context, addressID int64) gin.H {
 	}
 	return gin.H{
 		"status": q.Status, "matched": q.Status == "LINKED",
-		"assetCode": quadAssetCode(a, c, q.AssetID),
-		"portCode": quadPortCode(a, c, q.PortID),
-		"addrCode": quadAddrCode(a, c, addressID),
+		"assetCode":    quadAssetCode(a, c, q.AssetID),
+		"portCode":     quadPortCode(a, c, q.PortID),
+		"addrCode":     quadAddrCode(a, c, addressID),
 		"customerCode": quadCustomerCode(a, c, q.CustomerID),
 	}
 }

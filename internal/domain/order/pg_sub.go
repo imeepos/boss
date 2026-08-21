@@ -44,10 +44,11 @@ func (s *PGStore) ListDispatchTickets(ctx context.Context) ([]DispatchTicket, er
 
 // ListTicketItems 列表读模型:派单工单联表订单/客户/地址(师傅端列表页)。
 // 详情视图(api/openapi/worker/schemas.yaml::TicketDetail)在此基础上复用:
-//   增列 c.phone、po.name、t.{splitter_port,pre_bind_tag,schedule_slot}、
-//   LEFT JOIN complaints(cmp) 取 faultTypeLabel/reportedAt/slaLeftMinutes/remoteDiagnosis。
-//   订单 DONE 时取 MAX(order_stages.finished_at) 作为 finishedAt,空=进行中。
-//   SLA 剩余分钟由 Go 侧实时计算(见 computeSlaLeft)。
+//
+//	增列 c.phone、po.name、t.{splitter_port,pre_bind_tag,schedule_slot}、
+//	LEFT JOIN complaints(cmp) 取 faultTypeLabel/reportedAt/slaLeftMinutes/remoteDiagnosis。
+//	订单 DONE 时取 MAX(order_stages.finished_at) 作为 finishedAt,空=进行中。
+//	SLA 剩余分钟由 Go 侧实时计算(见 computeSlaLeft)。
 func (s *PGStore) ListTicketItems(ctx context.Context) ([]TicketItem, error) {
 	rows, err := s.db.Query(ctx, `
 		SELECT t.id, t.ticket_no, t.order_id, COALESCE(t.worker_id, 0), t.status,

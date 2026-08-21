@@ -41,14 +41,14 @@ type Input struct {
 
 // Item 列表条目(含当前账号读状态)。
 type Item struct {
-	ID        int64  `json:"id"`
-	Category  string `json:"category"`
-	Level     string `json:"level"`
-	Title     string `json:"title"`
-	Content   string `json:"content"`
-	Link      string `json:"link"`
-	RefType   string `json:"refType"`
-	RefID     string `json:"refId"`
+	ID         int64  `json:"id"`
+	Category   string `json:"category"`
+	Level      string `json:"level"`
+	Title      string `json:"title"`
+	Content    string `json:"content"`
+	Link       string `json:"link"`
+	RefType    string `json:"refType"`
+	RefID      string `json:"refId"`
 	Resolved   bool   `json:"resolved"`
 	CreatedAt  string `json:"createdAt"`
 	Read       bool   `json:"read"`

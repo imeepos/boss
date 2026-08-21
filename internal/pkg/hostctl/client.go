@@ -16,9 +16,9 @@ import (
 
 // Client 调用宿主机 hostctl sidecar。
 type Client struct {
-	BaseURL  string
-	HMACKey  string
-	HTTP     *http.Client
+	BaseURL string
+	HMACKey string
+	HTTP    *http.Client
 }
 
 // New 创建客户端。url 示例: http://172.26.0.1:39093。
@@ -60,7 +60,9 @@ func (c *Client) RotateSecret(secret string) (*RotateResp, error) {
 	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<16))
 
 	if resp.StatusCode != http.StatusOK {
-		var errResp struct{ Error string `json:"error"` }
+		var errResp struct {
+			Error string `json:"error"`
+		}
 		_ = json.Unmarshal(respBody, &errResp)
 		return nil, fmt.Errorf("hostctl %d: %s", resp.StatusCode, errResp.Error)
 	}

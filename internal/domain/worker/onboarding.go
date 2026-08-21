@@ -8,11 +8,11 @@ import (
 
 // 师傅注册 / 审核 / 实名认证 子域错误。
 var (
-	ErrRegistrationNotFound  = errors.New("worker: registration not found")
-	ErrRegistrationConflict  = errors.New("worker: registration status conflict")  // 非 PENDING 重复审核
-	ErrInvalidReviewFields   = errors.New("worker: review fields invalid")        // 审核时 groupId/regionId 未补正
-	ErrRealNameNotFound      = errors.New("worker: real name verification not found")
-	ErrRealNameConflict      = errors.New("worker: real name verification conflict") // 非 PENDING 重复核验
+	ErrRegistrationNotFound = errors.New("worker: registration not found")
+	ErrRegistrationConflict = errors.New("worker: registration status conflict") // 非 PENDING 重复审核
+	ErrInvalidReviewFields  = errors.New("worker: review fields invalid")        // 审核时 groupId/regionId 未补正
+	ErrRealNameNotFound     = errors.New("worker: real name verification not found")
+	ErrRealNameConflict     = errors.New("worker: real name verification conflict") // 非 PENDING 重复核验
 )
 
 // 注册申请状态枚举(terms.md 通用枚举延伸)。

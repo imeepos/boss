@@ -40,7 +40,7 @@ func TestPGStore_Submit(t *testing.T) {
 		defer mock.Close()
 
 		expectSubmitRefs(mock, 10, 5)
-mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(1), "root.luzon"))
 		mock.ExpectQuery(`SELECT 'ORD-'`).
@@ -78,7 +78,7 @@ mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 		defer mock.Close()
 
 		expectSubmitRefs(mock, 10, 5)
-mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnError(pgx.ErrNoRows)
 		mock.ExpectQuery(`SELECT id, 'root' FROM legal_entities`).
@@ -113,7 +113,7 @@ mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 		defer mock.Close()
 
 		expectSubmitRefs(mock, 0, 5)
-mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnError(pgx.ErrNoRows)
 		mock.ExpectQuery(`SELECT id, 'root' FROM legal_entities`).
@@ -136,7 +136,7 @@ mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 		defer mock.Close()
 
 		expectSubmitRefs(mock, 0, 5)
-mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(2), "root.luzon"))
 

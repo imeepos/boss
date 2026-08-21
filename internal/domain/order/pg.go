@@ -22,9 +22,9 @@ type dbtx interface {
 // PGStore 是 OrderService 接口的 PostgreSQL 实现(阶段5)。
 type PGStore struct {
 	db      dbtx
-	cust    CustomerLookup   // 跨域:客户存在性校验
-	checker ResourceChecker  // 跨域:资源核查(环节2)
-	reserve PortReserver     // 跨域:端口预占(环节3/5)
+	cust    CustomerLookup    // 跨域:客户存在性校验
+	checker ResourceChecker   // 跨域:资源核查(环节2)
+	reserve PortReserver      // 跨域:端口预占(环节3/5)
 	quad    QuadLinkPrebinder // 跨域:四码预绑定(环节5)
 }
 

@@ -33,10 +33,10 @@ type fakeOnboarding struct {
 }
 
 type approveCall struct {
-	ID            int64
-	ReviewerID    int64
-	GroupID       int64
-	RegionID      int64
+	ID         int64
+	ReviewerID int64
+	GroupID    int64
+	RegionID   int64
 }
 
 func (f *fakeOnboarding) Submit(_ context.Context, reg worker.Registration) (int64, error) {

@@ -8,8 +8,9 @@
 // 时间戳与服务器时间差 > 5min 拒绝，防重放。
 //
 // 路由：
-//   GET  /healthz                              无鉴权
-//   POST /v1/minio/rotate-secret               鉴权，写 root_password + 重启 minio
+//
+//	GET  /healthz                              无鉴权
+//	POST /v1/minio/rotate-secret               鉴权，写 root_password + 重启 minio
 //
 // 进程以非 root 运行（systemd User=imeepos），通过 sudoers 限定只能
 // 执行 docker compose ... minio + 写 /etc/minio/secrets/*。

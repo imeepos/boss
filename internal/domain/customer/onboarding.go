@@ -53,9 +53,9 @@ type CustomerRealNameVerification struct {
 	RealName          string    `json:"realName"`
 	IDCardNo          string    `json:"idCardNo"`
 	Result            string    `json:"result"`
-	RejectReason      string    `json:"rejectReason"`              // FAIL 时后台/自动核验填写
-	IDCardFrontID     int64     `json:"idCardFrontId"`             // attachments.id 人像面,0=未传
-	IDCardBackID      int64     `json:"idCardBackId"`              // attachments.id 国徽面,0=未传
+	RejectReason      string    `json:"rejectReason"`  // FAIL 时后台/自动核验填写
+	IDCardFrontID     int64     `json:"idCardFrontId"` // attachments.id 人像面,0=未传
+	IDCardBackID      int64     `json:"idCardBackId"`  // attachments.id 国徽面,0=未传
 	VerifiedAt        time.Time `json:"verifiedAt"`
 	OperatorAccountID int64     `json:"operatorAccountId"`
 	OperatorName      string    `json:"operatorName"`

@@ -72,9 +72,9 @@ func TestMinIOStoragePut(t *testing.T) {
 
 // fakeS3State 按方法返回状态码,可中途改状态模拟并发建桶等场景。
 type fakeS3State struct {
-	head  int // HEAD /bucket
-	mkPut int // PUT /bucket (MakeBucket)
-	objPut int
+	head           int // HEAD /bucket
+	mkPut          int // PUT /bucket (MakeBucket)
+	objPut         int
 	afterMkPutHead int // MakeBucket 失败后复查 BucketExists 的 HEAD 状态码
 	mkPutCalls     int
 }

@@ -13,7 +13,7 @@ import (
 
 // fakeRow 实现 pgx.Row,可编程 Scan 结果。
 type fakeRow struct {
-	err error    // Scan 直接返回该错误
+	err error // Scan 直接返回该错误
 	at  *Attachment
 	ts  pgtype.Timestamptz
 }
@@ -53,13 +53,13 @@ func (r *fakeRows) Scan(dest ...any) error {
 	return r.items[r.idx-1].Scan(dest...)
 }
 
-func (r *fakeRows) Err() error { return r.nextErr }
-func (r *fakeRows) Close()     { r.closed = true }
-func (r *fakeRows) CommandTag() pgconn.CommandTag { return pgconn.CommandTag{} }
+func (r *fakeRows) Err() error                                   { return r.nextErr }
+func (r *fakeRows) Close()                                       { r.closed = true }
+func (r *fakeRows) CommandTag() pgconn.CommandTag                { return pgconn.CommandTag{} }
 func (r *fakeRows) FieldDescriptions() []pgconn.FieldDescription { return nil }
-func (r *fakeRows) Values() ([]any, error) { return nil, nil }
-func (r *fakeRows) RawValues() [][]byte { return nil }
-func (r *fakeRows) Conn() *pgx.Conn { return nil }
+func (r *fakeRows) Values() ([]any, error)                       { return nil, nil }
+func (r *fakeRows) RawValues() [][]byte                          { return nil }
+func (r *fakeRows) Conn() *pgx.Conn                              { return nil }
 
 // fakeDB 实现 dbtx。
 type fakeDB struct {

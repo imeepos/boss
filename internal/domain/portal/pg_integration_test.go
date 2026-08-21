@@ -34,7 +34,7 @@ func openPGTest(t *testing.T) Service {
 
 // stubSender 记录调用、可注入错误,覆盖外发通道两个分支。
 type stubSender struct {
-	err  error
+	err   error
 	calls int
 	last  string
 }

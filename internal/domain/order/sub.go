@@ -35,7 +35,7 @@ type Complaint struct {
 
 // complaintTypeLabels complaints.type → 故障类型中文标签(对齐 docs/contract/complaint-type-map.md)。
 var complaintTypeLabels = map[string]string{
-	"SINGLE_OUTAGE": "单户断网（紧急 SLA ≤4h）",
+	"SINGLE_OUTAGE":  "单户断网（紧急 SLA ≤4h）",
 	"PARTIAL_OUTAGE": "部分业务不可用（常规 SLA ≤8h）",
 	"SLOW_NET":       "网速慢（一般 SLA ≤24h）",
 	"WIFI_ISSUE":     "Wi-Fi 信号问题（一般 SLA ≤24h）",
@@ -84,7 +84,7 @@ type TicketItem struct {
 	CustomerPhone string `json:"customerPhone"` // 明文,handler 出门必须 httpx.MaskPhone 脱敏
 	OfferName     string `json:"offerName"`     // → product_offers.name(下单快照)
 	Address       string `json:"address"`
-	Stage         int8   `json:"stage"` // 订单当前环节 1~12
+	Stage         int8   `json:"stage"`      // 订单当前环节 1~12
 	FinishedAt    string `json:"finishedAt"` // 订单 DONE 时 MAX(order_stages.finished_at) 派生,空=进行中
 
 	// 装维工单字段(环节3/5/8 写入 dispatch_tickets)。
@@ -94,11 +94,11 @@ type TicketItem struct {
 
 	// 报障工单字段(LEFT JOIN complaints,仅报障单有值)。
 	ComplaintType   string `json:"complaintType"`   // complaints.type 原始值
-	FaultTypeLabel  string `json:"faultTypeLabel"`   // complaintTypeLabels 映射后的中文标签
-	ReportedAt      string `json:"reportedAt"`       // complaints.created_at
-	SlaLeftMinutes  int    `json:"slaLeftMinutes"`   // SLA 剩余分钟(实时计算或从 sla_deadline 派生)
-	RemoteDiagnosis string `json:"remoteDiagnosis"`  // complaints.remote_diagnosis
-	SlaDeadline     string `json:"slaDeadline"`       // complaints.sla_deadline 原始值
+	FaultTypeLabel  string `json:"faultTypeLabel"`  // complaintTypeLabels 映射后的中文标签
+	ReportedAt      string `json:"reportedAt"`      // complaints.created_at
+	SlaLeftMinutes  int    `json:"slaLeftMinutes"`  // SLA 剩余分钟(实时计算或从 sla_deadline 派生)
+	RemoteDiagnosis string `json:"remoteDiagnosis"` // complaints.remote_diagnosis
+	SlaDeadline     string `json:"slaDeadline"`     // complaints.sla_deadline 原始值
 }
 
 // AssignOpt 指派/改约时可选写入工单的附加字段。

@@ -123,7 +123,7 @@ func TestDashboard(t *testing.T) {
 
 // TestSameDayTimezone 回归:DB 时间戳为 UTC,now 为本地时区时不得把当日订单算进前一天。
 func TestSameDayTimezone(t *testing.T) {
-	local := time.FixedZone("CST", 8*3600) // 固定 +8,避免宿主机时区影响断言
+	local := time.FixedZone("CST", 8*3600)            // 固定 +8,避免宿主机时区影响断言
 	now := time.Date(2026, 8, 21, 10, 0, 0, 0, local) // 本地 08-21 10:00
 	utc := time.FixedZone("UTC", 0)
 	cases := []struct {

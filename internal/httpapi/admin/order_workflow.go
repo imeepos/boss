@@ -19,9 +19,15 @@ func registerOrderWorkflowRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 核查预览:只读查询地址下设备与端口分布,不推进订单。
 	wf.GET("/:orderNo/check-preview", func(c *gin.Context) {
 		o, err := a.Order.GetByNo(c.Request.Context(), c.Param("orderNo"))
-		if err != nil { respondErr(c, err); return }
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		detail, err := a.Resource.CheckDetail(c.Request.Context(), o.AddressID)
-		if err != nil { respondErr(c, err); return }
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"orderNo": o.OrderNo, "addressId": o.AddressID, "stage": o.Stage, "status": o.Status, "detail": detail})
 	})
 
@@ -33,7 +39,10 @@ func registerOrderWorkflowRoutes(g *gin.RouterGroup, a *app.Application) {
 			return
 		}
 		available, idlePorts, err := a.Resource.Check(c.Request.Context(), o.AddressID)
-		if err != nil { respondErr(c, err); return }
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		if err := a.Order.CheckResource(c.Request.Context(), o.ID); err != nil {
 			respondErr(c, err)
 			return
