@@ -82,9 +82,10 @@ func portalTicketOf(it order.TicketItem, workerID int64) gin.H {
 		"customerName": it.CustomerName,
 		"customerPhoneMasked": httpx.MaskPhone(it.CustomerPhone),
 		"product":             it.OfferName,
-		"address":      it.Address, "distanceKm": nil, "scheduleSlot": "",
+		"address":        it.Address, "distanceKm": nil,
+		"scheduleSlot":   it.ScheduleSlot,
 		"stage": it.Stage, "stageTotal": 12, "status": status,
-		"slaLeftMinutes": nil, "finishedAt": it.FinishedAt,
+		"slaLeftMinutes": it.SlaLeftMinutes, "finishedAt": it.FinishedAt,
 	}
 }
 

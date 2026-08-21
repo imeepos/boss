@@ -66,10 +66,10 @@ func TestPGStore_ListComplaints(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status"}
+	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "created_at", "remote_diagnosis", "sla_deadline"}
 	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "TKT-20250817-012", int64(8), int64(0), int64(1), "主品牌·企业", "no_internet", "PROCESSING"))
+			AddRow(int64(1), "TKT-20250817-012", int64(8), int64(0), int64(1), "主品牌·企业", "SINGLE_OUTAGE", "PROCESSING", "2025-08-17 10:00", "", ""))
 
 	s := NewPGStore(mock, stubExists{})
 	got, err := s.ListComplaints(context.Background())
@@ -92,12 +92,12 @@ func TestPGStore_CreateComplaint(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO complaints`).
-		WithArgs("TKT-20250817-013", int64(1), nil, int64(1), "主品牌·企业", "slow", "OPEN").
+		WithArgs("TKT-20250817-013", int64(1), nil, int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock, stubExists{})
 	id, err := s.CreateComplaint(context.Background(), Complaint{
-		TicketNo: "TKT-20250817-013", CustomerID: 1, LegalEntityID: 1, LegalEntityName: "主品牌·企业", Type: "slow", Status: "OPEN",
+		TicketNo: "TKT-20250817-013", CustomerID: 1, LegalEntityID: 1, LegalEntityName: "主品牌·企业", Type: "SLOW_NET", Status: "OPEN",
 	})
 	if err != nil {
 		t.Fatalf("CreateComplaint: %v", err)
@@ -172,10 +172,13 @@ func TestPGStore_GetTicketItemByNo(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 19 columns matching the updated SELECT in GetTicketItemByNo.
 	cols := []string{
 		"id", "ticket_no", "order_id", "worker_id", "status",
 		"o.status", "c.name", "c.phone", "po.name",
 		"addr", "stage", "finished_at",
+		"splitter_port", "pre_bind_tag", "schedule_slot",
+		"cmp.type", "cmp.created_at", "cmp.remote_diagnosis", "cmp.sla_deadline",
 	}
 	mock.ExpectQuery(`FROM dispatch_tickets`).
 		WithArgs("TIC-1").
@@ -184,6 +187,8 @@ func TestPGStore_GetTicketItemByNo(t *testing.T) {
 				int64(1), "TIC-1", int64(7), int64(2), "DOING",
 				"DONE", "王先生", "13800001234", "1000M 极速宽带",
 				"望京X · 3栋501", int8(12), "2026-08-21 16:30",
+				"SPL-01-01", "", "",
+				"SINGLE_OUTAGE", "2026-08-21 10:00", "光功率过低", "2026-08-21 14:00",
 			))
 
 	s := NewPGStore(mock, stubExists{})
@@ -199,6 +204,22 @@ func TestPGStore_GetTicketItemByNo(t *testing.T) {
 	}
 	if it.Address != "望京X · 3栋501" || it.Stage != 12 {
 		t.Fatalf("addr/stage wrong: %+v", it)
+	}
+	if it.SplitterPort != "SPL-01-01" {
+		t.Fatalf("splitterPort wrong: %q", it.SplitterPort)
+	}
+	if it.FaultTypeLabel != "单户断网（紧急 SLA ≤4h）" {
+		t.Fatalf("faultTypeLabel wrong: %q", it.FaultTypeLabel)
+	}
+	if it.RemoteDiagnosis != "光功率过低" {
+		t.Fatalf("remoteDiagnosis wrong: %q", it.RemoteDiagnosis)
+	}
+	if it.ReportedAt != "2026-08-21 10:00" {
+		t.Fatalf("reportedAt wrong: %q", it.ReportedAt)
+	}
+	// SlaLeftMinutes depends on time.Now() vs sla_deadline, just check >=0 or ==0 for test.
+	if it.SlaLeftMinutes < 0 {
+		t.Fatalf("slaLeftMinutes negative: %d", it.SlaLeftMinutes)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
@@ -219,6 +240,8 @@ func TestPGStore_GetTicketItemByNo_NotFound(t *testing.T) {
 			"id", "ticket_no", "order_id", "worker_id", "status",
 			"o.status", "c.name", "c.phone", "po.name",
 			"addr", "stage", "finished_at",
+			"splitter_port", "pre_bind_tag", "schedule_slot",
+			"cmp.type", "cmp.created_at", "cmp.remote_diagnosis", "cmp.sla_deadline",
 		}))
 
 	s := NewPGStore(mock, stubExists{})
