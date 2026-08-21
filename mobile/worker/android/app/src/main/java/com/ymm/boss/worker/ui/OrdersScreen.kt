@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -102,6 +103,17 @@ fun OrdersScreen(nav: NavHost) {
         isRefreshing = refreshing,
         onRefresh = { refreshing = true; refresh++ },
         state = pullState,
+        contentAlignment = Alignment.TopStart,
+        indicator = {
+            // 对齐 user 端 PageRefresh:指示器水平居中,白底容器 + 主色圆环
+            PullToRefreshDefaults.Indicator(
+                state = pullState,
+                isRefreshing = refreshing,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = Color.White,
+                color = Primary,
+            )
+        },
     ) {
     Column(Modifier.fillMaxSize()) {
         TopBar("工单列表", action = "刷新", onAction = { refresh++ })
