@@ -1,10 +1,13 @@
 package adminapi
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	pushdomain "github.com/ymm-001/boss/internal/domain/push"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -69,6 +72,7 @@ func registerDispatchRoutes(g *gin.RouterGroup, a *app.Application) {
 			respondErr(c, err)
 			return
 		}
+		notifyTicketAssigned(a, c, w.ID, w.Name, ticketNo)
 		httpx.RecordAudit(a, c, "dispatch.assign", "dispatch_ticket", ticketNo,
 			map[string]any{"masterId": req.MasterID, "scheduleSlot": req.ScheduleSlot, "preBindTag": req.PreBindTag})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
@@ -168,9 +172,22 @@ func appendTransfer(a *app.Application, c *gin.Context, ticket *order.DispatchTi
 	if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), ticket.TicketNo, toID, toName); err != nil {
 		return err
 	}
+	notifyTicketAssigned(a, c, toID, toName, ticket.TicketNo)
 	httpx.RecordAudit(a, c, "dispatch.transfer", "dispatch_ticket", ticket.TicketNo,
 		map[string]any{"toMasterId": toID, "reason": reason})
 	return nil
+}
+
+// notifyTicketAssigned 派单/转派成功后向目标师傅推通知;尽力而为,失败只留痕不影响派单。
+func notifyTicketAssigned(a *app.Application, c *gin.Context, workerID int64, workerName, ticketNo string) {
+	if a.PushNotifier == nil || workerID <= 0 {
+		return
+	}
+	title, alert := pushdomain.TicketAssignedAlert(ticketNo, workerName)
+	go func() {
+		_ = a.PushNotifier.NotifyWorker(context.WithoutCancel(c.Request.Context()),
+			workerID, title, alert, map[string]string{"ticketNo": ticketNo})
+	}()
 }
 
 // assignTicketReq 工单指派请求体(masterId 必填;scheduleSlot/preBindTag 可选)。

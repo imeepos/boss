@@ -67,6 +67,8 @@ type Application struct {
 	Push push.Sender
 	// PushDevices 推送设备注册表(迁移 000095);App 上报 RegistrationID,发送链路按主体反查。
 	PushDevices pushdomain.DevicesService
+	// PushNotifier 定向通知器(派单→师傅手机);nil 安全(httpapi 跳过)。
+	PushNotifier pushdomain.WorkerNotifier
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
@@ -181,6 +183,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	if err := ensureAuditPartitions(ctx, pool); err != nil {
 		return nil, err
 	}
+	// 推送通道与设备注册表:通道供 Notifier/自检共用;设备表供上报与反查共用。
+	pushSender := push.NewDynamic(pushConfigResolver(usr, cfg))
+	pushdevices := pushdomain.NewDevicesPGStore(pool)
 	// 验证码短信通道:配置源=biz_params(后台短信配置页,60s 热生效),env 凭据兜底,
 	// 凭据齐备走阿里云国际短信(+86/+60 统一),否则降级日志通道(仅开发)。
 	portalSvc := portal.NewPGStoreWithSender(pool, sms.NewRouter(
@@ -212,7 +217,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		RealID: realid.NewDynamic(realidConfigResolver(usr, cfg)),
 
 		// 移动端推送通道:biz_params(push.*)优先/env 兜底,60s 热生效;凭据缺失降级日志通道。
-		Push: push.NewDynamic(pushConfigResolver(usr, cfg)),
+		Push: pushSender,
 
 		Billing: bill,
 		Arrears: bill,
@@ -246,7 +251,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		APIKey:      akstore,
 		AI:          aisvc,
 		Notify:      notify.NewPGStore(pool),
-		PushDevices: pushdomain.NewDevicesPGStore(pool),
+		PushDevices: pushdevices,
+		// 派单等业务事件的定向通知:设备反查 → 通道发送 → push_records 留痕(尽力而为)。
+		PushNotifier: pushdomain.NewNotifier(pushSender, pushdevices, pushdomain.NewRecordsPGStore(pool)),
 
 		// Backup 数据备份迁移(运维工具);归档目录 env BOSS_BACKUP_DIR,默认 data/backups。
 		Backup: newBackupService(pool),

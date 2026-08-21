@@ -3,12 +3,14 @@ package workerapi
 // W 师傅端门户工单动作:领取/签到/导航/转单/改约/回退/重试/投诉/修复上报。
 
 import (
+	"context"
 	"errors"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	pushdomain "github.com/ymm-001/boss/internal/domain/push"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -126,12 +128,26 @@ func transferTicket(c *gin.Context, a *app.Application, tk *order.DispatchTicket
 	if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), tk.TicketNo, req.TargetWorkerID, targetName); err != nil {
 		return err
 	}
+	notifyTicketTransferred(a, c, req.TargetWorkerID, targetName, tk.TicketNo)
 	_, err := a.OrderLedger.AppendDispatchTransfer(c.Request.Context(), order.DispatchTransfer{
 		TicketID: tk.TicketID, FromWorkerID: workerID, FromWorkerName: workerName,
 		ToWorkerID: req.TargetWorkerID, ToWorkerName: targetName, Reason: req.Reason,
 		OperatorAccountID: 0, // 师傅端自助改派,非账号操作
 	})
 	return err
+}
+
+// notifyTicketTransferred 师傅端转派成功后向目标师傅推通知(退回池 to=0 不推);
+// 尽力而为,失败只留痕不影响改派。
+func notifyTicketTransferred(a *app.Application, c *gin.Context, targetWorkerID int64, targetName, ticketNo string) {
+	if a.PushNotifier == nil || targetWorkerID <= 0 {
+		return
+	}
+	title, alert := pushdomain.TicketAssignedAlert(ticketNo, targetName)
+	go func() {
+		_ = a.PushNotifier.NotifyWorker(context.WithoutCancel(c.Request.Context()),
+			targetWorkerID, title, alert, map[string]string{"ticketNo": ticketNo})
+	}()
 }
 
 // workerRescheduleReq 改约请求体(对齐 OpenAPI /tickets/{ticketNo}/reschedule)。

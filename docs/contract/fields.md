@@ -317,6 +317,24 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 
 > 接口（两 portal 同形，JWT 鉴权）：`POST /api/user/v1/push/device`、`POST /api/worker/v1/push/device`，body `{registrationId, vendor?}`；形态非法 42200（契约 user/misc.yaml、worker/misc.yaml）。管理端只读（后台页二期随推送留痕一起评估）。
 
+### 1.6.7 push_records（推送留痕，迁移 000096）
+
+定向推送逐设备一行留痕；"留痕为权威、推送尽力而为"——发送失败不影响业务事务。触发点：派单指派（`POST /dispatch/pool/{ticketNo}/assign`）、admin 转派、师傅端转派（目标师傅）；文案统一出口 `push.TicketAssignedAlert`。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 主体类型 | `SubjectType` | subject_type | user / worker |
+| 主体 ID | `SubjectID` | subject_id | BIGINT |
+| RegistrationID | `RegistrationID` | registration_id | SKIP_* 时空 |
+| 标题/内容 | `Title` / `Alert` | title / alert | — |
+| 扩展参数 | `Extras` | extras | JSONB，如 `{"ticketNo":"TK-1"}` |
+| 状态 | `Status` | status | SENT / FAILED / LOG（日志通道）/ SKIP_NO_DEVICE / SKIP_DISABLED |
+| 服务商消息 | `MsgID` | msg_id | JPush msg_id；日志通道为 `log` |
+| 失败原因 | `Error` | error | FAILED 时填 |
+| 时间 | `CreatedAt` | created_at | — |
+
+> 无独立 API；后台查看页二期评估（现经 SQL/留痕表审计）。
+
 ### 1.7 api_keys（免登录 API key，internal/domain/apikey，迁移 000042/000043/000045）
 
 > 固定用途：CLI/自动化（bossctl）免登录认证。key 与三类主体绑定（`subject_type` account/worker/customer，000043 三表登录边界 + 000044 主体扩展）；只存 sha256(key) 哈希，明文仅创建时返回一次（安全约定见迁移 000042 头注）。
