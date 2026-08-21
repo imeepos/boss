@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -107,8 +108,12 @@ fun MessagesScreen(nav: Nav) {
 
 @Composable
 private fun SegmentBar(selected: String, onSelect: (String) -> Unit) {
+    // 5 个分类胶囊在 360dp 屏放不下,加 horizontalScroll 让最后一个 tab 可被滚到。
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+        Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
