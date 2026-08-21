@@ -3,6 +3,7 @@ package com.ymm.boss.worker.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -182,6 +183,20 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean 
 fun Empty(text: String = "暂无数据") {
     Text(text, fontSize = 13.sp, color = Muted,
         modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+}
+
+// 行内动作按钮(白底蓝边/蓝实底,卡片内快捷操作用)
+@Composable
+fun ActionBtn(text: String, modifier: Modifier = Modifier, primary: Boolean = false, onClick: () -> Unit) {
+    val bg = if (primary) Color(0xFF086CF5) else Color.White
+    val fg = if (primary) Color.White else Color(0xFF086CF5)
+    Text(text, fontSize = 13.sp, color = fg,
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(bg)
+            .clickable { onClick() }
+            .padding(vertical = 10.dp),
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 }
 
 // 轻提示(对齐 H5 草稿的 alert/Toast)

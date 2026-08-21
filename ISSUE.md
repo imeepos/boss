@@ -1,5 +1,9 @@
 # ISSUE.md（上游/工具问题清单）
 
+## 后端·worker
+
+- **信息缺失｜`GET /api/worker/v1/tickets/{ticketNo}` 字段不全**：`internal/httpapi/worker/ticket.go::workerTicketDetailHandler` 仅返回 `ticketNo/bizNo/status/statusLabel/stages/quad/riskCheck`，缺 `type/typeLabel/product/customerName/customerPhoneMasked/address/splitterPort/preBindTag/scheduleSlot/faultTypeLabel/reportedAt/slaLeftMinutes/remoteDiagnosis/finishedAt/distanceKm`（参 `api/openapi/worker/schemas.yaml::TicketDetail`）。移动端工单详情需按 `designs/worker-order-detail-v1.spec.md` §4.2 做 4 屏分支（A 安装/装维中、B 报障/紧急、C 待领取、D 已完成），缺字段前端只能 fallback 占位（`type` 由 `stages.length` 推断 INSTALL=12/REPAIR=6，其余字段缺失则隐藏区块）。
+
 ## web/admin
 
 - **信息不准｜`web/admin/scripts/dev-token.mjs` 已失效**：脚本按旧前缀 `POST {baseUrl}/auth/login` 请求登录，后端实际前缀是 `/api/admin/v1`（`src/lib/serverConfig.ts` 的 `API_PREFIX`），运行直接 HTTP 404。应改为 `/api/admin/v1/auth/login`，或删除脚本改由 curl + localStorage 注入（skill docs 已记录替代做法）。

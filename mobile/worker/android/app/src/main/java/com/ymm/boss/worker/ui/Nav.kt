@@ -14,6 +14,8 @@ sealed interface Screen {
     // 工单详情(新装 order.html / 修复 repair.html 按工单前缀分流)
     data class TicketDetail(val no: String) : Screen
     data class Repair(val no: String) : Screen
+    // 报障工单的"修复上报"表单(独立页,避免与工单详情互相递归)
+    data class RepairReport(val no: String) : Screen
 
     // 新装作业链
     data class Scan(val no: String) : Screen          // 扫码绑定
