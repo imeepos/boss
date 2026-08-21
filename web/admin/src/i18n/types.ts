@@ -79,6 +79,24 @@ export interface Translations {
     pageUnit: string
   }
   pages: {
+    home: {
+      navFeatures: string
+      navContact: string
+      login: string
+      enterConsole: string
+      heroBadge: string
+      heroTitle: string
+      heroSubtitle: string
+      heroCta: string
+      heroCtaAlt: string
+      stats: Array<{ value: string; label: string }>
+      featuresTitle: string
+      featuresSubtitle: string
+      features: Array<{ icon: string; title: string; desc: string }>
+      contactTitle: string
+      contactDesc: string
+      footer: string
+    }
     dashboard: {
       title: string
       welcome: string
@@ -1587,6 +1605,47 @@ export interface Translations {
       jump: string
       pageUnit: string
       loadFail: string
+    }
+    backup: {
+      title: string
+      desc: string
+      refresh: string
+      newBackup: string
+      restore: string
+      restoreTitle: string
+      restoreHint: string
+      restoreSubmit: string
+      restoreUploading: string
+      restoreNoFile: string
+      createTitle: string
+      createHint: string
+      tableSearch: string
+      selectedCount: string
+      createSubmit: string
+      createSubmitting: string
+      allTables: string
+      columns: string[]
+      kindBackup: string
+      kindRestore: string
+      scopeAll: string
+      scopeTables: string
+      statusRunning: string
+      statusSucceeded: string
+      statusFailed: string
+      download: string
+      del: string
+      deleteConfirm: string
+      empty: string
+      loadFail: string
+      busy: string
+      detailTitle: string
+      close: string
+      rangeText: string
+      prev: string
+      next: string
+      perPage: string
+      jump: string
+      pageUnit: string
     }
     profile: {
       title: string

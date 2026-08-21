@@ -7,11 +7,13 @@ import { UCenterLayout } from './layouts/UCenterLayout'
 import { AuthGuard } from './layouts/AuthGuard'
 import { useProfile } from './layouts/profile'
 const LoginPage = lazy(() => import('./pages/login'))
+const HomePage = lazy(() => import('./pages/home'))
 const DashboardPage = lazy(() => import('./pages/dashboard'))
 const AccountListPage = lazy(() => import('./pages/base/account'))
 const AddressPage = lazy(() => import('./pages/base/address'))
 const GeoPage = lazy(() => import('./pages/base/geo'))
 const ImporterPage = lazy(() => import('./pages/base/importer'))
+const BackupPage = lazy(() => import('./pages/backup'))
 const ParamsPage = lazy(() => import('./pages/base/params'))
 const AuthConfigPage = lazy(() => import('./pages/base/authconfig'))
 const SmsConfigPage = lazy(() => import('./pages/base/smsconfig'))
@@ -74,6 +76,7 @@ const PlaceholderPage = lazy(() => import('./pages/placeholder').then((m) => ({ 
 import { MENU_GROUPS } from './router/menu.def'
 import { canAccess } from './router/role-menu'
 import { useT } from './i18n'
+import { getAuthToken } from './api/client'
 import { ConfirmProvider } from './components/ConfirmDialog'
 
 /** 菜单页:越权直访 403;已接入页正式渲染,其余占位(A1 起逐页替换)。 */
@@ -87,6 +90,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'address') return <AddressPage />
   if (pageKey === 'geo') return <GeoPage />
   if (pageKey === 'importer') return <ImporterPage />
+  if (pageKey === 'backup') return <BackupPage />
   if (pageKey === 'params') return <ParamsPage />
   if (pageKey === 'authconfig') return <AuthConfigPage />
   if (pageKey === 'smsconfig') return <SmsConfigPage />
@@ -149,6 +153,11 @@ function RouteFallback() {
   return <div className="flex min-h-32 items-center justify-center text-sm text-[var(--shell-group-title)]">Loading…</div>
 }
 
+/** 根路径分流:有 token 进工作台,无 token 看官网首页(未登录直接访问 / 不再弹登录)。 */
+function RootRedirect() {
+  return <Navigate to={getAuthToken() ? '/dashboard' : '/home'} replace />
+}
+
 /** 附件管理预览:自由筛选 + 选择模式全功能展示。 */
 function AttachmentManagerPreview() {
   const [selected, setSelected] = useState<number[]>([])
@@ -162,6 +171,9 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/home" element={<HomePage />} />
+        {/* 根路径分流(公开):未登录看官网首页,已登录进工作台;守卫区改无路径布局路由。 */}
+        <Route path="/" element={<RootRedirect />} />
         <Route
           path="/ucenter"
           element={
@@ -180,14 +192,12 @@ export default function App() {
           <Route path="audit" element={<ProfilePage />} />
         </Route>
         <Route
-          path="/"
           element={
             <AuthGuard>
               {(profile) => <AdminLayout profile={profile} />}
             </AuthGuard>
           }
         >
-          <Route index element={<Navigate to="/dashboard" replace />} />
           {/* 附件管理组件预览路由(AttachmentManager 通用组件,正式嵌入业务页后移除)。 */}
           <Route path="dev/attachments" element={<AttachmentManagerPreview />} />
           {MENU_GROUPS.flatMap((g) => g.items).map((it) => (
