@@ -150,39 +150,22 @@ func quadAssetCode(a *app.Application, c *gin.Context, assetID int64) string {
 	return ast.AssetCode
 }
 
-// quadPortCode 端口码(ports.port_code;经端口所属资源遍历)。
+// quadPortCode 端口码(ports.port_code;单查 GetPort,非遍历)。
 func quadPortCode(a *app.Application, c *gin.Context, portID int64) string {
-	resources, err := a.Resource.ListResources(c.Request.Context())
-	if err != nil {
+	p, err := a.Resource.GetPort(c.Request.Context(), portID)
+	if err != nil || p == nil {
 		return ""
 	}
-	for _, r := range resources {
-		ports, err := a.Resource.ListPorts(c.Request.Context(), r.ID)
-		if err != nil {
-			continue
-		}
-		for _, p := range ports {
-			if p.PortID == portID {
-				return p.PortCode
-			}
-		}
-	}
-	return ""
+	return p.PortCode
 }
 
-// quadAddrCode 用户地址码(user_addresses.addr_code;未命中返回空)。
+// quadAddrCode 地址码(addresses.path,权威表;LTREE 路径如 root.luzon.ncr.manila)。
 func quadAddrCode(a *app.Application, c *gin.Context, addressID int64) string {
-	list, err := a.UserData.ListUserAddresses(c.Request.Context())
-	if err != nil {
+	ad, err := a.Geo.GetAddress(c.Request.Context(), addressID)
+	if err != nil || ad == nil {
 		return ""
 	}
-	for _, m := range list {
-		if id, _ := m["id"].(int64); id == addressID {
-			code, _ := m["addrCode"].(string)
-			return code
-		}
-	}
-	return ""
+	return ad.Path
 }
 
 // workerReportGetHandler 上报预取:四码对照 + 检测项占位。

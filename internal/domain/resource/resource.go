@@ -36,6 +36,7 @@ type ResourceService interface {
 	GetResource(ctx context.Context, id int64) (*Resource, error)
 
 	ListPorts(ctx context.Context, resourceID int64) ([]Port, error)
+	GetPort(ctx context.Context, portID int64) (*Port, error)
 	CreatePort(ctx context.Context, p Port) (int64, error)
 	// ReservePort 端口预占:仅 IDLE 可预占为 RESERVED,并挂订单;失败返回 ErrPortNotAvailable。
 	ReservePort(ctx context.Context, portID, orderID int64) error

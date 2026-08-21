@@ -126,4 +126,15 @@ type GeoService interface {
 	RemoveSubdivisionName(ctx context.Context, code, locale, nameType string) error
 
 	Import(ctx context.Context, data ImportData) (ImportCounts, error)
+
+	// GetAddress 按 id 查地址(path/name/level);未命中返回 nil。
+	GetAddress(ctx context.Context, id int64) (*AddressInfo, error)
+}
+
+// AddressInfo 地址简要信息(四码 addrCode 展示用)。
+type AddressInfo struct {
+	ID    int64  `json:"id"`
+	Path  string `json:"path"`  // LTREE 路径如 root.luzon.ncr.manila
+	Name  string `json:"name"`
+	Level int    `json:"level"` // 1市 2区 3街道 4小区 5楼栋
 }

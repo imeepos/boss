@@ -115,6 +115,21 @@ func (s *PGStore) GetResource(ctx context.Context, id int64) (*Resource, error) 
 
 const portCols = `id, port_code, quad_code, resource_id, legal_entity_id, legal_entity_name, address_id, region_id, region_name, COALESCE(order_id, 0), status`
 
+// GetPort 按 id 查单个端口;未命中返回 ErrNotFound。
+func (s *PGStore) GetPort(ctx context.Context, portID int64) (*Port, error) {
+	var p Port
+	err := s.db.QueryRow(ctx, `SELECT `+portCols+` FROM ports WHERE id = $1`, portID).
+		Scan(&p.PortID, &p.PortCode, &p.QuadCode, &p.ResourceID, &p.LegalEntityID, &p.LegalEntityName,
+			&p.AddressID, &p.RegionID, &p.RegionName, &p.OrderID, &p.Status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("resource: get port: %w", err)
+	}
+	return &p, nil
+}
+
 // ListPorts 列出端口;resourceID=0 返回全部,否则按设备过滤。
 func (s *PGStore) ListPorts(ctx context.Context, resourceID int64) ([]Port, error) {
 	rows, err := s.db.Query(ctx, `
