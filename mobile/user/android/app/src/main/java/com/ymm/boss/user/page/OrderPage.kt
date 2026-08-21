@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.HourglassEmpty
@@ -498,8 +499,26 @@ private fun BoxScope.FloatingActionBar(nav: Nav, no: String, order: JSONObject?,
                     ) { Text("联系师傅", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
                 }
                 "CANCELLED" -> {
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Text("订单已取消", fontSize = 13.sp, color = Palette.muted)
+                    Box(
+                        Modifier.weight(1f).height(44.dp)
+                            .background(Palette.err.copy(alpha = 0.08f), RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Filled.Cancel,
+                                contentDescription = null,
+                                tint = Palette.err,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                "订单已取消",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.W500,
+                                color = Palette.err,
+                            )
+                        }
                     }
                     OutlinedButton(
                         onClick = { nav.push(com.ymm.boss.user.ui.Route.Complaint) },
