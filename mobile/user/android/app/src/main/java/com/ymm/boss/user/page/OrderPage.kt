@@ -124,9 +124,12 @@ fun OrderScreen(nav: Nav, no: String) {
             if (err.isNotEmpty()) Notice(err, Palette.err)
             StatusHeader(order)
             InfoCard(order)
-            MilestoneBlock(order)
-            if (status == "INSTALLING") EstimateBanner(order)
-            TimelineCard(detail, timeline)
+            // 已取消订单:无装维动作,里程碑 + 12 环节时间线均隐藏。
+            if (status != "CANCELLED") {
+                MilestoneBlock(order)
+                if (status == "INSTALLING") EstimateBanner(order)
+                TimelineCard(detail, timeline)
+            }
             Spacer(Modifier.height(96.dp))
         }
         if (status.isNotEmpty()) FloatingActionBar(nav, no, order, status)
