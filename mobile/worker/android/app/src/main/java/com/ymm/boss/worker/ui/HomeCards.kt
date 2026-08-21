@@ -108,7 +108,7 @@ internal fun HomeHeader(state: HomeHeadState, onOpenMessages: () -> Unit) {
 /** 今日概览卡:标题 + 三列数值(对齐 user 端 BroadbandCard 的 SubInfo 布局);顶距 0,贴齐滚动区顶。 */
 @Composable
 internal fun OverviewCard(today: TodayStats) {
-    HomeCard(modifier = Modifier.padding(top = 0.dp)) {
+    HomeCard(topPadding = 0) {
         Text(
             "今日概览", fontSize = 16.sp, lineHeight = 20.sp,
             fontWeight = FontWeight.Bold, color = Primary,
@@ -140,9 +140,9 @@ private fun SubInfo(label: String, value: String, color: Color, modifier: Modifi
 
 /** 白底圆角卡容器(对齐 user 端卡片规格:16dp 圆角 + 16dp 内边距)。 */
 @Composable
-internal fun HomeCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun HomeCard(modifier: Modifier = Modifier, topPadding: Int = 4, content: @Composable () -> Unit) {
     Card(
-        modifier = modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp),
+        modifier = modifier.fillMaxWidth().padding(top = topPadding.dp, bottom = 4.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
