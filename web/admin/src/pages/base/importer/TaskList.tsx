@@ -14,7 +14,7 @@ export interface ImportTaskRow {
   createdAt: string
 }
 
-export function ImportTaskList() {
+export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
   const t = useT()
   const im = t.pages.importer
   const [rows, setRows] = useState<ImportTaskRow[]>([])
@@ -26,13 +26,13 @@ export function ImportTaskList() {
       .then((d) => setRows(d?.items ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : im.loadFail))
   }
-  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="overflow-x-auto px-4 pb-4" style={{ margin: '0 16px 24px' }}>
-      <div className="flex flex-wrap items-center gap-2 p-4" style={{ padding: '0 0 10px' }}>
-        <h3 style={{ margin: 0, fontSize: 14 }}>{im.tasksTitle}</h3>
-        <span className="spacer" />
+    <div className="overflow-x-auto px-4 pb-4">
+      <div className="flex items-center gap-2 pb-2.5">
+        <h3 className="m-0 text-sm">{im.tasksTitle}</h3>
+        <div className="flex-1" />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
       </div>
       <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">

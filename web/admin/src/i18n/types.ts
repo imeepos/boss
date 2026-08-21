@@ -188,6 +188,25 @@ export interface Translations {
       taskColumns: string[]
       taskKindAddr: string
       taskKindGeo: string
+      fileButton: string
+      dropHint: string
+      onlyJson: string
+      fileTooLarge: string
+      readFail: string
+      pasteToggle: string
+      clear: string
+      template: string
+      importing: string
+      pastePlaceholder: string
+      parseFailAt: string
+      reasonNotArray: string
+      reasonNotObject: string
+      reasonBadRow: string
+      previewOf: string
+      previewTruncated: string
+      importedGeo: string
+      addrColumns: string[]
+      geoSections: string[]
     }
     account: {
       title: string
