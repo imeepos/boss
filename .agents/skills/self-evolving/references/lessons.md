@@ -146,3 +146,4 @@
 - 共享工作区提交前必看 `git diff --cached`:并行进程可能已把它的文件暂存进 index,直接 `git add 我的文件 && git commit` 会把 index 里别人的暂存一并卷入;混文件(如 openapi user.yaml)用 `git hash-object -w` + `git update-index --cacheinfo` 只暂存自己的 hunk(2026-08-23 stripe 接入踩过,reset --soft 重做)。
 - 契约命名门禁(check-contract-sync B)会扫描 json tag:解码外部渠道 snake_case 响应别用 struct tag,用 map[string]any 取字段。
 - 当门禁脚本输出"OK"但带计数时,先检查计数是否为 0 或异常小——扫描目录迁移后 0 条路由也能全绿,假阴性比 FAIL 更危险(2026-08-23 contract-sync A 扫旧目录 internal/app,22 条路由漂移无人发现)。
+- Compose 组件内部链了 `.padding(top=X)` 时,外部再传 `Modifier.padding(top=0)` 是 no-op(内部 padding 在后,覆盖归零);要归零必须给组件加显式参数(如 topPadding=0)。(2026-08-21 worker 首页 OverviewCard 顶距,用户真机二次点名)

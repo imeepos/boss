@@ -755,3 +755,13 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最大坑:并行代理生成的 pgx mock 测试与实际依赖签名/SQL 参数不一致，导致全仓编译或测试失败；为追求数字而引入不可维护测试反而降低质量。
 - skill 是否提前警告:共享工作区改动需先检查归属，红线覆盖了这一点；但没有替代“先确保测试可编译、再看覆盖率”的明确门禁。
 - 重来一次:先按包单独运行测试和 coverprofile，再提交可靠的边界用例；对真实数据库/对象存储优先使用稳定集成测试或只覆盖可离线模拟的错误边界，不为不可达分支修改生产代码。
+
+## 2026-08-21 user/worker Android 打包安装
+- 哪个坑浪费最多时间:脚本只覆盖 user，且系统 PATH 没有 adb；如果直接运行脚本会在设备选择前失败。本次先读取 user/worker 的 Gradle 配置，确认两端默认分别连接 102 的 user/worker API，再用 SDK 内 adb 手动构建和安装。
+- skill 有没有提前警告:有。Android 经验要求确认 `BUILD SUCCESSFUL` 后再 install，并区分实体机与模拟器；本次同时检测到两台设备，明确指定实体机 serial，避免误装模拟器。
+- 重来一次:脚本应支持 worker 或统一双端构建安装；执行前先检查 `$HOME/Library/Android/sdk/platform-tools/adb` 和 `adb devices -l`，构建成功后再逐包安装，并用 `pm path` 与 `lastUpdateTime` 核验。
+
+## 2026-08-21 worker Android 首页重设计
+- 哪个坑浪费最多时间:把 `Modifier.padding(top=0.dp)` 通过参数传给 HomeCard,而 HomeCard 内部链了自己 `.padding(top=4.dp)`,修饰符在内部 padding 之前叠加,零边距被 4dp 覆盖,no-op 假修复;用户看真机后才二次点名。
+- skill 有没有提前警告:部分。红线#6(未验证就声称已修复)方向对,但没写"Compose 修饰符叠加顺序会吃掉外部归零"这一具体机制。
+- 重来一次:组件内部写死的 padding 要覆盖时,必须给组件加显式参数(如 topPadding)而不是靠外部 modifier;改完在真机/截图上确认数值,不靠代码推断。

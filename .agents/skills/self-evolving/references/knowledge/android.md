@@ -66,3 +66,4 @@ portal_sms_codes, emulator, 10.0.2.2, adb reverse
 | 17 | known-issues（2026-08-20） | build FAILED 后 && 链 adb install 装旧包报 Success;先判定 BUILD SUCCESSFUL 再 install |
 | 18 | lessons（2026-08-20） | 多页视觉一致=抽共用组件+单点参数对象(PinnedGradientPage/PinnedHeaderSpec),别各页调参对比修补 |
 | 19 | lessons（2026-08-20） | 多会话仓库:pull 后先 assemble 验基线绿;别人坏提交最小修复解锁 |
+- Compose 修饰符叠加:内部 `.padding(top=4)` 会覆盖外部传入的 `padding(top=0)`;组件内写死的间距要可归零,必须暴露显式参数(2026-08-21 worker 首页 OverviewCard 实锤,见 lessons.md)
