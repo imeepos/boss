@@ -39,6 +39,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, user.ErrRoleNotFound),
 		errors.Is(err, user.ErrFKViolation),
 		errors.Is(err, quadlink.ErrForeignKeyViolation),
+		errors.Is(err, worker.ErrForeignKeyViolation),
 		errors.Is(err, ErrGeoInvalidParam):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
@@ -80,7 +81,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, customer.ErrRegistrationConflict),
 		errors.Is(err, customer.ErrRealNameConflict),
 		errors.Is(err, worker.ErrRegistrationConflict),
-		errors.Is(err, worker.ErrRealNameConflict):
+		errors.Is(err, worker.ErrRealNameConflict),
+		errors.Is(err, worker.ErrInvalidReviewFields):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, ai.ErrNotConfigured),
 		errors.Is(err, ai.ErrInvalidInput):

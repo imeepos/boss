@@ -32,14 +32,23 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 		if !ok {
 			return
 		}
+		var req workerApproveReq
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(req.GroupID, "groupId"),
+				httpx.RequirePositiveID(req.RegionID, "regionId"),
+			)
+		}) {
+			return
+		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		workerID, err := a.WorkerOnboarding.Approve(c.Request.Context(), id, claims.AccountID)
+		workerID, err := a.WorkerOnboarding.Approve(c.Request.Context(), id, claims.AccountID, req.GroupID, req.RegionID)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
 		httpx.RecordAudit(a, c, "worker_registration.approve", "worker_registration", c.Param("id"),
-			gin.H{"workerId": workerID})
+			gin.H{"workerId": workerID, "groupId": req.GroupID, "regionId": req.RegionID})
 		respond(c, apitypes.CodeOK, gin.H{"workerId": workerID, "status": worker.RegStatusApproved})
 	})
 
@@ -147,6 +156,12 @@ type workerGroupCreateReq struct {
 // workerReviewReq 审核驳回请求体(note 选填,建议必填)。
 type workerReviewReq struct {
 	Note string `json:"note"`
+}
+
+// workerApproveReq 审核通过请求体(groupId/regionId 由审核员显式指定/纠正师傅登记空值)。
+type workerApproveReq struct {
+	GroupID  int64 `json:"groupId" binding:"required"`
+	RegionID int64 `json:"regionId" binding:"required"`
 }
 
 // workerRealNameReq 师傅实名核验提交请求体。

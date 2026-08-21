@@ -16,6 +16,7 @@ services:
       BOSS_JWT_SECRET: "sjb3jaoqhtWPAErtglyE2TqDiMc1j7oYXx5+IjmE+M5pdQ16V/Wrc5MUBIOZwYdt"
       BOSS_ADMIN_USERNAME: "admin"
       BOSS_ADMIN_PASSWORD: "admin123"
+      BOSS_DEBUG_SMS: "1" # 102 联调机开启 /debug/sms-code;严禁带到线上
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 15s

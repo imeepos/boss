@@ -8,10 +8,11 @@ import (
 
 // 师傅注册 / 审核 / 实名认证 子域错误。
 var (
-	ErrRegistrationNotFound = errors.New("worker: registration not found")
-	ErrRegistrationConflict = errors.New("worker: registration status conflict") // 非 PENDING 重复审核
-	ErrRealNameNotFound     = errors.New("worker: real name verification not found")
-	ErrRealNameConflict     = errors.New("worker: real name verification conflict") // 非 PENDING 重复核验
+	ErrRegistrationNotFound  = errors.New("worker: registration not found")
+	ErrRegistrationConflict  = errors.New("worker: registration status conflict")  // 非 PENDING 重复审核
+	ErrInvalidReviewFields   = errors.New("worker: review fields invalid")        // 审核时 groupId/regionId 未补正
+	ErrRealNameNotFound      = errors.New("worker: real name verification not found")
+	ErrRealNameConflict      = errors.New("worker: real name verification conflict") // 非 PENDING 重复核验
 )
 
 // 注册申请状态枚举(terms.md 通用枚举延伸)。
@@ -64,7 +65,8 @@ type OnboardingService interface {
 	// ListRegistrations 按状态(空=全部)列出申请,提交时间倒序。
 	ListRegistrations(ctx context.Context, status string) ([]Registration, error)
 	// Approve 审核通过:状态 PENDING→APPROVED,并建 workers 主档,回填 worker_id。
-	Approve(ctx context.Context, id, reviewerAccountID int64) (workerID int64, err error)
+	// groupID/regionID 由审核员在 admin UI 显式指定并校正。
+	Approve(ctx context.Context, id, reviewerAccountID, groupID, regionID int64) (workerID int64, err error)
 	// Reject 审核驳回:状态 PENDING→REJECTED,记审核意见(幂等仅作用于 PENDING)。
 	Reject(ctx context.Context, id, reviewerAccountID int64, note string) error
 }

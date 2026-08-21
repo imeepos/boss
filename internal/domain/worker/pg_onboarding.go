@@ -10,6 +10,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// nullableInt64 把 ≤0 视作空(NULL),与 worker_registrations 的可空约束保持一致。
+// 师傅自助注册允许 groupId=0 / regionId=0 表示待后台审核时补正,落库为 NULL。
+func nullableInt64(v int64) any {
+	if v <= 0 {
+		return nil
+	}
+	return v
+}
+
 // regCols lists columns returned by the list query.
 const regCols = `id, name, phone, id_card_no, group_id, region_id, status,
  review_note, reviewer_account_id, worker_id, submitted_at, reviewed_at`
@@ -41,7 +50,8 @@ func (s *PGStore) Submit(ctx context.Context, reg Registration) (int64, error) {
 	err := s.db.QueryRow(ctx, `
 INSERT INTO worker_registrations(name, phone, id_card_no, group_id, region_id)
 VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		reg.Name, reg.Phone, reg.IDCardNo, reg.GroupID, reg.RegionID).Scan(&id)
+		reg.Name, reg.Phone, reg.IDCardNo,
+		nullableInt64(reg.GroupID), nullableInt64(reg.RegionID)).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("worker: submit registration: %w", err)
 	}
@@ -93,18 +103,21 @@ SELECT `+regCols+` FROM worker_registrations
 // ApproveRegistration 审核通过:校验 PENDING,创建 workers 主档,更新申请回填 worker_id。
 // 返回新创建的 worker_id;status 冲突返回 ErrRegistrationConflict。
 // 乐观锁:UPDATE ... WHERE status=PENDING 原子置状态,避免并发双重通过。
-func (s *PGStore) Approve(ctx context.Context, id, reviewerAccountID int64) (int64, error) {
+// 班组/区域由 caller 显式传入(groupID/regionID > 0),允许审核时纠正师傅登记时未填的字段。
+func (s *PGStore) Approve(ctx context.Context, id, reviewerAccountID, groupID, regionID int64) (int64, error) {
+	if groupID <= 0 || regionID <= 0 {
+		return 0, ErrInvalidReviewFields
+	}
 	var (
-		name     string
-		groupID  int64
-		regionID int64
-		phone    string
-		subAt    time.Time
+		name  string
+		phone string
+		subAt time.Time
 	)
-	err := s.db.QueryRow(ctx, `
-SELECT name, group_id, region_id, phone, submitted_at
+	row := s.db.QueryRow(ctx, `
+SELECT name, phone, submitted_at
  FROM worker_registrations
- WHERE id = $1 AND status = $2`, id, RegStatusPending).Scan(&name, &groupID, &regionID, &phone, &subAt)
+ WHERE id = $1 AND status = $2`, id, RegStatusPending)
+	err := row.Scan(&name, &phone, &subAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, ErrRegistrationConflict
@@ -123,9 +136,10 @@ VALUES($1,$2,$3,$4,$5,1,$6,'') RETURNING id`,
 	}
 
 	res, err := s.db.Exec(ctx, `
-UPDATE worker_registrations SET status=$1, reviewer_account_id=$2, worker_id=$3, reviewed_at=now()
- WHERE id=$4 AND status=$5`,
-		RegStatusApproved, reviewerAccountID, workerID, id, RegStatusPending)
+UPDATE worker_registrations
+ SET status=$1, reviewer_account_id=$2, worker_id=$3, group_id=$4, region_id=$5, reviewed_at=now()
+ WHERE id=$6 AND status=$7`,
+		RegStatusApproved, reviewerAccountID, workerID, groupID, regionID, id, RegStatusPending)
 	if err != nil {
 		return 0, fmt.Errorf("worker: approve reg update: %w", err)
 	}
