@@ -818,3 +818,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 ## 2026-08-20 ODN 管理接口落地(goal round 3)
 - 顺利。一处失误:gofmt 漏跑 internal/pkg/httpx(只查了改动主目录),把未格式化文件提交了,靠 commit --amend 补救——门禁前 gofmt -l 要覆盖本次全部触碰包。
 - 复用模式有效:ledger_test 的 fakeX 内嵌接口桩 + doJSON + middleware.Authn 测试引擎直接照搬,handler 测试半小时收敛。
+
+## 2026-08-20 ODN 局点/核心设备与 Admin Web 收尾(goal round 4)
+- 最费时：共享工作区并行会话同时改三语言 i18n 与订单类型，web build/typecheck 的全量错误混入本轮；使用 git diff HEAD 与 `git diff --cached` 只暂存 ODN UI，避免吞并邻居改动。
+- 新经验：共享前端 i18n 文件不能直接 `git add`;必须从 HEAD 生成最小 patch 再 cached apply，保证提交边界。
+- 设备扩容后缀初版误把 -10 判非法(正则首位 [2-9]);规范是禁 -1、允许 -10，已改为 `-([2-9]|[1-9][0-9]+)` 并用 102 PG 重放迁移验证。
