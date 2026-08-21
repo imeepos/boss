@@ -217,3 +217,5 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - 本机无 JDK 也能编 Android:gradle 自带 JDK 在 ~/.gradle/jdks/eclipse_adoptium-17*/.../Contents/Home,`export JAVA_HOME=<该目录> ANDROID_HOME=~/Library/Android/sdk && ./gradlew compileDebugKotlin --rerun-tasks`;UP-TO-DATE 不算验证,必须 --rerun-tasks(2026-08-23 Stripe 支付页验证用)。
 - 2026-08-21 真机点不准控件时: `adb shell uiautomator dump /sdcard/ui.xml && adb shell cat /sdcard/ui.xml | grep -o 'text="xxx"[^>]*bounds="[^"]*"'` 直接取 bounds 中心点，不猜坐标。
 - git 提交长中文 message 不要用 `git commit -m "$(cat <<'EOF' ... EOF)"`(bash 报 bad substitution);写临时文件 `git commit -F <file>` 后删除。2026-08-24。
+- 102 后端新部署链路(2026-08-21 实测):本地 git push gitea(192.168.0.102:222) → CI 自动 build+push 镜像(tag=commit SHA,latest 随之更新,约 1 分钟) → ssh 102 `cd ~/boss/deployments && docker compose -f docker-compose.102.app.yml pull server && up -d server`(报 loki logging plugin 错误但容器仍重建成功,以 docker inspect Image/StartedAt 为准) → curl 验证。
+- 模拟器注入真实 token 联调:`adb shell am force-stop` 后 `adb shell "run-as <pkg> sh -c 'cat > /data/data/<pkg>/shared_prefs/<prefs>.xml'"` 写入信封 token;登录态用 `run-as <pkg> cat shared_prefs/<prefs>.xml` 核对,残留 mock-xxx token 一眼可辨。(2026-08-21)

@@ -160,3 +160,5 @@
 - 页面直访 404/空白时先 grep router/menu.def.ts 的真实 path(菜单分组带前缀,如 /alarm/alarm),不要猜 /alarm。(2026-04-11)
 - 当订单处于 stage 2 时，修复是预占入口先打开资源核查，只有核查 available 后才 POST `/orders/:orderNo/reserve`；直接预占会返回 42200 参数非法。skill 没提前警告我。
 - 当 React 页面动作按钮可能被表单包裹时，修复是所有非提交动作显式声明 `type="button"`，避免隐式提交导致导航。skill 没提前警告我。
+- 移动端"点击按钮无反应"先怀疑服务端状态没翻转,别只查前端:本例 accept 返回 code:0 但只回填 worker_id 不改 status,列表刷新后观感"没反应"。排查顺序 = 前端事件链(uiautomator dump 断言) → curl 同端点 → 查服务端写库逻辑。(2026-08-21 师傅端领取工单)
+- 测试替身里手工改状态(fw.tickets[0].Status="DOING")会掩蔽服务端不落库的 bug;fake 必须真实执行状态流转,断言才能守住回归。(2026-08-21)
