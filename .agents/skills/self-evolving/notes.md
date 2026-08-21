@@ -809,3 +809,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 新教训(候选红线)：本项目 migration 必须 BEGIN/COMMIT 成对;写入 schema_migrations 前应校验表确实存在。配套修复手段=核实后 delete 记录重放(000076/000079 两例)。
 - 另一坑:NOT NULL DEFAULT '' 列配 NULLIF($n,'') 必触发 23502——'' 语义列直接绑参,不要 NULLIF。
 - 集成测试要幂等:开头清理残留 + -count=2 验证。
+
+## 2026-04-11 admin 原生 confirm 替换为 ConfirmDialog
+- 最耗时的坑:找对了"没有 alert、只有 19 处 window.confirm",但浏览器冒烟时反复打不开页面——原因是告警页真实路由是 /alarm/alarm(菜单分组前缀),不是 /alarm;另外 cdp-capture 每次运行是全新浏览器上下文,localStorage 不跨运行持久,必须单次运行内 set 存储 + location.href 导航 + 最后一个 async eval 断言。
+- skill 有没有预警:cdp-capture 用法文档齐全,但没写"存储不跨运行持久"和"eval 顺序在 settle 前"这两个细节,踩了 4 次截图才定位。
+- 重来一次:先 grep menu.def.ts 拿真实 path 再开页;把全部前置动作压进同一次 cdp-capture 调用。

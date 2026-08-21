@@ -155,3 +155,6 @@
 - 2026-08-20 用户否定'订单按客户归属判公司'的推导:多地址客户场景下应按安装地址→区域→运营主体判定;领域判定问题先枚举实体的物理约束(一客户多地址)再选主判据,不要默认外键继承.
 - 并行会话共享工作区时,提交前必须 `git add <明确文件清单>` 而非 `git add -A/-.`;2026-08-20 ad27799 把并行会话未提交的 6 个文件扫进 docs 提交,只能靠未推送的 rebase 拆分补救。
 - cdp-capture 冒烟带鉴权页面:URL 先指到 /login,settle 后 eval 写 localStorage(boss.token/boss.servers/boss.server.active)再 location.replace('/目标页');直接reload会停在 /login(初始无token已被守卫重定向)。
+- 脚本批量在 import 区插行时,不要按"以 import 开头的行"定位插入点——多行 `import {` 会被拦腰插入;应找完整 import 语句(或 `} from` 行)之后插入。(2026-04-11 admin confirm 替换)
+- cdp-capture.mjs 每次运行是新浏览器上下文:localStorage 注入必须与页面导航在同一次调用里完成,且最后一个 --eval 用 async 等待+返回文本做断言;eval 执行在 --settle 之前。(2026-04-11)
+- 页面直访 404/空白时先 grep router/menu.def.ts 的真实 path(菜单分组带前缀,如 /alarm/alarm),不要猜 /alarm。(2026-04-11)
