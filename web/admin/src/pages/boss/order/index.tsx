@@ -9,11 +9,13 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type OrderListRow, type TimelineRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 const STATUSES = ['PENDING', 'RESERVED', 'INSTALLING', 'DONE'] as const
 
 export default function OrderPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const o = t.pages.orderPage
   const [rows, setRows] = useState<OrderListRow[]>([])
   const [error, setError] = useState('')
@@ -46,9 +48,9 @@ export default function OrderPage() {
   }
 
   // advance 按当前环节推进:1→核查 2→预占 3→收费(自动段 5-8);cancel 需二次确认。
-  const advance = (row: OrderListRow, action: 'check-resource' | 'reserve' | 'charge' | 'cancel') => {
+  const advance = async (row: OrderListRow, action: 'check-resource' | 'reserve' | 'charge' | 'cancel') => {
     if (busy) return
-    if (action === 'cancel' && !window.confirm(o.confirmCancel.replace('{no}', row.orderNo))) return
+    if (action === 'cancel' && !(await confirmDialog(o.confirmCancel.replace('{no}', row.orderNo), { danger: true }))) return
     setBusy(true)
     setError('')
     apiFetch(`/orders/${encodeURIComponent(row.orderNo)}/${action}`, { method: 'POST' })

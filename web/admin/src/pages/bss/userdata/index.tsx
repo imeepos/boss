@@ -5,11 +5,13 @@ import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
 import { TABS, type Row, type TabDef } from './tabs'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 type Loader = { rows: Row[]; error: string; busy: boolean }
 
 export default function UserDataPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const u = t.pages.userdataPage
   const [tab, setTab] = useState<string>(TABS[0].key)
   const [st, setSt] = useState<Record<string, Loader>>({})
@@ -25,8 +27,8 @@ export default function UserDataPage() {
   }
   useEffect(() => { load(TABS[0]) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const act = (def: TabDef, row: Row) => {
-    if (!window.confirm(u.actConfirm.replace('{id}', String(row.id)))) return
+  const act = async (def: TabDef, row: Row) => {
+    if (!(await confirmDialog(u.actConfirm.replace('{id}', String(row.id)), { danger: true }))) return
     apiFetch(`${def.actionPath}/${encodeURIComponent(String(row.id))}/${def.action}`, { method: 'PUT' })
       .then(() => { setNotice(u.acted); load(def) })
       .catch(() => setNotice(u.actFail))

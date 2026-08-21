@@ -6,9 +6,11 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ReserveRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function ReservePage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const r = t.pages.reservePage
   const [rows, setRows] = useState<ReserveRow[]>([])
   const [error, setError] = useState('')
@@ -30,7 +32,7 @@ export default function ReservePage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const release = async (reserveId: number) => {
-    if (busy || !window.confirm(r.releaseConfirm)) return
+    if (busy || !(await confirmDialog(r.releaseConfirm, { danger: true }))) return
     setBusy(true)
     try {
       await apiFetch(`/reserves/${reserveId}/release`, { method: 'POST' })

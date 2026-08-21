@@ -7,9 +7,11 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ReconRow } from '../types'
 import { fmtFee, fmtTime } from '../../../lib/format'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function PayCheckPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const p = t.pages.paycheck
   const [rows, setRows] = useState<ReconRow[]>([])
   const [error, setError] = useState('')
@@ -29,7 +31,7 @@ export default function PayCheckPage() {
 
   const settle = async (batchNo: string) => {
     if (busy) return
-    if (!window.confirm(p.settleConfirm)) return
+    if (!(await confirmDialog(p.settleConfirm, { danger: true }))) return
     setBusy(true)
     try {
       await apiFetch(`/reconciliations/${encodeURIComponent(batchNo)}/settle`, { method: 'POST' })

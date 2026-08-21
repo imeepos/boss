@@ -7,9 +7,11 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { pageSlice, type RegionRefRow, type TransferRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function TransferPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const r = t.pages.transferPage
   const [rows, setRows] = useState<TransferRow[]>([])
   const [regions, setRegions] = useState<RegionRefRow[]>([])
@@ -62,7 +64,7 @@ export default function TransferPage() {
   const review = async (transferNo: string, action: 'approve' | 'reject') => {
     if (busy) return
     const act = action === 'approve' ? r.approve : r.reject
-    if (!window.confirm(r.confirm.replace('{act}', act).replace('{no}', transferNo))) return
+    if (!(await confirmDialog(r.confirm.replace('{act}', act).replace('{no}', transferNo), { danger: action === 'reject' }))) return
     setBusy(true)
     try {
       await apiFetch(`/transfers/${encodeURIComponent(transferNo)}/${action}`, { method: 'POST' })

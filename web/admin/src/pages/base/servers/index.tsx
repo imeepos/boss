@@ -14,12 +14,14 @@ import {
   type ServerConfig,
   type ServerDraft,
 } from '../../../lib/serverConfig'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 const ACT_CLS = 'mr-2.5 border-none bg-none px-0 text-xs text-[var(--color-text-link)] cursor-pointer hover:underline'
 const DANGER_CLS = ACT_CLS + ' text-[var(--color-danger)]'
 
 export default function ServersPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const [items, setItems] = useState<ServerConfig[]>([])
   const [active, setActive] = useState<string | null>(null)
   const [editing, setEditing] = useState<ServerDraft | null>(null)
@@ -61,15 +63,15 @@ export default function ServersPage() {
     flash(t.pages.servers.saved)
   }
 
-  const del = (it: ServerConfig) => {
-    if (!window.confirm(t.pages.servers.deleteConfirm.replace('{name}', it.name))) return
+  const del = async (it: ServerConfig) => {
+    if (!(await confirmDialog(t.pages.servers.deleteConfirm.replace('{name}', it.name), { danger: true }))) return
     removeServer(it.id)
     reload()
     flash(t.pages.servers.deleted)
   }
 
-  const use = (it: ServerConfig) => {
-    if (!window.confirm(t.pages.servers.useConfirm.replace('{name}', it.name))) return
+  const use = async (it: ServerConfig) => {
+    if (!(await confirmDialog(t.pages.servers.useConfirm.replace('{name}', it.name)))) return
     setActiveServerId(it.id)
     window.location.reload()
   }

@@ -6,11 +6,13 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type QuadLinkRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 interface ReconReport { Total: number; Linked: number; Conflict: number; Unlinked: number }
 
 export default function QuadCheckPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const c = t.pages.quadCheckPage
   const [rows, setRows] = useState<QuadLinkRow[]>([])
   const [error, setError] = useState('')
@@ -30,7 +32,7 @@ export default function QuadCheckPage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reconcile = async () => {
-    if (busy || !window.confirm(c.reconcileConfirm)) return
+    if (busy || !(await confirmDialog(c.reconcileConfirm))) return
     setBusy(true)
     setHint('')
     try {
@@ -49,7 +51,7 @@ export default function QuadCheckPage() {
   }
 
   const resolve = async (id: number) => {
-    if (busy || !window.confirm(c.resolveConfirm)) return
+    if (busy || !(await confirmDialog(c.resolveConfirm))) return
     setBusy(true)
     try {
       await apiFetch(`/quad-conflicts/${id}/resolve`, { method: 'POST' })

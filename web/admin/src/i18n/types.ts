@@ -12,6 +12,7 @@ export interface Translations {
     loading: string
     dataScope: string
     dataScopeAll: string
+    confirmDialog: { title: string; ok: string; cancel: string }
   }
   auth: {
     login: {

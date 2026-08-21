@@ -6,9 +6,11 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ComplaintRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function ComplaintPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const c = t.pages.complaintPage
   const [rows, setRows] = useState<ComplaintRow[]>([])
   const [error, setError] = useState('')
@@ -27,7 +29,7 @@ export default function ComplaintPage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const close = async (ticketNo: string) => {
-    if (busy || !window.confirm(c.closeConfirm)) return
+    if (busy || !(await confirmDialog(c.closeConfirm, { danger: true }))) return
     setBusy(true)
     try {
       await apiFetch(`/complaints/${encodeURIComponent(ticketNo)}/close`, { method: 'POST' })

@@ -6,9 +6,11 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type StopResumeTaskRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function StopSrvPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const s = t.pages.stopsrv
   const [rows, setRows] = useState<StopResumeTaskRow[]>([])
   const [error, setError] = useState('')
@@ -31,7 +33,7 @@ export default function StopSrvPage() {
 
   const retry = async (taskId: number) => {
     if (busy) return
-    if (!window.confirm(s.retryConfirm)) return
+    if (!(await confirmDialog(s.retryConfirm))) return
     setBusy(true)
     try {
       await apiFetch(`/stop-resume-tasks/${taskId}/retry`, { method: 'POST' })

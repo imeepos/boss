@@ -13,6 +13,7 @@ import {
   upsertServer,
   type ServerDraft,
 } from '../lib/serverConfig'
+import { useConfirm } from './ConfirmDialog'
 
 export interface ServerManagerDialogProps {
   /** 阻断模式:无关闭按钮,启用任一服务端后回调 onApply。 */
@@ -27,6 +28,7 @@ const ACT_CLS = 'mr-2.5 border-none bg-none px-0 text-xs text-[var(--color-text-
 
 export function ServerManagerDialog({ blocking, onClose, onApply }: ServerManagerDialogProps) {
   const t = useT()
+  const confirmDialog = useConfirm()
   const [items, setItems] = useState(listServers)
   const [active, setActive] = useState(activeServerId)
   const [editing, setEditing] = useState<ServerDraft | null>(null)
@@ -49,16 +51,16 @@ export function ServerManagerDialog({ blocking, onClose, onApply }: ServerManage
     reload()
   }
 
-  const del = (id: string) => {
+  const del = async (id: string) => {
     const name = items.find((it) => it.id === id)?.name ?? ''
-    if (!window.confirm(t.pages.servers.deleteConfirm.replace('{name}', name))) return
+    if (!(await confirmDialog(t.pages.servers.deleteConfirm.replace('{name}', name), { danger: true }))) return
     removeServer(id)
     reload()
   }
 
-  const use = (id: string) => {
+  const use = async (id: string) => {
     const name = items.find((it) => it.id === id)?.name ?? ''
-    if (!blocking && !window.confirm(t.pages.servers.useConfirm.replace('{name}', name))) return
+    if (!blocking && !(await confirmDialog(t.pages.servers.useConfirm.replace('{name}', name)))) return
     setActiveServerId(id)
     if (blocking) onApply?.(id)
     else window.location.reload()

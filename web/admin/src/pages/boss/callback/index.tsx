@@ -5,9 +5,11 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ActivationCallbackRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function CallbackPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const c = t.pages.callbackPage
   const [rows, setRows] = useState<ActivationCallbackRow[]>([])
   const [error, setError] = useState('')
@@ -26,7 +28,7 @@ export default function CallbackPage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const retry = async (id: number) => {
-    if (busy || !window.confirm(c.retryConfirm)) return
+    if (busy || !(await confirmDialog(c.retryConfirm))) return
     setBusy(true)
     try {
       await apiFetch(`/activation-callbacks/${id}/retry`, { method: 'POST' })

@@ -6,11 +6,13 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ProvisionTaskRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 const STATUSES = ['PENDING', 'DOING', 'DONE', 'FAILED'] as const
 
 export default function ProvisionTaskPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const p = t.pages.provisionPage
   const [rows, setRows] = useState<ProvisionTaskRow[]>([])
   const [error, setError] = useState('')
@@ -30,7 +32,7 @@ export default function ProvisionTaskPage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const retry = async (taskNo: string) => {
-    if (busy || !window.confirm(p.retryConfirm)) return
+    if (busy || !(await confirmDialog(p.retryConfirm))) return
     setBusy(true)
     try {
       await apiFetch(`/provision-tasks/${encodeURIComponent(taskNo)}/retry`, { method: 'POST' })

@@ -11,6 +11,7 @@ const zhCN: Translations = {
     loading: '加载中…',
     dataScope: '数据域:',
     dataScopeAll: '数据域:全集团',
+    confirmDialog: { title: '操作确认', ok: '确认', cancel: '取消' },
   },
   auth: {
     login: {

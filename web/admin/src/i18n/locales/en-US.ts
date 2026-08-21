@@ -11,6 +11,7 @@ const enUS: Translations = {
     loading: 'Loading…',
     dataScope: 'Data Scope:',
     dataScopeAll: 'Data Scope: All',
+    confirmDialog: { title: 'Confirm', ok: 'OK', cancel: 'Cancel' },
   },
   auth: {
     login: {

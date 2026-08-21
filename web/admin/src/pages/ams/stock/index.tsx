@@ -7,9 +7,11 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { pageSlice, type StocktakeRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function StockPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const s = t.pages.stock
   const [rows, setRows] = useState<StocktakeRow[]>([])
   const [companies, setCompanies] = useState<{ id: number; name: string }[]>([])
@@ -58,7 +60,7 @@ export default function StockPage() {
   }
 
   const diffHandle = async (taskId: number) => {
-    if (busy || !window.confirm(s.diffConfirm)) return
+    if (busy || !(await confirmDialog(s.diffConfirm))) return
     setBusy(true)
     try {
       await apiFetch(`/stocktakes/${taskId}/diff-handle`, { method: 'POST' })

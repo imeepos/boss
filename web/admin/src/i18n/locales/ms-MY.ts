@@ -11,6 +11,7 @@ const msMY: Translations = {
     loading: 'Memuatkan…',
     dataScope: 'Skop Data:',
     dataScopeAll: 'Skop Data: Semua',
+    confirmDialog: { title: 'Sahkan', ok: 'Sahkan', cancel: 'Batal' },
   },
   auth: {
     login: {

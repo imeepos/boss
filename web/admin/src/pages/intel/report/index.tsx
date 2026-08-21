@@ -7,11 +7,13 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
 
 export default function ReportPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const r = t.pages.reportPage
   const [rows, setRows] = useState<ReportRow[]>([])
   const [error, setError] = useState('')
@@ -40,8 +42,8 @@ export default function ReportPage() {
       .catch(() => setViewError(r.viewFail))
   }
 
-  const send = (row: ReportRow) => {
-    if (busy || !window.confirm(r.sendConfirm.replace('{id}', String(row.id)))) return
+  const send = async (row: ReportRow) => {
+    if (busy || !(await confirmDialog(r.sendConfirm.replace('{id}', String(row.id))))) return
     setNotice('')
     setBusy(true)
     apiFetch(`/reports/${row.id}/send`, { method: 'POST' })

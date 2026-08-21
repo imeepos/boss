@@ -68,6 +68,7 @@ import { PlaceholderPage } from './pages/placeholder'
 import { MENU_GROUPS } from './router/menu.def'
 import { canAccess } from './router/role-menu'
 import { useT } from './i18n'
+import { ConfirmProvider } from './components/ConfirmDialog'
 
 /** 菜单页:越权直访 403;已接入页正式渲染,其余占位(A1 起逐页替换)。 */
 function MenuPage({ pageKey }: { pageKey: string }) {
@@ -137,6 +138,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
 
 export default function App() {
   return (
+    <ConfirmProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -174,5 +176,6 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </ConfirmProvider>
   )
 }

@@ -9,11 +9,13 @@ import { Input } from '../../../components/ui/input'
 import { AddressGeoDrawer, type AddressRow, type CountryRow } from './AddressGeoDrawer'
 import { AddressNodeDrawer } from './AddressNodeDrawer'
 import { CARD, TOOLBAR, SPACER, ADDR_ROW, ADDR_TOGGLE, ADDR_NAME, ACT_BTN, SEP } from '../geo/styles'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 interface AddressHit { node: AddressRow; ancestors: AddressRow[] }
 
 export default function AddressPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const a = t.pages.address
   const [roots, setRoots] = useState<AddressRow[]>([])
   const [countries, setCountries] = useState<CountryRow[]>([])
@@ -92,7 +94,7 @@ export default function AddressPage() {
   const visible = (rows: AddressRow[]) => filterRows(rows, kw, childrenOf)
 
   const remove = async (row: AddressRow) => {
-    if (!window.confirm(`${a.deleteConfirm}: ${row.name}?`)) return
+    if (!(await confirmDialog(`${a.deleteConfirm}: ${row.name}?`, { danger: true }))) return
     await apiFetch(`/addresses/${row.id}`, { method: 'DELETE' })
       .catch(() => setError(a.deleteFail))
     loadRoots()

@@ -6,9 +6,11 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ArrearsRow } from '../types'
 import { fmtFee } from '../../../lib/format'
+import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function ArrearsPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const a = t.pages.arrearsPage
   const [rows, setRows] = useState<ArrearsRow[]>([])
   const [error, setError] = useState('')
@@ -29,7 +31,7 @@ export default function ArrearsPage() {
   const act = async (customerId: number, action: 'stop' | 'resume') => {
     if (busy) return
     const confirmMsg = action === 'stop' ? a.stopConfirm : a.resumeConfirm
-    if (!window.confirm(confirmMsg)) return
+    if (!(await confirmDialog(confirmMsg, { danger: action === 'stop' }))) return
     setBusy(true)
     try {
       await apiFetch(`/arrears/${customerId}/${action}`, { method: 'POST' })

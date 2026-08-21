@@ -8,9 +8,11 @@ import { Pagination } from '../../components/Pagination'
 import { Drawer } from '../../components/Drawer'
 import { fmtTime } from '../../lib/format'
 import { pageSlice, type AlarmRow } from '../quad/types'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 export default function AlarmPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const a = t.pages.alarmPage
   const [rows, setRows] = useState<AlarmRow[]>([])
   const [error, setError] = useState('')
@@ -33,7 +35,7 @@ export default function AlarmPage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const ack = async (alarmId: number) => {
-    if (busy || !window.confirm(a.ackConfirm)) return
+    if (busy || !(await confirmDialog(a.ackConfirm))) return
     setBusy(true)
     try {
       await apiFetch(`/alarms/${alarmId}/ack`, { method: 'POST' })
