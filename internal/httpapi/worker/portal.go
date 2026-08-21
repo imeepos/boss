@@ -140,6 +140,7 @@ func registerWorkerPortalAuth(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/auth/logout", func(c *gin.Context) {
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
+	registerWorkerDevRoutes(g, a)
 }
 
 // workerSubjectResolver 师傅端只认 worker 主体密钥;account/customer 主体

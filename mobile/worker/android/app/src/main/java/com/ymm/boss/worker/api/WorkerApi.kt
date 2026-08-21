@@ -18,6 +18,11 @@ object AuthApi {
     suspend fun smsCode(phone: String): JSONObject =
         Api.post("/auth/sms-code", JSONObject().put("phone", phone))
 
+    // 开发模式:仅在 server 端 BOSS_DEV_MODE=true 时注册。回显该手机号 login 场景的最近一条未过期未消费验证码;
+    // 40400 表示尚未签发(需先调 smsCode)。生产构建不会出现此路径(服务端不挂载)。
+    suspend fun devSmsCode(phone: String): JSONObject =
+        Api.post("/auth/dev/sms-code", JSONObject().put("phone", phone))
+
     suspend fun login(phone: String, mode: String, credential: String): JSONObject {
         val body = JSONObject().put("phone", phone).put("mode", mode)
         if (mode == "sms") body.put("smsCode", credential) else body.put("password", credential)

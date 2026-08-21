@@ -44,6 +44,35 @@ paths:
                   token: { type: string }
                   workerId: { type: integer }
 
+  /auth/dev/sms-code:
+    post:
+      tags: [Auth]
+      summary: 开发模式查询最新验证码(仅 BOSS_DEV_MODE=true 注册)
+      operationId: devWorkerSmsCode
+      description: |
+        只在服务端 BOSS_DEV_MODE=true 时注册。供师傅端开发模式自动填表使用。
+        返回该手机号 login 场景最近一条未过期且未消费的验证码;不存在返回 40400。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        '200':
+          description: 命中
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: string, example: '123456' }
+                  issuedAt: { type: string, format: date-time }
+        '404': { $ref: './schemas.yaml#/components/responses/NotFound' }
+
   /auth/logout:
     post:
       tags: [Auth]

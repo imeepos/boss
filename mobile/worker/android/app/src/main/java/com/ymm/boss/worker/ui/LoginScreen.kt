@@ -26,14 +26,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.api.Api
+import com.ymm.boss.worker.api.ApiException
 import com.ymm.boss.worker.api.AuthApi
 import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.Primary2
+import com.ymm.boss.worker.util.DevMode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.util.Log
@@ -48,6 +51,9 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
     var countdown by remember { mutableStateOf(0) }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
+    val dev = remember { DevMode.get(ctx) }
+    var devMode by remember { mutableStateOf(dev.enabled) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Header("装维平台 · 师傅端", "请用工号手机号登录")
@@ -74,6 +80,19 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
                                 try {
                                     AuthApi.smsCode(phone.trim())
                                     countdown = 60
+                                    if (!devMode) {
+                                        while (countdown > 0) { delay(1000); countdown-- }
+                                        return@launch
+                                    }
+                                    // 开发模式:服务端回显最近一条验证码,自动回填;短信落库需一拍,短暂轮询拿取。
+                                    repeat(8) {
+                                        delay(300)
+                                        try {
+                                            val c = AuthApi.devSmsCode(phone.trim()).optString("code")
+                                            if (c.isNotEmpty()) { sms = c; return@launch }
+                                        } catch (_: ApiException) { /* 40400 暂无记录,继续重试 */ }
+                                        catch (_: Exception) { }
+                                    }
                                     while (countdown > 0) { delay(1000); countdown-- }
                                 } catch (e: Exception) {
                                     tip = "验证码发送失败:${e.message}"
@@ -90,7 +109,6 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
                 scope.launch {
                     try {
                         val r = AuthApi.login(phone.trim(), "sms", sms.trim())
-                        // Api 已解信封,r 即 data:{token,workerId}(契约 auth.yaml)
                         val tk = r.optString("token")
                         if (tk.isEmpty()) {
                             tip = "登录响应缺少 token"
@@ -108,6 +126,25 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
         }
         Card(Modifier.padding(14.dp)) {
             Notice("登录需师傅手机号在职且验证码有效;登录后 token 由 Api 自动携带。")
+        }
+        // 开发模式开关:开启后获取验证码时自动从服务端回拉明文并回填输入框;
+        // 仅在服务端 BOSS_DEV_MODE=true 时实际生效。
+        Card(Modifier.padding(14.dp)) {
+            Column {
+                Text("开发者选项", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF262626))
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth().clickable {
+                    devMode = !devMode
+                    dev.enabled = devMode
+                }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (devMode) "☑" else "☐", fontSize = 16.sp, color = Primary)
+                    Column(Modifier.padding(start = 10.dp).weight(1f)) {
+                        Text("开发模式", fontSize = 14.sp)
+                        Text("点击\"获取验证码\"后自动从服务端回填明文", fontSize = 12.sp, color = Color(0xFF8C8C8C))
+                    }
+                }
+            }
         }
         if (tip.isNotEmpty()) Card(Modifier.padding(14.dp)) { Notice(tip, red = true) }
     }

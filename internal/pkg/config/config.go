@@ -11,6 +11,7 @@ type Config struct {
 	Server struct {
 		HTTPAddr string
 		GRPCAddr string
+		DevMode  bool // BOSS_DEV_MODE=true:注册开发专用调试端点(回显验证码等);生产严禁开启。
 	}
 	CORS struct {
 		Origins []string
@@ -110,6 +111,7 @@ func Load() *Config {
 	c := &Config{}
 	c.Server.HTTPAddr = getenv("BOSS_HTTP_ADDR", ":8080")
 	c.Server.GRPCAddr = getenv("BOSS_GRPC_ADDR", ":9090")
+	c.Server.DevMode = getenv("BOSS_DEV_MODE", "") == "true"
 	c.CORS.Origins = getlist("BOSS_CORS_ORIGINS", []string{"http://localhost:5173", "http://localhost:5174"})
 	c.Database.DSN = getenv("BOSS_PG_DSN", "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable")
 	c.APISIX.AdminURL = getenv("BOSS_APISIX_ADMIN", "http://192.168.0.102:29180")
