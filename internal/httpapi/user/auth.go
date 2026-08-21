@@ -48,6 +48,7 @@ func customerIDFromToken(claims *auth.Claims) int64 {
 }
 
 // requireCustomer 客户鉴权守卫:从 API key Subject 或客户 JWT 取客户 ID;非客户身份 401。
+// 合成客户 ID 为负数(隔离空间),也是合法客户。
 func requireCustomer(c *gin.Context) (int64, bool) {
 	if s := middleware.SubjectFrom(c); s != nil && s.Type == customerRole {
 		return s.Ref, true
@@ -59,7 +60,7 @@ func requireCustomer(c *gin.Context) (int64, bool) {
 	}
 	claims, _ := v.(*auth.Claims)
 	id := customerIDFromToken(claims)
-	if id <= 0 {
+	if id == 0 {
 		respond(c, apitypes.CodeUnauthorized, nil)
 		return 0, false
 	}
