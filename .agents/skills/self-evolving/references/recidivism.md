@@ -51,3 +51,4 @@
 | 自写临时 CDP 脚本做浏览器调试而非用 cdp-capture.mjs | 1 | 2026-08-20(元素级 clip 截图自写 icon-check.mjs,被中断未跑成) | 与高频红线#2精神冲突;确需元素级截图应先扩展 cdp-capture 而非另起炉灶 |
 | 跑 docker prune 前未核对仅本地标签镜像与宿主 registry 登录态 | 1 | 2026-08-20(docker-clean.sh 删掉 deploy-runner 镜像,CI 断链;叠加重建出 600 迁移文件致 boss-server 重启 13 次) | prune 前先圈关键镜像,清理后必验 CI 链路 |
 | 组件内部 padding 吃掉外部归零 modifier,造成 no-op 假修复 | 1 | 2026-08-21(worker 首页 OverviewCard 顶距,传 padding(top=0) 无效,真机确认后才真修) | 假修复一轮+用户二次点名 |
+| 4 | 2026-08-21 | 真机 reboot 前未查 secure keyguard,PIN 锁死设备(1 次) |

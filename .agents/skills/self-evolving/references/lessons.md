@@ -147,3 +147,7 @@
 - 契约命名门禁(check-contract-sync B)会扫描 json tag:解码外部渠道 snake_case 响应别用 struct tag,用 map[string]any 取字段。
 - 当门禁脚本输出"OK"但带计数时,先检查计数是否为 0 或异常小——扫描目录迁移后 0 条路由也能全绿,假阴性比 FAIL 更危险(2026-08-23 contract-sync A 扫旧目录 internal/app,22 条路由漂移无人发现)。
 - Compose 组件内部链了 `.padding(top=X)` 时,外部再传 `Modifier.padding(top=0)` 是 no-op(内部 padding 在后,覆盖归零);要归零必须给组件加显式参数(如 topPadding=0)。(2026-08-21 worker 首页 OverviewCard 顶距,用户真机二次点名)
+- 2026-08-21 共享真机禁盲目 reboot:先 `dumpsys window policy | grep secure=true` 判断有无 PIN 锁,锁死即永久失去 adb 可控性;SystemUI 卡死优先转 emulator 而不是重启真机。
+- 2026-08-21 Kotlin 不存在 `Modifier.包名.函数` 点号调用扩展;Modifier 链必须先 import 再裸函数名连缀,编译错误一眼即辨。
+- 2026-08-21 when 校验的 else 分支必须显式返回"通过"哨兵(如 ""),`else -> "agree"` 会把门控条件变成永久失败,UI 自动化点击无响应时优先查这类恒假分支。
+- 2026-08-21 实名流程: 后端 scene=verify 验证码端点 + verifications 附件三列(000070)已在 102 上线;合成客户(注册未建主档)无手机号,发码端点正确 40400,端上须有失败提示通道。
