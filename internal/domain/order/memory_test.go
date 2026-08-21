@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"errors"
 	"testing"
 )
 
@@ -106,5 +107,33 @@ func TestTrackNotFound(t *testing.T) {
 	s, _ := newSvc()
 	if _, _, err := s.Track(context.Background(), 99); err != ErrOrderNotFound {
 		t.Fatalf("err = %v, want ErrOrderNotFound", err)
+	}
+}
+
+// TestMemoryService_SubmitOwnership 契约:注入 OwnershipResolver 时归属由地址推导,
+// 请求直传值仅做冲突校验(adopted note 2026-08-20-order-legal-entity-by-address)。
+func TestMemoryService_SubmitOwnership(t *testing.T) {
+	own := OwnershipMap{100: {LegalEntityID: 2, RegionPath: "root.luzon.ncr"}}
+	cust := stubExists{ok: true}
+	s := NewMemoryService(cust, &stubChecker{}, own)
+
+	o, err := s.Submit(context.Background(), SubmitReq{CustomerID: 1, AddressID: 100, ChannelID: 5})
+	if err != nil {
+		t.Fatalf("Submit: %v", err)
+	}
+	if o.LegalEntityID != 2 || o.RegionPath != "root.luzon.ncr" {
+		t.Fatalf("ownership not derived: %+v", o)
+	}
+
+	if _, err := s.Submit(context.Background(), SubmitReq{
+		CustomerID: 1, AddressID: 100, ChannelID: 5, LegalEntityID: 1,
+	}); !errors.Is(err, ErrOwnershipMismatch) {
+		t.Fatalf("err=%v, want ErrOwnershipMismatch", err)
+	}
+
+	if _, err := s.Submit(context.Background(), SubmitReq{
+		CustomerID: 1, AddressID: 999, ChannelID: 5,
+	}); !errors.Is(err, ErrAddressNotCovered) {
+		t.Fatalf("err=%v, want ErrAddressNotCovered", err)
 	}
 }

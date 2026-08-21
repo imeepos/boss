@@ -25,6 +25,9 @@ func TestPGStore_Submit(t *testing.T) {
 		}
 		defer mock.Close()
 
+		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+			WithArgs(int64(100)).
+			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(1), "root.luzon"))
 		mock.ExpectQuery(`SELECT 'ORD-'`).
 			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
 		mock.ExpectQuery(`INSERT INTO orders`).
@@ -36,13 +39,58 @@ func TestPGStore_Submit(t *testing.T) {
 
 		s := NewPGStore(mock, stubExists{ok: true})
 		o, err := s.Submit(context.Background(), SubmitReq{
-			CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5, LegalEntityID: 1, RegionPath: "root.luzon",
+			CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5,
 		})
 		if err != nil {
 			t.Fatalf("Submit: %v", err)
 		}
+		if o.LegalEntityID != 1 || o.RegionPath != "root.luzon" {
+			t.Fatalf("ownership not derived: %+v", o)
+		}
 		if o.ID != 7 || o.Status != "PENDING" || o.Stage != 1 || o.OrderNo == "" {
 			t.Fatalf("o=%+v", o)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("地址未覆盖", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+			WithArgs(int64(100)).
+			WillReturnError(pgx.ErrNoRows)
+
+		s := NewPGStore(mock, stubExists{ok: true})
+		_, err = s.Submit(context.Background(), SubmitReq{CustomerID: 1, AddressID: 100, ChannelID: 5})
+		if !errors.Is(err, ErrAddressNotCovered) {
+			t.Fatalf("err=%v, want ErrAddressNotCovered", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("归属冲突", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+			WithArgs(int64(100)).
+			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(2), "root.luzon"))
+
+		s := NewPGStore(mock, stubExists{ok: true})
+		_, err = s.Submit(context.Background(), SubmitReq{
+			CustomerID: 1, AddressID: 100, ChannelID: 5, LegalEntityID: 1,
+		})
+		if !errors.Is(err, ErrOwnershipMismatch) {
+			t.Fatalf("err=%v, want ErrOwnershipMismatch", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet: %v", err)

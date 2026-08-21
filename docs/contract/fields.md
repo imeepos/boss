@@ -114,6 +114,21 @@
 
 `addresses` 国际化挂接（迁移 000038，path 权威不变）：`CountryID → country_code`（→ geo_country，空=历史数据未挂）、`AdminCode → admin_code`（→ geo_subdivision，一级行政区锚点）。
 
+### 1.5.2 odn_region_code / odn_city_code（ODN 地理空间编码映射，迁移 000075）
+
+> 依据《Suniway ODN 地理空间编码规范》V1.0；派生映射表，PSGC（000041）权威不动。裁定见 adopted note 2026-08-20-odn-geospatial-encoding-alignment；审计 alignment-audit §10（E4/E5/E10/E11）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| PRV 编码 | `PrvCode` | prv_code | CHAR(6) 主键 `^[A-Z]{3}\d{3}$`，如 PHL001；82 行全量（PHL075 预留不落） |
+| PSGC 锚点 | `PsgcCode` | psgc_code | → geo_subdivision.code，如 PH-1400100000 |
+| 规范省名 | `SpecName` | spec_name | 规范索引表中文名 |
+| 备注 | `Note` | note | 层级差异/规范勘误留痕（NCR→大区节点、HUC、Maguindanao 拆分等） |
+| 城市前缀 | `CityPrefix` | city_prefix | VARCHAR(5) `^[A-Z]{3,5}$`（规范索引含 4-5 字母，见 ISSUE.md），与 prv_code 复合主键（规范 2.3 省内唯一） |
+| 城市 PSGC | `PsgcCode` | psgc_code | → geo_subdivision.code（HUC 直辖大区时锚大区直属城市节点），119 行全量 |
+
+> 局点 3 位序号（MNL001 的 001 段）、网格分区与电杆/人井等基础设施编码属 odn 待建域（E6~E9），本表只登记 PRV 与城市前缀字典。
+
 
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
@@ -242,10 +257,11 @@
 | 客户 | `CustomerID` | customer_id | BIGINT → customers |
 | 渠道 | `ChannelID` | channel_id | BIGINT → channels（REQ-ORD-006 必填不可改） |
 | 产品 | `OfferID` | offer_id | BIGINT → product_offers |
-| 地址 | `AddressID` | address_id | BIGINT → addresses |
+| 地址 | `AddressID` | address_id | BIGINT → addresses；**归属判定源**（见下行） |
 | 当前环节 | `Stage` | stage | 1~12（见 terms.md 第 1 节） |
 | 状态 | `Status` | status | PENDING/RESERVED/INSTALLING/DONE（见 terms.md 第 3 节） |
-| 区域 | `RegionPath` | region_path | LTREE |
+| 区域 | `RegionPath` | region_path | LTREE；下单时由地址推导快照 |
+| 归属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities；由安装地址推导（address→region→最近覆盖祖先，migrations/000076），下单快照不可变；调用方直传值仅做冲突校验（adopted note 2026-08-20-order-legal-entity-by-address） |
 | 成交价 | `PriceSnapshot` | price_snapshot | 下单时生效价快照（账单金额以此为准） |
 
 > 快照列（TS 实体）：`customer_name`（客户姓名）、`offer_name`（产品名），下单时冻结，改名/调价不影响历史订单（与 `price_snapshot` 同规则）。

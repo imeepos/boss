@@ -184,12 +184,14 @@
 
 | # | 规范条款 | 差距 | 处置 | 状态 |
 |:-:|:-----|:-----|:-----|:----:|
-| E4 | 第2章 PRV 省级编码（`PHL001`~`PHL083`） | 系统用 PSGC 10 位码，无 PRV 格式 | 派生映射表（PSGC 省级 ↔ PRV），不改 000041 权威数据 | 待建 |
-| E5 | 第3章 NodeCode 局点编码（`MNL001`） | 全库无 NodeCode 概念 | 同上映射 + 规划部分配台账 | 待建 |
+| E4 | 第2章 PRV 省级编码（`PHL001`~`PHL083`） | 系统用 PSGC 10 位码，无 PRV 格式 | migrations/000075 `odn_region_code` 82 行全量映射（PHL075 预留不落），FK 锚 geo_subdivision，集成测试 `TestODNRegionCityCodes_Integration` 守护 | ✅ 000075 |
+| E5 | 第3章 NodeCode 局点编码（`MNL001`） | 全库无 NodeCode 概念 | 000075 `odn_city_code` 119 个城市前缀全量登记（复合主键 省内唯一，规范 2.3）；局点 3 位序号实体随 E6 odn 域落 | ✅ 前缀登记（序号随 E6） |
 | E6 | 第4章 网格分区 + 基础设施编码（P/MH/TW/CLS/TBX） | 无电杆/人井/铁塔/接头盒/终端盒实体 | 新域 `internal/domain/odn`，需求驱动再建 | 待建 |
 | E7 | 4.7 网格容量预警（800/999/90 三级） | 无 | 随 E6 网格实体落 | 待建 |
 | E8 | 第5章 光缆段落/纤芯编码 + A 端方向优先级 | 无光缆段落/纤芯实体 | 随 E6 落 | 待建 |
 | E9 | 第7章 红线3（5 位数字系统校验） | 无编码校验逻辑 | 随 E6 落（入库校验 5 位数字） | 待建 |
-| E10 | 前缀冲突：`ports.port_code='P-SPLxx-yy'` vs 电杆 `P01001` | 字母前缀 `P` 双义 | ODN 域开工前须先裁定端口码形态/域名空间 | ⚠ 待裁定 |
+| E10 | 前缀冲突：`ports.port_code='P-SPLxx-yy'` vs 电杆 `P01001` | 字母前缀 `P` 双义 | 裁定：ODN 规范码落 odn_* 表独立命名空间（`prv_code`/`city_prefix`/未来基础设施码列），`ports.port_code` 保留为 BOSS 内部资源码，二者不混存不互斥，冲突消解 | ✅ 裁定 |
+| E11 | 姊妹规范设备码 `OLT001`（无连字符）vs `Resource.Code` `OLT-01` | 核心链路设备编码格式分歧 | 同 E10：ODN 链路编码是 odn 域编码体系，`resource.code` 是 BOSS 内部资源码，经映射关联、不强制改名；odn 域开工时落 `odn_code` 专列 | ✅ 裁定（映射随 E6） |
 
-> 姊妹文档《Suniway ODN 基础设施资源编码规范》（SNW/OLT/ODF/OCC/ODB/SDB/PRT/TBP）与 `Resource.Code`（`OLT-01`/`SPL-01`）的格式分歧随 E10 一并裁定。
+> 姊妹文档《Suniway ODN 基础设施资源编码规范》V1.0 已对账：核心链路拓扑（`SNW_PRV_NodeCode_ODF?_OCC?_ODB_SDB_PRT_TBP?`）、连接符规则（系统一律 `_`、扩容后缀 `-N`（禁 `-1`）、`--` 仅图纸）、标签规范均归 odn 域编码体系，系统侧校验正则随 E6 落地。
+> 规范文档自身缺陷（83省 vs PSA 82省混排 HUC、城市前缀 3字母 vs 索引表 4-5 字母、塔布克/阿拉贝尔/纳本图兰归属错误、Maguindanao 已拆分未更新）已登记 `ISSUE.md`，映射一律按 PSA PSGC 事实裁定并在 note 列留痕。

@@ -26,17 +26,23 @@ type MemoryService struct {
 	seq     int64
 	cust    CustomerLookup
 	checker ResourceChecker
+	own     OwnershipResolver
 	logSeq  int64
 }
 
-// NewMemoryService 创建内存订单服务。
-func NewMemoryService(cust CustomerLookup, checker ResourceChecker) *MemoryService {
-	return &MemoryService{
+// NewMemoryService 创建内存订单服务;own 可为 nil(退回请求直传归属)。
+func NewMemoryService(cust CustomerLookup, checker ResourceChecker, own ...OwnershipResolver) *MemoryService {
+	s := &MemoryService{
 		m:       make(map[int64]*Order),
 		logs:    make(map[int64][]StageLog),
+		ratings: make(map[string]Rating),
 		cust:    cust,
 		checker: checker,
 	}
+	if len(own) > 0 {
+		s.own = own[0]
+	}
+	return s
 }
 
 // Submit 下单(环节1):校验客户存在后建单,status=PENDING、stage=1,写环节日志。
@@ -51,6 +57,17 @@ func (s *MemoryService) Submit(ctx context.Context, req SubmitReq) (*Order, erro
 	if !ok {
 		return nil, fmt.Errorf("order: customer %d not found", req.CustomerID)
 	}
+	legalEntityID, regionPath := req.LegalEntityID, req.RegionPath
+	if s.own != nil {
+		own, err := s.own.Resolve(ctx, req.AddressID)
+		if err != nil {
+			return nil, err
+		}
+		if err := checkOwnershipConflict(req, own); err != nil {
+			return nil, err
+		}
+		legalEntityID, regionPath = own.LegalEntityID, own.RegionPath
+	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -64,8 +81,8 @@ func (s *MemoryService) Submit(ctx context.Context, req SubmitReq) (*Order, erro
 		Stage:         1,
 		Status:        "PENDING",
 		ChannelID:     req.ChannelID,
-		LegalEntityID: req.LegalEntityID,
-		RegionPath:    req.RegionPath,
+		LegalEntityID: legalEntityID,
+		RegionPath:    regionPath,
 		CreatedAt:     time.Now(),
 	}
 	s.m[o.ID] = o

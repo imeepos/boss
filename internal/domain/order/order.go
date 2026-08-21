@@ -29,11 +29,13 @@ type StageLog struct {
 }
 
 // SubmitReq 下单请求(环节1)。
+// LegalEntityID/RegionPath 为可选校验值:归属由安装地址服务端推导
+// (adopted note 2026-08-20-order-legal-entity-by-address),传入值与推导冲突时拒单。
 type SubmitReq struct {
 	CustomerID    int64
 	OfferID       int64
 	AddressID     int64
 	ChannelID     int64 // 必填,不可改(→ channels)
-	LegalEntityID int64 // 品牌=运营主体(legal_entities)
+	LegalEntityID int64 // 可选校验:≠0 时须与地址推导一致
 	RegionPath    string
 }

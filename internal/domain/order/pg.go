@@ -48,6 +48,13 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 	if !ok {
 		return nil, fmt.Errorf("order: customer %d not found", req.CustomerID)
 	}
+	own, err := s.resolveOwnership(ctx, req.AddressID)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkOwnershipConflict(req, own); err != nil {
+		return nil, err
+	}
 
 	// 订单号由数据库序列发号(migrations/000031):跨进程/重启不重复。
 	var orderNo string
@@ -64,8 +71,8 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 		Stage:         1,
 		Status:        "PENDING",
 		ChannelID:     req.ChannelID,
-		LegalEntityID: req.LegalEntityID,
-		RegionPath:    req.RegionPath,
+		LegalEntityID: own.LegalEntityID,
+		RegionPath:    own.RegionPath,
 	}
 	err = s.db.QueryRow(ctx, `
 		INSERT INTO orders(order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path)
@@ -118,6 +125,31 @@ func (s *PGStore) Track(ctx context.Context, orderID int64) (*Order, []StageLog,
 		stages = append(stages, lg)
 	}
 	return &o, stages, rows.Err()
+}
+
+// resolveOwnership 地址→经营区域→最近覆盖祖先的运营主体(migrations/000076)。
+// 地址不存在/未挂区域/区域链无覆盖 均返回 ErrAddressNotCovered。
+func (s *PGStore) resolveOwnership(ctx context.Context, addressID int64) (AddressOwnership, error) {
+	var own AddressOwnership
+	err := s.db.QueryRow(ctx, `
+		SELECT cov.legal_entity_id, cov.path::text
+		FROM addresses a
+		JOIN LATERAL (
+			SELECT r.legal_entity_id, r.path
+			FROM regions r
+			WHERE r.path <@ (SELECT path FROM regions WHERE id = a.region_id)
+			  AND r.legal_entity_id IS NOT NULL
+			ORDER BY r.path DESC
+			LIMIT 1
+		) cov ON TRUE
+		WHERE a.id = $1`, addressID).Scan(&own.LegalEntityID, &own.RegionPath)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return AddressOwnership{}, fmt.Errorf("address %d: %w", addressID, ErrAddressNotCovered)
+	}
+	if err != nil {
+		return AddressOwnership{}, fmt.Errorf("order: resolve ownership: %w", err)
+	}
+	return own, nil
 }
 
 // appendStage 写环节日志。

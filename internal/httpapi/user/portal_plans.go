@@ -131,7 +131,7 @@ func portalSubmitWorkOrder(c *gin.Context, a *app.Application, cid, targetOffer,
 	}
 	return a.Order.Submit(c.Request.Context(), order.SubmitReq{
 		CustomerID: cid, OfferID: offerID, AddressID: addressID,
-		ChannelID: channelID, LegalEntityID: cust.LegalEntityID, RegionPath: "",
+		ChannelID: channelID, // 归属由安装地址服务端推导(2026-08-20 裁定)
 	})
 }
 

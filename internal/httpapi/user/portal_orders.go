@@ -155,11 +155,6 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeInvalidParam, nil)
 			return
 		}
-		cust, err := a.Customer.Get(c.Request.Context(), cid)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
 		channelID, err := portalChannelID(c, a, req.ChannelID)
 		if err != nil {
 			respondErr(c, err)
@@ -170,12 +165,10 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		o, err := a.Order.Submit(c.Request.Context(), order.SubmitReq{
-			CustomerID:    cid,
-			OfferID:       offerID,
-			AddressID:     addrID,
-			ChannelID:     channelID,
-			LegalEntityID: cust.LegalEntityID,
-			RegionPath:    "",
+			CustomerID: cid,
+			OfferID:    offerID,
+			AddressID:  addrID,
+			ChannelID:  channelID, // 归属由安装地址服务端推导(2026-08-20 裁定)
 		})
 		if err != nil {
 			respondErr(c, err)
