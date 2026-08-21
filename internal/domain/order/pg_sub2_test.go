@@ -39,6 +39,8 @@ func TestPGStore_CreateDismantle(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM orders WHERE id = \$1\)`).
+		WithArgs(int64(10)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO dismantles`).
 		WithArgs("DSM-20250817-002", int64(10), int64(1), "主品牌·企业", int64(6), int64(201), "PENDING").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))

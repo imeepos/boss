@@ -54,6 +54,9 @@ var ErrOfferNotOrderable = errors.New("order: offer not found or not published")
 // ErrChannelNotActive 渠道不存在或已停用。
 var ErrChannelNotActive = errors.New("order: channel not found or disabled")
 
+// ErrForeignKeyViolation 关联实体不存在(投诉/工单等子表写入口的孤儿数据防护)。
+var ErrForeignKeyViolation = errors.New("order: referenced entity not found")
+
 // exists 校验单表存在性(orders 无外键约束,关联完整性由本域应用层保证)。
 func (s *PGStore) exists(ctx context.Context, table string, id int64, extra string) (bool, error) {
 	var ok bool

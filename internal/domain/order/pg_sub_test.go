@@ -40,6 +40,8 @@ func TestPGStore_CreateDispatchTicket(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM orders WHERE id = \$1\)`).
+		WithArgs(int64(2)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO dispatch_tickets`).
 		WithArgs("WO-02", int64(2), nil, "", nil, "", nil, "", int64(1), "主品牌·企业", "PENDING").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -91,6 +93,8 @@ func TestPGStore_CreateComplaint(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM customers WHERE id = \$1\)`).
+		WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO complaints`).
 		WithArgs("TKT-20250817-013", int64(1), nil, int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))

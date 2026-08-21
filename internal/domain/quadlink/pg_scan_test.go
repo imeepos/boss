@@ -174,6 +174,9 @@ func TestPGStore_Reconcile(t *testing.T) {
 	// 对账:成员缺失的关联置 CONFLICT。
 	mock.ExpectExec(`UPDATE quad_links ql SET status = 'CONFLICT'`).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 2))
+	// 对账顺带清理孤儿行(与 CONFLICT 同判定,DELETE)。
+	mock.ExpectExec(`DELETE FROM quad_links ql`).
+		WillReturnResult(pgxmock.NewResult("DELETE", 0))
 	// 统计各状态数。
 	mock.ExpectQuery(`SELECT status, count(.*) FROM quad_links GROUP BY status`).
 		WillReturnRows(mock.NewRows([]string{"status", "count"}).
