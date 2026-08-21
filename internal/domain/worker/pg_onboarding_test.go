@@ -46,6 +46,33 @@ func TestPGStore_Submit(t *testing.T) {
 	}
 }
 
+// TestPGStore_SubmitAllowsEmpty 师傅端自助注册允许 groupId/regionId=0,以 NULL 落库等待后台补正。
+func TestPGStore_SubmitAllowsEmpty(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`INSERT INTO worker_registrations\(name, phone, id_card_no, group_id, region_id\)`).
+		WithArgs("李师傅", "13900000002", "110101199001011235", nil, nil).
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(8)))
+
+	s := NewPGStore(mock)
+	id, err := s.Submit(context.Background(), Registration{
+		Name: "李师傅", Phone: "13900000002", IDCardNo: "110101199001011235",
+	})
+	if err != nil {
+		t.Fatalf("Submit empty: %v", err)
+	}
+	if id != 8 {
+		t.Fatalf("id=%d, want 8", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
 func TestPGStore_ListRegistrations(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -94,26 +121,46 @@ func TestPGStore_Approve(t *testing.T) {
 
 	subAt := time.Date(2026, 8, 19, 8, 0, 0, 0, time.UTC)
 	// 1) 读待审核行
-	mock.ExpectQuery(`SELECT name, group_id, region_id, phone, submitted_at FROM worker_registrations`).
+	mock.ExpectQuery(`SELECT name, phone, submitted_at FROM worker_registrations`).
 		WithArgs(int64(1), RegStatusPending).
-		WillReturnRows(mock.NewRows([]string{"name", "group_id", "region_id", "phone", "submitted_at"}).
-			AddRow("王师傅", int64(6), int64(4), "13800000001", subAt))
+		WillReturnRows(mock.NewRows([]string{"name", "phone", "submitted_at"}).
+			AddRow("王师傅", "13800000001", subAt))
 	// 2) 建 workers 主档
 	mock.ExpectQuery(`INSERT INTO workers\(staff_no, name, group_id, region_id, phone, status, joined_at, password_hash\)`).
 		WithArgs(pgxmock.AnyArg(), "王师傅", int64(6), int64(4), "13800000001", subAt).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
-	// 3) 乐观锁更新
-	mock.ExpectExec(`UPDATE worker_registrations SET status=\$1, reviewer_account_id=\$2, worker_id=\$3, reviewed_at=now\(\)`).
-		WithArgs(RegStatusApproved, int64(103), int64(9), int64(1), RegStatusPending).
+	// 3) 乐观锁更新(回填 worker_id + 校正 group_id/region_id)
+	mock.ExpectExec(`UPDATE worker_registrations SET status=\$1, reviewer_account_id=\$2, worker_id=\$3, group_id=\$4, region_id=\$5, reviewed_at=now\(\)`).
+		WithArgs(RegStatusApproved, int64(103), int64(9), int64(6), int64(4), int64(1), RegStatusPending).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	s := NewPGStore(mock)
-	wid, err := s.Approve(context.Background(), 1, 103)
+	wid, err := s.Approve(context.Background(), 1, 103, 6, 4)
 	if err != nil {
 		t.Fatalf("Approve: %v", err)
 	}
 	if wid != 9 {
 		t.Fatalf("workerId=%d, want 9", wid)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_ApproveMissingGroup 审核时未补 group/region 应返回 ErrInvalidReviewFields。
+func TestPGStore_ApproveMissingGroup(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	s := NewPGStore(mock)
+	if _, err := s.Approve(context.Background(), 1, 103, 0, 4); !errors.Is(err, ErrInvalidReviewFields) {
+		t.Fatalf("err=%v, want ErrInvalidReviewFields", err)
+	}
+	if _, err := s.Approve(context.Background(), 1, 103, 6, 0); !errors.Is(err, ErrInvalidReviewFields) {
+		t.Fatalf("err=%v, want ErrInvalidReviewFields", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
@@ -128,12 +175,12 @@ func TestPGStore_ApproveConflict(t *testing.T) {
 	defer mock.Close()
 
 	// 状态非 PENDING → 无行
-	mock.ExpectQuery(`SELECT name, group_id, region_id, phone, submitted_at FROM worker_registrations`).
+	mock.ExpectQuery(`SELECT name, phone, submitted_at FROM worker_registrations`).
 		WithArgs(int64(1), RegStatusPending).
 		WillReturnError(pgx.ErrNoRows)
 
 	s := NewPGStore(mock)
-	_, err = s.Approve(context.Background(), 1, 103)
+	_, err = s.Approve(context.Background(), 1, 103, 6, 4)
 	if !errors.Is(err, ErrRegistrationConflict) {
 		t.Fatalf("err=%v, want ErrRegistrationConflict", err)
 	}

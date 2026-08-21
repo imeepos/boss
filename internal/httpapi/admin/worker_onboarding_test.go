@@ -22,6 +22,7 @@ type fakeOnboarding struct {
 	submitted  worker.Registration
 	submittedN int
 	approved   []int64
+	approvedAt []approveCall
 	rejected   []int64
 	rejectNote string
 	list       []worker.Registration
@@ -29,6 +30,13 @@ type fakeOnboarding struct {
 	rnVerify   []worker.WorkerRealNameVerification
 	latest     *worker.WorkerRealNameVerification
 	approveErr error
+}
+
+type approveCall struct {
+	ID            int64
+	ReviewerID    int64
+	GroupID       int64
+	RegionID      int64
 }
 
 func (f *fakeOnboarding) Submit(_ context.Context, reg worker.Registration) (int64, error) {
@@ -39,11 +47,12 @@ func (f *fakeOnboarding) Submit(_ context.Context, reg worker.Registration) (int
 func (f *fakeOnboarding) ListRegistrations(_ context.Context, _ string) ([]worker.Registration, error) {
 	return f.list, nil
 }
-func (f *fakeOnboarding) Approve(_ context.Context, id, _ int64) (int64, error) {
+func (f *fakeOnboarding) Approve(_ context.Context, id, reviewerID, groupID, regionID int64) (int64, error) {
 	if f.approveErr != nil {
 		return 0, f.approveErr
 	}
 	f.approved = append(f.approved, id)
+	f.approvedAt = append(f.approvedAt, approveCall{ID: id, ReviewerID: reviewerID, GroupID: groupID, RegionID: regionID})
 	return 99, nil
 }
 func (f *fakeOnboarding) Reject(_ context.Context, id, _ int64, note string) error {
@@ -109,13 +118,30 @@ func TestWorkerOnboarding_ApproveAndVerify(t *testing.T) {
 	r, mgr := newOnboardingTestRouter(f)
 	tok := authToken(t, mgr)
 
-	// 审核通过
-	w := postBodyAuth(t, r, "/api/admin/v1/worker-registrations/5/approve", `{}`, tok)
+	// 审核通过(本版强制传 groupId/regionId)
+	w := postBodyAuth(t, r, "/api/admin/v1/worker-registrations/5/approve", `{"groupId":6,"regionId":4}`, tok)
 	if w.Code != http.StatusOK {
 		t.Fatalf("approve code=%d body=%s", w.Code, w.Body.String())
 	}
 	if len(f.approved) != 1 || f.approved[0] != 5 {
 		t.Fatalf("approved=%v", f.approved)
+	}
+	if len(f.approvedAt) != 1 || f.approvedAt[0].GroupID != 6 || f.approvedAt[0].RegionID != 4 {
+		t.Fatalf("approvedAt=%+v", f.approvedAt)
+	}
+
+	// 审核通过未传 groupId 应被 envelope code 拒绝(业务码 CodeInvalidParam)。
+	w = postBodyAuth(t, r, "/api/admin/v1/worker-registrations/6/approve", `{}`, tok)
+	if w.Code != http.StatusOK {
+		t.Fatalf("http=%d", w.Code)
+	}
+	var env struct {
+		Code int             `json:"code"`
+		Data json.RawMessage `json:"data"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &env)
+	if env.Code == 0 {
+		t.Fatalf("envelope code should be non-zero, body=%s", w.Body.String())
 	}
 
 	// 提交实名
