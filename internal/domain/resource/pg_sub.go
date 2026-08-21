@@ -26,7 +26,19 @@ func (s *PGStore) ListTransfers(ctx context.Context) ([]Transfer, error) {
 }
 
 // CreateTransfer 新建调拨单,返回自增 id。
+// 校验 resource_id 存在性,防止孤儿调拨单。
 func (s *PGStore) CreateTransfer(ctx context.Context, t Transfer) (int64, error) {
+	// 关联完整性校验
+	if t.ResourceID > 0 {
+		ok, err := s.exists(ctx, "resources", t.ResourceID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("resource: resource %d: %w", t.ResourceID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO transfers(transfer_no, resource_id, legal_entity_id, legal_entity_name, from_region_id, to_region_id, status)
@@ -58,7 +70,19 @@ func (s *PGStore) ListExpansions(ctx context.Context) ([]Expansion, error) {
 }
 
 // CreateExpansion 新建扩容单,返回自增 id。
+// 校验 legal_entity_id 存在性,防止孤儿扩容单。
 func (s *PGStore) CreateExpansion(ctx context.Context, e Expansion) (int64, error) {
+	// 关联完整性校验
+	if e.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", e.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("resource: legal entity %d: %w", e.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO expansions(legal_entity_id, expansion_no, region_id, expected_ports, status)

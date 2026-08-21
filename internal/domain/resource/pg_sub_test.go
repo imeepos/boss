@@ -42,6 +42,11 @@ func TestPGStore_CreateTransfer(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: resource exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(2)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO transfers`).
 		WithArgs("TRF-20250817-002", int64(2), int64(1), "主品牌·企业", int64(11), int64(13), "PENDING").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -93,6 +98,11 @@ func TestPGStore_CreateExpansion(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
+
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO expansions`).
 		WithArgs(int64(1), "EXP-20250817-002", int64(12), int32(200), "PENDING").

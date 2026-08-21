@@ -75,7 +75,19 @@ func (s *PGStore) ListQosTemplates(ctx context.Context, legalEntityID int64) ([]
 }
 
 // CreateQosTemplate 新增 QoS 模板,返回自增 id。
+// 校验 legal_entity_id 存在性,防止孤儿模板。
 func (s *PGStore) CreateQosTemplate(ctx context.Context, q QosTemplate) (int64, error) {
+	// 关联完整性校验
+	if q.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", q.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("resource: legal entity %d: %w", q.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx,
 		`INSERT INTO qos_templates(legal_entity_id, code, name) VALUES($1,$2,$3) RETURNING id`,

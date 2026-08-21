@@ -160,7 +160,19 @@ func computeSlaLeft(complaintType, slaDeadline string) int {
 }
 
 // CreateDispatchTicket 新建派单工单,返回自增 id。
+// 校验 order_id 存在性,防止孤儿工单。
 func (s *PGStore) CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error) {
+	// 关联完整性校验
+	if t.OrderID > 0 {
+		ok, err := s.exists(ctx, "orders", t.OrderID, "")
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("order: order %d not found for dispatch ticket: %w", t.OrderID, ErrOrderNotFound)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO dispatch_tickets(ticket_no, order_id, worker_id, worker_name, group_id, group_name, region_id, region_name, legal_entity_id, legal_entity_name, status)
@@ -200,8 +212,29 @@ func (s *PGStore) ListComplaints(ctx context.Context) ([]Complaint, error) {
 }
 
 // CreateComplaint 新建报障工单,返回自增 id。
+// 校验 customer_id 和 order_id(若非零)存在性,防止孤儿投诉。
 // Caller 可传 RemoteDiagnosis 和 SlaDeadline(格式 YYYY-MM-DD HH24:MI);空值走 DEFAULT。
 func (s *PGStore) CreateComplaint(ctx context.Context, c Complaint) (int64, error) {
+	// 关联完整性校验
+	if c.CustomerID > 0 {
+		ok, err := s.exists(ctx, "customers", c.CustomerID, "")
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("order: customer %d: %w", c.CustomerID, ErrForeignKeyViolation)
+		}
+	}
+	if c.OrderID > 0 {
+		ok, err := s.exists(ctx, "orders", c.OrderID, "")
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("order: order %d: %w", c.OrderID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO complaints(ticket_no, customer_id, order_id, legal_entity_id, legal_entity_name,

@@ -26,7 +26,19 @@ func (s *PGStore) ListDismantles(ctx context.Context) ([]Dismantle, error) {
 }
 
 // CreateDismantle 新建拆机单,返回自增 id。
+// 校验 order_id 存在性,防止孤儿拆机单。
 func (s *PGStore) CreateDismantle(ctx context.Context, d Dismantle) (int64, error) {
+	// 关联完整性校验
+	if d.OrderID > 0 {
+		ok, err := s.exists(ctx, "orders", d.OrderID, "")
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("order: order %d: %w", d.OrderID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO dismantles(dismantle_no, order_id, legal_entity_id, legal_entity_name, asset_id, port_id, status)
