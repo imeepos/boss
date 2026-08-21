@@ -219,7 +219,7 @@ paths:
   /hall:
     get:
       tags: [Hall]
-      summary: 任务池(跨区公开可抢工单)
+      summary: 任务池(仅含师傅负责区域匹配的未指派工单)
       operationId: listHall
       responses:
         '200':
@@ -231,9 +231,11 @@ paths:
   /hall/{ticketNo}/grab:
     post:
       tags: [Hall]
-      summary: 抢单(先到先得,成功后进入我的工单)
+      summary: 抢单(先到先得;校验在职/负责区域/接单设置,成功后进入我的工单)
       operationId: grabTicket
       parameters:
         - $ref: './schemas.yaml#/components/parameters/TicketNo'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '403':
+          description: 不在职/跨区工单/停接单/接单类型不符

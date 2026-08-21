@@ -9,6 +9,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -79,12 +80,12 @@ func portalTicketOf(it order.TicketItem, workerID int64) gin.H {
 	return gin.H{
 		"ticketNo": it.TicketNo, "bizNo": it.TicketNo, "type": "INSTALL",
 		"typeLabel": "新装", "statusLabel": portalTicketStatusLabel(status),
-		"customerName": it.CustomerName,
+		"customerName":        it.CustomerName,
 		"customerPhoneMasked": httpx.MaskPhone(it.CustomerPhone),
 		"product":             it.OfferName,
-		"address":        it.Address, "distanceKm": nil,
-		"scheduleSlot":   it.ScheduleSlot,
-		"stage": it.Stage, "stageTotal": 12, "status": status,
+		"address":             it.Address, "distanceKm": nil,
+		"scheduleSlot": it.ScheduleSlot,
+		"stage":        it.Stage, "stageTotal": 12, "status": status,
 		"slaLeftMinutes": it.SlaLeftMinutes, "finishedAt": it.FinishedAt,
 	}
 }
@@ -227,22 +228,22 @@ func workerTicketDetailHandler(a *app.Application) gin.HandlerFunc {
 			"ticketNo": tk.TicketNo, "bizNo": ord.OrderNo,
 			"status": status, "statusLabel": portalTicketStatusLabel(status),
 			// 工单头字段(对齐 OpenAPI TicketDetail)
-			"product":              item.OfferName,
-			"customerName":         item.CustomerName,
-			"customerPhoneMasked":  httpx.MaskPhone(item.CustomerPhone),
-			"address":              item.Address,
-			"splitterPort":         item.SplitterPort,
-			"preBindTag":           item.PreBindTag,
-			"scheduleSlot":         item.ScheduleSlot,
-			"faultTypeLabel":       item.FaultTypeLabel,
-			"reportedAt":           item.ReportedAt,
-			"slaLeftMinutes":       item.SlaLeftMinutes,
-			"remoteDiagnosis":      item.RemoteDiagnosis,
-			"finishedAt":           item.FinishedAt,
+			"product":             item.OfferName,
+			"customerName":        item.CustomerName,
+			"customerPhoneMasked": httpx.MaskPhone(item.CustomerPhone),
+			"address":             item.Address,
+			"splitterPort":        item.SplitterPort,
+			"preBindTag":          item.PreBindTag,
+			"scheduleSlot":        item.ScheduleSlot,
+			"faultTypeLabel":      item.FaultTypeLabel,
+			"reportedAt":          item.ReportedAt,
+			"slaLeftMinutes":      item.SlaLeftMinutes,
+			"remoteDiagnosis":     item.RemoteDiagnosis,
+			"finishedAt":          item.FinishedAt,
 			// 已有结构
-			"stages":               portalStages(stages),
-			"quad":                 portalQuadH(a, c, ord.AddressID),
-			"riskCheck":            gin.H{"blacklistHit": false, "graylistHit": false},
+			"stages":    portalStages(stages),
+			"quad":      portalQuadH(a, c, ord.AddressID),
+			"riskCheck": gin.H{"blacklistHit": false, "graylistHit": false},
 		})
 	}
 }
@@ -264,22 +265,45 @@ func portalStages(logs []order.StageLog) []gin.H {
 	return out
 }
 
-// workerHallHandler 任务池:未指派的公开工单。
+// workerHallHandler 任务池:未指派的公开工单,仅含与师傅负责区域匹配的单。
 func workerHallHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		list, err := a.WorkOrder.ListTicketItems(c.Request.Context())
+		workerID, _ := portalWorker(c)
+		w, err := a.Worker.GetWorker(c.Request.Context(), workerID)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		items := make([]gin.H, 0)
-		for _, it := range list {
-			if it.WorkerID == 0 && it.Status == "PENDING" {
-				items = append(items, portalTicketOf(it, 0))
-			}
+		if !hallItemsForWorker(c, a, w.RegionID) {
+			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"items": items})
 	}
+}
+
+// hallItemsForWorker 输出任务池:工单须未指派、待派且区域匹配(0=不限区域)。
+func hallItemsForWorker(c *gin.Context, a *app.Application, workerRegionID int64) bool {
+	tickets, err := a.WorkOrder.ListDispatchTickets(c.Request.Context())
+	if err != nil {
+		respondErr(c, err)
+		return false
+	}
+	inRegion := make(map[string]bool, len(tickets))
+	for _, t := range tickets {
+		inRegion[t.TicketNo] = worker.RegionMatched(workerRegionID, t.RegionID)
+	}
+	list, err := a.WorkOrder.ListTicketItems(c.Request.Context())
+	if err != nil {
+		respondErr(c, err)
+		return false
+	}
+	items := make([]gin.H, 0)
+	for _, it := range list {
+		if it.WorkerID == 0 && it.Status == "PENDING" && inRegion[it.TicketNo] {
+			items = append(items, portalTicketOf(it, 0))
+		}
+	}
+	respond(c, apitypes.CodeOK, gin.H{"items": items})
+	return true
 }
 
 // workerGrabHandler 抢单:先到先得,PENDING 且未指派才可抢。

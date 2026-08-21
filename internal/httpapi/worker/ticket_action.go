@@ -9,6 +9,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -42,6 +43,10 @@ func assignTicketToMe(c *gin.Context, a *app.Application, ticketNo string, grab 
 		return
 	}
 	workerID, workerName := portalWorker(c)
+	// 资格闸门:在职 + 负责区域匹配 + 接单设置(在线/接单类型)。
+	if !workerMayAccept(c, a, workerID, tk) {
+		return
+	}
 	if !grab && tk.WorkerID != workerID {
 		respond(c, apitypes.CodeForbidden, nil)
 		return
@@ -95,7 +100,15 @@ func workerTransferHandler(a *app.Application) gin.HandlerFunc {
 		if !workerOwnedTicket(c, tk) {
 			return
 		}
-		if err := transferTicket(c, a, tk, &req); err != nil {
+		// 目标闸门:在职 + 区域匹配(退回调度池 targetWorkerId=0 不校验)。
+		var to *worker.Worker
+		if req.TargetWorkerID != 0 {
+			var ok bool
+			if to, ok = workerTransferTargetOK(c, a, req.TargetWorkerID, tk); !ok {
+				return
+			}
+		}
+		if err := transferTicket(c, a, tk, to, &req); err != nil {
 			respondErr(c, err)
 			return
 		}
@@ -103,16 +116,12 @@ func workerTransferHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// transferTicket 执行改派:目标师傅名回填;目标 0=退回池。
-func transferTicket(c *gin.Context, a *app.Application, tk *order.DispatchTicket, req *workerTransferReq) error {
+// transferTicket 执行改派:目标师傅名回填;to nil = 退回池。
+func transferTicket(c *gin.Context, a *app.Application, tk *order.DispatchTicket, to *worker.Worker, req *workerTransferReq) error {
 	workerID, workerName := portalWorker(c)
 	targetName := ""
-	if req.TargetWorkerID != 0 {
-		w, err := a.Worker.GetWorker(c.Request.Context(), req.TargetWorkerID)
-		if err != nil {
-			return err
-		}
-		targetName = w.Name
+	if to != nil {
+		targetName = to.Name
 	}
 	if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), tk.TicketNo, req.TargetWorkerID, targetName); err != nil {
 		return err

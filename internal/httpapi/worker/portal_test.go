@@ -22,6 +22,7 @@ import (
 
 type fakePortalWorkerSvc struct {
 	worker.WorkerService
+	region int64
 }
 
 func (f *fakePortalWorkerSvc) ListWorkers(context.Context, int64) ([]worker.Worker, error) {
@@ -35,7 +36,21 @@ func (f *fakePortalWorkerSvc) GetWorker(_ context.Context, id int64) (*worker.Wo
 	if id != 7 {
 		return nil, worker.ErrNotFound
 	}
-	return &worker.Worker{ID: 7, StaffNo: "WK-1007", Name: "张师傅", Phone: "13800001234", Status: 1}, nil
+	return &worker.Worker{ID: 7, StaffNo: "WK-1007", Name: "张师傅", Phone: "13800001234",
+		Status: 1, RegionID: f.region}, nil
+}
+
+// fakePortalLedger 桩接单设置:未配置按 ErrNotFound(=默认在线全类型)。
+type fakePortalLedger struct {
+	worker.WorkerLedgerService
+	settings map[int64]*worker.Settings
+}
+
+func (f *fakePortalLedger) GetSettings(_ context.Context, id int64) (*worker.Settings, error) {
+	if s, ok := f.settings[id]; ok {
+		return s, nil
+	}
+	return nil, worker.ErrNotFound
 }
 
 type fakePortalWorkOrder struct {
@@ -123,12 +138,18 @@ func (f *fakePortalOrder) ActivateUser(_ context.Context, id int64) error {
 }
 
 func portalTestRouter(t *testing.T, fw *fakePortalWorkOrder, fo *fakePortalOrder) *gin.Engine {
+	return portalTestRouterWith(t, fw, fo, &fakePortalWorkerSvc{}, nil)
+}
+
+// portalTestRouterWith 可注入区域/接单设置的完整装配。
+func portalTestRouterWith(t *testing.T, fw *fakePortalWorkOrder, fo *fakePortalOrder,
+	ws *fakePortalWorkerSvc, wl worker.WorkerLedgerService) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	t.Setenv("BOSS_JWT_SECRET", "portal-test-secret")
 	r := gin.New()
 	a := &app.Application{
-		Worker: &fakePortalWorkerSvc{}, WorkOrder: fw, Order: fo,
+		Worker: ws, WorkOrder: fw, Order: fo, WorkerLedger: wl,
 		Portal: portal.NewMemory(),
 	}
 	Register(r, a, newWorkerJWTManager())
@@ -251,5 +272,78 @@ func TestPortalAcceptFlipsStatus(t *testing.T) {
 	res = portalWorkerDo(r, "POST", "/api/worker/v1/tickets/ORD-1/accept", "", tok)
 	if res["code"].(float64) == 0 {
 		t.Fatalf("re-accept should fail: %v", res)
+	}
+}
+
+// portalGrabToken 测试专用 token(师傅 7);先定密钥再签发。
+func portalGrabToken(t *testing.T) string {
+	t.Helper()
+	t.Setenv("BOSS_JWT_SECRET", "portal-test-secret")
+	tok, err := signWorkerToken(7, "张师傅")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tok
+}
+
+// TestGrabRejectsOutOfRegion 回归:任务池/抢单必须限制在师傅负责区域内。
+func TestGrabRejectsOutOfRegion(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketID: 1, TicketNo: "ORD-X", OrderID: 1, WorkerID: 0, Status: "PENDING", RegionID: 2},
+	}}
+	r := portalTestRouterWith(t, fw, &fakePortalOrder{},
+		&fakePortalWorkerSvc{region: 1}, &fakePortalLedger{})
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/hall/ORD-X/grab", "", tok)
+	if res["code"].(float64) == 0 || fw.assigned != 0 {
+		t.Fatalf("cross-region grab should be rejected: %v assigned=%d", res, fw.assigned)
+	}
+}
+
+// TestHallFiltersByRegion 回归:任务池仅展示负责区域匹配的工单。
+func TestHallFiltersByRegion(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketNo: "ORD-IN", WorkerID: 0, Status: "PENDING", RegionID: 1},
+		{TicketNo: "ORD-OUT", WorkerID: 0, Status: "PENDING", RegionID: 2},
+	}}
+	r := portalTestRouterWith(t, fw, &fakePortalOrder{},
+		&fakePortalWorkerSvc{region: 1}, &fakePortalLedger{})
+	res := portalWorkerDo(r, "GET", "/api/worker/v1/hall", "", tok)
+	items := res["data"].(map[string]any)["items"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["ticketNo"] != "ORD-IN" {
+		t.Fatalf("hall must only contain in-region tickets: %v", items)
+	}
+}
+
+// TestGrabRejectsStoppedWorker 回归:停接单/类型不符的师傅不可抢单。
+func TestGrabRejectsStoppedWorker(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketNo: "ORD-1", WorkerID: 0, Status: "PENDING", RegionID: 1},
+	}}
+	ledger := &fakePortalLedger{settings: map[int64]*worker.Settings{
+		7: {WorkerID: 7, Accepting: false, RadiusKm: 5, AcceptTypes: ""},
+	}}
+	r := portalTestRouterWith(t, fw, &fakePortalOrder{}, &fakePortalWorkerSvc{region: 1}, ledger)
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/hall/ORD-1/grab", "", tok)
+	if res["code"].(float64) == 0 || fw.assigned != 0 {
+		t.Fatalf("stopped worker grab should be rejected: %v", res)
+	}
+}
+
+// TestGrabRejectsAcceptTypeMismatch 回归:接单类型不含 INSTALL 时拒绝。
+func TestGrabRejectsAcceptTypeMismatch(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketNo: "ORD-1", WorkerID: 0, Status: "PENDING", RegionID: 1},
+	}}
+	ledger := &fakePortalLedger{settings: map[int64]*worker.Settings{
+		7: {WorkerID: 7, Accepting: true, RadiusKm: 5, AcceptTypes: "REPAIR"},
+	}}
+	r := portalTestRouterWith(t, fw, &fakePortalOrder{}, &fakePortalWorkerSvc{region: 1}, ledger)
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/hall/ORD-1/grab", "", tok)
+	if res["code"].(float64) == 0 || fw.assigned != 0 {
+		t.Fatalf("type-mismatched grab should be rejected: %v", res)
 	}
 }
