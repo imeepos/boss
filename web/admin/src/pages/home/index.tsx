@@ -1,6 +1,7 @@
 // 官网首页(公开落地页):根路径未登录时入口;导航 + hero + 数据 + 核心能力 + 页脚。
 // 文案走 i18n,颜色走 brand/shell 令牌,图标复用 public/icons 组图标(MaskIcon)。
 import { Link, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useT, useLang, localeOptions } from '../../i18n'
 import { useTheme } from '../../theme/context'
 import { getAuthToken } from '../../api/client'
@@ -8,6 +9,18 @@ import { Dropdown } from '../../components/Dropdown'
 import { AdCarousel } from '../auth-ads'
 import { GlobeIcon, MaskIcon, MoonIcon, SunIcon } from '../../layouts/icons'
 import logoFull from '../../assets/brand/logo-mark-gradient.png'
+
+/** CTA 目标页 chunk 空闲预载:消除首击导航时顶层 Suspense 整页闪 Loading。 */
+function usePreloadCtaTarget(signedIn: boolean): void {
+  useEffect(() => {
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 300))
+    const id = idle(() => {
+      void import('../login')
+      if (signedIn) void import('../dashboard')
+    })
+    return () => window.cancelIdleCallback?.(id)
+  }, [signedIn])
+}
 
 const NAV_LINK = 'text-sm text-[var(--shell-nav-text)] hover:text-white transition-colors'
 const HERO_TITLE = 'text-4xl md:text-5xl font-bold leading-tight text-white'
@@ -27,6 +40,13 @@ export default function HomePage() {
   const signedIn = !!getAuthToken()
   const ctaTarget = signedIn ? '/dashboard' : '/login'
   const ctaLabel = signedIn ? t.pages.home.enterConsole : t.pages.home.login
+  usePreloadCtaTarget(signedIn)
+
+  // 锚点平滑滚动(仅本页生效,卸载还原):原生 hash 跳转是瞬移,观感似闪烁。
+  useEffect(() => {
+    document.documentElement.classList.add('scroll-smooth')
+    return () => document.documentElement.classList.remove('scroll-smooth')
+  }, [])
 
   return (
     <div className="min-h-screen bg-[var(--shell-content-bg)]">
@@ -102,7 +122,7 @@ export default function HomePage() {
       </section>
 
       {/* 核心能力:6 卡片,图标复用菜单组图标 */}
-      <section id="features" className="mx-auto max-w-6xl px-4 py-16">
+      <section id="features" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16">
         <h2 className="text-center text-2xl font-bold text-[var(--shell-heading)]">
           {t.pages.home.featuresTitle}
         </h2>
@@ -125,7 +145,7 @@ export default function HomePage() {
       </section>
 
       {/* 联系 CTA */}
-      <section id="contact" className="mx-auto max-w-6xl px-4 pb-16">
+      <section id="contact" className="mx-auto max-w-6xl scroll-mt-16 px-4 pb-16">
         <div className="rounded-lg bg-[var(--color-brand-navy-950)] px-6 py-12 text-center">
           <h2 className="text-xl font-bold text-white">{t.pages.home.contactTitle}</h2>
           <p className="mt-2 text-sm text-[var(--shell-nav-text)]">{t.pages.home.contactDesc}</p>
