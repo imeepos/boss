@@ -131,7 +131,35 @@ fun MessagesScreen(nav: Nav) {
             }
             items.isEmpty() -> AppCard { EmptyState("暂无消息") }
             else -> items.forEach { m ->
-                MessageCard(m, onClick = { nav.push(routeOf(m.optString("category"))) })
+                MessageCard(
+                    m = m,
+                    onClick = {
+                        val msgId = m.optString("messageId")
+                        val wasRead = m.optBoolean("read")
+                        // 乐观更新:立刻把这条本地标记为已读,UI 立即响应。
+                        if (!wasRead) {
+                            items = items.map {
+                                if (it.optString("messageId") == msgId) {
+                                    JSONObject(it.toString()).put("read", true)
+                                } else it
+                            }
+                            // 后台异步调 API:成功保持已读,失败回滚到未读。
+                            scope.launch {
+                                try {
+                                    ProfileApi.readMessage(msgId)
+                                    nav.requestRefresh()
+                                } catch (e: Exception) {
+                                    items = items.map {
+                                        if (it.optString("messageId") == msgId) {
+                                            JSONObject(it.toString()).put("read", false)
+                                        } else it
+                                    }
+                                }
+                            }
+                        }
+                        nav.push(routeOf(m.optString("category")))
+                    },
+                )
             }
         }
         Spacer(Modifier.height(12.dp))

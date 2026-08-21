@@ -37,7 +37,7 @@ object ProfileApi {
      * 单条消息标为已读。404 表示消息不存在或不属于当前用户(乐观更新可据此回滚)。
      */
     suspend fun readMessage(messageId: String): JSONObject =
-        Api.put("/messages/$messageId/read")
+        Api.put("/messages/$messageId/read", JSONObject())
 }
 
 // JSONArray 转 JSONObject 列表,跳过非法项;页面侧通用工具。

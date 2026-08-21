@@ -263,6 +263,22 @@
 
 > 接口（admin，`/api/admin/v1`）：`POST /attachments/upload`（multipart `file`）｜`GET /attachments?uploaderType=&uploaderId=&keyword=&limit=&offset=`（类型+id 必须成对，缺省=当前登录身份；返回 `{items,total}`）｜`DELETE /attachments/:id`（软删，40400=不存在或已删，记审计 attachment.delete）｜`POST /attachments/batch-get` `{ids}`（选择回显，≤200，后端去重滤已删）。
 
+### 1.6.5 push.* 推送配置（页面 `/base/pushconfig`「推送配置」，迁移 000094）
+
+存储复用 `biz_params`（key 前缀 `push.`，与 auth.*/realid.*/minio.* 同一套加密/掩码约定）。运行时由 push.Dynamic 消费（60s 热生效）；凭据缺失/未配置 → 降级日志通道（不外呼）。设计契约：docs/plan/push-config-design.md。
+
+| 页面字段 | key（API/DB 同名） | 枚举/说明 |
+|:--------|:-------------------|:----------|
+| 启用开关 | `push.enabled` | true/false，默认 true |
+| 推送服务商 | `push.provider` | jpush（固定，预留多供应商路由） |
+| AppKey | `push.jpush.appKey` | 极光控制台"应用设置" |
+| Master Secret | `push.jpush.masterSecret` | secret,密文落库；空串=不修改 |
+| REST 端点 | `push.jpush.apiUrl` | 默认 https://bjapi.push.jiguang.cn/v3 |
+| iOS APNs 环境 | `push.jpush.apnsProduction` | true=生产/false=开发，默认 true；Android 无此区分 |
+| 离线保留（秒） | `push.jpush.liveTime` | 默认 86400（1 天） |
+
+> 接口：`GET /push-config`、`PUT /push-config/channel`、`POST /push-config/channel/test`（无 target=完整性校验；带 target+targetKind（registration_id|alias）=真实试发一条测试通知；permCode `menu:pushconfig`，迁移 000094）。env 兜底：`BOSS_JPUSH_APP_KEY`/`BOSS_JPUSH_MASTER_SECRET`。
+
 ### 1.7 api_keys（免登录 API key，internal/domain/apikey，迁移 000042/000043/000045）
 
 > 固定用途：CLI/自动化（bossctl）免登录认证。key 与三类主体绑定（`subject_type` account/worker/customer，000043 三表登录边界 + 000044 主体扩展）；只存 sha256(key) 哈希，明文仅创建时返回一次（安全约定见迁移 000042 头注）。

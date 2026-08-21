@@ -141,7 +141,7 @@ func (s *PGStore) ListJobs(ctx context.Context, f ListFilter) ([]Job, int, error
 }
 
 // FinishJob 收尾:status + 统计 + 错误信息 + 文件名。
-func (s *PGStore) FinishJob(ctx context.Context, id int64, status, fileName string, sizeBytes int64, tableCount, rowCount int64, errMsg string) error {
+func (s *PGStore) FinishJob(ctx context.Context, id int64, status, fileName string, sizeBytes int64, tableCount int, rowCount int64, errMsg string) error {
 	_, err := s.db.Exec(ctx, `
 		UPDATE backup_jobs
 		SET status = $2, file_name = $3, size_bytes = $4, table_count = $5,

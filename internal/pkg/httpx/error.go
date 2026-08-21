@@ -8,6 +8,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/asset"
+	"github.com/ymm-001/boss/internal/domain/backup"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/customer/userdata"
@@ -40,6 +41,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, user.ErrFKViolation),
 		errors.Is(err, quadlink.ErrForeignKeyViolation),
 		errors.Is(err, worker.ErrForeignKeyViolation),
+		errors.Is(err, backup.ErrInvalidInput),
 		errors.Is(err, ErrGeoInvalidParam):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
@@ -57,8 +59,11 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrRegistrationNotFound),
 		errors.Is(err, worker.ErrRealNameNotFound),
 		errors.Is(err, userdata.ErrNotFound),
-		errors.Is(err, portal.ErrNotFound):
+		errors.Is(err, portal.ErrNotFound),
+		errors.Is(err, backup.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
+	case errors.Is(err, backup.ErrBusy):
+		Respond(c, apitypes.CodeResourceBusy, nil)
 	case errors.Is(err, odn.ErrDuplicate):
 		Respond(c, apitypes.CodeConflict, nil)
 	case errors.Is(err, odn.ErrInvalidCode),

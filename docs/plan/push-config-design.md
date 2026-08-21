@@ -17,7 +17,7 @@
 | `push.jpush.appKey` | channel | | | JPush 应用 AppKey(控制台"应用设置"页) |
 | `push.jpush.masterSecret` | channel | ✓ | | 服务端密钥,**加密落库,GET 只回 hasValue** |
 | `push.jpush.apiUrl` | channel | | `https://bjapi.push.jiguang.cn/v3` | REST 端点,默认官方;留空用默认 |
-| `push.jpush.androidChannel` | channel | | `production` | JPush Android 通道环境:`production`/`develop`,联调期用 develop |
+| `push.jpush.apnsProduction` | channel | | `true` | iOS APNs 环境:true=生产/false=开发;REST v3 仅此一个环境开关,Android 通道无此区分 |
 | `push.jpush.liveTime` | channel | | `86400` | 离线保留秒数(默认 1 天) |
 
 group 仅一个 `channel`(无文案模板组;通知文案由业务事件携带)。

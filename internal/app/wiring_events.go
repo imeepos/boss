@@ -3,15 +3,25 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
 	aaability "github.com/ymm-001/boss/internal/domain/aaa/billing"
 	"github.com/ymm-001/boss/internal/domain/analytics"
+	"github.com/ymm-001/boss/internal/pkg/audit"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/events"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// ensureAuditPartitions E14:预建当月起 2 个月的审计分区,避免写入全部落入 default。
+func ensureAuditPartitions(ctx context.Context, pool *pgxpool.Pool) error {
+	if err := audit.NewPGWriter(pool).EnsurePartitions(ctx, time.Now(), 2); err != nil {
+		return fmt.Errorf("wiring: audit partitions: %w", err)
+	}
+	return nil
+}
 
 // emitters 外发通道装配结果;关闭函数由 New 统一挂到 app.close。
 type emitters struct {
