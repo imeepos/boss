@@ -74,13 +74,13 @@ func TestPGStore_ListWorkers(t *testing.T) {
 
 	cols := []string{"id", "staff_no", "name", "group_id", "region_id", "phone", "status", "joined_at", "left_at"}
 	mock.ExpectQuery(`SELECT id, staff_no, name, group_id, region_id, phone, status, joined_at, left_at FROM workers`).
-		WithArgs(int64(1)).
+		WithArgs(int64(1), "").
 		WillReturnRows(mock.NewRows(cols).
 			AddRow(int64(1), "WK-1024", "张师傅", int64(1), int64(11), "138****8899", int16(1), ts, nil).
 			AddRow(int64(2), "WK-1025", "李师傅", int64(1), int64(11), "136****1177", int16(0), ts, ts))
 
 	s := NewPGStore(mock)
-	got, err := s.ListWorkers(context.Background(), 1)
+	got, err := s.ListWorkers(context.Background(), 1, "")
 	if err != nil {
 		t.Fatalf("ListWorkers: %v", err)
 	}

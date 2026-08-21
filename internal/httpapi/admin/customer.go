@@ -30,6 +30,20 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
 
+	// 客户详情(customer.yaml GET /customers/{id});未命中回 NotFound。
+	cus.GET("/:id", func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		det, err := a.Customer.Get(c.Request.Context(), id)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, det)
+	})
+
 	cus.GET("/:id/verify-logs", func(c *gin.Context) {
 		id, ok := httpx.ParsePathParamInt64(c, "id")
 		if !ok {

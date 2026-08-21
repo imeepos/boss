@@ -13,6 +13,16 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /customers/{id}:
+    get:
+      tags: [Customer]
+      summary: 客户档案详情(fields.md §2.1 单档;未命中 40400)
+      operationId: getCustomer
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 客户ID }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
   /customers/{id}/verify-logs:
     get:
       tags: [Customer]
