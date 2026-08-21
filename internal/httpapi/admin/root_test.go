@@ -64,6 +64,9 @@ func (f *fakeUser) CreateLegalEntity(context.Context, user.LegalEntity) (int64, 
 func (f *fakeUser) UpdateLegalEntity(context.Context, int64, user.LegalEntity) error {
 	return nil
 }
+func (f *fakeUser) AssignRegionCoverage(context.Context, int64, int64) error {
+	return nil
+}
 func (f *fakeUser) ListMenuPermMatrix(context.Context) (user.MenuPermMatrix, error) {
 	return user.MenuPermMatrix{}, nil
 }

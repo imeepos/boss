@@ -271,4 +271,23 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, list)
 	})
 
+	// 区域覆盖主体划分:子公司划经营区域/摘除(migrations/000076;0=摘除回落祖先/总公司兜底)。
+	g.PUT("/regions/:regionId/coverage", requirePerm(a.User, "menu:region"), func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("regionId"), 10, 64)
+		var req struct {
+			LegalEntityID int64 `json:"legalEntityId"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || id <= 0 || req.LegalEntityID < 0 {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		if err := a.User.AssignRegionCoverage(c.Request.Context(), id, req.LegalEntityID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "org.assign-region-coverage", "region", c.Param("regionId"),
+			map[string]any{"legalEntityId": req.LegalEntityID})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	})
+
 }

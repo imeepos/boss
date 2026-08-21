@@ -60,6 +60,8 @@ type Service interface {
 	// 组织实体(子公司/部门/岗位/经营区域)的只读查询与管理。
 	ListRegions(ctx context.Context, parentPath string) ([]Region, error)
 	ListLegalEntities(ctx context.Context) ([]LegalEntity, error)
+	// AssignRegionCoverage 区域挂/摘运营主体覆盖(menu:region 保护;0=摘除)。
+	AssignRegionCoverage(ctx context.Context, regionID, legalEntityID int64) error
 	ListAccounts(ctx context.Context) ([]AccountRow, error)
 	// ListDataScopes 账号数据范围清单(menu:datascope 保护;kw 过滤账号/姓名/角色)。
 	ListDataScopes(ctx context.Context, kw string) ([]AccountRow, error)

@@ -6,6 +6,8 @@ export interface RegionRow {
   level: number
   name: string
   parent: string
+  legalEntityId?: number
+  legalEntityName?: string
 }
 
 export interface RegionView extends RegionRow {

@@ -12,6 +12,27 @@ import (
 
 var ErrFKViolation = errors.New("user: foreign key violation")
 
+// AssignRegionCoverage 区域挂/摘运营主体覆盖(migrations/000076)。
+// legalEntityID=0 摘除覆盖(该区域回落到祖先覆盖/总公司兜底);未命中区域返回 ErrNotFound。
+func (s *PGStore) AssignRegionCoverage(ctx context.Context, regionID, legalEntityID int64) (err error) {
+	if regionID <= 0 || legalEntityID < 0 {
+		return ErrInvalidInput
+	}
+	tag, err := s.db.Exec(ctx,
+		`UPDATE regions SET legal_entity_id = NULLIF($2, 0) WHERE id = $1`,
+		regionID, legalEntityID)
+	if isFKViolation(err) {
+		return ErrFKViolation
+	}
+	if err != nil {
+		return fmt.Errorf("user: assign region coverage: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // CreateDepartment 新建部门(挂靠子公司,子公司内同名唯一)。
 func (s *PGStore) CreateDepartment(ctx context.Context, legalEntityID int64, name string) (int64, error) {
 	if legalEntityID <= 0 || strings.TrimSpace(name) == "" || len([]rune(name)) > 64 {

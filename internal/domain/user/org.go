@@ -6,18 +6,21 @@ package user
 
 // Region 经营区域节点(集团/大区/省/城市,与地址地理树解耦)。
 type Region struct {
-	ID     int64  `json:"id"`
-	Path   string `json:"path"`  // 物化路径,如 root.luzon.ncr.manila(唯一权威)
-	Level  int8   `json:"level"` // 冗余列 = nlevel(path):1集团 2大区 3省 4城市
-	Name   string `json:"name"`
-	Parent string `json:"parent"` // 父路径 = subpath(path,0,-1)
+	ID              int64  `json:"id"`
+	Path            string `json:"path"`  // 物化路径,如 root.luzon.ncr.manila(唯一权威)
+	Level           int8   `json:"level"` // 冗余列 = nlevel(path):1集团 2大区 3省 4城市
+	Name            string `json:"name"`
+	Parent          string `json:"parent"`          // 父路径 = subpath(path,0,-1)
+	LegalEntityID   int64  `json:"legalEntityId"`   // 覆盖运营主体,0=未挂(兜底总公司)
+	LegalEntityName string `json:"legalEntityName"` // 覆盖主体名快照(展示)
 }
 
 // LegalEntity 子公司/法人(品牌隔离的最小隔离单元)。
 type LegalEntity struct {
-	ID   int64  `json:"id"`
-	Code string `json:"code"` // LEG-A / LEG-B / LEG-C
-	Name string `json:"name"`
+	ID         int64  `json:"id"`
+	Code       string `json:"code"` // LEG-A / LEG-B / LEG-C
+	Name       string `json:"name"`
+	IsPlatform bool   `json:"isPlatform"` // 平台总公司(全库唯一,migrations/000077):未覆盖区域订单兜底
 }
 
 // Department 部门(挂靠子公司)。

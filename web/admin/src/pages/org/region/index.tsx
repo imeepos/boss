@@ -1,5 +1,6 @@
 // 经营区域页:四级树(level 1集团 2大区 3省 4城市),列名以 fields.md 1.3 为准。
 // 契约: GET /regions(org.yaml;parentPath 前缀过滤=下钻)。下级数由全量列表派生。
+// 覆盖主体列:PUT /regions/:id/coverage 划分子公司经营区域(0=摘除,兜底总公司)。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -8,9 +9,12 @@ import { PageHead, pagerTexts } from '../shared'
 import { buildRegionView, filterRegions, pageSlice, type RegionRow } from './tree'
 import { Pagination } from '../../../components/Pagination'
 
+interface EntityOption { id: number; name: string; isPlatform: boolean }
+
 export default function RegionPage() {
   const t = useT()
   const [rows, setRows] = useState<RegionRow[]>([])
+  const [entities, setEntities] = useState<EntityOption[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
   const [level, setLevel] = useState('')
@@ -25,6 +29,30 @@ export default function RegionPage() {
       .catch((e) => setError(e instanceof Error ? e.message : t.pages.region.loadFail))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    apiFetch<EntityOption[]>('/legal-entities').then((d) => setEntities(d ?? [])).catch(() => {})
+  }, [])
+
+  // assignCoverage 划分/摘除覆盖主体后整表刷新。
+  const assignCoverage = (regionId: number, legalEntityId: number) => {
+    apiFetch('/regions/' + regionId + '/coverage', {
+      method: 'PUT',
+      body: { legalEntityId },
+    })
+      .then(load)
+      .catch(() => setError(t.pages.region.assignFail))
+  }
+
+  const coverageOptions = useMemo(
+    () => [
+      { value: '', label: t.pages.region.coverageNone },
+      ...entities.map((e) => ({
+        value: String(e.id),
+        label: e.name + (e.isPlatform ? '（平台）' : ''),
+      })),
+    ],
+    [entities, t],
+  )
 
   const view = useMemo(
     () => filterRegions(buildRegionView(rows, t.pages.region.levelNames), keyword, level, drillPath),
@@ -66,6 +94,14 @@ export default function RegionPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.parent || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.childCount}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <Dropdown
+                        value={r.legalEntityId ? String(r.legalEntityId) : ''}
+                        options={coverageOptions}
+                        onChange={(v) => assignCoverage(r.id, Number(v) || 0)}
+                        ariaLabel={t.pages.region.coverageNone}
+                      />
+                    </td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {r.childCount > 0 && (
                         <span className="inline-flex items-center">
                           <button onClick={() => { setDrillPath(r.path); setPage(1) }}>{t.pages.region.drill}</button>
@@ -74,7 +110,7 @@ export default function RegionPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.region.empty}</div></td></tr>}
+                {!slice.length && <tr><td colSpan={7} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.pages.region.empty}</div></td></tr>}
               </tbody>
             </table>
           </div>

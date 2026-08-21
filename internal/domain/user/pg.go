@@ -61,9 +61,9 @@ func (s *PGStore) Login(ctx context.Context, username, password string) (*LoginR
 	return &LoginResult{AccountID: id, Username: username, RealName: realName, RoleCode: roleCode, RoleName: roleName}, nil
 }
 
-// ListLegalEntities 列出全部子公司/法人。
+// ListLegalEntities 列出全部子公司/法人(含平台总公司标志)。
 func (s *PGStore) ListLegalEntities(ctx context.Context) ([]LegalEntity, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, code, name FROM legal_entities ORDER BY id`)
+	rows, err := s.db.Query(ctx, `SELECT id, code, name, is_platform FROM legal_entities ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("user: list legal_entities: %w", err)
 	}
@@ -71,7 +71,7 @@ func (s *PGStore) ListLegalEntities(ctx context.Context) ([]LegalEntity, error) 
 	out := make([]LegalEntity, 0)
 	for rows.Next() {
 		var e LegalEntity
-		if err := rows.Scan(&e.ID, &e.Code, &e.Name); err != nil {
+		if err := rows.Scan(&e.ID, &e.Code, &e.Name, &e.IsPlatform); err != nil {
 			return nil, fmt.Errorf("user: scan legal_entity: %w", err)
 		}
 		out = append(out, e)
@@ -79,12 +79,15 @@ func (s *PGStore) ListLegalEntities(ctx context.Context) ([]LegalEntity, error) 
 	return out, rows.Err()
 }
 
-// ListRegions 列出经营区域;parentPath 为空返回全部,否则返回该子树(ltree 前缀)。
+// ListRegions 列出经营区域(含覆盖主体);parentPath 为空返回全部,否则返回该子树(ltree 前缀)。
 func (s *PGStore) ListRegions(ctx context.Context, parentPath string) ([]Region, error) {
-	query := `SELECT id, path, level, name FROM regions ORDER BY path`
+	query := `SELECT r.id, r.path, r.level, r.name, COALESCE(r.legal_entity_id,0), COALESCE(le.name,'')
+		FROM regions r LEFT JOIN legal_entities le ON le.id = r.legal_entity_id ORDER BY r.path`
 	args := []any{}
 	if parentPath != "" {
-		query = `SELECT id, path, level, name FROM regions WHERE path <@ $1::ltree ORDER BY path`
+		query = `SELECT r.id, r.path, r.level, r.name, COALESCE(r.legal_entity_id,0), COALESCE(le.name,'')
+			FROM regions r LEFT JOIN legal_entities le ON le.id = r.legal_entity_id
+			WHERE r.path <@ $1::ltree ORDER BY r.path`
 		args = append(args, parentPath)
 	}
 	rows, err := s.db.Query(ctx, query, args...)
@@ -95,7 +98,7 @@ func (s *PGStore) ListRegions(ctx context.Context, parentPath string) ([]Region,
 	out := make([]Region, 0)
 	for rows.Next() {
 		var r Region
-		if err := rows.Scan(&r.ID, &r.Path, &r.Level, &r.Name); err != nil {
+		if err := rows.Scan(&r.ID, &r.Path, &r.Level, &r.Name, &r.LegalEntityID, &r.LegalEntityName); err != nil {
 			return nil, fmt.Errorf("user: scan region: %w", err)
 		}
 		r.Parent = parentOf(r.Path)

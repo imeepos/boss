@@ -1079,6 +1079,8 @@ export interface Translations {
       allLevel: string
       levelNames: string[]
       columns: string[]
+      coverageNone: string
+      assignFail: string
       detail: string
       drill: string
       total: string

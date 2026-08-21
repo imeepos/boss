@@ -18,11 +18,11 @@ func TestPGStore_ListLegalEntities(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, code, name FROM legal_entities ORDER BY id`).
-		WillReturnRows(mock.NewRows([]string{"id", "code", "name"}).
-			AddRow(int64(1), "LEG-A", "主品牌·企业").
-			AddRow(int64(2), "LEG-B", "家庭宽带").
-			AddRow(int64(3), "LEG-C", "批发品牌"))
+	mock.ExpectQuery(`SELECT id, code, name, is_platform FROM legal_entities ORDER BY id`).
+		WillReturnRows(mock.NewRows([]string{"id", "code", "name", "is_platform"}).
+			AddRow(int64(1), "LEG-A", "主品牌·企业", false).
+			AddRow(int64(2), "LEG-B", "家庭宽带", false).
+			AddRow(int64(3), "LEG-C", "批发品牌", false))
 
 	s := NewPGStore(mock)
 	got, err := s.ListLegalEntities(context.Background())
@@ -40,7 +40,7 @@ func TestPGStore_ListLegalEntities(t *testing.T) {
 	}
 }
 
-// TestPGStore_ListRegions 契约:返回全部经营区域,并派生父路径。
+// TestPGStore_ListRegions 契约:返回全部经营区域,派生父路径并带覆盖主体。
 func TestPGStore_ListRegions(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -48,10 +48,10 @@ func TestPGStore_ListRegions(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, path, level, name FROM regions ORDER BY path`).
-		WillReturnRows(mock.NewRows([]string{"id", "path", "level", "name"}).
-			AddRow(int64(1), "root", int8(1), "集团").
-			AddRow(int64(2), "root.luzon", int8(2), "吕宋大区"))
+	mock.ExpectQuery(`SELECT r.id, r.path, r.level, r.name`).
+		WillReturnRows(mock.NewRows([]string{"id", "path", "level", "name", "legal_entity_id", "legal_entity_name"}).
+			AddRow(int64(1), "root", int8(1), "集团", int64(9), "平台总公司").
+			AddRow(int64(2), "root.luzon", int8(2), "吕宋大区", int64(0), ""))
 
 	s := NewPGStore(mock)
 	got, err := s.ListRegions(context.Background(), "")
@@ -67,9 +67,52 @@ func TestPGStore_ListRegions(t *testing.T) {
 	if got[1].Parent != "root" {
 		t.Fatalf("root.luzon.Parent=%q, want root", got[1].Parent)
 	}
+	if got[0].LegalEntityID != 9 || got[0].LegalEntityName != "平台总公司" {
+		t.Fatalf("root coverage=%+v, want 9/平台总公司", got[0])
+	}
+	if got[1].LegalEntityID != 0 || got[1].LegalEntityName != "" {
+		t.Fatalf("root.luzon coverage=%+v, want uncovered", got[1])
+	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)
 	}
+}
+
+// TestPGStore_AssignRegionCoverage 契约:区域挂/摘覆盖主体;0=摘除(NULLIF);未命中 ErrNotFound。
+func TestPGStore_AssignRegionCoverage(t *testing.T) {
+	t.Run("挂覆盖", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec(`UPDATE regions SET legal_entity_id`).
+			WithArgs(int64(2), int64(5)).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		if err := NewPGStore(mock).AssignRegionCoverage(context.Background(), 2, 5); err != nil {
+			t.Fatalf("AssignRegionCoverage: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("摘覆盖", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec(`UPDATE regions SET legal_entity_id`).
+			WithArgs(int64(2), int64(0)).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		if err := NewPGStore(mock).AssignRegionCoverage(context.Background(), 2, 0); err != nil {
+			t.Fatalf("AssignRegionCoverage(0): %v", err)
+		}
+	})
+	t.Run("区域不存在", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec(`UPDATE regions SET legal_entity_id`).
+			WithArgs(int64(99), int64(5)).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+		if err := NewPGStore(mock).AssignRegionCoverage(context.Background(), 99, 5); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("err=%v, want ErrNotFound", err)
+		}
+	})
 }
 
 // TestPGStore_ListDepartments 契约:返回部门并冗余子公司名。
