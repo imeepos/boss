@@ -4,6 +4,7 @@ package workerapi
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -16,8 +17,8 @@ import (
 // registerWorkerPortalAssetRoutes 资产域路由(wauth 组)。
 func registerWorkerPortalAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/tickets/:ticketNo/dismantle/scan", workerDismantleScanHandler(a))
-	g.GET("/tickets/:ticketNo/replace", workerReplaceGetHandler)
-	g.POST("/tickets/:ticketNo/replace", workerAuditOK(a, "replace"))
+	g.GET("/tickets/:ticketNo/replace", workerReplaceGetHandler(a))
+	g.POST("/tickets/:ticketNo/replace", workerReplacePostHandler(a))
 	g.POST("/assets/:epc/return", workerAssetReturnHandler(a))
 	g.GET("/materials", workerMaterialsHandler(a))
 	g.POST("/materials/:itemId/out", workerMaterialOutHandler(a))
@@ -58,12 +59,93 @@ func workerDismantleScanHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// workerReplaceGetHandler 换件预取:换件台账表缺失,返回占位步骤(缺口见报告)。
-func workerReplaceGetHandler(c *gin.Context) {
-	respond(c, apitypes.CodeOK, gin.H{
-		"ticketNo": c.Param("ticketNo"), "oldEpc": "", "oldEpcStatus": "",
-		"replaceType": "", "steps": []gin.H{{"name": "扫旧件", "status": "TODO"}},
-	})
+// workerReplaceGetHandler 换件预取:旧件 EPC 经四码绑定链(地址→quadlink→资产→标签)取真实值,
+// 步骤状态由换件流水(worker_replace_logs)驱动。
+func workerReplaceGetHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tk, ord, err := ticketOrder(c, a)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		oldEpc, oldStatus := boundEpcOf(a, c, ord.AddressID)
+		logs, err := a.WorkerEvent.ListReplaceLogs(c.Request.Context(), tk.TicketNo)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		done := len(logs) > 0
+		respond(c, apitypes.CodeOK, gin.H{
+			"ticketNo": tk.TicketNo, "oldEpc": oldEpc, "oldEpcStatus": oldStatus,
+			"replaceType": "故障调换 · 旧件返修",
+			"steps": []gin.H{
+				{"name": "扫旧件", "status": done, "note": oldEpc},
+				{"name": "换新件", "status": done, "note": lastNewEpc(logs)},
+				{"name": "登记返修", "status": done, "note": ""},
+			},
+		})
+	}
+}
+
+// boundEpcOf 取地址当前绑定资产的标签 EPC;链路任一环缺失返回空串与 UNLINKED。
+func boundEpcOf(a *app.Application, c *gin.Context, addressID int64) (string, string) {
+	q, err := a.QuadLink.GetByAddress(c.Request.Context(), addressID)
+	if err != nil || q == nil || q.AssetID == 0 {
+		return "", "UNLINKED"
+	}
+	ast, err := a.Asset.GetAsset(c.Request.Context(), q.AssetID)
+	if err != nil || ast == nil || ast.TagID == 0 {
+		return "", q.Status
+	}
+	tags, err := a.Asset.ListTags(c.Request.Context())
+	if err != nil {
+		return "", q.Status
+	}
+	for _, t := range tags {
+		if t.TagID == ast.TagID {
+			return t.EpcCode, q.Status
+		}
+	}
+	return "", q.Status
+}
+
+func lastNewEpc(logs []worker.ReplaceLog) string {
+	if len(logs) == 0 {
+		return ""
+	}
+	return logs[len(logs)-1].NewEpc
+}
+
+// workerReplacePostHandler 完成换件:落 worker_replace_logs + 审计留痕。
+func workerReplacePostHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req workerReplaceReq
+		if err := c.ShouldBindJSON(&req); err != nil || req.NewEpc == "" {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		tk, _, err := ticketOrder(c, a)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		workerID, _ := portalWorker(c)
+		if _, err := a.WorkerEvent.AppendReplaceLog(c.Request.Context(), worker.ReplaceLog{
+			WorkerID: workerID, TicketNo: tk.TicketNo, OldEpc: req.OldEpc, NewEpc: req.NewEpc, CreatedAt: time.Now(),
+		}); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "数据变更", "worker_replace", tk.TicketNo,
+			map[string]any{"oldEpc": req.OldEpc, "newEpc": req.NewEpc})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
+// workerReplaceReq 换件提交请求体(契约 asset.yaml Replace)。
+type workerReplaceReq struct {
+	OldEpc string `json:"oldEpc"`
+	NewEpc string `json:"newEpc"`
 }
 
 // workerAssetReturnHandler 旧件返库登记:落 asset_returns(PENDING 待确认)。

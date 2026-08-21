@@ -225,3 +225,36 @@ func (s *PGStore) ListMaterialItems(ctx context.Context) ([]MaterialItem, error)
 	}
 	return out, rows.Err()
 }
+
+// AppendReplaceLog 换件登记落流水,返回自增 id。
+func (s *PGStore) AppendReplaceLog(ctx context.Context, r ReplaceLog) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO worker_replace_logs(worker_id, ticket_no, old_epc, new_epc, created_at)
+		VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		r.WorkerID, r.TicketNo, r.OldEpc, r.NewEpc, r.CreatedAt).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("worker: append replace log: %w", err)
+	}
+	return id, nil
+}
+
+// ListReplaceLogs 按工单号取换件流水(时间正序)。
+func (s *PGStore) ListReplaceLogs(ctx context.Context, ticketNo string) ([]ReplaceLog, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, worker_id, ticket_no, old_epc, new_epc, created_at
+		FROM worker_replace_logs WHERE ticket_no = $1 ORDER BY created_at, id`, ticketNo)
+	if err != nil {
+		return nil, fmt.Errorf("worker: list replace logs: %w", err)
+	}
+	defer rows.Close()
+	out := make([]ReplaceLog, 0)
+	for rows.Next() {
+		var r ReplaceLog
+		if err := rows.Scan(&r.ID, &r.WorkerID, &r.TicketNo, &r.OldEpc, &r.NewEpc, &r.CreatedAt); err != nil {
+			return nil, fmt.Errorf("worker: scan replace log: %w", err)
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}

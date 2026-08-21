@@ -1,6 +1,9 @@
 package worker
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Material 师傅物料领用记录。
 type Material struct {
@@ -84,6 +87,19 @@ type WorkerEventService interface {
 	ListToolItems(ctx context.Context) ([]ToolItem, error)
 	// ListMaterialItems 物料主档全量(师傅端领料目录)。
 	ListMaterialItems(ctx context.Context) ([]MaterialItem, error)
+	// AppendReplaceLog/ListReplaceLogs 换件登记流水(师傅端换机页)。
+	AppendReplaceLog(ctx context.Context, r ReplaceLog) (int64, error)
+	ListReplaceLogs(ctx context.Context, ticketNo string) ([]ReplaceLog, error)
+}
+
+// ReplaceLog 换件登记流水。
+type ReplaceLog struct {
+	ID        int64     `json:"id"`
+	WorkerID  int64     `json:"workerId"`
+	TicketNo  string    `json:"ticketNo"`
+	OldEpc    string    `json:"oldEpc"`
+	NewEpc    string    `json:"newEpc"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 // MaterialItem 物料主档。

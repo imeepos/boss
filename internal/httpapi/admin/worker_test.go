@@ -280,3 +280,9 @@ func (f *fakeWorkerOps) ListToolItems(context.Context) ([]worker.ToolItem, error
 func (f *fakeWorkerOps) ListMaterialItems(context.Context) ([]worker.MaterialItem, error) {
 	return nil, nil
 }
+func (f *fakeWorkerOps) AppendReplaceLog(context.Context, worker.ReplaceLog) (int64, error) {
+	return 1, nil
+}
+func (f *fakeWorkerOps) ListReplaceLogs(context.Context, string) ([]worker.ReplaceLog, error) {
+	return nil, nil
+}
