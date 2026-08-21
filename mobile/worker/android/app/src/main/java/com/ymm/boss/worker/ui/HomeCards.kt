@@ -105,10 +105,10 @@ internal fun HomeHeader(state: HomeHeadState, onOpenMessages: () -> Unit) {
     }
 }
 
-/** 今日概览卡:标题 + 三列数值(对齐 user 端 BroadbandCard 的 SubInfo 布局)。 */
+/** 今日概览卡:标题 + 三列数值(对齐 user 端 BroadbandCard 的 SubInfo 布局);顶距 0,贴齐滚动区顶。 */
 @Composable
 internal fun OverviewCard(today: TodayStats) {
-    HomeCard {
+    HomeCard(modifier = Modifier.padding(top = 0.dp)) {
         Text(
             "今日概览", fontSize = 16.sp, lineHeight = 20.sp,
             fontWeight = FontWeight.Bold, color = Primary,
