@@ -34,13 +34,15 @@ export function AttachmentPickerDialog({ open, onClose, onPick }: {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="max-w-[min(72rem,calc(100vw-32px))] max-h-[90vh] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0">
+        <DialogHeader className="px-6 pt-5 pb-3">
           <DialogTitle>{t.pickTitle}</DialogTitle>
         </DialogHeader>
-        <AttachmentManager selectable selectedIds={selected} onSelectionChange={setSelected} />
-        <DialogFooter className="items-center gap-3">
-          {err && <span className="text-xs text-[var(--color-danger)]">{err}</span>}
+        <div className="min-h-0 overflow-auto px-6">
+          <AttachmentManager selectable selectedIds={selected} onSelectionChange={setSelected} />
+        </div>
+        <DialogFooter className="items-center gap-3 border-t border-[var(--shell-side-border)] px-6 py-3">
+          {err && <span className="mr-auto text-xs text-[var(--color-danger)]">{err}</span>}
           <ToolbarButton onClick={() => void pick()} disabled={busy || selected.length !== 1}>
             {busy ? t.pickFetching : t.pickUse}
           </ToolbarButton>
