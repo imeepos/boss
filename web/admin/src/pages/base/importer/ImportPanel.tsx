@@ -126,7 +126,7 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
   }
 
   return (
-    <div className="mx-4 mb-6 flex flex-col gap-1.5">
+    <div className="mb-6 flex flex-col gap-1.5">
       <label className="text-sm text-[var(--shell-content-text)]">{title}</label>
       <p className="m-0 mb-1 text-xs text-[var(--shell-input-placeholder)]">{hint}</p>
       <div
