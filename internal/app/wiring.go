@@ -5,22 +5,13 @@ import (
 	"fmt"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
-	"github.com/ymm-001/boss/internal/domain/ai"
-	"github.com/ymm-001/boss/internal/domain/apikey"
-	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/device"
-	"github.com/ymm-001/boss/internal/domain/geo"
-	"github.com/ymm-001/boss/internal/domain/gis"
-	"github.com/ymm-001/boss/internal/domain/notify"
-	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/portal"
-	"github.com/ymm-001/boss/internal/domain/provision"
-	pushdomain "github.com/ymm-001/boss/internal/domain/push" // 设备注册表(域侧);通道 Sender 在 pkg/push
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/report"
 	"github.com/ymm-001/boss/internal/domain/resource"
@@ -56,16 +47,13 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
 	aaastore := aaa.NewPGStore(pool)
-	akstore := apikey.NewPGStore(pool)
-	aisvc := ai.NewService(ai.NewPGStore(pool))
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
 	// E14:预建当月起 2 个月的审计分区(见 wiring_events.go)。
 	if err := ensureAuditPartitions(ctx, pool); err != nil {
 		return nil, err
 	}
-	// 推送通道与设备注册表:通道供 Notifier/自检共用;设备表供上报与反查共用。
+	// 推送通道:Notifier/自检共用,设备表构造见 wiring_aaa_infra.go。
 	pushSender := push.NewDynamic(pushConfigResolver(usr, cfg))
-	pushdevices := pushdomain.NewDevicesPGStore(pool)
 	// 验证码短信通道:配置源=biz_params(后台短信配置页,60s 热生效),env 凭据兜底,
 	// 凭据齐备走阿里云国际短信(+86/+60 统一),否则降级日志通道(仅开发)。
 	portalSvc := portal.NewPGStoreWithSender(pool, sms.NewRouter(
@@ -118,22 +106,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Channel:     ord,
 
 		Device:    dev,
-		Geo:       geo.NewPGStore(pool),
-		Gis:       gis.NewPGStore(pool),
-		ODN:       odn.NewPGStore(pool),
 		Analytics: anaStore,
 		Alarm:     dev,
-
-		Aaa:         aaastore,
-		Provision:   provision.NewPGStore(pool),
-		QuadLink:    qlStore,
-		Asset:       asset.NewPGStore(pool),
-		APIKey:      akstore,
-		AI:          aisvc,
-		Notify:      notify.NewPGStore(pool),
-		PushDevices: pushdevices,
-		// 派单等业务事件的定向通知:设备反查 → 通道发送 → push_records 留痕(尽力而为)。
-		PushNotifier: pushdomain.NewNotifier(pushSender, pushdevices, pushdomain.NewRecordsPGStore(pool)),
 
 		// Backup 数据备份迁移(运维工具);归档目录 env BOSS_BACKUP_DIR,默认 data/backups。
 		Backup: newBackupService(pool),
@@ -152,6 +126,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		WorkerOnboarding: wrk,
 		WorkerRealName:   wrk,
 	}
+
+	wireGeoServices(app, pool)
+	wireAAAInfra(app, pool, aaastore, pushSender)
 
 	app.Audit = aw
 	app.Attachment.Resolve = minioConfigResolver(app.User, app.Attachment.Conf)
