@@ -1,5 +1,6 @@
 // 附件域接口:对接 /attachments*(信封解包/ token 注入由 apiFetch 统一处理)。
-import { apiFetch } from './client'
+import { apiFetch, apiBaseUrl, getAuthToken } from './client'
+import { ApiError } from './envelope'
 
 export type UploaderType = 'account' | 'worker' | 'customer'
 
@@ -62,4 +63,19 @@ export async function getAttachmentsByIds(ids: number[]): Promise<{ items: Attac
     body: { ids },
   })
   return { items: data?.items ?? [] }
+}
+
+/** 下载附件对象字节并封装为 File(二进制流不走 envelope,手动带 token)。 */
+export async function fetchAttachmentFile(id: number): Promise<File> {
+  const headers: Record<string, string> = {}
+  const token = getAuthToken()
+  if (token) headers.Authorization = `Bearer ${token}`
+  const res = await fetch(`${apiBaseUrl()}/attachments/${id}/content`, { headers })
+  if (!res.ok) throw new ApiError(res.status, `附件下载失败(HTTP ${res.status})`)
+  const blob = await res.blob()
+  const { items } = await getAttachmentsByIds([id])
+  const at = items[0]
+  return new File([blob], at?.fileName ?? `attachment-${id}`, {
+    type: at?.contentType || blob.type || 'application/octet-stream',
+  })
 }

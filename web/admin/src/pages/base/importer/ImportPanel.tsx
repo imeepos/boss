@@ -10,6 +10,7 @@ import {
   type ImportKind, type PreviewResult,
 } from './preview'
 import { excelTemplate, isExcelFile, parseExcel, type ExcelParseResult } from './excel'
+import { AttachmentPickerDialog } from './AttachmentPickerDialog'
 
 /** Excel 解析错误 → i18n 文案(sheet/row 定位透传)。 */
 function excelErrorText(r: Extract<ExcelParseResult, { ok: false }>, text: Text): string {
@@ -38,6 +39,7 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState('')
   const [error, setError] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const parsed = useMemo(() => (payload.trim() ? parseJson(payload) : null), [payload])
@@ -155,12 +157,18 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
         <ToolbarButton onClick={() => downloadTemplate('xlsx')}>{text.templateExcel}</ToolbarButton>
         <ToolbarButton onClick={() => downloadTemplate('json')}>{text.template}</ToolbarButton>
         <ToolbarButton onClick={() => setAdvanced((v) => !v)}>{text.pasteToggle}</ToolbarButton>
+        <ToolbarButton onClick={() => setPickerOpen(true)}>{text.pickFromAttachments}</ToolbarButton>
         {payload && (
           <ToolbarButton onClick={() => { setPayload(''); setResult(''); setError('') }}>
             {text.clear}
           </ToolbarButton>
         )}
       </div>
+      <AttachmentPickerDialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={(f) => readFile(f)}
+      />
       {advanced && (
         <textarea
           className={AREA_CLS}

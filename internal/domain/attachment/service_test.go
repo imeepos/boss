@@ -12,6 +12,13 @@ type fakeStore struct {
 	saved *Attachment
 }
 
+// getByIDStore 让 Get 命中指定附件(Download 成功路径)。
+type getByIDStore struct{ fakeStore }
+
+func (g *getByIDStore) Get(context.Context, int64) (*Attachment, error) {
+	return &Attachment{ID: 7, ObjectKey: "20260101/ab", FileName: "f.json", ContentType: "application/json"}, nil
+}
+
 func (f *fakeStore) Create(_ context.Context, at *Attachment) (*Attachment, error) {
 	at.ID = 1
 	f.saved = at
@@ -42,6 +49,14 @@ func (f *fakeObj) Put(_ context.Context, cfg MinIOConfig, _ io.Reader, _ int64, 
 		return "", f.err
 	}
 	return f.key, nil
+}
+
+func (f *fakeObj) Open(_ context.Context, cfg MinIOConfig, _ string) (io.ReadCloser, error) {
+	f.got = cfg
+	if f.err != nil {
+		return nil, f.err
+	}
+	return io.NopCloser(strings.NewReader("obj-bytes")), nil
 }
 
 func TestUploadRecordsUploader(t *testing.T) {
@@ -105,5 +120,31 @@ func TestUploadObjPutError(t *testing.T) {
 	svc := &Service{St: &fakeStore{}, Obj: &fakeObj{err: errors.New("put boom")}}
 	if _, err := svc.Upload(context.Background(), &Attachment{UploaderType: UploaderWorker, UploaderID: 2}, strings.NewReader("x"), 1); err == nil {
 		t.Fatal("obj put error should fail")
+	}
+}
+
+func TestDownloadReturnsMetaAndStream(t *testing.T) {
+	obj := &fakeObj{}
+	svc := &Service{St: &getByIDStore{}, Obj: obj, Conf: MinIOConfig{Bucket: "b"}, Resolve: func(context.Context) (MinIOConfig, error) {
+		return MinIOConfig{Endpoint: "e", Bucket: "resolved"}, nil
+	}}
+	at, r, err := svc.Download(context.Background(), 7)
+	if err != nil {
+		t.Fatalf("download: %v", err)
+	}
+	defer r.Close()
+	if at.FileName != "f.json" || obj.got.Bucket != "resolved" {
+		t.Fatalf("unexpected: %+v cfg=%+v", at, obj.got)
+	}
+	body, _ := io.ReadAll(r)
+	if string(body) != "obj-bytes" {
+		t.Fatalf("unexpected body: %q", body)
+	}
+}
+
+func TestDownloadNotFound(t *testing.T) {
+	svc := &Service{St: &fakeStore{}, Obj: &fakeObj{}}
+	if _, _, err := svc.Download(context.Background(), 404); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("want ErrNotFound, got %v", err)
 	}
 }

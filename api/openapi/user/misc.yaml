@@ -213,3 +213,32 @@ paths:
       responses:
         '200': { description: 命中;data 含 code/issuedAt }
         '404': { description: 无有效验证码 }
+
+  /push/device:
+    post:
+      tags: [Misc]
+      summary: 推送设备上报(App 启动/登录后上报 JPush RegistrationID)
+      operationId: registerPushDevice
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [registrationId]
+              properties:
+                registrationId: { type: string, example: "1507bfd3f9ac1e045a", description: 10-64 位字母数字 }
+                vendor: { type: string, example: jpush }
+      responses:
+        '200':
+          description: envelope;同 RegistrationID 重复上报幂等(设备换账号改绑)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data: { type: object, properties: { ok: { type: boolean } } }
+        '422':
+          description: registrationId 形态非法(42200)

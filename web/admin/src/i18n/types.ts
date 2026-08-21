@@ -248,6 +248,11 @@ export interface Translations {
       fileTooLarge: string
       readFail: string
       pasteToggle: string
+      pickFromAttachments: string
+      pickTitle: string
+      pickUse: string
+      pickFetching: string
+      pickFetchFail: string
       clear: string
       template: string
       importing: string

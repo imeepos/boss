@@ -84,6 +84,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerPortalBillingRoutes(uauth, a)
 	registerPortalServiceRoutes(uauth, a)
 	registerPortalAttachmentRoutes(uauth, a)
+	registerPortalPushDeviceRoutes(uauth, a)
 	registerStripeRoutes(pub, uauth, a)
 }
 

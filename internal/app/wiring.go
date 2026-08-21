@@ -24,6 +24,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/provision"
+	pushdomain "github.com/ymm-001/boss/internal/domain/push" // 设备注册表(域侧);通道 Sender 在 pkg/push
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/report"
 	"github.com/ymm-001/boss/internal/domain/resource"
@@ -64,6 +65,8 @@ type Application struct {
 	RealID realid.Verifier
 	// Push 移动端推送通道(极光 JPush 聚合);凭据缺失时为日志通道。
 	Push push.Sender
+	// PushDevices 推送设备注册表(迁移 000095);App 上报 RegistrationID,发送链路按主体反查。
+	PushDevices pushdomain.DevicesService
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
@@ -236,13 +239,14 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Analytics: anaStore,
 		Alarm:     dev,
 
-		Aaa:       aaastore,
-		Provision: provision.NewPGStore(pool),
-		QuadLink:  qlStore,
-		Asset:     asset.NewPGStore(pool),
-		APIKey:    akstore,
-		AI:        aisvc,
-		Notify:    notify.NewPGStore(pool),
+		Aaa:         aaastore,
+		Provision:   provision.NewPGStore(pool),
+		QuadLink:    qlStore,
+		Asset:       asset.NewPGStore(pool),
+		APIKey:      akstore,
+		AI:          aisvc,
+		Notify:      notify.NewPGStore(pool),
+		PushDevices: pushdomain.NewDevicesPGStore(pool),
 
 		// Backup 数据备份迁移(运维工具);归档目录 env BOSS_BACKUP_DIR,默认 data/backups。
 		Backup: newBackupService(pool),

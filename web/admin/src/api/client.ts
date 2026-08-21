@@ -3,6 +3,9 @@
 import { ApiError, unwrap, type Envelope } from './envelope'
 import { apiBaseUrl } from '../lib/serverConfig'
 
+// 转导出:二进制下载等不走 apiFetch 的调用方需要同一基址。
+export { apiBaseUrl }
+
 let authToken: string | null = null
 
 const storage = (): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null =>

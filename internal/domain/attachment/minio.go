@@ -27,6 +27,9 @@ type MinIOConfig struct {
 type ObjectStorage interface {
 	// Put 上传对象并返回 object key。
 	Put(ctx context.Context, cfg MinIOConfig, reader io.Reader, size int64, contentType, origName string) (string, error)
+
+	// Open 按 object key 打开对象读流(调用方负责 Close)。
+	Open(ctx context.Context, cfg MinIOConfig, key string) (io.ReadCloser, error)
 }
 
 // MinIOStorage 基于 minio-go 的实现。
@@ -92,6 +95,19 @@ func (s *MinIOStorage) Put(ctx context.Context, cfg MinIOConfig, reader io.Reade
 	return key, nil
 }
 
+// Open 按 object key 打开对象读流。
+func (s *MinIOStorage) Open(ctx context.Context, cfg MinIOConfig, key string) (io.ReadCloser, error) {
+	cli, err := newClient(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("attachment: minio client: %w", err)
+	}
+	obj, err := cli.GetObject(ctx, cfg.Bucket, key, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("attachment: get object: %w", err)
+	}
+	return obj, nil
+}
+
 // Service 附件上传服务:对象入 MinIO + 元数据入 PG。
 type Service struct {
 	St      Store
@@ -120,4 +136,25 @@ func (s *Service) Upload(ctx context.Context, at *Attachment, reader io.Reader, 
 	at.ObjectKey = key
 	at.SizeBytes = size
 	return s.St.Create(ctx, at)
+}
+
+// Download 按 id 取附件元数据与对象读流(调用方负责 Close)。
+func (s *Service) Download(ctx context.Context, id int64) (*Attachment, io.ReadCloser, error) {
+	at, err := s.St.Get(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	cfg := s.Conf
+	if s.Resolve != nil {
+		resolved, err := s.Resolve(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		cfg = resolved
+	}
+	r, err := s.Obj.Open(ctx, cfg, at.ObjectKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	return at, r, nil
 }

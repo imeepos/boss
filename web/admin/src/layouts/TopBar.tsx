@@ -10,11 +10,10 @@ import { useT, useLang, localeOptions } from '../i18n'
 import { useTheme } from '../theme/context'
 import { CheckIcon, GlobeIcon, LogoutIcon, MaskIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, UserIcon } from './icons'
 import { NotifBell } from './NotifBell'
+import { POPOVER, POPOVER_ITEM } from './popover'
 import { cn } from '../lib/cn'
 
 const TOOL_BTN = 'grid h-[34px] w-[34px] cursor-pointer place-items-center rounded-full border-0 bg-none text-white/80 hover:bg-[var(--shell-search-bg-focus)] hover:text-white'
-const MENU = 'absolute right-0 top-[calc(100%+8px)] z-50 rounded-[10px] border border-[var(--shell-side-border)] bg-[var(--shell-content-bg)] p-1 shadow-[var(--shell-fab-shadow)]'
-const MENU_BTN = 'flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border-0 bg-none px-2.5 py-2 text-left text-[13px] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
 
 interface TopBarProps {
   profile: Profile
@@ -121,13 +120,13 @@ function LangSwitch() {
         <GlobeIcon />
       </button>
       {open && (
-        <div className={MENU} role="listbox">
+        <div className={POPOVER} role="listbox">
           {localeOptions().map((opt) => (
             <button
               key={opt.value}
               role="option"
               aria-selected={opt.value === locale}
-              className={cn(MENU_BTN, opt.value === locale && 'font-semibold text-[var(--color-brand-gold-500)]')}
+              className={cn(POPOVER_ITEM, opt.value === locale && 'font-semibold text-[var(--color-brand-gold-500)]')}
               onClick={() => {
                 setLocale(opt.value as typeof locale)
                 setOpen(false)
@@ -174,16 +173,16 @@ function UserMenu({ profile }: { profile: Profile }) {
         <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--color-brand-gold-500)] text-[13px] font-semibold text-[var(--color-brand-navy-950)]">{profile.realName.slice(0, 1)}</span>
       </button>
       {open && (
-        <div className={cn(MENU, 'min-w-[180px]')} role="menu">
-          <div className="mb-1 border-b border-[var(--shell-side-border)] px-2.5 pt-2 pb-2.5">
-            <div className="text-sm font-semibold text-[var(--shell-heading)]">{profile.realName}</div>
+        <div className={POPOVER} role="menu">
+          <div className="mb-1 border-b border-[var(--shell-popover-border)] px-3 pt-2 pb-2">
+            <div className="text-[13px] font-semibold text-[var(--shell-heading)]">{profile.realName}</div>
             <div className="mt-0.5 text-xs text-[var(--shell-group-title)]">{profile.roleName}</div>
           </div>
-          <button role="menuitem" className={cn(MENU_BTN, 'justify-start')} onClick={() => { setOpen(false); nav('/ucenter/overview') }}>
+          <button role="menuitem" className={POPOVER_ITEM} onClick={() => { setOpen(false); nav('/ucenter/overview') }}>
             <UserIcon />
             <span>{t.common.profile}</span>
           </button>
-          <button role="menuitem" className={cn(MENU_BTN, 'justify-start text-[var(--color-danger)] hover:bg-[rgba(217,75,75,0.08)]')} onClick={logout}>
+          <button role="menuitem" className={cn(POPOVER_ITEM, 'justify-start text-[var(--color-danger)] hover:bg-[rgba(217,75,75,0.08)]')} onClick={logout}>
             <LogoutIcon />
             <span>{t.common.logout}</span>
           </button>

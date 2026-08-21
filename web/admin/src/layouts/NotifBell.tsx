@@ -5,10 +5,10 @@ import { apiFetch } from '../api/client'
 import { useT } from '../i18n'
 import { cn } from '../lib/cn'
 import { markNotificationsRead, useUnreadCount } from '../lib/useNotifications'
+import { POPOVER, POPOVER_DIVIDER } from './popover'
 import { BellIcon } from './icons'
 
-export const NOTIF_MENU = 'absolute right-0 top-[calc(100%+8px)] z-50 w-80 rounded-[10px] border border-[var(--shell-side-border)] bg-[var(--shell-content-bg)] p-1 shadow-[var(--shell-fab-shadow)]'
-export const NOTIF_ITEM = 'flex w-full cursor-pointer flex-col gap-0.5 rounded-md border-0 bg-none px-2.5 py-2 text-left hover:bg-[var(--shell-menu-hover-bg)]'
+export const NOTIF_ITEM = 'flex w-full cursor-pointer flex-col gap-0.5 rounded border-0 bg-none px-3 py-2 text-left hover:bg-[var(--shell-menu-hover-bg)]'
 const TOOL_BTN = 'relative grid h-[34px] w-[34px] cursor-pointer place-items-center rounded-full border-0 bg-none text-white/80 hover:bg-[var(--shell-search-bg-focus)] hover:text-white'
 
 interface RecentItem {
@@ -75,8 +75,8 @@ export function NotifBell() {
         <Badge count={count} />
       </button>
       {open && (
-        <div className={NOTIF_MENU} role="menu">
-          <div className="border-b border-[var(--shell-side-border)] px-2.5 pt-2 pb-2 text-[13px] font-semibold text-[var(--shell-heading)]">
+        <div className={cn(POPOVER, 'w-80')} role="menu">
+          <div className="border-b border-[var(--shell-popover-border)] px-3 pt-2 pb-2 text-[13px] font-semibold text-[var(--shell-heading)]">
             {n.cardTitle}
           </div>
           <div className="max-h-80 overflow-y-auto">
@@ -95,7 +95,7 @@ export function NotifBell() {
               <div className="px-2.5 py-4 text-center text-xs text-[var(--shell-group-title)]">{n.bellEmpty}</div>
             )}
           </div>
-          <div className="flex border-t border-[var(--shell-side-border)] pt-1">
+          <div className={cn(POPOVER_DIVIDER, 'flex pt-1')}>
             <button role="menuitem" className="flex-1 cursor-pointer border-0 bg-none py-2 text-xs text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" onClick={markAll}>
               {n.markAllRead}
             </button>

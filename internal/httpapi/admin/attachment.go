@@ -5,7 +5,9 @@ package adminapi
 
 import (
 	"errors"
+	"io"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -19,11 +21,15 @@ import (
 )
 
 // registerAttachmentRoutes 附件域路由(authed 组,须登录)。
+
+// maxContentBytes 内容下载读侧上限(与上传 32MB 对齐)。
+const maxContentBytes = 32 << 20
 func registerAttachmentRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/attachments/upload", httpx.AttachmentUpload(a.Attachment, adminAttachmentUploader))
 	g.GET("/attachments", adminAttachmentList(a))
 	g.DELETE("/attachments/:id", adminAttachmentDelete(a))
 	g.POST("/attachments/batch-get", adminAttachmentBatchGet(a))
+	g.GET("/attachments/:id/content", adminAttachmentContent(a))
 }
 
 // adminAttachmentUploader 身份解析:API key 主体优先,否则 JWT 账号。
@@ -103,6 +109,35 @@ func adminAttachmentDelete(a *app.Application) gin.HandlerFunc {
 		}
 		httpx.RecordAudit(a, c, "attachment.delete", "attachment", strconv.FormatInt(id, 10), nil)
 		respond(c, apitypes.CodeOK, nil)
+	}
+}
+
+// adminAttachmentContent 输出附件对象字节(导入中心等消费方按文件读取)。
+// 二进制流不走 envelope;40400=不存在或已删。上传时限 32MB,读侧同限防御。
+func adminAttachmentContent(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		at, r, err := a.Attachment.Download(c.Request.Context(), id)
+		if err != nil {
+			if errors.Is(err, attachment.ErrNotFound) {
+				respond(c, apitypes.CodeNotFound, nil)
+				return
+			}
+			respondErr(c, err)
+			return
+		}
+		defer r.Close()
+		buf, err := io.ReadAll(io.LimitReader(r, maxContentBytes+1))
+		if err != nil || len(buf) > maxContentBytes {
+			respond(c, apitypes.CodeInternal, nil)
+			return
+		}
+		name := strings.ReplaceAll(at.FileName, `"`, "")
+		c.Header("Content-Disposition", `attachment; filename="`+name+`"`)
+		c.Data(200, at.ContentType, buf)
 	}
 }
 
