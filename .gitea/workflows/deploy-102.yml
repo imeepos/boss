@@ -24,7 +24,7 @@ jobs:
 
       - name: Deploy (compose up)
         run: |
-          docker-compose -f deployments/docker-compose.102.app.yml -p boss-app up -d --remove-orphans
+          docker-compose -f deployments/docker-compose.102.app.yml -p boss-app up -d --force-recreate --remove-orphans
           sleep 12
           docker-compose -f deployments/docker-compose.102.app.yml -p boss-app ps
 
