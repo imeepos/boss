@@ -60,7 +60,12 @@ internal fun milestoneOf(stage: Int) = when {
 internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, onClick: () -> Unit) {
     val no = t.optString("ticketNo")
     val status = t.optString("status")
-    HomeCard(topPadding = 0) {
+    // 卡片容器对齐 user 端 AppCard:平面白底 + 12dp 圆角 + 16dp 内边距,无阴影
+    Column(
+        Modifier.fillMaxWidth()
+            .background(Color.White, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+    ) {
         Column(Modifier.fillMaxWidth().clickable(enabled = status != "TODO") { onClick() }) {
             Row(
                 Modifier.fillMaxWidth(),
