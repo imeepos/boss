@@ -42,6 +42,9 @@ paths:
   # ---------- Home ----------
   /home: { $ref: './worker/ticket.yaml#/paths/~1home' }
 
+  # ---------- Push(推送设备上报) ----------
+  /push/device: { $ref: './worker/misc.yaml#/paths/~1push~1device' }
+
   # ---------- Ticket ----------
   /tickets: { $ref: './worker/ticket.yaml#/paths/~1tickets' }
   /tickets/history: { $ref: './worker/ticket.yaml#/paths/~1tickets~1history' }

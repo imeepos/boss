@@ -44,6 +44,8 @@ paths:
   /profile/security/phone: { $ref: './user/profile.yaml#/paths/~1profile~1security~1phone' }
   /profile/notify-settings: { $ref: './user/profile.yaml#/paths/~1profile~1notify-settings' }
   /profile/language: { $ref: './user/profile.yaml#/paths/~1profile~1language' }
+  # ---------- Push(推送设备上报) ----------
+  /push/device: { $ref: './user/misc.yaml#/paths/~1push~1device' }
   # ---------- Product ----------
   /products: { $ref: './user/product.yaml#/paths/~1products' }
   /products/{id}: { $ref: './user/product.yaml#/paths/~1products~1{id}' }

@@ -99,6 +99,14 @@ paths:
   /attachments/upload: { $ref: './admin/sys.yaml#/paths/~1attachments~1upload' }
   /attachments/batch-get: { $ref: './admin/sys.yaml#/paths/~1attachments~1batch-get' }
   /attachments/{id}: { $ref: './admin/sys.yaml#/paths/~1attachments~1{id}' }
+  /attachments/{id}/content: { $ref: './admin/sys.yaml#/paths/~1attachments~1{id}~1content' }
+
+  # ---------- Backup(数据备份迁移,运维工具) ----------
+  /backup/tables: { $ref: './admin/sys.yaml#/paths/~1backup~1tables' }
+  /backup/jobs: { $ref: './admin/sys.yaml#/paths/~1backup~1jobs' }
+  /backup/jobs/{id}: { $ref: './admin/sys.yaml#/paths/~1backup~1jobs~1{id}' }
+  /backup/jobs/{id}/file: { $ref: './admin/sys.yaml#/paths/~1backup~1jobs~1{id}~1file' }
+  /backup/restore: { $ref: './admin/sys.yaml#/paths/~1backup~1restore' }
 
   # ---------- Notify(后台提醒中心) ----------
   /notifications: { $ref: './admin/notify.yaml#/paths/~1notifications' }
@@ -129,6 +137,7 @@ paths:
   /customer-registrations/{id}/approve: { $ref: './admin/customer.yaml#/paths/~1customer-registrations~1{id}~1approve' }
   /customer-registrations/{id}/reject: { $ref: './admin/customer.yaml#/paths/~1customer-registrations~1{id}~1reject' }
   /customers: { $ref: './admin/customer.yaml#/paths/~1customers' }
+  /customers/{id}: { $ref: './admin/customer.yaml#/paths/~1customers~1{id}' }
   /customers/{id}/real-name: { $ref: './admin/customer.yaml#/paths/~1customers~1{id}~1real-name' }
   /customers/{id}/real-name/verify: { $ref: './admin/customer.yaml#/paths/~1customers~1{id}~1real-name~1verify' }
   /customers/{id}/verify-logs: { $ref: './admin/customer.yaml#/paths/~1customers~1{id}~1verify-logs' }
