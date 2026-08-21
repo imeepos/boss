@@ -31,10 +31,11 @@ type ScanReq struct {
 
 // ReconcileReport 四码对账结果。
 type ReconcileReport struct {
-	Total    int
-	Linked   int
-	Conflict int
-	Unlinked int
+	Total    int `json:"total"`
+	Linked   int `json:"linked"`
+	Conflict int `json:"conflict"`
+	Unlinked int `json:"unlinked"`
+	Purged   int `json:"purged"` // 本轮清理的孤儿行数
 }
 
 // VerifyScan 扫码绑定(环节9 强制):实物 EPC ↔ 预绑定资产核对。
@@ -106,8 +107,9 @@ func (s *PGStore) UnbindRequireScan(ctx context.Context, orderID int64, scannedE
 	return nil
 }
 
-// Reconcile 四码对账任务:任一成员(资产/客户/端口/地址)缺失 → 置 CONFLICT;返回各状态统计。
+// Reconcile 四码对账任务:成员缺失置 CONFLICT → 自动清理孤儿行 → 返回统计。
 func (s *PGStore) Reconcile(ctx context.Context) (*ReconcileReport, error) {
+	// 1. 标 CONFLICT。
 	if _, err := s.db.Exec(ctx, `
 		UPDATE quad_links ql SET status = 'CONFLICT'
 		WHERE NOT EXISTS (SELECT 1 FROM assets a WHERE a.id = ql.asset_id)
@@ -116,12 +118,18 @@ func (s *PGStore) Reconcile(ctx context.Context) (*ReconcileReport, error) {
 		   OR NOT EXISTS (SELECT 1 FROM addresses ad WHERE ad.id = ql.address_id)`); err != nil {
 		return nil, fmt.Errorf("quadlink: reconcile conflict: %w", err)
 	}
+	// 2. 清理孤儿行(与标 CONFLICT 相同判定条件)。
+	purged, err := s.PurgeOrphans(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("quadlink: reconcile purge: %w", err)
+	}
+	// 3. 统计。
 	rows, err := s.db.Query(ctx, `SELECT status, count(*) FROM quad_links GROUP BY status`)
 	if err != nil {
 		return nil, fmt.Errorf("quadlink: reconcile stats: %w", err)
 	}
 	defer rows.Close()
-	rep := &ReconcileReport{}
+	rep := &ReconcileReport{Purged: int(purged)}
 	for rows.Next() {
 		var st string
 		var n int

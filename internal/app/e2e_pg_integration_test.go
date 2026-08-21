@@ -97,6 +97,19 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			if err := step.run(ctx, orderID); err != nil {
 				t.Fatalf("环节%s(%d/12) 失败: %v", step.name, i+2, err)
 			}
+			// 环节5(applyTag)后验证 quad_link 自动创建。
+			if step.name == "applyTag" {
+				ql, qlErr := a.QuadLink.GetByCustomer(ctx, s.customerID)
+				if qlErr != nil {
+					t.Fatalf("applyTag 后 quad_link 未创建: %v", qlErr)
+				}
+				if ql.PortID == 0 {
+					t.Fatalf("applyTag 后 quad_link port_id=0,应该有值")
+				}
+				if ql.Status != "UNLINKED" {
+					t.Fatalf("applyTag 后 quad_link status=%s, want UNLINKED", ql.Status)
+				}
+			}
 		}
 		o, _, err := a.Order.Track(ctx, orderID)
 		if err != nil {
