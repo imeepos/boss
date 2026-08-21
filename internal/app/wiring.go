@@ -152,7 +152,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	bill := billing.NewPGStore(pool)
 	res := resource.NewPGStore(pool)
 	qlStore := quadlink.NewPGStore(pool)
-	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, quadLinkPrebinder{svc: qlStore})
+	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res}, quadLinkPrebinder{svc: qlStore})
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
