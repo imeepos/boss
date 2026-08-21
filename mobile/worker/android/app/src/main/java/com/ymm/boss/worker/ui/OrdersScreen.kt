@@ -77,10 +77,17 @@ fun OrdersScreen(nav: NavHost) {
     suspend fun reload() {
         loading = true; failed = false
         try {
-            val r = TicketApi.list(if (cur == "all") null else cur.uppercase())
+            // 进行中 tab 口径与首页 ongoing 一致(TODO+ACCEPTED+DOING 均未完成),拉全量后客户端过滤
+            val doingTab = cur == "doing"
+            val r = TicketApi.list(if (doingTab || cur == "all") null else cur.uppercase())
             val a = r.optJSONArray("items") ?: JSONArray()
             items.clear()
-            for (i in 0 until a.length()) a.optJSONObject(i)?.let { items.add(it) }
+            for (i in 0 until a.length()) {
+                val t = a.optJSONObject(i) ?: continue
+                val s = t.optString("status")
+                if (doingTab && s != "TODO" && s != "ACCEPTED" && s != "DOING") continue
+                items.add(t)
+            }
             visible = PAGE_SIZE
         } catch (e: Exception) { failed = true } finally { loading = false }
     }

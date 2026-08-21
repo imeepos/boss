@@ -43,11 +43,26 @@ func workerOwnedTicket(c *gin.Context, tk *order.DispatchTicket) bool {
 	return false
 }
 
+// portalTicketStatusLabel 师傅端状态中文(fields.md 工单列表列)。
+func portalTicketStatusLabel(s string) string {
+	switch s {
+	case "TODO":
+		return "待领取"
+	case "ACCEPTED":
+		return "已接单"
+	case "DOING":
+		return "进行中"
+	default:
+		return "已完成"
+	}
+}
+
 // portalTicketOf 派单工单 → Ticket 视图(worker/schemas.yaml Ticket)。
 func portalTicketOf(tk order.DispatchTicket, workerID int64) gin.H {
 	status := portalTicketStatus(tk, workerID)
 	return gin.H{
 		"ticketNo": tk.TicketNo, "bizNo": tk.TicketNo, "type": "INSTALL",
+		"typeLabel": "新装", "statusLabel": portalTicketStatusLabel(status),
 		"address": "", "distanceKm": 0, "scheduleSlot": "",
 		"stage": 9, "stageTotal": 12, "status": status,
 		"slaLeftMinutes": nil, "finishedAt": "",
