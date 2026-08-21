@@ -167,3 +167,5 @@
 - 当需要给容器注入密钥时,优先 long-syntax `volumes: [bind]` 挂文件;`top-level secrets:` + `secrets: [..]` 块在某些基础镜像(UBI Micro、Distroless)上即使 compose config 渲染正常,容器内 `/run/secrets/` 也可能不存在。skill 没提前警告我。(2026-08-21 MinIO)
 74. Node22/Chrome 现版 JSON.parse 报文是「Unexpected token 'x', "片段" is not valid JSON」,无 position/line;行号定位只能靠 Firefox 的 "line N" 正则,其余回落无行号文案(2026-08-2x importer 预览)。
 75. 提交时暂存区存在并行会话遗留文件,用 `git commit -m ... -- <本任务路径>` pathspec 提交,不动他人在场改动(2026-08-2x importer 提交避开 mobile/*.kt)。
+76. pgx v5 回扫 timestamptz 得到的是「Go 进程本地时区」的 time.Time，不是 UTC——代码注释声称"DB 时间戳按 UTC 扫描"属错误假设；时区审计先实测（pgx 连库 SELECT now() 回扫看偏移），再信注释(2026-08-21 时区审计)。
+77. 时间正确性常靠「DB会话=进程=UTC」三重巧合维持：审计时区须同时查 SHOW TimeZone、DSN 是否带 TimeZone、容器 TZ env 三处；任何一处单方面改变都会碎(2026-08-21)。

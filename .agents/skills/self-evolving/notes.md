@@ -125,3 +125,9 @@
 - skill 有没有提前警告我:red-lines #7(不假设图像输入)命中;V8 报文格式无沉淀。
 - 重来一次:先 node -e 验证目标运行时报文格式再写解析;目测类验证直接声明"请人类目测"。
 - 新经验已喂:lessons #74(V8 JSON 报文)、#75(git 暂存区并行遗留按 pathspec 提交)、techniques(eval 内 location.href 导航模式)。
+
+## 2026-08-21 全仓时间/时区审计
+- 哪个坑浪费最多时间：dashboard.go 注释断言"DB 时间戳按 UTC 扫描"，与 pgx v5 实测(回扫进程本地时区)矛盾——差点照注释下结论。
+- skill 有没有提前警告我：没有；时区三重巧合(会话/DSN/容器)无沉淀。
+- 重来一次：涉及时区的结论一律先连库实测，不信代码注释。
+- 新经验已喂：lessons #76/#77，审计报告 docs/review/time-timezone-audit.md。
