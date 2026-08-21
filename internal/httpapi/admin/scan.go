@@ -135,4 +135,13 @@ func registerScanRoutes(g *gin.RouterGroup, a *app.Application) {
 		httpx.RecordAudit(a, c, "数据变更", "quadlink", "reconcile", map[string]any{"conflict": rep.Conflict})
 		respond(c, apitypes.CodeOK, rep)
 	})
+	q.POST("/quad-links/purge-orphans", func(c *gin.Context) {
+		n, err := a.QuadLink.PurgeOrphans(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "数据变更", "quadlink", "purge-orphans", map[string]any{"deleted": n})
+		respond(c, apitypes.CodeOK, gin.H{"deleted": n})
+	})
 }

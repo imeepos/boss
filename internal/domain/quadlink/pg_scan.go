@@ -157,6 +157,22 @@ func (s *PGStore) ResolveConflict(ctx context.Context, linkID int64) error {
 	return nil
 }
 
+// PurgeOrphans 删除所有孤儿 quad_link 行(成员不存在则删),返回删除条数。
+// 孤儿判定与 Reconcile 相同:资产/客户/端口/地址任一实体缺失。
+// 建议在 Reconcile 之后调用,先标 CONFLICT 再清理。
+func (s *PGStore) PurgeOrphans(ctx context.Context) (int64, error) {
+	tag, err := s.db.Exec(ctx, `
+		DELETE FROM quad_links ql
+		WHERE NOT EXISTS (SELECT 1 FROM assets a WHERE a.id = ql.asset_id)
+		   OR NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = ql.customer_id)
+		   OR NOT EXISTS (SELECT 1 FROM ports p WHERE p.id = ql.port_id)
+		   OR NOT EXISTS (SELECT 1 FROM addresses ad WHERE ad.id = ql.address_id)`)
+	if err != nil {
+		return 0, fmt.Errorf("quadlink: purge orphans: %w", err)
+	}
+	return tag.RowsAffected(), nil
+}
+
 // linkByOrder 经订单→端口预占定位预绑定四码(扫码绑定场景)。
 func (s *PGStore) linkByOrder(ctx context.Context, orderID int64) (*QuadLink, error) {
 	var customerID int64

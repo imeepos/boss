@@ -36,6 +36,7 @@ func (f *fakeQuadlink) UnbindRequireScan(_ context.Context, orderID int64, epc s
 	f.unbound = [2]any{orderID, epc}
 	return f.unbindErr
 }
+func (f *fakeQuadlink) PurgeOrphans(_ context.Context) (int64, error) { return 0, nil }
 
 type fakeWorkOrder struct {
 	order.WorkOrderService

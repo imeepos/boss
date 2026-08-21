@@ -38,4 +38,6 @@ type QuadLinkService interface {
 	Reconcile(ctx context.Context) (*ReconcileReport, error)
 	// ResolveConflict 冲突人工处理:CONFLICT → UNLINKED(非冲突态拒)。
 	ResolveConflict(ctx context.Context, linkID int64) error
+	// PurgeOrphans 删除所有孤儿 quad_link 行(成员不存在则删),返回删除条数。
+	PurgeOrphans(ctx context.Context) (int64, error)
 }

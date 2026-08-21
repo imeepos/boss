@@ -43,6 +43,7 @@ type fakeDashQuadlink struct {
 func (f *fakeDashQuadlink) ListLinks(context.Context) ([]quadlink.QuadLink, error) {
 	return f.links, nil
 }
+func (f *fakeDashQuadlink) PurgeOrphans(context.Context) (int64, error) { return 0, nil }
 
 // TestDashboard 契约:统计卡/订单状态分布/待办/近7日趋势均来自真实在库数据。
 func TestDashboard(t *testing.T) {

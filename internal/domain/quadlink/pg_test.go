@@ -245,3 +245,51 @@ func TestPGStore_GetByLatestLifecycle(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+func TestPGStore_PurgeOrphans(t *testing.T) {
+	t.Run("删除孤儿行返回条数", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectExec(`DELETE FROM quad_links ql`).
+			WillReturnResult(pgxmock.NewResult("DELETE", 132))
+
+		s := NewPGStore(mock)
+		n, err := s.PurgeOrphans(context.Background())
+		if err != nil {
+			t.Fatalf("PurgeOrphans: %v", err)
+		}
+		if n != 132 {
+			t.Fatalf("n=%d, want 132", n)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("无孤儿时返回 0", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectExec(`DELETE FROM quad_links ql`).
+			WillReturnResult(pgxmock.NewResult("DELETE", 0))
+
+		s := NewPGStore(mock)
+		n, err := s.PurgeOrphans(context.Background())
+		if err != nil {
+			t.Fatalf("PurgeOrphans: %v", err)
+		}
+		if n != 0 {
+			t.Fatalf("n=%d, want 0", n)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+}

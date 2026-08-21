@@ -49,6 +49,7 @@ func (s *stubQuadlink) UnbindRequireScan(_ context.Context, _ int64, _ string) e
 func (s *stubQuadlink) Reconcile(_ context.Context) (*quadlink.ReconcileReport, error) {
 	return s.rep, s.reconcileErr
 }
+func (s *stubQuadlink) PurgeOrphans(_ context.Context) (int64, error) { return 0, nil }
 
 type stubWorkOrderGRPC struct {
 	order.WorkOrderService
