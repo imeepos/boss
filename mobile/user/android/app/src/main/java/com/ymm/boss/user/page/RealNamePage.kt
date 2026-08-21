@@ -1,6 +1,7 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.statusBarSolid
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 // 实名认证分步流程(designs/realname-flow-states-v1):3 步 + 4 状态页。
@@ -80,6 +82,7 @@ fun VerifyScreen(nav: com.ymm.boss.user.ui.Nav) {
     // 表单与附件状态提升:UPLOAD 步提交时要带上 FORM 步资料
     var name by rememberSaveable { mutableStateOf("") }
     var idNo by rememberSaveable { mutableStateOf("") }
+    var sms by rememberSaveable { mutableStateOf("") }
     var frontId by rememberSaveable { mutableStateOf(0L) }
     var backId by rememberSaveable { mutableStateOf(0L) }
 
@@ -90,6 +93,12 @@ fun VerifyScreen(nav: com.ymm.boss.user.ui.Nav) {
             phase = initialPhase(d)
         } catch (e: Exception) { data = null } // 拉取失败不白屏,按待填表单展示
         finally { loading = false }
+    }
+    val uiScope = androidx.compose.runtime.rememberCoroutineScope()
+    // 提交成功后重拉,按服务端最新结论(自动 PASS/FAIL/人工 PENDING)落阶段
+    fun reloadAfterSubmit() {
+        loading = true
+        uiScope.launch { reload() }
     }
     LaunchedEffect(nav.refreshTick) { reload() }
 
@@ -102,12 +111,12 @@ fun VerifyScreen(nav: com.ymm.boss.user.ui.Nav) {
         ) {
             Spacer(Modifier.height(8.dp))
             when (phase) {
-                RNPhase.FORM -> RNFormStep(data, name, idNo,
-                    onName = { name = it }, onIdNo = { idNo = it },
+                RNPhase.FORM -> RNFormStep(data, name, idNo, sms,
+                    onName = { name = it }, onIdNo = { idNo = it }, onSms = { sms = it },
                     onNext = { phase = RNPhase.UPLOAD })
-                RNPhase.UPLOAD -> RNUploadStep(name, idNo, frontId, backId,
+                RNPhase.UPLOAD -> RNUploadStep(name, idNo, sms, frontId, backId,
                     onFront = { frontId = it }, onBack_ = { backId = it },
-                    onSubmitted = { phase = it })
+                    onSubmitted = { reloadAfterSubmit() })
                 RNPhase.REVIEWING -> RNReviewingPage(data)
                 RNPhase.APPROVED -> RNApprovedPage(data)
                 RNPhase.REJECTED -> RNRejectedPage(data, onResubmit = {
@@ -175,9 +184,33 @@ internal fun RNPrimaryButton(text: String, enabled: Boolean, loading: Boolean = 
     }
 }
 
+/** 驳回页重提按钮:白底 + warning 橙描边/文字(spec: 不用红)。 */
+@Composable
+internal fun RNWarnButton(text: String, onClick: () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp).height(46.dp)
+            .background(Color.White, RoundedCornerShape(10.dp))
+            .border(1.dp, RN.warn, RoundedCornerShape(10.dp))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.material3.Text(text, fontSize = 15.sp, color = RN.warn, fontWeight = FontWeight.W600)
+    }
+}
+
 /** 辅助/说明小字。 */
 @Composable
 internal fun RNFootnote(text: String, color: Color = RN.muted) {
     androidx.compose.material3.Text(
         text, fontSize = 12.sp, color = color, modifier = Modifier.padding(vertical = 4.dp))
+}
+
+/** 实名流程白卡:10dp 圆角 + 16dp 内边距 + 8dp 纵向间距(spec 卡片规格)。 */
+@Composable
+internal fun RNSharedCard(content: @Composable () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            .background(Color.White, RoundedCornerShape(10.dp))
+            .padding(16.dp),
+    ) { content() }
 }

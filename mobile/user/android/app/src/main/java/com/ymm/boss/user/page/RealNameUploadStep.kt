@@ -1,0 +1,176 @@
+package com.ymm.boss.user.page
+
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.ymm.boss.user.api.AccountApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+// 单面上传状态:待上传(虚线+相机) / 上传中(进度) / 已上传(预览+绿对勾) / 失败(红标,点击重试)。
+private enum class UploadState { IDLE, UPLOADING, DONE, FAILED }
+
+// Screen2 证件上传:拍摄要点 + 人像面/国徽面上传卡 + 提交认证(两面完成前禁用)。
+@Composable
+internal fun RNUploadStep(
+    name: String, idNo: String, sms: String, frontId: Long, backId: Long,
+    onFront: (Long) -> Unit, onBack_: (Long) -> Unit,
+    onSubmitted: () -> Unit,
+) {
+    var submitting by remember { mutableStateOf(false) }
+    var submitErr by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+
+    RNSharedCard {
+        Text("拍摄要点", fontSize = 14.sp, fontWeight = FontWeight.W600, color = RN.ink)
+        RNFootnote("· 证件原件拍摄，四角完整、清晰无反光\n· 字迹、头像、有效期清晰可辨\n· 请勿翻拍复印件或屏幕照片")
+    }
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        CardHead("证件照片")
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            UploadCard("人像面", Modifier.weight(1f), onUploaded = onFront)
+            Spacer(Modifier.size(12.dp))
+            UploadCard("国徽面", Modifier.weight(1f), onUploaded = onBack_)
+        }
+    }
+    if (submitErr.isNotBlank()) RNFootnote(submitErr, Color(0xFFFF2D2F))
+    RNPrimaryButton("提交认证", enabled = frontId > 0 && backId > 0, loading = submitting) {
+        submitting = true; submitErr = ""
+        scope.launch {
+            try {
+                AccountApi.submitVerify("身份证", name, idNo, sms, frontId, backId)
+                // 提交成功由父级重拉状态,按服务端结论(自动 PASS/FAIL/人工 PENDING)落对应状态页
+                onSubmitted()
+            } catch (e: Exception) {
+                submitErr = com.ymm.boss.user.api.Api.friendlyMessage(e)
+            } finally { submitting = false }
+        }
+    }
+}
+
+/** 上传卡:自持状态机;选图→上传→DONE 回调附件 id;失败可点击重选。 */
+@Composable
+private fun UploadCard(label: String, modifier: Modifier = Modifier, onUploaded: (Long) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var state by remember { mutableStateOf(UploadState.IDLE) }
+    var preview by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var hint by remember { mutableStateOf("") }
+
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) startUpload(scope, context, uri) { st, bmp, id, msg ->
+            state = st; if (bmp != null) preview = bmp
+            hint = msg
+            if (id > 0) onUploaded(id)
+        }
+    }
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            Modifier.fillMaxWidth().height(110.dp)
+                .let { m ->
+                    if (state == UploadState.IDLE) m.border(1.dp, RN.placeholder, RoundedCornerShape(8.dp))
+                    else m.background(RN.line.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                }
+                .clickable {
+                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            when (state) {
+                UploadState.IDLE -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Outlined.PhotoCamera, contentDescription = null,
+                        tint = RN.placeholder, modifier = Modifier.size(28.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text("上传证件$label", fontSize = 12.sp, color = RN.muted)
+                }
+                UploadState.UPLOADING -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                else -> preview?.let {
+                    Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxWidth().height(110.dp))
+                } ?: Text("已上传", fontSize = 12.sp, color = RN.muted)
+            }
+            if (state == UploadState.DONE) Icon(
+                Icons.Filled.CheckCircle, contentDescription = null, tint = RN.success,
+                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(20.dp))
+            if (state == UploadState.FAILED) Icon(
+                Icons.Filled.ErrorOutline, contentDescription = null, tint = Color(0xFFFF2D2F),
+                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(20.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            when (state) {
+                UploadState.DONE -> "$label · 已上传"
+                UploadState.UPLOADING -> "$label · 上传中…"
+                UploadState.FAILED -> "$label · 上传失败，点击重试"
+                else -> "$label · 待上传"
+            },
+            fontSize = 12.sp, color = if (state == UploadState.DONE) RN.success else RN.muted)
+        if (hint.isNotBlank() && state == UploadState.FAILED) Text(hint, fontSize = 11.sp, color = Color(0xFFFF2D2F))
+    }
+}
+
+/** 读图(降采样预览+原始字节)→ POST /attachments/upload;结果回推状态机。 */
+private fun startUpload(
+    scope: kotlinx.coroutines.CoroutineScope,
+    context: android.content.Context, uri: Uri,
+    onResult: (UploadState, android.graphics.Bitmap?, Long, String) -> Unit,
+) {
+    scope.launch {
+        onResult(UploadState.UPLOADING, decodePreview(context, uri), 0, "")
+        try {
+            val id = withContext(Dispatchers.IO) {
+                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: throw IllegalStateException("读取图片失败")
+                if (bytes.size > 32_000_000) throw IllegalStateException("图片超过 32MB 上限")
+                AccountApi.uploadAttachment("idcard.jpg", "image/jpeg", bytes).optLong("id", 0L)
+            }
+            if (id > 0) onResult(UploadState.DONE, null, id, "")
+            else throw IllegalStateException("上传响应缺少附件 id")
+        } catch (e: Exception) {
+            onResult(UploadState.FAILED, null, 0, e.message ?: "上传失败")
+        }
+    }
+}
+
+private fun decodePreview(context: android.content.Context, uri: Uri): android.graphics.Bitmap? = runCatching {
+    val opts = BitmapFactory.Options().apply { inSampleSize = 4 }
+    context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
+}.getOrNull()
