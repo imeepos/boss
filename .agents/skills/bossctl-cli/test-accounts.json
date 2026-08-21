@@ -3,7 +3,8 @@
     "description": "BOSS 业务平台测试账号库(师傅注册/审核/实名认证/开网全流程模拟)",
     "server": "http://192.168.0.102:28080",
     "storage_note": "本文件为测试账号唯一事实源;新增测试账号必须追加到此文件",
-    "last_updated": "2026-08-20T16:48:29Z"
+    "last_updated": "2026-08-21T12:00:00Z",
+    "dead_data_cleanup": "2026-08-21 清理孤儿数据:322条孤儿订单+子表(2008 order_stages+81 dispatch_tickets+106 scan_logs)、56条孤儿预占、113条孤儿调配单、93条孤儿告警、78条孤儿LOID账号、1条PENDING客户注册、1条REJECTED师傅注册;吊销4个未使用API key(id=12/13/14/15)"
   },
   "admin": {
     "username": "admin",
@@ -58,18 +59,18 @@
     },
     {
       "workerId": null,
-      "registrationId": 16,
+      "registrationId": null,
       "name": "李驳回",
       "phone": "13800001002",
       "idCardNo": "110101199002022345",
       "groupId": 11,
       "groupCode": "GRP-TEST",
       "regionId": 4,
-      "status": "REJECTED",
+      "status": "CLEANED",
       "reviewNote": "身份证照片不清晰,请重新上传",
       "realNameStatus": null,
       "apiKey": null,
-      "note": "场景C驳回流程:注册→驳回(未生成worker主档)"
+      "note": "场景C驳回流程:注册→驳回;已随2026-08-21死数据清理删除"
     }
   ],
   "customers": [

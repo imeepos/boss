@@ -68,11 +68,18 @@ func portalVerifyStatus(a *app.Application) gin.HandlerFunc {
 		for k, v := range latest {
 			payload[k] = v
 		}
+		// 优先从 customers 主档取,合成客户(隔离空间)回退 portal_accounts
 		if v, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
 			status = v.RealNameStatus
 			payload["nameMasked"] = portalMaskName(v.Name)
 			payload["idNoMasked"] = portalMaskIDNo(v.IdNo)
 			payload["phoneMasked"] = portalMaskPhone(v.Phone)
+		} else {
+			// 合成客户:从 portal_accounts 取手机号
+			phone := portalCustomerPhone(c.Request.Context(), a, cid)
+			payload["phoneMasked"] = portalMaskPhone(phone)
+			payload["nameMasked"] = ""
+			payload["idNoMasked"] = ""
 		}
 		payload["status"] = status
 		respond(c, apitypes.CodeOK, payload)

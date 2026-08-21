@@ -3,8 +3,6 @@ package adminapi
 // 用户端数据域路由(承接 api/openapi/admin/userdata.yaml):用户列表/详情聚合 + 实体表管理视图。
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -16,12 +14,7 @@ import (
 // bindBody 绑定 JSON 请求体;失败统一回 InvalidParam。
 // pathInt64 解析路径整型参数;失败统一回 InvalidParam(bool=false 表示已响应)。
 func pathInt64(c *gin.Context, name string) (int64, bool) {
-	v, err := strconv.ParseInt(c.Param(name), 10, 64)
-	if err != nil {
-		respond(c, apitypes.CodeInvalidParam, nil)
-		return 0, false
-	}
-	return v, true
+	return httpx.ParsePathParamInt64(c, name)
 }
 
 // registerUserdataRoutes 注册用户端数据域路由:列表族。

@@ -5,12 +5,12 @@ package adminapi
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/report"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -108,9 +108,8 @@ func registerReportRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 报告推送:按 id 取快照 → Push(intel.yaml /reports/{reportId}/send)。
 	rp.POST("/reports/:reportId/send", func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("reportId"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "reportId")
+		if !ok {
 			return
 		}
 		snap, err := a.Report.St.SnapshotByID(c.Request.Context(), id)

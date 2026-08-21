@@ -40,28 +40,28 @@ var orphanChecks = []struct {
 	sql  string
 }{
 	{"orders.customer_id -> customers", `SELECT count(*), COALESCE((array_agg(o.id ORDER BY o.id))[1:10], '{}'::bigint[])
-		FROM orders o WHERE NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = o.customer_id)`},
+		FROM orders o WHERE o.customer_id > 0 AND NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = o.customer_id)`},
 	{"orders.offer_id -> product_offers", `SELECT count(*), COALESCE((array_agg(o.id ORDER BY o.id))[1:10], '{}'::bigint[])
-		FROM orders o WHERE NOT EXISTS (SELECT 1 FROM product_offers p WHERE p.id = o.offer_id)`},
+		FROM orders o WHERE o.offer_id > 0 AND NOT EXISTS (SELECT 1 FROM product_offers p WHERE p.id = o.offer_id)`},
 	{"orders.channel_id -> channels", `SELECT count(*), COALESCE((array_agg(o.id ORDER BY o.id))[1:10], '{}'::bigint[])
-		FROM orders o WHERE NOT EXISTS (SELECT 1 FROM channels ch WHERE ch.id = o.channel_id)`},
+		FROM orders o WHERE o.channel_id > 0 AND NOT EXISTS (SELECT 1 FROM channels ch WHERE ch.id = o.channel_id)`},
 	{"lo_accounts.customer_id -> customers", `SELECT count(*), COALESCE((array_agg(l.id ORDER BY l.id))[1:10], '{}'::bigint[])
-		FROM lo_accounts l WHERE NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = l.customer_id)`},
+		FROM lo_accounts l WHERE l.customer_id > 0 AND NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = l.customer_id)`},
 	{"lo_accounts.qos_template_id -> qos_templates", `SELECT count(*), COALESCE((array_agg(l.id ORDER BY l.id))[1:10], '{}'::bigint[])
-		FROM lo_accounts l WHERE NOT EXISTS (SELECT 1 FROM qos_templates q WHERE q.id = l.qos_template_id)`},
+		FROM lo_accounts l WHERE l.qos_template_id > 0 AND NOT EXISTS (SELECT 1 FROM qos_templates q WHERE q.id = l.qos_template_id)`},
 	{"reserve_records.port_id -> ports", `SELECT count(*), COALESCE((array_agg(r.id ORDER BY r.id))[1:10], '{}'::bigint[])
-		FROM reserve_records r WHERE NOT EXISTS (SELECT 1 FROM ports p WHERE p.id = r.port_id)`},
+		FROM reserve_records r WHERE r.port_id > 0 AND NOT EXISTS (SELECT 1 FROM ports p WHERE p.id = r.port_id)`},
 	{"reserve_records.order_id -> orders", `SELECT count(*), COALESCE((array_agg(r.id ORDER BY r.id))[1:10], '{}'::bigint[])
-		FROM reserve_records r WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = r.order_id)`},
+		FROM reserve_records r WHERE r.order_id > 0 AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = r.order_id)`},
 	{"transfers.resource_id -> resources", `SELECT count(*), COALESCE((array_agg(t.id ORDER BY t.id))[1:10], '{}'::bigint[])
-		FROM transfers t WHERE NOT EXISTS (SELECT 1 FROM resources rs WHERE rs.id = t.resource_id)`},
+		FROM transfers t WHERE t.resource_id > 0 AND NOT EXISTS (SELECT 1 FROM resources rs WHERE rs.id = t.resource_id)`},
 	{"alarms.resource_id -> resources", `SELECT count(*), COALESCE((array_agg(a.id ORDER BY a.id))[1:10], '{}'::bigint[])
-		FROM alarms a WHERE a.resource_id IS NOT NULL
+		FROM alarms a WHERE a.resource_id > 0
 		AND NOT EXISTS (SELECT 1 FROM resources rs WHERE rs.id = a.resource_id)`},
 	{"invoices.customer_id -> customers", `SELECT count(*), COALESCE((array_agg(i.id ORDER BY i.id))[1:10], '{}'::bigint[])
-		FROM invoices i WHERE NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = i.customer_id)`},
+		FROM invoices i WHERE i.customer_id > 0 AND NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = i.customer_id)`},
 	{"provision_logs.task_id -> provision_tasks", `SELECT count(*), COALESCE((array_agg(l.id ORDER BY l.id))[1:10], '{}'::bigint[])
-		FROM provision_logs l WHERE NOT EXISTS (SELECT 1 FROM provision_tasks t WHERE t.id = l.task_id)`},
+		FROM provision_logs l WHERE l.task_id > 0 AND NOT EXISTS (SELECT 1 FROM provision_tasks t WHERE t.id = l.task_id)`},
 }
 
 // PatrolOrphans 逐项跑巡检;单项 SQL 失败即中止(巡检只读,失败=连接问题)。

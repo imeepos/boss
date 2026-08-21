@@ -84,9 +84,8 @@ func registerODNCableRoutes(g *gin.RouterGroup, a *app.Application, perm gin.Han
 		respond(c, apitypes.CodeOK, seg)
 	})
 	g.POST("/odn/segments/:id/fibers", perm, func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
 			return
 		}
 		var req odnFiberReq
@@ -100,9 +99,8 @@ func registerODNCableRoutes(g *gin.RouterGroup, a *app.Application, perm gin.Han
 		respond(c, apitypes.CodeOK, nil)
 	})
 	g.GET("/odn/segments/:id/fibers", perm, func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
 			return
 		}
 		list, err := a.ODN.ListFibers(c.Request.Context(), id)

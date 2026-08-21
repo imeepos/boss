@@ -94,9 +94,8 @@ func registerODNSiteDeviceRoutes(g *gin.RouterGroup, a *app.Application, perm gi
 		respond(c, apitypes.CodeOK, gin.H{"code": d.Code})
 	})
 	g.DELETE("/odn/devices/:id", perm, func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil || id <= 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
 			return
 		}
 		if err := a.ODN.RetireDevice(c.Request.Context(), id); err != nil {

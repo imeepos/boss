@@ -42,11 +42,11 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://192.168.0.102:28080/api/user/v1")}\"")
+            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://192.168.0.102:8080/api/user/v1")}\"")
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://192.168.0.102:28080/api/user/v1")}\"")
+            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://192.168.0.102:8080/api/user/v1")}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

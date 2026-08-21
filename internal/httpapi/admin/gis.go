@@ -10,6 +10,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/gis"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -41,9 +42,8 @@ func registerGisRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	gi.GET("/gis/resources/:resourceId/detail", func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("resourceId"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "resourceId")
+		if !ok {
 			return
 		}
 		d, err := a.Gis.ResourceDetail(c.Request.Context(), id)
