@@ -102,3 +102,53 @@ func TestODNPassive_Integration(t *testing.T) {
 		t.Fatal("在用设施存在,网格退役应失败")
 	}
 }
+
+// TestODNCable_Integration 光缆段落定向 + 纤芯顺序(需真实 PostgreSQL)。
+func TestODNCable_Integration(t *testing.T) {
+	dsn := os.Getenv("BOSS_PG_TEST_DSN")
+	if dsn == "" {
+		t.Skip("BOSS_PG_TEST_DSN 未设置,跳过集成测试")
+	}
+	ctx := context.Background()
+	pool, err := database.Open(ctx, dsn)
+	if err != nil {
+		t.Fatalf("database.Open: %v", err)
+	}
+	defer pool.Close()
+	if err := database.Migrate(ctx, pool, "../../../migrations"); err != nil {
+		t.Fatalf("database.Migrate: %v", err)
+	}
+	s := NewPGStore(pool)
+	pool.Exec(ctx, "DELETE FROM odn_cable_segment WHERE a_code='ODF001' AND b_code='OCC001'")
+
+	// 定向:颠倒输入也归一为 ODF 为 A 端;同对端点幂等。
+	seg, err := s.CreateSegment(ctx, "OCC001", "ODF001", "t")
+	if err != nil {
+		t.Fatalf("CreateSegment: %v", err)
+	}
+	if seg.ACode != "ODF001" || seg.BCode != "OCC001" {
+		t.Fatalf("定向错误 A=%s B=%s", seg.ACode, seg.BCode)
+	}
+	if _, err := s.CreateSegment(ctx, "ODF001", "OCC001", "t"); err != nil {
+		t.Fatalf("同对端点应幂等: %v", err)
+	}
+	// 同优先级拒绝。
+	if _, err := s.CreateSegment(ctx, "P01001", "P02005", ""); err != ErrSamePriority {
+		t.Fatalf("同优先级期望 ErrSamePriority,实际 %v", err)
+	}
+
+	// 纤芯 G01~G99,重复 G 号拒绝。
+	if err := s.AddFiber(ctx, seg.ID, Fiber{GNo: 1, Kind: "GYTA"}); err != nil {
+		t.Fatalf("AddFiber: %v", err)
+	}
+	if err := s.AddFiber(ctx, seg.ID, Fiber{GNo: 1}); err != ErrDuplicate {
+		t.Fatalf("重复 G 号期望 ErrDuplicate,实际 %v", err)
+	}
+	fibers, err := s.ListFibers(ctx, seg.ID)
+	if err != nil || len(fibers) != 1 || fibers[0].GNo != 1 {
+		t.Fatalf("ListFibers: %v %d", err, len(fibers))
+	}
+
+	// 清理。
+	pool.Exec(ctx, "DELETE FROM odn_cable_segment WHERE a_code='ODF001' AND b_code='OCC001'")
+}

@@ -131,7 +131,7 @@
 
 ### 1.5.3 odn_grid / odn_facility（ODN 无源物理层，迁移 000078，internal/domain/odn）
 
-> 依据《Suniway ODN 地理空间编码规范》V1.0 第 4 章。E6/E7/E9 落地；光缆段落/纤芯（E8）待建。
+> 依据《Suniway ODN 地理空间编码规范》V1.0 第 4 章。E6/E7/E9 落地；光缆段落/纤芯（E8）见本节末。
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
 |:---------|:-------|:------|:----------|
@@ -149,6 +149,18 @@
 | 状态 | `Status` | status | IN_USE / RETIRED（报废永久锁定，禁止复用/删除） |
 
 > 校验：`odn.ValidateFacilityCode`（格式 + 序号 000/00000 预留禁用）；入库校验网格已备案（ErrGridMissing）与容量 999（ErrGridFull）。
+
+### 1.5.4 odn_cable_segment / odn_fiber（光缆段落与纤芯，迁移 000079，规范第 5 章/E8）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| A 端 | `ACode` | a_code | 优先级较高设备（规范 5.2：SNW>ODF>OCC>CLS>ODB>P>MH；TW/TBX 等规范未列者最低档兜底） |
+| B 端 | `BCode` | b_code | 优先级较低设备；与 A 端唯一约束 `(a_code,b_code)`，同对幂等 |
+| 段落名 | `Name` | name | 可空描述 |
+| G 号 | `GNo` | g_no | 1~99，与 segment_id 复合主键（规范 5.3 `段落-G01~G99`） |
+| 光缆型号 | `Kind` | kind | 文本描述 |
+
+> 存储口径：`--` 仅设计图纸不入库（规范 5.1），系统侧存两端编码列；`OrderEndpoints` 定向（同优先级拒绝 ErrSamePriority），端点正则覆盖设施码（5 位）与核心设备码（3 位，SNW/ODF/OCC/ODB/SDB/PRT/TBP/OLT，设备实体待 odn 域扩展）。
 
 
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
