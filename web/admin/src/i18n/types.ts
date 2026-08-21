@@ -725,6 +725,20 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      picker: {
+        search: string
+        phone: string
+        group: string
+        region: string
+        score: string
+        accepted: string
+        doing: string
+        select: string
+        selected: string
+        left: string
+        noMatch: string
+        loadFail: string
+      }
     }
     dismantlePage: {
       title: string

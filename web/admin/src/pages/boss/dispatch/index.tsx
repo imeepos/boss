@@ -8,6 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type DispatchTicketRow, type DispatchTransferRow } from '../types'
+import { WorkerPicker, type PickedWorker } from './WorkerPicker'
 
 export default function DispatchPage() {
   const t = useT()
@@ -23,6 +24,7 @@ export default function DispatchPage() {
   const [workerFilter, setWorkerFilter] = useState('')
   const [act, setAct] = useState<{ mode: 'assign' | 'transfer'; ticket: DispatchTicketRow } | null>(null)
   const [masterId, setMasterId] = useState('')
+  const [picked, setPicked] = useState<PickedWorker | null>(null)
   const [reason, setReason] = useState('')
   const [formError, setFormError] = useState('')
 
@@ -116,11 +118,11 @@ export default function DispatchPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       <span className="inline-flex items-center">
                         {x.workerId === 0 ? (
-                          <button disabled={busy} onClick={() => { setAct({ mode: 'assign', ticket: x }); setMasterId(''); setFormError('') }}>
+                          <button disabled={busy} onClick={() => { setAct({ mode: 'assign', ticket: x }); setMasterId(''); setPicked(null); setFormError('') }}>
                             {d.assign}
                           </button>
                         ) : (
-                          <button disabled={busy} onClick={() => { setAct({ mode: 'transfer', ticket: x }); setMasterId(''); setReason(''); setFormError('') }}>
+                          <button disabled={busy} onClick={() => { setAct({ mode: 'transfer', ticket: x }); setMasterId(''); setPicked(null); setReason(''); setFormError('') }}>
                             {d.transfer}
                           </button>
                         )}
@@ -171,7 +173,13 @@ export default function DispatchPage() {
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.fMaster}({act.ticket.ticketNo})</label>
               <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={masterId} placeholder={d.pMaster}
-                onChange={(e) => setMasterId(e.target.value)} />
+                onChange={(e) => { setMasterId(e.target.value); setPicked(null) }} />
+              {picked && (
+                <div className="text-xs text-[var(--shell-crumb-text)]">
+                  {picked.name} · {picked.staffNo} · {picked.phone || '—'} · {picked.groupName} · {picked.regionName}
+                </div>
+              )}
+              <div className="mt-1"><WorkerPicker selectedId={masterId} onSelect={(w) => { setMasterId(String(w.id)); setPicked(w); setFormError('') }} /></div>
             </div>
             {act.mode === 'transfer' && (
               <div className="flex flex-col gap-1.5">
