@@ -238,3 +238,4 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## PG 分区 default 积压导致 23514 拒建分区
 场景 → `CREATE TABLE ... PARTITION OF` 报 `updated partition constraint for default partition would be violated`(SQLSTATE 23514),服务启动崩溃循环。
 怎么用 → 事务内:暂存表(LIKE 母表)← default 中该范围行 → DELETE default 该范围 → 建分区 → 从暂存表 INSERT 回母表 → DROP 暂存表;修复代码见 internal/pkg/audit/partitions.go migrateDefaultRows(自愈路径)。
+- 102 无短信凭据时通道降级 LogSender,验证码直接打在 boss-server 容器日志:POST sms-code 后 `docker logs boss-server --since 30s | grep 'sms\[dev\]'` 捞 code 即可 e2e 登录师傅端(2026-08-25 push_devices 冒烟);注意同 phone+scene 60s 冷却(42300)。
