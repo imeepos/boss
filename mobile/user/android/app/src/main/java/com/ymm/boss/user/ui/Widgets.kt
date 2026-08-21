@@ -132,6 +132,7 @@ fun TabHeader(title: String) {
 /**
  * 胶囊筛选 tab:选中实心主色,未选中白底描边(plain 时未选中无底色)。
  * iconTint 用于未选中态图标色(分类胶囊用,选中态固定白)。
+ * badge 在 label 右侧显示小数字徽章(分类未读数等);传 null 不渲染。
  */
 @Composable
 fun PillTab(
@@ -141,6 +142,7 @@ fun PillTab(
     icon: ImageVector? = null,
     plain: Boolean = false,
     iconTint: Color? = null,
+    badge: String? = null,
 ) {
     val bg = if (active) Palette.primary else if (plain) Color.Transparent else Palette.panel
     val borderColor = if (active) Palette.primary else if (plain) Color.Transparent else Palette.line
@@ -162,6 +164,23 @@ fun PillTab(
             color = if (active) Color.White else if (plain) Palette.muted else Palette.ink,
             fontWeight = if (active) FontWeight.W500 else FontWeight.Normal,
         )
+        if (!badge.isNullOrBlank()) {
+            Spacer(Modifier.width(6.dp))
+            // 选中态:白底主色字;未选中:主色 12% 底 + 主色字;统一用主色,不用状态色,避免抢眼。
+            val badgeBg = if (active) Color.White.copy(alpha = 0.25f) else Palette.primary.copy(alpha = 0.12f)
+            val badgeFg = if (active) Color.White else Palette.primary
+            Box(
+                Modifier
+                    .background(badgeBg, RoundedCornerShape(999.dp))
+                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    badge, fontSize = 10.sp, color = badgeFg,
+                    fontWeight = FontWeight.W600, maxLines = 1,
+                )
+            }
+        }
     }
 }
 

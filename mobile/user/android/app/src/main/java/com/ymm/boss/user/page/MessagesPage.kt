@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,7 +65,7 @@ import org.json.JSONObject
 // 设计稿:designs/messages-center-v1.png;规格:designs/messages-center-v1.spec.md。
 // 每项:key → label → icon → tint(未选中态胶囊图标色,与消息卡 IconTile 同色族)
 private val CATEGORIES = listOf(
-    CategoryUi("", "全部", null, Palette.muted),
+    CategoryUi("", "全部", Icons.Filled.Circle, Palette.primary),
     CategoryUi("billing", "账单缴费", Icons.Filled.Circle, Palette.primary),
     CategoryUi("balance", "余额预警", Icons.Filled.Circle, Palette.orange),
     CategoryUi("fault", "故障公告", Icons.Filled.Circle, Palette.purple),
@@ -99,11 +100,25 @@ fun MessagesScreen(nav: Nav) {
         }
     }
 
+    // 全量统计未读数:每次刷新拉一次,按 category 分组。"全部" tab 用 totalUnread,其他 tab 用各自分组未读。
+    // 失败静默 → 空 map → tab 不显示徽章,不打扰用户。
+    var unreadByCategory by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var totalUnread by remember { mutableIntStateOf(0) }
+    LaunchedEffect(nav.refreshTick) {
+        try {
+            val d = UserApi.misc.messages(null)
+            val all = d.optJSONArray("items").toObjectList()
+            totalUnread = all.count { !it.optBoolean("read") }
+            unreadByCategory = all.groupBy { it.optString("category") }
+                .mapValues { (_, list) -> list.count { !it.optBoolean("read") } }
+        } catch (e: Exception) { }
+    }
+
     val unread = items.count { !it.optBoolean("read") }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("消息中心", onBack = { nav.pop() }, action = "订阅设置", onAction = { nav.push(Route.Notify) })
-        SegmentBar(category) { category = it }
+        SegmentBar(category, totalUnread, unreadByCategory) { category = it }
         SummaryCard(total = items.size, unread = unread, loading = loading, nav = nav)
         when {
             loading -> LoadingState()
@@ -120,7 +135,12 @@ fun MessagesScreen(nav: Nav) {
 }
 
 @Composable
-private fun SegmentBar(selected: String, onSelect: (String) -> Unit) {
+private fun SegmentBar(
+    selected: String,
+    totalUnread: Int,
+    unreadByCategory: Map<String, Int>,
+    onSelect: (String) -> Unit,
+) {
     // 5 个分类胶囊在 360dp 屏放不下,加 horizontalScroll 让最后一个 tab 可被滚到。
     Row(
         Modifier
@@ -131,6 +151,12 @@ private fun SegmentBar(selected: String, onSelect: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CATEGORIES.forEach { c ->
+            val badge = if (c.key.isEmpty()) {
+                if (totalUnread > 0) "$totalUnread" else null
+            } else {
+                val n = unreadByCategory[c.key] ?: 0
+                if (n > 0) "$n" else null
+            }
             PillTab(
                 label = c.label,
                 active = selected == c.key,
@@ -138,6 +164,7 @@ private fun SegmentBar(selected: String, onSelect: (String) -> Unit) {
                 icon = c.icon,
                 plain = true,
                 iconTint = c.iconTint,
+                badge = badge,
             )
         }
     }
