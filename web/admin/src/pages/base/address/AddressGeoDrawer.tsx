@@ -6,7 +6,7 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { ToolbarButton } from '../../../components/business/page-head'
 import type { CountryRow } from '../geo/CountryForm'
-import type { SubdivRow } from '../geo/SubdivisionPanel'
+import type { SubdivRow } from '../geo/subdiv-shared'
 import { FORM, FIELD_FULL, LABEL, REQ } from '../geo/styles'
 
 export interface AddressRow {

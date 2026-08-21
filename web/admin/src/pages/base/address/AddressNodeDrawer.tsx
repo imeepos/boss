@@ -7,7 +7,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { ToolbarButton } from '../../../components/business/page-head'
 import { Input } from '../../../components/ui/input'
 import type { CountryRow } from '../geo/CountryForm'
-import type { SubdivRow } from '../geo/SubdivisionPanel'
+import type { SubdivRow } from '../geo/subdiv-shared'
 import type { AddressRow } from './AddressGeoDrawer'
 import { FORM, FIELD_FULL, LABEL, REQ, HINT } from '../geo/styles'
 

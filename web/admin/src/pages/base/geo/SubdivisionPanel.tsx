@@ -1,8 +1,8 @@
 // 行政区划维护面板:卡片化列表 + 工具栏(国家筛选/搜索/主操作) + 抽屉式表单与译名。
+// 表单在 SubdivForm.tsx,译名在 SubdivNames.tsx,共享类型在 subdiv-shared.ts。
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
@@ -11,29 +11,10 @@ import { Input } from '../../../components/ui/input'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { StatusTag } from './CountryPanel'
 import type { CountryRow } from './CountryForm'
-import { CARD, TOOLBAR, SPACER, TABLE_WRAP, FOOTER, FORM, FIELD, FIELD_FULL, LABEL, REQ } from './styles'
-import { useConfirm } from '../../../components/ConfirmDialog'
-
-export interface SubdivRow {
-  code: string
-  countryCode: string
-  parentCode: string
-  level: number
-  category: string
-  osmAdminLevel: number
-  geonameId: number
-  isActive: boolean
-  displayName: string
-}
-
-interface NameRow { locale: string; name: string; nameType: string }
-
-const EMPTY: SubdivRow = {
-  code: '', countryCode: '', parentCode: '', level: 1, category: 'region',
-  osmAdminLevel: 4, geonameId: 0, isActive: true, displayName: '',
-}
-
-const TAG_OFF = 'mb-1.5 inline-flex items-center justify-between rounded-[4px] border border-[color-mix(in_srgb,var(--shell-group-title)_35%,transparent)] bg-[color-mix(in_srgb,var(--shell-group-title)_10%,transparent)] px-2 py-0.5 text-xs leading-[22px] text-[var(--shell-group-title)]'
+import { CARD, TOOLBAR, SPACER, TABLE_WRAP, FOOTER } from './styles'
+import { SubdivForm } from './SubdivForm'
+import { SubdivNames } from './SubdivNames'
+import { EMPTY, type SubdivRow } from './subdiv-shared'
 
 export function SubdivisionPanel() {
   const t = useT()
@@ -182,138 +163,5 @@ function SubdivTable({ rows, onEdit, onToggle, onNames }: {
         </TableBody>
       </Table>
     </div>
-  )
-}
-
-// SubdivForm 区划新建/编辑抽屉表单。
-function SubdivForm({ initial, editing, country, onDone, onCancel }: {
-  initial: SubdivRow
-  editing: boolean
-  country: string
-  onDone: () => void
-  onCancel: () => void
-}) {
-  const t = useT()
-  const g = t.pages.geo
-  const [form, setForm] = useState(initial)
-  const [error, setError] = useState('')
-
-  const save = async () => {
-    const path = editing ? `/geo/subdivisions/${form.code}` : '/geo/subdivisions'
-    try {
-      await apiFetch(path, { method: editing ? 'PUT' : 'POST', body: { ...form } })
-      onDone()
-    } catch {
-      setError(g.saveFail)
-    }
-  }
-
-  // 字段标签来自 i18n geo.subdivFields。
-  const texts: [keyof typeof g.subdivFields, boolean][] = [
-    ['code', true],
-    ['countryCode', true],
-    ['parentCode', false],
-    ['category', true],
-  ]
-
-  return (
-    <Drawer title={`${editing ? g.edit : g.add} · ${g.tabSubdiv}`} onClose={onCancel}
-      footer={
-        <>
-          {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
-          <ToolbarButton onClick={onCancel}>{g.cancel}</ToolbarButton>
-          <ToolbarButton primary onClick={save}>{g.save}</ToolbarButton>
-        </>
-      }>
-      <div className={FORM}>
-        {texts.map(([k, req]) => (
-          <div key={k} className={FIELD_FULL}>
-            <label className={LABEL}>{req && <span className={REQ}>*</span>}{g.subdivFields[k]}</label>
-            <Input disabled={editing && k === 'code'}
-              value={form[k] as string}
-              onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
-          </div>
-        ))}
-        <NumField label={g.subdivFields.level} value={form.level}
-          onChange={(v) => setForm({ ...form, level: v })} />
-        <NumField label={g.subdivFields.osmAdminLevel} value={form.osmAdminLevel}
-          onChange={(v) => setForm({ ...form, osmAdminLevel: v })} />
-        <div className={FIELD_FULL}>
-          <label className={LABEL}>{g.subdivFields.geonameId}</label>
-          <Input type="number" value={form.geonameId}
-            onChange={(e) => setForm({ ...form, geonameId: Number(e.target.value) })} />
-        </div>
-      </div>
-      {editing && <p className="mt-3 text-xs text-[var(--shell-group-title)]">
-        {g.filterCountry}: {country || form.countryCode}
-      </p>}
-    </Drawer>
-  )
-}
-
-// NumField 数字输入字段。
-function NumField({ label, value, onChange }: {
-  label: string
-  value: number
-  onChange: (v: number) => void
-}) {
-  return (
-    <div className={FIELD}>
-      <label className={LABEL}>{label}</label>
-      <Input type="number" value={value}
-        onChange={(e) => onChange(Number(e.target.value))} />
-    </div>
-  )
-}
-
-// SubdivNames 区划译名维护抽屉。
-function SubdivNames({ code, onClose }: { code: string; onClose: () => void }) {
-  const t = useT()
-  const g = t.pages.geo
-  const confirmDialog = useConfirm()
-  const [names, setNames] = useState<NameRow[]>([])
-  const [locale, setLocale] = useState('zh-Hans')
-  const [name, setName] = useState('')
-
-  const load = useCallback(() => {
-    apiFetch<NameRow[]>(`/geo/subdivisions/${code}/names`)
-      .then((d) => setNames(d ?? []))
-      .catch(() => setNames([]))
-  }, [code])
-
-  useEffect(load, [load])
-
-  const add = async () => {
-    if (!name.trim()) return
-    await apiFetch(`/geo/subdivisions/${code}/names`, {
-      method: 'POST', body: { locale, name, nameType: 'STANDARD' },
-    }).catch(() => undefined)
-    setName('')
-    load()
-  }
-
-  const remove = async (loc: string, nameType: string) => {
-    if (!(await confirmDialog(g.deleteNameConfirm, { danger: true }))) return
-    await apiFetch(`/geo/subdivisions/${code}/names/${loc}/${nameType}`, { method: 'DELETE' })
-    load()
-  }
-
-  return (
-    <Drawer title={`${g.names} · ${code}`} onClose={onClose}>
-      {names.map((n) => (
-        <div key={n.locale + n.nameType} className={TAG_OFF}>
-          <span>{n.locale} · {n.nameType} · {n.name}</span>
-          <button className="cursor-pointer border-none bg-none text-[var(--color-danger)]"
-            onClick={() => remove(n.locale, n.nameType)}>×</button>
-        </div>
-      ))}
-      <div className="mt-3 flex gap-2">
-        <Input className="w-27" value={locale}
-          onChange={(e) => setLocale(e.target.value)} placeholder="locale" />
-        <Input value={name}
-          onChange={(e) => setName(e.target.value)} placeholder="name" />
-        <ToolbarButton onClick={add}>{g.addName}</ToolbarButton>
-      </div>
-    </Drawer>
   )
 }
