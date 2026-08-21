@@ -187,3 +187,6 @@
 - lesson: CI(deploy-102.yml)只构建/部署 Go server 镜像;web/admin 前端验证一律本地 pnpm dev + localStorage 注入 102 token 直连。
 - lessons 77: CDP 断言按钮文案前先 grep locale 实际 key 值再写正则;样例数据先读目标 schema(如 preview.ts ADDR_FIELDS),shape 不符会误判组件故障。
 - lessons 78: push 后 102 新接口仍 404 = CI 部署延迟(~1-2 分钟),20s 轮询直到生效,勿回滚排查自己的路由。
+- lessons 79: 本仓库 push 远端名是 gitea(ssh://git@192.168.0.102:222/sker/boss.git)不是 origin,git push origin 会直接报无权限;push 后 CI 自动部署 102。
+- lessons 80: 并行会话可能把你编辑中/已测完的文件抢先 commit(2026-08-21 worker keyword 被 41a0125 收走且混入他人 popover.ts);提交前后各 git status 一次,发现他方文件混入自己提交时在总结中明确说明而非默默接受。
+- lessons 81: admin 选择器三件套已沉淀在 web/admin/src/components/pickers/(EntityPicker 基座:服务端 keyword 检索 + DetailDrawer 详情 + 前往管理页跳转),新表单选用户/师傅/客户直接复用,别再各页自造。
