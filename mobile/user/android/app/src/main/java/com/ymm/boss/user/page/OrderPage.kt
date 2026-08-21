@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -479,7 +480,7 @@ private fun BoxScope.FloatingActionBar(nav: Nav, no: String, order: JSONObject?,
                     ) { Text("变更地址", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
                 }
                 "DONE" -> {
-                    if (order.optBoolean("canRate")) {
+                    if (order?.optBoolean("canRate") == true) {
                         Button(
                             onClick = { nav.push(com.ymm.boss.user.ui.Route.Rate(no)) },
                             colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
