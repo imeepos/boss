@@ -14,7 +14,7 @@
 
 1. Go 路由实现：`internal/app/http.go`（总装 + auth）+ `http_{org,order,billing,customer,resource,scan,asset,aaa,device,gis,provision,quadlink,worker}.go`
 2. 响应 envelope：`internal/app/http.go` 的 `respond/respondErr` + `pkg/apitypes`（错误码）
-3. 字段与枚举：`docs/contract/{terms,fields,domain-map}.md` + `server-ts/src/enums.ts`
+3. 字段与枚举：`docs/contract/{terms,fields,domain-map}.md` + Go 枚举定义
 4. 契约文件：`api/openapi/admin.yaml`（聚合）+ `api/openapi/admin/*.yaml`（17 个域文件）
 
 ## 已知基线（供核对，若与代码不符以代码为准并报告）

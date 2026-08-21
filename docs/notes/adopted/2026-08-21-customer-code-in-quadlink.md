@@ -50,8 +50,8 @@
    - UPDATE 回填 `C-` + 8 位左零
    - 建触发器 `trg_customers_set_code`(BEFORE INSERT,基于 `NEW.id` 派生)兜底新增行
    - SET NOT NULL + UNIQUE INDEX
-2. ⚠️ `server-ts` `Customer` 实体:本仓库未发现 server-ts 实体目录(`grep -r 'class Customer\\b' --include='*.ts'` 无命中),
-   fields.md §7.1 标注的"server-ts/src/entities/customer.ts"暂未落地。跳过。
+2. ⚠️ `server-ts` 已移除:server-ts 实体目录已移除，职责已迁移至 Go 实体。
+   fields.md §7.1 已更新为 Go 实体。跳过。
 3. ✅ Go 域 `Customer` 结构体加 `CustomerCode` 字段;`customerCols` 加 `customer_code`;
    `scanCustomer` 多扫一列。INSERT 不动 — 由 DB 触发器兜底生成。
 4. ✅ `internal/httpapi/worker/scan.go:portalQuadH` 把 `customerCode: ""` 改为读

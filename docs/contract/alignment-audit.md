@@ -1,6 +1,6 @@
 # 数据建模 ↔ 三端页面 对齐审计台账（contract/alignment-audit）
 
-> 版本 V1.0（2026-08-17）｜权威源：`terms.md` / `fields.md` / `domain-map.md` / migrations / `server-ts` 实体
+> 版本 V1.0（2026-08-17）｜权威源：`terms.md` / `fields.md` / `domain-map.md` / migrations / Go 实体
 > 定位：把「数据建模（68 表）与 admin/user/worker 三端页面」的对齐状态固化为可销项清单。
 > 规则：字段/状态/术语以 `terms.md` 为准；页面列名 ↔ 字段名 ↔ 枚举以 `fields.md` 为准；已销项标 ✅ 并注明提交。
 

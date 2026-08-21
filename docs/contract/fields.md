@@ -423,9 +423,9 @@
 | `updated_at` | TIMESTAMPTZ | 有变更流的实体才加 |
 | `brand_id` / `region_path` | — | 品牌区域横切维度，主数据实体按需带 |
 
-## 7. 师傅域（cross-domain worker，server-ts/src/entities/worker.ts）
+## 7. 师傅域（cross-domain worker，Go 实体）
 
-> 本节实体落在 server-ts（TypeORM），字段名用 TS 实体名，DB 列经 SnakeNamingStrategy 转 snake_case。
+> 本节实体已迁移至 Go 实体，字段名用 Go struct 字段名，DB 列经 snake_case 命名。
 
 ### 7.1 worker_groups / workers（班组·师傅）
 
@@ -531,9 +531,9 @@
 
 > 追溯补充：`order_stages` 冗余 `operator_account_id` + `operator_name`（环节执行人）；`scan_logs` 冗余 `worker_name`（扫码师傅）。`region_price_histories` 为区域调价台账（与 `product_price_histories` 同构）。
 
-## 8A. 对齐三端页面补齐的实体（server-ts）
+## 8A. 对齐三端页面补齐的实体（Go 实体）
 
-> 为消除「页面有列、实体缺失」的缺口补的实体，字段名沿用 TS 实体，DB 列经 SnakeNamingStrategy 转 snake_case。
+> 为消除「页面有列、实体缺失」的缺口补的实体，字段名沿用 Go struct 字段名，DB 列经 snake_case 命名。
 
 | 实体 | 承接页 | 关键列 |
 |:-----|:-------|:-------|

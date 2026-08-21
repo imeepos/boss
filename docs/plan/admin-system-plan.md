@@ -39,7 +39,7 @@
 ## 三、工程位置与结构
 
 ```
-web/admin/                    # 新建，与 server-ts/ 平级
+web/admin/                    # 新建
 ├── package.json / vite.config.ts / tsconfig.json
 ├── src/
 │   ├── main.tsx / App.tsx           # ProLayout 壳 + 路由生成

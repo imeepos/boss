@@ -16,7 +16,7 @@
 | `POST /auth/login` 入参 `{username,password}`，返回 `data:{token, accountId, realName, roleName}` | http.go L71-93 | 登录只存 token，用户信息以 `/auth/me` 为准 |
 | `GET /auth/me` 返回 `data:{accountId, username, realName, roleCode, roleName, legalEntityName, regionScope}`，**不含菜单树** | http.go L99 + user.Service.Profile | `roleCode`（RoleCode 枚举）直接驱动菜单可见性 |
 | RBAC 为逐接口 permCode 注入 + Redis 快照，权限变更即时生效 | user.Service 注释、middleware | 前端不做权限判断，仅按 roleCode 渲染菜单、兜底 403 |
-| 枚举权威源已存在：`server-ts/src/enums.ts`（与 terms.md 对齐，含 RoleCode） | server-ts | StatusTag 与菜单映射的枚举注册表从这里导出，不手抄 |
+| 枚举权威源已存在：Go 枚举定义（与 terms.md 对齐，含 RoleCode） | Go 实体 | StatusTag 与菜单映射的枚举注册表从这里导出，不手抄 |
 | 原型登录页 `docs/admin/login.html`，菜单结构 `docs/admin/menu.js` 13 组 45 页 | docs/admin | 交互与结构照抄 |
 
 ## 1. 任务分解（按依赖顺序）
@@ -51,7 +51,7 @@
 
 ### T5 StatusTag 组件
 - `src/components/StatusTag/`：`<StatusTag domain="order" value="ASSIGNED" />`，domain→枚举注册表。
-- 注册表来源：`server-ts/src/enums.ts` 导出 JSON（加一个导出脚本或直接复制为 `src/api/enums.json`，脚本校验与 terms.md 一致）；颜色按原型各页 `<span class="st-*">` 语义集中定义一次。
+- 注册表来源：Go 枚举定义导出 JSON（加一个导出脚本或直接复制为 `src/api/enums.json`，脚本校验与 terms.md 一致）；颜色按原型各页 `<span class="st-*">` 语义集中定义一次。
 - 产出：组件 + 注册表 + 快照测试（全枚举渲染不出 unknown）。
 
 ### T6 account 页迁移样板（验证基座，非 A1 正式内容）

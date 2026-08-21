@@ -8,7 +8,7 @@
 | # | 候选 | 分类 | 裁决/动作 |
 |---|---|---|---|
 | S1 | `internal/domain/ai`、`apikey`、`geo`、`report`、`worker` 未列入 README 目录树 | 文档滞后 | KEEP+修：README 目录树补 5 域（已执行） |
-| S2 | `server-ts/`（TS 实体镜像）与 `web/admin` 并存 | 双物嫌疑 | KEEP：职责已裁定（note 2026-08-17），server-ts 不部署不连库；W2 门禁将其对账机械化后价值更高 |
+| S2 | `server-ts/`（TS 实体镜像）已移除 | 已移除 | 已移除：职责已迁移至 Go 实体，server-ts 不再维护 |
 | S3 | 根目录 `需求提示词-*.md`、`技术栈方案-*.md`（原始输入） | 归档候选 | KEEP 暂缓：9 阶段未走完，仍是需求权威；阶段 9 后迁 docs/archive/ |
 | S4 | `internal/domain/asset/pg.go` 316 行、`user/pg.go` 309 行 | 超 300 红线 | ✅ 已拆：读/写侧分 pg.go + pg_write.go，baseline 豁免清零（commit 65203f3/0bbd896） |
 | S5 | `internal/domain/gis`、`analytics` 等阶段 8/9 域已有实现 | 提前生长 | KEEP：均有 pg 实现+集成测试,不是空壳；阶段推进时按 seam 模板继续 |

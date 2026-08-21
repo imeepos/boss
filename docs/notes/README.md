@@ -20,7 +20,7 @@
 | 日期 | 决策 | 文件 |
 |---|---|---|
 | 2026-08-17 | order_no 改 DB 序列生成 | adopted/2026-08-17-order-no-db-sequence.md |
-| 2026-08-17 | server-ts 作为 TS 实体镜像层保留 | adopted/2026-08-17-server-ts-entity-mirror.md |
+| 2026-08-17 | server-ts 已移除，职责迁移至 Go 实体 | adopted/2026-08-17-server-ts-entity-mirror.md |
 | 2026-08-18 | app.env 固定密钥直接入库 | adopted/2026-08-18-app-env-in-repo.md |
 | 2026-08-18 | geo 与 gis 分立两个域 | adopted/2026-08-18-geo-vs-gis-split.md |
 | 2026-08-18 | 菲律宾行政区划以 migration 全量内置 | adopted/2026-08-18-psgc-builtin-migration.md |
