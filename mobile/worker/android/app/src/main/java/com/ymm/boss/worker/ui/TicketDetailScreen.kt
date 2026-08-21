@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -23,7 +22,7 @@ import kotlinx.coroutines.launch
  * - 类型(INSTALL/REPAIR)由 stages.length 推断(后端 TicketDetail 暂未返 type)
  * - 卡片实现见 TicketDetailCards.kt
  *
- * 下拉刷新:PageRefresh 容器包裹内容,触发器连入 loadOnce 的 key;
+ * 下拉刷新:PageRefresh 容器包裹 LazyColumn,触发器连入 loadOnce 的 key;
  * 回退/重试/领取工单操作成功后调用 nav.requestRefresh() 自动重拉数据,
  * 不必师傅手动下拉。后端若真的回退了 stage,UI 即时反映最新进度。
  */
@@ -38,7 +37,7 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
             is Load.Loading -> Box(Modifier.weight(1f)) { Loading() }
             is Load.Fail -> {
                 Box(Modifier.weight(1f)) {
-                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    Column(Modifier.fillMaxSize()) {
                         TopBar("工单详情", onBack = { nav.pop() }, action = "联系调度",
                             onAction = { nav.push(Screen.Service) })
                         Card(Modifier.padding(14.dp)) {
@@ -53,39 +52,42 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
                 val type = inferTicketType(d)
                 val title = if (type == "REPAIR") "报障工单" else "工单详情"
 
-                PageRefresh(nav) {
-                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                        TopBar(title, onBack = { nav.pop() }, action = "联系调度",
-                            onAction = { nav.push(Screen.Service) })
-                        DetailHeaderCard(d, type)
-                        if (status != "TODO") QuickActionRow(d, nav, no)
-                        TimelineCard(d)
-                        // A 屏(安装/装维中)追加回退/重试(spec §4.7)
-                        if (status == "DOING" && type == "INSTALL") {
-                            TimelineExtras(no,
-                                onRollback = {
-                                    scope.launch {
-                                        try {
-                                            TicketApi.rollback(no)
-                                            toast(ctx, "已发起回退,正在刷新...")
-                                            nav.requestRefresh()
-                                        } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
-                                    }
-                                },
-                                onRetry = {
-                                    scope.launch {
-                                        try {
-                                            TicketApi.retry(no)
-                                            toast(ctx, "已发起重试,正在刷新...")
-                                            nav.requestRefresh()
-                                        } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
-                                    }
-                                })
+                PageRefresh(nav, modifier = Modifier.weight(1f)) {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        item {
+                            TopBar(title, onBack = { nav.pop() }, action = "联系调度",
+                                onAction = { nav.push(Screen.Service) })
+                            DetailHeaderCard(d, type)
                         }
-                        QuadCard(d.optJSONObject("quad"))
-                        RiskCard(d.optJSONObject("riskCheck"))
-                        if (status == "DONE") ReceiptCard()
-                        Spacer(Modifier.height(12.dp))
+                        if (status != "TODO") item { QuickActionRow(d, nav, no) }
+                        item { TimelineCard(d) }
+                        if (status == "DOING" && type == "INSTALL") {
+                            item {
+                                TimelineExtras(no,
+                                    onRollback = {
+                                        scope.launch {
+                                            try {
+                                                TicketApi.rollback(no)
+                                                toast(ctx, "已发起回退,正在刷新...")
+                                                nav.requestRefresh()
+                                            } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
+                                        }
+                                    },
+                                    onRetry = {
+                                        scope.launch {
+                                            try {
+                                                TicketApi.retry(no)
+                                                toast(ctx, "已发起重试,正在刷新...")
+                                                nav.requestRefresh()
+                                            } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
+                                        }
+                                    })
+                            }
+                        }
+                        item { QuadCard(d.optJSONObject("quad")) }
+                        item { RiskCard(d.optJSONObject("riskCheck")) }
+                        if (status == "DONE") item { ReceiptCard() }
+                        item { Spacer(Modifier.height(12.dp)) }
                     }
                 }
                 BottomActionBar(d, nav, no,

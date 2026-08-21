@@ -73,15 +73,18 @@ func portalTicketStatusLabel(s string) string {
 // portalTicketOf 派单工单 → Ticket 视图(worker/schemas.yaml Ticket)。
 // 地址/客户/环节取自列表读模型 TicketItem(联表订单),不再占位;
 // 订单已终态(DONE/CANCELED)时工单视图按完成处理,避免"12/12 待领取"。
+// 产品名/手机号脱敏一并随列表读模型填入,与详情对齐 OpenAPI TicketDetail。
 func portalTicketOf(it order.TicketItem, workerID int64) gin.H {
 	status := portalItemStatus(it, workerID)
 	return gin.H{
 		"ticketNo": it.TicketNo, "bizNo": it.TicketNo, "type": "INSTALL",
 		"typeLabel": "新装", "statusLabel": portalTicketStatusLabel(status),
 		"customerName": it.CustomerName,
+		"customerPhoneMasked": httpx.MaskPhone(it.CustomerPhone),
+		"product":             it.OfferName,
 		"address":      it.Address, "distanceKm": nil, "scheduleSlot": "",
 		"stage": it.Stage, "stageTotal": 12, "status": status,
-		"slaLeftMinutes": nil, "finishedAt": "",
+		"slaLeftMinutes": nil, "finishedAt": it.FinishedAt,
 	}
 }
 
@@ -190,6 +193,12 @@ func workerTicketsHistoryHandler(a *app.Application) gin.HandlerFunc {
 }
 
 // workerTicketDetailHandler 工单详情:订单 12 环节时间轴 + 四码对照 + 风控位。
+//
+// 字段对齐 api/openapi/worker/schemas.yaml::TicketDetail。
+// 工单头信息(客户/地址/产品/分光器端口/预绑定标签/预约时间/报障/完成时间)经由
+// a.WorkOrder.GetTicketItemByNo 联表获取;手机号走 httpx.MaskPhone 脱敏出门;
+// OpenAPI 预留位(分光器/预绑定/预约时间/报障/SLA/远程诊断)后端暂无数据源,返回空,
+// 前端按空值不渲染处理。
 func workerTicketDetailHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
@@ -207,12 +216,32 @@ func workerTicketDetailHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		item, err := a.WorkOrder.GetTicketItemByNo(c.Request.Context(), tk.TicketNo)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		status := portalTicketStatus(*tk, currentWorkerID)
 		respond(c, apitypes.CodeOK, gin.H{
 			"ticketNo": tk.TicketNo, "bizNo": ord.OrderNo,
-			"status": portalTicketStatus(*tk, currentWorkerID),
-			"statusLabel": portalTicketStatusLabel(portalTicketStatus(*tk, currentWorkerID)),
-			"stages": portalStages(stages), "quad": portalQuadH(a, c, ord.AddressID),
-			"riskCheck": gin.H{"blacklistHit": false, "graylistHit": false},
+			"status": status, "statusLabel": portalTicketStatusLabel(status),
+			// 工单头字段(对齐 OpenAPI TicketDetail)
+			"product":              item.OfferName,
+			"customerName":         item.CustomerName,
+			"customerPhoneMasked":  httpx.MaskPhone(item.CustomerPhone),
+			"address":              item.Address,
+			"splitterPort":         item.SplitterPort,
+			"preBindTag":           item.PreBindTag,
+			"scheduleSlot":         item.ScheduleSlot,
+			"faultTypeLabel":       item.FaultTypeLabel,
+			"reportedAt":           item.ReportedAt,
+			"slaLeftMinutes":       item.SlaLeftMinutes,
+			"remoteDiagnosis":      item.RemoteDiagnosis,
+			"finishedAt":           item.FinishedAt,
+			// 已有结构
+			"stages":               portalStages(stages),
+			"quad":                 portalQuadH(a, c, ord.AddressID),
+			"riskCheck":            gin.H{"blacklistHit": false, "graylistHit": false},
 		})
 	}
 }

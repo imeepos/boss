@@ -40,15 +40,23 @@ func (s *PGStore) ListDispatchTickets(ctx context.Context) ([]DispatchTicket, er
 }
 
 // ListTicketItems 列表读模型:派单工单联表订单/客户/地址(师傅端列表页)。
+// 详情视图(api/openapi/worker/schemas.yaml::TicketDetail)在此基础上复用:
+//   增列 c.phone、po.name,并按 t.ticket_no 过滤出 GetTicketItemByNo。
+//   订单 DONE 时取 MAX(order_stages.finished_at) 作为 finishedAt,空=进行中。
 func (s *PGStore) ListTicketItems(ctx context.Context) ([]TicketItem, error) {
 	rows, err := s.db.Query(ctx, `
 		SELECT t.id, t.ticket_no, t.order_id, COALESCE(t.worker_id, 0), t.status,
-		       COALESCE(o.status, ''), COALESCE(c.name, ''), COALESCE(a.name, ua.detail, ''), COALESCE(o.stage, 0)
+		       COALESCE(o.status, ''), COALESCE(c.name, ''), COALESCE(c.phone, ''), COALESCE(po.name, ''),
+		       COALESCE(a.name, ua.detail, ''), COALESCE(o.stage, 0),
+		       COALESCE(TO_CHAR(MAX(os.finished_at), 'YYYY-MM-DD HH24:MI'), '')
 		FROM dispatch_tickets t
 		LEFT JOIN orders o ON t.order_id = o.id
 		LEFT JOIN customers c ON o.customer_id = c.id
+		LEFT JOIN product_offers po ON o.offer_id = po.id
 		LEFT JOIN addresses a ON o.address_id = a.id
 		LEFT JOIN user_addresses ua ON o.address_id = ua.id
+		LEFT JOIN order_stages os ON os.order_id = o.id
+		GROUP BY t.id, o.status, c.name, c.phone, po.name, a.name, ua.detail, o.stage
 		ORDER BY t.id`)
 	if err != nil {
 		return nil, fmt.Errorf("order: list ticket items: %w", err)
@@ -58,12 +66,44 @@ func (s *PGStore) ListTicketItems(ctx context.Context) ([]TicketItem, error) {
 	for rows.Next() {
 		var it TicketItem
 		if err := rows.Scan(&it.TicketID, &it.TicketNo, &it.OrderID, &it.WorkerID, &it.Status,
-			&it.OrderStatus, &it.CustomerName, &it.Address, &it.Stage); err != nil {
+			&it.OrderStatus, &it.CustomerName, &it.CustomerPhone, &it.OfferName,
+			&it.Address, &it.Stage, &it.FinishedAt); err != nil {
 			return nil, fmt.Errorf("order: scan ticket item: %w", err)
 		}
 		out = append(out, it)
 	}
 	return out, rows.Err()
+}
+
+// GetTicketItemByNo 按 ticketNo 寻址的详情读模型:同 ListTicketItems 联表语义 + 单行过滤。
+// 仅命中返回;无行时返回 ErrOrderNotFound(对齐 GetDispatchTicketByNo 行为)。
+func (s *PGStore) GetTicketItemByNo(ctx context.Context, ticketNo string) (*TicketItem, error) {
+	var it TicketItem
+	err := s.db.QueryRow(ctx, `
+		SELECT t.id, t.ticket_no, t.order_id, COALESCE(t.worker_id, 0), t.status,
+		       COALESCE(o.status, ''), COALESCE(c.name, ''), COALESCE(c.phone, ''), COALESCE(po.name, ''),
+		       COALESCE(a.name, ua.detail, ''), COALESCE(o.stage, 0),
+		       COALESCE(TO_CHAR(MAX(os.finished_at), 'YYYY-MM-DD HH24:MI'), '')
+		FROM dispatch_tickets t
+		LEFT JOIN orders o ON t.order_id = o.id
+		LEFT JOIN customers c ON o.customer_id = c.id
+		LEFT JOIN product_offers po ON o.offer_id = po.id
+		LEFT JOIN addresses a ON o.address_id = a.id
+		LEFT JOIN user_addresses ua ON o.address_id = ua.id
+		LEFT JOIN order_stages os ON os.order_id = o.id
+		WHERE t.ticket_no = $1
+		GROUP BY t.id, o.status, c.name, c.phone, po.name, a.name, ua.detail, o.stage`,
+		ticketNo).
+		Scan(&it.TicketID, &it.TicketNo, &it.OrderID, &it.WorkerID, &it.Status,
+			&it.OrderStatus, &it.CustomerName, &it.CustomerPhone, &it.OfferName,
+			&it.Address, &it.Stage, &it.FinishedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrOrderNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("order: get ticket item by no: %w", err)
+	}
+	return &it, nil
 }
 
 // CreateDispatchTicket 新建派单工单,返回自增 id。

@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v4"
@@ -161,7 +162,71 @@ func TestPGStore_AppendScanLog(t *testing.T) {
 	}
 }
 
-// GetDispatchTicketByNo 扫码闭环入口:ticketNo → 工单(含 orderID)。
+// GetTicketItemByNo 工单详情读模型:同 ListTicketItems 联表语义,按 ticketNo 寻址单行。
+// 该接口是师傅端工单详情接口(GET /tickets/:ticketNo)的工单头数据源,必须返回
+// 客户姓名/手机/地址/产品/完成时间等联表字段,详见 OpenAPI TicketDetail。
+func TestPGStore_GetTicketItemByNo(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{
+		"id", "ticket_no", "order_id", "worker_id", "status",
+		"o.status", "c.name", "c.phone", "po.name",
+		"addr", "stage", "finished_at",
+	}
+	mock.ExpectQuery(`FROM dispatch_tickets`).
+		WithArgs("TIC-1").
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(
+				int64(1), "TIC-1", int64(7), int64(2), "DOING",
+				"DONE", "王先生", "13800001234", "1000M 极速宽带",
+				"望京X · 3栋501", int8(12), "2026-08-21 16:30",
+			))
+
+	s := NewPGStore(mock, stubExists{})
+	it, err := s.GetTicketItemByNo(context.Background(), "TIC-1")
+	if err != nil {
+		t.Fatalf("GetTicketItemByNo: %v", err)
+	}
+	if it.CustomerName != "王先生" || it.CustomerPhone != "13800001234" {
+		t.Fatalf("customer fields wrong: %+v", it)
+	}
+	if it.OfferName != "1000M 极速宽带" || it.FinishedAt != "2026-08-21 16:30" {
+		t.Fatalf("offer/finishedAt wrong: %+v", it)
+	}
+	if it.Address != "望京X · 3栋501" || it.Stage != 12 {
+		t.Fatalf("addr/stage wrong: %+v", it)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// GetTicketItemByNo 未命中返回 ErrOrderNotFound(对齐 GetDispatchTicketByNo 行为)。
+func TestPGStore_GetTicketItemByNo_NotFound(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`FROM dispatch_tickets`).
+		WithArgs("MISSING").
+		WillReturnRows(mock.NewRows([]string{
+			"id", "ticket_no", "order_id", "worker_id", "status",
+			"o.status", "c.name", "c.phone", "po.name",
+			"addr", "stage", "finished_at",
+		}))
+
+	s := NewPGStore(mock, stubExists{})
+	_, err = s.GetTicketItemByNo(context.Background(), "MISSING")
+	if !errors.Is(err, ErrOrderNotFound) {
+		t.Fatalf("want ErrOrderNotFound, got %v", err)
+	}
+}
 func TestPGStore_GetDispatchTicketByNo(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {

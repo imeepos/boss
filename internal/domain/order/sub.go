@@ -41,16 +41,35 @@ type ScanLog struct {
 }
 
 // TicketItem 派单工单列表读模型:联表补订单环节/客户/安装地址(师傅端列表视图)。
+//
+// 详情视图(api/openapi/worker/schemas.yaml::TicketDetail)需要更多字段:
+//   CustomerPhone/OfferName/SplitterPort/PreBindTag/ScheduleSlot
+//   /FaultTypeLabel/ReportedAt/SlaLeftMinutes/RemoteDiagnosis/FinishedAt。
+// 实际有数据支撑的:CustomerPhone、OfferName、FinishedAt(由 MAX(order_stages.finished_at)
+// 在 status=DONE 时派生)。其余字段是 OpenAPI 预留位,后端暂未提供数据源,返回空串/0,
+// 前端按"空值不渲染"处理。
 type TicketItem struct {
 	TicketID     int64  `json:"ticketId"`
 	TicketNo     string `json:"ticketNo"`
 	OrderID      int64  `json:"orderId"`
 	WorkerID     int64  `json:"workerId"`
-	Status       string `json:"status"`       // PENDING/DOING/DONE/CANCELED
-	OrderStatus  string `json:"orderStatus"`  // 订单终态兜底:DONE/CANCELED 时工单视图按完成处理
+	Status       string `json:"status"`      // PENDING/DOING/DONE/CANCELED
+	OrderStatus  string `json:"orderStatus"` // 订单终态兜底:DONE/CANCELED 时工单视图按完成处理
 	CustomerName string `json:"customerName"`
+	CustomerPhone string `json:"customerPhone"` // 明文,handler 出门必须 httpx.MaskPhone 脱敏
+	OfferName    string `json:"offerName"`      // → product_offers.name(下单快照)
 	Address      string `json:"address"`
 	Stage        int8   `json:"stage"` // 订单当前环节 1~12
+	FinishedAt   string `json:"finishedAt"` // 订单 DONE 时 MAX(order_stages.finished_at) 派生,空=进行中
+
+	// OpenAPI TicketDetail 预留位:后端尚未提供数据源,前端按空值不渲染处理。
+	SplitterPort    string `json:"splitterPort"`
+	PreBindTag      string `json:"preBindTag"`
+	ScheduleSlot    string `json:"scheduleSlot"`
+	FaultTypeLabel  string `json:"faultTypeLabel"`
+	ReportedAt      string `json:"reportedAt"`
+	SlaLeftMinutes  int    `json:"slaLeftMinutes"`  // 报障单 SLA 倒计时,后端未实现返回 0
+	RemoteDiagnosis string `json:"remoteDiagnosis"` // 报障单远程诊断结论,后端未实现返回空
 }
 
 // WorkOrderService 订单工单/报障/扫码域服务口(阶段5 子表)。
@@ -58,6 +77,8 @@ type WorkOrderService interface {
 	ListDispatchTickets(ctx context.Context) ([]DispatchTicket, error)
 	// ListTicketItems 列表读模型:派单工单联表订单/客户/地址,供师傅端列表页。
 	ListTicketItems(ctx context.Context) ([]TicketItem, error)
+	// GetTicketItemByNo 详情读模型:同 ListTicketItems 联表语义,按 ticketNo 寻址单行。
+	GetTicketItemByNo(ctx context.Context, ticketNo string) (*TicketItem, error)
 	GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*DispatchTicket, error)
 	// AssignDispatchTicket 指派师傅(workerID/workerName 回填工单)。
 	AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error
