@@ -228,13 +228,16 @@ func (s *PGStore) ListMaterialItems(ctx context.Context) ([]MaterialItem, error)
 	return out, rows.Err()
 }
 
-// AppendReplaceLog 换件登记落流水,返回自增 id。
+// AppendReplaceLog 换件登记落流水,返回自增 id。tag id 按 EPC 唯一键解析(E15)。
 func (s *PGStore) AppendReplaceLog(ctx context.Context, r ReplaceLog) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO worker_replace_logs(worker_id, ticket_no, old_epc, new_epc, created_at)
-		VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		r.WorkerID, r.TicketNo, r.OldEpc, r.NewEpc, r.CreatedAt).Scan(&id)
+		INSERT INTO worker_replace_logs(worker_id, dispatch_ticket_id, ticket_no,
+			old_tag_id, new_tag_id, old_epc, new_epc, created_at)
+		VALUES($1, NULLIF($2,0), $3,
+			(SELECT id FROM tags WHERE epc_code=$4), (SELECT id FROM tags WHERE epc_code=$5),
+			$4, $5, $6) RETURNING id`,
+		r.WorkerID, r.DispatchTicketID, r.TicketNo, r.OldEpc, r.NewEpc, r.CreatedAt).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("worker: append replace log: %w", err)
 	}
@@ -244,7 +247,8 @@ func (s *PGStore) AppendReplaceLog(ctx context.Context, r ReplaceLog) (int64, er
 // ListReplaceLogs 按工单号取换件流水(时间正序)。
 func (s *PGStore) ListReplaceLogs(ctx context.Context, ticketNo string) ([]ReplaceLog, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, worker_id, ticket_no, old_epc, new_epc, created_at
+		SELECT id, worker_id, COALESCE(dispatch_ticket_id,0), ticket_no,
+			COALESCE(old_tag_id,0), COALESCE(new_tag_id,0), old_epc, new_epc, created_at
 		FROM worker_replace_logs WHERE ticket_no = $1 ORDER BY created_at, id`, ticketNo)
 	if err != nil {
 		return nil, fmt.Errorf("worker: list replace logs: %w", err)
@@ -253,7 +257,8 @@ func (s *PGStore) ListReplaceLogs(ctx context.Context, ticketNo string) ([]Repla
 	out := make([]ReplaceLog, 0)
 	for rows.Next() {
 		var r ReplaceLog
-		if err := rows.Scan(&r.ID, &r.WorkerID, &r.TicketNo, &r.OldEpc, &r.NewEpc, &r.CreatedAt); err != nil {
+		if err := rows.Scan(&r.ID, &r.WorkerID, &r.DispatchTicketID, &r.TicketNo,
+			&r.OldTagID, &r.NewTagID, &r.OldEpc, &r.NewEpc, &r.CreatedAt); err != nil {
 			return nil, fmt.Errorf("worker: scan replace log: %w", err)
 		}
 		out = append(out, r)

@@ -68,3 +68,32 @@ func TestMaterialLink_Integration(t *testing.T) {
 		t.Fatalf("item_id=%d, want %d", back, itemID)
 	}
 }
+
+// TestReplaceLogIds_Integration E15 迁移验证(需真实 PG,未设 DSN 跳过):
+// 000092 后 worker_replace_logs 具备 dispatch_ticket_id/old_tag_id/new_tag_id 列。
+func TestReplaceLogIds_Integration(t *testing.T) {
+	dsn := os.Getenv("BOSS_PG_TEST_DSN")
+	if dsn == "" {
+		t.Skip("BOSS_PG_TEST_DSN 未设置,跳过集成测试")
+	}
+	ctx := context.Background()
+	pool, err := database.Open(ctx, dsn)
+	if err != nil {
+		t.Fatalf("database.Open: %v", err)
+	}
+	defer pool.Close()
+	if err := database.Migrate(ctx, pool, "../../../migrations"); err != nil {
+		t.Fatalf("database.Migrate: %v", err)
+	}
+	for _, col := range []string{"dispatch_ticket_id", "old_tag_id", "new_tag_id"} {
+		var ok bool
+		if err := pool.QueryRow(ctx, `
+			SELECT EXISTS (SELECT 1 FROM information_schema.columns
+			WHERE table_name='worker_replace_logs' AND column_name=$1)`, col).Scan(&ok); err != nil {
+			t.Fatalf("check %s: %v", col, err)
+		}
+		if !ok {
+			t.Fatalf("worker_replace_logs.%s 不存在,000092 未生效", col)
+		}
+	}
+}

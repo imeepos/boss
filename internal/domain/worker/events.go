@@ -96,12 +96,15 @@ type WorkerEventService interface {
 
 // ReplaceLog 换件登记流水。
 type ReplaceLog struct {
-	ID        int64     `json:"id"`
-	WorkerID  int64     `json:"workerId"`
-	TicketNo  string    `json:"ticketNo"`
-	OldEpc    string    `json:"oldEpc"`
-	NewEpc    string    `json:"newEpc"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID               int64     `json:"id"`
+	WorkerID         int64     `json:"workerId"`
+	DispatchTicketID int64     `json:"dispatchTicketId"` // → dispatch_tickets(E15);0=历史行未回填
+	TicketNo         string    `json:"ticketNo"`         // 展示快照
+	OldTagID         int64     `json:"oldTagId"`         // → tags(E15,按 EPC 解析);0=未命中
+	NewTagID         int64     `json:"newTagId"`
+	OldEpc           string    `json:"oldEpc"` // 展示快照
+	NewEpc           string    `json:"newEpc"`
+	CreatedAt        time.Time `json:"createdAt"`
 }
 
 // MaterialItem 物料主档。

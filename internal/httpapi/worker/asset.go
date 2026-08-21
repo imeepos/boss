@@ -139,7 +139,8 @@ func workerReplacePostHandler(a *app.Application) gin.HandlerFunc {
 		}
 		workerID, _ := portalWorker(c)
 		if _, err := a.WorkerEvent.AppendReplaceLog(c.Request.Context(), worker.ReplaceLog{
-			WorkerID: workerID, TicketNo: tk.TicketNo, OldEpc: req.OldEpc, NewEpc: req.NewEpc, CreatedAt: time.Now(),
+			WorkerID: workerID, DispatchTicketID: tk.TicketID, TicketNo: tk.TicketNo,
+			OldEpc: req.OldEpc, NewEpc: req.NewEpc, CreatedAt: time.Now(),
 		}); err != nil {
 			respondErr(c, err)
 			return
