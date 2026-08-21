@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.api.Api
+import com.ymm.boss.worker.api.friendlyMessage
 import com.ymm.boss.worker.api.AuthApi
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
@@ -201,7 +202,7 @@ private fun sendOnboardCode(
         try {
             AuthApi.smsCode(phone.trim())
             onDone("")
-        } catch (e: Exception) { onDone("验证码发送失败：${Api.friendlyMessage(e)}") }
+        } catch (e: Exception) { onDone("验证码发送失败：${friendlyMessage(e)}") }
     }
 }
 
@@ -229,7 +230,7 @@ private fun doOnboard(
             Api.post("/worker-registrations", body)
             onDone(true, "")
         } catch (e: Exception) {
-            onDone(false, "提交失败：${Api.friendlyMessage(e)}")
+            onDone(false, "提交失败：${friendlyMessage(e)}")
         }
     }
 }
