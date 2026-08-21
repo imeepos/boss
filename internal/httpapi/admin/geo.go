@@ -73,8 +73,7 @@ func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 	g.PUT("/geo/countries/:code", perm, func(c *gin.Context) {
 		var req geoCountryReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		err := a.Geo.UpdateCountry(c.Request.Context(), c.Param("code"), geoCountryOf(req))
@@ -89,8 +88,7 @@ func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 		var body struct {
 			Active bool `json:"active"`
 		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &body) {
 			return
 		}
 		if err := a.Geo.SetCountryActive(c.Request.Context(), c.Param("code"), body.Active); err != nil {
@@ -104,8 +102,7 @@ func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 国家译名与关联属性。
 	g.POST("/geo/countries/:code/names", perm, func(c *gin.Context) {
 		var req geoNameReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		err := a.Geo.AddCountryName(c.Request.Context(), c.Param("code"),
@@ -129,8 +126,7 @@ func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 	g.PUT("/geo/countries/:code/attrs", perm, func(c *gin.Context) {
 		var attrs geo.CountryAttrs
-		if err := c.ShouldBindJSON(&attrs); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &attrs) {
 			return
 		}
 		if err := a.Geo.ReplaceCountryAttrs(c.Request.Context(), c.Param("code"), attrs); err != nil {
@@ -170,8 +166,7 @@ func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 	g.PUT("/geo/subdivisions/:code", perm, func(c *gin.Context) {
 		var req geoSubdivReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		err := a.Geo.UpdateSubdivision(c.Request.Context(), c.Param("code"), geoSubdivOf(req))
@@ -186,8 +181,7 @@ func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 		var body struct {
 			Active bool `json:"active"`
 		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &body) {
 			return
 		}
 		if err := a.Geo.SetSubdivisionActive(c.Request.Context(), c.Param("code"), body.Active); err != nil {
@@ -199,8 +193,7 @@ func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 	g.POST("/geo/subdivisions/:code/names", perm, func(c *gin.Context) {
 		var req geoNameReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		err := a.Geo.AddSubdivisionName(c.Request.Context(), c.Param("code"),
@@ -230,7 +223,7 @@ func geoCreateCountry(c *gin.Context, a *app.Application) (string, error) {
 		Alpha2 string `json:"alpha2" binding:"required,len=2"`
 		geoCountryReq
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if !httpx.BindAndValidate(c, &body) {
 		return "", httpx.ErrGeoInvalidParam
 	}
 	co := geoCountryOf(body.geoCountryReq)
@@ -247,7 +240,7 @@ func geoCreateSubdiv(c *gin.Context, a *app.Application) (string, error) {
 		Code string `json:"code" binding:"required"`
 		geoSubdivReq
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if !httpx.BindAndValidate(c, &body) {
 		return "", httpx.ErrGeoInvalidParam
 	}
 	d := geoSubdivOf(body.geoSubdivReq)

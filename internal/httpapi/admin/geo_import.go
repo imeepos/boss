@@ -16,8 +16,7 @@ func registerGeoImportRoute(g *gin.RouterGroup, a *app.Application) {
 	perm := requirePerm(a.User, "menu:geo")
 	g.POST("/geo/import", perm, func(c *gin.Context) {
 		var data geo.ImportData
-		if err := c.ShouldBindJSON(&data); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &data) {
 			return
 		}
 		if err := validateGeoImport(data); err != nil {

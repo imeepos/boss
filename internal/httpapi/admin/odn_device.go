@@ -7,6 +7,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/odn"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -41,8 +42,7 @@ func registerODNSiteDeviceRoutes(g *gin.RouterGroup, a *app.Application, perm gi
 	})
 	g.POST("/odn/sites", perm, func(c *gin.Context) {
 		var req odnSiteReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		st := odn.Site{PrvCode: c.Query("prvCode"), CityPrefix: c.Query("cityPrefix"),
@@ -82,8 +82,7 @@ func registerODNSiteDeviceRoutes(g *gin.RouterGroup, a *app.Application, perm gi
 	})
 	g.POST("/odn/devices", perm, func(c *gin.Context) {
 		var req odnDeviceReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		d := odn.Device{Code: req.Code, Kind: req.Kind, PrvCode: req.PrvCode,

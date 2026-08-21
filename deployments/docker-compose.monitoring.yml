@@ -1,0 +1,64 @@
+# 生产监控配置:Prometheus + Alertmanager + Grafana + Node Exporter
+# 用法:所有节点运行,docker compose -f docker-compose.monitoring.yml up -d
+name: boss-monitoring
+
+services:
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    container_name: boss-node-exporter
+    ports: ["9100:9100"]
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+  prometheus:
+    image: 192.168.0.102:5000/boss/prometheus:3.4.0
+    restart: unless-stopped
+    container_name: boss-prometheus
+    ports: ["19090:9090"]
+    volumes:
+      - ./observability/prometheus-prod.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/alerting-rules.yml:/etc/prometheus/alerting-rules.yml:ro
+      - prom_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+  alertmanager:
+    image: 192.168.0.102:5000/boss/alertmanager:0.28.0
+    restart: unless-stopped
+    container_name: boss-alertmanager
+    ports: ["19093:9093"]
+    volumes:
+      - ./observability/alertmanager-prod.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+
+  grafana:
+    image: 192.168.0.102:5000/boss/grafana:11.5.2
+    restart: unless-stopped
+    container_name: boss-grafana
+    ports: ["19300:3000"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: boss12345
+      GF_SERVER_ROOT_URL: "http://192.168.0.102:19300"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+
+volumes:
+  prom_data:
+  grafana_data:

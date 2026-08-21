@@ -40,9 +40,8 @@ func registerPortalOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 // portalProductDetail GET /products/:id:产品详情(PUBLISHED 才可见)。
 func portalProductDetail(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
 			return
 		}
 		list, lerr := a.Product.ListProducts(c.Request.Context(), 0)

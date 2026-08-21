@@ -3,6 +3,7 @@ package userapi
 // 用户端门户 Profile 域:实名认证(/auth/verify) + 我的/账号安全/通知订阅/语言。
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"strings"
@@ -12,6 +13,17 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
+
+// portalCustomerPhone 取客户手机号:优先 customers 主档,合成客户(隔离空间,无 customers 主档)回退 portal_accounts。
+func portalCustomerPhone(ctx context.Context, a *app.Application, cid int64) string {
+	if v, err := a.Customer.Get(ctx, cid); err == nil {
+		return v.Phone
+	}
+	if acc, err := a.Portal.AccountByCustomer(ctx, cid); err == nil {
+		return acc.Phone
+	}
+	return ""
+}
 
 // portalMaskPhone 138****1234;portalMaskName 王**;portalMaskIDNo 首3尾4。
 func portalMaskPhone(s string) string {
@@ -71,16 +83,16 @@ func portalVerifyStatus(a *app.Application) gin.HandlerFunc {
 func portalVerifySmsCode(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
-		v, err := a.Customer.Get(c.Request.Context(), cid)
-		if err != nil {
+		phone := portalCustomerPhone(c.Request.Context(), a, cid)
+		if phone == "" {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
+		}
+		if err := a.Portal.IssueSms(c.Request.Context(), phone, "verify"); err != nil {
 			respondErr(c, err)
 			return
 		}
-		if err := a.Portal.IssueSms(c.Request.Context(), v.Phone, "verify"); err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true, "phoneMasked": portalMaskPhone(v.Phone)})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "phoneMasked": portalMaskPhone(phone)})
 	}
 }
 
@@ -100,12 +112,12 @@ func portalVerifySubmit(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		v, err := a.Customer.Get(c.Request.Context(), cid)
-		if err != nil {
-			respondErr(c, err)
+		phone := portalCustomerPhone(c.Request.Context(), a, cid)
+		if phone == "" {
+			respond(c, apitypes.CodeNotFound, nil)
 			return
 		}
-		ok, err := a.Portal.ConsumeSms(c.Request.Context(), v.Phone, "verify", req.SmsCode)
+		ok, err := a.Portal.ConsumeSms(c.Request.Context(), phone, "verify", req.SmsCode)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -129,12 +141,18 @@ func portalVerifySubmit(a *app.Application) gin.HandlerFunc {
 }
 
 // portalProfile GET /profile:个人中心聚合(客户主档 + 实名脱敏)。
+// 合成客户(隔离空间 9e9 段,无 customers 主档)按 /home 口径降级返回,不再 40400。
 func portalProfile(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
 		v, err := a.Customer.Get(c.Request.Context(), cid)
 		if err != nil {
-			respondErr(c, err)
+			phone := portalCustomerPhone(c.Request.Context(), a, cid)
+			respond(c, apitypes.CodeOK, gin.H{
+				"customerId": cid, "name": "用户", "phoneMasked": portalMaskPhone(phone),
+				"realName": gin.H{"nameMasked": "", "idType": "", "idNoMasked": "", "status": "NONE"},
+				"plan":     portalProfilePlan(a, c, cid),
+			})
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{

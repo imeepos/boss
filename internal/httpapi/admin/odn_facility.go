@@ -7,6 +7,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/odn"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -39,8 +40,7 @@ func registerODNFacilityRoutes(g *gin.RouterGroup, a *app.Application, perm gin.
 	})
 	g.POST("/odn/facilities", perm, func(c *gin.Context) {
 		var req odnFacilityReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		f := odn.Facility{Code: req.Code, Kind: req.Kind, PrvCode: req.PrvCode,
@@ -73,8 +73,7 @@ func registerODNCableRoutes(g *gin.RouterGroup, a *app.Application, perm gin.Han
 	})
 	g.POST("/odn/segments", perm, func(c *gin.Context) {
 		var req odnSegmentReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		seg, err := a.ODN.CreateSegment(c.Request.Context(), req.Endpoint1, req.Endpoint2, req.Name)
@@ -91,8 +90,7 @@ func registerODNCableRoutes(g *gin.RouterGroup, a *app.Application, perm gin.Han
 			return
 		}
 		var req odnFiberReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		if err := a.ODN.AddFiber(c.Request.Context(), id, odn.Fiber{GNo: req.GNo, Kind: req.Kind}); err != nil {

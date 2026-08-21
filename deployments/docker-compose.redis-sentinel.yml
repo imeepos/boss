@@ -1,0 +1,36 @@
+# Redis 哨兵模式配置
+# 用法:所有节点运行,docker compose -f docker-compose.redis-sentinel.yml up -d
+# node-1 运行 redis-master + sentinel
+# node-2/node-3 运行 redis-replica + sentinel
+name: boss-redis-ha
+
+services:
+  redis:
+    image: 192.168.0.102:5000/boss/redis:7
+    restart: unless-stopped
+    container_name: boss-redis
+    ports: ["26379:6379"]
+    volumes:
+      - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  sentinel:
+    image: 192.168.0.102:5000/boss/redis:7
+    restart: unless-stopped
+    container_name: boss-redis-sentinel
+    ports: ["26380:26379"]
+    volumes:
+      - ./sentinel.conf:/usr/local/etc/redis/sentinel.conf:ro
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:

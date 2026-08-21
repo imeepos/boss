@@ -1,0 +1,121 @@
+# Prometheus 告警规则
+# 生产环境必须配置的告警
+
+groups:
+  - name: boss-service-alerts
+    rules:
+      # 服务存活告警
+      - alert: BossServerDown
+        expr: up{job="boss-server"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Boss Server 宕机"
+          description: "Boss Server 实例 {{ $labels.instance }} 已宕机超过 1 分钟"
+
+      # CPU 使用率告警
+      - alert: HighCpuUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU 使用率过高"
+          description: "节点 {{ $labels.instance }} CPU 使用率 {{ $value }}% 超过 80%"
+
+      # 内存使用率告警
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "内存使用率过高"
+          description: "节点 {{ $labels.instance }} 内存使用率 {{ $value }}% 超过 85%"
+
+      # 磁盘空间告警
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "磁盘空间不足"
+          description: "节点 {{ $labels.instance }} 根分区剩余空间 {{ $value }}%"
+
+  - name: boss-postgres-alerts
+    rules:
+      # PostgreSQL 连接数告警
+      - alert: PostgresHighConnections
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL 连接数过高"
+          description: "PostgreSQL 当前连接数 {{ $value }} 超过 80"
+
+      # PostgreSQL 复制延迟告警
+      - alert: PostgresReplicationLag
+        expr: pg_replication_lag > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL 复制延迟"
+          description: "PostgreSQL 从节点复制延迟 {{ $value }} 秒"
+
+      # PostgreSQL 服务宕机
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL 宕机"
+          description: "PostgreSQL 实例 {{ $labels.instance }} 已宕机"
+
+  - name: boss-redis-alerts
+    rules:
+      # Redis 内存使用率告警
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis 内存使用率过高"
+          description: "Redis 内存使用率 {{ $value }}% 超过 80%"
+
+      # Redis 服务宕机
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis 宕机"
+          description: "Redis 实例 {{ $labels.instance }} 已宕机"
+
+  - name: boss-kafka-alerts
+    rules:
+      # Kafka 消费延迟告警
+      - alert: KafkaConsumerLag
+        expr: kafka_consumer_lag_sum > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka 消费延迟"
+          description: "Kafka 消费组 {{ $labels.consumer_group }} 延迟 {{ $value }} 条"
+
+      # Kafka 服务宕机
+      - alert: KafkaDown
+        expr: up{job="kafka"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka 宕机"
+          description: "Kafka 实例 {{ $labels.instance }} 已宕机"

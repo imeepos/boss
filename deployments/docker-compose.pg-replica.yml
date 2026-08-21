@@ -1,0 +1,33 @@
+# PostgreSQL 流复制从节点配置
+# 用法:在 node-2/node-3 上运行,docker compose -f docker-compose.pg-replica.yml up -d
+# 前置条件:node-1 的 PG 主节点已配置允许复制连接(pg_hba.conf)
+name: boss-pg-replica
+
+services:
+  postgres:
+    image: 192.168.0.102:5000/boss/postgres:16
+    restart: unless-stopped
+    container_name: boss-pg-replica
+    environment:
+      # 从节点环境变量:只读模式
+      POSTGRES_USER: boss
+      POSTGRES_PASSWORD: boss
+      POSTGRES_DB: boss
+    ports: ["25432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./pg-replica-init.sh:/docker-entrypoint-initdb.d/init-replica.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U boss"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    command: >
+      postgres
+        -c wal_level=replica
+        -c max_wal_senders=3
+        -c hot_standby=on
+        -c hot_standby_feedback=on
+
+volumes:
+  pgdata:

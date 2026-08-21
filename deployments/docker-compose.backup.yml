@@ -1,0 +1,65 @@
+# 自动备份配置:每日全量备份 PostgreSQL + MinIO 数据
+# 用法:docker compose -f docker-compose.backup.yml up -d
+# 备份存储:MinIO 的 boss-backups 桶,保留 30 天
+name: boss-backup
+
+services:
+  pg-backup:
+    image: 192.168.0.102:5000/boss/postgres:16
+    restart: unless-stopped
+    container_name: boss-pg-backup
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        #!/bin/bash
+        set -e
+        BACKUP_DIR="/backups/pg"
+        mkdir -p $BACKUP_DIR
+        while true; do
+          DATE=$(date +%Y%m%d_%H%M%S)
+          echo "[$(date)] 开始 PostgreSQL 全量备份..."
+          PGPASSWORD=boss pg_dumpall -h 192.168.0.102 -p 25432 -U boss | gzip > "$BACKUP_DIR/boss_full_$DATE.sql.gz"
+          echo "[$(date)] 备份完成: boss_full_$DATE.sql.gz"
+          # 上传到 MinIO
+          mc alias set boss http://192.168.0.102:29000 boss boss12345
+          mc cp "$BACKUP_DIR/boss_full_$DATE.sql.gz" boss/boss-backups/pg/
+          echo "[$(date)] 已上传到 MinIO"
+          # 清理 30 天前的本地备份
+          find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete
+          echo "[$(date)] 等待下次备份(24小时)..."
+          sleep 86400
+        done
+    volumes:
+      - pg-backups:/backups/pg
+    environment:
+      PGHOST: 192.168.0.102
+      PGPORT: "25432"
+      PGUSER: boss
+      PGPASSWORD: boss
+
+  minio-backup:
+    image: minio/mc
+    restart: unless-stopped
+    container_name: boss-minio-backup
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        #!/bin/bash
+        set -e
+        # 配置 MinIO 别名
+        mc alias set boss http://192.168.0.102:29000 boss boss12345
+        # 创建备份桶(如果不存在)
+        mc mb boss/boss-backups --ignore-existing
+        mc mb boss/boss-backups/pg --ignore-existing
+        mc mb boss/boss-backups/minio --ignore-existing
+        # 启用版本控制
+        mc version enable boss/boss-backups
+        echo "MinIO 备份桶已初始化"
+        # 保持容器运行
+        tail -f /dev/null
+    volumes:
+      - minio-backups:/backups
+
+volumes:
+  pg-backups:
+  minio-backups:
