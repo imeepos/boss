@@ -266,8 +266,9 @@ private fun EstimateBanner(order: JSONObject?) {
 private fun TimelineCard(detail: JSONObject?, timeline: List<JSONObject>) {
     AppCard {
         val done = timeline.count { it.optString("result") == "DONE" }
-        val currentStage = (detail?.optInt("stage") ?: 1).coerceIn(1, 12)
-        val currentMilestone = ((currentStage - 1) / 3 + 1).coerceIn(1, 4)
+        // 推导当前 milestone:取 timeline 中最大的 stage(任何 result)
+        val maxStage = timeline.maxOfOrNull { it.optInt("stage", 1) } ?: 1
+        val currentMilestone = ((maxStage - 1) / 3 + 1).coerceIn(1, 4)
         val allDone = timeline.isNotEmpty() && done == timeline.size
         CardTitle("装维进度", "$done/12 已完成")
         Spacer(Modifier.height(8.dp))
