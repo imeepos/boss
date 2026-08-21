@@ -45,3 +45,4 @@
 | 2026-08-20 | ODN 地理空间编码对齐:PRV/NodeCode 由 PSGC 派生映射不改权威数据,odn 无源物理层为待建域,端口码 P 前缀冲突待裁定 | adopted/2026-08-20-odn-geospatial-encoding-alignment.md |
 | 2026-08-20 | 订单归属公司由安装地址判定,客户与公司无直接归属关系 | adopted/2026-08-20-order-legal-entity-by-address.md |
 | 2026-08-21 | MinIO root 密码改 bind-mount 文件注入(不动明文),bucket 统一策略+生命周期 | adopted/2026-08-21-minio-secret-file-mount.md |
+| 2026-08-21 | hostctl sidecar + MinIO 密钥热轮换 admin API(HMAC 鉴权) | adopted/2026-08-21-hostctl-sidecar-rotate.md |
