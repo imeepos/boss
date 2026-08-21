@@ -26,6 +26,7 @@
 - 禁止改 handler 时只照"今天写了多少就返多少"——OpenAPI schemas.yaml 是契约,改 handler 前必 grep 该接口的 schema,确认返出的 gin.H keys 覆盖 schema 所有必填字段;schema 没字段后端必须返 schema 必有字段,缺字段前端 `optString` 静默吞空变"沉默 bug"(师傅工单详情 12 字段缺失案例, 2025-08-21)。
 - 禁止同一资源 list 走联表、detail 不走联表——list/detail 必须共用读模型根;若 list 已 LEFT JOIN customers/orders,detail 不应绕过只读主表后用 Track 重建拼装,这种不对称是漂移的温床。规则:同一资源的 list 与 detail 方法,共用同一段 SQL 子句(可分两方法,但底层 join 必须一致)。
 - 禁止把"会话边界残留的未提交修改"误当作自己引入的回归——会话切换前别人/上一次会话改的文件可能留在工作区未被 commit(2026-08-21 套餐详情页遇 OrderPage.kt 已存在 4 处编译错误,实际来自前一会话)。规则:开工前必跑 `git status` + `git diff --stat`,遇到非本次任务的 M 文件先隔离或放回 stash,再确认自己的代码。
+- 禁止把"接口存在"等同于"业务正当"——2026-08-21 CLI 联调时三次默认用 admin 身份调 `POST /orders` 代客下单,代码层路由存在 ≠ 该接口是 admin 的主业;admin 真正职责是建号/审批/调度/状态机推进,下单是 customer 自助;被用户点名"admin 只管创建用户和一些审批 其他的不管"才纠正。规则:动手前先读 terms.md/domain-map.md 看清角色与环节映射,接口列表只反映能力全集,不决定调用方;真正"该谁调"由领域边界 + RBAC permCode 决定。
 
 ## 严禁执行任何 git 命令(2026-08-21 admin 包拆分)
 
