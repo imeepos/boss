@@ -135,7 +135,8 @@ type workerRealNameReq struct {
 	Method   string `json:"method" binding:"required"`
 }
 
-// workerRealNameVerifyReq 实名核验请求体。
+// workerRealNameVerifyReq 实名核验请求体;reason 仅客户域 FAIL 时落 verifications.reject_reason。
 type workerRealNameVerifyReq struct {
 	Result string `json:"result" binding:"required"` // PASS / FAIL
+	Reason string `json:"reason"`                    // 驳回原因(FAIL 时建议必填)
 }

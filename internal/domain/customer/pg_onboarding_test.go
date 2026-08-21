@@ -80,15 +80,15 @@ func TestPGStore_Verify_PassSyncsStatus(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectExec(`UPDATE verifications SET result=\$1, operator_account_id=\$2, operator_name=\$3, verified_at=now\(\) WHERE subject_type='customer' AND subject_id=\$4 AND result=\$5`).
-		WithArgs(RealNamePass, int64(1000), "admin", int64(88), RealNamePending).
+	mock.ExpectExec(`UPDATE verifications SET result=\$1, reject_reason=\$2, operator_account_id=\$3, operator_name=\$4, verified_at=now\(\) WHERE subject_type='customer' AND subject_id=\$5 AND result=\$6`).
+		WithArgs(RealNamePass, "", int64(1000), "admin", int64(88), RealNamePending).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	// PASS 同步 customers.real_name_status=VERIFIED
 	mock.ExpectExec(`UPDATE customers SET real_name_status='VERIFIED' WHERE id=\$1`).
 		WithArgs(int64(88)).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	s := NewPGStore(mock)
-	if err := s.Verify(context.Background(), 88, RealNamePass, "admin", 1000); err != nil {
+	if err := s.Verify(context.Background(), 88, RealNamePass, "", "admin", 1000); err != nil {
 		t.Fatalf("Verify: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

@@ -102,12 +102,12 @@ func registerCustomerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 			return
 		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		if err := a.CustomerRealName.Verify(c.Request.Context(), customerID, req.Result, claims.Username, claims.AccountID); err != nil {
+		if err := a.CustomerRealName.Verify(c.Request.Context(), customerID, req.Result, req.Reason, claims.Username, claims.AccountID); err != nil {
 			respondErr(c, err)
 			return
 		}
 		httpx.RecordAudit(a, c, "customer_realname.verify", "customer_realname", c.Param("id"),
-			gin.H{"result": req.Result})
+			gin.H{"result": req.Result, "reason": req.Reason})
 		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
 	})
 }

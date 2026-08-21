@@ -15,11 +15,11 @@ func TestPGStore_ListVerifications(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, subject_id, method, verified_at, result, COALESCE\(operator_account_id, 0\), COALESCE\(operator_name, ''\)`).
+	mock.ExpectQuery(`SELECT id, subject_id, method, verified_at, result, reject_reason, COALESCE\(operator_account_id, 0\), COALESCE\(operator_name, ''\)`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{
-			"id", "customer_id", "method", "verified_at", "result", "operator_account_id", "operator_name",
-		}).AddRow(int64(1), int64(1), "人脸", fixedTime, "PASS", int64(3), "张三"))
+			"id", "customer_id", "method", "verified_at", "result", "reject_reason", "operator_account_id", "operator_name",
+		}).AddRow(int64(1), int64(1), "人脸", fixedTime, "PASS", "", int64(3), "张三"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListVerifications(context.Background(), 1)

@@ -189,7 +189,7 @@ func (f *fakeRealName) SubmitRealName(context.Context, customer.CustomerRealName
 func (f *fakeRealName) GetLatest(context.Context, int64) (*customer.CustomerRealNameVerification, error) {
 	return nil, customer.ErrRealNameNotFound
 }
-func (f *fakeRealName) Verify(context.Context, int64, string, string, int64) error {
+func (f *fakeRealName) Verify(context.Context, int64, string, string, string, int64) error {
 	return nil
 }
 
@@ -314,5 +314,42 @@ func TestPortal_PasswordLogin(t *testing.T) {
 		`{"phone":"13900005678","password":"wrong-pass-99"}`, "")
 	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeUnauthorized) {
 		t.Fatalf("bad password resp=%s", w.Body.String())
+	}
+}
+
+// TestPortal_VerifySubmitFlow 实名分步流程:发码到绑定手机 → 提交(验证码+证件附件) → 状态含脱敏手机号。
+// memory 门户发码恒为 123456;错码不落库不消费,正码可复用重发后的新码。
+func TestPortal_VerifySubmitFlow(t *testing.T) {
+	cust := userPortalCust()
+	r, mgr, _ := newUserPortalRouter(cust, nil, nil)
+	tok, _ := signCustomerToken(mgr, 7, "13800001234")
+
+	w := userPortalDo(r, http.MethodPost, "/api/user/v1/auth/verify/sms-code", ``, tok)
+	if code, data := userPortalCode(t, w); code != 0 || data["phoneMasked"] != "138****1234" {
+		t.Fatalf("sms-code resp=%s", w.Body.String())
+	}
+	// 缺验证码/缺证件附件 → 参数错误
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/verify",
+		`{"name":"王先生","idNo":"110101199001011234"}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeInvalidParam) {
+		t.Fatalf("missing fields resp=%s", w.Body.String())
+	}
+	// 错验证码 → 40100
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/verify",
+		`{"name":"王先生","idNo":"110101199001011234","smsCode":"000000","idCardFrontId":1,"idCardBackId":2}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeUnauthorized) {
+		t.Fatalf("bad code resp=%s", w.Body.String())
+	}
+	// 正码提交成功
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/auth/verify",
+		`{"name":"王先生","idNo":"110101199001011234","smsCode":"123456","idCardFrontId":1,"idCardBackId":2}`, tok)
+	if code, data := userPortalCode(t, w); code != 0 || data["ok"] != true {
+		t.Fatalf("submit resp=%s", w.Body.String())
+	}
+	// 状态查询带脱敏手机号与最新结论字段
+	w = userPortalDo(r, http.MethodGet, "/api/user/v1/auth/verify", "", tok)
+	if code, data := userPortalCode(t, w); code != 0 || data["phoneMasked"] != "138****1234" ||
+		data["latestResult"] == nil || data["rejectReason"] == nil {
+		t.Fatalf("status resp=%s", w.Body.String())
 	}
 }

@@ -60,7 +60,7 @@ func (f *fakeCustOnboard) SubmitRealName(_ context.Context, v customer.CustomerR
 func (f *fakeCustOnboard) GetLatest(_ context.Context, _ int64) (*customer.CustomerRealNameVerification, error) {
 	return f.latest, nil
 }
-func (f *fakeCustOnboard) Verify(_ context.Context, id int64, result, _ string, _ int64) error {
+func (f *fakeCustOnboard) Verify(_ context.Context, id int64, result, reason, _ string, _ int64) error {
 	f.rnVerify = append(f.rnVerify, customer.CustomerRealNameVerification{CustomerID: id, Result: result})
 	return nil
 }

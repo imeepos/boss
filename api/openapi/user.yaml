@@ -36,6 +36,7 @@ paths:
   /auth/reset-password: { $ref: './user/auth.yaml#/paths/~1auth~1reset-password' }
   /auth/logout: { $ref: './user/auth.yaml#/paths/~1auth~1logout' }
   /auth/verify: { $ref: './user/auth.yaml#/paths/~1auth~1verify' }
+  /auth/verify/sms-code: { $ref: './user/auth.yaml#/paths/~1auth~1verify~1sms-code' }
   # ---------- Profile ----------
   /profile: { $ref: './user/profile.yaml#/paths/~1profile' }
   /profile/security: { $ref: './user/profile.yaml#/paths/~1profile~1security' }

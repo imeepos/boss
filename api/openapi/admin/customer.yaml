@@ -81,6 +81,7 @@ paths:
               required: [result]
               properties:
                 result: { type: string, enum: [PASS, FAIL] }
+                reason: { type: string, description: 驳回原因(FAIL 时落 verifications.reject_reason,用户端驳回页展示) }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 

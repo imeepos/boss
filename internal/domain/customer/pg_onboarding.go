@@ -140,9 +140,11 @@ UPDATE customer_registrations
 func (s *PGStore) SubmitRealName(ctx context.Context, v CustomerRealNameVerification) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-INSERT INTO verifications(subject_type, subject_id, method, real_name, id_card_no, result)
-VALUES('customer',$1,$2,$3,$4,$5) RETURNING id`,
-		v.CustomerID, v.Method, v.RealName, v.IDCardNo, v.Result).Scan(&id)
+INSERT INTO verifications(subject_type, subject_id, method, real_name, id_card_no, result,
+                          id_card_front_id, id_card_back_id)
+VALUES('customer',$1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		v.CustomerID, v.Method, v.RealName, v.IDCardNo, v.Result,
+		v.IDCardFrontID, v.IDCardBackID).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("customer: submit real name: %w", err)
 	}
@@ -152,7 +154,8 @@ VALUES('customer',$1,$2,$3,$4,$5) RETURNING id`,
 // GetLatest 取客户最新实名核验记录。
 func (s *PGStore) GetLatest(ctx context.Context, customerID int64) (*CustomerRealNameVerification, error) {
 	row := s.db.QueryRow(ctx, `
-SELECT id, subject_id, method, real_name, id_card_no, result, verified_at, operator_account_id, operator_name
+SELECT id, subject_id, method, real_name, id_card_no, result, reject_reason,
+       id_card_front_id, id_card_back_id, verified_at, operator_account_id, operator_name
  FROM verifications
  WHERE subject_type = 'customer' AND subject_id = $1
  ORDER BY verified_at DESC
@@ -161,7 +164,8 @@ SELECT id, subject_id, method, real_name, id_card_no, result, verified_at, opera
 	var op pgtype.Int8
 	var opName pgtype.Text
 	if err := row.Scan(&v.ID, &v.CustomerID, &v.Method, &v.RealName, &v.IDCardNo,
-		&v.Result, &v.VerifiedAt, &op, &opName); err != nil {
+		&v.Result, &v.RejectReason, &v.IDCardFrontID, &v.IDCardBackID,
+		&v.VerifiedAt, &op, &opName); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrRealNameNotFound
 		}
@@ -176,14 +180,14 @@ SELECT id, subject_id, method, real_name, id_card_no, result, verified_at, opera
 	return &v, nil
 }
 
-// Verify 后台核验:仅作用于 PENDING 记录;PASS 同步 customers.real_name_status=VERIFIED。
+// Verify 后台核验:仅作用于 PENDING 记录;PASS 同步 customers.real_name_status=VERIFIED,FAIL 记驳回原因。
 // 采用原子更新(受影响行>0),避免并发双重通过。
-func (s *PGStore) Verify(ctx context.Context, customerID int64, result, operatorName string, operatorAccountID int64) error {
+func (s *PGStore) Verify(ctx context.Context, customerID int64, result, reason, operatorName string, operatorAccountID int64) error {
 	res, err := s.db.Exec(ctx, `
 UPDATE verifications
- SET result=$1, operator_account_id=$2, operator_name=$3, verified_at=now()
- WHERE subject_type='customer' AND subject_id=$4 AND result=$5`,
-		result, operatorAccountID, operatorName, customerID, RealNamePending)
+ SET result=$1, reject_reason=$2, operator_account_id=$3, operator_name=$4, verified_at=now()
+ WHERE subject_type='customer' AND subject_id=$5 AND result=$6`,
+		result, reason, operatorAccountID, operatorName, customerID, RealNamePending)
 	if err != nil {
 		return fmt.Errorf("customer: verify real name: %w", err)
 	}

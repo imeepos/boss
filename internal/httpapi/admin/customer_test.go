@@ -58,7 +58,7 @@ func (f *fakeRealName) SubmitRealName(context.Context, customer.CustomerRealName
 func (f *fakeRealName) GetLatest(context.Context, int64) (*customer.CustomerRealNameVerification, error) {
 	return nil, customer.ErrRealNameNotFound
 }
-func (f *fakeRealName) Verify(context.Context, int64, string, string, int64) error {
+func (f *fakeRealName) Verify(context.Context, int64, string, string, string, int64) error {
 	return nil
 }
 

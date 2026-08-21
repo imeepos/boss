@@ -12,6 +12,7 @@ var userRoutes = []routeEntry{
 	{"POST", "/auth/logout", "退出登录"},
 	{"GET", "/auth/verify", "实名认证状态与核验记录"},
 	{"POST", "/auth/verify", "发起(重新)实名核验(落 PENDING;阿里云二要素通道启用时即时自动核验)"},
+	{"POST", "/auth/verify/sms-code", "给当前客户绑定手机号发实名验证码(scene=verify)"},
 	{"GET", "/bills", "我的账单列表"},
 	{"GET", "/bills/:billNo", "账单明细"},
 	{"POST", "/payments", "发起缴费(生成支付单)"},

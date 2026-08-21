@@ -58,6 +58,10 @@ components:
         status: { type: string, enum: [VERIFIED, PENDING] }
         nameMasked: { type: string }
         idNoMasked: { type: string }
+        phoneMasked: { type: string, example: '138****1234' }
+        latestResult: { type: string, enum: [PASS, FAIL, PENDING, ''], description: 最新一条核验记录结论,空=从未提交 }
+        submitTime: { type: string, description: 最新提交时间 }
+        rejectReason: { type: string, description: 最近一次 FAIL 的驳回原因 }
         verifyAt: { type: string }
         records:
           type: array
@@ -67,13 +71,18 @@ components:
               method: { type: string }
               time: { type: string }
               result: { type: string, enum: [PASS, FAIL, PENDING] }
+              reason: { type: string, description: FAIL 时的驳回原因 }
 
     VerifySubmit:
       type: object
+      required: [name, idNo, smsCode, idCardFrontId, idCardBackId]
       properties:
-        idType: { type: string }
+        idType: { type: string, example: '身份证' }
         name: { type: string }
         idNo: { type: string }
+        smsCode: { type: string, description: 发送到绑定手机号的验证码(/auth/verify/sms-code,scene=verify) }
+        idCardFrontId: { type: integer, format: int64, description: 人像面附件 id(/attachments/upload 返回) }
+        idCardBackId: { type: integer, format: int64, description: 国徽面附件 id }
 
     NotifySettings:
       type: object

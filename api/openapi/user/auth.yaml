@@ -189,3 +189,24 @@ paths:
                       ok: { type: boolean, example: true }
                       result: { type: string, enum: [PASS, FAIL, PENDING] }
 
+  /auth/verify/sms-code:
+    post:
+      tags: [Auth]
+      summary: 给当前客户绑定手机号发实名验证码(scene=verify)
+      description: 60s 冷却同 phone+scene;验证码 5 分钟一次性,提交 /auth/verify 时消费。
+      operationId: sendVerifySmsCode
+      responses:
+        '200':
+          description: 已发送(通道未配置时仅落库)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean, example: true }
+                      phoneMasked: { type: string, example: '138****1234' }
+

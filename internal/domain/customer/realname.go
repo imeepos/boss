@@ -12,6 +12,7 @@ type RealNameVerification struct {
 	Method            string    `json:"method"` // 人脸/证件OCR/人工/第三方
 	VerifiedAt        time.Time `json:"verifiedAt"`
 	Result            string    `json:"result"`            // PASS通过/FAIL不通过
+	RejectReason      string    `json:"rejectReason"`      // FAIL 时的驳回原因
 	OperatorAccountID int64     `json:"operatorAccountId"` // 0=空
 	OperatorName      string    `json:"operatorName"`      // 操作人姓名快照
 }
@@ -24,6 +25,6 @@ type RealNameService interface {
 	SubmitRealName(ctx context.Context, v CustomerRealNameVerification) (int64, error)
 	// GetLatest 取客户当前实名核验(最新一条)。
 	GetLatest(ctx context.Context, customerID int64) (*CustomerRealNameVerification, error)
-	// Verify 后台核验:结果 PENDING→PASS/FAIL(幂等仅作用于 PENDING;PASS 同步 customers.real_name_status)。
-	Verify(ctx context.Context, customerID int64, result, operatorName string, operatorAccountID int64) error
+	// Verify 后台核验:结果 PENDING→PASS/FAIL(幂等仅作用于 PENDING;PASS 同步 customers.real_name_status;FAIL 记 reason)。
+	Verify(ctx context.Context, customerID int64, result, reason, operatorName string, operatorAccountID int64) error
 }

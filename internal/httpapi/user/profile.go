@@ -35,43 +35,88 @@ func portalMaskIDNo(s string) string {
 	return s[:3] + strings.Repeat("*", len(s)-7) + s[len(s)-4:]
 }
 
-// portalVerifyStatus GET /auth/verify:实名状态 + 核验记录(RealName 域, terms.md real_name_status)。
+// portalVerifyStatus GET /auth/verify:实名状态 + 最新结论 + 核验记录(RealName 域, terms.md real_name_status)。
+// latestResult/submitTime/rejectReason 供端上渲染 审核中/已认证/驳回 三态;records 含驳回原因。
 func portalVerifyStatus(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
 		records, _ := a.CustomerRealName.ListVerifications(c.Request.Context(), cid)
 		items := make([]gin.H, 0, len(records))
+		latest := gin.H{"latestResult": "", "submitTime": "", "rejectReason": ""}
 		for _, r := range records {
-			items = append(items, gin.H{"method": r.Method, "time": r.VerifiedAt, "result": r.Result})
+			items = append(items, gin.H{"method": r.Method, "time": r.VerifiedAt, "result": r.Result, "reason": r.RejectReason})
+			latest["latestResult"] = r.Result
+			latest["submitTime"] = r.VerifiedAt
+			if r.Result == customer.RealNameFail {
+				latest["rejectReason"] = r.RejectReason
+			}
 		}
 		status := "PENDING"
 		payload := gin.H{"status": status, "records": items}
+		for k, v := range latest {
+			payload[k] = v
+		}
 		if v, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
 			status = v.RealNameStatus
 			payload["nameMasked"] = portalMaskName(v.Name)
 			payload["idNoMasked"] = portalMaskIDNo(v.IdNo)
+			payload["phoneMasked"] = portalMaskPhone(v.Phone)
 		}
 		payload["status"] = status
 		respond(c, apitypes.CodeOK, payload)
 	}
 }
 
-// portalVerifySubmit POST /auth/verify:提交实名资料,落 PENDING;
-// 二要素通道启用时即时自动核验(PASS/FAIL),否则等后台人工核验。
+// portalVerifySmsCode POST /auth/verify/sms-code:给当前客户绑定手机号发实名验证码(scene=verify)。
+func portalVerifySmsCode(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		v, err := a.Customer.Get(c.Request.Context(), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if err := a.Portal.IssueSms(c.Request.Context(), v.Phone, "verify"); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "phoneMasked": portalMaskPhone(v.Phone)})
+	}
+}
+
+// portalVerifySubmit POST /auth/verify:短信验证码(scene=verify) + 证件附件(正/反面) + 实名资料,
+// 落 PENDING;二要素通道启用时即时自动核验(PASS/FAIL),否则等后台人工核验。
 func portalVerifySubmit(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
 		var req struct {
-			IdType string `json:"idType"`
-			Name   string `json:"name" binding:"required"`
-			IdNo   string `json:"idNo" binding:"required"`
+			IdType        string `json:"idType"`
+			Name          string `json:"name" binding:"required"`
+			IdNo          string `json:"idNo" binding:"required"`
+			SmsCode       string `json:"smsCode" binding:"required"`
+			IdCardFrontID int64  `json:"idCardFrontId" binding:"required"`
+			IdCardBackID  int64  `json:"idCardBackId" binding:"required"`
 		}
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		_, err := a.CustomerRealName.SubmitRealName(c.Request.Context(), customer.CustomerRealNameVerification{
+		v, err := a.Customer.Get(c.Request.Context(), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		ok, err := a.Portal.ConsumeSms(c.Request.Context(), v.Phone, "verify", req.SmsCode)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !ok {
+			respond(c, apitypes.CodeUnauthorized, nil)
+			return
+		}
+		_, err = a.CustomerRealName.SubmitRealName(c.Request.Context(), customer.CustomerRealNameVerification{
 			CustomerID: cid, Method: "自助提交", RealName: req.Name, IDCardNo: req.IdNo,
-			Result: customer.RealNamePending,
+			Result: customer.RealNamePending, IDCardFrontID: req.IdCardFrontID, IDCardBackID: req.IdCardBackID,
 		})
 		if err != nil {
 			respondErr(c, err)

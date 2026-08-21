@@ -25,7 +25,12 @@ func (a *Application) AutoVerifyRealName(ctx context.Context, customerID int64, 
 		log.Printf("realid: auto verify failed customer=%d: %v", customerID, err)
 		return customer.RealNamePending
 	}
-	if err := a.CustomerRealName.Verify(ctx, customerID, decision, RealIDAutoOperator, 0); err != nil {
+	// 二要素 FAIL 即"姓名与证件号不一致",写入驳回原因供用户端驳回页展示。
+	reason := ""
+	if decision == customer.RealNameFail {
+		reason = "姓名与证件号码不一致,请核对后重新提交"
+	}
+	if err := a.CustomerRealName.Verify(ctx, customerID, decision, reason, RealIDAutoOperator, 0); err != nil {
 		log.Printf("realid: persist %s failed customer=%d: %v", decision, customerID, err)
 		return customer.RealNamePending
 	}
