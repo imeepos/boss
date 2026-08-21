@@ -85,11 +85,6 @@ boss/
 │   ├── plan/                   # 计划与路线图
 │   ├── notes/                  # 决策记录(adopted/rejected)
 │   └── ...                     # 设计文档、评审、复盘
-├── web/                        # Web 前端应用
-│   ├── admin/                  # 管理端(React)
-│   ├── desktop/                # 管理端桌面客户端(Tauri)
-│   └── shared/                 # Web 共享层
-│       └── server-ts/          # TS 实体镜像(枚举/实体类型)
 ├── mobile/                     # 移动端应用
 │   ├── worker/                 # 师傅端独立 app
 │   │   ├── android/            # Android app
