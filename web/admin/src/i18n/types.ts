@@ -173,33 +173,6 @@ export interface Translations {
       deviceCode: string
       deviceKind: string
     }
-    odn: {
-      title: string
-      subtitle: string
-      tabs: { grids: string; facilities: string; sites: string; devices: string }
-      add: string
-      cancel: string
-      save: string
-      saving: string
-      loadFail: string
-      saveFail: string
-      empty: string
-      retire: string
-      warn: string
-      gridCode: string
-      name: string
-      coverage: string
-      usage: string
-      status: string
-      actions: string
-      code: string
-      kind: string
-      nodeCode: string
-      siteNo: string
-      parentId: string
-      deviceCode: string
-      deviceKind: string
-    }
     importer: {
       title: string
       addrTitle: string
@@ -716,6 +689,7 @@ export interface Translations {
       actionFail: string
       checkTitle: string
       runCheck: string
+      continueReserve: string
       checkPass: string
       checkFail: string
       failureHelp: string

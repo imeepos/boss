@@ -216,12 +216,6 @@ const msMY: Translations = {
       add: 'Tambah', cancel: 'Batal', save: 'Simpan', saving: 'Menyimpan…', loadFail: 'Gagal memuatkan', saveFail: 'Gagal menyimpan', empty: 'Tiada data', retire: 'Lupus', warn: 'Amaran kapasiti',
       gridCode: 'Kod grid', name: 'Nama', coverage: 'Liputan', usage: 'Penggunaan', status: 'Status', actions: 'Tindakan', code: 'Kod', kind: 'Jenis', nodeCode: 'NodeCode', siteNo: 'Nombor tapak', parentId: 'ID induk', deviceCode: 'Kod peranti', deviceKind: 'Jenis peranti',
     },
-    odn: {
-      title: 'Rangkaian Pasif ODN', subtitle: 'Grid · Infrastruktur · Tapak & Peranti Teras',
-      tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras' },
-      add: 'Tambah', cancel: 'Batal', save: 'Simpan', saving: 'Menyimpan…', loadFail: 'Gagal memuatkan', saveFail: 'Gagal menyimpan', empty: 'Tiada data', retire: 'Lupus', warn: 'Amaran kapasiti',
-      gridCode: 'Kod grid', name: 'Nama', coverage: 'Liputan', usage: 'Penggunaan', status: 'Status', actions: 'Tindakan', code: 'Kod', kind: 'Jenis', nodeCode: 'NodeCode', siteNo: 'Nombor tapak', parentId: 'ID induk', deviceCode: 'Kod peranti', deviceKind: 'Jenis peranti',
-    },
     importer: {
       title: 'Pusat Import Data',
       addrTitle: 'Import Hierarki Alamat',
@@ -736,7 +730,7 @@ const msMY: Translations = {
       actCancel: 'Batal',
       confirmCancel: 'Batalkan pesanan {no}? Tidak boleh dikembalikan',
       actionFail: 'Tindakan gagal',
-      checkTitle: 'Semakan Sumber', runCheck: 'Jalankan Semakan', checkPass: 'Semakan lulus: {count} port kosong ditemui', checkFail: 'Semakan gagal: tiada port kosong di alamat sasaran', failureHelp: 'Pesanan kekal di peringkat 2. Mulakan peluasan atau pemindahan rentas wilayah.',
+      checkTitle: 'Semakan Sumber', runCheck: 'Jalankan Semakan', continueReserve: 'Teruskan Tempahan', checkPass: 'Semakan lulus: {count} port kosong ditemui', checkFail: 'Semakan gagal: tiada port kosong di alamat sasaran', failureHelp: 'Pesanan kekal di peringkat 2. Mulakan peluasan atau pemindahan rentas wilayah.',
       totalPorts: 'Jumlah', idlePorts: 'Kosong', reservedPorts: 'Ditempah', usedPorts: 'Digunakan', device: 'Peranti', deviceStatus: 'Status Peranti', idlePortCodes: 'Port Tersedia', expand: 'Mulakan Peluasan', transfer: 'Pemindahan Rentas Wilayah',
       trackTitle: 'Garis Masa Peringkat Pesanan',
       timelineColumns: ['Peringkat', 'Selesai Pada', 'Tempoh', 'Cuba Semula', 'Keputusan'],

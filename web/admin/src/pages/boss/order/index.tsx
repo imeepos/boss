@@ -67,7 +67,16 @@ export default function OrderPage() {
   }
 
   // advance 按当前环节推进:2→预占 3→收费(自动段 5-8);cancel 需二次确认。
-  const advance = async (row: OrderListRow, action: 'check-resource' | 'reserve' | 'charge' | 'cancel') => {
+  const reserveFromCheck = () => {
+    if (!check || busy) return
+    setBusy(true)
+    apiFetch(`/orders/${encodeURIComponent(check.row.orderNo)}/reserve`, { method: 'POST' })
+      .then(() => { setCheck(null); load() })
+      .catch((e) => setCheck((x) => x ? { ...x, message: e instanceof Error ? e.message : o.actionFail } : x))
+      .finally(() => setBusy(false))
+  }
+
+  const advance = async (row: OrderListRow, action: 'reserve' | 'charge' | 'cancel') => {
     if (busy) return
     if (action === 'cancel' && !(await confirmDialog(o.confirmCancel.replace('{no}', row.orderNo), { danger: true }))) return
     setBusy(true)
@@ -142,6 +151,7 @@ export default function OrderPage() {
           footer={<div className="flex gap-2">
             {check.result === false && <><button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => nav('/oss/expand')}>{o.expand}</button><button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => nav('/oss/transfer')}>{o.transfer}</button></>}
             <button className="h-8 rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)]" disabled={busy || !check.detail || check.result !== null} onClick={runCheck}>{o.runCheck}</button>
+            {check.result === true && <button className="h-8 rounded-sm border-none bg-[var(--color-success)] px-4 text-[13px] text-white" disabled={busy} onClick={reserveFromCheck}>{o.continueReserve}</button>}
             <button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => setCheck(null)}>{t.pages.company.cancel}</button>
           </div>}>
           <div className="flex flex-col gap-4 p-4 text-[13px]">

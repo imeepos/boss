@@ -216,12 +216,6 @@ const zhCN: Translations = {
       add: '新增', cancel: '取消', save: '保存', saving: '保存中…', loadFail: '加载失败', saveFail: '保存失败', empty: '暂无数据', retire: '退役', warn: '容量预警',
       gridCode: '网格码', name: '名称', coverage: '覆盖区域', usage: '占用', status: '状态', actions: '操作', code: '编码', kind: '类型', nodeCode: 'NodeCode', siteNo: '局点序号', parentId: '上级 ID', deviceCode: '设备编码', deviceKind: '设备类型',
     },
-    odn: {
-      title: 'ODN 无源网络', subtitle: '网格分区 · 基础设施 · 局点与核心链路设备',
-      tabs: { grids: '网格分区', facilities: '基础设施', sites: '局点', devices: '核心设备' },
-      add: '新增', cancel: '取消', save: '保存', saving: '保存中…', loadFail: '加载失败', saveFail: '保存失败', empty: '暂无数据', retire: '退役', warn: '容量预警',
-      gridCode: '网格码', name: '名称', coverage: '覆盖区域', usage: '占用', status: '状态', actions: '操作', code: '编码', kind: '类型', nodeCode: 'NodeCode', siteNo: '局点序号', parentId: '上级 ID', deviceCode: '设备编码', deviceKind: '设备类型',
-    },
     importer: {
       title: '数据导入中心',
       addrTitle: '地址层级导入',
@@ -736,7 +730,7 @@ const zhCN: Translations = {
       actCancel: '取消',
       confirmCancel: '确认取消订单 {no}?取消后不可恢复',
       actionFail: '操作失败',
-      checkTitle: '资源核查', runCheck: '开始核查', checkPass: '核查通过，发现 {count} 个空闲端口', checkFail: '核查未通过：目标地址暂无空闲端口', failureHelp: '订单将停留在环节2等待，可发起扩容或跨区调配。',
+      checkTitle: '资源核查', runCheck: '开始核查', continueReserve: '继续预占', checkPass: '核查通过，发现 {count} 个空闲端口', checkFail: '核查未通过：目标地址暂无空闲端口', failureHelp: '订单将停留在环节2等待，可发起扩容或跨区调配。',
       totalPorts: '总端口', idlePorts: '空闲', reservedPorts: '已预占', usedPorts: '已使用', device: '设备', deviceStatus: '设备状态', idlePortCodes: '可用端口', expand: '发起扩容', transfer: '跨区调配',
       trackTitle: '订单环节时间轴',
       timelineColumns: ['环节', '完成时间', '耗时', '重试', '结果'],

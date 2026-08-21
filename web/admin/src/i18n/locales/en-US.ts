@@ -216,12 +216,6 @@ const enUS: Translations = {
       add: 'Add', cancel: 'Cancel', save: 'Save', saving: 'Saving…', loadFail: 'Load failed', saveFail: 'Save failed', empty: 'No data', retire: 'Retire', warn: 'Capacity warning',
       gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type',
     },
-    odn: {
-      title: 'ODN Passive Network', subtitle: 'Grids · Infrastructure · Sites & Core Devices',
-      tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices' },
-      add: 'Add', cancel: 'Cancel', save: 'Save', saving: 'Saving…', loadFail: 'Load failed', saveFail: 'Save failed', empty: 'No data', retire: 'Retire', warn: 'Capacity warning',
-      gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type',
-    },
     importer: {
       title: 'Data Import Center',
       addrTitle: 'Address Hierarchy Import',
@@ -736,7 +730,7 @@ const enUS: Translations = {
       actCancel: 'Cancel',
       confirmCancel: 'Cancel order {no}? This cannot be undone',
       actionFail: 'Action failed',
-      checkTitle: 'Resource Check', runCheck: 'Run Check', checkPass: 'Check passed: {count} idle ports found', checkFail: 'Check failed: no idle port at the target address', failureHelp: 'The order stays at stage 2. Start an expansion or cross-region transfer.',
+      checkTitle: 'Resource Check', runCheck: 'Run Check', continueReserve: 'Continue Reservation', checkPass: 'Check passed: {count} idle ports found', checkFail: 'Check failed: no idle port at the target address', failureHelp: 'The order stays at stage 2. Start an expansion or cross-region transfer.',
       totalPorts: 'Total', idlePorts: 'Idle', reservedPorts: 'Reserved', usedPorts: 'Used', device: 'Device', deviceStatus: 'Device Status', idlePortCodes: 'Available Ports', expand: 'Start Expansion', transfer: 'Cross-region Transfer',
       trackTitle: 'Order Stage Timeline',
       timelineColumns: ['Stage', 'Finished At', 'Duration', 'Retries', 'Result'],
