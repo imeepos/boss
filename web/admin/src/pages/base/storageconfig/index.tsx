@@ -8,6 +8,10 @@ import { Card } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Switch } from '../../../components/ui/switch'
+import {
+  Dialog, DialogTrigger, DialogContent, DialogHeader,
+  DialogFooter, DialogTitle, DialogDescription, DialogClose,
+} from '../../../components/ui/dialog'
 
 type Field = { value: string; hasValue: boolean }
 type Fields = Record<string, Field>
@@ -57,6 +61,23 @@ export default function StorageConfigPage() {
     finally { setSaving(false) }
   }
 
+  // 轮换密码
+  const [rotateOpen, setRotateOpen] = useState(false)
+  const [newSecret, setNewSecret] = useState('')
+  const [rotating, setRotating] = useState(false)
+  const doRotate = async () => {
+    if (rotating || !newSecret) return
+    setRotating(true)
+    try {
+      await apiFetch('/storage-config/rotate-secret', { method: 'POST', body: { secret: newSecret } })
+      toast.success(a.rotated)
+      setRotateOpen(false)
+      setNewSecret('')
+      load()
+    } catch (e) { toast.error(e instanceof Error ? e.message : a.rotateFail) }
+    finally { setRotating(false) }
+  }
+
   if (error) return <div><PageHead title={a.title} desc={a.desc} /><ErrorBanner message={error} /><div className="mt-3"><ToolbarButton onClick={load}>{a.retry}</ToolbarButton></div></div>
 
   return (
@@ -77,7 +98,36 @@ export default function StorageConfigPage() {
           <FormField label={a.secretKey}><SecretInput value={draft['minio.secretKey'] ?? ''} hasValue={!!fields['minio.secretKey']?.hasValue} onChange={(v) => set('minio.secretKey', v)} /></FormField>
           <FormField label={a.useSSL}><span className="flex items-center gap-2"><Switch checked={useSSL} onCheckedChange={(v) => set('minio.useSSL', String(v))} aria-label={a.useSSL} /><span className="text-sm">{useSSL ? a.enabled : a.disabled}</span></span></FormField>
         </div>
-        <div className="mt-5 flex justify-end"><ToolbarButton primary disabled={saving} onClick={save}>{saving ? a.saving : a.save}</ToolbarButton></div>
+        <div className="mt-5 flex items-center justify-between">
+          <Dialog open={rotateOpen} onOpenChange={setRotateOpen}>
+            <DialogTrigger asChild>
+              <ToolbarButton>{a.rotateSecret}</ToolbarButton>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{a.rotateSecret}</DialogTitle>
+                <DialogDescription>{a.rotateSecretDesc}</DialogDescription>
+              </DialogHeader>
+              <FormField label={a.newSecret}>
+                <Input
+                  type="password"
+                  value={newSecret}
+                  onChange={(e) => setNewSecret(e.target.value)}
+                  placeholder={a.newSecretPlaceholder}
+                  className="w-full"
+                  autoFocus
+                />
+              </FormField>
+              <DialogFooter>
+                <DialogClose asChild><ToolbarButton>{a.cancel}</ToolbarButton></DialogClose>
+                <ToolbarButton primary disabled={rotating || newSecret.length < 8} onClick={doRotate}>
+                  {rotating ? a.rotating : a.rotate}
+                </ToolbarButton>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <ToolbarButton primary disabled={saving} onClick={save}>{saving ? a.saving : a.save}</ToolbarButton>
+        </div>
       </Card>
     </div>
   )

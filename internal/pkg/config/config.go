@@ -20,9 +20,13 @@ type Config struct {
 	Redis    struct{ Addrs []string }
 	Kafka    struct{ Brokers []string }
 	Events   struct{ Topic string } // 状态变更事件 topic
-	MinIO    struct {
+	MinIO struct {
 		Endpoint, AccessKey, SecretKey, Bucket string
 		UseSSL                                 bool
+	}
+	HostCtl struct {
+		URL    string // http://172.26.0.1:39093 (docker bridge gateway)
+		HMACKey string // 预共享 HMAC 密钥
 	}
 	Temporal struct{ Host string }
 
@@ -171,6 +175,8 @@ func Load() *Config {
 	c.MinIO.SecretKey = getenv("BOSS_MINIO_SECRET_KEY", "boss12345")
 	c.MinIO.Bucket = getenv("BOSS_MINIO_BUCKET", "boss-attachments")
 	c.MinIO.UseSSL = getenv("BOSS_MINIO_USE_SSL", "false") == "true"
+	c.HostCtl.URL = getenv("BOSS_HOSTCTL_URL", "http://172.26.0.1:39093")
+	c.HostCtl.HMACKey = getenv("BOSS_HOSTCTL_HMAC_KEY", "")
 	return c
 }
 

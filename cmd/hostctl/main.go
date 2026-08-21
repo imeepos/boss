@@ -49,7 +49,9 @@ func main() {
 }
 
 func loadConfig() *config {
-	listen := flag.String("listen", "127.0.0.1:39092", "bind address")
+	// 0.0.0.0 让 docker bridge 内的 boss-server 也能访问;
+	// HMAC 鉴权保护写接口, healthz 无需认证。
+	listen := flag.String("listen", "0.0.0.0:39093", "bind address")
 	secret := flag.String("secret-file", "/etc/boss-host-ctl/hmac.key", "HMAC key file (0600)")
 	cdir := flag.String("compose-dir", "/home/imeepos/boss/deployments", "compose 工作目录")
 	cfile := flag.String("compose-file", "docker-compose.infra.yml,docker-compose.102.yml", "compose 文件，逗号分隔")

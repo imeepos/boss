@@ -1327,6 +1327,15 @@ export interface Translations {
       saveFail: string
       loadFail: string
       retry: string
+      rotateSecret: string
+      rotateSecretDesc: string
+      newSecret: string
+      newSecretPlaceholder: string
+      rotate: string
+      rotating: string
+      rotated: string
+      rotateFail: string
+      cancel: string
     }
     realidconfig: {
       title: string

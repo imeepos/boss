@@ -31,6 +31,7 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
 	"github.com/ymm-001/boss/internal/pkg/events"
+	"github.com/ymm-001/boss/internal/pkg/hostctl"
 	"github.com/ymm-001/boss/internal/pkg/realid"
 	"github.com/ymm-001/boss/internal/pkg/sms"
 	"github.com/ymm-001/boss/internal/pkg/stripe"
@@ -99,6 +100,9 @@ type Application struct {
 
 	// Attachment 附件上传(三端共用,对象入 MinIO,元数据入 attachments 表)。
 	Attachment *attachment.Service
+
+	// HostCtl 宿主机 sidecar 客户端(轮换 MinIO 密钥等特权操作);nil=未配置。
+	HostCtl *hostctl.Client
 
 	// AaaAuth 授权查询(授权器,权威状态=lo_accounts);Cdr 话单投递(PG 落库 + Kafka 双写)。
 	// gRPC aaa/v1 GetAuthorization/EmitCDR 依赖,债务偿还:契约服务可在 cmd/server 内直连。
@@ -249,6 +253,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 	app.Audit = aw
 	app.Attachment.Resolve = minioConfigResolver(app.User, app.Attachment.Conf)
+	if cfg.HostCtl.URL != "" && cfg.HostCtl.HMACKey != "" {
+		app.HostCtl = hostctl.New(cfg.HostCtl.URL, cfg.HostCtl.HMACKey)
+	}
 	wireStripe(app, cfg) // 卡收单通道:密钥齐备才注册(见 wiring_stripe.go)
 
 	// 阶段9:经营分析 + 自动报告。

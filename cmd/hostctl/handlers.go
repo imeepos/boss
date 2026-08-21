@@ -169,9 +169,11 @@ func waitMinioHealthy(ctx context.Context) bool {
 		if ctx.Err() != nil {
 			return false
 		}
-		// UBI Micro 镜像无 curl,改用宿主机 nc 探测端口
-		c := exec.CommandContext(ctx, "nc", "-z", "-w", "1", "127.0.0.1", "29000")
-		if err := c.Run(); err == nil {
+		c := exec.CommandContext(ctx, "curl", "-fsS", "-o", "/dev/null",
+			"-w", "%{http_code}", "--max-time", "2",
+			"http://127.0.0.1:29000/minio/health/live")
+		out, err := c.CombinedOutput()
+		if err == nil && strings.TrimSpace(string(out)) == "200" {
 			return true
 		}
 		time.Sleep(healthPollEvery)
