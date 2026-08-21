@@ -286,6 +286,10 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
                     fontSize = 14.sp, fontWeight = titleWeight, color = titleColor,
                     modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
+                if (tagText.isNotBlank()) {
+                    Spacer(Modifier.width(8.dp))
+                    Tag(tagText, colorOfTag(tagLevel))
+                }
                 Spacer(Modifier.width(8.dp))
                 Text(
                     formatTime(m.optString("createdAt")),
@@ -303,10 +307,6 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
                     fontSize = 12.sp, color = contentColor,
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
-            }
-            if (tagText.isNotBlank()) {
-                Spacer(Modifier.height(8.dp))
-                Tag(tagText, colorOfTag(tagLevel))
             }
         }
     }
