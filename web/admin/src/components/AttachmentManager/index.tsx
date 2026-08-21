@@ -1,10 +1,9 @@
 // 附件管理通用组件:上传(多文件)/查询(关键词+上传者+文件类型+分页)/软删除/选择(复选回调)。
-// 按 MIME/扩展名识别 9 类文件并渲染彩色图标徽章(image/audio/video/pdf/document/spreadsheet/archive/code/other);
-// 客户端按类型过滤(后端契约不动);左侧分类侧栏 + 顶部类型下拉联动;视图切换 UI 占位(数据模型不变)。
+// 本文件只承担状态与编排:头部工具栏 + 侧栏/列表/网格三个子视图;
+// 分类算法在 logic.ts,图标在 FileTypeIcon.tsx,纯视图在 CategorySidebar/ListView/GridView。
 // 嵌入场景由 props 固定上传者(隐藏筛选行);独立使用时暴露完整筛选。
 // 样式:tailwind 原子类 + tokens.css .afti-* 类别色,双主题自动切换;文案走 i18n attachmentManager 块。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { LayoutGrid, List as ListIcon } from 'lucide-react'
 import { useT } from '../../i18n'
 import { ApiError } from '../../api/envelope'
 import {
@@ -14,14 +13,15 @@ import { useConfirm } from '../ConfirmDialog'
 import { Dropdown } from '../Dropdown'
 import { Pagination } from '../Pagination'
 import { ToolbarButton } from '../business/page-head'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
-import { fmtTime } from '../../lib/format'
 import {
-  FILE_CATEGORY_KEYS, classifyAttachment, countByCategory, filterByCategory,
-  fmtBytes, oversizeFiles, toggleSelection, toListQuery,
+  FILE_CATEGORY_KEYS, filterByCategory, oversizeFiles, toggleSelection, toListQuery,
   type FileCategoryKey,
 } from './logic'
-import { FileTypeIcon } from './FileTypeIcon'
+import { CategorySidebar } from './CategorySidebar'
+import { ListView } from './ListView'
+import { GridView } from './GridView'
+import { ViewToggle } from './ViewToggle'
+import { INPUT, CARD } from './styles'
 
 export interface AttachmentManagerProps {
   /** 固定上传者筛选(类型+id 成对传入即锁定);缺省自由筛选。 */
@@ -32,10 +32,6 @@ export interface AttachmentManagerProps {
   selectedIds?: number[]
   onSelectionChange?: (ids: number[]) => void
 }
-
-const CARD = 'border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-const INPUT = 'h-8 w-44 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] placeholder:text-[var(--shell-crumb-text)] focus:border-[var(--shell-input-border-focus)] focus:outline-none'
-const DANGER_BTN = 'h-7 cursor-pointer rounded-sm border-0 bg-transparent px-2 text-xs text-[var(--color-danger)] hover:underline disabled:cursor-not-allowed disabled:opacity-50'
 
 export function AttachmentManager({
   uploaderType, uploaderId, selectable = false, selectedIds = [], onSelectionChange,
@@ -98,7 +94,6 @@ export function AttachmentManager({
     () => filterByCategory(items, categorySel),
     [items, categorySel],
   )
-  const categoryCounts = useMemo(() => countByCategory(items), [items])
   const visibleTotal = categorySel ? visibleItems.length : total
   const pageColSpan = (selectable ? 1 : 0) + (!fixedUploader ? 1 : 0) + 5
 
@@ -154,12 +149,15 @@ export function AttachmentManager({
     }
     onSelectionChange?.([...new Set([...selectedIds, ...visibleItems.map((it) => it.id)])])
   }
+  const selectCategory = (c: FileCategoryKey | '') => {
+    setCategorySel(c)
+    setPage(1)
+  }
 
-  const sidebarItems = FILE_CATEGORY_KEYS
   const categoryOptions = useMemo(() => [
     { value: '', label: t.fileCategory.all },
-    ...sidebarItems.map((k) => ({ value: k, label: t.fileCategory[k] })),
-  ], [t, sidebarItems])
+    ...FILE_CATEGORY_KEYS.map((k) => ({ value: k, label: t.fileCategory[k] })),
+  ], [t])
 
   return (
     <section className={CARD} aria-label={t.title}>
@@ -177,7 +175,7 @@ export function AttachmentManager({
         <Dropdown
           value={categorySel}
           ariaLabel={t.filterByType}
-          onChange={(v) => { setCategorySel(v as FileCategoryKey | ''); setPage(1) }}
+          onChange={(v) => selectCategory(v as FileCategoryKey | '')}
           options={categoryOptions}
         />
         {!fixedUploader && (
@@ -214,24 +212,7 @@ export function AttachmentManager({
             <ToolbarButton onClick={() => void onDeleteSelected()} disabled={busy}>{t.deleteSelected}</ToolbarButton>
           </>
         )}
-        <div className="inline-flex h-8 overflow-hidden rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)]">
-          <button
-            type="button"
-            aria-label={t.colFileName + ' ' + view}
-            className={`inline-flex h-full w-8 items-center justify-center transition-colors ${view === 'list' ? 'bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)]' : 'text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'}`}
-            onClick={() => setView('list')}
-          >
-            <ListIcon className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-label={'grid'}
-            className={`inline-flex h-full w-8 items-center justify-center border-l border-[var(--shell-input-border)] transition-colors ${view === 'grid' ? 'bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)]' : 'text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'}`}
-            onClick={() => setView('grid')}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-        </div>
+        <ViewToggle view={view} onChange={setView} listLabel={t.colFileName} />
         <ToolbarButton onClick={() => fileRef.current?.click()} disabled={busy}>
           {busy ? t.uploading : t.upload}
         </ToolbarButton>
@@ -244,106 +225,32 @@ export function AttachmentManager({
       </header>
 
       <div className="flex min-h-[280px]">
-        {/* 左侧分类侧栏 */}
-        <aside className="hidden w-56 shrink-0 border-r border-[var(--shell-side-border)] bg-[var(--shell-side-bg)] py-2 lg:block">
-          <button
-            type="button"
-            className={`flex w-full items-center gap-2 px-4 py-2 text-left text-[13px] transition-colors ${categorySel === '' ? 'border-l-[3px] border-[var(--shell-nav-line)] bg-[var(--shell-menu-active-bg)] font-semibold text-[var(--shell-menu-active-text)]' : 'text-[var(--shell-menu-text)] hover:bg-[var(--shell-menu-hover-bg)]'}`}
-            onClick={() => { setCategorySel(''); setPage(1) }}
-          >
-            <span className={`afti-image inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm ${categorySel === '' ? 'bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)]' : ''}`}>
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </span>
-            <span className="flex-1">{t.fileCategory.all}</span>
-            <span className={`min-w-6 rounded-sm px-1.5 py-0.5 text-center text-[11px] tabular-nums ${categorySel === '' ? 'bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)]' : 'bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'}`}>{total}</span>
-          </button>
-          {sidebarItems.map((k) => {
-            const count = categoryCounts[k]
-            const active = categorySel === k
-            return (
-              <button
-                key={k}
-                type="button"
-                title={`${t.fileCategory[k]} · ${t.categoryBadgeTip}`}
-                className={`flex w-full items-center gap-2 px-4 py-2 text-left text-[13px] transition-colors ${active ? 'border-l-[3px] border-[var(--shell-nav-line)] bg-[var(--shell-menu-active-bg)] font-semibold text-[var(--shell-menu-active-text)]' : 'text-[var(--shell-menu-text)] hover:bg-[var(--shell-menu-hover-bg)]'}`}
-                onClick={() => { setCategorySel(active ? '' : k); setPage(1) }}
-              >
-                <FileTypeIcon category={k} size={20} />
-                <span className="flex-1">{t.fileCategory[k]}</span>
-                <span className={`min-w-6 rounded-sm px-1.5 py-0.5 text-center text-[11px] tabular-nums ${active ? 'bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)]' : 'bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'}`}>{count}</span>
-              </button>
-            )
-          })}
-        </aside>
+        <CategorySidebar
+          items={items}
+          total={total}
+          selected={categorySel}
+          onSelect={selectCategory}
+          t={t}
+        />
 
         {/* 主区:列表 / 网格 */}
         <div className="min-w-0 flex-1">
           {view === 'list' ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {selectable && (
-                      <TableHead className="w-9">
-                        <input type="checkbox" aria-label={t.title} className="accent-[var(--shell-fab-bg)]" checked={allChecked} onChange={(e) => toggleAll(e.target.checked)} />
-                      </TableHead>
-                    )}
-                    <TableHead>{t.colFileName}</TableHead>
-                    <TableHead>{t.colType}</TableHead>
-                    <TableHead>{t.colSize}</TableHead>
-                    {!fixedUploader && <TableHead>{t.colUploader}</TableHead>}
-                    <TableHead>{t.colTime}</TableHead>
-                    <TableHead className="w-28">{t.colActions}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading && (
-                    <TableRow><TableCell colSpan={pageColSpan} className="py-8 text-center text-[var(--shell-group-title)]">{common.loading}</TableCell></TableRow>
-                  )}
-                  {!loading && visibleItems.length === 0 && (
-                    <TableRow><TableCell colSpan={pageColSpan} className="py-8 text-center text-[var(--shell-group-title)]">{t.empty}</TableCell></TableRow>
-                  )}
-                  {!loading && visibleItems.map((row) => {
-                    const cat = classifyAttachment(row.contentType, row.fileName)
-                    return (
-                      <TableRow key={row.id}>
-                        {selectable && (
-                          <TableCell>
-                            <input
-                              type="checkbox" aria-label={row.fileName}
-                              className="accent-[var(--shell-fab-bg)]"
-                              checked={selectedIds.includes(row.id)}
-                              onChange={(e) => toggleRow(row.id, e.target.checked)}
-                            />
-                          </TableCell>
-                        )}
-                        <TableCell className="max-w-72 text-[var(--shell-heading)]">
-                          <div className="flex items-center gap-2.5">
-                            <FileTypeIcon category={cat} size={28} />
-                            <span className="truncate" title={row.fileName}>{row.fileName || '—'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-[var(--shell-content-text)]">{t.fileCategory[cat]}</TableCell>
-                        <TableCell className="text-[var(--shell-content-text)] tabular-nums">{fmtBytes(row.sizeBytes)}</TableCell>
-                        {!fixedUploader && (
-                          <TableCell className="text-[var(--shell-content-text)]">
-                            {uploaderLabel[row.uploaderType] ?? row.uploaderType} #{row.uploaderId}
-                          </TableCell>
-                        )}
-                        <TableCell className="text-[var(--shell-content-text)]">{fmtTime(row.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="inline-flex items-center gap-1">
-                            <button type="button" className={DANGER_BTN} title={t.download}>{t.download}</button>
-                            <span className="text-[var(--shell-side-border)]">|</span>
-                            <button type="button" className={DANGER_BTN} onClick={() => void onDelete(row)}>{t.delete}</button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <ListView
+              loading={loading}
+              rows={visibleItems}
+              selectable={selectable}
+              selectedIds={selectedIds}
+              fixedUploader={fixedUploader}
+              colSpan={pageColSpan}
+              allChecked={allChecked}
+              uploaderLabel={uploaderLabel}
+              t={t}
+              commonLoading={common.loading}
+              onToggle={toggleRow}
+              onToggleAll={toggleAll}
+              onDelete={(row) => void onDelete(row)}
+            />
           ) : (
             <GridView
               loading={loading}
@@ -380,75 +287,5 @@ export function AttachmentManager({
         />
       </div>
     </section>
-  )
-}
-
-interface GridProps {
-  loading: boolean
-  empty: string
-  rows: AttachmentDTO[]
-  selectable: boolean
-  selectedIds: number[]
-  fixedUploader: boolean
-  uploaderLabel: Record<UploaderType, string>
-  t: ReturnType<typeof useT>['attachmentManager']
-  onToggle: (id: number, checked: boolean) => void
-  onDelete: (row: AttachmentDTO) => void
-}
-
-function GridView({ loading, empty, rows, selectable, selectedIds, fixedUploader, uploaderLabel, t, onToggle, onDelete }: GridProps) {
-  if (loading) {
-    return <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-3 xl:grid-cols-4">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="h-28 animate-pulse rounded-md bg-[var(--shell-menu-hover-bg)]" />
-      ))}
-    </div>
-  }
-  if (!rows.length) {
-    return <div className="py-12 text-center text-[var(--shell-group-title)]">{empty}</div>
-  }
-  return (
-    <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-3 xl:grid-cols-4">
-      {rows.map((row) => {
-        const cat = classifyAttachment(row.contentType, row.fileName)
-        const selected = selectedIds.includes(row.id)
-        return (
-          <div
-            key={row.id}
-            className={`group relative flex flex-col gap-2 rounded-md border bg-[var(--shell-card-bg)] p-3 transition-colors ${selected ? 'border-[var(--shell-fab-bg)] ring-1 ring-[var(--shell-fab-bg)]' : 'border-[var(--shell-card-border)] hover:border-[var(--shell-input-border-hover)]'}`}
-          >
-            {selectable && (
-              <input
-                type="checkbox" aria-label={row.fileName}
-                className="absolute right-2 top-2 accent-[var(--shell-fab-bg)]"
-                checked={selected}
-                onChange={(e) => onToggle(row.id, e.target.checked)}
-              />
-            )}
-            <div className="flex items-center gap-2.5">
-              <FileTypeIcon category={cat} size={36} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[13px] font-medium text-[var(--shell-heading)]" title={row.fileName}>{row.fileName || '—'}</div>
-                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[var(--shell-content-text)]">
-                  <span className="tabular-nums">{fmtBytes(row.sizeBytes)}</span>
-                  <span>·</span>
-                  <span className="truncate">{fmtTime(row.createdAt)}</span>
-                </div>
-              </div>
-            </div>
-            {!fixedUploader && (
-              <div className="text-[11px] text-[var(--shell-content-text)]">
-                {uploaderLabel[row.uploaderType] ?? row.uploaderType} #{row.uploaderId}
-              </div>
-            )}
-            <div className="flex items-center justify-end gap-1 border-t border-[var(--shell-side-border)] pt-2">
-              <button type="button" className={DANGER_BTN} title={t.download}>{t.download}</button>
-              <span className="text-[var(--shell-side-border)]">|</span>
-              <button type="button" className={DANGER_BTN} onClick={() => onDelete(row)}>{t.delete}</button>
-            </div>
-          </div>
-        )
-      })}
-    </div>
   )
 }
