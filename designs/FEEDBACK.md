@@ -178,3 +178,27 @@
   用 `git stash` 验证过非本修改引入,不在本 fix 范围。
 - **再犯标记**：1 次。规则写入 `references/red-lines.md`：
   改 handler 前必 grep schema,同一资源 list/detail 必须共用联表根。
+
+### E2. 7 字段实装(2025-08-21 commit 99e495c)
+- **上轮**(81dfed1):7 字段从"handler 不返"修成"返空串/0",骨架不塌;
+  **本轮**:从"空串"变成"真实数据"。
+- **Migration 000087**:
+  - `complaints` 加 `created_at`(DEFAULT now())/`remote_diagnosis`/`sla_deadline`;
+  - `dispatch_tickets` 加 `schedule_slot`/`splitter_port`/`pre_bind_tag`;
+  - DB 验证通过:`\d complaints` + `\d dispatch_tickets` 确认 6 列全到位。
+- **JOIN 改造**:`ListTicketItems`/`GetTicketItemByNo` SQL LEFT JOIN complaints(cmp),
+  取 `cmp.type`/`created_at`/`remote_diagnosis`/`sla_deadline`;
+  `FaultTypeLabel` 由 Go 侧 `complaintTypeLabels` map 映射;
+  `SlaLeftMinutes` 由 `computeSlaLeft()` 实时计算。
+- **环节写入**:
+  - 环节5 `ApplyTag`:端口预占后查 `ports+resources` 取 `port_code`+`resource.code`,
+    拼接 `splitterPort` 写入 `dispatch_tickets.splitter_port`(新增逻辑);
+  - `pre_bind_tag`/`schedule_slot`:暂空,需上游调度/仓库系统提供数据源。
+- **新契约文档**:`docs/contract/complaint-type-map.md` 定义 complaints.type → 故障类型
+  中文标签 + SLA 小时数映射表,新增 complaints.type 值时必回写。
+- **冒烟**:102 部署后 bossctl 验证 13 字段全部有值(新装工单 complaint 字段空=正确,
+  无 complaints 关联;splitterPort 空=存量工单非 ApplyTag 流程创建)。
+- **102 修障**:部署发现 server 卡在 migration 000086(`uq_quad_links_customer` UNIQUE
+  无法创建),根因是 quad_links 存在 customer_id=213 的两行重复(UNLINKED stale +
+  LINKED current),手动 DELETE stale 行后重启成功。规则:CI 构建失败时,
+  先查 docker logs 看哪条迁移卡住,再查对应表数据是否满足约束。
