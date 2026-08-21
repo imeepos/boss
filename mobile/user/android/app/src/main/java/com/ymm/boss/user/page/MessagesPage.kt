@@ -244,12 +244,17 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
     val tint = colorOfCategory(m.optString("category"))
     val icon = iconOfCategory(m.optString("category"))
 
-    // 未读 = 左 3dp 主色细条 + 内容区,已读 = 普通白卡无强调。设计稿意图是细线视觉提示,不是包边。
+    // 不同 category 视觉区分:
+    //  - 未读 = 左 3dp category 色细条 + 卡片底色用 category 色 4% 浅底(更明显)
+    //  - 已读 = 纯白卡,无细条无底色,只靠 icon + tag 颜色区分类别
+    // 警示型(余额/故障)用浅底更突出,信息型(账单/优惠)保持白底,克制不抢眼。
+    val cardBg = if (!read) tint.copy(alpha = 0.05f) else Palette.panel
+
     Row(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 6.dp)
-            .background(Palette.panel, RoundedCornerShape(12.dp))
+            .background(cardBg, RoundedCornerShape(12.dp))
             .clickable { onClick() }
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -259,7 +264,7 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
                 Modifier
                     .width(3.dp)
                     .height(40.dp)
-                    .background(Palette.primary, RoundedCornerShape(2.dp)),
+                    .background(tint, RoundedCornerShape(2.dp)),
             )
             Spacer(Modifier.width(10.dp))
         }
@@ -279,7 +284,7 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
                 )
                 if (!read) {
                     Spacer(Modifier.width(6.dp))
-                    Box(Modifier.size(7.dp).background(Palette.primary, CircleShape))
+                    Box(Modifier.size(7.dp).background(tint, CircleShape))
                 }
             }
             if (m.optString("content").isNotBlank()) {
