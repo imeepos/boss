@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
+import { ResourcePicker } from '../../../components/ResourcePicker'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ProvisionLogRow } from '../types'
 
@@ -39,8 +40,16 @@ export default function ProvisionLogPage() {
       <PageHead title={p.title} desc={p.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" style={{ width: 160 }} placeholder={p.filterTask}
-            value={taskId} onChange={(e) => { setTaskId(e.target.value); setPage(1) }} />
+          <ResourcePicker
+            value={taskId}
+            onChange={(v) => { setTaskId(v); setPage(1) }}
+            load={() => apiFetch<{ items: { id: number; taskNo: string; stageEvent: string }[] }>('/provision-tasks').then((x) => x?.items ?? [])}
+            toOption={(x) => ({ value: String(x.id), label: `${x.taskNo} · ${x.stageEvent}` })}
+            ariaLabel={p.filterTask}
+            emptyLabel={t.pages.pickers.common.all}
+            searchPlaceholder={t.pages.pickers.common.placeholder}
+            errorText={p.loadFail}
+          />
           <Dropdown
             value={result}
             options={[{ value: '', label: p.allResult }, { value: 'SUCCESS', label: 'SUCCESS' }, { value: 'FAILED', label: 'FAILED' }]}

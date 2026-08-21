@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
+import { ResourcePicker } from '../../../components/ResourcePicker'
 import { pageSlice, type ReserveRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
@@ -51,8 +52,16 @@ export default function ReservePage() {
       <PageHead title={r.title} desc={r.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={r.filterPort}
-            value={portId} onChange={(e) => { setPortId(e.target.value); setPage(1) }} />
+          <ResourcePicker
+            value={portId}
+            onChange={(v) => { setPortId(v); setPage(1) }}
+            load={() => apiFetch<{ items: { portId: number; portCode: string }[] }>('/ports').then((x) => x?.items ?? [])}
+            toOption={(p) => ({ value: String(p.portId), label: p.portCode })}
+            ariaLabel={r.filterPort}
+            emptyLabel={t.pages.pickers.common.all}
+            searchPlaceholder={t.pages.pickers.common.placeholder}
+            errorText={r.loadFail}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>

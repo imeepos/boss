@@ -5,6 +5,8 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
+import { ResourcePicker } from '../../../components/ResourcePicker'
+import { searchCustomers } from '../../../api/pickers'
 import { pageSlice, type StopResumeTaskRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
@@ -52,8 +54,16 @@ export default function StopSrvPage() {
       <PageHead title={s.title} desc={s.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={s.filterCustomer}
-            value={customerId} onChange={(e) => { setCustomerId(e.target.value); setPage(1) }} />
+          <ResourcePicker
+            value={customerId}
+            onChange={(v) => { setCustomerId(v); setPage(1) }}
+            search={searchCustomers}
+            toOption={(c) => ({ value: String(c.id), label: `${c.name} · ${c.phone || c.customerCode}` })}
+            ariaLabel={s.filterCustomer}
+            emptyLabel={t.pages.pickers.common.all}
+            searchPlaceholder={t.pages.pickers.common.placeholder}
+            errorText={s.loadFail}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>

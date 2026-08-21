@@ -1,9 +1,12 @@
 // 消息中心 · 师傅消息页签:查询(GET /worker-messages?workerId=) + 下发(POST /worker-messages)。
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
+import { ResourcePicker } from '../../../components/ResourcePicker'
 import { StatusTag } from '../../../components/StatusTag'
+import { searchWorkers } from '../../../api/pickers'
+import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
 import { fmtTime, filterMessages, toId, MESSAGE_LEVELS, type WorkerMessageEntry } from './logic'
 
@@ -18,6 +21,7 @@ export const th: CSSProperties = {
 export const td: CSSProperties = { padding: '8px 10px', borderBottom: '1px solid #f0f0f0' }
 
 export function WorkerMessagesTab({ t }: { t: Ns }) {
+  const p = useT().pages.pickers
   const [rows, setRows] = useState<WorkerMessageEntry[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -43,6 +47,14 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
   }
 
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // 筛选师傅变化后自动重查(替代原输入框 onBlur 触发)。
+  const reloadRef = useRef(false)
+  useEffect(() => {
+    if (!reloadRef.current) return
+    reloadRef.current = false
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workerId])
 
   const filtered = filterMessages(rows, keyword, level, read)
   const slice = filtered.slice((page - 1) * pageSize, page * pageSize)
@@ -88,15 +100,31 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
           onChange={(v) => { setRead(v); setPage(1) }}
           ariaLabel={t.allRead}
         />
-        <input style={{ ...ctl, width: 120 }} placeholder={t.workerIdPlaceholder} value={workerId}
-          onChange={(e) => { setWorkerId(e.target.value); setPage(1) }} onBlur={load} />
+        <ResourcePicker
+          value={workerId}
+          onChange={(v) => { setWorkerId(v); setPage(1); reloadRef.current = true }}
+          search={searchWorkers}
+          toOption={(w) => ({ value: String(w.id), label: `${w.name} · ${w.staffNo}` })}
+          ariaLabel={t.workerIdPlaceholder}
+          emptyLabel={p.common.all}
+          searchPlaceholder={p.common.placeholder}
+          errorText={t.loadFail}
+        />
         <span style={{ flex: 1 }} />
         <button style={{ ...ctl, cursor: 'pointer' }} onClick={load}>{t.refresh}</button>
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: 13, color: '#666' }}>{t.sendTitle}:</span>
-        <input style={{ ...ctl, width: 100 }} placeholder={t.workerIdPlaceholder} value={sendWorker}
-          onChange={(e) => setSendWorker(e.target.value)} />
+        <ResourcePicker
+          value={sendWorker}
+          onChange={setSendWorker}
+          search={searchWorkers}
+          toOption={(w) => ({ value: String(w.id), label: `${w.name} · ${w.staffNo}` })}
+          ariaLabel={t.workerIdPlaceholder}
+          emptyLabel={p.common.all}
+          searchPlaceholder={p.common.placeholder}
+          errorText={t.loadFail}
+        />
         <Dropdown
           value={sendLevel}
           options={MESSAGE_LEVELS.map((lv) => ({ value: lv, label: lv }))}

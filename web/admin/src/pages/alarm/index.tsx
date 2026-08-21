@@ -5,6 +5,7 @@ import { useT } from '../../i18n'
 import { PageHead, pagerTexts } from '../org/shared'
 import { StatusTag } from '../../components/StatusTag'
 import { Pagination } from '../../components/Pagination'
+import { ResourcePicker } from '../../components/ResourcePicker'
 import { Drawer } from '../../components/Drawer'
 import { fmtTime } from '../../lib/format'
 import { pageSlice, type AlarmRow } from '../quad/types'
@@ -72,8 +73,16 @@ export default function AlarmPage() {
       <PageHead title={a.title} desc={a.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={a.filterResource}
-            value={resourceId} onChange={(e) => { setResourceId(e.target.value); setPage(1) }} />
+          <ResourcePicker
+            value={resourceId}
+            onChange={(v) => { setResourceId(v); setPage(1) }}
+            load={() => apiFetch<{ items: { id: number; name: string; code: string }[] }>('/resources').then((x) => x?.items ?? [])}
+            toOption={(x) => ({ value: String(x.id), label: `${x.name} (${x.code})` })}
+            ariaLabel={a.filterResource}
+            emptyLabel={t.pages.pickers.common.all}
+            searchPlaceholder={t.pages.pickers.common.placeholder}
+            errorText={a.loadFail}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setRetestOpen(true)}>{a.batchRetest}</button>

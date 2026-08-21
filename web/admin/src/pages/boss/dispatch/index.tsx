@@ -9,6 +9,8 @@ import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type DispatchTicketRow, type DispatchTransferRow } from '../types'
 import { WorkerPicker, type PickedWorker } from './WorkerPicker'
+import { ResourcePicker } from '../../../components/ResourcePicker'
+import { searchWorkers } from '../../../api/pickers'
 
 export default function DispatchPage() {
   const t = useT()
@@ -96,8 +98,16 @@ export default function DispatchPage() {
             </button>
           ))}
           {tab === 'mine' && (
-            <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" style={{ width: 180 }} placeholder={d.filterWorker}
-              value={workerFilter} onChange={(e) => { setWorkerFilter(e.target.value); setPage(1) }} />
+            <ResourcePicker
+              value={workerFilter}
+              onChange={(v) => { setWorkerFilter(v); setPage(1) }}
+              search={searchWorkers}
+              toOption={(w) => ({ value: String(w.id), label: `${w.name} · ${w.staffNo}` })}
+              ariaLabel={d.filterWorker}
+              emptyLabel={t.pages.pickers.common.all}
+              searchPlaceholder={t.pages.pickers.common.placeholder}
+              errorText={d.loadFail}
+            />
           )}
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
@@ -172,14 +182,12 @@ export default function DispatchPage() {
           <div className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.fMaster}({act.ticket.ticketNo})</label>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={masterId} placeholder={d.pMaster}
-                onChange={(e) => { setMasterId(e.target.value); setPicked(null) }} />
+              <div><WorkerPicker selectedId={masterId} onSelect={(w) => { setMasterId(String(w.id)); setPicked(w); setFormError('') }} /></div>
               {picked && (
                 <div className="text-xs text-[var(--shell-crumb-text)]">
                   {picked.name} · {picked.staffNo} · {picked.phone || '—'} · {picked.groupName} · {picked.regionName}
                 </div>
               )}
-              <div className="mt-1"><WorkerPicker selectedId={masterId} onSelect={(w) => { setMasterId(String(w.id)); setPicked(w); setFormError('') }} /></div>
             </div>
             {act.mode === 'transfer' && (
               <div className="flex flex-col gap-1.5">

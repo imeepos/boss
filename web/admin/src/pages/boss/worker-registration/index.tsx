@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
+import { ResourcePicker } from '../../../components/ResourcePicker'
 import { fmtTime } from '../../../lib/format'
 
 interface WorkerRegistrationRow {
@@ -139,9 +140,29 @@ export default function WorkerRegistrationPage() {
             {actMode === 'approve' ? (
               <>
                 <label className="mb-1 block text-sm text-gray-600">{w.groupId}</label>
-                <input className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm" type="number" placeholder={w.groupIdPlaceholder} value={groupId} onChange={(e) => setGroupId(e.target.value)} />
+                <div className="mb-3">
+                  <ResourcePicker
+                    value={groupId}
+                    onChange={setGroupId}
+                    load={() => apiFetch<{ items: { id: number; name: string }[] }>('/worker-groups').then((x) => x?.items ?? [])}
+                    toOption={(g) => ({ value: String(g.id), label: g.name })}
+                    ariaLabel={w.groupId}
+                    searchPlaceholder={w.groupIdPlaceholder}
+                    errorText={w.loadFail}
+                  />
+                </div>
                 <label className="mb-1 block text-sm text-gray-600">{w.regionId}</label>
-                <input className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm" type="number" placeholder={w.regionIdPlaceholder} value={regionId} onChange={(e) => setRegionId(e.target.value)} />
+                <div className="mb-3">
+                  <ResourcePicker
+                    value={regionId}
+                    onChange={setRegionId}
+                    load={() => apiFetch<{ id: number; name: string }[]>('/regions').then((x) => (Array.isArray(x) ? x : []))}
+                    toOption={(r) => ({ value: String(r.id), label: r.name })}
+                    ariaLabel={w.regionId}
+                    searchPlaceholder={w.regionIdPlaceholder}
+                    errorText={w.loadFail}
+                  />
+                </div>
               </>
             ) : (
               <>

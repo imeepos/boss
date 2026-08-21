@@ -1698,7 +1698,7 @@ const msMY: Translations = {
       pageUnit: 'halaman',
     },
     pickers: {
-      common: { placeholder: 'Cari mengikut nama / no. kakitangan / telefon / kod', loadFail: 'Gagal memuatkan pilihan', viewDetail: 'Butiran', detailFail: 'Gagal memuatkan butiran', close: 'Tutup', jumpToList: 'Buka halaman pengurusan' },
+      common: { placeholder: 'Cari mengikut nama / no. kakitangan / telefon / kod', loadFail: 'Gagal memuatkan pilihan', viewDetail: 'Butiran', detailFail: 'Gagal memuatkan butiran', close: 'Tutup', jumpToList: 'Buka halaman pengurusan', all: 'Semua' },
       worker: { title: 'Butiran Pekerja', aria: 'Pilih pekerja', name: 'Nama', staffNo: 'No. Kakitangan', phone: 'Telefon', group: 'Kumpulan', region: 'Wilayah', status: 'Status', onDuty: 'Bertugas', left: 'Berhenti', joinedAt: 'Tarikh menyertai' },
       customer: { title: 'Butiran Pelanggan', aria: 'Pilih pelanggan', code: 'Kod Pelanggan', name: 'Nama', phone: 'Telefon', idType: 'Jenis ID', idNo: 'No. ID', realNameStatus: 'Status Nama Sebenar', serviceStatus: 'Status Perkhidmatan', region: 'Wilayah', createdAt: 'Dicipta pada' },
       user: { title: 'Butiran Pengguna', aria: 'Pilih pengguna', name: 'Nama', phone: 'Telefon', plan: 'Pelan', balance: 'Baki', arrears: 'Tertunggak', activeOrders: 'Pesanan Aktif', realNameStatus: 'Status Nama Sebenar', serviceStatus: 'Status Perkhidmatan', autoPay: 'Bayar Automatik', on: 'Hidup', off: 'Mati' },

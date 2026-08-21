@@ -1698,7 +1698,7 @@ const enUS: Translations = {
       pageUnit: 'page',
     },
     pickers: {
-      common: { placeholder: 'Search by name / staff no. / phone / code', loadFail: 'Failed to load options', viewDetail: 'Detail', detailFail: 'Failed to load detail', close: 'Close', jumpToList: 'Open manage page' },
+      common: { placeholder: 'Search by name / staff no. / phone / code', loadFail: 'Failed to load options', viewDetail: 'Detail', detailFail: 'Failed to load detail', close: 'Close', jumpToList: 'Open manage page', all: 'All' },
       worker: { title: 'Worker Detail', aria: 'Select worker', name: 'Name', staffNo: 'Staff No.', phone: 'Phone', group: 'Group', region: 'Region', status: 'Status', onDuty: 'On duty', left: 'Left', joinedAt: 'Joined at' },
       customer: { title: 'Customer Detail', aria: 'Select customer', code: 'Customer Code', name: 'Name', phone: 'Phone', idType: 'ID Type', idNo: 'ID No.', realNameStatus: 'Real-name Status', serviceStatus: 'Service Status', region: 'Region', createdAt: 'Created at' },
       user: { title: 'User Detail', aria: 'Select user', name: 'Name', phone: 'Phone', plan: 'Plan', balance: 'Balance', arrears: 'Arrears', activeOrders: 'Active Orders', realNameStatus: 'Real-name Status', serviceStatus: 'Service Status', autoPay: 'Auto Pay', on: 'On', off: 'Off' },

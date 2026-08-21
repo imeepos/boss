@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Pagination } from '../../../components/Pagination'
+import { ResourcePicker } from '../../../components/ResourcePicker'
+import { searchCustomers } from '../../../api/pickers'
 import { pagerTexts } from '../../org/shared'
 import { fmtFee } from '../../../lib/format'
 import type { InvoiceRow } from '../types'
@@ -54,8 +56,16 @@ export function InvoicePanel() {
     <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]" style={{ marginTop: 12 }}>
       <div className="flex flex-wrap items-center gap-2 p-4">
         <strong>{v.title}</strong>
-        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={v.filterCustomer}
-          value={customerId} onChange={(e) => { setCustomerId(e.target.value); setPage(1) }} />
+        <ResourcePicker
+          value={customerId}
+          onChange={(v) => { setCustomerId(v); setPage(1) }}
+          search={searchCustomers}
+          toOption={(c) => ({ value: String(c.id), label: `${c.name} · ${c.phone || c.customerCode}` })}
+          ariaLabel={v.filterCustomer}
+          emptyLabel={t.pages.pickers.common.all}
+          searchPlaceholder={t.pages.pickers.common.placeholder}
+          errorText={v.loadFail}
+        />
         <span className="spacer" />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
       </div>
