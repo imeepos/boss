@@ -198,3 +198,5 @@
 78. 并行 agent 在场时父会话禁用 git stash 诊断——stash -u 会卷走 agent 半成品,pop 又与其并发写冲突;诊断"失败是否预存在"用 git show HEAD:<file> 对比或临时 worktree。
 79. 补 OpenAPI 契约先 grep 域 yaml:多数"漂移"只是聚合 face.yaml 缺 $ref 行(定义早已存在),2 行修复而不是重写定义。
 80. 未提交的关键改动在有并行会话/agent 的环境里立即 commit——工作区随时可能被别人的 git 写操作回滚。
+- worktree 基线编译失败先 `git stash -u` 验基线再自查;并行方会往 gitea/main 推破损中间态(漏 add 新文件最常见)(2026-08-25 worker-android)。
+- JPush 5.x 集成:只加 cn.jiguang.sdk:jpush 依赖 + manifestPlaceholders["JPUSH_APPKEY"],不写 meta-data(AAR 已带占位符)(2026-08-25)。

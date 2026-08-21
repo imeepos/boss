@@ -222,3 +222,11 @@
 - 重来一次:并行 agent 在场时,父会话绝不用 stash 诊断(改用临时 worktree 或等 agent 收尾);未提交的重要改动立即 commit 保护;给 agent 的禁令要写明"不得执行任何改变工作区的 git 写操作,只读 git status/diff/log 无妨"。
 - 纠正:A agent 写入 red-lines.md 的"连 git status 也不许跑"过宽——真正的红线是 git 写操作(checkout/restore/stash/clean/commit/reset),只读命令无害。
 - 有效手法:补契约时先查定义是否已存在于域 yaml(本次 /customers/{id}、push/device 都只是聚合 ref 缺失,2 行搞定);checker 失败项先 stash-free 地 git show HEAD: 对比判定"预存在"还是 WIP 引入(agent 的预存在判断是错的)。
+
+## 2026-08-25 worker 端 JPush 集成(worktree 会话)
+
+- 最大坑:gitea/main 本身编译破损(并行方提交了 10 处 FieldLabel 调用但定义文件漏 add,另有缺 import/误限定引用)。教训:worktree 基线编译失败时先 stash 自己的改动验基线,别急着怀疑自己。
+- stash -u + reset --hard + 事后 pop 丢了部分改动:重放比救回快,所有小改动在对话里有据可查。
+- JPush 5.7.0 AAR 的 manifest 自带 ${JPUSH_APPKEY}/${JPUSH_CHANNEL} 占位符,app 侧只要 manifestPlaceholders,自己写 meta-data 反而 merge 冲突。
+- write 工具对刚被 git clean 掉的路径报 "file no longer exists":改用 bash heredoc 落盘。
+- JAVA:JDK17 在 /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home;worktree 需手动拷 local.properties。
