@@ -1,7 +1,8 @@
 // 平台用户工作台独立壳层：视觉沿用 Admin Shell，内容聚焦员工工作与权限。
 // 样式:tailwind 原子类(原 ucenter.css 已删除),令牌走 shell-* 体系。
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { Loading } from '../components/Loading'
 import type { Profile } from '../api/auth'
 import { adminLogout } from '../api/auth'
 import { useT } from '../i18n'
@@ -54,7 +55,7 @@ export function UCenterLayout({ profile }: { profile: Profile }) {
             </nav>
             <div className="mt-auto grid gap-[7px] border-t border-[var(--shell-side-border)] p-4 text-xs text-[var(--shell-crumb-text)]"><span>{profile.roleName}</span><span>{t.pages.profile.personal.dataScope}: {profile.regionScope || t.pages.profile.personal.allScope}</span></div>
           </aside>
-          <main className="relative min-w-0 flex-1 overflow-y-auto bg-[var(--shell-content-bg)] px-6 pb-12 pt-4 max-[760px]:px-3 max-[760px]:pb-9"><div className="mb-4 flex gap-2 text-xs text-[var(--shell-crumb-text)]"><Link className="inherit no-underline" to="/ucenter/overview">{t.pages.profile.title}</Link><span>/</span><strong className="font-semibold text-[var(--shell-heading)]">{items.find(([key]) => pathname.endsWith(`/${key}`))?.[1] ?? t.pages.profile.navigation.overview}</strong></div><Outlet /></main>
+          <main className="relative min-w-0 flex-1 overflow-y-auto bg-[var(--shell-content-bg)] px-6 pb-12 pt-4 max-[760px]:px-3 max-[760px]:pb-9"><div className="mb-4 flex gap-2 text-xs text-[var(--shell-crumb-text)]"><Link className="inherit no-underline" to="/ucenter/overview">{t.pages.profile.title}</Link><span>/</span><strong className="font-semibold text-[var(--shell-heading)]">{items.find(([key]) => pathname.endsWith(`/${key}`))?.[1] ?? t.pages.profile.navigation.overview}</strong></div><Suspense fallback={<Loading />}><Outlet /></Suspense></main>
         </div>
       </div>
     </ProfileContext.Provider>
