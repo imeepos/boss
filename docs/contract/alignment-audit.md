@@ -186,10 +186,10 @@
 |:-:|:-----|:-----|:-----|:----:|
 | E4 | 第2章 PRV 省级编码（`PHL001`~`PHL083`） | 系统用 PSGC 10 位码，无 PRV 格式 | migrations/000075 `odn_region_code` 82 行全量映射（PHL075 预留不落），FK 锚 geo_subdivision，集成测试 `TestODNRegionCityCodes_Integration` 守护 | ✅ 000075 |
 | E5 | 第3章 NodeCode 局点编码（`MNL001`） | 全库无 NodeCode 概念 | 000075 `odn_city_code` 119 个城市前缀全量登记（复合主键 省内唯一，规范 2.3）；局点 3 位序号实体随 E6 odn 域落 | ✅ 前缀登记（序号随 E6） |
-| E6 | 第4章 网格分区 + 基础设施编码（P/MH/TW/CLS/TBX） | 无电杆/人井/铁塔/接头盒/终端盒实体 | 新域 `internal/domain/odn`，需求驱动再建 | 待建 |
-| E7 | 4.7 网格容量预警（800/999/90 三级） | 无 | 随 E6 网格实体落 | 待建 |
-| E8 | 第5章 光缆段落/纤芯编码 + A 端方向优先级 | 无光缆段落/纤芯实体 | 随 E6 落 | 待建 |
-| E9 | 第7章 红线3（5 位数字系统校验） | 无编码校验逻辑 | 随 E6 落（入库校验 5 位数字） | 待建 |
+| E6 | 第4章 网格分区 + 基础设施编码（P/MH/TW/CLS/TBX） | 无电杆/人井/铁塔/接头盒/终端盒实体 | 落地 `internal/domain/odn`：migrations/000078 `odn_grid`/`odn_facility` + PGStore + 单测/集成测试（102 PG 实测通过）；网格备案→设施入库→占用统计→报废锁定全链路 | ✅ 000078 |
+| E7 | 4.7 网格容量预警（800/999/90 三级） | 无 | `ListGrids` 返回占用数 + ≥800 warn 标记；入库超 999 拒绝（ErrGridFull）；≥90 网格细分评估留待 admin 页面接入 | ✅ 域层（页面待接） |
+| E8 | 第5章 光缆段落/纤芯编码 + A 端方向优先级 | 无光缆段落/纤芯实体 | 待建（依赖 E6 设施先有存量；`--` 仅图纸不入库，A/B 端优先级 7 级表已固化在规范） | 待建 |
+| E9 | 第7章 红线3（5 位数字系统校验） | 无编码校验逻辑 | `odn.ValidateFacilityCode`：格式正则 + 序号 000/00000 预留禁用 + DB CHECK 双层校验；单测覆盖 14 例 | ✅ 000078 |
 | E10 | 前缀冲突：`ports.port_code='P-SPLxx-yy'` vs 电杆 `P01001` | 字母前缀 `P` 双义 | 裁定：ODN 规范码落 odn_* 表独立命名空间（`prv_code`/`city_prefix`/未来基础设施码列），`ports.port_code` 保留为 BOSS 内部资源码，二者不混存不互斥，冲突消解 | ✅ 裁定 |
 | E11 | 姊妹规范设备码 `OLT001`（无连字符）vs `Resource.Code` `OLT-01` | 核心链路设备编码格式分歧 | 同 E10：ODN 链路编码是 odn 域编码体系，`resource.code` 是 BOSS 内部资源码，经映射关联、不强制改名；odn 域开工时落 `odn_code` 专列 | ✅ 裁定（映射随 E6） |
 

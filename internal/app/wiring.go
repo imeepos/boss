@@ -18,6 +18,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/device"
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/gis"
+	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/provision"
@@ -85,6 +86,7 @@ type Application struct {
 	Alarm     device.AlarmService
 	Geo       geo.GeoService
 	Gis       gis.GISService
+	ODN       odn.ODNService
 	Analytics analytics.AnalyticsService
 	Report    *report.ReportService
 
@@ -218,6 +220,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Device:    dev,
 		Geo:       geo.NewPGStore(pool),
 		Gis:       gis.NewPGStore(pool),
+		ODN:       odn.NewPGStore(pool),
 		Analytics: anaStore,
 		Alarm:     dev,
 

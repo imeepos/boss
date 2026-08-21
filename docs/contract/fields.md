@@ -127,7 +127,28 @@
 | 城市前缀 | `CityPrefix` | city_prefix | VARCHAR(5) `^[A-Z]{3,5}$`（规范索引含 4-5 字母，见 ISSUE.md），与 prv_code 复合主键（规范 2.3 省内唯一） |
 | 城市 PSGC | `PsgcCode` | psgc_code | → geo_subdivision.code（HUC 直辖大区时锚大区直属城市节点），119 行全量 |
 
-> 局点 3 位序号（MNL001 的 001 段）、网格分区与电杆/人井等基础设施编码属 odn 待建域（E6~E9），本表只登记 PRV 与城市前缀字典。
+> 局点 3 位序号（MNL001 的 001 段）属 odn 域后续实体；网格分区与基础设施见 §1.5.3。
+
+### 1.5.3 odn_grid / odn_facility（ODN 无源物理层，迁移 000078，internal/domain/odn）
+
+> 依据《Suniway ODN 地理空间编码规范》V1.0 第 4 章。E6/E7/E9 落地；光缆段落/纤芯（E8）待建。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| PRV | `PrvCode` | prv_code | CHAR(6) → odn_region_code |
+| 城市前缀 | `CityPrefix` | city_prefix | VARCHAR(5) → odn_city_code（复合 FK） |
+| 网格码 | `GridCode` | grid_code | SMALLINT 1~99，复合主键（规范 4.1） |
+| 网格名称 | `Name` | name | 如 马尼拉老城区 |
+| 覆盖区域 | `Coverage` | coverage | 文本描述 |
+| 状态 | `Status` | status | ACTIVE / RESERVED（预留扩展区）/ RETIRED |
+| 占用数 | `Facilities` | —（聚合） | 网格内 P/MH 计数；≥800 触发预警（规范 4.7） |
+| 设施编码 | `Code` | code | VARCHAR(8) 主键 `^(P\|MH\|TW\|CLS\|TBX)[0-9]{5}$`（红线 3） |
+| 类型 | `Kind` | kind | P 电杆 / MH 人井 / TW 铁塔 / CLS 接头盒 / TBX 终端盒 |
+| 所属网格 | `GridCode` | grid_code | P/MH 必填 01~99（编码网格段须一致）；TW/CLS/TBX NULL |
+| 坐标 | `Lat`/`Lng` | lat/lng | 可空 |
+| 状态 | `Status` | status | IN_USE / RETIRED（报废永久锁定，禁止复用/删除） |
+
+> 校验：`odn.ValidateFacilityCode`（格式 + 序号 000/00000 预留禁用）；入库校验网格已备案（ErrGridMissing）与容量 999（ErrGridFull）。
 
 
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
