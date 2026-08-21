@@ -39,6 +39,7 @@ import TagPage from './pages/ams/tag'
 import StockPage from './pages/ams/stock'
 import ReplacePage from './pages/ams/replace'
 import ResourcePage from './pages/oss/resource'
+import ODNPage from './pages/oss/odn'
 import ReservePage from './pages/oss/reserve'
 import TransferPage from './pages/oss/transfer'
 import DevicePage from './pages/oss/device'
@@ -110,6 +111,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'stock') return <StockPage />
   if (pageKey === 'replace') return <ReplacePage />
   if (pageKey === 'resource') return <ResourcePage />
+  if (pageKey === 'odn') return <ODNPage />
   if (pageKey === 'reserve') return <ReservePage />
   if (pageKey === 'transfer') return <TransferPage />
   if (pageKey === 'device') return <DevicePage />
