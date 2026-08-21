@@ -5,6 +5,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -21,9 +22,15 @@ type workerRegistrationReq struct {
 func registerWorkerSelfRegistration(pub *gin.RouterGroup, a *app.Application) {
 	pub.POST("/worker-registrations", func(c *gin.Context) {
 		var req workerRegistrationReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" || req.Phone == "" ||
-			req.IDCardNo == "" || req.GroupID <= 0 || req.RegionID <= 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Name, "name", 64),
+				httpx.RequirePhone(req.Phone, "phone"),
+				httpx.RequireString(req.IDCardNo, "idCardNo", 32),
+				httpx.RequirePositiveID(req.GroupID, "groupId"),
+				httpx.RequirePositiveID(req.RegionID, "regionId"),
+			)
+		}) {
 			return
 		}
 		id, err := a.WorkerOnboarding.Submit(c.Request.Context(), worker.Registration{

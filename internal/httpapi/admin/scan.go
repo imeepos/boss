@@ -3,8 +3,6 @@ package adminapi
 // W5 扫码闭环 handler:worker 扫码绑定/拆机扫码 + admin 扫码日志/四码对账/冲突处理。
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -40,12 +38,16 @@ func workerFromClaims(c *gin.Context) (int64, string) {
 func registerScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	w := g.Group("/tickets")
 	w.POST("/:ticketNo/scan-bind", func(c *gin.Context) {
-		var req scanBindReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		var req scanBindReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -72,12 +74,16 @@ func registerScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	w.POST("/:ticketNo/dismantle/scan", func(c *gin.Context) {
-		var req scanBindReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		var req scanBindReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -114,9 +120,8 @@ func registerScanRoutes(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": out})
 	})
 	q.POST("/quad-conflicts/:id/resolve", func(c *gin.Context) {
-		linkID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		linkID, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
 			return
 		}
 		if err := a.QuadLink.ResolveConflict(c.Request.Context(), linkID); err != nil {

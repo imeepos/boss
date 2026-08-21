@@ -3,13 +3,13 @@ package adminapi
 import (
 	"context"
 	"errors"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/pkg/auth"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -37,8 +37,15 @@ func registerAPIKeyRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	ak.POST("/api-keys", func(c *gin.Context) {
 		var req createAPIKeyReq
-		if err := c.ShouldBindJSON(&req); err != nil || !apikey.ValidSubjectType(req.SubjectType) {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			if !apikey.ValidSubjectType(req.SubjectType) {
+				return &httpx.ValidationError{Field: "subjectType", Message: "must be account, worker, or customer"}
+			}
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(req.SubjectRef, "subjectRef"),
+				httpx.RequireString(req.Name, "name", 64),
+			)
+		}) {
 			return
 		}
 		// 主体必须真实存在,避免签出悬空密钥
@@ -59,9 +66,8 @@ func registerAPIKeyRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	ak.DELETE("/api-keys/:id", func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
 			return
 		}
 		if err := a.APIKey.Revoke(c.Request.Context(), id); err != nil {

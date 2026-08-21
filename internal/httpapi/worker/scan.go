@@ -39,12 +39,16 @@ type workerScanBindReq struct {
 // workerScanBindHandler 扫码绑定(环节9):四码核对,MATCH 才推进订单环节9。
 func workerScanBindHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req workerScanBindReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		var req workerScanBindReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -281,8 +285,12 @@ func workerChargePostHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		var req workerChargeReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			if req.Amount <= 0 {
+				return &httpx.ValidationError{Field: "amount", Message: "must be greater than 0"}
+			}
+			return nil
+		}) {
 			return
 		}
 		httpx.RecordAudit(a, c, "数据变更", "worker_charge", c.Param("ticketNo"), map[string]any{

@@ -1,8 +1,6 @@
 package adminapi
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -11,10 +9,9 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// pathID 解析路径参数为 int64;非法值返回 0 由域层按未命中处理。
-func pathID(c *gin.Context, name string) int64 {
-	id, _ := strconv.ParseInt(c.Param(name), 10, 64)
-	return id
+// pathIDValid 解析路径参数为 int64;非法值返回 400。
+func pathIDValid(c *gin.Context, name string) (int64, bool) {
+	return httpx.ParsePathParamInt64(c, name)
 }
 
 // registerTaxRoutes 注册发票税务域路由(TAX/AG-04,入 billing 分组)。
@@ -67,13 +64,17 @@ func registerTaxRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.POST("/invoices/:id/void", requirePerm(a.User, "menu:billing"), func(c *gin.Context) {
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
 		var body struct {
 			Reason string `json:"reason" binding:"required"`
 		}
 		if !httpx.BindBody(c, &body) {
 			return
 		}
-		if err := a.Tax.VoidInvoice(c.Request.Context(), pathID(c, "id"), body.Reason); err != nil {
+		if err := a.Tax.VoidInvoice(c.Request.Context(), id, body.Reason); err != nil {
 			respondErr(c, err)
 			return
 		}
@@ -83,7 +84,11 @@ func registerTaxRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 重开:原票 VOID 保留编号 + 新票新 ARN(TAX-003)。
 	g.POST("/invoices/:id/reissue", requirePerm(a.User, "menu:billing"), func(c *gin.Context) {
-		inv, err := a.Tax.ReissueInvoice(c.Request.Context(), pathID(c, "id"))
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
+		inv, err := a.Tax.ReissueInvoice(c.Request.Context(), id)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -94,7 +99,10 @@ func registerTaxRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 税局网关提交:按发票属地取网关开具并落回执;未注册网关(人工通道)则提示走回填。
 	g.POST("/invoices/:id/tax-submit", requirePerm(a.User, "menu:billing"), func(c *gin.Context) {
-		id := pathID(c, "id")
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
 		inv, err := a.Tax.GetInvoice(c.Request.Context(), id)
 		if err != nil {
 			respondErr(c, err)
@@ -124,13 +132,17 @@ func registerTaxRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 人工通道回填:运营者在税局平台(数电票/BIR)开具后登记税局票号。
 	g.POST("/invoices/:id/tax-backfill", requirePerm(a.User, "menu:billing"), func(c *gin.Context) {
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
 		var body struct {
 			TaxNo string `json:"taxNo" binding:"required"`
 		}
 		if !httpx.BindBody(c, &body) {
 			return
 		}
-		if err := a.Tax.BackfillTaxNo(c.Request.Context(), pathID(c, "id"), body.TaxNo); err != nil {
+		if err := a.Tax.BackfillTaxNo(c.Request.Context(), id, body.TaxNo); err != nil {
 			respondErr(c, err)
 			return
 		}

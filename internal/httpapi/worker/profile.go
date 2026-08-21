@@ -141,8 +141,12 @@ func workerClockHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		workerID, _ := portalWorker(c)
 		var req workerClockReq
-		if err := c.ShouldBindJSON(&req); err != nil || (req.Type != "IN" && req.Type != "OUT") {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			if req.Type != "IN" && req.Type != "OUT" {
+				return &httpx.ValidationError{Field: "type", Message: "must be IN or OUT"}
+			}
+			return nil
+		}) {
 			return
 		}
 		now := time.Now()
@@ -194,8 +198,7 @@ func workerSettingsGetHandler(a *app.Application) gin.HandlerFunc {
 func workerSettingsPutHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req workerSettingsReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		workerID, _ := portalWorker(c)

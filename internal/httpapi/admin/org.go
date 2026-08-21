@@ -59,8 +59,7 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 法人写操作(org.yaml createLegalEntity/updateLegalEntity)。
 	g.POST("/legal-entities", requirePerm(a.User, "menu:company"), func(c *gin.Context) {
 		var req legalEntityReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		id, err := a.User.CreateLegalEntity(c.Request.Context(), user.LegalEntity{Code: req.Code, Name: req.Name})
@@ -73,10 +72,12 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.PUT("/legal-entities/:legalEntityId", requirePerm(a.User, "menu:company"), func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("legalEntityId"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "legalEntityId")
+		if !ok {
+			return
+		}
 		var req legalEntityReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		if err := a.User.UpdateLegalEntity(c.Request.Context(), id, user.LegalEntity{Code: req.Code, Name: req.Name}); err != nil {
@@ -100,8 +101,14 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 受权建号(封闭模型):上级分配角色/组织归属/数据范围。
 	g.POST("/accounts", requirePerm(a.User, "menu:account"), func(c *gin.Context) {
 		var req user.AccountInput
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Username, "username", 64),
+				httpx.RequireString(req.Password, "password", 128),
+				httpx.RequireString(req.RealName, "realName", 64),
+				httpx.RequireString(req.RoleCode, "roleCode", 32),
+			)
+		}) {
 			return
 		}
 		id, err := a.User.CreateAccount(c.Request.Context(), req)
@@ -117,14 +124,18 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 受权改号:角色/组织/数据范围/启停/改密(密码留空不改)。
 	g.PUT("/accounts/:accountId", requirePerm(a.User, "menu:account"), func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("accountId"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "accountId")
+		if !ok {
 			return
 		}
 		var req user.AccountInput
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Username, "username", 64),
+				httpx.RequireString(req.RealName, "realName", 64),
+				httpx.RequireString(req.RoleCode, "roleCode", 32),
+			)
+		}) {
 			return
 		}
 		if err := a.User.UpdateAccount(c.Request.Context(), id, req); err != nil {
@@ -186,8 +197,12 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 部门受权维护(建号前基础数据);menu:department 门禁。
 	g.POST("/departments", requirePerm(a.User, "menu:department"), func(c *gin.Context) {
 		var req departmentReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(req.LegalEntityID, "legalEntityId"),
+				httpx.RequireString(req.Name, "name", 64),
+			)
+		}) {
 			return
 		}
 		id, err := a.User.CreateDepartment(c.Request.Context(), req.LegalEntityID, req.Name)
@@ -200,14 +215,17 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.PUT("/departments/:deptId", requirePerm(a.User, "menu:department"), func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("deptId"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "deptId")
+		if !ok {
 			return
 		}
 		var req departmentReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(req.LegalEntityID, "legalEntityId"),
+				httpx.RequireString(req.Name, "name", 64),
+			)
+		}) {
 			return
 		}
 		if err := a.User.UpdateDepartment(c.Request.Context(), id, req.LegalEntityID, req.Name); err != nil {
@@ -230,8 +248,13 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 岗位受权维护(建号前基础数据);menu:post 门禁;roles=功能角色码全量替换。
 	g.POST("/posts", requirePerm(a.User, "menu:post"), func(c *gin.Context) {
 		var req postReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(req.DeptID, "deptId"),
+				httpx.RequireString(req.Code, "code", 32),
+				httpx.RequireString(req.Name, "name", 64),
+			)
+		}) {
 			return
 		}
 		id, err := a.User.CreatePost(c.Request.Context(), req.DeptID, req.Code, req.Name, req.Roles)
@@ -244,14 +267,18 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.PUT("/posts/:postId", requirePerm(a.User, "menu:post"), func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("postId"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "postId")
+		if !ok {
 			return
 		}
 		var req postReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(req.DeptID, "deptId"),
+				httpx.RequireString(req.Code, "code", 32),
+				httpx.RequireString(req.Name, "name", 64),
+			)
+		}) {
 			return
 		}
 		if err := a.User.UpdatePost(c.Request.Context(), id, req.DeptID, req.Code, req.Name, req.Roles); err != nil {
@@ -273,12 +300,14 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 区域覆盖主体划分:子公司划经营区域/摘除(migrations/000076;0=摘除回落祖先/总公司兜底)。
 	g.PUT("/regions/:regionId/coverage", requirePerm(a.User, "menu:region"), func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("regionId"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "regionId")
+		if !ok {
+			return
+		}
 		var req struct {
 			LegalEntityID int64 `json:"legalEntityId"`
 		}
-		if err := c.ShouldBindJSON(&req); err != nil || id <= 0 || req.LegalEntityID < 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		if err := a.User.AssignRegionCoverage(c.Request.Context(), id, req.LegalEntityID); err != nil {

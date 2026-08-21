@@ -5,6 +5,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -22,9 +23,16 @@ type customerRegistrationReq struct {
 func registerCustomerSelfRegistration(pub *gin.RouterGroup, a *app.Application) {
 	pub.POST("/customer-registrations", func(c *gin.Context) {
 		var req customerRegistrationReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" || req.Phone == "" ||
-			req.IDCardNo == "" || req.LegalEntityID <= 0 || req.AddressID <= 0 || req.RegionID <= 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Name, "name", 64),
+				httpx.RequirePhone(req.Phone, "phone"),
+				httpx.RequireString(req.IDCardNo, "idCardNo", 32),
+				httpx.RequirePositiveID(req.LegalEntityID, "legalEntityId"),
+				httpx.RequirePositiveID(req.AddressID, "addressId"),
+				httpx.RequirePositiveID(req.RegionID, "regionId"),
+			)
+		}) {
 			return
 		}
 		id, err := a.CustomerOnboarding.Submit(c.Request.Context(), customer.Registration{

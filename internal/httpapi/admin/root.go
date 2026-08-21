@@ -39,8 +39,12 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 
 	api.POST("/auth/login", func(c *gin.Context) {
 		var req loginReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Username, "username", 64),
+				httpx.RequireString(req.Password, "password", 128),
+			)
+		}) {
 			return
 		}
 		res, err := a.User.Login(c.Request.Context(), req.Username, req.Password)
@@ -96,8 +100,12 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 			return
 		}
 		var req changePasswordReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.OldPassword, "oldPassword", 128),
+				httpx.RequireString(req.NewPassword, "newPassword", 128),
+			)
+		}) {
 			return
 		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
@@ -116,8 +124,11 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 			return
 		}
 		var req selfProfileReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.RealName == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.RealName, "realName", 64),
+			)
+		}) {
 			return
 		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)

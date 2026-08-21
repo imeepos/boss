@@ -27,8 +27,13 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 新建班组(承接 admin 后台基础数据维护;code 公司内唯一)。
 	g.POST("/worker-groups", requirePerm(a.User, "menu:order"), func(c *gin.Context) {
 		var req workerGroupCreateReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.Code == "" || req.Name == "" || req.LegalEntityID <= 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Code, "code", 32),
+				httpx.RequireString(req.Name, "name", 64),
+				httpx.RequirePositiveID(req.LegalEntityID, "legalEntityId"),
+			)
+		}) {
 			return
 		}
 		id, err := a.Worker.CreateGroup(c.Request.Context(), worker.Group{
@@ -172,8 +177,12 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 下发站内消息(即时出现在师傅端消息中心,worker.yaml POST /worker-messages)。
 	g.POST("/worker-messages", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
 		var req sendWorkerMessageReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.Title == "" || req.WorkerID <= 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(req.WorkerID, "workerId"),
+				httpx.RequireString(req.Title, "title", 128),
+			)
+		}) {
 			return
 		}
 		if _, err := a.Worker.GetWorker(c.Request.Context(), req.WorkerID); err != nil {
@@ -231,8 +240,11 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	g.POST("/notices", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
 		var req publishNoticeReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Title, "title", 128),
+			)
+		}) {
 			return
 		}
 		id, err := a.WorkerNotice.CreateNotice(c.Request.Context(), worker.Notice{

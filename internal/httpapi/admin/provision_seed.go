@@ -22,8 +22,11 @@ func registerProvisionSeedRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 网络资源(含端口):环节2/3 前置。
 	p.POST("/resources", func(c *gin.Context) {
 		var r resource.Resource
-		if err := c.ShouldBindJSON(&r); err != nil || r.AddressID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &r, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(r.AddressID, "addressId"),
+			)
+		}) {
 			return
 		}
 		id, err := a.Resource.CreateResource(c.Request.Context(), r)
@@ -37,8 +40,12 @@ func registerProvisionSeedRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	p.POST("/ports", func(c *gin.Context) {
 		var p2 resource.Port
-		if err := c.ShouldBindJSON(&p2); err != nil || p2.ResourceID == 0 || p2.AddressID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &p2, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(p2.ResourceID, "resourceId"),
+				httpx.RequirePositiveID(p2.AddressID, "addressId"),
+			)
+		}) {
 			return
 		}
 		if p2.Status == "" {
@@ -56,8 +63,11 @@ func registerProvisionSeedRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 渠道:下单前置。
 	p.POST("/channels", func(c *gin.Context) {
 		var ch order.Channel
-		if err := c.ShouldBindJSON(&ch); err != nil || ch.Code == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &ch, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(ch.Code, "code", 32),
+			)
+		}) {
 			return
 		}
 		id, err := a.Channel.CreateChannel(c.Request.Context(), ch)
@@ -71,8 +81,11 @@ func registerProvisionSeedRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 资产批次/标签/资产:环节5 标签预绑定与环节9 扫码前置。
 	p.POST("/asset-batches", func(c *gin.Context) {
 		var b asset.AssetBatch
-		if err := c.ShouldBindJSON(&b); err != nil || b.Code == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &b, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(b.Code, "code", 64),
+			)
+		}) {
 			return
 		}
 		id, err := a.Asset.CreateBatch(c.Request.Context(), b)
@@ -85,8 +98,11 @@ func registerProvisionSeedRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	p.POST("/tags", func(c *gin.Context) {
 		var t asset.Tag
-		if err := c.ShouldBindJSON(&t); err != nil || t.EpcCode == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &t, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(t.EpcCode, "epcCode", 64),
+			)
+		}) {
 			return
 		}
 		id, err := a.Asset.CreateTag(c.Request.Context(), t)
@@ -99,8 +115,11 @@ func registerProvisionSeedRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	p.POST("/assets", func(c *gin.Context) {
 		var as asset.Asset
-		if err := c.ShouldBindJSON(&as); err != nil || as.BatchID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &as, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(as.BatchID, "batchId"),
+			)
+		}) {
 			return
 		}
 		id, err := a.Asset.CreateAsset(c.Request.Context(), as)
@@ -114,8 +133,12 @@ func registerProvisionSeedRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 派单工单:环节8 派单后置备工单,再入池指派师傅。
 	p.POST("/dispatch-tickets", func(c *gin.Context) {
 		var t order.DispatchTicket
-		if err := c.ShouldBindJSON(&t); err != nil || t.TicketNo == "" || t.OrderID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &t, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(t.TicketNo, "ticketNo", 32),
+				httpx.RequirePositiveID(t.OrderID, "orderId"),
+			)
+		}) {
 			return
 		}
 		if t.Status == "" {

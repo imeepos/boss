@@ -12,6 +12,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -24,8 +25,11 @@ type workerSmsCodeReq struct {
 func workerSmsCodeHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req workerSmsCodeReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Phone, "phone", 20),
+			)
+		}) {
 			return
 		}
 		if _, err := findWorkerByPhone(c.Request.Context(), a, req.Phone); err != nil {
@@ -52,8 +56,12 @@ type workerLoginReq struct {
 func workerLoginHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req workerLoginReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Phone, "phone", 20),
+				httpx.RequireString(req.Mode, "mode", 16),
+			)
+		}) {
 			return
 		}
 		w, err := findWorkerByPhone(c.Request.Context(), a, req.Phone)

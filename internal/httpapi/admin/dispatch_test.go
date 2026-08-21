@@ -33,13 +33,16 @@ func (f *fakeDispatchOrder) ListDispatchTickets(context.Context) ([]order.Dispat
 func (f *fakeDispatchOrder) ListTicketItems(context.Context) ([]order.TicketItem, error) {
 	return nil, nil
 }
+func (f *fakeDispatchOrder) GetTicketItemByNo(context.Context, string) (*order.TicketItem, error) {
+	return nil, nil
+}
 func (f *fakeDispatchOrder) GetDispatchTicketByNo(_ context.Context, no string) (*order.DispatchTicket, error) {
 	if f.byNo != nil {
 		f.byNo.TicketNo = no
 	}
 	return f.byNo, nil
 }
-func (f *fakeDispatchOrder) AssignDispatchTicket(_ context.Context, no string, id int64, name string) error {
+func (f *fakeDispatchOrder) AssignDispatchTicket(_ context.Context, no string, id int64, name string, _ ...order.AssignOpt) error {
 	f.assigned = &struct {
 		ticketNo   string
 		workerID   int64
@@ -47,7 +50,7 @@ func (f *fakeDispatchOrder) AssignDispatchTicket(_ context.Context, no string, i
 	}{no, id, name}
 	return nil
 }
-func (f *fakeDispatchOrder) AssignPendingDispatchTicket(_ context.Context, no string, id int64, name string) error {
+func (f *fakeDispatchOrder) AssignPendingDispatchTicket(_ context.Context, no string, id int64, name string, _ ...order.AssignOpt) error {
 	f.assigned = &struct {
 		ticketNo   string
 		workerID   int64
@@ -57,6 +60,12 @@ func (f *fakeDispatchOrder) AssignPendingDispatchTicket(_ context.Context, no st
 }
 func (f *fakeDispatchOrder) CreateDispatchTicket(context.Context, order.DispatchTicket) (int64, error) {
 	return 0, nil
+}
+func (f *fakeDispatchOrder) ClaimDispatchTicket(context.Context, string, int64, string) error {
+	return nil
+}
+func (f *fakeDispatchOrder) UpdateScheduleSlot(context.Context, string, string) error {
+	return nil
 }
 func (f *fakeDispatchOrder) ListComplaints(context.Context) ([]order.Complaint, error) {
 	return nil, nil
@@ -157,7 +166,7 @@ func TestDispatchPool(t *testing.T) {
 func TestAssignTicket(t *testing.T) {
 	mgr := auth.NewManager("s", time.Hour)
 	wo := &fakeDispatchOrder{}
-	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅"}}
+	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}}
 	r := newDispatchRouter(wo, &fakeOrderLedger{}, ws, mgr)
 
 	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/pool/TK-1/assign", `{"masterId":5}`, authToken(t, mgr))
@@ -167,6 +176,64 @@ func TestAssignTicket(t *testing.T) {
 	if wo.assigned == nil || wo.assigned.ticketNo != "TK-1" ||
 		wo.assigned.workerID != 5 || wo.assigned.workerName != "张师傅" {
 		t.Fatalf("assigned=%+v", wo.assigned)
+	}
+}
+
+// TestAssignTicketRejectsInactiveWorker 回归:离职/停用师傅不可被指派(修复前无状态校验)。
+func TestAssignTicketRejectsInactiveWorker(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	wo := &fakeDispatchOrder{}
+	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "离职师傅", Status: 0}}
+	r := newDispatchRouter(wo, &fakeOrderLedger{}, ws, mgr)
+
+	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/pool/TK-1/assign", `{"masterId":5}`, authToken(t, mgr))
+	var body struct {
+		Code int `json:"code"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Code == 0 || wo.assigned != nil {
+		t.Fatalf("code=%d assigned=%+v, want rejected", body.Code, wo.assigned)
+	}
+}
+
+// TestTransferTicketRejects 回归:终态工单不可转派;目标即当前师傅拒绝。
+func TestTransferTicketRejects(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	done := &fakeDispatchOrder{byNo: &order.DispatchTicket{
+		TicketID: 3, TicketNo: "TK-D", WorkerID: 5, Status: "DONE",
+	}}
+	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅", Status: 1}}
+	r := newDispatchRouter(done, &fakeOrderLedger{}, ws, mgr)
+
+	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/tickets/TK-D/transfer",
+		`{"toMasterId":6,"reason":"终态"}`, authToken(t, mgr))
+	var body struct {
+		Code int `json:"code"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Code == 0 {
+		t.Fatalf("terminal ticket transfer should be rejected, body=%s", w.Body.String())
+	}
+
+	self := &fakeDispatchOrder{byNo: &order.DispatchTicket{
+		TicketID: 3, TicketNo: "TK-S", WorkerID: 6, Status: "PENDING",
+	}}
+	r2 := newDispatchRouter(self, &fakeOrderLedger{},
+		&fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅", Status: 1}}, mgr)
+	w2 := postBodyAuth(t, r2, "/api/admin/v1/dispatch/tickets/TK-S/transfer",
+		`{"toMasterId":6,"reason":"自转"}`, authToken(t, mgr))
+	var body2 struct {
+		Code int `json:"code"`
+	}
+	if err := json.Unmarshal(w2.Body.Bytes(), &body2); err != nil {
+		t.Fatal(err)
+	}
+	if body2.Code == 0 || self.assigned != nil {
+		t.Fatalf("self-transfer should be rejected, code=%d assigned=%+v", body2.Code, self.assigned)
 	}
 }
 
@@ -200,7 +267,7 @@ func TestTransferTicket(t *testing.T) {
 		TicketID: 3, TicketNo: "TK-3", WorkerID: 5, WorkerName: "张师傅",
 	}}
 	ol := &fakeOrderLedger{}
-	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅"}}
+	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅", Status: 1}}
 	r := newDispatchRouter(wo, ol, ws, mgr)
 
 	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/tickets/TK-3/transfer",

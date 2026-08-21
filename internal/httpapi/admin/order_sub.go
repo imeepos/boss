@@ -3,8 +3,6 @@ package adminapi
 // 订单域子表路由:报障投诉/拆机/激活回调(order.yaml 已声明、原未实现的 5 个端点)。
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -46,8 +44,7 @@ func registerOrderSubRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	g.POST("/dismantles", requirePerm(a.User, "menu:dismantle"), func(c *gin.Context) {
 		var d order.Dismantle
-		if err := c.ShouldBindJSON(&d); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &d) {
 			return
 		}
 		id, err := a.OrderLedger.CreateDismantle(c.Request.Context(), d)
@@ -69,9 +66,8 @@ func registerOrderSubRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.POST("/activation-callbacks/:callbackId/retry", requirePerm(a.User, "menu:callback"), func(c *gin.Context) {
-		id, err := strconv.ParseInt(c.Param("callbackId"), 10, 64)
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		id, ok := httpx.ParsePathParamInt64(c, "callbackId")
+		if !ok {
 			return
 		}
 		if err := a.OrderLedger.RetryActivationCallback(c.Request.Context(), id); err != nil {

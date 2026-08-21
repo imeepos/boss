@@ -39,12 +39,16 @@ type workerEPCReq struct {
 // workerDismantleScanHandler 拆机扫码解绑:复用 quadlink 强制扫码约束。
 func workerDismantleScanHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req workerEPCReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		var req workerEPCReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -121,8 +125,11 @@ func lastNewEpc(logs []worker.ReplaceLog) string {
 func workerReplacePostHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req workerReplaceReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.NewEpc == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.NewEpc, "newEpc", 64),
+			)
+		}) {
 			return
 		}
 		tk, _, err := ticketOrder(c, a)

@@ -35,19 +35,21 @@ func registerAddressRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 挂接/改挂国家与一级行政区锚点(仅根节点;字段口径 docs/contract/fields.md 1.5.1)。
 	g.PUT("/addresses/:id/geo", requirePerm(a.User, "menu:address"), func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
 		var body struct {
 			CountryCode string `json:"countryCode" binding:"required,len=2"`
 			AdminCode   string `json:"adminCode"`
 		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &body) {
 			return
 		}
 		if err := validateGeoAnchor(c.Request.Context(), a, body.CountryCode, body.AdminCode); err != nil {
 			respondErr(c, err)
 			return
 		}
-		id := queryInt64(c, "id")
 		if err := a.User.SetAddressGeo(c.Request.Context(), id, body.CountryCode, body.AdminCode); err != nil {
 			respondErr(c, err)
 			return
@@ -81,8 +83,12 @@ func registerAddressRoutes(g *gin.RouterGroup, a *app.Application) {
 			CountryCode string `json:"countryCode"`
 			AdminCode   string `json:"adminCode"`
 		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &body, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(body.Label, "label", 32),
+				httpx.RequireString(body.Name, "name", 128),
+			)
+		}) {
 			return
 		}
 		if body.CountryCode != "" || body.AdminCode != "" {
@@ -105,14 +111,20 @@ func registerAddressRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 改名(path 权威不可变)。
 	g.PUT("/addresses/:id", requirePerm(a.User, "menu:address"), func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
 		var body struct {
 			Name string `json:"name" binding:"required"`
 		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &body, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(body.Name, "name", 128),
+			)
+		}) {
 			return
 		}
-		id := queryInt64(c, "id")
 		if err := a.User.UpdateAddressName(c.Request.Context(), id, body.Name); err != nil {
 			respondErr(c, err)
 			return
@@ -124,7 +136,10 @@ func registerAddressRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 删除叶节点(有子级/被业务引用返回 409)。
 	g.DELETE("/addresses/:id", requirePerm(a.User, "menu:address"), func(c *gin.Context) {
-		id := queryInt64(c, "id")
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
 		if err := a.User.DeleteAddress(c.Request.Context(), id); err != nil {
 			respondErr(c, err)
 			return
@@ -142,8 +157,7 @@ func registerAddressRoutes(g *gin.RouterGroup, a *app.Application) {
 				AdminCode   string `json:"adminCode"`
 			} `json:"rows" binding:"required"`
 		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		rows := make([]user.AddressRow, 0, len(req.Rows))

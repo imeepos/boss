@@ -57,8 +57,7 @@ func workerServiceMessagesHandler(a *app.Application) gin.HandlerFunc {
 func workerServiceMessageHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req workerServiceMessageReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		workerID, _ := portalWorker(c)
@@ -125,8 +124,7 @@ func workerSafetyCheckHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		workerID, _ := portalWorker(c)
 		var req workerSafetyCheckReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		now := time.Now()
