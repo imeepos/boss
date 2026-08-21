@@ -16,5 +16,7 @@ WORKDIR /app
 COPY migrations /app/migrations
 # 迁移文件源权限可能是 600(git/编辑器差异),容器以 app 用户运行必须可读,统一放开读权限。
 RUN chmod -R a+rX /app/migrations
+# 备份归档目录(BOSS_BACKUP_DIR):镜像内预建属主 app,命名卷首挂时继承该属主。
+RUN mkdir -p /data/backups && chown app:app /data/backups
 USER app
 ENTRYPOINT ["boss-server"]
