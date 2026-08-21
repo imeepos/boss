@@ -169,13 +169,13 @@ fun MessagesScreen(nav: Nav) {
                                 ProfileApi.readMessage(msgId)
                                 true
                             } catch (e: Exception) {
+                                android.util.Log.w("MessagesPage", "mark-read failed msgId=$msgId: ${e::class.simpleName} ${e.message}", e)
+                                markErr = "标记已读失败: ${e::class.simpleName}: ${e.message}"
                                 false
                             }
                             pendingMsgId = null
                             if (ok) {
                                 nav.push(routeOf(m.optString("category")))
-                            } else {
-                                markErr = "标记已读失败,请重试"
                             }
                         }
                     },
