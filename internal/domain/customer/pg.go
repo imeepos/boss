@@ -9,6 +9,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
+var ErrForeignKeyViolation = errors.New("customer: foreign key violation")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
@@ -47,8 +50,40 @@ func scanCustomer(r rowScanner) (*Customer, error) {
 	return &c, nil
 }
 
+// exists 校验单表存在性(customers 无外键约束,关联完整性由本域应用层保证)。
+func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, error) {
+	var ok bool
+	err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM `+table+` WHERE id = $1)`, id).Scan(&ok)
+	if err != nil {
+		return false, fmt.Errorf("customer: check %s %d: %w", table, id, err)
+	}
+	return ok, nil
+}
+
 // Create 建档,返回自增 id;customer_code 由 migration 000085 派生规则填入。
+// 校验 address_id 和 legal_entity_id 存在性,防止孤儿客户。
 func (s *PGStore) Create(ctx context.Context, c Customer) (int64, error) {
+	// 关联完整性校验
+	if c.AddressID > 0 {
+		ok, err := s.exists(ctx, "addresses", c.AddressID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("customer: address %d: %w", c.AddressID, ErrForeignKeyViolation)
+		}
+	}
+	if c.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", c.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("customer: legal entity %d: %w", c.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO customers(name, phone, id_type, id_no, real_name_status, service_status,
