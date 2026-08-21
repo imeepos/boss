@@ -14,7 +14,37 @@ const custRegCols = `id, name, phone, id_card_no, legal_entity_id, address_id, r
  review_note, reviewer_account_id, customer_id, submitted_at, reviewed_at`
 
 // Submit 新建客户注册申请(落 PENDING);submitted_at 由 DB 默认 now() 生成。
+// 校验 legal_entity_id, address_id, region_id 存在性,防止孤儿申请。
 func (s *PGStore) Submit(ctx context.Context, reg Registration) (int64, error) {
+	// 关联完整性校验
+	if reg.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", reg.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("customer: legal entity %d: %w", reg.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+	if reg.AddressID > 0 {
+		ok, err := s.exists(ctx, "addresses", reg.AddressID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("customer: address %d: %w", reg.AddressID, ErrForeignKeyViolation)
+		}
+	}
+	if reg.RegionID > 0 {
+		ok, err := s.exists(ctx, "regions", reg.RegionID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("customer: region %d: %w", reg.RegionID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 INSERT INTO customer_registrations(name, phone, id_card_no, legal_entity_id, address_id, region_id)
