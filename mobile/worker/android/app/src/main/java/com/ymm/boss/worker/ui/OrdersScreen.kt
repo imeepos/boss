@@ -45,9 +45,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.api.TicketApi
+import com.ymm.boss.worker.api.friendlyMessage
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
+import com.ymm.boss.worker.ui.theme.Success
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -64,7 +66,8 @@ private const val PAGE_SIZE = 20
 fun OrdersScreen(nav: NavHost) {
     var cur by remember { mutableStateOf("doing") }
     var refresh by remember { mutableIntStateOf(0) }
-    var tip by remember { mutableStateOf("") }
+    var tip by remember { mutableStateOf<Pair<Boolean, String>?>(null) } // ok to 文案
+    var taking by remember { mutableStateOf("") } // 正在领取的 ticketNo
     var loading by remember { mutableStateOf(true) }
     var refreshing by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
@@ -99,9 +102,16 @@ fun OrdersScreen(nav: NavHost) {
     }
 
     fun take(no: String) {
+        if (taking.isNotEmpty()) return
+        taking = no
         scope.launch {
-            tip = try { TicketApi.accept(no).optString("message", "已领取") }
-            catch (e: Exception) { "领取失败，请重试。" }
+            tip = try {
+                TicketApi.accept(no)
+                true to "领取成功，工单已进入进行中"
+            } catch (e: Exception) {
+                false to "接单失败：${friendlyMessage(e)}"
+            }
+            taking = ""
             refresh++
         }
     }
@@ -125,13 +135,15 @@ fun OrdersScreen(nav: NavHost) {
     Column(Modifier.fillMaxSize()) {
         TopBar("工单列表", action = "刷新", onAction = { refresh++ })
         FilterTabs(cur) { cur = it }
-        if (tip.isNotEmpty()) {
-            Text(tip, fontSize = 12.sp, color = Color(0xFFCF1322), modifier = Modifier.padding(horizontal = 16.dp))
+        if (tip != null) {
+            val (ok, msg) = tip!!
+            Text(msg, fontSize = 12.sp, color = if (ok) Success else Color(0xFFCF1322),
+                modifier = Modifier.padding(horizontal = 16.dp))
         }
         when {
             loading && items.isEmpty() -> HomeCard(topPadding = 0) { CardTitle("工单"); Loading() }
             failed && items.isEmpty() -> HomeCard(topPadding = 0) { CardTitle("工单"); Notice("工单加载失败，请刷新重试。") }
-            else -> TicketList(items.take(visible), hasMore = visible < items.size, nav, onLoadMore = { visible += PAGE_SIZE }) { take(it) }
+            else -> TicketList(items.take(visible), hasMore = visible < items.size, nav, onLoadMore = { visible += PAGE_SIZE }, taking = taking) { take(it) }
         }
     }
     }
@@ -143,6 +155,7 @@ private fun TicketList(
     hasMore: Boolean,
     nav: NavHost,
     onLoadMore: () -> Unit,
+    taking: String,
     onTake: (String) -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -152,7 +165,7 @@ private fun TicketList(
             item { EmptyState("暂无工单") }
         }
         items(items, key = { it.optString("ticketNo") }) { t ->
-            TicketOrderCard(t, onTake = onTake) { nav.push(ticketScreen(t.optString("ticketNo"))) }
+            TicketOrderCard(t, onTake = onTake, taking = taking) { nav.push(ticketScreen(t.optString("ticketNo"))) }
         }
         item {
             Footer(hasMore)

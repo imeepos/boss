@@ -57,7 +57,7 @@ internal fun milestoneOf(stage: Int) = when {
 }
 
 @Composable
-internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, onClick: () -> Unit) {
+internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, taking: String = "", onClick: () -> Unit) {
     val no = t.optString("ticketNo")
     val status = t.optString("status")
     // 卡片容器对齐 user 端 AppCard:外边距 14/6 + 平面白底 + 12dp 圆角 + 16dp 内边距,无阴影
@@ -105,7 +105,7 @@ internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, onClick: (
             }
             when (status) {
                 "DONE" -> DoneFooter()
-                "TODO" -> TodoFooter(no, onTake)
+                "TODO" -> TodoFooter(no, taking == no, onTake)
                 else -> ProgressBody(t.optInt("stage", 1))
             }
         }
@@ -125,7 +125,7 @@ private fun ProgressBody(stage: Int) {
 }
 
 @Composable
-private fun TodoFooter(no: String, onTake: (String) -> Unit) {
+private fun TodoFooter(no: String, busy: Boolean, onTake: (String) -> Unit) {
     Spacer(Modifier.height(12.dp))
     Row(
         Modifier.fillMaxWidth(),
@@ -133,10 +133,10 @@ private fun TodoFooter(no: String, onTake: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "领取工单", fontSize = 13.sp, color = Color.White, textAlign = TextAlign.Center,
+            if (busy) "领取中…" else "领取工单", fontSize = 13.sp, color = Color.White, textAlign = TextAlign.Center,
             modifier = Modifier
-                .background(Primary, RoundedCornerShape(8.dp))
-                .clickable { onTake(no) }
+                .background(if (busy) Primary.copy(alpha = 0.5f) else Primary, RoundedCornerShape(8.dp))
+                .clickable(enabled = !busy) { onTake(no) }
                 .padding(horizontal = 20.dp, vertical = 8.dp),
         )
     }

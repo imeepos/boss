@@ -11,6 +11,24 @@ import java.net.URL
 
 class ApiException(val status: Int, message: String) : Exception(message)
 
+// 异常 → 用户可读文案;ApException.status 即信封 code(对齐 pkg/apitypes/code.go)。
+fun friendlyMessage(e: Exception): String = when {
+    e is ApiException && e.status >= 1000 -> when (e.status) {
+        40100 -> "登录已失效，请重新登录"
+        40300 -> "暂无权限领取该工单"
+        40400 -> "工单不存在"
+        40910 -> "工单状态已变化，请刷新后重试"
+        else -> e.message?.ifBlank { null } ?: "请求失败(${e.status})"
+    }
+    e is ApiException -> when (e.status) {
+        401 -> "登录已失效，请重新登录"
+        in 500..599 -> "服务器异常，请稍后重试"
+        else -> "网络异常(HTTP ${e.status})"
+    }
+    e is java.io.IOException -> "网络连接失败，请检查网络"
+    else -> e.message?.ifBlank { null } ?: "操作失败，请重试"
+}
+
 // 师傅端统一 HTTP 客户端,契约对齐 api/openapi/worker.yaml(信封裁定见 alignment-audit.md §9)。
 // 服务端所有响应为统一信封 {code,msg,data}:code!=0 抛 ApiException,成功返回 data 载荷。
 // base 由 BuildConfig.BOSS_BASE_URL 注入,debug 走 10.0.2.2:28080(模拟器宿主机),release 走 HTTPS 生产域名。
