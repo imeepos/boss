@@ -1,148 +1,24 @@
 package adminapi
 
-import (
-	"strconv"
-	"time"
+// W 师傅注册 / 审核 / 实名认证 子域路由注册(迁移 000050)。
+// 注册申请为公开端点,已在 RegisterRoutes 的 api 组注册;此处为审核队列 + 实名核验(均走 menu:dispatch)。
+// 全部 handler 实现见 worker_onboarding_handlers.go;此处只保留扁平路由表 + 请求体类型。
 
+import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/internal/domain/worker"
-	"github.com/ymm-001/boss/internal/pkg/auth"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
-	"github.com/ymm-001/boss/internal/pkg/middleware"
-	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // registerWorkerOnboardingRoutes 注册师傅注册 / 审核 / 实名认证 子域路由(迁移 000050)。
-// 注册申请为公开端点,已在 RegisterRoutes 的 api 组注册;此处为审核队列 + 实名核验(均走 menu:dispatch)。
 func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
-	// 审核队列:按状态列出(空=全部)。
-	g.GET("/worker-registrations", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		list, err := a.WorkerOnboarding.ListRegistrations(c.Request.Context(), c.Query("status"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
+	g.GET("/worker-registrations", requirePerm(a.User, "menu:dispatch"), workerListRegistrationsHandler(a))
+	g.POST("/worker-registrations/:id/approve", requirePerm(a.User, "menu:dispatch"), workerApproveRegistrationHandler(a))
+	g.POST("/worker-registrations/:id/reject", requirePerm(a.User, "menu:dispatch"), workerRejectRegistrationHandler(a))
 
-	// 审核通过:建 workers 主档 + 回填。
-	g.POST("/worker-registrations/:id/approve", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		id, ok := httpx.ParsePathParamInt64(c, "id")
-		if !ok {
-			return
-		}
-		var req workerApproveReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequirePositiveID(req.GroupID, "groupId"),
-				httpx.RequirePositiveID(req.RegionID, "regionId"),
-			)
-		}) {
-			return
-		}
-		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		workerID, err := a.WorkerOnboarding.Approve(c.Request.Context(), id, claims.AccountID, req.GroupID, req.RegionID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "worker_registration.approve", "worker_registration", c.Param("id"),
-			gin.H{"workerId": workerID, "groupId": req.GroupID, "regionId": req.RegionID})
-		resolveTodo(c.Request.Context(), a, refWorkerReg, strconv.FormatInt(id, 10))
-		respond(c, apitypes.CodeOK, gin.H{"workerId": workerID, "status": worker.RegStatusApproved})
-	})
-
-	// 审核驳回:记审核意见。
-	g.POST("/worker-registrations/:id/reject", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		id, ok := httpx.ParsePathParamInt64(c, "id")
-		if !ok {
-			return
-		}
-		var req workerReviewReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		if err := a.WorkerOnboarding.Reject(c.Request.Context(), id, claims.AccountID, req.Note); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "worker_registration.reject", "worker_registration", c.Param("id"),
-			gin.H{"note": req.Note})
-		resolveTodo(c.Request.Context(), a, refWorkerReg, strconv.FormatInt(id, 10))
-		respond(c, apitypes.CodeOK, gin.H{"status": worker.RegStatusRejected})
-	})
-
-	// 师傅实名核验相关(worker 主体 1:1)。
-	g.POST("/workers/:workerId/real-name", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
-		if !ok {
-			return
-		}
-		var req workerRealNameReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequireString(req.RealName, "realName", 64),
-				httpx.RequireString(req.IDCardNo, "idCardNo", 32),
-				httpx.RequireString(req.Method, "method", 32),
-			)
-		}) {
-			return
-		}
-		id, err := a.WorkerRealName.SubmitRealName(c.Request.Context(), worker.WorkerRealNameVerification{
-			WorkerID:   workerID,
-			Method:     req.Method,
-			RealName:   req.RealName,
-			IDCardNo:   req.IDCardNo,
-			Result:     worker.RealNamePending,
-			VerifiedAt: time.Now(),
-		})
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "result": worker.RealNamePending})
-	})
-
-	g.GET("/workers/:workerId/real-name", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
-		if !ok {
-			return
-		}
-		v, err := a.WorkerRealName.GetLatest(c.Request.Context(), workerID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, v)
-	})
-
-	// 后台核验:PASS / FAIL。
-	g.POST("/workers/:workerId/real-name/verify", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
-		if !ok {
-			return
-		}
-		var req workerRealNameVerifyReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			if req.Result != worker.RealNamePass && req.Result != worker.RealNameFail {
-				return &httpx.ValidationError{Field: "result", Message: "must be PASS or FAIL"}
-			}
-			return nil
-		}) {
-			return
-		}
-		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		if err := a.WorkerRealName.Verify(c.Request.Context(), workerID, req.Result, claims.Username, claims.AccountID); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "worker_realname.verify", "worker_realname", c.Param("workerId"),
-			gin.H{"result": req.Result})
-		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
-	})
+	g.POST("/workers/:workerId/real-name", requirePerm(a.User, "menu:dispatch"), workerSubmitRealNameHandler(a))
+	g.GET("/workers/:workerId/real-name", requirePerm(a.User, "menu:dispatch"), workerGetRealNameHandler(a))
+	g.POST("/workers/:workerId/real-name/verify", requirePerm(a.User, "menu:dispatch"), workerVerifyRealNameHandler(a))
 }
 
 // workerGroupCreateReq 新建班组请求体(legalEntityId+code+name 必填)。
