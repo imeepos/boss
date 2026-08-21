@@ -224,3 +224,21 @@ paths:
         - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /regions/{regionId}/coverage:
+    put:
+      tags: [Org]
+      summary: 区域覆盖主体划分(子公司划经营区域;legalEntityId=0 摘除回落祖先/总公司兜底)
+      operationId: assignRegionCoverage
+      parameters:
+        - { name: regionId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legalEntityId]
+              properties:
+                legalEntityId: { type: integer, format: int64 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

@@ -1,0 +1,52 @@
+# admin 后台提醒中心(docs/plan/admin-notify-center.md;internal/domain/notify)。
+# 权限复用 menu:dispatch(消息中心页同门禁)。
+paths:
+  /notifications:
+    get:
+      tags: [Notify]
+      summary: 提醒清单(category/level/unread/hideResolved 过滤 + 分页)
+      operationId: listNotifications
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: level, in: query, schema: { type: string } }
+        - { name: unread, in: query, schema: { type: string, enum: ['1'] }, description: '1=仅未读' }
+        - { name: hideResolved, in: query, schema: { type: string, enum: ['1'] } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: envelope;data.items/data.total
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      items: { type: array, items: { type: object } }
+                      total: { type: integer }
+
+  /notifications/unread-count:
+    get:
+      tags: [Notify]
+      summary: 未读数(按角色/账号)
+      operationId: unreadNotificationCount
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /notifications/read:
+    post:
+      tags: [Notify]
+      summary: 标记已读(id 列表)
+      operationId: readNotifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids: { type: array, items: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

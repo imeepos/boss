@@ -695,6 +695,40 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /storage-config/rotate-secret:
+    post:
+      tags: [Sys]
+      summary: 轮换对象存储密钥(hostctl sidecar 新密钥落 secret 文件;permCode menu:params)
+      operationId: rotateStorageSecret
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /attachments/batch-get:
+    post:
+      tags: [Sys]
+      summary: 批量取附件元数据(按 id 列表)
+      operationId: batchGetAttachments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids: { type: array, items: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /attachments/{id}:
+    delete:
+      tags: [Sys]
+      summary: 删除附件(软删)
+      operationId: deleteAttachment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
 components:
   schemas:
     Attachment:

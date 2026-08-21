@@ -164,3 +164,11 @@ paths:
                 epc: { type: string }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /quad-links/purge-orphans:
+    post:
+      tags: [Quad]
+      summary: 清理孤儿链路(删除四码引用主体已不存在的 UNLINKED 行)
+      operationId: purgeOrphanQuadLinks
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

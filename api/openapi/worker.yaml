@@ -34,6 +34,7 @@ tags:
 paths:
   # ---------- Auth ----------
   /auth/sms-code: { $ref: './worker/auth.yaml#/paths/~1auth~1sms-code' }
+  /auth/dev/sms-code: { $ref: './worker/auth.yaml#/paths/~1auth~1dev~1sms-code' }
   /auth/login: { $ref: './worker/auth.yaml#/paths/~1auth~1login' }
   /auth/logout: { $ref: './worker/auth.yaml#/paths/~1auth~1logout' }
   /worker-registrations: { $ref: './worker/auth.yaml#/paths/~1worker-registrations' }

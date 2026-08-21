@@ -91,8 +91,16 @@ paths:
   /realid-config/{group}: { $ref: './admin/sys.yaml#/paths/~1realid-config~1{group}' }
   /realid-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1realid-config~1channel~1test' }
   /storage-config: { $ref: './admin/sys.yaml#/paths/~1storage-config' }
+  /storage-config/rotate-secret: { $ref: './admin/sys.yaml#/paths/~1storage-config~1rotate-secret' }
   /attachments: { $ref: './admin/sys.yaml#/paths/~1attachments' }
   /attachments/upload: { $ref: './admin/sys.yaml#/paths/~1attachments~1upload' }
+  /attachments/batch-get: { $ref: './admin/sys.yaml#/paths/~1attachments~1batch-get' }
+  /attachments/{id}: { $ref: './admin/sys.yaml#/paths/~1attachments~1{id}' }
+
+  # ---------- Notify(后台提醒中心) ----------
+  /notifications: { $ref: './admin/notify.yaml#/paths/~1notifications' }
+  /notifications/unread-count: { $ref: './admin/notify.yaml#/paths/~1notifications~1unread-count' }
+  /notifications/read: { $ref: './admin/notify.yaml#/paths/~1notifications~1read' }
 
   # ---------- AI(OpenAI 能力网关) ----------
   /ai/openai/config: { $ref: './admin/ai.yaml#/paths/~1ai~1openai~1config' }
@@ -109,6 +117,7 @@ paths:
   /api-keys: { $ref: './admin/sys.yaml#/paths/~1api-keys' }
   /api-keys/{id}: { $ref: './admin/sys.yaml#/paths/~1api-keys~1{id}' }
   /regions: { $ref: './admin/org.yaml#/paths/~1regions' }
+  /regions/{regionId}/coverage: { $ref: './admin/org.yaml#/paths/~1regions~1{regionId}~1coverage' }
   /menu-perms: { $ref: './admin/org.yaml#/paths/~1menu-perms' }
   /data-scopes: { $ref: './admin/org.yaml#/paths/~1data-scopes' }
 
@@ -173,6 +182,8 @@ paths:
   /orders: { $ref: './admin/order.yaml#/paths/~1orders' }
   /orders/{orderNo}: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}' }
   /orders/{orderNo}/check-resource: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}~1check-resource' }
+  /orders/{orderNo}/check-preview: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}~1check-preview' }
+  /orders/{orderNo}/cancel: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}~1cancel' }
   /orders/{orderNo}/reserve: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}~1reserve' }
   /orders/{orderNo}/charge: { $ref: './admin/order.yaml#/paths/~1orders~1{orderNo}~1charge' }
   /dispatch/pool: { $ref: './admin/order.yaml#/paths/~1dispatch~1pool' }
@@ -260,6 +271,7 @@ paths:
   /quad-links/by-port: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-port' }
   /quad-links/by-address: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-address' }
   /quad-links/reconcile: { $ref: './admin/quad.yaml#/paths/~1quad-links~1reconcile' }
+  /quad-links/purge-orphans: { $ref: './admin/quad.yaml#/paths/~1quad-links~1purge-orphans' }
   /scan-logs: { $ref: './admin/quad.yaml#/paths/~1scan-logs' }
   /tickets/{ticketNo}/scan-bind: { $ref: './admin/quad.yaml#/paths/~1tickets~1{ticketNo}~1scan-bind' }
   /tickets/{ticketNo}/dismantle/scan: { $ref: './admin/quad.yaml#/paths/~1tickets~1{ticketNo}~1dismantle~1scan' }

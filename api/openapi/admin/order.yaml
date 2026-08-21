@@ -238,3 +238,23 @@ paths:
         - { name: ticketNo, in: path, required: true, schema: { type: string } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /orders/{orderNo}/check-preview:
+    get:
+      tags: [Order]
+      summary: 核查预览(只读:地址下设备与端口分布,不推进订单)
+      operationId: checkPreviewOrder
+      parameters:
+        - { name: orderNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /orders/{orderNo}/cancel:
+    post:
+      tags: [Order]
+      summary: 订单取消(任一未完成状态→CANCELLED;与门户 portalOrderCancel 同语义)
+      operationId: cancelOrder
+      parameters:
+        - { name: orderNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
