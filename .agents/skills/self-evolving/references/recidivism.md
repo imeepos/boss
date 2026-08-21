@@ -55,3 +55,5 @@
 | 4 | 2026-08-21 | 真机 reboot 前未查 secure keyguard,PIN 锁死设备(1 次) |
 | 改 handler 未先 grep OpenAPI schemas.yaml 看完整字段,导致 schema 列出 12 字段 handler 只返 6 字段,前端 optString 静默吞空变"沉默 bug" | 1 | 2025-08-21(师傅工单详情 customerName/phone/address/product/finishedAt 等 12 字段全空白,FEEDBACK E 区记录) | schema/handler 漂移无失败信号;改 handler 前必 grep schema,list/detail 必须共用联表根 |
 | 任务开始前不看 `git status -uall`,带别人的 dirty diff 进提交 | 1 | 2026-08-21(user 端 dev-mode 临改被误判为我的范围而动 import) | 险些污染提交;应先划定"我的工作面",别人的 lint/缺 import 只提示 owner,不顺手改 |
+| 本地 macOS 与 102 部署文件是独立副本(非 git 同步),本地 edit 不影响服务器 | 1 | 2026-08-21(MinIO compose 文件改完本地,docker compose 在 102 上仍跑老版本;反复 "Recreated" 但配置不变才发现) | 浪费 10+ 轮;改部署文件必须先 ssh+cat 确认服务器实际版本,或先 scp 同步再 edit |
+| docker compose 顶层 `secrets:` 块在 UBI Micro 镜像容器内 `/run/secrets/` 不存在 | 1 | 2026-08-21(MinIO 镜像 RELEASE.2025-09-07,`docker compose config` 渲染正常但 `docker inspect` 见 Mounts 无 secrets) | 弃用 docker secrets,改 long-syntax bind mount;UBI Micro 镜像基础 docker secrets 兼容性未经验证前默认走 bind mount |

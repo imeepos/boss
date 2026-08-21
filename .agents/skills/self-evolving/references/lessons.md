@@ -163,3 +163,5 @@
 - 移动端"点击按钮无反应"先怀疑服务端状态没翻转,别只查前端:本例 accept 返回 code:0 但只回填 worker_id 不改 status,列表刷新后观感"没反应"。排查顺序 = 前端事件链(uiautomator dump 断言) → curl 同端点 → 查服务端写库逻辑。(2026-08-21 师傅端领取工单)
 - 测试替身里手工改状态(fw.tickets[0].Status="DOING")会掩蔽服务端不落库的 bug;fake 必须真实执行状态流转,断言才能守住回归。(2026-08-21)
 - 当测试报 "invalid worker token" 时,先检查 signWorkerToken 是否发生在 t.Setenv(BOSS_JWT_SECRET) 之后——顺序颠倒会签出错误密钥的 token。(2026-08-24)
+- 当部署文件存在于本机与服务器两侧且非 git 同步时,改文件前必须先 `ssh server cat <path>` 确认服务器版本,edit 本机副本后用 `scp` 推上去;改完用 `ssh ... git status` 或 `docker compose config` 在服务器侧验证,而非凭本机 git diff。skill 没提前警告我。(2026-08-21 MinIO compose)
+- 当需要给容器注入密钥时,优先 long-syntax `volumes: [bind]` 挂文件;`top-level secrets:` + `secrets: [..]` 块在某些基础镜像(UBI Micro、Distroless)上即使 compose config 渲染正常,容器内 `/run/secrets/` 也可能不存在。skill 没提前警告我。(2026-08-21 MinIO)
