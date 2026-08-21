@@ -27,8 +27,7 @@ func registerAIRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	ag.PUT("/ai/openai/config", func(c *gin.Context) {
 		var req ai.ConfigUpdate
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		claims, _ := c.Get(middleware.CtxClaims)
@@ -49,8 +48,7 @@ func registerAIRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	ag.POST("/ai/chat/completions", func(c *gin.Context) {
 		var req ai.ChatRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		res, err := a.AI.ChatCompletion(c.Request.Context(), req)
@@ -63,8 +61,7 @@ func registerAIRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	ag.POST("/ai/embeddings", func(c *gin.Context) {
 		var req ai.EmbeddingRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		res, err := a.AI.Embeddings(c.Request.Context(), req)

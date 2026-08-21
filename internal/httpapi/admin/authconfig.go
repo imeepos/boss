@@ -45,20 +45,19 @@ func registerAuthConfigRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.PUT("/auth-config/:group", perm, func(c *gin.Context) {
 		group := c.Param("group")
 		if len(authFieldByGroup(group)) == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "invalid group"})
 			return
 		}
 		var req struct {
 			Values map[string]string `json:"values" binding:"required"`
 		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		for key := range req.Values {
 			f, ok := authFieldByKey(key)
 			if !ok || f.Group != group {
-				respond(c, apitypes.CodeInvalidParam, nil)
+				respond(c, apitypes.CodeInvalidParam, gin.H{"error": "key does not belong to group"})
 				return
 			}
 		}

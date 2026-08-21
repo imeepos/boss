@@ -57,19 +57,23 @@ func registerSysRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.PUT("/params/:key", requirePerm(a.User, "menu:params"), func(c *gin.Context) {
+		key := c.Param("key")
+		if key == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "key is required"})
+			return
+		}
 		var req struct {
 			Value string `json:"value" binding:"required"`
 		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		var accountID int64 = httpx.ClaimsAccountID(c)
-		if err := a.User.UpdateParam(c.Request.Context(), c.Param("key"), req.Value, accountID); err != nil {
+		if err := a.User.UpdateParam(c.Request.Context(), key, req.Value, accountID); err != nil {
 			respondErr(c, err)
 			return
 		}
-		httpx.RecordAudit(a, c, "数据变更", "biz_param", c.Param("key"), map[string]any{"value": req.Value})
+		httpx.RecordAudit(a, c, "数据变更", "biz_param", key, map[string]any{"value": req.Value})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 

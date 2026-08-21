@@ -41,8 +41,7 @@ func adminStorageConfigPut(a *app.Application) gin.HandlerFunc {
 		var req struct {
 			Values map[string]string `json:"values" binding:"required"`
 		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		id := httpx.ClaimsAccountID(c)
