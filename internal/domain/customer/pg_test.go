@@ -51,18 +51,21 @@ func TestPGStore_Get(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, name, phone, id_type, id_no, real_name_status, service_status, address_id, legal_entity_id, region_id, region_name, created_at FROM customers WHERE id`).
+		mock.ExpectQuery(`SELECT id, customer_code, name, phone, id_type, id_no, real_name_status, service_status, address_id, legal_entity_id, region_id, region_name, created_at FROM customers WHERE id`).
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows([]string{
-				"id", "name", "phone", "id_type", "id_no", "real_name_status", "service_status",
+				"id", "customer_code", "name", "phone", "id_type", "id_no", "real_name_status", "service_status",
 				"address_id", "legal_entity_id", "region_id", "region_name", "created_at",
-			}).AddRow(int64(1), "王先生", "13800001111", "身份证", "110101199001011234", "VERIFIED", "ACTIVE",
+			}).AddRow(int64(1), "C-00000001", "王先生", "13800001111", "身份证", "110101199001011234", "VERIFIED", "ACTIVE",
 				int64(100), int64(1), int64(11), "root.luzon.ncr.manila", fixedTime))
 
 		s := NewPGStore(mock)
 		c, err := s.Get(context.Background(), 1)
 		if err != nil {
 			t.Fatalf("Get: %v", err)
+		}
+		if c.CustomerCode != "C-00000001" {
+			t.Fatalf("CustomerCode=%q, want C-00000001", c.CustomerCode)
 		}
 		if c.Name != "王先生" || c.Phone != "13800001111" || c.RegionID != 11 {
 			t.Fatalf("c=%+v", c)
@@ -78,7 +81,7 @@ func TestPGStore_Get(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, name, phone`).
+		mock.ExpectQuery(`SELECT id, customer_code, name, phone`).
 			WithArgs(int64(99)).
 			WillReturnError(pgx.ErrNoRows)
 
@@ -101,12 +104,12 @@ func TestPGStore_List(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, name, phone`).
+	mock.ExpectQuery(`SELECT id, customer_code, name, phone`).
 		WithArgs("王", "", "", 10, 0).
 		WillReturnRows(mock.NewRows([]string{
-			"id", "name", "phone", "id_type", "id_no", "real_name_status", "service_status",
+			"id", "customer_code", "name", "phone", "id_type", "id_no", "real_name_status", "service_status",
 			"address_id", "legal_entity_id", "region_id", "region_name", "created_at",
-		}).AddRow(int64(1), "王先生", "13800001111", "身份证", "110101199001011234", "VERIFIED", "ACTIVE",
+		}).AddRow(int64(1), "C-00000001", "王先生", "13800001111", "身份证", "110101199001011234", "VERIFIED", "ACTIVE",
 			int64(100), int64(1), int64(11), "root.luzon.ncr.manila", fixedTime))
 
 	s := NewPGStore(mock)
@@ -114,7 +117,7 @@ func TestPGStore_List(t *testing.T) {
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
-	if len(got) != 1 || got[0].Name != "王先生" {
+	if len(got) != 1 || got[0].Name != "王先生" || got[0].CustomerCode != "C-00000001" {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

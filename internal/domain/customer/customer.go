@@ -6,6 +6,7 @@ import "time"
 // 字段权威:docs/contract/fields.md 2.1;企业多联系人/站点属扩展,届时加 contact 子表。
 type Customer struct {
 	ID             int64     `json:"id"`
+	CustomerCode   string    `json:"customerCode"`   // 用户码:展示冗余,前缀 C-,对账仍以 ID 为准(adopted 2026-08-21)
 	Name           string    `json:"name"`
 	Phone          string    `json:"phone"`
 	IdType         string    `json:"idType"` // 身份证/护照/营业执照

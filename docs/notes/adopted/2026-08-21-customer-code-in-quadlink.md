@@ -45,21 +45,35 @@
 
 ## 落地任务清单(配套随主变更同提交)
 
-1. migration `000085_customer_code.up.sql`:`ALTER TABLE customers ADD COLUMN customer_code VARCHAR(32);`
-   `UPDATE customers SET customer_code = 'C-' || lpad(id::text, 8, '0');`
-   `ALTER TABLE customers ALTER COLUMN customer_code SET NOT NULL;`
-   `CREATE UNIQUE INDEX uq_customers_customer_code ON customers(customer_code);`
-   并同步 `.down.sql`。
-2. `server-ts` `Customer` 实体加 `customerCode` 字段(SnakeNamingStrategy 转 `customer_code`)。
-3. Go 域 `Customer` 结构体加 `CustomerCode` 字段,`INSERT`/`SELECT` 列清单同步加。
-4. `internal/httpapi/worker/scan.go:portalQuadH` 把 `customerCode: ""` 改为读 `a.Customer.GetCustomerCode(q.CustomerID)`。
-5. `docs/contract/fields.md` §2.1 增 `CustomerCode` 行 + §5.1 加"展示冗余"说明(本 note 互链)。
-6. `docs/contract/alignment-audit.md` §四码口径错误 第 8 条标 ✅ 已收敛(指本 note)。
-7. `docs/contract/data-layers.md` 附录 A 第 8 条标 ✅ 已修正。
-8. 师傅端 `worker/order.html:136` / `worker/report.html:72` / `admin/quadlink.html:105` 字段不变,
-   由后端接口正常返回即可。
-9. 单测:`internal/httpapi/worker/scan_test.go`(若有)增加 `customerCode` 非空断言。
-10. e2e:补一条 `quad{ customerCode: "C-..." }` 期望值。
+1. ✅ migration `000085_customer_code.up.sql` / `.down.sql`(2026-08-21 落地):
+   - 加列 `customer_code VARCHAR(32)`
+   - UPDATE 回填 `C-` + 8 位左零
+   - 建触发器 `trg_customers_set_code`(BEFORE INSERT,基于 `NEW.id` 派生)兜底新增行
+   - SET NOT NULL + UNIQUE INDEX
+2. ⚠️ `server-ts` `Customer` 实体:本仓库未发现 server-ts 实体目录(`grep -r 'class Customer\\b' --include='*.ts'` 无命中),
+   fields.md §7.1 标注的"server-ts/src/entities/customer.ts"暂未落地。跳过。
+3. ✅ Go 域 `Customer` 结构体加 `CustomerCode` 字段;`customerCols` 加 `customer_code`;
+   `scanCustomer` 多扫一列。INSERT 不动 — 由 DB 触发器兜底生成。
+4. ✅ `internal/httpapi/worker/scan.go:portalQuadH` 把 `customerCode: ""` 改为读
+   `quadCustomerCode(a, c, q.CustomerID)`,新函数读 `a.Customer.Get(...).CustomerCode`。
+5. ✅ `docs/contract/fields.md` §2.1 增 `CustomerCode` 行 + §5.1 加"展示冗余"说明。
+6. ✅ `docs/contract/data-layers.md` 附录 A 第 8 条标 ✅ 已收敛(指本 note)。
+7. ✅ 师傅端 `worker/order.html:136` / `worker/report.html:72` / `admin/quadlink.html:105`
+   字段不变,由后端接口正常返回即可。
+8. ✅ 单测:`pg_test.go` `TestPGStore_Get` / `TestPGStore_List` 更新 mock SELECT 列点,
+   并新增 `CustomerCode` 字段断言;`TestPGStore_Get/未命中` 同步更新正则。
+9. ⏳ e2e:补一条 `quad{ customerCode: "C-..." }` 期望值 — 待真实 102 环境 migration 跑完后补。
+
+## 落地偏离说明
+
+- 落地方案由"应用层发号"调整为"DB 触发器兜底":保留 note 落地点 #3 INSERT 列同步,但实际
+  INSERT 不带 customer_code(由 BEFORE INSERT 触发器基于 `NEW.id` 派生)。优势:零应用层发号
+  逻辑、INSERT 路径零改动(两处生产 INSERT + 一处 gis 集成测试全部无需触动);唯一代价:
+  PG 端多一个 plpgsql 触发器函数 + 一条触发器,与 `arn_sequences` 行锁计数表同源
+  (adopted 2026-08-18)。
+- PG BEFORE INSERT 触发器读取 `NEW.id` 的可靠性:PG 10+ BIGSERIAL = `DEFAULT nextval(...)`,
+  默认表达式在 BEFORE 触发器之前求值,`NEW.id` 已被 sequence 赋值(参见
+  https://www.postgresql.org/docs/current/trigger-definition.html)。
 
 ## 关联
 

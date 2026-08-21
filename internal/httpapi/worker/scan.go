@@ -111,7 +111,8 @@ func workerPhotoUploadHandler(a *app.Application) gin.HandlerFunc {
 }
 
 // portalQuadH 按地址取四码对照视图:码值经绑定链解析(资产码/端口码真实,
-// 用户地址码取 user_addresses.addr_code;customerCode 无主档编码,暂空)。
+// 用户地址码取 user_addresses.addr_code;customerCode 取 customers.customer_code,
+// adopted 2026-08-21 后由 migration 000085 + BEFORE INSERT 触发器自动派生)。
 func portalQuadH(a *app.Application, c *gin.Context, addressID int64) gin.H {
 	q, err := a.QuadLink.GetByAddress(c.Request.Context(), addressID)
 	if err != nil || q == nil {
@@ -123,8 +124,17 @@ func portalQuadH(a *app.Application, c *gin.Context, addressID int64) gin.H {
 		"assetCode": quadAssetCode(a, c, q.AssetID),
 		"portCode": quadPortCode(a, c, q.PortID),
 		"addrCode": quadAddrCode(a, c, addressID),
-		"customerCode": "",
+		"customerCode": quadCustomerCode(a, c, q.CustomerID),
 	}
+}
+
+// quadCustomerCode 用户码(customers.customer_code,adopted 2026-08-21)。
+func quadCustomerCode(a *app.Application, c *gin.Context, customerID int64) string {
+	cust, err := a.Customer.Get(c.Request.Context(), customerID)
+	if err != nil || cust == nil {
+		return ""
+	}
+	return cust.CustomerCode
 }
 
 // quadAssetCode 资产码(assets.asset_code)。

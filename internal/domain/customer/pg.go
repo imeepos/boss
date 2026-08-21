@@ -36,18 +36,18 @@ type rowScanner interface {
 	Scan(dest ...any) error
 }
 
-const customerCols = `id, name, phone, id_type, id_no, real_name_status, service_status, address_id, legal_entity_id, region_id, region_name, created_at`
+const customerCols = `id, customer_code, name, phone, id_type, id_no, real_name_status, service_status, address_id, legal_entity_id, region_id, region_name, created_at`
 
 func scanCustomer(r rowScanner) (*Customer, error) {
 	var c Customer
-	if err := r.Scan(&c.ID, &c.Name, &c.Phone, &c.IdType, &c.IdNo, &c.RealNameStatus,
+	if err := r.Scan(&c.ID, &c.CustomerCode, &c.Name, &c.Phone, &c.IdType, &c.IdNo, &c.RealNameStatus,
 		&c.ServiceStatus, &c.AddressID, &c.LegalEntityID, &c.RegionID, &c.RegionName, &c.CreatedAt); err != nil {
 		return nil, err
 	}
 	return &c, nil
 }
 
-// Create 建档,返回自增 id。
+// Create 建档,返回自增 id;customer_code 由 migration 000085 派生规则填入。
 func (s *PGStore) Create(ctx context.Context, c Customer) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
