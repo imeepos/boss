@@ -169,3 +169,4 @@
 75. 提交时暂存区存在并行会话遗留文件,用 `git commit -m ... -- <本任务路径>` pathspec 提交,不动他人在场改动(2026-08-2x importer 提交避开 mobile/*.kt)。
 76. pgx v5 回扫 timestamptz 得到的是「Go 进程本地时区」的 time.Time，不是 UTC——代码注释声称"DB 时间戳按 UTC 扫描"属错误假设；时区审计先实测（pgx 连库 SELECT now() 回扫看偏移），再信注释(2026-08-21 时区审计)。
 77. 时间正确性常靠「DB会话=进程=UTC」三重巧合维持：审计时区须同时查 SHOW TimeZone、DSN 是否带 TimeZone、容器 TZ env 三处；任何一处单方面改变都会碎(2026-08-21)。
+- #78 门禁(typecheck/test/build)通过后立即 git commit,再跑耗时的 E2E/CDP/双主题验证;共享工作区有并行会话时,验证耗时窗口就是被扫提交/被回退的窗口(2026-08-21 importer Excel 导入被并行会话混提交)。

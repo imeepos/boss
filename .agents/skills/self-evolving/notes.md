@@ -131,3 +131,8 @@
 - skill 有没有提前警告我：没有；时区三重巧合(会话/DSN/容器)无沉淀。
 - 重来一次：涉及时区的结论一律先连库实测，不信代码注释。
 - 新经验已喂：lessons #76/#77，审计报告 docs/review/time-timezone-audit.md。
+
+## 2026-08-21 importer Excel 导入任务
+- 哪个坑浪费最多时间:门禁通过后先跑长链路验证(E2E+CDP 双主题),期间并行会话把我的 8 个文件连同它自己的 notify 路由扫进同一个混合提交 f919acc;git status 突然"干净"导致一轮恐慌排查。
+- skill 有没有预警:部分预警(lessons 有"git add 前查暂存区"与"并行会话覆盖未提交修改"),但没有"门禁绿后先 commit 再验证"的明确指令。
+- 重来一次:门禁(typecheck/test/build)一绿立即 commit,再做 E2E/截图等耗时验证,验证发现问题的修复走第二个提交。
