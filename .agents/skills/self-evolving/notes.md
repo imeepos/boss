@@ -190,3 +190,8 @@
 - 最浪费时间的坑:并行会话把我进行中的半成品(还混入无关 OrderPage.kt)直接提交成 fe30e60 巨石 commit;以及 102 容器命名卷 root 属主导致服务装配 nil,两轮部署才修好。
 - skill 有没有提前警告:并行会话问题有(recidivism 已登记过同源坑);Docker 卷属主坑无。
 - 重来一次:开工即 git status 分辨并行改动;凡新增服务依赖可写目录,部署 compose/Dockerfile 与代码同一提交落地,并在镜像里预建目录 chown。
+
+## 2026-08-25 顶栏下拉统一 antd 圆角卡片样式
+- 最大坑:CDP 双主题验证完到 git commit 之间隔了一次 pnpm 门禁,期间并行会话把我 4 个已 stage 文件卷进它的 feat(push)/feat(worker) 提交。内容已验证且在 HEAD,但失去独立 revert 性——累犯台账该条第 2 次。
+- 自我预警:lesson 74 明确预警过,这次验证环节多、窗口拉长,还是中招。改完应先 commit 再做长门禁。
+- 重来一次:样式类改动验证成本高时,先 commit 一次"CID 验证过的中间态",门禁后如需修正再补 commit。
