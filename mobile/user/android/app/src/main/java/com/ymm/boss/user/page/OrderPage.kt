@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
@@ -82,6 +83,7 @@ import org.json.JSONObject
 @Composable
 fun OrderScreen(nav: Nav, no: String) {
     var detail by remember { mutableStateOf<JSONObject?>(null) }
+    var wrapper by remember { mutableStateOf<JSONObject?>(null) }
     var timeline by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var err by remember { mutableStateOf("") }
     var showCancel by remember { mutableStateOf(false) }
@@ -89,6 +91,7 @@ fun OrderScreen(nav: Nav, no: String) {
     LaunchedEffect(no, nav.refreshTick) {
         try {
             val resp = OrderApi.detail(no)
+            wrapper = resp
             detail = resp.optJSONObject("order")
             timeline = resp.optJSONArray("timeline").toObjList()
             notFound = false
@@ -123,12 +126,14 @@ fun OrderScreen(nav: Nav, no: String) {
             )
             if (err.isNotEmpty()) Notice(err, Palette.err)
             StatusHeader(order)
-            InfoCard(order)
-            // 已取消订单:无装维动作,里程碑 + 12 环节时间线均隐藏。
+            InfoCard(order, wrapper)
+            // 已取消订单:无装维动作,里程碑 + 12 环节时间线均隐藏;改展示 CancelInfoCard 给出取消阶段说明。
             if (status != "CANCELLED") {
                 MilestoneBlock(order)
                 if (status == "INSTALLING") EstimateBanner(order)
                 TimelineCard(detail, timeline)
+            } else {
+                CancelInfoCard(order)
             }
             Spacer(Modifier.height(96.dp))
         }
@@ -193,7 +198,7 @@ private fun String?.orDefault(fallback: String): String =
     if (this.isNullOrBlank()) fallback else this
 
 @Composable
-private fun InfoCard(order: JSONObject?) {
+private fun InfoCard(order: JSONObject?, wrapper: JSONObject?) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     AppCard {
@@ -201,9 +206,10 @@ private fun InfoCard(order: JSONObject?) {
         Spacer(Modifier.height(4.dp))
         InfoRow("产品名称", order?.optString("productName").orDefault("—"))
         InfoRow("安装地址", order?.optString("address").orDefault("—"), icon = Icons.Filled.LocationOn)
-        InfoRow("下单时间", order?.optString("submitedAt").orDefault("—"))
-        val name = order?.optString("technicianName").orDefault("")
-        val phone = order?.optString("technicianPhoneMasked").orDefault("")
+        // submitedAt/technicianName/technicianPhoneMasked 在 OrderDetail 顶层,不在 inner order。
+        InfoRow("下单时间", wrapper?.optString("submitedAt").orDefault("—"))
+        val name = wrapper?.optString("technicianName").orDefault("")
+        val phone = wrapper?.optString("technicianPhoneMasked").orDefault("")
         val techLine = when {
             name.isBlank() -> "尚未分配"
             phone.isBlank() -> name
@@ -271,6 +277,51 @@ private fun EstimateBanner(order: JSONObject?) {
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Palette.subtle, modifier = Modifier.size(18.dp))
         }
     }
+}
+
+/**
+ * 已取消订单信息卡:根据取消时所处的环节(1~12),给出阶段性的常见原因说明;
+ * 配合后端尚未提供 cancelled_at 字段的现状,文案为基于阶段位置的启发式描述。
+ */
+@Composable
+private fun CancelInfoCard(order: JSONObject?) {
+    val stage = order?.optInt("stage", 1)?.coerceIn(1, 12) ?: 1
+    val stageLabel = order?.optString("stageLabel").orDefault("")
+    val desc = cancelStageDesc(stage)
+    AppCard {
+        Row(verticalAlignment = Alignment.Top) {
+            Box(
+                Modifier.size(36.dp).background(Palette.warn.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Info, contentDescription = null, tint = Palette.warn, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text("取消说明", fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.ink)
+                Text(
+                    desc, fontSize = 13.sp, color = Palette.muted,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                if (stageLabel.isNotBlank()) {
+                    Text(
+                        "取消于:$stageLabel(环节 $stage)",
+                        fontSize = 12.sp, color = Palette.subtle,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun cancelStageDesc(stage: Int): String = when {
+    stage <= 1 -> "订单创建后立即撤销,通常为重复下单或暂不需要"
+    stage <= 3 -> "资源核查/端口预占阶段被取消,该地址可能暂无可用资源"
+    stage <= 6 -> "合同收费环节被取消,可能为支付未完成或主动撤销"
+    stage <= 9 -> "已派单后被取消,可能为装维条件不具备或用户主动撤销"
+    stage <= 11 -> "上门安装过程中被取消,可能为现场条件不满足"
+    else -> "订单完成后异常取消,请联系客服核查"
 }
 
 @Composable
