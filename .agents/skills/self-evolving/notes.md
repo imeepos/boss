@@ -781,3 +781,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 哪个坑浪费最多时间:真机 SystemUI 通知栏卡死后盲目 reboot,设备有 PIN 锁(secure=true)远程无法解锁,被迫转模拟器;另有两个自造坑:Compose Modifier 链写了两处 `Modifier.androidx.xxx` 点号扩展语法(编译期拦住),校验 when 的 else 恒返回 "agree" 只能靠真机点击发现。
 - skill 有没有提前警告:并行僵尸 agent 提交 WIP 已警告(android.md #4)且确实又发生(d9ff2ee);reboot 共享真机没有警告——新坑。
 - 重来一次:动 device 状态前先 `dumpsys window policy | grep secure`;uiautomator 自动化发现按钮点击无效时,第一时间怀疑"按钮 enabled=false 的门控条件",而不是重复点击。
+
+## 2026-08-21 工作台数据核对 + dashboard 时区修复
+- 哪个坑浪费时间最多:bossctl 二进制参数是 -server 不是 --base/BOSS_BASE,试了三次才通;/tmp 写文件首跑被旧 shell 残留误导。
+- skill 有没有预警:有(对接 102:28080),但没有记录 bossctl 的参数名。
+- 重来一次:先 bossctl --help 看参数再调用;数据核对优先"同源交叉验证"(把 /orders /alarms /quad-links 原始拉回来用 python 重算,再对照 /dashboard)。
