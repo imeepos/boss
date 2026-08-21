@@ -2,7 +2,6 @@ package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,10 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,7 +61,7 @@ fun RegisterScreen(nav: Nav) {
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
         CodeField(code, countdown,
             onCode = { code = it },
-            onSend = { sendRegisterCode(scope, phone) { err = it; countdown = 60 } })
+            onSend = { sendRegisterCode(scope, phone) { err = it; countdown = 59 } })
         PwdField("设置密码(≥10 位,含大小写与数字)", pwd, { pwd = it }, "请设置登录密码")
         PwdField("确认密码", pwd2, { pwd2 = it }, "请再次输入密码")
         AgreeRow(agreed, { agreed = it }) { nav.push(Route.Agreement) }
@@ -77,13 +73,9 @@ fun RegisterScreen(nav: Nav) {
 
 @Composable
 private fun RegisterFooter(err: String, onSubmit: () -> Unit, onLogin: () -> Unit) {
-    Text(err, fontSize = 12.5.sp, color = Palette.err, modifier = Modifier.padding(bottom = 6.dp, top = 2.dp))
-    Button(
-        onClick = onSubmit,
-        colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-        modifier = Modifier.fillMaxWidth().height(44.dp),
-    ) { Text("注册并登录") }
-    Text("已有账号,去登录", fontSize = 12.5.sp, color = Palette.primary,
+    Text(err, fontSize = 12.sp, color = Palette.err, modifier = Modifier.padding(bottom = 6.dp, top = 2.dp))
+    RNPrimaryButton("注册并登录", enabled = true, onClick = onSubmit)
+    Text("已有账号，去登录", fontSize = 12.sp, color = RN.primary,
         modifier = Modifier.padding(top = 12.dp).clickable { onLogin() })
 }
 
@@ -130,7 +122,8 @@ internal fun AuthCard(title: String, sub: String, onBack: (() -> Unit)? = null, 
         ) {
             Spacer(Modifier.height(20.dp))
             Column(
-                Modifier.background(Palette.panel, RoundedCornerShape(12.dp)).padding(16.dp).fillMaxWidth(),
+                // login-register-states-v2 骨架:卡片 10dp 圆角 + 16dp 内边距
+                Modifier.background(Palette.panel, RoundedCornerShape(10.dp)).padding(16.dp).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Palette.ink)
@@ -144,14 +137,20 @@ internal fun AuthCard(title: String, sub: String, onBack: (() -> Unit)? = null, 
 
 @Composable
 internal fun CodeField(code: String, countdown: Int, onCode: (String) -> Unit, onSend: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(value = code, onValueChange = onCode, label = { Text("验证码") },
-            placeholder = { Text("6 位验证码") }, singleLine = true, modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword))
-        OutlinedButton(onClick = onSend, enabled = countdown == 0, modifier = Modifier.height(56.dp)) {
-            Text(if (countdown > 0) "${countdown}s" else "获取验证码", fontSize = 12.5.sp, color = Palette.primary)
-        }
-    }
+    OutlinedTextField(
+        value = code, onValueChange = onCode, label = { Text("验证码") },
+        placeholder = { Text("6 位验证码") }, singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        trailingIcon = {
+            Text(
+                if (countdown > 0) "${countdown}s后重发" else "获取验证码",
+                fontSize = 12.sp, fontWeight = FontWeight.W500,
+                color = if (countdown > 0) RN.placeholder else RN.primary,
+                modifier = Modifier.padding(end = 8.dp).clickable(enabled = countdown == 0) { onSend() },
+            )
+        },
+    )
 }
 
 @Composable
