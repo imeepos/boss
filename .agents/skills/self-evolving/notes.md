@@ -1,5 +1,20 @@
 # Notes
 
+## 2026-08-21 师傅端 token 失效未跳转登录页
+
+**哪个坑浪费了最多时间？**
+
+首次编译未设置 Java 17，Gradle 直接提示找不到 Java Runtime；设置 `JAVA_HOME=/opt/homebrew/opt/openjdk@17` 后才正常验证。
+
+**这个 skill 有没有提前警告我？**
+
+Android 索引已明确记录 gradlew 报无 Java Runtime 时使用 Homebrew OpenJDK 17；同时提醒 token 失效需覆盖 HTTP 401 与业务码 40100。
+
+**重来一次我会怎么做？**
+
+先检查 JAVA_HOME 再编译；认证客户端统一把 HTTP/信封错误交给一个回调，并在 Compose 根路由注册回调，清除 token 后 reset 到 Login，避免各页面重复处理。
+
+
 ## 2026-08-21 订单预占按钮跳转与参数非法
 
 **哪个坑浪费了最多时间？**

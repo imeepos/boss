@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.StatusBarSolid
+import com.ymm.boss.worker.api.Api
 
 // 底部 Tab(对齐 nav.js:工作台/工单/我的)
 private data class Tab(val screen: Screen, val label: String, val glyph: String)
@@ -46,6 +48,15 @@ private fun isTabRoot(s: Screen): Boolean = s in TABS.map { it.screen }
 @Composable
 fun AppRoot(loggedIn: Boolean) {
     val nav = remember { NavHost(if (loggedIn) Screen.Home else Screen.Login) }
+    DisposableEffect(nav) {
+        Api.onUnauthorized = {
+            Api.setToken(null)
+            nav.reset(Screen.Login)
+        }
+        onDispose {
+            if (Api.onUnauthorized != null) Api.onUnauthorized = null
+        }
+    }
     // 系统返回键:压栈页逐个弹出,栈底则退出
     BackHandler(enabled = nav.stack.size > 1) { nav.pop() }
     Column(

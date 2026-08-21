@@ -1,6 +1,8 @@
 package com.ymm.boss.worker.api
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import com.ymm.boss.worker.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -34,6 +36,7 @@ fun friendlyMessage(e: Exception): String = when {
 // base 由 BuildConfig.BOSS_BASE_URL 注入,debug 走 10.0.2.2:28080(模拟器宿主机),release 走 HTTPS 生产域名。
 object Api {
     var base: String = BuildConfig.BOSS_BASE_URL
+    var onUnauthorized: (() -> Unit)? = null
     private const val TOKEN_KEY = "boss_worker_token"
     private const val PREFS = "boss_worker"
     private lateinit var appContext: Context
@@ -76,7 +79,7 @@ object Api {
                 }
                 val code = conn.responseCode
                 val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.readText() ?: ""
-                if (code !in 200..299) throw ApiException(code, "HTTP $code")
+                if (code !in 200..299) throwApiException(code, "HTTP $code")
                 unwrap(text)
             } finally { conn.disconnect() }
         }
@@ -96,8 +99,15 @@ object Api {
     private fun unwrap(text: String): JSONObject {
         val obj = JSONObject(text)
         val code = obj.optInt("code", -1)
-        if (code != 0) throw ApiException(code, obj.optString("msg").ifBlank { "code $code" })
+        if (code != 0) throwApiException(code, obj.optString("msg").ifBlank { "code $code" })
         return obj.optJSONObject("data") ?: JSONObject()
+    }
+
+    private fun throwApiException(status: Int, message: String): Nothing {
+        if (status == 401 || status == 40100) {
+            Handler(Looper.getMainLooper()).post { onUnauthorized?.invoke() }
+        }
+        throw ApiException(status, message)
     }
 
     private suspend fun request(method: String, path: String, body: JSONObject?): JSONObject =
@@ -111,7 +121,7 @@ object Api {
                 val code = conn.responseCode
                 val text = (if (code in 200..299) conn.inputStream else conn.errorStream)
                     ?.bufferedReader()?.readText() ?: ""
-                if (code !in 200..299) throw ApiException(code, "HTTP $code")
+                if (code !in 200..299) throwApiException(code, "HTTP $code")
                 if (text.isBlank()) JSONObject() else unwrap(text)
             } finally {
                 conn.disconnect()
@@ -126,11 +136,11 @@ object Api {
                 val code = conn.responseCode
                 val text = (if (code in 200..299) conn.inputStream else conn.errorStream)
                     ?.bufferedReader()?.readText() ?: ""
-                if (code !in 200..299) throw ApiException(code, "HTTP $code")
+                if (code !in 200..299) throwApiException(code, "HTTP $code")
                 if (text.isBlank()) return@withContext JSONArray()
                 val obj = JSONObject(text)
                 val ec = obj.optInt("code", -1)
-                if (ec != 0) throw ApiException(ec, obj.optString("msg").ifBlank { "code $ec" })
+                if (ec != 0) throwApiException(ec, obj.optString("msg").ifBlank { "code $ec" })
                 when (val d = obj.opt("data")) {
                     is JSONArray -> d
                     is JSONObject -> d.optJSONArray("items") ?: JSONArray()
