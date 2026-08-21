@@ -148,17 +148,12 @@ private fun TicketList(
     val listState = rememberLazyListState()
     InfiniteScroll(listState, hasMore, onLoadMore)
     LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-        item {
-            HomeCard(topPadding = 0) {
-                CardTitle("工单 (${items.size}${if (hasMore) "+" else ""} 单)")
-                if (items.isEmpty()) EmptyState("暂无工单")
-            }
+        if (items.isEmpty()) {
+            item { EmptyState("暂无工单") }
         }
-        items(items) { t ->
-            Box(Modifier.padding(horizontal = 0.dp)) {
-                HomeCard(topPadding = 0) {
-                    TicketRow(t, onTake = onTake) { nav.push(ticketScreen(t.optString("ticketNo"))) }
-                }
+        items(items, key = { it.optString("ticketNo") }) { t ->
+            Box(Modifier.padding(top = 8.dp)) {
+                TicketOrderCard(t, onTake = onTake) { nav.push(ticketScreen(t.optString("ticketNo"))) }
             }
         }
         item {
@@ -187,43 +182,6 @@ private fun Footer(hasMore: Boolean) {
 }
 
 /** 列表行(对齐 user 端 BillCell:主标题 + 副标题 + 右侧状态列)。 */
-@Composable
-private fun TicketRow(t: JSONObject, onTake: (String) -> Unit, onClick: () -> Unit) {
-    val no = t.optString("ticketNo")
-    val dist = if (t.isNull("distanceKm")) "" else " · 距您 ${t.optDouble("distanceKm")}km"
-    Row(
-        Modifier.fillMaxWidth().clickable(enabled = t.optString("status") != "TODO") { onClick() }
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text("$no · ${t.optString("typeLabel")}", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Ink)
-            Text(t.optString("address") + dist, fontSize = 12.sp, color = Muted)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            StatusTag(t.optString("statusLabel"), t.optString("status"))
-            if (!t.isNull("stageTotal")) {
-                Text("${t.optInt("stage", -1)}/${t.optInt("stageTotal")} 环节", fontSize = 12.sp, color = Muted)
-            }
-            if (t.optString("status") == "TODO") AcceptBtn { onTake(no) }
-        }
-    }
-}
-
-@Composable
-private fun AcceptBtn(onTake: () -> Unit) {
-    Text(
-        "领取", fontSize = 13.sp, color = Color.White, textAlign = TextAlign.Center,
-        modifier = Modifier
-            .padding(top = 6.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Primary)
-            .clickable { onTake() }
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-    )
-}
-
 /** 胶囊筛选 tab(对齐 user 端 PillTab plain 形态)。 */
 @Composable
 private fun FilterTabs(current: String, onSelect: (String) -> Unit) {
