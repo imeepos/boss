@@ -159,13 +159,13 @@ func quadPortCode(a *app.Application, c *gin.Context, portID int64) string {
 	return p.PortCode
 }
 
-// quadAddrCode 地址码(addresses.path,权威表;LTREE 路径如 root.luzon.ncr.manila)。
+// quadAddrCode 地址码(addresses.name,权威表;如"马尼拉市")。
 func quadAddrCode(a *app.Application, c *gin.Context, addressID int64) string {
 	ad, err := a.Geo.GetAddress(c.Request.Context(), addressID)
 	if err != nil || ad == nil {
 		return ""
 	}
-	return ad.Path
+	return ad.Name
 }
 
 // workerReportGetHandler 上报预取:四码对照 + 检测项占位。
