@@ -55,7 +55,9 @@ func TestPGStore_CreateLink(t *testing.T) {
 			WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE id = \$1 AND address_id = \$2\)`).
 			WithArgs(int64(201), int64(301)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
-		// asset_id=0 → INSERT NULL(不查 assets)。
+		// 已有关联查空 → INSERT(upsert 语义);asset_id=0 → INSERT NULL。
+		mock.ExpectQuery(`SELECT id FROM quad_links`).
+			WithArgs(int64(2)).WillReturnError(pgx.ErrNoRows)
 		mock.ExpectQuery(`INSERT INTO quad_links`).
 			WithArgs(nil, int64(2), int64(201), int64(301), int64(1), "主品牌·企业", "LINKED").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -88,12 +90,14 @@ func TestPGStore_CreateLink(t *testing.T) {
 			WithArgs(int64(201)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM addresses WHERE id = \$1\)`).
 			WithArgs(int64(301)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM assets WHERE id = \$1\)`).
+			WithArgs(int64(101)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM legal_entities WHERE id = \$1\)`).
 			WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE id = \$1 AND address_id = \$2\)`).
 			WithArgs(int64(201), int64(301)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
-		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM assets WHERE id = \$1\)`).
-			WithArgs(int64(101)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT id FROM quad_links`).
+			WithArgs(int64(2)).WillReturnError(pgx.ErrNoRows)
 		mock.ExpectQuery(`INSERT INTO quad_links`).
 			WithArgs(int64(101), int64(2), int64(201), int64(301), int64(1), "主品牌·企业", "LINKED").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -162,6 +166,12 @@ func TestPGStore_CreateLink(t *testing.T) {
 			WithArgs(int64(201)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM addresses WHERE id = \$1\)`).
 			WithArgs(int64(301)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM legal_entities WHERE id = \$1\)`).
+			WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE id = \$1 AND address_id = \$2\)`).
+			WithArgs(int64(201), int64(301)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT id FROM quad_links`).
+			WithArgs(int64(2)).WillReturnError(pgx.ErrNoRows)
 		mock.ExpectQuery(`INSERT INTO quad_links`).
 			WithArgs(nil, int64(2), int64(201), int64(301), int64(1), "", "UNLINKED").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(99)))

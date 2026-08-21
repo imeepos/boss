@@ -3,7 +3,38 @@ package order
 import (
 	"context"
 	"testing"
+
+	"github.com/pashagolub/pgxmock/v4"
 )
+
+// TestPGStore_CancelReleasesPorts 回归:取消订单必须回收本订单预占端口(RESERVED→IDLE),
+// 否则端口死占泄漏(修复前 Cancel 只做 status 迁移,ReleasePortByOrder 全仓库无调用方)。
+func TestPGStore_CancelReleasesPorts(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT status FROM orders`).
+		WithArgs(int64(7)).WillReturnRows(mock.NewRows([]string{"status"}).AddRow("RESERVED"))
+	mock.ExpectExec(`UPDATE orders SET status`).
+		WithArgs(int64(7), "CANCELLED").WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	// transitionStatus 会同步终态到派单工单。
+	mock.ExpectExec(`UPDATE dispatch_tickets`).
+		WithArgs(int64(7), "CANCELED").WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+	// 关键断言:预占端口被回收。
+	mock.ExpectExec(`UPDATE ports SET status = 'IDLE', order_id = NULL`).
+		WithArgs(int64(7)).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	s := NewPGStore(mock, stubExists{ok: true})
+	if err := s.Cancel(context.Background(), 7); err != nil {
+		t.Fatalf("Cancel: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
 
 // TestFullWorkflow 契约:12 环节按序走完,状态沿 PENDING→RESERVED→INSTALLING→DONE 流转。
 func TestFullWorkflow(t *testing.T) {
