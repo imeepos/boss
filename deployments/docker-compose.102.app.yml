@@ -17,6 +17,12 @@ services:
       BOSS_ADMIN_USERNAME: "admin"
       BOSS_ADMIN_PASSWORD: "admin123"
       BOSS_DEBUG_SMS: "1" # 102 联调机开启 /debug/sms-code;严禁带到线上
+      BOSS_HOSTCTL_URL: "http://172.26.0.1:39093"
+      # HMAC key 通过 bind mount 注入,不进 git/env/process
+      BOSS_HOSTCTL_HMAC_KEY_FILE: "/run/hostctl-hmac/hmac.key"
+    volumes:
+      # hostctl HMAC key:宿主机 /etc/boss-host-ctl/hmac.key(0600)
+      - /etc/boss-host-ctl/hmac.key:/run/hostctl-hmac/hmac.key:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 15s

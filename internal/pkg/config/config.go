@@ -176,7 +176,7 @@ func Load() *Config {
 	c.MinIO.Bucket = getenv("BOSS_MINIO_BUCKET", "boss-attachments")
 	c.MinIO.UseSSL = getenv("BOSS_MINIO_USE_SSL", "false") == "true"
 	c.HostCtl.URL = getenv("BOSS_HOSTCTL_URL", "http://172.26.0.1:39093")
-	c.HostCtl.HMACKey = getenv("BOSS_HOSTCTL_HMAC_KEY", "")
+	c.HostCtl.HMACKey = readEnvOrFile("BOSS_HOSTCTL_HMAC_KEY", "BOSS_HOSTCTL_HMAC_KEY_FILE")
 	return c
 }
 
@@ -219,4 +219,19 @@ func getlist(k string, def []string) []string {
 		}
 	}
 	return out
+}
+
+// readEnvOrFile 先读 envKey 环境变量,若为空则读 fileKey 对应的文件路径内容。
+// 用于密钥类配置:env 直传优先,文件挂载兜底(避免明文进 compose/git)。
+func readEnvOrFile(envKey, fileKey string) string {
+	if v := os.Getenv(envKey); v != "" {
+		return v
+	}
+	if fp := os.Getenv(fileKey); fp != "" {
+		data, err := os.ReadFile(fp)
+		if err == nil {
+			return strings.TrimSpace(string(data))
+		}
+	}
+	return ""
 }
