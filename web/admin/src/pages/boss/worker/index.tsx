@@ -4,6 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
+import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type WorkerGroupRow, type WorkerRow } from '../types'
 
@@ -41,11 +42,12 @@ export default function WorkerPage() {
       <PageHead title={w.title} desc={w.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={groupId ? String(groupId) : ''}
-            onChange={(e) => { setGroupId(Number(e.target.value) || 0); setPage(1); load() }}>
-            <option value="">{w.allGroup}</option>
-            {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
+          <Dropdown
+            value={groupId ? String(groupId) : ''}
+            options={[{ value: '', label: w.allGroup }, ...groups.map((g) => ({ value: String(g.id), label: g.name }))]}
+            onChange={(v) => { setGroupId(Number(v) || 0); setPage(1); load() }}
+            ariaLabel={w.allGroup}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>

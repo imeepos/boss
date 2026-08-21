@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
+import { Dropdown } from '../../../components/Dropdown'
 import { pageSlice, type ProvisionTaskRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
@@ -51,11 +52,12 @@ export default function ProvisionTaskPage() {
       <PageHead title={p.title} desc={p.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={status}
-            onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">{p.allStatus}</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <Dropdown
+            value={status}
+            options={[{ value: '', label: p.allStatus }, ...STATUSES.map((st) => ({ value: st, label: st }))]}
+            onChange={(v) => { setStatus(v); setPage(1) }}
+            ariaLabel={p.allStatus}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>

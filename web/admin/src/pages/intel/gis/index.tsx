@@ -4,6 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
+import { Dropdown } from '../../../components/Dropdown'
 import { DetailDrawer } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type GisNode, type GisResourceDetail } from '../types'
@@ -48,10 +49,12 @@ export default function GisPage() {
       <PageHead title={g.title} desc={g.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={level}
-            onChange={(e) => { const v = Number(e.target.value); setLevel(v); setParentId(0); setPage(1); load(v, 0) }}>
-            {LEVELS.map((lv, i) => <option key={lv} value={lv}>{lv}. {g.levels[i]}</option>)}
-          </select>
+          <Dropdown
+            value={String(level)}
+            options={LEVELS.map((lv, i) => ({ value: String(lv), label: `${lv}. ${g.levels[i]}` }))}
+            onChange={(v) => { const n = Number(v); setLevel(n); setParentId(0); setPage(1); load(n, 0) }}
+            ariaLabel={g.title}
+          />
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder="parentId"
             value={parentId || ''} onChange={(e) => { setParentId(Number(e.target.value) || 0); setPage(1) }} />
           <span className="spacer" />

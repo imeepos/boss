@@ -4,6 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
+import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ProvisionLogRow } from '../types'
 
@@ -40,12 +41,12 @@ export default function ProvisionLogPage() {
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" style={{ width: 160 }} placeholder={p.filterTask}
             value={taskId} onChange={(e) => { setTaskId(e.target.value); setPage(1) }} />
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={result}
-            onChange={(e) => { setResult(e.target.value); setPage(1) }}>
-            <option value="">{p.allResult}</option>
-            <option value="SUCCESS">SUCCESS</option>
-            <option value="FAILED">FAILED</option>
-          </select>
+          <Dropdown
+            value={result}
+            options={[{ value: '', label: p.allResult }, { value: 'SUCCESS', label: 'SUCCESS' }, { value: 'FAILED', label: 'FAILED' }]}
+            onChange={(v) => { setResult(v); setPage(1) }}
+            ariaLabel={p.allResult}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>

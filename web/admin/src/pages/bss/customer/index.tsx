@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { DetailDrawer, PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
+import { Dropdown } from '../../../components/Dropdown'
 import { SERVICE_STATUSES, filterCustomers, pageSlice } from './filter'
 import type { CustomerRow } from './types'
 import { VerifyLogsDrawer } from './VerifyLogsDrawer'
@@ -48,11 +49,12 @@ export default function CustomerPage() {
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={c.phonePlaceholder}
             value={phone} onChange={(e) => { setPhone(e.target.value); setPage(1) }} />
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={status}
-            onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">{c.allStatus}</option>
-            {SERVICE_STATUSES.map((s, i) => <option key={s} value={s}>{c.statusOptions[i]}</option>)}
-          </select>
+          <Dropdown
+            value={status}
+            options={[{ value: '', label: c.allStatus }, ...SERVICE_STATUSES.map((s, i) => ({ value: s, label: c.statusOptions[i] }))]}
+            onChange={(v) => { setStatus(v); setPage(1) }}
+            ariaLabel={c.allStatus}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>

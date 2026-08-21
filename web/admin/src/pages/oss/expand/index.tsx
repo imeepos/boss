@@ -6,6 +6,7 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
+import { Dropdown } from '../../../components/Dropdown'
 import { pageSlice, type ExpansionRow, type LegalEntityRow, type RegionRefRow } from '../types'
 
 export default function ExpandPage() {
@@ -120,19 +121,21 @@ export default function ExpandPage() {
           <div className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{e.fCompany}</label>
-              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={legalEntityId ? String(legalEntityId) : ''}
-                onChange={(ev) => setLegalEntityId(Number(ev.target.value) || 0)}>
-                <option value="">{e.pCompany}</option>
-                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <Dropdown
+                value={legalEntityId ? String(legalEntityId) : ''}
+                options={[{ value: '', label: e.pCompany }, ...companies.map((c) => ({ value: String(c.id), label: c.name }))]}
+                onChange={(v) => setLegalEntityId(Number(v) || 0)}
+                ariaLabel={e.pCompany}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{e.fRegion}</label>
-              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={regionId ? String(regionId) : ''}
-                onChange={(ev) => setRegionId(Number(ev.target.value) || 0)}>
-                <option value="">{e.pRegion}</option>
-                {regions.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-              </select>
+              <Dropdown
+                value={regionId ? String(regionId) : ''}
+                options={[{ value: '', label: e.pRegion }, ...regions.map((x) => ({ value: String(x.id), label: x.name }))]}
+                onChange={(v) => setRegionId(Number(v) || 0)}
+                ariaLabel={e.pRegion}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{e.fPorts}</label>

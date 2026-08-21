@@ -9,6 +9,7 @@ import { AuthShell, BrandAside, inputStyle, buttonStyle, BRAND_NAVY } from '../a
 import { AdCarousel } from '../auth-ads'
 import { useT } from '../../i18n'
 import { ServerManagerDialog } from '../../components/ServerManagerDialog'
+import { Dropdown } from '../../components/Dropdown'
 import { initialPickerState, pickServer, type ServerPickerState } from './serverPicker'
 
 export default function LoginPage() {
@@ -58,17 +59,16 @@ export default function LoginPage() {
         <h2 style={titleStyle}>{t.auth.login.title}</h2>
         <p style={subStyle}>{t.auth.login.subtitle}</p>
         <form onSubmit={onSubmit} style={{ marginTop: 12 }}>
-          <select
+          <Dropdown
             value={picker.activeId}
-            onChange={(e) => onPick(e.target.value)}
-            style={{ ...inputStyle, color: BRAND_NAVY }}
-            data-testid="server-select"
-          >
-            {!picker.servers.length && <option value="">{t.auth.login.serverNone}</option>}
-            {picker.servers.map((s) => (
-              <option key={s.id} value={s.id}>{s.name} ({s.baseUrl})</option>
-            ))}
-          </select>
+            options={[
+              ...(!picker.servers.length ? [{ value: '', label: t.auth.login.serverNone }] : []),
+              ...picker.servers.map((s) => ({ value: s.id, label: `${s.name} (${s.baseUrl})` })),
+            ]}
+            onChange={onPick}
+            ariaLabel={t.auth.login.serverNone}
+            triggerStyle={{ width: 274 }}
+          />
           <a onClick={() => setManageOpen(true)} style={addLinkStyle}>{t.auth.login.serverManage}</a>
           <input
             placeholder={t.auth.login.usernamePlaceholder}
