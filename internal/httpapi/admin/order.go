@@ -76,8 +76,14 @@ func registerOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	ord.POST("", func(c *gin.Context) {
 		var req order.SubmitReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(req.CustomerID, "customerId"),
+				httpx.RequirePositiveID(req.OfferID, "offerId"),
+				httpx.RequirePositiveID(req.AddressID, "addressId"),
+				httpx.RequirePositiveID(req.ChannelID, "channelId"),
+			)
+		}) {
 			return
 		}
 		o, err := a.Order.Submit(c.Request.Context(), req)
@@ -93,6 +99,10 @@ func registerOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	ord.GET("/:orderNo", func(c *gin.Context) {
 		orderNo := c.Param("orderNo")
+		if orderNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "orderNo is required"})
+			return
+		}
 		o, err := a.Order.GetByNo(c.Request.Context(), orderNo)
 		if err != nil {
 			respondErr(c, err)

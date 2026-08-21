@@ -6,15 +6,16 @@ import (
 )
 
 // QuadLink 四码合一(资产-客户-端口-地址 四码关联,任一码反查单表索引)。
+// AssetID 在预绑定阶段可为 0/空(扫码环节再回填),migration 000086 改为允许 NULL。
 type QuadLink struct {
-	ID              int64  `json:"id"`
-	AssetID         int64  `json:"assetId"`
-	CustomerID      int64  `json:"customerId"`
-	PortID          int64  `json:"portId"`
-	AddressID       int64  `json:"addressId"`
-	LegalEntityID   int64  `json:"legalEntityId"`
-	LegalEntityName string `json:"legalEntityName"`
-	Status          string `json:"status"` // LINKED/CONFLICT/UNLINKED
+	ID              int64   `json:"id"`
+	AssetID         int64   `json:"assetId"`  // 预绑定阶段可为 0,扫码绑定(环节9)回填真实资产 ID
+	CustomerID      int64   `json:"customerId"`
+	PortID          int64   `json:"portId"`
+	AddressID       int64   `json:"addressId"`
+	LegalEntityID   int64   `json:"legalEntityId"`
+	LegalEntityName string  `json:"legalEntityName"`
+	Status          string  `json:"status"` // LINKED/CONFLICT/UNLINKED
 }
 
 // ErrForeignKeyViolation 四码关联中某个成员 ID 对应的实体不存在(assets/customers/ports/addresses)。

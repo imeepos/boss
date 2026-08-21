@@ -18,7 +18,7 @@ func TestPGStore_ListLinks(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, asset_id, customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status FROM quad_links`).
+	mock.ExpectQuery(`SELECT id, COALESCE\(asset_id, 0\), customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status FROM quad_links`).
 		WillReturnRows(mock.NewRows(cols).
 			AddRow(int64(1), int64(100), int64(1), int64(200), int64(300), int64(1), "主品牌·企业", "LINKED"))
 
@@ -36,22 +36,55 @@ func TestPGStore_ListLinks(t *testing.T) {
 }
 
 func TestPGStore_CreateLink(t *testing.T) {
-	t.Run("正常创建四码均存在", func(t *testing.T) {
+	t.Run("正常创建 asset_id=0 不落资产", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer mock.Close()
 
-		// 4 个存在性校验全部 true。
-		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM assets WHERE id = \$1\)`).
-			WithArgs(int64(101)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		// 三码存在性校验(客户/端口/地址)。
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM customers WHERE id = \$1\)`).
 			WithArgs(int64(2)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE id = \$1\)`).
 			WithArgs(int64(201)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM addresses WHERE id = \$1\)`).
 			WithArgs(int64(301)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		// asset_id=0 → INSERT NULL(不查 assets)。
+		mock.ExpectQuery(`INSERT INTO quad_links`).
+			WithArgs(nil, int64(2), int64(201), int64(301), int64(1), "主品牌·企业", "LINKED").
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
+
+		s := NewPGStore(mock)
+		id, err := s.CreateLink(context.Background(), QuadLink{
+			CustomerID: 2, PortID: 201, AddressID: 301, LegalEntityID: 1, LegalEntityName: "主品牌·企业", Status: "LINKED",
+		})
+		if err != nil {
+			t.Fatalf("CreateLink: %v", err)
+		}
+		if id != 2 {
+			t.Fatalf("id=%d, want 2", id)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("正常创建 asset_id 非零查资产存在性", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM customers WHERE id = \$1\)`).
+			WithArgs(int64(2)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE id = \$1\)`).
+			WithArgs(int64(201)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM addresses WHERE id = \$1\)`).
+			WithArgs(int64(301)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM assets WHERE id = \$1\)`).
+			WithArgs(int64(101)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 		mock.ExpectQuery(`INSERT INTO quad_links`).
 			WithArgs(int64(101), int64(2), int64(201), int64(301), int64(1), "主品牌·企业", "LINKED").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -78,16 +111,16 @@ func TestPGStore_CreateLink(t *testing.T) {
 		}
 		defer mock.Close()
 
-		// 资产存在。
-		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM assets WHERE id = \$1\)`).
-			WithArgs(int64(101)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
-		// 客户 999 不存在 → 立即拒绝,后续不再查 port/address/INSERT。
+		// 客户存在。
 		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM customers WHERE id = \$1\)`).
+			WithArgs(int64(2)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		// 端口 999 不存在 → 立即拒绝,后续不再查 address/INSERT。
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE id = \$1\)`).
 			WithArgs(int64(999)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
 
 		s := NewPGStore(mock)
 		_, err = s.CreateLink(context.Background(), QuadLink{
-			AssetID: 101, CustomerID: 999, PortID: 201, AddressID: 301, LegalEntityID: 1, Status: "UNLINKED",
+			CustomerID: 2, PortID: 999, AddressID: 301, LegalEntityID: 1, Status: "UNLINKED",
 		})
 		if !errors.Is(err, ErrForeignKeyViolation) {
 			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
@@ -97,13 +130,45 @@ func TestPGStore_CreateLink(t *testing.T) {
 		}
 	})
 
-	t.Run("ID 为零则立即拒绝", func(t *testing.T) {
+	t.Run("customer_id 为零则立即拒绝不触DB", func(t *testing.T) {
 		s := NewPGStore(nil) // 不需要 mock,不应触及 DB。
 		_, err := s.CreateLink(context.Background(), QuadLink{
-			AssetID: 0, CustomerID: 2, PortID: 201, AddressID: 301, LegalEntityID: 1, Status: "UNLINKED",
+			CustomerID: 0, PortID: 201, AddressID: 301, LegalEntityID: 1, Status: "UNLINKED",
 		})
 		if !errors.Is(err, ErrForeignKeyViolation) {
 			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+		}
+	})
+
+	t.Run("asset_id=0 且三码存在时成功(预绑定场景)", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM customers WHERE id = \$1\)`).
+			WithArgs(int64(2)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE id = \$1\)`).
+			WithArgs(int64(201)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM addresses WHERE id = \$1\)`).
+			WithArgs(int64(301)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery(`INSERT INTO quad_links`).
+			WithArgs(nil, int64(2), int64(201), int64(301), int64(1), "", "UNLINKED").
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(99)))
+
+		s := NewPGStore(mock)
+		id, err := s.CreateLink(context.Background(), QuadLink{
+			CustomerID: 2, PortID: 201, AddressID: 301, LegalEntityID: 1, Status: "UNLINKED",
+		})
+		if err != nil {
+			t.Fatalf("CreateLink: %v", err)
+		}
+		if id != 99 {
+			t.Fatalf("id=%d, want 99", id)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
 		}
 	})
 }
@@ -116,7 +181,7 @@ func TestPGStore_GetByAsset(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, asset_id, customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status FROM quad_links WHERE asset_id = \$1`).
+		mock.ExpectQuery(`SELECT id, COALESCE\(asset_id, 0\), customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status FROM quad_links WHERE asset_id = \$1 AND asset_id IS NOT NULL`).
 			WithArgs(int64(100)).
 			WillReturnRows(mock.NewRows(cols).
 				AddRow(int64(1), int64(100), int64(1), int64(200), int64(300), int64(1), "主品牌·企业", "LINKED"))
@@ -163,7 +228,7 @@ func TestPGStore_GetByLatestLifecycle(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`WHERE customer_id = \$1 ORDER BY id DESC LIMIT 1`).
+	mock.ExpectQuery(`WHERE customer_id = \$1 AND customer_id IS NOT NULL ORDER BY id DESC LIMIT 1`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows(cols).
 			AddRow(int64(5), int64(105), int64(7), int64(205), int64(305), int64(1), "主品牌·企业", "LINKED"))

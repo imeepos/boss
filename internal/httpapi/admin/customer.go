@@ -31,7 +31,10 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	cus.GET("/:id/verify-logs", func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
 		list, err := a.RealName.ListVerifications(c.Request.Context(), id)
 		if err != nil {
 			respondErr(c, err)
@@ -50,12 +53,19 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
 
+	// POST /products 创建产品:校验必填字段,保证 LegalEntityID 有效,防止孤儿产品。
 	prod.POST("", func(c *gin.Context) {
 		var req customer.ProductOffer
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Name, "name", 128),
+				httpx.RequirePositiveID(req.LegalEntityID, "legalEntityId"),
+				httpx.RequirePositiveFloat(req.MonthlyFee, "monthlyFee"),
+			)
+		}) {
 			return
 		}
+		// Bandwidth 可选;Category 空值回退 broadband(由 DB 层处理)。
 		id, err := a.Product.CreateProduct(c.Request.Context(), req)
 		if err != nil {
 			respondErr(c, err)
@@ -65,7 +75,10 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	prod.GET("/:id/price-history", func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
 		list, err := a.CustomerLedger.ListProductPriceHistories(c.Request.Context(), id)
 		if err != nil {
 			respondErr(c, err)
@@ -76,10 +89,16 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 产品调价(worker.yaml POST /products/{id}/price-history):更新月费并追加台账。
 	prod.POST("/:id/price-history", func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
 		var req changeProductPriceReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.NewPrice <= 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveFloat(req.NewPrice, "newPrice"),
+			)
+		}) {
 			return
 		}
 		effectiveAt := req.EffectiveAt

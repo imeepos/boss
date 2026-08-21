@@ -72,8 +72,13 @@ func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	tr := g.Group("", requirePerm(a.User, "menu:transfer"))
 	tr.POST("/transfers", func(c *gin.Context) {
 		var t resource.Transfer
-		if err := c.ShouldBindJSON(&t); err != nil || t.ResourceID == 0 || t.FromRegionID == 0 || t.ToRegionID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &t, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(t.ResourceID, "resourceId"),
+				httpx.RequirePositiveID(t.FromRegionID, "fromRegionId"),
+				httpx.RequirePositiveID(t.ToRegionID, "toRegionId"),
+			)
+		}) {
 			return
 		}
 		if t.TransferNo == "" {

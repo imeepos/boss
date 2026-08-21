@@ -20,18 +20,27 @@ type dbtx interface {
 // PGStore 是 OrderService 接口的 PostgreSQL 实现(阶段5)。
 type PGStore struct {
 	db      dbtx
-	cust    CustomerLookup  // 跨域:客户存在性校验
-	checker ResourceChecker // 跨域:资源核查(环节2)
+	cust    CustomerLookup   // 跨域:客户存在性校验
+	checker ResourceChecker  // 跨域:资源核查(环节2)
+	reserve PortReserver     // 跨域:端口预占(环节3/5)
+	quad    QuadLinkPrebinder // 跨域:四码预绑定(环节5)
 }
 
 // NewPGStore 构造 PGStore;cust 由 app 装配层注入 customer 域实现。
-// checker 可选(环节2 资源核查依赖,未注入时 CheckResource 返回错误)。
-func NewPGStore(db dbtx, cust CustomerLookup, checker ...ResourceChecker) *PGStore {
-	var c ResourceChecker
-	if len(checker) > 0 {
-		c = checker[0]
+// checker/reserve/quad 可选(各环节依赖,未注入时对应环节返回错误)。
+func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
+	s := &PGStore{db: db, cust: cust}
+	for _, e := range extras {
+		switch v := e.(type) {
+		case ResourceChecker:
+			s.checker = v
+		case PortReserver:
+			s.reserve = v
+		case QuadLinkPrebinder:
+			s.quad = v
+		}
 	}
-	return &PGStore{db: db, cust: cust, checker: c}
+	return s
 }
 
 const orderCols = `id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, created_at`

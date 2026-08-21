@@ -29,7 +29,7 @@ func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
 }
 
-const linkCols = `id, asset_id, customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status`
+const linkCols = `id, COALESCE(asset_id, 0), customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status`
 
 // ListLinks 列出全部四码关联。
 func (s *PGStore) ListLinks(ctx context.Context) ([]QuadLink, error) {
@@ -50,16 +50,16 @@ func (s *PGStore) ListLinks(ctx context.Context) ([]QuadLink, error) {
 }
 
 // CreateLink 新建四码关联,返回自增 id。
-// 关联完整性:INSERT 前校验 asset_id/customer_id/port_id/address_id 四码对应的实体均存在;
-// 任一不存在返回 ErrForeignKeyViolation,拒绝落"孤儿"quad_link 行(对账次轮修正)。
+// 关联完整性:INSERT 前校验 customer_id/port_id/address_id 三码对应的实体均存在;
+// asset_id 可为 0(预绑定阶段无资产,扫码环节9回填),为 0 时跳过资产校验,INSERT NULL;
+// 任一非零 ID 不存在返回 ErrForeignKeyViolation,拒绝落"孤儿"quad_link 行。
 func (s *PGStore) CreateLink(ctx context.Context, q QuadLink) (int64, error) {
-	// 关联存在性校验:4 条 SELECT EXISTS,加 1 次 round-trip 可合并,但为可读性保持分查。
+	// 三码(customer/port/address)必填且实体必须存在;为 0 立即拒绝(不触 DB)。
 	refs := []struct {
 		table string
 		id    int64
-		label string // 用于错误信息区分哪码缺失
+		label string
 	}{
-		{"assets", q.AssetID, "asset"},
 		{"customers", q.CustomerID, "customer"},
 		{"ports", q.PortID, "port"},
 		{"addresses", q.AddressID, "address"},
@@ -79,11 +79,28 @@ func (s *PGStore) CreateLink(ctx context.Context, q QuadLink) (int64, error) {
 		}
 	}
 
+	// asset_id:非零时校验存在性;为 0 时 INSERT NULL(扫码环节9回填)。
+	if q.AssetID != 0 {
+		var exists bool
+		if err := s.db.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM assets WHERE id = $1)`, q.AssetID,
+		).Scan(&exists); err != nil {
+			return 0, fmt.Errorf("quadlink: check asset %d: %w", q.AssetID, err)
+		}
+		if !exists {
+			return 0, fmt.Errorf("quadlink: asset %d not found: %w", q.AssetID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
+	var assetArg any // nil → INSERT NULL;int64 → INSERT value.
+	if q.AssetID != 0 {
+		assetArg = q.AssetID
+	}
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO quad_links(asset_id, customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status)
 		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-		q.AssetID, q.CustomerID, q.PortID, q.AddressID, q.LegalEntityID, q.LegalEntityName, q.Status).Scan(&id)
+		assetArg, q.CustomerID, q.PortID, q.AddressID, q.LegalEntityID, q.LegalEntityName, q.Status).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("quadlink: create link: %w", err)
 	}
@@ -94,7 +111,7 @@ func (s *PGStore) CreateLink(ctx context.Context, q QuadLink) (int64, error) {
 // 000056 后同一码可有多行历史(UNLINKED 保留),取最新一行的当前生命周期。
 func (s *PGStore) getBy(ctx context.Context, col string, val int64) (*QuadLink, error) {
 	var q QuadLink
-	err := s.db.QueryRow(ctx, `SELECT `+linkCols+` FROM quad_links WHERE `+col+` = $1 ORDER BY id DESC LIMIT 1`, val).
+	err := s.db.QueryRow(ctx, `SELECT `+linkCols+` FROM quad_links WHERE `+col+` = $1 AND `+col+` IS NOT NULL ORDER BY id DESC LIMIT 1`, val).
 		Scan(&q.ID, &q.AssetID, &q.CustomerID, &q.PortID, &q.AddressID, &q.LegalEntityID, &q.LegalEntityName, &q.Status)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound

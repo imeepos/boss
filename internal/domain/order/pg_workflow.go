@@ -69,8 +69,44 @@ func (s *PGStore) ChargeContract(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "chargeContract")
 }
 
-// ApplyTag 环节5 标签预绑定。
+// ApplyTag 环节5 标签预绑定:预占端口 + 落四码关联(UNLINKED,资产扫码时回填)。
+// 前置:环节4 合同收费已推进(顺序守卫保证 stage=4)。
+// 依赖:PortReserver.ReserveFirstAvailable(选端口) + QuadLinkPrebinder.CreateLink(落四码)。
 func (s *PGStore) ApplyTag(ctx context.Context, orderID int64) error {
+	// 读订单上下文。
+	var addressID, customerID, legalEntityID int64
+	var regionPath string
+	err := s.db.QueryRow(ctx,
+		`SELECT address_id, customer_id, legal_entity_id, COALESCE(region_path, '')
+		 FROM orders WHERE id = $1`, orderID).Scan(&addressID, &customerID, &legalEntityID, &regionPath)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrOrderNotFound
+		}
+		return fmt.Errorf("order: applyTag select: %w", err)
+	}
+
+	// 端口预占(环节3 未预占端口时由本环节兜底;已预占则 ReserveFirstAvailable 幂等)。
+	if s.reserve == nil {
+		return errors.New("order: port reserver not wired")
+	}
+	portID, err := s.reserve.ReserveFirstAvailable(ctx, addressID, orderID)
+	if err != nil {
+		return fmt.Errorf("order: applyTag reserve port: %w", err)
+	}
+
+	// 四码预绑定(UNLINKED;资产为空,扫码环节9回填)。
+	if s.quad == nil {
+		return errors.New("order: quad link prebinder not wired")
+	}
+	_, err = s.quad.CreateLink(ctx, QuadLinkBindReq{
+		CustomerID: customerID, PortID: portID, AddressID: addressID,
+		LegalEntityID: legalEntityID, Status: "UNLINKED",
+	})
+	if err != nil {
+		return fmt.Errorf("order: applyTag create quad link: %w", err)
+	}
+
 	return s.advance(ctx, orderID, "applyTag")
 }
 

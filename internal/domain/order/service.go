@@ -18,6 +18,29 @@ type ResourceChecker interface {
 	Check(ctx context.Context, addressID int64) (available bool, options []string, err error)
 }
 
+// PortReserver 端口预占跨域依赖口(环节3/5)。
+// 由 resource 域提供,在目标地址找空闲端口预占给订单;无空闲返回 ErrPortNotAvailable。
+type PortReserver interface {
+	ReserveFirstAvailable(ctx context.Context, addressID, orderID int64) (portID int64, err error)
+}
+
+// QuadLinkBindReq 四码预绑定请求(order 域定义,由 app 装配层映射到 quadlink.QuadLink)。
+type QuadLinkBindReq struct {
+	AssetID         int64
+	CustomerID      int64
+	PortID          int64
+	AddressID       int64
+	LegalEntityID   int64
+	LegalEntityName string
+	Status          string
+}
+
+// QuadLinkPrebinder 四码预绑定跨域依赖口(环节5)。
+// 由 quadlink 域提供,创建四码关联行(UNLINKED,资产可为空,扫码时回填)。
+type QuadLinkPrebinder interface {
+	CreateLink(ctx context.Context, q QuadLinkBindReq) (linkID int64, err error)
+}
+
 // OrderService 订单域服务口(阶段5)。
 // 契约:CT-002 订单-资源核查、CT-003 端口预占;环节标识见 terms.md §1;状态/环节正交见 terms.md §3。
 type OrderService interface {

@@ -151,7 +151,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	cust := customer.NewPGStore(pool)
 	bill := billing.NewPGStore(pool)
 	res := resource.NewPGStore(pool)
-	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res)
+	qlStore := quadlink.NewPGStore(pool)
+	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, quadLinkPrebinder{svc: qlStore})
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
@@ -226,7 +227,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 		Aaa:       aaastore,
 		Provision: provision.NewPGStore(pool),
-		QuadLink:  quadlink.NewPGStore(pool),
+		QuadLink:  qlStore,
 		Asset:     asset.NewPGStore(pool),
 		APIKey:    akstore,
 		AI:        aisvc,
