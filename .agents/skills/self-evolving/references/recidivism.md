@@ -61,3 +61,5 @@
 | gin 同 prefix 下两个 RouterGroup 注册同路径不同中间件,panic "already registered" | 1 | 2026-08-21(pub 和 uauth 都挂 `/debug/sms-code`,gin tree 路径节点冲突) | 同 prefix 下单一路由注册;场景差异用可选鉴权中间件在 handler 内分支 |
 | build.gradle.kts 默认端口与真实服务不一致,装完 APK 连不上才发现 | 1 | 2026-08-21(默认8080,102服务器28080,用户登录到验证码发送失败) | 开工前先 grep 默认端口,不一致先修再开发;或用 `-PbossBaseUrl=` 覆盖 |
 | 未完工改动被并行会话卷进混合提交(失去独立revert性) | 1 | 2026-08-21(fe30e60 卷入附件后端+i18n,7d0d984 卷入组件前端) | 提交纪律被破坏,只能记录在案 |
+| 并行agent把进行中的半成品连同无关文件提交成一条巨石 commit | 2 | 2026-08-20(僵尸subagent回退), 2026-08-21(fe30e60 混入 OrderPage.kt) | 提交污染难 revert;开工与收尾各 git status 一次,提交前 diff --cached 复核 |
+| 新服务依赖可写目录但部署物(compose/Dockerfile)未随代码提交,102 装配 nil | 1 | 2026-08-21(backup 卷 permission denied,两轮部署) | 功能代码与部署物必须同批提交 |

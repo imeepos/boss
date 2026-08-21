@@ -185,3 +185,8 @@
 - 最大坑:`min-w-45` 是 Tailwind v4 写法,本项目 v3.4 静默丢弃,菜单塌到 71px 文字竖排;同文件 w-45/w-27 同病。CDP 断言 min-width=0px 一锤定音。
 - 自我预警:lessons #12"CSS 引用不存在令牌静默 fallback"同族,但类名层面没有对应条目,已补 lessons 77。
 - 重来一次:遇到"样式错乱"先量 getComputedStyle,不猜 CSS;并 grep 全仓同族类名评估范围,范围外的不混提交。
+
+## 2026-08-21 数据备份迁移功能(backup 域)
+- 最浪费时间的坑:并行会话把我进行中的半成品(还混入无关 OrderPage.kt)直接提交成 fe30e60 巨石 commit;以及 102 容器命名卷 root 属主导致服务装配 nil,两轮部署才修好。
+- skill 有没有提前警告:并行会话问题有(recidivism 已登记过同源坑);Docker 卷属主坑无。
+- 重来一次:开工即 git status 分辨并行改动;凡新增服务依赖可写目录,部署 compose/Dockerfile 与代码同一提交落地,并在镜像里预建目录 chown。

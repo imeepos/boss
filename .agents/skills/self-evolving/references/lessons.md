@@ -181,3 +181,7 @@
 - lessons 76: vite 突然 500 "Failed to resolve import"先查并行会话是否 mid-edit 共享入口文件(App.tsx),等 1-2 分钟再curl该模块确认,别急着改自己代码。
 | 74 | 2026-08-21 admin | lazy 路由页首载 chunk 时整页闪烁 = 唯一 Suspense 边界挂在布局树外层(整壳被 fallback 卸载);修法:在布局 Outlet 外加局部 Suspense,壳层保持挂载 |
 - lessons 77: Tailwind v3 无动态 spacing 刻度,v4 写法(min-w-45/w-27/w-130)被 JIT 静默丢弃不报错——宽度塌缩/换行错乱先查 getComputedStyle 的 width/minWidth;v3 一律任意值 min-w-[180px]。全仓已知 ~20 处同类残留(ServerManagerDialog/params/servers 等),未修。
+- lesson: 102 容器以 app 用户(uid 1000,alpine adduser -D)运行,空命名卷首挂继承镜像目录属主——镜像里 mkdir+chown 才保险;已存在的旧卷必须 docker run --rm -v <vol>:/d alpine chown -R 1000:1000 /d 人工修一次。
+- lesson: apiFetch 发 FormData 时绝不能带 Content-Type: application/json,要让浏览器补 multipart boundary(client.ts 已修,新调用方直接传 FormData 即可)。
+- lesson: Go 服务新增依赖可写目录的功能时,deployments compose(BOSS_BACKUP_DIR + 命名卷)与 Dockerfile(预建目录)必须与功能代码同一批提交,否则 102 部署即 nil 服务。
+- lesson: CI(deploy-102.yml)只构建/部署 Go server 镜像;web/admin 前端验证一律本地 pnpm dev + localStorage 注入 102 token 直连。
