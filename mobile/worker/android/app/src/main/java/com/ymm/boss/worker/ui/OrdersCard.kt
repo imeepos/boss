@@ -60,9 +60,10 @@ internal fun milestoneOf(stage: Int) = when {
 internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, onClick: () -> Unit) {
     val no = t.optString("ticketNo")
     val status = t.optString("status")
-    // 卡片容器对齐 user 端 AppCard:平面白底 + 12dp 圆角 + 16dp 内边距,无阴影
+    // 卡片容器对齐 user 端 AppCard:外边距 14/6 + 平面白底 + 12dp 圆角 + 16dp 内边距,无阴影
     Column(
         Modifier.fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp)
             .background(Color.White, RoundedCornerShape(12.dp))
             .padding(16.dp),
     ) {

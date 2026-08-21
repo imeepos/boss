@@ -152,9 +152,7 @@ private fun TicketList(
             item { EmptyState("暂无工单") }
         }
         items(items, key = { it.optString("ticketNo") }) { t ->
-            Box(Modifier.padding(top = 8.dp)) {
-                TicketOrderCard(t, onTake = onTake) { nav.push(ticketScreen(t.optString("ticketNo"))) }
-            }
+            TicketOrderCard(t, onTake = onTake) { nav.push(ticketScreen(t.optString("ticketNo"))) }
         }
         item {
             Footer(hasMore)
