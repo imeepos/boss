@@ -162,3 +162,4 @@
 - 当 React 页面动作按钮可能被表单包裹时，修复是所有非提交动作显式声明 `type="button"`，避免隐式提交导致导航。skill 没提前警告我。
 - 移动端"点击按钮无反应"先怀疑服务端状态没翻转,别只查前端:本例 accept 返回 code:0 但只回填 worker_id 不改 status,列表刷新后观感"没反应"。排查顺序 = 前端事件链(uiautomator dump 断言) → curl 同端点 → 查服务端写库逻辑。(2026-08-21 师傅端领取工单)
 - 测试替身里手工改状态(fw.tickets[0].Status="DOING")会掩蔽服务端不落库的 bug;fake 必须真实执行状态流转,断言才能守住回归。(2026-08-21)
+- 当测试报 "invalid worker token" 时,先检查 signWorkerToken 是否发生在 t.Setenv(BOSS_JWT_SECRET) 之后——顺序颠倒会签出错误密钥的 token。(2026-08-24)

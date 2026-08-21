@@ -845,3 +845,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最费时：React.lazy 对只导出命名组件的 error/placeholder 页面不能直接 import，必须在动态 import 后映射 `{ default: module.NamedPage }`；先跑 typecheck 能立即定位。
 - skill 是否预警：前端门禁要求 build/typecheck，但没有直接覆盖 lazy named export 的类型形状。
 - 重来一次：批量把页面导入改懒加载时，先区分 default export 与 named export，再运行 typecheck；最终用构建产物大小确认 chunk warning 是否消失。
+
+## 2026-08-24 师傅接单区域校验补齐
+- 最费时：新写的测试用例里 token 在 t.Setenv 之前签发,导致 "invalid worker token" 白排查一轮;另一个是 edit 工具对 tab 缩进敏感,从 read 复制时层级数错一次。
+- skill 是否预警：红线 1/4 覆盖了"先读再改",但没有"签 token 必须在 Setenv 密钥之后"这条。
+- 重来一次：封装 helper 时把 Setenv 放进 helper 首行;edit 前先 cat -et 确认目标行真实缩进层级。
