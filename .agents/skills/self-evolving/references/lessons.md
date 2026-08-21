@@ -185,3 +185,5 @@
 - lesson: apiFetch 发 FormData 时绝不能带 Content-Type: application/json,要让浏览器补 multipart boundary(client.ts 已修,新调用方直接传 FormData 即可)。
 - lesson: Go 服务新增依赖可写目录的功能时,deployments compose(BOSS_BACKUP_DIR + 命名卷)与 Dockerfile(预建目录)必须与功能代码同一批提交,否则 102 部署即 nil 服务。
 - lesson: CI(deploy-102.yml)只构建/部署 Go server 镜像;web/admin 前端验证一律本地 pnpm dev + localStorage 注入 102 token 直连。
+- lessons 77: CDP 断言按钮文案前先 grep locale 实际 key 值再写正则;样例数据先读目标 schema(如 preview.ts ADDR_FIELDS),shape 不符会误判组件故障。
+- lessons 78: push 后 102 新接口仍 404 = CI 部署延迟(~1-2 分钟),20s 轮询直到生效,勿回滚排查自己的路由。
