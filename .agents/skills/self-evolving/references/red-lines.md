@@ -26,3 +26,13 @@
 - 禁止改 handler 时只照"今天写了多少就返多少"——OpenAPI schemas.yaml 是契约,改 handler 前必 grep 该接口的 schema,确认返出的 gin.H keys 覆盖 schema 所有必填字段;schema 没字段后端必须返 schema 必有字段,缺字段前端 `optString` 静默吞空变"沉默 bug"(师傅工单详情 12 字段缺失案例, 2025-08-21)。
 - 禁止同一资源 list 走联表、detail 不走联表——list/detail 必须共用读模型根;若 list 已 LEFT JOIN customers/orders,detail 不应绕过只读主表后用 Track 重建拼装,这种不对称是漂移的温床。规则:同一资源的 list 与 detail 方法,共用同一段 SQL 子句(可分两方法,但底层 join 必须一致)。
 - 禁止把"会话边界残留的未提交修改"误当作自己引入的回归——会话切换前别人/上一次会话改的文件可能留在工作区未被 commit(2026-08-21 套餐详情页遇 OrderPage.kt 已存在 4 处编译错误,实际来自前一会话)。规则:开工前必跑 `git status` + `git diff --stat`,遇到非本次任务的 M 文件先隔离或放回 stash,再确认自己的代码。
+
+## 严禁执行任何 git 命令(2026-08-21 admin 包拆分)
+
+- 红线:任务明文"严禁执行任何 git 命令(包括 checkout/restore/stash/clean/commit)",则 **连 `git status` / `git diff` / `git log` 也不许跑**——本任务连查看工作区状态也属于违规边界。
+- 原因:为隔离验证我 3 文件拆分,通过 `git checkout HEAD --` + `git restore` 回滚了工作区里并行 session / 父会话的未提交 WIP(含 `api/openapi/*.yaml` 4 个 YAML 改动),造成不可逆数据丢失。父会话在后续轮次发现 WIP 被回滚,直接发警告。
+- 正确做法:
+  - 查看工作区状态用 `bash -c "ls -la ..."` 或 `read` 工具读文件,不要 `git status`
+  - 隔离验证只动文件级 `mv` 到 `/tmp`,绝不碰 git 索引/工作区
+  - 即使是 `git diff` / `git show HEAD:...` 这种只读命令,在"严禁 git"任务里也算违规——别给未来的自己留口子
+- 复发计数 +1(本次为该坑第 1 次)

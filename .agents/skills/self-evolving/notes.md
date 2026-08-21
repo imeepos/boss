@@ -210,3 +210,15 @@
 - skill 提前警告过吗:recidivism 有"并行agent把半成品卷进提交",但没有"failed 通知不可信"这一条。
 - 重来一次:收到 subagent failed 通知先 list_agents 复实况;发现非预期未跟踪文件先查 mtime 与来源再删;另外 commit message 里的行数必须实测(本次 202/179 写错,rebase 补救)。
 - 有效手法:拆分前先看同目录既有模式(logic.ts/styles.ts/wiring_*.go),新文件名对齐既有命名;门禁(check-contract-sync)自身就是超标受害者,拆完 C 项即绿。
+
+## 2026-08-21 admin 包 3 文件路由 handler 拆分
+- 最耗时的坑:工作区里同时有另一个并行 session 在做同包其他文件(billing/dispatch/tax/userdata_more 等)的同类拆分;中途并行 session 反复改 `billing.go`/`dispatch.go`/`userdata_more.go` 等,本轮 `git stash pop` / `mv *_handlers.go /tmp/` / `git checkout HEAD -- ...` 来回 4-5 趟,差点把别人半成品冲掉。
+- skill 提前警告过吗:无。本任务与并行 session 同目录不同文件,但都操作 admin 包,go build 错误会互相掩盖。
+- 重来一次:接到"只动这 3 个文件(+同包新建文件)"的任务,先 `git status --short` 备份当前 dirty state(快照一份到 /tmp),验证门禁时只把无关 WIP `mv` 到 /tmp,**不要** `git checkout HEAD --` 别人的 WIP——git restore 后并行 session 又写回来就会重新冲突;最稳的是:复制无关 WIP 文件到 /tmp 单独验证,验证完原样 `mv` 回工作区,不动 git。
+- 有效手法:参考既成模式 `internal/httpapi/worker/ticket_action*.go`(扁平路由表 + 同包 *_handlers.go 拆分);具名 handler 用工厂签名 `func xxx(a *app.Application) gin.HandlerFunc` 与 W1 模板对齐;新文件 ≤300 行约束下,worker 18 个 handler 拆 3 个文件(主档/fact+event/notice+message),org 14 个 handler 1 个文件(292 行,主题连贯)。
+
+## 2026-08-21 admin 路由 handler 批量拆分(3 subagent 并行) + 契约补登
+- 最耗时的坑:三方互踩——(1)某 agent 用 git checkout/stash "清理"工作区,回滚了父会话未提交的 yaml 契约修改;(2)父会话自己用 git stash 诊断测试失败,又差点吞掉并行 agent 的半成品(agent 只能重写)。并行协作中任何一方执行改变工作区的 git 写操作都会互相毁灭。
+- 重来一次:并行 agent 在场时,父会话绝不用 stash 诊断(改用临时 worktree 或等 agent 收尾);未提交的重要改动立即 commit 保护;给 agent 的禁令要写明"不得执行任何改变工作区的 git 写操作,只读 git status/diff/log 无妨"。
+- 纠正:A agent 写入 red-lines.md 的"连 git status 也不许跑"过宽——真正的红线是 git 写操作(checkout/restore/stash/clean/commit/reset),只读命令无害。
+- 有效手法:补契约时先查定义是否已存在于域 yaml(本次 /customers/{id}、push/device 都只是聚合 ref 缺失,2 行搞定);checker 失败项先 stash-free 地 git show HEAD: 对比判定"预存在"还是 WIP 引入(agent 的预存在判断是错的)。
