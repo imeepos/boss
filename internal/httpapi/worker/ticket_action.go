@@ -78,12 +78,16 @@ type workerTransferReq struct {
 // workerTransferHandler 转单/改派:改派留台账(dispatch_transfers)。
 func workerTransferHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req workerTransferReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		var req workerTransferReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -133,12 +137,16 @@ type workerRescheduleReq struct {
 // 格式 "MM-DD HH:MM-HH:MM"(newDate + " " + newSlot)。
 func workerRescheduleHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req workerRescheduleReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		var req workerRescheduleReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -205,12 +213,16 @@ type workerComplaintReq struct {
 // workerComplaintHandler 投诉登记:转客服域(complaints,status=OPEN)。
 func workerComplaintHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req workerComplaintReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		var req workerComplaintReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -240,16 +252,21 @@ type workerRepairReportReq struct {
 // workerRepairReportHandler 修复上报:FIXED → 报障 CLOSED,UNFIXED → PROCESSING。
 func workerRepairReportHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
+			return
+		}
 		var req workerRepairReportReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			if req.Result != "FIXED" && req.Result != "UNFIXED" {
+				return &httpx.ValidationError{Field: "result", Message: "must be FIXED or UNFIXED"}
+			}
+			return nil
+		}) {
 			return
 		}
-		if req.Result != "FIXED" && req.Result != "UNFIXED" {
-			respond(c, apitypes.CodeInvalidParam, nil)
-			return
-		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
 			return

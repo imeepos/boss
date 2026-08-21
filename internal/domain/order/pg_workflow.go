@@ -49,6 +49,8 @@ func (s *PGStore) syncDispatchTicket(ctx context.Context, orderID int64, orderSt
 	switch orderStatus {
 	case "DONE":
 		mapped = "DONE"
+	case "CANCELLED": // 订单状态机枚举双 L,工单表枚举单 LCANCELED:取消订单此前漏同步。
+		mapped = "CANCELED"
 	case "CANCELED":
 		mapped = "CANCELED"
 	}
@@ -69,17 +71,15 @@ func (s *PGStore) ChargeContract(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "chargeContract")
 }
 
-// ApplyTag 环节5 标签预绑定:预占端口 + 落四码关联(UNLINKED,资产扫码时回填)
-// + 把端口→分光器信息写入 dispatch_tickets.splitter_port。
-// 前置:环节4 合同收费已推进(顺序守卫保证 stage=4)。
-// 依赖:PortReserver.ReserveFirstAvailable(选端口) + QuadLinkPrebinder.CreateLink(落四码)。
+// ApplyTag 环节5 标签预绑定:读已预占端口(环节3) + 落四码关联(UNLINKED) + 写分光器端口。
+// 前置:环节3 reserve 已预占端口(ports.order_id 已挂);未预占时兜底调 ReserveFirstAvailable。
+// 依赖:PortReserver(兜底) + QuadLinkPrebinder(落四码)。
 func (s *PGStore) ApplyTag(ctx context.Context, orderID int64) error {
 	// 读订单上下文。
 	var addressID, customerID, legalEntityID int64
-	var regionPath string
 	err := s.db.QueryRow(ctx,
-		`SELECT address_id, customer_id, legal_entity_id, COALESCE(region_path, '')
-		 FROM orders WHERE id = $1`, orderID).Scan(&addressID, &customerID, &legalEntityID, &regionPath)
+		`SELECT address_id, customer_id, legal_entity_id
+		 FROM orders WHERE id = $1`, orderID).Scan(&addressID, &customerID, &legalEntityID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrOrderNotFound
@@ -87,16 +87,23 @@ func (s *PGStore) ApplyTag(ctx context.Context, orderID int64) error {
 		return fmt.Errorf("order: applyTag select: %w", err)
 	}
 
-	// 端口预占(环节3 未预占端口时由本环节兜底;已预占则 ReserveFirstAvailable 幂等)。
-	if s.reserve == nil {
-		return errors.New("order: port reserver not wired")
-	}
-	portID, err := s.reserve.ReserveFirstAvailable(ctx, addressID, orderID)
-	if err != nil {
-		return fmt.Errorf("order: applyTag reserve port: %w", err)
+	// 端口:环节3 已预占则读 ports.order_id;未预占时兜底 ReserveFirstAvailable。
+	var portID int64
+	err = s.db.QueryRow(ctx,
+		`SELECT id FROM ports WHERE order_id = $1 AND status = 'RESERVED'`, orderID).Scan(&portID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		if s.reserve == nil {
+			return errors.New("order: port reserver not wired")
+		}
+		portID, err = s.reserve.ReserveFirstAvailable(ctx, addressID, orderID)
+		if err != nil {
+			return fmt.Errorf("order: applyTag reserve port: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("order: applyTag find port: %w", err)
 	}
 
-	// 写入 splitter_port:端口码 + 所属设备(分光器)码,格式 "SPL-03-07 · PON 7口"。
+	// 写入 splitter_port:端口码 + 所属设备码。
 	var portCode, resCode string
 	_ = s.db.QueryRow(ctx,
 		`SELECT p.port_code, COALESCE(r.code, '')

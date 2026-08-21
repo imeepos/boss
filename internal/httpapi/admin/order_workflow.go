@@ -68,15 +68,18 @@ func registerOrderWorkflowRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	// 环节4 合同收费 + 自动段 5-8(标签预绑定/建档/预下发/派单):未收费不派单由顺序守卫保证。
+	// 幂等:stage>=4 时跳过 ChargeContract,直接推进 AutoPreScan。
 	wf.POST("/:orderNo/charge", func(c *gin.Context) {
 		o, err := a.Order.GetByNo(c.Request.Context(), c.Param("orderNo"))
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		if err := a.Order.ChargeContract(c.Request.Context(), o.ID); err != nil {
-			respondErr(c, err)
-			return
+		if o.Stage < 4 {
+			if err := a.Order.ChargeContract(c.Request.Context(), o.ID); err != nil {
+				respondErr(c, err)
+				return
+			}
 		}
 		if err := a.Automation.AutoPreScan(c.Request.Context(), o.ID); err != nil {
 			respondErr(c, err)

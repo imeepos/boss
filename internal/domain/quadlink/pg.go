@@ -125,7 +125,26 @@ func (s *PGStore) CreateLink(ctx context.Context, q QuadLink) (int64, error) {
 	if q.AssetID != 0 {
 		assetArg = q.AssetID
 	}
+	// 同一客户已有四码关联时复用(UPDATE port/address/asset/status),避免唯一约束冲突。
+	// 一个客户在同一时刻只有一组四码关联;新订单的端口/地址覆盖旧的。
 	err := s.db.QueryRow(ctx, `
+		SELECT id FROM quad_links WHERE customer_id = $1 AND customer_id IS NOT NULL
+		LIMIT 1`, q.CustomerID).Scan(&id)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return 0, fmt.Errorf("quadlink: check existing link: %w", err)
+	}
+	if err == nil {
+		// 已有行,UPDATE。
+		_, err = s.db.Exec(ctx,
+			`UPDATE quad_links SET asset_id=$2, port_id=$3, address_id=$4, status=$5 WHERE id=$1`,
+			id, assetArg, q.PortID, q.AddressID, q.Status)
+		if err != nil {
+			return 0, fmt.Errorf("quadlink: update link: %w", err)
+		}
+		return id, nil
+	}
+	// 无已有行,INSERT。
+	err = s.db.QueryRow(ctx, `
 		INSERT INTO quad_links(asset_id, customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status)
 		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
 		assetArg, q.CustomerID, q.PortID, q.AddressID, q.LegalEntityID, q.LegalEntityName, q.Status).Scan(&id)
