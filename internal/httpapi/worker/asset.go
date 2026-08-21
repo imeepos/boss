@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/device"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -26,7 +27,7 @@ func registerWorkerPortalAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/materials/tools/:toolId/borrow", workerToolBorrowHandler(a, true))
 	g.POST("/materials/tools/:toolId/give-back", workerToolBorrowHandler(a, false))
 	g.GET("/maintenance", workerMaintenanceHandler(a))
-	g.GET("/tickets/:ticketNo/measure", workerMeasureHandler)
+	g.GET("/tickets/:ticketNo/measure", workerMeasureHandler(a))
 	g.GET("/tickets/:ticketNo/resources", workerResourcesHandler(a))
 }
 
@@ -303,12 +304,70 @@ func portalPriorityLabel(p string) string {
 	}
 }
 
-// workerMeasureHandler 现场测速:实测通道未接,返回占位(缺口见报告)。
-func workerMeasureHandler(c *gin.Context) {
-	respond(c, apitypes.CodeOK, gin.H{
-		"opticalPowerDbm": 0, "opticalPowerLabel": "", "downloadMbps": 0,
-		"uploadMbps": 0, "packetLossRate": 0,
-	})
+// workerMeasureHandler 现场测速:光功率/丢包取设备采集链(device_metrics,
+// 地址→资源→最新样本),上下行速率暂无实测通道(保持 0,如实回传)。
+func workerMeasureHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		_, ord, err := ticketOrder(c, a)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		optical, loss, label := latestDeviceSample(a, c, ord.AddressID)
+		respond(c, apitypes.CodeOK, gin.H{
+			"opticalPowerDbm": optical, "opticalPowerLabel": label,
+			"downloadMbps": 0, "uploadMbps": 0, "packetLossRate": loss,
+		})
+	}
+}
+
+// latestDeviceSample 取地址所属资源的最新的设备样本;无样本返回 0 值 + 离线标签。
+func latestDeviceSample(a *app.Application, c *gin.Context, addressID int64) (float64, float64, string) {
+	resources, err := a.Resource.ListResources(c.Request.Context())
+	if err != nil {
+		return 0, 0, "无数据"
+	}
+	var latest *device.DeviceMetric
+	for _, r := range resources {
+		if r.AddressID != addressID {
+			continue
+		}
+		metrics, err := a.Device.ListMetrics(c.Request.Context(), r.ID)
+		if err != nil {
+			continue
+		}
+		for i := range metrics {
+			m := metrics[i]
+			if latest == nil || m.CollectedAt.After(latest.CollectedAt) {
+				latest = &m
+			}
+		}
+	}
+	if latest == nil {
+		return 0, 0, "无数据"
+	}
+	optical, loss := 0.0, 0.0
+	if latest.OpticalPower != nil {
+		optical = *latest.OpticalPower
+	}
+	if latest.PacketLoss != nil {
+		loss = *latest.PacketLoss
+	}
+	return optical, loss, opticalPowerLabel(optical)
+}
+
+// opticalPowerLabel 光功率判档:-24dBm 以上正常,-27 以下异常,其间偏弱。
+func opticalPowerLabel(dbm float64) string {
+	switch {
+	case dbm == 0:
+		return "无数据"
+	case dbm >= -24:
+		return "正常"
+	case dbm >= -27:
+		return "偏弱"
+	default:
+		return "异常"
+	}
 }
 
 // workerResourcesHandler 片区资源:经 resource 域核查目标地址空闲端口。

@@ -110,16 +110,65 @@ func workerPhotoUploadHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// portalQuadH 按地址取四码对照视图(仅状态码;码值映射缺口见报告)。
+// portalQuadH 按地址取四码对照视图:码值经绑定链解析(资产码/端口码真实,
+// 用户地址码取 user_addresses.addr_code;customerCode 无主档编码,暂空)。
 func portalQuadH(a *app.Application, c *gin.Context, addressID int64) gin.H {
 	q, err := a.QuadLink.GetByAddress(c.Request.Context(), addressID)
 	if err != nil || q == nil {
-		return gin.H{"status": "UNLINKED", "matched": false}
+		return gin.H{"status": "UNLINKED", "matched": false,
+			"assetCode": "", "customerCode": "", "portCode": "", "addrCode": ""}
 	}
 	return gin.H{
 		"status": q.Status, "matched": q.Status == "LINKED",
-		"assetCode": "", "customerCode": "", "portCode": "", "addrCode": "",
+		"assetCode": quadAssetCode(a, c, q.AssetID),
+		"portCode": quadPortCode(a, c, q.PortID),
+		"addrCode": quadAddrCode(a, c, addressID),
+		"customerCode": "",
 	}
+}
+
+// quadAssetCode 资产码(assets.asset_code)。
+func quadAssetCode(a *app.Application, c *gin.Context, assetID int64) string {
+	ast, err := a.Asset.GetAsset(c.Request.Context(), assetID)
+	if err != nil || ast == nil {
+		return ""
+	}
+	return ast.AssetCode
+}
+
+// quadPortCode 端口码(ports.port_code;经端口所属资源遍历)。
+func quadPortCode(a *app.Application, c *gin.Context, portID int64) string {
+	resources, err := a.Resource.ListResources(c.Request.Context())
+	if err != nil {
+		return ""
+	}
+	for _, r := range resources {
+		ports, err := a.Resource.ListPorts(c.Request.Context(), r.ID)
+		if err != nil {
+			continue
+		}
+		for _, p := range ports {
+			if p.PortID == portID {
+				return p.PortCode
+			}
+		}
+	}
+	return ""
+}
+
+// quadAddrCode 用户地址码(user_addresses.addr_code;未命中返回空)。
+func quadAddrCode(a *app.Application, c *gin.Context, addressID int64) string {
+	list, err := a.UserData.ListUserAddresses(c.Request.Context())
+	if err != nil {
+		return ""
+	}
+	for _, m := range list {
+		if id, _ := m["id"].(int64); id == addressID {
+			code, _ := m["addrCode"].(string)
+			return code
+		}
+	}
+	return ""
 }
 
 // workerReportGetHandler 上报预取:四码对照 + 检测项占位。
