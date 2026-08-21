@@ -133,7 +133,7 @@ function LangSwitch() {
               }}
             >
               <span>{opt.label}</span>
-              {opt.value === locale && <CheckIcon />}
+              {opt.value === locale && <span className="ml-auto"><CheckIcon /></span>}
             </button>
           ))}
         </div>
