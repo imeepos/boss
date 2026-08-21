@@ -179,3 +179,4 @@
 - lessons 74: 共享工作区并行会话可能把你的未提交改动卷进它的混合提交——完工即自commit,不给别人代提交的机会;发现被卷提交不可 revert 拆分,只能记录(7d0d984/fe30e60)。
 - lessons 75: cdp-capture 首个 --eval 偶发在 about:blank 上执行(localStorage SecurityError)——注入与 location.href 合并成一个 eval,第二个 eval 只做轮询断言,一次成功。
 - lessons 76: vite 突然 500 "Failed to resolve import"先查并行会话是否 mid-edit 共享入口文件(App.tsx),等 1-2 分钟再curl该模块确认,别急着改自己代码。
+| 74 | 2026-08-21 admin | lazy 路由页首载 chunk 时整页闪烁 = 唯一 Suspense 边界挂在布局树外层(整壳被 fallback 卸载);修法:在布局 Outlet 外加局部 Suspense,壳层保持挂载 |

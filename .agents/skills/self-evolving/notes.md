@@ -175,3 +175,8 @@
 - 最耗时的坑:并行 agent 共享工作区。兄弟会话先改坏 App.tsx(引用未建的 ./pages/backup)致 vite 500、又停掉 5199 dev server、最后把我的全部改动卷进它的混合提交(fe30e60/7d0d984,不可独立 revert)。
 - skill 提前警告过吗:警告过并行 agent 风险,但"改动被兄弟会话代为混合提交"是新变体;cdp 首个 eval 在 about:blank 执行抛 SecurityError 的竞态 skill 未提。
 - 重来一次:早 10 分钟用 git diff --name-only 快照自己的文件清单;dev server 自己起而非蹭兄弟的;cdp 用"eval1 注入+跳转合并、eval2 轮询"结构一次成功。
+
+## 2026-08-21 修顶栏导航首次点击全页闪烁
+- 最大坑:验证时只注入 token 不够,`boss.servers`/`boss.server.active` 也必须注入,否则 apiBaseUrl 走相对路径 404 → AuthGuard 登出跳登录页,断言根本没跑在目标页面上。skill 里其实写了要注入三个 key,下次照单全收。
+- 自我预警:足够,累犯台账"无验证声称已修复"红线这次提前规避了(真实 DOM 断言 sameNode)。
+- 重来一次:提交前 git status 发现 TopBar.tsx/OrderPage.kt 是并行会话遗留,只 add 自己的两个文件——这条已在台账,执行了。
