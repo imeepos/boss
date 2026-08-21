@@ -62,6 +62,8 @@ type WorkOrderService interface {
 	// AssignDispatchTicket 指派师傅(workerID/workerName 回填工单)。
 	AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error
 	AssignPendingDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error
+	// ClaimDispatchTicket 师傅领取:回填师傅并 PENDING→DOING。
+	ClaimDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error
 	CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error)
 	ListComplaints(ctx context.Context) ([]Complaint, error)
 	CreateComplaint(ctx context.Context, c Complaint) (int64, error)

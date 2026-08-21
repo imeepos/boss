@@ -3,6 +3,8 @@ package workerapi
 // W 师傅端门户工单动作:领取/签到/导航/转单/改约/回退/重试/投诉/修复上报。
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -48,11 +50,16 @@ func assignTicketToMe(c *gin.Context, a *app.Application, ticketNo string, grab 
 		respond(c, apitypes.CodeStateInvalid, nil)
 		return
 	}
-	assign := a.WorkOrder.AssignDispatchTicket
+	assign := a.WorkOrder.ClaimDispatchTicket
 	if grab {
 		assign = a.WorkOrder.AssignPendingDispatchTicket
 	}
 	if err := assign(c.Request.Context(), ticketNo, workerID, workerName); err != nil {
+		// 并发领取:预检通过但抢占落空,按状态无效而非不存在。
+		if errors.Is(err, order.ErrOrderNotFound) {
+			respond(c, apitypes.CodeStateInvalid, nil)
+			return
+		}
 		respondErr(c, err)
 		return
 	}

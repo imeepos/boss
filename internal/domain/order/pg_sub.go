@@ -158,10 +158,25 @@ func (s *PGStore) AssignDispatchTicket(ctx context.Context, ticketNo string, wor
 	return nil
 }
 
-// AssignPendingDispatchTicket 仅在待派且未指派时抢占工单，保证先到先得。
+// ClaimDispatchTicket 师傅领取:回填师傅并 PENDING→DOING;非待派返回 ErrOrderNotFound。
+func (s *PGStore) ClaimDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error {
+	tag, err := s.db.Exec(ctx, `
+		UPDATE dispatch_tickets SET worker_id=$2, worker_name=$3, status='DOING'
+		WHERE ticket_no=$1 AND status='PENDING'`,
+		ticketNo, workerID, workerName)
+	if err != nil {
+		return fmt.Errorf("order: claim dispatch ticket: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrOrderNotFound
+	}
+	return nil
+}
+
+// AssignPendingDispatchTicket 抢单:待派且未指派时抢占,同时 PENDING→DOING(先到先得)。
 func (s *PGStore) AssignPendingDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error {
 	tag, err := s.db.Exec(ctx, `
-		UPDATE dispatch_tickets SET worker_id=$2, worker_name=$3
+		UPDATE dispatch_tickets SET worker_id=$2, worker_name=$3, status='DOING'
 		WHERE ticket_no=$1 AND status='PENDING' AND COALESCE(worker_id, 0)=0`,
 		ticketNo, workerID, workerName)
 	if err != nil {

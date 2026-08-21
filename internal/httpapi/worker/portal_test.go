@@ -75,6 +75,27 @@ func (f *fakePortalWorkOrder) AssignDispatchTicket(_ context.Context, no string,
 }
 
 func (f *fakePortalWorkOrder) AssignPendingDispatchTicket(_ context.Context, no string, workerID int64, _ string) error {
+	for i := range f.tickets {
+		if f.tickets[i].TicketNo == no {
+			f.tickets[i].WorkerID = workerID
+			f.tickets[i].Status = "DOING"
+		}
+	}
+	f.assigned = workerID
+	return nil
+}
+
+func (f *fakePortalWorkOrder) ClaimDispatchTicket(_ context.Context, no string, workerID int64, name string) error {
+	for i := range f.tickets {
+		if f.tickets[i].TicketNo == no {
+			if f.tickets[i].Status != "PENDING" {
+				return order.ErrOrderNotFound
+			}
+			f.tickets[i].WorkerID = workerID
+			f.tickets[i].WorkerName = name
+			f.tickets[i].Status = "DOING"
+		}
+	}
 	f.assigned = workerID
 	return nil
 }
@@ -176,14 +197,15 @@ func TestPortalLoginAndTickets(t *testing.T) {
 	if res["_status"] != http.StatusUnauthorized {
 		t.Fatalf("anon should 401: %v", res)
 	}
-	// 抢单成功
+	// 抢单成功:fake 内直接流转 PENDING→DOING,不再手工改状态(回归:抢单不改状态=列表永远"待领取")
 	res = portalWorkerDo(r, "POST", "/api/worker/v1/hall/ORD-1/grab", "", token)
 	if res["code"].(float64) != 0 || fw.assigned != 7 {
 		t.Fatalf("grab failed: %v assigned=%d", res, fw.assigned)
 	}
+	if fw.tickets[0].Status != "DOING" {
+		t.Fatalf("grab should flip status to DOING, got %s", fw.tickets[0].Status)
+	}
 	// 我的工单列表(抢单后归属师傅 7)
-	fw.tickets[0].WorkerID = 7
-	fw.tickets[0].Status = "DOING"
 	res = portalWorkerDo(r, "GET", "/api/worker/v1/tickets", "", token)
 	items := res["data"].(map[string]any)["items"].([]any)
 	if len(items) != 1 {
@@ -196,5 +218,30 @@ func TestPortalLoginAndTickets(t *testing.T) {
 	}
 	if it["statusLabel"] != "进行中" || it["stage"].(float64) != 9 {
 		t.Fatalf("statusLabel/stage wrong: %v", it)
+	}
+}
+
+// 回归:领取(accept)后工单必须 PENDING→DOING,否则列表刷新仍"待领取",观感"点击无反应"。
+func TestPortalAcceptFlipsStatus(t *testing.T) {
+	t.Setenv("BOSS_JWT_SECRET", "portal-test-secret")
+	tok, err := signWorkerToken(7, "张师傅")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketID: 1, TicketNo: "ORD-1", OrderID: 1, WorkerID: 7, Status: "PENDING"},
+	}}
+	r := portalTestRouter(t, fw, &fakePortalOrder{})
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/tickets/ORD-1/accept", "", tok)
+	if res["code"].(float64) != 0 {
+		t.Fatalf("accept failed: %v", res)
+	}
+	if fw.tickets[0].Status != "DOING" {
+		t.Fatalf("accept should flip status to DOING, got %s", fw.tickets[0].Status)
+	}
+	// 重复领取:已非 PENDING,按状态无效拒绝
+	res = portalWorkerDo(r, "POST", "/api/worker/v1/tickets/ORD-1/accept", "", tok)
+	if res["code"].(float64) == 0 {
+		t.Fatalf("re-accept should fail: %v", res)
 	}
 }
