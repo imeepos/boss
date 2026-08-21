@@ -899,3 +899,21 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - gin 路由冲突设计:单一端点按场景分支(可选鉴权中间件)比双路由双 handler 更清晰。
 - 验证码自动回填的边界:dev 端点返回404时(dev mode off 但 App 开关 on),Android 客户端 `devAutoFillSms` 捕获异常返回 false,不做任何提示——这才是正确的降级行为。
 
+## 2026-08-21 用户端 套餐详情页 设计+开发
+
+**哪个坑浪费了最多时间？**
+
+- 会话边界残留:开工时遇到 4 处编译错误(`Api.HttpError.code` 未解析、`OrderStepper` private 等),差点误以为是自己的改动引入。`git status` 后才看到 OrderPage.kt/OrderCard.kt 早被前一会话修改且未 commit。浪费一轮排查才发现。
+- `BoxScope` + `align(Alignment.BottomCenter)`:CtaBar 用 `private fun BoxScope.CtaBar(...)` 修饰,内部 Surface 用 `Modifier.align(Alignment.BottomCenter)` 才能贴底。第一次没注意 BoxScope receiver 与 Modifier 的区分,debug 一次。
+
+**这个 skill 有没有提前警告我？**
+
+- 高频红线 #5"任务完成必 git commit,git status 干净才算收尾"间接相关——前一会话未 commit 留下的脏工作区是本任务的污染源。
+- 技巧10(grep 实战)没触发——这次只看 `Nav` 和 `Routes.kt` 就足够。
+
+**重来一次我会怎么做？**
+
+- 任务第 0 步:开工前先 `git status` + `git diff --stat` 看有没有前一会话残留 M 文件,遇到先 `git stash` 隔离或确认它属于本任务范围(否则走单独提交)。
+- `BoxScope` 扩展函数写固定 CTA 栏:首次提交时 CtaBar 拿到了 `onSubmit: (CoroutineScope, ...) -> Unit` 这种 dual-source 模式不好读,后续重构为外层 `rememberCoroutineScope()` + 内层只接受 `onClick: () -> Unit` 才清爽。原则:Composable 子组件拿到 scope 是反模式,scope 留给最近一层。
+- 设计稿自检:Loop A 的识图判定可以单独跑 `gpt-image-analyze.mjs` 问"对比这张图与 USER-APP-SPEC §2.2 IconTile 语义色"——这次靠肉眼识别色彩命中,但遇到色值争议(比如"热门"绿该是 `#34C759` 还是 alpha=0.1 浅底)时自动比对更可靠。
+
