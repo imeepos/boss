@@ -22,6 +22,9 @@ import kotlinx.coroutines.launch
  * - 4 屏状态分支由 status 字段决定:TODO/DOING/DONE
  * - 类型(INSTALL/REPAIR)由 stages.length 推断(后端 TicketDetail 暂未返 type)
  * - 卡片实现见 TicketDetailCards.kt
+ *
+ * 注:回退/重试按钮当前后端仅做审计留痕(见 ISSUE.md),前端文案如实告知,
+ * 操作完成后下拉刷新查看最新进度。
  */
 @Composable
 fun TicketDetailScreen(nav: NavHost, no: String) {
@@ -60,16 +63,18 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
                         TimelineExtras(no,
                             onRollback = {
                                 scope.launch {
-                                    try { toast(ctx, TicketApi.rollback(no)
-                                        .optString("message", "已回退上一环节")) }
-                                    catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
+                                    try {
+                                        TicketApi.rollback(no)
+                                        toast(ctx, "回退请求已记录，请下拉刷新查看最新进度")
+                                    } catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
                                 }
                             },
                             onRetry = {
                                 scope.launch {
-                                    try { toast(ctx, TicketApi.retry(no)
-                                        .optString("message", "已重试失败环节")) }
-                                    catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
+                                    try {
+                                        TicketApi.retry(no)
+                                        toast(ctx, "重试请求已记录，请下拉刷新查看最新进度")
+                                    } catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
                                 }
                             })
                     }
@@ -89,16 +94,18 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
                     },
                     onRollback = {
                         scope.launch {
-                            try { toast(ctx, TicketApi.rollback(no)
-                                .optString("message", "已回退")) }
-                            catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
+                            try {
+                                TicketApi.rollback(no)
+                                toast(ctx, "回退请求已记录，请下拉刷新查看最新进度")
+                            } catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
                         }
                     },
                     onRetry = {
                         scope.launch {
-                            try { toast(ctx, TicketApi.retry(no)
-                                .optString("message", "已重试")) }
-                            catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
+                            try {
+                                TicketApi.retry(no)
+                                toast(ctx, "重试请求已记录，请下拉刷新查看最新进度")
+                            } catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
                         }
                     })
             }
