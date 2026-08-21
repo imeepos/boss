@@ -204,10 +204,10 @@
 | # | 发现 | 矛盾/风险 | 处置 | 状态 |
 |:-:|:-----|:-----|:-----|:----:|
 | E12 | terms.md「四码合一=四码唯一关联」vs 000086 asset 可空 + 000088 customer 1:N | 权威字典口径过时，「四码」实为「2~4 码、customer 多链路」 | terms.md 术语行加 Amended（对齐 fields.md 5.1 唯一约束演进） | ✅ 已修 |
-| E13 | material_items/material_tools 主档（000073）与 worker_materials/worker_tools 断链：主档建了，事实表仍存自由文本 name，无 item_id/tool_id 引用、无 CHECK | 000073 动机自述「主档驱动」未兑现：领料编码无从校验，按物料聚合/成本核算做不出来，name 写错即脏数据 | 修复待排期：事实表加 item_id/tool_id（保留 name 快照列），入库校验码存在 | ⏳ 待排期 |
-| E14 | audit_logs 分区名存实亡：仅建 2025_08 + default（000001），无任何自动建分区代码/运维约定（grep internal/ 无 PARTITION 创建） | 2026 全部审计写入落 default 分区，按月查询无分区裁剪；架构评审发现 1.1/1.4 至今未闭环 | 修复待排期：启动时/定时 EnsurePartition(now+2月)，或改 pg_partman | ⏳ 待排期 |
-| E15 | worker_replace_logs（000074）用 ticket_no 字符串 + old/new_epc 字符串软引用 | 违反 data-layers 附录 A 修复口径「全部 numeric id 强引用 + code 仅展示冗余」；EPC 当资产码用是附录 A「资产码混用」同类复发 | 修复待排期：改 dispatch_ticket_id + old/new_tag_id（epc 留展示快照）；存量少（新表）可直改 | ⏳ 待排期 |
-| E16 | odn_device.site_no 无 FK 指向 odn_site（复合主键无法单列 FK），域内其余全硬 FK | site_no 可悬空指向不存在局点；odn_device 入库若无应用层校验则破坏 E11 归属链 | 裁定：复合键设计的固有权衡；要求域层 CreateDevice 校验 (prv,city,site_no) 存在性（对齐 odn.ValidateFacilityCode 先例） | ⏳ 域层补校验 |
+| E13 | material_items/material_tools 主档（000073）与 worker_materials/worker_tools 断链：主档建了，事实表仍存自由文本 name，无 item_id/tool_id 引用、无 CHECK | 000073 动机自述「主档驱动」未兑现：领料编码无从校验，按物料聚合/成本核算做不出来，name 写错即脏数据 | 修复：迁移 000091 加 item_id/tool_id 硬 FK + 唯一名回填；域层/师傅端接线；102 PG 实测（2026-08-21） | ✅ 000091 |
+| E14 | audit_logs 分区名存实亡：仅建 2025_08 + default（000001），无任何自动建分区代码/运维约定（grep internal/ 无 PARTITION 创建） | 2026 全部审计写入落 default 分区，按月查询无分区裁剪；架构评审发现 1.1/1.4 至今未闭环 | 修复：PGWriter.EnsurePartitions（当月起 ahead 月幂等预建），wiring 启动预建 2 个月；pgxmock 单测覆盖跨年（2026-08-21） | ✅ 已修 |
+| E15 | worker_replace_logs（000074）用 ticket_no 字符串 + old/new_epc 字符串软引用 | 违反 data-layers 附录 A 修复口径「全部 numeric id 强引用 + code 仅展示冗余」；EPC 当资产码用是附录 A「资产码混用」同类复发 | 修复：迁移 000092 加 dispatch_ticket_id/old_tag_id/new_tag_id 硬 FK + 回填；AppendReplaceLog 工单 id 直传、tag id 按 EPC 解析；102 PG 实测（2026-08-21） | ✅ 000092 |
+| E16 | odn_device.site_no 无 FK 指向 odn_site（复合主键无法单列 FK），域内其余全硬 FK | site_no 可悬空指向不存在局点；odn_device 入库若无应用层校验则破坏 E11 归属链 | 修复：insertTopDevice 校验 ACTIVE 局点存在，失败返回 ErrSiteMissing；102 PG 集成实测挂未备案局点被拒（2026-08-21） | ✅ 已修 |
 
 > 澄清（非缺陷）：worker_registrations.group_id 可空（000089）与 workers.group_id NOT NULL 不矛盾——
 > Approve 强制审核员显式补正 groupID/regionID 才建工人（internal/domain/worker/onboarding.go ErrInvalidReviewFields 守护）。

@@ -159,11 +159,11 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 | worker_registrations ✚ | id | ▲group_id(FK **可空**，000089——散师傅/平台直招不挂班组) ▲region_id(可空,000089) ▲worker_id(通过后回填,软) ▲reviewer_account_id(软) | 入驻审核队列 |
 | 师傅实名 | — | 统一走 verifications(subject_type='worker')，见 §2.3 | — |
 | worker_performances ✚ / worker_commissions ✚ / worker_schedules ✚ | id | ▲worker_id ▲group_id(FK)；UQ(worker,period,group) 月度粒度 | 师傅×月×班组 |
-| worker_materials ✚ / worker_tools ✚ / worker_feedbacks ✚ / asset_returns ✚ | id | ▲worker_id ▲group_id(FK)；asset_returns 另软挂 asset | 事件级事实 |
+| worker_materials ✚ / worker_tools ✚ / worker_feedbacks ✚ / asset_returns ✚ | id | ▲worker_id ▲group_id(FK)；materials/tools 另挂 item_id/tool_id(FK→主档，000091，name 留展示快照)；asset_returns 另软挂 asset | 事件级事实 |
 | worker_attendance ✚ | id | ▲worker_id(FK,000071)；clock_type IN/OUT | 师傅 1:N 打卡 |
 | worker_safety_checks ✚ | id | ▲worker_id(FK,000072)；work_type + checklist TEXT[] | 师傅 1:N 安检 |
-| worker_replace_logs ✚ | id | ▲worker_id(FK,000074)；sFK ticket_no + old/new_epc | 师傅 1:N 换签 |
-| material_items ✚ / material_tools ✚ | id/UQ code(MI-*/TL-*) | 全局物料/工具主档(000073)；worker_materials.name / worker_tools.name 按编码对齐主档，无 FK | 全局目录 |
+| worker_replace_logs ✚ | id | ▲worker_id(FK,000074) ▲dispatch_ticket_id(FK,000092) ▲old/new_tag_id(FK,按 EPC 解析)；ticket_no/epc 留展示快照 | 师傅 1:N 换签 |
+| material_items ✚ / material_tools ✚ | id/UQ code(MI-*/TL-*) | 全局物料/工具主档(000073)；worker_materials.item_id / worker_tools.tool_id 硬引用(000091，E13 修复) | 全局目录 |
 
 > **归属关系与月度粒度铁律**：月度级事实粒度=「师傅×月×班组」，唯一键 `(worker_id, period, group_id)`，月中调组拆多行；
 > 归属口径=事发时，工单记派单时班组；`worker_settings`/`worker_messages` 不加快照。
