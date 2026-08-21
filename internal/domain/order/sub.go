@@ -46,7 +46,8 @@ type TicketItem struct {
 	TicketNo     string `json:"ticketNo"`
 	OrderID      int64  `json:"orderId"`
 	WorkerID     int64  `json:"workerId"`
-	Status       string `json:"status"` // PENDING/DOING/DONE/CANCELED
+	Status       string `json:"status"`       // PENDING/DOING/DONE/CANCELED
+	OrderStatus  string `json:"orderStatus"`  // 订单终态兜底:DONE/CANCELED 时工单视图按完成处理
 	CustomerName string `json:"customerName"`
 	Address      string `json:"address"`
 	Stage        int8   `json:"stage"` // 订单当前环节 1~12

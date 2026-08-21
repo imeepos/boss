@@ -38,7 +38,28 @@ func (s *PGStore) advance(ctx context.Context, orderID int64, event string) erro
 	if _, err := s.db.Exec(ctx, `UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, step.stage, nextStatus); err != nil {
 		return fmt.Errorf("order: advance update: %w", err)
 	}
+	s.syncDispatchTicket(ctx, orderID, nextStatus)
 	return s.appendStage(ctx, orderID, step.stage, "DONE")
+}
+
+// syncDispatchTicket 订单终态同步派单工单:订单 DONE/CANCELED 时工单随动,
+// 避免订单已完成而工单仍停留 PENDING(师傅端出现"12/12 待领取")。
+func (s *PGStore) syncDispatchTicket(ctx context.Context, orderID int64, orderStatus string) {
+	mapped := ""
+	switch orderStatus {
+	case "DONE":
+		mapped = "DONE"
+	case "CANCELED":
+		mapped = "CANCELED"
+	}
+	if mapped == "" {
+		return
+	}
+	if _, err := s.db.Exec(ctx,
+		`UPDATE dispatch_tickets SET status = $2 WHERE order_id = $1 AND status <> $2`, orderID, mapped); err != nil {
+		// 同步失败不阻断主流程;工单视图另有订单终态兜底(read model)
+		_ = err
+	}
 }
 
 // 环节 4~12(terms.md §1)。各环节目前是「人工确认」推进;自动化在阶段7 经同一状态机升级。
@@ -115,5 +136,6 @@ func (s *PGStore) transitionStatus(ctx context.Context, orderID int64, event str
 	if _, err := s.db.Exec(ctx, `UPDATE orders SET status = $2 WHERE id = $1`, orderID, next); err != nil {
 		return fmt.Errorf("order: status update: %w", err)
 	}
+	s.syncDispatchTicket(ctx, orderID, next)
 	return nil
 }

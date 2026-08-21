@@ -39,6 +39,14 @@ func portalStatusOf(status string, ownerID, workerID int64) string {
 	}
 }
 
+// portalItemStatus 列表项状态:订单终态兜底优先,再走工单状态映射。
+func portalItemStatus(it order.TicketItem, workerID int64) string {
+	if it.OrderStatus == "DONE" || it.OrderStatus == "CANCELED" {
+		return "DONE"
+	}
+	return portalStatusOf(it.Status, it.WorkerID, workerID)
+}
+
 func workerOwnedTicket(c *gin.Context, tk *order.DispatchTicket) bool {
 	workerID, _ := portalWorker(c)
 	if tk.WorkerID == workerID {
@@ -63,9 +71,10 @@ func portalTicketStatusLabel(s string) string {
 }
 
 // portalTicketOf 派单工单 → Ticket 视图(worker/schemas.yaml Ticket)。
-// 地址/客户/环节取自列表读模型 TicketItem(联表订单),不再占位。
+// 地址/客户/环节取自列表读模型 TicketItem(联表订单),不再占位;
+// 订单已终态(DONE/CANCELED)时工单视图按完成处理,避免"12/12 待领取"。
 func portalTicketOf(it order.TicketItem, workerID int64) gin.H {
-	status := portalStatusOf(it.Status, it.WorkerID, workerID)
+	status := portalItemStatus(it, workerID)
 	return gin.H{
 		"ticketNo": it.TicketNo, "bizNo": it.TicketNo, "type": "INSTALL",
 		"typeLabel": "新装", "statusLabel": portalTicketStatusLabel(status),
@@ -120,7 +129,7 @@ func workerHomeHandler(a *app.Application) gin.HandlerFunc {
 		today := gin.H{"accepted": 0, "finished": 0, "doing": 0, "todo": 0}
 		ongoing := make([]gin.H, 0, len(tickets))
 		for _, it := range tickets {
-			s := portalStatusOf(it.Status, it.WorkerID, workerID)
+			s := portalItemStatus(it, workerID)
 			incHomeCount(today, s)
 			if s == "TODO" || s == "DOING" {
 				ongoing = append(ongoing, portalTicketOf(it, workerID))
@@ -153,7 +162,7 @@ func workerTicketsHandler(a *app.Application) gin.HandlerFunc {
 		status := c.DefaultQuery("status", "all")
 		items := make([]gin.H, 0, len(tickets))
 		for _, it := range tickets {
-			if status == "all" || portalStatusOf(it.Status, it.WorkerID, workerID) == status {
+			if status == "all" || portalItemStatus(it, workerID) == status {
 				items = append(items, portalTicketOf(it, workerID))
 			}
 		}
@@ -172,7 +181,7 @@ func workerTicketsHistoryHandler(a *app.Application) gin.HandlerFunc {
 		}
 		items := make([]gin.H, 0, len(tickets))
 		for _, it := range tickets {
-			if it.Status == "DONE" || it.Status == "CANCELED" {
+			if portalItemStatus(it, workerID) == "DONE" {
 				items = append(items, portalTicketOf(it, workerID))
 			}
 		}

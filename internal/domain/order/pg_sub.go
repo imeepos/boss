@@ -43,7 +43,7 @@ func (s *PGStore) ListDispatchTickets(ctx context.Context) ([]DispatchTicket, er
 func (s *PGStore) ListTicketItems(ctx context.Context) ([]TicketItem, error) {
 	rows, err := s.db.Query(ctx, `
 		SELECT t.id, t.ticket_no, t.order_id, COALESCE(t.worker_id, 0), t.status,
-		       COALESCE(c.name, ''), COALESCE(a.name, ua.detail, ''), COALESCE(o.stage, 0)
+		       COALESCE(o.status, ''), COALESCE(c.name, ''), COALESCE(a.name, ua.detail, ''), COALESCE(o.stage, 0)
 		FROM dispatch_tickets t
 		LEFT JOIN orders o ON t.order_id = o.id
 		LEFT JOIN customers c ON o.customer_id = c.id
@@ -58,7 +58,7 @@ func (s *PGStore) ListTicketItems(ctx context.Context) ([]TicketItem, error) {
 	for rows.Next() {
 		var it TicketItem
 		if err := rows.Scan(&it.TicketID, &it.TicketNo, &it.OrderID, &it.WorkerID, &it.Status,
-			&it.CustomerName, &it.Address, &it.Stage); err != nil {
+			&it.OrderStatus, &it.CustomerName, &it.Address, &it.Stage); err != nil {
 			return nil, fmt.Errorf("order: scan ticket item: %w", err)
 		}
 		out = append(out, it)
