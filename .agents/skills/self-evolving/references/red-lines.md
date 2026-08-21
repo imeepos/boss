@@ -23,3 +23,5 @@
 - 禁止自研 Compose 组件调用点用裸尾随lambda传点击动作(组件末位是 @Composable 插槽时必绑错)——动作一律 onClick = 命名参数显式传递。
 - 禁止在本机启动 boss 服务(go run/built binary)做冒烟/联调,因为测试服务器只有一个(102 服务器,192.168.0.102),提交后 gitea CI 会自动部署,本机配置低且会与既有进程抢端口/IPv6 双绑造成假 404(用户明令 2026-08-19)。冒烟改走 102 部署后的地址,不在本机起服务。
 - 禁止在 102 上裸跑 `docker image prune -af`/`builder prune -af` 而不先核对"仅本地标签"镜像——2026-08-20 一次 prune 同时炸掉 boss-server(重建踩中迁移文件 600)和 CI(deploy-runner 镜像被删+宿主未 login registry),双故障叠加;清理前必须圈定关键镜像并确认 registry 可回拉、宿主已 login。
+- 禁止改 handler 时只照"今天写了多少就返多少"——OpenAPI schemas.yaml 是契约,改 handler 前必 grep 该接口的 schema,确认返出的 gin.H keys 覆盖 schema 所有必填字段;schema 没字段后端必须返 schema 必有字段,缺字段前端 `optString` 静默吞空变"沉默 bug"(师傅工单详情 12 字段缺失案例, 2025-08-21)。
+- 禁止同一资源 list 走联表、detail 不走联表——list/detail 必须共用读模型根;若 list 已 LEFT JOIN customers/orders,detail 不应绕过只读主表后用 Track 重建拼装,这种不对称是漂移的温床。规则:同一资源的 list 与 detail 方法,共用同一段 SQL 子句(可分两方法,但底层 join 必须一致)。

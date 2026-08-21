@@ -139,3 +139,42 @@
   ③两 App 间 Tab 名差异保留（如师傅端 3 Tab vs 用户端 4 Tab），但 TabBar 视觉（图标尺寸/选中色/
   高度/未读气泡）必须一致；④"业务语义不同就换主色"是反模式，应靠文案+状态徽章表达，而非按钮色。
   再犯标记：无（首犯，已落到 docs/worker/UI-SPEC.md §12 对齐口径表）
+
+## E. 后端/契约漂移(2025-08-21)
+- **触发**：师傅反馈"工单详情页看不到工单详细信息,应该能看到订单信息脱敏的"。
+  实地勘察发现：前端按 `api/openapi/worker/schemas.yaml::TicketDetail` 读 12 个字段
+  (customerName/customerPhoneMasked/address/product/splitterPort/preBindTag/
+  scheduleSlot/faultTypeLabel/reportedAt/slaLeftMinutes/remoteDiagnosis/finishedAt),
+  但 `internal/httpapi/worker/ticket.go::workerTicketDetailHandler` 实际只返
+  6 字段(ticketNo/bizNo/status/statusLabel/stages/quad/riskCheck),其余由
+  `optString` 静默吞空值,详情页工单头塌成空骨架。
+- **根因**：schema 是契约、handler 是实现,二者漂移无失败信号——前端按 schema
+  读、handler 按"今天写了多少就返多少"返,中间无一致性门禁。`optString` 默认
+  返回空串而非抛错,把漂移变成"看起来页面活了但啥也没有"的沉默 bug。
+- **教训**：
+  1. **schema 必须有代码守门**：OpenAPI/JSON-Schema 是契约,build 时若 handler 返
+     出的 gin.H keys 不覆盖 schema 必填字段,应当告警(可写 codegen
+     校验或 lint);短期无工具时,改 handler 前必先 grep `schemas.yaml` 看
+     该接口 schema 完整字段列表。
+  2. **前端 `optString` 把漂移变沉默**：`JSONObject.optString(key)` 默认空串、
+     `optInt(key, -1)` 默认 -1,前端读空时常无感("字段不存在"和"字段为空"
+     同形)。应当在 frontend review 检查"读到的字段如果为空、是否影响关键
+     UI 区块",关键 UI 字段空时应有占位/告警,而非"什么都不显示"。
+  3. **同一接口的 list/detail 必须共享读模型根**：`ListTicketItems` 已联
+     customers/addresses/orders,`workerTicketDetailHandler` 却只读
+     `dispatch_tickets` + `Track`,二者各走各的——这种"列表读了、详情没读"
+     的不对称是漂移的温床。规则:同一资源 list/detail 必须共用同一套
+     联表 SQL(可以分两方法但底层 join 一致)。
+- **修法**(2025-08-21 commit 81dfed1)：
+  - `TicketItem` 增 `CustomerPhone/OfferName/FinishedAt` 有数据支撑字段 +
+    7 个 OpenAPI 预留位(空值,前端按"空不渲染"处理);
+  - 新增 `GetTicketItemByNo`,共用 `ListTicketItems` 联表根;
+  - handler 出门走 `httpx.MaskPhone` 脱敏;
+  - `portalTicketOf` 同步填 product/customerPhoneMasked,与详情对齐;
+  - `pg_sub_test` 增 2 个用例锁联表列序 + ErrOrderNotFound 行为。
+- **未修**(本任务范围外,留待后续单提交):`internal/httpapi/admin`
+  的 `fakeDispatchOrder` stub 缺 `ClaimDispatchTicket`,导致
+  dashboard_test/dispatch_test 编译失败——本次提交前已 broken,
+  用 `git stash` 验证过非本修改引入,不在本 fix 范围。
+- **再犯标记**：1 次。规则写入 `references/red-lines.md`：
+  改 handler 前必 grep schema,同一资源 list/detail 必须共用联表根。
