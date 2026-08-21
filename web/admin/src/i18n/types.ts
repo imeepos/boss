@@ -541,6 +541,7 @@ export interface Translations {
       fAsset: string
       pAsset: string
       eAsset: string
+      pickSearch: string
       fReason: string
       pReason: string
       fPriority: string
@@ -802,6 +803,8 @@ export interface Translations {
       eOrder: string
       fAsset: string
       fPort: string
+      pickSearch: string
+      pickEmpty: string
       total: string
       empty: string
       loadFail: string

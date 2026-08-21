@@ -6,6 +6,7 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
+import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type PortHistoryRow, type PortRow, type ResourceRow } from '../types'
 
@@ -53,11 +54,13 @@ export default function ResourcePage() {
       <PageHead title={r.title} desc={r.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={resourceId ? String(resourceId) : ''}
-            onChange={(e) => { const v = Number(e.target.value) || 0; setResourceId(v); setPage(1); loadPorts(v) }}>
-            <option value="">{r.allDevice}</option>
-            {devices.map((d) => <option key={d.id} value={d.id}>{d.name} ({d.code})</option>)}
-          </select>
+          <Dropdown
+            value={resourceId ? String(resourceId) : ''}
+            options={[{ value: '', label: r.allDevice }, ...devices.map((d) => ({ value: String(d.id), label: `${d.name} (${d.code})` }))]}
+            onChange={(v) => { const n = Number(v) || 0; setResourceId(n); setPage(1); loadPorts(n) }}
+            ariaLabel={r.allDevice}
+            triggerStyle={{ minWidth: 200 }}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => loadPorts(resourceId)}>
             {t.pages.audit.refresh}

@@ -15,10 +15,14 @@ interface DropdownProps {
   ariaLabel: string
   disabled?: boolean
   triggerStyle?: CSSProperties
+  /** 浮层顶部渲染关键字过滤输入(按 label 大小写不敏感匹配)。 */
+  searchable?: boolean
+  searchPlaceholder?: string
 }
 
-export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle }: DropdownProps) {
+export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder }: DropdownProps) {
   const [open, setOpen] = useState(false)
+  const [keyword, setKeyword] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -31,12 +35,14 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
   }, [open, disabled])
 
   const current = options.find((o) => o.value === value)
+  const kw = keyword.trim().toLowerCase()
+  const visible = searchable && kw !== '' ? options.filter((o) => o.label.toLowerCase().includes(kw)) : options
   return (
     <div className="relative inline-flex" ref={rootRef} style={triggerStyle}>
       <button
         type="button"
         className={'flex h-8 w-full items-center justify-between gap-2 rounded-sm border py-0 pr-1 pl-2.5 text-[13px]' + (disabled ? ' cursor-not-allowed border-[var(--shell-input-border)] bg-[var(--shell-input-disabled-bg)] text-[var(--shell-input-placeholder)]' : ' cursor-pointer border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]')}
-        onClick={() => { if (!disabled) setOpen((v) => !v) }}
+        onClick={() => { if (!disabled) { setOpen((v) => !v); if (!open) setKeyword('') } }}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
@@ -57,7 +63,18 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
           aria-label={ariaLabel}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          {options.map((o) => (
+          {searchable && (
+            <div className="border-b border-[var(--shell-side-border)] px-1 pb-1">
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="h-7 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
+              />
+            </div>
+          )}
+          {visible.map((o) => (
             <button
               key={o.value}
               type="button"

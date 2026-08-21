@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
+import { ResourcePicker } from '../../../components/ResourcePicker'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
-import { pageSlice, PRIORITIES, type ReplacementRow } from '../types'
+import { pageSlice, PRIORITIES, type AssetRow, type ReplacementRow } from '../types'
 
 export default function ReplacePage() {
   const t = useT()
@@ -103,9 +104,15 @@ export default function ReplacePage() {
           <div className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fAsset}</label>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={assetId} placeholder={r.pAsset}
-                onChange={(e) => setAssetId(e.target.value)} />
-              {!assetOk && assetId !== '' && <span className="text-[11px] text-[var(--color-danger)]">{r.eAsset}</span>}
+              <ResourcePicker
+                value={assetId}
+                onChange={setAssetId}
+                load={() => apiFetch<{ items: AssetRow[] }>('/assets').then((x) => x?.items ?? [])}
+                toOption={(a) => ({ value: String(a.assetId), label: `${a.assetCode} (#${a.assetId})` })}
+                ariaLabel={r.fAsset}
+                searchPlaceholder={r.pickSearch}
+                errorText={r.loadFail}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label>{r.fReason}</label>

@@ -1,6 +1,7 @@
 // 订单与工单域行类型:对齐 internal/domain/{order,worker} 与 http_order*.go。
 
 export interface OrderListRow {
+  id: number
   orderNo: string
   customer: string
   product: string

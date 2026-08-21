@@ -6,7 +6,10 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
-import { pageSlice, type DismantleRow } from '../types'
+import { ResourcePicker } from '../../../components/ResourcePicker'
+import { pageSlice, type DismantleRow, type OrderListRow } from '../types'
+import type { AssetRow } from '../../ams/types'
+import type { PortRow } from '../../oss/types'
 
 export default function DismantlePage() {
   const t = useT()
@@ -54,7 +57,6 @@ export default function DismantlePage() {
   }
 
   const slice = pageSlice(rows, page, pageSize)
-  const idOk = (v: string) => v === '' || (/^\d+$/.test(v) && Number(v) > 0)
   const orderOk = /^\d+$/.test(orderId) && Number(orderId) > 0
 
   return (
@@ -104,20 +106,41 @@ export default function DismantlePage() {
           <div className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.fOrder}</label>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={orderId}
-                onChange={(e) => setOrderId(e.target.value)} />
-              {!orderOk && orderId !== '' && <span className="text-[11px] text-[var(--color-danger)]">{d.eOrder}</span>}
+              <ResourcePicker
+                value={orderId}
+                onChange={setOrderId}
+                load={() => apiFetch<{ items: OrderListRow[] }>('/orders').then((x) => x?.items ?? [])}
+                toOption={(o) => ({ value: String(o.id), label: `${o.orderNo}${o.customer ? ` · ${o.customer}` : ''}` })}
+                ariaLabel={d.fOrder}
+                searchPlaceholder={d.pickSearch}
+                errorText={d.loadFail}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label>{d.fAsset}</label>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={assetId}
-                onChange={(e) => setAssetId(e.target.value)} />
-              {!idOk(assetId) && <span className="text-[11px] text-[var(--color-danger)]">{d.eOrder}</span>}
+              <ResourcePicker
+                value={assetId}
+                onChange={setAssetId}
+                load={() => apiFetch<{ items: AssetRow[] }>('/assets').then((x) => x?.items ?? [])}
+                toOption={(a) => ({ value: String(a.assetId), label: `${a.assetCode} (#${a.assetId})` })}
+                ariaLabel={d.fAsset}
+                emptyLabel={d.pickEmpty}
+                searchPlaceholder={d.pickSearch}
+                errorText={d.loadFail}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label>{d.fPort}</label>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={portId}
-                onChange={(e) => setPortId(e.target.value)} />
+              <ResourcePicker
+                value={portId}
+                onChange={setPortId}
+                load={() => apiFetch<{ items: PortRow[] }>('/ports').then((x) => x?.items ?? [])}
+                toOption={(p) => ({ value: String(p.portId), label: `${p.portCode} (#${p.portId})` })}
+                ariaLabel={d.fPort}
+                emptyLabel={d.pickEmpty}
+                searchPlaceholder={d.pickSearch}
+                errorText={d.loadFail}
+              />
             </div>
             {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
