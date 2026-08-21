@@ -6,6 +6,7 @@ package push
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	pkgpush "github.com/ymm-001/boss/internal/pkg/push"
@@ -96,12 +97,14 @@ func failRecord(workerID int64, title, alert string, extras map[string]string, e
 		Title: title, Alert: alert, Extras: extras, Status: StatusFailed, Error: errMsg}
 }
 
-// record 留痕失败静默(尽力而为),不影响业务。
+// record 留痕失败记日志(尽力而为不中断业务,但静默吞错会掩盖配置类故障)。
 func (n *Notifier) record(ctx context.Context, r Record) {
 	if n.records == nil {
 		return
 	}
-	_ = n.records.Record(ctx, r)
+	if err := n.records.Record(ctx, r); err != nil {
+		log.Printf("push: record failed: %v", err)
+	}
 }
 
 // TicketAssignedAlert 派单通知文案(title/alert 统一出口,指派/转派触发共用)。
