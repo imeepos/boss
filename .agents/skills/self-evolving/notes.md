@@ -792,3 +792,9 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - skill 预警：有（环境事实），执行时没先读。
 - 重来一次：凡 PDF/命令行工具先 `export PATH=/opt/homebrew/bin:$PATH` 再调用。
 - 无新增红线；文档变更已 commit（a04343d），git status 干净。
+
+## 2026-08-20 ODN 编码映射落地(goal round 1)
+- 最费时：共享工作区有并行会话同刻提交——中途 git status 突变(000076 出现、我的 docs 编辑被对方提交)。发现后逐文件核对内容未丢失才继续,没有盲目重做。
+- skill 预警：红线1(编辑前 read)多次救场;但"共享工作区文件可能被并行进程改掉"这条应升级意识:提交前必须 git status+log 核对,编号类资源(migration 序号)先 ls 再定。
+- 重来一次：生成 migration 前先 ls migrations/ 拿最新序号,并在提交信息里写死文件名防混淆。
+- 坑:python 内联补丁脚本改脚本(patching a patching),越改越乱,最后整文件重写才收敛——>3 次补丁就该重写。
