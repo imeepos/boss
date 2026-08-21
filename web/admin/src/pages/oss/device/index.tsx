@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
+import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type DeviceMetricRow, type MaintenanceRow, type ResourceRow } from '../types'
 
@@ -69,11 +70,13 @@ export default function DevicePage() {
           ))}
           <span className="spacer" />
           {tab === 'metrics' && (
-            <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={resourceId ? String(resourceId) : ''}
-              onChange={(e) => { const v = Number(e.target.value) || 0; setResourceId(v); setPage(1); loadMetrics(v) }}>
-              <option value="">{d.allDevice}</option>
-              {devices.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.code})</option>)}
-            </select>
+            <Dropdown
+              value={resourceId ? String(resourceId) : ''}
+              options={[{ value: '', label: d.allDevice }, ...devices.map((x) => ({ value: String(x.id), label: `${x.name} (${x.code})` }))]}
+              onChange={(v) => { const n = Number(v) || 0; setResourceId(n); setPage(1); loadMetrics(n) }}
+              ariaLabel={d.allDevice}
+              triggerStyle={{ minWidth: 200 }}
+            />
           )}
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy}
             onClick={() => (tab === 'metrics' ? loadMetrics(resourceId) : loadMaints())}>

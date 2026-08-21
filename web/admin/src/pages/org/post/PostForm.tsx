@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { Dropdown } from '../../../components/Dropdown'
 import type { PostRow } from './filter'
 
 export interface PostFormValues {
@@ -69,13 +70,15 @@ export function PostFormDrawer({
       <div className="flex flex-col gap-3.5">
         <div className="flex flex-col gap-1.5">
           <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.post.fDept}</label>
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={values.deptId ? String(values.deptId) : ''}
-            onChange={(e) => onChange({ ...values, deptId: Number(e.target.value) || 0 })}>
-            <option value="">{t.pages.post.pDept}</option>
-            {depts.map((d) => (
-              <option key={d.id} value={d.id}>{d.legalEntity ? `${d.legalEntity} / ` : ''}{d.name}</option>
-            ))}
-          </select>
+          <Dropdown
+            value={values.deptId ? String(values.deptId) : ''}
+            options={[
+              { value: '', label: t.pages.post.pDept },
+              ...depts.map((d) => ({ value: String(d.id), label: d.legalEntity ? `${d.legalEntity} / ${d.name}` : d.name })),
+            ]}
+            onChange={(v) => onChange({ ...values, deptId: Number(v) || 0 })}
+            ariaLabel={t.pages.post.pDept}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.post.fCode}</label>

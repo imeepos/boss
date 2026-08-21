@@ -6,7 +6,9 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
-import { pageSlice, type RegionRefRow, type TransferRow } from '../types'
+import { Dropdown } from '../../../components/Dropdown'
+import { ResourcePicker } from '../../../components/ResourcePicker'
+import { pageSlice, type RegionRefRow, type ResourceRow, type TransferRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function TransferPage() {
@@ -136,25 +138,34 @@ export default function TransferPage() {
           <div className="flex flex-col gap-3.5">
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fResource}</label>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={resourceId} placeholder={r.pResource}
-                onChange={(e) => setResourceId(e.target.value)} />
+              <ResourcePicker
+                value={resourceId}
+                onChange={setResourceId}
+                load={() => apiFetch<{ items: ResourceRow[] }>('/resources').then((x) => x?.items ?? [])}
+                toOption={(x) => ({ value: String(x.id), label: `${x.name} (${x.code})` })}
+                ariaLabel={r.fResource}
+                searchPlaceholder={r.pResource}
+                errorText={r.loadFail}
+              />
               {!resourceOk && resourceId !== '' && <span className="text-[11px] text-[var(--color-danger)]">{r.eResource}</span>}
             </div>
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fFrom}</label>
-              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={fromRegionId ? String(fromRegionId) : ''}
-                onChange={(e) => setFromRegionId(Number(e.target.value) || 0)}>
-                <option value="">—</option>
-                {regions.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-              </select>
+              <Dropdown
+                value={fromRegionId ? String(fromRegionId) : ''}
+                options={[{ value: '', label: '—' }, ...regions.map((x) => ({ value: String(x.id), label: x.name }))]}
+                onChange={(v) => setFromRegionId(Number(v) || 0)}
+                ariaLabel={r.fFrom}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fTo}</label>
-              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={toRegionId ? String(toRegionId) : ''}
-                onChange={(e) => setToRegionId(Number(e.target.value) || 0)}>
-                <option value="">—</option>
-                {regions.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-              </select>
+              <Dropdown
+                value={toRegionId ? String(toRegionId) : ''}
+                options={[{ value: '', label: '—' }, ...regions.map((x) => ({ value: String(x.id), label: x.name }))]}
+                onChange={(v) => setToRegionId(Number(v) || 0)}
+                ariaLabel={r.fTo}
+              />
               {!regionOk && (fromRegionId !== 0 || toRegionId !== 0) && <span className="text-[11px] text-[var(--color-danger)]">{r.eRegion}</span>}
             </div>
             {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
