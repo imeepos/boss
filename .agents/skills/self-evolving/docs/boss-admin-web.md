@@ -59,8 +59,7 @@
 - DB 直连（本机无 psql 时）：`host=192.168.0.102 port=25432 user=boss password=boss dbname=boss`（与 configs/config.example.yaml 同源）；用 /tmp 临时 go 程序 + pgx
 - 冒烟账号 admin 的 account_id=103（102 库）
 
-- 102 远程环境（CI 自动部署）：`http://192.168.0.102:28080`，账号 `admin / Boss-admin-2026`（sysadmin；口令权威=仓库 `deployments/app.env`，该文件已入库——内网私有仓库裁定，转公网前必须移出）。geo 维护页在 基础配置→国家与行政区划（menu:geo）。
-  - Amended 2026-08-2x：实测 `Boss-admin-2026` 返回 40100「未认证或凭证无效」，当前可用口令为 `admin / admin123`（accountId=103）；以 login 接口实测为准。
+- 102 远程环境（CI 自动部署）：`http://192.168.0.102:28080`，冒烟账号 `admin / admin123`（sysadmin，accountId=103；2026-08-21 login 接口实测可用）。口令权威=仓库 `deployments/app.env` 的 `BOSS_ADMIN_PASSWORD=admin123`，与 `docker-compose.102.app.yml`、`scripts/devseed/main.go` 三处一致；app.env 已入库系内网私有仓库裁定，转公网前必须移出。曾误记为 `Boss-admin-2026`（40100 失效，2026-08-21 实测废弃该说法）。geo 维护页在 基础配置→国家与行政区划（menu:geo）。
 
 ## 页面状态与分页约定（2026-08-18 geo 首例）
 
