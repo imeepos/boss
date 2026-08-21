@@ -48,6 +48,18 @@ func (f *fakePortalWorkOrder) ListDispatchTickets(context.Context) ([]order.Disp
 	return f.tickets, nil
 }
 
+func (f *fakePortalWorkOrder) ListTicketItems(context.Context) ([]order.TicketItem, error) {
+	out := make([]order.TicketItem, 0, len(f.tickets))
+	for _, t := range f.tickets {
+		out = append(out, order.TicketItem{
+			TicketID: t.TicketID, TicketNo: t.TicketNo, OrderID: t.OrderID,
+			WorkerID: t.WorkerID, Status: t.Status,
+			CustomerName: "测试客户", Address: "测试路 1 号", Stage: 9,
+		})
+	}
+	return out, nil
+}
+
 func (f *fakePortalWorkOrder) GetDispatchTicketByNo(_ context.Context, no string) (*order.DispatchTicket, error) {
 	for _, t := range f.tickets {
 		if t.TicketNo == no {
@@ -176,5 +188,13 @@ func TestPortalLoginAndTickets(t *testing.T) {
 	items := res["data"].(map[string]any)["items"].([]any)
 	if len(items) != 1 {
 		t.Fatalf("tickets: %v", res)
+	}
+	it := items[0].(map[string]any)
+	// 列表视图字段来自读模型联表,不再占位
+	if it["address"] != "测试路 1 号" || it["customerName"] != "测试客户" {
+		t.Fatalf("ticket view not enriched: %v", it)
+	}
+	if it["statusLabel"] != "进行中" || it["stage"].(float64) != 9 {
+		t.Fatalf("statusLabel/stage wrong: %v", it)
 	}
 }

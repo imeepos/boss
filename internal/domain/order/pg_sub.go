@@ -39,6 +39,33 @@ func (s *PGStore) ListDispatchTickets(ctx context.Context) ([]DispatchTicket, er
 	return out, rows.Err()
 }
 
+// ListTicketItems 列表读模型:派单工单联表订单/客户/地址(师傅端列表页)。
+func (s *PGStore) ListTicketItems(ctx context.Context) ([]TicketItem, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT t.id, t.ticket_no, t.order_id, COALESCE(t.worker_id, 0), t.status,
+		       COALESCE(c.name, ''), COALESCE(a.name, ua.detail, ''), COALESCE(o.stage, 0)
+		FROM dispatch_tickets t
+		LEFT JOIN orders o ON t.order_id = o.id
+		LEFT JOIN customers c ON o.customer_id = c.id
+		LEFT JOIN addresses a ON o.address_id = a.id
+		LEFT JOIN user_addresses ua ON o.address_id = ua.id
+		ORDER BY t.id`)
+	if err != nil {
+		return nil, fmt.Errorf("order: list ticket items: %w", err)
+	}
+	defer rows.Close()
+	out := make([]TicketItem, 0)
+	for rows.Next() {
+		var it TicketItem
+		if err := rows.Scan(&it.TicketID, &it.TicketNo, &it.OrderID, &it.WorkerID, &it.Status,
+			&it.CustomerName, &it.Address, &it.Stage); err != nil {
+			return nil, fmt.Errorf("order: scan ticket item: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 // CreateDispatchTicket 新建派单工单,返回自增 id。
 func (s *PGStore) CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error) {
 	var id int64

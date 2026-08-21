@@ -40,9 +40,23 @@ type ScanLog struct {
 	Result     string `json:"result"` // MATCH/MISMATCH/OFFLINE_CACHED
 }
 
+// TicketItem 派单工单列表读模型:联表补订单环节/客户/安装地址(师傅端列表视图)。
+type TicketItem struct {
+	TicketID     int64  `json:"ticketId"`
+	TicketNo     string `json:"ticketNo"`
+	OrderID      int64  `json:"orderId"`
+	WorkerID     int64  `json:"workerId"`
+	Status       string `json:"status"` // PENDING/DOING/DONE/CANCELED
+	CustomerName string `json:"customerName"`
+	Address      string `json:"address"`
+	Stage        int8   `json:"stage"` // 订单当前环节 1~12
+}
+
 // WorkOrderService 订单工单/报障/扫码域服务口(阶段5 子表)。
 type WorkOrderService interface {
 	ListDispatchTickets(ctx context.Context) ([]DispatchTicket, error)
+	// ListTicketItems 列表读模型:派单工单联表订单/客户/地址,供师傅端列表页。
+	ListTicketItems(ctx context.Context) ([]TicketItem, error)
 	GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*DispatchTicket, error)
 	// AssignDispatchTicket 指派师傅(workerID/workerName 回填工单)。
 	AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error

@@ -21,11 +21,16 @@ var portalStageNames = [13]string{
 
 // portalTicketStatus 派单工单状态 → 师傅端状态(TODO/ACCEPTED/DOING/DONE)。
 func portalTicketStatus(tk order.DispatchTicket, workerID int64) string {
-	switch tk.Status {
+	return portalStatusOf(tk.Status, tk.WorkerID, workerID)
+}
+
+// portalStatusOf 状态映射核心(DispatchTicket/TicketItem 共用)。
+func portalStatusOf(status string, ownerID, workerID int64) string {
+	switch status {
 	case "PENDING":
 		return "TODO"
 	case "DOING":
-		if tk.WorkerID == workerID {
+		if ownerID == workerID {
 			return "DOING"
 		}
 		return "ACCEPTED"
@@ -58,28 +63,30 @@ func portalTicketStatusLabel(s string) string {
 }
 
 // portalTicketOf 派单工单 → Ticket 视图(worker/schemas.yaml Ticket)。
-func portalTicketOf(tk order.DispatchTicket, workerID int64) gin.H {
-	status := portalTicketStatus(tk, workerID)
+// 地址/客户/环节取自列表读模型 TicketItem(联表订单),不再占位。
+func portalTicketOf(it order.TicketItem, workerID int64) gin.H {
+	status := portalStatusOf(it.Status, it.WorkerID, workerID)
 	return gin.H{
-		"ticketNo": tk.TicketNo, "bizNo": tk.TicketNo, "type": "INSTALL",
+		"ticketNo": it.TicketNo, "bizNo": it.TicketNo, "type": "INSTALL",
 		"typeLabel": "新装", "statusLabel": portalTicketStatusLabel(status),
-		"address": "", "distanceKm": 0, "scheduleSlot": "",
-		"stage": 9, "stageTotal": 12, "status": status,
+		"customerName": it.CustomerName,
+		"address":      it.Address, "distanceKm": nil, "scheduleSlot": "",
+		"stage": it.Stage, "stageTotal": 12, "status": status,
 		"slaLeftMinutes": nil, "finishedAt": "",
 	}
 }
 
-// myTickets 取我的全部工单(按当前师傅过滤)。
-func myTickets(c *gin.Context, a *app.Application) ([]order.DispatchTicket, error) {
+// myTicketItems 取我的全部工单列表项(按当前师傅过滤)。
+func myTicketItems(c *gin.Context, a *app.Application) ([]order.TicketItem, error) {
 	workerID, _ := portalWorker(c)
-	list, err := a.WorkOrder.ListDispatchTickets(c.Request.Context())
+	list, err := a.WorkOrder.ListTicketItems(c.Request.Context())
 	if err != nil {
 		return nil, err
 	}
-	out := make([]order.DispatchTicket, 0, len(list))
-	for _, tk := range list {
-		if tk.WorkerID == workerID {
-			out = append(out, tk)
+	out := make([]order.TicketItem, 0, len(list))
+	for _, it := range list {
+		if it.WorkerID == workerID {
+			out = append(out, it)
 		}
 	}
 	return out, nil
@@ -105,18 +112,18 @@ func workerHomeHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		tickets, err := myTickets(c, a)
+		tickets, err := myTicketItems(c, a)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
 		today := gin.H{"accepted": 0, "finished": 0, "doing": 0, "todo": 0}
 		ongoing := make([]gin.H, 0, len(tickets))
-		for _, tk := range tickets {
-			s := portalTicketStatus(tk, workerID)
+		for _, it := range tickets {
+			s := portalStatusOf(it.Status, it.WorkerID, workerID)
 			incHomeCount(today, s)
 			if s == "TODO" || s == "DOING" {
-				ongoing = append(ongoing, portalTicketOf(tk, workerID))
+				ongoing = append(ongoing, portalTicketOf(it, workerID))
 			}
 		}
 		respond(c, apitypes.CodeOK, gin.H{
@@ -138,16 +145,16 @@ func incHomeCount(today gin.H, s string) {
 func workerTicketsHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		workerID, _ := portalWorker(c)
-		tickets, err := myTickets(c, a)
+		tickets, err := myTicketItems(c, a)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
 		status := c.DefaultQuery("status", "all")
 		items := make([]gin.H, 0, len(tickets))
-		for _, tk := range tickets {
-			if status == "all" || portalTicketStatus(tk, workerID) == status {
-				items = append(items, portalTicketOf(tk, workerID))
+		for _, it := range tickets {
+			if status == "all" || portalStatusOf(it.Status, it.WorkerID, workerID) == status {
+				items = append(items, portalTicketOf(it, workerID))
 			}
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
@@ -158,15 +165,15 @@ func workerTicketsHandler(a *app.Application) gin.HandlerFunc {
 func workerTicketsHistoryHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		workerID, _ := portalWorker(c)
-		tickets, err := myTickets(c, a)
+		tickets, err := myTicketItems(c, a)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
 		items := make([]gin.H, 0, len(tickets))
-		for _, tk := range tickets {
-			if tk.Status == "DONE" || tk.Status == "CANCELED" {
-				items = append(items, portalTicketOf(tk, workerID))
+		for _, it := range tickets {
+			if it.Status == "DONE" || it.Status == "CANCELED" {
+				items = append(items, portalTicketOf(it, workerID))
 			}
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
@@ -193,7 +200,8 @@ func workerTicketDetailHandler(a *app.Application) gin.HandlerFunc {
 		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"ticketNo": tk.TicketNo, "bizNo": ord.OrderNo,
-			"status": portalTicketStatus(*tk, currentWorkerID), "statusLabel": "",
+			"status": portalTicketStatus(*tk, currentWorkerID),
+			"statusLabel": portalTicketStatusLabel(portalTicketStatus(*tk, currentWorkerID)),
 			"stages": portalStages(stages), "quad": portalQuadH(a, c, ord.AddressID),
 			"riskCheck": gin.H{"blacklistHit": false, "graylistHit": false},
 		})
@@ -220,15 +228,15 @@ func portalStages(logs []order.StageLog) []gin.H {
 // workerHallHandler 任务池:未指派的公开工单。
 func workerHallHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		list, err := a.WorkOrder.ListDispatchTickets(c.Request.Context())
+		list, err := a.WorkOrder.ListTicketItems(c.Request.Context())
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
 		items := make([]gin.H, 0)
-		for _, tk := range list {
-			if tk.WorkerID == 0 && tk.Status == "PENDING" {
-				items = append(items, portalTicketOf(tk, 0))
+		for _, it := range list {
+			if it.WorkerID == 0 && it.Status == "PENDING" {
+				items = append(items, portalTicketOf(it, 0))
 			}
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
