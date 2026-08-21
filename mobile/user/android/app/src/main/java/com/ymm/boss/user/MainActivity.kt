@@ -1,6 +1,8 @@
 package com.ymm.boss.user
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -8,6 +10,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.ymm.boss.user.api.Api
@@ -32,6 +35,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppRoot() {
     val nav = remember { Nav(if (Api.token().isNotEmpty()) Route.Home else Route.Login) }
+    DisposableEffect(nav) {
+        val mainHandler = Handler(Looper.getMainLooper())
+        Api.onUnauthorized = { mainHandler.post { nav.resetTo(Route.Login) } }
+        onDispose { Api.onUnauthorized = null }
+    }
     Surface(Modifier.fillMaxSize()) {
         val key = tabKeyOf(nav.current)
         val isHome = nav.current == Route.Home

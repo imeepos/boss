@@ -22,6 +22,8 @@ object Api {
     var base: String = DEFAULT_BASE
         private set
 
+    var onUnauthorized: (() -> Unit)? = null
+
     fun init(context: Context, baseOverride: String? = null) {
         TokenStore.init(context)
         LangStore.init(context)
@@ -31,6 +33,15 @@ object Api {
     fun token(): String = TokenStore.read()
 
     fun setToken(t: String?) = TokenStore.write(t)
+
+    private fun handleUnauthorized(status: Int) {
+        if (isUnauthorized(status)) {
+            setToken(null)
+            onUnauthorized?.invoke()
+        }
+    }
+
+    private fun isUnauthorized(status: Int): Boolean = status == 401 || status == 40100
 
     class HttpError(val status: Int, message: String) : Exception(message)
 
@@ -85,7 +96,10 @@ object Api {
             try {
                 val code = conn.responseCode
                 val text = streamText(conn, code)
-                if (code !in 200..299) throw HttpError(code, "HTTP $code")
+                if (code !in 200..299) {
+                    handleUnauthorized(code)
+                    throw HttpError(code, "HTTP $code")
+                }
                 if (text.isBlank()) JSONObject() else unwrap(text)
             } finally { conn.disconnect() }
     }
@@ -95,7 +109,10 @@ object Api {
         val conn = open("GET", path, null)
         try {
             val code = conn.responseCode
-            if (code !in 200..299) throw HttpError(code, "HTTP $code")
+            if (code !in 200..299) {
+                handleUnauthorized(code)
+                throw HttpError(code, "HTTP $code")
+            }
             val buf = ByteArrayOutputStream()
             conn.inputStream.use { it.copyTo(buf) }
             buf.toByteArray()
@@ -106,7 +123,10 @@ object Api {
     private fun unwrap(text: String): JSONObject {
         val obj = JSONObject(text)
         val code = obj.optInt("code", -1)
-        if (code != 0) throw HttpError(code, obj.optString("msg").ifBlank { "code $code" })
+        if (code != 0) {
+            handleUnauthorized(code)
+            throw HttpError(code, obj.optString("msg").ifBlank { "code $code" })
+        }
         return obj.optJSONObject("data") ?: JSONObject()
     }
 
@@ -116,7 +136,10 @@ object Api {
             try {
                 val code = conn.responseCode
                 val text = streamText(conn, code)
-                if (code !in 200..299) throw HttpError(code, "HTTP $code")
+                if (code !in 200..299) {
+                    handleUnauthorized(code)
+                    throw HttpError(code, "HTTP $code")
+                }
                 if (text.isBlank()) JSONObject() else unwrap(text)
             } finally { conn.disconnect() }
         }
@@ -127,11 +150,18 @@ object Api {
             try {
                 val code = conn.responseCode
                 val text = streamText(conn, code)
-                if (code !in 200..299) throw HttpError(code, "HTTP $code")
+                if (code !in 200..299) {
+                    handleUnauthorized(code)
+                    throw HttpError(code, "HTTP $code")
+                }
                 if (text.isBlank()) return@withContext JSONArray()
                 // 数组载荷包在信封 data 内:data 本身为数组,或 data.items
                 val obj = JSONObject(text)
-                if (obj.optInt("code", -1) != 0) throw HttpError(obj.optInt("code"), obj.optString("msg"))
+                val envelopeCode = obj.optInt("code", -1)
+                if (envelopeCode != 0) {
+                    handleUnauthorized(envelopeCode)
+                    throw HttpError(envelopeCode, obj.optString("msg"))
+                }
                 when (val d = obj.opt("data")) {
                     is JSONArray -> d
                     is JSONObject -> d.optJSONArray("items") ?: JSONArray()
