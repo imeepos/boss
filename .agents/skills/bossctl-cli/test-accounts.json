@@ -42,6 +42,116 @@
     ],
     "note": "审核人员(ops 角色持有 menu:dispatch);负责审核师傅注册与实名核验"
   },
+  "kefu_xu": {
+    "username": "kefu_xu",
+    "password": "Kefu@123",
+    "realName": "徐客服",
+    "accountId": 256,
+    "roleCode": "ops",
+    "org": {
+      "legalEntityId": 1,
+      "legalEntityCode": "LEG-MAIN",
+      "deptId": 4,
+      "deptName": "客服部",
+      "postId": 7,
+      "postCode": "agent"
+    },
+    "apiKeys": [
+      {
+        "name": "cli-staff-256",
+        "key": "boss_e3a44a018991c25ba0b8957b7e1daa3d"
+      }
+    ],
+    "note": "客服坐席-主品牌(2026-08-21 admin 受权建号);环节1 客户自助下单经此账号仅查看,不走代客"
+  },
+  "kefu_zhao": {
+    "username": "kefu_zhao",
+    "password": "Kefu@123",
+    "realName": "赵客服",
+    "accountId": 259,
+    "roleCode": "ops",
+    "org": {
+      "legalEntityId": 2,
+      "legalEntityCode": "LEG-HOME",
+      "deptId": 5,
+      "deptName": "客服部",
+      "postId": 8,
+      "postCode": "agent"
+    },
+    "apiKeys": [
+      {
+        "name": "cli-staff-259",
+        "key": "boss_9217a7c398e259a0bea64ca77c95157a"
+      }
+    ],
+    "note": "客服坐席-家庭宽带(2026-08-21 admin 受权建号)"
+  },
+  "dispatch_li": {
+    "username": "dispatch_li",
+    "password": "Disp@123",
+    "realName": "李调度",
+    "accountId": 257,
+    "roleCode": "technician",
+    "org": {
+      "legalEntityId": 1,
+      "legalEntityCode": "LEG-MAIN",
+      "deptId": 1,
+      "deptName": "装维调度部",
+      "postId": 1,
+      "postCode": "dispatcher"
+    },
+    "apiKeys": [
+      {
+        "name": "cli-staff-257",
+        "key": "boss_613c58ec7c8f7873c36e53cf0415a98d"
+      }
+    ],
+    "note": "装维调度员-主品牌(2026-08-21 admin 受权建号);负责段2/3 资源核查+端口预占+段8 派单"
+  },
+  "cashier_wang": {
+    "username": "cashier_wang",
+    "password": "Cash@123",
+    "realName": "王财务",
+    "accountId": 258,
+    "roleCode": "ops",
+    "org": {
+      "legalEntityId": 1,
+      "legalEntityCode": "LEG-MAIN",
+      "deptId": 7,
+      "deptName": "财务部",
+      "postId": 11,
+      "postCode": "cashier"
+    },
+    "apiKeys": [
+      {
+        "name": "cli-staff-258",
+        "key": "boss_5c7f31f303c96af60f6dcb57a27d6949"
+      }
+    ],
+    "note": "财务收款员-主品牌(2026-08-21 admin 受权建号);负责段4 合同收费"
+  },
+  "noc_chen": {
+    "username": "noc_chen",
+    "password": "Noc@123",
+    "realName": "陈网维",
+    "accountId": 260,
+    "roleCode": "resource_admin",
+    "org": {
+      "legalEntityId": 1,
+      "legalEntityCode": "LEG-MAIN",
+      "deptId": 10,
+      "deptName": "网络运维部",
+      "postId": 16,
+      "postCode": "noc_engineer"
+    },
+    "apiKeys": [
+      {
+        "name": "cli-staff-260",
+        "key": "boss_1b2fda3e511e823ebca096b5495ba74c"
+      }
+    ],
+    "note": "网络运维工程师-主品牌(2026-08-21 admin 受权建号);负责端口/资源管理(/ports /resources /provision/*)"
+  },
   "workers": [
     {
       "workerId": 6,
