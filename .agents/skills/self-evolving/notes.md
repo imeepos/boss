@@ -814,3 +814,7 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最耗时的坑:找对了"没有 alert、只有 19 处 window.confirm",但浏览器冒烟时反复打不开页面——原因是告警页真实路由是 /alarm/alarm(菜单分组前缀),不是 /alarm;另外 cdp-capture 每次运行是全新浏览器上下文,localStorage 不跨运行持久,必须单次运行内 set 存储 + location.href 导航 + 最后一个 async eval 断言。
 - skill 有没有预警:cdp-capture 用法文档齐全,但没写"存储不跨运行持久"和"eval 顺序在 settle 前"这两个细节,踩了 4 次截图才定位。
 - 重来一次:先 grep menu.def.ts 拿真实 path 再开页;把全部前置动作压进同一次 cdp-capture 调用。
+
+## 2026-08-20 ODN 管理接口落地(goal round 3)
+- 顺利。一处失误:gofmt 漏跑 internal/pkg/httpx(只查了改动主目录),把未格式化文件提交了,靠 commit --amend 补救——门禁前 gofmt -l 要覆盖本次全部触碰包。
+- 复用模式有效:ledger_test 的 fakeX 内嵌接口桩 + doJSON + middleware.Authn 测试引擎直接照搬,handler 测试半小时收敛。
