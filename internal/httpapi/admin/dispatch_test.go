@@ -13,6 +13,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
+	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // fakeDispatchOrder 桩 order.WorkOrderService。
@@ -303,5 +304,62 @@ func TestDispatchTransfers(t *testing.T) {
 	}
 	if len(body.Data.Items) != 1 || body.Data.Items[0].Reason != "跨区改派" {
 		t.Fatalf("items=%+v", body.Data.Items)
+	}
+}
+
+// TestAssignTicketRegionMismatchForce 回归:跨区指派默认 40900 提醒,force 确认后放行。
+func TestAssignTicketRegionMismatchForce(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	wo := &fakeDispatchOrder{byNo: &order.DispatchTicket{
+		TicketNo: "TK-X", RegionID: 2, RegionName: "南区", Status: "PENDING",
+	}}
+	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1, RegionID: 1}}
+	r := newDispatchRouter(wo, &fakeOrderLedger{}, ws, mgr)
+
+	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/pool/TK-X/assign",
+		`{"masterId":5}`, authToken(t, mgr))
+	var body struct {
+		Code int `json:"code"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Code != int(apitypes.CodeConflict) || wo.assigned != nil {
+		t.Fatalf("cross-region assign should 40900 and not assign: code=%d assigned=%+v", body.Code, wo.assigned)
+	}
+
+	w = postBodyAuth(t, r, "/api/admin/v1/dispatch/pool/TK-X/assign",
+		`{"masterId":5,"force":true}`, authToken(t, mgr))
+	if w.Code != http.StatusOK || wo.assigned == nil || wo.assigned.workerID != 5 {
+		t.Fatalf("forced assign should pass: status=%d assigned=%+v body=%s", w.Code, wo.assigned, w.Body.String())
+	}
+}
+
+// TestTransferTicketRegionMismatchForce 回归:跨区转派默认 40900 提醒,force 确认后放行。
+func TestTransferTicketRegionMismatchForce(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	wo := &fakeDispatchOrder{byNo: &order.DispatchTicket{
+		TicketID: 3, TicketNo: "TK-X", WorkerID: 5, RegionID: 2, RegionName: "南区", Status: "DOING",
+	}}
+	ol := &fakeOrderLedger{}
+	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅", Status: 1, RegionID: 1}}
+	r := newDispatchRouter(wo, ol, ws, mgr)
+
+	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/tickets/TK-X/transfer",
+		`{"toMasterId":6,"reason":"跨区"}`, authToken(t, mgr))
+	var body struct {
+		Code int `json:"code"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Code != int(apitypes.CodeConflict) || wo.assigned != nil {
+		t.Fatalf("cross-region transfer should 40900: code=%d assigned=%+v", body.Code, wo.assigned)
+	}
+
+	w = postBodyAuth(t, r, "/api/admin/v1/dispatch/tickets/TK-X/transfer",
+		`{"toMasterId":6,"reason":"跨区","force":true}`, authToken(t, mgr))
+	if w.Code != http.StatusOK || wo.assigned == nil || wo.assigned.workerID != 6 {
+		t.Fatalf("forced transfer should pass: status=%d body=%s", w.Code, w.Body.String())
 	}
 }

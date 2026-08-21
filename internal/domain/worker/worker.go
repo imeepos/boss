@@ -28,6 +28,15 @@ type Worker struct {
 	LeftAt   *time.Time `json:"leftAt,omitempty"` // nil=在职
 }
 
+// RegionMatched 师傅与工单区域是否匹配:任一方区域缺失(0=无区域)视为匹配
+// (未设区域=不限区域);双方均非空且不同才算跨区。
+func RegionMatched(workerRegionID, ticketRegionID int64) bool {
+	if workerRegionID == 0 || ticketRegionID == 0 {
+		return true
+	}
+	return workerRegionID == ticketRegionID
+}
+
 // WorkerService 师傅域服务口(阶段2):班组/师傅。
 type WorkerService interface {
 	ListGroups(ctx context.Context) ([]Group, error)

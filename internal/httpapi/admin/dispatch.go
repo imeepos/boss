@@ -50,6 +50,20 @@ func registerDispatchRoutes(g *gin.RouterGroup, a *app.Application) {
 			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "worker not active"})
 			return
 		}
+		ticket, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		// 跨区指派:默认拒绝并回 40900 提醒,前端二次确认后带 force 强派。
+		if ticket != nil && !worker.RegionMatched(w.RegionID, ticket.RegionID) && !req.Force {
+			respond(c, apitypes.CodeConflict, gin.H{
+				"error": "region mismatch", "forceRequired": true,
+				"ticketRegionId": ticket.RegionID, "ticketRegionName": ticket.RegionName,
+				"workerRegionId": w.RegionID,
+			})
+			return
+		}
 		if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), ticketNo, w.ID, w.Name,
 			order.AssignOpt{ScheduleSlot: req.ScheduleSlot, PreBindTag: req.PreBindTag}); err != nil {
 			respondErr(c, err)
@@ -121,6 +135,15 @@ func registerDispatchRoutes(g *gin.RouterGroup, a *app.Application) {
 			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "target worker is current assignee"})
 			return
 		}
+		// 跨区转派:同指派,默认 40900 提醒,force 确认后放行。
+		if !worker.RegionMatched(to.RegionID, ticket.RegionID) && !req.Force {
+			respond(c, apitypes.CodeConflict, gin.H{
+				"error": "region mismatch", "forceRequired": true,
+				"ticketRegionId": ticket.RegionID, "ticketRegionName": ticket.RegionName,
+				"workerRegionId": to.RegionID,
+			})
+			return
+		}
 		if err := appendTransfer(a, c, ticket, to.ID, to.Name, req.Reason); err != nil {
 			respondErr(c, err)
 			return
@@ -155,10 +178,12 @@ type assignTicketReq struct {
 	MasterID     int64  `json:"masterId" binding:"required"`
 	ScheduleSlot string `json:"scheduleSlot"` // 预约时间段，如 08-22 14:00-16:00
 	PreBindTag   string `json:"preBindTag"`   // 预绑定 EPC 标签，如 EPC-0001
+	Force        bool   `json:"force"`        // 跨区指派二次确认:true=已知晓跨区仍强制派单
 }
 
 // transferTicketReq 工单转派请求体(toMasterId/reason 必填)。
 type transferTicketReq struct {
 	ToMasterID int64  `json:"toMasterId" binding:"required"`
 	Reason     string `json:"reason" binding:"required"`
+	Force      bool   `json:"force"` // 跨区转派二次确认
 }

@@ -76,7 +76,7 @@ paths:
   /dispatch/pool/{ticketNo}/assign:
     post:
       tags: [Order]
-      summary: 工单指派(候选师傅)
+      summary: 工单指派(候选师傅;跨区默认 40900 提醒,force 确认后强派)
       operationId: assignTicket
       parameters:
         - { name: ticketNo, in: path, required: true, schema: { type: string } }
@@ -90,8 +90,11 @@ paths:
                 masterId: { type: integer }
                 scheduleSlot: { type: string, description: '预约时间段，如 08-22 14:00-16:00' }
                 preBindTag: { type: string, description: '预绑定 EPC 标签，如 EPC-0001' }
+                force: { type: boolean, description: '跨区指派二次确认:已知晓区域不匹配仍强制派单' }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '409':
+          description: 师傅负责区域与工单区域不匹配(data 携带 forceRequired/ticketRegionId/workerRegionId),前端确认后带 force 重发
 
   /dispatch/my-tickets:
     get:
@@ -114,7 +117,7 @@ paths:
   /dispatch/tickets/{ticketNo}/transfer:
     post:
       tags: [Order]
-      summary: 工单转派
+      summary: 工单转派(跨区默认 40900 提醒,force 确认后放行)
       operationId: transferTicket
       parameters:
         - { name: ticketNo, in: path, required: true, schema: { type: string } }
@@ -127,8 +130,11 @@ paths:
               properties:
                 toMasterId: { type: integer }
                 reason: { type: string }
+                force: { type: boolean, description: '跨区转派二次确认' }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '409':
+          description: 目标师傅区域与工单区域不匹配(data 携带 forceRequired/ticketRegionId/workerRegionId)
 
   /dismantles:
     get:
