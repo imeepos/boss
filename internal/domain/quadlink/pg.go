@@ -50,7 +50,35 @@ func (s *PGStore) ListLinks(ctx context.Context) ([]QuadLink, error) {
 }
 
 // CreateLink 新建四码关联,返回自增 id。
+// 关联完整性:INSERT 前校验 asset_id/customer_id/port_id/address_id 四码对应的实体均存在;
+// 任一不存在返回 ErrForeignKeyViolation,拒绝落"孤儿"quad_link 行(对账次轮修正)。
 func (s *PGStore) CreateLink(ctx context.Context, q QuadLink) (int64, error) {
+	// 关联存在性校验:4 条 SELECT EXISTS,加 1 次 round-trip 可合并,但为可读性保持分查。
+	refs := []struct {
+		table string
+		id    int64
+		label string // 用于错误信息区分哪码缺失
+	}{
+		{"assets", q.AssetID, "asset"},
+		{"customers", q.CustomerID, "customer"},
+		{"ports", q.PortID, "port"},
+		{"addresses", q.AddressID, "address"},
+	}
+	for _, r := range refs {
+		if r.id == 0 {
+			return 0, fmt.Errorf("quadlink: %s id required: %w", r.label, ErrForeignKeyViolation)
+		}
+		var exists bool
+		if err := s.db.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM `+r.table+` WHERE id = $1)`, r.id,
+		).Scan(&exists); err != nil {
+			return 0, fmt.Errorf("quadlink: check %s %d: %w", r.label, r.id, err)
+		}
+		if !exists {
+			return 0, fmt.Errorf("quadlink: %s %d not found: %w", r.label, r.id, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO quad_links(asset_id, customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status)
