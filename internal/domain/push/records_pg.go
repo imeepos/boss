@@ -16,16 +16,17 @@ type RecordsPGStore struct{ db devicesDB }
 // NewRecordsPGStore 构造 PG 留痕存储。
 func NewRecordsPGStore(db devicesDB) *RecordsPGStore { return &RecordsPGStore{db: db} }
 
-// extrasJSON extras 序列化(pg 落库用);nil 返回 '{}'。
-func extrasJSON(m map[string]string) []byte {
+// extrasJSON extras 序列化(pg 落库用);返回 string——pgx 对 []byte 走 bytea
+// 二进制编码,jsonb 列会报 invalid input syntax for type json(102 实测踩坑)。
+func extrasJSON(m map[string]string) string {
 	if len(m) == 0 {
-		return []byte("{}")
+		return "{}"
 	}
 	b, err := json.Marshal(m)
 	if err != nil {
-		return []byte("{}")
+		return "{}"
 	}
-	return b
+	return string(b)
 }
 
 // Record 追加一行留痕。
