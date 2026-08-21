@@ -128,7 +128,8 @@ func (s *PGStore) Track(ctx context.Context, orderID int64) (*Order, []StageLog,
 }
 
 // resolveOwnership 地址→经营区域→最近覆盖祖先的运营主体(migrations/000076)。
-// 地址不存在/未挂区域/区域链无覆盖 均返回 ErrAddressNotCovered。
+// 未匹配到子公司覆盖时兜底平台总公司(migrations/000077):root 挂总公司,天然最近祖先兜底;
+// 地址连区域都未挂时直接返回总公司。仅平台总公司未配置才报错。
 func (s *PGStore) resolveOwnership(ctx context.Context, addressID int64) (AddressOwnership, error) {
 	var own AddressOwnership
 	err := s.db.QueryRow(ctx, `
@@ -144,10 +145,25 @@ func (s *PGStore) resolveOwnership(ctx context.Context, addressID int64) (Addres
 		) cov ON TRUE
 		WHERE a.id = $1`, addressID).Scan(&own.LegalEntityID, &own.RegionPath)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return AddressOwnership{}, fmt.Errorf("address %d: %w", addressID, ErrAddressNotCovered)
+		return s.platformFallback(ctx)
 	}
 	if err != nil {
 		return AddressOwnership{}, fmt.Errorf("order: resolve ownership: %w", err)
+	}
+	return own, nil
+}
+
+// platformFallback 兜底平台总公司(is_platform 唯一),RegionPath 取 root。
+func (s *PGStore) platformFallback(ctx context.Context) (AddressOwnership, error) {
+	var own AddressOwnership
+	err := s.db.QueryRow(ctx,
+		`SELECT id, 'root' FROM legal_entities WHERE is_platform LIMIT 1`).
+		Scan(&own.LegalEntityID, &own.RegionPath)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return AddressOwnership{}, fmt.Errorf("order: submit needs platform entity: %w", ErrPlatformMissing)
+	}
+	if err != nil {
+		return AddressOwnership{}, fmt.Errorf("order: platform fallback: %w", err)
 	}
 	return own, nil
 }

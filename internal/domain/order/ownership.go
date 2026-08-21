@@ -7,8 +7,11 @@ import (
 )
 
 // ErrAddressNotCovered 安装地址未挂经营区域,或所在区域(含祖先)无运营主体覆盖。
-// 决策依据 adopted note 2026-08-20-order-legal-entity-by-address:下单前必须补齐配置。
+// PG 实现已由平台总公司兜底(migrations/000077),此错误仅在内存实现/配置缺失时出现。
 var ErrAddressNotCovered = errors.New("order: address not covered by any legal entity")
+
+// ErrPlatformMissing 未配置平台总公司(is_platform=true),兜底链断裂,属配置错误。
+var ErrPlatformMissing = errors.New("order: platform legal entity not configured")
 
 // ErrOwnershipMismatch 调用方传入的 LegalEntityID 与地址推导结果冲突。
 var ErrOwnershipMismatch = errors.New("order: legal entity mismatch with address")

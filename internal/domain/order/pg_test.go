@@ -54,7 +54,7 @@ func TestPGStore_Submit(t *testing.T) {
 			t.Fatalf("unmet: %v", err)
 		}
 	})
-	t.Run("地址未覆盖", func(t *testing.T) {
+	t.Run("未覆盖兜底总公司", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatal(err)
@@ -64,11 +64,46 @@ func TestPGStore_Submit(t *testing.T) {
 		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnError(pgx.ErrNoRows)
+		mock.ExpectQuery(`SELECT id, 'root' FROM legal_entities`).
+			WillReturnRows(mock.NewRows([]string{"id", "path"}).AddRow(int64(9), "root"))
+		mock.ExpectQuery(`SELECT 'ORD-'`).
+			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
+		mock.ExpectQuery(`INSERT INTO orders`).
+			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(9), "root").
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
+		mock.ExpectExec(`INSERT INTO order_stages`).
+			WithArgs(int64(7), int8(1), "DOING").
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+		s := NewPGStore(mock, stubExists{ok: true})
+		o, err := s.Submit(context.Background(), SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
+		if err != nil {
+			t.Fatalf("Submit: %v", err)
+		}
+		if o.LegalEntityID != 9 || o.RegionPath != "root" {
+			t.Fatalf("want platform fallback(9/root), got %+v", o)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("平台总公司未配置", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+			WithArgs(int64(100)).
+			WillReturnError(pgx.ErrNoRows)
+		mock.ExpectQuery(`SELECT id, 'root' FROM legal_entities`).
+			WillReturnError(pgx.ErrNoRows)
 
 		s := NewPGStore(mock, stubExists{ok: true})
 		_, err = s.Submit(context.Background(), SubmitReq{CustomerID: 1, AddressID: 100, ChannelID: 5})
-		if !errors.Is(err, ErrAddressNotCovered) {
-			t.Fatalf("err=%v, want ErrAddressNotCovered", err)
+		if !errors.Is(err, ErrPlatformMissing) {
+			t.Fatalf("err=%v, want ErrPlatformMissing", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet: %v", err)
