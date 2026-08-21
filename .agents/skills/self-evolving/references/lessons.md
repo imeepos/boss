@@ -190,3 +190,5 @@
 - lessons 79: 本仓库 push 远端名是 gitea(ssh://git@192.168.0.102:222/sker/boss.git)不是 origin,git push origin 会直接报无权限;push 后 CI 自动部署 102。
 - lessons 80: 并行会话可能把你编辑中/已测完的文件抢先 commit(2026-08-21 worker keyword 被 41a0125 收走且混入他人 popover.ts);提交前后各 git status 一次,发现他方文件混入自己提交时在总结中明确说明而非默默接受。
 - lessons 81: admin 选择器三件套已沉淀在 web/admin/src/components/pickers/(EntityPicker 基座:服务端 keyword 检索 + DetailDrawer 详情 + 前往管理页跳转),新表单选用户/师傅/客户直接复用,别再各页自造。
+- lessons 82: CDP 断言自研 Dropdown:打开浮层必须对触发器 click(),选中选项必须 dispatchEvent(new MouseEvent('mousedown',{bubbles:true}))——onChange 绑在 onMouseDown 上,click() 选不中;页面常有多个 listbox 触发器,先按 aria-label/innerText 枚举定位再操作。
+- lessons 83: CDP --logs 的 network 条目是最硬的断言证据:选中选择器后刷新,直接在日志里 grep 请求参数(如 bills?customerId=213),比读 DOM 文本可靠(React 重渲染时机会让 textContent 读取扑空)。
