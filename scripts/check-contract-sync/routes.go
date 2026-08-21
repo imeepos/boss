@@ -1,0 +1,186 @@
+// 检查 A:Go 实际注册路由必须在 api/openapi/{admin,user,worker}.yaml 之一出现
+// (实现超前契约 = 漂移)。用 go/ast 提取三端路由,逐端与契约对账。
+package main
+
+import (
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
+)
+
+var httpMethods = map[string]bool{"GET": true, "POST": true, "PUT": true, "DELETE": true, "PATCH": true}
+
+// extractRoutes 识别两种模式: <id> := <recv>.Group("pfx") 与 <recv>.METHOD("/path")。
+// 路由已从 internal/app 迁至 internal/httpapi(2026-08 三端拆分),此处跟随迁移;
+// 按端分别归集,与 api/openapi/{admin,user,worker}.yaml 逐端对账(三端路径可重名)。
+func extractRoutes(root string) (map[string]map[string]bool, error) {
+	routes := map[string]map[string]bool{}
+	fset := token.NewFileSet()
+	for _, face := range []string{"admin", "user", "worker"} {
+		dir := filepath.Join(root, "internal", "httpapi", face)
+		pkgs, err := parser.ParseDir(fset, dir, func(fi os.FileInfo) bool {
+			return !strings.HasSuffix(fi.Name(), "_test.go")
+		}, 0)
+		if err != nil {
+			return nil, err
+		}
+		faceRoutes := map[string]bool{}
+		for _, pkg := range pkgs {
+			for _, f := range pkg.Files {
+				for _, decl := range f.Decls {
+					routesFromDecl(decl, faceRoutes)
+				}
+			}
+		}
+		routes[face] = faceRoutes
+	}
+	return routes, nil
+}
+
+func routesFromDecl(decl ast.Decl, routes map[string]bool) {
+	fn, ok := decl.(*ast.FuncDecl)
+	if !ok || !strings.HasPrefix(strings.ToLower(fn.Name.Name), "register") {
+		return
+	}
+	prefix := map[string]string{"g": ""} // ident -> 路径前缀;寄存器形参 g 前缀 ""
+	ast.Inspect(fn.Body, func(n ast.Node) bool {
+		if as, ok := n.(*ast.AssignStmt); ok && len(as.Lhs) == 1 {
+			id, ok := as.Lhs[0].(*ast.Ident)
+			if !ok {
+				return true
+			}
+			recv, pfx, ok := groupPrefix(as.Rhs)
+			if !ok {
+				return true
+			}
+			prefix[id.Name] = prefix[recv] + pfx
+			return true
+		}
+		if st, ok := n.(*ast.ExprStmt); ok {
+			if recv, path, ok := methodCall(st.X); ok {
+				routes[normalizePath(prefix[recv]+path)] = true
+			}
+		}
+		return true
+	})
+}
+
+// groupPrefix 识别 <recv>.Group("pfx", ...) 调用,返回 (recv ident, recv前缀+pfx)。
+func groupPrefix(exprs []ast.Expr) (recvID, pfx string, ok bool) {
+	ce, ok := exprs[0].(*ast.CallExpr)
+	if !ok {
+		return "", "", false
+	}
+	sel, ok := ce.Fun.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "Group" || len(ce.Args) == 0 {
+		return "", "", false
+	}
+	lit, ok := ce.Args[0].(*ast.BasicLit)
+	if !ok || lit.Kind != token.STRING {
+		return "", "", false
+	}
+	id, _ := sel.X.(*ast.Ident)
+	if id == nil {
+		return "", "", false
+	}
+	return id.Name, unquote(lit.Value), true
+}
+
+// methodCall 识别 <recv>.METHOD("/path") 调用。
+func methodCall(e ast.Expr) (recvID, path string, ok bool) {
+	ce, ok := e.(*ast.CallExpr)
+	if !ok {
+		return "", "", false
+	}
+	sel, ok := ce.Fun.(*ast.SelectorExpr)
+	if !ok || !httpMethods[sel.Sel.Name] || len(ce.Args) == 0 {
+		return "", "", false
+	}
+	lit, ok := ce.Args[0].(*ast.BasicLit)
+	if !ok || lit.Kind != token.STRING {
+		return "", "", false
+	}
+	id, _ := sel.X.(*ast.Ident)
+	if id == nil {
+		return "", "", false
+	}
+	return id.Name, unquote(lit.Value), true
+}
+
+// normalizePath gin :param → openapi {param};剥离三端 /api/{face}/v1 前缀。
+func normalizePath(p string) string {
+	for _, pfx := range []string{"/api/admin/v1", "/api/user/v1", "/api/worker/v1", "/api/v1"} {
+		p = strings.TrimPrefix(p, pfx)
+	}
+	segs := strings.Split(p, "/")
+	for i, s := range segs {
+		if strings.HasPrefix(s, ":") {
+			segs[i] = "{" + s[1:] + "}"
+		}
+	}
+	return strings.Join(segs, "/")
+}
+
+func checkRoutes(root string) int {
+	routes, err := extractRoutes(root)
+	if err != nil {
+		fmt.Println("A: 解析路由失败:", err)
+		return 1
+	}
+	base := loadBaseline()
+	fails := 0
+	total := 0
+	for _, face := range []string{"admin", "user", "worker"} {
+		fails += checkFaceRoutes(root, face, routes[face], base)
+		total += len(routes[face])
+	}
+	if fails == 0 {
+		fmt.Printf("A OK 三端 %d 条路由全部有契约\n", total)
+	}
+	return fails
+}
+
+func checkFaceRoutes(root, face string, faceRoutes map[string]bool, base map[string]bool) int {
+	specPaths := map[string]bool{}
+	if err := collectSpecPaths(filepath.Join(root, "api/openapi", face+".yaml"), specPaths); err != nil {
+		fmt.Println("A: 解析", face+".yaml", "失败:", err)
+		return 1
+	}
+	var miss []string
+	for r := range faceRoutes {
+		if !specPaths[r] {
+			miss = append(miss, r)
+		}
+	}
+	sort.Strings(miss)
+	fails := 0
+	for _, p := range miss {
+		if base["route:"+face+p] {
+			continue
+		}
+		fmt.Println("A FAIL 路由已实现但契约未登记:", face, p)
+		fails++
+	}
+	return fails
+}
+
+var specPathRe = regexp.MustCompile(`^  (/[^:\s]+):\s*\{?\s*\$ref`)
+
+func collectSpecPaths(path string, out map[string]bool) error {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		if m := specPathRe.FindStringSubmatch(line); m != nil {
+			out[m[1]] = true
+		}
+	}
+	return nil
+}
