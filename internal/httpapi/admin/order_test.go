@@ -77,11 +77,11 @@ func authToken(t *testing.T, mgr *auth.Manager) string {
 	return tok
 }
 
-// TestOrderListHandler 契约:订单列表返回 items,含 stageLabel/ops。
+// TestOrderListHandler 契约:订单列表返回 items,含 stageLabel/ops/id。
 func TestOrderListHandler(t *testing.T) {
 	mgr := auth.NewManager("s", time.Hour)
 	f := &fakeOrder{list: []order.OrderListItem{
-		{OrderNo: "ORD-1", Customer: "王先生", Product: "100M", Address: "Manila", Stage: 3, Status: "PENDING"},
+		{ID: 42, OrderNo: "ORD-1", Customer: "王先生", Product: "100M", Address: "Manila", Stage: 3, Status: "PENDING"},
 	}}
 	r := newOrderRouter(f, &fakeUser{permOk: true}, mgr)
 	w := getJSON(t, r, "/api/admin/v1/orders", authToken(t, mgr))
@@ -98,7 +98,7 @@ func TestOrderListHandler(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if len(body.Data.Items) != 1 || body.Data.Items[0].OrderNo != "ORD-1" ||
+	if len(body.Data.Items) != 1 || body.Data.Items[0].ID != 42 || body.Data.Items[0].OrderNo != "ORD-1" ||
 		body.Data.Items[0].StageLabel != "端口预占" || len(body.Data.Items[0].Ops) == 0 {
 		t.Fatalf("body=%+v", body)
 	}

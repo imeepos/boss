@@ -158,7 +158,7 @@ func (s *MemoryService) List(ctx context.Context, q OrderQuery) ([]OrderListItem
 			continue
 		}
 		out = append(out, OrderListItem{
-			OrderNo: o.OrderNo, Stage: o.Stage, Status: o.Status,
+			ID: o.ID, OrderNo: o.OrderNo, Stage: o.Stage, Status: o.Status,
 			AddressID: o.AddressID, CreatedAt: o.CreatedAt,
 		})
 	}

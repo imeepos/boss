@@ -13,6 +13,7 @@ type OrderQuery struct {
 
 // OrderListItem 订单列表读模型(联表展示客户/产品/地址名,字段与 order.html 列表列对齐)。
 type OrderListItem struct {
+	ID        int64     `json:"id"`
 	OrderNo   string    `json:"orderNo"`
 	Customer  string    `json:"customer"`
 	Product   string    `json:"product"`

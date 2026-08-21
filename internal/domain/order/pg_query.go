@@ -15,7 +15,7 @@ func (s *PGStore) List(ctx context.Context, q OrderQuery) ([]OrderListItem, erro
 		limit = 1 << 30
 	}
 	rows, err := s.db.Query(ctx, `
-		SELECT o.order_no, COALESCE(c.name,''), COALESCE(p.name,''),
+		SELECT o.id, o.order_no, COALESCE(c.name,''), COALESCE(p.name,''),
 		       COALESCE(a.name, ua.detail, ''), o.address_id, o.stage, o.status, o.created_at
 		FROM orders o
 		LEFT JOIN customers c ON o.customer_id = c.id
@@ -35,7 +35,7 @@ func (s *PGStore) List(ctx context.Context, q OrderQuery) ([]OrderListItem, erro
 	out := make([]OrderListItem, 0)
 	for rows.Next() {
 		var it OrderListItem
-		if err := rows.Scan(&it.OrderNo, &it.Customer, &it.Product, &it.Address,
+		if err := rows.Scan(&it.ID, &it.OrderNo, &it.Customer, &it.Product, &it.Address,
 			&it.AddressID, &it.Stage, &it.Status, &it.CreatedAt); err != nil {
 			return nil, fmt.Errorf("order: scan list item: %w", err)
 		}

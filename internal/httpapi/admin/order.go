@@ -19,6 +19,7 @@ var stageNames = map[int8]string{
 
 // orderListResp 订单列表项(承接 listOrders,ops 为可用操作)。
 type orderListResp struct {
+	ID         int64     `json:"id"`
 	OrderNo    string    `json:"orderNo"`
 	Customer   string    `json:"customer"`
 	Product    string    `json:"product"`
@@ -65,7 +66,7 @@ func registerOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 		items := make([]orderListResp, 0, len(list))
 		for _, it := range list {
 			items = append(items, orderListResp{
-				OrderNo: it.OrderNo, Customer: it.Customer, Product: it.Product, Address: it.Address,
+				ID: it.ID, OrderNo: it.OrderNo, Customer: it.Customer, Product: it.Product, Address: it.Address,
 				Stage: it.Stage, StageLabel: stageNames[it.Stage], Status: it.Status,
 				Ops: orderOps(it.Status), CreatedAt: it.CreatedAt,
 			})

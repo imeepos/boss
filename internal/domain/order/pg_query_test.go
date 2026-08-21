@@ -17,17 +17,17 @@ func TestPGStore_List(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT o.order_no, COALESCE\(c.name`).
+	mock.ExpectQuery(`SELECT o.id, o.order_no, COALESCE\(c.name`).
 		WithArgs("", "PENDING", int64(0), 1<<30, 0).
-		WillReturnRows(mock.NewRows([]string{"order_no", "customer", "product", "address", "address_id", "stage", "status", "created_at"}).
-			AddRow("ORD-20250817-001", "王先生", "100M宽带", "Manila", int64(100), int8(3), "PENDING", ts))
+		WillReturnRows(mock.NewRows([]string{"id", "order_no", "customer", "product", "address", "address_id", "stage", "status", "created_at"}).
+			AddRow(int64(7), "ORD-20250817-001", "王先生", "100M宽带", "Manila", int64(100), int8(3), "PENDING", ts))
 
 	s := NewPGStore(mock, stubExists{})
 	got, err := s.List(context.Background(), OrderQuery{Status: "PENDING"})
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
-	if len(got) != 1 || got[0].OrderNo != "ORD-20250817-001" || got[0].Customer != "王先生" || got[0].Stage != 3 {
+	if len(got) != 1 || got[0].ID != 7 || got[0].OrderNo != "ORD-20250817-001" || got[0].Customer != "王先生" || got[0].Stage != 3 {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
