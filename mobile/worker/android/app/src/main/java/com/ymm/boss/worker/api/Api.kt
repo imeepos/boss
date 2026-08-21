@@ -45,6 +45,9 @@ object Api {
         appContext = ctx.applicationContext
     }
 
+    /** context:全局应用上下文(推送注册等非 UI 模块取用)。 */
+    fun context(): Context = appContext
+
     fun token(): String = prefs().getString(TOKEN_KEY, "") ?: ""
 
     fun setToken(t: String?) {

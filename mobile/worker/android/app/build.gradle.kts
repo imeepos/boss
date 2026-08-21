@@ -9,6 +9,9 @@ plugins {
 fun bossBaseUrl(default: String): String =
     (project.findProperty("bossBaseUrl") as? String)?.takeIf { it.isNotBlank() } ?: default
 
+// 极光 AppKey:-PjpushAppKey=... 注入;凭据未到位时空串(SDK 打日志不 crash),到位后 CI 传参。
+fun jpushAppKey(): String = (project.findProperty("jpushAppKey") as? String)?.takeIf { it.isNotBlank() } ?: ""
+
 val keystoreProperties = Properties().apply {
     val f = rootProject.file("keystore.properties")
     if (f.exists()) f.inputStream().use { load(it) }
@@ -25,6 +28,10 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "JPUSH_APPKEY", "\"${jpushAppKey()}\"")
+        // JPush AAR manifest 自带 ${JPUSH_APPKEY}/${JPUSH_CHANNEL} 占位,经 placeholders 注入。
+        manifestPlaceholders["JPUSH_APPKEY"] = jpushAppKey()
+        manifestPlaceholders["JPUSH_CHANNEL"] = "developer-default"
     }
 
     signingConfigs {
@@ -97,4 +104,7 @@ dependencies {
 
     // Guava (CameraX ListenableFuture)
     implementation(libs.guava.android)
+
+    // 极光推送(MavenCentral;jcore 经传递依赖引入)
+    implementation("cn.jiguang.sdk:jpush:5.7.0")
 }

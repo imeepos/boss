@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.api.Api
+import com.ymm.boss.worker.api.friendlyMessage
+import com.ymm.boss.worker.push.PushRegistrar
 import com.ymm.boss.worker.api.AuthApi
 import com.ymm.boss.worker.api.ApiException
 import com.ymm.boss.worker.ui.theme.Ink
@@ -193,7 +195,7 @@ private fun sendCode(
                 }
             }
             onDone("")
-        } catch (e: Exception) { onDone("验证码发送失败：${Api.friendlyMessage(e)}") }
+        } catch (e: Exception) { onDone("验证码发送失败：${friendlyMessage(e)}") }
     }
 }
 
@@ -213,12 +215,13 @@ private fun doLogin(
             val tk = r.optString("token")
             if (tk.isEmpty()) { onErr("登录响应缺少 token"); return@launch }
             Api.setToken(tk)
+            PushRegistrar.ensureRegisteredOnLogin()
             onLoggedIn()
         } catch (e: Exception) {
             if (e is ApiException && e.status == 40100) {
                 onErr(if (mode == "sms") "验证码错误或已过期，请重新获取" else "手机号或密码不正确")
             } else {
-                onErr("登录失败：${Api.friendlyMessage(e)}")
+                onErr("登录失败：${friendlyMessage(e)}")
             }
         }
     }
