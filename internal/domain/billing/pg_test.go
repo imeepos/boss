@@ -42,6 +42,15 @@ func TestPGStore_CreateBill(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: customer exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(2)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO bills`).
 		WithArgs("BILL-202608-202", int64(2), "赵女士", int64(1), "主品牌·企业", int64(11), "马尼拉市", "2026-08", 129.0, "UNPAID").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -142,6 +151,11 @@ func TestPGStore_CreatePayment(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
+
+	// FK validation: bill exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO payments`).
 		WithArgs("PAY-20260820-002", int64(1), int64(0), 158.0, "alipay", "SUCCESS").

@@ -72,7 +72,19 @@ func (s *PGStore) ListGroups(ctx context.Context) ([]Group, error) {
 }
 
 // CreateGroup 新建班组,返回自增 id。
+// 校验 legal_entity_id 存在性,防止孤儿班组。
 func (s *PGStore) CreateGroup(ctx context.Context, g Group) (int64, error) {
+	// 关联完整性校验
+	if g.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", g.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("worker: legal entity %d: %w", g.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO worker_groups(legal_entity_id, code, name, leader_id, leader_name)
@@ -106,7 +118,19 @@ func (s *PGStore) ListWorkers(ctx context.Context, groupID int64) ([]Worker, err
 }
 
 // CreateWorker 新建师傅,返回自增 id。
+// 校验 group_id 存在性,防止孤儿师傅。
 func (s *PGStore) CreateWorker(ctx context.Context, w Worker) (int64, error) {
+	// 关联完整性校验
+	if w.GroupID > 0 {
+		ok, err := s.exists(ctx, "worker_groups", w.GroupID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("worker: group %d: %w", w.GroupID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO workers(staff_no, name, group_id, region_id, phone, status, joined_at, left_at)

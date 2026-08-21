@@ -42,6 +42,11 @@ func TestPGStore_CreateResource(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: address exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(100)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO resources`).
 		WithArgs(int64(1), "SPL-02", "望京分光器-02", "SPLITTER", int64(1), int64(100), "ONLINE").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
@@ -141,6 +146,15 @@ func TestPGStore_CreatePort(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
+
+	// FK validation: resource exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(2)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: address exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(100)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO ports`).
 		WithArgs("P-SPL01-02", "P-SPL01-02", int64(2), int64(1), "主品牌·企业", int64(100), int64(11), "马尼拉市", nil, "IDLE").

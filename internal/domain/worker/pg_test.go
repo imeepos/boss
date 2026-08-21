@@ -43,6 +43,11 @@ func TestPGStore_CreateGroup(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO worker_groups`).
 		WithArgs(int64(1), "抢修组", "抢修组", nil, "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -93,6 +98,11 @@ func TestPGStore_CreateWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
+
+	// FK validation: group exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	var nilTime *time.Time
 	mock.ExpectQuery(`INSERT INTO workers`).

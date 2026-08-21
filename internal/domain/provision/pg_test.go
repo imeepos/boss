@@ -43,6 +43,11 @@ func TestPGStore_CreateTemplate(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// FK validation: legal entity exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+
 	mock.ExpectQuery(`INSERT INTO provision_templates`).
 		WithArgs(int64(1), "TPL-GPON", "GPON标准开通").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))

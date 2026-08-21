@@ -35,6 +35,17 @@ func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
 }
 
+// exists 校验单表存在性(resources/ports 无外键约束,关联完整性由本域应用层保证)。
+func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, error) {
+	var ok bool
+	err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM `+table+` WHERE id = $1)`, id).Scan(&ok)
+	if err != nil {
+		return false, fmt.Errorf("resource: check %s %d: %w", table, id, err)
+	}
+	return ok, nil
+}
+
 // idOrNil 把 0 归一为 NULL(可空外键约定:0=空)。
 func idOrNil(id int64) any {
 	if id == 0 {
@@ -64,7 +75,19 @@ func (s *PGStore) ListResources(ctx context.Context) ([]Resource, error) {
 }
 
 // CreateResource 新建设备,返回自增 id。
+// 校验 address_id 存在性,防止孤儿设备。
 func (s *PGStore) CreateResource(ctx context.Context, r Resource) (int64, error) {
+	// 关联完整性校验
+	if r.AddressID > 0 {
+		ok, err := s.exists(ctx, "addresses", r.AddressID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("resource: address %d: %w", r.AddressID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO resources(legal_entity_id, code, name, type, parent_id, address_id, status)
@@ -114,7 +137,28 @@ func (s *PGStore) ListPorts(ctx context.Context, resourceID int64) ([]Port, erro
 }
 
 // CreatePort 新建端口,返回自增 id。
+// 校验 resource_id 和 address_id 存在性,防止孤儿端口。
 func (s *PGStore) CreatePort(ctx context.Context, p Port) (int64, error) {
+	// 关联完整性校验
+	if p.ResourceID > 0 {
+		ok, err := s.exists(ctx, "resources", p.ResourceID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("resource: resource %d: %w", p.ResourceID, ErrForeignKeyViolation)
+		}
+	}
+	if p.AddressID > 0 {
+		ok, err := s.exists(ctx, "addresses", p.AddressID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("resource: address %d: %w", p.AddressID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO ports(port_code, quad_code, resource_id, legal_entity_id, legal_entity_name,

@@ -27,6 +27,20 @@ func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
 }
 
+// ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
+var ErrForeignKeyViolation = errors.New("provision: foreign key violation")
+
+// exists 校验单表存在性(provision_templates 无外键约束,关联完整性由本域应用层保证)。
+func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, error) {
+	var ok bool
+	err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM `+table+` WHERE id = $1)`, id).Scan(&ok)
+	if err != nil {
+		return false, fmt.Errorf("provision: check %s %d: %w", table, id, err)
+	}
+	return ok, nil
+}
+
 // ListTemplates 列出全部下发模板。
 func (s *PGStore) ListTemplates(ctx context.Context) ([]Template, error) {
 	rows, err := s.db.Query(ctx, `SELECT id, legal_entity_id, code, name FROM provision_templates ORDER BY id`)
@@ -46,7 +60,19 @@ func (s *PGStore) ListTemplates(ctx context.Context) ([]Template, error) {
 }
 
 // CreateTemplate 新建下发模板,返回自增 id。
+// 校验 legal_entity_id 存在性,防止孤儿模板。
 func (s *PGStore) CreateTemplate(ctx context.Context, t Template) (int64, error) {
+	// 关联完整性校验
+	if t.LegalEntityID > 0 {
+		ok, err := s.exists(ctx, "legal_entities", t.LegalEntityID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("provision: legal entity %d: %w", t.LegalEntityID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx,
 		`INSERT INTO provision_templates(legal_entity_id, code, name) VALUES($1,$2,$3) RETURNING id`,
