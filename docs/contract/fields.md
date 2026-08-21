@@ -279,6 +279,7 @@
 | 地址 | `AddressID` | address_id | BIGINT → addresses（挂接楼栋） |
 | — | `PasswordHash` | password_hash | TEXT，客户 App 密码哈希；空值不可密码登录 |
 | 登录状态 | `AuthStatus` | auth_status | 1允许登录 / 0禁止登录 |
+| 用户码 | `CustomerCode` | customer_code | VARCHAR(32) UNIQUE,前缀 `C-` 后 8 位 = `id` 左零;四码 `quad.customerCode` 展示字段,对账/扫码/外键仍以 `CustomerID` 为权威(adopted 2026-08-21) |
 
 > 区域锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域），`legal_entity_id`（归属公司），按地区/企业统计客户；客户搬家/转品牌经 `customer_histories` 台账快照事发区域。
 
@@ -409,6 +410,9 @@
 > **口径裁定**：四码=资产-客户-端口-地址（全案 REQ-AMS-003/REQ-CONS-002 权威）。
 > 技术栈方案 3.3（docs/archive/技术栈方案-一步到位.md）原文写 `quad_link(asset_id, user_id, port_id, addr_id)`，`user_id` 系笔误，
 > 应为 `customer_id`（`user` 是系统账号域，`customer` 是客户域，二者不同，见 domain-map）。
+
+> **展示冗余**：四码对外 API 同时返回 `assetCode/customerCode/portCode/addrCode`，其中 `customerCode` 取 `customers.customer_code`（adopted 2026-08-21），
+> 与 `customer_id` 是 ID ↔ code 双向冗余关系；扫码/对账/外键一律以 ID 为准，code 仅供师傅现场人工口头核验与 UI 展示。
 
 ## 6. 跨域通用列（所有实体强制）
 

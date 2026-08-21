@@ -109,7 +109,7 @@ L5 stages/tickets/reserves/quad/scan/callback/dismantle/bills/payments/...
 | 类别 | 数量 | 典型 |
 |:-----|:-----|:-----|
 | 孤儿外键 | 4 | ports/reserves/callbacks 引用不存在的订单 ORD-...009/011/021 |
-| 四码口径错误 | 8 | quad.customerCode 全部用 LOID(认证账号)冒充客户，违反 fields.md 5.1 裁定 |
+| 四码口径错误 | 8 | quad.customerCode 全部用 LOID(认证账号)冒充客户，违反 fields.md 5.1 裁定 | ✅ adopted 2026-08-21 落 `customers.customer_code` 修正 |
 | 端口码体系分裂 | 9 | quad/dismantles 用 P-SPLxx-xx 码，ports 表里根本没有 |
 | 资产码混用 | 3 | dismantles.assetCode 用 EPC(标签码)当资产码；A-/EPC-/TAG- 三套码互串 |
 | 弱引用 | 2 | orders/bills/lo_accounts 用客户姓名字符串做关联；customers 缺 addressId |

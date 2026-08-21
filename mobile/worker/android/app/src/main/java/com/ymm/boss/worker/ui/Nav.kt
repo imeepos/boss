@@ -58,6 +58,11 @@ class NavHost(initial: Screen) {
     var stack by mutableStateOf(listOf<Screen>(initial))
         private set
 
+    // 全局下拉刷新触发器:任意页面调用 requestRefresh() 自增,
+    // 页面通过 loadOnce(no, nav.refreshTick) 在 key 变化时自动重拉。
+    var refreshTick by mutableStateOf(0)
+        private set
+
     val current: Screen get() = stack.last()
 
     fun push(s: Screen) {
@@ -75,6 +80,10 @@ class NavHost(initial: Screen) {
 
     fun reset(s: Screen) {
         stack = listOf(s)
+    }
+
+    fun requestRefresh() {
+        refreshTick++
     }
 }
 

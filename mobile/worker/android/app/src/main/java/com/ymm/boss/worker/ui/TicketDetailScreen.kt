@@ -23,12 +23,13 @@ import kotlinx.coroutines.launch
  * - 类型(INSTALL/REPAIR)由 stages.length 推断(后端 TicketDetail 暂未返 type)
  * - 卡片实现见 TicketDetailCards.kt
  *
- * 注:回退/重试按钮当前后端仅做审计留痕(见 ISSUE.md),前端文案如实告知,
- * 操作完成后下拉刷新查看最新进度。
+ * 下拉刷新:PageRefresh 容器包裹内容,触发器连入 loadOnce 的 key;
+ * 回退/重试/领取工单操作成功后调用 nav.requestRefresh() 自动重拉数据,
+ * 不必师傅手动下拉。后端若真的回退了 stage,UI 即时反映最新进度。
  */
 @Composable
 fun TicketDetailScreen(nav: NavHost, no: String) {
-    val state by loadOnce(no) { TicketApi.detail(no) }
+    val state by loadOnce(no, nav.refreshTick) { TicketApi.detail(no) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
 
@@ -52,60 +53,67 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
                 val type = inferTicketType(d)
                 val title = if (type == "REPAIR") "报障工单" else "工单详情"
 
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                    TopBar(title, onBack = { nav.pop() }, action = "联系调度",
-                        onAction = { nav.push(Screen.Service) })
-                    DetailHeaderCard(d, type)
-                    if (status != "TODO") QuickActionRow(d, nav, no)
-                    TimelineCard(d)
-                    // A 屏(安装/装维中)追加回退/重试(spec §4.7)
-                    if (status == "DOING" && type == "INSTALL") {
-                        TimelineExtras(no,
-                            onRollback = {
-                                scope.launch {
-                                    try {
-                                        TicketApi.rollback(no)
-                                        toast(ctx, "回退请求已记录，请下拉刷新查看最新进度")
-                                    } catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
-                                }
-                            },
-                            onRetry = {
-                                scope.launch {
-                                    try {
-                                        TicketApi.retry(no)
-                                        toast(ctx, "重试请求已记录，请下拉刷新查看最新进度")
-                                    } catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
-                                }
-                            })
+                PageRefresh(nav) {
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        TopBar(title, onBack = { nav.pop() }, action = "联系调度",
+                            onAction = { nav.push(Screen.Service) })
+                        DetailHeaderCard(d, type)
+                        if (status != "TODO") QuickActionRow(d, nav, no)
+                        TimelineCard(d)
+                        // A 屏(安装/装维中)追加回退/重试(spec §4.7)
+                        if (status == "DOING" && type == "INSTALL") {
+                            TimelineExtras(no,
+                                onRollback = {
+                                    scope.launch {
+                                        try {
+                                            TicketApi.rollback(no)
+                                            toast(ctx, "已发起回退,正在刷新...")
+                                            nav.requestRefresh()
+                                        } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
+                                    }
+                                },
+                                onRetry = {
+                                    scope.launch {
+                                        try {
+                                            TicketApi.retry(no)
+                                            toast(ctx, "已发起重试,正在刷新...")
+                                            nav.requestRefresh()
+                                        } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
+                                    }
+                                })
+                        }
+                        QuadCard(d.optJSONObject("quad"))
+                        RiskCard(d.optJSONObject("riskCheck"))
+                        if (status == "DONE") ReceiptCard()
+                        Spacer(Modifier.height(12.dp))
                     }
-                    QuadCard(d.optJSONObject("quad"))
-                    RiskCard(d.optJSONObject("riskCheck"))
-                    if (status == "DONE") ReceiptCard()
-                    Spacer(Modifier.height(12.dp))
                 }
                 BottomActionBar(d, nav, no,
                     onAccept = {
                         scope.launch {
-                            try { toast(ctx, TicketApi.accept(no)
-                                .optString("message", "已领取工单"))
-                                nav.pop() }
-                            catch (_: Exception) { toast(ctx, "领取失败，请重试。") }
+                            try {
+                                TicketApi.accept(no)
+                                toast(ctx, "已领取工单")
+                                nav.pop()
+                            } catch (_: Exception) { toast(ctx, "领取失败，请重试。") }
                         }
                     },
                     onRollback = {
                         scope.launch {
                             try {
                                 TicketApi.rollback(no)
-                                toast(ctx, "回退请求已记录，请下拉刷新查看最新进度")
-                            } catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
+                                toast(ctx, "已发起回退,正在刷新...")
+                                nav.requestRefresh()
+                            } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
                         }
                     },
                     onRetry = {
                         scope.launch {
                             try {
                                 TicketApi.retry(no)
-                                toast(ctx, "重试请求已记录，请下拉刷新查看最新进度")
-                            } catch (_: Exception) { toast(ctx, "操作失败，请重试。") }
+                                toast(ctx, "已发起重试,正在刷新...")
+                                nav.requestRefresh()
+                            } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
                         }
                     })
             }
