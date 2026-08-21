@@ -66,7 +66,8 @@ fun AppRoot(loggedIn: Boolean) {
         StatusBarBand()
         Box(Modifier.weight(1f)) {
             when (val cur = nav.current) {
-                is Screen.Login -> LoginScreen(onLoggedIn = { nav.reset(Screen.Home) })
+                is Screen.Login -> LoginScreen(onLoggedIn = { nav.reset(Screen.Home) }, onOnboard = { nav.push(Screen.Onboard) })
+                is Screen.Onboard -> OnboardScreen(onBack = { nav.pop() })
                 is Screen.Home -> HomeScreen(nav)
                 is Screen.Orders -> OrdersScreen(nav)
                 is Screen.Profile -> ProfileScreen(nav)

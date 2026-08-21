@@ -48,6 +48,7 @@ const LoAccountPage = lazy(() => import('./pages/oss/loaccount'))
 const ExpandPage = lazy(() => import('./pages/oss/expand'))
 const OrderPage = lazy(() => import('./pages/boss/order'))
 const WorkerPage = lazy(() => import('./pages/boss/worker'))
+const WorkerRegPage = lazy(() => import('./pages/boss/worker-registration'))
 const WorkerOpsPage = lazy(() => import('./pages/boss/worker-ops'))
 const DispatchPage = lazy(() => import('./pages/boss/dispatch'))
 const DismantlePage = lazy(() => import('./pages/boss/dismantle'))
@@ -121,6 +122,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'expand') return <ExpandPage />
   if (pageKey === 'order') return <OrderPage />
   if (pageKey === 'worker') return <WorkerPage />
+  if (pageKey === 'worker-reg') return <WorkerRegPage />
   if (pageKey === 'worker-ops') return <WorkerOpsPage />
   if (pageKey === 'dispatch') return <DispatchPage />
   if (pageKey === 'dismantle') return <DismantlePage />

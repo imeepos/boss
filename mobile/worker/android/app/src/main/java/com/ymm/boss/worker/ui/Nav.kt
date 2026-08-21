@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 // 页面路由:与 docs/worker/*.html 一一对应,详情类页面携带工单号 no
 sealed interface Screen {
     data object Login : Screen
+    data object Onboard : Screen  // 申请入驻
     data object Home : Screen
     data object Orders : Screen
     data object Profile : Screen

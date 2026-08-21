@@ -734,6 +734,32 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    workerRegPage: {
+      title: string
+      desc: string
+      columns: string[]
+      approve: string
+      reject: string
+      approveTitle: string
+      rejectTitle: string
+      groupId: string
+      groupIdPlaceholder: string
+      regionId: string
+      regionIdPlaceholder: string
+      rejectNote: string
+      rejectNotePlaceholder: string
+      cancel: string
+      confirmApprove: string
+      confirmReject: string
+      eGroupRequired: string
+      eRegionRequired: string
+      eNoteRequired: string
+      actionFail: string
+      refresh: string
+      total: string
+      empty: string
+      loadFail: string
+    }
     workerOps: {
       title: string
       desc: string

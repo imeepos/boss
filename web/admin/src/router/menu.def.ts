@@ -68,6 +68,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   { id: 'boss', label: '订单与工单', items: [
     { key: 'order', label: '订单管理', path: '/boss/order' },
     { key: 'worker', label: '师傅管理', path: '/boss/worker' },
+    { key: 'worker-reg', label: '师傅注册审核', path: '/boss/worker-reg' },
     { key: 'worker-ops', label: '师傅端内容', path: '/boss/worker-ops' },
     { key: 'message', label: '消息中心', path: '/boss/message' },
     { key: 'dispatch', label: '派单管理', path: '/boss/dispatch' },
