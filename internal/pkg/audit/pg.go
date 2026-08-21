@@ -14,6 +14,7 @@ type dbtx interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 // PGWriter 审计同步写入器(直接 INSERT 到按月分区表 audit_logs)。
