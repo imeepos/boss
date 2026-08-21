@@ -45,7 +45,8 @@ import org.json.JSONObject
 @Composable
 internal fun RNFormStep(
     data: JSONObject?, name: String, idNo: String, sms: String,
-    onName: (String) -> Unit, onIdNo: (String) -> Unit, onSms: (String) -> Unit, onNext: () -> Unit,
+    onName: (String) -> Unit, onIdNo: (String) -> Unit, onSms: (String) -> Unit,
+    onNext: () -> Unit, onAgreement: () -> Unit,
 ) {
     var err by remember { mutableStateOf("") }
     var notice by remember { mutableStateOf("") }
@@ -68,7 +69,7 @@ internal fun RNFormStep(
         }, onSend = {
             notice = ""
             sendVerifyCode(scope) { msg, cd ->
-                if (cd) countdown = 60 else notice = msg
+                if (cd) countdown = 59 else notice = msg  // spec: 起始即 "59s后重发"
             }
         })
         if (notice.isNotBlank()) RNFootnote(notice, Color(0xFFFF2D2F))
@@ -76,7 +77,8 @@ internal fun RNFormStep(
             "name" -> "请填写真实姓名"; "idNo" -> "身份证号需 18 位"; else -> "请输入短信验证码"
         }, Color(0xFFFF2D2F))
     }
-    AgreeRow(agreed, onToggle = { agreed = it; if (err == "agree") err = "" })
+    AgreeRow(agreed, onToggle = { agreed = it; if (err == "agree") err = "" },
+        onAgreement = onAgreement)
     if (err == "agree") RNFootnote("请先阅读并同意认证服务协议", Color(0xFFFF2D2F))
     RNPrimaryButton("下一步", enabled = agreed) {
         val e = when {
@@ -163,7 +165,7 @@ private fun SmsField(code: String, countdown: Int, onSms: (String) -> Unit, onSe
 }
 
 @Composable
-private fun AgreeRow(agreed: Boolean, onToggle: (Boolean) -> Unit) {
+private fun AgreeRow(agreed: Boolean, onToggle: (Boolean) -> Unit, onAgreement: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier.size(18.dp).clickable { onToggle(!agreed) }
@@ -174,6 +176,9 @@ private fun AgreeRow(agreed: Boolean, onToggle: (Boolean) -> Unit) {
             if (agreed) Box(Modifier.size(8.dp).background(RN.primary, CircleShape))
         }
         Spacer(Modifier.size(8.dp))
-        Text("已阅读并同意《实名认证服务协议》，认证信息真实有效", fontSize = 12.sp, color = RN.muted)
+        Text("已阅读并同意", fontSize = 12.sp, color = RN.muted)
+        Text("《实名认证服务协议》", fontSize = 12.sp, color = RN.primary,
+            fontWeight = FontWeight.W500, modifier = Modifier.clickable { onAgreement() })
+        Text("，认证信息真实有效", fontSize = 12.sp, color = RN.muted)
     }
 }

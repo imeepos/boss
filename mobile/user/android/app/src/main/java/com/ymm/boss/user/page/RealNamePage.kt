@@ -36,8 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
-import com.ymm.boss.user.ui.Palette
-import com.ymm.boss.user.ui.statusBarSolid
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -113,7 +111,8 @@ fun VerifyScreen(nav: com.ymm.boss.user.ui.Nav) {
             when (phase) {
                 RNPhase.FORM -> RNFormStep(data, name, idNo, sms,
                     onName = { name = it }, onIdNo = { idNo = it }, onSms = { sms = it },
-                    onNext = { phase = RNPhase.UPLOAD })
+                    onNext = { phase = RNPhase.UPLOAD },
+                    onAgreement = { nav.push(com.ymm.boss.user.ui.Route.Agreement) })
                 RNPhase.UPLOAD -> RNUploadStep(name, idNo, sms, frontId, backId,
                     onFront = { frontId = it }, onBack_ = { backId = it },
                     onSubmitted = { reloadAfterSubmit() })
@@ -129,41 +128,52 @@ fun VerifyScreen(nav: com.ymm.boss.user.ui.Nav) {
     }
 }
 
-/** 三步 Stepper:当前实心蓝,已完成蓝+对勾,未到灰(spec: 单一样式组件,四屏复用)。 */
+/** 渐变 Hero + 三步 Stepper(spec: 蓝渐变 160deg,Stepper 单一样式组件四屏复用,只切 current)。 */
 @Composable
 private fun RNStepper(current: Int) {
     val labels = listOf("填写信息", "证件上传", "审核状态")
-    Row(
-        Modifier.fillMaxWidth().background(Palette.bg).padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.Center,
+    Box(
+        Modifier.fillMaxWidth()
+            .background(Brush.linearGradient(listOf(Color(0xFF0872F4), Color(0xFF1698FA))))
+            .padding(vertical = 14.dp),
     ) {
-        labels.forEachIndexed { i, label ->
-            if (i > 0) Box(Modifier.width(28.dp).height(1.dp).align(Alignment.CenterVertically)
-                .background(if (i < current) RN.primary else RN.line))
-            RNStepNode(i + 1, label, i + 1 == current, i + 1 < current)
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            labels.forEachIndexed { i, label ->
+                if (i > 0) Box(
+                    Modifier.weight(1f).height(1.dp).padding(horizontal = 4.dp)
+                        .background(if (i < current) Color.White else Color.White.copy(alpha = 0.35f)),
+                )
+                Spacer(Modifier.size(4.dp))
+                RNStepNode(i + 1, label, i + 1 == current, i + 1 < current)
+            }
         }
     }
 }
 
 @Composable
 private fun RNStepNode(step: Int, label: String, current: Boolean, done: Boolean) {
+    val nodeBg = if (done || current) Color.White else Color.White.copy(alpha = 0.35f)
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(18.dp).background(
-                when { done -> RN.primary; current -> RN.primary; else -> RN.placeholder },
-                CircleShape,
-            ), contentAlignment = Alignment.Center,
+            Modifier.size(18.dp).background(nodeBg, CircleShape),
+            contentAlignment = Alignment.Center,
         ) {
             if (done) androidx.compose.material3.Icon(
                 Icons.Filled.Check, contentDescription = null,
-                tint = Color.White, modifier = Modifier.size(12.dp))
+                tint = RN.primary, modifier = Modifier.size(12.dp))
             else androidx.compose.material3.Text(
-                "$step", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.W600)
+                "$step", fontSize = 10.sp,
+                color = if (done || current) RN.primary else Color.White,
+                fontWeight = FontWeight.W600)
         }
         Spacer(Modifier.width(6.dp))
         androidx.compose.material3.Text(
             label, fontSize = 12.sp,
-            color = if (current || done) RN.ink else RN.muted,
+            color = if (current || done) Color.White else Color.White.copy(alpha = 0.75f),
             fontWeight = if (current) FontWeight.W600 else FontWeight.Normal)
     }
 }
