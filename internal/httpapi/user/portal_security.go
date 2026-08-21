@@ -18,7 +18,15 @@ func portalSecurity(a *app.Application) gin.HandlerFunc {
 		cid, _ := requireCustomer(c)
 		v, err := a.Customer.Get(c.Request.Context(), cid)
 		if err != nil {
-			respondErr(c, err)
+			phone := portalCustomerPhone(c.Request.Context(), a, cid)
+			pwdAt := ""
+			if acc, accountErr := a.Portal.AccountByCustomer(c.Request.Context(), cid); accountErr == nil {
+				pwdAt = acc.PasswordUpdatedAt.Format(time.RFC3339)
+			}
+			respond(c, apitypes.CodeOK, gin.H{
+				"realNameStatus": "NONE", "nameMasked": "", "idNoMasked": "",
+				"passwordUpdatedAt": pwdAt, "phoneMasked": portalMaskPhone(phone), "verifyAt": "",
+			})
 			return
 		}
 		pwdAt := ""
