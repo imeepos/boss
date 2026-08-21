@@ -21,9 +21,12 @@ services:
       BOSS_HOSTCTL_URL: "http://172.26.0.1:39093"
       # HMAC key 通过 bind mount 注入,不进 git/env/process
       BOSS_HOSTCTL_HMAC_KEY_FILE: "/run/hostctl-hmac/hmac.key"
+      # 数据备份迁移归档目录(迁移 000095,/backup/* API);命名卷持久化
+      BOSS_BACKUP_DIR: "/data/backups"
     volumes:
       # hostctl HMAC key:宿主机 /etc/boss-host-ctl/hmac.key(0600)
       - /etc/boss-host-ctl/hmac.key:/run/hostctl-hmac/hmac.key:ro
+      - boss_backup_data:/data/backups
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 15s
@@ -39,3 +42,6 @@ services:
       BOSS_PG_DSN: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
       BOSS_KAFKA_BROKERS: "192.168.0.102:29092"
       BOSS_REPORT_PERIOD: "daily"
+
+volumes:
+  boss_backup_data:

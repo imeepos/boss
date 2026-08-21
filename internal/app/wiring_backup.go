@@ -2,6 +2,7 @@
 package app
 
 import (
+	"log"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -10,9 +11,11 @@ import (
 )
 
 func newBackupService(pool *pgxpool.Pool) *backup.Service {
-	svc, err := backup.NewService(pool, os.Getenv("BOSS_BACKUP_DIR"))
+	dir := os.Getenv("BOSS_BACKUP_DIR")
+	svc, err := backup.NewService(pool, dir)
 	if err != nil {
-		// 目录建不出来属部署级故障:留 nil,路由层判空返回服务不可用。
+		// 目录建不出来属部署级故障:留 nil,路由层判空返回服务不可用;此处必须留痕。
+		log.Printf("wiring: backup service unavailable (dir=%q): %v", dir, err)
 		return nil
 	}
 	return svc
