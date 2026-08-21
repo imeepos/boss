@@ -27,7 +27,7 @@ func registerWorkerTicketActions(g *gin.RouterGroup, a *app.Application) {
 		})
 	})
 	g.POST("/tickets/:ticketNo/transfer", workerTransferHandler(a))
-	g.POST("/tickets/:ticketNo/reschedule", workerAuditOK(a, "reschedule"))
+	g.POST("/tickets/:ticketNo/reschedule", workerRescheduleHandler(a))
 	g.POST("/tickets/:ticketNo/rollback", workerAuditOK(a, "rollback"))
 	g.POST("/tickets/:ticketNo/retry", workerRetryHandler(a))
 	g.POST("/tickets/:ticketNo/complaint", workerComplaintHandler(a))
@@ -50,11 +50,13 @@ func assignTicketToMe(c *gin.Context, a *app.Application, ticketNo string, grab 
 		respond(c, apitypes.CodeStateInvalid, nil)
 		return
 	}
-	assign := a.WorkOrder.ClaimDispatchTicket
+	var assignErr error
 	if grab {
-		assign = a.WorkOrder.AssignPendingDispatchTicket
+		assignErr = a.WorkOrder.AssignPendingDispatchTicket(c.Request.Context(), ticketNo, workerID, workerName)
+	} else {
+		assignErr = a.WorkOrder.ClaimDispatchTicket(c.Request.Context(), ticketNo, workerID, workerName)
 	}
-	if err := assign(c.Request.Context(), ticketNo, workerID, workerName); err != nil {
+	if err := assignErr; err != nil {
 		// 并发领取:预检通过但抢占落空,按状态无效而非不存在。
 		if errors.Is(err, order.ErrOrderNotFound) {
 			respond(c, apitypes.CodeStateInvalid, nil)
@@ -119,7 +121,43 @@ func transferTicket(c *gin.Context, a *app.Application, tk *order.DispatchTicket
 	return err
 }
 
-// workerAuditOK 无独立落表的动作(改约/回退):审计留痕 + OK(缺口见报告)。
+// workerRescheduleReq 改约请求体(对齐 OpenAPI /tickets/{ticketNo}/reschedule)。
+type workerRescheduleReq struct {
+	NewDate string `json:"newDate" binding:"required"` // 如 08-22
+	NewSlot string `json:"newSlot" binding:"required"` // 如 14:00-16:00
+	Reason  string `json:"reason"`
+	Remark  string `json:"remark"`
+}
+
+// workerRescheduleHandler 改约:落表 dispatch_tickets.schedule_slot + 审计留痕。
+// 格式 "MM-DD HH:MM-HH:MM"(newDate + " " + newSlot)。
+func workerRescheduleHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req workerRescheduleReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !workerOwnedTicket(c, tk) {
+			return
+		}
+		scheduleSlot := req.NewDate + " " + req.NewSlot
+		if err := a.WorkOrder.UpdateScheduleSlot(c.Request.Context(), tk.TicketNo, scheduleSlot); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "reschedule", "dispatch_ticket", tk.TicketNo,
+			map[string]any{"scheduleSlot": scheduleSlot, "reason": req.Reason, "remark": req.Remark})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "scheduleSlot": scheduleSlot})
+	}
+}
+
+// workerAuditOK 无独立落表的动作(回退):审计留痕 + OK(缺口见报告)。
 func workerAuditOK(a *app.Application, action string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		httpx.RecordAudit(a, c, "状态变更", "worker_ticket", c.Param("ticketNo"),

@@ -50,12 +50,13 @@ func registerDispatchRoutes(g *gin.RouterGroup, a *app.Application) {
 			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "worker not active"})
 			return
 		}
-		if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), ticketNo, w.ID, w.Name); err != nil {
+		if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), ticketNo, w.ID, w.Name,
+			order.AssignOpt{ScheduleSlot: req.ScheduleSlot, PreBindTag: req.PreBindTag}); err != nil {
 			respondErr(c, err)
 			return
 		}
 		httpx.RecordAudit(a, c, "dispatch.assign", "dispatch_ticket", ticketNo,
-			map[string]any{"masterId": req.MasterID})
+			map[string]any{"masterId": req.MasterID, "scheduleSlot": req.ScheduleSlot, "preBindTag": req.PreBindTag})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
 
@@ -149,9 +150,11 @@ func appendTransfer(a *app.Application, c *gin.Context, ticket *order.DispatchTi
 	return nil
 }
 
-// assignTicketReq 工单指派请求体(masterId 必填)。
+// assignTicketReq 工单指派请求体(masterId 必填;scheduleSlot/preBindTag 可选)。
 type assignTicketReq struct {
-	MasterID int64 `json:"masterId" binding:"required"`
+	MasterID     int64  `json:"masterId" binding:"required"`
+	ScheduleSlot string `json:"scheduleSlot"` // 预约时间段，如 08-22 14:00-16:00
+	PreBindTag   string `json:"preBindTag"`   // 预绑定 EPC 标签，如 EPC-0001
 }
 
 // transferTicketReq 工单转派请求体(toMasterId/reason 必填)。

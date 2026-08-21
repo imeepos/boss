@@ -69,12 +69,12 @@ func (f *fakePortalWorkOrder) GetDispatchTicketByNo(_ context.Context, no string
 	return nil, order.ErrOrderNotFound
 }
 
-func (f *fakePortalWorkOrder) AssignDispatchTicket(_ context.Context, no string, workerID int64, _ string) error {
+func (f *fakePortalWorkOrder) AssignDispatchTicket(_ context.Context, no string, workerID int64, _ string, _ ...order.AssignOpt) error {
 	f.assigned = workerID
 	return nil
 }
 
-func (f *fakePortalWorkOrder) AssignPendingDispatchTicket(_ context.Context, no string, workerID int64, _ string) error {
+func (f *fakePortalWorkOrder) AssignPendingDispatchTicket(_ context.Context, no string, workerID int64, _ string, _ ...order.AssignOpt) error {
 	for i := range f.tickets {
 		if f.tickets[i].TicketNo == no {
 			f.tickets[i].WorkerID = workerID
@@ -98,6 +98,14 @@ func (f *fakePortalWorkOrder) ClaimDispatchTicket(_ context.Context, no string, 
 	}
 	f.assigned = workerID
 	return nil
+}
+
+func (f *fakePortalWorkOrder) UpdateScheduleSlot(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (f *fakePortalWorkOrder) GetTicketItemByNo(_ context.Context, _ string) (*order.TicketItem, error) {
+	return &order.TicketItem{}, nil
 }
 
 type fakePortalOrder struct {

@@ -88,6 +88,8 @@ paths:
               required: [masterId]
               properties:
                 masterId: { type: integer }
+                scheduleSlot: { type: string, description: '预约时间段，如 08-22 14:00-16:00' }
+                preBindTag: { type: string, description: '预绑定 EPC 标签，如 EPC-0001' }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 

@@ -101,6 +101,14 @@ type TicketItem struct {
 	SlaDeadline     string `json:"slaDeadline"`       // complaints.sla_deadline 原始值
 }
 
+// AssignOpt 指派/改约时可选写入工单的附加字段。
+// ScheduleSlot:预约时间段(如 "08-22 14:00-16:00");PreBindTag:预绑定 EPC 标签。
+// 两者均为空串时不覆盖已有值(幂等)。
+type AssignOpt struct {
+	ScheduleSlot string // 预约时间段
+	PreBindTag   string // 预绑定 EPC 标签
+}
+
 // WorkOrderService 订单工单/报障/扫码域服务口(阶段5 子表)。
 type WorkOrderService interface {
 	ListDispatchTickets(ctx context.Context) ([]DispatchTicket, error)
@@ -109,11 +117,13 @@ type WorkOrderService interface {
 	// GetTicketItemByNo 详情读模型:同 ListTicketItems 联表语义,按 ticketNo 寻址单行。
 	GetTicketItemByNo(ctx context.Context, ticketNo string) (*TicketItem, error)
 	GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*DispatchTicket, error)
-	// AssignDispatchTicket 指派师傅(workerID/workerName 回填工单)。
-	AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error
-	AssignPendingDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error
+	// AssignDispatchTicket 指派师傅(workerID/workerName 回填工单);opt 可选写入预约/预绑定。
+	AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string, opt ...AssignOpt) error
+	AssignPendingDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string, opt ...AssignOpt) error
 	// ClaimDispatchTicket 师傅领取:回填师傅并 PENDING→DOING。
 	ClaimDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string) error
+	// UpdateScheduleSlot 改约:更新预约时间段 + 重置报障 SLA 截止时间。
+	UpdateScheduleSlot(ctx context.Context, ticketNo string, scheduleSlot string) error
 	CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error)
 	ListComplaints(ctx context.Context) ([]Complaint, error)
 	CreateComplaint(ctx context.Context, c Complaint) (int64, error)
