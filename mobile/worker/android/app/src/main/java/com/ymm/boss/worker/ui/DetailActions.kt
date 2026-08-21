@@ -47,24 +47,27 @@ internal fun nodeStateOf(result: String): NodeState = when (result) {
 }
 
 // 节点圆点(DONE 绿实+白勾 / DOING 蓝实+数字+晕圈 / PENDING 白底灰描边+灰数字)
+// 圆 12dp + 显式 lineHeight=fontSize:避免默认行高 × 1.4 撑爆被裁
 @Composable
 internal fun NodeDot(state: NodeState, num: Int) {
     when (state) {
-        NodeState.DONE -> Box(Modifier.size(12.dp).background(Color(0xFF0AA847), CircleShape),
+        NodeState.DONE -> Box(Modifier.size(14.dp).background(Color(0xFF0AA847), CircleShape),
             contentAlignment = Alignment.Center) {
-            Text("✓", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            Text("✓", color = Color.White, fontSize = 10.sp, lineHeight = 10.sp,
+                fontWeight = FontWeight.Bold)
         }
-        NodeState.DOING -> Box(Modifier.size(18.dp).background(Color(0x33086CF5), CircleShape),
+        NodeState.DOING -> Box(Modifier.size(20.dp).background(Color(0x33086CF5), CircleShape),
             contentAlignment = Alignment.Center) {
-            Box(Modifier.size(12.dp).background(Color(0xFF086CF5), CircleShape),
+            Box(Modifier.size(14.dp).background(Color(0xFF086CF5), CircleShape),
                 contentAlignment = Alignment.Center) {
-                Text("$num", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                Text("$num", color = Color.White, fontSize = 10.sp, lineHeight = 10.sp,
+                    fontWeight = FontWeight.Bold)
             }
         }
-        NodeState.PENDING -> Box(Modifier.size(12.dp).background(Color.White, CircleShape)
+        NodeState.PENDING -> Box(Modifier.size(14.dp).background(Color.White, CircleShape)
             .border(1.dp, Color(0xFFAEB4BE), CircleShape),
             contentAlignment = Alignment.Center) {
-            Text("$num", color = Color(0xFFAEB4BE), fontSize = 9.sp)
+            Text("$num", color = Color(0xFFAEB4BE), fontSize = 10.sp, lineHeight = 10.sp)
         }
     }
 }

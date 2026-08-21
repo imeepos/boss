@@ -115,49 +115,66 @@ internal fun QuickActionRow(d: JSONObject, nav: NavHost, no: String) {
 }
 
 // Card3 装维进度时间轴(横版一字排开)
+// total 用 spec §4.4 锁定的环节总数(12/6),不取 stages.length();
+// 后端 TicketDetail 暂未返 stageTotal,前端由 inferTicketType 推断。
+// 文案对齐 spec §4.4:"装维进度(当前:N 环节 · M/N 已完成)"
 @Composable
 internal fun TimelineCard(d: JSONObject) {
     val stages = d.optJSONArray("stages") ?: JSONArray()
-    val total = stages.length()
-    val doneCount = (0 until total).count { stages.optJSONObject(it).optString("result") == "DONE" }
+    val total = if (inferTicketType(d) == "REPAIR") 6 else 12
+    val doneCount = (0 until stages.length())
+        .count { stages.optJSONObject(it).optString("result") == "DONE" }
+    val currentStage = stages.optJSONObject(stages.length() - 1)?.optInt("stage") ?: 0
     Card(Modifier.padding(12.dp)) {
-        SectionTitle("装维进度", more = "$doneCount/$total 已完成")
+        SectionTitle("装维进度",
+            more = "当前:$currentStage 环节 · $doneCount/$total 已完成")
         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            for (i in 0 until total) {
-                val st = nodeStateOf(stages.optJSONObject(i).optString("result"))
-                NodeDot(st, stages.optJSONObject(i).optInt("stage"))
-                if (i < total - 1) {
-                    val next = nodeStateOf(stages.optJSONObject(i + 1).optString("result"))
-                    TimelineConnector(st == NodeState.DONE && next == NodeState.DONE, Modifier.weight(1f))
+            for (i in 1..total) {
+                // 按环节号 1..N 在 stages 里找匹配日志,缺环节视为 PENDING
+                val stage = (0 until stages.length())
+                    .map { stages.optJSONObject(it) }
+                    .firstOrNull { it.optInt("stage") == i }
+                val st = if (stage == null) NodeState.PENDING
+                         else nodeStateOf(stage.optString("result"))
+                NodeDot(st, i)
+                if (i < total) {
+                    val nextStage = (0 until stages.length())
+                        .map { stages.optJSONObject(it) }
+                        .firstOrNull { it.optInt("stage") == i + 1 }
+                    val nextSt = if (nextStage == null) NodeState.PENDING
+                                 else nodeStateOf(nextStage.optString("result"))
+                    TimelineConnector(st == NodeState.DONE && nextSt == NodeState.DONE,
+                        Modifier.weight(1f))
                 }
             }
         }
     }
 }
 
-// Card4 四码校验(2×2)
+// Card4 四码校验(2×2):按 spec §4.5 status 三态分色
+//   LINKED   → 绿 + "已通过校验"
+//   CONFLICT → 红 + "不一致 · 需核实"
+//   UNLINKED → 灰 + "待校验"
 @Composable
 internal fun QuadCard(quad: JSONObject?) {
     Card(Modifier.padding(12.dp)) {
         SectionTitle("四码校验", more = "一致性校验")
         if (quad == null) { Notice("四码信息缺失"); return@Card }
-        val matched = quad.optBoolean("matched", true)
         val status = quad.optString("status")
-        val stText = when {
-            status == "CONFLICT" -> "不一致 · 需核实"
-            matched -> "已通过校验"
-            else -> "待校验"
+        val (cellColor, stText) = when (status) {
+            "CONFLICT" -> Color(0xFFFF4D4F) to "不一致 · 需核实"
+            "LINKED"   -> Color(0xFF0AA847) to "已通过校验"
+            else       -> Color(0xFFAEB4BE) to "待校验"
         }
-        val okColor = if (matched) Color(0xFF0AA847) else Color(0xFFFF4D4F)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuadCell("资产码", quad.optString("assetCode"), stText, okColor, Modifier.weight(1f))
-                QuadCell("用户码", quad.optString("customerCode"), stText, okColor, Modifier.weight(1f))
+                QuadCell("资产码", quad.optString("assetCode"), stText, cellColor, Modifier.weight(1f))
+                QuadCell("用户码", quad.optString("customerCode"), stText, cellColor, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuadCell("端口码", quad.optString("portCode"), stText, okColor, Modifier.weight(1f))
-                QuadCell("地址码", quad.optString("addrCode"), stText, okColor, Modifier.weight(1f))
+                QuadCell("端口码", quad.optString("portCode"), stText, cellColor, Modifier.weight(1f))
+                QuadCell("地址码", quad.optString("addrCode"), stText, cellColor, Modifier.weight(1f))
             }
         }
     }
@@ -168,6 +185,7 @@ private fun QuadCell(label: String, value: String, st: String, color: Color, mod
     val border = when (color) {
         Color(0xFF0AA847) -> Color(0xFF6FD18B)
         Color(0xFFFF4D4F) -> Color(0xFFFF9B9D)
+        Color(0xFFAEB4BE) -> Color(0xFFE7EAF0)
         else -> Color(0xFFE7EAF0)
     }
     Box(modifier = modifier.background(Color.White, RoundedCornerShape(8.dp))
