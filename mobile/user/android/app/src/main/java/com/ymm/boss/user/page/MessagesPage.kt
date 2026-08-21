@@ -2,12 +2,15 @@ package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -245,30 +248,36 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
     val icon = iconOfCategory(m.optString("category"))
 
     // 不同 category 视觉区分:
-    //  - 未读 = 左 3dp category 色细条 + 卡片底色用 category 色 4% 浅底(更明显)
-    //  - 已读 = 纯白卡,无细条无底色,只靠 icon + tag 颜色区分类别
+    //  - 未读 = 左 3dp × 全卡高 category 色边框 + 卡片底色用 category 色 4% 浅底
+    //  - 已读 = 纯白卡,无左边框无底色,只靠 icon + tag 颜色区分类别
     // 警示型(余额/故障)用浅底更突出,信息型(账单/优惠)保持白底,克制不抢眼。
     val cardBg = if (!read) tint.copy(alpha = 0.05f) else Palette.panel
 
+    // IntrinsicSize.Min 让 Row 高度由最高子元素决定,bar 才能 fillMaxHeight() 占满全卡。
     Row(
         Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .padding(horizontal = 14.dp, vertical = 6.dp)
-            .background(cardBg, RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .clip(RoundedCornerShape(12.dp))
+            .background(cardBg)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.Top,
     ) {
         if (!read) {
+            // 左 3dp × 全卡高边框(贴齐卡片左边,圆角由 clip 保证)
             Box(
                 Modifier
                     .width(3.dp)
-                    .height(40.dp)
-                    .background(tint, RoundedCornerShape(2.dp)),
+                    .fillMaxHeight()
+                    .background(tint),
             )
-            Spacer(Modifier.width(10.dp))
         }
-        Column(Modifier.weight(1f)) {
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(14.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconTile(icon, tint, size = 40.dp, corner = 12.dp)
                 Spacer(Modifier.width(12.dp))
