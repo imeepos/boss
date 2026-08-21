@@ -8,7 +8,8 @@ import type { MenuGroup } from '../router/menu.def'
 import logoMark from '../assets/brand/logo-mark-navy.png'
 import { useT, useLang, localeOptions } from '../i18n'
 import { useTheme } from '../theme/context'
-import { BellIcon, CheckIcon, GlobeIcon, LogoutIcon, MaskIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, UserIcon } from './icons'
+import { CheckIcon, GlobeIcon, LogoutIcon, MaskIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, UserIcon } from './icons'
+import { NotifBell } from './NotifBell'
 import { cn } from '../lib/cn'
 
 const TOOL_BTN = 'grid h-[34px] w-[34px] cursor-pointer place-items-center rounded-full border-0 bg-none text-white/80 hover:bg-[var(--shell-search-bg-focus)] hover:text-white'
@@ -204,9 +205,7 @@ function RightTools({ profile }: { profile: Profile }) {
       >
         {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
       </button>
-      <button className={TOOL_BTN} title={t.shell.notifications}>
-        <BellIcon />
-      </button>
+      <NotifBell />
       <LangSwitch />
       <UserMenu profile={profile} />
     </div>

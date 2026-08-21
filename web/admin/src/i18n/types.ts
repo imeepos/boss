@@ -1466,6 +1466,33 @@ export interface Translations {
       perPage: string
       jump: string
       pageUnit: string
+      tabAdmin: string
+      notif: {
+        cardTitle: string
+        empty: string
+        loadFail: string
+        refresh: string
+        markAllRead: string
+        viewAll: string
+        goHandle: string
+        resolved: string
+        allCategories: string
+        categoryTodo: string
+        categoryTask: string
+        levelInfo: string
+        levelWarn: string
+        levelUrgent: string
+        allLevels: string
+        unreadOnly: string
+        columns: string[]
+        rangeText: string
+        prev: string
+        next: string
+        perPage: string
+        jump: string
+        pageUnit: string
+        bellEmpty: string
+      }
     }
     audit: {
       title: string
