@@ -11,7 +11,7 @@ import (
 // ListMaterials 列出师傅物料领用;workerID=0 返回全部。
 func (s *PGStore) ListMaterials(ctx context.Context, workerID int64) ([]Material, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, `+factSnap+`, name, qty FROM worker_materials WHERE ($1 = 0 OR worker_id = $1) ORDER BY id`, workerID)
+		`SELECT id, `+factSnap+`, COALESCE(item_id,0), name, qty FROM worker_materials WHERE ($1 = 0 OR worker_id = $1) ORDER BY id`, workerID)
 	if err != nil {
 		return nil, fmt.Errorf("worker: list materials: %w", err)
 	}
@@ -19,7 +19,7 @@ func (s *PGStore) ListMaterials(ctx context.Context, workerID int64) ([]Material
 	out := make([]Material, 0)
 	for rows.Next() {
 		var m Material
-		if err := rows.Scan(&m.ID, &m.WorkerID, &m.GroupID, &m.GroupName, &m.LegalEntityID, &m.LegalEntityName, &m.RegionID, &m.RegionName, &m.Name, &m.Qty); err != nil {
+		if err := rows.Scan(&m.ID, &m.WorkerID, &m.GroupID, &m.GroupName, &m.LegalEntityID, &m.LegalEntityName, &m.RegionID, &m.RegionName, &m.ItemID, &m.Name, &m.Qty); err != nil {
 			return nil, fmt.Errorf("worker: scan material: %w", err)
 		}
 		out = append(out, m)
@@ -31,8 +31,9 @@ func (s *PGStore) ListMaterials(ctx context.Context, workerID int64) ([]Material
 func (s *PGStore) AppendMaterial(ctx context.Context, m Material) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO worker_materials(`+factSnap+`, name, qty) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-		m.WorkerID, m.GroupID, m.GroupName, m.LegalEntityID, m.LegalEntityName, m.RegionID, m.RegionName, m.Name, m.Qty).Scan(&id)
+		`INSERT INTO worker_materials(`+factSnap+`, item_id, name, qty)
+		VALUES($1,$2,$3,$4,$5,$6,$7,NULLIF($8,0),$9,$10) RETURNING id`,
+		m.WorkerID, m.GroupID, m.GroupName, m.LegalEntityID, m.LegalEntityName, m.RegionID, m.RegionName, m.ItemID, m.Name, m.Qty).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("worker: append material: %w", err)
 	}
@@ -42,7 +43,7 @@ func (s *PGStore) AppendMaterial(ctx context.Context, m Material) (int64, error)
 // ListTools 列出师傅工具借用;workerID=0 返回全部。
 func (s *PGStore) ListTools(ctx context.Context, workerID int64) ([]Tool, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, `+factSnap+`, name, borrowed FROM worker_tools WHERE ($1 = 0 OR worker_id = $1) ORDER BY id`, workerID)
+		`SELECT id, `+factSnap+`, COALESCE(tool_id,0), name, borrowed FROM worker_tools WHERE ($1 = 0 OR worker_id = $1) ORDER BY id`, workerID)
 	if err != nil {
 		return nil, fmt.Errorf("worker: list tools: %w", err)
 	}
@@ -50,7 +51,7 @@ func (s *PGStore) ListTools(ctx context.Context, workerID int64) ([]Tool, error)
 	out := make([]Tool, 0)
 	for rows.Next() {
 		var t Tool
-		if err := rows.Scan(&t.ID, &t.WorkerID, &t.GroupID, &t.GroupName, &t.LegalEntityID, &t.LegalEntityName, &t.RegionID, &t.RegionName, &t.Name, &t.Borrowed); err != nil {
+		if err := rows.Scan(&t.ID, &t.WorkerID, &t.GroupID, &t.GroupName, &t.LegalEntityID, &t.LegalEntityName, &t.RegionID, &t.RegionName, &t.ToolID, &t.Name, &t.Borrowed); err != nil {
 			return nil, fmt.Errorf("worker: scan tool: %w", err)
 		}
 		out = append(out, t)
@@ -62,8 +63,9 @@ func (s *PGStore) ListTools(ctx context.Context, workerID int64) ([]Tool, error)
 func (s *PGStore) AppendTool(ctx context.Context, t Tool) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO worker_tools(`+factSnap+`, name, borrowed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-		t.WorkerID, t.GroupID, t.GroupName, t.LegalEntityID, t.LegalEntityName, t.RegionID, t.RegionName, t.Name, t.Borrowed).Scan(&id)
+		`INSERT INTO worker_tools(`+factSnap+`, tool_id, name, borrowed)
+		VALUES($1,$2,$3,$4,$5,$6,$7,NULLIF($8,0),$9,$10) RETURNING id`,
+		t.WorkerID, t.GroupID, t.GroupName, t.LegalEntityID, t.LegalEntityName, t.RegionID, t.RegionName, t.ToolID, t.Name, t.Borrowed).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("worker: append tool: %w", err)
 	}

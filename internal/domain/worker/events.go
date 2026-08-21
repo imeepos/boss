@@ -15,6 +15,7 @@ type Material struct {
 	LegalEntityName string `json:"legalEntityName"`
 	RegionID        int64  `json:"regionId"`
 	RegionName      string `json:"regionName"`
+	ItemID          int64  `json:"itemId"` // → material_items(E13);0=历史行未回填
 	Name            string `json:"name"`
 	Qty             int32  `json:"qty"`
 }
@@ -29,6 +30,7 @@ type Tool struct {
 	LegalEntityName string `json:"legalEntityName"`
 	RegionID        int64  `json:"regionId"`
 	RegionName      string `json:"regionName"`
+	ToolID          int64  `json:"toolId"` // → material_tools(E13);0=历史行未回填
 	Name            string `json:"name"`
 	Borrowed        bool   `json:"borrowed"`
 }

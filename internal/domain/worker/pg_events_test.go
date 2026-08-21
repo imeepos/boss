@@ -15,18 +15,18 @@ func TestPGStore_ListMaterials(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "worker_id", "group_id", "group_name", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "name", "qty"}
-	mock.ExpectQuery(`SELECT id, worker_id, group_id, group_name, legal_entity_id, legal_entity_name, region_id, region_name, name, qty FROM worker_materials`).
+	cols := []string{"id", "worker_id", "group_id", "group_name", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "item_id", "name", "qty"}
+	mock.ExpectQuery(`SELECT id, worker_id, group_id, group_name, legal_entity_id, legal_entity_name, region_id, region_name, COALESCE\(item_id,0\), name, qty FROM worker_materials`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), int64(1), int64(1), "装机一组", int64(1), "主品牌·企业", int64(11), "马尼拉市", "光纤跳线", int32(3)))
+			AddRow(int64(1), int64(1), int64(1), "装机一组", int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(7), "光纤跳线", int32(3)))
 
 	s := NewPGStore(mock)
 	got, err := s.ListMaterials(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("ListMaterials: %v", err)
 	}
-	if len(got) != 1 || got[0].Qty != 3 {
+	if len(got) != 1 || got[0].Qty != 3 || got[0].ItemID != 7 {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -42,13 +42,13 @@ func TestPGStore_AppendMaterial(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO worker_materials`).
-		WithArgs(int64(1), int64(1), "装机一组", int64(1), "主品牌·企业", int64(11), "马尼拉市", "光纤跳线", int32(3)).
+		WithArgs(int64(1), int64(1), "装机一组", int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(7), "光纤跳线", int32(3)).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)
 	id, err := s.AppendMaterial(context.Background(), Material{
 		WorkerID: 1, GroupID: 1, GroupName: "装机一组", LegalEntityID: 1, LegalEntityName: "主品牌·企业",
-		RegionID: 11, RegionName: "马尼拉市", Name: "光纤跳线", Qty: 3,
+		RegionID: 11, RegionName: "马尼拉市", ItemID: 7, Name: "光纤跳线", Qty: 3,
 	})
 	if err != nil {
 		t.Fatalf("AppendMaterial: %v", err)
@@ -68,18 +68,18 @@ func TestPGStore_ListTools(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "worker_id", "group_id", "group_name", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "name", "borrowed"}
-	mock.ExpectQuery(`SELECT id, worker_id, group_id, group_name, legal_entity_id, legal_entity_name, region_id, region_name, name, borrowed FROM worker_tools`).
+	cols := []string{"id", "worker_id", "group_id", "group_name", "legal_entity_id", "legal_entity_name", "region_id", "region_name", "tool_id", "name", "borrowed"}
+	mock.ExpectQuery(`SELECT id, worker_id, group_id, group_name, legal_entity_id, legal_entity_name, region_id, region_name, COALESCE\(tool_id,0\), name, borrowed FROM worker_tools`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), int64(1), int64(1), "装机一组", int64(1), "主品牌·企业", int64(11), "马尼拉市", "熔纤机", true))
+			AddRow(int64(1), int64(1), int64(1), "装机一组", int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(5), "熔纤机", true))
 
 	s := NewPGStore(mock)
 	got, err := s.ListTools(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)
 	}
-	if len(got) != 1 || !got[0].Borrowed {
+	if len(got) != 1 || !got[0].Borrowed || got[0].ToolID != 5 {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -95,13 +95,13 @@ func TestPGStore_AppendTool(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO worker_tools`).
-		WithArgs(int64(1), int64(1), "装机一组", int64(1), "主品牌·企业", int64(11), "马尼拉市", "熔纤机", true).
+		WithArgs(int64(1), int64(1), "装机一组", int64(1), "主品牌·企业", int64(11), "马尼拉市", int64(5), "熔纤机", true).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)
 	id, err := s.AppendTool(context.Background(), Tool{
 		WorkerID: 1, GroupID: 1, GroupName: "装机一组", LegalEntityID: 1, LegalEntityName: "主品牌·企业",
-		RegionID: 11, RegionName: "马尼拉市", Name: "熔纤机", Borrowed: true,
+		RegionID: 11, RegionName: "马尼拉市", ToolID: 5, Name: "熔纤机", Borrowed: true,
 	})
 	if err != nil {
 		t.Fatalf("AppendTool: %v", err)
