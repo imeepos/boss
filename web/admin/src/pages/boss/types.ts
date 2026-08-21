@@ -12,6 +12,26 @@ export interface OrderListRow {
   createdAt: string
 }
 
+export interface CheckDeviceRow {
+  code: string
+  name: string
+  type: string
+  status: string
+  total: number
+  idle: number
+}
+
+export interface CheckDetail {
+  addressId: number
+  total: number
+  idle: number
+  reserved: number
+  used: number
+  disabled: number
+  idleCodes: string[]
+  devices: CheckDeviceRow[]
+}
+
 export interface TimelineRow {
   stage: number
   name: string

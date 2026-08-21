@@ -94,6 +94,7 @@ export interface Translations {
       jumpText: string
       pageUnit: string
       names: string
+      deleteNameConfirm: string
       addName: string
       attrs: string
       timeZones: string
@@ -144,6 +145,33 @@ export interface Translations {
       loadFail: string
       saveFail: string
       empty: string
+    }
+    odn: {
+      title: string
+      subtitle: string
+      tabs: { grids: string; facilities: string; sites: string; devices: string }
+      add: string
+      cancel: string
+      save: string
+      saving: string
+      loadFail: string
+      saveFail: string
+      empty: string
+      retire: string
+      warn: string
+      gridCode: string
+      name: string
+      coverage: string
+      usage: string
+      status: string
+      actions: string
+      code: string
+      kind: string
+      nodeCode: string
+      siteNo: string
+      parentId: string
+      deviceCode: string
+      deviceKind: string
     }
     importer: {
       title: string
@@ -659,6 +687,20 @@ export interface Translations {
       actCancel: string
       confirmCancel: string
       actionFail: string
+      checkTitle: string
+      runCheck: string
+      checkPass: string
+      checkFail: string
+      failureHelp: string
+      totalPorts: string
+      idlePorts: string
+      reservedPorts: string
+      usedPorts: string
+      device: string
+      deviceStatus: string
+      idlePortCodes: string
+      expand: string
+      transfer: string
       trackTitle: string
       timelineColumns: string[]
       total: string
@@ -1396,7 +1438,7 @@ export interface Translations {
       personal: { title: string; desc: string; badge: string; username: string; realName: string; phone: string; phonePlaceholder: string; saved: string; saveFail: string; role: string; company: string; dataScope: string; unassigned: string; allScope: string }
       password: { title: string; desc: string; old: string; next: string; confirm: string; submit: string; success: string; fail: string; mismatch: string }
       securityProtection: { title: string; loginProtection: string; loginHistory: string; pending: string }
-      apiKey: { title: string; desc: string; loadFail: string; denied: string; empty: string; name: string; key: string; lastUsed: string; status: string; namePlaceholder: string; create: string; neverUsed: string; active: string; revoke: string; securityTip: string }
+      apiKey: { title: string; desc: string; loadFail: string; denied: string; empty: string; name: string; key: string; lastUsed: string; status: string; namePlaceholder: string; create: string; neverUsed: string; active: string; revoke: string; revokeConfirm: string; securityTip: string }
       myData: { title: string; desc: string; orders: string; ordersDesc: string; bills: string; billsDesc: string; service: string; serviceDesc: string; messages: string; messagesDesc: string; audit: string; auditDesc: string; permissions: string; permissionsDesc: string }
       permissions: { title: string; desc: string; role: string; company: string; scope: string }
       audit: { title: string; desc: string; empty: string; emptyDesc: string; loadFail: string }

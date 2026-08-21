@@ -45,4 +45,6 @@ type ResourceService interface {
 	ReleasePortByOrder(ctx context.Context, orderID int64) error
 	// Check 资源核查(环节2):目标地址是否有空闲端口;options 为空闲端口码列表。
 	Check(ctx context.Context, addressID int64) (available bool, options []string, err error)
+	// CheckDetail 返回设备级端口分布,供后台核查前预览与失败处置。
+	CheckDetail(ctx context.Context, addressID int64) (*CheckDetail, error)
 }

@@ -16,6 +16,15 @@ import (
 func registerOrderWorkflowRoutes(g *gin.RouterGroup, a *app.Application) {
 	wf := g.Group("/orders", requirePerm(a.User, "menu:order"))
 
+	// 核查预览:只读查询地址下设备与端口分布,不推进订单。
+	wf.GET("/:orderNo/check-preview", func(c *gin.Context) {
+		o, err := a.Order.GetByNo(c.Request.Context(), c.Param("orderNo"))
+		if err != nil { respondErr(c, err); return }
+		detail, err := a.Resource.CheckDetail(c.Request.Context(), o.AddressID)
+		if err != nil { respondErr(c, err); return }
+		respond(c, apitypes.CodeOK, gin.H{"orderNo": o.OrderNo, "addressId": o.AddressID, "stage": o.Stage, "status": o.Status, "detail": detail})
+	})
+
 	// 环节2 资源核查:调资源域核查目标地址,推进 stage=2。
 	wf.POST("/:orderNo/check-resource", func(c *gin.Context) {
 		o, err := a.Order.GetByNo(c.Request.Context(), c.Param("orderNo"))
@@ -23,12 +32,14 @@ func registerOrderWorkflowRoutes(g *gin.RouterGroup, a *app.Application) {
 			respondErr(c, err)
 			return
 		}
+		available, idlePorts, err := a.Resource.Check(c.Request.Context(), o.AddressID)
+		if err != nil { respondErr(c, err); return }
 		if err := a.Order.CheckResource(c.Request.Context(), o.ID); err != nil {
 			respondErr(c, err)
 			return
 		}
-		httpx.RecordAudit(a, c, "order.check_resource", "order", o.OrderNo, nil)
-		respond(c, apitypes.CodeOK, gin.H{"orderNo": o.OrderNo, "stage": 2})
+		httpx.RecordAudit(a, c, "order.check_resource", "order", o.OrderNo, gin.H{"available": available, "idlePorts": idlePorts})
+		respond(c, apitypes.CodeOK, gin.H{"orderNo": o.OrderNo, "stage": 2, "available": available, "idlePorts": idlePorts})
 	})
 
 	// 环节3 端口预占:资源域占空闲端口(写 order_id),再推进状态机 PENDING→RESERVED。

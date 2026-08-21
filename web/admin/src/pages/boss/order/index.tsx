@@ -1,6 +1,7 @@
 // 订单管理页:契约 GET /orders(keyword/status 过滤);跟踪抽屉 GET /orders/:orderNo(order+timeline);
 // 环节推进 POST /orders/:orderNo/{check-resource,reserve,charge,cancel}(order_workflow.go)。
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -8,13 +9,14 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
-import { pageSlice, type OrderListRow, type TimelineRow } from '../types'
+import { pageSlice, type CheckDetail, type OrderListRow, type TimelineRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
 const STATUSES = ['PENDING', 'RESERVED', 'INSTALLING', 'DONE'] as const
 
 export default function OrderPage() {
   const t = useT()
+  const nav = useNavigate()
   const confirmDialog = useConfirm()
   const o = t.pages.orderPage
   const [rows, setRows] = useState<OrderListRow[]>([])
@@ -26,6 +28,7 @@ export default function OrderPage() {
   const [busy, setBusy] = useState(false)
   const [track, setTrack] = useState<{ order: OrderListRow; timeline: TimelineRow[] } | null>(null)
   const [trackError, setTrackError] = useState('')
+  const [check, setCheck] = useState<{ row: OrderListRow; detail: CheckDetail | null; result: boolean | null; message: string } | null>(null)
 
   const load = () => {
     setError('')
@@ -47,7 +50,23 @@ export default function OrderPage() {
       .catch(() => setTrackError(o.trackFail))
   }
 
-  // advance 按当前环节推进:1→核查 2→预占 3→收费(自动段 5-8);cancel 需二次确认。
+  const openCheck = (row: OrderListRow) => {
+    setCheck({ row, detail: null, result: null, message: '' })
+    apiFetch<{ detail: CheckDetail }>(`/orders/${encodeURIComponent(row.orderNo)}/check-preview`)
+      .then((d) => setCheck((x) => x ? { ...x, detail: d?.detail ?? null } : x))
+      .catch((e) => setCheck((x) => x ? { ...x, message: e instanceof Error ? e.message : o.actionFail } : x))
+  }
+
+  const runCheck = () => {
+    if (!check || busy) return
+    setBusy(true)
+    apiFetch<{ available: boolean; idlePorts: string[] }>(`/orders/${encodeURIComponent(check.row.orderNo)}/check-resource`, { method: 'POST' })
+      .then((d) => setCheck((x) => x ? { ...x, result: d?.available ?? false, message: d?.available ? o.checkPass.replace('{count}', String(d.idlePorts?.length ?? 0)) : o.checkFail } : x))
+      .catch((e) => setCheck((x) => x ? { ...x, message: e instanceof Error ? e.message : o.actionFail } : x))
+      .finally(() => { setBusy(false); load() })
+  }
+
+  // advance 按当前环节推进:2→预占 3→收费(自动段 5-8);cancel 需二次确认。
   const advance = async (row: OrderListRow, action: 'check-resource' | 'reserve' | 'charge' | 'cancel') => {
     if (busy) return
     if (action === 'cancel' && !(await confirmDialog(o.confirmCancel.replace('{no}', row.orderNo), { danger: true }))) return
@@ -92,7 +111,7 @@ export default function OrderPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       <span className="inline-flex items-center gap-3">
                         {r.stage === 1 && r.status === 'PENDING' && (
-                          <button disabled={busy} onClick={() => advance(r, 'check-resource')}>{o.actCheck}</button>
+                          <button disabled={busy} onClick={() => openCheck(r)}>{o.actCheck}</button>
                         )}
                         {r.stage === 2 && r.status === 'PENDING' && (
                           <button disabled={busy} onClick={() => advance(r, 'reserve')}>{o.actReserve}</button>
@@ -118,6 +137,26 @@ export default function OrderPage() {
             onPage={setPage} onSize={setPageSize} {...pagerTexts(o)} />
         </div>
       </div>
+      {check && (
+        <Drawer title={o.checkTitle} onClose={() => setCheck(null)}
+          footer={<div className="flex gap-2">
+            {check.result === false && <><button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => nav('/oss/expand')}>{o.expand}</button><button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => nav('/oss/transfer')}>{o.transfer}</button></>}
+            <button className="h-8 rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)]" disabled={busy || !check.detail || check.result !== null} onClick={runCheck}>{o.runCheck}</button>
+            <button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => setCheck(null)}>{t.pages.company.cancel}</button>
+          </div>}>
+          <div className="flex flex-col gap-4 p-4 text-[13px]">
+            <div><div className="font-medium text-[var(--shell-heading)]">{check.row.orderNo}</div><div className="text-[var(--shell-crumb-text)]">{check.row.customer} · {check.row.product} · {check.row.address}</div></div>
+            {check.detail && <>
+              <div className="grid grid-cols-4 gap-2 text-center"><div>{o.totalPorts}<b className="block text-lg">{check.detail.total}</b></div><div>{o.idlePorts}<b className="block text-lg text-[var(--color-success)]">{check.detail.idle}</b></div><div>{o.reservedPorts}<b className="block text-lg">{check.detail.reserved}</b></div><div>{o.usedPorts}<b className="block text-lg">{check.detail.used}</b></div></div>
+              <table className="w-full border-collapse"><thead><tr><th className="p-2 text-left">{o.device}</th><th className="p-2 text-left">{o.deviceStatus}</th><th className="p-2 text-right">{o.idlePorts}</th></tr></thead><tbody>{check.detail.devices.map((d) => <tr key={d.code}><td className="border-t p-2">{d.name || d.code}</td><td className="border-t p-2">{d.status}</td><td className="border-t p-2 text-right">{d.idle}/{d.total}</td></tr>)}</tbody></table>
+              <div><div className="mb-1">{o.idlePortCodes}</div><div className="flex flex-wrap gap-1">{check.detail.idleCodes.map((code) => <span key={code} className="rounded bg-[var(--shell-menu-hover-bg)] px-2 py-1">{code}</span>)}</div></div>
+            </>}
+            {check.result === true && <div className="rounded border border-[color-mix(in_srgb,var(--color-success)_25%,transparent)] p-3 text-[var(--color-success)]">{check.message}</div>}
+            {check.result === false && <div className="rounded border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] p-3 text-[var(--color-danger)]">{check.message}<div className="mt-1 text-[var(--shell-content-text)]">{o.failureHelp}</div></div>}
+            {check.message && check.result === null && <div className="text-[var(--color-danger)]">{check.message}</div>}
+          </div>
+        </Drawer>
+      )}
       {(track || trackError) && (
       <Drawer title={o.trackTitle} onClose={() => { setTrack(null); setTrackError('') }}
         footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setTrack(null)}>
