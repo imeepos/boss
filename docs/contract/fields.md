@@ -161,7 +161,27 @@
 | G 号 | `GNo` | g_no | 1~99，与 segment_id 复合主键（规范 5.3 `段落-G01~G99`） |
 | 光缆型号 | `Kind` | kind | 文本描述 |
 
-> 存储口径：`--` 仅设计图纸不入库（规范 5.1），系统侧存两端编码列；`OrderEndpoints` 定向（同优先级拒绝 ErrSamePriority），端点正则覆盖设施码（5 位）与核心设备码（3 位，SNW/ODF/OCC/ODB/SDB/PRT/TBP/OLT，设备实体待 odn 域扩展）。
+> 存储口径：`--` 仅设计图纸不入库（规范 5.1），系统侧存两端编码列；`OrderEndpoints` 定向（同优先级拒绝 ErrSamePriority），端点正则覆盖设施码（5 位）与核心设备码（3 位，见 §1.5.5 设备实体）。
+
+### 1.5.5 odn_site / odn_device（局点与核心链路设备，迁移 000081，资产编码规范第 2/3 章）
+
+> 管理面同 §1.5.3（`menu:odn`，`/odn/sites|devices`）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| PRV/城市 | `PrvCode`/`CityPrefix` | prv_code/city_prefix | → odn_city_code（复合 FK），与 site_no 复合主键 |
+| 局点序号 | `SiteNo` | site_no | 1~999；NodeCode = 城市前缀 + 3 位序号（如 MNL001） |
+| 局点名 | `Name` | name | 可空 |
+| 坐标 | `Lat`/`Lng` | lat/lng | 可空 |
+| 状态 | `Status` | status | ACTIVE / RETIRED（须无在用设备方可退役） |
+| 设备码 | `Code` | code | `^(SNW\|OLT\|ODF\|OCC\|ODB\|SDB\|PRT\|TBP)\d{3}(-([2-9]\|[1-9]\d+))?$`（规范 5.1，同址扩容 -N 且 N≥2 禁 -1） |
+| 类型 | `Kind` | kind | SNW/OLT/ODF/OCC/ODB/SDB/PRT/TBP |
+| 归属局点 | `SiteNo` | site_no | 可空（市域设备） |
+| 上级 | `ParentID` | parent_id | ODB→OCC / SDB→ODB / PRT→SDB / TBP→PRT（自引用，顶层 NULL） |
+| 唯一性 | — | uq_odn_device_city | 市域内唯一；SNW 全网唯一（部分索引） |
+| 状态 | `Status` | status | IN_USE / RETIRED（报废永久锁定） |
+
+> 校验：`ValidateDeviceCode`（格式+扩容后缀）+ `RequiredParentKind`（归属链）；子级设备上级须为同城在用设备。
 
 
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）

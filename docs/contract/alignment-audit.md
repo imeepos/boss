@@ -191,7 +191,7 @@
 | E8 | 第5章 光缆段落/纤芯编码 + A 端方向优先级 | 无光缆段落/纤芯实体 | migrations/000079 `odn_cable_segment`/`odn_fiber` + `OrderEndpoints` 定向（规范 5.2 优先级，同档拒绝）；`--` 仅图纸不入库，存两端编码列；G01~G99 纤芯顺序；102 PG 集成实测 | ✅ 000079 |
 | E9 | 第7章 红线3（5 位数字系统校验） | 无编码校验逻辑 | `odn.ValidateFacilityCode`：格式正则 + 序号 000/00000 预留禁用 + DB CHECK 双层校验；单测覆盖 14 例 | ✅ 000078 |
 | E10 | 前缀冲突：`ports.port_code='P-SPLxx-yy'` vs 电杆 `P01001` | 字母前缀 `P` 双义 | 裁定：ODN 规范码落 odn_* 表独立命名空间（`prv_code`/`city_prefix`/未来基础设施码列），`ports.port_code` 保留为 BOSS 内部资源码，二者不混存不互斥，冲突消解 | ✅ 裁定 |
-| E11 | 姊妹规范设备码 `OLT001`（无连字符）vs `Resource.Code` `OLT-01` | 核心链路设备编码格式分歧 | 同 E10：ODN 链路编码是 odn 域编码体系，`resource.code` 是 BOSS 内部资源码，经映射关联、不强制改名；odn 域开工时落 `odn_code` 专列 | ✅ 裁定（映射随 E6） |
+| E11 | 姊妹规范设备码 `OLT001`（无连字符）vs `Resource.Code` `OLT-01` | 核心链路设备编码格式分歧 | 裁定同 E10；落地：migrations/000081 `odn_site`（NodeCode=城市前缀+3 位序号）+ `odn_device`（SNW 全网唯一/其余市域唯一，ODB→OCC/SDB→ODB/PRT→SDB/TBP→PRT 归属链，同址扩容 `-N` N≥2 禁 `-1`），设备直接落 ODN 编码体系（code 列），`resource.code` 保留不改；REST `/odn/sites|devices` 已接；102 PG 集成实测 | ✅ 000081 |
 
-> 姊妹文档《Suniway ODN 基础设施资源编码规范》V1.0 已对账：核心链路拓扑（`SNW_PRV_NodeCode_ODF?_OCC?_ODB_SDB_PRT_TBP?`）、连接符规则（系统一律 `_`、扩容后缀 `-N`（禁 `-1`）、`--` 仅图纸）、标签规范均归 odn 域编码体系，系统侧校验正则随 E6 落地。
+> 姊妹文档《Suniway ODN 基础设施资源编码规范》V1.0 已对账并落地：核心链路拓扑（`SNW_PRV_NodeCode_ODF?_OCC?_ODB_SDB_PRT_TBP?`）、连接符规则（系统一律 `_`、扩容后缀 `-N`（禁 `-1`）、`--` 仅图纸）、编号隔离域与归属链见 odn_device；箱内部件（OBD/FDP 2 位号）待需求驱动再建。
 > 规范文档自身缺陷（83省 vs PSA 82省混排 HUC、城市前缀 3字母 vs 索引表 4-5 字母、塔布克/阿拉贝尔/纳本图兰归属错误、Maguindanao 已拆分未更新）已登记 `ISSUE.md`，映射一律按 PSA PSGC 事实裁定并在 note 列留痕。

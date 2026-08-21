@@ -108,6 +108,14 @@ type ODNService interface {
 	ListSegments(ctx context.Context, endpoint string) ([]Segment, error)
 	AddFiber(ctx context.Context, segID int64, f Fiber) error
 	ListFibers(ctx context.Context, segID int64) ([]Fiber, error)
+
+	// 局点与核心链路设备(资产编码规范第 2/3 章)。
+	ListSites(ctx context.Context, prvCode, cityPrefix string) ([]Site, error)
+	CreateSite(ctx context.Context, st Site) error
+	RetireSite(ctx context.Context, prvCode, cityPrefix string, siteNo int16) error
+	CreateDevice(ctx context.Context, d Device) error
+	ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error)
+	RetireDevice(ctx context.Context, id int64) error
 }
 
 // GridRef 网格定位(城市 + 网格码)。

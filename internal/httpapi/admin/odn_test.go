@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,6 +29,14 @@ type fakeODN struct {
 
 func (f *fakeODN) CreateFacility(_ context.Context, fac odn.Facility) error {
 	f.created = &fac
+	return f.createErr
+}
+
+func (f *fakeODN) CreateSite(_ context.Context, st odn.Site) error {
+	return f.createErr
+}
+
+func (f *fakeODN) CreateDevice(_ context.Context, d odn.Device) error {
 	return f.createErr
 }
 
@@ -115,5 +124,30 @@ func TestODNSegmentHandlers(t *testing.T) {
 		f := &fakeODN{createErr: errors.New("boom")}
 		doJSON(odnRouter(f), http.MethodPost, "/api/admin/v1/odn/segments",
 			`{"endpoint1":"ODF001","endpoint2":"OCC001"}`)
+	})
+}
+
+func TestODNSiteDeviceHandlers(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST /odn/sites 回显 NodeCode", func(t *testing.T) {
+		f := &fakeODN{}
+		w := doJSON(odnRouter(f), http.MethodPost,
+			"/api/admin/v1/odn/sites?prvCode=PHL001&cityPrefix=MNL", `{"siteNo":1,"name":"中心局点"}`)
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "MNL001") {
+			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+	t.Run("POST /odn/devices 层级错误映射", func(t *testing.T) {
+		f := &fakeODN{createErr: odn.ErrBadHierarchy}
+		w := doJSON(odnRouter(f), http.MethodPost, "/api/admin/v1/odn/devices",
+			`{"code":"SDB001","kind":"SDB","prvCode":"PHL001","cityPrefix":"MNL","parentId":1}`)
+		var body struct {
+			Code int `json:"code"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &body)
+		if body.Code != 42200 {
+			t.Fatalf("期望 42200,body=%s", w.Body.String())
+		}
 	})
 }

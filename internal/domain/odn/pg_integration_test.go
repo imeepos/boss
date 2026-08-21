@@ -152,3 +152,89 @@ func TestODNCable_Integration(t *testing.T) {
 	// 清理。
 	pool.Exec(ctx, "DELETE FROM odn_cable_segment WHERE a_code='ODF001' AND b_code='OCC001'")
 }
+
+// TestODNSiteDevice_Integration 局点 + 核心链路设备端到端(需真实 PostgreSQL)。
+func TestODNSiteDevice_Integration(t *testing.T) {
+	dsn := os.Getenv("BOSS_PG_TEST_DSN")
+	if dsn == "" {
+		t.Skip("BOSS_PG_TEST_DSN 未设置,跳过集成测试")
+	}
+	ctx := context.Background()
+	pool, err := database.Open(ctx, dsn)
+	if err != nil {
+		t.Fatalf("database.Open: %v", err)
+	}
+	defer pool.Close()
+	if err := database.Migrate(ctx, pool, "../../../migrations"); err != nil {
+		t.Fatalf("database.Migrate: %v", err)
+	}
+	s := NewPGStore(pool)
+	cleanup := func() {
+		pool.Exec(ctx, `DELETE FROM odn_device WHERE prv_code='PHL001' AND city_prefix='MNL'
+			AND code IN ('SNW990','OLT990','OCC990','ODB990','ODB990-2','SDB990')`)
+		pool.Exec(ctx, `DELETE FROM odn_site WHERE prv_code='PHL001' AND city_prefix='MNL' AND site_no=998`)
+	}
+	cleanup()
+	t.Cleanup(cleanup)
+
+	// 局点:MNL998(避开规范预留 MNL150~999 之外的测试位? 998 在预留段,测试专用)。
+	if err := s.CreateSite(ctx, Site{PrvCode: "PHL001", CityPrefix: "MNL",
+		SiteNo: 998, Name: "集成测试局点"}); err != nil {
+		t.Fatalf("CreateSite: %v", err)
+	}
+	sites, err := s.ListSites(ctx, "PHL001", "MNL")
+	if err != nil || len(sites) == 0 {
+		t.Fatalf("ListSites: %v %d", err, len(sites))
+	}
+
+	// 顶层设备 SNW(全网唯一)与 OCC(市域唯一)。
+	if err := s.CreateDevice(ctx, Device{Code: "SNW990", Kind: DevSNW,
+		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 998}); err != nil {
+		t.Fatalf("CreateDevice SNW990: %v", err)
+	}
+	if err := s.CreateDevice(ctx, Device{Code: "OCC990", Kind: DevOCC,
+		PrvCode: "PHL001", CityPrefix: "MNL"}); err != nil {
+		t.Fatalf("CreateDevice OCC990: %v", err)
+	}
+	// 归属链:ODB 必须挂在 OCC 下;错挂 OLT 下拒绝。
+	devs, err := s.ListDevices(ctx, DevOCC, "PHL001", "MNL")
+	if err != nil || len(devs) != 1 {
+		t.Fatalf("ListDevices OCC: %v %d", err, len(devs))
+	}
+	occID := devs[0].ID
+	if err := s.CreateDevice(ctx, Device{Code: "ODB990", Kind: DevODB,
+		PrvCode: "PHL001", CityPrefix: "MNL", ParentID: 999999}); err == nil {
+		t.Fatal("上级不存在应拒绝")
+	}
+	if err := s.CreateDevice(ctx, Device{Code: "ODB990", Kind: DevODB,
+		PrvCode: "PHL001", CityPrefix: "MNL", ParentID: occID}); err != nil {
+		t.Fatalf("CreateDevice ODB990: %v", err)
+	}
+	// 同址扩容:ODB990-2 挂同一 OCC。
+	if err := s.CreateDevice(ctx, Device{Code: "ODB990-2", Kind: DevODB,
+		PrvCode: "PHL001", CityPrefix: "MNL", ParentID: occID}); err != nil {
+		t.Fatalf("CreateDevice ODB990-2: %v", err)
+	}
+	// SDB 必须挂 ODB 下,挂 OCC 拒绝。
+	if err := s.CreateDevice(ctx, Device{Code: "SDB990", Kind: DevSDB,
+		PrvCode: "PHL001", CityPrefix: "MNL", ParentID: occID}); err == nil {
+		t.Fatal("SDB 挂 OCC 应拒绝(须挂 ODB)")
+	}
+	odbs, _ := s.ListDevices(ctx, DevODB, "PHL001", "MNL")
+	if len(odbs) != 2 {
+		t.Fatalf("ODB 期望 2 台(含扩容),实际 %d", len(odbs))
+	}
+	for _, d := range odbs {
+		if d.ParentID != occID {
+			t.Fatalf("ODB %s 归属错误 parent=%d", d.Code, d.ParentID)
+		}
+	}
+
+	// 报废锁定 + 局点退役联动。
+	if err := s.RetireDevice(ctx, occID); err != nil {
+		t.Fatalf("RetireDevice: %v", err)
+	}
+	if err := s.RetireSite(ctx, "PHL001", "MNL", 998); err == nil {
+		t.Fatal("SNW990 仍挂局点 998,退役应失败")
+	}
+}

@@ -158,3 +158,83 @@ paths:
                 gNo: { type: integer, minimum: 1, maximum: 99 }
                 kind: { type: string, description: 光缆型号 }
       responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /odn/sites:
+    get:
+      tags: [ODN]
+      summary: 局点列表(NodeCode = 城市前缀 + 3 位序号)
+      operationId: listOdnSites
+      parameters:
+        - { name: prvCode, in: query, required: true, schema: { type: string } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 新建局点(规划部分配序号)
+      operationId: createOdnSite
+      parameters:
+        - { name: prvCode, in: query, required: true, schema: { type: string } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [siteNo]
+              properties:
+                siteNo: { type: integer, minimum: 1, maximum: 999 }
+                name: { type: string }
+                lat: { type: number }
+                lng: { type: number }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/sites/{siteNo}:
+    delete:
+      tags: [ODN]
+      summary: 局点退役(须无在用设备挂接)
+      operationId: retireOdnSite
+      parameters:
+        - { name: siteNo, in: path, required: true, schema: { type: integer } }
+        - { name: prvCode, in: query, required: true, schema: { type: string } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /odn/devices:
+    get:
+      tags: [ODN]
+      summary: 核心链路设备列表(kind/城市过滤)
+      operationId: listOdnDevices
+      parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [SNW, OLT, ODF, OCC, ODB, SDB, PRT, TBP] } }
+        - { name: prvCode, in: query, schema: { type: string } }
+        - { name: cityPrefix, in: query, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 新建设备(格式/归属链校验;SNW 全网唯一,其余市域唯一;扩容后缀 -N N>=2)
+      operationId: createOdnDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, kind, prvCode, cityPrefix]
+              properties:
+                code: { type: string, examples: [OLT001, ODB001-2], description: '^(SNW|OLT|ODF|OCC|ODB|SDB|PRT|TBP)[0-9]{3}(-[2-9][0-9]*)?$' }
+                kind: { type: string, enum: [SNW, OLT, ODF, OCC, ODB, SDB, PRT, TBP] }
+                prvCode: { type: string, examples: [PHL001] }
+                cityPrefix: { type: string, examples: [MNL] }
+                siteNo: { type: integer, description: 归属局点序号,0=市域设备 }
+                parentId: { type: integer, description: ODB/SDB/PRT/TBP 必填,上级类型见规范 2.1 }
+                name: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/devices/{id}:
+    delete:
+      tags: [ODN]
+      summary: 设备报废(编码永久锁定)
+      operationId: retireOdnDevice
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Ok' } }

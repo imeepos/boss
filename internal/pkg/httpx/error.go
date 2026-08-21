@@ -62,7 +62,9 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, odn.ErrGridMissing),
 		errors.Is(err, odn.ErrGridFull),
 		errors.Is(err, odn.ErrInvalidEndpoint),
-		errors.Is(err, odn.ErrSamePriority):
+		errors.Is(err, odn.ErrSamePriority),
+		errors.Is(err, odn.ErrInvalidDeviceCode),
+		errors.Is(err, odn.ErrBadHierarchy):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, odn.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)

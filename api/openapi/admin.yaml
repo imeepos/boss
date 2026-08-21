@@ -322,3 +322,7 @@ paths:
   /odn/facilities/{code}: { $ref: './admin/odn.yaml#/paths/~1odn~1facilities~1{code}' }
   /odn/segments: { $ref: './admin/odn.yaml#/paths/~1odn~1segments' }
   /odn/segments/{id}/fibers: { $ref: './admin/odn.yaml#/paths/~1odn~1segments~1{id}~1fibers' }
+  /odn/sites: { $ref: './admin/odn.yaml#/paths/~1odn~1sites' }
+  /odn/sites/{siteNo}: { $ref: './admin/odn.yaml#/paths/~1odn~1sites~1{siteNo}' }
+  /odn/devices: { $ref: './admin/odn.yaml#/paths/~1odn~1devices' }
+  /odn/devices/{id}: { $ref: './admin/odn.yaml#/paths/~1odn~1devices~1{id}' }

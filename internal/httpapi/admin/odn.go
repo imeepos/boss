@@ -107,6 +107,7 @@ func registerODNRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	registerODNFacilityRoutes(g, a, perm)
 	registerODNCableRoutes(g, a, perm)
+	registerODNSiteDeviceRoutes(g, a, perm)
 }
 
 // odnPathParamInt 路径参数转 int16,失败已回 400。
