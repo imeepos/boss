@@ -165,3 +165,37 @@ func TestPGStore_SendMessage(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+func TestPGStore_AppendAndListClocks(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	day := time.Date(2026, 8, 21, 0, 0, 0, 0, time.Local)
+	start := time.Date(2026, 8, 21, 0, 0, 0, 0, time.Local)
+	end := start.Add(24 * time.Hour)
+	mock.ExpectQuery(`INSERT INTO worker_attendance`).
+		WithArgs(int64(7), "IN", pgxmock.AnyArg()).
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
+	mock.ExpectQuery(`SELECT id, worker_id, clock_type, clocked_at`).
+		WithArgs(int64(7), start, end).
+		WillReturnRows(mock.NewRows([]string{"id", "worker_id", "clock_type", "clocked_at"}).
+			AddRow(int64(1), int64(7), "IN", ts))
+
+	s := NewPGStore(mock)
+	if _, err := s.AppendClock(context.Background(), Attendance{WorkerID: 7, ClockType: "IN", ClockedAt: day}); err != nil {
+		t.Fatalf("AppendClock: %v", err)
+	}
+	got, err := s.ListClocks(context.Background(), 7, day)
+	if err != nil {
+		t.Fatalf("ListClocks: %v", err)
+	}
+	if len(got) != 1 || got[0].ClockType != "IN" {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}

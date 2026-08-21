@@ -144,3 +144,11 @@ func TestUserdataGapAccountNotFound(t *testing.T) {
 		t.Fatalf("want code 40400, got %s", got)
 	}
 }
+
+func (f *fakeWorkerLedger) AppendClock(context.Context, worker.Attendance) (int64, error) {
+	return 1, nil
+}
+
+func (f *fakeWorkerLedger) ListClocks(context.Context, int64, time.Time) ([]worker.Attendance, error) {
+	return nil, nil
+}

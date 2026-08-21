@@ -29,6 +29,10 @@ type fakeDispatchOrder struct {
 func (f *fakeDispatchOrder) ListDispatchTickets(context.Context) ([]order.DispatchTicket, error) {
 	return f.tickets, nil
 }
+
+func (f *fakeDispatchOrder) ListTicketItems(context.Context) ([]order.TicketItem, error) {
+	return nil, nil
+}
 func (f *fakeDispatchOrder) GetDispatchTicketByNo(_ context.Context, no string) (*order.DispatchTicket, error) {
 	if f.byNo != nil {
 		f.byNo.TicketNo = no

@@ -19,7 +19,7 @@ func registerWorkerPortalProfileRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/profile", workerProfileHandler(a))
 	g.GET("/performance", workerPerformanceHandler(a))
 	g.GET("/schedule", workerScheduleHandler(a))
-	g.POST("/schedule/clock", workerClockHandler)
+	g.POST("/schedule/clock", workerClockHandler(a))
 	g.GET("/settings", workerSettingsGetHandler(a))
 	g.PUT("/settings", workerSettingsPutHandler(a))
 	g.GET("/feedbacks", workerFeedbacksHandler(a))
@@ -123,13 +123,51 @@ func workerScheduleHandler(a *app.Application) gin.HandlerFunc {
 				busy = append(busy, s.BusyDays)
 			}
 		}
-		respond(c, apitypes.CodeOK, gin.H{"month": month, "busyDays": busy, "today": []gin.H{}})
+		clocks, err := a.WorkerLedger.ListClocks(c.Request.Context(), workerID, time.Now())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		today := make([]gin.H, 0, len(clocks))
+		for _, a := range clocks {
+			today = append(today, gin.H{"type": a.ClockType, "clockedAt": a.ClockedAt.Format("15:04")})
+		}
+		respond(c, apitypes.CodeOK, gin.H{"month": month, "busyDays": busy, "today": today})
 	}
 }
 
-// workerClockHandler 工时打卡:考勤流水表缺失,回执当前时间(缺口见报告)。
-func workerClockHandler(c *gin.Context) {
-	respond(c, apitypes.CodeOK, gin.H{"clockedAt": nowHM()})
+// workerClockHandler 工时打卡:落 worker_attendance 流水,回执当前时间与当日记录。
+func workerClockHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		workerID, _ := portalWorker(c)
+		var req workerClockReq
+		if err := c.ShouldBindJSON(&req); err != nil || (req.Type != "IN" && req.Type != "OUT") {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		now := time.Now()
+		if _, err := a.WorkerLedger.AppendClock(c.Request.Context(), worker.Attendance{
+			WorkerID: workerID, ClockType: req.Type, ClockedAt: now,
+		}); err != nil {
+			respondErr(c, err)
+			return
+		}
+		clocks, err := a.WorkerLedger.ListClocks(c.Request.Context(), workerID, now)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		today := make([]gin.H, 0, len(clocks))
+		for _, a := range clocks {
+			today = append(today, gin.H{"type": a.ClockType, "clockedAt": a.ClockedAt.Format("15:04")})
+		}
+		respond(c, apitypes.CodeOK, gin.H{"clockedAt": now.Format("15:04"), "today": today})
+	}
+}
+
+// workerClockReq 打卡请求体;type 取契约枚举 IN/OUT。
+type workerClockReq struct {
+	Type string `json:"type"`
 }
 
 // workerSettingsGetHandler 接单设置查询;未设置返回默认。

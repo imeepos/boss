@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -116,4 +117,40 @@ func (s *PGStore) SendMessage(ctx context.Context, m Message) (int64, error) {
 		return 0, fmt.Errorf("worker: send message: %w", err)
 	}
 	return id, nil
+}
+
+// AppendClock 追加考勤打卡流水,返回自增 id。
+func (s *PGStore) AppendClock(ctx context.Context, a Attendance) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `
+		INSERT INTO worker_attendance(worker_id, clock_type, clocked_at)
+		VALUES($1,$2,$3) RETURNING id`, a.WorkerID, a.ClockType, a.ClockedAt).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("worker: append clock: %w", err)
+	}
+	return id, nil
+}
+
+// ListClocks 取师傅当日打卡流水(自然日按本地时区,day 取其零点后区间)。
+func (s *PGStore) ListClocks(ctx context.Context, workerID int64, day time.Time) ([]Attendance, error) {
+	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
+	end := start.Add(24 * time.Hour)
+	rows, err := s.db.Query(ctx, `
+		SELECT id, worker_id, clock_type, clocked_at
+		FROM worker_attendance
+		WHERE worker_id = $1 AND clocked_at >= $2 AND clocked_at < $3
+		ORDER BY clocked_at, id`, workerID, start, end)
+	if err != nil {
+		return nil, fmt.Errorf("worker: list clocks: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Attendance, 0)
+	for rows.Next() {
+		var a Attendance
+		if err := rows.Scan(&a.ID, &a.WorkerID, &a.ClockType, &a.ClockedAt); err != nil {
+			return nil, fmt.Errorf("worker: scan clock: %w", err)
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
 }

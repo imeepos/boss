@@ -42,7 +42,15 @@ type Message struct {
 	Read     bool      `json:"read"`
 }
 
-// WorkerLedgerService 师傅台账域服务口(阶段2):归属台账/接单设置/站内消息。
+// Attendance 考勤打卡流水(师傅端上下班打卡)。
+type Attendance struct {
+	ID        int64     `json:"id"`
+	WorkerID  int64     `json:"workerId"`
+	ClockType string    `json:"clockType"` // IN 上班 / OUT 下班(契约 profile.yaml)
+	ClockedAt time.Time `json:"clockedAt"`
+}
+
+// WorkerLedgerService 师傅台账域服务口(阶段2):归属台账/接单设置/站内消息/考勤。
 type WorkerLedgerService interface {
 	ListMemberships(ctx context.Context, workerID int64) ([]Membership, error)
 	AppendMembership(ctx context.Context, m Membership) (int64, error)
@@ -50,4 +58,7 @@ type WorkerLedgerService interface {
 	UpsertSettings(ctx context.Context, s Settings) (int64, error)
 	ListMessages(ctx context.Context, workerID int64) ([]Message, error)
 	SendMessage(ctx context.Context, m Message) (int64, error)
+	// AppendClock 追加打卡流水;ListClocks 按师傅+自然日取当日流水。
+	AppendClock(ctx context.Context, a Attendance) (int64, error)
+	ListClocks(ctx context.Context, workerID int64, day time.Time) ([]Attendance, error)
 }

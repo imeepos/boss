@@ -251,3 +251,11 @@ func TestConfirmAssetReturn(t *testing.T) {
 		t.Fatalf("status=%d confirmed=%d", w.Code, f.confirmed)
 	}
 }
+
+func (f *fakeWorkerOps) AppendClock(context.Context, worker.Attendance) (int64, error) {
+	return 1, nil
+}
+
+func (f *fakeWorkerOps) ListClocks(context.Context, int64, time.Time) ([]worker.Attendance, error) {
+	return nil, nil
+}
