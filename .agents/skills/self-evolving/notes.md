@@ -170,3 +170,8 @@
 - 新坑(重试已成功的 edit 导致双重插入):一次消息里发了两次同样的 edit,第一次成功第二次把 Push 装配块插了两遍,靠 grep 发现。重试前先确认上次是否已生效。
 - skill 提前预警了:menu.def 新增项必须补 items/<key>.svg(docs/boss-admin-web.md 记录),这次靠它躲过无图标坑;红线#3(禁原生 select)第一次写就踩了,靠红线记忆当场改 Dropdown。
 - UI 验证新姿势:AuthGuard 需要 boss.servers JSON 含 id 字段且 boss.server.active 指向该 id;vite 无代理禁用,API 直连绝对地址;DOM 断言用 --eval "JSON.stringify({path,text})" 比截图更硬。
+
+## 2026-08-21 附件管理组件(web/admin 前后端)
+- 最耗时的坑:并行 agent 共享工作区。兄弟会话先改坏 App.tsx(引用未建的 ./pages/backup)致 vite 500、又停掉 5199 dev server、最后把我的全部改动卷进它的混合提交(fe30e60/7d0d984,不可独立 revert)。
+- skill 提前警告过吗:警告过并行 agent 风险,但"改动被兄弟会话代为混合提交"是新变体;cdp 首个 eval 在 about:blank 执行抛 SecurityError 的竞态 skill 未提。
+- 重来一次:早 10 分钟用 git diff --name-only 快照自己的文件清单;dev server 自己起而非蹭兄弟的;cdp 用"eval1 注入+跳转合并、eval2 轮询"结构一次成功。

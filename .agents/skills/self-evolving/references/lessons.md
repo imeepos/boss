@@ -176,3 +176,6 @@
 - 重发同一 edit 前先确认上次结果:一次消息里重复的 edit 会双倍插入,重试成功的 edit = 制造重复块(2026-08-25 wiring.go Push 块 x2)。
 - 共享工作区有并行 agent 时:自己 write 的文件可能被对方改写/提交,提交前用 git log/diff 认领自己的产物,不重提对方的中间态(2026-08-25 push-config 与 backup 并行)。
 - admin 页面 UI 实测:localStorage 注 boss.servers 必须 [{id,name,baseUrl}] 且 active=id;无 vite 代理,API 直连 baseUrl;DOM 断言优先于截图(2026-08-25)。
+- lessons 74: 共享工作区并行会话可能把你的未提交改动卷进它的混合提交——完工即自commit,不给别人代提交的机会;发现被卷提交不可 revert 拆分,只能记录(7d0d984/fe30e60)。
+- lessons 75: cdp-capture 首个 --eval 偶发在 about:blank 上执行(localStorage SecurityError)——注入与 location.href 合并成一个 eval,第二个 eval 只做轮询断言,一次成功。
+- lessons 76: vite 突然 500 "Failed to resolve import"先查并行会话是否 mid-edit 共享入口文件(App.tsx),等 1-2 分钟再curl该模块确认,别急着改自己代码。
