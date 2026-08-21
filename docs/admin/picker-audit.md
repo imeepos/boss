@@ -1,5 +1,9 @@
 # 选择器对接审计（2026-08-21）
 
+> **状态:清单 1-10 已全部落地(提交 b89b873);#11 payment 账单号保留手填(账单号语义强)。**
+> 真实 DOM 验证:billing 客户选择器(选中→trigger 显示→GET /bills?customerId=213 网络断言)、
+> provlog 任务选择器(本地关键字过滤)均通过;其余页面同构替换。
+
 > 目标:所有"手填实体 ID"的页面一律换选择器。基座组件 `web/admin/src/components/pickers/`
 > (EntityPicker:服务端 keyword 检索 + DetailDrawer 详情 + 前往管理页);用户/师傅/客户三域
 > 已有现成封装,其余域用 ResourcePicker(load/search 模式)。
