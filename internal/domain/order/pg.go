@@ -8,6 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/ymm-001/boss/internal/pkg/clock"
 )
 
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
@@ -112,9 +114,11 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 	}
 
 	// 订单号由数据库序列发号(migrations/000031):跨进程/重启不重复。
+	// 日期段按业务时区切日(会话时区 UTC,裸 now() 在马尼拉 08:00 前会算前一天)。
 	var orderNo string
 	if err := s.db.QueryRow(ctx,
-		`SELECT 'ORD-' || to_char(now(), 'YYYYMMDD') || '-' || lpad(nextval('order_no_seq')::text, 6, '0')`,
+		`SELECT 'ORD-' || to_char(now() AT TIME ZONE $1, 'YYYYMMDD') || '-' || lpad(nextval('order_no_seq')::text, 6, '0')`,
+		clock.Location().String(),
 	).Scan(&orderNo); err != nil {
 		return nil, fmt.Errorf("order: next order_no: %w", err)
 	}

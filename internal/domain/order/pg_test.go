@@ -44,6 +44,7 @@ mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(1), "root.luzon"))
 		mock.ExpectQuery(`SELECT 'ORD-'`).
+			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
 		mock.ExpectQuery(`INSERT INTO orders`).
 			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(1), "root.luzon").
@@ -83,6 +84,7 @@ mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 		mock.ExpectQuery(`SELECT id, 'root' FROM legal_entities`).
 			WillReturnRows(mock.NewRows([]string{"id", "path"}).AddRow(int64(9), "root"))
 		mock.ExpectQuery(`SELECT 'ORD-'`).
+			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
 		mock.ExpectQuery(`INSERT INTO orders`).
 			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(9), "root").

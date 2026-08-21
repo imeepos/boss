@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ymm-001/boss/internal/pkg/clock"
 )
 
 // CustomerLookup 下单时校验客户存在的跨域依赖口(契约 CT-001 反方向读取)。
@@ -74,7 +76,7 @@ func (s *MemoryService) Submit(ctx context.Context, req SubmitReq) (*Order, erro
 	s.seq++
 	o := &Order{
 		ID:            s.seq,
-		OrderNo:       fmt.Sprintf("ORD-%s-%03d", time.Now().Format("20060102"), s.seq),
+		OrderNo:       fmt.Sprintf("ORD-%s-%03d", clock.Now().Format("20060102"), s.seq),
 		CustomerID:    req.CustomerID,
 		OfferID:       req.OfferID,
 		AddressID:     req.AddressID,
