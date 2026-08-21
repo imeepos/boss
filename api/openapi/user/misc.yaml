@@ -44,6 +44,28 @@ paths:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
 
+  /messages/{messageId}/read:
+    put:
+      tags: [Misc]
+      summary: 单条消息标为已读
+      operationId: readOneMessage
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 已读成功
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+        '404':
+          description: 消息不存在或不属于当前用户
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/Error' }
+
   /coupons:
     get:
       tags: [Misc]
@@ -176,3 +198,18 @@ paths:
                 properties:
                   code: { type: integer, example: 0 }
                   data: { type: object }
+
+  /debug/sms-code:
+    get:
+      tags: [Misc]
+      summary: 开发模式验证码回显(仅 BOSS_DEBUG_SMS=1 时注册;严禁线上开启)
+      description: |
+        login/register/reset 场景公开;verify 场景须带 JWT(phone 从 claims 解)。
+        返回该手机号最近一条未过期且未消费的验证码。
+      operationId: debugSmsCode
+      parameters:
+        - { name: phone, in: query, schema: { type: string } }
+        - { name: scene, in: query, schema: { type: string, enum: [login, register, reset, verify] } }
+      responses:
+        '200': { description: 命中;data 含 code/issuedAt }
+        '404': { description: 无有效验证码 }

@@ -86,9 +86,11 @@ paths:
   /service/chat: { $ref: './user/customer-service.yaml#/paths/~1service~1chat' }
   /service/faq: { $ref: './user/customer-service.yaml#/paths/~1service~1faq' }
   # ---------- Misc ----------
+  /debug/sms-code: { $ref: './user/misc.yaml#/paths/~1debug~1sms-code' }
   /home: { $ref: './user/misc.yaml#/paths/~1home' }
   /messages: { $ref: './user/misc.yaml#/paths/~1messages' }
   /messages/read-all: { $ref: './user/misc.yaml#/paths/~1messages~1read-all' }
+  /messages/{messageId}/read: { $ref: './user/misc.yaml#/paths/~1messages~1{messageId}~1read' }
   /coupons: { $ref: './user/misc.yaml#/paths/~1coupons' }
   /usage: { $ref: './user/misc.yaml#/paths/~1usage' }
   /addresses: { $ref: './user/misc.yaml#/paths/~1addresses' }
