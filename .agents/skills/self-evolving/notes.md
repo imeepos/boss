@@ -798,3 +798,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - skill 预警：红线1(编辑前 read)多次救场;但"共享工作区文件可能被并行进程改掉"这条应升级意识:提交前必须 git status+log 核对,编号类资源(migration 序号)先 ls 再定。
 - 重来一次：生成 migration 前先 ls migrations/ 拿最新序号,并在提交信息里写死文件名防混淆。
 - 坑:python 内联补丁脚本改脚本(patching a patching),越改越乱,最后整文件重写才收敛——>3 次补丁就该重写。
+
+## 2026-08-20 订单生命周期 UI 闭环
+- 最费时:cdp 验证登录门禁页面(reload 停在 /login 排查 3 轮)——skill 有 localStorage 注入配方但没写"必须从 /login 起步再 replace";已补进 lessons。
+- 踩坑:并行会话把我未提交的文件扫进它的 docs 提交;以后提交用明确文件清单。
+- 重来一次:改完立刻 commit,不留给并行进程捡漏。
