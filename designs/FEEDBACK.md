@@ -239,3 +239,33 @@
   无法创建),根因是 quad_links 存在 customer_id=213 的两行重复(UNLINKED stale +
   LINKED current),手动 DELETE stale 行后重启成功。规则:CI 构建失败时,
   先查 docker logs 看哪条迁移卡住,再查对应表数据是否满足约束。
+
+### F. 官网首页 redesign 落地(2025-08-21 完成)
+- 设计稿：`designs/landing-page-v1.png`（PC admin 1536×1024 横版）+ `designs/landing-page-v1.spec.md`
+- 风格：科技商务风，深藏青 `#0F1E3B` + 金色 `#D5A63A` 主调，浅蓝渐变 Hero 区配内联 SVG 网络装饰
+- 7 个区块：sticky 顶栏（Logo+3 锚点+语言/主题切换+CTA）→ Hero（双栏）→ 数据条（3 KPI 金色）→ 核心能力（6 卡 3×2）→ 客户成功实践（3 卡绿色语义图标+metric）→ CTA 横幅（皇冠+深底）→ 深色页脚
+- 实现拆分：home/index.tsx (68 行聚合) + sections.tsx (230 行 6 个子区块) + icons.tsx (33 行) + HeroNetworkDecoration.tsx (49 行 SVG 装饰)
+- i18n 三语同步新增 14 字段：navSolutions/bookDemo/bookExclusive/learnMore/heroLine2/casesTitle/casesSubtitle/cases/ctaBannerTitle/ctaBannerSubtitle/viewDetail/footerCopyright + 重命名 3 个旧字段
+- 新增 7 个 SVG 图标（order/asset/network/twin/5g/refine/ops），全部 24 viewBox/stroke 1.8/round
+- Hero 标题修复：`grid-cols-[1.2fr_1fr]` + `whitespace-nowrap` 双 span 解决 mid-character 折行（"营"单独成行）
+- 落地路径 2c34af5（被并行会话的混合 commit 携带，非独立提交）
+- **教训沉淀**：
+  1. 共享工作区并行会话 `git add -A` 会把所有人的未提交改动卷入同一 commit（landing-page redesign 与附件管理器/empty state refactor 混在 2c34af5 共 82 文件）。修法：开工前 `git status` 划定边界、提交前用 pathspec 限制 `git add <明确清单>`，被卷入时**总结里点名告知用户**而非默默接受。
+  2. 共享 i18n 文件被并行会话争抢时出现"自己的 key 丢失"：执行 `git checkout HEAD -- file` + 重应用后必须 `git diff --stat` 验证自己加的 key 仍在；本次经历 3 次往返才稳住。
+  3. Hero 类大标题若用 `<br/>` 强制换行 + 2 列网格，列宽不够时第一个 span 内的中文字符会单独折行。修法：`whitespace-nowrap` 包每个 span + 主网格调成 `[1.2fr_1fr]` 给文字更多宽度；通用规则：中文标题强制不折行要显式 `whitespace-nowrap`。
+  4. 位图模型没有精确尺寸概念——设计稿里 48px 标题在 2 列网格的左列里必然溢出。spec 必须写明"hero 标题在 [md+] 用 whitespace-nowrap + 列比例 ≥ 1.2"，实现才能落实。
+
+### A. 附件管理器 9 类文件识别 + 彩色徽章(2025-08-21 完成)
+- 设计稿：`designs/attachment-manager-v1.png`（PC admin 1536×1024 横版）
+- 核心改进：原 AttachmentManager 仅展示 contentType 文本，行内无视觉区分。新版本按 MIME + 扩展名归 9 类（image/audio/video/pdf/document/spreadsheet/archive/code/other），行首 28-32px 圆角浅底彩色徽章 + 左侧分类侧栏 + 顶部类型下拉 + 列表/网格视图切换。
+- 颜色写入 `tokens.css` 的 `.afti-*` 类（[data-theme] 双套），避免 JS 读主题。
+- 客户端按类型过滤（后端契约不动），badge 显示当前页内分布；分页器在过滤后重算 total。
+- 双主题截图验证（亮/暗各一张）：对比度足够，色彩克制。
+- i18n 三语同步新增 fileCategory/filterByType/filterScopeHint/downloadSelected/download/categoryBadgeTip。
+- 单测 126 通过：classifyAttachment 覆盖 9 类 + 边界（MIME/扩展名/中文名/URL 带 query/.tar.gz 复合扩展）。
+- 落地路径 2c34af5（被并行会话合并提交到 mixed commit）。
+- **教训沉淀**：
+  1. 共享工作区并行 agent 可能把"自己的文件"和"对方正在改的文件"合并提交（rule 79）。本次 AttachmentManager 重设计 + table empty states refactor + 官网首页 redesign 全混在 2c34af5 一次提交（82 files,1530+ 346-），违反"一次提交=一个可独立陈述的变更"原则。修法：开工前 `git status` 确认彼此边界，发现被卷进非自己任务范围的 commit 时**在总结里点名告知用户**，不默默接受。
+  2. 共享 i18n 文件（types.ts + 三份 locale）被多个并行会话争抢时，会出现"自己写的 key 丢失"现象（typeScript 被 reset 后我自己加的 key 没了），必须**最后 git diff 验证自己的 key 仍存在**，否则从头补一次。
+  3. `.afti-*` CSS 变量按 [data-theme] 双套是简单可靠的多主题配色方案：无需 JS 读 `data-theme`，只需 CSS 选择器覆盖；组件代码零分支。
+  4. 网格/列表视图的 toggle 按钮 aria-label 必须用人类可读文本（"grid"），不能拼字符串（`'文件名 list'`）——前者稳定，后者对前端可控性差。
