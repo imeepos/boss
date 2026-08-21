@@ -34,3 +34,27 @@ func TestPGStore_AssignDispatchTicket(t *testing.T) {
 		}
 	})
 }
+
+// TestPGStore_DispatchOrder_CreatesTicket 契约:环节8 派单推进状态机后同步落待派工单(幂等)。
+func TestPGStore_DispatchOrder_CreatesTicket(t *testing.T) {
+	mock, _ := pgxmock.NewPool()
+	defer mock.Close()
+	mock.ExpectQuery(`SELECT stage, status FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(pgxmock.NewRows([]string{"stage", "status"}).AddRow(int16(7), "RESERVED"))
+	mock.ExpectExec(`UPDATE orders SET stage`).
+		WithArgs(int64(7), int8(8), "INSTALLING").
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectExec(`INSERT INTO order_stages`).
+		WithArgs(int64(7), int8(8), "DONE").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectExec(`INSERT INTO dispatch_tickets`).
+		WithArgs(int64(7)).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	if err := NewPGStore(mock, nil, nil).DispatchOrder(context.Background(), 7); err != nil {
+		t.Fatalf("DispatchOrder: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
