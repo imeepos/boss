@@ -84,7 +84,7 @@ function SearchBox({ groups }: { groups: MenuGroup[] }) {
       <SearchIcon />
       <input
         ref={inputRef}
-        className="w-45 border-0 bg-none text-[13px] text-white outline-none transition-[width] placeholder:text-white/45 max-[959px]:w-27"
+        className="w-[180px] border-0 bg-none text-[13px] text-white outline-none transition-[width] placeholder:text-white/45 max-[959px]:w-[108px]"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onBlur={collapse}
@@ -174,7 +174,7 @@ function UserMenu({ profile }: { profile: Profile }) {
         <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--color-brand-gold-500)] text-[13px] font-semibold text-[var(--color-brand-navy-950)]">{profile.realName.slice(0, 1)}</span>
       </button>
       {open && (
-        <div className={cn(MENU, 'min-w-45')} role="menu">
+        <div className={cn(MENU, 'min-w-[180px]')} role="menu">
           <div className="mb-1 border-b border-[var(--shell-side-border)] px-2.5 pt-2 pb-2.5">
             <div className="text-sm font-semibold text-[var(--shell-heading)]">{profile.realName}</div>
             <div className="mt-0.5 text-xs text-[var(--shell-group-title)]">{profile.roleName}</div>
