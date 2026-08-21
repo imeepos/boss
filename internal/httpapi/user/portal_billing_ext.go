@@ -4,12 +4,12 @@ package userapi
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/pdfgen"
+	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -70,7 +70,7 @@ func portalReceiptPdf(a *app.Application) gin.HandlerFunc {
 				fmt.Sprintf("金额: %.2f 元", p.Amount),
 				"支付方式: " + portalPayMethodLabel[p.Method],
 				"状态: " + p.Status,
-				"支付时间: " + time.Now().Format("2006-01-02 15:04:05"),
+				"支付时间: " + clock.Now().Format("2006-01-02 15:04:05"),
 				"", "本凭证由 BOSS 系统出具,仅供缴费记录查询使用。",
 			})
 			portalServePdf(c, "receipt-"+p.PayNo+".pdf", pdf)

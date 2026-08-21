@@ -10,6 +10,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/internal/pdfgen"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -107,7 +108,7 @@ func portalInvoicePdf(a *app.Application) gin.HandlerFunc {
 				fmt.Sprintf("价税合计: %.2f 元", inv.TotalAmount),
 				"状态: " + inv.Status,
 				"税局票号: " + inv.TaxNo,
-				"开票时间: " + inv.IssuedAt.Format("2006-01-02 15:04:05"),
+				"开票时间: " + inv.IssuedAt.In(clock.Location()).Format("2006-01-02 15:04:05"),
 				"", "系统发票记录无法定效力,以税局回执为准(tax_no)。",
 			})
 			portalServePdf(c, "invoice-"+inv.InvoiceNo+".pdf", pdf)
