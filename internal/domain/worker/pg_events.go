@@ -2,7 +2,10 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // ListMaterials 列出师傅物料领用;workerID=0 返回全部。
@@ -155,4 +158,70 @@ func (s *PGStore) ConfirmAssetReturn(ctx context.Context, returnID int64) error 
 		return ErrNotFound
 	}
 	return nil
+}
+
+// GetMaterialItem 按主档 id 查物料;未命中返回 ErrNotFound。
+func (s *PGStore) GetMaterialItem(ctx context.Context, id int64) (*MaterialItem, error) {
+	var m MaterialItem
+	err := s.db.QueryRow(ctx,
+		`SELECT id, code, name, spec, unit FROM material_items WHERE id = $1`, id).
+		Scan(&m.ID, &m.Code, &m.Name, &m.Spec, &m.Unit)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("worker: get material item: %w", err)
+	}
+	return &m, nil
+}
+
+// GetTool 按主档 id 查工具;未命中返回 ErrNotFound。
+func (s *PGStore) GetTool(ctx context.Context, id int64) (*ToolItem, error) {
+	var t ToolItem
+	err := s.db.QueryRow(ctx,
+		`SELECT id, code, name FROM material_tools WHERE id = $1`, id).
+		Scan(&t.ID, &t.Code, &t.Name)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("worker: get tool: %w", err)
+	}
+	return &t, nil
+}
+
+// ListToolItems 工具主档全量。
+func (s *PGStore) ListToolItems(ctx context.Context) ([]ToolItem, error) {
+	rows, err := s.db.Query(ctx, `SELECT id, code, name FROM material_tools ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("worker: list tool items: %w", err)
+	}
+	defer rows.Close()
+	out := make([]ToolItem, 0)
+	for rows.Next() {
+		var t ToolItem
+		if err := rows.Scan(&t.ID, &t.Code, &t.Name); err != nil {
+			return nil, fmt.Errorf("worker: scan tool item: %w", err)
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// ListMaterialItems 物料主档全量。
+func (s *PGStore) ListMaterialItems(ctx context.Context) ([]MaterialItem, error) {
+	rows, err := s.db.Query(ctx, `SELECT id, code, name, spec, unit FROM material_items ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("worker: list material items: %w", err)
+	}
+	defer rows.Close()
+	out := make([]MaterialItem, 0)
+	for rows.Next() {
+		var m MaterialItem
+		if err := rows.Scan(&m.ID, &m.Code, &m.Name, &m.Spec, &m.Unit); err != nil {
+			return nil, fmt.Errorf("worker: scan material item: %w", err)
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
 }

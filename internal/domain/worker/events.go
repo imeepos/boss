@@ -77,4 +77,27 @@ type WorkerEventService interface {
 	AppendAssetReturn(ctx context.Context, r AssetReturn) (int64, error)
 	// ConfirmAssetReturn 确认返库:status PENDING → RETURNED;未命中或已返库返回 ErrNotFound。
 	ConfirmAssetReturn(ctx context.Context, returnID int64) error
+	// GetMaterialItem/GetTool 主档查询;未命中返回 ErrNotFound。
+	GetMaterialItem(ctx context.Context, id int64) (*MaterialItem, error)
+	GetTool(ctx context.Context, id int64) (*ToolItem, error)
+	// ListToolItems 工具主档全量(师傅端借还列表)。
+	ListToolItems(ctx context.Context) ([]ToolItem, error)
+	// ListMaterialItems 物料主档全量(师傅端领料目录)。
+	ListMaterialItems(ctx context.Context) ([]MaterialItem, error)
+}
+
+// MaterialItem 物料主档。
+type MaterialItem struct {
+	ID   int64  `json:"id"`
+	Code string `json:"code"`
+	Name string `json:"name"`
+	Spec string `json:"spec"`
+	Unit string `json:"unit"`
+}
+
+// ToolItem 工具主档。
+type ToolItem struct {
+	ID   int64  `json:"id"`
+	Code string `json:"code"`
+	Name string `json:"name"`
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -101,55 +102,85 @@ func workerMaterialsHandler(a *app.Application) gin.HandlerFunc {
 				pendingItems = append(pendingItems, gin.H{"epc": "", "reason": r.Reason})
 			}
 		}
+		catalog := make([]gin.H, 0)
+		if items, err := a.WorkerEvent.ListMaterialItems(c.Request.Context()); err == nil {
+			for _, m := range items {
+				catalog = append(catalog, gin.H{
+					"itemId": strconv.FormatInt(m.ID, 10), "name": m.Name, "spec": m.Spec, "unit": m.Unit,
+				})
+			}
+		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"items": items, "returned": gin.H{"repairCount": 0, "dismantleCount": 0},
-			"pendingReturn": pendingItems,
+			"pendingReturn": pendingItems, "catalog": catalog,
 		})
 	}
 }
 
-// workerMaterialOutHandler 领料出库:追加领用记录(扫码侧由 itemId 关联)。
+// workerMaterialOutHandler 领料出库:主档校验 + 真实名称落领用记录。
 func workerMaterialOutHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		item := lookupMaterialItem(c, a)
+		if item == nil {
+			return
+		}
 		workerID, _ := portalWorker(c)
-		_, err := a.WorkerEvent.AppendMaterial(c.Request.Context(), workerMaterialOf(c, workerID))
+		_, err := a.WorkerEvent.AppendMaterial(c.Request.Context(), worker.Material{
+			WorkerID: workerID, Name: item.Name + " " + item.Spec, Qty: 1,
+		})
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "name": item.Name, "spec": item.Spec})
 	}
 }
 
-// workerToolsHandler 工具借还状态。
+// workerToolsHandler 工具借还状态:主档目录 × 师傅最新借还状态(同名取最后一条记录)。
 func workerToolsHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		workerID, _ := portalWorker(c)
-		tools, err := a.WorkerEvent.ListTools(c.Request.Context(), workerID)
+		catalog, err := a.WorkerEvent.ListToolItems(c.Request.Context())
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		items := make([]gin.H, 0, len(tools))
-		for _, t := range tools {
+		records, err := a.WorkerEvent.ListTools(c.Request.Context(), workerID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		latest := make(map[string]bool, len(records))
+		for _, r := range records { // ListTools 按 id 升序,后写覆盖 = 最新状态
+			latest[r.Name] = r.Borrowed
+		}
+		items := make([]gin.H, 0, len(catalog))
+		for _, t := range catalog {
 			items = append(items, gin.H{
-				"toolId": strconv.FormatInt(t.ID, 10), "name": t.Name, "borrowed": t.Borrowed,
+				"toolId": strconv.FormatInt(t.ID, 10), "name": t.Name,
+				"code": t.Code, "borrowed": latest[t.Name],
 			})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
 	}
 }
 
-// workerToolBorrowHandler 工具借用/归还登记。
+// workerToolBorrowHandler 工具借用/归还登记:主档校验 + 真实名称落记录。
 func workerToolBorrowHandler(a *app.Application, borrowed bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		tool := lookupToolItem(c, a)
+		if tool == nil {
+			return
+		}
 		workerID, _ := portalWorker(c)
-		_, err := a.WorkerEvent.AppendTool(c.Request.Context(), workerToolOf(c, workerID, borrowed))
+		_, err := a.WorkerEvent.AppendTool(c.Request.Context(), worker.Tool{
+			WorkerID: workerID, Name: tool.Name, Borrowed: borrowed,
+		})
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "name": tool.Name})
 	}
 }
 

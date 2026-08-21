@@ -267,3 +267,16 @@ func (f *fakeWorkerOps) AppendSafetyCheck(context.Context, worker.SafetyCheck) (
 func (f *fakeWorkerOps) ListSafetyChecks(context.Context, int64) ([]worker.SafetyCheck, error) {
 	return nil, nil
 }
+
+func (f *fakeWorkerOps) GetMaterialItem(context.Context, int64) (*worker.MaterialItem, error) {
+	return nil, nil
+}
+func (f *fakeWorkerOps) GetTool(context.Context, int64) (*worker.ToolItem, error) {
+	return nil, nil
+}
+func (f *fakeWorkerOps) ListToolItems(context.Context) ([]worker.ToolItem, error) {
+	return nil, nil
+}
+func (f *fakeWorkerOps) ListMaterialItems(context.Context) ([]worker.MaterialItem, error) {
+	return nil, nil
+}
