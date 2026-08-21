@@ -1,5 +1,20 @@
 # boss 用户端 UI 设计规范（提取自基准页 user-home.png）
 
+> ⚠️ **本文件已于 2025-08-21 标记为"历史参考,不再作为生成源"。**
+>
+> **新页面/新设计稿一律以 [`USER-APP-SPEC.md`](./USER-APP-SPEC.md) 为准**,理由:
+> 1. 本文件主色 `#086CF5` 是**登录/实名流的局部色**(对应 `RN.primary`),非全局主色;
+>    全局 4 tab 主色代码真值是 `#007AFF` (BrandBlue),已记入 USER-APP-SPEC §2。
+> 2. 本文件页边距 16dp 是**单值断言**,实际是两套上下文:pinned 骨架页(首页/我的)= 16dp
+>    (`PinnedHeaderSpec.sideMargin`),非 pinned 页(服务/账单/详情)= 14dp(`AppCard.outer`);
+>    详见 USER-APP-SPEC §4 与 FEEDBACK D3。
+> 3. 本文件未覆盖登录/注册/实名/找回四条路由的私有 RN token 与区块结构。
+> 4. 本文件字号只列 5 档(12/14/16/20/22),实测 13 档,USER-APP-SPEC §3.1 已补全。
+>
+> 详见 `FEEDBACK.md` D2/D3 区对齐记录。
+
+---
+
 > 来源：`designs/user-home.png`（gpt-5.6-sol 识图提取，2025-08-20）。测量按 2x 密度归一化到 384dp 画布，
 > 数值为视觉反推值，允许 ±2dp/±1sp 误差。本文件是后续所有设计稿生成（ui-proto 预设 M2 元模板）的
 > token 事实源；与代码 Palette 冲突时以代码为准并回改本文件。
