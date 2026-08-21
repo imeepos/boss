@@ -7,9 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/internal/domain/resource"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
-	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // genNo 生成台账单号(缺省时):前缀-日期-纳秒尾(12 位熵,防跨轮持久库唯一号撞车)。
@@ -21,151 +18,18 @@ func genNo(prefix string) string {
 // registerResourceRoutes 注册网络资源域路由(承接 api/openapi/admin/oss.yaml)。
 func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	res := g.Group("", requirePerm(a.User, "menu:resource"))
-	res.GET("/resources", func(c *gin.Context) {
-		list, err := a.Resource.ListResources(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-
-	res.GET("/ports", func(c *gin.Context) {
-		list, err := a.Resource.ListPorts(c.Request.Context(), queryInt64(c, "resourceId"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-
-	res.GET("/ports/:portId/change-history", func(c *gin.Context) {
-		id, ok := httpx.ParsePathParamInt64(c, "portId")
-		if !ok {
-			return
-		}
-		list, err := a.ResourceSub.ListPortHistory(c.Request.Context(), id)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-
-	res.POST("/reserves/:reserveId/release", func(c *gin.Context) {
-		id, ok := httpx.ParsePathParamInt64(c, "reserveId")
-		if !ok {
-			return
-		}
-		if err := a.ResourceSub.ReleaseReserve(c.Request.Context(), id); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "状态变更", "reserve", c.Param("reserveId"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
-
-	res.GET("/reserves", func(c *gin.Context) {
-		list, err := a.ResourceSub.ListReserveRecords(c.Request.Context(), queryInt64(c, "portId"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
+	res.GET("/resources", listResourcesHandler(a))
+	res.GET("/ports", listPortsHandler(a))
+	res.GET("/ports/:portId/change-history", listPortHistoryHandler(a))
+	res.POST("/reserves/:reserveId/release", releaseReserveHandler(a))
+	res.GET("/reserves", listReservesHandler(a))
 
 	tr := g.Group("", requirePerm(a.User, "menu:transfer"))
-	tr.POST("/transfers", func(c *gin.Context) {
-		var t resource.Transfer
-		if !httpx.BindAndValidate(c, &t, func() error {
-			return httpx.CollectErrors(
-				httpx.RequirePositiveID(t.ResourceID, "resourceId"),
-				httpx.RequirePositiveID(t.FromRegionID, "fromRegionId"),
-				httpx.RequirePositiveID(t.ToRegionID, "toRegionId"),
-			)
-		}) {
-			return
-		}
-		if t.TransferNo == "" {
-			t.TransferNo = genNo("TRF")
-		}
-		if t.Status == "" {
-			t.Status = "PENDING"
-		}
-		id, err := a.ResourceSub.CreateTransfer(c.Request.Context(), t)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "数据变更", "transfer", t.TransferNo, map[string]any{"resourceId": t.ResourceID, "toRegionId": t.ToRegionID})
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "transferNo": t.TransferNo})
-	})
-	tr.POST("/transfers/:transferNo/approve", func(c *gin.Context) {
-		no := c.Param("transferNo")
-		if err := a.ResourceSub.ApproveTransfer(c.Request.Context(), no); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "状态变更", "transfer", no, map[string]any{"result": "approved"})
-		respond(c, apitypes.CodeOK, nil)
-	})
-	tr.POST("/transfers/:transferNo/reject", func(c *gin.Context) {
-		no := c.Param("transferNo")
-		if err := a.ResourceSub.RejectTransfer(c.Request.Context(), no); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "状态变更", "transfer", no, map[string]any{"result": "rejected"})
-		respond(c, apitypes.CodeOK, nil)
-	})
-
-	tr.GET("/transfers", func(c *gin.Context) {
-		list, err := a.ResourceSub.ListTransfers(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-	tr.GET("/expansions", func(c *gin.Context) {
-		list, err := a.ResourceSub.ListExpansions(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-	tr.POST("/expansions", func(c *gin.Context) {
-		var e resource.Expansion
-		if !httpx.BindAndValidate(c, &e, func() error {
-			return httpx.CollectErrors(
-				httpx.RequirePositiveID(e.LegalEntityID, "legalEntityId"),
-				httpx.RequirePositiveID(e.RegionID, "regionId"),
-			)
-		}) {
-			return
-		}
-		if e.ExpansionNo == "" {
-			e.ExpansionNo = genNo("EXP")
-		}
-		if e.Status == "" {
-			e.Status = "PENDING"
-		}
-		id, err := a.ResourceSub.CreateExpansion(c.Request.Context(), e)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "数据变更", "expansion", e.ExpansionNo, map[string]any{"regionId": e.RegionID, "expectedPorts": e.ExpectedPorts})
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "expansionNo": e.ExpansionNo})
-	})
-
-	tr.GET("/expansions/qos-templates", func(c *gin.Context) {
-		list, err := a.ResourceAssign.ListQosTemplates(c.Request.Context(), queryInt64(c, "legalEntityId"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
+	tr.POST("/transfers", createTransferHandler(a))
+	tr.POST("/transfers/:transferNo/approve", approveTransferHandler(a))
+	tr.POST("/transfers/:transferNo/reject", rejectTransferHandler(a))
+	tr.GET("/transfers", listTransfersHandler(a))
+	tr.GET("/expansions", listExpansionsHandler(a))
+	tr.POST("/expansions", createExpansionHandler(a))
+	tr.GET("/expansions/qos-templates", listQosTemplatesHandler(a))
 }
