@@ -86,10 +86,6 @@ volumes:
   pgdata:
   miniodata:
   vmdata:
-
-# 密钥文件:容器内 /run/secrets/* 由 secrets 节挂入，源文件在 /etc/minio/secrets/
-secrets:
-  minio_root_user:
-    file: /etc/minio/secrets/root_user
-  minio_root_password:
-    file: /etc/minio/secrets/root_password
+# 注:MinIO 密码走 bind-mount 注入容器内 /etc/minio/secrets/*，
+# 源文件在宿主机 /etc/minio/secrets/，权限 600、root 拥有。
+# 不在 compose 里写明文，也不在 git 里追踪。
