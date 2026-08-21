@@ -133,6 +133,7 @@ const msMY: Translations = {
       colPercent: 'Peratus',
       colProgress: 'Kemajuan',
       todoCount: '{n} jumlah',
+      todoGo: 'Uruskan',
       loadFail: 'Gagal memuatkan',
       empty: 'Tiada data',
     },

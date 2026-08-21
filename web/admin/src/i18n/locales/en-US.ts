@@ -133,6 +133,7 @@ const enUS: Translations = {
       colPercent: 'Share',
       colProgress: 'Progress',
       todoCount: '{n} in total',
+      todoGo: 'Handle',
       loadFail: 'Failed to load',
       empty: 'No data',
     },

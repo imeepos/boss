@@ -58,6 +58,7 @@ export interface Translations {
       colPercent: string
       colProgress: string
       todoCount: string
+      todoGo: string
       loadFail: string
       empty: string
     }

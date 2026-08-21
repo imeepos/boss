@@ -1,6 +1,7 @@
 // 工作台:GET /dashboard 聚合真实数据(统计卡/订单状态分布/待办/近7日趋势)
 // 样式:tailwind 原子类 + ui/button + business/page-head,已移除 dashboard.css。
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
@@ -29,6 +30,7 @@ const TREND_CLASS = {
 
 export default function DashboardPage({ profile }: { profile: Profile }) {
   const t = useT()
+  const navigate = useNavigate()
   const d = t.pages.dashboard
   const [data, setData] = useState<DashboardData | null>(null)
   const [error, setError] = useState('')
@@ -127,8 +129,15 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
               <div className="max-h-[320px] overflow-y-auto">
                 {pagedTodos.map((it) => {
                   const time = it.time ? fmtTime(it.time).split(' ')[1] || fmtTime(it.time) : '--'
+                  // 待办处理入口:派单池待指派跳派单管理(默认即派单池页签),告警跳告警中心。
+                  const target = it.source === '派单池' ? '/boss/dispatch' : '/alarm'
                   return (
-                    <div key={it.todoId} className="flex items-start gap-3 border-b border-border py-2.5 last:border-b-0">
+                    <button
+                      key={it.todoId}
+                      className="flex w-full cursor-pointer items-start gap-3 border-b border-border bg-transparent border-0 p-0 py-2.5 text-left last:border-b-0 hover:bg-muted/50"
+                      onClick={() => navigate(target)}
+                      title={d.todoGo}
+                    >
                       <div className="w-14 flex-shrink-0 text-xs text-muted-foreground">{time}</div>
                       <div className="flex-1">
                         <span className="text-[13px] leading-relaxed text-[var(--shell-content-text)]">{it.subject}</span>
@@ -136,7 +145,8 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                           {it.source}
                         </span>
                       </div>
-                    </div>
+                      <span className="flex-shrink-0 self-center text-xs text-primary hover:underline">{d.todoGo}</span>
+                    </button>
                   )
                 })}
               </div>

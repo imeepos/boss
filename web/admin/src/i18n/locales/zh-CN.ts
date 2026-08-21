@@ -133,6 +133,7 @@ const zhCN: Translations = {
       colPercent: '占比',
       colProgress: '进度',
       todoCount: '共 {n} 条',
+      todoGo: '去处理',
       loadFail: '加载失败',
       empty: '暂无数据',
     },
