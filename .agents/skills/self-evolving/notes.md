@@ -180,3 +180,8 @@
 - 最大坑:验证时只注入 token 不够,`boss.servers`/`boss.server.active` 也必须注入,否则 apiBaseUrl 走相对路径 404 → AuthGuard 登出跳登录页,断言根本没跑在目标页面上。skill 里其实写了要注入三个 key,下次照单全收。
 - 自我预警:足够,累犯台账"无验证声称已修复"红线这次提前规避了(真实 DOM 断言 sameNode)。
 - 重来一次:提交前 git status 发现 TopBar.tsx/OrderPage.kt 是并行会话遗留,只 add 自己的两个文件——这条已在台账,执行了。
+
+## 2026-08-25 修顶栏用户头像下拉样式错乱
+- 最大坑:`min-w-45` 是 Tailwind v4 写法,本项目 v3.4 静默丢弃,菜单塌到 71px 文字竖排;同文件 w-45/w-27 同病。CDP 断言 min-width=0px 一锤定音。
+- 自我预警:lessons #12"CSS 引用不存在令牌静默 fallback"同族,但类名层面没有对应条目,已补 lessons 77。
+- 重来一次:遇到"样式错乱"先量 getComputedStyle,不猜 CSS;并 grep 全仓同族类名评估范围,范围外的不混提交。
