@@ -88,6 +88,7 @@ fun MessagesScreen(nav: Nav) {
     var items by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var loadErr by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(category, nav.refreshTick) {
         loading = true

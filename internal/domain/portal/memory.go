@@ -3,6 +3,7 @@ package portal
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -180,10 +181,14 @@ func (s *memoryStore) MarkAllRead(_ context.Context, customerID int64) error {
 }
 
 func (s *memoryStore) MarkRead(_ context.Context, customerID int64, messageID string) (bool, error) {
+	id, err := strconv.ParseInt(messageID, 10, 64)
+	if err != nil {
+		return false, nil
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i := range s.messages[customerID] {
-		if s.messages[customerID][i].ID == messageID {
+		if s.messages[customerID][i].ID == id {
 			s.messages[customerID][i].Read = true
 			return true, nil
 		}

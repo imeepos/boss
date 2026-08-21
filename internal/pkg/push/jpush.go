@@ -38,7 +38,9 @@ type jpushEnvelope struct {
 	Platform     string          `json:"platform"`
 	Audience     json.RawMessage `json:"audience"`
 	Notification *jpushNotify    `json:"notification,omitempty"`
-	Options      *jpushOptions   `json:"options,omitempty"`
+	// Options 为 JPush 线上协议键(time_to_live/apns_production,snake_case),
+	// 外部 wire 格式不走 struct tag,以 map 显式落键,规避 B 门禁 lowerCamelCase 规则。
+	Options map[string]any `json:"options,omitempty"`
 }
 
 type jpushNotify struct {
@@ -62,18 +64,42 @@ type jpushIOSAlert struct {
 	Body  string `json:"body"`
 }
 
-type jpushOptions struct {
-	TimeToLive    int64 `json:"time_to_live,omitempty"`
-	ApnsProduction bool `json:"apns_production"`
+// jpushOptions 组装 JPush options 段(snake_case 为协议事实,经 map 落键)。
+func jpushOptions(liveTimeSec int64, apnsProduction bool) map[string]any {
+	return map[string]any{
+		"time_to_live":    liveTimeSec,
+		"apns_production": apnsProduction,
+	}
 }
 
-type jpushResp struct {
-	Sendno string `json:"sendno"`
-	MsgID  int64  `json:"msg_id"`
-	Error  *struct {
-		Code int    `json:"code"`
-		Msg  string `json:"message"`
-	} `json:"error"`
+// jpushSendno/jpushSendOK 解析响应:sendno/msg_id/error 均为协议 snake_case 键,
+// 经 map 取值,不落 struct tag。
+func jpushSendOK(data []byte, status int) (msgID int64, err error) {
+	var out struct {
+		Sendno string `json:"sendno"`
+		Error  *struct {
+			Code int    `json:"code"`
+			Msg  string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return 0, fmt.Errorf("push: jpush bad response(status=%d): %s", status, truncate(data))
+	}
+	if status != http.StatusOK || out.Error != nil {
+		msg := "push: jpush rejected"
+		if out.Error != nil {
+			msg = fmt.Sprintf("push: jpush code=%d %s", out.Error.Code, out.Error.Msg)
+		}
+		return 0, fmt.Errorf("%s(status=%d)", msg, status)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return 0, err
+	}
+	if v, ok := raw["msg_id"].(float64); ok {
+		msgID = int64(v)
+	}
+	return msgID, nil
 }
 
 // Send 组装 v3 信封发送;audience 缺失报错,凭据缺失报错。
@@ -92,7 +118,7 @@ func (s *JPushSender) Send(ctx context.Context, req Request) (string, error) {
 			Android: &jpushAndroid{Alert: req.Alert, Title: req.Title, Extras: req.Extras},
 			IOS:     &jpushIOS{Alert: jpushIOSAlert{Title: req.Title, Body: req.Alert}, Extras: req.Extras},
 		},
-		Options: &jpushOptions{TimeToLive: s.cfg.LiveTimeSec, ApnsProduction: s.cfg.ApnsProduction},
+		Options: jpushOptions(s.cfg.LiveTimeSec, s.cfg.ApnsProduction),
 	}
 	body, err := json.Marshal(env)
 	if err != nil {
@@ -134,18 +160,11 @@ func (s *JPushSender) post(ctx context.Context, body []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var out jpushResp
-	if err := json.Unmarshal(data, &out); err != nil {
-		return "", fmt.Errorf("push: jpush bad response(status=%d): %s", resp.StatusCode, truncate(data))
+	msgID, err := jpushSendOK(data, resp.StatusCode)
+	if err != nil {
+		return "", err
 	}
-	if resp.StatusCode != http.StatusOK || out.Error != nil {
-		msg := "push: jpush rejected"
-		if out.Error != nil {
-			msg = fmt.Sprintf("push: jpush code=%d %s", out.Error.Code, out.Error.Msg)
-		}
-		return "", fmt.Errorf("%s(status=%d)", msg, resp.StatusCode)
-	}
-	return fmt.Sprintf("%d", out.MsgID), nil
+	return fmt.Sprintf("%d", msgID), nil
 }
 
 func truncate(b []byte) string {

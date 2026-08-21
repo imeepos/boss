@@ -92,6 +92,9 @@ paths:
   /realid-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1realid-config~1channel~1test' }
   /storage-config: { $ref: './admin/sys.yaml#/paths/~1storage-config' }
   /storage-config/rotate-secret: { $ref: './admin/sys.yaml#/paths/~1storage-config~1rotate-secret' }
+  /push-config: { $ref: './admin/sys.yaml#/paths/~1push-config' }
+  /push-config/{group}: { $ref: './admin/sys.yaml#/paths/~1push-config~1{group}' }
+  /push-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1push-config~1channel~1test' }
   /attachments: { $ref: './admin/sys.yaml#/paths/~1attachments' }
   /attachments/upload: { $ref: './admin/sys.yaml#/paths/~1attachments~1upload' }
   /attachments/batch-get: { $ref: './admin/sys.yaml#/paths/~1attachments~1batch-get' }

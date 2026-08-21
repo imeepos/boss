@@ -248,6 +248,21 @@
 
 > 接口：`GET/PUT /storage-config`（sys.yaml；PUT values 仅接受上表五键，未知 key 42200）。
 
+### 1.6.4 attachments（附件登记，通用组件 AttachmentManager，迁移 000065/000093）
+
+对象实体存 MinIO（object_key），DB 只存登记。三端上传（admin/user/worker），admin 端查询/软删除。000093 加 `deleted_at` 软删除（被 verifications 等业务引用，禁物理删；MinIO 对象保留可审计）。
+
+| 组件列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 文件名 | `fileName` | file_name | 原始文件名，关键词 ILIKE |
+| 类型 | `contentType` | content_type | MIME |
+| 大小 | `sizeBytes` | size_bytes | 上传上限 32MB（42200） |
+| 上传者 | `uploaderType` + `uploaderId` | uploader_type / uploader_id | account / worker / customer（与 apikey 主体模型对齐） |
+| 上传时间 | `createdAt` | created_at | RFC3339 |
+| — | — | deleted_at | 软删除标记；列表/查询默认过滤 |
+
+> 接口（admin，`/api/admin/v1`）：`POST /attachments/upload`（multipart `file`）｜`GET /attachments?uploaderType=&uploaderId=&keyword=&limit=&offset=`（类型+id 必须成对，缺省=当前登录身份；返回 `{items,total}`）｜`DELETE /attachments/:id`（软删，40400=不存在或已删，记审计 attachment.delete）｜`POST /attachments/batch-get` `{ids}`（选择回显，≤200，后端去重滤已删）。
+
 ### 1.7 api_keys（免登录 API key，internal/domain/apikey，迁移 000042/000043/000045）
 
 > 固定用途：CLI/自动化（bossctl）免登录认证。key 与三类主体绑定（`subject_type` account/worker/customer，000043 三表登录边界 + 000044 主体扩展）；只存 sha256(key) 哈希，明文仅创建时返回一次（安全约定见迁移 000042 头注）。

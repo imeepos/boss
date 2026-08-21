@@ -230,3 +230,11 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 关键文件 → `internal/httpapi/user/debug_sms.go`(后端端点),`mobile/user/android/app/src/main/java/com/ymm/boss/user/api/DevModeStore.kt`(开关持久化),`util/DevSms.kt`(自动回填封装),`api/DebugApi.kt`(客户端端点)。verify 场景(实名认证)用 `debugOptionalAuthn` 中间件解析 JWT→从 portal_accounts 取 phone,不需要客户端显式传 phone。(2026-08-21)
 20. CDP 单次运行内多步导航:eval 链中先 set localStorage,再 `location.href='/target'`(cdp-capture 每条 eval 后有 settle,后续 eval 落在新页面上),最后一条 eval 跑断言 IIFE,VERIFY 结果从 --logs 的 console 条目取(2026-08-2x importer 双主题验证)。
 - 门禁(make check)红了先证伪"是不是我搞的":`git worktree add /tmp/base <开工前commit>` 在基线跑同一检查,失败集合相同即并行会话遗留债务,只修自己域+在总结如实声明,不替在场他人越界修(git show BASE:file | wc -l 对比行数可进一步定位)(2026-08-21 时区改造)。
+
+## 远程(ssh/102)执行多行 SQL
+场景 → ssh 到服务器在 docker 容器里跑 psql 多行 SQL。
+怎么用 → 本地写 .sql 文件 → scp 到远程 → docker cp 进容器 → `docker exec <pg> psql -U boss -d boss -f /tmp/x.sql`,末尾带 SELECT 验证行数。禁止 ssh 单引号内嵌 heredoc:docker exec 会静默不执行(退出码 0 无输出),极易误判成功。
+
+## PG 分区 default 积压导致 23514 拒建分区
+场景 → `CREATE TABLE ... PARTITION OF` 报 `updated partition constraint for default partition would be violated`(SQLSTATE 23514),服务启动崩溃循环。
+怎么用 → 事务内:暂存表(LIKE 母表)← default 中该范围行 → DELETE default 该范围 → 建分区 → 从暂存表 INSERT 回母表 → DROP 暂存表;修复代码见 internal/pkg/audit/partitions.go migrateDefaultRows(自愈路径)。

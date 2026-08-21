@@ -1361,6 +1361,44 @@ export interface Translations {
       testOk: string
       testFail: string
     }
+    pushconfig: {
+      title: string
+      desc: string
+      chTitle: string
+      enabledReady: string
+      disabled: string
+      pending: string
+      provider: string
+      providerHint: string
+      appKey: string
+      appKeyHint: string
+      masterSecret: string
+      secretSet: string
+      apiUrl: string
+      apiUrlHint: string
+      apnsProduction: string
+      apnsProductionHint: string
+      prod: string
+      dev: string
+      liveTime: string
+      liveTimeHint: string
+      targetKindLabel: string
+      targetRegId: string
+      targetAlias: string
+      testTargetPh: string
+      targetInvalid: string
+      envNote: string
+      save: string
+      saving: string
+      saved: string
+      saveFail: string
+      loadFail: string
+      retry: string
+      testBtn: string
+      testing: string
+      testOk: string
+      testFail: string
+    }
     storageconfig: {
       title: string
       desc: string

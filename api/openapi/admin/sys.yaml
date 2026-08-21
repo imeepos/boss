@@ -703,6 +703,74 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /push-config:
+    get:
+      tags: [Sys]
+      summary: 推送配置全量(secret 字段掩码:仅返回 hasValue,值不回显)
+      description: JPush 通道参数(docs/plan/push-config-design.md);非 secret 字段空值回退默认。
+      operationId: getPushConfig
+      responses:
+        '200':
+          description: envelope;data.fields 为 {key: {value, hasValue}}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      fields:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          properties:
+                            value: { type: string }
+                            hasValue: { type: boolean }
+
+  /push-config/{group}:
+    put:
+      tags: [Sys]
+      summary: 分组部分更新(secret 空串=不修改;越组 key 拒绝)
+      operationId: updatePushConfigGroup
+      parameters:
+        - { name: group, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [values]
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /push-config/channel/test:
+    post:
+      tags: [Sys]
+      summary: 推送通道自检(无 target=配置完整性校验;带 target=真实试发测试通知)
+      description: targetKind=registration_id(默认)|alias;values 为草稿覆盖(未保存先试)。
+      operationId: testPushConfig
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+                target: { type: string, description: registrationID 或 alias }
+                targetKind: { type: string, enum: [registration_id, alias] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /attachments/batch-get:
     post:
       tags: [Sys]

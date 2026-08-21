@@ -47,3 +47,4 @@
 | 2026-08-21 | MinIO root 密码改 bind-mount 文件注入(不动明文),bucket 统一策略+生命周期 | adopted/2026-08-21-minio-secret-file-mount.md |
 | 2026-08-21 | hostctl sidecar + MinIO 密钥热轮换 admin API(HMAC 鉴权) | adopted/2026-08-21-hostctl-sidecar-rotate.md |
 | 2026-08-25 | 后台提醒中心:广播+读回执/30s 轮询/来源域 handler 层接入 | adopted/2026-08-25-admin-notify-broadcast-read-receipt.md |
+| 2026-08-25 | 附件删除采用软删除(attachments.deleted_at,000093):引用面不可穷举禁物理删,MinIO 对象保留可审计 | adopted/2026-08-25-attachment-soft-delete.md |

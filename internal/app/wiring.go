@@ -34,6 +34,7 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/database"
 	"github.com/ymm-001/boss/internal/pkg/events"
 	"github.com/ymm-001/boss/internal/pkg/hostctl"
+	"github.com/ymm-001/boss/internal/pkg/push"
 	"github.com/ymm-001/boss/internal/pkg/realid"
 	"github.com/ymm-001/boss/internal/pkg/sms"
 	"github.com/ymm-001/boss/internal/pkg/stripe"
@@ -61,6 +62,8 @@ type Application struct {
 	CustomerRealName   customer.RealNameService
 	// RealID 实名二要素自动核验通道(阿里云实人认证 Id2MetaVerify);nil=未配置,提交落 PENDING 人工核验。
 	RealID realid.Verifier
+	// Push 移动端推送通道(极光 JPush 聚合);凭据缺失时为日志通道。
+	Push push.Sender
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
@@ -201,9 +204,6 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		CustomerRealName:   cust,
 		// 实名二要素通道:biz_params(realid.*)优先/env 兜底,60s 热生效;未配置落 PENDING 人工核验。
 		RealID: realid.NewDynamic(realidConfigResolver(usr, cfg)),
-
-		// 移动端推送通道:biz_params(push.*)优先/env 兜底,60s 热生效;凭据缺失降级日志通道。
-		Push: push.NewDynamic(pushConfigResolver(usr, cfg)),
 
 		// 移动端推送通道:biz_params(push.*)优先/env 兜底,60s 热生效;凭据缺失降级日志通道。
 		Push: push.NewDynamic(pushConfigResolver(usr, cfg)),
