@@ -1,12 +1,14 @@
 package adminapi
 
+// 国际地理基础数据维护路由(menu:geo 门禁,sysadmin)。
+// 具名 handler 见 geo_handlers.go;批量导入见 geo_import.go。
+
 import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
-	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // httpx.ErrGeoInvalidParam 参数绑定失败哨兵,respondErr 统一映射 CodeInvalidParam。
@@ -40,181 +42,31 @@ type geoNameReq struct {
 	NameType string `json:"nameType" binding:"required"`
 }
 
-// registerGeoRoutes 注册国际地理基础数据维护路由(menu:geo 门禁,sysadmin)。
+// registerGeoRoutes 注册国际地理基础数据维护路由。
 func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 	perm := requirePerm(a.User, "menu:geo")
 	registerGeoImportRoute(g, a)
 
 	// 国家:列表/详情/新建/编辑/启停。
-	g.GET("/geo/countries", perm, func(c *gin.Context) {
-		list, err := a.Geo.ListCountries(c.Request.Context(), c.Query("locale"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, list)
-	})
-	g.GET("/geo/countries/:code", perm, func(c *gin.Context) {
-		d, err := a.Geo.GetCountry(c.Request.Context(), c.Param("code"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, d)
-	})
-	g.POST("/geo/countries", perm, func(c *gin.Context) {
-		alpha2, err := geoCreateCountry(c, a)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.create-country", "geo_country", alpha2, nil)
-		respond(c, apitypes.CodeOK, gin.H{"alpha2": alpha2})
-	})
-	g.PUT("/geo/countries/:code", perm, func(c *gin.Context) {
-		var req geoCountryReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		err := a.Geo.UpdateCountry(c.Request.Context(), c.Param("code"), geoCountryOf(req))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.update-country", "geo_country", c.Param("code"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
-	g.PUT("/geo/countries/:code/active", perm, func(c *gin.Context) {
-		var body struct {
-			Active bool `json:"active"`
-		}
-		if !httpx.BindAndValidate(c, &body) {
-			return
-		}
-		if err := a.Geo.SetCountryActive(c.Request.Context(), c.Param("code"), body.Active); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.set-country-active", "geo_country", c.Param("code"), map[string]any{"active": body.Active})
-		respond(c, apitypes.CodeOK, nil)
-	})
+	g.GET("/geo/countries", perm, geoListCountries(a))
+	g.GET("/geo/countries/:code", perm, geoGetCountry(a))
+	g.POST("/geo/countries", perm, geoCreateCountryHandler(a))
+	g.PUT("/geo/countries/:code", perm, geoUpdateCountry(a))
+	g.PUT("/geo/countries/:code/active", perm, geoSetCountryActive(a))
 
 	// 国家译名与关联属性。
-	g.POST("/geo/countries/:code/names", perm, func(c *gin.Context) {
-		var req geoNameReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		err := a.Geo.AddCountryName(c.Request.Context(), c.Param("code"),
-			geo.CountryName{Locale: req.Locale, Name: req.Name, NameType: req.NameType})
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.add-country-name", "geo_country", c.Param("code"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
-	g.DELETE("/geo/countries/:code/names/:locale/:nameType", perm, func(c *gin.Context) {
-		err := a.Geo.RemoveCountryName(c.Request.Context(),
-			c.Param("code"), c.Param("locale"), c.Param("nameType"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.remove-country-name", "geo_country", c.Param("code"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
-	g.PUT("/geo/countries/:code/attrs", perm, func(c *gin.Context) {
-		var attrs geo.CountryAttrs
-		if !httpx.BindAndValidate(c, &attrs) {
-			return
-		}
-		if err := a.Geo.ReplaceCountryAttrs(c.Request.Context(), c.Param("code"), attrs); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.replace-country-attrs", "geo_country", c.Param("code"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
+	g.POST("/geo/countries/:code/names", perm, geoAddCountryName(a))
+	g.DELETE("/geo/countries/:code/names/:locale/:nameType", perm, geoRemoveCountryName(a))
+	g.PUT("/geo/countries/:code/attrs", perm, geoReplaceCountryAttrs(a))
 
 	// 区划:列表/新建/编辑/启停/译名。
-	g.GET("/geo/subdivisions", perm, func(c *gin.Context) {
-		list, err := a.Geo.ListSubdivisions(c.Request.Context(),
-			c.Query("country"), c.Query("locale"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, list)
-	})
-	g.GET("/geo/subdivisions/:code/names", perm, func(c *gin.Context) {
-		names, err := a.Geo.ListSubdivisionNames(c.Request.Context(), c.Param("code"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, names)
-	})
-	g.POST("/geo/subdivisions", perm, func(c *gin.Context) {
-		code, err := geoCreateSubdiv(c, a)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.create-subdivision", "geo_subdivision", code, nil)
-		respond(c, apitypes.CodeOK, gin.H{"code": code})
-	})
-	g.PUT("/geo/subdivisions/:code", perm, func(c *gin.Context) {
-		var req geoSubdivReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		err := a.Geo.UpdateSubdivision(c.Request.Context(), c.Param("code"), geoSubdivOf(req))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.update-subdivision", "geo_subdivision", c.Param("code"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
-	g.PUT("/geo/subdivisions/:code/active", perm, func(c *gin.Context) {
-		var body struct {
-			Active bool `json:"active"`
-		}
-		if !httpx.BindAndValidate(c, &body) {
-			return
-		}
-		if err := a.Geo.SetSubdivisionActive(c.Request.Context(), c.Param("code"), body.Active); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.set-subdivision-active", "geo_subdivision", c.Param("code"), map[string]any{"active": body.Active})
-		respond(c, apitypes.CodeOK, nil)
-	})
-	g.POST("/geo/subdivisions/:code/names", perm, func(c *gin.Context) {
-		var req geoNameReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		err := a.Geo.AddSubdivisionName(c.Request.Context(), c.Param("code"),
-			geo.SubdivisionName{Locale: req.Locale, Name: req.Name, NameType: req.NameType})
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.add-subdivision-name", "geo_subdivision", c.Param("code"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
-	g.DELETE("/geo/subdivisions/:code/names/:locale/:nameType", perm, func(c *gin.Context) {
-		err := a.Geo.RemoveSubdivisionName(c.Request.Context(),
-			c.Param("code"), c.Param("locale"), c.Param("nameType"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "geo.remove-subdivision-name", "geo_subdivision", c.Param("code"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
+	g.GET("/geo/subdivisions", perm, geoListSubdivisions(a))
+	g.GET("/geo/subdivisions/:code/names", perm, geoListSubdivisionNames(a))
+	g.POST("/geo/subdivisions", perm, geoCreateSubdivisionHandler(a))
+	g.PUT("/geo/subdivisions/:code", perm, geoUpdateSubdivision(a))
+	g.PUT("/geo/subdivisions/:code/active", perm, geoSetSubdivisionActive(a))
+	g.POST("/geo/subdivisions/:code/names", perm, geoAddSubdivisionName(a))
+	g.DELETE("/geo/subdivisions/:code/names/:locale/:nameType", perm, geoRemoveSubdivisionName(a))
 }
 
 // geoCreateCountry 新建国家(主键 alpha2 在 URL 外的 body 顶层)。
