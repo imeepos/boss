@@ -9,20 +9,24 @@
 
 1. **TopBar**："消息中心"，左返回箭头 `nav.pop()`，右"订阅设置"→ `Route.Notify`
 2. **分类筛选**：`PillTab(plain=true)` 横排，5 个分类（全部/账单缴费/余额预警/故障公告/优惠活动），
-   滚动区水平 padding 14dp，vertical 8dp，spacedBy 8dp。选中态=主色实底白字。
-3. **消息统计摘要卡**：`AppCard`，水平排列：
-   - 左侧：消息总数 20sp/Bold + "条消息" 12sp muted；如有未读追加 12sp/Bold 主色 "X 条未读"
-   - 右侧：仅未读 > 0 时显示"全部已读"文字按钮（13sp 主色，48dp 点击热区）
-4. **消息列表**：每条消息为独立 `AppCard`，卡片间距 vertical 6dp：
-   - **未读**消息：`Card` 额外加 `border(1.5.dp, Palette.primary.copy(alpha=0.3f), 12.dp)` 左侧蓝色竖线或描边
-   - **已读**消息：普通白卡无描边
+   滚动区水平 padding 14dp，vertical 8dp，spacedBy 8dp，**Row 外层加 `horizontalScroll`**（5 tab 在 360dp 屏宽放不下）。
+   选中态=主色实底白字。
+3. **消息统计摘要卡**：`AppCard`，水平两栏 + 1dp 竖分割线（高度 32dp 居中）：
+   - 左侧（32dp IconTile + 8dp spacer + Column weight=1f）：
+     消息总数 18sp/Bold + "全部消息" 11sp muted；IconTile 用 `Icons.Outlined.Mail` + `Palette.primary`
+   - 右侧（同结构）：
+     未读数 18sp/Bold + "未读消息" 11sp muted；IconTile 用 `Icons.Outlined.Notifications` + **`Palette.primary`（非 orange）**
+   - 仅未读 > 0 时右栏尾部追加 "全部已读" 链接（11sp/W500 主色，Box heightIn(40dp) + widthIn(min 60dp)）
+4. **消息列表**：每条消息为独立 Row 容器（不用 AppCard，自带 padding 14dp + 12dp 圆角白底）：
+   - **未读**消息：左侧加 **3dp 宽 × 40dp 高主色细竖条**（圆角 2dp）作为视觉强调 + 右侧时间旁附 7dp 蓝点
+   - **已读**消息：普通白卡无强调
    - 卡内结构：
-     - 顶行：左侧 `IconTile` 40dp 圆角 12dp（按 category 取语义色）+ 标题 14sp/W600（未读）或 14sp/W500（已读）
+     - 顶行：`IconTile` 40dp 圆角 12dp（按 category 取语义色）+ 标题 14sp/W600（未读）或 14sp/W500（已读）
        + 时间戳 12sp muted 右对齐
      - 内容行：`content` 12sp muted（未读）或 12sp subtle（已读），maxLines=2，ellipsize
      - 底行左侧：`Tag` 组件（tag 文字 + tagLevel 色）
-5. **空态**：`EmptyState("暂无消息", Icons.Outlined.Notifications)` — 复用 Widgets.kt
-6. **加载态**：`CircularProgressIndicator` 居中，保留骨架布局
+5. **空态**：`EmptyState("暂无消息", Icons.Outlined.Inbox)` — 复用 Widgets.kt
+6. **加载态**：`CircularProgressIndicator(strokeWidth=2.dp, size=24.dp)` 居中，保留骨架布局
 7. **错误态**：14sp 红文字 + "点击重试" 蓝链接 48dp 热区
 
 ### 色彩规范

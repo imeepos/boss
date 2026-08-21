@@ -1,7 +1,6 @@
 package com.ymm.boss.user.page
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -137,9 +137,9 @@ private fun SummaryCard(total: Int, unread: Int, loading: Boolean, nav: Nav) {
         ) {
             StatColumn(loading, total, "全部消息", Icons.Outlined.Mail, Palette.primary, Modifier.weight(1f))
             Box(
-                Modifier.height(36.dp).width(1.dp).background(Palette.line),
+                Modifier.height(32.dp).width(1.dp).background(Palette.line),
             )
-            StatColumn(loading, unread, "未读消息", Icons.Outlined.Notifications, Palette.orange, Modifier.weight(1f), showAction = unread > 0) {
+            StatColumn(loading, unread, "未读消息", Icons.Outlined.Notifications, Palette.primary, Modifier.weight(1f), showAction = unread > 0) {
                 scope.launch {
                     try { ProfileApi.readAllMessages() } catch (e: Exception) { }
                     nav.requestRefresh()
@@ -161,21 +161,27 @@ private fun StatColumn(
     onAction: () -> Unit = {},
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Spacer(Modifier.width(16.dp))
-        IconTile(icon, tint, size = 36.dp, corner = 10.dp)
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(8.dp))
+        IconTile(icon, tint, size = 32.dp, corner = 10.dp)
+        Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
-            Text(if (loading) "—" else "$count", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Palette.ink)
-            Text(label, fontSize = 11.sp, color = Palette.muted)
+            Text(if (loading) "—" else "$count", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Palette.ink, maxLines = 1)
+            Text(label, fontSize = 11.sp, color = Palette.muted, maxLines = 1)
         }
         if (showAction) {
             Box(
-                Modifier.size(40.dp).clickable { onAction() },
+                Modifier
+                    .height(40.dp)
+                    .widthIn(min = 60.dp)
+                    .clickable { onAction() }
+                    .padding(horizontal = 4.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("全部已读", fontSize = 11.sp, color = Palette.primary, fontWeight = FontWeight.W500)
+                Text(
+                    "全部已读", fontSize = 11.sp, color = Palette.primary, fontWeight = FontWeight.W500,
+                    maxLines = 1,
+                )
             }
-            Spacer(Modifier.width(4.dp))
         }
     }
 }
@@ -191,21 +197,26 @@ private fun MessageCard(m: JSONObject, onClick: () -> Unit) {
     val tint = colorOfCategory(m.optString("category"))
     val icon = iconOfCategory(m.optString("category"))
 
-    AppCard(
-        outer = PaddingValues(vertical = 6.dp),
-        inner = PaddingValues(14.dp),
-        shape = RoundedCornerShape(12.dp),
+    // 未读 = 左 3dp 主色细条 + 内容区,已读 = 普通白卡无强调。设计稿意图是细线视觉提示,不是包边。
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp)
+            .background(Palette.panel, RoundedCornerShape(12.dp))
+            .clickable { onClick() }
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .then(
-                    if (!read) Modifier.border(1.5.dp, Palette.primary.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                    else Modifier
-                )
-                .padding(0.dp),
-        ) {
+        if (!read) {
+            Box(
+                Modifier
+                    .width(3.dp)
+                    .height(40.dp)
+                    .background(Palette.primary, RoundedCornerShape(2.dp)),
+            )
+            Spacer(Modifier.width(10.dp))
+        }
+        Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconTile(icon, tint, size = 40.dp, corner = 12.dp)
                 Spacer(Modifier.width(12.dp))
