@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ymm-001/boss/internal/pkg/clock"
 )
 
 type Config struct {
@@ -101,6 +103,10 @@ type Config struct {
 		AccessKeyID     string
 		AccessKeySecret string
 	}
+	// Business 业务时区:自然日/月边界与墙钟展示的统一口径(存储/DB会话仍固定 UTC)。
+	Business struct {
+		Timezone string // IANA 名,默认 Asia/Manila
+	}
 	// Stripe 支付通道(卡收单;APIKey 为空时通道不注册,缴费走既有模拟直落账)。
 	Stripe struct {
 		APIKey     string // sk_... 密钥(引用不存值)
@@ -169,6 +175,12 @@ func Load() *Config {
 	c.Stripe.WebhookSec = getenv("BOSS_STRIPE_WEBHOOK_SECRET", "")
 	c.Stripe.Currency = getenv("BOSS_STRIPE_CURRENCY", "php")
 	c.Stripe.APIBaseURL = getenv("BOSS_STRIPE_API_BASE", "")
+
+	c.Business.Timezone = getenv("BOSS_TIMEZONE", "Asia/Manila")
+	if err := clock.Set(c.Business.Timezone); err != nil {
+		// 未知名回落 UTC 并保留配置原值,启动日志可见;不阻断进程。
+		_ = clock.Set("UTC")
+	}
 
 	c.MinIO.Endpoint = getenv("BOSS_MINIO_ENDPOINT", "192.168.0.102:29000")
 	c.MinIO.AccessKey = getenv("BOSS_MINIO_ACCESS_KEY", "boss")
