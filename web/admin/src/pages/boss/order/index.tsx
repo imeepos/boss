@@ -1,4 +1,5 @@
-// 订单管理页:契约 GET /orders(keyword/status 过滤);跟踪抽屉 GET /orders/:orderNo(order+timeline)。
+// 订单管理页:契约 GET /orders(keyword/status 过滤);跟踪抽屉 GET /orders/:orderNo(order+timeline);
+// 环节推进 POST /orders/:orderNo/{check-resource,reserve,charge,cancel}(order_workflow.go)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -44,6 +45,18 @@ export default function OrderPage() {
       .catch(() => setTrackError(o.trackFail))
   }
 
+  // advance 按当前环节推进:1→核查 2→预占 3→收费(自动段 5-8);cancel 需二次确认。
+  const advance = (row: OrderListRow, action: 'check-resource' | 'reserve' | 'charge' | 'cancel') => {
+    if (busy) return
+    if (action === 'cancel' && !window.confirm(o.confirmCancel.replace('{no}', row.orderNo))) return
+    setBusy(true)
+    setError('')
+    apiFetch(`/orders/${encodeURIComponent(row.orderNo)}/${action}`, { method: 'POST' })
+      .then(() => load())
+      .catch((e) => setError(e instanceof Error ? e.message : o.actionFail))
+      .finally(() => setBusy(false))
+  }
+
   const slice = pageSlice(rows, page, pageSize)
 
   return (
@@ -75,7 +88,19 @@ export default function OrderPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.stage}. {r.stageLabel}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="order" value={r.status} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
+                      <span className="inline-flex items-center gap-3">
+                        {r.stage === 1 && r.status === 'PENDING' && (
+                          <button disabled={busy} onClick={() => advance(r, 'check-resource')}>{o.actCheck}</button>
+                        )}
+                        {r.stage === 2 && r.status === 'PENDING' && (
+                          <button disabled={busy} onClick={() => advance(r, 'reserve')}>{o.actReserve}</button>
+                        )}
+                        {r.stage === 3 && r.status === 'RESERVED' && (
+                          <button disabled={busy} onClick={() => advance(r, 'charge')}>{o.actCharge}</button>
+                        )}
+                        {r.status !== 'DONE' && r.status !== 'CANCELLED' && (
+                          <button disabled={busy} onClick={() => advance(r, 'cancel')}>{o.actCancel}</button>
+                        )}
                         <button onClick={() => openTrack(r.orderNo)}>{o.track}</button>
                       </span>
                     </td>

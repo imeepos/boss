@@ -70,6 +70,21 @@ func registerOrderWorkflowRoutes(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, gin.H{"orderNo": o.OrderNo, "stage": 8})
 	})
 
+	// 订单取消:任一未完成状态可取消(status→CANCELLED),与门户 portalOrderCancel 同语义。
+	wf.POST("/:orderNo/cancel", func(c *gin.Context) {
+		o, err := a.Order.GetByNo(c.Request.Context(), c.Param("orderNo"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if err := a.Order.Cancel(c.Request.Context(), o.ID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "order.cancel", "order", o.OrderNo, nil)
+		respond(c, apitypes.CodeOK, gin.H{"orderNo": o.OrderNo, "status": "CANCELLED"})
+	})
+
 	// 环节10 激活(上门扫码后,师傅上报装维结果):自动段 10-12(激活/回调/更新GIS)→ 订单 DONE。
 	// 与扫码路由同门禁:任何已认证主体可调(worker 主体/账号),身份经 Subject 或 claims 识别。
 	tic := g.Group("/tickets")

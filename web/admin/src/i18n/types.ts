@@ -652,6 +652,12 @@ export interface Translations {
       statusOptions: string[]
       columns: string[]
       track: string
+      actCheck: string
+      actReserve: string
+      actCharge: string
+      actCancel: string
+      confirmCancel: string
+      actionFail: string
       trackTitle: string
       timelineColumns: string[]
       total: string
