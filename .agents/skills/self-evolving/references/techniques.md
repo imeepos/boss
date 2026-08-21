@@ -223,3 +223,8 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## 任务开工先 `git status -uall` 划定"我的工作面"
 场景 → monorepo 里有多端/多 agent 并行工作,worktree 已有他人未提交的 dirty 文件;你只该动自己负责的子目录,否则提交时会污染别人的改动、且看不出脏 diff 是谁先来的。
 怎么用 → `git status -uall`(列出 unstaged + untracked)。把任务限定到目标子目录(mobile/worker/android/ 或 internal/httpapi/worker/),只 `git add <明确清单>`,他人的 diff 留给各自 owner 收口。如果发现清单里有他人刚遗留的小问题(如 import 缺失、lint),**别顺手带**,要么单开一个 chore commit,要么抛到群里给对应 owner。
+
+## 开发模式验证码自动回填(不用再翻日志抄码)
+场景 → 联调测试时频繁登录/注册,每次都要去 PG 查 portal_sms_codes 拿验证码再手动填入,繁琐。
+怎么用 → 后端环境变量 `BOSS_DEBUG_SMS=1` 启动;Android App "我的" 页底部「开发选项」开关开启;点「获取验证码」后自动从 `/debug/sms-code?phone=&scene=` 拉明文回填。release 包永远不生效(前端 `BuildConfig.DEBUG=false` → `DevModeStore.isEnabled()` 恒 false)。后端未配 `BOSS_DEBUG_SMS=1` 时返回 404,Android 侧静默降级,不报错。
+关键文件 → `internal/httpapi/user/debug_sms.go`(后端端点),`mobile/user/android/app/src/main/java/com/ymm/boss/user/api/DevModeStore.kt`(开关持久化),`util/DevSms.kt`(自动回填封装),`api/DebugApi.kt`(客户端端点)。verify 场景(实名认证)用 `debugOptionalAuthn` 中间件解析 JWT→从 portal_accounts 取 phone,不需要客户端显式传 phone。(2026-08-21)

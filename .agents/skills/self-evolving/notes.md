@@ -880,3 +880,22 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 工作区动别人的代码(如发现 user/debug_sms.go 有 lint 错误)先确认是不是我的责任:如果是, 提醒 user 端任务 owner 处理或单开一个 chore commit;如果不动, 不要顺手带。
 - Android 端 devMode 校验时,Api 返回的 ApiException status/msg 一定要结构化,别靠吞 `_`——这里我用 `catch (_: ApiException)` 仅为了不中断轮询,其实可以在外面把 status 取出当日志,排查时不必再翻 trace。
 
+## 2026-08-21 用户端开发模式验证码自动回填
+
+**哪个坑浪费了最多时间？**
+
+- gin 路由注册冲突:最初把同一个 `/debug/sms-code` 同时注册到 pub 和 uauth 两个 RouterGroup 上(两条不同中间件链),gin panic "handlers are already registered"。原因是 pub 和 uauth 共享同一 prefix `/api/user/v1`,两个 GET 同路径的路由相互冲突。解决:只在 pub 注册,verify 场景用可选鉴权中间件 `debugOptionalAuthn` 在 handler 内分支。
+- 真机 base URL 不一致:build.gradle.kts 默认 `8080` 但102 服务在 `28080`,导致 `BuildConfig.BOSS_BASE_URL` 指向错误端口。用 `-PbossBaseUrl=http://192.168.0.102:28080/api/user/v1` 覆盖解决。经验教训:出厂默认值应该是最常用的端口,而不是占位值。
+
+**这个 skill 有没有提前警告我？**
+
+- 技巧11(Compose 尾随 lambda)和技巧2(导航幽灵跳转)没触发——这次改动只改了回调签名,没涉及尾随 lambda。
+- 技巧2(浏览器自测调试必须用 cdp-capture.mjs)未涉及——Android 端用 uiautomator dump + adb 验证。
+- 已知问题13(build-install-user-android.sh mapfile 不兼容 macOS bash3.2)确认:用 `./gradlew assembleDebug` 直接构建,不走该脚本。
+
+**重来一次我会怎么做？**
+
+- 先确认 base URL 端口:建 feature 前 `grep -n "BOSS_BASE_URL" build.gradle.kts` 检查 debug 和 release 端口是否一致,不一致先修再开发。
+- gin 路由冲突设计:单一端点按场景分支(可选鉴权中间件)比双路由双 handler 更清晰。
+- 验证码自动回填的边界:dev 端点返回404时(dev mode off 但 App 开关 on),Android 客户端 `devAutoFillSms` 捕获异常返回 false,不做任何提示——这才是正确的降级行为。
+

@@ -67,3 +67,7 @@ portal_sms_codes, emulator, 10.0.2.2, adb reverse
 | 18 | lessons（2026-08-20） | 多页视觉一致=抽共用组件+单点参数对象(PinnedGradientPage/PinnedHeaderSpec),别各页调参对比修补 |
 | 19 | lessons（2026-08-20） | 多会话仓库:pull 后先 assemble 验基线绿;别人坏提交最小修复解锁 |
 - Compose 修饰符叠加:内部 `.padding(top=4)` 会覆盖外部传入的 `padding(top=0)`;组件内写死的间距要可归零,必须暴露显式参数(2026-08-21 worker 首页 OverviewCard 实锤,见 lessons.md)
+| 20 | techniques（2026-08-21） | 开发模式验证码自动回填:后端 `/debug/sms-code?phone=&scene=` 查 portal_sms_codes;Android 侧 `DevModeStore`(SharedPreferences) + `DebugApi` + `devAutoFillSms` 封装;release 包 `BuildConfig.DEBUG=false` 永不生效;102 机配 `BOSS_DEBUG_SMS=1` 环境变量 |
+| 21 | lessons（2026-08-21） | build.gradle.kts 默认端口与真实服务不一致时(`8080` vs `28080`),用 `-PbossBaseUrl=...` 覆盖;建 feature 前先 `grep -n "BOSS_BASE_URL" build.gradle.kts` 确认 debug 端口 |
+| 22 | lessons（2026-08-21） | dev-mode 降级:后端 BOSS_DEBUG_SMS=0 时 /debug/sms-code 404,Android 侧 `devAutoFillSms` catch Exception 返回 false,不填入验证码也不报错——正确降级行为 |
+| 23 | techniques（2026-08-21） | 开发模式开关持久化:SharedPreferences 读写(`boss_user_dev` prefs + `boss_user_dev_mode` key),与 LangStore/TokenStore 同源但不同 prefs 文件,避免 token 被清时连带丢失开发配置 |
