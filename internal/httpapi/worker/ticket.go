@@ -3,13 +3,12 @@ package workerapi
 // W 师傅端门户工单域:首页/列表/详情/流转/任务池(worker/ticket.yaml)。
 
 import (
-	"time"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -258,7 +257,7 @@ func portalStages(logs []order.StageLog) []gin.H {
 		}
 		item := gin.H{"stage": l.Stage, "name": name, "result": l.Result, "note": ""}
 		if l.FinishedAt != nil {
-			item["finishedAt"] = l.FinishedAt.Format("01-02 15:04")
+			item["finishedAt"] = l.FinishedAt.In(clock.Location()).Format("01-02 15:04")
 		}
 		out = append(out, item)
 	}
@@ -314,4 +313,4 @@ func workerGrabHandler(a *app.Application) gin.HandlerFunc {
 }
 
 // nowHM 当前时间 HH:mm(签到/打卡回执)。
-func nowHM() string { return time.Now().Format("15:04") }
+func nowHM() string { return clock.Now().Format("15:04") }

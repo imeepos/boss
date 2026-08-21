@@ -216,7 +216,7 @@ func workerMaterialOutHandler(a *app.Application) gin.HandlerFunc {
 		}
 		workerID, _ := portalWorker(c)
 		_, err := a.WorkerEvent.AppendMaterial(c.Request.Context(), worker.Material{
-			WorkerID: workerID, Name: item.Name + " " + item.Spec, Qty: 1,
+			WorkerID: workerID, ItemID: item.ID, Name: item.Name + " " + item.Spec, Qty: 1,
 		})
 		if err != nil {
 			respondErr(c, err)
@@ -240,15 +240,24 @@ func workerToolsHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		latest := make(map[string]bool, len(records))
+		latest := make(map[int64]bool, len(records))
+		latestByName := make(map[string]bool, len(records))
 		for _, r := range records { // ListTools 按 id 升序,后写覆盖 = 最新状态
-			latest[r.Name] = r.Borrowed
+			if r.ToolID > 0 {
+				latest[r.ToolID] = r.Borrowed
+			} else {
+				latestByName[r.Name] = r.Borrowed // 历史行未回填 tool_id,按名兜底
+			}
 		}
 		items := make([]gin.H, 0, len(catalog))
 		for _, t := range catalog {
+			borrowed, ok := latest[t.ID]
+			if !ok {
+				borrowed = latestByName[t.Name]
+			}
 			items = append(items, gin.H{
 				"toolId": strconv.FormatInt(t.ID, 10), "name": t.Name,
-				"code": t.Code, "borrowed": latest[t.Name],
+				"code": t.Code, "borrowed": borrowed,
 			})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
@@ -264,7 +273,7 @@ func workerToolBorrowHandler(a *app.Application, borrowed bool) gin.HandlerFunc 
 		}
 		workerID, _ := portalWorker(c)
 		_, err := a.WorkerEvent.AppendTool(c.Request.Context(), worker.Tool{
-			WorkerID: workerID, Name: tool.Name, Borrowed: borrowed,
+			WorkerID: workerID, ToolID: tool.ID, Name: tool.Name, Borrowed: borrowed,
 		})
 		if err != nil {
 			respondErr(c, err)

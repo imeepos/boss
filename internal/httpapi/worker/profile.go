@@ -4,12 +4,12 @@ package workerapi
 
 import (
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -36,7 +36,7 @@ func workerProfileHandler(a *app.Application) gin.HandlerFunc {
 		}
 		perfs, _ := a.WorkerFact.ListPerformances(c.Request.Context(), workerID)
 		finished, onTime, score := 0, 0, 0.0
-		period := time.Now().Format("2006-01")
+		period := clock.Now().Format("2006-01")
 		for _, p := range perfs {
 			if p.Period == period {
 				finished += int(p.Finished)
@@ -58,7 +58,7 @@ func workerPerformanceHandler(a *app.Application) gin.HandlerFunc {
 		workerID, _ := portalWorker(c)
 		period := c.Query("period")
 		if period == "" {
-			period = time.Now().Format("2006-01")
+			period = clock.Now().Format("2006-01")
 		}
 		perfs, err := a.WorkerFact.ListPerformances(c.Request.Context(), workerID)
 		if err != nil {
@@ -110,7 +110,7 @@ func workerScheduleHandler(a *app.Application) gin.HandlerFunc {
 		workerID, _ := portalWorker(c)
 		month := c.Query("month")
 		if month == "" {
-			month = time.Now().Format("2006-01")
+			month = clock.Now().Format("2006-01")
 		}
 		rows, err := a.WorkerFact.ListSchedules(c.Request.Context(), workerID)
 		if err != nil {
@@ -123,14 +123,14 @@ func workerScheduleHandler(a *app.Application) gin.HandlerFunc {
 				busy = append(busy, s.BusyDays)
 			}
 		}
-		clocks, err := a.WorkerLedger.ListClocks(c.Request.Context(), workerID, time.Now())
+		clocks, err := a.WorkerLedger.ListClocks(c.Request.Context(), workerID, clock.Now())
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
 		today := make([]gin.H, 0, len(clocks))
 		for _, a := range clocks {
-			today = append(today, gin.H{"type": a.ClockType, "clockedAt": a.ClockedAt.Format("15:04")})
+			today = append(today, gin.H{"type": a.ClockType, "clockedAt": a.ClockedAt.In(clock.Location()).Format("15:04")})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"month": month, "busyDays": busy, "today": today})
 	}
@@ -149,7 +149,7 @@ func workerClockHandler(a *app.Application) gin.HandlerFunc {
 		}) {
 			return
 		}
-		now := time.Now()
+		now := clock.Now()
 		if _, err := a.WorkerLedger.AppendClock(c.Request.Context(), worker.Attendance{
 			WorkerID: workerID, ClockType: req.Type, ClockedAt: now,
 		}); err != nil {
@@ -163,7 +163,7 @@ func workerClockHandler(a *app.Application) gin.HandlerFunc {
 		}
 		today := make([]gin.H, 0, len(clocks))
 		for _, a := range clocks {
-			today = append(today, gin.H{"type": a.ClockType, "clockedAt": a.ClockedAt.Format("15:04")})
+			today = append(today, gin.H{"type": a.ClockType, "clockedAt": a.ClockedAt.In(clock.Location()).Format("15:04")})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"clockedAt": now.Format("15:04"), "today": today})
 	}

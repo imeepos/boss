@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+
+	"github.com/ymm-001/boss/internal/pkg/clock"
 )
 
 // idOrNil 把 0 归一为 NULL(可空外键约定:0=空)。
@@ -148,7 +150,7 @@ func computeSlaLeft(complaintType, slaDeadline string) int {
 	}
 	now := time.Now()
 	if slaDeadline != "" {
-		if dl, err := time.ParseInLocation("2006-01-02 15:04", slaDeadline, time.Local); err == nil {
+		if dl, err := time.ParseInLocation("2006-01-02 15:04", slaDeadline, clock.Location()); err == nil {
 			left := int(dl.Sub(now).Minutes())
 			if left < 0 {
 				return 0

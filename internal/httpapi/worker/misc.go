@@ -9,6 +9,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/worker"
+	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -48,7 +49,7 @@ func workerServiceMessagesHandler(a *app.Application) gin.HandlerFunc {
 			if m.Title == "worker" {
 				from = "worker"
 			}
-			items = append(items, gin.H{"from": from, "content": m.Content, "sentAt": m.SentAt.Format("01-02 15:04")})
+			items = append(items, gin.H{"from": from, "content": m.Content, "sentAt": m.SentAt.In(clock.Location()).Format("01-02 15:04")})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
 	}
@@ -85,7 +86,7 @@ func workerMessagesHandler(a *app.Application) gin.HandlerFunc {
 		for _, m := range list {
 			items = append(items, gin.H{
 				"level": m.Level, "title": m.Title, "content": m.Content,
-				"sentAt": m.SentAt.Format("01-02 15:04"), "read": m.Read,
+				"sentAt": m.SentAt.In(clock.Location()).Format("01-02 15:04"), "read": m.Read,
 			})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
@@ -105,7 +106,7 @@ func workerNoticesHandler(a *app.Application) gin.HandlerFunc {
 			if n.Active {
 				items = append(items, gin.H{
 					"noticeId": n.ID, "title": n.Title, "category": n.Category,
-					"publishedAt": n.PublishedAt.Format("01-02"),
+					"publishedAt": n.PublishedAt.In(clock.Location()).Format("01-02"),
 				})
 			}
 		}
@@ -127,7 +128,7 @@ func workerSafetyCheckHandler(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
-		now := time.Now()
+		now := clock.Now()
 		if _, err := a.WorkerLedger.AppendSafetyCheck(c.Request.Context(), worker.SafetyCheck{
 			WorkerID: workerID, WorkType: req.WorkType, Checklist: req.Checklist, CheckedAt: now,
 		}); err != nil {
