@@ -40,3 +40,4 @@
 | 2026-08-23 | Stripe 卡收单通道:发起建意图/回调验签落账,pay_no 幂等,密钥未配即降级 | adopted/2026-08-23-stripe-card-channel.md |
 | 2026-08-24 | 实名二要素自动核验:阿里云实人认证 Id2MetaVerify,提交即核验,凭据未配保持人工 | adopted/2026-08-24-realid-channel-aliyun-cloudauth.md |
 | 2026-08-25 | 三端全量支持 API key 鉴权:worker 端补 worker 主体密钥,主体边界不跨端,对接 AI 操作系统 | adopted/2026-08-25-api-key-three-portal.md |
+| 2026-08-20 | ODN 地理空间编码对齐:PRV/NodeCode 由 PSGC 派生映射不改权威数据,odn 无源物理层为待建域,端口码 P 前缀冲突待裁定 | adopted/2026-08-20-odn-geospatial-encoding-alignment.md |
