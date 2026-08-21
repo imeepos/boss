@@ -171,3 +171,4 @@
 77. 时间正确性常靠「DB会话=进程=UTC」三重巧合维持：审计时区须同时查 SHOW TimeZone、DSN 是否带 TimeZone、容器 TZ env 三处；任何一处单方面改变都会碎(2026-08-21)。
 - #78 门禁(typecheck/test/build)通过后立即 git commit,再跑耗时的 E2E/CDP/双主题验证;共享工作区有并行会话时,验证耗时窗口就是被扫提交/被回退的窗口(2026-08-21 importer Excel 导入被并行会话混提交)。
 - 当 INSERT 拼 `const factSnap + 显式列` SQL 时,占位符总数必须现场重数列数(factSnap 是 7 列不是直觉的 8),pgx 报 insufficient arguments 第一反应应是数列,不是加参数。pgxmock 单测对多余占位符不报错,会静默通过,必须跑真库集成测试才能抓住。
+- lesson: locale/types.ts 插入 i18n 块时,同形尾部 key(pageUnit/rangeText)在多个 section 重复,必须用"目标段的段名行+下一段段名"做唯一锚点,不能凭尾部 key 模式定位(2026-08-25 notif 块插进 company 段,三份 locale 全错返工)。

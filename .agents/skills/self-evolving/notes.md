@@ -153,3 +153,8 @@
 - 哪个坑浪费最多时间:ssh 单引号里嵌 heredoc 传 SQL,docker exec 静默没执行(退出码 0 无输出),差点误判已修复;靠"验证实际状态"才发现。
 - skill 有没有提前警告:红线 6(没验证动作不许声称已修)拦住了我,先查了实际分区分布才发现没执行。
 - 重来一次:远程执行 SQL 一律本地写文件 → scp → docker cp → psql -f,绝不走 ssh 内嵌 heredoc。
+
+## 2026-08-25 后台提醒中心(notify 域)全栈落地
+- 哪个坑浪费最多时间:i18n 三份 locale 插 key 时,凭"pageUnit 结尾"猜段落,把 notif 块插进了 company 段而不是 message 段,三份全错,返工一轮才发现;另有 python 脚本改完文件后凭旧记忆 edit,报 file changed since read。
+- skill 有没有提前警告我:有——高频红线#1 正是"edit 前必须 read",又犯了;段落锚点问题 lessons 里没有对应条目(新教训)。
+- 重来一次:locale 插入前先 grep "message: {" 拿行号,用"下一段段名"做唯一锚点,不看尾部 key 形状;任何脚本改文件后立即重新 read。
