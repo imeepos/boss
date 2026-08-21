@@ -69,7 +69,8 @@ func (s *PGStore) ChargeContract(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "chargeContract")
 }
 
-// ApplyTag 环节5 标签预绑定:预占端口 + 落四码关联(UNLINKED,资产扫码时回填)。
+// ApplyTag 环节5 标签预绑定:预占端口 + 落四码关联(UNLINKED,资产扫码时回填)
+// + 把端口→分光器信息写入 dispatch_tickets.splitter_port。
 // 前置:环节4 合同收费已推进(顺序守卫保证 stage=4)。
 // 依赖:PortReserver.ReserveFirstAvailable(选端口) + QuadLinkPrebinder.CreateLink(落四码)。
 func (s *PGStore) ApplyTag(ctx context.Context, orderID int64) error {
@@ -93,6 +94,21 @@ func (s *PGStore) ApplyTag(ctx context.Context, orderID int64) error {
 	portID, err := s.reserve.ReserveFirstAvailable(ctx, addressID, orderID)
 	if err != nil {
 		return fmt.Errorf("order: applyTag reserve port: %w", err)
+	}
+
+	// 写入 splitter_port:端口码 + 所属设备(分光器)码,格式 "SPL-03-07 · PON 7口"。
+	var portCode, resCode string
+	_ = s.db.QueryRow(ctx,
+		`SELECT p.port_code, COALESCE(r.code, '')
+		 FROM ports p LEFT JOIN resources r ON p.resource_id = r.id
+		 WHERE p.id = $1`, portID).Scan(&portCode, &resCode)
+	if portCode != "" {
+		sp := portCode
+		if resCode != "" {
+			sp = resCode + " · " + portCode
+		}
+		_, _ = s.db.Exec(ctx,
+			`UPDATE dispatch_tickets SET splitter_port = $2 WHERE order_id = $1`, orderID, sp)
 	}
 
 	// 四码预绑定(UNLINKED;资产为空,扫码环节9回填)。
