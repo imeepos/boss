@@ -83,7 +83,7 @@ func TestPGStore_ListRegistrations(t *testing.T) {
 	cols := []string{"id", "name", "phone", "id_card_no", "group_id", "region_id",
 		"status", "review_note", "reviewer_account_id", "worker_id", "submitted_at", "reviewed_at"}
 	subAt := time.Date(2026, 8, 19, 8, 0, 0, 0, time.UTC)
-	mock.ExpectQuery(`SELECT id, name, phone, id_card_no, group_id, region_id, status, review_note, reviewer_account_id, worker_id, submitted_at, reviewed_at FROM worker_registrations`).
+	mock.ExpectQuery(`SELECT id, name, phone, id_card_no, COALESCE\(group_id, 0\), COALESCE\(region_id, 0\), status, review_note, reviewer_account_id, worker_id, submitted_at, reviewed_at FROM worker_registrations`).
 		WithArgs("PENDING").
 		WillReturnRows(mock.NewRows(cols).
 			AddRow(int64(1), "王师傅", "13800000001", "110101199001011234", int64(6), int64(4),

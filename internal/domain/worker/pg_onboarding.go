@@ -20,7 +20,8 @@ func nullableInt64(v int64) any {
 }
 
 // regCols lists columns returned by the list query.
-const regCols = `id, name, phone, id_card_no, group_id, region_id, status,
+// group_id/region_id 自迁移 000089 可空(自助注册留 NULL 待审核补正),COALESCE 兜 0 防 scan 500。
+const regCols = `id, name, phone, id_card_no, COALESCE(group_id, 0), COALESCE(region_id, 0), status,
  review_note, reviewer_account_id, worker_id, submitted_at, reviewed_at`
 
 // Submit 新建师傅注册申请(落 PENDING);submitted_at 由 DB 默认 now() 生成。
