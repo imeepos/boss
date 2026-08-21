@@ -5,6 +5,49 @@ description: BOSS 业务平台 CLI 工具,用于操作全部 REST API 接口(121
 
 # bossctl CLI 工具使用指南
 
+## 基础原则(踩坑 3 次沉淀,务必先读)
+
+1. **接口存在 ≠ 业务正当**。admin 端有 `POST /orders` 路由,但下单是 customer 的本职;admin 真正的职责是建号/审批/调度/状态机推进。看到路由不要默认"我能调就归我"。
+2. **admin 是"账号管理员",不是业务角色**。sysadmin 不下客户订单、不替调度派单、不替财务收费;它通过 `POST /accounts` 把业务岗位(客服/调度/财务/网维)受权建出来,各业务岗位用自己的 API key 干自己的活。
+3. **一笔订单 = 4 个真人 + 系统协作**,客户/客服(财务)/调度员/师傅各管一摊:
+   - 客户自己 `POST /api/user/v1/orders` 下单(`CustomerID` 由服务端注入,不可传别人的)
+   - 客服坐席只接待 customer 转入的人工咨询,不要替客户下单(任何"代客下单"的真实业务都是少数线下场景,不是 demo 主路径)
+   - 调度员推进 `check-resource` / `reserve` / `dispatch` / `assign` 段2/3/8
+   - 财务推进 `charge` 段4
+   - 师傅接单、扫码绑定、激活、签收(`/api/worker/v1/...`)
+4. **三表登录边界**:`accounts` 只给后台员工用;`workers` 只给师傅端用;`customers` 只给客户 App 用。三类主体的 API key 不互通——customer key 不能调 admin 接口,worker key 不能调 admin 接口。
+5. **RBAC permCode 决定可见性**:同一 admin 端点,`menu:order` / `menu:dispatch` / `menu:billing` / `menu:resource` 是不同岗位;sysadmin 全有,但真实业务用对应 permCode 的受权账号去干。
+
+## 工作职责分工(一张表)
+
+> 数据来自 `test-accounts.json`;新增任何业务账号必须按相同结构追加,见后文"测试账号存储"。
+
+| 角色 | 主体类型 | roleCode | 主营接口 | 主要干的事 |
+|---|---|---|---|---|
+| **客户** | customer | (无) | `/api/user/v1/*` | 自助下单、催单、取消、改地址、评价 |
+| **装维师傅** | worker | (无) | `/api/worker/v1/*` | 接单、扫码、激活、签收、反馈 |
+| **客服坐席** | account | ops | `/orders` (GET)、`/complaints` | 受理客户咨询、投诉办结;**不下单** |
+| **装维调度员** | account | technician | `/orders` workflow、`/dispatch/pool`、`/dispatch/my-tickets` | 资源核查、端口预占、派单给师傅 |
+| **财务收款员** | account | ops | `/billing-runs`、`/payments`、`/invoices` | 段4合同收费、对账、出票 |
+| **网络运维工程师** | account | resource_admin | `/ports` `/resources` `/provision/*` | 端口/资源置备、网络监控 |
+| **审核员** | account | ops | `/customer-registrations/*`、`/worker-registrations/*` | 注册申请审批、实名核验 |
+| **管理员(admin)** | account | sysadmin | `POST /accounts`、`POST /api-keys`、跨域审计 | 受权建号、签发 API key、审批 |
+
+### 一笔新装订单的协作示例
+
+```
+1. customer   POST  /api/user/v1/orders         → 订单 ORD-XXX
+2. dispatch   POST  /orders/XXX/check-resource  → 段2 资源核查
+3. dispatch   POST  /orders/XXX/reserve         → 段3 端口预占
+4. cashier    POST  /orders/XXX/charge          → 段4 合同收费
+5. dispatch   POST  /dispatch/pool/.../assign   → 段8 派单给师傅
+6. worker     POST  /api/worker/v1/tickets/.../accept
+7. worker     POST  /api/worker/v1/tickets/.../scan-bind
+8. worker     POST  /api/worker/v1/tickets/.../activate → DONE
+```
+
+每步用对应角色的 API key,不要把 5-8 步都拿 admin 去干(那样等于绕过了平台的 RBAC 设计意图)。
+
 ## 使用二进制
 
 技能内预编译了各平台二进制文件,位于 `assets/` 目录下:
@@ -169,17 +212,42 @@ API key 认证依赖服务端已部署对应能力:
 **存储位置:本技能目录下的 `test-accounts.json`**
 (即 `.agents/skills/bossctl-cli/test-accounts.json`,与 SKILL.md 同级)
 
-- **用途**:沿用/复盘师傅注册→后台审核→实名认证等流程时,直接读取该 JSON 复用账号与 API key,无需重新建号。
-- **内容**:`admin`(总管理员)、`reviewer1`(审核人员,ops 角色持 menu:dispatch)、`workers[]`(每个注册的师傅,含 workerId/registrationId/API key)。
+- **用途**:沿用/复盘客户注册→后台审核→师傅注册→下单→调度→财务→师傅上门 12 环节全流程时,直接读取该 JSON 复用账号与 API key,无需重新建号。
+- **内容**(按"基础原则"中的角色齐全):
+  - `admin`(总管理员,sysadmin)— **只做**受权建号/签发 API key/审计,不下单
+  - `reviewer1`(测试审核员,ops)— 注册审批、实名核验
+  - `kefu_xu` / `kefu_zhao`(客服坐席,ops)— 受理客户咨询、投诉办结
+  - `dispatch_li`(装维调度员,technician)— 资源核查、端口预占、派单
+  - `cashier_wang`(财务收款员,ops)— 段4 合同收费、对账、出票
+  - `noc_chen`(网络运维工程师,resource_admin)— 端口/资源置备
+  - `workers[]`(每个注册的师傅,含 workerId/registrationId/API key)
+  - `customers[]`(每个注册的客户,含 customerId/phone/realName 状态/API key)
 - **约定**:
-  - 每次新建**任何**测试账号/师傅/审核人员,都必须把用户名、密码、API key、关联组织 ID 追加写入该 JSON(保持结构一致)。
+  - 每次新建**任何**测试账号(无论 account/worker/customer),都必须把用户名、密码、API key、roleCode、关联组织(legalEntityId/deptId/postId)ID 追加写入该 JSON(保持结构一致)。
+  - 业务账号结构:`{username, password, realName, accountId, roleCode, org:{legalEntityId, deptId, deptName, postId, postCode}, apiKeys:[{name,key}], note}`;新增时必须包含 roleCode + org 完整四元组(否则后续派单/审计会查不到归属)。
+  - 师傅结构:`{workerId, registrationId, name, phone, idCardNo, groupId, groupCode, regionId, status, realNameStatus, apiKey, note}`。
+  - 客户结构:`{customerId, registrationId, name, phone, idCardNo, legalEntityId, addressId, regionId, status, realNameStatus, serviceStatus, apiKey, note}`。
   - 密码与 API key 为敏感信息;该文件权限建议 `0600`,不要提交到公共仓库。
   - 用 `--as <身份名>` 或 `--api-key <key>` 切换身份调用,详见上文"认证方式"。
 
 **示例用法(读取账号发起调用)**:
 
 ```bash
-# 用 admin 创建 API key
+# 用 admin 受权建一个调度员账号
 ADMIN_KEY=$(python3 -c "import json;print(json.load(open('.agents/skills/bossctl-cli/test-accounts.json'))['admin']['apiKeys'][0]['key'])")
-bossctl --api-key "$ADMIN_KEY" call POST /legal-entities --data '{"code":"DEMO","name":"演示企业"}'
+bossctl --api-key "$ADMIN_KEY" call POST /accounts --data '{"username":"dispatch_xx","password":"Disp@123","realName":"X调度","phone":"1390000xxx","roleCode":"technician","legalEntityId":1,"deptId":1,"postId":1,"status":1}'
+
+# 读取调度员 API key 并以调度员身份推进订单
+DISP_KEY=$(python3 -c "import json;print(json.load(open('.agents/skills/bossctl-cli/test-accounts.json'))['dispatch_li']['apiKeys'][0]['key'])")
+bossctl --api-key "$DISP_KEY" call POST /orders/ORD-20260822-000378/reserve --data '{}'
+
+# 读取 customer API key 让客户自助下单
+CUST_KEY=$(python3 -c "import json;print(json.load(open('.agents/skills/bossctl-cli/test-accounts.json'))['customers'][1]['apiKey'])")
+curl -X POST "http://192.168.0.102:28080/api/user/v1/orders" -H "X-API-Key: $CUST_KEY" -H "Content-Type: application/json" -d '{"productId":"111","addressId":"290","channelId":"111"}'
 ```
+
+### ⚠️ 反模式(踩坑警示)
+
+- **不要用 admin API key 调 `/orders` POST** —— 这是 customer 的本职,admin 调等于绕过 RBAC。真正"代客下单"仅限极少数线下场景,不是 demo 主路径。
+- **不要用一个 API key 跑完整流程** —— 每一步用对应角色(段2/3/8 用调度,段4 用财务,段9-12 用师傅),这才是平台的真实分工;用一个 key 全干等于把 RBAC 设计意图架空。
+- **不要在新单接口 body 里编 customerId** —— user 端 `/orders` 的 CustomerID 是服务端从 token 取的,body 里传了也不会用;admin 端 `POST /orders` body 才传 customerId,但那是给极少数代客场景用的,不要当主路径。
