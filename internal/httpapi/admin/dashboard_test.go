@@ -119,3 +119,25 @@ func TestDashboard(t *testing.T) {
 		t.Fatalf("trend=%+v", body.Data.Trend)
 	}
 }
+
+// TestSameDayTimezone 回归:DB 时间戳为 UTC,now 为本地时区时不得把当日订单算进前一天。
+func TestSameDayTimezone(t *testing.T) {
+	local := time.FixedZone("CST", 8*3600) // 固定 +8,避免宿主机时区影响断言
+	now := time.Date(2026, 8, 21, 10, 0, 0, 0, local) // 本地 08-21 10:00
+	utc := time.FixedZone("UTC", 0)
+	cases := []struct {
+		ts     time.Time
+		want   bool
+		descEv string
+	}{
+		{time.Date(2026, 8, 21, 2, 0, 0, 0, utc), true, "UTC 02:00 = 本地 10:00 当日"},
+		{time.Date(2026, 8, 20, 20, 0, 0, 0, utc), true, "UTC 20:00 = 本地当日 04:00"},
+		{time.Date(2026, 8, 20, 10, 0, 0, 0, utc), false, "UTC 10:00 = 本地前一日 18:00"},
+		{time.Date(2026, 8, 21, 10, 0, 0, 0, local), true, "本地当日"},
+	}
+	for _, c := range cases {
+		if got := sameDay(c.ts, now); got != c.want {
+			t.Fatalf("%s: sameDay=%v want=%v", c.descEv, got, c.want)
+		}
+	}
+}

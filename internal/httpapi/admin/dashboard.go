@@ -127,7 +127,7 @@ func dashboardTodos(alarms []device.Alarm, tickets []order.DispatchTicket) []gin
 		if al.Status == "OPEN" {
 			items = append(items, gin.H{
 				"todoId": al.ID, "subject": al.AlarmNo + " " + al.Content,
-				"source": "告警中心", "time": al.CreatedAt.Format("15:04"),
+				"source": "告警中心", "time": al.CreatedAt.Local().Format("15:04"),
 			})
 		}
 	}
@@ -150,8 +150,10 @@ func weeklyTrend(orders []order.OrderListItem, now time.Time) gin.H {
 	return gin.H{"days": days, "values": counts}
 }
 
-// sameDay 同日判定(本地时区)。
+// sameDay 同日判定(先归一到 b 的时区:DB 时间戳按 UTC 扫描,time.Now() 为服务器本地时区,
+// 直接比较会在本地 00:00-08:00 期间把当日订单算进前一天)。
 func sameDay(a, b time.Time) bool {
+	a = a.In(b.Location())
 	ay, am, ad := a.Date()
 	by, bm, bd := b.Date()
 	return ay == by && am == bm && ad == bd
