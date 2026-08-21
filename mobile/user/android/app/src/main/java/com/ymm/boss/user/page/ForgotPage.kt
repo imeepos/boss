@@ -20,6 +20,7 @@ import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -44,7 +45,9 @@ fun ForgotScreen(nav: Nav) {
         AuthPhoneRow(phone, "请输入注册手机号") { phone = it }
         AuthCodeRow(code, countdown,
             onCode = { code = it },
-            onSend = { sendResetCode(scope, phone) { err = it; countdown = 60 } })
+            onSend = {
+                sendResetCode(scope, phone, onCode = { code = it }) { err = it; countdown = 60 }
+            })
         AuthPwdRow(np, { np = it }, "新密码(≥10位,含大小写与数字)", npVisible) { npVisible = !npVisible }
         AuthPwdRow(np2, { np2 = it }, "请再次输入新密码", np2Visible) { np2Visible = !np2Visible }
         if (err.isNotBlank()) Text(err, fontSize = 12.sp, color = com.ymm.boss.user.ui.Palette.err,
@@ -56,11 +59,19 @@ fun ForgotScreen(nav: Nav) {
     }
 }
 
-private fun sendResetCode(scope: kotlinx.coroutines.CoroutineScope, phone: String, onDone: (String) -> Unit) {
+private fun sendResetCode(
+    scope: kotlinx.coroutines.CoroutineScope,
+    phone: String,
+    onCode: (String) -> Unit,
+    onDone: (String) -> Unit,
+) {
     if (phone.isBlank()) { onDone("请输入手机号"); return }
+    if (!Regex("^1\\d{10}$").matches(phone)) { onDone("手机号格式不正确"); return }
     scope.launch {
         try {
-            UserApi.auth.smsCode(phone, "reset"); onDone("")
+            UserApi.auth.smsCode(phone, "reset")
+            devAutoFillSms(phone, "reset", onCode)
+            onDone("")
         } catch (e: Exception) { onDone("验证码发送失败：" + Api.friendlyMessage(e)) }
     }
 }

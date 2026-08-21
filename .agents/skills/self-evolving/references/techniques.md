@@ -219,3 +219,7 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - git 提交长中文 message 不要用 `git commit -m "$(cat <<'EOF' ... EOF)"`(bash 报 bad substitution);写临时文件 `git commit -F <file>` 后删除。2026-08-24。
 - 102 后端新部署链路(2026-08-21 实测):本地 git push gitea(192.168.0.102:222) → CI 自动 build+push 镜像(tag=commit SHA,latest 随之更新,约 1 分钟) → ssh 102 `cd ~/boss/deployments && docker compose -f docker-compose.102.app.yml pull server && up -d server`(报 loki logging plugin 错误但容器仍重建成功,以 docker inspect Image/StartedAt 为准) → curl 验证。
 - 模拟器注入真实 token 联调:`adb shell am force-stop` 后 `adb shell "run-as <pkg> sh -c 'cat > /data/data/<pkg>/shared_prefs/<prefs>.xml'"` 写入信封 token;登录态用 `run-as <pkg> cat shared_prefs/<prefs>.xml` 核对,残留 mock-xxx token 一眼可辨。(2026-08-21)
+
+## 任务开工先 `git status -uall` 划定"我的工作面"
+场景 → monorepo 里有多端/多 agent 并行工作,worktree 已有他人未提交的 dirty 文件;你只该动自己负责的子目录,否则提交时会污染别人的改动、且看不出脏 diff 是谁先来的。
+怎么用 → `git status -uall`(列出 unstaged + untracked)。把任务限定到目标子目录(mobile/worker/android/ 或 internal/httpapi/worker/),只 `git add <明确清单>`,他人的 diff 留给各自 owner 收口。如果发现清单里有他人刚遗留的小问题(如 import 缺失、lint),**别顺手带**,要么单开一个 chore commit,要么抛到群里给对应 owner。

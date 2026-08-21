@@ -41,6 +41,28 @@ func TestMemorySms(t *testing.T) {
 	}
 }
 
+// TestMemoryLatestSmsCode 开发模式回显:签发后能查到,消费后变 nil,未签发也 nil。
+func TestMemoryLatestSmsCode(t *testing.T) {
+	s := NewMemory()
+	ctx := context.Background()
+	if got, err := s.LatestSmsCode(ctx, "+8613800000001", "login"); err != nil || got != nil {
+		t.Fatalf("未签发应为 nil: %+v, %v", got, err)
+	}
+	if err := s.IssueSms(ctx, "+8613800000001", "login"); err != nil {
+		t.Fatalf("IssueSms: %v", err)
+	}
+	got, err := s.LatestSmsCode(ctx, "+8613800000001", "login")
+	if err != nil || got == nil || got.Code != "123456" {
+		t.Fatalf("签发后应查到 123456: %+v, %v", got, err)
+	}
+	if _, err := s.ConsumeSms(ctx, "+8613800000001", "login", "123456"); err != nil {
+		t.Fatalf("ConsumeSms: %v", err)
+	}
+	if got, err := s.LatestSmsCode(ctx, "+8613800000001", "login"); err != nil || got != nil {
+		t.Fatalf("消费后应为 nil: %+v, %v", got, err)
+	}
+}
+
 func TestMemoryAccounts(t *testing.T) {
 	s := NewMemory()
 	ctx := context.Background()

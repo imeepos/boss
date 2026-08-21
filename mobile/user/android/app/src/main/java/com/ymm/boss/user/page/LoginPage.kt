@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.Nav
+import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -85,7 +86,9 @@ fun LoginScreen(nav: Nav) {
                     if (mode == "sms") {
                         AuthCodeRow(code, countdown,
                             onCode = { code = it },
-                            onSend = { sendCode(scope, phone) { err = it; countdown = 59 } })
+                            onSend = {
+                                sendCode(scope, phone, onCode = { code = it }) { err = it; countdown = 59 }
+                            })
                     } else {
                         AuthPwdRow(password, { password = it }, "请输入密码", pwdVisible) { pwdVisible = !pwdVisible }
                         Text("忘记密码", fontSize = 12.sp, color = RN.muted,
@@ -157,12 +160,19 @@ private fun RegisterEntry(onClick: () -> Unit) {
     }
 }
 
-private fun sendCode(scope: kotlinx.coroutines.CoroutineScope, phone: String, onDone: (String) -> Unit) {
+private fun sendCode(
+    scope: kotlinx.coroutines.CoroutineScope,
+    phone: String,
+    onCode: (String) -> Unit,
+    onDone: (String) -> Unit,
+) {
     if (phone.isBlank()) { onDone("请输入手机号"); return }
     if (!Regex("^1\\d{10}$").matches(phone)) { onDone("手机号格式不正确"); return }
     scope.launch {
         try {
-            UserApi.auth.smsCode(phone, "login"); onDone("")
+            UserApi.auth.smsCode(phone, "login")
+            devAutoFillSms(phone, "login", onCode)
+            onDone("")
         } catch (e: Exception) { onDone("验证码发送失败：" + Api.friendlyMessage(e)) }
     }
 }

@@ -54,9 +54,13 @@ services:
     command: server /data --console-address ":9001"
     ports: ["29000:9000", "29001:9001"]
     environment:
-      MINIO_ROOT_USER: boss
-      MINIO_ROOT_PASSWORD: boss12345
-    volumes: [miniodata:/data]
+      # 密码走 bind-mount 文件，避免明文进 compose/git/process env
+      MINIO_ROOT_USER_FILE: /etc/minio/secrets/root_user
+      MINIO_ROOT_PASSWORD_FILE: /etc/minio/secrets/root_password
+    volumes:
+      - miniodata:/data
+      - /etc/minio/secrets/root_user:/etc/minio/secrets/root_user:ro
+      - /etc/minio/secrets/root_password:/etc/minio/secrets/root_password:ro
 
   temporal:
     image: 192.168.0.102:5000/boss/temporal:1.24
@@ -82,3 +86,10 @@ volumes:
   pgdata:
   miniodata:
   vmdata:
+
+# 密钥文件:容器内 /run/secrets/* 由 secrets 节挂入，源文件在 /etc/minio/secrets/
+secrets:
+  minio_root_user:
+    file: /etc/minio/secrets/root_user
+  minio_root_password:
+    file: /etc/minio/secrets/root_password

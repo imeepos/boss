@@ -14,6 +14,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.ymm.boss.user.api.Api
+import com.ymm.boss.user.api.DevModeStore
 import com.ymm.boss.user.ui.BossTheme
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.PageRefresh
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Api.init(this)
+        DevModeStore.init(this)
         enableEdgeToEdge()
         // 状态栏区域由 PageScaffold 统一画固定纯色带(与首页一致,不透明),此处只保证图标为白色。
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false

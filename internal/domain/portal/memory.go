@@ -55,6 +55,16 @@ func (s *memoryStore) ConsumeSms(_ context.Context, phone, scene, code string) (
 	return true, nil
 }
 
+func (s *memoryStore) LatestSmsCode(_ context.Context, phone, scene string) (*SmsCode, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	code, ok := s.sms[phone+"|"+scene]
+	if !ok {
+		return nil, nil
+	}
+	return &SmsCode{Phone: phone, Scene: scene, Code: code, IssuedAt: time.Now()}, nil
+}
+
 func (s *memoryStore) NextSyntheticCustomerID(_ context.Context) (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

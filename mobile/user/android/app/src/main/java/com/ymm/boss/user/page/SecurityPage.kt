@@ -38,6 +38,7 @@ import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -139,7 +140,11 @@ private fun PhoneForm() {
             OutlinedButton(
                 onClick = {
                     scope.launch {
-                        try { UserApi.auth.smsCode(phone, "login"); msg = "验证码已发送" }
+                        try {
+                            UserApi.auth.smsCode(phone, "login")
+                            devAutoFillSms(phone, "login") { code = it }
+                            msg = "验证码已发送"
+                        }
                         catch (e: Exception) { msg = "验证码发送失败" }
                     }
                 },

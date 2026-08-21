@@ -43,8 +43,11 @@ services:
     command: server /data --console-address ":9001"
     ports: ["9000:9000", "9001:9001"]
     environment:
-      MINIO_ROOT_USER: boss
-      MINIO_ROOT_PASSWORD: boss12345
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+    secrets:
+      - minio_root_user
+      - minio_root_password
     volumes: [miniodata:/data]
 
   temporal:
@@ -67,3 +70,10 @@ volumes:
   pgdata:
   miniodata:
   vmdata:
+
+# 密钥:容器内 /run/secrets/* 由 secrets 节挂入，源文件在 /etc/minio/secrets/
+secrets:
+  minio_root_user:
+    file: /etc/minio/secrets/root_user
+  minio_root_password:
+    file: /etc/minio/secrets/root_password

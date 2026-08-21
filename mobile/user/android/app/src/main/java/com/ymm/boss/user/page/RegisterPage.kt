@@ -31,6 +31,7 @@ import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -56,7 +57,9 @@ fun RegisterScreen(nav: Nav) {
         AuthPhoneRow(phone, "请输入手机号") { phone = it }
         AuthCodeRow(code, countdown,
             onCode = { code = it },
-            onSend = { sendRegisterCode(scope, phone) { err = it; countdown = 59 } })
+            onSend = {
+                sendRegisterCode(scope, phone, onCode = { code = it }) { err = it; countdown = 59 }
+            })
         AuthPwdRow(pwd, { pwd = it }, "设置密码(≥10位,含大小写与数字)", pwdVisible) { pwdVisible = !pwdVisible }
         AuthPwdRow(pwd2, { pwd2 = it }, "请再次输入密码", pwd2Visible) { pwd2Visible = !pwd2Visible }
         if (err.isNotBlank()) Text(err, fontSize = 12.sp, color = Palette.err,
@@ -76,11 +79,19 @@ fun RegisterScreen(nav: Nav) {
 private fun pwdInvalid(p: String): Boolean =
     p.length < 10 || p.none { it.isDigit() } || p.none { it.isLowerCase() } || p.none { it.isUpperCase() }
 
-private fun sendRegisterCode(scope: kotlinx.coroutines.CoroutineScope, phone: String, onDone: (String) -> Unit) {
+private fun sendRegisterCode(
+    scope: kotlinx.coroutines.CoroutineScope,
+    phone: String,
+    onCode: (String) -> Unit,
+    onDone: (String) -> Unit,
+) {
     if (phone.isBlank()) { onDone("请输入手机号"); return }
+    if (!Regex("^1\\d{10}$").matches(phone)) { onDone("手机号格式不正确"); return }
     scope.launch {
         try {
-            UserApi.auth.smsCode(phone, "register"); onDone("")
+            UserApi.auth.smsCode(phone, "register")
+            devAutoFillSms(phone, "register", onCode)
+            onDone("")
         } catch (e: Exception) { onDone("验证码发送失败：" + com.ymm.boss.user.api.Api.friendlyMessage(e)) }
     }
 }

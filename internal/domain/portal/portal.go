@@ -37,11 +37,22 @@ type Message struct {
 	CreatedAt  time.Time
 }
 
+// SmsCode 验证码记录:供开发模式回显用,不返回敏感字段外的其他元数据。
+type SmsCode struct {
+	Phone    string
+	Scene    string
+	Code     string
+	IssuedAt time.Time
+}
+
 // Service 门户状态服务接口(handler 依赖此抽象,测试以内存实现替身)。
 type Service interface {
 	// IssueSms 签发验证码(5 分钟有效);ConsumeSms 一次性校验消费。
 	IssueSms(ctx context.Context, phone, scene string) error
 	ConsumeSms(ctx context.Context, phone, scene, code string) (bool, error)
+	// LatestSmsCode 查询某手机号+场景下最近一条未过期且未消费的验证码(开发模式回显)。
+	// 不存在返回 (nil, nil)。
+	LatestSmsCode(ctx context.Context, phone, scene string) (*SmsCode, error)
 
 	// NextSyntheticCustomerID 未关联主档的注册账号发隔离空间合成 ID(负数段,见 000057 迁移)。
 	NextSyntheticCustomerID(ctx context.Context) (int64, error)

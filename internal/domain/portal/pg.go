@@ -73,6 +73,22 @@ func (s *pgStore) ConsumeSms(ctx context.Context, phone, scene, code string) (bo
 	return tag.RowsAffected() == 1, nil
 }
 
+func (s *pgStore) LatestSmsCode(ctx context.Context, phone, scene string) (*SmsCode, error) {
+	var c SmsCode
+	err := s.pool.QueryRow(ctx,
+		`SELECT phone, scene, code, issued_at FROM portal_sms_codes
+		WHERE phone=$1 AND scene=$2 AND used=FALSE AND expires_at > now()
+		ORDER BY issued_at DESC LIMIT 1`,
+		phone, scene).Scan(&c.Phone, &c.Scene, &c.Code, &c.IssuedAt)
+	if errors.Is(err, errNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
 // randReader 抽成变量仅为注入故障 reader(测试),生产行为不变。
 var randReader = rand.Reader
 

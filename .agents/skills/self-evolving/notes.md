@@ -865,3 +865,18 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最费时：新写的测试用例里 token 在 t.Setenv 之前签发,导致 "invalid worker token" 白排查一轮;另一个是 edit 工具对 tab 缩进敏感,从 read 复制时层级数错一次。
 - skill 是否预警：红线 1/4 覆盖了"先读再改",但没有"签 token 必须在 Setenv 密钥之后"这条。
 - 重来一次：封装 helper 时把 Setenv 放进 helper 首行;edit 前先 cat -et 确认目标行真实缩进层级。
+
+
+## 2026-08-21 师傅端开发模式自动获取验证码
+
+**哪个坑浪费了最多时间？**
+工作区里有他人未提交的 dev-mode 收尾改动(user 端),worktree 不洁。我第一次 go build ./... 失败是因为 user/debug_sms.go 里 httpx "imported and not used",我下意识把它当成我刚看的状态去删除 import——但实际看的是文件旧版本缓存/或别人在他自己的 read 后改了它。继续 build 才发现 server 整树编译没问题,debug_sms.go 我根本不该碰。还有一处:我自己加的 LoginScreen.kt 第一版没有正确处理 devMode 路径下"已拿到 code 就不该跑 60s 倒计时"的边界,但 edit 时范围一致,没踩 edit 红线,反而让我重构了一次流程分支。
+
+**这个 skill 有没有提前警告我？**
+"高频红线 #5 任务完成必须 git commit"保证了产物理清,但"开工前 `git status` 看是否有他人未提交 diff"这一点在 skill 里是隐含的——应在 `references/techniques.md` 显式标注:任务开始先用 `git status -uall` 划定工作面。也不要轻信 read 工具的输出:如果他人同时改 worktree,你以为的可信快照下一秒就过期。
+
+**重来一次我会怎么做？**
+- 第一步永远 `git status -uall` 列出 unstaged + untracked,只动跟我任务相关的路径;其它路径(像 user 端那批改动)留在 dirty,提交严格按文件清单 add -m,避免污染。
+- 工作区动别人的代码(如发现 user/debug_sms.go 有 lint 错误)先确认是不是我的责任:如果是, 提醒 user 端任务 owner 处理或单开一个 chore commit;如果不动, 不要顺手带。
+- Android 端 devMode 校验时,Api 返回的 ApiException status/msg 一定要结构化,别靠吞 `_`——这里我用 `catch (_: ApiException)` 仅为了不中断轮询,其实可以在外面把 status 取出当日志,排查时不必再翻 trace。
+

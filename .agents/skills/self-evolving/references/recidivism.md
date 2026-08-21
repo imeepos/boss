@@ -54,3 +54,4 @@
 | 组件内部 padding 吃掉外部归零 modifier,造成 no-op 假修复 | 1 | 2026-08-21(worker 首页 OverviewCard 顶距,传 padding(top=0) 无效,真机确认后才真修) | 假修复一轮+用户二次点名 |
 | 4 | 2026-08-21 | 真机 reboot 前未查 secure keyguard,PIN 锁死设备(1 次) |
 | 改 handler 未先 grep OpenAPI schemas.yaml 看完整字段,导致 schema 列出 12 字段 handler 只返 6 字段,前端 optString 静默吞空变"沉默 bug" | 1 | 2025-08-21(师傅工单详情 customerName/phone/address/product/finishedAt 等 12 字段全空白,FEEDBACK E 区记录) | schema/handler 漂移无失败信号;改 handler 前必 grep schema,list/detail 必须共用联表根 |
+| 任务开始前不看 `git status -uall`,带别人的 dirty diff 进提交 | 1 | 2026-08-21(user 端 dev-mode 临改被误判为我的范围而动 import) | 险些污染提交;应先划定"我的工作面",别人的 lint/缺 import 只提示 owner,不顺手改 |

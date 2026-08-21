@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
 import com.ymm.boss.user.api.Api
+import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -68,7 +69,7 @@ internal fun RNFormStep(
             onSms(it); if (err == "sms") err = ""
         }, onSend = {
             notice = ""
-            sendVerifyCode(scope) { msg, cd ->
+            sendVerifyCode(scope, onCode = { onSms(it) }) { msg, cd ->
                 if (cd) countdown = 59 else notice = msg  // spec: 起始即 "59s后重发"
             }
         })
@@ -92,10 +93,16 @@ internal fun RNFormStep(
     }
 }
 
-private fun sendVerifyCode(scope: kotlinx.coroutines.CoroutineScope, onDone: (String, Boolean) -> Unit) {
+private fun sendVerifyCode(
+    scope: kotlinx.coroutines.CoroutineScope,
+    onCode: (String) -> Unit,
+    onDone: (String, Boolean) -> Unit,
+) {
     scope.launch {
         try {
-            AccountApi.sendVerifySmsCode(); onDone("", true)
+            AccountApi.sendVerifySmsCode()
+            devAutoFillSms("", "verify", onCode)
+            onDone("", true)
         } catch (e: Exception) { onDone(Api.friendlyMessage(e) + "，稍后可重试", false) }
     }
 }

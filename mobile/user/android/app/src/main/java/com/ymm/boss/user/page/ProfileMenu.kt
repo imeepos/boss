@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.Api
+import com.ymm.boss.user.api.DevModeStore
 import com.ymm.boss.user.api.LangStore
 import com.ymm.boss.user.api.ProfileApi
 import com.ymm.boss.user.api.UserApi
@@ -116,6 +118,53 @@ internal fun SettingsCard(nav: Nav) {
     AppCard(outer = PaddingValues(vertical = 6.dp)) {
         CardTitle("账号与设置")
         entries.forEach { e -> MenuRow(e.icon, e.tint, e.label) { nav.push(e.route) } }
+    }
+    if (com.ymm.boss.user.BuildConfig.DEBUG) DevModeCard()
+}
+
+/** 开发模式开关(仅 debug 包可见):开启后"获取验证码"自动从后台拉明文回填。 */
+@Composable
+internal fun DevModeCard() {
+    var enabled by remember { mutableStateOf(DevModeStore.isEnabled()) }
+    AppCard(outer = PaddingValues(vertical = 6.dp)) {
+        CardTitle("开发选项")
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("开发模式", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.ink)
+                Text(
+                    if (enabled) "获取验证码后自动从后台拉明文回填" else "关闭后走正常短信验证码流程",
+                    fontSize = 12.sp, color = Palette.muted,
+                )
+            }
+            DevSwitch(enabled = enabled) {
+                enabled = it
+                DevModeStore.setEnabled(it)
+            }
+        }
+    }
+}
+
+/** 圆形拨码开关:开=主色实心,关=灰描边(spec 与 ProfileMenu 其他控件一致)。 */
+@Composable
+private fun DevSwitch(enabled: Boolean, onToggle: (Boolean) -> Unit) {
+    val bg = if (enabled) Palette.primary else Palette.line
+    val knobOffset = if (enabled) 18.dp else 0.dp
+    Box(
+        Modifier
+            .size(width = 44.dp, height = 26.dp)
+            .background(bg, RoundedCornerShape(13.dp))
+            .clickable { onToggle(!enabled) },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Box(
+            Modifier
+                .padding(start = knobOffset + 3.dp)
+                .size(20.dp)
+                .background(Color.White, CircleShape),
+        )
     }
 }
 
