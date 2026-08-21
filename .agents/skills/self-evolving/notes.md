@@ -163,3 +163,10 @@
 - 坑:edit 的 old_string 以 `<Route` 这类高频重复片段做锚,匹配到了相邻的 ucenter 路由而非目标路由,改完才发现(红线#4 变体:锚点不唯一)。修法:多行 old_string 必须包含目标独有上下文(如 path 属性行),改完立刻重读确认。
 - 坑:根路径 "/" 原本被 AuthGuard 整包住,index 子路由里的分流组件永远执行不到(未登录先被踢 /login)。守卫区改无路径布局路由 + 顶层独立 "/" 分流路由解决。
 - 并行会话半成品(pages/backup)让全仓 typecheck 一度挂掉;等对方自愈后门禁通过,commit 精确 add 6 个文件避开污染。
+
+## 2026-08-25 push-config 落地(并行 agent 共存会话)
+
+- 最大的坑:共享工作区有另一个并行 agent 同步开发(backup 功能),我的新文件(jpush.go)被其中途重构、wiring.go 被连环改写、我的半成品被对方打包进两个巨石提交。教训:大粒度 write 后立刻 build 验证;提交前必须重新 diff 确认哪些是自己的产物;不要基于记忆断言文件内容。
+- 新坑(重试已成功的 edit 导致双重插入):一次消息里发了两次同样的 edit,第一次成功第二次把 Push 装配块插了两遍,靠 grep 发现。重试前先确认上次是否已生效。
+- skill 提前预警了:menu.def 新增项必须补 items/<key>.svg(docs/boss-admin-web.md 记录),这次靠它躲过无图标坑;红线#3(禁原生 select)第一次写就踩了,靠红线记忆当场改 Dropdown。
+- UI 验证新姿势:AuthGuard 需要 boss.servers JSON 含 id 字段且 boss.server.active 指向该 id;vite 无代理禁用,API 直连绝对地址;DOM 断言用 --eval "JSON.stringify({path,text})" 比截图更硬。

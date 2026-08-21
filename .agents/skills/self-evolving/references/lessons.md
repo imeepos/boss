@@ -172,3 +172,7 @@
 - #78 门禁(typecheck/test/build)通过后立即 git commit,再跑耗时的 E2E/CDP/双主题验证;共享工作区有并行会话时,验证耗时窗口就是被扫提交/被回退的窗口(2026-08-21 importer Excel 导入被并行会话混提交)。
 - 当 INSERT 拼 `const factSnap + 显式列` SQL 时,占位符总数必须现场重数列数(factSnap 是 7 列不是直觉的 8),pgx 报 insufficient arguments 第一反应应是数列,不是加参数。pgxmock 单测对多余占位符不报错,会静默通过,必须跑真库集成测试才能抓住。
 - lesson: locale/types.ts 插入 i18n 块时,同形尾部 key(pageUnit/rangeText)在多个 section 重复,必须用"目标段的段名行+下一段段名"做唯一锚点,不能凭尾部 key 模式定位(2026-08-25 notif 块插进 company 段,三份 locale 全错返工)。
+
+- 重发同一 edit 前先确认上次结果:一次消息里重复的 edit 会双倍插入,重试成功的 edit = 制造重复块(2026-08-25 wiring.go Push 块 x2)。
+- 共享工作区有并行 agent 时:自己 write 的文件可能被对方改写/提交,提交前用 git log/diff 认领自己的产物,不重提对方的中间态(2026-08-25 push-config 与 backup 并行)。
+- admin 页面 UI 实测:localStorage 注 boss.servers 必须 [{id,name,baseUrl}] 且 active=id;无 vite 代理,API 直连 baseUrl;DOM 断言优先于截图(2026-08-25)。
