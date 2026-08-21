@@ -823,3 +823,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 最费时：共享工作区并行会话同时改三语言 i18n 与订单类型，web build/typecheck 的全量错误混入本轮；使用 git diff HEAD 与 `git diff --cached` 只暂存 ODN UI，避免吞并邻居改动。
 - 新经验：共享前端 i18n 文件不能直接 `git add`;必须从 HEAD 生成最小 patch 再 cached apply，保证提交边界。
 - 设备扩容后缀初版误把 -10 判非法(正则首位 [2-9]);规范是禁 -1、允许 -10，已改为 `-([2-9]|[1-9][0-9]+)` 并用 102 PG 重放迁移验证。
+
+## 2026-08-24 拆机/更换表单改 ResourcePicker,资源页筛选取消原生 select
+- 顺利:契约先行(terms/domain-map/fields + 后端 order_sub.go/query.go 读序正确),先读 i18n 三语言块再落键,门禁 typecheck/test/build 一次过,成功避开累犯红线 #1/#3/#5。
+- 唯一波折:长中文 commit message 用 `git commit -m "$(cat <<'EOF' ...)"` 报 bash bad substitution,改临时文件 + `git commit -F` 一次过——已沉淀 techniques.md。
+- 重来一次仍应:先勘察三个目标页与 Dropdown/组件视觉再动手;每个 i18n 键落三语言后 grep 锚点行验证落点(本次 fPort:'Port ID' 两页面块同文案,靠 grep pickSearch 行号确认落进 dismantlePage)。
