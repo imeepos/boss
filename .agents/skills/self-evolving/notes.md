@@ -840,3 +840,8 @@ e2e 自清理写对了三轮才闭环,三个坑各废一轮全量验证:① pgx 
 - 顺利:契约先行(terms/domain-map/fields + 后端 order_sub.go/query.go 读序正确),先读 i18n 三语言块再落键,门禁 typecheck/test/build 一次过,成功避开累犯红线 #1/#3/#5。
 - 唯一波折:长中文 commit message 用 `git commit -m "$(cat <<'EOF' ...)"` 报 bash bad substitution,改临时文件 + `git commit -F` 一次过——已沉淀 techniques.md。
 - 重来一次仍应:先勘察三个目标页与 Dropdown/组件视觉再动手;每个 i18n 键落三语言后 grep 锚点行验证落点(本次 fPort:'Port ID' 两页面块同文案,靠 grep pickSearch 行号确认落进 dismantlePage)。
+
+## 2026-08-24 web/admin 路由页面懒加载
+- 最费时：React.lazy 对只导出命名组件的 error/placeholder 页面不能直接 import，必须在动态 import 后映射 `{ default: module.NamedPage }`；先跑 typecheck 能立即定位。
+- skill 是否预警：前端门禁要求 build/typecheck，但没有直接覆盖 lazy named export 的类型形状。
+- 重来一次：批量把页面导入改懒加载时，先区分 default export 与 named export，再运行 typecheck；最终用构建产物大小确认 chunk warning 是否消失。

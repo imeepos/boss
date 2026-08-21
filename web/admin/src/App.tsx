@@ -1,71 +1,73 @@
 // 路由:登录页独立;受保护区 AuthGuard→AdminLayout(Outlet);45 页全集 + 403/404。
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './layouts/AdminLayout'
 import { UCenterLayout } from './layouts/UCenterLayout'
 import { AuthGuard } from './layouts/AuthGuard'
 import { useProfile } from './layouts/profile'
-import LoginPage from './pages/login'
-import DashboardPage from './pages/dashboard'
-import AccountListPage from './pages/base/account'
-import AddressPage from './pages/base/address'
-import GeoPage from './pages/base/geo'
-import ImporterPage from './pages/base/importer'
-import ParamsPage from './pages/base/params'
-import AuthConfigPage from './pages/base/authconfig'
-import SmsConfigPage from './pages/base/smsconfig'
-import RealIDConfigPage from './pages/base/realidconfig'
-import StorageConfigPage from './pages/base/storageconfig'
-import ServersPage from './pages/base/servers'
-import AuditPage from './pages/base/audit'
-import CompanyPage from './pages/org/company'
-import DepartmentPage from './pages/org/department'
-import PostPage from './pages/org/post'
-import RegionPage from './pages/org/region'
-import MenuPermPage from './pages/org/menuperm'
-import DataScopePage from './pages/org/datascope'
-import ApiKeyPage from './pages/org/apikey'
-import MessageCenterPage from './pages/boss/message'
-import CustomerPage from './pages/bss/customer'
-import ProductPage from './pages/bss/product'
-import UserListPage from './pages/bss/user'
-import UserDataPage from './pages/bss/userdata'
-import BillPage from './pages/billing/billing'
-import PaymentPage from './pages/billing/payment'
-import ArrearsPage from './pages/billing/arrears'
-import StopSrvPage from './pages/billing/stopsrv'
-import PayCheckPage from './pages/billing/paycheck'
-import AssetPage from './pages/ams/asset'
-import TagPage from './pages/ams/tag'
-import StockPage from './pages/ams/stock'
-import ReplacePage from './pages/ams/replace'
-import ResourcePage from './pages/oss/resource'
-import ODNPage from './pages/oss/odn'
-import ReservePage from './pages/oss/reserve'
-import TransferPage from './pages/oss/transfer'
-import DevicePage from './pages/oss/device'
-import LoAccountPage from './pages/oss/loaccount'
-import ExpandPage from './pages/oss/expand'
-import OrderPage from './pages/boss/order'
-import WorkerPage from './pages/boss/worker'
-import WorkerOpsPage from './pages/boss/worker-ops'
-import DispatchPage from './pages/boss/dispatch'
-import DismantlePage from './pages/boss/dismantle'
-import ComplaintPage from './pages/boss/complaint'
-import CallbackPage from './pages/boss/callback'
-import QuadLinkPage from './pages/quad/quadlink'
-import QuadCheckPage from './pages/quad/check'
-import ScanLogPage from './pages/quad/scanlog'
-import AlarmPage from './pages/alarm'
-import AaaLogPage from './pages/aaalog'
-import ProvisionTaskPage from './pages/provision/provision'
-import TemplatePage from './pages/provision/template'
-import ProvlogPage from './pages/provision/provlog'
-import GisPage from './pages/intel/gis'
-import AnalyticsPage from './pages/intel/analytics'
-import ReportPage from './pages/intel/report'
-import ProfilePage from './pages/profile'
-import { ForbiddenPage, NotFoundPage } from './pages/error'
-import { PlaceholderPage } from './pages/placeholder'
+const LoginPage = lazy(() => import('./pages/login'))
+const DashboardPage = lazy(() => import('./pages/dashboard'))
+const AccountListPage = lazy(() => import('./pages/base/account'))
+const AddressPage = lazy(() => import('./pages/base/address'))
+const GeoPage = lazy(() => import('./pages/base/geo'))
+const ImporterPage = lazy(() => import('./pages/base/importer'))
+const ParamsPage = lazy(() => import('./pages/base/params'))
+const AuthConfigPage = lazy(() => import('./pages/base/authconfig'))
+const SmsConfigPage = lazy(() => import('./pages/base/smsconfig'))
+const RealIDConfigPage = lazy(() => import('./pages/base/realidconfig'))
+const StorageConfigPage = lazy(() => import('./pages/base/storageconfig'))
+const ServersPage = lazy(() => import('./pages/base/servers'))
+const AuditPage = lazy(() => import('./pages/base/audit'))
+const CompanyPage = lazy(() => import('./pages/org/company'))
+const DepartmentPage = lazy(() => import('./pages/org/department'))
+const PostPage = lazy(() => import('./pages/org/post'))
+const RegionPage = lazy(() => import('./pages/org/region'))
+const MenuPermPage = lazy(() => import('./pages/org/menuperm'))
+const DataScopePage = lazy(() => import('./pages/org/datascope'))
+const ApiKeyPage = lazy(() => import('./pages/org/apikey'))
+const MessageCenterPage = lazy(() => import('./pages/boss/message'))
+const CustomerPage = lazy(() => import('./pages/bss/customer'))
+const ProductPage = lazy(() => import('./pages/bss/product'))
+const UserListPage = lazy(() => import('./pages/bss/user'))
+const UserDataPage = lazy(() => import('./pages/bss/userdata'))
+const BillPage = lazy(() => import('./pages/billing/billing'))
+const PaymentPage = lazy(() => import('./pages/billing/payment'))
+const ArrearsPage = lazy(() => import('./pages/billing/arrears'))
+const StopSrvPage = lazy(() => import('./pages/billing/stopsrv'))
+const PayCheckPage = lazy(() => import('./pages/billing/paycheck'))
+const AssetPage = lazy(() => import('./pages/ams/asset'))
+const TagPage = lazy(() => import('./pages/ams/tag'))
+const StockPage = lazy(() => import('./pages/ams/stock'))
+const ReplacePage = lazy(() => import('./pages/ams/replace'))
+const ResourcePage = lazy(() => import('./pages/oss/resource'))
+const ODNPage = lazy(() => import('./pages/oss/odn'))
+const ReservePage = lazy(() => import('./pages/oss/reserve'))
+const TransferPage = lazy(() => import('./pages/oss/transfer'))
+const DevicePage = lazy(() => import('./pages/oss/device'))
+const LoAccountPage = lazy(() => import('./pages/oss/loaccount'))
+const ExpandPage = lazy(() => import('./pages/oss/expand'))
+const OrderPage = lazy(() => import('./pages/boss/order'))
+const WorkerPage = lazy(() => import('./pages/boss/worker'))
+const WorkerOpsPage = lazy(() => import('./pages/boss/worker-ops'))
+const DispatchPage = lazy(() => import('./pages/boss/dispatch'))
+const DismantlePage = lazy(() => import('./pages/boss/dismantle'))
+const ComplaintPage = lazy(() => import('./pages/boss/complaint'))
+const CallbackPage = lazy(() => import('./pages/boss/callback'))
+const QuadLinkPage = lazy(() => import('./pages/quad/quadlink'))
+const QuadCheckPage = lazy(() => import('./pages/quad/check'))
+const ScanLogPage = lazy(() => import('./pages/quad/scanlog'))
+const AlarmPage = lazy(() => import('./pages/alarm'))
+const AaaLogPage = lazy(() => import('./pages/aaalog'))
+const ProvisionTaskPage = lazy(() => import('./pages/provision/provision'))
+const TemplatePage = lazy(() => import('./pages/provision/template'))
+const ProvlogPage = lazy(() => import('./pages/provision/provlog'))
+const GisPage = lazy(() => import('./pages/intel/gis'))
+const AnalyticsPage = lazy(() => import('./pages/intel/analytics'))
+const ReportPage = lazy(() => import('./pages/intel/report'))
+const ProfilePage = lazy(() => import('./pages/profile'))
+const ForbiddenPage = lazy(() => import('./pages/error').then((m) => ({ default: m.ForbiddenPage })))
+const NotFoundPage = lazy(() => import('./pages/error').then((m) => ({ default: m.NotFoundPage })))
+const PlaceholderPage = lazy(() => import('./pages/placeholder').then((m) => ({ default: m.PlaceholderPage })))
 import { MENU_GROUPS } from './router/menu.def'
 import { canAccess } from './router/role-menu'
 import { useT } from './i18n'
@@ -138,9 +140,14 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   return <PlaceholderPage title={label} />
 }
 
+function RouteFallback() {
+  return <div className="flex min-h-32 items-center justify-center text-sm text-[var(--shell-group-title)]">Loading…</div>
+}
+
 export default function App() {
   return (
     <ConfirmProvider>
+    <Suspense fallback={<RouteFallback />}>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -178,6 +185,7 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </Suspense>
     </ConfirmProvider>
   )
 }
