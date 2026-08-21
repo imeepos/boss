@@ -522,6 +522,21 @@
 | 发布时间 | `publishedAt` | published_at | |
 | 操作 | — | — | 上下架切换 `PUT /notices/{id}/toggle` |
 
+**admin_notifications（后台提醒页签,迁移 000090）**
+
+广播+读回执模型:主体面向角色广播,已读状态在 `admin_notification_reads` 按账号记录;`resolved` 由来源域驱动(todo 生命周期),与账号视角的 `read` 分离。API:`GET /notifications`、`GET /notifications/unread-count`、`POST /notifications/read`。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 级别 | `level` | level | INFO/WARN/URGENT |
+| 标题 | `title` | title | 未读加粗;读状态 join reads |
+| 类型 | `category` | category | todo=待办/task=任务结果 |
+| 时间 | `createdAt` | created_at | |
+| 状态 | `read`/`resolved` | reads/resolved | resolved 行灰显且不计未读 |
+| 操作 | — | — | 「去处理」跳 `link`(menu.def 路由);已读调 `POST /notifications/read` |
+
+`ref_type` 来源域:importer/worker_reg/provision/report/billing/complaint(幂等键 ref_type+ref_id+category)。
+
 ## 8. 归属台账实体（通用深度关联模式，六张）
 
 可变归属/状态 + 派生历史 → 配「台账」四件套：FK 双向 + `xxx_name` 快照 + 时间区间 + `reason`/`operator_account_id` 追溯。
