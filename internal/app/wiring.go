@@ -18,6 +18,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/device"
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/gis"
+	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/portal"
@@ -97,6 +98,8 @@ type Application struct {
 	Asset     asset.AssetService
 	APIKey    apikey.Service
 	AI        ai.Service
+	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
+	Notify notify.Service
 
 	// Attachment 附件上传(三端共用,对象入 MinIO,元数据入 attachments 表)。
 	Attachment *attachment.Service
@@ -235,6 +238,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Asset:     asset.NewPGStore(pool),
 		APIKey:    akstore,
 		AI:        aisvc,
+		Notify:    notify.NewPGStore(pool),
 
 		Attachment: &attachment.Service{
 			St: attachment.NewPGStore(pool), Obj: attachment.NewMinIOStorage(),
