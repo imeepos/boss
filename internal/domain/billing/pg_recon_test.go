@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/pashagolub/pgxmock/v4"
+
+	"github.com/ymm-001/boss/internal/pkg/clock"
 )
 
 // TestPGStore_ListReconciliations 契约:批次列表含 diff 派生值。
@@ -122,7 +124,8 @@ func TestPGStore_RecordChannelStatement(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{
 			"id", "batch_no", "channel", "channel_amount", "system_amount", "status", "created_at", "settled_at",
 		}).AddRow(int64(4), "PC-20250816-04", "支付宝", 0, 0, "DIFF_PENDING", created, nil))
-	mock.ExpectQuery(`FROM payments`).WithArgs(created).
+	dayStart, dayEnd := clock.DayBounds(created)
+	mock.ExpectQuery(`FROM payments`).WithArgs(dayStart, dayEnd).
 		WillReturnRows(mock.NewRows([]string{"id", "pay_no", "amount"}).
 			AddRow(int64(11), "PAY-1", 100.00))
 	mock.ExpectExec(`DELETE FROM reconciliation_items`).WithArgs(int64(4)).

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -176,9 +177,9 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 			respond(c, apitypes.CodeNotFound, nil)
 			return
 		}
-		date := time.Now()
+		date := clock.Now()
 		if d := c.Query("date"); d != "" {
-			parsed, err := time.ParseInLocation("2006-01-02", d, time.Local)
+			parsed, err := time.ParseInLocation("2006-01-02", d, clock.Location())
 			if err != nil {
 				respond(c, apitypes.CodeInvalidParam, nil)
 				return

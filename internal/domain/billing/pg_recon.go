@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+
+	"github.com/ymm-001/boss/internal/pkg/clock"
 )
 
 // ListReconciliations 对账批次列表,按批次号倒序(最新在前)。
@@ -127,13 +129,16 @@ func (s *PGStore) getReconBatchByID(ctx context.Context, batchID int64) (*ReconB
 }
 
 // loadDailyPayments 系统侧比对范围:批次创建同日(批次号 PC-YYYYMMDD-NN 按日出批)的 SUCCESS 缴费。
+// 日界由 clock.DayBounds 按业务时区在 Go 侧切好传入——date_trunc 依赖会话时区(UTC),
+// 与批次号的业务日口径不一致会在马尼拉 00:00-08:00 错切一天。
 func (s *PGStore) loadDailyPayments(ctx context.Context, day time.Time) ([]PaymentRef, error) {
+	start, end := clock.DayBounds(day)
 	rows, err := s.db.Query(ctx, `
 		SELECT id, pay_no, amount FROM payments
 		WHERE status='SUCCESS'
-		  AND created_at >= date_trunc('day', $1::timestamptz)
-		  AND created_at < date_trunc('day', $1::timestamptz) + interval '1 day'
-		ORDER BY id`, day)
+		  AND created_at >= $1
+		  AND created_at < $2
+		ORDER BY id`, start, end)
 	if err != nil {
 		return nil, fmt.Errorf("billing: load daily payments: %w", err)
 	}
