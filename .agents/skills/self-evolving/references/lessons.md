@@ -192,3 +192,6 @@
 - lessons 81: admin 选择器三件套已沉淀在 web/admin/src/components/pickers/(EntityPicker 基座:服务端 keyword 检索 + DetailDrawer 详情 + 前往管理页跳转),新表单选用户/师傅/客户直接复用,别再各页自造。
 - lessons 82: CDP 断言自研 Dropdown:打开浮层必须对触发器 click(),选中选项必须 dispatchEvent(new MouseEvent('mousedown',{bubbles:true}))——onChange 绑在 onMouseDown 上,click() 选不中;页面常有多个 listbox 触发器,先按 aria-label/innerText 枚举定位再操作。
 - lessons 83: CDP --logs 的 network 条目是最硬的断言证据:选中选择器后刷新,直接在日志里 grep 请求参数(如 bills?customerId=213),比读 DOM 文本可靠(React 重渲染时机会让 textContent 读取扑空)。
+75. subagent failed 通知不可信:先 list_agents 看实况,僵尸 agent 会继续写文件;提交前对每个非预期未跟踪文件查来源(mtime/内容)再处置。
+76. 拆分大文件先扫同目录既有拆分模式(components/AttachmentManager、geo/styles.ts、app/wiring_*.go),新文件命名与职责边界对齐惯例,review 成本最低。
+77. commit message 里的量化结论(行数/用例数)必须来自实测命令输出,不许凭记忆估。

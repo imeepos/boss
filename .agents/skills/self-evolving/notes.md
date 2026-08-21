@@ -204,3 +204,9 @@
 ## 2026-08-21 官网首页顶栏导航闪烁
 - 坑:用户说"顶部导航"先入为主修了后台 AdminLayout,实际指官网首页 /home——公开页与后台壳层是两套路由,C TA 跨顶层路由首载 lazy chunk 仍会整页闪 Loading。同一根因两个发病位置。
 - 重来一次:接到"XX 页面闪烁"先确认用户说的是哪个页面/哪条路由路径,再定位 Suspense 边界。
+
+## 2026-08-21 代码规整 codereview(6 文件拆分)
+- 最耗时的坑:6 个并行 subagent 全部收到 "failed" 通知,实际 3 个还在跑,把重复拆分文件写进工作区;git stash -u 时被卷进又 pop 出来,差点污染提交。
+- skill 提前警告过吗:recidivism 有"并行agent把半成品卷进提交",但没有"failed 通知不可信"这一条。
+- 重来一次:收到 subagent failed 通知先 list_agents 复实况;发现非预期未跟踪文件先查 mtime 与来源再删;另外 commit message 里的行数必须实测(本次 202/179 写错,rebase 补救)。
+- 有效手法:拆分前先看同目录既有模式(logic.ts/styles.ts/wiring_*.go),新文件名对齐既有命名;门禁(check-contract-sync)自身就是超标受害者,拆完 C 项即绿。

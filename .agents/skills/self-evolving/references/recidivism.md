@@ -63,3 +63,5 @@
 | 未完工改动被并行会话卷进混合提交(失去独立revert性) | 2 | 2026-08-21(fe30e60 卷入附件后端+i18n,7d0d984 卷入组件前端); 2026-08-25(popover 统一样式 4 文件被卷进 b31a217 feat(push)/41a0125 feat(worker),已验证内容在 HEAD 但不可独立 revert) | 提交纪律被破坏,只能记录在案;CDP 验证与 commit 之间的窗口越长越危险,改完立刻提交 |
 | 并行agent把进行中的半成品连同无关文件提交成一条巨石 commit | 2 | 2026-08-20(僵尸subagent回退), 2026-08-21(fe30e60 混入 OrderPage.kt) | 提交污染难 revert;开工与收尾各 git status 一次,提交前 diff --cached 复核 |
 | 新服务依赖可写目录但部署物(compose/Dockerfile)未随代码提交,102 装配 nil | 1 | 2026-08-21(backup 卷 permission denied,两轮部署) | 功能代码与部署物必须同批提交 |
+| subagent "failed" 通知后未用 list_agents 复核,僵尸 agent 仍在并行写文件,与主线产出重复/冲突 | 1 | 2026-08-21(6 个重构 subagent 全报 failed,实际 3 个仍 running,残留 sections/ 等重复文件混入 stash) | 收到 failed 通知先 list_agents 核实;提交前 git status 出现非预期未跟踪文件必须查来源 |
+| commit message 里写未经测量的数字(行数"370->202",实际 179) | 1 | 2026-08-21(profile 拆分,rebase reword 补救) | 写结论数字前先 wc -l 实测;此为红线#6 的数字版 |
