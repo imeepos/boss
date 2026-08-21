@@ -158,3 +158,5 @@
 - 脚本批量在 import 区插行时,不要按"以 import 开头的行"定位插入点——多行 `import {` 会被拦腰插入;应找完整 import 语句(或 `} from` 行)之后插入。(2026-04-11 admin confirm 替换)
 - cdp-capture.mjs 每次运行是新浏览器上下文:localStorage 注入必须与页面导航在同一次调用里完成,且最后一个 --eval 用 async 等待+返回文本做断言;eval 执行在 --settle 之前。(2026-04-11)
 - 页面直访 404/空白时先 grep router/menu.def.ts 的真实 path(菜单分组带前缀,如 /alarm/alarm),不要猜 /alarm。(2026-04-11)
+- 当订单处于 stage 2 时，修复是预占入口先打开资源核查，只有核查 available 后才 POST `/orders/:orderNo/reserve`；直接预占会返回 42200 参数非法。skill 没提前警告我。
+- 当 React 页面动作按钮可能被表单包裹时，修复是所有非提交动作显式声明 `type="button"`，避免隐式提交导致导航。skill 没提前警告我。

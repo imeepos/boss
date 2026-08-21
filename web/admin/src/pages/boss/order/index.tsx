@@ -6,6 +6,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
+import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
@@ -87,6 +88,8 @@ export default function OrderPage() {
       .finally(() => setBusy(false))
   }
 
+  const statusOptions = [{ value: '', label: o.allStatus }, ...STATUSES.map((value, i) => ({ value, label: o.statusOptions[i] }))]
+
   const slice = pageSlice(rows, page, pageSize)
 
   return (
@@ -96,13 +99,9 @@ export default function OrderPage() {
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={o.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-          <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 pr-6 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={status}
-            onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">{o.allStatus}</option>
-            {STATUSES.map((s, i) => <option key={s} value={s}>{o.statusOptions[i]}</option>)}
-          </select>
+          <Dropdown value={status} options={statusOptions} onChange={(value) => { setStatus(value); setPage(1) }} ariaLabel={o.allStatus} />
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
           <div className="overflow-x-auto px-4 pb-4">
@@ -120,18 +119,18 @@ export default function OrderPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       <span className="inline-flex items-center gap-3">
                         {r.stage === 1 && r.status === 'PENDING' && (
-                          <button disabled={busy} onClick={() => openCheck(r)}>{o.actCheck}</button>
+                          <button type="button" disabled={busy} onClick={() => openCheck(r)}>{o.actCheck}</button>
                         )}
                         {r.stage === 2 && r.status === 'PENDING' && (
-                          <button disabled={busy} onClick={() => advance(r, 'reserve')}>{o.actReserve}</button>
+                          <button type="button" disabled={busy} onClick={() => openCheck(r)}>{o.actReserve}</button>
                         )}
                         {r.stage === 3 && r.status === 'RESERVED' && (
-                          <button disabled={busy} onClick={() => advance(r, 'charge')}>{o.actCharge}</button>
+                          <button type="button" disabled={busy} onClick={() => advance(r, 'charge')}>{o.actCharge}</button>
                         )}
                         {r.status !== 'DONE' && r.status !== 'CANCELLED' && (
-                          <button disabled={busy} onClick={() => advance(r, 'cancel')}>{o.actCancel}</button>
+                          <button type="button" disabled={busy} onClick={() => advance(r, 'cancel')}>{o.actCancel}</button>
                         )}
-                        <button onClick={() => openTrack(r.orderNo)}>{o.track}</button>
+                        <button type="button" onClick={() => openTrack(r.orderNo)}>{o.track}</button>
                       </span>
                     </td>
                   </tr>
@@ -149,10 +148,10 @@ export default function OrderPage() {
       {check && (
         <Drawer title={o.checkTitle} onClose={() => setCheck(null)}
           footer={<div className="flex gap-2">
-            {check.result === false && <><button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => nav('/oss/expand')}>{o.expand}</button><button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => nav('/oss/transfer')}>{o.transfer}</button></>}
-            <button className="h-8 rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)]" disabled={busy || !check.detail || check.result !== null} onClick={runCheck}>{o.runCheck}</button>
-            {check.result === true && <button className="h-8 rounded-sm border-none bg-[var(--color-success)] px-4 text-[13px] text-white" disabled={busy} onClick={reserveFromCheck}>{o.continueReserve}</button>}
-            <button className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => setCheck(null)}>{t.pages.company.cancel}</button>
+            {check.result === false && <><button type="button" className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => nav('/oss/expand')}>{o.expand}</button><button type="button" className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => nav('/oss/transfer')}>{o.transfer}</button></>}
+            <button type="button" className="h-8 rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)]" disabled={busy || !check.detail || check.result !== null} onClick={runCheck}>{o.runCheck}</button>
+            {check.result === true && <button type="button" className="h-8 rounded-sm border-none bg-[var(--color-success)] px-4 text-[13px] text-white" disabled={busy} onClick={reserveFromCheck}>{o.continueReserve}</button>}
+            <button type="button" className="h-8 rounded-sm border border-[var(--shell-input-border)] px-4 text-[13px]" onClick={() => setCheck(null)}>{t.pages.company.cancel}</button>
           </div>}>
           <div className="flex flex-col gap-4 p-4 text-[13px]">
             <div><div className="font-medium text-[var(--shell-heading)]">{check.row.orderNo}</div><div className="text-[var(--shell-crumb-text)]">{check.row.customer} · {check.row.product} · {check.row.address}</div></div>
@@ -169,7 +168,7 @@ export default function OrderPage() {
       )}
       {(track || trackError) && (
       <Drawer title={o.trackTitle} onClose={() => { setTrack(null); setTrackError('') }}
-        footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setTrack(null)}>
+        footer={<button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setTrack(null)}>
           {t.pages.company.cancel}
         </button>}>
         {trackError ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{trackError}</div> : (
