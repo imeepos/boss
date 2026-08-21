@@ -165,3 +165,5 @@
 - 当测试报 "invalid worker token" 时,先检查 signWorkerToken 是否发生在 t.Setenv(BOSS_JWT_SECRET) 之后——顺序颠倒会签出错误密钥的 token。(2026-08-24)
 - 当部署文件存在于本机与服务器两侧且非 git 同步时,改文件前必须先 `ssh server cat <path>` 确认服务器版本,edit 本机副本后用 `scp` 推上去;改完用 `ssh ... git status` 或 `docker compose config` 在服务器侧验证,而非凭本机 git diff。skill 没提前警告我。(2026-08-21 MinIO compose)
 - 当需要给容器注入密钥时,优先 long-syntax `volumes: [bind]` 挂文件;`top-level secrets:` + `secrets: [..]` 块在某些基础镜像(UBI Micro、Distroless)上即使 compose config 渲染正常,容器内 `/run/secrets/` 也可能不存在。skill 没提前警告我。(2026-08-21 MinIO)
+74. Node22/Chrome 现版 JSON.parse 报文是「Unexpected token 'x', "片段" is not valid JSON」,无 position/line;行号定位只能靠 Firefox 的 "line N" 正则,其余回落无行号文案(2026-08-2x importer 预览)。
+75. 提交时暂存区存在并行会话遗留文件,用 `git commit -m ... -- <本任务路径>` pathspec 提交,不动他人在场改动(2026-08-2x importer 提交避开 mobile/*.kt)。

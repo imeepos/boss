@@ -228,3 +228,4 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 场景 → 联调测试时频繁登录/注册,每次都要去 PG 查 portal_sms_codes 拿验证码再手动填入,繁琐。
 怎么用 → 后端环境变量 `BOSS_DEBUG_SMS=1` 启动;Android App "我的" 页底部「开发选项」开关开启;点「获取验证码」后自动从 `/debug/sms-code?phone=&scene=` 拉明文回填。release 包永远不生效(前端 `BuildConfig.DEBUG=false` → `DevModeStore.isEnabled()` 恒 false)。后端未配 `BOSS_DEBUG_SMS=1` 时返回 404,Android 侧静默降级,不报错。
 关键文件 → `internal/httpapi/user/debug_sms.go`(后端端点),`mobile/user/android/app/src/main/java/com/ymm/boss/user/api/DevModeStore.kt`(开关持久化),`util/DevSms.kt`(自动回填封装),`api/DebugApi.kt`(客户端端点)。verify 场景(实名认证)用 `debugOptionalAuthn` 中间件解析 JWT→从 portal_accounts 取 phone,不需要客户端显式传 phone。(2026-08-21)
+20. CDP 单次运行内多步导航:eval 链中先 set localStorage,再 `location.href='/target'`(cdp-capture 每条 eval 后有 settle,后续 eval 落在新页面上),最后一条 eval 跑断言 IIFE,VERIFY 结果从 --logs 的 console 条目取(2026-08-2x importer 双主题验证)。

@@ -60,6 +60,7 @@
 - 冒烟账号 admin 的 account_id=103（102 库）
 
 - 102 远程环境（CI 自动部署）：`http://192.168.0.102:28080`，账号 `admin / Boss-admin-2026`（sysadmin；口令权威=仓库 `deployments/app.env`，该文件已入库——内网私有仓库裁定，转公网前必须移出）。geo 维护页在 基础配置→国家与行政区划（menu:geo）。
+  - Amended 2026-08-2x：实测 `Boss-admin-2026` 返回 40100「未认证或凭证无效」，当前可用口令为 `admin / admin123`（accountId=103）；以 login 接口实测为准。
 
 ## 页面状态与分页约定（2026-08-18 geo 首例）
 

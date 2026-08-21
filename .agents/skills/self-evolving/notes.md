@@ -119,3 +119,9 @@
 - 坑:用 bash sed 读 data-relations.md 后直接 edit,4 个编辑全被拒(第 5 次犯红线#1);排查脚本规格时凭 grep 记忆写 worker_replace_logs 的"UQ ticket_no+epc",核对 DDL 后才改掉,险些把臆造约束写进 ER 图。
 - skill 有预警:红线#1 原文就写了 cat/sed 不算已读。
 - 重来:凡是要 edit 的文件,一律先 read 工具;ER 规格里每条 UQ/FK 注记必须回 grep 对应 DDL 再落笔。
+
+## 2026-08-2x importer 页重构(文件上传+预览+契约修复)
+- 哪个坑浪费最多时间:V8 新版 JSON.parse 报文不再含 "position N",行号定位单测失败;另 read_image 本环境只回元数据不能目测。
+- skill 有没有提前警告我:red-lines #7(不假设图像输入)命中;V8 报文格式无沉淀。
+- 重来一次:先 node -e 验证目标运行时报文格式再写解析;目测类验证直接声明"请人类目测"。
+- 新经验已喂:lessons #74(V8 JSON 报文)、#75(git 暂存区并行遗留按 pathspec 提交)、techniques(eval 内 location.href 导航模式)。
