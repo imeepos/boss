@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
 	aaability "github.com/ymm-001/boss/internal/domain/aaa/billing"
@@ -167,6 +168,10 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	akstore := apikey.NewPGStore(pool)
 	aisvc := ai.NewService(ai.NewPGStore(pool))
 	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
+	// E14:预建当月起 2 个月的审计分区,避免写入全部落入 default。
+	if err := audit.NewPGWriter(pool).EnsurePartitions(ctx, time.Now(), 2); err != nil {
+		return nil, fmt.Errorf("wiring: audit partitions: %w", err)
+	}
 	// 验证码短信通道:配置源=biz_params(后台短信配置页,60s 热生效),env 凭据兜底,
 	// 凭据齐备走阿里云国际短信(+86/+60 统一),否则降级日志通道(仅开发)。
 	portalSvc := portal.NewPGStoreWithSender(pool, sms.NewRouter(
