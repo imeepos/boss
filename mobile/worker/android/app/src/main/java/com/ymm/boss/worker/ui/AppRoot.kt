@@ -6,11 +6,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +30,7 @@ import com.ymm.boss.worker.ui.theme.Bg
 import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
+import com.ymm.boss.worker.ui.theme.StatusBarSolid
 
 // 底部 Tab(对齐 nav.js:工作台/工单/我的)
 private data class Tab(val screen: Screen, val label: String, val glyph: String)
@@ -43,7 +48,11 @@ fun AppRoot(loggedIn: Boolean) {
     val nav = remember { NavHost(if (loggedIn) Screen.Home else Screen.Login) }
     // 系统返回键:压栈页逐个弹出,栈底则退出
     BackHandler(enabled = nav.stack.size > 1) { nav.pop() }
-    Column(Modifier.fillMaxSize().background(Bg).windowInsetsPadding(WindowInsets.safeDrawing)) {
+    Column(
+        Modifier.fillMaxSize().background(Bg)
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)),
+    ) {
+        StatusBarBand()
         Box(Modifier.weight(1f)) {
             when (val cur = nav.current) {
                 is Screen.Login -> LoginScreen(onLoggedIn = { nav.reset(Screen.Home) })
@@ -87,9 +96,17 @@ fun AppRoot(loggedIn: Boolean) {
     }
 }
 
+/** 固定状态栏色带:高度即状态栏 inset,背景色全页面统一为头部渐变起点色。 */
+@Composable
+private fun StatusBarBand() {
+    val height = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    Box(Modifier.fillMaxWidth().height(height).background(StatusBarSolid))
+}
+
 @Composable
 private fun TabBar(nav: NavHost) {
-    Row(Modifier.fillMaxWidth().background(Color.White).padding(vertical = 6.dp)) {
+    Box(Modifier.fillMaxWidth().background(Color.White)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         TABS.forEach { tab ->
             val active = nav.current == tab.screen
             Column(
@@ -101,6 +118,7 @@ private fun TabBar(nav: NavHost) {
                 Text(tab.label, fontSize = 11.sp, color = if (active) Primary else Muted)
             }
         }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Line))
     }
-    Box(Modifier.fillMaxWidth().height(1.dp).background(Line))
 }

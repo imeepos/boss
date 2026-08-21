@@ -5,6 +5,10 @@ import androidx.compose.ui.graphics.Color
 // 对齐 docs/worker/style.css 的 :root 色板
 val Primary = Color(0xFF1677FF)
 val Primary2 = Color(0xFF69B1FF)
+// 固定状态栏色:所有页面统一,取头部渐变起点色(对齐 user 端 statusBarSolid 方案)
+val StatusBarSolid = Primary
+// StatusBarSolid 的 ARGB 形式,供 SystemBarStyle(需要 Int)使用
+const val StatusBarSolidArgb = 0xFF1677FF.toInt()
 val Bg = Color(0xFFF5F6F8)
 // Bg 的 ARGB 形式,供 SystemBarStyle(需要 Int 而非 Color)使用
 const val BgArgb = 0xFFF5F6F8.toInt()
