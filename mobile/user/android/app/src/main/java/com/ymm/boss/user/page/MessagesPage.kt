@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Mail
@@ -61,8 +62,20 @@ import org.json.JSONObject
 
 // 对应 docs/user/messages.html:消息中心,GET /messages?category= + POST /messages/read-all。
 // 设计稿:designs/messages-center-v1.png;规格:designs/messages-center-v1.spec.md。
+// 每项:key → label → icon → tint(未选中态胶囊图标色,与消息卡 IconTile 同色族)
 private val CATEGORIES = listOf(
-    "" to "全部", "billing" to "账单缴费", "balance" to "余额预警", "fault" to "故障公告", "promo" to "优惠活动",
+    CategoryUi("", "全部", null, Palette.muted),
+    CategoryUi("billing", "账单缴费", Icons.Filled.Circle, Palette.primary),
+    CategoryUi("balance", "余额预警", Icons.Filled.Circle, Palette.orange),
+    CategoryUi("fault", "故障公告", Icons.Filled.Circle, Palette.purple),
+    CategoryUi("promo", "优惠活动", Icons.Filled.Circle, Palette.err),
+)
+
+private data class CategoryUi(
+    val key: String,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector?,
+    val iconTint: androidx.compose.ui.graphics.Color,
 )
 
 @Composable
@@ -117,8 +130,15 @@ private fun SegmentBar(selected: String, onSelect: (String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CATEGORIES.forEach { (key, label) ->
-            PillTab(label, active = selected == key, onClick = { onSelect(key) }, plain = true)
+        CATEGORIES.forEach { c ->
+            PillTab(
+                label = c.label,
+                active = selected == c.key,
+                onClick = { onSelect(c.key) },
+                icon = c.icon,
+                plain = true,
+                iconTint = c.iconTint,
+            )
         }
     }
 }

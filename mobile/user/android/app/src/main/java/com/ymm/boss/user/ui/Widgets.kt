@@ -129,9 +129,19 @@ fun TabHeader(title: String) {
     ) { Text(title, fontSize = 16.sp, fontWeight = FontWeight.W600, color = Color.White) }
 }
 
-/** 胶囊筛选 tab:选中实心主色,未选中白底描边(plain 时未选中无底色)。 */
+/**
+ * 胶囊筛选 tab:选中实心主色,未选中白底描边(plain 时未选中无底色)。
+ * iconTint 用于未选中态图标色(分类胶囊用,选中态固定白)。
+ */
 @Composable
-fun PillTab(label: String, active: Boolean, onClick: () -> Unit, icon: ImageVector? = null, plain: Boolean = false) {
+fun PillTab(
+    label: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector? = null,
+    plain: Boolean = false,
+    iconTint: Color? = null,
+) {
     val bg = if (active) Palette.primary else if (plain) Color.Transparent else Palette.panel
     val borderColor = if (active) Palette.primary else if (plain) Color.Transparent else Palette.line
     Row(
@@ -143,7 +153,8 @@ fun PillTab(label: String, active: Boolean, onClick: () -> Unit, icon: ImageVect
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = if (active) Color.White else Palette.muted, modifier = Modifier.size(15.dp))
+            val tint = if (active) Color.White else iconTint ?: Palette.muted
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(15.dp))
             Spacer(Modifier.width(5.dp))
         }
         Text(
