@@ -113,3 +113,9 @@
 - 2026-08-24 师傅接单：Setenv 放进签发 helper 首行；edit 前 cat -et 确认缩进层级。
 - 2026-08-21 dev-mode 验证码：gin 同一路径双 RouterGroup 注册会 panic，单一端点 + 可选鉴权中间件分支更清晰；dev 端点 404 时客户端静默降级不提示。
 - 2026-08-21 套餐详情：Composable 子组件拿 CoroutineScope 是反模式，scope 留给最近一层；色值争议用 gpt-image-analyze 自动比对。
+
+## 2026-08-21 表结构对账与 ER 图同步
+
+- 坑:用 bash sed 读 data-relations.md 后直接 edit,4 个编辑全被拒(第 5 次犯红线#1);排查脚本规格时凭 grep 记忆写 worker_replace_logs 的"UQ ticket_no+epc",核对 DDL 后才改掉,险些把臆造约束写进 ER 图。
+- skill 有预警:红线#1 原文就写了 cat/sed 不算已读。
+- 重来:凡是要 edit 的文件,一律先 read 工具;ER 规格里每条 UQ/FK 注记必须回 grep 对应 DDL 再落笔。
