@@ -1,6 +1,7 @@
 # 用户端/师傅端推送对接调研
 
-> 状态:调研结论,待评审。日期:2026-08-23。
+> 状态:调研结论,已裁定采用 JPush。日期:2026-08-23。
+> 后续:后台配置项设计定稿见 `docs/plan/push-config-design.md`(§2-§6)。
 > 背景:两端均为原生 Kotlin/Compose Android(`mobile/user/android`、`mobile/worker/android`,iOS 目录为空占位,H5 未启动),后端 Go 单体 + Kafka 事件底座,`internal/domain/notify` 现仅覆盖 admin 侧通知,移动端无任何推送基建。
 
 ## 1. 需求场景与触达要求
