@@ -63,7 +63,7 @@ menu.js 共 13 分组 49 菜单页（另 `login.html` 为登录散页，不进�
 | admin 分组(D) | 能力域(A) | internal 包(C) | 阶段(C) | 页面 |
 |:--------------|:----------|:---------------|:--------|:-----|
 | overview 运营总览 | BI(聚合) | `analytics` | 阶段9 | dashboard |
-| base 基础配置 | SYS | `user` | 阶段1 | account/address/settings/audit/importer |
+| base 基础配置 | SYS | `user`(+`backup`,迁移 000095) | 阶段1 | account/address/settings/audit/importer/backup |
 | org 组织与权限 | SYS + BRAND | `user` | 阶段1 | company/department/post/region/menuperm/datascope |
 | bss 客户与资费 | CRM + PROD | `customer` | 阶段2 | customer/product/user/userdata |
 | billing 计费与账务 | BIL + PAY + AR | `billing` | 阶段5 | billing/payment/arrears/stopsrv/paycheck |

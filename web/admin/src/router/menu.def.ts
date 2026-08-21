@@ -28,6 +28,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'servers', label: '服务端配置', path: '/base/servers' },
     { key: 'audit', label: '审计日志', path: '/base/audit' },
     { key: 'importer', label: '数据导入中心', path: '/base/importer' },
+    { key: 'backup', label: '数据备份迁移', path: '/base/backup' },
   ]},
   { id: 'org', label: '组织与权限', items: [
     { key: 'company', label: '子公司/法人', path: '/org/company' },

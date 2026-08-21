@@ -43,6 +43,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -107,21 +108,26 @@ fun OrderScreen(nav: Nav, no: String) {
 
     val order = detail
     val status = order?.optString("status") ?: ""
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar(
-            title = "订单详情",
-            onBack = { nav.pop() },
-            action = if (status in setOf("PENDING", "RESERVED", "INSTALLING")) "取消" else null,
-            onAction = { showCancel = true },
-        )
-        if (err.isNotEmpty()) Notice(err, Palette.err)
-        StatusHeader(order)
-        InfoCard(order)
-        MilestoneBlock(order)
-        if (status == "INSTALLING") EstimateBanner(order)
-        TimelineCard(detail, timeline)
-        ActionBar(nav, no, order)
-        Spacer(Modifier.height(12.dp))
+    // 底部固定操作栏高度约 84dp(内 padding 12+12 + Button 44dp),留 96dp 给滚动区尾,避免最后一行被遮。
+    Box(Modifier.fillMaxSize().background(Palette.bg)) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        ) {
+            TopBar(
+                title = "订单详情",
+                onBack = { nav.pop() },
+                action = if (status in setOf("PENDING", "RESERVED", "INSTALLING")) "取消" else null,
+                onAction = { showCancel = true },
+            )
+            if (err.isNotEmpty()) Notice(err, Palette.err)
+            StatusHeader(order)
+            InfoCard(order)
+            MilestoneBlock(order)
+            if (status == "INSTALLING") EstimateBanner(order)
+            TimelineCard(detail, timeline)
+            Spacer(Modifier.height(96.dp))
+        }
+        if (status.isNotEmpty()) FloatingActionBar(nav, no, order, status)
     }
     if (showCancel) CancelDialog(nav, no) { showCancel = false }
 }
@@ -444,58 +450,67 @@ private fun StageNode(result: String) {
 }
 
 @Composable
-private fun ActionBar(nav: Nav, no: String, order: JSONObject?) {
-    val status = order?.optString("status") ?: return
+private fun BoxScope.FloatingActionBar(nav: Nav, no: String, order: JSONObject?, status: String) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
-    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        when (status) {
-            "PENDING", "RESERVED", "INSTALLING" -> {
-                Button(
-                    onClick = { scope.launch { urge(ctx, no, nav) } },
-                    colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-                    modifier = Modifier.weight(1f),
-                ) { Text("催单", fontSize = 15.sp, fontWeight = FontWeight.W600, color = androidx.compose.ui.graphics.Color.White) }
-                OutlinedButton(
-                    onClick = { scope.launch { dialTechnician(ctx, no) } },
-                    modifier = Modifier.weight(1f),
-                ) { Text("联系师傅", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
-                OutlinedButton(
-                    onClick = { /* TODO: 跳转变更地址子页 */ },
-                    modifier = Modifier.weight(1f),
-                ) { Text("变更地址", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
-            }
-            "DONE" -> {
-                if (order.optBoolean("canRate")) {
+    Surface(
+        tonalElevation = 2.dp,
+        color = Palette.panel,
+        modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            when (status) {
+                "PENDING", "RESERVED", "INSTALLING" -> {
                     Button(
-                        onClick = { nav.push(com.ymm.boss.user.ui.Route.Rate(no)) },
+                        onClick = { scope.launch { urge(ctx, no) } },
                         colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-                        modifier = Modifier.weight(1f),
-                    ) { Text("去评价", fontSize = 15.sp, fontWeight = FontWeight.W600, color = androidx.compose.ui.graphics.Color.White) }
-                } else {
-                    Box(
-                        Modifier.weight(1f).background(Palette.success.copy(alpha = 0.08f), RoundedCornerShape(8.dp)).padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) { Text("订单已完成,感谢您的选择!", fontSize = 13.sp, color = Palette.success) }
+                        modifier = Modifier.weight(1f).height(44.dp),
+                    ) { Text("催单", fontSize = 15.sp, fontWeight = FontWeight.W600, color = androidx.compose.ui.graphics.Color.White) }
+                    OutlinedButton(
+                        onClick = { scope.launch { dialTechnician(ctx, no) } },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                    ) { Text("联系师傅", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
+                    OutlinedButton(
+                        onClick = { /* TODO: 跳转变更地址子页 */ },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                    ) { Text("变更地址", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
                 }
-                OutlinedButton(
-                    onClick = { scope.launch { dialTechnician(ctx, no) } },
-                    modifier = Modifier.weight(1f),
-                ) { Text("联系师傅", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
-            }
-            "CANCELLED" -> {
-                Box(Modifier.weight(1f).padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
-                    Text("订单已取消", fontSize = 13.sp, color = Palette.muted)
+                "DONE" -> {
+                    if (order.optBoolean("canRate")) {
+                        Button(
+                            onClick = { nav.push(com.ymm.boss.user.ui.Route.Rate(no)) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
+                            modifier = Modifier.weight(1f).height(44.dp),
+                        ) { Text("去评价", fontSize = 15.sp, fontWeight = FontWeight.W600, color = androidx.compose.ui.graphics.Color.White) }
+                    } else {
+                        Box(
+                            Modifier.weight(1f).background(Palette.success.copy(alpha = 0.08f), RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) { Text("订单已完成,感谢您的选择!", fontSize = 13.sp, color = Palette.success) }
+                    }
+                    OutlinedButton(
+                        onClick = { scope.launch { dialTechnician(ctx, no) } },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                    ) { Text("联系师傅", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
                 }
-                OutlinedButton(onClick = { nav.push(com.ymm.boss.user.ui.Route.Complaint) }, modifier = Modifier.weight(1f)) {
-                    Text("联系客服", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary)
+                "CANCELLED" -> {
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Text("订单已取消", fontSize = 13.sp, color = Palette.muted)
+                    }
+                    OutlinedButton(
+                        onClick = { nav.push(com.ymm.boss.user.ui.Route.Complaint) },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                    ) { Text("联系客服", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
                 }
             }
         }
     }
 }
 
-private suspend fun urge(ctx: Context, no: String, nav: Nav) {
+private suspend fun urge(ctx: Context, no: String) {
     try {
         OrderApi.urge(no)
         Toast.makeText(ctx, "已通知师傅加紧处理", Toast.LENGTH_SHORT).show()

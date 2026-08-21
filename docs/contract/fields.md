@@ -183,6 +183,28 @@
 
 > 校验：`ValidateDeviceCode`（格式+扩容后缀）+ `RequiredParentKind`（归属链）；子级设备上级须为同城在用设备。
 
+### 1.5.6 backup_jobs（数据备份迁移任务，迁移 000095，internal/domain/backup）
+
+> 运维工具（SYS 域）：按表导出 gzip JSONL 归档 + 追加式导入恢复。管理面 `/base/backup`（menu:backup，sysadmin），API `/api/admin/v1/backup/*`。设计裁定见 adopted note 2026-08-21-backup-local-jsonl。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 任务ID | `ID` | id | BIGSERIAL 主键 |
+| 类型 | `Kind` | kind | backup（导出归档）/ restore（导入恢复） |
+| 范围 | `Scope` | scope | all（public 全部业务表）/ tables（选表） |
+| — | `Tables` | tables | TEXT[]，选表清单（scope=all 时为全表快照） |
+| 状态 | `Status` | status | running / succeeded / failed |
+| 文件 | `FileName` | file_name | 归档文件名（服务端本地磁盘，BOSS_BACKUP_DIR，默认 data/backups） |
+| 大小 | `SizeBytes` | size_bytes | 归档字节数 |
+| 表数 | `TableCount` | table_count | 归档内表数 |
+| 行数 | `RowCount` | row_count | 导出/导入行数 |
+| — | `Error` | error | 失败原因（failed 时非空） |
+| 操作人 | `Operator` | operator_id | → accounts（联 real_name 快照展示） |
+| 开始时间 | `CreatedAt` | created_at | TIMESTAMPTZ |
+| 结束时间 | `FinishedAt` | finished_at | TIMESTAMPTZ，可空（执行中） |
+
+> 恢复语义 = 只补不删：逐行 `INSERT ... ON CONFLICT DO NOTHING`，冲突行跳过；进程内串行执行（同时至多一条任务）。backup_jobs / schema_migrations 不入备份候选集。
+
 
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 

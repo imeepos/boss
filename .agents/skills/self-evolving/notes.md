@@ -158,3 +158,8 @@
 - 哪个坑浪费最多时间:i18n 三份 locale 插 key 时,凭"pageUnit 结尾"猜段落,把 notif 块插进了 company 段而不是 message 段,三份全错,返工一轮才发现;另有 python 脚本改完文件后凭旧记忆 edit,报 file changed since read。
 - skill 有没有提前警告我:有——高频红线#1 正是"edit 前必须 read",又犯了;段落锚点问题 lessons 里没有对应条目(新教训)。
 - 重来一次:locale 插入前先 grep "message: {" 拿行号,用"下一段段名"做唯一锚点,不看尾部 key 形状;任何脚本改文件后立即重新 read。
+
+## 2026-08-21 官网首页 /home 任务
+- 坑:edit 的 old_string 以 `<Route` 这类高频重复片段做锚,匹配到了相邻的 ucenter 路由而非目标路由,改完才发现(红线#4 变体:锚点不唯一)。修法:多行 old_string 必须包含目标独有上下文(如 path 属性行),改完立刻重读确认。
+- 坑:根路径 "/" 原本被 AuthGuard 整包住,index 子路由里的分流组件永远执行不到(未登录先被踢 /login)。守卫区改无路径布局路由 + 顶层独立 "/" 分流路由解决。
+- 并行会话半成品(pages/backup)让全仓 typecheck 一度挂掉;等对方自愈后门禁通过,commit 精确 add 6 个文件避开污染。

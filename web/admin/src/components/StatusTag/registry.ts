@@ -18,6 +18,7 @@ export type StatusDomain =
   | 'product' | 'quad' | 'tag' | 'resource' | 'loAccount' | 'ticket'
   | 'task' | 'complaint' | 'scan' | 'alarmLevel' | 'alarmStatus' | 'maintPriority'
   | 'accountStatus' | 'message' | 'realName' | 'recon' | 'reserve'
+  | 'backupStatus'
 
 type Registry = Partial<Record<StatusDomain, Record<string, TagMeta>>>
 
@@ -140,5 +141,10 @@ export const REGISTRY: Registry = {
     INFO: { label: '信息', color: BLUE },
     WARN: { label: '警告', color: ORANGE },
     URGENT: { label: '紧急', color: RED },
+  },
+  backupStatus: {
+    running: { label: '执行中', color: BLUE },
+    succeeded: { label: '成功', color: GREEN },
+    failed: { label: '失败', color: RED },
   },
 }

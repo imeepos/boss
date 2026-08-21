@@ -156,3 +156,32 @@ func (s *Service) CreateRestore(ctx context.Context, operatorID int64, fileName,
 func (s *Service) jobFilePath(fileName string) string {
 	return filepath.Join(s.dir, fileName)
 }
+
+// ListTables 候选表清单(public 普通表,排除系统表)。
+func (s *Service) ListTables(ctx context.Context) ([]string, error) {
+	return s.store.ListTables(ctx)
+}
+
+// List 任务清单。
+func (s *Service) List(ctx context.Context, f ListFilter) ([]Job, int, error) {
+	return s.store.ListJobs(ctx, f)
+}
+
+// Get 任务详情。
+func (s *Service) Get(ctx context.Context, id int64) (*Job, error) {
+	return s.store.GetJob(ctx, id)
+}
+
+// Delete 删除任务行;有归档文件时一并清理磁盘。
+func (s *Service) Delete(ctx context.Context, id int64) error {
+	fileName, err := s.store.DeleteJob(ctx, id)
+	if err != nil {
+		return err
+	}
+	if fileName != "" {
+		if rmErr := os.Remove(s.jobFilePath(fileName)); rmErr != nil && !os.IsNotExist(rmErr) {
+			return rmErr
+		}
+	}
+	return nil
+}

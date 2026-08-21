@@ -48,3 +48,4 @@
 | 2026-08-21 | hostctl sidecar + MinIO 密钥热轮换 admin API(HMAC 鉴权) | adopted/2026-08-21-hostctl-sidecar-rotate.md |
 | 2026-08-25 | 后台提醒中心:广播+读回执/30s 轮询/来源域 handler 层接入 | adopted/2026-08-25-admin-notify-broadcast-read-receipt.md |
 | 2026-08-25 | 附件删除采用软删除(attachments.deleted_at,000093):引用面不可穷举禁物理删,MinIO 对象保留可审计 | adopted/2026-08-25-attachment-soft-delete.md |
+| 2026-08-21 | 数据备份迁移(000095):本地磁盘 gzip JSONL 归档 + ON CONFLICT DO NOTHING 追加恢复,只补不删,进程内串行 | adopted/2026-08-21-backup-local-jsonl.md |
