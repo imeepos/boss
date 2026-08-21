@@ -1697,6 +1697,12 @@ const zhCN: Translations = {
       jump: '跳至',
       pageUnit: '页',
     },
+    pickers: {
+      common: { placeholder: '输入姓名/工号/手机号或编码检索', loadFail: '选项加载失败', viewDetail: '详情', detailFail: '详情加载失败', close: '关闭', jumpToList: '前往管理页' },
+      worker: { title: '师傅详情', aria: '选择师傅', name: '姓名', staffNo: '工号', phone: '手机号', group: '班组', region: '负责区域', status: '状态', onDuty: '在职', left: '离职', joinedAt: '入职时间' },
+      customer: { title: '客户详情', aria: '选择客户', code: '客户编码', name: '姓名', phone: '手机号', idType: '证件类型', idNo: '证件号', realNameStatus: '实名状态', serviceStatus: '服务状态', region: '所在区域', createdAt: '建档时间' },
+      user: { title: '用户详情', aria: '选择用户', name: '姓名', phone: '手机号', plan: '当前套餐', balance: '余额', arrears: '欠费金额', activeOrders: '在途业务', realNameStatus: '实名状态', serviceStatus: '服务状态', autoPay: '自动缴费', on: '已开启', off: '未开启' },
+    },
     profile: {
       title: '后台账号中心', activeAccount: '账号正常', save: '保存修改', cancel: '取消',
       navigation: { title: '账号中心', overview: '工作概览', overviewDesc: '待办与快捷处理入口', personal: '基本资料', personalDesc: '姓名与联系方式', security: '账号安全', securityDesc: '密码与登录保护', permissions: '我的权限', permissionsDesc: '角色与数据范围（只读）', work: '我的工作', workDesc: '当前账号负责的业务记录', apiKey: 'API Key', apiKeyDesc: '自动化访问凭证', audit: '我的操作审计', auditDesc: '当前账号产生的操作记录', backAdmin: '返回管理端', platformWorkspace: '后台账号工作台', menu: '打开账号中心菜单' },

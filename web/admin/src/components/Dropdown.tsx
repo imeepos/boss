@@ -18,9 +18,12 @@ interface DropdownProps {
   /** 浮层顶部渲染关键字过滤输入(按 label 大小写不敏感匹配)。 */
   searchable?: boolean
   searchPlaceholder?: string
+  /** 远程检索模式:关闭本地过滤,关键字经 onKeywordChange 上抛由调用方请求服务端。 */
+  remote?: boolean
+  onKeywordChange?: (keyword: string) => void
 }
 
-export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder }: DropdownProps) {
+export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder, remote, onKeywordChange }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
@@ -36,7 +39,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
 
   const current = options.find((o) => o.value === value)
   const kw = keyword.trim().toLowerCase()
-  const visible = searchable && kw !== '' ? options.filter((o) => o.label.toLowerCase().includes(kw)) : options
+  const visible = searchable && !remote && kw !== '' ? options.filter((o) => o.label.toLowerCase().includes(kw)) : options
   return (
     <div className="relative inline-flex" ref={rootRef} style={triggerStyle}>
       <button
@@ -68,7 +71,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
               <input
                 type="text"
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => { setKeyword(e.target.value); onKeywordChange?.(e.target.value) }}
                 placeholder={searchPlaceholder}
                 className="h-7 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
               />
