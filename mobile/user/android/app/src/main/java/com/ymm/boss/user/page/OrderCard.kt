@@ -130,7 +130,7 @@ private fun DoneFooter(o: JSONObject, nav: Nav, no: String) {
 }
 
 @Composable
-private fun OrderStepper(current: Int) {
+internal fun OrderStepper(current: Int) {
     val labels = listOf("提交订单", "受理成功", "上门安装", "完成")
     Box(Modifier.fillMaxWidth().height(52.dp)) {
         Row(
