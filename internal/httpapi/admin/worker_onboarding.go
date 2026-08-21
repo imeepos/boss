@@ -1,7 +1,6 @@
 package adminapi
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +28,10 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 审核通过:建 workers 主档 + 回填。
 	g.POST("/worker-registrations/:id/approve", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
 		workerID, err := a.WorkerOnboarding.Approve(c.Request.Context(), id, claims.AccountID)
 		if err != nil {
@@ -43,10 +45,12 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 审核驳回:记审核意见。
 	g.POST("/worker-registrations/:id/reject", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
 		var req workerReviewReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
@@ -61,10 +65,18 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 师傅实名核验相关(worker 主体 1:1)。
 	g.POST("/workers/:workerId/real-name", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		workerID, _ := strconv.ParseInt(c.Param("workerId"), 10, 64)
+		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
+		if !ok {
+			return
+		}
 		var req workerRealNameReq
-		if err := c.ShouldBindJSON(&req); err != nil || req.RealName == "" || req.IDCardNo == "" || req.Method == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.RealName, "realName", 64),
+				httpx.RequireString(req.IDCardNo, "idCardNo", 32),
+				httpx.RequireString(req.Method, "method", 32),
+			)
+		}) {
 			return
 		}
 		id, err := a.WorkerRealName.SubmitRealName(c.Request.Context(), worker.WorkerRealNameVerification{
@@ -83,7 +95,10 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.GET("/workers/:workerId/real-name", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		workerID, _ := strconv.ParseInt(c.Param("workerId"), 10, 64)
+		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
+		if !ok {
+			return
+		}
 		v, err := a.WorkerRealName.GetLatest(c.Request.Context(), workerID)
 		if err != nil {
 			respondErr(c, err)
@@ -94,11 +109,17 @@ func registerWorkerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 后台核验:PASS / FAIL。
 	g.POST("/workers/:workerId/real-name/verify", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		workerID, _ := strconv.ParseInt(c.Param("workerId"), 10, 64)
+		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
+		if !ok {
+			return
+		}
 		var req workerRealNameVerifyReq
-		if err := c.ShouldBindJSON(&req); err != nil ||
-			(req.Result != worker.RealNamePass && req.Result != worker.RealNameFail) {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req, func() error {
+			if req.Result != worker.RealNamePass && req.Result != worker.RealNameFail {
+				return &httpx.ValidationError{Field: "result", Message: "must be PASS or FAIL"}
+			}
+			return nil
+		}) {
 			return
 		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)

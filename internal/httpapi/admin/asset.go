@@ -2,7 +2,6 @@ package adminapi
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -24,7 +23,10 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	})
 	ams.GET("/assets/:assetId/lifecycle", func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("assetId"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "assetId")
+		if !ok {
+			return
+		}
 		list, err := a.Asset.ListLifecycles(c.Request.Context(), id)
 		if err != nil {
 			respondErr(c, err)
@@ -60,8 +62,12 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	g.POST("/stocktakes", requirePerm(a.User, "menu:stock"), func(c *gin.Context) {
 		var st asset.Stocktake
-		if err := c.ShouldBindJSON(&st); err != nil || st.LegalEntityID == 0 || st.Scope == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &st, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(st.LegalEntityID, "legalEntityId"),
+				httpx.RequireString(st.Scope, "scope", 64),
+			)
+		}) {
 			return
 		}
 		if st.Status == "" {
@@ -76,7 +82,10 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 		respond(c, apitypes.CodeOK, gin.H{"id": id})
 	})
 	g.POST("/stocktakes/:taskId/diff-handle", requirePerm(a.User, "menu:stock"), func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("taskId"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "taskId")
+		if !ok {
+			return
+		}
 		if err := a.Asset.HandleStocktakeDiff(c.Request.Context(), id); err != nil {
 			respondErr(c, err)
 			return
@@ -86,8 +95,11 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 	g.POST("/replacements", requirePerm(a.User, "menu:replace"), func(c *gin.Context) {
 		var r asset.Replacement
-		if err := c.ShouldBindJSON(&r); err != nil || r.AssetID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &r, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(r.AssetID, "assetId"),
+			)
+		}) {
 			return
 		}
 		if r.ReplacementNo == "" {

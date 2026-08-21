@@ -45,7 +45,27 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 
 const orderCols = `id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, created_at`
 
-// Submit 下单(环节1):校验渠道/客户后建单,status=PENDING、stage=1,写环节日志。
+// ErrAddressNotFound 安装地址不存在(orders.address_id 无外键,应用层校验)。
+var ErrAddressNotFound = errors.New("order: address not found")
+
+// ErrOfferNotOrderable 产品不存在或非 PUBLISHED(草稿/下架不可下单)。
+var ErrOfferNotOrderable = errors.New("order: offer not found or not published")
+
+// ErrChannelNotActive 渠道不存在或已停用。
+var ErrChannelNotActive = errors.New("order: channel not found or disabled")
+
+// exists 校验单表存在性(orders 无外键约束,关联完整性由本域应用层保证)。
+func (s *PGStore) exists(ctx context.Context, table string, id int64, extra string) (bool, error) {
+	var ok bool
+	err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM `+table+` WHERE id = $1`+extra+`)`, id).Scan(&ok)
+	if err != nil {
+		return false, fmt.Errorf("order: check %s %d: %w", table, id, err)
+	}
+	return ok, nil
+}
+
+// Submit 下单(环节1):校验渠道/客户/产品/地址关联完整性后建单,status=PENDING、stage=1,写环节日志。
 func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 	if req.ChannelID == 0 {
 		return nil, errors.New("order: channel_id required")
@@ -56,6 +76,29 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 	}
 	if !ok {
 		return nil, fmt.Errorf("order: customer %d not found", req.CustomerID)
+	}
+	// 关联完整性(orders 表无外键,这里拒掉孤儿引用):
+	// 地址必须存在(否则归属推导会误走平台兜底放行);产品必须 PUBLISHED;渠道必须 ACTIVE。
+	addrOK, err := s.exists(ctx, "addresses", req.AddressID, "")
+	if err != nil {
+		return nil, err
+	}
+	if !addrOK {
+		return nil, fmt.Errorf("order: address %d: %w", req.AddressID, ErrAddressNotFound)
+	}
+	offerOK, err := s.exists(ctx, "product_offers", req.OfferID, ` AND status = 'PUBLISHED'`)
+	if err != nil {
+		return nil, err
+	}
+	if !offerOK {
+		return nil, fmt.Errorf("order: offer %d: %w", req.OfferID, ErrOfferNotOrderable)
+	}
+	chOK, err := s.exists(ctx, "channels", req.ChannelID, ` AND status = 'ACTIVE'`)
+	if err != nil {
+		return nil, err
+	}
+	if !chOK {
+		return nil, fmt.Errorf("order: channel %d: %w", req.ChannelID, ErrChannelNotActive)
 	}
 	own, err := s.resolveOwnership(ctx, req.AddressID)
 	if err != nil {

@@ -2,7 +2,6 @@ package quadlink
 
 import (
 	"context"
-	"errors"
 )
 
 // QuadLink 四码合一(资产-客户-端口-地址 四码关联,任一码反查单表索引)。
@@ -18,8 +17,7 @@ type QuadLink struct {
 	Status          string  `json:"status"` // LINKED/CONFLICT/UNLINKED
 }
 
-// ErrForeignKeyViolation 四码关联中某个成员 ID 对应的实体不存在(assets/customers/ports/addresses)。
-var ErrForeignKeyViolation = errors.New("quadlink: referenced entity not found")
+// ErrForeignKeyViolation 四码关联中某个成员 ID 对应的实体不存在(assets/customers/ports/addresses/legal_entities);定义见 pg.go。
 
 // QuadLinkService 四码合一域服务口(阶段6)。
 type QuadLinkService interface {

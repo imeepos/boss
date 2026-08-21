@@ -55,6 +55,11 @@ func registerOrderWorkflowRoutes(g *gin.RouterGroup, a *app.Application) {
 			return
 		}
 		if err := a.Order.Reserve(c.Request.Context(), o.ID); err != nil {
+			// 补偿:状态机拒绝(如重复预占)时回滚刚占的端口,避免 RESERVED 端口泄漏。
+			if rerr := a.Resource.ReleasePortByOrder(c.Request.Context(), o.ID); rerr != nil {
+				httpx.RecordAudit(a, c, "order.reserve_compensate_failed", "order", o.OrderNo,
+					gin.H{"portId": portID, "error": rerr.Error()})
+			}
 			respondErr(c, err)
 			return
 		}

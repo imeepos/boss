@@ -25,8 +25,13 @@ func registerProvisionRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 新建/复制配置模板(provision.yaml createProvisionTemplate,原 planned)。
 	g.POST("/provision-templates", requirePerm(a.User, "menu:template"), func(c *gin.Context) {
 		var t provision.Template
-		if err := c.ShouldBindJSON(&t); err != nil || t.LegalEntityID == 0 || t.Code == "" || t.Name == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &t, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(t.LegalEntityID, "legalEntityId"),
+				httpx.RequireString(t.Code, "code", 64),
+				httpx.RequireString(t.Name, "name", 128),
+			)
+		}) {
 			return
 		}
 		id, err := a.Provision.CreateTemplate(c.Request.Context(), t)
@@ -58,7 +63,12 @@ func registerProvisionRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 失败任务重试:按 taskNo 寻址,FAILED→PENDING + 重试计数留痕。
 	g.POST("/provision-tasks/:taskNo/retry", requirePerm(a.User, "menu:provision"), func(c *gin.Context) {
-		task, err := a.Provision.GetTaskByNo(c.Request.Context(), c.Param("taskNo"))
+		taskNo := c.Param("taskNo")
+		if taskNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "taskNo is required"})
+			return
+		}
+		task, err := a.Provision.GetTaskByNo(c.Request.Context(), taskNo)
 		if err != nil {
 			respondErr(c, err)
 			return

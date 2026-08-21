@@ -57,7 +57,10 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 师傅详情(worker.yaml GET /workers/{workerId})。
 	g.GET("/workers/:workerId", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		workerID, _ := strconv.ParseInt(c.Param("workerId"), 10, 64)
+		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
+		if !ok {
+			return
+		}
 		w, err := a.Worker.GetWorker(c.Request.Context(), workerID)
 		if err != nil {
 			respondErr(c, err)
@@ -122,7 +125,10 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 差评复核(worker.yaml POST /worker-feedbacks/{feedbackId}/review)。
 	g.POST("/worker-feedbacks/:feedbackId/review", requirePerm(a.User, "menu:order"), func(c *gin.Context) {
-		feedbackID, _ := strconv.ParseInt(c.Param("feedbackId"), 10, 64)
+		feedbackID, ok := httpx.ParsePathParamInt64(c, "feedbackId")
+		if !ok {
+			return
+		}
 		if err := a.WorkerEvent.ReviewFeedback(c.Request.Context(), feedbackID); err != nil {
 			respondErr(c, err)
 			return
@@ -142,7 +148,10 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 确认返库(worker.yaml POST /asset-returns/{returnId}/confirm)。
 	g.POST("/asset-returns/:returnId/confirm", requirePerm(a.User, "menu:order"), func(c *gin.Context) {
-		returnID, _ := strconv.ParseInt(c.Param("returnId"), 10, 64)
+		returnID, ok := httpx.ParsePathParamInt64(c, "returnId")
+		if !ok {
+			return
+		}
 		if err := a.WorkerEvent.ConfirmAssetReturn(c.Request.Context(), returnID); err != nil {
 			respondErr(c, err)
 			return
@@ -188,14 +197,16 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 修改接单设置(在线/半径/接单类型),师傅1:1 即时生效(worker.yaml /workers/{id}/settings)。
 	g.PUT("/workers/:workerId/settings", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		workerID, _ := strconv.ParseInt(c.Param("workerId"), 10, 64)
+		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
+		if !ok {
+			return
+		}
 		if _, err := a.Worker.GetWorker(c.Request.Context(), workerID); err != nil {
 			respondErr(c, err)
 			return
 		}
 		var req workerSettingsReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		if _, err := a.WorkerLedger.UpsertSettings(c.Request.Context(), worker.Settings{
@@ -236,7 +247,10 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.PUT("/notices/:noticeId/toggle", requirePerm(a.User, "menu:dispatch"), func(c *gin.Context) {
-		noticeID, _ := strconv.ParseInt(c.Param("noticeId"), 10, 64)
+		noticeID, ok := httpx.ParsePathParamInt64(c, "noticeId")
+		if !ok {
+			return
+		}
 		if err := a.WorkerNotice.ToggleNotice(c.Request.Context(), noticeID); err != nil {
 			respondErr(c, err)
 			return

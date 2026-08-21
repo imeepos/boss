@@ -182,9 +182,19 @@ func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "updateMap")
 }
 
-// Cancel 取消订单:任一未完成状态可取消(status→CANCELLED),不动环节序号。
+// Cancel 取消订单:任一未完成状态可取消(status→CANCELLED),不动环节序号;并回收预占端口。
 func (s *PGStore) Cancel(ctx context.Context, orderID int64) error {
-	return s.transitionStatus(ctx, orderID, "cancel")
+	if err := s.transitionStatus(ctx, orderID, "cancel"); err != nil {
+		return err
+	}
+	// 取消必回收本订单预占端口(RESERVED→IDLE):否则端口死占,地址端口逐步耗尽。
+	// 无预占端口(未到环节3/5)视为正常不报错;与 resource.ReleasePortByOrder 同谓词语义。
+	if _, err := s.db.Exec(ctx,
+		`UPDATE ports SET status = 'IDLE', order_id = NULL WHERE order_id = $1 AND status = 'RESERVED'`, orderID,
+	); err != nil {
+		return fmt.Errorf("order: cancel release ports: %w", err)
+	}
+	return nil
 }
 
 // Release 端口释放:RESERVED→PENDING(超时/取消的预占回滚),不动环节序号。

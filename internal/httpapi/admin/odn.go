@@ -7,6 +7,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/odn"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -58,14 +59,13 @@ func registerODNRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 	g.POST("/odn/grids", perm, func(c *gin.Context) {
 		var req odnGridReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		gr := odn.Grid{PrvCode: c.Query("prvCode"), CityPrefix: c.Query("cityPrefix"),
 			GridCode: req.GridCode, Name: req.Name, Coverage: req.Coverage, Status: req.Status}
 		if gr.PrvCode == "" || gr.CityPrefix == "" {
-			respond(c, apitypes.CodeInvalidParam, nil)
+			httpx.RespondValidationError(c, "prvCode/cityPrefix", "query params prvCode and cityPrefix are required")
 			return
 		}
 		if err := a.ODN.CreateGrid(c.Request.Context(), gr); err != nil {
@@ -80,8 +80,7 @@ func registerODNRoutes(g *gin.RouterGroup, a *app.Application) {
 			return
 		}
 		var req odnGridReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		gr := odn.Grid{Name: req.Name, Coverage: req.Coverage, Status: req.Status}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -31,9 +32,13 @@ func registerDispatchRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 工单指派:候选师傅(masterId)回填工单。
 	d.POST("/pool/:ticketNo/assign", func(c *gin.Context) {
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
+			return
+		}
 		var req assignTicketReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		w, err := a.Worker.GetWorker(c.Request.Context(), req.MasterID)
@@ -41,11 +46,15 @@ func registerDispatchRoutes(g *gin.RouterGroup, a *app.Application) {
 			respondErr(c, err)
 			return
 		}
-		if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), c.Param("ticketNo"), w.ID, w.Name); err != nil {
+		if !workerAssignable(w) {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "worker not active"})
+			return
+		}
+		if err := a.WorkOrder.AssignDispatchTicket(c.Request.Context(), ticketNo, w.ID, w.Name); err != nil {
 			respondErr(c, err)
 			return
 		}
-		httpx.RecordAudit(a, c, "dispatch.assign", "dispatch_ticket", c.Param("ticketNo"),
+		httpx.RecordAudit(a, c, "dispatch.assign", "dispatch_ticket", ticketNo,
 			map[string]any{"masterId": req.MasterID})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
@@ -79,19 +88,36 @@ func registerDispatchRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 工单转派:留痕改派台账 + 回填新师傅。
 	d.POST("/tickets/:ticketNo/transfer", func(c *gin.Context) {
-		var req transferTicketReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		ticketNo := c.Param("ticketNo")
+		if ticketNo == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
 			return
 		}
-		ticket, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		var req transferTicketReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		ticket, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		// 终态工单不可转派;转派目标即当前师傅视为无效操作。
+		if ticket.Status == "DONE" || ticket.Status == "CANCELED" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticket already " + ticket.Status})
 			return
 		}
 		to, err := a.Worker.GetWorker(c.Request.Context(), req.ToMasterID)
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		if !workerAssignable(to) {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "worker not active"})
+			return
+		}
+		if to.ID == ticket.WorkerID {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "target worker is current assignee"})
 			return
 		}
 		if err := appendTransfer(a, c, ticket, to.ID, to.Name, req.Reason); err != nil {
@@ -100,6 +126,11 @@ func registerDispatchRoutes(g *gin.RouterGroup, a *app.Application) {
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	})
+}
+
+// workerAssignable 指派/转派目标师傅必须在职(status=1 且未离职):离职师傅不可接单。
+func workerAssignable(w *worker.Worker) bool {
+	return w != nil && w.Status == 1 && w.LeftAt == nil
 }
 
 // appendTransfer 追加改派台账并把工单指到新师傅。

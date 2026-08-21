@@ -17,6 +17,20 @@ func (s stubExists) Exists(context.Context, int64) (bool, error) { return s.ok, 
 
 var ts = time.Date(2025, 8, 17, 10, 0, 0, 0, time.UTC)
 
+// expectRefExists 桩 Submit 关联存在性校验(addresses/product_offers/channels,均返回存在)。
+func expectRefExists(mock pgxmock.PgxPoolIface, table string, id int64) {
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ` + table).
+		WithArgs(id).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+}
+
+// expectSubmitRefs 桩 Submit 三项关联存在性校验(address/offer/channel 默认全通过)。
+func expectSubmitRefs(mock pgxmock.PgxPoolIface, offerID, channelID int64) {
+	expectRefExists(mock, "addresses", 100)
+	expectRefExists(mock, "product_offers", offerID)
+	expectRefExists(mock, "channels", channelID)
+}
+
 func TestPGStore_Submit(t *testing.T) {
 	t.Run("成功", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -25,7 +39,8 @@ func TestPGStore_Submit(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+		expectSubmitRefs(mock, 10, 5)
+mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(1), "root.luzon"))
 		mock.ExpectQuery(`SELECT 'ORD-'`).
@@ -61,7 +76,8 @@ func TestPGStore_Submit(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+		expectSubmitRefs(mock, 10, 5)
+mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnError(pgx.ErrNoRows)
 		mock.ExpectQuery(`SELECT id, 'root' FROM legal_entities`).
@@ -94,7 +110,8 @@ func TestPGStore_Submit(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+		expectSubmitRefs(mock, 0, 5)
+mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnError(pgx.ErrNoRows)
 		mock.ExpectQuery(`SELECT id, 'root' FROM legal_entities`).
@@ -116,7 +133,8 @@ func TestPGStore_Submit(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
+		expectSubmitRefs(mock, 0, 5)
+mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(2), "root.luzon"))
 
@@ -157,6 +175,69 @@ func TestPGStore_Submit(t *testing.T) {
 		s := NewPGStore(mock, stubExists{ok: true})
 		if _, err := s.Submit(context.Background(), SubmitReq{CustomerID: 1}); err == nil {
 			t.Fatal("want error for missing channel")
+		}
+	})
+	t.Run("地址不存在", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM addresses`).
+			WithArgs(int64(100)).
+			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+
+		s := NewPGStore(mock, stubExists{ok: true})
+		_, err = s.Submit(context.Background(), SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
+		if !errors.Is(err, ErrAddressNotFound) {
+			t.Fatalf("err=%v, want ErrAddressNotFound", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("产品未上架", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		expectRefExists(mock, "addresses", 100)
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM product_offers`).
+			WithArgs(int64(10)).
+			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+
+		s := NewPGStore(mock, stubExists{ok: true})
+		_, err = s.Submit(context.Background(), SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
+		if !errors.Is(err, ErrOfferNotOrderable) {
+			t.Fatalf("err=%v, want ErrOfferNotOrderable", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("渠道停用", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		expectRefExists(mock, "addresses", 100)
+		expectRefExists(mock, "product_offers", 10)
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM channels`).
+			WithArgs(int64(5)).
+			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+
+		s := NewPGStore(mock, stubExists{ok: true})
+		_, err = s.Submit(context.Background(), SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
+		if !errors.Is(err, ErrChannelNotActive) {
+			t.Fatalf("err=%v, want ErrChannelNotActive", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
 		}
 	})
 }

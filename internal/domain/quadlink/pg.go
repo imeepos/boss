@@ -12,6 +12,12 @@ import (
 // ErrNotFound 记录不存在。
 var ErrNotFound = errors.New("quadlink: not found")
 
+// ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
+var ErrForeignKeyViolation = errors.New("quadlink: foreign key violation")
+
+// ErrPortAddressMismatch 端口与地址不一致(四码交叉校验)。
+var ErrPortAddressMismatch = errors.New("quadlink: port-address mismatch")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
@@ -90,6 +96,28 @@ func (s *PGStore) CreateLink(ctx context.Context, q QuadLink) (int64, error) {
 		if !exists {
 			return 0, fmt.Errorf("quadlink: asset %d not found: %w", q.AssetID, ErrForeignKeyViolation)
 		}
+	}
+
+	// legal_entity_id:运营主体必须存在(admin 侧必填,入口只查非零,存在性在此兜底)。
+	var leExists bool
+	if err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM legal_entities WHERE id = $1)`, q.LegalEntityID,
+	).Scan(&leExists); err != nil {
+		return 0, fmt.Errorf("quadlink: check legal entity %d: %w", q.LegalEntityID, err)
+	}
+	if !leExists {
+		return 0, fmt.Errorf("quadlink: legal entity %d not found: %w", q.LegalEntityID, ErrForeignKeyViolation)
+	}
+
+	// 码间交叉一致性:端口必须归属同一安装地址(ports.address_id 冗余列直查),否则四码自相矛盾。
+	var portAddrMatch bool
+	if err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM ports WHERE id = $1 AND address_id = $2)`, q.PortID, q.AddressID,
+	).Scan(&portAddrMatch); err != nil {
+		return 0, fmt.Errorf("quadlink: check port %d address: %w", q.PortID, err)
+	}
+	if !portAddrMatch {
+		return 0, fmt.Errorf("quadlink: port %d not at address %d: %w", q.PortID, q.AddressID, ErrPortAddressMismatch)
 	}
 
 	var id int64

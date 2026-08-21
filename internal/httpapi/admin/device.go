@@ -1,8 +1,6 @@
 package adminapi
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -27,7 +25,10 @@ func registerDeviceRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	g.POST("/alarms/:alarmId/ack", requirePerm(a.User, "menu:alarm"), func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("alarmId"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "alarmId")
+		if !ok {
+			return
+		}
 		if err := a.Alarm.UpdateAlarmStatus(c.Request.Context(), id, "ACKED"); err != nil {
 			respondErr(c, err)
 			return
@@ -38,8 +39,7 @@ func registerDeviceRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 台风应急·批量复测:按片区受理,返回批量复测任务号(alarm.yaml batchRetestAlarms)。
 	g.POST("/alarms/batch-retest", requirePerm(a.User, "menu:alarm"), func(c *gin.Context) {
 		var req batchRetestReq
-		if err := c.ShouldBindJSON(&req); err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
 		taskNo, err := a.Alarm.AppendRetestTask(c.Request.Context(), req.Scope)

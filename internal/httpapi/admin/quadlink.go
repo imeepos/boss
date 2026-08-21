@@ -16,9 +16,15 @@ func registerQuadlinkRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 新建四码绑定(装维前预绑定:资产+客户+端口+地址,status=UNLINKED)。
 	g.POST("/quad-links", requirePerm(a.User, "menu:quadlink"), func(c *gin.Context) {
 		var q quadlink.QuadLink
-		if err := c.ShouldBindJSON(&q); err != nil || q.AssetID == 0 || q.CustomerID == 0 ||
-			q.PortID == 0 || q.AddressID == 0 || q.LegalEntityID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &q, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(q.AssetID, "assetId"),
+				httpx.RequirePositiveID(q.CustomerID, "customerId"),
+				httpx.RequirePositiveID(q.PortID, "portId"),
+				httpx.RequirePositiveID(q.AddressID, "addressId"),
+				httpx.RequirePositiveID(q.LegalEntityID, "legalEntityId"),
+			)
+		}) {
 			return
 		}
 		if q.Status == "" {

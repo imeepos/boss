@@ -2,7 +2,6 @@ package adminapi
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,7 +40,10 @@ func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	res.GET("/ports/:portId/change-history", func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("portId"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "portId")
+		if !ok {
+			return
+		}
 		list, err := a.ResourceSub.ListPortHistory(c.Request.Context(), id)
 		if err != nil {
 			respondErr(c, err)
@@ -51,7 +53,10 @@ func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 
 	res.POST("/reserves/:reserveId/release", func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("reserveId"), 10, 64)
+		id, ok := httpx.ParsePathParamInt64(c, "reserveId")
+		if !ok {
+			return
+		}
 		if err := a.ResourceSub.ReleaseReserve(c.Request.Context(), id); err != nil {
 			respondErr(c, err)
 			return
@@ -132,8 +137,12 @@ func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	})
 	tr.POST("/expansions", func(c *gin.Context) {
 		var e resource.Expansion
-		if err := c.ShouldBindJSON(&e); err != nil || e.LegalEntityID == 0 || e.RegionID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		if !httpx.BindAndValidate(c, &e, func() error {
+			return httpx.CollectErrors(
+				httpx.RequirePositiveID(e.LegalEntityID, "legalEntityId"),
+				httpx.RequirePositiveID(e.RegionID, "regionId"),
+			)
+		}) {
 			return
 		}
 		if e.ExpansionNo == "" {
