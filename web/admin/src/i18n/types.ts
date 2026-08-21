@@ -189,6 +189,10 @@ export interface Translations {
       taskKindAddr: string
       taskKindGeo: string
       fileButton: string
+      templateExcel: string
+      excelNoSheet: string
+      excelBadHeader: string
+      excelBadRow: string
       dropHint: string
       onlyJson: string
       fileTooLarge: string

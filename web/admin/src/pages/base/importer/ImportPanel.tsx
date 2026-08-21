@@ -9,6 +9,14 @@ import {
   MAX_BYTES, PREVIEW_ROWS, buildPreview, parseJson, resultCount, templateJson,
   type ImportKind, type PreviewResult,
 } from './preview'
+import { excelTemplate, isExcelFile, parseExcel, type ExcelParseResult } from './excel'
+
+/** Excel 解析错误 → i18n 文案(sheet/row 定位透传)。 */
+function excelErrorText(r: Extract<ExcelParseResult, { ok: false }>, text: Text): string {
+  if (r.reason === 'noSheet') return text.excelNoSheet
+  if (r.reason === 'badHeader') return text.excelBadHeader.replace('{sheet}', r.sheet ?? '')
+  return text.excelBadRow.replace('{sheet}', r.sheet ?? '').replace('{row}', String(r.row ?? ''))
+}
 
 const AREA_CLS = 'min-h-35 resize-y rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 py-2 font-mono text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]'
 const DROP_CLS = 'cursor-pointer rounded-sm border border-dashed border-[var(--shell-input-border)] bg-[var(--shell-menu-hover-bg)] px-4 py-6 text-center text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)]'
@@ -36,12 +44,28 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
   const preview: PreviewResult | null = parsed?.ok ? buildPreview(kind, parsed.value) : null
 
   const readFile = (file: File) => {
-    if (!/\.json$/i.test(file.name) && file.type !== 'application/json') {
-      setError(text.onlyJson)
-      return
-    }
     if (file.size > MAX_BYTES) {
       setError(text.fileTooLarge)
+      return
+    }
+    if (isExcelFile(file.name, file.type)) {
+      // Excel 通道:解析为 JSON 通道同构载荷后走统一预览/提交链路。
+      file.arrayBuffer()
+        .then((buf) => {
+          const r = parseExcel(kind, buf)
+          if (!r.ok) {
+            setError(excelErrorText(r, text))
+            return
+          }
+          setPayload(JSON.stringify(r.value, null, 2))
+          setResult('')
+          setError('')
+        })
+        .catch(() => setError(text.readFail))
+      return
+    }
+    if (!/\.json$/i.test(file.name) && file.type !== 'application/json') {
+      setError(text.onlyJson)
       return
     }
     const reader = new FileReader()
@@ -60,12 +84,14 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
     if (f) readFile(f)
   }
 
-  const downloadTemplate = () => {
-    const blob = new Blob([templateJson(kind)], { type: 'application/json' })
+  const downloadTemplate = (fmt: 'xlsx' | 'json') => {
+    const blob = fmt === 'xlsx'
+      ? new Blob([excelTemplate(kind)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      : new Blob([templateJson(kind)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = kind === 'addr' ? 'address-import-template.json' : 'geo-import-template.json'
+    a.download = `${kind === 'addr' ? 'address-import' : 'geo-import'}-template.${fmt}`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -117,7 +143,7 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
       <input
         ref={fileRef}
         type="file"
-        accept=".json,application/json"
+        accept=".json,.xlsx,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0]
@@ -126,7 +152,8 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
         }}
       />
       <div className="mt-2 flex items-center gap-3">
-        <ToolbarButton onClick={downloadTemplate}>{text.template}</ToolbarButton>
+        <ToolbarButton onClick={() => downloadTemplate('xlsx')}>{text.templateExcel}</ToolbarButton>
+        <ToolbarButton onClick={() => downloadTemplate('json')}>{text.template}</ToolbarButton>
         <ToolbarButton onClick={() => setAdvanced((v) => !v)}>{text.pasteToggle}</ToolbarButton>
         {payload && (
           <ToolbarButton onClick={() => { setPayload(''); setResult(''); setError('') }}>
