@@ -35,10 +35,14 @@ export async function apiFetch<T = unknown>(path: string, opts: RequestOptions =
   const headers: Record<string, string> = {}
   const token = getAuthToken()
   if (token) headers.Authorization = `Bearer ${token}`
-  let body: string | undefined
+  let body: BodyInit | undefined
   if (opts.body !== undefined) {
-    headers['Content-Type'] = 'application/json'
-    body = JSON.stringify(opts.body)
+    if (opts.body instanceof FormData) {
+      body = opts.body // multipart 由浏览器自动补 boundary,勿手写 Content-Type
+    } else {
+      headers['Content-Type'] = 'application/json'
+      body = JSON.stringify(opts.body)
+    }
   }
   const res = await fetch(url, { method: opts.method ?? 'GET', headers, body })
   if (!res.ok) throw new ApiError(res.status, `网关错误(HTTP ${res.status})`)

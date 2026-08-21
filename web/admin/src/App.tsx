@@ -1,5 +1,6 @@
 // 路由:登录页独立;受保护区 AuthGuard→AdminLayout(Outlet);45 页全集 + 403/404。
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
+import { AttachmentManager } from './components/AttachmentManager'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './layouts/AdminLayout'
 import { UCenterLayout } from './layouts/UCenterLayout'
@@ -146,6 +147,12 @@ function RouteFallback() {
   return <div className="flex min-h-32 items-center justify-center text-sm text-[var(--shell-group-title)]">Loading…</div>
 }
 
+/** 附件管理预览:自由筛选 + 选择模式全功能展示。 */
+function AttachmentManagerPreview() {
+  const [selected, setSelected] = useState<number[]>([])
+  return <AttachmentManager selectable selectedIds={selected} onSelectionChange={setSelected} />
+}
+
 export default function App() {
   return (
     <ConfirmProvider>
@@ -179,6 +186,8 @@ export default function App() {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
+          {/* 附件管理组件预览路由(AttachmentManager 通用组件,正式嵌入业务页后移除)。 */}
+          <Route path="dev/attachments" element={<AttachmentManagerPreview />} />
           {MENU_GROUPS.flatMap((g) => g.items).map((it) => (
             <Route key={it.key} path={it.path} element={<MenuPage pageKey={it.key} />} />
           ))}

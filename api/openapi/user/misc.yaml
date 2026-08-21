@@ -56,15 +56,15 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: 已读成功
+          description: 已读成功(业务码 0)
           content:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
         '404':
-          description: 消息不存在或不属于当前用户
+          description: 消息不存在或不属于当前用户(业务码 CodeNotFound=40400)
           content:
             application/json:
-              schema: { $ref: './schemas.yaml#/components/schemas/Error' }
+              schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
 
   /coupons:
     get:

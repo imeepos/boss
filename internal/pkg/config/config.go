@@ -98,6 +98,11 @@ type Config struct {
 		AccessKeySecret string
 		From            string // 阿里云国际 SenderID
 	}
+	// JPush 移动端推送通道(极光聚合;凭据为空时降级日志通道)。
+	JPush struct {
+		AppKey       string
+		MasterSecret string
+	}
 	// RealID 实名二要素核验通道(阿里云实人认证 Id2MetaVerify;凭据为空时通道不注册,落 PENDING 走人工核验)。
 	RealID struct {
 		AccessKeyID     string
@@ -167,6 +172,9 @@ func Load() *Config {
 	c.SMS.AccessKeyID = getenv("BOSS_SMS_ALIYUN_AK_ID", "")
 	c.SMS.AccessKeySecret = getenv("BOSS_SMS_ALIYUN_AK_SECRET", "")
 	c.SMS.From = getenv("BOSS_SMS_ALIYUN_FROM", "")
+
+	c.JPush.AppKey = getenv("BOSS_JPUSH_APP_KEY", "")
+	c.JPush.MasterSecret = getenv("BOSS_JPUSH_MASTER_SECRET", "")
 
 	c.RealID.AccessKeyID = getenv("BOSS_REALID_ALIYUN_AK_ID", "")
 	c.RealID.AccessKeySecret = getenv("BOSS_REALID_ALIYUN_AK_SECRET", "")

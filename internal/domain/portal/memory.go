@@ -179,6 +179,18 @@ func (s *memoryStore) MarkAllRead(_ context.Context, customerID int64) error {
 	return nil
 }
 
+func (s *memoryStore) MarkRead(_ context.Context, customerID int64, messageID string) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range s.messages[customerID] {
+		if s.messages[customerID][i].ID == messageID {
+			s.messages[customerID][i].Read = true
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (s *memoryStore) HasUnread(_ context.Context, customerID int64) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

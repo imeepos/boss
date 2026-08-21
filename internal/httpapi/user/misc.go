@@ -18,6 +18,7 @@ func registerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/home", portalHome(a))
 	g.GET("/messages", portalListMessages(a))
 	g.POST("/messages/read-all", portalReadAllMessages(a))
+	g.PUT("/messages/:messageId/read", portalReadOneMessage(a))
 	// 用户端 /coupons 仅挂在 /api/user/v1(与 admin /api/admin/v1 前缀隔离,无路由冲突)。
 	g.GET("/coupons", portalListCoupons(a))
 	g.GET("/addresses", portalListAddresses(a))
@@ -153,7 +154,11 @@ func portalListMessages(a *app.Application) gin.HandlerFunc {
 		items := make([]gin.H, 0)
 		for _, m := range msgs {
 			if cat == "all" || m.Payload["category"] == cat {
-				item := gin.H{"read": m.Read, "createdAt": m.CreatedAt}
+				item := gin.H{
+					"messageId": strconv.FormatInt(m.ID, 10),
+					"read":      m.Read,
+					"createdAt": m.CreatedAt,
+				}
 				for key, value := range m.Payload {
 					item[key] = value
 				}
@@ -169,6 +174,29 @@ func portalReadAllMessages(a *app.Application) gin.HandlerFunc {
 		cid, _ := requireCustomer(c)
 		if err := a.Portal.MarkAllRead(c.Request.Context(), cid); err != nil {
 			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
+// portalReadOneMessage 单条消息标为已读。messageId 不存在或不属于当前客户 → 404,
+// 前端乐观更新时据此区分"服务端已确认"与"未知消息"。
+func portalReadOneMessage(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		messageID := c.Param("messageId")
+		if messageID == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "messageId 必填"})
+			return
+		}
+		found, err := a.Portal.MarkRead(c.Request.Context(), cid, messageID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !found {
+			respond(c, apitypes.CodeNotFound, gin.H{"error": "消息不存在"})
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})

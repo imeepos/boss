@@ -90,6 +90,16 @@ func (s *pgStore) MarkAllRead(ctx context.Context, customerID int64) error {
 	return err
 }
 
+func (s *pgStore) MarkRead(ctx context.Context, customerID int64, messageID string) (bool, error) {
+	tag, err := s.pool.Exec(ctx,
+		`UPDATE portal_messages SET read=TRUE WHERE customer_id=$1 AND message_id=$2`,
+		customerID, messageID)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
 func (s *pgStore) HasUnread(ctx context.Context, customerID int64) (bool, error) {
 	var n int
 	err := s.pool.QueryRow(ctx, `SELECT count(*) FROM portal_messages WHERE customer_id=$1 AND read=FALSE`, customerID).Scan(&n)

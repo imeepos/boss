@@ -46,6 +46,38 @@ export interface Translations {
     groups: Record<string, string>
     items: Record<string, string>
   }
+  attachmentManager: {
+    title: string
+    searchPlaceholder: string
+    search: string
+    upload: string
+    uploading: string
+    delete: string
+    deleteSelected: string
+    confirmDeleteOne: string
+    confirmDeleteSelected: string
+    allUploaders: string
+    uploaderAccount: string
+    uploaderWorker: string
+    uploaderCustomer: string
+    uploaderIdPlaceholder: string
+    selectedInfo: string
+    colFileName: string
+    colType: string
+    colSize: string
+    colUploader: string
+    colTime: string
+    colActions: string
+    empty: string
+    uploadFail: string
+    deleteFail: string
+    rangeText: string
+    prev: string
+    next: string
+    perPage: string
+    jump: string
+    pageUnit: string
+  }
   pages: {
     dashboard: {
       title: string

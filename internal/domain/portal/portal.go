@@ -70,6 +70,7 @@ type Service interface {
 	Messages(ctx context.Context, customerID int64) ([]Message, error)
 	PutMessage(ctx context.Context, customerID int64, payload map[string]any) error
 	MarkAllRead(ctx context.Context, customerID int64) error
+	MarkRead(ctx context.Context, customerID int64, messageID string) (bool, error)
 	HasUnread(ctx context.Context, customerID int64) (bool, error)
 
 	Balance(ctx context.Context, customerID int64) (float64, error)

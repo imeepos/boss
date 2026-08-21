@@ -180,20 +180,10 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		[]string{"86", "60"},
 	))
 
-	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表)。
-	var anaStore analytics.AnalyticsService = analytics.NewPGStore(pool, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)
-	var closeOLAP func()
-	if cfg.Analytics.Backend == "starrocks" && cfg.OLAP.StarRocksDSN != "" {
-		sr, err := analytics.NewStarRocksStore(cfg.OLAP.StarRocksDSN, cfg.Analytics.MaintUnitCost, cfg.Analytics.PortUnitCost)
-		if err != nil {
-			return nil, fmt.Errorf("wiring: starrocks: %w", err)
-		}
-		if err := sr.Ping(ctx); err != nil {
-			_ = sr.Close()
-			return nil, fmt.Errorf("wiring: starrocks ping: %w", err)
-		}
-		anaStore = sr
-		closeOLAP = func() { _ = sr.Close() }
+	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表,见 wiring_events.go)。
+	anaStore, closeOLAP, err := selectAnalytics(ctx, pool, cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	app := &Application{
@@ -211,6 +201,12 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		CustomerRealName:   cust,
 		// 实名二要素通道:biz_params(realid.*)优先/env 兜底,60s 热生效;未配置落 PENDING 人工核验。
 		RealID: realid.NewDynamic(realidConfigResolver(usr, cfg)),
+
+		// 移动端推送通道:biz_params(push.*)优先/env 兜底,60s 热生效;凭据缺失降级日志通道。
+		Push: push.NewDynamic(pushConfigResolver(usr, cfg)),
+
+		// 移动端推送通道:biz_params(push.*)优先/env 兜底,60s 热生效;凭据缺失降级日志通道。
+		Push: push.NewDynamic(pushConfigResolver(usr, cfg)),
 
 		Billing: bill,
 		Arrears: bill,
@@ -270,39 +266,23 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	// 阶段9:经营分析 + 自动报告。
 	app.Report = &report.ReportService{Ana: app.Analytics, St: report.NewPGStore(pool)}
 
-	// 债务偿还:gRPC aaa/v1 依赖——授权器 + 话单投递(PG 落库必选,Kafka 可用时双写)。
+	// 债务偿还:gRPC aaa/v1 依赖——授权器 + 话单投递 + W8 事件链(见 wiring_events.go)。
 	app.AaaAuth = aaa.NewPGAuthorizer(pool)
-	cdrStore := aaability.NewPGEmitter(aaastore)
-	var cdr aaability.Emitter = cdrStore
-	var closeCDR func()
-	if len(cfg.Kafka.Brokers) > 0 {
-		ke := aaability.NewKafkaEmitter(cfg.Kafka.Brokers, cfg.AAA.CDRTopic)
-		cdr = &aaability.FanoutEmitter{Realtime: ke, Store: cdrStore}
-		closeCDR = func() { _ = ke.Close() }
-	}
-	app.Cdr = cdr
-
-	// W8:Kafka 状态变更链路(brokers 可用即接,否则降级 Noop)。
-	var pub events.Publisher = events.Noop{}
-	var closePub func()
-	if len(cfg.Kafka.Brokers) > 0 {
-		kp := events.NewKafkaPublisher(cfg.Kafka.Brokers, cfg.Events.Topic)
-		pub = kp
-		closePub = func() { _ = kp.Close() }
-	}
-	app.pubEvents = pub
-	app.Automation = NewAutomation(app.Order, pub)
+	em := wireEmitters(aaastore, cfg)
+	app.Cdr = em.cdr
+	app.pubEvents = em.pub
+	app.Automation = NewAutomation(app.Order, em.pub)
 	app.ReconAuto = &billing.AutoReconciler{Recon: app.Recon, Sources: app.ReconSources}
 
 	stopPatrol := startPatrolLoop(app)
 	app.close = func() {
 		stopPatrol() // 巡检循环
 		aw.Close()   // 排空审计队列
-		if closeCDR != nil {
-			closeCDR()
+		if em.closeCdr != nil {
+			em.closeCdr()
 		}
-		if closePub != nil {
-			closePub()
+		if em.closePub != nil {
+			em.closePub()
 		}
 		if closeOLAP != nil {
 			closeOLAP()

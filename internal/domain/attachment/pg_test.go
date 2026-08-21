@@ -155,3 +155,92 @@ func TestPGStoreListByUploader(t *testing.T) {
 		t.Fatal("rows.Err should fail")
 	}
 }
+
+// execDB 记录 Exec 结果以驱动 Delete 断言。
+type execDB struct {
+	fakeDB
+	affected int64
+	execErr  error
+}
+
+func (d *execDB) Exec(context.Context, string, ...any) (pgconn.CommandTag, error) {
+	if d.execErr != nil {
+		return pgconn.CommandTag{}, d.execErr
+	}
+	return pgconn.NewCommandTag("UPDATE 1"), nil
+}
+
+func TestPGStoreDelete(t *testing.T) {
+	db := &execDB{affected: 1}
+	if err := NewPGStore(db).Delete(context.Background(), 7); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	db = &execDB{execErr: errors.New("boom")}
+	if err := NewPGStore(db).Delete(context.Background(), 7); err == nil {
+		t.Fatal("exec error should fail")
+	}
+}
+
+func TestPGStoreGetByIDs(t *testing.T) {
+	rows := &fakeRows{items: []*fakeRow{{at: sampleAt(), ts: ts(time.Now())}}}
+	got, err := NewPGStore(&fakeDB{rows: rows}).GetByIDs(context.Background(), []int64{7, 7, 0, -1})
+	if err != nil {
+		t.Fatalf("get-by-ids: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("unexpected: %+v", got)
+	}
+	empty, err := NewPGStore(&fakeDB{rows: &fakeRows{}}).GetByIDs(context.Background(), nil)
+	if err != nil || len(empty) != 0 {
+		t.Fatalf("empty ids: %v %+v", err, empty)
+	}
+	if _, err := NewPGStore(&fakeDB{queryErr: errors.New("q")}).GetByIDs(context.Background(), []int64{7}); err == nil {
+		t.Fatal("query error should fail")
+	}
+}
+
+// countRow 同时充当 count(*) 的 QueryRow 与数据行。
+type countRow struct {
+	fakeRow
+	total int64
+}
+
+func (r *countRow) Scan(dest ...any) error {
+	if r.err != nil {
+		return r.err
+	}
+	*(dest[0].(*int)) = int(r.total)
+	return nil
+}
+
+// listDB 让 QueryRow(count) 与 Query(数据) 各走各的桩。
+type listDB struct {
+	fakeDB
+	count *countRow
+}
+
+func (d *listDB) QueryRow(context.Context, string, ...any) pgx.Row { return d.count }
+
+func TestPGStoreList(t *testing.T) {
+	db := &listDB{count: &countRow{total: 3}, fakeDB: fakeDB{rows: &fakeRows{items: []*fakeRow{{at: sampleAt()}}}}}
+	items, total, err := NewPGStore(db).List(context.Background(), ListFilter{
+		UploaderType: "worker", UploaderID: 9, Keyword: " f ", Limit: 10, Offset: 20})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if total != 3 || len(items) != 1 {
+		t.Fatalf("unexpected: total=%d items=%+v", total, items)
+	}
+	// limit 钳制与负 offset 不 panic。
+	if _, _, err := NewPGStore(db).List(context.Background(), ListFilter{Limit: 0, Offset: -5}); err != nil {
+		t.Fatalf("clamp: %v", err)
+	}
+	// count 失败必须返回错误。
+	bad := &listDB{count: &countRow{fakeRow: fakeRow{err: errors.New("c")}}}
+	if _, _, err := NewPGStore(bad).List(context.Background(), ListFilter{}); err == nil {
+		t.Fatal("count error should fail")
+	}
+	if _, _, err := NewPGStore(&listDB{count: &countRow{fakeRow: fakeRow{err: errors.New("q")}}}).List(context.Background(), ListFilter{}); err == nil {
+		t.Fatal("query error should fail")
+	}
+}

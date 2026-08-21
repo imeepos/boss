@@ -24,6 +24,12 @@ func (f *fakeStore) ListByUploader(context.Context, string, int64, int) ([]Attac
 	return nil, nil
 }
 
+func (f *fakeStore) List(context.Context, ListFilter) ([]Attachment, int, error) { return nil, 0, nil }
+
+func (f *fakeStore) Delete(context.Context, int64) error { return nil }
+
+func (f *fakeStore) GetByIDs(context.Context, []int64) ([]Attachment, error) { return nil, nil }
+
 type fakeObj struct {
 	key string
 	err error
