@@ -1,5 +1,16 @@
 # Notes
 
+## 2026-08-21 登录/注册/找回页对齐 login-register-states-v2 设计稿
+
+**哪个坑浪费了最多时间？**
+两处：① Kotlin 带默认值尾参 + trailing lambda——`AuthPhoneRow(value, onChange, hint="")` 的尾 lambda 绑定到 `hint` 而非 `onChange`，三处调用同时报错；② 用 perl -pi 批量改文件后没重读，edit 报 file changed since read（红线#1 变体：shell 改文件≠已观察）。另外真机盲点坐标 tap 两次截图错页，最后用 uiautomator dump 取 bounds 才点中。
+
+**这个 skill 有没有提前警告我？**
+红线#1 警告过外部改文件问题；trailing lambda 绑定规则和 uiautomator dump 技巧均无沉淀。
+
+**重来一次我会怎么做？**
+Compose 自定义组件一律把回调函数参数放最后且其后不放默认值参数；shell 批量改完立即 read 再 edit；真机点击定位一律先 uiautomator dump 取 bounds，不猜坐标。
+
 ## 2026-08-21 worker/user 代码体检续修
 
 **哪个坑浪费了最多时间？**
