@@ -36,3 +36,15 @@
 
 - internal/domain/quadlink/pg_scan_test.go:重扫 LINKED 同资产 → MATCH 无第二日志
 - internal/httpapi/admin/scan_test.go:环节9已完成重扫 → MATCH 不报错
+
+## 102 线上探针证据(2026-08-23,镜像 20:02Z 含修复)
+
+订单 ORD-20260823-000472(工单 DT-...-000472,单 EPC-idem7167):
+
+| 探针 | 结果 |
+|------|------|
+| 重放扫码 x2 | 均 `{"result":"MATCH"}`,scan_logs 零新增(6→6) |
+| 重放 charge | 200,stage=8 跳过收费,无二次收款 |
+| 重放 activate x2 | 均 ok:true,自动段幂等续推跳过 |
+| 全链 5 轮回归 | 5/5,成功率 100% |
+
