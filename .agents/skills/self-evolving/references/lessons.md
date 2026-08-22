@@ -209,3 +209,5 @@
 87. 生图 prompt 的 Style 段不要写"现代/简洁/专业"等空词;翻译成可执行的设计语言——editorial / restrained / technical luxury / like Stripe or Linear + 具体的字号跳跃/字距收紧/圆角上限/焦点圈双层。空洞词被模型按"通用 SaaS"理解,正是"中规中矩"的源头(2026-08-25)。
 88. 节拍检测法:设计稿缩到 25% 后眯眼看——能立刻找到 3 个明确"组"说明节奏对,平均分布就是 24/24/24/24 的平庸节奏。节拍三件套=字号敢跳(14→24 不是 14→17)+留白敢空(主标题上下 32px+)+分组敢疏(区块 32-48px、组内 8-16px)。
 86. 给领域 service 接口加方法前,先 grep 全部实现方(含测试 fake):embedded interface 的 fake 不受影响,显式逐方法实现的 fake 会漏,build 红一轮才发现一处(2026-08-21 RollbackStage)。
+81. 路由注册必须放在 register* 前缀函数内:check-contract-sync 的提取器只扫 register 开头函数,把 g.POST 写进 setup*/其他命名函数会静默逃出契约对账(362<->363 少计无告警)。重构 root.go 时警惕。
+82. 多 cd 链式命令一处失败后续命令会在错误目录执行(含 git stash!)——跨 checkout 操作一律用绝对路径或 workdir 参数,绝不用相对路径串联 cd。
