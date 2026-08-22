@@ -1293,6 +1293,10 @@ const zhCN: Translations = {
       compareTitle: '四周期指标对比',
       compareDesc: '以下为单期快照按周期并排对比,非历史趋势曲线',
       compareLegend: ['收入', '投入', '综合 ROI', '告警数', '待维护'],
+      // 趋势曲线(commit B6)
+      trendTitle: '报告趋势曲线',
+      trendDesc: '取所选周期最近 12 个窗口的真实历史快照(真趋势)',
+      trendEmpty: '快照不足 2 个,无法绘制趋势',
     },
     userPage: {
       title: '用户列表',

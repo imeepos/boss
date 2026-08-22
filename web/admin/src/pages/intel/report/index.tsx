@@ -1,6 +1,8 @@
-// 报告中心页:契约 GET /reports + /reports/latest?period(正文抽屉)+ POST /reports/:id/send。
-// 顶部 4 统计卡 + 四周期对比柱状(明确"对比"非"趋势");下方报告列表+正文 Drawer。
-import { useEffect, useState } from 'react'
+// 报告中心页:契约 GET /reports + /reports/latest?period(正文抽屉)+ /reports/history?period
+// (B1 后端 trend 接口,前端用 LineTrend SVG 折线渲染)+ POST /reports/:id/send。
+// 顶部 4 统计卡 + LineTrend 趋势曲线(本期真趋势!)+ 四周期对比柱状保留作概览;
+// 下方报告列表+正文 Drawer。
+import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -10,7 +12,7 @@ import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
-import { CardShell, StatCard, StackedBars } from '../../../components/business/charts'
+import { CardShell, StatCard, LineTrend, StackedBars, type LineTrendSeries } from '../../../components/business/charts'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
 
@@ -26,6 +28,10 @@ export default function ReportPage() {
   const [view, setView] = useState<ReportPayload | null>(null)
   const [viewError, setViewError] = useState('')
   const [notice, setNotice] = useState('')
+  // trend 曲线(B1+B6):选周期 + 取 history
+  const [trendPeriod, setTrendPeriod] = useState<string>('daily')
+  const [trendSnaps, setTrendSnaps] = useState<{ windowStart: string; payload: ReportPayload }[]>([])
+  const [trendBusy, setTrendBusy] = useState(false)
 
   const load = () => {
     setError('')
@@ -44,6 +50,16 @@ export default function ReportPage() {
       .then((d) => setView(d?.payload ?? null))
       .catch(() => setViewError(r.viewFail))
   }
+
+  // trend 曲线数据拉取(后端 /reports/history?period&limit)
+  const loadTrend = (period: string) => {
+    setTrendBusy(true)
+    apiFetch<{ items: { windowStart: string; payload: ReportPayload }[] }>('/reports/history', { query: { period, limit: 12 } })
+      .then((d) => setTrendSnaps(d?.items ?? []))
+      .catch(() => setTrendSnaps([]))
+      .finally(() => setTrendBusy(false))
+  }
+  useEffect(() => { loadTrend(trendPeriod) }, [trendPeriod]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const send = async (row: ReportRow) => {
     if (busy || !(await confirmDialog(r.sendConfirm.replace('{id}', String(row.id))))) return
@@ -77,6 +93,29 @@ export default function ReportPage() {
       : [0, 0, 0, 0, 0],
   }))
 
+  // 趋势曲线(B6):从 history 取最多 12 个窗口倒序 → 反转成时间正序;
+  // 5 条指标线:收入/投入/ROI/告警数(=maint.length)/待维护(=maint.MUST_REPLACE.length)。
+  const trendSeries: LineTrendSeries[] = useMemo(() => {
+    const ordered = [...trendSnaps].reverse() // 旧→新(从左到右画)
+    const v0 = (k: 'revenue' | 'investment' | 'roi', idx: number) => {
+      const snap = ordered[idx]?.payload
+      const sum = snap?.regionROI.reduce((s, r) => s + r[k], 0) ?? 0
+      return sum
+    }
+    const alerts = (idx: number) => ordered[idx]?.payload?.maintenance.length ?? 0
+    const must = (idx: number) =>
+      ordered[idx]?.payload?.maintenance.filter((m) => m.priority === 'MUST_REPLACE').length ?? 0
+    return [
+      { name: r.compareLegend[0], values: ordered.map((_, i) => v0('revenue', i)) },
+      { name: r.compareLegend[1], values: ordered.map((_, i) => v0('investment', i)) },
+      { name: r.compareLegend[2], values: ordered.map((_, i) => v0('roi', i)) },
+      { name: r.compareLegend[3], values: ordered.map((_, i) => alerts(i)) },
+      { name: r.compareLegend[4], values: ordered.map((_, i) => must(i)) },
+    ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trendSnaps])
+  const trendLabels = useMemo(() => [...trendSnaps].reverse().map((s) => fmtTime(s.windowStart).slice(5, 10)), [trendSnaps])
+
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
@@ -86,6 +125,24 @@ export default function ReportPage() {
         <StatCard label={r.generatedAtLabel} value={rows.length > 0 ? fmtTime(rows[0].createdAt).split(' ')[0] : '—'} />
         <StatCard label={r.periods[2]} value={rows.filter((x) => x.period === 'monthly').length} />
       </section>
+
+      <CardShell className="mb-4">
+        <div className="mb-1 flex items-center justify-between">
+          <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{r.trendTitle}</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] text-[var(--shell-group-title)]">{r.trendDesc}</span>
+            <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[13px] text-[var(--shell-content-text)]"
+              value={trendPeriod} onChange={(e) => setTrendPeriod(e.target.value)} disabled={trendBusy}>
+              {PERIODS.map((p, i) => <option key={p} value={p}>{r.periods[i]}</option>)}
+            </select>
+          </div>
+        </div>
+        {trendSnaps.length >= 2 ? (
+          <LineTrend labels={trendLabels} series={trendSeries} />
+        ) : (
+          <div className="flex h-48 items-center justify-center text-[13px] text-[var(--shell-group-title)]">{r.trendEmpty}</div>
+        )}
+      </CardShell>
 
       <CardShell className="mb-4">
         <div className="mb-1 flex items-center justify-between">

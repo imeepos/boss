@@ -1291,6 +1291,10 @@ const msMY: Translations = {
       compareTitle: 'Perbandingan Penunjuk 4 Tempoh',
       compareDesc: 'Snapshot per-tempoh bersebelahan, bukan lengkung trend sejarah',
       compareLegend: ['Hasil', 'Pelaburan', 'ROI Komposit', 'Alarm', 'Barisan Penyelenggaraan'],
+      // Garis trend (commit B6)
+      trendTitle: 'Garis Trend Laporan',
+      trendDesc: 'Sejarah sebenar 12 snapshot terkini untuk tempoh dipilih (trend sebenar)',
+      trendEmpty: 'Sekurang-kurangnya 2 snapshot diperlukan untuk lukis trend',
       jumpText: 'Lompat ke',
       pageUnit: 'halaman',
     },

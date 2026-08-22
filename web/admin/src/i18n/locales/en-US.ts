@@ -1291,6 +1291,10 @@ const enUS: Translations = {
       compareTitle: '4-Period Indicator Comparison',
       compareDesc: 'Snapshot-per-period side-by-side comparison, not a historical trend',
       compareLegend: ['Revenue', 'Investment', 'Composite ROI', 'Alarms', 'Maintenance Queue'],
+      // Trend lines (commit B6)
+      trendTitle: 'Report Trend Lines',
+      trendDesc: 'Real history of latest 12 snapshots for selected period (true trend)',
+      trendEmpty: 'Need at least 2 snapshots to draw trend',
       jumpText: 'Jump to',
       pageUnit: 'page',
     },

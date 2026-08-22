@@ -1243,6 +1243,10 @@ export interface Translations {
       compareTitle: string
       compareDesc: string
       compareLegend: string[]
+      // 趋势曲线(commit B6)
+      trendTitle: string
+      trendDesc: string
+      trendEmpty: string
     }
     userPage: {
       title: string

@@ -1,7 +1,8 @@
-// 共享图表组件桶:卡片壳/统计卡/纵向柱状/横条/环形/堆叠柱(六件套,源自 dashboard + intel 三页)。
+// 共享图表组件桶:卡片壳/统计卡/纵向柱状/横条/环形/堆叠柱/趋势折线(七件套)。
 export { CardShell } from './card-shell'
 export { StatCard, type Trend } from './stat-card'
 export { VerticalBars } from './v-bars'
 export { HorizontalBar } from './h-bar'
 export { Donut, type DonutSegment } from './donut'
 export { StackedBars, type StackedBarSeries } from './stacked-bars'
+export { LineTrend, type LineTrendSeries } from './line-trend'
