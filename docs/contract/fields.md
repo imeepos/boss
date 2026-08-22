@@ -675,6 +675,7 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | device_metrics | admin/device.html OLT 监控 | resource_id/optical_power/packet_loss/status |
 | device_maintenances | worker 设备健康 | device_no/health_score/fault_count/priority |
 | report_snapshots | admin/report.html 报告中心 | period/window_start/window_end/payload（唯一键 `(period, window_start)`，同窗口幂等覆盖；payload=派生聚合全文） |
+| reports_trend（派生） | admin/report.html trend 曲线 | GET /reports/history?period&limit(默认 12 上限 90)→ items[].{windowStart, payload}(数字孪生 commit B1 后端 / ReportService.History;前端 commit B6 LineTrend SVG 折线消费,选周期 + limit 个历史快照的真趋势曲线) |
 | gis_points（派生） | admin/gis.html PGIS 真地图点位 | level/parentId/bbox → id/level/lng/lat/status/count/parentId（PGIS 数字孪生 commit 1 后端 / GIS 域 Points 服务；前端 OL `gisPoints/items` 消费） |
 | gis_map_tile(前端 OL 配置) | admin/gis.html PgisMap props | theme?: 'light'\|'dark'、tileUrl?: string（数字孪生 commit A3 + A7 落地；默认 OSM 公开瓦片 + CartoDB Dark Matter；tileserver-gl 自建 PMTiles 就位后切 PMTILES_TILE_URL） |
 
