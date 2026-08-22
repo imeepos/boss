@@ -17,6 +17,9 @@ func checkFileLen(root string) int {
 			if err != nil || fi.IsDir() || !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
 				return nil
 			}
+			if isGenerated(p) {
+				return nil // 生成文件(如 bossctl 路由目录)不受手写红线约束
+			}
 			n := countLines(p)
 			if n > 300 {
 				rel, _ := filepath.Rel(root, p)
@@ -41,6 +44,26 @@ func countLines(p string) int {
 		return 0
 	}
 	return strings.Count(string(b), "\n") + 1
+}
+
+// isGenerated 按 Go 惯例识别生成文件:头部含 "Code generated"。
+func isGenerated(p string) bool {
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return false
+	}
+	head := string(b)
+	if i := strings.IndexByte(head, '\n'); i >= 0 {
+		head = head[:min(i, 512)]
+	}
+	return strings.Contains(head, "Code generated")
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // baselinePath baseline 与本目录源文件同目录(与运行 cwd 无关)。
