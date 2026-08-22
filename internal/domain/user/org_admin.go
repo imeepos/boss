@@ -127,6 +127,62 @@ func (s *PGStore) UpdatePost(ctx context.Context, id, deptID int64, code, name s
 	return s.replacePostRoles(ctx, id, roles)
 }
 
+// DeleteDepartment 删除部门;仍有岗位或在职账号挂靠时拒(ErrConflict);未命中 ErrNotFound。
+func (s *PGStore) DeleteDepartment(ctx context.Context, id int64) error {
+	if id <= 0 {
+		return ErrInvalidInput
+	}
+	var occupied int
+	if err := s.db.QueryRow(ctx, `
+		SELECT (SELECT count(*) FROM posts WHERE dept_id=$1)
+		     + (SELECT count(*) FROM accounts WHERE dept_id=$1)`, id).
+		Scan(&occupied); err != nil {
+		return fmt.Errorf("user: delete department check: %w", err)
+	}
+	if occupied > 0 {
+		return ErrConflict
+	}
+	tag, err := s.db.Exec(ctx, `DELETE FROM departments WHERE id=$1`, id)
+	if err != nil {
+		return fmt.Errorf("user: delete department: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// DeletePost 删除岗位(事务内连同 post_roles);仍有在职账号挂岗时拒(ErrConflict)。
+func (s *PGStore) DeletePost(ctx context.Context, id int64) error {
+	if id <= 0 {
+		return ErrInvalidInput
+	}
+	var occupied int
+	if err := s.db.QueryRow(ctx,
+		`SELECT count(*) FROM accounts WHERE post_id=$1`, id).Scan(&occupied); err != nil {
+		return fmt.Errorf("user: delete post check: %w", err)
+	}
+	if occupied > 0 {
+		return ErrConflict
+	}
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("user: delete post tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	tag, err := tx.Exec(ctx, `DELETE FROM posts WHERE id=$1`, id)
+	if err != nil {
+		return fmt.Errorf("user: delete post: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM post_roles WHERE post_id=$1`, id); err != nil {
+		return fmt.Errorf("user: delete post roles: %w", err)
+	}
+	return tx.Commit(ctx)
+}
+
 // replacePostRoles 全量替换岗位→角色绑定;未知角色码返回 ErrRoleNotFound。
 func (s *PGStore) replacePostRoles(ctx context.Context, postID int64, roles []string) error {
 	tx, err := s.db.Begin(ctx)

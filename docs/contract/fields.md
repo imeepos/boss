@@ -80,6 +80,9 @@
 | 岗位 | `DeptID` | dept_id | BIGINT → departments |
 | 岗位 | `Roles` | （聚合） | post_roles 关联 |
 
+> 接口（admin，`/api/admin/v1`，迁移 000099 配套）：`DELETE /departments/:id`（仍有岗位或在职账号挂靠 → 40900 拒）、`DELETE /posts/:id`（事务内连同 post_roles；仍有账号挂岗 → 40900 拒）。物理删除，无软删标记；占用校验在前，审计记 op=delete。
+> 页面「组织架构与人员」（`/org/staff`，permCode `menu:staff`，仅 sysadmin）：左树 = 子公司→部门→岗位（节点带成员数），右侧成员列表 = 该部门在职账号（列：账号/姓名/角色/岗位/状态）；成员赋岗走账号表单级联下拉（企业→部门→岗位）；人员"删"= 停用（status 0，账号有审计外键不做物理删）。
+
 ### 1.5 addresses（地址层级）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |

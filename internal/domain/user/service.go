@@ -85,6 +85,9 @@ type Service interface {
 	UpdateDepartment(ctx context.Context, id, legalEntityID int64, name string) error
 	CreatePost(ctx context.Context, deptID int64, code, name string, roles []string) (int64, error)
 	UpdatePost(ctx context.Context, id, deptID int64, code, name string, roles []string) error
+	// DeleteDepartment/DeletePost 删除(组织架构与人员页);被岗位/账号占用返回 ErrConflict。
+	DeleteDepartment(ctx context.Context, id int64) error
+	DeletePost(ctx context.Context, id int64) error
 	GetDataScope(ctx context.Context, accountID int64) (DataScope, error)
 	GetProfile(ctx context.Context, accountID int64) (*Profile, error)
 }

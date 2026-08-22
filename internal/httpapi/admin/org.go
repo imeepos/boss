@@ -62,8 +62,10 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/departments", requirePerm(a.User, "menu:department"), orgListDepartmentsHandler(a))
 	g.POST("/departments", requirePerm(a.User, "menu:department"), orgCreateDepartmentHandler(a))
 	g.PUT("/departments/:deptId", requirePerm(a.User, "menu:department"), orgUpdateDepartmentHandler(a))
+	g.DELETE("/departments/:deptId", requirePerm(a.User, "menu:department"), orgDeleteDepartmentHandler(a))
 
 	g.GET("/posts", requirePerm(a.User, "menu:post"), orgListPostsHandler(a))
 	g.POST("/posts", requirePerm(a.User, "menu:post"), orgCreatePostHandler(a))
 	g.PUT("/posts/:postId", requirePerm(a.User, "menu:post"), orgUpdatePostHandler(a))
+	g.DELETE("/posts/:postId", requirePerm(a.User, "menu:post"), orgDeletePostHandler(a))
 }
