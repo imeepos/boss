@@ -71,6 +71,7 @@
 | 发票 invoice.status | ISSUED / VOIDED | 已生成 / 已作废（编号保留不回收，TAX-004） |
 | 发票 invoice.tax_status | PENDING / SUBMITTED / ISSUED / FAILED | 税局网关状态：待开具 / 已提交 / 已开具（税局票号回填）/ 失败可重试；与 invoice.status 正交 |
 | 设备健康 priority | MUST_REPLACE / SUGGEST / WATCH | 必须更换 / 建议 / 观察 |
+| 订购付费模式 billing_mode | PREPAID / POSTPAID | 预付费（办单即收，不进月度出账）/ 后付费（月度出账，存量默认）；挂 lo_accounts 与 orders 快照，不挂 product_offers（adopted note 2026-08-22） |
 
 ## 5. 关键术语
 
@@ -81,6 +82,7 @@
 | 扫码绑定 | 装维现场扫码，实物光猫与预绑定核对 | 不一致→换机/重绑 |
 | 四码合一 | 资产/客户/端口/地址 四码关联（第 2 码=客户，fields.md 5.1 口径） | 任一码反查单表索引。Amended 2026-08-21：「唯一关联」不再绝对——000086 起 asset 可空（纯端口链路），000088 起 customer 可 1:N（一客户多链路）；asset/port/address 各至多一条非空活跃链路（部分唯一索引），UNLINKED 行保留为历史 |
 | 未收费不派单 | 4 合同收费未成功，禁止进入 8 派单 | 硬约束，全案 REQ-CL-001 |
+| 预付费 | 客户订购时选 PREPAID，环节 4 合同收费当场收款（缴费流水落账） | 不进月度出账；与后付费正交于套餐（同套餐可双卖法，adopted note 2026-08-22） |
 | ARN | 对外单据（发票/收据）连续编号，发票 INV-、收据 OR- 各自成序列 | 占号行锁串行、回滚号回退；作废 VOID 保留编号不回收（TAX-004）。Amended 2026-08-18：降格为**内部流水号**，法定票号以税局回执（tax_no）为准（多属地网关，见 adopted note） |
 
 ## 附录 A：需按 12 环节修正的历史文件位置（已全部销项 ✅）

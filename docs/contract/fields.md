@@ -411,6 +411,9 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | 区域 | `RegionPath` | region_path | LTREE；下单时由地址推导快照 |
 | 归属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities；由安装地址推导（address→region→最近覆盖祖先，migrations/000076），下单快照不可变；未匹配子公司覆盖时兜底平台总公司（is_platform，migrations/000077）；调用方直传值仅做冲突校验（adopted note 2026-08-20-order-legal-entity-by-address） |
 | 成交价 | `PriceSnapshot` | price_snapshot | 下单时生效价快照（账单金额以此为准） |
+| 付费方式 | `BillingMode` | billing_mode | PREPAID/POSTPAID（000102）；下单时客户选定快照，环节 6 建 LO 账号时继承到 lo_accounts；默认 POSTPAID（adopted note 2026-08-22-prepaid-postpaid-billing-mode） |
+
+> lo_accounts 同名列 `billing_mode`（000102）：订购关系上的付费模式权威态；PREPAID 客户不进月度出账（GenerateBills 过滤），预付费在环节 4 合同收费当场收款落缴费流水。
 
 > 快照列（TS 实体）：`customer_name`（客户姓名）、`offer_name`（产品名），下单时冻结，改名/调价不影响历史订单（与 `price_snapshot` 同规则）。
 
