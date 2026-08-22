@@ -37,7 +37,7 @@ export function TopNav({
   shellT: { themeToDark: string; themeToLight: string }
 }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0F1E3B]/95 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-white/10 backdrop-blur" style={{ backgroundColor: 'rgba(15, 30, 59, 0.95)' }}>
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
         <Link to="/home" className="flex items-center gap-2">
           <img src={logoFull} alt="" className="h-7 w-7" />
