@@ -26,14 +26,20 @@ func registerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/addresses", portalListAddresses(a))
 	g.POST("/addresses", portalCreateAddress(a))
 	g.GET("/usage", portalUsage)
-	g.GET("/diy/steps", func(c *gin.Context) {
-		respond(c, apitypes.CodeOK, gin.H{"items": portalDiySections})
-	})
-	g.GET("/agreement", func(c *gin.Context) {
-		respond(c, apitypes.CodeOK, gin.H{
-			"userAgreement": []string{"服务条款", "费用与账期", "终止与违约"},
-			"privacyPolicy": []string{"信息收集范围", "使用与共享", "保存期限与删除"},
-		})
+	g.GET("/diy/steps", portalDiySteps)
+	g.GET("/agreement", portalAgreement)
+}
+
+// portalDiySteps 自助排障静态引导(契约 DiySection)。
+func portalDiySteps(c *gin.Context) {
+	respond(c, apitypes.CodeOK, gin.H{"items": portalDiySections})
+}
+
+// portalAgreement 协议占位(用户协议 + 隐私政策三段目录)。
+func portalAgreement(c *gin.Context) {
+	respond(c, apitypes.CodeOK, gin.H{
+		"userAgreement": []string{"服务条款", "费用与账期", "终止与违约"},
+		"privacyPolicy": []string{"信息收集范围", "使用与共享", "保存期限与删除"},
 	})
 }
 
@@ -43,12 +49,7 @@ func portalListCoupons(a *app.Application) gin.HandlerFunc {
 		cid, _ := requireCustomer(c)
 		status := c.DefaultQuery("status", "available")
 		if a.UserData == nil {
-			respond(c, apitypes.CodeOK, gin.H{
-				"items": []gin.H{{
-					"couponId": "C-001", "amount": 20.0, "threshold": 100.0,
-					"title": "缴费满 100 减 20", "expireAt": "2026-12-31", "status": status,
-				}}, "inviteLink": "https://u.ymm.example/invite",
-			})
+			respond(c, apitypes.CodeOK, portalListCouponsFallback(status))
 			return
 		}
 		rows, err := a.UserData.ListCoupons(c.Request.Context())
@@ -56,24 +57,46 @@ func portalListCoupons(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		items := make([]gin.H, 0)
-		for _, r := range rows {
-			if toInt64(r["customerId"]) != cid {
-				continue
-			}
-			items = append(items, gin.H{
-				"couponId": toStr(r["couponId"]), "name": toStr(r["name"]),
-				"amount": float64(toInt64(r["amount"])) / 100, "threshold": 0.0,
-				"title": toStr(r["name"]), "expireAt": toStr(r["expireAt"]),
-				"status": couponStatus(toStr(r["status"]), status),
-			})
-		}
-		invite := ""
-		if cfg, err := a.UserData.GetInviteConfig(c.Request.Context()); err == nil && len(cfg) > 0 {
-			invite = toStr(cfg[0]["inviteLink"])
-		}
+		items := portalListCouponsItems(rows, cid, status)
+		invite := portalListCouponsInvite(c, a)
 		respond(c, apitypes.CodeOK, gin.H{"items": items, "inviteLink": invite})
 	}
+}
+
+// portalListCouponsFallback userdata 未接入时返回静态示例。
+func portalListCouponsFallback(status string) gin.H {
+	return gin.H{
+		"items": []gin.H{{
+			"couponId": "C-001", "amount": 20.0, "threshold": 100.0,
+			"title": "缴费满 100 减 20", "expireAt": "2026-12-31", "status": status,
+		}}, "inviteLink": "https://u.ymm.example/invite",
+	}
+}
+
+// portalListCouponsItems 客户匹配的券视图(amount=分→元)。
+func portalListCouponsItems(rows []map[string]any, cid int64, status string) []gin.H {
+	items := make([]gin.H, 0)
+	for _, r := range rows {
+		if toInt64(r["customerId"]) != cid {
+			continue
+		}
+		items = append(items, gin.H{
+			"couponId": toStr(r["couponId"]), "name": toStr(r["name"]),
+			"amount": float64(toInt64(r["amount"])) / 100, "threshold": 0.0,
+			"title": toStr(r["name"]), "expireAt": toStr(r["expireAt"]),
+			"status": couponStatus(toStr(r["status"]), status),
+		})
+	}
+	return items
+}
+
+// portalListCouponsInvite 邀请链接(配置空时返回空串)。
+func portalListCouponsInvite(c *gin.Context, a *app.Application) string {
+	cfg, err := a.UserData.GetInviteConfig(c.Request.Context())
+	if err != nil || len(cfg) == 0 {
+		return ""
+	}
+	return toStr(cfg[0]["inviteLink"])
 }
 
 // couponStatus DB 券状态 → 契约状态(available/used/expired)。

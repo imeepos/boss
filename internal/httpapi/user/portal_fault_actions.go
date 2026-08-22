@@ -87,26 +87,8 @@ func portalTechnician(a *app.Application, c *gin.Context, cid, orderID int64) (s
 	if err != nil {
 		return "", "", false
 	}
-	orderIDs := map[int64]bool{}
-	if orderID > 0 {
-		orderIDs[orderID] = true
-	} else if list, err := a.Order.List(c.Request.Context(), order.OrderQuery{CustomerID: cid}); err == nil {
-		for _, item := range list {
-			if o, err := a.Order.GetByNo(c.Request.Context(), item.OrderNo); err == nil {
-				orderIDs[o.ID] = true
-			}
-		}
-	}
-	var hit *order.DispatchTicket
-	for i := range tickets {
-		t := &tickets[i]
-		if t.WorkerID == 0 || !orderIDs[t.OrderID] {
-			continue
-		}
-		if hit == nil || t.TicketID > hit.TicketID {
-			hit = t
-		}
-	}
+	orderIDs := portalTechnicianOrderIDs(c, a, cid, orderID)
+	hit := portalTechnicianPickTicket(tickets, orderIDs)
 	if hit == nil {
 		return "", "", false
 	}
@@ -119,4 +101,38 @@ func portalTechnician(a *app.Application, c *gin.Context, cid, orderID int64) (s
 		name = w.Name
 	}
 	return name, w.Phone, true
+}
+
+// portalTechnicianOrderIDs 收订单号集合:orderID>0 锁定该订单,否则取客户名下所有订单ID。
+func portalTechnicianOrderIDs(c *gin.Context, a *app.Application, cid, orderID int64) map[int64]bool {
+	orderIDs := map[int64]bool{}
+	if orderID > 0 {
+		orderIDs[orderID] = true
+		return orderIDs
+	}
+	list, err := a.Order.List(c.Request.Context(), order.OrderQuery{CustomerID: cid})
+	if err != nil {
+		return orderIDs
+	}
+	for _, item := range list {
+		if o, err := a.Order.GetByNo(c.Request.Context(), item.OrderNo); err == nil {
+			orderIDs[o.ID] = true
+		}
+	}
+	return orderIDs
+}
+
+// portalTechnicianPickTicket 在派单工单中挑选属于 orderIDs、worker_id>0、最近派的一条。
+func portalTechnicianPickTicket(tickets []order.DispatchTicket, orderIDs map[int64]bool) *order.DispatchTicket {
+	var hit *order.DispatchTicket
+	for i := range tickets {
+		t := &tickets[i]
+		if t.WorkerID == 0 || !orderIDs[t.OrderID] {
+			continue
+		}
+		if hit == nil || t.TicketID > hit.TicketID {
+			hit = t
+		}
+	}
+	return hit
 }

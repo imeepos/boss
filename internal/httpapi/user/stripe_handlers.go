@@ -30,18 +30,12 @@ func portalStripeCheckout(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		gw := a.PayGateway.Get("stripe")
-		if gw == nil {
-			respond(c, apitypes.CodeInvalidParam, nil) // 通道未配置(无密钥)
-			return
-		}
-		payNo, ok := stripeAcquirePayNo(a, c, cid, req.BillNo)
+		gw, payNo, ok := portalStripeAcquire(c, a, cid, req.BillNo)
 		if !ok {
 			return
 		}
-		co, err := gw.CreateCheckout(c.Request.Context(), payNo, toCents(req.Amount), map[string]string{
-			"bill_no": req.BillNo, "customer_id": strconv.FormatInt(cid, 10),
-		}, req.SuccessURL, req.CancelURL)
+		meta := map[string]string{"bill_no": req.BillNo, "customer_id": strconv.FormatInt(cid, 10)}
+		co, err := gw.CreateCheckout(c.Request.Context(), payNo, toCents(req.Amount), meta, req.SuccessURL, req.CancelURL)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -65,18 +59,12 @@ func portalStripeIntent(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		gw := a.PayGateway.Get("stripe")
-		if gw == nil {
-			respond(c, apitypes.CodeInvalidParam, nil) // 通道未配置(无密钥)
-			return
-		}
-		payNo, ok := stripeAcquirePayNo(a, c, cid, req.BillNo)
+		gw, payNo, ok := portalStripeAcquire(c, a, cid, req.BillNo)
 		if !ok {
 			return
 		}
-		intent, err := gw.CreateIntent(c.Request.Context(), payNo, toCents(req.Amount), map[string]string{
-			"bill_no": req.BillNo, "customer_id": strconv.FormatInt(cid, 10),
-		})
+		meta := map[string]string{"bill_no": req.BillNo, "customer_id": strconv.FormatInt(cid, 10)}
+		intent, err := gw.CreateIntent(c.Request.Context(), payNo, toCents(req.Amount), meta)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -86,6 +74,20 @@ func portalStripeIntent(a *app.Application) gin.HandlerFunc {
 			"clientSecret": intent.ClientSecret, "intentId": intent.IntentID, "currency": intent.Currency,
 		})
 	}
+}
+
+// portalStripeAcquire 通道就绪 + 派单 payNo(checkout/intent 共用前置);失败已回写响应。
+func portalStripeAcquire(c *gin.Context, a *app.Application, cid int64, billNo string) (billing.PaymentGateway, string, bool) {
+	gw := a.PayGateway.Get("stripe")
+	if gw == nil {
+		respond(c, apitypes.CodeInvalidParam, nil) // 通道未配置(无密钥)
+		return nil, "", false
+	}
+	payNo, ok := stripeAcquirePayNo(a, c, cid, billNo)
+	if !ok {
+		return nil, "", false
+	}
+	return gw, payNo, true
 }
 
 // stripeAcquirePayNo 账单归属校验 + NextNo 派单(checkout/intent 共用前置)。

@@ -12,15 +12,25 @@ import (
 // Register 注册管理端路由:/api/v1 前缀 + 账密 JWT/API key 鉴权链。
 // admin 端为封闭账号模型:无自助注册,账号由超管引导(EnsureSuperAdmin)或 org/account 受权流程创建。
 func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
+	authed := setupAdminAuth(r, a, mgr)
+	registerAdminAuthRoutes(authed, a, mgr)
+	registerAdminDomainRoutes(authed, a)
+}
+
+// setupAdminAuth 装配 /api/admin/v1 根组 + 鉴权链。
+// 公共:登录端点(无认证);鉴权:先 API key 免登录,再回退 JWT 认证。
+// API key 与三类主体(account/worker/customer)绑定;account 注入完整 RBAC 身份,
+// worker/customer 注入受限身份(菜单门禁 403,扫码接口经 Subject 识别)。
+func setupAdminAuth(r *gin.Engine, a *app.Application, mgr *auth.Manager) *gin.RouterGroup {
 	api := r.Group("/api/admin/v1")
 	api.POST("/auth/login", adminLoginHandler(a, mgr))
-
-	// 需要鉴权的路由组:先尝试 API key 免登录认证,再回退 JWT 认证。
-	// API key 与三类主体(account/worker/customer)绑定;account 注入完整 RBAC 身份,
-	// worker/customer 注入受限身份(菜单门禁 403,扫码接口经 Subject 识别)。
 	authed := api.Group("")
 	authed.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudAdmin))
+	return authed
+}
 
+// registerAdminAuthRoutes 鉴权组内的自身认证端点(me/logout/改密/改资料/续期)。
+func registerAdminAuthRoutes(authed *gin.RouterGroup, a *app.Application, mgr *auth.Manager) {
 	authed.GET("/auth/me", adminMeHandler(a))
 	// 退出登录:token 无状态,前端清本地 token 即可(auth.yaml adminLogout)。
 	authed.POST("/auth/logout", adminLogoutHandler())
@@ -31,7 +41,10 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	// 滑动续期:token 仍有效时换发新 token(TTL 重置),实现"一次登录、活跃期免二次登录"。
 	// 角色取 DB 最新快照(权限/角色变更即时生效);API key 主体无账号概念,不参与续期。
 	authed.POST("/auth/refresh", adminRefreshTokenHandler(a, mgr))
+}
 
+// registerAdminDomainRoutes 注册鉴权组内的全部业务域路由。
+func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerOrgRoutes(authed, a)
 	registerAddressRoutes(authed, a)
 	registerSysRoutes(authed, a)

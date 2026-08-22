@@ -49,19 +49,10 @@ func debugSmsCode(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		scene := c.Query("scene")
 		phone := c.Query("phone")
-		if scene == "verify" && phone == "" {
-			cid, ok := requireCustomer(c)
-			if !ok {
-				return
-			}
-			phone = portalCustomerPhone(c.Request.Context(), a, cid)
-		}
-		if phone == "" || scene == "" {
-			respond(c, apitypes.CodeInvalidParam, gin.H{"reason": "phone and scene required"})
+		if ok := debugSmsResolveVerifyPhone(c, a, &phone, scene); !ok {
 			return
 		}
-		if scene != "login" && scene != "register" && scene != "reset" && scene != "verify" {
-			respond(c, apitypes.CodeInvalidParam, gin.H{"reason": "invalid scene"})
+		if !debugSmsParamsOK(c, phone, scene) {
 			return
 		}
 		rec, err := a.Portal.LatestSmsCode(c.Request.Context(), phone, scene)
@@ -80,4 +71,30 @@ func debugSmsCode(a *app.Application) gin.HandlerFunc {
 			"issuedAt": rec.IssuedAt,
 		})
 	}
+}
+
+// debugSmsResolveVerifyPhone verify 场景从 claims 解手机号;返回 false 时 handler 已回写响应。
+func debugSmsResolveVerifyPhone(c *gin.Context, a *app.Application, phone *string, scene string) bool {
+	if scene != "verify" || *phone != "" {
+		return true
+	}
+	cid, ok := requireCustomer(c)
+	if !ok {
+		return false
+	}
+	*phone = portalCustomerPhone(c.Request.Context(), a, cid)
+	return true
+}
+
+// debugSmsParamsOK phone/scene 必填 + scene 枚举校验;失败已回写响应。
+func debugSmsParamsOK(c *gin.Context, phone, scene string) bool {
+	if phone == "" || scene == "" {
+		respond(c, apitypes.CodeInvalidParam, gin.H{"reason": "phone and scene required"})
+		return false
+	}
+	if scene != "login" && scene != "register" && scene != "reset" && scene != "verify" {
+		respond(c, apitypes.CodeInvalidParam, gin.H{"reason": "invalid scene"})
+		return false
+	}
+	return true
 }

@@ -94,34 +94,32 @@ func faultItem(f order.Complaint) gin.H {
 func portalCreateFault(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
-		var req struct {
-			FaultType   string `json:"faultType" binding:"required,oneof=no_internet slow ont_fault other"`
-			Address     string `json:"address" binding:"required"`
-			Description string `json:"description" binding:"required"`
-			Contact     string `json:"contact"`
-		}
+		var req portalFaultReq
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		legID, legName, err := portalComplaintMeta(c.Request.Context(), a, cid)
-		if err != nil {
-			respondErr(c, err)
+		ticketNo, ok := portalCreateFaultFlow(c, a, cid, req)
+		if !ok {
 			return
 		}
-		ticketNo, err := portalCreateFaultTicket(c, a, cid, legID, legName, req)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if err := portalCreateFaultMessage(c, a, cid, ticketNo, req.Description); err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{
-			"ticketNo": ticketNo, "faultType": req.FaultType,
-			"faultTypeLabel": portalFaultTypeLabel[req.FaultType],
-			"address":        req.Address, "createdAt": time.Now(), "status": "OPEN", "statusLabel": "受理中",
-		})
+		respond(c, apitypes.CodeOK, faultCreatedPayload(ticketNo, req))
+	}
+}
+
+// portalFaultReq 报障请求体。
+type portalFaultReq struct {
+	FaultType   string `json:"faultType" binding:"required,oneof=no_internet slow ont_fault other"`
+	Address     string `json:"address" binding:"required"`
+	Description string `json:"description" binding:"required"`
+	Contact     string `json:"contact"`
+}
+
+// faultCreatedPayload 报障受理回执。
+func faultCreatedPayload(ticketNo string, req portalFaultReq) gin.H {
+	return gin.H{
+		"ticketNo": ticketNo, "faultType": req.FaultType,
+		"faultTypeLabel": portalFaultTypeLabel[req.FaultType],
+		"address":        req.Address, "createdAt": time.Now(), "status": "OPEN", "statusLabel": "受理中",
 	}
 }
 
@@ -194,22 +192,7 @@ func portalCreateComplaint(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		legID, legName, err := portalComplaintMeta(c.Request.Context(), a, cid)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		ticketNo, err := a.Portal.NextNo(c.Request.Context(), "TKT")
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		_, err = a.WorkOrder.CreateComplaint(c.Request.Context(), order.Complaint{
-			TicketNo: ticketNo, CustomerID: cid, LegalEntityID: legID, LegalEntityName: legName,
-			Type: "用户投诉: " + req.Type, Status: "OPEN",
-		})
-		if err != nil {
-			respondErr(c, err)
+		if !portalCreateComplaintFlow(c, a, cid, req.Type) {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
@@ -237,4 +220,47 @@ func portalFaq(c *gin.Context) {
 		{"id": "f1", "question": "如何修改密码?", "answer": "我的-账号安全-修改密码。"},
 		{"id": "f2", "question": "账单多久出一次?", "answer": "每月 1 日出上一账期账单。"},
 	}})
+}
+// portalCreateFaultFlow 报障三步:法人主体 → 建投诉工单 → 首条沟通消息;
+// 失败已回写响应。
+func portalCreateFaultFlow(c *gin.Context, a *app.Application, cid int64, req portalFaultReq) (string, bool) {
+	legID, legName, err := portalComplaintMeta(c.Request.Context(), a, cid)
+	if err != nil {
+		respondErr(c, err)
+		return "", false
+	}
+	ticketNo, err := portalCreateFaultTicket(c, a, cid, legID, legName, req)
+	if err != nil {
+		respondErr(c, err)
+		return "", false
+	}
+	if err := portalCreateFaultMessage(c, a, cid, ticketNo, req.Description); err != nil {
+		respondErr(c, err)
+		return "", false
+	}
+	return ticketNo, true
+}
+
+// portalCreateComplaintFlow 投诉建档:法人主体 → 派单号 → 投诉工单(OPEN);
+// 失败已回写响应。
+func portalCreateComplaintFlow(c *gin.Context, a *app.Application, cid int64, typ string) bool {
+	legID, legName, err := portalComplaintMeta(c.Request.Context(), a, cid)
+	if err != nil {
+		respondErr(c, err)
+		return false
+	}
+	ticketNo, err := a.Portal.NextNo(c.Request.Context(), "TKT")
+	if err != nil {
+		respondErr(c, err)
+		return false
+	}
+	_, err = a.WorkOrder.CreateComplaint(c.Request.Context(), order.Complaint{
+		TicketNo: ticketNo, CustomerID: cid, LegalEntityID: legID, LegalEntityName: legName,
+		Type: "用户投诉: " + typ, Status: "OPEN",
+	})
+	if err != nil {
+		respondErr(c, err)
+		return false
+	}
+	return true
 }

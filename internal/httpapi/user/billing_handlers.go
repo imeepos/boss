@@ -202,10 +202,7 @@ func portalBalanceGet(a *app.Application) gin.HandlerFunc {
 func portalTopup(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
-		var req struct {
-			Amount    float64 `json:"amount" binding:"required,gt=0"`
-			PayMethod string  `json:"payMethod" binding:"required"`
-		}
+		var req portalTopupReq
 		if !httpx.BindBody(c, &req) {
 			return
 		}
@@ -213,21 +210,35 @@ func portalTopup(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		payNo, err := a.Portal.NextNo(c.Request.Context(), "PAY")
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		// 充值也落缴费流水(bill_id NULL + customer_id 归属),否则 /payments 与凭证端点查不到。
-		if _, err := a.Billing.CreatePayment(c.Request.Context(), billing.Payment{
-			PayNo: payNo, CustomerID: cid, Amount: req.Amount,
-			Method: req.PayMethod, Status: "SUCCESS",
-		}); err != nil {
-			respondErr(c, err)
+		payNo, ok := topupRecordPayment(c, a, cid, req)
+		if !ok {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"payNo": payNo, "amount": req.Amount, "payMethod": req.PayMethod, "status": "SUCCESS",
 		})
 	}
+}
+// portalTopupReq 充值请求体。
+type portalTopupReq struct {
+	Amount    float64 `json:"amount" binding:"required,gt=0"`
+	PayMethod string  `json:"payMethod" binding:"required"`
+}
+
+// topupRecordPayment 充值派单号 + 落缴费流水(bill_id NULL + customer_id 归属,
+// 否则 /payments 与凭证端点查不到);失败已回写响应。
+func topupRecordPayment(c *gin.Context, a *app.Application, cid int64, req portalTopupReq) (string, bool) {
+	payNo, err := a.Portal.NextNo(c.Request.Context(), "PAY")
+	if err != nil {
+		respondErr(c, err)
+		return "", false
+	}
+	if _, err := a.Billing.CreatePayment(c.Request.Context(), billing.Payment{
+		PayNo: payNo, CustomerID: cid, Amount: req.Amount,
+		Method: req.PayMethod, Status: "SUCCESS",
+	}); err != nil {
+		respondErr(c, err)
+		return "", false
+	}
+	return payNo, true
 }

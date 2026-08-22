@@ -17,21 +17,8 @@ import (
 func portalHome(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
-		name, phone, service := "用户", "", "服务在线 · 网络正常"
-		if v, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
-			name, phone = v.Name, httpx.MaskPhone(v.Phone)
-			if v.ServiceStatus != "ACTIVE" {
-				service = "服务状态: " + v.ServiceStatus
-			}
-		}
-		var due float64
-		if bills, err := a.Billing.ListBills(c.Request.Context(), cid); err == nil {
-			for _, b := range bills {
-				if b.Status != "PAID" {
-					due += b.Amount
-				}
-			}
-		}
+		name, phone, service := portalHomeCustomer(a, c, cid)
+		due := portalHomeDue(c, a, cid)
 		hasUnread, err := a.Portal.HasUnread(c.Request.Context(), cid)
 		if err != nil {
 			respondErr(c, err)
@@ -52,6 +39,35 @@ func portalHome(a *app.Application) gin.HandlerFunc {
 			"services":      portalHomeServices(a, c),
 		})
 	}
+}
+
+// portalHomeCustomer 取客户名/脱敏手机号/在线状态文案;Customer 取不到则给默认值。
+func portalHomeCustomer(a *app.Application, c *gin.Context, cid int64) (string, string, string) {
+	name, phone, service := "用户", "", "服务在线 · 网络正常"
+	v, err := a.Customer.Get(c.Request.Context(), cid)
+	if err != nil {
+		return name, phone, service
+	}
+	name, phone = v.Name, httpx.MaskPhone(v.Phone)
+	if v.ServiceStatus != "ACTIVE" {
+		service = "服务状态: " + v.ServiceStatus
+	}
+	return name, phone, service
+}
+
+// portalHomeDue 客户未缴账单合计(ListBills 失败按 0)。
+func portalHomeDue(c *gin.Context, a *app.Application, cid int64) float64 {
+	bills, err := a.Billing.ListBills(c.Request.Context(), cid)
+	if err != nil {
+		return 0
+	}
+	var due float64
+	for _, b := range bills {
+		if b.Status != "PAID" {
+			due += b.Amount
+		}
+	}
+	return due
 }
 
 // portalHomeOngoingOrders 进行中订单(PENDING/RESERVED/INSTALLING,契约 OrderSummary 字段)。

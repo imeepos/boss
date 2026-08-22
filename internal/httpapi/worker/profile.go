@@ -161,12 +161,17 @@ func workerClockHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		today := make([]gin.H, 0, len(clocks))
-		for _, a := range clocks {
-			today = append(today, gin.H{"type": a.ClockType, "clockedAt": a.ClockedAt.In(clock.Location()).Format("15:04")})
-		}
-		respond(c, apitypes.CodeOK, gin.H{"clockedAt": now.Format("15:04"), "today": today})
+		respond(c, apitypes.CodeOK, gin.H{"clockedAt": now.Format("15:04"), "today": clockToday(clocks)})
 	}
+}
+
+// clockToday 当日打卡记录渲染(HH:MM)。
+func clockToday(clocks []worker.Attendance) []gin.H {
+	today := make([]gin.H, 0, len(clocks))
+	for _, a := range clocks {
+		today = append(today, gin.H{"type": a.ClockType, "clockedAt": a.ClockedAt.In(clock.Location()).Format("15:04")})
+	}
+	return today
 }
 
 // workerClockReq 打卡请求体;type 取契约枚举 IN/OUT。

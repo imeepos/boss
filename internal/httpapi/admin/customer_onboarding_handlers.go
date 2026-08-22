@@ -75,13 +75,7 @@ func customerSubmitRealNameHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		var req workerRealNameReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequireString(req.RealName, "realName", 64),
-				httpx.RequireString(req.IDCardNo, "idCardNo", 32),
-				httpx.RequireString(req.Method, "method", 32),
-			)
-		}) {
+		if !bindRealNameReq(c, &req) {
 			return
 		}
 		id, err := a.CustomerRealName.SubmitRealName(c.Request.Context(), customer.CustomerRealNameVerification{

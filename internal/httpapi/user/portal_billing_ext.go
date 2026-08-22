@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/pdfgen"
 	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
@@ -63,17 +64,7 @@ func portalReceiptPdf(a *app.Application) gin.HandlerFunc {
 			if p.BillID != 0 {
 				period = periodByBill[p.BillID]
 			}
-			pdf := pdfgen.Build("BOSS 缴费凭证", []string{
-				"凭证号: OR-" + p.PayNo,
-				"支付单号: " + p.PayNo,
-				fmt.Sprintf("账期: %s", period),
-				fmt.Sprintf("金额: %.2f 元", p.Amount),
-				"支付方式: " + portalPayMethodLabel[p.Method],
-				"状态: " + p.Status,
-				"支付时间: " + clock.Now().Format("2006-01-02 15:04:05"),
-				"", "本凭证由 BOSS 系统出具,仅供缴费记录查询使用。",
-			})
-			portalServePdf(c, "receipt-"+p.PayNo+".pdf", pdf)
+			portalServePdf(c, "receipt-"+p.PayNo+".pdf", receiptPdf(p, period))
 			return
 		}
 		respond(c, apitypes.CodeNotFound, nil)
@@ -89,4 +80,18 @@ var portalPayMethodLabel = map[string]string{
 func portalServePdf(c *gin.Context, name string, pdf []byte) {
 	c.Header("Content-Disposition", `attachment; filename="`+name+`"`)
 	c.Data(200, "application/pdf", pdf)
+}
+
+// receiptPdf 缴费凭证 PDF 内容行。
+func receiptPdf(p billing.Payment, period string) []byte {
+	return pdfgen.Build("BOSS 缴费凭证", []string{
+		"凭证号: OR-" + p.PayNo,
+		"支付单号: " + p.PayNo,
+		fmt.Sprintf("账期: %s", period),
+		fmt.Sprintf("金额: %.2f 元", p.Amount),
+		"支付方式: " + portalPayMethodLabel[p.Method],
+		"状态: " + p.Status,
+		"支付时间: " + clock.Now().Format("2006-01-02 15:04:05"),
+		"", "本凭证由 BOSS 系统出具,仅供缴费记录查询使用。",
+	})
 }

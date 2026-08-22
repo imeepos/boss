@@ -88,13 +88,7 @@ func workerSubmitRealNameHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		var req workerRealNameReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequireString(req.RealName, "realName", 64),
-				httpx.RequireString(req.IDCardNo, "idCardNo", 32),
-				httpx.RequireString(req.Method, "method", 32),
-			)
-		}) {
+		if !bindRealNameReq(c, &req) {
 			return
 		}
 		id, err := a.WorkerRealName.SubmitRealName(c.Request.Context(), worker.WorkerRealNameVerification{
@@ -154,4 +148,15 @@ func workerVerifyRealNameHandler(a *app.Application) gin.HandlerFunc {
 			gin.H{"result": req.Result})
 		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
 	}
+}
+
+// bindRealNameReq 实名提交共用绑定校验(realName/idCardNo/method);失败已回写响应。
+func bindRealNameReq(c *gin.Context, req *workerRealNameReq) bool {
+	return httpx.BindAndValidate(c, req, func() error {
+		return httpx.CollectErrors(
+			httpx.RequireString(req.RealName, "realName", 64),
+			httpx.RequireString(req.IDCardNo, "idCardNo", 32),
+			httpx.RequireString(req.Method, "method", 32),
+		)
+	})
 }

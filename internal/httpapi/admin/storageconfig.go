@@ -47,27 +47,8 @@ func adminStorageConfigPut(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
-		id := httpx.ClaimsAccountID(c)
-		for key, value := range req.Values {
-			if !storageKeys[key] {
-				respond(c, apitypes.CodeInvalidParam, nil)
-				return
-			}
-			if key == "minio.secretKey" {
-				if value == "" {
-					continue
-				}
-				enc, err := secretbox.Seal(value)
-				if err != nil {
-					respond(c, apitypes.CodeInternal, nil)
-					return
-				}
-				value = enc
-			}
-			if err := a.User.UpdateParam(c.Request.Context(), key, value, id); err != nil {
-				respondErr(c, err)
-				return
-			}
+		if !storageApplyValues(c, a, req.Values) {
+			return
 		}
 		httpx.RecordAudit(a, c, "数据变更", "storage_config", "minio", gin.H{"keys": len(req.Values)})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
@@ -94,27 +75,58 @@ func adminStorageConfigRotateSecret(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeInternal, nil)
 			return
 		}
-
-		// 先更新 biz_params(加密存储)
-		enc, err := secretbox.Seal(secret)
-		if err != nil {
-			respond(c, apitypes.CodeInternal, nil)
+		if !storagePersistSecret(c, a, secret) {
 			return
 		}
-		uid := httpx.ClaimsAccountID(c)
-		if err := a.User.UpdateParam(c.Request.Context(), "minio.secretKey", enc, uid); err != nil {
-			respondErr(c, err)
-			return
-		}
-
-		// 调 hostctl 写宿主机密码文件 + 重启 minio
 		r, err := a.HostCtl.RotateSecret(secret)
 		if err != nil {
 			respond(c, apitypes.CodeInternal, gin.H{"error": fmt.Sprintf("hostctl: %v", err)})
 			return
 		}
-
 		httpx.RecordAudit(a, c, "密钥轮换", "storage_config", "minio", gin.H{"rotatedAt": r.RotatedAt})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true, "rotatedAt": r.RotatedAt, "duration": r.Duration})
 	}
+}
+
+// storagePersistSecret 新密码加密落 biz_params;失败已回写响应。
+func storagePersistSecret(c *gin.Context, a *app.Application, secret string) bool {
+	enc, err := secretbox.Seal(secret)
+	if err != nil {
+		respond(c, apitypes.CodeInternal, nil)
+		return false
+	}
+	uid := httpx.ClaimsAccountID(c)
+	if err := a.User.UpdateParam(c.Request.Context(), "minio.secretKey", enc, uid); err != nil {
+		respondErr(c, err)
+		return false
+	}
+	return true
+}
+
+// storageApplyValues 逐键落库:白名单校验;secretKey 空值跳过、非空加密;
+// 失败已回写响应。
+func storageApplyValues(c *gin.Context, a *app.Application, values map[string]string) bool {
+	id := httpx.ClaimsAccountID(c)
+	for key, value := range values {
+		if !storageKeys[key] {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return false
+		}
+		if key == "minio.secretKey" {
+			if value == "" {
+				continue
+			}
+			enc, err := secretbox.Seal(value)
+			if err != nil {
+				respond(c, apitypes.CodeInternal, nil)
+				return false
+			}
+			value = enc
+		}
+		if err := a.User.UpdateParam(c.Request.Context(), key, value, id); err != nil {
+			respondErr(c, err)
+			return false
+		}
+	}
+	return true
 }

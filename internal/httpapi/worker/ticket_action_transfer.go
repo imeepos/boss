@@ -34,12 +34,8 @@ func workerTransferHandler(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if !workerOwnedTicket(c, tk) {
+		tk, ok := workerOwnedTicketByNo(c, a, ticketNo)
+		if !ok {
 			return
 		}
 		// 目标闸门:在职 + 区域匹配(退回调度池 targetWorkerId=0 不校验)。

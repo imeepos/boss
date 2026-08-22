@@ -128,19 +128,8 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		offerID := portalID(req.ProductID)
-		addrID := portalID(req.AddressID)
-		if offerID == 0 || addrID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
-			return
-		}
-		channelID, err := portalChannelID(c, a, req.ChannelID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if channelID == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
+		offerID, addrID, channelID, ok := portalSubmitOrderParse(c, a, req.ProductID, req.AddressID, req.ChannelID)
+		if !ok {
 			return
 		}
 		o, err := a.Order.Submit(c.Request.Context(), order.SubmitReq{
@@ -156,4 +145,24 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, portalOrderSummary(o, productName(a, c, offerID),
 			addressName(a, c, addrID, ""), false))
 	}
+}
+
+// portalSubmitOrderParse 解析请求参数为强类型 ID(解析失败或渠道空 → false 已回写响应)。
+func portalSubmitOrderParse(c *gin.Context, a *app.Application, productID, addressID, channelID string) (int64, int64, int64, bool) {
+	offerID := portalID(productID)
+	addrID := portalID(addressID)
+	if offerID == 0 || addrID == 0 {
+		respond(c, apitypes.CodeInvalidParam, nil)
+		return 0, 0, 0, false
+	}
+	chID, err := portalChannelID(c, a, channelID)
+	if err != nil {
+		respondErr(c, err)
+		return 0, 0, 0, false
+	}
+	if chID == 0 {
+		respond(c, apitypes.CodeInvalidParam, nil)
+		return 0, 0, 0, false
+	}
+	return offerID, addrID, chID, true
 }

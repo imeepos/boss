@@ -43,16 +43,7 @@ func assignTicketToMe(c *gin.Context, a *app.Application, ticketNo string, grab 
 		return
 	}
 	workerID, workerName := portalWorker(c)
-	// 资格闸门:在职 + 负责区域匹配 + 接单设置(在线/接单类型)。
-	if !workerMayAccept(c, a, workerID, tk) {
-		return
-	}
-	if !grab && tk.WorkerID != workerID {
-		respond(c, apitypes.CodeForbidden, nil)
-		return
-	}
-	if tk.Status != "PENDING" || (grab && tk.WorkerID != 0) {
-		respond(c, apitypes.CodeStateInvalid, nil)
+	if !assignEligible(c, a, workerID, tk, grab) {
 		return
 	}
 	var assignErr error
@@ -71,6 +62,23 @@ func assignTicketToMe(c *gin.Context, a *app.Application, ticketNo string, grab 
 		return
 	}
 	respond(c, apitypes.CodeOK, gin.H{"ok": true})
+}
+
+// assignEligible 领取资格闸门:在职 + 区域匹配 + 接单设置,accept 须已指派自己,
+// 状态须 PENDING(抢单时还须未指派);失败已回写响应。
+func assignEligible(c *gin.Context, a *app.Application, workerID int64, tk *order.DispatchTicket, grab bool) bool {
+	if !workerMayAccept(c, a, workerID, tk) {
+		return false
+	}
+	if !grab && tk.WorkerID != workerID {
+		respond(c, apitypes.CodeForbidden, nil)
+		return false
+	}
+	if tk.Status != "PENDING" || (grab && tk.WorkerID != 0) {
+		respond(c, apitypes.CodeStateInvalid, nil)
+		return false
+	}
+	return true
 }
 
 // workerAuditOK 无独立落表的动作(回退):审计留痕 + OK(缺口见报告)。

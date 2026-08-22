@@ -18,38 +18,56 @@ func portalSecurity(a *app.Application) gin.HandlerFunc {
 		cid, _ := requireCustomer(c)
 		v, err := a.Customer.Get(c.Request.Context(), cid)
 		if err != nil {
-			phone := portalCustomerPhone(c.Request.Context(), a, cid)
-			pwdAt := ""
-			if acc, accountErr := a.Portal.AccountByCustomer(c.Request.Context(), cid); accountErr == nil {
-				pwdAt = acc.PasswordUpdatedAt.Format(time.RFC3339)
-			}
-			respond(c, apitypes.CodeOK, gin.H{
-				"realNameStatus": "NONE", "nameMasked": "", "idNoMasked": "",
-				"passwordUpdatedAt": pwdAt, "phoneMasked": portalMaskPhone(phone), "verifyAt": "",
-			})
+			respond(c, apitypes.CodeOK, portalSecurityFallback(c, a, cid))
 			return
 		}
-		pwdAt := ""
-		if acc, err := a.Portal.AccountByPhone(c.Request.Context(), v.Phone); err == nil {
-			pwdAt = acc.PasswordUpdatedAt.Format(time.RFC3339)
-		}
-		// verifyAt:契约要求返回;取最近一次 PASS 核验时间,未核验为空串。
-		verifyAt := ""
-		if vs, err := a.RealName.ListVerifications(c.Request.Context(), cid); err == nil {
-			for _, ver := range vs {
-				if ver.Result == "PASS" {
-					if at := ver.VerifiedAt.Format(time.RFC3339); at > verifyAt {
-						verifyAt = at
-					}
-				}
-			}
-		}
+		pwdAt := portalSecurityPasswordAt(c, a, v.Phone)
+		verifyAt := portalSecurityVerifyAt(c, a, cid)
 		respond(c, apitypes.CodeOK, gin.H{
 			"realNameStatus": v.RealNameStatus, "nameMasked": portalMaskName(v.Name),
 			"idNoMasked": portalMaskIDNo(v.IdNo), "passwordUpdatedAt": pwdAt,
 			"phoneMasked": portalMaskPhone(v.Phone), "verifyAt": verifyAt,
 		})
 	}
+}
+
+// portalSecurityFallback 客户档案缺失时返回的安全信息(姓名/身份证均按空)。
+func portalSecurityFallback(c *gin.Context, a *app.Application, cid int64) gin.H {
+	phone := portalCustomerPhone(c.Request.Context(), a, cid)
+	pwdAt := ""
+	if acc, accountErr := a.Portal.AccountByCustomer(c.Request.Context(), cid); accountErr == nil {
+		pwdAt = acc.PasswordUpdatedAt.Format(time.RFC3339)
+	}
+	return gin.H{
+		"realNameStatus": "NONE", "nameMasked": "", "idNoMasked": "",
+		"passwordUpdatedAt": pwdAt, "phoneMasked": portalMaskPhone(phone), "verifyAt": "",
+	}
+}
+
+// portalSecurityPasswordAt 最近一次改密时间(失败返回空串)。
+func portalSecurityPasswordAt(c *gin.Context, a *app.Application, phone string) string {
+	acc, err := a.Portal.AccountByPhone(c.Request.Context(), phone)
+	if err != nil {
+		return ""
+	}
+	return acc.PasswordUpdatedAt.Format(time.RFC3339)
+}
+
+// portalSecurityVerifyAt 最近一次 PASS 核验时间;契约要求返回。
+func portalSecurityVerifyAt(c *gin.Context, a *app.Application, cid int64) string {
+	vs, err := a.RealName.ListVerifications(c.Request.Context(), cid)
+	if err != nil {
+		return ""
+	}
+	verifyAt := ""
+	for _, ver := range vs {
+		if ver.Result == "PASS" {
+			if at := ver.VerifiedAt.Format(time.RFC3339); at > verifyAt {
+				verifyAt = at
+			}
+		}
+	}
+	return verifyAt
 }
 
 // portalChangePassword PUT /profile/security/password:校验旧密码 → 更新(portal_accounts 落库)。

@@ -29,15 +29,11 @@ func workerComplaintHandler(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
-		if err != nil {
-			respondErr(c, err)
+		tk, ok := workerOwnedTicketByNo(c, a, ticketNo)
+		if !ok {
 			return
 		}
-		if !workerOwnedTicket(c, tk) {
-			return
-		}
-		_, err = a.WorkOrder.CreateComplaint(c.Request.Context(), order.Complaint{
+		_, err := a.WorkOrder.CreateComplaint(c.Request.Context(), order.Complaint{
 			TicketNo: tk.TicketNo, OrderID: tk.OrderID,
 			LegalEntityID: tk.LegalEntityID, LegalEntityName: tk.LegalEntityName,
 			Type: req.Category, Status: "OPEN",
@@ -48,6 +44,19 @@ func workerComplaintHandler(a *app.Application) gin.HandlerFunc {
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
+}
+
+// workerOwnedTicketByNo 工单动作共用:取单 + 归属校验;失败已回写响应。
+func workerOwnedTicketByNo(c *gin.Context, a *app.Application, ticketNo string) (*order.DispatchTicket, bool) {
+	tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
+	if err != nil {
+		respondErr(c, err)
+		return nil, false
+	}
+	if !workerOwnedTicket(c, tk) {
+		return nil, false
+	}
+	return tk, true
 }
 
 // workerRepairReportReq 修复结果上报。
@@ -73,22 +82,24 @@ func workerRepairReportHandler(a *app.Application) gin.HandlerFunc {
 		}) {
 			return
 		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
-		if err != nil {
-			respondErr(c, err)
+		tk, ok := workerOwnedTicketByNo(c, a, ticketNo)
+		if !ok {
 			return
 		}
-		if !workerOwnedTicket(c, tk) {
-			return
-		}
-		if req.Result == "FIXED" {
-			if err := a.WorkOrder.CloseComplaint(c.Request.Context(), c.Param("ticketNo")); err != nil {
-				respond(c, apitypes.CodeOK, gin.H{"reviewPassed": false, "status": "PROCESSING"})
-				return
-			}
-			respond(c, apitypes.CodeOK, gin.H{"reviewPassed": true, "status": "CLOSED"})
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"reviewPassed": false, "status": "PROCESSING", "remark": req.Remark})
+		respondRepairResult(c, a, tk.TicketNo, req)
 	}
+}
+
+// respondRepairResult 修复上报结果:FIXED → 报障 CLOSED(关闭失败回落 PROCESSING),
+// UNFIXED → PROCESSING。
+func respondRepairResult(c *gin.Context, a *app.Application, ticketNo string, req workerRepairReportReq) {
+	if req.Result == "FIXED" {
+		if err := a.WorkOrder.CloseComplaint(c.Request.Context(), ticketNo); err != nil {
+			respond(c, apitypes.CodeOK, gin.H{"reviewPassed": false, "status": "PROCESSING"})
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"reviewPassed": true, "status": "CLOSED"})
+		return
+	}
+	respond(c, apitypes.CodeOK, gin.H{"reviewPassed": false, "status": "PROCESSING", "remark": req.Remark})
 }

@@ -119,13 +119,8 @@ func submitInvoiceToTax(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		gw := a.TaxGateway.Get(inv.TaxJurisdiction)
-		if gw == nil || gw.Channel() == billing.TaxChannelManual {
-			respond(c, apitypes.CodeInvalidParam, gin.H{"hint": "tax gateway not configured; use tax-backfill"})
-			return
-		}
-		if inv.Status != "ISSUED" || inv.TaxStatus == billing.TaxStatusIssued {
-			respondErr(c, billing.ErrInvoiceNotTaxable)
+		gw, ok2 := invoiceTaxable(c, a, inv)
+		if !ok2 {
 			return
 		}
 		receipt, err := gw.Issue(c.Request.Context(), *inv)
@@ -162,4 +157,19 @@ func backfillInvoiceTaxNo(a *app.Application) gin.HandlerFunc {
 		httpx.RecordAudit(a, c, "invoice.taxBackfill", "invoice", c.Param("id"), gin.H{"taxNo": body.TaxNo})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
+}
+
+// invoiceTaxable 开票资格:税局网关已配置(非人工)且发票 ISSUED 未开税;
+// 失败已回写响应。
+func invoiceTaxable(c *gin.Context, a *app.Application, inv *billing.Invoice) (billing.TaxGateway, bool) {
+	gw := a.TaxGateway.Get(inv.TaxJurisdiction)
+	if gw == nil || gw.Channel() == billing.TaxChannelManual {
+		respond(c, apitypes.CodeInvalidParam, gin.H{"hint": "tax gateway not configured; use tax-backfill"})
+		return nil, false
+	}
+	if inv.Status != "ISSUED" || inv.TaxStatus == billing.TaxStatusIssued {
+		respondErr(c, billing.ErrInvoiceNotTaxable)
+		return nil, false
+	}
+	return gw, true
 }

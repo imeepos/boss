@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -30,25 +31,10 @@ func scanBindHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		workerID, workerName := workerFromClaims(c)
-		if workerID == 0 { // 工单未带师傅且 JWT 无账号:回退工单档案
-			workerID, workerName = tk.WorkerID, tk.WorkerName
-		}
-		result, err := a.QuadLink.VerifyScan(c.Request.Context(), quadlink.ScanReq{
-			OrderID: tk.OrderID, WorkerID: workerID, WorkerName: workerName,
-			ScannedEPC: req.EPC, OfflineCalc: req.Offline,
-		})
-		if err != nil {
-			httpx.RespondScanErr(c, err)
+		if !scanVerifyAndAdvance(c, a, tk, req) {
 			return
 		}
-		if result == "MATCH" { // 核对一致才推进环节9
-			if err := a.Order.ScanBind(c.Request.Context(), tk.OrderID); err != nil {
-				respondErr(c, err)
-				return
-			}
-		}
-		respond(c, apitypes.CodeOK, gin.H{"result": result})
+		respond(c, apitypes.CodeOK, gin.H{"result": "MATCH"})
 	}
 }
 
@@ -148,4 +134,34 @@ func quadLinksPurgeOrphansHandler(a *app.Application) gin.HandlerFunc {
 		httpx.RecordAudit(a, c, "数据变更", "quadlink", "purge-orphans", map[string]any{"deleted": n})
 		respond(c, apitypes.CodeOK, gin.H{"deleted": n})
 	}
+}
+// scanBindWorker 扫码绑定执行师傅:JWT 无账号时回退工单档案。
+func scanBindWorker(c *gin.Context, tk *order.DispatchTicket) (int64, string) {
+	workerID, workerName := workerFromClaims(c)
+	if workerID == 0 { // 工单未带师傅且 JWT 无账号:回退工单档案
+		workerID, workerName = tk.WorkerID, tk.WorkerName
+	}
+	return workerID, workerName
+}
+
+// scanVerifyAndAdvance 四码核对;核对一致(MATCH)才推进环节9;失败已回写响应。
+func scanVerifyAndAdvance(c *gin.Context, a *app.Application, tk *order.DispatchTicket, req scanBindReq) bool {
+	workerID, workerName := scanBindWorker(c, tk)
+	result, err := a.QuadLink.VerifyScan(c.Request.Context(), quadlink.ScanReq{
+		OrderID: tk.OrderID, WorkerID: workerID, WorkerName: workerName,
+		ScannedEPC: req.EPC, OfflineCalc: req.Offline,
+	})
+	if err != nil {
+		httpx.RespondScanErr(c, err)
+		return false
+	}
+	if result != "MATCH" { // 核对不一致不推进,直接回结果
+		respond(c, apitypes.CodeOK, gin.H{"result": result})
+		return false
+	}
+	if err := a.Order.ScanBind(c.Request.Context(), tk.OrderID); err != nil {
+		respondErr(c, err)
+		return false
+	}
+	return true
 }

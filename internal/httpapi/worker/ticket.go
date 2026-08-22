@@ -228,10 +228,23 @@ func workerTicketDetailPayload(c *gin.Context, a *app.Application, tk *order.Dis
 		return gin.H{}
 	}
 	status := portalTicketStatus(*tk, currentWorkerID)
-	return gin.H{
+	payload := gin.H{
 		"ticketNo": tk.TicketNo, "bizNo": ord.OrderNo,
 		"status": status, "statusLabel": portalTicketStatusLabel(status),
-		// 工单头字段(对齐 OpenAPI TicketDetail)
+		// 已有结构
+		"stages":    portalStages(stages),
+		"quad":      portalQuadH(a, c, ord.AddressID),
+		"riskCheck": gin.H{"blacklistHit": false, "graylistHit": false},
+	}
+	for k, v := range ticketHeadFields(item) {
+		payload[k] = v
+	}
+	return payload
+}
+
+// ticketHeadFields 工单头字段视图(对齐 OpenAPI TicketDetail)。
+func ticketHeadFields(item *order.TicketItem) gin.H {
+	return gin.H{
 		"product":             item.OfferName,
 		"customerName":        item.CustomerName,
 		"customerPhoneMasked": httpx.MaskPhone(item.CustomerPhone),
@@ -244,10 +257,6 @@ func workerTicketDetailPayload(c *gin.Context, a *app.Application, tk *order.Dis
 		"slaLeftMinutes":      item.SlaLeftMinutes,
 		"remoteDiagnosis":     item.RemoteDiagnosis,
 		"finishedAt":          item.FinishedAt,
-		// 已有结构
-		"stages":    portalStages(stages),
-		"quad":      portalQuadH(a, c, ord.AddressID),
-		"riskCheck": gin.H{"blacklistHit": false, "graylistHit": false},
 	}
 }
 

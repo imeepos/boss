@@ -56,22 +56,31 @@ func buildDashboard(a *app.Application, c *gin.Context) (gin.H, error) {
 // dashboardStats 统计卡:今日订单/进行中工单/待处理告警/四码一致率。
 func dashboardStats(orders []order.OrderListItem, tickets []order.DispatchTicket,
 	alarms []device.Alarm, links []quadlink.QuadLink) []gin.H {
-	today, active, open := 0, 0, 0
-	for _, o := range orders {
-		if sameDay(o.CreatedAt, clock.Now()) {
-			today++
+	today := countIf(len(orders), func(i int) bool { return sameDay(orders[i].CreatedAt, clock.Now()) })
+	active := countIf(len(tickets), func(i int) bool { return tickets[i].Status == "DOING" })
+	open := countIf(len(alarms), func(i int) bool { return alarms[i].Status == "OPEN" })
+	rate := linkedRate(links)
+	return []gin.H{
+		{"key": "todayOrders", "label": "今日新增订单", "value": fmt.Sprint(today), "delta": "", "trend": "flat"},
+		{"key": "activeTickets", "label": "进行中工单", "value": fmt.Sprint(active), "delta": "", "trend": "flat"},
+		{"key": "pendingAlarms", "label": "待处理告警", "value": fmt.Sprint(open), "delta": "", "trend": "flat"},
+		{"key": "assetConsistency", "label": "四码一致率", "value": rate, "delta": "", "trend": "flat"},
+	}
+}
+
+// countIf 按下标谓词计数。
+func countIf(n int, pred func(i int) bool) int {
+	c := 0
+	for i := 0; i < n; i++ {
+		if pred(i) {
+			c++
 		}
 	}
-	for _, t := range tickets {
-		if t.Status == "DOING" {
-			active++
-		}
-	}
-	for _, al := range alarms {
-		if al.Status == "OPEN" {
-			open++
-		}
-	}
+	return c
+}
+
+// linkedRate 四码一致率(LINKED 占比);无链路回"—"。
+func linkedRate(links []quadlink.QuadLink) string {
 	linked, total := 0, 0
 	for _, l := range links {
 		total++
@@ -79,16 +88,10 @@ func dashboardStats(orders []order.OrderListItem, tickets []order.DispatchTicket
 			linked++
 		}
 	}
-	rate := "—"
-	if total > 0 {
-		rate = fmt.Sprintf("%.1f%%", float64(linked)/float64(total)*100)
+	if total == 0 {
+		return "—"
 	}
-	return []gin.H{
-		{"key": "todayOrders", "label": "今日新增订单", "value": fmt.Sprint(today), "delta": "", "trend": "flat"},
-		{"key": "activeTickets", "label": "进行中工单", "value": fmt.Sprint(active), "delta": "", "trend": "flat"},
-		{"key": "pendingAlarms", "label": "待处理告警", "value": fmt.Sprint(open), "delta": "", "trend": "flat"},
-		{"key": "assetConsistency", "label": "四码一致率", "value": rate, "delta": "", "trend": "flat"},
-	}
+	return fmt.Sprintf("%.1f%%", float64(linked)/float64(total)*100)
 }
 
 // orderStatusDist 订单状态分布(terms.md 状态枚举 + 占比)。

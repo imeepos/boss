@@ -64,24 +64,9 @@ func adminAttachmentList(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeUnauthorized, nil)
 			return
 		}
-		f := attachment.ListFilter{
-			UploaderType: c.Query("uploaderType"),
-			UploaderID:   queryInt64(c, "uploaderId"),
-			Keyword:      c.Query("keyword"),
-			Limit:        int(queryInt64(c, "limit")),
-			Offset:       int(queryInt64(c, "offset")),
-		}
-		if f.UploaderType != "" {
-			if !attachment.ValidUploaderType(f.UploaderType) || f.UploaderID <= 0 {
-				respond(c, apitypes.CodeInvalidParam, nil)
-				return
-			}
-		} else if f.UploaderID > 0 {
-			// 只传了 id 未传类型:无法定位多态主体,拒绝。
-			respond(c, apitypes.CodeInvalidParam, nil)
+		f, ok2 := attachmentListFilter(c, ut, uid)
+		if !ok2 {
 			return
-		} else {
-			f.UploaderType, f.UploaderID = ut, uid
 		}
 		items, total, err := a.Attachment.St.List(c.Request.Context(), f)
 		if err != nil {
@@ -158,4 +143,29 @@ func adminAttachmentBatchGet(a *app.Application) gin.HandlerFunc {
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	}
+}
+
+// attachmentListFilter 解析列表筛选:类型+id 成对才有效;缺省回落请求者本人;
+// 只传 id 未传类型无法定位多态主体,拒绝。失败已回写响应。
+func attachmentListFilter(c *gin.Context, ut string, uid int64) (attachment.ListFilter, bool) {
+	f := attachment.ListFilter{
+		UploaderType: c.Query("uploaderType"),
+		UploaderID:   queryInt64(c, "uploaderId"),
+		Keyword:      c.Query("keyword"),
+		Limit:        int(queryInt64(c, "limit")),
+		Offset:       int(queryInt64(c, "offset")),
+	}
+	if f.UploaderType != "" {
+		if !attachment.ValidUploaderType(f.UploaderType) || f.UploaderID <= 0 {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return f, false
+		}
+		return f, true
+	}
+	if f.UploaderID > 0 {
+		respond(c, apitypes.CodeInvalidParam, nil)
+		return f, false
+	}
+	f.UploaderType, f.UploaderID = ut, uid
+	return f, true
 }

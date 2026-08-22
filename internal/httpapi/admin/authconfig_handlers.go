@@ -54,39 +54,55 @@ func authConfigPutHandler(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
-		for key := range req.Values {
-			f, ok := authFieldByKey(key)
-			if !ok || f.Group != group {
-				respond(c, apitypes.CodeInvalidParam, gin.H{"error": "key does not belong to group"})
-				return
-			}
+		if !authConfigKeysInGroup(c, req.Values, group) {
+			return
 		}
-		accountID := httpx.ClaimsAccountID(c)
-		for _, f := range authFieldByGroup(group) {
-			raw, ok := req.Values[f.Key]
-			if !ok {
-				continue
-			}
-			if f.Secret && raw == "" {
-				continue // 掩码回显未修改:跳过
-			}
-			val := raw
-			if f.Secret {
-				enc, err := sealParamSecret(raw)
-				if err != nil {
-					respond(c, apitypes.CodeInternal, nil)
-					return
-				}
-				val = enc
-			}
-			if err := a.User.UpdateParam(c.Request.Context(), f.Key, val, accountID); err != nil {
-				respondErr(c, err)
-				return
-			}
-			httpx.RecordAudit(a, c, "数据变更", "auth_config", f.Key, authAuditDetail(f, raw))
+		if !authConfigApplyGroup(c, a, group, req.Values) {
+			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
+}
+
+// authConfigKeysInGroup 校验请求键都归属当前分组;失败已回写响应。
+func authConfigKeysInGroup(c *gin.Context, values map[string]string, group string) bool {
+	for key := range values {
+		f, ok := authFieldByKey(key)
+		if !ok || f.Group != group {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "key does not belong to group"})
+			return false
+		}
+	}
+	return true
+}
+
+// authConfigApplyGroup 逐字段落库(掩码回显跳过;secret 加密后写)+ 审计;失败已回写响应。
+func authConfigApplyGroup(c *gin.Context, a *app.Application, group string, values map[string]string) bool {
+	accountID := httpx.ClaimsAccountID(c)
+	for _, f := range authFieldByGroup(group) {
+		raw, ok := values[f.Key]
+		if !ok {
+			continue
+		}
+		if f.Secret && raw == "" {
+			continue // 掩码回显未修改:跳过
+		}
+		val := raw
+		if f.Secret {
+			enc, err := sealParamSecret(raw)
+			if err != nil {
+				respond(c, apitypes.CodeInternal, nil)
+				return false
+			}
+			val = enc
+		}
+		if err := a.User.UpdateParam(c.Request.Context(), f.Key, val, accountID); err != nil {
+			respondErr(c, err)
+			return false
+		}
+		httpx.RecordAudit(a, c, "数据变更", "auth_config", f.Key, authAuditDetail(f, raw))
+	}
+	return true
 }
 
 // authConfigTestHandler POST /auth-config/{group}/test:号码认证连通性自检(v1=配置完整性校验)。
@@ -102,25 +118,34 @@ func authConfigTestHandler(a *app.Application) gin.HandlerFunc {
 		}
 		_ = c.ShouldBindJSON(&req)
 
-		list, err := a.User.ListParams(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
+		cur, ok := authMergedConfig(c, a, group, req.Values)
+		if !ok {
 			return
-		}
-		cur := map[string]string{}
-		for _, p := range list {
-			cur[p.Key] = p.Value
-		}
-		for _, f := range authFields {
-			if cur[f.Key] == "" {
-				cur[f.Key] = f.Default
-			}
-		}
-		for k, v := range req.Values {
-			if f, ok := authFieldByKey(k); ok && f.Group == group && !(f.Secret && v == "") {
-				cur[k] = v
-			}
 		}
 		respond(c, apitypes.CodeOK, authTestResult(group, cur))
 	}
+}
+// authMergedConfig 自检配置合成:库内现值 → 缺省补齐 → 请求覆盖(掩码空值跳过);
+// 失败已回写响应。
+func authMergedConfig(c *gin.Context, a *app.Application, group string, values map[string]string) (map[string]string, bool) {
+	list, err := a.User.ListParams(c.Request.Context())
+	if err != nil {
+		respondErr(c, err)
+		return nil, false
+	}
+	cur := map[string]string{}
+	for _, p := range list {
+		cur[p.Key] = p.Value
+	}
+	for _, f := range authFields {
+		if cur[f.Key] == "" {
+			cur[f.Key] = f.Default
+		}
+	}
+	for k, v := range values {
+		if f, ok := authFieldByKey(k); ok && f.Group == group && !(f.Secret && v == "") {
+			cur[k] = v
+		}
+	}
+	return cur, true
 }
