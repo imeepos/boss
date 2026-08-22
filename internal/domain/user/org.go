@@ -21,6 +21,10 @@ type LegalEntity struct {
 	Code       string `json:"code"` // LEG-A / LEG-B / LEG-C
 	Name       string `json:"name"`
 	IsPlatform bool   `json:"isPlatform"` // 平台总公司(全库唯一,migrations/000077):未覆盖区域订单兜底
+	// 税务属地配置(migrations/000109):开票主体决定属地与通道,
+	// 发票开具时快照到 invoices.tax_jurisdiction/tax_channel。
+	TaxJurisdiction string `json:"taxJurisdiction"` // ''/CN/PH,空=未定(人工通道)
+	TaxChannel      string `json:"taxChannel"`      // manual/leqi/bir_eis
 }
 
 // Department 部门(挂靠子公司)。

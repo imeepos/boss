@@ -17,6 +17,9 @@ import (
 type legalEntityReq struct {
 	Code string `json:"code" binding:"required"`
 	Name string `json:"name" binding:"required"`
+	// 税务属地配置(000109):''/CN/PH 与 manual/leqi/bir_eis;非法值由 DB CHECK 拒绝。
+	TaxJurisdiction string `json:"taxJurisdiction"`
+	TaxChannel      string `json:"taxChannel"`
 }
 
 // departmentReq 部门新建/编辑请求体(挂靠子公司,名称必填)。
