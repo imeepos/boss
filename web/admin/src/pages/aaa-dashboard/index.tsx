@@ -4,9 +4,6 @@ import { useT } from '../../i18n'
 import { PageHead, ToolbarButton } from '../../components/business/page-head'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
-import type { AuthLogRow, CdrRow } from '../quad/types'
-import type { LoAccountRow } from '../oss/types'
-
 type Summary = {
   accounts: number
   active: number
@@ -23,23 +20,6 @@ const emptySummary: Summary = {
   cdrs: 0, unbilled: 0, authSuccess: 0, authFailed: 0,
 }
 
-function countBy<T>(rows: T[], pick: (row: T) => string, value: string) {
-  return rows.filter((row) => pick(row) === value).length
-}
-
-function buildSummary(accounts: LoAccountRow[], cdrs: CdrRow[], auths: AuthLogRow[]): Summary {
-  return {
-    accounts: accounts.length,
-    active: countBy(accounts, (row) => row.status, 'ACTIVE'),
-    suspended: countBy(accounts, (row) => row.status, 'SUSPENDED'),
-    closed: countBy(accounts, (row) => row.status, 'CLOSED'),
-    cdrs: cdrs.length,
-    unbilled: countBy(cdrs, (row) => row.billingStatus, 'UNBILLED'),
-    authSuccess: countBy(auths, (row) => row.result, 'SUCCESS'),
-    authFailed: countBy(auths, (row) => row.result, 'FAILED'),
-  }
-}
-
 export default function AaaDashboardPage() {
   const t = useT()
   const a = t.pages.aaaDashboard
@@ -51,13 +31,9 @@ export default function AaaDashboardPage() {
   const load = () => {
     setBusy(true)
     setError('')
-    Promise.all([
-      apiFetch<{ items: LoAccountRow[] }>('/lo-accounts'),
-      apiFetch<{ items: CdrRow[] }>('/cdrs'),
-      apiFetch<{ items: AuthLogRow[] }>('/auth-logs'),
-    ])
-      .then(([accounts, cdrs, auths]) => {
-        setSummary(buildSummary(accounts?.items ?? [], cdrs?.items ?? [], auths?.items ?? []))
+    apiFetch<{ summary: Summary }>('/aaa/summary')
+      .then((data) => {
+        setSummary(data?.summary ?? emptySummary)
         setLoadedAt(new Date().toISOString())
       })
       .catch((e) => setError(e instanceof Error ? e.message : a.loadFail))

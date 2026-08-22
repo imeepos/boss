@@ -125,8 +125,13 @@ paths:
   /lo-accounts:
     get:
       tags: [Oss]
-      summary: '认证账号 LOID 列表(AAA 域,挂 oss 页面;代码不读查询参数,返回全量)'
+      summary: '认证账号 LOID 分页列表(AAA 域,挂 oss 页面)'
       operationId: listLoAccounts
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: keyword, in: query, schema: { type: string }, description: LOID 或公司关键字 }
+        - { name: status, in: query, schema: { type: string }, description: ACTIVE/SUSPENDED/CLOSED }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 

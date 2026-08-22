@@ -8,64 +8,24 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// aaaSummaryHandler 基于 AAA 真实读模型聚合总览，不复制一套统计表。
+// aaaSummaryHandler 使用数据库侧聚合并套用当前账号数据范围。
 func aaaSummaryHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := c.Request.Context()
-		accounts, err := a.Aaa.ListLoAccounts(ctx)
+		svc, ok := a.Aaa.(aaa.AdminQueryService)
+		if !ok {
+			respond(c, apitypes.CodeInternal, nil)
+			return
+		}
+		scope, err := aaaScope(c, a.User)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		cdrs, err := a.Aaa.ListCdrs(ctx, "")
+		summary, err := svc.GetAdminSummary(c.Request.Context(), scope)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		auths, err := a.Aaa.ListAuthLogs(ctx, "")
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"summary": summarizeAAA(accounts, cdrs, auths)})
+		respond(c, apitypes.CodeOK, gin.H{"summary": summary})
 	}
-}
-
-func summarizeAAA(accounts []aaa.LoAccount, cdrs []aaa.CdrRecord, auths []aaa.AuthLog) gin.H {
-	return gin.H{
-		"accounts": len(accounts), "active": countLoStatus(accounts, "ACTIVE"),
-		"suspended": countLoStatus(accounts, "SUSPENDED"), "closed": countLoStatus(accounts, "CLOSED"),
-		"cdrs": len(cdrs), "unbilled": countCdrStatus(cdrs, "UNBILLED"),
-		"authSuccess": countAuthResult(auths, "SUCCESS"), "authFailed": countAuthResult(auths, "FAILED"),
-	}
-}
-
-func countLoStatus(rows []aaa.LoAccount, status string) int {
-	count := 0
-	for _, row := range rows {
-		if row.Status == status {
-			count++
-		}
-	}
-	return count
-}
-
-func countCdrStatus(rows []aaa.CdrRecord, status string) int {
-	count := 0
-	for _, row := range rows {
-		if row.BillingStatus == status {
-			count++
-		}
-	}
-	return count
-}
-
-func countAuthResult(rows []aaa.AuthLog, result string) int {
-	count := 0
-	for _, row := range rows {
-		if row.Result == result {
-			count++
-		}
-	}
-	return count
 }

@@ -27,6 +27,9 @@ components:
                   items:
                     type: array
                     items: { type: object }
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
     Item:
       description: 单条记录(data 为平铺对象;未命中 code=404)
       content:
