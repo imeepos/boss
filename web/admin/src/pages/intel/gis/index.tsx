@@ -8,6 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { DetailDrawer } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
+import { useLocalStorage } from '../../../lib/useLocalStorage'
 import { pageSlice, type GisNode, type GisPointRow, type GisResourceDetail } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { CardShell, StatCard } from '../../../components/business/charts'
@@ -29,7 +30,7 @@ export default function GisPage() {
   const [busy, setBusy] = useState(false)
   const [detail, setDetail] = useState<GisResourceDetail | null>(null)
   const [detailError, setDetailError] = useState('')
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useLocalStorage<Theme>('intel.gis.theme', 'light')
 
   const load = (lv: number, pid: number) => {
     setError('')
