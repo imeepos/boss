@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
@@ -30,8 +31,30 @@ func partnerSubmitHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		// 后台待办提醒:入驻申请待审核(docs/plan/admin-notify-center.md §4);尽力而为。
+		emitPartnerApplyTodo(a, c, id, req.CompanyName, req.ContactName)
 		respond(c, apitypes.CodeOK, gin.H{"applicationId": id, "status": partner.StatusPending})
 	}
+}
+
+// emitPartnerApplyTodo 提交成功 → 消息中心待办;(partner_apply,id,todo) 幂等。
+func emitPartnerApplyTodo(a *app.Application, c *gin.Context, id int64, company, contact string) {
+	if a.Notify == nil {
+		return
+	}
+	_ = a.Notify.Emit(c.Request.Context(), notify.Input{
+		Category: notify.CategoryTodo, Level: notify.LevelWarn,
+		Title: "企业入驻申请待审核:" + company + "(" + contact + ")",
+		RefType: "partner_apply", RefID: strconv.FormatInt(id, 10), Link: "/org/partner",
+	})
+}
+
+// resolvePartnerApplyTodo 审核终态 → 待办置 resolved;尽力而为,不影响审核结果。
+func resolvePartnerApplyTodo(a *app.Application, c *gin.Context, id int64) {
+	if a.Notify == nil {
+		return
+	}
+	_ = a.Notify.Resolve(c.Request.Context(), "partner_apply", strconv.FormatInt(id, 10))
 }
 
 // partnerListHandler GET /partner/applications:审核队列(状态过滤,空=全部)。
@@ -62,6 +85,7 @@ func partnerApproveHandler(a *app.Application) gin.HandlerFunc {
 		}
 		httpx.RecordAudit(a, c, "partner_application.approve", "partner_application", c.Param("id"),
 			gin.H{"legalEntityId": res.LegalEntityID, "adminAccountId": res.AdminAccountID})
+		resolvePartnerApplyTodo(a, c, id)
 		respond(c, apitypes.CodeOK, res)
 	}
 }
@@ -84,6 +108,7 @@ func partnerRejectHandler(a *app.Application) gin.HandlerFunc {
 		}
 		httpx.RecordAudit(a, c, "partner_application.reject", "partner_application", c.Param("id"),
 			gin.H{"note": req.Note})
+		resolvePartnerApplyTodo(a, c, id)
 		respond(c, apitypes.CodeOK, gin.H{"status": partner.StatusRejected})
 	}
 }
