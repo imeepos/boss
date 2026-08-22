@@ -1,8 +1,9 @@
-# PGIS 瓦片服务(commit 8):tileserver-gl + PMTiles 自建底图,取代 OSM 公开瓦片。
-# 占位:OSM PBF 切片 + 菲律宾 PSGC 区域高 zoom 切片,资产文件后续 PULL/PUSH 部署。
+# PGIS 瓦片服务(commit 8 占位 + commit A7 实配):tileserver-gl + PMTiles 自建底图。
 # 用法:102 服务器 `docker compose -f docker-compose.tiles.yml up -d`
 # 设计依据:docs/notes/adopted/2026-08-22-intel-visualization-upgrade.md v2
-# 注:OSM 公开瓦片(本期临时)+ tileserver-gl 自建(下期切)并存两套,以 OSM 起步不影响本服务部署。
+#          docs/notes/adopted/2026-08-22-intel-viz-next-phase.md (A7 段)
+# 数据契约:deployments/tiles/config.json 配置两个 PMTiles 数据源
+#          + 一份 basic 样式;前端 OL 通过 PMTiles XYZ tile URL 消费。
 name: boss-tiles
 
 services:
@@ -13,17 +14,34 @@ services:
     ports:
       - "18080:8080"
     volumes:
-      # PMTiles 单文件切片:低 zoom 全球覆盖 + 高 zoom PSGC 区域(菲律宾)
+      # PMTiles 单文件切片 + 配置文件 + 字体 + 样式
       - ./tiles/data:/data:ro
+      - ./tiles/config.json:/data/config.json:ro
+      - ./tiles/fonts:/data/fonts:ro
     environment:
       # 走自建内网端口,前端 OL 通过 nginx 反代(参见 docker-compose.nginx.yml)
       - TILE_SERVER_PORT=8080
+      - TILE_SERVER_CONFIG=/data/config.json
     healthcheck:
+      # /health 返回 200 OK 即视为健康;
+      # 启动初期 PMTiles 文件不存在时此端点会 503,ops 应先放入 PMTiles 再 up。
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 30s
 
-  # OSM PBF 预切片(Nominatim 模式,可选;OSM PBF 数据本卷不提交,部署后异步下载)
-  # 当前为占位,实际 PMTiles 文件由 ops 部署时拉取并放入 ./tiles/data/。
-  # 建议体积:< 1GB(全球低 zoom + 菲律宾高 zoom)。
+  # 注意:tileserver-gl 默认 8080 端口 + /data PMTiles 单文件 + basic style + fonts
+  # PMTiles 文件由 ops 部署时从 https://protomaps.com 下载或自建:
+  #   - ./tiles/data/world-lowzoom.pmtiles (~200MB)
+  #   - ./tiles/data/philippines-highzoom.pmtiles (~700MB,可选,只服务菲律宾)
+  # 配置文件 ./tiles/config.json 已定义数据源;字体目录 ./tiles/fonts/ 暂留空。
+  # 部署后端点:
+  #   - http://boss.ymm.cn/tiles/health         healthcheck
+  #   - http://boss.ymm.cn/tiles/styles/basic  样式预览
+  #   - http://boss.ymm.cn/tiles/data/world-lowzoom/{z}/{x}/{y}.pbf  矢量瓦片(PMTiles)
+  #   - http://boss.ymm.cn/tiles/data/world-lowzoom/metadata.json   元数据(zoom range)
+
+  # OSM 公开瓦片(本期临时)+ tileserver-gl 自建(下期切)并存两套,
+  # 以 OSM 起步不影响本服务部署;前端 maps/tile-source.ts 的
+  # LIGHT_TILE_URL 保持 OSM 兜底直到 ops 放入 PMTiles 文件后再切到 PMTILES_TILE_URL。

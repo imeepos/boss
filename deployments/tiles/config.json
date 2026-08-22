@@ -1,0 +1,27 @@
+{
+  "options": {
+    "paths": {
+      "root": "/data",
+      "font": "/data/fonts"
+    },
+    "format": "pbf",
+    "serveMode": "readOnly"
+  },
+  "data": {
+    "world-lowzoom": {
+      "mbtiles": "/data/world-lowzoom.pmtiles"
+    },
+    "philippines-highzoom": {
+      "mbtiles": "/data/philippines-highzoom.pmtiles"
+    }
+  },
+  "styles": {
+    "basic": {
+      "style": "/data/styles/basic.json"
+    }
+  },
+  "health": {
+    "enabled": true,
+    "path": "/health"
+  }
+}
