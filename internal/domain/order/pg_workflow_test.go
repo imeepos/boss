@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v4"
@@ -199,4 +200,109 @@ func TestPGStore_RollbackStage(t *testing.T) {
 			t.Fatalf("err=%v, want ErrIllegalTransition", err)
 		}
 	})
+}
+
+// fakePrepaidCollector 预付费收款桩:记录入参,可注入失败。
+type fakePrepaidCollector struct {
+	customerID int64
+	amount     float64
+	err        error
+}
+
+func (f *fakePrepaidCollector) Collect(_ context.Context, customerID int64, amount float64) error {
+	f.customerID, f.amount = customerID, amount
+	return f.err
+}
+
+// expectChargeAdvance 环节4 推进(advance)的 mock 序列:select → update → 环节日志。
+func expectChargeAdvance(mock pgxmock.PgxPoolIface) {
+	mock.ExpectQuery(`SELECT stage, status FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(3), "RESERVED"))
+	mock.ExpectExec(`UPDATE orders SET stage`).
+		WithArgs(int64(7), int8(4), "RESERVED").
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectExec(`INSERT INTO order_stages`).
+		WithArgs(int64(7), int8(4), "DONE").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+}
+
+// TestPGStore_ChargeContractPrepaid 契约:预付费订单环节4 先当场收款再推进(REQ-CL-001)。
+func TestPGStore_ChargeContractPrepaid(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT billing_mode, customer_id FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"billing_mode", "customer_id"}).AddRow("PREPAID", int64(9)))
+	mock.ExpectQuery(`SELECT COALESCE\(ro.monthly_fee, po.monthly_fee\)`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"amount"}).AddRow(199.0))
+	expectChargeAdvance(mock)
+
+	fake := &fakePrepaidCollector{}
+	s := NewPGStore(mock, stubExists{ok: true}, fake)
+	if err := s.ChargeContract(context.Background(), 7); err != nil {
+		t.Fatalf("ChargeContract: %v", err)
+	}
+	if fake.customerID != 9 || fake.amount != 199.0 {
+		t.Fatalf("collect=%+v", fake)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_ChargeContractPostpaidSkipsCollect 契约:后付费不触发当场收款。
+func TestPGStore_ChargeContractPostpaidSkipsCollect(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT billing_mode, customer_id FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"billing_mode", "customer_id"}).AddRow("POSTPAID", int64(9)))
+	expectChargeAdvance(mock)
+
+	fake := &fakePrepaidCollector{}
+	s := NewPGStore(mock, stubExists{ok: true}, fake)
+	if err := s.ChargeContract(context.Background(), 7); err != nil {
+		t.Fatalf("ChargeContract: %v", err)
+	}
+	if fake.customerID != 0 {
+		t.Fatalf("postpaid should not collect, got %+v", fake)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_ChargeContractPrepaidCollectFail 契约:收款失败环节4 不推进(未收费不派单)。
+func TestPGStore_ChargeContractPrepaidCollectFail(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT billing_mode, customer_id FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"billing_mode", "customer_id"}).AddRow("PREPAID", int64(9)))
+	mock.ExpectQuery(`SELECT COALESCE\(ro.monthly_fee, po.monthly_fee\)`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"amount"}).AddRow(199.0))
+
+	fake := &fakePrepaidCollector{err: errors.New("pay channel down")}
+	s := NewPGStore(mock, stubExists{ok: true}, fake)
+	if err := s.ChargeContract(context.Background(), 7); err == nil {
+		t.Fatal("want error when collect fails")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
 }

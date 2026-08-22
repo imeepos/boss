@@ -203,6 +203,7 @@ func (s *PGStore) ListPaymentsByCustomer(ctx context.Context, customerID int64) 
 
 // GenerateBills 出账:为在网客户按账期批量生成账单,幂等(ON CONFLICT DO NOTHING)。
 // 金额=区域月费覆盖(region_offers 按 region_path)优先,否则产品基础月费;均为成交价快照。
+// 预付费客户(billing_mode=PREPAID)不进月度出账:环节4 已当场收款(adopted note 2026-08-22)。
 func (s *PGStore) GenerateBills(ctx context.Context, period string) (int, error) {
 	tag, err := s.db.Exec(ctx, `
 		INSERT INTO bills(bill_no, customer_id, customer_name, legal_entity_id, legal_entity_name, region_id, region_name, period, amount, status)
@@ -214,6 +215,7 @@ func (s *PGStore) GenerateBills(ctx context.Context, period string) (int, error)
 		JOIN product_offers po ON la.offer_id = po.id
 		LEFT JOIN region_offers ro ON ro.offer_id = la.offer_id AND la.region_path <> '' AND ro.region_path = la.region_path
 		WHERE la.status = 'ACTIVE' AND c.service_status = 'ACTIVE'
+		  AND la.billing_mode = 'POSTPAID'
 		ON CONFLICT (customer_id, period) DO NOTHING`, period)
 	if err != nil {
 		return 0, fmt.Errorf("billing: generate bills: %w", err)

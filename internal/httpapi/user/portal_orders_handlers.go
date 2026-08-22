@@ -121,9 +121,10 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
 		var req struct {
-			ProductID string `json:"productId" binding:"required"`
-			AddressID string `json:"addressId" binding:"required"`
-			ChannelID string `json:"channelId"`
+			ProductID   string `json:"productId" binding:"required"`
+			AddressID   string `json:"addressId" binding:"required"`
+			ChannelID   string `json:"channelId"`
+			BillingMode string `json:"billingMode"` // PREPAID/POSTPAID,空回退 POSTPAID
 		}
 		if !httpx.BindBody(c, &req) {
 			return
@@ -133,10 +134,11 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		o, err := a.Order.Submit(c.Request.Context(), order.SubmitReq{
-			CustomerID: cid,
-			OfferID:    offerID,
-			AddressID:  addrID,
-			ChannelID:  channelID, // 归属由安装地址服务端推导(2026-08-20 裁定)
+			CustomerID:  cid,
+			OfferID:     offerID,
+			AddressID:   addrID,
+			ChannelID:   channelID,       // 归属由安装地址服务端推导(2026-08-20 裁定)
+			BillingMode: req.BillingMode, // 付费模式客户选定(2026-08-22 裁定)
 		})
 		if err != nil {
 			respondErr(c, err)

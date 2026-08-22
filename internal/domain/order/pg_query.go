@@ -49,7 +49,7 @@ func (s *PGStore) GetByNo(ctx context.Context, orderNo string) (*Order, error) {
 	var o Order
 	err := s.db.QueryRow(ctx, `SELECT `+orderCols+` FROM orders WHERE order_no = $1`, orderNo).
 		Scan(&o.ID, &o.OrderNo, &o.CustomerID, &o.OfferID, &o.AddressID, &o.Stage, &o.Status,
-			&o.ChannelID, &o.LegalEntityID, &o.RegionPath, &o.CreatedAt)
+			&o.ChannelID, &o.LegalEntityID, &o.RegionPath, &o.BillingMode, &o.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrOrderNotFound
 	}

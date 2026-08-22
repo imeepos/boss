@@ -48,7 +48,6 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	bill.SetCouponDeductor(promo.DeductForPayment)
 	res := resource.NewPGStore(pool)
 	qlStore := quadlink.NewPGStore(pool)
-	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res}, quadLinkPrebinder{svc: qlStore})
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
@@ -67,6 +66,10 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		nil, // 后续中国国内报备通道就绪后注入 ByRegion["86"]。
 		[]string{"86", "60"},
 	))
+
+	// 环节4 预付费当场收款(adopted note 2026-08-22):依赖 portalSvc,故在 portal 之后构造。
+	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res},
+		quadLinkPrebinder{svc: qlStore}, prepaidCollector{bill: bill, portal: portalSvc})
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表,见 wiring_events.go)。
 	anaStore, closeOLAP, err := selectAnalytics(ctx, pool, cfg)

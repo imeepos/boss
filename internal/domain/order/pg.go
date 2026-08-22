@@ -26,6 +26,7 @@ type PGStore struct {
 	checker ResourceChecker   // 跨域:资源核查(环节2)
 	reserve PortReserver      // 跨域:端口预占(环节3/5)
 	quad    QuadLinkPrebinder // 跨域:四码预绑定(环节5)
+	prepaid PrepaidCollector  // 跨域:预付费当场收款(环节4)
 }
 
 // NewPGStore 构造 PGStore;cust 由 app 装配层注入 customer 域实现。
@@ -40,12 +41,14 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 			s.reserve = v
 		case QuadLinkPrebinder:
 			s.quad = v
+		case PrepaidCollector:
+			s.prepaid = v
 		}
 	}
 	return s
 }
 
-const orderCols = `id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, created_at`
+const orderCols = `id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, created_at`
 
 // ErrAddressNotFound 安装地址不存在(orders.address_id 无外键,应用层校验)。
 var ErrAddressNotFound = errors.New("order: address not found")
@@ -122,6 +125,9 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 	).Scan(&orderNo); err != nil {
 		return nil, fmt.Errorf("order: next order_no: %w", err)
 	}
+	if req.BillingMode != BillingModePrepaid && req.BillingMode != BillingModePostpaid {
+		req.BillingMode = BillingModePostpaid
+	}
 	o := &Order{
 		OrderNo:       orderNo,
 		CustomerID:    req.CustomerID,
@@ -132,11 +138,12 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 		ChannelID:     req.ChannelID,
 		LegalEntityID: own.LegalEntityID,
 		RegionPath:    own.RegionPath,
+		BillingMode:   req.BillingMode,
 	}
 	err = s.db.QueryRow(ctx, `
-		INSERT INTO orders(order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-		o.OrderNo, o.CustomerID, o.OfferID, o.AddressID, o.Stage, o.Status, o.ChannelID, o.LegalEntityID, o.RegionPath).Scan(&o.ID)
+		INSERT INTO orders(order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+		o.OrderNo, o.CustomerID, o.OfferID, o.AddressID, o.Stage, o.Status, o.ChannelID, o.LegalEntityID, o.RegionPath, o.BillingMode).Scan(&o.ID)
 	if err != nil {
 		return nil, fmt.Errorf("order: submit insert: %w", err)
 	}
@@ -156,7 +163,7 @@ func (s *PGStore) Track(ctx context.Context, orderID int64) (*Order, []StageLog,
 	var o Order
 	err := s.db.QueryRow(ctx, `SELECT `+orderCols+` FROM orders WHERE id = $1`, orderID).
 		Scan(&o.ID, &o.OrderNo, &o.CustomerID, &o.OfferID, &o.AddressID, &o.Stage, &o.Status,
-			&o.ChannelID, &o.LegalEntityID, &o.RegionPath, &o.CreatedAt)
+			&o.ChannelID, &o.LegalEntityID, &o.RegionPath, &o.BillingMode, &o.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil, ErrOrderNotFound
 	}

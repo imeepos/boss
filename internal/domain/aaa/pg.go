@@ -26,7 +26,7 @@ func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
 }
 
-const loAccountCols = `id, loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, COALESCE(region_path,''), offer_id, qos_template_id, status`
+const loAccountCols = `id, loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, COALESCE(region_path,''), offer_id, qos_template_id, status, billing_mode`
 
 // ListLoAccounts 列出全部 LO 账号。
 func (s *PGStore) ListLoAccounts(ctx context.Context) ([]LoAccount, error) {
@@ -38,7 +38,7 @@ func (s *PGStore) ListLoAccounts(ctx context.Context) ([]LoAccount, error) {
 	out := make([]LoAccount, 0)
 	for rows.Next() {
 		var a LoAccount
-		if err := rows.Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status); err != nil {
+		if err := rows.Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status, &a.BillingMode); err != nil {
 			return nil, fmt.Errorf("aaa: scan lo_account: %w", err)
 		}
 		out = append(out, a)
@@ -46,17 +46,33 @@ func (s *PGStore) ListLoAccounts(ctx context.Context) ([]LoAccount, error) {
 	return out, rows.Err()
 }
 
-// CreateLoAccount 新建 LO 账号,返回自增 id。
+// CreateLoAccount 新建 LO 账号,返回自增 id;BillingMode 空时继承该客户最近订单的
+// 付费模式(fields.md §3.1,只读跨表与 GenerateBills 同惯例),仍空回退 POSTPAID。
 func (s *PGStore) CreateLoAccount(ctx context.Context, a LoAccount) (int64, error) {
+	if a.BillingMode == "" {
+		a.BillingMode = s.inheritBillingMode(ctx, a.CustomerID)
+	}
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO lo_accounts(loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, region_path, offer_id, qos_template_id, status)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
-		a.Loid, a.CustomerID, a.LegalEntityID, a.LegalEntityName, a.RegionID, a.RegionName, nilIfEmpty(a.RegionPath), a.OfferID, a.QosTemplateID, a.Status).Scan(&id)
+		INSERT INTO lo_accounts(loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, region_path, offer_id, qos_template_id, status, billing_mode)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+		a.Loid, a.CustomerID, a.LegalEntityID, a.LegalEntityName, a.RegionID, a.RegionName, nilIfEmpty(a.RegionPath), a.OfferID, a.QosTemplateID, a.Status, a.BillingMode).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("aaa: create lo_account: %w", err)
 	}
 	return id, nil
+}
+
+// inheritBillingMode 读客户最近订单的付费模式;无订单/查询失败回退 POSTPAID。
+func (s *PGStore) inheritBillingMode(ctx context.Context, customerID int64) string {
+	var mode string
+	err := s.db.QueryRow(ctx,
+		`SELECT billing_mode FROM orders WHERE customer_id = $1 ORDER BY id DESC LIMIT 1`,
+		customerID).Scan(&mode)
+	if err != nil || (mode != BillingModePrepaid && mode != BillingModePostpaid) {
+		return BillingModePostpaid
+	}
+	return mode
 }
 
 // nilIfEmpty 空串归 NULL(region_path 可空)。
@@ -71,7 +87,7 @@ func nilIfEmpty(s string) any {
 func (s *PGStore) GetLoAccountByLoid(ctx context.Context, loid string) (*LoAccount, error) {
 	var a LoAccount
 	err := s.db.QueryRow(ctx, `SELECT `+loAccountCols+` FROM lo_accounts WHERE loid = $1`, loid).
-		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status)
+		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status, &a.BillingMode)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -85,7 +101,7 @@ func (s *PGStore) GetLoAccountByLoid(ctx context.Context, loid string) (*LoAccou
 func (s *PGStore) GetLoAccountByCustomer(ctx context.Context, customerID int64) (*LoAccount, error) {
 	var a LoAccount
 	err := s.db.QueryRow(ctx, `SELECT `+loAccountCols+` FROM lo_accounts WHERE customer_id = $1`, customerID).
-		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status)
+		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status, &a.BillingMode)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
