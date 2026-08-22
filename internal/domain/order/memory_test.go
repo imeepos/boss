@@ -85,6 +85,56 @@ func TestReserveTransitions(t *testing.T) {
 	_ = checker
 }
 
+// TestRollbackStage 回归(ISSUE.md worker rollback 仅审计不落库):
+// 回退删最新日志、stage 前移、DONE→INSTALLING 逆向迁移,且可重新推进。
+func TestRollbackStage(t *testing.T) {
+	s, _ := newSvc(1)
+	ctx := context.Background()
+	o, _ := s.Submit(ctx, SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
+	for _, fn := range []func(context.Context, int64) error{
+		s.CheckResource, s.Reserve, s.ChargeContract, s.ApplyTag, s.CreateUserProfile,
+		s.PreConfigOLT, s.DispatchOrder, s.ScanBind, s.ActivateUser, s.NotifyActivation, s.UpdateMap,
+	} {
+		if err := fn(ctx, o.ID); err != nil {
+			t.Fatalf("advance: %v", err)
+		}
+	}
+	if err := s.RollbackStage(ctx, o.ID); err != nil {
+		t.Fatalf("RollbackStage: %v", err)
+	}
+	got, logs, _ := s.Track(ctx, o.ID)
+	// 环节12(updateMap)不产生 status,回退到 11 时 DONE 保持(done 由环节11产生)。
+	if got.Stage != 11 || got.Status != "DONE" {
+		t.Fatalf("stage=%d status=%s, want 11/DONE", got.Stage, got.Status)
+	}
+	if n := len(logs); n != 11 { // 环节1~11(环节12日志已删)
+		t.Fatalf("logs=%d, want 11", n)
+	}
+	// 再回退一次:离开环节11 → DONE→INSTALLING。
+	if err := s.RollbackStage(ctx, o.ID); err != nil {
+		t.Fatalf("RollbackStage(2): %v", err)
+	}
+	got, _, _ = s.Track(ctx, o.ID)
+	if got.Stage != 10 || got.Status != "INSTALLING" {
+		t.Fatalf("stage=%d status=%s, want 10/INSTALLING", got.Stage, got.Status)
+	}
+	// 重新推进 11/12 环节可走通(顺序守卫以回退后的 stage 为准)。
+	for _, fn := range []func(context.Context, int64) error{s.NotifyActivation, s.UpdateMap} {
+		if err := fn(ctx, o.ID); err != nil {
+			t.Fatalf("re-advance: %v", err)
+		}
+	}
+	got, _, _ = s.Track(ctx, o.ID)
+	if got.Stage != 12 || got.Status != "DONE" {
+		t.Fatalf("re-advanced stage=%d status=%s, want 12/DONE", got.Stage, got.Status)
+	}
+	// stage<2 拒绝回退。
+	o2, _ := s.Submit(ctx, SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
+	if err := s.RollbackStage(ctx, o2.ID); err != ErrIllegalTransition {
+		t.Fatalf("stage1 rollback err=%v, want ErrIllegalTransition", err)
+	}
+}
+
 func TestCheckResourceNoResource(t *testing.T) {
 	cust := &stubCustomer{m: map[int64]bool{1: true}}
 	checker := &stubChecker{available: false, options: []string{"扩容", "跨区调配"}}

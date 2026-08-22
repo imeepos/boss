@@ -259,6 +259,9 @@ func (f *fakeOrder) NotifyActivation(ctx context.Context, id int64) error {
 func (f *fakeOrder) UpdateMap(ctx context.Context, id int64) error { return nil }
 func (f *fakeOrder) Cancel(ctx context.Context, id int64) error    { return nil }
 func (f *fakeOrder) Release(ctx context.Context, id int64) error   { return nil }
+func (f *fakeOrder) RollbackStage(ctx context.Context, id int64) error {
+	return nil
+}
 func (f *fakeOrder) List(ctx context.Context, q order.OrderQuery) ([]order.OrderListItem, error) {
 	return f.list, nil
 }
