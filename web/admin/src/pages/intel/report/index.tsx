@@ -12,7 +12,8 @@ import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
-import { CardShell, StatCard, LineTrend, StackedBars, type LineTrendSeries } from '../../../components/business/charts'
+import { CardShell, StatCard, LineTrend, StackedBars } from '../../../components/business/charts'
+import { buildTrendSeries, type TrendSnap } from './trend'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
 
@@ -84,36 +85,22 @@ export default function ReportPage() {
   const groups = PERIODS.map((_, i) => ({
     stacks: v
       ? [
-          v.regionROI[i]?.revenue ?? 0,
-          v.regionROI[i]?.investment ?? 0,
-          v.regionROI[i]?.roi ?? 0,
+          v.regionROI?.[i]?.revenue ?? 0,
+          v.regionROI?.[i]?.investment ?? 0,
+          v.regionROI?.[i]?.roi ?? 0,
           0,
-          v.maintenance.length,
+          v.maintenance?.length ?? 0,
         ]
       : [0, 0, 0, 0, 0],
   }))
 
-  // 趋势曲线(B6):从 history 取最多 12 个窗口倒序 → 反转成时间正序;
-  // 5 条指标线:收入/投入/ROI/告警数(=maint.length)/待维护(=maint.MUST_REPLACE.length)。
-  const trendSeries: LineTrendSeries[] = useMemo(() => {
-    const ordered = [...trendSnaps].reverse() // 旧→新(从左到右画)
-    const v0 = (k: 'revenue' | 'investment' | 'roi', idx: number) => {
-      const snap = ordered[idx]?.payload
-      const sum = snap?.regionROI.reduce((s, r) => s + r[k], 0) ?? 0
-      return sum
-    }
-    const alerts = (idx: number) => ordered[idx]?.payload?.maintenance.length ?? 0
-    const must = (idx: number) =>
-      ordered[idx]?.payload?.maintenance.filter((m) => m.priority === 'MUST_REPLACE').length ?? 0
-    return [
-      { name: r.compareLegend[0], values: ordered.map((_, i) => v0('revenue', i)) },
-      { name: r.compareLegend[1], values: ordered.map((_, i) => v0('investment', i)) },
-      { name: r.compareLegend[2], values: ordered.map((_, i) => v0('roi', i)) },
-      { name: r.compareLegend[3], values: ordered.map((_, i) => alerts(i)) },
-      { name: r.compareLegend[4], values: ordered.map((_, i) => must(i)) },
-    ]
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trendSnaps])
+  // 趋势曲线(B6 + 回归修复):buildTrendSeries 纯函数处理单点字段缺失
+  // (regression: B6 第一次用 snap?.regionROI.reduce(...) 在 regionROI=null
+  // 的老快照上 .reduce 被 null 调用 → "Cannot read properties of null (reading 'reduce')")。
+  const trendSeries = useMemo(
+    () => buildTrendSeries(trendSnaps as TrendSnap[], r.compareLegend),
+    [trendSnaps, r.compareLegend],
+  )
   const trendLabels = useMemo(() => [...trendSnaps].reverse().map((s) => fmtTime(s.windowStart).slice(5, 10)), [trendSnaps])
 
   return (
@@ -205,7 +192,7 @@ export default function ReportPage() {
             <div className="flex flex-col gap-2.5">
               <div className="flex gap-3 text-[13px]"><span className="w-24 flex-none text-[var(--shell-group-title)]">{r.generatedAtLabel}</span>
                 <span className="break-all text-[var(--shell-content-text)]">{fmtTime(view.generatedAt)}</span></div>
-              {view.indicators.map((x) => (
+              {(view.indicators ?? []).map((x) => (
                 <div className="flex gap-3 text-[13px]" key={x.key}>
                   <span className="w-24 flex-none text-[var(--shell-group-title)]">{x.name || x.key}</span><span className="break-all text-[var(--shell-content-text)]">{x.value} · {x.detail}</span>
                 </div>
