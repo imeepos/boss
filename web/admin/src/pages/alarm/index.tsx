@@ -1,6 +1,7 @@
 // 告警列表页:契约 GET /alarms?resourceId + POST /alarms/:id/ack + POST /alarms/batch-retest。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../api/client'
+import { useQueryState } from '../../lib/useQueryState'
 import { useT } from '../../i18n'
 import { PageHead, pagerTexts } from '../org/shared'
 import { StatusTag } from '../../components/StatusTag'
@@ -20,6 +21,7 @@ export default function AlarmPage() {
   const [error, setError] = useState('')
   const [hint, setHint] = useState('')
   const [resourceId, setResourceId] = useState('')
+  const [urlStatus] = useQueryState('status', '')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
@@ -67,7 +69,8 @@ export default function AlarmPage() {
     }
   }
 
-  const slice = pageSlice(rows, page, pageSize)
+  const filtered = urlStatus ? rows.filter((row) => row.status === urlStatus) : rows
+  const slice = pageSlice(filtered, page, pageSize)
 
   return (
     <div>

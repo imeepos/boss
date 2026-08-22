@@ -1,6 +1,7 @@
 // 对账与告警页:契约 GET /quad-conflicts + POST /quad-conflicts/:id/resolve + POST /quad-links/reconcile。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { useQueryState } from '../../../lib/useQueryState'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
@@ -18,6 +19,7 @@ export default function QuadCheckPage() {
   const [rows, setRows] = useState<QuadLinkRow[]>([])
   const [error, setError] = useState('')
   const [hint, setHint] = useState('')
+  const [urlStatus] = useQueryState('status', '')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
@@ -64,7 +66,8 @@ export default function QuadCheckPage() {
     }
   }
 
-  const slice = pageSlice(rows, page, pageSize)
+  const filtered = urlStatus ? rows.filter((row) => row.status === urlStatus) : rows
+  const slice = pageSlice(filtered, page, pageSize)
 
   return (
     <div>

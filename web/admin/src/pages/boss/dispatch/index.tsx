@@ -1,6 +1,7 @@
 // 派单管理页:工单池指派 / 我的工单 / 改派台账(order.yaml /dispatch 段)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { useQueryState } from '../../../lib/useQueryState'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
@@ -16,6 +17,7 @@ import { TableStateRow } from '../../../components/business'
 export default function DispatchPage() {
   const t = useT()
   const d = t.pages.dispatchPage
+  const [urlStatus] = useQueryState('status', '')
   const [tab, setTab] = useState<'pool' | 'mine' | 'transfers'>('pool')
   const [pool, setPool] = useState<DispatchTicketRow[]>([])
   const [mine, setMine] = useState<DispatchTicketRow[]>([])
@@ -78,10 +80,12 @@ export default function DispatchPage() {
     }
   }
 
-  const slice = pageSlice<DispatchTicketRow | DispatchTransferRow>(
-    tab === 'pool' ? pool : tab === 'mine' ? mine : transfers, page, pageSize,
-  )
-  const count = tab === 'pool' ? pool.length : tab === 'mine' ? mine.length : transfers.length
+  const source = tab === 'pool' ? pool : tab === 'mine' ? mine : transfers
+  const filtered = urlStatus
+    ? source.filter((row) => 'status' in row && row.status === urlStatus)
+    : source
+  const slice = pageSlice<DispatchTicketRow | DispatchTransferRow>(filtered, page, pageSize)
+  const count = filtered.length
 
   return (
     <div>
