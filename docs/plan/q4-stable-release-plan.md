@@ -17,7 +17,7 @@
 | 8 | 1.0 客户验收包 | `docs/ops/acceptance-1.0.md` | 待做 |
 | 9 | 运维手册 | `docs/ops/runbook.md` | 待做 |
 | 10 | 实施培训材料 | `docs/ops/training.md` | 待做 |
-| 11 | SLO 度量采集脚本 | `scripts/load/` 下扩展 | 待做 |
+| 11 | SLO 度量采集脚本 | `scripts/ops/slo-collect.sh` | ✅ |
 
 ## 验收标准（来自路线图，逐条给出证据方式）
 
