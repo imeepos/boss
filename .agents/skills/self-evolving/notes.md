@@ -387,3 +387,8 @@
 - 哪个坑浪费最多时间：102 的 Docker Compose 项目目录只存在于 Docker 容器/宿主机挂载上下文，SSH 文件系统没有 `/opt/boss` 或 `/workspace`，直接 scp 到推测路径失败；改用 `/tmp` compose 文件并复用既有 Compose project 才完成部署验证。
 - skill 有没有提前警告：有，环境事实与“未验证不声称已验证”红线有效；`docker` 不在本机 PATH 也应优先使用远端 SSH 执行。
 - 重来一次我会怎么做：先从 `docker inspect` 的 Compose labels 读取真实 config path/project，再决定远端文件投递位置；确认二进制存在、UDP 监听后再发真实 RADIUS Access 与 Accounting 请求。
+
+## 2026-08-26 Q2 订单预占超时释放(goal round 1)
+- 哪个坑浪费最多时间:无大坑;唯一波折是 lint 失败,排查后发现 gofmt/contract-sync 失败项在 main 基线同样存在(既有债务),非本次引入。
+- skill 有没有提前警告:有——"并行 Agent 编译阻塞识别法"与"迁移撞号两处必查"直接套用,000108 无撞号。
+- 重来一次会怎么做:一开始就先在 main 跑 contract-sync 记录基线,再跑 worktree 对照,省一轮排查。
