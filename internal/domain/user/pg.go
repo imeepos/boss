@@ -196,6 +196,11 @@ func (s *PGStore) GetProfile(ctx context.Context, accountID int64) (*Profile, er
 	if err != nil {
 		return nil, fmt.Errorf("user: get profile: %w", err)
 	}
+	perms, err := s.listAccountPermCodes(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	p.PermissionCodes = perms
 	return &p, nil
 }
 

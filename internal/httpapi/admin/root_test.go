@@ -26,6 +26,8 @@ type fakeUser struct {
 	accounts  []user.AccountRow
 	changeErr error
 	deleteErr error
+	roleRes   *user.RoleDetail
+	roleErr   error
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -125,6 +127,21 @@ func (f *fakeUser) RecordImportTask(context.Context, string, int64, int, int, ma
 }
 func (f *fakeUser) ListImportTasks(context.Context) ([]user.ImportTask, error) {
 	return nil, nil
+}
+func (f *fakeUser) ListPermissions(context.Context) ([]user.Permission, error) {
+	return nil, nil
+}
+func (f *fakeUser) ListRoleDetails(context.Context) ([]user.RoleDetail, error) {
+	return nil, nil
+}
+func (f *fakeUser) CreateCustomRole(context.Context, string, []string) (*user.RoleDetail, error) {
+	return f.roleRes, f.roleErr
+}
+func (f *fakeUser) UpdateCustomRole(context.Context, int64, string, []string) error {
+	return f.roleErr
+}
+func (f *fakeUser) DeleteCustomRole(context.Context, int64) error {
+	return f.roleErr
 }
 
 func newTestRouter(f *fakeUser, mgr *auth.Manager) *gin.Engine {

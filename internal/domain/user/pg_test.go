@@ -450,6 +450,10 @@ func TestPGStore_GetProfile(t *testing.T) {
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"id", "username", "real_name", "phone", "code", "name", "legal_entity_name", "region_scope"}).
 			AddRow(int64(1), "boss", "老板", "13800000000", "sysadmin", "系统管理员", "主品牌·企业", "root.luzon"))
+	mock.ExpectQuery(`SELECT p.code FROM role_permissions`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"code"}).
+			AddRow("menu:dashboard").AddRow("menu:menuperm"))
 
 	s := NewPGStore(mock)
 	p, err := s.GetProfile(context.Background(), 1)
@@ -458,6 +462,9 @@ func TestPGStore_GetProfile(t *testing.T) {
 	}
 	if p.RealName != "老板" || p.Phone != "13800000000" || p.RoleName != "系统管理员" || p.LegalEntityName != "主品牌·企业" {
 		t.Fatalf("p=%+v", p)
+	}
+	if len(p.PermissionCodes) != 2 {
+		t.Fatalf("permissionCodes=%+v", p.PermissionCodes)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)

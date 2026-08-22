@@ -187,6 +187,54 @@ paths:
                   msg: { type: string }
                   data: { type: array, items: { type: object } }
 
+  /permissions:
+    get:
+      tags: [Org]
+      summary: 全量权限码清单(角色编辑抽屉数据源)
+      operationId: listPermissions
+      description: permissions 表全量 code/name;menu:menuperm 门禁
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /role-details:
+    get:
+      tags: [Org]
+      summary: 角色详情全集(内置标记 + 权限码聚合)
+      operationId: listRoleDetails
+      description: 每角色含 id/code/name/isBuiltin/permissionCodes[];内置在前;menu:menuperm 门禁。内置角色权限集即"模板",前端新建派生角色以此为初始勾选。
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /roles/{roleId}:
+    put:
+      tags: [Org]
+      summary: 编辑派生角色(改名 + 权限集全量替换)
+      operationId: updateCustomRole
+      description: 内置角色拒改(40300);menu:menuperm 门禁;permissionCodes 为全集,空=清空
+      parameters:
+        - { name: roleId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 64 }
+                permissionCodes: { type: array, items: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [Org]
+      summary: 删除派生角色(连同 role_permissions)
+      operationId: deleteCustomRole
+      description: 内置角色拒删(40300);被账号/岗位引用拒(40900);menu:menuperm 门禁
+      parameters:
+        - { name: roleId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /menu-perms:
     get:
       tags: [Org]

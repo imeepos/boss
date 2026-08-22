@@ -58,8 +58,9 @@ type DataScope struct {
 
 // MenuRoleCol 菜单权限矩阵的角色列。
 type MenuRoleCol struct {
-	RoleCode string `json:"roleCode"`
-	RoleName string `json:"roleName"`
+	RoleCode  string `json:"roleCode"`
+	RoleName  string `json:"roleName"`
+	IsBuiltin bool   `json:"isBuiltin"`
 }
 
 // MenuPermRow 菜单权限矩阵的权限行(含持有该菜单的角色码)。

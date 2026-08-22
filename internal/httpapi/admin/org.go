@@ -33,6 +33,12 @@ type postReq struct {
 	Roles  []string `json:"roles"`
 }
 
+// roleReq 自定义角色新建/编辑请求体(名称必填;permissionCodes 为权限码全集,空=清空)。
+type roleReq struct {
+	Name            string   `json:"name" binding:"required"`
+	PermissionCodes []string `json:"permissionCodes"`
+}
+
 // requirePerm 返回 RBAC 中间件:账号需持有 permCode 才可访问。
 // 列表端点按「菜单可见性」权限码门禁(menu:*),与 000003 种子对齐。
 func requirePerm(svc user.Service, permCode string) gin.HandlerFunc {
@@ -56,6 +62,11 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.PUT("/accounts/:accountId", requirePerm(a.User, "menu:account"), orgUpdateAccountHandler(a))
 
 	g.GET("/roles", requirePerm(a.User, "menu:account"), orgListRolesHandler(a))
+	g.GET("/permissions", requirePerm(a.User, "menu:menuperm"), orgListPermissionsHandler(a))
+	g.GET("/role-details", requirePerm(a.User, "menu:menuperm"), orgListRoleDetailsHandler(a))
+	g.POST("/roles", requirePerm(a.User, "menu:menuperm"), orgCreateRoleHandler(a))
+	g.PUT("/roles/:roleId", requirePerm(a.User, "menu:menuperm"), orgUpdateRoleHandler(a))
+	g.DELETE("/roles/:roleId", requirePerm(a.User, "menu:menuperm"), orgDeleteRoleHandler(a))
 	g.GET("/menu-perms", requirePerm(a.User, "menu:menuperm"), orgListMenuPermsHandler(a))
 	g.GET("/data-scopes", requirePerm(a.User, "menu:datascope"), orgListDataScopesHandler(a))
 

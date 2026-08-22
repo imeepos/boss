@@ -59,9 +59,10 @@ func (s *PGStore) ListMenuPermMatrix(ctx context.Context) (MenuPermMatrix, error
 	return out, rows.Err()
 }
 
-// listRoles 角色列(id/code/name)。
+// listRoles 角色列(code/name/is_builtin;内置在前)。
 func (s *PGStore) listRoles(ctx context.Context) ([]MenuRoleCol, error) {
-	rows, err := s.db.Query(ctx, `SELECT code, name FROM roles ORDER BY id`)
+	rows, err := s.db.Query(ctx,
+		`SELECT code, name, is_builtin FROM roles ORDER BY is_builtin DESC, id`)
 	if err != nil {
 		return nil, fmt.Errorf("user: list roles: %w", err)
 	}
@@ -69,7 +70,7 @@ func (s *PGStore) listRoles(ctx context.Context) ([]MenuRoleCol, error) {
 	out := make([]MenuRoleCol, 0)
 	for rows.Next() {
 		var r MenuRoleCol
-		if err := rows.Scan(&r.RoleCode, &r.RoleName); err != nil {
+		if err := rows.Scan(&r.RoleCode, &r.RoleName, &r.IsBuiltin); err != nil {
 			return nil, fmt.Errorf("user: scan role: %w", err)
 		}
 		out = append(out, r)

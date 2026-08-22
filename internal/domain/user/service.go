@@ -23,6 +23,8 @@ type Profile struct {
 	RoleName        string `json:"roleName"`
 	LegalEntityName string `json:"legalEntityName"`
 	RegionScope     string `json:"regionScope"` // 空=全集团
+	// PermissionCodes 角色持有的权限码全集;自定义角色经此驱动前端动态菜单。
+	PermissionCodes []string `json:"permissionCodes"`
 }
 
 type Service interface {
@@ -90,6 +92,13 @@ type Service interface {
 	DeletePost(ctx context.Context, id int64) error
 	GetDataScope(ctx context.Context, accountID int64) (DataScope, error)
 	GetProfile(ctx context.Context, accountID int64) (*Profile, error)
+
+	// 自定义角色维护(migrations/000100):内置角色只读,派生角色权限集全量替换。
+	ListPermissions(ctx context.Context) ([]Permission, error)
+	ListRoleDetails(ctx context.Context) ([]RoleDetail, error)
+	CreateCustomRole(ctx context.Context, name string, permCodes []string) (*RoleDetail, error)
+	UpdateCustomRole(ctx context.Context, id int64, name string, permCodes []string) error
+	DeleteCustomRole(ctx context.Context, id int64) error
 }
 
 type Address struct {

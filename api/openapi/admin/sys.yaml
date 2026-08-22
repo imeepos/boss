@@ -70,11 +70,11 @@ paths:
   /roles:
     get:
       tags: [Sys]
-      summary: 角色列表(7 角色码见 fields.md 1.2;permCode menu:account)
+      summary: 角色列表(内置 7 角色码见 fields.md 1.2 + 自定义角色;permCode menu:account)
       operationId: listRoles
       responses:
         '200':
-          description: data 为裸数组 [{code,name}]
+          description: data 为裸数组 [{code,name}](建号/岗位表单数据源,含自定义角色)
           content:
             application/json:
               schema:
@@ -88,6 +88,31 @@ paths:
                       properties:
                         code: { type: string, example: ops }
                         name: { type: string, example: 业务运营 }
+    post:
+      tags: [Org]
+      summary: 新建派生角色(权限码全集;permCode menu:menuperm)
+      operationId: createCustomRole
+      description: 自定义角色(迁移 000100):code 由后端生成 custom_*;模板复用=前端取 /role-details 内置角色权限集作为初始勾选后提交全集
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 64 }
+                permissionCodes: { type: array, items: { type: string }, description: 权限码全集(空=无权限) }
+      responses:
+        '200':
+          description: data 为新角色详情 {id,code,name,isBuiltin:false,permissionCodes[]}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data: { type: object }
 
   /addresses:
     get:

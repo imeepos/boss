@@ -131,6 +131,9 @@ paths:
   /regions/{regionId}/coverage: { $ref: './admin/org.yaml#/paths/~1regions~1{regionId}~1coverage' }
   /menu-perms: { $ref: './admin/org.yaml#/paths/~1menu-perms' }
   /data-scopes: { $ref: './admin/org.yaml#/paths/~1data-scopes' }
+  /permissions: { $ref: './admin/org.yaml#/paths/~1permissions' }
+  /role-details: { $ref: './admin/org.yaml#/paths/~1role-details' }
+  /roles/{roleId}: { $ref: './admin/org.yaml#/paths/~1roles~1{roleId}' }
 
   # ---------- Customer(CRM + PROD) ----------
   /customer-registrations: { $ref: './admin/customer.yaml#/paths/~1customer-registrations' }

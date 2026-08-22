@@ -55,9 +55,11 @@ func TestPGStore_ListMenuPermMatrix(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
-	mock.ExpectQuery(`SELECT code, name FROM roles ORDER BY id`).
-		WillReturnRows(mock.NewRows([]string{"code", "name"}).
-			AddRow("sysadmin", "系统管理员").AddRow("ops", "运营"))
+	mock.ExpectQuery(`SELECT code, name, is_builtin FROM roles ORDER BY is_builtin DESC, id`).
+		WillReturnRows(mock.NewRows([]string{"code", "name", "is_builtin"}).
+			AddRow("sysadmin", "系统管理员", true).
+			AddRow("ops", "运营", true).
+			AddRow("custom_ab", "派生角色", false))
 	mock.ExpectQuery(`SELECT p.code, p.name`).
 		WillReturnRows(mock.NewRows([]string{"code", "name", "roles"}).
 			AddRow("menu:dashboard", "运营总览·工作台", []string{"ops", "sysadmin"}).
@@ -67,8 +69,11 @@ func TestPGStore_ListMenuPermMatrix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListMenuPermMatrix: %v", err)
 	}
-	if len(m.RoleColumns) != 2 || m.RoleColumns[0].RoleCode != "sysadmin" {
+	if len(m.RoleColumns) != 3 || m.RoleColumns[0].RoleCode != "sysadmin" {
 		t.Fatalf("roles=%+v", m.RoleColumns)
+	}
+	if !m.RoleColumns[0].IsBuiltin || m.RoleColumns[2].IsBuiltin {
+		t.Fatalf("is_builtin 标记错误: %+v", m.RoleColumns)
 	}
 	if len(m.Rows) != 2 {
 		t.Fatalf("rows=%+v", m.Rows)

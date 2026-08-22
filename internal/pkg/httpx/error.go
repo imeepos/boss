@@ -31,6 +31,8 @@ func RespondErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, user.ErrUnauthorized):
 		Respond(c, apitypes.CodeUnauthorized, nil)
+	case errors.Is(err, user.ErrRoleProtected):
+		Respond(c, apitypes.CodeForbidden, nil)
 	case errors.Is(err, user.ErrUsernameTaken),
 		errors.Is(err, user.ErrDuplicate),
 		errors.Is(err, user.ErrConflict),
