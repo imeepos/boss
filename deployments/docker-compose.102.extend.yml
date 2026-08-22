@@ -70,7 +70,10 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: boss12345
-    volumes: [grafana_data:/var/lib/grafana]
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana-datasources.yml:/etc/grafana/provisioning/datasources/grafana-datasources.yml:ro
+      - ./observability/dashboards:/etc/grafana/provisioning/dashboards:ro
     networks: [boss]
 
   # ---------- 可观测:日志 ----------

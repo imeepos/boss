@@ -52,4 +52,4 @@ sum(rate(boss_http_requests_total{path=~".*/auth/login",code="200"}[30d]))
 - [ ] S6 话单对账结果定时落表，可查询历史完整率
 - [x] S7 报表产出时间采集（并入 `slo-collect.sh`：窗口结束 8h 内为按时）
 - [x] Prometheus 抓取配置（102 已修复跨网络抓取并验证 up=1,见 prometheus.yml 注释）+ SLO 告警规则 slo-rules.yml
-- [ ] Grafana 看板 JSON（导入即用,S1-S3 曲线）
+- [x] Grafana 看板 `deployments/observability/dashboards/boss-slo.json`(S1-S3+流量+慢接口,102 provisioning 实测数据源 up=1)

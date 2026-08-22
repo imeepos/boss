@@ -1,0 +1,12 @@
+# 看板 provisioning:自动加载本目录 JSON(如 boss-slo.json)。
+apiVersion: 1
+providers:
+  - name: boss-dashboards
+    orgId: 1
+    folder: BOSS
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false
