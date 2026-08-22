@@ -68,6 +68,10 @@ func (f *settleBilling) RecordPayment(_ context.Context, p billing.Payment) (int
 	f.pays = append(f.pays, p)
 	return int64(len(f.pays)), nil
 }
+func (f *settleBilling) RecordPaymentWithCoupon(_ context.Context, p billing.Payment) (billing.PaymentReceipt, error) {
+	id, err := f.RecordPayment(context.Background(), p)
+	return billing.PaymentReceipt{PaymentID: id, Amount: p.Amount}, err
+}
 func (f *settleBilling) GenerateBills(context.Context, string) (int, error) { return 0, nil }
 
 // newStripeRouter gw 为 nil 表示通道未配置(空注册表)。

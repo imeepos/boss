@@ -57,6 +57,7 @@ paths:
                 billNo: { type: string }
                 amount: { type: number }
                 payMethod: { type: string, enum: [wechat, alipay, card, cash] }
+                couponId: { type: string, description: 可选抵扣券,核销与落账同事务,实收=amount-抵扣 }
       responses:
         '200':
           description: 支付单已生成

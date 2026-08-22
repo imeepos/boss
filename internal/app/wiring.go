@@ -13,6 +13,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/report"
 	"github.com/ymm-001/boss/internal/domain/resource"
@@ -42,6 +43,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	cust := customer.NewPGStore(pool)
 	partnerSvc := partner.NewPGStore(pool)
 	bill := billing.NewPGStore(pool)
+	promo := promotion.NewPGStore(pool)
+	// 券抵扣与缴费同事务:billing 定义注入点,promotion 提供实现(跨域禁实现依赖)。
+	bill.SetCouponDeductor(promo.DeductForPayment)
 	res := resource.NewPGStore(pool)
 	qlStore := quadlink.NewPGStore(pool)
 	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res}, quadLinkPrebinder{svc: qlStore})
@@ -79,6 +83,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		CustomerLedger: cust,
 		RealName:       cust,
 		UserData:       udcustomer.NewPGStore(pool),
+		Promotion:      promo,
 		Portal:         portalSvc,
 
 		CustomerOnboarding: cust,

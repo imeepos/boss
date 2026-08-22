@@ -198,6 +198,7 @@ func newFullPortalRouter(cust *customer.Customer, ud *fakeUserData, ch *fakeChan
 		WorkOrder: wo,
 		Portal:    portal.NewMemory(),
 		UserData:  ud,
+		Promotion: &fakePromo{items: ud.coupons},
 		Channel:   ch,
 		Tax:       &fakeTaxStub{},
 	}, mgr)

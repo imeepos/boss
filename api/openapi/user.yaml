@@ -94,6 +94,8 @@ paths:
   /messages/read-all: { $ref: './user/misc.yaml#/paths/~1messages~1read-all' }
   /messages/{messageId}/read: { $ref: './user/misc.yaml#/paths/~1messages~1{messageId}~1read' }
   /coupons: { $ref: './user/misc.yaml#/paths/~1coupons' }
+  /coupons/redeem: { $ref: './user/misc.yaml#/paths/~1coupons~1redeem' }
+  /coupons/{couponId}/gift: { $ref: './user/misc.yaml#/paths/~1coupons~1{couponId}~1gift' }
   /usage: { $ref: './user/misc.yaml#/paths/~1usage' }
   /addresses: { $ref: './user/misc.yaml#/paths/~1addresses' }
   /diy/steps: { $ref: './user/misc.yaml#/paths/~1diy~1steps' }

@@ -71,6 +71,12 @@
 | 发票 invoice.status | ISSUED / VOIDED | 已生成 / 已作废（编号保留不回收，TAX-004） |
 | 发票 invoice.tax_status | PENDING / SUBMITTED / ISSUED / FAILED | 税局网关状态：待开具 / 已提交 / 已开具（税局票号回填）/ 失败可重试；与 invoice.status 正交 |
 | 设备健康 priority | MUST_REPLACE / SUGGEST / WATCH | 必须更换 / 建议 / 观察 |
+| 券模板 template.status | DRAFT / ENABLED / DISABLED | 草稿 / 启用 / 停用 |
+| 券实例 coupon.status | ISSUED / USED / EXPIRED / DISABLED | 已发放 / 已使用 / 已过期 / 已停用；user 端展示态 available/used/expired/gifting 由其派生 |
+| 券类型 coupon.type | FULL_CUT / DISCOUNT / CASH | 满减 / 折扣(万分比) / 代金券 |
+| 券来源 coupon.source | ADMIN_ISSUE / CAMPAIGN / REDEEM / GIFT / INVITE | 手发 / 活动 / 兑换码 / 转赠 / 邀请 |
+| 兑换码 code.status | UNUSED / REDEEMED / DISABLED | 未兑换 / 已兑换 / 已停用 |
+| 赠送规则 gift_rule.status | ENABLED / DISABLED | 启用 / 停用（时长阶梯 6送1/12送3/24送6） |
 
 ## 5. 关键术语
 

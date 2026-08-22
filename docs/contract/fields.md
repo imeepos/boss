@@ -774,6 +774,45 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 > 企业工作台数据口径：员工 = accounts 按 legal_entity_id 归属（角色限 partner_admin/partner_staff）；
 > 订单 = orders 按 legal_entity_id 隔离（只读）。角色 `partner_staff` 无员工管理权限。
 
+## 8C. 营销促销域（internal/domain/promotion，000102）
+
+`coupon_templates`（券模板，L1 依赖 legal_entity）：
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:------|:------|:----------|
+| `templateId` | template_id | BIGSERIAL PK |
+| `legalEntityId` | legal_entity_id | BIGINT → legal_entities |
+| `name` | name | 模板名 |
+| `type` | type | FULL_CUT / DISCOUNT / CASH（terms.md） |
+| `faceValue` | face_value | 分；折扣券为万分比（8500=85折） |
+| `threshold` | threshold | 使用门槛（分），0=无门槛 |
+| `maxDiscount` | max_discount | 折扣封顶（分），可空 |
+| `scopeType` / `scopeRef` | scope_type / scope_ref | ALL / PRODUCT / FIRST_ORDER；PRODUCT 时指向 product_offers.id |
+| `totalQty` / `issuedQty` | total_qty / issued_qty | 发行总量（0=不限）/ 已发（行锁防超发） |
+| `perCustomerLimit` | per_customer_limit | 每人限领 |
+| `validDays` / `validFrom` / `validTo` | valid_days / valid_from / valid_to | 领取后 N 天 / 固定窗口（二选一） |
+| `status` | status | DRAFT / ENABLED / DISABLED |
+
+`coupons`（券实例，存量表增量改造）：新增 `template_id`、`type`、`face_value`、`threshold`、
+`max_discount`、`scope_type`、`scope_ref`（模板快照，发放时冻结）、`source`
+（ADMIN_ISSUE/CAMPAIGN/REDEEM/GIFT/INVITE）、`code`（转赠载体，UNIQUE，非空=转赠中）、
+`issued_at`、`used_at`、`payment_id`（核销流水）；status 由 active/disabled 迁移为
+ISSUED/USED/EXPIRED/DISABLED。
+
+`coupon_codes`（兑换码批次）：`code_id` PK、`code` UNIQUE、`template_id`、`status`
+（UNUSED/REDEEMED/DISABLED）、`redeemed_by` → customers、`redeemed_at`。
+
+`coupon_redemptions`（核销记录，缴费同事务写入）：`redemption_id` PK、`coupon_id` → coupons、
+`payment_id`（逻辑关联 payments）、`customer_id`、`deducted_amount`（实际抵扣分）、`created_at`。
+
+`gift_rules`（赠送时长阶梯规则）：`rule_id` PK、`legal_entity_id`、`name`、`scope_type`/`scope_ref`
+（ALL/PRODUCT）、`buy_months`、`gift_months`、`status`（ENABLED/DISABLED）。
+
+`gift_records`（赠送发放记录）：`record_id` PK、`rule_id` → gift_rules、`customer_id` → customers、
+`product_id`、`buy_months`、`gift_months`、`payment_id`（逻辑关联）。
+
+> 金额单位一律为分（int64）；billing 域缴费金额为元（float64），跨域边界处换算（billing.redeemCoupon）。
+
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。

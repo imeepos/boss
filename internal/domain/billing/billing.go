@@ -24,8 +24,16 @@ type Payment struct {
 	BillID     int64   `json:"billId"`
 	CustomerID int64   `json:"customerId"` // 充值流水归属;账单流水可缺省(按账单回查)
 	Amount     float64 `json:"amount"`
-	Method     string  `json:"method"` // wechat/alipay/card/cash
-	Status     string  `json:"status"` // SUCCESS/FAILED/REFUNDED
+	Method     string  `json:"method"`   // wechat/alipay/card/cash
+	Status     string  `json:"status"`   // SUCCESS/FAILED/REFUNDED
+	CouponID   string  `json:"couponId"` // 可选:缴费抵扣券,核销与落账同事务
+}
+
+// PaymentReceipt 落账回执(含券抵扣明细)。
+type PaymentReceipt struct {
+	PaymentID     int64   `json:"paymentId"`
+	Amount        float64 `json:"amount"`        // 实收(元)
+	DeductedCents int64   `json:"deductedCents"` // 券抵扣(分),0=无券
 }
 
 // BillingService 计费账务域服务口(阶段5):出账/缴费。
@@ -39,6 +47,9 @@ type BillingService interface {
 	CreatePayment(ctx context.Context, p Payment) (int64, error)
 	// RecordPayment 收款落账:缴费流水 + 账单置 PAID 同事务,pay_no 唯一幂等。
 	RecordPayment(ctx context.Context, p Payment) (int64, error)
+	// RecordPaymentWithCoupon 带券缴费:CouponID 非空时同事务核销(promotion 注入),
+	// payments.amount 记实收,抵扣额见回执 DeductedCents。
+	RecordPaymentWithCoupon(ctx context.Context, p Payment) (PaymentReceipt, error)
 	// GenerateBills 出账:为在网客户按账期批量生成账单(金额=产品基础月费成交价快照),幂等。
 	// 返回本次新生成账单数。区域调价覆盖(region_offers)待 lo_account 补齐 region_path 后接入。
 	GenerateBills(ctx context.Context, period string) (int, error)

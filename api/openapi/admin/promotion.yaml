@@ -1,0 +1,134 @@
+# 营销促销域(PROMO):券模板/发放/兑换码/赠送时长规则。
+# 老券仓端点(/coupons)仍在 userdata.yaml,与本期增量并行。
+
+paths:
+  /coupon-templates:
+    get:
+      summary: 券模板列表
+      tags: [Promotion]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      summary: 新建券模板(满减/折扣/代金券)
+      tags: [Promotion]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CouponTemplate' }
+      responses:
+        '200':
+          description: 模板 ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      templateId: { type: integer, format: int64 }
+  /coupon-templates/{templateId}/disable:
+    put:
+      summary: 停用券模板(已发券不受影响)
+      tags: [Promotion]
+      parameters: [{ name: templateId, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+  /coupon-templates/{templateId}/issue:
+    post:
+      summary: 按模板批量发券(限总量/限每人)
+      tags: [Promotion]
+      parameters: [{ name: templateId, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customerIds]
+              properties:
+                customerIds: { type: array, items: { type: integer, format: int64 } }
+      responses:
+        '200': { description: 实际发放数 }
+  /coupon-templates/{templateId}/codes:
+    get:
+      summary: 兑换码列表
+      tags: [Promotion]
+      parameters: [{ name: templateId, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      summary: 生成兑换码批次
+      tags: [Promotion]
+      parameters: [{ name: templateId, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [count]
+              properties:
+                count: { type: integer, minimum: 1, maximum: 1000 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+  /gift-rules:
+    get:
+      summary: 赠送时长规则列表(阶梯:6送1/12送3/24送6)
+      tags: [Promotion]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      summary: 新建赠送时长规则
+      tags: [Promotion]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GiftRule' }
+      responses:
+        '200': { description: 规则 ID }
+  /gift-rules/{ruleId}/disable:
+    put:
+      summary: 停用赠送规则
+      tags: [Promotion]
+      parameters: [{ name: ruleId, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+
+components:
+  schemas:
+    CouponTemplate:
+      type: object
+      required: [legalEntityId, name, type, faceValue]
+      properties:
+        templateId: { type: integer, format: int64 }
+        legalEntityId: { type: integer, format: int64 }
+        name: { type: string }
+        type: { type: string, enum: [FULL_CUT, DISCOUNT, CASH] }
+        faceValue: { type: integer, format: int64, description: 分;折扣率为万分比 }
+        threshold: { type: integer, format: int64, description: 使用门槛(分),0=无 }
+        maxDiscount: { type: integer, format: int64, description: 折扣封顶(分) }
+        scopeType: { type: string, enum: [ALL, PRODUCT, FIRST_ORDER] }
+        scopeRef: { type: integer, format: int64 }
+        totalQty: { type: integer, format: int64, description: 发行总量,0=不限 }
+        perCustomerLimit: { type: integer }
+        validDays: { type: integer, description: 领取后 N 天有效 }
+        validFrom: { type: string, format: date-time }
+        validTo: { type: string, format: date-time }
+        status: { type: string, enum: [DRAFT, ENABLED, DISABLED] }
+        issuedQty: { type: integer, format: int64 }
+    GiftRule:
+      type: object
+      required: [legalEntityId, name, buyMonths, giftMonths]
+      properties:
+        ruleId: { type: integer, format: int64 }
+        legalEntityID: { type: integer, format: int64 }
+        name: { type: string }
+        scopeType: { type: string, enum: [ALL, PRODUCT] }
+        scopeRef: { type: integer, format: int64 }
+        buyMonths: { type: integer, minimum: 1 }
+        giftMonths: { type: integer, minimum: 1 }
+        status: { type: string, enum: [ENABLED, DISABLED] }
