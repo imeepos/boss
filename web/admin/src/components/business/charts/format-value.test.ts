@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatNumber, formatRatio, formatCurrency, formatScore,
-  formatIndicatorValue, formatSegmentValue,
+  formatIndicatorDetail, formatIndicatorValue, formatSegmentValue,
 } from './format-value'
 
 describe('format-value', () => {
@@ -41,6 +41,12 @@ describe('format-value', () => {
       expect(formatCurrency(123456)).toBe('¥12.35万')
       expect(formatCurrency(123456789)).toBe('¥1.23亿')
       expect(formatCurrency(-123456789)).toBe('¥-1.23亿')
+    })
+  })
+
+  describe('formatIndicatorDetail', () => {
+    it('压缩 ROI 详情中的收入和投资金额', () => {
+      expect(formatIndicatorDetail('收入123456.78元/投资987654321元')).toBe('收入¥12.35万/投资¥9.88亿')
     })
   })
 

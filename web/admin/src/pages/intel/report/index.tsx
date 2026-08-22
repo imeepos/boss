@@ -13,7 +13,7 @@ import { pageSlice, type ReportPayload, type ReportRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
 import { CardShell, StatCard, LineTrend, StackedBars } from '../../../components/business/charts'
-import { formatCurrency } from '../../../components/business/charts/format-value'
+import { formatCurrency, formatIndicatorDetail, formatIndicatorValue } from '../../../components/business/charts/format-value'
 import { buildTrendSeries, type TrendSnap } from './trend'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
@@ -195,7 +195,7 @@ export default function ReportPage() {
                 <span className="break-all text-[var(--shell-content-text)]">{fmtTime(view.generatedAt)}</span></div>
               {(view.indicators ?? []).map((x) => (
                 <div className="flex gap-3 text-[13px]" key={x.key}>
-                  <span className="w-24 flex-none text-[var(--shell-group-title)]">{x.name || x.key}</span><span className="break-all text-[var(--shell-content-text)]">{x.value} · {x.detail}</span>
+                  <span className="w-24 flex-none text-[var(--shell-group-title)]">{x.name || x.key}</span><span className="break-all text-[var(--shell-content-text)]">{formatIndicatorValue(x.key, x.value)} · {formatIndicatorDetail(x.detail)}</span>
                 </div>
               ))}
               {view.conclusions && view.conclusions.length > 0 && (
