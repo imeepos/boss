@@ -397,3 +397,8 @@
 - 哪个坑浪费最多时间:迁移撞号再现——开工时查过分支无 000109,提交前 contract-sync 才发现 q3 会话已合并 000109/000110 进 main,被迫让号改名 000111。
 - skill 有没有提前警告:有,AGENTS.md 迁移编号规则原样命中;教训是"查完分支到提交之间 main 还会动",让号检查必须放在提交前最后一刻,不是开工时。
 - 重来一次会怎么做:写完迁移后立即 git fetch + 重跑 D 门禁再 commit,不等整轮 make check。
+
+## 2026-08-26 Q2 每日五域对账(goal round 3)
+- 哪个坑浪费最多时间:pgxmock 正则写错(`count\(\*)` 少个右括号转义),TestReconCounts 报 regexp 解析错误——pgxmock 的 ExpectQuery 参数是正则,括号必须成对转义。
+- skill 有没有提前警告:未明确警告;known-issues 里有 pgx 占位符教训但无 pgxmock 正则转义条目。
+- 重来一次会怎么做:pgxmock 用 `SELECT count\(\*\)` 全转义,或用 regexp.QuoteMeta 思路先在本地正则工具验一遍再写进测试。
