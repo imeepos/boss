@@ -67,9 +67,10 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		[]string{"86", "60"},
 	))
 
-	// 环节4 预付费当场收款(adopted note 2026-08-22):依赖 portalSvc,故在 portal 之后构造。
+	// 环节4 预付费当场收款(adopted note 2026-08-22):依赖 portalSvc,故在 portal 之后构造;
+	// 赠送阶梯经 promotion 命中(000104:buy_months/gift_months 快照)。
 	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res},
-		quadLinkPrebinder{svc: qlStore}, prepaidCollector{bill: bill, portal: portalSvc})
+		quadLinkPrebinder{svc: qlStore}, prepaidCollector{bill: bill, portal: portalSvc, promo: promo})
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表,见 wiring_events.go)。
 	anaStore, closeOLAP, err := selectAnalytics(ctx, pool, cfg)

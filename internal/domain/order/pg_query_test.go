@@ -44,10 +44,10 @@ func TestPGStore_GetByNo(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, created_at FROM orders WHERE order_no`).
+		mock.ExpectQuery(`SELECT id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, buy_months, gift_months, created_at FROM orders WHERE order_no`).
 			WithArgs("ORD-20250817-001").
-			WillReturnRows(mock.NewRows([]string{"id", "order_no", "customer_id", "offer_id", "address_id", "stage", "status", "channel_id", "legal_entity_id", "region_path", "billing_mode", "created_at"}).
-				AddRow(int64(7), "ORD-20250817-001", int64(1), int64(10), int64(100), int8(3), "PENDING", int64(5), int64(1), "root.luzon", "POSTPAID", ts))
+			WillReturnRows(mock.NewRows([]string{"id", "order_no", "customer_id", "offer_id", "address_id", "stage", "status", "channel_id", "legal_entity_id", "region_path", "billing_mode", "buy_months", "gift_months", "created_at"}).
+				AddRow(int64(7), "ORD-20250817-001", int64(1), int64(10), int64(100), int8(3), "PENDING", int64(5), int64(1), "root.luzon", "POSTPAID", 0, 0, ts))
 
 		s := NewPGStore(mock, stubExists{})
 		o, err := s.GetByNo(context.Background(), "ORD-20250817-001")

@@ -25,10 +25,11 @@ type PortReserver interface {
 }
 
 // PrepaidCollector 预付费当场收款跨域依赖口(环节4)。
-// 由 billing+portal 域提供、app 装配层注入(派 PAY 单号 + 落缴费流水);
-// order 域不 import billing 域实现。
+// 由 billing+portal+promotion 域提供、app 装配层注入(派 PAY 单号 + 落缴费流水
+// + 赠送时长阶梯命中落痕);order 域不 import billing/promotion 域实现。
+// amount = months x 月费(调用方算好);返回赠送月数(0=未命中阶梯)。
 type PrepaidCollector interface {
-	Collect(ctx context.Context, customerID int64, amount float64) error
+	Collect(ctx context.Context, customerID int64, amount float64, offerID int64, months int) (giftMonths int, err error)
 }
 
 // QuadLinkBindReq 四码预绑定请求(order 域定义,由 app 装配层映射到 quadlink.QuadLink)。

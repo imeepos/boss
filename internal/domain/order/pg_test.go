@@ -47,7 +47,7 @@ func TestPGStore_Submit(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
 		mock.ExpectQuery(`INSERT INTO orders`).
-			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(1), "root.luzon", "POSTPAID").
+			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(1), "root.luzon", "POSTPAID", 0).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
 		mock.ExpectExec(`INSERT INTO order_stages`).
 			WithArgs(int64(7), int8(1), "DOING").
@@ -87,7 +87,7 @@ func TestPGStore_Submit(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
 		mock.ExpectQuery(`INSERT INTO orders`).
-			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(9), "root", "POSTPAID").
+			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(9), "root", "POSTPAID", 0).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
 		mock.ExpectExec(`INSERT INTO order_stages`).
 			WithArgs(int64(7), int8(1), "DOING").
@@ -299,11 +299,11 @@ func TestPGStore_Track(t *testing.T) {
 	}
 	defer mock.Close()
 
-	orderCols := []string{"id", "order_no", "customer_id", "offer_id", "address_id", "stage", "status", "channel_id", "legal_entity_id", "region_path", "billing_mode", "created_at"}
-	mock.ExpectQuery(`SELECT id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, created_at FROM orders`).
+	orderCols := []string{"id", "order_no", "customer_id", "offer_id", "address_id", "stage", "status", "channel_id", "legal_entity_id", "region_path", "billing_mode", "buy_months", "gift_months", "created_at"}
+	mock.ExpectQuery(`SELECT id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, buy_months, gift_months, created_at FROM orders`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows(orderCols).
-			AddRow(int64(1), "ORD-20250817-001", int64(1), int64(10), int64(100), int8(3), "RESERVED", int64(5), int64(1), "root.luzon", "POSTPAID", ts))
+			AddRow(int64(1), "ORD-20250817-001", int64(1), int64(10), int64(100), int8(3), "RESERVED", int64(5), int64(1), "root.luzon", "POSTPAID", 0, 0, ts))
 	mock.ExpectQuery(`SELECT id, order_id, stage, result, retries, finished_at FROM order_stages`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"id", "order_id", "stage", "result", "retries", "finished_at"}).

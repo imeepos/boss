@@ -412,6 +412,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | 归属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities；由安装地址推导（address→region→最近覆盖祖先，migrations/000076），下单快照不可变；未匹配子公司覆盖时兜底平台总公司（is_platform，migrations/000077）；调用方直传值仅做冲突校验（adopted note 2026-08-20-order-legal-entity-by-address） |
 | 成交价 | `PriceSnapshot` | price_snapshot | 下单时生效价快照（账单金额以此为准） |
 | 付费方式 | `BillingMode` | billing_mode | PREPAID/POSTPAID（000102）；下单时客户选定快照，环节 6 建 LO 账号时继承到 lo_accounts；默认 POSTPAID（adopted note 2026-08-22-prepaid-postpaid-billing-mode） |
+| 预缴月数 | `BuyMonths` | buy_months | 0~60（000104）；0=按月缴（环节 4 收 1 个月月费），N>0=预缴 N 月（环节 4 收 N×月费，区域覆盖口径同出账） |
+| 赠送月数 | `GiftMonths` | gift_months | 0~60（000104）；环节 4 收款时按 gift_duration_rules 阶梯命中回填（如 6送1/12送3/24送6，取 ≤预缴月数的最大档），未命中为 0 |
 
 > lo_accounts 同名列 `billing_mode`（000102）：订购关系上的付费模式权威态；PREPAID 客户不进月度出账（GenerateBills 过滤），预付费在环节 4 合同收费当场收款落缴费流水。
 

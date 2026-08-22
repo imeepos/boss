@@ -202,16 +202,20 @@ func TestPGStore_RollbackStage(t *testing.T) {
 	})
 }
 
-// fakePrepaidCollector 预付费收款桩:记录入参,可注入失败。
+// fakePrepaidCollector 预付费收款桩:记录入参,可注入失败与赠送返回。
 type fakePrepaidCollector struct {
 	customerID int64
 	amount     float64
+	offerID    int64
+	months     int
+	gift       int
 	err        error
 }
 
-func (f *fakePrepaidCollector) Collect(_ context.Context, customerID int64, amount float64) error {
-	f.customerID, f.amount = customerID, amount
-	return f.err
+func (f *fakePrepaidCollector) Collect(_ context.Context, customerID int64, amount float64,
+	offerID int64, months int) (int, error) {
+	f.customerID, f.amount, f.offerID, f.months = customerID, amount, offerID, months
+	return f.gift, f.err
 }
 
 // expectChargeAdvance 环节4 推进(advance)的 mock 序列:select → update → 环节日志。
@@ -227,7 +231,8 @@ func expectChargeAdvance(mock pgxmock.PgxPoolIface) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 }
 
-// TestPGStore_ChargeContractPrepaid 契约:预付费订单环节4 先当场收款再推进(REQ-CL-001)。
+// TestPGStore_ChargeContractPrepaid 契约:预付费订单环节4 先当场收款再推进(REQ-CL-001);
+// 预缴 12 月按 12x月费 收,赠送命中回填 orders.gift_months。
 func TestPGStore_ChargeContractPrepaid(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -235,9 +240,37 @@ func TestPGStore_ChargeContractPrepaid(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT billing_mode, customer_id FROM orders`).
+	expectChargeSelect(mock, "PREPAID", 9, 5, 12)
+	mock.ExpectQuery(`SELECT COALESCE\(ro.monthly_fee, po.monthly_fee\)`).
 		WithArgs(int64(7)).
-		WillReturnRows(mock.NewRows([]string{"billing_mode", "customer_id"}).AddRow("PREPAID", int64(9)))
+		WillReturnRows(mock.NewRows([]string{"amount"}).AddRow(199.0))
+	mock.ExpectExec(`UPDATE orders SET gift_months`).
+		WithArgs(int64(7), 3).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	expectChargeAdvance(mock)
+
+	fake := &fakePrepaidCollector{gift: 3}
+	s := NewPGStore(mock, stubExists{ok: true}, fake)
+	if err := s.ChargeContract(context.Background(), 7); err != nil {
+		t.Fatalf("ChargeContract: %v", err)
+	}
+	if fake.customerID != 9 || fake.amount != 199.0*12 || fake.offerID != 5 || fake.months != 12 {
+		t.Fatalf("collect=%+v", fake)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_ChargeContractPrepaidMonthly 契约:buy_months=0(按月缴)收 1 个月月费,不回填赠送。
+func TestPGStore_ChargeContractPrepaidMonthly(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	expectChargeSelect(mock, "PREPAID", 9, 5, 0)
 	mock.ExpectQuery(`SELECT COALESCE\(ro.monthly_fee, po.monthly_fee\)`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"amount"}).AddRow(199.0))
@@ -248,12 +281,20 @@ func TestPGStore_ChargeContractPrepaid(t *testing.T) {
 	if err := s.ChargeContract(context.Background(), 7); err != nil {
 		t.Fatalf("ChargeContract: %v", err)
 	}
-	if fake.customerID != 9 || fake.amount != 199.0 {
+	if fake.amount != 199.0 || fake.months != 1 {
 		t.Fatalf("collect=%+v", fake)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
 	}
+}
+
+// expectChargeSelect 环节4 前置查询桩:付费模式/客户/产品/预缴月数。
+func expectChargeSelect(mock pgxmock.PgxPoolIface, mode string, customerID, offerID, buyMonths int64) {
+	mock.ExpectQuery(`SELECT billing_mode, customer_id, offer_id, buy_months FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"billing_mode", "customer_id", "offer_id", "buy_months"}).
+			AddRow(mode, customerID, offerID, buyMonths))
 }
 
 // TestPGStore_ChargeContractPostpaidSkipsCollect 契约:后付费不触发当场收款。
@@ -264,9 +305,7 @@ func TestPGStore_ChargeContractPostpaidSkipsCollect(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT billing_mode, customer_id FROM orders`).
-		WithArgs(int64(7)).
-		WillReturnRows(mock.NewRows([]string{"billing_mode", "customer_id"}).AddRow("POSTPAID", int64(9)))
+	expectChargeSelect(mock, "POSTPAID", 9, 5, 0)
 	expectChargeAdvance(mock)
 
 	fake := &fakePrepaidCollector{}
@@ -290,9 +329,7 @@ func TestPGStore_ChargeContractPrepaidCollectFail(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT billing_mode, customer_id FROM orders`).
-		WithArgs(int64(7)).
-		WillReturnRows(mock.NewRows([]string{"billing_mode", "customer_id"}).AddRow("PREPAID", int64(9)))
+	expectChargeSelect(mock, "PREPAID", 9, 5, 0)
 	mock.ExpectQuery(`SELECT COALESCE\(ro.monthly_fee, po.monthly_fee\)`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"amount"}).AddRow(199.0))

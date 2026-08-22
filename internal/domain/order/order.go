@@ -16,6 +16,8 @@ type Order struct {
 	LegalEntityID int64     `json:"legalEntityId"` // 品牌=运营主体(legal_entities, 品牌隔离最小单元)
 	RegionPath    string    `json:"regionPath"`
 	BillingMode   string    `json:"billingMode"` // PREPAID/POSTPAID(000102);空回退 POSTPAID
+	BuyMonths     int       `json:"buyMonths"`   // 预缴月数(000104);0=按月缴
+	GiftMonths    int       `json:"giftMonths"`  // 赠送月数(000104);环节4 收款按阶梯命中回填
 	CreatedAt     time.Time `json:"createdAt"`
 }
 
@@ -46,4 +48,5 @@ type SubmitReq struct {
 	LegalEntityID int64  `json:"legalEntityId"` // 可选校验:≠0 时须与地址推导一致
 	RegionPath    string `json:"regionPath"`
 	BillingMode   string `json:"billingMode"` // PREPAID/POSTPAID,空回退 POSTPAID;环节4 预付费当场收款
+	BuyMonths     int    `json:"buyMonths"`   // 预缴月数,0=按月缴(环节4 收 1 个月);1~60
 }

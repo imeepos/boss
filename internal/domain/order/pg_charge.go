@@ -1,6 +1,7 @@
 package order
 
-// 环节4 合同收费:预付费当场收款(adopted note 2026-08-22-prepaid-postpaid-billing-mode)。
+// 环节4 合同收费:预付费当场收款(adopted note 2026-08-22-prepaid-postpaid-billing-mode);
+// 预缴 N 月按 N x 月费收,赠送阶梯(gift_duration_rules)命中回填 orders.gift_months。
 
 import (
 	"context"
@@ -19,14 +20,15 @@ func (s *PGStore) ChargeContract(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "chargeContract")
 }
 
-// collectPrepaid 预付费当场收款:金额=区域月费覆盖优先,否则产品基础月费(与出账同口径)。
+// collectPrepaid 预付费当场收款:预缴月数=orders.buy_months(0 视为按月缴 1 个月),
+// 金额=月数 x 月费(区域覆盖优先,与出账同口径);赠送月数回填 orders.gift_months。
 // collector 未注入或收款失败时返回错误,环节 4 不推进。
 func (s *PGStore) collectPrepaid(ctx context.Context, orderID int64) error {
 	var mode string
-	var customerID int64
+	var customerID, offerID, buyMonths int64
 	err := s.db.QueryRow(ctx,
-		`SELECT billing_mode, customer_id FROM orders WHERE id = $1`, orderID).
-		Scan(&mode, &customerID)
+		`SELECT billing_mode, customer_id, offer_id, buy_months FROM orders WHERE id = $1`, orderID).
+		Scan(&mode, &customerID, &offerID, &buyMonths)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrOrderNotFound
 	}
@@ -39,24 +41,41 @@ func (s *PGStore) collectPrepaid(ctx context.Context, orderID int64) error {
 	if s.prepaid == nil {
 		return errors.New("order: prepaid collector not wired")
 	}
-	amount, err := s.prepaidAmount(ctx, orderID)
+	months := buyMonths
+	if months < 1 {
+		months = 1
+	}
+	fee, err := s.prepaidMonthlyFee(ctx, orderID)
 	if err != nil {
 		return err
 	}
-	if err := s.prepaid.Collect(ctx, customerID, amount); err != nil {
+	gift, err := s.prepaid.Collect(ctx, customerID, fee*float64(months), offerID, int(months))
+	if err != nil {
 		return fmt.Errorf("order: prepaid collect: %w", err)
+	}
+	return s.writebackGiftMonths(ctx, orderID, gift)
+}
+
+// writebackGiftMonths 赠送月数回填快照;0 不写。
+func (s *PGStore) writebackGiftMonths(ctx context.Context, orderID int64, gift int) error {
+	if gift <= 0 {
+		return nil
+	}
+	if _, err := s.db.Exec(ctx,
+		`UPDATE orders SET gift_months = $2 WHERE id = $1`, orderID, gift); err != nil {
+		return fmt.Errorf("order: writeback gift_months: %w", err)
 	}
 	return nil
 }
 
-// prepaidAmount 预付费收款金额:区域月费覆盖(region_offers)优先,否则产品基础月费。
-func (s *PGStore) prepaidAmount(ctx context.Context, orderID int64) (float64, error) {
+// prepaidMonthlyFee 预付费月费:区域月费覆盖(region_offers)优先,否则产品基础月费。
+func (s *PGStore) prepaidMonthlyFee(ctx context.Context, orderID int64) (float64, error) {
 	var amount float64
 	err := s.db.QueryRow(ctx, `
 		SELECT COALESCE(ro.monthly_fee, po.monthly_fee)
 		FROM orders o
 		JOIN product_offers po ON po.id = o.offer_id
-		LEFT JOIN region_offers ro ON ro.offer_id = o.offer_id AND o.region_path <> '' AND ro.region_path = o.region_path
+		LEFT JOIN region_offers ro ON ro.offer_id = o.offer_id AND o.region_path <> '' AND o.region_path = o.region_path
 		WHERE o.id = $1`, orderID).Scan(&amount)
 	if err != nil {
 		return 0, fmt.Errorf("order: prepaid amount: %w", err)
