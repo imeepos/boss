@@ -10,20 +10,22 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-// expectIssueTx 桩一次成功开票事务:查重(空)→账单→占号→插入→提交。
-// 金额契约 TAX-TC1:净额 999 + VAT 12% 119.88 = 合计 1118.88,编号 INV-00000001。
+// expectIssueTx 桩一次成功开票事务:查重(空)→账单(联法人属地)→占号→插入→提交。
+// 金额契约 TAX-TC1:净额 999 + VAT 12% 119.88 = 合计 1118.88,编号 INV-00000001;
+// 属地契约(000109):法人 CN/manual 快照落票。
 func expectIssueTx(t *testing.T, mock pgxmock.PgxPoolIface, billID int64) {
 	t.Helper()
 	mock.ExpectQuery(`SELECT 1 FROM invoices`).WithArgs(billID).
 		WillReturnError(pgx.ErrNoRows)
-	mock.ExpectQuery(`SELECT id, bill_no, customer_id, customer_name, amount FROM bills`).WithArgs(billID).
-		WillReturnRows(mock.NewRows([]string{"id", "bill_no", "customer_id", "customer_name", "amount"}).
-			AddRow(billID, "BILL-202608-201", int64(1), "王先生", 999.0))
+	mock.ExpectQuery(`FROM bills b LEFT JOIN legal_entities`).WithArgs(billID).
+		WillReturnRows(mock.NewRows([]string{"id", "bill_no", "customer_id", "customer_name",
+			"amount", "tax_jurisdiction", "tax_channel"}).
+			AddRow(billID, "BILL-202608-201", int64(1), "王先生", 999.0, "CN", "manual"))
 	mock.ExpectQuery(`UPDATE arn_sequences`).WithArgs(arnDocType).
 		WillReturnRows(mock.NewRows([]string{"next_no", "prefix"}).AddRow(int64(1), "INV-"))
 	mock.ExpectQuery(`INSERT INTO invoices`).
 		WithArgs("INV-00000001", billID, "BILL-202608-201", int64(1), "王先生", "王先生",
-			999.0, VATRate, 119.88, 1118.88).
+			999.0, VATRate, 119.88, 1118.88, "CN", "manual", "PENDING").
 		WillReturnRows(mock.NewRows([]string{"id", "issued_at"}).AddRow(int64(11), time.Now()))
 }
 
@@ -49,6 +51,9 @@ func TestPGStore_IssueInvoiceForBill_TaxTC1(t *testing.T) {
 	}
 	if inv.Status != "ISSUED" || inv.Title != "王先生" {
 		t.Fatalf("inv=%+v", inv)
+	}
+	if inv.TaxJurisdiction != "CN" || inv.TaxChannel != "manual" || inv.TaxStatus != "PENDING" {
+		t.Fatalf("tax snapshot=%+v, want CN/manual/PENDING", inv)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
@@ -211,7 +216,7 @@ func TestPGStore_IssueInvoicesForPeriod(t *testing.T) {
 	// 账单2 开票失败(占号错) → 进异常清单,批次继续
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT 1 FROM invoices`).WithArgs(int64(2)).WillReturnError(pgx.ErrNoRows)
-	mock.ExpectQuery(`SELECT id, bill_no, customer_id, customer_name, amount FROM bills`).WithArgs(int64(2)).
+	mock.ExpectQuery(`FROM bills b LEFT JOIN legal_entities`).WithArgs(int64(2)).
 		WillReturnError(errors.New("db down"))
 	mock.ExpectRollback()
 

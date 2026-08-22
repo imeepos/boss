@@ -77,6 +77,8 @@
 |:---------|:-------|:------|:----------|
 | 子公司 | `Code` | code | LEG-A/LEG-B/LEG-C |
 | 子公司 | `Name` | name | — |
+| 子公司 | `TaxJurisdiction` | tax_jurisdiction | ''/CN/PH，空=未定（000109，开票属地配置源） |
+| 子公司 | `TaxChannel` | tax_channel | manual/leqi/bir_eis，空缺省归一化 manual |
 | 部门 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities |
 | 部门 | `Name` | name | 子公司内唯一 |
 | 岗位 | `Code` | code | dispatcher/cashier/agent/field_tech…（部门内唯一） |
@@ -454,7 +456,7 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | 税额 | `VatAmount` | vat_amount | = ROUND(net×rate, 2)（GEN-006） |
 | 合计 | `TotalAmount` | total_amount | = 净额 + 税额（TAX-002） |
 | 状态 | `Status` | status | ISSUED 已生成 / VOIDED 已作废（`void_reason`/`voided_at` 留痕） |
-| 税务属地 | `TaxJurisdiction` | tax_jurisdiction | CN 中国数电票 / PH 菲律宾 BIR / 空=未定（000049） |
+| 税务属地 | `TaxJurisdiction` | tax_jurisdiction | CN 中国数电票 / PH 菲律宾 BIR / 空=未定；开票时经 bills.legal_entity_id 从法人快照（000109） |
 | 税务通道 | `TaxChannel` | tax_channel | manual 人工回填 / leqi（预留）/ bir_eis（预留） |
 | 税务状态 | `TaxStatus` | tax_status | PENDING 待开具 / SUBMITTED 已提交 / ISSUED 已开具 / FAILED 失败（`tax_fail_reason` 留痕） |
 | 税局票号 | `TaxNo` | tax_no | CN 数电票 20 位 / PH BIR 回执号；回填后方为有效票据 |

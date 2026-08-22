@@ -19,6 +19,7 @@
 
 | 日期 | 决策 | 文件 |
 |---|---|---|
+| 2026-08-27 | 税务属地配置挂法人(000109):legal_entities.tax_jurisdiction/tax_channel 为配置源,开票经 bills.legal_entity_id 快照落票;区域定属地/独立配置表/手工指定被否决 | adopted/2026-08-27-tax-jurisdiction-on-legal-entity.md |
 | 2026-08-26 | 新建 promotion 营销促销域(000102):券模板/兑换/转赠/缴费抵扣核销从 userdata 独立;billing 经 CouponDeductor 注入实现同事务核销 | adopted/2026-08-26-promotion-domain.md |
 | 2026-08-26 | 最小 LOY 积分域(000104):账本+流水+积分换券;跨域兑换用补偿模式(先扣后发,失败回补),不做跨域同事务 | adopted/2026-08-26-loy-minimal.md |
 | 2026-08-17 | order_no 改 DB 序列生成 | adopted/2026-08-17-order-no-db-sequence.md |

@@ -8,7 +8,7 @@ const NL = String.fromCharCode(10);
 const METHODS = ['get', 'post', 'put', 'delete', 'patch'];
 const PORTALS = [
   { name: 'admin', prefix: '/api/admin/v1', out: 'cmd/bossctl/routes_admin.go', var: 'adminRoutes' },
-  { name: 'user', prefix: '/api/v1', out: 'cmd/bossctl/routes_user.go', var: 'userRoutes' },
+  { name: 'user', prefix: '/api/user/v1', out: 'cmd/bossctl/routes_user.go', var: 'userRoutes' },
   { name: 'worker', prefix: '/api/worker/v1', out: 'cmd/bossctl/routes_worker.go', var: 'workerRoutes' },
 ];
 
@@ -16,7 +16,7 @@ function parseFile(file) {
   const routes = [];
   let curPath = null, curMethod = null;
   for (const ln of fs.readFileSync(file, 'utf8').split(NL)) {
-    if (/^  \//.test(ln)) { curPath = ln.trim().slice(0, -1); curMethod = null; continue; }
+    if (/^  '?\//.test(ln)) { curPath = ln.trim().replace(/^'|'$/g, '').slice(0, -1); curMethod = null; continue; }
     const t = ln.trim();
     const ind = ln.length - ln.replace(/^ +/, '').length;
     if (curPath && ind === 4 && t.endsWith(':')) {
