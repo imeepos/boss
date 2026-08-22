@@ -1,26 +1,45 @@
-// 渠道对账页:契约 GET /reconciliations;差异挂起批次 POST /reconciliations/:batchNo/settle。
+// 渠道对账页:双页签——渠道对账(GET /reconciliations) + 账实核对(GET /billing/ledger-recon)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
-import { pageSlice, type ReconRow } from '../types'
+import { pageSlice, type ReconRow, type LedgerReconRow, type LedgerReconSummary } from '../types'
 import { fmtFee, fmtTime } from '../../../lib/format'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow } from '../../../components/business'
+
+const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/
+
+function currentPeriod(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
 
 export default function PayCheckPage() {
   const t = useT()
   const confirmDialog = useConfirm()
   const p = t.pages.paycheck
+  const [tab, setTab] = useState<'channel' | 'ledger'>('channel')
+
+  // 渠道对账状态
   const [rows, setRows] = useState<ReconRow[]>([])
-  const [error, setError] = useState('')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [chPage, setChPage] = useState(1)
+  const [chSize, setChSize] = useState(10)
   const [busy, setBusy] = useState(false)
 
-  const load = () => {
+  // 账实核对状态(服务端分页)
+  const [period, setPeriod] = useState(currentPeriod())
+  const [periodInput, setPeriodInput] = useState(currentPeriod())
+  const [ledgerRows, setLedgerRows] = useState<LedgerReconRow[]>([])
+  const [ledgerTotal, setLedgerTotal] = useState(0)
+  const [summary, setSummary] = useState<LedgerReconSummary | null>(null)
+  const [lgPage, setLgPage] = useState(1)
+  const [lgSize, setLgSize] = useState(20)
+  const [error, setError] = useState('')
+
+  const loadChannel = () => {
     setError('')
     setBusy(true)
     apiFetch<{ items: ReconRow[] }>('/reconciliations')
@@ -28,7 +47,32 @@ export default function PayCheckPage() {
       .catch((e) => setError(e instanceof Error ? e.message : p.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(loadChannel, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadLedger = () => {
+    if (!PERIOD_RE.test(periodInput)) {
+      setError(p.ledgerPeriodInvalid)
+      return
+    }
+    setError('')
+    setBusy(true)
+    setPeriod(periodInput)
+    apiFetch<{ items: LedgerReconRow[]; total: number; summary: LedgerReconSummary }>(
+      '/billing/ledger-recon',
+      { query: { period: periodInput, page: lgPage, pageSize: lgSize } },
+    )
+      .then((d) => {
+        setLedgerRows(d?.items ?? [])
+        setLedgerTotal(d?.total ?? 0)
+        setSummary(d?.summary ?? null)
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : p.loadFail))
+      .finally(() => setBusy(false))
+  }
+  useEffect(() => {
+    if (tab === 'ledger' && PERIOD_RE.test(period)) loadLedger()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, lgPage, lgSize])
 
   const settle = async (batchNo: string) => {
     if (busy) return
@@ -36,7 +80,7 @@ export default function PayCheckPage() {
     setBusy(true)
     try {
       await apiFetch(`/reconciliations/${encodeURIComponent(batchNo)}/settle`, { method: 'POST' })
-      load()
+      loadChannel()
     } catch (e) {
       setError(e instanceof Error ? e.message : p.actionFail)
     } finally {
@@ -44,17 +88,43 @@ export default function PayCheckPage() {
     }
   }
 
-  const slice = pageSlice(rows, page, pageSize)
+  const slice = pageSlice(rows, chPage, chSize)
+  const diffCount = summary
+    ? Object.entries(summary.byKind ?? {}).reduce((n, [k, v]) => (k === 'MATCH' ? n : n + v), 0)
+    : 0
+
+  const tabBtn = (key: 'channel' | 'ledger', label: string) => (
+    <button key={key} onClick={() => { setTab(key); setError('') }}
+      style={{
+        padding: '8px 16px', fontSize: 14, cursor: 'pointer', background: 'none', border: 'none',
+        borderBottom: tab === key ? '2px solid #1677ff' : '2px solid transparent',
+        color: tab === key ? '#1677ff' : '#666', fontWeight: tab === key ? 600 : 400,
+      }}>
+      {label}
+    </button>
+  )
 
   return (
     <div>
       <PageHead title={p.title} desc={p.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
+        <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
+          {tabBtn('channel', p.tabChannel)}
+          {tabBtn('ledger', p.tabLedger)}
+          {tab === 'ledger' && (
+            <>
+              <input className="ml-2 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" style={{ width: 160 }} placeholder={p.ledgerPeriod}
+                value={periodInput} onChange={(e) => setPeriodInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { setLgPage(1); loadLedger() } }} />
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => { setLgPage(1); loadLedger() }}>{p.ledgerQuery}</button>
+            </>
+          )}
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy}
+            onClick={() => (tab === 'channel' ? loadChannel() : loadLedger())}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
+          : tab === 'channel' ? (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{p.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
@@ -80,10 +150,49 @@ export default function PayCheckPage() {
               </tbody>
             </table>
           </div>
+        ) : (
+          <>
+            {summary && (
+              <div className="flex flex-wrap items-center gap-4 px-4 pb-3 text-[13px] text-[var(--shell-content-text)]">
+                <span>{p.ledgerBillsTotal}: <b className="text-[var(--shell-heading)]">{fmtFee(summary.billsTotal)}</b></span>
+                <span>{p.ledgerPaidTotal}: <b className="text-[var(--shell-heading)]">{fmtFee(summary.paidTotal)}</b></span>
+                <span>{p.ledgerInvoiceTotal}: <b className="text-[var(--shell-heading)]">{fmtFee(summary.invoiceTotal)}</b></span>
+                <span className={diffCount > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}>
+                  {p.ledgerDiffCount.replace('{count}', String(diffCount))}
+                </span>
+              </div>
+            )}
+            <div className="overflow-x-auto px-4 pb-4">
+              <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+                <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{p.ledgerColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
+                <tbody>
+                  {ledgerRows.map((r) => (
+                    <tr key={r.billId}>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.billNo}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.customerName}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.legalEntityName}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.billAmount)}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.paidAmount)}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.invoiceAmount)}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="ledgerRecon" value={r.diffKind} /></td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.invoiceNo || '—'}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.taxStatus || '—'}</td>
+                    </tr>
+                  ))}
+                  {!ledgerRows.length && <TableStateRow colSpan={9} loading={busy} text={p.empty} />}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
-          <Pagination total={rows.length} page={page} pageSize={pageSize}
-            onPage={setPage} onSize={setPageSize} {...pagerTexts(p)} />
+          {tab === 'channel' ? (
+            <Pagination total={rows.length} page={chPage} pageSize={chSize}
+              onPage={setChPage} onSize={setChSize} {...pagerTexts(p)} />
+          ) : (
+            <Pagination total={ledgerTotal} page={lgPage} pageSize={lgSize}
+              onPage={setLgPage} onSize={setLgSize} {...pagerTexts(p)} />
+          )}
         </div>
       </div>
     </div>
