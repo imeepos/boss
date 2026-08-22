@@ -9,6 +9,7 @@ import (
 
 // registerAaaRoutes 注册认证计费域路由(承接 oss.yaml listLoAccounts + aaa.yaml listAaaLogs)。
 func registerAaaRoutes(g *gin.RouterGroup, a *app.Application) {
+	g.GET("/aaa/summary", requirePerm(a.User, "menu:aaadashboard"), aaaSummaryHandler(a))
 	g.GET("/lo-accounts", requirePerm(a.User, "menu:loaccount"), func(c *gin.Context) {
 		list, err := a.Aaa.ListLoAccounts(c.Request.Context())
 		if err != nil {

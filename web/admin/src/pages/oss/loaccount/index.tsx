@@ -4,6 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
+import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type LoAccountRow } from '../types'
 import { TableStateRow } from '../../../components/business'
@@ -14,6 +15,7 @@ export default function LoAccountPage() {
   const [rows, setRows] = useState<LoAccountRow[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
+  const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
@@ -32,9 +34,10 @@ export default function LoAccountPage() {
 
   const filtered = useMemo(() => {
     const k = keyword.trim().toLowerCase()
-    if (!k) return rows
-    return rows.filter((r) => r.loid.toLowerCase().includes(k))
-  }, [rows, keyword])
+    const matchesKeyword = (r: LoAccountRow) => !k || r.loid.toLowerCase().includes(k)
+    const matchesStatus = (r: LoAccountRow) => !status || r.status === status
+    return rows.filter((r) => matchesKeyword(r) && matchesStatus(r))
+  }, [rows, keyword, status])
   const slice = pageSlice(filtered, page, pageSize)
 
   return (
@@ -44,6 +47,17 @@ export default function LoAccountPage() {
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={l.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
+          <Dropdown
+            value={status}
+            options={[
+              { value: '', label: l.allStatus },
+              { value: 'ACTIVE', label: l.active },
+              { value: 'SUSPENDED', label: l.suspended },
+              { value: 'CLOSED', label: l.closed },
+            ]}
+            onChange={(value) => { setStatus(value); setPage(1) }}
+            ariaLabel={l.allStatus}
+          />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>

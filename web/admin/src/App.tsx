@@ -63,6 +63,7 @@ const QuadLinkPage = lazy(() => import('./pages/quad/quadlink'))
 const QuadCheckPage = lazy(() => import('./pages/quad/check'))
 const ScanLogPage = lazy(() => import('./pages/quad/scanlog'))
 const AlarmPage = lazy(() => import('./pages/alarm'))
+const AaaDashboardPage = lazy(() => import('./pages/aaa-dashboard'))
 const AaaLogPage = lazy(() => import('./pages/aaalog'))
 const ProvisionTaskPage = lazy(() => import('./pages/provision/provision'))
 const TemplatePage = lazy(() => import('./pages/provision/template'))
@@ -154,6 +155,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'check') return <QuadCheckPage />
   if (pageKey === 'scanlog') return <ScanLogPage />
   if (pageKey === 'alarm') return <AlarmPage />
+  if (pageKey === 'aaadashboard') return <AaaDashboardPage />
   if (pageKey === 'aaalog') return <AaaLogPage />
   if (pageKey === 'provision') return <ProvisionTaskPage />
   if (pageKey === 'template') return <TemplatePage />

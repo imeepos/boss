@@ -1,4 +1,12 @@
 paths:
+  /aaa/summary:
+    get:
+      tags: [Aaa]
+      summary: AAA 运行总览(真实 LO 账号、话单、认证日志聚合)
+      operationId: getAaaSummary
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
   /cdrs:
     get:
       tags: [Aaa]

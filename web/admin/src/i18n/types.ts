@@ -777,10 +777,37 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    aaaDashboard: {
+      title: string
+      desc: string
+      refresh: string
+      refreshing: string
+      updatedAt: string
+      accounts: string
+      accountsHint: string
+      active: string
+      activeHint: string
+      suspended: string
+      suspendedHint: string
+      cdrs: string
+      cdrsHint: string
+      unbilled: string
+      unbilledHint: string
+      authRate: string
+      authRateHint: string
+      statusTitle: string
+      success: string
+      failed: string
+      loadFail: string
+    }
     loAccountPage: {
       title: string
       desc: string
       searchPlaceholder: string
+      allStatus: string
+      active: string
+      suspended: string
+      closed: string
       columns: string[]
       total: string
       empty: string

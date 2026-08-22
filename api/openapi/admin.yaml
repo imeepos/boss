@@ -320,6 +320,7 @@ paths:
   /alarms/batch-retest: { $ref: './admin/alarm.yaml#/paths/~1alarms~1batch-retest' }
 
   # ---------- Aaa ----------
+  /aaa/summary: { $ref: './admin/aaa.yaml#/paths/~1aaa~1summary' }
   /cdrs: { $ref: './admin/aaa.yaml#/paths/~1cdrs' }
   /auth-logs: { $ref: './admin/aaa.yaml#/paths/~1auth-logs' }
 

@@ -94,6 +94,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'alarm', label: '告警列表', path: '/alarm/alarm' },
   ]},
   { id: 'aaa', label: '认证计费', items: [
+    { key: 'aaadashboard', label: 'AAA 运行总览', path: '/aaa/dashboard' },
     { key: 'aaalog', label: '话单与认证日志', path: '/aaa/aaalog' },
   ]},
   { id: 'partner', label: '企业工作台', items: [

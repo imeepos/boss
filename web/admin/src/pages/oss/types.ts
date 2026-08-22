@@ -92,6 +92,7 @@ export interface LoAccountRow {
   offerId: number
   qosTemplateId: number
   status: string // ACTIVE/SUSPENDED/CLOSED
+  billingMode?: string // PREPAID/POSTPAID
 }
 
 export interface LegalEntityRow { id: number; name: string }
