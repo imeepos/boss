@@ -1,5 +1,6 @@
 {{- $comp := dict
   "server" (dict "cmd" "server" "probes" true "svc" true)
+  "aaa" (dict "cmd" "aaa" "probes" false "svc" true)
   "collector" (dict "cmd" "collector" "probes" false "svc" false)
   "provisioner" (dict "cmd" "provisioner" "probes" false "svc" false)
   "gis" (dict "cmd" "gis" "probes" false "svc" false)
@@ -63,26 +64,46 @@ spec:
             {{- toYaml $.Values.worker.resources | nindent 12 }}
             {{- end }}
           ports:
+            {{- if eq $name "aaa" }}
+            - name: radius-auth
+              containerPort: 1812
+              protocol: UDP
+            - name: radius-acct
+              containerPort: 1813
+              protocol: UDP
+            {{- else }}
             - name: http
               containerPort: {{ $.Values.server.httpPort }}
             - name: grpc
               containerPort: {{ $.Values.server.grpcPort }}
+            {{- end }}
 ---
 {{- if $c.svc }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: boss-server
-  labels: { app: boss, component: server }
+  name: boss-{{ $name }}
+  labels: { app: boss, component: "{{ $name }}" }
 spec:
-  selector: { app: boss, component: server }
+  selector: { app: boss, component: "{{ $name }}" }
   ports:
+    {{- if eq $name "aaa" }}
+    - name: radius-auth
+      protocol: UDP
+      port: 1812
+      targetPort: radius-auth
+    - name: radius-acct
+      protocol: UDP
+      port: 1813
+      targetPort: radius-acct
+    {{- else }}
     - name: http
       port: {{ $.Values.server.httpPort }}
       targetPort: http
     - name: grpc
       port: {{ $.Values.server.grpcPort }}
       targetPort: grpc
+    {{- end }}
 ---
 {{- end }}
 {{- end }}

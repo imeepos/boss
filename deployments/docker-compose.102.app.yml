@@ -33,6 +33,22 @@ services:
       timeout: 3s
       retries: 5
 
+  aaa:
+    image: 192.168.0.102:5000/boss/server:latest
+    container_name: boss-aaa
+    entrypoint: ["boss-aaa"]
+    restart: unless-stopped
+    ports:
+      - "1812:1812/udp" # RADIUS Authentication
+      - "1813:1813/udp" # RADIUS Accounting
+    environment:
+      BOSS_PG_DSN: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
+      BOSS_KAFKA_BROKERS: "192.168.0.102:29092"
+      BOSS_AAA_AUTH_ADDR: ":1812"
+      BOSS_AAA_ACCT_ADDR: ":1813"
+      BOSS_AAA_SECRET: "boss-aaa-secret"
+      BOSS_AAA_CDR_TOPIC: "boss-cdr"
+
   report:
     image: 192.168.0.102:5000/boss/server:latest
     container_name: boss-report
