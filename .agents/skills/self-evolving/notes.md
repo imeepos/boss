@@ -295,3 +295,9 @@
 - 哪个坑浪费最多时间:CDP 冒烟三次误判"步骤跳转失败"——两次是我自造的信用码不足 18 位、一次漏填第2步必填联系人,校验全部在正确拦截;另发现 cdp-capture 每次运行全新 profile,localStorage 跨运行不共享。
 - skill 有没有提前警告我:React 原生 setter 填表(坑 79)有预警,直接复用一次通过;profile 不共享无记录。
 - 重来一次:冒烟数据先按校验规则自检(长度/格式逐项数一遍);需要 localStorage 状态的断言全部放同一次调用的多 --eval 里完成。
+
+## 2026-08-2x 组织架构与人员页(/org/staff 前后端)
+
+- 哪个坑浪费最多时间:push origin 不存在(remote 叫 gitea)与 102 口令漂移(Boss-admin-2026 → 实测 admin123)各废一轮;其余顺利——先读 skill 知识库再动手,复用 AccountForm/DeptForm/PostForm/ConfirmDialog 零返工。
+- skill 有没有提前警告我:大部分有(级联下拉/禁 select/门禁流程/CDP 验证);remote 名与 102 实际口令两处事实漂移无记录,已修 docs/boss-admin-web.md。
+- 重来一次:push 前先 `git remote -v`;连 102 先用 devseed 口令 admin123 试,40100 再翻 app.env。

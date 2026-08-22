@@ -83,3 +83,4 @@
 - 102 冒烟数据(勿清理也勿复用):legal_entity 7 "Smoke Partner Co"(信用码 SMOKE123456),账号 pt_KE123456(口令见会话记录)/pt_smoke_staff1;申请 1=已通过,2=已驳回,3=已通过(CDPVERIFY9)
 - 102 admin 口令实为 admin/admin123(compose environment BOSS_ADMIN_PASSWORD 权威;deployments/app.env 的 Boss-admin-2026 已过时)
 - admin-web 前端部署在 http://192.168.0.102:5180(nginx 同源代理 /api/);CI deploy-102 的 compose 常把容器留在 Created,需 ssh 上去 docker start
+- git remote 名是 `gitea`(ssh://git@192.168.0.102:222/sker/boss.git),没有 origin;push gitea main 触发 CI(后端 28080 与前端 5180 一起出新构建)
