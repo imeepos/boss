@@ -212,6 +212,7 @@ const msMY: Translations = {
       ctaBannerTitle: 'Bina Tindanan Operasi Telekom yang Cekap, Pintar dan Tangkas',
       ctaBannerSubtitle: 'Mulakan perjalanan Sphere Boss anda hari ini dan bentuk masa depan operasi digital',
       viewDetail: 'Lihat butiran',
+      footerTagline: 'Platform pengurusan operasi telekom generasi baharu',
       footerCopyright: '© 2024 Sphere Boss. Hak cipta terpelihara.',
     },
     dashboard: {

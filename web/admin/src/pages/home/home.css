@@ -1,0 +1,56 @@
+/* 官网首页页面级令牌:亮/暗双主题,sections.tsx 与 HeroConsoleMock 引用。 */
+/* 令牌均在此定义,tailwind 类里禁止再写裸色值。 */
+
+:root[data-theme='light'] {
+  --home-hero-from: #E8F0FA;
+  --home-hero-via: #F0F4FA;
+  --home-hero-to: #F4F5F7;
+  --home-hero-subtitle: #4E5664;
+  --home-hero-badge-bg: rgba(255, 255, 255, 0.55);
+  --home-hero-badge-border: rgba(213, 166, 58, 0.4);
+  --home-section-alt: #F8FAFC;
+  --home-icon-bg: #F4F7FB;
+  --home-icon-fg: #31568F;
+  --home-case-bg: #E7F5EE;
+  --home-case-fg: #2F8F63;
+  --home-mock-bg: #FFFFFF;
+  --home-mock-border: rgba(15, 30, 59, 0.08);
+  --home-mock-panel: #F4F6FA;
+  --home-mock-panel-2: #E9EEF6;
+  --home-mock-bar: #31568F;
+  --home-mock-bar-accent: #D5A63A;
+  --home-mock-line: #31568F;
+  --home-mock-grid: rgba(15, 30, 59, 0.06);
+  --home-stats-glow: rgba(213, 166, 58, 0.1);
+  --home-cta-glow: rgba(213, 166, 58, 0.12);
+  --home-mock-dot-r: #E06C5A;
+  --home-mock-dot-y: #E3B341;
+  --home-mock-dot-g: #58B368;
+}
+
+:root[data-theme='dark'] {
+  --home-hero-from: #0E1D38;
+  --home-hero-via: #0B1729;
+  --home-hero-to: #0A1528;
+  --home-hero-subtitle: #A6B1C3;
+  --home-hero-badge-bg: rgba(255, 255, 255, 0.05);
+  --home-hero-badge-border: rgba(213, 166, 58, 0.35);
+  --home-section-alt: #0C1930;
+  --home-icon-bg: rgba(49, 86, 143, 0.2);
+  --home-icon-fg: #8FB3E3;
+  --home-case-bg: rgba(47, 143, 99, 0.16);
+  --home-case-fg: #5BB98B;
+  --home-mock-bg: #10203F;
+  --home-mock-border: rgba(255, 255, 255, 0.08);
+  --home-mock-panel: #0D1B33;
+  --home-mock-panel-2: #16294B;
+  --home-mock-bar: #31568F;
+  --home-mock-bar-accent: #D5A63A;
+  --home-mock-line: #D5A63A;
+  --home-mock-grid: rgba(255, 255, 255, 0.06);
+  --home-stats-glow: rgba(213, 166, 58, 0.08);
+  --home-cta-glow: rgba(213, 166, 58, 0.1);
+  --home-mock-dot-r: #E06C5A;
+  --home-mock-dot-y: #E3B341;
+  --home-mock-dot-g: #58B368;
+}
