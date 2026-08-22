@@ -9,20 +9,20 @@ import { HeroConsoleMock } from './HeroConsoleMock'
 import { CrownIcon, ThemeIcon } from './icons'
 import { localeOptions } from '../../i18n'
 
-// ----- 样式 token -----
+// ----- 样式 token(字体层级对齐 MiniMax 官网:大标题/紧凑字距/大留白) -----
 export const NAV_LINK = 'text-sm text-[var(--shell-nav-text)] transition-colors hover:text-white'
-const STAT_VALUE = 'text-4xl font-bold leading-none text-[var(--color-brand-gold-500)]'
-const STAT_LABEL = 'mt-2 text-xs text-[var(--shell-nav-text)]'
-const CARD = 'rounded-xl border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6 shadow-[var(--shell-card-shadow)] transition-all hover:-translate-y-0.5 hover:border-[var(--home-hero-badge-border)] hover:shadow-lg'
-const CARD_TITLE = 'text-base font-semibold text-[var(--shell-heading)]'
-const CARD_DESC = 'mt-2 text-xs leading-5 text-[var(--shell-content-text)]'
-const ICON_BOX = 'flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-[var(--home-icon-bg)] text-[var(--home-icon-fg)]'
-const ICON_BOX_CASE = 'flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[var(--home-case-bg)] text-[var(--home-case-fg)]'
-const BTN_GOLD = 'rounded-md bg-[var(--color-brand-gold-500)] px-5 py-2.5 text-sm font-semibold text-[var(--color-brand-navy-950)] transition-colors hover:bg-[var(--color-brand-gold-600)]'
-const BTN_GOLD_LG = 'rounded-md bg-[var(--color-brand-gold-500)] px-7 py-3 text-sm font-semibold text-[var(--color-brand-navy-950)] transition-colors hover:bg-[var(--color-brand-gold-600)]'
-const BTN_GHOST = 'inline-flex items-center rounded-md border border-[var(--home-mock-border)] bg-[var(--color-brand-navy-950)] px-5 py-2.5 text-sm text-white transition-colors hover:border-white/40 hover:bg-white/5'
-const SECTION_TITLE = 'text-center text-[28px] font-bold text-[var(--shell-heading)]'
-const SECTION_SUB = 'mt-2 text-center text-sm text-[var(--shell-content-text)]'
+const STAT_VALUE = 'font-brand text-5xl font-bold leading-none tracking-tight text-[var(--color-brand-gold-500)]'
+const STAT_LABEL = 'mt-2 text-sm text-[var(--shell-nav-text)]'
+const CARD = 'rounded-xl border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-8 shadow-[var(--shell-card-shadow)] transition-all hover:-translate-y-1 hover:border-[var(--home-hero-badge-border)] hover:shadow-lg'
+const CARD_TITLE = 'font-brand text-lg font-semibold tracking-tight text-[var(--shell-heading)]'
+const CARD_DESC = 'mt-3 text-sm leading-6 text-[var(--shell-content-text)]'
+const ICON_BOX = 'flex h-12 w-12 flex-none items-center justify-center rounded-lg bg-[var(--home-icon-bg)] text-[var(--home-icon-fg)]'
+const ICON_BOX_CASE = 'flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[var(--home-case-bg)] text-[var(--home-case-fg)]'
+const BTN_GOLD = 'rounded-md bg-[var(--color-brand-gold-500)] px-6 py-3 text-sm font-semibold text-[var(--color-brand-navy-950)] transition-colors hover:bg-[var(--color-brand-gold-600)]'
+const BTN_GOLD_LG = 'rounded-md bg-[var(--color-brand-gold-500)] px-8 py-3.5 text-base font-semibold text-[var(--color-brand-navy-950)] transition-colors hover:bg-[var(--color-brand-gold-600)]'
+const BTN_GHOST = 'inline-flex items-center rounded-md border border-[var(--home-mock-border)] bg-[var(--color-brand-navy-950)] px-6 py-3 text-sm text-white transition-colors hover:border-white/40 hover:bg-white/5'
+const SECTION_TITLE = 'font-brand text-center text-4xl font-bold tracking-tight text-[var(--shell-heading)]'
+const SECTION_SUB = 'mt-3 text-center text-base text-[var(--shell-content-text)]'
 
 export function TopNav({
   locale, setLocale, theme, toggleTheme, ctaLabel, onCtaClick, t, shellT,
@@ -83,18 +83,18 @@ export function Hero({
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[var(--home-hero-from)] via-[var(--home-hero-via)] to-[var(--home-hero-to)]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--home-hero-badge-border)] to-transparent" />
-      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-[1.15fr_1fr] md:py-24">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-[1.15fr_1fr] md:py-28">
         <div className="relative z-10">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--home-hero-badge-border)] bg-[var(--home-hero-badge-bg)] px-3 py-1 text-xs font-medium text-[var(--color-brand-gold-600)] dark:text-[var(--color-brand-gold-500)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--home-hero-badge-border)] bg-[var(--home-hero-badge-bg)] px-3.5 py-1.5 text-xs font-medium tracking-wide text-[var(--color-brand-gold-600)] dark:text-[var(--color-brand-gold-500)]">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand-gold-500)]" />
             {t.heroBadge}
           </span>
-          <h1 className="mt-5 text-[36px] font-bold leading-[1.2] text-[var(--color-brand-navy-950)] dark:text-[var(--shell-heading)] md:text-[44px]">
+          <h1 className="font-brand mt-6 text-[38px] font-bold leading-[1.15] tracking-tight text-[var(--color-brand-navy-950)] dark:text-[var(--shell-heading)] md:text-[56px]">
             <span className="block">{t.heroTitle}</span>
-            <span className="mt-2 block bg-gradient-to-r from-[var(--color-brand-gold-500)] to-[var(--color-brand-gold-600)] bg-clip-text text-transparent">{t.heroLine2}</span>
+            <span className="mt-3 block bg-gradient-to-r from-[var(--color-brand-gold-500)] to-[var(--color-brand-gold-600)] bg-clip-text text-transparent">{t.heroLine2}</span>
           </h1>
-          <p className="mt-5 max-w-md text-sm leading-6 text-[var(--home-hero-subtitle)]">{t.heroSubtitle}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <p className="mt-6 max-w-lg text-base leading-7 text-[var(--home-hero-subtitle)]">{t.heroSubtitle}</p>
+          <div className="mt-10 flex flex-wrap gap-3">
             <button type="button" className={BTN_GOLD} onClick={onCtaClick}>{t.bookDemo}</button>
             <a href="#features" className={BTN_GHOST}>{t.learnMore}</a>
           </div>
@@ -118,10 +118,10 @@ export function About({
   return (
     <section className="relative overflow-hidden border-y border-white/5 bg-[var(--color-brand-navy-950)]">
       <div className="pointer-events-none absolute left-1/2 top-0 h-40 w-[36rem] -translate-x-1/2 rounded-full bg-[var(--home-stats-glow)] blur-3xl" />
-      <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-[1.3fr_1fr] lg:items-center">
+      <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-20 lg:grid-cols-[1.3fr_1fr] lg:items-center">
         <div>
-          <h2 className="text-2xl font-bold text-white">{title}</h2>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--shell-nav-text)]">{desc}</p>
+          <h2 className="font-brand text-3xl font-bold tracking-tight text-white">{title}</h2>
+          <p className="mt-5 max-w-xl text-base leading-8 text-[var(--shell-nav-text)]">{desc}</p>
         </div>
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 lg:grid-cols-1 lg:gap-6">
           {stats.map((s) => (
@@ -145,10 +145,10 @@ export function Features({
   viewDetail: string
 }) {
   return (
-    <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20">
+    <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24">
       <h2 className={SECTION_TITLE}>{title}</h2>
       <p className={SECTION_SUB}>{subtitle}</p>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f) => (
           <div key={f.icon} className={CARD}>
             <div className="flex items-start gap-4">
@@ -183,10 +183,10 @@ export function Cases({
 }) {
   return (
     <section id="solutions" className="bg-gradient-to-b from-transparent to-[var(--home-section-alt)]">
-      <div className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-20">
+      <div className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-24">
         <h2 className={SECTION_TITLE}>{title}</h2>
         <p className={SECTION_SUB}>{subtitle}</p>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {cases.map((c) => (
             <div key={c.icon} className={CARD}>
               <div className="flex items-start gap-4">
@@ -227,14 +227,14 @@ export function CtaBanner({
 }) {
   return (
     <section id="contact" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-20">
-      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[var(--color-brand-navy-950)] px-6 py-10 md:px-10">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[var(--color-brand-navy-950)] px-6 py-12 md:px-12">
         <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-[var(--home-cta-glow)] blur-3xl" />
         <div className="relative flex flex-col items-center gap-6 md:flex-row md:justify-between md:gap-8">
           <div className="flex items-center gap-5">
             <span className="flex-none"><CrownIcon size={56} /></span>
             <div>
-              <h2 className="text-xl font-bold text-white">{title}</h2>
-              <p className="mt-1 text-sm text-[var(--shell-nav-text)]">{subtitle}</p>
+              <h2 className="font-brand text-2xl font-bold tracking-tight text-white">{title}</h2>
+              <p className="mt-2 text-sm text-[var(--shell-nav-text)]">{subtitle}</p>
             </div>
           </div>
           <button type="button" className={BTN_GOLD_LG} onClick={onClick}>{buttonLabel}</button>
