@@ -15,6 +15,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
@@ -60,6 +61,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrRegistrationNotFound),
 		errors.Is(err, worker.ErrRealNameNotFound),
 		errors.Is(err, userdata.ErrNotFound),
+		errors.Is(err, partner.ErrApplicationNotFound),
+		errors.Is(err, partner.ErrStaffNotFound),
 		errors.Is(err, portal.ErrNotFound),
 		errors.Is(err, backup.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
@@ -85,6 +88,10 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, billing.ErrIllegalInvoiceTransition),
 		errors.Is(err, billing.ErrInvoiceNotTaxable),
 		errors.Is(err, customer.ErrRegistrationConflict),
+		errors.Is(err, partner.ErrApplicationConflict),
+		errors.Is(err, partner.ErrNotPartner),
+		errors.Is(err, partner.ErrStaffScope),
+		errors.Is(err, partner.ErrApplicationDuplicate),
 		errors.Is(err, customer.ErrRealNameConflict),
 		errors.Is(err, worker.ErrRegistrationConflict),
 		errors.Is(err, worker.ErrRealNameConflict),
