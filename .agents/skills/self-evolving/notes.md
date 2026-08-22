@@ -255,5 +255,5 @@
 
 ## 2026-08-21 修复经营区域页 /regions 404
 - 最大坑:registerRegionRoutes 从 org.go 拆出后漏在 registerAdminDomainRoutes 挂载,handler/路由文件都在、单测全绿(因为没测路由装配),线上恒 404。拆分路由文件时"定义-挂载"两步分离是静默失败点,回归测试必须走完整 Register 装配。
-- skill 提前预警了吗:boss-admin-web.md 口令段落已纠正过 admin/admin123,本次会话首轮摘要仍引用了旧仓库地址段的过期说法(Boss-admin-2026)导致首次 curl 401——摘要前应再核对 skill 文档最新版本。
+- skill 提前预警了吗:boss-admin-web.md 口令段落已纠正过 admin/admin123,本次会话首轮摘要仍引用了过期口令说法导致首次 curl 401——摘要前应再核对 skill 文档最新版本。
 - 重来一次:定位 404 时第一时间 grep "路由函数名" 的调用点(不只是定义),拆分类 bug 5 分钟可定位。
