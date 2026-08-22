@@ -38,6 +38,7 @@ func (f *fakePromo) Issue(context.Context, int64, []int64) (int, error) {
 func (f *fakePromo) IssueToCustomer(context.Context, int64, int64, string) (string, error) {
 	return "CPN-x", nil
 }
+func (f *fakePromo) PointsPrice(context.Context, int64) (int64, error) { return 0, nil }
 func (f *fakePromo) CreateCodes(_ context.Context, _ int64, n int) ([]promotion.CouponCode, error) {
 	return f.codes[:n], nil
 }

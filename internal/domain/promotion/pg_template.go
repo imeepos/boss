@@ -12,7 +12,7 @@ import (
 const templateCols = `template_id, legal_entity_id, name, type, face_value, threshold,
 	COALESCE(max_discount,0), scope_type, COALESCE(scope_ref,0), total_qty, issued_qty,
 	per_customer_limit, COALESCE(valid_days,0), COALESCE(to_char(valid_from,'YYYY-MM-DD"T"HH24:MI:SSOF'),''),
-	COALESCE(to_char(valid_to,'YYYY-MM-DD"T"HH24:MI:SSOF'),''), status`
+	COALESCE(to_char(valid_to,'YYYY-MM-DD"T"HH24:MI:SSOF'),''), status, points_price`
 
 // ListTemplates 模板列表(含禁用)。
 func (s *PGStore) ListTemplates(ctx context.Context) ([]Template, error) {
@@ -36,7 +36,7 @@ func scanTemplate(row pgx.Row) (*Template, error) {
 	var t Template
 	if err := row.Scan(&t.TemplateID, &t.LegalEntityID, &t.Name, &t.Type, &t.FaceValue,
 		&t.Threshold, &t.MaxDiscount, &t.ScopeType, &t.ScopeRef, &t.TotalQty, &t.IssuedQty,
-		&t.PerCustomerLimit, &t.ValidDays, &t.ValidFrom, &t.ValidTo, &t.Status); err != nil {
+		&t.PerCustomerLimit, &t.ValidDays, &t.ValidFrom, &t.ValidTo, &t.Status, &t.PointsPrice); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -52,13 +52,13 @@ func (s *PGStore) CreateTemplate(ctx context.Context, t Template) (int64, error)
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO coupon_templates(legal_entity_id, name, type, face_value, threshold,
 			max_discount, scope_type, scope_ref, total_qty, per_customer_limit,
-			valid_days, valid_from, valid_to, status)
+			valid_days, valid_from, valid_to, status, points_price)
 		VALUES($1,$2,$3,$4,$5,NULLIF($6,0),$7,NULLIF($8,0),$9,$10,NULLIF($11,0),
-			NULLIF($12,'')::timestamptz,NULLIF($13,'')::timestamptz,'ENABLED')
+			NULLIF($12,'')::timestamptz,NULLIF($13,'')::timestamptz,'ENABLED',$14)
 		RETURNING template_id`,
 		t.LegalEntityID, t.Name, t.Type, t.FaceValue, t.Threshold, t.MaxDiscount,
 		t.ScopeType, t.ScopeRef, t.TotalQty, t.PerCustomerLimit,
-		t.ValidDays, t.ValidFrom, t.ValidTo).Scan(&id)
+		t.ValidDays, t.ValidFrom, t.ValidTo, t.PointsPrice).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("promotion: create template: %w", err)
 	}
@@ -230,4 +230,18 @@ func (s *PGStore) ListCodes(ctx context.Context, templateID int64) ([]CouponCode
 		out = append(out, cc)
 	}
 	return out, rows.Err()
+}
+
+// PointsPrice 模板积分兑换价(0=不可积分兑换)。
+func (s *PGStore) PointsPrice(ctx context.Context, templateID int64) (int64, error) {
+	var price int64
+	err := s.db.QueryRow(ctx,
+		`SELECT points_price FROM coupon_templates WHERE template_id=$1`, templateID).Scan(&price)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNotFound
+		}
+		return 0, fmt.Errorf("promotion: points price: %w", err)
+	}
+	return price, nil
 }

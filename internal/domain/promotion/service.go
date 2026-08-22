@@ -16,6 +16,7 @@ const (
 	SourceRedeem   = "REDEEM"
 	SourceGift     = "GIFT"
 	SourceInvite   = "INVITE"
+	SourceLoyalty  = "LOYALTY"
 )
 
 // ErrNotFound 目标记录未命中。
@@ -55,6 +56,7 @@ type Template struct {
 	ValidTo          string `json:"validTo"`   // RFC3339,可空
 	Status           string `json:"status"`    // DRAFT/ENABLED/DISABLED
 	IssuedQty        int64  `json:"issuedQty"`
+	PointsPrice      int64  `json:"pointsPrice"` // 积分兑换价,0=不可积分兑换(000104)
 }
 
 // Coupon 券实例(客户视角)。
@@ -92,6 +94,8 @@ type Service interface {
 	Issue(ctx context.Context, templateID int64, customerIDs []int64) (int, error)
 	// IssueToCustomer 向单客户按模板发一张券(带来源:邀请奖励/积分兑换),返回券号。
 	IssueToCustomer(ctx context.Context, templateID, customerID int64, source string) (string, error)
+	// PointsPrice 模板积分兑换价(0=不可积分兑换);模板不存在返回 ErrNotFound。
+	PointsPrice(ctx context.Context, templateID int64) (int64, error)
 	// CreateCodes 按模板生成兑换码批次。
 	CreateCodes(ctx context.Context, templateID int64, count int) ([]CouponCode, error)
 	ListCodes(ctx context.Context, templateID int64) ([]CouponCode, error)

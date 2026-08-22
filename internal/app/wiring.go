@@ -13,6 +13,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/report"
@@ -46,6 +47,11 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	promo := promotion.NewPGStore(pool)
 	// 券抵扣与缴费同事务:billing 定义注入点,promotion 提供实现(跨域禁实现依赖)。
 	bill.SetCouponDeductor(promo.DeductForPayment)
+	// 积分换券:LOY 持账本,PROMO 出券;价查/发券经函数注入(补偿模式,见 adopted note)。
+	points := loy.NewPGStore(pool, promo.PointsPrice,
+		func(ctx context.Context, tpl, cid int64) (string, error) {
+			return promo.IssueToCustomer(ctx, tpl, cid, promotion.SourceLoyalty)
+		})
 	res := resource.NewPGStore(pool)
 	qlStore := quadlink.NewPGStore(pool)
 	dev := device.NewPGStore(pool)
@@ -87,6 +93,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		RealName:       cust,
 		UserData:       udcustomer.NewPGStore(pool),
 		Promotion:      promo,
+		Points:         points,
 		Portal:         portalSvc,
 
 		CustomerOnboarding: cust,

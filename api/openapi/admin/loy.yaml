@@ -1,0 +1,50 @@
+# 积分域管理端点(最小 LOY,000104):余额/流水 + 手动调整。
+
+paths:
+  /points/{customerId}:
+    get:
+      summary: 客户积分余额与流水(近 100 条)
+      tags: [Loyalty]
+      parameters: [{ name: customerId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      responses:
+        '200':
+          description: 余额与流水
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      balance: { type: integer, format: int64 }
+                      entries:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            entryId: { type: integer, format: int64 }
+                            delta: { type: integer, format: int64 }
+                            balanceAfter: { type: integer, format: int64 }
+                            reason: { type: string, enum: [ADMIN_ADJUST, EXCHANGE, EXCHANGE_REVERSAL] }
+                            refId: { type: integer, format: int64 }
+                            createdAt: { type: string }
+  /points/{customerId}/adjust:
+    post:
+      summary: 手动调整积分(delta 正充负扣,不得扣成负数)
+      tags: [Loyalty]
+      parameters: [{ name: customerId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [delta]
+              properties:
+                delta: { type: integer, format: int64, not: { const: 0 } }
+                reason: { type: string }
+      responses:
+        '200':
+          description: 调整后余额
