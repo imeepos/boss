@@ -230,3 +230,14 @@
 - JPush 5.7.0 AAR 的 manifest 自带 ${JPUSH_APPKEY}/${JPUSH_CHANNEL} 占位符,app 侧只要 manifestPlaceholders,自己写 meta-data 反而 merge 冲突。
 - write 工具对刚被 git clean 掉的路径报 "file no longer exists":改用 bash heredoc 落盘。
 - JAVA:JDK17 在 /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home;worktree 需手动拷 local.properties。
+
+## 2026-08-25 user/worker 域 handler 函数体拆分(worktree 会话)
+
+- 任务:重构 internal/httpapi/{user,worker} 共 11 个文件;按"超 60 行函数"拆 + 注册函数收敛为扁平表;零行为变更。
+- 用户清单里的"111x3/107x3/75x2"是函数总行数,不是单函数 >60 — 实际最长单 handler 49 行;按"handler 函数聚合视图 + helper 提取"思路统一拆到 30 行内。
+- 关键技巧:
+  - 同包新建 `*_handlers.go`,原文件留路由表 + 共享类型/视图辅助,跨文件共享无需 export。
+  - 错误短路 + gin.H{} 的 helper 用 `(result, ok)` 双返回值;helper 失败已 respondErr,handler 一句 `if !ok { return }` 续写。
+  - type alias 兜底:返回 `billing.Invoice` 实类型,绝不引入接口抽象(初版用 `invoiceLike` 接口反而破坏调用点)。
+- 禁改动 git 写操作(任务硬规则)+ 共享工作区并行会话:全程 `git status --short` 自查,build 错先想"是不是并行 agent 改了 admin 域",别浪费时间排查自己的 user/worker 文件。
+- 旧文件加注释 + 提取 helper 后行数膨胀超出 300 上限(trade.go 305, asset.go 320, profile.go 334):必须再拆第二轮;判断标准 = 文件末尾 `awk '/^func /' | wc -l` 与 `wc -l` 同时看。
