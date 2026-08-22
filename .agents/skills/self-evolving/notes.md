@@ -263,3 +263,9 @@
 - skill 有提前警告:是(红线#7),未遵守。
 - 重来一次:截图后直接写 VERIFY 断言链(结构/文案/主题/报错四类),不做读图尝试。
 - worktree+立即 commit+合并清理流程本次顺畅,无返工。
+
+## 2026-08-25 官网首页页脚全幅铺满 + 语言选择框深色主题适配
+- 最大坑:用户反馈"底部有边距",Footer 组件已有 px-4 md:px-[60px] 边距,需要去掉改为全幅铺满;同时 Dropdown 组件在深色背景下样式不协调。
+- skill 有提前警告:是(lessons 有"CSS 引用不存在令牌静默 fallback"),但本次问题是显式设置的边距而非令牌缺失。
+- 重来一次:用户说"全屏"时,检查组件是否有 padding/margin 限制;深色背景下的表单控件需要显式设置 borderColor/backgroundColor/color。
+- 新经验:Footer 全幅铺满用 mx-auto max-w-7xl 居中限宽而非 px 边距;深色背景下的 Dropdown 需要特殊样式覆盖。
