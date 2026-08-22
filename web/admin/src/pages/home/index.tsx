@@ -1,6 +1,6 @@
 // 官网首页(公开落地页):根路径未登录时入口;聚合顶栏 + Hero + 数据条 +
 // 核心能力(6 卡片)+ 客户成功实践(3 案例)+ CTA 横幅 + 页脚。
-// 文案走 i18n,颜色走 brand/shell 令牌,子区块在 sections.tsx。
+// 文案走 i18n,颜色走 brand/shell + home.css 页级令牌,子区块在 sections.tsx / Footer.tsx。
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useT, useLang } from '../../i18n'
@@ -9,6 +9,8 @@ import { getAuthToken } from '../../api/client'
 import {
   TopNav, Hero, Stats, Features, Cases, CtaBanner,
 } from './sections'
+import { Footer } from './Footer'
+import './home.css'
 
 /** CTA 目标页 chunk 空闲预载:消除首击导航时顶层 Suspense 整页闪 Loading。 */
 function usePreloadCtaTarget(signedIn: boolean): void {
@@ -59,11 +61,10 @@ export default function HomePage() {
       <Features features={h.features} title={h.featuresTitle} subtitle={h.featuresSubtitle} />
       <Cases cases={h.cases} title={h.casesTitle} subtitle={h.casesSubtitle} viewDetail={h.viewDetail} />
       <CtaBanner title={h.ctaBannerTitle} subtitle={h.ctaBannerSubtitle} buttonLabel={h.bookExclusive} onClick={goCta} />
-      <footer className="bg-[var(--color-brand-navy-950)]">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-center px-4 text-xs text-[var(--shell-nav-text)]">
-          {h.footerCopyright}
-        </div>
-      </footer>
+      <Footer t={{
+        tagline: h.footerTagline, navFeatures: h.navFeatures, navSolutions: h.navSolutions,
+        navContact: h.navContact, login: h.login, copyright: h.footerCopyright,
+      }} />
     </div>
   )
 }

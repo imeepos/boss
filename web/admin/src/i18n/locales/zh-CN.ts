@@ -212,6 +212,7 @@ const zhCN: Translations = {
       ctaBannerTitle: '打造高效、智能、敏捷的电信运营管理体系',
       ctaBannerSubtitle: '立即体验 Sphere Boss,开启数字化运营新未来',
       viewDetail: '查看详情',
+      footerTagline: '新一代电信运营管理平台',
       footerCopyright: '© 2024 Sphere Boss. 保留所有权利。',
     },
     dashboard: {

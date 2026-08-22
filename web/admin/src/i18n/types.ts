@@ -119,6 +119,7 @@ export interface Translations {
       ctaBannerTitle: string
       ctaBannerSubtitle: string
       viewDetail: string
+      footerTagline: string
       footerCopyright: string
     }
     dashboard: {

@@ -212,6 +212,7 @@ const enUS: Translations = {
       ctaBannerTitle: 'Build an Efficient, Intelligent and Agile Telecom Operations Stack',
       ctaBannerSubtitle: 'Start your Sphere Boss journey today and shape the future of digital operations',
       viewDetail: 'View details',
+      footerTagline: 'Next-generation telecom operations platform',
       footerCopyright: '© 2024 Sphere Boss. All rights reserved.',
     },
     dashboard: {
