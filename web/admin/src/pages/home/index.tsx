@@ -1,14 +1,17 @@
 // 官网首页(公开落地页):根路径未登录时入口;聚合顶栏 + Hero + 数据条 +
 // 核心能力(6 卡片)+ 客户成功实践(3 案例)+ CTA 横幅 + 页脚。
-// 文案走 i18n,颜色走 brand/shell + home.css 页级令牌,子区块在 sections.tsx / Footer.tsx。
+// 文案走 i18n,颜色走 brand/shell + home.css 页级令牌,子区块同目录单文件一区块。
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useT, useLang } from '../../i18n'
 import { useTheme } from '../../theme/context'
 import { getAuthToken } from '../../api/client'
-import {
-  TopNav, Hero, About, Features, Cases, CtaBanner,
-} from './sections'
+import { TopNav } from './TopNav'
+import { Hero } from './Hero'
+import { StatsBand } from './StatsBand'
+import { Features } from './Features'
+import { Cases } from './Cases'
+import { CtaBanner } from './CtaBanner'
 import { Footer } from './Footer'
 import './home.css'
 
@@ -57,9 +60,9 @@ export default function HomePage() {
         heroBadge: h.heroBadge, heroTitle: h.heroTitle, heroLine2: h.heroLine2,
         heroSubtitle: h.heroSubtitle, bookDemo: h.bookDemo, learnMore: h.learnMore,
       }} />
-      <About title={h.aboutTitle} desc={h.aboutDesc} stats={h.stats} />
-      <Features features={h.features} title={h.featuresTitle} subtitle={h.featuresSubtitle} viewDetail={h.viewDetail} />
-      <Cases cases={h.cases} title={h.casesTitle} subtitle={h.casesSubtitle} viewDetail={h.viewDetail} />
+      <StatsBand stats={h.stats} />
+      <Features features={h.features} title={h.featuresTitle} subtitle={h.featuresSubtitle} />
+      <Cases cases={h.cases} title={h.casesTitle} subtitle={h.casesSubtitle} />
       <CtaBanner title={h.ctaBannerTitle} subtitle={h.ctaBannerSubtitle} buttonLabel={h.bookExclusive} onClick={goCta} />
       <Footer
         t={{
