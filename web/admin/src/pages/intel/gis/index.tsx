@@ -1,4 +1,5 @@
-// GIS 地图页:契约 GET /gis/levels + GET /gis/drill?level&parentId + GET /gis/resources/:id/detail。
+// GIS 地图页:契约 GET /gis/drill + /gis/points + /gis/resources/:id/detail。
+// 顶部 PGIS 真地图(OpenLayers),下方八级 drill 明细表;点击点位→资源详情 Drawer。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -7,8 +8,10 @@ import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { DetailDrawer } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
-import { pageSlice, type GisNode, type GisResourceDetail } from '../types'
+import { pageSlice, type GisNode, type GisPointRow, type GisResourceDetail } from '../types'
 import { TableStateRow } from '../../../components/business'
+import { CardShell } from '../../../components/business/charts'
+import { PgisMap, type GisPoint } from '../../../components/business/maps'
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8] as const
 
@@ -18,7 +21,9 @@ export default function GisPage() {
   const [level, setLevel] = useState(1)
   const [parentId, setParentId] = useState(0)
   const [nodes, setNodes] = useState<GisNode[]>([])
+  const [points, setPoints] = useState<GisPoint[]>([])
   const [error, setError] = useState('')
+  const [pointsError, setPointsError] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
@@ -33,7 +38,24 @@ export default function GisPage() {
       .catch((e) => setError(e instanceof Error ? e.message : g.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(() => { load(1, 0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // 地图点位与 drill 同步(level/parentId 改变即重拉)。
+  const loadPoints = (lv: number, pid: number) => {
+    setPointsError('')
+    apiFetch<{ items: GisPointRow[] }>('/gis/points', { query: { level: lv, parentId: pid || undefined } })
+      .then((d) => setPoints((d?.items ?? []).map((r) => ({
+        id: r.id, level: r.level, name: r.name,
+        lng: r.lng, lat: r.lat, status: r.status,
+        count: r.count, parentId: r.parentId,
+      }))))
+      .catch((e) => setPointsError(e instanceof Error ? e.message : g.mapLoadFail))
+  }
+  useEffect(() => { load(1, 0); loadPoints(1, 0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const refreshAll = () => { load(level, parentId); loadPoints(level, parentId) }
+  const changeLevel = (lv: number) => {
+    setLevel(lv); setParentId(0); setPage(1)
+    load(lv, 0); loadPoints(lv, 0)
+  }
 
   const openDetail = (resourceId: number) => {
     setDetail(null)
@@ -48,21 +70,36 @@ export default function GisPage() {
   return (
     <div>
       <PageHead title={g.title} desc={g.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <Dropdown
-            value={String(level)}
-            options={LEVELS.map((lv, i) => ({ value: String(lv), label: `${lv}. ${g.levels[i]}` }))}
-            onChange={(v) => { const n = Number(v); setLevel(n); setParentId(0); setPage(1); load(n, 0) }}
-            ariaLabel={g.title}
-          />
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder="parentId"
-            value={parentId || ''} onChange={(e) => { setParentId(Number(e.target.value) || 0); setPage(1) }} />
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(level, parentId)}>{t.pages.audit.refresh}</button>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Dropdown
+          value={String(level)}
+          options={LEVELS.map((lv, i) => ({ value: String(lv), label: `${lv}. ${g.levels[i]}` }))}
+          onChange={(v) => changeLevel(Number(v))}
+          ariaLabel={g.title}
+        />
+        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder="parentId"
+          value={parentId || ''} onChange={(e) => { setParentId(Number(e.target.value) || 0); setPage(1) }} />
+        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={refreshAll}>{t.pages.audit.refresh}</button>
+      </div>
+
+      <CardShell className="mb-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{g.mapTitle}</h3>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={refreshAll}>{g.mapRefresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
+        {pointsError ? (
+          <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{pointsError}</div>
+        ) : null}
+        <div className="h-[480px]">
+          {points.length > 0
+            ? <PgisMap points={points} onSelect={(p) => p.level >= 6 && openDetail(p.id)} />
+            : <div className="flex h-full items-center justify-center text-[13px] text-[var(--shell-group-title)]">{g.mapEmpty}</div>}
+        </div>
+      </CardShell>
+
+      <CardShell>
+        {error ? <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{g.drillColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
@@ -79,15 +116,12 @@ export default function GisPage() {
             </table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={nodes.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(g)} />
         </div>
-        <div style={{ padding: '8px 12px', fontSize: 13, color: '#888' }}>
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" style={{ width: 160 }} placeholder="resourceId (6/7 级)"
-            onChange={(e) => { const v = Number(e.target.value); if (v > 0) openDetail(v) }} />
-        </div>
-      </div>
+      </CardShell>
+
       {(detail || detailError) && (
         <DetailDrawer
           title={g.detailTitle}

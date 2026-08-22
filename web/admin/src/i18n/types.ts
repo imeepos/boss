@@ -1174,6 +1174,11 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      // PGIS 地图(commit 5)
+      mapTitle: string
+      mapEmpty: string
+      mapLoadFail: string
+      mapRefresh: string
     }
     analyticsPage: {
       title: string

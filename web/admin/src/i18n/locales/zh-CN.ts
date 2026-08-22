@@ -1224,6 +1224,11 @@ const zhCN: Translations = {
       rangeText: '第 {from}-{to} 条,共 {count} 条',
       jumpText: '跳至',
       pageUnit: '页',
+      // PGIS 地图(commit 5)
+      mapTitle: '地图视图',
+      mapEmpty: '该层级暂无坐标点位',
+      mapLoadFail: '点位加载失败',
+      mapRefresh: '刷新点位',
     },
     analyticsPage: {
       title: '经营分析',

@@ -25,6 +25,18 @@ export interface GisResourceDetail {
   collectedAt?: string | null
 }
 
+/** 地图点位:GET /gis/points(items),与 maps/GisPoint 对齐(后端字段 lowerCamelCase)。 */
+export interface GisPointRow {
+  id: number
+  level: number
+  name: string
+  lng: number
+  lat: number
+  status: string
+  count: number
+  parentId: number
+}
+
 /** 五大指标:GET /analytics/indicators(indicators)。 */
 export interface IndicatorRow {
   key: string

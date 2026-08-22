@@ -1224,6 +1224,11 @@ const enUS: Translations = {
       rangeText: '{from}-{to} of {count}',
       jumpText: 'Jump to',
       pageUnit: 'page',
+      // PGIS map (commit 5)
+      mapTitle: 'Map View',
+      mapEmpty: 'No points at this level',
+      mapLoadFail: 'Failed to load points',
+      mapRefresh: 'Refresh Points',
     },
     analyticsPage: {
       title: 'Analytics',

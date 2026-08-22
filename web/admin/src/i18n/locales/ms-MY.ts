@@ -1224,6 +1224,11 @@ const msMY: Translations = {
       rangeText: '{from}-{to} daripada {count}',
       jumpText: 'Lompat ke',
       pageUnit: 'halaman',
+      // Peta PGIS (commit 5)
+      mapTitle: 'Paparan Peta',
+      mapEmpty: 'Tiada titik pada peringkat ini',
+      mapLoadFail: 'Gagal memuatkan titik',
+      mapRefresh: 'Muat Semula Titik',
     },
     analyticsPage: {
       title: 'Analitik',
