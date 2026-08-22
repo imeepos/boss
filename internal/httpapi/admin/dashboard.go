@@ -138,7 +138,7 @@ func dashboardTodos(alarms []device.Alarm, tickets []order.DispatchTicket) []gin
 	return items
 }
 
-// orderTrend 按周期聚合订单创建日;unknown 及空值按 weekly 处理。
+// orderTrend 按周期聚合订单创建时间;年和全部按月,避免横轴点位过密。
 func orderTrend(orders []order.OrderListItem, period string, now time.Time) gin.H {
 	period = normalizeTrendPeriod(period)
 	start, step, count, layout := trendWindow(period, orders, now)
@@ -175,7 +175,7 @@ func trendWindow(period string, orders []order.OrderListItem, now time.Time) (ti
 		start := time.Date(local.Year(), time.Month(month), 1, 0, 0, 0, 0, local.Location())
 		return start, 1, int(local.Sub(start).Hours()/24) + 1, "01-02"
 	case "year":
-		return time.Date(local.Year(), 1, 1, 0, 0, 0, 0, local.Location()), 1, local.YearDay(), "01-02"
+		return time.Date(local.Year(), 1, 1, 0, 0, 0, 0, local.Location()), 1, int(local.Month()), "2006-01"
 	case "all":
 		start := time.Date(local.Year(), local.Month(), 1, 0, 0, 0, 0, local.Location())
 		for _, o := range orders {
@@ -194,7 +194,7 @@ func trendWindow(period string, orders []order.OrderListItem, now time.Time) (ti
 
 func trendBucket(created, point time.Time, step int, period string) bool {
 	created = created.In(point.Location())
-	if period == "all" {
+	if period == "all" || period == "year" {
 		return created.Year() == point.Year() && created.Month() == point.Month()
 	}
 	next := point.AddDate(0, 0, step)

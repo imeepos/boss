@@ -50,7 +50,8 @@ export function OrderTrend({ labels, values, valueUnit, tooltipLabel, emptyText 
           <CartesianGrid vertical={false} stroke="var(--shell-side-border)" strokeDasharray="3 5" />
           <XAxis
             dataKey="label"
-            interval={0}
+            interval={data.length > 14 ? Math.ceil(data.length / 12) - 1 : 0}
+            minTickGap={16}
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'var(--shell-group-title)', fontSize: 11 }}
