@@ -2,6 +2,7 @@ import {
   Area,
   CartesianGrid,
   Line,
+  LabelList,
   LineChart,
   ResponsiveContainer,
   Tooltip,
@@ -37,7 +38,7 @@ export function OrderTrend({ labels, values, valueUnit, tooltipLabel, emptyText 
   }
 
   return (
-    <div className="h-64 w-full" role="img" aria-label={tooltipLabel}>
+    <div className="h-80 w-full" role="img" aria-label={tooltipLabel}>
       <ResponsiveContainer width="100%" height="100%" minWidth={280}>
         <LineChart data={data} margin={{ top: 16, right: 12, left: -12, bottom: 4 }}>
           <defs>
@@ -49,6 +50,7 @@ export function OrderTrend({ labels, values, valueUnit, tooltipLabel, emptyText 
           <CartesianGrid vertical={false} stroke="var(--shell-side-border)" strokeDasharray="3 5" />
           <XAxis
             dataKey="label"
+            interval={0}
             axisLine={false}
             tickLine={false}
             tick={{ fill: 'var(--shell-group-title)', fontSize: 11 }}
@@ -80,10 +82,20 @@ export function OrderTrend({ labels, values, valueUnit, tooltipLabel, emptyText 
             dataKey="value"
             stroke="var(--color-brand-gold-500)"
             strokeWidth={3}
-            dot={{ r: 4, fill: 'var(--shell-card-bg)', stroke: 'var(--color-brand-gold-500)', strokeWidth: 2 }}
-            activeDot={{ r: 6, fill: 'var(--color-brand-gold-500)', stroke: 'var(--shell-card-bg)', strokeWidth: 2 }}
+            dot={{ r: 5, fill: 'var(--shell-card-bg)', stroke: 'var(--color-brand-gold-500)', strokeWidth: 2 }}
+            activeDot={{ r: 7, fill: 'var(--color-brand-gold-500)', stroke: 'var(--shell-card-bg)', strokeWidth: 2 }}
             connectNulls
-          />
+          >
+            <LabelList
+              dataKey="value"
+              position="top"
+              offset={10}
+              fill="var(--shell-heading)"
+              fontSize={12}
+              fontWeight={600}
+              formatter={(value: number) => formatValue(value, valueUnit)}
+            />
+          </Line>
         </LineChart>
       </ResponsiveContainer>
     </div>
