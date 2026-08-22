@@ -148,6 +148,7 @@ paths:
   /products/{id}/price-history: { $ref: './admin/customer.yaml#/paths/~1products~1{id}~1price-history' }
 
   # ---------- Billing ----------
+  /billing/ledger-recon: { $ref: './admin/billing.yaml#/paths/~1billing~1ledger-recon' }
   /bills: { $ref: './admin/billing.yaml#/paths/~1bills' }
   /payments: { $ref: './admin/billing.yaml#/paths/~1payments' }
   /billing-runs: { $ref: './admin/billing.yaml#/paths/~1billing-runs' }

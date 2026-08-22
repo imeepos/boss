@@ -29,6 +29,8 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/reconciliations/:batchNo/statement", requirePerm(a.User, "menu:paycheck"), recordChannelStatement(a))
 	// 自动对账:按渠道建当日批次(幂等)并从已配置源拉流水比对;manual 渠道只建批。
 	g.POST("/reconciliations/auto", requirePerm(a.User, "menu:paycheck"), autoReconcile(a))
+	// 账实核对:应收/实收/开票三角,按账单定位差异(与渠道对账正交)。
+	g.GET("/billing/ledger-recon", requirePerm(a.User, "menu:paycheck"), ledgerReconHandler(a))
 }
 
 // execStopResume 对 LO 账号执行停/复机迁移,返回任务落账状态(DONE/FAILED)。
