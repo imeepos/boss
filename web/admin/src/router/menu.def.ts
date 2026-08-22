@@ -38,6 +38,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'menuperm', label: '菜单权限', path: '/org/menuperm' },
     { key: 'datascope', label: '数据权限', path: '/org/datascope' },
     { key: 'apikey', label: 'API Key', path: '/org/apikey' },
+    { key: 'partner', label: '入驻申请审核', path: '/org/partner' },
   ]},
   { id: 'bss', label: '客户与资费', items: [
     { key: 'customer', label: '客户档案', path: '/bss/customer' },
@@ -93,6 +94,11 @@ export const MENU_GROUPS: MenuGroup[] = [
   ]},
   { id: 'aaa', label: '认证计费', items: [
     { key: 'aaalog', label: '话单与认证日志', path: '/aaa/aaalog' },
+  ]},
+  { id: 'partner', label: '企业工作台', items: [
+    { key: 'partner-home', label: '我的企业', path: '/partner/home' },
+    { key: 'partner-staff', label: '员工管理', path: '/partner/staff' },
+    { key: 'partner-orders', label: '企业订单', path: '/partner/orders' },
   ]},
   { id: 'intel', label: '数字孪生与经营', items: [
     { key: 'gis', label: 'GIS 地图', path: '/intel/gis' },
