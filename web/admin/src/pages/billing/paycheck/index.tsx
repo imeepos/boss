@@ -8,7 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ReconRow, type LedgerReconRow, type LedgerReconSummary } from '../types'
 import { fmtFee, fmtTime } from '../../../lib/format'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, TabBar } from '../../../components/business'
 
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 
@@ -93,27 +93,21 @@ export default function PayCheckPage() {
     ? Object.entries(summary.byKind ?? {}).reduce((n, [k, v]) => (k === 'MATCH' ? n : n + v), 0)
     : 0
 
-  const tabBtn = (key: 'channel' | 'ledger', label: string) => (
-    <button key={key} onClick={() => { setTab(key); setError('') }}
-      style={{
-        padding: '8px 16px', fontSize: 14, cursor: 'pointer', background: 'none', border: 'none',
-        borderBottom: tab === key ? '2px solid #1677ff' : '2px solid transparent',
-        color: tab === key ? '#1677ff' : '#666', fontWeight: tab === key ? 600 : 400,
-      }}>
-      {label}
-    </button>
-  )
-
   return (
     <div>
       <PageHead title={p.title} desc={p.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
-          {tabBtn('channel', p.tabChannel)}
-          {tabBtn('ledger', p.tabLedger)}
+        <div className="px-4 pt-3">
+          <TabBar
+            tabs={[{ key: 'channel' as const, label: p.tabChannel }, { key: 'ledger' as const, label: p.tabLedger }]}
+            value={tab}
+            onChange={(key) => { setTab(key); setError('') }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center' }}>
           {tab === 'ledger' && (
             <>
-              <input className="ml-2 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" style={{ width: 160 }} placeholder={p.ledgerPeriod}
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" style={{ width: 160 }} placeholder={p.ledgerPeriod}
                 value={periodInput} onChange={(e) => setPeriodInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { setLgPage(1); loadLedger() } }} />
               <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => { setLgPage(1); loadLedger() }}>{p.ledgerQuery}</button>
