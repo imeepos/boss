@@ -225,3 +225,5 @@
 - 当连不上"记忆中的"公网端口时,先看 `sudo ufw status`:138 只放行 22/3773/8787/4873/43770/80/8888/8899/8080/8090-8092/8788/8789/5173/3478/49160-49360,其余 TCP 全 DROP,症状=ping 通但端口超时。skill 没提前警告我。
 - 当 cdp-capture.mjs 跨多次运行共享 localStorage 状态(语言/主题)时,修复是不行——每次运行全新 profile,setItem 后另一次运行读到 null;必须在同一次调用的多个 --eval 里 set→location.reload()→轮询断言。skill 没提前警告我。
 - 当冒烟脚本点"下一步"没跳步时,先核对测试数据本身是否满足校验(如信用码必须整 18 位),再怀疑页面逻辑——本次连续两次自造数据长度不够,校验其实一直在正确拦截。skill 没提前警告我。
+- 当 gpt-image-generate.mjs 文生图报 400 "Unknown parameter: 'response_format'/'style'" 时,修复是从 buildPayload 删掉对应字段——当前代理端点不认这两个参数,gpt-image-2 默认即返回 b64_json,输出分支本已兼容 b64_json/url 两种。
+- 当在 web/admin 子目录用相对路径跑 `.agents/skills/.../xxx.mjs` 时,修复是 cd 回仓库根再跑——Node 报模块找不到只打出版本号尾巴,先想路径再想环境。
