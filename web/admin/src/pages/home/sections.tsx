@@ -83,6 +83,7 @@ export function Hero({
 }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[var(--home-hero-from)] via-[var(--home-hero-via)] to-[var(--home-hero-to)]">
+      <div className="pointer-events-none absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-20 dark:opacity-30" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--home-hero-badge-border)] to-transparent" />
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-[1.15fr_1fr] md:py-28">
         <div className="relative z-10">
@@ -229,6 +230,7 @@ export function CtaBanner({
   return (
     <section id="contact" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-20">
       <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[var(--color-brand-navy-950)] px-6 py-12 md:px-12">
+        <div className="pointer-events-none absolute inset-0 bg-[url('/images/cta-bg.png')] bg-cover bg-center opacity-30" />
         <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-[var(--home-cta-glow)] blur-3xl" />
         <div className="relative flex flex-col items-center gap-6 md:flex-row md:justify-between md:gap-8">
           <div className="flex items-center gap-5">
