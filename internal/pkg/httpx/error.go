@@ -63,6 +63,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrRegistrationNotFound),
 		errors.Is(err, worker.ErrRealNameNotFound),
 		errors.Is(err, userdata.ErrNotFound),
+		errors.Is(err, userdata.ErrPlanNotFound),
 		errors.Is(err, partner.ErrApplicationNotFound),
 		errors.Is(err, partner.ErrStaffNotFound),
 		errors.Is(err, portal.ErrNotFound),

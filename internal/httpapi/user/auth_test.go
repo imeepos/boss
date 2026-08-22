@@ -202,8 +202,11 @@ func (f *fakeRealName) Verify(context.Context, int64, string, string, string, in
 }
 
 // 三端拆包后与 admin 测试各自持有同形桩(桩实现随端契约独立演进)。
-// fakeBilling 桩 billing.BillingService。
-type fakeBilling struct{ bills []billing.Bill }
+// fakeBilling 桩 billing.BillingService;pays 记录带券落账调用供续费断言。
+type fakeBilling struct {
+	bills []billing.Bill
+	pays  []billing.Payment
+}
 
 func (f *fakeBilling) ListBills(context.Context, int64) ([]billing.Bill, error) { return f.bills, nil }
 func (f *fakeBilling) CreateBill(context.Context, billing.Bill) (int64, error)  { return 0, nil }
@@ -217,7 +220,8 @@ func (f *fakeBilling) ListPaymentsByCustomer(context.Context, int64) ([]billing.
 func (f *fakeBilling) CreatePayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
 func (f *fakeBilling) RecordPayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
 func (f *fakeBilling) RecordPaymentWithCoupon(_ context.Context, p billing.Payment) (billing.PaymentReceipt, error) {
-	return billing.PaymentReceipt{Amount: p.Amount}, nil
+	f.pays = append(f.pays, p)
+	return billing.PaymentReceipt{PaymentID: 901, Amount: p.Amount}, nil
 }
 func (f *fakeBilling) GenerateBills(context.Context, string) (int, error)            { return 0, nil }
 

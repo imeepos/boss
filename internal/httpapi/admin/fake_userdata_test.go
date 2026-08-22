@@ -41,6 +41,12 @@ func (f *fakeUserdata) ListUserPlans(context.Context) ([]map[string]any, error) 
 func (f *fakeUserdata) CreateUserPlan(context.Context, userdata.UserPlan) (int64, error) {
 	return 1, nil
 }
+func (f *fakeUserdata) GetPlanForRenewal(context.Context, int64, int64) (int64, float64, error) {
+	return 1, 100, nil
+}
+func (f *fakeUserdata) RenewPlan(context.Context, int64, int64, int) (string, error) {
+	return "2027-08", nil
+}
 func (f *fakeUserdata) ListAddons(context.Context) ([]map[string]any, error) {
 	return []map[string]any{{"addonId": "ADD-01", "name": "加速包", "price": int64(1000)}}, nil
 }

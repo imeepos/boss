@@ -31,6 +31,7 @@ func registerPortalOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/plans/:planId/cancel", portalPlanCancelPreview(a))
 	g.POST("/plans/:planId/change", portalPlanChange(a))
 	g.POST("/plans/:planId/move", portalPlanMove(a))
+	g.POST("/plans/:planId/renew", portalPlanRenew(a))
 	g.POST("/plans/:planId/cancel", portalPlanCancel(a))
 }
 

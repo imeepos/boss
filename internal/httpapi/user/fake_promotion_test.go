@@ -12,6 +12,9 @@ type fakePromo struct {
 	items  []map[string]any
 	gift   string
 	redeem string
+	// 续费赠送断言:match 非空时 MatchGiftRule 命中;recorded 落痕记录。
+	match    *promotion.GiftRule
+	recorded []promotion.GiftRecord
 }
 
 func (f *fakePromo) ListTemplates(context.Context) ([]promotion.Template, error) { return nil, nil }
@@ -46,6 +49,9 @@ func (f *fakePromo) CreateGiftRule(context.Context, promotion.GiftRule) (int64, 
 }
 func (f *fakePromo) DisableGiftRule(context.Context, int64) error { return nil }
 func (f *fakePromo) MatchGiftRule(context.Context, int64, int) (*promotion.GiftRule, error) {
-	return nil, nil
+	return f.match, nil
 }
-func (f *fakePromo) RecordGift(context.Context, promotion.GiftRecord) error { return nil }
+func (f *fakePromo) RecordGift(_ context.Context, r promotion.GiftRecord) error {
+	f.recorded = append(f.recorded, r)
+	return nil
+}

@@ -1,6 +1,17 @@
 # 优惠券/代金券/赠送 促销体系 审查与设计
 
-> 版本 V1.0（2026-08-26）｜状态：设计稿（未实施）
+> 版本 V1.1（2026-08-22）｜状态：P1~P3 已实施（迁移 000102 + promotion 域 + admin/user 端点），
+> 赠送时长阶梯已实施且经用户端续费闭环生效（POST /plans/{planId}/renew）。
+> V1.0（2026-08-26 设计稿）原文见下,实施差异以本节为准。
+>
+> **V1.1 实施增补（赠送时长,原设计未覆盖）**
+> - 表：gift_duration_rules（阶梯：scope ALL/PRODUCT + buy_months/gift_months）+ gift_duration_records。
+> - 触发：用户端续费 `POST /plans/{planId}/renew {months,payMethod,couponId}` ——
+>   金额 = N 月 × 产品基础月费（区域覆盖不参与续费口径），命中阶梯自动加赠，
+>   user_plans.contract_end 延长 N+赠送 月，赠送落痕关联缴费流水。
+> - 规则语义：取 buy_months ≤ 实购月数的最大档（购 13 月命中 12送3）。
+> - 待办：订单环节4 预付费收款目前按 1 个月月费收（pg_charge.prepaidAmount），
+>   后续按合约期月数收款时同步接入阶梯。
 > 审查范围：现有 coupons 实现 + 计费缴费链路 + 契约文档
 > 结论：已有功能为"演示级券账本"，不满足市场需求；本文给出升级设计。
 
