@@ -11,6 +11,7 @@ import (
 	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/device"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/report"
@@ -39,6 +40,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 
 	cust := customer.NewPGStore(pool)
+	partnerSvc := partner.NewPGStore(pool)
 	bill := billing.NewPGStore(pool)
 	res := resource.NewPGStore(pool)
 	qlStore := quadlink.NewPGStore(pool)
@@ -80,6 +82,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Portal:         portalSvc,
 
 		CustomerOnboarding: cust,
+		Partner:            partnerSvc,
 		CustomerRealName:   cust,
 		// 实名二要素通道:biz_params(realid.*)优先/env 兜底,60s 热生效;未配置落 PENDING 人工核验。
 		RealID: realid.NewDynamic(realidConfigResolver(usr, cfg)),

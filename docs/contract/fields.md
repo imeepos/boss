@@ -742,6 +742,31 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 > 000059 起本表并入统一 `verifications`（subject_type='customer'）；000070 起新增上表三列。
 > 2026-08-24 起支持阿里云二要素自动核验：通道配置后提交即判定，结论记录 operator_name=「阿里云二要素」、operator_account_id=0；通道未配置/调用失败保持 PENDING 走人工核验（adopted/2026-08-24-realid-channel-aliyun-cloudauth.md）。
 
+## 8B. 招商入驻域（internal/domain/partner，000098）
+
+`partner_applications`（入驻申请，公开提交；审核前不入 legal_entities/accounts）：
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:------|:------|:----------|
+| `companyName` | company_name | 企业名称 |
+| `creditCode` | credit_code | 统一社会信用码（同码 PENDING 申请唯一） |
+| `contactName` | contact_name | 联系人 |
+| `contactPhone` | contact_phone | 联系电话 |
+| `email` | email | 邮箱（可空） |
+| `businessDesc` | business_desc | 合作意向说明 |
+| `status` | status | **PENDING 待审核 / APPROVED 已通过 / REJECTED 已驳回**（terms.md 通用枚举延伸） |
+| `reviewNote` | review_note | 审核意见（驳回必填） |
+| `reviewerAccountId` | reviewer_account_id | BIGINT → accounts（审核人） |
+| `legalEntityId` | legal_entity_id | BIGINT → legal_entities（审核通过后建子公司回填，空=未开通） |
+| `adminAccountId` | admin_account_id | BIGINT → accounts（审核通过后建 partner_admin 账号回填） |
+| `submittedAt` | submitted_at | 提交时间 |
+| `reviewedAt` | reviewed_at | 审核时间，null=未审核 |
+
+> 审核通过 = 建 `legal_entities`（code=P-<信用码>）+ `accounts`（username=pt_<信用码后8位>，
+> 角色 `partner_admin`，legal_entity_id 绑定做数据隔离）；初始口令随机 12 位仅审核响应返回一次。
+> 企业工作台数据口径：员工 = accounts 按 legal_entity_id 归属（角色限 partner_admin/partner_staff）；
+> 订单 = orders 按 legal_entity_id 隔离（只读）。角色 `partner_staff` 无员工管理权限。
+
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。

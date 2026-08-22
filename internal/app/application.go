@@ -20,6 +20,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push" // 设备注册表(域侧);通道 Sender 在 pkg/push
@@ -102,6 +103,9 @@ type Application struct {
 	Asset     asset.AssetService
 	APIKey    apikey.Service
 	AI        ai.Service
+	// Partner 招商引资/合作入驻域(迁移 000098)。
+	Partner partner.Service
+
 	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
 	Notify notify.Service
 
