@@ -239,3 +239,11 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 场景 → `CREATE TABLE ... PARTITION OF` 报 `updated partition constraint for default partition would be violated`(SQLSTATE 23514),服务启动崩溃循环。
 怎么用 → 事务内:暂存表(LIKE 母表)← default 中该范围行 → DELETE default 该范围 → 建分区 → 从暂存表 INSERT 回母表 → DROP 暂存表;修复代码见 internal/pkg/audit/partitions.go migrateDefaultRows(自愈路径)。
 - 102 无短信凭据时通道降级 LogSender,验证码直接打在 boss-server 容器日志:POST sms-code 后 `docker logs boss-server --since 30s | grep 'sms\[dev\]'` 捞 code 即可 e2e 登录师傅端(2026-08-25 push_devices 冒烟);注意同 phone+scene 60s 冷却(42300)。
+
+## cdp 截图指定主题/语言:URL 一次性覆盖优先于 --eval
+场景 → 要给同一页拍 light/dark 双主题,或指定语言。
+怎么用 → `cdp-capture.mjs "http://host/home?theme=dark" out.png`;lib/urlPrefs.ts 启动时把 ?theme=/?lang= 写入 localStorage 并抹除,首屏即正确;比 --eval setItem(页面加载后才执行、不重渲、需再 reload)省一步且无误差。
+
+## git worktree 快速闭环(改代码防主分支污染)
+场景 → AGENTS.md 禁止直接在主分支改代码时。
+怎么用 → `git worktree add ../boss-<task> -b feat/<task>` → 在 worktree 内开发+门禁+commit → 主 checkout `git merge --no-ff` → `git worktree remove --force`(web/admin/node_modules 残留会挡普通 remove)→ `git branch -d`;最后 `git worktree list` + `git branch` 双确认干净。未跟踪文件(如设计稿 png)在主 checkout 直接 mv 进 worktree 即可带走。

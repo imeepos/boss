@@ -301,3 +301,10 @@
 - 哪个坑浪费最多时间:push origin 不存在(remote 叫 gitea)与 102 口令漂移(Boss-admin-2026 → 实测 admin123)各废一轮;其余顺利——先读 skill 知识库再动手,复用 AccountForm/DeptForm/PostForm/ConfirmDialog 零返工。
 - skill 有没有提前警告我:大部分有(级联下拉/禁 select/门禁流程/CDP 验证);remote 名与 102 实际口令两处事实漂移无记录,已修 docs/boss-admin-web.md。
 - 重来一次:push 前先 `git remote -v`;连 102 先用 devseed 口令 admin123 试,40100 再翻 app.env。
+
+## 2026-08-25 官网首页 gpt-image-2 重设计
+
+- 哪个坑最费时:gpt-image-generate.mjs 连续两个 400(先 `response_format` 后 `style` 不被代理端点接受),各浪费一轮生成调用;删参后立通。
+- skill 有没有提前警告:没有。gpt-image-2 脚本是新工具,参数兼容清单此前未沉淀。
+- 重来一次会怎么做:先小质量(low)试跑一发验证端点参数兼容,再上 --quality high;cdp 截图主题直接用 ?theme= URL 覆盖,不走 --eval setItem(加载后执行不重渲)。
+- 顺手的坑:worktree remove 被 web/admin/node_modules 残留挡住(Directory not empty),需 --force;且 && 链断导致 branch -d 漏跑,收尾要确认 worktree list + branch 双干净。
