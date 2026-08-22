@@ -140,7 +140,7 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 			AddressID:   addrID,
 			ChannelID:   channelID,       // 归属由安装地址服务端推导(2026-08-20 裁定)
 			BillingMode: req.BillingMode, // 付费模式客户选定(2026-08-22 裁定)
-			BuyMonths:   req.BuyMonths,   // 预缴月数(000103)
+			BuyMonths:   req.BuyMonths,   // 预缴月数(000104)
 		})
 		if err != nil {
 			respondErr(c, err)

@@ -10,7 +10,7 @@
 >   金额 = N 月 × 产品基础月费（区域覆盖不参与续费口径），命中阶梯自动加赠，
 >   user_plans.contract_end 延长 N+赠送 月，赠送落痕关联缴费流水。
 > - 规则语义：取 buy_months ≤ 实购月数的最大档（购 13 月命中 12送3）。
-> - 订单链路（2026-08-22 已落地，000103）：下单 SubmitReq 带 buyMonths（0=按月缴），
+> - 订单链路（2026-08-22 已落地，000104）：下单 SubmitReq 带 buyMonths（0=按月缴），
 >   预付费环节4 收 N×月费（区域覆盖口径同出账），阶梯命中回填 orders.gift_months
 >   并落 gift_duration_records。
 > 审查范围：现有 coupons 实现 + 计费缴费链路 + 契约文档

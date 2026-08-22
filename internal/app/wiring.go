@@ -68,7 +68,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	))
 
 	// 环节4 预付费当场收款(adopted note 2026-08-22):依赖 portalSvc,故在 portal 之后构造;
-	// 赠送阶梯经 promotion 命中(000103:buy_months/gift_months 快照)。
+	// 赠送阶梯经 promotion 命中(000104:buy_months/gift_months 快照)。
 	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res},
 		quadLinkPrebinder{svc: qlStore}, prepaidCollector{bill: bill, portal: portalSvc, promo: promo})
 
