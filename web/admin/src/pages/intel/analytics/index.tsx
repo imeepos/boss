@@ -11,6 +11,7 @@ import { pageSlice } from '../types'
 import type { AnalyticsMaintRow, HeatCellRow, IndicatorRow, RegionRoiRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { CardShell, Donut, HorizontalBar, StatCard, VerticalBars } from '../../../components/business/charts'
+import { formatSegmentValue } from '../../../components/business/charts/format-value'
 
 export default function AnalyticsPage() {
   const t = useT()
@@ -64,7 +65,15 @@ export default function AnalyticsPage() {
       </section>
       <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <CardShell title={a.overviewIndicator}>
-          <Donut segments={indicators.map((x) => ({ label: x.name || x.key, value: x.value }))} />
+          <Donut
+            segments={indicators.map((x) => ({ label: x.name || x.key, value: x.value }))}
+            formatValue={(_v, seg) => {
+              // 通过 label 反查原 IndicatorRow(segment 仅有 label/value,key 丢在 map 过程中)
+              const orig = indicators.find((i) => i.name === seg.label || i.key === seg.label)
+              return orig ? formatSegmentValue(orig) : seg.value.toString()
+            }}
+            sublabel={indicators.length > 0 ? `${indicators.length} 项` : undefined}
+          />
         </CardShell>
         <CardShell title={a.overviewRoi}>
           <HorizontalBar
