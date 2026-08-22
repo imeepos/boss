@@ -328,3 +328,8 @@
 - 哪个坑浪费最多时间:并行 Agent 在我的 worktree 内直接改了 service.go(追加赠送规则接口段)并留下重复迁移 000103_gift_duration,与已提交的 000102 gift 表撞车;靠 go build 编译错误清单才定位到接口已被扩展。
 - skill 有没有提前警告:是——techniques #26(并行 Agent 编译阻塞识别)和 lessons #19(接口加方法同一提交补桩)直接适用,按此处理没有走弯路。
 - 重来一次会怎么做:worktree 并不能隔离共享文件系统上的并行 Agent;开工前和工作中期各跑一次 `git status + ls migrations | tail` 对账,发现别人未跟踪的迁移先沟通/裁定单一事实源再动工。
+
+## 2026-08-25 预付费/后付费付费模式落地
+- 最大时间坑:无(整体顺畅);小坑是用 python 批量替换改 struct 字段时把收尾 `}` 误写成 `)`,build 立刻暴露,一次修复。
+- skill 预警有效:后端索引 #25(迁移先看真实最大编号)、#31(多返回值)等均提前规避;门禁 C 红线(300 行)被 check-contract-sync 抓到 pg_workflow.go 超行,拆 pg_charge.go 解决。
+- 重来一次:改 struct 字段的 python 替换块应带上收尾括号上下文一起断言;合并前先看 main 是否被并行推进(promotion-coupon 插入导致 terms.md 冲突,手工并表解决)。
