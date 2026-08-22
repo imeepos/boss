@@ -1,16 +1,19 @@
 // W11 k6 压测:登录 → 管理端关键读链路(订单/资源/GIS/分析)。
-// 运行: k6 run -e BASE=http://127.0.0.1:8080 scripts/load/api-load.js
+// 运行: k6 run -e BASE=http://192.168.0.102:28080 scripts/load/api-load.js
 // 阈值(roadmap §2):读接口 p95<500ms、错误率<1%、登录 p95<800ms。
 import http from 'k6/http'
 import { check, sleep } from 'k6'
 import { Trend } from 'k6/metrics'
 
-const BASE = __ENV.BASE || 'http://127.0.0.1:8080'
+const BASE = __ENV.BASE || 'http://192.168.0.102:28080'
 // 注意:勿用 __ENV.USER/PASS 这类常见 shell 变量名(k6 会继承全量环境变量)。
-const USER = __ENV.LOAD_USER || 'loadtest'
-const PASS = __ENV.LOAD_PASS || 'Load-test-123'
+const USER = __ENV.LOAD_USER || 'admin'
+const PASS = __ENV.LOAD_PASS || ''
 
 const loginLatency = new Trend('login_latency', true)
+
+// 容量档位可用环境变量覆盖: k6 run -e TARGET=50 scripts/load/api-load.js
+const TARGET = Number(__ENV.TARGET || 20)
 
 export const options = {
   scenarios: {
@@ -18,8 +21,8 @@ export const options = {
       executor: 'ramping-vus',
       startVUs: 2,
       stages: [
-        { duration: '30s', target: 20 },
-        { duration: '1m', target: 20 },
+        { duration: '30s', target: TARGET },
+        { duration: '1m', target: TARGET },
         { duration: '15s', target: 0 },
       ],
       gracefulRampDown: '10s',
@@ -33,7 +36,7 @@ export const options = {
 }
 
 export function setup() {
-  const res = http.post(`${BASE}/api/v1/auth/login`, JSON.stringify({ username: USER, password: PASS }), {
+  const res = http.post(`${BASE}/api/admin/v1/auth/login`, JSON.stringify({ username: USER, password: PASS }), {
     headers: { 'Content-Type': 'application/json' },
   })
   check(res, { 'login ok': (r) => r.status === 200 && r.json('code') === 0 })
@@ -46,17 +49,17 @@ export function setup() {
 export default function (data) {
   const auth = { headers: { Authorization: 'Bearer ' + data.token } }
 
-  const loginRes = http.post(`${BASE}/api/v1/auth/login`, JSON.stringify({ username: USER, password: PASS }), {
+  const loginRes = http.post(`${BASE}/api/admin/v1/auth/login`, JSON.stringify({ username: USER, password: PASS }), {
     headers: { 'Content-Type': 'application/json' },
   })
   loginLatency.add(loginRes.timings.duration)
 
   for (const path of [
-    '/api/v1/auth/me',
-    '/api/v1/orders',
-    '/api/v1/resources',
-    '/api/v1/gis/levels',
-    '/api/v1/analytics/indicators',
+    '/api/admin/v1/auth/me',
+    '/api/admin/v1/orders',
+    '/api/admin/v1/resources',
+    '/api/admin/v1/gis/levels',
+    '/api/admin/v1/analytics/indicators',
   ]) {
     const res = http.get(BASE + path, auth)
     check(res, {
