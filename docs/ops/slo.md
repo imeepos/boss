@@ -47,7 +47,7 @@ sum(rate(boss_http_requests_total{path=~".*/auth/login",code="200"}[30d]))
 
 ## 5. 待办（进入容量/演练阶段前补齐）
 
-- [ ] S5 消息延迟 DB 聚合脚本（scripts/load 或 scripts/ops 下）
+- [x] S5 消息延迟 DB 聚合脚本（`scripts/ops/slo-collect.sh`，含 S4/S5/S7，基线见 `slo-baseline-102.md`）
 - [ ] S6 话单对账结果定时落表，可查询历史完整率
-- [ ] S7 报表产出时间埋点
+- [x] S7 报表产出时间采集（并入 `slo-collect.sh`：窗口结束 8h 内为按时）
 - [ ] Prometheus 抓取配置（deployments 下）与看板 JSON

@@ -240,3 +240,5 @@
 - 2026-08-22 worktree 收尾 ff-merge 失败的正确动作序列(协议已固化 docs/notes/adopted/2026-08-22-worktree-merge-protocol.md):回 worktree `git rebase main` → force-with-lease 更新备份 → 重试 ff-merge;全程绝不 worktree remove。
 78. 本地起 stub 代理后端做浏览器验证时,必须先应答 OPTIONS 预检(204 + Allow-* 头)再转发,否则跨域 fetch 静默全灭,断言全空误判页面没渲染。(2026-08-22 工作台空态验证)
 ### pgxmock ExpectQuery 参数是正则,SQL 中的括号需成对转义(如 count\(\*\)),否则报 error parsing regexp
+- 2026-08-26 worktree 收尾时 `git merge --ff-only X | tail -1` 管道会吞退出码,失败后 && 链继续跑掉 worktree remove;合并命令必须单独执行或显式检查退出码,失败唯一动作是回 worktree rebase 重试。
+D 门禁撞号先 merge main 反向同步再复跑:worktree 基点过旧会看到已被让号修复的旧撞号

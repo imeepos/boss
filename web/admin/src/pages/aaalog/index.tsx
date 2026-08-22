@@ -6,7 +6,7 @@ import { PageHead, pagerTexts } from '../org/shared'
 import { Pagination } from '../../components/Pagination'
 import { fmtTime } from '../../lib/format'
 import { type AuthLogRow, type CdrRow } from '../quad/types'
-import { TableStateRow } from '../../components/business'
+import { TableStateRow, TabBar } from '../../components/business'
 
 export default function AaaLogPage() {
   const t = useT()
@@ -45,17 +45,14 @@ export default function AaaLogPage() {
     <div>
       <PageHead title={a.title} desc={a.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
-          {(['cdr', 'auth'] as const).map((key) => (
-            <button key={key} onClick={() => { setTab(key); setPage(1) }}
-              style={{
-                padding: '8px 16px', fontSize: 14, cursor: 'pointer', background: 'none', border: 'none',
-                borderBottom: tab === key ? '2px solid #1677ff' : '2px solid transparent',
-                color: tab === key ? '#1677ff' : '#666', fontWeight: tab === key ? 600 : 400,
-              }}>
-              {key === 'cdr' ? a.tabCdr : a.tabAuth}
-            </button>
-          ))}
+        <div className="px-4 pt-3">
+          <TabBar
+            tabs={[{ key: 'cdr' as const, label: a.tabCdr }, { key: 'auth' as const, label: a.tabAuth }]}
+            value={tab}
+            onChange={(key) => { setTab(key); setPage(1) }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center' }}>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" style={{ width: 180 }} placeholder={a.filterLoid}
             value={loid} onChange={(e) => { setLoid(e.target.value); setPage(1) }} />
           <span className="spacer" />
