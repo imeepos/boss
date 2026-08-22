@@ -1,6 +1,6 @@
 // roleCode → 分组可见性映射(前端仅渲染;接口级权限由后端 permCode 拦截,直访越权路由 → 403 页)。
 // 角色职责依据 server-ts/src/enums.ts RoleCode 与 domain-map.md 能力域。
-import { MENU_GROUPS, PAGE_BY_KEY, type MenuItem } from './menu.def'
+import { MENU_GROUPS, PAGE_BY_KEY, type MenuGroup, type MenuItem } from './menu.def'
 
 /** 后台 accounts 专用角色；customer/workers 属于其他端，不进入管理后台。 */
 export type RoleCode =
@@ -43,9 +43,27 @@ export function visiblePages(role: string): VisiblePage[] {
   return out
 }
 
-/** 直访路由是否对该角色可见(403 判定)。 */
-export function canAccess(role: string, pageKey: string): boolean {
+/** 直访路由是否对该角色可见(403 判定;自定义角色按 menu:<key> 权限码逐项判定)。 */
+export function canAccess(role: string, pageKey: string, permCodes?: string[]): boolean {
   const page = PAGE_BY_KEY.get(pageKey)
   if (!page) return false
-  return visibleGroupIds(role).includes(page.groupId)
+  if (ROLE_GROUPS[role as RoleCode]) return visibleGroupIds(role).includes(page.groupId)
+  return new Set(permCodes ?? []).has(`menu:${pageKey}`)
+}
+
+/** 自定义角色:按持有 menu:<key> 过滤菜单项,空组剔除(无独立权限码的项不出现)。 */
+export function filterGroupsByPerms(permCodes: string[]): MenuGroup[] {
+  const held = new Set(permCodes)
+  return MENU_GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((it) => held.has(`menu:${it.key}`)) }))
+    .filter((g) => g.items.length > 0)
+}
+
+/** 侧栏可见分组:内置角色走静态映射,自定义角色按权限码动态推导。 */
+export function visibleGroupsForRole(role: string, permCodes?: string[]): MenuGroup[] {
+  if (ROLE_GROUPS[role as RoleCode]) {
+    const ids = new Set(visibleGroupIds(role))
+    return MENU_GROUPS.filter((g) => ids.has(g.id))
+  }
+  return filterGroupsByPerms(permCodes ?? [])
 }

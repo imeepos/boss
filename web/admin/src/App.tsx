@@ -90,7 +90,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   const t = useT()
   const profile = useProfile()
   const label = t.menu.items[pageKey] ?? pageKey
-  if (!canAccess(profile.roleCode, pageKey)) {
+  if (!canAccess(profile.roleCode, pageKey, profile.permissionCodes)) {
     // 入驻企业角色误落平台页(如登录后默认 /dashboard):送回企业工作台首页。
     if (profile.roleCode.startsWith('partner_')) return <Navigate to="/partner/home" replace />
     return <ForbiddenPage />

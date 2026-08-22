@@ -1,6 +1,5 @@
-// 菜单权限页:三层权限模型横幅 + 角色×菜单矩阵(勾选=角色持该 menu:* 权限)。
-// 契约: GET /menu-perms(org.yaml;data:{model:{layers[string]},matrix:{roleColumns,rows}})。
-// 原型的"调整可见性/保存"为演示交互,无后端操作,不实现(契约只读)。
+// 菜单权限页:角色管理卡片(自定义角色,迁移 000100)+ 三层权限模型横幅 + 角色×菜单矩阵。
+// 契约: GET /role-details、GET /permissions、POST/PUT/DELETE /roles(org.yaml)、GET /menu-perms。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -9,6 +8,7 @@ import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterMatrixRows, pageSlice, type MenuPermData, type MenuPermViewRow } from './matrix'
 import { Pagination } from '../../../components/Pagination'
 import { EmptyState } from '../../../components/business'
+import { RoleManagerCard } from './RoleManagerCard'
 
 export default function MenuPermPage() {
   const t = useT()
@@ -43,6 +43,7 @@ export default function MenuPermPage() {
   return (
     <div>
       <PageHead title={t.pages.menuperm.title} desc={t.pages.menuperm.desc} />
+      <RoleManagerCard onChanged={load} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]" style={{ marginBottom: 16 }}>
         <div className="px-4 pt-3.5 text-[15px] font-semibold text-[var(--shell-heading)]">{t.pages.menuperm.modelTitle}</div>
         <div className="overflow-x-auto px-4 pb-4">

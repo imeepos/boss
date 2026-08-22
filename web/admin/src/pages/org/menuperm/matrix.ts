@@ -3,6 +3,7 @@
 export interface MenuRoleCol {
   roleCode: string
   roleName: string
+  isBuiltin?: boolean
 }
 
 export interface MenuPermRow {

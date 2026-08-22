@@ -71,7 +71,7 @@ export interface Translations {
     colActions: string
     empty: string
     uploadFail: string
-    deleteFail: string
+    deleteFail: string,
     rangeText: string
     prev: string
     next: string
@@ -166,7 +166,7 @@ export interface Translations {
       inactive: string
       total: string
       loadFail: string
-      saveFail: string
+      saveFail: string,
       filterCountry: string
       searchPlaceholder: string
       empty: string
@@ -217,8 +217,8 @@ export interface Translations {
       addChild: string
       rename: string
       delete: string
-      deleteConfirm: string
-      deleteFail: string
+      deleteConfirm: string,
+      deleteFail: string,
       pathLabel: string
       pathHint: string
       nameLabel: string
@@ -226,7 +226,7 @@ export interface Translations {
       adminCode: string
       none: string
       loadFail: string
-      saveFail: string
+      saveFail: string,
       empty: string
     }
     odn: {
@@ -238,7 +238,7 @@ export interface Translations {
       save: string
       saving: string
       loadFail: string
-      saveFail: string
+      saveFail: string,
       empty: string
       retire: string
       retireConfirm: string
@@ -287,7 +287,7 @@ export interface Translations {
       pickFetching: string
       pickFetchFail: string
       clear: string
-      template: string
+      template: string,
       importing: string
       pastePlaceholder: string
       parseFailAt: string
@@ -318,7 +318,7 @@ export interface Translations {
       createTitle: string
       editTitle: string
       submitting: string
-      saveFail: string
+      saveFail: string,
       empty: string
       scopeAll: string
       gBasic: string
@@ -367,7 +367,7 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
-      saveFail: string
+      saveFail: string,
       saved: string
       prev: string
       next: string
@@ -380,7 +380,7 @@ export interface Translations {
       title: string
       desc: string
       loadFail: string
-      saveFail: string
+      saveFail: string,
       addDept: string
       addPost: string
       edit: string
@@ -406,7 +406,7 @@ export interface Translations {
       create: string
       createTitle: string
       editTitle: string
-      saveFail: string
+      saveFail: string,
       fLegalEntity: string
       pLegalEntity: string
       fName: string
@@ -432,7 +432,7 @@ export interface Translations {
       create: string
       createTitle: string
       editTitle: string
-      saveFail: string
+      saveFail: string,
       fDept: string
       pDept: string
       fCode: string
@@ -484,7 +484,7 @@ export interface Translations {
       detail: string
       create: string
       createTitle: string
-      saveFail: string
+      saveFail: string,
       loadFail: string
       history: string
       historyTitle: string
@@ -642,7 +642,7 @@ export interface Translations {
       columns: string[]
       create: string
       createTitle: string
-      saveFail: string
+      saveFail: string,
       fCompany: string
       pCompany: string
       fScope: string
@@ -668,7 +668,7 @@ export interface Translations {
       columns: string[]
       create: string
       createTitle: string
-      saveFail: string
+      saveFail: string,
       fAsset: string
       pAsset: string
       eAsset: string
@@ -729,7 +729,7 @@ export interface Translations {
       columns: string[]
       create: string
       createTitle: string
-      saveFail: string
+      saveFail: string,
       fResource: string
       pResource: string
       eResource: string
@@ -789,7 +789,7 @@ export interface Translations {
       columns: string[]
       create: string
       createTitle: string
-      saveFail: string
+      saveFail: string,
       fCompany: string
       pCompany: string
       fRegion: string
@@ -955,7 +955,7 @@ export interface Translations {
       columns: string[]
       create: string
       createTitle: string
-      saveFail: string
+      saveFail: string,
       fOrder: string
       eOrder: string
       fAsset: string
@@ -1121,7 +1121,7 @@ export interface Translations {
       desc: string
       columns: string[]
       create: string
-      saveFail: string
+      saveFail: string,
       requiredHint: string
       cancel: string
       save: string
@@ -1263,7 +1263,7 @@ export interface Translations {
       columns: string[]
       create: string
       createTitle: string
-      saveFail: string
+      saveFail: string,
       loadFail: string
       fAccount: string
       pAccount: string
@@ -1319,6 +1319,29 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      roleTitle: string,
+      createRole: string,
+      editRole: string,
+      roleName: string,
+      roleNamePh: string,
+      roleCode: string,
+      roleType: string,
+      builtin: string,
+      custom: string,
+      builtinReadOnly: string,
+      permCount: string,
+      template: string,
+      templateNone: string,
+      templateHint: string,
+      permsMenu: string,
+      permsAction: string,
+      permSelected: string,
+      deleteRole: string,
+      deleteConfirm: string,
+      saveFail: string,
+      deleteFail: string,
+      errProtected: string,
+      errInUse: string,
     }
     datascope: {
       title: string
@@ -1357,7 +1380,7 @@ export interface Translations {
       save: string
       saving: string
       saved: string
-      saveFail: string
+      saveFail: string,
       resetForm: string
       detailTitle: string
       currentValue: string
@@ -1396,7 +1419,7 @@ export interface Translations {
       save: string
       saving: string
       saved: string
-      saveFail: string
+      saveFail: string,
       loadFail: string
       retry: string
       testBtn: string
@@ -1429,7 +1452,7 @@ export interface Translations {
       save: string
       saving: string
       saved: string
-      saveFail: string
+      saveFail: string,
       loadFail: string
       retry: string
       testBtn: string
@@ -1467,7 +1490,7 @@ export interface Translations {
       save: string
       saving: string
       saved: string
-      saveFail: string
+      saveFail: string,
       loadFail: string
       retry: string
       testBtn: string
@@ -1493,7 +1516,7 @@ export interface Translations {
       save: string
       saving: string
       saved: string
-      saveFail: string
+      saveFail: string,
       loadFail: string
       retry: string
       rotateSecret: string
@@ -1529,7 +1552,7 @@ export interface Translations {
       save: string
       saving: string
       saved: string
-      saveFail: string
+      saveFail: string,
       loadFail: string
       retry: string
       testBtn: string
@@ -1554,7 +1577,7 @@ export interface Translations {
       useConfirm: string
       edit: string
       delete: string
-      deleteConfirm: string
+      deleteConfirm: string,
       add: string
       addTitle: string
       editTitle: string
@@ -1692,7 +1715,7 @@ export interface Translations {
       statusFailed: string
       download: string
       del: string
-      deleteConfirm: string
+      deleteConfirm: string,
       empty: string
       loadFail: string
       busy: string

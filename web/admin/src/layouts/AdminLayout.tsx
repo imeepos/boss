@@ -10,16 +10,15 @@ import { Sidebar } from './Sidebar'
 import { Breadcrumb } from './Breadcrumb'
 import { BottomBar } from './BottomBar'
 import { Fab } from './Fab'
-import { MENU_GROUPS, KEY_BY_PATH, PAGE_BY_KEY } from '../router/menu.def'
-import { visibleGroupIds } from '../router/role-menu'
+import { KEY_BY_PATH, PAGE_BY_KEY } from '../router/menu.def'
+import { visibleGroupsForRole } from '../router/role-menu'
 
 export function AdminLayout({ profile }: { profile: Profile; children?: ReactNode }) {
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const visible = new Set(visibleGroupIds(profile.roleCode))
-  const groups = MENU_GROUPS.filter((g) => visible.has(g.id))
+  const groups = visibleGroupsForRole(profile.roleCode, profile.permissionCodes)
   const activeKey = KEY_BY_PATH.get(pathname)
   const activeGroupId = activeKey ? PAGE_BY_KEY.get(activeKey)?.groupId : undefined
 

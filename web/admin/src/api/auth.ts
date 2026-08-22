@@ -17,6 +17,8 @@ export interface Profile {
   roleName: string
   legalEntityName: string
   regionScope: string
+  /** 角色持有的权限码全集;自定义角色经此驱动动态菜单。 */
+  permissionCodes?: string[]
 }
 
 /** 登录:成功后立即持久化 token。 */
