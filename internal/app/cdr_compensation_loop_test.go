@@ -12,10 +12,10 @@ import (
 
 // fakeCdrCompStore 话单补偿存桩。
 type fakeCdrCompStore struct {
-	cdrs     []aaa.CdrRecord
-	listErr  error
-	marked   map[int64]string
-	markErr  error
+	cdrs    []aaa.CdrRecord
+	listErr error
+	marked  map[int64]string
+	markErr error
 }
 
 func (f *fakeCdrCompStore) ListUnsentCdrs(context.Context, int) ([]aaa.CdrRecord, error) {

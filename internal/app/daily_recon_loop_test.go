@@ -11,9 +11,9 @@ import (
 
 // fakeReconStoreApp report.Store + ReconProber 桩(app 侧)。
 type fakeReconStoreApp struct {
-	checks     []report.ReconCheck
-	saved      []*report.Snapshot
-	latestDay  time.Time // 当日已有快照的日期;零值=无快照
+	checks    []report.ReconCheck
+	saved     []*report.Snapshot
+	latestDay time.Time // 当日已有快照的日期;零值=无快照
 }
 
 func (f *fakeReconStoreApp) UpsertSnapshot(_ context.Context, s *report.Snapshot) error {
@@ -106,4 +106,43 @@ func TestStartDailyReconLoop(t *testing.T) {
 		stop()
 		stop()
 	})
+}
+
+// fakeEscalateNotify 记 EscalateOverdue 调用。
+type fakeEscalateNotify struct {
+	fakeNotify
+	calls int
+}
+
+func (f *fakeEscalateNotify) EscalateOverdue(context.Context) (int64, error) {
+	f.calls++
+	return 3, nil
+}
+
+func TestPatrolEscalateOverdueTodos(t *testing.T) {
+	t.Run("窄口支持时每轮升级", func(t *testing.T) {
+		n := &fakeEscalateNotify{}
+		patrolEscalateOverdueTodos(context.Background(), &Application{Notify: n})
+		if n.calls != 1 {
+			t.Fatalf("calls=%d", n.calls)
+		}
+	})
+	t.Run("MemStore 无窄口安全跳过", func(t *testing.T) {
+		patrolEscalateOverdueTodos(context.Background(), &Application{Notify: nil})
+		patrolEscalateOverdueTodos(context.Background(), &Application{Notify: &fakeNotify{}})
+	})
+}
+
+// 契约:daily_recon 异常待办带 P1 时限(DueHours=4)。
+func TestReconNoticeCarriesDeadline(t *testing.T) {
+	n := &fakeNotify{}
+	emitReconNotice(context.Background(), reconLoopDeps{n: n}, &report.ReconPayload{
+		Checks: []report.ReconCheck{{Domain: "quadlink", Name: "conflicts", Count: 2}},
+	}, time.Date(2026, 8, 26, 3, 0, 0, 0, time.Local))
+	if len(n.inputs) != 1 {
+		t.Fatalf("notices=%d", len(n.inputs))
+	}
+	if n.inputs[0].DueHours != 4 {
+		t.Fatalf("notice=%+v, want DueHours=4", n.inputs[0])
+	}
 }

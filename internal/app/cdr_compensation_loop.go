@@ -23,11 +23,11 @@ type cdrCompStore interface {
 
 // cdrCompDeps 补偿循环最小依赖,便于单测注入。
 type cdrCompDeps struct {
-	store   cdrCompStore             // 必备:权威侧读/回写
-	emit    aaability.Emitter        // 必备:Kafka 实时链路
-	n       notify.Service           // 可空:失败留痕通知
-	batch   int                      // 每轮上限
-	nowFunc func() time.Time        // 可替换时钟(测试)
+	store   cdrCompStore      // 必备:权威侧读/回写
+	emit    aaability.Emitter // 必备:Kafka 实时链路
+	n       notify.Service    // 可空:失败留痕通知
+	batch   int               // 每轮上限
+	nowFunc func() time.Time  // 可替换时钟(测试)
 }
 
 const (
