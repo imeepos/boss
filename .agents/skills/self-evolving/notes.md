@@ -308,3 +308,8 @@
 - skill 有没有提前警告:没有。gpt-image-2 脚本是新工具,参数兼容清单此前未沉淀。
 - 重来一次会怎么做:先小质量(low)试跑一发验证端点参数兼容,再上 --quality high;cdp 截图主题直接用 ?theme= URL 覆盖,不走 --eval setItem(加载后执行不重渲)。
 - 顺手的坑:worktree remove 被 web/admin/node_modules 残留挡住(Directory not empty),需 --force;且 && 链断导致 branch -d 漏跑,收尾要确认 worktree list + branch 双干净。
+
+## 2026-08-22 自定义角色全栈任务
+- 最耗时的坑:CDP 点击模板下拉选项不生效,排查两轮才发现 Dropdown onChange 挂在 mousedown;skill 未预警(已补 techniques)。
+- 环境事实漂移:102 口令与 GUI 端口都与文档不符,浪费一轮;已回写 boss-admin-web.md 与 lessons。
+- 重来一次:先 curl 探端口/口令再开浏览器链路;点不动先看组件源码事件绑定。

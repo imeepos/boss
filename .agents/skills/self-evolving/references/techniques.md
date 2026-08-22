@@ -247,3 +247,6 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## git worktree 快速闭环(改代码防主分支污染)
 场景 → AGENTS.md 禁止直接在主分支改代码时。
 怎么用 → `git worktree add ../boss-<task> -b feat/<task>` → 在 worktree 内开发+门禁+commit → 主 checkout `git merge --no-ff` → `git worktree remove --force`(web/admin/node_modules 残留会挡普通 remove)→ `git branch -d`;最后 `git worktree list` + `git branch` 双确认干净。未跟踪文件(如设计稿 png)在主 checkout 直接 mv 进 worktree 即可带走。
+- 2026-08-22 CDP 自动化点击 Dropdown 选项必须派发 `mousedown`(组件 onChange 挂在 onMouseDown,onClick 仅 preventDefault);触发器开浮层用 click,选项选择用 `el.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}))`。
+- 2026-08-22 cdp-capture 注入登录态后 SPA 不认:eval 设 localStorage 要与 `location.href=目标页` 同一条执行(先访问根路径设值再跳转),分开执行时应用已用空 token 启动重定向 /login。
+- 2026-08-22 102 环境分工:28080=纯 API(直访 SPA 路由 404 page not found),admin GUI 在 5180 端口(compose boss-admin-web 容器);截图/联调一律打 5180。

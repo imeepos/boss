@@ -227,3 +227,7 @@
 - 当冒烟脚本点"下一步"没跳步时,先核对测试数据本身是否满足校验(如信用码必须整 18 位),再怀疑页面逻辑——本次连续两次自造数据长度不够,校验其实一直在正确拦截。skill 没提前警告我。
 - 当 gpt-image-generate.mjs 文生图报 400 "Unknown parameter: 'response_format'/'style'" 时,修复是从 buildPayload 删掉对应字段——当前代理端点不认这两个参数,gpt-image-2 默认即返回 b64_json,输出分支本已兼容 b64_json/url 两种。
 - 当在 web/admin 子目录用相对路径跑 `.agents/skills/.../xxx.mjs` 时,修复是 cd 回仓库根再跑——Node 报模块找不到只打出版本号尾巴,先想路径再想环境。
+- 当列表型配置页前端用统一 `Row.id` 取主键列却显示 undefined 且 toggle/disable 死链 `xxx/undefined/...` 时，修复是 Tab 定义自带 `idKey: string` 按后端 SQL `AS "..."` 别名一一标注（addonId/couponId/denomId/customerId/faqId/guideId/id），渲染与动作 URL 都按 `row[def.idKey]` 取；同步加 tabs.test.ts 锁住映射。后端主键名与前端假设不一致是无告警漂移，grep `pg_lists.go` 的 SELECT 列表是唯一对账源。skill 没提前警告我。
+- 2026-08-22 批量脚本插入 locale 行要自带尾逗号,插完立即 typecheck(types/三份 locale 四处同步时用脚本尤其注意)。
+- 2026-08-22 regen 生成物(如 bossctl 路由目录)会夹带他人域的历史漂移,提交前必看 diff,只手工保留本次变更相关条目。
+- 2026-08-22 102 admin 口令已漂移为 admin/admin123(文档写的 Boss-admin-2026 已失效),以实测为准。

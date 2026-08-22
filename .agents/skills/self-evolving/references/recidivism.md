@@ -65,3 +65,4 @@
 | 新服务依赖可写目录但部署物(compose/Dockerfile)未随代码提交,102 装配 nil | 1 | 2026-08-21(backup 卷 permission denied,两轮部署) | 功能代码与部署物必须同批提交 |
 | subagent "failed" 通知后未用 list_agents 复核,僵尸 agent 仍在并行写文件,与主线产出重复/冲突 | 1 | 2026-08-21(6 个重构 subagent 全报 failed,实际 3 个仍 running,残留 sections/ 等重复文件混入 stash) | 收到 failed 通知先 list_agents 核实;提交前 git status 出现非预期未跟踪文件必须查来源 |
 | commit message 里写未经测量的数字(行数"370->202",实际 179) | 1 | 2026-08-21(profile 拆分,rebase reword 补救) | 写结论数字前先 wc -l 实测;此为红线#6 的数字版 |
+| 列表页前端用统一 `Row.id` 取主键,后端 SQL AS 出来的实际主键名因表而异(addonId/couponId/denomId/customerId/faqId/guideId/id),ID 列显示 undefined 且 toggle/disable URL 拼出 `xxx/undefined/...` 死链 | 1 | 2026-08-22(用户端配置页 /bss/userdata 7 个 tab 全军覆没) | 写列表组件前先 `SELECT ... AS "..."` 列出后端实际别名,Tab 定义需自带 idKey;tabs.ts 必须有单测锁住映射 |
