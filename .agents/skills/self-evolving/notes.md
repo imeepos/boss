@@ -333,3 +333,8 @@
 - 最大时间坑:无(整体顺畅);小坑是用 python 批量替换改 struct 字段时把收尾 `}` 误写成 `)`,build 立刻暴露,一次修复。
 - skill 预警有效:后端索引 #25(迁移先看真实最大编号)、#31(多返回值)等均提前规避;门禁 C 红线(300 行)被 check-contract-sync 抓到 pg_workflow.go 超行,拆 pg_charge.go 解决。
 - 重来一次:改 struct 字段的 python 替换块应带上收尾括号上下文一起断言;合并前先看 main 是否被并行推进(promotion-coupon 插入导致 terms.md 冲突,手工并表解决)。
+
+## 2026-08-22 促销券+赠送时长任务
+- 哪个坑浪费最多时间: 在 boss-promo-impl(他人会话的半成品 worktree)里读码、编辑、干等并行写入,既差点覆盖别人文件又浪费了等待时间。
+- skill 有没有提前警告: 有(techniques #26/#80 并行 Agent 识别),但只用于"不改他人文件",没上升到"先确认 worktree 归属再进入"。
+- 重来一次: 开工第一步 git worktree list + git status 时间戳判定归属;不是自己的立即另起 worktree 从 main 拉分支。

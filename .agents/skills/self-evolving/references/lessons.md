@@ -230,3 +230,4 @@
 - 当列表型配置页前端用统一 `Row.id` 取主键列却显示 undefined 且 toggle/disable 死链 `xxx/undefined/...` 时，修复是 Tab 定义自带 `idKey: string` 按后端 SQL `AS "..."` 别名一一标注（addonId/couponId/denomId/customerId/faqId/guideId/id），渲染与动作 URL 都按 `row[def.idKey]` 取；同步加 tabs.test.ts 锁住映射。后端主键名与前端假设不一致是无告警漂移，grep `pg_lists.go` 的 SELECT 列表是唯一对账源。skill 没提前警告我。
 - 2026-08-22 批量脚本插入 locale 行要自带尾逗号,插完立即 typecheck(types/三份 locale 四处同步时用脚本尤其注意)。
 - 2026-08-22 regen 生成物(如 bossctl 路由目录)会夹带他人域的历史漂移,提交前必看 diff,只手工保留本次变更相关条目。
+# 84 (2026-08-22): 发现半成品未提交代码时,先 git worktree list 判断是否他人(并行会话)的活跃 worktree——是则绝不进入编辑,另起自己的 worktree;用户点名"一人一个 worktree"。

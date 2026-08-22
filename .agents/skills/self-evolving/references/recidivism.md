@@ -67,3 +67,4 @@
 | commit message 里写未经测量的数字(行数"370->202",实际 179) | 1 | 2026-08-21(profile 拆分,rebase reword 补救) | 写结论数字前先 wc -l 实测;此为红线#6 的数字版 |
 | 列表页前端用统一 `Row.id` 取主键,后端 SQL AS 出来的实际主键名因表而异(addonId/couponId/denomId/customerId/faqId/guideId/id),ID 列显示 undefined 且 toggle/disable URL 拼出 `xxx/undefined/...` 死链 | 1 | 2026-08-22(用户端配置页 /bss/userdata 7 个 tab 全军覆没) | 写列表组件前先 `SELECT ... AS "..."` 列出后端实际别名,Tab 定义需自带 idKey;tabs.ts 必须有单测锁住映射 |
 | worktree commit 完成后未先 ff-merge 就清理,commit 随 worktree 删除被 GC(无 remote 备份) | 1 | 2026-08-22(intel 板块可视化 c1 /gis/points 290 行 commit 在 worktree 删除时丢失,git fsck --lost-found 找不到,只能重做) | worktree 收尾顺序:① push origin ② merge --ff-only ③ worktree remove ④ branch -D ⑤ push --delete;每步独立可逆,绝不跳步 |
+| 误闯并行会话的 worktree 并编辑其未提交文件(2026-08-22,用户点名) | 1 | 2026-08-22 |
