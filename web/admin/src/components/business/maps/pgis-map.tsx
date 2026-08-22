@@ -12,6 +12,7 @@ import TileLayer from 'ol/layer/Tile'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import { fromLonLat, transformExtent } from 'ol/proj'
+import { unByKey } from 'ol/Observable'
 import { GeoJSON } from 'ol/format'
 import { Style, Circle, Fill, Stroke, Text } from 'ol/style'
 import { pointRadius, pointColor, pointsToFeatureCollection, type GisPoint } from './point-layer'
@@ -97,7 +98,7 @@ export function PgisMap({
     vectorLayerRef.current = layer
     return () => {
       map.removeLayer(layer)
-      map.un('singleclick', handler as never)
+      unByKey(handler)
       if (vectorLayerRef.current === layer) vectorLayerRef.current = old
     }
   }, [points, theme, onSelect])
@@ -111,19 +112,10 @@ export function PgisMap({
       const [minX, minY, maxX, maxY] = transformExtent(ext, 'EPSG:3857', 'EPSG:4326')
       onViewportChange({ minLng: minX, minLat: minY, maxLng: maxX, maxLat: maxY })
     }
-    const listeners = [
-      (map.on as unknown as (k: string, l: () => void) => unknown)('moveend', handler),
-      (map.on as unknown as (k: string, l: () => void) => unknown)('zoomend', handler),
-    ]
+    const listener = map.on('moveend', handler)
     // mount 后立即触发一次(初始视域)
     handler()
-    return () => {
-      // OL un() 签名是 Observable + Object + MapBrowser + MapEvent + MapRender 多重 OnSignature 联合,
-      // TS 无法从 handler listener 反推 key 字面量;用 loose cast 绕过(运行时安全)。
-      const un = map.un as unknown as (k: string, l: unknown) => void
-      un('moveend', listeners[0])
-      un('zoomend', listeners[1])
-    }
+    return () => unByKey(listener)
   }, [onViewportChange])
 
   return <div ref={ref} className="h-full min-h-96 w-full rounded-md border border-[var(--shell-card-border)]" data-testid="pgis-map" />
