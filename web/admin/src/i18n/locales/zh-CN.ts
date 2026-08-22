@@ -1229,6 +1229,15 @@ const zhCN: Translations = {
       mapEmpty: '该层级暂无坐标点位',
       mapLoadFail: '点位加载失败',
       mapRefresh: '刷新点位',
+      // 主题切换(commit A4)
+      themeLight: '浅色',
+      themeDark: '深色',
+      themeSwitchHint: '切换瓦片主题',
+      // 顶部统计卡(A5)
+      statLevelNodes: '当前层级点位',
+      statInBbox: '视域内点位',
+      statOnline: '在线点位',
+      statAvgCount: '平均子级数',
     },
     analyticsPage: {
       title: '经营分析',

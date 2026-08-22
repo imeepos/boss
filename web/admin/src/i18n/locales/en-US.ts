@@ -1229,6 +1229,15 @@ const enUS: Translations = {
       mapEmpty: 'No points at this level',
       mapLoadFail: 'Failed to load points',
       mapRefresh: 'Refresh Points',
+      // Theme switch (commit A4)
+      themeLight: 'Light',
+      themeDark: 'Dark',
+      themeSwitchHint: 'Switch tile theme',
+      // Top stat cards (A5)
+      statLevelNodes: 'Level Points',
+      statInBbox: 'In Viewport',
+      statOnline: 'Online Points',
+      statAvgCount: 'Avg Children',
     },
     analyticsPage: {
       title: 'Analytics',

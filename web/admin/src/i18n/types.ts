@@ -1179,6 +1179,15 @@ export interface Translations {
       mapEmpty: string
       mapLoadFail: string
       mapRefresh: string
+      // 主题切换(commit A4)
+      themeLight: string
+      themeDark: string
+      themeSwitchHint: string
+      // 顶部统计卡(A5)
+      statLevelNodes: string
+      statInBbox: string
+      statOnline: string
+      statAvgCount: string
     }
     analyticsPage: {
       title: string

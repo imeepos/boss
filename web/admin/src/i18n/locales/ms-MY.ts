@@ -1229,6 +1229,15 @@ const msMY: Translations = {
       mapEmpty: 'Tiada titik pada peringkat ini',
       mapLoadFail: 'Gagal memuatkan titik',
       mapRefresh: 'Muat Semula Titik',
+      // Tukar tema (commit A4)
+      themeLight: 'Cerah',
+      themeDark: 'Gelap',
+      themeSwitchHint: 'Tukar tema jubin',
+      // Kad statistik atas (A5)
+      statLevelNodes: 'Titik Peringkat',
+      statInBbox: 'Dalam Pandangan',
+      statOnline: 'Titik Dalam Talian',
+      statAvgCount: 'Purata Anak',
     },
     analyticsPage: {
       title: 'Analitik',
