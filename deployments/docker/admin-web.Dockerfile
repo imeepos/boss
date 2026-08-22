@@ -7,7 +7,7 @@ WORKDIR /app
 COPY web/admin/package.json web/admin/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prefer-offline
 COPY web/admin/ ./
-RUN pnpm build
+RUN pnpm build && find /app/dist -type f -exec chmod 644 {} \; && find /app/dist -type d -exec chmod 755 {} \;
 
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
