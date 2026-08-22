@@ -31,8 +31,8 @@ const LINK = 'text-sm text-[var(--shell-nav-text)] transition-colors hover:text-
 export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: FooterProps) {
   return (
     <footer className="bg-[var(--color-brand-navy-950)] px-4 md:px-[60px]">
-      {/* 第一段:超链组(品牌 + 产品/方案/快速入口) */}
-      <div className="mx-auto max-w-[1440px]">
+      {/* 第一段:超链组(品牌 + 产品/方案/快速入口),全幅铺满仅留边距 */}
+      <div>
         <div className="grid grid-cols-1 gap-12 py-16 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-8">
           <div>
             <div className="flex items-center gap-3">
