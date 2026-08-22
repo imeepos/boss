@@ -335,6 +335,7 @@ paths:
   /analytics/maintenance: { $ref: './admin/intel.yaml#/paths/~1analytics~1maintenance' }
   /reports: { $ref: './admin/intel.yaml#/paths/~1reports' }
   /reports/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1latest' }
+  /reports/recon/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1recon~1latest' }
   /reports/{reportId}/send: { $ref: './admin/intel.yaml#/paths/~1reports~1{reportId}~1send' }
   /db-patrol/orphans: { $ref: './admin/intel.yaml#/paths/~1db-patrol~1orphans' }
   /db-patrol/latest: { $ref: './admin/intel.yaml#/paths/~1db-patrol~1latest' }

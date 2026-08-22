@@ -170,10 +170,12 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	stopPatrol := startPatrolLoop(app)
 	stopReserveTimeout := startReserveTimeoutLoop(app)
 	stopCdrComp := startCdrCompensationLoop(aaastore, em.cdrRT, app.Notify)
+	stopDailyRecon := startDailyReconLoop(app)
 	app.close = func() {
 		stopPatrol()         // 巡检循环
 		stopReserveTimeout() // 预占超时释放循环(Q2)
 		stopCdrComp()        // 话单补偿循环(Q2)
+		stopDailyRecon()     // 每日数据对账循环(Q2)
 		aw.Close()           // 排空审计队列
 		if em.closeCdr != nil {
 			em.closeCdr()

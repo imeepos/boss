@@ -77,6 +77,15 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
+  /reports/recon/latest:
+    get:
+      tags: [Intel]
+      summary: 最新每日数据对账快照(五域检查:订单/四码/资源/账务/GIS;每日 03:00 定时产出)
+      description: Q2 每日对账:六项只读计数检查,allOK=false 时异常进 URGENT 待办;无快照 code=404。permCode menu:report。
+      operationId: getLatestRecon
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
   /reports/{reportId}/send:
     post:
       tags: [Intel]
