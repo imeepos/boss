@@ -69,12 +69,16 @@ paths:
   /coupons:
     get:
       tags: [Misc]
-      summary: 优惠券列表(可用/已使用/已过期)
+      summary: 优惠券列表(可用/已使用/已过期;billCents>0 时附预估抵扣并过滤门槛不满足券)
       operationId: listCoupons
       parameters:
         - name: status
           in: query
-          schema: { type: string, enum: [available, used, expired] }
+          schema: { type: string, enum: [available, used, expired, all] }
+        - name: billCents
+          in: query
+          description: 账单金额(分),用于可用性过滤与预估抵扣
+          schema: { type: integer, format: int64 }
       responses:
         '200':
           description: 优惠券列表
@@ -87,6 +91,54 @@ paths:
                     type: array
                     items: { $ref: './schemas.yaml#/components/schemas/Coupon' }
                   inviteLink: { type: string }
+
+  /coupons/redeem:
+    post:
+      tags: [Misc]
+      summary: 兑换码领券 / 接收转赠券
+      operationId: redeemCoupon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        '200':
+          description: 领取成功,返回券号
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      couponId: { type: string }
+
+  /coupons/{couponId}/gift:
+    post:
+      tags: [Misc]
+      summary: 整券转赠(返回一次性转赠码,受赠方经 /coupons/redeem 领取)
+      operationId: giftCoupon
+      parameters: [{ name: couponId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200':
+          description: 转赠码
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      giftCode: { type: string }
 
   /usage:
     get:

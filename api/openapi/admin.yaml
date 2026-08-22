@@ -259,6 +259,12 @@ paths:
   /user-messages/read-all: { $ref: './admin/userdata.yaml#/paths/~1user-messages~1read-all' }
   /coupons: { $ref: './admin/userdata.yaml#/paths/~1coupons' }
   /coupons/{couponId}/disable: { $ref: './admin/userdata.yaml#/paths/~1coupons~1{couponId}~1disable' }
+  /coupon-templates: { $ref: './admin/promotion.yaml#/paths/~1coupon-templates' }
+  /coupon-templates/{templateId}/disable: { $ref: './admin/promotion.yaml#/paths/~1coupon-templates~1{templateId}~1disable' }
+  /coupon-templates/{templateId}/issue: { $ref: './admin/promotion.yaml#/paths/~1coupon-templates~1{templateId}~1issue' }
+  /coupon-templates/{templateId}/codes: { $ref: './admin/promotion.yaml#/paths/~1coupon-templates~1{templateId}~1codes' }
+  /gift-rules: { $ref: './admin/promotion.yaml#/paths/~1gift-rules' }
+  /gift-rules/{ruleId}/disable: { $ref: './admin/promotion.yaml#/paths/~1gift-rules~1{ruleId}~1disable' }
   /invite-config: { $ref: './admin/userdata.yaml#/paths/~1invite-config' }
   /user-usages: { $ref: './admin/userdata.yaml#/paths/~1user-usages' }
   /diy-guides: { $ref: './admin/userdata.yaml#/paths/~1diy-guides' }
