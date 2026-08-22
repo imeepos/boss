@@ -68,11 +68,6 @@ func (s *PGStore) syncDispatchTicket(ctx context.Context, orderID int64, orderSt
 
 // 环节 4~12(terms.md §1)。各环节目前是「人工确认」推进;自动化在阶段7 经同一状态机升级。
 
-// ChargeContract 环节4 合同收费(未收费不派单的硬约束由顺序守卫保证:dispatch 需 stage=7)。
-func (s *PGStore) ChargeContract(ctx context.Context, orderID int64) error {
-	return s.advance(ctx, orderID, "chargeContract")
-}
-
 // ApplyTag 环节5 标签预绑定:读已预占端口(环节3) + 落四码关联(UNLINKED) + 写分光器端口。
 // 前置:环节3 reserve 已预占端口(ports.order_id 已挂);未预占时兜底调 ReserveFirstAvailable。
 // 依赖:PortReserver(兜底) + QuadLinkPrebinder(落四码)。

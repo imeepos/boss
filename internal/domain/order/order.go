@@ -15,8 +15,15 @@ type Order struct {
 	ChannelID     int64     `json:"channelId"`     // 渠道 → channels,REQ-ORD-006 必填不可改
 	LegalEntityID int64     `json:"legalEntityId"` // 品牌=运营主体(legal_entities, 品牌隔离最小单元)
 	RegionPath    string    `json:"regionPath"`
+	BillingMode   string    `json:"billingMode"` // PREPAID/POSTPAID(000102);空回退 POSTPAID
 	CreatedAt     time.Time `json:"createdAt"`
 }
+
+// 付费模式枚举(与 aaa 域对齐,terms.md §4);下单客户选定,环节6 继承到 lo_accounts。
+const (
+	BillingModePrepaid  = "PREPAID"
+	BillingModePostpaid = "POSTPAID"
+)
 
 // StageLog 环节时间轴(order.html「环节时间轴」表)。
 type StageLog struct {
@@ -38,4 +45,5 @@ type SubmitReq struct {
 	ChannelID     int64  `json:"channelId"`     // 必填,不可改(→ channels)
 	LegalEntityID int64  `json:"legalEntityId"` // 可选校验:≠0 时须与地址推导一致
 	RegionPath    string `json:"regionPath"`
+	BillingMode   string `json:"billingMode"` // PREPAID/POSTPAID,空回退 POSTPAID;环节4 预付费当场收款
 }

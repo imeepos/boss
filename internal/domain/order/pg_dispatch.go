@@ -124,4 +124,3 @@ func (s *PGStore) UpdateScheduleSlot(ctx context.Context, ticketNo string, sched
 	}
 	return nil
 }
-

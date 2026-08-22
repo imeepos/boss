@@ -84,4 +84,3 @@ func (s *PGStore) CloseComplaint(ctx context.Context, ticketNo string) error {
 	}
 	return nil
 }
-
