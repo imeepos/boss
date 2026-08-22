@@ -54,10 +54,14 @@ function detailSummary(detail: string): string {
   }
 }
 
-/** ISO 时间 → 展示文本(YYYY-MM-DD HH:mm:ss,去时区尾巴)。 */
+/** ISO 时间 → 展示文本(YYYY-MM-DD HH:mm:ss,浏览器本地时区)。
+ * 字符串截断会原样露出 UTC 墙钟(菲律宾用户慢 8 小时,ISSUE.md 展示错位),必须经 Date 转本地。 */
 export function formatTime(iso: string): string {
   if (!iso) return ''
-  return iso.replace('T', ' ').replace(/(\.\d+|Z|[+-]\d{2}:\d{2})$/, '')
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const p = (x: number) => String(x).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 }
 
 /** 筛选:关键字(操作人/内容) + 类型 + 日期前缀。 */
