@@ -191,7 +191,7 @@ func udListInviteConfig(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// udUpdateInviteConfig PUT /invite-config:更新邀请链接与奖励券模板(000103)。
+// udUpdateInviteConfig PUT /invite-config:更新邀请链接与奖励券模板(000106)。
 func udUpdateInviteConfig(a *app.Application) gin.HandlerFunc {
 	ud := a.UserData
 	return func(c *gin.Context) {
