@@ -62,6 +62,7 @@ paths:
   /plans/{planId}/change: { $ref: './user/order.yaml#/paths/~1plans~1{planId}~1change' }
   /plans/{planId}/move: { $ref: './user/order.yaml#/paths/~1plans~1{planId}~1move' }
   /plans/{planId}/cancel: { $ref: './user/order.yaml#/paths/~1plans~1{planId}~1cancel' }
+  /plans/{planId}/renew: { $ref: './user/promotion.yaml#/paths/~1plans~1{planId}~1renew' }
   /orders/{orderNo}/rate: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}~1rate' }
   /orders/{orderNo}/technician-contact: { $ref: './user/order.yaml#/paths/~1orders~1{orderNo}~1technician-contact' }
   # ---------- Billing ----------

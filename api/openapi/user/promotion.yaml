@@ -1,0 +1,44 @@
+# Promotion 域(用户端):套餐续费(购 N 月自动算赠送时长,可带券抵扣)。
+# 券仓/兑换/转赠路径在 misc.yaml(Misc tag);本文件只挂续费闭环。
+openapi: 3.0.3
+
+paths:
+  /plans/{planId}/renew:
+    post:
+      tags: [Order]
+      summary: 套餐续费(预缴 N 月当场收款,赠送时长阶梯自动命中)
+      description: |
+        金额 = N 月 x 产品基础月费(区域覆盖不参与续费口径)。
+        可带 couponId 同事务核销抵扣;命中赠送阶梯(gift-rules,如 6送1/12送3/24送6)
+        时合约到期月延长 N+赠送 月,赠送写入 gift_duration_records。
+      operationId: renewPlan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [months, payMethod]
+              properties:
+                months: { type: integer, minimum: 1, maximum: 60 }
+                payMethod: { type: string, enum: [wechat, alipay, card, cash] }
+                couponId: { type: string, description: 可选,缴费抵扣券 }
+      responses:
+        '200':
+          description: 续费成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payNo: { type: string }
+                  amount: { type: number, description: 实收(元,已扣券) }
+                  deductedCents: { type: integer, description: 券抵扣(分) }
+                  buyMonths: { type: integer }
+                  giftMonths: { type: integer, description: 赠送月数,未命中为 0 }
+                  contractEnd: { type: string, description: 新合约到期月 'YYYY-MM' }
