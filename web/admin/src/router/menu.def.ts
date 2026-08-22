@@ -32,6 +32,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   ]},
   { id: 'org', label: '组织与权限', items: [
     { key: 'company', label: '子公司/法人', path: '/org/company' },
+    { key: 'staff', label: '组织架构与人员', path: '/org/staff' },
     { key: 'department', label: '部门管理', path: '/org/department' },
     { key: 'post', label: '岗位管理', path: '/org/post' },
     { key: 'region', label: '经营区域', path: '/org/region' },

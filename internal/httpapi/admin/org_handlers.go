@@ -230,6 +230,38 @@ func orgUpdateDepartmentHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// orgDeleteDepartmentHandler DELETE /departments/{deptId}:部门删除;仍有岗位/账号挂靠时 40900 拒。
+func orgDeleteDepartmentHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "deptId")
+		if !ok {
+			return
+		}
+		if err := a.User.DeleteDepartment(c.Request.Context(), id); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "数据变更", "department", c.Param("deptId"), map[string]any{"op": "delete"})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
+// orgDeletePostHandler DELETE /posts/{postId}:岗位删除(连同 post_roles);仍有账号挂岗时 40900 拒。
+func orgDeletePostHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "postId")
+		if !ok {
+			return
+		}
+		if err := a.User.DeletePost(c.Request.Context(), id); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "数据变更", "post", c.Param("postId"), map[string]any{"op": "delete"})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
 // orgListPostsHandler GET /posts:岗位列表(按 deptId 过滤)。
 func orgListPostsHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {

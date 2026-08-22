@@ -25,6 +25,7 @@ type fakeUser struct {
 	entities  []user.LegalEntity
 	accounts  []user.AccountRow
 	changeErr error
+	deleteErr error
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -106,6 +107,12 @@ func (f *fakeUser) CreatePost(context.Context, int64, string, string, []string) 
 }
 func (f *fakeUser) UpdatePost(context.Context, int64, int64, string, string, []string) error {
 	return nil
+}
+func (f *fakeUser) DeleteDepartment(context.Context, int64) error {
+	return f.deleteErr
+}
+func (f *fakeUser) DeletePost(context.Context, int64) error {
+	return f.deleteErr
 }
 func (f *fakeUser) ListParams(context.Context) ([]user.Param, error) {
 	return nil, nil

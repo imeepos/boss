@@ -4,9 +4,13 @@ package adminapi
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 )
 
@@ -83,6 +87,52 @@ func TestOrgWriteHandlers(t *testing.T) {
 		_ = json.Unmarshal(w.Body.Bytes(), &env)
 		if env.Code == 0 {
 			t.Fatalf("expect non-zero code, body=%s", w.Body.String())
+		}
+	})
+}
+
+func TestOrgDeleteHandlers(t *testing.T) {
+	mgr := auth.NewManager("test-secret", time.Hour)
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
+
+	del := func(t *testing.T, r *gin.Engine, path string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodDelete, path, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w
+	}
+
+	t.Run("删部门 无权限 403", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{permOk: false}, mgr)
+		if w := del(t, r, "/api/admin/v1/departments/1"); w.Code != 403 {
+			t.Fatalf("status=%d want 403", w.Code)
+		}
+	})
+
+	t.Run("删部门 被占用 409", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{permOk: true, deleteErr: user.ErrConflict}, mgr)
+		w := del(t, r, "/api/admin/v1/departments/1")
+		var env struct {
+			Code int `json:"code"`
+		}
+		_ = json.Unmarshal(w.Body.Bytes(), &env)
+		if env.Code == 0 {
+			t.Fatalf("expect conflict code, body=%s", w.Body.String())
+		}
+	})
+
+	t.Run("删部门 成功", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{permOk: true}, mgr)
+		if w := del(t, r, "/api/admin/v1/departments/1"); w.Code != 200 {
+			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("删岗位 成功", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{permOk: true}, mgr)
+		if w := del(t, r, "/api/admin/v1/posts/1"); w.Code != 200 {
+			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 		}
 	})
 }
