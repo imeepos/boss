@@ -34,7 +34,10 @@ func (f *fakeBilling) RecordPayment(context.Context, billing.Payment) (int64, er
 func (f *fakeBilling) RecordPaymentWithCoupon(_ context.Context, p billing.Payment) (billing.PaymentReceipt, error) {
 	return billing.PaymentReceipt{Amount: p.Amount}, nil
 }
-func (f *fakeBilling) GenerateBills(context.Context, string) (int, error)            { return 0, nil }
+func (f *fakeBilling) GenerateBills(context.Context, string) (int, error) { return 0, nil }
+func (f *fakeBilling) RefundPayment(_ context.Context, _ int64, _ string) (*billing.Payment, error) {
+	return nil, nil
+}
 
 // fakeArrears 桩 billing.ArrearsService。
 type fakeArrears struct {
