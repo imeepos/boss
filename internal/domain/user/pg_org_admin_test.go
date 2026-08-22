@@ -10,15 +10,30 @@ import (
 
 // TestPGStore_LegalEntityWrite 契约:法人可新建;编辑未命中返回 ErrNotFound。
 func TestPGStore_LegalEntityWrite(t *testing.T) {
-	t.Run("新建", func(t *testing.T) {
+	t.Run("新建带属地", func(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()
 		mock.ExpectQuery(`INSERT INTO legal_entities`).
-			WithArgs("LEG-D", "D 公司").
+			WithArgs("LEG-D", "D 公司", "PH", "bir_eis").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
-		id, err := NewPGStore(mock).CreateLegalEntity(context.Background(), LegalEntity{Code: "LEG-D", Name: "D 公司"})
+		id, err := NewPGStore(mock).CreateLegalEntity(context.Background(),
+			LegalEntity{Code: "LEG-D", Name: "D 公司", TaxJurisdiction: "PH", TaxChannel: "bir_eis"})
 		if err != nil || id != 7 {
 			t.Fatalf("id=%d err=%v", id, err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("新建属地缺省归一化 manual", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`INSERT INTO legal_entities`).
+			WithArgs("LEG-E", "E 公司", "", "manual").
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(8)))
+		if _, err := NewPGStore(mock).CreateLegalEntity(context.Background(),
+			LegalEntity{Code: "LEG-E", Name: "E 公司"}); err != nil {
+			t.Fatalf("create: %v", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet: %v", err)
@@ -27,18 +42,18 @@ func TestPGStore_LegalEntityWrite(t *testing.T) {
 	t.Run("编辑", func(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()
-		mock.ExpectExec(`UPDATE legal_entities SET code=\$2, name=\$3 WHERE id=\$1`).
-			WithArgs(int64(7), "LEG-D", "D 集团").
+		mock.ExpectExec(`UPDATE legal_entities SET code=\$2, name=\$3, tax_jurisdiction=\$4, tax_channel=\$5 WHERE id=\$1`).
+			WithArgs(int64(7), "LEG-D", "D 集团", "CN", "leqi").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		if err := NewPGStore(mock).UpdateLegalEntity(context.Background(), 7,
-			LegalEntity{Code: "LEG-D", Name: "D 集团"}); err != nil {
+			LegalEntity{Code: "LEG-D", Name: "D 集团", TaxJurisdiction: "CN", TaxChannel: "leqi"}); err != nil {
 			t.Fatalf("UpdateLegalEntity: %v", err)
 		}
 	})
 	t.Run("编辑未命中", func(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()
-		mock.ExpectExec(`UPDATE legal_entities`).WithArgs(int64(99), "LEG-X", "X").
+		mock.ExpectExec(`UPDATE legal_entities`).WithArgs(int64(99), "LEG-X", "X", "", "manual").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 		err := NewPGStore(mock).UpdateLegalEntity(context.Background(), 99,
 			LegalEntity{Code: "LEG-X", Name: "X"})

@@ -18,11 +18,11 @@ func TestPGStore_ListLegalEntities(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, code, name, is_platform FROM legal_entities ORDER BY id`).
-		WillReturnRows(mock.NewRows([]string{"id", "code", "name", "is_platform"}).
-			AddRow(int64(1), "LEG-A", "主品牌·企业", false).
-			AddRow(int64(2), "LEG-B", "家庭宽带", false).
-			AddRow(int64(3), "LEG-C", "批发品牌", false))
+	mock.ExpectQuery(`SELECT id, code, name, is_platform, tax_jurisdiction, tax_channel FROM legal_entities ORDER BY id`).
+		WillReturnRows(mock.NewRows([]string{"id", "code", "name", "is_platform", "tax_jurisdiction", "tax_channel"}).
+			AddRow(int64(1), "LEG-A", "主品牌·企业", false, "CN", "manual").
+			AddRow(int64(2), "LEG-B", "家庭宽带", false, "", "manual").
+			AddRow(int64(3), "LEG-C", "批发品牌", false, "PH", "bir_eis"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListLegalEntities(context.Background())

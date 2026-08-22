@@ -321,6 +321,16 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /invoices/{id}/tax-events:
+    get:
+      tags: [Billing]
+      summary: 发票税局轨迹回放(回执/回填/作废/重开留痕,时间正序;permCode menu:billing)
+      operationId: listInvoiceTaxEvents
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
 components:
   schemas:
     Invoice:

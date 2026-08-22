@@ -27,6 +27,7 @@ func ensureAuditPartitions(ctx context.Context, pool *pgxpool.Pool) error {
 type emitters struct {
 	cdr      aaability.Emitter // 话单投递(PG 必选,Kafka 双写)
 	pub      events.Publisher  // W8 状态变更链路
+	cdrRT    aaability.Emitter // Kafka 话单实时链路(补偿循环用;未部署 Kafka 为 nil)
 	closeCdr func()
 	closePub func()
 }
@@ -39,7 +40,8 @@ func wireEmitters(aaastore *aaa.PGStore, cfg *config.Config) emitters {
 	e.cdr = cdrStore
 	if len(cfg.Kafka.Brokers) > 0 {
 		ke := aaability.NewKafkaEmitter(cfg.Kafka.Brokers, cfg.AAA.CDRTopic)
-		e.cdr = &aaability.FanoutEmitter{Realtime: ke, Store: cdrStore}
+		e.cdr = &aaability.FanoutEmitter{Realtime: ke, Store: cdrStore, Marker: aaastore}
+		e.cdrRT = ke
 		e.closeCdr = func() { _ = ke.Close() }
 	}
 

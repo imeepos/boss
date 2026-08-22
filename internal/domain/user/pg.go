@@ -63,7 +63,7 @@ func (s *PGStore) Login(ctx context.Context, username, password string) (*LoginR
 
 // ListLegalEntities 列出全部子公司/法人(含平台总公司标志)。
 func (s *PGStore) ListLegalEntities(ctx context.Context) ([]LegalEntity, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, code, name, is_platform FROM legal_entities ORDER BY id`)
+	rows, err := s.db.Query(ctx, `SELECT id, code, name, is_platform, tax_jurisdiction, tax_channel FROM legal_entities ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("user: list legal_entities: %w", err)
 	}
@@ -71,7 +71,7 @@ func (s *PGStore) ListLegalEntities(ctx context.Context) ([]LegalEntity, error) 
 	out := make([]LegalEntity, 0)
 	for rows.Next() {
 		var e LegalEntity
-		if err := rows.Scan(&e.ID, &e.Code, &e.Name, &e.IsPlatform); err != nil {
+		if err := rows.Scan(&e.ID, &e.Code, &e.Name, &e.IsPlatform, &e.TaxJurisdiction, &e.TaxChannel); err != nil {
 			return nil, fmt.Errorf("user: scan legal_entity: %w", err)
 		}
 		out = append(out, e)

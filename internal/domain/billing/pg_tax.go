@@ -162,9 +162,13 @@ func issueInvoiceTx(ctx context.Context, tx pgx.Tx, billID int64) (*Invoice, err
 		return nil, fmt.Errorf("billing: dup check: %w", err)
 	}
 	var b Bill
-	err = tx.QueryRow(ctx,
-		`SELECT id, bill_no, customer_id, customer_name, amount FROM bills WHERE id = $1`, billID).
-		Scan(&b.BillID, &b.BillNo, &b.CustomerID, &b.CustomerName, &b.Amount)
+	var juris, channel string
+	err = tx.QueryRow(ctx, `
+		SELECT b.id, b.bill_no, b.customer_id, b.customer_name, b.amount,
+			COALESCE(le.tax_jurisdiction,''), COALESCE(le.tax_channel,'manual')
+		FROM bills b LEFT JOIN legal_entities le ON le.id = b.legal_entity_id
+		WHERE b.id = $1`, billID).
+		Scan(&b.BillID, &b.BillNo, &b.CustomerID, &b.CustomerName, &b.Amount, &juris, &channel)
 	if err == pgx.ErrNoRows {
 		return nil, ErrNotFound
 	}
@@ -180,13 +184,16 @@ func issueInvoiceTx(ctx context.Context, tx pgx.Tx, billID int64) (*Invoice, err
 		InvoiceNo: arn, BillID: b.BillID, BillNo: b.BillNo, CustomerID: b.CustomerID,
 		CustomerName: b.CustomerName, Title: b.CustomerName, NetAmount: round2(b.Amount),
 		VatRate: VATRate, VatAmount: vat, TotalAmount: round2(b.Amount + vat), Status: "ISSUED",
+		// 属地快照(000109):开票主体的税务配置随票落账,tax-submit 按此路由网关。
+		TaxJurisdiction: juris, TaxChannel: channel, TaxStatus: TaxStatusPENDING,
 	}
 	err = tx.QueryRow(ctx, `
 		INSERT INTO invoices(invoice_no, bill_id, bill_no, customer_id, customer_name, title,
-			net_amount, vat_rate, vat_amount, total_amount)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, issued_at`,
+			net_amount, vat_rate, vat_amount, total_amount, tax_jurisdiction, tax_channel, tax_status)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id, issued_at`,
 		inv.InvoiceNo, inv.BillID, inv.BillNo, inv.CustomerID, inv.CustomerName, inv.Title,
-		inv.NetAmount, inv.VatRate, inv.VatAmount, inv.TotalAmount).Scan(&inv.ID, &inv.IssuedAt)
+		inv.NetAmount, inv.VatRate, inv.VatAmount, inv.TotalAmount,
+		inv.TaxJurisdiction, inv.TaxChannel, inv.TaxStatus).Scan(&inv.ID, &inv.IssuedAt)
 	if err != nil {
 		return nil, fmt.Errorf("billing: insert invoice: %w", err)
 	}

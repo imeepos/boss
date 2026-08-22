@@ -85,6 +85,7 @@ func voidInvoice(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		appendTaxTrail(a, c, id, billing.TaxEventVoid, invTaxStatusForTrail(a, c, id), "", "")
 		httpx.RecordAudit(a, c, "invoice.void", "invoice", c.Param("id"), gin.H{"reason": body.Reason})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
@@ -102,6 +103,7 @@ func reissueInvoice(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		appendTaxTrail(a, c, id, billing.TaxEventReissue, "", "", "")
 		httpx.RecordAudit(a, c, "invoice.reissue", "invoice", c.Param("id"), gin.H{"newNo": inv.InvoiceNo})
 		respond(c, apitypes.CodeOK, gin.H{"invoice": inv})
 	}
@@ -132,6 +134,7 @@ func submitInvoiceToTax(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		appendTaxTrail(a, c, id, billing.TaxEventReceipt, receipt.Status, receipt.TaxNo, receipt.FailReason)
 		httpx.RecordAudit(a, c, "invoice.taxSubmit", "invoice", inv.InvoiceNo, gin.H{"status": receipt.Status})
 		respond(c, apitypes.CodeOK, gin.H{"receipt": receipt})
 	}
@@ -154,9 +157,53 @@ func backfillInvoiceTaxNo(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		appendTaxTrail(a, c, id, billing.TaxEventBackfill, billing.TaxStatusIssued, body.TaxNo, "")
 		httpx.RecordAudit(a, c, "invoice.taxBackfill", "invoice", c.Param("id"), gin.H{"taxNo": body.TaxNo})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
+}
+
+// listInvoiceTaxEvents GET /invoices/:id/tax-events:发票税局轨迹回放(时间正序)。
+func listInvoiceTaxEvents(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
+		svc, ok2 := a.Tax.(billing.TaxEventService)
+		if !ok2 {
+			respond(c, apitypes.CodeInternal, nil)
+			return
+		}
+		events, err := svc.ListTaxEvents(c.Request.Context(), id)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": events})
+	}
+}
+
+// appendTaxTrail 状态迁移成功后落轨迹(best-effort:失败不回滚业务动作,
+// 终态以 invoices 列列为准,审计日志双轨兜底;取舍见 docs/design/q3-tax-trail.md)。
+func appendTaxTrail(a *app.Application, c *gin.Context, invoiceID int64, event, statusAfter, taxNo, failReason string) {
+	svc, ok := a.Tax.(billing.TaxEventService)
+	if !ok {
+		return
+	}
+	_, _ = svc.AppendTaxEvent(c.Request.Context(), billing.TaxEvent{
+		InvoiceID: invoiceID, Event: event, TaxStatusAfter: statusAfter,
+		TaxNo: taxNo, FailReason: failReason, OperatorAccountID: httpx.ClaimsAccountID(c),
+	})
+}
+
+// invTaxStatusForTrail 作废/重开后回读当时税局状态(VOID/REISSUE 事件携带,非税状态迁移)。
+func invTaxStatusForTrail(a *app.Application, c *gin.Context, id int64) string {
+	inv, err := a.Tax.GetInvoice(c.Request.Context(), id)
+	if err != nil {
+		return ""
+	}
+	return inv.TaxStatus
 }
 
 // invoiceTaxable 开票资格:税局网关已配置(非人工)且发票 ISSUED 未开税;

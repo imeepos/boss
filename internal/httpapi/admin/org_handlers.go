@@ -32,7 +32,10 @@ func orgCreateLegalEntityHandler(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
-		id, err := a.User.CreateLegalEntity(c.Request.Context(), user.LegalEntity{Code: req.Code, Name: req.Name})
+		id, err := a.User.CreateLegalEntity(c.Request.Context(), user.LegalEntity{
+			Code: req.Code, Name: req.Name,
+			TaxJurisdiction: req.TaxJurisdiction, TaxChannel: req.TaxChannel,
+		})
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -53,7 +56,10 @@ func orgUpdateLegalEntityHandler(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
-		if err := a.User.UpdateLegalEntity(c.Request.Context(), id, user.LegalEntity{Code: req.Code, Name: req.Name}); err != nil {
+		if err := a.User.UpdateLegalEntity(c.Request.Context(), id, user.LegalEntity{
+			Code: req.Code, Name: req.Name,
+			TaxJurisdiction: req.TaxJurisdiction, TaxChannel: req.TaxChannel,
+		}); err != nil {
 			respondErr(c, err)
 			return
 		}

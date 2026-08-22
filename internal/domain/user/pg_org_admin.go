@@ -5,11 +5,20 @@ import (
 	"fmt"
 )
 
+// normalizeTaxChannel 属地配置归一化:channel 空=manual;jurisdiction 空表示未定(合法)。
+func normalizeTaxChannel(e *LegalEntity) {
+	if e.TaxChannel == "" {
+		e.TaxChannel = "manual"
+	}
+}
+
 // CreateLegalEntity 新建法人(code 公司内唯一),返回自增 id。
 func (s *PGStore) CreateLegalEntity(ctx context.Context, e LegalEntity) (int64, error) {
+	normalizeTaxChannel(&e)
 	var id int64
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO legal_entities(code, name) VALUES($1,$2) RETURNING id`, e.Code, e.Name).
+		`INSERT INTO legal_entities(code, name, tax_jurisdiction, tax_channel)
+		VALUES($1,$2,$3,$4) RETURNING id`, e.Code, e.Name, e.TaxJurisdiction, e.TaxChannel).
 		Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("user: create legal_entity: %w", err)
@@ -19,8 +28,10 @@ func (s *PGStore) CreateLegalEntity(ctx context.Context, e LegalEntity) (int64, 
 
 // UpdateLegalEntity 编辑法人(code/name);未命中返回 ErrNotFound。
 func (s *PGStore) UpdateLegalEntity(ctx context.Context, id int64, e LegalEntity) error {
+	normalizeTaxChannel(&e)
 	tag, err := s.db.Exec(ctx,
-		`UPDATE legal_entities SET code=$2, name=$3 WHERE id=$1`, id, e.Code, e.Name)
+		`UPDATE legal_entities SET code=$2, name=$3, tax_jurisdiction=$4, tax_channel=$5
+		WHERE id=$1`, id, e.Code, e.Name, e.TaxJurisdiction, e.TaxChannel)
 	if err != nil {
 		return fmt.Errorf("user: update legal_entity: %w", err)
 	}
