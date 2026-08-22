@@ -412,3 +412,8 @@
 - 哪个坑浪费最多时间:pgx 把 int 参数喂给 SQL 里推断为 text 的位置($1 || ' days')直接报 unable to encode——int 不会自动转 text,必须 Go 侧 strconv.Itoa。真库验证才发现,单测用 AnyArg 拦不住。
 - skill 有没有提前警告:没有;known-issues 有占位符编号教训但无"参数类型必须与 SQL 推断类型匹配"条目。
 - 重来一次会怎么做:SQL 里带 $1 拼接的查询,真库验证先于写 mock 单测;或干脆 SQL 写死 interval '7 days'(常量窗口)绕开参数。
+
+## 2026-08-26 Q2 P1 待办时限(goal round 6)
+- 哪个坑浪费最多时间:迁移文件头注释里写了分号("Resolve 记 resolved_at;"),我的临时回环脚本按 ';' 切分语句直接 SQL 语法错——注释里的分号会毒害一切朴素 split 工具。
+- skill 有没有提前警告:无。迁移注释只写中文顿号/逗号,不写分号,这条已入 lessons。
+- 重来一次会怎么做:写迁移文件时注释禁用分号;或回环脚本先用 PG parser 而非 split。
