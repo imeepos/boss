@@ -141,6 +141,11 @@ export interface Translations {
       trendTooltip: string
       trendPeriod: string
       trendPeriods: { week: string; month: string; quarter: string; year: string; all: string }
+      trendPrevious: string
+      trendNext: string
+      trendZoomOut: string
+      trendZoomIn: string
+      trendReset: string
       colStatus: string
       colCount: string
       colPercent: string

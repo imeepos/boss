@@ -237,6 +237,7 @@ const enUS: Translations = {
       trendTooltip: 'Orders',
        trendPeriod: 'Time range',
        trendPeriods: { week: 'This week', month: 'This month', quarter: 'This quarter', year: 'This year', all: 'All time' },
+       trendPrevious: 'Previous', trendNext: 'Next', trendZoomOut: 'Zoom out', trendZoomIn: 'Zoom in', trendReset: 'Reset',
       colStatus: 'Status',
       colCount: 'Count',
       colPercent: 'Share',
