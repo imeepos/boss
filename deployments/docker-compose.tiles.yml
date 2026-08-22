@@ -1,0 +1,29 @@
+# PGIS 瓦片服务(commit 8):tileserver-gl + PMTiles 自建底图,取代 OSM 公开瓦片。
+# 占位:OSM PBF 切片 + 菲律宾 PSGC 区域高 zoom 切片,资产文件后续 PULL/PUSH 部署。
+# 用法:102 服务器 `docker compose -f docker-compose.tiles.yml up -d`
+# 设计依据:docs/notes/adopted/2026-08-22-intel-visualization-upgrade.md v2
+# 注:OSM 公开瓦片(本期临时)+ tileserver-gl 自建(下期切)并存两套,以 OSM 起步不影响本服务部署。
+name: boss-tiles
+
+services:
+  tileserver-gl:
+    image: 192.168.0.102:5000/boss/tileserver-gl:5.14.0
+    restart: unless-stopped
+    container_name: boss-tileserver
+    ports:
+      - "18080:8080"
+    volumes:
+      # PMTiles 单文件切片:低 zoom 全球覆盖 + 高 zoom PSGC 区域(菲律宾)
+      - ./tiles/data:/data:ro
+    environment:
+      # 走自建内网端口,前端 OL 通过 nginx 反代(参见 docker-compose.nginx.yml)
+      - TILE_SERVER_PORT=8080
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # OSM PBF 预切片(Nominatim 模式,可选;OSM PBF 数据本卷不提交,部署后异步下载)
+  # 当前为占位,实际 PMTiles 文件由 ops 部署时拉取并放入 ./tiles/data/。
+  # 建议体积:< 1GB(全球低 zoom + 菲律宾高 zoom)。
