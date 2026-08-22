@@ -402,3 +402,8 @@
 - 哪个坑浪费最多时间:pgxmock 正则写错(`count\(\*)` 少个右括号转义),TestReconCounts 报 regexp 解析错误——pgxmock 的 ExpectQuery 参数是正则,括号必须成对转义。
 - skill 有没有提前警告:未明确警告;known-issues 里有 pgx 占位符教训但无 pgxmock 正则转义条目。
 - 重来一次会怎么做:pgxmock 用 `SELECT count\(\*\)` 全转义,或用 regexp.QuoteMeta 思路先在本地正则工具验一遍再写进测试。
+
+## 2026-08-26 Q2 补偿任务中心(goal round 4)
+- 哪个坑浪费最多时间:worktree 基于 d03694e 时撞见 000112 同树双文件(payment_refund 后被别会话改名 000113),D 门禁红;merge main 后自愈。根因:并行会话让号发生在我的 worktree 基点之后。
+- skill 有没有提前警告:迁移撞号规则已知,但"worktree 基点过旧导致 D 门禁红,先 merge main 再判断是不是自己的锅"这条是新的。
+- 重来一次会怎么做:make check 见 D FAIL 先 git merge main 反向同步再复跑,不急着排查自己的迁移文件。
