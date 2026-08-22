@@ -338,3 +338,8 @@
 - 哪个坑浪费最多时间: 在 boss-promo-impl(他人会话的半成品 worktree)里读码、编辑、干等并行写入,既差点覆盖别人文件又浪费了等待时间。
 - skill 有没有提前警告: 有(techniques #26/#80 并行 Agent 识别),但只用于"不改他人文件",没上升到"先确认 worktree 归属再进入"。
 - 重来一次: 开工第一步 git worktree list + git status 时间戳判定归属;不是自己的立即另起 worktree 从 main 拉分支。
+
+## 2026-08-26 促销未实施三项(邀请/赠送落痕/积分)
+- 哪个坑浪费最多时间:迁移编号两次撞车——并行 Agent 的 order_buy_months 让号到 000104 恰好撞我同号的 loy_points,合并后才从 ls migrations 发现。
+- skill 有没有提前警告:部分——lessons #25 教了开工前查最大编号,没教"合并前后再查一次";已在本轮实践补上。
+- 重来一次会怎么做:合并自己分支前后各跑一次 `ls migrations/*.up.sql | tail`,发现撞号立刻让号,不等收尾才看。
