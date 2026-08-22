@@ -40,8 +40,10 @@ func offerSeed(suffix string) customer.ProductOffer {
 }
 
 func custSeed(s *e2eSeed) customer.Customer {
+	// phone/idNo 全库唯一(uq_customers_app_login_phone),带纳秒后缀防残留数据撞约束。
 	return customer.Customer{
-		Name: "E2E客户", Phone: "09170000000", IdType: "身份证", IdNo: "E2E-ID",
+		Name: "E2E客户", Phone: fmt.Sprintf("0917%08d", time.Now().UnixNano()%1e8),
+		IdType: "身份证", IdNo: "E2E-ID-" + fmt.Sprintf("%d", time.Now().UnixNano()%1e12),
 		RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE",
 		AddressID: s.addressID, LegalEntityID: 1,
 		RegionID: s.regionID, RegionName: s.regionName,

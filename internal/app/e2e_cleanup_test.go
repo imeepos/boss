@@ -67,11 +67,11 @@ func buildCleanupStmts(custID int64, chanCode, offerName, username string) []str
 	}
 }
 
-// addrSetSQL 两棵测试地址树的全部节点。按模式而非精确根匹配:W8 子测试用独立
-// orderNo6 后缀建根,精确匹配会漏;^(e2e|w8)[0-9]+$ 是 e2e 专用命名,不碰真实数据,
+// addrSetSQL 两棵测试地址树的全部节点。按模式而非精确根匹配:W8/W8b 子测试用独立
+// orderNo6 后缀建根,精确匹配会漏;^(e2e|w8b?)[0-9]+$ 是 e2e 专用命名,不碰真实数据,
 // 且天然覆盖历史运行残留。
 func addrSetSQL() string {
-	return `(SELECT id FROM addresses WHERE path::text ~ '^(e2e|w8)[0-9]+$')`
+	return `(SELECT id FROM addresses WHERE path::text ~ '^(e2e|w8b?|full|cancel|ledger|w5)[0-9]+$')`
 }
 
 // firstLine 截 SQL 首行用于日志。
