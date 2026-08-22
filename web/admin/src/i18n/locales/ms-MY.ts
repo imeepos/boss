@@ -213,6 +213,11 @@ const msMY: Translations = {
       ctaBannerSubtitle: 'Mulakan perjalanan Sphere Boss anda hari ini dan bentuk masa depan operasi digital',
       viewDetail: 'Lihat butiran',
       footerTagline: 'Platform pengurusan operasi telekom generasi baharu',
+      footerTaglineDesc: 'Pengurusan kitaran hayat penuh merentas pesanan, sumber, aset, rangkaian, amaran dan bil, memperkasakan pengendali dengan operasi halus dan inovasi.',
+      footerProductTitle: 'Produk',
+      footerSolutionsTitle: 'Penyelesaian',
+      footerQuickTitle: 'Pautan Pantas',
+      footerLanguage: 'Bahasa',
       footerCopyright: '© 2024 Sphere Boss. Hak cipta terpelihara.',
     },
     dashboard: {
