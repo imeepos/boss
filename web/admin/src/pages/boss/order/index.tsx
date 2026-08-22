@@ -26,10 +26,12 @@ export default function OrderPage() {
   const [error, setError] = useState('')
   const [urlKeyword, setUrlKeyword] = useQueryState('kw', '')
   const [urlStatus, setUrlStatus] = useQueryState('status', '')
+  const [urlCreated] = useQueryState('created', '')
   const [urlPage, setUrlPage] = useQueryInt('page', 1)
   const [urlPageSize, setUrlPageSize] = useQueryInt('size', 10)
   const [keyword, setKeyword] = useState(urlKeyword)
   const [status, setStatus] = useState(urlStatus)
+  const created = urlCreated
   const [page, setPage] = useState(urlPage)
   const [pageSize, setPageSize] = useState(urlPageSize)
   const [busy, setBusy] = useState(false)
@@ -41,7 +43,11 @@ export default function OrderPage() {
     setError('')
     setBusy(true)
     apiFetch<{ items: OrderListRow[] }>('/orders', {
-      query: { keyword: keyword || undefined, status: status || undefined },
+      query: {
+        keyword: keyword || undefined,
+        status: status || undefined,
+        created: created || undefined,
+      },
     })
       .then((d) => setRows(d?.items ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : o.loadFail))
@@ -117,7 +123,10 @@ export default function OrderPage() {
     setUrlPage(1)
   }
 
-  const slice = pageSlice(rows, page, pageSize)
+  const todayRows = created === 'today'
+    ? rows.filter((row) => new Date(row.createdAt).toDateString() === new Date().toDateString())
+    : rows
+  const slice = pageSlice(todayRows, page, pageSize)
 
   return (
     <div>

@@ -25,6 +25,13 @@ interface DashboardData {
 
 const TODO_PAGE_SIZE = 5
 
+const STAT_CARD_TARGETS: Record<string, string> = {
+  todayOrders: '/boss/order?created=today',
+  activeTickets: '/boss/dispatch?status=DOING',
+  pendingAlarms: '/alarm?status=OPEN',
+  assetConsistency: '/quad/check?status=CONFLICT',
+}
+
 const VALID_TREND: ReadonlySet<Trend> = new Set<Trend>(['up', 'down', 'flat'])
 const TREND_PERIODS = ['week', 'month', 'quarter', 'year', 'all'] as const
 
@@ -82,6 +89,7 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                 value={s.value}
                 delta={s.delta}
                 trend={VALID_TREND.has(s.trend as Trend) ? (s.trend as Trend) : 'flat'}
+                onClick={STAT_CARD_TARGETS[s.key] ? () => navigate(STAT_CARD_TARGETS[s.key]) : undefined}
               />
             ))}
           </section>
