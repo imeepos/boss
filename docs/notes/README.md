@@ -19,6 +19,7 @@
 
 | 日期 | 决策 | 文件 |
 |---|---|---|
+| 2026-08-26 | 新建 promotion 营销促销域(000102):券模板/兑换/转赠/缴费抵扣核销从 userdata 独立;billing 经 CouponDeductor 注入实现同事务核销 | adopted/2026-08-26-promotion-domain.md |
 | 2026-08-17 | order_no 改 DB 序列生成 | adopted/2026-08-17-order-no-db-sequence.md |
 | 2026-08-17 | server-ts 已移除，职责迁移至 Go 实体 | adopted/2026-08-17-server-ts-entity-mirror.md |
 | 2026-08-18 | app.env 固定密钥直接入库 | adopted/2026-08-18-app-env-in-repo.md |
