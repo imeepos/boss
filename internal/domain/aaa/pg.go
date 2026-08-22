@@ -46,10 +46,11 @@ func (s *PGStore) ListLoAccounts(ctx context.Context) ([]LoAccount, error) {
 	return out, rows.Err()
 }
 
-// CreateLoAccount 新建 LO 账号,返回自增 id;BillingMode 空回退 POSTPAID。
+// CreateLoAccount 新建 LO 账号,返回自增 id;BillingMode 空时继承该客户最近订单的
+// 付费模式(fields.md §3.1,只读跨表与 GenerateBills 同惯例),仍空回退 POSTPAID。
 func (s *PGStore) CreateLoAccount(ctx context.Context, a LoAccount) (int64, error) {
 	if a.BillingMode == "" {
-		a.BillingMode = BillingModePostpaid
+		a.BillingMode = s.inheritBillingMode(ctx, a.CustomerID)
 	}
 	var id int64
 	err := s.db.QueryRow(ctx, `
@@ -60,6 +61,18 @@ func (s *PGStore) CreateLoAccount(ctx context.Context, a LoAccount) (int64, erro
 		return 0, fmt.Errorf("aaa: create lo_account: %w", err)
 	}
 	return id, nil
+}
+
+// inheritBillingMode 读客户最近订单的付费模式;无订单/查询失败回退 POSTPAID。
+func (s *PGStore) inheritBillingMode(ctx context.Context, customerID int64) string {
+	var mode string
+	err := s.db.QueryRow(ctx,
+		`SELECT billing_mode FROM orders WHERE customer_id = $1 ORDER BY id DESC LIMIT 1`,
+		customerID).Scan(&mode)
+	if err != nil || (mode != BillingModePrepaid && mode != BillingModePostpaid) {
+		return BillingModePostpaid
+	}
+	return mode
 }
 
 // nilIfEmpty 空串归 NULL(region_path 可空)。

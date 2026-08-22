@@ -250,6 +250,9 @@ func TestPGStore_CreateLoAccountBillingModeDefault(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectQuery(`SELECT billing_mode FROM orders`).
+		WithArgs(int64(5)).
+		WillReturnError(pgx.ErrNoRows)
 	mock.ExpectQuery(`INSERT INTO lo_accounts`).
 		WithArgs("LOID-88B1", int64(5), int64(1), "主品牌·企业", int64(11), "马尼拉市", nil, int64(2), int64(1), "ACTIVE", "POSTPAID").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
@@ -257,6 +260,33 @@ func TestPGStore_CreateLoAccountBillingModeDefault(t *testing.T) {
 	s := NewPGStore(mock)
 	if _, err := s.CreateLoAccount(context.Background(), LoAccount{
 		Loid: "LOID-88B1", CustomerID: 5, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
+		RegionID: 11, RegionName: "马尼拉市", OfferID: 2, QosTemplateID: 1, Status: "ACTIVE",
+	}); err != nil {
+		t.Fatalf("CreateLoAccount: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_CreateLoAccountBillingModeInherit 契约:未显式指定时继承客户最近订单付费模式。
+func TestPGStore_CreateLoAccountBillingModeInherit(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT billing_mode FROM orders`).
+		WithArgs(int64(6)).
+		WillReturnRows(mock.NewRows([]string{"billing_mode"}).AddRow("PREPAID"))
+	mock.ExpectQuery(`INSERT INTO lo_accounts`).
+		WithArgs("LOID-88C1", int64(6), int64(1), "主品牌·企业", int64(11), "马尼拉市", nil, int64(2), int64(1), "ACTIVE", "PREPAID").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(4)))
+
+	s := NewPGStore(mock)
+	if _, err := s.CreateLoAccount(context.Background(), LoAccount{
+		Loid: "LOID-88C1", CustomerID: 6, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
 		RegionID: 11, RegionName: "马尼拉市", OfferID: 2, QosTemplateID: 1, Status: "ACTIVE",
 	}); err != nil {
 		t.Fatalf("CreateLoAccount: %v", err)
