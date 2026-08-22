@@ -1,4 +1,17 @@
 paths:
+  /billing/ledger-recon:
+    get:
+      tags: [Billing]
+      summary: 账实核对(应收/实收/开票三角,按账单定位差异;permCode menu:paycheck)
+      operationId: ledgerRecon
+      parameters:
+        - { name: period, in: query, required: true, schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$' }, description: 账期 YYYY-MM }
+        - { name: legalEntityId, in: query, schema: { type: integer, format: int64 }, description: 按法人过滤(0=数据范围内全部) }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /bills:
     get:
       tags: [Billing]
