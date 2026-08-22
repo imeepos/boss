@@ -30,10 +30,10 @@ const LINK = 'text-sm text-[var(--shell-nav-text)] transition-colors hover:text-
 
 export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: FooterProps) {
   return (
-    <footer className="bg-[var(--color-brand-navy-950)] px-4 md:px-[60px]">
-      {/* 第一段:超链组(品牌 + 产品/方案/快速入口),全幅铺满仅留边距 */}
-      <div>
-        <div className="grid grid-cols-1 gap-12 py-16 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-8">
+    <footer className="bg-[var(--color-brand-navy-950)]">
+      {/* 第一段:超链组(品牌 + 产品/方案/快速入口),全幅铺满 */}
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-8">
           <div>
             <div className="flex items-center gap-3">
               <img src={logoFull} alt="" className="h-10 w-10" />
@@ -60,8 +60,10 @@ export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: Footer
             <a href="#contact" className={LINK}>{t.navContact}</a>
           </FooterColumn>
         </div>
-        {/* 第二段:版权条 */}
-        <div className="flex flex-col items-center gap-4 border-t border-white/10 py-6 sm:flex-row sm:justify-between">
+      </div>
+      {/* 第二段:版权条,全幅深底 */}
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-6 py-6 sm:flex-row sm:justify-between lg:px-8">
           <span className="text-xs text-[var(--shell-nav-text)]">{t.copyright}</span>
           <div className="flex items-center gap-2">
             <span className="text-xs text-[var(--shell-nav-text)]">{t.language}</span>
@@ -70,7 +72,7 @@ export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: Footer
               options={localeOptions()}
               onChange={(v) => setLocale(v as Locale)}
               ariaLabel="language"
-              triggerStyle={{ height: 32 }}
+              triggerStyle={{ height: 32, borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--shell-nav-text)' }}
             />
           </div>
         </div>
