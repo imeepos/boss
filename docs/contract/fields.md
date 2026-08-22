@@ -56,9 +56,12 @@
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
 |:---------|:-------|:------|:----------|
-| — | `Code` | code | 7 角色码：customer/technician/asset_admin/resource_admin/ops/analyst/sysadmin |
+| — | `Code` | code | 内置 7 角色码：customer/technician/asset_admin/resource_admin/ops/analyst/sysadmin；自定义角色 code 后端生成（`custom_*`，迁移 000100） |
 | — | `Name` | name | 中文名 |
+| 类型 | `IsBuiltin` | is_builtin | true=内置只读 / false=自定义可改删 |
 | 权限码 | `Code`(perm) | code | 如 `asset:create`、`menu:order` |
+
+> 自定义角色（菜单权限页·角色管理）：新建时可选内置模板整体复制其权限集，落库前可单独增删；编辑=权限码全集全量替换；被账号/岗位引用拒删（40900），内置拒改删（40300）。`/auth/me` 透出 `permissionCodes`，自定义角色的前端菜单按 `menu:<key>` 逐项动态推导。
 
 ### 1.3 regions（经营区域）
 
