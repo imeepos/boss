@@ -27,4 +27,6 @@ func registerTaxRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/invoices/:id/tax-submit", requirePerm(a.User, "menu:billing"), submitInvoiceToTax(a))
 	// 人工通道回填:运营者在税局平台(数电票/BIR)开具后登记税局票号。
 	g.POST("/invoices/:id/tax-backfill", requirePerm(a.User, "menu:billing"), backfillInvoiceTaxNo(a))
+	// 税局轨迹回放:回执/回填/作废/重开留痕(验收②可追踪)。
+	g.GET("/invoices/:id/tax-events", requirePerm(a.User, "menu:billing"), listInvoiceTaxEvents(a))
 }
