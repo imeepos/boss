@@ -16,6 +16,11 @@
 
 - **已修复(2026-08-21, c364f4a)｜行为怪象｜订单/工单号日期段按业务时区但列表展示按 UTC**:orderNo 是 ORD-20260822-xxx(业务时区 8/22),而 orders.createdAt 返回 2026-08-21T23:52:48Z(UTC 8/21)。pg.go:117 注释已说明发号按业务时区切日,但前端/admin 列表直接展示 UTC 时间戳,同一天的单出现"8/21 创建却 8/22 单号"的观感错位。→ 展示层应统一转业务时区,或 createdAt 序列化带时区标注。
 
+## 第4轮全流程重验(2026-08-22,零 SQL 补救贯通 12 环节)
+
+- **已修复(2026-08-22, 61b0dcd/000097)｜行为缺口｜000056 残留 `*_active` 索引阻塞复购客户**:000088 裁定 customer 可 1:N(一客户多链路)并撤销 000086 的 `uq_quad_links_customer`,但 000056 时代的四个 `uq_quad_links_{customer,asset,port,address}_active` 部分唯一索引从未被任何迁移删除 → 客户已有 LINKED 链路后,第二单扫码置 LINKED 必撞 23505(实测 ORD-20260822-000432 scan-bind 报 duplicate key uq_quad_links_customer_active)。修复:迁移 000097 DROP 四个残留索引(customer 列违反 1:N 契约;asset/port/address 三列被 000086 非空唯一完全覆盖属纯冗余),e2e 新增 W8c 回归(同客户两地址两单,双双扫码 LINKED)。
+- **信息不准｜`GET /provision/channels` 响应字段 PascalCase**:52612c4 新增的渠道目录返回 `ID/Code/Name/Status`(domain struct 无 json tag 直出),违反 fields.md §0 的 JSON lowerCamelCase 规则(应为 `id/code/name/status`)。→ Channel struct 加 json tag 或 handler 显式构造响应。
+
 ## 后端·worker
 
 - **已修复(2026-08-21, 94b6078)｜信息缺失｜`GET /api/worker/v1/tickets/{ticketNo}` 字段不全**：`internal/httpapi/worker/ticket.go::workerTicketDetailHandler` 仅返回 `ticketNo/bizNo/status/statusLabel/stages/quad/riskCheck`，缺 `type/typeLabel/product/customerName/customerPhoneMasked/address/splitterPort/preBindTag/scheduleSlot/faultTypeLabel/reportedAt/slaLeftMinutes/remoteDiagnosis/finishedAt/distanceKm`（参 `api/openapi/worker/schemas.yaml::TicketDetail`）。移动端工单详情需按 `designs/worker-order-detail-v1.spec.md` §4.2 做 4 屏分支（A 安装/装维中、B 报障/紧急、C 待领取、D 已完成），缺字段前端只能 fallback 占位（`type` 由 `stages.length` 推断 INSTALL=12/REPAIR=6，其余字段缺失则隐藏区块）。
