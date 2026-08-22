@@ -1,20 +1,21 @@
 // 工作台:GET /dashboard 聚合真实数据(统计卡/订单状态分布/待办/近7日趋势)
-// 样式:tailwind 原子类 + ui/button + business/page-head,已移除 dashboard.css。
+// 样式:tailwind 原子类 + ui/button + business/charts 共享组件。
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
 import { PageHead } from '../../components/business/page-head'
+import { CardShell, StatCard, VerticalBars, type Trend } from '../../components/business/charts'
 import { Button } from '../../components/ui/button'
 import { StatusTag } from '../../components/StatusTag'
 import { fmtTime } from '../../lib/format'
 
-interface StatCard { key: string; label: string; value: string; delta: string; trend: string }
+interface StatCardDto { key: string; label: string; value: string; delta: string; trend: string }
 interface StatusDist { status: string; statusLabel: string; count: number; percent: string }
 interface TodoItem { todoId: number; subject: string; source: string; time: string }
 interface DashboardData {
-  stats: StatCard[]
+  stats: StatCardDto[]
   orderStatusDist: StatusDist[]
   todos: { items: TodoItem[] }
   trend: { days: string[]; values: number[] }
@@ -22,11 +23,7 @@ interface DashboardData {
 
 const TODO_PAGE_SIZE = 5
 
-const TREND_CLASS = {
-  up: 'text-[var(--color-danger)]',
-  down: 'text-[var(--color-success)]',
-  flat: 'text-muted-foreground',
-} as const
+const VALID_TREND: ReadonlySet<Trend> = new Set<Trend>(['up', 'down', 'flat'])
 
 export default function DashboardPage({ profile }: { profile: Profile }) {
   const t = useT()
@@ -48,10 +45,11 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const welcome = d.welcome.replace('{name}', profile.realName).replace('{role}', profile.roleCode)
-  const maxTrend = Math.max(1, ...(data?.trend.values ?? [1]))
   const todoItems = data?.todos.items ?? []
   const totalTodoPages = Math.ceil(todoItems.length / TODO_PAGE_SIZE)
   const pagedTodos = todoItems.slice((todoPage - 1) * TODO_PAGE_SIZE, todoPage * TODO_PAGE_SIZE)
+  const trendLabels = (data?.trend.days ?? []).map((x) => x.slice(5))
+  const trendValues = data?.trend.values ?? []
 
   return (
     <div>
@@ -67,20 +65,18 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
         <>
           <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {data.stats.map((s) => (
-              <div
+              <StatCard
                 key={s.key}
-                className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]"
-              >
-                <div className="mb-2 text-sm text-[var(--shell-content-text)]">{s.label}</div>
-                <div className="text-[28px] font-semibold leading-tight text-[var(--shell-heading)]">{s.value}</div>
-                {s.delta ? <div className={'mt-1 text-[13px] ' + (TREND_CLASS[s.trend as keyof typeof TREND_CLASS] ?? TREND_CLASS.flat)}>{s.delta}</div> : null}
-              </div>
+                label={s.label}
+                value={s.value}
+                delta={s.delta}
+                trend={VALID_TREND.has(s.trend as Trend) ? (s.trend as Trend) : 'flat'}
+              />
             ))}
           </section>
 
           <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <article className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]">
-              <h3 className="mb-4 text-base font-semibold text-[var(--shell-heading)]">{d.distTitle}</h3>
+            <CardShell title={d.distTitle}>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-[13px]">
                   <thead>
@@ -109,10 +105,10 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                   </tbody>
                 </table>
               </div>
-            </article>
+            </CardShell>
 
-            <article className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]">
-              <div className="mb-4 flex items-center justify-between">
+            <CardShell>
+              <div className="-mt-5 mb-4 flex items-center justify-between">
                 <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{d.todoTitle}</h3>
                 {totalTodoPages > 1 && (
                   <div className="flex items-center gap-2">
@@ -150,24 +146,12 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                   )
                 })}
               </div>
-            </article>
+            </CardShell>
           </section>
 
-          <section className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]">
-            <h3 className="mb-4 text-base font-semibold text-[var(--shell-heading)]">{d.trendTitle}</h3>
-            <div className="flex h-40 items-end gap-3 overflow-x-auto py-5">
-              {(data.trend.days ?? []).map((day, i) => (
-                <div key={day + i} className="flex h-full min-w-12 flex-col items-center justify-end gap-2" title={`${day}: ${data.trend.values[i]}`}>
-                  <div className="text-xs font-medium text-muted-foreground">{data.trend.values[i]}</div>
-                  <div
-                    className="min-h-1 w-3/5 max-w-8 rounded-t-sm bg-primary transition-[height] duration-300"
-                    style={{ height: `${(data.trend.values[i] / maxTrend) * 100}%` }}
-                  />
-                  <span className="text-xs text-muted-foreground">{day.slice(5)}</span>
-                </div>
-              ))}
-            </div>
-          </section>
+          <CardShell title={d.trendTitle}>
+            <VerticalBars labels={trendLabels} values={trendValues} />
+          </CardShell>
         </>
       ) : null}
     </div>
