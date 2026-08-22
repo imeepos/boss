@@ -59,14 +59,11 @@ func portalBillStatusMatch(b billing.Bill, status string) bool {
 }
 
 // portalCreatePayment POST /payments:发起缴费(bill 归属校验 + RecordPayment 落库置 PAID)。
+// 可选 couponId:缴费同事务核销,实收=账单金额-抵扣。
 func portalCreatePayment(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
-		var req struct {
-			BillNo    string  `json:"billNo" binding:"required"`
-			Amount    float64 `json:"amount" binding:"required,gt=0"`
-			PayMethod string  `json:"payMethod" binding:"required,oneof=wechat alipay card cash"`
-		}
+		var req portalPayReq
 		if !httpx.BindBody(c, &req) {
 			return
 		}
@@ -86,12 +83,16 @@ func portalCreatePayment(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// respondPay 落单笔缴费(PAID 冲突检测 + RecordPayment)。
-func respondPay(c *gin.Context, a *app.Application, b billing.Bill, req struct {
+// portalPayReq 缴费请求体。
+type portalPayReq struct {
 	BillNo    string  `json:"billNo" binding:"required"`
 	Amount    float64 `json:"amount" binding:"required,gt=0"`
 	PayMethod string  `json:"payMethod" binding:"required,oneof=wechat alipay card cash"`
-}) {
+	CouponID  string  `json:"couponId"`
+}
+
+// respondPay 落单笔缴费(PAID 冲突检测 + RecordPayment;带券走同事务核销)。
+func respondPay(c *gin.Context, a *app.Application, b billing.Bill, req portalPayReq) {
 	if b.Status == "PAID" {
 		respond(c, apitypes.CodeConflict, nil)
 		return
@@ -101,16 +102,18 @@ func respondPay(c *gin.Context, a *app.Application, b billing.Bill, req struct {
 		respondErr(c, err)
 		return
 	}
-	if _, err := a.Billing.RecordPayment(c.Request.Context(), billing.Payment{
-		PayNo: payNo, BillID: b.BillID, Amount: req.Amount,
-		Method: req.PayMethod, Status: "SUCCESS",
-	}); err != nil {
+	receipt, err := a.Billing.RecordPaymentWithCoupon(c.Request.Context(), billing.Payment{
+		PayNo: payNo, BillID: b.BillID, CustomerID: b.CustomerID, Amount: req.Amount,
+		Method: req.PayMethod, Status: "SUCCESS", CouponID: req.CouponID,
+	})
+	if err != nil {
 		respondErr(c, err)
 		return
 	}
 	respond(c, apitypes.CodeOK, gin.H{
-		"payNo": payNo, "amount": req.Amount, "billPeriod": b.Period,
+		"payNo": payNo, "amount": receipt.Amount, "billPeriod": b.Period,
 		"payMethod": req.PayMethod, "status": "SUCCESS",
+		"deductedCents": receipt.DeductedCents, "paymentId": receipt.PaymentID,
 	})
 }
 

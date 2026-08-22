@@ -23,6 +23,8 @@ func registerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.PUT("/messages/:messageId/read", portalReadOneMessage(a))
 	// 用户端 /coupons 仅挂在 /api/user/v1(与 admin /api/admin/v1 前缀隔离,无路由冲突)。
 	g.GET("/coupons", portalListCoupons(a))
+	g.POST("/coupons/redeem", portalRedeemCoupon(a))
+	g.POST("/coupons/:couponId/gift", portalGiftCoupon(a))
 	g.GET("/addresses", portalListAddresses(a))
 	g.POST("/addresses", portalCreateAddress(a))
 	g.GET("/usage", portalUsage)
@@ -43,51 +45,57 @@ func portalAgreement(c *gin.Context) {
 	})
 }
 
-// portalListCoupons GET /coupons?status=:我的优惠券(可从 userdata 券仓读取;未接入时降级静态)。
+// portalListCoupons GET /coupons?status=&billCents=:我的优惠券。
+// billCents>0 时按账单金额过滤门槛并附预估抵扣 estDeduct(分)。
 func portalListCoupons(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
 		status := c.DefaultQuery("status", "available")
-		if a.UserData == nil {
-			respond(c, apitypes.CodeOK, portalListCouponsFallback(status))
+		billCents, _ := strconv.ParseInt(c.Query("billCents"), 10, 64)
+		if a.Promotion == nil {
+			respond(c, apitypes.CodeInternal, gin.H{"error": "promotion not configured"})
 			return
 		}
-		rows, err := a.UserData.ListCoupons(c.Request.Context())
+		items, err := a.Promotion.ListCustomerCoupons(c.Request.Context(), cid, status, billCents)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		items := portalListCouponsItems(rows, cid, status)
 		invite := portalListCouponsInvite(c, a)
 		respond(c, apitypes.CodeOK, gin.H{"items": items, "inviteLink": invite})
 	}
 }
 
-// portalListCouponsFallback userdata 未接入时返回静态示例。
-func portalListCouponsFallback(status string) gin.H {
-	return gin.H{
-		"items": []gin.H{{
-			"couponId": "C-001", "amount": 20.0, "threshold": 100.0,
-			"title": "缴费满 100 减 20", "expireAt": "2026-12-31", "status": status,
-		}}, "inviteLink": "https://u.ymm.example/invite",
+// portalRedeemCoupon POST /coupons/redeem {code}:兑换码领券 / 接收转赠券。
+func portalRedeemCoupon(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		var req struct {
+			Code string `json:"code" binding:"required"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		couponID, err := a.Promotion.RedeemCode(c.Request.Context(), req.Code, cid)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"couponId": couponID})
 	}
 }
 
-// portalListCouponsItems 客户匹配的券视图(amount=分→元)。
-func portalListCouponsItems(rows []map[string]any, cid int64, status string) []gin.H {
-	items := make([]gin.H, 0)
-	for _, r := range rows {
-		if toInt64(r["customerId"]) != cid {
-			continue
+// portalGiftCoupon POST /coupons/:couponId/gift:整券转赠,返回一次性转赠码。
+func portalGiftCoupon(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cid, _ := requireCustomer(c)
+		code, err := a.Promotion.CreateGift(c.Request.Context(), c.Param("couponId"), cid)
+		if err != nil {
+			respondErr(c, err)
+			return
 		}
-		items = append(items, gin.H{
-			"couponId": toStr(r["couponId"]), "name": toStr(r["name"]),
-			"amount": float64(toInt64(r["amount"])) / 100, "threshold": 0.0,
-			"title": toStr(r["name"]), "expireAt": toStr(r["expireAt"]),
-			"status": couponStatus(toStr(r["status"]), status),
-		})
+		respond(c, apitypes.CodeOK, gin.H{"giftCode": code})
 	}
-	return items
 }
 
 // portalListCouponsInvite 邀请链接(配置空时返回空串)。
@@ -97,16 +105,6 @@ func portalListCouponsInvite(c *gin.Context, a *app.Application) string {
 		return ""
 	}
 	return toStr(cfg[0]["inviteLink"])
-}
-
-// couponStatus DB 券状态 → 契约状态(available/used/expired)。
-func couponStatus(dbStatus, _ string) string {
-	switch dbStatus {
-	case "used", "expired":
-		return dbStatus
-	default:
-		return "available"
-	}
 }
 
 // portalListAddresses GET /addresses:我的家庭地址(契约 AddressInfo)。

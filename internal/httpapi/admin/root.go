@@ -85,6 +85,7 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerUserdataRoutes(authed, a)
 	registerUserdataMoreRoutes(authed, a)
 	registerUserdataGapRoutes(authed, a)
+	registerPromotionRoutes(authed, a)
 	registerAttachmentRoutes(authed, a)
 	registerNotifyRoutes(authed, a)
 	registerBackupRoutes(authed, a)

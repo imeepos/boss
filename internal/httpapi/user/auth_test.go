@@ -216,6 +216,9 @@ func (f *fakeBilling) ListPaymentsByCustomer(context.Context, int64) ([]billing.
 }
 func (f *fakeBilling) CreatePayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
 func (f *fakeBilling) RecordPayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
+func (f *fakeBilling) RecordPaymentWithCoupon(_ context.Context, p billing.Payment) (billing.PaymentReceipt, error) {
+	return billing.PaymentReceipt{Amount: p.Amount}, nil
+}
 func (f *fakeBilling) GenerateBills(context.Context, string) (int, error)            { return 0, nil }
 
 // fakeArrears 桩 billing.ArrearsService。
