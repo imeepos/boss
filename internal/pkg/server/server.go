@@ -7,7 +7,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -36,14 +35,10 @@ func New(cfg Config) *gin.Engine {
 	return r
 }
 
-func cors(origins []string) gin.HandlerFunc {
-	allowed := make(map[string]struct{}, len(origins))
-	for _, origin := range origins {
-		allowed[origin] = struct{}{}
-	}
+func cors(_ []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		if !originAllowed(origin, allowed) {
+		if origin == "" {
 			c.Next()
 			return
 		}
@@ -60,22 +55,8 @@ func cors(origins []string) gin.HandlerFunc {
 	}
 }
 
-// originAllowed 精确白名单命中即放行;开发本机源(localhost/127.0.0.1)不限端口——
-// vite 端口随占用漂移(5173→5175…),逐个枚举不可维护。
-func originAllowed(origin string, allowed map[string]struct{}) bool {
-	if _, ok := allowed[origin]; ok {
-		return true
-	}
-	u, err := url.Parse(origin)
-	if err != nil {
-		return false
-	}
-	host := u.Hostname()
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return false
-	}
-	return host == "localhost" || host == "127.0.0.1" || host == "::1"
-}
+// originAllowed 已移除:CORS 不再做来源校验,任意 Origin 均回显放行——
+// 2026-08-22 公网映射(43.240.223.138:5180 前端 → :28080 接口)后来源不可枚举。
 
 // Run 启动 HTTP 并监听 OS 信号实现优雅退出。
 // 返回 error 仅用于启动失败的致命场景;优雅退出路径返回 nil。
