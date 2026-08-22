@@ -69,3 +69,5 @@
 | worktree commit 完成后未先 ff-merge 就清理,commit 随 worktree 删除被 GC(无 remote 备份) | 2 | 2026-08-22(intel 板块可视化 c1 /gis/points 290 行 commit 在 worktree 删除时丢失); 2026-08-22(下一期 A2 maps/tile-source.ts 91 行 commit 28b2ec1 丢失,原因变种:并行会话推新 commit → ff-merge 失败 → 误把 worktree 与分支一起删 → GC) | worktree 收尾顺序:① push origin ② 立刻 merge --ff-only ③ worktree remove ④ branch -D ⑤ push --delete;每步独立可逆,绝不跳步。变种防御:**ff-merge 失败时不要删 worktree**——先 rebase worktree 到新 main 再 merge;只有 push 成功后且 merge 失败时才允许清理 |
 | 并行会话推 commit 后,我方 worktree ff-merge 失败,误以为"合并失败=工作丢失" | 3 | 2026-08-22(A2 丢失的直接诱因); 2026-08-22(A4 i18n 7 个 key + A5 GIS UI 一起丢,因习惯性"merge 失败就清掉"); 本任务全程共触发 3 次 | ff-merge 失败时**严禁 worktree remove + branch -D**;唯一允许操作:git rebase main 在 worktree,重试 ff-merge。落入此坑 ≥3 次,下次升级红线 |
 | 误闯并行会话的 worktree 并编辑其未提交文件(2026-08-22,用户点名) | 1 | 2026-08-22 |
+| 带暂存主工作建临时验证分支,git commit(-am)把暂存文件卷进临时提交,删分支时差点丢主工作(靠 dangling commit 找回) | 2 | 2026-08-22(门禁D项验证,同会话连犯两次) | 验证分支只 add 明确 pathspec;commit 前必 git status 核对暂存清单;删验证分支前确认主工作文件仍在工作树 |
+| git mv 误在主 workdir 执行(违反"禁止主分支修改") | 1 | 2026-08-22(invite_reward 让号) | 多 worktree 并行时,每条命令显式确认 workdir 参数指向自己的 worktree,不依赖默认值 |

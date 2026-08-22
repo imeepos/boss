@@ -343,3 +343,8 @@
 - 哪个坑浪费最多时间:迁移编号两次撞车——并行 Agent 的 order_buy_months 让号到 000104 恰好撞我同号的 loy_points,合并后才从 ls migrations 发现。
 - skill 有没有提前警告:部分——lessons #25 教了开工前查最大编号,没教"合并前后再查一次";已在本轮实践补上。
 - 重来一次会怎么做:合并自己分支前后各跑一次 `ls migrations/*.up.sql | tail`,发现撞号立刻让号,不等收尾才看。
+
+## 2026-08-22 迁移撞号门禁固化任务
+- 哪个坑浪费最多时间: 临时分支验证 D2 时 commit -am 两次卷走暂存的门禁代码,删分支后从 dangling commit 找回;git mv 又误在主 workdir 执行。
+- skill 有没有提前警告: 部分(勿闯他人 worktree 有记录),但"暂存文件被临时分支 commit 卷走"无预警。
+- 重来一次: 验证分支只 add 明确 pathspec;所有命令显式 workdir;删分支前 status 核对。

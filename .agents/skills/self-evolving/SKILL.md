@@ -19,6 +19,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 6. **【已犯 3 次】禁止在总结里声称"已适配/已验证"而没有验证动作** —— 引用每个 CSS 令牌前 grep 它的定义；UI 交互必须在真实业务 DOM 中断言点击后的控件文本、筛选结果和 URL；没有双主题截图/build 或真实点击断言时一律明确写"未验证"。
 7. **【已犯 1 次】禁止假设模型支持图像输入** —— Kimi-k3 不支持图像分析，需要图像分析时应使用专门的工具（如 cdp-capture.mjs + 代码审查）或明确说明"未验证"。
 8. **【已犯 1 次】禁止在未检查环境依赖时使用工具** —— 使用 Playwright/Puppeteer 等工具前必须先检查是否已安装，避免运行时报错浪费时间。
+9. **【已犯 3 次】worktree 收尾 ff-merge 失败时严禁删 worktree + branch -D** —— 并行会话推新 commit → 本地 main 前进 → worktree 分支 ff-merge 失败是常态(diverging 分支)。唯一允许操作:`git rebase main` 在 worktree 内 → 重试 ff-merge;**绝不允许**"`merge` 失败就算没合并上,直接 worktree remove + branch -D"——commit 在 worktree + refs/heads/<branch> 里安全,但 worktree remove 会触发 GC 不可逆丢失。落入此坑 3 次,A2/A4/A5 都丢过 commit;**下次再犯立刻停手重读本文**。
 
 
 # 上级叮嘱
