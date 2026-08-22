@@ -15,7 +15,7 @@ import (
 
 const appCols = `id, company_name, credit_code, contact_name, contact_phone,
  COALESCE(email,''), business_desc, status, COALESCE(review_note,''),
- reviewer_account_id, COALESCE(legal_entity_id,0), COALESCE(admin_account_id,0),
+ COALESCE(reviewer_account_id,0), COALESCE(legal_entity_id,0), COALESCE(admin_account_id,0),
  submitted_at, reviewed_at`
 
 // Validate 校验申请必填项(公开端点入参,宽松但非空)。
