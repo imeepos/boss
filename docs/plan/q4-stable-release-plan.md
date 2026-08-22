@@ -12,7 +12,7 @@
 | 3 | SLO/SLI 定义与看板口径 | `docs/ops/slo.md` | ✅ |
 | 4 | 发布列车规范（版本化/灰度/回滚/发布后验证） | `docs/ops/release-train.md` | ✅ |
 | 5 | 容量压测报告 | `docs/ops/load-test-report.md` | ✅ |
-| 6 | 迁移演练与灾备恢复记录 | `docs/ops/dr-drill.md` | 待做 |
+| 6 | 迁移演练与灾备恢复记录 | `docs/ops/dr-drill.md` | ✅ |
 | 7 | 回滚演练记录 | 并入 `docs/ops/dr-drill.md` | 待做 |
 | 8 | 1.0 客户验收包 | `docs/ops/acceptance-1.0.md` | 待做 |
 | 9 | 运维手册 | `docs/ops/runbook.md` | 待做 |
