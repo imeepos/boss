@@ -170,15 +170,16 @@ func (s *PGStore) DeletePost(ctx context.Context, id int64) error {
 		return fmt.Errorf("user: delete post tx: %w", err)
 	}
 	defer tx.Rollback(ctx)
+	// 先删 post_roles 再删 posts:post_roles.post_id 外键约束 posts,反序触发 FK 违反(线上 50000)。
+	if _, err := tx.Exec(ctx, `DELETE FROM post_roles WHERE post_id=$1`, id); err != nil {
+		return fmt.Errorf("user: delete post roles: %w", err)
+	}
 	tag, err := tx.Exec(ctx, `DELETE FROM posts WHERE id=$1`, id)
 	if err != nil {
 		return fmt.Errorf("user: delete post: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return ErrNotFound
-	}
-	if _, err := tx.Exec(ctx, `DELETE FROM post_roles WHERE post_id=$1`, id); err != nil {
-		return fmt.Errorf("user: delete post roles: %w", err)
 	}
 	return tx.Commit(ctx)
 }

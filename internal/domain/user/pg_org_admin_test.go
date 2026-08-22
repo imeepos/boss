@@ -91,3 +91,34 @@ func TestPGStore_ListMenuPermMatrix(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+// TestPGStore_DeletePost 回归:先删 post_roles 再删 posts(反序触发 FK 违反,线上 50000);挂岗拒删。
+func TestPGStore_DeletePost(t *testing.T) {
+	t.Run("空闲岗位删除(先绑后岗)", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT count\(\*\) FROM accounts WHERE post_id`).
+			WithArgs(int64(28)).WillReturnRows(mock.NewRows([]string{"cnt"}).AddRow(0))
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM post_roles`).WithArgs(int64(28)).
+			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mock.ExpectExec(`DELETE FROM posts`).WithArgs(int64(28)).
+			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mock.ExpectCommit()
+		if err := NewPGStore(mock).DeletePost(context.Background(), 28); err != nil {
+			t.Fatalf("DeletePost: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("挂岗拒删", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT count\(\*\) FROM accounts WHERE post_id`).
+			WithArgs(int64(28)).WillReturnRows(mock.NewRows([]string{"cnt"}).AddRow(2))
+		if err := NewPGStore(mock).DeletePost(context.Background(), 28); !errors.Is(err, ErrConflict) {
+			t.Fatalf("err=%v", err)
+		}
+	})
+}
