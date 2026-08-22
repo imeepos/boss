@@ -90,7 +90,10 @@ func TestDashboard(t *testing.T) {
 			} `json:"todos"`
 			Trend struct {
 				Days   []string `json:"days"`
-				Values []int    `json:"values"`
+				Series []struct {
+					Status string `json:"status"`
+					Values []int  `json:"values"`
+				} `json:"series"`
 			} `json:"trend"`
 		} `json:"data"`
 	}
@@ -116,9 +119,15 @@ func TestDashboard(t *testing.T) {
 	if len(body.Data.Todos.Items) != 2 {
 		t.Fatalf("todos=%+v", body.Data.Todos.Items)
 	}
-	if len(body.Data.Trend.Days) != 7 || len(body.Data.Trend.Values) != 7 ||
-		sumTrend(body.Data.Trend.Values) != 2 {
+	if len(body.Data.Trend.Days) != 7 || len(body.Data.Trend.Series) != 5 {
 		t.Fatalf("trend=%+v", body.Data.Trend)
+	}
+	trend := map[string][]int{}
+	for _, series := range body.Data.Trend.Series {
+		trend[series.Status] = series.Values
+	}
+	if sumTrend(trend["PENDING"]) != 1 || sumTrend(trend["DONE"]) != 1 {
+		t.Fatalf("trend series=%+v", trend)
 	}
 	month := getJSON(t, r, "/api/admin/v1/dashboard?trendPeriod=month", authToken(t, mgr))
 	if month.Code != http.StatusOK || !contains(month.Body.String(), `"period":"month"`) {

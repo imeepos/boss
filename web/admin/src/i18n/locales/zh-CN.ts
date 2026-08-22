@@ -236,6 +236,7 @@ const zhCN: Translations = {
       trendTitle: '近7日订单趋势',
       trendUnit: '单',
       trendTooltip: '订单数',
+       trendStatusToggle: '切换订单状态曲线',
        trendPeriod: '时间范围',
        trendPeriods: { week: '本周', month: '本月', quarter: '本季度', year: '本年', all: '全部' },
        trendPrevious: '向前', trendNext: '向后', trendZoomOut: '缩小', trendZoomIn: '放大', trendReset: '重置',

@@ -59,6 +59,7 @@
 
 - 2026-08-24 工作台订单状态跳转：仪表盘统计行用 navigate 携带 `status`，订单列表用 useQueryState/useQueryInt 做首次 URL 初始化并在本地交互时双写 URL；worktree 合并前若 main 已推进，必须回 feature merge main 后重新门禁再 ff-merge。
 - 2026-08-24 工作台统计卡跳转：统计卡必须由组件统一处理鼠标/键盘交互，目标列表页同时消费 URL 条件；今日订单需前后端共同支持时间条件，不能只改变前端地址。
+- 2026-08-24 订单状态趋势：后端趋势接口返回按 terms.md 五种状态拆分的 series，前端图表通过 legend button 切换可见曲线；扩展接口时同步更新后端 contract test、Dashboard DTO 和三份 locale。
 
 - 2026-08-22 GIS 地图空白：真实 102 `/gis/points?level=1` 返回空 items 时，页面原先用条件渲染卸载 OpenLayers；地图底图也随之消失。地图容器必须独立渲染，空数据提示用 pointer-events-none 覆盖层，避免把“无点位”误处理成“无地图”。
 - 2026-08-22 GIS 地图仍空白：OpenLayers `map.on()` 返回 EventsKey，不能传给 `map.un()` 当 listener；React StrictMode 清理 effect 时抛 `removeEventListener` 异常，地图随组件卸载。统一用 `unByKey()` 清理 OL 事件。
@@ -88,6 +89,7 @@
 - 2026-08-26 工作台趋势反馈：本地 main 合并不等于 102 已部署，必须检查 `main...gitea/main` 并推送 main 后再让用户刷新；趋势数据稀疏时单纯折线+面积仍显空，应增大图表高度、固定展示 7 个刻度并增加点位数值标签。
 - 2026-08-26 工作台趋势时间筛选：周期切换要把 `trendPeriod` 作为 API query 传到后端真实聚合逻辑，前端使用现有 `Dropdown`，不能新增原生 select；周从周一开始，月/季/年按自然周期，全部按订单最早月份至当前月份聚合，所有筛选文案同步三语言。
 - 2026-08-26 工作台趋势横轴：年度趋势不能按 365 天输出并强制 `interval=0`；应按月聚合为 12 点，前端对超过 14 个点的序列按最多约 12 个刻度自适应隐藏标签，细节交给 Tooltip。
+- 2026-08-26 三年路线图：规划先读取 terms/domain-map/fields 与既有 3 个月路线图，再按“生产稳态→业务扩展→智能经营”组织年度目标；每个季度同时写交付范围、验收指标和明确不做项，避免把远期愿景写成功能堆砌。本次无代码门禁需求，已通过 worktree、独立提交、推送后 ff-merge 归档。
 - 2026-08-26 工作台趋势交互：类炒股图表采用主图 pointer drag 平移 + 左右窗口按钮 + 缩放/重置控制，长序列才显示交互条；数据切换后用 effect 重置窗口，所有辅助按钮 aria-label 也必须进入三语言闭环。
 - 2026-08-18 分页下拉 4 连纠：静默失败 + 总结说没验证过的假话是最严重模式；写新组件前 grep lessons 相关关键词。
 - 2026-08-19 bossctl：flag not defined 第一时间看 -h；契约 A 门禁先读 collectSpecPaths 源码确认匹配机制（$ref 行不递归子文件）。

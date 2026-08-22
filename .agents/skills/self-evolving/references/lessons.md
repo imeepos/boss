@@ -71,6 +71,7 @@
 - 当在 worktree 的子目录执行 git add 时，修复是先用 `git rev-parse --show-toplevel` 确认仓库根目录，路径按根目录解析；门禁结束必须在根目录检查 `git status --short`。skill 没提前警告我。
 - 当项目有定制设计系统（非 shadcn default theme）且需要 shadcn-style UI 组件时，修复是手动创建组件（参考 shadcn 编码模式：forwardRef + cn + cva），不走 `npx shadcn@latest add` CLI。原因：生成的组件使用 `hsl(var(--primary))` 等默认 CSS 变量，与项目现有的 `--color-brand-*`/`--shell-*` 设计令牌不兼容，手动改写的工作量不亚于直接写。skill 没提前警告我。
 - 当工具超时时，不要急着归因到网络。先做排除：① 去掉管道重试看真实输出；② 检查是否在等交互输入（加 `-y` 或 `--yes`）；③ 检查目标 URL 是否可直达（`curl -v` 看连接耗时）；④ 检查本地 registry 配置（`npm config get registry` / `pnpm config get registry`）。skill 没提前警告我。
+- 当整理跨年度研发计划时，修复是先以契约和现有路线图建立基线，再用年度主题、季度出口指标、横向工程主线、明确不做项和季度治理机制约束范围；不要把未建能力域直接承诺为无验收条件的功能清单。skill 没提前警告我。
 - Playwright 断言页面标题时,侧边栏菜单/面包屑/页内 h2 三处同文案会触发 strict mode violation:一律用 getByRole('heading') 而非 getByText(2026-08-18, e2e 冒烟首跑 2 失败均此因)
 - 跑前端 e2e 前先确认 vite proxy 的 BOSS_API_TARGET 指向真实后端(vite.config 默认 102:28080),playwright webServer.env 里覆盖才生效(2026-08-18)
 - 当用户反复强调"保存/记录账号密码 API key"时,修复是当场用 write 工具落盘 JSON 并 `ls` 确认存在,不要只口头答应"会保存"——本会话因只答应不执行被用户连催四次,浪费多轮(2026-08-19)

@@ -4,29 +4,42 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 
-interface OrderTrendPoint { label: string; value: number }
+interface OrderTrendPoint { label: string; [key: string]: string | number }
+export interface OrderTrendSeries { key: string; label: string; color: string; values: number[] }
 interface OrderTrendProps {
   labels: string[]
-  values: number[]
+  series: OrderTrendSeries[]
   valueUnit: string
   tooltipLabel: string
   emptyText: string
+  statusToggleLabel: string
   interactionLabels: { previous: string; next: string; zoomOut: string; zoomIn: string; reset: string }
 }
 
 const MIN_VISIBLE = 5
 
 function formatValue(value: number, unit: string): string { return `${value}${unit}` }
-function points(labels: string[], values: number[]): OrderTrendPoint[] {
-  return labels.map((label, index) => ({ label, value: values[index] ?? 0 }))
+function points(labels: string[], series: OrderTrendSeries[], visible: Set<string>): OrderTrendPoint[] {
+  return labels.map((label, index) => {
+    const point: OrderTrendPoint = { label }
+    for (const item of series) {
+      if (visible.has(item.key)) point[item.key] = item.values[index] ?? 0
+    }
+    return point
+  })
 }
 function clamp(value: number, min: number, max: number): number { return Math.max(min, Math.min(max, value)) }
 
-export function OrderTrend({ labels, values, valueUnit, tooltipLabel, emptyText, interactionLabels }: OrderTrendProps) {
-  const data = useMemo(() => points(labels, values), [labels, values])
+export function OrderTrend({ labels, series, valueUnit, tooltipLabel, emptyText, statusToggleLabel, interactionLabels }: OrderTrendProps) {
+  const seriesSignature = series.map((item) => item.key).join('|')
+  const [visibleKeys, setVisibleKeys] = useState(() => new Set(series.map((item) => item.key)))
+  const data = useMemo(() => points(labels, series, visibleKeys), [labels, series, visibleKeys])
   const [range, setRange] = useState({ start: 0, end: Math.max(0, data.length - 1) })
   const [dragStart, setDragStart] = useState<number | null>(null)
   const visible = data.slice(range.start, range.end + 1)
+  useEffect(() => {
+    setVisibleKeys(new Set(series.map((item) => item.key)))
+  }, [seriesSignature])
   useEffect(() => {
     setRange({ start: 0, end: Math.max(0, data.length - 1) })
   }, [data.length])
@@ -50,8 +63,34 @@ export function OrderTrend({ labels, values, valueUnit, tooltipLabel, emptyText,
     return <div className="flex h-64 items-center justify-center text-[13px] text-[var(--shell-group-title)]">{emptyText}</div>
   }
 
+  const toggleSeries = (key: string) => {
+    setVisibleKeys((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
   return (
     <div className="flex w-full flex-col gap-3" role="img" aria-label={tooltipLabel}>
+      <div className="flex flex-wrap gap-2" aria-label={statusToggleLabel}>
+        {series.map((item) => {
+          const active = visibleKeys.has(item.key)
+          return (
+            <button
+              key={item.key}
+              type="button"
+              aria-pressed={active}
+              className="inline-flex items-center gap-1.5 rounded border border-[var(--shell-side-border)] px-2 py-1 text-xs text-[var(--shell-content-text)]"
+              onClick={() => toggleSeries(item.key)}
+            >
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: active ? item.color : 'var(--shell-group-title)' }} />
+              {item.label}
+            </button>
+          )
+        })}
+      </div>
       <div
         className={`h-80 w-full${canPan ? ' cursor-grab select-none active:cursor-grabbing' : ''}`}
         onPointerDown={(event) => {
@@ -73,10 +112,12 @@ export function OrderTrend({ labels, values, valueUnit, tooltipLabel, emptyText,
         <ResponsiveContainer width="100%" height="100%" minWidth={280}>
           <LineChart data={visible} margin={{ top: 20, right: 12, left: -12, bottom: 4 }}>
             <defs>
-              <linearGradient id="order-trend-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-brand-gold-500)" stopOpacity={0.28} />
-                <stop offset="100%" stopColor="var(--color-brand-gold-500)" stopOpacity={0.02} />
-              </linearGradient>
+              {series.map((item) => (
+                <linearGradient key={item.key} id={`order-trend-fill-${item.key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={item.color} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={item.color} stopOpacity={0.02} />
+                </linearGradient>
+              ))}
             </defs>
             <CartesianGrid vertical={false} stroke="var(--shell-side-border)" strokeDasharray="3 5" />
             <XAxis dataKey="label" interval={visible.length > 14 ? Math.ceil(visible.length / 12) - 1 : 0} minTickGap={16} axisLine={false} tickLine={false} tick={{ fill: 'var(--shell-group-title)', fontSize: 11 }} dy={8} />
@@ -85,12 +126,16 @@ export function OrderTrend({ labels, values, valueUnit, tooltipLabel, emptyText,
               cursor={{ stroke: 'var(--color-brand-gold-500)', strokeDasharray: '4 4', strokeOpacity: 0.65 }}
               contentStyle={{ background: 'var(--shell-card-bg)', border: '1px solid var(--shell-card-border)', borderRadius: '8px', boxShadow: 'var(--shell-card-shadow)', color: 'var(--shell-heading)', fontSize: '12px' }}
               labelStyle={{ color: 'var(--shell-heading)', fontWeight: 600, marginBottom: 4 }}
-              formatter={(value) => [formatValue(Number(value), valueUnit), tooltipLabel]}
+              formatter={(value, key) => [formatValue(Number(value), valueUnit), series.find((item) => item.key === key)?.label ?? key]}
             />
-            <Area type="monotone" dataKey="value" stroke="none" fill="url(#order-trend-fill)" />
-            <Line type="monotone" dataKey="value" stroke="var(--color-brand-gold-500)" strokeWidth={3} dot={{ r: 5, fill: 'var(--shell-card-bg)', stroke: 'var(--color-brand-gold-500)', strokeWidth: 2 }} activeDot={{ r: 7, fill: 'var(--color-brand-gold-500)', stroke: 'var(--shell-card-bg)', strokeWidth: 2 }} connectNulls>
-              <LabelList dataKey="value" position="top" offset={10} fill="var(--shell-heading)" fontSize={12} fontWeight={600} formatter={(value: number) => formatValue(value, valueUnit)} />
-            </Line>
+            {series.filter((item) => visibleKeys.has(item.key)).map((item) => (
+              <>
+                <Area key={`${item.key}-area`} type="monotone" dataKey={item.key} stroke="none" fill={`url(#order-trend-fill-${item.key})`} />
+                <Line key={item.key} type="monotone" dataKey={item.key} stroke={item.color} strokeWidth={2.5} dot={{ r: 4, fill: 'var(--shell-card-bg)', stroke: item.color, strokeWidth: 2 }} activeDot={{ r: 6, fill: item.color, stroke: 'var(--shell-card-bg)', strokeWidth: 2 }} connectNulls>
+                  <LabelList dataKey={item.key} position="top" offset={8} fill="var(--shell-heading)" fontSize={11} fontWeight={600} formatter={(value: number) => formatValue(value, valueUnit)} />
+                </Line>
+              </>
+            ))}
           </LineChart>
         </ResponsiveContainer>
       </div>

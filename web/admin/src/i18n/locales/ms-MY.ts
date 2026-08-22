@@ -236,6 +236,7 @@ const msMY: Translations = {
       trendTitle: 'Trend Pesanan 7 Hari',
       trendUnit: '',
       trendTooltip: 'Pesanan',
+       trendStatusToggle: 'Tukar garis status pesanan',
        trendPeriod: 'Julat masa',
        trendPeriods: { week: 'Minggu ini', month: 'Bulan ini', quarter: 'Suku ini', year: 'Tahun ini', all: 'Semua' },
        trendPrevious: 'Sebelumnya', trendNext: 'Seterusnya', trendZoomOut: 'Zum keluar', trendZoomIn: 'Zum masuk', trendReset: 'Set semula',

@@ -143,17 +143,32 @@ func orderTrend(orders []order.OrderListItem, period string, now time.Time) gin.
 	period = normalizeTrendPeriod(period)
 	start, step, count, layout := trendWindow(period, orders, now)
 	days := make([]string, count)
-	counts := make([]int, count)
-	for i := 0; i < count; i++ {
-		point := start.AddDate(0, 0, i*step)
-		days[i] = point.Format(layout)
-		for _, o := range orders {
-			if trendBucket(o.CreatedAt, point, step, period) {
-				counts[i]++
+	for i := range days {
+		days[i] = start.AddDate(0, 0, i*step).Format(layout)
+	}
+	return gin.H{"period": period, "days": days, "series": trendSeries(orders, days, start, step, period)}
+}
+
+func trendSeries(orders []order.OrderListItem, days []string, start time.Time, step int, period string) []gin.H {
+	labels := map[string]string{
+		"PENDING": "待核查", "RESERVED": "已预占", "INSTALLING": "装维中",
+		"DONE": "已完成", "CANCELLED": "已取消",
+	}
+	statuses := []string{"PENDING", "RESERVED", "INSTALLING", "DONE", "CANCELLED"}
+	series := make([]gin.H, 0, len(statuses))
+	for _, status := range statuses {
+		values := make([]int, len(days))
+		for i := range days {
+			point := start.AddDate(0, 0, i*step)
+			for _, item := range orders {
+				if item.Status == status && trendBucket(item.CreatedAt, point, step, period) {
+					values[i]++
+				}
 			}
 		}
+		series = append(series, gin.H{"status": status, "statusLabel": labels[status], "values": values})
 	}
-	return gin.H{"period": period, "days": days, "values": counts}
+	return series
 }
 
 func normalizeTrendPeriod(period string) string {
