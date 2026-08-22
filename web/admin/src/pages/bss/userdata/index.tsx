@@ -28,8 +28,9 @@ export default function UserDataPage() {
   useEffect(() => { load(TABS[0]) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const act = async (def: TabDef, row: Row) => {
-    if (!(await confirmDialog(u.actConfirm.replace('{id}', String(row.id)), { danger: true }))) return
-    apiFetch(`${def.actionPath}/${encodeURIComponent(String(row.id))}/${def.action}`, { method: 'PUT' })
+    const id = row[def.idKey]
+    if (!(await confirmDialog(u.actConfirm.replace('{id}', String(id)), { danger: true }))) return
+    apiFetch(`${def.actionPath}/${encodeURIComponent(String(id))}/${def.action}`, { method: 'PUT' })
       .then(() => { setNotice(u.acted); load(def) })
       .catch(() => setNotice(u.actFail))
   }
@@ -58,10 +59,10 @@ export default function UserDataPage() {
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">ID</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.nameCol}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.statusCol}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.opCol}</th></tr></thead>
               <tbody>
                 {state.rows.map((r) => (
-                  <tr key={String(r.id)}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.id)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.name ?? r.title ?? r.question ?? r.code ?? r.label ?? '—')}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.status ?? (r.enabled ? u.on : u.off) ?? '—')}</td>
+                  <tr key={String(r[cur.idKey])}>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r[cur.idKey])}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.name ?? r.title ?? r.question ?? r.code ?? r.label ?? r.customerName ?? '—')}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.status ?? (r.enabled ? u.on : u.off) ?? (r.active ? u.on : u.off) ?? '—')}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {cur.action ? (
                         <span className="inline-flex items-center">
