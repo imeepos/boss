@@ -1,135 +1,24 @@
 package adminapi
 
+// 客户注册/审核/实名核验 子域路由注册(迁移 000051)。
+// 注册申请为公开端点,已在 RegisterRoutes 的 api 组注册;此处为审核队列 + 实名核验(均走 menu:customer)。
+// 全部 handler 实现见 customer_onboarding_handlers.go。
+
 import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/internal/domain/customer"
-	"github.com/ymm-001/boss/internal/pkg/auth"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
-	"github.com/ymm-001/boss/internal/pkg/middleware"
-	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // registerCustomerOnboardingRoutes 注册客户注册 / 审核 / 实名认证 子域路由(迁移 000051)。
-// 注册申请为公开端点,已在 RegisterRoutes 的 api 组注册;此处为审核队列 + 实名核验(均走 menu:customer)。
 func registerCustomerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
-	// 审核队列:按状态列出(空=全部)。
-	g.GET("/customer-registrations", requirePerm(a.User, "menu:customer"), func(c *gin.Context) {
-		list, err := a.CustomerOnboarding.ListRegistrations(c.Request.Context(), c.Query("status"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
+	g.GET("/customer-registrations", requirePerm(a.User, "menu:customer"), customerRegistrationListHandler(a))
+	g.POST("/customer-registrations/:id/approve", requirePerm(a.User, "menu:customer"), customerRegistrationApproveHandler(a))
+	g.POST("/customer-registrations/:id/reject", requirePerm(a.User, "menu:customer"), customerRegistrationRejectHandler(a))
 
-	// 审核通过:建 customers 主档 + 回填。
-	g.POST("/customer-registrations/:id/approve", requirePerm(a.User, "menu:customer"), func(c *gin.Context) {
-		id, ok := httpx.ParsePathParamInt64(c, "id")
-		if !ok {
-			return
-		}
-		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		customerID, err := a.CustomerOnboarding.Approve(c.Request.Context(), id, claims.AccountID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "customer_registration.approve", "customer_registration", c.Param("id"),
-			gin.H{"customerId": customerID})
-		respond(c, apitypes.CodeOK, gin.H{"customerId": customerID, "status": customer.RegStatusApproved})
-	})
-
-	// 审核驳回:记审核意见。
-	g.POST("/customer-registrations/:id/reject", requirePerm(a.User, "menu:customer"), func(c *gin.Context) {
-		id, ok := httpx.ParsePathParamInt64(c, "id")
-		if !ok {
-			return
-		}
-		var req workerReviewReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		if err := a.CustomerOnboarding.Reject(c.Request.Context(), id, claims.AccountID, req.Note); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "customer_registration.reject", "customer_registration", c.Param("id"),
-			gin.H{"note": req.Note})
-		respond(c, apitypes.CodeOK, gin.H{"status": customer.RegStatusRejected})
-	})
-
-	// 客户实名核验相关(customer 主体 1:1)。
-	g.POST("/customers/:id/real-name", requirePerm(a.User, "menu:customer"), func(c *gin.Context) {
-		customerID, ok := httpx.ParsePathParamInt64(c, "id")
-		if !ok {
-			return
-		}
-		var req workerRealNameReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequireString(req.RealName, "realName", 64),
-				httpx.RequireString(req.IDCardNo, "idCardNo", 32),
-				httpx.RequireString(req.Method, "method", 32),
-			)
-		}) {
-			return
-		}
-		id, err := a.CustomerRealName.SubmitRealName(c.Request.Context(), customer.CustomerRealNameVerification{
-			CustomerID: customerID,
-			Method:     req.Method,
-			RealName:   req.RealName,
-			IDCardNo:   req.IDCardNo,
-			Result:     customer.RealNamePending,
-		})
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		// 阿里云二要素自动核验;通道未配置时保持 PENDING 走下方人工核验端点。
-		result := a.AutoVerifyRealName(c.Request.Context(), customerID, req.RealName, req.IDCardNo)
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "result": result})
-	})
-
-	g.GET("/customers/:id/real-name", requirePerm(a.User, "menu:customer"), func(c *gin.Context) {
-		customerID, ok := httpx.ParsePathParamInt64(c, "id")
-		if !ok {
-			return
-		}
-		v, err := a.CustomerRealName.GetLatest(c.Request.Context(), customerID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, v)
-	})
-
-	// 后台核验:PASS / FAIL。
-	g.POST("/customers/:id/real-name/verify", requirePerm(a.User, "menu:customer"), func(c *gin.Context) {
-		customerID, ok := httpx.ParsePathParamInt64(c, "id")
-		if !ok {
-			return
-		}
-		var req workerRealNameVerifyReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			if req.Result != customer.RealNamePass && req.Result != customer.RealNameFail {
-				return &httpx.ValidationError{Field: "result", Message: "must be PASS or FAIL"}
-			}
-			return nil
-		}) {
-			return
-		}
-		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		if err := a.CustomerRealName.Verify(c.Request.Context(), customerID, req.Result, req.Reason, claims.Username, claims.AccountID); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "customer_realname.verify", "customer_realname", c.Param("id"),
-			gin.H{"result": req.Result, "reason": req.Reason})
-		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
-	})
+	g.POST("/customers/:id/real-name", requirePerm(a.User, "menu:customer"), customerSubmitRealNameHandler(a))
+	g.GET("/customers/:id/real-name", requirePerm(a.User, "menu:customer"), customerGetRealNameHandler(a))
+	g.POST("/customers/:id/real-name/verify", requirePerm(a.User, "menu:customer"), customerVerifyRealNameHandler(a))
 }
 
 // customerRegistrationReq 客户注册申请请求体。
