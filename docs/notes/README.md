@@ -51,3 +51,4 @@
 | 2026-08-21 | 数据备份迁移(000095):本地磁盘 gzip JSONL 归档 + ON CONFLICT DO NOTHING 追加恢复,只补不删,进程内串行 | adopted/2026-08-21-backup-local-jsonl.md |
 | 2026-08-22 | 自定义角色(000100):内置 7 角色只读,模板复用放前端,后端只收权限码全集全量替换 | adopted/2026-08-22-custom-roles.md |
 | 2026-08-22 | 数字孪生与经营板块可视化升级 v2:PGIS 真地图(OL+OSM 瓦片起步)+ 新增 /gis/points 接口 + charts/ 共享 SVG 组件;v1 八级树形 Canvas 方案被推翻 | adopted/2026-08-22-intel-visualization-upgrade.md |
+| 2026-08-22 | 数字孪生板块 v1 方案(八级树形 Canvas)已否决,原文见 `git show 5ad9960:docs/notes/adopted/2026-08-22-intel-visualization-upgrade.md` | (superseded by v2) |
