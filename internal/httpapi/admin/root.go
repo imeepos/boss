@@ -46,6 +46,7 @@ func registerAdminAuthRoutes(authed *gin.RouterGroup, a *app.Application, mgr *a
 // registerAdminDomainRoutes 注册鉴权组内的全部业务域路由。
 func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerOrgRoutes(authed, a)
+	registerRegionRoutes(authed, a)
 	registerAddressRoutes(authed, a)
 	registerSysRoutes(authed, a)
 	registerAuthConfigRoutes(authed, a)
