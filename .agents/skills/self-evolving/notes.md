@@ -85,6 +85,7 @@
 - 2026-08-26 工作台趋势反馈：本地 main 合并不等于 102 已部署，必须检查 `main...gitea/main` 并推送 main 后再让用户刷新；趋势数据稀疏时单纯折线+面积仍显空，应增大图表高度、固定展示 7 个刻度并增加点位数值标签。
 - 2026-08-26 工作台趋势时间筛选：周期切换要把 `trendPeriod` 作为 API query 传到后端真实聚合逻辑，前端使用现有 `Dropdown`，不能新增原生 select；周从周一开始，月/季/年按自然周期，全部按订单最早月份至当前月份聚合，所有筛选文案同步三语言。
 - 2026-08-26 工作台趋势横轴：年度趋势不能按 365 天输出并强制 `interval=0`；应按月聚合为 12 点，前端对超过 14 个点的序列按最多约 12 个刻度自适应隐藏标签，细节交给 Tooltip。
+- 2026-08-26 工作台趋势交互：类炒股图表采用主图 pointer drag 平移 + 左右窗口按钮 + 缩放/重置控制，长序列才显示交互条；数据切换后用 effect 重置窗口，所有辅助按钮 aria-label 也必须进入三语言闭环。
 - 2026-08-18 分页下拉 4 连纠：静默失败 + 总结说没验证过的假话是最严重模式；写新组件前 grep lessons 相关关键词。
 - 2026-08-19 bossctl：flag not defined 第一时间看 -h；契约 A 门禁先读 collectSpecPaths 源码确认匹配机制（$ref 行不递归子文件）。
 - 2026-08-19 开网全流程：先建资产再以 boundAssetId + status BOUND 创建标签（CreateAsset 不回写 bound_asset_id）；客户凭证 = API key(subjectType=customer)，sign 完立即写 identities.json 落盘。

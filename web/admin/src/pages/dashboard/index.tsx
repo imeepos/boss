@@ -203,6 +203,7 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
               valueUnit={d.trendUnit}
               tooltipLabel={d.trendTooltip}
               emptyText={d.empty}
+              interactionLabels={{ previous: d.trendPrevious, next: d.trendNext, zoomOut: d.trendZoomOut, zoomIn: d.trendZoomIn, reset: d.trendReset }}
             />
           </CardShell>
         </>

@@ -237,6 +237,7 @@ const msMY: Translations = {
       trendTooltip: 'Pesanan',
        trendPeriod: 'Julat masa',
        trendPeriods: { week: 'Minggu ini', month: 'Bulan ini', quarter: 'Suku ini', year: 'Tahun ini', all: 'Semua' },
+       trendPrevious: 'Sebelumnya', trendNext: 'Seterusnya', trendZoomOut: 'Zum keluar', trendZoomIn: 'Zum masuk', trendReset: 'Set semula',
       colStatus: 'Status',
       colCount: 'Bilangan',
       colPercent: 'Peratus',
