@@ -7,7 +7,7 @@ const PALETTE = ['#C69835', '#1F355F', '#BE8D25', '#273F70', '#9CAAC3', '#A6B1C3
 export interface DonutSegment { label: string; value: number }
 
 export function Donut({
-  segments, total, label = '指标构成', sublabel, formatValue, formatTotal,
+  segments, total, label = '', sublabel, formatValue, formatTotal,
 }: {
   segments: DonutSegment[]
   /** 显式给定时覆盖 sum,避免精度问题 */
@@ -50,7 +50,7 @@ export function Donut({
           })}
         </g>
         <text x="60" y="55" textAnchor="middle" className="fill-[var(--shell-heading)]" fontSize="20" fontWeight="600">{fmtTot(sum)}</text>
-        <text x="60" y="72" textAnchor="middle" className="fill-[var(--shell-group-title)]" fontSize="10">{label}</text>
+        {label && <text x="60" y="72" textAnchor="middle" className="fill-[var(--shell-group-title)]" fontSize="10">{label}</text>}
         {sublabel && <text x="60" y="88" textAnchor="middle" className="fill-[var(--shell-group-title)]" fontSize="9">{sublabel}</text>}
       </svg>
       <ul className="flex flex-col gap-1.5 text-[13px]">
