@@ -241,3 +241,9 @@
   - type alias 兜底:返回 `billing.Invoice` 实类型,绝不引入接口抽象(初版用 `invoiceLike` 接口反而破坏调用点)。
 - 禁改动 git 写操作(任务硬规则)+ 共享工作区并行会话:全程 `git status --short` 自查,build 错先想"是不是并行 agent 改了 admin 域",别浪费时间排查自己的 user/worker 文件。
 - 旧文件加注释 + 提取 helper 后行数膨胀超出 300 上限(trade.go 305, asset.go 320, profile.go 334):必须再拆第二轮;判断标准 = 文件末尾 `awk '/^func /' | wc -l` 与 `wc -l` 同时看。
+
+## 2026-08-21 ISSUE.md 12环节缺口 测试复现+修复
+
+- 哪个坑浪费最多时间:e2e 集成套件自 5c5f2a7(归属按地址推导)起就一直红(LegalEntityID 硬编码撞平台兜底主体、共享地址撞 quad_link 唯一索引、capPub nil panic、grpc seed 二插工单),先跑基线才发现红的不止我的用例,连环修了 6 处测试债。
+- skill 有没有提前警告:部分——红线第 6 条"未验证不声称"促使我先跑基线;但"改测试前先确认基线颜色"没有明示。
+- 重来一次:动任何集成测试前,先在干净 checkout 上跑一遍同 run 的测试,红的先分类"环境漂移/测试债/我的改动"再动手。

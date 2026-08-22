@@ -203,3 +203,5 @@
 81. 免登录 CDP 验证 admin 页时,?token= 会在 auth 探测失败(如 boss.servers 未配)时被 logout 清掉;正解=先开 /login,eval 注入 boss.token+boss.servers+boss.server.active 后再 location.href 目标页(2026-08-21 admin 状态组件验证)。
 82. cdp-capture 的验证结果用 eval 返回对象(stdout 打印)而不是 console.log——涉及 location 跳转的用例里,console 采集常落在导航前,VERIFY 抓不到(2026-08-21)。
 83. 代码改完跑门禁前先 commit 一版草稿:长验证流程(DOM 双主题断言)中途,并行会话可能把工作区改动扫进它的巨石提交,提交纪律已被破坏且无法干净拆分(2026-08-21 2c34af5 混装)。
+84. 改集成测试前先跑基线:红了一片时先分类(环境漂移/存量测试债/自己的改动),别默认是自己改坏的——本仓 e2e 曾整红 1 天无人发现(2026-08-21 e2e 归属推导测试债)。
+85. 部分唯一索引(WHERE status IN ...)的表做批量 UPDATE 到索引内状态时,同键多行会 23505:批量标记语句必须带"每键至多一行"守卫(已有活跃行不标/取最小 id)(2026-08-21 Reconcile CONFLICT)。
