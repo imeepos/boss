@@ -93,6 +93,7 @@ func portalIssueSmsHandler(a *app.Application) gin.HandlerFunc {
 }
 
 // portalRegisterHandler POST /auth/register:客户注册(短信码校验 + 发 token)。
+// 可选 inviteCode=邀请人手机号:配置了奖励券模板时向邀请人发一张券(尽力而为,不阻塞注册)。
 func portalRegisterHandler(a *app.Application, mgr *auth.Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req portalRegisterReq
@@ -103,6 +104,7 @@ func portalRegisterHandler(a *app.Application, mgr *auth.Manager) gin.HandlerFun
 		if !ok {
 			return
 		}
+		portalIssueInviteReward(c, a, req.InviteCode)
 		token, err := signCustomerToken(mgr, acc.CustomerID, req.Phone)
 		if err != nil {
 			respond(c, apitypes.CodeInternal, nil)
@@ -110,6 +112,27 @@ func portalRegisterHandler(a *app.Application, mgr *auth.Manager) gin.HandlerFun
 		}
 		respond(c, apitypes.CodeOK, gin.H{"token": token, "customerId": acc.CustomerID})
 	}
+}
+
+// portalIssueInviteReward 邀请奖励:inviteCode(邀请人手机号)命中且后台配置了
+// 奖励券模板时,按模板向邀请人发一张 INVITE 来源券。失败静默(注册主流程优先)。
+func portalIssueInviteReward(c *gin.Context, a *app.Application, inviteCode string) {
+	if inviteCode == "" || a.Promotion == nil || a.UserData == nil {
+		return
+	}
+	cfg, err := a.UserData.GetInviteConfig(c.Request.Context())
+	if err != nil || len(cfg) == 0 {
+		return
+	}
+	tplID, _ := cfg[0]["rewardTemplateId"].(int64)
+	if tplID == 0 {
+		return
+	}
+	inviters, err := a.Customer.List(c.Request.Context(), customer.CustomerQuery{Phone: inviteCode})
+	if err != nil || len(inviters) == 0 {
+		return
+	}
+	_, _ = a.Promotion.IssueToCustomer(c.Request.Context(), tplID, inviters[0].ID, "INVITE")
 }
 
 // portalRegisterCustomerID 解析注册绑定客户ID:同名客户复用,否则取 NextSyntheticCustomerID。
@@ -146,9 +169,10 @@ func portalResetPasswordHandler(a *app.Application) gin.HandlerFunc {
 }
 // portalRegisterReq 注册请求体。
 type portalRegisterReq struct {
-	Phone    string `json:"phone" binding:"required"`
-	SmsCode  string `json:"smsCode" binding:"required"`
-	Password string `json:"password" binding:"required,min=10"`
+	Phone      string `json:"phone" binding:"required"`
+	SmsCode    string `json:"smsCode" binding:"required"`
+	Password   string `json:"password" binding:"required,min=10"`
+	InviteCode string `json:"inviteCode"` // 邀请人手机号,可空
 }
 
 // portalRegisterAccount 注册三步:验证码核销 → 客户建档 → 账号 upsert;

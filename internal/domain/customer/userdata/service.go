@@ -250,6 +250,8 @@ type Service interface {
 	DisableCoupon(ctx context.Context, couponID string) error
 
 	GetInviteConfig(ctx context.Context) ([]map[string]any, error)
+	// UpdateInviteConfig 更新邀请配置(邀请链接 + 奖励券模板)。
+	UpdateInviteConfig(ctx context.Context, inviteLink string, rewardTemplateID int64) error
 	ListUserUsages(ctx context.Context) ([]map[string]any, error)
 	ListDiyGuides(ctx context.Context) ([]map[string]any, error)
 	ToggleDiyGuide(ctx context.Context, guideID string) error

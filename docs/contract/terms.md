@@ -74,9 +74,10 @@
 | 券模板 template.status | DRAFT / ENABLED / DISABLED | 草稿 / 启用 / 停用 |
 | 券实例 coupon.status | ISSUED / USED / EXPIRED / DISABLED | 已发放 / 已使用 / 已过期 / 已停用；user 端展示态 available/used/expired/gifting 由其派生 |
 | 券类型 coupon.type | FULL_CUT / DISCOUNT / CASH | 满减 / 折扣(万分比) / 代金券 |
-| 券来源 coupon.source | ADMIN_ISSUE / CAMPAIGN / REDEEM / GIFT / INVITE | 手发 / 活动 / 兑换码 / 转赠 / 邀请 |
+| 券来源 coupon.source | ADMIN_ISSUE / CAMPAIGN / REDEEM / GIFT / INVITE / LOYALTY | 手发 / 活动 / 兑换码 / 转赠 / 邀请 / 积分兑换 |
 | 兑换码 code.status | UNUSED / REDEEMED / DISABLED | 未兑换 / 已兑换 / 已停用 |
 | 赠送规则 gift_rule.status | ENABLED / DISABLED | 启用 / 停用（时长阶梯 6送1/12送3/24送6） |
+| 积分流水 entry.reason | ADMIN_ADJUST / EXCHANGE / EXCHANGE_REVERSAL | 手动调整 / 积分换券扣减 / 发券失败补偿回补 |
 | 订购付费模式 billing_mode | PREPAID / POSTPAID | 预付费（办单即收，不进月度出账）/ 后付费（月度出账，存量默认）；挂 lo_accounts 与 orders 快照，不挂 product_offers（adopted note 2026-08-22） |
 
 ## 5. 关键术语

@@ -265,6 +265,8 @@ paths:
   /coupon-templates/{templateId}/codes: { $ref: './admin/promotion.yaml#/paths/~1coupon-templates~1{templateId}~1codes' }
   /gift-rules: { $ref: './admin/promotion.yaml#/paths/~1gift-rules' }
   /gift-rules/{ruleId}/disable: { $ref: './admin/promotion.yaml#/paths/~1gift-rules~1{ruleId}~1disable' }
+  /points/{customerId}: { $ref: './admin/loy.yaml#/paths/~1points~1{customerId}' }
+  /points/{customerId}/adjust: { $ref: './admin/loy.yaml#/paths/~1points~1{customerId}~1adjust' }
   /invite-config: { $ref: './admin/userdata.yaml#/paths/~1invite-config' }
   /user-usages: { $ref: './admin/userdata.yaml#/paths/~1user-usages' }
   /diy-guides: { $ref: './admin/userdata.yaml#/paths/~1diy-guides' }

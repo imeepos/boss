@@ -120,6 +120,7 @@ components:
         validTo: { type: string, format: date-time }
         status: { type: string, enum: [DRAFT, ENABLED, DISABLED] }
         issuedQty: { type: integer, format: int64 }
+        pointsPrice: { type: integer, format: int64, description: 积分兑换价,0=不可积分兑换 }
     GiftRule:
       type: object
       required: [legalEntityId, name, buyMonths, giftMonths]

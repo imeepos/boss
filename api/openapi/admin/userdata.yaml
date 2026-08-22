@@ -125,9 +125,23 @@ paths:
   /invite-config:
     get:
       tags: [Userdata]
-      summary: 邀请有礼配置(邀请链接/奖励)
+      summary: 邀请有礼配置(邀请链接/奖励金额/奖励券模板)
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+    put:
+      tags: [Userdata]
+      summary: 更新邀请配置(奖励券模板非 0 时,注册携带邀请人手机号即向邀请人发券)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inviteLink: { type: string, description: 空=不改 }
+                rewardTemplateId: { type: integer, format: int64, description: 奖励券模板,0=关闭 }
+      responses:
+        '200': { description: OK }
   /user-usages:
     get:
       tags: [Userdata]

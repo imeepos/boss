@@ -39,6 +39,7 @@ func registerUserdataMoreRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/coupons", perm, udCreateCoupon(a))
 	g.PUT("/coupons/:couponId/disable", perm, udDisableCoupon(a))
 	g.GET("/invite-config", perm, udListInviteConfig(a))
+	g.PUT("/invite-config", perm, udUpdateInviteConfig(a))
 	g.GET("/user-usages", perm, udListUserUsages(a))
 	g.GET("/diy-guides", perm, udListDiyGuides(a))
 	g.PUT("/diy-guides/:guideId/toggle", perm, udToggleDiyGuide(a))

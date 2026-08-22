@@ -1,0 +1,60 @@
+# 用户端积分域(最小 LOY,000104):余额/流水/积分换券。
+
+paths:
+  /points:
+    get:
+      summary: 我的积分(余额 + 近 100 条流水)
+      tags: [Loyalty]
+      operationId: getPoints
+      responses:
+        '200':
+          description: 积分信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      balance: { type: integer, format: int64 }
+                      entries:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            entryId: { type: integer, format: int64 }
+                            delta: { type: integer, format: int64 }
+                            balanceAfter: { type: integer, format: int64 }
+                            reason: { type: string }
+                            createdAt: { type: string }
+
+  /points/exchange:
+    post:
+      summary: 积分换券(模板须配置 pointsPrice;先扣积分后发券,发券失败补偿回补)
+      tags: [Loyalty]
+      operationId: exchangePoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [templateId]
+              properties:
+                templateId: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: 兑换成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      couponId: { type: string }
+                      cost: { type: integer, format: int64 }

@@ -22,6 +22,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push" // 设备注册表(域侧);通道 Sender 在 pkg/push
@@ -54,6 +55,9 @@ type Application struct {
 
 	// Promotion 营销促销域:券模板/发放/兑换/转赠/缴费抵扣(docs/design/promotion-coupon.md)。
 	Promotion promotion.Service
+
+	// Points 忠诚度积分域(最小实现,000104):账本/流水/积分换券。
+	Points loy.Service
 
 	// Portal 用户端/师傅端门户状态(验证码/账号/偏好/消息/钱包/单号)。
 	Portal portal.Service

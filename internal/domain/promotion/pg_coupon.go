@@ -121,14 +121,9 @@ func (s *PGStore) RedeemCode(ctx context.Context, code string, customerID int64)
 	if held >= t.PerCustomerLimit {
 		return "", &conflictError{reason: "已达每人限领数量"}
 	}
-	if err := insertCoupon(ctx, tx, t, customerID, SourceRedeem); err != nil {
+	couponID, err = insertCoupon(ctx, tx, t, customerID, SourceRedeem)
+	if err != nil {
 		return "", err
-	}
-	// insertCoupon 未回填券号,反查最新一张(同事务可见)。
-	if err := tx.QueryRow(ctx, `
-		SELECT coupon_id FROM coupons WHERE customer_id=$1 AND template_id=$2
-		ORDER BY issued_at DESC, coupon_id DESC LIMIT 1`, customerID, t.TemplateID).Scan(&couponID); err != nil {
-		return "", fmt.Errorf("promotion: fetch redeemed coupon: %w", err)
 	}
 	if _, err := tx.Exec(ctx,
 		`UPDATE coupon_codes SET status='REDEEMED', redeemed_by=$2, redeemed_at=now() WHERE code=$1`,

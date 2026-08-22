@@ -108,6 +108,7 @@ func (f *fakeUserData) DisableCoupon(context.Context, string) error           { 
 func (f *fakeUserData) GetInviteConfig(context.Context) ([]map[string]any, error) {
 	return f.invite, nil
 }
+func (f *fakeUserData) UpdateInviteConfig(context.Context, string, int64) error { return nil }
 func (f *fakeUserData) ListUserUsages(context.Context) ([]map[string]any, error) {
 	return nil, nil
 }

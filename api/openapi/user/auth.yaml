@@ -69,6 +69,7 @@ paths:
                 phone: { type: string }
                 smsCode: { type: string }
                 password: { type: string, minLength: 10 }
+                inviteCode: { type: string, description: 邀请人手机号,可空;命中奖励配置时向邀请人发券 }
       responses:
         '200':
           description: 注册成功

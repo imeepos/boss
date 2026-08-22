@@ -817,6 +817,21 @@ ISSUED/USED/EXPIRED/DISABLED。
 `product_id`、`buy_months`、`gift_months`、`payment_id`（逻辑关联）。
 
 > 金额单位一律为分（int64）；billing 域缴费金额为元（float64），跨域边界处换算（billing.redeemCoupon）。
+> 000103/000104 增量：`invite_config` 增 `reward_template_id`（邀请奖励券模板，可空）；
+> `coupon_templates` 增 `points_price`（积分兑换价，0=不可）。
+
+## 8D. 忠诚度积分域（internal/domain/loy，000104 最小实现）
+
+`loy_point_ledgers`（积分账本，客户唯一）：`customer_id` PK → customers、`balance`
+（CHECK >= 0）、`updated_at`。
+
+`loy_point_entries`（积分流水）：`entry_id` BIGSERIAL PK、`customer_id` → customers、
+`delta`（正充负扣）、`balance_after`（落库后余额快照）、`reason`
+（terms.md：ADMIN_ADJUST/EXCHANGE/EXCHANGE_REVERSAL）、`ref_id`（EXCHANGE 时为模板 id）、
+`created_at`。
+
+> 范围：等级/任务/缴费自动积分属完整 LOY（roadmap 三期后），本期仅账本+手动调整+积分换券；
+> 兑换经 LOY→PROMO 服务调用（先扣积分后发券，发券失败补偿回补，见 adopted note）。
 
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 

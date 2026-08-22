@@ -96,6 +96,7 @@ func (f *fakeUserdata) DisableCoupon(_ context.Context, couponID string) error {
 func (f *fakeUserdata) GetInviteConfig(context.Context) ([]map[string]any, error) {
 	return []map[string]any{{"id": int64(1), "inviteLink": "https://x", "rewardAmount": int64(100), "active": true}}, nil
 }
+func (f *fakeUserdata) UpdateInviteConfig(context.Context, string, int64) error { return nil }
 func (f *fakeUserdata) ListUserUsages(context.Context) ([]map[string]any, error) {
 	return f.ok(), nil
 }

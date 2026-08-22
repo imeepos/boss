@@ -191,6 +191,25 @@ func udListInviteConfig(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// udUpdateInviteConfig PUT /invite-config:更新邀请链接与奖励券模板(000103)。
+func udUpdateInviteConfig(a *app.Application) gin.HandlerFunc {
+	ud := a.UserData
+	return func(c *gin.Context) {
+		var req struct {
+			InviteLink        string `json:"inviteLink"`
+			RewardTemplateID int64  `json:"rewardTemplateId"`
+		}
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		if err := ud.UpdateInviteConfig(c.Request.Context(), req.InviteLink, req.RewardTemplateID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
 func udListUserUsages(a *app.Application) gin.HandlerFunc {
 	ud := a.UserData
 	return func(c *gin.Context) {
