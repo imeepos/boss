@@ -1,5 +1,7 @@
 // PGIS 地图容器:OpenLayers + 可切换瓦片源(light/dark/PMTiles)+ GeoJSON 点位图层。
-// 接收 points/theme/tileUrl 与 onSelect;mount 一次,points/theme 变化复用 map 实例。
+// 接收 points/theme/tileUrl + onSelect + onViewportChange;mount 一次,
+// points/theme 变化复用 map 实例。viewport 回调在 moveend 时触发,
+// 业务页用于"视域内点位"实时统计(B3 消费)。
 // jsdom 单测跳过(WebGL 缺失),vitest e2e 用真实浏览器兜底。
 
 import { useEffect, useRef } from 'react'
@@ -9,18 +11,23 @@ import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-import { fromLonLat } from 'ol/proj'
+import { fromLonLat, transformExtent } from 'ol/proj'
 import { GeoJSON } from 'ol/format'
 import { Style, Circle, Fill, Stroke, Text } from 'ol/style'
 import { pointRadius, pointColor, pointsToFeatureCollection, type GisPoint } from './point-layer'
 import { DEFAULT_VIEW } from './bbox-utils'
 import { makeTileLayer, readDocumentTheme, type Theme } from './tile-source'
 
+/** 视域范围(WGS84 经纬度),格式与 /gis/points 的 bbox 入参兼容。 */
+export interface ViewportBbox { minLng: number; minLat: number; maxLng: number; maxLat: number }
+
 export function PgisMap({
-  points, onSelect, theme, tileUrl,
+  points, onSelect, onViewportChange, theme, tileUrl,
 }: {
   points: GisPoint[]
   onSelect?: (p: GisPoint) => void
+  /** 视域范围回调(moveend/zoomend 时调用);不传则不订阅。 */
+  onViewportChange?: (b: ViewportBbox) => void
   /** 不传时按 [data-theme] 自动切换;传了以传入为准。 */
   theme?: Theme
   /** 不传时按 theme 选默认 URL(light→OSM,dark→CartoDB)。 */
@@ -94,6 +101,30 @@ export function PgisMap({
       if (vectorLayerRef.current === layer) vectorLayerRef.current = old
     }
   }, [points, theme, onSelect])
+
+  // 视域变化(moveend/zoomend)→ 计算 bbox 转 WGS84 → 回调。
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !onViewportChange) return
+    const handler = () => {
+      const ext = map.getView().calculateExtent(map.getSize() ?? [0, 0])
+      const [minX, minY, maxX, maxY] = transformExtent(ext, 'EPSG:3857', 'EPSG:4326')
+      onViewportChange({ minLng: minX, minLat: minY, maxLng: maxX, maxLat: maxY })
+    }
+    const listeners = [
+      (map.on as unknown as (k: string, l: () => void) => unknown)('moveend', handler),
+      (map.on as unknown as (k: string, l: () => void) => unknown)('zoomend', handler),
+    ]
+    // mount 后立即触发一次(初始视域)
+    handler()
+    return () => {
+      // OL un() 签名是 Observable + Object + MapBrowser + MapEvent + MapRender 多重 OnSignature 联合,
+      // TS 无法从 handler listener 反推 key 字面量;用 loose cast 绕过(运行时安全)。
+      const un = map.un as unknown as (k: string, l: unknown) => void
+      un('moveend', listeners[0])
+      un('zoomend', listeners[1])
+    }
+  }, [onViewportChange])
 
   return <div ref={ref} className="h-full min-h-96 w-full rounded-md border border-[var(--shell-card-border)]" data-testid="pgis-map" />
 }
