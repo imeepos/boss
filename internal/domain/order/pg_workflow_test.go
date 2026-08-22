@@ -155,3 +155,48 @@ func TestCancelAndRelease(t *testing.T) {
 		}
 	})
 }
+
+// TestPGStore_RollbackStage 回归(ISSUE.md worker rollback 仅审计不落库):
+// 删最新环节日志、stage 前移、status 级联逆向、工单随动 DOING。
+func TestPGStore_RollbackStage(t *testing.T) {
+	t.Run("段11回退:DONE→INSTALLING + 工单随动", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT stage, status FROM orders`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(11), "DONE"))
+		mock.ExpectExec(`DELETE FROM order_stages`).
+			WithArgs(int64(7), int8(11)).
+			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mock.ExpectExec(`UPDATE orders SET stage`).
+			WithArgs(int64(7), int8(10), "INSTALLING").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectExec(`UPDATE dispatch_tickets`).
+			WithArgs(int64(7), "DOING").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		s := NewPGStore(mock, stubExists{ok: true})
+		if err := s.RollbackStage(context.Background(), 7); err != nil {
+			t.Fatalf("RollbackStage: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("stage<2 拒绝", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT stage, status FROM orders`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(1), "PENDING"))
+		s := NewPGStore(mock, stubExists{ok: true})
+		if err := s.RollbackStage(context.Background(), 7); err != ErrIllegalTransition {
+			t.Fatalf("err=%v, want ErrIllegalTransition", err)
+		}
+	})
+}
