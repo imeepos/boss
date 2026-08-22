@@ -30,7 +30,7 @@ type PGStore struct{ db dbtx }
 func NewPGStore(db dbtx) *PGStore { return &PGStore{db: db} }
 
 const itemCols = `n.id, n.category, n.level, n.title, n.content, n.link,
-	n.ref_type, n.ref_id, n.resolved, n.created_at,
+	n.ref_type, n.ref_id, n.resolved, n.created_at, n.due_at, n.resolved_at,
 	(r.notification_id IS NOT NULL) AS read`
 
 // Emit 幂等写入:同 (ref_type, ref_id, category) 已存在时跳过(INSERT...SELECT...WHERE NOT EXISTS)。
@@ -39,15 +39,19 @@ func (s *PGStore) Emit(ctx context.Context, in Input) error {
 		return ErrInvalidInput
 	}
 	in = in.NormalizeDefaults()
+	var dueAt any // nil=无时限;todo 且 DueHours>0 时 now+hours(000115,Q2 P1 时限)
+	if in.Category == CategoryTodo && in.DueHours > 0 {
+		dueAt = time.Now().Add(time.Duration(in.DueHours) * time.Hour)
+	}
 	tag, err := s.db.Exec(ctx, `
 		INSERT INTO admin_notifications
-			(category, level, title, content, link, ref_type, ref_id, target_role)
-		SELECT $1, $2, $3, $4, $5, $6, $7, $8
+			(category, level, title, content, link, ref_type, ref_id, target_role, due_at)
+		SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9
 		WHERE NOT EXISTS (
 			SELECT 1 FROM admin_notifications
 			WHERE ref_type = $6 AND ref_id = $7 AND category = $1
 		)`,
-		in.Category, in.Level, in.Title, in.Content, in.Link, in.RefType, in.RefID, in.TargetRole)
+		in.Category, in.Level, in.Title, in.Content, in.Link, in.RefType, in.RefID, in.TargetRole, dueAt)
 	if err != nil {
 		return fmt.Errorf("notify: emit: %w", err)
 	}
@@ -61,7 +65,7 @@ func (s *PGStore) Resolve(ctx context.Context, refType, refID string) error {
 		return ErrInvalidInput
 	}
 	_, err := s.db.Exec(ctx, `
-		UPDATE admin_notifications SET resolved = TRUE
+		UPDATE admin_notifications SET resolved = TRUE, resolved_at = now()
 		WHERE ref_type = $1 AND ref_id = $2 AND NOT resolved`, refType, refID)
 	if err != nil {
 		return fmt.Errorf("notify: resolve: %w", err)
@@ -91,7 +95,7 @@ func (s *PGStore) List(ctx context.Context, role string, accountID int64, f Filt
 	defer rows.Close()
 	items := []Item{}
 	for rows.Next() {
-		it, err := scanItem(rows)
+		it, err := scanItem(rows, time.Now())
 		if err != nil {
 			return nil, 0, err
 		}
@@ -163,14 +167,22 @@ func listWhere(role string, accountID int64, f Filter) (string, []any) {
 	return w, args
 }
 
-func scanItem(row scanner) (Item, error) {
+func scanItem(row scanner, now time.Time) (Item, error) {
 	var it Item
 	var created time.Time
+	var due, resolvedAt *time.Time
 	if err := row.Scan(&it.ID, &it.Category, &it.Level, &it.Title, &it.Content,
-		&it.Link, &it.RefType, &it.RefID, &it.Resolved, &created, &it.Read); err != nil {
+		&it.Link, &it.RefType, &it.RefID, &it.Resolved, &created, &due, &resolvedAt, &it.Read); err != nil {
 		return it, fmt.Errorf("notify: scan: %w", err)
 	}
 	it.CreatedAt = created.UTC().Format(time.RFC3339)
+	if due != nil {
+		it.DueAt = due.UTC().Format(time.RFC3339)
+		it.Overdue = !it.Resolved && due.Before(now)
+	}
+	if resolvedAt != nil {
+		it.ResolvedAt = resolvedAt.UTC().Format(time.RFC3339)
+	}
 	return it, nil
 }
 

@@ -54,6 +54,24 @@ func runPatrolOnce(ctx context.Context, a *Application) {
 		log.Printf("patrol loop: %v", err)
 	}
 	patrolOverdueComplaints(cctx, a)
+	patrolEscalateOverdueTodos(cctx, a)
+}
+
+// patrolEscalateOverdueTodos P1 待办超时升级:超时未办就地升 URGENT(000115);
+// 每小时一轮,幂等只动 level。日志留痕,不额外刷通知。
+func patrolEscalateOverdueTodos(ctx context.Context, a *Application) {
+	esc, ok := a.Notify.(notify.OverdueEscalator)
+	if !ok || a.Notify == nil {
+		return
+	}
+	n, err := esc.EscalateOverdue(ctx)
+	if err != nil {
+		log.Printf("patrol escalate todos: %v", err)
+		return
+	}
+	if n > 0 {
+		log.Printf("patrol escalate todos: %d overdue todo(s) escalated to URGENT", n)
+	}
 }
 
 // patrolOverdueComplaints 报障工单超时巡检:SLA 已过且未办结 → URGENT 待办提醒

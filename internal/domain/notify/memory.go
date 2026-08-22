@@ -4,6 +4,7 @@ package notify
 import (
 	"context"
 	"sort"
+	"time"
 )
 
 // MemStore 是 Service 的内存实现。
@@ -27,11 +28,15 @@ func (m *MemStore) Emit(_ context.Context, in Input) error {
 		}
 	}
 	m.next++
-	m.items = append(m.items, Item{
+	it := Item{
 		ID: m.next, Category: in.Category, Level: in.Level, Title: in.Title,
 		Content: in.Content, Link: in.Link, RefType: in.RefType, RefID: in.RefID,
 		TargetRole: in.TargetRole, CreatedAt: "1970-01-01T00:00:00Z",
-	})
+	}
+	if in.Category == CategoryTodo && in.DueHours > 0 {
+		it.DueAt = time.Now().Add(time.Duration(in.DueHours) * time.Hour).UTC().Format(time.RFC3339)
+	}
+	m.items = append(m.items, it)
 	return nil
 }
 
@@ -39,7 +44,10 @@ func (m *MemStore) Emit(_ context.Context, in Input) error {
 func (m *MemStore) Resolve(_ context.Context, refType, refID string) error {
 	for i := range m.items {
 		if m.items[i].RefType == refType && m.items[i].RefID == refID {
-			m.items[i].Resolved = true
+			if !m.items[i].Resolved {
+				m.items[i].Resolved = true
+				m.items[i].ResolvedAt = time.Now().UTC().Format(time.RFC3339)
+			}
 		}
 	}
 	return nil

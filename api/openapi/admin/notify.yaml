@@ -28,6 +28,17 @@ paths:
                       items: { type: array, items: { type: object } }
                       total: { type: integer }
 
+  /notifications/sla-stats:
+    get:
+      tags: [Notify]
+      summary: P1 待办时限统计(窗口内按时办结率;Q2 验收)
+      description: 000115:todo 带 due_at,Resolve 记 resolved_at;onTimeRate=resolvedOnTime/(onTime+late+overdueOpen),无样本=1。windowDays 默认 7。
+      operationId: getNotificationSlaStats
+      parameters:
+        - { name: windowDays, in: query, schema: { type: integer, default: 7 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
   /notifications/unread-count:
     get:
       tags: [Notify]

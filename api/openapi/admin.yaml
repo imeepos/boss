@@ -110,6 +110,7 @@ paths:
 
   # ---------- Notify(后台提醒中心) ----------
   /notifications: { $ref: './admin/notify.yaml#/paths/~1notifications' }
+  /notifications/sla-stats: { $ref: './admin/notify.yaml#/paths/~1notifications~1sla-stats' }
   /notifications/unread-count: { $ref: './admin/notify.yaml#/paths/~1notifications~1unread-count' }
   /notifications/read: { $ref: './admin/notify.yaml#/paths/~1notifications~1read' }
 

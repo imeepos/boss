@@ -37,6 +37,7 @@ type Input struct {
 	RefType    string // 来源域标识,如 importer
 	RefID      string // 来源域主键
 	TargetRole string // 空=全部后台角色
+	DueHours   int    // >0 且 todo:due_at=now+hours(P1 处理时限,Q2)
 }
 
 // Item 列表条目(含当前账号读状态)。
@@ -52,7 +53,10 @@ type Item struct {
 	Resolved   bool   `json:"resolved"`
 	CreatedAt  string `json:"createdAt"`
 	Read       bool   `json:"read"`
-	TargetRole string `json:"-"` // 服务端过滤用,不下发
+	DueAt      string `json:"dueAt,omitempty"`      // P1 处理时限(RFC3339;空=无时限)
+	Overdue    bool   `json:"overdue"`              // 未办且已过时限
+	ResolvedAt string `json:"resolvedAt,omitempty"` // 办结时间(未办为空)
+	TargetRole string `json:"-"`                    // 服务端过滤用,不下发
 }
 
 // Filter 列表过滤;零值=不过滤。

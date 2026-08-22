@@ -104,6 +104,7 @@ func emitReconNotice(ctx context.Context, d reconLoopDeps, p *report.ReconPayloa
 	in := notify.Input{
 		Category: notify.CategoryTodo,
 		Level:    notify.LevelUrgent,
+		DueHours: 4, // P1 处理时限:对齐四码冲突 4 小时清零线(Q2 验收)
 		Title:    "每日数据对账发现异常",
 		Content:  "异常项: " + strings.Join(bad, ", ") + ";请按 P1 时限处理(四码冲突 4 小时内清零)",
 		Link:     "/intel/report",

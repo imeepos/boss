@@ -14,6 +14,7 @@ import (
 func registerNotifyRoutes(g *gin.RouterGroup, a *app.Application) {
 	authed := g.Group("", requirePerm(a.User, "menu:dispatch"))
 	authed.GET("/notifications", notifyList(a))
+	authed.GET("/notifications/sla-stats", notifySLAStats(a))
 	authed.GET("/notifications/unread-count", notifyUnreadCount(a))
 	authed.POST("/notifications/read", notifyMarkRead(a))
 }
