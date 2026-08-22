@@ -33,6 +33,7 @@
 |:-----|:-----|:-----|
 | [shadcn-components.md](shadcn-components.md) | shadcn/ui 组件选型 | 63 个组件按用途分类，标注已安装状态，含安装命令与注意事项 |
 | [prompt-templates.md](prompt-templates.md) | 提示词模板/指南 | 设计稿→页面布局提示词（Web 版 + Android 版）、DSH Goal objective 编写指南；全文内化在 knowledge/ 下，跨项目可复用 |
+| [design-aesthetics.md](design-aesthetics.md) | 设计美学手册 | Stripe/Linear/Vercel/Bloomberg 设计语言精粹（字体纪律、ring shadow、双层焦点、80/15/5 比例、节拍检测、避坑清单）；画稿前必读 |
 
 ### 开工前必查
 
