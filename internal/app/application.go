@@ -22,6 +22,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push" // 设备注册表(域侧);通道 Sender 在 pkg/push
 	"github.com/ymm-001/boss/internal/domain/quadlink"
@@ -50,6 +51,9 @@ type Application struct {
 	CustomerLedger customer.CustomerLedgerService
 	RealName       customer.RealNameService
 	UserData       udcustomer.Service
+
+	// Promotion 营销促销域:券模板/发放/兑换/转赠/缴费抵扣(docs/design/promotion-coupon.md)。
+	Promotion promotion.Service
 
 	// Portal 用户端/师傅端门户状态(验证码/账号/偏好/消息/钱包/单号)。
 	Portal portal.Service

@@ -253,33 +253,3 @@ func (s *PGStore) ReissueInvoice(ctx context.Context, id int64) (*Invoice, error
 	}
 	return inv, nil
 }
-
-// RecordPayment 收款落账:缴费流水 + 账单置 PAID 同事务;pay_no 唯一幂等。
-func (s *PGStore) RecordPayment(ctx context.Context, p Payment) (int64, error) {
-	if p.Status == "" {
-		p.Status = "SUCCESS"
-	}
-	tx, err := s.db.(beginner).Begin(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("billing: begin payment tx: %w", err)
-	}
-	defer tx.Rollback(ctx)
-	var id int64
-	err = tx.QueryRow(ctx, `
-		INSERT INTO payments(pay_no, bill_id, amount, method, status)
-		VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		p.PayNo, p.BillID, p.Amount, p.Method, p.Status).Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("billing: insert payment: %w", err)
-	}
-	if p.Status == "SUCCESS" {
-		if _, err := tx.Exec(ctx,
-			`UPDATE bills SET status = 'PAID' WHERE id = $1 AND status = 'UNPAID'`, p.BillID); err != nil {
-			return 0, fmt.Errorf("billing: mark bill paid: %w", err)
-		}
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return 0, fmt.Errorf("billing: commit payment tx: %w", err)
-	}
-	return id, nil
-}

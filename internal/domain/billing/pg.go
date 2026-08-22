@@ -22,15 +22,23 @@ type dbtx interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
+// CouponDeductor 缴费同事务核销券(promotion 域实现,app 装配注入;
+// billing 不 import promotion,遵守跨域禁依赖规则)。金额单位分。
+type CouponDeductor func(ctx context.Context, tx pgx.Tx, couponID string, customerID, paymentID, billCents int64) (deductedCents int64, err error)
+
 // PGStore 是 BillingService 接口的 PostgreSQL 实现(阶段5)。
 type PGStore struct {
-	db dbtx
+	db          dbtx
+	couponDeduc CouponDeductor
 }
 
 // NewPGStore 构造 PGStore;db 传 *pgxpool.Pool 或测试 mock。
 func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
 }
+
+// SetCouponDeductor 注入券核销器;nil=本库无券能力(纯缴费)。
+func (s *PGStore) SetCouponDeductor(f CouponDeductor) { s.couponDeduc = f }
 
 // exists 校验单表存在性(bills/payments 无外键约束,关联完整性由本域应用层保证)。
 func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, error) {
