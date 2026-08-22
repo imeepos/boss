@@ -78,10 +78,8 @@ function buildPayload(args) {
     n: args.n,
     size: args.size,
     quality: args.quality,
-    response_format: 'b64_json',
   }
   if (args.system) body.system_prompt = args.system
-  if (args.style) body.style = args.style
   return body
 }
 
