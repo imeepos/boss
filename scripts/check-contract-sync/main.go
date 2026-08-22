@@ -1,7 +1,8 @@
 // Command check-contract-sync 契约同步机械门禁。
 // 三项检查,任一 fail 即退出码 1(CI/Makefile 接入点):
 //
-//	A. 路由对账在 routes.go;B. json tag 在 jsontags.go;C. 行数红线在 filelen.go。
+//	A. 路由对账在 routes.go;B. json tag 在 jsontags.go;C. 行数红线在 filelen.go;
+//	D. 迁移编号唯一性在 migcheck.go(同树 + 跨未合并分支撞号)。
 //	已登记差异走 check-contract-sync.baseline 豁免,新增差异即 fail。
 package main
 
@@ -34,6 +35,7 @@ func main() {
 	fails += checkRoutes(rootVal)
 	fails += checkJSONTags(rootVal)
 	fails += checkFileLen(rootVal)
+	fails += checkMigrations(rootVal)
 	if fails > 0 {
 		fmt.Printf("check-contract-sync: %d 项失败\n", fails)
 		os.Exit(1)
