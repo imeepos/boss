@@ -6,9 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/order"
-	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -17,9 +15,7 @@ import (
 func registerWorkerPortalScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/tickets/:ticketNo/scan-bind", workerScanBindHandler(a))
 	g.POST("/tickets/:ticketNo/scan-abnormal", workerAuditOK(a, "scan-abnormal"))
-	g.GET("/tickets/:ticketNo/photos", func(c *gin.Context) {
-		respond(c, apitypes.CodeOK, gin.H{"items": []gin.H{}})
-	})
+	g.GET("/tickets/:ticketNo/photos", workerPhotoListHandler)
 	g.POST("/tickets/:ticketNo/photos", workerPhotoUploadHandler(a))
 	g.GET("/tickets/:ticketNo/report", workerReportGetHandler(a))
 	g.POST("/tickets/:ticketNo/report", workerReportSubmitHandler(a))
@@ -30,88 +26,9 @@ func registerWorkerPortalScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/tickets/:ticketNo/charge", workerChargePostHandler(a))
 }
 
-// workerScanBindReq 扫码绑定请求体。
-type workerScanBindReq struct {
-	EPC     string `json:"epc" binding:"required"`
-	Offline bool   `json:"offline"`
-}
-
-// workerScanBindHandler 扫码绑定(环节9):四码核对,MATCH 才推进订单环节9。
-func workerScanBindHandler(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ticketNo := c.Param("ticketNo")
-		if ticketNo == "" {
-			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
-			return
-		}
-		var req workerScanBindReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if !workerOwnedTicket(c, tk) {
-			return
-		}
-		workerID, workerName := portalWorker(c)
-		result, err := a.QuadLink.VerifyScan(c.Request.Context(), quadlink.ScanReq{
-			OrderID: tk.OrderID, WorkerID: workerID, WorkerName: workerName,
-			ScannedEPC: req.EPC, OfflineCalc: req.Offline,
-		})
-		if err != nil {
-			httpx.RespondScanErr(c, err)
-			return
-		}
-		quad := gin.H{"status": "UNLINKED"}
-		if result == "MATCH" {
-			if err := a.Order.ScanBind(c.Request.Context(), tk.OrderID); err != nil {
-				respondErr(c, err)
-				return
-			}
-			quad["status"] = "LINKED"
-		}
-		respond(c, apitypes.CodeOK, gin.H{
-			"matched": result == "MATCH", "result": result,
-			"message": "", "quad": quad,
-		})
-	}
-}
-
-// workerPhotoUploadHandler 取证上传:照片进入 MinIO,元数据登记后返回附件信息。
-func workerPhotoUploadHandler(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		tk, _, err := ticketOrder(c, a)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if !workerOwnedTicket(c, tk) {
-			return
-		}
-		fh, err := c.FormFile("file")
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
-			return
-		}
-		f, err := fh.Open()
-		if err != nil {
-			respond(c, apitypes.CodeInvalidParam, nil)
-			return
-		}
-		defer f.Close()
-		at, err := a.Attachment.Upload(c.Request.Context(), &attachment.Attachment{
-			FileName: fh.Filename, ContentType: fh.Header.Get("Content-Type"),
-			UploaderType: attachment.UploaderWorker, UploaderID: tk.WorkerID,
-		}, f, fh.Size)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"photoId": at.ID, "fileName": at.FileName, "linked": true, "objectKey": at.ObjectKey})
-	}
+// workerPhotoListHandler 取证列表(预取空集,客户端按文件上传后端刷新)。
+func workerPhotoListHandler(c *gin.Context) {
+	respond(c, apitypes.CodeOK, gin.H{"items": []gin.H{}})
 }
 
 // portalQuadH 按地址取四码对照视图:码值经绑定链解析(资产码/端口码真实,

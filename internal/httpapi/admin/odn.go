@@ -1,13 +1,14 @@
 package adminapi
 
+// ODN 无源物理层路由注册(menu:odn 门禁;契约 api/openapi/admin/odn.yaml)。
+// 网格 handler 实现见 odn_handlers.go;设施/光缆/纤芯/局点/设备路由注册沿用各自文件。
+
 import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/internal/domain/odn"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -48,61 +49,10 @@ type odnFiberReq struct {
 func registerODNRoutes(g *gin.RouterGroup, a *app.Application) {
 	perm := requirePerm(a.User, "menu:odn")
 
-	// 网格分区。
-	g.GET("/odn/grids", perm, func(c *gin.Context) {
-		list, err := a.ODN.ListGrids(c.Request.Context(), c.Query("prvCode"), c.Query("cityPrefix"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, list)
-	})
-	g.POST("/odn/grids", perm, func(c *gin.Context) {
-		var req odnGridReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		gr := odn.Grid{PrvCode: c.Query("prvCode"), CityPrefix: c.Query("cityPrefix"),
-			GridCode: req.GridCode, Name: req.Name, Coverage: req.Coverage, Status: req.Status}
-		if gr.PrvCode == "" || gr.CityPrefix == "" {
-			httpx.RespondValidationError(c, "prvCode/cityPrefix", "query params prvCode and cityPrefix are required")
-			return
-		}
-		if err := a.ODN.CreateGrid(c.Request.Context(), gr); err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"gridCode": gr.GridCode})
-	})
-	g.PUT("/odn/grids/:gridCode", perm, func(c *gin.Context) {
-		gridCode, ok := odnPathParamInt(c, "gridCode")
-		if !ok {
-			return
-		}
-		var req odnGridReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		gr := odn.Grid{Name: req.Name, Coverage: req.Coverage, Status: req.Status}
-		err := a.ODN.UpdateGrid(c.Request.Context(), c.Query("prvCode"), c.Query("cityPrefix"), gridCode, gr)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, nil)
-	})
-	g.DELETE("/odn/grids/:gridCode", perm, func(c *gin.Context) {
-		gridCode, ok := odnPathParamInt(c, "gridCode")
-		if !ok {
-			return
-		}
-		if err := a.ODN.RetireGrid(c.Request.Context(),
-			c.Query("prvCode"), c.Query("cityPrefix"), gridCode); err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, nil)
-	})
+	g.GET("/odn/grids", perm, odnListGridsHandler(a))
+	g.POST("/odn/grids", perm, odnCreateGridHandler(a))
+	g.PUT("/odn/grids/:gridCode", perm, odnUpdateGridHandler(a))
+	g.DELETE("/odn/grids/:gridCode", perm, odnRetireGridHandler(a))
 
 	registerODNFacilityRoutes(g, a, perm)
 	registerODNCableRoutes(g, a, perm)

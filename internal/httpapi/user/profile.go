@@ -5,13 +5,12 @@ package userapi
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/customer"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
-	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // portalCustomerPhone 取客户手机号:优先 customers 主档,合成客户(隔离空间,无 customers 主档)回退 portal_accounts。
@@ -45,130 +44,6 @@ func portalMaskIDNo(s string) string {
 		return s
 	}
 	return s[:3] + strings.Repeat("*", len(s)-7) + s[len(s)-4:]
-}
-
-// portalVerifyStatus GET /auth/verify:实名状态 + 最新结论 + 核验记录(RealName 域, terms.md real_name_status)。
-// latestResult/submitTime/rejectReason 供端上渲染 审核中/已认证/驳回 三态;records 含驳回原因。
-func portalVerifyStatus(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		records, _ := a.CustomerRealName.ListVerifications(c.Request.Context(), cid)
-		items := make([]gin.H, 0, len(records))
-		latest := gin.H{"latestResult": "", "submitTime": "", "rejectReason": ""}
-		for _, r := range records {
-			items = append(items, gin.H{"method": r.Method, "time": r.VerifiedAt, "result": r.Result, "reason": r.RejectReason})
-			latest["latestResult"] = r.Result
-			latest["submitTime"] = r.VerifiedAt
-			if r.Result == customer.RealNameFail {
-				latest["rejectReason"] = r.RejectReason
-			}
-		}
-		status := "PENDING"
-		payload := gin.H{"status": status, "records": items}
-		for k, v := range latest {
-			payload[k] = v
-		}
-		// 优先从 customers 主档取,合成客户(隔离空间)回退 portal_accounts
-		if v, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
-			status = v.RealNameStatus
-			payload["nameMasked"] = portalMaskName(v.Name)
-			payload["idNoMasked"] = portalMaskIDNo(v.IdNo)
-			payload["phoneMasked"] = portalMaskPhone(v.Phone)
-		} else {
-			// 合成客户:从 portal_accounts 取手机号
-			phone := portalCustomerPhone(c.Request.Context(), a, cid)
-			payload["phoneMasked"] = portalMaskPhone(phone)
-			payload["nameMasked"] = ""
-			payload["idNoMasked"] = ""
-		}
-		payload["status"] = status
-		respond(c, apitypes.CodeOK, payload)
-	}
-}
-
-// portalVerifySmsCode POST /auth/verify/sms-code:给当前客户绑定手机号发实名验证码(scene=verify)。
-func portalVerifySmsCode(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		phone := portalCustomerPhone(c.Request.Context(), a, cid)
-		if phone == "" {
-			respond(c, apitypes.CodeNotFound, nil)
-			return
-		}
-		if err := a.Portal.IssueSms(c.Request.Context(), phone, "verify"); err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true, "phoneMasked": portalMaskPhone(phone)})
-	}
-}
-
-// portalVerifySubmit POST /auth/verify:短信验证码(scene=verify) + 证件附件(正/反面) + 实名资料,
-// 落 PENDING;二要素通道启用时即时自动核验(PASS/FAIL),否则等后台人工核验。
-func portalVerifySubmit(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		var req struct {
-			IdType        string `json:"idType"`
-			Name          string `json:"name" binding:"required"`
-			IdNo          string `json:"idNo" binding:"required"`
-			SmsCode       string `json:"smsCode" binding:"required"`
-			IdCardFrontID int64  `json:"idCardFrontId" binding:"required"`
-			IdCardBackID  int64  `json:"idCardBackId" binding:"required"`
-		}
-		if !httpx.BindBody(c, &req) {
-			return
-		}
-		phone := portalCustomerPhone(c.Request.Context(), a, cid)
-		if phone == "" {
-			respond(c, apitypes.CodeNotFound, nil)
-			return
-		}
-		ok, err := a.Portal.ConsumeSms(c.Request.Context(), phone, "verify", req.SmsCode)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if !ok {
-			respond(c, apitypes.CodeUnauthorized, nil)
-			return
-		}
-		_, err = a.CustomerRealName.SubmitRealName(c.Request.Context(), customer.CustomerRealNameVerification{
-			CustomerID: cid, Method: "自助提交", RealName: req.Name, IDCardNo: req.IdNo,
-			Result: customer.RealNamePending, IDCardFrontID: req.IdCardFrontID, IDCardBackID: req.IdCardBackID,
-		})
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		// 阿里云二要素自动核验(通道未配置时保持 PENDING 人工核验,见 app.AutoVerifyRealName)。
-		result := a.AutoVerifyRealName(c.Request.Context(), cid, req.Name, req.IdNo)
-		respond(c, apitypes.CodeOK, gin.H{"ok": true, "result": result})
-	}
-}
-
-// portalProfile GET /profile:个人中心聚合(客户主档 + 实名脱敏)。
-// 合成客户(隔离空间 9e9 段,无 customers 主档)按 /home 口径降级返回,不再 40400。
-func portalProfile(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		v, err := a.Customer.Get(c.Request.Context(), cid)
-		if err != nil {
-			phone := portalCustomerPhone(c.Request.Context(), a, cid)
-			respond(c, apitypes.CodeOK, gin.H{
-				"customerId": cid, "name": "用户", "phoneMasked": portalMaskPhone(phone),
-				"realName": gin.H{"nameMasked": "", "idType": "", "idNoMasked": "", "status": "NONE"},
-				"plan":     portalProfilePlan(a, c, cid),
-			})
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{
-			"customerId": v.ID, "name": v.Name, "phoneMasked": portalMaskPhone(v.Phone),
-			"realName": gin.H{"nameMasked": portalMaskName(v.Name), "idType": v.IdType,
-				"idNoMasked": portalMaskIDNo(v.IdNo), "status": v.RealNameStatus},
-			"plan": portalProfilePlan(a, c, v.ID),
-		})
-	}
 }
 
 // portalProfilePlan /profile 的 plan 聚合:当前套餐(user_plans + 产品价)
@@ -246,48 +121,4 @@ func portalProductByID(a *app.Application, c *gin.Context, id int64) *customer.P
 		}
 	}
 	return nil
-}
-
-func portalGetNotify(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		p, err := a.Portal.GetPrefs(c.Request.Context(), cid)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, p.Notify)
-	}
-}
-
-func portalPutNotify(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		var body gin.H
-		if !httpx.BindBody(c, &body) {
-			return
-		}
-		if err := a.Portal.SavePrefs(c.Request.Context(), cid, body, ""); err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
-	}
-}
-
-func portalPutLanguage(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		var req struct {
-			Language string `json:"language" binding:"required,oneof=zh en fil"`
-		}
-		if !httpx.BindBody(c, &req) {
-			return
-		}
-		if err := a.Portal.SavePrefs(c.Request.Context(), cid, nil, req.Language); err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
-	}
 }

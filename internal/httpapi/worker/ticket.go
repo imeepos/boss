@@ -211,38 +211,43 @@ func workerTicketDetailHandler(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeForbidden, nil)
 			return
 		}
-		ord, stages, err := a.Order.Track(c.Request.Context(), tk.OrderID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		item, err := a.WorkOrder.GetTicketItemByNo(c.Request.Context(), tk.TicketNo)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		status := portalTicketStatus(*tk, currentWorkerID)
-		respond(c, apitypes.CodeOK, gin.H{
-			"ticketNo": tk.TicketNo, "bizNo": ord.OrderNo,
-			"status": status, "statusLabel": portalTicketStatusLabel(status),
-			// 工单头字段(对齐 OpenAPI TicketDetail)
-			"product":             item.OfferName,
-			"customerName":        item.CustomerName,
-			"customerPhoneMasked": httpx.MaskPhone(item.CustomerPhone),
-			"address":             item.Address,
-			"splitterPort":        item.SplitterPort,
-			"preBindTag":          item.PreBindTag,
-			"scheduleSlot":        item.ScheduleSlot,
-			"faultTypeLabel":      item.FaultTypeLabel,
-			"reportedAt":          item.ReportedAt,
-			"slaLeftMinutes":      item.SlaLeftMinutes,
-			"remoteDiagnosis":     item.RemoteDiagnosis,
-			"finishedAt":          item.FinishedAt,
-			// 已有结构
-			"stages":    portalStages(stages),
-			"quad":      portalQuadH(a, c, ord.AddressID),
-			"riskCheck": gin.H{"blacklistHit": false, "graylistHit": false},
-		})
+		respond(c, apitypes.CodeOK, workerTicketDetailPayload(c, a, tk, currentWorkerID))
+	}
+}
+
+// workerTicketDetailPayload 详情视图聚合(订单环节 + 工单头 + 四码 + 风控)。
+func workerTicketDetailPayload(c *gin.Context, a *app.Application, tk *order.DispatchTicket, currentWorkerID int64) gin.H {
+	ord, stages, err := a.Order.Track(c.Request.Context(), tk.OrderID)
+	if err != nil {
+		respondErr(c, err)
+		return gin.H{}
+	}
+	item, err := a.WorkOrder.GetTicketItemByNo(c.Request.Context(), tk.TicketNo)
+	if err != nil {
+		respondErr(c, err)
+		return gin.H{}
+	}
+	status := portalTicketStatus(*tk, currentWorkerID)
+	return gin.H{
+		"ticketNo": tk.TicketNo, "bizNo": ord.OrderNo,
+		"status": status, "statusLabel": portalTicketStatusLabel(status),
+		// 工单头字段(对齐 OpenAPI TicketDetail)
+		"product":             item.OfferName,
+		"customerName":        item.CustomerName,
+		"customerPhoneMasked": httpx.MaskPhone(item.CustomerPhone),
+		"address":             item.Address,
+		"splitterPort":        item.SplitterPort,
+		"preBindTag":          item.PreBindTag,
+		"scheduleSlot":        item.ScheduleSlot,
+		"faultTypeLabel":      item.FaultTypeLabel,
+		"reportedAt":          item.ReportedAt,
+		"slaLeftMinutes":      item.SlaLeftMinutes,
+		"remoteDiagnosis":     item.RemoteDiagnosis,
+		"finishedAt":          item.FinishedAt,
+		// 已有结构
+		"stages":    portalStages(stages),
+		"quad":      portalQuadH(a, c, ord.AddressID),
+		"riskCheck": gin.H{"blacklistHit": false, "graylistHit": false},
 	}
 }
 

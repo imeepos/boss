@@ -1,16 +1,14 @@
 package adminapi
 
-// W5 扫码闭环 handler:worker 扫码绑定/拆机扫码 + admin 扫码日志/四码对账/冲突处理。
+// W5 扫码闭环路由注册:worker 扫码绑定/拆机扫码 + admin 扫码日志/四码对账/冲突处理。
+// 全部 handler 实现见 scan_handlers.go。
 
 import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/pkg/auth"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
-	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // ticket 扫码请求体(worker/scan.yaml、worker/asset.yaml)。
@@ -37,116 +35,13 @@ func workerFromClaims(c *gin.Context) (int64, string) {
 // registerScanRoutes 注册 worker 扫码闭环 + admin 四码对账路由。
 func registerScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	w := g.Group("/tickets")
-	w.POST("/:ticketNo/scan-bind", func(c *gin.Context) {
-		ticketNo := c.Param("ticketNo")
-		if ticketNo == "" {
-			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
-			return
-		}
-		var req scanBindReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		workerID, workerName := workerFromClaims(c)
-		if workerID == 0 { // 工单未带师傅且 JWT 无账号:回退工单档案
-			workerID, workerName = tk.WorkerID, tk.WorkerName
-		}
-		result, err := a.QuadLink.VerifyScan(c.Request.Context(), quadlink.ScanReq{
-			OrderID: tk.OrderID, WorkerID: workerID, WorkerName: workerName,
-			ScannedEPC: req.EPC, OfflineCalc: req.Offline,
-		})
-		if err != nil {
-			httpx.RespondScanErr(c, err)
-			return
-		}
-		if result == "MATCH" { // 核对一致才推进环节9
-			if err := a.Order.ScanBind(c.Request.Context(), tk.OrderID); err != nil {
-				respondErr(c, err)
-				return
-			}
-		}
-		respond(c, apitypes.CodeOK, gin.H{"result": result})
-	})
-
-	w.POST("/:ticketNo/dismantle/scan", func(c *gin.Context) {
-		ticketNo := c.Param("ticketNo")
-		if ticketNo == "" {
-			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticketNo is required"})
-			return
-		}
-		var req scanBindReq
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if err := a.QuadLink.UnbindRequireScan(c.Request.Context(), tk.OrderID, req.EPC); err != nil {
-			httpx.RespondScanErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "状态变更", "quadlink", c.Param("ticketNo"), map[string]any{"action": "dismantle-scan"})
-		respond(c, apitypes.CodeOK, nil)
-	})
+	w.POST("/:ticketNo/scan-bind", scanBindHandler(a))
+	w.POST("/:ticketNo/dismantle/scan", scanDismantleHandler(a))
 
 	q := g.Group("", requirePerm(a.User, "menu:quadlink"))
-	q.GET("/scan-logs", func(c *gin.Context) {
-		list, err := a.WorkOrder.ListScanLogs(c.Request.Context(), queryInt64(c, "orderId"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-	q.GET("/quad-conflicts", func(c *gin.Context) {
-		list, err := a.QuadLink.ListLinks(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		out := make([]quadlink.QuadLink, 0, len(list))
-		for _, it := range list {
-			if it.Status == "CONFLICT" {
-				out = append(out, it)
-			}
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": out})
-	})
-	q.POST("/quad-conflicts/:id/resolve", func(c *gin.Context) {
-		linkID, ok := httpx.ParsePathParamInt64(c, "id")
-		if !ok {
-			return
-		}
-		if err := a.QuadLink.ResolveConflict(c.Request.Context(), linkID); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "状态变更", "quadlink", c.Param("id"), nil)
-		respond(c, apitypes.CodeOK, nil)
-	})
-	q.POST("/quad-links/reconcile", func(c *gin.Context) {
-		rep, err := a.QuadLink.Reconcile(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "数据变更", "quadlink", "reconcile", map[string]any{"conflict": rep.Conflict})
-		respond(c, apitypes.CodeOK, rep)
-	})
-	q.POST("/quad-links/purge-orphans", func(c *gin.Context) {
-		n, err := a.QuadLink.PurgeOrphans(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "数据变更", "quadlink", "purge-orphans", map[string]any{"deleted": n})
-		respond(c, apitypes.CodeOK, gin.H{"deleted": n})
-	})
+	q.GET("/scan-logs", scanLogsHandler(a))
+	q.GET("/quad-conflicts", quadConflictsListHandler(a))
+	q.POST("/quad-conflicts/:id/resolve", quadConflictResolveHandler(a))
+	q.POST("/quad-links/reconcile", quadLinksReconcileHandler(a))
+	q.POST("/quad-links/purge-orphans", quadLinksPurgeOrphansHandler(a))
 }
