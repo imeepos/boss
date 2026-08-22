@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SLO 采集脚本:在 102 上聚合 S4/S5/S7 的 DB 侧 SLI,输出 JSON。
+# SLO 采集脚本:在 102 上聚合 S4/S5/S6/S7 的 DB 侧 SLI,输出 JSON。
 # 用法: ./scripts/ops/slo-collect.sh [ssh-host]   (默认 imeepos@192.168.0.102)
 # 指标定义见 docs/ops/slo.md;本脚本只做采集,不判达标(由看板/报告消费)。
 set -uo pipefail
@@ -21,6 +21,12 @@ SELECT json_build_object(
  's5_admin_todo', (SELECT json_build_object(
    'open', count(*), 'older_24h', count(*) FILTER (WHERE created_at < now() - interval '24 hours')
  ) FROM admin_notifications WHERE category='todo' AND NOT resolved),
+ 's6_cdrs', (SELECT json_build_object(
+   'total', count(*),
+   'kafka_by_status', COALESCE(json_object_agg(kafka_status, c), '{}'::json),
+   'billing_unbilled', count(*) FILTER (WHERE billing_status = 'UNBILLED')
+ ) FROM (SELECT kafka_status, billing_status, count(*) OVER (PARTITION BY kafka_status) c
+        FROM cdrs WHERE started_at > now() - interval '7 days') t),
  's7_reports', (SELECT json_build_object(
    'latest_daily_created', max(created_at)::text,
    'latest_daily_window', max(window_end)::text,

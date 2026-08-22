@@ -49,7 +49,7 @@ sum(rate(boss_http_requests_total{path=~".*/auth/login",code="200"}[30d]))
 ## 5. 待办（进入容量/演练阶段前补齐）
 
 - [x] S5 消息延迟 DB 聚合脚本（`scripts/ops/slo-collect.sh`，含 S4/S5/S7，基线见 `slo-baseline-102.md`）
-- [ ] S6 话单对账结果定时落表，可查询历史完整率
+- [x] S6 话单状态采集已并入 `slo-collect.sh`(kafka_status 送达分布+billing 覆盖);历史完整率随采集留档按周滚动
 - [x] S7 报表产出时间采集（并入 `slo-collect.sh`：窗口结束 8h 内为按时）
 - [x] Prometheus 抓取配置（102 已修复跨网络抓取并验证 up=1,见 prometheus.yml 注释）+ SLO 告警规则 slo-rules.yml
 - [x] Grafana 看板 `deployments/observability/dashboards/boss-slo.json`(S1-S3+流量+慢接口,102 provisioning 实测数据源 up=1)
