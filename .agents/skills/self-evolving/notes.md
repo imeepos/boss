@@ -257,3 +257,9 @@
 - 最大坑:registerRegionRoutes 从 org.go 拆出后漏在 registerAdminDomainRoutes 挂载,handler/路由文件都在、单测全绿(因为没测路由装配),线上恒 404。拆分路由文件时"定义-挂载"两步分离是静默失败点,回归测试必须走完整 Register 装配。
 - skill 提前预警了吗:boss-admin-web.md 口令段落已纠正过 admin/admin123,本次会话首轮摘要仍引用了过期口令说法导致首次 curl 401——摘要前应再核对 skill 文档最新版本。
 - 重来一次:定位 404 时第一时间 grep "路由函数名" 的调用点(不只是定义),拆分类 bug 5 分钟可定位。
+
+## 2026-08-21 官网首页视觉重设计(worktree 流程)
+- 坑:明知红线#7"不假设模型支持图像输入",仍先试了 read_image——返回元数据无画面,白费一步;应直接上 --eval DOM 断言。
+- skill 有提前警告:是(红线#7),未遵守。
+- 重来一次:截图后直接写 VERIFY 断言链(结构/文案/主题/报错四类),不做读图尝试。
+- worktree+立即 commit+合并清理流程本次顺畅,无返工。
