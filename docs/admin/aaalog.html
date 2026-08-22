@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>话单与认证日志 · BOSS 管理后台</title>
+<title>话单与认证日志 · BOSS 管理后台（历史原型）</title>
 <link rel="stylesheet" href="style.css">
+<style>.legacy-notice{margin:16px;padding:10px 12px;border:1px solid #e5b85c;background:#fff8e5;color:#6b4d00;font-size:13px}</style>
 </head>
 <body>
 <div class="layout">
@@ -18,6 +19,7 @@
       <div class="right"><span class="ico"><img src="icons/bell.svg" alt=""></span><span>系统管理员</span><div class="avatar">管</div></div>
     </header>
     <div class="content">
+      <div class="legacy-notice">历史原型，仅用于视觉参考。真实契约为新 Admin 前端的分页 GET /cdrs 与 GET /auth-logs；补单、详情、旧 /aaa-logs 路由未纳入当前交付。</div>
       <div class="page-head">
         <h2>话单与认证日志（AAA）</h2>
         <div class="desc">认证成败 · 授权记录 · 实时话单 · 丢单/补单</div>

@@ -1,18 +1,19 @@
 // 认证账号页(AAA 域,挂 oss 分组):契约 GET /lo-accounts。
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
-import { pageSlice, type LoAccountRow } from '../types'
+import { type LoAccountRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 
 export default function LoAccountPage() {
   const t = useT()
   const l = t.pages.loAccountPage
   const [rows, setRows] = useState<LoAccountRow[]>([])
+  const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
   const [status, setStatus] = useState('')
@@ -23,22 +24,16 @@ export default function LoAccountPage() {
   const load = () => {
     setError('')
     setBusy(true)
-    apiFetch<{ items: LoAccountRow[] }>('/lo-accounts', {
-      query: { keyword: keyword.trim() || undefined },
+    apiFetch<{ items: LoAccountRow[]; total: number }>('/lo-accounts', {
+      query: { keyword: keyword.trim() || undefined, status: status || undefined, page, pageSize },
     })
-      .then((d) => setRows(d?.items ?? []))
+      .then((d) => { setRows(d?.items ?? []); setTotal(d?.total ?? 0) })
       .catch((e) => setError(e instanceof Error ? e.message : l.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [page, pageSize, keyword, status])
 
-  const filtered = useMemo(() => {
-    const k = keyword.trim().toLowerCase()
-    const matchesKeyword = (r: LoAccountRow) => !k || r.loid.toLowerCase().includes(k)
-    const matchesStatus = (r: LoAccountRow) => !status || r.status === status
-    return rows.filter((r) => matchesKeyword(r) && matchesStatus(r))
-  }, [rows, keyword, status])
-  const slice = pageSlice(filtered, page, pageSize)
+  const slice = rows
 
   return (
     <div>
@@ -73,16 +68,17 @@ export default function LoAccountPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.legalEntityName || `#${r.legalEntityId}`}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.regionName || r.regionPath || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.qosTemplateId ? `#${r.qosTemplateId}` : '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.billingMode === 'PREPAID' ? l.prepaid : l.postpaid}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="loAccount" value={r.status} /></td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={l.empty} />}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={l.empty} />}
               </tbody>
             </table>
           </div>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
-          <Pagination total={filtered.length} page={page} pageSize={pageSize}
+          <Pagination total={total} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(l)} />
         </div>
       </div>

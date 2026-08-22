@@ -4,36 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// registerAaaRoutes 注册认证计费域路由(承接 oss.yaml listLoAccounts + aaa.yaml listAaaLogs)。
+// registerAaaRoutes 注册认证计费域路由(账号、话单、认证日志和运行总览)。
 func registerAaaRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/aaa/summary", requirePerm(a.User, "menu:aaadashboard"), aaaSummaryHandler(a))
-	g.GET("/lo-accounts", requirePerm(a.User, "menu:loaccount"), func(c *gin.Context) {
-		list, err := a.Aaa.ListLoAccounts(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-
-	g.GET("/cdrs", requirePerm(a.User, "menu:aaalog"), func(c *gin.Context) {
-		list, err := a.Aaa.ListCdrs(c.Request.Context(), c.Query("loid"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-
-	g.GET("/auth-logs", requirePerm(a.User, "menu:aaalog"), func(c *gin.Context) {
-		list, err := a.Aaa.ListAuthLogs(c.Request.Context(), c.Query("loid"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
+	g.GET("/lo-accounts", requirePerm(a.User, "menu:loaccount"), aaaLoAccountsPageHandler(a))
+	g.GET("/cdrs", requirePerm(a.User, "menu:aaalog"), aaaCdrsPageHandler(a))
+	g.GET("/auth-logs", requirePerm(a.User, "menu:aaalog"), aaaAuthLogsPageHandler(a))
 }

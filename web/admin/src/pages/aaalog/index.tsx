@@ -5,7 +5,7 @@ import { useT } from '../../i18n'
 import { PageHead, pagerTexts } from '../org/shared'
 import { Pagination } from '../../components/Pagination'
 import { fmtTime } from '../../lib/format'
-import { pageSlice, type AuthLogRow, type CdrRow } from '../quad/types'
+import { type AuthLogRow, type CdrRow } from '../quad/types'
 import { TableStateRow } from '../../components/business'
 
 export default function AaaLogPage() {
@@ -14,6 +14,7 @@ export default function AaaLogPage() {
   const [tab, setTab] = useState<'cdr' | 'auth'>('cdr')
   const [cdrs, setCdrs] = useState<CdrRow[]>([])
   const [auths, setAuths] = useState<AuthLogRow[]>([])
+  const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
   const [loid, setLoid] = useState('')
   const [page, setPage] = useState(1)
@@ -24,20 +25,20 @@ export default function AaaLogPage() {
     setError('')
     setBusy(true)
     const req = key === 'cdr'
-      ? apiFetch<{ items: CdrRow[] }>('/cdrs', { query: { loid: loid || undefined } })
-      : apiFetch<{ items: AuthLogRow[] }>('/auth-logs', { query: { loid: loid || undefined } })
+      ? apiFetch<{ items: CdrRow[]; total: number }>('/cdrs', { query: { loid: loid || undefined, page, pageSize } })
+      : apiFetch<{ items: AuthLogRow[]; total: number }>('/auth-logs', { query: { loid: loid || undefined, page, pageSize } })
     req.then((x) => {
-      const items = (x as { items?: CdrRow[] & AuthLogRow[] } | null)?.items ?? []
+      const items = x?.items ?? []
+      setTotal(x?.total ?? 0)
       if (key === 'cdr') setCdrs(items as CdrRow[])
       else setAuths(items as AuthLogRow[])
     })
       .catch((e) => setError(e instanceof Error ? e.message : a.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(() => { load(tab) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(tab) }, [tab, page, pageSize])
 
-  const slice = pageSlice<CdrRow | AuthLogRow>(tab === 'cdr' ? cdrs : auths, page, pageSize)
-  const count = tab === 'cdr' ? cdrs.length : auths.length
+  const slice = tab === 'cdr' ? cdrs : auths
   const fmtOct = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)}MB` : `${(n / 1024).toFixed(1)}KB`)
 
   return (
@@ -72,7 +73,7 @@ export default function AaaLogPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.sessionTime}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtOct(x.inputOctets)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtOct(x.outputOctets)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.billingStatus}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.billingStatus === 'BILLED' ? a.billed : a.unbilled}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.startedAt)}</td>
                   </tr>
                 ))}
@@ -88,7 +89,7 @@ export default function AaaLogPage() {
                 {(slice as AuthLogRow[]).map((x) => (
                   <tr key={x.id}>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.loid}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.result === 'SUCCESS' ? 'SUCCESS' : 'FAILED'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.result === 'SUCCESS' ? a.success : a.failed}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.createdAt)}</td>
                   </tr>
                 ))}
@@ -98,7 +99,7 @@ export default function AaaLogPage() {
           </div>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
-          <Pagination total={count} page={page} pageSize={pageSize}
+          <Pagination total={total} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
         </div>
       </div>

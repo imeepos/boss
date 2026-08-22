@@ -50,6 +50,49 @@ type AuthLog struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+// AdminScope 管理端 AAA 查询范围；空公司和区域表示全集团。
+type AdminScope struct {
+	LegalEntityID int64
+	RegionScope   string
+}
+
+// AdminPage AAA 管理列表分页参数。
+type AdminPage struct {
+	Page     int
+	PageSize int
+	Keyword  string
+	Status   string
+	Loid     string
+}
+
+// AdminPageResult 分页数据与总数。
+type AdminPageResult[T any] struct {
+	Items    []T `json:"items"`
+	Total    int `json:"total"`
+	Page     int `json:"page"`
+	PageSize int `json:"pageSize"`
+}
+
+// AdminSummary AAA 管理总览聚合结果。
+type AdminSummary struct {
+	Accounts    int `json:"accounts"`
+	Active      int `json:"active"`
+	Suspended   int `json:"suspended"`
+	Closed      int `json:"closed"`
+	Cdrs        int `json:"cdrs"`
+	Unbilled    int `json:"unbilled"`
+	AuthSuccess int `json:"authSuccess"`
+	AuthFailed  int `json:"authFailed"`
+}
+
+// AdminQueryService 是 AAA 管理端分页查询扩展，不改变三端业务接口。
+type AdminQueryService interface {
+	GetAdminSummary(ctx context.Context, scope AdminScope) (AdminSummary, error)
+	ListLoAccountsPage(ctx context.Context, q AdminPage, scope AdminScope) (AdminPageResult[LoAccount], error)
+	ListCdrsPage(ctx context.Context, q AdminPage, scope AdminScope) (AdminPageResult[CdrRecord], error)
+	ListAuthLogsPage(ctx context.Context, q AdminPage, scope AdminScope) (AdminPageResult[AuthLog], error)
+}
+
 // AaaService AAA 认证计费域服务口(阶段7):LO 账号/话单/认证日志。
 type AaaService interface {
 	ListLoAccounts(ctx context.Context) ([]LoAccount, error)

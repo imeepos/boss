@@ -809,6 +809,8 @@ export interface Translations {
       active: string
       suspended: string
       closed: string
+      prepaid: string
+      postpaid: string
       columns: string[]
       total: string
       empty: string
@@ -1125,6 +1127,10 @@ export interface Translations {
       cdrColumns: string[]
       authColumns: string[]
       acctStatus: string[]
+      billed: string
+      unbilled: string
+      success: string
+      failed: string
       total: string
       empty: string
       loadFail: string

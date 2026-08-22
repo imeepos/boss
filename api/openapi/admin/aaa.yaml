@@ -13,7 +13,11 @@ paths:
       summary: 'AAA 话单列表(对齐 Go 实现 GET /cdrs,permCode menu:aaalog)'
       operationId: listCdrs
       parameters:
-        - { name: loid, in: query, schema: { type: string }, description: 按 LO 账号过滤(代码读取 loid) }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: keyword, in: query, schema: { type: string }, description: LOID 或会话关键字 }
+        - { name: loid, in: query, schema: { type: string }, description: 按 LO 账号过滤 }
+        - { name: status, in: query, schema: { type: string }, description: CDR billingStatus }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
@@ -23,6 +27,10 @@ paths:
       summary: '认证日志(对齐 Go 实现 GET /auth-logs,permCode menu:aaalog)'
       operationId: listAuthLogs
       parameters:
-        - { name: loid, in: query, schema: { type: string }, description: 按 LO 账号过滤(代码读取 loid) }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: keyword, in: query, schema: { type: string }, description: LOID 关键字 }
+        - { name: loid, in: query, schema: { type: string }, description: 按 LO 账号过滤 }
+        - { name: status, in: query, schema: { type: string }, description: 认证 result }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
