@@ -233,3 +233,6 @@
 # 84 (2026-08-22): 发现半成品未提交代码时,先 git worktree list 判断是否他人(并行会话)的活跃 worktree——是则绝不进入编辑,另起自己的 worktree;用户点名"一人一个 worktree"。
 # 85 (2026-08-22): 临时验证分支永远用 `git add <明确路径>` + commit,绝不 -am;删除前 `git status` 确认主工作未随行。
 # 86 (2026-08-22): 多 worktree 并行时命令必须显式传 workdir,git mv/add 这类"就地生效"操作在默认目录执行会直接污染主分支。
+- 2026-08-22 仓库远端名是 `gitea`(ssh://git@192.168.0.102:222),无 `origin`;worktree 收尾第①步 push 前先 `git remote -v` 确认远端名,push origin 必 128。
+- 2026-08-22 macOS 系统 bash 是 3.2(无 mapfile/readarray/关联数组declare -A部分可用),写 shell 脚本须兼容 3.2:用 while read + 数组 append 代替 mapfile,写完 bash -n + 实跑验证。
+- 2026-08-22 worktree 收尾 ff-merge 失败的正确动作序列(协议已固化 docs/notes/adopted/2026-08-22-worktree-merge-protocol.md):回 worktree `git rebase main` → force-with-lease 更新备份 → 重试 ff-merge;全程绝不 worktree remove。

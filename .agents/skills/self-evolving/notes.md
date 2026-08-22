@@ -348,3 +348,8 @@
 - 哪个坑浪费最多时间: 临时分支验证 D2 时 commit -am 两次卷走暂存的门禁代码,删分支后从 dangling commit 找回;git mv 又误在主 workdir 执行。
 - skill 有没有提前警告: 部分(勿闯他人 worktree 有记录),但"暂存文件被临时分支 commit 卷走"无预警。
 - 重来一次: 验证分支只 add 明确 pathspec;所有命令显式 workdir;删分支前 status 核对。
+
+## 2026-08-22 worktree 合并协议固化任务
+- 哪个坑浪费最多时间: push origin 报 128(远端实际叫 gitea)+ mapfile 在 macOS bash 3.2 不存在致脚本首跑失败,各废一轮。
+- skill 有没有提前警告: 否,两条都已补进 lessons。
+- 重来一次会怎么做: 写脚本前先确认目标 shell 版本(默认按 bash 3.2 兼容写);收尾 push 前先 git remote -v。
