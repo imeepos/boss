@@ -66,13 +66,11 @@ export default function HomePage() {
           tagline: h.footerTagline, taglineDesc: h.footerTaglineDesc,
           productTitle: h.footerProductTitle, solutionsTitle: h.footerSolutionsTitle,
           quickTitle: h.footerQuickTitle, navContact: h.navContact,
-          bookDemo: h.bookDemo, login: h.login, language: h.footerLanguage,
+          bookDemo: h.bookDemo, login: h.login,
           copyright: h.footerCopyright,
         }}
         featureLinks={h.features.slice(0, 3)}
         caseLinks={h.cases}
-        locale={locale}
-        setLocale={(v) => setLocale(v as typeof locale)}
       />
     </div>
   )

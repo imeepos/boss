@@ -1,9 +1,7 @@
 // 官网页脚:全幅两段式(对齐 MiniMax 官网结构)——上段超链组(品牌 + 三栏
-// 链接),下段版权条(版权 + 语言切换)。全幅深底大留白,内层限宽居中。
+// 链接),下段版权条。全幅深底大留白,内层限宽居中。
 // 链接文案复用 h.features/h.cases 标题与既有 i18n key,颜色走 brand/shell 令牌。
 import { Link } from 'react-router-dom'
-import { Dropdown } from '../../components/Dropdown'
-import { localeOptions, type Locale } from '../../i18n'
 import logoFull from '../../assets/brand/logo-mark-gradient.png'
 
 export interface FooterProps {
@@ -17,18 +15,15 @@ export interface FooterProps {
     bookDemo: string
     login: string
     copyright: string
-    language: string
   }
   featureLinks: Array<{ title: string }>
   caseLinks: Array<{ title: string }>
-  locale: Locale
-  setLocale: (v: Locale) => void
 }
 
 const COL_TITLE = 'font-brand text-sm font-semibold tracking-wide text-white'
 const LINK = 'text-sm text-[var(--shell-nav-text)] transition-colors hover:text-white'
 
-export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: FooterProps) {
+export function Footer({ t, featureLinks, caseLinks }: FooterProps) {
   return (
     <footer className="bg-[var(--color-brand-navy-950)]">
       {/* 第一段:超链组(品牌 + 产品/方案/快速入口),全幅铺满 */}
@@ -63,19 +58,8 @@ export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: Footer
       </div>
       {/* 第二段:版权条,全幅深底 */}
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-6 py-6 sm:flex-row sm:justify-between lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-6 lg:px-8">
           <span className="text-xs text-[var(--shell-nav-text)]">{t.copyright}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[var(--shell-nav-text)]">{t.language}</span>
-            <Dropdown
-              value={locale}
-              options={localeOptions()}
-              onChange={(v) => setLocale(v as Locale)}
-              ariaLabel="language"
-              triggerStyle={{ height: 32 }}
-              onDark
-            />
-          </div>
         </div>
       </div>
     </footer>
