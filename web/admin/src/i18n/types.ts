@@ -139,6 +139,7 @@ export interface Translations {
       trendTitle: string
       trendUnit: string
       trendTooltip: string
+      trendStatusToggle: string
       trendPeriod: string
       trendPeriods: { week: string; month: string; quarter: string; year: string; all: string }
       trendPrevious: string

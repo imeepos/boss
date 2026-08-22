@@ -16,11 +16,12 @@ import { todoTarget } from './todoTarget'
 interface StatCardDto { key: string; label: string; value: string; delta: string; trend: string }
 interface StatusDist { status: string; statusLabel: string; count: number; percent: string }
 interface TodoItem { todoId: number; subject: string; source: string; time: string }
+interface TrendSeriesDto { status: string; statusLabel: string; values: number[] }
 interface DashboardData {
   stats: StatCardDto[]
   orderStatusDist: StatusDist[]
   todos: { items: TodoItem[] }
-  trend: { days: string[]; values: number[] }
+  trend: { days: string[]; series: TrendSeriesDto[] }
 }
 
 const TODO_PAGE_SIZE = 5
@@ -33,6 +34,7 @@ const STAT_CARD_TARGETS: Record<string, string> = {
 }
 
 const VALID_TREND: ReadonlySet<Trend> = new Set<Trend>(['up', 'down', 'flat'])
+const TREND_COLORS = ['#D5A63A', '#1677FF', '#722ED1', '#52C41A', '#8C8C8C']
 const TREND_PERIODS = ['week', 'month', 'quarter', 'year', 'all'] as const
 
 export default function DashboardPage({ profile }: { profile: Profile }) {
@@ -67,7 +69,12 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
   const totalTodoPages = Math.ceil(todoItems.length / TODO_PAGE_SIZE)
   const pagedTodos = todoItems.slice((todoPage - 1) * TODO_PAGE_SIZE, todoPage * TODO_PAGE_SIZE)
   const trendLabels = data?.trend.days ?? []
-  const trendValues = data?.trend.values ?? []
+  const trendSeries = (data?.trend.series ?? []).map((item, index) => ({
+    key: item.status,
+    label: item.statusLabel,
+    color: TREND_COLORS[index % TREND_COLORS.length],
+    values: item.values,
+  }))
 
   return (
     <div>
@@ -207,10 +214,11 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
             </div>
             <OrderTrend
               labels={trendLabels}
-              values={trendValues}
+              series={trendSeries}
               valueUnit={d.trendUnit}
               tooltipLabel={d.trendTooltip}
               emptyText={d.empty}
+              statusToggleLabel={d.trendStatusToggle}
               interactionLabels={{ previous: d.trendPrevious, next: d.trendNext, zoomOut: d.trendZoomOut, zoomIn: d.trendZoomIn, reset: d.trendReset }}
             />
           </CardShell>
