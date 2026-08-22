@@ -1,6 +1,6 @@
 // GIS 地图页:契约 GET /gis/drill + /gis/points + /gis/resources/:id/detail。
-// 顶部 PGIS 真地图(OpenLayers),下方八级 drill 明细表;点击点位→资源详情 Drawer。
-import { useEffect, useState } from 'react'
+// 顶部 4 张统计卡 + PGIS 真地图(主题可切换) + 八级 drill 明细表。
+import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -10,8 +10,8 @@ import { DetailDrawer } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type GisNode, type GisPointRow, type GisResourceDetail } from '../types'
 import { TableStateRow } from '../../../components/business'
-import { CardShell } from '../../../components/business/charts'
-import { PgisMap, type GisPoint } from '../../../components/business/maps'
+import { CardShell, StatCard } from '../../../components/business/charts'
+import { PgisMap, type GisPoint, type Theme } from '../../../components/business/maps'
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8] as const
 
@@ -29,6 +29,7 @@ export default function GisPage() {
   const [busy, setBusy] = useState(false)
   const [detail, setDetail] = useState<GisResourceDetail | null>(null)
   const [detailError, setDetailError] = useState('')
+  const [theme, setTheme] = useState<Theme>('light')
 
   const load = (lv: number, pid: number) => {
     setError('')
@@ -67,6 +68,14 @@ export default function GisPage() {
 
   const slice = pageSlice(nodes, page, pageSize)
 
+  // 顶部 4 张统计卡:当前层级点位/视域内点位/在线点位/平均子级数。
+  // 视域内点位本期=当前层级(全部 points),后续接 map.on('moveend') 计算 viewport。
+  const onlineCount = useMemo(() => points.filter((p) => p.status === 'ONLINE').length, [points])
+  const avgCount = useMemo(() => {
+    if (points.length === 0) return 0
+    return Math.round(points.reduce((s, p) => s + p.count, 0) / points.length)
+  }, [points])
+
   return (
     <div>
       <PageHead title={g.title} desc={g.desc} />
@@ -80,7 +89,18 @@ export default function GisPage() {
         <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder="parentId"
           value={parentId || ''} onChange={(e) => { setParentId(Number(e.target.value) || 0); setPage(1) }} />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={refreshAll}>{t.pages.audit.refresh}</button>
+        <span className="flex-1" />
+        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" title={g.themeSwitchHint} onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+          {theme === 'light' ? g.themeDark : g.themeLight}
+        </button>
       </div>
+
+      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label={g.statLevelNodes} value={points.length} />
+        <StatCard label={g.statInBbox} value={points.length} />
+        <StatCard label={g.statOnline} value={onlineCount} />
+        <StatCard label={g.statAvgCount} value={avgCount} />
+      </section>
 
       <CardShell className="mb-4">
         <div className="mb-3 flex items-center justify-between">
@@ -92,7 +112,7 @@ export default function GisPage() {
         ) : null}
         <div className="h-[480px]">
           {points.length > 0
-            ? <PgisMap points={points} onSelect={(p) => p.level >= 6 && openDetail(p.id)} />
+            ? <PgisMap points={points} onSelect={(p) => p.level >= 6 && openDetail(p.id)} theme={theme} />
             : <div className="flex h-full items-center justify-center text-[13px] text-[var(--shell-group-title)]">{g.mapEmpty}</div>}
         </div>
       </CardShell>
