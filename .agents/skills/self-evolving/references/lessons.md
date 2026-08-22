@@ -220,3 +220,6 @@
 77. 102 admin-web 部署在 5180,nginx 同源代理 /api/→boss-server;浏览器冒烟不要设 boss.servers(直连 28080 会撞 CORS 白名单预检 404),让 apiFetch 走相对前缀即可。
 78. 102 部署 CI(deploy-102)的 compose up --force-recreate 会把容器留在 Created 不启动,部署后需人工 docker start;遇到 404 别急着重试 push,先 docker ps -a 看容器状态。
 79. React 受控 input 程序化填值直接 el.value= 无效,必须 Object.getOwnPropertyDescriptor(原型,'value').set.call(el,v)+dispatchEvent(input);(补强 techniques #4,本次再次验证)
+- 当内网服务(102:xxxx)要经公网 138(43.240.223.138, ssh ops@22, ufw 只放行表内端口)暴露时,修复是 102 上 systemd 常驻 `ssh -N -R 127.0.0.1:15180:127.0.0.1:5180 ops@43.240.223.138`(服务名 boss-5180-tunnel) + 138 nginx sites-enabled/boss-5180 listen 5180→15180(带 websocket 头) + `ufw allow 5180/tcp`;GatewayPorts=no 恰好把远端绑死 loopback,由 nginx 出公网。skill 没提前警告我。
+- 当 sshd 拒绝带选项的 authorized_keys 行时,修复是 `sudo sshd -d -p 2223` 起 debug 实例 + ufw 临时放行该端口,日志 "bad key options" 一行即定位;注意 sed 的占位前缀会被 sshd 当选项解析。skill 没提前警告我。
+- 当连不上"记忆中的"公网端口时,先看 `sudo ufw status`:138 只放行 22/3773/8787/4873/43770/80/8888/8899/8080/8090-8092/8788/8789/5173/3478/49160-49360,其余 TCP 全 DROP,症状=ping 通但端口超时。skill 没提前警告我。

@@ -283,3 +283,9 @@
 - 哪个坑浪费最多时间:102 部署 CI 三连坑——pnpm@latest 升级致 admin-web 镜像构建失败(任务 2287)、compose up 容器滞留 Created 误以为没部署、CORS 白名单让 token 注入直连 28080 全 404。三者都不在代码里,全靠翻 gitea actions 日志(zstd 解压)+ docker ps -a + 网络日志定位。
 - skill 有没有提前警告我:部分——"对接 102/别本机起服务"避免了本地冒烟弯路;但部署流水线的 Created 态和 CORS 白名单无记录,已补 ISSUE.md + lessons 77/78。
 - 重来一次:push 后第一时间看 gitea actions 日志而不是反复 curl 轮询;新增可空列时一开始就 COALESCE 全套(坑 74),httpx 错误映射随域错误同提交(坑 75)。
+
+## 2026-08-22 内网 102:5180 经 138 公网暴露
+
+- 哪个坑浪费最多时间:authorized_keys 选项语法——`permitremoteopen` 根本不是 authorized_keys 选项(client/Match 专用),正确的是 `permitlisten`,但该 Ubuntu sshd 8.9 对 permitlisten 报 "bad key options";最终退到 `restrict,port-forwarding`。期间 sed 占位词 TUNNELTEST 又被 sshd 当未知选项,连带排查。
+- skill 有没有提前警告我:没有,references 里完全没 138/公网隧道知识;ssh config 里其实已有 public-box 线索(`~/.ssh/config` grep 138 一发命中),但没有"先查 ssh config 再问用户"的经验条目。
+- 重来一次:排查 authorized_keys 拒绝直接 `sudo /usr/sbin/sshd -d -p <ufw放行的临时端口>` 抓 "bad key options" 一行定位,不盲猜选项名;选项从最小集(restrict,port-forwarding)起步再加严。
