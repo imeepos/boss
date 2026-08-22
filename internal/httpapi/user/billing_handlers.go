@@ -116,6 +116,7 @@ func respondPay(c *gin.Context, a *app.Application, b billing.Bill, req portalPa
 		return
 	}
 	giftMonths := recordDurationGift(c, a, b.CustomerID, req, receipt.PaymentID)
+	a.ResumeAfterPayment(c.Request.Context(), b.CustomerID)
 	respond(c, apitypes.CodeOK, gin.H{
 		"payNo": payNo, "amount": receipt.Amount, "billPeriod": b.Period,
 		"payMethod": req.PayMethod, "status": "SUCCESS",

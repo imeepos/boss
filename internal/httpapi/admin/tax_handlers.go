@@ -63,9 +63,21 @@ func recordPayment(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		resumeCustomerAfterPay(c, a, p)
 		httpx.RecordAudit(a, c, "payment.record", "payment", p.PayNo, nil)
 		respond(c, apitypes.CodeOK, gin.H{"id": id})
 	}
+}
+
+// resumeCustomerAfterPay 缴费归属客户(直传优先,账单兜底)后自动复机(尽力而为)。
+func resumeCustomerAfterPay(c *gin.Context, a *app.Application, p billing.Payment) {
+	cid := p.CustomerID
+	if cid == 0 && p.BillID > 0 {
+		if b, err := a.Billing.GetBill(c.Request.Context(), p.BillID); err == nil && b != nil {
+			cid = b.CustomerID
+		}
+	}
+	a.ResumeAfterPayment(c.Request.Context(), cid)
 }
 
 // voidInvoice 发票作废。

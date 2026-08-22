@@ -160,7 +160,11 @@ func stripeSettle(a *app.Application, c *gin.Context, ev stripe.Event) error {
 				_, err := a.Billing.RecordPayment(c.Request.Context(), billing.Payment{
 					PayNo: ev.PayNo, BillID: b.BillID, Amount: amount, Method: "card", Status: status,
 				})
-				return err
+				if err != nil {
+					return err
+				}
+				a.ResumeAfterPayment(c.Request.Context(), ev.CustomerID)
+				return nil
 			}
 		}
 	}
