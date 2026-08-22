@@ -1,4 +1,5 @@
-// 报告中心页:契约 GET /reports(items)+ GET /reports/latest?period(正文抽屉)+ POST /reports/:id/send。
+// 报告中心页:契约 GET /reports + /reports/latest?period(正文抽屉)+ POST /reports/:id/send。
+// 顶部 4 统计卡 + 四周期对比柱状(明确"对比"非"趋势");下方报告列表+正文 Drawer。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -9,6 +10,7 @@ import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
+import { CardShell, StatCard, StackedBars } from '../../../components/business/charts'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
 
@@ -59,22 +61,53 @@ export default function ReportPage() {
     return i >= 0 ? r.periods[i] : p
   }
 
+  // 顶部 4 张卡 + 四周期对比柱状:本期无 trend 历史接口,柱内堆叠的 5 段值
+  // 取自 view.payload 或全部 0 兜底(loading 状态)。view 来自用户点击的某一期快照,
+  // 故本概览为"快照对照",i18n 文案显式标注 compareDesc"非趋势"。
+  const v = view
+  const groups = PERIODS.map((_, i) => ({
+    stacks: v
+      ? [
+          v.regionROI[i]?.revenue ?? 0,
+          v.regionROI[i]?.investment ?? 0,
+          v.regionROI[i]?.roi ?? 0,
+          0,
+          v.maintenance.length,
+        ]
+      : [0, 0, 0, 0, 0],
+  }))
+
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <span className="spacer" />
+      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label={r.columns[0]} value={rows.length} />
+        <StatCard label={r.periods[3]} value={rows.filter((x) => x.period === 'quarterly').length} />
+        <StatCard label={r.generatedAtLabel} value={rows.length > 0 ? fmtTime(rows[0].createdAt).split(' ')[0] : '—'} />
+        <StatCard label={r.periods[2]} value={rows.filter((x) => x.period === 'monthly').length} />
+      </section>
+
+      <CardShell className="mb-4">
+        <div className="mb-1 flex items-center justify-between">
+          <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{r.compareTitle}</h3>
+          <span className="text-[12px] text-[var(--shell-group-title)]">{r.compareDesc}</span>
+        </div>
+        <StackedBars groups={groups} legends={r.compareLegend} />
+      </CardShell>
+
+      <CardShell className="mb-4">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="flex-1" />
           {PERIODS.map((p, i) => (
             <button key={p} className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => viewLatest(p)}>
               {r.view} · {r.periods[i]}
             </button>
           ))}
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          {notice && <span style={{ fontSize: 13, color: '#52c41a' }}>{notice}</span>}
+          {notice && <span className="text-[13px] text-[var(--color-success)]">{notice}</span>}
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
+        {error ? <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
@@ -86,7 +119,7 @@ export default function ReportPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.windowEnd)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.createdAt)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
+                      <span className="inline-flex items-center gap-2">
                         <button onClick={() => viewLatest(x.period)}>{r.view}</button>
                         <button disabled={busy} onClick={() => send(x)}>{r.send}</button>
                       </span>
@@ -98,11 +131,12 @@ export default function ReportPage() {
             </table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
         </div>
-      </div>
+      </CardShell>
+
       {(view || viewError) && (
         <Drawer title={r.viewTitle} onClose={() => { setView(null); setViewError('') }}
           footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setView(null); setViewError('') }}>

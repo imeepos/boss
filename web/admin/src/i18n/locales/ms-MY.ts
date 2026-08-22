@@ -1278,6 +1278,10 @@ const msMY: Translations = {
       next: 'Seterusnya',
       perPage: '/ halaman',
       rangeText: '{from}-{to} daripada {count}',
+      // Perbandingan 4 tempoh (commit 7): jelas "perbandingan" bukan "trend"
+      compareTitle: 'Perbandingan Penunjuk 4 Tempoh',
+      compareDesc: 'Snapshot per-tempoh bersebelahan, bukan lengkung trend sejarah',
+      compareLegend: ['Hasil', 'Pelaburan', 'ROI Komposit', 'Alarm', 'Barisan Penyelenggaraan'],
       jumpText: 'Lompat ke',
       pageUnit: 'halaman',
     },

@@ -1230,6 +1230,10 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      // 四周期对比柱状(commit 7)
+      compareTitle: string
+      compareDesc: string
+      compareLegend: string[]
     }
     userPage: {
       title: string

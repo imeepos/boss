@@ -1280,6 +1280,10 @@ const zhCN: Translations = {
       rangeText: '第 {from}-{to} 条,共 {count} 条',
       jumpText: '跳至',
       pageUnit: '页',
+      // 四周期对比柱状(commit 7):明确"对比"非"趋势"
+      compareTitle: '四周期指标对比',
+      compareDesc: '以下为单期快照按周期并排对比,非历史趋势曲线',
+      compareLegend: ['收入', '投入', '综合 ROI', '告警数', '待维护'],
     },
     userPage: {
       title: '用户列表',

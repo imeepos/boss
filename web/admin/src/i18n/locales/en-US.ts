@@ -1278,6 +1278,10 @@ const enUS: Translations = {
       next: 'Next',
       perPage: '/ page',
       rangeText: '{from}-{to} of {count}',
+      // 4-period comparison (commit 7): explicitly "comparison" not "trend"
+      compareTitle: '4-Period Indicator Comparison',
+      compareDesc: 'Snapshot-per-period side-by-side comparison, not a historical trend',
+      compareLegend: ['Revenue', 'Investment', 'Composite ROI', 'Alarms', 'Maintenance Queue'],
       jumpText: 'Jump to',
       pageUnit: 'page',
     },
