@@ -178,6 +178,44 @@ func TestPGStore_CreateAsset(t *testing.T) {
 	}
 }
 
+// CreateAsset 带 tag_id 时回填 tags 双向绑定(ISSUE.md:置备资产不回填 tag 导致扫码 40920)。
+func TestPGStore_CreateAsset_BackfillTagBinding(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`INSERT INTO assets`).
+		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+	// 回填:未绑定标签 → bound_asset_id + BOUND。
+	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
+		WithArgs(int64(9), int64(3)).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	s := NewPGStore(mock)
+	id, err := s.CreateAsset(context.Background(), Asset{
+		AssetCode: "A-20260003", BatchID: 1, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
+		TagID: 9, Type: "ONU", Status: "IN_STOCK",
+	})
+	if err != nil {
+		t.Fatalf("CreateAsset: %v", err)
+	}
+	if id != 3 {
+		t.Fatalf("id=%d, want 3", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
 func TestPGStore_GetAsset(t *testing.T) {
 	t.Run("命中", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()

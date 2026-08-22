@@ -54,7 +54,8 @@ func seedGRPCE2E(t *testing.T, ctx context.Context, a *app.Application, pool *pg
 
 	o, err := a.Order.Submit(ctx, order.SubmitReq{
 		CustomerID: s.customerID, OfferID: s.offerID, AddressID: s.addressID,
-		ChannelID: s.channelID, LegalEntityID: 1, RegionPath: "root.luzon.ncr.manila",
+		// LegalEntityID 不传:归属由地址推导(5c5f2a7 契约)。
+		ChannelID: s.channelID, RegionPath: "root.luzon.ncr.manila",
 	})
 	if err != nil {
 		t.Fatalf("submit order: %v", err)
@@ -74,15 +75,15 @@ func seedGRPCE2E(t *testing.T, ctx context.Context, a *app.Application, pool *pg
 			t.Fatalf("order %s: %v", st.name, err)
 		}
 	}
-	seed.portID, err = a.Resource.ReserveFirstAvailable(ctx, s.addressID, seed.orderID)
-	if err != nil {
-		t.Fatalf("reserve port: %v", err)
+	// applyTag 已自动预占端口+落四码(UNLINKED,asset_id=0),dispatchOrder 已自动生成工单。
+	// 此处只做对齐:读回预占端口、工单改用种子号。
+	if err := pool.QueryRow(ctx,
+		`SELECT id FROM ports WHERE order_id=$1`, seed.orderID).Scan(&seed.portID); err != nil {
+		t.Fatalf("find reserved port: %v", err)
 	}
-	if _, err := a.WorkOrder.CreateDispatchTicket(ctx, order.DispatchTicket{
-		TicketNo: seed.ticketNo, OrderID: seed.orderID,
-		LegalEntityID: 1, LegalEntityName: "主品牌·企业", Status: "PENDING",
-	}); err != nil {
-		t.Fatalf("create dispatch ticket: %v", err)
+	if _, err := pool.Exec(ctx,
+		`UPDATE dispatch_tickets SET ticket_no=$2 WHERE order_id=$1`, seed.orderID, seed.ticketNo); err != nil {
+		t.Fatalf("rename dispatch ticket: %v", err)
 	}
 
 	// 资产 + 标签(EPC 预绑定资产)。
@@ -109,12 +110,11 @@ func seedGRPCE2E(t *testing.T, ctx context.Context, a *app.Application, pool *pg
 		t.Fatalf("bind tag to asset: %v", err)
 	}
 
-	// 四码关联(资产-客户-端口-地址)。
+	// 四码:applyTag 已按订单落(客户/端口/地址一致),置备资产后回填 asset_id 并置 LINKED。
 	if _, err := pool.Exec(ctx, `
-		INSERT INTO quad_links(asset_id, customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status)
-		VALUES($1,$2,$3,$4,1,'主品牌·企业','LINKED')`,
-		seed.assetID, s.customerID, seed.portID, s.addressID); err != nil {
-		t.Fatalf("create quad link: %v", err)
+		UPDATE quad_links SET asset_id=$2, status='LINKED'
+		WHERE port_id=$1`, seed.portID, seed.assetID); err != nil {
+		t.Fatalf("backfill quad link: %v", err)
 	}
 
 	// LO 账号(客户 1:1,挂套餐与 QoS 模板;编码带后缀保证可重复运行)。

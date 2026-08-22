@@ -81,7 +81,8 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	token := loginE2E(t, ts, s)
 
 	t.Run("全流程_下单到激活_12环节", func(t *testing.T) {
-		orderID, orderNo := submitOrderE2E(t, ts, token, s)
+		addr := newE2EAddress(t, ctx, pool, a, "full")
+		orderID, orderNo := submitOrderE2E(t, ts, token, s, addr)
 		steps := []struct {
 			name string
 			run  func(context.Context, int64) error
@@ -122,20 +123,19 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	})
 
 	t.Run("取消订单_端口释放", func(t *testing.T) {
-		orderID, _ := submitOrderE2E(t, ts, token, s)
+		addr := newE2EAddress(t, ctx, pool, a, "cancel")
+		orderID, _ := submitOrderE2E(t, ts, token, s, addr)
 		if err := a.Order.CheckResource(ctx, orderID); err != nil {
 			t.Fatal(err)
 		}
-		portID, err := a.Resource.ReserveFirstAvailable(ctx, s.addressID, orderID)
+		portID, err := a.Resource.ReserveFirstAvailable(ctx, addr, orderID)
 		if err != nil {
 			t.Fatalf("预占端口: %v", err)
 		}
 		if err := a.Order.Cancel(ctx, orderID); err != nil {
 			t.Fatalf("取消: %v", err)
 		}
-		if err := a.Resource.ReleasePortByOrder(ctx, orderID); err != nil {
-			t.Fatalf("端口释放: %v", err)
-		}
+		// Cancel 同谓词语义:取消即回收预占端口(RESERVED→IDLE),无需再手动 ReleasePortByOrder。
 		var status string
 		if err := pool.QueryRow(ctx, `SELECT status FROM ports WHERE id=$1`, portID).Scan(&status); err != nil {
 			t.Fatal(err)
@@ -146,12 +146,17 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	})
 
 	t.Run("台账写侧_调拨审批_释放预占", func(t *testing.T) {
-		// 调拨:建单→审批→驳回第二条。
-		no1 := postOK(t, ts, token, "/api/admin/v1/transfers",
-			fmt.Sprintf(`{"resourceId":1,"legalEntityId":1,"legalEntityName":"主品牌","fromRegionId":11,"toRegionId":13}`), "transferNo")
+		// 调拨:建单(真实资源/区域 id,静态 id 在干净库上 FK 不存在)→审批→驳回第二条。
+		tresID, err := a.Resource.CreateResource(ctx, resSeed(s.addressID,
+			fmt.Sprintf("%d", time.Now().UnixNano()%1e12)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		tbody := fmt.Sprintf(`{"resourceId":%d,"legalEntityId":1,"legalEntityName":"主品牌","fromRegionId":%d,"toRegionId":%d}`,
+			tresID, s.regionID, s.regionID)
+		no1 := postOK(t, ts, token, "/api/admin/v1/transfers", tbody, "transferNo")
 		postOK(t, ts, token, "/api/admin/v1/transfers/"+no1+"/approve", "", "")
-		no2 := postOK(t, ts, token, "/api/admin/v1/transfers",
-			`{"resourceId":1,"legalEntityId":1,"legalEntityName":"主品牌","fromRegionId":11,"toRegionId":14}`, "transferNo")
+		no2 := postOK(t, ts, token, "/api/admin/v1/transfers", tbody, "transferNo")
 		postOK(t, ts, token, "/api/admin/v1/transfers/"+no2+"/reject", "", "")
 		for _, tc := range []struct{ no, want string }{{no1, "DOING"}, {no2, "DONE"}} {
 			var st string
@@ -164,8 +169,9 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		}
 
 		// 手动释放预占:预占端口+写 HELD 记录 → HTTP 释放 → 端口 IDLE、记录 RELEASED。
-		orderID, _ := submitOrderE2E(t, ts, token, s)
-		portID, err := a.Resource.ReserveFirstAvailable(ctx, s.addressID, orderID)
+		addr := newE2EAddress(t, ctx, pool, a, "ledger")
+		orderID, _ := submitOrderE2E(t, ts, token, s, addr)
+		portID, err := a.Resource.ReserveFirstAvailable(ctx, addr, orderID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -187,8 +193,9 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	})
 
 	t.Run("W5_扫码闭环_一致推进_不一致拒_拆机必扫码", func(t *testing.T) {
-		orderID, _ := submitOrderE2E(t, ts, token, s)
-		if _, err := a.Resource.ReserveFirstAvailable(ctx, s.addressID, orderID); err != nil {
+		addr := newE2EAddress(t, ctx, pool, a, "w5")
+		orderID, _ := submitOrderE2E(t, ts, token, s, addr)
+		if _, err := a.Resource.ReserveFirstAvailable(ctx, addr, orderID); err != nil {
 			t.Fatal(err) // 环节3 预占落地(advance 只推环节/状态)
 		}
 		for _, step := range []func(context.Context, int64) error{
@@ -199,7 +206,8 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		// 预绑定:建批次+资产+标签(EPC)+四码(UNLINKED)。
+		// 预绑定:建批次+资产+标签(EPC)。四码由 applyTag 自动落(UNLINKED,asset_id=0),
+		// 不再手工 CreateLink(uq_quad_links_port 唯一);扫码按预绑定标签资产回填核对。
 		batchID, err := a.Asset.CreateBatch(ctx, asset.AssetBatch{
 			LegalEntityID: 1, Code: "RK-E2E-" + orderNo6(orderID), Name: "E2E批次",
 		})
@@ -214,21 +222,9 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			t.Fatal(err)
 		}
 		epc := "E2E-SCAN-" + orderNo6(orderID)
-		tagID, err := a.Asset.CreateTag(ctx, asset.Tag{
+		if _, err := a.Asset.CreateTag(ctx, asset.Tag{
 			LegalEntityID: 1, TagNo: "T-E2E-" + orderNo6(orderID), EpcCode: epc, Band: "UHF",
 			BoundAssetID: assetID, Status: "BOUND", Battery: "OK",
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		_ = tagID
-		var portID int64
-		if err := pool.QueryRow(ctx, `SELECT id FROM ports WHERE order_id=$1`, orderID).Scan(&portID); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := a.QuadLink.CreateLink(ctx, quadlink.QuadLink{
-			AssetID: assetID, CustomerID: customerIDOf(t, ctx, pool, orderID), PortID: portID,
-			AddressID: s.addressID, LegalEntityID: 1, LegalEntityName: "主品牌·企业", Status: "UNLINKED",
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -237,11 +233,10 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		if !strings.Contains(body, `"code":40920`) && !strings.Contains(body, `"code":40400`) {
 			t.Fatalf("body=%s", body)
 		}
-		// 工单 + 一致扫码 → MATCH 推进环节9。
+		// 工单:dispatchOrder 已自动落 DT- 工单,改名复用(order_id 唯一,二次插入 23505)。
 		tno := "TIC-E2E-" + orderNo6(orderID)
 		if _, err := pool.Exec(ctx,
-			`INSERT INTO dispatch_tickets(ticket_no, order_id, legal_entity_id, legal_entity_name, status)
-			 VALUES($1,$2,1,'主品牌·企业','DOING')`, tno, orderID); err != nil {
+			`UPDATE dispatch_tickets SET ticket_no=$2, status='DOING' WHERE order_id=$1`, orderID, tno); err != nil {
 			t.Fatal(err)
 		}
 		_, body = scanPost(t, ts, token, "/api/admin/v1/tickets/"+tno+"/scan-bind", `{"epc":"`+epc+`"}`)
@@ -273,7 +268,8 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	t.Run("W6_AAA_停复机即时生效_话单入账", func(t *testing.T) {
 		authz := aaa.NewPGAuthorizer(pool)
 		customerID, err := a.Customer.Create(ctx, customer.Customer{
-			Name: "E2E-AAA客户", Phone: "09171111111", IdType: "身份证", IdNo: "E2E-AAA",
+			Name: "E2E-AAA客户", Phone: fmt.Sprintf("0918%08d", time.Now().UnixNano()%1e8),
+			IdType: "身份证", IdNo: "E2E-AAA-" + orderNo6(time.Now().UnixNano()%1e12),
 			RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE",
 			AddressID: s.addressID, LegalEntityID: 1, RegionID: s.regionID, RegionName: s.regionName,
 		})
@@ -390,24 +386,8 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	t.Run("W8_下单到激活全自动_人工只收费扫码", func(t *testing.T) {
 		pub := &capPub{}
 		m := app.NewAutomation(a.Order, pub)
-		// 独立客户(quad_links.customer_id 唯一,不能与其它子测试共用种子客户)。
-		custID, err := a.Customer.Create(ctx, customer.Customer{
-			Name: "E2E-W8客户", Phone: "09172222222", IdType: "身份证", IdNo: "E2E-W8",
-			RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE",
-			AddressID: s.addressID, LegalEntityID: 1, RegionID: s.regionID, RegionName: s.regionName,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		o0, err := a.Order.Submit(ctx, order.SubmitReq{
-			CustomerID: custID, OfferID: s.offerID, AddressID: s.addressID,
-			ChannelID: s.channelID, LegalEntityID: 1, RegionPath: "root.luzon.ncr.manila",
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		orderID := o0.ID
-		// 独立地址+设备+端口(quad_links.address_id/port_id 唯一)。
+		// 独立地址+设备+端口(quad_links.address_id/port_id 唯一;订单/客户/端口同地址,
+		// 否则 applyTag 四码校验 port-address mismatch)。
 		suffix := orderNo6(time.Now().UnixNano() % 1e12)
 		var w8Addr int64
 		if err := pool.QueryRow(ctx,
@@ -425,6 +405,24 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// 独立客户(quad_links.customer_id 唯一,不能与其它子测试共用种子客户)。
+		custID, err := a.Customer.Create(ctx, customer.Customer{
+			Name: "E2E-W8客户", Phone: fmt.Sprintf("0919%08d", time.Now().UnixNano()%1e8),
+			IdType: "身份证", IdNo: "E2E-W8-" + suffix,
+			RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE",
+			AddressID: w8Addr, LegalEntityID: 1, RegionID: s.regionID, RegionName: s.regionName,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		o0, err := a.Order.Submit(ctx, order.SubmitReq{
+			CustomerID: custID, OfferID: s.offerID, AddressID: w8Addr,
+			ChannelID: s.channelID, RegionPath: "root.luzon.ncr.manila",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		orderID := o0.ID
 		auto := []func(context.Context, int64) error{
 			a.Order.CheckResource, a.Order.Reserve, a.Order.ChargeContract,
 		}
@@ -464,12 +462,8 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := a.QuadLink.CreateLink(ctx, quadlink.QuadLink{
-			AssetID: assetID, CustomerID: custID, PortID: w8Port,
-			AddressID: w8Addr, LegalEntityID: 1, LegalEntityName: "主品牌·企业", Status: "UNLINKED",
-		}); err != nil {
-			t.Fatal(err)
-		}
+		// 四码由 applyTag 自动落(asset_id=0),此处不再手工 CreateLink(uq_quad_links_port
+		// 唯一,重复预绑定 23505);扫码时按预绑定标签资产核对/回填。
 		if res, err := a.QuadLink.VerifyScan(ctx, quadlink.ScanReq{
 			OrderID: orderID, WorkerID: 1, WorkerName: "E2E", ScannedEPC: epc,
 		}); err != nil || res != "MATCH" {
@@ -488,6 +482,123 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		}
 		if len(pub.got) != 7 { // 4(段一)+3(段二) 条状态变更事件
 			t.Fatalf("events=%d, want 7", len(pub.got))
+		}
+	})
+
+	// ISSUE.md 三缺口回归:自动化链路 applyTag 四码不带资产 + 置备资产不回填 tag +
+	// worker/admin 激活不对称。全程不用 W5/W8 的人工预绑定 workaround。
+	t.Run("W8b_自动化链路_置备回填tag_扫码回填资产_激活后续推", func(t *testing.T) {
+		m := app.NewAutomation(a.Order, nil)
+		// 独立地址+设备+端口(quad_links 唯一索引;订单/客户/端口同地址)。
+		suffix := orderNo6(time.Now().UnixNano() % 1e12)
+		var addr int64
+		if err := pool.QueryRow(ctx,
+			`INSERT INTO addresses(path, level, name) VALUES($1, 1, $2) RETURNING id`,
+			"w8b"+suffix, "W8b测试市").Scan(&addr); err != nil {
+			t.Fatal(err)
+		}
+		res, err := a.Resource.CreateResource(ctx, resSeed(addr, suffix))
+		if err != nil {
+			t.Fatal(err)
+		}
+		port, err := a.Resource.CreatePort(ctx, portSeed(res, &e2eSeed{
+			addressID: addr, regionID: s.regionID, regionName: s.regionName,
+		}, suffix, 1))
+		if err != nil {
+			t.Fatal(err)
+		}
+		custID, err := a.Customer.Create(ctx, customer.Customer{
+			Name: "E2E-W8b客户", Phone: fmt.Sprintf("0917%08d", time.Now().UnixNano()%1e8),
+			IdType: "身份证", IdNo: "E2E-W8b-" + suffix,
+			RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE",
+			AddressID: addr, LegalEntityID: 1, RegionID: s.regionID, RegionName: s.regionName,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		o0, err := a.Order.Submit(ctx, order.SubmitReq{
+			CustomerID: custID, OfferID: s.offerID, AddressID: addr,
+			ChannelID: s.channelID, RegionPath: "root.luzon.ncr.manila",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		orderID := o0.ID
+		for _, step := range []func(context.Context, int64) error{
+			a.Order.CheckResource, a.Order.Reserve, a.Order.ChargeContract,
+		} {
+			if err := step(ctx, orderID); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := a.Resource.ReservePort(ctx, port, orderID); err != nil {
+			t.Fatal(err)
+		}
+		// 自动段一:applyTag 落四码(asset_id=0,自动化链路无选资产步骤)。
+		if err := m.AutoPreScan(ctx, orderID); err != nil {
+			t.Fatalf("AutoPreScan: %v", err)
+		}
+		// 置备:先建 UNBOUND 标签,再建带 tag_id 的资产 → 应回填 bound_asset_id/BOUND。
+		epc := "EPC-W8b-" + orderNo6(orderID)
+		tagID, err := a.Asset.CreateTag(ctx, asset.Tag{
+			LegalEntityID: 1, TagNo: "T-W8b-" + orderNo6(orderID), EpcCode: epc,
+			Band: "UHF", Status: "UNBOUND", Battery: "OK",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		batchID, err := a.Asset.CreateBatch(ctx, asset.AssetBatch{LegalEntityID: 1,
+			Code: "RK-W8b-" + orderNo6(orderID), Name: "W8b批次"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assetID, err := a.Asset.CreateAsset(ctx, asset.Asset{
+			LegalEntityID: 1, LegalEntityName: "主品牌·企业", BatchID: batchID,
+			AssetCode: "A-W8b-" + orderNo6(orderID), TagID: tagID, Type: "ONU", Status: "IN_STOCK",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var boundID int64
+		var tagSt string
+		if err := pool.QueryRow(ctx,
+			`SELECT COALESCE(bound_asset_id,0), status FROM tags WHERE id=$1`, tagID).
+			Scan(&boundID, &tagSt); err != nil {
+			t.Fatal(err)
+		}
+		if boundID != assetID || tagSt != "BOUND" {
+			t.Fatalf("tag backfill bound=%d status=%s, want asset=%d BOUND", boundID, tagSt, assetID)
+		}
+		// 扫码(环节9):四码 asset_id=0 → 回填实物资产后 MATCH(不再 40920)。
+		if res, err := a.QuadLink.VerifyScan(ctx, quadlink.ScanReq{
+			OrderID: orderID, WorkerID: 1, WorkerName: "E2E", ScannedEPC: epc,
+		}); err != nil || res != "MATCH" {
+			t.Fatalf("scan res=%s err=%v (want MATCH, 无 MISMATCH)", res, err)
+		}
+		var linkAsset int64
+		var linkSt string
+		if err := pool.QueryRow(ctx,
+			`SELECT COALESCE(asset_id,0), status FROM quad_links WHERE port_id=$1`, port).
+			Scan(&linkAsset, &linkSt); err != nil {
+			t.Fatal(err)
+		}
+		if linkAsset != assetID || linkSt != "LINKED" {
+			t.Fatalf("link asset=%d status=%s, want asset=%d LINKED", linkAsset, linkSt, assetID)
+		}
+		if err := a.Order.ScanBind(ctx, orderID); err != nil {
+			t.Fatal(err)
+		}
+		// worker 端激活:只推段10(ActivateUser)。
+		if err := a.Order.ActivateUser(ctx, orderID); err != nil {
+			t.Fatal(err)
+		}
+		// admin 端重调 AutoPostScan:应跳过段10 从段11 续推到 DONE(不再 42200 卡死)。
+		if err := m.AutoPostScan(ctx, orderID); err != nil {
+			t.Fatalf("AutoPostScan after worker activate: %v", err)
+		}
+		o, _, err := a.Order.Track(ctx, orderID)
+		if err != nil || o.Stage != 12 || o.Status != "DONE" {
+			t.Fatalf("final stage=%d status=%s err=%v", o.Stage, o.Status, err)
 		}
 	})
 }

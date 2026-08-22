@@ -34,3 +34,9 @@ var workflowByEvent = func() map[string]stageStep {
 	}
 	return m
 }()
+
+// StageOf 事件 → 目标环节序号;供编排层判定环节是否已完成(幂等续推)。
+func StageOf(event string) (int8, bool) {
+	step, ok := workflowByEvent[event]
+	return step.stage, ok
+}

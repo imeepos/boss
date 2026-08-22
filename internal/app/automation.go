@@ -54,17 +54,32 @@ func (m *Automation) AutoPostScan(ctx context.Context, orderID int64) error {
 }
 
 // run 顺序推进并逐环节发事件;失败即停(调用方重试从失败环节续推,顺序守卫保证幂等)。
+// 已完成环节(当前 stage ≥ 目标 stage)直接跳过:worker/admin 激活不对称时
+// (worker 只推段10,admin activate 重调 AutoPostScan)可从段11 续推而非 42200。
 func (m *Automation) run(ctx context.Context, orderID int64, steps []struct {
 	event string
 	run   func(context.Context, int64) error
 }) error {
+	cur := m.currentStage(ctx, orderID)
 	for i, st := range steps {
+		if stage, ok := order.StageOf(st.event); ok && cur >= stage {
+			continue // 该环节已完成(含他端推进),幂等续推
+		}
 		if err := st.run(ctx, orderID); err != nil {
 			return fmt.Errorf("automation: %s: %w", st.event, err)
 		}
 		m.emit(ctx, orderID, int8(i), st.event)
 	}
 	return nil
+}
+
+// currentStage 读订单当前环节;读不到(订单缺失等)返回 0,交由后续 step 报错。
+func (m *Automation) currentStage(ctx context.Context, orderID int64) int8 {
+	o, _, err := m.Order.Track(ctx, orderID)
+	if err != nil || o == nil {
+		return 0
+	}
+	return o.Stage
 }
 
 // emit 发布环节迁移事件(尽力而为,失败不影响推进)。
