@@ -3,7 +3,7 @@
 //
 // Key 派生映射(与 internal/domain/analytics/pg.go:67-72 对齐):
 //   portUtilization / installConversion → 0~1 比例 → 百分比
-//   maintenanceCostPerUser              → 元(2 位小数 + 千分位)
+//   maintenanceCostPerUser              → 金额
 //   assetHealth                         → 0~100 评分(取整)
 //   regionROI                           → 比值(2 位小数)
 //   其它                                → 启发式:0~1 走百分比,绝对数走千分位 2 位小数
@@ -34,6 +34,11 @@ export function formatCurrency(n: number): string {
   return `¥${formatNumber(n, 2)}`
 }
 
+/** 将后端 ROI 详情中的金额也压缩，避免明细抽屉出现长数字。 */
+export function formatIndicatorDetail(detail: string): string {
+  return detail.replace(/(收入|投资)(-?\d+(?:\.\d+)?)(元)/g, (_, label, value) => `${label}${formatCurrency(Number(value))}`)
+}
+
 /** 评分(0~100,取整)。 */
 export function formatScore(n: number): string {
   if (!Number.isFinite(n)) return '0'
@@ -46,7 +51,6 @@ export function formatIndicatorValue(key: string, value: number): string {
   if (key === 'maintenanceCostPerUser') return formatCurrency(value)
   if (key === 'assetHealth') return formatScore(value)
   if (key === 'regionROI') return formatNumber(value, 2)
-  // 兜底:启发式(0~1 当比例;绝对数走千分位 2 位)
   if (Number.isFinite(value) && value > 0 && value <= 1) return formatRatio(value, 1)
   return formatNumber(value, 2)
 }
