@@ -50,6 +50,36 @@ func TestPGStore_VerifyScan(t *testing.T) {
 		}
 	})
 
+	t.Run("重扫已 LINKED 同资产 → MATCH 幂等,不写第二日志", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT customer_id FROM orders WHERE id = \$1`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(3)))
+		mock.ExpectQuery(`FROM ports`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
+		mock.ExpectQuery(`FROM quad_links`).
+			WithArgs(int64(11)).
+			WillReturnRows(mock.NewRows(cols).
+				AddRow(int64(1), int64(5), int64(3), int64(11), int64(21), int64(1), "主品牌·企业", "LINKED"))
+		mock.ExpectQuery(`FROM tags`).
+			WithArgs("EPC-OK").
+			WillReturnRows(mock.NewRows([]string{"id", "bound_asset_id"}).AddRow(int64(9), int64(5)))
+
+		s := NewPGStore(mock)
+		res, err := s.VerifyScan(context.Background(), ScanReq{
+			OrderID: 7, WorkerID: 2, WorkerName: "张师傅", ScannedEPC: "EPC-OK",
+		})
+		if err != nil || res != "MATCH" {
+			t.Fatalf("res=%s err=%v, want MATCH/nil", res, err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
 	t.Run("EPC 不一致 → ErrScanMismatch 且日志 MISMATCH", func(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()

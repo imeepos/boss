@@ -63,6 +63,11 @@ func (s *PGStore) VerifyScan(ctx context.Context, req ScanReq) (string, error) {
 		}
 		link.AssetID = assetID
 	}
+	// 幂等重放:已 LINKED 且同一资产的重扫直接 MATCH,不重复写 scan_logs
+	// (客户端超时重试场景;重复日志会让对账/审计口径翻倍)。
+	if link.Status == "LINKED" && assetID == link.AssetID && !req.OfflineCalc {
+		return "MATCH", nil
+	}
 	result := "MATCH"
 	if assetID != link.AssetID {
 		result = "MISMATCH"

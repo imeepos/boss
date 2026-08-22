@@ -5,6 +5,8 @@ package adminapi
 // 请求体类型 scanBindReq 与工具 workerFromClaims 见 scan.go。
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -160,6 +162,11 @@ func scanVerifyAndAdvance(c *gin.Context, a *app.Application, tk *order.Dispatch
 		return false
 	}
 	if err := a.Order.ScanBind(c.Request.Context(), tk.OrderID); err != nil {
+		// 幂等重放:环节9 已完成(重复扫码)按成功回 MATCH,不报错。
+		if errors.Is(err, order.ErrIllegalTransition) {
+			respond(c, apitypes.CodeOK, gin.H{"result": "MATCH"})
+			return false
+		}
 		respondErr(c, err)
 		return false
 	}

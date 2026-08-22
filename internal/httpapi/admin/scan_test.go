@@ -56,9 +56,13 @@ func (f *fakeWorkOrder) ListScanLogs(context.Context, int64) ([]order.ScanLog, e
 type fakeOrderScan struct {
 	order.OrderService
 	scanBound int64
+	scanErr   error
 }
 
-func (f *fakeOrderScan) ScanBind(_ context.Context, id int64) error { f.scanBound = id; return nil }
+func (f *fakeOrderScan) ScanBind(_ context.Context, id int64) error {
+	f.scanBound = id
+	return f.scanErr
+}
 
 func scanRouter(fq *fakeQuadlink, fw *fakeWorkOrder, fo *fakeOrderScan) *gin.Engine {
 	r := gin.New()
@@ -98,6 +102,15 @@ func TestScanBindHandler(t *testing.T) {
 		}
 		if fq.verified.WorkerID != 2 { // 师傅身份取自 JWT
 			t.Fatalf("verified=%+v", fq.verified)
+		}
+	})
+
+	t.Run("重复扫码(环节9已完成) → MATCH 幂等不报错", func(t *testing.T) {
+		fo := &fakeOrderScan{scanErr: order.ErrIllegalTransition}
+		_, body := scanDo(scanRouter(&fakeQuadlink{verifyRes: "MATCH"}, &fakeWorkOrder{ticket: ticket()}, fo),
+			http.MethodPost, "/api/admin/v1/tickets/TIC-1/scan-bind", `{"epc":"EPC-OK"}`)
+		if !strings.Contains(body, `"MATCH"`) {
+			t.Fatalf("body=%s", body)
 		}
 	})
 
