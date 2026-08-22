@@ -817,7 +817,7 @@ ISSUED/USED/EXPIRED/DISABLED。
 `product_id`、`buy_months`、`gift_months`、`payment_id`（逻辑关联）。
 
 > 金额单位一律为分（int64）；billing 域缴费金额为元（float64），跨域边界处换算（billing.redeemCoupon）。
-> 000103/000104 增量：`invite_config` 增 `reward_template_id`（邀请奖励券模板，可空）；
+> 000106/000105 增量：`invite_config` 增 `reward_template_id`（邀请奖励券模板，可空）；
 > `coupon_templates` 增 `points_price`（积分兑换价，0=不可）。
 
 ## 8D. 忠诚度积分域（internal/domain/loy，000104 最小实现）
