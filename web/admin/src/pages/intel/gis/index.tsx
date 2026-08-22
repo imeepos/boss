@@ -1,6 +1,6 @@
 // GIS 地图页:契约 GET /gis/drill + /gis/points + /gis/resources/:id/detail。
 // 顶部 4 张统计卡 + PGIS 真地图(主题可切换) + 八级 drill 明细表。
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -69,11 +69,24 @@ export default function GisPage() {
   const slice = pageSlice(nodes, page, pageSize)
 
   // 顶部 4 张统计卡:当前层级点位/视域内点位/在线点位/平均子级数。
-  // 视域内点位本期=当前层级(全部 points),后续接 map.on('moveend') 计算 viewport。
+  // 视域内点位由 map.onViewportChange(B2)持续更新,inBbox 在 points 变化时重置。
   const onlineCount = useMemo(() => points.filter((p) => p.status === 'ONLINE').length, [points])
   const avgCount = useMemo(() => {
     if (points.length === 0) return 0
     return Math.round(points.reduce((s, p) => s + p.count, 0) / points.length)
+  }, [points])
+  // 视域内点位:bbox 变化 + points 变化时重算。
+  const [inBbox, setInBbox] = useState(0)
+  const bboxRef = useRef<{ minLng: number; minLat: number; maxLng: number; maxLat: number } | null>(null)
+  const onViewportChange = (b: { minLng: number; minLat: number; maxLng: number; maxLat: number }) => {
+    bboxRef.current = b
+    setInBbox(points.filter((p) => p.lng >= b.minLng && p.lng <= b.maxLng && p.lat >= b.minLat && p.lat <= b.maxLat).length)
+  }
+  // points 变化时用上次 bbox 重算
+  useEffect(() => {
+    const b = bboxRef.current
+    if (!b) return
+    setInBbox(points.filter((p) => p.lng >= b.minLng && p.lng <= b.maxLng && p.lat >= b.minLat && p.lat <= b.maxLat).length)
   }, [points])
 
   return (
@@ -97,7 +110,7 @@ export default function GisPage() {
 
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label={g.statLevelNodes} value={points.length} />
-        <StatCard label={g.statInBbox} value={points.length} />
+        <StatCard label={g.statInBbox} value={inBbox} />
         <StatCard label={g.statOnline} value={onlineCount} />
         <StatCard label={g.statAvgCount} value={avgCount} />
       </section>
@@ -112,7 +125,7 @@ export default function GisPage() {
         ) : null}
         <div className="h-[480px]">
           {points.length > 0
-            ? <PgisMap points={points} onSelect={(p) => p.level >= 6 && openDetail(p.id)} theme={theme} />
+            ? <PgisMap points={points} onSelect={(p) => p.level >= 6 && openDetail(p.id)} theme={theme} onViewportChange={onViewportChange} />
             : <div className="flex h-full items-center justify-center text-[13px] text-[var(--shell-group-title)]">{g.mapEmpty}</div>}
         </div>
       </CardShell>
