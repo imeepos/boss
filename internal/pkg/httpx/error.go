@@ -108,6 +108,10 @@ func RespondErr(c *gin.Context, err error) {
 		Respond(c, apitypes.CodeResourceBusy, nil)
 	case errors.Is(err, sms.ErrUnsupportedRegion):
 		Respond(c, apitypes.CodeInvalidParam, nil)
+	case errors.Is(err, userdata.ErrContractDrift):
+		// 列表契约漂移(主键列缺失/空):映射 500 并保留详细 message,
+		// 调用方看到错误提示而不是 undefined 行(postmortem 0002 纵深防御)。
+		Respond(c, apitypes.CodeInternal, gin.H{"reason": err.Error()})
 	default:
 		log.Printf("httpx: unmapped error (code=%d): %v", apitypes.CodeInternal, err)
 		Respond(c, apitypes.CodeInternal, nil)

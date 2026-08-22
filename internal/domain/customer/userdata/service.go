@@ -11,6 +11,83 @@ type notFoundError struct{}
 
 func (*notFoundError) Error() string { return "userdata: not found" }
 
+// ErrContractDrift 列表契约漂移:某行必填主键/列返回 nil 或空串。
+// 兜住"前端假设字段名(id)与后端 SQL AS 别名(addonId/couponId/...)不一致"
+// 这种静默失败——一旦发生立刻 500,前端看到提示而不是 undefined。
+// 路由层映射 CodeInternal(2026-08-22 postmortem 0002 的纵深防御)。
+var ErrContractDrift = &contractDriftError{}
+
+type contractDriftError struct {
+	op    string
+	field string
+}
+
+func (e *contractDriftError) Error() string {
+	if e.field == "" {
+		return "userdata: contract drift"
+	}
+	return "userdata: contract drift: " + e.op + " 缺关键列 " + e.field
+}
+
+// Is 允许 errors.Is 链路识别。
+func (e *contractDriftError) Is(target error) bool {
+	_, ok := target.(*contractDriftError)
+	return ok
+}
+
+// AssertListContract 列表契约守护:items 非空时每行必须包含 pkField 且值非零值
+// (nil/空串/0)。命中漂移返回 ErrContractDrift;空列表直接放行(无数据≠契约漂移)。
+// 调用点必须按后端 SQL AS 别名填写 pkField,如 "addonId"/"couponId"/"denomId"。
+func AssertListContract(op, pkField string, items []map[string]any) error {
+	if len(items) == 0 {
+		return nil
+	}
+	for i, row := range items {
+		v, ok := row[pkField]
+		if !ok || v == nil {
+			return &contractDriftError{op: op, field: pkField + "(missing in row#" + strconvI(i) + ")"}
+		}
+		switch x := v.(type) {
+		case string:
+			if x == "" {
+				return &contractDriftError{op: op, field: pkField + "(empty in row#" + strconvI(i) + ")"}
+			}
+		case int64:
+			if x == 0 {
+				return &contractDriftError{op: op, field: pkField + "(zero in row#" + strconvI(i) + ")"}
+			}
+		case int:
+			if x == 0 {
+				return &contractDriftError{op: op, field: pkField + "(zero in row#" + strconvI(i) + ")"}
+			}
+		}
+	}
+	return nil
+}
+
+// strconvI 局部轻量 itoa,避免本包新增 strconv 导入(各处已有 fmt)。
+func strconvI(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	neg := n < 0
+	if neg {
+		n = -n
+	}
+	var buf [20]byte
+	i := len(buf)
+	for n > 0 {
+		i--
+		buf[i] = byte('0' + n%10)
+		n /= 10
+	}
+	if neg {
+		i--
+		buf[i] = '-'
+	}
+	return string(buf[i:])
+}
+
 // UserAccountUpdate 用户账户设置修改(自动缴费开关)。
 type UserAccountUpdate struct {
 	AutoPay bool `json:"autoPay"`

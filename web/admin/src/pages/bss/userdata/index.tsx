@@ -29,6 +29,10 @@ export default function UserDataPage() {
 
   const act = async (def: TabDef, row: Row) => {
     const id = row[def.idKey]
+    if (id === undefined || id === null || id === '') {
+      setNotice(u.actFail)
+      return
+    }
     if (!(await confirmDialog(u.actConfirm.replace('{id}', String(id)), { danger: true }))) return
     apiFetch(`${def.actionPath}/${encodeURIComponent(String(id))}/${def.action}`, { method: 'PUT' })
       .then(() => { setNotice(u.acted); load(def) })
@@ -37,6 +41,18 @@ export default function UserDataPage() {
 
   const cur = TABS.find((x) => x.key === tab) ?? TABS[0]
   const state = st[cur.key] ?? { rows: [], error: '', busy: false }
+
+  // 双层防御:即使后端契约已 500 兜住,前端也 detect 主键 undefined,
+  // 用 `—missing` 渲染而不是 `undefined` 字符串,console.warn 一次方便发现。
+  const missingRows = state.rows.filter((r) => {
+    const id = r[cur.idKey]
+    return id === undefined || id === null || id === ''
+  })
+  if (missingRows.length > 0 && typeof console !== 'undefined') {
+    console.warn(
+      `[userdata] ${cur.key} 列表含 ${missingRows.length} 行缺主键列 ${cur.idKey}(后端 SQL AS 别名或断言失败)`,
+    )
+  }
 
   return (
     <div>
@@ -59,14 +75,18 @@ export default function UserDataPage() {
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">ID</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.nameCol}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.statusCol}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.opCol}</th></tr></thead>
               <tbody>
                 {state.rows.map((r) => (
-                  <tr key={String(r[cur.idKey])}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r[cur.idKey])}</td>
+                  <tr key={String(r[cur.idKey] ?? Math.random())}>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={r[cur.idKey] === undefined || r[cur.idKey] === null || r[cur.idKey] === '' ? `缺主键列 ${cur.idKey}` : undefined}>
+                      {r[cur.idKey] === undefined || r[cur.idKey] === null || r[cur.idKey] === '' ? '—missing' : String(r[cur.idKey])}
+                    </td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.name ?? r.title ?? r.question ?? r.code ?? r.label ?? r.customerName ?? '—')}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.status ?? (r.enabled ? u.on : u.off) ?? (r.active ? u.on : u.off) ?? '—')}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {cur.action ? (
                         <span className="inline-flex items-center">
-                          <button onClick={() => act(cur, r)}>{cur.action === "disable" ? u.disable : u.toggle}</button>
+                          <button
+                            disabled={r[cur.idKey] === undefined || r[cur.idKey] === null || r[cur.idKey] === ''}
+                            onClick={() => act(cur, r)}>{cur.action === "disable" ? u.disable : u.toggle}</button>
                         </span>
                       ) : '—'}
                     </td>

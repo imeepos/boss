@@ -42,7 +42,7 @@ func (f *fakeUserdata) CreateUserPlan(context.Context, userdata.UserPlan) (int64
 	return 1, nil
 }
 func (f *fakeUserdata) ListAddons(context.Context) ([]map[string]any, error) {
-	return f.ok(), nil
+	return []map[string]any{{"addonId": "ADD-01", "name": "加速包", "price": int64(1000)}}, nil
 }
 func (f *fakeUserdata) CreateAddon(context.Context, userdata.Addon) error { return nil }
 func (f *fakeUserdata) ToggleAddon(_ context.Context, addonID string) error {
@@ -59,13 +59,13 @@ func (f *fakeUserdata) CreateAddonSubscription(context.Context, userdata.AddonSu
 	return 1, nil
 }
 func (f *fakeUserdata) ListNotifySettings(context.Context) ([]map[string]any, error) {
-	return f.ok(), nil
+	return []map[string]any{{"customerId": int64(9), "customerName": "王先生", "business": true}}, nil
 }
 func (f *fakeUserdata) UpdateNotifySettings(context.Context, int64, userdata.NotifySetting) error {
 	return nil
 }
 func (f *fakeUserdata) ListUserFaqs(context.Context) ([]map[string]any, error) {
-	return f.ok(), nil
+	return []map[string]any{{"faqId": "FAQ-01", "category": "billing", "question": "如何开发票?", "answer": "自助开具", "active": true}}, nil
 }
 func (f *fakeUserdata) CreateUserFaq(context.Context, userdata.UserFaq) error { return nil }
 func (f *fakeUserdata) ToggleUserFaq(_ context.Context, faqID string) error {
@@ -80,7 +80,7 @@ func (f *fakeUserdata) CreateUserMessage(context.Context, userdata.UserMessage) 
 }
 func (f *fakeUserdata) MarkAllMessagesRead(context.Context, int64) error { return nil }
 func (f *fakeUserdata) ListCoupons(context.Context) ([]map[string]any, error) {
-	return f.ok(), nil
+	return []map[string]any{{"couponId": "CPN-01", "customerId": int64(9), "name": "立减券", "amount": int64(1000)}}, nil
 }
 func (f *fakeUserdata) CreateCoupon(context.Context, userdata.Coupon) error { return nil }
 func (f *fakeUserdata) DisableCoupon(_ context.Context, couponID string) error {
@@ -88,13 +88,13 @@ func (f *fakeUserdata) DisableCoupon(_ context.Context, couponID string) error {
 	return nil
 }
 func (f *fakeUserdata) GetInviteConfig(context.Context) ([]map[string]any, error) {
-	return f.ok(), nil
+	return []map[string]any{{"id": int64(1), "inviteLink": "https://x", "rewardAmount": int64(100), "active": true}}, nil
 }
 func (f *fakeUserdata) ListUserUsages(context.Context) ([]map[string]any, error) {
 	return f.ok(), nil
 }
 func (f *fakeUserdata) ListDiyGuides(context.Context) ([]map[string]any, error) {
-	return f.ok(), nil
+	return []map[string]any{{"guideId": "G-01", "title": "排障指南", "category": "network", "steps": "step1", "active": true}}, nil
 }
 func (f *fakeUserdata) ToggleDiyGuide(_ context.Context, guideID string) error {
 	f.calledPath = guideID
@@ -112,7 +112,7 @@ func (f *fakeUserdata) ListUserBalances(context.Context) ([]map[string]any, erro
 }
 func (f *fakeUserdata) AdjustUserBalance(context.Context, int64, int64) error { return nil }
 func (f *fakeUserdata) ListTopupDenominations(context.Context) ([]map[string]any, error) {
-	return f.ok(), nil
+	return []map[string]any{{"denomId": "D-50", "amount": int64(5000), "bonus": int64(200), "active": true}}, nil
 }
 func (f *fakeUserdata) UpdateTopupDenomination(_ context.Context, denomID string, _d userdata.TopupDenomination) error {
 	f.calledPath = denomID

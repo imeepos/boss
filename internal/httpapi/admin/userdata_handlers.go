@@ -134,6 +134,10 @@ func udListAddons(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if err := userdata.AssertListContract("ListAddons", "addonId", list); err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	}
 }

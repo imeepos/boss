@@ -19,6 +19,10 @@ func udListNotifySettings(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if err := userdata.AssertListContract("ListNotifySettings", "customerId", list); err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	}
 }
@@ -47,6 +51,10 @@ func udListUserFaqs(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		list, err := ud.ListUserFaqs(c.Request.Context())
 		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if err := userdata.AssertListContract("ListUserFaqs", "faqId", list); err != nil {
 			respondErr(c, err)
 			return
 		}
@@ -133,6 +141,10 @@ func udListCoupons(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if err := userdata.AssertListContract("ListCoupons", "couponId", list); err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	}
 }
@@ -171,6 +183,10 @@ func udListInviteConfig(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if err := userdata.AssertListContract("ListInviteConfig", "id", list); err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	}
 }
@@ -192,6 +208,10 @@ func udListDiyGuides(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		list, err := ud.ListDiyGuides(c.Request.Context())
 		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if err := userdata.AssertListContract("ListDiyGuides", "guideId", list); err != nil {
 			respondErr(c, err)
 			return
 		}

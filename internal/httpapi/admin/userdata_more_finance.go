@@ -50,6 +50,10 @@ func udListTopupDenominations(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if err := userdata.AssertListContract("ListTopupDenominations", "denomId", list); err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	}
 }
