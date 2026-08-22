@@ -80,6 +80,9 @@ components:
         bizNo: { type: string }
         status: { type: string }
         statusLabel: { type: string }
+        type: { type: string, enum: [INSTALL, REPAIR], description: 报障单(complaints 联表有值)为 REPAIR,否则 INSTALL }
+        typeLabel: { type: string, example: 新装 }
+        distanceKm: { type: number, nullable: true, description: 距离(暂无数据源,空) }
         product: { type: string, example: 1000M 极速宽带（有线）· ¥199/月 }
         customerName: { type: string, example: 王先生 }
         customerPhoneMasked: { type: string, example: 138****1234 }

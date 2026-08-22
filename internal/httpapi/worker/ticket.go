@@ -69,15 +69,25 @@ func portalTicketStatusLabel(s string) string {
 	}
 }
 
+// portalTicketTypeOf 工单类型:报障单(complaints 联表有值)→ REPAIR/报障,否则 INSTALL/新装。
+// 前端不再按 stages.length 推断(ISSUE.md worker 详情字段缺口)。
+func portalTicketTypeOf(it order.TicketItem) (string, string) {
+	if it.ComplaintType != "" || it.FaultTypeLabel != "" {
+		return "REPAIR", "报障"
+	}
+	return "INSTALL", "新装"
+}
+
 // portalTicketOf 派单工单 → Ticket 视图(worker/schemas.yaml Ticket)。
 // 地址/客户/环节取自列表读模型 TicketItem(联表订单),不再占位;
 // 订单已终态(DONE/CANCELED)时工单视图按完成处理,避免"12/12 待领取"。
 // 产品名/手机号脱敏一并随列表读模型填入,与详情对齐 OpenAPI TicketDetail。
 func portalTicketOf(it order.TicketItem, workerID int64) gin.H {
 	status := portalItemStatus(it, workerID)
+	typ, typLabel := portalTicketTypeOf(it)
 	return gin.H{
-		"ticketNo": it.TicketNo, "bizNo": it.TicketNo, "type": "INSTALL",
-		"typeLabel": "新装", "statusLabel": portalTicketStatusLabel(status),
+		"ticketNo": it.TicketNo, "bizNo": it.TicketNo, "type": typ,
+		"typeLabel": typLabel, "statusLabel": portalTicketStatusLabel(status),
 		"customerName":        it.CustomerName,
 		"customerPhoneMasked": httpx.MaskPhone(it.CustomerPhone),
 		"product":             it.OfferName,
@@ -228,9 +238,11 @@ func workerTicketDetailPayload(c *gin.Context, a *app.Application, tk *order.Dis
 		return gin.H{}
 	}
 	status := portalTicketStatus(*tk, currentWorkerID)
+	typ, typLabel := portalTicketTypeOf(*item)
 	return gin.H{
 		"ticketNo": tk.TicketNo, "bizNo": ord.OrderNo,
 		"status": status, "statusLabel": portalTicketStatusLabel(status),
+		"type": typ, "typeLabel": typLabel, "distanceKm": nil,
 		// 工单头字段(对齐 OpenAPI TicketDetail)
 		"product":             item.OfferName,
 		"customerName":        item.CustomerName,
