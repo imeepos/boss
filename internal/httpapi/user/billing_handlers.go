@@ -9,6 +9,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -89,9 +90,13 @@ type portalPayReq struct {
 	Amount    float64 `json:"amount" binding:"required,gt=0"`
 	PayMethod string  `json:"payMethod" binding:"required,oneof=wechat alipay card cash"`
 	CouponID  string  `json:"couponId"`
+	// 预缴场景:实购 N 个月(productId 可空=全店规则),命中赠送阶梯时落痕并返回 giftMonths。
+	BuyMonths int   `json:"buyMonths"`
+	ProductID int64 `json:"productId"`
 }
 
-// respondPay 落单笔缴费(PAID 冲突检测 + RecordPayment;带券走同事务核销)。
+// respondPay 落单笔缴费(PAID 冲突检测 + RecordPayment;带券走同事务核销;
+// buyMonths>0 时按赠送阶梯规则落痕)。
 func respondPay(c *gin.Context, a *app.Application, b billing.Bill, req portalPayReq) {
 	if b.Status == "PAID" {
 		respond(c, apitypes.CodeConflict, nil)
@@ -110,11 +115,31 @@ func respondPay(c *gin.Context, a *app.Application, b billing.Bill, req portalPa
 		respondErr(c, err)
 		return
 	}
+	giftMonths := recordDurationGift(c, a, b.CustomerID, req, receipt.PaymentID)
 	respond(c, apitypes.CodeOK, gin.H{
 		"payNo": payNo, "amount": receipt.Amount, "billPeriod": b.Period,
 		"payMethod": req.PayMethod, "status": "SUCCESS",
 		"deductedCents": receipt.DeductedCents, "paymentId": receipt.PaymentID,
+		"giftMonths": giftMonths,
 	})
+}
+
+// recordDurationGift 缴费成功后赠送时长落痕:命中阶梯返回赠送月数,未命中/未配置返回 0。
+func recordDurationGift(c *gin.Context, a *app.Application, cid int64, req portalPayReq, paymentID int64) int {
+	if req.BuyMonths <= 0 || a.Promotion == nil {
+		return 0
+	}
+	rule, err := a.Promotion.MatchGiftRule(c.Request.Context(), req.ProductID, req.BuyMonths)
+	if err != nil || rule == nil {
+		return 0
+	}
+	if err := a.Promotion.RecordGift(c.Request.Context(), promotion.GiftRecord{
+		RuleID: rule.RuleID, CustomerID: cid, ProductID: req.ProductID,
+		BuyMonths: req.BuyMonths, GiftMonths: rule.GiftMonths, PaymentID: paymentID,
+	}); err != nil {
+		return 0
+	}
+	return rule.GiftMonths
 }
 
 // portalListPayments GET /payments:我的缴费记录(缴费+充值,按客户聚合)。
