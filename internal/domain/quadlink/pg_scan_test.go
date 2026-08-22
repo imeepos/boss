@@ -103,6 +103,51 @@ func TestPGStore_VerifyScan(t *testing.T) {
 			t.Fatalf("err=%v, want ErrNotPrebound", err)
 		}
 	})
+
+	// ISSUE.md:自动化链路 applyTag 四码不带资产(asset_id=0) → 扫码回填而非 MISMATCH。
+	t.Run("link 无资产 → 回填资产且 MATCH", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+
+		mock.ExpectQuery(`SELECT customer_id FROM orders WHERE id = \$1`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(3)))
+		mock.ExpectQuery(`FROM ports`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
+		// asset_id=0(自动化链路未选资产)。
+		mock.ExpectQuery(`FROM quad_links`).
+			WithArgs(int64(11)).
+			WillReturnRows(mock.NewRows(cols).
+				AddRow(int64(1), int64(0), int64(3), int64(11), int64(21), int64(1), "主品牌·企业", "UNLINKED"))
+		mock.ExpectQuery(`FROM tags`).
+			WithArgs("EPC-OK").
+			WillReturnRows(mock.NewRows([]string{"id", "bound_asset_id"}).AddRow(int64(9), int64(5)))
+		// 回填扫码实物资产。
+		mock.ExpectExec(`UPDATE quad_links SET asset_id`).
+			WithArgs(int64(1), int64(5)).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectExec(`UPDATE quad_links SET status = 'LINKED'`).
+			WithArgs(int64(1)).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectQuery(`INSERT INTO scan_logs`).
+			WithArgs(int64(7), int64(2), "张师傅", int64(9), "MATCH").
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(100)))
+
+		s := NewPGStore(mock)
+		res, err := s.VerifyScan(context.Background(), ScanReq{
+			OrderID: 7, WorkerID: 2, WorkerName: "张师傅", ScannedEPC: "EPC-OK",
+		})
+		if err != nil {
+			t.Fatalf("VerifyScan: %v", err)
+		}
+		if res != "MATCH" {
+			t.Fatalf("res=%s, want MATCH", res)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
 }
 
 func TestPGStore_UnbindRequireScan(t *testing.T) {

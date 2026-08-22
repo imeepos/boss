@@ -54,6 +54,15 @@ func (s *PGStore) VerifyScan(ctx context.Context, req ScanReq) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("quadlink: scan tag: %w", err)
 	}
+	// 自动化链路兜底:applyTag 未选资产(asset_id=0,terms.md Amended 资产可空),
+	// 扫码时以实物标签绑定的资产回填四码,而非判 MISMATCH。
+	if link.AssetID == 0 {
+		if _, err := s.db.Exec(ctx,
+			`UPDATE quad_links SET asset_id = $2 WHERE id = $1`, link.ID, assetID); err != nil {
+			return "", fmt.Errorf("quadlink: scan backfill asset: %w", err)
+		}
+		link.AssetID = assetID
+	}
 	result := "MATCH"
 	if assetID != link.AssetID {
 		result = "MISMATCH"
@@ -108,14 +117,29 @@ func (s *PGStore) UnbindRequireScan(ctx context.Context, orderID int64, scannedE
 }
 
 // Reconcile 四码对账任务:成员缺失置 CONFLICT → 自动清理孤儿行 → 返回统计。
+// asset_id 可空(000086 资产可空链路),仅非空资产缺失才判孤儿;
+// 000056 部分唯一索引限制同码至多一条 LINKED/CONFLICT,守卫保证每次至多标一条
+// (孤儿行随后即被清理,标记仅为可观测的中间态)。
 func (s *PGStore) Reconcile(ctx context.Context) (*ReconcileReport, error) {
-	// 1. 标 CONFLICT。
+	// 1. 标 CONFLICT(每码至多一条:已有活跃行则不标,否则取最小 id 的孤儿)。
 	if _, err := s.db.Exec(ctx, `
 		UPDATE quad_links ql SET status = 'CONFLICT'
-		WHERE NOT EXISTS (SELECT 1 FROM assets a WHERE a.id = ql.asset_id)
+		WHERE ((ql.asset_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM assets a WHERE a.id = ql.asset_id))
 		   OR NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = ql.customer_id)
 		   OR NOT EXISTS (SELECT 1 FROM ports p WHERE p.id = ql.port_id)
-		   OR NOT EXISTS (SELECT 1 FROM addresses ad WHERE ad.id = ql.address_id)`); err != nil {
+		   OR NOT EXISTS (SELECT 1 FROM addresses ad WHERE ad.id = ql.address_id))
+		  AND NOT EXISTS (
+			SELECT 1 FROM quad_links y
+			WHERE y.id <> ql.id
+			  AND (y.customer_id = ql.customer_id OR y.port_id = ql.port_id
+			    OR y.address_id = ql.address_id
+			    OR (y.asset_id IS NOT NULL AND y.asset_id IS NOT DISTINCT FROM ql.asset_id))
+			  AND (y.status IN ('LINKED','CONFLICT')
+			    OR (((y.asset_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM assets a2 WHERE a2.id = y.asset_id))
+			       OR NOT EXISTS (SELECT 1 FROM customers c2 WHERE c2.id = y.customer_id)
+			       OR NOT EXISTS (SELECT 1 FROM ports p2 WHERE p2.id = y.port_id)
+			       OR NOT EXISTS (SELECT 1 FROM addresses ad2 WHERE ad2.id = y.address_id))
+				  AND y.id < ql.id)))`); err != nil {
 		return nil, fmt.Errorf("quadlink: reconcile conflict: %w", err)
 	}
 	// 2. 清理孤儿行(与标 CONFLICT 相同判定条件)。
@@ -166,12 +190,12 @@ func (s *PGStore) ResolveConflict(ctx context.Context, linkID int64) error {
 }
 
 // PurgeOrphans 删除所有孤儿 quad_link 行(成员不存在则删),返回删除条数。
-// 孤儿判定与 Reconcile 相同:资产/客户/端口/地址任一实体缺失。
+// 孤儿判定与 Reconcile 相同:资产可空,仅非空资产缺失才算;客户/端口/地址任一缺失即删。
 // 建议在 Reconcile 之后调用,先标 CONFLICT 再清理。
 func (s *PGStore) PurgeOrphans(ctx context.Context) (int64, error) {
 	tag, err := s.db.Exec(ctx, `
 		DELETE FROM quad_links ql
-		WHERE NOT EXISTS (SELECT 1 FROM assets a WHERE a.id = ql.asset_id)
+		WHERE (ql.asset_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM assets a WHERE a.id = ql.asset_id))
 		   OR NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = ql.customer_id)
 		   OR NOT EXISTS (SELECT 1 FROM ports p WHERE p.id = ql.port_id)
 		   OR NOT EXISTS (SELECT 1 FROM addresses ad WHERE ad.id = ql.address_id)`)
