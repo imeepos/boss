@@ -596,10 +596,20 @@ export interface Translations {
     paycheck: {
       title: string
       desc: string
+      tabChannel: string
+      tabLedger: string
       columns: string[]
       settle: string
       settleConfirm: string
       actionFail: string
+      ledgerPeriod: string
+      ledgerQuery: string
+      ledgerPeriodInvalid: string
+      ledgerColumns: string[]
+      ledgerBillsTotal: string
+      ledgerPaidTotal: string
+      ledgerInvoiceTotal: string
+      ledgerDiffCount: string
       total: string
       empty: string
       loadFail: string

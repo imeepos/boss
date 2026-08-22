@@ -17,7 +17,7 @@ export type StatusDomain =
   | 'order' | 'port' | 'asset' | 'bill' | 'payment' | 'service'
   | 'product' | 'quad' | 'tag' | 'resource' | 'loAccount' | 'ticket'
   | 'task' | 'complaint' | 'scan' | 'alarmLevel' | 'alarmStatus' | 'maintPriority'
-  | 'accountStatus' | 'message' | 'realName' | 'recon' | 'reserve'
+  | 'accountStatus' | 'message' | 'realName' | 'recon' | 'reserve' | 'ledgerRecon'
   | 'backupStatus'
 
 type Registry = Partial<Record<StatusDomain, Record<string, TagMeta>>>
@@ -65,6 +65,14 @@ export const REGISTRY: Registry = {
   recon: {
     DIFF_PENDING: { label: '差异挂起', color: ORANGE },
     SETTLED: { label: '已平账', color: GREEN },
+  },
+  ledgerRecon: {
+    UNPAID: { label: '未收', color: RED },
+    PARTIAL: { label: '部分收', color: ORANGE },
+    OVERPAID: { label: '多收', color: PURPLE },
+    REFUNDED: { label: '退款未补', color: RED },
+    PAID_NO_INVOICE: { label: '已收未开票', color: ORANGE },
+    MATCH: { label: '一致', color: GREEN },
   },
   reserve: {
     HELD: { label: '预占中', color: ORANGE },

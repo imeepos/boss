@@ -71,6 +71,31 @@ export interface ReconRow {
   settledAt?: string
 }
 
+// 账实核对行(契约 GET /billing/ledger-recon;枚举见 terms.md ledger_recon.diffKind)。
+export interface LedgerReconRow {
+  billId: number
+  billNo: string
+  customerId: number
+  customerName: string
+  legalEntityId: number
+  legalEntityName: string
+  period: string
+  billAmount: number
+  paidAmount: number
+  invoiceAmount: number
+  refundAmount: number
+  diffKind: string // UNPAID/PARTIAL/OVERPAID/REFUNDED/PAID_NO_INVOICE/MATCH
+  invoiceNo: string
+  taxStatus: string
+}
+
+export interface LedgerReconSummary {
+  billsTotal: number
+  paidTotal: number
+  invoiceTotal: number
+  byKind: Record<string, number>
+}
+
 export function pageSlice<T>(rows: T[], page: number, pageSize: number): T[] {
   return rows.slice((page - 1) * pageSize, page * pageSize)
 }
