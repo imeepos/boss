@@ -10,6 +10,7 @@ import { CardShell, StatCard, VerticalBars, type Trend } from '../../components/
 import { Button } from '../../components/ui/button'
 import { StatusTag } from '../../components/StatusTag'
 import { fmtTime } from '../../lib/format'
+import { todoTarget } from './todoTarget'
 
 interface StatCardDto { key: string; label: string; value: string; delta: string; trend: string }
 interface StatusDist { status: string; statusLabel: string; count: number; percent: string }
@@ -125,13 +126,13 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
               <div className="max-h-[320px] overflow-y-auto">
                 {pagedTodos.map((it) => {
                   const time = it.time ? fmtTime(it.time).split(' ')[1] || fmtTime(it.time) : '--'
-                  // 待办处理入口:派单池待指派跳派单管理(默认即派单池页签),告警跳告警中心。
-                  const target = it.source === '派单池' ? '/boss/dispatch' : '/alarm'
+                  // 待办处理入口:source 经 todoTarget 解析为已注册菜单路由,未注册不跳转。
+                  const target = todoTarget(it.source)
                   return (
                     <button
                       key={it.todoId}
                       className="flex w-full cursor-pointer items-start gap-3 border-b border-border bg-transparent border-0 p-0 py-2.5 text-left last:border-b-0 hover:bg-muted/50"
-                      onClick={() => navigate(target)}
+                      onClick={() => { if (target) navigate(target) }}
                       title={d.todoGo}
                     >
                       <div className="w-14 flex-shrink-0 text-xs text-muted-foreground">{time}</div>
