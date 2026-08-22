@@ -54,5 +54,6 @@
 | 2026-08-22 | 自定义角色(000100):内置 7 角色只读,模板复用放前端,后端只收权限码全集全量替换 | adopted/2026-08-22-custom-roles.md |
 | 2026-08-22 | 数字孪生与经营板块可视化升级 v2:PGIS 真地图(OL+OSM 瓦片起步)+ 新增 /gis/points 接口 + charts/ 共享 SVG 组件;v1 八级树形 Canvas 方案被推翻 | adopted/2026-08-22-intel-visualization-upgrade.md |
 | 2026-08-22 | 数字孪生板块 v1 方案(八级树形 Canvas)已否决,原文见 `git show 5ad9960:docs/notes/adopted/2026-08-22-intel-visualization-upgrade.md` | (superseded by v2) |
+| 2026-08-22 | 数字孪生板块下一期 v3:tileserver-gl 自建 PMTiles + OL dark theme 双瓦片源(CartoDB Dark Matter)+ 经营分析去掉原表格页签;前端 maps/tile-source.ts 抽工厂 | adopted/2026-08-22-intel-viz-next-phase.md |
 | 2026-08-22 | 套餐付费模式挂客户订购关系(lo_accounts),预付费办业务当时即收(与环节4合流);套餐级模式/出账日批扣被否决 | adopted/2026-08-22-prepaid-postpaid-billing-mode.md |
 | 2026-08-22 | worktree 多分支合并协议:冲突在 feature 侧消化(合前反向同步+合完立刻同步其余),中央文件 append-only,收尾四步防丢码;配套 scripts/worktree-sync.sh | adopted/2026-08-22-worktree-merge-protocol.md |
