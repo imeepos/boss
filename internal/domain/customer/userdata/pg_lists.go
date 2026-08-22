@@ -1,6 +1,9 @@
 package userdata
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // 用户端实体表/全局配置的只读管理视图(列名即 JSON 字段)。
 // 双胞胎表(余额/消息/通知偏好/发票/投诉)已按裁定 D1(2026-08-20)改为读权威表的薄适配层:
@@ -73,7 +76,25 @@ func (s *PGStore) ListCoupons(ctx context.Context) ([]map[string]any, error) {
 
 func (s *PGStore) GetInviteConfig(ctx context.Context) ([]map[string]any, error) {
 	return s.listMaps(ctx, `SELECT id, invite_link AS "inviteLink", reward_amount AS "rewardAmount",
+		COALESCE(reward_template_id,0) AS "rewardTemplateId",
 		active FROM invite_config ORDER BY id`)
+}
+
+// UpdateInviteConfig 更新邀请配置(邀请链接 + 奖励券模板;空 inviteLink 不改)。
+func (s *PGStore) UpdateInviteConfig(ctx context.Context, inviteLink string, rewardTemplateID int64) error {
+	tag, err := s.db.Exec(ctx, `
+		UPDATE invite_config SET
+			invite_link = CASE WHEN $1 = '' THEN invite_link ELSE $1 END,
+			reward_template_id = NULLIF($2,0)
+		WHERE id = (SELECT min(id) FROM invite_config)`,
+		inviteLink, rewardTemplateID)
+	if err != nil {
+		return fmt.Errorf("userdata: update invite config: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (s *PGStore) ListUserUsages(ctx context.Context) ([]map[string]any, error) {
