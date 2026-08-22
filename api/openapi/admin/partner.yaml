@@ -1,0 +1,94 @@
+# 招商引资/合作入驻域(迁移 000098/000099;internal/httpapi/admin/partner.go)。
+# 公开提交免登录;审核走 menu:partner;企业工作台走 partner-* 菜单门禁。
+paths:
+  /partner/applications:
+    post:
+      tags: [Partner]
+      summary: 企业自助提交入驻申请(公开,免登录)
+      operationId: partnerSubmit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [companyName, creditCode, contactName, contactPhone, businessDesc]
+              properties:
+                companyName: { type: string }
+                creditCode: { type: string, description: 统一社会信用代码 }
+                contactName: { type: string }
+                contactPhone: { type: string }
+                email: { type: string }
+                businessDesc: { type: string }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+    get:
+      tags: [Partner]
+      summary: 入驻申请审核队列
+      operationId: partnerList
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+  /partner/applications/{id}/approve:
+    post:
+      tags: [Partner]
+      summary: 审核通过(建 partner 主体+管理员账号)
+      operationId: partnerApprove
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer, format: int64 } } ]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+  /partner/applications/{id}/reject:
+    post:
+      tags: [Partner]
+      summary: 审核驳回(记意见)
+      operationId: partnerReject
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer, format: int64 } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [reason], properties: { reason: { type: string } } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+  /partner/me:
+    get:
+      tags: [Partner]
+      summary: 企业工作台-本企业档案
+      operationId: partnerProfile
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+  /partner/staff:
+    get:
+      tags: [Partner]
+      summary: 企业工作台-员工列表
+      operationId: partnerStaffList
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+    post:
+      tags: [Partner]
+      summary: 企业工作台-新建员工(partner_staff)
+      operationId: partnerStaffCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, realName]
+              properties:
+                username: { type: string }
+                password: { type: string, minLength: 6 }
+                realName: { type: string }
+                phone: { type: string }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+  /partner/staff/{id}/status:
+    put:
+      tags: [Partner]
+      summary: 企业工作台-员工启用(1)/停用(0)
+      operationId: partnerStaffStatus
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer, format: int64 } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: integer, enum: [0, 1] } } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+  /partner/orders:
+    get:
+      tags: [Partner]
+      summary: 企业工作台-本企业订单列表
+      operationId: partnerOrders
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }

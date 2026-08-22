@@ -7,6 +7,18 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /gis/points:
+    get:
+      tags: [Intel]
+      summary: 地图点位(Point 列表;前端自行拼 GeoJSON;permCode menu:gis)
+      operationId: gisPoints
+      parameters:
+        - { name: level, in: query, required: true, schema: { type: integer, minimum: 1, maximum: 8 } }
+        - { name: parentId, in: query, schema: { type: integer, format: int64 } }
+        - { name: bbox, in: query, schema: { type: string, description: 'minLng,minLat,maxLng,maxLat(WGS84);空=不限' } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /gis/drill:
     get:
       tags: [Intel]
@@ -66,6 +78,17 @@ paths:
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /reports/history:
+    get:
+      tags: [Intel]
+      summary: 历史快照(新→旧,trend 用;period 默认 daily,limit 默认 12 上限 90)
+      operationId: reportHistory
+      parameters:
+        - { name: period, in: query, schema: { type: string, enum: [daily, weekly, monthly, quarterly] } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 90 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /reports/latest:
     get:

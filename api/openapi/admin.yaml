@@ -151,6 +151,7 @@ paths:
   /billing/ledger-recon: { $ref: './admin/billing.yaml#/paths/~1billing~1ledger-recon' }
   /bills: { $ref: './admin/billing.yaml#/paths/~1bills' }
   /payments: { $ref: './admin/billing.yaml#/paths/~1payments' }
+  /payments/{id}/refund: { $ref: './admin/billing.yaml#/paths/~1payments~1{id}~1refund' }
   /billing-runs: { $ref: './admin/billing.yaml#/paths/~1billing-runs' }
   /invoices: { $ref: './admin/billing.yaml#/paths/~1invoices' }
   /invoices/{id}/void: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1void' }
@@ -329,12 +330,14 @@ paths:
 
   # ---------- Intel ----------
   /gis/levels: { $ref: './admin/intel.yaml#/paths/~1gis~1levels' }
+  /gis/points: { $ref: './admin/intel.yaml#/paths/~1gis~1points' }
   /gis/drill: { $ref: './admin/intel.yaml#/paths/~1gis~1drill' }
   /gis/resources/{resourceId}/detail: { $ref: './admin/intel.yaml#/paths/~1gis~1resources~1{resourceId}~1detail' }
   /analytics/indicators: { $ref: './admin/intel.yaml#/paths/~1analytics~1indicators' }
   /analytics/heatmap: { $ref: './admin/intel.yaml#/paths/~1analytics~1heatmap' }
   /analytics/maintenance: { $ref: './admin/intel.yaml#/paths/~1analytics~1maintenance' }
   /reports: { $ref: './admin/intel.yaml#/paths/~1reports' }
+  /reports/history: { $ref: './admin/intel.yaml#/paths/~1reports~1history' }
   /reports/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1latest' }
   /reports/recon/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1recon~1latest' }
   /compensation-tasks: { $ref: './admin/intel.yaml#/paths/~1compensation-tasks' }
@@ -367,3 +370,12 @@ paths:
   /odn/sites/{siteNo}: { $ref: './admin/odn.yaml#/paths/~1odn~1sites~1{siteNo}' }
   /odn/devices: { $ref: './admin/odn.yaml#/paths/~1odn~1devices' }
   /odn/devices/{id}: { $ref: './admin/odn.yaml#/paths/~1odn~1devices~1{id}' }
+
+  # ---------- Partner(招商引资/合作入驻) ----------
+  /partner/applications: { $ref: './admin/partner.yaml#/paths/~1partner~1applications' }
+  /partner/applications/{id}/approve: { $ref: './admin/partner.yaml#/paths/~1partner~1applications~1{id}~1approve' }
+  /partner/applications/{id}/reject: { $ref: './admin/partner.yaml#/paths/~1partner~1applications~1{id}~1reject' }
+  /partner/me: { $ref: './admin/partner.yaml#/paths/~1partner~1me' }
+  /partner/staff: { $ref: './admin/partner.yaml#/paths/~1partner~1staff' }
+  /partner/staff/{id}/status: { $ref: './admin/partner.yaml#/paths/~1partner~1staff~1{id}~1status' }
+  /partner/orders: { $ref: './admin/partner.yaml#/paths/~1partner~1orders' }
