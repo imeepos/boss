@@ -210,6 +210,13 @@ type Service interface {
 	ListUserPlans(ctx context.Context) ([]map[string]any, error)
 	CreateUserPlan(ctx context.Context, p UserPlan) (int64, error)
 
+	// GetPlanForRenewal 续费前置:归属校验 + 产品基础月费(区域覆盖不参与,
+	// 续费口径见 docs/design/promotion-coupon.md);未命中返回 ErrPlanNotFound。
+	GetPlanForRenewal(ctx context.Context, planID, customerID int64) (productID int64, monthlyFee float64, err error)
+	// RenewPlan 延长合约到期月:自 max(当前月, contract_end) 起 +months 月,
+	// 返回新到期月 'YYYY-MM';未命中返回 ErrPlanNotFound。
+	RenewPlan(ctx context.Context, planID, customerID int64, months int) (string, error)
+
 	ListAddons(ctx context.Context) ([]map[string]any, error)
 	CreateAddon(ctx context.Context, a Addon) error
 	ToggleAddon(ctx context.Context, addonID string) error

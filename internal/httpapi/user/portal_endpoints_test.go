@@ -30,6 +30,11 @@ type fakeUserData struct {
 	plans   []map[string]any
 	invite  []map[string]any
 	created int
+	// 续费桩:renewFee 0 = 套餐未命中;renewedMonths/renewEnd 供断言。
+	renewProductID int64
+	renewFee       int
+	renewedMonths  int
+	renewEnd       string
 }
 
 func (f *fakeUserData) ListUsers(context.Context, string) ([]map[string]any, error) {
@@ -56,6 +61,16 @@ func (f *fakeUserData) ListUserPlans(context.Context) ([]map[string]any, error) 
 }
 func (f *fakeUserData) CreateUserPlan(context.Context, udcustomer.UserPlan) (int64, error) {
 	return 0, nil
+}
+func (f *fakeUserData) GetPlanForRenewal(_ context.Context, _, _ int64) (int64, float64, error) {
+	if f.renewFee == 0 {
+		return 0, 0, udcustomer.ErrPlanNotFound
+	}
+	return f.renewProductID, float64(f.renewFee), nil
+}
+func (f *fakeUserData) RenewPlan(_ context.Context, _, _ int64, months int) (string, error) {
+	f.renewedMonths = months
+	return f.renewEnd, nil
 }
 func (f *fakeUserData) ListAddons(context.Context) ([]map[string]any, error) { return f.addons, nil }
 func (f *fakeUserData) CreateAddon(context.Context, udcustomer.Addon) error  { return nil }
