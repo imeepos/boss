@@ -16,11 +16,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image
+      - name: Build server image
         run: docker build -f deployments/docker/server.Dockerfile -t 192.168.0.102:5000/boss/server:${GITHUB_SHA} -t 192.168.0.102:5000/boss/server:latest .
 
-      - name: Push image
-        run: docker push 192.168.0.102:5000/boss/server:${GITHUB_SHA} && docker push 192.168.0.102:5000/boss/server:latest
+      - name: Build admin-web image
+        run: docker build -f deployments/docker/admin-web.Dockerfile -t 192.168.0.102:5000/boss/admin-web:${GITHUB_SHA} -t 192.168.0.102:5000/boss/admin-web:latest .
+
+      - name: Push images
+        run: |
+          docker push 192.168.0.102:5000/boss/server:${GITHUB_SHA}
+          docker push 192.168.0.102:5000/boss/server:latest
+          docker push 192.168.0.102:5000/boss/admin-web:${GITHUB_SHA}
+          docker push 192.168.0.102:5000/boss/admin-web:latest
 
       - name: Deploy (compose up)
         run: |
@@ -35,3 +42,11 @@ jobs:
             sleep 6
           done
           echo "healthz failed"; docker logs boss-server --tail 50; exit 1
+
+      - name: Healthcheck admin-web
+        run: |
+          for i in 1 2 3 4 5; do
+            if wget -qO- http://192.168.0.102:5180/; then echo; exit 0; fi
+            sleep 3
+          done
+          echo "admin-web failed"; docker logs boss-admin-web --tail 20; exit 1

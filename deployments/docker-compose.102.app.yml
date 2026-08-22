@@ -43,5 +43,14 @@ services:
       BOSS_KAFKA_BROKERS: "192.168.0.102:29092"
       BOSS_REPORT_PERIOD: "daily"
 
+  admin-web:
+    image: 192.168.0.102:5000/boss/admin-web:latest
+    container_name: boss-admin-web
+    restart: unless-stopped
+    ports:
+      - "5180:80" # admin 前端
+    depends_on:
+      - server
+
 volumes:
   boss_backup_data:
