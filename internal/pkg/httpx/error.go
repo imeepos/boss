@@ -46,6 +46,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, quadlink.ErrForeignKeyViolation),
 		errors.Is(err, worker.ErrForeignKeyViolation),
 		errors.Is(err, backup.ErrInvalidInput),
+		errors.Is(err, order.ErrInvalidInput),
 		errors.Is(err, ErrGeoInvalidParam):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),

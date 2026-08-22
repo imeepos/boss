@@ -48,6 +48,7 @@ paths:
                 addressId: { type: string }
                 channelId: { type: string }
                 billingMode: { type: string, enum: [PREPAID, POSTPAID], default: POSTPAID, description: 付费模式;预付费环节4当场收款(adopted 2026-08-22) }
+                buyMonths: { type: integer, minimum: 0, maximum: 60, default: 0, description: 预缴月数;0=按月缴,预付费环节4按 N月x月费 收款并命中赠送阶梯(gift-rules) }
       responses:
         '200':
           description: 下单成功

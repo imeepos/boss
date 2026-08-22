@@ -125,6 +125,7 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 			AddressID   string `json:"addressId" binding:"required"`
 			ChannelID   string `json:"channelId"`
 			BillingMode string `json:"billingMode"` // PREPAID/POSTPAID,空回退 POSTPAID
+			BuyMonths   int    `json:"buyMonths"`   // 预缴月数,0=按月缴;预付费环节4 按 N 月收款
 		}
 		if !httpx.BindBody(c, &req) {
 			return
@@ -139,6 +140,7 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 			AddressID:   addrID,
 			ChannelID:   channelID,       // 归属由安装地址服务端推导(2026-08-20 裁定)
 			BillingMode: req.BillingMode, // 付费模式客户选定(2026-08-22 裁定)
+			BuyMonths:   req.BuyMonths,   // 预缴月数(000103)
 		})
 		if err != nil {
 			respondErr(c, err)

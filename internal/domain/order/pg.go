@@ -48,7 +48,7 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 	return s
 }
 
-const orderCols = `id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, created_at`
+const orderCols = `id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, buy_months, gift_months, created_at`
 
 // ErrAddressNotFound 安装地址不存在(orders.address_id 无外键,应用层校验)。
 var ErrAddressNotFound = errors.New("order: address not found")
@@ -58,6 +58,9 @@ var ErrOfferNotOrderable = errors.New("order: offer not found or not published")
 
 // ErrChannelNotActive 渠道不存在或已停用。
 var ErrChannelNotActive = errors.New("order: channel not found or disabled")
+
+// ErrInvalidInput 请求参数超出约束(如 buyMonths 越界)。
+var ErrInvalidInput = errors.New("order: invalid input")
 
 // ErrForeignKeyViolation 关联实体不存在(投诉/工单等子表写入口的孤儿数据防护)。
 var ErrForeignKeyViolation = errors.New("order: referenced entity not found")
@@ -128,6 +131,9 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 	if req.BillingMode != BillingModePrepaid && req.BillingMode != BillingModePostpaid {
 		req.BillingMode = BillingModePostpaid
 	}
+	if req.BuyMonths < 0 || req.BuyMonths > 60 {
+		return nil, fmt.Errorf("order: buyMonths %d: %w", req.BuyMonths, ErrInvalidInput)
+	}
 	o := &Order{
 		OrderNo:       orderNo,
 		CustomerID:    req.CustomerID,
@@ -139,11 +145,12 @@ func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
 		LegalEntityID: own.LegalEntityID,
 		RegionPath:    own.RegionPath,
 		BillingMode:   req.BillingMode,
+		BuyMonths:     req.BuyMonths,
 	}
 	err = s.db.QueryRow(ctx, `
-		INSERT INTO orders(order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
-		o.OrderNo, o.CustomerID, o.OfferID, o.AddressID, o.Stage, o.Status, o.ChannelID, o.LegalEntityID, o.RegionPath, o.BillingMode).Scan(&o.ID)
+		INSERT INTO orders(order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, buy_months)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+		o.OrderNo, o.CustomerID, o.OfferID, o.AddressID, o.Stage, o.Status, o.ChannelID, o.LegalEntityID, o.RegionPath, o.BillingMode, o.BuyMonths).Scan(&o.ID)
 	if err != nil {
 		return nil, fmt.Errorf("order: submit insert: %w", err)
 	}
@@ -163,7 +170,7 @@ func (s *PGStore) Track(ctx context.Context, orderID int64) (*Order, []StageLog,
 	var o Order
 	err := s.db.QueryRow(ctx, `SELECT `+orderCols+` FROM orders WHERE id = $1`, orderID).
 		Scan(&o.ID, &o.OrderNo, &o.CustomerID, &o.OfferID, &o.AddressID, &o.Stage, &o.Status,
-			&o.ChannelID, &o.LegalEntityID, &o.RegionPath, &o.BillingMode, &o.CreatedAt)
+			&o.ChannelID, &o.LegalEntityID, &o.RegionPath, &o.BillingMode, &o.BuyMonths, &o.GiftMonths, &o.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil, ErrOrderNotFound
 	}
