@@ -3,6 +3,8 @@ package adminapi
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -36,6 +38,14 @@ func (f *fakeProvSeed) CreatePort(context.Context, resource.Port) (int64, error)
 func (f *fakeProvSeed) CreateChannel(context.Context, order.Channel) (int64, error) {
 	f.chanID++
 	return f.chanID, nil
+}
+
+// ListChannels GET 目录桩:固定两条,供列表断言。
+func (f *fakeProvSeed) ListChannels(context.Context) ([]order.Channel, error) {
+	return []order.Channel{
+		{ID: 1, Code: "HALL", Name: "营业厅", Status: "ACTIVE"},
+		{ID: 2, Code: "ONLINE", Name: "线上", Status: "ACTIVE"},
+	}, nil
 }
 func (f *fakeProvSeed) CreateBatch(context.Context, asset.AssetBatch) (int64, error) {
 	f.batchID++
@@ -108,5 +118,29 @@ func TestProvisionSeed_Invalid(t *testing.T) {
 	_ = json.Unmarshal(w.Body.Bytes(), &resp)
 	if resp.Code == 0 || f.tktID != 0 {
 		t.Fatalf("应拒绝缺 orderId: resp=%+v", resp)
+	}
+}
+
+// TestProvisionListChannels GET /provision/channels 渠道目录(ISSUE.md 渠道无查询接口)。
+func TestProvisionListChannels(t *testing.T) {
+	f := &fakeProvSeed{}
+	r, mgr := newProvSeedRouter(f, auth.NewManager("s", time.Hour))
+	tok := authToken(t, mgr)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/admin/v1/provision/channels", nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var out struct {
+		Code int `json:"code"`
+		Data struct {
+			Items []order.Channel `json:"items"`
+			Total int             `json:"total"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &out)
+	if out.Code != 0 || out.Data.Total != 2 || len(out.Data.Items) != 2 || out.Data.Items[0].Code != "HALL" {
+		t.Fatalf("list channels resp=%s", w.Body.String())
 	}
 }

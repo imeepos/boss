@@ -12,16 +12,16 @@ import (
 // Register 注册管理端路由:/api/v1 前缀 + 账密 JWT/API key 鉴权链。
 // admin 端为封闭账号模型:无自助注册,账号由超管引导(EnsureSuperAdmin)或 org/account 受权流程创建。
 func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
-	authed := setupAdminAuth(r, a, mgr)
+	authed := registerAdminAuthRoot(r, a, mgr)
 	registerAdminAuthRoutes(authed, a, mgr)
 	registerAdminDomainRoutes(authed, a)
 }
 
-// setupAdminAuth 装配 /api/admin/v1 根组 + 鉴权链。
+// registerAdminAuthRoot 装配 /api/admin/v1 根组 + 鉴权链。
 // 公共:登录端点(无认证);鉴权:先 API key 免登录,再回退 JWT 认证。
 // API key 与三类主体(account/worker/customer)绑定;account 注入完整 RBAC 身份,
 // worker/customer 注入受限身份(菜单门禁 403,扫码接口经 Subject 识别)。
-func setupAdminAuth(r *gin.Engine, a *app.Application, mgr *auth.Manager) *gin.RouterGroup {
+func registerAdminAuthRoot(r *gin.Engine, a *app.Application, mgr *auth.Manager) *gin.RouterGroup {
 	api := r.Group("/api/admin/v1")
 	api.POST("/auth/login", adminLoginHandler(a, mgr))
 	authed := api.Group("")

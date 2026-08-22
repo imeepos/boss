@@ -208,3 +208,4 @@
 86. 画稿"中规中矩"根因是 5 个维度都打 5 分;高级感是在对的维度上克制(颜色/圆角/装饰)、对的维度上极致(节奏/字号/留白)。Linear 用 510/590 字重、Stripe 用 300 细体大字、Vercel 用 box-shadow 代替 border——每个"反常识"决定背后都是反 SaaS 默认值的克制。设计稿前必读 `references/knowledge/design-aesthetics.md`。
 87. 生图 prompt 的 Style 段不要写"现代/简洁/专业"等空词;翻译成可执行的设计语言——editorial / restrained / technical luxury / like Stripe or Linear + 具体的字号跳跃/字距收紧/圆角上限/焦点圈双层。空洞词被模型按"通用 SaaS"理解,正是"中规中矩"的源头(2026-08-25)。
 88. 节拍检测法:设计稿缩到 25% 后眯眼看——能立刻找到 3 个明确"组"说明节奏对,平均分布就是 24/24/24/24 的平庸节奏。节拍三件套=字号敢跳(14→24 不是 14→17)+留白敢空(主标题上下 32px+)+分组敢疏(区块 32-48px、组内 8-16px)。
+86. 给领域 service 接口加方法前,先 grep 全部实现方(含测试 fake):embedded interface 的 fake 不受影响,显式逐方法实现的 fake 会漏,build 红一轮才发现一处(2026-08-21 RollbackStage)。

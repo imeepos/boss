@@ -48,9 +48,35 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
   /provision/channels:
+    get:
+      tags: [Provision]
+      summary: 渠道目录列表(下单需 channelId,免翻 DB)
+      operationId: listProvisionChannels
+      responses:
+        '200':
+          description: 渠道目录
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            ID: { type: integer, format: int64 }
+                            Code: { type: string, example: HALL }
+                            Name: { type: string }
+                            Status: { type: string, enum: [ACTIVE, DISABLED] }
     post:
       tags: [Provision]
-      summary: 置备下单渠道(HALL营业厅/ONLINE线上/AGENT代理商)
+      summary: 置备下单渠道(HALL营业厅/ONLINE线上/AGENT代理商;code 重复返回 40900)
       operationId: provisionChannel
       requestBody:
         required: true

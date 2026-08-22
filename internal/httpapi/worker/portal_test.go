@@ -16,6 +16,7 @@ import (
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 )
@@ -56,6 +57,7 @@ func (f *fakePortalLedger) GetSettings(_ context.Context, id int64) (*worker.Set
 type fakePortalWorkOrder struct {
 	order.WorkOrderService
 	tickets  []order.DispatchTicket
+	item     *order.TicketItem
 	assigned int64
 }
 
@@ -120,12 +122,25 @@ func (f *fakePortalWorkOrder) UpdateScheduleSlot(_ context.Context, _ string, _ 
 }
 
 func (f *fakePortalWorkOrder) GetTicketItemByNo(_ context.Context, _ string) (*order.TicketItem, error) {
+	if f.item != nil {
+		return f.item, nil
+	}
 	return &order.TicketItem{}, nil
 }
 
 type fakePortalOrder struct {
 	order.OrderService
 	activated int64
+	rolledBack int64
+}
+
+// fakePortalQuad 四码桩:详情页 quad 视图按未绑定兜底。
+type fakePortalQuad struct {
+	quadlink.QuadLinkService
+}
+
+func (f *fakePortalQuad) GetByAddress(context.Context, int64) (*quadlink.QuadLink, error) {
+	return nil, quadlink.ErrNotFound
 }
 
 func (f *fakePortalOrder) Track(context.Context, int64) (*order.Order, []order.StageLog, error) {
@@ -134,6 +149,11 @@ func (f *fakePortalOrder) Track(context.Context, int64) (*order.Order, []order.S
 
 func (f *fakePortalOrder) ActivateUser(_ context.Context, id int64) error {
 	f.activated = id
+	return nil
+}
+
+func (f *fakePortalOrder) RollbackStage(_ context.Context, id int64) error {
+	f.rolledBack = id
 	return nil
 }
 
@@ -151,6 +171,7 @@ func portalTestRouterWith(t *testing.T, fw *fakePortalWorkOrder, fo *fakePortalO
 	a := &app.Application{
 		Worker: ws, WorkOrder: fw, Order: fo, WorkerLedger: wl,
 		Portal: portal.NewMemory(),
+		QuadLink: &fakePortalQuad{},
 	}
 	Register(r, a, newWorkerJWTManager())
 	return r
@@ -284,6 +305,51 @@ func portalGrabToken(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return tok
+}
+
+// TestWorkerTicketDetailType 回归(ISSUE.md worker 详情字段缺口):
+// 详情补 type/typeLabel;报障单(complaints 联表有值)推导 REPAIR,普通单 INSTALL。
+func TestWorkerTicketDetailType(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketID: 1, TicketNo: "DT-1", OrderID: 1, WorkerID: 7, Status: "DOING"},
+	}}
+	r := portalTestRouter(t, fw, &fakePortalOrder{})
+
+	res := portalWorkerDo(r, "GET", "/api/worker/v1/tickets/DT-1", "", tok)
+	data, _ := res["data"].(map[string]any)
+	if data["type"] != "INSTALL" || data["typeLabel"] != "新装" {
+		t.Fatalf("install detail type=%v/%v", data["type"], data["typeLabel"])
+	}
+
+	fw.item = &order.TicketItem{ComplaintType: "NO_NET", FaultTypeLabel: "单户断网"}
+	res = portalWorkerDo(r, "GET", "/api/worker/v1/tickets/DT-1", "", tok)
+	data, _ = res["data"].(map[string]any)
+	if data["type"] != "REPAIR" || data["typeLabel"] != "报障" {
+		t.Fatalf("repair detail type=%v/%v", data["type"], data["typeLabel"])
+	}
+}
+
+// TestWorkerRollback 回归(ISSUE.md rollback 仅审计不落库):
+// 本人工单回退真实调用 RollbackStage;他人工单拒绝。
+func TestWorkerRollback(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketID: 1, TicketNo: "DT-1", OrderID: 5, WorkerID: 7, Status: "DOING"},
+		{TicketID: 2, TicketNo: "DT-2", OrderID: 6, WorkerID: 8, Status: "DOING"},
+	}}
+	fo := &fakePortalOrder{}
+	r := portalTestRouter(t, fw, fo)
+
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/tickets/DT-1/rollback", "", tok)
+	if res["code"].(float64) != 0 || fo.rolledBack != 5 {
+		t.Fatalf("rollback res=%v rolledBack=%d, want ok/5", res, fo.rolledBack)
+	}
+	// 他人工单:拒绝且不动订单。
+	res = portalWorkerDo(r, "POST", "/api/worker/v1/tickets/DT-2/rollback", "", tok)
+	if res["code"].(float64) == 0 || fo.rolledBack != 5 {
+		t.Fatalf("foreign ticket rollback should be rejected: %v", res)
+	}
 }
 
 // TestGrabRejectsOutOfRegion 回归:任务池/抢单必须限制在师傅负责区域内。

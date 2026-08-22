@@ -40,3 +40,12 @@ func StageOf(event string) (int8, bool) {
 	step, ok := workflowByEvent[event]
 	return step.stage, ok
 }
+
+// workflowByStage 环节序号 → 环节步定义(回退时反查该环节触发的 status 事件)。
+var workflowByStage = func() map[int8]stageStep {
+	m := make(map[int8]stageStep, len(workflow))
+	for _, s := range workflow {
+		m[s.stage] = s
+	}
+	return m
+}()

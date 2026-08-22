@@ -31,7 +31,7 @@ paths:
                         ops: { type: array, items: { type: string }, description: 可用操作(跟踪/变更/退订) }
     post:
       tags: [Order]
-      summary: 新建订单(客服代客下单,进入环节 1)
+      summary: 新建订单(仅限线下代客极少数场景;正常下单口径是 user 端 /api/user/v1/orders)
       operationId: createOrder
       requestBody: { content: { application/json: { schema: { type: object } } } }
       responses:

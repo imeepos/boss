@@ -9,7 +9,8 @@ const USER = process.env.BOSS_ADMIN_USER ?? 'admin'
 const PASS = process.env.BOSS_ADMIN_PASS ?? 'admin123'
 const APP = process.env.BOSS_WEB_ORIGIN ?? 'http://localhost:5173'
 
-const res = await fetch(`${API}/api/v1/auth/login`, {
+// 前缀与 src/lib/serverConfig.ts 的 API_PREFIX 对齐(/api/admin/v1);裸 /auth/login 会 404。
+const res = await fetch(`${API}/api/admin/v1/auth/login`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ username: USER, password: PASS }),

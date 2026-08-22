@@ -29,7 +29,7 @@ func registerWorkerTicketActions(g *gin.RouterGroup, a *app.Application) {
 	})
 	g.POST("/tickets/:ticketNo/transfer", workerTransferHandler(a))
 	g.POST("/tickets/:ticketNo/reschedule", workerRescheduleHandler(a))
-	g.POST("/tickets/:ticketNo/rollback", workerAuditOK(a, "rollback"))
+	g.POST("/tickets/:ticketNo/rollback", workerRollbackHandler(a))
 	g.POST("/tickets/:ticketNo/retry", workerRetryHandler(a))
 	g.POST("/tickets/:ticketNo/complaint", workerComplaintHandler(a))
 	g.POST("/tickets/:ticketNo/repair-report", workerRepairReportHandler(a))
@@ -81,11 +81,33 @@ func assignEligible(c *gin.Context, a *app.Application, workerID int64, tk *orde
 	return true
 }
 
-// workerAuditOK 无独立落表的动作(回退):审计留痕 + OK(缺口见报告)。
+// workerAuditOK 无独立落表的动作(消息已读/扫码异常/签到):审计留痕 + OK。
 func workerAuditOK(a *app.Application, action string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		httpx.RecordAudit(a, c, "状态变更", "worker_ticket", c.Param("ticketNo"),
 			map[string]any{"action": action})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
+// workerRollbackHandler 回退上一环节:真实落库(删最新环节日志、stage 前移、
+// status 逆向迁移、DONE 工单随动 DOING),前端刷新时间轴即可见。
+func workerRollbackHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !workerOwnedTicket(c, tk) {
+			return
+		}
+		if err := a.Order.RollbackStage(c.Request.Context(), tk.OrderID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "状态变更", "worker_ticket", tk.TicketNo,
+			map[string]any{"action": "rollback"})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
 }

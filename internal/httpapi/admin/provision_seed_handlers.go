@@ -79,6 +79,18 @@ func createChannelHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// listChannelsHandler GET /provision/channels:渠道目录(下单需 channelId,免翻 DB)。
+func listChannelsHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		list, err := a.Channel.ListChannels(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": list, "total": len(list)})
+	}
+}
+
 // createAssetBatchHandler POST /provision/asset-batches:环节5 标签预绑定。
 func createAssetBatchHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {

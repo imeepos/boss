@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/client'
 import { useT } from '../i18n'
 import { cn } from '../lib/cn'
+import { fmtTime } from '../lib/format'
 import { markNotificationsRead, useUnreadCount } from '../lib/useNotifications'
 import { POPOVER, POPOVER_DIVIDER } from './popover'
 import { BellIcon } from './icons'
@@ -87,7 +88,7 @@ export function NotifBell() {
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-[var(--shell-group-title)]">
                   <i className={cn('h-1.5 w-1.5 rounded-full', r.level === 'URGENT' ? 'bg-[var(--color-danger)]' : r.level === 'WARN' ? 'bg-[var(--color-brand-gold-500)]' : 'bg-[var(--shell-menu-icon)]')} />
-                  {r.createdAt.replace('T', ' ').slice(5, 16)}
+                  {fmtTime(r.createdAt).slice(5, 16)}
                 </span>
               </button>
             ))}
