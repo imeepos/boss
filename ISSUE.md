@@ -27,6 +27,11 @@
 
 - **已修复(2026-08-21, 36d6d5e)｜行为缺口｜`POST /api/worker/v1/tickets/{ticketNo}/rollback` 仅审计不落库**：`internal/httpapi/worker/ticket_action.go::workerAuditOK` 对 rollback/reschedule 两动作只 `httpx.RecordAudit` + `respond{ok:true}`，**未修改 StageLog、未回退 stage、未动 Order/DispatchTicket 状态**。前端点击"回退上一环节"返回 200 成功 toast，但详情接口再查 stages 数组不变，时间轴不刷新。修复需：(1) 找到该工单 Order 当前 stage；(2) 删除/标废最新一条 StageLog（或新增一条 `result=ROLLED_BACK` 记录并前移 stage 指针）；(3) 同步 `dispatch_tickets.stage` 与 `orders.current_stage`；(4) 重启后端前注意 schema 迁移。前端已临时把 toast 文案改为"回退请求已记录，请下拉刷新查看最新进度"避免误操作预期，等后端补完整功能后再恢复正向文案。
 
+## CI/部署(deploy-102)
+
+- **未修复(2026-08-22,任务 2289/2291 实测)｜部署怪象｜`docker-compose up -d --force-recreate` 后容器滞留 Created 不启动**:deploy-102 workflow 的 Deploy 步骤执行后,boss-server/boss-report/boss-admin-web 常处于 "Created" 状态而非 Up,需人工 `docker start`。两次部署(75a0b60 前后)均复现;job 日志未见 start 失败信息,疑似 runner 容器内 docker CLI 与宿主 daemon 的 start 时序问题。→ 排查方向:compose 版本兼容(宿主 2.26.1)、`--force-recreate --remove-orphans` 组合、job 容器生命周期内 daemon 响应。人工恢复命令:`ssh imeepos@192.168.0.102 'docker start boss-server boss-report boss-admin-web'`。
+- **未修复(2026-08-22)｜信息缺失｜compose 未设 `BOSS_CORS_ORIGINS`,5180 直连 28080 必挂**:后端 CORS 白名单默认仅 localhost:5173/5174(internal/pkg/config/config.go:130),102 上 admin-web(5180)若在"服务端配置"里填 `http://192.168.0.102:28080` 直连,预检 OPTIONS 404 全端不可用。同源 nginx 代理(`5180/api/`→boss-server)是正路:浏览器免登录冒烟时 localStorage **不要**设置 boss.servers,让 apiFetch 走相对前缀。→ 若要支持直连,compose environment 应加 `BOSS_CORS_ORIGINS: "http://192.168.0.102:5180"`。
+
 ## web/admin
 
 - **已修复(2026-08-21, 2f0769f)｜信息不准｜`web/admin/scripts/dev-token.mjs` 已失效**：脚本按旧前缀 `POST {baseUrl}/auth/login` 请求登录，后端实际前缀是 `/api/admin/v1`（`src/lib/serverConfig.ts` 的 `API_PREFIX`），运行直接 HTTP 404。应改为 `/api/admin/v1/auth/login`，或删除脚本改由 curl + localStorage 注入（skill docs 已记录替代做法）。

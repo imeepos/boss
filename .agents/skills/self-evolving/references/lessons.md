@@ -212,3 +212,11 @@
 86. 给领域 service 接口加方法前,先 grep 全部实现方(含测试 fake):embedded interface 的 fake 不受影响,显式逐方法实现的 fake 会漏,build 红一轮才发现一处(2026-08-21 RollbackStage)。
 81. 路由注册必须放在 register* 前缀函数内:check-contract-sync 的提取器只扫 register 开头函数,把 g.POST 写进 setup*/其他命名函数会静默逃出契约对账(362<->363 少计无告警)。重构 root.go 时警惕。
 82. 多 cd 链式命令一处失败后续命令会在错误目录执行(含 git stash!)——跨 checkout 操作一律用绝对路径或 workdir 参数,绝不用相对路径串联 cd。
+
+## 2026-08-22 partner 入驻域(后端+前端全链路)
+74. PG 行含 NULL 列时,SELECT 列表必须对每个可空列 COALESCE(x,0) 再扫 int64;否则 List/详情首查即 500("can't scan into dest: cannot scan NULL into *int64"),本地无库跑不出来,102 实测才暴露。
+75. 新增域错误必须同步登记 internal/pkg/httpx/error.go 的 RespondErr 映射表,否则业务冲突(重复审核/重复提交)落 default 500"内部错误",用户无法判断原因。
+76. 多阶段 Dockerfile 的依赖安装层,COPY 清单必须包含全部 install 前置输入(pnpm-workspace.yaml 的构建白名单也是);pnpm 新版把 ignored build scripts 升级为硬失败,pnpm@latest 漂移会让 CI 无代码变更也断,固定版本号。
+77. 102 admin-web 部署在 5180,nginx 同源代理 /api/→boss-server;浏览器冒烟不要设 boss.servers(直连 28080 会撞 CORS 白名单预检 404),让 apiFetch 走相对前缀即可。
+78. 102 部署 CI(deploy-102)的 compose up --force-recreate 会把容器留在 Created 不启动,部署后需人工 docker start;遇到 404 别急着重试 push,先 docker ps -a 看容器状态。
+79. React 受控 input 程序化填值直接 el.value= 无效,必须 Object.getOwnPropertyDescriptor(原型,'value').set.call(el,v)+dispatchEvent(input);(补强 techniques #4,本次再次验证)

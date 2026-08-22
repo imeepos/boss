@@ -74,3 +74,12 @@
 - 图标规格：描边 SVG，viewBox 24 / stroke 1.8-2 / round cap / currentColor，显示 14px；禁止文字字形当图标
 - 主题：自研组件按 geo.css 模式自带 `:root[data-theme='light'/'dark']` 组件级令牌块；引用任何 var(--x) 前先 grep theme/tokens.css + styles.css 确认存在（曾引用不存在的 --shell-bg 静默翻车）
 - 可复用外壳令牌（双主题）：--shell-card-bg / --shell-card-border / --shell-content-text / --shell-group-title / --shell-menu-hover-bg / --shell-fab-bg（亮藏青/暗金）/ --shell-fab-bg-icon；focus 描边 --color-border-focus（styles.css，不分主题）
+
+## 招商入驻域速查(2026-08-22 查证,迁移 000098)
+
+- 公开申请页 `/partner/apply`(免登录,登录页有入口);admin 审核页 `/org/partner`(menu:partner,org 组)
+- 企业工作台组 `/partner/{home,staff,orders}`:仅 partner_admin/partner_staff 可见;sysadmin 不见该组(无 legal_entity 归属)
+- 审核通过 = 建 legal_entities(P-<信用码>)+ 管理账号 pt_<信用码后8位>(role partner_admin,legal_entity_id 绑定);初始口令 12 位随机,仅审核响应/弹窗展示一次
+- 102 冒烟数据(勿清理也勿复用):legal_entity 7 "Smoke Partner Co"(信用码 SMOKE123456),账号 pt_KE123456(口令见会话记录)/pt_smoke_staff1;申请 1=已通过,2=已驳回,3=已通过(CDPVERIFY9)
+- 102 admin 口令实为 admin/admin123(compose environment BOSS_ADMIN_PASSWORD 权威;deployments/app.env 的 Boss-admin-2026 已过时)
+- admin-web 前端部署在 http://192.168.0.102:5180(nginx 同源代理 /api/);CI deploy-102 的 compose 常把容器留在 Created,需 ssh 上去 docker start

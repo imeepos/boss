@@ -277,3 +277,9 @@
 - 重来一次:开工第一个 bash 先 `curl http://localhost:5173/ | head -3` + `curl http://localhost:5173/src/App.tsx | grep -m1 refreshReg` 验证 baseURL 路径打的是不是目标仓库;不是立刻排查端口冲突,而不是去看截图找组件问题。
 - peer.ts addLocalStream 已经天然 iterate 所有 tracks (line 76),audio 不用改 — 实现前先读现状避免重复改。
 - playwright `.mjs` helper 文件不能写 TS-style `import type {Page}`;要么改名 .ts,要么用 `import('@playwright/test').Page` 在 JSDoc 里写。
+
+## 2026-08-22 招商入驻域全链路(web/admin + Go 后端)
+
+- 哪个坑浪费最多时间:102 部署 CI 三连坑——pnpm@latest 升级致 admin-web 镜像构建失败(任务 2287)、compose up 容器滞留 Created 误以为没部署、CORS 白名单让 token 注入直连 28080 全 404。三者都不在代码里,全靠翻 gitea actions 日志(zstd 解压)+ docker ps -a + 网络日志定位。
+- skill 有没有提前警告我:部分——"对接 102/别本机起服务"避免了本地冒烟弯路;但部署流水线的 Created 态和 CORS 白名单无记录,已补 ISSUE.md + lessons 77/78。
+- 重来一次:push 后第一时间看 gitea actions 日志而不是反复 curl 轮询;新增可空列时一开始就 COALESCE 全套(坑 74),httpx 错误映射随域错误同提交(坑 75)。
