@@ -213,6 +213,11 @@ const enUS: Translations = {
       ctaBannerSubtitle: 'Start your Sphere Boss journey today and shape the future of digital operations',
       viewDetail: 'View details',
       footerTagline: 'Next-generation telecom operations platform',
+      footerTaglineDesc: 'Full-lifecycle management across orders, resources, assets, networks, alarms and billing, empowering operators with refined operations and innovation.',
+      footerProductTitle: 'Product',
+      footerSolutionsTitle: 'Solutions',
+      footerQuickTitle: 'Quick Links',
+      footerLanguage: 'Language',
       footerCopyright: '© 2024 Sphere Boss. All rights reserved.',
     },
     dashboard: {

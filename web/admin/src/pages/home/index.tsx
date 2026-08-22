@@ -61,10 +61,19 @@ export default function HomePage() {
       <Features features={h.features} title={h.featuresTitle} subtitle={h.featuresSubtitle} />
       <Cases cases={h.cases} title={h.casesTitle} subtitle={h.casesSubtitle} viewDetail={h.viewDetail} />
       <CtaBanner title={h.ctaBannerTitle} subtitle={h.ctaBannerSubtitle} buttonLabel={h.bookExclusive} onClick={goCta} />
-      <Footer t={{
-        tagline: h.footerTagline, navFeatures: h.navFeatures, navSolutions: h.navSolutions,
-        navContact: h.navContact, login: h.login, copyright: h.footerCopyright,
-      }} />
+      <Footer
+        t={{
+          tagline: h.footerTagline, taglineDesc: h.footerTaglineDesc,
+          productTitle: h.footerProductTitle, solutionsTitle: h.footerSolutionsTitle,
+          quickTitle: h.footerQuickTitle, navContact: h.navContact,
+          bookDemo: h.bookDemo, login: h.login, language: h.footerLanguage,
+          copyright: h.footerCopyright,
+        }}
+        featureLinks={h.features.slice(0, 3)}
+        caseLinks={h.cases}
+        locale={locale}
+        setLocale={(v) => setLocale(v as typeof locale)}
+      />
     </div>
   )
 }

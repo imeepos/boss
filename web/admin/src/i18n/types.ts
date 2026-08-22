@@ -120,6 +120,11 @@ export interface Translations {
       ctaBannerSubtitle: string
       viewDetail: string
       footerTagline: string
+      footerTaglineDesc: string
+      footerProductTitle: string
+      footerSolutionsTitle: string
+      footerQuickTitle: string
+      footerLanguage: string
       footerCopyright: string
     }
     dashboard: {
