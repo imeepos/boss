@@ -58,6 +58,8 @@ paths:
                 amount: { type: number }
                 payMethod: { type: string, enum: [wechat, alipay, card, cash] }
                 couponId: { type: string, description: 可选抵扣券,核销与落账同事务,实收=amount-抵扣 }
+                buyMonths: { type: integer, description: 预缴实购月数,>0 时按赠送阶梯规则落痕并返回 giftMonths }
+                productId: { type: integer, format: int64, description: 赠送规则匹配产品范围,0=全店规则 }
       responses:
         '200':
           description: 支付单已生成

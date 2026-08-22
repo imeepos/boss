@@ -47,7 +47,7 @@
 | 营收保障 RA | RA | AG-15 | 待建 | — | 待建 | 待建 |
 | 防欺诈 FMS | FMS | AG-16 | 待建 | — | 待建 | 待建 |
 | 结算互连 SET | SET | AG-17 | 待建 | — | 待建 | 待建 |
-| 忠诚度积分 LOY | LOY | AG-18 | 待建 | — | 待建 | 待建 |
+| 忠诚度积分 LOY | LOY | AG-18 | `loy`（最小实现,000104:账本/流水/积分换券;等级/任务/缴费自动积分待完整版） | 增量 | 无专用页（admin API /points/*;user /points） | 积分换券经 LOY→PROMO 服务调用(补偿模式,见 adopted note） |
 | 客户门户 | PORT | XG-04(组装) | 待建(前端) | — | user端(非admin) | — |
 | 消息通知 | NOT | XG-04(组装) | `worker`(师傅侧消息/公告)、`notify`(admin 侧提醒/待办,迁移 000090) | 阶段2 | boss | message(后台提醒=第三页签);推送通道配置 push.*(pkg/push,迁移 000094,页面 /base/pushconfig) |
 | AI 能力网关 | AI | （横切，平台级，非 21 域） | `ai` | 增量 | 无专用页（复用 base/settings 参数页） | ai.openai.* 配置经 /params 或 /ai/openai/config 热更 |

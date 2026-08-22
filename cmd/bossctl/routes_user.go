@@ -47,6 +47,8 @@ var userRoutes = []routeEntry{
 	{"GET", "/coupons", "优惠券列表(可用/已使用/已过期;billCents 附预估抵扣)"},
 	{"POST", "/coupons/redeem", "兑换码领券/接收转赠券"},
 	{"POST", "/coupons/:couponId/gift", "整券转赠(返回一次性转赠码)"},
+	{"GET", "/points", "我的积分(余额+流水)"},
+	{"POST", "/points/exchange", "积分换券(模板须配置积分价)"},
 	{"GET", "/usage", "网络用量(本周期/上月/近 6 月)"},
 	{"GET", "/addresses", "家庭地址列表"},
 	{"POST", "/addresses", "新增家庭地址"},
