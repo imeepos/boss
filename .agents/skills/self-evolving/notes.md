@@ -407,3 +407,8 @@
 - 哪个坑浪费最多时间:worktree 基于 d03694e 时撞见 000112 同树双文件(payment_refund 后被别会话改名 000113),D 门禁红;merge main 后自愈。根因:并行会话让号发生在我的 worktree 基点之后。
 - skill 有没有提前警告:迁移撞号规则已知,但"worktree 基点过旧导致 D 门禁红,先 merge main 再判断是不是自己的锅"这条是新的。
 - 重来一次会怎么做:make check 见 D FAIL 先 git merge main 反向同步再复跑,不急着排查自己的迁移文件。
+
+## 2026-08-26 Q2 四码清零率(goal round 5)
+- 哪个坑浪费最多时间:pgx 把 int 参数喂给 SQL 里推断为 text 的位置($1 || ' days')直接报 unable to encode——int 不会自动转 text,必须 Go 侧 strconv.Itoa。真库验证才发现,单测用 AnyArg 拦不住。
+- skill 有没有提前警告:没有;known-issues 有占位符编号教训但无"参数类型必须与 SQL 推断类型匹配"条目。
+- 重来一次会怎么做:SQL 里带 $1 拼接的查询,真库验证先于写 mock 单测;或干脆 SQL 写死 interval '7 days'(常量窗口)绕开参数。

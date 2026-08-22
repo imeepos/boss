@@ -242,3 +242,4 @@
 ### pgxmock ExpectQuery 参数是正则,SQL 中的括号需成对转义(如 count\(\*\)),否则报 error parsing regexp
 - 2026-08-26 worktree 收尾时 `git merge --ff-only X | tail -1` 管道会吞退出码,失败后 && 链继续跑掉 worktree remove;合并命令必须单独执行或显式检查退出码,失败唯一动作是回 worktree rebase 重试。
 D 门禁撞号先 merge main 反向同步再复跑:worktree 基点过旧会看到已被让号修复的旧撞号
+pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)报 unable to encode,Go 侧显式转换或 SQL 写死常量
