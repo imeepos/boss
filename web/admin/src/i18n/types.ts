@@ -1707,8 +1707,12 @@ export interface Translations {
       audit: { title: string; desc: string; empty: string; emptyDesc: string; loadFail: string }
     }
     partnerApply: {
-      title: string; subtitle: string; companyName: string; creditCode: string; contactName: string
-      contactPhone: string; email: string; businessDesc: string; businessDescPlaceholder: string
+      title: string; subtitle: string; stepCompany: string; stepContact: string; stepIntent: string
+      stepOf: string; next: string; prev: string; companyName: string; companyNamePh: string
+      creditCode: string; creditCodePh: string; contactName: string; contactNamePh: string
+      contactPhone: string; contactPhonePh: string; email: string; emailPh: string
+      businessDesc: string; businessDescPlaceholder: string; fieldRequired: string
+      invalidCreditCode: string; invalidPhone: string; invalidEmail: string
       submit: string; submitting: string; success: string; receiptNo: string; successDesc: string
       backLogin: string; fail: string
     }
