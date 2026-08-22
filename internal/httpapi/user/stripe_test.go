@@ -73,6 +73,9 @@ func (f *settleBilling) RecordPaymentWithCoupon(_ context.Context, p billing.Pay
 	return billing.PaymentReceipt{PaymentID: id, Amount: p.Amount}, err
 }
 func (f *settleBilling) GenerateBills(context.Context, string) (int, error) { return 0, nil }
+func (f *settleBilling) RefundPayment(_ context.Context, _ int64, _ string) (*billing.Payment, error) {
+	return nil, nil
+}
 
 // newStripeRouter gw 为 nil 表示通道未配置(空注册表)。
 func newStripeRouter(bill billing.BillingService, gw billing.PaymentGateway, wh stripe.Webhook) *gin.Engine {
