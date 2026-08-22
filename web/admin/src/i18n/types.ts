@@ -376,6 +376,26 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    staff: {
+      title: string
+      desc: string
+      loadFail: string
+      saveFail: string
+      addDept: string
+      addPost: string
+      edit: string
+      del: string
+      delDeptConfirm: string
+      delPostConfirm: string
+      addMember: string
+      columns: string[]
+      empty: string
+      searchPlaceholder: string
+      selectTip: string
+      memberUnit: string
+      deptUnit: string
+      postUnit: string
+    }
     department: {
       title: string
       desc: string

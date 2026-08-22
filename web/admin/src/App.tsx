@@ -14,6 +14,7 @@ const AddressPage = lazy(() => import('./pages/base/address'))
 const GeoPage = lazy(() => import('./pages/base/geo'))
 const ImporterPage = lazy(() => import('./pages/base/importer'))
 const BackupPage = lazy(() => import('./pages/backup'))
+const StaffOrgPage = lazy(() => import('./pages/org/staff'))
 const ParamsPage = lazy(() => import('./pages/base/params'))
 const AuthConfigPage = lazy(() => import('./pages/base/authconfig'))
 const SmsConfigPage = lazy(() => import('./pages/base/smsconfig'))
@@ -109,6 +110,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'servers') return <ServersPage />
   if (pageKey === 'audit') return <AuditPage />
   if (pageKey === 'company') return <CompanyPage />
+  if (pageKey === 'staff') return <StaffOrgPage />
   if (pageKey === 'department') return <DepartmentPage />
   if (pageKey === 'post') return <PostPage />
   if (pageKey === 'region') return <RegionPage />
