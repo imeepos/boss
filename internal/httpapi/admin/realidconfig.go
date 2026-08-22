@@ -3,10 +3,10 @@ package adminapi
 // 实名核验配置路由:GET 全量(掩码)/PUT 分组更新/POST channel 自检(完整性或真实试核)。
 // 存储复用 biz_params,secret AES-GCM 加密;运行时通道由 app 装配的 realid.Dynamic 消费(60s 热生效)。
 // 未启用/未配置 → 提交落 PENDING,人工核验兜底(customer_onboarding 的 real-name/verify 不受影响)。
+// 全部 handler 实现见 config_handlers.go;此处只保留扁平路由表 + 落库辅助。
 
 import (
 	"errors"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -17,82 +17,13 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
+// registerRealIDConfigRoutes 注册实名核验配置路由。
 func registerRealIDConfigRoutes(g *gin.RouterGroup, a *app.Application) {
 	perm := requirePerm(a.User, "menu:realidconfig")
 
-	// 全量配置:secret 只回 hasValue 标记。
-	g.GET("/realid-config", perm, func(c *gin.Context) {
-		list, err := a.User.ListParams(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		stored := map[string]string{}
-		for _, p := range list {
-			stored[p.Key] = p.Value
-		}
-		fields := gin.H{}
-		for _, f := range realidFields {
-			v := stored[f.Key]
-			if f.Secret {
-				fields[f.Key] = gin.H{"value": "", "hasValue": v != ""}
-				continue
-			}
-			if v == "" {
-				v = f.Default
-			}
-			fields[f.Key] = gin.H{"value": v, "hasValue": v != ""}
-		}
-		respond(c, apitypes.CodeOK, gin.H{"fields": fields})
-	})
-
-	// 分组部分更新:secret 空串=不修改;越组 key 拒绝。
-	g.PUT("/realid-config/:group", perm, func(c *gin.Context) {
-		group := c.Param("group")
-		if len(realidFieldByGroup(group)) == 0 {
-			respond(c, apitypes.CodeInvalidParam, nil)
-			return
-		}
-		var req struct {
-			Values map[string]string `json:"values" binding:"required"`
-		}
-		if !httpx.BindAndValidate(c, &req) {
-			return
-		}
-		if !realidKeysInGroup(req.Values, group) {
-			respond(c, apitypes.CodeInvalidParam, nil)
-			return
-		}
-		if !realidSaveGroup(c, a, group, req.Values) {
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
-	})
-
-	// channel 自检:无 name/idNo=配置完整性校验;带 =用草稿合并配置真实试核一组二要素。
-	g.POST("/realid-config/channel/test", perm, func(c *gin.Context) {
-		var req struct {
-			Values map[string]string `json:"values"`
-			Name   string            `json:"name"`
-			IdNo   string            `json:"idNo"`
-		}
-		_ = c.ShouldBindJSON(&req)
-		cur, err := realidMergedParams(c, a, req.Values, "channel")
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if req.Name == "" || req.IdNo == "" {
-			respond(c, apitypes.CodeOK, realidCompletenessResult(cur))
-			return
-		}
-		start := time.Now()
-		decision, err := realidVerifierFromParams(cur).Verify(c.Request.Context(), req.Name, req.IdNo)
-		respond(c, apitypes.CodeOK, gin.H{
-			"ok": err == nil, "latencyMs": time.Since(start).Milliseconds(),
-			"message": realidTestMessage(decision, err),
-		})
-	})
+	g.GET("/realid-config", perm, realidConfigGetHandler(a))
+	g.PUT("/realid-config/:group", perm, realidConfigPutHandler(a))
+	g.POST("/realid-config/channel/test", perm, realidConfigTestHandler(a))
 }
 
 // realidSaveGroup 逐字段落库 + 审计;secret 加密,空串跳过。

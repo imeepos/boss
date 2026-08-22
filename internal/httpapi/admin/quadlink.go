@@ -1,104 +1,23 @@
 package adminapi
 
-import (
-	"fmt"
+// 四码合一域路由注册(承接 quad.yaml,任一码反查)。
+// 全部 handler 实现见 quadlink_handlers.go;此处只保留扁平路由表 + 共享工具。
 
+import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/internal/domain/quadlink"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // registerQuadlinkRoutes 注册四码合一域路由(承接 quad.yaml,任一码反查)。
 func registerQuadlinkRoutes(g *gin.RouterGroup, a *app.Application) {
-	// 新建四码绑定(装维前预绑定:资产+客户+端口+地址,status=UNLINKED)。
-	g.POST("/quad-links", requirePerm(a.User, "menu:quadlink"), func(c *gin.Context) {
-		var q quadlink.QuadLink
-		if !httpx.BindAndValidate(c, &q, func() error {
-			return httpx.CollectErrors(
-				httpx.RequirePositiveID(q.AssetID, "assetId"),
-				httpx.RequirePositiveID(q.CustomerID, "customerId"),
-				httpx.RequirePositiveID(q.PortID, "portId"),
-				httpx.RequirePositiveID(q.AddressID, "addressId"),
-				httpx.RequirePositiveID(q.LegalEntityID, "legalEntityId"),
-			)
-		}) {
-			return
-		}
-		if q.Status == "" {
-			q.Status = "UNLINKED"
-		}
-		id, err := a.QuadLink.CreateLink(c.Request.Context(), q)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "数据变更", "quad_link", fmt.Sprint(id), nil)
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": q.Status})
-	})
-
-	g.GET("/quad-links", requirePerm(a.User, "menu:quadlink"), func(c *gin.Context) {
-		list, err := a.QuadLink.ListLinks(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	})
-
-	g.GET("/quad-links/by-asset", requirePerm(a.User, "menu:quadlink"), func(c *gin.Context) {
-		assetID, ok := requireID(c, "assetId")
-		if !ok {
-			return
-		}
-		q, err := a.QuadLink.GetByAsset(c.Request.Context(), assetID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, q)
-	})
-
-	g.GET("/quad-links/by-customer", requirePerm(a.User, "menu:quadlink"), func(c *gin.Context) {
-		customerID, ok := requireID(c, "customerId")
-		if !ok {
-			return
-		}
-		q, err := a.QuadLink.GetByCustomer(c.Request.Context(), customerID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, q)
-	})
-
-	g.GET("/quad-links/by-port", requirePerm(a.User, "menu:quadlink"), func(c *gin.Context) {
-		portID, ok := requireID(c, "portId")
-		if !ok {
-			return
-		}
-		q, err := a.QuadLink.GetByPort(c.Request.Context(), portID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, q)
-	})
-
-	g.GET("/quad-links/by-address", requirePerm(a.User, "menu:quadlink"), func(c *gin.Context) {
-		addressID, ok := requireID(c, "addressId")
-		if !ok {
-			return
-		}
-		q, err := a.QuadLink.GetByAddress(c.Request.Context(), addressID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, q)
-	})
+	g.POST("/quad-links", requirePerm(a.User, "menu:quadlink"), quadlinkCreateLinkHandler(a))
+	g.GET("/quad-links", requirePerm(a.User, "menu:quadlink"), quadlinkListLinksHandler(a))
+	g.GET("/quad-links/by-asset", requirePerm(a.User, "menu:quadlink"), quadlinkGetByAssetHandler(a))
+	g.GET("/quad-links/by-customer", requirePerm(a.User, "menu:quadlink"), quadlinkGetByCustomerHandler(a))
+	g.GET("/quad-links/by-port", requirePerm(a.User, "menu:quadlink"), quadlinkGetByPortHandler(a))
+	g.GET("/quad-links/by-address", requirePerm(a.User, "menu:quadlink"), quadlinkGetByAddressHandler(a))
 }
 
 // requireID 校验必填 ID 查询参数:缺失/非法/非正数时返回 422 并终止请求。

@@ -1,5 +1,8 @@
 package adminapi
 
+// 订单域路由注册(承接 api/openapi/admin/order.yaml)。
+// 全部 handler 实现见 order_handlers.go;此处只保留扁平路由表 + 响应体/辅助。
+
 import (
 	"time"
 
@@ -7,8 +10,6 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
-	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // stageNames 环节序号 → 中文名(terms.md §1)。
@@ -54,70 +55,9 @@ func orderOps(status string) []string {
 func registerOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 	ord := g.Group("/orders", requirePerm(a.User, "menu:order"))
 
-	ord.GET("", func(c *gin.Context) {
-		list, err := a.Order.List(c.Request.Context(), order.OrderQuery{
-			Keyword: c.Query("keyword"),
-			Status:  c.Query("status"),
-		})
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		items := make([]orderListResp, 0, len(list))
-		for _, it := range list {
-			items = append(items, orderListResp{
-				ID: it.ID, OrderNo: it.OrderNo, Customer: it.Customer, Product: it.Product, Address: it.Address,
-				Stage: it.Stage, StageLabel: stageNames[it.Stage], Status: it.Status,
-				Ops: orderOps(it.Status), CreatedAt: it.CreatedAt,
-			})
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": items})
-	})
-
-	ord.POST("", func(c *gin.Context) {
-		var req order.SubmitReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequirePositiveID(req.CustomerID, "customerId"),
-				httpx.RequirePositiveID(req.OfferID, "offerId"),
-				httpx.RequirePositiveID(req.AddressID, "addressId"),
-				httpx.RequirePositiveID(req.ChannelID, "channelId"),
-			)
-		}) {
-			return
-		}
-		o, err := a.Order.Submit(c.Request.Context(), req)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "数据变更", "order", o.OrderNo, map[string]any{
-			"customerId": req.CustomerID, "offerId": req.OfferID, "channelId": req.ChannelID,
-		})
-		respond(c, apitypes.CodeOK, gin.H{"id": o.ID, "orderNo": o.OrderNo, "stage": o.Stage, "status": o.Status})
-	})
-
-	ord.GET("/:orderNo", func(c *gin.Context) {
-		orderNo := c.Param("orderNo")
-		if orderNo == "" {
-			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "orderNo is required"})
-			return
-		}
-		o, err := a.Order.GetByNo(c.Request.Context(), orderNo)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		_, logs, err := a.Order.Track(c.Request.Context(), o.ID)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{
-			"order":    o,
-			"timeline": buildTimeline(o, logs),
-		})
-	})
+	ord.GET("", orderListHandler(a))
+	ord.POST("", orderSubmitHandler(a))
+	ord.GET("/:orderNo", orderGetHandler(a))
 }
 
 // buildTimeline 环节日志 → 时间轴;耗时 = 本环节完成时间 - 上一环节完成时间(首环节为下单时间)。
