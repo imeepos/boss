@@ -2,6 +2,7 @@
 // 环节推进 POST /orders/:orderNo/{check-resource,reserve,charge,cancel}(order_workflow.go)。
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -14,7 +15,7 @@ import { pageSlice, type CheckDetail, type OrderListRow, type TimelineRow } from
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
 
-const STATUSES = ['PENDING', 'RESERVED', 'INSTALLING', 'DONE'] as const
+const STATUSES = ['PENDING', 'RESERVED', 'INSTALLING', 'DONE', 'CANCELLED'] as const
 
 export default function OrderPage() {
   const t = useT()
@@ -23,10 +24,14 @@ export default function OrderPage() {
   const o = t.pages.orderPage
   const [rows, setRows] = useState<OrderListRow[]>([])
   const [error, setError] = useState('')
-  const [keyword, setKeyword] = useState('')
-  const [status, setStatus] = useState('')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [urlKeyword, setUrlKeyword] = useQueryState('kw', '')
+  const [urlStatus, setUrlStatus] = useQueryState('status', '')
+  const [urlPage, setUrlPage] = useQueryInt('page', 1)
+  const [urlPageSize, setUrlPageSize] = useQueryInt('size', 10)
+  const [keyword, setKeyword] = useState(urlKeyword)
+  const [status, setStatus] = useState(urlStatus)
+  const [page, setPage] = useState(urlPage)
+  const [pageSize, setPageSize] = useState(urlPageSize)
   const [busy, setBusy] = useState(false)
   const [track, setTrack] = useState<{ order: OrderListRow; timeline: TimelineRow[] } | null>(null)
   const [trackError, setTrackError] = useState('')
@@ -91,6 +96,27 @@ export default function OrderPage() {
 
   const statusOptions = [{ value: '', label: o.allStatus }, ...STATUSES.map((value, i) => ({ value, label: o.statusOptions[i] }))]
 
+  const updateKeyword = (value: string) => {
+    setKeyword(value)
+    setUrlKeyword(value)
+    setPage(1)
+    setUrlPage(1)
+  }
+
+  const updateStatus = (value: string) => {
+    setStatus(value)
+    setUrlStatus(value)
+    setPage(1)
+    setUrlPage(1)
+  }
+
+  const updatePageSize = (value: number) => {
+    setPageSize(value)
+    setUrlPageSize(value)
+    setPage(1)
+    setUrlPage(1)
+  }
+
   const slice = pageSlice(rows, page, pageSize)
 
   return (
@@ -99,8 +125,8 @@ export default function OrderPage() {
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={o.searchPlaceholder}
-            value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-          <Dropdown value={status} options={statusOptions} onChange={(value) => { setStatus(value); setPage(1) }} ariaLabel={o.allStatus} />
+            value={keyword} onChange={(e) => updateKeyword(e.target.value)} />
+          <Dropdown value={status} options={statusOptions} onChange={updateStatus} ariaLabel={o.allStatus} />
           <span className="spacer" />
           <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
@@ -143,7 +169,8 @@ export default function OrderPage() {
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
-            onPage={setPage} onSize={setPageSize} {...pagerTexts(o)} />
+            onPage={(value) => { setPage(value); setUrlPage(value) }}
+            onSize={updatePageSize} {...pagerTexts(o)} />
         </div>
       </div>
       {check && (

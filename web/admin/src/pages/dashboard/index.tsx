@@ -100,7 +100,19 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                   </thead>
                   <tbody>
                     {data.orderStatusDist.map((r) => (
-                      <tr key={r.status}>
+                      <tr
+                        key={r.status}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/boss/order?status=${encodeURIComponent(r.status)}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            navigate(`/boss/order?status=${encodeURIComponent(r.status)}`)
+                          }
+                        }}
+                        tabIndex={0}
+                        role="link"
+                      >
                         <td className="border-b border-border px-3 py-2.5 text-[var(--shell-content-text)]">
                           <StatusTag domain="order" value={r.status} />
                         </td>
