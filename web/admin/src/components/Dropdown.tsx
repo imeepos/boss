@@ -15,6 +15,8 @@ interface DropdownProps {
   ariaLabel: string
   disabled?: boolean
   triggerStyle?: CSSProperties
+  /** 覆盖触发器按钮的默认 class(深色表面等场景)。 */
+  buttonClassName?: string
   /** 浮层顶部渲染关键字过滤输入(按 label 大小写不敏感匹配)。 */
   searchable?: boolean
   searchPlaceholder?: string
@@ -23,7 +25,7 @@ interface DropdownProps {
   onKeywordChange?: (keyword: string) => void
 }
 
-export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder, remote, onKeywordChange }: DropdownProps) {
+export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, buttonClassName, searchable, searchPlaceholder, remote, onKeywordChange }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
@@ -44,7 +46,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
     <div className="relative inline-flex" ref={rootRef} style={triggerStyle}>
       <button
         type="button"
-        className={'flex h-8 w-full items-center justify-between gap-2 rounded-sm border py-0 pr-1 pl-2.5 text-[13px]' + (disabled ? ' cursor-not-allowed border-[var(--shell-input-border)] bg-[var(--shell-input-disabled-bg)] text-[var(--shell-input-placeholder)]' : ' cursor-pointer border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]')}
+        className={buttonClassName ?? ('flex h-8 w-full items-center justify-between gap-2 rounded-sm border py-0 pr-1 pl-2.5 text-[13px]' + (disabled ? ' cursor-not-allowed border-[var(--shell-input-border)] bg-[var(--shell-input-disabled-bg)] text-[var(--shell-input-placeholder)]' : ' cursor-pointer border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]'))}
         onClick={() => { if (!disabled) { setOpen((v) => !v); if (!open) setKeyword('') } }}
         aria-haspopup="listbox"
         aria-expanded={open}
