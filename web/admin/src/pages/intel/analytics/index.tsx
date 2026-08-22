@@ -82,7 +82,12 @@ export default function AnalyticsPage() {
           />
         </CardShell>
         <CardShell title={a.overviewHeat}>
-          <VerticalBars labels={heatUtilLabels} values={heatUtilValues} />
+          <VerticalBars
+            labels={heatUtilLabels}
+            values={heatUtilValues}
+            valueLabel="%"
+            emptyText="尚无地址端口数据"
+          />
         </CardShell>
       </section>
 
