@@ -295,6 +295,7 @@ paths:
   /quad-links/by-customer: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-customer' }
   /quad-links/by-port: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-port' }
   /quad-links/by-address: { $ref: './admin/quad.yaml#/paths/~1quad-links~1by-address' }
+  /quad-links/clearance-rate: { $ref: './admin/quad.yaml#/paths/~1quad-links~1clearance-rate' }
   /quad-links/reconcile: { $ref: './admin/quad.yaml#/paths/~1quad-links~1reconcile' }
   /quad-links/purge-orphans: { $ref: './admin/quad.yaml#/paths/~1quad-links~1purge-orphans' }
   /scan-logs: { $ref: './admin/quad.yaml#/paths/~1scan-logs' }

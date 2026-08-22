@@ -115,6 +115,15 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /quad-links/clearance-rate:
+    get:
+      tags: [Quad]
+      summary: 四码冲突 4 小时清零率(7 天窗口;验收线 ≥95%,Q2)
+      description: 000114 冲突时间线:Reconcile 标 CONFLICT 记 conflict_at,ResolveConflict 记 cleared_at;rate=clearedWithin4h/discovered,无事件=1。
+      operationId: getQuadClearanceRate
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
   /scan-logs:
     get:
       tags: [Quad]

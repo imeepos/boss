@@ -122,8 +122,11 @@ func (s *PGStore) UnbindRequireScan(ctx context.Context, orderID int64, scannedE
 // (孤儿行随后即被清理,标记仅为可观测的中间态)。
 func (s *PGStore) Reconcile(ctx context.Context) (*ReconcileReport, error) {
 	// 1. 标 CONFLICT(每码至多一条:已有活跃行则不标,否则取最小 id 的孤儿)。
+	// conflict_at 首次进入冲突态记时(已在冲突态不重置时钟),cleared_at 清零;
+	// 两列构成冲突事件时间线,支撑 4 小时清零率(000114,Q2 验收)。
 	if _, err := s.db.Exec(ctx, `
-		UPDATE quad_links ql SET status = 'CONFLICT'
+		UPDATE quad_links ql SET status = 'CONFLICT',
+			  conflict_at = COALESCE(ql.conflict_at, now()), cleared_at = NULL
 		WHERE ((ql.asset_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM assets a WHERE a.id = ql.asset_id))
 		   OR NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = ql.customer_id)
 		   OR NOT EXISTS (SELECT 1 FROM ports p WHERE p.id = ql.port_id)
@@ -177,9 +180,11 @@ func (s *PGStore) Reconcile(ctx context.Context) (*ReconcileReport, error) {
 var ErrIllegalTransition = errors.New("quadlink: illegal transition")
 
 // ResolveConflict 四码冲突人工处理:仅 CONFLICT 可置回 UNLINKED(修复后重新预绑定/扫码)。
+// cleared_at 留痕(000114):清零率 = cleared_at-conflict_at ≤ 4h 占比。
 func (s *PGStore) ResolveConflict(ctx context.Context, linkID int64) error {
 	tag, err := s.db.Exec(ctx,
-		`UPDATE quad_links SET status = 'UNLINKED' WHERE id = $1 AND status = 'CONFLICT'`, linkID)
+		`UPDATE quad_links SET status = 'UNLINKED', cleared_at = now()
+		 WHERE id = $1 AND status = 'CONFLICT'`, linkID)
 	if err != nil {
 		return fmt.Errorf("quadlink: resolve conflict: %w", err)
 	}

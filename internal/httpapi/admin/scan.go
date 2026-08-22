@@ -42,6 +42,7 @@ func registerScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	q.GET("/scan-logs", scanLogsHandler(a))
 	q.GET("/quad-conflicts", quadConflictsListHandler(a))
 	q.POST("/quad-conflicts/:id/resolve", quadConflictResolveHandler(a))
+	q.GET("/quad-links/clearance-rate", quadClearanceRateHandler(a))
 	q.POST("/quad-links/reconcile", quadLinksReconcileHandler(a))
 	q.POST("/quad-links/purge-orphans", quadLinksPurgeOrphansHandler(a))
 }
