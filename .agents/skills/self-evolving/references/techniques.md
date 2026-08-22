@@ -250,3 +250,4 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - 2026-08-22 CDP 自动化点击 Dropdown 选项必须派发 `mousedown`(组件 onChange 挂在 onMouseDown,onClick 仅 preventDefault);触发器开浮层用 click,选项选择用 `el.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}))`。
 - 2026-08-22 cdp-capture 注入登录态后 SPA 不认:eval 设 localStorage 要与 `location.href=目标页` 同一条执行(先访问根路径设值再跳转),分开执行时应用已用空 token 启动重定向 /login。
 - 2026-08-22 102 环境分工:28080=纯 API(直访 SPA 路由 404 page not found),admin GUI 在 5180 端口(compose boss-admin-web 容器);截图/联调一律打 5180。
+- 2026-08-22 PG LIKE 中 `_` 是单字符通配符:精确前缀匹配写 `LIKE 'custom\_%'`(默认转义符反斜杠),或用 `starts_with(code,'custom_')` / 左等值。删除验收数据按主键等值删,不用模式。

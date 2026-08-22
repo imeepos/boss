@@ -313,3 +313,8 @@
 - 最耗时的坑:CDP 点击模板下拉选项不生效,排查两轮才发现 Dropdown onChange 挂在 mousedown;skill 未预警(已补 techniques)。
 - 环境事实:102 口令与 5180 端口在 boss-admin-web.md 均已有记载,本会话开头读到的旧快照误导了判断;开工前应重读该文件而非凭记忆。
 - 重来一次:先 curl 探端口/口令再开浏览器链路;点不动先看组件源码事件绑定。
+
+## 2026-08-22 自定义角色验收清理事故
+- 最贵的一刀:清理 SQL `LIKE 'custom_%'` 下划线通配误删内置 customer 角色;"roles deleted: 2"的异常输出被我错误假设带过,半小时后核对才发现。
+- skill 未预警 LIKE 通配符陷阱(已补 red-lines + techniques,并写 postmortem 0003)。
+- 重来一次:删除输出与预期数不符 → 停;临时脚本只做等值删除。
