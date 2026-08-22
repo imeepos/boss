@@ -110,7 +110,14 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
 
             <CardShell>
               <div className="-mt-5 mb-4 flex items-center justify-between">
-                <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{d.todoTitle}</h3>
+                <div className="flex items-baseline">
+                  <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{d.todoTitle}</h3>
+                  {todoItems.length > 0 && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {d.todoCount.replace('{n}', String(todoItems.length))}
+                    </span>
+                  )}
+                </div>
                 {totalTodoPages > 1 && (
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" disabled={todoPage === 1} onClick={() => setTodoPage((p) => Math.max(1, p - 1))}>
@@ -124,6 +131,9 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                 )}
               </div>
               <div className="max-h-[320px] overflow-y-auto">
+                {todoItems.length === 0 && (
+                  <p className="m-0 py-8 text-center text-sm text-muted-foreground">{d.empty}</p>
+                )}
                 {pagedTodos.map((it) => {
                   const time = it.time ? fmtTime(it.time).split(' ')[1] || fmtTime(it.time) : '--'
                   // 待办处理入口:source 经 todoTarget 解析为已注册菜单路由,未注册不跳转。
