@@ -47,7 +47,7 @@ func TestPGStore_Submit(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
 		mock.ExpectQuery(`INSERT INTO orders`).
-			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(1), "root.luzon", "POSTPAID", 0).
+			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(1), "root.luzon", "POSTPAID", 0, pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
 		mock.ExpectExec(`INSERT INTO order_stages`).
 			WithArgs(int64(7), int8(1), "DOING").
@@ -87,7 +87,7 @@ func TestPGStore_Submit(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"order_no"}).AddRow("ORD-20250817-000001"))
 		mock.ExpectQuery(`INSERT INTO orders`).
-			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(9), "root", "POSTPAID", 0).
+			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(9), "root", "POSTPAID", 0, pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
 		mock.ExpectExec(`INSERT INTO order_stages`).
 			WithArgs(int64(7), int8(1), "DOING").

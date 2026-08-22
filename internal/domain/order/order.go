@@ -49,4 +49,5 @@ type SubmitReq struct {
 	RegionPath    string `json:"regionPath"`
 	BillingMode   string `json:"billingMode"` // PREPAID/POSTPAID,空回退 POSTPAID;环节4 预付费当场收款
 	BuyMonths     int    `json:"buyMonths"`   // 预缴月数,0=按月缴(环节4 收 1 个月);1~60
+	RequestID     string `json:"requestId"`   // 可选幂等键(000116):同客户重放返回已有订单
 }

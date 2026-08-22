@@ -9,7 +9,7 @@
 
 | 环节 | 端点 | 重放行为 | 机理(代码证据) | 判定 |
 |------|------|----------|----------------|------|
-| 1 下单 | POST /orders | 无幂等键,重复=重复订单 | pg.go Submit 仅校验主体存在,无去重键 | **缺口,待裁定** |
+| 1 下单 | POST /orders | 可选 requestId(000116):同客户同键重放返回已有订单;空键不键控 | pg.go Submit findByRequestID + uq_orders_customer_request 唯一索引 | 幂等 ✓(000116) |
 | 2 核查 | POST /orders/:no/check-resource | 重复→重复返回清单,不二次推进 | pg_check.go:已核查(stage>=2)直接 return nil | 幂等 ✓ |
 | 3 预占 | POST /orders/:no/reserve | 重复→状态机拒绝+端口补偿回滚 | handler 补偿调 ReleasePortByOrder,无 RESERVED 泄漏 | 安全拒绝 ✓ |
 | 4 收费 | POST /orders/:no/charge | 重复→跳过收费直接重跑自动段 | handler: stage>=4 跳过 ChargeContract | 幂等 ✓ |
@@ -25,17 +25,19 @@
 **POST /orders 无幂等键**(客户/客服双击 → 重复订单,重复占端口/重复收费风险):
 - 方案A:请求带 clientRequestId,orders 表唯一索引去重(契约变更,三端同步);
 - 方案B:同 customer+address 存在非终态订单时拒绝(业务语义强,误伤合法二装)。
-- 需 dated note 裁定后实施;实施前该端点记为未覆盖。
+- **已裁定(2026-08-23,adopted/2026-08-23-order-submit-idempotency.md):方案A 变体——
+  可选 `requestId`(客户维度唯一,migration 000116),空键不键控,重放返回已有订单;
+  admin/user 门户两端透传。**
 
 ## 覆盖率
 
-- 主链路写端点 10 项:幂等/安全拒绝 9 项,缺口 1 项(下单),**90%**;
-  下单幂等化落地后达 100%。
+- 主链路写端点 10 项:幂等/安全拒绝 10 项,**100%**(下单经 000116 requestId 补齐)。
 
 ## 回归测试
 
 - internal/domain/quadlink/pg_scan_test.go:重扫 LINKED 同资产 → MATCH 无第二日志
 - internal/httpapi/admin/scan_test.go:环节9已完成重扫 → MATCH 不报错
+- internal/app/e2e_submit_idem_test.go:同 requestId 重放同单,不同 requestId 新单
 
 ## 102 线上探针证据(2026-08-23,镜像 20:02Z 含修复)
 
