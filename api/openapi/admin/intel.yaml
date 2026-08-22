@@ -86,6 +86,15 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
+  /compensation-tasks:
+    get:
+      tags: [Intel]
+      summary: 补偿任务中心(六类跨域补偿任务聚合,每项带可回放 retry/settle 路径)
+      description: Q2 补偿任务中心:provisionTask/stopResume/activationCallback/taxInvoice/cdrKafka/reconBatch;只读聚合,回放调各域 retry 接口。permCode menu:report。
+      operationId: listCompensationTasks
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /reports/{reportId}/send:
     post:
       tags: [Intel]
