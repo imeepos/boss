@@ -3,10 +3,23 @@
 > 技能文件地址：`.agents/skills/self-evolving/SKILL.md`
 > 安卓构建脚本： scripts/build-install-user-android.sh
 > 102服务器信息： imeepos@192.168.0.102
+> 后端对接一律用 102 部署环境： http://192.168.0.102:28080 （admin 前缀 /api/admin/v1；不要本机起服务、不要 mock 数据）
 > 使用worktree避免冲突，完成后合并到主分支，清理老分支，不用用户同意
 > 写完的东西要立刻存档（commit）
 > 禁止直接在主分支上修改任何代码
 > 端口冲突有可能其他人在工作，不要打扰，换个端口，结束时关闭清理
+
+## worktree 合并协议（防并行分支冲突，2026-08-22 固化）
+
+> 全文见 `docs/notes/adopted/2026-08-22-worktree-merge-protocol.md`，此处为执行要点。
+
+- **短命分支**：任务完成当天即合并，不过夜；冲突一律在 feature 侧消化，进 main 的合并保持干净。
+- **合并前反向同步**：worktree 内先 `git merge main`（本地私有分支可 rebase），解冲突跑门禁，再回主树合并。
+- **一次只合一个，合完立刻同步其余**：可用 `scripts/worktree-sync.sh` 一键对全部活跃 worktree 执行 merge main + 门禁。
+- **中央登记文件 append-only**：menu.def.ts / App.tsx / i18n types+locale / fields.md 的注册类改动压成独立小提交，不埋进大 feature 提交。
+- **收尾四步（硬性，防代码丢失）**：① `git push gitea <分支>`（远端名是 gitea 不是 origin）→ ② 主树 `git merge --ff-only <分支>` → ③ `git worktree remove` → ④ `git branch -d` + `git push gitea --delete`。
+- **ff-merge 失败 ≠ commit 丢失**（commit 安全在分支 ref 上）：失败时严禁删 worktree，唯一动作是回 worktree `git rebase main` 后重试②。
+- 误闯并行会话的 worktree 并编辑其未提交文件是事故（2026-08-22 用户点名）；发现半成品先 `git worktree list` 判断归属。
 
 ## 迁移编号规则（防并行撞号，2026-08-22 固化）
 worktree 只隔离文件，不隔离全局共享的流水资源（迁移号/路由/权限码/契约章节），
