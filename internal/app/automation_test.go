@@ -88,6 +88,32 @@ func TestAutomation(t *testing.T) {
 		}
 	})
 
+	// ISSUE.md:worker 激活只推段10后,admin 重调 AutoPostScan 应跳过段10 从段11 续推(幂等)。
+	t.Run("段10已完成 → AutoPostScan 跳过激活续推 11-12", func(t *testing.T) {
+		o, pub := &autoOrder{}, &capPub{}
+		o.track = &order.Order{OrderNo: "ORD-T", Stage: 10}
+		m := NewAutomation(o, pub)
+		if err := m.AutoPostScan(context.Background(), 1); err != nil {
+			t.Fatal(err)
+		}
+		if len(o.calls) != 2 || o.calls[0] != "notifyActivation" || o.calls[1] != "updateMap" {
+			t.Fatalf("calls=%v, want [notifyActivation updateMap]", o.calls)
+		}
+	})
+
+	// 12 环节全部完成时重调为 no-op(重试幂等)。
+	t.Run("段12已完成 → AutoPostScan 全跳过", func(t *testing.T) {
+		o := &autoOrder{}
+		o.track = &order.Order{OrderNo: "ORD-T", Stage: 12}
+		m := NewAutomation(o, nil)
+		if err := m.AutoPostScan(context.Background(), 1); err != nil {
+			t.Fatal(err)
+		}
+		if len(o.calls) != 0 {
+			t.Fatalf("calls=%v, want empty", o.calls)
+		}
+	})
+
 	t.Run("nil publisher 降级不 panic", func(t *testing.T) {
 		o := &autoOrder{}
 		m := NewAutomation(o, nil)
