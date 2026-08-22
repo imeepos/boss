@@ -124,10 +124,13 @@ export default function GisPage() {
         {pointsError ? (
           <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{pointsError}</div>
         ) : null}
-        <div className="h-[480px]">
-          {points.length > 0
-            ? <PgisMap points={points} onSelect={(p) => p.level >= 6 && openDetail(p.id)} theme={theme} onViewportChange={onViewportChange} />
-            : <div className="flex h-full items-center justify-center text-[13px] text-[var(--shell-group-title)]">{g.mapEmpty}</div>}
+        <div className="relative h-[480px]">
+          <PgisMap points={points} onSelect={(p) => p.level >= 6 && openDetail(p.id)} theme={theme} onViewportChange={onViewportChange} />
+          {!points.length && !pointsError ? (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-[var(--shell-group-title)]">
+              {g.mapEmpty}
+            </div>
+          ) : null}
         </div>
       </CardShell>
 
