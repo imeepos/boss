@@ -24,7 +24,7 @@ export interface FooterProps {
   setLocale: (v: Locale) => void
 }
 
-const COL_TITLE = 'text-sm font-semibold text-white'
+const COL_TITLE = 'font-brand text-sm font-semibold tracking-wide text-white'
 const LINK = 'text-sm text-[var(--shell-nav-text)] transition-colors hover:text-white'
 
 export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: FooterProps) {
@@ -35,7 +35,7 @@ export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: Footer
           <div className="flex items-center gap-3">
             <img src={logoFull} alt="" className="h-9 w-9" />
             <div className="flex flex-col leading-tight">
-              <span className="text-base font-bold text-white">Sphere Boss</span>
+              <span className="font-brand text-lg font-bold tracking-tight text-white">Sphere Boss</span>
               <span className="mt-0.5 text-xs text-[var(--shell-nav-text)]">{t.tagline}</span>
             </div>
           </div>
