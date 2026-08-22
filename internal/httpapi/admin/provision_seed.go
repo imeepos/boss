@@ -16,7 +16,8 @@ func registerProvisionSeedRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 网络资源(含端口):环节2/3 前置。
 	p.POST("/resources", createResourceHandler(a))
 	p.POST("/ports", createPortHandler(a))
-	// 渠道:下单前置。
+	// 渠道:下单前置;GET 目录供联调取 channelId(无需翻 DB)。
+	p.GET("/channels", listChannelsHandler(a))
 	p.POST("/channels", createChannelHandler(a))
 	// 资产批次/标签/资产:环节5 标签预绑定与环节9 扫码前置。
 	p.POST("/asset-batches", createAssetBatchHandler(a))

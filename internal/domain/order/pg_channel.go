@@ -6,7 +6,11 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// ErrChannelDuplicate 渠道 code 重复(channels.code 唯一)。
+var ErrChannelDuplicate = errors.New("order: channel code duplicate")
 
 // ListChannels 列出全部渠道目录。
 func (s *PGStore) ListChannels(ctx context.Context) ([]Channel, error) {
@@ -40,12 +44,16 @@ func (s *PGStore) GetChannel(ctx context.Context, id int64) (*Channel, error) {
 	return &c, nil
 }
 
-// CreateChannel 新增渠道,返回自增 id。
+// CreateChannel 新增渠道,返回自增 id;code 重复报 ErrChannelDuplicate(40900)。
 func (s *PGStore) CreateChannel(ctx context.Context, c Channel) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx,
 		`INSERT INTO channels(code, name, status) VALUES($1,$2,$3) RETURNING id`,
 		c.Code, c.Name, c.Status).Scan(&id)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return 0, fmt.Errorf("order: channel code %q: %w", c.Code, ErrChannelDuplicate)
+	}
 	if err != nil {
 		return 0, fmt.Errorf("order: create channel: %w", err)
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v4"
 )
 
@@ -102,6 +103,28 @@ func TestPGStore_CreateChannel(t *testing.T) {
 	}
 	if id != 1 {
 		t.Fatalf("id=%d, want 1", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+// TestPGStore_CreateChannelDuplicate 回归(ISSUE.md 渠道重复 50000):code 唯一冲突 → 40900。
+func TestPGStore_CreateChannelDuplicate(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`INSERT INTO channels`).
+		WithArgs("HALL", "营业厅", "ACTIVE").
+		WillReturnError(&pgconn.PgError{Code: "23505", ConstraintName: "channels_code_key"})
+
+	s := NewPGStore(mock, stubExists{})
+	_, err = s.CreateChannel(context.Background(), Channel{Code: "HALL", Name: "营业厅", Status: "ACTIVE"})
+	if !errors.Is(err, ErrChannelDuplicate) {
+		t.Fatalf("err=%v, want ErrChannelDuplicate", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)
