@@ -73,7 +73,7 @@ export function Footer({ t, featureLinks, caseLinks, locale, setLocale }: Footer
               onChange={(v) => setLocale(v as Locale)}
               ariaLabel="language"
               triggerStyle={{ height: 32 }}
-              buttonClassName="flex h-8 w-full items-center justify-between gap-2 cursor-pointer rounded-sm border border-white/20 bg-white/[0.08] py-0 pr-1 pl-2.5 text-[13px] text-[var(--shell-nav-text)] hover:border-white/40 focus-visible:border-white/40"
+              onDark
             />
           </div>
         </div>
