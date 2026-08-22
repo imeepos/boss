@@ -269,3 +269,11 @@
 - skill 有提前警告:是(lessons 有"CSS 引用不存在令牌静默 fallback"),但本次问题是显式设置的边距而非令牌缺失。
 - 重来一次:用户说"全屏"时,检查组件是否有 padding/margin 限制;深色背景下的表单控件需要显式设置 borderColor/backgroundColor/color。
 - 新经验:Footer 全幅铺满用 mx-auto max-w-7xl 居中限宽而非 px 边距;深色背景下的 Dropdown 需要特殊样式覆盖。
+
+## 2026-08-26 remote-desktop trackC: audio + RoomList + 双浏览器 e2e
+
+- 哪个坑浪费最多时间:playwright config 默认 baseURL/webServer.port=5173,与同机 BOSS 应用的 dev server 撞端口,所有现有 e2e 跑出来都挂在"BOSS 首页"而不是 remote-desktop,浪费一轮排查才意识到是端口串台。修正:playwright.config 改读 PW_PORT 环境变量,本地 `CI=1 PW_PORT=5291 pnpm exec playwright test` 才跑通。
+- skill 有没有提前警告:有——recidivism #30「端口被陈旧进程双绑」描述了类似现象,但偏重 102 server 端的孤儿进程,没明示并行 worktree vite dev server 同端口的事故。
+- 重来一次:开工第一个 bash 先 `curl http://localhost:5173/ | head -3` + `curl http://localhost:5173/src/App.tsx | grep -m1 refreshReg` 验证 baseURL 路径打的是不是目标仓库;不是立刻排查端口冲突,而不是去看截图找组件问题。
+- peer.ts addLocalStream 已经天然 iterate 所有 tracks (line 76),audio 不用改 — 实现前先读现状避免重复改。
+- playwright `.mjs` helper 文件不能写 TS-style `import type {Page}`;要么改名 .ts,要么用 `import('@playwright/test').Page` 在 JSDoc 里写。
