@@ -9,12 +9,13 @@ export interface StackedBarSeries {
 }
 
 export function StackedBars({
-  groups, legends,
+  groups, legends, formatValue = (value) => String(value),
 }: {
   /** 每柱一组数据,K 段堆叠。groups 与柱数对齐,length=柱数。 */
   groups: StackedBarSeries[]
   /** K 段名称(图例) */
   legends: string[]
+  formatValue?: (value: number) => string
 }) {
   if (groups.length === 0) return null
   const totals = groups.map((g) => g.stacks.reduce((s, v) => s + Math.max(0, v), 0))
@@ -27,11 +28,11 @@ export function StackedBars({
           const h = total > 0 ? (total / max) * 100 : 0
           return (
             <div key={i} className="flex h-full w-12 flex-col items-center justify-end gap-1.5" title={`${total}`}>
-              <div className="text-[11px] text-[var(--shell-group-title)]">{total}</div>
+              <div className="text-[11px] text-[var(--shell-group-title)]">{formatValue(total)}</div>
               <div className="flex w-full flex-col-reverse overflow-hidden rounded-t-sm bg-[var(--color-surface-disabled)]" style={{ height: `${h}%` }}>
                 {g.stacks.map((v, k) => {
                   const segH = total > 0 ? (Math.max(0, v) / total) * 100 : 0
-                  return <div key={k} className="w-full" style={{ height: `${segH}%`, background: PALETTE[k % PALETTE.length] }} title={`${legends[k] ?? k}: ${v}`} />
+                  return <div key={k} className="w-full" style={{ height: `${segH}%`, background: PALETTE[k % PALETTE.length] }} title={`${legends[k] ?? k}: ${formatValue(v)}`} />
                 })}
               </div>
             </div>

@@ -11,7 +11,7 @@ import { pageSlice } from '../types'
 import type { AnalyticsMaintRow, HeatCellRow, IndicatorRow, RegionRoiRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { CardShell, Donut, HorizontalBar, StatCard, VerticalBars } from '../../../components/business/charts'
-import { formatSegmentValue } from '../../../components/business/charts/format-value'
+import { formatCurrency, formatSegmentValue } from '../../../components/business/charts/format-value'
 
 export default function AnalyticsPage() {
   const t = useT()
@@ -58,8 +58,8 @@ export default function AnalyticsPage() {
     <div>
       <PageHead title={a.title} desc={a.desc} />
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={a.roiColumns[1]} value={totalRev.toFixed(2)} />
-        <StatCard label={a.roiColumns[2]} value={totalInv.toFixed(2)} />
+        <StatCard label={a.roiColumns[1]} value={formatCurrency(totalRev)} />
+        <StatCard label={a.roiColumns[2]} value={formatCurrency(totalInv)} />
         <StatCard label={a.roiColumns[3]} value={`${compositeRoi.toFixed(2)}%`} />
         <StatCard label={a.overviewMaint} value={maints.length} />
       </section>

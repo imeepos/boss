@@ -13,6 +13,7 @@ import { pageSlice, type ReportPayload, type ReportRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
 import { CardShell, StatCard, LineTrend, StackedBars } from '../../../components/business/charts'
+import { formatCurrency } from '../../../components/business/charts/format-value'
 import { buildTrendSeries, type TrendSnap } from './trend'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
@@ -136,7 +137,7 @@ export default function ReportPage() {
           <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{r.compareTitle}</h3>
           <span className="text-[12px] text-[var(--shell-group-title)]">{r.compareDesc}</span>
         </div>
-        <StackedBars groups={groups} legends={r.compareLegend} />
+        <StackedBars groups={groups} legends={r.compareLegend} formatValue={formatCurrency} />
       </CardShell>
 
       <CardShell className="mb-4">
