@@ -289,3 +289,9 @@
 - 哪个坑浪费最多时间:authorized_keys 选项语法——`permitremoteopen` 根本不是 authorized_keys 选项(client/Match 专用),正确的是 `permitlisten`,但该 Ubuntu sshd 8.9 对 permitlisten 报 "bad key options";最终退到 `restrict,port-forwarding`。期间 sed 占位词 TUNNELTEST 又被 sshd 当未知选项,连带排查。
 - skill 有没有提前警告我:没有,references 里完全没 138/公网隧道知识;ssh config 里其实已有 public-box 线索(`~/.ssh/config` grep 138 一发命中),但没有"先查 ssh config 再问用户"的经验条目。
 - 重来一次:排查 authorized_keys 拒绝直接 `sudo /usr/sbin/sshd -d -p <ufw放行的临时端口>` 抓 "bad key options" 一行定位,不盲猜选项名;选项从最小集(restrict,port-forwarding)起步再加严。
+
+## 2026-08-22 入驻申请分步表单 + 消息中心通知
+
+- 哪个坑浪费最多时间:CDP 冒烟三次误判"步骤跳转失败"——两次是我自造的信用码不足 18 位、一次漏填第2步必填联系人,校验全部在正确拦截;另发现 cdp-capture 每次运行全新 profile,localStorage 跨运行不共享。
+- skill 有没有提前警告我:React 原生 setter 填表(坑 79)有预警,直接复用一次通过;profile 不共享无记录。
+- 重来一次:冒烟数据先按校验规则自检(长度/格式逐项数一遍);需要 localStorage 状态的断言全部放同一次调用的多 --eval 里完成。

@@ -223,3 +223,5 @@
 - 当内网服务(102:xxxx)要经公网 138(43.240.223.138, ssh ops@22, ufw 只放行表内端口)暴露时,修复是 102 上 systemd 常驻 `ssh -N -R 127.0.0.1:15180:127.0.0.1:5180 ops@43.240.223.138`(服务名 boss-5180-tunnel) + 138 nginx sites-enabled/boss-5180 listen 5180→15180(带 websocket 头) + `ufw allow 5180/tcp`;GatewayPorts=no 恰好把远端绑死 loopback,由 nginx 出公网。skill 没提前警告我。
 - 当 sshd 拒绝带选项的 authorized_keys 行时,修复是 `sudo sshd -d -p 2223` 起 debug 实例 + ufw 临时放行该端口,日志 "bad key options" 一行即定位;注意 sed 的占位前缀会被 sshd 当选项解析。skill 没提前警告我。
 - 当连不上"记忆中的"公网端口时,先看 `sudo ufw status`:138 只放行 22/3773/8787/4873/43770/80/8888/8899/8080/8090-8092/8788/8789/5173/3478/49160-49360,其余 TCP 全 DROP,症状=ping 通但端口超时。skill 没提前警告我。
+- 当 cdp-capture.mjs 跨多次运行共享 localStorage 状态(语言/主题)时,修复是不行——每次运行全新 profile,setItem 后另一次运行读到 null;必须在同一次调用的多个 --eval 里 set→location.reload()→轮询断言。skill 没提前警告我。
+- 当冒烟脚本点"下一步"没跳步时,先核对测试数据本身是否满足校验(如信用码必须整 18 位),再怀疑页面逻辑——本次连续两次自造数据长度不够,校验其实一直在正确拦截。skill 没提前警告我。
