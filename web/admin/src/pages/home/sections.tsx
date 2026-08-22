@@ -58,6 +58,7 @@ export function TopNav({
             onChange={(v) => setLocale(v)}
             ariaLabel="language"
             triggerStyle={{ height: 32 }}
+            onDark
           />
           <button
             type="button"

@@ -21,9 +21,11 @@ interface DropdownProps {
   /** 远程检索模式:关闭本地过滤,关键字经 onKeywordChange 上抛由调用方请求服务端。 */
   remote?: boolean
   onKeywordChange?: (keyword: string) => void
+  /** 深色表面上使用(顶栏/页脚等常青藏青底):透明触发器 + 深色浮层,不随亮主题翻白。 */
+  onDark?: boolean
 }
 
-export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder, remote, onKeywordChange }: DropdownProps) {
+export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder, remote, onKeywordChange, onDark }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
@@ -44,7 +46,11 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
     <div className="relative inline-flex" ref={rootRef} style={triggerStyle}>
       <button
         type="button"
-        className={'flex h-8 w-full items-center justify-between gap-2 rounded-sm border py-0 pr-1 pl-2.5 text-[13px]' + (disabled ? ' cursor-not-allowed border-[var(--shell-input-border)] bg-[var(--shell-input-disabled-bg)] text-[var(--shell-input-placeholder)]' : ' cursor-pointer border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]')}
+        className={'flex h-8 w-full items-center justify-between gap-2 rounded-sm border py-0 pr-1 pl-2.5 text-[13px]' + (disabled
+          ? ' cursor-not-allowed border-[var(--shell-input-border)] bg-[var(--shell-input-disabled-bg)] text-[var(--shell-input-placeholder)]'
+          : onDark
+            ? ' cursor-pointer border-white/20 bg-white/5 text-white hover:border-white/40 focus-visible:border-white/60'
+            : ' cursor-pointer border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]')}
         onClick={() => { if (!disabled) { setOpen((v) => !v); if (!open) setKeyword('') } }}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -61,7 +67,9 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
       </button>
       {open && (
         <div
-          className="absolute left-0 top-[calc(100%+6px)] z-[1000] max-h-[264px] min-w-full overflow-y-auto rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] p-1 shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+          className={'absolute left-0 top-[calc(100%+6px)] z-[1000] max-h-[264px] min-w-full overflow-y-auto rounded-md border p-1 ' + (onDark
+            ? 'border-white/10 bg-[var(--color-brand-navy-900)] shadow-[0_12px_32px_rgba(0,0,0,0.4)]'
+            : 'border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] shadow-[0_6px_16px_rgba(0,0,0,0.08)]')}
           role="listbox"
           aria-label={ariaLabel}
           onMouseDown={(e) => e.stopPropagation()}
@@ -83,7 +91,9 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
               type="button"
               role="option"
               aria-selected={o.value === value}
-              className={'flex w-full cursor-pointer items-center justify-between gap-4 rounded-sm border-none bg-none px-2.5 py-1.5 text-left text-[13px] whitespace-nowrap text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]' + (o.value === value ? ' font-semibold text-[var(--shell-fab-bg)]' : '')}
+              className={'flex w-full cursor-pointer items-center justify-between gap-4 rounded-sm border-none bg-none px-2.5 py-1.5 text-left text-[13px] whitespace-nowrap ' + (onDark
+                ? 'text-white hover:bg-white/10' + (o.value === value ? ' font-semibold text-[var(--color-brand-gold-500)]' : '')
+                : 'text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]' + (o.value === value ? ' font-semibold text-[var(--shell-fab-bg)]' : ''))}
               onMouseDown={(e) => {
                 e.stopPropagation()
                 e.preventDefault()
