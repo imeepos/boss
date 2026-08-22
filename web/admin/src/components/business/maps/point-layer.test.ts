@@ -28,9 +28,16 @@ describe('point-layer', () => {
     expect(pointRadius(100, 100)).toBeGreaterThan(pointRadius(50, 100))
     expect(pointRadius(100, 100)).toBeLessThanOrEqual(20) // 6 + 14*1 = 20
   })
-  it('pointColor:ONLINE 金色,其它深蓝', () => {
+  it('pointColor:ONLINE 金色,其它深蓝(light)', () => {
     expect(pointColor('ONLINE')).toBe('#C69835')
     expect(pointColor('OFFLINE')).toBe('#1F355F')
     expect(pointColor('UNKNOWN')).toBe('#1F355F')
+  })
+  it('pointColor:dark 主题提亮对比度', () => {
+    expect(pointColor('ONLINE', 'dark')).toBe('#E5C985')
+    expect(pointColor('OFFLINE', 'dark')).toBe('#9CAAC3')
+  })
+  it('pointColor:theme 默认 light', () => {
+    expect(pointColor('ONLINE')).toBe(pointColor('ONLINE', 'light'))
   })
 })
