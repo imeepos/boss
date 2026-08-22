@@ -81,6 +81,15 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("asset: create asset: %w", err)
 	}
+	// tag 双向绑定回填:assets.tag_id 写入时同步 tags.bound_asset_id/status,
+	// 与环节9 扫码核对(VerifyScan 要求 bound_asset_id 非空)口径对齐。
+	if a.TagID > 0 {
+		if _, err := s.db.Exec(ctx,
+			`UPDATE tags SET bound_asset_id = $2, status = 'BOUND'
+			 WHERE id = $1 AND bound_asset_id IS NULL`, a.TagID, id); err != nil {
+			return 0, fmt.Errorf("asset: bind tag: %w", err)
+		}
+	}
 	return id, nil
 }
 
