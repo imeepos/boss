@@ -473,6 +473,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | 金额 | `Amount` | amount | NUMERIC |
 | 方式 | `Method` | method | wechat/alipay/card/cash（见 terms.md 第 4 节） |
 | 状态 | `Status` | status | SUCCESS/FAILED/REFUNDED |
+| 退款原因 | `RefundReason` | refund_reason | 000112 全额退款留痕,未退为空 |
+| 退款时间 | `RefundedAt` | refunded_at | 000112;可空,退款时落 now() |
 
 > 000068 起 payments 同时挂 `bill_id`(可空) 与 `customer_id`：账单缴费走 bill，充值类流水仅挂 customer；
 > 存量行已回填 customer_id（取 bill.customer_id）。

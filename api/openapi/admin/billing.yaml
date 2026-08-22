@@ -32,6 +32,25 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /payments/{id}/refund:
+    post:
+      tags: [Billing]
+      summary: 全额退款(000112;流水 REFUNDED 留痕+账单回 UNPAID;permCode menu:payment)
+      operationId: refundPayment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 流水 id }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, description: 退款原因(留痕) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /arrears:
     get:
       tags: [Billing]

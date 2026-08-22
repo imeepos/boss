@@ -1,6 +1,9 @@
 package billing
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Bill 账单(客户×账期唯一,金额=订单成交价快照)。
 type Bill struct {
@@ -27,6 +30,9 @@ type Payment struct {
 	Method     string  `json:"method"`   // wechat/alipay/card/cash
 	Status     string  `json:"status"`   // SUCCESS/FAILED/REFUNDED
 	CouponID   string  `json:"couponId"` // 可选:缴费抵扣券,核销与落账同事务
+	// 退款留痕(000112):全额退款后 reason/时间落流水;未退为空/nil。
+	RefundReason string     `json:"refundReason"`
+	RefundedAt   *time.Time `json:"refundedAt,omitempty"`
 }
 
 // PaymentReceipt 落账回执(含券抵扣明细)。
@@ -50,6 +56,9 @@ type BillingService interface {
 	// RecordPaymentWithCoupon 带券缴费:CouponID 非空时同事务核销(promotion 注入),
 	// payments.amount 记实收,抵扣额见回执 DeductedCents。
 	RecordPaymentWithCoupon(ctx context.Context, p Payment) (PaymentReceipt, error)
+	// RefundPayment 全额退款(000112):流水置 REFUNDED 留痕,账单无其他在流水时回 UNPAID;
+	// 仅 SUCCESS 可退;发票不自动作废(人工 void/reissue)。
+	RefundPayment(ctx context.Context, paymentID int64, reason string) (*Payment, error)
 	// GenerateBills 出账:为在网客户按账期批量生成账单(金额=产品基础月费成交价快照),幂等。
 	// 返回本次新生成账单数。区域调价覆盖(region_offers)待 lo_account 补齐 region_path 后接入。
 	GenerateBills(ctx context.Context, period string) (int, error)

@@ -39,6 +39,29 @@ func listPayments(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// refundPayment 全额退款(000112):流水 REFUNDED 留痕,账单回 UNPAID 可重收款。
+func refundPayment(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
+		var body struct {
+			Reason string `json:"reason" binding:"required"`
+		}
+		if !httpx.BindBody(c, &body) {
+			return
+		}
+		p, err := a.Billing.RefundPayment(c.Request.Context(), id, body.Reason)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "payment.refund", "payment", p.PayNo, gin.H{"reason": body.Reason})
+		respond(c, apitypes.CodeOK, gin.H{"payment": p})
+	}
+}
+
 // listArrears 欠费清单。
 func listArrears(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
