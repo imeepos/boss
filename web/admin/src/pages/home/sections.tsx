@@ -91,7 +91,7 @@ export function Hero({
           </span>
           <h1 className="mt-5 text-[36px] font-bold leading-[1.2] text-[var(--color-brand-navy-950)] dark:text-[var(--shell-heading)] md:text-[44px]">
             <span className="block">{t.heroTitle}</span>
-            <span className="mt-2 block text-[var(--color-brand-navy-900)] dark:text-[var(--shell-nav-active)]">{t.heroLine2}</span>
+            <span className="mt-2 block bg-gradient-to-r from-[var(--color-brand-gold-500)] to-[var(--color-brand-gold-600)] bg-clip-text text-transparent">{t.heroLine2}</span>
           </h1>
           <p className="mt-5 max-w-md text-sm leading-6 text-[var(--home-hero-subtitle)]">{t.heroSubtitle}</p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -107,33 +107,42 @@ export function Hero({
   )
 }
 
-export function Stats({ stats }: { stats: Array<{ value: string; label: string }> }) {
+/** 关于区块:公司简介(左) + 关键数据(右),MiniMax 官网式"简介+统计"合并布局。 */
+export function About({
+  title, desc, stats,
+}: {
+  title: string
+  desc: string
+  stats: Array<{ value: string; label: string }>
+}) {
   return (
     <section className="relative overflow-hidden border-y border-white/5 bg-[var(--color-brand-navy-950)]">
       <div className="pointer-events-none absolute left-1/2 top-0 h-40 w-[36rem] -translate-x-1/2 rounded-full bg-[var(--home-stats-glow)] blur-3xl" />
-      <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-3">
-        {stats.map((s, i) => (
-          <div
-            key={s.label}
-            className={'flex items-center justify-center sm:justify-start' + (i > 0 ? ' sm:border-l sm:border-white/10 sm:pl-10' : '')}
-          >
-            <div className="text-center sm:text-left">
-              <div className={STAT_VALUE}>{s.value}</div>
-              <div className={STAT_LABEL}>{s.label}</div>
+      <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-[1.3fr_1fr] lg:items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-white">{title}</h2>
+          <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--shell-nav-text)]">{desc}</p>
+        </div>
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 lg:grid-cols-1 lg:gap-6">
+          {stats.map((s) => (
+            <div key={s.label} className="flex items-baseline gap-3 lg:flex-none">
+              <span className={STAT_VALUE}>{s.value}</span>
+              <span className={STAT_LABEL + ' mt-0'}>{s.label}</span>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   )
 }
 
 export function Features({
-  features, title, subtitle,
+  features, title, subtitle, viewDetail,
 }: {
-  features: Array<{ icon: string; title: string; desc: string }>
+  features: Array<{ icon: string; title: string; tag: string; desc: string }>
   title: string
   subtitle: string
+  viewDetail: string
 }) {
   return (
     <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20">
@@ -148,9 +157,15 @@ export function Features({
               </span>
               <div className="min-w-0 flex-1">
                 <h3 className={CARD_TITLE}>{f.title}</h3>
+                <span className="mt-1.5 inline-block rounded bg-[var(--home-icon-bg)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--home-icon-fg)]">
+                  {f.tag}
+                </span>
                 <p className={CARD_DESC}>{f.desc}</p>
               </div>
             </div>
+            <a href="#contact" className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-brand-gold-600)] hover:underline dark:text-[var(--color-brand-gold-500)]">
+              {viewDetail}
+            </a>
           </div>
         ))}
       </div>

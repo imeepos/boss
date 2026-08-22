@@ -112,7 +112,9 @@ export interface Translations {
       stats: Array<{ value: string; label: string }>
       featuresTitle: string
       featuresSubtitle: string
-      features: Array<{ icon: string; title: string; desc: string }>
+      features: Array<{ icon: string; title: string; tag: string; desc: string }>
+      aboutTitle: string
+      aboutDesc: string
       casesTitle: string
       casesSubtitle: string
       cases: Array<{ icon: string; title: string; desc: string; metric: string }>

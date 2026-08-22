@@ -7,7 +7,7 @@ import { useT, useLang } from '../../i18n'
 import { useTheme } from '../../theme/context'
 import { getAuthToken } from '../../api/client'
 import {
-  TopNav, Hero, Stats, Features, Cases, CtaBanner,
+  TopNav, Hero, About, Features, Cases, CtaBanner,
 } from './sections'
 import { Footer } from './Footer'
 import './home.css'
@@ -57,8 +57,8 @@ export default function HomePage() {
         heroBadge: h.heroBadge, heroTitle: h.heroTitle, heroLine2: h.heroLine2,
         heroSubtitle: h.heroSubtitle, bookDemo: h.bookDemo, learnMore: h.learnMore,
       }} />
-      <Stats stats={h.stats} />
-      <Features features={h.features} title={h.featuresTitle} subtitle={h.featuresSubtitle} />
+      <About title={h.aboutTitle} desc={h.aboutDesc} stats={h.stats} />
+      <Features features={h.features} title={h.featuresTitle} subtitle={h.featuresSubtitle} viewDetail={h.viewDetail} />
       <Cases cases={h.cases} title={h.casesTitle} subtitle={h.casesSubtitle} viewDetail={h.viewDetail} />
       <CtaBanner title={h.ctaBannerTitle} subtitle={h.ctaBannerSubtitle} buttonLabel={h.bookExclusive} onClick={goCta} />
       <Footer
