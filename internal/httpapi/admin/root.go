@@ -24,6 +24,8 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 func registerAdminAuthRoot(r *gin.Engine, a *app.Application, mgr *auth.Manager) *gin.RouterGroup {
 	api := r.Group("/api/admin/v1")
 	api.POST("/auth/login", adminLoginHandler(a, mgr))
+	// 入驻申请公开提交(招商引资,免登录;admin 封闭账号模型的唯一自助入口)。
+	registerPartnerPublicRoutes(api, a)
 	authed := api.Group("")
 	authed.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudAdmin))
 	return authed
@@ -64,6 +66,7 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerTaxRoutes(authed, a)
 	registerCustomerRoutes(authed, a)
 	registerCustomerOnboardingRoutes(authed, a)
+	registerPartnerRoutes(authed, a)
 	registerResourceRoutes(authed, a)
 	registerScanRoutes(authed, a)
 	registerAssetRoutes(authed, a)

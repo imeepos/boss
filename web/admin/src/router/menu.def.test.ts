@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { MENU_GROUPS, PAGE_BY_KEY } from './menu.def'
 import { visibleGroupIds, visiblePages } from './role-menu'
 
-// 契约:docs/admin/menu.js 13 组结构照抄;分组 id/页面 key 唯一;sysadmin 全可见。
+// 契约:docs/admin/menu.js 13 组结构照抄 + partner 企业工作台组(000098 入驻域,仅 partner_* 角色);
+// 分组 id/页面 key 唯一;sysadmin 可见全部平台组(不含 partner)。
 describe('menu.def', () => {
-  it('13 个分组(与原型 menu.js 一致)', () => {
-    expect(MENU_GROUPS).toHaveLength(13)
+  it('14 个分组(原型 13 组 + partner 企业工作台)', () => {
+    expect(MENU_GROUPS).toHaveLength(14)
     expect(MENU_GROUPS.map((g) => g.id)).toEqual([
       'overview', 'base', 'org', 'bss', 'billing', 'ams', 'oss',
-      'boss', 'quad', 'provision', 'alarm', 'aaa', 'intel',
+      'boss', 'quad', 'provision', 'alarm', 'aaa', 'partner', 'intel',
     ])
   })
 
@@ -28,11 +29,18 @@ describe('menu.def', () => {
 })
 
 describe('role-menu 可见性', () => {
-  it('sysadmin 可见全部 13 组', () => {
+  it('sysadmin 可见 13 个平台组(不含 partner 企业工作台)', () => {
     expect(visibleGroupIds('sysadmin')).toHaveLength(13)
+    expect(visibleGroupIds('sysadmin')).not.toContain('partner')
   })
 
-  it('每个 RoleCode 至少可见 overview(工作台兜底)', () => {
+  it('partner 角色可见企业工作台(partner_admin 不含平台组)', () => {
+    expect(visibleGroupIds('partner_admin')).toEqual(['partner'])
+    expect(visibleGroupIds('partner_staff')).toContain('partner')
+    expect(visibleGroupIds('partner_staff')).toContain('overview')
+  })
+
+  it('每个平台 RoleCode 至少可见 overview(工作台兜底)', () => {
     for (const role of ['asset_admin', 'resource_admin', 'ops', 'analyst', 'sysadmin'] as const) {
       expect(visibleGroupIds(role)).toContain('overview')
     }

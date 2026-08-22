@@ -41,7 +41,7 @@
 | 经营分析 BI | BI | AG-12 | `analytics`(+`report`) | 阶段9 | intel | analytics/report |
 | 客服工单 | CS | AG-07 | 待建 | — | boss(报障) | complaint |
 | 应收信用 | AR | AG-09 | 待建 | — | billing(欠费) | arrears |
-| 渠道经销商 | CH | AG-10 | 待建 | — | 待建 | 待建 |
+| 渠道经销商 | CH | AG-10 | `partner`(入驻先行) | 阶段1(000098) | org(审核页 partner)+企业工作台 | partner 入驻申请审核/我的企业/员工管理/企业订单 |
 | 批发结算 | WHO | AG-13 | 待建 | — | 待建 | 待建 |
 | 品牌区域 | BRAND | AG-14 | `user`(Region) | 阶段1 | org | region/company |
 | 营收保障 RA | RA | AG-15 | 待建 | — | 待建 | 待建 |

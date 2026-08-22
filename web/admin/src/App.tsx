@@ -70,9 +70,14 @@ const GisPage = lazy(() => import('./pages/intel/gis'))
 const AnalyticsPage = lazy(() => import('./pages/intel/analytics'))
 const ReportPage = lazy(() => import('./pages/intel/report'))
 const ProfilePage = lazy(() => import('./pages/profile'))
+const PartnerApplyPage = lazy(() => import('./pages/partner/apply'))
 const ForbiddenPage = lazy(() => import('./pages/error').then((m) => ({ default: m.ForbiddenPage })))
 const NotFoundPage = lazy(() => import('./pages/error').then((m) => ({ default: m.NotFoundPage })))
 const PlaceholderPage = lazy(() => import('./pages/placeholder').then((m) => ({ default: m.PlaceholderPage })))
+const PartnerReviewPage = lazy(() => import('./pages/org/partner'))
+const PartnerHomePage = lazy(() => import('./pages/partner/home'))
+const PartnerStaffPage = lazy(() => import('./pages/partner/staff'))
+const PartnerOrdersPage = lazy(() => import('./pages/partner/orders'))
 import { MENU_GROUPS } from './router/menu.def'
 import { canAccess } from './router/role-menu'
 import { useT } from './i18n'
@@ -84,7 +89,11 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   const t = useT()
   const profile = useProfile()
   const label = t.menu.items[pageKey] ?? pageKey
-  if (!canAccess(profile.roleCode, pageKey)) return <ForbiddenPage />
+  if (!canAccess(profile.roleCode, pageKey)) {
+    // 入驻企业角色误落平台页(如登录后默认 /dashboard):送回企业工作台首页。
+    if (profile.roleCode.startsWith('partner_')) return <Navigate to="/partner/home" replace />
+    return <ForbiddenPage />
+  }
   if (pageKey === 'dashboard') return <DashboardPage profile={profile} />
   if (pageKey === 'account') return <AccountListPage />
   if (pageKey === 'address') return <AddressPage />
@@ -106,6 +115,10 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'menuperm') return <MenuPermPage />
   if (pageKey === 'datascope') return <DataScopePage />
   if (pageKey === 'apikey') return <ApiKeyPage />
+  if (pageKey === 'partner') return <PartnerReviewPage />
+  if (pageKey === 'partner-home') return <PartnerHomePage />
+  if (pageKey === 'partner-staff') return <PartnerStaffPage />
+  if (pageKey === 'partner-orders') return <PartnerOrdersPage />
   if (pageKey === 'message') return <MessageCenterPage />
   if (pageKey === 'customer') return <CustomerPage />
   if (pageKey === 'product') return <ProductPage />
@@ -171,6 +184,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/partner/apply" element={<PartnerApplyPage />} />
         <Route path="/home" element={<HomePage />} />
         {/* 根路径分流(公开):未登录看官网首页,已登录进工作台;守卫区改无路径布局路由。 */}
         <Route path="/" element={<RootRedirect />} />

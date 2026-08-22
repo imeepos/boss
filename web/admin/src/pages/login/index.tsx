@@ -69,7 +69,10 @@ export default function LoginPage() {
             ariaLabel={t.auth.login.serverNone}
             triggerStyle={{ width: 274 }}
           />
-          <a onClick={() => setManageOpen(true)} style={addLinkStyle}>{t.auth.login.serverManage}</a>
+          <span style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <a onClick={() => setManageOpen(true)} style={addLinkStyle}>{t.auth.login.serverManage}</a>
+            <a onClick={() => nav('/partner/apply')} style={addLinkStyle}>{t.auth.login.partnerApply}</a>
+          </span>
           <input
             placeholder={t.auth.login.usernamePlaceholder}
             value={username}

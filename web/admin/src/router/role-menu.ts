@@ -5,12 +5,17 @@ import { MENU_GROUPS, PAGE_BY_KEY, type MenuItem } from './menu.def'
 /** 后台 accounts 专用角色；customer/workers 属于其他端，不进入管理后台。 */
 export type RoleCode =
   | 'asset_admin' | 'resource_admin' | 'ops' | 'analyst' | 'sysadmin'
+  | 'partner_admin' | 'partner_staff'
 
 const OVERVIEW = 'overview'
+// 入驻企业专属组:仅 partner_* 角色可见;sysadmin 是平台方账号无 legal_entity 归属,不进企业工作台。
+const PARTNER_GROUPS = ['partner']
 
 /** 各角色可见分组(sysadmin 全量)。 */
 export const ROLE_GROUPS: Record<RoleCode, string[]> = {
-  sysadmin: MENU_GROUPS.map((g) => g.id),
+  sysadmin: MENU_GROUPS.map((g) => g.id).filter((id) => !PARTNER_GROUPS.includes(id)),
+  partner_admin: [...PARTNER_GROUPS],
+  partner_staff: [OVERVIEW, ...PARTNER_GROUPS],
   ops: [OVERVIEW, 'bss', 'billing', 'boss', 'quad', 'alarm', 'aaa', 'intel', 'provision'],
   asset_admin: [OVERVIEW, 'ams'],
   resource_admin: [OVERVIEW, 'oss', 'provision', 'alarm'],

@@ -26,6 +26,7 @@ export interface Translations {
       emptyFields: string
       fail: string
       serverManage: string
+      partnerApply: string
       serverNone: string
       serverRequired: string
     }
@@ -1704,6 +1705,36 @@ export interface Translations {
       myData: { title: string; desc: string; orders: string; ordersDesc: string; bills: string; billsDesc: string; service: string; serviceDesc: string; messages: string; messagesDesc: string; audit: string; auditDesc: string; permissions: string; permissionsDesc: string }
       permissions: { title: string; desc: string; role: string; company: string; scope: string }
       audit: { title: string; desc: string; empty: string; emptyDesc: string; loadFail: string }
+    }
+    partnerApply: {
+      title: string; subtitle: string; companyName: string; creditCode: string; contactName: string
+      contactPhone: string; email: string; businessDesc: string; businessDescPlaceholder: string
+      submit: string; submitting: string; success: string; receiptNo: string; successDesc: string
+      backLogin: string; fail: string
+    }
+    partnerReview: {
+      title: string; desc: string; tabAll: string; statusPending: string; statusApproved: string
+      statusRejected: string; colCompany: string; colCreditCode: string; colContact: string
+      colStatus: string; colSubmitted: string; colOp: string; email: string; businessDesc: string
+      rejectReason: string; rejectReasonPlaceholder: string; approve: string; reject: string
+      confirmReject: string; cancel: string; approveResultTitle: string; approveResultUser: string
+      approveResultPwd: string; pwdTip: string; close: string; empty: string; loadFail: string
+      refresh: string
+    }
+    partnerHome: {
+      title: string; desc: string; companyName: string; creditCode: string; contact: string
+      email: string; appliedAt: string; approvedAt: string; loadFail: string
+    }
+    partnerStaff: {
+      title: string; desc: string; colUsername: string; colRealName: string; colPhone: string
+      colRole: string; colStatus: string; colCreatedAt: string; colOp: string; add: string
+      password: string; create: string; cancel: string; roleAdmin: string; roleStaff: string
+      enabled: string; disabled: string; enable: string; disable: string; empty: string; loadFail: string
+    }
+    partnerOrders: {
+      title: string; desc: string; colOrderNo: string; colCustomer: string; colStage: string
+      colStatus: string; colCreatedAt: string; stageUnit: string; empty: string; loadFail: string
+      refresh: string
     }
     error: {
       forbidden: string
