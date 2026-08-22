@@ -353,3 +353,8 @@
 - 哪个坑浪费最多时间: push origin 报 128(远端实际叫 gitea)+ mapfile 在 macOS bash 3.2 不存在致脚本首跑失败,各废一轮。
 - skill 有没有提前警告: 否,两条都已补进 lessons。
 - 重来一次会怎么做: 写脚本前先确认目标 shell 版本(默认按 bash 3.2 兼容写);收尾 push 前先 git remote -v。
+
+## 2026-08-22 工作台多语言/多主题检查
+- 最费时:本地 stub 代理验证空态分支,首轮 CORS 预检(OPTIONS)没处理,数据全没加载,断言全空排查一轮。
+- skill 预警有效:图像工具返回元数据不可视(红线#7 同源),立即改走 VERIFY console.log DOM 断言,未浪费时间。
+- 重来一次:写代理 stub 第一行就处理 OPTIONS + 通配 CORS 头。
