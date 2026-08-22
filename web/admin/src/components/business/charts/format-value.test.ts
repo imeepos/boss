@@ -37,6 +37,11 @@ describe('format-value', () => {
     it('元(千分位 + 2 位小数 + ¥)', () => {
       expect(formatCurrency(366.6667)).toBe('¥366.67')
     })
+    it('金额过大时使用万/亿单位', () => {
+      expect(formatCurrency(123456)).toBe('¥12.35万')
+      expect(formatCurrency(123456789)).toBe('¥1.23亿')
+      expect(formatCurrency(-123456789)).toBe('¥-1.23亿')
+    })
   })
 
   describe('formatScore', () => {

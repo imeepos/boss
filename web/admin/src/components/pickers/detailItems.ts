@@ -1,7 +1,7 @@
 // 选择器详情字段映射:纯函数,文案由调用方 i18n 传入,便于单测。
 import type { CustomerItem, UserDetail, WorkerItem } from '../../api/pickers'
 import type { DetailItem } from '../../pages/org/shared'
-import { fmtTime } from '../../lib/format'
+import { fmtFee, fmtTime } from '../../lib/format'
 
 export interface WorkerDetailTexts {
   name: string; staffNo: string; phone: string; group: string
@@ -49,8 +49,8 @@ export function userDetailItems(u: UserDetail, t: UserDetailTexts): DetailItem[]
     { k: t.name, v: u.name },
     { k: t.phone, v: u.phone },
     { k: t.plan, v: u.planName },
-    { k: t.balance, v: String(u.balance) },
-    { k: t.arrears, v: String(u.arrearsAmount) },
+    { k: t.balance, v: fmtFee(u.balance) },
+    { k: t.arrears, v: fmtFee(u.arrearsAmount) },
     { k: t.activeOrders, v: String(u.activeOrders) },
     { k: t.realNameStatus, v: u.realNameStatus },
     { k: t.serviceStatus, v: u.serviceStatus },

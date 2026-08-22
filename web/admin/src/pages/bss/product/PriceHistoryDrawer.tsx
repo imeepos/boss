@@ -4,7 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { useT } from '../../../i18n'
 import type { PriceHistoryRow } from './types'
-import { fmtTime } from '../../../lib/format'
+import { fmtFee, fmtTime } from '../../../lib/format'
 import { EmptyState } from '../../../components/business'
 
 export function PriceHistoryDrawer({
@@ -49,6 +49,3 @@ export function PriceHistoryDrawer({
   )
 }
 
-export function fmtFee(n: number): string {
-  return Number(n).toFixed(2)
-}

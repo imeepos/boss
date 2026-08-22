@@ -25,9 +25,12 @@ export function formatRatio(n: number, decimals = 1): string {
   return `${(n * 100).toFixed(decimals)}%`
 }
 
-/** 元(2 位小数 + 千分位 + 元单位)。 */
+/** 金额使用千分位并在过大时切换为万/亿单位。 */
 export function formatCurrency(n: number): string {
   if (!Number.isFinite(n)) return '¥0'
+  const absolute = Math.abs(n)
+  if (absolute >= 100_000_000) return `¥${(n / 100_000_000).toFixed(2)}亿`
+  if (absolute >= 10_000) return `¥${(n / 10_000).toFixed(2)}万`
   return `¥${formatNumber(n, 2)}`
 }
 
