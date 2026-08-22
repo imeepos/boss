@@ -105,3 +105,72 @@ func TestResourceDetail(t *testing.T) {
 		}
 	})
 }
+
+func TestPoints_LevelDispatch(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("非法层级拒", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		s := NewPGStore(mock)
+		if _, err := s.Points(ctx, 0, 0, ""); !errors.Is(err, errLevelInvalid) {
+			t.Fatalf("err=%v, want errLevelInvalid", err)
+		}
+		if _, err := s.Points(ctx, 9, 0, ""); !errors.Is(err, errLevelInvalid) {
+			t.Fatalf("err=%v, want errLevelInvalid", err)
+		}
+	})
+
+	t.Run("bbox 解析错", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		s := NewPGStore(mock)
+		if _, err := s.Points(ctx, 1, 0, "121,31,abc"); err == nil {
+			t.Fatal("want bbox parse error")
+		}
+	})
+
+	t.Run("地址层级返回 geom 经纬度", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`FROM addresses a`).
+			WithArgs(int16(1), int64(0)).
+			WillReturnRows(mock.NewRows([]string{"id", "name", "lng", "lat", "status", "cnt", "parent_id"}).
+				AddRow(int64(1), "市", 121.5, 31.2, "AREA", int64(3), int64(0)))
+		s := NewPGStore(mock)
+		pts, err := s.Points(ctx, 1, 0, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(pts) != 1 || pts[0].Lng != 121.5 || pts[0].Level != 1 || pts[0].Count != 3 {
+			t.Fatalf("pts=%+v", pts)
+		}
+	})
+
+	t.Run("层 6 OLT 借父地址", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`FROM resources r`).
+			WithArgs(int64(5)).
+			WillReturnRows(mock.NewRows([]string{"id", "name", "lng", "lat", "status", "cnt", "parent_id"}).
+				AddRow(int64(10), "OLT-01", 121.4, 31.1, "ONLINE", int64(2), int64(5)))
+		s := NewPGStore(mock)
+		pts, _ := s.Points(ctx, 6, 5, "")
+		if len(pts) != 1 || pts[0].Level != 6 || pts[0].Status != "ONLINE" {
+			t.Fatalf("pts=%+v", pts)
+		}
+	})
+
+	t.Run("bbox 带 4 个 float 参数", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		// level=1, parentID=0, bbox 4 个 float = 共 6 个参数。
+		mock.ExpectQuery(`FROM addresses a`).
+			WithArgs(int16(1), int64(0), 121.0, 31.0, 122.0, 32.0).
+			WillReturnRows(mock.NewRows([]string{"id", "name", "lng", "lat", "status", "cnt", "parent_id"}))
+		s := NewPGStore(mock)
+		if _, err := s.Points(ctx, 1, 0, "121,31,122,32"); err != nil {
+			t.Fatal(err)
+		}
+	})
+}

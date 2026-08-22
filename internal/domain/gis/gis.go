@@ -41,4 +41,21 @@ type GISService interface {
 	LevelCounts(ctx context.Context) ([]Node, error)
 	// ResourceDetail 资产实时详情。
 	ResourceDetail(ctx context.Context, resourceID int64) (*ResourceDetail, error)
+	// Points 地图点位:按 level+bbox+parentID 返回点位(GeoJSON FeatureCollection 由 handler 包装)。
+	// level 1~5 走 addresses.geom;level 6 OLT 借父地址 geom;level 7~8 SPLITTER/ports join odn_* 取 lat/lng。
+	// bbox="minLng,minLat,maxLng,maxLat"(WGS84),空串=不限。
+	Points(ctx context.Context, level int16, parentID int64, bbox string) ([]Point, error)
+}
+
+// Point 地图点位(对应 GeoJSON Feature 的 properties + geometry.coordinates 抽平)。
+// Lng/Lat WGS84 经纬度;Count=下一级直属数量(叶级=0);Status=资源当前状态(地址层级固定 "AREA")。
+type Point struct {
+	ID       int64   `json:"id"`
+	Level    int16   `json:"level"`
+	Name     string  `json:"name"`
+	Lng      float64 `json:"lng"`
+	Lat      float64 `json:"lat"`
+	Status   string  `json:"status"`
+	Count    int64   `json:"count"`
+	ParentID int64   `json:"parentId"`
 }

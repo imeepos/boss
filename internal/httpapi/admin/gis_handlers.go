@@ -59,3 +59,22 @@ func gisResourceDetail(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, d)
 	}
 }
+
+// gisPoints GET /gis/points?level&parentId&bbox:地图点位(Point 列表)。
+// 前端收到 items 后自行拼 GeoJSON FeatureCollection(type/features);后端不耦合 GeoJSON 字段。
+// bbox 格式:"minLng,minLat,maxLng,maxLat"(WGS84);空=不限。
+func gisPoints(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		level, err := strconv.Atoi(c.Query("level"))
+		if err != nil || level < 1 || level > 8 {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		pts, err := a.Gis.Points(c.Request.Context(), int16(level), queryInt64(c, "parentId"), c.Query("bbox"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": pts})
+	}
+}
