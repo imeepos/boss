@@ -233,6 +233,8 @@ const msMY: Translations = {
       distTitle: 'Agihan Status Pesanan',
       todoTitle: 'Tugasan',
       trendTitle: 'Trend Pesanan 7 Hari',
+      trendUnit: '',
+      trendTooltip: 'Pesanan',
       colStatus: 'Status',
       colCount: 'Bilangan',
       colPercent: 'Peratus',

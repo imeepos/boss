@@ -233,6 +233,8 @@ const enUS: Translations = {
       distTitle: 'Order Status Distribution',
       todoTitle: 'Todos',
       trendTitle: 'Orders in Last 7 Days',
+      trendUnit: '',
+      trendTooltip: 'Orders',
       colStatus: 'Status',
       colCount: 'Count',
       colPercent: 'Share',

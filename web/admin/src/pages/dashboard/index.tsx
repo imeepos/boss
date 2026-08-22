@@ -6,7 +6,7 @@ import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
 import { PageHead } from '../../components/business/page-head'
-import { CardShell, StatCard, VerticalBars, type Trend } from '../../components/business/charts'
+import { CardShell, OrderTrend, StatCard, type Trend } from '../../components/business/charts'
 import { Button } from '../../components/ui/button'
 import { StatusTag } from '../../components/StatusTag'
 import { fmtTime } from '../../lib/format'
@@ -161,7 +161,13 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
           </section>
 
           <CardShell title={d.trendTitle}>
-            <VerticalBars labels={trendLabels} values={trendValues} />
+            <OrderTrend
+              labels={trendLabels}
+              values={trendValues}
+              valueUnit={d.trendUnit}
+              tooltipLabel={d.trendTooltip}
+              emptyText={d.empty}
+            />
           </CardShell>
         </>
       ) : null}

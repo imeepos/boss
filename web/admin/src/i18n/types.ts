@@ -137,6 +137,8 @@ export interface Translations {
       distTitle: string
       todoTitle: string
       trendTitle: string
+      trendUnit: string
+      trendTooltip: string
       colStatus: string
       colCount: string
       colPercent: string

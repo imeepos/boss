@@ -19,6 +19,8 @@ vi.mock('../../i18n', () => ({
         welcome: '欢迎,{name}({role})。',
         loadFail: '加载失败',
         empty: '暂无数据',
+        trendUnit: '单',
+        trendTooltip: '订单数',
       },
       audit: {
         refresh: '刷新',

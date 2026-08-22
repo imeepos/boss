@@ -233,6 +233,8 @@ const zhCN: Translations = {
       distTitle: '订单状态分布',
       todoTitle: '待办事项',
       trendTitle: '近7日订单趋势',
+      trendUnit: '单',
+      trendTooltip: '订单数',
       colStatus: '状态',
       colCount: '数量',
       colPercent: '占比',
