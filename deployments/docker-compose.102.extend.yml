@@ -49,6 +49,7 @@ services:
     ports: ["19090:9090"]
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/slo-rules.yml:/etc/prometheus/slo-rules.yml:ro
       - prom_data:/prometheus
     networks: [boss]
 

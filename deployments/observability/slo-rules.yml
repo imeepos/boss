@@ -1,0 +1,29 @@
+# SLO 告警规则(docs/ops/slo.md S1/S2 + 存活)。
+# 预算耗尽降速/冻结的处置见 slo.md §4;阈值与 SLO 定义保持同步。
+groups:
+  - name: boss-slo
+    rules:
+      - alert: BossServerDown
+        expr: up{job="boss-server"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "boss-server /metrics 抓取失败(存活/SLO 数据中断)"
+
+      - alert: BossApiAvailabilityBudget
+        expr: |
+          sum(rate(boss_http_requests_total{code=~"5.."}[5m]))
+          / sum(rate(boss_http_requests_total[5m])) > 0.01
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "S1 可用性跌破 99%(5m 窗口 5xx>1%),触发发布列车回滚评估"
+
+      - alert: BossApiLatencyBudget
+        expr: |
+          sum(rate(boss_http_request_duration_seconds_bucket{le="0.5"}[10m]))
+          / sum(rate(boss_http_request_duration_seconds_bucket{le="+Inf"}[10m])) < 0.99
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "S2 读时延达标率跌破 99%(10m 窗口 P95 口径)"

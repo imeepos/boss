@@ -7,17 +7,20 @@ alerting:
     - static_configs:
         - targets: ["alertmanager:9093"]
 
-rule_files: []
+rule_files:
+  - /etc/prometheus/slo-rules.yml
 
 scrape_configs:
   - job_name: prometheus
     static_configs:
       - targets: ["localhost:9090"]
 
-  # 业务单体 /metrics(阶段1-6 落地后接入)
+  # 业务单体 /metrics。
+  # 注意:boss-server 与监控栈分属不同 compose 网络,容器名互不解析;
+  # 用宿主机地址经端口映射抓取(102 上 boss-server 映射 28080)。
   - job_name: boss-server
     static_configs:
-      - targets: ["boss-server:8080"]
+      - targets: ["192.168.0.102:28080"]
 
   # OLT 指标时序库
   - job_name: victoriametrics

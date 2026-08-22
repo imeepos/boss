@@ -10,6 +10,7 @@
   - `boss_http_request_duration_seconds{method,path}` — 时延直方图（bucket 5ms…2.5s）
 - `/healthz` 存活探针。
 - 102 环境实测：两个端点均 200 可采（2026-08 验证）。
+- 2026-08-26 修复:Prometheus 与 boss-server 跨 compose 网络互不解析,抓取目标改为宿主机 `192.168.0.102:28080`,实测 up=1、流量入库、SLO 告警规则生效(BossServerDown/S1/S2)。
 
 ## 2. SLI 与 SLO 总表
 
@@ -50,4 +51,5 @@ sum(rate(boss_http_requests_total{path=~".*/auth/login",code="200"}[30d]))
 - [x] S5 消息延迟 DB 聚合脚本（`scripts/ops/slo-collect.sh`，含 S4/S5/S7，基线见 `slo-baseline-102.md`）
 - [ ] S6 话单对账结果定时落表，可查询历史完整率
 - [x] S7 报表产出时间采集（并入 `slo-collect.sh`：窗口结束 8h 内为按时）
-- [ ] Prometheus 抓取配置（deployments 下）与看板 JSON
+- [x] Prometheus 抓取配置（102 已修复跨网络抓取并验证 up=1,见 prometheus.yml 注释）+ SLO 告警规则 slo-rules.yml
+- [ ] Grafana 看板 JSON（导入即用,S1-S3 曲线）
