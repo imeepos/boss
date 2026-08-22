@@ -1249,6 +1249,12 @@ const msMY: Translations = {
       rangeText: '{from}-{to} daripada {count}',
       jumpText: 'Lompat ke',
       pageUnit: 'halaman',
+      // Gambaran keseluruhan (commit 6)
+      overviewIndicator: 'Campuran Penunjuk',
+      overviewRoi: 'Ranking ROI Wilayah',
+      overviewHeat: 'Taburan Penggunaan',
+      overviewMaint: 'Barisan Penyelenggaraan',
+      roiFmt: '{value}%',
     },
     reportPage: {
       title: 'Pusat Laporan',

@@ -1249,6 +1249,12 @@ const enUS: Translations = {
       rangeText: '{from}-{to} of {count}',
       jumpText: 'Jump to',
       pageUnit: 'page',
+      // Overview (commit 6)
+      overviewIndicator: 'Indicator Mix',
+      overviewRoi: 'Region ROI Ranking',
+      overviewHeat: 'Utilization Distribution',
+      overviewMaint: 'Maintenance Queue',
+      roiFmt: '{value}%',
     },
     reportPage: {
       title: 'Report Center',

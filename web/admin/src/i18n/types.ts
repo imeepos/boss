@@ -1199,6 +1199,12 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      // 概览(commit 6)
+      overviewIndicator: string
+      overviewRoi: string
+      overviewHeat: string
+      overviewMaint: string
+      roiFmt: string
     }
     reportPage: {
       title: string

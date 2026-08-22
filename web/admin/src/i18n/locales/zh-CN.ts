@@ -1249,6 +1249,12 @@ const zhCN: Translations = {
       rangeText: '第 {from}-{to} 条,共 {count} 条',
       jumpText: '跳至',
       pageUnit: '页',
+      // 概览(commit 6)
+      overviewIndicator: '指标构成',
+      overviewRoi: '区域 ROI 排名',
+      overviewHeat: '利用率分布',
+      overviewMaint: '待维护设备',
+      roiFmt: '{value}%',
     },
     reportPage: {
       title: '报告中心',

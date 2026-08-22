@@ -1,4 +1,5 @@
-// 经营分析页:契约 GET /analytics/indicators + /analytics/heatmap + /analytics/maintenance(三页签)。
+// 经营分析页:契约 GET /analytics/indicators + /analytics/heatmap + /analytics/maintenance。
+// 顶部概览(4 统计卡 + 3 图:环形/横条/直方);下方三页签表格保留作明细。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -8,6 +9,7 @@ import { Pagination } from '../../../components/Pagination'
 import { pageSlice } from '../types'
 import type { AnalyticsMaintRow, HeatCellRow, IndicatorRow, RegionRoiRow } from '../types'
 import { TableStateRow } from '../../../components/business'
+import { CardShell, Donut, HorizontalBar, StatCard, VerticalBars } from '../../../components/business/charts'
 
 export default function AnalyticsPage() {
   const t = useT()
@@ -49,26 +51,55 @@ export default function AnalyticsPage() {
   const maintSlice = pageSlice(maints, page, pageSize)
   const heatSlice = pageSlice(heat, page, pageSize)
 
+  // 概览计算:三大聚合 + 4 张卡(总收入/总投入/综合 ROI/待维护)
+  const totalRev = roi.reduce((s, r) => s + r.revenue, 0)
+  const totalInv = roi.reduce((s, r) => s + r.investment, 0)
+  const compositeRoi = totalInv > 0 ? (totalRev / totalInv) * 100 : 0
+  const heatTop10 = [...heat].sort((x, y) => y.utilization - x.utilization).slice(0, 10)
+  const heatUtilLabels = heatTop10.map((x) => x.name || `#${x.addressId}`)
+  const heatUtilValues = heatTop10.map((x) => Math.round(x.utilization * 100))
+
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
+      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label={a.roiColumns[1]} value={totalRev.toFixed(2)} />
+        <StatCard label={a.roiColumns[2]} value={totalInv.toFixed(2)} />
+        <StatCard label={a.roiColumns[3]} value={`${compositeRoi.toFixed(2)}%`} />
+        <StatCard label={a.overviewMaint} value={maints.length} />
+      </section>
+      <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <CardShell title={a.overviewIndicator}>
+          <Donut segments={indicators.map((x) => ({ label: x.name || x.key, value: x.value }))} />
+        </CardShell>
+        <CardShell title={a.overviewRoi}>
+          <HorizontalBar
+            items={roi.map((r) => ({ label: r.regionName || `#${r.regionId}`, value: r.roi }))}
+            format={(v) => a.roiFmt.replace('{value}', v.toFixed(2))}
+          />
+        </CardShell>
+        <CardShell title={a.overviewHeat}>
+          <VerticalBars labels={heatUtilLabels} values={heatUtilValues} />
+        </CardShell>
+      </section>
+
+      <CardShell>
+        <div className="mb-3 flex items-center gap-2 border-b border-[var(--shell-side-border)]">
           {(['indicator', 'heatmap', 'maint'] as const).map((key) => (
             <button key={key} onClick={() => { setTab(key); setPage(1) }}
-              style={{
-                padding: '8px 16px', fontSize: 14, cursor: 'pointer', background: 'none', border: 'none',
-                borderBottom: tab === key ? '2px solid #1677ff' : '2px solid transparent',
-                color: tab === key ? '#1677ff' : '#666', fontWeight: tab === key ? 600 : 400,
-              }}>
+              className={'h-8 cursor-pointer border-0 bg-transparent px-4 text-[13px] ' + (
+                tab === key
+                  ? 'border-b-2 border-[var(--color-border-focus)] font-semibold text-[var(--color-border-focus)]'
+                  : 'text-[var(--shell-content-text)] hover:text-[var(--shell-heading)]'
+              )}>
               {key === 'indicator' ? a.tabIndicator : key === 'heatmap' ? a.tabHeatmap : a.tabMaint}
             </button>
           ))}
-          <span className="spacer" />
+          <span className="flex-1" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'indicator' ? (
-          <div className="overflow-x-auto px-4 pb-4">
+        {error ? <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'indicator' ? (
+          <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.indicatorColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
@@ -77,13 +108,13 @@ export default function AnalyticsPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.key}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.name}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.value}</td>
-                    <td style={{ maxWidth: 360 }} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.detail || '—'}</td>
+                    <td className="h-11 px-3 max-w-90 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.detail || '—'}</td>
                   </tr>
                 ))}
                 {!indicators.length && <TableStateRow colSpan={4} loading={busy} text={a.empty} />}
               </tbody>
             </table>
-            <h4 style={{ margin: '16px 0 8px' }}>{a.roiColumns.join(' / ')}</h4>
+            <h4 className="mt-4 mb-2 text-sm font-semibold">{a.roiColumns.join(' / ')}</h4>
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.roiColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
@@ -100,7 +131,7 @@ export default function AnalyticsPage() {
             </table>
           </div>
         ) : tab === 'heatmap' ? (
-          <div className="overflow-x-auto px-4 pb-4">
+          <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.heatColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
@@ -117,7 +148,7 @@ export default function AnalyticsPage() {
             </table>
           </div>
         ) : (
-          <div className="overflow-x-auto px-4 pb-4">
+          <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.maintColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
@@ -137,11 +168,11 @@ export default function AnalyticsPage() {
             </table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={count} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
         </div>
-      </div>
+      </CardShell>
     </div>
   )
 }
