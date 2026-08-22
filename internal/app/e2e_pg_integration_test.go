@@ -601,6 +601,87 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 			t.Fatalf("final stage=%d status=%s err=%v", o.Stage, o.Status, err)
 		}
 	})
+
+	// ISSUE.md 残留索引回归:000056 的 uq_quad_links_customer_active 未随 000088 撤销,
+	// 复购客户第二单扫码置 LINKED 撞 23505;000097 清理后一客户多链路应放行。
+	t.Run("W8c_复购客户二单扫码_一客户多链路", func(t *testing.T) {
+		suffix := orderNo6(time.Now().UnixNano() % 1e12)
+		custID, err := a.Customer.Create(ctx, customer.Customer{
+			Name: "E2E-W8c客户", Phone: fmt.Sprintf("0918%08d", time.Now().UnixNano()%1e8),
+			IdType: "身份证", IdNo: "E2E-W8c-" + suffix,
+			RealNameStatus: "VERIFIED", ServiceStatus: "ACTIVE",
+			AddressID: s.addressID, LegalEntityID: 1, RegionID: s.regionID, RegionName: s.regionName,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := app.NewAutomation(a.Order, nil)
+		runOneOrder := func(seq int) { // 单订单链路:独立地址+端口→段1-8→扫码 LINKED
+			t.Helper()
+			sf := fmt.Sprintf("%sc%d", suffix, seq)
+			var addr int64
+			if err := pool.QueryRow(ctx,
+				`INSERT INTO addresses(path, level, name) VALUES($1, 1, $2) RETURNING id`,
+				"w8c"+sf, "W8c测试市"+sf).Scan(&addr); err != nil {
+				t.Fatal(err)
+			}
+			res, err := a.Resource.CreateResource(ctx, resSeed(addr, sf))
+			if err != nil {
+				t.Fatal(err)
+			}
+			port, err := a.Resource.CreatePort(ctx, portSeed(res, &e2eSeed{
+				addressID: addr, regionID: s.regionID, regionName: s.regionName,
+			}, sf, 1))
+			if err != nil {
+				t.Fatal(err)
+			}
+			o, err := a.Order.Submit(ctx, order.SubmitReq{
+				CustomerID: custID, OfferID: s.offerID, AddressID: addr,
+				ChannelID: s.channelID, RegionPath: "root.luzon.ncr.manila",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, step := range []func(context.Context, int64) error{
+				a.Order.CheckResource, a.Order.Reserve, a.Order.ChargeContract,
+			} {
+				if err := step(ctx, o.ID); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := a.Resource.ReservePort(ctx, port, o.ID); err != nil {
+				t.Fatal(err)
+			}
+			if err := m.AutoPreScan(ctx, o.ID); err != nil {
+				t.Fatal(err)
+			}
+			epc := "EPC-W8c-" + sf
+			tagID, err := a.Asset.CreateTag(ctx, asset.Tag{
+				LegalEntityID: 1, TagNo: "T-W8c-" + sf, EpcCode: epc, Band: "UHF", Battery: "OK",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			batchID, err := a.Asset.CreateBatch(ctx, asset.AssetBatch{
+				LegalEntityID: 1, Code: "RK-W8c-" + sf, Name: "W8c批次"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := a.Asset.CreateAsset(ctx, asset.Asset{
+				LegalEntityID: 1, LegalEntityName: "主品牌·企业", BatchID: batchID,
+				AssetCode: "A-W8c-" + sf, TagID: tagID, Type: "ONU", Status: "IN_STOCK",
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if res, err := a.QuadLink.VerifyScan(ctx, quadlink.ScanReq{
+				OrderID: o.ID, WorkerID: 1, WorkerName: "E2E", ScannedEPC: epc,
+			}); err != nil || res != "MATCH" {
+				t.Fatalf("order %d scan res=%s err=%v (want MATCH)", o.ID, res, err)
+			}
+		}
+		runOneOrder(1)
+		runOneOrder(2) // 复购:同客户第二条活跃链路(000097 前撞 customer_active 23505)
+	})
 }
 
 // postOKStatus 带登录态 POST,仅断言 HTTP 200。
