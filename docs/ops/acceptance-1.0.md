@@ -12,7 +12,7 @@
 | 4 | 容量压测通过 | 60 VU 全阈值(读 p95<500ms、错误<1%、登录 p95<800ms) | `docs/ops/load-test-report.md`(204rps 通过) | ✅ |
 | 5 | 灾备恢复演练成功 | 备份→恢复 RTO 记录,数据一致 | `docs/ops/dr-drill.md` §1(32s/150 表) | ✅ |
 | 6 | 迁移演练成功 | 最新迁移 up/down 双向可逆 | `docs/ops/dr-drill.md` §2(342ms/115ms) | ✅ |
-| 7 | 回滚演练成功 | 迁移 down 可逆 + 镜像按版本可切 | `docs/ops/dr-drill.md` §4;容器级切换排入发布窗口 | 待终验 |
+| 7 | 回滚演练成功 | 容器级切换 RTO 3s + 迁移 down 可逆 | `docs/ops/dr-drill.md` §4(2026-08-26 实测) | ✅ |
 | 8 | 运维手册齐备 | 例行动作/发布回滚/安全例行成文 | `docs/ops/runbook.md` | ✅ |
 | 9 | 培训材料齐备 | 三角色课程+考核标准 | `docs/ops/training.md` | ✅ |
 
