@@ -478,6 +478,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 
 > 000068 起 payments 同时挂 `bill_id`(可空) 与 `customer_id`：账单缴费走 bill，充值类流水仅挂 customer；
 > 存量行已回填 customer_id（取 bill.customer_id）。
+> 缴费成功自动复机（Q3）：SUCCESS 落账后若客户 LO 账号 SUSPENDED 即自动 RESUME（迁移+`stop_resume_tasks` RESUME 流水留痕；
+> 失败任务留 FAILED 经 `POST /stop-resume-tasks/:id/retry` 重试），入口覆盖 admin 收款/门户缴费/门户续费/Stripe webhook。
 
 ## 4. 阶段3/4 · 资产与资源（internal/domain/{asset,resource}）
 
