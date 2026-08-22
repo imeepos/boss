@@ -35,6 +35,8 @@ type Payload struct {
 type Store interface {
 	UpsertSnapshot(ctx context.Context, s *Snapshot) error
 	LatestSnapshot(ctx context.Context, period string) (*Snapshot, error)
+	// LatestSnapshots 取指定周期最近 N 份快照(新→旧),给 trend 曲线用。
+	LatestSnapshots(ctx context.Context, period string, limit int) ([]Snapshot, error)
 	ListSnapshots(ctx context.Context) ([]Snapshot, error)
 	// SnapshotByID 按主键取快照(报告推送入口);未命中返回 ErrNoSnapshot。
 	SnapshotByID(ctx context.Context, id int64) (*Snapshot, error)
@@ -83,6 +85,18 @@ func (r *ReportService) Generate(ctx context.Context, period string, at time.Tim
 // Latest 指定周期最新快照。
 func (r *ReportService) Latest(ctx context.Context, period string) (*Snapshot, error) {
 	return r.St.LatestSnapshot(ctx, period)
+}
+
+// History 指定周期最近 limit 份快照(新→旧);limit 默认 12,上限 90。
+// 用于趋势曲线:多份快照的指标/ROI/热力/维护堆叠,前端画折线。
+func (r *ReportService) History(ctx context.Context, period string, limit int) ([]Snapshot, error) {
+	if limit <= 0 {
+		limit = 12
+	}
+	if limit > 90 {
+		limit = 90
+	}
+	return r.St.LatestSnapshots(ctx, period, limit)
 }
 
 // List 快照列表(新→旧)。

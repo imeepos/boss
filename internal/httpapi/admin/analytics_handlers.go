@@ -142,3 +142,38 @@ func reportSendHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
 }
+
+// reportHistoryHandler GET /reports/history?period&limit:历史快照(新→旧,trend 用)。
+// limit 默认 12,上限 90(handler 端再夹一次,服务层兜底)。
+func reportHistoryHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		period := c.DefaultQuery("period", "daily")
+		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "12"))
+		if limit <= 0 {
+			limit = 12
+		}
+		if limit > 90 {
+			limit = 90
+		}
+		snaps, err := a.Report.History(c.Request.Context(), period, limit)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		// 每份快照解出 Payload(与 reportLatestHandler 同形,字段展开给前端免二次解码)。
+		out := make([]gin.H, 0, len(snaps))
+		for _, s := range snaps {
+			var body report.Payload
+			if err := json.Unmarshal(s.Payload, &body); err != nil {
+				respondErr(c, err)
+				return
+			}
+			out = append(out, gin.H{
+				"id": s.ID, "period": s.Period,
+				"windowStart": s.WindowStart, "windowEnd": s.WindowEnd,
+				"createdAt": s.CreatedAt, "payload": body,
+			})
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": out})
+	}
+}

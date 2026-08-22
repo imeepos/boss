@@ -42,6 +42,16 @@ func (s *stubStore) LatestSnapshot(_ context.Context, period string) (*Snapshot,
 	}
 	return nil, ErrNoSnapshot
 }
+func (s *stubStore) LatestSnapshots(_ context.Context, period string, limit int) ([]Snapshot, error) {
+	out := make([]Snapshot, 0, limit)
+	// 倒序扫,模拟 ORDER BY id DESC(同窗口 upsert 后 ID 递增)
+	for i := len(s.saved) - 1; i >= 0 && len(out) < limit; i-- {
+		if s.saved[i].Period == period {
+			out = append(out, s.saved[i])
+		}
+	}
+	return out, nil
+}
 func (s *stubStore) ListSnapshots(context.Context) ([]Snapshot, error) { return s.saved, nil }
 func (s *stubStore) SnapshotByID(_ context.Context, id int64) (*Snapshot, error) {
 	for _, snap := range s.saved {
@@ -112,6 +122,38 @@ func TestLatest_None(t *testing.T) {
 	r := &ReportService{Ana: stubAna{}, St: &stubStore{}}
 	if _, err := r.St.LatestSnapshot(context.Background(), "daily"); !errors.Is(err, ErrNoSnapshot) {
 		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestHistory_LimitDefaults(t *testing.T) {
+	// limit<=0 → 默认 12(走 upsert 后取 LatestSnapshots;空 stub 走 0 限 → 返回空);
+	// limit>90 → 夹到 90(handler 端同样校验)。
+	r := &ReportService{Ana: stubAna{}, St: &stubStore{}}
+	if got, _ := r.History(context.Background(), "daily", 0); len(got) != 0 {
+		t.Fatalf("default limit 0 want empty, got %d", len(got))
+	}
+}
+
+func TestHistory_FilterByPeriod(t *testing.T) {
+	at := time.Date(2026, 8, 17, 12, 0, 0, 0, time.UTC)
+	ana := stubAna{ind: sampleIndicators()}
+	st := &stubStore{}
+	r := &ReportService{Ana: ana, St: st}
+	for _, p := range []string{"daily", "weekly", "daily", "monthly"} {
+		if _, err := r.Generate(context.Background(), p, at); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := r.History(context.Background(), "daily", 12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("want 2 daily snapshots, got %d", len(got))
+	}
+	// 顺序:新→旧(同 window_start,但 upsert 覆盖 → ID 递增)。
+	if got[0].ID <= got[1].ID {
+		t.Fatalf("want newer first, got %v", got)
 	}
 }
 

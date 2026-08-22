@@ -74,6 +74,9 @@ func (f *fakeReportStore) UpsertSnapshot(_ context.Context, s *report.Snapshot) 
 func (f *fakeReportStore) LatestSnapshot(context.Context, string) (*report.Snapshot, error) {
 	return &f.snap, nil
 }
+func (f *fakeReportStore) LatestSnapshots(context.Context, string, int) ([]report.Snapshot, error) {
+	return []report.Snapshot{f.snap}, nil
+}
 func (f *fakeReportStore) ListSnapshots(context.Context) ([]report.Snapshot, error) {
 	return nil, nil
 }

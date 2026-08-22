@@ -26,5 +26,6 @@ func registerReportRoutes(g *gin.RouterGroup, a *app.Application) {
 	rp.GET("/db-patrol/latest", reportLatestPatrolHandler(a))
 	rp.GET("/reports", reportListHandler(a))
 	rp.GET("/reports/latest", reportLatestHandler(a))
+	rp.GET("/reports/history", reportHistoryHandler(a))
 	rp.POST("/reports/:reportId/send", reportSendHandler(a))
 }

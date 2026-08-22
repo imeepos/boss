@@ -73,6 +73,31 @@ func (s *PGStore) SnapshotByID(ctx context.Context, id int64) (*Snapshot, error)
 	return &snap, nil
 }
 
+// LatestSnapshots 指定周期最近 limit 份快照(新→旧)。同窗口被 upsert 覆盖,
+// 取到的每行 window_start 唯一;limit<=0 返回空切片(不报错)。
+func (s *PGStore) LatestSnapshots(ctx context.Context, period string, limit int) ([]Snapshot, error) {
+	if limit <= 0 {
+		return []Snapshot{}, nil
+	}
+	rows, err := s.db.Query(ctx, `
+		SELECT id, period, window_start, window_end, payload, created_at
+		FROM report_snapshots WHERE period = $1
+		ORDER BY window_start DESC LIMIT $2`, period, limit)
+	if err != nil {
+		return nil, fmt.Errorf("report: history: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Snapshot, 0, limit)
+	for rows.Next() {
+		var snap Snapshot
+		if err := rows.Scan(&snap.ID, &snap.Period, &snap.WindowStart, &snap.WindowEnd, &snap.Payload, &snap.CreatedAt); err != nil {
+			return nil, fmt.Errorf("report: scan: %w", err)
+		}
+		out = append(out, snap)
+	}
+	return out, rows.Err()
+}
+
 // ListSnapshots 全部快照(新→旧)。
 func (s *PGStore) ListSnapshots(ctx context.Context) ([]Snapshot, error) {
 	rows, err := s.db.Query(ctx, `
