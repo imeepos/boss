@@ -375,3 +375,8 @@
 - 哪个坑浪费最多时间：完整门禁链在 120 秒内因并行依赖安装和构建超时，随后拆开单独执行 build 才拿到明确通过证据。
 - skill 有没有提前警告：有，门禁要求和未验证不声称已验证的红线有效；没有把超时误报成代码失败。
 - 重来一次我会怎么做：依赖已安装后把 typecheck、test、build 分段执行，并为生产构建预留足够超时时间。
+
+## 2026-08-24 AAA 一键部署核验
+- 哪个坑浪费最多时间：102 的 Docker Compose 项目目录只存在于 Docker 容器/宿主机挂载上下文，SSH 文件系统没有 `/opt/boss` 或 `/workspace`，直接 scp 到推测路径失败；改用 `/tmp` compose 文件并复用既有 Compose project 才完成部署验证。
+- skill 有没有提前警告：有，环境事实与“未验证不声称已验证”红线有效；`docker` 不在本机 PATH 也应优先使用远端 SSH 执行。
+- 重来一次我会怎么做：先从 `docker inspect` 的 Compose labels 读取真实 config path/project，再决定远端文件投递位置；确认二进制存在、UDP 监听后再发真实 RADIUS Access 与 Accounting 请求。
