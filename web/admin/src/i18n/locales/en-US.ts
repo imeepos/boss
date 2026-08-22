@@ -235,6 +235,8 @@ const enUS: Translations = {
       trendTitle: 'Orders in Last 7 Days',
       trendUnit: '',
       trendTooltip: 'Orders',
+       trendPeriod: 'Time range',
+       trendPeriods: { week: 'This week', month: 'This month', quarter: 'This quarter', year: 'This year', all: 'All time' },
       colStatus: 'Status',
       colCount: 'Count',
       colPercent: 'Share',

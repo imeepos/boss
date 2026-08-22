@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -116,9 +117,23 @@ func TestDashboard(t *testing.T) {
 		t.Fatalf("todos=%+v", body.Data.Todos.Items)
 	}
 	if len(body.Data.Trend.Days) != 7 || len(body.Data.Trend.Values) != 7 ||
-		body.Data.Trend.Values[6] != 1 || body.Data.Trend.Values[5] != 1 {
+		sumTrend(body.Data.Trend.Values) != 2 {
 		t.Fatalf("trend=%+v", body.Data.Trend)
 	}
+	month := getJSON(t, r, "/api/admin/v1/dashboard?trendPeriod=month", authToken(t, mgr))
+	if month.Code != http.StatusOK || !contains(month.Body.String(), `"period":"month"`) {
+		t.Fatalf("month trend=%s", month.Body.String())
+	}
+}
+
+func contains(body, fragment string) bool { return strings.Contains(body, fragment) }
+
+func sumTrend(values []int) int {
+	total := 0
+	for _, value := range values {
+		total += value
+	}
+	return total
 }
 
 // TestSameDayTimezone 回归:DB 时间戳为 UTC,now 为本地时区时不得把当日订单算进前一天。

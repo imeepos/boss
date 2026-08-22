@@ -7,6 +7,7 @@ import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
 import { PageHead } from '../../components/business/page-head'
 import { CardShell, OrderTrend, StatCard, type Trend } from '../../components/business/charts'
+import { Dropdown } from '../../components/Dropdown'
 import { Button } from '../../components/ui/button'
 import { StatusTag } from '../../components/StatusTag'
 import { fmtTime } from '../../lib/format'
@@ -25,6 +26,7 @@ interface DashboardData {
 const TODO_PAGE_SIZE = 5
 
 const VALID_TREND: ReadonlySet<Trend> = new Set<Trend>(['up', 'down', 'flat'])
+const TREND_PERIODS = ['week', 'month', 'quarter', 'year', 'all'] as const
 
 export default function DashboardPage({ profile }: { profile: Profile }) {
   const t = useT()
@@ -34,29 +36,37 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [todoPage, setTodoPage] = useState(1)
+  const [trendPeriod, setTrendPeriod] = useState<(typeof TREND_PERIODS)[number]>('week')
 
-  const load = () => {
+  const load = (period = trendPeriod) => {
     setError('')
     setBusy(true)
-    apiFetch<DashboardData>('/dashboard')
+    apiFetch<DashboardData>('/dashboard', { query: { trendPeriod: period } })
       .then((v) => setData(v))
       .catch((e) => setError(e instanceof Error ? e.message : d.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const changeTrendPeriod = (value: string) => {
+    if (!TREND_PERIODS.includes(value as (typeof TREND_PERIODS)[number])) return
+    const period = value as (typeof TREND_PERIODS)[number]
+    setTrendPeriod(period)
+    void load(period)
+  }
 
   const welcome = d.welcome.replace('{name}', profile.realName).replace('{role}', profile.roleCode)
   const todoItems = data?.todos.items ?? []
   const totalTodoPages = Math.ceil(todoItems.length / TODO_PAGE_SIZE)
   const pagedTodos = todoItems.slice((todoPage - 1) * TODO_PAGE_SIZE, todoPage * TODO_PAGE_SIZE)
-  const trendLabels = (data?.trend.days ?? []).map((x) => x.slice(5))
+  const trendLabels = data?.trend.days ?? []
   const trendValues = data?.trend.values ?? []
 
   return (
     <div>
       <PageHead title={d.title} desc={welcome} />
       <div className="mb-6 flex items-center gap-2">
-        <Button size="sm" disabled={busy} onClick={load}>{t.pages.audit.refresh}</Button>
+        <Button size="sm" disabled={busy} onClick={() => { void load() }}>{t.pages.audit.refresh}</Button>
       </div>
       {error ? (
         <div className="mb-4 rounded-md border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -160,7 +170,21 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
             </CardShell>
           </section>
 
-          <CardShell title={d.trendTitle}>
+          <CardShell>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{d.trendTitle}</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[var(--shell-group-title)]">{d.trendPeriod}</span>
+                <Dropdown
+                  value={trendPeriod}
+                  options={TREND_PERIODS.map((value) => ({ value, label: d.trendPeriods[value] }))}
+                  onChange={changeTrendPeriod}
+                  ariaLabel={d.trendPeriod}
+                  disabled={busy}
+                  triggerStyle={{ minWidth: 116 }}
+                />
+              </div>
+            </div>
             <OrderTrend
               labels={trendLabels}
               values={trendValues}

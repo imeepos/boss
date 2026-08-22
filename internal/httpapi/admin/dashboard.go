@@ -49,7 +49,7 @@ func buildDashboard(a *app.Application, c *gin.Context) (gin.H, error) {
 		"stats":           dashboardStats(orders, tickets, alarms, links),
 		"orderStatusDist": orderStatusDist(orders),
 		"todos":           gin.H{"items": dashboardTodos(alarms, tickets)},
-		"trend":           weeklyTrend(orders, clock.Now()),
+		"trend":           orderTrend(orders, c.Query("trendPeriod"), clock.Now()),
 	}, nil
 }
 
@@ -138,20 +138,67 @@ func dashboardTodos(alarms []device.Alarm, tickets []order.DispatchTicket) []gin
 	return items
 }
 
-// weeklyTrend 近7日下单趋势(按订单创建日聚合)。
-func weeklyTrend(orders []order.OrderListItem, now time.Time) gin.H {
-	days := make([]string, 7)
-	counts := make([]int, 7)
-	for i := 6; i >= 0; i-- {
-		day := now.AddDate(0, 0, -i)
-		days[6-i] = day.Format("01-02")
+// orderTrend 按周期聚合订单创建日;unknown 及空值按 weekly 处理。
+func orderTrend(orders []order.OrderListItem, period string, now time.Time) gin.H {
+	period = normalizeTrendPeriod(period)
+	start, step, count, layout := trendWindow(period, orders, now)
+	days := make([]string, count)
+	counts := make([]int, count)
+	for i := 0; i < count; i++ {
+		point := start.AddDate(0, 0, i*step)
+		days[i] = point.Format(layout)
 		for _, o := range orders {
-			if sameDay(o.CreatedAt, day) {
-				counts[6-i]++
+			if trendBucket(o.CreatedAt, point, step, period) {
+				counts[i]++
 			}
 		}
 	}
-	return gin.H{"days": days, "values": counts}
+	return gin.H{"period": period, "days": days, "values": counts}
+}
+
+func normalizeTrendPeriod(period string) string {
+	switch period {
+	case "week", "month", "quarter", "year", "all":
+		return period
+	default:
+		return "week"
+	}
+}
+
+func trendWindow(period string, orders []order.OrderListItem, now time.Time) (time.Time, int, int, string) {
+	local := now.In(now.Location())
+	switch period {
+	case "month":
+		return time.Date(local.Year(), local.Month(), 1, 0, 0, 0, 0, local.Location()), 1, local.Day(), "01-02"
+	case "quarter":
+		month := (int(local.Month())-1)/3*3 + 1
+		start := time.Date(local.Year(), time.Month(month), 1, 0, 0, 0, 0, local.Location())
+		return start, 1, int(local.Sub(start).Hours()/24) + 1, "01-02"
+	case "year":
+		return time.Date(local.Year(), 1, 1, 0, 0, 0, 0, local.Location()), 1, local.YearDay(), "01-02"
+	case "all":
+		start := time.Date(local.Year(), local.Month(), 1, 0, 0, 0, 0, local.Location())
+		for _, o := range orders {
+			created := o.CreatedAt.In(local.Location())
+			if created.Before(start) {
+				start = time.Date(created.Year(), created.Month(), 1, 0, 0, 0, 0, local.Location())
+			}
+		}
+		count := (local.Year()-start.Year())*12 + int(local.Month()-start.Month()) + 1
+		return start, 1, count, "2006-01"
+	default:
+		start := local.AddDate(0, 0, -((int(local.Weekday()) + 6) % 7))
+		return time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, local.Location()), 1, 7, "01-02"
+	}
+}
+
+func trendBucket(created, point time.Time, step int, period string) bool {
+	created = created.In(point.Location())
+	if period == "all" {
+		return created.Year() == point.Year() && created.Month() == point.Month()
+	}
+	next := point.AddDate(0, 0, step)
+	return !created.Before(point) && created.Before(next)
 }
 
 // sameDay 同日判定(先归一到 b 的时区;pgx 回扫带进程时区而 clock.Now() 带
