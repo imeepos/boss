@@ -200,3 +200,6 @@
 80. 未提交的关键改动在有并行会话/agent 的环境里立即 commit——工作区随时可能被别人的 git 写操作回滚。
 - worktree 基线编译失败先 `git stash -u` 验基线再自查;并行方会往 gitea/main 推破损中间态(漏 add 新文件最常见)(2026-08-25 worker-android)。
 - JPush 5.x 集成:只加 cn.jiguang.sdk:jpush 依赖 + manifestPlaceholders["JPUSH_APPKEY"],不写 meta-data(AAR 已带占位符)(2026-08-25)。
+81. 免登录 CDP 验证 admin 页时,?token= 会在 auth 探测失败(如 boss.servers 未配)时被 logout 清掉;正解=先开 /login,eval 注入 boss.token+boss.servers+boss.server.active 后再 location.href 目标页(2026-08-21 admin 状态组件验证)。
+82. cdp-capture 的验证结果用 eval 返回对象(stdout 打印)而不是 console.log——涉及 location 跳转的用例里,console 采集常落在导航前,VERIFY 抓不到(2026-08-21)。
+83. 代码改完跑门禁前先 commit 一版草稿:长验证流程(DOM 双主题断言)中途,并行会话可能把工作区改动扫进它的巨石提交,提交纪律已被破坏且无法干净拆分(2026-08-21 2c34af5 混装)。
