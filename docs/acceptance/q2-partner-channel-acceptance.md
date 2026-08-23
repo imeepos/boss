@@ -46,7 +46,7 @@ pnpm --dir web/admin run test -- --runInBand
 pnpm --dir web/admin run build
 ```
 
-结果：typecheck 通过；45 个测试文件、247 个测试通过；生产构建通过。文档中的 28080 是后端 API 入口；按 `deployments/docker-compose.102.app.yml`，前端实际入口为 `http://192.168.0.102:5180`。已用 CDP 在 5180 验证 `/login` 与 `/partner/apply` 返回 200，伙伴申请页面加载 `apply` 与 `partner` chunks；表单输入事件也已验证（2 个输入值成功写入）。
+结果：typecheck 通过；45 个测试文件、247 个测试通过；生产构建通过。文档中的 28080 是后端 API 入口；按 `deployments/docker-compose.102.app.yml`，前端实际入口为 `http://192.168.0.102:5180`。已用 CDP 在 5180 验证 `/login` 与 `/partner/apply` 返回 200，伙伴申请页面加载 `apply` 与 `partner` chunks；表单输入事件也已验证（2 个输入值成功写入）。使用 102 配置的 `admin/admin123` 登录也已成功：页面跳转 `/dashboard`、`boss.token` 已写入，Dashboard 菜单正常加载。
 
 ## 已执行命令
 
@@ -68,4 +68,4 @@ BOSS_PG_TEST_DSN='host=192.168.0.102 port=25432 user=boss password=boss dbname=b
 - 伙伴 HTTP/PG 全链路单个测试用例尚未把入驻审批后的新账号登录、区域设置、渠道下单、12 环节推进、自动佣金和审计报表全部串成一次旅程。
 - 风控每日上限的并发订单创建尚未做压力级集成测试；已有租户行锁阻塞验收。
 - 102 后端 API 根路径 `/` 返回 404 属于预期，因为前端入口按部署编排位于 `:5180`；已完成 `/login` 与 `/partner/apply` 的页面加载及表单输入级 CDP 验证。
-- 尚未使用真实伙伴账号完成 5180 登录后的 `/partner/home`、`/partner/staff`、`/partner/orders` 点击验收；需要安全的真实账号/一次性凭证后继续。
+- 已完成 102 `admin/admin123` 登录和 Dashboard 加载验收；尚未使用真实伙伴账号完成登录后的 `/partner/home`、`/partner/staff`、`/partner/orders` 点击验收，需要安全的伙伴账号/一次性凭证后继续。
