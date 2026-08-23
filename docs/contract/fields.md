@@ -360,6 +360,21 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 
 `api_key_permission_templates` 与 `api_key_template_permissions` 提供受限 API key 权限模板；模板由平台维护，签发时仅引用 code，不保存明文密钥。
 
+### 1.8 partner_commission_ledger（渠道佣金结算台账，000118）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:---------|:------|:---------|
+| 订单 | `OrderID` | order_id | BIGINT → orders |
+| 渠道企业 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities |
+| 订单金额 | `OrderAmount` | order_amount | NUMERIC(18,2)，下单金额快照 |
+| 佣金比例 | `CommissionRate` | commission_rate | 0~1 |
+| 佣金金额 | `CommissionAmount` | commission_amount | 订单金额×比例，保留两位 |
+| 状态 | `Status` | status | ACCRUED / SETTLED / VOID |
+| 结算时间 | `SettledAt` | settled_at | 已结算时填写 |
+| 结算人 | `SettledBy` | settled_by | → accounts |
+
+> 仅覆盖渠道企业订单的佣金台账与结算，不建设跨运营商批发结算或融资。
+
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
 ### 2.1 customers（普通用户/客户主体，源自 customer.html）
