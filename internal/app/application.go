@@ -100,7 +100,9 @@ type Application struct {
 	WorkOrder       order.WorkOrderService
 	CSMetrics       order.CSMetricsReader
 	Knowledge       cs.KnowledgeService
+	Callbacks       cs.CallbackService
 	ARMetrics       billing.ARMetricsReader
+	ARClosure       billing.ARClosureService
 	CollectionQueue billing.CollectionQueueService
 	OrderLedger     order.OrderLedgerService
 	Channel         order.ChannelService

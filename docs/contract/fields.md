@@ -831,6 +831,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | 催收任务 | `collectionTasks` | `ar_collection_tasks` | PENDING/DOING/DONE/FAILED 人工可接管 |
 | 承诺还款 | `paymentPromises` | `ar_payment_promises` | OPEN/FULFILLED/BROKEN/CANCELED |
 | 核销 | `writeoffs` | `ar_writeoffs` | 金额、原因、审批人和审批时间留痕 |
+
+AR closure API: `POST/GET /ar/aging-snapshots` generates and reads customer daily snapshots idempotently by `(customerId,snapshotDate)`; `GET/POST /ar/payment-promises` and `/status` manage `OPEN/FULFILLED/BROKEN/CANCELED`; `GET/POST /ar/writeoffs` records amount, reason, approver and approval time.
 | 服务指标 | `metricKey/numerator/denominator/value` | `service_metric_snapshots` | 按日幂等，禁止无样本伪造数据 |
 
 ## 8C. 招商入驻域（internal/domain/partner，000098）

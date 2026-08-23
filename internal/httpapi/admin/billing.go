@@ -40,6 +40,13 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/billing/ledger-recon", requirePerm(a.User, "menu:paycheck"), ledgerReconHandler(a))
 	// 欠费催收批处理(Q3):逾期标记+欠费快照+超线自动停机;失败任务可经 retry 重放。
 	g.POST("/dunning-runs", requirePerm(a.User, "menu:stopsrv"), runDunning(a))
+	g.POST("/ar/aging-snapshots", requirePerm(a.User, "menu:arrears"), generateAgingSnapshots(a))
+	g.GET("/ar/aging-snapshots", requirePerm(a.User, "menu:arrears"), listAgingSnapshots(a))
+	g.GET("/ar/payment-promises", requirePerm(a.User, "menu:arrears"), listPaymentPromises(a))
+	g.POST("/ar/payment-promises", requirePerm(a.User, "menu:arrears"), createPaymentPromise(a))
+	g.POST("/ar/payment-promises/:id/status", requirePerm(a.User, "menu:arrears"), updatePaymentPromiseStatus(a))
+	g.GET("/ar/writeoffs", requirePerm(a.User, "menu:arrears"), listWriteoffs(a))
+	g.POST("/ar/writeoffs", requirePerm(a.User, "menu:arrears"), createWriteoff(a))
 }
 
 // runDunning 欠费催收批处理:宽限/停机线天数可配,缺省 15/30。

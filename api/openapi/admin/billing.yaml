@@ -98,6 +98,69 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /ar/aging-snapshots:
+    post:
+      tags: [Billing]
+      summary: 生成每日账龄快照(按客户+日期幂等)
+      operationId: generateAgingSnapshots
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+    get:
+      tags: [Billing]
+      summary: 查询每日账龄快照
+      operationId: listAgingSnapshots
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date } }
+        - { name: customerId, in: query, schema: { type: integer, format: int64 } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+
+  /ar/payment-promises:
+    get:
+      tags: [Billing]
+      summary: 承诺还款列表
+      operationId: listPaymentPromises
+      parameters: [{ name: customerId, in: query, schema: { type: integer, format: int64 } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+    post:
+      tags: [Billing]
+      summary: 创建承诺还款
+      operationId: createPaymentPromise
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/PaymentPromiseInput' } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
+  /ar/payment-promises/{id}/status:
+    post:
+      tags: [Billing]
+      summary: 更新承诺还款状态
+      operationId: updatePaymentPromiseStatus
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { type: object, required: [status], properties: { status: { type: string, enum: [OPEN, FULFILLED, BROKEN, CANCELED] } } } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
+  /ar/writeoffs:
+    get:
+      tags: [Billing]
+      summary: 核销记录列表
+      operationId: listWriteoffs
+      parameters: [{ name: customerId, in: query, schema: { type: integer, format: int64 } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+    post:
+      tags: [Billing]
+      summary: 创建核销记录
+      operationId: createWriteoff
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/WriteoffInput' } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
   /dunning-runs:
     post:
       tags: [Billing]
@@ -408,6 +471,22 @@ paths:
 
 components:
   schemas:
+    PaymentPromiseInput:
+      type: object
+      required: [customerId, amount, promisedAt, dueAt]
+      properties:
+        customerId: { type: integer, format: int64 }
+        amount: { type: number }
+        promisedAt: { type: string, format: date-time }
+        dueAt: { type: string, format: date-time }
+    WriteoffInput:
+      type: object
+      required: [customerId, amount, reason]
+      properties:
+        customerId: { type: integer, format: int64 }
+        amount: { type: number }
+        reason: { type: string }
+        approvedBy: { type: integer, format: int64, nullable: true }
     Invoice:
       type: object
       description: 电子发票(billing.Invoice;业务状态 ISSUED/VOIDED 与税局网关状态正交)
