@@ -1208,6 +1208,10 @@ export interface Translations {
       desc: string
       columns: string[]
       create: string
+      edit: string
+      delete: string
+      deleteConfirm: string
+      allStatus: string
       saveFail: string,
       requiredHint: string
       cancel: string

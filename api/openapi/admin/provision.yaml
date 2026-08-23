@@ -32,6 +32,30 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /provision-templates/{templateId}:
+    put:
+      tags: [Provision]
+      summary: 编辑配置模板(内容 JSON、版本自增)
+      operationId: updateProvisionTemplate
+      parameters: [{ name: templateId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+    delete:
+      tags: [Provision]
+      summary: 删除未被任务引用的配置模板
+      operationId: deleteProvisionTemplate
+      parameters: [{ name: templateId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
+  /provision-templates/{templateId}/status:
+    put:
+      tags: [Provision]
+      summary: 启用或停用配置模板
+      operationId: setProvisionTemplateStatus
+      parameters: [{ name: templateId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [status], properties: { status: { type: string, enum: [ENABLED, DISABLED] } } } } } }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
   /provision-logs:
     get:
       tags: [Provision]

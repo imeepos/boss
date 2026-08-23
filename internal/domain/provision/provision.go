@@ -7,10 +7,14 @@ import (
 
 // Template 下发模板(各公司设备型号不同,模板挂公司)。
 type Template struct {
-	ID            int64  `json:"id"`
-	LegalEntityID int64  `json:"legalEntityId"`
-	Code          string `json:"code"` // TPL-FTTH
-	Name          string `json:"name"`
+	ID            int64          `json:"id"`
+	LegalEntityID int64          `json:"legalEntityId"`
+	Code          string         `json:"code"` // TPL-FTTH
+	Name          string         `json:"name"`
+	Content       map[string]any `json:"content"`
+	Version       int32          `json:"version"`
+	Status        string         `json:"status"` // ENABLED/DISABLED
+	UpdatedAt     time.Time      `json:"updatedAt"`
 }
 
 // Task 下发任务(按模板向 LO 账号下发配置)。
@@ -42,6 +46,9 @@ type Log struct {
 type ProvisionService interface {
 	ListTemplates(ctx context.Context) ([]Template, error)
 	CreateTemplate(ctx context.Context, t Template) (int64, error)
+	UpdateTemplate(ctx context.Context, t Template) error
+	SetTemplateStatus(ctx context.Context, id int64, status string) error
+	DeleteTemplate(ctx context.Context, id int64) error
 	ListTasks(ctx context.Context) ([]Task, error)
 	CreateTask(ctx context.Context, t Task) (int64, error)
 	// GetTaskByNo 按外部 task_no 寻址(契约 provision/v1 GetTask/RetryTask)。

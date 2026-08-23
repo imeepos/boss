@@ -1239,8 +1239,12 @@ const enUS: Translations = {
     templatePage: {
       title: 'Provision Templates',
       desc: 'Templates belong to companies (device models differ) · TPL-* codes',
-      columns: ['ID', 'Company', 'Template Code', 'Template Name'],
+      columns: ['ID', 'Company', 'Template Code', 'Template Name', 'Status', 'Version', 'Actions'],
       create: 'New Template',
+      edit: 'Edit',
+      delete: 'Delete',
+      deleteConfirm: 'Delete template "{name}"? Only templates not referenced by provision tasks can be deleted.',
+      allStatus: 'All statuses',
       legalEntity: 'Company',
       legalEntityPlaceholder: 'Select company',
       codeLabel: 'Template Code',

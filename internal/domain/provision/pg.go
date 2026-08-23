@@ -2,6 +2,7 @@ package provision
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -43,7 +44,7 @@ func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, err
 
 // ListTemplates 列出全部下发模板。
 func (s *PGStore) ListTemplates(ctx context.Context) ([]Template, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, legal_entity_id, code, name FROM provision_templates ORDER BY id`)
+	rows, err := s.db.Query(ctx, `SELECT id, legal_entity_id, code, name, content, version, status, updated_at FROM provision_templates ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("provision: list templates: %w", err)
 	}
@@ -51,8 +52,14 @@ func (s *PGStore) ListTemplates(ctx context.Context) ([]Template, error) {
 	out := make([]Template, 0)
 	for rows.Next() {
 		var t Template
-		if err := rows.Scan(&t.ID, &t.LegalEntityID, &t.Code, &t.Name); err != nil {
+		var raw []byte
+		if err := rows.Scan(&t.ID, &t.LegalEntityID, &t.Code, &t.Name, &raw, &t.Version, &t.Status, &t.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("provision: scan template: %w", err)
+		}
+		if len(raw) > 0 && string(raw) != "null" {
+			if err := json.Unmarshal(raw, &t.Content); err != nil {
+				return nil, fmt.Errorf("provision: decode template content: %w", err)
+			}
 		}
 		out = append(out, t)
 	}
@@ -74,9 +81,13 @@ func (s *PGStore) CreateTemplate(ctx context.Context, t Template) (int64, error)
 	}
 
 	var id int64
-	err := s.db.QueryRow(ctx,
-		`INSERT INTO provision_templates(legal_entity_id, code, name) VALUES($1,$2,$3) RETURNING id`,
-		t.LegalEntityID, t.Code, t.Name).Scan(&id)
+	raw, err := json.Marshal(t.Content)
+	if err != nil {
+		return 0, fmt.Errorf("provision: encode template content: %w", err)
+	}
+	err = s.db.QueryRow(ctx,
+		`INSERT INTO provision_templates(legal_entity_id, code, name, content, version, status) VALUES($1,$2,$3,$4,1,$5) RETURNING id`,
+		t.LegalEntityID, t.Code, t.Name, raw, normalizedStatus(t.Status)).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("provision: create template: %w", err)
 	}

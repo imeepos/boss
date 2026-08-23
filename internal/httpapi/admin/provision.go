@@ -13,6 +13,9 @@ import (
 func registerProvisionRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/provision-templates", requirePerm(a.User, "menu:template"), provisionListTemplatesHandler(a))
 	g.POST("/provision-templates", requirePerm(a.User, "menu:template"), provisionCreateTemplateHandler(a))
+	g.PUT("/provision-templates/:templateId", requirePerm(a.User, "menu:template"), provisionUpdateTemplateHandler(a))
+	g.PUT("/provision-templates/:templateId/status", requirePerm(a.User, "menu:template"), provisionSetTemplateStatusHandler(a))
+	g.DELETE("/provision-templates/:templateId", requirePerm(a.User, "menu:template"), provisionDeleteTemplateHandler(a))
 	g.GET("/provision-tasks", requirePerm(a.User, "menu:provision"), provisionListTasksHandler(a))
 	g.GET("/provision-logs", requirePerm(a.User, "menu:provlog"), provisionListLogsHandler(a))
 	g.POST("/provision-tasks/:taskNo/retry", requirePerm(a.User, "menu:provision"), provisionRetryTaskHandler(a))

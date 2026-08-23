@@ -1239,8 +1239,12 @@ const msMY: Translations = {
     templatePage: {
       title: 'Templat Provision',
       desc: 'Templat milik syarikat (model peranti berbeza) · kod TPL-*',
-      columns: ['ID', 'Syarikat', 'Kod Templat', 'Nama Templat'],
+      columns: ['ID', 'Syarikat', 'Kod Templat', 'Nama Templat', 'Status', 'Versi', 'Tindakan'],
       create: 'Templat Baharu',
+      edit: 'Edit',
+      delete: 'Padam',
+      deleteConfirm: 'Padam templat "{name}"? Hanya templat yang tidak dirujuk oleh tugas provision boleh dipadam.',
+      allStatus: 'Semua status',
       legalEntity: 'Syarikat',
       legalEntityPlaceholder: 'Pilih syarikat',
       codeLabel: 'Kod Templat',

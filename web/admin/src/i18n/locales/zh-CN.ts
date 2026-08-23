@@ -1239,8 +1239,12 @@ const zhCN: Translations = {
     templatePage: {
       title: '配置模板',
       desc: '下发模板挂公司(各公司设备型号不同)· TPL-* 编码',
-      columns: ['ID', '公司', '模板编号', '模板名称'],
+      columns: ['ID', '公司', '模板编号', '模板名称', '状态', '版本', '操作'],
       create: '新建模板',
+      edit: '编辑',
+      delete: '删除',
+      deleteConfirm: '删除模板「{name}」?仅未被下发任务引用的模板可删除',
+      allStatus: '全部状态',
       legalEntity: '所属公司',
       legalEntityPlaceholder: '选择公司',
       codeLabel: '模板编号',

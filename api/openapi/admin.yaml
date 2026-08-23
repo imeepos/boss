@@ -332,6 +332,8 @@ paths:
   /provision-tasks: { $ref: './admin/provision.yaml#/paths/~1provision-tasks' }
   /provision-tasks/{taskNo}/retry: { $ref: './admin/provision.yaml#/paths/~1provision-tasks~1{taskNo}~1retry' }
   /provision-templates: { $ref: './admin/provision.yaml#/paths/~1provision-templates' }
+  /provision-templates/{templateId}: { $ref: './admin/provision.yaml#/paths/~1provision-templates~1{templateId}' }
+  /provision-templates/{templateId}/status: { $ref: './admin/provision.yaml#/paths/~1provision-templates~1{templateId}~1status' }
   /provision-logs: { $ref: './admin/provision.yaml#/paths/~1provision-logs' }
 
   # ---------- Provision Seed(联调置备) ----------

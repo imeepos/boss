@@ -28,7 +28,10 @@ func (f *fakeProvision) ListTemplates(context.Context) ([]provision.Template, er
 func (f *fakeProvision) CreateTemplate(context.Context, provision.Template) (int64, error) {
 	return 0, nil
 }
-func (f *fakeProvision) ListTasks(context.Context) ([]provision.Task, error) { return nil, nil }
+func (f *fakeProvision) UpdateTemplate(context.Context, provision.Template) error { return nil }
+func (f *fakeProvision) SetTemplateStatus(context.Context, int64, string) error   { return nil }
+func (f *fakeProvision) DeleteTemplate(context.Context, int64) error              { return nil }
+func (f *fakeProvision) ListTasks(context.Context) ([]provision.Task, error)      { return nil, nil }
 func (f *fakeProvision) CreateTask(context.Context, provision.Task) (int64, error) {
 	return 0, nil
 }

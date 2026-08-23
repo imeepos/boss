@@ -19,9 +19,9 @@ func TestPGStore_ListTemplates(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, legal_entity_id, code, name FROM provision_templates`).
-		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "code", "name"}).
-			AddRow(int64(1), int64(1), "TPL-FTTH", "FTTH标准开通"))
+	mock.ExpectQuery(`SELECT id, legal_entity_id, code, name, content, version, status, updated_at FROM provision_templates`).
+		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "code", "name", "content", "version", "status", "updated_at"}).
+			AddRow(int64(1), int64(1), "TPL-FTTH", "FTTH标准开通", []byte(`{}`), int32(1), "ENABLED", ts))
 
 	s := NewPGStore(mock)
 	got, err := s.ListTemplates(context.Background())
@@ -49,7 +49,7 @@ func TestPGStore_CreateTemplate(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO provision_templates`).
-		WithArgs(int64(1), "TPL-GPON", "GPON标准开通").
+		WithArgs(int64(1), "TPL-GPON", "GPON标准开通", []byte(`null`), "ENABLED").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)

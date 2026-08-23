@@ -18,6 +18,10 @@ export interface ProvisionTemplateRow {
   legalEntityId: number
   code: string
   name: string
+  content: Record<string, unknown>
+  version: number
+  status: string
+  updatedAt: string
 }
 
 /** 下发日志:GET /provision-logs?taskId(items)。 */
