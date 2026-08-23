@@ -15,12 +15,24 @@
 | `complaint-type-map.md` | 报障/投诉类型映射(从草稿语义到实体枚举) | 客服工单 type↔故障类型口径不一 |
 | `vendor-adapter-spec.md` | 供应商适配器规范(支付/短信/实名/税务/地图/设备/AAA):接口形状、密钥引用、降级、幂等、沙箱、新增 checklist 与现有对齐评估 | 外部系统接入各自造轮、密钥落库、缺降级路径 |
 
+## 事实源成熟度（截至 2026-08-27）
+
+| 契约层 | 文档 | 落地形态 | 备注 |
+|:------|:-----|:---------|:-----|
+| 字段字典 | `fields.md` | 970 行,覆盖 1-9 节 + 8A~8D 子域 | 阶段1-9 域实体字段全部收录;新域按 §0 规则回写 |
+| REST 契约 | `api/openapi/{admin,user,worker,open}/*.yaml` | 28+10+7+4 文件 + 三端聚合 yaml | admin 275/user 81/worker 60 operationId（见 baseline-freeze.md §1） |
+| gRPC 契约 | `api/proto/boss/{common,aaa,device,provision,quadlink}/v1/*.proto` | 5 个域骨架 + common envelope | envelope 跨服务错误码/分页契约（架构评审 2.1） |
+| 错误码 | `pkg/apitypes/code.go` | 11 个跨进程错误码 | 进程内响应统一经 `internal/httpresp` 包裹（架构评审 3.1） |
+
 ## 三份事实源的补充说明
 
-本目录仍未覆盖、后续应补的契约文档（按优先级）：
+`fields.md`/`api/openapi/`/`api/proto/` 三处契约源目前已各自成型，不再是占位文档；
+新增字段/路由/事件时按各自头部「权威源」要求回写即可，无需新建 `fields.md` / `api-contract.md`。
+剩余待补的契约文档（按优先级）：
 
-1. `fields.md`（字段字典）：每个域对象的字段名 + 类型 + 枚举，页面列名 ↔ 英文字段 ↔ DB 列三列对照。当前各域 struct 只有 user 域有实体，补齐字段字典可把 struct/migration/页面三处命名锁死。
-2. `api-contract.md`（接口契约）：REST/OpenAPI + gRPC proto 的方法、DTO、错误码。当前 `api/openapi/` 和 `api/proto/` 仅 README 占位。
+1. **事件契约**（`api/proto/events/v1/*.proto` 或 OpenAPI webhook 模板）：跨进程 Kafka 事件 schema，
+   与 `internal/pkg/events` 实现对齐。Q4 开放平台 webhook 验签样例已落地（见 `api/openapi/open/sandbox.yaml`
+   的 `webhook` 字段 + 接收方本地复算 v1 签名约定）。
 
 ## 编号规范
 
