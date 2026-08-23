@@ -108,3 +108,11 @@ paths:
       parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
       responses:
         '200': { description: 已结算 }
+  /partner/audit-report:
+    get:
+      summary: 渠道操作审计报表(按当前账号,可按 action 过滤)
+      tags: [Partner]
+      parameters:
+        - { name: action, in: query, schema: { type: string } }
+      responses:
+        '200': { description: 审计报表条目列表 }
