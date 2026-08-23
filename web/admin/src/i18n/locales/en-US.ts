@@ -1433,7 +1433,7 @@ const enUS: Translations = {
       title: 'Open Platform (Developer Portal)', desc: 'External app credentials, webhook subscriptions and deliveries; secret shown only once on creation',
       count: '{n} apps',
       columns: ['Name', 'AppId', 'Status', 'Sandbox', 'Rate/Quota', 'Last used', 'Actions'],
-      create: 'Create app', createTitle: 'Create open app', saveFail: 'Save failed', loadFail: 'Failed to load (no menu:openplat permission or service unavailable)',
+      create: 'Create app', createTitle: 'Create open app', saveFail: 'Save failed', loadFail: 'Failed to load (no menu:openplat permission or service unavailable)', nameRequired: 'Name is required',
       empty: 'No apps', active: 'Active', disabled: 'Disabled', sandboxOn: 'Sandbox', neverUsed: 'Never used',
       enable: 'Enable', disable: 'Disable', secretOnce: 'Shown only once. Copy and store it now:',
       fName: 'Name', pName: 'Integrator purpose, e.g. crm-integrator', fRpm: 'Rate limit (RPM)', fQuota: 'Daily quota',

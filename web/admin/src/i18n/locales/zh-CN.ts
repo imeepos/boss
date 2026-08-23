@@ -1433,7 +1433,7 @@ const zhCN: Translations = {
       title: '开放平台(开发者门户)', desc: '外部集成方应用凭证、Webhook 订阅与投递管理;Secret 仅创建时展示一次',
       count: '共 {n} 个应用',
       columns: ['名称', 'AppId', '状态', '沙箱', '限流/配额', '最近使用', '操作'],
-      create: '创建应用', createTitle: '创建开放应用', saveFail: '保存失败', loadFail: '加载失败(无 menu:openplat 权限或服务不可用)',
+      create: '创建应用', createTitle: '创建开放应用', saveFail: '保存失败', loadFail: '加载失败(无 menu:openplat 权限或服务不可用)', nameRequired: '名称不能为空',
       empty: '暂无应用', active: '启用', disabled: '停用', sandboxOn: '沙箱', neverUsed: '从未使用',
       enable: '启用', disable: '停用', secretOnce: 'Secret 仅此一次展示,请立即复制保存:',
       fName: '名称', pName: '集成方用途,如 crm-integrator', fRpm: '每分钟限流(RPM)', fQuota: '日调用配额',

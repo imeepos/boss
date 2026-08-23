@@ -1405,6 +1405,7 @@ export interface Translations {
       createTitle: string
       saveFail: string
       loadFail: string
+      nameRequired: string
       empty: string
       active: string
       disabled: string

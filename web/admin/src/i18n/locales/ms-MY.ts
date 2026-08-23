@@ -1433,7 +1433,7 @@ const msMY: Translations = {
       title: 'Platform Terbuka (Portal Pembangun)', desc: 'Kredensial aplikasi luar, langganan webhook dan penghantaran; secret ditunjuk sekali sahaja',
       count: '{n} aplikasi',
       columns: ['Nama', 'AppId', 'Status', 'Sandbox', 'Kadaran/Kuota', 'Terakhir diguna', 'Tindakan'],
-      create: 'Cipta aplikasi', createTitle: 'Cipta aplikasi terbuka', saveFail: 'Gagal simpan', loadFail: 'Gagal muat (tiada kebenaran menu:openplat atau perkhidmatan tidak tersedia)',
+      create: 'Cipta aplikasi', createTitle: 'Cipta aplikasi terbuka', saveFail: 'Gagal simpan', loadFail: 'Gagal muat (tiada kebenaran menu:openplat atau perkhidmatan tidak tersedia)', nameRequired: 'Nama diperlukan',
       empty: 'Tiada aplikasi', active: 'Aktif', disabled: 'Dilumpuhkan', sandboxOn: 'Sandbox', neverUsed: 'Belum diguna',
       enable: 'Aktifkan', disable: 'Lumpuhkan', secretOnce: 'Ditunjuk sekali sahaja. Salin dan simpan sekarang:',
       fName: 'Nama', pName: 'Tujuan integrasi, cth. crm-integrator', fRpm: 'Had kadaran (RPM)', fQuota: 'Kuota harian',

@@ -42,17 +42,22 @@ export default function OpenPlatPage() {
 
   const submit = async () => {
     if (!form || busy) return
+    const name = form.name.trim()
+    if (!name) {
+      setFormError(t.pages.openplat.nameRequired)
+      return
+    }
     setBusy(true)
     setFormError('')
     try {
       const res = await apiFetch<{ secret: string }>('/openplat/apps', {
         method: 'POST',
-        body: JSON.stringify({
-          name: form.name.trim(),
+        body: {
+          name,
           rateLimitRpm: form.rateLimitRpm,
           dailyQuota: form.dailyQuota,
           sandbox: form.sandbox,
-        }),
+        },
       })
       setForm(null)
       setSecret(res?.secret ?? '')
