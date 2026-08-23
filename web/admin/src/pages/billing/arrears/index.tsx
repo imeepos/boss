@@ -4,7 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
-import { pageSlice, type ArrearsRow } from '../types'
+import { pageSlice, type ArrearsRow, type ARMetrics, type CollectionTaskRow } from '../types'
 import { fmtFee } from '../../../lib/format'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow } from '../../../components/business'
@@ -18,12 +18,18 @@ export default function ArrearsPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
+  const [metrics, setMetrics] = useState<ARMetrics | null>(null)
+  const [tasks, setTasks] = useState<CollectionTaskRow[]>([])
 
   const load = () => {
     setError('')
     setBusy(true)
-    apiFetch<{ items: ArrearsRow[] }>('/arrears')
-      .then((d) => setRows(d?.items ?? []))
+    Promise.all([
+      apiFetch<{ items: ArrearsRow[] }>('/arrears'),
+      apiFetch<ARMetrics>('/ar-metrics'),
+      apiFetch<{ items: CollectionTaskRow[] }>('/collection-tasks?status=PENDING'),
+    ])
+      .then(([d, m, q]) => { setRows(d?.items ?? []); setMetrics(m); setTasks(q?.items ?? []) })
       .catch((e) => setError(e instanceof Error ? e.message : a.loadFail))
       .finally(() => setBusy(false))
   }
@@ -49,6 +55,13 @@ export default function ArrearsPage() {
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
+      {metrics && <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[
+          [a.columns[1], fmtFee(metrics.totalAmount)], [a.columns[0], metrics.customerCount],
+          [a.columns[3], metrics.stoppedCount], [a.columns[2], metrics.overdueBillCount],
+        ].map(([label, value]) => <div key={String(label)} className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-3"><div className="text-xs text-[var(--shell-group-title)]">{label}</div><div className="mt-1 text-xl font-semibold text-[var(--shell-heading)]">{value}</div></div>)}
+      </div>}
+      {tasks.length > 0 && <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4"><div className="mb-3 text-sm font-semibold text-[var(--shell-heading)]">{a.title}</div><div className="grid gap-2 md:grid-cols-2">{tasks.slice(0, 6).map((task) => <div key={task.id} className="flex items-center justify-between rounded-sm bg-[var(--shell-menu-hover-bg)] px-3 py-2 text-xs"><span>{task.customer || `#${task.customerId}`}</span><span className="text-[var(--color-danger)]">{fmtFee(task.amount)} · {task.days}d</span></div>)}</div></div>}
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />

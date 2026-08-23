@@ -101,6 +101,16 @@ export interface ComplaintRow {
   status: string // OPEN/PROCESSING/CLOSED
 }
 
+export interface CSMetrics {
+  openCount: number
+  processingCount: number
+  closedCount: number
+  slaBreachedOpen: number
+  slaOnTimeClosed: number
+  slaOverdueClosed: number
+  avgCloseHours: number
+}
+
 export interface DismantleRow {
   id: number
   dismantleNo: string

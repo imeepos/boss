@@ -5,7 +5,7 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
-import { pageSlice, type ComplaintRow } from '../types'
+import { pageSlice, type ComplaintRow, type CSMetrics } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow } from '../../../components/business'
 
@@ -18,12 +18,16 @@ export default function ComplaintPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
+  const [metrics, setMetrics] = useState<CSMetrics | null>(null)
 
   const load = () => {
     setError('')
     setBusy(true)
-    apiFetch<ComplaintRow[]>('/complaints')
-      .then((x) => setRows(Array.isArray(x) ? x : []))
+    Promise.all([
+      apiFetch<ComplaintRow[]>('/complaints'),
+      apiFetch<CSMetrics>('/complaint-metrics'),
+    ])
+      .then(([x, m]) => { setRows(Array.isArray(x) ? x : []); setMetrics(m) })
       .catch((e) => setError(e instanceof Error ? e.message : c.loadFail))
       .finally(() => setBusy(false))
   }
@@ -47,6 +51,12 @@ export default function ComplaintPage() {
   return (
     <div>
       <PageHead title={c.title} desc={c.desc} />
+      {metrics && <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[
+          [c.columns[1], metrics.openCount], [c.columns[4], metrics.processingCount],
+          [c.columns[3], metrics.slaBreachedOpen], [c.columns[5], `${metrics.avgCloseHours.toFixed(1)}h`],
+        ].map(([label, value]) => <div key={String(label)} className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-3"><div className="text-xs text-[var(--shell-group-title)]">{label}</div><div className="mt-1 text-xl font-semibold text-[var(--shell-heading)]">{value}</div></div>)}
+      </div>}
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
