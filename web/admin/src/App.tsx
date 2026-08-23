@@ -35,6 +35,8 @@ const CustomerPage = lazy(() => import('./pages/bss/customer'))
 const ProductPage = lazy(() => import('./pages/bss/product'))
 const UserListPage = lazy(() => import('./pages/bss/user'))
 const UserDataPage = lazy(() => import('./pages/bss/userdata'))
+const MarketingRulesPage = lazy(() => import('./pages/bss/marketing'))
+const MarketingReconPage = lazy(() => import('./pages/bss/marketing/recon'))
 const BillPage = lazy(() => import('./pages/billing/billing'))
 const PaymentPage = lazy(() => import('./pages/billing/payment'))
 const ArrearsPage = lazy(() => import('./pages/billing/arrears'))
@@ -127,6 +129,8 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'product') return <ProductPage />
   if (pageKey === 'user') return <UserListPage />
   if (pageKey === 'userdata') return <UserDataPage />
+  if (pageKey === 'marketing') return <MarketingRulesPage />
+  if (pageKey === 'marketing-recon') return <MarketingReconPage />
   if (pageKey === 'billing') return <BillPage />
   if (pageKey === 'payment') return <PaymentPage />
   if (pageKey === 'arrears') return <ArrearsPage />

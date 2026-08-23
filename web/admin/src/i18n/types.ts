@@ -1872,6 +1872,26 @@ export interface Translations {
       colStatus: string; colCreatedAt: string; stageUnit: string; empty: string; loadFail: string
       refresh: string
     }
+    marketing: {
+      title: string; desc: string
+      tabCoupons: string; tabGift: string; tabEarn: string; tabLevels: string; tabTasks: string
+      tabPoints: string
+      colName: string; colStatus: string; colOp: string; empty: string; loadFail: string
+      create: string; creating: string; disable: string; formIncomplete: string
+      couponName: string; couponType: string; couponFaceYuan: string; couponThresholdYuan: string
+      couponValidDays: string; couponTotalQty: string; couponIssued: string
+      giftBuyMonths: string; giftGiftMonths: string
+      earnCurrent: string; earnPerYuan: string; earnMin: string; earnExpire: string; earnNever: string
+      earnNone: string; earnPointsPerYuan: string; earnPointsPerYuanHint: string; earnMinYuan: string
+      earnExpireDays: string; earnExpireDaysHint: string; earnSave: string; earnSaved: string
+      levelMinPoints: string
+      taskCode: string; taskPoints: string; taskPeriod: string
+      reconTitle: string; reconDesc: string; reconSummaryTpl: string; reconPointsSummaryTpl: string
+      reconDriftOnly: string; reconRefresh: string; reconIssuedQty: string; reconActualIssued: string
+      reconUsed: string; reconRedeemedAmount: string; reconFaceValueTotal: string; reconDiff: string
+      reconAllMatch: string; reconCustomer: string; reconBalance: string; reconEntriesSum: string
+      reconLifetimeEarn: string; reconExpiredTotal: string
+    }
     error: {
       forbidden: string
       notFound: string
