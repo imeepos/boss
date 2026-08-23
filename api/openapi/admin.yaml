@@ -396,6 +396,11 @@ paths:
   /comp-tasks/{id}/close: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1close' }
   # ---------- Metric(指标目录与质量规则) ----------
   /metric-catalog: { $ref: './admin/metric.yaml#/paths/~1metric-catalog' }
+  /etl-jobs: { $ref: './admin/etl.yaml#/paths/~1etl-jobs' }
+  /etl-jobs/{jobKey}: { $ref: './admin/etl.yaml#/paths/~1etl-jobs~1{jobKey}' }
+  /etl-jobs/{jobKey}/disable: { $ref: './admin/etl.yaml#/paths/~1etl-jobs~1{jobKey}~1disable' }
+  /etl-jobs/{jobKey}/runs: { $ref: './admin/etl.yaml#/paths/~1etl-jobs~1{jobKey}~1runs' }
+  /etl-freshness: { $ref: './admin/etl.yaml#/paths/~1etl-freshness' }
   /metric-catalog/{key}: { $ref: './admin/metric.yaml#/paths/~1metric-catalog~1{key}' }
   /metric-catalog/{key}/deprecate: { $ref: './admin/metric.yaml#/paths/~1metric-catalog~1{key}~1deprecate' }
   /metric-quality-rules: { $ref: './admin/metric.yaml#/paths/~1metric-quality-rules' }

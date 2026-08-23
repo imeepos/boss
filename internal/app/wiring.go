@@ -178,6 +178,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	app.Report = &report.ReportService{Ana: app.Analytics, St: reportStore}
 	app.CompTask = report.NewCompTaskService(reportStore)
 	app.Metric = metric.NewPGStore(pool)
+	app.ETL = metric.NewPGStore(pool)
 
 	// 债务偿还:gRPC aaa/v1 依赖——授权器 + 话单投递 + W8 事件链(见 wiring_events.go)。
 	app.AaaAuth = aaa.NewPGAuthorizer(pool)
