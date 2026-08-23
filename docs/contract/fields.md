@@ -901,7 +901,7 @@ ISSUED/USED/EXPIRED/DISABLED。
 > 000106/000105 增量：`invite_config` 增 `reward_template_id`（邀请奖励券模板，可空）；
 > `coupon_templates` 增 `points_price`（积分兑换价，0=不可）。
 
-## 8D. 忠诚度积分域（internal/domain/loy，000104 最小实现；000119 完整化）
+## 8D. 忠诚度积分域（internal/domain/loy，000119 完整化）
 
 `loy_point_ledgers`（积分账本，客户唯一）：`customer_id` PK → customers、`balance`
 （CHECK >= 0）、`updated_at`。
@@ -926,8 +926,9 @@ PAYMENT_* 时为 payment id，(reason,ref_id) 部分唯一索引保幂等）、
 `min_cents`（起缴门槛）、`expire_days`（获得积分有效期天数，0=永久）、`status`
 （仅最新 ENABLED 行生效，SaveEarnRule 旧行自动失效）。
 
-> 兑换经 LOY→PROMO 服务调用（先扣积分后发券，发券失败补偿回补，见 adopted note）；
+> 兑换经 LOY→PROMO 服务调用（先扣积分后发券，发券失败或超时由补偿回补/回放，见 adopted note）；
 > 过期清算按客户汇总到期获得流水一次性扣减（余额不足只扣到 0，已消费部分不重复扣）。
+> 退款回滚按 `(PAYMENT_EARN, payment_id, customer_id)` 幂等生成 `PAYMENT_REVERSAL`；缴费自动积分按生效规则计算，重复回调返回原发放额。
 
 ### 8D-2. 券积分对账报表（2028 Q2 交付，GET /coupon-recon 与 /loy/points-recon）
 

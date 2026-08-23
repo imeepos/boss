@@ -60,6 +60,15 @@ a{color:var(--primary);text-decoration:none;}
   align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;}
 .ic-blue{background:#1677ff;}.ic-green{background:#52c41a;}.ic-orange{background:#faad14;}.ic-purple{background:#722ed1;}
 
+/* 积分中心 */
+.points-page{padding-top:18px;}
+.points-balance{display:flex;align-items:center;gap:12px;padding:18px 0 22px;border-bottom:1px solid var(--line);}
+.points-balance strong{font-size:32px;line-height:1;color:var(--primary);margin-right:auto;}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:20px 0 6px;}
+.section-title h2{font-size:15px;margin:0;}
+.empty{color:var(--muted);text-align:center;padding:16px 0;}
+.error{color:var(--err);padding:12px 0;}
+
 /* 标签 */
 .tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:4px;border:1px solid transparent;white-space:nowrap;}
 .tag-green{color:#389e0d;background:#f6ffed;border-color:#b7eb8f;}
