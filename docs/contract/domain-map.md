@@ -48,7 +48,7 @@
 | 防欺诈 FMS | FMS | AG-16 | 待建 | — | 待建 | 待建 |
 | 结算互连 SET | SET | AG-17 | 待建 | — | 待建 | 待建 |
 | 忠诚度积分 LOY | LOY | AG-18 | `loy`（000119 完整化：账本/流水/等级/任务/缴费自动积分/过期/退款回滚/积分换券补偿） | 增量 | 无专用页（admin API /points/*;user /points） | 用户门户 `/user/points` 展示余额、等级、任务、流水；积分换券经 LOY→PROMO 服务调用（先扣后发，失败补偿，超时可回放） |
-| 客户门户 | PORT | XG-04(组装) | `docs/user` 客户门户 MVP（真实 user API） | 增量(S4) | user端(非admin) | 首页→产品→订单→支付→发票/进度→工单/券/积分；完整旅程仍需 102 浏览器验收 |
+| 客户门户 | PORT | XG-04(组装) | `docs/user` 客户门户（35 页接入真实 user API `http://192.168.0.102:28080/api/user/v1`） | 增量(S4) | user端(非admin) | 首页→产品→订单→支付→发票/进度→工单/券/积分；导航流程已闭环；待完善：统一导航/三语/i18n/异常处理 |
 | 消息通知 | NOT | XG-04(组装) | `worker`(师傅侧消息/公告)、`notify`(admin 侧提醒/待办,迁移 000090) | 阶段2 | boss | message(后台提醒=第三页签);推送通道配置 push.*(pkg/push,迁移 000094,页面 /base/pushconfig) |
 | AI 能力网关 | AI | （横切，平台级，非 21 域） | `ai` | 增量 | 无专用页（复用 base/settings 参数页） | ai.openai.* 配置经 /params 或 /ai/openai/config 热更 |
 | 营销促销 | PROMO | （横切营销；LOY 积分待建，积分换券未来经契约） | `promotion` | 增量(000102) | bss（券仓入用户详情聚合;模板/赠送规则经 admin API,无专用页面） | 券模板/发放/兑换码/转赠/缴费抵扣/赠送时长规则;设计见 docs/design/promotion-coupon.md |
