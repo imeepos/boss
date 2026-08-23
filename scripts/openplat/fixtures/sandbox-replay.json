@@ -1,0 +1,43 @@
+{
+  "description": "开放平台回放样例集(M5):记录 请求→期望响应 对,scripts/openplat-replay.mjs 按序回放。data 与 internal/domain/openplat/sandbox.go 的样例同源,由 Go 测试 TestReplayFixturesMatchSandboxSamples 守护同步。",
+  "cases": [
+    {
+      "name": "ping",
+      "request": { "method": "GET", "path": "/api/open/v1/ping" },
+      "expect": { "status": 200, "code": 0, "dataFields": ["appRowId", "sandbox", "version"] }
+    },
+    {
+      "name": "sandbox-samples",
+      "request": { "method": "GET", "path": "/api/open/v1/sandbox/samples" },
+      "expect": { "status": 200, "code": 0, "dataFields": ["orders", "webhook"] }
+    },
+    {
+      "name": "sample-order-done",
+      "request": { "method": "GET", "path": "/api/open/v1/orders/SBX-ORD-0004" },
+      "expect": {
+        "status": 200,
+        "code": 0,
+        "data": { "orderNo": "SBX-ORD-0004", "status": "DONE", "stage": 12, "offerId": 103 }
+      }
+    },
+    {
+      "name": "sample-order-installing",
+      "request": { "method": "GET", "path": "/api/open/v1/orders/SBX-ORD-0003" },
+      "expect": {
+        "status": 200,
+        "code": 0,
+        "data": { "orderNo": "SBX-ORD-0003", "status": "INSTALLING", "stage": 9, "offerId": 101 }
+      }
+    },
+    {
+      "name": "sandbox-cannot-see-production-order",
+      "request": { "method": "GET", "path": "/api/open/v1/orders/ORD-20250817-001" },
+      "expect": { "status": 404 }
+    },
+    {
+      "name": "missing-signature-rejected",
+      "request": { "method": "GET", "path": "/api/open/v1/ping", "unsigned": true },
+      "expect": { "status": 401 }
+    }
+  ]
+}
