@@ -77,7 +77,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	// 赠送阶梯经 promotion 命中(000104:buy_months/gift_months 快照)。
 	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res},
 		quadLinkPrebinder{svc: qlStore},
-		prepaidCollector{bill: bill, portal: portalSvc, promo: promo, points: points})
+		prepaidCollector{bill: bill, portal: portalSvc, promo: promo, points: points}, partnerSvc, usr)
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表,见 wiring_events.go)。
 	anaStore, closeOLAP, err := selectAnalytics(ctx, pool, cfg)
@@ -157,6 +157,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 	wireGeoServices(app, pool)
 	wireAAAInfra(app, pool, aaastore, pushSender)
+	// 订单环节推进广播到开放平台 Webhook(000125 outbox;尽力而为,失败不影响推进)。
+	ord.SetStageNotifier(app.OpenWebhook)
 
 	app.Audit = aw
 	app.Attachment.Resolve = minioConfigResolver(app.User, app.Attachment.Conf)
@@ -189,7 +191,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		stopDailyRecon()      // 每日数据对账循环(Q2)
 		stopPointsExpire()    // 积分过期清算循环(2028 Q2)
 		stopWebhookDelivery() // Webhook 投递循环(Q4 开放平台 M2)
-		aw.Close()           // 排空审计队列
+		aw.Close()            // 排空审计队列
 		if em.closeCdr != nil {
 			em.closeCdr()
 		}

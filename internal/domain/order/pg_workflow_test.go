@@ -220,9 +220,9 @@ func (f *fakePrepaidCollector) Collect(_ context.Context, customerID int64, amou
 
 // expectChargeAdvance 环节4 推进(advance)的 mock 序列:select → update → 环节日志。
 func expectChargeAdvance(mock pgxmock.PgxPoolIface) {
-	mock.ExpectQuery(`SELECT stage, status FROM orders`).
+	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).
-		WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(3), "RESERVED"))
+		WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(3), "RESERVED", "ORD-7"))
 	mock.ExpectExec(`UPDATE orders SET stage`).
 		WithArgs(int64(7), int8(4), "RESERVED").
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))

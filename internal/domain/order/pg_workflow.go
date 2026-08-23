@@ -8,40 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// advance 推进一个环节:顺序守卫(stage 必须等于上一环节)+ status 迁移(经 orderSM)+ 环节日志。
-// 单事实源:所有环节推进都必须过此原语,禁止直接改 stage/status。
-func (s *PGStore) advance(ctx context.Context, orderID int64, event string) error {
-	step, ok := workflowByEvent[event]
-	if !ok {
-		return fmt.Errorf("order: unknown event %q", event)
-	}
-	var stage int8
-	var status string
-	err := s.db.QueryRow(ctx, `SELECT stage, status FROM orders WHERE id = $1`, orderID).Scan(&stage, &status)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrOrderNotFound
-	}
-	if err != nil {
-		return fmt.Errorf("order: advance select: %w", err)
-	}
-	if stage != step.stage-1 {
-		return ErrIllegalTransition
-	}
-	nextStatus := status
-	if step.statusEvent != "" {
-		ns, err := transition(status, step.statusEvent)
-		if err != nil {
-			return err
-		}
-		nextStatus = ns
-	}
-	if _, err := s.db.Exec(ctx, `UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, step.stage, nextStatus); err != nil {
-		return fmt.Errorf("order: advance update: %w", err)
-	}
-	s.syncDispatchTicket(ctx, orderID, nextStatus)
-	return s.appendStage(ctx, orderID, step.stage, "DONE")
-}
-
 // syncDispatchTicket 订单终态同步派单工单:订单 DONE/CANCELED 时工单随动,
 // 避免订单已完成而工单仍停留 PENDING(师傅端出现"12/12 待领取")。
 func (s *PGStore) syncDispatchTicket(ctx context.Context, orderID int64, orderStatus string) {
@@ -182,6 +148,7 @@ func (s *PGStore) NotifyActivation(ctx context.Context, orderID int64) error {
 }
 
 // UpdateMap 环节12 更新 GIS;订单终态 DONE 后端口转在用(terms.md §4:IDLE→RESERVED→USED)。
+// 渠道订单到达终态时自动计提佣金(尽力而为,不影响环节推进)。
 func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
 	if err := s.advance(ctx, orderID, "updateMap"); err != nil {
 		return err
@@ -191,7 +158,29 @@ func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
 	); err != nil {
 		return fmt.Errorf("order: mark port used: %w", err)
 	}
+	s.accruePartnerCommission(ctx, orderID)
 	return nil
+}
+
+// accruePartnerCommission 渠道订单终态自动计提佣金;尽力而为,失败只记日志不阻断。
+func (s *PGStore) accruePartnerCommission(ctx context.Context, orderID int64) {
+	if s.commission == nil {
+		return
+	}
+	var entityID int64
+	var amount float64
+	err := s.db.QueryRow(ctx, `
+SELECT o.legal_entity_id, po.monthly_fee * GREATEST(o.buy_months, 1)
+FROM orders o JOIN channels ch ON ch.id=o.channel_id
+JOIN product_offers po ON po.id=o.offer_id
+WHERE o.id=$1 AND ch.code='AGENT'`, orderID).Scan(&entityID, &amount)
+	if err != nil {
+		return
+	}
+	if entityID == 0 {
+		return
+	}
+	_, _ = s.commission.AccrueCommission(ctx, orderID, entityID, amount, partnerRate(ctx, s.params))
 }
 
 // Cancel 取消订单:任一未完成状态可取消(status→CANCELLED),不动环节序号;并回收预占端口。
