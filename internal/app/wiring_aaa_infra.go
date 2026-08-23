@@ -24,7 +24,10 @@ func wireAAAInfra(app *Application, pool *pgxpool.Pool, aaastore *aaa.PGStore, p
 	app.QuadLink = quadlink.NewPGStore(pool)
 	app.Asset = asset.NewPGStore(pool)
 	app.APIKey = apikey.NewPGStore(pool)
-	app.OpenPlat = openplat.NewPGStore(pool)
+	openstore := openplat.NewPGStore(pool)
+	app.OpenPlat = openstore
+	// Webhook 投递器:同一 store(outbox 读写)+ 默认 HTTP 客户端,后台循环驱动。
+	app.OpenWebhook = openplat.NewWebhookDispatcher(openstore, openplat.NewHTTPPoster())
 	app.AI = ai.NewService(ai.NewPGStore(pool))
 	app.Notify = notify.NewPGStore(pool)
 

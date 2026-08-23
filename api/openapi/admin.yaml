@@ -135,6 +135,9 @@ paths:
   /openplat/apps/{id}/status: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1status' }
   /openplat/apps/{id}/subscriptions: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1subscriptions' }
   /openplat/subscriptions/{id}: { $ref: './admin/openplat.yaml#/paths/~1openplat~1subscriptions~1{id}' }
+  /openplat/deliveries: { $ref: './admin/openplat.yaml#/paths/~1openplat~1deliveries' }
+  /openplat/deliveries/{id}/requeue: { $ref: './admin/openplat.yaml#/paths/~1openplat~1deliveries~1{id}~1requeue' }
+  /openplat/apps/{id}/test-event: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1test-event' }
   /regions: { $ref: './admin/org.yaml#/paths/~1regions' }
   /regions/{regionId}/coverage: { $ref: './admin/org.yaml#/paths/~1regions~1{regionId}~1coverage' }
   /menu-perms: { $ref: './admin/org.yaml#/paths/~1menu-perms' }

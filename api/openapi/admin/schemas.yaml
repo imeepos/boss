@@ -104,3 +104,19 @@ components:
         endpointUrl: { type: string }
         status: { type: integer, enum: [0, 1] }
         createdAt: { type: string }
+    OpenPlatDelivery:
+      type: object
+      description: Webhook 投递 outbox 行(迁移 000125;同订阅+event_id 幂等唯一)
+      properties:
+        id: { type: integer, format: int64 }
+        subscriptionId: { type: integer, format: int64 }
+        eventId: { type: string, description: 幂等键,如 ORD-20250817-001:activated }
+        eventType: { type: string }
+        payload: { type: string, description: JSON 文本 }
+        status: { type: integer, enum: [0, 1, 2], description: 0待投递 1已投递 2死信 }
+        attempts: { type: integer }
+        nextAttemptAt: { type: string }
+        httpStatus: { type: integer }
+        lastError: { type: string }
+        deliveredAt: { type: string }
+        createdAt: { type: string }

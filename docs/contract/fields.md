@@ -392,3 +392,7 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | — | `LastUsedAt` | last_used_at | 供审计/巡检 |
 | 订阅事件 | `EventType` | open_webhook_subscriptions.event_type | 如 order.activated；同 app+事件+端点唯一 |
 | 回调端点 | `EndpointURL` | endpoint_url | HTTPS 回调地址（M2 投递器消费） |
+| 投递状态 | `Status` | open_webhook_deliveries.status | 0待投递 / 1已投递 / 2死信（超过 6 次重试，迁移 000125） |
+| 幂等键 | `EventID` | open_webhook_deliveries.event_id | 同订阅+事件唯一（UNIQUE + DO NOTHING），重放不重复执行业务动作 |
+| 重试次数 | `Attempts` | attempts | 失败按 30s×2^n 指数退避（封顶 1h），`NextAttemptAt` 排下次 |
+| 投递结果 | `HTTPStatus` / `LastError` | http_status / last_error | 2xx 成功；非 2xx/网络错误记错误进重试 |

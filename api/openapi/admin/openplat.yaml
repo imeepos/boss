@@ -121,3 +121,57 @@ paths:
       responses:
         '200':
           description: data 为 null
+
+  /openplat/deliveries:
+    get:
+      tags: [OpenPlat]
+      summary: Webhook 投递 outbox(倒序最近 200;subscriptionId 过滤,0=全部)
+      operationId: listOpenDeliveries
+      parameters:
+        - { name: subscriptionId, in: query, required: false, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: data.items 为投递数组(迁移 000125)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/OpenPlatDelivery' }
+
+  /openplat/deliveries/{id}/requeue:
+    post:
+      tags: [OpenPlat]
+      summary: 死信/失败投递重置重试(attempts 清零;已投递行拒绝)
+      operationId: requeueOpenDelivery
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: data 为 null
+
+  /openplat/apps/{id}/test-event:
+    post:
+      tags: [OpenPlat]
+      summary: 发测试事件(openplat.test)到该应用全部启用订阅,集成方自助验收签名/连通
+      operationId: emitOpenTestEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: data 含 eventId(幂等键)与 queued(命中订阅数)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eventId: { type: string }
+                  queued: { type: integer }

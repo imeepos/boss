@@ -73,6 +73,10 @@ type Service interface {
 	CreateSubscription(ctx context.Context, appID int64, eventType, endpointURL string) (*Subscription, error)
 	ListSubscriptions(ctx context.Context, appID int64) ([]Subscription, error)
 	DeleteSubscription(ctx context.Context, id int64) error
+
+	// ListDeliveries / Requeue 管理 Webhook 投递 outbox(M2,迁移 000125)。
+	ListDeliveries(ctx context.Context, subscriptionID int64) ([]Delivery, error)
+	Requeue(ctx context.Context, id int64) error
 }
 
 // AuthContext 验签所需的最小应用上下文。

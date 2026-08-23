@@ -18,6 +18,11 @@ func registerOpenPlatRoutes(g *gin.RouterGroup, a *app.Application) {
 	op.GET("/openplat/apps/:id/subscriptions", openPlatSubListHandler(a))
 	op.POST("/openplat/apps/:id/subscriptions", openPlatSubCreateHandler(a))
 	op.DELETE("/openplat/subscriptions/:id", openPlatSubDeleteHandler(a))
+
+	// M2:投递 outbox 管理面 + 集成方自助验收集(测试事件)。
+	op.GET("/openplat/deliveries", openPlatDeliveryListHandler(a))
+	op.POST("/openplat/deliveries/:id/requeue", openPlatDeliveryRequeueHandler(a))
+	op.POST("/openplat/apps/:id/test-event", openPlatTestEventHandler(a))
 }
 
 // openPlatAppCreateReq 创建应用请求体(rpm/quota 缺省 60/10000)。

@@ -116,6 +116,7 @@ type Application struct {
 	Asset     asset.AssetService
 	APIKey    apikey.Service
 	OpenPlat  openplat.Service // 开放平台(Q4):外部应用凭证/签名/配额/Webhook 订阅
+	OpenWebhook *openplat.WebhookDispatcher // Webhook 投递器(outbox/退避重试,迁移 000124)
 	AI        ai.Service
 	// Partner 招商引资/合作入驻域(迁移 000098)。
 	Partner           partner.Service
