@@ -7,6 +7,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/aaa"
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/cs"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/device"
@@ -128,6 +129,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		Order:           ord,
 		WorkOrder:       ord,
 		CSMetrics:       ord,
+		Knowledge:       cs.NewPGKnowledgeStore(pool),
 		ARMetrics:       bill,
 		CollectionQueue: bill,
 		OrderLedger:     ord,

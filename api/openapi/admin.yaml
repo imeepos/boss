@@ -384,6 +384,10 @@ paths:
   /geo/subdivisions/{code}/names/{locale}/{nameType}: { $ref: './admin/geo.yaml#/paths/~1geo~1subdivisions~1{code}~1names~1{locale}~1{nameType}' }
   /geo/import: { $ref: './admin/geo.yaml#/paths/~1geo~1import' }
 
+  # ---------- CS Knowledge(客服知识库) ----------
+  /knowledge-articles: { $ref: './admin/knowledge.yaml#/paths/~1knowledge-articles' }
+  /knowledge-articles/{articleId}: { $ref: './admin/knowledge.yaml#/paths/~1knowledge-articles~1{articleId}' }
+
   # ---------- ODN(无源物理层) ----------
   /odn/grids: { $ref: './admin/odn.yaml#/paths/~1odn~1grids' }
   /odn/grids/{gridCode}: { $ref: './admin/odn.yaml#/paths/~1odn~1grids~1{gridCode}' }

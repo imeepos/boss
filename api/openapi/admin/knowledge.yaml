@@ -1,0 +1,58 @@
+paths:
+  /knowledge-articles:
+    get:
+      tags: [CS]
+      summary: 客服知识库文章列表(CS 域,menu:complaint)
+      operationId: listKnowledgeArticles
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [CS]
+      summary: 新增知识库文章
+      operationId: createKnowledgeArticle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, title, content]
+              properties:
+                code: { type: string }
+                title: { type: string }
+                content: { type: string }
+                status: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE], default: DRAFT }
+                ownerId: { type: integer, format: int64 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /knowledge-articles/{articleId}:
+    put:
+      tags: [CS]
+      summary: 更新知识库文章(版本自增)
+      operationId: updateKnowledgeArticle
+      parameters:
+        - { name: articleId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, title, content]
+              properties:
+                code: { type: string }
+                title: { type: string }
+                content: { type: string }
+                status: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE] }
+                ownerId: { type: integer, format: int64 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [CS]
+      summary: 删除知识库文章
+      operationId: deleteKnowledgeArticle
+      parameters:
+        - { name: articleId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

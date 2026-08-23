@@ -62,6 +62,7 @@ const WorkerOpsPage = lazy(() => import('./pages/boss/worker-ops'))
 const DispatchPage = lazy(() => import('./pages/boss/dispatch'))
 const DismantlePage = lazy(() => import('./pages/boss/dismantle'))
 const ComplaintPage = lazy(() => import('./pages/boss/complaint'))
+const KnowledgePage = lazy(() => import('./pages/boss/knowledge'))
 const ServiceMetricsPage = lazy(() => import('./pages/boss/service-metrics'))
 const FeedbackPage = lazy(() => import('./pages/boss/feedback'))
 const CallbackPage = lazy(() => import('./pages/boss/callback'))
@@ -160,6 +161,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'dispatch') return <DispatchPage />
   if (pageKey === 'dismantle') return <DismantlePage />
   if (pageKey === 'complaint') return <ComplaintPage />
+  if (pageKey === 'knowledge') return <KnowledgePage />
   if (pageKey === 'service-metrics') return <ServiceMetricsPage />
   if (pageKey === 'feedback') return <FeedbackPage />
   if (pageKey === 'callback') return <CallbackPage />

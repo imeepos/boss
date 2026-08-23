@@ -12,6 +12,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/backup"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/cs"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/device"
@@ -98,6 +99,7 @@ type Application struct {
 	Order           order.OrderService
 	WorkOrder       order.WorkOrderService
 	CSMetrics       order.CSMetricsReader
+	Knowledge       cs.KnowledgeService
 	ARMetrics       billing.ARMetricsReader
 	CollectionQueue billing.CollectionQueueService
 	OrderLedger     order.OrderLedgerService
@@ -111,14 +113,14 @@ type Application struct {
 	Analytics analytics.AnalyticsService
 	Report    *report.ReportService
 
-	Aaa       aaa.AaaService
-	Provision provision.ProvisionService
-	QuadLink  quadlink.QuadLinkService
-	Asset     asset.AssetService
-	APIKey    apikey.Service
-	OpenPlat  openplat.Service // 开放平台(Q4):外部应用凭证/签名/配额/Webhook 订阅
+	Aaa         aaa.AaaService
+	Provision   provision.ProvisionService
+	QuadLink    quadlink.QuadLinkService
+	Asset       asset.AssetService
+	APIKey      apikey.Service
+	OpenPlat    openplat.Service            // 开放平台(Q4):外部应用凭证/签名/配额/Webhook 订阅
 	OpenWebhook *openplat.WebhookDispatcher // Webhook 投递器(outbox/退避重试,迁移 000124)
-	AI        ai.Service
+	AI          ai.Service
 	// Partner 招商引资/合作入驻域(迁移 000098)。
 	Partner           partner.Service
 	PartnerCommission partner.CommissionLedgerService

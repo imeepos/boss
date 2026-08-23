@@ -82,6 +82,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'dispatch', label: '派单管理', path: '/boss/dispatch' },
     { key: 'dismantle', label: '拆机管理', path: '/boss/dismantle' },
     { key: 'complaint', label: '报障与投诉', path: '/boss/complaint' },
+    { key: 'knowledge', label: '知识库', path: '/boss/knowledge' },
     { key: 'service-metrics', label: '客户服务指标', path: '/boss/service-metrics' },
     { key: 'feedback', label: '回访评价', path: '/boss/feedback' },
     { key: 'callback', label: '激活回调', path: '/boss/callback' },
