@@ -767,7 +767,24 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 > 000059 起本表并入统一 `verifications`（subject_type='customer'）；000070 起新增上表三列。
 > 2026-08-24 起支持阿里云二要素自动核验：通道配置后提交即判定，结论记录 operator_name=「阿里云二要素」、operator_account_id=0；通道未配置/调用失败保持 PENDING 走人工核验（adopted/2026-08-24-realid-channel-aliyun-cloudauth.md）。
 
-## 8B. 招商入驻域（internal/domain/partner，000098）
+## 8B. Q1 客服与应收信用基础（internal/domain/cs + internal/domain/ar，000118）
+
+> CS 扩展既有 `complaints` 工单；AR 扩展既有 `arrears` 快照。跨域只保存稳定 ID，不复制订单、客户、账单、资源或告警事实。
+
+| 页面/概念 | API 字段 | DB 列 | 说明 |
+|:---|:---|:---|:---|
+| 工单优先级 | `priority` | `priority` | LOW/NORMAL/HIGH/URGENT |
+| 升级级别 | `escalationLevel` | `escalation_level` | 0=未升级，正整数递增 |
+| 首次响应 | `firstResponseAt` | `first_response_at` | 首次客服响应时间 |
+| SLA 截止 | `slaDueAt` | `sla_due_at` | 未关闭工单的绝对截止时间 |
+| 账龄快照日 | `snapshotDate` | `snapshot_date` | 客户每日唯一 |
+| 账龄桶 | `days1To30` 等 | `days_1_30` 等 | 1-30/31-60/61-90/90+ 金额 |
+| 催收任务 | `collectionTasks` | `ar_collection_tasks` | PENDING/DOING/DONE/FAILED 人工可接管 |
+| 承诺还款 | `paymentPromises` | `ar_payment_promises` | OPEN/FULFILLED/BROKEN/CANCELED |
+| 核销 | `writeoffs` | `ar_writeoffs` | 金额、原因、审批人和审批时间留痕 |
+| 服务指标 | `metricKey/numerator/denominator/value` | `service_metric_snapshots` | 按日幂等，禁止无样本伪造数据 |
+
+## 8C. 招商入驻域（internal/domain/partner，000098）
 
 `partner_applications`（入驻申请，公开提交；审核前不入 legal_entities/accounts）：
 

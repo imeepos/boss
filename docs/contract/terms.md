@@ -80,6 +80,8 @@
 | 积分流水 entry.reason | ADMIN_ADJUST / EXCHANGE / EXCHANGE_REVERSAL | 手动调整 / 积分换券扣减 / 发券失败补偿回补 |
 | 订购付费模式 billing_mode | PREPAID / POSTPAID | 预付费（办单即收，不进月度出账）/ 后付费（月度出账，存量默认）；挂 lo_accounts 与 orders 快照，不挂 product_offers（adopted note 2026-08-22） |
 | 账实核对 ledger_recon.diffKind | UNPAID / PARTIAL / OVERPAID / REFUNDED / PAID_NO_INVOICE / MATCH | 未收 / 部分收 / 多收 / 退款未补收 / 已收未开票 / 三角一致；按账单定位（应收=bills.amount，实收=SUCCESS−REFUNDED，开票=ISSUED invoices.total_amount），见 docs/design/q3-ledger-recon.md |
+| CS 工单优先级 cs_ticket_extensions.priority | LOW / NORMAL / HIGH / URGENT | 客服队列优先级；不改变 complaints.status |
+| AR 信用等级 ar_credit_profiles.credit_level | STANDARD / WATCH / RESTRICTED / SUSPENDED | 可解释规则等级；停机仍经既有 stop_resume_tasks 编排 |
 | 税局轨迹 invoice_tax_event.event | RECEIPT / BACKFILL / VOID / REISSUE | 网关回执 / 人工回填票号 / 发票作废 / 原票作废重开；轨迹与 invoice.status、tax_status 正交，时间正序回放，见 docs/design/q3-tax-trail.md |
 
 ## 5. 关键术语
