@@ -3,6 +3,9 @@
 package adminapi
 
 import (
+	"strings"
+	"unicode/utf8"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -26,8 +29,10 @@ func registerOpenPlatRoutes(g *gin.RouterGroup, a *app.Application) {
 }
 
 // openPlatAppCreateReq 创建应用请求体(rpm/quota 缺省 60/10000)。
+// name 由 gin binding:"required" 在反序列化阶段拒空字符串,
+// 配合 validate() 里的 trim+长度校验,避免客户端发 "" 或全空白绕过。
 type openPlatAppCreateReq struct {
-	Name         string `json:"name"`
+	Name         string `json:"name" binding:"required"`
 	RateLimitRPM int    `json:"rateLimitRpm"`
 	DailyQuota   int    `json:"dailyQuota"`
 	Sandbox      bool   `json:"sandbox"`
@@ -44,9 +49,19 @@ type openPlatSubCreateReq struct {
 	EndpointURL string `json:"endpointUrl"`
 }
 
-// validate 校验创建应用请求。
+// validate 校验创建应用请求:trim 后非空 + 长度 ≤ 64;rpm/quota 非负。
 func (r openPlatAppCreateReq) validate() error {
-	return httpx.RequireString(r.Name, "name", 64)
+	name := strings.TrimSpace(r.Name)
+	if name == "" {
+		return &httpx.ValidationError{Field: "name", Message: "is required"}
+	}
+	if utf8.RuneCountInString(name) > 64 {
+		return &httpx.ValidationError{Field: "name", Message: "max 64 characters"}
+	}
+	return httpx.CollectErrors(
+		httpx.RequireNonNegativeFloat(float64(r.RateLimitRPM), "rateLimitRpm"),
+		httpx.RequireNonNegativeFloat(float64(r.DailyQuota), "dailyQuota"),
+	)
 }
 
 // validate 校验新增订阅请求。
