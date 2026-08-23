@@ -327,7 +327,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 	t.Run("W7_下发重试留痕_指标告警", func(t *testing.T) {
 		// 下发:建模板+任务 → 失败留痕 → 重试 → 执行成功。
 		tplID, err := a.Provision.CreateTemplate(ctx, provision.Template{
-			LegalEntityID: 1, Code: "TPL-E2E-" + orderNo6(time.Now().UnixNano()%1e12), Name: "E2E模板",
+			LegalEntityID: 1, Code: fmt.Sprintf("TPL-E2E-%d", time.Now().UnixNano()%1000000000000), Name: "E2E模板",
 		})
 		if err != nil {
 			t.Fatal(err)
