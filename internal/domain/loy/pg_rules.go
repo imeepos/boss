@@ -130,7 +130,7 @@ func (s *PGStore) DisableTask(ctx context.Context, taskID int64) error {
 	return nil
 }
 
-// periodKeyOf 当前周期键:ONE_TIME 固定 '',DAILY/MONTHLY 按本地时间截断。
+// periodKeyOf 当前周期键:ONE_TIME 固定 ”,DAILY/MONTHLY 按本地时间截断。
 func periodKeyOf(period string, now time.Time) string {
 	switch period {
 	case "DAILY":

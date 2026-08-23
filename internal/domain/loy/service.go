@@ -16,11 +16,11 @@ const (
 	ReasonAdjust    = "ADMIN_ADJUST"
 	ReasonExchange  = "EXCHANGE"
 	ReasonReversal  = "EXCHANGE_REVERSAL"
-	ReasonPayEarn   = "PAYMENT_EARN"   // ref=payment_id
+	ReasonPayEarn   = "PAYMENT_EARN"     // ref=payment_id
 	ReasonPayRoll   = "PAYMENT_REVERSAL" // ref=payment_id,退款冲销
-	ReasonTask      = "TASK_EARN"      // ref=task_id
-	ReasonExpired   = "EXPIRED"        // ref=被过期汇总的最早 entry_id
-	ReasonCompensat = "COMPENSATION"   // 跨域失败补偿回补
+	ReasonTask      = "TASK_EARN"        // ref=task_id
+	ReasonExpired   = "EXPIRED"          // ref=被过期汇总的最早 entry_id
+	ReasonCompensat = "COMPENSATION"     // 跨域失败补偿回补
 )
 
 // Entry 积分流水。
@@ -54,10 +54,10 @@ type Task struct {
 
 // EarnRule 缴费自动积分规则:每元积分 + 起缴门槛 + 获得积分有效期天数。
 type EarnRule struct {
-	RuleID        int64 `json:"ruleId"`
-	PointsPerYuan int   `json:"pointsPerYuan" binding:"gte=0"`
-	MinCents      int64 `json:"minCents" binding:"gte=0"`
-	ExpireDays    int   `json:"expireDays" binding:"gte=0"` // 0=永不过期
+	RuleID        int64  `json:"ruleId"`
+	PointsPerYuan int    `json:"pointsPerYuan" binding:"gte=0"`
+	MinCents      int64  `json:"minCents" binding:"gte=0"`
+	ExpireDays    int    `json:"expireDays" binding:"gte=0"` // 0=永不过期
 	Status        string `json:"status"`
 }
 

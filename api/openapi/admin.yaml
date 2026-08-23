@@ -128,6 +128,7 @@ paths:
   /posts/{postId}: { $ref: './admin/org.yaml#/paths/~1posts~1{postId}' }
   /api-keys: { $ref: './admin/sys.yaml#/paths/~1api-keys' }
   /api-keys/{id}: { $ref: './admin/sys.yaml#/paths/~1api-keys~1{id}' }
+  /api-key-templates: { $ref: './admin/sys.yaml#/paths/~1api-key-templates' }
   /regions: { $ref: './admin/org.yaml#/paths/~1regions' }
   /regions/{regionId}/coverage: { $ref: './admin/org.yaml#/paths/~1regions~1{regionId}~1coverage' }
   /menu-perms: { $ref: './admin/org.yaml#/paths/~1menu-perms' }
@@ -153,6 +154,7 @@ paths:
   /bills: { $ref: './admin/billing.yaml#/paths/~1bills' }
   /payments: { $ref: './admin/billing.yaml#/paths/~1payments' }
   /payments/{id}/refund: { $ref: './admin/billing.yaml#/paths/~1payments~1{id}~1refund' }
+  /dunning-runs: { $ref: './admin/billing.yaml#/paths/~1dunning-runs' }
   /billing-runs: { $ref: './admin/billing.yaml#/paths/~1billing-runs' }
   /invoices: { $ref: './admin/billing.yaml#/paths/~1invoices' }
   /invoices/{id}/void: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1void' }
@@ -271,6 +273,12 @@ paths:
   /gift-rules/{ruleId}/disable: { $ref: './admin/promotion.yaml#/paths/~1gift-rules~1{ruleId}~1disable' }
   /points/{customerId}: { $ref: './admin/loy.yaml#/paths/~1points~1{customerId}' }
   /points/{customerId}/adjust: { $ref: './admin/loy.yaml#/paths/~1points~1{customerId}~1adjust' }
+  /loy/levels: { $ref: './admin/loy.yaml#/paths/~1loy~1levels' }
+  /loy/levels/{id}/disable: { $ref: './admin/loy.yaml#/paths/~1loy~1levels~1{id}~1disable' }
+  /loy/tasks: { $ref: './admin/loy.yaml#/paths/~1loy~1tasks' }
+  /loy/tasks/{id}/disable: { $ref: './admin/loy.yaml#/paths/~1loy~1tasks~1{id}~1disable' }
+  /loy/earn-rule: { $ref: './admin/loy.yaml#/paths/~1loy~1earn-rule' }
+  /loy/expire/run: { $ref: './admin/loy.yaml#/paths/~1loy~1expire~1run' }
   /invite-config: { $ref: './admin/userdata.yaml#/paths/~1invite-config' }
   /user-usages: { $ref: './admin/userdata.yaml#/paths/~1user-usages' }
   /diy-guides: { $ref: './admin/userdata.yaml#/paths/~1diy-guides' }

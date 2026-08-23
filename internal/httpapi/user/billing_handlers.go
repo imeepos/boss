@@ -158,9 +158,9 @@ func portalListPayments(a *app.Application) gin.HandlerFunc {
 		for _, p := range pays {
 			items = append(items, gin.H{
 				"payNo": p.PayNo, "amount": p.Amount,
-				"period":     portalPaymentPeriod(p, periodByBill),
-				"payMethod":  p.Method,
-				"paidAt":     time.Now().Format(time.RFC3339),
+				"period":    portalPaymentPeriod(p, periodByBill),
+				"payMethod": p.Method,
+				"paidAt":    time.Now().Format(time.RFC3339),
 			})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
@@ -249,6 +249,7 @@ func portalTopup(a *app.Application) gin.HandlerFunc {
 		})
 	}
 }
+
 // portalTopupReq 充值请求体。
 type portalTopupReq struct {
 	Amount    float64 `json:"amount" binding:"required,gt=0"`

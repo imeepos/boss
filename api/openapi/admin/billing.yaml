@@ -392,3 +392,18 @@ components:
         taxNo: { type: string, description: 税局票号,ISSUED 时非空 }
         taxFailReason: { type: string }
         issuedAt: { type: string, format: date-time }
+  /dunning-runs:
+    post:
+      summary: 欠费催收批处理(宽限/停机线天数可配,缺省 15/30)
+      tags: [Billing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                graceDays: { type: integer }
+                stopAfterDays: { type: integer }
+      responses:
+        '200': { description: 催收执行结果 }

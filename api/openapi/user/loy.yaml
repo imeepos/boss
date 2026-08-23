@@ -58,3 +58,72 @@ paths:
                     properties:
                       couponId: { type: string }
                       cost: { type: integer, format: int64 }
+  /points/tier:
+    get:
+      summary: 我的积分等级(累计获得积分匹配,可为 null)
+      tags: [Loyalty]
+      responses:
+        '200':
+          description: 当前等级
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      tier:
+                        type: object
+                        nullable: true
+                        properties:
+                          levelId: { type: integer, format: int64 }
+                          name: { type: string }
+                          minPoints: { type: integer, format: int64 }
+  /points/tasks:
+    get:
+      summary: 积分任务列表与当前周期完成态
+      tags: [Loyalty]
+      responses:
+        '200':
+          description: 任务列表(completedAt 非空=本周期已完成)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      tasks:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            taskId: { type: integer, format: int64 }
+                            code: { type: string }
+                            name: { type: string }
+                            points: { type: integer, format: int64 }
+                            period: { type: string, enum: [ONE_TIME, DAILY, MONTHLY] }
+                            status: { type: string, enum: [ENABLED, DISABLED] }
+                            completedAt: { type: string }
+  /points/tasks/{id}/complete:
+    post:
+      summary: 完成任务领积分(周期内幂等,重复返回冲突)
+      tags: [Loyalty]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
+      responses:
+        '200':
+          description: 完成后余额
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      balance: { type: integer, format: int64 }

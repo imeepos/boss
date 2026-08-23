@@ -36,6 +36,31 @@ func (f *fakeLoy) Exchange(context.Context, int64, int64) (string, int64, error)
 	return f.coupon, f.cost, nil
 }
 
+func (f *fakeLoy) ListLevels(context.Context) ([]loy.Level, error)       { return nil, nil }
+func (f *fakeLoy) CreateLevel(context.Context, loy.Level) (int64, error) { return 1, nil }
+func (f *fakeLoy) DisableLevel(context.Context, int64) error             { return nil }
+func (f *fakeLoy) TierOf(context.Context, int64) (*loy.Level, error)     { return nil, nil }
+func (f *fakeLoy) ListTasks(context.Context) ([]loy.Task, error)         { return nil, nil }
+func (f *fakeLoy) CreateTask(context.Context, loy.Task) (int64, error)   { return 1, nil }
+func (f *fakeLoy) DisableTask(context.Context, int64) error              { return nil }
+func (f *fakeLoy) CompleteTask(_ context.Context, _ int64, _ int64) (int64, error) {
+	return f.balance, nil
+}
+func (f *fakeLoy) TaskStatus(context.Context, int64) (map[int64]string, error) {
+	return nil, nil
+}
+func (f *fakeLoy) EarnForPayment(context.Context, int64, int64, int64) (int64, error) {
+	return 0, nil
+}
+func (f *fakeLoy) RollbackPayment(context.Context, int64, int64) (int64, error) {
+	return 0, nil
+}
+func (f *fakeLoy) EarnRuleOf(context.Context) (*loy.EarnRule, error) { return nil, nil }
+func (f *fakeLoy) SaveEarnRule(context.Context, loy.EarnRule) (int64, error) {
+	return 1, nil
+}
+func (f *fakeLoy) ExpireDue(context.Context) (int, error) { return 0, nil }
+
 func TestPortalPoints(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mgr := auth.NewManager("s", time.Hour)
