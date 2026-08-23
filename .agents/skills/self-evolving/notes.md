@@ -75,11 +75,13 @@
 - 2026-08-24 伙伴台账回归：佣金写入测试应验证幂等 upsert 的真实参数，并验证结算零行时拒绝，避免只测列表读路径。
 - 2026-08-24 受限 API key：模板码必须从 Lookup 传入认证上下文，Authz 先按模板权限集判定；不能只在签发接口保存 template_code 而继续让 key 继承完整 RBAC。
 - 2026-08-24 API key 回归：异步 `Touch` 测试必须等待原子计数，模板权限测试同时断言允许 `menu:partner-orders` 与拒绝普通管理菜单。
+- 2026-08-24 伙伴 HTTP 回归：直接调用 handler 比装配完整 RBAC 路由更稳定；测试 stub 要按拆分后的 Partner/Commission/Audit/Region 接口分别注入，避免 nil 权限服务 panic。
 - 2026-08-24 工作台统计卡跳转：统计卡必须由组件统一处理鼠标/键盘交互，目标列表页同时消费 URL 条件；今日订单需前后端共同支持时间条件，不能只改变前端地址。
 - 2026-08-24 订单状态趋势：后端趋势接口返回按 terms.md 五种状态拆分的 series，前端图表通过 legend button 切换可见曲线；扩展接口时同步更新后端 contract test、Dashboard DTO 和三份 locale。
 - 本轮 Q1 CS/AR：迁移号查到未合并分支已占 000117，必须让号到 000118；Go 工具不在 PATH（gofmt/go test 均未执行），收尾应明确区分代码门禁未运行与代码错误。
 - 本轮指标增量：并行主树编辑事故再次发生，必须在每次写入前用绝对 worktree 路径确认目标，且测试桩改动要在特性树完成；核心门禁实际应显式使用 `/opt/homebrew/bin/go`，不能信任 PATH。
 - 本轮前端看板：已有 i18n 类型结构和多语言 locale 不易用宽 old_string 精确替换，新增 UI 应优先复用已有列名/页面文案或先定位精确行，避免为少量标签扩大契约改动；前端 typecheck/test/build 三门禁均可直接验证数据接入。
+- 本轮补齐页面：新增菜单 key 后必须同步 zh-CN/en-US/ms-MY 三份 locale，且 locale 脚本从仓库根目录执行；在 web/admin 子目录执行仓库相对路径脚本会静默找不到文件，导致键集测试失败。
 
 - 2026-08-22 GIS 地图空白：真实 102 `/gis/points?level=1` 返回空 items 时，页面原先用条件渲染卸载 OpenLayers；地图底图也随之消失。地图容器必须独立渲染，空数据提示用 pointer-events-none 覆盖层，避免把“无点位”误处理成“无地图”。
 - 2026-08-22 GIS 地图仍空白：OpenLayers `map.on()` 返回 EventsKey，不能传给 `map.un()` 当 listener；React StrictMode 清理 effect 时抛 `removeEventListener` 异常，地图随组件卸载。统一用 `unByKey()` 清理 OL 事件。
