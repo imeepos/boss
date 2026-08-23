@@ -17,7 +17,7 @@
 |:-----|:-----|:----------|
 | 每日 | 检查健康与告警 | Grafana 看板;`curl :28080/healthz` |
 | 每日 | SLO 采集留档 | `scripts/ops/slo-collect.sh`(结果归 `docs/ops/` 周报) |
-| 每日低峰 | 数据库备份 | `docker-compose.backup.yml` 基建;pg_dump 流程见 `dr-drill.md` §1 |
+| 每日低峰 | 数据库备份 | 102 crontab 03:30 自动调 `POST /api/admin/v1/backup/jobs`;恢复流程见 `dr-drill.md` §1、`POST /backup/restore` |
 | 每周 | 契约对账复跑 | `node scripts/ops/contract-probe.mjs`(退出码非 0 即有漂移) |
 | 每列车 | 发布后验证 | `release-train.md` §7 七项清单 |
 | 每列车 | 主链路验收 | `scripts/ops/mainchain-acceptance.sh RUNS=10` |
