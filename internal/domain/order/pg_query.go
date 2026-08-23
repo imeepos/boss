@@ -12,7 +12,10 @@ import (
 func (s *PGStore) List(ctx context.Context, q OrderQuery) ([]OrderListItem, error) {
 	limit := q.Limit
 	if limit <= 0 {
-		limit = 1 << 30
+		limit = 100
+	}
+	if limit > 100 {
+		limit = 100
 	}
 	rows, err := s.db.Query(ctx, `
 		SELECT o.id, o.order_no, COALESCE(c.name,''), COALESCE(p.name,''),

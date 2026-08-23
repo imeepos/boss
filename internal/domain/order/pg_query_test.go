@@ -18,7 +18,7 @@ func TestPGStore_List(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`SELECT o.id, o.order_no, COALESCE\(c.name`).
-		WithArgs("", "PENDING", int64(0), 1<<30, 0).
+		WithArgs("", "PENDING", int64(0), 100, 0).
 		WillReturnRows(mock.NewRows([]string{"id", "order_no", "customer", "product", "address", "address_id", "stage", "status", "created_at"}).
 			AddRow(int64(7), "ORD-20250817-001", "王先生", "100M宽带", "Manila", int64(100), int8(3), "PENDING", ts))
 
