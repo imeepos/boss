@@ -34,6 +34,7 @@ func partnerOrderSubmitHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		req.LegalEntityID = profile.LegalEntityID
+		req.PartnerOrder = true
 		if a.PartnerOrderRisk != nil {
 			decision, riskErr := a.PartnerOrderRisk.CheckOrderRisk(c.Request.Context(), claims.AccountID, req.CustomerID)
 			if riskErr != nil {
@@ -42,7 +43,11 @@ func partnerOrderSubmitHandler(a *app.Application) gin.HandlerFunc {
 			}
 			if !decision.Allowed {
 				httpx.RecordAudit(a, c, "partner_order.blocked", "customer", strconv.FormatInt(req.CustomerID, 10), gin.H{"reason": decision.Reason})
-				respond(c, apitypes.CodeInvalidParam, gin.H{"error": "partner order blocked", "reason": decision.Reason})
+				if decision.Reason == "DAILY_ORDER_LIMIT" {
+					respondErr(c, order.ErrPartnerDailyCap)
+				} else {
+					respondErr(c, order.ErrPartnerCustomerCooldown)
+				}
 				return
 			}
 		}

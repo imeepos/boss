@@ -107,7 +107,9 @@ func RespondErr(c *gin.Context, err error) {
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, ai.ErrDownstream):
 		Respond(c, apitypes.CodeDownstreamErr, nil)
-	case errors.Is(err, portal.ErrSmsCooldown):
+	case errors.Is(err, portal.ErrSmsCooldown),
+		errors.Is(err, order.ErrPartnerDailyCap),
+		errors.Is(err, order.ErrPartnerCustomerCooldown):
 		Respond(c, apitypes.CodeResourceBusy, nil)
 	case errors.Is(err, sms.ErrUnsupportedRegion):
 		Respond(c, apitypes.CodeInvalidParam, nil)

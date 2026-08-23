@@ -10,6 +10,8 @@ var ErrOrderNotFound = errors.New("order: not found")
 
 // ErrIllegalTransition 非法状态流转(经 statemachine 判定拒绝)。
 var ErrIllegalTransition = errors.New("order: illegal transition")
+var ErrPartnerDailyCap = errors.New("order: partner daily order cap exceeded")
+var ErrPartnerCustomerCooldown = errors.New("order: partner customer cooldown")
 
 // ResourceChecker 资源核查跨域依赖口(契约 CT-002)。
 // 由 resource 域(阶段4)提供、app 装配层注入;order 域不 import resource 域实现。
