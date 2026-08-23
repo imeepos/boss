@@ -28,6 +28,8 @@ func registerPartnerRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/partner/commissions", requirePerm(a.User, "menu:partner-orders"), partnerCommissionListHandler(a))
 	g.POST("/partner/commissions/:id/settle", requirePerm(a.User, "menu:partner-orders"), partnerCommissionSettleHandler(a))
 	g.GET("/partner/audit-report", requirePerm(a.User, "menu:partner-audit"), partnerAuditReportHandler(a))
+	g.GET("/partner/region-scope", requirePerm(a.User, "menu:partner-home"), partnerRegionScopeHandler(a))
+	g.PUT("/partner/region-scope", requirePerm(a.User, "menu:partner-home"), partnerRegionScopeUpdateHandler(a))
 }
 
 // partnerSubmitReq 入驻申请公开提交请求体。

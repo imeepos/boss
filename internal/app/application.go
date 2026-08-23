@@ -123,6 +123,7 @@ type Application struct {
 	PartnerCommission partner.CommissionLedgerService
 	PartnerAudit      partner.AuditReportService
 	PartnerOrderRisk  partner.OrderRiskService
+	PartnerRegion     partner.RegionScopeService
 
 	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
 	Notify notify.Service
