@@ -13,6 +13,8 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 
 1. **【已犯 5 次】编辑文件前必须用 read 工具读最新内容** —— bash 的 cat/sed 输出不算"已观察",edit 会直接拒绝;同一会话第二轮编辑凭记忆拼 old_string 必 not found;共享工作区文件可能被并行进程改掉,edit 报 file changed since read 也要重读。
 2. **【已犯 2 次】浏览器自测调试必须用 cdp-capture.mjs，playwright 只用于项目 E2E 自动化脚本** —— cdp-capture 零依赖、截图+console 报错+失败请求响应体+网络采集+自动填表，是调试排查的首选工具；playwright 只放 `e2e/` 目录做 CI 自动化冒烟，不做日常调试。混用时用户会再次点名纠正。
+2a. **【已犯 2 次】修复前端后用户报"看不到变化"应先自检 bundle/缓存,而不是反复改代码** —— assets/*.js 命中 `max-age=31536000, immutable` 时 index.html 引用是 hash 名,旧 index.html 缓存会让浏览器认知中的 chunk 与服务器上已替换的 chunk 错位;修完代码必须 `curl` 远端 bundle 验证新代码文本已在内(`grep -c newFunction index-*.js`),再让用户硬刷新。同源坑见 recidivism #51(smsconfig hover 才出现)。
+2. **【已犯 2 次】浏览器自测调试必须用 cdp-capture.mjs，playwright 只用于项目 E2E 自动化脚本** —— cdp-capture 零依赖、截图+console 报错+失败请求响应体+网络采集+自动填表，是调试排查的首选工具；playwright 只放 `e2e/` 目录做 CI 自动化冒烟，不做日常调试。混用时用户会再次点名纠正。
 3. **【已犯 2 次】禁止用原生 `<select>` 新增下拉** —— option 弹层系统渲染无法随主题定制,已两次被用户点名;一律用 `web/admin/src/components/Dropdown.tsx`。
 4. **【已犯 2 次】edit 的 new_string 必须与 old_string 范围严格对称** —— 不顺手带函数头/注释(会重复定义),不做"只删换行"的 no-op(会并行致语法错);改完立刻 build 验证。
 5. **【已犯 5 次】任务完成必须 git commit,`git status` 干净才算收尾** —— 门禁 = typecheck + test + build + commit;反思流程第 0 步先 `git status`,有产物先提交再反思。

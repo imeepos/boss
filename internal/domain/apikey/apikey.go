@@ -28,6 +28,7 @@ type APIKey struct {
 	SubjectName string `json:"subjectName"` // 冗余展示:账号名/师傅名/客户名
 	Name        string `json:"name"`        // 用途说明,如 ci-pipeline
 	KeyPrefix   string `json:"keyPrefix"`   // 密钥前 8 位
+	TemplateCode string `json:"templateCode,omitempty"` // 受限权限模板
 	Status      int16  `json:"status"`      // 1启用 0停用
 	LastUsedAt  string `json:"lastUsedAt"`  // ISO8601,空=从未使用
 	CreatedAt   string `json:"createdAt"`
@@ -37,6 +38,14 @@ type APIKey struct {
 type CreateResult struct {
 	APIKey
 	PlainKey string `json:"plainKey"` // 完整密钥,如 boss_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+}
+
+// PermissionTemplate 是可用于受限密钥的权限模板。
+type PermissionTemplate struct {
+	Code        string   `json:"code"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Permissions []string `json:"permissions"`
 }
 
 // Subject Lookup 解析出的主体标识。
@@ -49,10 +58,12 @@ type Subject struct {
 type Service interface {
 	// Create 为指定主体创建 API key,返回完整密钥。
 	// subjectType ∈ {account, worker, customer};subjectRef 为主体表主键。
-	Create(ctx context.Context, subjectType string, subjectRef, createdBy int64, name string) (*CreateResult, error)
+	Create(ctx context.Context, subjectType string, subjectRef, createdBy int64, name, templateCode string) (*CreateResult, error)
 
 	// List 列出所有 API key 元数据(不含明文密钥)。
 	List(ctx context.Context) ([]APIKey, error)
+	// ListTemplates 列出可用于签发受限密钥的权限模板。
+	ListTemplates(ctx context.Context) ([]PermissionTemplate, error)
 
 	// Revoke 停用指定 API key(软删除)。
 	Revoke(ctx context.Context, id int64) error

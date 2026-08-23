@@ -17,11 +17,11 @@ func TestPGStore_Create(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO api_keys`).
-		WithArgs("worker", int64(5), "field-worker", pgxmock.AnyArg(), int64(1)).
+		WithArgs("worker", int64(5), "field-worker", pgxmock.AnyArg(), int64(1), "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(10)))
 
 	s := NewPGStore(mock)
-	res, err := s.Create(context.Background(), SubjectWorker, 5, 1, "field-worker")
+	res, err := s.Create(context.Background(), SubjectWorker, 5, 1, "field-worker", "")
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestPGStore_Create(t *testing.T) {
 
 func TestPGStore_CreateInvalidSubject(t *testing.T) {
 	s := NewPGStore(nil)
-	if _, err := s.Create(context.Background(), "hacker", 1, 1, "x"); err != ErrInvalidSubject {
+	if _, err := s.Create(context.Background(), "hacker", 1, 1, "x", ""); err != ErrInvalidSubject {
 		t.Fatalf("expected ErrInvalidSubject, got %v", err)
 	}
 }
@@ -50,12 +50,12 @@ func TestPGStore_List(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "subject_type", "subject_ref", "subject_name", "name", "status", "last_used_at", "created_at"}
+	cols := []string{"id", "subject_type", "subject_ref", "subject_name", "name", "status", "last_used_at", "created_at", "template_code"}
 	now := time.Now()
 	mock.ExpectQuery(`SELECT k.id, k.subject_type`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "account", int64(1), "admin", "ci", int16(1), nil, now).
-			AddRow(int64(2), "worker", int64(5), "张师傅", "field", int16(1), now, now))
+			AddRow(int64(1), "account", int64(1), "admin", "ci", int16(1), nil, now, "").
+			AddRow(int64(2), "worker", int64(5), "张师傅", "field", int16(1), now, now, "partner-orders-read"))
 
 	s := NewPGStore(mock)
 	list, err := s.List(context.Background())
