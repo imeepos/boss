@@ -8,11 +8,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <a class="back" href="bills.html">&lsaquo;</a>
-    <div class="t">电子发票</div>
-    <span class="act"></span>
-  </div>
+  <div id="header" data-back="bills.html"></div>
 
   <div class="card">
     <div class="c-title">开票信息 <span class="more" onclick="location.href='security.html'">维护</span></div>
@@ -32,6 +28,7 @@
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>

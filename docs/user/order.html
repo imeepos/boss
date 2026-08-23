@@ -8,11 +8,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <a class="back" href="orders.html">&lsaquo;</a>
-    <div class="t">订单详情</div>
-    <span class="act" onclick="cancelOrder()">取消</span>
-  </div>
+  <div id="header" data-back="orders.html"></div>
 
   <div class="card">
     <div class="c-title" id="o-title">加载中…</div>
@@ -34,6 +30,7 @@
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>

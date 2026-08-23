@@ -8,11 +8,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <a class="back" href="messages.html">&lsaquo;</a>
-    <div class="t">通知订阅设置</div>
-    <span class="act"></span>
-  </div>
+  <div id="header" data-back="messages.html"></div>
 
   <div class="card">
     <div class="c-title">业务通知 <span class="tag tag-blue">不可退订</span></div>
@@ -38,6 +34,7 @@
   <button class="btn-block" style="margin:0 14px 20px;width:auto;" onclick="save()">保存设置</button>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>

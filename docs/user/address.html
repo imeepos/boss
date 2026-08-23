@@ -8,11 +8,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <a class="back" href="profile.html">&lsaquo;</a>
-    <div class="t">家庭地址管理</div>
-    <span class="act">新增</span>
-  </div>
+  <div id="header" data-back="profile.html"></div>
 
   <div class="card" id="addr-list"></div>
 
@@ -43,6 +39,7 @@
   <div class="muted" style="text-align:center;font-size:12px;margin:0 14px;">地址须挂接到小区/楼栋层级，用于资源核查与装维上门。</div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>

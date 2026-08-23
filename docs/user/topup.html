@@ -8,11 +8,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <a class="back" href="home.html">&lsaquo;</a>
-    <div class="t">余额充值</div>
-    <span class="act" onclick="location.href='coupon.html'">使用优惠券</span>
-  </div>
+  <div id="header" data-back="home.html"></div>
 
   <div class="card">
     <div class="c-title">账户余额 <span class="tag tag-blue" id="balance">¥—</span></div>
@@ -32,6 +28,7 @@
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
