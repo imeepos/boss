@@ -83,7 +83,14 @@
 - 2026-08-24 Q2 验收矩阵：必须把每个交付项映射到实现文件、路由、自动化测试和明确状态；尚未串联的伙伴全旅程与前端 102 验收要单独列为缺口，不能用直营 E2E 代替。
 - 2026-08-24 前端验收：伙伴页面存在不等于 102 页面已验收；必须先确认实际部署路由，根 URL 404 时记录为未验收，不用截图或 build 结果替代线上点击证据。
 - 2026-08-24 102 路由探测：`/healthz=200` 只证明后端存活；`/`、`/login`、`/admin` 和 `/api/admin/v1/auth/login` 404 说明当前 URL 没有 Web Shell/API 路由，必须记录部署入口阻塞。
+- 2026-08-24 102 入口纠正：`docker-compose.102.app.yml` 明确 admin-web 暴露 `:5180`、server 暴露 `:28080`；先探测编排文件再判定 28080 404，CDP 已在 5180 验证 `/login` 与 `/partner/apply`。
+- 2026-08-24 102 管理员冒烟：先在同一次 CDP 会话写入 `boss.servers`/active，再用原生 setter 触发账号密码 input，点击 `button[type=submit]`；成功证据是 URL `/dashboard`、`boss.token` 和菜单 DOM，而非只看 HTTP 200。
+- 2026-08-24 伙伴页面线上验收：管理员 token 访问 `/partner/home` 路由可达不等于伙伴企业 API 数据可验收；管理员角色不应伪装成 partner_admin，必须使用真实伙伴凭证或明确保留缺口。
+- 2026-08-24 102 权限冒烟：管理员 token 调用伙伴企业 API 返回 403 是正确门禁证据；真实伙伴数据验收不能用管理员 token 替代，需使用审批返回的一次性 partner_admin 凭证。
+- 2026-08-24 102 版本漂移：同一资源 GET 可 200 而新增 POST 返回 404；必须用源码路由注册与线上逐路由 curl 对照，确认镜像落后后停止伪造线上验收。
+- 2026-08-24 102 部署恢复：push main 触发 deploy-102 后，先看 `docker inspect boss-server Created` 与日志路由注册，再重试 POST；部署完成后才可用审批返回的一次性凭证做伙伴 Web E2E。
 - 本轮知识库：新后端路由合并到 main 不等于 102 已部署；真实 `/knowledge-articles` 返回非 JSON 404，必须报告为线上未验收，不能用本地测试替代部署证据。
+- 本轮配置模板：新增迁移字段后，旧 102 镜像仍可能返回旧字段且 HTTP 200；必须用 GET 返回字段、PUT/状态/删除逐路由实测，不能把“列表可用”当作新能力已部署。
 - 2026-08-24 渠道下单回归：handler 测试必须断言服务端设置 `PartnerOrder` 与伙伴 `LegalEntityID`，并单独验证风控拒绝时不会调用 OrderService。
 - 2026-08-24 工作台统计卡跳转：统计卡必须由组件统一处理鼠标/键盘交互，目标列表页同时消费 URL 条件；今日订单需前后端共同支持时间条件，不能只改变前端地址。
 - 2026-08-24 订单状态趋势：后端趋势接口返回按 terms.md 五种状态拆分的 series，前端图表通过 legend button 切换可见曲线；扩展接口时同步更新后端 contract test、Dashboard DTO 和三份 locale。
@@ -487,3 +494,8 @@
 - 上轮 grep 把 mixin 写法打到主树 notes.md(不是我改的)。同时本轮 notes.md
   在主树有未提交改动,add -A 一并带走了——以后反思走单独 commit 或 worktree,
   避免反射污染主树工作区。
+
+## 2026-01 boss-provision-template-custom 模板页增强(子代理)
+- 坑:无。read 先行、门禁全绿(typecheck/test/build)。
+- 决策:worktree 里有父会话未提交的后端/表单半成品,子代理不代为 commit(混合提交违反单一 revert 约定,且可能撞并行编辑),交回父会话收尾。红线#5 的例外要有明确理由并写明。
+- i18n 新增 key(edit/delete/deleteConfirm/allStatus)+ columns 扩列,types.ts 与三语言同步,一次改齐。
