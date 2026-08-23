@@ -39,6 +39,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'menuperm', label: '菜单权限', path: '/org/menuperm' },
     { key: 'datascope', label: '数据权限', path: '/org/datascope' },
     { key: 'apikey', label: 'API Key', path: '/org/apikey' },
+    { key: 'openplat', label: '开放平台', path: '/org/openplat' },
     { key: 'partner', label: '入驻申请审核', path: '/org/partner' },
   ]},
   { id: 'bss', label: '客户与资费', items: [

@@ -1366,6 +1366,42 @@ export interface Translations {
       revokeConfirm: string
       plainOnce: string
     },
+    openplat: {
+      title: string
+      desc: string
+      count: string
+      columns: string[]
+      create: string
+      createTitle: string
+      saveFail: string
+      loadFail: string
+      empty: string
+      active: string
+      disabled: string
+      sandboxOn: string
+      neverUsed: string
+      enable: string
+      disable: string
+      secretOnce: string
+      fName: string
+      pName: string
+      fRpm: string
+      fQuota: string
+      fSandbox: string
+      sandboxHint: string
+      subsTitle: string
+      pEndpoint: string
+      addSub: string
+      delSub: string
+      noSubs: string
+      dlvTitle: string
+      dlvPending: string
+      dlvDone: string
+      dlvDead: string
+      noDeliveries: string
+      requeue: string
+      testEvent: string
+    },
     region: {
       title: string
       desc: string

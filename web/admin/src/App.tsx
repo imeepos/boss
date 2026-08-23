@@ -30,6 +30,7 @@ const RegionPage = lazy(() => import('./pages/org/region'))
 const MenuPermPage = lazy(() => import('./pages/org/menuperm'))
 const DataScopePage = lazy(() => import('./pages/org/datascope'))
 const ApiKeyPage = lazy(() => import('./pages/org/apikey'))
+const OpenPlatPage = lazy(() => import('./pages/org/openplat'))
 const MessageCenterPage = lazy(() => import('./pages/boss/message'))
 const CustomerPage = lazy(() => import('./pages/bss/customer'))
 const ProductPage = lazy(() => import('./pages/bss/product'))
@@ -120,6 +121,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'menuperm') return <MenuPermPage />
   if (pageKey === 'datascope') return <DataScopePage />
   if (pageKey === 'apikey') return <ApiKeyPage />
+  if (pageKey === 'openplat') return <OpenPlatPage />
   if (pageKey === 'partner') return <PartnerReviewPage />
   if (pageKey === 'partner-home') return <PartnerHomePage />
   if (pageKey === 'partner-staff') return <PartnerStaffPage />
