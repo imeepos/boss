@@ -37,6 +37,32 @@ func TestPGStore_CancelReleasesPorts(t *testing.T) {
 	}
 }
 
+// TestPGStore_UpdateMapRepairsReservedPort 回归:订单已 DONE 但端口仍 RESERVED 时，重试环节12必须补偿为 USED。
+func TestPGStore_UpdateMapRepairsReservedPort(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(12), "DONE", "ORD-7"))
+	mock.ExpectQuery(`SELECT stage, status FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(12), "DONE"))
+	mock.ExpectExec(`UPDATE ports SET status = 'USED'`).
+		WithArgs(int64(7)).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	s := NewPGStore(mock, stubExists{ok: true})
+	if err := s.UpdateMap(context.Background(), 7); err != nil {
+		t.Fatalf("UpdateMap retry: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
 // TestFullWorkflow 契约:12 环节按序走完,状态沿 PENDING→RESERVED→INSTALLING→DONE 流转。
 func TestFullWorkflow(t *testing.T) {
 	s, _ := newSvc(1)
