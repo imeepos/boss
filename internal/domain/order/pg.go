@@ -26,12 +26,13 @@ type transactionalDB interface {
 
 // PGStore 是 OrderService 接口的 PostgreSQL 实现(阶段5)。
 type PGStore struct {
-	db      dbtx
-	cust    CustomerLookup    // 跨域:客户存在性校验
-	checker ResourceChecker   // 跨域:资源核查(环节2)
-	reserve PortReserver      // 跨域:端口预占(环节3/5)
-	quad    QuadLinkPrebinder // 跨域:四码预绑定(环节5)
-	prepaid PrepaidCollector  // 跨域:预付费当场收款(环节4)
+	db         dbtx
+	cust       CustomerLookup    // 跨域:客户存在性校验
+	checker    ResourceChecker   // 跨域:资源核查(环节2)
+	reserve    PortReserver      // 跨域:端口预占(环节3/5)
+	quad       QuadLinkPrebinder // 跨域:四码预绑定(环节5)
+	prepaid    PrepaidCollector  // 跨域:预付费当场收款(环节4)
+	commission PartnerCommissionAccrual
 }
 
 // NewPGStore 构造 PGStore;cust 由 app 装配层注入 customer 域实现。
@@ -48,6 +49,8 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 			s.quad = v
 		case PrepaidCollector:
 			s.prepaid = v
+		case PartnerCommissionAccrual:
+			s.commission = v
 		}
 	}
 	return s
