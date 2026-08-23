@@ -1,7 +1,20 @@
 # 后台管理系统（admin 端）规划 · 技术栈与落地路线
 
-> 版本 V1.0｜权威源：`docs/contract/{terms,domain-map,fields}.md`、`docs/admin/menu.js`、`api/openapi/admin.yaml`、`docs/archive/技术栈方案-一步到位.md`
+> 版本 V1.0（首版 2026-08-17）｜权威源：`docs/contract/{terms,domain-map,fields}.md`、`docs/admin/menu.js`、`api/openapi/admin.yaml`、`docs/archive/技术栈方案-一步到位.md`
 > 定位：管理后台前端工程的**唯一执行规划**。原型（`docs/admin/*.html`）是交互与字段的视觉契约，本文档回答"用什么栈、放哪里、分几步做"。
+>
+> **Amended 2026-08-27（V1.1 现状对齐）**：A0/A1/A2/A3/A4/A5/A6 批次已陆续落地到 `web/admin/` 实体工程，
+> 本文档保留作为"原始执行规划与决策依据"，不再随工程演进而回写。
+> 现状事实变更（必须按变更后口径理解，不要照搬 V1.0 行文）：
+> - admin 前缀 `/api/v1` → **`/api/admin/v1`**（2026-08-19 三端前缀分离，`docs/notes/adopted/2026-08-19-api-three-portal-prefix.md`）；
+> - mock `api/mock/combined.js`（:8092）已**移除**（同 note），`api/mock/selfcheck.js` 一并下线；
+> - `cmd/server :8080` 起步端口已在 102 上调整为 `:28080`（nginx 同源反代前置），`web/admin` 通过 `boss.servers` 配置直连；
+> - GIS 由 Cesium 改为 **OpenLayers + OSM 瓦片起步**（`docs/notes/adopted/2026-08-22-intel-visualization-upgrade.md` v2）；
+> - OLAP 由 Doris 改为 **StarRocks**（`README.md` §基础设施清单 备注）；
+> - UI 由 AntD 5 + ProComponents 改为 **Radix UI primitives + 自建组件库**（`web/admin/components.json` + `web/admin/src/components/ui/`），
+>   tailwind + CSS 变量双主题（`docs/design/admin-design-system.md`），原 ProTable/ProForm 形态未沿用。
+>
+> 新增 admin 端需求时按 `web/admin/README.md` + 当前 `docs/admin/menu.js` 形态实现，不要照搬本文档 V1.0 行文。
 
 ---
 
