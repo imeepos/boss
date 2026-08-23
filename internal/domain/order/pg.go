@@ -292,10 +292,3 @@ func (s *PGStore) platformFallback(ctx context.Context) (AddressOwnership, error
 }
 
 // appendStage 写环节日志。
-func (s *PGStore) appendStage(ctx context.Context, orderID int64, stage int8, result string) error {
-	if _, err := s.db.Exec(ctx,
-		`INSERT INTO order_stages(order_id, stage, result) VALUES($1,$2,$3)`, orderID, stage, result); err != nil {
-		return fmt.Errorf("order: append stage: %w", err)
-	}
-	return nil
-}

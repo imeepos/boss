@@ -58,3 +58,12 @@ func (s *PGStore) emitStageDone(ctx context.Context, orderNo string, stage int8,
 		OrderNo: orderNo, Stage: stage, Status: status,
 	})
 }
+
+// appendStage 落环节日志(order_stages)。
+func (s *PGStore) appendStage(ctx context.Context, orderID int64, stage int8, result string) error {
+	if _, err := s.db.Exec(ctx,
+		`INSERT INTO order_stages(order_id, stage, result) VALUES($1,$2,$3)`, orderID, stage, result); err != nil {
+		return fmt.Errorf("order: append stage: %w", err)
+	}
+	return nil
+}
