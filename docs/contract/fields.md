@@ -358,7 +358,7 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | — | `ExpiresAt` | expires_at | 空=永不过期 |
 | 权限模板 | `TemplateCode` | template_code | 空=完整继承主体 RBAC；非空=仅允许模板权限子集 |
 
-`api_key_permission_templates` 与 `api_key_template_permissions` 提供受限 API key 权限模板；模板由平台维护，签发时仅引用 code，不保存明文密钥。
+`api_key_permission_templates` 与 `api_key_template_permissions` 提供受限 API key 权限模板；模板由平台维护，签发时仅引用 code，不保存明文密钥。`Lookup` 将模板码带入认证上下文，RBAC 门禁对受限 key 仅放行模板列出的权限；伙伴订单只读 key 使用 `partner-orders-read` 模板。
 
 ### 1.8 partner_commission_ledger（渠道佣金结算台账，000118）
 

@@ -50,8 +50,9 @@ type PermissionTemplate struct {
 
 // Subject Lookup 解析出的主体标识。
 type Subject struct {
-	Type string // account | worker | customer
-	Ref  int64  // 主体表主键
+	Type         string // account | worker | customer
+	Ref          int64  // 主体表主键
+	TemplateCode string // 受限权限模板
 }
 
 // Service 免登录 API key 管理接口。

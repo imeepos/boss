@@ -29,9 +29,10 @@ const CtxSubject = "boss.subject"
 
 // Subject 请求主体身份(由 API key 中间件注入)。
 type Subject struct {
-	Type string // account | worker | customer
-	Ref  int64  // 主体表主键
-	Name string // 展示名
+	Type         string // account | worker | customer
+	Ref          int64  // 主体表主键
+	Name         string // 展示名
+	TemplateCode string // 受限权限模板
 }
 
 // SubjectResolver 由 app 层注入:按主体类型加载展示名/角色码。
@@ -64,7 +65,7 @@ func APIKeyAuth(keys apikey.Service, resolve SubjectResolver) gin.HandlerFunc {
 			claims.AccountID = subj.Ref // 管理账号:RBAC 按 accountID 判定
 		}
 		c.Set(CtxClaims, claims)
-		c.Set(CtxSubject, &Subject{Type: subj.Type, Ref: subj.Ref, Name: name})
+		c.Set(CtxSubject, &Subject{Type: subj.Type, Ref: subj.Ref, Name: name, TemplateCode: subj.TemplateCode})
 		go keys.Touch(context.Background(), h)
 		c.Next()
 	}

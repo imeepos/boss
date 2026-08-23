@@ -117,9 +117,9 @@ func TestPGStore_Lookup(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT subject_type, subject_ref FROM api_keys`).
+	mock.ExpectQuery(`SELECT subject_type, subject_ref, COALESCE\(template_code, ''\) FROM api_keys`).
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"subject_type", "subject_ref"}).AddRow("worker", int64(5)))
+		WillReturnRows(mock.NewRows([]string{"subject_type", "subject_ref", "template_code"}).AddRow("worker", int64(5), "partner-orders-read"))
 
 	s := NewPGStore(mock)
 	subj, err := s.Lookup(context.Background(), "abc")
@@ -141,7 +141,7 @@ func TestPGStore_LookupNotFound(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT subject_type, subject_ref FROM api_keys`).
+	mock.ExpectQuery(`SELECT subject_type, subject_ref, COALESCE\(template_code, ''\) FROM api_keys`).
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)
 

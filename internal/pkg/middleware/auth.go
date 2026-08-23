@@ -46,9 +46,17 @@ type PermChecker func(ctx context.Context, accountID int64, permCode string) (bo
 // DataScopeChecker 数据范围判定:资源属主组织是否落在账号数据范围内。
 type DataScopeChecker func(ctx context.Context, accountID int64, owner any) (bool, error)
 
-// Authz RBAC 授权:越权访问被拒绝并提示(阶段1验收项)。
+// Authz RBAC 授权:受限 API key 先按模板校验，普通账号走角色权限。
 func Authz(check PermChecker, permCode string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if subject := SubjectFrom(c); subject != nil && subject.TemplateCode != "" {
+			if subject.TemplateCode == "partner-orders-read" && permCode == "menu:partner-orders" {
+				c.Next()
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"code": 403, "msg": "api key template does not allow permission"})
+			return
+		}
 		claims := c.MustGet(CtxClaims).(*auth.Claims)
 		ok, err := check(c.Request.Context(), claims.AccountID, permCode)
 		if err != nil {

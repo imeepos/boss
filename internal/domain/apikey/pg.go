@@ -135,8 +135,8 @@ func (s *PGStore) Revoke(ctx context.Context, id int64) error {
 func (s *PGStore) Lookup(ctx context.Context, keyHash string) (*Subject, error) {
 	var subj Subject
 	err := s.db.QueryRow(ctx, `
-		SELECT subject_type, subject_ref FROM api_keys
-		WHERE key_hash = $1 AND status = 1`, keyHash).Scan(&subj.Type, &subj.Ref)
+		SELECT subject_type, subject_ref, COALESCE(template_code, '') FROM api_keys
+		WHERE key_hash = $1 AND status = 1`, keyHash).Scan(&subj.Type, &subj.Ref, &subj.TemplateCode)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
