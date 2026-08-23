@@ -34,6 +34,7 @@ type PGStore struct {
 	prepaid    PrepaidCollector  // 跨域:预付费当场收款(环节4)
 	commission PartnerCommissionAccrual
 	notifier   StageNotifier // 可选:环节推进广播(开放平台 Webhook,nil=未启用)
+	params     PartnerCommissionRate
 }
 
 // NewPGStore 构造 PGStore;cust 由 app 装配层注入 customer 域实现。
@@ -52,6 +53,8 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 			s.prepaid = v
 		case PartnerCommissionAccrual:
 			s.commission = v
+		case PartnerCommissionRate:
+			s.params = v
 		}
 	}
 	return s

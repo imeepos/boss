@@ -77,7 +77,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	// 赠送阶梯经 promotion 命中(000104:buy_months/gift_months 快照)。
 	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res},
 		quadLinkPrebinder{svc: qlStore},
-		prepaidCollector{bill: bill, portal: portalSvc, promo: promo, points: points}, partnerSvc)
+		prepaidCollector{bill: bill, portal: portalSvc, promo: promo, points: points}, partnerSvc, usr)
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表,见 wiring_events.go)。
 	anaStore, closeOLAP, err := selectAnalytics(ctx, pool, cfg)

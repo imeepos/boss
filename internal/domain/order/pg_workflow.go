@@ -180,7 +180,7 @@ WHERE o.id=$1 AND ch.code='AGENT'`, orderID).Scan(&entityID, &amount)
 	if entityID == 0 {
 		return
 	}
-	_, _ = s.commission.AccrueCommission(ctx, orderID, entityID, amount, partnerDefaultRate)
+	_, _ = s.commission.AccrueCommission(ctx, orderID, entityID, amount, partnerRate(ctx, s.params))
 }
 
 // Cancel 取消订单:任一未完成状态可取消(status→CANCELLED),不动环节序号;并回收预占端口。
