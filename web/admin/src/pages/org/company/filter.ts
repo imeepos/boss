@@ -4,6 +4,8 @@ export interface LegalEntityRow {
   id: number
   code: string
   name: string
+  taxJurisdiction?: string
+  taxChannel?: string
 }
 
 /** 关键词命中 code/name(大小写不敏感)。 */

@@ -373,6 +373,14 @@ export interface Translations {
       nameLabel: string
       codePlaceholder: string
       namePlaceholder: string
+      taxLabel: string
+      taxUndetermined: string
+      taxCN: string
+      taxPH: string
+      channelLabel: string
+      channelManual: string
+      channelLeqi: string
+      channelBIR: string
       requiredHint: string
       total: string
       empty: string
