@@ -12,14 +12,30 @@ import { EmptyState } from '../../../components/business'
 
 export interface ApiKeyRow {
   id: number
-  accountId: number
-  accountName?: string
+  subjectType: string
+  subjectRef: number
+  subjectName: string
   name: string
   keyPrefix: string
   status: number
   lastUsedAt: string
   expiresAt: string
   createdAt: string
+}
+
+// 主体类型枚举 -> 短标签(列表展示用,语言无关)。
+function subjectLabel(t: string): string {
+  if (t === 'account') return 'Account'
+  if (t === 'worker') return 'Worker'
+  if (t === 'customer') return 'Customer'
+  return t || 'unknown'
+}
+
+// 绑定账号列渲染:有展示名用展示名 + 主体类型,无则退到 `type:#ref`,绝不渲染 `#undefined`。
+export function subjectCell(row: ApiKeyRow): string {
+  const tag = subjectLabel(row.subjectType)
+  if (row.subjectName && row.subjectType) return `${row.subjectName} (${tag})`
+  return `${tag}:#${row.subjectRef}`
 }
 
 export default function ApiKeyPage() {
@@ -76,7 +92,7 @@ export default function ApiKeyPage() {
 
   const kw = keyword.trim()
   const shown = rows.filter((r) => !kw
-    || r.name.includes(kw) || (r.accountName ?? '').includes(kw) || r.keyPrefix.includes(kw))
+    || r.name.includes(kw) || r.subjectName.includes(kw) || r.keyPrefix.includes(kw))
   const cols = t.pages.apikey.columns
 
   return (
@@ -98,7 +114,7 @@ export default function ApiKeyPage() {
             {shown.map((r) => (
               <tr key={r.id}>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.accountName || `#${r.accountId}`}</td>
+                <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{subjectCell(r)}</td>
                 <td className="break-all rounded-sm bg-black/5 px-2 py-1.5 font-mono text-xs">{r.keyPrefix ? `${r.keyPrefix}…` : '—'}</td>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.status === 1 ? t.pages.apikey.active : t.pages.apikey.revoked}</td>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.lastUsedAt ? formatTime(r.lastUsedAt) : t.pages.apikey.neverUsed}</td>
