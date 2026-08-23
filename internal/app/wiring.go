@@ -76,7 +76,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	// 环节4 预付费当场收款(adopted note 2026-08-22):依赖 portalSvc,故在 portal 之后构造;
 	// 赠送阶梯经 promotion 命中(000104:buy_months/gift_months 快照)。
 	ord := order.NewPGStore(pool, customerLookup{svc: cust}, res, portReserver{svc: res},
-		quadLinkPrebinder{svc: qlStore}, prepaidCollector{bill: bill, portal: portalSvc, promo: promo})
+		quadLinkPrebinder{svc: qlStore},
+		prepaidCollector{bill: bill, portal: portalSvc, promo: promo, points: points})
 
 	// 阶段9:经营分析后端选择(pg 派生聚合 | starrocks OLAP 宽表,见 wiring_events.go)。
 	anaStore, closeOLAP, err := selectAnalytics(ctx, pool, cfg)
@@ -172,11 +173,13 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	stopReserveTimeout := startReserveTimeoutLoop(app)
 	stopCdrComp := startCdrCompensationLoop(aaastore, em.cdrRT, app.Notify)
 	stopDailyRecon := startDailyReconLoop(app)
+	stopPointsExpire := startPointsExpireLoop(points)
 	app.close = func() {
 		stopPatrol()         // 巡检循环
 		stopReserveTimeout() // 预占超时释放循环(Q2)
 		stopCdrComp()        // 话单补偿循环(Q2)
 		stopDailyRecon()     // 每日数据对账循环(Q2)
+		stopPointsExpire()   // 积分过期清算循环(2028 Q2)
 		aw.Close()           // 排空审计队列
 		if em.closeCdr != nil {
 			em.closeCdr()

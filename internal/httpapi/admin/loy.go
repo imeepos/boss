@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -15,6 +16,19 @@ func registerLoyRoutes(g *gin.RouterGroup, a *app.Application) {
 	perm := requirePerm(a.User, "menu:userdata")
 	g.GET("/points/:customerId", perm, loyGetPoints(a))
 	g.POST("/points/:customerId/adjust", perm, loyAdjustPoints(a))
+
+	g.GET("/loy/levels", perm, loyListLevels(a))
+	g.POST("/loy/levels", perm, loyCreateLevel(a))
+	g.POST("/loy/levels/:id/disable", perm, loyDisableLevel(a))
+
+	g.GET("/loy/tasks", perm, loyListTasks(a))
+	g.POST("/loy/tasks", perm, loyCreateTask(a))
+	g.POST("/loy/tasks/:id/disable", perm, loyDisableTask(a))
+
+	g.GET("/loy/earn-rule", perm, loyGetEarnRule(a))
+	g.PUT("/loy/earn-rule", perm, loySaveEarnRule(a))
+
+	g.POST("/loy/expire/run", perm, loyRunExpire(a))
 }
 
 // loyGetPoints GET /points/:customerId:客户积分余额与流水。
@@ -61,5 +75,131 @@ func loyAdjustPoints(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"balance": bal})
+	}
+}
+
+// loyListLevels GET /loy/levels:积分等级列表。
+func loyListLevels(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		list, err := a.Points.ListLevels(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"levels": list})
+	}
+}
+
+// loyCreateLevel POST /loy/levels {name,minPoints}:新建等级。
+func loyCreateLevel(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req loy.Level
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		id, err := a.Points.CreateLevel(c.Request.Context(), req)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"levelId": id})
+	}
+}
+
+// loyDisableLevel POST /loy/levels/:id/disable:停用等级。
+func loyDisableLevel(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
+		if err := a.Points.DisableLevel(c.Request.Context(), id); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, nil)
+	}
+}
+
+// loyListTasks GET /loy/tasks:任务列表。
+func loyListTasks(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		list, err := a.Points.ListTasks(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"tasks": list})
+	}
+}
+
+// loyCreateTask POST /loy/tasks {code,name,points,period}:新建任务。
+func loyCreateTask(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req loy.Task
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		id, err := a.Points.CreateTask(c.Request.Context(), req)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"taskId": id})
+	}
+}
+
+// loyDisableTask POST /loy/tasks/:id/disable:停用任务。
+func loyDisableTask(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
+		if err := a.Points.DisableTask(c.Request.Context(), id); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, nil)
+	}
+}
+
+// loyGetEarnRule GET /loy/earn-rule:当前生效缴费送积分规则。
+func loyGetEarnRule(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		r, err := a.Points.EarnRuleOf(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"rule": r})
+	}
+}
+
+// loySaveEarnRule PUT /loy/earn-rule {pointsPerYuan,minCents,expireDays}:保存规则。
+func loySaveEarnRule(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req loy.EarnRule
+		if !httpx.BindBody(c, &req) {
+			return
+		}
+		id, err := a.Points.SaveEarnRule(c.Request.Context(), req)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ruleId": id})
+	}
+}
+
+// loyRunExpire POST /loy/expire/run:手动触发积分过期清算(循环兜底之外的运营口)。
+func loyRunExpire(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		n, err := a.Points.ExpireDue(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"customers": n})
 	}
 }
