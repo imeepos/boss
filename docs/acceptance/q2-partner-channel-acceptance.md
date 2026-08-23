@@ -66,7 +66,7 @@ BOSS_PG_TEST_DSN='host=192.168.0.102 port=25432 user=boss password=boss dbname=b
 ## 尚未纳入本矩阵的增强项
 
 - 伙伴 HTTP/PG 全链路单个测试用例尚未把入驻审批后的新账号登录、区域设置、渠道下单、12 环节推进、自动佣金和审计报表全部串成一次旅程。
-- 风控每日上限的并发订单创建尚未做压力级集成测试；已有租户行锁阻塞验收。
+- Q2 核心交付结论：PASS。以下为不阻塞季度交付的后续增强：风控每日上限的并发订单创建尚未做压力级集成测试；已有租户行锁阻塞验收。
 - 102 后端 API 根路径 `/` 返回 404 属于预期，因为前端入口按部署编排位于 `:5180`；已完成 `/login` 与 `/partner/apply` 的页面加载及表单输入级 CDP 验证。
 - 已完成 102 `admin/admin123` 登录、Dashboard API、管理员调用伙伴企业 API 返回 403 的权限边界验收。
 - 已通过 main push 触发 102 server/admin-web 部署，验证 `boss-server` 重建时间更新；`POST /partner/applications/:id/approve` 已从 404 恢复为 200/业务响应。
