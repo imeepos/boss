@@ -104,26 +104,7 @@ paths:
         - { name: status, in: query, schema: { type: string, enum: [PENDING, APPROVED, REJECTED] } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
-    post:
-      tags: [Customer]
-      summary: 客户自助注册(公开端点,落 PENDING 申请)
-      operationId: submitCustomerRegistration
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, phone, idCardNo, legalEntityId, addressId, regionId]
-              properties:
-                name: { type: string, description: 申报姓名 }
-                phone: { type: string, description: 联系电话 }
-                idCardNo: { type: string, description: 证件号 }
-                legalEntityId: { type: integer, format: int64 }
-                addressId: { type: integer, format: int64, description: 装机地址 }
-                regionId: { type: integer, format: int64, description: 经营区域 }
-      responses:
-        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    # 自助注册提交在 user 端契约(api/openapi/user/auth.yaml),admin 只管审核。
 
   /customer-registrations/{id}/approve:
     post:

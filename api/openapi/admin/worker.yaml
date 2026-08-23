@@ -36,23 +36,7 @@ paths:
         - { name: status, in: query, schema: { type: string } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
-    post:
-      tags: [Worker]
-      summary: 师傅自助注册(公开端点,无需登录)
-      operationId: submitWorkerRegistration
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name: { type: string }
-                phone: { type: string }
-                idCardNo: { type: string }
-                groupId: { type: integer }
-                regionId: { type: integer }
-      responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    # 自助注册提交在 worker 端契约(api/openapi/worker/auth.yaml),admin 只管审核。
 
   /worker-registrations/{id}/approve:
     post:

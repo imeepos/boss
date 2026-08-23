@@ -6,7 +6,7 @@
 
 ## 1. 结论
 
-444 条契约路由中 442 条在 102 环境实测已部署（99.5%）。发现 2 个工具级缺陷（已修复：user 端前缀硬编码、path key 引号解析）与 2 条真实契约差异（契约超前实现）。
+终态(2026-08-26):460/460 契约路由在 102 全部实测部署,探针全绿。过程中修复 2 个工具缺陷(user 端前缀硬编码、引号 path key 解析)并销项 Q4-1/Q4-2(admin 契约错登端侧自助注册端点)。
 
 ## 2. 发现与处置
 
@@ -25,14 +25,14 @@
 
 | # | 路由 | 现状 | 处置建议 |
 |:-:|:-----|:-----|:---------|
-| Q4-1 | admin `POST /customer-registrations` | 代码仅有 GET 列表 + approve/reject，无创建 | 二选一：补创建实现，或契约降级为「由 user 端提交」 |
-| Q4-2 | admin `POST /worker-registrations` | 同上 | 同上（师傅注册走 worker 端扫码，admin 创建或非必要） |
+| Q4-1 | admin `POST /customer-registrations` | 自助注册实现实际在 user 端(`/api/user/v1`),admin 契约错登 | 已从 admin 契约移除(2026-08-26),user 端契约本就齐全 |
+| Q4-2 | admin `POST /worker-registrations` | 同上,实现在 worker 端 | 已移除,worker 端契约本就齐全 |
 
 ## 3. 销项状态
 
 - [x] 工具前缀错误（随本报告提交修复）
 - [x] 引号 path key 解析（随本报告提交修复）
-- [ ] Q4-1/Q4-2 契约与实现对齐（进 backlog，销项后更新本表）
+- [x] Q4-1/Q4-2 已销项：探针 460/460 全绿(2026-08-26)
 
 ## 4. 复跑方式
 
