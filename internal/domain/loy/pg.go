@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -112,11 +113,17 @@ func applyDelta(ctx context.Context, tx pgx.Tx, customerID, delta int64) (int64,
 	return after, nil
 }
 
-// insertEntry 流水落库。
+// insertEntry 流水落库(无有效期)。
 func insertEntry(ctx context.Context, tx pgx.Tx, customerID, delta, after int64, reason string, refID int64) error {
+	return insertEntryExpiring(ctx, tx, customerID, delta, after, reason, refID, nil)
+}
+
+// insertEntryExpiring 带有效期流水落库(expiresAt nil=不限定)。
+func insertEntryExpiring(ctx context.Context, tx pgx.Tx, customerID, delta, after int64,
+	reason string, refID int64, expiresAt *time.Time) error {
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO loy_point_entries(customer_id, delta, balance_after, reason, ref_id)
-		VALUES($1,$2,$3,$4,NULLIF($5,0))`, customerID, delta, after, reason, refID); err != nil {
+		INSERT INTO loy_point_entries(customer_id, delta, balance_after, reason, ref_id, expires_at)
+		VALUES($1,$2,$3,$4,NULLIF($5,0),$6)`, customerID, delta, after, reason, refID, expiresAt); err != nil {
 		return fmt.Errorf("loy: insert entry: %w", err)
 	}
 	return nil

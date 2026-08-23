@@ -914,3 +914,9 @@ components:
         lastUsedAt: { type: string, description: ISO8601,空=从未使用 }
         expiresAt: { type: string, description: ISO8601,空=永不过期 }
         createdAt: { type: string }
+  /api-key-templates:
+    get:
+      summary: 列出受限权限模板(2028 Q1 渠道受限 key 契约)
+      tags: [APIKey]
+      responses:
+        '200': { description: 模板列表 }

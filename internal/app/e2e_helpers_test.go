@@ -140,8 +140,8 @@ func newE2EAddress(t *testing.T, ctx context.Context, pool *pgxpool.Pool, a *app
 	}
 	for i := 1; i <= 2; i++ {
 		if _, err := a.Resource.CreatePort(ctx, resource.Port{
-			PortCode: fmt.Sprintf("P-E2E-%s-%02d", suffix, i),
-			QuadCode: fmt.Sprintf("Q-E2E-%s-%02d", suffix, i),
+			PortCode:   fmt.Sprintf("P-E2E-%s-%02d", suffix, i),
+			QuadCode:   fmt.Sprintf("Q-E2E-%s-%02d", suffix, i),
 			ResourceID: resID, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
 			AddressID: addrID, Status: "IDLE",
 		}); err != nil {

@@ -48,3 +48,120 @@ paths:
       responses:
         '200':
           description: 调整后余额
+  /loy/levels:
+    get:
+      summary: 积分等级列表(按门槛升序)
+      tags: [Loyalty]
+      responses:
+        '200': { description: 等级列表 }
+    post:
+      summary: 新建积分等级
+      tags: [Loyalty]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                minPoints: { type: integer, format: int64 }
+      responses:
+        '200': { description: 新建等级 id }
+  /loy/levels/{id}/disable:
+    post:
+      summary: 停用积分等级
+      tags: [Loyalty]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
+      responses:
+        '200': { description: 已停用 }
+  /loy/tasks:
+    get:
+      summary: 积分任务列表
+      tags: [Loyalty]
+      responses:
+        '200': { description: 任务列表 }
+    post:
+      summary: 新建积分任务(ONE_TIME/DAILY/MONTHLY)
+      tags: [Loyalty]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, points, period]
+              properties:
+                code: { type: string }
+                name: { type: string }
+                points: { type: integer, format: int64 }
+                period: { type: string, enum: [ONE_TIME, DAILY, MONTHLY] }
+      responses:
+        '200': { description: 新建任务 id }
+  /loy/tasks/{id}/disable:
+    post:
+      summary: 停用积分任务
+      tags: [Loyalty]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
+      responses:
+        '200': { description: 已停用 }
+  /loy/earn-rule:
+    get:
+      summary: 当前生效的缴费送积分规则(可空)
+      tags: [Loyalty]
+      responses:
+        '200': { description: 规则或 null }
+    put:
+      summary: 保存缴费送积分规则(新行生效,旧行自动失效)
+      tags: [Loyalty]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pointsPerYuan]
+              properties:
+                pointsPerYuan: { type: integer }
+                minCents: { type: integer, format: int64 }
+                expireDays: { type: integer }
+      responses:
+        '200': { description: 新规则 id }
+  /loy/expire/run:
+    post:
+      summary: 手动触发积分过期清算
+      tags: [Loyalty]
+      responses:
+        '200': { description: 本次清算客户数 }
+  /loy/points-recon:
+    get:
+      summary: 积分对账报表(账本余额 vs 流水合计,diff=drift 只看漂移行)
+      tags: [Loyalty]
+      parameters:
+        - { name: diff, in: query, schema: { type: string, enum: [drift] } }
+      responses:
+        '200':
+          description: 对账行与汇总
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      rows:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            customerId: { type: integer, format: int64 }
+                            balance: { type: integer, format: int64 }
+                            entriesSum: { type: integer, format: int64 }
+                            lifetimeEarn: { type: integer, format: int64 }
+                            expiredTotal: { type: integer, format: int64 }
+                            byReason: { type: object }
+                            diffKind: { type: string, enum: [MATCH, BALANCE_DRIFT] }
+                      summary: { type: object }

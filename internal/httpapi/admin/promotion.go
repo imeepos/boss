@@ -3,6 +3,8 @@ package adminapi
 // 营销促销域路由:券模板 CRUD/批量发放/兑换码批次(docs/design/promotion-coupon.md)。
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -23,6 +25,43 @@ func registerPromotionRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/gift-rules", perm, promoListGiftRules(a))
 	g.POST("/gift-rules", perm, promoCreateGiftRule(a))
 	g.PUT("/gift-rules/:ruleId/disable", perm, promoDisableGiftRule(a))
+	g.GET("/coupon-recon", perm, promoCouponRecon(a))
+}
+
+// couponReconer Promotion 的可选对账能力(PGStore 实现,窄口断言不污染接口)。
+type couponReconer interface {
+	CouponRecon(ctx context.Context) ([]promotion.CouponReconRow, promotion.CouponReconSummary, error)
+}
+
+// promoCouponRecon GET /coupon-recon:券对账报表(diff=drift 只看差异行,缺省全量)。
+func promoCouponRecon(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rc, ok := a.Promotion.(couponReconer)
+		if !ok {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
+		}
+		rows, sum, err := rc.CouponRecon(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if c.Query("diff") == "drift" {
+			rows = filterCouponDrift(rows)
+		}
+		respond(c, apitypes.CodeOK, gin.H{"rows": rows, "summary": sum})
+	}
+}
+
+// filterCouponDrift 只保留非 MATCH 行。
+func filterCouponDrift(rows []promotion.CouponReconRow) []promotion.CouponReconRow {
+	out := make([]promotion.CouponReconRow, 0, len(rows))
+	for _, r := range rows {
+		if r.DiffKind != promotion.ReconDiffMatch {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // promoListTemplates GET /coupon-templates:模板列表。

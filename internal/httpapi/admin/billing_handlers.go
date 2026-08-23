@@ -3,6 +3,8 @@ package adminapi
 // 计费账务域 handler 实现(从 billing.go 抽出,registerBillingRoutes 只剩扁平路由表)。
 
 import (
+	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -57,8 +59,20 @@ func refundPayment(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		rollbackPaymentPoints(c.Request.Context(), a, p.CustomerID, id)
 		httpx.RecordAudit(a, c, "payment.refund", "payment", p.PayNo, gin.H{"reason": body.Reason})
 		respond(c, apitypes.CodeOK, gin.H{"payment": p})
+	}
+}
+
+// rollbackPaymentPoints 退款冲销缴费积分(2028 Q2):按 payment_id 幂等;
+// 冲销失败仅记日志(积分不足时下次人工补偿),不回滚退款主流程。
+func rollbackPaymentPoints(ctx context.Context, a *app.Application, customerID, paymentID int64) {
+	if a.Points == nil {
+		return
+	}
+	if _, err := a.Points.RollbackPayment(ctx, paymentID, customerID); err != nil {
+		log.Printf("[loy-rollback] payment %d rollback failed: %v", paymentID, err)
 	}
 }
 

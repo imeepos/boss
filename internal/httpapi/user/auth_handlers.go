@@ -167,6 +167,7 @@ func portalResetPasswordHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
 }
+
 // portalRegisterReq 注册请求体。
 type portalRegisterReq struct {
 	Phone      string `json:"phone" binding:"required"`

@@ -44,7 +44,7 @@ func emitPartnerApplyTodo(a *app.Application, c *gin.Context, id int64, company,
 	}
 	_ = a.Notify.Emit(c.Request.Context(), notify.Input{
 		Category: notify.CategoryTodo, Level: notify.LevelWarn,
-		Title: "企业入驻申请待审核:" + company + "(" + contact + ")",
+		Title:   "企业入驻申请待审核:" + company + "(" + contact + ")",
 		RefType: "partner_apply", RefID: strconv.FormatInt(id, 10), Link: "/org/partner",
 	})
 }

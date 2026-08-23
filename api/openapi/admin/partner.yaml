@@ -94,26 +94,25 @@ paths:
       responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
   /partner/commissions:
     get:
+      summary: 渠道佣金台账列表(可按状态/企业筛选)
       tags: [Partner]
-      summary: 企业工作台-佣金台账列表(permCode menu:partner-orders;status 过滤,空=全部)
-      operationId: partnerCommissions
       parameters:
-        - { name: status, in: query, required: false, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [ACCRUED, SETTLED, VOID] } }
+        - { name: legalEntityId, in: query, schema: { type: integer, format: int64 } }
       responses:
-        '200':
-          description: data.items 为佣金台账数组(000118_partner_commission_ledger)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items: { type: object }
+        '200': { description: 佣金台账列表 }
   /partner/commissions/{id}/settle:
     post:
+      summary: 结算单条佣金台账(ACCRUED → SETTLED)
       tags: [Partner]
-      summary: 佣金结算(单条;审计 partner_commission.settle;permCode menu:partner-orders)
-      operationId: partnerCommissionSettle
-      parameters: [ { name: id, in: path, required: true, schema: { type: integer, format: int64 } } ]
-      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
+      responses:
+        '200': { description: 已结算 }
+  /partner/audit-report:
+    get:
+      summary: 渠道操作审计报表(按当前账号,可按 action 过滤)
+      tags: [Partner]
+      parameters:
+        - { name: action, in: query, schema: { type: string } }
+      responses:
+        '200': { description: 审计报表条目列表 }

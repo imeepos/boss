@@ -99,6 +99,9 @@ paths:
   /coupons/{couponId}/gift: { $ref: './user/misc.yaml#/paths/~1coupons~1{couponId}~1gift' }
   /points: { $ref: './user/loy.yaml#/paths/~1points' }
   /points/exchange: { $ref: './user/loy.yaml#/paths/~1points~1exchange' }
+  /points/tier: { $ref: './user/loy.yaml#/paths/~1points~1tier' }
+  /points/tasks: { $ref: './user/loy.yaml#/paths/~1points~1tasks' }
+  /points/tasks/{id}/complete: { $ref: './user/loy.yaml#/paths/~1points~1tasks~1{id}~1complete' }
   /usage: { $ref: './user/misc.yaml#/paths/~1usage' }
   /addresses: { $ref: './user/misc.yaml#/paths/~1addresses' }
   /diy/steps: { $ref: './user/misc.yaml#/paths/~1diy~1steps' }

@@ -9,13 +9,13 @@ const (
 
 // AgingSnapshot is the daily, explainable AR aging distribution.
 type AgingSnapshot struct {
-	CustomerID  int64
-	Current     float64
-	Days1To30   float64
-	Days31To60  float64
-	Days61To90  float64
-	Days90Plus  float64
-	Total       float64
+	CustomerID int64
+	Current    float64
+	Days1To30  float64
+	Days31To60 float64
+	Days61To90 float64
+	Days90Plus float64
+	Total      float64
 }
 
 // CollectionTask is an operator-owned, rule-generated queue item.

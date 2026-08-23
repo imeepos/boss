@@ -3,7 +3,9 @@ package userapi
 // 门户 Billing 扩展:自动缴费开关(portal_billing_prefs)与缴费凭证 PDF 下载。
 
 import (
+	"context"
 	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
 
@@ -94,4 +96,15 @@ func receiptPdf(p billing.Payment, period string) []byte {
 		"支付时间: " + clock.Now().Format("2006-01-02 15:04:05"),
 		"", "本凭证由 BOSS 系统出具,仅供缴费记录查询使用。",
 	})
+}
+
+// earnPointsForPayment 缴费成功自动积分(2028 Q2):按 loy_earn_rules 以 payment_id
+// 幂等发放;失败仅记日志不阻塞主流程(过期清算循环兜底重放)。
+func earnPointsForPayment(ctx context.Context, a *app.Application, customerID, paymentID int64, amount float64) {
+	if a.Points == nil {
+		return
+	}
+	if _, err := a.Points.EarnForPayment(ctx, paymentID, customerID, int64(amount*100)); err != nil {
+		log.Printf("[loy-earn] payment %d earn failed: %v", paymentID, err)
+	}
 }

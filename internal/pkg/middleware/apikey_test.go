@@ -30,7 +30,7 @@ func (f *fakeKeyService) List(ctx context.Context) ([]apikey.APIKey, error) { re
 func (f *fakeKeyService) ListTemplates(ctx context.Context) ([]apikey.PermissionTemplate, error) {
 	return nil, nil
 }
-func (f *fakeKeyService) Revoke(ctx context.Context, id int64) error        { return nil }
+func (f *fakeKeyService) Revoke(ctx context.Context, id int64) error { return nil }
 func (f *fakeKeyService) Lookup(ctx context.Context, keyHash string) (*apikey.Subject, error) {
 	if s, ok := f.lookup[keyHash]; ok {
 		return s, nil

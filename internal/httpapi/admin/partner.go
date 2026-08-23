@@ -27,6 +27,7 @@ func registerPartnerRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/partner/orders", requirePerm(a.User, "menu:partner-orders"), partnerOrderSubmitHandler(a))
 	g.GET("/partner/commissions", requirePerm(a.User, "menu:partner-orders"), partnerCommissionListHandler(a))
 	g.POST("/partner/commissions/:id/settle", requirePerm(a.User, "menu:partner-orders"), partnerCommissionSettleHandler(a))
+	g.GET("/partner/audit-report", requirePerm(a.User, "menu:partner-audit"), partnerAuditReportHandler(a))
 }
 
 // partnerSubmitReq 入驻申请公开提交请求体。

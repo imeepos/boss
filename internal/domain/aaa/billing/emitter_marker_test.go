@@ -79,5 +79,7 @@ func TestFanoutEmitter_KafkaStatusMarking(t *testing.T) {
 
 type failWriter struct{}
 
-func (failWriter) WriteMessages(context.Context, ...kafka.Message) error { return errors.New("kafka down") }
-func (failWriter) Close() error                                          { return nil }
+func (failWriter) WriteMessages(context.Context, ...kafka.Message) error {
+	return errors.New("kafka down")
+}
+func (failWriter) Close() error { return nil }

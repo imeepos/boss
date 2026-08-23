@@ -24,6 +24,7 @@ import (
 
 // maxContentBytes 内容下载读侧上限(与上传 32MB 对齐)。
 const maxContentBytes = 32 << 20
+
 func registerAttachmentRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/attachments/upload", httpx.AttachmentUpload(a.Attachment, adminAttachmentUploader))
 	g.GET("/attachments", adminAttachmentList(a))

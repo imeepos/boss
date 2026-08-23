@@ -47,6 +47,7 @@ func portalPlanRenew(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		gift := renewGiftMonths(ctx, a, productID, int64(req.Months), cid, receipt.PaymentID)
+		earnPointsForPayment(ctx, a, cid, receipt.PaymentID, receipt.Amount)
 		a.ResumeAfterPayment(ctx, cid)
 		end, err := a.UserData.RenewPlan(ctx, planID, cid, req.Months+gift)
 		if err != nil {
