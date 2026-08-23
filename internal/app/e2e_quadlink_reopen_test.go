@@ -93,4 +93,23 @@ func TestE2E_QuadLinkAddressReopen_Integration(t *testing.T) {
 	if portOverlap != 0 {
 		t.Fatalf("两条链路端口重叠(各应占独立端口)")
 	}
+
+	// 第二单推到环节12:订单 DONE 后端口必须 RESERVED→USED(terms.md §4 生命周期)。
+	for _, step := range []func(context.Context, int64) error{
+		a.Order.CreateUserProfile, a.Order.PreConfigOLT, a.Order.DispatchOrder,
+		a.Order.ScanBind, a.Order.ActivateUser, a.Order.NotifyActivation, a.Order.UpdateMap,
+	} {
+		if err := step(ctx, id2); err != nil {
+			t.Fatalf("推进到 DONE 失败: %v", err)
+		}
+	}
+	var usedCnt int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM ports WHERE order_id = $2 AND status = 'USED' AND address_id = $1`,
+		addr, id2).Scan(&usedCnt); err != nil {
+		t.Fatal(err)
+	}
+	if usedCnt != 1 {
+		t.Fatalf("订单 DONE 后 USED 端口数=%d, want 1", usedCnt)
+	}
 }

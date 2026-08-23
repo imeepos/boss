@@ -181,9 +181,17 @@ func (s *PGStore) NotifyActivation(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "notifyActivation")
 }
 
-// UpdateMap 环节12 更新 GIS。
+// UpdateMap 环节12 更新 GIS;订单终态 DONE 后端口转在用(terms.md §4:IDLE→RESERVED→USED)。
 func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
-	return s.advance(ctx, orderID, "updateMap")
+	if err := s.advance(ctx, orderID, "updateMap"); err != nil {
+		return err
+	}
+	if _, err := s.db.Exec(ctx,
+		`UPDATE ports SET status = 'USED' WHERE order_id = $1 AND status = 'RESERVED'`, orderID,
+	); err != nil {
+		return fmt.Errorf("order: mark port used: %w", err)
+	}
+	return nil
 }
 
 // Cancel 取消订单:任一未完成状态可取消(status→CANCELLED),不动环节序号;并回收预占端口。
