@@ -31,7 +31,7 @@ export default function CollectionTasksPage() {
     setBusy(true)
     try {
       await apiFetch(`/collection-tasks/${task.id}/status`, {
-        method: 'POST', body: JSON.stringify({ status: next }),
+        method: 'POST', body: { status: next },
       })
       load()
     } catch (e) {

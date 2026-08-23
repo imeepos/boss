@@ -58,7 +58,7 @@ export function AppDetail({ app, onRefreshApps }: { app: OpenAppRow; onRefreshAp
     try {
       await apiFetch(`/openplat/apps/${app.id}/subscriptions`, {
         method: 'POST',
-        body: JSON.stringify({ eventType: evType.trim(), endpointUrl: endpoint.trim() }),
+        body: { eventType: evType.trim(), endpointUrl: endpoint.trim() },
       })
       setEndpoint('')
       load()

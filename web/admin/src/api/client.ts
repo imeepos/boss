@@ -42,6 +42,10 @@ export async function apiFetch<T = unknown>(path: string, opts: RequestOptions =
   if (opts.body !== undefined) {
     if (opts.body instanceof FormData) {
       body = opts.body // multipart 由浏览器自动补 boundary,勿手写 Content-Type
+    } else if (typeof opts.body === 'string') {
+      // 调用方已经 JSON.stringify 过:直接发,不要再 stringify 一遍(否则服务端收的是被双引号包裹的字符串)。
+      headers['Content-Type'] = 'application/json'
+      body = opts.body
     } else {
       headers['Content-Type'] = 'application/json'
       body = JSON.stringify(opts.body)

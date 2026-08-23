@@ -75,7 +75,7 @@ export default function OpenPlatPage() {
     try {
       await apiFetch(`/openplat/apps/${row.id}/status`, {
         method: 'PUT',
-        body: JSON.stringify({ status: row.status === 1 ? 0 : 1 }),
+        body: { status: row.status === 1 ? 0 : 1 },
       })
       load()
     } catch (e) {
