@@ -55,7 +55,7 @@ WHERE a.id = $1 AND a.legal_entity_id IS NOT NULL`, accountID).
 	return p, nil
 }
 
-// ListStaff 本企业员工账号(partner_* 角色,id 升序)。
+// ListStaff 本企业员工账号(partner_* 角色,id 升序)。区域范围用于裁剪员工归属区域。
 func (s *PGStore) ListStaff(ctx context.Context, accountID int64) ([]StaffRow, error) {
 	entityID, err := s.entityOfAccount(ctx, accountID)
 	if err != nil {
@@ -64,11 +64,16 @@ func (s *PGStore) ListStaff(ctx context.Context, accountID int64) ([]StaffRow, e
 	if entityID == 0 {
 		return nil, ErrNotPartner
 	}
+	var regionScope string
+	if err := s.db.QueryRow(ctx, `SELECT COALESCE(region_scope::text,'') FROM accounts WHERE id=$1`, accountID).Scan(&regionScope); err != nil {
+		return nil, fmt.Errorf("partner: account region scope: %w", err)
+	}
 	rows, err := s.db.Query(ctx, `
 SELECT a.id, a.username, a.real_name, COALESCE(a.phone,''), r.code, a.status, a.created_at
 FROM accounts a JOIN roles r ON r.id = a.role_id
 WHERE a.legal_entity_id = $1 AND r.code IN ('partner_admin','partner_staff')
-ORDER BY a.id`, entityID)
+  AND ($2 = '' OR a.region_scope <@ $2::ltree)
+ORDER BY a.id`, entityID, regionScope)
 	if err != nil {
 		return nil, fmt.Errorf("partner: list staff: %w", err)
 	}
@@ -144,11 +149,15 @@ func (s *PGStore) ListOrders(ctx context.Context, accountID int64) ([]OrderRow, 
 	if entityID == 0 {
 		return nil, ErrNotPartner
 	}
+	var regionScope string
+	if err := s.db.QueryRow(ctx, `SELECT COALESCE(region_scope::text,'') FROM accounts WHERE id=$1`, accountID).Scan(&regionScope); err != nil {
+		return nil, fmt.Errorf("partner: account region scope: %w", err)
+	}
 	rows, err := s.db.Query(ctx, `
 SELECT o.id, o.order_no, COALESCE(c.name,''), o.stage, o.status, o.created_at
 FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
-WHERE o.legal_entity_id = $1
-ORDER BY o.created_at DESC, o.id DESC LIMIT 200`, entityID)
+WHERE o.legal_entity_id = $1 AND ($2 = '' OR o.region_path <@ $2::ltree)
+ORDER BY o.created_at DESC, o.id DESC LIMIT 200`, entityID, regionScope)
 	if err != nil {
 		return nil, fmt.Errorf("partner: list orders: %w", err)
 	}

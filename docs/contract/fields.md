@@ -384,6 +384,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 
 接口 `GET/PUT /partner/region-scope` 仅允许伙伴账号访问；设置值必须属于本企业覆盖区域，订单归属仍以地址推导结果为权威。
 
+伙伴员工和企业订单查询都按当前账号 `region_scope` 使用 LTREE 子树过滤；空范围表示本企业全区域。
+
 ### 1.8 开放平台（open_apps / open_webhook_subscriptions / open_usage_day，internal/domain/openplat，迁移 000122）
 
 > 固定用途：Q4 开放平台与互操作（docs/plan/q4-open-platform-plan.md）。外部集成方应用凭证 AppId+Secret，HMAC-SHA256 请求签名验签（区别于 1.7 的内部 bearer key：Secret 需原文落库，决策见 adopted note 2026-08-22-open-platform-secret）；开放面前缀 /api/open/v1，只读或经内部服务校验，禁止直写核心事实表。
