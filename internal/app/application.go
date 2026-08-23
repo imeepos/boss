@@ -17,12 +17,12 @@ import (
 	"github.com/ymm-001/boss/internal/domain/device"
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/gis"
+	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
-	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push" // 设备注册表(域侧);通道 Sender 在 pkg/push
@@ -76,6 +76,8 @@ type Application struct {
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
+	// Dunning 欠费催收域(Q3):逾期标记+欠费清单;停机编排见 RunDunning。
+	Dunning billing.DunningService
 	Recon   billing.ReconService
 	// ReconAuto 自动对账编排(渠道源注册表 ReconSources);admin POST /reconciliations/auto。
 	ReconAuto    *billing.AutoReconciler

@@ -480,6 +480,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 > 存量行已回填 customer_id（取 bill.customer_id）。
 > 缴费成功自动复机（Q3）：SUCCESS 落账后若客户 LO 账号 SUSPENDED 即自动 RESUME（迁移+`stop_resume_tasks` RESUME 流水留痕；
 > 失败任务留 FAILED 经 `POST /stop-resume-tasks/:id/retry` 重试），入口覆盖 admin 收款/门户缴费/门户续费/Stripe webhook。
+> 欠费催收批处理（Q3）：`POST /dunning-runs`（graceDays 宽限/stopAfterDays 停机线，缺省 15/30）→ 宽限外 UNPAID 账单置
+> OVERDUE → `arrears` 快照更新（COLLECTING/STOPPED）→ 超停机线 LO 自动 STOP+流水留痕；账龄自 `bills.created_at` 起算。
 
 ## 4. 阶段3/4 · 资产与资源（internal/domain/{asset,resource}）
 

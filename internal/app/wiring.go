@@ -108,6 +108,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 		Billing: bill,
 		Arrears: bill,
+		Dunning: bill,
 		Recon:   bill,
 		Tax:     bill,
 

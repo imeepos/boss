@@ -59,6 +59,23 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /dunning-runs:
+    post:
+      tags: [Billing]
+      summary: 欠费催收批处理(逾期标记+欠费快照+超停机线自动停机;permCode menu:stopsrv)
+      operationId: runDunning
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                graceDays: { type: integer, description: 宽限天数(账单生成起算),缺省 15 }
+                stopAfterDays: { type: integer, description: 最早逾期超此天数即停机,缺省 30 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /arrears/{customerId}/stop:
     post:
       tags: [Billing]

@@ -5,6 +5,8 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
+	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // registerBillingRoutes 注册计费账务域路由(承接 api/openapi/admin/billing.yaml)。
@@ -33,6 +35,36 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/reconciliations/auto", requirePerm(a.User, "menu:paycheck"), autoReconcile(a))
 	// 账实核对:应收/实收/开票三角,按账单定位差异(与渠道对账正交)。
 	g.GET("/billing/ledger-recon", requirePerm(a.User, "menu:paycheck"), ledgerReconHandler(a))
+	// 欠费催收批处理(Q3):逾期标记+欠费快照+超线自动停机;失败任务可经 retry 重放。
+	g.POST("/dunning-runs", requirePerm(a.User, "menu:stopsrv"), runDunning(a))
+}
+
+// runDunning 欠费催收批处理:宽限/停机线天数可配,缺省 15/30。
+func runDunning(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var body struct {
+			GraceDays     int `json:"graceDays"`
+			StopAfterDays int `json:"stopAfterDays"`
+		}
+		if !httpx.BindBody(c, &body) {
+			return
+		}
+		if body.GraceDays <= 0 {
+			body.GraceDays = 15
+		}
+		if body.StopAfterDays <= 0 {
+			body.StopAfterDays = 30
+		}
+		res, err := a.RunDunning(c.Request.Context(), body.GraceDays, body.StopAfterDays)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "billing.dunning", "dunning", "run",
+			gin.H{"graceDays": body.GraceDays, "stopAfterDays": body.StopAfterDays,
+				"overdueBills": res.OverdueBills, "stopped": len(res.StoppedIDs)})
+		respond(c, apitypes.CodeOK, gin.H{"result": res})
+	}
 }
 
 // execStopResume 对 LO 账号执行停/复机迁移,返回任务落账状态(DONE/FAILED)。

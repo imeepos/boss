@@ -12,9 +12,9 @@ import (
 // resumeAaa 桩:仅覆盖复机路径用到的两个方法,其余走嵌入接口(误调即 panic 暴露)。
 type resumeAaa struct {
 	aaa.AaaService
-	lo         *aaa.LoAccount
-	resumed    int64
-	resumeErr  error
+	lo        *aaa.LoAccount
+	resumed   int64
+	resumeErr error
 }
 
 func (f *resumeAaa) GetLoAccountByCustomer(context.Context, int64) (*aaa.LoAccount, error) {
