@@ -28,6 +28,8 @@ tags:
     description: 基础配置(账号/地址层级/业务参数/审计日志/数据导入)
   - name: AI
     description: AI 能力网关(OpenAI SDK 封装;apiKey/apiUrl 集中配置热更)
+  - name: OpenPlat
+    description: 开放平台管理(应用凭证/Webhook 订阅;迁移 000121,docs/plan/q4-open-platform-plan.md)
   - name: Org
     description: 组织与权限(法人/部门/岗位/区域/菜单权限/数据权限)
   - name: Customer
@@ -129,7 +131,15 @@ paths:
   /api-keys: { $ref: './admin/sys.yaml#/paths/~1api-keys' }
   /api-keys/{id}: { $ref: './admin/sys.yaml#/paths/~1api-keys~1{id}' }
   /api-key-templates: { $ref: './admin/sys.yaml#/paths/~1api-key-templates' }
+  /openplat/apps: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps' }
+  /openplat/apps/{id}/status: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1status' }
+  /openplat/apps/{id}/subscriptions: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1subscriptions' }
+  /openplat/subscriptions/{id}: { $ref: './admin/openplat.yaml#/paths/~1openplat~1subscriptions~1{id}' }
   /api-key-templates: { $ref: './admin/sys.yaml#/paths/~1api-key-templates' }
+  /openplat/apps: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps' }
+  /openplat/apps/{id}/status: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1status' }
+  /openplat/apps/{id}/subscriptions: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1subscriptions' }
+  /openplat/subscriptions/{id}: { $ref: './admin/openplat.yaml#/paths/~1openplat~1subscriptions~1{id}' }
   /regions: { $ref: './admin/org.yaml#/paths/~1regions' }
   /regions/{regionId}/coverage: { $ref: './admin/org.yaml#/paths/~1regions~1{regionId}~1coverage' }
   /menu-perms: { $ref: './admin/org.yaml#/paths/~1menu-perms' }
