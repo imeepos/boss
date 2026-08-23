@@ -1,13 +1,13 @@
 // Admin 设计系统采用率审计(docs/admin/page-patterns.md §5)。
 // 用法: node scripts/check-ds-adoption.js [阈值,缺省 0.6]
-// 阈值棘轮:2026-08-23 收敛 boss/message、profile 后上调至 80% 目标位。
+// 阈值棘轮:审计改递归统计后真基线 bss57/org72/base83,棘轮位 50%,目标 80%。
 // 规则:pages/<模块> 下引用 components/business 或 components/ui 的 .tsx 占比 ≥ 阈值;
 // 模块页数 < 3 不判(样本过小);任一大模块低于阈值退出非零。
 const fs = require('fs')
 const path = require('path')
 
 const PAGES = path.join(__dirname, '..', 'web', 'admin', 'src', 'pages')
-const THRESHOLD = parseFloat(process.argv[2] || '0.8')
+const THRESHOLD = parseFloat(process.argv[2] || '0.5')
 const MIN_PAGES = 3
 // home=公开官网落地页(自有视觉体系),error/login/placeholder=壳页,均非 Admin 业务页。
 const EXEMPT = new Set(['home', 'error', 'login', 'placeholder', 'auth-ads.tsx', 'auth-shell.tsx'])
@@ -17,12 +17,17 @@ const dirs = fs.readdirSync(PAGES, { withFileTypes: true })
 
 let bad = 0
 const rows = []
+// 递归收集模块内全部 .tsx 页面(嵌套子目录一并统计,防止只看顶层漏测)。
+const walk = (dir) =>
+  fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    if (e.isDirectory()) return walk(path.join(dir, e.name))
+    return e.name.endsWith('.tsx') && !e.name.endsWith('.test.tsx') ? [path.join(dir, e.name)] : []
+  })
 for (const d of dirs) {
-  const files = fs.readdirSync(path.join(PAGES, d.name))
-    .filter((f) => f.endsWith('.tsx') && !EXEMPT.has(f) && !f.endsWith('.test.tsx'))
+  const files = walk(path.join(PAGES, d.name))
   if (files.length < MIN_PAGES) continue
   const uses = files.filter((f) => {
-    const src = fs.readFileSync(path.join(PAGES, d.name, f), 'utf8')
+    const src = fs.readFileSync(f, 'utf8')
     return src.includes('components/business') || src.includes("components/ui") ||
       src.includes('../business') || src.includes('../ui')
   }).length
