@@ -156,7 +156,7 @@ func (s *PGStore) ListOrders(ctx context.Context, accountID int64) ([]OrderRow, 
 	rows, err := s.db.Query(ctx, `
 SELECT o.id, o.order_no, COALESCE(c.name,''), o.stage, o.status, o.created_at
 FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
-WHERE o.legal_entity_id = $1 AND ($2 = '' OR o.region_path <@ $2::ltree)
+WHERE o.legal_entity_id = $1 AND ($2 = '' OR o.region_path::ltree <@ $2::ltree)
 ORDER BY o.created_at DESC, o.id DESC LIMIT 200`, entityID, regionScope)
 	if err != nil {
 		return nil, fmt.Errorf("partner: list orders: %w", err)
