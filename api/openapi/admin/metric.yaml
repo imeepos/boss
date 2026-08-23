@@ -1,0 +1,121 @@
+paths:
+  /metric-catalog:
+    get:
+      tags: [Intel]
+      summary: 指标目录列表（支持按状态过滤）
+      description: S5 指标目录。menu:report。
+      operationId: listMetricCatalog
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [DRAFT, ACTIVE, DEPRECATED, ARCHIVED] } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /metric-catalog/{key}:
+    get:
+      tags: [Intel]
+      summary: 指标目录详情（按 key 查询）
+      description: menu:report。
+      operationId: getMetricCatalogByKey
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+        '404': { $ref: './schemas.yaml#/components/responses/NotFound' }
+    put:
+      tags: [Intel]
+      summary: 指标目录 upsert（key 存在则更新，不存在则创建）
+      description: menu:report。
+      operationId: upsertMetricCatalog
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                formula: { type: string }
+                unit: { type: string }
+                dimensions: { type: array, items: { type: string } }
+                refreshCadence: { type: string, enum: [REALTIME, HOURLY, DAILY, WEEKLY, MONTHLY, ON_DEMAND] }
+                owner: { type: string }
+                domain: { type: string }
+                status: { type: string, enum: [DRAFT, ACTIVE, DEPRECATED] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+        '404': { $ref: './schemas.yaml#/components/responses/NotFound' }
+
+  /metric-catalog/{key}/deprecate:
+    post:
+      tags: [Intel]
+      summary: 废弃指标
+      description: menu:report。
+      operationId: deprecateMetricCatalog
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+        '404': { $ref: './schemas.yaml#/components/responses/NotFound' }
+
+  /metric-quality-rules:
+    get:
+      tags: [Intel]
+      summary: 数据质量规则列表（支持 enabled 过滤）
+      description: menu:report。
+      operationId: listMetricQualityRules
+      parameters:
+        - { name: enabled, in: query, schema: { type: string, enum: ['true'] } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /metric-quality-rules/{ruleKey}:
+    put:
+      tags: [Intel]
+      summary: 数据质量规则 upsert
+      description: menu:report。
+      operationId: upsertMetricQualityRule
+      parameters:
+        - { name: ruleKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                scope: { type: string }
+                checkExpr: { type: string }
+                thresholdExpr: { type: string }
+                severity: { type: string, enum: [INFO, WARN, CRITICAL] }
+                owner: { type: string }
+                enabled: { type: boolean }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+        '404': { $ref: './schemas.yaml#/components/responses/NotFound' }
+
+  /metric-quality-rules/{ruleKey}/disable:
+    post:
+      tags: [Intel]
+      summary: 禁用质量规则
+      description: menu:report。
+      operationId: disableMetricQualityRule
+      parameters:
+        - { name: ruleKey, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/OK' }
+        '404': { $ref: './schemas.yaml#/components/responses/NotFound' }
+
+  /metric-quality-scan:
+    get:
+      tags: [Intel]
+      summary: 扫描启用的规则并返回违规明细（供补偿任务中心登记）
+      description: menu:report。当前为占位实现，返回 scan_pending；实际 CHECK_EXPR 由 ops worker 解释执行。
+      operationId: scanMetricQuality
+      parameters:
+        - { name: scope, in: query, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

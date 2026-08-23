@@ -394,6 +394,14 @@ paths:
   /comp-tasks/{id}/retry: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1retry' }
   /comp-tasks/{id}/replay: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1replay' }
   /comp-tasks/{id}/close: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1close' }
+  # ---------- Metric(指标目录与质量规则) ----------
+  /metric-catalog: { $ref: './admin/metric.yaml#/paths/~1metric-catalog' }
+  /metric-catalog/{key}: { $ref: './admin/metric.yaml#/paths/~1metric-catalog~1{key}' }
+  /metric-catalog/{key}/deprecate: { $ref: './admin/metric.yaml#/paths/~1metric-catalog~1{key}~1deprecate' }
+  /metric-quality-rules: { $ref: './admin/metric.yaml#/paths/~1metric-quality-rules' }
+  /metric-quality-rules/{ruleKey}: { $ref: './admin/metric.yaml#/paths/~1metric-quality-rules~1{ruleKey}' }
+  /metric-quality-rules/{ruleKey}/disable: { $ref: './admin/metric.yaml#/paths/~1metric-quality-rules~1{ruleKey}~1disable' }
+  /metric-quality-scan: { $ref: './admin/metric.yaml#/paths/~1metric-quality-scan' }
   /reports/{reportId}/send: { $ref: './admin/intel.yaml#/paths/~1reports~1{reportId}~1send' }
   /db-patrol/orphans: { $ref: './admin/intel.yaml#/paths/~1db-patrol~1orphans' }
   /db-patrol/latest: { $ref: './admin/intel.yaml#/paths/~1db-patrol~1latest' }

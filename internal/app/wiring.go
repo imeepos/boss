@@ -12,6 +12,7 @@ import (
 	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/device"
 	"github.com/ymm-001/boss/internal/domain/loy"
+	"github.com/ymm-001/boss/internal/domain/metric"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
@@ -176,6 +177,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	reportStore := report.NewPGStore(pool)
 	app.Report = &report.ReportService{Ana: app.Analytics, St: reportStore}
 	app.CompTask = report.NewCompTaskService(reportStore)
+	app.Metric = metric.NewPGStore(pool)
 
 	// 债务偿还:gRPC aaa/v1 依赖——授权器 + 话单投递 + W8 事件链(见 wiring_events.go)。
 	app.AaaAuth = aaa.NewPGAuthorizer(pool)

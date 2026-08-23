@@ -13,6 +13,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/geo"
+	"github.com/ymm-001/boss/internal/domain/metric"
 	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
@@ -69,7 +70,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, partner.ErrApplicationNotFound),
 		errors.Is(err, partner.ErrStaffNotFound),
 		errors.Is(err, portal.ErrNotFound),
-		errors.Is(err, backup.ErrNotFound):
+		errors.Is(err, backup.ErrNotFound),
+		errors.Is(err, metric.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, backup.ErrBusy):
 		Respond(c, apitypes.CodeResourceBusy, nil)
