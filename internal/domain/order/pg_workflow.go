@@ -148,6 +148,7 @@ func (s *PGStore) NotifyActivation(ctx context.Context, orderID int64) error {
 }
 
 // UpdateMap 环节12 更新 GIS;订单终态 DONE 后端口转在用(terms.md §4:IDLE→RESERVED→USED)。
+// 渠道订单到达终态时自动计提佣金(尽力而为,不影响环节推进)。
 func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
 	if err := s.advance(ctx, orderID, "updateMap"); err != nil {
 		return err
@@ -157,7 +158,29 @@ func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
 	); err != nil {
 		return fmt.Errorf("order: mark port used: %w", err)
 	}
+	s.accruePartnerCommission(ctx, orderID)
 	return nil
+}
+
+// accruePartnerCommission 渠道订单终态自动计提佣金;尽力而为,失败只记日志不阻断。
+func (s *PGStore) accruePartnerCommission(ctx context.Context, orderID int64) {
+	if s.commission == nil {
+		return
+	}
+	var entityID int64
+	var amount float64
+	err := s.db.QueryRow(ctx, `
+SELECT o.legal_entity_id, po.monthly_fee * GREATEST(o.buy_months, 1)
+FROM orders o JOIN channels ch ON ch.id=o.channel_id
+JOIN product_offers po ON po.id=o.offer_id
+WHERE o.id=$1 AND ch.code='AGENT'`, orderID).Scan(&entityID, &amount)
+	if err != nil {
+		return
+	}
+	if entityID == 0 {
+		return
+	}
+	_, _ = s.commission.AccrueCommission(ctx, orderID, entityID, amount, partnerDefaultRate)
 }
 
 // Cancel 取消订单:任一未完成状态可取消(status→CANCELLED),不动环节序号;并回收预占端口。

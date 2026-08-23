@@ -51,6 +51,28 @@ export interface ArrearsRow {
   status: string // 催收中/已停机等
 }
 
+export interface CollectionTaskRow {
+  id: number
+  customerId: number
+  customer: string
+  taskType: string
+  priority: string
+  status: string
+  dueAt: string
+  amount: number
+  days: number
+  note: string
+}
+
+export interface ARMetrics {
+  totalAmount: number
+  customerCount: number
+  stoppedCount: number
+  overdueBillCount: number
+  agingBuckets: { d0To15: number; d16To30: number; d31To60: number; d61To90: number; d90Plus: number }
+  lastRunAt: string
+}
+
 export interface StopResumeTaskRow {
   id: number
   customerId: number
