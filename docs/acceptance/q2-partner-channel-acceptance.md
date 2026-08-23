@@ -46,7 +46,7 @@ pnpm --dir web/admin run test -- --runInBand
 pnpm --dir web/admin run build
 ```
 
-结果：typecheck 通过；45 个测试文件、247 个测试通过；生产构建通过。102 页面级验收仍未完成：`/healthz` 返回 `{"status":"ok"}`，但 `/`、`/login`、`/admin`、`/api/admin/v1/auth/login` 均返回 404。该服务是后端健康入口，不是当前可访问的前端 Shell，因此未将健康检查或 404 误判为页面 PASS。
+结果：typecheck 通过；45 个测试文件、247 个测试通过；生产构建通过。文档中的 28080 是后端 API 入口；按 `deployments/docker-compose.102.app.yml`，前端实际入口为 `http://192.168.0.102:5180`。已用 CDP 在 5180 验证 `/login` 与 `/partner/apply` 返回 200，伙伴申请页面加载 `apply` 与 `partner` chunks；表单输入事件也已验证（2 个输入值成功写入）。
 
 ## 已执行命令
 
@@ -67,5 +67,5 @@ BOSS_PG_TEST_DSN='host=192.168.0.102 port=25432 user=boss password=boss dbname=b
 
 - 伙伴 HTTP/PG 全链路单个测试用例尚未把入驻审批后的新账号登录、区域设置、渠道下单、12 环节推进、自动佣金和审计报表全部串成一次旅程。
 - 风控每日上限的并发订单创建尚未做压力级集成测试；已有租户行锁阻塞验收。
-- 102 部署阻塞已确认：`GET /healthz` 为 200，但前端 Shell 与 admin API 登录路径均为 404；需要实际前端部署 URL 或完成 Web Shell 部署后，才能执行伙伴页面登录、点击和交互验收。
-- 102 页面级登录点击验收尚未完成；当前 102 根 URL 返回 404，需使用实际部署的前端路由或部署完成后再验收。
+- 102 后端 API 根路径 `/` 返回 404 属于预期，因为前端入口按部署编排位于 `:5180`；已完成 `/login` 与 `/partner/apply` 的页面加载及表单输入级 CDP 验证。
+- 尚未使用真实伙伴账号完成 5180 登录后的 `/partner/home`、`/partner/staff`、`/partner/orders` 点击验收；需要安全的真实账号/一次性凭证后继续。
