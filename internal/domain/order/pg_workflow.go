@@ -8,40 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// advance 推进一个环节:顺序守卫(stage 必须等于上一环节)+ status 迁移(经 orderSM)+ 环节日志。
-// 单事实源:所有环节推进都必须过此原语,禁止直接改 stage/status。
-func (s *PGStore) advance(ctx context.Context, orderID int64, event string) error {
-	step, ok := workflowByEvent[event]
-	if !ok {
-		return fmt.Errorf("order: unknown event %q", event)
-	}
-	var stage int8
-	var status string
-	err := s.db.QueryRow(ctx, `SELECT stage, status FROM orders WHERE id = $1`, orderID).Scan(&stage, &status)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrOrderNotFound
-	}
-	if err != nil {
-		return fmt.Errorf("order: advance select: %w", err)
-	}
-	if stage != step.stage-1 {
-		return ErrIllegalTransition
-	}
-	nextStatus := status
-	if step.statusEvent != "" {
-		ns, err := transition(status, step.statusEvent)
-		if err != nil {
-			return err
-		}
-		nextStatus = ns
-	}
-	if _, err := s.db.Exec(ctx, `UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, step.stage, nextStatus); err != nil {
-		return fmt.Errorf("order: advance update: %w", err)
-	}
-	s.syncDispatchTicket(ctx, orderID, nextStatus)
-	return s.appendStage(ctx, orderID, step.stage, "DONE")
-}
-
 // syncDispatchTicket 订单终态同步派单工单:订单 DONE/CANCELED 时工单随动,
 // 避免订单已完成而工单仍停留 PENDING(师傅端出现"12/12 待领取")。
 func (s *PGStore) syncDispatchTicket(ctx context.Context, orderID int64, orderStatus string) {

@@ -39,9 +39,9 @@ func TestPGStore_AssignDispatchTicket(t *testing.T) {
 func TestPGStore_DispatchOrder_CreatesTicket(t *testing.T) {
 	mock, _ := pgxmock.NewPool()
 	defer mock.Close()
-	mock.ExpectQuery(`SELECT stage, status FROM orders`).
+	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).
-		WillReturnRows(pgxmock.NewRows([]string{"stage", "status"}).AddRow(int16(7), "RESERVED"))
+		WillReturnRows(pgxmock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int16(7), "RESERVED", "ORD-7"))
 	mock.ExpectExec(`UPDATE orders SET stage`).
 		WithArgs(int64(7), int8(8), "INSTALLING").
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))

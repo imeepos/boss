@@ -26,12 +26,13 @@ type transactionalDB interface {
 
 // PGStore 是 OrderService 接口的 PostgreSQL 实现(阶段5)。
 type PGStore struct {
-	db      dbtx
-	cust    CustomerLookup    // 跨域:客户存在性校验
-	checker ResourceChecker   // 跨域:资源核查(环节2)
-	reserve PortReserver      // 跨域:端口预占(环节3/5)
-	quad    QuadLinkPrebinder // 跨域:四码预绑定(环节5)
-	prepaid PrepaidCollector  // 跨域:预付费当场收款(环节4)
+	db       dbtx
+	cust     CustomerLookup    // 跨域:客户存在性校验
+	checker  ResourceChecker   // 跨域:资源核查(环节2)
+	reserve  PortReserver      // 跨域:端口预占(环节3/5)
+	quad     QuadLinkPrebinder // 跨域:四码预绑定(环节5)
+	prepaid  PrepaidCollector  // 跨域:预付费当场收款(环节4)
+	notifier StageNotifier     // 可选:环节推进广播(开放平台 Webhook,nil=未启用)
 }
 
 // NewPGStore 构造 PGStore;cust 由 app 装配层注入 customer 域实现。
@@ -52,6 +53,10 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 	}
 	return s
 }
+
+// SetStageNotifier 注入环节推进广播钩子(app 装配层,wireAAAInfra 之后调用);
+// 广播尽力而为,失败不影响环节推进本身。
+func (s *PGStore) SetStageNotifier(n StageNotifier) { s.notifier = n }
 
 const orderCols = `id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, buy_months, gift_months, created_at`
 

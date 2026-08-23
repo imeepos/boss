@@ -157,6 +157,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 	wireGeoServices(app, pool)
 	wireAAAInfra(app, pool, aaastore, pushSender)
+	// 订单环节推进广播到开放平台 Webhook(000125 outbox;尽力而为,失败不影响推进)。
+	ord.SetStageNotifier(app.OpenWebhook)
 
 	app.Audit = aw
 	app.Attachment.Resolve = minioConfigResolver(app.User, app.Attachment.Conf)
