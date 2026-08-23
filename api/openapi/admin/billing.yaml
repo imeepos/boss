@@ -59,6 +59,37 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /collection-tasks:
+    get:
+      tags: [Billing]
+      summary: 应收催收任务队列
+      operationId: listCollectionTasks
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [PENDING, DOING, DONE, FAILED] } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /collection-tasks/{taskId}/status:
+    post:
+      tags: [Billing]
+      summary: 更新催收任务状态(人工可接管)
+      operationId: updateCollectionTask
+      parameters:
+        - { name: taskId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [PENDING, DOING, DONE, FAILED] }
+                outcome: { type: string }
+                note: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /arrears:
     get:
       tags: [Billing]

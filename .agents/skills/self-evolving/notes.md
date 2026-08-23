@@ -64,9 +64,11 @@
 - 2026-08-24 渠道审计报表：审计报表优先聚合既有 `audit_logs`，通过订单归属 `legal_entity_id` 做租户隔离；新增权限必须同步角色绑定、契约字段和回滚迁移。
 - 2026-08-24 渠道基础反作弊：订单风控检查必须在伙伴企业隔离后、OrderService.Submit 前执行；命中限额或客户冷却要写 `partner_order.blocked` 审计，且允许服务为空以兼容旧装配。
 - 2026-08-24 风控契约收口：风控参数用 `biz_params` 默认值迁移并映射资源繁忙错误；服务端 `PartnerOrder` 标记必须是 `json:"-"`，避免客户端伪造伙伴来源。
+- 2026-08-24 伙伴风控原子化：仅在 handler 预查计数不足以抗并发；伙伴 `Submit` 必须在同一事务内锁定 `legal_entities`、校验客户/产品租户归属、计数后插入订单和 stage 日志。
 - 2026-08-24 工作台统计卡跳转：统计卡必须由组件统一处理鼠标/键盘交互，目标列表页同时消费 URL 条件；今日订单需前后端共同支持时间条件，不能只改变前端地址。
 - 2026-08-24 订单状态趋势：后端趋势接口返回按 terms.md 五种状态拆分的 series，前端图表通过 legend button 切换可见曲线；扩展接口时同步更新后端 contract test、Dashboard DTO 和三份 locale。
 - 本轮 Q1 CS/AR：迁移号查到未合并分支已占 000117，必须让号到 000118；Go 工具不在 PATH（gofmt/go test 均未执行），收尾应明确区分代码门禁未运行与代码错误。
+- 本轮指标增量：并行主树编辑事故再次发生，必须在每次写入前用绝对 worktree 路径确认目标，且测试桩改动要在特性树完成；核心门禁实际应显式使用 `/opt/homebrew/bin/go`，不能信任 PATH。
 
 - 2026-08-22 GIS 地图空白：真实 102 `/gis/points?level=1` 返回空 items 时，页面原先用条件渲染卸载 OpenLayers；地图底图也随之消失。地图容器必须独立渲染，空数据提示用 pointer-events-none 覆盖层，避免把“无点位”误处理成“无地图”。
 - 2026-08-22 GIS 地图仍空白：OpenLayers `map.on()` 返回 EventsKey，不能传给 `map.un()` 当 listener；React StrictMode 清理 effect 时抛 `removeEventListener` 异常，地图随组件卸载。统一用 `unByKey()` 清理 OL 事件。

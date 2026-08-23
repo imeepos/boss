@@ -95,12 +95,13 @@ type Application struct {
 	ResourceSub    resource.ResourceSubService
 	ResourceAssign resource.ResourceAssignService
 
-	Order       order.OrderService
-	WorkOrder   order.WorkOrderService
-	CSMetrics   order.CSMetricsReader
-	ARMetrics   billing.ARMetricsReader
-	OrderLedger order.OrderLedgerService
-	Channel     order.ChannelService
+	Order           order.OrderService
+	WorkOrder       order.WorkOrderService
+	CSMetrics       order.CSMetricsReader
+	ARMetrics       billing.ARMetricsReader
+	CollectionQueue billing.CollectionQueueService
+	OrderLedger     order.OrderLedgerService
+	Channel         order.ChannelService
 
 	Device    device.DeviceService
 	Alarm     device.AlarmService
@@ -122,6 +123,7 @@ type Application struct {
 	PartnerCommission partner.CommissionLedgerService
 	PartnerAudit      partner.AuditReportService
 	PartnerOrderRisk  partner.OrderRiskService
+	PartnerRegion     partner.RegionScopeService
 
 	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
 	Notify notify.Service
