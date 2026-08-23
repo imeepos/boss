@@ -9,6 +9,7 @@ const BASE = __ENV.BASE || 'http://192.168.0.102:28080'
 // 注意:勿用 __ENV.USER/PASS 这类常见 shell 变量名(k6 会继承全量环境变量)。
 const USER = __ENV.LOAD_USER || 'admin'
 const PASS = __ENV.LOAD_PASS || ''
+const DRY_RUN = __ENV.DRY_RUN !== 'false' && PASS === ''
 
 const loginLatency = new Trend('login_latency', true)
 
@@ -36,6 +37,10 @@ export const options = {
 }
 
 export function setup() {
+  if (DRY_RUN) {
+    console.log(`dry-run: target=${BASE}; set LOAD_PASS and DRY_RUN=false to probe`)
+    return { token: '' }
+  }
   const res = http.post(`${BASE}/api/admin/v1/auth/login`, JSON.stringify({ username: USER, password: PASS }), {
     headers: { 'Content-Type': 'application/json' },
   })
@@ -47,6 +52,10 @@ export function setup() {
 }
 
 export default function (data) {
+  if (DRY_RUN) {
+    sleep(1)
+    return
+  }
   const auth = { headers: { Authorization: 'Bearer ' + data.token } }
 
   const loginRes = http.post(`${BASE}/api/admin/v1/auth/login`, JSON.stringify({ username: USER, password: PASS }), {
