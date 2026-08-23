@@ -465,3 +465,14 @@
 - 并行会话当天把 main 推进了 4 次,迁移号两次撞号(117、121),契约缺口三处。
   让号规则+反向同步流程本身是顺的,问题是反向同步后冲突解析脚本截断了 application.go,
   靠 go build 抓回来。教训:merge 冲突用脚本批量解后必须立即 go build + go vet。
+
+## 2026-08-22 Q4 开放平台季度验收(round 7–8)
+
+- 102 真实环境验收时 admin 创建开放应用返回 42200,本地 reproduce 发现
+  RequireString/CollectErrors 实际正确返回 nil,根本原因:102 部署的二进制
+  落后于主树代码(读路径 OK,写路径陈旧)。重演:本地 reproduce pass → 不要
+  在没先 reproduce 的前提下归因于"对方二进制陈旧"。教训:怀疑外部环境时先
+  在本地 main 跑一遍最小 reproduce,二分定位是代码 bug 还是部署漂移。
+- 上轮 grep 把 mixin 写法打到主树 notes.md(不是我改的)。同时本轮 notes.md
+  在主树有未提交改动,add -A 一并带走了——以后反思走单独 commit 或 worktree,
+  避免反射污染主树工作区。
