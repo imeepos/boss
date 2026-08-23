@@ -44,3 +44,21 @@ func TestCouponView(t *testing.T) {
 		t.Fatalf("all view item=%v", item)
 	}
 }
+
+// TestCouponView_FilterCaseInsensitive used/USED 过滤大小写不敏感(000119 验收集发现)。
+func TestCouponView_FilterCaseInsensitive(t *testing.T) {
+	used := Coupon{Status: "USED"}
+	if _, ok := couponView(used, "used", 0); !ok {
+		t.Fatal("status=used 过滤应命中 USED 券")
+	}
+	if _, ok := couponView(used, "USED", 0); !ok {
+		t.Fatal("status=USED 过滤应命中 USED 券")
+	}
+	if _, ok := couponView(used, "available", 0); ok {
+		t.Fatal("used 券不应出现在 available 过滤")
+	}
+	item, ok := couponView(used, "all", 0)
+	if !ok || item["status"] != "used" {
+		t.Fatalf("展示态应小写化: %#v", item)
+	}
+}
