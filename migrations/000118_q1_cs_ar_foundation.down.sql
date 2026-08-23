@@ -1,0 +1,12 @@
+BEGIN;
+DROP TABLE IF EXISTS service_metric_snapshots;
+DROP TABLE IF EXISTS ar_writeoffs;
+DROP TABLE IF EXISTS ar_payment_promises;
+DROP TABLE IF EXISTS ar_collection_tasks;
+DROP TABLE IF EXISTS ar_credit_profiles;
+DROP TABLE IF EXISTS ar_aging_snapshots;
+DROP TABLE IF EXISTS cs_callbacks;
+DROP TABLE IF EXISTS cs_knowledge_articles;
+DROP TABLE IF EXISTS cs_ticket_events;
+DROP TABLE IF EXISTS cs_ticket_extensions;
+COMMIT;
