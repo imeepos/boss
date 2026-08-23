@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS etl_job_run;
+DROP TABLE IF EXISTS etl_job;

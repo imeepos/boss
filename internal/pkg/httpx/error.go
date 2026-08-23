@@ -71,7 +71,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, partner.ErrStaffNotFound),
 		errors.Is(err, portal.ErrNotFound),
 		errors.Is(err, backup.ErrNotFound),
-		errors.Is(err, metric.ErrNotFound):
+		errors.Is(err, metric.ErrNotFound),
+		errors.Is(err, metric.ErrETLNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, backup.ErrBusy):
 		Respond(c, apitypes.CodeResourceBusy, nil)

@@ -120,6 +120,7 @@ type Application struct {
 	// Metric 指标目录与数据质量规则(S5 基础):指标 key/定义/公式/负责人/版本/血缘占位;
 	// 质量异常经 ScanQuality 发现后投递到 CompTask 补偿任务中心。
 	Metric metric.Service
+	ETL    metric.ETLService
 
 	Aaa         aaa.AaaService
 	Provision   provision.ProvisionService

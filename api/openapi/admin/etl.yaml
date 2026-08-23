@@ -1,0 +1,44 @@
+paths:
+  /etl-jobs:
+    get:
+      tags: [Intel]
+      summary: ETL投影任务台账
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Intel]
+      summary: upsert ETL任务
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: './schemas.yaml#/components/schemas/Item' } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+  /etl-jobs/{jobKey}:
+    get:
+      tags: [Intel]
+      summary: ETL任务详情
+      parameters: [{ name: jobKey, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Item' } }
+  /etl-jobs/{jobKey}/disable:
+    post:
+      tags: [Intel]
+      summary: 停用ETL任务
+      parameters: [{ name: jobKey, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Item' } }
+  /etl-jobs/{jobKey}/runs:
+    get:
+      tags: [Intel]
+      summary: ETL运行历史
+      parameters: [{ name: jobKey, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+    post:
+      tags: [Intel]
+      summary: 记录ETL运行
+      parameters: [{ name: jobKey, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Item' } }
+  /etl-freshness:
+    get:
+      tags: [Intel]
+      summary: ETL数据新鲜度看板
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
