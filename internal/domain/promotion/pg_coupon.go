@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -37,8 +38,10 @@ func (s *PGStore) ListCustomerCoupons(ctx context.Context, customerID int64, sta
 }
 
 // couponView 单券展示视图;不匹配过滤态返回 ok=false。
+// 展示态统一小写:ISSUED 派生 available/expired/gifting,USED/EXPIRED/DISABLED 原样小写化,
+// 过滤参数(available/used/expired/all)大小写不敏感。
 func couponView(c Coupon, filter string, billCents int64) (map[string]any, bool) {
-	view := c.Status
+	view := strings.ToLower(c.Status)
 	switch {
 	case c.Status == "ISSUED" && c.Code != "":
 		view = "gifting" // 转赠中:自身不可用,仅在 all 视图展示
@@ -47,7 +50,7 @@ func couponView(c Coupon, filter string, billCents int64) (map[string]any, bool)
 	case c.Status == "ISSUED":
 		view = "available"
 	}
-	if filter != "all" && filter != "" && view != filter {
+	if filter != "all" && filter != "" && !strings.EqualFold(view, filter) {
 		return nil, false
 	}
 	item := map[string]any{

@@ -118,23 +118,17 @@ paths:
         '200': { description: 审计报表条目列表 }
   /partner/region-scope:
     get:
-      summary: 企业工作台-经营区域范围(按当前账号;permCode menu:partner-home)
+      summary: 渠道企业区域权限范围(按当前账号)
       tags: [Partner]
-      operationId: partnerRegionScope
       responses:
-        '200': { description: data 为区域范围对象(regionPath 等) }
+        '200': { description: 区域范围 }
     put:
-      summary: 更新经营区域范围(审计 partner_region_scope.update;permCode menu:partner-home)
+      summary: 更新渠道企业区域权限范围
       tags: [Partner]
-      operationId: partnerRegionScopeUpdate
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [regionPath]
-              properties:
-                regionPath: { type: string, description: 区域路径,如 PH/NCR/Quezon_City }
+            schema: { type: object }
       responses:
-        '200': { description: data 回显 regionPath }
+        '200': { description: 已更新 }
