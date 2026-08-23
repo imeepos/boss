@@ -68,6 +68,13 @@
 - 2026-08-24 伙伴区域权限：复用 accounts.region_scope LTREE，不新增重复权限表；设置区域时必须校验 regions 属于当前 legal_entity，订单归属仍以地址推导为权威。
 - 2026-08-24 区域权限接入：仅提供 region-scope 写接口不形成有效隔离；伙伴员工和订单列表必须在 SQL 中使用同一账号 `region_scope` LTREE 子树谓词过滤。
 - 2026-08-24 佣金自动计提：佣金应在订单第 12 环节完成后触发，且只对 `AGENT` 渠道；金额从产品月费与订单预缴月数计算，使用幂等台账接口，失败不得阻断订单状态机。
+- 2026-08-24 佣金比例热配置：跨域读取 `biz_params` 应通过最小接口注入订单域，解析失败或越界回退默认值；主流程不能依赖配置读取成功。
+- 2026-08-24 渠道验收：先用 `go test ./internal/domain/order` 覆盖配置回退，再用 `BOSS_PG_TEST_DSN` 跑真实订单 12 环节与 requestId 幂等 E2E；两者通过才可宣称订单链路已验证。
+- 2026-08-24 风控回归：pgxmock 风控测试应分别覆盖每日上限和客户冷却，断言 reason 码与租户查询参数；真实并发锁语义仍需 PostgreSQL 集成测试，不能由 mock 代替。
+- 2026-08-24 真实锁验收：集成测试必须在完整 Git worktree 中执行；`BOSS_PG_TEST_DSN` 未设置时只能报告 skipped，设置 102 DSN 后 `TestPartnerTenantLockIntegration` PASS 才算锁语义有证据。
+- 2026-08-24 伙伴台账回归：佣金写入测试应验证幂等 upsert 的真实参数，并验证结算零行时拒绝，避免只测列表读路径。
+- 2026-08-24 受限 API key：模板码必须从 Lookup 传入认证上下文，Authz 先按模板权限集判定；不能只在签发接口保存 template_code 而继续让 key 继承完整 RBAC。
+- 2026-08-24 API key 回归：异步 `Touch` 测试必须等待原子计数，模板权限测试同时断言允许 `menu:partner-orders` 与拒绝普通管理菜单。
 - 2026-08-24 工作台统计卡跳转：统计卡必须由组件统一处理鼠标/键盘交互，目标列表页同时消费 URL 条件；今日订单需前后端共同支持时间条件，不能只改变前端地址。
 - 2026-08-24 订单状态趋势：后端趋势接口返回按 terms.md 五种状态拆分的 series，前端图表通过 legend button 切换可见曲线；扩展接口时同步更新后端 contract test、Dashboard DTO 和三份 locale。
 - 本轮 Q1 CS/AR：迁移号查到未合并分支已占 000117，必须让号到 000118；Go 工具不在 PATH（gofmt/go test 均未执行），收尾应明确区分代码门禁未运行与代码错误。
