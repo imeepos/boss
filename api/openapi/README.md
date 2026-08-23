@@ -2,6 +2,12 @@
 
 对外 REST 契约,APISIX 网关路由与 JWT 鉴权以此为准。
 
+## 开放平台端(外部集成方)
+
+- `open.yaml` —— 聚合入口,前缀 `/api/open/v1`,鉴权为 AppId+Secret HMAC-SHA256 请求签名(非 JWT)。
+- `open/` —— 域文件:`ping.yaml`(连通自检)、`order.yaml`(订单只读查询)。
+- 版本化:不兼容变更发 v2,旧版本至少保留两个季度;红线:开放面不直写核心事实表。
+
 ## 用户端(客户门户)
 
 - `user.yaml` —— 聚合入口,`info/servers/tags` + 内联 `$ref` 指向 `user/` 下各域文件与 schemas。

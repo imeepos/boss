@@ -57,6 +57,7 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerRealIDConfigRoutes(authed, a)
 	registerAIRoutes(authed, a)
 	registerAPIKeyRoutes(authed, a)
+	registerOpenPlatRoutes(authed, a)
 	registerOrderRoutes(authed, a)
 	registerOrderSubRoutes(authed, a)
 	registerOrderWorkflowRoutes(authed, a)

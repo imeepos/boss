@@ -11,6 +11,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/notify"
+	"github.com/ymm-001/boss/internal/domain/openplat"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
@@ -23,6 +24,7 @@ func wireAAAInfra(app *Application, pool *pgxpool.Pool, aaastore *aaa.PGStore, p
 	app.QuadLink = quadlink.NewPGStore(pool)
 	app.Asset = asset.NewPGStore(pool)
 	app.APIKey = apikey.NewPGStore(pool)
+	app.OpenPlat = openplat.NewPGStore(pool)
 	app.AI = ai.NewService(ai.NewPGStore(pool))
 	app.Notify = notify.NewPGStore(pool)
 

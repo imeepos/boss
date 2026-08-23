@@ -1,0 +1,36 @@
+# open 端 Order 域:订单只读查询(开放面最小投影,不含内部成本口径)。
+paths:
+  /orders/{orderNo}:
+    get:
+      tags: [Order]
+      summary: 按订单号查询订单状态(只读,经 OrderService 读模型)
+      operationId: openGetOrder
+      security:
+        - OpenHmacAuth: []
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string, example: ORD-20250817-001 }
+      responses:
+        '200':
+          description: 订单只读投影
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      orderNo: { type: string }
+                      status: { type: string, enum: [PENDING, RESERVED, INSTALLING, DONE], description: terms.md 订单状态 }
+                      stage: { type: integer, minimum: 1, maximum: 12, description: 12 环节进度 }
+                      offerId: { type: integer, format: int64, description: 产品 → product_offers }
+                      createdAt: { type: string, format: date-time }
+        '401':
+          description: 验签失败
+        '404':
+          description: 订单不存在

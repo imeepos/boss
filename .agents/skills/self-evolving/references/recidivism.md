@@ -5,6 +5,8 @@
 
 | 坑 | 次数 | 发生日期 | 后果 |
 |---|---|---|---|
+| bash 默认 cwd 是主树而非 worktree,python/sed 批量编辑跑错树 | 1 | 2026-08-22(改了主树 check-contract-sync/routes.go;另一次 FileNotFound 才发现) | worktree 内每条 bash 显式带 workdir,heredoc 开头 pwd 自检 |
+| 非交互 rebase 的 reword sed 按行号命中错误 pick,把 main 侧提交贴了自己的 message | 1 | 2026-08-22(开放平台 M1 分支,三轮返工) | sed 按 hash 前缀匹配不按行号;改完 git log --graph 验证 |
 | 用原生 `<select>` 写下拉(option 弹层无法随主题定制) | 2 | 2026-08-18(顶栏语言切换), 2026-08-18(geo 分页 size changer+国家筛选) | 两次被用户点名"奇怪",返工 1 轮 |
 | edit 前不用 read 工具看文件 / 凭上轮记忆拼 old_string | 5 | 2026-08-18(cat 后 edit 被拒), 2026-08-18(sed 后 edit 被拒), 2026-08-18(UserMenu old_string not found) | 每次浪费一轮重试 |; 2026-08-20(并行会话改文件,edit 连续 file changed since read); 2026-08-21(data-relations.md 用 bash sed 读后 4 个 edit 全被拒,重读一轮); 2026-08-25(notify_test.go python 改后 edit 拒,locale 凭记忆 edit 拒) |
 | 会话边界残留未提交修改被误判为本会话引入的回归 | 1 | 2026-08-21(套餐详情页遇 OrderPage.kt 已存在 4 处编译错误) | 浪费一轮排查后才定位是前一会话遗留 |

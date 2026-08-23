@@ -1,0 +1,123 @@
+# 开放平台管理面(admin 端):应用凭证 + Webhook 订阅。
+# 前缀 /api/admin/v1,permCode menu:openplat(迁移 000122)。
+# Secret 仅创建响应返回一次,后续永不回显。
+paths:
+  /openplat/apps:
+    get:
+      tags: [OpenPlat]
+      summary: 开放应用清单(裸数组;不含 Secret)
+      operationId: listOpenApps
+      responses:
+        '200':
+          description: data.items 为应用元数据数组
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/OpenPlatApp' }
+    post:
+      tags: [OpenPlat]
+      summary: 创建开放应用(AppId+Secret 仅本次返回;缺省 rpm 60 / quota 10000)
+      operationId: createOpenApp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 64 }
+                rateLimitRpm: { type: integer, description: 每分钟调用上限,缺省 60 }
+                dailyQuota: { type: integer, description: 日调用配额,缺省 10000 }
+                sandbox: { type: boolean, description: 沙箱应用(M4) }
+      responses:
+        '200':
+          description: data 含 appId 与 secret(仅此一次)
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/OpenPlatAppCreated' }
+
+  /openplat/apps/{id}/status:
+    put:
+      tags: [OpenPlat]
+      summary: 启用/停用开放应用(停用即验签失效)
+      operationId: setOpenAppStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: integer, enum: [0, 1] }
+      responses:
+        '200':
+          description: data 为 null
+
+  /openplat/apps/{id}/subscriptions:
+    get:
+      tags: [OpenPlat]
+      summary: 应用的事件订阅清单(裸数组)
+      operationId: listOpenSubscriptions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: data.items 为订阅数组
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/OpenPlatSubscription' }
+    post:
+      tags: [OpenPlat]
+      summary: 新增事件订阅(同 app+事件+端点唯一;M2 投递器消费)
+      operationId: createOpenSubscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventType, endpointUrl]
+              properties:
+                eventType: { type: string, example: order.activated }
+                endpointUrl: { type: string, maxLength: 512 }
+      responses:
+        '200':
+          description: data 为新建订阅
+
+  /openplat/subscriptions/{id}:
+    delete:
+      tags: [OpenPlat]
+      summary: 删除事件订阅
+      operationId: deleteOpenSubscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: data 为 null

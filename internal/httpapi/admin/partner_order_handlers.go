@@ -1,6 +1,8 @@
 package adminapi
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -32,6 +34,23 @@ func partnerOrderSubmitHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		req.LegalEntityID = profile.LegalEntityID
+		req.PartnerOrder = true
+		if a.PartnerOrderRisk != nil {
+			decision, riskErr := a.PartnerOrderRisk.CheckOrderRisk(c.Request.Context(), claims.AccountID, req.CustomerID)
+			if riskErr != nil {
+				respondErr(c, riskErr)
+				return
+			}
+			if !decision.Allowed {
+				httpx.RecordAudit(a, c, "partner_order.blocked", "customer", strconv.FormatInt(req.CustomerID, 10), gin.H{"reason": decision.Reason})
+				if decision.Reason == "DAILY_ORDER_LIMIT" {
+					respondErr(c, order.ErrPartnerDailyCap)
+				} else {
+					respondErr(c, order.ErrPartnerCustomerCooldown)
+				}
+				return
+			}
+		}
 		o, err := a.Order.Submit(c.Request.Context(), req)
 		if err != nil {
 			respondErr(c, err)
