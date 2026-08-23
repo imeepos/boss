@@ -19,7 +19,9 @@
 
 ## 已知基线（供核对，若与代码不符以代码为准并报告）
 
-- 前缀 `/api/v1`（三端共用）；envelope `{code,msg,data}`，HTTP 恒 200，code=0 成功
+- admin 前缀 **`/api/admin/v1`**（2026-08-19 三端前缀分离，
+  `docs/notes/adopted/2026-08-19-api-three-portal-prefix.md`）；user=`/api/v1`、worker=`/api/worker/v1`、
+  open=`/api/open/v1`。envelope `{code,msg,data}`，HTTP 恒 200，code=0 成功。
 - `/auth/me` 返回 roleCode（无菜单树）；`/auth/logout`、`/menu-perms`、sys 域 accounts/roles/params/audit-logs/import-tasks 后端未实现
 - 契约应已覆盖 Go 全部 75 个路径；inline schema 描述 data 负载；列表 data 为裸数组
 
