@@ -388,3 +388,5 @@ paths:
   /partner/staff: { $ref: './admin/partner.yaml#/paths/~1partner~1staff' }
   /partner/staff/{id}/status: { $ref: './admin/partner.yaml#/paths/~1partner~1staff~1{id}~1status' }
   /partner/orders: { $ref: './admin/partner.yaml#/paths/~1partner~1orders' }
+  /partner/commissions: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions' }
+  /partner/commissions/{id}/settle: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions~1{id}~1settle' }

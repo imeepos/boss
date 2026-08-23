@@ -92,3 +92,19 @@ paths:
       summary: 企业工作台-本企业订单列表
       operationId: partnerOrders
       responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+  /partner/commissions:
+    get:
+      summary: 渠道佣金台账列表(可按状态/企业筛选)
+      tags: [Partner]
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [ACCRUED, SETTLED, VOID] } }
+        - { name: legalEntityId, in: query, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { description: 佣金台账列表 }
+  /partner/commissions/{id}/settle:
+    post:
+      summary: 结算单条佣金台账(ACCRUED → SETTLED)
+      tags: [Partner]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
+      responses:
+        '200': { description: 已结算 }
