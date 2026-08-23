@@ -73,6 +73,7 @@
 - 当工具超时时，不要急着归因到网络。先做排除：① 去掉管道重试看真实输出；② 检查是否在等交互输入（加 `-y` 或 `--yes`）；③ 检查目标 URL 是否可直达（`curl -v` 看连接耗时）；④ 检查本地 registry 配置（`npm config get registry` / `pnpm config get registry`）。skill 没提前警告我。
 - 当整理跨年度研发计划时，修复是先以契约和现有路线图建立基线，再用年度主题、季度出口指标、横向工程主线、明确不做项和季度治理机制约束范围；不要把未建能力域直接承诺为无验收条件的功能清单。skill 没提前警告我。
 - 当把年度路线继续拆成季度时，修复是每季固定写“目标、重点计划、交付物、验收指标”，并同时标注规划序号与自然季度，避免周期起点和季度编号混淆。skill 没提前警告我。
+- 当季度计划涉及待建能力域时，修复是先核对 domain-map 的已建/待建状态，再在每季写明确不做项；这样能避免 WHO、RA、FMS、SET 等未具备边界的域被远期愿景顺手承诺。skill 没提前警告我。
 - Playwright 断言页面标题时,侧边栏菜单/面包屑/页内 h2 三处同文案会触发 strict mode violation:一律用 getByRole('heading') 而非 getByText(2026-08-18, e2e 冒烟首跑 2 失败均此因)
 - 跑前端 e2e 前先确认 vite proxy 的 BOSS_API_TARGET 指向真实后端(vite.config 默认 102:28080),playwright webServer.env 里覆盖才生效(2026-08-18)
 - 当用户反复强调"保存/记录账号密码 API key"时,修复是当场用 write 工具落盘 JSON 并 `ls` 确认存在,不要只口头答应"会保存"——本会话因只答应不执行被用户连催四次,浪费多轮(2026-08-19)
@@ -245,3 +246,4 @@ D 门禁撞号先 merge main 反向同步再复跑:worktree 基点过旧会看�
 pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)报 unable to encode,Go 侧显式转换或 SQL 写死常量
 迁移 SQL 文件注释里禁止写分号:朴素 split(";") 工具(回环脚本/migrate 某些模式)会被注释内分号毒害
 - 2026-08-23 验证线上行为前先核对 registry 镜像 Created 时间与本地 commit 时间;容器 Up 时间/健康检查通过都不代表二进制已更新(CI 异步部署,验证失败先怀疑没部署)。
+- 2026-08-23 前端代码已 commit/已 push/容器已 rebuild,用户仍报"看不到变化"时,修复是三步自检:`curl -sI 域名/` 看 `Cache-Control` 是否命中 `max-age=...immutable`、`curl 域名/assets/index-*.js | grep <新代码符号>` 验证新 chunk 是否真到位、`curl 域名/index.html | grep index-...js` 看 index.html 引用的 hash 是否为新 chunk;命中 immutable 时用户需硬刷新才能看到新版本(nginx sites-enabled/boss-5180 当前未加 no-cache for index.html,这是已知改进点)。skill 没提前警告我"修完前端先 curl 远端 bundle 自检"。
