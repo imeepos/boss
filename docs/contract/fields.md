@@ -439,6 +439,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 
 > 快照列（TS 实体）：`customer_name`（客户姓名）、`offer_name`（产品名），下单时冻结，改名/调价不影响历史订单（与 `price_snapshot` 同规则）。
 
+> 渠道订单接口 `POST /partner/orders` 只接受伙伴账号身份，服务端从伙伴企业档案取得 `legal_entity_id`，再调用同一 `OrderService.Submit`；因此渠道订单复用直营订单的 12 环节、资源核查/端口预占和计费规则，不复制状态机。
+
 ### 3.2 order_stages（订单环节时间轴）
 
 | 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
