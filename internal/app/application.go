@@ -117,6 +117,7 @@ type Application struct {
 	Partner           partner.Service
 	PartnerCommission partner.CommissionLedgerService
 	PartnerAudit      partner.AuditReportService
+	PartnerOrderRisk  partner.OrderRiskService
 
 	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
 	Notify notify.Service
