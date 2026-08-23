@@ -404,3 +404,4 @@ paths:
   /partner/commissions: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions' }
   /partner/commissions/{id}/settle: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions~1{id}~1settle' }
   /partner/audit-report: { $ref: './admin/partner.yaml#/paths/~1partner~1audit-report' }
+  /partner/region-scope: { $ref: './admin/partner.yaml#/paths/~1partner~1region-scope' }
