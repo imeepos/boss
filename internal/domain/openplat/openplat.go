@@ -85,4 +85,5 @@ type AuthContext struct {
 	Secret       string
 	RateLimitRPM int
 	DailyQuota   int
+	Sandbox      bool // 沙箱应用:开放面只见样例数据(M4)
 }

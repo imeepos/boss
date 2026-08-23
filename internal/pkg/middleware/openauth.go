@@ -18,6 +18,9 @@ import (
 // CtxOpenApp 验签通过的应用行 ID 上下文键。
 const CtxOpenApp = "boss.openapp"
 
+// CtxOpenSandbox 沙箱应用标记上下文键。
+const CtxOpenSandbox = "boss.opensandbox"
+
 // OpenAuth 开放平台验签中间件:
 // 校验 X-BOSS-AppId/Timestamp/Nonce/Signature,通过后记用量并检查日配额。
 func OpenAuth(svc openplat.Service) gin.HandlerFunc {
@@ -55,6 +58,7 @@ func OpenAuth(svc openplat.Service) gin.HandlerFunc {
 		}
 		c.Set(CtxOpenApp, auth.AppRowID)
 		c.Set(CtxOpenRPM, auth.RateLimitRPM)
+		c.Set(CtxOpenSandbox, auth.Sandbox)
 		c.Next()
 	}
 }
@@ -72,4 +76,11 @@ func OpenAppIDFrom(c *gin.Context) int64 {
 		}
 	}
 	return 0
+}
+
+// OpenSandboxFrom 判定请求来自沙箱应用(M4:开放面只见样例数据)。
+func OpenSandboxFrom(c *gin.Context) bool {
+	v, _ := c.Get(CtxOpenSandbox)
+	sb, _ := v.(bool)
+	return sb
 }

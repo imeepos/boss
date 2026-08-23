@@ -1,0 +1,38 @@
+# open 端 Sandbox 域:沙箱样例清单(自助验收工具数据源)。
+paths:
+  /sandbox/samples:
+    get:
+      tags: [Sandbox]
+      summary: 沙箱样例订单清单 + Webhook 验笔回放样例
+      description: |
+        沙箱应用(sandbox=true)可见 SBX-* 样例订单,与生产订单双向隔离;
+        webhook 样例供接收方本地复算 v1 签名(demo secret 仅用于练习)。
+      operationId: openSandboxSamples
+      security:
+        - OpenHmacAuth: []
+      responses:
+        '200':
+          description: 样例清单
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      orders:
+                        type: array
+                        items: { type: string, example: SBX-ORD-0001 }
+                      webhook:
+                        type: object
+                        properties:
+                          eventId: { type: string }
+                          eventType: { type: string, example: order.stage.done }
+                          timestamp: { type: string, description: Unix 秒(固定值保证可复现) }
+                          body: { type: string, description: JSON 负载文本 }
+                          expectedV1: { type: string, description: 期望的 v1 签名(hex) }
+        '401':
+          description: 验签失败

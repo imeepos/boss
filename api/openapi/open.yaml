@@ -21,11 +21,14 @@ tags:
   - name: Ping
     description: 连通性与验签自检
   - name: Order
-    description: 订单只读查询(12 环节状态,terms.md §1)
+    description: 订单只读查询(12 环节状态,terms.md §1;沙箱应用仅见 SBX-* 样例)
+  - name: Sandbox
+    description: 沙箱样例与回放(M4;docs/integration/open-platform.md)
 
 paths:
   /ping: { $ref: './open/ping.yaml#/paths/~1ping' }
   /orders/{orderNo}: { $ref: './open/order.yaml#/paths/~1orders~1{orderNo}' }
+  /sandbox/samples: { $ref: './open/sandbox.yaml#/paths/~1sandbox~1samples' }
 
 components:
   securitySchemes:

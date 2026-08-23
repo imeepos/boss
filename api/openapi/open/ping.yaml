@@ -21,6 +21,7 @@ paths:
                     type: object
                     properties:
                       appRowId: { type: integer, format: int64 }
+                      sandbox: { type: boolean, description: 沙箱应用标记(M4,样例数据隔离) }
                       version: { type: string, example: v1 }
         '401':
           description: 缺签名头/应用不存在或停用/验签失败/时间戳超窗

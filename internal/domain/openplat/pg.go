@@ -87,12 +87,12 @@ func (s *PGStore) SetAppStatus(ctx context.Context, id int64, status int16) erro
 	return nil
 }
 
-// LookupActive 按公开 AppID 取启用中应用的验签上下文。
+// LookupActive 按公开 AppID 取启用中应用的验签上下文(含沙箱标记)。
 func (s *PGStore) LookupActive(ctx context.Context, appID string) (*AuthContext, error) {
 	var a AuthContext
 	err := s.db.QueryRow(ctx, `
-		SELECT id, secret, rate_limit_rpm, daily_quota FROM open_apps
-		WHERE app_id = $1 AND status = 1`, appID).Scan(&a.AppRowID, &a.Secret, &a.RateLimitRPM, &a.DailyQuota)
+		SELECT id, secret, rate_limit_rpm, daily_quota, sandbox FROM open_apps
+		WHERE app_id = $1 AND status = 1`, appID).Scan(&a.AppRowID, &a.Secret, &a.RateLimitRPM, &a.DailyQuota, &a.Sandbox)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, ErrNotFound
