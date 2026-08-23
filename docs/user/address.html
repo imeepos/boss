@@ -15,30 +15,32 @@
   <div class="card">
     <div class="c-title">新增地址</div>
     <div class="field">
-      <label>小区 / 楼盘</label>
+      <label data-i18n="user.address.text1">小区 / 楼盘</label>
       <input type="text" id="community" placeholder="请输入小区名">
     </div>
     <div class="field">
-      <label>楼栋</label>
+      <label data-i18n="user.address.text2">楼栋</label>
       <input type="text" id="building" placeholder="楼栋号">
     </div>
     <div class="field">
-      <label>门牌号</label>
+      <label data-i18n="user.address.text3">门牌号</label>
       <input type="text" id="door" placeholder="单元/房间号">
     </div>
     <div class="field">
-      <label>联系人 / 电话</label>
+      <label data-i18n="user.address.text4">联系人 / 电话</label>
       <div style="display:flex;gap:8px;">
         <input type="text" id="contact" placeholder="联系人" style="flex:1;">
         <input type="tel" id="phone" placeholder="联系电话" style="flex:1.4;">
       </div>
     </div>
-    <button class="btn-block" onclick="save()">保存地址</button>
+    <button class="btn-block" onclick="save()" data-i18n="user.address.text5">保存地址</button>
   </div>
 
   <div class="muted" style="text-align:center;font-size:12px;margin:0 14px;">地址须挂接到小区/楼栋层级，用于资源核查与装维上门。</div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -46,7 +48,7 @@
   function cell(a) {
     return '<div class="cell"><div class="main"><div class="t">' + a.label + '</div>'
       + '<div class="d">' + (a.isDefault ? '默认安装地址' : '备用地址') + ' · ' + a.contact + ' · ' + a.phoneMasked + '</div></div>'
-      + '<div class="right"><span class="tag ' + (a.isDefault ? 'tag-green">默认' : 'tag-gray">备用') + '</span></div></div>';
+      + '<div class="right"><span class="tag ' + (a.isDefault ? 'tag-green" data-i18n="user.address.text6">默认' : 'tag-gray">备用') + '</span></div></div>';
   }
   API.misc.addresses().then(function (d) {
     document.getElementById('addr-list').innerHTML = (d.items || []).map(cell).join('');

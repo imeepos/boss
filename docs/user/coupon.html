@@ -11,9 +11,9 @@
   <div id="header" data-back="profile.html"></div>
 
   <div class="seg" id="tabs">
-    <a class="active" onclick="filterList('available')">可用</a>
-    <a onclick="filterList('used')">已使用</a>
-    <a onclick="filterList('expired')">已过期</a>
+    <a class="active" onclick="filterList('available')" data-i18n="user.coupon.text1">可用</a>
+    <a onclick="filterList('used')" data-i18n="user.coupon.text2">已使用</a>
+    <a onclick="filterList('expired')" data-i18n="user.coupon.text3">已过期</a>
   </div>
 
   <div id="coupon-list"></div>
@@ -21,23 +21,25 @@
   <div class="card">
     <div class="c-title">邀请好友</div>
     <div class="muted" style="font-size:12.5px;margin-bottom:12px;">邀请好友办理宽带，双方各得 ¥50 优惠券。</div>
-    <button class="btn-block ghost" onclick="copyInvite()">复制邀请链接</button>
+    <button class="btn-block ghost" onclick="copyInvite()" data-i18n="user.coupon.text4">复制邀请链接</button>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
   var inviteLink = '';
   function card(c) {
-    var hint = c.threshold > 0 ? '<span class="muted" style="font-size:12px;">满 ' + c.threshold + ' 可用</span>' : '';
+    var hint = c.threshold > 0 ? '<span class="muted" style="font-size:12px;" data-i18n="user.coupon.text5">满 ' + c.threshold + ' 可用</span>' : '';
     return '<div class="card" style="border-left:4px solid var(--primary);">'
       + '<div class="row" style="display:flex;justify-content:space-between;align-items:center;">'
       + '<div><b style="font-size:18px;">¥' + c.amount + '</b> ' + hint + '</div>'
-      + '<span class="tag tag-blue">可用</span></div>'
+      + '<span class="tag tag-blue" data-i18n="user.coupon.text6">可用</span></div>'
       + '<div class="muted" style="font-size:12px;margin-top:6px;">' + c.title + ' · 有效期至 ' + c.expireAt + '</div>'
-      + '<button class="btn btn-primary" style="margin-top:10px;" onclick="location.href=\'products.html\'">去使用</button></div>';
+      + '<button class="btn btn-primary" style="margin-top:10px;" onclick="location.href=\'products.html\'" data-i18n="user.coupon.text7">去使用</button></div>';
   }
   function filterList(k) {
     document.querySelectorAll('#tabs a').forEach(function (a, i) { a.className = (['available', 'used', 'expired'][i] === k) ? 'active' : ''; });

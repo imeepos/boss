@@ -11,20 +11,22 @@
   <div id="header" data-back="home.html"></div>
 
   <div class="seg" id="cats">
-    <a class="active" onclick="filter('broadband')">宽带套餐</a>
-    <a onclick="filter('fusion')">融合套餐</a>
-    <a onclick="filter('addon')">增值服务</a>
+    <a class="active" onclick="filter('broadband')" data-i18n="user.products.text1">宽带套餐</a>
+    <a onclick="filter('fusion')" data-i18n="user.products.text2">融合套餐</a>
+    <a onclick="filter('addon')" data-i18n="user.products.text3">增值服务</a>
   </div>
 
   <div id="product-cards"></div>
 
   <div class="card">
-    <div class="c-title">增值服务 <span class="more"><a href="addon.html">全部</a></span></div>
+    <div class="c-title">增值服务 <span class="more"><a href="addon.html" data-i18n="user.products.text4">全部</a></span></div>
     <div id="addon-cells"></div>
   </div>
 
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -33,15 +35,15 @@
     var fee = '¥' + p.monthlyFee + '/月';
     var tag = p.featured ? 'tag-orange' : 'tag-blue';
     return '<div class="card"' + (p.featured ? ' style="border:1px solid var(--primary);"' : '') + '>'
-      + '<div class="c-title"><a href="product.html?id=' + p.productId + '" style="color:inherit;">' + p.name + '</a> <span class="tag ' + tag + '">' + fee + '</span></div>'
+      + '<div class="c-title"><a href="product.html?id=' + p.productId + '" style="color:inherit;" data-i18n="user.products.text5">' + p.name + '</a> <span class="tag ' + tag + '" data-i18n="user.products.text6">' + fee + '</span></div>'
       + '<div class="muted" style="font-size:12.5px;margin-bottom:10px;">' + p.description + '</div>'
-      + '<button class="btn" onclick="location.href=\'product.html?id=' + p.productId + '\'">详情</button>'
-      + '<button class="btn btn-primary" onclick="buy(\'' + p.productId + '\')">立即办理</button></div>';
+      + '<button class="btn" onclick="location.href=\'product.html?id=' + p.productId + '\'" data-i18n="user.products.text7">详情</button>'
+      + '<button class="btn btn-primary" onclick="buy(\'' + p.productId + '\')" data-i18n="user.products.text8">立即办理</button></div>';
   }
   function aCell(a) {
     return '<div class="cell"><div class="main"><div class="t">' + a.name + '</div>'
       + '<div class="d">' + a.description + '</div></div>'
-      + '<button class="btn" onclick="location.href=\'addon.html\'">订购</button></div>';
+      + '<button class="btn" onclick="location.href=\'addon.html\'" data-i18n="user.products.text9">订购</button></div>';
   }
   function buy(productId) {
     var addr = { addressId: 'ADDR-001' }; // 演示:取默认地址

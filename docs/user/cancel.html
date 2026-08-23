@@ -13,9 +13,9 @@
   <div class="card">
     <div class="c-title">退订须知</div>
     <div class="muted" style="font-size:13px;line-height:1.8;">
-      <p>1. 合约期内退订，按未履约月份收取违约金，具体以结算页为准。</p>
-      <p>2. 拆机须装维师傅上门扫码解绑光猫设备（强制节点），请保持联系畅通。</p>
-      <p>3. 拆机完成后端口与账号同步释放，未缴账单需结清后方可完成。</p>
+      <p data-i18n="user.cancel.text1">1. 合约期内退订，按未履约月份收取违约金，具体以结算页为准。</p>
+      <p data-i18n="user.cancel.text2">2. 拆机须装维师傅上门扫码解绑光猫设备（强制节点），请保持联系畅通。</p>
+      <p data-i18n="user.cancel.text3">3. 拆机完成后端口与账号同步释放，未缴账单需结清后方可完成。</p>
     </div>
   </div>
 
@@ -37,17 +37,19 @@
   </div>
 
   <div style="margin:12px 14px 0;">
-    <button class="btn-block" onclick="submit()">确认退订 · 生成拆机单</button>
+    <button class="btn-block" onclick="submit()" data-i18n="user.cancel.text4">确认退订 · 生成拆机单</button>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
   function billCell(b) {
     return '<div class="cell"><div class="main"><div class="t">' + b.period + ' 账期</div><div class="d">¥' + b.amount.toFixed(2) + ' · 未缴</div></div>'
-      + '<div class="right"><span class="tag tag-orange">未缴</span></div></div>';
+      + '<div class="right"><span class="tag tag-orange" data-i18n="user.cancel.text5">未缴</span></div></div>';
   }
   API.plan.cancelPreview('PLAN-1000').then(function (d) {
     var html = (d.unpaidBills || []).map(billCell).join('');

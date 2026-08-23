@@ -24,37 +24,37 @@
 <body>
 <div class="lg-wrap">
   <div class="lg-card">
-    <h1>装维全流程 · 用户端</h1>
-    <p class="sub">宽带办理 · 账单缴费 · 故障报修</p>
+    <h1 data-i18n="user.login.text1">装维全流程 · 用户端</h1>
+    <p class="sub" data-i18n="user.login.text2">宽带办理 · 账单缴费 · 故障报修</p>
     <div class="field">
-      <label>手机号</label>
+      <label data-i18n="user.login.text3">手机号</label>
       <input type="tel" id="phone" placeholder="请输入手机号" value="13800001234">
     </div>
     <div class="seg" style="margin:0 0 16px;">
-      <a id="tab-sms" class="active" onclick="switchMode('sms')">验证码登录</a>
-      <a id="tab-pwd" onclick="switchMode('password')">密码登录</a>
+      <a id="tab-sms" class="active" onclick="switchMode('sms')" data-i18n="user.login.text4">验证码登录</a>
+      <a id="tab-pwd" onclick="switchMode('password')" data-i18n="user.login.text5">密码登录</a>
     </div>
     <div class="field" id="sms-field">
-      <label>验证码</label>
+      <label data-i18n="user.login.text6">验证码</label>
       <div class="code-row">
         <input type="text" id="sms-code" placeholder="6 位验证码">
-        <button type="button" class="code-btn" id="sms-btn" onclick="sendCode()">获取验证码</button>
+        <button type="button" class="code-btn" id="sms-btn" onclick="sendCode()" data-i18n="user.login.text7">获取验证码</button>
       </div>
     </div>
     <div class="field" id="pwd-field" style="display:none;">
-      <label>密码</label>
+      <label data-i18n="user.login.text8">密码</label>
       <input type="password" id="password" placeholder="请输入登录密码">
     </div>
     <div class="lg-extra">
-      <label><input type="checkbox" checked> 已阅读并同意<a href="agreement.html">《用户协议》</a></label>
-      <a href="forgot.html">忘记密码</a>
+      <label><input type="checkbox" checked> 已阅读并同意<a href="agreement.html" data-i18n="user.login.text9">《用户协议》</a></label>
+      <a href="forgot.html" data-i18n="user.login.text10">忘记密码</a>
     </div>
     <div class="err" id="err"></div>
-    <button class="btn-block" onclick="login()">登录</button>
+    <button class="btn-block" onclick="login()" data-i18n="user.login.text11">登录</button>
     <div class="divider">还没有账号</div>
-    <button class="btn-block ghost" onclick="location.href='register.html'">自助注册</button>
+    <button class="btn-block ghost" onclick="location.href='register.html'" data-i18n="user.login.text12">自助注册</button>
     <div class="divider">其他登录方式</div>
-    <button class="btn-block ghost">本机号码一键登录</button>
+    <button class="btn-block ghost" data-i18n="user.login.text13">本机号码一键登录</button>
   </div>
 </div>
 <script src="api.js"></script>

@@ -43,19 +43,19 @@
   <div class="card">
     <div class="c-title">证件信息</div>
     <div class="field">
-      <label>证件类型</label>
+      <label data-i18n="user.verify.text1">证件类型</label>
       <select disabled><option>身份证</option></select>
     </div>
     <div class="field">
-      <label>姓名</label>
+      <label data-i18n="user.verify.text2">姓名</label>
       <input type="text" value="王**" disabled>
     </div>
     <div class="field">
-      <label>证件号码</label>
+      <label data-i18n="user.verify.text3">证件号码</label>
       <input type="text" value="110***********1234" disabled>
     </div>
     <div class="field">
-      <label>证件照片（正反面）</label>
+      <label data-i18n="user.verify.text4">证件照片（正反面）</label>
       <div class="upload">
         <div class="up-box">正面已上传</div>
         <div class="up-box">反面已上传</div>
@@ -65,13 +65,13 @@
 
   <div class="card">
     <div class="c-title">核验记录</div>
-    <div class="cell"><div class="main"><div class="t">证件 + 人像比对</div><div class="d">2023-05-11 10:12</div></div><div class="right"><span class="tag tag-green">通过</span></div></div>
-    <div class="cell"><div class="main"><div class="t">证件 OCR</div><div class="d">2023-05-11 10:08</div></div><div class="right"><span class="tag tag-green">通过</span></div></div>
+    <div class="cell"><div class="main"><div class="t">证件 + 人像比对</div><div class="d">2023-05-11 10:12</div></div><div class="right"><span class="tag tag-green" data-i18n="user.verify.text5">通过</span></div></div>
+    <div class="cell"><div class="main"><div class="t">证件 OCR</div><div class="d">2023-05-11 10:08</div></div><div class="right"><span class="tag tag-green" data-i18n="user.verify.text6">通过</span></div></div>
   </div>
 
   <div class="card" style="text-align:center;">
     <div class="muted" style="font-size:12.5px;margin-bottom:10px;">证件已过期或信息需变更？</div>
-    <button class="btn" style="width:100%;" onclick="alert('重新核验需上传新证件并人像比对，提交后 1 个工作日内审核。')">重新核验</button>
+    <button class="btn" style="width:100%;" onclick="alert('重新核验需上传新证件并人像比对，提交后 1 个工作日内审核。')" data-i18n="user.verify.text7">重新核验</button>
   </div>
 
 </div>

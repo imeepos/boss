@@ -19,6 +19,8 @@
   <div id="tabbar"></div>
 </div>
 <script src="header.js"></script>
+<script src="locale.js"></script>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
@@ -31,7 +33,7 @@
   function sectionCard(s) {
     return '<div class="card" id="' + s.id + '"><div class="c-title">' + s.title + ' · 引导排查</div>'
       + (s.steps || []).map(stepCell).join('')
-      + '<button class="btn-block ghost" style="margin-top:12px;" onclick="location.href=\'fault.html\'">仍未解决 · 转人工报修</button></div>';
+      + '<button class="btn-block ghost" style="margin-top:12px;" onclick="location.href=\'fault.html\'" data-i18n="user.diy.text1">仍未解决 · 转人工报修</button></div>';
   }
   API.misc.diySteps().then(function (d) {
     var items = d.items || [];

@@ -11,9 +11,9 @@
   <div id="header" data-back="home.html"></div>
 
   <div class="seg" id="tabs">
-    <a class="active" onclick="switchPeriod('current')">本周期</a>
-    <a onclick="switchPeriod('last')">上月</a>
-    <a onclick="switchPeriod('six_month')">近 6 月</a>
+    <a class="active" onclick="switchPeriod('current')" data-i18n="user.usage.text1">本周期</a>
+    <a onclick="switchPeriod('last')" data-i18n="user.usage.text2">上月</a>
+    <a onclick="switchPeriod('six_month')" data-i18n="user.usage.text3">近 6 月</a>
   </div>
 
   <div class="card" style="text-align:center;">
@@ -40,6 +40,8 @@
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>

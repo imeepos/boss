@@ -13,22 +13,22 @@
   <div class="card">
     <div class="c-title">我要投诉 / 建议</div>
     <div class="field">
-      <label>类型</label>
+      <label data-i18n="user.complaint.text1">类型</label>
       <select id="type"><option value="attitude">服务态度投诉</option><option value="quality">装维质量投诉</option><option value="billing">计费争议</option><option value="suggestion">业务建议</option><option value="other">其他</option></select>
     </div>
     <div class="field">
-      <label>关联订单 / 报修单（选填）</label>
+      <label data-i18n="user.complaint.text2">关联订单 / 报修单（选填）</label>
       <input type="text" id="rel" placeholder="如 ORD-20250817-001">
     </div>
     <div class="field">
-      <label>详细描述</label>
+      <label data-i18n="user.complaint.text3">详细描述</label>
       <textarea rows="4" id="desc" placeholder="请描述问题经过与诉求"></textarea>
     </div>
     <div class="field">
-      <label>联系方式</label>
+      <label data-i18n="user.complaint.text4">联系方式</label>
       <input type="tel" id="contact" value="13800001234">
     </div>
-    <button class="btn-block" onclick="submit()">提交投诉</button>
+    <button class="btn-block" onclick="submit()" data-i18n="user.complaint.text5">提交投诉</button>
     <div class="muted" style="font-size:12px;margin-top:10px;">提交后 24 小时内受理，处理进度可在「消息中心」查询。</div>
   </div>
 
@@ -39,12 +39,14 @@
   <div id="tabbar"></div>
 </div>
 <script src="header.js"></script>
+<script src="locale.js"></script>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
   function cell(c) {
     return '<div class="cell"><div class="main"><div class="t">' + c.typeLabel + '</div><div class="d">' + c.createdAt + '</div></div>'
-      + '<div class="right"><span class="tag tag-green">' + c.statusLabel + '</span></div></div>';
+      + '<div class="right"><span class="tag tag-green" data-i18n="user.complaint.text6">' + c.statusLabel + '</span></div></div>';
   }
   API.complaint.list().then(function (d) {
     document.getElementById('list').innerHTML = (d.items || []).map(cell).join('');

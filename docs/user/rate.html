@@ -14,27 +14,29 @@
     <div class="c-title" id="r-order">订单 —</div>
     <div class="muted" style="font-size:12.5px;margin-bottom:12px;" id="r-desc">—</div>
     <div class="c-title" style="text-align:center;justify-content:center;gap:6px;margin:14px 0;">
-      <span style="font-size:26px;color:var(--warn);" id="stars" onclick="pickStar(event)">★★★★★</span>
+      <span style="font-size:26px;color:var(--warn);" id="stars" onclick="pickStar(event)" data-i18n="user.rate.text1">★★★★★</span>
     </div>
     <div class="muted" style="text-align:center;font-size:12px;margin-bottom:16px;">请对本次装维服务评分（1~5 星）</div>
 
     <div class="field">
-      <label>装维师傅服务态度</label>
+      <label data-i18n="user.rate.text2">装维师傅服务态度</label>
       <select id="attitude"><option value="5">5 分 · 非常满意</option><option value="4">4 分 · 满意</option><option value="3">3 分 · 一般</option><option value="2">2 分 · 不满意</option><option value="1">1 分 · 很不满意</option></select>
     </div>
     <div class="field">
-      <label>装维质量与速度</label>
+      <label data-i18n="user.rate.text3">装维质量与速度</label>
       <select id="quality"><option value="5">5 分 · 非常满意</option><option value="4">4 分 · 满意</option><option value="3">3 分 · 一般</option><option value="2">2 分 · 不满意</option><option value="1">1 分 · 很不满意</option></select>
     </div>
     <div class="field">
-      <label>评价留言（选填）</label>
+      <label data-i18n="user.rate.text4">评价留言（选填）</label>
       <textarea rows="3" id="comment" placeholder="分享你的装维体验"></textarea>
     </div>
-    <button class="btn-block" onclick="submit()">提交评价</button>
+    <button class="btn-block" onclick="submit()" data-i18n="user.rate.text5">提交评价</button>
     <div class="muted" style="font-size:12px;margin-top:10px;">评分低于 3 分将自动升级主管复核并回访。</div>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>

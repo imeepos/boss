@@ -20,12 +20,12 @@
     <div class="muted" style="font-size:13px;line-height:1.8;" id="privacy"></div>
   </div>
 
-  <button class="btn-block" style="margin:0 14px 20px;width:auto;" onclick="location.href='login.html'">返回登录</button>
+  <button class="btn-block" style="margin:0 14px 20px;width:auto;" onclick="location.href='login.html'" data-i18n="user.agreement.text1">返回登录</button>
 </div>
 <script src="api.js"></script>
 <script>
   function paras(items) {
-    return (items || []).map(function (t, i) { return '<p>' + (i + 1) + '. ' + t + '</p>'; }).join('');
+    return (items || []).map(function (t, i) { return '<p data-i18n="user.agreement.text2">' + (i + 1) + '. ' + t + '</p>'; }).join('');
   }
   API.misc.agreement().then(function (d) {
     document.getElementById('agreement').innerHTML = paras(d.userAgreement);

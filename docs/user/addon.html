@@ -16,22 +16,24 @@
   </div>
 
   <div class="card">
-    <div class="c-title">已订购 <span class="more">生效中</span></div>
+    <div class="c-title">已订购 <span class="more" data-i18n="user.addon.text1">生效中</span></div>
     <div id="subscribed"></div>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
   function availCell(a) {
     return '<div class="cell"><div class="main"><div class="t">' + a.name + '</div><div class="d">' + a.description + '</div></div>'
-      + '<div class="right"><button class="btn btn-primary" onclick="subscribe(\'' + a.addonId + '\')">订购</button></div></div>';
+      + '<div class="right"><button class="btn btn-primary" onclick="subscribe(\'' + a.addonId + '\')" data-i18n="user.addon.text2">订购</button></div></div>';
   }
   function subCell(a) {
     return '<div class="cell"><div class="main"><div class="t">' + a.name + '</div><div class="d">' + a.description + '</div></div>'
-      + '<div class="right"><button class="btn" onclick="unsubscribe(\'' + a.addonId + '\')">退订</button></div></div>';
+      + '<div class="right"><button class="btn" onclick="unsubscribe(\'' + a.addonId + '\')" data-i18n="user.addon.text3">退订</button></div></div>';
   }
   function subscribe(id) {
     API.addon.subscribe(id).then(function () { alert('已订购'); location.reload(); });

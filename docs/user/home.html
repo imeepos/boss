@@ -13,13 +13,13 @@
     <div class="hi" id="hi-name">加载中… <span id="hi-phone" style="font-size:13px;font-weight:400;opacity:.85;"></span>
       <a href="messages.html" style="color:#fff;font-size:18px;position:relative;">✉<span id="unread-dot" style="position:absolute;top:-6px;right:-8px;width:8px;height:8px;border-radius:50%;background:var(--err);display:none;"></span></a>
     </div>
-    <div class="st-line"><span class="dot"></span> <span id="online-status">服务在线 · 网络正常</span></div>
+    <div class="st-line"><span class="dot"></span> <span id="online-status" data-i18n="user.home.text1">服务在线 · 网络正常</span></div>
   </div>
 
   <div class="status-card">
     <div class="row">
-      <a class="plan" href="myplan.html" style="color:inherit;" id="plan-name">—</a>
-      <span class="tag tag-green">在网</span>
+      <a class="plan" href="myplan.html" style="color:inherit;" id="plan-name" data-i18n="user.home.text2">—</a>
+      <span class="tag tag-green" data-i18n="user.home.text3">在网</span>
     </div>
     <div class="net">
       <span>本月账单<a href="bills.html" style="color:inherit;"><b id="current-bill">¥—</b></a></span>
@@ -29,29 +29,31 @@
   </div>
 
   <div class="quick">
-    <a class="q" href="products.html"><span class="ic ic-blue">办</span>办套餐</a>
-    <a class="q" href="orders.html"><span class="ic ic-green">单</span>查订单</a>
-    <a class="q" href="pay.html"><span class="ic ic-orange">缴</span>缴费用</a>
-    <a class="q" href="fault.html"><span class="ic ic-purple">障</span>报故障</a>
-    <a class="q" href="topup.html"><span class="ic ic-orange">充</span>充值</a>
-    <a class="q" href="usage.html"><span class="ic ic-blue">量</span>查用量</a>
-    <a class="q" href="messages.html"><span class="ic ic-green">信</span>消息</a>
-    <a class="q" href="service.html"><span class="ic ic-purple">服</span>客服</a>
-    <a class="q" href="points.html"><span class="ic ic-orange">积</span>积分</a>
+    <a class="q" href="products.html"><span class="ic ic-blue" data-i18n="user.home.text4">办</span>办套餐</a>
+    <a class="q" href="orders.html"><span class="ic ic-green" data-i18n="user.home.text5">单</span>查订单</a>
+    <a class="q" href="pay.html"><span class="ic ic-orange" data-i18n="user.home.text6">缴</span>缴费用</a>
+    <a class="q" href="fault.html"><span class="ic ic-purple" data-i18n="user.home.text7">障</span>报故障</a>
+    <a class="q" href="topup.html"><span class="ic ic-orange" data-i18n="user.home.text8">充</span>充值</a>
+    <a class="q" href="usage.html"><span class="ic ic-blue" data-i18n="user.home.text9">量</span>查用量</a>
+    <a class="q" href="messages.html"><span class="ic ic-green" data-i18n="user.home.text10">信</span>消息</a>
+    <a class="q" href="service.html"><span class="ic ic-purple" data-i18n="user.home.text11">服</span>客服</a>
+    <a class="q" href="points.html"><span class="ic ic-orange" data-i18n="user.home.text12">积</span>积分</a>
   </div>
 
   <div class="card">
-    <div class="c-title">进行中订单 <a class="more" href="orders.html">全部</a></div>
+    <div class="c-title">进行中订单 <a class="more" href="orders.html" data-i18n="user.home.text13">全部</a></div>
     <div id="ongoing-orders"></div>
   </div>
 
   <div class="card">
-    <div class="c-title">我的服务 <span class="more">在线状态</span></div>
+    <div class="c-title">我的服务 <span class="more" data-i18n="user.home.text14">在线状态</span></div>
     <div id="services"></div>
   </div>
 
   <div id="tabbar"></div>
 </div>
+<script src="locale.js"></script>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
@@ -59,13 +61,13 @@
     return '<a class="cell" href="order.html?no=' + encodeURIComponent(o.orderNo) + '">'
       + '<div class="main"><div class="t">' + o.orderNo + ' · ' + o.productName + '</div>'
       + '<div class="d">' + o.address + '</div></div>'
-      + '<div class="right"><span class="tag tag-blue">' + o.statusLabel + '</span>'
+      + '<div class="right"><span class="tag tag-blue" data-i18n="user.home.text15">' + o.statusLabel + '</span>'
       + '<div style="margin-top:4px">' + o.stageLabel + ' ' + o.stage + '/12</div></div></a>';
   }
   function serviceCell(s) {
     return '<div class="cell"><div class="main"><div class="t">' + s.name + '</div>'
       + '<div class="d">' + s.desc + '</div></div>'
-      + '<div class="right"><span class="tag tag-green">' + s.statusLabel + '</span></div></div>';
+      + '<div class="right"><span class="tag tag-green" data-i18n="user.home.text16">' + s.statusLabel + '</span></div></div>';
   }
 
   API.misc.home().then(function (d) {

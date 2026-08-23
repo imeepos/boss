@@ -11,7 +11,7 @@
   <div id="header" data-back="profile.html"></div>
 
   <div class="card">
-    <div class="c-title">实名认证 <span class="tag tag-green" id="s-rn-status">已实名</span><a class="more" href="verify.html">核验详情</a></div>
+    <div class="c-title">实名认证 <span class="tag tag-green" id="s-rn-status" data-i18n="user.security.text1">已实名</span><a class="more" href="verify.html" data-i18n="user.security.text2">核验详情</a></div>
     <div class="cell"><div class="main"><div class="t">姓名</div></div><div class="right" id="s-name">—</div></div>
     <div class="cell"><div class="main"><div class="t">证件号码</div></div><div class="right" id="s-idno">—</div></div>
     <div class="cell"><div class="main"><div class="t">认证时间</div></div><div class="right" id="s-verifyat">—</div></div>
@@ -21,12 +21,12 @@
   <div class="card">
     <div class="c-title">登录密码</div>
     <div class="cell">
-      <div class="main"><div class="t">登录密码</div><div class="d">上次修改 <span id="s-pwdupdated">—</span></div></div>
-      <div class="right"><button class="btn" onclick="location.href='forgot.html'">修改</button></div>
+      <div class="main"><div class="t">登录密码</div><div class="d">上次修改 <span id="s-pwdupdated" data-i18n="user.security.text3">—</span></div></div>
+      <div class="right"><button class="btn" onclick="location.href='forgot.html'" data-i18n="user.security.text4">修改</button></div>
     </div>
     <div class="cell">
       <div class="main"><div class="t">绑定手机号</div><div class="d" id="s-phone">—</div></div>
-      <div class="right"><button class="btn">更换</button></div>
+      <div class="right"><button class="btn" data-i18n="user.security.text5">更换</button></div>
     </div>
   </div>
 
@@ -38,6 +38,8 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>

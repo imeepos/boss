@@ -11,12 +11,12 @@
   <div id="header" data-back="home.html"></div>
 
   <div class="card">
-    <div class="c-title">账户余额 <span class="tag tag-blue" id="balance">¥—</span></div>
+    <div class="c-title">账户余额 <span class="tag tag-blue" id="balance" data-i18n="user.topup.text1">¥—</span></div>
     <div class="muted" style="font-size:12.5px;margin-bottom:12px;">充值即时到账，可用于抵扣账单，到期自动结转。</div>
     <div class="c-title" style="font-size:13.5px;color:var(--muted);">充值面额</div>
     <div class="quick" style="grid-template-columns:repeat(3,1fr);margin:8px 0 14px;" id="denoms"></div>
     <div class="field">
-      <label>自定义金额</label>
+      <label data-i18n="user.topup.text2">自定义金额</label>
       <input type="number" id="custom-amount" placeholder="最低 ¥1" value="100">
     </div>
     <div class="c-title" style="font-size:13.5px;color:var(--muted);">支付方式</div>
@@ -24,10 +24,12 @@
     <div class="cell"><div class="main"><div class="t">支付宝</div></div><div class="right"><input type="radio" name="pay" value="alipay"></div></div>
     <div class="cell"><div class="main"><div class="t">银行卡</div></div><div class="right"><input type="radio" name="pay" value="card"></div></div>
     <div class="cell"><div class="main"><div class="t">预付券</div></div><div class="right"><input type="radio" name="pay" value="prepaid"></div></div>
-    <button class="btn-block" style="margin-top:14px;" onclick="topup()">确认充值</button>
+    <button class="btn-block" style="margin-top:14px;" onclick="topup()" data-i18n="user.topup.text3">确认充值</button>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -35,7 +37,7 @@
   API.topup.balance().then(function (d) {
     document.getElementById('balance').textContent = '¥' + d.balance.toFixed(2);
     document.getElementById('denoms').innerHTML = (d.denominations || []).map(function (n) {
-      return '<a class="q" style="padding:10px 4px;" onclick="pick(' + n + ')">¥' + n + '</a>';
+      return '<a class="q" style="padding:10px 4px;" onclick="pick(' + n + ')" data-i18n="user.topup.text4">¥' + n + '</a>';
     }).join('');
   });
   function pick(n) { document.getElementById('custom-amount').value = n; }

@@ -18,15 +18,17 @@
     <div class="cell"><div class="main"><div class="t">微信支付</div></div><div class="right"><input type="radio" name="pay" value="wechat" checked></div></div>
     <div class="cell"><div class="main"><div class="t">支付宝</div></div><div class="right"><input type="radio" name="pay" value="alipay"></div></div>
     <div class="cell"><div class="main"><div class="t">银行卡</div></div><div class="right"><input type="radio" name="pay" value="card"></div></div>
-    <button class="btn-block" style="margin-top:14px;" id="confirm-btn" onclick="pay()">确认支付</button>
+    <button class="btn-block" style="margin-top:14px;" id="confirm-btn" onclick="pay()" data-i18n="user.pay.text1">确认支付</button>
   </div>
 
   <div class="card">
-    <div class="c-title">缴费记录 <span class="more" onclick="location.href='invoice.html'">开发票</span></div>
+    <div class="c-title">缴费记录 <span class="more" onclick="location.href='invoice.html'" data-i18n="user.pay.text2">开发票</span></div>
     <div id="records"></div>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -36,7 +38,7 @@
   var currentPeriod = null;
 
   function recCell(r) {
-    var receipt = r.payMethod ? '<a href="receipt.html?no=' + encodeURIComponent(r.payNo) + '">凭证</a>' : '';
+    var receipt = r.payMethod ? '<a href="receipt.html?no=' + encodeURIComponent(r.payNo) + '" data-i18n="user.pay.text3">凭证</a>' : '';
     return '<div class="cell"><div class="main"><div class="t">¥' + r.amount + ' · ' + r.period + ' 账期</div>'
       + '<div class="d">' + r.payMethod + ' · ' + r.paidAt + '</div></div><div class="right">' + receipt + '</div></div>';
   }

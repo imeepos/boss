@@ -17,16 +17,18 @@
   </div>
 
   <div class="card">
-    <div class="c-title">自动缴费 <span class="tag tag-gray" id="b-autopay">未开通</span></div>
+    <div class="c-title">自动缴费 <span class="tag tag-gray" id="b-autopay" data-i18n="user.bill.text1">未开通</span></div>
     <div class="muted" style="font-size:12.5px;margin-bottom:12px;">开通后每月账期自动扣款，避免忘记缴费导致停机。</div>
-    <button class="btn-block ghost" onclick="location.href='payresult.html'">开通微信自动缴费</button>
+    <button class="btn-block ghost" onclick="location.href='payresult.html'" data-i18n="user.bill.text2">开通微信自动缴费</button>
   </div>
 
   <div style="margin:12px 14px 0;">
-    <button class="btn-block" id="b-pay-btn" onclick="location.href='pay.html'">立即缴费</button>
+    <button class="btn-block" id="b-pay-btn" onclick="location.href='pay.html'" data-i18n="user.bill.text3">立即缴费</button>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -39,7 +41,7 @@
   API.bill.detail(billNo).then(function (d) {
     var b = d.bill || {};
     var tag = b.status === 'PAID' ? 'tag-green' : 'tag-orange';
-    document.getElementById('b-title').innerHTML = b.period + ' 账期 <span class="tag ' + tag + '">' + b.statusLabel + '</span>';
+    document.getElementById('b-title').innerHTML = b.period + ' 账期 <span class="tag ' + tag + '" data-i18n="user.bill.text4">' + b.statusLabel + '</span>';
     document.getElementById('b-items').innerHTML = (d.items || []).map(itemCell).join('');
     document.getElementById('b-total').textContent = '¥' + d.totalDue.toFixed(2);
     document.getElementById('b-autopay').textContent = d.autoPayEnabled ? '已开通' : '未开通';

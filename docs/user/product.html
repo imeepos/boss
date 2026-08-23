@@ -17,7 +17,7 @@
   </div>
 
   <div class="card">
-    <div class="c-title">套餐对比 <span class="more">同档可选</span></div>
+    <div class="c-title">套餐对比 <span class="more" data-i18n="user.product.text1">同档可选</span></div>
     <div id="p-compare"></div>
   </div>
 
@@ -27,10 +27,12 @@
   </div>
 
   <div style="margin:12px 14px 0;">
-    <button class="btn-block" id="p-cta" onclick="orderNow()">立即办理</button>
+    <button class="btn-block" id="p-cta" onclick="orderNow()" data-i18n="user.product.text2">立即办理</button>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -45,7 +47,7 @@
   }
   function cmpCell(p) {
     return '<div class="cell"><div class="main"><div class="t">' + p.name + '</div><div class="d">'
-      + p.description + '</div></div><div class="right"><button class="btn" onclick="location.href=\'product.html?id=' + p.productId + '\'">查看</button></div></div>';
+      + p.description + '</div></div><div class="right"><button class="btn" onclick="location.href=\'product.html?id=' + p.productId + '\'" data-i18n="user.product.text3">查看</button></div></div>';
   }
   function orderNow() {
     API.order.submit({ productId: currentId, addressId: 'ADDR-001' }).then(function (o) {
@@ -55,7 +57,7 @@
 
   API.product.detail(currentId).then(function (d) {
     product = d.product;
-    document.getElementById('p-title').innerHTML = product.name + ' <span class="tag tag-orange">¥' + product.monthlyFee + '/月</span>';
+    document.getElementById('p-title').innerHTML = product.name + ' <span class="tag tag-orange" data-i18n="user.product.text4">¥' + product.monthlyFee + '/月</span>';
     document.getElementById('p-desc').textContent = product.description;
     document.getElementById('p-specs').innerHTML = (d.specs || []).map(specCell).join('');
     document.getElementById('p-compare').innerHTML = (d.compare || []).map(cmpCell).join('');

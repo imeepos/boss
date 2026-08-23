@@ -21,17 +21,19 @@
       <div class="main"><div class="t">交易单号</div></div><div class="right" id="pay-no">—</div>
     </div>
     <div class="cell" style="text-align:left;">
-      <div class="main"><div class="t">到账状态</div></div><div class="right"><span class="tag tag-green">已到账 · 复机已生效</span></div>
+      <div class="main"><div class="t">到账状态</div></div><div class="right"><span class="tag tag-green" data-i18n="user.payresult.text1">已到账 · 复机已生效</span></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:20px;">
-      <button class="btn" style="flex:1;" id="receipt-btn" onclick="gotoReceipt()">查看凭证</button>
-      <button class="btn btn-primary" style="flex:1;" onclick="location.href='home.html'">返回首页</button>
+      <button class="btn" style="flex:1;" id="receipt-btn" onclick="gotoReceipt()" data-i18n="user.payresult.text2">查看凭证</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="location.href='home.html'" data-i18n="user.payresult.text3">返回首页</button>
     </div>
   </div>
 
   <div class="muted" style="text-align:center;font-size:12px;margin:0 14px;">若未到账，30 分钟内未到将自动生成工单并人工跟进。</div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>

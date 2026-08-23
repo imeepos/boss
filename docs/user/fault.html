@@ -11,29 +11,29 @@
   <div id="header" data-back="home.html"></div>
 
   <div class="quick" style="grid-template-columns:repeat(2,1fr);margin:12px 14px;">
-    <a class="q" href="diy.html"><span class="ic ic-blue">检</span>自助排障</a>
-    <a class="q" href="service.html"><span class="ic ic-green">客</span>在线客服</a>
+    <a class="q" href="diy.html"><span class="ic ic-blue" data-i18n="user.fault.text1">检</span>自助排障</a>
+    <a class="q" href="service.html"><span class="ic ic-green" data-i18n="user.fault.text2">客</span>在线客服</a>
   </div>
 
   <div class="card">
     <div class="c-title">我要报修</div>
     <div class="field">
-      <label>故障类型</label>
+      <label data-i18n="user.fault.text3">故障类型</label>
       <select id="fault-type"><option value="no_internet">无法上网</option><option value="slow">网速慢</option><option value="ont_fault">光猫故障</option><option value="other">其他</option></select>
     </div>
     <div class="field">
-      <label>故障地址</label>
+      <label data-i18n="user.fault.text4">故障地址</label>
       <input type="text" id="fault-address" value="望京X · 3栋 · 501">
     </div>
     <div class="field">
-      <label>故障描述</label>
+      <label data-i18n="user.fault.text5">故障描述</label>
       <textarea rows="3" id="fault-desc" placeholder="请描述故障现象"></textarea>
     </div>
     <div class="field">
-      <label>联系方式</label>
+      <label data-i18n="user.fault.text6">联系方式</label>
       <input type="tel" id="fault-contact" value="13800001234">
     </div>
-    <button class="btn-block" onclick="submit()">提交报修</button>
+    <button class="btn-block" onclick="submit()" data-i18n="user.fault.text7">提交报修</button>
   </div>
 
   <div class="card">
@@ -43,6 +43,8 @@
   <div id="tabbar"></div>
 </div>
 <script src="header.js"></script>
+<script src="locale.js"></script>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
@@ -50,7 +52,7 @@
     var tag = f.status === 'RESOLVED' ? 'tag-green' : 'tag-blue';
     return '<a class="cell" href="faultdetail.html?no=' + encodeURIComponent(f.ticketNo) + '" style="color:inherit;">'
       + '<div class="main"><div class="t">' + f.faultTypeLabel + '</div><div class="d">' + f.ticketNo + ' · ' + f.createdAt + '</div></div>'
-      + '<div class="right"><span class="tag ' + tag + '">' + f.statusLabel + '</span></div></a>';
+      + '<div class="right"><span class="tag ' + tag + '" data-i18n="user.fault.text8">' + f.statusLabel + '</span></div></a>';
   }
   API.fault.list().then(function (d) {
     document.getElementById('records').innerHTML = (d.items || []).map(cell).join('');

@@ -11,20 +11,22 @@
   <div id="header" data-back="home.html"></div>
 
   <div class="seg" id="tabs">
-    <a class="active" onclick="filterList('')">全部</a>
-    <a onclick="filterList('billing')">账单缴费</a>
-    <a onclick="filterList('balance')">余额预警</a>
-    <a onclick="filterList('fault')">故障公告</a>
-    <a onclick="filterList('promo')">优惠活动</a>
+    <a class="active" onclick="filterList('')" data-i18n="user.messages.text1">全部</a>
+    <a onclick="filterList('billing')" data-i18n="user.messages.text2">账单缴费</a>
+    <a onclick="filterList('balance')" data-i18n="user.messages.text3">余额预警</a>
+    <a onclick="filterList('fault')" data-i18n="user.messages.text4">故障公告</a>
+    <a onclick="filterList('promo')" data-i18n="user.messages.text5">优惠活动</a>
   </div>
 
   <div class="card" id="msg-list"></div>
 
   <div class="card" style="text-align:center;">
-    <button class="btn" style="width:100%;" onclick="readAll()">全部标为已读</button>
+    <button class="btn" style="width:100%;" onclick="readAll()" data-i18n="user.messages.text6">全部标为已读</button>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -41,7 +43,7 @@
   function cell(m) {
     return '<a class="cell" href="' + hrefOf(m) + '" style="color:inherit;">'
       + '<div class="main"><div class="t">' + m.title + '</div><div class="d">' + m.content + '</div></div>'
-      + '<div class="right"><span class="tag ' + tagCss(m.tagLevel) + '">' + m.tag + '</span></div></a>';
+      + '<div class="right"><span class="tag ' + tagCss(m.tagLevel) + '" data-i18n="user.messages.text7">' + m.tag + '</span></div></a>';
   }
   function filterList(k) {
     document.querySelectorAll('#tabs a').forEach(function (a, i) { a.className = (['', 'billing', 'balance', 'fault', 'promo'][i] === k) ? 'active' : ''; });

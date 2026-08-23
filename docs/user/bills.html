@@ -13,19 +13,21 @@
   <div class="card" style="text-align:center;">
     <div class="muted" style="font-size:12.5px;" id="due-label">当前应缴</div>
     <div class="amount" style="font-size:30px;font-weight:700;margin:6px 0;" id="due-amount">¥—</div>
-    <button class="btn btn-primary" onclick="location.href='pay.html'">立即缴费</button>
-    <button class="btn" style="margin-left:8px;" onclick="location.href='topup.html'">余额充值</button>
+    <button class="btn btn-primary" onclick="location.href='pay.html'" data-i18n="user.bills.text1">立即缴费</button>
+    <button class="btn" style="margin-left:8px;" onclick="location.href='topup.html'" data-i18n="user.bills.text2">余额充值</button>
   </div>
 
   <div class="seg" id="tabs">
-    <a class="active" onclick="filterList('')">近 6 期</a>
-    <a onclick="filterList('paid')">已缴</a>
-    <a onclick="filterList('unpaid')">未缴</a>
+    <a class="active" onclick="filterList('')" data-i18n="user.bills.text3">近 6 期</a>
+    <a onclick="filterList('paid')" data-i18n="user.bills.text4">已缴</a>
+    <a onclick="filterList('unpaid')" data-i18n="user.bills.text5">未缴</a>
   </div>
 
   <div class="card" id="bill-list"></div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -34,7 +36,7 @@
     var tag = b.status === 'PAID' ? 'tag-green' : 'tag-orange';
     return '<a class="cell" href="bill.html?no=' + encodeURIComponent(b.billNo) + '" style="color:inherit;">'
       + '<div class="main"><div class="t">' + b.period + ' 账期</div><div class="d">' + b.productName + ' · ' + b.periodRange + '</div></div>'
-      + '<div class="right"><div class="amt amount">¥' + b.amount + '</div><span class="tag ' + tag + '">' + b.statusLabel + '</span></div></a>';
+      + '<div class="right"><div class="amt amount">¥' + b.amount + '</div><span class="tag ' + tag + '" data-i18n="user.bills.text6">' + b.statusLabel + '</span></div></a>';
   }
   function filterList(k) {
     document.querySelectorAll('#tabs a').forEach(function (a, i) { a.className = (['', 'paid', 'unpaid'][i] === k) ? 'active' : ''; });

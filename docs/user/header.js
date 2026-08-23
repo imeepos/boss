@@ -17,7 +17,9 @@
 
   function setLocale(lang) {
     localStorage.setItem('boss_user_locale', lang);
-    location.reload();
+    document.dispatchEvent(new CustomEvent('boss:locale-change', { detail: { locale: lang } }));
+    renderHeader();
+    if (window.L && typeof window.L.translatePage === 'function') window.L.translatePage();
   }
 
   function esc(v) {

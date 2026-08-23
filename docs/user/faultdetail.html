@@ -24,11 +24,13 @@
   </div>
 
   <div class="card" style="display:flex;gap:10px;">
-    <button class="btn" style="flex:1;">联系师傅</button>
-    <button class="btn" style="flex:1;">催单</button>
+    <button class="btn" style="flex:1;" data-i18n="user.faultdetail.text1">联系师傅</button>
+    <button class="btn" style="flex:1;" data-i18n="user.faultdetail.text2">催单</button>
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
+<script src="locale.js"></script>
 <script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
@@ -43,7 +45,7 @@
   }
   API.fault.detail(ticketNo).then(function (d) {
     var f = d.fault || {};
-    document.getElementById('f-title').innerHTML = f.ticketNo + ' <span class="tag tag-blue">' + f.statusLabel + '</span>';
+    document.getElementById('f-title').innerHTML = f.ticketNo + ' <span class="tag tag-blue" data-i18n="user.faultdetail.text3">' + f.statusLabel + '</span>';
     document.getElementById('f-type').textContent = f.faultTypeLabel || '—';
     document.getElementById('f-addr').textContent = f.address || '—';
     document.getElementById('f-time').textContent = f.createdAt || '—';
