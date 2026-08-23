@@ -9,8 +9,8 @@ import (
 // createAPIKeyReq 创建 API key 请求体。
 // subjectType ∈ {account, worker, customer};subjectRef 为对应主体表主键。
 type createAPIKeyReq struct {
-	SubjectType string `json:"subjectType" binding:"required"`
-	SubjectRef  int64  `json:"subjectRef" binding:"required"`
+	SubjectType  string `json:"subjectType" binding:"required"`
+	SubjectRef   int64  `json:"subjectRef" binding:"required"`
 	Name         string `json:"name" binding:"required"`
 	TemplateCode string `json:"templateCode"`
 }

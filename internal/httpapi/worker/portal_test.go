@@ -130,7 +130,7 @@ func (f *fakePortalWorkOrder) GetTicketItemByNo(_ context.Context, _ string) (*o
 
 type fakePortalOrder struct {
 	order.OrderService
-	activated int64
+	activated  int64
 	rolledBack int64
 }
 
@@ -170,7 +170,7 @@ func portalTestRouterWith(t *testing.T, fw *fakePortalWorkOrder, fo *fakePortalO
 	r := gin.New()
 	a := &app.Application{
 		Worker: ws, WorkOrder: fw, Order: fo, WorkerLedger: wl,
-		Portal: portal.NewMemory(),
+		Portal:   portal.NewMemory(),
 		QuadLink: &fakePortalQuad{},
 	}
 	Register(r, a, newWorkerJWTManager())

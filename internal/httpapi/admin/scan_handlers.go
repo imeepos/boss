@@ -137,6 +137,7 @@ func quadLinksPurgeOrphansHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, gin.H{"deleted": n})
 	}
 }
+
 // scanBindWorker 扫码绑定执行师傅:JWT 无账号时回退工单档案。
 func scanBindWorker(c *gin.Context, tk *order.DispatchTicket) (int64, string) {
 	workerID, workerName := workerFromClaims(c)

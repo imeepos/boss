@@ -13,8 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	pushdomain "github.com/ymm-001/boss/internal/domain/push"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	pushdomain "github.com/ymm-001/boss/internal/domain/push"
 )
 
 func newWorkerPushDeviceRouter(t *testing.T) (*gin.Engine, pushdomain.DevicesService) {

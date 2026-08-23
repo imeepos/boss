@@ -31,7 +31,10 @@ func apikeyListHandler(a *app.Application) gin.HandlerFunc {
 func apikeyTemplateListHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		list, err := a.APIKey.ListTemplates(c.Request.Context())
-		if err != nil { respondErr(c, err); return }
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
 	}
 }

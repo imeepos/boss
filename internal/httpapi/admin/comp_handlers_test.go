@@ -41,7 +41,7 @@ func TestCompensationTasksRoute(t *testing.T) {
 		gin.SetMode(gin.TestMode)
 		r := gin.New()
 		Register(r, &app.Application{
-			User:   &fakeUser{permOk: permOk},
+			User: &fakeUser{permOk: permOk},
 			Report: &report.ReportService{St: &fakeCompCenterStore{tasks: []report.CompTask{
 				{Domain: "provision", Type: "provisionTask", RefID: "TASK-9", Status: "FAILED",
 					RetryPath: "/api/admin/v1/provision-tasks/TASK-9/retry"},

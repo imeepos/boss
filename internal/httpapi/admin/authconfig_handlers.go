@@ -125,6 +125,7 @@ func authConfigTestHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, authTestResult(group, cur))
 	}
 }
+
 // authMergedConfig 自检配置合成:库内现值 → 缺省补齐 → 请求覆盖(掩码空值跳过);
 // 失败已回写响应。
 func authMergedConfig(c *gin.Context, a *app.Application, group string, values map[string]string) (map[string]string, bool) {

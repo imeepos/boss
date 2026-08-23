@@ -40,11 +40,11 @@ func TestDevicesValidation(t *testing.T) {
 		subjectID   int64
 		regID       string
 	}{
-		{"account", 1, "1507bfd3f9ac1e045a"},  // 主体枚举外
-		{SubjectUser, 0, "1507bfd3f9ac1e045a"}, // 主体 ID 非法
-		{SubjectUser, 1, "short123"},           // RegistrationID 太短
+		{"account", 1, "1507bfd3f9ac1e045a"},                // 主体枚举外
+		{SubjectUser, 0, "1507bfd3f9ac1e045a"},              // 主体 ID 非法
+		{SubjectUser, 1, "short123"},                        // RegistrationID 太短
 		{SubjectUser, 1, "含中文的registrationid非常长1234567890"}, // 非字母数字
-		{SubjectUser, 1, ""},                   // 空
+		{SubjectUser, 1, ""},                                // 空
 	}
 	for i, c := range cases {
 		if err := s.RegisterDevice(ctx, c.subjectType, c.subjectID, c.regID, "jpush"); !errors.Is(err, ErrInvalidDevice) {

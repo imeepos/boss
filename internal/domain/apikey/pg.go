@@ -104,12 +104,16 @@ SELECT t.code, t.name, t.description, COALESCE(array_agg(p.permission_code ORDER
 FROM api_key_permission_templates t
 LEFT JOIN api_key_template_permissions p ON p.template_code=t.code
 WHERE t.status=1 GROUP BY t.code, t.name, t.description ORDER BY t.code`)
-	if err != nil { return nil, fmt.Errorf("apikey: list templates: %w", err) }
+	if err != nil {
+		return nil, fmt.Errorf("apikey: list templates: %w", err)
+	}
 	defer rows.Close()
 	var out []PermissionTemplate
 	for rows.Next() {
 		var item PermissionTemplate
-		if err := rows.Scan(&item.Code, &item.Name, &item.Description, &item.Permissions); err != nil { return nil, err }
+		if err := rows.Scan(&item.Code, &item.Name, &item.Description, &item.Permissions); err != nil {
+			return nil, err
+		}
 		out = append(out, item)
 	}
 	return out, rows.Err()

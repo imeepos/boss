@@ -196,7 +196,7 @@ func udUpdateInviteConfig(a *app.Application) gin.HandlerFunc {
 	ud := a.UserData
 	return func(c *gin.Context) {
 		var req struct {
-			InviteLink        string `json:"inviteLink"`
+			InviteLink       string `json:"inviteLink"`
 			RewardTemplateID int64  `json:"rewardTemplateId"`
 		}
 		if !httpx.BindBody(c, &req) {

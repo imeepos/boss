@@ -22,16 +22,16 @@ const (
 
 // APIKey 元数据(不含明文密钥)。
 type APIKey struct {
-	ID          int64  `json:"id"`
-	SubjectType string `json:"subjectType"` // account | worker | customer
-	SubjectRef  int64  `json:"subjectRef"`  // 主体表主键
-	SubjectName string `json:"subjectName"` // 冗余展示:账号名/师傅名/客户名
-	Name        string `json:"name"`        // 用途说明,如 ci-pipeline
-	KeyPrefix   string `json:"keyPrefix"`   // 密钥前 8 位
+	ID           int64  `json:"id"`
+	SubjectType  string `json:"subjectType"`            // account | worker | customer
+	SubjectRef   int64  `json:"subjectRef"`             // 主体表主键
+	SubjectName  string `json:"subjectName"`            // 冗余展示:账号名/师傅名/客户名
+	Name         string `json:"name"`                   // 用途说明,如 ci-pipeline
+	KeyPrefix    string `json:"keyPrefix"`              // 密钥前 8 位
 	TemplateCode string `json:"templateCode,omitempty"` // 受限权限模板
-	Status      int16  `json:"status"`      // 1启用 0停用
-	LastUsedAt  string `json:"lastUsedAt"`  // ISO8601,空=从未使用
-	CreatedAt   string `json:"createdAt"`
+	Status       int16  `json:"status"`                 // 1启用 0停用
+	LastUsedAt   string `json:"lastUsedAt"`             // ISO8601,空=从未使用
+	CreatedAt    string `json:"createdAt"`
 }
 
 // CreateResult 创建成功返回(含完整密钥,仅在此时返回一次)。

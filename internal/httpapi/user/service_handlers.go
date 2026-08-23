@@ -221,6 +221,7 @@ func portalFaq(c *gin.Context) {
 		{"id": "f2", "question": "账单多久出一次?", "answer": "每月 1 日出上一账期账单。"},
 	}})
 }
+
 // portalCreateFaultFlow 报障三步:法人主体 → 建投诉工单 → 首条沟通消息;
 // 失败已回写响应。
 func portalCreateFaultFlow(c *gin.Context, a *app.Application, cid int64, req portalFaultReq) (string, bool) {
