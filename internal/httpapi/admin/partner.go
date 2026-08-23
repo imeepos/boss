@@ -24,6 +24,7 @@ func registerPartnerRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/partner/staff", requirePerm(a.User, "menu:partner-staff"), partnerStaffCreateHandler(a))
 	g.PUT("/partner/staff/:id/status", requirePerm(a.User, "menu:partner-staff"), partnerStaffStatusHandler(a))
 	g.GET("/partner/orders", requirePerm(a.User, "menu:partner-orders"), partnerOrdersHandler(a))
+	g.POST("/partner/orders", requirePerm(a.User, "menu:partner-orders"), partnerOrderSubmitHandler(a))
 	g.GET("/partner/commissions", requirePerm(a.User, "menu:partner-orders"), partnerCommissionListHandler(a))
 	g.POST("/partner/commissions/:id/settle", requirePerm(a.User, "menu:partner-orders"), partnerCommissionSettleHandler(a))
 }
