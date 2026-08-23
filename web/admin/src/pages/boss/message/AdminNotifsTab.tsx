@@ -6,6 +6,7 @@ import { apiFetch } from '../../../api/client'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { StatusTag } from '../../../components/StatusTag'
+import { DataTable } from '../../../components/business/data-table'
 import { useT } from '../../../i18n'
 import { fmtTime } from '../../../lib/format'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
@@ -25,8 +26,6 @@ export interface NotifItem {
 
 const CARD = 'rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]'
 const CTL = 'h-[30px] rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] px-2 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]'
-const TH = 'border-b border-[var(--shell-side-border)] px-2.5 py-2 text-left font-semibold'
-const TD = 'border-b border-[var(--shell-side-border)] px-2.5 py-2'
 
 export function AdminNotifsTab() {
   const t = useT()
@@ -109,32 +108,24 @@ export function AdminNotifsTab() {
       </div>
       {error ? <div className="py-3 text-[13px] text-[var(--color-danger)]">{error}</div> : (
         <>
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead>
-              <tr>{n.columns.map((c) => <th key={c} className={TH}>{c}</th>)}</tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className={r.resolved ? 'opacity-60' : ''}>
-                  <td className={TD}><StatusTag domain="message" value={r.level} /></td>
-                  <td className={`${TD} ${r.read ? '' : 'font-semibold text-[var(--shell-heading)]'}`}>{r.title}</td>
-                  <td className={TD}>{r.category === 'todo' ? n.categoryTodo : n.categoryTask}</td>
-                  <td className={TD}>{fmtTime(r.createdAt)}</td>
-                  <td className={TD}>{r.resolved ? n.resolved : (r.read ? t.pages.message.read : t.pages.message.unread)}</td>
-                  <td className={TD}>
-                    {r.link && (
-                      <button className="cursor-pointer border-0 bg-none p-0 text-[13px] text-[var(--color-brand-gold-500)] hover:underline" onClick={() => open(r)}>
-                        {r.category === 'todo' && !r.resolved ? n.goHandle : n.viewAll}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {!rows.length && (
-                <tr><td colSpan={n.columns.length} className={`${TD} text-center text-[var(--shell-group-title)]`}>{n.empty}</td></tr>
-              )}
-            </tbody>
-          </table>
+          <DataTable
+            emptyText={n.empty}
+            rows={rows as unknown as Record<string, unknown>[]}
+            columns={[
+              { key: 'level', label: n.columns[0], render: (r) => <StatusTag domain="message" value={String(r.level)} /> },
+              { key: 'title', label: n.columns[1], render: (r) => (
+                <span className={r.read ? '' : 'font-semibold text-[var(--shell-heading)]'}>{String(r.title)}</span>
+              ) },
+              { key: 'category', label: n.columns[2], render: (r) => (r.category === 'todo' ? n.categoryTodo : n.categoryTask) },
+              { key: 'createdAt', label: n.columns[3], render: (r) => fmtTime(String(r.createdAt)) },
+              { key: 'status', label: n.columns[4], render: (r) => (r.resolved ? n.resolved : (r.read ? t.pages.message.read : t.pages.message.unread)) },
+              { key: 'op', label: n.columns[5], render: (r) => (r.link ? (
+                <button className="cursor-pointer border-0 bg-none p-0 text-[13px] text-[var(--color-brand-gold-500)] hover:underline" onClick={() => open(r as unknown as NotifItem)}>
+                  {r.category === 'todo' && !r.resolved ? n.goHandle : n.viewAll}
+                </button>
+              ) : null) },
+            ]}
+          />
           <Pagination total={total} page={page} pageSize={pageSize} onPage={setPage} onSize={setPageSize}
             rangeText={n.rangeText} prevText={n.prev} nextText={n.next} perPageText={n.perPage}
             jumpText={n.jump} pageUnitText={n.pageUnit} />

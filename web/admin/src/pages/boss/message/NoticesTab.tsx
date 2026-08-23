@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
+import { DataTable } from '../../../components/business/data-table'
 import type { Translations } from '../../../i18n/types'
 import { filterNotices, fmtTime, type NoticeEntry } from './logic'
-import { ctl, th, td } from './WorkerMessagesTab'
+import { ctl } from './WorkerMessagesTab'
 
 type Ns = Translations['pages']['message']
 
@@ -71,29 +72,23 @@ export function NoticesTab({ t }: { t: Ns }) {
       </div>
       {error ? <div style={{ color: '#e54545', fontSize: 13, padding: '12px 0' }}>{error}</div> : (
         <>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr>{t.noticeColumns.map((c) => <th key={c} style={th}>{c}</th>)}</tr>
-            </thead>
-            <tbody>
-              {slice.map((r) => (
-                <tr key={r.id}>
-                  <td style={td}>{r.title}</td>
-                  <td style={td}>{r.category || '-'}</td>
-                  <td style={td}>
-                    <StatusTag domain="accountStatus" value={r.active ? '1' : '0'} />
-                  </td>
-                  <td style={td}>{fmtTime(r.publishedAt)}</td>
-                  <td style={td}>
-                    <a style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => toggle(r.id)}>
-                      {r.active ? t.offShelf : t.onShelf}
-                    </a>
-                  </td>
-                </tr>
-              ))}
-              {!slice.length && <tr><td colSpan={5} style={{ ...td, textAlign: 'center', color: '#999' }}>{t.empty}</td></tr>}
-            </tbody>
-          </table>
+          <DataTable
+            emptyText={t.empty}
+            rows={slice as unknown as Record<string, unknown>[]}
+            columns={[
+              { key: 'title', label: t.noticeColumns[0], render: (r) => String(r.title ?? '') },
+              { key: 'category', label: t.noticeColumns[1], render: (r) => String(r.category || '-') },
+              { key: 'active', label: t.noticeColumns[2], render: (r) => (
+                <StatusTag domain="accountStatus" value={r.active ? '1' : '0'} />
+              ) },
+              { key: 'publishedAt', label: t.noticeColumns[3], render: (r) => fmtTime(String(r.publishedAt)) },
+              { key: 'op', label: t.noticeColumns[4], render: (r) => (
+                <a style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => toggle(Number(r.id))}>
+                  {r.active ? t.offShelf : t.onShelf}
+                </a>
+              ) },
+            ]}
+          />
           <Pagination total={filtered.length} page={page} pageSize={pageSize} onPage={setPage} onSize={setPageSize}
             rangeText={t.rangeText} prevText={t.prev} nextText={t.next} perPageText={t.perPage}
             jumpText={t.jump} pageUnitText={t.pageUnit} />

@@ -6,6 +6,7 @@ import { ApiError } from '../../api/envelope'
 import { toAuditLog, type AuditEntry, type AuditLog } from '../base/audit/logic'
 import { useT } from '../../i18n'
 import { LIST_BTN, PAGE, SectionTitle, TIP } from './shared'
+import { EmptyState } from '../../components/business/feedback'
 
 export function AuditSection() {
   const t = useT()
@@ -33,7 +34,7 @@ export function AuditSection() {
       {denied && <div className={TIP}>{a.loadFail}</div>}
       {!error && !denied && (
         <div className="border-t border-[var(--shell-side-border)]">
-          {rows.length === 0 && <button className={LIST_BTN}><span className="grid gap-1"><strong className="text-[13px] font-medium">{a.empty}</strong><small className="text-xs text-[var(--shell-content-text)]">{a.emptyDesc}</small></span></button>}
+          {rows.length === 0 && <div className="px-1 py-6"><EmptyState text={a.empty} /></div>}
           {rows.map((r) => (
             <button key={r.logId} className={LIST_BTN}>
               <span className="grid gap-1"><strong className="text-[13px] font-medium">{r.time}</strong><small className="text-xs text-[var(--shell-content-text)]">{r.type} · {r.action} · {r.ip}</small></span>

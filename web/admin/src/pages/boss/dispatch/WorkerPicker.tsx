@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Input } from '../../../components/ui/input'
 
 interface WorkerRow {
   id: number
@@ -26,7 +27,6 @@ export interface PickedWorker extends WorkerRow {
   score: number | null
 }
 
-const INPUT_CLS = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 const CARD = 'flex items-center gap-3 rounded-sm border px-3 py-2.5 text-left cursor-pointer'
 const CARD_IDLE = 'border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] hover:border-[var(--color-border-focus)] hover:bg-[var(--shell-menu-hover-bg)]'
 const CARD_ON = 'border-[var(--color-border-focus)] bg-[var(--shell-menu-hover-bg)]'
@@ -106,7 +106,7 @@ export function WorkerPicker({ selectedId, onSelect }: {
 
   return (
     <div className="flex flex-col gap-2">
-      <input className={INPUT_CLS} value={keyword} placeholder={p.search} onChange={(e) => setKeyword(e.target.value)} />
+      <Input className="h-8 w-full" value={keyword} placeholder={p.search} onChange={(e) => setKeyword(e.target.value)} />
       {error && <div className="text-xs text-[var(--color-danger)]">{error}</div>}
       <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
         {filtered.map((w) => {

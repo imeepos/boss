@@ -5,6 +5,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { StatusTag } from '../../../components/StatusTag'
+import { DataTable } from '../../../components/business/data-table'
 import { searchWorkers } from '../../../api/pickers'
 import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
@@ -147,24 +148,18 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
       </div>
       {error ? <div style={{ color: '#e54545', fontSize: 13, padding: '12px 0' }}>{error}</div> : (
         <>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr>{t.msgColumns.map((c) => <th key={c} style={th}>{c}</th>)}</tr>
-            </thead>
-            <tbody>
-              {slice.map((r) => (
-                <tr key={r.id}>
-                  <td style={td}><StatusTag domain="message" value={r.level} /></td>
-                  <td style={td}>#{r.workerId}</td>
-                  <td style={td}>{r.title}</td>
-                  <td style={{ ...td, color: '#666' }}>{r.content}</td>
-                  <td style={td}>{fmtTime(r.sentAt)}</td>
-                  <td style={td}>{r.read ? t.read : t.unread}</td>
-                </tr>
-              ))}
-              {!slice.length && <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: '#999' }}>{t.empty}</td></tr>}
-            </tbody>
-          </table>
+          <DataTable
+            emptyText={t.empty}
+            rows={slice as unknown as Record<string, unknown>[]}
+            columns={[
+              { key: 'level', label: t.msgColumns[0], render: (r) => <StatusTag domain="message" value={String(r.level)} /> },
+              { key: 'workerId', label: t.msgColumns[1], render: (r) => `#${r.workerId}` },
+              { key: 'title', label: t.msgColumns[2], render: (r) => String(r.title ?? '') },
+              { key: 'content', label: t.msgColumns[3], render: (r) => <span style={{ color: '#666' }}>{String(r.content ?? '')}</span> },
+              { key: 'sentAt', label: t.msgColumns[4], render: (r) => fmtTime(String(r.sentAt)) },
+              { key: 'read', label: t.msgColumns[5], render: (r) => (r.read ? t.read : t.unread) },
+            ]}
+          />
           <Pagination total={filtered.length} page={page} pageSize={pageSize} onPage={setPage} onSize={setPageSize}
             rangeText={t.rangeText} prevText={t.prev} nextText={t.next} perPageText={t.perPage}
             jumpText={t.jump} pageUnitText={t.pageUnit} />
