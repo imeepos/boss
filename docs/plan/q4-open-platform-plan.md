@@ -18,7 +18,7 @@
 | M3 | 供应商适配器规范 | 支付/短信/实名/税务/地图/设备/AAA 适配器接口规范文档 + 现有 Stripe/SMS 归位对齐 | 已合并(docs/contract/vendor-adapter-spec.md;sandbox fixture 归 M4) |
 | M4 | 沙箱环境 | 沙箱 app 凭证隔离、样例数据集、回放样例(请求/响应 fixture) | 已合并(sandbox 双向隔离 + SBX 样例 + Webhook 回放样例 + selftest 脚本) |
 | M5 | 集成测试与回放工具 | 契约测试跑 open.yaml、流量回放脚本、集成方自助验收 checklist 工具 | 已合并(selftest 脚本 5 项验收 + openplat-replay.mjs 回放工具与 fixture + 同步守护测试;业务事件 order.stage.done 已挂接) |
-| M6 | 开发者门户 + 部署评估 | admin 内开发者门户页面(凭证/订阅/用量)、基于 102 真实负载的独立部署评估报告 | 部分:评估报告已合并(docs/ops/open-platform-deployment-assessment.md,结论不拆+再评估触发线);门户页面未开始 |
+| M6 | 开发者门户 + 部署评估 | admin 内开发者门户页面(凭证/订阅/用量)、基于 102 真实负载的独立部署评估报告 | 已合并(门户页面 /org/openplat:应用凭证 CRUD+Secret 一次性展示+订阅管理+投递视图+测试事件;评估报告见 docs/ops/open-platform-deployment-assessment.md) |
 
 ## M1 设计要点(本季第一刀)
 
