@@ -43,7 +43,7 @@ func (s *PGStore) ListCommissionLedger(ctx context.Context, accountID int64, sta
 
 func (s *PGStore) AccrueCommission(ctx context.Context, orderID, legalEntityID int64, orderAmount, rate float64) (int64, error) {
 	var id int64
-	err := s.db.QueryRow(ctx, `INSERT INTO partner_commission_ledger(order_id, legal_entity_id, order_amount, commission_rate, commission_amount) VALUES($1,$2,$3,$4,round(($3*$4)::numeric,2)) ON CONFLICT (order_id, legal_entity_id) DO UPDATE SET order_amount=EXCLUDED.order_amount, commission_rate=EXCLUDED.commission_rate, commission_amount=EXCLUDED.commission_amount WHERE partner_commission_ledger.status='ACCRUED' RETURNING id`, orderID, legalEntityID, orderAmount, rate).Scan(&id)
+	err := s.db.QueryRow(ctx, `INSERT INTO partner_commission_ledger(order_id, legal_entity_id, order_amount, commission_rate, commission_amount) VALUES($1,$2,$3,$4,round(($3::numeric*$4::numeric),2)) ON CONFLICT (order_id, legal_entity_id) DO UPDATE SET order_amount=EXCLUDED.order_amount, commission_rate=EXCLUDED.commission_rate, commission_amount=EXCLUDED.commission_amount WHERE partner_commission_ledger.status='ACCRUED' RETURNING id`, orderID, legalEntityID, orderAmount, rate).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("partner: accrue commission: %w", err)
 	}

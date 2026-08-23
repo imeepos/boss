@@ -27,7 +27,13 @@ func TestPartnerCommissionLedgerIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := pool.QueryRow(ctx, `SELECT id FROM accounts WHERE legal_entity_id=$1 AND role_id=(SELECT id FROM roles WHERE code='partner_admin') LIMIT 1`, entityID).Scan(&accountID); err != nil {
-		t.Skipf("没有伙伴管理员: %v", err)
+		var roleID int64
+		if err := pool.QueryRow(ctx, `SELECT id FROM roles WHERE code='partner_admin'`).Scan(&roleID); err != nil {
+			t.Fatal(err)
+		}
+		if err := pool.QueryRow(ctx, `INSERT INTO accounts(username,password_hash,real_name,role_id,legal_entity_id,status) VALUES($1,'e2e-test','E2E佣金管理员',$2,$3,1) RETURNING id`, "e2e-commission-admin-"+suffix, roleID, entityID).Scan(&accountID); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO channels(code,name,status) VALUES($1,'E2E代理','ACTIVE') RETURNING id`, "AGENT-E2E-"+suffix).Scan(&channelID); err != nil {
 		t.Fatal(err)
@@ -39,6 +45,7 @@ func TestPartnerCommissionLedgerIntegration(t *testing.T) {
 		_, _ = pool.Exec(ctx, `DELETE FROM partner_commission_ledger WHERE id=$1`, ledgerID)
 		_, _ = pool.Exec(ctx, `DELETE FROM orders WHERE id=$1`, orderID)
 		_, _ = pool.Exec(ctx, `DELETE FROM channels WHERE id=$1`, channelID)
+		_, _ = pool.Exec(ctx, `DELETE FROM accounts WHERE id=$1`, accountID)
 	}()
 	store := NewPGStore(pool)
 	ledgerID, err = store.AccrueCommission(ctx, orderID, entityID, 1000, 0.10)
