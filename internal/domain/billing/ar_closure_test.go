@@ -190,11 +190,10 @@ func TestPGStoreListWriteoffs(t *testing.T) {
 	}
 	defer pool.Close()
 
-	at := time.Date(2026, 8, 25, 14, 0, 0, 0, time.UTC)
 	pool.ExpectQuery(`SELECT id, customer_id, amount, reason, approved_by, approved_at FROM ar_writeoffs`).
 		WithArgs(int64(1)).
 		WillReturnRows(pool.NewRows([]string{"id", "customer_id", "amount", "reason", "approved_by", "approved_at"}).
-			AddRow(int64(4), int64(1), 100.0, "坏账", int64Ptr(99), &at))
+			AddRow(int64(4), int64(1), 100.0, "坏账", int64Ptr(99), nil))
 
 	s := NewPGStore(pool)
 	items, err := s.ListWriteoffs(context.Background(), 1)
