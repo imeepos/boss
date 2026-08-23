@@ -8,11 +8,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <a class="back" href="home.html">&lsaquo;</a>
-    <div class="t">产品套餐</div>
-    <span class="act"></span>
-  </div>
+  <div id="header" data-back="home.html"></div>
 
   <div class="seg" id="cats">
     <a class="active" onclick="filter('broadband')">宽带套餐</a>
@@ -29,6 +25,7 @@
 
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>

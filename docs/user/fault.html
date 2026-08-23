@@ -8,11 +8,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <a class="back" href="home.html">&lsaquo;</a>
-    <div class="t">故障报修</div>
-    <span class="act"></span>
-  </div>
+  <div id="header" data-back="home.html"></div>
 
   <div class="quick" style="grid-template-columns:repeat(2,1fr);margin:12px 14px;">
     <a class="q" href="diy.html"><span class="ic ic-blue">检</span>自助排障</a>
@@ -46,6 +42,7 @@
   </div>
   <div id="tabbar"></div>
 </div>
+<script src="header.js"></script>
 <script src="nav.js"></script>
 <script src="api.js"></script>
 <script>
