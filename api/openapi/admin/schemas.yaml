@@ -56,7 +56,7 @@ components:
   schemas:
     OpenPlatApp:
       type: object
-      description: 开放应用元数据(不含 Secret,迁移 000121)
+      description: 开放应用元数据(不含 Secret,迁移 000122)
       properties:
         id: { type: integer, format: int64 }
         appId: { type: string, example: op_0123456789abcdef }

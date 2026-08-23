@@ -29,7 +29,7 @@ tags:
   - name: AI
     description: AI 能力网关(OpenAI SDK 封装;apiKey/apiUrl 集中配置热更)
   - name: OpenPlat
-    description: 开放平台管理(应用凭证/Webhook 订阅;迁移 000121,docs/plan/q4-open-platform-plan.md)
+    description: 开放平台管理(应用凭证/Webhook 订阅;迁移 000122,docs/plan/q4-open-platform-plan.md)
   - name: Org
     description: 组织与权限(法人/部门/岗位/区域/菜单权限/数据权限)
   - name: Customer

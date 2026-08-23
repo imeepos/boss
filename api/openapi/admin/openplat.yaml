@@ -1,5 +1,5 @@
 # 开放平台管理面(admin 端):应用凭证 + Webhook 订阅。
-# 前缀 /api/admin/v1,permCode menu:openplat(迁移 000121)。
+# 前缀 /api/admin/v1,permCode menu:openplat(迁移 000122)。
 # Secret 仅创建响应返回一次,后续永不回显。
 paths:
   /openplat/apps:

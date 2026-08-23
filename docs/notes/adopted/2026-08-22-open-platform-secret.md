@@ -2,7 +2,7 @@
 
 ## 决策
 
-Q4 开放平台（openplat 域，迁移 000121）的外部应用凭证采用 **AppId + Secret + HMAC-SHA256 请求签名**，
+Q4 开放平台（openplat 域，迁移 000122）的外部应用凭证采用 **AppId + Secret + HMAC-SHA256 请求签名**，
 Secret **原文存放在 `open_apps.secret` 列**，不哈希。
 
 ## Why
