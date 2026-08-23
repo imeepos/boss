@@ -92,3 +92,28 @@ paths:
       summary: 企业工作台-本企业订单列表
       operationId: partnerOrders
       responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+  /partner/commissions:
+    get:
+      tags: [Partner]
+      summary: 企业工作台-佣金台账列表(permCode menu:partner-orders;status 过滤,空=全部)
+      operationId: partnerCommissions
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: data.items 为佣金台账数组(000118_partner_commission_ledger)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { type: object }
+  /partner/commissions/{id}/settle:
+    post:
+      tags: [Partner]
+      summary: 佣金结算(单条;审计 partner_commission.settle;permCode menu:partner-orders)
+      operationId: partnerCommissionSettle
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer, format: int64 } } ]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }

@@ -720,6 +720,27 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /api-key-templates:
+    get:
+      tags: [Sys]
+      summary: 受限权限模板清单(签发 API key 时可选;permCode menu:apikey)
+      operationId: listApiKeyTemplates
+      responses:
+        '200':
+          description: data.items 为模板数组(code/name/受限权限码集)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code: { type: string }
+                        name: { type: string }
+
   /storage-config/rotate-secret:
     post:
       tags: [Sys]

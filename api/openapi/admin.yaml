@@ -28,8 +28,6 @@ tags:
     description: 基础配置(账号/地址层级/业务参数/审计日志/数据导入)
   - name: AI
     description: AI 能力网关(OpenAI SDK 封装;apiKey/apiUrl 集中配置热更)
-  - name: OpenPlat
-    description: 开放平台管理(应用凭证/Webhook 订阅;迁移 000121,docs/plan/q4-open-platform-plan.md)
   - name: Org
     description: 组织与权限(法人/部门/岗位/区域/菜单权限/数据权限)
   - name: Customer
@@ -130,10 +128,8 @@ paths:
   /posts/{postId}: { $ref: './admin/org.yaml#/paths/~1posts~1{postId}' }
   /api-keys: { $ref: './admin/sys.yaml#/paths/~1api-keys' }
   /api-keys/{id}: { $ref: './admin/sys.yaml#/paths/~1api-keys~1{id}' }
-  /openplat/apps: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps' }
-  /openplat/apps/{id}/status: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1status' }
-  /openplat/apps/{id}/subscriptions: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1subscriptions' }
-  /openplat/subscriptions/{id}: { $ref: './admin/openplat.yaml#/paths/~1openplat~1subscriptions~1{id}' }
+  /api-key-templates: { $ref: './admin/sys.yaml#/paths/~1api-key-templates' }
+  /api-key-templates: { $ref: './admin/sys.yaml#/paths/~1api-key-templates' }
   /regions: { $ref: './admin/org.yaml#/paths/~1regions' }
   /regions/{regionId}/coverage: { $ref: './admin/org.yaml#/paths/~1regions~1{regionId}~1coverage' }
   /menu-perms: { $ref: './admin/org.yaml#/paths/~1menu-perms' }
@@ -159,7 +155,9 @@ paths:
   /bills: { $ref: './admin/billing.yaml#/paths/~1bills' }
   /payments: { $ref: './admin/billing.yaml#/paths/~1payments' }
   /payments/{id}/refund: { $ref: './admin/billing.yaml#/paths/~1payments~1{id}~1refund' }
+  /dunning-runs: { $ref: './admin/billing.yaml#/paths/~1dunning-runs' }
   /billing-runs: { $ref: './admin/billing.yaml#/paths/~1billing-runs' }
+  /dunning-runs: { $ref: './admin/billing.yaml#/paths/~1dunning-runs' }
   /invoices: { $ref: './admin/billing.yaml#/paths/~1invoices' }
   /invoices/{id}/void: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1void' }
   /invoices/{id}/reissue: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1reissue' }
@@ -275,8 +273,16 @@ paths:
   /coupon-templates/{templateId}/codes: { $ref: './admin/promotion.yaml#/paths/~1coupon-templates~1{templateId}~1codes' }
   /gift-rules: { $ref: './admin/promotion.yaml#/paths/~1gift-rules' }
   /gift-rules/{ruleId}/disable: { $ref: './admin/promotion.yaml#/paths/~1gift-rules~1{ruleId}~1disable' }
+  /coupon-recon: { $ref: './admin/promotion.yaml#/paths/~1coupon-recon' }
   /points/{customerId}: { $ref: './admin/loy.yaml#/paths/~1points~1{customerId}' }
   /points/{customerId}/adjust: { $ref: './admin/loy.yaml#/paths/~1points~1{customerId}~1adjust' }
+  /loy/levels: { $ref: './admin/loy.yaml#/paths/~1loy~1levels' }
+  /loy/levels/{id}/disable: { $ref: './admin/loy.yaml#/paths/~1loy~1levels~1{id}~1disable' }
+  /loy/tasks: { $ref: './admin/loy.yaml#/paths/~1loy~1tasks' }
+  /loy/tasks/{id}/disable: { $ref: './admin/loy.yaml#/paths/~1loy~1tasks~1{id}~1disable' }
+  /loy/earn-rule: { $ref: './admin/loy.yaml#/paths/~1loy~1earn-rule' }
+  /loy/expire/run: { $ref: './admin/loy.yaml#/paths/~1loy~1expire~1run' }
+  /loy/points-recon: { $ref: './admin/loy.yaml#/paths/~1loy~1points-recon' }
   /invite-config: { $ref: './admin/userdata.yaml#/paths/~1invite-config' }
   /user-usages: { $ref: './admin/userdata.yaml#/paths/~1user-usages' }
   /diy-guides: { $ref: './admin/userdata.yaml#/paths/~1diy-guides' }
@@ -386,3 +392,8 @@ paths:
   /partner/staff: { $ref: './admin/partner.yaml#/paths/~1partner~1staff' }
   /partner/staff/{id}/status: { $ref: './admin/partner.yaml#/paths/~1partner~1staff~1{id}~1status' }
   /partner/orders: { $ref: './admin/partner.yaml#/paths/~1partner~1orders' }
+  /partner/commissions: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions' }
+  /partner/commissions/{id}/settle: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions~1{id}~1settle' }
+  /partner/commissions: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions' }
+  /partner/commissions/{id}/settle: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions~1{id}~1settle' }
+  /partner/audit-report: { $ref: './admin/partner.yaml#/paths/~1partner~1audit-report' }
