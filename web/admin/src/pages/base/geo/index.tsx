@@ -6,9 +6,8 @@ import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { CountryPanel } from './CountryPanel'
 import { SubdivisionPanel } from './SubdivisionPanel'
-
-const TAB_BASE = 'mb-[-1px] cursor-pointer border-b-2 border-transparent bg-none px-0.5 pt-2.5 pb-3 text-sm text-[var(--shell-content-text)] hover:text-[var(--shell-heading)]'
-const TAB_ACTIVE = 'font-semibold text-[var(--shell-heading)] border-b-[var(--color-brand-gold-500)]'
+import { PageHead } from '../../../components/business/page-head'
+import { TabBar } from '../../../components/business/tab-bar'
 
 export default function GeoPage() {
   const t = useT()
@@ -19,30 +18,15 @@ export default function GeoPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{t.pages.geo.title}</h2>
-          <p className="mt-1 text-xs text-[var(--shell-crumb-text)]">ISO 3166-1 / ISO 3166-2 · CLDR · UN M49</p>
-        </div>
-      </div>
-      <nav className="mb-4 flex gap-8 border-b border-[var(--shell-side-border)]" role="tablist">
-        {(
-          [
-            ['country', t.pages.geo.tabCountry],
-            ['subdiv', t.pages.geo.tabSubdiv],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            role="tab"
-            aria-selected={tab === key}
-            className={tab === key ? `${TAB_BASE} ${TAB_ACTIVE}` : TAB_BASE}
-            onClick={() => { setTab(key); setUrlTab(key) }}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
+      <PageHead title={t.pages.geo.title} desc="ISO 3166-1 / ISO 3166-2 · CLDR · UN M49" />
+      <TabBar
+        tabs={[
+          { key: 'country' as const, label: t.pages.geo.tabCountry },
+          { key: 'subdiv' as const, label: t.pages.geo.tabSubdiv },
+        ]}
+        value={tab}
+        onChange={(k) => { setTab(k); setUrlTab(k) }}
+      />
       {tab === 'subdiv' ? <SubdivisionPanel /> : <CountryPanel />}
     </div>
   )

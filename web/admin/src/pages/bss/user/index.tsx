@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
+import { DataTable } from '../../../components/business/data-table'
 import { fmtTime } from '../../../lib/format'
 import { filterUsers, pageSlice, type UserRow } from './filter'
 
@@ -52,28 +53,22 @@ export default function UserListPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{u.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((r) => (
-                  <tr key={r.customerId}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.customerId}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.loginName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.planName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.createdAt)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => openDetail(r.customerId)}>{u.detail}</button>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {slice.length === 0 && <tr><td colSpan={u.columns.length} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{u.empty}</td></tr>}
-              </tbody>
-            </table>
+          <div className="px-4 pb-4">
+            <DataTable
+              emptyText={u.empty}
+              rows={slice as unknown as Record<string, unknown>[]}
+              columns={[
+                { key: 'customerId', label: u.columns[0], render: (r) => String(r.customerId) },
+                { key: 'name', label: u.columns[1], render: (r) => String(r.name ?? '') },
+                { key: 'phone', label: u.columns[2], render: (r) => String(r.phone ?? '') },
+                { key: 'loginName', label: u.columns[3], render: (r) => String(r.loginName || '—') },
+                { key: 'planName', label: u.columns[4], render: (r) => String(r.planName || '—') },
+                { key: 'createdAt', label: u.columns[5], render: (r) => fmtTime(String(r.createdAt)) },
+                { key: 'op', label: u.columns[6], render: (r) => (
+                  <button onClick={() => openDetail(Number(r.customerId))}>{u.detail}</button>
+                ) },
+              ]}
+            />
           </div>
         )}
         <Pagination total={filtered.length} page={page} pageSize={pageSize}

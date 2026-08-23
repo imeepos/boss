@@ -4,6 +4,7 @@ import { useT } from '../../../i18n'
 import { ImportPanel } from './ImportPanel'
 import { ImportTaskList } from './TaskList'
 import { CARD } from '../geo/styles'
+import { PageHead } from '../../../components/business/page-head'
 
 export default function ImporterPage() {
   const t = useT()
@@ -11,7 +12,7 @@ export default function ImporterPage() {
   const [taskRev, setTaskRev] = useState(0)
   return (
     <div className={CARD}>
-      <h2 className="mx-4 mt-4 mb-3 text-base text-[var(--shell-content-text)]">{im.title}</h2>
+      <div className="mx-4 mt-4 mb-3"><PageHead title={im.title} desc={im.addrHint} /></div>
       {/* 双面板并排各占一半;窄屏(md 以下)回落单列堆叠。 */}
       <div className="mx-4 mb-2 grid grid-cols-1 items-start gap-x-6 md:grid-cols-2">
         <ImportPanel kind="addr" title={im.addrTitle} hint={im.addrHint} endpoint="/addresses/import" text={im} onImported={() => setTaskRev((v) => v + 1)} />

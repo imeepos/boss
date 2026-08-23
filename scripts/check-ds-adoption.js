@@ -1,13 +1,13 @@
 // Admin 设计系统采用率审计(docs/admin/page-patterns.md §5)。
 // 用法: node scripts/check-ds-adoption.js [阈值,缺省 0.6]
-// 阈值棘轮:50%→70%(2026-08-23 表单批量收敛后),目标 80%。
+// 阈值棘轮:70%→75%(2026-08-23 bss/base 收敛后),目标 80%。
 // 规则:pages/<模块> 下引用 components/business 或 components/ui 的 .tsx 占比 ≥ 阈值;
 // 模块页数 < 3 不判(样本过小);任一大模块低于阈值退出非零。
 const fs = require('fs')
 const path = require('path')
 
 const PAGES = path.join(__dirname, '..', 'web', 'admin', 'src', 'pages')
-const THRESHOLD = parseFloat(process.argv[2] || '0.7')
+const THRESHOLD = parseFloat(process.argv[2] || '0.75')
 const MIN_PAGES = 3
 // home=公开官网落地页(自有视觉体系),error/login/placeholder=壳页,均非 Admin 业务页。
 const EXEMPT = new Set(['home', 'error', 'login', 'placeholder', 'auth-ads.tsx', 'auth-shell.tsx'])

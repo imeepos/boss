@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
+import { DataTable } from '../../../components/business/data-table'
 import { fmtTime } from '../../../lib/format'
 import { TABS, type Row, type TabDef } from './tabs'
 import { useConfirm } from '../../../components/ConfirmDialog'
@@ -70,31 +71,25 @@ export default function UserDataPage() {
         </div>
         {notice ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{notice}</div> : null}
         {state.error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{state.error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">ID</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.nameCol}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.statusCol}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{u.opCol}</th></tr></thead>
-              <tbody>
-                {state.rows.map((r) => (
-                  <tr key={String(r[cur.idKey] ?? Math.random())}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={r[cur.idKey] === undefined || r[cur.idKey] === null || r[cur.idKey] === '' ? `缺主键列 ${cur.idKey}` : undefined}>
-                      {r[cur.idKey] === undefined || r[cur.idKey] === null || r[cur.idKey] === '' ? '—missing' : String(r[cur.idKey])}
-                    </td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.name ?? r.title ?? r.question ?? r.code ?? r.label ?? r.customerName ?? '—')}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{String(r.status ?? (r.enabled ? u.on : u.off) ?? (r.active ? u.on : u.off) ?? '—')}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      {cur.action ? (
-                        <span className="inline-flex items-center">
-                          <button
-                            disabled={r[cur.idKey] === undefined || r[cur.idKey] === null || r[cur.idKey] === ''}
-                            onClick={() => act(cur, r)}>{cur.action === "disable" ? u.disable : u.toggle}</button>
-                        </span>
-                      ) : '—'}
-                    </td>
-                  </tr>
-                ))}
-                {state.rows.length === 0 && <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{u.empty}</td></tr>}
-              </tbody>
-            </table>
+          <div className="px-4 pb-4">
+            <DataTable
+              emptyText={u.empty}
+              rows={state.rows}
+              columns={[
+                { key: 'id', label: 'ID', render: (r) => {
+                  const v = r[cur.idKey]
+                  if (v === undefined || v === null || v === '') return <span title={`缺主键列 ${cur.idKey}`}>—missing</span>
+                  return String(v)
+                } },
+                { key: 'name', label: u.nameCol, render: (r) => String(r.name ?? r.title ?? r.question ?? r.code ?? r.label ?? r.customerName ?? '—') },
+                { key: 'status', label: u.statusCol, render: (r) => String(r.status ?? (r.enabled ? u.on : u.off) ?? (r.active ? u.on : u.off) ?? '—') },
+                { key: 'op', label: u.opCol, render: (r) => cur.action ? (
+                  <button
+                    disabled={r[cur.idKey] === undefined || r[cur.idKey] === null || r[cur.idKey] === ''}
+                    onClick={() => act(cur, r)}>{cur.action === 'disable' ? u.disable : u.toggle}</button>
+                ) : <>—</> },
+              ]}
+            />
           </div>
         )}
         <p className="pl-3 text-xs text-[var(--shell-crumb-text)]">{u.total.replace('{count}', String(state.rows.length))} · {fmtTime(new Date().toISOString())}</p>

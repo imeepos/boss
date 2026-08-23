@@ -78,8 +78,8 @@ node scripts/check-ds-adoption.js     # 输出各模块采用率与低于阈值�
 ```
 
 - 阈值:模块内 ≥80% 页面引用 `components/business` 或 `components/ui`。
-- 棘轮位 70%(2026-08-23 org/bss 表单批量收敛后);当前真基线 bss 71%/org 89%/
-  partner·provision 75%/base 83%,目标 80%。
+- 棘轮位 75%(2026-08-23 bss/base 收敛后);当前真基线 partner·provision 75%/org 89%/
+  base 92%,其余模块 100%,目标 80%。
 
 ## 6. 收敛存量清单(2026-08-23 审计基线)
 
@@ -88,11 +88,12 @@ node scripts/check-ds-adoption.js     # 输出各模块采用率与低于阈值�
 | 模块 | 未采用页数 | 优先级 |
 |---|---|---|
 | boss | 0(2026-08-23 收敛:message 四页+WorkerPicker) | 已完成 |
-| bss | 2(user/userdata) | 高 |
+| bss | 0(user/userdata 已收敛) | 已完成 |
 | base | 4 | 中 |
 | org | 2(staff 树) | 低 |
 | bss | 3 | 中 |
 | profile | 0(2026-08-23 收敛:AuditSection) | 已完成 |
-| backup/provision | 2 | 低 |
+| base | 2(audit/AccountForm) | 中 |
+| backup/provision | 1 | 低 |
 
 收敛方式:页面改动时顺手迁移;不接受"纯样式大改"式巨石提交。
