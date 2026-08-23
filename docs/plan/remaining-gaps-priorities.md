@@ -139,9 +139,20 @@
 
 ## 8. 当前会话已交付
 
-- CS/AR 完整业务闭环：`b565583`
-- 统一补偿与对账中心：`7917bc1`
-- 财务税务与支付闭环：`93bd249`
-- 开发收口计划：`796d759`
-- 差距审计：`docs/plan/three-year-gap-audit.md`
-- 三年路线图：`docs/plan/three-year-roadmap.md`
+| 提交 | 内容 | 状态 |
+|---|---|---|
+| `b565583` | CS/AR 完整业务闭环 | ✅ 已合并 main |
+| `7917bc1` | 统一补偿与对账中心 | ✅ 已合并 main |
+| `93bd249` | 财务税务与支付闭环 | ✅ 已合并 main |
+| `a3842eb` | 指标目录域（metric_catalog + quality_rules） | ✅ 已合并 main |
+| `6caaf5d` | 指标目录 Admin API（8 端点 + OpenAPI 464 路由） | ✅ 已合并 main |
+| `330548e` | PORT 状态更新（35 页已接入真实 API） | ✅ 已合并 main |
+| `db362de` | 会话总结 | ✅ 已合并 main |
+
+## 9. 下一轮入口
+
+按本会话交付顺序，下一轮建议：
+1. 数据治理：ETL 投影任务台账 + 质量异常派单到补偿中心
+2. PORT 完善：统一导航/三语/i18n/异常处理
+3. 多语言 user/worker 端
+4. 性能与 SLO 优化
