@@ -120,3 +120,51 @@ type Application struct {
 	PartnerCommission partner.CommissionLedgerService
 	PartnerAudit      partner.AuditReportService
 	PartnerOrderRisk  partner.OrderRiskService
+
+	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
+	Notify notify.Service
+
+	// Backup 数据备份迁移(导出 gzip JSONL 归档 + ON CONFLICT 追加恢复,迁移 000095)。
+	Backup *backup.Service
+
+	// Attachment 附件上传(三端共用,对象入 MinIO,元数据入 attachments 表)。
+	Attachment *attachment.Service
+
+	// HostCtl 宿主机 sidecar 客户端(轮换 MinIO 密钥等特权操作);nil=未配置。
+	HostCtl *hostctl.Client
+
+	// AaaAuth 授权查询(授权器,权威状态=lo_accounts);Cdr 话单投递(PG 落库 + Kafka 双写)。
+	// gRPC aaa/v1 GetAuthorization/EmitCDR 依赖,债务偿还:契约服务可在 cmd/server 内直连。
+	AaaAuth aaa.Authorizer
+	Cdr     aaability.Emitter
+
+	Worker       worker.WorkerService
+	WorkerLedger worker.WorkerLedgerService
+	WorkerFact   worker.WorkerFactService
+	WorkerEvent  worker.WorkerEventService
+	WorkerNotice worker.WorkerNoticeService
+
+	// 师傅注册 / 审核 / 实名认证 子域(迁移 000050)。
+	WorkerOnboarding worker.OnboardingService
+	WorkerRealName   worker.RealNameService
+
+	Audit audit.Writer // 关键操作审计(异步写,见 pkg/audit)
+
+	// Automation W8 环节自动编排(6/7/10/11 自动);事件经 Kafka 状态变更链路发布。
+	Automation *Automation
+	// pubEvents 事件发布器(Kafka;未配置时 Noop);Close 时释放连接。
+	pubEvents events.Publisher
+
+	// close 释放资源钩子(异步审计 writer + PG 池),由 cmd 层在优雅退出时调用。
+	close func()
+}
+
+// Close 释放装配持有的资源(异步审计排空 + 连接池关闭);幂等。
+func (a *Application) Close() {
+	if a.close != nil {
+		a.close()
+	}
+}
+
+// ErrNotImplemented 域尚未接入装配时返回,便于调用方降级/提示。
+var ErrNotImplemented = errors.New("app: domain service not wired yet")
