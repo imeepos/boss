@@ -56,7 +56,7 @@ func forgeWorkerToken(secret string) string {
 	c := workerClaimsForTest{
 		WorkerID: 9, WorkerName: "张师傅",
 		RegisteredClaims: jwt.RegisteredClaims{
-			IssuedAt: jwt.NewNumericDate(now),
+			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour)),
 			Subject:   "worker", Issuer: "boss-worker",
 		},
@@ -168,8 +168,8 @@ func TestCrossEnd_MalformedTokens(t *testing.T) {
 func TestCrossEnd_PositiveControls(t *testing.T) {
 	ts, adminTok, userTok, workerTok := newCrossEndServer(t)
 	cases := []struct {
-		name         string
-		token, path  string
+		name        string
+		token, path string
 	}{
 		{"admin 本端", adminTok, "/api/admin/v1/auth/me"},
 		{"user 本端", userTok, "/api/user/v1/points"},
