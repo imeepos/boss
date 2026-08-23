@@ -3,6 +3,17 @@
 > 版本 V1.1｜上级规划：`docs/plan/admin-system-plan.md` 第五节批次 A0
 > 契约依据：`internal/app/http.go`（已交付实现，权威）、`api/openapi/admin/auth.yaml`、`docs/contract/terms.md`
 > **V1.1 变更：不对接 mock（:8092）。请求层只对接 Go 后端真实接口。**
+>
+> **Amended 2026-08-27**：A0/A1–A6 批次已落地到 `web/admin/` 实体工程（Vite + React 18 + TS + Radix UI）；
+> 本文保留作为"原始执行计划与决策依据"，不再随工程演进而回写。
+> 必须按变更后口径理解的字段（不要照搬 V1.0 行文）：
+> - admin 前缀 `/api/v1` → **`/api/admin/v1`**（2026-08-19 三端前缀分离，
+>   `docs/notes/adopted/2026-08-19-api-three-portal-prefix.md`）；user/worker 改 `/api/v1` / `/api/worker/v1`。
+> - `cmd/server` 在 102 部署为 `:28080`（nginx 同源反代前置），dev 本地 `:8080`；admin 直连经 `boss.servers`
+>   localStorage 配置（`docs/notes/adopted/2026-08-19-admin-api-direct-cors.md`）。
+> - UI 选型从 AntD 5 + ProComponents 改为 Radix UI primitives + 自建组件库；tailwind + CSS 变量双主题。
+> - `api/openapi/admin.yaml` 当前声明前缀 `/api/admin/v1`（与 Go 实现 `internal/httpapi/admin` 对齐），
+>   生成 client 的 `servers.url` 直接复用。
 
 ---
 
