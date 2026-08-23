@@ -6,17 +6,27 @@ import (
 	"time"
 )
 
+// Callback dispatch status reflect the scheduler lifecycle.
+const (
+	CallbackPending   = "PENDING"
+	CallbackDispatched = "DISPATCHED"
+	CallbackCompleted = "COMPLETED"
+	CallbackSkipped    = "SKIPPED"
+)
+
 // Callback is a scheduled CS follow-up call.
 type Callback struct {
-	ID          int64      `json:"id"`
-	TicketID    int64      `json:"ticketId"`
-	CustomerID  int64      `json:"customerId"`
-	ScheduledAt time.Time  `json:"scheduledAt"`
-	CompletedAt *time.Time `json:"completedAt,omitempty"`
-	Result      string     `json:"result,omitempty"`
-	Rating      int16      `json:"rating,omitempty"`
-	Comment     string     `json:"comment,omitempty"`
-	OperatorID  int64      `json:"operatorId,omitempty"`
+	ID             int64      `json:"id"`
+	TicketID       int64      `json:"ticketId"`
+	CustomerID     int64      `json:"customerId"`
+	ScheduledAt    time.Time  `json:"scheduledAt"`
+	CompletedAt    *time.Time `json:"completedAt,omitempty"`
+	Result         string     `json:"result,omitempty"`
+	Rating         int16      `json:"rating,omitempty"`
+	Comment        string     `json:"comment,omitempty"`
+	OperatorID     int64      `json:"operatorId,omitempty"`
+	DispatchStatus string     `json:"dispatchStatus,omitempty"`
+	DispatchedAt   *time.Time `json:"dispatchedAt,omitempty"`
 }
 
 type CallbackService interface {
@@ -24,10 +34,12 @@ type CallbackService interface {
 	CreateCallback(context.Context, Callback) (int64, error)
 	UpdateCallback(context.Context, int64, Callback) error
 	DeleteCallback(context.Context, int64) error
+	// CompleteCallback writes the dispatch result back: result/rating/comment/operator.
+	CompleteCallback(context.Context, int64, Callback) error
 }
 
 func (s *PGKnowledgeStore) ListCallbacks(ctx context.Context) ([]Callback, error) {
-	rows, err := s.db.Query(ctx, `SELECT id,ticket_id,customer_id,scheduled_at,completed_at,COALESCE(result,''),COALESCE(rating,0),COALESCE(comment,''),COALESCE(operator_id,0) FROM cs_callbacks ORDER BY scheduled_at,id`)
+	rows, err := s.db.Query(ctx, `SELECT id,ticket_id,customer_id,scheduled_at,completed_at,COALESCE(result,''),COALESCE(rating,0),COALESCE(comment,''),COALESCE(operator_id,0),COALESCE(dispatch_status,'PENDING'),dispatched_at FROM cs_callbacks ORDER BY scheduled_at,id`)
 	if err != nil {
 		return nil, fmt.Errorf("cs: list callbacks: %w", err)
 	}
@@ -35,7 +47,7 @@ func (s *PGKnowledgeStore) ListCallbacks(ctx context.Context) ([]Callback, error
 	out := make([]Callback, 0)
 	for rows.Next() {
 		var c Callback
-		if err := rows.Scan(&c.ID, &c.TicketID, &c.CustomerID, &c.ScheduledAt, &c.CompletedAt, &c.Result, &c.Rating, &c.Comment, &c.OperatorID); err != nil {
+		if err := rows.Scan(&c.ID, &c.TicketID, &c.CustomerID, &c.ScheduledAt, &c.CompletedAt, &c.Result, &c.Rating, &c.Comment, &c.OperatorID, &c.DispatchStatus, &c.DispatchedAt); err != nil {
 			return nil, fmt.Errorf("cs: scan callback: %w", err)
 		}
 		out = append(out, c)
@@ -56,6 +68,18 @@ func (s *PGKnowledgeStore) UpdateCallback(ctx context.Context, id int64, c Callb
 	tag, err := s.db.Exec(ctx, `UPDATE cs_callbacks SET scheduled_at=$2,completed_at=$3,result=$4,rating=$5,comment=$6,operator_id=$7 WHERE id=$1`, id, c.ScheduledAt, c.CompletedAt, c.Result, c.Rating, c.Comment, c.OperatorID)
 	if err != nil {
 		return fmt.Errorf("cs: update callback: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrArticleNotFound
+	}
+	return nil
+}
+
+// CompleteCallback writes back a dispatch result and flips status to COMPLETED.
+func (s *PGKnowledgeStore) CompleteCallback(ctx context.Context, id int64, c Callback) error {
+	tag, err := s.db.Exec(ctx, `UPDATE cs_callbacks SET completed_at=$2,result=$3,rating=$4,comment=$5,operator_id=$6,dispatch_status='COMPLETED' WHERE id=$1`, id, c.CompletedAt, c.Result, c.Rating, c.Comment, c.OperatorID)
+	if err != nil {
+		return fmt.Errorf("cs: complete callback: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return ErrArticleNotFound

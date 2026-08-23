@@ -131,6 +131,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		CSMetrics:       ord,
 		Knowledge:       cs.NewPGKnowledgeStore(pool),
 		Callbacks:       cs.NewPGKnowledgeStore(pool),
+		Tickets:         cs.NewPGKnowledgeStore(pool),
 		ARMetrics:       bill,
 		ARClosure:       bill,
 		CollectionQueue: bill,

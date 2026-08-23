@@ -61,6 +61,7 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerOrderRoutes(authed, a)
 	registerOrderSubRoutes(authed, a)
 	registerCallbackRoutes(authed, a)
+	registerCSClosureRoutes(authed, a)
 	registerOrderWorkflowRoutes(authed, a)
 	registerDispatchRoutes(authed, a)
 	registerDashboardRoutes(authed, a)

@@ -101,6 +101,7 @@ type Application struct {
 	CSMetrics       order.CSMetricsReader
 	Knowledge       cs.KnowledgeService
 	Callbacks       cs.CallbackService
+	Tickets         cs.TicketService
 	ARMetrics       billing.ARMetricsReader
 	ARClosure       billing.ARClosureService
 	CollectionQueue billing.CollectionQueueService

@@ -1,0 +1,11 @@
+BEGIN;
+DROP TABLE IF EXISTS ar_replay_events;
+ALTER TABLE ar_writeoffs DROP COLUMN IF EXISTS approved_note;
+ALTER TABLE ar_writeoffs DROP COLUMN IF EXISTS requested_by;
+ALTER TABLE ar_writeoffs DROP COLUMN IF EXISTS status;
+ALTER TABLE ar_credit_profiles DROP COLUMN IF EXISTS evaluated_at;
+ALTER TABLE cs_callbacks DROP COLUMN IF EXISTS dispatched_at;
+ALTER TABLE cs_callbacks DROP COLUMN IF EXISTS dispatch_status;
+ALTER TABLE cs_ticket_extensions DROP COLUMN IF EXISTS updated_by;
+ALTER TABLE cs_ticket_extensions DROP COLUMN IF EXISTS assigned_to;
+COMMIT;

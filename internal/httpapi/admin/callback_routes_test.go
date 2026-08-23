@@ -15,6 +15,7 @@ func (callbackRoutesFake) ListCallbacks(context.Context) ([]cs.Callback, error) 
 func (callbackRoutesFake) CreateCallback(context.Context, cs.Callback) (int64, error) { return 1, nil }
 func (callbackRoutesFake) UpdateCallback(context.Context, int64, cs.Callback) error   { return nil }
 func (callbackRoutesFake) DeleteCallback(context.Context, int64) error                { return nil }
+func (callbackRoutesFake) CompleteCallback(context.Context, int64, cs.Callback) error { return nil }
 
 func TestCallbackRoutesRegistered(t *testing.T) {
 	gin.SetMode(gin.TestMode)

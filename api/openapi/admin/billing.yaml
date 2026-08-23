@@ -161,6 +161,68 @@ paths:
           application/json: { schema: { $ref: '#/components/schemas/WriteoffInput' } }
       responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
 
+  /ar/writeoffs/{id}/approve:
+    post:
+      tags: [Billing]
+      summary: 审批通过核销(PENDING→APPROVED)
+      operationId: approveWriteoff
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approver]
+              properties:
+                approver: { type: integer, format: int64 }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
+  /ar/writeoffs/{id}/reject:
+    post:
+      tags: [Billing]
+      summary: 驳回核销(PENDING→REJECTED)
+      operationId: rejectWriteoff
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
+  /ar/credit-profiles/{customerId}/evaluate:
+    post:
+      tags: [Billing]
+      summary: 评估信用等级与停机线
+      operationId: evaluateCreditProfile
+      parameters: [{ name: customerId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
+  /ar/collection-tasks/generate:
+    post:
+      tags: [Billing]
+      summary: 自动生成催收任务(基于账龄快照)
+      operationId: generateCollectionTasks
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
+  /ar/replay/{sourceType}:
+    post:
+      tags: [Billing]
+      summary: 一致性回放(按来源类型重算欠费)
+      operationId: replayEvents
+      parameters: [{ name: sourceType, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
+
+  /ar/replay-events:
+    get:
+      tags: [Billing]
+      summary: 一致性回放事件列表
+      operationId: listReplayEvents
+      parameters: [{ name: sourceType, in: query, schema: { type: string } }]
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+
   /dunning-runs:
     post:
       tags: [Billing]

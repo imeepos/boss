@@ -185,6 +185,55 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /complaints/{ticketNo}/status:
+    post:
+      tags: [Order]
+      summary: 工单状态流转(OPEN/PROCESSING/CLOSED)
+      operationId: transitionTicket
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [OPEN, PROCESSING, CLOSED] }
+                actor: { type: integer, format: int64 }
+                note: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /complaints/{ticketNo}/escalate:
+    post:
+      tags: [Order]
+      summary: 升级工单优先级
+      operationId: escalateTicket
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actor: { type: integer, format: int64 }
+                note: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /complaints/{ticketNo}/events:
+    get:
+      tags: [Order]
+      summary: 工单状态审计事件列表
+      operationId: listTicketEvents
+      parameters:
+        - { name: ticketNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /callbacks:
     get:
       tags: [Order]
@@ -216,6 +265,27 @@ paths:
       operationId: deleteCallback
       parameters:
         - { name: callbackId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /callbacks/{callbackId}/complete:
+    post:
+      tags: [Order]
+      summary: 回访结果回填(调度结果回写)
+      operationId: completeCallback
+      parameters:
+        - { name: callbackId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                result: { type: string }
+                rating: { type: integer, format: int16 }
+                comment: { type: string }
+                operatorId: { type: integer, format: int64 }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 

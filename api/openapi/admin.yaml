@@ -177,6 +177,12 @@ paths:
   /ar/payment-promises: { $ref: './admin/billing.yaml#/paths/~1ar~1payment-promises' }
   /ar/payment-promises/{id}/status: { $ref: './admin/billing.yaml#/paths/~1ar~1payment-promises~1{id}~1status' }
   /ar/writeoffs: { $ref: './admin/billing.yaml#/paths/~1ar~1writeoffs' }
+  /ar/writeoffs/{id}/approve: { $ref: './admin/billing.yaml#/paths/~1ar~1writeoffs~1{id}~1approve' }
+  /ar/writeoffs/{id}/reject: { $ref: './admin/billing.yaml#/paths/~1ar~1writeoffs~1{id}~1reject' }
+  /ar/credit-profiles/{customerId}/evaluate: { $ref: './admin/billing.yaml#/paths/~1ar~1credit-profiles~1{customerId}~1evaluate' }
+  /ar/collection-tasks/generate: { $ref: './admin/billing.yaml#/paths/~1ar~1collection-tasks~1generate' }
+  /ar/replay/{sourceType}: { $ref: './admin/billing.yaml#/paths/~1ar~1replay~1{sourceType}' }
+  /ar/replay-events: { $ref: './admin/billing.yaml#/paths/~1ar~1replay-events' }
   /ar-metrics: { $ref: './admin/billing.yaml#/paths/~1ar-metrics' }
   /collection-tasks: { $ref: './admin/billing.yaml#/paths/~1collection-tasks' }
   /collection-tasks/{taskId}/status: { $ref: './admin/billing.yaml#/paths/~1collection-tasks~1{taskId}~1status' }
@@ -233,8 +239,12 @@ paths:
   /complaints: { $ref: './admin/order.yaml#/paths/~1complaints' }
   /complaint-metrics: { $ref: './admin/order.yaml#/paths/~1complaint-metrics' }
   /complaints/{ticketNo}/close: { $ref: './admin/order.yaml#/paths/~1complaints~1{ticketNo}~1close' }
+  /complaints/{ticketNo}/status: { $ref: './admin/order.yaml#/paths/~1complaints~1{ticketNo}~1status' }
+  /complaints/{ticketNo}/escalate: { $ref: './admin/order.yaml#/paths/~1complaints~1{ticketNo}~1escalate' }
+  /complaints/{ticketNo}/events: { $ref: './admin/order.yaml#/paths/~1complaints~1{ticketNo}~1events' }
   /callbacks: { $ref: './admin/order.yaml#/paths/~1callbacks' }
   /callbacks/{callbackId}: { $ref: './admin/order.yaml#/paths/~1callbacks~1{callbackId}' }
+  /callbacks/{callbackId}/complete: { $ref: './admin/order.yaml#/paths/~1callbacks~1{callbackId}~1complete' }
   /activation-callbacks: { $ref: './admin/order.yaml#/paths/~1activation-callbacks' }
   /activation-callbacks/{callbackId}/retry: { $ref: './admin/order.yaml#/paths/~1activation-callbacks~1{callbackId}~1retry' }
   /tickets/{ticketNo}/activate: { $ref: './admin/order.yaml#/paths/~1tickets~1{ticketNo}~1activate' }
