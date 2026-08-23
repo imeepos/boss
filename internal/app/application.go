@@ -116,7 +116,8 @@ type Application struct {
 	OpenPlat  openplat.Service // 开放平台(Q4):外部应用凭证/签名/配额/Webhook 订阅
 	AI        ai.Service
 	// Partner 招商引资/合作入驻域(迁移 000098)。
-	Partner partner.Service
+	Partner           partner.Service
+	PartnerCommission partner.CommissionLedgerService
 
 	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
 	Notify notify.Service

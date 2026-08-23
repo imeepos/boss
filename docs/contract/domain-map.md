@@ -39,8 +39,8 @@
 | GIS | GIS | AG-11 | `gis` | 阶段8 | intel | gis |
 | 国际地理基础数据 | — | — | `geo` | 阶段1 | base（web/admin `/base/geo`；docs/admin menu.js 未列） | geo（国家/行政区划/译名，ISO 3166；服务 addresses 国际化，与 gis 分立见 note 2026-08-18-geo-vs-gis-split） |
 | 经营分析 BI | BI | AG-12 | `analytics`(+`report`) | 阶段9 | intel | analytics/report |
-| 客服工单 | CS | AG-07 | 待建 | — | boss(报障) | complaint |
-| 应收信用 | AR | AG-09 | 待建 | — | billing(欠费) | arrears |
+| 客服工单 | CS | AG-07 | `cs`（000118 基础） | 增量(Q1) | boss(报障) | complaint/客服工作台 |
+| 应收信用 | AR | AG-09 | `ar`（000118 基础） | 增量(Q1) | billing(欠费) | arrears/催收队列 |
 | 渠道经销商 | CH | AG-10 | `partner`(入驻先行) | 阶段1(000098) | org(审核页 partner)+企业工作台 | partner 入驻申请审核/我的企业/员工管理/企业订单 |
 | 批发结算 | WHO | AG-13 | 待建 | — | 待建 | 待建 |
 | 品牌区域 | BRAND | AG-14 | `user`(Region) | 阶段1 | org | region/company |

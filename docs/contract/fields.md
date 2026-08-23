@@ -356,6 +356,24 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | 主体 | `SubjectType` / `SubjectRef` | subject_type / subject_ref | account→accounts.id / worker→workers.id / customer→customers.id |
 | — | `LastUsedAt` | last_used_at | 供审计/巡检 |
 | — | `ExpiresAt` | expires_at | 空=永不过期 |
+| 权限模板 | `TemplateCode` | template_code | 空=完整继承主体 RBAC；非空=仅允许模板权限子集 |
+
+`api_key_permission_templates` 与 `api_key_template_permissions` 提供受限 API key 权限模板；模板由平台维护，签发时仅引用 code，不保存明文密钥。
+
+### 1.8 partner_commission_ledger（渠道佣金结算台账，000118）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:---------|:------|:---------|
+| 订单 | `OrderID` | order_id | BIGINT → orders |
+| 渠道企业 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities |
+| 订单金额 | `OrderAmount` | order_amount | NUMERIC(18,2)，下单金额快照 |
+| 佣金比例 | `CommissionRate` | commission_rate | 0~1 |
+| 佣金金额 | `CommissionAmount` | commission_amount | 订单金额×比例，保留两位 |
+| 状态 | `Status` | status | ACCRUED / SETTLED / VOID |
+| 结算时间 | `SettledAt` | settled_at | 已结算时填写 |
+| 结算人 | `SettledBy` | settled_by | → accounts |
+
+> 仅覆盖渠道企业订单的佣金台账与结算，不建设跨运营商批发结算或融资。
 
 ### 1.8 开放平台（open_apps / open_webhook_subscriptions / open_usage_day，internal/domain/openplat，迁移 000121）
 
@@ -438,6 +456,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 > lo_accounts 同名列 `billing_mode`（000102）：订购关系上的付费模式权威态；PREPAID 客户不进月度出账（GenerateBills 过滤），预付费在环节 4 合同收费当场收款落缴费流水。
 
 > 快照列（TS 实体）：`customer_name`（客户姓名）、`offer_name`（产品名），下单时冻结，改名/调价不影响历史订单（与 `price_snapshot` 同规则）。
+
+> 渠道订单接口 `POST /partner/orders` 只接受伙伴账号身份，服务端从伙伴企业档案取得 `legal_entity_id`，再调用同一 `OrderService.Submit`；因此渠道订单复用直营订单的 12 环节、资源核查/端口预占和计费规则，不复制状态机。
 
 ### 3.2 order_stages（订单环节时间轴）
 
@@ -782,7 +802,24 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 > 000059 起本表并入统一 `verifications`（subject_type='customer'）；000070 起新增上表三列。
 > 2026-08-24 起支持阿里云二要素自动核验：通道配置后提交即判定，结论记录 operator_name=「阿里云二要素」、operator_account_id=0；通道未配置/调用失败保持 PENDING 走人工核验（adopted/2026-08-24-realid-channel-aliyun-cloudauth.md）。
 
-## 8B. 招商入驻域（internal/domain/partner，000098）
+## 8B. Q1 客服与应收信用基础（internal/domain/cs + internal/domain/ar，000118）
+
+> CS 扩展既有 `complaints` 工单；AR 扩展既有 `arrears` 快照。跨域只保存稳定 ID，不复制订单、客户、账单、资源或告警事实。
+
+| 页面/概念 | API 字段 | DB 列 | 说明 |
+|:---|:---|:---|:---|
+| 工单优先级 | `priority` | `priority` | LOW/NORMAL/HIGH/URGENT |
+| 升级级别 | `escalationLevel` | `escalation_level` | 0=未升级，正整数递增 |
+| 首次响应 | `firstResponseAt` | `first_response_at` | 首次客服响应时间 |
+| SLA 截止 | `slaDueAt` | `sla_due_at` | 未关闭工单的绝对截止时间 |
+| 账龄快照日 | `snapshotDate` | `snapshot_date` | 客户每日唯一 |
+| 账龄桶 | `days1To30` 等 | `days_1_30` 等 | 1-30/31-60/61-90/90+ 金额 |
+| 催收任务 | `collectionTasks` | `ar_collection_tasks` | PENDING/DOING/DONE/FAILED 人工可接管 |
+| 承诺还款 | `paymentPromises` | `ar_payment_promises` | OPEN/FULFILLED/BROKEN/CANCELED |
+| 核销 | `writeoffs` | `ar_writeoffs` | 金额、原因、审批人和审批时间留痕 |
+| 服务指标 | `metricKey/numerator/denominator/value` | `service_metric_snapshots` | 按日幂等，禁止无样本伪造数据 |
+
+## 8C. 招商入驻域（internal/domain/partner，000098）
 
 `partner_applications`（入驻申请，公开提交；审核前不入 legal_entities/accounts）：
 

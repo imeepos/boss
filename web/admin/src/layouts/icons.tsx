@@ -112,6 +112,15 @@ export function CollapseIcon({ collapsed }: { collapsed: boolean }) {
   )
 }
 
+/** 分组折叠箭头:展开朝下,折叠朝右(描边随 currentColor)。 */
+export function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg {...svgProps} width={14} height={14} aria-hidden>
+      {open ? <path d="m6 9 6 6 6-6" /> : <path d="m9 6 6 6-6 6" />}
+    </svg>
+  )
+}
+
 /** 遮罩图标:引用 public/icons 下原型 SVG,颜色随 currentColor(亮/暗/激活自适应)。 */
 export function MaskIcon({ url, size = 18 }: { url: string; size?: number }) {
   // mask 样式原在 shell.css .mask-icon,现内联(shell.css 已删除)。

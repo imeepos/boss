@@ -1,0 +1,23 @@
+# 渠道订单接口：复用直营订单 OrderService，状态机仍为 terms.md 12 环节。
+paths:
+  /partner/orders:
+    post:
+      tags: [Partner]
+      summary: 企业工作台渠道下单
+      operationId: partnerOrderSubmit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customerId, offerId, addressId, channelId]
+              properties:
+                customerId: { type: integer, format: int64 }
+                offerId: { type: integer, format: int64 }
+                addressId: { type: integer, format: int64 }
+                channelId: { type: integer, format: int64 }
+                billingMode: { type: string, enum: [PREPAID, POSTPAID] }
+                buyMonths: { type: integer, minimum: 0, maximum: 60 }
+                requestId: { type: string }
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
