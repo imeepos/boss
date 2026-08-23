@@ -4,6 +4,8 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner } from '../../../components/business/page-head'
 import type { PostRow } from './filter'
 
 export interface PostFormValues {
@@ -68,8 +70,7 @@ export function PostFormDrawer({
         </>
       }>
       <div className="flex flex-col gap-3.5">
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.post.fDept}</label>
+        <FormField label={t.pages.post.fDept} required>
           <Dropdown
             value={values.deptId ? String(values.deptId) : ''}
             options={[
@@ -79,21 +80,18 @@ export function PostFormDrawer({
             onChange={(v) => onChange({ ...values, deptId: Number(v) || 0 })}
             ariaLabel={t.pages.post.pDept}
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.post.fCode}</label>
+        </FormField>
+        <FormField label={t.pages.post.fCode} required>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.code} placeholder={t.pages.post.pCode}
             onChange={(e) => onChange({ ...values, code: e.target.value })} />
           {!codeOk && values.code !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.post.eCode}</span>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.post.fName}</label>
+        </FormField>
+        <FormField label={t.pages.post.fName} required>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.name} placeholder={t.pages.post.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
           {!nameOk && values.name !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.post.eName}</span>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label>{t.pages.post.fRoles}</label>
+        </FormField>
+        <FormField label={t.pages.post.fRoles}>
           <div className="flex flex-wrap gap-2">
             {roles.map((r) => (
               <label key={r.code} className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 py-1 text-xs text-[var(--shell-content-text)] [&:has(input:checked)]:border-[var(--shell-fab-bg)] [&:has(input:checked)]:bg-[var(--shell-fab-bg)] [&:has(input:checked)]:text-[var(--shell-fab-icon)]">
@@ -102,8 +100,8 @@ export function PostFormDrawer({
               </label>
             ))}
           </div>
-        </div>
-        {submitError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{submitError}</div>}
+        </FormField>
+        {submitError && <ErrorBanner message={submitError} />}
       </div>
     </Drawer>
   )

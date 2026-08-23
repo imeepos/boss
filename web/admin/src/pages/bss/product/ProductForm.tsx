@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { useT } from '../../../i18n'
 import { PRODUCT_STATUSES, type ProductStatus } from './types'
 
@@ -56,42 +58,37 @@ export function ProductFormDrawer({
         </>
       }>
       <div className="flex flex-col gap-3.5">
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.fCompany}</label>
+        <FormField label={p.fCompany} required>
           <Dropdown
             value={values.legalEntityId ? String(values.legalEntityId) : ''}
             options={[{ value: '', label: p.pCompany }, ...companies.map((le) => ({ value: String(le.id), label: le.name }))]}
             onChange={(v) => onChange({ ...values, legalEntityId: Number(v) || 0 })}
             ariaLabel={p.pCompany}
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.fName}</label>
+        </FormField>
+        <FormField label={p.fName} required>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.name} placeholder={p.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
           {!nameOk && values.name !== '' && <span className="text-[11px] text-[var(--color-danger)]">{p.eName}</span>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label>{p.fBandwidth}</label>
+        </FormField>
+        <FormField label={p.fBandwidth}>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.bandwidth} placeholder={p.pBandwidth}
             onChange={(e) => onChange({ ...values, bandwidth: e.target.value })} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.fFee}</label>
+        </FormField>
+        <FormField label={p.fFee} required>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.monthlyFee} placeholder="0.00"
             onChange={(e) => onChange({ ...values, monthlyFee: e.target.value })} />
           {!feeOk && values.monthlyFee !== '' && <span className="text-[11px] text-[var(--color-danger)]">{p.eFee}</span>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label>{p.fStatus}</label>
+        </FormField>
+        <FormField label={p.fStatus}>
           <Dropdown
             value={values.status}
             options={PRODUCT_STATUSES.map((s, i) => ({ value: s, label: p.statusOptions[i] }))}
             onChange={(v) => onChange({ ...values, status: v as ProductStatus })}
             ariaLabel={p.fStatus}
           />
-        </div>
-        {submitError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{submitError}</div>}
+        </FormField>
+        {submitError && <ErrorBanner message={submitError} />}
       </div>
     </Drawer>
   )

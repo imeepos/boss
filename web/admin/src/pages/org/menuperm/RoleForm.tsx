@@ -4,6 +4,8 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner } from '../../../components/business/page-head'
 import {
   applyTemplate, rolePayload, splitPerms,
   type PermissionRow, type RoleDetail,
@@ -85,27 +87,24 @@ export function RoleFormDrawer({ open, state, builtinTemplates, onChange, onClos
         </>
       }>
       <div className="flex flex-col gap-3.5">
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{tr.roleName}</label>
+        <FormField label={tr.roleName} required>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={state.name} placeholder={tr.roleNamePh} maxLength={64}
             onChange={(e) => onChange({ ...state, name: e.target.value })} />
-        </div>
+        </FormField>
         {!state.id && (
-          <div className="flex flex-col gap-1.5">
-            <label>{tr.template}</label>
+          <FormField label={tr.template} hint={tr.templateHint}>
             <Dropdown
               value=""
               options={[{ value: '', label: tr.templateNone }, ...builtinTemplates.map((r) => ({ value: r.code, label: r.name }))]}
               onChange={onTemplate}
               ariaLabel={tr.template}
             />
-            <span className="text-[11px] text-[var(--shell-crumb-text)]">{tr.templateHint}</span>
-          </div>
+        </FormField>
         )}
         <PermGroup title={tr.permsMenu} perms={menu} codes={state.codes} onToggle={(c) => onChange({ ...state, codes: toggle(state.codes, c) })} />
         <PermGroup title={tr.permsAction} perms={action} codes={state.codes} onToggle={(c) => onChange({ ...state, codes: toggle(state.codes, c) })} />
         <span className="text-[11px] text-[var(--shell-crumb-text)]">{tr.permSelected.replace('{n}', String(selected.size))}</span>
-        {submitError && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{submitError}</div>}
+        {submitError && <ErrorBanner message={submitError} />}
       </div>
     </Drawer>
   )
