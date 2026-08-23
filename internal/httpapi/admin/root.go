@@ -60,6 +60,7 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerOpenPlatRoutes(authed, a)
 	registerOrderRoutes(authed, a)
 	registerOrderSubRoutes(authed, a)
+	registerCallbackRoutes(authed, a)
 	registerOrderWorkflowRoutes(authed, a)
 	registerDispatchRoutes(authed, a)
 	registerDashboardRoutes(authed, a)
