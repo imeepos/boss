@@ -76,6 +76,9 @@
 - 2026-08-24 受限 API key：模板码必须从 Lookup 传入认证上下文，Authz 先按模板权限集判定；不能只在签发接口保存 template_code 而继续让 key 继承完整 RBAC。
 - 2026-08-24 API key 回归：异步 `Touch` 测试必须等待原子计数，模板权限测试同时断言允许 `menu:partner-orders` 与拒绝普通管理菜单。
 - 2026-08-24 伙伴 HTTP 回归：直接调用 handler 比装配完整 RBAC 路由更稳定；测试 stub 要按拆分后的 Partner/Commission/Audit/Region 接口分别注入，避免 nil 权限服务 panic。
+- 2026-08-24 真实 E2E 稳定性：共享测试库重跑时，模板编码必须同时满足唯一性和数据库 VARCHAR(32) 长度；优先使用纳秒尾部短码，避免全流程被无关重复键/长度错误阻断。
+- 2026-08-24 伙伴审批 E2E：真实库审批测试必须清理 admin account、partner application、legal entity，并断言初始口令长度、APPROVED 状态和账号租户绑定。
+- 2026-08-24 伙伴佣金 E2E：台账真实库测试若依赖 AGENT 订单，必须明确记录无订单时 skipped；不能把 skipped 误报成通过，需后续用伙伴订单种子补齐。
 - 2026-08-24 工作台统计卡跳转：统计卡必须由组件统一处理鼠标/键盘交互，目标列表页同时消费 URL 条件；今日订单需前后端共同支持时间条件，不能只改变前端地址。
 - 2026-08-24 订单状态趋势：后端趋势接口返回按 terms.md 五种状态拆分的 series，前端图表通过 legend button 切换可见曲线；扩展接口时同步更新后端 contract test、Dashboard DTO 和三份 locale。
 - 本轮 Q1 CS/AR：迁移号查到未合并分支已占 000117，必须让号到 000118；Go 工具不在 PATH（gofmt/go test 均未执行），收尾应明确区分代码门禁未运行与代码错误。
