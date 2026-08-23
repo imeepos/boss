@@ -10,13 +10,43 @@
 | 伙伴入驻审核流程 | `internal/domain/partner/pg_apply.go`；`POST /partner/applications`；`/approve`、`/reject` | `TestPartnerApprovalIntegration`（真实 PostgreSQL） | PASS |
 | 企业工作台 | `internal/httpapi/admin/partner_handlers.go`；`/partner/me`、`/staff`、`/orders` | `partner_handlers_test.go` | PASS |
 | 区域权限 | `internal/domain/partner/pg_region.go`；`GET/PUT /partner/region-scope`；LTREE 过滤订单/员工 | `go test ./internal/domain/partner ./internal/httpapi/admin` | PASS |
-| 渠道订单接口 | `partner_order_handlers.go`；`POST /partner/orders` | handler 回归；直营订单 E2E 12 环节 | PASS |
+| 渠道订单接口 | `partner_order_handlers.go`；`POST /partner/orders` | `partner_order_handlers_test.go`；直营订单 E2E 12 环节 | PASS |
 | 12 环节、资源预占、计费复用 | `internal/domain/order/pg.go`、`pg_workflow.go` | `TestE2E_OrderLifecycle_Integration` | PASS |
 | 佣金结算台账 | `internal/domain/partner/pg_commission.go`；`GET /partner/commissions`、`/settle` | `TestPartnerCommissionLedgerIntegration`（真实 PostgreSQL） | PASS |
 | 佣金自动计提 | `UpdateMap` 完成后对 `AGENT` 订单计提；比例读取 `biz_params` | 佣金单测及台账 E2E | PASS |
 | API key 权限模板 | `internal/domain/apikey`；`internal/pkg/middleware/auth.go`；`partner-orders-read` | `TestAuthzRestrictedPartnerTemplate` | PASS |
 | 渠道审计报表 | `internal/domain/partner/pg_audit.go`；`GET /partner/audit-report` | handler 回归 | PASS |
 | 异常订单拦截/反作弊 | `pg_partner_fraud.go`；每日上限、客户冷却、客户/产品租户校验 | `TestPartnerTenantLockIntegration`（真实 PostgreSQL）及风险单测 | PASS |
+
+## 前端交付证据
+
+伙伴前端页面已纳入 `web/admin` 路由与菜单：
+
+- `/partner/apply`：公开入驻申请
+- `/org/partner`：入驻审核
+- `/partner/home`：我的企业
+- `/partner/staff`：员工管理
+- `/partner/orders`：企业订单
+
+实现证据：
+
+- `web/admin/src/api/partner.ts`
+- `web/admin/src/pages/partner/apply.tsx`
+- `web/admin/src/pages/org/partner/index.tsx`
+- `web/admin/src/pages/partner/home/index.tsx`
+- `web/admin/src/pages/partner/staff/index.tsx`
+- `web/admin/src/pages/partner/orders/index.tsx`
+- `web/admin/src/router/menu.def.ts`
+
+前端门禁已通过：
+
+```bash
+pnpm --dir web/admin run typecheck
+pnpm --dir web/admin run test -- --runInBand
+pnpm --dir web/admin run build
+```
+
+结果：typecheck 通过；45 个测试文件、247 个测试通过；生产构建通过。102 页面级登录点击验收本轮未完成：`http://192.168.0.102:28080/` 返回 404，未将 404 误判为页面 PASS。
 
 ## 已执行命令
 
@@ -37,4 +67,4 @@ BOSS_PG_TEST_DSN='host=192.168.0.102 port=25432 user=boss password=boss dbname=b
 
 - 伙伴 HTTP/PG 全链路单个测试用例尚未把入驻审批后的新账号登录、区域设置、渠道下单、12 环节推进、自动佣金和审计报表全部串成一次旅程。
 - 风控每日上限的并发订单创建尚未做压力级集成测试；已有租户行锁阻塞验收。
-- 前端伙伴工作台视觉冒烟与 102 部署页面验收尚未在本轮执行。
+- 102 页面级登录点击验收尚未完成；当前 102 根 URL 返回 404，需使用实际部署的前端路由或部署完成后再验收。
