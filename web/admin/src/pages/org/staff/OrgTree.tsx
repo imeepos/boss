@@ -1,5 +1,6 @@
 // 左侧组织树:企业→部门→岗位,节点带成员数与操作按钮(建部门/建岗位/编辑/删除)。
 import { useT } from '../../../i18n'
+import { EmptyState } from '../../../components/business/feedback'
 import type { DeptNode, EntityNode, PostNode, Selection } from './tree'
 
 interface OrgTreeProps {
@@ -23,7 +24,7 @@ export function OrgTree(p: OrgTreeProps) {
       {p.tree.map((e) => (
         <EntityRow key={e.id} e={e} {...p} />
       ))}
-      {!p.tree.length && <span className="px-2 py-3 text-xs text-[var(--shell-group-title)]">{t.pages.staff.empty}</span>}
+      {!p.tree.length && <div className="px-2 py-4"><EmptyState text={t.pages.staff.empty} /></div>}
     </div>
   )
 }

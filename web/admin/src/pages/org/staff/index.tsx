@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { PageHead } from '../../../components/business/page-head'
+import { EmptyState } from '../../../components/business/feedback'
 import { buildOrgTree, filterTree, membersOf, type DeptNode, type PostNode, type Selection } from './tree'
 import { OrgTree } from './OrgTree'
 import { MemberPanel } from './MemberPanel'
@@ -130,10 +132,7 @@ export default function StaffOrgPage() {
   const treeBox = 'w-72 flex-none overflow-y-auto rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)] p-2'
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{t.pages.staff.title}</h2>
-        <p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{t.pages.staff.desc}</p>
-      </div>
+      <PageHead title={t.pages.staff.title} desc={t.pages.staff.desc} />
       {error && (
         <div className="mb-4 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">
           {error} <button className="ml-2 cursor-pointer border-none bg-none text-[var(--color-danger)] underline" onClick={load}>{t.pages.audit.refresh}</button>
@@ -165,8 +164,8 @@ export default function StaffOrgPage() {
         {selection
           ? <MemberPanel title={title} members={members} busy={busy} onAdd={addMember} onEdit={(r) => setMemberForm(rowToForm(r))} onToggle={toggleMember} />
           : (
-            <div className="flex min-w-0 flex-1 items-center justify-center rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)] py-20 text-sm text-[var(--shell-group-title)]">
-              {t.pages.staff.selectTip}
+            <div className="flex min-w-0 flex-1 items-center justify-center rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)] py-20">
+              <EmptyState text={t.pages.staff.selectTip} />
             </div>
           )}
       </div>

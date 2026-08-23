@@ -6,6 +6,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
+import { FormField } from '../../../components/business/form-field'
 import { cascadeReset, validateAccount, type AccountFormValues } from './form'
 
 const GROUP_TITLE_CLS = 'my-1.5 -mb-1 text-xs font-semibold tracking-wide text-[var(--shell-group-title)]'
@@ -67,33 +68,28 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
   return (
     <div className="flex flex-col gap-3.5">
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gBasic}</div>
-      <div className="flex flex-col gap-1.5">
-        <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fUsername}</label>
+      <FormField label={t.pages.account.fUsername} required>
         <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.username} placeholder={t.pages.account.pUsername}
           onChange={(e) => set({ username: e.target.value })} />
         {err('invalidUsername') && <span className={ERR_CLS}>{t.pages.account.eUsername}</span>}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fPassword}</label>
+      </FormField>
+      <FormField label={t.pages.account.fPassword} required>
         <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="password" value={values.password}
           placeholder={values.id ? t.pages.account.pPasswordEdit : t.pages.account.pPassword}
           onChange={(e) => set({ password: e.target.value })} />
         {err('shortPassword') && <span className={ERR_CLS}>{t.pages.account.ePassword}</span>}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fRealName}</label>
+      </FormField>
+      <FormField label={t.pages.account.fRealName} required>
         <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.realName} placeholder={t.pages.account.pRealName}
           onChange={(e) => set({ realName: e.target.value })} />
         {err('invalidRealName') && <span className={ERR_CLS}>{t.pages.account.eRealName}</span>}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label>{t.pages.account.fPhone}</label>
+      </FormField>
+      <FormField label={t.pages.account.fPhone}>
         <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.phone} placeholder={t.pages.account.pPhone}
           onChange={(e) => set({ phone: e.target.value })} />
         {err('invalidPhone') && <span className={ERR_CLS}>{t.pages.account.ePhone}</span>}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.pages.account.fRole}</label>
+      </FormField>
+      <FormField label={t.pages.account.fRole} required>
         <Dropdown
           value={values.roleCode}
           options={[{ value: '', label: t.pages.account.pRole }, ...roles]}
@@ -101,20 +97,18 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
           ariaLabel={t.pages.account.fRole}
         />
         {err('roleRequired') && <span className={ERR_CLS}>{t.pages.account.eRole}</span>}
-      </div>
+      </FormField>
 
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gOrg}</div>
-      <div className="flex flex-col gap-1.5">
-        <label>{t.pages.account.fLegalEntity}</label>
+      <FormField label={t.pages.account.fLegalEntity}>
         <Dropdown
           value={values.legalEntityId ? String(values.legalEntityId) : ''}
           options={[{ value: '', label: t.pages.account.pAny }, ...legalEntities]}
           onChange={(v) => onChange(cascadeReset({ ...values, legalEntityId: Number(v) || 0 }, 'legalEntityId'))}
           ariaLabel={t.pages.account.fLegalEntity}
         />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label>{t.pages.account.fDept}</label>
+      </FormField>
+      <FormField label={t.pages.account.fDept}>
         <Dropdown
           value={values.deptId ? String(values.deptId) : ''}
           options={[{ value: '', label: t.pages.account.pAny }, ...departments]}
@@ -122,9 +116,8 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
           ariaLabel={t.pages.account.fDept}
           disabled={!values.legalEntityId}
         />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label>{t.pages.account.fPost}</label>
+      </FormField>
+      <FormField label={t.pages.account.fPost}>
         <Dropdown
           value={values.postId ? String(values.postId) : ''}
           options={[{ value: '', label: t.pages.account.pAny }, ...posts]}
@@ -132,18 +125,17 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
           ariaLabel={t.pages.account.fPost}
           disabled={!values.deptId}
         />
-      </div>
+      </FormField>
 
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gScope}</div>
-      <div className="flex flex-col gap-1.5">
-        <label>{t.pages.account.fRegionScope}</label>
+      <FormField label={t.pages.account.fRegionScope}>
         <Dropdown
           value={values.regionScope}
           options={[{ value: '', label: t.pages.account.scopeAll }, ...regions]}
           onChange={(v) => set({ regionScope: v })}
           ariaLabel={t.pages.account.fRegionScope}
         />
-      </div>
+      </FormField>
     </div>
   )
 }

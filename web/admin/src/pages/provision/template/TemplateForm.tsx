@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { useT } from '../../../i18n'
 import type { LegalEntityRow } from '../../org/company/filter'
 
@@ -49,27 +51,24 @@ export function TemplateForm({
         </>
       }
     >
-      {err && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" role="alert">{err}</div>}
+      {err && <ErrorBanner message={err} />}
       <div className="flex flex-col gap-3.5">
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.legalEntity}</label>
+        <FormField label={p.legalEntity} required>
           <Dropdown
             value={legalEntityId ? String(legalEntityId) : ''}
             options={[{ value: '', label: p.legalEntityPlaceholder }, ...entities.map((x) => ({ value: String(x.id), label: `${x.name} (${x.code})` }))]}
             onChange={(v) => setLegalEntityId(Number(v) || 0)}
             ariaLabel={p.legalEntityPlaceholder}
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.codeLabel}</label>
+        </FormField>
+        <FormField label={p.codeLabel} required>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={code} placeholder={p.codePlaceholder}
             onChange={(e) => setCode(e.target.value)} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{p.nameLabel}</label>
+        </FormField>
+        <FormField label={p.nameLabel} required>
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={name} placeholder={p.namePlaceholder}
             onChange={(e) => setName(e.target.value)} />
-        </div>
+        </FormField>
       </div>
     </Drawer>
   )

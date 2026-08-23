@@ -6,6 +6,7 @@ import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { DatePicker } from '../../../components/DatePicker'
 import { Pagination } from '../../../components/Pagination'
+import { DataTable } from '../../../components/business/data-table'
 import { filterAuditLogs, toAuditLog, type AuditEntry, type AuditLog } from './logic'
 
 export default function AuditPage() {
@@ -74,28 +75,20 @@ export default function AuditPage() {
         </div>
         {error ? <div style={{ color: '#e54545', fontSize: 13, padding: '12px 0' }}>{error}</div> : (
           <>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr>
-                  {t.pages.audit.columns.map((c) => (
-                    <th key={c} style={th}>{c}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {slice.map((r) => (
-                  <tr key={r.logId}>
-                    <td style={td}>{r.time}</td>
-                    <td style={td}>{r.operator}</td>
-                    <td style={td}><span style={tag}>{r.type}</span></td>
-                    <td style={td}>{r.action}</td>
-                    <td style={td}>{r.ip}</td>
-                    <td style={td}><a style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => setDetail(r.logId)}>{t.pages.audit.detail}</a></td>
-                  </tr>
-                ))}
-                {!slice.length && <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: '#999' }}>{t.pages.audit.empty}</td></tr>}
-              </tbody>
-            </table>
+            <DataTable
+              emptyText={t.pages.audit.empty}
+              rows={slice as unknown as Record<string, unknown>[]}
+              columns={[
+                { key: 'time', label: t.pages.audit.columns[0], render: (r) => String(r.time ?? '') },
+                { key: 'operator', label: t.pages.audit.columns[1], render: (r) => String(r.operator ?? '') },
+                { key: 'type', label: t.pages.audit.columns[2], render: (r) => <span style={tag}>{String(r.type)}</span> },
+                { key: 'action', label: t.pages.audit.columns[3], render: (r) => String(r.action ?? '') },
+                { key: 'ip', label: t.pages.audit.columns[4], render: (r) => String(r.ip ?? '') },
+                { key: 'op', label: t.pages.audit.columns[5], render: (r) => (
+                  <a style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => setDetail(String(r.logId))}>{t.pages.audit.detail}</a>
+                ) },
+              ]}
+            />
             <Pagination
               total={filtered.length}
               page={page}
@@ -134,8 +127,6 @@ export default function AuditPage() {
 
 const ctl: React.CSSProperties = { padding: '6px 10px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 13, background: '#fff' }
 const btn: React.CSSProperties = { padding: '6px 14px', border: '1px solid #d9d9d9', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 13 }
-const th: React.CSSProperties = { textAlign: 'left', padding: '8px 12px', background: '#fafafa', borderBottom: '1px solid #eee' }
-const td: React.CSSProperties = { padding: '8px 12px', borderBottom: '1px solid #f5f5f5' }
 const tag: React.CSSProperties = { padding: '1px 8px', borderRadius: 4, fontSize: 12, background: '#f0f5ff', color: '#2f54eb', border: '1px solid #adc6ff' }
 const mask: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
 const modal: React.CSSProperties = { background: '#fff', borderRadius: 8, padding: 20, width: 380 }

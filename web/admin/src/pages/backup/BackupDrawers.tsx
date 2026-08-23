@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
 import { Drawer } from '../../components/Drawer'
+import { ErrorBanner } from '../../components/business/page-head'
 import { filterTables, isBusyError } from './logic'
 import { BTN, BTN_PRIMARY } from './styles'
 
@@ -64,7 +65,7 @@ export function BackupCreateDrawer({ onClose, onChanged, onBusy }: DrawerProps) 
       }
     >
       <p className="m-0 text-xs text-[var(--shell-crumb-text)]">{b.createHint}</p>
-      {err && <p className="m-0 mt-3 text-[13px] text-[var(--color-danger)]">{err}</p>}
+      {err && <div className="mt-3"><ErrorBanner message={err} /></div>}
       <p className="m-0 mt-3 text-[13px] font-medium text-[var(--shell-heading)]">
         {b.selectedCount.replace('{count}', String(selected.size))}
       </p>
@@ -132,7 +133,7 @@ export function RestoreDrawer({ onClose, onChanged, onBusy }: DrawerProps) {
         accept=".gz,.jsonl.gz,application/gzip"
         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
       />
-      {err && <p className="m-0 mt-3 text-[13px] text-[var(--color-danger)]">{err}</p>}
+      {err && <div className="mt-3"><ErrorBanner message={err} /></div>}
     </Drawer>
   )
 }
