@@ -45,5 +45,5 @@
 
 ## 5. 遗留动作
 
-- [ ] 固定每日低峰 pg_dump 备份窗口(docker-compose.backup.yml 已有基建)
+- [x] 每日备份已落地:102 crontab 03:30 调 POST /backup/jobs(2026-08-26 配置并手动触发验证:任务 succeeded、文件下载 1MB gzip 正常)
 - [ ] 000112 部署到 102 后复跑 `contract-probe.mjs` 确认全绿
