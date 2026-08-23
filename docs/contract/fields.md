@@ -357,6 +357,24 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | — | `LastUsedAt` | last_used_at | 供审计/巡检 |
 | — | `ExpiresAt` | expires_at | 空=永不过期 |
 
+### 1.8 开放平台（open_apps / open_webhook_subscriptions / open_usage_day，internal/domain/openplat，迁移 000121）
+
+> 固定用途：Q4 开放平台与互操作（docs/plan/q4-open-platform-plan.md）。外部集成方应用凭证 AppId+Secret，HMAC-SHA256 请求签名验签（区别于 1.7 的内部 bearer key：Secret 需原文落库，决策见 adopted note 2026-08-22-open-platform-secret）；开放面前缀 /api/open/v1，只读或经内部服务校验，禁止直写核心事实表。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| — | `ID` | open_apps.id | BIGSERIAL PK |
+| AppID | `AppID` | app_id | op_<16hex>，公开标识，UNIQUE |
+| — | `Secret` | secret | ops_<32hex>，仅创建时返回一次 |
+| 名称 | `Name` | name | 集成方用途说明 |
+| 状态 | `Status` | status | 1启用 / 0停用（停用即验签失效） |
+| 限流 | `RateLimitRPM` | rate_limit_rpm | 每分钟调用上限，缺省 60 |
+| 配额 | `DailyQuota` | daily_quota | 日调用配额，缺省 10000（open_usage_day 计数） |
+| 沙箱 | `Sandbox` | sandbox | true=沙箱应用（M4 沙箱环境） |
+| — | `LastUsedAt` | last_used_at | 供审计/巡检 |
+| 订阅事件 | `EventType` | open_webhook_subscriptions.event_type | 如 order.activated；同 app+事件+端点唯一 |
+| 回调端点 | `EndpointURL` | endpoint_url | HTTPS 回调地址（M2 投递器消费） |
+
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
 ### 2.1 customers（普通用户/客户主体，源自 customer.html）

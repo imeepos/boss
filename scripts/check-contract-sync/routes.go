@@ -22,7 +22,7 @@ var httpMethods = map[string]bool{"GET": true, "POST": true, "PUT": true, "DELET
 func extractRoutes(root string) (map[string]map[string]bool, error) {
 	routes := map[string]map[string]bool{}
 	fset := token.NewFileSet()
-	for _, face := range []string{"admin", "user", "worker"} {
+	for _, face := range []string{"admin", "user", "worker", "open"} {
 		dir := filepath.Join(root, "internal", "httpapi", face)
 		pkgs, err := parser.ParseDir(fset, dir, func(fi os.FileInfo) bool {
 			return !strings.HasSuffix(fi.Name(), "_test.go")
@@ -115,7 +115,7 @@ func methodCall(e ast.Expr) (recvID, path string, ok bool) {
 
 // normalizePath gin :param → openapi {param};剥离三端 /api/{face}/v1 前缀。
 func normalizePath(p string) string {
-	for _, pfx := range []string{"/api/admin/v1", "/api/user/v1", "/api/worker/v1", "/api/v1"} {
+	for _, pfx := range []string{"/api/admin/v1", "/api/user/v1", "/api/worker/v1", "/api/open/v1", "/api/v1"} {
 		p = strings.TrimPrefix(p, pfx)
 	}
 	segs := strings.Split(p, "/")
@@ -136,7 +136,7 @@ func checkRoutes(root string) int {
 	base := loadBaseline()
 	fails := 0
 	total := 0
-	for _, face := range []string{"admin", "user", "worker"} {
+	for _, face := range []string{"admin", "user", "worker", "open"} {
 		fails += checkFaceRoutes(root, face, routes[face], base)
 		total += len(routes[face])
 	}

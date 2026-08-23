@@ -52,3 +52,34 @@ components:
       in: query
       schema: { type: string }
       description: 状态过滤(枚举见 docs/contract/terms.md 第 3/4 节)
+
+  schemas:
+    OpenPlatApp:
+      type: object
+      description: 开放应用元数据(不含 Secret,迁移 000121)
+      properties:
+        id: { type: integer, format: int64 }
+        appId: { type: string, example: op_0123456789abcdef }
+        name: { type: string }
+        status: { type: integer, enum: [0, 1] }
+        rateLimitRpm: { type: integer }
+        dailyQuota: { type: integer }
+        sandbox: { type: boolean }
+        lastUsedAt: { type: string, description: ISO8601,空=从未使用 }
+        createdAt: { type: string }
+    OpenPlatAppCreated:
+      allOf:
+        - $ref: '#/components/schemas/OpenPlatApp'
+        - type: object
+          properties:
+            secret: { type: string, description: 应用密钥,仅创建响应返回一次 }
+    OpenPlatSubscription:
+      type: object
+      description: Webhook 事件订阅(M2 投递器消费)
+      properties:
+        id: { type: integer, format: int64 }
+        appId: { type: integer, format: int64, description: open_apps.id }
+        eventType: { type: string, example: order.activated }
+        endpointUrl: { type: string }
+        status: { type: integer, enum: [0, 1] }
+        createdAt: { type: string }

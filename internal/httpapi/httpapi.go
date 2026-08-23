@@ -7,6 +7,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/httpapi/admin"
+	"github.com/ymm-001/boss/internal/httpapi/open"
 	"github.com/ymm-001/boss/internal/httpapi/user"
 	"github.com/ymm-001/boss/internal/httpapi/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
@@ -24,4 +25,5 @@ func RegisterRoutes(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	adminapi.Register(r, a, mgr)
 	userapi.Register(r, a, mgr)
 	workerapi.Register(r, a, mgr)
+	openapi.Register(r, a)
 }

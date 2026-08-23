@@ -20,6 +20,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/odn"
+	"github.com/ymm-001/boss/internal/domain/openplat"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
@@ -112,6 +113,7 @@ type Application struct {
 	QuadLink  quadlink.QuadLinkService
 	Asset     asset.AssetService
 	APIKey    apikey.Service
+	OpenPlat  openplat.Service // 开放平台(Q4):外部应用凭证/签名/配额/Webhook 订阅
 	AI        ai.Service
 	// Partner 招商引资/合作入驻域(迁移 000098)。
 	Partner partner.Service

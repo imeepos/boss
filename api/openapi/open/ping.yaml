@@ -1,0 +1,28 @@
+# open 端 Ping 域:连通性与验签自检。
+paths:
+  /ping:
+    get:
+      tags: [Ping]
+      summary: 连通性自检(验签通过即 200)
+      operationId: openPing
+      security:
+        - OpenHmacAuth: []
+      responses:
+        '200':
+          description: 验签通过
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      appRowId: { type: integer, format: int64 }
+                      version: { type: string, example: v1 }
+        '401':
+          description: 缺签名头/应用不存在或停用/验签失败/时间戳超窗
+        '429':
+          description: 限流或日配额超限

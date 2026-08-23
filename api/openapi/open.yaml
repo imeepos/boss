@@ -1,0 +1,38 @@
+# 开放平台对外 REST 契约(open 端,第四端)。
+# 前缀 /api/open/v1,版本化:不兼容变更发 v2,旧版本至少保留两个季度。
+# 鉴权:AppId+Secret HMAC-SHA256 请求签名(非 JWT/API key):
+#   X-BOSS-AppId / X-BOSS-Timestamp(Unix 秒,偏差 >5 分钟拒绝)/ X-BOSS-Nonce / X-BOSS-Signature
+#   签名串 = appId\nMETHOD\npath\ntimestamp\nnonce\nsha256hex(body),HMAC-SHA256(Secret) 后 hex。
+# 限流:每应用 RPM 令牌桶,超限 429;日配额超限 429 + X-BOSS-Quota-Exceeded: true。
+# 红线:开放面只读或经内部服务校验,外部系统不得直接写入订单、账务等核心事实表。
+# 聚合约定与三端一致:域文件放 open/,本文件只做 tags 与内联 $ref 聚合。
+openapi: 3.0.3
+info:
+  title: BOSS 开放平台(open 端) REST API
+  version: 1.0.0
+  description: |
+    外部集成方(支付/短信/实名/税务/地图/设备/AAA 及渠道系统)接入面。
+    认证为 HMAC 请求签名;契约以 docs/contract/{terms,fields,domain-map}.md 为准。
+servers:
+  - url: /api/open/v1
+    description: 开放平台接口前缀(独立于三端账号体系)
+
+tags:
+  - name: Ping
+    description: 连通性与验签自检
+  - name: Order
+    description: 订单只读查询(12 环节状态,terms.md §1)
+
+paths:
+  /ping: { $ref: './open/ping.yaml#/paths/~1ping' }
+  /orders/{orderNo}: { $ref: './open/order.yaml#/paths/~1orders~1{orderNo}' }
+
+components:
+  securitySchemes:
+    OpenHmacAuth:
+      type: apiKey
+      description: |
+        HMAC 请求签名(四个请求头协同):X-BOSS-AppId、X-BOSS-Timestamp、
+        X-BOSS-Nonce、X-BOSS-Signature。签名算法见文件头说明。
+      in: header
+      name: X-BOSS-Signature
