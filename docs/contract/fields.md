@@ -360,6 +360,21 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 
 `api_key_permission_templates` 与 `api_key_template_permissions` 提供受限 API key 权限模板；模板由平台维护，签发时仅引用 code，不保存明文密钥。
 
+### 1.8 partner_commission_ledger（渠道佣金结算台账，000118）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:---------|:------|:---------|
+| 订单 | `OrderID` | order_id | BIGINT → orders |
+| 渠道企业 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities |
+| 订单金额 | `OrderAmount` | order_amount | NUMERIC(18,2)，下单金额快照 |
+| 佣金比例 | `CommissionRate` | commission_rate | 0~1 |
+| 佣金金额 | `CommissionAmount` | commission_amount | 订单金额×比例，保留两位 |
+| 状态 | `Status` | status | ACCRUED / SETTLED / VOID |
+| 结算时间 | `SettledAt` | settled_at | 已结算时填写 |
+| 结算人 | `SettledBy` | settled_by | → accounts |
+
+> 仅覆盖渠道企业订单的佣金台账与结算，不建设跨运营商批发结算或融资。
+
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
 ### 2.1 customers（普通用户/客户主体，源自 customer.html）
@@ -767,7 +782,24 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 > 000059 起本表并入统一 `verifications`（subject_type='customer'）；000070 起新增上表三列。
 > 2026-08-24 起支持阿里云二要素自动核验：通道配置后提交即判定，结论记录 operator_name=「阿里云二要素」、operator_account_id=0；通道未配置/调用失败保持 PENDING 走人工核验（adopted/2026-08-24-realid-channel-aliyun-cloudauth.md）。
 
-## 8B. 招商入驻域（internal/domain/partner，000098）
+## 8B. Q1 客服与应收信用基础（internal/domain/cs + internal/domain/ar，000118）
+
+> CS 扩展既有 `complaints` 工单；AR 扩展既有 `arrears` 快照。跨域只保存稳定 ID，不复制订单、客户、账单、资源或告警事实。
+
+| 页面/概念 | API 字段 | DB 列 | 说明 |
+|:---|:---|:---|:---|
+| 工单优先级 | `priority` | `priority` | LOW/NORMAL/HIGH/URGENT |
+| 升级级别 | `escalationLevel` | `escalation_level` | 0=未升级，正整数递增 |
+| 首次响应 | `firstResponseAt` | `first_response_at` | 首次客服响应时间 |
+| SLA 截止 | `slaDueAt` | `sla_due_at` | 未关闭工单的绝对截止时间 |
+| 账龄快照日 | `snapshotDate` | `snapshot_date` | 客户每日唯一 |
+| 账龄桶 | `days1To30` 等 | `days_1_30` 等 | 1-30/31-60/61-90/90+ 金额 |
+| 催收任务 | `collectionTasks` | `ar_collection_tasks` | PENDING/DOING/DONE/FAILED 人工可接管 |
+| 承诺还款 | `paymentPromises` | `ar_payment_promises` | OPEN/FULFILLED/BROKEN/CANCELED |
+| 核销 | `writeoffs` | `ar_writeoffs` | 金额、原因、审批人和审批时间留痕 |
+| 服务指标 | `metricKey/numerator/denominator/value` | `service_metric_snapshots` | 按日幂等，禁止无样本伪造数据 |
+
+## 8C. 招商入驻域（internal/domain/partner，000098）
 
 `partner_applications`（入驻申请，公开提交；审核前不入 legal_entities/accounts）：
 
@@ -833,18 +865,33 @@ ISSUED/USED/EXPIRED/DISABLED。
 > 000106/000105 增量：`invite_config` 增 `reward_template_id`（邀请奖励券模板，可空）；
 > `coupon_templates` 增 `points_price`（积分兑换价，0=不可）。
 
-## 8D. 忠诚度积分域（internal/domain/loy，000104 最小实现）
+## 8D. 忠诚度积分域（internal/domain/loy，000104 最小实现；000119 完整化）
 
 `loy_point_ledgers`（积分账本，客户唯一）：`customer_id` PK → customers、`balance`
 （CHECK >= 0）、`updated_at`。
 
 `loy_point_entries`（积分流水）：`entry_id` BIGSERIAL PK、`customer_id` → customers、
 `delta`（正充负扣）、`balance_after`（落库后余额快照）、`reason`
-（terms.md：ADMIN_ADJUST/EXCHANGE/EXCHANGE_REVERSAL）、`ref_id`（EXCHANGE 时为模板 id）、
-`created_at`。
+（terms.md：ADMIN_ADJUST/EXCHANGE/EXCHANGE_REVERSAL/PAYMENT_EARN/PAYMENT_REVERSAL/
+TASK_EARN/EXPIRED/COMPENSATION）、`ref_id`（EXCHANGE 时为模板 id；
+PAYMENT_* 时为 payment id，(reason,ref_id) 部分唯一索引保幂等）、
+`expires_at`（获得类流水有效期，空=永久）、`expired`（过期清算标记）、`created_at`。
 
-> 范围：等级/任务/缴费自动积分属完整 LOY（roadmap 三期后），本期仅账本+手动调整+积分换券；
-> 兑换经 LOY→PROMO 服务调用（先扣积分后发券，发券失败补偿回补，见 adopted note）。
+`loy_levels`（积分等级，000119）：`level_id` PK、`name`、`min_points`（达标门槛；
+等级=累计获得积分的正向流水合计匹配最高档）、`status`、`created_at`。
+
+`loy_tasks`（积分任务，000119）：`task_id` PK、`code`（唯一）、`name`、`points`（>0）、
+`period`（ONE_TIME 终身一次 / DAILY 每日 / MONTHLY 每月）、`status`、`created_at`。
+
+`loy_task_completions`（任务完成，000119）：UNIQUE(task_id, customer_id, period_key)
+保周期幂等；`period_key`：ONE_TIME=''、DAILY=YYYY-MM-DD、MONTHLY=YYYY-MM。
+
+`loy_earn_rules`（缴费自动积分规则，000119）：`points_per_yuan`（每 1 元=100 分送 N 分）、
+`min_cents`（起缴门槛）、`expire_days`（获得积分有效期天数，0=永久）、`status`
+（仅最新 ENABLED 行生效，SaveEarnRule 旧行自动失效）。
+
+> 兑换经 LOY→PROMO 服务调用（先扣积分后发券，发券失败补偿回补，见 adopted note）；
+> 过期清算按客户汇总到期获得流水一次性扣减（余额不足只扣到 0，已消费部分不重复扣）。
 
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
