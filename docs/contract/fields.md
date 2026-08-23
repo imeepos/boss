@@ -895,6 +895,26 @@ PAYMENT_* 时为 payment id，(reason,ref_id) 部分唯一索引保幂等）、
 > 兑换经 LOY→PROMO 服务调用（先扣积分后发券，发券失败补偿回补，见 adopted note）；
 > 过期清算按客户汇总到期获得流水一次性扣减（余额不足只扣到 0，已消费部分不重复扣）。
 
+### 8D-2. 券积分对账报表（2028 Q2 交付，GET /coupon-recon 与 /loy/points-recon）
+
+券对账行（一模板一行，`diff=drift` 只看差异行）：
+
+| 页面列名 | 字段名 | 来源 | 枚举/说明 |
+|:---------|:-------|:-----|:---------|
+| 模板 | `TemplateID` / `Name` | coupon_templates | — |
+| 发放计数 | `IssuedQty` | 模板计数器 | 与 `ActualIssued` 核对 |
+| 实发数 | `ActualIssued` | coupons 实数 | 漂移即 COUNTER_DRIFT |
+| 状态分布 | `ByStatus` | coupons 聚合 | ISSUED/USED/EXPIRED/DISABLED |
+| 已核销 | `UsedCount` / `RedemptionCnt` | coupons / coupon_redemptions | 不等即 REDEMPTION_LOST |
+| 核销金额 | `RedeemedAmount` | coupon_redemptions.deducted_amount 合计 | 分 |
+| 面值敞口 | `FaceValueTotal` | ISSUED 券 face_value 合计 | 分 |
+| 差异 | `DiffKind` | — | MATCH / COUNTER_DRIFT / REDEMPTION_LOST |
+
+积分对账行（一客户一行）：`Balance`（账本）vs `EntriesSum`（流水合计），
+`LifetimeEarn`/`ExpiredTotal`/`ByReason`（reason→delta 合计）；
+`DiffKind` = MATCH / BALANCE_DRIFT。账本 loy_point_ledgers 仍为唯一事实源，
+对账只读不改。
+
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。

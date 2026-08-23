@@ -3,6 +3,8 @@ package adminapi
 // 积分域管理端点:余额/流水查询 + 手动调整(000104 最小 LOY)。
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -29,6 +31,38 @@ func registerLoyRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.PUT("/loy/earn-rule", perm, loySaveEarnRule(a))
 
 	g.POST("/loy/expire/run", perm, loyRunExpire(a))
+	g.GET("/loy/points-recon", perm, loyPointsRecon(a))
+}
+
+// pointsReconer Points 的可选对账能力(PGStore 实现,窄口断言)。
+type pointsReconer interface {
+	PointsRecon(ctx context.Context) ([]loy.PointReconRow, loy.PointReconSummary, error)
+}
+
+// loyPointsRecon GET /loy/points-recon:积分对账报表(diff=drift 只看差异行)。
+func loyPointsRecon(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rc, ok := a.Points.(pointsReconer)
+		if !ok {
+			respond(c, apitypes.CodeNotFound, nil)
+			return
+		}
+		rows, sum, err := rc.PointsRecon(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if c.Query("diff") == "drift" {
+			filtered := make([]loy.PointReconRow, 0, len(rows))
+			for _, r := range rows {
+				if r.DiffKind != loy.ReconDiffMatch {
+					filtered = append(filtered, r)
+				}
+			}
+			rows = filtered
+		}
+		respond(c, apitypes.CodeOK, gin.H{"rows": rows, "summary": sum})
+	}
 }
 
 // loyGetPoints GET /points/:customerId:客户积分余额与流水。

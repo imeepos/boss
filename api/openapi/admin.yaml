@@ -271,6 +271,7 @@ paths:
   /coupon-templates/{templateId}/codes: { $ref: './admin/promotion.yaml#/paths/~1coupon-templates~1{templateId}~1codes' }
   /gift-rules: { $ref: './admin/promotion.yaml#/paths/~1gift-rules' }
   /gift-rules/{ruleId}/disable: { $ref: './admin/promotion.yaml#/paths/~1gift-rules~1{ruleId}~1disable' }
+  /coupon-recon: { $ref: './admin/promotion.yaml#/paths/~1coupon-recon' }
   /points/{customerId}: { $ref: './admin/loy.yaml#/paths/~1points~1{customerId}' }
   /points/{customerId}/adjust: { $ref: './admin/loy.yaml#/paths/~1points~1{customerId}~1adjust' }
   /loy/levels: { $ref: './admin/loy.yaml#/paths/~1loy~1levels' }
@@ -279,6 +280,7 @@ paths:
   /loy/tasks/{id}/disable: { $ref: './admin/loy.yaml#/paths/~1loy~1tasks~1{id}~1disable' }
   /loy/earn-rule: { $ref: './admin/loy.yaml#/paths/~1loy~1earn-rule' }
   /loy/expire/run: { $ref: './admin/loy.yaml#/paths/~1loy~1expire~1run' }
+  /loy/points-recon: { $ref: './admin/loy.yaml#/paths/~1loy~1points-recon' }
   /invite-config: { $ref: './admin/userdata.yaml#/paths/~1invite-config' }
   /user-usages: { $ref: './admin/userdata.yaml#/paths/~1user-usages' }
   /diy-guides: { $ref: './admin/userdata.yaml#/paths/~1diy-guides' }

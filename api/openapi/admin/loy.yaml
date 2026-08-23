@@ -134,3 +134,34 @@ paths:
       tags: [Loyalty]
       responses:
         '200': { description: 本次清算客户数 }
+  /loy/points-recon:
+    get:
+      summary: 积分对账报表(账本余额 vs 流水合计,diff=drift 只看漂移行)
+      tags: [Loyalty]
+      parameters:
+        - { name: diff, in: query, schema: { type: string, enum: [drift] } }
+      responses:
+        '200':
+          description: 对账行与汇总
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      rows:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            customerId: { type: integer, format: int64 }
+                            balance: { type: integer, format: int64 }
+                            entriesSum: { type: integer, format: int64 }
+                            lifetimeEarn: { type: integer, format: int64 }
+                            expiredTotal: { type: integer, format: int64 }
+                            byReason: { type: object }
+                            diffKind: { type: string, enum: [MATCH, BALANCE_DRIFT] }
+                      summary: { type: object }
