@@ -88,6 +88,21 @@ func listArrears(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+func arMetricsHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if a.ARMetrics == nil {
+			respondErr(c, billing.ErrNotFound)
+			return
+		}
+		metrics, err := a.ARMetrics.ARMetrics(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, metrics)
+	}
+}
+
 // listStopResumeTasks 停复机任务列表。
 func listStopResumeTasks(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {

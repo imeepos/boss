@@ -2,6 +2,27 @@
 # V1.1 对齐 Go 实现(internal/app/http.go respond):统一 envelope {code,msg,data},HTTP 恒 200。
 # 域文件 inline schema 均描述 data 负载;列表 data 为 {items:[...]} 对象。
 components:
+  schemas:
+    CSMetrics:
+      type: object
+      properties:
+        openCount: { type: integer }
+        processingCount: { type: integer }
+        closedCount: { type: integer }
+        slaBreachedOpen: { type: integer }
+        slaOnTimeClosed: { type: integer }
+        slaOverdueClosed: { type: integer }
+        avgCloseHours: { type: number }
+    ARMetrics:
+      type: object
+      properties:
+        totalAmount: { type: number }
+        customerCount: { type: integer }
+        stoppedCount: { type: integer }
+        overdueBillCount: { type: integer }
+        agingBuckets: { type: object }
+        lastRunAt: { type: string }
+
   responses:
     Ok:
       description: 操作成功(code=0,data 由各接口定义或为空)

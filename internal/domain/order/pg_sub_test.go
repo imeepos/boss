@@ -68,10 +68,10 @@ func TestPGStore_ListComplaints(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "created_at", "remote_diagnosis", "sla_deadline"}
+	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
 	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "TKT-20250817-012", int64(8), int64(0), int64(1), "主品牌·企业", "SINGLE_OUTAGE", "PROCESSING", "2025-08-17 10:00", "", ""))
+			AddRow(int64(1), "TKT-20250817-012", int64(8), int64(0), int64(1), "主品牌·企业", "SINGLE_OUTAGE", "PROCESSING", "2025-08-17 10:00", "", "", nil, int64(0), ""))
 
 	s := NewPGStore(mock, stubExists{})
 	got, err := s.ListComplaints(context.Background())

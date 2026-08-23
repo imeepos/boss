@@ -12,8 +12,8 @@ import (
 func (s *PGStore) GetArrears(ctx context.Context, customerID int64) (*Arrears, error) {
 	var a Arrears
 	err := s.db.QueryRow(ctx,
-		`SELECT id, customer_id, amount, days, status FROM arrears WHERE customer_id = $1`, customerID).
-		Scan(&a.ID, &a.CustomerID, &a.Amount, &a.Days, &a.Status)
+		`SELECT id, customer_id, amount, days, status, updated_at, overdue_since FROM arrears WHERE customer_id = $1`, customerID).
+		Scan(&a.ID, &a.CustomerID, &a.Amount, &a.Days, &a.Status, &a.UpdatedAt, &a.OverdueSince)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -27,11 +27,11 @@ func (s *PGStore) GetArrears(ctx context.Context, customerID int64) (*Arrears, e
 func (s *PGStore) UpsertArrears(ctx context.Context, a Arrears) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO arrears(customer_id, amount, days, status)
-		VALUES($1,$2,$3,$4)
-		ON CONFLICT (customer_id) DO UPDATE SET amount = EXCLUDED.amount, days = EXCLUDED.days, status = EXCLUDED.status
+		INSERT INTO arrears(customer_id, amount, days, status, overdue_since)
+		VALUES($1,$2,$3,$4,$5)
+		ON CONFLICT (customer_id) DO UPDATE SET amount = EXCLUDED.amount, days = EXCLUDED.days, status = EXCLUDED.status, overdue_since = EXCLUDED.overdue_since, updated_at = now()
 		RETURNING id`,
-		a.CustomerID, a.Amount, a.Days, a.Status).Scan(&id)
+		a.CustomerID, a.Amount, a.Days, a.Status, a.OverdueSince).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("billing: upsert arrears: %w", err)
 	}

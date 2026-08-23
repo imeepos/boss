@@ -17,6 +17,7 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 全额退款(000112):流水 REFUNDED 留痕 + 账单回 UNPAID;发票不自动作废。
 	g.POST("/payments/:id/refund", requirePerm(a.User, "menu:payment"), refundPayment(a))
 	g.GET("/arrears", requirePerm(a.User, "menu:arrears"), listArrears(a))
+	g.GET("/ar-metrics", requirePerm(a.User, "menu:arrears"), arMetricsHandler(a))
 	g.GET("/stop-resume-tasks", requirePerm(a.User, "menu:stopsrv"), listStopResumeTasks(a))
 	// 欠费停机/复机:为客户生成停复机任务(经其 1:1 LO 账号)。网络侧执行在阶段7。
 	stop := g.Group("/arrears", requirePerm(a.User, "menu:stopsrv"))

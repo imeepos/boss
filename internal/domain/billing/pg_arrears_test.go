@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
@@ -18,10 +19,10 @@ func TestPGStore_GetArrears(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, customer_id, amount, days, status FROM arrears`).
+		mock.ExpectQuery(`SELECT id, customer_id, amount, days, status, updated_at, overdue_since FROM arrears`).
 			WithArgs(int64(1)).
-			WillReturnRows(mock.NewRows([]string{"id", "customer_id", "amount", "days", "status"}).
-				AddRow(int64(1), int64(1), 299.00, int32(30), "催收中"))
+			WillReturnRows(mock.NewRows([]string{"id", "customer_id", "amount", "days", "status", "updated_at", "overdue_since"}).
+				AddRow(int64(1), int64(1), 299.00, int32(30), "COLLECTING", time.Now(), nil))
 
 		s := NewPGStore(mock)
 		a, err := s.GetArrears(context.Background(), 1)
@@ -42,7 +43,7 @@ func TestPGStore_GetArrears(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, customer_id, amount, days, status FROM arrears`).
+		mock.ExpectQuery(`SELECT id, customer_id, amount, days, status, updated_at, overdue_since FROM arrears`).
 			WithArgs(int64(99)).
 			WillReturnError(pgx.ErrNoRows)
 
@@ -66,11 +67,11 @@ func TestPGStore_UpsertArrears(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO arrears`).
-		WithArgs(int64(1), 299.00, int32(30), "催收中").
+		WithArgs(int64(1), 299.00, int32(30), "COLLECTING", (*time.Time)(nil)).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
 
 	s := NewPGStore(mock)
-	id, err := s.UpsertArrears(context.Background(), Arrears{CustomerID: 1, Amount: 299.00, Days: 30, Status: "催收中"})
+	id, err := s.UpsertArrears(context.Background(), Arrears{CustomerID: 1, Amount: 299.00, Days: 30, Status: "COLLECTING"})
 	if err != nil {
 		t.Fatalf("UpsertArrears: %v", err)
 	}

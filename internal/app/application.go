@@ -97,6 +97,8 @@ type Application struct {
 
 	Order       order.OrderService
 	WorkOrder   order.WorkOrderService
+	CSMetrics   order.CSMetricsReader
+	ARMetrics   billing.ARMetricsReader
 	OrderLedger order.OrderLedgerService
 	Channel     order.ChannelService
 

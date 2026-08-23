@@ -1,14 +1,19 @@
 package billing
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Arrears 欠费态快照(应收信用域,客户1:1)。
 type Arrears struct {
-	ID         int64
-	CustomerID int64
-	Amount     float64 // 欠费金额
-	Days       int32   // 欠费天数
-	Status     string  // 催收中/已停机等
+	ID           int64
+	CustomerID   int64
+	Amount       float64    // 欠费金额
+	Days         int32      // 欠费天数
+	Status       string     // COLLECTING/STOPPED
+	UpdatedAt    time.Time  `json:"updatedAt"`
+	OverdueSince *time.Time `json:"overdueSince,omitempty"`
 }
 
 // StopResumeTask 停复机任务流水(欠费停机/缴费复机)。

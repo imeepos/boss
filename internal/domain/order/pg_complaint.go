@@ -14,7 +14,7 @@ func (s *PGStore) ListComplaints(ctx context.Context) ([]Complaint, error) {
 		       type, status,
 		       COALESCE(TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI'), ''),
 		       COALESCE(remote_diagnosis, ''),
-		       COALESCE(TO_CHAR(sla_deadline, 'YYYY-MM-DD HH24:MI'), '')
+		       COALESCE(TO_CHAR(sla_deadline, 'YYYY-MM-DD HH24:MI'), ''), closed_at, COALESCE(closed_by, 0), resolution
 		FROM complaints ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("order: list complaints: %w", err)
@@ -25,7 +25,7 @@ func (s *PGStore) ListComplaints(ctx context.Context) ([]Complaint, error) {
 		var c Complaint
 		if err := rows.Scan(&c.ID, &c.TicketNo, &c.CustomerID, &c.OrderID,
 			&c.LegalEntityID, &c.LegalEntityName, &c.Type, &c.Status,
-			&c.CreatedAt, &c.RemoteDiagnosis, &c.SlaDeadline); err != nil {
+			&c.CreatedAt, &c.RemoteDiagnosis, &c.SlaDeadline, &c.ClosedAt, &c.ClosedBy, &c.Resolution); err != nil {
 			return nil, fmt.Errorf("order: scan complaint: %w", err)
 		}
 		out = append(out, c)
@@ -75,7 +75,7 @@ func (s *PGStore) CreateComplaint(ctx context.Context, c Complaint) (int64, erro
 
 // CloseComplaint 投诉办结(ticketNo 寻址,status→CLOSED);未命中返回 ErrOrderNotFound。
 func (s *PGStore) CloseComplaint(ctx context.Context, ticketNo string) error {
-	tag, err := s.db.Exec(ctx, `UPDATE complaints SET status='CLOSED' WHERE ticket_no=$1`, ticketNo)
+	tag, err := s.db.Exec(ctx, `UPDATE complaints SET status='CLOSED', closed_at=now() WHERE ticket_no=$1`, ticketNo)
 	if err != nil {
 		return fmt.Errorf("order: close complaint: %w", err)
 	}

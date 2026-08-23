@@ -23,6 +23,21 @@ func orderListComplaintsHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+func orderCSMetricsHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if a.CSMetrics == nil {
+			respondErr(c, order.ErrOrderNotFound)
+			return
+		}
+		metrics, err := a.CSMetrics.CSMetrics(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, metrics)
+	}
+}
+
 // orderCloseComplaintHandler POST /complaints/{ticketNo}/close:办结报障。
 func orderCloseComplaintHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -167,6 +167,14 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /complaint-metrics:
+    get:
+      tags: [Order]
+      summary: 客服工单状态与 SLA 指标
+      operationId: complaintMetrics
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /complaints/{ticketNo}/close:
     post:
       tags: [Order]

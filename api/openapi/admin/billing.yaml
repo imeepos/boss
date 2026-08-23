@@ -51,6 +51,14 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /ar-metrics:
+    get:
+      tags: [Billing]
+      summary: 应收信用账龄与停机指标
+      operationId: arMetrics
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /arrears:
     get:
       tags: [Billing]

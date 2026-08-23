@@ -1,6 +1,9 @@
 package order
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // DispatchTicket 派单工单(订单1:1,指派师傅)。
 type DispatchTicket struct {
@@ -20,17 +23,20 @@ type DispatchTicket struct {
 
 // Complaint 报障工单(客服域,客户报障与处理)。
 type Complaint struct {
-	ID              int64  `json:"id"`
-	TicketNo        string `json:"ticketNo"`
-	CustomerID      int64  `json:"customerId"`
-	OrderID         int64  `json:"orderId"` // 0=无关联订单
-	LegalEntityID   int64  `json:"legalEntityId"`
-	LegalEntityName string `json:"legalEntityName"`
-	Type            string `json:"type"`
-	Status          string `json:"status"` // OPEN/PROCESSING/CLOSED
-	CreatedAt       string `json:"createdAt"`
-	RemoteDiagnosis string `json:"remoteDiagnosis"`
-	SlaDeadline     string `json:"slaDeadline"` // SLA 截止时间(派单时写入,空=无 SLA 或已过期)
+	ID              int64      `json:"id"`
+	TicketNo        string     `json:"ticketNo"`
+	CustomerID      int64      `json:"customerId"`
+	OrderID         int64      `json:"orderId"` // 0=无关联订单
+	LegalEntityID   int64      `json:"legalEntityId"`
+	LegalEntityName string     `json:"legalEntityName"`
+	Type            string     `json:"type"`
+	Status          string     `json:"status"` // OPEN/PROCESSING/CLOSED
+	CreatedAt       string     `json:"createdAt"`
+	RemoteDiagnosis string     `json:"remoteDiagnosis"`
+	SlaDeadline     string     `json:"slaDeadline"` // SLA 截止时间(派单时写入,空=无 SLA 或已过期)
+	ClosedAt        *time.Time `json:"closedAt,omitempty"`
+	ClosedBy        int64      `json:"closedBy,omitempty"`
+	Resolution      string     `json:"resolution,omitempty"`
 }
 
 // complaintTypeLabels complaints.type → 故障类型中文标签(对齐 docs/contract/complaint-type-map.md)。

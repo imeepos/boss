@@ -12,6 +12,7 @@ import (
 // registerOrderSubRoutes 注册订单子表路由(承接 api/openapi/admin/order.yaml)。
 func registerOrderSubRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/complaints", requirePerm(a.User, "menu:complaint"), orderListComplaintsHandler(a))
+	g.GET("/complaint-metrics", requirePerm(a.User, "menu:complaint"), orderCSMetricsHandler(a))
 	g.POST("/complaints/:ticketNo/close", requirePerm(a.User, "menu:complaint"), orderCloseComplaintHandler(a))
 
 	g.GET("/dismantles", requirePerm(a.User, "menu:dismantle"), orderListDismantlesHandler(a))

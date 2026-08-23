@@ -126,6 +126,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 		Order:       ord,
 		WorkOrder:   ord,
+		CSMetrics:   ord,
+		ARMetrics:   bill,
 		OrderLedger: ord,
 		Channel:     ord,
 
