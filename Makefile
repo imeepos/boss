@@ -66,6 +66,7 @@ web-admin-check:
 	pnpm --dir web/admin typecheck
 	pnpm --dir web/admin test
 	pnpm --dir web/admin build
+	node scripts/check-ds-adoption.js
 
 ## 从 proto 生成 gRPC 代码
 proto:

@@ -1,6 +1,8 @@
 // 个人工作台各分区共享的样式常量与展示型小组件。
 // 样式:tailwind 原子类,令牌走 shell-* 体系,双主题自动切换。
+// 重合件复用设计系统(page-patterns.md):SectionTitle=PageHead 包装。
 import { Link } from 'react-router-dom'
+import { PageHead } from '../../components/business/page-head'
 
 export const PAGE = 'border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6 shadow-[var(--shell-card-shadow)] md:p-8'
 export const BOX = 'grid gap-[7px] border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] p-4.5'
@@ -13,12 +15,7 @@ export const TIP = 'mt-4 bg-[var(--shell-menu-hover-bg)] px-3.5 py-2.5 text-xs l
 export const LIST_BTN = 'flex w-full min-h-16 cursor-pointer items-center justify-between border-0 border-b border-[var(--shell-side-border)] bg-transparent px-1 py-3 text-left text-[var(--shell-heading)] hover:text-[var(--color-brand-gold-600)]'
 
 export function SectionTitle({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div className="mb-0 border-b border-[var(--shell-side-border)] pb-[18px]">
-      <h1 className="m-0 mb-1.5 text-lg font-semibold text-[var(--shell-heading)]">{title}</h1>
-      <p className="m-0 text-[13px] text-[var(--shell-content-text)]">{desc}</p>
-    </div>
-  )
+  return <PageHead title={title} desc={desc} />
 }
 
 export function OverviewLink({ title, desc, href }: { title: string; desc: string; href: string }) {
