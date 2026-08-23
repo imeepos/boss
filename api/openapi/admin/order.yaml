@@ -185,6 +185,40 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /callbacks:
+    get:
+      tags: [Order]
+      summary: 客服回访计划列表
+      operationId: listCallbacks
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Order]
+      summary: 创建客服回访计划
+      operationId: createCallback
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /callbacks/{callbackId}:
+    put:
+      tags: [Order]
+      summary: 更新客服回访计划
+      operationId: updateCallback
+      parameters:
+        - { name: callbackId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [Order]
+      summary: 删除客服回访计划
+      operationId: deleteCallback
+      parameters:
+        - { name: callbackId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /activation-callbacks:
     get:
       tags: [Order]

@@ -229,6 +229,8 @@ paths:
   /complaints: { $ref: './admin/order.yaml#/paths/~1complaints' }
   /complaint-metrics: { $ref: './admin/order.yaml#/paths/~1complaint-metrics' }
   /complaints/{ticketNo}/close: { $ref: './admin/order.yaml#/paths/~1complaints~1{ticketNo}~1close' }
+  /callbacks: { $ref: './admin/order.yaml#/paths/~1callbacks' }
+  /callbacks/{callbackId}: { $ref: './admin/order.yaml#/paths/~1callbacks~1{callbackId}' }
   /activation-callbacks: { $ref: './admin/order.yaml#/paths/~1activation-callbacks' }
   /activation-callbacks/{callbackId}/retry: { $ref: './admin/order.yaml#/paths/~1activation-callbacks~1{callbackId}~1retry' }
   /tickets/{ticketNo}/activate: { $ref: './admin/order.yaml#/paths/~1tickets~1{ticketNo}~1activate' }

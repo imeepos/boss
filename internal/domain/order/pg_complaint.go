@@ -75,7 +75,16 @@ func (s *PGStore) CreateComplaint(ctx context.Context, c Complaint) (int64, erro
 
 // CloseComplaint 投诉办结(ticketNo 寻址,status→CLOSED);未命中返回 ErrOrderNotFound。
 func (s *PGStore) CloseComplaint(ctx context.Context, ticketNo string) error {
-	tag, err := s.db.Exec(ctx, `UPDATE complaints SET status='CLOSED', closed_at=now() WHERE ticket_no=$1`, ticketNo)
+	tag, err := s.db.Exec(ctx, `
+		WITH current AS (
+			SELECT id, status FROM complaints WHERE ticket_no=$1
+		), changed AS (
+			UPDATE complaints c SET status='CLOSED', closed_at=now()
+			FROM current WHERE c.id=current.id
+			RETURNING c.id, current.status AS from_status
+		)
+		INSERT INTO cs_ticket_events(ticket_id, event_type, from_status, to_status, note)
+		SELECT id, 'STATUS_CHANGED', from_status, 'CLOSED', 'complaint closed' FROM changed`, ticketNo)
 	if err != nil {
 		return fmt.Errorf("order: close complaint: %w", err)
 	}
