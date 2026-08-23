@@ -27,6 +27,18 @@ func apikeyListHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// apikeyTemplateListHandler GET /api-key-templates:列出受限权限模板。
+func apikeyTemplateListHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		list, err := a.APIKey.ListTemplates(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	}
+}
+
 // apikeyCreateHandler POST /api-keys:签发 API key(主体必真实存在,避免签出悬空密钥)。
 func apikeyCreateHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -39,7 +51,7 @@ func apikeyCreateHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
-		res, err := a.APIKey.Create(c.Request.Context(), req.SubjectType, req.SubjectRef, claims.AccountID, req.Name)
+		res, err := a.APIKey.Create(c.Request.Context(), req.SubjectType, req.SubjectRef, claims.AccountID, req.Name, req.TemplateCode)
 		if err != nil {
 			respondErr(c, err)
 			return
