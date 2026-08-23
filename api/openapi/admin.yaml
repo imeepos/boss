@@ -384,6 +384,13 @@ paths:
   /reports/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1latest' }
   /reports/recon/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1recon~1latest' }
   /compensation-tasks: { $ref: './admin/intel.yaml#/paths/~1compensation-tasks' }
+  /comp-tasks: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks' }
+  /comp-tasks/{id}: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}' }
+  /comp-tasks/{id}/claim: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1claim' }
+  /comp-tasks/{id}/transfer: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1transfer' }
+  /comp-tasks/{id}/retry: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1retry' }
+  /comp-tasks/{id}/replay: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1replay' }
+  /comp-tasks/{id}/close: { $ref: './admin/comp-tasks.yaml#/paths/~1comp-tasks~1{id}~1close' }
   /reports/{reportId}/send: { $ref: './admin/intel.yaml#/paths/~1reports~1{reportId}~1send' }
   /db-patrol/orphans: { $ref: './admin/intel.yaml#/paths/~1db-patrol~1orphans' }
   /db-patrol/latest: { $ref: './admin/intel.yaml#/paths/~1db-patrol~1latest' }

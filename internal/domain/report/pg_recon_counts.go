@@ -1,6 +1,7 @@
 package report
 
-// 五域每日对账只读计数(Q2):0=OK,非 0=异常条数,由 DailyRecon 落快照。
+// 每日对账只读计数(Q2/S2):0=OK,非 0=异常条数,由 DailyRecon 落快照。
+// S2 扩展:发票、积分、GIS 投影、开放平台投递。
 // 全部为单条 count SQL,失败即连接问题,整轮报错。
 
 import (
@@ -16,7 +17,7 @@ type reconQuery struct {
 	sql    string
 }
 
-// reconQueries 五域检查清单(订单×2/四码/资源/账务/GIS 口径)。
+// reconQueries 检查清单(订单×2/四码/资源/账务/GIS/发票/积分/Webhook 口径)。
 var reconQueries = []reconQuery{
 	{
 		domain: "order", name: "stuckReserved", detail: "RESERVED 超 24h 未推进(超时释放循环应清零)",
@@ -46,6 +47,27 @@ var reconQueries = []reconQuery{
 		domain: "gis", name: "usedPortNoOrder", detail: "地图口径:端口 USED 但订单引用悬空",
 		sql: `SELECT count(*) FROM ports p WHERE p.status = 'USED'
 		      AND (p.order_id IS NULL OR NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = p.order_id AND o.status IN ('INSTALLING','DONE')))`,
+	},
+	{
+		domain: "billing", name: "taxFailed", detail: "税局开具失败待重试",
+		sql: `SELECT count(*) FROM invoices WHERE tax_status = 'FAILED'`,
+	},
+	{
+		domain: "loy", name: "pointsReconDiff", detail: "积分流水与账本差异非零",
+		sql: `SELECT count(*) FROM (
+			SELECT lt.id FROM loy_ledgers lt
+			LEFT JOIN loy_entries le ON le.ledger_id = lt.id
+			WHERE lt.balance != COALESCE((SELECT SUM(le.amount) FROM loy_entries le WHERE le.ledger_id = lt.id), 0)
+			LIMIT 100
+		) sub`,
+	},
+	{
+		domain: "gis", name: "projectionStale", detail: "GIS 投影超过 24h 未更新",
+		sql: `SELECT count(*) FROM gis_points WHERE updated_at < now() - interval '24 hours'`,
+	},
+	{
+		domain: "openplat", name: "webhookFailures", detail: "Webhook 投递失败超 3 次",
+		sql: `SELECT count(*) FROM open_webhook_deliveries WHERE status = 'FAILED' AND retry_count >= 3`,
 	},
 }
 

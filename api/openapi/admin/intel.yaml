@@ -103,8 +103,8 @@ paths:
   /reports/recon/latest:
     get:
       tags: [Intel]
-      summary: 最新每日数据对账快照(五域检查:订单/四码/资源/账务/GIS;每日 03:00 定时产出)
-      description: Q2 每日对账:六项只读计数检查,allOK=false 时异常进 URGENT 待办;无快照 code=404。permCode menu:report。
+      summary: 最新每日数据对账快照(八域检查:订单/四码/资源/账务/GIS/发票/积分/Webhook;每日 03:00 定时产出)
+      description: Q2/S2 每日对账:十项只读计数检查,allOK=false 时异常进 URGENT 待办;无快照 code=404。permCode menu:report。
       operationId: getLatestRecon
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Item' }
@@ -112,8 +112,8 @@ paths:
   /compensation-tasks:
     get:
       tags: [Intel]
-      summary: 补偿任务中心(六类跨域补偿任务聚合,每项带可回放 retry/settle 路径)
-      description: Q2 补偿任务中心:provisionTask/stopResume/activationCallback/taxInvoice/cdrKafka/reconBatch;只读聚合,回放调各域 retry 接口。permCode menu:report。
+      summary: 补偿任务中心(九类跨域补偿任务聚合,每项带可回放 retry/settle 路径)
+      description: S2 补偿任务中心:provisionTask/stopResume/activationCallback/taxInvoice/cdrKafka/reconBatch/webhookDelivery/couponRecon/pointsFailed;只读聚合,回放调各域 retry 接口或 comp-tasks/:id/replay。permCode menu:report。
       operationId: listCompensationTasks
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }

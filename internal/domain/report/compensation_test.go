@@ -7,8 +7,8 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-// CompensationTasks(补偿任务中心)形状回归:六类查询全执行,
-// retryPath 按 refID 拼装,cdrKafka 聚合 0 不出条目。
+// CompensationTasks(补偿任务中心)形状回归:九类查询全执行,
+// retryPath 按 refID 拼装,cdrKafka/webhookDelivery/couponRecon 聚合 0 不出条目。
 func TestPGStore_CompensationTasks(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -28,6 +28,12 @@ func TestPGStore_CompensationTasks(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
 	mock.ExpectQuery(`FROM reconciliation_batches`).
 		WillReturnRows(pgxmock.NewRows([]string{"batch_no"}).AddRow("PC-20260826-01"))
+	mock.ExpectQuery(`FROM open_webhook_deliveries`).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
+	mock.ExpectQuery(`FROM coupons`).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
+	mock.ExpectQuery(`FROM loy_entries`).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
 
 	s := NewPGStore(mock)
 	tasks, err := s.CompensationTasks(context.Background())
@@ -35,9 +41,9 @@ func TestPGStore_CompensationTasks(t *testing.T) {
 		t.Fatalf("CompensationTasks: %v", err)
 	}
 	if len(tasks) != 4 {
-		t.Fatalf("tasks=%d, want 4(cdrKafka=0 不出条目): %+v", len(tasks), tasks)
+		t.Fatalf("tasks=%d, want 4(cdrKafka/webhookDelivery/couponRecon/pointsFailed=0 不出条目): %+v", len(tasks), tasks)
 	}
-	byType := map[string]CompTask{}
+	byType := map[string]CompTaskView{}
 	for _, t := range tasks {
 		byType[t.Type] = t
 	}
@@ -73,6 +79,12 @@ func TestPGStore_CompensationTasks_CdrAggregate(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("12"))
 	mock.ExpectQuery(`FROM reconciliation_batches`).
 		WillReturnRows(pgxmock.NewRows([]string{"x"}))
+	mock.ExpectQuery(`FROM open_webhook_deliveries`).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
+	mock.ExpectQuery(`FROM coupons`).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
+	mock.ExpectQuery(`FROM loy_entries`).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
 
 	s := NewPGStore(mock)
 	tasks, err := s.CompensationTasks(context.Background())
@@ -90,15 +102,15 @@ func TestPGStore_CompensationTasks_CdrAggregate(t *testing.T) {
 // fakeCompStore 基于 fakeReconStore(已实现 Store),补 CompTaskLister。
 type fakeCompStore struct {
 	fakeReconStore
-	tasks []CompTask
+	tasks []CompTaskView
 }
 
-func (f *fakeCompStore) CompensationTasks(context.Context) ([]CompTask, error) {
+func (f *fakeCompStore) CompensationTasks(context.Context) ([]CompTaskView, error) {
 	return f.tasks, nil
 }
 
 func TestReportService_CompensationTasks(t *testing.T) {
-	r := &ReportService{St: &fakeCompStore{tasks: []CompTask{{Domain: "order", Type: "activationCallback"}}}}
+	r := &ReportService{St: &fakeCompStore{tasks: []CompTaskView{{Domain: "order", Type: "activationCallback"}}}}
 	got, err := r.CompensationTasks(context.Background())
 	if err != nil || len(got) != 1 {
 		t.Fatalf("got=%+v err=%v", got, err)

@@ -1,0 +1,103 @@
+paths:
+  /comp-tasks:
+    get:
+      tags: [Intel]
+      summary: 补偿任务列表(过滤+分页;支持 status/source/priority/bizType/assigneeId)
+      description: S2 统一补偿任务/责任队列。menu:report。
+      operationId: listCompTasks
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [OPEN, CLAIMED, DOING, DONE, CLOSED] } }
+        - { name: source, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string, enum: [LOW, NORMAL, HIGH, URGENT] } }
+        - { name: bizType, in: query, schema: { type: string } }
+        - { name: assigneeId, in: query, schema: { type: integer, format: int64 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /comp-tasks/{id}:
+    get:
+      tags: [Intel]
+      summary: 补偿任务详情(含审计日志)
+      description: 返回完整 CompTask 实体,auditLog 为审计事件数组。menu:report。
+      operationId: getCompTask
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+        '404': { $ref: './schemas.yaml#/components/responses/NotFound' }
+
+  /comp-tasks/{id}/claim:
+    post:
+      tags: [Intel]
+      summary: 领取补偿任务(OPEN→CLAIMED)
+      description: 当前操作人认领任务,自动记 audit_log。menu:report。
+      operationId: claimCompTask
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '409': { $ref: './schemas.yaml#/components/responses/Conflict' }
+
+  /comp-tasks/{id}/transfer:
+    post:
+      tags: [Intel]
+      summary: 转派补偿任务(变更 assignee)
+      description: 指定新负责人,自动记 audit_log。menu:report。
+      operationId: transferCompTask
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [toId, toName]
+              properties:
+                toId: { type: integer, format: int64 }
+                toName: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /comp-tasks/{id}/retry:
+    post:
+      tags: [Intel]
+      summary: 重试补偿任务(计数+1,不改变状态)
+      description: 记录重试次数和最后重试时间,自动记 audit_log。menu:report。
+      operationId: retryCompTask
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /comp-tasks/{id}/replay:
+    post:
+      tags: [Intel]
+      summary: 回放补偿任务(CLOSED→OPEN,清空重试记录)
+      description: 仅对已关闭任务生效:重开为 OPEN,重置 retry_count=0,清空关闭信息。menu:report。
+      operationId: replayCompTask
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '409': { $ref: './schemas.yaml#/components/responses/Conflict' }
+
+  /comp-tasks/{id}/close:
+    post:
+      tags: [Intel]
+      summary: 关闭补偿任务(任意非CLOSED→CLOSED)
+      description: 可选 reason 参数说明关闭原因,自动记 audit_log。menu:report。
+      operationId: closeCompTask
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+        '409': { $ref: './schemas.yaml#/components/responses/Conflict' }

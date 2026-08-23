@@ -134,6 +134,9 @@ type Application struct {
 	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
 	Notify notify.Service
 
+	// CompTask 统一补偿任务/责任队列(S2):失败来源汇聚 + 领取/转派/重试/回放/关闭/审计。
+	CompTask *report.CompTaskService
+
 	// Backup 数据备份迁移(导出 gzip JSONL 归档 + ON CONFLICT 追加恢复,迁移 000095)。
 	Backup *backup.Service
 

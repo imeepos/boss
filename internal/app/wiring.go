@@ -173,7 +173,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	wireStripe(app, cfg) // 卡收单通道:密钥齐备才注册(见 wiring_stripe.go)
 
 	// 阶段9:经营分析 + 自动报告。
-	app.Report = &report.ReportService{Ana: app.Analytics, St: report.NewPGStore(pool)}
+	reportStore := report.NewPGStore(pool)
+	app.Report = &report.ReportService{Ana: app.Analytics, St: reportStore}
+	app.CompTask = report.NewCompTaskService(reportStore)
 
 	// 债务偿还:gRPC aaa/v1 依赖——授权器 + 话单投递 + W8 事件链(见 wiring_events.go)。
 	app.AaaAuth = aaa.NewPGAuthorizer(pool)

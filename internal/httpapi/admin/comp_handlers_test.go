@@ -15,7 +15,7 @@ import (
 )
 
 // fakeCompCenterStore 同时满足 report.Store 与 CompTaskLister 的最小桩。
-type fakeCompCenterStore struct{ tasks []report.CompTask }
+type fakeCompCenterStore struct{ tasks []report.CompTaskView }
 
 func (f *fakeCompCenterStore) UpsertSnapshot(context.Context, *report.Snapshot) error { return nil }
 func (f *fakeCompCenterStore) LatestSnapshot(context.Context, string) (*report.Snapshot, error) {
@@ -30,7 +30,7 @@ func (f *fakeCompCenterStore) ListSnapshots(context.Context) ([]report.Snapshot,
 func (f *fakeCompCenterStore) SnapshotByID(context.Context, int64) (*report.Snapshot, error) {
 	return nil, report.ErrNoSnapshot
 }
-func (f *fakeCompCenterStore) CompensationTasks(context.Context) ([]report.CompTask, error) {
+func (f *fakeCompCenterStore) CompensationTasks(context.Context) ([]report.CompTaskView, error) {
 	return f.tasks, nil
 }
 
@@ -42,7 +42,7 @@ func TestCompensationTasksRoute(t *testing.T) {
 		r := gin.New()
 		Register(r, &app.Application{
 			User: &fakeUser{permOk: permOk},
-			Report: &report.ReportService{St: &fakeCompCenterStore{tasks: []report.CompTask{
+			Report: &report.ReportService{St: &fakeCompCenterStore{tasks: []report.CompTaskView{
 				{Domain: "provision", Type: "provisionTask", RefID: "TASK-9", Status: "FAILED",
 					RetryPath: "/api/admin/v1/provision-tasks/TASK-9/retry"},
 			}}},

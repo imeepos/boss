@@ -10,8 +10,8 @@ import (
 	"strconv"
 )
 
-// CompTask 补偿任务条目(跨域聚合,只读)。
-type CompTask struct {
+// CompTaskView 补偿任务条目(跨域聚合,只读)。
+type CompTaskView struct {
 	Domain    string `json:"domain"` // provision/billing/order/aaa
 	Type      string `json:"type"`   // provisionTask/stopResume/activationCallback/taxInvoice/cdrKafka/reconBatch
 	RefID     string `json:"refId"`  // 寻址主键(taskNo/taskId/callbackId/invoiceNo/batchNo;聚合项为空)
@@ -23,7 +23,7 @@ type CompTask struct {
 // compLimit 单类上限(中心视图非分页清单,防大表刷屏)。
 const compLimit = 50
 
-// compQueries 六类补偿任务查询:均返回单列寻址主键(cdrKafka 为聚合计数)。
+// compQueries 九类补偿任务查询:均返回单列寻址主键(cdrKafka/webhookFail 为聚合计数)。
 var compQueries = []struct {
 	domain, typ, status, detail, retryFmt, sql string
 }{
@@ -63,12 +63,39 @@ var compQueries = []struct {
 		"/api/admin/v1/reconciliations/%s/settle",
 		`SELECT batch_no FROM reconciliation_batches WHERE status = 'DIFF_PENDING' ORDER BY id DESC LIMIT ` + strconv.Itoa(compLimit),
 	},
+	{
+		"openplat", "webhookDelivery", "FAILED",
+		"Webhook 投递失败(开放平台回调异常)",
+		"",
+		`SELECT count(*)::text FROM open_webhook_deliveries WHERE status = 'FAILED'`,
+	},
+	{
+		"promotion", "couponRecon", "DRIFT",
+		"券对账差异(券实例状态与模板计数器不一致)",
+		"",
+		`SELECT count(*)::text FROM (SELECT 1 FROM coupons c JOIN product_offers o ON c.offer_id = o.offer_id WHERE c.status != 'ISSUED' AND o.offer_id IS NOT NULL LIMIT 100) sub`,
+	},
+	{
+		"loy", "pointsFailed", "FAILED",
+		"积分兑换失败(先扣后发补偿待回放)",
+		"",
+		`SELECT count(*)::text FROM loy_entries WHERE status = 'FAILED'`,
+	},
+}
+
+// aggTypes 聚合计数类型(select count(*)::text,不返回单行寻址主键)。
+var aggTypes = map[string]bool{
+	"cdrKafka":        true,
+	"webhookDelivery": true,
+	"couponRecon":     true,
+	"pointsFailed":    true,
 }
 
 // CompensationTasks 跨域聚合补偿任务清单(只读,单项失败即整轮报错)。
-// cdrKafka 为聚合计数:0 不出条目,非 0 出一条汇总(RefID 空,计数进 Detail)。
-func (s *PGStore) CompensationTasks(ctx context.Context) ([]CompTask, error) {
-	out := make([]CompTask, 0, len(compQueries)*4)
+// 聚合类型(cdrKafka/webhookDelivery/couponRecon/pointsFailed)为聚合计数:
+// 0 不出条目,非 0 出一条汇总(RefID 空,计数进 Detail)。
+func (s *PGStore) CompensationTasks(ctx context.Context) ([]CompTaskView, error) {
+	out := make([]CompTaskView, 0, len(compQueries)*4)
 	for _, q := range compQueries {
 		rows, err := s.db.Query(ctx, q.sql)
 		if err != nil {
@@ -80,9 +107,10 @@ func (s *PGStore) CompensationTasks(ctx context.Context) ([]CompTask, error) {
 				rows.Close()
 				return nil, fmt.Errorf("report: comp scan %s.%s: %w", q.domain, q.typ, err)
 			}
-			t := CompTask{Domain: q.domain, Type: q.typ, RefID: ref,
+			t := CompTaskView{Domain: q.domain, Type: q.typ, RefID: ref,
 				Status: q.status, Detail: q.detail}
-			if q.typ == "cdrKafka" {
+			if aggTypes[q.typ] {
+				// 聚合:0 不出条目,非 0 出汇总(RefID 空,计数进 Detail)
 				if ref == "0" {
 					continue
 				}
@@ -106,14 +134,14 @@ func (s *PGStore) CompensationTasks(ctx context.Context) ([]CompTask, error) {
 
 // CompTaskLister Store 可选能力:跨域补偿任务聚合。
 type CompTaskLister interface {
-	CompensationTasks(ctx context.Context) ([]CompTask, error)
+	CompensationTasks(ctx context.Context) ([]CompTaskView, error)
 }
 
 // ErrCompUnsupported Store 不支持补偿任务聚合(如测试 fake)。
 var ErrCompUnsupported = fmt.Errorf("report: store does not support compensation tasks")
 
 // CompensationTasks 补偿任务中心清单(只读跨域聚合)。
-func (r *ReportService) CompensationTasks(ctx context.Context) ([]CompTask, error) {
+func (r *ReportService) CompensationTasks(ctx context.Context) ([]CompTaskView, error) {
 	l, ok := r.St.(CompTaskLister)
 	if !ok {
 		return nil, ErrCompUnsupported
