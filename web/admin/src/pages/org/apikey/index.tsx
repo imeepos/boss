@@ -8,7 +8,7 @@ import { ApiKeyFormDrawer, type ApiKeyFormValues } from './KeyForm'
 import { buildCreatePayload } from './payload'
 import { formatTime } from '../../base/audit/logic'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { EmptyState } from '../../../components/business'
+import { EmptyState, CopyButton } from '../../../components/business'
 
 export interface ApiKeyRow {
   id: number
@@ -148,7 +148,10 @@ export default function ApiKeyPage() {
         <div className="fixed bottom-6 right-6 z-[60] flex max-w-[420px] flex-col gap-2 rounded-md border border-[var(--shell-fab-bg)] bg-[var(--shell-card-bg)] p-4 text-[13px] text-[var(--shell-content-text)] shadow-[0_6px_24px_rgba(0,0,0,0.18)]">
           <div>{t.pages.apikey.plainOnce}</div>
           <code className="break-all rounded-sm bg-black/5 px-2 py-1.5 font-mono text-xs">{plainKey}</code>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setPlainKey('')}>{t.pages.company.cancel}</button>
+          <div className="flex gap-2">
+            <CopyButton text={plainKey} />
+            <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setPlainKey('')}>{t.pages.company.cancel}</button>
+          </div>
         </div>
       )}
 

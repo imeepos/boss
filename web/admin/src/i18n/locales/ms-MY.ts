@@ -12,6 +12,8 @@ const msMY: Translations = {
     dataScope: 'Skop Data:',
     dataScopeAll: 'Skop Data: Semua',
     confirmDialog: { title: 'Sahkan', ok: 'Sahkan', cancel: 'Batal' },
+    copy: 'Salin',
+    copied: 'Disalin',
   },
   auth: {
     login: {

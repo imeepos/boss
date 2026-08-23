@@ -1,5 +1,6 @@
 // 统一反馈态组件:加载中(spinner+文案)与空数据(图标+文案),全站唯一实现。
 // 颜色一律走 shell-* 令牌;文案默认取 i18n common.loading,空数据文案由调用方传入。
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '../../i18n'
 
 /** CSS 圆环 spinner,颜色随主题令牌。 */
@@ -53,5 +54,44 @@ export function TableStateRow({ colSpan, loading, text }: { colSpan: number; loa
         {loading ? <LoadingState text={t.common.loading} /> : <EmptyState text={text} />}
       </td>
     </tr>
+  )
+}
+
+/** 复制到剪贴板;非安全上下文(http)降级 execCommand。导出仅供单测。 */
+export function copyText(text: string): boolean {
+  if (navigator.clipboard?.writeText) {
+    void navigator.clipboard.writeText(text)
+    return true
+  }
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.style.position = 'fixed'
+  ta.style.opacity = '0'
+  document.body.appendChild(ta)
+  ta.select()
+  const ok = document.execCommand('copy')
+  ta.remove()
+  return ok
+}
+
+/** 一键复制按钮:复制传入文本,成功后短暂切换为"已复制"。 */
+export function CopyButton({ text, className = '' }: { text: string; className?: string }) {
+  const t = useT()
+  const [copied, setCopied] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  const onClick = () => {
+    if (copyText(text)) {
+      setCopied(true)
+      if (timer.current) clearTimeout(timer.current)
+      timer.current = setTimeout(() => setCopied(false), 1500)
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] ${className}`}
+    >{copied ? t.common.copied : t.common.copy}</button>
   )
 }

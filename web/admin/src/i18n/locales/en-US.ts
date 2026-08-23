@@ -12,6 +12,8 @@ const enUS: Translations = {
     dataScope: 'Data Scope:',
     dataScopeAll: 'Data Scope: All',
     confirmDialog: { title: 'Confirm', ok: 'OK', cancel: 'Cancel' },
+    copy: 'Copy',
+    copied: 'Copied',
   },
   auth: {
     login: {

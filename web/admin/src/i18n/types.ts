@@ -13,6 +13,8 @@ export interface Translations {
     dataScope: string
     dataScopeAll: string
     confirmDialog: { title: string; ok: string; cancel: string }
+    copy: string
+    copied: string
   }
   auth: {
     login: {
