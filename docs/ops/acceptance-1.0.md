@@ -6,8 +6,8 @@
 
 | # | 验收项 | 判定标准 | 证据 | 结果 |
 |:-:|:-------|:---------|:-----|:----:|
-| 1 | 全量回归通过 | 主链路验收 10/10 + `make check` 门禁绿 | `scripts/ops/mainchain-acceptance.sh`;报告 `docs/acceptance/2026-08-23-mainchain-102.md` | 待终验 |
-| 2 | API 契约一致 | 契约路由 100% 部署,无未销项漂移 | `docs/ops/contract-audit-q4.md`(442/444,余 2 项 backlog) | 待终验 |
+| 1 | 全量回归通过 | 主链路验收 10/10 + `make check` 门禁绿 | rc1 后复跑 10/10(2026-08-26);契约门禁 A-D OK;`go test ./...` 零失败 | ✅ |
+| 2 | API 契约一致 | 契约路由 100% 部署,无未销项漂移 | `docs/ops/contract-audit-q4.md` 终态 460/460 探针全绿(2026-08-26) | ✅ |
 | 3 | 核心 SLO 达标 | S1/S2/S3/S7 达标,S4/S5 客户环境首周复采 | `docs/ops/slo.md` + `slo-baseline-102.md` + 容量报告阈值 | 待终验 |
 | 4 | 容量压测通过 | 60 VU 全阈值(读 p95<500ms、错误<1%、登录 p95<800ms) | `docs/ops/load-test-report.md`(204rps 通过) | ✅ |
 | 5 | 灾备恢复演练成功 | 备份→恢复 RTO 记录,数据一致 | `docs/ops/dr-drill.md` §1(32s/150 表) | ✅ |
