@@ -54,6 +54,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'billing', label: '出账管理', path: '/billing/billing' },
     { key: 'payment', label: '缴费管理', path: '/billing/payment' },
     { key: 'arrears', label: '欠费停复机', path: '/billing/arrears' },
+    { key: 'collection-tasks', label: '催收任务队列', path: '/billing/collection-tasks' },
     { key: 'stopsrv', label: '停复机执行', path: '/billing/stopsrv' },
     { key: 'paycheck', label: '渠道对账', path: '/billing/paycheck' },
   ]},
@@ -81,6 +82,8 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'dispatch', label: '派单管理', path: '/boss/dispatch' },
     { key: 'dismantle', label: '拆机管理', path: '/boss/dismantle' },
     { key: 'complaint', label: '报障与投诉', path: '/boss/complaint' },
+    { key: 'service-metrics', label: '客户服务指标', path: '/boss/service-metrics' },
+    { key: 'feedback', label: '回访评价', path: '/boss/feedback' },
     { key: 'callback', label: '激活回调', path: '/boss/callback' },
   ]},
   { id: 'quad', label: '四码合一', items: [

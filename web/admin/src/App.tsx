@@ -41,6 +41,7 @@ const MarketingReconPage = lazy(() => import('./pages/bss/marketing/recon'))
 const BillPage = lazy(() => import('./pages/billing/billing'))
 const PaymentPage = lazy(() => import('./pages/billing/payment'))
 const ArrearsPage = lazy(() => import('./pages/billing/arrears'))
+const CollectionTasksPage = lazy(() => import('./pages/billing/collection-tasks'))
 const StopSrvPage = lazy(() => import('./pages/billing/stopsrv'))
 const PayCheckPage = lazy(() => import('./pages/billing/paycheck'))
 const AssetPage = lazy(() => import('./pages/ams/asset'))
@@ -61,6 +62,8 @@ const WorkerOpsPage = lazy(() => import('./pages/boss/worker-ops'))
 const DispatchPage = lazy(() => import('./pages/boss/dispatch'))
 const DismantlePage = lazy(() => import('./pages/boss/dismantle'))
 const ComplaintPage = lazy(() => import('./pages/boss/complaint'))
+const ServiceMetricsPage = lazy(() => import('./pages/boss/service-metrics'))
+const FeedbackPage = lazy(() => import('./pages/boss/feedback'))
 const CallbackPage = lazy(() => import('./pages/boss/callback'))
 const QuadLinkPage = lazy(() => import('./pages/quad/quadlink'))
 const QuadCheckPage = lazy(() => import('./pages/quad/check'))
@@ -136,6 +139,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'billing') return <BillPage />
   if (pageKey === 'payment') return <PaymentPage />
   if (pageKey === 'arrears') return <ArrearsPage />
+  if (pageKey === 'collection-tasks') return <CollectionTasksPage />
   if (pageKey === 'stopsrv') return <StopSrvPage />
   if (pageKey === 'paycheck') return <PayCheckPage />
   if (pageKey === 'asset') return <AssetPage />
@@ -156,6 +160,8 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'dispatch') return <DispatchPage />
   if (pageKey === 'dismantle') return <DismantlePage />
   if (pageKey === 'complaint') return <ComplaintPage />
+  if (pageKey === 'service-metrics') return <ServiceMetricsPage />
+  if (pageKey === 'feedback') return <FeedbackPage />
   if (pageKey === 'callback') return <CallbackPage />
   if (pageKey === 'quadlink') return <QuadLinkPage />
   if (pageKey === 'check') return <QuadCheckPage />
