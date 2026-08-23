@@ -98,6 +98,9 @@ func TestAPIKeyAccountSubject(t *testing.T) {
 			t.Fatalf("body=%s 缺少 %s", body, want)
 		}
 	}
+	for i := 0; i < 20 && keys.touchN.Load() != 1; i++ {
+		time.Sleep(time.Millisecond)
+	}
 	if keys.touchN.Load() != 1 {
 		t.Fatalf("touchN=%d want 1", keys.touchN.Load())
 	}
