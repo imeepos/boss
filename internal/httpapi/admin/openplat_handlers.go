@@ -28,7 +28,10 @@ func openPlatAppListHandler(a *app.Application) gin.HandlerFunc {
 func openPlatAppCreateHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req openPlatAppCreateReq
-		if !httpx.BindAndValidate(c, &req, req.validate) {
+		// req.validate 是值 receiver 的方法值,绑定到求值时的 req(此时为零值);
+		// BindAndValidate 内的 ShouldBindJSON 会修改 req,但方法值捕获的是旧副本,
+		// 导致校验永远走零值分支。改用闭包把 *&req 延迟到调用时再 deref。
+		if !httpx.BindAndValidate(c, &req, func() error { return req.validate() }) {
 			return
 		}
 		claims := c.MustGet(middleware.CtxClaims).(*auth.Claims)
@@ -85,7 +88,8 @@ func openPlatSubListHandler(a *app.Application) gin.HandlerFunc {
 func openPlatSubCreateHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req openPlatSubCreateReq
-		if !httpx.BindAndValidate(c, &req, req.validate) {
+		// 同 openPlatAppCreateHandler:值 receiver 方法值绑定零值,改用闭包延迟 deref。
+		if !httpx.BindAndValidate(c, &req, func() error { return req.validate() }) {
 			return
 		}
 		id, ok := httpx.ParsePathParamInt64(c, "id")
