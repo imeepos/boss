@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,6 +22,7 @@ func Open(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("database: parse dsn: %w", err)
 	}
 	cfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	configurePool(cfg)
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("database: new pool: %w", err)
@@ -29,6 +32,20 @@ func Open(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("database: ping: %w", err)
 	}
 	return pool, nil
+}
+
+func configurePool(cfg *pgxpool.Config) {
+	cfg.MaxConns = int32(envInt("BOSS_DB_MAX_CONNS", 50))
+	cfg.MinConns = int32(envInt("BOSS_DB_MIN_CONNS", 10))
+	cfg.MaxConnIdleTime = 5 * time.Minute
+}
+
+func envInt(key string, fallback int) int {
+	value, err := strconv.Atoi(os.Getenv(key))
+	if err != nil || value < 1 {
+		return fallback
+	}
+	return value
 }
 
 // Migrate 按文件名序执行 dir 下所有 *.up.sql,幂等(已应用版本记录在 schema_migrations)。
