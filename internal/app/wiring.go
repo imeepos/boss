@@ -100,6 +100,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		CustomerOnboarding: cust,
 		Partner:            partnerSvc,
 		PartnerCommission:  partnerSvc,
+		PartnerAudit:       partnerSvc,
 		CustomerRealName:   cust,
 		// 实名二要素通道:biz_params(realid.*)优先/env 兜底,60s 热生效;未配置落 PENDING 人工核验。
 		RealID: realid.NewDynamic(realidConfigResolver(usr, cfg)),

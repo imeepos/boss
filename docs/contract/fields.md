@@ -823,6 +823,8 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 
 > 审核通过 = 建 `legal_entities`（code=P-<信用码>）+ `accounts`（username=pt_<信用码后8位>，
 > 角色 `partner_admin`，legal_entity_id 绑定做数据隔离）；初始口令随机 12 位仅审核响应返回一次。
+
+`GET /partner/audit-report` 从既有 `audit_logs` 聚合渠道订单相关动作，按伙伴企业 `legal_entity_id` 隔离；不复制审计事实表。
 > 企业工作台数据口径：员工 = accounts 按 legal_entity_id 归属（角色限 partner_admin/partner_staff）；
 > 订单 = orders 按 legal_entity_id 隔离（只读）。角色 `partner_staff` 无员工管理权限。
 

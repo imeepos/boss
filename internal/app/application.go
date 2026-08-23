@@ -116,6 +116,7 @@ type Application struct {
 	// Partner 招商引资/合作入驻域(迁移 000098)。
 	Partner           partner.Service
 	PartnerCommission partner.CommissionLedgerService
+	PartnerAudit      partner.AuditReportService
 
 	// Notify 后台提醒中心(admin 通知+待办,迁移 000090)。
 	Notify notify.Service
