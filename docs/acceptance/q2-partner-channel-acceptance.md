@@ -1,0 +1,40 @@
+# Q2 渠道与伙伴协同验收矩阵
+
+> 范围：伙伴入驻、企业工作台、渠道订单、佣金结算、受限 API key、渠道审计与基础反作弊。
+> 明确不做：跨运营商批发结算、复杂渠道融资。
+
+## 交付矩阵
+
+| 交付项 | 实现证据 | 自动化证据 | 状态 |
+|---|---|---|---|
+| 伙伴入驻审核流程 | `internal/domain/partner/pg_apply.go`；`POST /partner/applications`；`/approve`、`/reject` | `TestPartnerApprovalIntegration`（真实 PostgreSQL） | PASS |
+| 企业工作台 | `internal/httpapi/admin/partner_handlers.go`；`/partner/me`、`/staff`、`/orders` | `partner_handlers_test.go` | PASS |
+| 区域权限 | `internal/domain/partner/pg_region.go`；`GET/PUT /partner/region-scope`；LTREE 过滤订单/员工 | `go test ./internal/domain/partner ./internal/httpapi/admin` | PASS |
+| 渠道订单接口 | `partner_order_handlers.go`；`POST /partner/orders` | handler 回归；直营订单 E2E 12 环节 | PASS |
+| 12 环节、资源预占、计费复用 | `internal/domain/order/pg.go`、`pg_workflow.go` | `TestE2E_OrderLifecycle_Integration` | PASS |
+| 佣金结算台账 | `internal/domain/partner/pg_commission.go`；`GET /partner/commissions`、`/settle` | `TestPartnerCommissionLedgerIntegration`（真实 PostgreSQL） | PASS |
+| 佣金自动计提 | `UpdateMap` 完成后对 `AGENT` 订单计提；比例读取 `biz_params` | 佣金单测及台账 E2E | PASS |
+| API key 权限模板 | `internal/domain/apikey`；`internal/pkg/middleware/auth.go`；`partner-orders-read` | `TestAuthzRestrictedPartnerTemplate` | PASS |
+| 渠道审计报表 | `internal/domain/partner/pg_audit.go`；`GET /partner/audit-report` | handler 回归 | PASS |
+| 异常订单拦截/反作弊 | `pg_partner_fraud.go`；每日上限、客户冷却、客户/产品租户校验 | `TestPartnerTenantLockIntegration`（真实 PostgreSQL）及风险单测 | PASS |
+
+## 已执行命令
+
+```bash
+export PATH=/opt/homebrew/bin:$PATH
+go test ./internal/domain/partner ./internal/domain/order ./internal/pkg/middleware ./internal/httpapi/admin ./internal/app
+
+BOSS_PG_TEST_DSN='host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable' \
+  go test ./internal/domain/order -run TestPartnerTenantLockIntegration -v -count=1
+
+BOSS_PG_TEST_DSN='host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable' \
+  go test ./internal/domain/partner -run 'TestPartner(Approval|CommissionLedger)Integration' -v -count=1
+```
+
+结果：聚焦 Go 测试通过；租户行锁、伙伴审批、佣金台账真实 PostgreSQL 测试通过。
+
+## 尚未纳入本矩阵的增强项
+
+- 伙伴 HTTP/PG 全链路单个测试用例尚未把入驻审批后的新账号登录、区域设置、渠道下单、12 环节推进、自动佣金和审计报表全部串成一次旅程。
+- 风控每日上限的并发订单创建尚未做压力级集成测试；已有租户行锁阻塞验收。
+- 前端伙伴工作台视觉冒烟与 102 部署页面验收尚未在本轮执行。
