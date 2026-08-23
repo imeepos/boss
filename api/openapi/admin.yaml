@@ -173,6 +173,10 @@ paths:
   /invoices/{id}/tax-backfill: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-backfill' }
   /invoices/{id}/tax-events: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-events' }
   /arrears: { $ref: './admin/billing.yaml#/paths/~1arrears' }
+  /ar/aging-snapshots: { $ref: './admin/billing.yaml#/paths/~1ar~1aging-snapshots' }
+  /ar/payment-promises: { $ref: './admin/billing.yaml#/paths/~1ar~1payment-promises' }
+  /ar/payment-promises/{id}/status: { $ref: './admin/billing.yaml#/paths/~1ar~1payment-promises~1{id}~1status' }
+  /ar/writeoffs: { $ref: './admin/billing.yaml#/paths/~1ar~1writeoffs' }
   /ar-metrics: { $ref: './admin/billing.yaml#/paths/~1ar-metrics' }
   /collection-tasks: { $ref: './admin/billing.yaml#/paths/~1collection-tasks' }
   /collection-tasks/{taskId}/status: { $ref: './admin/billing.yaml#/paths/~1collection-tasks~1{taskId}~1status' }
