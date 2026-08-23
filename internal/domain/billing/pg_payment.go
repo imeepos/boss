@@ -49,8 +49,9 @@ func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (Payme
 		}
 	}
 	if p.Status == "SUCCESS" {
+		// OVERDUE 账单缴清同样置 PAID(dunning 置逾期后缴费闭环)。
 		if _, err := tx.Exec(ctx,
-			`UPDATE bills SET status = 'PAID' WHERE id = $1 AND status = 'UNPAID'`, p.BillID); err != nil {
+			`UPDATE bills SET status = 'PAID' WHERE id = $1 AND status IN ('UNPAID','OVERDUE')`, p.BillID); err != nil {
 			return PaymentReceipt{}, fmt.Errorf("billing: mark bill paid: %w", err)
 		}
 	}

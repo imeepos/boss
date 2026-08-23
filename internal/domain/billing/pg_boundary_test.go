@@ -43,7 +43,7 @@ func TestGenerateBills_PeriodIdempotent(t *testing.T) {
 	}
 }
 
-// 边界3:缴费置 PAID 只从 UNPAID 迁移;重复 SUCCESS 缴费不重复改账单状态。
+// 边界3:缴费置 PAID 从 UNPAID/OVERDUE 迁移;已 PAID 不重复改账单状态。
 func TestRecordPayment_BillPaidTransitionGuard(t *testing.T) {
 	mock, _ := pgxmock.NewPool()
 	defer mock.Close()
@@ -51,7 +51,7 @@ func TestRecordPayment_BillPaidTransitionGuard(t *testing.T) {
 	mock.ExpectQuery(`INSERT INTO payments`).
 		WithArgs("PAY-B1", int64(1), 100.0, "cash", "SUCCESS").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
-	mock.ExpectExec(`UPDATE bills SET status = 'PAID' WHERE id = .* AND status = 'UNPAID'`).
+	mock.ExpectExec(`UPDATE bills SET status = 'PAID' WHERE id = .* AND status IN \('UNPAID','OVERDUE'\)`).
 		WithArgs(int64(1)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 	mock.ExpectCommit()
