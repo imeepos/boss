@@ -1,6 +1,6 @@
 # 三年规划与已实现功能差距审计
 
-> 版本 V1.0｜审计基线：当前 `main`（e52500b）及仓库内验收报告
+> 版本 V1.1｜审计基线：当前 `main`（e52500b）及仓库内验收报告；PORT/openplat 专项复核后修订
 > 对照范围：`docs/plan/three-year-roadmap.md`、`docs/contract/{terms,domain-map,fields}.md`、代码、契约和 `docs/acceptance`/`docs/ops` 证据。
 > 判定规则：有代码不等于完成；只有实现证据、契约/迁移、测试或真实环境验收相互支持，才标记“已完成”。
 
@@ -103,22 +103,22 @@
 | 计划项 | 状态 | 证据与判断 |
 |---|---|---|
 | PROMO 券模板、发放、兑换码、转赠、抵扣、赠送 | 已完成 | `internal/domain/promotion`、`docs/design/promotion-coupon.md`、Admin/user OpenAPI 和 marketing 页面；需继续补真实环境全旅程证据。 |
-| LOY 账本、积分流水、换券和补偿 | 部分完成 | `internal/domain/loy`、`docs/notes/adopted/2026-08-26-loy-minimal.md`；账本/流水/换券/补偿有，等级、任务、缴费自动积分属于明确未完成项。 |
-| 客户门户 MVP | 部分完成 | `mobile/user/android` 有产品、订单、缴费、账单、发票、工单、券等页面；`portal MVP` 有真实 PG E2E，但仍需完整真实环境旅程和多语言闭环。 |
+| LOY 账本、积分流水、等级、任务、自动积分、换券和补偿 | 核心已完成，生产验收部分完成 | `internal/domain/loy`、`docs/notes/adopted/2026-08-26-loy-minimal.md` 记录了早期最小实现，但后续实现已补等级、任务、自动积分、回滚和过期；仍需补真实环境完整验收，以及“先扣后发”超时/发券成功但响应丢失等异常场景。契约快照 `domain-map.md:50` 已滞后，需同步修订。 |
+| 客户门户 PORT | 部分完成（后端/API 已有，前端门户未完成） | 已有 `internal/httpapi/user/portal_catalog.go`、`portal_invoices.go` 等用户端真实端点，以及 `mobile/user/android` 的产品、订单、缴费、账单、发票、工单、券等页面和部分真实 PG E2E；但 `domain-map.md:51` 明确标记“待建(前端)”，尚未形成客户门户前端和完整真实环境旅程验收。 |
 | 三端身份和数据权限统一 | 部分完成 | 三端 JWT/API key 和权限边界已有 adopted notes；跨端统一验证、租户化和客户门户生产证据不足。 |
 
-**Q3 结论：PROMO 基本完成；LOY 完整版和 PORT 生产化是 P1。**
+**Q3 结论：PROMO 基本完成；LOY 核心已完成但需生产验收和契约同步；PORT 仍是“后端/API 已有、客户门户前端未完成”的 P1。**
 
 ### Q4：开放平台与互操作
 
 | 计划项 | 状态 | 证据与判断 |
 |---|---|---|
-| 开放 API v1、Webhook、签名、限流配额 | 已完成 | `docs/ops/acceptance-q4-open-platform.md` 六项交付全部通过。 |
-| 开发者门户、沙箱、回放、自助验收 | 已完成 | 同报告第 1、3、4、6 项；`docs/integration/open-platform.md`。 |
-| 供应商适配器规范和外部联调 | 已完成 | `docs/contract/vendor-adapter-spec.md`；Stripe/SMS/RealID/Tax/SNMP 适配器已有。 |
-| 102 管理写路径与最新版本一致 | 部分完成 | 验收报告明确 102 `/openplat/apps` POST 曾返回旧校验错误，需要重新部署确认。 |
+| 开放 API v1、Webhook、签名、限流配额 | 已完成（仓库实现） | `internal/httpapi/open/open.go`、`internal/domain/openplat/sign.go`、`web/admin/src/pages/org/openplat`；`docs/ops/acceptance-q4-open-platform.md` 六项交付有代码、迁移和测试证据。 |
+| 开发者门户、沙箱、回放、自助验收 | 已完成（仓库实现） | `docs/ops/acceptance-q4-open-platform.md` 第 1、3、4、6 项；`docs/integration/open-platform.md`；提交 `03c3234`、`5a1ec0d`、`1cabd1c`。 |
+| 供应商适配器规范和外部联调 | 部分完成（生产交付有风险） | `docs/contract/vendor-adapter-spec.md` 和现有适配器已在仓库落地；但“至少两类外部系统真实联调”与最新 102 镜像一致性仍需重新复验。 |
+| 102 管理写路径与最新版本一致 | 部分完成（生产风险） | `docs/ops/acceptance-q4-open-platform.md:51-55` 明确记录 `/openplat/apps` POST 曾返回旧校验错误；需重部署后用 JWT 创建 sandbox 应用，再跑 selftest/replay。 |
 
-**Q4 结论：功能目标已完成；102 生产部署一致性是 P0 运维收口，不是新功能。**
+**Q4 结论：开放平台仓库功能已完成；生产交付和真实外部联调仍部分完成，不能无条件标记为已上线。**
 
 ## 4. 第三年的差距
 
@@ -174,11 +174,11 @@
 1. 完成 1.0 客户终验：S4 订单完成率、S5 推送真实送达率和客户签收。
 2. 重新部署并验证 102 开放平台管理写路径，消除代码、迁移和镜像版本漂移。
 3. 建立 Q2 统一补偿/责任队列，补订单时间线、离线扫码弱网回放和每日质量报告。
-4. 完成 CS/AR、PORT 的真实环境全旅程验收，不把页面存在当作业务闭环完成。
+4. 完成 CS/AR、PORT 的真实环境全旅程验收；PORT 还必须先完成客户门户前端，不把用户端后端端点或移动端局部页面当作 PORT 完成。
 
 ### P1：下一阶段应做的产品能力
 
-5. 完成 LOY 完整版：等级、任务、缴费自动积分、过期和回滚补偿。
+5. 完成 LOY 生产收口：更新契约快照，补真实环境验收、超时重试和“先扣后发”补偿可观测性。
 6. 建立统一指标目录、指标口径版本、血缘和数据质量责任闭环。
 7. 补齐多语言用户端与师傅端，并完成多时区/多币种金额和账务测试。
 8. 建立租户级配置、配额、数据保留和审计隔离模型。
