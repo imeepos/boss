@@ -25,6 +25,9 @@ func registerTaxRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/invoices/:id/reissue", requirePerm(a.User, "menu:billing"), reissueInvoice(a))
 	// 税局网关提交:按发票属地取网关开具并落回执;未注册网关(人工通道)则提示走回填。
 	g.POST("/invoices/:id/tax-submit", requirePerm(a.User, "menu:billing"), submitInvoiceToTax(a))
+	g.POST("/invoices/:id/tax-retry", requirePerm(a.User, "menu:billing"), retryInvoiceTax(a))
+	g.POST("/invoices/:id/tax-replay", requirePerm(a.User, "menu:billing"), replayInvoiceTax(a))
+	g.GET("/invoices/:id/tax-failure", requirePerm(a.User, "menu:billing"), taxFailureDetails(a))
 	// 人工通道回填:运营者在税局平台(数电票/BIR)开具后登记税局票号。
 	g.POST("/invoices/:id/tax-backfill", requirePerm(a.User, "menu:billing"), backfillInvoiceTaxNo(a))
 	// 税局轨迹回放:回执/回填/作废/重开留痕(验收②可追踪)。

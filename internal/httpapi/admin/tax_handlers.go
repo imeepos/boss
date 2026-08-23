@@ -122,7 +122,24 @@ func reissueInvoice(a *app.Application) gin.HandlerFunc {
 }
 
 // submitInvoiceToTax 税局网关提交:按发票属地取网关开具并落回执。
+// MarkTaxResult 负责记录 RECEIPT 轨迹(含重复/乱序幂等),handler 不再重复 append。
 func submitInvoiceToTax(a *app.Application) gin.HandlerFunc {
+	return submitTax(a, "invoice.taxSubmit")
+}
+
+// retryInvoiceTax 税局重试:从 FAILED/BLOCKED 状态重新提交,行为同 tax-submit。
+func retryInvoiceTax(a *app.Application) gin.HandlerFunc {
+	return submitTax(a, "invoice.taxRetry")
+}
+
+// replayInvoiceTax 税局回放:对 SUBMITTED/FAILED/PENDING 重新推动网关,幂等。
+func replayInvoiceTax(a *app.Application) gin.HandlerFunc {
+	return submitTax(a, "invoice.taxReplay")
+}
+
+// submitTax 税局提交/重试/回放共享内核:网关 Issue → MarkTaxResult(含轨迹) → 审计。
+// MarkTaxResult 已内嵌 RECEIPT 轨迹,handler 不重复 append。
+func submitTax(a *app.Application, audit string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, ok := pathIDValid(c, "id")
 		if !ok {
@@ -146,8 +163,8 @@ func submitInvoiceToTax(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		appendTaxTrail(a, c, id, billing.TaxEventReceipt, receipt.Status, receipt.TaxNo, receipt.FailReason)
-		httpx.RecordAudit(a, c, "invoice.taxSubmit", "invoice", inv.InvoiceNo, gin.H{"status": receipt.Status})
+		httpx.RecordAudit(a, c, audit, "invoice", inv.InvoiceNo,
+			gin.H{"status": receipt.Status, "externalId": receipt.ExternalID})
 		respond(c, apitypes.CodeOK, gin.H{"receipt": receipt})
 	}
 }
@@ -172,6 +189,34 @@ func backfillInvoiceTaxNo(a *app.Application) gin.HandlerFunc {
 		appendTaxTrail(a, c, id, billing.TaxEventBackfill, billing.TaxStatusIssued, body.TaxNo, "")
 		httpx.RecordAudit(a, c, "invoice.taxBackfill", "invoice", c.Param("id"), gin.H{"taxNo": body.TaxNo})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
+// taxFailureDetails 单票税务失败详情，供运营定位并判断是否可重试。
+func taxFailureDetails(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := pathIDValid(c, "id")
+		if !ok {
+			return
+		}
+		inv, err := a.Tax.GetInvoice(c.Request.Context(), id)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		var last *billing.TaxEvent
+		if svc, ok := a.Tax.(billing.TaxEventService); ok {
+			if events, e := svc.ListTaxEvents(c.Request.Context(), id); e == nil {
+				for i := len(events) - 1; i >= 0; i-- {
+					if events[i].FailReason != "" {
+						last = &events[i]
+						break
+					}
+				}
+			}
+		}
+		respond(c, apitypes.CodeOK, gin.H{"invoice": inv, "lastFailure": last,
+			"retryable": inv.TaxStatus == billing.TaxStatusFailed || inv.TaxStatus == billing.TaxStatusBlocked})
 	}
 }
 

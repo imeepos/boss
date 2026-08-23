@@ -21,6 +21,7 @@ type TaxEvent struct {
 	TaxStatusAfter    string    `json:"taxStatusAfter"`
 	TaxNo             string    `json:"taxNo"`
 	FailReason        string    `json:"failReason"`
+	ExternalID        string    `json:"externalId"`
 	OperatorAccountID int64     `json:"operatorAccountId"`
 	CreatedAt         time.Time `json:"createdAt"`
 }

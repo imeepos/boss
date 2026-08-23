@@ -170,6 +170,9 @@ paths:
   /invoices/{id}/void: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1void' }
   /invoices/{id}/reissue: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1reissue' }
   /invoices/{id}/tax-submit: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-submit' }
+  /invoices/{id}/tax-retry: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-retry' }
+  /invoices/{id}/tax-replay: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-replay' }
+  /invoices/{id}/tax-failure: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-failure' }
   /invoices/{id}/tax-backfill: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-backfill' }
   /invoices/{id}/tax-events: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1tax-events' }
   /arrears: { $ref: './admin/billing.yaml#/paths/~1arrears' }

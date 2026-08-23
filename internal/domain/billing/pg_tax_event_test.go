@@ -16,7 +16,7 @@ func TestPGStore_AppendTaxEvent(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery(`INSERT INTO invoice_tax_events`).
-		WithArgs(int64(7), TaxEventReceipt, TaxStatusIssued, "24122000000012345678", "", int64(103)).
+		WithArgs(int64(7), TaxEventReceipt, TaxStatusIssued, "24122000000012345678", "", "", int64(103)).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
 	id, err := NewPGStore(mock).AppendTaxEvent(context.Background(), TaxEvent{
 		InvoiceID: 7, Event: TaxEventReceipt, TaxStatusAfter: TaxStatusIssued,
@@ -39,10 +39,10 @@ func TestPGStore_ListTaxEvents(t *testing.T) {
 	mock.ExpectQuery(`FROM invoice_tax_events`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{
-			"id", "invoice_id", "event", "tax_status_after", "tax_no", "fail_reason", "operator_account_id", "created_at",
+			"id", "invoice_id", "event", "tax_status_after", "tax_no", "fail_reason", "external_id", "operator_account_id", "created_at",
 		}).
-			AddRow(int64(1), int64(7), TaxEventReceipt, TaxStatusFailed, "", "signature invalid", int64(103), t0).
-			AddRow(int64(2), int64(7), TaxEventReceipt, TaxStatusIssued, "24122000000012345678", "", int64(103), t1))
+			AddRow(int64(1), int64(7), TaxEventReceipt, TaxStatusFailed, "", "signature invalid", "", int64(103), t0).
+			AddRow(int64(2), int64(7), TaxEventReceipt, TaxStatusIssued, "24122000000012345678", "", "", int64(103), t1))
 	events, err := NewPGStore(mock).ListTaxEvents(context.Background(), 7)
 	if err != nil {
 		t.Fatal(err)

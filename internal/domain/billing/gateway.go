@@ -24,13 +24,15 @@ const (
 	TaxStatusSUBMITTED = "SUBMITTED" // 已提交税局,待回执
 	TaxStatusIssued    = "ISSUED"    // 税局已开具(tax_no 回填)
 	TaxStatusFailed    = "FAILED"    // 开具失败(tax_fail_reason 留痕,可重试)
+	TaxStatusBlocked   = "BLOCKED"   // 外部资质/凭据不可用,不得伪造成功
 )
 
 // TaxReceipt 税局回执。
 type TaxReceipt struct {
 	TaxNo      string // 税局票号:CN 数电票 20 位 / PH BIR 回执号
-	Status     string // TaxStatusIssued / TaxStatusFailed
+	Status     string // TaxStatusIssued / TaxStatusFailed / TaxStatusSUBMITTED / TaxStatusBlocked
 	FailReason string
+	ExternalID string `json:"externalId"` // 外部回执/请求标识,用于重复与乱序幂等
 }
 
 // TaxGateway 税局开票网关:按属地各一个实现,实现方负责签名/报送/重试语义。

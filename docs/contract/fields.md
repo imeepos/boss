@@ -510,8 +510,10 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 | 状态 | `Status` | status | ISSUED 已生成 / VOIDED 已作废（`void_reason`/`voided_at` 留痕） |
 | 税务属地 | `TaxJurisdiction` | tax_jurisdiction | CN 中国数电票 / PH 菲律宾 BIR / 空=未定；开票时经 bills.legal_entity_id 从法人快照（000109） |
 | 税务通道 | `TaxChannel` | tax_channel | manual 人工回填 / leqi（预留）/ bir_eis（预留） |
-| 税务状态 | `TaxStatus` | tax_status | PENDING 待开具 / SUBMITTED 已提交 / ISSUED 已开具 / FAILED 失败（`tax_fail_reason` 留痕） |
+| 税务状态 | `TaxStatus` | tax_status | PENDING 待开具 / SUBMITTED 已提交 / ISSUED 已开具 / FAILED 失败 / BLOCKED 外部资质或凭据不可用（`tax_fail_reason` 留痕；BLOCKED 不得伪造成功，可人工回填或资质就绪后重试） |
 | 税局票号 | `TaxNo` | tax_no | CN 数电票 20 位 / PH BIR 回执号；回填后方为有效票据 |
+| 外部回执标识 | `ExternalID` | invoice_tax_events.external_id | 外部请求/回执标识；同一发票重复回执唯一幂等，乱序回执不得回退已 ISSUED |
+| 税务轨迹 | `TaxEvents` | invoice_tax_events | RECEIPT/BACKFILL/VOID/REISSUE；按 created_at、id 正序查询；失败详情、重试、回放经 `/invoices/{id}/tax-failure|tax-retry|tax-replay` |
 
 > ARN 发号：`arn_sequences` 计数表（`doc_type` INVOICE/RECEIPT 各一序列），事务内 `UPDATE..RETURNING` 原子占号、行锁串行、回滚号回退（决策 note：2026-08-18-tax-invoice-arn-numbering）。链路：收款 `POST /payments`（流水+账单 PAID 同事务）→ 出账+自动开票 `POST /billing-runs`（幂等，失败账单入 `failedIds`）→ 作废/重开 `POST /invoices/:id/{void,reissue}`。
 

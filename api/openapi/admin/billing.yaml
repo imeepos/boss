@@ -502,6 +502,36 @@ paths:
                     properties:
                       receipt: { type: object }
 
+  /invoices/{id}/tax-retry:
+    post:
+      tags: [Billing]
+      summary: 单票税务失败重试(FAILED/BLOCKED,无外部资质不伪造成功)
+      operationId: taxRetryInvoice
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /invoices/{id}/tax-replay:
+    post:
+      tags: [Billing]
+      summary: 单票税务提交回放(重复/乱序回执由 externalId 幂等)
+      operationId: taxReplayInvoice
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /invoices/{id}/tax-failure:
+    get:
+      tags: [Billing]
+      summary: 单票税务失败详情与重试标记
+      operationId: getInvoiceTaxFailure
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /invoices/{id}/tax-backfill:
     post:
       tags: [Billing]

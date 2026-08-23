@@ -282,17 +282,98 @@ func TestPGStore_BackfillTaxNo(t *testing.T) {
 	})
 }
 
-// TestPGStore_MarkTaxResult 契约(网关回执):失败留痕可重试,成功回填票号。
+// TestPGStore_MarkTaxResult 契约(网关回执):失败留痕/外部ID幂等/ISSUED不被乱序回退。
 func TestPGStore_MarkTaxResult(t *testing.T) {
-	mock, _ := pgxmock.NewPool()
-	defer mock.Close()
-	mock.ExpectExec(`UPDATE invoices SET tax_status`).WithArgs(int64(11), "FAILED", "", "signature invalid").
-		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-	if err := NewPGStore(mock).MarkTaxResult(context.Background(), 11,
-		TaxReceipt{Status: TaxStatusFailed, FailReason: "signature invalid"}); err != nil {
-		t.Fatalf("mark failed result: %v", err)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("unmet: %v", err)
-	}
+	t.Run("失败留痕可重试", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec(`INSERT INTO invoice_tax_events`).
+			WithArgs(int64(11), "FAILED", "", "signature invalid", "ext-001").
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectExec(`UPDATE invoices SET tax_status`).WithArgs(int64(11), "FAILED", "", "signature invalid").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		if err := NewPGStore(mock).MarkTaxResult(context.Background(), 11,
+			TaxReceipt{Status: TaxStatusFailed, FailReason: "signature invalid", ExternalID: "ext-001"}); err != nil {
+			t.Fatalf("mark failed: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("BLOCKED不伪造成功", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec(`INSERT INTO invoice_tax_events`).
+			WithArgs(int64(11), "BLOCKED", "", "external credential unavailable", "ext-002").
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectExec(`UPDATE invoices SET tax_status`).WithArgs(int64(11), "BLOCKED", "", "external credential unavailable").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		if err := NewPGStore(mock).MarkTaxResult(context.Background(), 11,
+			TaxReceipt{Status: TaxStatusBlocked, FailReason: "external credential unavailable", ExternalID: "ext-002"}); err != nil {
+			t.Fatalf("mark blocked: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("重复回执被幂等吞掉", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec(`INSERT INTO invoice_tax_events`).
+			WithArgs(int64(11), "FAILED", "", "timeout", "ext-003").
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectExec(`UPDATE invoices SET tax_status`).WithArgs(int64(11), "FAILED", "", "timeout").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		if err := NewPGStore(mock).MarkTaxResult(context.Background(), 11,
+			TaxReceipt{Status: TaxStatusFailed, FailReason: "timeout", ExternalID: "ext-003"}); err != nil {
+			t.Fatalf("first receipt: %v", err)
+		}
+		// duplicate: INSERT still happens but ON CONFLICT makes it a no-op
+		mock.ExpectExec(`INSERT INTO invoice_tax_events`).
+			WithArgs(int64(11), "FAILED", "", "timeout", "ext-003").
+			WillReturnResult(pgxmock.NewResult("INSERT", 0))
+		mock.ExpectExec(`UPDATE invoices SET tax_status`).WithArgs(int64(11), "FAILED", "", "timeout").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0)) // already FAILED, harmless
+		if err := NewPGStore(mock).MarkTaxResult(context.Background(), 11,
+			TaxReceipt{Status: TaxStatusFailed, FailReason: "timeout", ExternalID: "ext-003"}); err != nil {
+			t.Fatalf("duplicate receipt: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("ISSUED不被乱序失败回退", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec(`INSERT INTO invoice_tax_events`).
+			WithArgs(int64(11), "FAILED", "", "late failure", "ext-004").
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectExec(`UPDATE invoices SET tax_status`).
+			WithArgs(int64(11), "FAILED", "", "late failure").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+		if err := NewPGStore(mock).MarkTaxResult(context.Background(), 11,
+			TaxReceipt{Status: TaxStatusFailed, FailReason: "late failure", ExternalID: "ext-004"}); err != nil {
+			t.Fatalf("late failure not regressed: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("无ExternalID兼容旧调用方", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		// INSERT always called; empty external_id always inserted (no conflict)
+		mock.ExpectExec(`INSERT INTO invoice_tax_events`).
+			WithArgs(int64(11), "FAILED", "", "generic error", "").
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectExec(`UPDATE invoices SET tax_status`).WithArgs(int64(11), "FAILED", "", "generic error").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		if err := NewPGStore(mock).MarkTaxResult(context.Background(), 11,
+			TaxReceipt{Status: TaxStatusFailed, FailReason: "generic error"}); err != nil {
+			t.Fatalf("backward compat: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
 }
