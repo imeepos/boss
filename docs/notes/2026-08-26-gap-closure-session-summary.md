@@ -42,6 +42,10 @@
 ## 2. 当前主分支状态
 
 ```
+35e4682 feat(port): unified header with i18n language switcher
+318f2e6 feat(report): quality violation dispatch to compensation tasks
+d5e8484 docs(plan): update delivery summary and next steps
+db362de docs(notes): record gap closure session summary
 330548e docs(contract): update PORT status
 6caaf5d feat(metric): admin handlers, OpenAPI
 a3842eb feat(metric): metric catalog domain
@@ -61,9 +65,9 @@ b565583 feat(cs): full ticket lifecycle and callbacks
 
 | 优先级 | 任务 | 外部依赖 | 当前状态 |
 |---|---|---|---|
-| P1 | 数据治理：ETL 投影任务台账 + 质量异常派单到补偿中心 | 无 | 基础已落地，需接入 |
-| P1 | PORT 完善：统一导航/三语/i18n/异常处理 | 无 | 已有35 页，基础完整 |
-| P1 | 多语言 user/worker | 无 | 有 i18n 基础，需扩展 |
+| P1 | 数据治理：ETL 投影任务台账 | 无 | 质量异常派单已落地，需补 ETL 台账 |
+| P1 | PORT 完善：更多页面 i18n/异常处理 | 无 | header.js 已 5 页，其余页面待扩展 |
+| P1 | 多语言 user/worker：扩展到全部页面 | 无 | header.js 提供三语切换，页面级 i18n 待扩展 |
 | P2 | 性能与 SLO | 无（需本地基准） | 需优化 |
 | P3 | AI 辅助运营 | LLM key | 需外部支持 |
 | P3 | 预测维护 | 设备数据 | 需外部支持 |
