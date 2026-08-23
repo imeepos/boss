@@ -95,12 +95,13 @@ type Application struct {
 	ResourceSub    resource.ResourceSubService
 	ResourceAssign resource.ResourceAssignService
 
-	Order       order.OrderService
-	WorkOrder   order.WorkOrderService
-	CSMetrics   order.CSMetricsReader
-	ARMetrics   billing.ARMetricsReader
-	OrderLedger order.OrderLedgerService
-	Channel     order.ChannelService
+	Order           order.OrderService
+	WorkOrder       order.WorkOrderService
+	CSMetrics       order.CSMetricsReader
+	ARMetrics       billing.ARMetricsReader
+	CollectionQueue billing.CollectionQueueService
+	OrderLedger     order.OrderLedgerService
+	Channel         order.ChannelService
 
 	Device    device.DeviceService
 	Alarm     device.AlarmService
