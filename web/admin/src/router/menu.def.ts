@@ -46,6 +46,8 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'product', label: '产品资费', path: '/bss/product' },
     { key: 'user', label: '用户列表', path: '/bss/user' },
     { key: 'userdata', label: '用户端配置', path: '/bss/userdata' },
+    { key: 'marketing', label: '营销与积分规则', path: '/bss/marketing' },
+    { key: 'marketing-recon', label: '券积分对账', path: '/bss/marketing-recon' },
   ]},
   { id: 'billing', label: '计费与账务', items: [
     { key: 'billing', label: '出账管理', path: '/billing/billing' },
