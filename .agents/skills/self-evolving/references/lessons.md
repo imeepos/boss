@@ -244,3 +244,4 @@
 D 门禁撞号先 merge main 反向同步再复跑:worktree 基点过旧会看到已被让号修复的旧撞号
 pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)报 unable to encode,Go 侧显式转换或 SQL 写死常量
 迁移 SQL 文件注释里禁止写分号:朴素 split(";") 工具(回环脚本/migrate 某些模式)会被注释内分号毒害
+- 2026-08-23 验证线上行为前先核对 registry 镜像 Created 时间与本地 commit 时间;容器 Up 时间/健康检查通过都不代表二进制已更新(CI 异步部署,验证失败先怀疑没部署)。

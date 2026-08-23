@@ -422,3 +422,11 @@
 - 哪个坑浪费最多时间:102 持续 404 半小时,起初误判为"合并潮正常滚动";实为 compose up 中断在 create/start 之间,三个应用容器卡 Created,且中断残留的改名孤儿容器(sha 前缀_boss-*)阻塞后续重建。
 - skill 有没有提前警告:部分——"连续 push 并发 deploy 撞容器名"预警了冲突,但没覆盖"中断后卡 Created 需 docker start 补完 + 孤儿改名容器需 rm -f"这一恢复路径。
 - 重来一次会怎么做:看到全部应用容器同时 Created 超过两个镜像周期,立即判定中断而非滚动;先 docker start 补完意图,再清 sha 前缀孤儿,最后用 registry 已有 latest 补完 up,全程不手工构建镜像。
+
+## 2026-08-23 Q1 基线冻结与主链路补强(goal 多轮)
+
+- 哪个坑浪费最多时间:线上验证时两次对着旧镜像断言"修复无效"——102 部署是流水线异步的,registry `latest` 的 Created 时间才是真相,容器 Up 时间会骗人(旧容器也是新 Up)。
+- skill 有没有提前警告:没有;部署时序核查是盲区。
+- 重来一次:任何"验证线上行为"前,先 `docker inspect <registry image> --format {{.Created}}` 对比本地落地时间;验证失败先怀疑二进制没更新,再怀疑代码。
+- 撞号拦截(make contract-sync D 项)两次救场(000108/000112);让号流程顺利,规则有效。
+- ff-merge 失败两次,均按红线第 9 条 rebase 重试,零丢失。
