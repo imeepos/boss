@@ -151,7 +151,10 @@ func (s *PGStore) NotifyActivation(ctx context.Context, orderID int64) error {
 // 渠道订单到达终态时自动计提佣金(尽力而为,不影响环节推进)。
 func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
 	if err := s.advance(ctx, orderID, "updateMap"); err != nil {
-		return err
+		// 环节已完成但端口落库失败时允许重试，避免 DONE 订单永久残留 RESERVED。
+		if !errors.Is(err, ErrIllegalTransition) || !s.isDoneAtMapStage(ctx, orderID) {
+			return err
+		}
 	}
 	if _, err := s.db.Exec(ctx,
 		`UPDATE ports SET status = 'USED' WHERE order_id = $1 AND status = 'RESERVED'`, orderID,
@@ -160,6 +163,15 @@ func (s *PGStore) UpdateMap(ctx context.Context, orderID int64) error {
 	}
 	s.accruePartnerCommission(ctx, orderID)
 	return nil
+}
+
+func (s *PGStore) isDoneAtMapStage(ctx context.Context, orderID int64) bool {
+	var stage int8
+	var status string
+	if err := s.db.QueryRow(ctx, `SELECT stage, status FROM orders WHERE id = $1`, orderID).Scan(&stage, &status); err != nil {
+		return false
+	}
+	return stage == 12 && status == "DONE"
 }
 
 // accruePartnerCommission 渠道订单终态自动计提佣金;尽力而为,失败只记日志不阻断。
