@@ -8,9 +8,9 @@ import (
 
 // Callback dispatch status reflect the scheduler lifecycle.
 const (
-	CallbackPending   = "PENDING"
+	CallbackPending    = "PENDING"
 	CallbackDispatched = "DISPATCHED"
-	CallbackCompleted = "COMPLETED"
+	CallbackCompleted  = "COMPLETED"
 	CallbackSkipped    = "SKIPPED"
 )
 

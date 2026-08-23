@@ -7,10 +7,10 @@ import (
 
 // Status 指标目录状态。
 const (
-	StatusDraft     = "DRAFT"
-	StatusActive    = "ACTIVE"
+	StatusDraft      = "DRAFT"
+	StatusActive     = "ACTIVE"
 	StatusDeprecated = "DEPRECATED"
-	StatusArchived  = "ARCHIVED"
+	StatusArchived   = "ARCHIVED"
 )
 
 // RefreshCadence 刷新频率。
@@ -54,7 +54,7 @@ type QualityRule struct {
 	RuleKey       string    `json:"ruleKey"`
 	Name          string    `json:"name"`
 	Scope         string    `json:"scope"`
-	CheckExpr      string    `json:"checkExpr"`
+	CheckExpr     string    `json:"checkExpr"`
 	ThresholdExpr string    `json:"thresholdExpr"`
 	Severity      string    `json:"severity"`
 	Owner         string    `json:"owner"`
