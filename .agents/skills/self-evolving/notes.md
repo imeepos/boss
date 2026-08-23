@@ -58,8 +58,15 @@
 ## 任务日志（一段一行，仅存该任务唯一性结论）
 
 - 2026-08-24 工作台订单状态跳转：仪表盘统计行用 navigate 携带 `status`，订单列表用 useQueryState/useQueryInt 做首次 URL 初始化并在本地交互时双写 URL；worktree 合并前若 main 已推进，必须回 feature merge main 后重新门禁再 ff-merge。
+- 2026-08-24 渠道 API key 模板：给已有 Service 接口增加参数会波及 fake 实现与测试；必须先 grep 全仓调用点并同步测试桩，且 Go 工具可能不在 PATH，要先使用 /opt/homebrew/bin。
+- 2026-08-24 渠道佣金台账：渠道结算必须按 partner account 的 legal_entity_id 做数据隔离，结算 UPDATE 同时校验企业归属与 ACCRUED 状态；迁移号要在合并后重新 rebase，避免并行分支造成 ff 失败。
+- 2026-08-24 渠道订单接口：不要复制直营状态机；伙伴订单 handler 只负责伙伴企业身份和审计，订单创建必须复用 `OrderService.Submit`，由地址继续推导归属并保留 12 环节语义。
+- 2026-08-24 渠道审计报表：审计报表优先聚合既有 `audit_logs`，通过订单归属 `legal_entity_id` 做租户隔离；新增权限必须同步角色绑定、契约字段和回滚迁移。
+- 2026-08-24 渠道基础反作弊：订单风控检查必须在伙伴企业隔离后、OrderService.Submit 前执行；命中限额或客户冷却要写 `partner_order.blocked` 审计，且允许服务为空以兼容旧装配。
+- 2026-08-24 风控契约收口：风控参数用 `biz_params` 默认值迁移并映射资源繁忙错误；服务端 `PartnerOrder` 标记必须是 `json:"-"`，避免客户端伪造伙伴来源。
 - 2026-08-24 工作台统计卡跳转：统计卡必须由组件统一处理鼠标/键盘交互，目标列表页同时消费 URL 条件；今日订单需前后端共同支持时间条件，不能只改变前端地址。
 - 2026-08-24 订单状态趋势：后端趋势接口返回按 terms.md 五种状态拆分的 series，前端图表通过 legend button 切换可见曲线；扩展接口时同步更新后端 contract test、Dashboard DTO 和三份 locale。
+- 本轮 Q1 CS/AR：迁移号查到未合并分支已占 000117，必须让号到 000118；Go 工具不在 PATH（gofmt/go test 均未执行），收尾应明确区分代码门禁未运行与代码错误。
 
 - 2026-08-22 GIS 地图空白：真实 102 `/gis/points?level=1` 返回空 items 时，页面原先用条件渲染卸载 OpenLayers；地图底图也随之消失。地图容器必须独立渲染，空数据提示用 pointer-events-none 覆盖层，避免把“无点位”误处理成“无地图”。
 - 2026-08-22 GIS 地图仍空白：OpenLayers `map.on()` 返回 EventsKey，不能传给 `map.un()` 当 listener；React StrictMode 清理 effect 时抛 `removeEventListener` 异常，地图随组件卸载。统一用 `unByKey()` 清理 OL 事件。
@@ -432,3 +439,16 @@
 - 重来一次:任何"验证线上行为"前,先 `docker inspect <registry image> --format {{.Created}}` 对比本地落地时间;验证失败先怀疑二进制没更新,再怀疑代码。
 - 撞号拦截(make contract-sync D 项)两次救场(000108/000112);让号流程顺利,规则有效。
 - ff-merge 失败两次,均按红线第 9 条 rebase 重试,零丢失。
+
+## 2026-08-22 Q4 开放平台 M1(worktree feat/q4-open-platform,已合并 main)
+
+- 最耗时的坑:bash 默认 cwd 是主树,不是 worktree。python/sed 批量改文件两次跑错树
+  (一次改了主树的 check-contract-sync/routes.go,一次 FileNotFound 才发现)。
+  重来一次:凡在 worktree 工作,每条 bash 都显式带 workdir 参数,heredoc 脚本开头先 `pwd` 自检。
+- 第二个坑:非交互 rebase 的 GIT_SEQUENCE_EDITOR sed '1s/pick/reword' 会命中 todo 的
+  第一行 pick(--rebase-merges 下那是 main 侧第一个提交),把别人的提交改成了我的 message,
+  又花了三轮返工。教训:改历史前先用 `git log --oneline` 确认目标 hash,sed 匹配 hash 前缀
+  而不是行号;改完立刻 `git log --graph` 验证。
+- 并行会话当天把 main 推进了 4 次,迁移号两次撞号(117、121),契约缺口三处。
+  让号规则+反向同步流程本身是顺的,问题是反向同步后冲突解析脚本截断了 application.go,
+  靠 go build 抓回来。教训:merge 冲突用脚本批量解后必须立即 go build + go vet。
