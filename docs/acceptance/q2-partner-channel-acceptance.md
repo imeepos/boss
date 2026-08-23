@@ -46,7 +46,7 @@ pnpm --dir web/admin run test -- --runInBand
 pnpm --dir web/admin run build
 ```
 
-结果：typecheck 通过；45 个测试文件、247 个测试通过；生产构建通过。文档中的 28080 是后端 API 入口；按 `deployments/docker-compose.102.app.yml`，前端实际入口为 `http://192.168.0.102:5180`。已用 CDP 在 5180 验证 `/login` 与 `/partner/apply` 返回 200，伙伴申请页面加载 `apply` 与 `partner` chunks；表单输入事件也已验证（2 个输入值成功写入）。使用 102 配置的 `admin/admin123` 登录也已成功：页面跳转 `/dashboard`、`boss.token` 已写入，Dashboard API 返回 200。随后访问 `/partner/home` 返回 200，说明前端路由可达；由于管理员角色不属于 `partner_*`，未继续调用伙伴企业 API，避免把管理员身份误当伙伴身份。
+结果：typecheck 通过；45 个测试文件、247 个测试通过；生产构建通过。文档中的 28080 是后端 API 入口；按 `deployments/docker-compose.102.app.yml`，前端实际入口为 `http://192.168.0.102:5180`。已用 CDP 在 5180 验证 `/login` 与 `/partner/apply` 返回 200，伙伴申请页面加载 `apply` 与 `partner` chunks；表单输入事件也已验证（2 个输入值成功写入）。使用 102 配置的 `admin/admin123` 登录也已成功：页面跳转 `/dashboard`、`boss.token` 已写入，Dashboard API 返回 200。完成 102 boss-server 镜像更新后，使用真实审批返回的 `partner_admin` 一次性凭证完成 `/partner/home`、`/partner/staff`、`/partner/orders` 页面验收：三个页面均 HTTP 200、DOM 渲染企业资料/员工表格/订单空态，且分别调用 `/partner/me`、`/partner/staff`、`/partner/orders`。
 
 ## 已执行命令
 
@@ -68,5 +68,6 @@ BOSS_PG_TEST_DSN='host=192.168.0.102 port=25432 user=boss password=boss dbname=b
 - 伙伴 HTTP/PG 全链路单个测试用例尚未把入驻审批后的新账号登录、区域设置、渠道下单、12 环节推进、自动佣金和审计报表全部串成一次旅程。
 - 风控每日上限的并发订单创建尚未做压力级集成测试；已有租户行锁阻塞验收。
 - 102 后端 API 根路径 `/` 返回 404 属于预期，因为前端入口按部署编排位于 `:5180`；已完成 `/login` 与 `/partner/apply` 的页面加载及表单输入级 CDP 验证。
-- 已完成 102 `admin/admin123` 登录、Dashboard API、`/partner/home` 路由可达性验收；使用管理员 token 调用 `/partner/me`、`/partner/orders`、`/partner/region-scope`、`/partner/commissions`、`/partner/audit-report` 均返回 403，证明权限门禁生效。
-- 102 版本漂移已确认：`GET /partner/applications` 返回 200，但 `POST /partner/applications/:id/approve` 返回 404；源码 `internal/httpapi/admin/partner.go` 已注册该 POST 路由，说明 102 的 boss-server 镜像落后于当前主分支。伙伴审批和真实 `partner_admin` 数据验收因此被部署版本阻塞。
+- 已完成 102 `admin/admin123` 登录、Dashboard API、管理员调用伙伴企业 API 返回 403 的权限边界验收。
+- 已通过 main push 触发 102 server/admin-web 部署，验证 `boss-server` 重建时间更新；`POST /partner/applications/:id/approve` 已从 404 恢复为 200/业务响应。
+- 使用真实 `partner_admin` 一次性凭证完成 5180 `/partner/home`、`/partner/staff`、`/partner/orders` 页面和 API 验收。
