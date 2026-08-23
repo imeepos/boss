@@ -46,7 +46,7 @@ const listJoins = `
 
 // Create 为指定主体创建 API key,返回完整密钥(仅在此返回一次)。
 // subjectType ∈ {account, worker, customer};subjectRef 为主体表主键。
-func (s *PGStore) Create(ctx context.Context, subjectType string, subjectRef, createdBy int64, name string) (*CreateResult, error) {
+func (s *PGStore) Create(ctx context.Context, subjectType string, subjectRef, createdBy int64, name, templateCode string) (*CreateResult, error) {
 	if !ValidSubjectType(subjectType) {
 		return nil, ErrInvalidSubject
 	}
@@ -55,9 +55,9 @@ func (s *PGStore) Create(ctx context.Context, subjectType string, subjectRef, cr
 	hexHash := hex.EncodeToString(h[:])
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO api_keys (subject_type, subject_ref, name, key_hash, created_by)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id`, subjectType, subjectRef, name, hexHash, createdBy).Scan(&id)
+		INSERT INTO api_keys (subject_type, subject_ref, name, key_hash, created_by, template_code)
+		VALUES ($1, $2, $3, $4, $5, NULLIF($6, ''))
+		RETURNING id`, subjectType, subjectRef, name, hexHash, createdBy, templateCode).Scan(&id)
 	if err != nil {
 		return nil, fmt.Errorf("apikey: create: %w", err)
 	}
@@ -72,7 +72,7 @@ func (s *PGStore) Create(ctx context.Context, subjectType string, subjectRef, cr
 
 // List 列出所有 API key 元数据(不含明文密钥)。
 func (s *PGStore) List(ctx context.Context) ([]APIKey, error) {
-	rows, err := s.db.Query(ctx, `SELECT `+listCols+listJoins+` ORDER BY k.created_at DESC`)
+	rows, err := s.db.Query(ctx, `SELECT `+listCols+`, COALESCE(k.template_code, '')`+listJoins+` ORDER BY k.created_at DESC`)
 	if err != nil {
 		return nil, fmt.Errorf("apikey: list: %w", err)
 	}
@@ -82,7 +82,7 @@ func (s *PGStore) List(ctx context.Context) ([]APIKey, error) {
 		var k APIKey
 		var lastUsed, createdAt pgtype.Timestamptz
 		if err := rows.Scan(&k.ID, &k.SubjectType, &k.SubjectRef, &k.SubjectName, &k.Name,
-			&k.Status, &lastUsed, &createdAt); err != nil {
+			&k.Status, &lastUsed, &createdAt, &k.TemplateCode); err != nil {
 			return nil, fmt.Errorf("apikey: scan: %w", err)
 		}
 		if lastUsed.Valid {
@@ -92,6 +92,29 @@ func (s *PGStore) List(ctx context.Context) ([]APIKey, error) {
 			k.CreatedAt = createdAt.Time.Format(time.RFC3339)
 		}
 		out = append(out, k)
+	}
+	return out, rows.Err()
+}
+
+// ListTemplates 列出启用模板及其权限集。
+func (s *PGStore) ListTemplates(ctx context.Context) ([]PermissionTemplate, error) {
+	rows, err := s.db.Query(ctx, `
+SELECT t.code, t.name, t.description, COALESCE(array_agg(p.permission_code ORDER BY p.permission_code)
+    FILTER (WHERE p.permission_code IS NOT NULL), '{}')
+FROM api_key_permission_templates t
+LEFT JOIN api_key_template_permissions p ON p.template_code=t.code
+WHERE t.status=1 GROUP BY t.code, t.name, t.description ORDER BY t.code`)
+	if err != nil {
+		return nil, fmt.Errorf("apikey: list templates: %w", err)
+	}
+	defer rows.Close()
+	var out []PermissionTemplate
+	for rows.Next() {
+		var item PermissionTemplate
+		if err := rows.Scan(&item.Code, &item.Name, &item.Description, &item.Permissions); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
 	}
 	return out, rows.Err()
 }
