@@ -3,6 +3,7 @@ package loy
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pashagolub/pgxmock/v4"
 )
@@ -100,6 +101,19 @@ func TestRollbackPayment_AlreadyRolled(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPeriodKeyOf_RecurringTasks(t *testing.T) {
+	at := time.Date(2026, 8, 27, 12, 0, 0, 0, time.UTC)
+	if got := periodKeyOf("DAILY", at); got != "2026-08-27" {
+		t.Fatalf("daily key=%q", got)
+	}
+	if got := periodKeyOf("MONTHLY", at); got != "2026-08" {
+		t.Fatalf("monthly key=%q", got)
+	}
+	if got := periodKeyOf("ONE_TIME", at); got != "" {
+		t.Fatalf("one-time key=%q", got)
 	}
 }
 

@@ -4,17 +4,9 @@
 (function (global) {
   'use strict';
 
-  // 默认取"页面所在主机"的 hostname 拼接口地址:
-  // 本机打开 -> location.hostname 为空 -> 回退 127.0.0.1;
-  // 局域网另一台设备打开 -> location.hostname 就是那台设备的 IP/主机名 -> 直连其上的 mock。
-  // 也可通过 API_BASE_URL 显式指定(如 'http://192.168.0.15:8090/api/v1')。
-  var DEFAULT_BASE = (function () {
-    var host = (typeof location !== 'undefined' && location.hostname) || '';
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'http://' + host + ':8090/api/v1';
-    }
-    return 'http://127.0.0.1:8090/api/v1';
-  })();
+  // 生产门户默认使用 102 真实 user API；本地开发可由 API_BASE_URL 覆盖。
+  // 不在门户代码内嵌 mock，避免把局部演示误判为真实旅程。
+  var DEFAULT_BASE = 'http://192.168.0.102:28080/api/user/v1';
   var BASE = (global.API_BASE_URL || DEFAULT_BASE);
   var TOKEN_KEY = 'boss_user_token';
 
@@ -139,6 +131,13 @@
     service: {
       chat: function (message) { return post('/service/chat', { message: message }); },
       faq: function () { return get('/service/faq'); },
+    },
+
+    points: {
+      get: function () { return get('/points'); },
+      tier: function () { return get('/points/tier'); },
+      tasks: function () { return get('/points/tasks'); },
+      complete: function (id) { return post('/points/tasks/' + encodeURIComponent(id) + '/complete'); },
     },
 
     misc: {

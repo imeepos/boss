@@ -5,6 +5,7 @@
     { key: 'products', label: '产品', glyph: '▦', href: 'products.html' },
     { key: 'orders',   label: '订单', glyph: '≡', href: 'orders.html' },
     { key: 'profile',  label: '我的', glyph: '◉', href: 'profile.html' },
+    { key: 'points',   label: '积分', glyph: '✦', href: 'points.html' },
   ];
   var bar = document.getElementById('tabbar');
   if (!bar) return;
