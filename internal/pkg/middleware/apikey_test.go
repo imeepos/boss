@@ -23,11 +23,14 @@ type fakeKeyService struct {
 	touchN atomic.Int64
 }
 
-func (f *fakeKeyService) Create(ctx context.Context, st string, ref, by int64, n string) (*apikey.CreateResult, error) {
+func (f *fakeKeyService) Create(ctx context.Context, st string, ref, by int64, n, tpl string) (*apikey.CreateResult, error) {
 	return nil, nil
 }
 func (f *fakeKeyService) List(ctx context.Context) ([]apikey.APIKey, error) { return nil, nil }
-func (f *fakeKeyService) Revoke(ctx context.Context, id int64) error        { return nil }
+func (f *fakeKeyService) ListTemplates(ctx context.Context) ([]apikey.PermissionTemplate, error) {
+	return nil, nil
+}
+func (f *fakeKeyService) Revoke(ctx context.Context, id int64) error { return nil }
 func (f *fakeKeyService) Lookup(ctx context.Context, keyHash string) (*apikey.Subject, error) {
 	if s, ok := f.lookup[keyHash]; ok {
 		return s, nil
