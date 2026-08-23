@@ -57,7 +57,9 @@
 
 ## 任务日志（一段一行，仅存该任务唯一性结论）
 
+
 - 2026-08-24 工作台订单状态跳转：仪表盘统计行用 navigate 携带 `status`，订单列表用 useQueryState/useQueryInt 做首次 URL 初始化并在本地交互时双写 URL；worktree 合并前若 main 已推进，必须回 feature merge main 后重新门禁再 ff-merge。
+- 2026-08-23 性能与 SLO 优化：Go 门禁因 PATH 未含 Homebrew 工具和磁盘不足失败；下次先检查 `command -v go gofmt` 与 `df -h`，并在报告中将环境阻塞与代码失败分开。
 - 2026-08-24 渠道 API key 模板：给已有 Service 接口增加参数会波及 fake 实现与测试；必须先 grep 全仓调用点并同步测试桩，且 Go 工具可能不在 PATH，要先使用 /opt/homebrew/bin。
 - 2026-08-24 渠道佣金台账：渠道结算必须按 partner account 的 legal_entity_id 做数据隔离，结算 UPDATE 同时校验企业归属与 ACCRUED 状态；迁移号要在合并后重新 rebase，避免并行分支造成 ff 失败。
 - 2026-08-24 渠道订单接口：不要复制直营状态机；伙伴订单 handler 只负责伙伴企业身份和审计，订单创建必须复用 `OrderService.Submit`，由地址继续推导归属并保留 12 环节语义。
