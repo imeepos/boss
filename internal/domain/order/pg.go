@@ -19,6 +19,11 @@ type dbtx interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
+type transactionalDB interface {
+	dbtx
+	Begin(ctx context.Context) (pgx.Tx, error)
+}
+
 // PGStore 是 OrderService 接口的 PostgreSQL 实现(阶段5)。
 type PGStore struct {
 	db      dbtx
@@ -79,6 +84,13 @@ func (s *PGStore) exists(ctx context.Context, table string, id int64, extra stri
 // Submit 下单(环节1):校验渠道/客户/产品/地址关联完整性后建单,status=PENDING、stage=1,写环节日志。
 // 幂等(000116):req.RequestID 非空时,同客户同键重放返回已有订单,不重复发号建单。
 func (s *PGStore) Submit(ctx context.Context, req SubmitReq) (*Order, error) {
+	if req.PartnerOrder {
+		return s.submitPartnerAtomic(ctx, req)
+	}
+	return s.submitRegular(ctx, req)
+}
+
+func (s *PGStore) submitRegular(ctx context.Context, req SubmitReq) (*Order, error) {
 	if req.ChannelID == 0 {
 		return nil, errors.New("order: channel_id required")
 	}
