@@ -267,3 +267,9 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-24 git amend 前先确认 HEAD 指向哪个提交:并行多提交在途时 amend 默认打进 HEAD,不是"打进我想改的那个";误并后 reset --soft + 按文件重拆可恢复提交原子性。
 - 2026-08-24 日期边界类测试的正确隔离是给时钟加 SetFixed 测试缝钉死绝对时刻(生产默认真实墙钟),而不是依赖真实 now + 相对偏移:夹具与 handler 各取一次 now 就存在日界毫秒竞态,宿主时区也会渗入。
 - 2026-08-24 双父并集分类的代价是保守:main 刚前进过运行时提交后,即便只合 docs 也会触发一次重复部署(P2 侧 diff 含运行时文件)。这是可接受的取舍——漏部署真实变更比多一次幂等重启危害大;docs-only 直推(非合并形状)仍稳定跳过。
+- 新增后台菜单页时,权限码迁移必须同步登记 permissions + role_permissions(sysadmin CROSS JOIN 或单授),否则 102 回放直接 403 no permission(2026-08-28 menu:site 踩坑,先例 000039 geo_menu)。
+- INSERT 与 UPDATE 对同一状态字段的副作用必须对称:UPDATE 置 PUBLISHED 落 published_at 而 INSERT 不落,导致创建即发布的文章倒序错乱、日期为空(2026-08-28 cms_posts 102 回放发现)。
+- 102 部署是 push gitea main 触发 CI;回放验证要等容器真正换新(端点可达≠新代码),按"制造可观测差异再轮询"确认部署完成。
+- 2026-08-28 新路由的契约登记源是 api/openapi/*.yaml(A 检查),cmd/bossctl/routes_admin.go 只是 CLI 目录;两处都要加,漏 yaml 必红灯。
+- 2026-08-28 免鉴权公开端点三原则:只读最小投影手动挑字段、非公开态统一 404 不泄露存在性、挂靠既有 public 子路由先例不新开路由组。
+- 2026-08-28 前端区块接后端数据且业务上可能为空时,空态/失败态整块 return null 隐藏,不留空白占位区(官网首页 NewsSection 模式)。
