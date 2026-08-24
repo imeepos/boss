@@ -266,3 +266,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-24 CI 按变更分类跳过部署时,凡 HEAD 是合并提交必须并看两个父的 diff:feature 侧 merge main 后直接推 main,HEAD^ 是 feature tip,只看第一父会把带入 main 的运行时变更误判 docs-only 静默跳过部署(gitea task 2606 实例);修法 `files=$(git diff --name-only HEAD^ HEAD); git rev-parse -q HEAD^2 && files+="$(git diff --name-only HEAD^2 HEAD)"`。
 - 2026-08-24 git amend 前先确认 HEAD 指向哪个提交:并行多提交在途时 amend 默认打进 HEAD,不是"打进我想改的那个";误并后 reset --soft + 按文件重拆可恢复提交原子性。
 - 2026-08-24 日期边界类测试的正确隔离是给时钟加 SetFixed 测试缝钉死绝对时刻(生产默认真实墙钟),而不是依赖真实 now + 相对偏移:夹具与 handler 各取一次 now 就存在日界毫秒竞态,宿主时区也会渗入。
+- 2026-08-24 双父并集分类的代价是保守:main 刚前进过运行时提交后,即便只合 docs 也会触发一次重复部署(P2 侧 diff 含运行时文件)。这是可接受的取舍——漏部署真实变更比多一次幂等重启危害大;docs-only 直推(非合并形状)仍稳定跳过。
