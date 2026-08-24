@@ -31,9 +31,21 @@ jobs:
 
       - name: Deploy (compose up)
         run: |
+          # 根治遗留问题:固定 container_name 可能被其他 compose 项目(手动 deploy 的 deployments 项目、
+          # 无 label 的 docker run)占用,--force-recreate 在名字冲突处中止,已 Recreate 的容器滞留 Created。
+          # 先按名字清掉残留,保证 compose 独占名字后 up 必然完整拉起。
+          docker rm -f boss-server boss-aaa boss-report boss-admin-web 2>/dev/null || true
           docker-compose -f deployments/docker-compose.102.app.yml -p boss-app up -d --force-recreate --remove-orphans
           sleep 12
           docker-compose -f deployments/docker-compose.102.app.yml -p boss-app ps
+
+      - name: Verify all containers running
+        run: |
+          for c in boss-server boss-aaa boss-report boss-admin-web; do
+            state=$(docker inspect -f '{{.State.Status}}' "$c" 2>/dev/null || echo missing)
+            echo "$c=$state"
+            [ "$state" = "running" ] || { echo "container $c not running"; exit 1; }
+          done
 
       - name: Healthcheck
         run: |
