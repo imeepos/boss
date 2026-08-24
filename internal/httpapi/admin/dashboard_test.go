@@ -15,6 +15,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/pkg/auth"
+	"github.com/ymm-001/boss/internal/pkg/clock"
 )
 
 // dashboard 各域只读桩(嵌入接口,仅覆写用到的列表方法)。
@@ -49,7 +50,11 @@ func (f *fakeDashQuadlink) PurgeOrphans(context.Context) (int64, error) { return
 // TestDashboard 契约:统计卡/订单状态分布/待办/近7日趋势均来自真实在库数据。
 func TestDashboard(t *testing.T) {
 	mgr := auth.NewManager("s", time.Hour)
-	now := time.Now()
+	if err := clock.Set("Asia/Manila"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = clock.Set("UTC") })
+	now := clock.Now()
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	Register(r, &app.Application{
@@ -128,6 +133,9 @@ func TestDashboard(t *testing.T) {
 	}
 	if sumTrend(trend["PENDING"]) != 1 || sumTrend(trend["DONE"]) != 1 {
 		t.Fatalf("trend series=%+v", trend)
+	}
+	if err := clock.Set("UTC"); err != nil {
+		t.Fatal(err)
 	}
 	month := getJSON(t, r, "/api/admin/v1/dashboard?trendPeriod=month", authToken(t, mgr))
 	if month.Code != http.StatusOK || !contains(month.Body.String(), `"period":"month"`) {
