@@ -5,7 +5,6 @@ import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { TableStateRow } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
-import { useConfirm } from '../../../components/ConfirmDialog'
 import { apiBaseUrl } from '../../../api/client'
 import {
   listReleases, patchRelease, uploadRelease,
@@ -15,7 +14,7 @@ import {
 type Status = ClientReleaseDTO['status']
 
 export default function ClientReleasePage() {
-  const t = useT(); const s = t.pages.releasePage; const confirm = useConfirm()
+  const t = useT(); const s = t.pages.releasePage
   const [rows, setRows] = useState<ClientReleaseDTO[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')

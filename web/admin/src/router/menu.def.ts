@@ -85,6 +85,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'knowledge', label: '知识库', path: '/boss/knowledge' },
     { key: 'site', label: '官网内容', path: '/boss/site' },
     { key: 'site-cats', label: '官网分类', path: '/boss/site/cats' },
+    { key: 'release', label: '版本发布', path: '/boss/release' },
     { key: 'service-metrics', label: '客户服务指标', path: '/boss/service-metrics' },
     { key: 'feedback', label: '回访评价', path: '/boss/feedback' },
     { key: 'callback', label: '激活回调', path: '/boss/callback' },
