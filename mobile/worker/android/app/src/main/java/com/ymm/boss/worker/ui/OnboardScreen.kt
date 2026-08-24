@@ -60,7 +60,7 @@ import kotlinx.coroutines.launch
 // 提交后展示"已提交审核"状态页。
 
 @Composable
-fun OnboardScreen(onBack: () -> Unit) {
+fun OnboardScreen(onBack: () -> Unit, onAgreement: () -> Unit = {}) {
     var submitted by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
@@ -116,7 +116,7 @@ fun OnboardScreen(onBack: () -> Unit) {
             }
 
             // 协议行
-            AuthAgreeRow(agreed, onToggle = { agreed = it }, onAgreement = { /* TODO 协议页 */ })
+            AuthAgreeRow(agreed, onToggle = { agreed = it }, onAgreement = onAgreement)
 
             // 提交按钮
             AuthPrimaryButton("提交入驻申请", enabled = agreed && !busy, loading = busy,

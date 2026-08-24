@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
 private val pageBg = Color(0xFFF6F8FA)
 
 @Composable
-fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit) {
+fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit, onAgreement: () -> Unit = {}) {
     var mode by remember { mutableStateOf("sms") }
     var phone by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
@@ -108,7 +108,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit) {
                     if (err.isNotBlank()) AuthFootnote(err, Color(0xFFFF2D2F))
                 }
                 // 协议行
-                AuthAgreeRow(agreed, onToggle = { agreed = it }, onAgreement = { /* TODO 协议页 */ })
+                AuthAgreeRow(agreed, onToggle = { agreed = it }, onAgreement = onAgreement)
                 // 主按钮
                 AuthPrimaryButton("登录", enabled = agreed && !busy, loading = busy,
                     onClick = {

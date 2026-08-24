@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 sealed interface Screen {
     data object Login : Screen
     data object Onboard : Screen  // 申请入驻
+    data object Agreement : Screen  // 服务协议全文
     data object Home : Screen
     data object Orders : Screen
     data object Profile : Screen
