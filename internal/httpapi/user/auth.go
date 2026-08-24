@@ -74,6 +74,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerCustomerSelfRegistration(pub, a)
 	registerPortalAuthRoutes(pub, a, mgr)
 	RegisterDebugRoutes(pub, a, mgr)
+	registerUserClientReleaseRoutes(pub, a, mgr)
 
 	uauth := r.Group("/api/user/v1")
 	uauth.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudUser), portalCustomerOnly())

@@ -10,6 +10,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/analytics"
 	"github.com/ymm-001/boss/internal/domain/apikey"
+	"github.com/ymm-001/boss/internal/domain/apprelease"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/backup"
@@ -82,6 +83,8 @@ type Application struct {
 	PushNotifier pushdomain.WorkerNotifier
 	// CrashLogs 客户端崩溃日志存储(迁移 000136);nil 安全(httpapi 跳过)。
 	CrashLogs crashdomain.Store
+	// AppRelease 客户端版本发布域(000137):双端 APK 上传/灰度/发布;nil 安全。
+	AppRelease *apprelease.Service
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService

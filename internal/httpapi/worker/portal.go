@@ -124,6 +124,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	pub := r.Group("/api/worker/v1")
 	registerWorkerSelfRegistration(pub, a)
 	registerWorkerPortalAuth(pub, a)
+	registerWorkerClientReleaseRoutes(pub, a)
 	wauth := r.Group("/api/worker/v1", middleware.APIKeyAuth(a.APIKey, workerSubjectResolver(a)), workerAuth())
 	registerWorkerPortalTicketRoutes(wauth, a)
 	registerWorkerPortalScanRoutes(wauth, a)

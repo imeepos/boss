@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
+	"github.com/ymm-001/boss/internal/domain/apprelease"
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/domain/cms"
@@ -154,6 +155,12 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 			Conf: minioFallback(cfg),
 		},
 
+		// AppRelease 客户端版本发布(000137):APK 对象复用 attachment 的 MinIO 抽象。
+		AppRelease: &apprelease.Service{
+			St: apprelease.NewPGStore(pool), Obj: attachment.NewMinIOStorage(),
+			Conf: minioFallback(cfg),
+		},
+
 		Worker:       wrk,
 		WorkerLedger: wrk,
 		WorkerFact:   wrk,
@@ -171,6 +178,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 	app.Audit = aw
 	app.Attachment.Resolve = minioConfigResolver(app.User, app.Attachment.Conf)
+	app.AppRelease.Resolve = app.Attachment.Resolve // 同源密钥热轮换
 	if cfg.HostCtl.URL != "" && cfg.HostCtl.HMACKey != "" {
 		app.HostCtl = hostctl.New(cfg.HostCtl.URL, cfg.HostCtl.HMACKey)
 	}
