@@ -136,3 +136,10 @@ func TestSitePublicDetail_DraftIs404(t *testing.T) {
 		t.Fatalf("code=%d want 40400", env.Code)
 	}
 }
+
+func (f *fakeCMS) ListCategories(context.Context) ([]cms.Category, error) {
+	return []cms.Category{{ID: 1, Code: "NEWS", Name: "动态", Enabled: true}}, nil
+}
+func (f *fakeCMS) CreateCategory(_ context.Context, c cms.Category) (int64, error) { return 5, nil }
+func (f *fakeCMS) UpdateCategory(_ context.Context, c cms.Category) error          { return nil }
+func (f *fakeCMS) DeleteCategory(_ context.Context, id int64) error                { return nil }

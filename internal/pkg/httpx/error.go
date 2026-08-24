@@ -42,7 +42,9 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, billing.ErrDuplicateInvoice),
 		errors.Is(err, billing.ErrPaymentNotRefundable),
 		errors.Is(err, order.ErrChannelDuplicate),
-		errors.Is(err, cms.ErrSlugTaken):
+		errors.Is(err, cms.ErrSlugTaken),
+		errors.Is(err, cms.ErrCategoryTaken),
+		errors.Is(err, cms.ErrCategoryInUse):
 		Respond(c, apitypes.CodeConflict, nil)
 	case errors.Is(err, user.ErrInvalidInput),
 		errors.Is(err, user.ErrRoleNotFound),
@@ -52,7 +54,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, backup.ErrInvalidInput),
 		errors.Is(err, order.ErrInvalidInput),
 		errors.Is(err, ErrGeoInvalidParam),
-		errors.Is(err, cms.ErrInvalidPost):
+		errors.Is(err, cms.ErrInvalidPost),
+		errors.Is(err, cms.ErrInvalidCategory):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
@@ -76,7 +79,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, backup.ErrNotFound),
 		errors.Is(err, metric.ErrNotFound),
 		errors.Is(err, metric.ErrETLNotFound),
-		errors.Is(err, cms.ErrPostNotFound):
+		errors.Is(err, cms.ErrPostNotFound),
+		errors.Is(err, cms.ErrCategoryNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, backup.ErrBusy):
 		Respond(c, apitypes.CodeResourceBusy, nil)

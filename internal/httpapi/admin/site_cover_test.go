@@ -63,6 +63,20 @@ func newCoverRouter(published bool, cover int64, at *attachment.Attachment) *gin
 	return r
 }
 
+// newContentRouter 可指定正文与状态的公开面路由构造(正文图片/详情重写测试共用)。
+func newContentRouter(content, status string, at *attachment.Attachment) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	a := &app.Application{
+		User: &fakeUser{},
+		CMS: &fakeCMS{listed: []cms.Post{{ID: 1, Slug: "a",
+			Status: status, Content: content}}},
+		Attachment: &attachment.Service{St: &fakeAtStore{at: at}, Obj: &fakeObjStorage{content: "IMG"}},
+	}
+	Register(r, a, auth.NewManager("t", time.Hour))
+	return r
+}
+
 func coverStatus(pub bool) string {
 	if pub {
 		return cms.StatusPublished

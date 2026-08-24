@@ -56,7 +56,7 @@ func (s *PGStore) ListPublished(ctx context.Context, category string, limit int)
 	}
 	q := `SELECT ` + cols + ` FROM cms_posts WHERE status='PUBLISHED'`
 	args := []any{limit}
-	if category == CategoryNews || category == CategoryArticle {
+	if category != "" {
 		q += ` AND category=$2`
 		args = append(args, category)
 	}
@@ -98,6 +98,9 @@ func (s *PGStore) CreatePost(ctx context.Context, p Post) (int64, error) {
 	if err := p.validate(); err != nil {
 		return 0, err
 	}
+	if err := s.categoryUsable(ctx, p.Category); err != nil {
+		return 0, err
+	}
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO cms_posts(slug, title, category, summary, cover_attachment_id, content, status, author_name,
@@ -117,6 +120,9 @@ func (s *PGStore) CreatePost(ctx context.Context, p Post) (int64, error) {
 func (s *PGStore) UpdatePost(ctx context.Context, p Post) error {
 	p.normalize()
 	if err := p.validate(); err != nil {
+		return err
+	}
+	if err := s.categoryUsable(ctx, p.Category); err != nil {
 		return err
 	}
 	tag, err := s.db.Exec(ctx, `
@@ -152,7 +158,7 @@ func (s *PGStore) DeletePost(ctx context.Context, id int64) error {
 // normalize 空 category/status 落默认值,减少前端必传字段。
 func (p *Post) normalize() {
 	if p.Category == "" {
-		p.Category = CategoryNews
+		p.Category = "NEWS"
 	}
 	if p.Status == "" {
 		p.Status = StatusDraft
