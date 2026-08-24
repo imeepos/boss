@@ -437,6 +437,11 @@ paths:
   /site/posts: { $ref: './admin/site.yaml#/paths/~1site~1posts' }
   /site/posts/{slug}: { $ref: './admin/site.yaml#/paths/~1site~1posts~1{slug}' }
   /site/posts/{slug}/cover: { $ref: './admin/site.yaml#/paths/~1site~1posts~1{slug}~1cover' }
+  /client-releases: { $ref: './admin/client-release.yaml#/paths/~1client-releases' }
+  /client-releases/{id}: { $ref: './admin/client-release.yaml#/paths/~1client-releases~1{id}' }
+  /client-releases/{id}/apk: { $ref: './admin/client-release.yaml#/paths/~1client-releases~1{id}~1apk' }
+  /site/downloads: { $ref: './admin/client-release.yaml#/paths/~1site~1downloads' }
+  /site/downloads/apk: { $ref: './admin/client-release.yaml#/paths/~1site~1downloads~1apk' }
   /site/posts/{slug}/img/{attId}: { $ref: './admin/site.yaml#/paths/~1site~1posts~1{slug}~1img~1{attId}' }
   /site-categories: { $ref: './admin/site.yaml#/paths/~1site-categories' }
   /site-categories/{catId}: { $ref: './admin/site.yaml#/paths/~1site-categories~1{catId}' }

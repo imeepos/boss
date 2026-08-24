@@ -27,15 +27,15 @@ CREATE TABLE IF NOT EXISTS client_releases (
 CREATE INDEX IF NOT EXISTS idx_client_releases_active
     ON client_releases (app, platform, status, version_code DESC);
 
--- 菜单权限(menu:client-release,随功能迁移走,沿 000135 cms_menu 先例)。
+-- 菜单权限(menu:release,随功能迁移走,沿 000135 cms_menu 先例)。
 INSERT INTO permissions (code, name) VALUES
-    ('menu:client-release', '订单与工单·版本发布')
+    ('menu:release', '订单与工单·版本发布')
 ON CONFLICT (code) DO NOTHING;
 
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
-JOIN permissions p ON p.code = 'menu:client-release'
+JOIN permissions p ON p.code = 'menu:release'
 WHERE r.code = 'sysadmin'
 ON CONFLICT DO NOTHING;
 COMMIT;

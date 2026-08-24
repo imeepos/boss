@@ -1,0 +1,42 @@
+# 客户端版本检查(fields.md 8F):pub 组免登录,启动即查;deviceId 参与灰度分桶,
+# 白名单按主体豁免(带 token 尽力解析)。两端(worker/user)同构。
+paths:
+  /client/latest:
+    get:
+      tags: [Client]
+      summary: 升级判定(双门槛:versionCode 单调 + minSupportedCode 强升线)
+      operationId: checkClientUpdate
+      security: []
+      parameters:
+        - { name: versionCode, in: query, required: true, schema: { type: integer } }
+        - { name: deviceId, in: query, required: true, schema: { type: string }, description: 本地持久 UUID,灰度分桶输入 }
+      responses:
+        '200':
+          description: envelope;updateAvailable=false 时其余字段为零值
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      updateAvailable: { type: boolean }
+                      force: { type: boolean }
+                      version: { type: string }
+                      versionCode: { type: integer }
+                      notes: { type: string }
+                      sha256: { type: string }
+                      size: { type: integer }
+                      downloadUrl: { type: string, description: 同端相对路径,App 拼 deviceId 后下载 }
+  /client/apk/{id}:
+    get:
+      tags: [Client]
+      summary: 灰度门控下载(versionCode=0 重放判定,目标一致才放行,防灰度包直链)
+      operationId: downloadClientAPK
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: deviceId, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: application/vnd.android.package-archive 流 }

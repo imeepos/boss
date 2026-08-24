@@ -1034,7 +1034,7 @@ menu:site 守卫；正文 MarkdownEditor 双栏编辑（工具栏 + react-markdo
 未投放回落最近 PUBLISHED。响应 `updateAvailable/force/version/versionCode/notes/downloadUrl/sha256/size`；
 `force = 客户端 versionCode < minSupportedCode 或 release.force`。
 
-API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATCH 元数据与状态迁移 / GET :id/apk 下载，menu:client-release 权限）；
+API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATCH 元数据与状态迁移 / GET :id/apk 下载，menu:release 权限）；
 客户端匿名检查 `GET /api/{worker,user}/v1/client/latest`（免登录，启动即查）；
 官网匿名 `GET /api/admin/v1/client-releases/latest?app=`（仅 PUBLISHED，首页下载入口）。
 

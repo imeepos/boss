@@ -1,0 +1,154 @@
+# 客户端版本发布域(fields.md 8F,000137):admin 管理 + 官网匿名下载。
+# menu:release 权限;APK 对象入 MinIO,上传上限 256MB。
+paths:
+  /client-releases:
+    get:
+      tags: [ClientRelease]
+      summary: 发版列表(app 过滤可选,id 新→旧)
+      operationId: listClientReleases
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: app, in: query, schema: { type: string, enum: [user, worker] } }
+      responses:
+        '200':
+          description: envelope
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/ClientRelease' } }
+    post:
+      tags: [ClientRelease]
+      summary: 上传 APK 并创建发版(multipart,初始建议 DRAFT 再 PATCH 走灰度/全量)
+      operationId: uploadClientRelease
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, app, version, versionCode]
+              properties:
+                file: { type: string, format: binary, description: APK,上限 256MB }
+                app: { type: string, enum: [user, worker] }
+                version: { type: string, example: "1.2.0" }
+                versionCode: { type: integer, example: 12 }
+                minSupportedCode: { type: integer, example: 10 }
+                notes: { type: string }
+      responses:
+        '200':
+          description: envelope;sha256 边传边算
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ClientRelease' }
+  /client-releases/{id}:
+    get:
+      tags: [ClientRelease]
+      summary: 单条发版
+      operationId: getClientRelease
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ReleaseID' }]
+      responses:
+        '200': { description: envelope, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ClientRelease' } } } } } }
+    patch:
+      tags: [ClientRelease]
+      summary: 元数据/状态迁移(指针字段不传不变;whitelistIds 非 nil 即覆盖)
+      operationId: patchClientRelease
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ReleaseID' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                version: { type: string }
+                versionCode: { type: integer }
+                minSupportedCode: { type: integer }
+                notes: { type: string }
+                force: { type: boolean }
+                status: { type: string, enum: [DRAFT, GRAY, PUBLISHED, ROLLED_BACK] }
+                rolloutPercent: { type: integer, minimum: 0, maximum: 100 }
+                whitelistIds: { type: array, items: { type: integer } }
+      responses:
+        '200': { description: envelope, content: { application/json: { schema: { type: object, properties: { data: { $ref: '#/components/schemas/ClientRelease' } } } } } }
+  /client-releases/{id}/apk:
+    get:
+      tags: [ClientRelease]
+      summary: 管理端下载 APK(任意状态,回滚取旧包)
+      operationId: downloadClientReleaseAPK
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ReleaseID' }]
+      responses:
+        '200': { description: application/vnd.android.package-archive 流 }
+  /site/downloads:
+    get:
+      tags: [ClientRelease]
+      summary: 官网匿名下载卡片数据(两端最新 PUBLISHED,无发版该端隐藏)
+      operationId: publicSiteDownloads
+      security: []
+      responses:
+        '200':
+          description: envelope
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            app: { type: string, enum: [user, worker] }
+                            version: { type: string }
+                            sha256: { type: string }
+                            size: { type: integer }
+                            downloadPath: { type: string }
+  /site/downloads/apk:
+    get:
+      tags: [ClientRelease]
+      summary: 官网匿名包流(仅最新 PUBLISHED,不泄露灰度/回滚包)
+      operationId: publicSiteDownloadAPK
+      security: []
+      parameters: [{ name: app, in: query, required: true, schema: { type: string, enum: [user, worker] } }]
+      responses:
+        '200': { description: application/vnd.android.package-archive 流 }
+components:
+  parameters:
+    ReleaseID:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+  schemas:
+    ClientRelease:
+      type: object
+      properties:
+        id: { type: integer }
+        app: { type: string, enum: [user, worker] }
+        platform: { type: string, example: android }
+        version: { type: string }
+        versionCode: { type: integer }
+        minSupportedCode: { type: integer }
+        notes: { type: string }
+        force: { type: boolean }
+        status: { type: string, enum: [DRAFT, GRAY, PUBLISHED, ROLLED_BACK] }
+        rolloutPercent: { type: integer }
+        whitelistIds: { type: array, items: { type: integer } }
+        apkSize: { type: integer }
+        sha256: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }

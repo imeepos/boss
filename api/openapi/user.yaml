@@ -113,3 +113,5 @@ components:
     $ref: './user/schemas.yaml#/components/securitySchemes'
   schemas:
     $ref: './user/schemas.yaml#/components/schemas'
+  /client/latest: { $ref: './user/client.yaml#/paths/~1client~1latest' }
+  /client/apk/{id}: { $ref: './user/client.yaml#/paths/~1client~1apk~1{id}' }

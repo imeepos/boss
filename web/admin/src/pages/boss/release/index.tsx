@@ -1,5 +1,5 @@
 // 客户端版本管理:client_releases 列表 + 上传 + 灰度/白名单/状态编辑。
-// 菜单 key=release,权限 menu:client-release;契约见 docs/contract/fields.md 8F。
+// 菜单 key=release,权限 menu:release;契约见 docs/contract/fields.md 8F。
 import { useEffect, useState } from 'react'
 import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'

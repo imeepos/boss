@@ -32,5 +32,5 @@
 
 ## 迁移
 
-000137_client_releases:表 + menu:client-release 权限种子(授予 sysadmin,
+000137_client_releases:表 + menu:release 权限种子(授予 sysadmin,
 沿 000135 cms_menu 先例:权限码迁移随菜单走)。

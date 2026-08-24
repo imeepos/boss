@@ -13,9 +13,9 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// registerClientReleaseRoutes 版本发布管理(menu:client-release 权限)。
+// registerClientReleaseRoutes 版本发布管理(menu:release 权限)。
 func registerClientReleaseRoutes(g *gin.RouterGroup, a *app.Application) {
-	p := requirePerm(a.User, "menu:client-release")
+	p := requirePerm(a.User, "menu:release")
 	g.GET("/client-releases", p, clientReleaseList(a))
 	g.POST("/client-releases", p, clientReleaseCreate(a))
 	g.GET("/client-releases/:id", p, clientReleaseGet(a))
