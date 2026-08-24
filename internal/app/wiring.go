@@ -88,6 +88,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 
 	app := &Application{
+		Pool:      pool,
 		User:      usr,
 		OrgLedger: usr,
 

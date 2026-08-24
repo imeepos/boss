@@ -3,6 +3,8 @@ package app
 import (
 	"errors"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/ymm-001/boss/internal/domain/aaa"
 	aaability "github.com/ymm-001/boss/internal/domain/aaa/billing"
 	"github.com/ymm-001/boss/internal/domain/ai"
@@ -169,6 +171,9 @@ type Application struct {
 	WorkerRealName   worker.RealNameService
 
 	Audit audit.Writer // 关键操作审计(异步写,见 pkg/audit)
+
+	// Pool PG 连接池(指标采集用,pkg/server 注册 gauge;只读快照不接管生命周期)。
+	Pool *pgxpool.Pool
 
 	// Automation W8 环节自动编排(6/7/10/11 自动);事件经 Kafka 状态变更链路发布。
 	Automation *Automation

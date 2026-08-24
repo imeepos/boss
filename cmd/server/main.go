@@ -46,6 +46,7 @@ func main() {
 	}
 
 	mgr := auth.NewManager(cfg.JWT.Secret, cfg.JWT.TTL)
+	server.RegisterPoolMetrics(a.Pool) // 连接池运行指标(/metrics 暴露)
 	r := server.New(server.Config{
 		HTTPAddr:    cfg.Server.HTTPAddr,
 		CORSOrigins: cfg.CORS.Origins,
