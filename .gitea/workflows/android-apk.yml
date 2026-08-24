@@ -65,15 +65,20 @@ jobs:
           build_one() {
             local dir="$1" name="$2"
             echo "=== build $name ==="
-            cd "$dir"
-            echo "sdk.dir=/opt/android-sdk" > local.properties
-            docker run --rm --user root -v "$PWD":/prj -w /prj \
+            echo "sdk.dir=/opt/android-sdk" > "$dir/local.properties"
+            # job 容器内 $PWD 对宿主 daemon 不可见(-v bind mount 会挂空目录),
+            # 改走 docker create + cp(与 deploy-102 用 build context 同理,不依赖路径)
+            local cid
+            cid=$(docker create -w /prj --user root \
               -v boss-gradle-home:/root/.gradle -e GRADLE_USER_HOME=/root/.gradle \
               -v boss-android-sdk:/opt/android-sdk \
               -e JPUSH_APP_KEY="$JPUSH_APP_KEY" "$IMG" \
-              ./gradlew assembleRelease --quiet -PjpushAppKey="${JPUSH_APP_KEY:-}"
-            cp app/build/outputs/apk/release/app-release.apk "$OUTDIR/$name.apk"
-            cd - >/dev/null
+              ./gradlew assembleRelease --quiet -PjpushAppKey="${JPUSH_APP_KEY:-}")
+            trap 'docker rm -f $cid >/dev/null 2>&1 || true' EXIT
+            docker cp "$dir/." "$cid:/prj/"
+            docker start -a "$cid"
+            docker cp "$cid:/prj/app/build/outputs/apk/release/app-release.apk" "$OUTDIR/$name.apk"
+            docker rm "$cid" >/dev/null
           }
           build_one mobile/worker/android boss-worker
           build_one mobile/user/android boss-user
