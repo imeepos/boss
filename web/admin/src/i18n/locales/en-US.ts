@@ -218,6 +218,11 @@ const enUS: Translations = {
       aboutDesc: 'Sphere Boss is an integrated operations platform for telecom operators. Its 13 capability domains connect orders, resources, assets, networks and billing into one data chain, powering the admin console, worker app and user app with a unified foundation.',
       casesTitle: 'Customer Success Stories',
       casesSubtitle: 'Empowering operators to tackle complex challenges and grow business value',
+      newsTitle: 'News & Updates',
+      newsSubtitle: 'Latest company news, industry updates and articles',
+      newsEmpty: 'No posts yet',
+      newsCatNews: 'News',
+      newsCatArticle: 'Article',
       cases: [
         { icon: '5g', title: '5G Network Rollout & Management', desc: 'Full lifecycle management of 5G sites, shortening rollout cycles by', metric: '20%' },
         { icon: 'refine', title: 'Refined Resource Operations', desc: 'Unified resource view and tagging system, boosting resource utilization by', metric: '15%' },

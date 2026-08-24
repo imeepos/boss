@@ -218,6 +218,11 @@ const zhCN: Translations = {
       aboutDesc: 'Sphere Boss 是面向电信运营商的一体化运营管理平台,以 13 个能力域打通订单、资源、资产、网络与计费的全链路数据,为管理后台、师傅端与用户端三端提供统一支撑,帮助运营商提升运营效率、保障网络质量、实现精细化运营。',
       casesTitle: '客户成功实践',
       casesSubtitle: '助力运营商应对复杂挑战,实现业务价值增长',
+      newsTitle: '动态与新闻',
+      newsSubtitle: '最新公司动态、行业资讯与深度文章',
+      newsEmpty: '暂无内容',
+      newsCatNews: '动态',
+      newsCatArticle: '文章',
       cases: [
         { icon: '5g', title: '5G 网络建设与管理', desc: '实现 5G 站点全生命周期管理,缩短建设周期', metric: '20%' },
         { icon: 'refine', title: '资源精细化运营', desc: '统一资源视图与标签体系,资源利用率提升', metric: '15%' },

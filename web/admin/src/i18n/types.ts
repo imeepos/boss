@@ -120,6 +120,11 @@ export interface Translations {
       aboutDesc: string
       casesTitle: string
       casesSubtitle: string
+      newsTitle: string
+      newsSubtitle: string
+      newsEmpty: string
+      newsCatNews: string
+      newsCatArticle: string
       cases: Array<{ icon: string; title: string; desc: string; metric: string }>
       ctaBannerTitle: string
       ctaBannerSubtitle: string

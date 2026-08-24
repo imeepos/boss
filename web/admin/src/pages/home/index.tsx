@@ -11,6 +11,7 @@ import { Hero } from './Hero'
 import { StatsBand } from './StatsBand'
 import { Features } from './Features'
 import { Cases } from './Cases'
+import { NewsSection } from './NewsSection'
 import { CtaBanner } from './CtaBanner'
 import { Footer } from './Footer'
 import './home.css'
@@ -63,6 +64,10 @@ export default function HomePage() {
       <StatsBand stats={h.stats} />
       <Features features={h.features} title={h.featuresTitle} subtitle={h.featuresSubtitle} />
       <Cases cases={h.cases} title={h.casesTitle} subtitle={h.casesSubtitle} />
+      <NewsSection
+        title={h.newsTitle} subtitle={h.newsSubtitle} empty={h.newsEmpty}
+        catNews={h.newsCatNews} catArticle={h.newsCatArticle}
+      />
       <CtaBanner title={h.ctaBannerTitle} subtitle={h.ctaBannerSubtitle} buttonLabel={h.bookExclusive} onClick={goCta} />
       <Footer
         t={{

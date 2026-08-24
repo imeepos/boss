@@ -218,6 +218,11 @@ const msMY: Translations = {
       aboutDesc: 'Sphere Boss ialah platform operasi bersepadu untuk operator telekom. 13 domain keupayaannya menghubungkan pesanan, sumber, aset, rangkaian dan pembilan dalam satu rantaian data, memperkasakan konsol pentadbiran, aplikasi pekerja dan aplikasi pengguna dengan asas bersatu.',
       casesTitle: 'Kisah Kejayaan Pelanggan',
       casesSubtitle: 'Memperkasakan operator menangani cabaran kompleks dan mengembangkan nilai perniagaan',
+      newsTitle: 'Berita & Kemas Kini',
+      newsSubtitle: 'Berita syarikat terkini, kemas kini industri dan artikel',
+      newsEmpty: 'Tiada kandungan',
+      newsCatNews: 'Berita',
+      newsCatArticle: 'Artikel',
       cases: [
         { icon: '5g', title: 'Pelancaran & Pengurusan Rangkaian 5G', desc: 'Pengurusan kitaran hayat penuh tapak 5G, memendekkan kitaran pelancaran sebanyak', metric: '20%' },
         { icon: 'refine', title: 'Operasi Sumber Halus', desc: 'Pandangan sumber bersatu dan sistem penandaan, meningkatkan penggunaan sumber sebanyak', metric: '15%' },
