@@ -1,10 +1,11 @@
 // 动态与新闻区块:从公开接口 /site/posts 拉最新已发布内容,失败/为空时整块隐藏
 // (官网首页不为 CMS 未使用而留空白区)。
 import { useEffect, useState } from 'react'
-import { apiFetch } from '../../api/client'
+import { Link } from 'react-router-dom'
+import { apiFetch, apiBaseUrl } from '../../api/client'
 import { SectionHead } from './Features'
 
-interface NewsItem { slug: string; title: string; category: string; summary: string; publishedAt: string }
+interface NewsItem { slug: string; title: string; category: string; summary: string; coverAttachmentId: number; publishedAt: string }
 
 export interface NewsSectionProps {
   title: string
@@ -36,14 +37,17 @@ export function NewsSection(p: NewsSectionProps) {
         <SectionHead title={p.title} subtitle={p.subtitle} />
         <div className="mt-12 grid gap-6 lg:grid-cols-3">
           {items.map((n) => (
-            <article key={n.slug} className={CARD}>
+            <Link key={n.slug} to={`/news/${n.slug}`} className={CARD}>
+              {n.coverAttachmentId > 0 && (
+                <img className="h-36 w-full rounded-lg border border-[var(--shell-card-border)] object-cover" src={`${apiBaseUrl()}/site/posts/${n.slug}/cover`} alt={n.title} />
+              )}
               <div className="flex items-center justify-between gap-3">
                 <span className={TAG}>{n.category === 'ARTICLE' ? p.catArticle : p.catNews}</span>
                 <time className="flex-none text-xs text-[var(--shell-group-title)]">{n.publishedAt}</time>
               </div>
               <h3 className="font-brand text-base font-semibold tracking-tight text-[var(--shell-heading)]">{n.title}</h3>
               <p className="line-clamp-3 text-sm leading-6 text-[var(--shell-content-text)]">{n.summary || n.title}</p>
-            </article>
+            </Link>
           ))}
         </div>
       </div>

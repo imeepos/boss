@@ -125,6 +125,8 @@ export interface Translations {
       newsEmpty: string
       newsCatNews: string
       newsCatArticle: string
+      newsBack: string
+      newsNotFound: string
       cases: Array<{ icon: string; title: string; desc: string; metric: string }>
       ctaBannerTitle: string
       ctaBannerSubtitle: string

@@ -223,6 +223,8 @@ const zhCN: Translations = {
       newsEmpty: '暂无内容',
       newsCatNews: '动态',
       newsCatArticle: '文章',
+      newsBack: '返回首页',
+      newsNotFound: '内容不存在或已下线',
       cases: [
         { icon: '5g', title: '5G 网络建设与管理', desc: '实现 5G 站点全生命周期管理,缩短建设周期', metric: '20%' },
         { icon: 'refine', title: '资源精细化运营', desc: '统一资源视图与标签体系,资源利用率提升', metric: '15%' },

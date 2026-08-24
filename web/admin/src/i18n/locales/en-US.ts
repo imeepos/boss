@@ -223,6 +223,8 @@ const enUS: Translations = {
       newsEmpty: 'No posts yet',
       newsCatNews: 'News',
       newsCatArticle: 'Article',
+      newsBack: 'Back to home',
+      newsNotFound: 'Post not found or offline',
       cases: [
         { icon: '5g', title: '5G Network Rollout & Management', desc: 'Full lifecycle management of 5G sites, shortening rollout cycles by', metric: '20%' },
         { icon: 'refine', title: 'Refined Resource Operations', desc: 'Unified resource view and tagging system, boosting resource utilization by', metric: '15%' },

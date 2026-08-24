@@ -223,6 +223,8 @@ const msMY: Translations = {
       newsEmpty: 'Tiada kandungan',
       newsCatNews: 'Berita',
       newsCatArticle: 'Artikel',
+      newsBack: 'Kembali ke halaman utama',
+      newsNotFound: 'Kandungan tidak wujud atau di luar talian',
       cases: [
         { icon: '5g', title: 'Pelancaran & Pengurusan Rangkaian 5G', desc: 'Pengurusan kitaran hayat penuh tapak 5G, memendekkan kitaran pelancaran sebanyak', metric: '20%' },
         { icon: 'refine', title: 'Operasi Sumber Halus', desc: 'Pandangan sumber bersatu dan sistem penandaan, meningkatkan penggunaan sumber sebanyak', metric: '15%' },

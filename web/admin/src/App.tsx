@@ -8,6 +8,7 @@ import { AuthGuard } from './layouts/AuthGuard'
 import { useProfile } from './layouts/profile'
 const LoginPage = lazy(() => import('./pages/login'))
 const HomePage = lazy(() => import('./pages/home'))
+const NewsDetailPage = lazy(() => import('./pages/news'))
 const DashboardPage = lazy(() => import('./pages/dashboard'))
 const AccountListPage = lazy(() => import('./pages/base/account'))
 const AddressPage = lazy(() => import('./pages/base/address'))
@@ -206,6 +207,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/partner/apply" element={<PartnerApplyPage />} />
         <Route path="/home" element={<HomePage />} />
+        <Route path="/news/:slug" element={<NewsDetailPage />} />
         {/* 根路径分流(公开):未登录看官网首页,已登录进工作台;守卫区改无路径布局路由。 */}
         <Route path="/" element={<RootRedirect />} />
         <Route
