@@ -547,3 +547,9 @@
 ## 2026-08-28 客户端版本管理需求复盘(纯盘点,无代码)
 - 结论:四项需求(官网下载入口/admin 版本管理+灰度白名单/两端在线更新弹框/个人中心检查更新)全部未开工;已有底座是 android-apk CI 出包、cms 官网内容域、crash 日志域。
 - 教训:接手"复盘当前阶段"类任务时,先用 grep/ls 对需求逐条找落点再下结论,不凭 commit message 印象;本次确认 internal 无任何 app release/灰度域,避免虚报"已部分完成"。
+
+## 2026-08-28 复盘待办落地(CI 精确分类 + scan/latest 可辨识 + 合并止损线)
+- 最佳实践检索结论:push 事件 before/after SHA 是"本次推送变更面"的标准口径(GitHub/openshift hypershift 同款);k8s#87915 确认周期任务防惊群用 jitter/错峰是共识。gitea 实测不允许按裸 SHA fetch,改为 fetch main --depth=100 + rev-parse 在场检查,精确路径实测命中(task 2638 "Classifying by push event before=05e2235e")。
+- scan/latest 加 scannedAt:零值=启动后未完成过扫描,102 实测 boot 后 0001-01-01、手动扫描后带真实时刻;原先"重启后 checked=0 被误读为回归"的坑关闭。
+- 合并协议止损线:连续 3 次 diverging 即停,推远端后错峰;本轮收尾一次 ff 成功未触发,但规则已固化为 adopted note。
+- 未完成:cdr_compensation 表级错峰证据(等真实待补话单);4 条无执行器 ETL 任务处置需业务裁决,未单方面禁用。
