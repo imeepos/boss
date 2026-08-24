@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +34,7 @@ import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.StatusBarSolid
 import com.ymm.boss.worker.api.Api
+import com.ymm.boss.worker.push.DeepLink
 
 // 底部 Tab(对齐 nav.js:工作台/工单/我的)
 private data class Tab(val screen: Screen, val label: String, val glyph: String)
@@ -59,6 +61,14 @@ fun AppRoot(loggedIn: Boolean) {
     }
     // 系统返回键:压栈页逐个弹出,栈底则退出
     BackHandler(enabled = nav.stack.size > 1) { nav.pop() }
+    // 通知点击深链:未登录时保留 pending,登录后即跳;已在目标页不重复压栈
+    LaunchedEffect(DeepLink.pendingNo, loggedIn) {
+        val no = DeepLink.pendingNo ?: return@LaunchedEffect
+        if (!loggedIn) return@LaunchedEffect
+        DeepLink.consume()
+        val target = ticketScreen(no)
+        if (nav.current != target) nav.push(target)
+    }
     Column(
         Modifier.fillMaxSize().background(Bg)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)),
