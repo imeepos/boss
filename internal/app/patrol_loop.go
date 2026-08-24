@@ -17,7 +17,7 @@ import (
 const patrolInterval = time.Hour
 
 // startPatrolLoop 启动后台巡检循环,返回 stop(幂等)。
-// 首轮立即执行一次(启动即有当日基线),此后按周期。
+// 首轮按错峰延迟执行一次(启动即有当日基线),此后按周期。
 func startPatrolLoop(a *Application) (stop func()) {
 	if a.Report == nil {
 		return func() {}
@@ -26,7 +26,7 @@ func startPatrolLoop(a *Application) (stop func()) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		runPatrolOnce(ctx, a)
+		staggeredFirstRun(ctx, startupDelays["patrol"], func(c context.Context) { runPatrolOnce(c, a) })
 		t := time.NewTicker(patrolInterval)
 		defer t.Stop()
 		for {
