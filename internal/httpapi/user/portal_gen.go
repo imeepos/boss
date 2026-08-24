@@ -104,10 +104,15 @@ func toInt64(v any) int64 {
 	return 0
 }
 
-// toStr map 值转 string。
+// toStr map 值转 string;pgx 数值主键(int64/int)回填字符串 ID 字段(E2E 发现 addressId 恒空)。
 func toStr(v any) string {
-	if s, ok := v.(string); ok {
+	switch s := v.(type) {
+	case string:
 		return s
+	case int64:
+		return strconv.FormatInt(s, 10)
+	case int:
+		return strconv.Itoa(s)
 	}
 	return ""
 }
