@@ -36,4 +36,27 @@ func TestFreshnessStates(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeRunRejectsInvalidLifecycle(t *testing.T) {
+	started := time.Now()
+	finished := started.Add(-time.Second)
+	cases := []ETLJobRun{
+		{JobKey: "orders", Status: "UNKNOWN", StartedAt: started},
+		{JobKey: "orders", Status: ETLRunning, StartedAt: started, FinishedAt: &started},
+		{JobKey: "orders", Status: ETLSuccess, StartedAt: started, FinishedAt: &finished},
+	}
+	for _, run := range cases {
+		if _, err := normalizeRun(run); err == nil {
+			t.Errorf("normalizeRun(%+v) accepted invalid lifecycle", run)
+		}
+	}
+}
+
+func TestNormalizeRunCompletesMissingFinishedAt(t *testing.T) {
+	run, err := normalizeRun(ETLJobRun{JobKey: "orders", Status: ETLSuccess})
+	if err != nil || run.FinishedAt == nil {
+		t.Fatalf("run=%+v err=%v", run, err)
+	}
+}
+
 func ptr(t time.Time) *time.Time { return &t }

@@ -3,6 +3,7 @@ package metric
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -136,8 +137,12 @@ func (s *MemoryETLStore) DisableJob(_ context.Context, k string) error {
 	return nil
 }
 func normalizeRun(r ETLJobRun) (ETLJobRun, error) {
+	r.JobKey = strings.TrimSpace(r.JobKey)
 	if r.JobKey == "" {
 		return r, errors.New("metric: jobKey required")
+	}
+	if r.RowsAffected < 0 {
+		return r, errors.New("metric: rowsAffected cannot be negative")
 	}
 	if r.Status != ETLRunning && r.Status != ETLSuccess && r.Status != ETLFailed {
 		return r, errors.New("metric: invalid run status")
