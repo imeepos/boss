@@ -65,6 +65,8 @@ const DismantlePage = lazy(() => import('./pages/boss/dismantle'))
 const ComplaintPage = lazy(() => import('./pages/boss/complaint'))
 const KnowledgePage = lazy(() => import('./pages/boss/knowledge'))
 const SitePostsPage = lazy(() => import('./pages/boss/site'))
+const SitePostEditorPage = lazy(() => import('./pages/boss/site/editor'))
+const SiteCategoriesPage = lazy(() => import('./pages/boss/site/categories'))
 const ServiceMetricsPage = lazy(() => import('./pages/boss/service-metrics'))
 const FeedbackPage = lazy(() => import('./pages/boss/feedback'))
 const CallbackPage = lazy(() => import('./pages/boss/callback'))
@@ -165,6 +167,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'complaint') return <ComplaintPage />
   if (pageKey === 'knowledge') return <KnowledgePage />
   if (pageKey === 'site') return <SitePostsPage />
+  if (pageKey === 'site-cats') return <SiteCategoriesPage />
   if (pageKey === 'service-metrics') return <ServiceMetricsPage />
   if (pageKey === 'feedback') return <FeedbackPage />
   if (pageKey === 'callback') return <CallbackPage />
@@ -196,6 +199,13 @@ function RootRedirect() {
 function AttachmentManagerPreview() {
   const [selected, setSelected] = useState<number[]>([])
   return <AttachmentManager selectable selectedIds={selected} onSelectionChange={setSelected} />
+}
+
+/** 官网内容编辑子路由:new=新建,:postId=编辑;权限与列表页同源(menu:site)。 */
+function SiteEditorRoute() {
+  const profile = useProfile()
+  if (!canAccess(profile.roleCode, 'site', profile.permissionCodes)) return <ForbiddenPage />
+  return <SitePostEditorPage />
 }
 
 export default function App() {
@@ -236,6 +246,8 @@ export default function App() {
         >
           {/* 附件管理组件预览路由(AttachmentManager 通用组件,正式嵌入业务页后移除)。 */}
           <Route path="dev/attachments" element={<AttachmentManagerPreview />} />
+          <Route path="boss/site/new" element={<SiteEditorRoute />} />
+          <Route path="boss/site/:postId" element={<SiteEditorRoute />} />
           {MENU_GROUPS.flatMap((g) => g.items).map((it) => (
             <Route key={it.key} path={it.path} element={<MenuPage pageKey={it.key} />} />
           ))}

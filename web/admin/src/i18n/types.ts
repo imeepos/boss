@@ -1078,9 +1078,36 @@ export interface Translations {
       statusOptions: string[]
       catNews: string
       catArticle: string
+      newTitle: string
+      editTitle: string
+      back: string
+      manageCats: string
+      uploadImg: string
+      uploadFail: string
       stDraft: string
       stPublished: string
       stOffline: string
+      saveFail: string
+      actionFail: string
+      empty: string
+      loadFail: string
+    },
+    siteCatsPage: {
+      title: string
+      desc: string
+      columns: string[]
+      create: string
+      edit: string
+      save: string
+      delete: string
+      deleteConfirm: string
+      fCode: string
+      fName: string
+      fSort: string
+      fEnabled: string
+      enabledOn: string
+      enabledOff: string
+      inUse: string
       saveFail: string
       actionFail: string
       empty: string
