@@ -1,7 +1,9 @@
 # Android APK 出包:main 分支改 mobile/*/android 时构建 worker/user 两端 release APK,
 # 归档到宿主 /srv/boss/apk/<sha>/。与 deploy-102 同风格:纯 run 步骤,不依赖 marketplace action。
-# 镜像 cimg/android 自带 OpenJDK17 + Android SDK(license 已接受,缺的平台会自动下载),
-# gradle 缓存走命名卷 boss-gradle-home。
+# 镜像 192.168.0.102:5000/boss/android-builder:1(自建:102 无法直连 Docker Hub,
+# daocloud 镜像源白名单不含 cimg/android;基座 eclipse-temurin17 + Google 官方源
+# cmdline-tools,Dockerfile 见 deployments/docker/android-builder.Dockerfile)。
+# gradle 缓存/SDK 缓存走命名卷 boss-gradle-home / boss-android-sdk(平台包首跑自动下载)。
 # release 签名:repo secrets KEYSTORE_BASE64/KEYSTORE_PASSWORD/KEYSTORE_ALIAS/
 # KEYSTORE_KEY_PASSWORD 四项齐备时解码正式签名(keystore 永不入库);
 # 缺省则 gradle 自动回退 debug 签名,产物仅用于测试分发;
@@ -17,7 +19,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMG: cimg/android:2024.01
+  IMG: 192.168.0.102:5000/boss/android-builder:1
   OUT: /srv/boss/apk
 
 jobs:
@@ -64,9 +66,10 @@ jobs:
             local dir="$1" name="$2"
             echo "=== build $name ==="
             cd "$dir"
-            echo "sdk.dir=/opt/android/sdk" > local.properties
+            echo "sdk.dir=/opt/android-sdk" > local.properties
             docker run --rm --user root -v "$PWD":/prj -w /prj \
               -v boss-gradle-home:/root/.gradle -e GRADLE_USER_HOME=/root/.gradle \
+              -v boss-android-sdk:/opt/android-sdk \
               -e JPUSH_APP_KEY="$JPUSH_APP_KEY" "$IMG" \
               ./gradlew assembleRelease --quiet -PjpushAppKey="${JPUSH_APP_KEY:-}"
             cp app/build/outputs/apk/release/app-release.apk "$OUTDIR/$name.apk"
