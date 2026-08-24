@@ -17,6 +17,7 @@ usage() {
   --release             构建 release；默认构建 debug
   --device SERIAL       指定 adb serial
   --base-url URL        覆盖 bossBaseUrl
+  --connected           构建后执行 connectedDebugAndroidTest + 断言 tests 数>0
   --no-install          只构建，不安装
   -h, --help            显示帮助
 
@@ -84,6 +85,7 @@ while [[ $# -gt 0 ]]; do
     --release) BUILD_TYPE="release"; shift ;;
     --device) [[ $# -ge 2 ]] || { echo "错误: --device 缺少 SERIAL" >&2; exit 1; }; DEVICE="$2"; shift 2 ;;
     --base-url) [[ $# -ge 2 ]] || { echo "错误: --base-url 缺少 URL" >&2; exit 1; }; BASE_URL="$2"; shift 2 ;;
+    --connected) CONNECTED=1; shift ;;
     --no-install) NO_INSTALL=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "错误: 未知选项 $1" >&2; usage >&2; exit 1 ;;
@@ -102,6 +104,13 @@ GRADLE_ARGS=("$GRADLE_TASK")
 [[ -n "$BASE_URL" ]] && GRADLE_ARGS+=("-PbossBaseUrl=$BASE_URL")
 echo "==> 构建 worker Android $BUILD_TYPE"
 (cd "$ANDROID_DIR" && ./gradlew "${GRADLE_ARGS[@]}")
+
+if [[ "${CONNECTED:-0}" == 1 ]]; then
+  echo "==> 执行 connectedDebugAndroidTest"
+  (cd "$ANDROID_DIR" && ./gradlew connectedDebugAndroidTest)
+  THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  "$THIS_DIR/after-connected-test.sh" "mobile/worker/android"
+fi
 
 APK="$ANDROID_DIR/app/build/outputs/apk/$BUILD_TYPE/app-$BUILD_TYPE.apk"
 [[ -f "$APK" ]] || { echo "错误: APK 不存在: $APK" >&2; exit 1; }
