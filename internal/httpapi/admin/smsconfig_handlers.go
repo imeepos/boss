@@ -75,10 +75,21 @@ func smsConfigTestHandler(a *app.Application) gin.HandlerFunc {
 			Phone  string            `json:"phone"`
 		}
 		_ = c.ShouldBindJSON(&req)
+		// 自检合并 channel+template 两组草稿:必填项横跨两组(凭据在 channel,ContentCode 在 template)。
 		cur, err := smsMergedParams(c, a, req.Values, "channel")
 		if err != nil {
 			respondErr(c, err)
 			return
+		}
+		tpl, err := smsMergedParams(c, a, req.Values, "template")
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		for _, f := range smsFieldByGroup("template") {
+			if v, ok := tpl[f.Key]; ok {
+				cur[f.Key] = v
+			}
 		}
 		if req.Phone == "" {
 			respond(c, apitypes.CodeOK, smsCompletenessResult(cur))

@@ -75,18 +75,17 @@ func smsCompletenessResult(cur map[string]string) gin.H {
 
 // smsSenderFromParams 合并配置 → 通道实例(试发用;未配置凭据时为日志通道)。
 func smsSenderFromParams(cur map[string]string) sms.Sender {
-	tpl := map[string]string{}
-	if v := cur["sms.template.cn"]; v != "" {
-		tpl["86"] = v
+	codes := map[string]string{}
+	if v := cur["sms.contentCode.cn"]; v != "" {
+		codes["86"] = v
 	}
-	if v := cur["sms.template.my"]; v != "" {
-		tpl["60"] = v
+	if v := cur["sms.contentCode.my"]; v != "" {
+		codes["60"] = v
 	}
 	return sms.NewAliyunIntl(sms.AliyunIntlConfig{
 		AccessKeyID:     cur["sms.accessKeyId"],
 		AccessKeySecret: cur["sms.accessKeySecret"],
-		From:            cur["sms.from"],
-		Templates:       tpl,
+		ContentCodes:    codes,
 	})
 }
 
@@ -97,6 +96,9 @@ func smsTestMessage(err error) string {
 	}
 	if errors.Is(err, sms.ErrUnsupportedRegion) {
 		return "号码区号不支持(仅 +86 / +60)"
+	}
+	if errors.Is(err, sms.ErrContentCodeMissing) {
+		return "该区号未配置报备模板 ContentCode(短信配置页-报备模板)"
 	}
 	return "发送失败: " + err.Error()
 }

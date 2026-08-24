@@ -8,10 +8,10 @@ export interface SmsFieldState {
 export type SmsFields = Record<string, SmsFieldState>
 
 export const CH_KEYS = [
-  'sms.enabled', 'sms.provider', 'sms.accessKeyId', 'sms.accessKeySecret', 'sms.from',
+  'sms.enabled', 'sms.provider', 'sms.accessKeyId', 'sms.accessKeySecret',
 ] as const
 
-export const TP_KEYS = ['sms.template.cn', 'sms.template.my'] as const
+export const TP_KEYS = ['sms.contentCode.cn', 'sms.contentCode.my'] as const
 
 export const SMS_SECRET_KEYS = new Set(['sms.accessKeySecret'])
 

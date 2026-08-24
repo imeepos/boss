@@ -1,5 +1,5 @@
 // Package sms 验证码短信通道抽象:按手机号区号路由到地区通道。
-// 当前唯一生产通道为阿里云国际短信(dysmsapiintl);中国大陆(+86)后续可无缝切换国内报备通道。
+// 当前唯一生产通道为阿里云国际短信(dysmsapi ap-southeast-1);中国大陆(+86)后续可无缝切换国内报备通道。
 package sms
 
 import (
@@ -11,6 +11,9 @@ import (
 
 // ErrUnsupportedRegion 区号不在支持列表(当前仅 +86 中国 / +60 马来西亚)。
 var ErrUnsupportedRegion = errors.New("sms: unsupported region")
+
+// ErrContentCodeMissing 区号受支持但未配置该区号的报备模板 ContentCode。
+var ErrContentCodeMissing = errors.New("sms: content code not configured")
 
 // Sender 验证码短信发送通道。phone 为 E.164(带 + 前缀)。
 type Sender interface {

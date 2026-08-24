@@ -148,9 +148,6 @@ export default function SmsConfigPage() {
             <FormField label={a.provider} hint={a.providerHint}>
               <Input className="w-72" value={draft['sms.provider'] ?? ''} readOnly />
             </FormField>
-            <FormField label={a.senderId} hint={a.senderIdHint}>
-              <Input className="w-72" value={draft['sms.from'] ?? ''} onChange={(e) => set('sms.from', e.target.value)} />
-            </FormField>
             <FormField label={a.accessKeyId}>
               <Input className="w-72" value={draft['sms.accessKeyId'] ?? ''} onChange={(e) => set('sms.accessKeyId', e.target.value)} />
             </FormField>
@@ -182,15 +179,15 @@ export default function SmsConfigPage() {
           <div className="mt-2 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.envNote}</div>
         </Card>
 
-        {/* 卡片二:文案模板 */}
+        {/* 卡片二:报备模板 ContentCode */}
         <Card className="p-4">
           <div className="mb-3 font-semibold text-[var(--shell-heading)]">{a.tpTitle}</div>
           <div className="grid grid-cols-2 gap-4">
             <FormField label={a.tpCn} hint={a.tpHint}>
-              <Input className="w-72" value={draft['sms.template.cn'] ?? ''} onChange={(e) => set('sms.template.cn', e.target.value)} />
+              <Input className="w-72" value={draft['sms.contentCode.cn'] ?? ''} onChange={(e) => set('sms.contentCode.cn', e.target.value)} />
             </FormField>
             <FormField label={a.tpMy} hint={a.tpHint}>
-              <Input className="w-72" value={draft['sms.template.my'] ?? ''} onChange={(e) => set('sms.template.my', e.target.value)} />
+              <Input className="w-72" value={draft['sms.contentCode.my'] ?? ''} onChange={(e) => set('sms.contentCode.my', e.target.value)} />
             </FormField>
           </div>
           <div className="mt-3.5 flex justify-end">

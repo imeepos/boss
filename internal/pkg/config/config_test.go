@@ -47,7 +47,7 @@ func TestLoadDefaults(t *testing.T) {
 	if c.Stripe.Currency != "php" || c.Stripe.APIKey != "" || c.Stripe.APIBaseURL != "" {
 		t.Fatalf("stripe defaults: %+v", c.Stripe)
 	}
-	if c.SMS.From != "" || c.RealID.AccessKeyID != "" {
+	if c.SMS.AccessKeyID != "" || c.RealID.AccessKeyID != "" {
 		t.Fatalf("sms/realid defaults: %+v %+v", c.SMS, c.RealID)
 	}
 }
@@ -91,7 +91,6 @@ func TestLoadEnvOverrides(t *testing.T) {
 		"BOSS_REPORT_PUSH_TOPIC":       "push-t",
 		"BOSS_SMS_ALIYUN_AK_ID":        "sms-id",
 		"BOSS_SMS_ALIYUN_AK_SECRET":    "sms-sec",
-		"BOSS_SMS_ALIYUN_FROM":         "BOSS",
 		"BOSS_REALID_ALIYUN_AK_ID":     "rid-id",
 		"BOSS_REALID_ALIYUN_AK_SECRET": "rid-sec",
 		"BOSS_STRIPE_API_KEY":          "sk_x",
@@ -150,7 +149,7 @@ func TestLoadEnvOverrides(t *testing.T) {
 	if c.Report.Period != "weekly" || c.Report.PushTopic != "push-t" {
 		t.Fatalf("report: %+v", c.Report)
 	}
-	if c.SMS.AccessKeyID != "sms-id" || c.SMS.AccessKeySecret != "sms-sec" || c.SMS.From != "BOSS" {
+	if c.SMS.AccessKeyID != "sms-id" || c.SMS.AccessKeySecret != "sms-sec" {
 		t.Fatalf("sms: %+v", c.SMS)
 	}
 	if c.RealID.AccessKeyID != "rid-id" || c.RealID.AccessKeySecret != "rid-sec" {

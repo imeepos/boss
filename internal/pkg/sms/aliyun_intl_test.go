@@ -31,50 +31,42 @@ func (s *stubTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func newStubIntl(rt http.RoundTripper) *aliyunIntl {
 	return &aliyunIntl{
-		accessKeyID: "ak", accessKeySecret: "sk", from: "BOSS",
-		templates: DefaultTemplates(), client: &http.Client{Transport: rt},
-	}
-}
-
-func TestDefaultTemplates(t *testing.T) {
-	tpl := DefaultTemplates()
-	if tpl["86"] == "" || tpl["60"] == "" {
-		t.Fatalf("tpl=%v", tpl)
+		accessKeyID: "ak", accessKeySecret: "sk",
+		contentCodes: map[string]string{"86": "CC86", "60": "CC60"},
+		client:       &http.Client{Transport: rt},
 	}
 }
 
 func TestNewAliyunIntl(t *testing.T) {
-	s := NewAliyunIntl(AliyunIntlConfig{AccessKeyID: "ak", AccessKeySecret: "sk", From: "F"})
+	s := NewAliyunIntl(AliyunIntlConfig{AccessKeyID: "ak", AccessKeySecret: "sk"})
 	if s == nil {
 		t.Fatal("nil sender")
-	}
-	// Templates 为空时用 DefaultTemplates。
-	a, ok := s.(*aliyunIntl)
-	if !ok || a.templates["86"] == "" {
-		t.Fatalf("default templates missing: %+v", a)
 	}
 }
 
 func TestAliyunIntl_Send(t *testing.T) {
 	ctx := context.Background()
 
-	// 成功:ResponseCode=OK,模板 {code} 已渲染。
-	rt := &stubTransport{status: 200, body: `{"ResponseCode":"OK"}`}
+	// 成功:ResultCode=OK;PhoneNumbers 纯数字不带 +,ContentCode 按区号取。
+	rt := &stubTransport{status: 200, body: `{"ResultCode":"OK","ResultMessage":"ok"}`}
 	if err := newStubIntl(rt).Send(ctx, "+8613800138000", "123456", "login"); err != nil {
 		t.Fatalf("Send: %v", err)
 	}
-	if !strings.Contains(rt.reqBody, "Message=%E6%82%A8") || !strings.Contains(rt.reqBody, "123456") {
-		t.Fatalf("reqBody=%s", rt.reqBody)
-	}
-	if !strings.Contains(rt.reqBody, "AccessKeyId=ak") || !strings.Contains(rt.reqBody, "Signature=") {
-		t.Fatalf("signed params missing: %s", rt.reqBody)
+	for _, want := range []string{
+		"Action=SendSms", "Version=2018-05-01", "PhoneNumbers=8613800138000",
+		"ContentCode=CC86", "Type=OTP", "VerificationCode=123456",
+		"AccessKeyId=ak", "Signature=",
+	} {
+		if !strings.Contains(rt.reqBody, want) {
+			t.Fatalf("reqBody missing %q: %s", want, rt.reqBody)
+		}
 	}
 
-	// 业务失败:ResponseCode != OK。
-	rt = &stubTransport{status: 200, body: `{"ResponseCode":"isv.BUSY","ResponseDescription":"busy"}`}
+	// 业务失败:ResultCode != OK,带 ResultMessage。
+	rt = &stubTransport{status: 200, body: `{"ResultCode":"MOBILE_NUMBER_ILLEGAL","ResultMessage":"bad"}`}
 	err := newStubIntl(rt).Send(ctx, "+60123456789", "1", "login")
-	if err == nil || !strings.Contains(err.Error(), "isv.BUSY") {
-		t.Fatalf("err=%v, want ResponseCode", err)
+	if err == nil || !strings.Contains(err.Error(), "MOBILE_NUMBER_ILLEGAL") {
+		t.Fatalf("err=%v, want ResultCode", err)
 	}
 
 	// 响应非 JSON。
@@ -90,9 +82,17 @@ func TestAliyunIntl_Send(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "aliyun intl") {
 		t.Fatalf("err=%v, want transport error wrap", err)
 	}
+}
 
-	// 区号无模板。
-	err = newStubIntl(&stubTransport{}).Send(ctx, "+19995551234", "1", "login")
+func TestAliyunIntl_SendMissingContentCode(t *testing.T) {
+	// 区号支持但未配 ContentCode → ErrContentCodeMissing。
+	s := &aliyunIntl{accessKeyID: "ak", accessKeySecret: "sk", client: &http.Client{}}
+	err := s.Send(context.Background(), "+8613800138000", "1", "login")
+	if !errors.Is(err, ErrContentCodeMissing) {
+		t.Fatalf("err=%v, want ErrContentCodeMissing", err)
+	}
+	// 区号不支持 → ErrUnsupportedRegion。
+	err = s.Send(context.Background(), "+19995551234", "1", "login")
 	if !errors.Is(err, ErrUnsupportedRegion) {
 		t.Fatalf("err=%v, want ErrUnsupportedRegion", err)
 	}
@@ -124,7 +124,7 @@ func TestAliyunIntl_CallBadEndpoint(t *testing.T) {
 	defer func() { aliyunEndpoint = old }()
 	aliyunEndpoint = "http://bad\x7f" // 非法 URL 触发 NewRequest 失败分支
 	s := newStubIntl(&stubTransport{})
-	if _, err := s.call(context.Background(), map[string]string{"Action": "SendSMS"}); err == nil {
+	if _, err := s.call(context.Background(), map[string]string{"Action": "SendSms"}); err == nil {
 		t.Fatal("want request build error")
 	}
 }

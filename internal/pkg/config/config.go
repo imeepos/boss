@@ -96,7 +96,6 @@ type Config struct {
 	SMS struct {
 		AccessKeyID     string
 		AccessKeySecret string
-		From            string // 阿里云国际 SenderID
 	}
 	// JPush 移动端推送通道(极光聚合;凭据为空时降级日志通道)。
 	JPush struct {
@@ -171,7 +170,6 @@ func Load() *Config {
 
 	c.SMS.AccessKeyID = getenv("BOSS_SMS_ALIYUN_AK_ID", "")
 	c.SMS.AccessKeySecret = getenv("BOSS_SMS_ALIYUN_AK_SECRET", "")
-	c.SMS.From = getenv("BOSS_SMS_ALIYUN_FROM", "")
 
 	c.JPush.AppKey = getenv("BOSS_JPUSH_APP_KEY", "")
 	c.JPush.MasterSecret = getenv("BOSS_JPUSH_MASTER_SECRET", "")

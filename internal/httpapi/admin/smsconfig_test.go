@@ -43,7 +43,7 @@ func TestSMSConfigRoutes(t *testing.T) {
 		f := &fakeAuthUser{fakeUser: fakeUser{permOk: true}}
 		r := newAuthTestRouter(f, mgr)
 		w := putAuth(t, r, "/api/admin/v1/sms-config/channel",
-			`{"values":{"sms.accessKeyId":"LTAI123","sms.accessKeySecret":"s3cret","sms.from":"YMM"}}`, token)
+			`{"values":{"sms.accessKeyId":"LTAI123","sms.accessKeySecret":"s3cret"}}`, token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 		}
@@ -52,11 +52,11 @@ func TestSMSConfigRoutes(t *testing.T) {
 			t.Fatalf("secret not encrypted: %q", stored)
 		}
 		w2 := putAuth(t, r, "/api/admin/v1/sms-config/channel",
-			`{"values":{"sms.from":"YMM2","sms.accessKeySecret":""}}`, token)
+			`{"values":{"sms.accessKeyId":"LTAI456","sms.accessKeySecret":""}}`, token)
 		if w2.Code != 200 {
 			t.Fatalf("status=%d body=%s", w2.Code, w.Body.String())
 		}
-		if f.params["sms.accessKeySecret"] != stored || f.params["sms.from"] != "YMM2" {
+		if f.params["sms.accessKeySecret"] != stored || f.params["sms.accessKeyId"] != "LTAI456" {
 			t.Fatalf("empty secret should be skipped, from updated")
 		}
 	})
@@ -78,7 +78,7 @@ func TestSMSConfigRoutes(t *testing.T) {
 			t.Fatalf("missing fields should fail: %s", w.Body.String())
 		}
 		w2 := postJSONAuth(t, r, "/api/admin/v1/sms-config/channel/test",
-			`{"values":{"sms.accessKeyId":"k","sms.accessKeySecret":"s"}}`, token)
+			`{"values":{"sms.accessKeyId":"k","sms.accessKeySecret":"s","sms.contentCode.cn":"c1"}}`, token)
 		if !strings.Contains(w2.Body.String(), `"ok":true`) {
 			t.Fatalf("draft test should pass: %s", w2.Body.String())
 		}

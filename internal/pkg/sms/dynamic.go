@@ -14,13 +14,13 @@ import (
 var ErrDisabled = errors.New("sms: channel disabled")
 
 // ChannelConfig 通道配置(resolve 返回的明文形态)。
+// ContentCodeCN/MY 为阿里云国际控制台报备模板编号(SendSms ContentCode)。
 type ChannelConfig struct {
 	Enabled         bool
 	AccessKeyID     string
 	AccessKeySecret string
-	From            string
-	TemplateCN      string
-	TemplateMY      string
+	ContentCodeCN   string
+	ContentCodeMY   string
 }
 
 type cachedSender struct {
@@ -65,18 +65,17 @@ func (d *Dynamic) current(ctx context.Context) (Sender, error) {
 	}
 	s := Sender(LogSender{})
 	if cfg.AccessKeyID != "" && cfg.AccessKeySecret != "" {
-		tpl := map[string]string{}
-		if cfg.TemplateCN != "" {
-			tpl["86"] = cfg.TemplateCN
+		codes := map[string]string{}
+		if cfg.ContentCodeCN != "" {
+			codes["86"] = cfg.ContentCodeCN
 		}
-		if cfg.TemplateMY != "" {
-			tpl["60"] = cfg.TemplateMY
+		if cfg.ContentCodeMY != "" {
+			codes["60"] = cfg.ContentCodeMY
 		}
 		s = NewAliyunIntl(AliyunIntlConfig{
 			AccessKeyID:     cfg.AccessKeyID,
 			AccessKeySecret: cfg.AccessKeySecret,
-			From:            cfg.From,
-			Templates:       tpl,
+			ContentCodes:    codes,
 		})
 	}
 	d.cached = cachedSender{sender: s, at: time.Now()}

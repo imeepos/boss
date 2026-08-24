@@ -17,79 +17,69 @@ import (
 	"time"
 )
 
-// aliyunIntl 阿里云国际短信(dysmsapiintl.aliyuncs.com, SendSMS RPC, POP V1 签名)。
-// 中国大陆与马来西亚现阶段统一走此通道;国内报备通道就绪后改路由即可。
+// aliyunIntl 阿里云国际短信(dysmsapi ap-southeast-1, SendSms RPC, POP V1 签名)。
+// 2026-08-26 实测修正:旧端点 dysmsapiintl.aliyuncs.com 已不存在(NXDOMAIN),
+// 真实端点/参数以测试账号实证为准(PhoneNumbers+ContentCode, 响应 ResultCode/ResultMessage)。
 type aliyunIntl struct {
 	accessKeyID     string
 	accessKeySecret string
-	from            string            // 发送方 SenderID(阿里云国际控制台申请)
-	templates       map[string]string // 区号 → 文案模板,{code} 占位
+	contentCodes    map[string]string // 区号 → 控制台报备模板 ContentCode
 	client          *http.Client
 }
 
-// AliyunIntlConfig 阿里云国际短信参数。
+// AliyunIntlConfig 阿里云国际短信参数;ContentCodes 键为区号(86/60)。
 type AliyunIntlConfig struct {
 	AccessKeyID     string
 	AccessKeySecret string
-	From            string
-	Templates       map[string]string
+	ContentCodes    map[string]string
 }
 
-// DefaultTemplates 内置双语文案:86 中文 / 60 英文(马来西亚)。
-func DefaultTemplates() map[string]string {
-	return map[string]string{
-		"86": "您的验证码为{code}，5分钟内有效，请勿泄露。",
-		"60": "Your verification code is {code}. Valid for 5 minutes. Do not share it.",
-	}
-}
-
-// NewAliyunIntl 构造阿里云国际短信通道;Templates 为 nil 时用 DefaultTemplates。
+// NewAliyunIntl 构造阿里云国际短信通道。
 func NewAliyunIntl(cfg AliyunIntlConfig) Sender {
-	tpl := cfg.Templates
-	if len(tpl) == 0 {
-		tpl = DefaultTemplates()
-	}
 	return &aliyunIntl{
 		accessKeyID:     cfg.AccessKeyID,
 		accessKeySecret: cfg.AccessKeySecret,
-		from:            cfg.From,
-		templates:       tpl,
+		contentCodes:    cfg.ContentCodes,
 		client:          &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
-// Send 调用国际短信 SendSMS(Type=NONOTP, Message=渲染后文案)。
+// Send 调用国际短信 SendSms(Type=OTP, 验证码走 VerificationCode)。
+// PhoneNumbers 为纯数字(不带 +,带 + 报 MOBILE_NUMBER_ILLEGAL,已实测)。
 func (s *aliyunIntl) Send(ctx context.Context, phone, code, _ string) error {
-	tpl, ok := s.templates[Region(phone)]
-	if !ok {
-		return fmt.Errorf("%w: +%s", ErrUnsupportedRegion, Region(phone))
+	cc := Region(phone)
+	tplCode := s.contentCodes[cc]
+	if tplCode == "" {
+		if cc == "" {
+			return fmt.Errorf("%w: %s", ErrUnsupportedRegion, phone)
+		}
+		return fmt.Errorf("%w: +%s", ErrContentCodeMissing, cc)
 	}
 	body, err := s.call(ctx, map[string]string{
-		"Action":     "SendSMS",
-		"Version":    "2018-05-01",
-		"To":         phone,
-		"From":       s.from,
-		"Type":       "NONOTP",
-		"Message":    strings.ReplaceAll(tpl, "{code}", code),
-		"MessageTag": Region(phone),
+		"Action":          "SendSms",
+		"Version":         "2018-05-01",
+		"PhoneNumbers":    digits(phone),
+		"ContentCode":     tplCode,
+		"Type":            "OTP",
+		"VerificationCode": code,
 	})
 	if err != nil {
 		return fmt.Errorf("sms: aliyun intl: %w", err)
 	}
-	// 成功判定:ResponseCode == "OK"(阿里云国际 POP 风格 JSON 响应)。
+	// 成功判定:ResultCode == "OK"(阿里云国际 POP 风格 JSON 响应,实测键名)。
 	// 外部协议键名非 lowerCamelCase,走 map 解码而非结构体 tag(契约门禁红线)。
 	var resp map[string]string
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return fmt.Errorf("sms: aliyun intl: bad response: %w", err)
 	}
-	if resp["ResponseCode"] != "OK" {
-		return fmt.Errorf("sms: aliyun intl: %s: %s", resp["ResponseCode"], resp["ResponseDescription"])
+	if resp["ResultCode"] != "OK" {
+		return fmt.Errorf("sms: aliyun intl: %s: %s", resp["ResultCode"], resp["ResultMessage"])
 	}
 	return nil
 }
 
 // aliyunEndpoint POP 入口(测试可注入非法 URL 触发构造失败分支)。
-var aliyunEndpoint = "https://dysmsapiintl.aliyuncs.com/"
+var aliyunEndpoint = "https://dysmsapi.ap-southeast-1.aliyuncs.com/"
 
 // call 签发 POP V1 RPC 请求(HMAC-SHA1)并返回响应体。
 func (s *aliyunIntl) call(ctx context.Context, params map[string]string) ([]byte, error) {

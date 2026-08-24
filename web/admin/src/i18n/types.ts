@@ -1596,8 +1596,6 @@ export interface Translations {
       pending: string
       provider: string
       providerHint: string
-      senderId: string
-      senderIdHint: string
       accessKeyId: string
       accessKeySecret: string
       secretSet: string

@@ -19,7 +19,6 @@ func smsConfigResolver(svc user.Service, cfg *config.Config) func(context.Contex
 			Enabled:         true,
 			AccessKeyID:     cfg.SMS.AccessKeyID,
 			AccessKeySecret: cfg.SMS.AccessKeySecret,
-			From:            cfg.SMS.From,
 		}
 		list, err := svc.ListParams(ctx)
 		if err != nil {
@@ -47,9 +46,6 @@ func smsApplyParams(out *sms.ChannelConfig, stored map[string]string) {
 			out.AccessKeySecret = plain
 		}
 	}
-	if v := stored["sms.from"]; v != "" {
-		out.From = v
-	}
-	out.TemplateCN = stored["sms.template.cn"]
-	out.TemplateMY = stored["sms.template.my"]
+	out.ContentCodeCN = stored["sms.contentCode.cn"]
+	out.ContentCodeMY = stored["sms.contentCode.my"]
 }

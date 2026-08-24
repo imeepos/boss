@@ -22,8 +22,8 @@ func TestNewDynamic_LogFallback(t *testing.T) {
 func TestDynamic_AliyunPath(t *testing.T) {
 	d := NewDynamic(func(context.Context) (ChannelConfig, error) {
 		return ChannelConfig{
-			Enabled: true, AccessKeyID: "ak", AccessKeySecret: "sk", From: "F",
-			TemplateCN: "cn{code}", TemplateMY: "my{code}",
+			Enabled: true, AccessKeyID: "ak", AccessKeySecret: "sk",
+			ContentCodeCN: "cn-code", ContentCodeMY: "my-code",
 		}, nil
 	}).(*Dynamic)
 	s, err := d.current(context.Background())
