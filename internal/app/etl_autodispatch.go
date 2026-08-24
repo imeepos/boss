@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/ymm-001/boss/internal/domain/metric"
 	"github.com/ymm-001/boss/internal/domain/report"
@@ -16,6 +17,9 @@ type ETLScanResult struct {
 	Dispatched int      `json:"dispatched"`
 	JobKeys    []string `json:"jobKeys"`
 	Errors     []string `json:"errors,omitempty"`
+	// ScannedAt 本次扫描完成时刻;零值 = 进程启动后尚未完成过扫描,
+	// 此时其余字段为初始零值,不代表任务数为 0。
+	ScannedAt time.Time `json:"scannedAt,omitempty"`
 }
 
 type ETLScanner interface {
@@ -85,6 +89,7 @@ func (s *etlScanner) Scan(ctx context.Context) (ETLScanResult, error) {
 }
 
 func (s *etlScanner) record(result ETLScanResult, err error) (ETLScanResult, error) {
+	result.ScannedAt = time.Now().UTC()
 	s.mu.Lock()
 	s.latest = result
 	s.mu.Unlock()

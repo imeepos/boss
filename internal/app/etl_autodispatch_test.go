@@ -101,3 +101,24 @@ func TestETLScannerDispatchesOverdueIdempotently(t *testing.T) {
 		t.Fatalf("latest=%+v", latest)
 	}
 }
+
+// TestETLScannerScannedAt 最近结果带扫描完成时刻;启动后未扫描时为零值可辨识。
+func TestETLScannerScannedAt(t *testing.T) {
+	etl := &fakeETLScannerStore{freshness: []metric.Freshness{
+		{JobKey: "j1", Name: "J1", Status: metric.Fresh},
+	}}
+	s := NewETLScanner(etl, report.NewCompTaskService(&fakeETLCompStore{}))
+	if latest := s.Latest(); !latest.ScannedAt.IsZero() {
+		t.Fatalf("fresh scanner Latest should have zero ScannedAt, got %v", latest.ScannedAt)
+	}
+	res, err := s.Scan(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.ScannedAt.IsZero() {
+		t.Fatal("Scan result should carry ScannedAt")
+	}
+	if latest := s.Latest(); !latest.ScannedAt.Equal(res.ScannedAt) {
+		t.Fatalf("Latest ScannedAt=%v want %v", latest.ScannedAt, res.ScannedAt)
+	}
+}
