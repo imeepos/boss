@@ -21,5 +21,16 @@
 
 ## 待办
 
-- 变更地址子页 E2E（需登录态 + 102 环境）未做，待有测试账号流程时补。
 - JPush / 备份恢复端到端验证仍缺。
+
+## 补充(同日晚,E2E 变更地址链路)
+
+- 模拟器实测发现后端 bug:GET /addresses 的 `addressId` 恒空(`toStr` 只认 string,
+  pgx bigint 扫成 int64)。修复后部署 102,复测 addressId=1/2 正常。
+- API 级 E2E 闭环:sms-code(DB 取码)→login→POST /orders/ORD-20260821-000359/change-address
+  (addressId=2)→DB 断言 orders.address_id=2 落库成功。
+- App UI 链路:登录(验证码回填)、订单详情、变更地址子页(地址簿渲染/默认预选)均实测可达;
+  子页"确认变更地址"按钮在 uiautomator 下点击结果随机(同坐标时而生效时而无响应),
+  判定为该模拟器 Compose 语义/坐标漂移,未取得稳定的点击级断言——按钮绑定代码与
+  SubmitBar 为既有复用件,API 载荷一致。此项留待真机复测。
+- 另发现首页疑似点击区重叠(进行中订单卡部分区域点击误入"我的套餐"),待专项排查。
