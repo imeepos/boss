@@ -1094,6 +1094,41 @@ export interface Translations {
       empty: string
       loadFail: string
     },
+    releasePage: {
+      title: string
+      desc: string
+      columns: string[]
+      create: string
+      upload: string
+      edit: string
+      download: string
+      save: string
+      cancel: string
+      fApp: string
+      fVersion: string
+      fVersionCode: string
+      fMinSupported: string
+      fNotes: string
+      fFile: string
+      fStatus: string
+      fRollout: string
+      fWhitelist: string
+      fForce: string
+      appOptions: string[]
+      statusOptions: string[]
+      stDraft: string
+      stGray: string
+      stPublished: string
+      stRolledBack: string
+      appUser: string
+      appWorker: string
+      grayHint: string
+      uploadFail: string
+      saveFail: string
+      loadFail: string
+      actionFail: string
+      empty: string
+    },
     knowledgePage: {
       title: string
       desc: string
