@@ -25,9 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.ui.theme.Bg
 import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
@@ -36,13 +38,13 @@ import com.ymm.boss.worker.ui.theme.StatusBarSolid
 import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.push.DeepLink
 
-// 底部 Tab(对齐 nav.js:工作台/工单/我的)
-private data class Tab(val screen: Screen, val label: String, val glyph: String)
+// 底部 Tab(对齐 nav.js:工作台/工单/我的);文案走三语资源
+private data class Tab(val screen: Screen, val labelRes: Int, val glyph: String)
 
 private val TABS = listOf(
-    Tab(Screen.Home, "工作台", "⌂"),
-    Tab(Screen.Orders, "工单", "≡"),
-    Tab(Screen.Profile, "我的", "◉"),
+    Tab(Screen.Home, R.string.tab_home, "⌂"),
+    Tab(Screen.Orders, R.string.tab_orders, "≡"),
+    Tab(Screen.Profile, R.string.tab_profile, "◉"),
 )
 
 private fun isTabRoot(s: Screen): Boolean = s in TABS.map { it.screen }
@@ -144,7 +146,7 @@ private fun TabBar(nav: NavHost) {
             ) {
                 Text(tab.glyph, fontSize = 18.sp, fontWeight = FontWeight.Bold,
                     color = if (active) Primary else Muted)
-                Text(tab.label, fontSize = 11.sp, color = if (active) Primary else Muted)
+                Text(stringResource(tab.labelRes), fontSize = 11.sp, color = if (active) Primary else Muted)
             }
         }
         }

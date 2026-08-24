@@ -1,0 +1,50 @@
+<resources>
+    <string name="app_name">BOSS Technician</string>
+
+    <string name="tab_home">Workbench</string>
+    <string name="tab_orders">Orders</string>
+    <string name="tab_profile">Me</string>
+
+    <string name="auth_brand_title">Field Service · Technician</string>
+    <string name="auth_brand_subtitle">Accept jobs · On-site work · Scan &amp; sign</string>
+
+    <string name="auth_seg_sms">SMS Login</string>
+    <string name="auth_seg_pwd">Password Login</string>
+    <string name="auth_hint_phone">Enter phone number</string>
+    <string name="auth_hint_password">Enter password</string>
+    <string name="auth_hint_code">Enter SMS code</string>
+    <string name="auth_hint_name">Enter full name</string>
+    <string name="auth_hint_idcard">Enter ID card number</string>
+    <string name="auth_hint_group">Team ID (optional)</string>
+    <string name="auth_hint_region">Region ID (optional)</string>
+    <string name="auth_send_code">Get Code</string>
+    <string name="auth_resend_in">Resend in %1$ds</string>
+    <string name="auth_login">Log In</string>
+    <string name="auth_agree_prefix">I have read and agreed to</string>
+    <string name="auth_agreement">the Service Agreement</string>
+    <string name="auth_no_account">Not registered yet?</string>
+    <string name="auth_onboard_entry">Apply to join</string>
+    <string name="auth_has_account">Already have an account?</string>
+    <string name="auth_go_login">Log in</string>
+
+    <string name="err_phone_empty">Please enter a phone number</string>
+    <string name="err_phone_invalid">Invalid phone number format</string>
+    <string name="err_send_failed">Failed to send SMS code: %1$s</string>
+    <string name="err_need_phone_and">Enter phone number and %1$s</string>
+    <string name="label_sms">SMS code</string>
+    <string name="label_pwd">password</string>
+    <string name="err_code_bad">SMS code is wrong or expired, please request again</string>
+    <string name="err_pwd_bad">Incorrect phone number or password</string>
+    <string name="err_login_failed">Login failed: %1$s</string>
+    <string name="err_missing_token">Login response missing token</string>
+    <string name="err_form_incomplete">Please complete all fields</string>
+    <string name="err_submit_failed">Submit failed: %1$s</string>
+
+    <string name="onboard_title">Apply to Join</string>
+    <string name="onboard_subtitle">Submitted applications are reviewed before login is enabled</string>
+    <string name="onboard_submit">Submit Application</string>
+    <string name="onboard_submitted">Submitted</string>
+    <string name="onboard_submitted_desc">Your application has been submitted and is pending review</string>
+    <string name="onboard_submitted_note">Please do not submit again while under review</string>
+    <string name="onboard_back_login">Back to Login</string>
+</resources>

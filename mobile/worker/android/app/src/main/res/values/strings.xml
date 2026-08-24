@@ -1,3 +1,55 @@
 <resources>
     <string name="app_name">BOSS师傅端</string>
+
+    <!-- 底部 Tab -->
+    <string name="tab_home">工作台</string>
+    <string name="tab_orders">工单</string>
+    <string name="tab_profile">我的</string>
+
+    <!-- 登录/入驻 品牌区 -->
+    <string name="auth_brand_title">装维全流程 · 师傅端</string>
+    <string name="auth_brand_subtitle">工单接单 · 现场作业 · 扫码签收</string>
+
+    <!-- 登录表单 -->
+    <string name="auth_seg_sms">验证码登录</string>
+    <string name="auth_seg_pwd">密码登录</string>
+    <string name="auth_hint_phone">请输入手机号</string>
+    <string name="auth_hint_password">请输入密码</string>
+    <string name="auth_hint_code">请输入验证码</string>
+    <string name="auth_hint_name">请输入姓名</string>
+    <string name="auth_hint_idcard">请输入身份证号</string>
+    <string name="auth_hint_group">班组 ID(选填)</string>
+    <string name="auth_hint_region">区域 ID(选填)</string>
+    <string name="auth_send_code">获取验证码</string>
+    <string name="auth_resend_in">%1$ds后重发</string>
+    <string name="auth_login">登录</string>
+    <string name="auth_agree_prefix">我已阅读并同意</string>
+    <string name="auth_agreement">《服务协议》</string>
+    <string name="auth_no_account">还没有入驻？</string>
+    <string name="auth_onboard_entry">申请入驻</string>
+    <string name="auth_has_account">已有账号？</string>
+    <string name="auth_go_login">去登录</string>
+
+    <!-- 登录/入驻 错误与提示 -->
+    <string name="err_phone_empty">请输入手机号</string>
+    <string name="err_phone_invalid">手机号格式不正确</string>
+    <string name="err_send_failed">验证码发送失败：%1$s</string>
+    <string name="err_need_phone_and">请输入手机号与%1$s</string>
+    <string name="label_sms">验证码</string>
+    <string name="label_pwd">密码</string>
+    <string name="err_code_bad">验证码错误或已过期，请重新获取</string>
+    <string name="err_pwd_bad">手机号或密码不正确</string>
+    <string name="err_login_failed">登录失败：%1$s</string>
+    <string name="err_missing_token">登录响应缺少 token</string>
+    <string name="err_form_incomplete">请填写完整信息</string>
+    <string name="err_submit_failed">提交失败：%1$s</string>
+
+    <!-- 入驻 -->
+    <string name="onboard_title">申请入驻</string>
+    <string name="onboard_subtitle">提交后需等待后台审核,审核通过方可登录</string>
+    <string name="onboard_submit">提交入驻申请</string>
+    <string name="onboard_submitted">已提交审核</string>
+    <string name="onboard_submitted_desc">您的入驻申请已提交,请耐心等待后台审核</string>
+    <string name="onboard_submitted_note">审核期间请勿重复提交</string>
+    <string name="onboard_back_login">返回登录</string>
 </resources>

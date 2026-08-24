@@ -1,0 +1,50 @@
+<resources>
+    <string name="app_name">BOSS Teknisyen</string>
+
+    <string name="tab_home">Ruang Kerja</string>
+    <string name="tab_orders">Pesanan</string>
+    <string name="tab_profile">Saya</string>
+
+    <string name="auth_brand_title">Perkhidmatan Lapangan · Teknisyen</string>
+    <string name="auth_brand_subtitle">Terima pesanan · Kerja di lokasi · Imbas &amp; tandatangan</string>
+
+    <string name="auth_seg_sms">Log Masuk SMS</string>
+    <string name="auth_seg_pwd">Log Masuk Kata Laluan</string>
+    <string name="auth_hint_phone">Masukkan nombor telefon</string>
+    <string name="auth_hint_password">Masukkan kata laluan</string>
+    <string name="auth_hint_code">Masukkan kod SMS</string>
+    <string name="auth_hint_name">Masukkan nama penuh</string>
+    <string name="auth_hint_idcard">Masukkan nombor kad pengenalan</string>
+    <string name="auth_hint_group">ID pasukan (pilihan)</string>
+    <string name="auth_hint_region">ID wilayah (pilihan)</string>
+    <string name="auth_send_code">Dapatkan Kod</string>
+    <string name="auth_resend_in">Hantar semula dalam %1$ds</string>
+    <string name="auth_login">Log Masuk</string>
+    <string name="auth_agree_prefix">Saya telah membaca dan bersetuju dengan</string>
+    <string name="auth_agreement">Perjanjian Perkhidmatan</string>
+    <string name="auth_no_account">Belum berdaftar?</string>
+    <string name="auth_onboard_entry">Mohon menyertai</string>
+    <string name="auth_has_account">Sudah ada akaun?</string>
+    <string name="auth_go_login">Log masuk</string>
+
+    <string name="err_phone_empty">Sila masukkan nombor telefon</string>
+    <string name="err_phone_invalid">Format nombor telefon tidak sah</string>
+    <string name="err_send_failed">Gagal menghantar kod SMS: %1$s</string>
+    <string name="err_need_phone_and">Masukkan nombor telefon dan %1$s</string>
+    <string name="label_sms">kod SMS</string>
+    <string name="label_pwd">kata laluan</string>
+    <string name="err_code_bad">Kod SMS salah atau tamat tempoh, sila minta lagi</string>
+    <string name="err_pwd_bad">Nombor telefon atau kata laluan tidak betul</string>
+    <string name="err_login_failed">Log masuk gagal: %1$s</string>
+    <string name="err_missing_token">Respons log masuk tiada token</string>
+    <string name="err_form_incomplete">Sila lengkapkan semua medan</string>
+    <string name="err_submit_failed">Penghantaran gagal: %1$s</string>
+
+    <string name="onboard_title">Mohon Menyertai</string>
+    <string name="onboard_subtitle">Permohonan akan disemak sebelum log masuk dibenarkan</string>
+    <string name="onboard_submit">Hantar Permohonan</string>
+    <string name="onboard_submitted">Telah Dihantar</string>
+    <string name="onboard_submitted_desc">Permohonan anda telah dihantar dan menunggu semakan</string>
+    <string name="onboard_submitted_note">Jangan hantar semasa dalam semakan</string>
+    <string name="onboard_back_login">Kembali ke Log Masuk</string>
+</resources>
