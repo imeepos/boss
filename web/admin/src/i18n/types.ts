@@ -1049,6 +1049,34 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    sitePage: {
+      title: string
+      desc: string
+      columns: string[]
+      create: string
+      edit: string
+      save: string
+      delete: string
+      deleteConfirm: string
+      fSlug: string
+      fTitle: string
+      fCategory: string
+      fSummary: string
+      fContent: string
+      fStatus: string
+      fAuthor: string
+      categoryOptions: string[]
+      statusOptions: string[]
+      catNews: string
+      catArticle: string
+      stDraft: string
+      stPublished: string
+      stOffline: string
+      saveFail: string
+      actionFail: string
+      empty: string
+      loadFail: string
+    },
     knowledgePage: {
       title: string
       desc: string
