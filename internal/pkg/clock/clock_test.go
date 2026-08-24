@@ -21,6 +21,28 @@ func TestSetAndLocation(t *testing.T) {
 	}
 }
 
+func TestSetFixed(t *testing.T) {
+	Set("UTC")
+	t.Cleanup(func() { SetFixed(time.Time{}) })
+	fixedTime := time.Date(2026, 8, 21, 2, 0, 0, 0, time.UTC)
+	SetFixed(fixedTime)
+	if !Now().Equal(fixedTime) {
+		t.Fatalf("Now() = %v, want %v", Now(), fixedTime)
+	}
+	// 固定时刻优先于业务时区:Now() 返回钉死的绝对时刻本身。
+	if err := Set("Asia/Manila"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = Set("UTC") })
+	if !Now().Equal(fixedTime) {
+		t.Fatalf("Now() = %v, want fixed %v after tz change", Now(), fixedTime)
+	}
+	SetFixed(time.Time{})
+	if Now().Equal(fixedTime) {
+		t.Fatal("zero value should clear fixed time")
+	}
+}
+
 func TestDayBounds(t *testing.T) {
 	if err := Set("Asia/Manila"); err != nil {
 		t.Fatalf("set: %v", err)

@@ -46,7 +46,7 @@ func startCdrCompensationLoop(store cdrCompStore, emit aaability.Emitter, n noti
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		runCdrCompOnce(ctx, d)
+		staggeredFirstRun(ctx, "cdr_compensation", startupDelays["cdr_compensation"], func(c context.Context) { runCdrCompOnce(c, d) })
 		t := time.NewTicker(cdrCompInterval)
 		defer t.Stop()
 		for {
