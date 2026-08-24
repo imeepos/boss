@@ -512,3 +512,10 @@
 - 最大坑:存量代码的 API 形态(端点 dysmsapiintl/参数 To+Message/响应 ResponseCode)三处全错,域名全球 NXDOMAIN;官方文档页全是 SPA 抓不到,最后靠"逐个补参让 API 自己报错"实证出正确形态。
 - skill 没预警:对接外部 API 前应先做一次真实探活调用,不能假设存量实现正确。
 - 重来一次:第一步就用真实凭据 curl/POP 探活端点+最小参数,再读代码;省掉在 102 上排查 DNS 的弯路。
+
+## 2026-08-24 BOSS 遗留清零收尾(ETL 执行器 + 分支清理 + worker i18n 范围判定)
+- 最大坑:RecordRun SQL `$3-$2` 在 FinishedAt 为 NULL(RUNNING 记录)时 PG 报 42725 operator is not unique,部署后日志才暴露。skill 没预警"参数参与运算要显式类型标注"——已喂回 known-issues/lessons/recidivism。
+- 重来一次:写参数化 SQL 先过一遍"每个参数会不会是 NULL、NULL 时类型能否推断",再加一次本地 psql 实测,而不是靠部署后 docker logs 兜底。
+- 第二坑:sed 读 etl_pg.go 后 edit 被拒(read 工具唯一凭据),recidivism 第 5 次坑 +1 变 6,SKILL.md 顶部红线已有此条但本轮仍犯——下次 sed/cat 只用于浏览,要 edit 的文件一律 read 工具。
+- 范围判定教训:docs/* HTML 是文档/原型不算项目页面,worker i18n 验收范围 = web/admin 真实页面 + android 资源;验收前先问"真实代码还是原型",避免在 docs 里空转。
+- 分支清理:残留分支用 merge-base + 内容 diff + grep 同主题提交三连确认再删,backup-main 与 intel NPE 分支均以此法安全清理。

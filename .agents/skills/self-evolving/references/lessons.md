@@ -256,3 +256,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-23 前端代码已 commit/已 push/容器已 rebuild,用户仍报"看不到变化"时,修复是三步自检:`curl -sI 域名/` 看 `Cache-Control` 是否命中 `max-age=...immutable`、`curl 域名/assets/index-*.js | grep <新代码符号>` 验证新 chunk 是否真到位、`curl 域名/index.html | grep index-...js` 看 index.html 引用的 hash 是否为新 chunk;命中 immutable 时用户需硬刷新才能看到新版本(nginx sites-enabled/boss-5180 当前未加 no-cache for index.html,这是已知改进点)。skill 没提前警告我"修完前端先 curl 远端 bundle 自检"。
 - 对接外部 API:先用真实凭据发一次最小调用(哪怕报参数错),端点存在性+签名正确性立刻可知;SignatureDoesNotMatch 之外的一切参数级错误都说明签名已通过。
 - 旧供应商文档里的域名可能整个下线(NXDOMAIN),"no such host"先在本机 dig 一次再怪容器 DNS。
+- 2026-08-24 ETL 真实执行器接入模板(台账驱动):`ListJobs 过滤 enabled → 执行器注册表 map[jobKey]func(ctx)(rows int64, err error) → RecordRun(RUNNING, startedAt) → 执行 → RecordRun(SUCCESS/FAILED, finishedAt, rows, err)`;cadence 判定 `LastRunAt==nil 立即执行,否则 now-LastRunAt >= cadence`;无真实执行器的台账任务跳过不伪造记录(不发明业务行为)。
+- 2026-08-24 SQL 参数运算必须显式类型标注:pgx 参数化查询里 `$3-$2` 当 $3 为 NULL(如 RUNNING 记录 FinishedAt)时 PG 报 `SQLSTATE 42725 operator is not unique: unknown - unknown`;修法是 `$3::timestamptz-$2::timestamptz`。经验:凡参数参与算术/比较,先想 NULL 路径的类型推断。
+- 2026-08-24 docs/* 下的 HTML 是文档/原型不是项目页面,不纳入三语/功能验收;真实 worker 页面是 web/admin `boss/worker*` 三页(useT)+ mobile android `app_name`。判定验收范围前先问"这是真实项目代码还是 docs 原型"。
+- 2026-08-24 分支清理判定法:残留分支先 `git merge-base --is-ancestor <分支> main`;非祖先但内容已合入(如 backup-main tip 与 main 同标题提交 diff 为空、intel NPE 修复以新 hash 合入)可用 `git diff main <分支> --stat` + 逐提交 `git log main --grep=<主题>` 双确认后 -D,不必保留。
