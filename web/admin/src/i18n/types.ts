@@ -120,6 +120,13 @@ export interface Translations {
       aboutDesc: string
       casesTitle: string
       casesSubtitle: string
+      newsTitle: string
+      newsSubtitle: string
+      newsEmpty: string
+      newsCatNews: string
+      newsCatArticle: string
+      newsBack: string
+      newsNotFound: string
       cases: Array<{ icon: string; title: string; desc: string; metric: string }>
       ctaBannerTitle: string
       ctaBannerSubtitle: string
@@ -1049,6 +1056,36 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    sitePage: {
+      title: string
+      desc: string
+      columns: string[]
+      create: string
+      edit: string
+      save: string
+      delete: string
+      deleteConfirm: string
+      fSlug: string
+      fTitle: string
+      fCategory: string
+      fSummary: string
+      fContent: string
+      fStatus: string
+      fAuthor: string
+      fCover: string
+      fCoverRemove: string
+      categoryOptions: string[]
+      statusOptions: string[]
+      catNews: string
+      catArticle: string
+      stDraft: string
+      stPublished: string
+      stOffline: string
+      saveFail: string
+      actionFail: string
+      empty: string
+      loadFail: string
+    },
     knowledgePage: {
       title: string
       desc: string

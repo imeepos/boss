@@ -18,9 +18,36 @@ jobs:
 
       - name: Classify change
         id: change
+        env:
+          BEFORE: ${{ github.event.before }}
         run: |
           runtime=false
-          for path in $(git diff --name-only HEAD^ HEAD); do
+          # 优先用 push 事件的 before SHA 精确取本次推送的变更面(社区标准:
+          # github.event.before/after;before 为全零 = 新建分支/force push)。
+          # before 取不到(服务端不允许按 SHA fetch)时回退双父并集启发式:
+          # 只看 HEAD^ 会漏判——feature 侧先 merge main 再推送时 HEAD^ 是
+          # feature tip,运行时变更被误判 docs-only 跳过部署(task 2606 实例)。
+          base=""
+          if [ -n "$BEFORE" ] && [ "${BEFORE//0/}" != "" ]; then
+            # gitea 默认不允许按裸 SHA fetch,改为加深 main 历史后检查 before 是否在场
+            # (常规推送跨度远小于 100,force push/超长推送时 before 不在场,走回退)。
+            git fetch -q --depth=100 origin main 2>/dev/null || true
+            if git rev-parse --verify -q "$BEFORE^{commit}" >/dev/null 2>&1; then
+              base="$BEFORE"
+            fi
+          fi
+          if [ -n "$base" ]; then
+            echo "Classifying by push event before=$BEFORE"
+            files=$(git diff --name-only "$base" HEAD)
+          else
+            echo "before SHA unavailable; falling back to parent-diff heuristic"
+            files=$(git diff --name-only HEAD^ HEAD)
+            if git rev-parse --verify -q HEAD^2 >/dev/null 2>&1; then
+              files="$files
+          $(git diff --name-only HEAD^2 HEAD)"
+            fi
+          fi
+          for path in $files; do
             case "$path" in
               docs/*|.agents/*|*.md) ;;
               *) runtime=true; break ;;

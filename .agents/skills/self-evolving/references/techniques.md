@@ -265,3 +265,19 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## ETL 新鲜度派单闭环核对(102 实机)
 场景 → 验证"滞留派单与任务新鲜度一致、扫描无误派单"。
 怎么用 → ① 查派单:`docker exec boss-infra-postgres-1 psql -U boss -d boss -c "select biz_id,status,count(*),max(updated_at) from compensation_tasks where biz_id like 'etl_freshness:%' group by 1,2"`;② 查新鲜度:`select job_key,last_status,last_run_at,now()-last_run_at from etl_job`;③ 判定一致:FRESH 任务不应有 OPEN 派单(CloseRecoveredETL 会自动关),无真实执行器的投影任务 last_status 恒 RUNNING/last_run_at NULL,其 OPEN 派单是真实滞留不是误派;④ 连续扫描周期核对:间隔 > ETL_AUTODISPATCH_INTERVAL_SECONDS(默认 5min)取两次快照,OPEN 行数与 created_at 不变即无重复派单(SubmitQualityViolations 按 bizId+OPEN 幂等)。实机证据:2026-08-24 17:42 UTC 恢复的 ar_aging_snapshot/metric_quality_scan 派单被自动 CLOSED,4 条投影任务 OPEN 派单与恒 RUNNING 台账一致。
+
+## gitea actions 实机日志取证
+场景 → 需要流水线"跳过/部署"分类的原文证据(UI 不便或需自动化)。
+怎么用 → runner 侧 `docker logs gitea-runner --since 30m | grep task` 拿任务号;日志文件在 gitea 数据卷 `sudo find .../gitea_data/_data/actions_log/sker/boss -name <task>.log.zst`(目录按 task 号十六进制分桶,如 2605 在 2d/、2607 在 2f/),`sudo zstdcat` 后 grep "Runtime-affecting|Documentation"。任务运行中日志未落盘,需等完成。
+
+## 新路由契约 A 检查红灯:登记源是 openapi yaml(2026-08-28 cms)
+场景 → `make contract-sync` A 项报"路由已实现但契约未登记"。
+怎么用 → 登记源是 `api/openapi/admin.yaml`(加 `$ref: './admin/<域>.yaml#/paths/...'` 引用)+ 新建 `api/openapi/admin/<域>.yaml`(抄 knowledge.yaml 形状);`cmd/bossctl/routes_admin.go` 只是 CLI 展示目录,加了它 A 检查照样红。写 handler 前先把 yaml 建好,一次过 A。
+
+## pgxmock 单测两个形状坑(2026-08-28 cms)
+场景 → 域 store 写 pgxmock 契约单测。
+怎么用 → ① pool 接口类型名是 `pgxmock.PgxPoolIface`(不是 PgxPool);② SELECT 里的 `TO_CHAR(col,...)` 产出字符串列,mock 行必须喂字符串("2026-08-28 10:00"),喂 time.Time 报 destination kind 'string' not supported。
+
+## 102 回放确认"新代码已上线"的可观测差异法(2026-08-28 cms)
+场景 → push 后轮询端点,一直 200 但行为像旧代码。
+怎么用 → 别用"端点可达"判定;制造只有新代码才有的行为差异再轮询:如 cms 修复后,创建即 PUBLISHED 的文章 publishedAt 非空才是新代码(try1 旧 try2 新,间隔 25s)。泛化:回放断言里必须包含至少一个"新代码专属可观测字段"。

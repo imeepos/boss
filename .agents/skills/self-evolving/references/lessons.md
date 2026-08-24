@@ -263,3 +263,13 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 拆分同包 Kotlin 文件前先 `grep -rn "fun <拟用名>"` 全包扫一遍：private 改 internal 跨文件后与邻居页面同名函数直接 conflicting overloads，编译才炸（2026-08-24 OrderTimeline 撞 FaultDetailPage.TimelineCard）。
 - 调既有 API 前先 `grep -n "^object" <Api文件>` 确认函数归属哪个 object：一个文件多个 object（ProductApi/OrderApi 同文件）时凭文件名 import 必报 unresolved（2026-08-24 changeAddress）。
 - Compose test 的 DeviceConfigurationOverride 宽度覆盖：ForcedSize(DpSize) 兼容 1.7~1.11，Width(Dp) 是 1.9+ 才有；且都是 Companion 扩展，须显式 import 函数名（如 import androidx.compose.ui.test.ForcedSize），只 import 类名报 Unresolved（2026-08-24 360dp 基线）。
+- 2026-08-24 CI 按变更分类跳过部署时,凡 HEAD 是合并提交必须并看两个父的 diff:feature 侧 merge main 后直接推 main,HEAD^ 是 feature tip,只看第一父会把带入 main 的运行时变更误判 docs-only 静默跳过部署(gitea task 2606 实例);修法 `files=$(git diff --name-only HEAD^ HEAD); git rev-parse -q HEAD^2 && files+="$(git diff --name-only HEAD^2 HEAD)"`。
+- 2026-08-24 git amend 前先确认 HEAD 指向哪个提交:并行多提交在途时 amend 默认打进 HEAD,不是"打进我想改的那个";误并后 reset --soft + 按文件重拆可恢复提交原子性。
+- 2026-08-24 日期边界类测试的正确隔离是给时钟加 SetFixed 测试缝钉死绝对时刻(生产默认真实墙钟),而不是依赖真实 now + 相对偏移:夹具与 handler 各取一次 now 就存在日界毫秒竞态,宿主时区也会渗入。
+- 2026-08-24 双父并集分类的代价是保守:main 刚前进过运行时提交后,即便只合 docs 也会触发一次重复部署(P2 侧 diff 含运行时文件)。这是可接受的取舍——漏部署真实变更比多一次幂等重启危害大;docs-only 直推(非合并形状)仍稳定跳过。
+- 新增后台菜单页时,权限码迁移必须同步登记 permissions + role_permissions(sysadmin CROSS JOIN 或单授),否则 102 回放直接 403 no permission(2026-08-28 menu:site 踩坑,先例 000039 geo_menu)。
+- INSERT 与 UPDATE 对同一状态字段的副作用必须对称:UPDATE 置 PUBLISHED 落 published_at 而 INSERT 不落,导致创建即发布的文章倒序错乱、日期为空(2026-08-28 cms_posts 102 回放发现)。
+- 102 部署是 push gitea main 触发 CI;回放验证要等容器真正换新(端点可达≠新代码),按"制造可观测差异再轮询"确认部署完成。
+- 2026-08-28 新路由的契约登记源是 api/openapi/*.yaml(A 检查),cmd/bossctl/routes_admin.go 只是 CLI 目录;两处都要加,漏 yaml 必红灯。
+- 2026-08-28 免鉴权公开端点三原则:只读最小投影手动挑字段、非公开态统一 404 不泄露存在性、挂靠既有 public 子路由先例不新开路由组。
+- 2026-08-28 前端区块接后端数据且业务上可能为空时,空态/失败态整块 return null 隐藏,不留空白占位区(官网首页 NewsSection 模式)。

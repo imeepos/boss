@@ -14,6 +14,8 @@ import (
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/backup"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/cms"
+	crashdomain "github.com/ymm-001/boss/internal/domain/crash"
 	"github.com/ymm-001/boss/internal/domain/cs"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
@@ -78,6 +80,8 @@ type Application struct {
 	PushDevices pushdomain.DevicesService
 	// PushNotifier 定向通知器(派单→师傅手机);nil 安全(httpapi 跳过)。
 	PushNotifier pushdomain.WorkerNotifier
+	// CrashLogs 客户端崩溃日志存储(迁移 000136);nil 安全(httpapi 跳过)。
+	CrashLogs crashdomain.Store
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
@@ -105,6 +109,7 @@ type Application struct {
 	Knowledge       cs.KnowledgeService
 	Callbacks       cs.CallbackService
 	Tickets         cs.TicketService
+	CMS             cms.Service
 	ARMetrics       billing.ARMetricsReader
 	ARClosure       billing.ARClosureService
 	CollectionQueue billing.CollectionQueueService

@@ -45,6 +45,9 @@ paths:
   # ---------- Push(推送设备上报) ----------
   /push/device: { $ref: './worker/misc.yaml#/paths/~1push~1device' }
 
+  # ---------- Crash(客户端崩溃上报) ----------
+  /client/crash: { $ref: './worker/misc.yaml#/paths/~1client~1crash' }
+
   # ---------- Ticket ----------
   /tickets: { $ref: './worker/ticket.yaml#/paths/~1tickets' }
   /tickets/history: { $ref: './worker/ticket.yaml#/paths/~1tickets~1history' }

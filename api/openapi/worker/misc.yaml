@@ -176,3 +176,30 @@ paths:
                   data: { type: object, properties: { ok: { type: boolean } } }
         '422':
           description: registrationId 形态非法(42200)
+
+  /client/crash:
+    post:
+      tags: [Misc]
+      summary: 客户端崩溃日志上报(App 启动补传本地留痕,成功即删本地文件)
+      operationId: uploadClientCrash
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [log]
+              properties:
+                app: { type: string, example: "boss-worker/0.1.0", description: 客户端标识/版本 }
+                log: { type: string, description: 崩溃文本(线程/时间/堆栈);服务端截断至 64KB 保尾部 }
+      responses:
+        '200':
+          description: envelope;尽力而为,入库失败 5xx 由 App 保留文件重传
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data: { type: object, properties: { ok: { type: boolean } } }

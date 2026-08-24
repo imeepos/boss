@@ -94,3 +94,11 @@ func TestTicketAssignedAlert(t *testing.T) {
 		t.Fatalf("alert=%q %q", title, alert)
 	}
 }
+
+// 回归:extras 键名 ticketNo 是与师傅端 Android PushClickReceiver 的跨端契约,改键名即断链。
+func TestExtrasTicketNo(t *testing.T) {
+	got := ExtrasTicketNo("ORD-20260828-001")
+	if len(got) != 1 || got["ticketNo"] != "ORD-20260828-001" {
+		t.Fatalf("extras=%v", got)
+	}
+}

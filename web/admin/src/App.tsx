@@ -8,6 +8,7 @@ import { AuthGuard } from './layouts/AuthGuard'
 import { useProfile } from './layouts/profile'
 const LoginPage = lazy(() => import('./pages/login'))
 const HomePage = lazy(() => import('./pages/home'))
+const NewsDetailPage = lazy(() => import('./pages/news'))
 const DashboardPage = lazy(() => import('./pages/dashboard'))
 const AccountListPage = lazy(() => import('./pages/base/account'))
 const AddressPage = lazy(() => import('./pages/base/address'))
@@ -63,6 +64,7 @@ const DispatchPage = lazy(() => import('./pages/boss/dispatch'))
 const DismantlePage = lazy(() => import('./pages/boss/dismantle'))
 const ComplaintPage = lazy(() => import('./pages/boss/complaint'))
 const KnowledgePage = lazy(() => import('./pages/boss/knowledge'))
+const SitePostsPage = lazy(() => import('./pages/boss/site'))
 const ServiceMetricsPage = lazy(() => import('./pages/boss/service-metrics'))
 const FeedbackPage = lazy(() => import('./pages/boss/feedback'))
 const CallbackPage = lazy(() => import('./pages/boss/callback'))
@@ -162,6 +164,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'dismantle') return <DismantlePage />
   if (pageKey === 'complaint') return <ComplaintPage />
   if (pageKey === 'knowledge') return <KnowledgePage />
+  if (pageKey === 'site') return <SitePostsPage />
   if (pageKey === 'service-metrics') return <ServiceMetricsPage />
   if (pageKey === 'feedback') return <FeedbackPage />
   if (pageKey === 'callback') return <CallbackPage />
@@ -204,6 +207,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/partner/apply" element={<PartnerApplyPage />} />
         <Route path="/home" element={<HomePage />} />
+        <Route path="/news/:slug" element={<NewsDetailPage />} />
         {/* 根路径分流(公开):未登录看官网首页,已登录进工作台;守卫区改无路径布局路由。 */}
         <Route path="/" element={<RootRedirect />} />
         <Route

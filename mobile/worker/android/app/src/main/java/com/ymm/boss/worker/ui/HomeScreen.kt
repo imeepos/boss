@@ -21,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.HomeApi
 import com.ymm.boss.worker.api.MiscApi
 import com.ymm.boss.worker.ui.theme.Ink
@@ -52,7 +54,7 @@ fun HomeScreen(nav: NavHost) {
             item {
                 when (val s = home) {
                     is Load.Loading -> HomeCard { Loading() }
-                    is Load.Fail -> HomeCard { ErrorRetry("首页加载失败，请重试。") { reload += 1 } }
+                    is Load.Fail -> HomeCard { ErrorRetry(stringResource(R.string.err_home_load)) { reload += 1 } }
                     is Load.Ok -> HomeBody(nav, s.data)
                 }
             }
@@ -76,9 +78,9 @@ private fun HomeBody(nav: NavHost, d: JSONObject) {
         )
         val ongoing = d.optJSONArray("ongoing") ?: JSONArray()
         HomeCard(modifier = Modifier.padding(top = 8.dp)) {
-            CardHeader("进行中工单 (${ongoing.length()})", more = "全部") { nav.switchTab(Screen.Orders) }
+            CardHeader(stringResource(R.string.home_ongoing_title, ongoing.length()), more = stringResource(R.string.home_more_all)) { nav.switchTab(Screen.Orders) }
             when {
-                ongoing.length() == 0 -> CenterHint("暂无进行中工单")
+                ongoing.length() == 0 -> CenterHint(stringResource(R.string.home_no_ongoing))
                 else -> for (i in 0 until minOf(ongoing.length(), 3)) {
                     TicketCell(ongoing.optJSONObject(i), onClick = {
                         val no = ongoing.optJSONObject(i).optString("ticketNo")
@@ -93,13 +95,13 @@ private fun HomeBody(nav: NavHost, d: JSONObject) {
 @Composable
 private fun RemindCard(nav: NavHost, msgs: Load<JSONObject>) {
     HomeCard(modifier = Modifier.padding(top = 8.dp)) {
-        CardHeader("今日提醒", more = "消息中心", onMore = { nav.push(Screen.Messages) })
+        CardHeader(stringResource(R.string.home_reminders), more = stringResource(R.string.home_more_messages), onMore = { nav.push(Screen.Messages) })
         when (msgs) {
-            is Load.Loading -> CenterHint("加载中…")
-            is Load.Fail -> CenterHint("消息加载失败，请重试。")
+            is Load.Loading -> CenterHint(stringResource(R.string.hint_loading))
+            is Load.Fail -> CenterHint(stringResource(R.string.err_messages_load))
             is Load.Ok -> {
                 val items = msgs.data.optJSONArray("items") ?: JSONArray()
-                if (items.length() == 0) CenterHint("暂无提醒")
+                if (items.length() == 0) CenterHint(stringResource(R.string.home_no_reminders))
                 else for (i in 0 until minOf(items.length(), 3)) {
                     val x = items.optJSONObject(i)
                     KvRow(x.optString("title"), x.optString("content"))
@@ -110,16 +112,17 @@ private fun RemindCard(nav: NavHost, msgs: Load<JSONObject>) {
 }
 
 /** 头部文案:姓名 / 组别·手机号 / 今日状态行 / 未读角标(Message.read 对齐 worker misc 契约)。 */
+@Composable
 private fun homeHead(home: Load<JSONObject>, msgs: Load<JSONObject>): HomeHeadState = when (home) {
-    is Load.Loading -> HomeHeadState(name = "师傅", statusLine = "今日接单 - · 进行中 - · 待处理 -")
-    is Load.Fail -> HomeHeadState(name = "师傅", sub = "", statusLine = "")
+    is Load.Loading -> HomeHeadState(name = stringResource(R.string.default_worker), statusLine = stringResource(R.string.home_status_loading))
+    is Load.Fail -> HomeHeadState(name = stringResource(R.string.default_worker), sub = "", statusLine = "")
     is Load.Ok -> {
         val d = home.data
         val today = d.optJSONObject("today") ?: JSONObject()
         HomeHeadState(
-            name = d.optString("workerName", "师傅"),
+            name = d.optString("workerName", stringResource(R.string.default_worker)),
             sub = "${d.optString("groupName")} · ${d.optString("phoneMasked")}",
-            statusLine = "今日接单 ${today.optInt("accepted")} · 进行中 ${today.optInt("doing")} · 待处理 ${today.optInt("todo")}",
+            statusLine = stringResource(R.string.home_status_fmt, today.optInt("accepted"), today.optInt("doing"), today.optInt("todo")),
             hasUnread = unreadCount(msgs) > 0,
         )
     }

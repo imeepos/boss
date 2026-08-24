@@ -431,6 +431,13 @@ paths:
   /knowledge-articles: { $ref: './admin/knowledge.yaml#/paths/~1knowledge-articles' }
   /knowledge-articles/{articleId}: { $ref: './admin/knowledge.yaml#/paths/~1knowledge-articles~1{articleId}' }
 
+  # ---------- CMS(官网内容发布) ----------
+  /site-posts: { $ref: './admin/site.yaml#/paths/~1site-posts' }
+  /site-posts/{postId}: { $ref: './admin/site.yaml#/paths/~1site-posts~1{postId}' }
+  /site/posts: { $ref: './admin/site.yaml#/paths/~1site~1posts' }
+  /site/posts/{slug}: { $ref: './admin/site.yaml#/paths/~1site~1posts~1{slug}' }
+  /site/posts/{slug}/cover: { $ref: './admin/site.yaml#/paths/~1site~1posts~1{slug}~1cover' }
+
   # ---------- ODN(无源物理层) ----------
   /odn/grids: { $ref: './admin/odn.yaml#/paths/~1odn~1grids' }
   /odn/grids/{gridCode}: { $ref: './admin/odn.yaml#/paths/~1odn~1grids~1{gridCode}' }

@@ -21,6 +21,8 @@ class MainActivity : ComponentActivity() {
         takeDeepLink(intent)
         // 已登录则补报 RegistrationID(登录成功那次未上报成功/换设备场景)。
         PushRegistrar.ensureRegistered(applicationContext)
+        // 崩溃留痕启动补传(未登录静默跳过,内部 IO 协程)。
+        com.ymm.boss.worker.util.CrashLog.uploadPending(applicationContext)
         // 状态栏区域由 AppRoot 统一画固定纯色带(与头部渐变起点同源,对齐 user 端方案),图标白色。
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(StatusBarSolidArgb),
