@@ -13,6 +13,7 @@ sealed interface Route {
     data object Orders : Route
     data class Order(val no: String) : Route
     data class Rate(val no: String) : Route
+    data class OrderChangeAddress(val no: String) : Route
     data object MyPlan : Route
     data class Change(val planId: String) : Route
     data class Cancel(val planId: String) : Route

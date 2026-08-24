@@ -35,9 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.api.friendlyMessage
 import com.ymm.boss.worker.push.PushRegistrar
@@ -58,7 +60,7 @@ import kotlinx.coroutines.launch
 private val pageBg = Color(0xFFF6F8FA)
 
 @Composable
-fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit) {
+fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit, onAgreement: () -> Unit = {}) {
     var mode by remember { mutableStateOf("sms") }
     var phone by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
@@ -92,10 +94,10 @@ fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit) {
                         .background(Color.White, RoundedCornerShape(10.dp))
                         .padding(16.dp),
                 ) {
-                    AuthSegment(listOf("sms" to "验证码登录", "password" to "密码登录"), mode) {
+                    AuthSegment(listOf("sms" to stringResource(R.string.auth_seg_sms), "password" to stringResource(R.string.auth_seg_pwd)), mode) {
                         mode = it; err = ""
                     }
-                    AuthPhoneRow(phone, "请输入手机号") { phone = it }
+                    AuthPhoneRow(phone, stringResource(R.string.auth_hint_phone)) { phone = it }
                     if (mode == "sms") {
                         AuthCodeRow(code, countdown,
                             onCode = { code = it },
@@ -103,14 +105,14 @@ fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit) {
                                 sendCode(scope, phone, onCode = { code = it }) { err = it; countdown = 59 }
                             })
                     } else {
-                        AuthPwdRow(password, { password = it }, "请输入密码", pwdVisible) { pwdVisible = !pwdVisible }
+                        AuthPwdRow(password, { password = it }, stringResource(R.string.auth_hint_password), pwdVisible) { pwdVisible = !pwdVisible }
                     }
                     if (err.isNotBlank()) AuthFootnote(err, Color(0xFFFF2D2F))
                 }
                 // 协议行
-                AuthAgreeRow(agreed, onToggle = { agreed = it }, onAgreement = { /* TODO 协议页 */ })
+                AuthAgreeRow(agreed, onToggle = { agreed = it }, onAgreement = onAgreement)
                 // 主按钮
-                AuthPrimaryButton("登录", enabled = agreed && !busy, loading = busy,
+                AuthPrimaryButton(stringResource(R.string.auth_login), enabled = agreed && !busy, loading = busy,
                     onClick = {
                         busy = true
                         doLogin(scope, onLoggedIn, phone, mode, if (mode == "sms") code else password, devMode) {
@@ -147,9 +149,9 @@ private fun LoginHero() {
                     .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Outlined.Build, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp)) }
-            Text("装维全流程 · 师傅端", fontSize = 20.sp, fontWeight = FontWeight.Bold,
+            Text(stringResource(R.string.auth_brand_title), fontSize = 20.sp, fontWeight = FontWeight.Bold,
                 color = Color.White, modifier = Modifier.padding(top = 14.dp))
-            Text("工单接单 · 现场作业 · 扫码签收",
+            Text(stringResource(R.string.auth_brand_subtitle),
                 style = androidx.compose.ui.text.TextStyle(
                     fontSize = 12.sp, letterSpacing = 1.sp,
                     color = Color.White.copy(alpha = 0.85f)),
@@ -166,11 +168,14 @@ private fun OnboardEntry(onOnboard: () -> Unit) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("还没有入驻？", fontSize = 12.sp, color = Muted)
-        Text("申请入驻", fontSize = 12.sp, color = Primary, fontWeight = FontWeight.W500,
+        Text(stringResource(R.string.auth_no_account), fontSize = 12.sp, color = Muted)
+        Text(stringResource(R.string.auth_onboard_entry), fontSize = 12.sp, color = Primary, fontWeight = FontWeight.W500,
             modifier = Modifier.clickable { onOnboard() })
     }
 }
+
+// 非组合上下文取资源(错误文案在协程 helper 里拼)
+private fun s(res: Int, vararg fmt: Any = emptyArray()) = Api.context().getString(res, *fmt)
 
 private fun sendCode(
     scope: kotlinx.coroutines.CoroutineScope,
@@ -178,8 +183,8 @@ private fun sendCode(
     onCode: (String) -> Unit,
     onDone: (String) -> Unit,
 ) {
-    if (phone.isBlank()) { onDone("请输入手机号"); return }
-    if (!Regex("^1\\d{10}$").matches(phone)) { onDone("手机号格式不正确"); return }
+    if (phone.isBlank()) { onDone(s(R.string.err_phone_empty)); return }
+    if (!Regex("^1\\d{10}$").matches(phone)) { onDone(s(R.string.err_phone_invalid)); return }
     scope.launch {
         try {
             AuthApi.smsCode(phone.trim())
@@ -195,7 +200,7 @@ private fun sendCode(
                 }
             }
             onDone("")
-        } catch (e: Exception) { onDone("验证码发送失败：${friendlyMessage(e)}") }
+        } catch (e: Exception) { onDone(s(R.string.err_send_failed, friendlyMessage(e))) }
     }
 }
 
@@ -207,21 +212,21 @@ private fun doLogin(
     onErr: (String) -> Unit,
 ) {
     if (phone.isBlank() || credential.isBlank()) {
-        onErr("请输入手机号与" + if (mode == "sms") "验证码" else "密码"); return
+        onErr(s(R.string.err_need_phone_and, if (mode == "sms") s(R.string.label_sms) else s(R.string.label_pwd))); return
     }
     scope.launch {
         try {
             val r = AuthApi.login(phone.trim(), mode, credential.trim())
             val tk = r.optString("token")
-            if (tk.isEmpty()) { onErr("登录响应缺少 token"); return@launch }
+            if (tk.isEmpty()) { onErr(s(R.string.err_missing_token)); return@launch }
             Api.setToken(tk)
             PushRegistrar.ensureRegisteredOnLogin()
             onLoggedIn()
         } catch (e: Exception) {
             if (e is ApiException && e.status == 40100) {
-                onErr(if (mode == "sms") "验证码错误或已过期，请重新获取" else "手机号或密码不正确")
+                onErr(if (mode == "sms") s(R.string.err_code_bad) else s(R.string.err_pwd_bad))
             } else {
-                onErr("登录失败：${friendlyMessage(e)}")
+                onErr(s(R.string.err_login_failed, friendlyMessage(e)))
             }
         }
     }

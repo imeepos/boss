@@ -19,28 +19,32 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.ui.theme.Bg
 import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.StatusBarSolid
 import com.ymm.boss.worker.api.Api
+import com.ymm.boss.worker.push.DeepLink
 
-// 底部 Tab(对齐 nav.js:工作台/工单/我的)
-private data class Tab(val screen: Screen, val label: String, val glyph: String)
+// 底部 Tab(对齐 nav.js:工作台/工单/我的);文案走三语资源
+private data class Tab(val screen: Screen, val labelRes: Int, val glyph: String)
 
 private val TABS = listOf(
-    Tab(Screen.Home, "工作台", "⌂"),
-    Tab(Screen.Orders, "工单", "≡"),
-    Tab(Screen.Profile, "我的", "◉"),
+    Tab(Screen.Home, R.string.tab_home, "⌂"),
+    Tab(Screen.Orders, R.string.tab_orders, "≡"),
+    Tab(Screen.Profile, R.string.tab_profile, "◉"),
 )
 
 private fun isTabRoot(s: Screen): Boolean = s in TABS.map { it.screen }
@@ -59,6 +63,14 @@ fun AppRoot(loggedIn: Boolean) {
     }
     // 系统返回键:压栈页逐个弹出,栈底则退出
     BackHandler(enabled = nav.stack.size > 1) { nav.pop() }
+    // 通知点击深链:未登录时保留 pending,登录后即跳;已在目标页不重复压栈
+    LaunchedEffect(DeepLink.pendingNo, loggedIn) {
+        val no = DeepLink.pendingNo ?: return@LaunchedEffect
+        if (!loggedIn) return@LaunchedEffect
+        DeepLink.consume()
+        val target = ticketScreen(no)
+        if (nav.current != target) nav.push(target)
+    }
     Column(
         Modifier.fillMaxSize().background(Bg)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)),
@@ -66,8 +78,12 @@ fun AppRoot(loggedIn: Boolean) {
         StatusBarBand()
         Box(Modifier.weight(1f)) {
             when (val cur = nav.current) {
-                is Screen.Login -> LoginScreen(onLoggedIn = { nav.reset(Screen.Home) }, onOnboard = { nav.push(Screen.Onboard) })
-                is Screen.Onboard -> OnboardScreen(onBack = { nav.pop() })
+                is Screen.Login -> LoginScreen(
+                    onLoggedIn = { nav.reset(Screen.Home) },
+                    onOnboard = { nav.push(Screen.Onboard) },
+                    onAgreement = { nav.push(Screen.Agreement) })
+                is Screen.Onboard -> OnboardScreen(onBack = { nav.pop() }, onAgreement = { nav.push(Screen.Agreement) })
+                is Screen.Agreement -> AgreementScreen(nav)
                 is Screen.Home -> HomeScreen(nav)
                 is Screen.Orders -> OrdersScreen(nav)
                 is Screen.Profile -> ProfileScreen(nav)
@@ -130,7 +146,7 @@ private fun TabBar(nav: NavHost) {
             ) {
                 Text(tab.glyph, fontSize = 18.sp, fontWeight = FontWeight.Bold,
                     color = if (active) Primary else Muted)
-                Text(tab.label, fontSize = 11.sp, color = if (active) Primary else Muted)
+                Text(stringResource(tab.labelRes), fontSize = 11.sp, color = if (active) Primary else Muted)
             }
         }
         }

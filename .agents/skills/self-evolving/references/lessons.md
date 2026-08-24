@@ -260,3 +260,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-24 SQL 参数运算必须显式类型标注:pgx 参数化查询里 `$3-$2` 当 $3 为 NULL(如 RUNNING 记录 FinishedAt)时 PG 报 `SQLSTATE 42725 operator is not unique: unknown - unknown`;修法是 `$3::timestamptz-$2::timestamptz`。经验:凡参数参与算术/比较,先想 NULL 路径的类型推断。
 - 2026-08-24 docs/* 下的 HTML 是文档/原型不是项目页面,不纳入三语/功能验收;真实 worker 页面是 web/admin `boss/worker*` 三页(useT)+ mobile android `app_name`。判定验收范围前先问"这是真实项目代码还是 docs 原型"。
 - 2026-08-24 分支清理判定法:残留分支先 `git merge-base --is-ancestor <分支> main`;非祖先但内容已合入(如 backup-main tip 与 main 同标题提交 diff 为空、intel NPE 修复以新 hash 合入)可用 `git diff main <分支> --stat` + 逐提交 `git log main --grep=<主题>` 双确认后 -D,不必保留。
+- 拆分同包 Kotlin 文件前先 `grep -rn "fun <拟用名>"` 全包扫一遍：private 改 internal 跨文件后与邻居页面同名函数直接 conflicting overloads，编译才炸（2026-08-24 OrderTimeline 撞 FaultDetailPage.TimelineCard）。
+- 调既有 API 前先 `grep -n "^object" <Api文件>` 确认函数归属哪个 object：一个文件多个 object（ProductApi/OrderApi 同文件）时凭文件名 import 必报 unresolved（2026-08-24 changeAddress）。
+- Compose test 的 DeviceConfigurationOverride 宽度覆盖：ForcedSize(DpSize) 兼容 1.7~1.11，Width(Dp) 是 1.9+ 才有；且都是 Companion 扩展，须显式 import 函数名（如 import androidx.compose.ui.test.ForcedSize），只 import 类名报 Unresolved（2026-08-24 360dp 基线）。

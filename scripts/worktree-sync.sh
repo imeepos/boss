@@ -35,6 +35,19 @@ for wt in "${TARGETS[@]}"; do
     (cd "$wt/$GATES_DIR" && pnpm typecheck && pnpm test && pnpm build) \
       || { echo "GATE FAIL: $wt 门禁未过,勿合并"; fail=1; continue; }
   fi
+  # Android 门禁:分支改过 mobile/*/android 则必须 assembleDebug 通过
+  # (背景:主分支曾因漏改共享文件编译破损由 802c743 补救;local.properties 不入库,从主树补拷)
+  for d in mobile/worker/android mobile/user/android; do
+    base=$(git -C "$wt" merge-base HEAD main 2>/dev/null)
+    if [ -d "$wt/$d" ] && [ -n "$base" ] \
+      && git -C "$wt" diff --name-only "$base..HEAD" | grep -q "^$d/"; then
+      (cd "$wt/$d" \
+        && { [ -f local.properties ] || cp "$MAIN_WT/$d/local.properties" ./local.properties 2>/dev/null || true; } \
+        && JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}" ./gradlew assembleDebug --quiet) \
+        || { echo "GATE FAIL: $d assembleDebug 未过,勿合并"; fail=1; continue 2; }
+      echo "android gate ok: $d"
+    fi
+  done
   echo "SYNCED: $branch (门禁通过,可按收尾顺序合并)"
 done
 exit $fail

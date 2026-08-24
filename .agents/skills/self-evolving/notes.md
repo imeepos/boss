@@ -520,3 +520,13 @@
 - 范围判定教训:docs/* HTML 是文档/原型不算项目页面,worker i18n 验收范围 = web/admin 真实页面 + android 资源;验收前先问"真实代码还是原型",避免在 docs 里空转。
 - 分支清理:残留分支用 merge-base + 内容 diff + grep 同主题提交三连确认再删,backup-main 与 intel NPE 分支均以此法安全清理。
 - 本轮 ETL/P0：Dashboard 日期 flake 初修只移动相对时间仍不稳；真正修复是测试显式固定 `clock` 业务时区并用 `t.Cleanup` 恢复。102 已确认新容器启动并注册 ETL 路由，但未取得历史 6 条 OPEN 派单及两个扫描周期的实机数据证据，后续必须用 admin API/远端 PG 查询闭环，不能以 healthz 代替。
+
+## 2026-08-24 user-android 遗留清零（变更地址接线 + OrderPage 拆分 + 单测）
+- 哪个坑浪费了最多时间：拆 OrderPage 后与 FaultDetailPage 同包撞名（TimelineCard/InfoCard conflicting overloads），编译才暴露；另 ProductApi.changeAddress 实际在 OrderApi object 里，凭文件名猜 API 归属报 unresolved。
+- skill 有没有提前警告：部分——android.md 提醒了 worktree/验证类坑，但没提"同包拆文件先 grep 目标函数名是否已被占用"。
+- 重来一次会怎么做：拆文件前先 `grep -rn "fun 同名"` 全包扫一遍；调 API 前先看 object 边界（grep "^object"）。
+
+## 2026-08-24 user-android 第二轮（Messages/UserHome 拆分 + 360dp 基线）
+- 哪个坑浪费了最多时间：DeviceConfigurationOverride.Width(360.dp) 只在新版存在，编译报 Unresolved；查 aar 源码才定 ForcedSize(DpSize)，且是 Companion 扩展函数需显式 import ForcedSize。
+- skill 有没有提前警告：没有——版本相关的 Compose test API 差异未记录。
+- 重来一次会怎么做：用陌生 test API 前先 javap 本地缓存 aar 确认签名与版本，再写代码。

@@ -43,8 +43,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
@@ -101,10 +103,11 @@ internal fun AuthPhoneRow(value: String, hint: String, onChange: (String) -> Uni
 // 验证码行:右侧"获取验证码/倒计时"文字按钮
 @Composable
 internal fun AuthCodeRow(code: String, countdown: Int, onCode: (String) -> Unit, onSend: () -> Unit) {
-    AuthInputRow(code, onCode, "请输入验证码", Icons.Outlined.Shield, KeyboardType.NumberPassword,
+    AuthInputRow(code, onCode, stringResource(R.string.auth_hint_code), Icons.Outlined.Shield, KeyboardType.NumberPassword,
         trailing = {
             Text(
-                if (countdown > 0) "${countdown}s后重发" else "获取验证码",
+                if (countdown > 0) stringResource(R.string.auth_resend_in, countdown)
+                else stringResource(R.string.auth_send_code),
                 fontSize = 13.sp, fontWeight = FontWeight.W500,
                 color = if (countdown > 0) Muted else Primary,
                 modifier = Modifier.clickable(enabled = countdown == 0) { onSend() },
@@ -169,8 +172,8 @@ internal fun AuthAgreeRow(
             contentAlignment = Alignment.Center,
         ) { if (agreed) Box(Modifier.size(8.dp).background(Primary, CircleShape)) }
         Spacer(Modifier.width(8.dp))
-        Text("我已阅读并同意", fontSize = 12.sp, color = Muted)
-        Text("《服务协议》", fontSize = 12.sp, color = Primary,
+        Text(stringResource(R.string.auth_agree_prefix), fontSize = 12.sp, color = Muted)
+        Text(stringResource(R.string.auth_agreement), fontSize = 12.sp, color = Primary,
             fontWeight = FontWeight.W500, modifier = Modifier.clickable { onAgreement() })
     }
 }
