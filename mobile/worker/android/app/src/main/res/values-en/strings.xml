@@ -47,4 +47,77 @@
     <string name="onboard_submitted_desc">Your application has been submitted and is pending review</string>
     <string name="onboard_submitted_note">Please do not submit again while under review</string>
     <string name="onboard_back_login">Back to Login</string>
+
+    <!-- Home -->
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_noon">Good noon</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="default_worker">Technician</string>
+    <string name="cd_notifications">Notifications</string>
+    <string name="home_overview_title">Today</string>
+    <string name="stat_accepted">Accepted</string>
+    <string name="stat_finished">Finished</string>
+    <string name="stat_doing">In progress</string>
+    <string name="qa_schedule">Schedule</string>
+    <string name="qa_notice">Notices</string>
+    <string name="qa_hall">Task Pool</string>
+    <string name="qa_help">Manual</string>
+    <string name="qa_speed">Speed Test</string>
+    <string name="qa_pickup">Materials</string>
+    <string name="qa_safety">Safety</string>
+    <string name="qa_maintenance">Maintenance</string>
+    <string name="home_ongoing_title">Ongoing orders (%1$s)</string>
+    <string name="home_more_all">All</string>
+    <string name="home_no_ongoing">No ongoing orders</string>
+    <string name="home_reminders">Today\'s Reminders</string>
+    <string name="home_more_messages">Messages</string>
+    <string name="hint_loading">Loading…</string>
+    <string name="err_home_load">Failed to load home, please retry.</string>
+    <string name="err_messages_load">Failed to load messages, please retry.</string>
+    <string name="home_no_reminders">No reminders</string>
+    <string name="home_status_fmt">Accepted %1$d · In progress %2$d · To-do %3$d</string>
+    <string name="home_status_loading">Accepted - · In progress - · To-do -</string>
+
+    <!-- Orders -->
+    <string name="seg_doing">Ongoing</string>
+    <string name="seg_todo">To claim</string>
+    <string name="seg_done">Done</string>
+    <string name="seg_all">All</string>
+    <string name="toast_take_ok">Claimed. The order is now in progress</string>
+    <string name="toast_take_fail">Claim failed: %1$s</string>
+    <string name="orders_title">Orders</string>
+    <string name="orders_refresh">Refresh</string>
+    <string name="orders_card_title">Orders</string>
+    <string name="err_orders_load">Failed to load orders, please refresh.</string>
+    <string name="orders_empty">No orders</string>
+    <string name="orders_load_more">Pull up to load more…</string>
+    <string name="orders_all_loaded">All loaded</string>
+    <string name="orders_stage_fmt">%1$d/%2$d stages</string>
+    <string name="orders_addr_fallback">Address to be confirmed</string>
+    <string name="orders_title_fallback">Field work</string>
+    <string name="orders_taking">Claiming…</string>
+    <string name="orders_take_btn">Claim Order</string>
+    <string name="orders_done_title">Order completed</string>
+    <string name="orders_done_sub">Installation finished. Thank you!</string>
+    <string name="step_submit">Submitted</string>
+    <string name="step_accepted">Accepted</string>
+    <string name="step_install">On-site</string>
+    <string name="step_done">Done</string>
+
+    <!-- Agreement -->
+    <string name="agreement_updated">Updated: %1$s</string>
+    <string-array name="agreement_titles">
+        <item>1. Services</item><item>2. Account &amp; Identity</item><item>3. Work Standards</item>
+        <item>4. Customer Data Protection</item><item>5. Fees &amp; Settlement</item><item>6. Breach</item><item>7. Changes</item>
+    </string-array>
+    <string-array name="agreement_bodies">
+        <item>The platform provides technicians with end-to-end services including order dispatch, on-site work, scan-to-bind, photo reporting, activation and sign-off. Technicians shall complete on-site work within the scheduled time and report truthfully.</item>
+        <item>Joining requires your real name, phone number and ID number, subject to platform review. Accounts are for personal use only and must not be lent or shared.</item>
+        <item>Technicians shall follow safety regulations and wear required protective equipment. Report abnormalities (missing device, customer refusal, wrong address) via the App immediately; never resell or dispose of customer devices.</item>
+        <item>Customer names, addresses and phone numbers encountered during work are confidential and may only be used for the current order.</item>
+        <item>Fees are settled per the platform\'s published pricing. Charges must be completed online via the App; no off-platform charges.</item>
+        <item>Fraudulent reporting, unauthorized charging, data leakage or malicious complaints may result in suspension or termination, and the platform reserves the right to claim damages.</item>
+        <item>The platform may revise this agreement and will notify via in-app notices; continued use constitutes acceptance.</item>
+    </string-array>
 </resources>

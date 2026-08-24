@@ -52,4 +52,77 @@
     <string name="onboard_submitted_desc">您的入驻申请已提交,请耐心等待后台审核</string>
     <string name="onboard_submitted_note">审核期间请勿重复提交</string>
     <string name="onboard_back_login">返回登录</string>
+
+    <!-- 首页 -->
+    <string name="greeting_morning">早上好</string>
+    <string name="greeting_noon">中午好</string>
+    <string name="greeting_afternoon">下午好</string>
+    <string name="greeting_evening">晚上好</string>
+    <string name="default_worker">师傅</string>
+    <string name="cd_notifications">消息通知</string>
+    <string name="home_overview_title">今日概览</string>
+    <string name="stat_accepted">接单</string>
+    <string name="stat_finished">已完成</string>
+    <string name="stat_doing">进行中</string>
+    <string name="qa_schedule">排期</string>
+    <string name="qa_notice">公告</string>
+    <string name="qa_hall">任务池</string>
+    <string name="qa_help">手册</string>
+    <string name="qa_speed">测速</string>
+    <string name="qa_pickup">领料</string>
+    <string name="qa_safety">安全</string>
+    <string name="qa_maintenance">维护</string>
+    <string name="home_ongoing_title">进行中工单 (%1$s)</string>
+    <string name="home_more_all">全部</string>
+    <string name="home_no_ongoing">暂无进行中工单</string>
+    <string name="home_reminders">今日提醒</string>
+    <string name="home_more_messages">消息中心</string>
+    <string name="hint_loading">加载中…</string>
+    <string name="err_home_load">首页加载失败，请重试。</string>
+    <string name="err_messages_load">消息加载失败，请重试。</string>
+    <string name="home_no_reminders">暂无提醒</string>
+    <string name="home_status_fmt">今日接单 %1$d · 进行中 %2$d · 待处理 %3$d</string>
+    <string name="home_status_loading">今日接单 - · 进行中 - · 待处理 -</string>
+
+    <!-- 工单列表 -->
+    <string name="seg_doing">进行中</string>
+    <string name="seg_todo">待领取</string>
+    <string name="seg_done">已完成</string>
+    <string name="seg_all">全部</string>
+    <string name="toast_take_ok">领取成功，工单已进入进行中</string>
+    <string name="toast_take_fail">接单失败：%1$s</string>
+    <string name="orders_title">工单列表</string>
+    <string name="orders_refresh">刷新</string>
+    <string name="orders_card_title">工单</string>
+    <string name="err_orders_load">工单加载失败，请刷新重试。</string>
+    <string name="orders_empty">暂无工单</string>
+    <string name="orders_load_more">上拉加载更多…</string>
+    <string name="orders_all_loaded">已全部加载</string>
+    <string name="orders_stage_fmt">%1$d/%2$d 环节</string>
+    <string name="orders_addr_fallback">地址待补充</string>
+    <string name="orders_title_fallback">工单作业</string>
+    <string name="orders_taking">领取中…</string>
+    <string name="orders_take_btn">领取工单</string>
+    <string name="orders_done_title">工单已完成</string>
+    <string name="orders_done_sub">装维完成,感谢师傅辛苦!</string>
+    <string name="step_submit">提交订单</string>
+    <string name="step_accepted">受理成功</string>
+    <string name="step_install">上门安装</string>
+    <string name="step_done">完成</string>
+
+    <!-- 服务协议 -->
+    <string name="agreement_updated">更新日期:%1$s</string>
+    <string-array name="agreement_titles">
+        <item>一、服务内容</item><item>二、账号与实名</item><item>三、作业规范</item>
+        <item>四、用户信息保护</item><item>五、费用与结算</item><item>六、违约处理</item><item>七、协议变更</item>
+    </string-array>
+    <string-array name="agreement_bodies">
+        <item>本平台为装维师傅提供工单接收、现场作业、扫码绑定、拍照上报、激活签收等全流程协作服务。师傅应按平台派发的工单信息,在约定时间内完成上门作业并如实上报。</item>
+        <item>入驻需提交真实姓名、手机号与身份证号,经平台审核通过后方可接单。账号仅限本人使用,不得转借、出租或共享给第三方。</item>
+        <item>师傅应遵守安全作业规程,按规定着装并佩戴劳保用品;作业过程中如遇异常(设备缺失、用户拒装、地址错误等)应第一时间通过 App 上报,不得私自关闭或转卖用户设备。</item>
+        <item>师傅在作业中接触的用户姓名、地址、电话等信息均属平台保密信息,仅限本次工单作业使用,不得留存、传播或用于任何其他目的。</item>
+        <item>作业费用按平台公示的计费规则结算,收费需通过 App 收费功能线上完成,不得私自向用户收取协议外费用。</item>
+        <item>存在虚假上报、私收费用、泄露用户信息、恶意投诉用户等行为的,平台有权暂停或终止合作,并保留追偿权利。</item>
+        <item>平台可根据业务发展修订本协议,修订后将通过 App 公告通知;继续使用服务视为接受修订后的协议。</item>
+    </string-array>
 </resources>
