@@ -22,14 +22,21 @@ created_at, updated_at`
 func scanCompTask(row pgx.Row) (*CompTask, error) {
 	var t CompTask
 	var auditRaw []byte
+	var assigneeName, closeReason *string
 	err := row.Scan(
 		&t.ID, &t.Source, &t.BizType, &t.BizID, &t.FailureReason, &t.Priority, &t.Status,
-		&t.AssigneeID, &t.AssigneeName, &t.SLADeadline, &t.ClaimedAt, &t.ClaimedBy,
-		&t.ClosedAt, &t.ClosedBy, &t.CloseReason, &t.RetryCount, &t.MaxRetries, &t.LastRetryAt,
+		&t.AssigneeID, &assigneeName, &t.SLADeadline, &t.ClaimedAt, &t.ClaimedBy,
+		&t.ClosedAt, &t.ClosedBy, &closeReason, &t.RetryCount, &t.MaxRetries, &t.LastRetryAt,
 		&t.CreatedAt, &t.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
+	}
+	if assigneeName != nil {
+		t.AssigneeName = *assigneeName
+	}
+	if closeReason != nil {
+		t.CloseReason = *closeReason
 	}
 	t.AuditLog = SanitizeAudit(auditRaw)
 	return &t, nil
@@ -39,14 +46,21 @@ func scanCompTask(row pgx.Row) (*CompTask, error) {
 func scanCompTaskWithAudit(row pgx.Row) (*CompTask, error) {
 	var t CompTask
 	var auditRaw []byte
+	var assigneeName, closeReason *string
 	err := row.Scan(
 		&t.ID, &t.Source, &t.BizType, &t.BizID, &t.FailureReason, &t.Priority, &t.Status,
-		&t.AssigneeID, &t.AssigneeName, &t.SLADeadline, &t.ClaimedAt, &t.ClaimedBy,
-		&t.ClosedAt, &t.ClosedBy, &t.CloseReason, &t.RetryCount, &t.MaxRetries, &t.LastRetryAt,
+		&t.AssigneeID, &assigneeName, &t.SLADeadline, &t.ClaimedAt, &t.ClaimedBy,
+		&t.ClosedAt, &t.ClosedBy, &closeReason, &t.RetryCount, &t.MaxRetries, &t.LastRetryAt,
 		&auditRaw, &t.CreatedAt, &t.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
+	}
+	if assigneeName != nil {
+		t.AssigneeName = *assigneeName
+	}
+	if closeReason != nil {
+		t.CloseReason = *closeReason
 	}
 	t.AuditLog = SanitizeAudit(auditRaw)
 	return &t, nil
