@@ -282,3 +282,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-28 SPA 懒加载页面符号不在 entry bundle,验证部署看 entry 里的 i18n 文案字符串(必在主包);markdown 渲染断言用 DOM eval(li 数/strong 文本/img naturalWidth),不靠截图目测。
 - 用脚本向 TSX 批量插代码时,锚点必须选模块级唯一行(如 `export default function`),插进 JSX 内部只有 typecheck 能兜底;插完立刻跑 typecheck。
 - ff-merge 在多人并行仓库可能连续失败 2-3 次(main 实时前进),协议动作是"merge main→门禁→push→ff-only"循环,不是放弃或删树。
+- Gitea Actions job 容器内写文件的持久化只有宿主 docker 资源(命名卷/镜像/registry):job 容器文件系统随任务销毁,"绿了但产物没落盘"比红更隐蔽(run 1526 打印产物路径后 /srv/boss/apk 实不存在);跨容器传文件用 docker create+cp,bind mount 的 $PWD 对宿主 daemon 不可见(2026-08-28 android-apk 两连修)
+- 102 出网受限:registry-1.docker.io 直连超时,daocloud 镜像源仅白名单(library/* 可,cimg/mobiledevops 不可);但 dl.google.com/services.gradle.org/maven central 可达,自建镜像走 daocloud 基座+Google 源是正解(android-builder:1 已推 192.168.0.102:5000)
