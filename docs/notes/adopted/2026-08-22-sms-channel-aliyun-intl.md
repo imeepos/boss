@@ -21,3 +21,5 @@
 
 - 企业资质落定后,接入国内通道并注入 Router `ByRegion["86"]`;同时评估国内到达率。
 - 验证码文案模板从硬编码迁到配置/DB。
+
+> Amended: 端点/参数形态已被实测推翻，见 `2026-08-23-sms-aliyun-intl-endpoint-fix.md`（dysmsapiintl 域名 NXDOMAIN，真实端点 dysmsapi ap-southeast-1，参数 PhoneNumbers+ContentCode）。
