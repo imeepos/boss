@@ -157,11 +157,13 @@
 |---|---|---|
 | ETL 投影任务台账（000132，7 端点） | `4a0703f`/`4c025a5` | ✅ |
 | PORT 多语言扩展（user 37 页 + worker 37 页，247 key 三语） | `34b07d1`/`ce6008f`/`fa255a5` | ✅ |
-| 性能与 SLO（LIMIT 封顶、连接池、索引 000133、SLO 文档、k6 脚本） | `9e85b2f`/`a557a7c`/`9c9e5a4` | ✅ 待 102 部署复测 |
+| 性能与 SLO（LIMIT 封顶、连接池、索引 000133、SLO 文档、k6 脚本） | `9e85b2f`/`a557a7c`/`9c9e5a4` | ✅ 102 快速只读复测达标，完整 k6 待补 |
+| ETL 自动运行记录与 overdue 自动派单 | `02e7736d`/`224dd24`/`e7c3734`/`d04715b` | ✅ 102 已部署并验证幂等 |
 
 遗留：
-- ETL overdue 自动投递补偿中心（当前有 Service 能力，缺自动触发接线）
-- 性能优化待 102 部署后按 docs/plan/slo-baseline.md 复测
+- ETL 真实投影执行器尚未逐任务接入 RecordRun（当前由 API/扫描循环承载记录入口）
+- 完整 k6 ramping-vus、SQL EXPLAIN 与连接池指标采集待补
 - worker 2 页（无标准结构）未批量接入 data-i18n
+- `.dockerignore` 历史上排除了 Dockerfile 必需的 migrations/cmd/internal/api/pkg，临时构建已绕过；应修复部署构建规则
 
-下一轮建议：AI 辅助运营（等 LLM key）、预测维护（等设备数据）或上述遗留收口。
+下一轮建议：修复 Docker 构建忽略规则、补完整性能压测，再推进 AI/预测维护（等外部凭证/数据）。
