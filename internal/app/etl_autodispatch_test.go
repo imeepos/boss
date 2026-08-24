@@ -26,7 +26,10 @@ func (f *fakeETLScannerStore) ListRuns(context.Context, string) ([]metric.ETLJob
 	return nil, nil
 }
 
-type fakeETLCompStore struct{ inserted []report.CompTask }
+type fakeETLCompStore struct {
+	inserted []report.CompTask
+	closed   []int64
+}
 
 func (f *fakeETLCompStore) ListCompTasks(_ context.Context, filter report.CompTaskFilter) ([]report.CompTask, int, error) {
 	out := make([]report.CompTask, 0)
@@ -47,13 +50,36 @@ func (f *fakeETLCompStore) ClaimCompTask(context.Context, int64, int64, string) 
 func (f *fakeETLCompStore) TransferCompTask(context.Context, int64, int64, int64, string, string) error {
 	return nil
 }
-func (f *fakeETLCompStore) CloseCompTask(context.Context, int64, int64, string, string) error {
+func (f *fakeETLCompStore) CloseCompTask(_ context.Context, id, _ int64, _, _ string) error {
+	f.closed = append(f.closed, id)
+	for i := range f.inserted {
+		if f.inserted[i].ID == id {
+			f.inserted[i].Status = report.TaskStatusClosed
+		}
+	}
 	return nil
 }
 func (f *fakeETLCompStore) IncrementRetry(context.Context, int64) error { return nil }
 func (f *fakeETLCompStore) BatchInsertCompTasks(_ context.Context, tasks []report.CompTask) error {
 	f.inserted = append(f.inserted, tasks...)
 	return nil
+}
+
+func TestETLScannerClosesRecoveredFreshnessTask(t *testing.T) {
+	etl := &fakeETLScannerStore{freshness: []metric.Freshness{
+		{JobKey: "ar_aging_snapshot", Name: "AR", Status: metric.Fresh},
+	}}
+	comp := &fakeETLCompStore{inserted: []report.CompTask{{ID: 7, BizType: "metric_quality", BizID: "etl_freshness:ar_aging_snapshot", Status: report.TaskStatusOpen}}}
+	scanner := NewETLScanner(etl, report.NewCompTaskService(comp))
+	if _, err := scanner.Scan(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(comp.closed) != 1 || comp.closed[0] != 7 {
+		t.Fatalf("closed=%v, want [7]", comp.closed)
+	}
+	if comp.inserted[0].Status != report.TaskStatusClosed {
+		t.Fatalf("status=%s, want CLOSED", comp.inserted[0].Status)
+	}
 }
 
 func TestETLScannerDispatchesOverdueIdempotently(t *testing.T) {

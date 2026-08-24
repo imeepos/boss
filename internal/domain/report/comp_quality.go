@@ -20,6 +20,36 @@ type QualityViolationInput struct {
 
 // SubmitQualityViolations 将质量违规批量投递为补偿任务。
 // 已存在的 ruleKey+OPEN 任务不重复创建（幂等）。
+// CloseRecoveredETL closes open ETL freshness tasks whose jobs are fresh again.
+func (s *CompTaskService) CloseRecoveredETL(ctx context.Context, recoveredJobKeys []string, actorName string) (int, error) {
+	if len(recoveredJobKeys) == 0 {
+		return 0, nil
+	}
+	openTasks, _, err := s.St.ListCompTasks(ctx, CompTaskFilter{
+		BizType: "metric_quality",
+		Status:  TaskStatusOpen,
+		Limit:   1000,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("metric: list open quality tasks: %w", err)
+	}
+	recovered := make(map[string]struct{}, len(recoveredJobKeys))
+	for _, jobKey := range recoveredJobKeys {
+		recovered["etl_freshness:"+jobKey] = struct{}{}
+	}
+	closed := 0
+	for _, task := range openTasks {
+		if _, ok := recovered[task.BizID]; !ok {
+			continue
+		}
+		if err := s.Close(ctx, task.ID, 0, actorName, "ETL freshness recovered"); err != nil {
+			return closed, fmt.Errorf("metric: close recovered quality task %d: %w", task.ID, err)
+		}
+		closed++
+	}
+	return closed, nil
+}
+
 func (s *CompTaskService) SubmitQualityViolations(ctx context.Context, violations []QualityViolationInput, assigneeName string) (int, error) {
 	if len(violations) == 0 {
 		return 0, nil

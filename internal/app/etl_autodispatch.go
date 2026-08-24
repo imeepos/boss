@@ -45,8 +45,12 @@ func (s *etlScanner) Scan(ctx context.Context) (ETLScanResult, error) {
 	}
 	result.Checked = len(freshness)
 	violations := make([]report.QualityViolationInput, 0)
+	recovered := make([]string, 0)
 	for _, item := range freshness {
 		if item.Status != metric.Overdue {
+			if item.Status == metric.Fresh {
+				recovered = append(recovered, item.JobKey)
+			}
 			continue
 		}
 		result.Overdue++
@@ -59,13 +63,22 @@ func (s *etlScanner) Scan(ctx context.Context) (ETLScanResult, error) {
 			Observed: float64(item.LatenessThreshold),
 		})
 	}
-	if len(violations) > 0 && s.comp == nil {
-		result.Errors = append(result.Errors, "compensation service unavailable")
-	} else if len(violations) > 0 {
-		dispatched, err := s.comp.SubmitQualityViolations(ctx, violations, "etl-owner")
-		result.Dispatched = dispatched
-		if err != nil {
-			return s.record(result, fmt.Errorf("dispatch overdue tasks: %w", err))
+	if s.comp == nil {
+		if len(violations) > 0 || len(recovered) > 0 {
+			result.Errors = append(result.Errors, "compensation service unavailable")
+		}
+	} else {
+		if len(recovered) > 0 {
+			if _, err := s.comp.CloseRecoveredETL(ctx, recovered, "etl-owner"); err != nil {
+				return s.record(result, fmt.Errorf("close recovered tasks: %w", err))
+			}
+		}
+		if len(violations) > 0 {
+			dispatched, err := s.comp.SubmitQualityViolations(ctx, violations, "etl-owner")
+			result.Dispatched = dispatched
+			if err != nil {
+				return s.record(result, fmt.Errorf("dispatch overdue tasks: %w", err))
+			}
 		}
 	}
 	return s.record(result, nil)
