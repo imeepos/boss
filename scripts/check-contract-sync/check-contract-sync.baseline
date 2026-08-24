@@ -15,3 +15,18 @@ route:/products/{id}
 # 强制,历史不改名(改名需同步 schema_migrations,风险大于收益)。
 mig:000044
 mig:000095
+
+# ---- E. menu.def 复用他人权限码的存量页面(2026-08-28 E 项上线体检登记) ----
+# 整改方向:下述页面后续统一补专属权限码迁移(仿 000135),补一条删一条豁免。
+menu:collection-tasks
+menu:feedback
+menu:knowledge
+menu:marketing
+menu:marketing-recon
+menu:message
+menu:servers
+menu:service-metrics
+menu:storageconfig
+menu:worker
+menu:worker-ops
+menu:worker-reg

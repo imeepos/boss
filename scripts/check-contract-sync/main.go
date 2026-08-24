@@ -2,7 +2,8 @@
 // 三项检查,任一 fail 即退出码 1(CI/Makefile 接入点):
 //
 //	A. 路由对账在 routes.go;B. json tag 在 jsontags.go;C. 行数红线在 filelen.go;
-//	D. 迁移编号唯一性在 migcheck.go(同树 + 跨未合并分支撞号)。
+//	D. 迁移编号唯一性在 migcheck.go(同树 + 跨未合并分支撞号);
+//	E. menu.def 页面 key ↔ menu:<key> 权限码迁移对账在 menuperm.go。
 //	已登记差异走 check-contract-sync.baseline 豁免,新增差异即 fail。
 package main
 
@@ -36,6 +37,7 @@ func main() {
 	fails += checkJSONTags(rootVal)
 	fails += checkFileLen(rootVal)
 	fails += checkMigrations(rootVal)
+	fails += checkMenuPerms(rootVal)
 	if fails > 0 {
 		fmt.Printf("check-contract-sync: %d 项失败\n", fails)
 		os.Exit(1)
