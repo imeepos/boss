@@ -1082,6 +1082,7 @@ export interface Translations {
       fAuthor: string
       fCover: string
       fCoverRemove: string
+      filterAll: string
       categoryOptions: string[]
       statusOptions: string[]
       catNews: string

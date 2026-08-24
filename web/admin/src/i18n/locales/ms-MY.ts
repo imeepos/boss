@@ -1120,6 +1120,7 @@ const msMY: Translations = {
       fAuthor: 'Penulis',
       fCover: 'Imej muka depan',
       fCoverRemove: 'Buang muka depan',
+      filterAll: 'Semua',
       newTitle: 'Kandungan Baharu',
       editTitle: 'Sunting Kandungan',
       back: 'Kembali ke senarai',

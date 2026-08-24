@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { apiFetch, apiBaseUrl } from '../../api/client'
+import { setDocMeta } from '../../lib/docMeta'
 import { useT, useLang } from '../../i18n'
 import { useTheme } from '../../theme/context'
 import { TopNav } from '../home/TopNav'
@@ -29,6 +30,20 @@ export default function NewsDetailPage() {
     window.scrollTo(0, 0)
     return () => { alive = false }
   }, [slug])
+
+  // SEO 元数据:title/description/og 分享卡;封面走公开流绝对地址。
+  useEffect(() => {
+    if (!post) return
+    const base = apiBaseUrl().replace(/\/api\/admin\/v1$/, '')
+    const img = post.coverAttachmentId > 0 ? `${base}/api/admin/v1/site/posts/${post.slug}/cover` : undefined
+    return setDocMeta(post.title, {
+      description: post.summary || post.title,
+      'og:title': post.title,
+      'og:description': post.summary || post.title,
+      'og:type': 'article',
+      ...(img ? { 'og:image': img } : {}),
+    })
+  }, [post])
 
   const MD_H = 'font-brand font-semibold tracking-tight text-[var(--shell-heading)] mt-8 mb-3'
   const md = {

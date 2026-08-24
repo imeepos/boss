@@ -1120,6 +1120,7 @@ const enUS: Translations = {
       fAuthor: 'Author',
       fCover: 'Cover image',
       fCoverRemove: 'Remove cover',
+      filterAll: 'All',
       newTitle: 'New Post',
       editTitle: 'Edit Post',
       back: 'Back to list',

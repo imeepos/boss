@@ -8,6 +8,7 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { Dropdown } from '../../../components/Dropdown'
 
 type Post = {
   id: number; slug: string; title: string; category: string; summary: string
@@ -25,6 +26,8 @@ export default function SitePostsPage() {
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
   const pageSize = 10
+  const [fCat, setFCat] = useState('')
+  const [fSt, setFSt] = useState('')
 
   const load = () => {
     setBusy(true); setError('')
@@ -52,7 +55,8 @@ export default function SitePostsPage() {
   }
 
   const stLabel = (v: string) => (v === 'PUBLISHED' ? s.stPublished : v === 'OFFLINE' ? s.stOffline : s.stDraft)
-  const slice = rows.slice((page - 1) * pageSize, page * pageSize)
+  const filtered = rows.filter((p) => (!fCat || p.category === fCat) && (!fSt || p.status === fSt))
+  const slice = filtered.slice((page - 1) * pageSize, page * pageSize)
   const td = 'border-b border-[var(--shell-side-border)] px-3 py-2'
 
   return <div>
@@ -63,6 +67,14 @@ export default function SitePostsPage() {
     </div>
     <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
       {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
+      <div className="mb-3 flex items-center gap-3">
+        <Dropdown ariaLabel={s.fCategory} value={fCat ? cats[fCat] ?? fCat : s.filterAll}
+          onChange={(v) => { setFCat(v); setPage(1) }}
+          options={[{ value: '', label: s.filterAll }, ...Object.entries(cats).map(([code, name]) => ({ value: code, label: name }))]} />
+        <Dropdown ariaLabel={s.fStatus} value={fSt ? stLabel(fSt) : s.filterAll}
+          onChange={(v) => { setFSt(v); setPage(1) }}
+          options={[{ value: '', label: s.filterAll }, { value: 'DRAFT', label: s.stDraft }, { value: 'PUBLISHED', label: s.stPublished }, { value: 'OFFLINE', label: s.stOffline }]} />
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
           <thead><tr>{s.columns.map((x) => <th key={x} className="border-b border-[var(--shell-side-border)] px-3 py-2 text-left text-xs">{x}</th>)}</tr></thead>
@@ -84,7 +96,7 @@ export default function SitePostsPage() {
         </table>
       </div>
       <div className="flex justify-end pt-3">
-        <Pagination total={rows.length} page={page} pageSize={pageSize} onPage={setPage} onSize={() => {}} {...pagerTexts(t.pages.company)} />
+        <Pagination total={filtered.length} page={page} pageSize={pageSize} onPage={setPage} onSize={() => {}} {...pagerTexts(t.pages.company)} />
       </div>
     </div>
   </div>

@@ -1120,6 +1120,7 @@ const zhCN: Translations = {
       fAuthor: '作者',
       fCover: '封面图',
       fCoverRemove: '移除封面',
+      filterAll: '全部',
       newTitle: '新建内容',
       editTitle: '编辑内容',
       back: '返回列表',
