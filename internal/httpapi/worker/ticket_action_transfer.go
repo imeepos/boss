@@ -82,7 +82,7 @@ func notifyTicketTransferred(a *app.Application, c *gin.Context, targetWorkerID 
 	title, alert := pushdomain.TicketAssignedAlert(ticketNo, targetName)
 	go func() {
 		_ = a.PushNotifier.NotifyWorker(context.WithoutCancel(c.Request.Context()),
-			targetWorkerID, title, alert, map[string]string{"ticketNo": ticketNo})
+			targetWorkerID, title, alert, pushdomain.ExtrasTicketNo(ticketNo))
 	}()
 }
 

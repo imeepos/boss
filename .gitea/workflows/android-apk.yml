@@ -1,0 +1,57 @@
+# Android APK 出包:main 分支改 mobile/*/android 时构建 worker/user 两端 release APK,
+# 归档到宿主 /srv/boss/apk/<sha>/。与 deploy-102 同风格:纯 run 步骤,不依赖 marketplace action。
+# 镜像 cimg/android 自带 OpenJDK17 + Android SDK(license 已接受,缺的平台会自动下载),
+# gradle 缓存走命名卷 boss-gradle-home。
+# release 签名:仓库无 keystore 时 gradle 配置自动回退 debug 签名,产物仅用于测试分发;
+# jpushAppKey 走仓库 secret JPUSH_APP_KEY,缺省空串(SDK 仅日志不 crash)。
+name: android-apk
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/worker/android/**"
+      - "mobile/user/android/**"
+      - ".gitea/workflows/android-apk.yml"
+  workflow_dispatch:
+
+env:
+  IMG: cimg/android:2024.01
+  OUT: /srv/boss/apk
+
+jobs:
+  build:
+    runs-on: deploy-102
+    steps:
+      - name: Clone
+        run: |
+          git clone --depth 1 "http://sker:${GITHUB_TOKEN}@192.168.0.102:3001/sker/boss.git" .
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build APKs
+        env:
+          JPUSH_APP_KEY: ${{ secrets.JPUSH_APP_KEY }}
+        run: |
+          set -e
+          OUTDIR="$OUT/$GITHUB_SHA"
+          mkdir -p "$OUTDIR"
+          build_one() {
+            local dir="$1" name="$2"
+            echo "=== build $name ==="
+            cd "$dir"
+            echo "sdk.dir=/opt/android/sdk" > local.properties
+            docker run --rm --user root -v "$PWD":/prj -w /prj \
+              -v boss-gradle-home:/root/.gradle -e GRADLE_USER_HOME=/root/.gradle \
+              -e JPUSH_APP_KEY="$JPUSH_APP_KEY" "$IMG" \
+              ./gradlew assembleRelease --quiet -PjpushAppKey="${JPUSH_APP_KEY:-}"
+            cp app/build/outputs/apk/release/app-release.apk "$OUTDIR/$name.apk"
+            cd - >/dev/null
+          }
+          build_one mobile/worker/android boss-worker
+          build_one mobile/user/android boss-user
+
+      - name: Checksum
+        run: |
+          cd "$OUT/$GITHUB_SHA"
+          sha256sum *.apk | tee SHA256SUMS
+          echo "APKs at: $OUT/$GITHUB_SHA"

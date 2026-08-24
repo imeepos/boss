@@ -71,3 +71,18 @@
 
 - 是否上架应用市场?不上架则 OPPO/vivo/荣耀通道不可用,师傅端只能依赖华为/小米/极光自有通道 + 短信,需评估师傅机型分布。
 - JPush 免费版配额是否够用(师傅数 × 派单量 + 用户订单量)。
+
+## 7. 通知 extras 契约(2026-08-28 定稿,跨端对齐)
+
+服务端下发通知的 extras 为 JSON 对象,当前唯一场景为派单/转派:
+
+| 键 | 值 | 消费方 |
+|---|---|---|
+| `ticketNo` | 工单号(如 `ORD-20260828-001` / `TKT-...`) | 师傅端 Android `PushClickReceiver` 解析后深链工单详情 |
+
+- 构造统一出口:`pushdomain.ExtrasTicketNo(ticketNo)`(internal/domain/push/notifier.go),
+  回归测试 `TestExtrasTicketNo`;禁止在调用点内联 map 另起键名。
+- 师傅端解析兼容别名 `ticket_no`/`ticketNo`/`orderNo`/`no`(历史演进兜底),
+  新增场景一律用 `ticketNo`,不再扩别名。
+- Android 侧消费链:通知点击 → onNotifyMessageOpened → MainActivity(singleTop) →
+  DeepLink pending → AppRoot 登录态就绪后按 TKT/EMG 前缀分流 Repair/TicketDetail。

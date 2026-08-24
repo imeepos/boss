@@ -31,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
@@ -74,7 +76,7 @@ internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, taking: St
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(no, fontSize = 14.sp, fontWeight = FontWeight.W600, color = Ink)
-                Text("${t.optInt("stage", 0)}/${t.optInt("stageTotal", 12)} 环节", fontSize = 12.sp, color = Muted)
+                Text(stringResource(R.string.orders_stage_fmt, t.optInt("stage", 0), t.optInt("stageTotal", 12)), fontSize = 12.sp, color = Muted)
             }
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -87,7 +89,7 @@ internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, taking: St
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            titleOf(t), fontSize = 15.sp, fontWeight = FontWeight.W600,
+                            titleOf(t, stringResource(R.string.orders_title_fallback)), fontSize = 15.sp, fontWeight = FontWeight.W600,
                             color = Ink, maxLines = 1, modifier = Modifier.weight(1f, fill = false),
                         )
                         Text(t.optString("statusLabel"), fontSize = 13.sp, color = ticketStatusColor(status))
@@ -97,7 +99,7 @@ internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, taking: St
                         Icon(Icons.Filled.LocationOn, contentDescription = null, tint = Muted, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            t.optString("address").ifEmpty { "地址待补充" },
+                            t.optString("address").ifEmpty { stringResource(R.string.orders_addr_fallback) },
                             fontSize = 12.sp, color = Muted, maxLines = 1,
                         )
                     }
@@ -112,10 +114,10 @@ internal fun TicketOrderCard(t: JSONObject, onTake: (String) -> Unit, taking: St
     }
 }
 
-private fun titleOf(t: JSONObject): String {
+private fun titleOf(t: JSONObject, fallback: String): String {
     val customer = t.optString("customerName")
     val type = t.optString("typeLabel")
-    return listOf(customer, type).filter { it.isNotEmpty() }.joinToString(" · ").ifEmpty { "工单作业" }
+    return listOf(customer, type).filter { it.isNotEmpty() }.joinToString(" · ").ifEmpty { fallback }
 }
 
 @Composable
@@ -133,7 +135,7 @@ private fun TodoFooter(no: String, busy: Boolean, onTake: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            if (busy) "领取中…" else "领取工单", fontSize = 13.sp, color = Color.White, textAlign = TextAlign.Center,
+            if (busy) stringResource(R.string.orders_taking) else stringResource(R.string.orders_take_btn), fontSize = 13.sp, color = Color.White, textAlign = TextAlign.Center,
             modifier = Modifier
                 .background(if (busy) Primary.copy(alpha = 0.5f) else Primary, RoundedCornerShape(8.dp))
                 .clickable(enabled = !busy) { onTake(no) }
@@ -149,15 +151,18 @@ private fun DoneFooter() {
         Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Success, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
-            Text("工单已完成", fontSize = 14.sp, fontWeight = FontWeight.W600, color = Ink)
-            Text("装维完成,感谢师傅辛苦!", fontSize = 12.sp, color = Muted)
+            Text(stringResource(R.string.orders_done_title), fontSize = 14.sp, fontWeight = FontWeight.W600, color = Ink)
+            Text(stringResource(R.string.orders_done_sub), fontSize = 12.sp, color = Muted)
         }
     }
 }
 
 @Composable
 private fun TicketStepper(current: Int) {
-    val labels = listOf("提交订单", "受理成功", "上门安装", "完成")
+    val labels = listOf(
+        stringResource(R.string.step_submit), stringResource(R.string.step_accepted),
+        stringResource(R.string.step_install), stringResource(R.string.step_done),
+    )
     Box(Modifier.fillMaxWidth().height(52.dp)) {
         Row(
             Modifier.fillMaxWidth().padding(start = 36.dp, end = 36.dp, top = 10.dp),
