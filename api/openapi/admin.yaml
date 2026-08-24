@@ -436,6 +436,7 @@ paths:
   /site-posts/{postId}: { $ref: './admin/site.yaml#/paths/~1site-posts~1{postId}' }
   /site/posts: { $ref: './admin/site.yaml#/paths/~1site~1posts' }
   /site/posts/{slug}: { $ref: './admin/site.yaml#/paths/~1site~1posts~1{slug}' }
+  /site/posts/{slug}/cover: { $ref: './admin/site.yaml#/paths/~1site~1posts~1{slug}~1cover' }
 
   # ---------- ODN(无源物理层) ----------
   /odn/grids: { $ref: './admin/odn.yaml#/paths/~1odn~1grids' }

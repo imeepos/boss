@@ -320,4 +320,5 @@ var adminRoutes = []routeEntry{
 	{"DELETE", "/site-posts/:postId", "删除官网内容"},
 	{"GET", "/site/posts", "官网匿名读:已发布列表(公开)"},
 	{"GET", "/site/posts/:slug", "官网匿名读:已发布详情(公开)"},
+	{"GET", "/site/posts/:slug/cover", "官网匿名读:已发布封面图(公开,仅image/*)"},
 }

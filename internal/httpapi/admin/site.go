@@ -13,6 +13,7 @@ import (
 func registerSitePublicRoutes(api *gin.RouterGroup, a *app.Application) {
 	api.GET("/site/posts", sitePublicListHandler(a))
 	api.GET("/site/posts/:slug", sitePublicDetailHandler(a))
+	api.GET("/site/posts/:slug/cover", sitePublicCoverHandler(a))
 }
 
 // registerSiteRoutes 管理端文章 CRUD(menu:site 权限)。

@@ -83,3 +83,16 @@ paths:
         - { name: slug, in: path, required: true, schema: { type: string } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+  /site/posts/{slug}/cover:
+    get:
+      tags: [CMS]
+      summary: 官网匿名读(公开):已发布文章封面图片流(仅 image/*,其余 404)
+      operationId: getPublicSitePostCover
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: 封面图片二进制(inline, max-age=300)
+          content:
+            image/*: { schema: { type: string, format: binary } }
+        '404': { description: 非已发布/无封面/非图片 }
