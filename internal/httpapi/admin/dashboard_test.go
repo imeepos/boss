@@ -53,8 +53,15 @@ func TestDashboard(t *testing.T) {
 	if err := clock.Set("Asia/Manila"); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = clock.Set("UTC") })
-	now := clock.Now()
+	t.Cleanup(func() {
+		_ = clock.Set("UTC")
+		clock.SetFixed(time.Time{}) // 清除固定时刻,不泄漏给其他测试
+	})
+	// 钉死执行时刻:夹具与 handler 的 clock.Now() 完全一致,
+	// 测试不随真实执行日期、宿主时区或日界附近的毫秒差漂移。
+	manila := clock.Location()
+	now := time.Date(2026, 8, 21, 10, 0, 0, 0, manila)
+	clock.SetFixed(now)
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	Register(r, &app.Application{
@@ -126,6 +133,10 @@ func TestDashboard(t *testing.T) {
 	}
 	if len(body.Data.Trend.Days) != 7 || len(body.Data.Trend.Series) != 5 {
 		t.Fatalf("trend=%+v", body.Data.Trend)
+	}
+	// 固定时刻下的确定性窗口:2026-08-21(周五)所在周为 08-17(周一)起 7 天。
+	if body.Data.Trend.Days[0] != "08-17" || body.Data.Trend.Days[6] != "08-23" {
+		t.Fatalf("trend days=%v", body.Data.Trend.Days)
 	}
 	trend := map[string][]int{}
 	for _, series := range body.Data.Trend.Series {
