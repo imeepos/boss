@@ -35,8 +35,10 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.LangStore
 import com.ymm.boss.user.api.ProfileApi
+import com.ymm.boss.user.api.UpdateApi
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CardTitle
@@ -114,9 +117,30 @@ internal fun SettingsCard(nav: Nav) {
         MenuEntry("帮助中心", Icons.AutoMirrored.Filled.Help, Palette.primary, Route.Help),
         MenuEntry("用户协议与隐私", Icons.Filled.Description, Palette.muted, Route.Agreement),
     )
+    // 检查更新:手动拉 /client/latest,有新版走 UpdateDialog,无新版提示已是最新。
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    var update by remember { mutableStateOf<UpdateApi.UpdateInfo?>(null) }
+    var upToDate by remember { mutableStateOf(false) }
     AppCard(outer = PaddingValues(vertical = 6.dp)) {
         CardTitle("账号与设置")
         entries.forEach { e -> MenuRow(e.icon, e.tint, e.label) { nav.push(e.route) } }
+        MenuRow(Icons.Filled.SystemUpdate, Palette.primary, "检查更新") {
+            upToDate = false
+            scope.launch {
+                val info = UpdateApi.check(context)
+                if (info != null && info.updateAvailable) update = info else upToDate = true
+            }
+        }
+    }
+    UpdateDialog(update, onDismiss = { update = null })
+    if (upToDate) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { upToDate = false },
+            title = { Text("已是最新版本") },
+            text = { Text("当前版本 v${com.ymm.boss.user.BuildConfig.VERSION_NAME} 已是最新。") },
+            confirmButton = { TextButton(onClick = { upToDate = false }) { Text("知道了") } },
+        )
     }
 }
 

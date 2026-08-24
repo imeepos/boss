@@ -76,6 +76,8 @@ fun AppRoot(loggedIn: Boolean) {
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)),
     ) {
         StatusBarBand()
+        // 启动静默检查更新:有新版弹可忽略提醒(fields.md 8F),每进程一次。
+        UpdateGate()
         Box(Modifier.weight(1f)) {
             when (val cur = nav.current) {
                 is Screen.Login -> LoginScreen(

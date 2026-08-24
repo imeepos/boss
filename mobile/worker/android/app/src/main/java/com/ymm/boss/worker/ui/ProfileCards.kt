@@ -27,9 +27,14 @@ import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.api.AuthApi
+import com.ymm.boss.worker.api.UpdateApi
 import com.ymm.boss.worker.ui.theme.Err
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
@@ -120,16 +126,34 @@ internal fun ToolsCard(nav: NavHost) {
 
 @Composable
 internal fun SettingsCard(nav: NavHost, unread: Boolean) {
-    val entries = listOf(
-        MenuEntry("接单设置", Icons.Filled.Settings, Primary, Screen.Settings),
-        MenuEntry("服务公告", Icons.Filled.Campaign, Warn, Screen.Notice),
-        MenuEntry("帮助与反馈", Icons.AutoMirrored.Filled.Help, Success, Screen.Feedback),
-    )
+    // 检查更新:手动拉 /client/latest,有新版走 UpdateDialog,无新版提示已是最新。
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    var update by remember { mutableStateOf<UpdateApi.UpdateInfo?>(null) }
+    var upToDate by remember { mutableStateOf(false) }
     HomeCard {
         CardTitle("账号与设置")
-        entries.forEach { e ->
-            MenuRow(e.icon, e.tint, e.label, showDot = e.screen == Screen.Notice && unread) { nav.push(e.screen) }
+        MenuRow(Icons.Filled.Settings, Primary, "接单设置") { nav.push(Screen.Settings) }
+        MenuRow(Icons.Filled.Campaign, Warn, "服务公告", showDot = unread) { nav.push(Screen.Notice) }
+        MenuRow(Icons.AutoMirrored.Filled.Help, Success, "帮助与反馈") { nav.push(Screen.Feedback) }
+        MenuRow(Icons.Filled.SystemUpdate, Primary, "检查更新") {
+            upToDate = false
+            scope.launch {
+                val info = UpdateApi.check(context)
+                if (info != null && info.updateAvailable) update = info else upToDate = true
+            }
         }
+    }
+    UpdateDialog(update, onDismiss = { update = null })
+    if (upToDate) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { upToDate = false },
+            title = { Text("已是最新版本") },
+            text = { Text("当前版本 v${com.ymm.boss.worker.BuildConfig.VERSION_NAME} 已是最新。") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { upToDate = false }) { Text("知道了") }
+            },
+        )
     }
 }
 

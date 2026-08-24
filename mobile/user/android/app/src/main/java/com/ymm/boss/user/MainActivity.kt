@@ -49,6 +49,8 @@ fun AppRoot() {
         PageScaffold(nav, key, showTabs) {
             PageRefresh(nav) { RouteScreen(nav.current, nav) }
         }
+        // 启动静默检查更新:有新版弹可忽略提醒(fields.md 8F),每进程一次。
+        com.ymm.boss.user.page.UpdateGate()
     }
 }
 
