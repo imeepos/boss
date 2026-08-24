@@ -251,3 +251,4 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - 2026-08-22 cdp-capture 注入登录态后 SPA 不认:eval 设 localStorage 要与 `location.href=目标页` 同一条执行(先访问根路径设值再跳转),分开执行时应用已用空 token 启动重定向 /login。
 - 2026-08-22 102 环境分工:28080=纯 API(直访 SPA 路由 404 page not found),admin GUI 在 5180 端口(compose boss-admin-web 容器);截图/联调一律打 5180。
 - 2026-08-22 PG LIKE 中 `_` 是单字符通配符:精确前缀匹配写 `LIKE 'custom\_%'`(默认转义符反斜杠),或用 `starts_with(code,'custom_')` / 左等值。删除验收数据按主键等值删,不用模式。
+- 场景:官方 API 文档是 SPA 抓不到、又不确定参数形态。做法:写 10 行 POP 签名脚本,缺啥参数补啥参数,让网关逐个报 "X is mandatory",3 轮内拼出必填参数表;再用明显非法值(如 ContentCode=test)读业务错误码(SMS_CONTENT_CODE_ILLEGAL)确认参数语义。

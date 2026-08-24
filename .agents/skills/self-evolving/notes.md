@@ -507,3 +507,8 @@
 - 坑:无。read 先行、门禁全绿(typecheck/test/build)。
 - 决策:worktree 里有父会话未提交的后端/表单半成品,子代理不代为 commit(混合提交违反单一 revert 约定,且可能撞并行编辑),交回父会话收尾。红线#5 的例外要有明确理由并写明。
 - i18n 新增 key(edit/delete/deleteConfirm/allStatus)+ columns 扩列,types.ts 与三语言同步,一次改齐。
+
+## 2026-08-23 对接阿里云国际短信(测试账号)
+- 最大坑:存量代码的 API 形态(端点 dysmsapiintl/参数 To+Message/响应 ResponseCode)三处全错,域名全球 NXDOMAIN;官方文档页全是 SPA 抓不到,最后靠"逐个补参让 API 自己报错"实证出正确形态。
+- skill 没预警:对接外部 API 前应先做一次真实探活调用,不能假设存量实现正确。
+- 重来一次:第一步就用真实凭据 curl/POP 探活端点+最小参数,再读代码;省掉在 102 上排查 DNS 的弯路。
