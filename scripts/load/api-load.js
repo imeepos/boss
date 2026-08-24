@@ -12,6 +12,17 @@ const PASS = __ENV.LOAD_PASS || ''
 const DRY_RUN = __ENV.DRY_RUN !== 'false' && PASS === ''
 
 const loginLatency = new Trend('login_latency', true)
+// 按端点拆分读路径时延(W11 复测清单:记录每个读端点 P95,定位尾延迟来源)。
+const perEndpoint = {}
+for (const p of [
+  '/api/admin/v1/auth/me',
+  '/api/admin/v1/orders',
+  '/api/admin/v1/resources',
+  '/api/admin/v1/gis/levels',
+  '/api/admin/v1/analytics/indicators',
+]) {
+  perEndpoint[p] = new Trend('endpoint_latency_ms', true)
+}
 
 // 容量档位可用环境变量覆盖: k6 run -e TARGET=50 scripts/load/api-load.js
 const TARGET = Number(__ENV.TARGET || 20)
@@ -71,6 +82,7 @@ export default function (data) {
     '/api/admin/v1/analytics/indicators',
   ]) {
     const res = http.get(BASE + path, auth)
+    perEndpoint[path].add(res.timings.duration)
     check(res, {
       [`${path} 200`]: (r) => r.status === 200,
       [`${path} code=0`]: (r) => r.status === 200 && r.json('code') === 0,
