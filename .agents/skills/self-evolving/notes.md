@@ -538,3 +538,8 @@
 - 启动错峰实机证据:boss-server 日志出现三条 [loop-stagger] deferred(20s/40s/60s),patrol 首轮 report_snapshots 落在启动后 60s(18:21:22 启动→18:22:22 快照);reserve_timeout 保持立即补偿,频率/语义未动。
 - Dashboard 隔离:clock.SetFixed 测试缝把执行时刻钉死在固定 Manila 时刻,测试与 handler 的 now 完全一致,消除日界毫秒差与宿主时区依赖;4 个宿主时区 x count=2 全绿,并新增确定性 trend 窗口断言(08-17..08-23)。
 - 未验证项:docs-only 跳过路径在修复后分类器下的复测(本轮 docs 提交合并即验证);cdr_compensation 首轮无待补数据不落表,其错峰仅有日志证据无表证据。
+
+## 2026-08-28 官网 CMS 内容发布域(cms_posts)全链路交付
+- 哪个坑浪费最多时间:menu:site 权限码没随功能迁移入库,102 回放 403 后又要开第二个 worktree 补 000135;随后又发现 INSERT 即发布不落 published_at,第三次 worktree。
+- skill 有没有预警:契约先行(fields.md 8E + adopted note)让三次修复都很小、可独立 revert,提交纪律起了作用;但"权限码迁移随菜单走"此前无记录。
+- 重来一次:功能迁移清单里固定加一项"menu 权限码种子";写 Update 的状态副作用时立即对照 Insert 检查对称性。
