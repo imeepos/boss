@@ -270,3 +270,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 新增后台菜单页时,权限码迁移必须同步登记 permissions + role_permissions(sysadmin CROSS JOIN 或单授),否则 102 回放直接 403 no permission(2026-08-28 menu:site 踩坑,先例 000039 geo_menu)。
 - INSERT 与 UPDATE 对同一状态字段的副作用必须对称:UPDATE 置 PUBLISHED 落 published_at 而 INSERT 不落,导致创建即发布的文章倒序错乱、日期为空(2026-08-28 cms_posts 102 回放发现)。
 - 102 部署是 push gitea main 触发 CI;回放验证要等容器真正换新(端点可达≠新代码),按"制造可观测差异再轮询"确认部署完成。
+- 2026-08-28 新路由的契约登记源是 api/openapi/*.yaml(A 检查),cmd/bossctl/routes_admin.go 只是 CLI 目录;两处都要加,漏 yaml 必红灯。
+- 2026-08-28 免鉴权公开端点三原则:只读最小投影手动挑字段、非公开态统一 404 不泄露存在性、挂靠既有 public 子路由先例不新开路由组。
+- 2026-08-28 前端区块接后端数据且业务上可能为空时,空态/失败态整块 return null 隐藏,不留空白占位区(官网首页 NewsSection 模式)。
