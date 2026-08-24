@@ -263,3 +263,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 拆分同包 Kotlin 文件前先 `grep -rn "fun <拟用名>"` 全包扫一遍：private 改 internal 跨文件后与邻居页面同名函数直接 conflicting overloads，编译才炸（2026-08-24 OrderTimeline 撞 FaultDetailPage.TimelineCard）。
 - 调既有 API 前先 `grep -n "^object" <Api文件>` 确认函数归属哪个 object：一个文件多个 object（ProductApi/OrderApi 同文件）时凭文件名 import 必报 unresolved（2026-08-24 changeAddress）。
 - Compose test 的 DeviceConfigurationOverride 宽度覆盖：ForcedSize(DpSize) 兼容 1.7~1.11，Width(Dp) 是 1.9+ 才有；且都是 Companion 扩展，须显式 import 函数名（如 import androidx.compose.ui.test.ForcedSize），只 import 类名报 Unresolved（2026-08-24 360dp 基线）。
+- 2026-08-24 CI 按变更分类跳过部署时,凡 HEAD 是合并提交必须并看两个父的 diff:feature 侧 merge main 后直接推 main,HEAD^ 是 feature tip,只看第一父会把带入 main 的运行时变更误判 docs-only 静默跳过部署(gitea task 2606 实例);修法 `files=$(git diff --name-only HEAD^ HEAD); git rev-parse -q HEAD^2 && files+="$(git diff --name-only HEAD^2 HEAD)"`。
+- 2026-08-24 git amend 前先确认 HEAD 指向哪个提交:并行多提交在途时 amend 默认打进 HEAD,不是"打进我想改的那个";误并后 reset --soft + 按文件重拆可恢复提交原子性。
+- 2026-08-24 日期边界类测试的正确隔离是给时钟加 SetFixed 测试缝钉死绝对时刻(生产默认真实墙钟),而不是依赖真实 now + 相对偏移:夹具与 handler 各取一次 now 就存在日界毫秒竞态,宿主时区也会渗入。

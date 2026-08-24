@@ -530,3 +530,11 @@
 - 哪个坑浪费了最多时间：DeviceConfigurationOverride.Width(360.dp) 只在新版存在，编译报 Unresolved；查 aar 源码才定 ForcedSize(DpSize)，且是 Companion 扩展函数需显式 import ForcedSize。
 - skill 有没有提前警告：没有——版本相关的 Compose test API 差异未记录。
 - 重来一次会怎么做：用陌生 test API 前先 javap 本地缓存 aar 确认签名与版本，再写代码。
+
+## 2026-08-24 生产验证缺口补齐(ETL 派单闭环 + 部署分类修复 + 启动错峰 + 日期测试隔离)
+- 最大坑:deploy-102 分类步骤只 diff HEAD^ HEAD,feature 侧 merge main 后直接推送时 HEAD^ 是 feature tip,be312bb(task 2606)带运行时代码却被判 docs-only 跳过部署;靠并行会话的 2607 才把代码带上线。修复:合并提交并对第一/第二父的 diff 求并集,task 2608 同形合并提交实测改判 Runtime-affecting 并完成部署。skill 没预警——已喂回 lessons/techniques。
+- 次坑:git commit --amend 误把 stagger 日志改动并进相邻的 dashboard 提交,靠 reset --soft 重拆;多提交在途时 amend 前必须先看 HEAD 是哪个提交。
+- ETL 闭环实机证据(102):恢复的 ar_aging_snapshot/metric_quality_scan 派单 17:42:49 自动 CLOSED;4 条无真实执行器的投影任务 last_status 恒 RUNNING/last_run_at NULL,其 OPEN 派单是真实滞留非误派;scan/latest 显示 checked=6 overdue=4 dispatched=0,compensation_tasks 总数 6 跨多次扫描周期与两次服务重启不变(SubmitQualityViolations 按 bizId+OPEN 幂等)。
+- 启动错峰实机证据:boss-server 日志出现三条 [loop-stagger] deferred(20s/40s/60s),patrol 首轮 report_snapshots 落在启动后 60s(18:21:22 启动→18:22:22 快照);reserve_timeout 保持立即补偿,频率/语义未动。
+- Dashboard 隔离:clock.SetFixed 测试缝把执行时刻钉死在固定 Manila 时刻,测试与 handler 的 now 完全一致,消除日界毫秒差与宿主时区依赖;4 个宿主时区 x count=2 全绿,并新增确定性 trend 窗口断言(08-17..08-23)。
+- 未验证项:docs-only 跳过路径在修复后分类器下的复测(本轮 docs 提交合并即验证);cdr_compensation 首轮无待补数据不落表,其错峰仅有日志证据无表证据。
