@@ -197,6 +197,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	stopPointsExpire := startPointsExpireLoop(points)
 	stopWebhookDelivery := startWebhookDeliveryLoop(app.OpenWebhook)
 	stopETLOverdue := startETLOverdueLoop(app)
+	stopETLProjection := startETLProjectionLoop(app)
 	app.close = func() {
 		stopPatrol()          // 巡检循环
 		stopReserveTimeout()  // 预占超时释放循环(Q2)
@@ -205,6 +206,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		stopPointsExpire()    // 积分过期清算循环(2028 Q2)
 		stopWebhookDelivery() // Webhook 投递循环(Q4 开放平台 M2)
 		stopETLOverdue()      // ETL overdue 自动派单
+		stopETLProjection()   // ETL 真实投影执行器
 		aw.Close()            // 排空审计队列
 		if em.closeCdr != nil {
 			em.closeCdr()

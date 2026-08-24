@@ -159,11 +159,11 @@
 | PORT 多语言扩展（user 37 页 + worker 37 页，247 key 三语） | `34b07d1`/`ce6008f`/`fa255a5` | ✅ |
 | 性能与 SLO（LIMIT 封顶、连接池、索引 000133、SLO 文档、k6 脚本） | `9e85b2f`/`a557a7c`/`9c9e5a4` | ✅ 102 快速只读复测达标，完整 k6 待补 |
 | ETL 自动运行记录与 overdue 自动派单 | `02e7736d`/`224dd24`/`e7c3734`/`d04715b` | ✅ 102 已部署并验证幂等 |
+| 部署可靠性四修复（.dockerignore/容器启动/CORS/Channel JSON 字段） | `a6c97d2`/`4e68347`/`eee7fd9`/`9f76b26` | ✅ 102 全部实机验证 |
+| 完整性能压测（k6 ramping-vus + EXPLAIN + 连接池指标） | `f769826`/`5de9928` | ✅ 102 全量复测达标 |
 
 遗留：
-- ETL 真实投影执行器尚未逐任务接入 RecordRun（当前由 API/扫描循环承载记录入口）
-- 完整 k6 ramping-vus、SQL EXPLAIN 与连接池指标采集待补
-- worker 2 页（无标准结构）未批量接入 data-i18n
-- `.dockerignore` 历史上排除了 Dockerfile 必需的 migrations/cmd/internal/api/pkg，临时构建已绕过；应修复部署构建规则
+- order/billing/customer projection 三个台账任务无真实投影目标表（StarRocks 分析层未部署），保持台账登记，不伪造运行记录
+- docs/* 原型页（user/worker HTML）为文档非项目页面，不纳入三语验收；真实项目 worker 页面（admin boss/worker* 三页、android app_name）已三语覆盖
 
-下一轮建议：修复 Docker 构建忽略规则、补完整性能压测，再推进 AI/预测维护（等外部凭证/数据）。
+下一轮建议：投影任务真实执行器，再推进 AI/预测维护（等外部凭证/数据）。

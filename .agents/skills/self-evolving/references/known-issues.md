@@ -186,3 +186,7 @@
 ## 症状: /payments/stripe/{intent,checkout} 在 102 恒返回 42200 参数非法
 - 原因: handler 在 BindBody 之前先查 PayGateway.Get("stripe");102 容器未配 BOSS_STRIPE_API_KEY,网关未注册即按裁定"密钥未配即降级"返回 CodeInvalidParam(42200),与请求体无关。
 - 修法: 配置 BOSS_STRIPE_API_KEY(可选 BOSS_STRIPE_WEBHOOK_SECRET/BOSS_STRIPE_API_BASE)后重启 boss-server;排查时先看 internal/httpapi/user/stripe.go 的校验顺序。
+
+## 症状: ETL RecordRun 报 "ERROR: operator is not unique: unknown - unknown (SQLSTATE 42725)"
+- 原因: pgx 参数化 SQL `EXTRACT(EPOCH FROM ($3-$2))*1000` 中,当 FinishedAt 为 NULL(RUNNING 记录)时,`$3` 与 `$2` 的类型无法从 NULL 上下文推断,PG 在 unknown-unknown 上找不到唯一运算符。
+- 修法: 显式 cast `$3::timestamptz-$2::timestamptz`(commit a77e28b)。排查线索: docker logs boss-server | grep "etl executor" 会出现 record running: ERROR,而 etl_job_run 表为空——先看应用日志再查表。

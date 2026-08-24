@@ -56,7 +56,7 @@ func (s *PGStore) RecordRun(ctx context.Context, r ETLJobRun) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.db.Exec(ctx, `WITH run AS (INSERT INTO etl_job_run (job_key,started_at,finished_at,status,rows_affected,error) VALUES ($1,$2,$3,$4,$5,$6)) UPDATE etl_job SET last_run_at=$2,last_status=$4,last_rows_affected=$5,last_duration_ms=COALESCE(EXTRACT(EPOCH FROM ($3-$2))*1000,0)::bigint,updated_at=now() WHERE job_key=$1`, r.JobKey, r.StartedAt, r.FinishedAt, r.Status, r.RowsAffected, r.Error)
+	_, err = s.db.Exec(ctx, `WITH run AS (INSERT INTO etl_job_run (job_key,started_at,finished_at,status,rows_affected,error) VALUES ($1,$2,$3,$4,$5,$6)) UPDATE etl_job SET last_run_at=$2,last_status=$4,last_rows_affected=$5,last_duration_ms=COALESCE(EXTRACT(EPOCH FROM ($3::timestamptz-$2::timestamptz))*1000,0)::bigint,updated_at=now() WHERE job_key=$1`, r.JobKey, r.StartedAt, r.FinishedAt, r.Status, r.RowsAffected, r.Error)
 	return err
 }
 func (s *PGStore) ListFreshness(ctx context.Context) ([]Freshness, error) {
