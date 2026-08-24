@@ -120,4 +120,62 @@
         <item>Fraudulent reporting, unauthorized charging, data leakage or malicious complaints may result in suspension or termination, and the platform reserves the right to claim damages.</item>
         <item>The platform may revise this agreement and will notify via in-app notices; continued use constitutes acceptance.</item>
     </string-array>
+
+    <!-- Ticket detail -->
+    <string name="td_title">Order Detail</string>
+    <string name="td_title_repair">Repair Ticket</string>
+    <string name="td_contact_dispatch">Contact Dispatch</string>
+    <string name="err_ticket_load">Failed to load the order, please refresh.</string>
+    <string name="toast_rollback_sent">Rollback started, refreshing…</string>
+    <string name="toast_retry_sent">Retry started, refreshing…</string>
+    <string name="toast_accepted">Order claimed</string>
+    <string name="err_action">Action failed, please retry.</string>
+    <string name="err_accept">Claim failed, please retry.</string>
+    <string name="td_product">Product</string>
+    <string name="td_customer">Customer</string>
+    <string name="td_install_addr">Install Address</string>
+    <string name="td_splitter">Splitter/Port</string>
+    <string name="td_prebind">Pre-bound Tag</string>
+    <string name="td_schedule">Scheduled Time</string>
+    <string name="td_distance">Distance</string>
+    <string name="td_reported_at">Reported At</string>
+    <string name="td_sla_left">SLA Left</string>
+    <string name="td_remote_diag">Remote diagnosis: %1$s</string>
+    <string name="td_finished_at">Finished At</string>
+    <string name="td_contact_customer">Call Customer</string>
+    <string name="td_phone_masked">Number masked, please contact via platform</string>
+    <string name="td_navi">Navigate</string>
+    <string name="td_checkin">Check In</string>
+    <string name="td_progress">Progress</string>
+    <string name="td_progress_more">Current: stage %1$d · %2$d/%3$d done</string>
+    <string name="td_quad_title">Code Verification</string>
+    <string name="td_quad_more">Consistency</string>
+    <string name="td_quad_missing">Code info missing</string>
+    <string name="td_quad_conflict">Mismatch · verify needed</string>
+    <string name="td_quad_passed">Verified</string>
+    <string name="td_quad_pending">Pending</string>
+    <string name="td_asset">Asset code</string>
+    <string name="td_user_code">User code</string>
+    <string name="td_port_code">Port code</string>
+    <string name="td_addr_code">Address code</string>
+    <string name="td_risk_title">Risk Check</string>
+    <string name="td_risk_more">List Interception</string>
+    <string name="td_risk_hit">Hit, auto-blocked or manual review</string>
+    <string name="td_risk_miss">Not hit, work can proceed</string>
+    <string name="td_risk_hit_short">⚠ Black/gray list hit</string>
+    <string name="td_risk_miss_short">✓ Not on list</string>
+    <string name="td_risk_notice">If the risk list is hit, this order will be auto-blocked or sent to manual review, all actions audited.</string>
+    <string name="td_receipt_title">Completion Receipt</string>
+    <string name="td_receipt_confirmed">Customer confirmed · Service done</string>
+    <string name="td_signature">Customer Signature</string>
+    <string name="td_signature_placeholder">(dashed box · placeholder)</string>
+    <string name="td_view_report">View Report</string>
+    <string name="td_back_list">Back to List</string>
+    <string name="td_reschedule">Reschedule</string>
+    <string name="td_repair_report">Repair Report</string>
+    <string name="td_abnormal">Report Issue</string>
+    <string name="td_transfer">Transfer</string>
+    <string name="td_scan_bind">Scan &amp; Bind</string>
+    <string name="td_rollback">Rollback Stage</string>
+    <string name="td_retry_stage">Retry Failed Stage</string>
 </resources>

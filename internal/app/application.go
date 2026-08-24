@@ -14,6 +14,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/backup"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/cms"
 	"github.com/ymm-001/boss/internal/domain/cs"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
@@ -105,6 +106,7 @@ type Application struct {
 	Knowledge       cs.KnowledgeService
 	Callbacks       cs.CallbackService
 	Tickets         cs.TicketService
+	CMS             cms.Service
 	ARMetrics       billing.ARMetricsReader
 	ARClosure       billing.ARClosureService
 	CollectionQueue billing.CollectionQueueService

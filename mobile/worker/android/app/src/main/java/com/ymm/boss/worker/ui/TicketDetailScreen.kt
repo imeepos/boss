@@ -12,9 +12,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
+import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.api.TicketApi
 import kotlinx.coroutines.launch
+
+// 非组合上下文取资源(协程 toast 文案)
+private fun s(res: Int, vararg fmt: Any = emptyArray()) = Api.context().getString(res, *fmt)
 
 /**
  * 工单详情(对齐 designs/worker-order-detail-v1.spec.md):
@@ -38,10 +44,10 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
             is Load.Fail -> {
                 Box(Modifier.weight(1f)) {
                     Column(Modifier.fillMaxSize()) {
-                        TopBar("工单详情", onBack = { nav.pop() }, action = "联系调度",
+                        TopBar(stringResource(R.string.td_title), onBack = { nav.pop() }, action = stringResource(R.string.td_contact_dispatch),
                             onAction = { nav.push(Screen.Service) })
                         Card(Modifier.padding(14.dp)) {
-                            Notice("工单加载失败，请刷新重试。", red = true)
+                            Notice(stringResource(R.string.err_ticket_load), red = true)
                         }
                     }
                 }
@@ -50,12 +56,12 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
                 val d = s.data
                 val status = d.optString("status")
                 val type = inferTicketType(d)
-                val title = if (type == "REPAIR") "报障工单" else "工单详情"
+                val title = if (type == "REPAIR") stringResource(R.string.td_title_repair) else stringResource(R.string.td_title)
 
                 PageRefresh(nav, modifier = Modifier.weight(1f)) {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         item {
-                            TopBar(title, onBack = { nav.pop() }, action = "联系调度",
+                            TopBar(title, onBack = { nav.pop() }, action = stringResource(R.string.td_contact_dispatch),
                                 onAction = { nav.push(Screen.Service) })
                             DetailHeaderCard(d, type)
                         }
@@ -68,18 +74,18 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
                                         scope.launch {
                                             try {
                                                 TicketApi.rollback(no)
-                                                toast(ctx, "已发起回退,正在刷新...")
+                                                toast(ctx, s(R.string.toast_rollback_sent))
                                                 nav.requestRefresh()
-                                            } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
+                                            } catch (_: Exception) { toast(ctx, s(R.string.err_action)) }
                                         }
                                     },
                                     onRetry = {
                                         scope.launch {
                                             try {
                                                 TicketApi.retry(no)
-                                                toast(ctx, "已发起重试,正在刷新...")
+                                                toast(ctx, s(R.string.toast_retry_sent))
                                                 nav.requestRefresh()
-                                            } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
+                                            } catch (_: Exception) { toast(ctx, s(R.string.err_action)) }
                                         }
                                     })
                             }
@@ -95,27 +101,27 @@ fun TicketDetailScreen(nav: NavHost, no: String) {
                         scope.launch {
                             try {
                                 TicketApi.accept(no)
-                                toast(ctx, "已领取工单")
+                                toast(ctx, s(R.string.toast_accepted))
                                 nav.pop()
-                            } catch (_: Exception) { toast(ctx, "领取失败，请重试。") }
+                            } catch (_: Exception) { toast(ctx, s(R.string.err_accept)) }
                         }
                     },
                     onRollback = {
                         scope.launch {
                             try {
                                 TicketApi.rollback(no)
-                                toast(ctx, "已发起回退,正在刷新...")
+                                toast(ctx, s(R.string.toast_rollback_sent))
                                 nav.requestRefresh()
-                            } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
+                            } catch (_: Exception) { toast(ctx, s(R.string.err_action)) }
                         }
                     },
                     onRetry = {
                         scope.launch {
                             try {
                                 TicketApi.retry(no)
-                                toast(ctx, "已发起重试,正在刷新...")
+                                toast(ctx, s(R.string.toast_retry_sent))
                                 nav.requestRefresh()
-                            } catch (_: Exception) { toast(ctx, "操作失败,请重试。") }
+                            } catch (_: Exception) { toast(ctx, s(R.string.err_action)) }
                         }
                     })
             }

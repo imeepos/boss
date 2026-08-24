@@ -967,6 +967,29 @@ PAYMENT_* 时为 payment id，(reason,ref_id) 部分唯一索引保幂等）、
 `/bss/marketing-recon`（menu key `marketing-recon`）两 Tab 复用 8D-2 行结构，附加汇总行
 （`summary`）与 `diff=drift` 过滤；金额列后端为分，页面 ÷100 展示。
 
+## 8E. 官网内容发布域（internal/domain/cms，000134）
+
+`cms_posts`（官网动态/文章/新闻，单一内容表 + category 区分；沿用 cs_knowledge_articles 的版本自增与软状态机范式）：
+
+| 页面列 | 字段名 | DB 列 | 枚举/说明 |
+|:------|:------|:------|:----------|
+| 标题 | `title` | title | 非空，≤160 |
+| 别名 | `slug` | slug | URL 友好唯一键，小写字母数字连字符 |
+| 分类 | `category` | category | NEWS（动态/新闻）/ ARTICLE（文章） |
+| 摘要 | `summary` | summary | 列表展示，≤500 |
+| 封面 | `coverAttachmentId` | cover_attachment_id | 引用 attachments(id)，可空 |
+| 正文 | `content` | content | Markdown，TEXT 非空 |
+| 状态 | `status` | status | DRAFT / PUBLISHED / OFFLINE（terms.md 登记） |
+| 定时发布 | `publishedAt` | published_at | 置 PUBLISHED 时落 now()；公开读按 `status=PUBLISHED` 过滤 |
+| 版本 | `version` | version | 每次更新自增 |
+| 作者 | `authorName` | author_name | 展示用冗余名，可空 |
+| 创建/更新 | `createdAt`/`updatedAt` | created_at/updated_at | TIMESTAMPTZ |
+
+API：admin `/site-posts`（GET/POST/PUT/DELETE，menu:site 权限）；
+官网匿名只读 `/site/posts`（列表，仅 status=PUBLISHED，按 published_at 倒序，
+支持 category 过滤与 limit）与 `/site/posts/:slug`（详情，仅 PUBLISHED）。
+免鉴权公开读沿用 partner 入驻公开提交先例（admin 前缀内 public 子路由）。
+
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。

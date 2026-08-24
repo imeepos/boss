@@ -22,6 +22,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.ymm.boss.worker.R
+import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
@@ -41,6 +44,9 @@ import org.json.JSONObject
  * 类型(INSTALL/REPAIR)由 stages.length 推断(后端 TicketDetail 暂未返 type)。
  */
 
+// 非组合上下文取资源
+private fun s(res: Int, vararg fmt: Any = emptyArray()) = Api.context().getString(res, *fmt)
+
 // Card1 工单头(状态/类型分支)
 @Composable
 internal fun DetailHeaderCard(d: JSONObject, type: String) {
@@ -58,41 +64,41 @@ internal fun DetailHeaderCard(d: JSONObject, type: String) {
                 color = Color(0xFFFF4D4F), modifier = Modifier.padding(bottom = 4.dp))
         } else {
             val product = d.optString("product")
-            if (product.isNotEmpty()) KvRow("产品", product)
+            if (product.isNotEmpty()) KvRow(stringResource(R.string.td_product), product)
         }
         val name = d.optString("customerName")
         val phone = d.optString("customerPhoneMasked")
         if (name.isNotEmpty() || phone.isNotEmpty()) {
-            KvRow("客户", listOf(name, phone).filter { it.isNotEmpty() }.joinToString(" "))
+            KvRow(stringResource(R.string.td_customer), listOf(name, phone).filter { it.isNotEmpty() }.joinToString(" "))
         }
         val addr = d.optString("address")
-        if (addr.isNotEmpty()) KvRow("安装地址", addr)
+        if (addr.isNotEmpty()) KvRow(stringResource(R.string.td_install_addr), addr)
         if (type != "REPAIR") {
             val sp = d.optString("splitterPort")
-            if (sp.isNotEmpty()) KvRow("分光器/端口", sp)
+            if (sp.isNotEmpty()) KvRow(stringResource(R.string.td_splitter), sp)
             val pb = d.optString("preBindTag")
-            if (pb.isNotEmpty()) KvRow("预绑定标签", pb)
+            if (pb.isNotEmpty()) KvRow(stringResource(R.string.td_prebind), pb)
             val ss = d.optString("scheduleSlot")
-            if (ss.isNotEmpty()) KvRow("预约时间", ss)
+            if (ss.isNotEmpty()) KvRow(stringResource(R.string.td_schedule), ss)
             val dist = d.optDouble("distanceKm", -1.0)
-            if (status == "TODO" && dist >= 0) KvRow("距离", "%.1f km".format(dist), valueColor = Primary)
+            if (status == "TODO" && dist >= 0) KvRow(stringResource(R.string.td_distance), "%.1f km".format(dist), valueColor = Primary)
         } else {
             val reported = d.optString("reportedAt")
-            if (reported.isNotEmpty()) KvRow("报障时间", reported)
+            if (reported.isNotEmpty()) KvRow(stringResource(R.string.td_reported_at), reported)
             val sla = d.optInt("slaLeftMinutes", -1)
             if (sla >= 0) {
-                KvRow("SLA 剩余", "%d:%02d".format(sla / 60, sla % 60),
+                KvRow(stringResource(R.string.td_sla_left), "%d:%02d".format(sla / 60, sla % 60),
                     valueColor = Color(0xFFFA8C16))
             }
             val diag = d.optString("remoteDiagnosis")
             if (diag.isNotEmpty()) {
-                Text("远程诊断:$diag", fontSize = 12.sp, color = Muted,
+                Text(stringResource(R.string.td_remote_diag, diag), fontSize = 12.sp, color = Muted,
                     modifier = Modifier.padding(top = 4.dp))
             }
         }
         if (status == "DONE") {
             val finished = d.optString("finishedAt")
-            if (finished.isNotEmpty()) KvRow("完成时间", finished)
+            if (finished.isNotEmpty()) KvRow(stringResource(R.string.td_finished_at), finished)
         }
     }
 }
@@ -104,12 +110,12 @@ internal fun QuickActionRow(d: JSONObject, nav: NavHost, no: String) {
     val phone = d.optString("customerPhoneMasked")
     Card(Modifier.padding(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ActionBtn("联系客户", Modifier.weight(1f)) {
-                if (phone.isBlank()) toast(ctx, "号码已脱敏，请通过平台联系")
+            ActionBtn(stringResource(R.string.td_contact_customer), Modifier.weight(1f)) {
+                if (phone.isBlank()) toast(ctx, s(R.string.td_phone_masked))
                 else ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
             }
-            ActionBtn("一键导航", Modifier.weight(1f)) { nav.push(Screen.Navi(no)) }
-            ActionBtn("到点签到", Modifier.weight(1f)) { nav.push(Screen.Checkin(no)) }
+            ActionBtn(stringResource(R.string.td_navi), Modifier.weight(1f)) { nav.push(Screen.Navi(no)) }
+            ActionBtn(stringResource(R.string.td_checkin), Modifier.weight(1f)) { nav.push(Screen.Checkin(no)) }
         }
     }
 }
@@ -126,8 +132,8 @@ internal fun TimelineCard(d: JSONObject) {
         .count { stages.optJSONObject(it).optString("result") == "DONE" }
     val currentStage = stages.optJSONObject(stages.length() - 1)?.optInt("stage") ?: 0
     Card(Modifier.padding(12.dp)) {
-        SectionTitle("装维进度",
-            more = "当前:$currentStage 环节 · $doneCount/$total 已完成")
+        SectionTitle(stringResource(R.string.td_progress),
+            more = stringResource(R.string.td_progress_more, currentStage, doneCount, total))
         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically) {
             for (i in 1..total) {
@@ -159,22 +165,22 @@ internal fun TimelineCard(d: JSONObject) {
 @Composable
 internal fun QuadCard(quad: JSONObject?) {
     Card(Modifier.padding(12.dp)) {
-        SectionTitle("四码校验", more = "一致性校验")
-        if (quad == null) { Notice("四码信息缺失"); return@Card }
+        SectionTitle(stringResource(R.string.td_quad_title), more = stringResource(R.string.td_quad_more))
+        if (quad == null) { Notice(stringResource(R.string.td_quad_missing)); return@Card }
         val status = quad.optString("status")
         val (cellColor, stText) = when (status) {
-            "CONFLICT" -> Color(0xFFFF4D4F) to "不一致 · 需核实"
-            "LINKED"   -> Color(0xFF0AA847) to "已通过校验"
-            else       -> Color(0xFFAEB4BE) to "待校验"
+            "CONFLICT" -> Color(0xFFFF4D4F) to stringResource(R.string.td_quad_conflict)
+            "LINKED"   -> Color(0xFF0AA847) to stringResource(R.string.td_quad_passed)
+            else       -> Color(0xFFAEB4BE) to stringResource(R.string.td_quad_pending)
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuadCell("资产码", quad.optString("assetCode"), stText, cellColor, Modifier.weight(1f))
-                QuadCell("用户码", quad.optString("customerCode"), stText, cellColor, Modifier.weight(1f))
+                QuadCell(stringResource(R.string.td_asset), quad.optString("assetCode"), stText, cellColor, Modifier.weight(1f))
+                QuadCell(stringResource(R.string.td_user_code), quad.optString("customerCode"), stText, cellColor, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuadCell("端口码", quad.optString("portCode"), stText, cellColor, Modifier.weight(1f))
-                QuadCell("地址码", quad.optString("addrCode"), stText, cellColor, Modifier.weight(1f))
+                QuadCell(stringResource(R.string.td_port_code), quad.optString("portCode"), stText, cellColor, Modifier.weight(1f))
+                QuadCell(stringResource(R.string.td_addr_code), quad.optString("addrCode"), stText, cellColor, Modifier.weight(1f))
             }
         }
     }
@@ -202,18 +208,18 @@ private fun QuadCell(label: String, value: String, st: String, color: Color, mod
 @Composable
 internal fun RiskCard(risk: JSONObject?) {
     Card(Modifier.padding(12.dp)) {
-        SectionTitle("风控校验", more = "名单拦截")
+        SectionTitle(stringResource(R.string.td_risk_title), more = stringResource(R.string.td_risk_more))
         val hit = risk?.optBoolean("blacklistHit", false) == true
                 || risk?.optBoolean("graylistHit", false) == true
         val color = if (hit) Color(0xFFFF2D2F) else Color(0xFF0AA847)
-        val text = if (hit) "已命中，自动拦截或转人工审核" else "未命中，可正常装维"
+        val text = if (hit) stringResource(R.string.td_risk_hit) else stringResource(R.string.td_risk_miss)
         Row(Modifier.fillMaxWidth().padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(if (hit) "⚠ 命中黑/灰名单" else "✓ 未命中名单", fontSize = 13.sp, color = color,
+            Text(if (hit) stringResource(R.string.td_risk_hit_short) else stringResource(R.string.td_risk_miss_short), fontSize = 13.sp, color = color,
                 fontWeight = FontWeight.Medium)
             Text(text, fontSize = 13.sp, color = color)
         }
-        Notice("若命中风控名单，此单将自动拦截或转人工审核，操作全程留痕。")
+        Notice(stringResource(R.string.td_risk_notice))
     }
 }
 
@@ -221,7 +227,7 @@ internal fun RiskCard(risk: JSONObject?) {
 @Composable
 internal fun ReceiptCard() {
     Card(Modifier.padding(12.dp)) {
-        SectionTitle("完成回执")
+        SectionTitle(stringResource(R.string.td_receipt_title))
         Row(verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(vertical = 4.dp)) {
@@ -229,15 +235,15 @@ internal fun ReceiptCard() {
                 .padding(4.dp)) {
                 Text("✓", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
-            Text("客户已确认 · 服务完成", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            Text(stringResource(R.string.td_receipt_confirmed), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF0AA847))
         }
         Spacer(Modifier.height(8.dp))
-        Text("客户签名", fontSize = 12.sp, color = Muted)
+        Text(stringResource(R.string.td_signature), fontSize = 12.sp, color = Muted)
         Box(modifier = Modifier.fillMaxWidth().height(56.dp)
             .border(1.dp, Color(0xFFD9D9D9), RoundedCornerShape(8.dp))
             .padding(8.dp), contentAlignment = Alignment.Center) {
-            Text("（虚线框 · 占位）", fontSize = 12.sp, color = Muted)
+            Text(stringResource(R.string.td_signature_placeholder), fontSize = 12.sp, color = Muted)
         }
     }
 }
@@ -252,21 +258,21 @@ internal fun BottomActionBar(d: JSONObject, nav: NavHost, no: String,
         .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         when {
-            status == "TODO" -> PrimaryAction("领取工单", Modifier.weight(1f), onClick = onAccept)
+            status == "TODO" -> PrimaryAction(stringResource(R.string.orders_take_btn), Modifier.weight(1f), onClick = onAccept)
             status == "DONE" -> {
-                OutlinedAction("查看报告", Modifier.weight(1f)) { nav.push(Screen.Report(no)) }
-                OutlinedAction("返回列表", Modifier.weight(1f)) { nav.pop() }
+                OutlinedAction(stringResource(R.string.td_view_report), Modifier.weight(1f)) { nav.push(Screen.Report(no)) }
+                OutlinedAction(stringResource(R.string.td_back_list), Modifier.weight(1f)) { nav.pop() }
             }
             type == "REPAIR" -> {
-                OutlinedAction("联系客户", Modifier.weight(1f)) { nav.push(Screen.Service) }
-                OutlinedAction("改约", Modifier.weight(1f)) { nav.push(Screen.Reschedule(no)) }
-                PrimaryAction("修复上报", Modifier.weight(1f)) { nav.push(Screen.RepairReport(no)) }
+                OutlinedAction(stringResource(R.string.td_contact_customer), Modifier.weight(1f)) { nav.push(Screen.Service) }
+                OutlinedAction(stringResource(R.string.td_reschedule), Modifier.weight(1f)) { nav.push(Screen.Reschedule(no)) }
+                PrimaryAction(stringResource(R.string.td_repair_report), Modifier.weight(1f)) { nav.push(Screen.RepairReport(no)) }
             }
             else -> {
-                OutlinedAction("异常上报", Modifier.weight(1f)) { nav.push(Screen.ScanAbnormal(no)) }
-                OutlinedAction("转单", Modifier.weight(1f)) { nav.push(Screen.Transfer(no)) }
-                OutlinedAction("改约", Modifier.weight(1f)) { nav.push(Screen.Reschedule(no)) }
-                PrimaryAction("扫码绑定", Modifier.weight(1f)) { nav.push(Screen.Scan(no)) }
+                OutlinedAction(stringResource(R.string.td_abnormal), Modifier.weight(1f)) { nav.push(Screen.ScanAbnormal(no)) }
+                OutlinedAction(stringResource(R.string.td_transfer), Modifier.weight(1f)) { nav.push(Screen.Transfer(no)) }
+                OutlinedAction(stringResource(R.string.td_reschedule), Modifier.weight(1f)) { nav.push(Screen.Reschedule(no)) }
+                PrimaryAction(stringResource(R.string.td_scan_bind), Modifier.weight(1f)) { nav.push(Screen.Scan(no)) }
             }
         }
     }
@@ -277,7 +283,7 @@ internal fun BottomActionBar(d: JSONObject, nav: NavHost, no: String,
 internal fun TimelineExtras(no: String, onRollback: () -> Unit, onRetry: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        OutlinedAction("回退上一环节", Modifier.weight(1f), onClick = onRollback)
-        OutlinedAction("重试失败环节", Modifier.weight(1f), onClick = onRetry)
+        OutlinedAction(stringResource(R.string.td_rollback), Modifier.weight(1f), onClick = onRollback)
+        OutlinedAction(stringResource(R.string.td_retry_stage), Modifier.weight(1f), onClick = onRetry)
     }
 }

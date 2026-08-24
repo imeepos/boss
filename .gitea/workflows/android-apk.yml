@@ -2,7 +2,9 @@
 # 归档到宿主 /srv/boss/apk/<sha>/。与 deploy-102 同风格:纯 run 步骤,不依赖 marketplace action。
 # 镜像 cimg/android 自带 OpenJDK17 + Android SDK(license 已接受,缺的平台会自动下载),
 # gradle 缓存走命名卷 boss-gradle-home。
-# release 签名:仓库无 keystore 时 gradle 配置自动回退 debug 签名,产物仅用于测试分发;
+# release 签名:repo secrets KEYSTORE_BASE64/KEYSTORE_PASSWORD/KEYSTORE_ALIAS/
+# KEYSTORE_KEY_PASSWORD 四项齐备时解码正式签名(keystore 永不入库);
+# 缺省则 gradle 自动回退 debug 签名,产物仅用于测试分发;
 # jpushAppKey 走仓库 secret JPUSH_APP_KEY,缺省空串(SDK 仅日志不 crash)。
 name: android-apk
 on:
@@ -27,6 +29,29 @@ jobs:
           git clone --depth 1 "http://sker:${GITHUB_TOKEN}@192.168.0.102:3001/sker/boss.git" .
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Decode signing material
+        # keystore 永不入库:repo secret KEYSTORE_BASE64(keystore 文件 base64) +
+        # KEYSTORE_PASSWORD/KEYSTORE_ALIAS/KEYSTORE_KEY_PASSWORD 四项齐备时解码出
+        # 各端的 release.keystore + keystore.properties(gradle 已按存在即启用)。
+        # 任一缺失则跳过,沿用 debug 签名回退。
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEYSTORE_ALIAS" ] || [ -z "$KEYSTORE_KEY_PASSWORD" ]; then
+            echo "signing secrets incomplete, keep debug-signing fallback"
+            exit 0
+          fi
+          for d in mobile/worker/android mobile/user/android; do
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$d/release.keystore"
+            printf 'storeFile=release.keystore\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "$KEYSTORE_PASSWORD" "$KEYSTORE_ALIAS" "$KEYSTORE_KEY_PASSWORD" > "$d/keystore.properties"
+          done
+          echo "signing material decoded for both apps"
 
       - name: Build APKs
         env:
