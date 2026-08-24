@@ -12,17 +12,37 @@ jobs:
     steps:
       - name: Clone
         run: |
-          git clone --depth 1 "http://sker:${GITHUB_TOKEN}@192.168.0.102:3001/sker/boss.git" .
+          git clone --depth 2 "http://sker:${GITHUB_TOKEN}@192.168.0.102:3001/sker/boss.git" .
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Classify change
+        id: change
+        run: |
+          runtime=false
+          for path in $(git diff --name-only HEAD^ HEAD); do
+            case "$path" in
+              docs/*|.agents/*|*.md) ;;
+              *) runtime=true; break ;;
+            esac
+          done
+          echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
+          if [ "$runtime" = true ]; then
+            echo "Runtime-affecting changes detected; deployment will build and restart services."
+          else
+            echo "Documentation/skill-only changes detected; deployment is skipped."
+          fi
+
       - name: Build server image
+        if: steps.change.outputs.runtime == 'true'
         run: docker build -f deployments/docker/server.Dockerfile -t 192.168.0.102:5000/boss/server:${GITHUB_SHA} -t 192.168.0.102:5000/boss/server:latest .
 
       - name: Build admin-web image
+        if: steps.change.outputs.runtime == 'true'
         run: docker build -f deployments/docker/admin-web.Dockerfile -t 192.168.0.102:5000/boss/admin-web:${GITHUB_SHA} -t 192.168.0.102:5000/boss/admin-web:latest .
 
       - name: Push images
+        if: steps.change.outputs.runtime == 'true'
         run: |
           docker push 192.168.0.102:5000/boss/server:${GITHUB_SHA}
           docker push 192.168.0.102:5000/boss/server:latest
@@ -30,6 +50,7 @@ jobs:
           docker push 192.168.0.102:5000/boss/admin-web:latest
 
       - name: Deploy (compose up)
+        if: steps.change.outputs.runtime == 'true'
         run: |
           # 根治遗留问题:固定 container_name 可能被其他 compose 项目(手动 deploy 的 deployments 项目、
           # 无 label 的 docker run)占用,--force-recreate 在名字冲突处中止,已 Recreate 的容器滞留 Created。
@@ -40,6 +61,7 @@ jobs:
           docker-compose -f deployments/docker-compose.102.app.yml -p boss-app ps
 
       - name: Verify all containers running
+        if: steps.change.outputs.runtime == 'true'
         run: |
           for c in boss-server boss-aaa boss-report boss-admin-web; do
             state=$(docker inspect -f '{{.State.Status}}' "$c" 2>/dev/null || echo missing)
@@ -48,6 +70,7 @@ jobs:
           done
 
       - name: Healthcheck
+        if: steps.change.outputs.runtime == 'true'
         run: |
           for i in 1 2 3 4 5; do
             if wget -qO- http://192.168.0.102:28080/healthz; then echo; exit 0; fi
@@ -56,6 +79,7 @@ jobs:
           echo "healthz failed"; docker logs boss-server --tail 50; exit 1
 
       - name: Healthcheck admin-web
+        if: steps.change.outputs.runtime == 'true'
         run: |
           for i in 1 2 3 4 5; do
             if wget -qO- http://192.168.0.102:5180/; then echo; exit 0; fi
