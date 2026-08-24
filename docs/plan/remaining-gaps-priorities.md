@@ -163,7 +163,7 @@
 | 完整性能压测（k6 ramping-vus + EXPLAIN + 连接池指标） | `f769826`/`5de9928` | ✅ 102 全量复测达标 |
 
 遗留：
-- worker 2 页（无标准结构）未批量接入 data-i18n
 - order/billing/customer projection 三个台账任务无真实投影目标表（StarRocks 分析层未部署），保持台账登记，不伪造运行记录
+- docs/* 原型页（user/worker HTML）为文档非项目页面，不纳入三语验收；真实项目 worker 页面（admin boss/worker* 三页、android app_name）已三语覆盖
 
-下一轮建议：补 worker 页 i18n 与投影任务真实执行器，再推进 AI/预测维护（等外部凭证/数据）。
+下一轮建议：投影任务真实执行器，再推进 AI/预测维护（等外部凭证/数据）。
