@@ -10,6 +10,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/domain/asset"
+	crashdomain "github.com/ymm-001/boss/internal/domain/crash"
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/openplat"
 	"github.com/ymm-001/boss/internal/domain/provision"
@@ -30,6 +31,8 @@ func wireAAAInfra(app *Application, pool *pgxpool.Pool, aaastore *aaa.PGStore, p
 	app.OpenWebhook = openplat.NewWebhookDispatcher(openstore, openplat.NewHTTPPoster())
 	app.AI = ai.NewService(ai.NewPGStore(pool))
 	app.Notify = notify.NewPGStore(pool)
+
+	app.CrashLogs = crashdomain.NewPGStore(pool)
 
 	pushdevices := pushdomain.NewDevicesPGStore(pool)
 	app.PushDevices = pushdevices

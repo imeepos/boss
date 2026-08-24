@@ -1,6 +1,11 @@
 package com.ymm.boss.worker.util
 
 import android.content.Context
+import com.ymm.boss.worker.api.Api
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -26,9 +31,29 @@ object CrashLog {
         }
     }
 
-    /** 崩溃文件清单(旧→新),供后续上传/排查用。 */
+    /** 崩溃文件清单(旧→新),供上传/排查用。 */
     fun files(ctx: Context): List<File> =
         dir(ctx).listFiles { f -> f.isFile }?.sortedBy { it.name } ?: emptyList()
+
+    /**
+     * 启动补传:逐条 POST /client/crash(worker 契约),成功即删本地文件防重传;
+     * 未登录静默跳过,单文件失败不阻塞后续。自身起 IO 协程,调用方可直接主线程调。
+     */
+    fun uploadPending(ctx: Context) {
+        CoroutineScope(Dispatchers.IO).launch {
+            if (Api.token().isEmpty()) return@launch
+            for (f in files(ctx)) {
+                try {
+                    Api.post("/client/crash", JSONObject()
+                        .put("app", "boss-worker/" + com.ymm.boss.worker.BuildConfig.VERSION_NAME)
+                        .put("log", f.readText()))
+                    runCatching { f.delete() }
+                } catch (_: Exception) {
+                    // 保留文件下次再传
+                }
+            }
+        }
+    }
 
     private fun write(ctx: Context, thread: Thread, e: Throwable) {
         val d = dir(ctx)
