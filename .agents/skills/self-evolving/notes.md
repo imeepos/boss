@@ -525,3 +525,8 @@
 - 哪个坑浪费了最多时间：拆 OrderPage 后与 FaultDetailPage 同包撞名（TimelineCard/InfoCard conflicting overloads），编译才暴露；另 ProductApi.changeAddress 实际在 OrderApi object 里，凭文件名猜 API 归属报 unresolved。
 - skill 有没有提前警告：部分——android.md 提醒了 worktree/验证类坑，但没提"同包拆文件先 grep 目标函数名是否已被占用"。
 - 重来一次会怎么做：拆文件前先 `grep -rn "fun 同名"` 全包扫一遍；调 API 前先看 object 边界（grep "^object"）。
+
+## 2026-08-24 user-android 第二轮（Messages/UserHome 拆分 + 360dp 基线）
+- 哪个坑浪费了最多时间：DeviceConfigurationOverride.Width(360.dp) 只在新版存在，编译报 Unresolved；查 aar 源码才定 ForcedSize(DpSize)，且是 Companion 扩展函数需显式 import ForcedSize。
+- skill 有没有提前警告：没有——版本相关的 Compose test API 差异未记录。
+- 重来一次会怎么做：用陌生 test API 前先 javap 本地缓存 aar 确认签名与版本，再写代码。

@@ -42,8 +42,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
+import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.api.TicketApi
 import com.ymm.boss.worker.api.friendlyMessage
 import com.ymm.boss.worker.ui.theme.Ink
@@ -56,7 +59,21 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 // 工单列表(样式对齐 user 端账单页):胶囊筛选 tab + 下拉刷新 + 上拉增量渲染
-private val SEGS = listOf("doing" to "进行中", "todo" to "待领取", "done" to "已完成", "all" to "全部")
+// 文案存资源 id(三语),经 segs() 组合期解析;键名与后端状态过滤口径绑定
+private val SEG_KEYS = listOf(
+    "doing" to R.string.seg_doing, "todo" to R.string.seg_todo,
+    "done" to R.string.seg_done, "all" to R.string.seg_all,
+)
+
+@Composable
+private fun segs(): List<Pair<String, String>> = SEG_KEYS.map { it.first to stringResource(it.second) }
+
+/** SegRow 默认段位(组合期解析三语)。 */
+@Composable
+private fun defaultSegs(): List<Pair<String, String>> = segs()
+
+// 非组合上下文取资源(协程 toast 文案)
+private fun s(res: Int, vararg fmt: Any = emptyArray()) = Api.context().getString(res, *fmt)
 
 /** 后端 /tickets 一次返回全量(无分页参数),上拉加载按客户端增量渲染。 */
 private const val PAGE_SIZE = 20
@@ -107,9 +124,9 @@ fun OrdersScreen(nav: NavHost) {
         scope.launch {
             tip = try {
                 TicketApi.accept(no)
-                true to "领取成功，工单已进入进行中"
+                true to s(R.string.toast_take_ok)
             } catch (e: Exception) {
-                false to "接单失败：${friendlyMessage(e)}"
+                false to s(R.string.toast_take_fail, friendlyMessage(e))
             }
             taking = ""
             refresh++
@@ -133,7 +150,7 @@ fun OrdersScreen(nav: NavHost) {
         },
     ) {
     Column(Modifier.fillMaxSize()) {
-        TopBar("工单列表", action = "刷新", onAction = { refresh++ })
+        TopBar(stringResource(R.string.orders_title), action = stringResource(R.string.orders_refresh), onAction = { refresh++ })
         FilterTabs(cur) { cur = it }
         if (tip != null) {
             val (ok, msg) = tip!!
@@ -141,8 +158,8 @@ fun OrdersScreen(nav: NavHost) {
                 modifier = Modifier.padding(horizontal = 16.dp))
         }
         when {
-            loading && items.isEmpty() -> HomeCard(topPadding = 0) { CardTitle("工单"); Loading() }
-            failed && items.isEmpty() -> HomeCard(topPadding = 0) { CardTitle("工单"); Notice("工单加载失败，请刷新重试。") }
+            loading && items.isEmpty() -> HomeCard(topPadding = 0) { CardTitle(stringResource(R.string.orders_card_title)); Loading() }
+            failed && items.isEmpty() -> HomeCard(topPadding = 0) { CardTitle(stringResource(R.string.orders_card_title)); Notice(stringResource(R.string.err_orders_load)) }
             else -> TicketList(items.take(visible), hasMore = visible < items.size, nav, onLoadMore = { visible += PAGE_SIZE }, taking = taking) { take(it) }
         }
     }
@@ -162,7 +179,7 @@ private fun TicketList(
     InfiniteScroll(listState, hasMore, onLoadMore)
     LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
         if (items.isEmpty()) {
-            item { EmptyState("暂无工单") }
+            item { EmptyState(stringResource(R.string.orders_empty)) }
         }
         items(items, key = { it.optString("ticketNo") }) { t ->
             TicketOrderCard(t, onTake = onTake, taking = taking) { nav.push(ticketScreen(t.optString("ticketNo"))) }
@@ -186,7 +203,7 @@ private fun InfiniteScroll(state: LazyListState, hasMore: Boolean, onLoadMore: (
 @Composable
 private fun Footer(hasMore: Boolean) {
     Text(
-        if (hasMore) "上拉加载更多…" else "已全部加载",
+        if (hasMore) stringResource(R.string.orders_load_more) else stringResource(R.string.orders_all_loaded),
         fontSize = 12.sp, color = Muted, textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
     )
@@ -201,7 +218,7 @@ private fun FilterTabs(current: String, onSelect: (String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SEGS.forEach { (key, label) ->
+        segs().forEach { (key, label) ->
             PillTab(label, active = key == current) { onSelect(key) }
         }
     }
@@ -222,9 +239,9 @@ private fun PillTab(label: String, active: Boolean, onClick: () -> Unit) {
     )
 }
 
-/** 分段选择器(HistoryScreen 复用,保留原公共签名)。 */
+/** 分段选择器(HistoryScreen 复用,保留原公共签名;默认段位文案三语)。 */
 @Composable
-fun SegRow(cur: String, onSelect: (String) -> Unit, segs: List<Pair<String, String>> = SEGS) {
+fun SegRow(cur: String, onSelect: (String) -> Unit, segs: List<Pair<String, String>> = defaultSegs()) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)
         .clip(RoundedCornerShape(9.dp))
         .background(Color(0xFFEEF0F3))

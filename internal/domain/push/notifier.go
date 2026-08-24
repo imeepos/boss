@@ -111,3 +111,10 @@ func (n *Notifier) record(ctx context.Context, r Record) {
 func TicketAssignedAlert(ticketNo, workerName string) (string, string) {
 	return "新派工单", fmt.Sprintf("工单 %s 已派给%s,请打开师傅端查看详情", ticketNo, workerName)
 }
+
+// ExtrasTicketNo 派单通知 extras 构造统一出口:键名 ticketNo 为跨端契约
+// (师傅端 Android PushClickReceiver 解析,兼容别名 ticket_no/orderNo/no,
+// 勿散落内联 map 改键名,详见 docs/plan/push-integration.md §6)。
+func ExtrasTicketNo(ticketNo string) map[string]string {
+	return map[string]string{"ticketNo": ticketNo}
+}

@@ -20,7 +20,16 @@ jobs:
         id: change
         run: |
           runtime=false
-          for path in $(git diff --name-only HEAD^ HEAD); do
+          # 变更面 = 相对第一父的 diff;若为合并提交,并上相对第二父的 diff。
+          # 只看 HEAD^ 会漏判:feature 侧先 merge main 再推送时,HEAD^ 是 feature tip,
+          # diff 只剩 main 侧带入的 docs 变更,运行时变更被误判为 docs-only 跳过部署
+          # (实测 task 2606:be312bb 带运行时代码却报 "deployment is skipped")。
+          files=$(git diff --name-only HEAD^ HEAD)
+          if git rev-parse --verify -q HEAD^2 >/dev/null 2>&1; then
+            files="$files
+          $(git diff --name-only HEAD^2 HEAD)"
+          fi
+          for path in $files; do
             case "$path" in
               docs/*|.agents/*|*.md) ;;
               *) runtime=true; break ;;

@@ -1,5 +1,6 @@
 package com.ymm.boss.worker.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,8 +39,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.ui.theme.Err
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
@@ -48,11 +51,12 @@ import com.ymm.boss.worker.ui.theme.Success
 import com.ymm.boss.worker.ui.theme.Warn
 import java.util.Calendar
 
-internal fun greetingFor(hour: Int): String = when (hour) {
-    in 5..10 -> "早上好"
-    in 11..12 -> "中午好"
-    in 13..17 -> "下午好"
-    else -> "晚上好"
+/** 问候语资源 id(小时段 → 文案),文案见各 values 目录 strings.xml 的 greeting_*。 */
+internal fun greetingRes(hour: Int): Int = when (hour) {
+    in 5..10 -> R.string.greeting_morning
+    in 11..12 -> R.string.greeting_noon
+    in 13..17 -> R.string.greeting_afternoon
+    else -> R.string.greeting_evening
 }
 
 internal data class HomeHeadState(
@@ -73,7 +77,7 @@ internal fun HomeHeader(state: HomeHeadState, onOpenMessages: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "${greetingFor(hour)}，${state.name.ifEmpty { "师傅" }}",
+                    "${stringResource(greetingRes(hour))}，${state.name.ifEmpty { stringResource(R.string.default_worker) }}",
                     fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold,
                     color = Color.White, maxLines = 1,
                 )
@@ -84,7 +88,7 @@ internal fun HomeHeader(state: HomeHeadState, onOpenMessages: () -> Unit) {
             }
             Box {
                 Icon(
-                    Icons.Outlined.Notifications, contentDescription = "消息通知",
+                    Icons.Outlined.Notifications, contentDescription = stringResource(R.string.cd_notifications),
                     tint = Color.White, modifier = Modifier
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .clip(CircleShape)
@@ -110,16 +114,16 @@ internal fun HomeHeader(state: HomeHeadState, onOpenMessages: () -> Unit) {
 internal fun OverviewCard(today: TodayStats) {
     HomeCard(topPadding = 0) {
         Text(
-            "今日概览", fontSize = 16.sp, lineHeight = 20.sp,
+            stringResource(R.string.home_overview_title), fontSize = 16.sp, lineHeight = 20.sp,
             fontWeight = FontWeight.Bold, color = Primary,
         )
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            SubInfo("接单", today.accepted, Primary, Modifier.weight(1f))
-            SubInfo("已完成", today.finished, Success, Modifier.weight(1f))
-            SubInfo("进行中", today.doing, Warn, Modifier.weight(1f))
+            SubInfo(stringResource(R.string.stat_accepted), today.accepted, Primary, Modifier.weight(1f))
+            SubInfo(stringResource(R.string.stat_finished), today.finished, Success, Modifier.weight(1f))
+            SubInfo(stringResource(R.string.stat_doing), today.doing, Warn, Modifier.weight(1f))
         }
     }
 }
@@ -174,20 +178,20 @@ internal fun CardHeader(title: String, more: String? = null, onMore: (() -> Unit
     }
 }
 
-// 快捷入口(对齐原宫格:排期/公告/任务池/手册/测速/领料/安全/维护)
-private data class QuickAction(val label: String, val icon: ImageVector, val tint: Color, val screen: Screen)
+// 快捷入口(对齐原宫格:排期/公告/任务池/手册/测速/领料/安全/维护);label 存资源 id
+private data class QuickAction(@StringRes val label: Int, val icon: ImageVector, val tint: Color, val screen: Screen)
 
 @Composable
 internal fun QuickActions(nav: NavHost) {
     val actions = listOf(
-        QuickAction("排期", Icons.Outlined.EventNote, Primary, Screen.Schedule),
-        QuickAction("公告", Icons.Outlined.Campaign, Success, Screen.Notice),
-        QuickAction("任务池", Icons.Outlined.Assignment, Warn, Screen.Hall),
-        QuickAction("手册", Icons.Outlined.MenuBook, Primary, Screen.Help),
-        QuickAction("测速", Icons.Outlined.Speed, Success, Screen.Tool()),
-        QuickAction("领料", Icons.Outlined.Inventory, Warn, Screen.Pickup),
-        QuickAction("安全", Icons.Outlined.HealthAndSafety, Primary, Screen.Safety),
-        QuickAction("维护", Icons.Outlined.Build, Success, Screen.Maintenance),
+        QuickAction(R.string.qa_schedule, Icons.Outlined.EventNote, Primary, Screen.Schedule),
+        QuickAction(R.string.qa_notice, Icons.Outlined.Campaign, Success, Screen.Notice),
+        QuickAction(R.string.qa_hall, Icons.Outlined.Assignment, Warn, Screen.Hall),
+        QuickAction(R.string.qa_help, Icons.Outlined.MenuBook, Primary, Screen.Help),
+        QuickAction(R.string.qa_speed, Icons.Outlined.Speed, Success, Screen.Tool()),
+        QuickAction(R.string.qa_pickup, Icons.Outlined.Inventory, Warn, Screen.Pickup),
+        QuickAction(R.string.qa_safety, Icons.Outlined.HealthAndSafety, Primary, Screen.Safety),
+        QuickAction(R.string.qa_maintenance, Icons.Outlined.Build, Success, Screen.Maintenance),
     )
     HomeCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -214,9 +218,9 @@ private fun GridItem(action: QuickAction, modifier: Modifier = Modifier, onClick
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(action.icon, contentDescription = action.label, tint = action.tint, modifier = Modifier.size(24.dp))
+        Icon(action.icon, contentDescription = stringResource(action.label), tint = action.tint, modifier = Modifier.size(24.dp))
         Text(
-            action.label, fontSize = 12.sp, lineHeight = 14.sp,
+            stringResource(action.label), fontSize = 12.sp, lineHeight = 14.sp,
             color = Ink, modifier = Modifier.padding(top = 6.dp),
             textAlign = TextAlign.Center, maxLines = 1,
         )

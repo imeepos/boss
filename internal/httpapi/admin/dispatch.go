@@ -57,7 +57,7 @@ func notifyTicketAssigned(a *app.Application, c *gin.Context, workerID int64, wo
 	title, alert := pushdomain.TicketAssignedAlert(ticketNo, workerName)
 	go func() {
 		_ = a.PushNotifier.NotifyWorker(context.WithoutCancel(c.Request.Context()),
-			workerID, title, alert, map[string]string{"ticketNo": ticketNo})
+			workerID, title, alert, pushdomain.ExtrasTicketNo(ticketNo))
 	}()
 }
 
