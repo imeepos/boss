@@ -12,6 +12,7 @@ import { StatsBand } from './StatsBand'
 import { Features } from './Features'
 import { Cases } from './Cases'
 import { NewsSection } from './NewsSection'
+import { DownloadSection } from './DownloadSection'
 import { CtaBanner } from './CtaBanner'
 import { Footer } from './Footer'
 import './home.css'
@@ -67,6 +68,12 @@ export default function HomePage() {
       <NewsSection
         title={h.newsTitle} subtitle={h.newsSubtitle} empty={h.newsEmpty}
         catNews={h.newsCatNews} catArticle={h.newsCatArticle}
+      />
+      <DownloadSection
+        title={h.dlTitle} subtitle={h.dlSubtitle}
+        userApp={h.dlUserApp} workerApp={h.dlWorkerApp}
+        userDesc={h.dlUserDesc} workerDesc={h.dlWorkerDesc}
+        button={h.dlButton} shaPrefix={h.dlShaPrefix}
       />
       <CtaBanner title={h.ctaBannerTitle} subtitle={h.ctaBannerSubtitle} buttonLabel={h.bookExclusive} onClick={goCta} />
       <Footer

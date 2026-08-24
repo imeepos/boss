@@ -125,6 +125,14 @@ export interface Translations {
       newsEmpty: string
       newsCatNews: string
       newsCatArticle: string
+      dlTitle: string
+      dlSubtitle: string
+      dlUserApp: string
+      dlWorkerApp: string
+      dlUserDesc: string
+      dlWorkerDesc: string
+      dlButton: string
+      dlShaPrefix: string
       newsBack: string
       newsNotFound: string
       cases: Array<{ icon: string; title: string; desc: string; metric: string }>
