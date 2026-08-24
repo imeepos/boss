@@ -17,8 +17,9 @@ import (
 )
 
 var (
-	mu  sync.RWMutex
-	loc = time.UTC
+	mu    sync.RWMutex
+	loc   = time.UTC
+	fixed *time.Time // 测试用固定时刻;nil 表示走真实墙钟
 )
 
 // Set 设定业务时区(IANA 名);空串保持现状(测试/降级场景)。
@@ -45,7 +46,26 @@ func Location() *time.Location {
 
 // Now 当前时刻,墙钟落在业务时区。
 func Now() time.Time {
-	return time.Now().In(Location())
+	now := time.Now().In(Location())
+	mu.RLock()
+	f := fixed
+	mu.RUnlock()
+	if f != nil {
+		return *f
+	}
+	return now
+}
+
+// SetFixed 将 Now() 钉在固定时刻(仅测试隔离用,消除执行日期/时区/日界竞态);
+// 零值清除,恢复真实墙钟。生产路径不调用,行为不受影响。
+func SetFixed(t time.Time) {
+	mu.Lock()
+	if t.IsZero() {
+		fixed = nil
+	} else {
+		fixed = &t
+	}
+	mu.Unlock()
 }
 
 // DayBounds 返回 t 所在业务日的绝对时间区间 [start, end);
