@@ -10,6 +10,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/backup"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/cms"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/geo"
@@ -40,7 +41,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, geo.ErrDuplicate),
 		errors.Is(err, billing.ErrDuplicateInvoice),
 		errors.Is(err, billing.ErrPaymentNotRefundable),
-		errors.Is(err, order.ErrChannelDuplicate):
+		errors.Is(err, order.ErrChannelDuplicate),
+		errors.Is(err, cms.ErrSlugTaken):
 		Respond(c, apitypes.CodeConflict, nil)
 	case errors.Is(err, user.ErrInvalidInput),
 		errors.Is(err, user.ErrRoleNotFound),
@@ -49,7 +51,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrForeignKeyViolation),
 		errors.Is(err, backup.ErrInvalidInput),
 		errors.Is(err, order.ErrInvalidInput),
-		errors.Is(err, ErrGeoInvalidParam):
+		errors.Is(err, ErrGeoInvalidParam),
+		errors.Is(err, cms.ErrInvalidPost):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
@@ -72,7 +75,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, portal.ErrNotFound),
 		errors.Is(err, backup.ErrNotFound),
 		errors.Is(err, metric.ErrNotFound),
-		errors.Is(err, metric.ErrETLNotFound):
+		errors.Is(err, metric.ErrETLNotFound),
+		errors.Is(err, cms.ErrPostNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, backup.ErrBusy):
 		Respond(c, apitypes.CodeResourceBusy, nil)

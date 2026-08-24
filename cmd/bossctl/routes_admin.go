@@ -314,4 +314,10 @@ var adminRoutes = []routeEntry{
 	{"GET", "/service-messages", "调度会话记录"},
 	{"POST", "/service-messages", "调度下发会话"},
 	{"GET", "/worker-schedules", "师傅月排期忙日"},
+	{"GET", "/site-posts", "官网内容列表(动态/新闻/文章,含草稿)"},
+	{"POST", "/site-posts", "新增官网内容"},
+	{"PUT", "/site-posts/:postId", "更新官网内容(版本自增)"},
+	{"DELETE", "/site-posts/:postId", "删除官网内容"},
+	{"GET", "/site/posts", "官网匿名读:已发布列表(公开)"},
+	{"GET", "/site/posts/:slug", "官网匿名读:已发布详情(公开)"},
 }

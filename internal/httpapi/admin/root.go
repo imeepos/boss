@@ -26,6 +26,8 @@ func registerAdminAuthRoot(r *gin.Engine, a *app.Application, mgr *auth.Manager)
 	api.POST("/auth/login", adminLoginHandler(a, mgr))
 	// 入驻申请公开提交(招商引资,免登录;admin 封闭账号模型的唯一自助入口)。
 	registerPartnerPublicRoutes(api, a)
+	// 官网内容匿名只读(仅 PUBLISHED,免登录;公开面最小投影)。
+	registerSitePublicRoutes(api, a)
 	authed := api.Group("")
 	authed.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudAdmin))
 	return authed
@@ -97,4 +99,5 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerNotifyRoutes(authed, a)
 	registerBackupRoutes(authed, a)
 	registerKnowledgeRoutes(authed, a)
+	registerSiteRoutes(authed, a)
 }
