@@ -2,6 +2,7 @@
 // 正文 Markdown 编辑:textarea + 简易预览切换,不引重型所见即所得(adopted note)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { uploadAttachment } from '../../../api/attachments'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
@@ -15,9 +16,9 @@ type Post = {
   version: number; authorName: string; updatedAt: string
 }
 
-type Form = Pick<Post, 'slug' | 'title' | 'category' | 'summary' | 'content' | 'status' | 'authorName'>
+type Form = Pick<Post, 'slug' | 'title' | 'category' | 'summary' | 'content' | 'status' | 'authorName' | 'coverAttachmentId'>
 
-const emptyForm: Form = { slug: '', title: '', category: 'NEWS', summary: '', content: '', status: 'DRAFT', authorName: '' }
+const emptyForm: Form = { slug: '', title: '', category: 'NEWS', summary: '', content: '', status: 'DRAFT', authorName: '', coverAttachmentId: 0 }
 const inputCls = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 
 export default function SitePostsPage() {
@@ -39,7 +40,7 @@ export default function SitePostsPage() {
 
   const open = (p?: Post) => {
     setEditing(p ?? null); setPreview(false)
-    setForm(p ? { slug: p.slug, title: p.title, category: p.category, summary: p.summary, content: p.content, status: p.status, authorName: p.authorName } : emptyForm)
+    setForm(p ? { slug: p.slug, title: p.title, category: p.category, summary: p.summary, content: p.content, status: p.status, authorName: p.authorName, coverAttachmentId: p.coverAttachmentId } : emptyForm)
   }
   const save = async () => {
     setBusy(true)
@@ -47,6 +48,15 @@ export default function SitePostsPage() {
       await apiFetch(editing ? `/site-posts/${editing.id}` : '/site-posts', { method: editing ? 'PUT' : 'POST', body: form })
       setEditing(undefined); load()
     } catch (e) { setError(e instanceof Error ? e.message : s.saveFail); setBusy(false) }
+  }
+  const uploadCover = async (f: File | undefined) => {
+    if (!f) return
+    setBusy(true)
+    try {
+      const at = await uploadAttachment(f)
+      if (at) setForm((v) => ({ ...v, coverAttachmentId: at.id }))
+    } catch (e) { setError(e instanceof Error ? e.message : s.actionFail) }
+    setBusy(false)
   }
   const remove = async (p: Post) => {
     if (!(await confirm(s.deleteConfirm, { danger: true }))) return
@@ -103,6 +113,13 @@ export default function SitePostsPage() {
           <div className="mt-1"><Dropdown options={[{ value: 'DRAFT', label: s.stDraft }, { value: 'PUBLISHED', label: s.stPublished }, { value: 'OFFLINE', label: s.stOffline }]} value={stLabel(form.status)} onChange={(v) => setForm({ ...form, status: v })} ariaLabel={s.fStatus} /></div>
         </label>
         <label className="text-xs">{s.fAuthor}<input className={inputCls + ' mt-1'} value={form.authorName} onChange={(e) => setForm({ ...form, authorName: e.target.value })} /></label>
+        <label className="text-xs">{s.fCover}
+          <input className="mt-1 block w-full text-xs text-[var(--shell-content-text)] file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-[var(--shell-input-border)] file:bg-[var(--shell-input-bg)] file:px-3 file:py-1.5 file:text-xs" type="file" accept="image/*" onChange={(e) => uploadCover(e.target.files?.[0])} />
+        </label>
+        {form.coverAttachmentId > 0 && <div className="flex items-center gap-3 text-xs text-[var(--shell-content-text)]">
+          <span>#{form.coverAttachmentId}</span>
+          <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] px-3 text-xs" onClick={() => setForm({ ...form, coverAttachmentId: 0 })}>{s.fCoverRemove}</button>
+        </div>}
         <label className="text-xs">{s.fSummary}<input className={inputCls + ' mt-1'} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} /></label>
       </div>
       <div className="mt-3">

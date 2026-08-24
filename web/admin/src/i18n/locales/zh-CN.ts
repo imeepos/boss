@@ -1106,6 +1106,8 @@ const zhCN: Translations = {
       fContent: '正文(Markdown)',
       fStatus: '状态',
       fAuthor: '作者',
+      fCover: '封面图',
+      fCoverRemove: '移除封面',
       categoryOptions: ['动态/新闻','文章'],
       statusOptions: ['草稿','已发布','已下线'],
       catNews: '动态/新闻',

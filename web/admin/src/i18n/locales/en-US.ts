@@ -1106,6 +1106,8 @@ const enUS: Translations = {
       fContent: 'Content (Markdown)',
       fStatus: 'Status',
       fAuthor: 'Author',
+      fCover: 'Cover image',
+      fCoverRemove: 'Remove cover',
       categoryOptions: ['News','Article'],
       statusOptions: ['Draft','Published','Offline'],
       catNews: 'News',

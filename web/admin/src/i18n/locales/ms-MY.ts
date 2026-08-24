@@ -1106,6 +1106,8 @@ const msMY: Translations = {
       fContent: 'Kandungan (Markdown)',
       fStatus: 'Status',
       fAuthor: 'Penulis',
+      fCover: 'Imej muka depan',
+      fCoverRemove: 'Buang muka depan',
       categoryOptions: ['Berita','Artikel'],
       statusOptions: ['Draf','Diterbitkan','Di luar talian'],
       catNews: 'Berita',
