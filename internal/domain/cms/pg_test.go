@@ -101,6 +101,23 @@ func TestPGStore_CreatePost_SlugTaken(t *testing.T) {
 	}
 }
 
+// TestPGStore_CreatePost_PublishedAtOnce 契约:创建即 PUBLISHED 也落发布时间(102 回放发现的缺陷)。
+func TestPGStore_CreatePost_PublishedAtOnce(t *testing.T) {
+	mock := newMock(t)
+	mock.ExpectQuery(`INSERT INTO cms_posts`).WithArgs(
+		"go-live", "t", "NEWS", "s", nil, "c", StatusPublished, "a").
+		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int64(2)))
+
+	if _, err := NewPGStore(mock).CreatePost(context.Background(),
+		Post{Slug: "go-live", Title: "t", Summary: "s", Content: "c",
+			Status: StatusPublished, AuthorName: "a"}); err != nil {
+		t.Fatalf("create published: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // TestPGStore_UpdatePost_SetsPublishedAt 契约:置 PUBLISHED 且从未发布时落 now()。
 func TestPGStore_UpdatePost_SetsPublishedAt(t *testing.T) {
 	mock := newMock(t)

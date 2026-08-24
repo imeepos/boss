@@ -100,8 +100,9 @@ func (s *PGStore) CreatePost(ctx context.Context, p Post) (int64, error) {
 	}
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO cms_posts(slug, title, category, summary, cover_attachment_id, content, status, author_name)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+		INSERT INTO cms_posts(slug, title, category, summary, cover_attachment_id, content, status, author_name,
+			published_at)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $7='PUBLISHED' THEN now() END) RETURNING id`,
 		p.Slug, p.Title, p.Category, p.Summary, intOrNil(p.CoverAttachment), p.Content, p.Status, p.AuthorName).
 		Scan(&id)
 	if isUniqueViolation(err) {
