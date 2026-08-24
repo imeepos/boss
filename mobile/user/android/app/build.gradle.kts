@@ -27,6 +27,8 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        // JUnit4/Compose 用例必须走 AndroidJUnitRunner;AGP 缺省注册老 InstrumentationTestRunner,connected 会静默跑 0 个用例
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {

@@ -28,6 +28,8 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        // 防 user 端同款坑:缺省老 InstrumentationTestRunner 对 JUnit4 静默跑 0 用例(目前无 androidTest,先占位)
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "JPUSH_APPKEY", "\"${jpushAppKey()}\"")
         // JPush AAR manifest 自带 ${JPUSH_APPKEY}/${JPUSH_CHANNEL} 占位,经 placeholders 注入。
         manifestPlaceholders["JPUSH_APPKEY"] = jpushAppKey()

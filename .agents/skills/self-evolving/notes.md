@@ -553,3 +553,8 @@
 - scan/latest 加 scannedAt:零值=启动后未完成过扫描,102 实测 boot 后 0001-01-01、手动扫描后带真实时刻;原先"重启后 checked=0 被误读为回归"的坑关闭。
 - 合并协议止损线:连续 3 次 diverging 即停,推远端后错峰;本轮收尾一次 ff 成功未触发,但规则已固化为 adopted note。
 - 未完成:cdr_compensation 表级错峰证据(等真实待补话单);4 条无执行器 ETL 任务处置需业务裁决,未单方面禁用。
+
+## 2026-08-24 user-android 第三轮（connected 实跑 + E2E + 后端 addressId 修复）
+- 哪个坑浪费最多时间：①connected "BUILD SUCCESSFUL" 其实 0 用例（runner 缺省错误）；②模拟器 uiautomator 点 Compose 控件同坐标结果随机（键盘开关/列表滚动致 bounds 漂移），E2E 点击级断言始终不稳。
+- skill 有没有提前警告：部分——"数据加载稳定后再取坐标"有记录，但没警告"每次点击前必须重新 dump 取 bounds"和"grep 判页面可能匹配到旧文本"。
+- 重来一次会怎么做：E2E 优先 API 级闭环（登录→端点→DB 断言），UI 点击只做可达性冒烟；connected 先看结果 XML 的 tests 数再相信 BUILD。
