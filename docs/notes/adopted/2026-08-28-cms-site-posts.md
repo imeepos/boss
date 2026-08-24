@@ -23,3 +23,16 @@
 社区共识（Ghost/Strapi/textpattern 类内容模型）：title/slug/summary/cover/content +
 DRAFT/PUBLISHED 状态机 + 公开端只吐已发布 + version 自增防并发覆盖。本地范式抄
 cs_knowledge_articles（000118）。
+
+## Amended（2026-08-24 本轮修订，见 feat/cms-editor-categories）
+
+1. **决策 1（分类）修订**：分类从 NEWS/ARTICLE 枚举改为自定义字典表
+   `cms_categories`（000138）。Why：运营需要自定义分类与排序/启停管理；
+   放弃了：保留双枚举（无法扩展）。存量约束：code 被文章引用时禁删/禁改 code。
+2. **决策 3（编辑器）修订**：保留"正文 Markdown 而非富文本 HTML"的 XSS 裁定，
+   但编辑体验升级为工具栏 + react-markdown 双栏实时预览（Ghost 式），
+   图片经附件域（MinIO/S3）上传后以 `](att/N)` 引用；公开读由后端重写为
+   `/site/posts/:slug/img/:attId`（仅"该文引用 + image/*"，防枚举）。
+   放弃了：引入 TipTap 类所见即所得（HTML 输出重新打开 XSS 面 + 重依赖）。
+3. 新增裁定：添加/编辑走独立路由页（/boss/site/new、/:postId），
+   列表页只留列表，内联表单废弃。
