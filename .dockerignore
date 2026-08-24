@@ -10,11 +10,6 @@ server
 bossctl
 docs/
 scripts/
-api/
-cmd/
-internal/
-pkg/
-migrations/
 designs/
 mobile/
 web/h5/
