@@ -70,10 +70,10 @@ paths:
                         items:
                           type: object
                           properties:
-                            ID: { type: integer, format: int64 }
-                            Code: { type: string, example: HALL }
-                            Name: { type: string }
-                            Status: { type: string, enum: [ACTIVE, DISABLED] }
+                            id: { type: integer, format: int64 }
+                            code: { type: string, example: HALL }
+                            name: { type: string }
+                            status: { type: string, enum: [ACTIVE, DISABLED] }
     post:
       tags: [Provision]
       summary: 置备下单渠道(HALL营业厅/ONLINE线上/AGENT代理商;code 重复返回 40900)
