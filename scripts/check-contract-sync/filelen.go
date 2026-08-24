@@ -1,4 +1,5 @@
-// 检查 C:非 test 的 .go 文件不得超过 300 行(AGENTS.md 红线),存量超标走 baseline 豁免。
+// 检查 C:非 test 源文件不得超过 300 行(AGENTS.md 红线),存量超标走 baseline 豁免。
+// Go 侧覆盖 internal/pkg/cmd;Kotlin 侧覆盖 mobile/*/android/app/src/main(手写页面红线)。
 package main
 
 import (
@@ -11,14 +12,25 @@ import (
 
 func checkFileLen(root string) int {
 	fails := 0
+	fails += walkLen(root, []string{"internal", "pkg", "cmd"}, ".go", func(p string) bool {
+		return strings.HasSuffix(p, "_test.go") || isGenerated(p)
+	})
+	for _, d := range []string{"mobile/worker/android", "mobile/user/android"} {
+		fails += walkLen(root, []string{filepath.Join(d, "app/src/main")}, ".kt", func(string) bool { return false })
+	}
+	if fails == 0 {
+		fmt.Println("C OK 非测试文件均 <=300 行(豁免除外)")
+	}
+	return fails
+}
+
+func walkLen(root string, dirs []string, ext string, skip func(string) bool) int {
+	fails := 0
 	base := loadBaseline()
-	for _, dir := range []string{"internal", "pkg", "cmd"} {
+	for _, dir := range dirs {
 		filepath.Walk(filepath.Join(root, dir), func(p string, fi os.FileInfo, err error) error {
-			if err != nil || fi.IsDir() || !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
+			if err != nil || fi.IsDir() || !strings.HasSuffix(p, ext) || skip(p) {
 				return nil
-			}
-			if isGenerated(p) {
-				return nil // 生成文件(如 bossctl 路由目录)不受手写红线约束
 			}
 			n := countLines(p)
 			if n > 300 {
@@ -31,9 +43,6 @@ func checkFileLen(root string) int {
 			}
 			return nil
 		})
-	}
-	if fails == 0 {
-		fmt.Println("C OK 非测试文件均 <=300 行(豁免除外)")
 	}
 	return fails
 }

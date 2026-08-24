@@ -273,3 +273,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-28 新路由的契约登记源是 api/openapi/*.yaml(A 检查),cmd/bossctl/routes_admin.go 只是 CLI 目录;两处都要加,漏 yaml 必红灯。
 - 2026-08-28 免鉴权公开端点三原则:只读最小投影手动挑字段、非公开态统一 404 不泄露存在性、挂靠既有 public 子路由先例不新开路由组。
 - 2026-08-28 前端区块接后端数据且业务上可能为空时,空态/失败态整块 return null 隐藏,不留空白占位区(官网首页 NewsSection 模式)。
+- AGP 未声明 testInstrumentationRunner 时用老 InstrumentationTestRunner，JUnit4/Compose 用例 connectedDebugAndroidTest 静默跑 0 个且 BUILD SUCCESSFUL——必须看结果 XML tests 数（2026-08-24 user/worker 端均中招）。
+- 模拟器 uiautomator 点 Compose 控件：每次点击前重新 dump 取 bounds（键盘开合/滚动/懒加载都会漂移）；判定页面跳转不要 grep 旧文本可能残留，应用标题类唯一节点。点击级 E2E 不稳时降级为 API 级闭环（登录→端点→DB 断言）（2026-08-24 变更地址 E2E）。
+- Go 后端 map[string]any 出 JSON 的 ID 字段：pgx bigint 扫成 int64，toStr 若只认 string 则 ID 恒空；handler 层 toStr/toBool 工具必须覆盖 int64/int（2026-08-24 /addresses addressId 全空）。

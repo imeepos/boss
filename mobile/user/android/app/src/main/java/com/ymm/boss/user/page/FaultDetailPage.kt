@@ -73,8 +73,9 @@ fun FaultDetailScreen(nav: Nav, no: String) {
             val fault = d.optJSONObject("fault") ?: JSONObject()
             InfoCard(fault, d)
             TimelineCard(d.optJSONArray("timeline").toObjList())
-            ActionsCard(no) { reloadKey++ }
         }
+        // 动作只依赖工单号,不依赖详情数据;加载中/失败也保持可联系师傅、可催单。
+        ActionsCard(no) { reloadKey++ }
         Spacer(Modifier.height(12.dp))
     }
 }

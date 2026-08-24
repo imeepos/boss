@@ -547,3 +547,8 @@
 ## 2026-08-28 客户端版本管理需求复盘(纯盘点,无代码)
 - 结论:四项需求(官网下载入口/admin 版本管理+灰度白名单/两端在线更新弹框/个人中心检查更新)全部未开工;已有底座是 android-apk CI 出包、cms 官网内容域、crash 日志域。
 - 教训:接手"复盘当前阶段"类任务时,先用 grep/ls 对需求逐条找落点再下结论,不凭 commit message 印象;本次确认 internal 无任何 app release/灰度域,避免虚报"已部分完成"。
+
+## 2026-08-24 user-android 第三轮（connected 实跑 + E2E + 后端 addressId 修复）
+- 哪个坑浪费最多时间：①connected "BUILD SUCCESSFUL" 其实 0 用例（runner 缺省错误）；②模拟器 uiautomator 点 Compose 控件同坐标结果随机（键盘开关/列表滚动致 bounds 漂移），E2E 点击级断言始终不稳。
+- skill 有没有提前警告：部分——"数据加载稳定后再取坐标"有记录，但没警告"每次点击前必须重新 dump 取 bounds"和"grep 判页面可能匹配到旧文本"。
+- 重来一次会怎么做：E2E 优先 API 级闭环（登录→端点→DB 断言），UI 点击只做可达性冒烟；connected 先看结果 XML 的 tests 数再相信 BUILD。
