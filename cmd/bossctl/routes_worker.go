@@ -31,6 +31,7 @@ var workerRoutes = []routeEntry{
 	{"POST", "/safety/checks", "安全作业确认上报(高风险作业先确认留痕)"},
 	{"POST", "/attachments/upload", "附件上传(multipart/form-data,字段 file;单文件上限 32MB)"},
 	{"POST", "/push/device", "推送设备上报(师傅 App 启动/登录后上报 JPush RegistrationID)"},
+	{"POST", "/client/crash", "客户端崩溃日志上报(App 启动补传本地留痕,成功即删本地文件)"},
 	{"GET", "/profile", "我的(个人信息 + 本月累计)"},
 	{"GET", "/performance", "绩效明细(提成/排名/评分)"},
 	{"GET", "/schedule", "排期日历(月度标记 + 今日排期)"},

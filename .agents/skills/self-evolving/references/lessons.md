@@ -273,3 +273,12 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-28 新路由的契约登记源是 api/openapi/*.yaml(A 检查),cmd/bossctl/routes_admin.go 只是 CLI 目录;两处都要加,漏 yaml 必红灯。
 - 2026-08-28 免鉴权公开端点三原则:只读最小投影手动挑字段、非公开态统一 404 不泄露存在性、挂靠既有 public 子路由先例不新开路由组。
 - 2026-08-28 前端区块接后端数据且业务上可能为空时,空态/失败态整块 return null 隐藏,不留空白占位区(官网首页 NewsSection 模式)。
+- AGP 未声明 testInstrumentationRunner 时用老 InstrumentationTestRunner，JUnit4/Compose 用例 connectedDebugAndroidTest 静默跑 0 个且 BUILD SUCCESSFUL——必须看结果 XML tests 数（2026-08-24 user/worker 端均中招）。
+- 模拟器 uiautomator 点 Compose 控件：每次点击前重新 dump 取 bounds（键盘开合/滚动/懒加载都会漂移）；判定页面跳转不要 grep 旧文本可能残留，应用标题类唯一节点。点击级 E2E 不稳时降级为 API 级闭环（登录→端点→DB 断言）（2026-08-24 变更地址 E2E）。
+- Go 后端 map[string]any 出 JSON 的 ID 字段：pgx bigint 扫成 int64，toStr 若只认 string 则 ID 恒空；handler 层 toStr/toBool 工具必须覆盖 int64/int（2026-08-24 /addresses addressId 全空）。
+- 2026-08-28 部署探针必须先做区分度审查:旧代码同样回 404 的路径不能当"新代码已上线"的判据(cover 端点踩坑);可靠判据只有两类:前端 bundle 里 grep 新 i18n 字符串/符号,或后端制造新代码专属状态(如带封面的 200 图片流)再轮询。
+- 2026-08-28 公开图片类资源走"父资源门控"端点(/site/posts/:slug/cover 先验 PUBLISHED 再吐附件),不暴露 /attachments/:id 通用读,防枚举他人附件;非 image/* 一律 404。
+- 2026-08-28 匿名页图片不能引用需鉴权的附件端点;/attachments/:id/content 带 token 才 200,公开场景必须由后端提供免鉴权受控流。
+- 2026-08-28 SPA 懒加载页面符号不在 entry bundle,验证部署看 entry 里的 i18n 文案字符串(必在主包);markdown 渲染断言用 DOM eval(li 数/strong 文本/img naturalWidth),不靠截图目测。
+- 用脚本向 TSX 批量插代码时,锚点必须选模块级唯一行(如 `export default function`),插进 JSX 内部只有 typecheck 能兜底;插完立刻跑 typecheck。
+- ff-merge 在多人并行仓库可能连续失败 2-3 次(main 实时前进),协议动作是"merge main→门禁→push→ff-only"循环,不是放弃或删树。

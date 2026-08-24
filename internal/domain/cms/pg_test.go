@@ -36,14 +36,14 @@ func row(id int64, slug, status string) *pgxmock.Rows {
 // TestValidate 契约:非法 slug/超长 title/非法枚举/空正文一律 ErrInvalidPost。
 func TestValidate(t *testing.T) {
 	base := func() Post {
-		return Post{Title: "t", Slug: "hello-world", Category: CategoryNews,
+		return Post{Title: "t", Slug: "hello-world", Category: "NEWS",
 			Summary: "s", Content: "c", Status: StatusDraft}
 	}
 	cases := []func(*Post){
 		func(p *Post) { p.Slug = "Bad_Slug" },
 		func(p *Post) { p.Slug = "-leading" },
 		func(p *Post) { p.Title = "" },
-		func(p *Post) { p.Category = "BLOG" },
+		func(p *Post) { p.Category = "blog" }, // 小写非法 code;存在性/启用另由 categoryUsable 拦
 		func(p *Post) { p.Status = "SCHEDULED" },
 		func(p *Post) { p.Content = "" },
 	}
@@ -68,7 +68,7 @@ func TestPGStore_ListPublished(t *testing.T) {
 		WillReturnRows(row(1, "a", StatusPublished))
 
 	s := NewPGStore(mock)
-	got, err := s.ListPublished(context.Background(), CategoryNews, 10)
+	got, err := s.ListPublished(context.Background(), "NEWS", 10)
 	if err != nil || len(got) != 1 || got[0].Slug != "a" {
 		t.Fatalf("got=%+v err=%v", got, err)
 	}
@@ -88,9 +88,16 @@ func TestPGStore_GetPublishedBySlug_HidesDraft(t *testing.T) {
 	}
 }
 
+// expectCatUsable 桩掉 Create/Update 前的分类存在+启用预检。
+func expectCatUsable(mock pgxmock.PgxPoolIface, code string) {
+	mock.ExpectQuery(`SELECT enabled FROM cms_categories`).
+		WithArgs(code).WillReturnRows(pgxmock.NewRows([]string{"enabled"}).AddRow(true))
+}
+
 // TestPGStore_CreatePost_SlugTaken 契约:slug 唯一冲突映射 ErrSlugTaken。
 func TestPGStore_CreatePost_SlugTaken(t *testing.T) {
 	mock := newMock(t)
+	expectCatUsable(mock, "NEWS")
 	mock.ExpectQuery(`INSERT INTO cms_posts`).WithArgs(
 		"dup", "t", "NEWS", "s", nil, "c", StatusDraft, "").
 		WillReturnError(&pgconn.PgError{Code: "23505"})
@@ -104,6 +111,7 @@ func TestPGStore_CreatePost_SlugTaken(t *testing.T) {
 // TestPGStore_CreatePost_PublishedAtOnce 契约:创建即 PUBLISHED 也落发布时间(102 回放发现的缺陷)。
 func TestPGStore_CreatePost_PublishedAtOnce(t *testing.T) {
 	mock := newMock(t)
+	expectCatUsable(mock, "NEWS")
 	mock.ExpectQuery(`INSERT INTO cms_posts`).WithArgs(
 		"go-live", "t", "NEWS", "s", nil, "c", StatusPublished, "a").
 		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -121,6 +129,7 @@ func TestPGStore_CreatePost_PublishedAtOnce(t *testing.T) {
 // TestPGStore_UpdatePost_SetsPublishedAt 契约:置 PUBLISHED 且从未发布时落 now()。
 func TestPGStore_UpdatePost_SetsPublishedAt(t *testing.T) {
 	mock := newMock(t)
+	expectCatUsable(mock, "NEWS")
 	mock.ExpectExec(`UPDATE cms_posts`).WithArgs(
 		int64(1), "a", "t", "NEWS", "s", nil, "c", StatusPublished, "").
 		WillReturnResult(pgconn.NewCommandTag("UPDATE 1"))

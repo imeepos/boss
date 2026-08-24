@@ -20,10 +20,10 @@ paths:
               properties:
                 slug: { type: string }
                 title: { type: string }
-                category: { type: string, enum: [NEWS, ARTICLE], default: NEWS }
+                category: { type: string, description: cms_categories.code, default: NEWS }
                 summary: { type: string }
                 coverAttachmentId: { type: integer, format: int64 }
-                content: { type: string }
+                content: { type: string, description: Markdown, 正文图片引用 ](att/N) }
                 status: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE], default: DRAFT }
                 authorName: { type: string }
       responses:
@@ -46,10 +46,10 @@ paths:
               properties:
                 slug: { type: string }
                 title: { type: string }
-                category: { type: string, enum: [NEWS, ARTICLE] }
+                category: { type: string, description: cms_categories.code }
                 summary: { type: string }
                 coverAttachmentId: { type: integer, format: int64 }
-                content: { type: string }
+                content: { type: string, description: Markdown }
                 status: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE] }
                 authorName: { type: string }
       responses:
@@ -69,7 +69,7 @@ paths:
       summary: 官网匿名读(公开,免登录):已发布列表,发布时间倒序
       operationId: listPublicSitePosts
       parameters:
-        - { name: category, in: query, schema: { type: string, enum: [NEWS, ARTICLE] } }
+        - { name: category, in: query, schema: { type: string, description: cms_categories.code } }
         - { name: limit, in: query, schema: { type: integer, default: 10, maximum: 50 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
@@ -96,3 +96,74 @@ paths:
           content:
             image/*: { schema: { type: string, format: binary } }
         '404': { description: 非已发布/无封面/非图片 }
+
+  /site/posts/{slug}/img/{attId}:
+    get:
+      tags: [CMS]
+      summary: 官网匿名读(公开):正文图片流,仅吐该文 Markdown 确实引用的 image/* 附件
+      operationId: getPublicSitePostImage
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+        - { name: attId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 图片二进制(inline, max-age=300)
+          content:
+            image/*: { schema: { type: string, format: binary } }
+        '404': { description: 非已发布/正文未引用/非图片 }
+
+  /site-categories:
+    get:
+      tags: [CMS]
+      summary: 官网分类字典列表(sort_no 升序,menu:site)
+      operationId: listSiteCategories
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [CMS]
+      summary: 新增官网分类
+      operationId: createSiteCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: { type: string, description: 大写蛇形 2~32 位 }
+                name: { type: string }
+                sortNo: { type: integer, default: 0 }
+                enabled: { type: boolean, default: true }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /site-categories/{catId}:
+    put:
+      tags: [CMS]
+      summary: 更新官网分类(code 被文章引用时禁改,返回 40900)
+      operationId: updateSiteCategory
+      parameters:
+        - { name: catId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: { type: string }
+                name: { type: string }
+                sortNo: { type: integer }
+                enabled: { type: boolean }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [CMS]
+      summary: 删除官网分类(仍被文章引用时 40900)
+      operationId: deleteSiteCategory
+      parameters:
+        - { name: catId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

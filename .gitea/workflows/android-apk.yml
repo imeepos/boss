@@ -1,5 +1,6 @@
 # Android APK 出包:main 分支改 mobile/*/android 时构建 worker/user 两端 release APK,
-# 归档到宿主 /srv/boss/apk/<sha>/。与 deploy-102 同风格:纯 run 步骤,不依赖 marketplace action。
+# 产物归档宿主 docker 命名卷 boss-apk-artifacts/<sha>/(job 容器文件系统随任务销毁,
+# 不能写容器内路径;保留最近 20 个 sha)。与 deploy-102 同风格:纯 run 步骤,不依赖 marketplace action。
 # 镜像 192.168.0.102:5000/boss/android-builder:1(自建:102 无法直连 Docker Hub,
 # daocloud 镜像源白名单不含 cimg/android;基座 eclipse-temurin17 + Google 官方源
 # cmdline-tools,Dockerfile 见 deployments/docker/android-builder.Dockerfile)。
@@ -20,7 +21,6 @@ on:
 
 env:
   IMG: 192.168.0.102:5000/boss/android-builder:1
-  OUT: /srv/boss/apk
 
 jobs:
   build:
@@ -60,26 +60,48 @@ jobs:
           JPUSH_APP_KEY: ${{ secrets.JPUSH_APP_KEY }}
         run: |
           set -e
-          OUTDIR="$OUT/$GITHUB_SHA"
+          OUTDIR="/tmp/apk/$GITHUB_SHA"
           mkdir -p "$OUTDIR"
           build_one() {
             local dir="$1" name="$2"
             echo "=== build $name ==="
-            cd "$dir"
-            echo "sdk.dir=/opt/android-sdk" > local.properties
-            docker run --rm --user root -v "$PWD":/prj -w /prj \
+            echo "sdk.dir=/opt/android-sdk" > "$dir/local.properties"
+            # job 容器内 $PWD 对宿主 daemon 不可见(-v bind mount 会挂空目录),
+            # 改走 docker create + cp(与 deploy-102 用 build context 同理,不依赖路径)
+            local cid
+            cid=$(docker create -w /prj --user root \
               -v boss-gradle-home:/root/.gradle -e GRADLE_USER_HOME=/root/.gradle \
               -v boss-android-sdk:/opt/android-sdk \
               -e JPUSH_APP_KEY="$JPUSH_APP_KEY" "$IMG" \
-              ./gradlew assembleRelease --quiet -PjpushAppKey="${JPUSH_APP_KEY:-}"
-            cp app/build/outputs/apk/release/app-release.apk "$OUTDIR/$name.apk"
-            cd - >/dev/null
+              ./gradlew assembleRelease --quiet -PjpushAppKey="${JPUSH_APP_KEY:-}")
+            trap 'docker rm -f $cid >/dev/null 2>&1 || true' EXIT
+            docker cp "$dir/." "$cid:/prj/"
+            docker start -a "$cid"
+            docker cp "$cid:/prj/app/build/outputs/apk/release/app-release.apk" "$OUTDIR/$name.apk"
+            docker rm "$cid" >/dev/null
           }
           build_one mobile/worker/android boss-worker
           build_one mobile/user/android boss-user
+          echo "$OUTDIR" > /tmp/apk-dir
 
-      - name: Checksum
+      - name: Archive APKs
+        # job 容器文件系统随任务销毁,/srv/boss/apk 写进去即丢(run 1526 实证);
+        # 持久化走宿主命名卷 boss-apk-artifacts,保留最近 20 个 sha 目录。
+        # 取件:docker run --rm -v boss-apk-artifacts:/a alpine ls -R /a
+        #      docker run --rm -v boss-apk-artifacts:/a alpine cat /a/<sha>/boss-worker.apk > boss-worker.apk
         run: |
-          cd "$OUT/$GITHUB_SHA"
+          set -e
+          OUTDIR=$(cat /tmp/apk-dir)
+          cd "$OUTDIR"
           sha256sum *.apk | tee SHA256SUMS
-          echo "APKs at: $OUT/$GITHUB_SHA"
+          V=boss-apk-artifacts
+          A=docker.m.daocloud.io/library/alpine:3
+          docker pull -q "$A" >/dev/null
+          docker run --rm -v $V:/out "$A" mkdir -p /out/$GITHUB_SHA
+          holder=$(docker create -v $V:/out "$A" true)
+          for f in boss-worker.apk boss-user.apk SHA256SUMS; do
+            docker cp "$f" "$holder:/out/$GITHUB_SHA/"
+          done
+          docker rm "$holder" >/dev/null
+          docker run --rm -v $V:/out "$A" sh -c 'ls -1t /out | tail -n +21 | xargs -r rm -rf'
+          echo "APKs archived in docker volume: $V/$GITHUB_SHA"

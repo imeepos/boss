@@ -68,5 +68,6 @@
 | 2026-08-26 | 新建 promotion 营销促销域(000102):券模板/兑换/转赠/缴费抵扣核销从 userdata 独立;billing 经 CouponDeductor 注入实现同事务核销 | adopted/2026-08-26-promotion-domain.md |
 | 2026-08-27 | 税务属地配置挂法人(000109):legal_entities.tax_jurisdiction/tax_channel 为配置源,开票经 bills.legal_entity_id 快照落票;区域定属地/独立配置表/手工指定被否决 | adopted/2026-08-27-tax-jurisdiction-on-legal-entity.md |
 | 2026-08-28 | 客户端版本发布域 apprelease(000137):双门槛升级判定+确定性灰度分桶;APK 入 MinIO;免登录检查挂各端 pub 组;不做差分/渠道/热修复 | adopted/2026-08-28-app-release-domain.md |
+| 2026-08-28 | worktree 合并协议止损线:同一分支连续 re-sync 达 3 次未合入即停止竞速,推送保安全后与活跃会话错峰;无限重试(活锁)与中央合入队列被否决 | adopted/2026-08-28-worktree-merge-circuit-breaker.md |
 
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。

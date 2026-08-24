@@ -1,6 +1,8 @@
 package adminapi
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -46,6 +48,11 @@ func sitePublicDetailHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		// 正文附件引用 att/N 重写为公开图片端点 URL,官网渲染零鉴权直引。
+		slug := p.Slug
+		p.Content = cms.RewriteAttRefs(p.Content, func(id int64) string {
+			return siteImgURLPrefix + slug + "/img/" + strconv.FormatInt(id, 10)
+		})
 		respond(c, apitypes.CodeOK, sitePublicView(*p))
 	}
 }
