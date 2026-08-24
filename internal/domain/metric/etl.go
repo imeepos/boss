@@ -135,13 +135,38 @@ func (s *MemoryETLStore) DisableJob(_ context.Context, k string) error {
 	s.Jobs[k] = j
 	return nil
 }
-func (s *MemoryETLStore) RecordRun(_ context.Context, r ETLJobRun) error {
-	j, ok := s.Jobs[r.JobKey]
-	if !ok {
-		return ErrETLNotFound
+func normalizeRun(r ETLJobRun) (ETLJobRun, error) {
+	if r.JobKey == "" {
+		return r, errors.New("metric: jobKey required")
+	}
+	if r.Status != ETLRunning && r.Status != ETLSuccess && r.Status != ETLFailed {
+		return r, errors.New("metric: invalid run status")
 	}
 	if r.StartedAt.IsZero() {
 		r.StartedAt = time.Now()
+	}
+	if r.Status == ETLRunning && r.FinishedAt != nil {
+		return r, errors.New("metric: running run cannot have finishedAt")
+	}
+	if r.FinishedAt != nil && r.FinishedAt.Before(r.StartedAt) {
+		return r, errors.New("metric: finishedAt before startedAt")
+	}
+	if (r.Status == ETLSuccess || r.Status == ETLFailed) && r.FinishedAt == nil {
+		now := time.Now()
+		r.FinishedAt = &now
+	}
+	return r, nil
+}
+
+func (s *MemoryETLStore) RecordRun(_ context.Context, r ETLJobRun) error {
+	var err error
+	r, err = normalizeRun(r)
+	if err != nil {
+		return err
+	}
+	j, ok := s.Jobs[r.JobKey]
+	if !ok {
+		return ErrETLNotFound
 	}
 	r.ID = s.NextID
 	s.NextID++

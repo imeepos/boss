@@ -179,6 +179,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	app.CompTask = report.NewCompTaskService(reportStore)
 	app.Metric = metric.NewPGStore(pool)
 	app.ETL = metric.NewPGStore(pool)
+	app.ETLScanner = NewETLScanner(app.ETL, app.CompTask)
 
 	// 债务偿还:gRPC aaa/v1 依赖——授权器 + 话单投递 + W8 事件链(见 wiring_events.go)。
 	app.AaaAuth = aaa.NewPGAuthorizer(pool)
@@ -194,6 +195,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	stopDailyRecon := startDailyReconLoop(app)
 	stopPointsExpire := startPointsExpireLoop(points)
 	stopWebhookDelivery := startWebhookDeliveryLoop(app.OpenWebhook)
+	stopETLOverdue := startETLOverdueLoop(app)
 	app.close = func() {
 		stopPatrol()          // 巡检循环
 		stopReserveTimeout()  // 预占超时释放循环(Q2)
@@ -201,6 +203,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		stopDailyRecon()      // 每日数据对账循环(Q2)
 		stopPointsExpire()    // 积分过期清算循环(2028 Q2)
 		stopWebhookDelivery() // Webhook 投递循环(Q4 开放平台 M2)
+		stopETLOverdue()      // ETL overdue 自动派单
 		aw.Close()            // 排空审计队列
 		if em.closeCdr != nil {
 			em.closeCdr()

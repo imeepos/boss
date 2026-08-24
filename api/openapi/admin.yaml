@@ -401,6 +401,8 @@ paths:
   /etl-jobs/{jobKey}/disable: { $ref: './admin/etl.yaml#/paths/~1etl-jobs~1{jobKey}~1disable' }
   /etl-jobs/{jobKey}/runs: { $ref: './admin/etl.yaml#/paths/~1etl-jobs~1{jobKey}~1runs' }
   /etl-freshness: { $ref: './admin/etl.yaml#/paths/~1etl-freshness' }
+   /etl-freshness/scan: { $ref: './admin/etl.yaml#/paths/~1etl-freshness~1scan' }
+   /etl-freshness/scan/latest: { $ref: './admin/etl.yaml#/paths/~1etl-freshness~1scan~1latest' }
   /metric-catalog/{key}: { $ref: './admin/metric.yaml#/paths/~1metric-catalog~1{key}' }
   /metric-catalog/{key}/deprecate: { $ref: './admin/metric.yaml#/paths/~1metric-catalog~1{key}~1deprecate' }
   /metric-quality-rules: { $ref: './admin/metric.yaml#/paths/~1metric-quality-rules' }

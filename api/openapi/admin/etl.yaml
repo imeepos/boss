@@ -42,3 +42,13 @@ paths:
       tags: [Intel]
       summary: ETL数据新鲜度看板
       responses: { '200': { $ref: './schemas.yaml#/components/responses/List' } }
+  /etl-freshness/scan:
+    post:
+      tags: [Intel]
+      summary: 手动扫描并派发ETL逾期任务
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Item' } }
+  /etl-freshness/scan/latest:
+    get:
+      tags: [Intel]
+      summary: 获取最近一次ETL逾期扫描结果
+      responses: { '200': { $ref: './schemas.yaml#/components/responses/Item' } }

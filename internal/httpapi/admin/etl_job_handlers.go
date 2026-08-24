@@ -18,6 +18,8 @@ func registerETLRoutes(g *gin.RouterGroup, a *app.Application) {
 	m.POST("/etl-jobs/:jobKey/runs", etlRun(a))
 	m.GET("/etl-jobs/:jobKey/runs", etlRuns(a))
 	m.GET("/etl-freshness", etlFresh(a))
+	m.POST("/etl-freshness/scan", etlScan(a))
+	m.GET("/etl-freshness/scan/latest", etlScanLatest(a))
 }
 func etlList(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -72,7 +74,12 @@ func etlRun(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeInvalidParam, e.Error())
 			return
 		}
-		v.JobKey = strings.TrimSpace(c.Param("jobKey"))
+		pathKey := strings.TrimSpace(c.Param("jobKey"))
+		if v.JobKey != "" && strings.TrimSpace(v.JobKey) != pathKey {
+			respond(c, apitypes.CodeInvalidParam, "jobKey must match path")
+			return
+		}
+		v.JobKey = pathKey
 		if v.StartedAt.IsZero() {
 			v.StartedAt = time.Now()
 		}
@@ -93,6 +100,31 @@ func etlRuns(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, v)
 	}
 }
+func etlScan(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if a.ETLScanner == nil {
+			respond(c, apitypes.CodeOK, app.ETLScanResult{})
+			return
+		}
+		v, err := a.ETLScanner.Scan(c)
+		if err != nil {
+			respond(c, apitypes.CodeInvalidParam, err.Error())
+			return
+		}
+		respond(c, apitypes.CodeOK, v)
+	}
+}
+
+func etlScanLatest(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if a.ETLScanner == nil {
+			respond(c, apitypes.CodeOK, app.ETLScanResult{})
+			return
+		}
+		respond(c, apitypes.CodeOK, a.ETLScanner.Latest())
+	}
+}
+
 func etlFresh(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		v, e := a.ETL.ListFreshness(c)
