@@ -2,7 +2,7 @@ GO ?= $(or $(shell command -v go 2>/dev/null),/opt/homebrew/bin/go)
 GOFMT ?= $(or $(shell command -v gofmt 2>/dev/null),/opt/homebrew/bin/gofmt)
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check proto docker-build load bossctl bossctl-routes
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check proto docker-build load bossctl bossctl-routes check-conn-test-user check-conn-test-worker
 
 ## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证)
 bossctl:
@@ -67,6 +67,15 @@ web-admin-check:
 	pnpm --dir web/admin test
 	pnpm --dir web/admin build
 	node scripts/check-ds-adoption.js
+
+## 连接态测试(需模拟器/真机):connectedDebugAndroidTest + 断言 tests 数>0
+check-conn-test-user:
+	cd mobile/user/android && ./gradlew connectedDebugAndroidTest
+	scripts/after-connected-test.sh mobile/user/android
+
+check-conn-test-worker:
+	cd mobile/worker/android && ./gradlew connectedDebugAndroidTest
+	scripts/after-connected-test.sh mobile/worker/android
 
 ## 从 proto 生成 gRPC 代码
 proto:
