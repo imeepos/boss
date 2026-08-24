@@ -558,3 +558,8 @@
 - 哪个坑浪费最多时间：①connected "BUILD SUCCESSFUL" 其实 0 用例（runner 缺省错误）；②模拟器 uiautomator 点 Compose 控件同坐标结果随机（键盘开关/列表滚动致 bounds 漂移），E2E 点击级断言始终不稳。
 - skill 有没有提前警告：部分——"数据加载稳定后再取坐标"有记录，但没警告"每次点击前必须重新 dump 取 bounds"和"grep 判页面可能匹配到旧文本"。
 - 重来一次会怎么做：E2E 优先 API 级闭环（登录→端点→DB 断言），UI 点击只做可达性冒烟；connected 先看结果 XML 的 tests 数再相信 BUILD。
+
+## 2026-08-24 cms 编辑器+分类交付(feat/cms-editor-categories)
+- 最大时间坑:python 脚本向 App.tsx 插入函数时把函数体插进了 App() 的 JSX 里,typecheck 才发现;批量文本替换必须回读上下文确认插入点语法层级。
+- skill 是否预警:worktree 消失(boss-cms2 被并行会话收尾)靠"先查 refs 再动作"红线安全化解,未丢任何东西。
+- 重来一次:插函数类补丁一律锚定"export default function App() {"这类唯一行,插完立刻 typecheck。

@@ -280,3 +280,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-28 公开图片类资源走"父资源门控"端点(/site/posts/:slug/cover 先验 PUBLISHED 再吐附件),不暴露 /attachments/:id 通用读,防枚举他人附件;非 image/* 一律 404。
 - 2026-08-28 匿名页图片不能引用需鉴权的附件端点;/attachments/:id/content 带 token 才 200,公开场景必须由后端提供免鉴权受控流。
 - 2026-08-28 SPA 懒加载页面符号不在 entry bundle,验证部署看 entry 里的 i18n 文案字符串(必在主包);markdown 渲染断言用 DOM eval(li 数/strong 文本/img naturalWidth),不靠截图目测。
+- 用脚本向 TSX 批量插代码时,锚点必须选模块级唯一行(如 `export default function`),插进 JSX 内部只有 typecheck 能兜底;插完立刻跑 typecheck。
+- ff-merge 在多人并行仓库可能连续失败 2-3 次(main 实时前进),协议动作是"merge main→门禁→push→ff-only"循环,不是放弃或删树。
