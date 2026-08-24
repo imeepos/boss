@@ -55,6 +55,7 @@
 | ODN 无源物理层 | ODN | （横切,与 OSS/AMS 同源;规范见 docs/pdfs《Suniway ODN 地理空间编码规范》） | `odn` | 阶段7/8(增量) | oss（`menu:odn`,sysadmin+resource_admin） | 局点/核心链路设备/光缆段落纤芯/网格与设施(规范第 2-5 章);`/odn/sites\|devices\|grids\|facilities\|segments` |
 | 官网内容发布 | CMS | （平台级,非 21 域） | `cms`(000134) | 增量 | boss(官网内容) | `/boss/site` 文章管理(动态/新闻/文章)；公开读 `/api/admin/v1/site/posts` 免鉴权供官网首页 |
 | 开放平台 | OPEN | （横切,平台级,非 21 域） | `openplat`(000122) | 增量(Q4) | org（开发者门户,`/openplat`） | AppId+Secret HMAC 鉴权、Webhook 订阅与投递、配额与限流、回放工具;契约 `/api/open/v1` |
+| 客户端版本发布 | APPREL | （横切,平台级,非 21 域） | `apprelease`(000137) | 增量 | boss(版本发布) | `/boss/release` 双端 APK 上传/灰度(比例+白名单)/发布/回滚;客户端匿名查 `/api/{worker,user}/v1/client/latest`;官网下载入口读 admin 匿名 latest |
 
 > 注：`internal/domain/user` 承担 A 体系的 `系统管理` + `品牌区域(Region 部分)` 两类职责；
 > `internal/domain/billing` 承担 `计费账务` + `支付收款`；`internal/domain/device` 承担 `设备CPE` + `网络监控`。

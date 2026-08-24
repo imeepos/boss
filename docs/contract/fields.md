@@ -990,6 +990,37 @@ API：admin `/site-posts`（GET/POST/PUT/DELETE，menu:site 权限）；
 支持 category 过滤与 limit）与 `/site/posts/:slug`（详情，仅 PUBLISHED）。
 免鉴权公开读沿用 partner 入驻公开提交先例（admin 前缀内 public 子路由）。
 
+## 8F. 客户端版本发布域（internal/domain/apprelease，000137）
+
+`client_releases`（师傅端/用户端 App 发版记录，单一表 + app 区分两端；APK 对象入 MinIO 复用 attachment 存储抽象）：
+
+| 页面列 | 字段名 | DB 列 | 枚举/说明 |
+|:------|:------|:------|:----------|
+| 端 | `app` | app | user（用户端）/ worker（师傅端） |
+| 平台 | `platform` | platform | android（当前仅 Android） |
+| 版本号 | `version` | version | 展示用 semver，如 1.2.0 |
+| 版本码 | `versionCode` | version_code | 单调递增整数，升级判定唯一依据 |
+| 最低兼容码 | `minSupportedCode` | min_supported_code | 客户端 versionCode 低于此值 → 强制更新 |
+| 更新说明 | `notes` | notes | 更新日志，TEXT |
+| 强制 | `force` | force | bool，true 时弹框不可忽略（默认 false 不强制） |
+| 状态 | `status` | status | DRAFT / GRAY / PUBLISHED / ROLLED_BACK |
+| 灰度比例 | `rolloutPercent` | rollout_percent | 0~100，GRAY 生效；0=仅白名单 |
+| 白名单 | `whitelistIds` | whitelist_ids | int[]，灰度命中豁免（worker/customer id） |
+| 安装包 | `apkObjectKey` | apk_object_key | MinIO object key |
+| 包大小 | `apkSize` | apk_size | 字节 |
+| 校验和 | `sha256` | sha256 | APK SHA-256，客户端校验 |
+| 创建/更新 | `createdAt`/`updatedAt` | created_at/updated_at | TIMESTAMPTZ |
+
+升级判定（GET /client/latest，社区通行做法：latest + minSupported 双门槛 + 确定性灰度分桶）：
+按 app+platform 取 status∈(GRAY,PUBLISHED) 中 version_code 最大者；GRAY 时以
+`hash(deviceId+releaseId)%100 < rollout_percent` 或命中 whitelistIds 决定是否投放，
+未投放回落最近 PUBLISHED。响应 `updateAvailable/force/version/versionCode/notes/downloadUrl/sha256/size`；
+`force = 客户端 versionCode < minSupportedCode 或 release.force`。
+
+API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATCH 元数据与状态迁移 / GET :id/apk 下载，menu:client-release 权限）；
+客户端匿名检查 `GET /api/{worker,user}/v1/client/latest`（免登录，启动即查）；
+官网匿名 `GET /api/admin/v1/client-releases/latest?app=`（仅 PUBLISHED，首页下载入口）。
+
 ## 9. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。
