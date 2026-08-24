@@ -56,11 +56,11 @@ func (s *aliyunIntl) Send(ctx context.Context, phone, code, _ string) error {
 		return fmt.Errorf("%w: +%s", ErrContentCodeMissing, cc)
 	}
 	body, err := s.call(ctx, map[string]string{
-		"Action":          "SendSms",
-		"Version":         "2018-05-01",
-		"PhoneNumbers":    digits(phone),
-		"ContentCode":     tplCode,
-		"Type":            "OTP",
+		"Action":           "SendSms",
+		"Version":          "2018-05-01",
+		"PhoneNumbers":     digits(phone),
+		"ContentCode":      tplCode,
+		"Type":             "OTP",
 		"VerificationCode": code,
 	})
 	if err != nil {
