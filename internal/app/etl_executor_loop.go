@@ -57,7 +57,7 @@ func startETLProjectionLoop(a *Application) func() {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		staggeredFirstRun(ctx, startupDelays["etl_executor"], func(c context.Context) { runETLProjectionsOnce(c, a.ETL, execs) })
+		staggeredFirstRun(ctx, "etl_executor", startupDelays["etl_executor"], func(c context.Context) { runETLProjectionsOnce(c, a.ETL, execs) })
 		t := time.NewTicker(etlExecutorInterval())
 		defer t.Stop()
 		for {

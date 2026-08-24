@@ -6,6 +6,7 @@ package app
 
 import (
 	"context"
+	"log"
 	"time"
 )
 
@@ -18,11 +19,14 @@ var startupDelays = map[string]time.Duration{
 }
 
 // staggeredFirstRun 等待 offset(或 ctx 取消)后执行 fn;返回是否已执行。
-func staggeredFirstRun(ctx context.Context, offset time.Duration, fn func(context.Context)) bool {
+// 记录首轮延迟日志,供实机核对启动期执行分布。
+func staggeredFirstRun(ctx context.Context, name string, offset time.Duration, fn func(context.Context)) bool {
 	if offset <= 0 {
+		log.Printf("[loop-stagger] %s first run immediate", name)
 		fn(ctx)
 		return true
 	}
+	log.Printf("[loop-stagger] %s first run deferred by %s", name, offset)
 	t := time.NewTimer(offset)
 	defer t.Stop()
 	select {

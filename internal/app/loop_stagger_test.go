@@ -28,7 +28,7 @@ func TestStaggeredFirstRunRunsAfterOffset(t *testing.T) {
 	ctx := context.Background()
 	ran := make(chan time.Duration, 1)
 	start := time.Now()
-	if !staggeredFirstRun(ctx, 30*time.Millisecond, func(context.Context) {
+	if !staggeredFirstRun(ctx, "test", 30*time.Millisecond, func(context.Context) {
 		ran <- time.Since(start)
 	}) {
 		t.Fatal("expected first run to execute")
@@ -41,7 +41,7 @@ func TestStaggeredFirstRunRunsAfterOffset(t *testing.T) {
 // TestStaggeredFirstRunImmediate 零延迟保持原"启动即首轮"行为。
 func TestStaggeredFirstRunImmediate(t *testing.T) {
 	called := false
-	if !staggeredFirstRun(context.Background(), 0, func(context.Context) { called = true }) {
+	if !staggeredFirstRun(context.Background(), "test", 0, func(context.Context) { called = true }) {
 		t.Fatal("zero offset should run immediately")
 	}
 	if !called {
@@ -53,7 +53,7 @@ func TestStaggeredFirstRunImmediate(t *testing.T) {
 func TestStaggeredFirstRunCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if staggeredFirstRun(ctx, time.Hour, func(context.Context) { t.Fatal("should not run") }) {
+	if staggeredFirstRun(ctx, "test", time.Hour, func(context.Context) { t.Fatal("should not run") }) {
 		t.Fatal("expected cancel to suppress first run")
 	}
 }

@@ -26,7 +26,7 @@ func startPatrolLoop(a *Application) (stop func()) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		staggeredFirstRun(ctx, startupDelays["patrol"], func(c context.Context) { runPatrolOnce(c, a) })
+		staggeredFirstRun(ctx, "patrol", startupDelays["patrol"], func(c context.Context) { runPatrolOnce(c, a) })
 		t := time.NewTicker(patrolInterval)
 		defer t.Stop()
 		for {
