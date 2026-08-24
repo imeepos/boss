@@ -1,0 +1,85 @@
+paths:
+  /site-posts:
+    get:
+      tags: [CMS]
+      summary: 官网内容列表(含草稿,menu:site)
+      operationId: listSitePosts
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [CMS]
+      summary: 新增官网内容
+      operationId: createSitePost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slug, title, content]
+              properties:
+                slug: { type: string }
+                title: { type: string }
+                category: { type: string, enum: [NEWS, ARTICLE], default: NEWS }
+                summary: { type: string }
+                coverAttachmentId: { type: integer, format: int64 }
+                content: { type: string }
+                status: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE], default: DRAFT }
+                authorName: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /site-posts/{postId}:
+    put:
+      tags: [CMS]
+      summary: 更新官网内容(版本自增;置 PUBLISHED 落 published_at)
+      operationId: updateSitePost
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slug, title, content]
+              properties:
+                slug: { type: string }
+                title: { type: string }
+                category: { type: string, enum: [NEWS, ARTICLE] }
+                summary: { type: string }
+                coverAttachmentId: { type: integer, format: int64 }
+                content: { type: string }
+                status: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE] }
+                authorName: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [CMS]
+      summary: 删除官网内容
+      operationId: deleteSitePost
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /site/posts:
+    get:
+      tags: [CMS]
+      summary: 官网匿名读(公开,免登录):已发布列表,发布时间倒序
+      operationId: listPublicSitePosts
+      parameters:
+        - { name: category, in: query, schema: { type: string, enum: [NEWS, ARTICLE] } }
+        - { name: limit, in: query, schema: { type: integer, default: 10, maximum: 50 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /site/posts/{slug}:
+    get:
+      tags: [CMS]
+      summary: 官网匿名读(公开,免登录):已发布详情(草稿/下线 404)
+      operationId: getPublicSitePost
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
