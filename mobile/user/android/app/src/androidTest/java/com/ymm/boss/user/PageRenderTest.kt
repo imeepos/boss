@@ -1,10 +1,15 @@
 package com.ymm.boss.user
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ymm.boss.user.page.FaultDetailScreen
+import com.ymm.boss.user.page.MessagesScreen
 import com.ymm.boss.user.page.ProductScreen
 import com.ymm.boss.user.page.ReceiptScreen
 import com.ymm.boss.user.ui.Nav
@@ -45,5 +50,24 @@ class PageRenderTest {
         // AppCard 为 Column:详情/对比/合约三张卡的标题都应同时可见可点
         compose.onNodeWithText("套餐对比").assertIsDisplayed()
         compose.onNodeWithText("合约与说明").assertIsDisplayed()
+    }
+
+    /**
+     * 360dp 窄屏基线:防 PillTab 类水平溢出回归(2026-08-21 曾 5 胶囊在 360dp 溢出)。
+     * 用 DeviceConfigurationOverride.ForcedSize 强制 360x800 视口,断言骨架关键节点
+     * 仍可显示;不依赖网络数据。ForcedSize 兼容 ui-test 1.7~1.11(Width 是 1.9+ 新 API)。
+     */
+    @Test
+    fun messagesSkeletonFitsNarrow360dpViewport() {
+        compose.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.ForcedSize(DpSize(360.dp, 800.dp)),
+            ) {
+                MessagesScreen(Nav(Route.Messages))
+            }
+        }
+        compose.onNodeWithText("消息中心").assertIsDisplayed()
+        compose.onNodeWithText("全部消息").assertIsDisplayed()
+        compose.onNodeWithText("未读消息").assertIsDisplayed()
     }
 }
