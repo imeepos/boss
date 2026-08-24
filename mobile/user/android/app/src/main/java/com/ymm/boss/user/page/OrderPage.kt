@@ -530,7 +530,7 @@ private fun BoxScope.FloatingActionBar(nav: Nav, no: String, order: JSONObject?,
                         modifier = Modifier.weight(1f).height(44.dp),
                     ) { Text("联系师傅", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
                     OutlinedButton(
-                        onClick = { /* TODO: 跳转变更地址子页 */ },
+                        onClick = { nav.push(com.ymm.boss.user.ui.Route.OrderChangeAddress(no)) },
                         modifier = Modifier.weight(1f).height(44.dp),
                     ) { Text("变更地址", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.primary) }
                 }
