@@ -120,4 +120,62 @@
         <item>Laporan palsu, caj tanpa kebenaran, kebocoran data atau aduan berniat jahat boleh mengakibatkan penggantungan atau penamatan kerjasama.</item>
         <item>Platform boleh menyemak semula perjanjian ini dan akan memaklumkan melalui notis dalam App; penggunaan berterusan dianggap penerimaan.</item>
     </string-array>
+
+    <!-- Butiran pesanan -->
+    <string name="td_title">Butiran Pesanan</string>
+    <string name="td_title_repair">Pesanan Pembaikan</string>
+    <string name="td_contact_dispatch">Hubungi Dispatcher</string>
+    <string name="err_ticket_load">Gagal memuatkan pesanan, sila muat semula.</string>
+    <string name="toast_rollback_sent">Kembali dimulakan, memuat semula…</string>
+    <string name="toast_retry_sent">Cuba semula dimulakan, memuat semula…</string>
+    <string name="toast_accepted">Pesanan diambil</string>
+    <string name="err_action">Tindakan gagal, sila cuba lagi.</string>
+    <string name="err_accept">Gagal mengambil, sila cuba lagi.</string>
+    <string name="td_product">Produk</string>
+    <string name="td_customer">Pelanggan</string>
+    <string name="td_install_addr">Alamat Pemasangan</string>
+    <string name="td_splitter">Pemisah/Port</string>
+    <string name="td_prebind">Tag Prakuat</string>
+    <string name="td_schedule">Masa Dijadualkan</string>
+    <string name="td_distance">Jarak</string>
+    <string name="td_reported_at">Dilaporkan Pada</string>
+    <string name="td_sla_left">SLA Berbaki</string>
+    <string name="td_remote_diag">Diagnosis jauh: %1$s</string>
+    <string name="td_finished_at">Selesai Pada</string>
+    <string name="td_contact_customer">Telefon Pelanggan</string>
+    <string name="td_phone_masked">Nombor dilitup, sila hubungi melalui platform</string>
+    <string name="td_navi">Navigasi</string>
+    <string name="td_checkin">Daftar Masuk</string>
+    <string name="td_progress">Kemajuan</string>
+    <string name="td_progress_more">Semasa: peringkat %1$d · %2$d/%3$d selesai</string>
+    <string name="td_quad_title">Pengesahan Kod</string>
+    <string name="td_quad_more">Konsistensi</string>
+    <string name="td_quad_missing">Maklumat kod tiada</string>
+    <string name="td_quad_conflict">Tidak sepadan · perlu disemak</string>
+    <string name="td_quad_passed">Disahkan</string>
+    <string name="td_quad_pending">Belum disahkan</string>
+    <string name="td_asset">Kod aset</string>
+    <string name="td_user_code">Kod pengguna</string>
+    <string name="td_port_code">Kod port</string>
+    <string name="td_addr_code">Kod alamat</string>
+    <string name="td_risk_title">Semakan Risiko</string>
+    <string name="td_risk_more">Pintasan Senarai</string>
+    <string name="td_risk_hit">Dikenal pasti, disekat automatik atau semakan manual</string>
+    <string name="td_risk_miss">Tidak dikenal pasti, kerja boleh diteruskan</string>
+    <string name="td_risk_hit_short">⚠ Kena senarai hitam/kelabu</string>
+    <string name="td_risk_miss_short">✓ Tidak dalam senarai</string>
+    <string name="td_risk_notice">Jika senarai risiko dikenal pasti, pesanan ini akan disekat automatik atau dihantar untuk semakan manual.</string>
+    <string name="td_receipt_title">Resit Penyiapan</string>
+    <string name="td_receipt_confirmed">Pelanggan mengesahkan · Perkhidmatan selesai</string>
+    <string name="td_signature">Tandatangan Pelanggan</string>
+    <string name="td_signature_placeholder">(kotak putus-putus · ruang letak)</string>
+    <string name="td_view_report">Lihat Laporan</string>
+    <string name="td_back_list">Kembali ke Senarai</string>
+    <string name="td_reschedule">Jadual Semula</string>
+    <string name="td_repair_report">Laporan Pembaikan</string>
+    <string name="td_abnormal">Lapor Isu</string>
+    <string name="td_transfer">Pindah</string>
+    <string name="td_scan_bind">Imbas &amp; Ikat</string>
+    <string name="td_rollback">Kembali Peringkat</string>
+    <string name="td_retry_stage">Cuba Semula Peringkat Gagal</string>
 </resources>

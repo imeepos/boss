@@ -125,4 +125,62 @@
         <item>存在虚假上报、私收费用、泄露用户信息、恶意投诉用户等行为的,平台有权暂停或终止合作,并保留追偿权利。</item>
         <item>平台可根据业务发展修订本协议,修订后将通过 App 公告通知;继续使用服务视为接受修订后的协议。</item>
     </string-array>
+
+    <!-- 工单详情 -->
+    <string name="td_title">工单详情</string>
+    <string name="td_title_repair">报障工单</string>
+    <string name="td_contact_dispatch">联系调度</string>
+    <string name="err_ticket_load">工单加载失败，请刷新重试。</string>
+    <string name="toast_rollback_sent">已发起回退,正在刷新...</string>
+    <string name="toast_retry_sent">已发起重试,正在刷新...</string>
+    <string name="toast_accepted">已领取工单</string>
+    <string name="err_action">操作失败,请重试。</string>
+    <string name="err_accept">领取失败，请重试。</string>
+    <string name="td_product">产品</string>
+    <string name="td_customer">客户</string>
+    <string name="td_install_addr">安装地址</string>
+    <string name="td_splitter">分光器/端口</string>
+    <string name="td_prebind">预绑定标签</string>
+    <string name="td_schedule">预约时间</string>
+    <string name="td_distance">距离</string>
+    <string name="td_reported_at">报障时间</string>
+    <string name="td_sla_left">SLA 剩余</string>
+    <string name="td_remote_diag">远程诊断:%1$s</string>
+    <string name="td_finished_at">完成时间</string>
+    <string name="td_contact_customer">联系客户</string>
+    <string name="td_phone_masked">号码已脱敏，请通过平台联系</string>
+    <string name="td_navi">一键导航</string>
+    <string name="td_checkin">到点签到</string>
+    <string name="td_progress">装维进度</string>
+    <string name="td_progress_more">当前:%1$d 环节 · %2$d/%3$d 已完成</string>
+    <string name="td_quad_title">四码校验</string>
+    <string name="td_quad_more">一致性校验</string>
+    <string name="td_quad_missing">四码信息缺失</string>
+    <string name="td_quad_conflict">不一致 · 需核实</string>
+    <string name="td_quad_passed">已通过校验</string>
+    <string name="td_quad_pending">待校验</string>
+    <string name="td_asset">资产码</string>
+    <string name="td_user_code">用户码</string>
+    <string name="td_port_code">端口码</string>
+    <string name="td_addr_code">地址码</string>
+    <string name="td_risk_title">风控校验</string>
+    <string name="td_risk_more">名单拦截</string>
+    <string name="td_risk_hit">已命中，自动拦截或转人工审核</string>
+    <string name="td_risk_miss">未命中，可正常装维</string>
+    <string name="td_risk_hit_short">⚠ 命中黑/灰名单</string>
+    <string name="td_risk_miss_short">✓ 未命中名单</string>
+    <string name="td_risk_notice">若命中风控名单，此单将自动拦截或转人工审核，操作全程留痕。</string>
+    <string name="td_receipt_title">完成回执</string>
+    <string name="td_receipt_confirmed">客户已确认 · 服务完成</string>
+    <string name="td_signature">客户签名</string>
+    <string name="td_signature_placeholder">（虚线框 · 占位）</string>
+    <string name="td_view_report">查看报告</string>
+    <string name="td_back_list">返回列表</string>
+    <string name="td_reschedule">改约</string>
+    <string name="td_repair_report">修复上报</string>
+    <string name="td_abnormal">异常上报</string>
+    <string name="td_transfer">转单</string>
+    <string name="td_scan_bind">扫码绑定</string>
+    <string name="td_rollback">回退上一环节</string>
+    <string name="td_retry_stage">重试失败环节</string>
 </resources>
