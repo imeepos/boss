@@ -19,7 +19,7 @@
 ## 第4轮全流程重验(2026-08-22,零 SQL 补救贯通 12 环节)
 
 - **已修复(2026-08-22, 61b0dcd/000097)｜行为缺口｜000056 残留 `*_active` 索引阻塞复购客户**:000088 裁定 customer 可 1:N(一客户多链路)并撤销 000086 的 `uq_quad_links_customer`,但 000056 时代的四个 `uq_quad_links_{customer,asset,port,address}_active` 部分唯一索引从未被任何迁移删除 → 客户已有 LINKED 链路后,第二单扫码置 LINKED 必撞 23505(实测 ORD-20260822-000432 scan-bind 报 duplicate key uq_quad_links_customer_active)。修复:迁移 000097 DROP 四个残留索引(customer 列违反 1:N 契约;asset/port/address 三列被 000086 非空唯一完全覆盖属纯冗余),e2e 新增 W8c 回归(同客户两地址两单,双双扫码 LINKED)。
-- **信息不准｜`GET /provision/channels` 响应字段 PascalCase**:52612c4 新增的渠道目录返回 `ID/Code/Name/Status`(domain struct 无 json tag 直出),违反 fields.md §0 的 JSON lowerCamelCase 规则(应为 `id/code/name/status`)。→ Channel struct 加 json tag 或 handler 显式构造响应。
+- **已修复(2026-08-24, 9f76b26)｜信息不准｜`GET /provision/channels` 响应字段 PascalCase**:52612c4 新增的渠道目录返回 `ID/Code/Name/Status`(domain struct 无 json tag 直出),违反 fields.md §0 的 JSON lowerCamelCase 规则(应为 `id/code/name/status`)。修复:Channel struct 加 json tag + OpenAPI 响应 schema 同步,102 实测返回 `{"id":102,"code":"HALL",...}`。
 
 ## 后端·worker
 
@@ -29,8 +29,8 @@
 
 ## CI/部署(deploy-102)
 
-- **未修复(2026-08-22,任务 2289/2291 实测)｜部署怪象｜`docker-compose up -d --force-recreate` 后容器滞留 Created 不启动**:deploy-102 workflow 的 Deploy 步骤执行后,boss-server/boss-report/boss-admin-web 常处于 "Created" 状态而非 Up,需人工 `docker start`。两次部署(75a0b60 前后)均复现;job 日志未见 start 失败信息,疑似 runner 容器内 docker CLI 与宿主 daemon 的 start 时序问题。→ 排查方向:compose 版本兼容(宿主 2.26.1)、`--force-recreate --remove-orphans` 组合、job 容器生命周期内 daemon 响应。人工恢复命令:`ssh imeepos@192.168.0.102 'docker start boss-server boss-report boss-admin-web'`。
-- **未修复(2026-08-22)｜信息缺失｜compose 未设 `BOSS_CORS_ORIGINS`,5180 直连 28080 必挂**:后端 CORS 白名单默认仅 localhost:5173/5174(internal/pkg/config/config.go:130),102 上 admin-web(5180)若在"服务端配置"里填 `http://192.168.0.102:28080` 直连,预检 OPTIONS 404 全端不可用。同源 nginx 代理(`5180/api/`→boss-server)是正路:浏览器免登录冒烟时 localStorage **不要**设置 boss.servers,让 apiFetch 走相对前缀。→ 若要支持直连,compose environment 应加 `BOSS_CORS_ORIGINS: "http://192.168.0.102:5180"`。
+- **已修复(2026-08-24, 4e68347)｜部署怪象｜`docker-compose up -d --force-recreate` 后容器滞留 Created 不启动**:deploy-102 workflow 的 Deploy 步骤执行后,boss-server/boss-report/boss-admin-web 常处于 "Created" 状态而非 Up,需人工 `docker start`。根因(任务 2289/2291 日志):compose 固定 `container_name` 被其他项目(手工 deployments 部署/无 label docker run)的同名容器占用,`--force-recreate` 在 `Conflict. The container name "/boss-admin-web" is already in use` 处中止,已 Recreate 的容器滞留 Created。修复:Deploy 步骤先 `docker rm -f boss-server boss-aaa boss-report boss-admin-web` 清残留,up 后逐容器断言 running(新增 Verify all containers running 步骤);任务 2579 起全绿。
+- **已修复(2026-08-24, eee7fd9)｜信息缺失｜compose 未设 `BOSS_CORS_ORIGINS`,5180 直连 28080 必挂**:后端 CORS 白名单默认仅 localhost:5173/5174(internal/pkg/config/config.go:130),102 上 admin-web(5180)若在"服务端配置"里填 `http://192.168.0.102:28080` 直连,预检 OPTIONS 404 全端不可用。修复:compose server environment 显式加 `BOSS_CORS_ORIGINS: "http://192.168.0.102:5180,http://localhost:5173,http://localhost:5174"`(中间件 477ec0b 起任意 Origin 回显放行,此值作显式配置与收紧护栏);102 实测 OPTIONS 预检 204 + `Access-Control-Allow-Origin: http://192.168.0.102:5180`。
 
 ## web/admin
 
