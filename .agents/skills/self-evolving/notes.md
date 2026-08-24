@@ -519,3 +519,4 @@
 - 第二坑:sed 读 etl_pg.go 后 edit 被拒(read 工具唯一凭据),recidivism 第 5 次坑 +1 变 6,SKILL.md 顶部红线已有此条但本轮仍犯——下次 sed/cat 只用于浏览,要 edit 的文件一律 read 工具。
 - 范围判定教训:docs/* HTML 是文档/原型不算项目页面,worker i18n 验收范围 = web/admin 真实页面 + android 资源;验收前先问"真实代码还是原型",避免在 docs 里空转。
 - 分支清理:残留分支用 merge-base + 内容 diff + grep 同主题提交三连确认再删,backup-main 与 intel NPE 分支均以此法安全清理。
+- 本轮 ETL/P0：Dashboard 日期 flake 初修只移动相对时间仍不稳；真正修复是测试显式固定 `clock` 业务时区并用 `t.Cleanup` 恢复。102 已确认新容器启动并注册 ETL 路由，但未取得历史 6 条 OPEN 派单及两个扫描周期的实机数据证据，后续必须用 admin API/远端 PG 查询闭环，不能以 healthz 代替。
