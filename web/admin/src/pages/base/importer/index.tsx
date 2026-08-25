@@ -2,6 +2,7 @@
 // (menu:importer;geo 面板另需 menu:geo,业务批量导入逐行走各域创建端点权限)。
 import { useState } from 'react'
 import { useT } from '../../../i18n'
+import { useProfile } from '../../../layouts/profile'
 import { ImportPanel } from './ImportPanel'
 import { EntityImportPanel } from './EntityImportPanel'
 import { ImportTaskList } from './TaskList'
@@ -13,9 +14,12 @@ import { PageHead } from '../../../components/business/page-head'
 export default function ImporterPage() {
   const t = useT()
   const im = t.pages.importer
+  const profile = useProfile()
+  const heldPerms = new Set(profile.permissionCodes ?? [])
   const [taskRev, setTaskRev] = useState(0)
   const [entityKind, setEntityKind] = useState(IMPORT_ENTITIES[0].kind)
   const def = findEntity(entityKind) ?? IMPORT_ENTITIES[0]
+  const defAllowed = heldPerms.has(def.perm)
   const refreshTasks = () => setTaskRev((v) => v + 1)
 
   return (
@@ -34,14 +38,18 @@ export default function ImporterPage() {
             <div className="w-56">
               <Dropdown
                 value={def.kind}
-                options={IMPORT_ENTITIES.map((e) => ({ value: e.kind, label: im.entityNames[e.kind] ?? e.kind }))}
+                options={IMPORT_ENTITIES.map((e) => ({
+                  value: e.kind,
+                  label: im.entityNames[e.kind] ?? e.kind,
+                  disabled: !heldPerms.has(e.perm),
+                }))}
                 onChange={setEntityKind}
                 ariaLabel={im.entityTitle}
               />
             </div>
           </div>
           <p className="m-0 mt-1.5 mb-1 text-xs text-[var(--shell-input-placeholder)]">{im.entityHint}</p>
-          <EntityImportPanel key={def.kind} def={def} text={im} onImported={refreshTasks} />
+          <EntityImportPanel key={def.kind} def={def} noPerm={!defAllowed} text={im} onImported={refreshTasks} />
         </div>
       </div>
       <div className={`${CARD} mt-4`}>

@@ -352,6 +352,7 @@ export interface Translations {
       entityTooMany: string
       entityFailMore: string
       entityExportFail: string
+      entityNoPerm: string
     }
     account: {
       title: string

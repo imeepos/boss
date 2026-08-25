@@ -27,7 +27,13 @@ function excelErrorText(r: Extract<ExcelParseResult, { ok: false }>, text: Text)
   return text.excelBadRow.replace('{sheet}', r.sheet ?? '').replace('{row}', String(r.row ?? ''))
 }
 
-export function EntityImportPanel({ def, text, onImported }: { def: EntityDef; text: Text; onImported: () => void }) {
+export function EntityImportPanel({ def, noPerm, text, onImported }: {
+  def: EntityDef
+  /** 权限前置:当前账号缺创建端点菜单权限时禁止执行。 */
+  noPerm?: boolean
+  text: Text
+  onImported: () => void
+}) {
   const [payload, setPayload] = useState('')
   const [advanced, setAdvanced] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -102,7 +108,7 @@ export function EntityImportPanel({ def, text, onImported }: { def: EntityDef; t
 
   /** 逐行 POST;401(登录失效)中止剩余行,业务失败逐条记录不中断。 */
   const run = async () => {
-    if (!rows || busy) return
+    if (!rows || busy || noPerm) return
     setBusy(true)
     setError('')
     setFailures([])
@@ -216,9 +222,10 @@ export function EntityImportPanel({ def, text, onImported }: { def: EntityDef; t
         </div>
       )}
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <ToolbarButton primary disabled={!rows || rows.length === 0 || busy} onClick={run}>
+        <ToolbarButton primary disabled={noPerm || !rows || rows.length === 0 || busy} onClick={run}>
           {busy ? text.importing : text.importBtn}
         </ToolbarButton>
+        {noPerm && <span className="text-xs text-[var(--color-danger)]">{text.entityNoPerm.replace('{perm}', def.perm)}</span>}
         {progress && !busy && <Badge variant={failures.length ? 'warning' : 'success'}>{summary}</Badge>}
         {busy && progress && (
           <span className="text-xs text-[var(--shell-group-title)]">

@@ -14,6 +14,8 @@ export interface EntityDef {
   kind: string
   /** 既有 admin 创建端点(逐行 POST)。 */
   endpoint: string
+  /** 创建端点所需菜单权限码(权限前置:无权限置灰禁止导入)。 */
+  perm: string
   columns: EntityColumn[]
   /** 模板样例行(与 columns 同序的字段集)。 */
   samples: Array<Record<string, string | number | string[]>>
@@ -22,6 +24,7 @@ export interface EntityDef {
 export const IMPORT_ENTITIES: EntityDef[] = [
   {
     kind: 'account',
+    perm: 'menu:account',
     endpoint: '/accounts',
     columns: [
       { key: 'username', required: true, type: 'string' },
@@ -40,6 +43,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
   },
   {
     kind: 'legalEntity',
+    perm: 'menu:company',
     endpoint: '/legal-entities',
     columns: [
       { key: 'code', required: true, type: 'string' },
@@ -53,6 +57,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
   },
   {
     kind: 'department',
+    perm: 'menu:department',
     endpoint: '/departments',
     columns: [
       { key: 'legalEntityId', required: true, type: 'number' },
@@ -64,6 +69,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
   },
   {
     kind: 'post',
+    perm: 'menu:post',
     endpoint: '/posts',
     columns: [
       { key: 'deptId', required: true, type: 'number' },
@@ -77,6 +83,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
   },
   {
     kind: 'product',
+    perm: 'menu:product',
     endpoint: '/products',
     columns: [
       { key: 'legalEntityId', required: true, type: 'number' },

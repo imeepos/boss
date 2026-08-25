@@ -420,6 +420,7 @@ const zhCN: Translations = {
       entityTooMany: '行数 {count} 超过单次上限 {max},请分批导入',
       entityFailMore: '还有 {count} 条失败行未展示',
       entityExportFail: '导出失败行(JSON,可直接再导入)',
+      entityNoPerm: '当前账号无 {perm} 权限,禁止导入该项目',
     },
     account: {
       title: '账号与角色',

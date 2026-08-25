@@ -6,6 +6,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 export interface DropdownOption {
   value: string
   label: string
+  /** 置灰不可选(如权限不足);仍展示以保持选项可见性。 */
+  disabled?: boolean
 }
 
 interface DropdownProps {
@@ -93,12 +95,16 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
               type="button"
               role="option"
               aria-selected={o.value === value}
-              className={'flex w-full cursor-pointer items-center justify-between gap-4 rounded-sm border-none bg-none px-2.5 py-1.5 text-left text-[13px] whitespace-nowrap ' + (onDark
-                ? 'text-white hover:bg-white/10' + (o.value === value ? ' font-semibold text-[var(--color-brand-gold-500)]' : '')
-                : 'text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]' + (o.value === value ? ' font-semibold text-[var(--shell-fab-bg)]' : ''))}
+              aria-disabled={o.disabled || undefined}
+              className={'flex w-full items-center justify-between gap-4 rounded-sm border-none bg-none px-2.5 py-1.5 text-left text-[13px] whitespace-nowrap ' + (o.disabled
+                ? 'cursor-not-allowed text-[var(--shell-input-placeholder)]'
+                : 'cursor-pointer ' + (onDark
+                  ? 'text-white hover:bg-white/10' + (o.value === value ? ' font-semibold text-[var(--color-brand-gold-500)]' : '')
+                  : 'text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]' + (o.value === value ? ' font-semibold text-[var(--shell-fab-bg)]' : '')))}
               onMouseDown={(e) => {
                 e.stopPropagation()
                 e.preventDefault()
+                if (o.disabled) return
                 onChange(o.value)
                 setOpen(false)
               }}

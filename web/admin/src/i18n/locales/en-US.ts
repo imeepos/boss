@@ -420,6 +420,7 @@ const enUS: Translations = {
       entityTooMany: '{count} rows exceed the per-run limit {max}, please import in batches',
       entityFailMore: '{count} more failed rows not shown',
       entityExportFail: 'Export failed rows (JSON, re-importable)',
+      entityNoPerm: 'Current account lacks {perm}, import disabled for this target',
     },
     account: {
       title: 'Accounts & Roles',

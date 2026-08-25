@@ -420,6 +420,7 @@ const msMY: Translations = {
       entityTooMany: '{count} baris melebihi had {max} sekali import, sila import secara berkelompok',
       entityFailMore: '{count} baris gagal lagi tidak ditunjukkan',
       entityExportFail: 'Eksport baris gagal (JSON, boleh diimport semula)',
+      entityNoPerm: 'Akaun semasa tiada {perm}, import dilumpuhkan untuk sasaran ini',
     },
     account: {
       title: 'Akaun & Peranan',
