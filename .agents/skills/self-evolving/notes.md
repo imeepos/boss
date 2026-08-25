@@ -591,3 +591,9 @@
 - 外置卷停摆事故:go build/test 全部挂起(open 系统调用阻塞),根因 /Volumes/sker(外置 APFS)模块缓存 I/O 停摆;另一会话已迁移 ~/go 回内置盘并固化。教训:共享环境磁盘故障会以"go 命令无输出挂死"呈现,先 fs_usage/sample 定位再归因。
 - worktree 丢失事故:未提交的 etl-disable 改动随 worktree 一起消失(分支从未建立 commit)——并行会话可能清理了同名 worktree;教训:共享工作区**改动即刻 commit**,worktree 是易失的。本处靠并行会话等价实现兜底,无损失。
 - 收尾 cwd 核对:AGENTS.md 增补"②前先 pwd+branch 确认主树",根治 feature worktree 内 ff-merge no-op 假成功。
+
+## 2026-08-24 user-android 第四轮(空跑断言/E2E 登录脚本/worker 冒烟)
+- 最大坑:gradle/gradle 编译全部挂起(10 分钟超时×N),归因耗两轮才发现是共享外置卷 I/O 停摆(平行会话已根治:~ /go 迁内置盘)。教训:环境级"命令无输出挂死"先查磁盘/孤儿进程再盲目重试。
+- 次要:round4 worktree 被平行会话 ff-merge+清理,因我每项改动即刻 commit 才零损失——再次实证"改动即刻存档"是 worktree 易失环境的唯一安全网。
+- 首页点击重叠疑似 bug 排查结论:OrderItem onClick 接线正确(onOpenOrder→Route.Order),E2E 观察不一致(uiautomator 漂移)不构成代码 bug 证据,已记录待真机复测,不擅自改代码。
+- 重来一次:多命令批量验证(go test + gradle 编译)并行跑,先 `ps` 查孤儿进程,再怀疑代码。
