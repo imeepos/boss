@@ -125,6 +125,10 @@ object ProfileApi {
     suspend fun performance(period: String? = null): JSONObject =
         Api.get("/performance" + qs(mapOf("period" to period)))
 
+    // 队长查看装维队成员业绩(000141);非队长抛 40300,调用方捕获后隐藏入口。
+    suspend fun teamPerformance(period: String? = null): JSONObject =
+        Api.get("/team/performance" + qs(mapOf("period" to period)))
+
     suspend fun schedule(month: String? = null): JSONObject =
         Api.get("/schedule" + qs(mapOf("month" to month)))
 

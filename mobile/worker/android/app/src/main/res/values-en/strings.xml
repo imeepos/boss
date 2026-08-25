@@ -572,7 +572,11 @@
     <string name="fb_load_fail">Feedback load failed: %1$s</string>
     <string name="fb_empty">No feedback</string>
     <string name="fb_section_recent">Recent Reviews</string>
-    <string name="fb_section_avg">This Month Avg</string>
+        <string name="team_perf_title">Team Performance (%1$s)</string>
+    <string name="team_perf_empty">No member performance data</string>
+    <string name="team_perf_captain_tag">Captain</string>
+    <string name="team_perf_row">%1$s done · %2$s%% on-time · score %3$s</string>
+<string name="fb_section_avg">This Month Avg</string>
     <string name="fb_score_fmt">%1$.1f</string>
     <string name="fb_score_with_label_fmt">%1$.1f (%2$s)</string>
     <string name="fb_low_review_note">Low score needs review</string>

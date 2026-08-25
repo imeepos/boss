@@ -573,7 +573,11 @@
     <string name="perf_empty_commission">暂无提成明细</string>
     <string name="perf_empty_rank">暂无排名数据</string>
     <string name="perf_kv_score">评分</string>
-    <string name="fb_title">满意度反馈</string>
+        <string name="team_perf_title">装维队业绩（%1$s）</string>
+    <string name="team_perf_empty">暂无队员业绩数据</string>
+    <string name="team_perf_captain_tag">队长</string>
+    <string name="team_perf_row">%1$s单 · 准时%2$s%% · 评分%3$s</string>
+<string name="fb_title">满意度反馈</string>
     <string name="fb_load_fail">反馈加载失败：%1$s</string>
     <string name="fb_empty">暂无反馈</string>
     <string name="fb_section_recent">最近回访</string>

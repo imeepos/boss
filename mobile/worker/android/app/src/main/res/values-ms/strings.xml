@@ -572,7 +572,11 @@
     <string name="fb_load_fail">Gagal memuatkan maklum balas: %1$s</string>
     <string name="fb_empty">Tiada maklum balas</string>
     <string name="fb_section_recent">Ulasan Terkini</string>
-    <string name="fb_section_avg">Purata Bulan Ini</string>
+        <string name="team_perf_title">Prestasi Pasukan (%1$s)</string>
+    <string name="team_perf_empty">Tiada data prestasi ahli</string>
+    <string name="team_perf_captain_tag">Ketua</string>
+    <string name="team_perf_row">%1$s selesai · %2$s%% tepat masa · skor %3$s</string>
+<string name="fb_section_avg">Purata Bulan Ini</string>
     <string name="fb_score_fmt">%1$.1f</string>
     <string name="fb_score_with_label_fmt">%1$.1f (%2$s)</string>
     <string name="fb_low_review_note">Skor rendah perlu semakan</string>

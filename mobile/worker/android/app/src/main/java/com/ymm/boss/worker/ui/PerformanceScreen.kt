@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -72,8 +73,35 @@ fun PerformanceScreen(nav: NavHost) {
                         KvRow(r.optString("name"), "#${r.optInt("rank")}")
                     }
                 }
+                TeamPerfCard(period)
             }
         }
         Spacer(Modifier.height(12.dp))
+    }
+}
+
+// 队长专属:装维队成员月度业绩卡片(000141);非队长(40300)静默不渲染。
+@Composable
+private fun TeamPerfCard(period: String) {
+    val team by produceState<org.json.JSONObject?>(initialValue = null, period) {
+        value = try {
+            ProfileApi.teamPerformance(period)
+        } catch (_: Exception) {
+            null
+        }
+    }
+    val d = team ?: return
+    val group = d.optJSONObject("group") ?: org.json.JSONObject()
+    val items = d.optJSONArray("items") ?: JSONArray()
+    val captainTag = stringResource(R.string.team_perf_captain_tag)
+    val rowFmt = stringResource(R.string.team_perf_row)
+    Card(Modifier.padding(12.dp)) {
+        SectionTitle(stringResource(R.string.team_perf_title, group.optString("name")))
+        if (items.length() == 0) Empty(stringResource(R.string.team_perf_empty))
+        for (i in 0 until items.length()) {
+            val m = items.optJSONObject(i)
+            val name = if (m.optBoolean("isLeader")) "${m.optString("name")}($captainTag)" else m.optString("name")
+            KvRow(name, rowFmt.format(m.optInt("finished"), m.optInt("onTimeRate"), m.optDouble("score")))
+        }
     }
 }
