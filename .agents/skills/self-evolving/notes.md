@@ -770,3 +770,9 @@
 - skill 有没有提前警告:管道吞退出码有 #6 记录;设计稿存放位置 skill 未提"按端分目录",是勘察遗漏(只看了根 designs/,没查 mobile/user/design 的既有约定)。
 - 重来一次:① 构建验证先查 wrapper 分发缓存完整性,退出码重定向文件后单独读;② 生成设计稿前先 `find mobile/<role>/design` 确认存放约定。
 - 交付:勘察结论(登录页已实现已接线/编译绿/真实后端 28080)、worker-login-states-v1.png+spec、任务提示词 docs/plan/worker-login-page-task-prompt.md,已按 worktree 协议合并 main 并清理。
+
+## 2026-08-25 sms dev 分支 + CI SIGPIPE 排障(sms-dev-log-channel)
+- 哪个坑浪费最多时间:CI deploy-102 连败 28 个 run(run 1716-1743),run 日志只剩 Clone 首尾行,盲查 1 小时(对比成功 run/build 手动重现/重启 runner 全无效);真正解法=runner config level 调 debug + docker logs gitea-runner,一步看到"Failure - Main Classify change, exitcode 141"。
+- 根因:Classify 的 `$(docker images | grep | head -1)` 在 pipefail 下 head 提前关管道 → grep 收 SIGPIPE(141) → set -e 杀步骤。102 本地镜像 sha tag 累积后竞态必现——代码零变化却连败,极易误判为"环境坏了"。
+- skill 有没有提前警告我:没有。2026-09-22 notes.md 记过同症状("任务状态机卡死,5s 死于 Clone 后")但误判了根因;本次实证是脚本层 SIGPIPE,重启 runner 无效。
+- 重来一次:① gitea actions run 日志不完整时,第一时间开 runner debug 日志(runner config level: debug),别盲猜环境;② set -o pipefail 的脚本里凡是 ...| head -N 管道一律 `|| true` 兜底或改 awk;③ 排查"同症状历史记录"要先于"重新推理"。

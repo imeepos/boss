@@ -190,3 +190,8 @@
 ## 症状: ETL RecordRun 报 "ERROR: operator is not unique: unknown - unknown (SQLSTATE 42725)"
 - 原因: pgx 参数化 SQL `EXTRACT(EPOCH FROM ($3-$2))*1000` 中,当 FinishedAt 为 NULL(RUNNING 记录)时,`$3` 与 `$2` 的类型无法从 NULL 上下文推断,PG 在 unknown-unknown 上找不到唯一运算符。
 - 修法: 显式 cast `$3::timestamptz-$2::timestamptz`(commit a77e28b)。排查线索: docker logs boss-server | grep "etl executor" 会出现 record running: ERROR,而 etl_job_run 表为空——先看应用日志再查表。
+
+## CI deploy run 日志只剩首尾行、连败但代码没变(2026-08-25)
+- 症状:deploy-102 全部 run 5 秒内死于 Clone 后,run 日志(zst)丢失全部中间步骤输出;build/push/compose 手动执行全过;重启 gitea-runner 无效。
+- 原因:act_runner 0.2.11 run 日志流丢失(工具 bug);真实失败=workflow 脚本 `$(docker images | grep | head -1)` 在 pipefail 下的 SIGPIPE 竞态(exitcode 141),本地镜像 tag 累积增多后必现。
+- 修法:① 定位:runner config.yaml level 改 debug → docker logs gitea-runner 看步骤名+exitcode(排查完调回 info);② 根治:管道尾加 `|| true`(c2a2df61);③ 预防:pipefail 脚本禁裸 `| head -N`。
