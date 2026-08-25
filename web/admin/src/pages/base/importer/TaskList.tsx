@@ -10,8 +10,10 @@ export interface ImportTaskRow {
   id: number
   kind: string
   operator: string
+  total: number
   imported: number
   failed: number
+  skipped: number
   detail?: string
   createdAt: string
 }
@@ -28,10 +30,12 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
   const im = t.pages.importer
   const [rows, setRows] = useState<ImportTaskRow[]>([])
   const [error, setError] = useState('')
+  const [kind, setKind] = useState('')
 
   const load = () => {
     setError('')
-    apiFetch<{ items: ImportTaskRow[] }>('/import-tasks')
+    const query = kind ? `?kind=${encodeURIComponent(kind)}` : ''
+    apiFetch<{ items: ImportTaskRow[] }>(`/import-tasks${query}`)
       .then((d) => setRows(d?.items ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : im.loadFail))
   }
@@ -41,6 +45,8 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
     <div className="overflow-x-auto px-4 pb-4">
       <div className="flex items-center gap-2 pb-2.5">
         <h3 className="m-0 text-sm">{im.tasksTitle}</h3>
+        <input className="h-8 w-44 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)]" placeholder={im.taskKindFilter} value={kind}
+          onChange={(e) => setKind(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') load() }} />
         <div className="flex-1" />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
       </div>
@@ -52,8 +58,10 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.id}</td>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{taskKindLabel(im, r.kind)}</td>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.operator || '—'}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.total}</td>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.imported}</td>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.failed}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.skipped}</td>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{formatTime(r.createdAt)}</td>
             </tr>
           ))}

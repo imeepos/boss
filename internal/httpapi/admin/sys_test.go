@@ -90,7 +90,7 @@ func TestSysRoutes(t *testing.T) {
 	t.Run("导入结果登记 合法 kind 落库", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
 		w := postBodyAuth(t, r, "/api/admin/v1/import-tasks",
-			`{"kind":"entity:department","imported":2,"failed":1}`, token)
+			`{"kind":"entity:department","total":4,"imported":2,"failed":1,"skipped":1}`, token)
 		if w.Code != 200 || !jsonContains(w.Body.String(), `"ok":true`) {
 			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 		}
@@ -99,7 +99,7 @@ func TestSysRoutes(t *testing.T) {
 	t.Run("导入结果登记 非法 kind/负数 拒绝", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
 		for _, body := range []string{
-			`{"kind":"addresses"}`, `{"kind":"entity:Drop Table"}`, `{"kind":"entity:LegalEntity"}`, `{"kind":"entity:ok","imported":-1}`,
+			`{"kind":"addresses"}`, `{"kind":"entity:Drop Table"}`, `{"kind":"entity:LegalEntity"}`, `{"kind":"entity:ok","total":1,"imported":-1}`,
 		} {
 			w := postBodyAuth(t, r, "/api/admin/v1/import-tasks", body, token)
 			var env struct {

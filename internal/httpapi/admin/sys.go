@@ -85,8 +85,10 @@ func sysListImportTasksHandler(a *app.Application) gin.HandlerFunc {
 func sysRecordImportTaskHandler(a *app.Application) gin.HandlerFunc {
 	type recordReq struct {
 		Kind     string         `json:"kind"`
+		Total    int            `json:"total"`
 		Imported int            `json:"imported"`
 		Failed   int            `json:"failed"`
+		Skipped  int            `json:"skipped"`
 		Detail   map[string]any `json:"detail"`
 	}
 	return func(c *gin.Context) {
@@ -98,11 +100,11 @@ func sysRecordImportTaskHandler(a *app.Application) gin.HandlerFunc {
 		}) {
 			return
 		}
-		if !entityTaskKindRe.MatchString(req.Kind) || req.Imported < 0 || req.Failed < 0 {
-			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "kind must be entity:<name>, counts must be >= 0"})
+		if !entityTaskKindRe.MatchString(req.Kind) || req.Total < 0 || req.Imported < 0 || req.Failed < 0 || req.Skipped < 0 || req.Imported+req.Failed+req.Skipped > req.Total {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "kind must be entity:<name>, counts must be >= 0 and not exceed total"})
 			return
 		}
-		if err := a.User.RecordImportTask(c.Request.Context(), req.Kind, httpx.ClaimsAccountID(c), req.Imported, req.Failed, req.Detail); err != nil {
+		if err := a.User.RecordImportTask(c.Request.Context(), req.Kind, httpx.ClaimsAccountID(c), req.Total, req.Imported, req.Failed, req.Skipped, req.Detail); err != nil {
 			respondErr(c, err)
 			return
 		}
