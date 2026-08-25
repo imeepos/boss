@@ -12,7 +12,6 @@ import { TabBar } from '../../../components/business/tab-bar'
 
 export default function GeoPage() {
   const t = useT()
-  const im = t.pages.importer
   const [urlTab, setUrlTab] = useQueryState('tab', 'country')
   const [tab, setTab] = useState<'country' | 'subdiv'>(
     urlTab === 'subdiv' ? 'subdiv' : 'country',
