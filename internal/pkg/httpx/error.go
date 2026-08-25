@@ -50,6 +50,7 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, user.ErrInvalidInput),
 		errors.Is(err, user.ErrRoleNotFound),
 		errors.Is(err, user.ErrFKViolation),
+		errors.Is(err, customer.ErrForeignKeyViolation),
 		errors.Is(err, quadlink.ErrForeignKeyViolation),
 		errors.Is(err, worker.ErrForeignKeyViolation),
 		errors.Is(err, backup.ErrInvalidInput),

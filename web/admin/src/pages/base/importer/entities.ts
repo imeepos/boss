@@ -92,7 +92,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
       { key: 'roles', required: false, type: 'list' },
     ],
     samples: [
-      { deptId: 1, code: 'POST-IMP-01', name: '示例岗位', roles: 'ops,analyst' },
+      { deptId: 1, code: 'post_imp_01', name: '示例岗位', roles: 'ops,analyst' },
     ],
   },
   {
