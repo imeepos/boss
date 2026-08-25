@@ -123,7 +123,7 @@ func workerReportSubmitHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// activateWorkerOrder 激活统一入口：只在当前订单尚未完成环节10时推进一次。
+// activateWorkerOrder 激活统一入口：扫码后 AutoPostScan 自动段 10-12(与 admin 一致)。
 func activateWorkerOrder(c *gin.Context, a *app.Application, orderID int64) error {
 	ord, _, err := a.Order.Track(c.Request.Context(), orderID)
 	if err != nil {
@@ -132,6 +132,9 @@ func activateWorkerOrder(c *gin.Context, a *app.Application, orderID int64) erro
 	if ord.Stage < 9 {
 		return fmt.Errorf("worker: scan bind required before activation")
 	}
+	if a.Automation != nil {
+		return a.Automation.AutoPostScan(c.Request.Context(), orderID)
+	}
 	if ord.Stage == 9 {
 		return a.Order.ActivateUser(c.Request.Context(), orderID)
 	}
@@ -139,12 +142,24 @@ func activateWorkerOrder(c *gin.Context, a *app.Application, orderID int64) erro
 }
 
 // activationState 激活状态视图：只有环节11完成才代表订单侧回调成功。
-func activationState(ticketNo string, stage int8) gin.H {
+func activationState(ticketNo string, stage int8, loid string) gin.H {
 	status := "PENDING"
 	if stage >= 11 {
 		status = "SUCCESS"
 	}
-	return gin.H{"ticketNo": ticketNo, "loid": "", "status": status, "statusLabel": "", "lastTry": ""}
+	return gin.H{"ticketNo": ticketNo, "loid": loid, "status": status, "statusLabel": "", "lastTry": ""}
+}
+
+// workerOrderLoid 按客户查 LOID;未建档或不可用时返回空串。
+func workerOrderLoid(c *gin.Context, a *app.Application, customerID int64) string {
+	if customerID <= 0 || a.Aaa == nil {
+		return ""
+	}
+	lo, err := a.Aaa.GetLoAccountByCustomer(c.Request.Context(), customerID)
+	if err != nil || lo == nil {
+		return ""
+	}
+	return lo.Loid
 }
 
 // workerActivationGetHandler 激活状态查询。
@@ -155,7 +170,8 @@ func workerActivationGetHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage))
+		loid := workerOrderLoid(c, a, ord.CustomerID)
+		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage, loid))
 	}
 }
 
@@ -179,7 +195,8 @@ func workerActivateHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage))
+		loid := workerOrderLoid(c, a, ord.CustomerID)
+		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage, loid))
 	}
 }
 

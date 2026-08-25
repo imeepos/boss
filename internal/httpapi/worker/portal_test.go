@@ -152,6 +152,9 @@ func (f *fakePortalOrder) ActivateUser(_ context.Context, id int64) error {
 	return nil
 }
 
+func (f *fakePortalOrder) NotifyActivation(_ context.Context, _ int64) error { return nil }
+func (f *fakePortalOrder) UpdateMap(_ context.Context, _ int64) error        { return nil }
+
 func (f *fakePortalOrder) RollbackStage(_ context.Context, id int64) error {
 	f.rolledBack = id
 	return nil
@@ -170,8 +173,9 @@ func portalTestRouterWith(t *testing.T, fw *fakePortalWorkOrder, fo *fakePortalO
 	r := gin.New()
 	a := &app.Application{
 		Worker: ws, WorkOrder: fw, Order: fo, WorkerLedger: wl,
-		Portal:   portal.NewMemory(),
-		QuadLink: &fakePortalQuad{},
+		Portal:     portal.NewMemory(),
+		QuadLink:   &fakePortalQuad{},
+		Automation: app.NewAutomation(fo, nil),
 	}
 	Register(r, a, newWorkerJWTManager())
 	return r
@@ -411,5 +415,47 @@ func TestGrabRejectsAcceptTypeMismatch(t *testing.T) {
 	res := portalWorkerDo(r, "POST", "/api/worker/v1/hall/ORD-1/grab", "", tok)
 	if res["code"].(float64) == 0 || fw.assigned != 0 {
 		t.Fatalf("type-mismatched grab should be rejected: %v", res)
+	}
+}
+
+// TestActivateEnforcesOwnership 回归:激活接口拒绝非本人工单。
+func TestActivateEnforcesOwnership(t *testing.T) {
+	tok := portalGrabToken(t)
+	// 工单归属师傅 8(非当前师傅 7)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketNo: "ORD-1", OrderID: 1, WorkerID: 8, Status: "DOING"},
+	}}
+	fo := &fakePortalOrder{}
+	r := portalTestRouter(t, fw, fo)
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/tickets/ORD-1/activate", `{}`, tok)
+	if res["code"].(float64) != 40300 {
+		t.Fatalf("other worker's ticket activate should 40300, got %v", res)
+	}
+	// 归属正确时允许
+	fw.tickets[0].WorkerID = 7
+	res = portalWorkerDo(r, "POST", "/api/worker/v1/tickets/ORD-1/activate", `{}`, tok)
+	if res["code"].(float64) != 0 {
+		t.Fatalf("own ticket activate should succeed, got %v", res)
+	}
+}
+
+// TestActivationStateReturnsLoid 回归:激活状态查询返回真实 LOID(当 Aaa 可用时);不可用时返回空。
+func TestActivationStateReturnsLoid(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketNo: "ORD-1", OrderID: 1, WorkerID: 7, Status: "DOING"},
+	}}
+	fo := &fakePortalOrder{}
+	r := portalTestRouter(t, fw, fo)
+	res := portalWorkerDo(r, "GET", "/api/worker/v1/tickets/ORD-1/activation", "", tok)
+	if res["_status"] != http.StatusOK {
+		t.Fatalf("activation state should succeed, got %d: %v", res["_status"], res)
+	}
+	data := res["data"].(map[string]any)
+	if data["loid"].(string) != "" {
+		t.Fatalf("loid should be empty when Aaa not available, got %s", data["loid"])
+	}
+	if data["status"].(string) != "PENDING" {
+		t.Fatalf("status should be PENDING at stage 9, got %s", data["status"])
 	}
 }
