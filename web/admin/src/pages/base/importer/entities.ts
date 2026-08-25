@@ -149,6 +149,43 @@ export const IMPORT_ENTITIES: EntityDef[] = [
       { prvCode: 'PHL001', cityPrefix: 'MNL', gridCode: 12, name: '示例网格', coverage: 'Makati', status: 'ACTIVE' },
     ],
   },
+  {
+    kind: 'odn_device',
+    perm: 'menu:odn',
+    endpoint: '/odn/devices',
+    uniqueKey: ['code'],
+    columns: [
+      { key: 'code', required: true, type: 'string' },
+      { key: 'kind', required: true, type: 'string' },
+      { key: 'prvCode', required: true, type: 'string' },
+      { key: 'cityPrefix', required: true, type: 'string' },
+      { key: 'siteNo', required: false, type: 'number' },
+      { key: 'parentId', required: false, type: 'number' },
+      { key: 'name', required: false, type: 'string' },
+    ],
+    samples: [
+      { code: 'ODN-DEV-001', kind: 'OLT', prvCode: 'PHL001', cityPrefix: 'MNL', siteNo: 88, parentId: 0, name: '示例核心设备' },
+    ],
+  },
+  {
+    kind: 'odn_facility',
+    perm: 'menu:odn',
+    endpoint: '/odn/facilities',
+    uniqueKey: ['code'],
+    columns: [
+      { key: 'code', required: true, type: 'string' },
+      { key: 'kind', required: true, type: 'string' },
+      { key: 'prvCode', required: true, type: 'string' },
+      { key: 'cityPrefix', required: true, type: 'string' },
+      { key: 'gridCode', required: false, type: 'number' },
+      { key: 'name', required: false, type: 'string' },
+      { key: 'lat', required: false, type: 'number' },
+      { key: 'lng', required: false, type: 'number' },
+    ],
+    samples: [
+      { code: 'ODN-FAC-001', kind: 'MH', prvCode: 'PHL001', cityPrefix: 'MNL', gridCode: 12, name: '示例设施', lat: 14.6, lng: 121.0 },
+    ],
+  },
 ]
 
 export function findEntity(kind: string): EntityDef | undefined {
