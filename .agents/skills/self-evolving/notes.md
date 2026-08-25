@@ -608,3 +608,8 @@
 - 102 冒烟抓出三个真 bug(单测全绿也挡不住):multipart 缺省 minSupportedCode=0 撞 validate;pgx 把 nil []int64 编码 NULL 撞 NOT NULL(显式列不吃表 DEFAULT);缺省 minSupported=本版码导致所有存量客户端被强升(语义反了)。结论:multipart+DB 落库链路必须 102 实测,域单测覆盖不到编码层。
 - 违规:两个 fix 直接提交在 main 上(AGENTS 禁止);下不为例,冒烟发现的热修也走 worktree。
 - 教训:gin 同一路径段 :id 与 static/latest 冲突会注册期 panic,公开面用 /site/downloads 独立段;UI 验证用 cdp-capture --eval 打 innerText 断言,比截图可靠(本模型看不了图)。
+
+## 2026-08-28 bossctl release 子命令(CI APK 直传发版)
+- 顺利:fetch-apk.sh + release upload 打通 CI 产物→发版→App 检查/下载→官网下载全链,sha256 三处一致(CI 本地/服务端入库/下载回流)。
+- 小坑:fetch-apk.sh 期望 boss-worker.apk 同存,worker 构建缺席时整包拉取失败;按单 apk 手动 cat 拉取绕过。CI 卷当前只有 user 包,worker 出包链路待查(下一轮)。
+- 客户端 latest 对 versionCode=0 返回 42200(校验 vc>0),App 真机恒有 vc>=1,无影响;留档避免下次误判为 bug。
