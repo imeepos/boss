@@ -143,6 +143,10 @@ func productCreateHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		// Bandwidth 可选;Category 空值回退 broadband(由 DB 层处理)。
+		// EffectiveAt 未传(如批量导入模板)兜底当前时间,避免落 0001-01-01 零值(与调价 handler 同口径)。
+		if req.EffectiveAt.IsZero() {
+			req.EffectiveAt = time.Now()
+		}
 		id, err := a.Product.CreateProduct(c.Request.Context(), req)
 		if err != nil {
 			respondErr(c, err)
