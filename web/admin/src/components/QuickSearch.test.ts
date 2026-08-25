@@ -1,7 +1,7 @@
 // 快捷搜索展示逻辑测试:各域命中主键与展示文案映射。
 import { describe, expect, it } from 'vitest'
 import { hitId, hitText } from './QuickSearch'
-import type { CustomerHit, OrderHit, UserHit, WorkerHit } from '../../api/search'
+import type { CustomerHit, OrderHit, UserHit, WorkerHit } from '../api/search'
 
 describe('hitId', () => {
   it('按域取主键字段', () => {
