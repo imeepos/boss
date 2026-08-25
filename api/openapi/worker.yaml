@@ -96,6 +96,7 @@ paths:
   /schedule/clock: { $ref: './worker/profile.yaml#/paths/~1schedule~1clock' }
   /settings: { $ref: './worker/profile.yaml#/paths/~1settings' }
   /feedbacks: { $ref: './worker/profile.yaml#/paths/~1feedbacks' }
+  /team/performance: { $ref: './worker/profile.yaml#/paths/~1team~1performance' }
 
   # ---------- Misc ----------
   /messages: { $ref: './worker/misc.yaml#/paths/~1messages' }

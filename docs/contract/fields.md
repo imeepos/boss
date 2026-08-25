@@ -620,15 +620,26 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 
 ### 7.1 worker_groups / workers（班组·师傅）
 
-`worker_groups`（班组）：
+> UI 术语裁定（000141）：admin「师傅管理」页与师傅端以**装维队**方式展现班组，**组长**称**队长**；
+> 实体/DB 列不变（worker_groups / leader_id），仅展示文案层映射。
+
+`worker_groups`（班组，UI=装维队）：
 
 | 字段名(TS实体) | DB 列 | 枚举/说明 |
 |:---------|:------|:----------|
 | `code` | code | 班组编码，公司内唯一（稳定标识，name 可改 code 不变） |
 | `name` | name | 班组名称（可改名） |
 | `legalEntity` | legal_entity_id | BIGINT → legal_entities |
-| `leader` | leader_id | BIGINT → workers（组长，可空） |
+| `leader` | leader_id | BIGINT → workers（组长/UI=队长，可空；000141 起仅允许本队在职成员） |
 | `leaderName` | leader_name | 组长姓名快照 |
+| `memberCount` | —（子查询） | 在职成员数，仅列表视图冗余（000141） |
+| — | deleted_at | 软删（000141 增列）：null=在职队；仍有在职成员时禁止软删（40900） |
+
+> 装维队管理端点（000141，admin `/api/admin/v1`，perm `menu:order`）：
+> `PUT /worker-groups/{id}`（改名+指定队长）、`DELETE /worker-groups/{id}`（软删）、
+> `GET /worker-groups/{id}/performance?period=`（成员月度业绩）、
+> `POST /workers/{id}/transfer`（调队，落 §7.2 台账）。
+> 师傅端 `GET /api/worker/v1/team/performance?period=`：仅队长可见，非队长 40300。
 
 `workers`（安装师傅/师傅端用户）：
 

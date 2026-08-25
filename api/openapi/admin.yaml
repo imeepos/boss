@@ -265,6 +265,9 @@ paths:
   /workers/{workerId}/settings: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1settings' }
   /workers/{workerId}/real-name: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1real-name' }
   /workers/{workerId}/real-name/verify: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1real-name~1verify' }
+  /worker-groups/{groupId}: { $ref: './admin/worker.yaml#/paths/~1worker-groups~1{groupId}' }
+  /worker-groups/{groupId}/performance: { $ref: './admin/worker.yaml#/paths/~1worker-groups~1{groupId}~1performance' }
+  /workers/{workerId}/transfer: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1transfer' }
   /worker-performances: { $ref: './admin/worker.yaml#/paths/~1worker-performances' }
   /worker-commissions: { $ref: './admin/worker.yaml#/paths/~1worker-commissions' }
   /worker-feedbacks: { $ref: './admin/worker.yaml#/paths/~1worker-feedbacks' }
