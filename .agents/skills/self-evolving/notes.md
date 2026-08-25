@@ -670,3 +670,8 @@
 - 哪个坑浪费最多时间:cdp-capture 三次失败(127.0.0.1 连不上 vite、eval const 撞名、跨 run localStorage 不保留),skill 文档只写了注入键名没写"每次都是新 profile"。
 - skill 有没有提前警告我:部分(注入方法有),profile 不保留没警告。
 - 重来一次:先读 cdp-capture.mjs 源码确认 eval 语义,再一次性写完整 eval 链。
+
+## 2026-09-22 批量导入待办执行(行上限/结果登记/权限置灰/ODN query 列)
+- 哪个坑浪费最多时间:E2E2 下拉触发器按目标项文本找导致 undefined,一次失败;与上一轮"触发器=当前选中项"同源,已沉淀。
+- skill 有没有提前警告我:无(新坑)。
+- 重来一次:dropdown 交互统一模板——先点 aria-haspopup 按钮,再在 option 里找目标。

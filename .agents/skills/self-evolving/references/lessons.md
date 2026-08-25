@@ -335,3 +335,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - cdp-capture 每次运行是全新浏览器 profile:localStorage 不跨次保留,token/servers 注入必须在同一次运行内完成(首个 eval setItem + location.href 重新导航,后续 eval 用 Promise+setTimeout 等待)。
 - cdp-capture 多个 --eval 在同一页面上下文顺序执行:顶层 const/let 会跨 eval 撞名,一律用 IIFE 包裹。
 - vite dev 默认只绑 localhost(::1),127.0.0.1 连不上:CURL 探活和 CDP 访问都要用 http://localhost:PORT。
+- cdp-capture 操作自定义 Dropdown:触发器按钮文本是"当前选中项"(如'账号'),不是目标项;查找触发器用 aria-haspopup=listbox + 当前值文本,点开后 option 才按目标文本找。
