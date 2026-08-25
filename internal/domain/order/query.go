@@ -4,11 +4,13 @@ import "time"
 
 // OrderQuery 订单列表查询条件(承接 order.html 订单管理列表)。
 type OrderQuery struct {
-	Keyword    string // 订单号模糊
-	Status     string // PENDING/RESERVED/INSTALLING/DONE;空=全部
-	CustomerID int64  // 客户过滤;0=全部
-	Limit      int    // <=0 视为不限
-	Offset     int
+	Keyword       string // 订单号模糊
+	Status        string // PENDING/RESERVED/INSTALLING/DONE;空=全部
+	CustomerID    int64  // 客户过滤;0=全部
+	LegalEntityID int64  // 数据范围子公司;0=不限
+	RegionScope   string // 数据范围区域子树;空=不限
+	Limit         int    // <=0 视为不限
+	Offset        int
 }
 
 // OrderListItem 订单列表读模型(联表展示客户/产品/地址名,字段与 order.html 列表列对齐)。
