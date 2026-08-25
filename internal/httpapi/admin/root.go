@@ -104,4 +104,5 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerSiteRoutes(authed, a)
 	registerClientReleaseRoutes(authed, a)
 	registerCrashLogRoutes(authed, a)
+	registerSearchRoutes(authed, a)
 }

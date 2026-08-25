@@ -56,6 +56,8 @@ tags:
     description: 用户端数据管理(账户/地址簿/套餐订购/增值服务/通知订阅/FAQ/消息/优惠券/流量/排障指南/协议/余额/发票/投诉/实名记录/卖点与账单明细配置)
   - name: Worker
     description: 师傅管理(档案与接单设置/绩效提成/评价/消息/公告/FAQ/物料工具/旧件回收/设备健康/抢单池/调度会话/排期)
+  - name: Search
+    description: 聚合搜索(客户/用户/师傅/订单 四域统一检索,按权限返回)
 
 paths:
   # ---------- Auth ----------
@@ -471,3 +473,6 @@ paths:
   /partner/commissions/{id}/settle: { $ref: './admin/partner.yaml#/paths/~1partner~1commissions~1{id}~1settle' }
   /partner/audit-report: { $ref: './admin/partner.yaml#/paths/~1partner~1audit-report' }
   /partner/region-scope: { $ref: './admin/partner.yaml#/paths/~1partner~1region-scope' }
+
+  # ---------- Search(聚合搜索) ----------
+  /search: { $ref: './admin/search.yaml#/paths/~1search' }

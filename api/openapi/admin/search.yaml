@@ -1,0 +1,38 @@
+paths:
+  /search:
+    get:
+      tags: [Search]
+      summary: 聚合搜索(客户/用户/师傅/订单 四域;按账号持有权限返回,缺权限域不出组)
+      operationId: aggregateSearch
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema: { type: string }
+          description: 关键字(姓名/手机号/单号/工号/登录名,按域模糊匹配)
+      responses:
+        '200':
+          description: 分组检索结果(data:{groups:[{domain,items}]};每域至多 5 条)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      groups:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            domain:
+                              type: string
+                              enum: [customer, user, worker, order]
+                              description: 域标识,前端据此决定跳转路由与列展示
+                            items:
+                              type: array
+                              description: 各域条目字段复用对应列表契约(customer.yaml/userdata.yaml/worker.yaml/order.yaml)
+                              items: { type: object }
