@@ -195,7 +195,7 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 998}); err != nil {
 		t.Fatalf("CreateDevice SNW990: %v", err)
 	}
-	// 设备坐标(000142):带 lat/lng 创建 → 列表回读。
+	// 设备坐标(000143):带 lat/lng 创建 → 列表回读。
 	if err := s.CreateDevice(ctx, Device{Code: "OLT990", Kind: DevOLT,
 		PrvCode: "PHL001", CityPrefix: "MNL", Lat: f64p(14.55), Lng: f64p(120.98)}); err != nil {
 		t.Fatalf("CreateDevice OLT990(带坐标): %v", err)

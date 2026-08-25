@@ -13,7 +13,7 @@
 
 ## 决策
 
-1. **迁移 000142**：`odn_device` 补 `lat`/`lng` 可空列。历史数据无坐标不受影响；无坐标设备不上地图点位（GIS 查询侧过滤）。
+1. **迁移 000143**：`odn_device` 补 `lat`/`lng` 可空列。历史数据无坐标不受影响；无坐标设备不上地图点位（GIS 查询侧过滤）。注：初拟 000142，因并行分支 feat/worker-realtime-location 已占用 000142_worker_locations，让号为 000143。
 2. **GIS 域新增独立 ODN 点位查询**：`GET /gis/odn-points?entity=facility|site|device&bbox`（`menu:gis`）。ODN 实体自带 `lat/lng`（非 PostGIS geom），bbox 用 `lng/lat BETWEEN` 数值区间过滤，不复用 `Points` 的 `ST_Within`（pg_points.go 的 bboxToSQL 硬编码 `a.geom`）。
 3. **图层语义**：ODN 点位 level 9=设施 / 10=局点 / 11=设备，与八级 drill（1~8）正交，**不并入 drill 层级**——避免破坏现有八级下钻契约（`/gis/levels` 前端消费 1~8）。
 4. **前端**：ODN 管理页表单加 lat/lng 录入（设施/局点/设备），表格加坐标列；GIS 页加 ODN 图层下拉（关/设施/局点/设备），点位叠加进 OpenLayers 地图。ODN 点位（level 9~11）点击**不触发** `/gis/resources/:id/detail`（该接口只对逻辑资源有效）。
@@ -33,7 +33,7 @@
 
 ## 关联
 
-- 迁移：000142（odn_device 坐标列）
+- 迁移：000143（odn_device 坐标列）
 - 契约：`api/openapi/admin/intel.yaml` `/gis/odn-points`；fields.md §1.5.5
 - 域：`internal/domain/gis`（ODNPoints）、`internal/domain/odn`（Device 坐标）
 - 前端：`/oss/odn`（坐标录入/展示）、`/intel/gis`（ODN 图层）

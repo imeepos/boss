@@ -171,9 +171,9 @@
 
 > 存储口径：`--` 仅设计图纸不入库（规范 5.1），系统侧存两端编码列；`OrderEndpoints` 定向（同优先级拒绝 ErrSamePriority），端点正则覆盖设施码（5 位）与核心设备码（3 位，见 §1.5.5 设备实体）。
 
-### 1.5.5 odn_site / odn_device（局点与核心链路设备，迁移 000081/000142，资产编码规范第 2/3 章）
+### 1.5.5 odn_site / odn_device（局点与核心链路设备，迁移 000081/000143，资产编码规范第 2/3 章）
 
-> 管理面同 §1.5.3（`menu:odn`，`/odn/sites|devices`）；000142 起 odn_device 补坐标列（用户要求"所有物料有地理位置 与地图关联"），与 GIS `/gis/odn-points` 图层接通。
+> 管理面同 §1.5.3（`menu:odn`，`/odn/sites|devices`）；000143 起 odn_device 补坐标列（用户要求"所有物料有地理位置 与地图关联"），与 GIS `/gis/odn-points` 图层接通。
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
 |:---------|:-------|:------|:----------|
@@ -186,7 +186,7 @@
 | 类型 | `Kind` | kind | SNW/OLT/ODF/OCC/ODB/SDB/PRT/TBP |
 | 归属局点 | `SiteNo` | site_no | 可空（市域设备） |
 | 上级 | `ParentID` | parent_id | ODB→OCC / SDB→ODB / PRT→SDB / TBP→PRT（自引用，顶层 NULL） |
-| 坐标 | `Lat`/`Lng` | lat/lng | 可空（000142；无坐标设备不上地图点位） |
+| 坐标 | `Lat`/`Lng` | lat/lng | 可空（000143；无坐标设备不上地图点位） |
 | 唯一性 | — | uq_odn_device_city | 市域内唯一；SNW 全网唯一（部分索引） |
 | 状态 | `Status` | status | IN_USE / RETIRED（报废永久锁定） |
 
