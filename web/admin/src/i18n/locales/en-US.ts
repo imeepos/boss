@@ -48,6 +48,17 @@ const enUS: Translations = {
     quickCreate: 'Quick create',
     version: 'Version',
   },
+  quickSearch: {
+    placeholder: 'Search menus, customers, users, workers, orders…',
+    jump: 'Quick jump',
+    customers: 'Customers',
+    users: 'Users',
+    workers: 'Workers',
+    orders: 'Orders',
+    viewAll: 'View all',
+    empty: 'No matching results',
+    hint: 'Type at least 2 characters to search business data',
+  },
   menu: {
     groups: {
       overview: 'Overview',

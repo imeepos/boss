@@ -48,6 +48,17 @@ const msMY: Translations = {
     quickCreate: 'Cipta pantas',
     version: 'Versi',
   },
+  quickSearch: {
+    placeholder: 'Cari menu, pelanggan, pengguna, pekerja, pesanan…',
+    jump: 'Lompat pantas',
+    customers: 'Pelanggan',
+    users: 'Pengguna',
+    workers: 'Pekerja',
+    orders: 'Pesanan',
+    viewAll: 'Lihat semua',
+    empty: 'Tiada hasil sepadan',
+    hint: 'Taip sekurang-kurangnya 2 aksara untuk mencari data perniagaan',
+  },
   menu: {
     groups: {
       overview: 'Gambaran Keseluruhan',

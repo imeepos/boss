@@ -48,6 +48,17 @@ const zhCN: Translations = {
     quickCreate: '快捷新建',
     version: '版本',
   },
+  quickSearch: {
+    placeholder: '搜索菜单、客户、用户、师傅、订单…',
+    jump: '快捷跳转',
+    customers: '客户',
+    users: '用户',
+    workers: '师傅',
+    orders: '订单',
+    viewAll: '查看全部',
+    empty: '未找到匹配结果',
+    hint: '输入关键字检索业务数据(至少 2 个字符)',
+  },
   menu: {
     groups: {
       overview: '运营总览',

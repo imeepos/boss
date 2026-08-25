@@ -45,6 +45,17 @@ export interface Translations {
     quickCreate: string
     version: string
   }
+  quickSearch: {
+    placeholder: string
+    jump: string
+    customers: string
+    users: string
+    workers: string
+    orders: string
+    viewAll: string
+    empty: string
+    hint: string
+  }
   menu: {
     groups: Record<string, string>
     items: Record<string, string>
