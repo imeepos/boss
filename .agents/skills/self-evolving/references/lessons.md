@@ -302,3 +302,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - check-contract-sync E 项要求 menu.def key 与 menu: 权限码同名(camelCase 一一对应,无下划线);初版 menu:crash_logs 与菜单 key crashlogs 不匹配即红,且涉及迁移/handler/契约/i18n 错误文本多文件同步更名,宜首次命名即对齐
 - admin handler 单元测试不拉全 Register,自建最小路由仅装目标 handler + admin Authn 中间件更省力(避免依赖全部 user.Service fake)
 - ssh HOST arg1 arg2 ... 把 argv 按空格拼接发给远端 shell,含管道/重定向的命令必须整体作为一个字符串参数('ssh HOST "cmd | head"' 而非 'ssh HOST cmd head'),否则远端 shell 按字面管道解析;此坑在取件脚本 docker 链式调用反复出现
+- 2026-08-28: go build 连 -x 都零输出且挂死 → 先查 GOPATH/GOMODCACHE 是否在外置卷(~/go 软链 /Volumes/sker 停摆),本地 GOPATH 绕行再定位。
+- 2026-08-28: pgx 把 nil 切片编码为 SQL NULL,显式 INSERT 列不吃表 DEFAULT → 撞 NOT NULL;落库前 nil 兜底空切片。
+- 2026-08-28: multipart/DB 落库链路的 bug 域单测挡不住(缺省值/驱动编码/语义),必须 102 实测冒烟;gin 同段 :id 与 static 冲突注册期 panic,公开面用独立段(/site/downloads)。
+- 2026-08-28: UI 验证用 cdp-capture --eval 打 innerText 断言比截图可靠(无图像输入能力时);admin 页登录注入 localStorage boss.token 后 location.href 跳转。
