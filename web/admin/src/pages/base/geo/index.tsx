@@ -6,19 +6,27 @@ import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { CountryPanel } from './CountryPanel'
 import { SubdivisionPanel } from './SubdivisionPanel'
+import { BaseImportEntry } from '../importer/BaseImportEntry'
 import { PageHead } from '../../../components/business/page-head'
 import { TabBar } from '../../../components/business/tab-bar'
 
 export default function GeoPage() {
   const t = useT()
+  const im = t.pages.importer
   const [urlTab, setUrlTab] = useQueryState('tab', 'country')
   const [tab, setTab] = useState<'country' | 'subdiv'>(
     urlTab === 'subdiv' ? 'subdiv' : 'country',
   )
+  // 导入完成后 bump rev 重挂当前面板(key remount):面板从 URL search 恢复筛选并重新拉取。
+  const [rev, setRev] = useState(0)
 
   return (
     <div>
-      <PageHead title={t.pages.geo.title} desc="ISO 3166-1 / ISO 3166-2 · CLDR · UN M49" />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageHead title={t.pages.geo.title} desc="ISO 3166-1 / ISO 3166-2 · CLDR · UN M49" />
+        <BaseImportEntry kind="geo" title={im.geoTitle} hint={im.geoHint}
+          endpoint="/geo/import" onImported={() => setRev((v) => v + 1)} />
+      </div>
       <TabBar
         tabs={[
           { key: 'country' as const, label: t.pages.geo.tabCountry },
@@ -27,7 +35,7 @@ export default function GeoPage() {
         value={tab}
         onChange={(k) => { setTab(k); setUrlTab(k) }}
       />
-      {tab === 'subdiv' ? <SubdivisionPanel /> : <CountryPanel />}
+      {tab === 'subdiv' ? <SubdivisionPanel key={rev} /> : <CountryPanel key={rev} />}
     </div>
   )
 }

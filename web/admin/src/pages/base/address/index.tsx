@@ -8,6 +8,7 @@ import { Badge } from '../../../components/ui/badge'
 import { Input } from '../../../components/ui/input'
 import { AddressGeoDrawer, type AddressRow, type CountryRow } from './AddressGeoDrawer'
 import { AddressNodeDrawer } from './AddressNodeDrawer'
+import { BaseImportEntry } from '../importer/BaseImportEntry'
 import { CARD, TOOLBAR, SPACER, ADDR_ROW, ADDR_TOGGLE, ADDR_NAME, ACT_BTN, SEP } from '../geo/styles'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
@@ -17,6 +18,7 @@ export default function AddressPage() {
   const t = useT()
   const confirmDialog = useConfirm()
   const a = t.pages.address
+  const im = t.pages.importer
   const [roots, setRoots] = useState<AddressRow[]>([])
   const [countries, setCountries] = useState<CountryRow[]>([])
   const [childrenOf, setChildrenOf] = useState<Record<number, AddressRow[]>>({})
@@ -116,6 +118,8 @@ export default function AddressPage() {
         </ToolbarButton>
         <ToolbarButton primary
           onClick={() => setNodeForm({ mode: 'create', parent: undefined })}>+ {a.addRoot}</ToolbarButton>
+        <BaseImportEntry kind="addr" title={im.addrTitle} hint={im.addrHint}
+          endpoint="/addresses/import" onImported={loadRoots} />
       </div>
       <AddressTree rows={visible(roots)} childrenOf={childrenOf} expanded={expanded} depth={0}
         countryName={countryName} keyword={kw}
