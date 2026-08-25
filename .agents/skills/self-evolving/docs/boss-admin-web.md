@@ -86,3 +86,4 @@
 - 102 admin 口令实为 admin/admin123(compose environment BOSS_ADMIN_PASSWORD 权威;deployments/app.env 的 Boss-admin-2026 已过时)
 - admin-web 前端部署在 http://192.168.0.102:5180(nginx 同源代理 /api/);CI deploy-102 的 compose 常把容器留在 Created,需 ssh 上去 docker start
 - git remote 名是 `gitea`(ssh://git@192.168.0.102:222/sker/boss.git),没有 origin;push gitea main 触发 CI(后端 28080 与前端 5180 一起出新构建)
+- 部署验证(2026-09-22 装维队):push 后查 gitea actions 最新 run——DB `action_run` 按 `index` 排序,status 3=被更新 push 取代(非成功),deploy 成功会重建镜像(tag=commit sha)并重启容器;并行会话推进 main 会取代我的 run,等最新 main 的 run 完成再验接口。验证后端新路由:`curl http://192.168.0.102:28080/api/admin/v1/<新路径>` 未部署=404 page not found,部署后=401/业务信封。

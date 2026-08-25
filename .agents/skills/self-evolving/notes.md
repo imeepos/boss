@@ -675,3 +675,8 @@
 - 哪个坑浪费最多时间:E2E2 下拉触发器按目标项文本找导致 undefined,一次失败;与上一轮"触发器=当前选中项"同源,已沉淀。
 - skill 有没有提前警告我:无(新坑)。
 - 重来一次:dropdown 交互统一模板——先点 aria-haspopup 按钮,再在 option 里找目标。
+
+## 2026-09-22 装维队管理(worker-team-mgmt 000141)
+- 哪个坑浪费最多时间:① worker_group_memberships 已由 000019 建表,我按 fields.md"§7.2 新增"误以为不存在,先写了重复建表迁移(查 migrations 目录才发现);② check-contract-sync A 项:域文件 worker.yaml 加了 path 不够,顶层索引 api/openapi/{face}.yaml 必须同步登记 $ref 行;③ 部署验证:CI 是 main push 触发,并行会话推进 gitea main 会取代我 push 触发的 run(状态 3=被取代/取消),镜像 tag=commit sha,以 102 实际镜像/容器时间为准;④ Android gradle wrapper 网络下载失败,但 ~/.gradle 有缓存 dist,绕 wrapper 直接调 gradle 二进制 + JAVA_HOME=openjdk@17 + local.properties sdk.dir 可离线构建。
+- skill 有没有提前警告我:红线#1(改前先 read)命中;其余均为新坑。
+- 重来一次:① 写迁移前必 `ls migrations | grep` 目标表名,不信 fields.md 的"新增"字样;② openapi 域文件与顶层索引双处登记后一次跑 check-contract-sync;③ 部署验证看 gitea actions 最新 run(DB action_run index/status),status 3=被取代非成功,成功 deploy 会重建镜像并重启容器;④ Android 构建优先查 ~/.gradle/wrapper/dists 缓存。
