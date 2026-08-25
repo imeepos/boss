@@ -4,12 +4,11 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
-import { Badge } from '../../../components/ui/badge'
 import { Input } from '../../../components/ui/input'
 import { AddressGeoDrawer, type AddressRow, type CountryRow } from './AddressGeoDrawer'
 import { AddressNodeDrawer } from './AddressNodeDrawer'
 import { BatchImportEntry } from '../importer/BatchImportEntry'
-import { CARD, TOOLBAR, SPACER, ADDR_ROW, ADDR_TOGGLE, ADDR_NAME, ACT_BTN, SEP } from '../geo/styles'
+import { CARD, TOOLBAR, SPACER, ADDR_ROW, ADDR_TOGGLE, ADDR_NAME, ACT_BTN } from '../geo/styles'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
 interface AddressHit { node: AddressRow; ancestors: AddressRow[] }
@@ -18,7 +17,6 @@ export default function AddressPage() {
   const t = useT()
   const confirmDialog = useConfirm()
   const a = t.pages.address
-  const im = t.pages.importer
   const [roots, setRoots] = useState<AddressRow[]>([])
   const [countries, setCountries] = useState<CountryRow[]>([])
   const [childrenOf, setChildrenOf] = useState<Record<number, AddressRow[]>>({})
