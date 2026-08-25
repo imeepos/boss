@@ -4,6 +4,12 @@
 > 唯一性经验归入下方"跨任务提炼"；逐任务细节已由 references/(lessons/known-issues/red-lines/techniques + knowledge 索引)承接。
 > 之后仍按 SKILL.md 流程：一次任务一段，只增不改；累计 5 轮以上再做一次去重盘点。
 
+## 2026-08-25 实时位置上报闭环
+
+- 哪个坑浪费了最多时间？迁移号只检查了当前可见分支，门禁才发现 `feat/odn-gis-link` 已占用 000142/000143；随后按跨未合并分支让号到 000144，并重新跑门禁。
+- 这个 skill 有没有提前警告我？有，AGENTS.md 与后端经验明确要求逐分支检查迁移号；首次检查命令错误地只覆盖了部分 refs，说明必须直接用 `git for-each-ref` + `git ls-tree` 并验证门禁。
+- 重来一次我会怎么做？创建迁移前先 `git fetch --prune`，遍历本地和远端所有 refs 的 migrations 文件，再创建；Android 构建前先检查 Gradle wrapper 缓存/网络，失败时明确记录未验证而不声称 APK 构建成功。
+
 ## 跨任务提炼（按复发频次排序）
 
 ### 累犯TOP（5次以上）
