@@ -18,7 +18,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.AssetApi
 import com.ymm.boss.worker.api.TicketApi
 import kotlinx.coroutines.launch
@@ -27,44 +29,47 @@ import kotlinx.coroutines.launch
 @Composable
 fun DismantleScreen(nav: NavHost, no: String) {
     val info by loadOnce(no) { TicketApi.detail(no) }
+    val unboundOk = stringResource(R.string.dismantle_unbound_ok)
+    val unboundFail = stringResource(R.string.dismantle_unbound_fail)
+    val errBlank = stringResource(R.string.dismantle_err_blank)
     var epc by remember { mutableStateOf("") }
     var tip by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("拆机作业", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.dismantle_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("工单加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.dismantle_load_fail), red = true) }
             is Load.Ok -> Card(Modifier.padding(12.dp)) {
-                KvRow("工单号", s.data.optString("ticketNo"))
-                KvRow("预绑定标签", s.data.optString("preBindTag", "-"))
-                KvRow("分光器/端口", s.data.optString("splitterPort", "-"))
+                KvRow(stringResource(R.string.td_ticket_no), s.data.optString("ticketNo"))
+                KvRow(stringResource(R.string.dismantle_kv_prebind), s.data.optString("preBindTag", "-"))
+                KvRow(stringResource(R.string.dismantle_kv_splitter), s.data.optString("splitterPort", "-"))
             }
         }
         Card(Modifier.padding(12.dp)) {
-            FieldLabel("设备 EPC（扫码或手动输入）")
+            FieldLabel(stringResource(R.string.dismantle_field_epc))
             OutlinedTextField(value = epc, onValueChange = { epc = it },
-                placeholder = { Text("扫描光猫机身电子标签") }, singleLine = true,
+                placeholder = { Text(stringResource(R.string.dismantle_epc_hint)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
-            PrimaryButton("扫码解绑", modifier = Modifier.fillMaxWidth()) {
-                if (epc.isBlank()) { tip = "请先输入或扫描 EPC"; return@PrimaryButton }
+            PrimaryButton(stringResource(R.string.dismantle_submit), modifier = Modifier.fillMaxWidth()) {
+                if (epc.isBlank()) { tip = errBlank; return@PrimaryButton }
                 scope.launch {
                     tip = try {
                         val r = AssetApi.dismantleScan(no, epc.trim())
                         val msg = if (r.optBoolean("unbound") && r.optBoolean("portReleased"))
-                            "扫码解绑成功，端口已释放，可执行拆机" else r.optString("message", "解绑失败，请重试")
+                            unboundOk else r.optString("message", unboundFail)
                         toast(ctx, msg)
                         ""
-                    } catch (e: Exception) { "解绑失败：${e.message}" }
+                    } catch (e: Exception) { ctx.getString(R.string.dismantle_toast_fail, e.message ?: "") }
                 }
             }
             if (tip.isNotEmpty()) Notice(tip, red = true)
         }
         Card(Modifier.padding(12.dp)) {
-            Notice("拆机解绑后端口释放，旧件需按流程返库。")
+            Notice(stringResource(R.string.dismantle_notice))
         }
         Spacer(Modifier.height(12.dp))
     }

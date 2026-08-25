@@ -18,8 +18,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
 import kotlinx.coroutines.launch
 
@@ -27,7 +29,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun ComplaintScreen(nav: NavHost, no: String) {
     val info by loadOnce(no) { TicketApi.detail(no) }
-    val cats = listOf("网络不通", "网速不达标", "服务态度", "其他")
+    val catNet = stringResource(R.string.complaint_cat_network)
+    val catSpeed = stringResource(R.string.complaint_cat_speed)
+    val catSvc = stringResource(R.string.complaint_cat_service)
+    val catOther = stringResource(R.string.complaint_cat_other)
+    val cats = listOf(catNet, catSpeed, catSvc, catOther)
+    val errBlank = stringResource(R.string.complaint_err_blank)
+    val toastOk = stringResource(R.string.complaint_toast_ok)
     var category by remember { mutableStateOf(cats.first()) }
     var content by remember { mutableStateOf("") }
     var tip by remember { mutableStateOf("") }
@@ -35,33 +43,33 @@ fun ComplaintScreen(nav: NavHost, no: String) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("报障登记", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.complaint_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("工单加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.complaint_load_fail), red = true) }
             is Load.Ok -> Card(Modifier.padding(12.dp)) {
-                KvRow("工单号", s.data.optString("ticketNo"))
-                KvRow("客户", "${s.data.optString("customerName")} · ${s.data.optString("customerPhoneMasked")}")
+                KvRow(stringResource(R.string.td_ticket_no), s.data.optString("ticketNo"))
+                KvRow(stringResource(R.string.td_customer), "${s.data.optString("customerName")} · ${s.data.optString("customerPhoneMasked")}")
             }
         }
         Card(Modifier.padding(12.dp)) {
-            FieldLabel("投诉分类")
+            FieldLabel(stringResource(R.string.complaint_field_category))
             OptionRow(cats, category) { category = it }
             Spacer(Modifier.height(12.dp))
-            FieldLabel("问题描述")
+            FieldLabel(stringResource(R.string.complaint_field_content))
             OutlinedTextField(value = content, onValueChange = { content = it },
-                placeholder = { Text("请描述遇到的问题") }, minLines = 3,
+                placeholder = { Text(stringResource(R.string.complaint_content_hint)) }, minLines = 3,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
-            PrimaryButton("提交报障", modifier = Modifier.fillMaxWidth()) {
-                if (content.isBlank()) { tip = "请填写问题描述"; return@PrimaryButton }
+            PrimaryButton(stringResource(R.string.complaint_submit), modifier = Modifier.fillMaxWidth()) {
+                if (content.isBlank()) { tip = errBlank; return@PrimaryButton }
                 scope.launch {
                     tip = try {
                         val r = TicketApi.complaint(no, category, content.trim())
-                        toast(ctx, r.optString("message", "报障已提交"))
+                        toast(ctx, r.optString("message", toastOk))
                         nav.pop()
                         ""
-                    } catch (e: Exception) { "报障失败：${e.message}" }
+                    } catch (e: Exception) { ctx.getString(R.string.complaint_toast_fail, e.message ?: "") }
                 }
             }
             if (tip.isNotEmpty()) Text(tip, color = androidx.compose.ui.graphics.Color(0xFFCF1322),

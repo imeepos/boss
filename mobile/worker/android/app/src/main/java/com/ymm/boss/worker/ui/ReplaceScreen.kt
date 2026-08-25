@@ -21,8 +21,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.AssetApi
 import kotlinx.coroutines.launch
 
@@ -30,6 +32,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ReplaceScreen(nav: NavHost, no: String) {
     val info by loadOnce(no) { AssetApi.replace(no) }
+    val errBlank = stringResource(R.string.replace_err_blank_epc)
+    val toastOk = stringResource(R.string.replace_toast_ok)
     var oldEpc by remember { mutableStateOf("") }
     var newEpc by remember { mutableStateOf("") }
     var tip by remember { mutableStateOf("") }
@@ -37,47 +41,47 @@ fun ReplaceScreen(nav: NavHost, no: String) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("换件登记", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.replace_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("换件信息加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.replace_load_fail), red = true) }
             is Load.Ok -> {
                 val d = s.data
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("工单号", d.optString("ticketNo"))
-                    KvRow("旧设备", d.optString("oldEpc", "-"))
+                    KvRow(stringResource(R.string.td_ticket_no), d.optString("ticketNo"))
+                    KvRow(stringResource(R.string.replace_kv_old_device), d.optString("oldEpc", "-"))
                 }
             }
         }
         Card(Modifier.padding(12.dp)) {
-            FieldLabel("旧 EPC")
+            FieldLabel(stringResource(R.string.replace_field_old_epc))
             OutlinedTextField(value = oldEpc, onValueChange = { oldEpc = it },
-                placeholder = { Text("扫描旧光猫标签") }, singleLine = true,
+                placeholder = { Text(stringResource(R.string.replace_old_epc_hint)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
-            FieldLabel("新 EPC")
+            FieldLabel(stringResource(R.string.replace_field_new_epc))
             OutlinedTextField(value = newEpc, onValueChange = { newEpc = it },
-                placeholder = { Text("扫描新光猫标签") }, singleLine = true,
+                placeholder = { Text(stringResource(R.string.replace_new_epc_hint)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
-            PrimaryButton("确认换件", modifier = Modifier.fillMaxWidth()) {
-                if (oldEpc.isBlank() || newEpc.isBlank()) { tip = "请填写旧/新 EPC"; return@PrimaryButton }
+            PrimaryButton(stringResource(R.string.replace_submit), modifier = Modifier.fillMaxWidth()) {
+                if (oldEpc.isBlank() || newEpc.isBlank()) { tip = errBlank; return@PrimaryButton }
                 scope.launch {
                     tip = try {
                         val r = AssetApi.submitReplace(no, oldEpc.trim(), newEpc.trim())
-                        toast(ctx, r.optString("message", "换件登记完成，旧件转返修，新件沿用绑定"))
+                        toast(ctx, r.optString("message", toastOk))
                         nav.pop()
                         ""
-                    } catch (e: Exception) { "换件失败：${e.message}" }
+                    } catch (e: Exception) { ctx.getString(R.string.replace_toast_fail, e.message ?: "") }
                 }
             }
             if (tip.isNotEmpty()) Notice(tip, red = true)
         }
         Card(Modifier.padding(12.dp)) {
             Row {
-                ActionLink("退网登记") { nav.push(Screen.Retire(no)) }
+                ActionLink(stringResource(R.string.replace_action_retire)) { nav.push(Screen.Retire(no)) }
                 Spacer(Modifier.weight(1f))
-                ActionLink("扫码绑定") { nav.push(Screen.Scan(no)) }
+                ActionLink(stringResource(R.string.replace_action_scan)) { nav.push(Screen.Scan(no)) }
             }
         }
         Spacer(Modifier.height(12.dp))

@@ -14,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
 
 // 一键导航(对齐 docs/worker/navi.html)
@@ -24,22 +26,22 @@ fun NaviScreen(nav: NavHost, no: String) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("一键导航", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.navi_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("导航信息加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.navi_load_fail), red = true) }
             is Load.Ok -> {
                 val d = s.data
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("工单号", d.optString("ticketNo"))
-                    KvRow("地址", d.optString("address"))
-                    if (!d.isNull("distanceKm")) KvRow("距离", "${d.optDouble("distanceKm")} km")
+                    KvRow(stringResource(R.string.td_ticket_no), d.optString("ticketNo"))
+                    KvRow(stringResource(R.string.navi_kv_address), d.optString("address"))
+                    if (!d.isNull("distanceKm")) KvRow(stringResource(R.string.navi_kv_distance), stringResource(R.string.navi_kv_distance_fmt, d.optDouble("distanceKm").toString()))
                     if (!d.isNull("lat") && !d.isNull("lng")) {
-                        KvRow("坐标", "${d.optDouble("lat")}, ${d.optDouble("lng")}")
+                        KvRow(stringResource(R.string.navi_kv_coord), stringResource(R.string.navi_kv_coord_fmt, d.optDouble("lat").toString(), d.optDouble("lng").toString()))
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    PrimaryButton("打开外部地图", modifier = Modifier.fillMaxWidth()) {
+                    PrimaryButton(stringResource(R.string.navi_open_map), modifier = Modifier.fillMaxWidth()) {
                         val lat = d.optDouble("lat")
                         val lng = d.optDouble("lng")
                         val uri = if (lat != 0.0 && lng != 0.0) "geo:$lat,$lng?q=$lat,$lng"

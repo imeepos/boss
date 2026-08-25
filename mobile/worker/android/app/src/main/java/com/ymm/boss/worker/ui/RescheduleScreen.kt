@@ -18,8 +18,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
 import kotlinx.coroutines.launch
 
@@ -28,7 +30,13 @@ import kotlinx.coroutines.launch
 fun RescheduleScreen(nav: NavHost, no: String) {
     val info by loadOnce(no) { TicketApi.detail(no) }
     val slots = listOf("09:00-11:00", "14:00-16:00", "16:00-18:00")
-    val reasons = listOf("客户要求改期", "客户不在家（爽约）", "师傅排期冲突", "天气/交通延误")
+    val rReq = stringResource(R.string.reschedule_reason_customer_request)
+    val rNoShow = stringResource(R.string.reschedule_reason_no_show)
+    val rSched = stringResource(R.string.reschedule_reason_schedule_conflict)
+    val rWx = stringResource(R.string.reschedule_reason_weather_traffic)
+    val reasons = listOf(rReq, rNoShow, rSched, rWx)
+    val errNoDate = stringResource(R.string.reschedule_err_no_date)
+    val toastOk = stringResource(R.string.reschedule_toast_ok)
     var date by remember { mutableStateOf("") }
     var slot by remember { mutableStateOf(slots.first()) }
     var reason by remember { mutableStateOf(reasons.first()) }
@@ -38,52 +46,52 @@ fun RescheduleScreen(nav: NavHost, no: String) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("改约", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.reschedule_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("工单加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.reschedule_load_fail), red = true) }
             is Load.Ok -> {
                 val d = s.data
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("工单号", d.optString("ticketNo"))
-                    KvRow("客户", "${d.optString("customerName")} · ${d.optString("customerPhoneMasked")}")
-                    KvRow("原预约", d.optString("scheduleSlot", "--"))
+                    KvRow(stringResource(R.string.td_ticket_no), d.optString("ticketNo"))
+                    KvRow(stringResource(R.string.td_customer), "${d.optString("customerName")} · ${d.optString("customerPhoneMasked")}")
+                    KvRow(stringResource(R.string.reschedule_kv_original), d.optString("scheduleSlot", "--"))
                 }
             }
         }
         Card(Modifier.padding(12.dp)) {
-            FieldLabel("新预约日期")
+            FieldLabel(stringResource(R.string.reschedule_field_date))
             OutlinedTextField(value = date, onValueChange = { date = it },
-                placeholder = { Text("如 2026-08-20") }, singleLine = true,
+                placeholder = { Text(stringResource(R.string.reschedule_date_hint)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
-            FieldLabel("新预约时段")
+            FieldLabel(stringResource(R.string.reschedule_field_slot))
             OptionRow(slots, slot) { slot = it }
             Spacer(Modifier.height(12.dp))
-            FieldLabel("变更原因")
+            FieldLabel(stringResource(R.string.reschedule_field_reason))
             OptionRow(reasons, reason) { reason = it }
             Spacer(Modifier.height(12.dp))
-            FieldLabel("备注（选填）")
+            FieldLabel(stringResource(R.string.reschedule_field_remark))
             OutlinedTextField(value = remark, onValueChange = { remark = it },
-                placeholder = { Text("特殊情况说明") }, minLines = 2,
+                placeholder = { Text(stringResource(R.string.reschedule_remark_hint)) }, minLines = 2,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
-            PrimaryButton("提交改约", modifier = Modifier.fillMaxWidth()) {
-                if (date.isBlank()) { tip = "请填写新预约日期"; return@PrimaryButton }
+            PrimaryButton(stringResource(R.string.reschedule_submit), modifier = Modifier.fillMaxWidth()) {
+                if (date.isBlank()) { tip = errNoDate; return@PrimaryButton }
                 scope.launch {
                     tip = try {
                         val r = TicketApi.reschedule(no, date.trim(), slot, reason, remark.trim())
-                        toast(ctx, r.optString("message", "改约成功"))
+                        toast(ctx, r.optString("message", toastOk))
                         nav.pop()
                         ""
-                    } catch (e: Exception) { "改约失败：${e.message}" }
+                    } catch (e: Exception) { ctx.getString(R.string.reschedule_toast_fail, e.message ?: "") }
                 }
             }
             if (tip.isNotEmpty()) Text(tip, color = androidx.compose.ui.graphics.Color(0xFFCF1322),
                 fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
         }
         Card(Modifier.padding(12.dp)) {
-            Notice("改约与「爽约」同一入口：客户不在家选「客户不在家」，系统二次短信确认并重新计时 SLA。")
+            Notice(stringResource(R.string.reschedule_notice))
         }
         Spacer(Modifier.height(12.dp))
     }

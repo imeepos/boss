@@ -24,8 +24,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
 import kotlinx.coroutines.launch
 
@@ -33,7 +35,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun TransferScreen(nav: NavHost, no: String) {
     val info by loadOnce(no) { TicketApi.detail(no) }
-    val reasons = listOf("现场条件不满足", "客户要求换人", "设备/材料需更换", "其他")
+    val rSite = stringResource(R.string.transfer_reason_site)
+    val rCust = stringResource(R.string.transfer_reason_customer)
+    val rMat = stringResource(R.string.transfer_reason_material)
+    val rOther = stringResource(R.string.transfer_reason_other)
+    val reasons = listOf(rSite, rCust, rMat, rOther)
+    val errBadId = stringResource(R.string.transfer_err_bad_id)
+    val toastOk = stringResource(R.string.transfer_toast_ok)
     var reason by remember { mutableStateOf(reasons.first()) }
     var target by remember { mutableStateOf("") }
     var remark by remember { mutableStateOf("") }
@@ -42,52 +50,52 @@ fun TransferScreen(nav: NavHost, no: String) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("转单", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.transfer_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("工单加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.transfer_load_fail), red = true) }
             is Load.Ok -> {
                 val d = s.data
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("工单号", d.optString("ticketNo"))
-                    KvRow("预约时段", d.optString("scheduleSlot", "--"))
+                    KvRow(stringResource(R.string.td_ticket_no), d.optString("ticketNo"))
+                    KvRow(stringResource(R.string.transfer_kv_slot), d.optString("scheduleSlot", "--"))
                 }
             }
         }
         Card(Modifier.padding(12.dp)) {
-            FieldLabel("转单原因")
+            FieldLabel(stringResource(R.string.transfer_field_reason))
             OptionRow(reasons, reason) { reason = it }
             Spacer(Modifier.height(12.dp))
-            FieldLabel("转派对象（选填，留空退回调度池）")
+            FieldLabel(stringResource(R.string.transfer_field_target))
             OutlinedTextField(value = target, onValueChange = { target = it },
-                placeholder = { Text("如：李师傅 · 装机一组") }, singleLine = true,
+                placeholder = { Text(stringResource(R.string.transfer_target_hint)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
-            FieldLabel("说明")
+            FieldLabel(stringResource(R.string.transfer_field_remark))
             OutlinedTextField(value = remark, onValueChange = { remark = it },
-                placeholder = { Text("向调度说明现场情况") }, minLines = 3,
+                placeholder = { Text(stringResource(R.string.transfer_remark_hint)) }, minLines = 3,
                 modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
-            PrimaryButton("确认转单", modifier = Modifier.fillMaxWidth()) {
+            PrimaryButton(stringResource(R.string.transfer_submit), modifier = Modifier.fillMaxWidth()) {
                 scope.launch {
                     tip = try {
                         val targetId = target.trim().takeIf { it.isNotEmpty() }?.toLongOrNull()
                         if (target.trim().isNotEmpty() && targetId == null) {
-                            tip = "转派对象请输入师傅 ID"
+                            tip = errBadId
                             return@launch
                         }
                         val r = TicketApi.transfer(no, reason, targetId, remark.trim())
-                        toast(ctx, r.optString("message", "转单成功"))
+                        toast(ctx, r.optString("message", toastOk))
                         nav.pop()
                         ""
-                    } catch (e: Exception) { "转单失败：${e.message}" }
+                    } catch (e: Exception) { ctx.getString(R.string.transfer_toast_fail, e.message ?: "") }
                 }
             }
             if (tip.isNotEmpty()) Text(tip, color = androidx.compose.ui.graphics.Color(0xFFCF1322),
                 fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
         }
         Card(Modifier.padding(12.dp)) {
-            Notice("转单后本单将从「我的工单」移除，避免同一订单双人处理。")
+            Notice(stringResource(R.string.transfer_notice))
         }
         Spacer(Modifier.height(12.dp))
     }

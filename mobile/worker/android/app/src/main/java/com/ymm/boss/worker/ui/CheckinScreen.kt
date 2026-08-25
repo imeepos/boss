@@ -17,8 +17,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
 import com.ymm.boss.worker.util.LocationHelper
 import kotlinx.coroutines.launch
@@ -28,29 +30,32 @@ fun CheckinScreen(nav: NavHost, no: String) {
     val info by loadOnce(no) { TicketApi.detail(no) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val toastOk = stringResource(R.string.checkin_toast_ok)
+    val locFail = stringResource(R.string.checkin_loc_fail)
+    val locOkFmt = stringResource(R.string.checkin_loc_ok)
     var locating by remember { mutableStateOf(false) }
     var locationInfo by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("到点签到", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.checkin_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("工单加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.checkin_load_fail), red = true) }
             is Load.Ok -> {
                 val d = s.data
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("工单号", d.optString("ticketNo"))
-                    KvRow("客户", "${d.optString("customerName")}(${d.optString("customerPhoneMasked")})")
-                    KvRow("地址", d.optString("address"))
-                    KvRow("预约时段", d.optString("scheduleSlot"))
+                    KvRow(stringResource(R.string.td_ticket_no), d.optString("ticketNo"))
+                    KvRow(stringResource(R.string.td_customer), "${d.optString("customerName")}(${d.optString("customerPhoneMasked")})")
+                    KvRow(stringResource(R.string.scan_kv_address), d.optString("address"))
+                    KvRow(stringResource(R.string.transfer_kv_slot), d.optString("scheduleSlot"))
                 }
-                Card(Modifier.padding(12.dp)) { Notice("到达现场后签到，系统记录定位与时间，超时未签到将触发调度预警。") }
+                Card(Modifier.padding(12.dp)) { Notice(stringResource(R.string.checkin_notice)) }
                 if (locationInfo.isNotEmpty()) {
                     Card(Modifier.padding(12.dp)) { Text(locationInfo, fontSize = 13.sp) }
                 }
                 Card(Modifier.padding(12.dp)) {
                     PrimaryButton(
-                        text = if (locating) "定位中…" else "确认签到",
+                        text = if (locating) stringResource(R.string.checkin_btn_locating) else stringResource(R.string.checkin_btn_submit),
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !locating,
                     ) {
@@ -59,10 +64,11 @@ fun CheckinScreen(nav: NavHost, no: String) {
                             try {
                                 val loc = LocationHelper.getCurrentLocation(ctx)
                                 val latLng = if (loc != null) {
-                                    locationInfo = "定位成功: ${loc.lat}, ${loc.lng} (精度 ${loc.accuracy}m)"
+                                    locationInfo = ctx.getString(R.string.checkin_loc_ok,
+                                        loc.lat.toString(), loc.lng.toString(), loc.accuracy.toString())
                                     loc.lat to loc.lng
                                 } else {
-                                    locationInfo = "定位失败，请打开定位权限后重试"
+                                    locationInfo = locFail
                                     null
                                 }
                                 if (latLng == null) {
@@ -71,9 +77,9 @@ fun CheckinScreen(nav: NavHost, no: String) {
                                 }
                                 val (lat, lng) = latLng
                                 val r = TicketApi.checkin(no, lat, lng)
-                                toast(ctx, r.optString("message", "签到成功"))
+                                toast(ctx, r.optString("message", toastOk))
                                 nav.pop()
-                            } catch (e: Exception) { toast(ctx, "签到失败：${e.message}") }
+                            } catch (e: Exception) { toast(ctx, ctx.getString(R.string.checkin_toast_fail, e.message ?: "")) }
                             locating = false
                         }
                     }
