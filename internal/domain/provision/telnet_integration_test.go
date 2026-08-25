@@ -21,14 +21,15 @@ type filteredSvc struct {
 	taskID int64
 }
 
-func (f *filteredSvc) ListTasks(ctx context.Context) ([]Task, error) {
+func (f *filteredSvc) ClaimTask(ctx context.Context) (*Task, error) {
 	all, err := f.ProvisionService.ListTasks(ctx)
 	if err != nil {
 		return nil, err
 	}
 	for _, t := range all {
-		if t.ID == f.taskID {
-			return []Task{t}, nil
+		if t.ID == f.taskID && t.Status == "PENDING" {
+			t.Status = "DOING"
+			return &t, nil
 		}
 	}
 	return nil, nil

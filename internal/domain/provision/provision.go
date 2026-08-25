@@ -56,7 +56,10 @@ type ProvisionService interface {
 	ListLogs(ctx context.Context, taskID int64) ([]Log, error)
 	AppendLog(ctx context.Context, l Log) (int64, error)
 
-	// ExecuteTask 执行下发:PENDING→DOING→DONE + SUCCESS 留痕(设备协议交互由 provisioner 执行)。
+	// ClaimTask 原子领取一个 PENDING 任务(状态置 DOING)并返回;无待办返回 (nil, nil)。
+	// 用 FOR UPDATE SKIP LOCKED 防止多 provisioner 实例重复下发同一任务。
+	ClaimTask(ctx context.Context) (*Task, error)
+	// ExecuteTask 完成下发:PENDING 或 DOING→DONE + SUCCESS 留痕(设备协议交互由 provisioner 执行)。
 	ExecuteTask(ctx context.Context, taskID int64) error
 	// FailTask 失败:→FAILED + 原因留痕。
 	FailTask(ctx context.Context, taskID int64, reason string) error

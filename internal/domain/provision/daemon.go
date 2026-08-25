@@ -44,29 +44,29 @@ func (d *Daemon) Run(ctx context.Context) {
 	}
 }
 
-// tick 一轮:处理全部 PENDING 任务。
+// tick 一轮:原子领取 PENDING 任务,逐步执行至无待办。
 func (d *Daemon) tick(ctx context.Context) {
-	tasks, err := d.svc.ListTasks(ctx)
-	if err != nil {
-		log.Printf("provision daemon: list tasks: %v", err)
-		return
-	}
-	for _, t := range tasks {
-		if t.Status != "PENDING" {
-			continue
+	for {
+		t, err := d.svc.ClaimTask(ctx)
+		if err != nil {
+			log.Printf("provision daemon: claim task: %v", err)
+			return
 		}
-		if err := d.exec.Exec(ctx, t); err != nil {
+		if t == nil {
+			return // 无待办任务
+		}
+		if err := d.exec.Exec(ctx, *t); err != nil {
 			if failErr := d.svc.FailTask(ctx, t.ID, err.Error()); failErr != nil {
 				log.Printf("provision daemon: fail task %d: %v", t.ID, failErr)
 			}
-			d.notifyDone(ctx, t, err)
+			d.notifyDone(ctx, *t, err)
 			continue
 		}
 		if err := d.svc.ExecuteTask(ctx, t.ID); err != nil {
 			log.Printf("provision daemon: execute task %d: %v", t.ID, err)
 			continue
 		}
-		d.notifyDone(ctx, t, nil)
+		d.notifyDone(ctx, *t, nil)
 	}
 }
 
