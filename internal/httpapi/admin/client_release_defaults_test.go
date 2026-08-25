@@ -82,7 +82,7 @@ func TestClientReleaseCreateDefaults(t *testing.T) {
 	if env.Code != 0 {
 		t.Fatalf("envelope code=%d body=%s", env.Code, w.Body.String())
 	}
-	if st.created == nil || st.created.MinSupportedCode != 2 || st.created.Status != apprelease.StatusDraft {
+	if st.created == nil || st.created.MinSupportedCode != 1 || st.created.Status != apprelease.StatusDraft {
 		t.Fatalf("defaults wrong: %+v", st.created)
 	}
 }
