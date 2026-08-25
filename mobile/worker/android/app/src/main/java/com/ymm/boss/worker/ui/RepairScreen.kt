@@ -26,9 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
 import com.ymm.boss.worker.ui.theme.Primary
 import kotlinx.coroutines.launch
@@ -44,37 +46,41 @@ fun RepairReportScreen(nav: NavHost, no: String) {
     var remark by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val fixedLabel = stringResource(R.string.repair_result_fixed)
+    val unfixedLabel = stringResource(R.string.repair_result_unfixed)
+    val options = listOf(fixedLabel, unfixedLabel)
+    val cancelLabel = stringResource(R.string.btn_cancel)
+    val toastPassed = stringResource(R.string.repair_toast_passed)
+    val toastPending = stringResource(R.string.repair_toast_pending)
+    val toastFail = stringResource(R.string.repair_toast_fail)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("修复上报", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.repair_title), onBack = { nav.pop() })
         Card(Modifier.padding(12.dp)) {
-            SectionTitle("修复结果")
-            OptionRow(listOf("已恢复", "未恢复"),
-                if (result == "FIXED") "已恢复" else "未恢复") {
-                result = if (it == "已恢复") "FIXED" else "UNFIXED"
+            SectionTitle(stringResource(R.string.repair_result_title))
+            OptionRow(options, if (result == "FIXED") fixedLabel else unfixedLabel) {
+                result = if (it == fixedLabel) "FIXED" else "UNFIXED"
             }
             OutlinedTextField(value = remark, onValueChange = { remark = it },
-                placeholder = { Text("补充现场处理说明") }, minLines = 2,
+                placeholder = { Text(stringResource(R.string.repair_remark_hint)) }, minLines = 2,
                 modifier = Modifier.fillMaxWidth())
         }
         Card(Modifier.padding(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SecondaryBtn("取消", Modifier.weight(1f)) { nav.pop() }
-                PrimaryBtn("提交上报", Modifier.weight(1f)) {
+                SecondaryBtn(cancelLabel, Modifier.weight(1f)) { nav.pop() }
+                PrimaryBtn(stringResource(R.string.repair_submit), Modifier.weight(1f)) {
                     scope.launch {
                         try {
                             val r = TicketApi.repairReport(no, result, remark.trim())
-                            toast(ctx, if (r.optBoolean("reviewPassed"))
-                                "网络已恢复，工单关闭，系统自动复核通过"
-                            else "结果已上报，系统复核中")
+                            toast(ctx, if (r.optBoolean("reviewPassed")) toastPassed else toastPending)
                             nav.pop()
-                        } catch (_: Exception) { toast(ctx, "上报失败，请重试。") }
+                        } catch (_: Exception) { toast(ctx, toastFail) }
                     }
                 }
             }
         }
-        Notice("上报修复后系统自动复核网络是否恢复；未恢复将回「处理中」，恢复则关闭并触发满意度回访。")
+        Notice(stringResource(R.string.repair_notice))
         Spacer(Modifier.height(12.dp))
     }
 }

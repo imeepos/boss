@@ -29,10 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ScanApi
 import com.ymm.boss.worker.api.TicketApi
 import com.ymm.boss.worker.BuildConfig
@@ -53,22 +55,22 @@ fun ScanScreen(nav: NavHost, no: String) {
     var epcInput by remember { mutableStateOf("") }
     var cameraGranted by remember { mutableStateOf(false) }
     var cameraErr by remember { mutableStateOf("") }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> cameraGranted = granted; if (!granted) cameraErr = "需要相机权限才能扫码" }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> cameraGranted = granted; if (!granted) cameraErr = ctx.getString(R.string.scan_camera_denied) }
 
     fun doBind(epc: String, offline: Boolean) {
         scope.launch {
-            result = try { ScanApi.bind(no, epc, offline) } catch (e: Exception) { bindErr = "扫码失败：${e.message}"; null }
+            result = try { ScanApi.bind(no, epc, offline) } catch (e: Exception) { bindErr = ctx.getString(R.string.scan_err_bind, e.message ?: ""); null }
         }
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("扫码绑定（环节 9）", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.scan_title), onBack = { nav.pop() })
         when (val s = info) {
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("加载工单失败：${s.message}", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.scan_err_load, s.message), red = true) }
             is Load.Ok -> InfoCard(s.data)
             is Load.Loading -> {}
         }
@@ -87,8 +89,8 @@ fun ScanScreen(nav: NavHost, no: String) {
                         }
                     } else {
                         Card(Modifier.padding(12.dp)) {
-                            Notice("扫码需要相机权限")
-                            PrimaryButton("授权相机", modifier = Modifier.fillMaxWidth()) {
+                            Notice(stringResource(R.string.scan_camera_required))
+                            PrimaryButton(stringResource(R.string.scan_camera_grant), modifier = Modifier.fillMaxWidth()) {
                                 permissionLauncher.launch(android.Manifest.permission.CAMERA)
                             }
                         }
@@ -97,11 +99,11 @@ fun ScanScreen(nav: NavHost, no: String) {
                     ManualBindBox(epcInput, onInput = { epcInput = it }) { epc, offline -> doBind(epc, offline) }
                 }
                 Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SimBtn(if (scanMode) "手动输入" else "相机扫码", Modifier.weight(1f), primary = !scanMode) { scanMode = !scanMode }
+                    SimBtn(stringResource(if (scanMode) R.string.scan_btn_manual else R.string.scan_btn_camera), Modifier.weight(1f), primary = !scanMode) { scanMode = !scanMode }
                 }
             }
         }
-        Card(Modifier.padding(12.dp)) { Notice("绑定结果必须与预绑定标签一致，不一致时绑定将被系统拒绝，请勿用手工数据替代扫码。") }
+        Card(Modifier.padding(12.dp)) { Notice(stringResource(R.string.scan_bind_notice)) }
         Spacer(Modifier.height(12.dp))
     }
 }
@@ -110,7 +112,7 @@ fun ScanScreen(nav: NavHost, no: String) {
 private fun CameraScanBox(cameraErr: (String) -> Unit, onScanned: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     Card(Modifier.padding(12.dp)) {
-        Text("请将摄像头对准光猫电子标签", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink,
+        Text(stringResource(R.string.scan_align_label), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink,
             modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().height(280.dp).clip(RoundedCornerShape(16.dp))) {
@@ -120,31 +122,31 @@ private fun CameraScanBox(cameraErr: (String) -> Unit, onScanned: (String) -> Un
             )
         }
         Spacer(Modifier.height(8.dp))
-        Text("识别到条码后自动提交", fontSize = 13.sp, color = Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        Text(stringResource(R.string.scan_auto_submit), fontSize = 13.sp, color = Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
     }
 }
 
 @Composable
 private fun ManualBindBox(epc: String, onInput: (String) -> Unit, onBind: (String, Boolean) -> Unit) {
     Card(Modifier.padding(12.dp)) {
-        Text("输入EPC标签编码", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink,
+        Text(stringResource(R.string.scan_manual_input), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink,
             modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFFE6F4FF)).padding(vertical = 36.dp), contentAlignment = Alignment.Center) {
             Text("▣", fontSize = 52.sp, color = Primary, fontWeight = FontWeight.Bold)
         }
-        OutlinedTextField(value = epc, onValueChange = onInput, label = { Text("EPC 标签编码") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        PrimaryButton("提交绑定", modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        OutlinedTextField(value = epc, onValueChange = onInput, label = { Text(stringResource(R.string.scan_epc_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        PrimaryButton(stringResource(R.string.scan_submit_bind), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             onBind(epc.trim(), false)
         }
-        Text("支持 LF / HF / UHF 频段 · 弱网自动离线缓存", fontSize = 12.sp, color = Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        Text(stringResource(R.string.scan_freq_hint), fontSize = 12.sp, color = Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
         if (BuildConfig.DEBUG) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SimBtn("模拟扫码", Modifier.weight(1f), primary = true) { onBind("EPC-0001", false) }
-                SimBtn("模拟「不符」", Modifier.weight(1f)) { onBind("EPC-9999", false) }
+                SimBtn(stringResource(R.string.scan_sim_match), Modifier.weight(1f), primary = true) { onBind("EPC-0001", false) }
+                SimBtn(stringResource(R.string.scan_sim_mismatch), Modifier.weight(1f)) { onBind("EPC-9999", false) }
             }
-            SimBtn("模拟「弱网离线」", Modifier.fillMaxWidth().padding(top = 8.dp)) { onBind("EPC-0001", true) }
+            SimBtn(stringResource(R.string.scan_sim_offline), Modifier.fillMaxWidth().padding(top = 8.dp)) { onBind("EPC-0001", true) }
         }
     }
 }
@@ -156,9 +158,9 @@ private fun InfoCard(d: JSONObject) {
             Text(d.optString("ticketNo"), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink)
             StatusTag(d.optString("statusLabel"), d.optString("status"))
         }
-        KvRow("预绑定标签", d.optString("preBindTag", "-"))
-        KvRow("客户", "${d.optString("customerName")} · ${d.optString("customerPhoneMasked")}")
-        KvRow("安装地址", d.optString("address")); KvRow("分光器/端口", d.optString("splitterPort", "-"))
+        KvRow(stringResource(R.string.scan_prebind), d.optString("preBindTag", "-"))
+        KvRow(stringResource(R.string.td_customer), "${d.optString("customerName")} · ${d.optString("customerPhoneMasked")}")
+        KvRow(stringResource(R.string.scan_kv_address), d.optString("address")); KvRow(stringResource(R.string.scan_kv_splitter), d.optString("splitterPort", "-"))
     }
 }
 
@@ -166,11 +168,11 @@ private fun InfoCard(d: JSONObject) {
 private fun ResultOk(nav: NavHost, no: String, msg: String) {
     Card(Modifier.padding(12.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("扫码结果", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink)
-            StatusTag("一致", "DONE")
+            Text(stringResource(R.string.scan_result_title), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink)
+            StatusTag(stringResource(R.string.scan_result_match), "DONE")
         }
         Notice(msg)
-        SimBtn("继续结果上报", Modifier.fillMaxWidth().padding(top = 12.dp), primary = true) { nav.push(Screen.Report(no)) }
+        SimBtn(stringResource(R.string.scan_continue_report), Modifier.fillMaxWidth().padding(top = 12.dp), primary = true) { nav.push(Screen.Report(no)) }
     }
 }
 
@@ -178,13 +180,13 @@ private fun ResultOk(nav: NavHost, no: String, msg: String) {
 private fun ResultBad(nav: NavHost, no: String, msg: String) {
     Card(Modifier.padding(12.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("扫码结果", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink)
-            StatusTag("不一致", "DOING")
+            Text(stringResource(R.string.scan_result_title), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink)
+            StatusTag(stringResource(R.string.scan_result_mismatch), "DOING")
         }
         Notice(msg, red = true)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
-            SimBtn("换件登记", Modifier.weight(1f)) { nav.push(Screen.Replace(no)) }
-            SimBtn("异常上报", Modifier.weight(1f)) { nav.push(Screen.ScanAbnormal(no)) }
+            SimBtn(stringResource(R.string.scan_replace), Modifier.weight(1f)) { nav.push(Screen.Replace(no)) }
+            SimBtn(stringResource(R.string.scan_abnormal), Modifier.weight(1f)) { nav.push(Screen.ScanAbnormal(no)) }
         }
     }
 }
@@ -193,8 +195,8 @@ private fun ResultBad(nav: NavHost, no: String, msg: String) {
 private fun ResultOffline(msg: String) {
     Card(Modifier.padding(12.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("网络状态", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink)
-            StatusTag("弱网离线", "ACCEPTED")
+            Text(stringResource(R.string.scan_offline_title), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink)
+            StatusTag(stringResource(R.string.scan_offline_label), "ACCEPTED")
         }
         Notice(msg)
     }

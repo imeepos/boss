@@ -19,8 +19,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ScanApi
 import kotlinx.coroutines.launch
 
@@ -31,12 +33,13 @@ fun ChargeScreen(nav: NavHost, no: String) {
     var tip by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val defaultMethod = stringResource(R.string.charge_default_method)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("现场收款", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.charge_title), onBack = { nav.pop() })
         when (val c = charge) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("应收信息加载失败：${c.message}", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.charge_load_fail, c.message), red = true) }
             is Load.Ok -> {
                 val due = c.data.optDouble("amountDue", 0.0)
                 val amountDefault = if (due % 1.0 == 0.0) due.toInt().toString() else due.toString()
@@ -46,38 +49,39 @@ fun ChargeScreen(nav: NavHost, no: String) {
                     ?.takeIf { it.isNotEmpty() }
                     ?: listOf("QR", "CASH", "POS")
                 var amount by remember(due) { mutableStateOf(amountDefault) }
-                var method by remember(methods) { mutableStateOf(methods.firstOrNull() ?: "扫码支付") }
+                var method by remember(methods) { mutableStateOf(methods.firstOrNull() ?: defaultMethod) }
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("工单号", c.data.optString("ticketNo", no))
+                    KvRow(stringResource(R.string.td_ticket_no), c.data.optString("ticketNo", no))
                     val desc = c.data.optString("amountDesc")
-                    KvRow("应收", "¥$due" + if (desc.isNotEmpty()) "（$desc）" else "")
-                    KvRow("收款方式", methods.joinToString(" / "))
+                    val dueText = stringResource(R.string.charge_amount_due_fmt, due.toString(), desc)
+                    KvRow(stringResource(R.string.charge_amount_due), dueText)
+                    KvRow(stringResource(R.string.charge_methods), methods.joinToString(" / "))
                 }
                 Card(Modifier.padding(12.dp)) {
-                    FieldLabel("实收金额")
+                    FieldLabel(stringResource(R.string.charge_received_label))
                     OutlinedTextField(value = amount, onValueChange = { amount = it },
-                        placeholder = { Text("¥") }, singleLine = true,
+                        placeholder = { Text(stringResource(R.string.charge_received_hint)) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(12.dp))
-                    FieldLabel("支付方式")
+                    FieldLabel(stringResource(R.string.charge_method_label))
                     OptionRow(methods, method) { method = it }
                     Spacer(Modifier.height(12.dp))
-                    PrimaryButton("确认收款并签收", modifier = Modifier.fillMaxWidth()) {
+                    PrimaryButton(stringResource(R.string.charge_submit), modifier = Modifier.fillMaxWidth()) {
                         val v = amount.toDoubleOrNull() ?: 0.0
-                        if (v <= 0) { tip = "请填写有效的实收金额。"; return@PrimaryButton }
+                        if (v <= 0) { tip = ctx.getString(R.string.charge_invalid_amount); return@PrimaryButton }
                         scope.launch {
                             tip = try {
                                 ScanApi.submitCharge(no, v, method)
                                 nav.push(Screen.Sign(no))
                                 ""
-                            } catch (e: Exception) { "收款提交失败：${e.message}" }
+                            } catch (e: Exception) { ctx.getString(R.string.charge_submit_fail, e.message ?: "") }
                         }
                     }
                     if (tip.isNotEmpty()) Notice(tip, red = true)
                 }
                 Card(Modifier.padding(12.dp)) {
-                    Notice("收款到账即时更新账务，缴费凭证同步生成电子收据。")
+                    Notice(stringResource(R.string.charge_notice))
                 }
             }
         }

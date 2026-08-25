@@ -18,7 +18,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ScanApi
 import java.io.File
 import org.json.JSONArray
@@ -37,36 +39,36 @@ fun PhotoScreen(nav: NavHost, no: String) {
         scope.launch {
             try {
                 val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                if (bytes == null) throw IllegalStateException("无法读取照片")
+                if (bytes == null) throw IllegalStateException(ctx.getString(R.string.photo_err_read))
                 ScanApi.uploadPhoto(no, "evidence.jpg", ctx.contentResolver.getType(uri) ?: "image/jpeg", bytes)
                 refresh++
-                toast(ctx, "上传成功")
-            } catch (e: Exception) { toast(ctx, "上传失败：${e.message}") }
+                toast(ctx, ctx.getString(R.string.photo_toast_ok))
+            } catch (e: Exception) { toast(ctx, ctx.getString(R.string.photo_err_load, e.message ?: "")) }
             uploading = false
         }
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("拍照取证", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.photo_title), onBack = { nav.pop() })
         when (val s = state) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("加载失败：${s.message}", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.photo_err_load, s.message), red = true) }
             is Load.Ok -> {
                 val items = s.data.optJSONArray("items") ?: JSONArray()
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("取证场景", "现场环境 / 标签污损")
-                    SectionTitle("已上传", more = "${items.length()} 张")
-                    if (items.length() == 0) Empty("暂无照片")
+                    KvRow(stringResource(R.string.photo_scene_title), stringResource(R.string.photo_scene_value))
+                    SectionTitle(stringResource(R.string.photo_uploaded), more = stringResource(R.string.photo_count, items.length()))
+                    if (items.length() == 0) Empty(stringResource(R.string.photo_empty))
                     for (i in 0 until items.length()) {
                         val it0 = items.optJSONObject(i)
-                        KvRow(it0.optString("fileName"), if (it0.optBoolean("linked")) "已关联" else "待关联")
+                        KvRow(it0.optString("fileName"), stringResource(if (it0.optBoolean("linked")) R.string.photo_linked else R.string.photo_unlinked))
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    PrimaryButton("选择照片并上传", enabled = !uploading, modifier = Modifier.fillMaxWidth()) {
+                    PrimaryButton(stringResource(R.string.photo_pick), enabled = !uploading, modifier = Modifier.fillMaxWidth()) {
                         picker.launch("image/*")
                     }
-                    Notice("照片将上传至后台配置的 MinIO 对象存储")
+                    Notice(stringResource(R.string.photo_notice))
                 }
             }
         }
