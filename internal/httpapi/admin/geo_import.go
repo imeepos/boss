@@ -35,11 +35,14 @@ func registerGeoImportRoute(g *gin.RouterGroup, a *app.Application) {
 			"countries": counts.Countries, "countryNames": counts.CountryNames,
 			"subdivisions": counts.Subdivisions, "subdivisionNames": counts.SubdivisionNames,
 		})
-		_ = a.User.RecordImportTask(c.Request.Context(), "geo", httpx.ClaimsAccountID(c),
+		if err := a.User.RecordImportTask(c.Request.Context(), "geo", httpx.ClaimsAccountID(c),
 			counts.Countries+counts.Subdivisions, counts.Countries+counts.Subdivisions, 0, 0, map[string]any{
 				"countries": counts.Countries, "countryNames": counts.CountryNames,
 				"subdivisions": counts.Subdivisions, "subdivisionNames": counts.SubdivisionNames,
-			})
+			}); err != nil {
+			respondErr(c, err)
+			return
+		}
 		emitTask(c.Request.Context(), a, refImporter, "geo-"+fmt.Sprint(time.Now().Unix()),
 			"geo 导入完成:"+strconv.Itoa(int(counts.Countries+counts.Subdivisions))+" 行", linkImporter, false)
 		respond(c, apitypes.CodeOK, counts)

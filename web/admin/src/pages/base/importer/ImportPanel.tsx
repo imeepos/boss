@@ -26,11 +26,12 @@ const TD = 'h-9 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)
 
 type Text = Translations['pages']['importer']
 
-export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
+export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImported }: {
   kind: ImportKind
   title: string
   hint: string
   endpoint: string
+  noPerm?: boolean
   text: Text
   onImported: () => void
 }) {
@@ -99,7 +100,7 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
   }
 
   const run = async () => {
-    if (!preview?.ok || busy) return
+    if (!preview?.ok || busy || noPerm) return
     setBusy(true)
     setError('')
     setResult('')
@@ -222,7 +223,7 @@ export function ImportPanel({ kind, title, hint, endpoint, text, onImported }: {
         </div>
       )}
       <div className="mt-3 flex items-center gap-3">
-        <ToolbarButton primary disabled={!preview?.ok || busy} onClick={run}>
+        <ToolbarButton primary disabled={noPerm || !preview?.ok || busy} onClick={run}>
           {busy ? text.importing : text.importBtn}
         </ToolbarButton>
         {result && <Badge variant="success">{result}</Badge>}

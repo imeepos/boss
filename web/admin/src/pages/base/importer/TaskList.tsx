@@ -23,7 +23,8 @@ export interface ImportTaskRow {
 export function taskKindLabel(im: Translations['pages']['importer'], kind: string): string {
   if (kind === 'geo') return im.taskKindGeo
   if (kind.startsWith('entity:')) return im.entityNames[kind.slice('entity:'.length)] ?? kind
-  return im.taskKindAddr
+  if (kind === 'addr' || kind === 'addresses') return im.taskKindAddr
+  return kind
 }
 
 export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {

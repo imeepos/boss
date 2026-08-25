@@ -172,6 +172,7 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
           setFailures([...fails])
           setProgress({ done: ok + fails.length, total })
           await registerTask(rows.length, ok, fails.length, dedupe.skipped)
+          if (ok > 0 || fails.length > 0) onImported()
           setBusy(false)
           return
         }

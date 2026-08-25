@@ -28,12 +28,13 @@ export function BatchImportEntry({ kind, onImported, label }: {
   const name = def ? im.entityNames[def.kind] ?? def.kind : (kind === 'addr' ? im.entryAddr : im.entryGeo)
   const btnLabel = def ? `${im.importBtn} ${name}` : name
   const drawerTitle = def ? `${im.entityTitle} · ${name}` : (kind === 'addr' ? im.addrTitle : im.geoTitle)
-  const noPerm = def ? !(profile.permissionCodes ?? []).includes(def.perm) : false
+  const perm = def?.perm ?? (kind === 'addr' ? 'menu:importer' : 'menu:geo')
+  const noPerm = !(profile.permissionCodes ?? []).includes(perm)
 
   return (
     <>
-      <span title={noPerm ? im.entityNoPerm.replace('{perm}', def?.perm ?? '') : undefined}>
-        <ToolbarButton primary onClick={() => setOpen(true)}>
+      <span title={noPerm ? im.entityNoPerm.replace('{perm}', perm) : undefined}>
+        <ToolbarButton primary disabled={noPerm} onClick={() => setOpen(true)}>
           {label ?? btnLabel}
         </ToolbarButton>
       </span>
@@ -42,9 +43,9 @@ export function BatchImportEntry({ kind, onImported, label }: {
           {def ? (
             <EntityImportPanel def={def} noPerm={noPerm} text={im} onImported={onImported} />
           ) : kind === 'addr' ? (
-            <ImportPanel kind="addr" title={im.addrTitle} hint={im.addrHint} endpoint="/addresses/import" text={im} onImported={onImported} />
+            <ImportPanel kind="addr" title={im.addrTitle} hint={im.addrHint} endpoint="/addresses/import" noPerm={noPerm} text={im} onImported={onImported} />
           ) : (
-            <ImportPanel kind="geo" title={im.geoTitle} hint={im.geoHint} endpoint="/geo/import" text={im} onImported={onImported} />
+            <ImportPanel kind="geo" title={im.geoTitle} hint={im.geoHint} endpoint="/geo/import" noPerm={noPerm} text={im} onImported={onImported} />
           )}
         </Drawer>
       )}
