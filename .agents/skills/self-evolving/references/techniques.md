@@ -311,3 +311,7 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## cdp-capture 免登录注入时序(2026-09-01)
 场景 → 对 admin SPA 页面注入 token 后截图/断言 DOM。
 怎么用 → 先从 `/login` 打开页面再注入 localStorage,然后 `location.href='/目标路径'` 导航;不要在目标页注入后 `location.reload()` —— reload 时序下 AuthGuard 先读旧态会弹回 /login。注入项:boss.token + boss.servers([{id,name,baseUrl}]) + boss.server.active(存 id)+ boss.theme。dev 页面用 `localhost:5199`(vite --strictPort),生产用 102:5180 同源代理;断言分组标题等计算样式直接 `--eval getComputedStyle` 返回 fontSize/color,无需读图(flash 模型无图像输入)。
+
+## 幂等文件修改脚本模板(2026-09-22)
+场景 → 用 python 往现有 TS/Go 文件插入字段/实体,防重复执行污染。
+怎么用 → 每处插入先查标记:`if '  uniqueKey?: string[]' not in s:` 才插;每个 kind 块用 `if marker not in s.split(kind_line)[1].split('  {')[0]: continue` 防重;结尾打印 `s.count(标记)` 断言插入次数正确。写完立即 `git diff --stat | wc -l` + `wc -l <file>` 确认单次增量(本次死循环:输出每次都是 "entities ok",但文件从 140→1388 行)。

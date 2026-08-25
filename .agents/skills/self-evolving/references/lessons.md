@@ -336,3 +336,11 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - cdp-capture 多个 --eval 在同一页面上下文顺序执行:顶层 const/let 会跨 eval 撞名,一律用 IIFE 包裹。
 - vite dev 默认只绑 localhost(::1),127.0.0.1 连不上:CURL 探活和 CDP 访问都要用 http://localhost:PORT。
 - cdp-capture 操作自定义 Dropdown:触发器按钮文本是"当前选中项"(如'账号'),不是目标项;查找触发器用 aria-haspopup=listbox + 当前值文本,点开后 option 才按目标文本找。
+- 死循环预防:同一 bash 命令连续执行 ≥2 次且输出逐字相同,说明是"重放"而非"推进"——先 `git diff`/`wc -l`/`grep -c` 核查真实状态,再决定是否重跑;绝不盲目重发同一命令。
+- 改文件的 python 脚本必须幂等:插入前先查"该标记是否已存在"(check-then-insert),否则 `assert count==1` 只防"已存在",防不住"每轮 search() 又命中、又插一份"(用 re.search + 插入后同一正则继续命中 → 每跑一次多一份)。
+- 一个 bash 调用只放一段 heredoc:不要把 python 拆成 `<<'EOF'...EOF` 后接裸 bash 再 `<<'EOF'`(第二段 `s=open(f).read()` 会被 bash 当命令报 syntax error);要改多文件用单一 python heredoc 内循环。
+- python 内嵌多行 Go/TS 代码用三引号字符串 `'''...'''`,别用单引号+真实换行(直接 SyntaxError EOL)。
+- 替换脚本锚点要足够特异:短文本(如 `product: '产品资费',`)会在多个页面/段落重复出现,`assert count==1` 炸;先 `grep -n` 定位,锚点带上下文(整行 entityNames: {...})。
+- 给数组(如 IMPORT_ENTITIES)加元素后,toEqual 断言会因"插入位置与测试预期顺序不一致"失败:新增元素要么按现有顺序插入,要么同步改测试期望顺序(看 diff 的 -/+ 定谁错)。
+- 加域方法会把文件顶过 300 行红线(contract-sync C 项):写前 `wc -l`,超了压缩空行或换文件。
+- 大段手改后跑 `gofmt -l <file>`,非空就 `gofmt -w`,再 build(空白被脚本合并后 gofmt 会补齐)。

@@ -680,3 +680,9 @@
 - 哪个坑浪费最多时间:① worker_group_memberships 已由 000019 建表,我按 fields.md"§7.2 新增"误以为不存在,先写了重复建表迁移(查 migrations 目录才发现);② check-contract-sync A 项:域文件 worker.yaml 加了 path 不够,顶层索引 api/openapi/{face}.yaml 必须同步登记 $ref 行;③ 部署验证:CI 是 main push 触发,并行会话推进 gitea main 会取代我 push 触发的 run(状态 3=被取代/取消),镜像 tag=commit sha,以 102 实际镜像/容器时间为准;④ Android gradle wrapper 网络下载失败,但 ~/.gradle 有缓存 dist,绕 wrapper 直接调 gradle 二进制 + JAVA_HOME=openjdk@17 + local.properties sdk.dir 可离线构建。
 - skill 有没有提前警告我:红线#1(改前先 read)命中;其余均为新坑。
 - 重来一次:① 写迁移前必 `ls migrations | grep` 目标表名,不信 fields.md 的"新增"字样;② openapi 域文件与顶层索引双处登记后一次跑 check-contract-sync;③ 部署验证看 gitea actions 最新 run(DB action_run index/status),status 3=被取代非成功,成功 deploy 会重建镜像并重启容器;④ Android 构建优先查 ~/.gradle/wrapper/dists 缓存。
+
+## 2026-09-22 批量导入第 3 轮(行上限参数化/去重/ODN/customer 直建)+ 死循环复盘
+- 哪个坑浪费最多时间:对 entities.ts 重复执行非幂等插入脚本 ~15 次,文件被 uniqueKey/listEndpoint 块污染到 1388 行,git checkout 回滚后重做。根因:脚本非幂等 + 我见输出相同就重发,没先核查。
+- skill 有没有提前警告我:无(新坑,已升为红线)。
+- 重来一次:写文件脚本一律幂等 + 每写一次 `git diff --stat` 确认增量;同命令输出不变就停下查状态。
+- 次要坑:heredoc 拆多段、锚点不特异、数组顺序断言不一致、加方法超 300 行红线、gofmt。
