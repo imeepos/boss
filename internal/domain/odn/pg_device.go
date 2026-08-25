@@ -87,7 +87,7 @@ func (s *PGStore) insertTopDevice(ctx context.Context, d Device) error {
 		siteNo = d.SiteNo
 	}
 	_, err := s.db.Exec(ctx, `INSERT INTO odn_device (code, kind, prv_code, city_prefix, site_no, name, lat, lng)
-		VALUES ($1,$2,$3,$4,$5,$6,NULLIF($7,0),NULLIF($8,0))`,
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 		d.Code, d.Kind, d.PrvCode, d.CityPrefix, siteNo, d.Name, d.Lat, d.Lng)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create device: %w", err), ErrNotFound)
@@ -108,7 +108,7 @@ func (s *PGStore) insertChildDevice(ctx context.Context, d Device, wantKind stri
 		return fmt.Errorf("%w: %s 的上级必须是同城市的在用 %s", ErrBadHierarchy, d.Code, wantKind)
 	}
 	_, err = s.db.Exec(ctx, `INSERT INTO odn_device (code, kind, prv_code, city_prefix, parent_id, name, lat, lng)
-		VALUES ($1,$2,$3,$4,$5,$6,NULLIF($7,0),NULLIF($8,0))`,
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 		d.Code, d.Kind, d.PrvCode, d.CityPrefix, d.ParentID, d.Name, d.Lat, d.Lng)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create device: %w", err), ErrNotFound)

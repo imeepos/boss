@@ -207,10 +207,18 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 	if olts[0].Lat == nil || olts[0].Lng == nil || *olts[0].Lat != 14.55 || *olts[0].Lng != 120.98 {
 		t.Fatalf("设备坐标回读失败: lat=%v lng=%v", olts[0].Lat, olts[0].Lng)
 	}
-	// 无坐标设备 Lat/Lng 为 nil。
+	// 无坐标设备(E16:site_no 无 FK,域层守护——挂未备案局点必须拒绝)。
 	if err := s.CreateDevice(ctx, Device{Code: "OLT991", Kind: DevOLT,
-		PrvCode: "PHL001", CityPrefix: "MNL"}); err == nil {
+		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 997}); err == nil {
 		t.Fatal("OLT 挂未备案局点 997 应拒绝(ErrSiteMissing)")
+	}
+	// SNW990 无坐标创建 → Lat/Lng 为 nil。
+	snws, err := s.ListDevices(ctx, DevSNW, "PHL001", "MNL")
+	if err != nil || len(snws) != 1 {
+		t.Fatalf("ListDevices SNW: %v %d", err, len(snws))
+	}
+	if snws[0].Lat != nil || snws[0].Lng != nil {
+		t.Fatalf("无坐标设备应 Lat/Lng=nil,实际 %v %v", snws[0].Lat, snws[0].Lng)
 	}
 	if err := s.CreateDevice(ctx, Device{Code: "OCC990", Kind: DevOCC,
 		PrvCode: "PHL001", CityPrefix: "MNL"}); err != nil {
