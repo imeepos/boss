@@ -653,3 +653,10 @@
 - skill 有没有提前警告:worktree 协议说了 worktree 文件隔离,但没有警告"gitignored 的 target 在共享盘上会被并行会话意外覆盖"——已补进 lessons。
 - 重来一次:① 始终用 worktree 自己的 target 目录,绝不设 CARGO_TARGET_DIR 跨树共享;② 检验 Tauri 内嵌资源的正确做法:strings 查入口 hash 文件名(assets/index-xxx.js)而非压缩后的 HTML 文本;③ 验证前确认二进制没有被其他进程覆盖(先 ls -la --full-time 定锚点);④ 直接 `pnpm install` 真实安装,不 symlink node_modules 跨 worktree。
 - 结果:tauri.conf.json 增加 beforeBuildCommand + beforeDevCommand;package.json 增加 admin:build/desktop:build:static 脚本;pnpm-lock.yaml 提交;README 更新。debug 和 release 构建均验证入口文件 index-DzFk6AEB.js 嵌入二进制(136 个资产路径),release 产出 16MB DMG + 19MB .app。合并 main 后清理分支与 worktree。
+
+## 2026-09-01 关联数据门禁加固(api-gate)
+
+- 哪个坑浪费最多时间:① 13GB go-build 缓存耗尽磁盘(仅 741Mi 余量),`make check` 的 test 阶段全部 build failed——误判为代码编译错,重跑两次才发现是 ENOSPC;② 并行会话连续推进 main(local main 领先 gitea/main),rebase 两次 + gate 重跑三次才落到最终态;③ 300 行红线:主分支本身已红(pg.go 304/pg_workflow.go 370),我给 pg_workflow 加代码又推高到 383。
+- skill 有没有提前警告:没有——磁盘余量、并行 main 前进、行数红线余量都是本次新踩。
+- 重来一次:① 跑 make check 前先 `df -h`,余量 <2G 先 `go clean -cache`(可释放 13G);② 改大文件前用 `python3 -c "print(open(f).read().count(chr(10))+1)"` 查行数,并先跑 check-contract-sync 看 C 项是否已红;③ rebase 期间绝不并发跑 gate(测试进程读写工作区,结果无效);④ ff-merge 前用 `git merge-base --is-ancestor HEAD <branch>` 确认 local main 领先 gitea/main 的 commit 也进了分支。
+- 结果:8 个域写入入口加非空+存在性门禁(lo_accounts/transfers/reserve_records/port_history/payments/complaints/scan_logs/alarms),DispatchOrder 幂等自愈 + Automation selfHeal 续推关闭环节8 无工单孤儿类;paymentCols 补读 customer_id;拆 pg_workflow.go/pg.go 守 300 行;make check 全绿后 ff-only 合并 main,worktree 与远端分支已清理。

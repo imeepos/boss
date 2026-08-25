@@ -324,3 +324,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-09-01: worktree 间 symlink node_modules 触发 pnpm 模块状态检测不一致,报`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`;应在 worktree 内`pnpm install --ignore-workspace` 真实安装。
 - 2026-09-01: 后台 job 的 bash 调用不继承父 shell 的 PATH;export PATH 必须写在命令字符串内。
 - 2026-09-01: gitignored 的 target 目录在多 worktree 共享盘上可能被并行会话意外覆盖/回退;不要信任另一个 worktree 的 target 目录内容。
+- 2026-09-01: 磁盘将满时 `go test ./...` 的 build failed 是假信号——先 `df -h`,余量不足先 `go clean -cache`(本项目 go-build 缓存可达 13G)再重跑,勿当代码错排查。
+- 2026-09-01: 300 行红线检查(check-contract-sync C 项)按 `strings.Count("\n")+1` 计数(比 wc -l 多 1);改大文件前先查余量,主分支可能已被并行分支推高到红,顺手拆文件守红线(findByRequestID→pg_query.go、回退/取消→pg_reopen.go 先例)。
+- 2026-09-01: 并行 worktree 会话会让 local main 领先 gitea/main(未推 commit);ff-merge 前 `git merge-base --is-ancestor HEAD <分支>` 确认,rebase 应以 local main HEAD 为基而非 gitea/main。
+- 2026-09-01: make check 与 git rebase 不可并发——rebase 改写工作区文件,运行中的测试读到半成品,结果作废必须重跑。

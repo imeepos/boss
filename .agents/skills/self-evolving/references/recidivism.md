@@ -87,3 +87,6 @@
 
 | 新增 SQL 运算参数时未显式类型标注,PG 报 operator is not unique | 1 | 2026-08-24(RecordRun $3-$2 遇 FinishedAt NULL 报 SQLSTATE 42725) | 部署后才发现,多一轮容器重启验证;修复是 $3::timestamptz-$2::timestamptz 显式 cast |
 | 迁移/循环验证时只查目标表数据,没先看应用日志定位失败原因 | 1 | 2026-08-24(etl_job_run 空表直接怀疑执行器没接,实则 RecordRun SQL 报错) | 浪费一轮;docker logs grep 关键字先行 |
+
+| 磁盘余量耗尽时把 go test 的 build failed 当代码错误排查 | 1 | 2026-09-01(13G go-build 缓存占满,make check test 阶段全 build failed,重跑 2 次才归因 ENOSPC) | 先 df -h + go clean -cache 再谈代码 |
+| make check 与 git rebase 并发执行,gate 结果作废 | 1 | 2026-09-01(测试运行中 rebase 改写工作区,重跑 gate 才有效) | 任何会改写工作区的操作与 gate 严格串行 |
