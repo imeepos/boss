@@ -57,13 +57,18 @@ func (s *PGStore) UpdateSelfProfile(ctx context.Context, accountID int64, realNa
 // ImportAddresses 批量导入地址;level 与 parent_id 由 path 派生(应用层算,不手填)。
 // 约束:子节点导入前父节点必须已存在(ltree 前缀父路径反查)。
 func (s *PGStore) ImportAddresses(ctx context.Context, rows []AddressRow) (int, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("user: import address begin: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
 	imported := 0
 	for _, r := range rows {
 		level := int8(len(strings.Split(r.Path, ".")))
 		parentPath := parentOf(r.Path)
 		var parentID int64
 		if parentPath != "" {
-			err := s.db.QueryRow(ctx,
+			err := tx.QueryRow(ctx,
 				`SELECT id FROM addresses WHERE path = $1::ltree`, parentPath).Scan(&parentID)
 			if errors.Is(err, pgx.ErrNoRows) {
 				return imported, fmt.Errorf("user: import address %q: parent %q not found", r.Path, parentPath)
@@ -76,13 +81,19 @@ func (s *PGStore) ImportAddresses(ctx context.Context, rows []AddressRow) (int, 
 		if parentPath != "" {
 			parentArg = parentID
 		}
-		if _, err := s.db.Exec(ctx,
+		if _, err := tx.Exec(ctx,
 			`INSERT INTO addresses(path, level, name, parent_id, country_code, admin_code)
 			VALUES($1::ltree, $2, $3, $4, NULLIF($5,''), NULLIF($6,''))`,
 			r.Path, level, r.Name, parentArg, r.geoCountry(level), r.geoAdmin(level)); err != nil {
+			if isPgCode(err, "23505") {
+				return imported, ErrDuplicate
+			}
 			return imported, fmt.Errorf("user: import address insert: %w", err)
 		}
 		imported++
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("user: import address commit: %w", err)
 	}
 	return imported, nil
 }
