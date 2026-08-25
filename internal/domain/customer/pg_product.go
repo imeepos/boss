@@ -54,6 +54,9 @@ func (s *PGStore) CreateProduct(ctx context.Context, p ProductOffer) (int64, err
 		INSERT INTO product_offers(legal_entity_id, name, bandwidth, monthly_fee, category, effective_at, status)
 		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
 		p.LegalEntityID, p.Name, p.Bandwidth, p.MonthlyFee, category, p.EffectiveAt, p.Status).Scan(&id)
+	if isPgUniqueViolation(err) {
+		return 0, ErrDuplicate
+	}
 	if err != nil {
 		return 0, fmt.Errorf("customer: create product: %w", err)
 	}

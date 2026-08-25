@@ -32,6 +32,7 @@ func TestRespondErrMapping(t *testing.T) {
 		{user.ErrUsernameTaken, apitypes.CodeConflict},
 		{user.ErrDuplicate, apitypes.CodeConflict},
 		{user.ErrConflict, apitypes.CodeConflict},
+		{customer.ErrDuplicate, apitypes.CodeConflict},
 		{geo.ErrDuplicate, apitypes.CodeConflict},
 		{billing.ErrDuplicateInvoice, apitypes.CodeConflict},
 		{user.ErrInvalidInput, apitypes.CodeInvalidParam},

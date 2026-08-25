@@ -4,7 +4,6 @@ package user
 
 import (
 	"errors"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -53,5 +52,6 @@ func isLoginName(s string) bool {
 
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == "23505" && strings.Contains(pgErr.ConstraintName, "username")
+	// 任意唯一约束冲突均视为冲突(账号表唯一键=username,部门/岗位为复合唯一键)。
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }

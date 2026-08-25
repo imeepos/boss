@@ -12,11 +12,20 @@ import (
 // ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
 var ErrForeignKeyViolation = errors.New("customer: foreign key violation")
 
+// ErrDuplicate 自然键重复(客户手机号/产品同公司同名等唯一约束冲突)。
+var ErrDuplicate = errors.New("customer: duplicate")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+// isPgUniqueViolation 唯一约束冲突(23505)。
+func isPgUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
 
 // beginner 显式事务入口;*pgxpool.Pool 与 pgxmock 均满足。
@@ -92,6 +101,9 @@ func (s *PGStore) Create(ctx context.Context, c Customer) (int64, error) {
 		RETURNING id`,
 		c.Name, c.Phone, c.IdType, c.IdNo, c.RealNameStatus, c.ServiceStatus,
 		c.AddressID, c.LegalEntityID, c.RegionID, c.RegionName).Scan(&id)
+	if isPgUniqueViolation(err) {
+		return 0, ErrDuplicate
+	}
 	if err != nil {
 		return 0, fmt.Errorf("customer: create: %w", err)
 	}

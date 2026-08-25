@@ -38,6 +38,7 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, user.ErrUsernameTaken),
 		errors.Is(err, user.ErrDuplicate),
 		errors.Is(err, user.ErrConflict),
+		errors.Is(err, customer.ErrDuplicate),
 		errors.Is(err, geo.ErrDuplicate),
 		errors.Is(err, billing.ErrDuplicateInvoice),
 		errors.Is(err, billing.ErrPaymentNotRefundable),
