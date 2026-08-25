@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
 import { formatTime } from '../../base/audit/logic'
 import { EmptyState } from '../../../components/business'
+import { buildTaskQuery, type TaskQueryFilters } from './taskQuery'
 
 export interface ImportTaskRow {
   id: number
@@ -37,13 +38,8 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
 
   const load = () => {
     setError('')
-    const params = new URLSearchParams()
-    if (kind) params.set('kind', kind)
-    if (operator) params.set('operator', operator)
-    if (from) params.set('from', new Date(`${from}T00:00:00Z`).toISOString())
-    if (to) params.set('to', new Date(`${to}T00:00:00Z`).toISOString())
-    const query = params.toString() ? `?${params}` : ''
-    apiFetch<{ items: ImportTaskRow[] }>(`/import-tasks${query}`)
+    const filters: TaskQueryFilters = { kind, operator, from, to }
+    apiFetch<{ items: ImportTaskRow[] }>(`/import-tasks${buildTaskQuery(filters)}`)
       .then((d) => setRows(d?.items ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : im.loadFail))
   }
@@ -57,7 +53,6 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
         <input className="h-8 w-32 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)]" placeholder={im.taskOperatorFilter} value={operator} onChange={(e) => setOperator(e.target.value)} />
         <input type="date" className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)]" value={from} onChange={(e) => setFrom(e.target.value)} />
         <input type="date" className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)]" value={to} onChange={(e) => setTo(e.target.value)} />
-        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-xs text-[var(--shell-content-text)]" onClick={load}>{t.pages.audit.refresh}</button>
         <div className="flex-1" />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
       </div>
