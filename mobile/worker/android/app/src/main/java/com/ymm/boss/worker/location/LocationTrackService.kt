@@ -52,6 +52,10 @@ class LocationTrackService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        if (!hasLocationPermission()) {
+            stopSelf()
+            return
+        }
         startForeground(NOTIFICATION_ID, notification())
         requestUpdates()
     }
@@ -69,10 +73,12 @@ class LocationTrackService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun requestUpdates() {
-        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+    private fun hasLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (!granted) return
+
+    private fun requestUpdates() {
+        if (!hasLocationPermission()) return
         val request = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, REPORT_INTERVAL_MS)
             .setMinUpdateIntervalMillis(REPORT_INTERVAL_MS)
             .setWaitForAccurateLocation(false)
