@@ -12,6 +12,37 @@ paths:
         - { name: offset, in: query, schema: { type: integer } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Customer]
+      summary: 客户直建(批量导入用;regionName 服务端快照,realName PENDING/service ACTIVE)
+      operationId: createCustomer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, phone, legalEntityId, addressId, regionId]
+              properties:
+                name: { type: string }
+                phone: { type: string }
+                legalEntityId: { type: integer, format: int64 }
+                addressId: { type: integer, format: int64 }
+                regionId: { type: integer, format: int64 }
+                idType: { type: string, description: 缺省身份证 }
+                idNo: { type: string }
+      responses:
+        '200':
+          description: data={id}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
 
   /customers/{id}:
     get:

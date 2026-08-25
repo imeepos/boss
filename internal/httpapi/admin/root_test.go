@@ -58,6 +58,10 @@ func (f *fakeUser) DeleteAddress(context.Context, int64) error             { ret
 func (f *fakeUser) SearchAddresses(context.Context, string) ([]user.AddressHit, error) {
 	return nil, nil
 }
+func (f *fakeUser) GetRegion(_ context.Context, id int64) (*user.Region, error) {
+	if id == 0 { return nil, nil }
+	return &user.Region{ID: id, Name: "测试区域", Path: "root.test", Level: 2, LegalEntityID: 1, LegalEntityName: "测试公司"}, nil
+}
 func (f *fakeUser) ListRegions(context.Context, string) ([]user.Region, error) { return nil, nil }
 func (f *fakeUser) ListLegalEntities(context.Context) ([]user.LegalEntity, error) {
 	return f.entities, nil

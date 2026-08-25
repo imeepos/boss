@@ -5,6 +5,7 @@ package adminapi
 // 请求体类型 changeProductPriceReq 见 customer.go。
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -15,6 +16,49 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
+
+// customerCreateReq 客户直建请求体(批量导入用;regionName 由 regionId 服务端快照)。
+type customerCreateReq struct {
+	Name          string `json:"name" binding:"required"`
+	Phone         string `json:"phone" binding:"required"`
+	LegalEntityID int64  `json:"legalEntityId" binding:"required"`
+	AddressID     int64  `json:"addressId" binding:"required"`
+	RegionID      int64  `json:"regionId" binding:"required"`
+	IdType        string `json:"idType"`
+	IdNo          string `json:"idNo"`
+}
+
+// customerCreateHandler POST /customers:客户直建(menu:customer;镜像注册审核通过的主档插行,
+// REAL_NAME PENDING / SERVICE ACTIVE 默认,idType 缺省身份证)。
+func customerCreateHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req customerCreateReq
+		if !httpx.BindAndValidate(c, &req) {
+			return
+		}
+		region, err := a.User.GetRegion(c.Request.Context(), req.RegionID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		idType := req.IdType
+		if idType == "" {
+			idType = "身份证"
+		}
+		id, err := a.Customer.Create(c.Request.Context(), customer.Customer{
+			Name: req.Name, Phone: req.Phone, IdType: idType, IdNo: req.IdNo,
+			RealNameStatus: customer.RealNamePending, ServiceStatus: "ACTIVE",
+			AddressID: req.AddressID, LegalEntityID: req.LegalEntityID,
+			RegionID: region.ID, RegionName: region.Name,
+		})
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "数据变更", "customer", fmt.Sprint(id), gin.H{"op": "create"})
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	}
+}
 
 // customerListHandler GET /customers:客户列表(按 keyword/phone/status 过滤,分页)。
 func customerListHandler(a *app.Application) gin.HandlerFunc {

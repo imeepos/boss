@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
+	"strings"
 )
 
 // ErrNotFound 记录不存在。
@@ -80,6 +79,23 @@ func (s *PGStore) ListLegalEntities(ctx context.Context) ([]LegalEntity, error) 
 }
 
 // ListRegions 列出经营区域(含覆盖主体);parentPath 为空返回全部,否则返回该子树(ltree 前缀)。
+// GetRegion 按 id 查单区域;未命中返回 ErrNotFound。
+func (s *PGStore) GetRegion(ctx context.Context, id int64) (*Region, error) {
+	var r Region
+	err := s.db.QueryRow(ctx, `
+		SELECT r.id, r.path, r.level, r.name, COALESCE(r.legal_entity_id,0), COALESCE(le.name,'')
+		FROM regions r LEFT JOIN legal_entities le ON le.id = r.legal_entity_id
+		WHERE r.id = $1`, id).
+		Scan(&r.ID, &r.Path, &r.Level, &r.Name, &r.LegalEntityID, &r.LegalEntityName)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("user: get region: %w", err)
+	}
+	r.Parent = parentOf(r.Path)
+	return &r, nil
+}
 func (s *PGStore) ListRegions(ctx context.Context, parentPath string) ([]Region, error) {
 	query := `SELECT r.id, r.path, r.level, r.name, COALESCE(r.legal_entity_id,0), COALESCE(le.name,'')
 		FROM regions r LEFT JOIN legal_entities le ON le.id = r.legal_entity_id ORDER BY r.path`

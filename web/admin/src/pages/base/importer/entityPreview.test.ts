@@ -13,8 +13,8 @@ describe('实体定义', () => {
     expect(kinds.length).toBe(new Set(kinds).size)
     for (const k of kinds) expect(k).toMatch(re)
   })
-  it('9 个项目均含端点、必填列与权限码', () => {
-    expect(IMPORT_ENTITIES.map((e) => e.kind)).toEqual(['account', 'legal_entity', 'department', 'post', 'product', 'odn_site', 'odn_grid', 'odn_device', 'odn_facility'])
+  it('10 个项目均含端点、必填列与权限码', () => {
+    expect(IMPORT_ENTITIES.map((e) => e.kind)).toEqual(['account', 'legal_entity', 'department', 'post', 'product', 'odn_site', 'odn_grid', 'customer', 'odn_device', 'odn_facility'])
     expect(new Set(IMPORT_ENTITIES.map((e) => e.perm)).size).toBeGreaterThan(0)
     for (const e of IMPORT_ENTITIES) {
       expect(e.endpoint.startsWith('/')).toBe(true)

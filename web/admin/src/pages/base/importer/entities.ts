@@ -150,6 +150,25 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     ],
   },
   {
+    kind: 'customer',
+    perm: 'menu:customer',
+    endpoint: '/customers',
+    uniqueKey: ['phone'],
+    listEndpoint: '/customers',
+    columns: [
+      { key: 'name', required: true, type: 'string' },
+      { key: 'phone', required: true, type: 'string' },
+      { key: 'legalEntityId', required: true, type: 'number' },
+      { key: 'addressId', required: true, type: 'number' },
+      { key: 'regionId', required: true, type: 'number' },
+      { key: 'idType', required: false, type: 'string' },
+      { key: 'idNo', required: false, type: 'string' },
+    ],
+    samples: [
+      { name: '示例客户', phone: '09170000001', legalEntityId: 1, addressId: 1, regionId: 1, idType: '身份证', idNo: '' },
+    ],
+  },
+  {
     kind: 'odn_device',
     perm: 'menu:odn',
     endpoint: '/odn/devices',

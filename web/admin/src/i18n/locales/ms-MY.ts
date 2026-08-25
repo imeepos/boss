@@ -411,7 +411,7 @@ const msMY: Translations = {
       geoSections: ['countries', 'countryNames', 'subdivisions', 'subdivisionNames'],
       entityTitle: 'Import Kelompok Data Perniagaan',
       entityHint: 'Pilih sasaran, muat turun templat, kemudian import; setiap baris memanggil API cipta berkaitan dan memerlukan kebenaran menu. Pengepala Excel mesti mengandungi semua kunci lajur',
-      entityNames: { account: 'Akaun', legal_entity: 'Entiti Undang-undang', department: 'Jabatan', post: 'Jawatan', product: 'Tawaran Produk', odn_site: 'Tapak ODN', odn_grid: 'Grid ODN', odn_device: 'Peranti ODN', odn_facility: 'Kemudahan ODN' },
+      entityNames: { account: 'Akaun', legal_entity: 'Entiti Undang-undang', department: 'Jabatan', post: 'Jawatan', product: 'Tawaran Produk', customer: 'Pelanggan', odn_site: 'Tapak ODN', odn_grid: 'Grid ODN', odn_device: 'Peranti ODN', odn_facility: 'Kemudahan ODN' },
       entityProgress: 'Kemajuan {done}/{total}',
       entityDone: 'Selesai: {ok} berjaya · {fail} gagal',
       entityRowFail: 'Baris {row} gagal: {msg}',

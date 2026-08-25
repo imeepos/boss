@@ -184,6 +184,19 @@ func TestProductListHandler(t *testing.T) {
 	}
 }
 
+func TestCustomerCreate(t *testing.T) {
+	mgr := auth.NewManager("test-secret", time.Hour)
+	fc := &fakeCustomer{}
+	r := newCustomerRouter(fc, &fakeProduct{}, mgr)
+	w := postBodyAuth(t, r, "/api/admin/v1/customers",
+		`{"name":"批量导入客户","phone":"09170000001","legalEntityId":1,"addressId":1,"regionId":1}`, authToken(t, mgr))
+	var env struct{ Code int `json:"code"` }
+	_ = json.Unmarshal(w.Body.Bytes(), &env)
+	if w.Code != 200 || env.Code != 0 {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
 // TestChangeProductPrice 契约:产品调价更新月费并追加台账(worker.yaml POST /products/{id}/price-history)。
 func TestChangeProductPrice(t *testing.T) {
 	mgr := auth.NewManager("s", time.Hour)

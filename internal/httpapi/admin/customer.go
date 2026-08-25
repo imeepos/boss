@@ -15,6 +15,7 @@ import (
 func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 	cus := g.Group("/customers", requirePerm(a.User, "menu:customer"))
 	cus.GET("", customerListHandler(a))
+	cus.POST("", customerCreateHandler(a))
 	cus.GET("/:id", customerGetHandler(a))
 	cus.GET("/:id/verify-logs", customerVerifyLogsHandler(a))
 

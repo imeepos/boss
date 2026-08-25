@@ -60,6 +60,7 @@ type Service interface {
 	SearchAddresses(ctx context.Context, kw string) ([]AddressHit, error)
 
 	// 组织实体(子公司/部门/岗位/经营区域)的只读查询与管理。
+	GetRegion(ctx context.Context, id int64) (*Region, error)
 	ListRegions(ctx context.Context, parentPath string) ([]Region, error)
 	ListLegalEntities(ctx context.Context) ([]LegalEntity, error)
 	// AssignRegionCoverage 区域挂/摘运营主体覆盖(menu:region 保护;0=摘除)。
