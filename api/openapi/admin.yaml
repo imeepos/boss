@@ -102,6 +102,7 @@ paths:
   /attachments/batch-get: { $ref: './admin/sys.yaml#/paths/~1attachments~1batch-get' }
   /attachments/{id}: { $ref: './admin/sys.yaml#/paths/~1attachments~1{id}' }
   /attachments/{id}/content: { $ref: './admin/sys.yaml#/paths/~1attachments~1{id}~1content' }
+  /crash-logs: { $ref: './admin/sys.yaml#/paths/~1crash-logs' }
 
   # ---------- Backup(数据备份迁移,运维工具) ----------
   /backup/tables: { $ref: './admin/sys.yaml#/paths/~1backup~1tables' }

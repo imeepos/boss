@@ -343,6 +343,21 @@ App 启动/登录后上报 JPush RegistrationID；发送链路按主体反查定
 
 > 无独立 API；后台查看页二期评估（现经 SQL/留痕表审计）。
 
+### 1.6.8 client_crash_logs（客户端崩溃日志，迁移 000136）
+
+App 本地留痕后启动补传；服务端入库即视为成功，App 端成功即删本地文件防重传（尽力端端）。日志文本服务端按 64KB 截断保尾部堆栈。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| ID | `ID` | id | BIGSERIAL |
+| 主体类型 | `SubjectType` | subject_type | 默认 worker（当前仅师傅端上报） |
+| 主体 ID | `SubjectID` | subject_id | BIGINT；未登录=0 |
+| App 标识 | `App` | app | 例 `boss-worker/0.1.0` |
+| 崩溃日志 | `Log` | log | 服务端截断 64KB 保尾部 |
+| 时间 | `CreatedAt` | created_at | — |
+
+> 上报接口：`POST /api/worker/v1/client/crash`（worker/misc.yaml，wauth）；管理端查询 `GET /api/admin/v1/crash-logs?limit=N`（admin/sys.yaml，permCode `menu:crash_logs`，迁移 000140）。
+
 ### 1.7 api_keys（免登录 API key，internal/domain/apikey，迁移 000042/000043/000045）
 
 > 固定用途：CLI/自动化（bossctl）免登录认证。key 与三类主体绑定（`subject_type` account/worker/customer，000043 三表登录边界 + 000044 主体扩展）；只存 sha256(key) 哈希，明文仅创建时返回一次（安全约定见迁移 000042 头注）。

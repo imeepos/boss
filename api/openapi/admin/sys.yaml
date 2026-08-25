@@ -920,3 +920,26 @@ components:
       tags: [APIKey]
       responses:
         '200': { description: 模板列表 }
+  /crash-logs:
+    get:
+      summary: 客户端崩溃日志列表(管理端排查;permCode menu:crash_logs)
+      tags: [Misc]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: 最新 N 条按 created_at DESC;单条 log 文本服务端已截断至 64KB 保尾部
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    subjectType: { type: string, example: worker }
+                    subjectId: { type: integer }
+                    app: { type: string, example: "boss-worker/0.1.0" }
+                    log: { type: string }
+                    createdAt: { type: string, format: date-time }
