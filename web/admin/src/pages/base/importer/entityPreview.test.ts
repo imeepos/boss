@@ -55,10 +55,12 @@ describe('parseEntityRows', () => {
     expect(env).toMatchObject({ ok: true, rows: [{ legalEntityId: 1, name: 'A' }] })
     expect(env.ok && env.rawRows).toEqual([{ legalEntityId: 1, name: 'A' }])
   })
-  it('超过单次上限报 tooMany(含实际行数)', () => {
+  it('超过单次上限报 tooMany(含实际行数),上限可参数化', () => {
     const many = Array.from({ length: MAX_IMPORT_ROWS + 1 }, (_, i) => ({ legalEntityId: 1, name: `D${i}` }))
     expect(parseEntityRows(dept, many)).toEqual({ ok: false, reason: 'tooMany', count: many.length })
     expect(parseEntityRows(dept, many.slice(0, MAX_IMPORT_ROWS)).ok).toBe(true)
+    expect(parseEntityRows(dept, [{ legalEntityId: 1, name: 'A' }, { legalEntityId: 1, name: 'B' }], 1))
+      .toEqual({ ok: false, reason: 'tooMany', count: 2 })
   })
   it('非数组/坏行定位行号与字段', () => {
     expect(parseEntityRows(dept, { x: 1 })).toEqual({ ok: false, reason: 'notArray' })

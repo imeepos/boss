@@ -50,10 +50,10 @@ function toList(raw: unknown): string[] | null {
 }
 
 /** 顶层形状校验 + 逐行必填检查;行号 1 起算。 */
-export function parseEntityRows(def: EntityDef, value: unknown): EntityParseResult {
+export function parseEntityRows(def: EntityDef, value: unknown, maxRows: number = MAX_IMPORT_ROWS): EntityParseResult {
   const arr = Array.isArray(value) ? value : rowsEnvelope(value)
   if (!arr) return { ok: false, reason: 'notArray' }
-  if (arr.length > MAX_IMPORT_ROWS) return { ok: false, reason: 'tooMany', count: arr.length }
+  if (arr.length > maxRows) return { ok: false, reason: 'tooMany', count: arr.length }
   const rows: Array<Record<string, unknown>> = []
   for (let i = 0; i < arr.length; i++) {
     const it = arr[i]

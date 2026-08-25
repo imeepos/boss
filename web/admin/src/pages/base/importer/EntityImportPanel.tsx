@@ -1,6 +1,6 @@
 // 业务实体批量导入面板:模板下载(Excel/JSON)+ 文件/附件选择 + 预览 + 逐行调用既有创建端点。
 // 与 addr/geo 面板差异:执行为客户端逐行 POST,进度与失败行逐条反馈;401 中止剩余行。
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { ApiError } from '../../../api/envelope'
 import { ToolbarButton } from '../../../components/business/page-head'
@@ -43,12 +43,27 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
   const [failures, setFailures] = useState<RowFailure[]>([])
   const [pickerOpen, setPickerOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  /** 单次行数上限:业务参数 importer.maxRows 覆盖,缺省 500(读取失败不阻断)。 */
+  const [maxRows, setMaxRows] = useState(MAX_IMPORT_ROWS)
+
+  useEffect(() => {
+    let alive = true
+    apiFetch<{ items: Array<{ key: string; value: string }> }>('/params')
+      .then((d) => {
+        const it = d?.items?.find((p) => p.key === 'importer.maxRows')
+        if (!it || !alive) return
+        const n = Number(JSON.parse(it.value))
+        if (Number.isInteger(n) && n > 0) setMaxRows(n)
+      })
+      .catch(() => undefined)
+    return () => { alive = false }
+  }, [])
 
   const parsed = useMemo(() => {
     if (!payload.trim()) return null
     const json = parseJson(payload)
-    return json.ok ? parseEntityRows(def, json.value) : json
-  }, [payload, def])
+    return json.ok ? parseEntityRows(def, json.value, maxRows) : json
+  }, [payload, def, maxRows])
 
   const rows = parsed?.ok ? parsed.rows : null
   /** 原始行(未经矫正):失败行导出重试文件的数据源,与 rows 下标一一对齐。 */
@@ -189,7 +204,7 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
           {'reason' in parsed && parsed.reason === 'badRow'
             ? text.reasonEntityBadRow.replace('{row}', String(parsed.row)).replace('{field}', parsed.field ?? '')
             : 'reason' in parsed && parsed.reason === 'tooMany'
-              ? text.entityTooMany.replace('{count}', String(parsed.count ?? '')).replace('{max}', String(MAX_IMPORT_ROWS))
+              ? text.entityTooMany.replace('{count}', String(parsed.count ?? '')).replace('{max}', String(maxRows))
               : text.reasonNotArray}
           {'line' in parsed && parsed.line !== undefined ? ` (${text.parseFailAt.replace('{line}', String(parsed.line))})` : ''}
         </p>
