@@ -20,6 +20,9 @@ func (s *PGStore) CreateLegalEntity(ctx context.Context, e LegalEntity) (int64, 
 		`INSERT INTO legal_entities(code, name, tax_jurisdiction, tax_channel)
 		VALUES($1,$2,$3,$4) RETURNING id`, e.Code, e.Name, e.TaxJurisdiction, e.TaxChannel).
 		Scan(&id)
+	if isUniqueViolation(err) {
+		return 0, ErrConflict
+	}
 	if err != nil {
 		return 0, fmt.Errorf("user: create legal_entity: %w", err)
 	}
@@ -32,6 +35,9 @@ func (s *PGStore) UpdateLegalEntity(ctx context.Context, id int64, e LegalEntity
 	tag, err := s.db.Exec(ctx,
 		`UPDATE legal_entities SET code=$2, name=$3, tax_jurisdiction=$4, tax_channel=$5
 		WHERE id=$1`, id, e.Code, e.Name, e.TaxJurisdiction, e.TaxChannel)
+	if isUniqueViolation(err) {
+		return ErrConflict
+	}
 	if err != nil {
 		return fmt.Errorf("user: update legal_entity: %w", err)
 	}
