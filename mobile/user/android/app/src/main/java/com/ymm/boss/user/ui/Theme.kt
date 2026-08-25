@@ -1,29 +1,17 @@
 package com.ymm.boss.user.ui
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.ymm.boss.user.ui.theme.ActionOrange
-import com.ymm.boss.user.ui.theme.ActionOrangeDark
 import com.ymm.boss.user.ui.theme.ActionPurple
-import com.ymm.boss.user.ui.theme.ActionPurpleDark
 import com.ymm.boss.user.ui.theme.BrandBlue
-import com.ymm.boss.user.ui.theme.BrandBlueDark
 import com.ymm.boss.user.ui.theme.BrandBlueGradientEnd
-import com.ymm.boss.user.ui.theme.BrandBlueGradientEndDark
-import com.ymm.boss.user.ui.theme.BrandBlueGradientStart
-import com.ymm.boss.user.ui.theme.BrandBlueGradientStartDark
 import com.ymm.boss.user.ui.theme.Green500
-import com.ymm.boss.user.ui.theme.Green500Dark
-import com.ymm.boss.user.ui.theme.OnSurfaceDark
 import com.ymm.boss.user.ui.theme.OnSurfaceLight
-import com.ymm.boss.user.ui.theme.OnSurfaceVariantDark
 import com.ymm.boss.user.ui.theme.OnSurfaceVariantLight
-import com.ymm.boss.user.ui.theme.SurfaceDark
 import com.ymm.boss.user.ui.theme.SurfaceLight
 
 object Palette {
@@ -44,24 +32,13 @@ object Palette {
     val dotOff = Color(0xFFFF3B30)
 }
 
+// 固定浅色主题,不跟随系统暗色模式(用户裁定 2026-08-25):手机开暗色时
+// 卡片/底部导航曾切 SurfaceDark 变黑,其余页面写死浅色不变 → 主题撕裂。
+// 与 worker 端 WorkerTheme 同构,暗色配色完全移除。
 @Composable
 fun BossTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-    val scheme = if (dark) {
-        darkColorScheme(
-            primary = BrandBlueDark,
-            secondary = Green500Dark,
-            tertiary = OnSurfaceVariantDark,
-            background = Color(0xFF101114),
-            surface = SurfaceDark,
-            surfaceVariant = Color(0xFF2C2C2E),
-            onBackground = OnSurfaceDark,
-            onSurface = OnSurfaceDark,
-            onSurfaceVariant = OnSurfaceVariantDark,
-            error = Color(0xFFFF6961),
-        )
-    } else {
-        lightColorScheme(
+    MaterialTheme(
+        colorScheme = lightColorScheme(
             primary = BrandBlue,
             secondary = Green500,
             tertiary = OnSurfaceVariantLight,
@@ -72,9 +49,9 @@ fun BossTheme(content: @Composable () -> Unit) {
             onSurface = OnSurfaceLight,
             onSurfaceVariant = OnSurfaceVariantLight,
             error = Color(0xFFFF3B30),
-        )
-    }
-    MaterialTheme(colorScheme = scheme, content = content)
+        ),
+        content = content,
+    )
 }
 
 @Composable
@@ -88,30 +65,20 @@ fun auxText(): Color = MaterialTheme.colorScheme.onSurfaceVariant
 
 /** 统一渐变基准(与"我的"页一致):BrandBlue → 渐变端色。 */
 @Composable
-fun profileHeaderGradient(): Brush = if (isSystemInDarkTheme()) {
-    Brush.linearGradient(listOf(BrandBlueDark, BrandBlueGradientEndDark))
-} else {
+fun profileHeaderGradient(): Brush =
     Brush.linearGradient(listOf(BrandBlue, BrandBlueGradientEnd))
-}
 
 /** 首页渐变:基准上仅起点略加深,保持同族不突兀。 */
 @Composable
-fun homeHeaderGradient(): Brush = if (isSystemInDarkTheme()) {
-    Brush.linearGradient(listOf(Color(0xFF4E97EC), BrandBlueGradientEndDark))
-} else {
+fun homeHeaderGradient(): Brush =
     Brush.linearGradient(listOf(Color(0xFF006AE5), BrandBlueGradientEnd))
-}
 
 /** 固定状态栏色:所有页面统一,取首页渐变起点色,不透明、不随页面切换变化。 */
 @Composable
-fun statusBarSolid(): Color = if (isSystemInDarkTheme()) {
-    Color(0xFF4E97EC)
-} else {
-    Color(0xFF006AE5)
-}
+fun statusBarSolid(): Color = Color(0xFF006AE5)
 
 @Composable
-fun actionOrange(): Color = if (isSystemInDarkTheme()) ActionOrangeDark else ActionOrange
+fun actionOrange(): Color = ActionOrange
 
 @Composable
-fun actionPurple(): Color = if (isSystemInDarkTheme()) ActionPurpleDark else ActionPurple
+fun actionPurple(): Color = ActionPurple
