@@ -76,7 +76,9 @@ func clientReleaseCreate(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeInvalidParam, gin.H{"field": "versionCode"})
 			return
 		}
-		r.MinSupportedCode, _ = strconv.Atoi(c.PostForm("minSupportedCode"))
+		if r.MinSupportedCode, _ = strconv.Atoi(c.PostForm("minSupportedCode")); r.MinSupportedCode < 1 {
+			r.MinSupportedCode = r.VersionCode // 缺省=本版码,即"本版不强制任何人"
+		}
 		r.RolloutPercent, _ = strconv.Atoi(c.PostForm("rolloutPercent"))
 		r.Force = c.PostForm("force") == "true"
 		r.WhitelistIDs = parseIDList(c.PostForm("whitelistIds"))
