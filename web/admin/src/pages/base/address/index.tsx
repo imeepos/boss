@@ -18,7 +18,6 @@ export default function AddressPage() {
   const t = useT()
   const confirmDialog = useConfirm()
   const a = t.pages.address
-  const im = t.pages.importer
   const [roots, setRoots] = useState<AddressRow[]>([])
   const [countries, setCountries] = useState<CountryRow[]>([])
   const [childrenOf, setChildrenOf] = useState<Record<number, AddressRow[]>>({})
