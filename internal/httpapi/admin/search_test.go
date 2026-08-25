@@ -51,7 +51,7 @@ func newSearchRouter(fu *permUser, fc *fakeCustomer, fo *fakeOrder, fw *searchWo
 
 // searchGroupResp 聚合响应分组解析骨架(items 逐域字段不同,此处仅断言条数)。
 type searchGroupResp struct {
-	Domain string   `json:"domain"`
+	Domain string            `json:"domain"`
 	Items  []json.RawMessage `json:"items"`
 }
 
