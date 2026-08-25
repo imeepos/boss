@@ -19,12 +19,19 @@ import (
 // customerListHandler GET /customers:客户列表(按 keyword/phone/status 过滤,分页)。
 func customerListHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		scope, err := a.User.GetDataScope(c.Request.Context(), httpx.ClaimsAccountID(c))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		list, err := a.Customer.List(c.Request.Context(), customer.CustomerQuery{
-			NameKeyword: c.Query("keyword"),
-			Phone:       c.Query("phone"),
-			Status:      c.Query("status"),
-			Limit:       int(queryInt64(c, "limit")),
-			Offset:      int(queryInt64(c, "offset")),
+			NameKeyword:   c.Query("keyword"),
+			Phone:         c.Query("phone"),
+			Status:        c.Query("status"),
+			LegalEntityID: scope.LegalEntityID,
+			RegionScope:   scope.RegionScope,
+			Limit:         int(queryInt64(c, "limit")),
+			Offset:        int(queryInt64(c, "offset")),
 		})
 		if err != nil {
 			respondErr(c, err)

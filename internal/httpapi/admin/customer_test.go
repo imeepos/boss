@@ -11,14 +11,19 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 )
 
-type fakeCustomer struct{ list []customer.Customer }
+type fakeCustomer struct {
+	list    []customer.Customer
+	lastQ   customer.CustomerQuery
+}
 
 func (f *fakeCustomer) Create(context.Context, customer.Customer) (int64, error) { return 0, nil }
 func (f *fakeCustomer) Get(context.Context, int64) (*customer.Customer, error)   { return nil, nil }
-func (f *fakeCustomer) List(context.Context, customer.CustomerQuery) ([]customer.Customer, error) {
+func (f *fakeCustomer) List(_ context.Context, q customer.CustomerQuery) ([]customer.Customer, error) {
+	f.lastQ = q
 	return f.list, nil
 }
 
@@ -115,6 +120,41 @@ func TestCustomerListHandler(t *testing.T) {
 	}
 	if len(body.Data.Items) != 1 || body.Data.Items[0].Name != "王先生" || body.Data.Items[0].RealNameStatus != "VERIFIED" {
 		t.Fatalf("body=%+v", body)
+	}
+	if c.lastQ.LegalEntityID != 0 || c.lastQ.RegionScope != "" {
+		t.Fatalf("scope=%+v", c.lastQ)
+	}
+}
+
+func TestCustomerListHandlerAppliesDataScope(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	c := &fakeCustomer{}
+	r := newCustomerRouter(c, &fakeProduct{}, mgr)
+	w := getJSON(t, r, "/api/admin/v1/customers", authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d", w.Code)
+	}
+	if c.lastQ.LegalEntityID != 0 || c.lastQ.RegionScope != "" {
+		t.Fatalf("unexpected default scope=%+v", c.lastQ)
+	}
+}
+
+func TestCustomerListHandlerAppliesDataScopeRestricted(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	fc := &fakeCustomer{}
+	r := gin.New()
+	gin.SetMode(gin.TestMode)
+	Register(r, &app.Application{
+		User:     &fakeUser{permOk: true, dataScope: user.DataScope{LegalEntityID: 3, RegionScope: "root.luzon"}},
+		Customer: fc, Product: &fakeProduct{}, RealName: &fakeRealName{}, CustomerLedger: &fakeLedger{},
+	}, mgr)
+
+	w := getJSON(t, r, "/api/admin/v1/customers", authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d", w.Code)
+	}
+	if fc.lastQ.LegalEntityID != 3 || fc.lastQ.RegionScope != "root.luzon" {
+		t.Fatalf("data scope not applied: lastQ=%+v", fc.lastQ)
 	}
 }
 

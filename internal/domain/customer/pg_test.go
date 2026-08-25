@@ -114,7 +114,7 @@ func TestPGStore_List(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`SELECT id, customer_code, name, phone`).
-		WithArgs("王", "", "", 10, 0).
+		WithArgs("王", "", "", int64(0), "", 10, 0).
 		WillReturnRows(mock.NewRows([]string{
 			"id", "customer_code", "name", "phone", "id_type", "id_no", "real_name_status", "service_status",
 			"address_id", "legal_entity_id", "region_id", "region_name", "created_at",

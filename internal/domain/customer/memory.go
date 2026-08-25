@@ -73,7 +73,10 @@ func match(c Customer, q CustomerQuery) bool {
 	if q.Status != "" && c.ServiceStatus != q.Status {
 		return false
 	}
-	return true
+	if q.LegalEntityID != 0 && c.LegalEntityID != q.LegalEntityID {
+		return false
+	}
+	return q.RegionScope == "" || c.RegionName == q.RegionScope
 }
 
 func contains(s, sub string) bool {

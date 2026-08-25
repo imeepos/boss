@@ -123,9 +123,14 @@ func (s *PGStore) List(ctx context.Context, q CustomerQuery) ([]Customer, error)
 		WHERE ($1 = '' OR name ILIKE '%' || $1 || '%')
 		  AND ($2 = '' OR phone = $2)
 		  AND ($3 = '' OR service_status = $3)
+		  AND ($4 = 0 OR legal_entity_id = $4)
+		  AND ($5 = '' OR region_id IN (
+			SELECT r.id FROM regions r
+			WHERE r.path <@ text2ltree($5)
+		  ))
 		ORDER BY id
-		LIMIT $4 OFFSET $5`,
-		q.NameKeyword, q.Phone, q.Status, limit, q.Offset)
+		LIMIT $6 OFFSET $7`,
+		q.NameKeyword, q.Phone, q.Status, q.LegalEntityID, q.RegionScope, limit, q.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("customer: list: %w", err)
 	}

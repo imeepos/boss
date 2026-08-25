@@ -22,9 +22,11 @@ type Customer struct {
 
 // CustomerQuery 列表过滤条件(管理后台 customer.html 列表)。
 type CustomerQuery struct {
-	NameKeyword string
-	Phone       string
-	Status      string
-	Limit       int
-	Offset      int
+	NameKeyword     string
+	Phone           string
+	Status          string
+	LegalEntityID   int64
+	RegionScope     string
+	Limit           int
+	Offset          int
 }

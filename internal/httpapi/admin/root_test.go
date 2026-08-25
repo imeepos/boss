@@ -28,6 +28,7 @@ type fakeUser struct {
 	deleteErr error
 	roleRes   *user.RoleDetail
 	roleErr   error
+	dataScope user.DataScope
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -78,7 +79,7 @@ func (f *fakeUser) ListDepartments(context.Context, int64) ([]user.Department, e
 }
 func (f *fakeUser) ListPosts(context.Context, int64) ([]user.Post, error) { return nil, nil }
 func (f *fakeUser) GetDataScope(context.Context, int64) (user.DataScope, error) {
-	return user.DataScope{}, nil
+	return f.dataScope, nil
 }
 func (f *fakeUser) GetProfile(context.Context, int64) (*user.Profile, error) {
 	return &user.Profile{AccountID: 1, Username: "boss", RealName: "老板", RoleName: "系统管理员"}, nil
