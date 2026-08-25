@@ -117,3 +117,27 @@
 放弃的方案:对软引用列补 DB FK 约束(会拦历史脏数据导致迁移失败,且与「软引用」历史裁定
 冲突);对存量孤儿做批量 DELETE(需单独死数据任务,不在门禁提交内)。门禁全部走
 pgxmock 单测锁定 SQL 契约,`make check` 全绿。
+
+## 七、Addendum(2026-08-25):存量孤儿数据清理落地
+
+门禁(§六)只拦新数据;本节按建议 §五.1 清存量孤儿。执行通道:无本地 psql,经
+`ssh imeepos@192.168.0.102` + `docker exec -i boss-infra-postgres-1 psql -U boss -d boss`
+管道跑 SQL 文件(多层 shell 引号必炸,文件管道最稳)。流程:快照 → 预检(FK 依赖扫
+描)→ pg_dump 备份(16 表,102 服务器 /tmp/boss_orphan_backup_20260825-045747.sql)→
+单事务 ON_ERROR_STOP 清理 → 复扫=0 → API 冒烟。
+
+| 类目 | 清理动作 | 结果 |
+|---|---|---|
+| orders 悬空(客户/产品/渠道缺失,E2E 造数) | 删 145(含从属:order_stages 18、reserve_records 11、其余 0) | orders 246→101 |
+| lo_accounts 孤儿 | 删 18(仅剩 customer 213 的 LOID-E2E-RESUME-001) | 19→1 |
+| cdrs 孤儿 loid | 删 95(76 存量 + 19 关联已删 LO 账号) | 95→0 |
+| transfers 资源悬空 | 删 22 | 22→0 |
+| reserve_records 端口/订单悬空 | 删 11+11 | →0 |
+| alarms 悬空资源 | 删 12(NULL 平台告警 2 条保留) | 22→10 |
+| 环节8+ 无工单(合法订单 336/352) | 补落工单 DT-20260820-000314/000330(DOING,与 INSTALLING 对齐) | 47→49 |
+| 泄漏 RESERVED 端口(DONE/CANCELLED 订单) | 32→USED(环节12 语义)、1→IDLE(CANCELLED)、2 悬空 order_id 引用清空 | 33 归位 |
+| payments PAY-3/PAY-4 | 不删——实际锚定 customer 213,此前读路径恒显示 customerId=0 是 §六 修复的观测假象 | 保持 |
+
+清理后复扫各孤儿类=0;API 冒烟 /orders /ports /lo-accounts /transfers /alarms /payments
+/complaints /dispatch/pool 全部正常,payments 已如实回显 customerId=213。
+遗留:devseed/E2E 造数脚本加「用例结束自清理」(建议 §五.1 剩余项,防再泄漏)。

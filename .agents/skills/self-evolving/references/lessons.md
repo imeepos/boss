@@ -328,3 +328,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-09-01: 300 行红线检查(check-contract-sync C 项)按 `strings.Count("\n")+1` 计数(比 wc -l 多 1);改大文件前先查余量,主分支可能已被并行分支推高到红,顺手拆文件守红线(findByRequestID→pg_query.go、回退/取消→pg_reopen.go 先例)。
 - 2026-09-01: 并行 worktree 会话会让 local main 领先 gitea/main(未推 commit);ff-merge 前 `git merge-base --is-ancestor HEAD <分支>` 确认,rebase 应以 local main HEAD 为基而非 gitea/main。
 - 2026-09-01: make check 与 git rebase 不可并发——rebase 改写工作区文件,运行中的测试读到半成品,结果作废必须重跑。
+- 2026-09-01: 本机无 psql/DB 客户端时,用 `cat x.sql | ssh imeepos@192.168.0.102 'docker exec -i boss-infra-postgres-1 psql -U boss -d boss -X'` 管道执行(host 无 psql,DB 在容器 boss-infra-postgres-1,映射 25432);多层 shell 引号必炸,SQL 写文件管道最稳;执行前 `\set ON_ERROR_STOP on` + BEGIN/COMMIT 包单事务。
+- 2026-09-01: 删除父表前先做 FK 依赖扫描(`grep REFERENCES orders migrations/*.up.sql`)+ pg_dump 备份受影响表(`pg_dump -t t1 -t t2 ...`),子表先行删除防 FK 阻断;破坏性清理走 快照→预检→备份→事务清理→复扫=0→API 冒烟 六步。
