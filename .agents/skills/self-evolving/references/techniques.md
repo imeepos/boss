@@ -307,3 +307,7 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## Tauri 内嵌静态资源验证(2026-09-01)
 场景 → 验证 `tauri build` 产出的桌面二进制确实嵌入了最新的 `web/admin/dist` 静态资源。
 怎么用 → ① 先确认 dist 入口文件名: `grep -o 'index-[^"]*\.js' web/admin/dist/index.html`;② 从二进制中 grep 该文件名: `strings target/<profile>/boss-desktop | grep -c "index-xxx"`(返回≥1 即嵌入成功);③ 可选查验资产路径总数: `strings binary | grep -oE "/assets/[A-Za-z0-9._-]+" | sort -u | wc -l` 与 dist 文件数对比。注意:assets 内容被 brotli 压缩,HTML 全文不会出现在 strings 中;入口文件名和路径 key 以明文出现。
+
+## cdp-capture 免登录注入时序(2026-09-01)
+场景 → 对 admin SPA 页面注入 token 后截图/断言 DOM。
+怎么用 → 先从 `/login` 打开页面再注入 localStorage,然后 `location.href='/目标路径'` 导航;不要在目标页注入后 `location.reload()` —— reload 时序下 AuthGuard 先读旧态会弹回 /login。注入项:boss.token + boss.servers([{id,name,baseUrl}]) + boss.server.active(存 id)+ boss.theme。dev 页面用 `localhost:5199`(vite --strictPort),生产用 102:5180 同源代理;断言分组标题等计算样式直接 `--eval getComputedStyle` 返回 fontSize/color,无需读图(flash 模型无图像输入)。
