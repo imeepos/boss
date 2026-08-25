@@ -659,7 +659,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | `joinedAt` | joined_at | 入职时间 |
 | `leftAt` | left_at | 离职时间，null=在职 |
 
-### 7.2 worker_locations（师傅实时位置，迁移 000143）
+### 7.2 worker_locations（师傅实时位置，迁移 000144）
 
 位置上报只保存师傅端身份对应的实时轨迹，当前点按 `reportedAt` 倒序取最新；订单详情通过派单工单的 `workerId` 关联读取。
 
