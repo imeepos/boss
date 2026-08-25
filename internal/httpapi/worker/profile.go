@@ -23,6 +23,7 @@ func registerWorkerPortalProfileRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/settings", workerSettingsGetHandler(a))
 	g.PUT("/settings", workerSettingsPutHandler(a))
 	g.GET("/feedbacks", workerFeedbacksHandler(a))
+	g.GET("/team/performance", workerTeamPerformanceHandler(a)) // 队长业绩(000141)
 }
 
 // workerProfileHandler 我的:档案 + 本月累计(绩效行按月过滤)。

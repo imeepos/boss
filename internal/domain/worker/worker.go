@@ -5,14 +5,15 @@ import (
 	"time"
 )
 
-// Group 师傅班组(运营主体自定义组织,公司内 code 唯一)。
+// Group 师傅班组(UI 别名"装维队",运营主体自定义组织,公司内 code 唯一)。
 type Group struct {
 	ID            int64  `json:"id"`
 	LegalEntityID int64  `json:"legalEntityId"`
 	Code          string `json:"code"`
 	Name          string `json:"name"`
-	LeaderID      int64  `json:"leaderId"` // 0=无组长
+	LeaderID      int64  `json:"leaderId"` // 0=无队长
 	LeaderName    string `json:"leaderName"`
+	MemberCount   int    `json:"memberCount"` // 在职成员数(装维队列表视图冗余)
 }
 
 // Worker 装维师傅(归属班组,服务区域须落班组公司经营区域)。
@@ -45,4 +46,19 @@ type WorkerService interface {
 	ListWorkers(ctx context.Context, groupID int64, keyword string) ([]Worker, error)
 	CreateWorker(ctx context.Context, w Worker) (int64, error)
 	GetWorker(ctx context.Context, id int64) (*Worker, error)
+}
+
+// TeamService 装维队管理服务口(000141):队伍维护/成员调队/队长绩效视图。
+// 队伍实体即 Group(班组),UI 术语"装维队/队长"对应契约"班组/组长"。
+type TeamService interface {
+	// UpdateGroup 改名 + 指定队长(leaderID=0 清空);队长必须为本队在职成员。
+	UpdateGroup(ctx context.Context, groupID int64, name string, leaderID int64) (*Group, error)
+	// SoftDeleteGroup 软删队伍(deleted_at 置位);仍有在职成员时拒绝(fields.md §7.3 铁律 1)。
+	SoftDeleteGroup(ctx context.Context, groupID int64) error
+	// TransferWorker 成员调队:改 workers.group_id + 落 worker_group_memberships 台账。
+	TransferWorker(ctx context.Context, t Transfer) error
+	// ListTeamPerformances 队成员月度绩效(队长/后台业绩统计);period 空=全部月。
+	ListTeamPerformances(ctx context.Context, groupID int64, period string) ([]TeamMemberPerf, error)
+	// GroupOfLeader 查队长所辖队伍;非队长返回 ErrNotFound。
+	GroupOfLeader(ctx context.Context, workerID int64) (*Group, error)
 }

@@ -84,6 +84,12 @@ func RespondErr(c *gin.Context, err error) {
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, backup.ErrBusy):
 		Respond(c, apitypes.CodeResourceBusy, nil)
+	// 装维队管理(000141):队非空软删/同队调队 → 冲突;队长非本队成员 → 参数非法。
+	case errors.Is(err, worker.ErrGroupNotEmpty),
+		errors.Is(err, worker.ErrSameGroup):
+		Respond(c, apitypes.CodeConflict, nil)
+	case errors.Is(err, worker.ErrLeaderNotMember):
+		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, odn.ErrDuplicate):
 		Respond(c, apitypes.CodeConflict, nil)
 	case errors.Is(err, odn.ErrInvalidCode),

@@ -52,10 +52,12 @@ func idOrNil(id int64) any {
 	return id
 }
 
-// ListGroups 列出全部班组。
+// ListGroups 列出全部在职班组(装维队;软删排除,附在职成员数)。
 func (s *PGStore) ListGroups(ctx context.Context) ([]Group, error) {
-	rows, err := s.db.Query(ctx,
-		`SELECT id, legal_entity_id, code, name, COALESCE(leader_id, 0), COALESCE(leader_name, '') FROM worker_groups ORDER BY id`)
+	rows, err := s.db.Query(ctx, `
+		SELECT g.id, g.legal_entity_id, g.code, g.name, COALESCE(g.leader_id, 0), COALESCE(g.leader_name, ''),
+		       (SELECT COUNT(*) FROM workers w WHERE w.group_id = g.id AND w.status = 1)
+		FROM worker_groups g WHERE g.deleted_at IS NULL ORDER BY g.id`)
 	if err != nil {
 		return nil, fmt.Errorf("worker: list groups: %w", err)
 	}
@@ -63,7 +65,7 @@ func (s *PGStore) ListGroups(ctx context.Context) ([]Group, error) {
 	out := make([]Group, 0)
 	for rows.Next() {
 		var g Group
-		if err := rows.Scan(&g.ID, &g.LegalEntityID, &g.Code, &g.Name, &g.LeaderID, &g.LeaderName); err != nil {
+		if err := rows.Scan(&g.ID, &g.LegalEntityID, &g.Code, &g.Name, &g.LeaderID, &g.LeaderName, &g.MemberCount); err != nil {
 			return nil, fmt.Errorf("worker: scan group: %w", err)
 		}
 		out = append(out, g)

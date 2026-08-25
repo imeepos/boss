@@ -102,3 +102,32 @@ paths:
           content:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/Feedbacks' }
+
+  /team/performance:
+    get:
+      tags: [Profile]
+      summary: 队长查看装维队成员月度业绩统计(000141);非队长返回 40300
+      operationId: getTeamPerformance
+      parameters:
+        - name: period
+          in: query
+          schema: { type: string, example: '2026-08' }
+      responses:
+        '200':
+          description: 队伍信息 + 成员业绩列表(workerId/staffNo/name/phone/isLeader/finished/onTimeRate/score)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period: { type: string }
+                  group:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      name: { type: string }
+                      memberCount: { type: integer }
+                  items:
+                    type: array
+                    items:
+                      type: object

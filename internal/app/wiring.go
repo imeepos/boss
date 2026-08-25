@@ -166,6 +166,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		},
 
 		Worker:       wrk,
+		WorkerTeam:   wrk,
 		WorkerLedger: wrk,
 		WorkerFact:   wrk,
 		WorkerEvent:  wrk,

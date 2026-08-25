@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE worker_groups DROP COLUMN IF EXISTS deleted_at;
+COMMIT;

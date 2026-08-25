@@ -26,6 +26,63 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /worker-groups/{groupId}:
+    put:
+      tags: [Worker]
+      summary: 装维队维护(000141):改名 + 指定队长(leaderId=0 清空,队长须为本队在职成员)
+      operationId: updateWorkerGroup
+      parameters:
+        - { name: groupId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                leaderId: { type: integer, format: int64 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+    delete:
+      tags: [Worker]
+      summary: 装维队软删(000141);仍有在职成员返回 40900
+      operationId: deleteWorkerGroup
+      parameters:
+        - { name: groupId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /worker-groups/{groupId}/performance:
+    get:
+      tags: [Worker]
+      summary: 装维队成员月度业绩统计(000141,period 空取当月)
+      operationId: getWorkerGroupPerformance
+      parameters:
+        - { name: groupId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: period, in: query, schema: { type: string, example: '2026-08' } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /workers/{workerId}/transfer:
+    post:
+      tags: [Worker]
+      summary: 成员调队(000141):改当前归属 + 落 worker_group_memberships 台账
+      operationId: transferWorker
+      parameters:
+        - { name: workerId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [groupId]
+              properties:
+                groupId: { type: integer, format: int64 }
+                reason: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   # 师傅注册 / 审核 / 实名认证 子域(迁移 000050)。
   /worker-registrations:
     get:

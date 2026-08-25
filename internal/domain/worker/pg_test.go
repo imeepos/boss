@@ -19,16 +19,16 @@ func TestPGStore_ListGroups(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, legal_entity_id, code, name, COALESCE\(leader_id, 0\), COALESCE\(leader_name, ''\) FROM worker_groups`).
-		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "code", "name", "leader_id", "leader_name"}).
-			AddRow(int64(1), int64(1), "装机一组", "装机一组", int64(1024), "张师傅"))
+	mock.ExpectQuery(`FROM worker_groups g WHERE g\.deleted_at IS NULL`).
+		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "code", "name", "leader_id", "leader_name", "member_count"}).
+			AddRow(int64(1), int64(1), "装机一组", "装机一组", int64(1024), "张师傅", 3))
 
 	s := NewPGStore(mock)
 	got, err := s.ListGroups(context.Background())
 	if err != nil {
 		t.Fatalf("ListGroups: %v", err)
 	}
-	if len(got) != 1 || got[0].LeaderID != 1024 {
+	if len(got) != 1 || got[0].LeaderID != 1024 || got[0].MemberCount != 3 {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

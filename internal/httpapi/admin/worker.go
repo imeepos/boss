@@ -13,6 +13,11 @@ import (
 func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/worker-groups", requirePerm(a.User, "menu:order"), workerListGroupsHandler(a))
 	g.POST("/worker-groups", requirePerm(a.User, "menu:order"), workerCreateGroupHandler(a))
+	// 装维队管理(000141):维护/软删/队长/业绩统计。
+	g.PUT("/worker-groups/:groupId", requirePerm(a.User, "menu:order"), workerUpdateGroupHandler(a))
+	g.DELETE("/worker-groups/:groupId", requirePerm(a.User, "menu:order"), workerDeleteGroupHandler(a))
+	g.GET("/worker-groups/:groupId/performance", requirePerm(a.User, "menu:order"), workerTeamPerformanceHandler(a))
+	g.POST("/workers/:workerId/transfer", requirePerm(a.User, "menu:order"), workerTransferHandler(a))
 
 	g.GET("/workers", requirePerm(a.User, "menu:dispatch"), workerListWorkersHandler(a))
 	g.GET("/workers/:workerId", requirePerm(a.User, "menu:dispatch"), workerGetWorkerHandler(a))

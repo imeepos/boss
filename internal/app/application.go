@@ -169,6 +169,7 @@ type Application struct {
 	Cdr     aaability.Emitter
 
 	Worker       worker.WorkerService
+	WorkerTeam   worker.TeamService
 	WorkerLedger worker.WorkerLedgerService
 	WorkerFact   worker.WorkerFactService
 	WorkerEvent  worker.WorkerEventService
