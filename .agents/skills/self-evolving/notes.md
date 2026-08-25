@@ -563,3 +563,7 @@
 - 最大时间坑:python 脚本向 App.tsx 插入函数时把函数体插进了 App() 的 JSX 里,typecheck 才发现;批量文本替换必须回读上下文确认插入点语法层级。
 - skill 是否预警:worktree 消失(boss-cms2 被并行会话收尾)靠"先查 refs 再动作"红线安全化解,未丢任何东西。
 - 重来一次:插函数类补丁一律锚定"export default function App() {"这类唯一行,插完立刻 typecheck。
+
+## 2026-08-28 阶段复盘(纯盘点)
+- 坑:主树留有未提交运行时改动(client_release.go 缺省修复+回归测试),且 go build/test 全程无输出挂起——根因是并行会话的 go build 同刻在跑,疑似共享 GOCACHE 锁/资源竞争,本轮未能验证测试,复盘里必须如实标"未验证"。
+- 重来一次:动手跑门禁前先 `ps aux | grep "go build"` 看是否有并行会话在编译,有则错峰或换 GOFLAGS/GOCACHE 隔离,不空等 10 分钟。
