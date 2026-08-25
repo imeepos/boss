@@ -597,3 +597,8 @@
 - 次要:round4 worktree 被平行会话 ff-merge+清理,因我每项改动即刻 commit 才零损失——再次实证"改动即刻存档"是 worktree 易失环境的唯一安全网。
 - 首页点击重叠疑似 bug 排查结论:OrderItem onClick 接线正确(onOpenOrder→Route.Order),E2E 观察不一致(uiautomator 漂移)不构成代码 bug 证据,已记录待真机复测,不擅自改代码。
 - 重来一次:多命令批量验证(go test + gradle 编译)并行跑,先 `ps` 查孤儿进程,再怀疑代码。
+
+## 2026-08-28 CMS 第三轮复盘:baseline/SEO/筛选/缓存
+- 哪个坑浪费最多时间:并行 worktree 抢 pnpm store 导致 install 挂死;本轮改用 Go/契约先行 commit + CI 构建 + 102 真机补证据,没有继续无效重试。
+- skill 有没有提前警告:nginx immutable 配对、匿名图片不能复用鉴权附件端点、部署探针区分度的经验都直接命中;pnpm store 并行锁只在本轮新增。
+- 重来一次会怎么做:开 worktree 后第一步检查 node_modules/store 是否被其他 worktree 占用;前端验证优先复用已安装依赖或把 CI build 状态纳入明确回放门禁,并在计划中标出"本地门禁受阻时的降级证据链"。

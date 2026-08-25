@@ -281,3 +281,15 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## 102 回放确认"新代码已上线"的可观测差异法(2026-08-28 cms)
 场景 → push 后轮询端点,一直 200 但行为像旧代码。
 怎么用 → 别用"端点可达"判定;制造只有新代码才有的行为差异再轮询:如 cms 修复后,创建即 PUBLISHED 的文章 publishedAt 非空才是新代码(try1 旧 try2 新,间隔 25s)。泛化:回放断言里必须包含至少一个"新代码专属可观测字段"。
+
+## SPA SEO 元数据 DOM 断言(102 实机)
+场景 → 验证异步详情页 SEO title/description/og。
+怎么用 → cdp-capture `--eval "(() => ({title:document.title,description:document.querySelector('meta[name=description]')?.content,ogTitle:document.querySelector('meta[property=\\\"og:title\\\"]')?.content,ogImage:!!document.querySelector('meta[property=\\\"og:image\\\"]')}))()"`;同时 logs 断言 console errors=0。无需截图目测。
+
+## nginx SPA 缓存头双断言
+场景 → 验证 stale SPA 修复已部署。
+怎么用 → `curl -sI http://192.168.0.102:5180/ | grep -i cache-control` 必须 no-cache;再从 `/home` HTML 取 `assets/index-*.js`,对 hash 资产 curl -I 必须 public, immutable。两侧一起断言,防误改。
+
+## menu 权限 baseline 消化回放
+场景 → 迁移补专属 menu:<key> 后确认已落库。
+怎么用 → 先 `make contract-sync` E 必须显示 zero baseline;部署后 admin login → `/auth/me` 取 `permissionCodes`,逐项 grep 新码;只看到 menu.def 不等于 DB 已迁移。

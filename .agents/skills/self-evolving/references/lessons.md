@@ -295,3 +295,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - go/gradle 命令"无输出挂死"且 CPU 0%:先查共享卷 I/O(fs_usage/sample)与孤儿进程(PPID=1),再怀疑代码或依赖(2026-08-24 user-android round4)。
 - 一次 E2E 观察到的"点错页"先核对 onClick 接线与调用链,再定性 UI bug;uiautomator 坐标漂移可制造假象,未复现不擅自改代码(2026-08-24 首页重叠排查)。
 - worktree 环境每项改动即刻 commit:并行会话可能随时 ff-merge+清理 worktree,未提交改动随树消失不可逆(2026-08-24 round4 实证)。
+- 2026-08-28 menu 权限 baseline 消化应先补 permissions+role_permissions(sysadmin) 再谈后端 requirePerm 收敛:一次迁移改变多域鉴权会放大风险;专属码先服务自定义角色菜单可见性,端点级收敛分批做。
+- 2026-08-28 前端本地 pnpm store 被并行 worktree 抢锁时,不要无限重试 install;保留已完成 Go/契约门禁,先 commit 原子变更让 CI 构建成为第二道 web 门禁,但最终 102 回放必须补齐 typecheck/build 证据。
+- 2026-08-28 SEO SPA 元数据应在异步文章数据到达后设置并在卸载还原(title/meta);og:image 必须使用匿名可访问的受控封面流,不能引用带 JWT 的 /attachments/:id/content。
+- 2026-08-28 nginx 缓存修复的正确配对是 index.html/no-cache + /assets hash 文件 immutable;只改一侧会分别导致旧入口或资产缓存问题。
