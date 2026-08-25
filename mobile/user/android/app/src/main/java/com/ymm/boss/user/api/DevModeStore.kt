@@ -18,11 +18,11 @@ object DevModeStore {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     }
 
-    /** release 包强制 false;debug 包读 prefs,默认 false。 */
+    /** release 包强制 false;debug 包默认开启(联调免手动开开关,worker 端同构裁定)。 */
     fun isEnabled(): Boolean {
         if (!com.ymm.boss.user.BuildConfig.DEBUG) return false
         if (!::prefs.isInitialized) return false
-        return prefs.getBoolean(KEY, false)
+        return prefs.getBoolean(KEY, true)
     }
 
     fun setEnabled(enabled: Boolean) {
