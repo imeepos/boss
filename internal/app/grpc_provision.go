@@ -43,7 +43,7 @@ func (s *provisionGRPC) EnqueueTask(ctx context.Context, req *provisionv1.Task) 
 	if err != nil {
 		return &provisionv1.OpResponse{Code: grpcCodeFor(err, provErrMap)}, nil
 	}
-	if templateID == 0 {
+	if templateID == 0 || req.OrderId <= 0 {
 		return &provisionv1.OpResponse{Code: commonv1.Code_CODE_INVALID_PARAM}, nil
 	}
 	loAccountID, err := s.loAccountIDByOrder(ctx, req.OrderId)
@@ -63,13 +63,29 @@ func (s *provisionGRPC) EnqueueTask(ctx context.Context, req *provisionv1.Task) 
 	return &provisionv1.OpResponse{Code: commonv1.Code_CODE_OK, TaskNo: taskNo, Status: "PENDING"}, nil
 }
 
+func validProvisionStage(stage string) bool {
+	switch stage {
+	case "preConfigOLT", "activateUser", "notifyActivation":
+		return true
+	default:
+		return false
+	}
+}
+
 // RetryTask 失败重试:FAILED→PENDING + 重试计数留痕。
 func (s *provisionGRPC) RetryTask(ctx context.Context, req *provisionv1.RetryTaskRequest) (*provisionv1.OpResponse, error) {
 	tk, err := s.prov.GetTaskByNo(ctx, req.TaskNo)
 	if err != nil {
 		return &provisionv1.OpResponse{Code: grpcCodeFor(err, provErrMap)}, nil
 	}
-	if err := s.prov.RetryTask(ctx, tk.ID, 0); err != nil {
+	logs, _ := s.prov.ListLogs(ctx, tk.ID)
+	var max int16
+	for _, l := range logs {
+		if l.Retries > max {
+			max = l.Retries
+		}
+	}
+	if err := s.prov.RetryTask(ctx, tk.ID, max); err != nil {
 		return &provisionv1.OpResponse{Code: grpcCodeFor(err, provErrMap)}, nil
 	}
 	return &provisionv1.OpResponse{Code: commonv1.Code_CODE_OK, TaskNo: req.TaskNo, Status: "PENDING"}, nil

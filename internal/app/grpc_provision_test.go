@@ -37,7 +37,8 @@ func (s *stubProv) CreateTask(_ context.Context, t provision.Task) (int64, error
 func (s *stubProv) GetTaskByNo(context.Context, string) (*provision.Task, error) {
 	return s.byNo, s.byNoErr
 }
-func (s *stubProv) RetryTask(context.Context, int64, int16) error { return s.retryErr }
+func (s *stubProv) RetryTask(context.Context, int64, int16) error            { return s.retryErr }
+func (s *stubProv) ListLogs(context.Context, int64) ([]provision.Log, error) { return nil, nil }
 
 type stubOrderTrack struct {
 	order.OrderService
