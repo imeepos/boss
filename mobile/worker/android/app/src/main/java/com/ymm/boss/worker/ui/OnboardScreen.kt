@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.Api
+import com.ymm.boss.worker.api.ApiException
 import com.ymm.boss.worker.api.friendlyMessage
 import com.ymm.boss.worker.api.AuthApi
 import com.ymm.boss.worker.ui.theme.Ink
@@ -108,7 +109,7 @@ fun OnboardScreen(onBack: () -> Unit, onAgreement: () -> Unit = {}) {
                 AuthCodeRow(code, countdown,
                     onCode = { code = it },
                     onSend = {
-                        sendOnboardCode(scope, phone) { err = it; countdown = 59 }
+                        sendOnboardCode(scope, phone, onCode = { code = it }) { err = it; countdown = 59 }
                     })
                 AuthInputRow(idCardNo, { idCardNo = it }, stringResource(R.string.auth_hint_idcard), Icons.Outlined.Badge, KeyboardType.Text)
                 // 班组/区域 ID 可留空,0 表示待后台补正
@@ -199,13 +200,26 @@ private fun s(res: Int, vararg fmt: Any = emptyArray()) = Api.context().getStrin
 private fun sendOnboardCode(
     scope: kotlinx.coroutines.CoroutineScope,
     phone: String,
+    onCode: (String) -> Unit,
     onDone: (String) -> Unit,
 ) {
     if (phone.isBlank()) { onDone(s(R.string.err_phone_empty)); return }
     if (!Regex("^1\\d{10}$").matches(phone)) { onDone(s(R.string.err_phone_invalid)); return }
     scope.launch {
         try {
-            AuthApi.smsCode(phone.trim())
+            // register 场景:服务端对新手机号公开(入驻者本来就不是在职师傅)
+            AuthApi.smsCode(phone.trim(), scene = "register")
+            // 开发模式:自动回填(register 场景码,与登录页同构)
+            val dev = com.ymm.boss.worker.util.DevMode.get(android.app.Activity())
+            if (dev.enabled) {
+                repeat(8) {
+                    delay(300)
+                    try {
+                        val c = AuthApi.devSmsCode(phone.trim(), scene = "register").optString("code")
+                        if (c.isNotEmpty()) { onCode(c); onDone(""); return@launch }
+                    } catch (_: ApiException) { }
+                }
+            }
             onDone("")
         } catch (e: Exception) { onDone(s(R.string.err_send_failed, friendlyMessage(e))) }
     }

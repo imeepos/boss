@@ -16,12 +16,15 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// workerSmsCodeReq 发送验证码请求体。
+// workerSmsCodeReq 发送验证码请求体。scene=login(默认,须在职师傅)|register(入驻,公开)。
 type workerSmsCodeReq struct {
 	Phone string `json:"phone" binding:"required"`
+	Scene string `json:"scene"`
 }
 
-// workerSmsCodeHandler 发送登录验证码:师傅手机号须在职,验证码落库 5 分钟有效。
+// workerSmsCodeHandler 发送验证码:login 场景师傅手机号须在职(防 stranger 探测),
+// register 场景(入驻页)对新手机号公开——否则入驻验证码永远发不出(2026-08-25 死锁实例)。
+// 验证码按 scene 落库 5 分钟有效,登录/入驻各自消费对应 scene,互不串用。
 func workerSmsCodeHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req workerSmsCodeReq
@@ -32,11 +35,20 @@ func workerSmsCodeHandler(a *app.Application) gin.HandlerFunc {
 		}) {
 			return
 		}
-		if _, err := findWorkerByPhone(c.Request.Context(), a, req.Phone); err != nil {
-			respond(c, apitypes.CodeUnauthorized, nil)
+		if req.Scene == "" {
+			req.Scene = "login"
+		}
+		if req.Scene != "login" && req.Scene != "register" {
+			respond(c, apitypes.CodeInvalidParam, nil)
 			return
 		}
-		if err := a.Portal.IssueSms(c.Request.Context(), req.Phone, "login"); err != nil {
+		if req.Scene == "login" {
+			if _, err := findWorkerByPhone(c.Request.Context(), a, req.Phone); err != nil {
+				respond(c, apitypes.CodeUnauthorized, nil)
+				return
+			}
+		}
+		if err := a.Portal.IssueSms(c.Request.Context(), req.Phone, req.Scene); err != nil {
 			respondErr(c, err)
 			return
 		}

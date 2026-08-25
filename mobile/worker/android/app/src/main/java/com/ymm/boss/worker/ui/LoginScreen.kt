@@ -200,7 +200,12 @@ private fun sendCode(
                 }
             }
             onDone("")
-        } catch (e: Exception) { onDone(s(R.string.err_send_failed, friendlyMessage(e))) }
+        } catch (e: Exception) {
+            // 40100 在发码场景=手机号不是在职师傅(服务端 workerSmsCodeHandler 拦截),
+            // 与登录态过期无关,给准确入驻指引而非"登录已失效"误导文案。
+            if (e is ApiException && e.status == 40100) onDone(s(R.string.err_phone_not_worker))
+            else onDone(s(R.string.err_send_failed, friendlyMessage(e)))
+        }
     }
 }
 

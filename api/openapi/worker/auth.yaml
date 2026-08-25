@@ -2,8 +2,12 @@ paths:
   /auth/sms-code:
     post:
       tags: [Auth]
-      summary: 发送登录验证码
+      summary: 发送验证码(登录/入驻)
       operationId: sendWorkerSmsCode
+      description: |
+        scene=login(默认)登录场景,师傅手机号须在职(否则 40100);
+        scene=register 入驻场景,对新手机号公开(入驻页获取验证码)。
+        验证码按 scene 分储,登录消费 login、入驻审核链路对应 register。
       requestBody:
         required: true
         content:
@@ -13,6 +17,7 @@ paths:
               required: [phone]
               properties:
                 phone: { type: string }
+                scene: { type: string, enum: [login, register] }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
@@ -51,7 +56,8 @@ paths:
       operationId: devWorkerSmsCode
       description: |
         只在服务端 BOSS_DEV_MODE=true 时注册。供师傅端开发模式自动填表使用。
-        返回该手机号 login 场景最近一条未过期且未消费的验证码;不存在返回 40400。
+        返回该手机号指定场景(scene,默认 login,可传 register 供入驻页回填)
+        最近一条未过期且未消费的验证码;不存在返回 40400。
       requestBody:
         required: true
         content:
@@ -61,6 +67,7 @@ paths:
               required: [phone]
               properties:
                 phone: { type: string }
+                scene: { type: string, enum: [login, register] }
       responses:
         '200':
           description: 命中

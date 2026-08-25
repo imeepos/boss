@@ -30,6 +30,7 @@
     <string name="err_phone_empty">Sila masukkan nombor telefon</string>
     <string name="err_phone_invalid">Format nombor telefon tidak sah</string>
     <string name="err_send_failed">Gagal menghantar kod SMS: %1$s</string>
+    <string name="err_phone_not_worker">Nombor ini belum berdaftar sebagai pekerja. Sila daftar dahulu.</string>
     <string name="err_need_phone_and">Masukkan nombor telefon dan %1$s</string>
     <string name="label_sms">kod SMS</string>
     <string name="label_pwd">kata laluan</string>

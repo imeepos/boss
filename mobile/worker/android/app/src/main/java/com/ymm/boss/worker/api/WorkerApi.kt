@@ -15,13 +15,14 @@ private fun qs(params: Map<String, String?>): String {
 }
 
 object AuthApi {
-    suspend fun smsCode(phone: String): JSONObject =
-        Api.post("/auth/sms-code", JSONObject().put("phone", phone))
+    // scene:login(默认,须在职师傅)|register(入驻页,对新号公开);两场景验证码分储。
+    suspend fun smsCode(phone: String, scene: String = "login"): JSONObject =
+        Api.post("/auth/sms-code", JSONObject().put("phone", phone).put("scene", scene))
 
-    // 开发模式:仅在 server 端 BOSS_DEV_MODE=true 时注册。回显该手机号 login 场景的最近一条未过期未消费验证码;
-    // 40400 表示尚未签发(需先调 smsCode)。生产构建不会出现此路径(服务端不挂载)。
-    suspend fun devSmsCode(phone: String): JSONObject =
-        Api.post("/auth/dev/sms-code", JSONObject().put("phone", phone))
+    // 开发模式:仅在 server 端 BOSS_DEV_MODE=true 时注册。回显该手机号对应场景最近一条
+    // 未过期未消费验证码;40400 表示尚未签发(需先调 smsCode)。生产构建不会出现此路径。
+    suspend fun devSmsCode(phone: String, scene: String = "login"): JSONObject =
+        Api.post("/auth/dev/sms-code", JSONObject().put("phone", phone).put("scene", scene))
 
     suspend fun login(phone: String, mode: String, credential: String): JSONObject {
         val body = JSONObject().put("phone", phone).put("mode", mode)

@@ -30,6 +30,7 @@
     <string name="err_phone_empty">Please enter a phone number</string>
     <string name="err_phone_invalid">Invalid phone number format</string>
     <string name="err_send_failed">Failed to send SMS code: %1$s</string>
+    <string name="err_phone_not_worker">This phone number is not a registered worker. Please onboard first.</string>
     <string name="err_need_phone_and">Enter phone number and %1$s</string>
     <string name="label_sms">SMS code</string>
     <string name="label_pwd">password</string>

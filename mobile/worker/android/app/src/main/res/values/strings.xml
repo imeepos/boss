@@ -34,6 +34,7 @@
     <string name="err_phone_empty">请输入手机号</string>
     <string name="err_phone_invalid">手机号格式不正确</string>
     <string name="err_send_failed">验证码发送失败：%1$s</string>
+    <string name="err_phone_not_worker">该手机号尚未注册为师傅，请先完成入驻</string>
     <string name="err_need_phone_and">请输入手机号与%1$s</string>
     <string name="label_sms">验证码</string>
     <string name="label_pwd">密码</string>

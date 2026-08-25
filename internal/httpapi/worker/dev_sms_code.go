@@ -13,13 +13,14 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// devSmsCodeReq 开发模式查询验证码请求体。
+// devSmsCodeReq 开发模式查询验证码请求体。scene=login(默认)|register(入驻页回填)。
 type devSmsCodeReq struct {
 	Phone string `json:"phone" binding:"required"`
+	Scene string `json:"scene"`
 }
 
-// devSmsCodeHandler 查询某 phone+scene(login)最近一条未过期未消费的验证码。
-// scene 固定为 login:师傅门户只此一处消费验证码,避免误开放至其他场景。
+// devSmsCodeHandler 查询某 phone+scene 最近一条未过期未消费的验证码。
+// scene 白名单 login|register:登录页回填用 login,入驻页回填用 register,两场景码分储不串用。
 func devSmsCodeHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req devSmsCodeReq
@@ -30,7 +31,14 @@ func devSmsCodeHandler(a *app.Application) gin.HandlerFunc {
 		}) {
 			return
 		}
-		sc, err := a.Portal.LatestSmsCode(c.Request.Context(), req.Phone, "login")
+		if req.Scene == "" {
+			req.Scene = "login"
+		}
+		if req.Scene != "login" && req.Scene != "register" {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		sc, err := a.Portal.LatestSmsCode(c.Request.Context(), req.Phone, req.Scene)
 		if err != nil {
 			respondErr(c, err)
 			return
