@@ -75,8 +75,8 @@ type LoidReq struct {
 
 // LoidAccount LO 账号查询结果(order 域使用的最小视图)。
 type LoidAccount struct {
-	ID    int64
-	Loid  string
+	ID      int64
+	Loid    string
 	OfferID int64
 }
 

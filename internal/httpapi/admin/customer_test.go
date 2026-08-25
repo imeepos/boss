@@ -16,8 +16,8 @@ import (
 )
 
 type fakeCustomer struct {
-	list    []customer.Customer
-	lastQ   customer.CustomerQuery
+	list  []customer.Customer
+	lastQ customer.CustomerQuery
 }
 
 func (f *fakeCustomer) Create(context.Context, customer.Customer) (int64, error) { return 0, nil }
