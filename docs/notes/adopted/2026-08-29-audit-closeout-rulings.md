@@ -80,4 +80,15 @@
 
 ## 8. 数据处置执行记录(102,备份+单事务)
 
-执行后回填:备份文件路径、事务结果、复扫结论(见 git log / 复盘)。
+- 备份: /tmp/boss_audit_close_backup_20260825-060915.sql(verifications/order_stages/
+  orders/invoices)+ 验收造数备份 /tmp/boss_acc_backup_20260825-060939.sql。
+- 单事务(内置断言,任一不符整体回滚):DELETE verifications 4/5(2 行);
+  乱序 5 单 stage2 PENDING→DONE(5 行);COMMIT 成功。
+- bill 2 补开:POST /billing-runs {"period":"2026-07"} → issued=1,
+  INV-00000006(560=500×1.12,ISSUED);PAID 无发票账单归零。
+- 验收造数回收: acceptance-cleanup.sh --apply,31 轮 acc_ 标记数据全删
+  (订单/工单/环节/四码/端口/资产/标签/批次/资源/地址各 31,环节日志 372)。
+- 复扫: db-patrol-gate 11 项全 0(OK);/customers/213/verify-logs 仅剩 id 1
+  PASS(与主档一致);无评价 DONE 单 37→6(剩余为真实单,按 §6 豁免);
+  quad address 288 = 150 UNLINKED + 225 LINKED(§3 裁定口径)。
+- 注: 聚合端点 verifyRecords 改读 verifications 属代码修复,随本分支合并部署后生效。
