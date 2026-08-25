@@ -21,6 +21,8 @@ var workerRoutes = []routeEntry{
 	{"POST", "/auth/dev/sms-code", "开发模式查询最新验证码(仅 BOSS_DEV_MODE=true 注册)"},
 	{"POST", "/auth/logout", "退出登录"},
 	{"POST", "/worker-registrations", "师傅自助注册(提交后进 admin 审核队列,公开端点)"},
+	{"GET", "/client/latest", "升级判定(双门槛:versionCode 单调 + minSupportedCode 强升线)"},
+	{"GET", "/client/apk/:id", "灰度门控下载(versionCode=0 重放判定,目标一致才放行,防灰度包直链)"},
 	{"GET", "/messages", "消息中心(应急/超时预警/改派/下发/标签电量)"},
 	{"POST", "/messages/read-all", "全部标记已读"},
 	{"POST", "/messages/clear", "清空已读消息"},

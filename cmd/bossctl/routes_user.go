@@ -31,6 +31,8 @@ var userRoutes = []routeEntry{
 	{"POST", "/billing/auto-pay", "开通/关闭自动缴费"},
 	{"GET", "/invoices", "电子发票(开票信息 + 可开票账期 + 记录)"},
 	{"POST", "/invoices", "申请开票"},
+	{"GET", "/client/latest", "升级判定(双门槛:versionCode 单调 + minSupportedCode 强升线)"},
+	{"GET", "/client/apk/:id", "灰度门控下载(versionCode=0 重放判定,目标一致才放行,防灰度包直链)"},
 	{"GET", "/faults", "报修记录列表"},
 	{"POST", "/faults", "提交报修"},
 	{"GET", "/faults/:ticketNo", "报修详情(报障 6 环节时间轴)"},

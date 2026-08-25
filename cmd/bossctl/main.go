@@ -61,6 +61,8 @@ func main() {
 		cli.routes(args)
 	case "upload":
 		err = cli.upload(args)
+	case "release":
+		err = cli.release(args)
 	case "apikey":
 		err = cli.apikey(args)
 	case "identity":
