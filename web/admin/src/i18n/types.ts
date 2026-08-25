@@ -1865,6 +1865,19 @@ export interface Translations {
       invalidUrl: string
       empty: string
     }
+    crashlogs: {
+      title: string
+      desc: string
+      refresh: string
+      empty: string
+      loadFail: string
+      colTime: string
+      colApp: string
+      colSubject: string
+      colOp: string
+      expand: string
+      collapse: string
+    }
     message: {
       title: string
       desc: string

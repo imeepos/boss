@@ -23,6 +23,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'authconfig', label: '认证配置', path: '/base/authconfig' },
     { key: 'smsconfig', label: '短信配置', path: '/base/smsconfig' },
     { key: 'pushconfig', label: '推送配置', path: '/base/pushconfig' },
+    { key: 'crashlogs', label: '崩溃日志', path: '/base/crashlogs' },
     { key: 'realidconfig', label: '实名核验配置', path: '/base/realidconfig' },
     { key: 'storageconfig', label: 'MinIO 存储配置', path: '/base/storageconfig' },
     { key: 'servers', label: '服务端配置', path: '/base/servers' },
