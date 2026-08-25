@@ -153,6 +153,9 @@ bossctl login admin your-password
 | `identity save <name> --api-key KEY` | 保存身份档案(复合场景切换用) |
 | `identity list` | 列出身份档案 |
 | `identity remove <name>` | 删除身份档案 |
+| `release upload --app user\|worker --version 1.2.0 --code 12 [--min N] [--notes S] [--status DRAFT\|GRAY\|PUBLISHED] [--rollout N] [--whitelist 1,2] FILE.apk` | 上传 CI 产 APK 创建发版(POST /client-releases,menu:release) |
+| `release patch <id> --status GRAY --rollout 20 [--whitelist 1,2] [--min N] [--force]` | 状态迁移/灰度比例/白名单编辑 |
+| `release list [--app user\|worker]` | 发版列表 |
 | `ai config [--url URL] [--key KEY] [--model M]` | 查看/更新 OpenAI 集中配置(apiKey/apiUrl 平台统一管理) |
 | `ai chat [--model M] <文本>` | AI 对话补全 |
 | `ai embed [--model M] <文本...>` | 文本向量化(需网关支持 embedding 模型) |
