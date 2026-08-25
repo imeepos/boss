@@ -56,7 +56,7 @@ func (s *PGStore) ListImportTasks(ctx context.Context, kind, operator, from, to 
 		  AND ($3 = '' OR t.created_at >= $3::timestamptz)
 		  AND ($4 = '' OR t.created_at < $4::timestamptz)
 		ORDER BY t.created_at DESC
-		LIMIT 200)`, kind, operator, from, to)
+		LIMIT 200`, kind, operator, from, to)
 	if err != nil {
 		return nil, fmt.Errorf("user: list import tasks: %w", err)
 	}
