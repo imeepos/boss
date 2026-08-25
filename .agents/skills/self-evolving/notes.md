@@ -585,3 +585,9 @@
 - skill 有没有提前警告:docs 提到免登录注入但格式不完整(漏 id/active=id),已修正。
 - 重来一次:先读 serverConfig.readStored 再注入;填表前先 console 出各 input 的 placeholder 对齐下标。
 - 门禁与合并均按 worktree 协议走,main 两次前进都靠 merge main 消化,ff-merge 一次成功。
+
+## 2026-08-28 ETL 无执行器台账处置 + 外置卷停摆 + 收尾 cwd 核对
+- ETL 台账处置(102):4 条无真实执行器投影任务(billing/compensation/customer/order_projection)经 API disable 成功;对应 4 条 OPEN 派单按"job disabled: no real executor yet"关闭(close 接口字段是 reason 不是 closeReason,首次误传未落库——状态已对,原因字段空,已如实记录);手动扫描实测 checked=2 overdue=0 dispatched=0,噪音清零。与并行会话 f358fabd(禁用任务退出新鲜度监控)形成"代码+数据"闭环。
+- 外置卷停摆事故:go build/test 全部挂起(open 系统调用阻塞),根因 /Volumes/sker(外置 APFS)模块缓存 I/O 停摆;另一会话已迁移 ~/go 回内置盘并固化。教训:共享环境磁盘故障会以"go 命令无输出挂死"呈现,先 fs_usage/sample 定位再归因。
+- worktree 丢失事故:未提交的 etl-disable 改动随 worktree 一起消失(分支从未建立 commit)——并行会话可能清理了同名 worktree;教训:共享工作区**改动即刻 commit**,worktree 是易失的。本处靠并行会话等价实现兜底,无损失。
+- 收尾 cwd 核对:AGENTS.md 增补"②前先 pwd+branch 确认主树",根治 feature worktree 内 ff-merge no-op 假成功。
