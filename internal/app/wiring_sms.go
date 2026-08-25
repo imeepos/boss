@@ -6,21 +6,25 @@ package app
 import (
 	"context"
 
-	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/secretbox"
 	"github.com/ymm-001/boss/internal/pkg/sms"
 )
 
 // smsConfigResolver 读取 biz_params → 明文 ChannelConfig;读库失败回退 env 形态。
-func smsConfigResolver(svc user.Service, cfg *config.Config) func(context.Context) (sms.ChannelConfig, error) {
+// DevMode(BOSS_DEV_MODE=true)强制日志通道:验证码只落库+日志,不读真实阿里云凭据——
+// 与后台短信配置页解耦,dev 联调不因模板未配置而 500(2026-08-26 用户裁定)。
+func smsConfigResolver(lister paramLister, cfg *config.Config) func(context.Context) (sms.ChannelConfig, error) {
 	return func(ctx context.Context) (sms.ChannelConfig, error) {
+		if cfg.Server.DevMode {
+			return sms.ChannelConfig{Enabled: true}, nil // 无凭据 → Dynamic 落 LogSender
+		}
 		out := sms.ChannelConfig{
 			Enabled:         true,
 			AccessKeyID:     cfg.SMS.AccessKeyID,
 			AccessKeySecret: cfg.SMS.AccessKeySecret,
 		}
-		list, err := svc.ListParams(ctx)
+		list, err := lister.ListParams(ctx)
 		if err != nil {
 			return out, nil // DB 不可读:退回 env 兜底,不阻塞发送
 		}
