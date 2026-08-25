@@ -1716,6 +1716,7 @@ const enUS: Translations = {
     smsconfig: {
       title: 'SMS Settings',
       desc: 'OTP SMS channel (Alibaba Cloud International SMS; mainland China +86 / Malaysia +60), hot-reloads about 1 minute after save',
+      edit: 'Edit',
       chTitle: 'Channel · Alibaba Cloud International SMS',
       tpTitle: 'Registered Templates (ContentCode)',
       enabledReady: 'Enabled',
@@ -1746,6 +1747,7 @@ const enUS: Translations = {
     pushconfig: {
       title: 'Push Settings',
       desc: 'Mobile push channel (JPush aggregation; user & worker app notifications), hot-reloads about 1 minute after save',
+      edit: 'Edit',
       chTitle: 'Channel · JPush',
       enabledReady: 'Enabled',
       disabled: 'Disabled',
@@ -1815,6 +1817,7 @@ const enUS: Translations = {
     realidconfig: {
       title: 'Real-Name Verification Settings',
       desc: 'Automatic 2-element real-name verification channel (Alibaba Cloud Cloudauth Id2MetaVerify), hot-reloads about 1 minute after save; when disabled or unconfigured, submissions stay pending for manual review',
+      edit: 'Edit',
       chTitle: 'Auto Verification · Alibaba Cloud Cloudauth',
       enabledReady: 'Enabled',
       disabled: 'Disabled (manual only)',

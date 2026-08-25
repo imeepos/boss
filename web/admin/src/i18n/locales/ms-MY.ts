@@ -1716,6 +1716,7 @@ const msMY: Translations = {
     smsconfig: {
       title: 'Tetapan SMS',
       desc: 'Saluran SMS OTP (Alibaba Cloud International SMS; China +86 / Malaysia +60), berkuat semula kira-kira 1 minit selepas simpan',
+      edit: 'Sunting',
       chTitle: 'Saluran · Alibaba Cloud International SMS',
       tpTitle: 'Templat Berdaftar (ContentCode)',
       enabledReady: 'Diaktifkan',
@@ -1746,6 +1747,7 @@ const msMY: Translations = {
     pushconfig: {
       title: 'Tetapan Tolakan',
       desc: 'Saluran tolakan mudah alih (agregasi JPush; pemberitahuan app pengguna & pekerja), berkuat semula kira-kira 1 minit selepas simpan',
+      edit: 'Sunting',
       chTitle: 'Saluran · JPush',
       enabledReady: 'Diaktifkan',
       disabled: 'Dinyahaktifkan',
@@ -1815,6 +1817,7 @@ const msMY: Translations = {
     realidconfig: {
       title: 'Tetapan Pengesahan Identiti',
       desc: 'Saluran pengesahan identiti automatik 2 elemen (Alibaba Cloud Cloudauth Id2MetaVerify), berkuat kuasa semula kira-kira 1 minit selepas simpan; jika dilumpuhkan atau tidak dikonfigurasi, penghantaran kekal menunggu semakan manual',
+      edit: 'Sunting',
       chTitle: 'Saluran Automatik · Alibaba Cloud Cloudauth',
       enabledReady: 'Diaktifkan',
       disabled: 'Dilumpuhkan (manual sahaja)',

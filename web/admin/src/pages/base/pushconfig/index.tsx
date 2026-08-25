@@ -1,9 +1,10 @@
-// 推送配置页:JPush 聚合通道卡片 + 自检(完整性 / 真实试发)。
+// 推送配置页:JPush 聚合通道卡片摘要 + 抽屉式编辑与自检(完整性 / 真实试发)。
 // 契约:GET /push-config(掩码)、PUT /push-config/channel、POST /push-config/channel/test。
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Drawer } from '../../../components/Drawer'
 import { PageHead, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { FormField } from '../../../components/business/form-field'
 import { Card } from '../../../components/ui/card'
@@ -55,6 +56,7 @@ export default function PushConfigPage() {
   const [testing, setTesting] = useState(false)
   const [testTarget, setTestTarget] = useState('')
   const [targetKind, setTargetKind] = useState<'registration_id' | 'alias'>('registration_id')
+  const [editing, setEditing] = useState(false)
 
   const set = (key: string, v: string) => setDraft((d) => ({ ...d, [key]: v }))
 
@@ -84,6 +86,7 @@ export default function PushConfigPage() {
         setSecretSet((s) => ({ ...s, 'push.jpush.masterSecret': true }))
       }
       setDraft((d) => ({ ...d, 'push.jpush.masterSecret': '' }))
+      setEditing(false)
       toast.success(a.saved)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : a.saveFail)
@@ -122,6 +125,13 @@ export default function PushConfigPage() {
   const configured =
     !!secretSet['push.jpush.masterSecret'] || draft['push.jpush.appKey'] !== ''
 
+  const summaryRow = (label: string, value: ReactNode) => (
+    <div className="flex gap-2 text-[13px] text-[var(--shell-content-text)]">
+      <span className="w-32 shrink-0 text-[var(--shell-crumb-text)]">{label}</span>
+      <span className="break-all">{value || '—'}</span>
+    </div>
+  )
+
   if (error) return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
@@ -133,58 +143,78 @@ export default function PushConfigPage() {
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
-      <Card className="p-4">
+      <Card className="flex flex-col gap-2 p-4">
         <div className="mb-3 flex items-center justify-between">
-          <span className="font-semibold text-[var(--shell-heading)]">{a.chTitle}</span>
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 font-semibold text-[var(--shell-heading)]">
+            {a.chTitle}
             {enabled
               ? (configured
                   ? <Badge variant="success">{a.enabledReady}</Badge>
                   : <Badge variant="warning">{a.pending}</Badge>)
               : <Badge>{a.disabled}</Badge>}
-            <Switch
-              checked={enabled}
-              onCheckedChange={(v) => set('push.enabled', String(v))}
-              aria-label={a.chTitle}
-            />
           </span>
+          <ToolbarButton primary onClick={() => setEditing(true)}>{a.edit}</ToolbarButton>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label={a.provider} hint={a.providerHint}>
-            <Input className="w-72" value={draft['push.provider'] ?? ''} readOnly />
-          </FormField>
-          <FormField label={a.appKey} hint={a.appKeyHint}>
-            <Input className="w-72" value={draft['push.jpush.appKey'] ?? ''} onChange={(e) => set('push.jpush.appKey', e.target.value)} />
-          </FormField>
-          <FormField label={a.masterSecret}>
-            <SecretInput
-              value={draft['push.jpush.masterSecret'] ?? ''}
-              onChange={(v) => set('push.jpush.masterSecret', v)}
-              placeholder={a.secretSet}
-              hasValue={!!secretSet['push.jpush.masterSecret']}
-            />
-          </FormField>
-          <FormField label={a.apiUrl} hint={a.apiUrlHint}>
-            <Input className="w-72" value={draft['push.jpush.apiUrl'] ?? ''} onChange={(e) => set('push.jpush.apiUrl', e.target.value)} />
-          </FormField>
-          <FormField label={a.apnsProduction} hint={a.apnsProductionHint}>
-            <span className="flex w-72 items-center gap-2">
-              <Switch
-                checked={draft['push.jpush.apnsProduction'] !== 'false'}
-                onCheckedChange={(v) => set('push.jpush.apnsProduction', String(v))}
-                aria-label={a.apnsProduction}
+        {summaryRow(a.provider, draft['push.provider'])}
+        {summaryRow(a.appKey, draft['push.jpush.appKey'])}
+        {summaryRow(a.masterSecret, secretSet['push.jpush.masterSecret'] ? a.secretSet : '')}
+        {summaryRow(a.apiUrl, draft['push.jpush.apiUrl'])}
+        {summaryRow(a.apnsProduction, draft['push.jpush.apnsProduction'] !== 'false' ? a.prod : a.dev)}
+        {summaryRow(a.liveTime, draft['push.jpush.liveTime'])}
+        <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.envNote}</div>
+      </Card>
+
+      {editing && (
+        <Drawer title={a.chTitle} onClose={() => setEditing(false)}
+          footer={
+            <>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setEditing(false)}>
+                {t.common.confirmDialog.cancel}
+              </button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={saving} onClick={save}>
+                {saving ? a.saving : a.save}
+              </button>
+            </>
+          }>
+          <div className="mb-4 flex items-center gap-2">
+            <Switch checked={enabled} onCheckedChange={(v) => set('push.enabled', String(v))} aria-label={a.chTitle} />
+            {enabled ? a.enabledReady : a.disabled}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label={a.provider} hint={a.providerHint}>
+              <Input className="w-72" value={draft['push.provider'] ?? ''} readOnly />
+            </FormField>
+            <FormField label={a.appKey} hint={a.appKeyHint}>
+              <Input className="w-72" value={draft['push.jpush.appKey'] ?? ''} onChange={(e) => set('push.jpush.appKey', e.target.value)} />
+            </FormField>
+            <FormField label={a.masterSecret}>
+              <SecretInput
+                value={draft['push.jpush.masterSecret'] ?? ''}
+                onChange={(v) => set('push.jpush.masterSecret', v)}
+                placeholder={a.secretSet}
+                hasValue={!!secretSet['push.jpush.masterSecret']}
               />
-              <span className="text-xs text-[var(--shell-crumb-text)]">
-                {draft['push.jpush.apnsProduction'] !== 'false' ? a.prod : a.dev}
+            </FormField>
+            <FormField label={a.apiUrl} hint={a.apiUrlHint}>
+              <Input className="w-72" value={draft['push.jpush.apiUrl'] ?? ''} onChange={(e) => set('push.jpush.apiUrl', e.target.value)} />
+            </FormField>
+            <FormField label={a.apnsProduction} hint={a.apnsProductionHint}>
+              <span className="flex w-72 items-center gap-2">
+                <Switch
+                  checked={draft['push.jpush.apnsProduction'] !== 'false'}
+                  onCheckedChange={(v) => set('push.jpush.apnsProduction', String(v))}
+                  aria-label={a.apnsProduction}
+                />
+                <span className="text-xs text-[var(--shell-crumb-text)]">
+                  {draft['push.jpush.apnsProduction'] !== 'false' ? a.prod : a.dev}
+                </span>
               </span>
-            </span>
-          </FormField>
-          <FormField label={a.liveTime} hint={a.liveTimeHint}>
-            <Input className="w-72" value={draft['push.jpush.liveTime'] ?? ''} onChange={(e) => set('push.jpush.liveTime', e.target.value)} />
-          </FormField>
-        </div>
-        <div className="mt-3.5 flex items-center justify-end gap-2">
-          <span className="mr-auto flex items-center gap-2">
+            </FormField>
+            <FormField label={a.liveTime} hint={a.liveTimeHint}>
+              <Input className="w-72" value={draft['push.jpush.liveTime'] ?? ''} onChange={(e) => set('push.jpush.liveTime', e.target.value)} />
+            </FormField>
+          </div>
+          <div className="mt-4 flex items-center gap-2 border-t border-[var(--shell-side-border)] pt-3">
             <Dropdown
               value={targetKind}
               options={[
@@ -204,13 +234,9 @@ export default function PushConfigPage() {
             <ToolbarButton disabled={testing} onClick={test}>
               {testing ? a.testing : a.testBtn}
             </ToolbarButton>
-          </span>
-          <ToolbarButton primary disabled={saving} onClick={save}>
-            {saving ? a.saving : a.save}
-          </ToolbarButton>
-        </div>
-        <div className="mt-2 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.envNote}</div>
-      </Card>
+          </div>
+        </Drawer>
+      )}
     </div>
   )
 }

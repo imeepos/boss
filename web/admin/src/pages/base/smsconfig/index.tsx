@@ -1,9 +1,10 @@
-// 短信配置页:通道配置(阿里云国际短信)/文案模板两卡片 + 试发自检。
+// 短信配置页:通道配置/文案模板两卡片摘要 + 抽屉式编辑 + 试发自检。
 // 契约:GET /sms-config(掩码)、PUT /sms-config/{channel|template}、POST /sms-config/channel/test。
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Drawer } from '../../../components/Drawer'
 import { PageHead, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { FormField } from '../../../components/business/form-field'
 import { Card } from '../../../components/ui/card'
@@ -53,6 +54,7 @@ export default function SmsConfigPage() {
   const [saving, setSaving] = useState('')
   const [testing, setTesting] = useState(false)
   const [testPhone, setTestPhone] = useState('')
+  const [editing, setEditing] = useState<'channel' | 'template' | null>(null)
 
   const set = (key: string, v: string) => setDraft((d) => ({ ...d, [key]: v }))
 
@@ -82,6 +84,7 @@ export default function SmsConfigPage() {
         setSecretSet((s) => ({ ...s, 'sms.accessKeySecret': true }))
       }
       setDraft((d) => ({ ...d, 'sms.accessKeySecret': '' }))
+      setEditing(null)
       toast.success(a.saved)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : a.saveFail)
@@ -115,6 +118,23 @@ export default function SmsConfigPage() {
   const enabled = draft['sms.enabled'] === 'true'
   const configured = !!secretSet['sms.accessKeySecret'] || draft['sms.accessKeyId'] !== ''
 
+  const summaryRow = (label: string, value: ReactNode) => (
+    <div className="flex gap-2 text-[13px] text-[var(--shell-content-text)]">
+      <span className="w-32 shrink-0 text-[var(--shell-crumb-text)]">{label}</span>
+      <span className="break-all">{value || '—'}</span>
+    </div>
+  )
+  const footerBtns = (group: 'channel' | 'template', onSaved: () => void) => (
+    <>
+      <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setEditing(null)}>
+        {t.common.confirmDialog.cancel}
+      </button>
+      <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={saving === group} onClick={onSaved}>
+        {saving === group ? a.saving : a.save}
+      </button>
+    </>
+  )
+
   if (error) return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
@@ -128,21 +148,40 @@ export default function SmsConfigPage() {
       <PageHead title={a.title} desc={a.desc} />
       <div className="flex flex-col gap-4">
         {/* 卡片一:通道配置 */}
-        <Card className="p-4">
+        <Card className="flex flex-col gap-2 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="font-semibold text-[var(--shell-heading)]">{a.chTitle}</span>
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 font-semibold text-[var(--shell-heading)]">
+              {a.chTitle}
               {enabled
                 ? (configured
                     ? <Badge variant="success">{a.enabledReady}</Badge>
                     : <Badge variant="warning">{a.pending}</Badge>)
                 : <Badge>{a.disabled}</Badge>}
-              <Switch
-                checked={enabled}
-                onCheckedChange={(v) => set('sms.enabled', String(v))}
-                aria-label={a.chTitle}
-              />
             </span>
+            <ToolbarButton primary onClick={() => setEditing('channel')}>{a.edit}</ToolbarButton>
+          </div>
+          {summaryRow(a.provider, draft['sms.provider'])}
+          {summaryRow(a.accessKeyId, draft['sms.accessKeyId'])}
+          {summaryRow(a.accessKeySecret, secretSet['sms.accessKeySecret'] ? a.secretSet : '')}
+          <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.envNote}</div>
+        </Card>
+
+        {/* 卡片二:报备模板 ContentCode */}
+        <Card className="flex flex-col gap-2 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="font-semibold text-[var(--shell-heading)]">{a.tpTitle}</span>
+            <ToolbarButton primary onClick={() => setEditing('template')}>{a.edit}</ToolbarButton>
+          </div>
+          {summaryRow(a.tpCn, draft['sms.contentCode.cn'])}
+          {summaryRow(a.tpMy, draft['sms.contentCode.my'])}
+        </Card>
+      </div>
+
+      {editing === 'channel' && (
+        <Drawer title={a.chTitle} onClose={() => setEditing(null)} footer={footerBtns('channel', () => save('channel', CH_KEYS))}>
+          <div className="mb-4 flex items-center gap-2">
+            <Switch checked={enabled} onCheckedChange={(v) => set('sms.enabled', String(v))} aria-label={a.chTitle} />
+            {enabled ? a.enabledReady : a.disabled}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <FormField label={a.provider} hint={a.providerHint}>
@@ -160,28 +199,22 @@ export default function SmsConfigPage() {
               />
             </FormField>
           </div>
-          <div className="mt-3.5 flex items-center justify-end gap-2">
-            <span className="mr-auto flex items-center gap-2">
-              <Input
-                className="w-52"
-                placeholder={a.testPhonePh}
-                value={testPhone}
-                onChange={(e) => setTestPhone(e.target.value)}
-              />
-              <ToolbarButton disabled={testing} onClick={test}>
-                {testing ? a.testing : a.testBtn}
-              </ToolbarButton>
-            </span>
-            <ToolbarButton primary disabled={saving === 'channel'} onClick={() => save('channel', CH_KEYS)}>
-              {saving === 'channel' ? a.saving : a.save}
+          <div className="mt-4 flex items-center gap-2 border-t border-[var(--shell-side-border)] pt-3">
+            <Input
+              className="w-52"
+              placeholder={a.testPhonePh}
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+            />
+            <ToolbarButton disabled={testing} onClick={test}>
+              {testing ? a.testing : a.testBtn}
             </ToolbarButton>
           </div>
-          <div className="mt-2 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.envNote}</div>
-        </Card>
+        </Drawer>
+      )}
 
-        {/* 卡片二:报备模板 ContentCode */}
-        <Card className="p-4">
-          <div className="mb-3 font-semibold text-[var(--shell-heading)]">{a.tpTitle}</div>
+      {editing === 'template' && (
+        <Drawer title={a.tpTitle} onClose={() => setEditing(null)} footer={footerBtns('template', () => save('template', TP_KEYS))}>
           <div className="grid grid-cols-2 gap-4">
             <FormField label={a.tpCn} hint={a.tpHint}>
               <Input className="w-72" value={draft['sms.contentCode.cn'] ?? ''} onChange={(e) => set('sms.contentCode.cn', e.target.value)} />
@@ -190,13 +223,8 @@ export default function SmsConfigPage() {
               <Input className="w-72" value={draft['sms.contentCode.my'] ?? ''} onChange={(e) => set('sms.contentCode.my', e.target.value)} />
             </FormField>
           </div>
-          <div className="mt-3.5 flex justify-end">
-            <ToolbarButton primary disabled={saving === 'template'} onClick={() => save('template', TP_KEYS)}>
-              {saving === 'template' ? a.saving : a.save}
-            </ToolbarButton>
-          </div>
-        </Card>
-      </div>
+        </Drawer>
+      )}
     </div>
   )
 }

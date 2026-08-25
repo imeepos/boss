@@ -1717,6 +1717,7 @@ const zhCN: Translations = {
     smsconfig: {
       title: '短信配置',
       desc: '验证码短信通道（阿里云国际短信，中国大陆 +86 / 马来西亚 +60），保存后约 1 分钟热生效',
+      edit: '编辑',
       chTitle: '通道配置 · 阿里云国际短信',
       tpTitle: '报备模板（ContentCode）',
       enabledReady: '已启用',
@@ -1747,6 +1748,7 @@ const zhCN: Translations = {
     pushconfig: {
       title: '推送配置',
       desc: '移动端推送通道（极光 JPush 聚合，用户端/师傅端 App 通知），保存后约 1 分钟热生效',
+      edit: '编辑',
       chTitle: '通道配置 · 极光 JPush',
       enabledReady: '已启用',
       disabled: '已停用',
@@ -1816,6 +1818,7 @@ const zhCN: Translations = {
     realidconfig: {
       title: '实名核验配置',
       desc: '客户实名二要素自动核验通道（阿里云实人认证 Id2MetaVerify），保存后约 1 分钟热生效；未启用或未配置时实名提交保持待人工核验',
+      edit: '编辑',
       chTitle: '自动核验通道 · 阿里云实人认证',
       enabledReady: '已启用',
       disabled: '已停用（仅人工核验）',

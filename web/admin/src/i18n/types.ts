@@ -1703,6 +1703,7 @@ export interface Translations {
     smsconfig: {
       title: string
       desc: string
+      edit: string
       chTitle: string
       tpTitle: string
       enabledReady: string
@@ -1733,6 +1734,7 @@ export interface Translations {
     pushconfig: {
       title: string
       desc: string
+      edit: string
       chTitle: string
       enabledReady: string
       disabled: string
@@ -1802,6 +1804,7 @@ export interface Translations {
     realidconfig: {
       title: string
       desc: string
+      edit: string
       chTitle: string
       enabledReady: string
       disabled: string
