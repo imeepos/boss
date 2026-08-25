@@ -1,6 +1,7 @@
 package workerapi
 
 // W 师傅端门户扫码绑定闭环(worker/scan.yaml):环节9/10、取证、签收、现场收款。
+// 激活检测字段只反映已确认的订单状态，未接入网元/AAA 时不得伪造成功。
 
 import (
 	"fmt"
@@ -87,7 +88,7 @@ func quadAddrCode(a *app.Application, c *gin.Context, addressID int64) string {
 	return ad.Name
 }
 
-// workerReportGetHandler 上报预取:四码对照 + 检测项占位。
+// workerReportGetHandler 上报预取:四码对照 + 当前真实可确认状态。
 func workerReportGetHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tk, ord, err := ticketOrder(c, a)
@@ -97,7 +98,7 @@ func workerReportGetHandler(a *app.Application) gin.HandlerFunc {
 		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"ticketNo": tk.TicketNo, "quad": portalQuadH(a, c, ord.AddressID),
-			"checks":       gin.H{"powerOn": true, "opticalPowerDbm": 0, "provisionDone": true, "loidAuthPassed": true},
+			"checks":       gin.H{"powerOn": false, "opticalPowerDbm": 0, "provisionDone": false, "loidAuthPassed": false},
 			"provisionLog": gin.H{"template": "", "preResult": "", "onsiteResult": ""},
 		})
 	}
@@ -137,10 +138,10 @@ func activateWorkerOrder(c *gin.Context, a *app.Application, orderID int64) erro
 	return nil
 }
 
-// activationState 激活状态视图:订单环节 >10 视为 SUCCESS,=10 为 PENDING。
+// activationState 激活状态视图：只有环节11完成才代表订单侧回调成功。
 func activationState(ticketNo string, stage int8) gin.H {
 	status := "PENDING"
-	if stage > 10 {
+	if stage >= 11 {
 		status = "SUCCESS"
 	}
 	return gin.H{"ticketNo": ticketNo, "loid": "", "status": status, "statusLabel": "", "lastTry": ""}
