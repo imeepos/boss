@@ -17,7 +17,7 @@
 - **合并前反向同步**：worktree 内先 `git merge main`（本地私有分支可 rebase），解冲突跑门禁，再回主树合并。
 - **一次只合一个，合完立刻同步其余**：可用 `scripts/worktree-sync.sh` 一键对全部活跃 worktree 执行 merge main + 门禁。
 - **中央登记文件 append-only**：menu.def.ts / App.tsx / i18n types+locale / fields.md 的注册类改动压成独立小提交，不埋进大 feature 提交。
-- **收尾四步（硬性，防代码丢失）**：① `git push gitea <分支>`（远端名是 gitea 不是 origin）→ ② 主树 `git merge --ff-only <分支>` → ③ `git worktree remove` → ④ `git branch -d` + `git push gitea --delete`。
+- **收尾四步（硬性，防代码丢失）**：① `git push gitea <分支>`（远端名是 gitea 不是 origin）→ ② 主树 `git merge --ff-only <分支>` → ③ `git worktree remove` → ④ `git branch -d` + `git push gitea --delete`。**执行前先核对 cwd 在主树（`pwd` + `git branch --show-current`）**：在 feature worktree 内执行②是 no-op 假成功（2026-08-28 实例），还会把本地 main 指针误推。
 - **ff-merge 失败 ≠ commit 丢失**（commit 安全在分支 ref 上）：失败时严禁删 worktree，唯一动作是回 worktree `git rebase main` 后重试②。
 - 误闯并行会话的 worktree 并编辑其未提交文件是事故（2026-08-22 用户点名）；发现半成品先 `git worktree list` 判断归属。
 

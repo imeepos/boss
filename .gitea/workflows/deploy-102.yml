@@ -13,6 +13,7 @@ jobs:
       - name: Clone
         run: |
           git clone --depth 2 "http://sker:${GITHUB_TOKEN}@192.168.0.102:3001/sker/boss.git" .
+          echo "::notice::deploy-102 run for ${GITHUB_SHA} (event before=${GITHUB_EVENT_BEFORE:-${{ github.event.before }}})"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
