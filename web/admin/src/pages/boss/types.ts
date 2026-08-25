@@ -49,6 +49,19 @@ export interface WorkerGroupRow {
   name: string
   leaderId: number
   leaderName: string
+  memberCount: number // 在职成员数(000141)
+}
+
+// 装维队成员月度业绩(000141 GET /worker-groups/{id}/performance)
+export interface TeamPerfRow {
+  workerId: number
+  staffNo: string
+  name: string
+  phone: string
+  isLeader: boolean
+  finished: number
+  onTimeRate: number
+  score: number
 }
 
 export interface WorkerRow {

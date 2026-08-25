@@ -1,92 +1,151 @@
-// 师傅管理页:契约 GET /worker-groups + GET /workers?groupId&keyword(在职/离职状态)。
-import { useEffect, useMemo, useState } from 'react'
+// 师傅管理页(装维队视图,000141):左侧队伍卡片 + 右侧成员表;
+// 支持新建/编辑/解散队伍、指定队长、成员调队、队伍业绩统计。
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
-import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type WorkerGroupRow, type WorkerRow } from '../types'
 import { TableStateRow } from '../../../components/business'
+import { TeamDialogs, type DialogMode } from './TeamDialogs'
+
+const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
+const primarySmallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--color-brand-bg)] bg-[var(--color-brand-bg)] px-3 text-[12px] text-white hover:opacity-80'
 
 export default function WorkerPage() {
   const t = useT()
   const w = t.pages.workerPage
-  const [rows, setRows] = useState<WorkerRow[]>([])
   const [groups, setGroups] = useState<WorkerGroupRow[]>([])
+  const [rows, setRows] = useState<WorkerRow[]>([])
   const [error, setError] = useState('')
   const [urlKeyword, setUrlKeyword] = useQueryState('kw', '')
   const [keyword, setKeyword] = useState(urlKeyword)
-  const [groupId, setGroupId] = useState(0)
+  const [selGroup, setSelGroup] = useState(0) // 0=全部成员
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
+  const [dialog, setDialog] = useState<DialogMode>(null)
 
-  const load = () => {
+  const load = useCallback(() => {
     setError('')
     setBusy(true)
-    apiFetch<{ items: WorkerRow[] }>('/workers', { query: { groupId: groupId || undefined, keyword: keyword || undefined } })
-      .then((d) => setRows(d?.items ?? []))
+    Promise.all([
+      apiFetch<{ items: WorkerGroupRow[] }>('/worker-groups'),
+      apiFetch<{ items: WorkerRow[] }>('/workers'),
+    ])
+      .then(([g, wk]) => { setGroups(g?.items ?? []); setRows(wk?.items ?? []) })
       .catch((e) => setError(e instanceof Error ? e.message : w.loadFail))
       .finally(() => setBusy(false))
-  }
-  useEffect(() => {
-    apiFetch<{ items: WorkerGroupRow[] }>('/worker-groups')
-      .then((d) => setGroups(d?.items ?? []))
-      .catch(() => setGroups([]))
-    load()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [load])
 
   const groupName = (id: number) => groups.find((g) => g.id === id)?.name ?? `#${id}`
   const filtered = useMemo(() => {
     const k = keyword.trim().toLowerCase()
-    if (!k) return rows
-    return rows.filter((r) => r.name.toLowerCase().includes(k) || r.staffNo.toLowerCase().includes(k) || (r.phone || '').toLowerCase().includes(k))
-  }, [rows, keyword])
+    return rows.filter((r) => (!selGroup || r.groupId === selGroup)
+      && (!k || r.name.toLowerCase().includes(k) || r.staffNo.toLowerCase().includes(k) || (r.phone || '').toLowerCase().includes(k)))
+  }, [rows, keyword, selGroup])
   const slice = pageSlice(filtered, page, pageSize)
+
+  // setCaptain 行内快捷:指定队长 = PUT 队伍(带当前名 + 新 leaderId)。
+  const setCaptain = async (r: WorkerRow) => {
+    try {
+      await apiFetch(`/worker-groups/${r.groupId}`, { method: 'PUT', body: { name: groupName(r.groupId), leaderId: r.id } })
+      load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : w.actionFail)
+    }
+  }
+
+  const cardCls = (id: number) =>
+    `cursor-pointer rounded-md border p-3 text-left transition-colors ${selGroup === id
+      ? 'border-[var(--color-brand-bg)] bg-[color-mix(in_srgb,var(--color-brand-bg)_8%,transparent)]'
+      : 'border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] hover:border-[var(--color-border-hover)]'}`
 
   return (
     <div>
       <PageHead title={w.title} desc={w.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={w.searchPlaceholder}
-            value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
-          <Dropdown
-            value={groupId ? String(groupId) : ''}
-            options={[{ value: '', label: w.allGroup }, ...groups.map((g) => ({ value: String(g.id), label: g.name }))]}
-            onChange={(v) => { setGroupId(Number(v) || 0); setPage(1); load() }}
-            ariaLabel={w.allGroup}
-          />
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-        </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{w.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.staffNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{groupName(r.groupId)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.status === 1 ? w.active : w.left}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.joinedAt)}</td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={w.empty} />}
-              </tbody>
-            </table>
+      <div className="mb-4 flex flex-col gap-4 lg:flex-row">
+        {/* 装维队卡片列 */}
+        <div className="w-full shrink-0 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)] lg:w-72">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-[var(--shell-heading)]">{w.teamTitle}</span>
+            <button className={primarySmallBtn} onClick={() => setDialog({ type: 'create' })}>{w.newTeam}</button>
           </div>
-        )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
-          <Pagination total={rows.length} page={page} pageSize={pageSize}
-            onPage={setPage} onSize={setPageSize} {...pagerTexts(w)} />
+          <div className="flex flex-col gap-2">
+            <button className={cardCls(0)} onClick={() => { setSelGroup(0); setPage(1) }}>
+              <div className="text-[13px] font-medium text-[var(--shell-heading)]">{w.allMembers}</div>
+              <div className="mt-1 text-xs text-[var(--shell-group-title)]">{w.memberCount}: {rows.filter((r) => r.status === 1).length}</div>
+            </button>
+            {groups.map((g) => (
+              <div key={g.id} className={cardCls(g.id)} role="button" tabIndex={0}
+                onClick={() => { setSelGroup(g.id); setPage(1) }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { setSelGroup(g.id); setPage(1) } }}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[13px] font-medium text-[var(--shell-heading)]">{g.name}</span>
+                  <span className="shrink-0 text-xs text-[var(--shell-group-title)]">{g.code}</span>
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-xs text-[var(--shell-group-title)]">
+                  <span>{w.captain}: {g.leaderName || w.captainEmpty}</span>
+                  <span>{w.memberCount}: {g.memberCount}</span>
+                </div>
+                <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button className={smallBtn} onClick={() => setDialog({ type: 'edit', group: g })}>{w.editTeam}</button>
+                  <button className={smallBtn} onClick={() => setDialog({ type: 'perf', group: g })}>{w.perfBtn}</button>
+                  <button className={smallBtn} onClick={() => setDialog({ type: 'disband', group: g })}>{w.disband}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 成员表 */}
+        <div className="min-w-0 flex-1 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+          <div className="flex flex-wrap items-center gap-2 p-4">
+            <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={w.searchPlaceholder}
+              value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
+            <span className="text-sm text-[var(--shell-group-title)]">{selGroup ? groupName(selGroup) : w.allMembers}</span>
+            <span className="spacer" />
+            <button className={smallBtn} disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          </div>
+          {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+            <div className="overflow-x-auto px-4 pb-4">
+              <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+                <thead><tr>{w.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
+                <tbody>
+                  {slice.map((r) => (
+                    <tr key={r.id}>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.staffNo}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{groupName(r.groupId)}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone || '—'}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.status === 1 ? w.active : w.left}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.joinedAt)}</td>
+                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
+                        {r.status === 1 && (
+                          <div className="flex gap-2">
+                            <button className={smallBtn} onClick={() => setCaptain(r)}>{w.setCaptain}</button>
+                            <button className={smallBtn} onClick={() => setDialog({ type: 'transfer', worker: r })}>{w.transfer}</button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!slice.length && <TableStateRow colSpan={w.columns.length} loading={busy} text={w.empty} />}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+            <Pagination total={filtered.length} page={page} pageSize={pageSize}
+              onPage={setPage} onSize={setPageSize} {...pagerTexts(w)} />
+          </div>
         </div>
       </div>
+
+      <TeamDialogs mode={dialog} groups={groups} workers={rows} onClose={() => setDialog(null)} onDone={load} />
     </div>
   )
 }
