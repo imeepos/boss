@@ -1657,6 +1657,7 @@ export interface Translations {
     authconfig: {
       title: string
       desc: string
+      edit: string
       cnTitle: string
       myTitle: string
       fbTitle: string

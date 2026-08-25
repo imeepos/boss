@@ -1670,6 +1670,7 @@ const enUS: Translations = {
     authconfig: {
       title: 'Phone Auth Config',
       desc: 'Manage one-tap phone login and SMS verification channels, with automatic fallback',
+      edit: 'Edit',
       cnTitle: 'China · One-tap Login (JVerification)',
       myTitle: 'Malaysia/Overseas · Number Verification',
       fbTitle: 'Fallback & Compliance Policy',

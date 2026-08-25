@@ -1670,6 +1670,7 @@ const msMY: Translations = {
     authconfig: {
       title: 'Konfigurasi Pengesahan Telefon',
       desc: 'Urus log masuk satu sentuhan telefon dan saluran SMS, dengan pengurangan automatik',
+      edit: 'Sunting',
       cnTitle: 'China · Log Masuk Satu Sentuhan (JVerification)',
       myTitle: 'Malaysia/Luar Negara · Pengesahan Nombor',
       fbTitle: 'Dasar Pengurangan & Pematuhan',

@@ -1670,6 +1670,7 @@ const zhCN: Translations = {
     authconfig: {
       title: '号码认证配置',
       desc: '管理本机号码一键登录与短信验证渠道，失败自动降级',
+      edit: '编辑',
       cnTitle: '中国区 · 一键登录（极光认证 JVerification）',
       myTitle: '马来西亚/海外 · 号码认证',
       fbTitle: '降级与合规策略',
