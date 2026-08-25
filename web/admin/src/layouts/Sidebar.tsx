@@ -70,7 +70,7 @@ function SideGroup({
       ) : (
         <button
           type="button"
-          className="mx-4 mt-4 mb-1 flex w-[calc(100%-2rem)] cursor-pointer items-center gap-1.5 border-0 bg-transparent px-0 py-1 text-left text-[11px] font-medium tracking-[2px] text-[var(--shell-group-title)] hover:text-[var(--shell-menu-active-text)] max-[1199px]:justify-center max-[959px]:justify-start"
+          className="mx-4 mt-4 mb-1 flex w-[calc(100%-2rem)] cursor-pointer items-center gap-1.5 border-0 bg-transparent px-0 py-1 text-left text-[13px] font-medium tracking-[1px] text-[var(--shell-menu-text)] hover:text-[var(--shell-menu-active-text)] max-[1199px]:justify-center max-[959px]:justify-start"
           aria-expanded={!folded}
           aria-label={label}
           onClick={onToggleFold}
