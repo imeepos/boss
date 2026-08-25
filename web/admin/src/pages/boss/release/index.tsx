@@ -102,7 +102,7 @@ export default function ClientReleasePage() {
               <td className={td}>{r.updatedAt || '—'}</td>
               <td className={td}>
                 <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => { setEditing(r); setPatch({}) }}>{s.edit}</button>
-                <a className="ml-3 text-[13px] text-[var(--color-brand-solid)] underline-offset-2 hover:underline" href={`${apiBaseUrl()}/client-releases/${r.id}/apk`} download>{s.download}</a>
+                <a className="ml-3 text-[13px] text-[var(--shell-fab-bg)] underline-offset-2 hover:underline" href={`${apiBaseUrl()}/client-releases/${r.id}/apk`} download>{s.download}</a>
               </td>
             </tr>)}
             {!rows.length && <TableStateRow colSpan={s.columns.length} loading={busy} text={s.empty} />}

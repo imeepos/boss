@@ -40,7 +40,8 @@ export function DownloadSection(p: DownloadSectionProps) {
 
   const CARD = 'flex flex-col gap-3 rounded-xl border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-7 shadow-[var(--shell-card-shadow)] transition-all hover:-translate-y-1 hover:border-[var(--home-hero-badge-border)] hover:shadow-lg'
   const BADGE = 'flex h-10 w-10 items-center justify-center rounded-full border border-[var(--home-hero-badge-border)] bg-[var(--home-hero-badge-bg)] font-brand text-base font-semibold text-[var(--home-gold-fg)]'
-  const BTN = 'inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-brand-solid)] px-5 text-[13px] font-medium text-white transition-opacity hover:opacity-90'
+  // 金色主按钮沿用 Hero BTN_GOLD 令牌(--color-brand-solid 不存在,白字回落透明背景不可见)。
+  const BTN = 'inline-flex h-9 items-center justify-center rounded-md bg-[var(--color-brand-gold-500)] px-5 text-[13px] font-medium text-[var(--color-brand-navy-950)] transition-colors hover:bg-[var(--color-brand-gold-600)]'
 
   return (
     <section id="download">
