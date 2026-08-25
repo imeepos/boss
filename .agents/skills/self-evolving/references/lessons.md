@@ -290,3 +290,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 接手无主 worktree 双证法:ps 无归属进程 + 文件 mtime 超 6 小时,即可安全当归属者完成收尾。
 - (修正上条)~/go/pkg/mod 挂起根因已确诊:~/go 是符号链接→外置卷 /Volumes/sker(USB APFS),该卷 I/O 停摆时所有依赖它的 go/pnpm 命令集体卡死在 open();停摆常自愈(复查时 ls 7ms、go list 0.2s)。若复发,根治方案是把 ~/go 指回内置盘;应急仍是隔离 GOPATH/GOCACHE=/tmp。外置盘上还住着 .vite-plus node 运行时,同停摆会连带 pnpm。
 - (落地)2026-08-24 已把 ~/go 从外置卷 /Volumes/sker 迁回内置盘 ~/.local/go(原符号链接原子替换,缓存 1.7G rsync 保留,旧副本留在 sker 作备份可删)。此后外置盘停摆不再影响 go 门禁。
+- worktree 未提交编辑 + worktree 被外部清理 = 改动直接丢失(2026-08-28 round5:boss-wa5 在签名实测中途被外部 prune,gitignore 改动未 commit 即失);防御:worktree 内编辑后立即 commit(每个文件/小簇),即使测试未跑完也先 stash 不留无 commit 文件
+- ~/.gradle 是指向 /Volumes/sker/.gradle 的符号链接,该目录会被清空导致 wrapper 冷启动卡住;解决:GRADLE_USER_HOME=本地路径(/Users/imeepos/.gradle-local),首次下载 gradle 发行版+依赖即可(2026-08-28 round5)

@@ -59,7 +59,12 @@ function connectCdp(wsDebuggerUrl) {
       pending.delete(msg.id)
     } else if (msg.method) onEvent(msg)
   }
-  const ready = new Promise((res) => (ws.onopen = res))
+  // ws 打不开/被关必须 reject,否则 ready 永挂(2026-08-24 实测:静默 60s 超时无任何输出)。
+  const ready = new Promise((res, rej) => {
+    ws.onopen = () => res()
+    ws.onerror = (e) => rej(new Error('cdp ws error: ' + (e?.message ?? 'unknown')))
+    ws.onclose = (e) => rej(new Error(`cdp ws closed code=${e?.code}`))
+  })
   const send = (method, params = {}) =>
     new Promise((res) => {
       const id = ++seq
