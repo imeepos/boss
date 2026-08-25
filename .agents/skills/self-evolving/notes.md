@@ -646,3 +646,10 @@
 - skill 有没有提前警告:红线 6(禁止未验证声称已验证)直接命中——报告页把真实未接入的检测项写死成 true;worktree 收尾协议(先 fetch 主分支、feature 内 merge main、ff-only)和"禁止直接在 main 改代码"全程遵守,合并一次成功。
 - 重来一次:先 grep `advance(` 找到所有"假推进"环节,一次性把 6/7 一起接真实依赖再提交,避免拆成两个半成 commit;stage_hook 测试用 pgxmock 时需要同时 mock 新增的 `SELECT customer_id FROM orders` 查询与 stub ProfileCreator/ProvisionTaskCreator,漏了会得到"provision task creator not wired"。
 - 结果:worker report/activate 补工单归属校验与 stage9 前置守卫;报告/激活状态不再伪造成功;环节6 幂等创建 LO 账号(LOID 由 customer_code 派生),环节7 幂等创建 provision 任务;gRPC provision 入队增加 orderId/stage 校验、重试计数从日志累计;全量 Go 测试与 build 通过,ff-only 合并 main 并已清理 worktree 与远端分支。
+
+## 2026-09-01 web/admin 桌面端内嵌静态资源打包
+
+- 哪个坑浪费最多时间:CARGO_TARGET_DIR 指向主树 target 导致嵌入陈旧资产——tauri-build 的 build script 输出缓存命中,新 dist 的入口文件 (index-DzFk6AEB.js) 没进二进制,strings 查不到。折腾了 3 轮对比才定位是共享 target 指纹污染。第二个坑:主树 target/debug 的 boss-desktop 被外部进程回退到 8/19 快照(27MB→42MB→27MB),同一二进制文件在不同 probes 表现不一致,浪费了猜疑时间。
+- skill 有没有提前警告:worktree 协议说了 worktree 文件隔离,但没有警告"gitignored 的 target 在共享盘上会被并行会话意外覆盖"——已补进 lessons。
+- 重来一次:① 始终用 worktree 自己的 target 目录,绝不设 CARGO_TARGET_DIR 跨树共享;② 检验 Tauri 内嵌资源的正确做法:strings 查入口 hash 文件名(assets/index-xxx.js)而非压缩后的 HTML 文本;③ 验证前确认二进制没有被其他进程覆盖(先 ls -la --full-time 定锚点);④ 直接 `pnpm install` 真实安装,不 symlink node_modules 跨 worktree。
+- 结果:tauri.conf.json 增加 beforeBuildCommand + beforeDevCommand;package.json 增加 admin:build/desktop:build:static 脚本;pnpm-lock.yaml 提交;README 更新。debug 和 release 构建均验证入口文件 index-DzFk6AEB.js 嵌入二进制(136 个资产路径),release 产出 16MB DMG + 19MB .app。合并 main 后清理分支与 worktree。

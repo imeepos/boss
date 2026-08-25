@@ -318,3 +318,9 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - Compose stringResource() 只能在 @Composable scope 内直接调用,不可放在 onClick lambda / scope.launch / try-catch 块内;编译器报 \"Try catch is not supported around composable function invocations\" 或 \"@Composable invocations can only happen from the context of a @Composable function\"。解决:hoist 到所属 Composable 函数顶部声明 val(2026-08-28 round7 batch6)
 - Android 模块级常量(listOf(...))无法用 stringResource,因为 stringResource 只能在 @Composable scope 调用;两种解决:(a) 把常量从模块顶层移到 Composable 函数体内用 stringResource 取,(b) 重构为 Composable 函数返回列表(2026-08-28 round7 batch7)
 - 加 stringResource 调用务必同步加 import androidx.compose.ui.res.stringResource,编译器报 Unresolved reference 而非提示缺失导入;ProfileCards/ProfileScreen/SafetyScreen 三处踩坑(2026-08-28 round7 batch7)
+- 2026-09-01: Tauri 内嵌资产验证方法——assets 被 brotli 压缩,HTML 全文不会出现在 strings 输出;应该 grep 入口 hash 文件名(如 `strings binary | grep -c "index-xxx"`)验证当前 dist 已被嵌入,keys 会以明文出现。
+- 2026-09-01: CARGO_TARGET_DIR 跨 worktree 共享会导致 tauri-build 的 build script 输出缓存命中,新 dist 文件列表不更新;二进制嵌入陈旧资产。必须用 worktree 自己的 target 目录。
+- 2026-09-01: pnpm 工作空间根 pnpm-workspace.yaml 无 packages 字段时,`pnpm install` 在子项目报"No projects found";需 `--ignore-workspace` 标记。`pnpm build` 脚本不受影响。
+- 2026-09-01: worktree 间 symlink node_modules 触发 pnpm 模块状态检测不一致,报`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`;应在 worktree 内`pnpm install --ignore-workspace` 真实安装。
+- 2026-09-01: 后台 job 的 bash 调用不继承父 shell 的 PATH;export PATH 必须写在命令字符串内。
+- 2026-09-01: gitignored 的 target 目录在多 worktree 共享盘上可能被并行会话意外覆盖/回退;不要信任另一个 worktree 的 target 目录内容。

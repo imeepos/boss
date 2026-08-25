@@ -303,3 +303,7 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## menu 权限 baseline 消化回放
 场景 → 迁移补专属 menu:<key> 后确认已落库。
 怎么用 → 先 `make contract-sync` E 必须显示 zero baseline;部署后 admin login → `/auth/me` 取 `permissionCodes`,逐项 grep 新码;只看到 menu.def 不等于 DB 已迁移。
+
+## Tauri 内嵌静态资源验证(2026-09-01)
+场景 → 验证 `tauri build` 产出的桌面二进制确实嵌入了最新的 `web/admin/dist` 静态资源。
+怎么用 → ① 先确认 dist 入口文件名: `grep -o 'index-[^"]*\.js' web/admin/dist/index.html`;② 从二进制中 grep 该文件名: `strings target/<profile>/boss-desktop | grep -c "index-xxx"`(返回≥1 即嵌入成功);③ 可选查验资产路径总数: `strings binary | grep -oE "/assets/[A-Za-z0-9._-]+" | sort -u | wc -l` 与 dist 文件数对比。注意:assets 内容被 brotli 压缩,HTML 全文不会出现在 strings 中;入口文件名和路径 key 以明文出现。
