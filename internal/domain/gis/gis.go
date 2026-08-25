@@ -45,6 +45,10 @@ type GISService interface {
 	// level 1~5 走 addresses.geom;level 6 OLT 借父地址 geom;level 7~8 SPLITTER/ports join odn_* 取 lat/lng。
 	// bbox="minLng,minLat,maxLng,maxLat"(WGS84),空串=不限。
 	Points(ctx context.Context, level int16, parentID int64, bbox string) ([]Point, error)
+	// ODNPoints ODN 无源物理层点位(entity=facility|site|device):
+	// 设施/局点/设备自带 lat/lng(000078/081/142),直接作地图图层点位;
+	// 无坐标行不返回;bbox="minLng,minLat,maxLng,maxLat"(WGS84),空串=不限。
+	ODNPoints(ctx context.Context, entity string, bbox string) ([]Point, error)
 }
 
 // Point 地图点位(对应 GeoJSON Feature 的 properties + geometry.coordinates 抽平)。

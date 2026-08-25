@@ -19,6 +19,17 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /gis/odn-points:
+    get:
+      tags: [Intel]
+      summary: ODN 无源物理层点位(设施/局点/设备自带 lat/lng 作地图图层;permCode menu:gis)
+      operationId: gisODNPoints
+      parameters:
+        - { name: entity, in: query, required: true, schema: { type: string, enum: [facility, site, device] } }
+        - { name: bbox, in: query, schema: { type: string, description: 'minLng,minLat,maxLng,maxLat(WGS84);空=不限' } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /gis/drill:
     get:
       tags: [Intel]

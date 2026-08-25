@@ -11,7 +11,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
-import { pageSlice, type CheckDetail, type OrderListRow, type TimelineRow } from '../types'
+import { pageSlice, type CheckDetail, type OrderListRow, type TimelineRow, type WorkerLocationRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
 
@@ -35,7 +35,7 @@ export default function OrderPage() {
   const [page, setPage] = useState(urlPage)
   const [pageSize, setPageSize] = useState(urlPageSize)
   const [busy, setBusy] = useState(false)
-  const [track, setTrack] = useState<{ order: OrderListRow; timeline: TimelineRow[] } | null>(null)
+  const [track, setTrack] = useState<{ order: OrderListRow; timeline: TimelineRow[]; latestLocation: WorkerLocationRow | null } | null>(null)
   const [trackError, setTrackError] = useState('')
   const [check, setCheck] = useState<{ row: OrderListRow; detail: CheckDetail | null; result: boolean | null; message: string } | null>(null)
 
@@ -58,8 +58,8 @@ export default function OrderPage() {
   const openTrack = (orderNo: string) => {
     setTrack(null)
     setTrackError('')
-    apiFetch<{ order: OrderListRow; timeline: TimelineRow[] }>(`/orders/${encodeURIComponent(orderNo)}`)
-      .then((d) => setTrack({ order: d?.order ?? null as unknown as OrderListRow, timeline: d?.timeline ?? [] }))
+    apiFetch<{ order: OrderListRow; timeline: TimelineRow[]; latestLocation: WorkerLocationRow | null }>(`/orders/${encodeURIComponent(orderNo)}`)
+      .then((d) => setTrack({ order: d?.order ?? null as unknown as OrderListRow, timeline: d?.timeline ?? [], latestLocation: d?.latestLocation ?? null }))
       .catch(() => setTrackError(o.trackFail))
   }
 
@@ -208,7 +208,8 @@ export default function OrderPage() {
         footer={<button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setTrack(null)}>
           {t.pages.company.cancel}
         </button>}>
-        {trackError ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{trackError}</div> : (
+        {!trackError && <div className="mx-4 mb-4 rounded-sm border border-[var(--shell-card-border)] p-3 text-[13px]"><div className="mb-2 font-medium">{o.locationTitle}</div>{track?.latestLocation ? <div>纬度 {track.latestLocation.lat.toFixed(6)} · 经度 {track.latestLocation.lng.toFixed(6)} · {o.locationUpdated} {fmtTime(track.latestLocation.reportedAt)}</div> : <div>{o.locationEmpty}</div>}</div>}
+         {trackError ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{trackError}</div> : (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{o.timelineColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>

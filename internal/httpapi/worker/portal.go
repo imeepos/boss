@@ -134,6 +134,7 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerWorkerPortalAttachmentRoutes(wauth, a)
 	registerWorkerPushDeviceRoutes(wauth, a)
 	registerWorkerCrashRoutes(wauth, a)
+	registerWorkerLocationRoutes(wauth, a)
 }
 
 // registerWorkerPortalAuth 公开组:验证码/登录/退出(worker/auth.yaml)。

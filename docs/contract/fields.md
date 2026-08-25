@@ -171,9 +171,9 @@
 
 > 存储口径：`--` 仅设计图纸不入库（规范 5.1），系统侧存两端编码列；`OrderEndpoints` 定向（同优先级拒绝 ErrSamePriority），端点正则覆盖设施码（5 位）与核心设备码（3 位，见 §1.5.5 设备实体）。
 
-### 1.5.5 odn_site / odn_device（局点与核心链路设备，迁移 000081，资产编码规范第 2/3 章）
+### 1.5.5 odn_site / odn_device（局点与核心链路设备，迁移 000081/000143，资产编码规范第 2/3 章）
 
-> 管理面同 §1.5.3（`menu:odn`，`/odn/sites|devices`）。
+> 管理面同 §1.5.3（`menu:odn`，`/odn/sites|devices`）；000143 起 odn_device 补坐标列（用户要求"所有物料有地理位置 与地图关联"），与 GIS `/gis/odn-points` 图层接通。
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
 |:---------|:-------|:------|:----------|
@@ -186,10 +186,12 @@
 | 类型 | `Kind` | kind | SNW/OLT/ODF/OCC/ODB/SDB/PRT/TBP |
 | 归属局点 | `SiteNo` | site_no | 可空（市域设备） |
 | 上级 | `ParentID` | parent_id | ODB→OCC / SDB→ODB / PRT→SDB / TBP→PRT（自引用，顶层 NULL） |
+| 坐标 | `Lat`/`Lng` | lat/lng | 可空（000143；无坐标设备不上地图点位） |
 | 唯一性 | — | uq_odn_device_city | 市域内唯一；SNW 全网唯一（部分索引） |
 | 状态 | `Status` | status | IN_USE / RETIRED（报废永久锁定） |
 
 > 校验：`ValidateDeviceCode`（格式+扩容后缀）+ `RequiredParentKind`（归属链）；子级设备上级须为同城在用设备。
+> GIS 点位：`GET /gis/odn-points?entity=facility|site|device&bbox`（menu:gis）——设施/局点/设备自带 lat/lng 直接作地图图层，无坐标行过滤，bbox 数值区间过滤。
 
 ### 1.5.6 backup_jobs（数据备份迁移任务，迁移 000095，internal/domain/backup）
 
@@ -656,6 +658,22 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | `status` | status | 1在职 / 0离职 |
 | `joinedAt` | joined_at | 入职时间 |
 | `leftAt` | left_at | 离职时间，null=在职 |
+
+### 7.2 worker_locations（师傅实时位置，迁移 000144）
+
+位置上报只保存师傅端身份对应的实时轨迹，当前点按 `reportedAt` 倒序取最新；订单详情通过派单工单的 `workerId` 关联读取。
+
+| 页面列名 | API 字段 | DB 列 | 类型/说明 |
+|:---------|:---------|:------|:----------|
+| 师傅 | `workerId` | worker_id | BIGINT → workers |
+| 纬度 | `lat` | lat | WGS84，-90~90 |
+| 经度 | `lng` | lng | WGS84，-180~180 |
+| 定位精度 | `accuracyM` | accuracy_m | 米，>=0 |
+| 速度 | `speedMps` | speed_mps | 米/秒，>=0 |
+| 航向 | `bearing` | bearing | 度，0~<360 |
+| 上报时间 | `reportedAt` | reported_at | TIMESTAMPTZ |
+
+> Worker API：`POST /api/worker/v1/location/report`；后台查询 `GET /api/admin/v1/workers/{workerId}/location`；订单详情返回 `latestLocation`。位置服务不信任请求体中的 workerId，以 JWT/API key 主体为准。
 
 ### 7.2 worker_group_memberships（班组归属台账，新增）
 

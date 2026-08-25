@@ -365,7 +365,7 @@ const enUS: Translations = {
       title: 'ODN Passive Network', subtitle: 'Grids · Infrastructure · Sites & Core Devices',
       tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices' },
       add: 'Add', cancel: 'Cancel', save: 'Save', saving: 'Saving…', loadFail: 'Load failed', saveFail: 'Save failed', empty: 'No data', retire: 'Retire', retireConfirm: 'Retire this ODN resource? This cannot be undone.', warn: 'Capacity warning',
-      gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type',
+      gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type', lat: 'Latitude', lng: 'Longitude',
     },
     importer: {
       title: 'Data Import Center',
@@ -979,6 +979,9 @@ const enUS: Translations = {
       checkTitle: 'Resource Check', runCheck: 'Run Check', continueReserve: 'Continue Reservation', checkPass: 'Check passed: {count} idle ports found', checkFail: 'Check failed: no idle port at the target address', failureHelp: 'The order stays at stage 2. Start an expansion or cross-region transfer.',
       totalPorts: 'Total', idlePorts: 'Idle', reservedPorts: 'Reserved', usedPorts: 'Used', device: 'Device', deviceStatus: 'Device Status', idlePortCodes: 'Available Ports', expand: 'Start Expansion', transfer: 'Cross-region Transfer',
       trackTitle: 'Order Stage Timeline',
+       locationTitle: 'Worker Live Location',
+       locationEmpty: 'No location reported',
+       locationUpdated: 'Last reported',
       timelineColumns: ['Stage', 'Finished At', 'Duration', 'Retries', 'Result'],
       total: '{count} records',
       empty: 'No data',
@@ -1038,6 +1041,11 @@ const enUS: Translations = {
       eNameRequired: 'Team name required',
       eCodeRequired: 'Team code required',
       eEntityRequired: 'Company required',
+      teamOps: 'Actions',
+      pickWorker: 'Pick worker',
+      pickWorkerPlaceholder: 'Search staff no / name',
+      addToGroupHint: 'Pick a worker to add to the current team',
+      needSelectGroup: 'Select a team on the left first',
     },
     workerRegPage: {
       title: 'Worker Registration',
@@ -1487,6 +1495,12 @@ const enUS: Translations = {
       statInBbox: 'In Viewport',
       statOnline: 'Online Points',
       statAvgCount: 'Avg Children',
+      // ODN layer (odn-points)
+      odnLayerTitle: 'ODN Layer',
+      odnLayerOff: 'Off',
+      odnLayerFacility: 'Facilities',
+      odnLayerSite: 'Sites',
+      odnLayerDevice: 'Devices',
     },
     analyticsPage: {
       title: 'Analytics',

@@ -365,7 +365,7 @@ const msMY: Translations = {
       title: 'Rangkaian Pasif ODN', subtitle: 'Grid · Infrastruktur · Tapak & Peranti Teras',
       tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras' },
       add: 'Tambah', cancel: 'Batal', save: 'Simpan', saving: 'Menyimpan…', loadFail: 'Gagal memuatkan', saveFail: 'Gagal menyimpan', empty: 'Tiada data', retire: 'Lupus', retireConfirm: 'Lupuskan sumber ODN ini? Tindakan ini tidak boleh dibuat asal.', warn: 'Amaran kapasiti',
-      gridCode: 'Kod grid', name: 'Nama', coverage: 'Liputan', usage: 'Penggunaan', status: 'Status', actions: 'Tindakan', code: 'Kod', kind: 'Jenis', nodeCode: 'NodeCode', siteNo: 'Nombor tapak', parentId: 'ID induk', deviceCode: 'Kod peranti', deviceKind: 'Jenis peranti',
+      gridCode: 'Kod grid', name: 'Nama', coverage: 'Liputan', usage: 'Penggunaan', status: 'Status', actions: 'Tindakan', code: 'Kod', kind: 'Jenis', nodeCode: 'NodeCode', siteNo: 'Nombor tapak', parentId: 'ID induk', deviceCode: 'Kod peranti', deviceKind: 'Jenis peranti', lat: 'Latitud', lng: 'Longitud',
     },
     importer: {
       title: 'Pusat Import Data',
@@ -979,6 +979,9 @@ const msMY: Translations = {
       checkTitle: 'Semakan Sumber', runCheck: 'Jalankan Semakan', continueReserve: 'Teruskan Tempahan', checkPass: 'Semakan lulus: {count} port kosong ditemui', checkFail: 'Semakan gagal: tiada port kosong di alamat sasaran', failureHelp: 'Pesanan kekal di peringkat 2. Mulakan peluasan atau pemindahan rentas wilayah.',
       totalPorts: 'Jumlah', idlePorts: 'Kosong', reservedPorts: 'Ditempah', usedPorts: 'Digunakan', device: 'Peranti', deviceStatus: 'Status Peranti', idlePortCodes: 'Port Tersedia', expand: 'Mulakan Peluasan', transfer: 'Pemindahan Rentas Wilayah',
       trackTitle: 'Garis Masa Peringkat Pesanan',
+       locationTitle: 'Lokasi Langsung Juruteknik',
+       locationEmpty: 'Tiada lokasi dilaporkan',
+       locationUpdated: 'Laporan terakhir',
       timelineColumns: ['Peringkat', 'Selesai Pada', 'Tempoh', 'Cuba Semula', 'Keputusan'],
       total: '{count} rekod',
       empty: 'Tiada data',
@@ -1038,6 +1041,11 @@ const msMY: Translations = {
       eNameRequired: 'Nama pasukan diperlukan',
       eCodeRequired: 'Kod pasukan diperlukan',
       eEntityRequired: 'Syarikat diperlukan',
+      teamOps: 'Tindakan',
+      pickWorker: 'Pilih pekerja',
+      pickWorkerPlaceholder: 'Cari no. staf / nama',
+      addToGroupHint: 'Pilih pekerja untuk ditambah ke pasukan semasa',
+      needSelectGroup: 'Pilih pasukan di sebelah kiri dahulu',
     },
     workerRegPage: {
       title: 'Semakan Pendaftaran Pekerja',
@@ -1487,6 +1495,12 @@ const msMY: Translations = {
       statInBbox: 'Dalam Pandangan',
       statOnline: 'Titik Dalam Talian',
       statAvgCount: 'Purata Anak',
+      // Lapisan ODN (odn-points)
+      odnLayerTitle: 'Lapisan ODN',
+      odnLayerOff: 'Mati',
+      odnLayerFacility: 'Kemudahan',
+      odnLayerSite: 'Tapak',
+      odnLayerDevice: 'Peranti',
     },
     analyticsPage: {
       title: 'Analitik',

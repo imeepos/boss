@@ -30,7 +30,7 @@ func (s *PGStore) ListSites(ctx context.Context, prvCode, cityPrefix string) ([]
 // CreateSite 新建局点(NodeCode 由规划部分配;唯一冲突→ErrDuplicate)。
 func (s *PGStore) CreateSite(ctx context.Context, st Site) error {
 	_, err := s.db.Exec(ctx, `INSERT INTO odn_site (prv_code, city_prefix, site_no, name, lat, lng)
-		VALUES ($1,$2,$3,$4,NULLIF($5,0),NULLIF($6,0))`,
+		VALUES ($1,$2,$3,$4,NULLIF($5,0.0),NULLIF($6,0.0))`,
 		st.PrvCode, st.CityPrefix, st.SiteNo, st.Name, st.Lat, st.Lng)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create site: %w", err), ErrNotFound)
@@ -86,8 +86,9 @@ func (s *PGStore) insertTopDevice(ctx context.Context, d Device) error {
 		}
 		siteNo = d.SiteNo
 	}
-	_, err := s.db.Exec(ctx, `INSERT INTO odn_device (code, kind, prv_code, city_prefix, site_no, name)
-		VALUES ($1,$2,$3,$4,$5,$6)`, d.Code, d.Kind, d.PrvCode, d.CityPrefix, siteNo, d.Name)
+	_, err := s.db.Exec(ctx, `INSERT INTO odn_device (code, kind, prv_code, city_prefix, site_no, name, lat, lng)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+		d.Code, d.Kind, d.PrvCode, d.CityPrefix, siteNo, d.Name, d.Lat, d.Lng)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create device: %w", err), ErrNotFound)
 	}
@@ -106,8 +107,9 @@ func (s *PGStore) insertChildDevice(ctx context.Context, d Device, wantKind stri
 	if !parentOK {
 		return fmt.Errorf("%w: %s 的上级必须是同城市的在用 %s", ErrBadHierarchy, d.Code, wantKind)
 	}
-	_, err = s.db.Exec(ctx, `INSERT INTO odn_device (code, kind, prv_code, city_prefix, parent_id, name)
-		VALUES ($1,$2,$3,$4,$5,$6)`, d.Code, d.Kind, d.PrvCode, d.CityPrefix, d.ParentID, d.Name)
+	_, err = s.db.Exec(ctx, `INSERT INTO odn_device (code, kind, prv_code, city_prefix, parent_id, name, lat, lng)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+		d.Code, d.Kind, d.PrvCode, d.CityPrefix, d.ParentID, d.Name, d.Lat, d.Lng)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create device: %w", err), ErrNotFound)
 	}
@@ -117,7 +119,7 @@ func (s *PGStore) insertChildDevice(ctx context.Context, d Device, wantKind stri
 // ListDevices 设备列表(kind 可空;城市可空=全网)。
 func (s *PGStore) ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error) {
 	rows, err := s.db.Query(ctx, `SELECT id, code, kind, prv_code, city_prefix,
-			COALESCE(site_no,0), COALESCE(parent_id,0), COALESCE(name,''), status
+			COALESCE(site_no,0), COALESCE(parent_id,0), COALESCE(name,''), lat, lng, status
 		FROM odn_device WHERE ($1='' OR kind=$1) AND ($2='' OR (prv_code=$2 AND city_prefix=$3))
 		ORDER BY code LIMIT 500`, kind, prvCode, cityPrefix)
 	if err != nil {
@@ -128,7 +130,7 @@ func (s *PGStore) ListDevices(ctx context.Context, kind, prvCode, cityPrefix str
 	for rows.Next() {
 		var d Device
 		if err := rows.Scan(&d.ID, &d.Code, &d.Kind, &d.PrvCode, &d.CityPrefix,
-			&d.SiteNo, &d.ParentID, &d.Name, &d.Status); err != nil {
+			&d.SiteNo, &d.ParentID, &d.Name, &d.Lat, &d.Lng, &d.Status); err != nil {
 			return nil, fmt.Errorf("odn: scan device: %w", err)
 		}
 		out = append(out, d)

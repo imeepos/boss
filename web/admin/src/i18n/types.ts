@@ -298,6 +298,8 @@ export interface Translations {
       parentId: string
       deviceCode: string
       deviceKind: string
+      lat: string
+      lng: string
     }
     importer: {
       title: string
@@ -940,6 +942,9 @@ export interface Translations {
       expand: string
       transfer: string
       trackTitle: string
+      locationTitle: string
+      locationEmpty: string
+      locationUpdated: string
       timelineColumns: string[]
       total: string
       empty: string
@@ -1000,6 +1005,12 @@ export interface Translations {
       eNameRequired: string
       eCodeRequired: string
       eEntityRequired: string
+      // 装维队 UI 优化(000141 迭代):卡片操作下拉 / 头部添加按钮 / 抽屉业绩 / 选师入组
+      teamOps: string
+      pickWorker: string
+      pickWorkerPlaceholder: string
+      addToGroupHint: string
+      needSelectGroup: string
     }
     workerRegPage: {
       title: string
@@ -1452,6 +1463,12 @@ export interface Translations {
       statInBbox: string
       statOnline: string
       statAvgCount: string
+      // ODN 图层(odn-points)
+      odnLayerTitle: string
+      odnLayerOff: string
+      odnLayerFacility: string
+      odnLayerSite: string
+      odnLayerDevice: string
     }
     analyticsPage: {
       title: string

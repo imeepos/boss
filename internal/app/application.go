@@ -168,12 +168,13 @@ type Application struct {
 	AaaAuth aaa.Authorizer
 	Cdr     aaability.Emitter
 
-	Worker       worker.WorkerService
-	WorkerTeam   worker.TeamService
-	WorkerLedger worker.WorkerLedgerService
-	WorkerFact   worker.WorkerFactService
-	WorkerEvent  worker.WorkerEventService
-	WorkerNotice worker.WorkerNoticeService
+	Worker         worker.WorkerService
+	WorkerTeam     worker.TeamService
+	WorkerLedger   worker.WorkerLedgerService
+	WorkerFact     worker.WorkerFactService
+	WorkerEvent    worker.WorkerEventService
+	WorkerNotice   worker.WorkerNoticeService
+	WorkerLocation worker.LocationService
 
 	// 师傅注册 / 审核 / 实名认证 子域(迁移 000050)。
 	WorkerOnboarding worker.OnboardingService

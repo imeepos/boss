@@ -1,0 +1,8 @@
+-- 回滚 ODN 设备坐标列。
+BEGIN;
+
+ALTER TABLE odn_device
+    DROP COLUMN IF EXISTS lat,
+    DROP COLUMN IF EXISTS lng;
+
+COMMIT;

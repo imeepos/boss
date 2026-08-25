@@ -78,6 +78,10 @@ func (s *PGStore) TransferWorker(ctx context.Context, t Transfer) error {
 		), closed AS (
 			UPDATE worker_group_memberships SET effective_to = now()
 			WHERE worker_id = $1 AND effective_to IS NULL
+		), cleared AS (
+			-- 队长须为本队在职成员:调离者原任队长则清空其队长位(防跨队残留)。
+			UPDATE worker_groups SET leader_id = NULL, leader_name = ''
+			WHERE leader_id = $1 AND id <> $2
 		)
 		INSERT INTO worker_group_memberships(
 			worker_id, group_id, group_name, legal_entity_id, legal_entity_name,

@@ -262,6 +262,7 @@ paths:
   /worker-registrations/{id}/reject: { $ref: './admin/worker.yaml#/paths/~1worker-registrations~1{id}~1reject' }
   /workers: { $ref: './admin/worker.yaml#/paths/~1workers' }
   /workers/{workerId}: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}' }
+  /workers/{workerId}/location: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1location' }
   /workers/{workerId}/settings: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1settings' }
   /workers/{workerId}/real-name: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1real-name' }
   /workers/{workerId}/real-name/verify: { $ref: './admin/worker.yaml#/paths/~1workers~1{workerId}~1real-name~1verify' }
@@ -383,6 +384,7 @@ paths:
   # ---------- Intel ----------
   /gis/levels: { $ref: './admin/intel.yaml#/paths/~1gis~1levels' }
   /gis/points: { $ref: './admin/intel.yaml#/paths/~1gis~1points' }
+  /gis/odn-points: { $ref: './admin/intel.yaml#/paths/~1gis~1odn-points' }
   /gis/drill: { $ref: './admin/intel.yaml#/paths/~1gis~1drill' }
   /gis/resources/{resourceId}/detail: { $ref: './admin/intel.yaml#/paths/~1gis~1resources~1{resourceId}~1detail' }
   /analytics/indicators: { $ref: './admin/intel.yaml#/paths/~1analytics~1indicators' }

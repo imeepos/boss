@@ -13,9 +13,14 @@ const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 type Tab = 'grids' | 'facilities' | 'sites' | 'devices'
 type Grid = { prvCode: string; cityPrefix: string; gridCode: number; name: string; coverage: string; status: string; facilities: number; warn: boolean }
-type Facility = { code: string; kind: string; prvCode: string; cityPrefix: string; gridCode: number; name: string; status: string }
-type Site = { prvCode: string; cityPrefix: string; siteNo: number; name: string; status: string }
-type Device = { id: number; code: string; kind: string; prvCode: string; cityPrefix: string; siteNo: number; parentId: number; name: string; status: string }
+type Facility = { code: string; kind: string; prvCode: string; cityPrefix: string; gridCode: number; name: string; lat: number | null; lng: number | null; status: string }
+type Site = { prvCode: string; cityPrefix: string; siteNo: number; name: string; lat: number | null; lng: number | null; status: string }
+type Device = { id: number; code: string; kind: string; prvCode: string; cityPrefix: string; siteNo: number; parentId: number; name: string; lat: number | null; lng: number | null; status: string }
+
+// fmtCoord 坐标展示:空值显示 '-'。
+function fmtCoord(v: number | null | undefined): string {
+  return v == null ? '-' : String(v)
+}
 
 type FilterProps = { prv: string; city: string; setPrv: (v: string) => void; setCity: (v: string) => void }
 function CityFilter({ prv, city, setPrv, setCity }: FilterProps) {
@@ -86,19 +91,23 @@ function Form({ tab, busy, submit, g }: FormProps) {
   const field = (key: string, label: string, placeholder = '') => <label className={FIELD}><span className={LABEL}>{label}</span><Input value={values[key] ?? ''} placeholder={placeholder} onChange={(e) => set(key, e.target.value)} /></label>
   const save = () => {
     const paths: Record<Tab, string> = { grids: '/odn/grids', facilities: '/odn/facilities', sites: '/odn/sites', devices: '/odn/devices' }
-    const body = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, /^\d+$/.test(v) ? Number(v) : v]))
+    const body = Object.fromEntries(Object.entries(values).map(([k, v]) => {
+      if (v === '') return [k, undefined]
+      if (/^-?\d+(\.\d+)?$/.test(v)) return [k, Number(v)]
+      return [k, v]
+    }))
     void submit(body, paths[tab])
   }
   return <div className={`${CARD} mt-4 p-4`}><div className="grid grid-cols-2 gap-3 md:grid-cols-4">
     {tab === 'grids' && <>{field('gridCode', g.gridCode, '01~99')}{field('name', g.name)}{field('coverage', g.coverage)}{field('status', g.status, 'ACTIVE')}</>}
-    {tab === 'facilities' && <>{field('code', g.code, 'P01001')}{field('kind', g.kind, 'P / MH / TW / CLS / TBX')}{field('gridCode', g.gridCode, 'P/MH 必填')}{field('name', g.name)}</>}
-    {tab === 'sites' && <>{field('siteNo', g.siteNo, '001~999')}{field('name', g.name)}</>}
-    {tab === 'devices' && <>{field('code', g.deviceCode, 'OLT001 / ODB001-2')}{field('kind', g.deviceKind, 'OLT / ODB / SDB ...')}{field('siteNo', g.siteNo)}{field('parentId', g.parentId)}</>}
+    {tab === 'facilities' && <>{field('code', g.code, 'P01001')}{field('kind', g.kind, 'P / MH / TW / CLS / TBX')}{field('gridCode', g.gridCode, 'P/MH 必填')}{field('name', g.name)}{field('lat', g.lat, '14.55')}{field('lng', g.lng, '120.98')}</>}
+    {tab === 'sites' && <>{field('siteNo', g.siteNo, '001~999')}{field('name', g.name)}{field('lat', g.lat, '14.55')}{field('lng', g.lng, '120.98')}</>}
+    {tab === 'devices' && <>{field('code', g.deviceCode, 'OLT001 / ODB001-2')}{field('kind', g.deviceKind, 'OLT / ODB / SDB ...')}{field('siteNo', g.siteNo)}{field('parentId', g.parentId)}{field('lat', g.lat, '14.55')}{field('lng', g.lng, '120.98')}</>}
   </div><div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={save}>{busy ? g.saving : g.save}</ToolbarButton></div></div>
 }
 
 function GridTable({ rows, onRetire, g }: { rows: Grid[]; onRetire: (n: number) => void; g: any }) { return <DataTable headers={[g.gridCode, g.name, g.coverage, g.usage, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.gridCode}><TableCell>{String(r.gridCode).padStart(2, '0')}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.coverage}</TableCell><TableCell>{r.facilities}/999 {r.warn && <Badge variant="warning">{g.warn}</Badge>}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.gridCode)}>{g.retire}</button></TableCell></TableRow>} /> }
-function FacilityTable({ rows, onRetire, g }: { rows: Facility[]; onRetire: (c: string) => void; g: any }) { return <DataTable headers={[g.code, g.kind, g.gridCode, g.name, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.code}><TableCell className="font-mono">{r.code}</TableCell><TableCell>{r.kind}</TableCell><TableCell>{r.gridCode || '-'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.code)}>{g.retire}</button></TableCell></TableRow>} /> }
-function SiteTable({ rows, onRetire, g }: { rows: Site[]; onRetire: (n: number) => void; g: any }) { return <DataTable headers={[g.nodeCode, g.name, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.siteNo}><TableCell className="font-mono">{r.cityPrefix}{String(r.siteNo).padStart(3, '0')}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.siteNo)}>{g.retire}</button></TableCell></TableRow>} /> }
-function DeviceTable({ rows, onRetire, g }: { rows: Device[]; onRetire: (n: number) => void; g: any }) { return <DataTable headers={[g.code, g.kind, g.parentId, g.name, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.id}><TableCell className="font-mono">{r.code}</TableCell><TableCell>{r.kind}</TableCell><TableCell>{r.parentId || '-'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.id)}>{g.retire}</button></TableCell></TableRow>} /> }
+function FacilityTable({ rows, onRetire, g }: { rows: Facility[]; onRetire: (c: string) => void; g: any }) { return <DataTable headers={[g.code, g.kind, g.gridCode, g.name, g.lat, g.lng, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.code}><TableCell className="font-mono">{r.code}</TableCell><TableCell>{r.kind}</TableCell><TableCell>{r.gridCode || '-'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{fmtCoord(r.lat)}</TableCell><TableCell>{fmtCoord(r.lng)}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.code)}>{g.retire}</button></TableCell></TableRow>} /> }
+function SiteTable({ rows, onRetire, g }: { rows: Site[]; onRetire: (n: number) => void; g: any }) { return <DataTable headers={[g.nodeCode, g.name, g.lat, g.lng, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.siteNo}><TableCell className="font-mono">{r.cityPrefix}{String(r.siteNo).padStart(3, '0')}</TableCell><TableCell>{r.name}</TableCell><TableCell>{fmtCoord(r.lat)}</TableCell><TableCell>{fmtCoord(r.lng)}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.siteNo)}>{g.retire}</button></TableCell></TableRow>} /> }
+function DeviceTable({ rows, onRetire, g }: { rows: Device[]; onRetire: (n: number) => void; g: any }) { return <DataTable headers={[g.code, g.kind, g.parentId, g.name, g.lat, g.lng, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.id}><TableCell className="font-mono">{r.code}</TableCell><TableCell>{r.kind}</TableCell><TableCell>{r.parentId || '-'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{fmtCoord(r.lat)}</TableCell><TableCell>{fmtCoord(r.lng)}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.id)}>{g.retire}</button></TableCell></TableRow>} /> }
 function DataTable<T>({ headers, rows, empty, render }: { headers: string[]; rows: T[]; empty: string; render: (row: T) => React.ReactNode }) { return rows.length === 0 ? <EmptyState text={empty} /> : <div className="overflow-x-auto"><Table><TableHeader><TableRow>{headers.map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{rows.map(render)}</TableBody></Table></div> }

@@ -4,6 +4,12 @@
 > 唯一性经验归入下方"跨任务提炼"；逐任务细节已由 references/(lessons/known-issues/red-lines/techniques + knowledge 索引)承接。
 > 之后仍按 SKILL.md 流程：一次任务一段，只增不改；累计 5 轮以上再做一次去重盘点。
 
+## 2026-08-25 实时位置上报闭环
+
+- 哪个坑浪费了最多时间？迁移号只检查了当前可见分支，门禁才发现 `feat/odn-gis-link` 已占用 000142/000143；随后按跨未合并分支让号到 000144，并重新跑门禁。
+- 这个 skill 有没有提前警告我？有，AGENTS.md 与后端经验明确要求逐分支检查迁移号；首次检查命令错误地只覆盖了部分 refs，说明必须直接用 `git for-each-ref` + `git ls-tree` 并验证门禁。
+- 重来一次我会怎么做？创建迁移前先 `git fetch --prune`，遍历本地和远端所有 refs 的 migrations 文件，再创建；Android 构建前先检查 Gradle wrapper 缓存/网络，失败时明确记录未验证而不声称 APK 构建成功。
+
 ## 跨任务提炼（按复发频次排序）
 
 ### 累犯TOP（5次以上）
@@ -686,3 +692,9 @@
 - skill 有没有提前警告我:无(新坑,已升为红线)。
 - 重来一次:写文件脚本一律幂等 + 每写一次 `git diff --stat` 确认增量;同命令输出不变就停下查状态。
 - 次要坑:heredoc 拆多段、锚点不特异、数组顺序断言不一致、加方法超 300 行红线、gofmt。
+
+## 2026-09-22 装维队 UI 优化(worker-team-ui-opt)
+- 哪个坑浪费最多时间:① CI deploy runner 任务状态机卡死(task status 停在 2/running 但 job 实际已失败,所有并行会话的 deploy 均 5s 内死于 Clone 后),gitea rerun API 404、无 web 凭据,最终手动部署(ssh + deploy-runner 容器挂 docker.sock 复刻 CI 步骤:clone/build/push/compose up)绕过;② cdp-capture 验证 Dropdown 选项需 dispatch MouseEvent('mousedown')——Dropdown 选项在 onMouseDown 里触发 onChange(为防 popup 点击冒泡),程序化 .click() 不生效,曾误判"点了没反应";③ 手动部署脚本里写死了 gitea token,用完必须删(已删)。
+- skill 有没有提前警告我:cdp-capture eval 语义已在 boss-admin-web.md 有记载,但 mousedown 这条没有。
+- 重来一次:① CI 卡死先查 action_task.status 与 job log 一致性,再决定手动部署;② 验证 Dropdown 交互统一用 mousedown;③ 脚本里的凭据用完即删。
+- 交付:队伍卡片操作下拉、头部添加装维队按钮、业绩统计右侧抽屉、师傅选择器选人入组;门禁全绿,102 手动部署后 DOM 断言逐项验证通过。

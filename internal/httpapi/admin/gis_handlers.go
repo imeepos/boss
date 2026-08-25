@@ -78,3 +78,20 @@ func gisPoints(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, gin.H{"items": pts})
 	}
 }
+
+// gisODNPoints GET /gis/odn-points?entity=facility|site|device&bbox:
+// ODN 无源物理层点位(设施/局点/设备自带 lat/lng,直接作地图图层)。
+func gisODNPoints(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		pts, err := a.Gis.ODNPoints(c.Request.Context(), c.Query("entity"), c.Query("bbox"))
+		if err != nil {
+			if errors.Is(err, gis.ErrODNEntityInvalid) {
+				respond(c, apitypes.CodeInvalidParam, nil)
+				return
+			}
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": pts})
+	}
+}

@@ -8,6 +8,9 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/database"
 )
 
+// f64p float64 指针(设备坐标可空字段测试用)。
+func f64p(v float64) *float64 { return &v }
+
 // TestODNPassive_Integration 网格分区 + 基础设施端到端(需真实 PostgreSQL,
 // BOSS_PG_TEST_DSN 未设置时跳过)。以 000075 的 PHL001/MNL 为样例城市。
 func TestODNPassive_Integration(t *testing.T) {
@@ -63,8 +66,16 @@ func TestODNPassive_Integration(t *testing.T) {
 		t.Fatalf("CreateFacility MH98001: %v", err)
 	}
 	if err := s.CreateFacility(ctx, Facility{Code: "TW98001", Kind: KindTower,
-		PrvCode: "PHL001", CityPrefix: "MNL"}); err != nil {
+		PrvCode: "PHL001", CityPrefix: "MNL", Lat: 14.6, Lng: 120.99}); err != nil {
 		t.Fatalf("CreateFacility TW98001: %v", err)
+	}
+	// 设施坐标回归:NULLIF($7,0.0) 修复(0 整数字面量曾把 float 坐标推断为 int)。
+	tws, err := s.ListFacilities(ctx, KindTower, GridRef{})
+	if err != nil || len(tws) != 1 {
+		t.Fatalf("ListFacilities TW: %v %d", err, len(tws))
+	}
+	if tws[0].Lat != 14.6 || tws[0].Lng != 120.99 {
+		t.Fatalf("设施坐标回读失败: lat=%v lng=%v", tws[0].Lat, tws[0].Lng)
 	}
 
 	// 列表与占用统计。
@@ -172,7 +183,7 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 	cleanup := func() {
 		pool.Exec(ctx, `DELETE FROM odn_device WHERE prv_code='PHL001' AND city_prefix='MNL'
 			AND code IN ('SNW990','OLT990','OLT991','OCC990','ODB990','ODB990-2','SDB990')`)
-		pool.Exec(ctx, `DELETE FROM odn_site WHERE prv_code='PHL001' AND city_prefix='MNL' AND site_no=998`)
+		pool.Exec(ctx, `DELETE FROM odn_site WHERE prv_code='PHL001' AND city_prefix='MNL' AND site_no IN (997,998)`)
 	}
 	cleanup()
 	t.Cleanup(cleanup)
@@ -182,9 +193,26 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 		SiteNo: 998, Name: "集成测试局点"}); err != nil {
 		t.Fatalf("CreateSite: %v", err)
 	}
+	// 局点坐标回归:NULLIF($5,0.0) 修复(0 整数字面量曾把 float 坐标推断为 int)。
+	if err := s.CreateSite(ctx, Site{PrvCode: "PHL001", CityPrefix: "MNL",
+		SiteNo: 997, Name: "带坐标局点", Lat: 14.5995, Lng: 120.9842}); err != nil {
+		t.Fatalf("CreateSite 带坐标: %v", err)
+	}
 	sites, err := s.ListSites(ctx, "PHL001", "MNL")
 	if err != nil || len(sites) == 0 {
 		t.Fatalf("ListSites: %v %d", err, len(sites))
+	}
+	coordOK := false
+	for _, st := range sites {
+		if st.SiteNo == 997 {
+			coordOK = true
+			if st.Lat != 14.5995 || st.Lng != 120.9842 {
+				t.Fatalf("局点坐标回读失败: lat=%v lng=%v", st.Lat, st.Lng)
+			}
+		}
+	}
+	if !coordOK {
+		t.Fatal("ListSites 未返回带坐标局点 997")
 	}
 
 	// 顶层设备 SNW(全网唯一)与 OCC(市域唯一)。
@@ -192,10 +220,30 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 998}); err != nil {
 		t.Fatalf("CreateDevice SNW990: %v", err)
 	}
-	// E16:site_no 无 FK,域层守护——挂未备案局点必须拒绝。
+	// 设备坐标(000143):带 lat/lng 创建 → 列表回读。
+	if err := s.CreateDevice(ctx, Device{Code: "OLT990", Kind: DevOLT,
+		PrvCode: "PHL001", CityPrefix: "MNL", Lat: f64p(14.55), Lng: f64p(120.98)}); err != nil {
+		t.Fatalf("CreateDevice OLT990(带坐标): %v", err)
+	}
+	olts, err := s.ListDevices(ctx, DevOLT, "PHL001", "MNL")
+	if err != nil || len(olts) != 1 {
+		t.Fatalf("ListDevices OLT: %v %d", err, len(olts))
+	}
+	if olts[0].Lat == nil || olts[0].Lng == nil || *olts[0].Lat != 14.55 || *olts[0].Lng != 120.98 {
+		t.Fatalf("设备坐标回读失败: lat=%v lng=%v", olts[0].Lat, olts[0].Lng)
+	}
+	// 无坐标设备(E16:site_no 无 FK,域层守护——挂未备案局点必须拒绝)。
 	if err := s.CreateDevice(ctx, Device{Code: "OLT991", Kind: DevOLT,
-		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 997}); err == nil {
-		t.Fatal("OLT 挂未备案局点 997 应拒绝(ErrSiteMissing)")
+		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 996}); err == nil {
+		t.Fatal("OLT 挂未备案局点 996 应拒绝(ErrSiteMissing)")
+	}
+	// SNW990 无坐标创建 → Lat/Lng 为 nil。
+	snws, err := s.ListDevices(ctx, DevSNW, "PHL001", "MNL")
+	if err != nil || len(snws) != 1 {
+		t.Fatalf("ListDevices SNW: %v %d", err, len(snws))
+	}
+	if snws[0].Lat != nil || snws[0].Lng != nil {
+		t.Fatalf("无坐标设备应 Lat/Lng=nil,实际 %v %v", snws[0].Lat, snws[0].Lng)
 	}
 	if err := s.CreateDevice(ctx, Device{Code: "OCC990", Kind: DevOCC,
 		PrvCode: "PHL001", CityPrefix: "MNL"}); err != nil {

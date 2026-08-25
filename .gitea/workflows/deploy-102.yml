@@ -23,30 +23,38 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           runtime=false
-          # 优先用 push 事件的 before SHA 精确取本次推送的变更面(社区标准:
-          # github.event.before/after;before 为全零 = 新建分支/force push)。
-          # before 取不到(服务端不允许按 SHA fetch)时回退双父并集启发式:
-          # 只看 HEAD^ 会漏判——feature 侧先 merge main 再推送时 HEAD^ 是
-          # feature tip,运行时变更被误判 docs-only 跳过部署(task 2606 实例)。
           base=""
-          if [ -n "$BEFORE" ] && [ "${BEFORE//0/}" != "" ]; then
-            # gitea 默认不允许按裸 SHA fetch,改为加深 main 历史后检查 before 是否在场
-            # (常规推送跨度远小于 100,force push/超长推送时 before 不在场,走回退)。
+          # 优先与「102 上实际已部署的镜像 sha」比对:gitea 同分支新 push 会取消
+          # 待执行的旧 run,若中途夹一个 docs-only 推送,仅看 github.event.before
+          # 会把此前未部署的 runtime 变更漏判为 docs-only 跳过部署(2026-09-22
+          # 装维队/批量导入两会话同坑:run 被 docs 提交取代取消,feature 未上线)。
+          deployed=$(docker images --format '{{.Tag}}' 192.168.0.102:5000/boss/server 2>/dev/null | grep -Ev '^latest$|^$' | head -1)
+          if [ -n "$deployed" ]; then
+            git fetch -q --depth=200 origin main 2>/dev/null || true
+            if git rev-parse --verify -q "$deployed^{commit}" >/dev/null 2>&1; then
+              base="$deployed"
+              echo "Classifying against last deployed sha=$deployed"
+            fi
+          fi
+          # 部署 sha 不可用时退回 push 事件 before(社区标准;before 为全零=新建分支/force push)。
+          if [ -z "$base" ] && [ -n "$BEFORE" ] && [ "${BEFORE//0/}" != "" ]; then
             git fetch -q --depth=100 origin main 2>/dev/null || true
             if git rev-parse --verify -q "$BEFORE^{commit}" >/dev/null 2>&1; then
               base="$BEFORE"
+              echo "Classifying by push event before=$BEFORE"
             fi
           fi
-          if [ -n "$base" ]; then
-            echo "Classifying by push event before=$BEFORE"
-            files=$(git diff --name-only "$base" HEAD)
-          else
+          if [ -z "$base" ]; then
+            # 双父并集启发式:只看 HEAD^ 会漏判——feature 侧先 merge main 再推送时
+            # HEAD^ 是 feature tip,运行时变更被误判 docs-only 跳过部署(task 2606 实例)。
             echo "before SHA unavailable; falling back to parent-diff heuristic"
             files=$(git diff --name-only HEAD^ HEAD)
             if git rev-parse --verify -q HEAD^2 >/dev/null 2>&1; then
               files="$files
           $(git diff --name-only HEAD^2 HEAD)"
             fi
+          else
+            files=$(git diff --name-only "$base" HEAD)
           fi
           for path in $files; do
             case "$path" in
