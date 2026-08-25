@@ -639,3 +639,10 @@
 - skill 有没有提前警告:契约字段和数据权限接入原则已提前命中；本轮没有违反 worktree 红线，独立分支先测试再合并。
 - 重来一次:实现范围过滤时同时核对列表的分页参数是否已经从 HTTP 层透传，避免把权限正确与分页表现混在一起；对 102 API 断言时先检查响应结构和实际条数。
 - 结果:订单列表 GET /orders 已自动使用账号 legalEntityId + regionScope；PG/Memory 两套实现均过滤，Go 全量测试与 build 通过；102 的 admin、kefu_xu、reviewer1 实测分别看到全量、LEG-MAIN 订单、空集。
+
+## 2026-09-01 光猫授权/解锁链路审计与环节 6/7 真实化
+
+- 哪个坑浪费最多时间:师傅端扫码/激活接口只做订单 stage 推进,还硬编码 `loidAuthPassed/provisionDone=true` 假成功;审计后确认 AAA 授权与 provision 下发从未串入主链,环节 6/7 的 `CreateUserProfile/PreConfigOLT` 只是 `advance()` 壳子。修复时先改 worker handler 行为,再按 order 域既有 `extras ...any + 接口注入` 模式接 aaa.NewPGStore 与 provision.NewPGStore。
+- skill 有没有提前警告:红线 6(禁止未验证声称已验证)直接命中——报告页把真实未接入的检测项写死成 true;worktree 收尾协议(先 fetch 主分支、feature 内 merge main、ff-only)和"禁止直接在 main 改代码"全程遵守,合并一次成功。
+- 重来一次:先 grep `advance(` 找到所有"假推进"环节,一次性把 6/7 一起接真实依赖再提交,避免拆成两个半成 commit;stage_hook 测试用 pgxmock 时需要同时 mock 新增的 `SELECT customer_id FROM orders` 查询与 stub ProfileCreator/ProvisionTaskCreator,漏了会得到"provision task creator not wired"。
+- 结果:worker report/activate 补工单归属校验与 stage9 前置守卫;报告/激活状态不再伪造成功;环节6 幂等创建 LO 账号(LOID 由 customer_code 派生),环节7 幂等创建 provision 任务;gRPC provision 入队增加 orderId/stage 校验、重试计数从日志累计;全量 Go 测试与 build 通过,ff-only 合并 main 并已清理 worktree 与远端分支。
