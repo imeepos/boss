@@ -109,6 +109,9 @@ func workerReportSubmitHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !workerOwnedTicket(c, tk) {
+			return
+		}
 		if err := a.Order.ActivateUser(c.Request.Context(), tk.OrderID); err != nil {
 			respondErr(c, err)
 			return
@@ -144,6 +147,9 @@ func workerActivateHandler(a *app.Application) gin.HandlerFunc {
 		tk, _, err := ticketOrder(c, a)
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		if !workerOwnedTicket(c, tk) {
 			return
 		}
 		if err := a.Order.ActivateUser(c.Request.Context(), tk.OrderID); err != nil {
