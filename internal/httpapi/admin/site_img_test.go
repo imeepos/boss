@@ -50,7 +50,9 @@ func TestSiteImg_OnlyReferencedImageOfPublishedPost(t *testing.T) {
 }
 
 // fakeAtStoreMulti 支持多附件的桩(fakeAtStore 只回填单个)。
-type fakeAtStoreMulti struct{ m map[int64]*attachment.Attachment }
+type fakeAtStoreMulti struct {
+	m map[int64]*attachment.Attachment
+}
 
 func (f *fakeAtStoreMulti) Create(context.Context, *attachment.Attachment) (*attachment.Attachment, error) {
 	return nil, nil
