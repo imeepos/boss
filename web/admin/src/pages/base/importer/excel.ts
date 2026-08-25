@@ -4,6 +4,7 @@
 // 译名列 locale/name/nameType 在 Excel 中平铺,转换时组装回嵌套 name 对象。
 import * as XLSX from 'xlsx'
 import type { ImportKind } from './preview'
+import type { EntityDef } from './entities'
 
 export type ExcelParseResult =
   | { ok: true; value: unknown }
@@ -108,6 +109,36 @@ function parseGeo(buf: ArrayBuffer): ExcelParseResult {
 /** 解析入口:按面板类型转换为 JSON 通道同构载荷。 */
 export function parseExcel(kind: ImportKind, buf: ArrayBuffer): ExcelParseResult {
   return kind === 'addr' ? parseAddr(buf) : parseGeo(buf)
+}
+
+/** 业务实体面板:单 sheet 首行表头=实体列 key → 行对象数组(类型矫正交给 entityPreview)。 */
+export function parseEntityExcel(def: EntityDef, buf: ArrayBuffer): ExcelParseResult {
+  const { aoa, name } = sheetToAoA(buf)
+  const keys = def.columns.map((c) => c.key)
+  const idx = aoa.length > 0 ? headerIndex(aoa[0], keys) : null
+  if (!idx) return { ok: false, reason: 'badHeader', sheet: name }
+  const objs: Array<Record<string, string | number>> = []
+  for (let r = 1; r < aoa.length; r++) {
+    const row = aoa[r]
+    if (row.every((c) => str(c) === '')) continue
+    const o: Record<string, string | number> = {}
+    for (const k of keys) o[k] = str(row[idx.get(k) as number])
+    objs.push(o)
+  }
+  if (objs.length === 0) return { ok: false, reason: 'badRow', sheet: name, row: 2 }
+  return { ok: true, value: objs }
+}
+
+/** 业务实体 xlsx 模板:sheet 名=kind,表头=列 key,样例行与 JSON 模板一致。 */
+export function entityExcelTemplate(def: EntityDef): ArrayBuffer {
+  const header = def.columns.map((c) => c.key)
+  const rows = def.samples.map((s) => header.map((k) => {
+    const v = s[k]
+    return v === undefined ? '' : Array.isArray(v) ? v.join(',') : v
+  }))
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), def.kind)
+  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer
 }
 
 /** 生成 xlsx 模板(表头 + 样例行,与解析约定一致)。 */

@@ -332,3 +332,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-09-01: 删除父表前先做 FK 依赖扫描(`grep REFERENCES orders migrations/*.up.sql`)+ pg_dump 备份受影响表(`pg_dump -t t1 -t t2 ...`),子表先行删除防 FK 阻断;破坏性清理走 快照→预检→备份→事务清理→复扫=0→API 冒烟 六步。
 - 给被 pgxmock 锁 SQL 的函数加前置查询时,先 `grep -rn "ExpectQuery.*<原SQL片段>"` 列全受影响 mock 再动手,避免逐个跑测试发现。
 - "表在迁移里有但库里不存在"先查是否有后续迁移 DROP/吸收(如 000059 三表归一),再下"缺失"结论。
+- cdp-capture 每次运行是全新浏览器 profile:localStorage 不跨次保留,token/servers 注入必须在同一次运行内完成(首个 eval setItem + location.href 重新导航,后续 eval 用 Promise+setTimeout 等待)。
+- cdp-capture 多个 --eval 在同一页面上下文顺序执行:顶层 const/let 会跨 eval 撞名,一律用 IIFE 包裹。
+- vite dev 默认只绑 localhost(::1),127.0.0.1 连不上:CURL 探活和 CDP 访问都要用 http://localhost:PORT。
