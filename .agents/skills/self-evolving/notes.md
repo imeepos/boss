@@ -577,3 +577,11 @@
 - 次坑:cdp 免登录注入后 location.reload() 无效——首载已被守卫重定向到 /login,reload 的是 /login;正确做法=注入后 location.href='/目标路径'。boss.servers 数组元素必须含 id 字段(readStored 过滤无 id 项)。
 - 半成品捡漏:etl-disable 遗留 Enabled 零值 false 缺省 bug(测试 freshness=[] 即症状);docMeta.test 是 main 上门禁红(SEO 提交自带),捡到即修,独立 worktree 独立 revert。
 - 重来一次:接手 7 小时无人碰的 worktree 前,先 ps 查归属进程 + stat 查 mtime,双证死会话再动手;跑门禁前先 ps 查并行 go 进程。
+
+## 2026-08-28 web/admin 表单统一抽屉化(营销/版本/消息/开放平台/4 配置页)
+
+- 最耗时的坑:免登录冒烟时 boss.servers 注入缺 id 字段,被 readStored 静默过滤,页面弹回登录页还以为 token 失效;对照 serverConfig.ts 源码才定位。已修正进 docs/boss-admin-web.md。
+- 第二个坑:券模板抽屉自测时填了 ins[2](门槛)而不是 ins[1](面值),误以为校验坏了;Dropdown 是 button 不占 input 下标。已记入 docs。
+- skill 有没有提前警告:docs 提到免登录注入但格式不完整(漏 id/active=id),已修正。
+- 重来一次:先读 serverConfig.readStored 再注入;填表前先 console 出各 input 的 placeholder 对齐下标。
+- 门禁与合并均按 worktree 协议走,main 两次前进都靠 merge main 消化,ff-merge 一次成功。

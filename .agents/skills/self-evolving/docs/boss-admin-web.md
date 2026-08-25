@@ -10,6 +10,8 @@
 - 本地联调覆盖：`cd web/admin && BOSS_API_TARGET=http://127.0.0.1:18080 pnpm dev`
 - mock 服务（`scripts/mock-admin.sh`，端口 8092）只有 user/worker 端登录，**不能**用于 admin 登录冒烟
 - **dev 免登录**：~~`node web/admin/scripts/dev-token.mjs`~~ **已失效(HTTP 404,脚本仍按旧前缀 /auth/login 请求,2026-08-20 查证)**。现用:`curl -s http://192.168.0.102:28080/api/admin/v1/auth/login -X POST -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin123"}'` 取 `data.token`,浏览器 localStorage 注入 `boss.token` + `boss.servers`(JSON 数组含 baseUrl) + `boss.server.active` 后直访目标页;登录页表单无 id/selector,不要走表单 eval
+  - **2026-08-28 修正**:`boss.servers` 数组元素必须有 `id` 字段(string),`boss.server.active` 存的是该 **id 而非 name**;缺 id 会被 serverConfig.readStored 过滤掉 → 页面弹"未配置服务端"并被弹回登录页。可用注入:`localStorage.setItem('boss.servers',JSON.stringify([{id:'s102',name:'102',baseUrl:'http://192.168.0.102:28080'}]));localStorage.setItem('boss.server.active','s102')`
+  - React 受控输入用 cdp eval 填值必须走原生 setter + input 事件:`Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,v); el.dispatchEvent(new Event('input',{bubbles:true}))`;注意 Dropdown 组件渲染的是 button 不是 input,querySelectorAll('input') 下标会跳过下拉位
 
 ## 门禁
 
