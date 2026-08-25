@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// vitest 默认 environment: 'node'(vite.config.ts),DOM 断言必须逐文件声明 jsdom。
 import { describe, expect, it } from 'vitest'
 import { setDocMeta } from './docMeta'
 
@@ -7,8 +9,8 @@ describe('setDocMeta', () => {
     document.title = 'before'
     const restore = setDocMeta('文章标题', { description: '摘要', 'og:title': '文章标题' })
     expect(document.title).toBe('文章标题')
-    expect(document.head.querySelector('meta[name="description"]')?.content).toBe('摘要')
-    expect(document.head.querySelector('meta[property="og:title"]')?.content).toBe('文章标题')
+    expect(document.head.querySelector('meta[name="description"]')?.getAttribute('content')).toBe('摘要')
+    expect(document.head.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe('文章标题')
     restore()
     expect(document.title).toBe('before')
     expect(document.head.querySelector('meta[property="og:title"]')).toBeNull()
