@@ -613,3 +613,7 @@
 - 顺利:fetch-apk.sh + release upload 打通 CI 产物→发版→App 检查/下载→官网下载全链,sha256 三处一致(CI 本地/服务端入库/下载回流)。
 - 小坑:fetch-apk.sh 期望 boss-worker.apk 同存,worker 构建缺席时整包拉取失败;按单 apk 手动 cat 拉取绕过。CI 卷当前只有 user 包,worker 出包链路待查(下一轮)。
 - 客户端 latest 对 versionCode=0 返回 42200(校验 vc>0),App 真机恒有 vc>=1,无影响;留档避免下次误判为 bug。
+
+## 2026-08-25 fetch-apk "worker 未归档"误判复盘
+- 根因不是 CI:worker/user 双包一直在卷里,真凶是 fetch-apk.sh 用法承诺"sha 前缀可"但代码从未实现前缀展开,短前缀直拼路径必 No such file;且旧版把一切 cp 错误吞成 "not present",把传输层故障伪装成"文件不存在"。
+- 教训:①结论"X 不存在"前先绕过中间脚本直接对底层(docker run cat)验证一次;②warning 文案必须区分"真缺席"与"取失败",吞 stderr 的 warn 会把排查带偏一整轮;③ls 输出接 head 截断会静默丢字段——上一轮就是被自己 head -5 截断的列表带偏的。
