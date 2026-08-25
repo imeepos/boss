@@ -620,4 +620,5 @@ Your version is too old; update required to continue.</string>
     <string name="safety_section_checks">Safety Checklist</string>
     <string name="pc_up_to_date_title">Up to date</string>
     <string name="profile_kv_service_fmt">%1$d years of service</string>
+    <string name="load_default_fail">Load failed</string>
 </resources>

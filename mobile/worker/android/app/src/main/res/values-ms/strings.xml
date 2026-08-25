@@ -620,4 +620,5 @@ Versi anda terlalu lama; kemas kini diperlukan untuk teruskan.</string>
     <string name="safety_section_checks">Senarai Semakan Keselamatan</string>
     <string name="pc_up_to_date_title">Terkini</string>
     <string name="profile_kv_service_fmt">%1$d tahun berkhidmat</string>
+    <string name="load_default_fail">Gagal memuatkan</string>
 </resources>
