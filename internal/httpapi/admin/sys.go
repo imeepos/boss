@@ -71,7 +71,7 @@ func sysListParamsHandler(a *app.Application) gin.HandlerFunc {
 // sysListImportTasksHandler GET /import-tasks:导入任务记录(menu:importer)。
 func sysListImportTasksHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		list, err := a.User.ListImportTasks(c.Request.Context())
+		list, err := a.User.ListImportTasks(c.Request.Context(), c.Query("kind"), c.Query("operator"), c.Query("from"), c.Query("to"))
 		if err != nil {
 			respondErr(c, err)
 			return

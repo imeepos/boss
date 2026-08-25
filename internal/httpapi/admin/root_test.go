@@ -132,7 +132,7 @@ func (f *fakeUser) UpdateParam(context.Context, string, string, int64) error {
 func (f *fakeUser) RecordImportTask(context.Context, string, int64, int, int, int, int, map[string]any) error {
 	return nil
 }
-func (f *fakeUser) ListImportTasks(context.Context) ([]user.ImportTask, error) {
+func (f *fakeUser) ListImportTasks(context.Context, string, string, string, string) ([]user.ImportTask, error) {
 	return nil, nil
 }
 func (f *fakeUser) ListPermissions(context.Context) ([]user.Permission, error) {

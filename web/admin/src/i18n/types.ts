@@ -318,6 +318,9 @@ export interface Translations {
       totalRows: string
       skippedRows: string
       taskKindFilter: string
+      taskOperatorFilter: string
+      taskFromFilter: string
+      taskToFilter: string
       taskKindAddr: string
       taskKindGeo: string
       fileButton: string

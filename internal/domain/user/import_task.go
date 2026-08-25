@@ -44,15 +44,19 @@ func (s *PGStore) RecordImportTask(ctx context.Context, kind string, operatorID 
 	return nil
 }
 
-// ListImportTasks 导入记录清单(近 200 条,时间倒序)。
-func (s *PGStore) ListImportTasks(ctx context.Context) ([]ImportTask, error) {
+// ListImportTasks 导入记录清单(近 200 条,时间倒序),支持类型/操作人/时间范围筛选。
+func (s *PGStore) ListImportTasks(ctx context.Context, kind, operator, from, to string) ([]ImportTask, error) {
 	rows, err := s.db.Query(ctx, `
 		SELECT t.id, t.kind, COALESCE(a.real_name, ''), t.total, t.imported, t.failed, t.skipped,
 		       COALESCE(t.detail::text, '{}'), t.created_at
 		FROM import_tasks t
 		LEFT JOIN accounts a ON a.id = t.operator_id
+		WHERE ($1 = '' OR t.kind = $1)
+		  AND ($2 = '' OR a.real_name ILIKE '%' || $2 || '%')
+		  AND ($3 = '' OR t.created_at >= $3::timestamptz)
+		  AND ($4 = '' OR t.created_at < $4::timestamptz)
 		ORDER BY t.created_at DESC
-		LIMIT 200`)
+		LIMIT 200)`, kind, operator, from, to)
 	if err != nil {
 		return nil, fmt.Errorf("user: list import tasks: %w", err)
 	}
