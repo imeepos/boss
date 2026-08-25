@@ -660,3 +660,8 @@
 - skill 有没有提前警告:没有——磁盘余量、并行 main 前进、行数红线余量都是本次新踩。
 - 重来一次:① 跑 make check 前先 `df -h`,余量 <2G 先 `go clean -cache`(可释放 13G);② 改大文件前用 `python3 -c "print(open(f).read().count(chr(10))+1)"` 查行数,并先跑 check-contract-sync 看 C 项是否已红;③ rebase 期间绝不并发跑 gate(测试进程读写工作区,结果无效);④ ff-merge 前用 `git merge-base --is-ancestor HEAD <branch>` 确认 local main 领先 gitea/main 的 commit 也进了分支。
 - 结果:8 个域写入入口加非空+存在性门禁(lo_accounts/transfers/reserve_records/port_history/payments/complaints/scan_logs/alarms),DispatchOrder 幂等自愈 + Automation selfHeal 续推关闭环节8 无工单孤儿类;paymentCols 补读 customer_id;拆 pg_workflow.go/pg.go 守 300 行;make check 全绿后 ff-only 合并 main,worktree 与远端分支已清理。
+
+## 2026-08-29 客户中心审计收尾(audit-close-20260829)
+- 哪个坑浪费最多时间:无大坑;pgxmock 既有用例因 advance 新增前置查询集体红,逐 mock 补期望耗时最多。
+- skill 是否提前警告:红线#1(编辑前先 read,worktree 路径与主树路径不同文件)命中两次,靠规则避免。
+- 重来一次:改被多测试锁 SQL 的函数前,先 grep 所有 `ExpectQuery.*SELECT stage` 一次性列出受影响 mock。
