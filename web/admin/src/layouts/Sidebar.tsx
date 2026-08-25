@@ -27,7 +27,7 @@ function loadWidth() {
   return Number.isFinite(saved) && saved >= SIDE_MIN_W ? clampWidth(saved) : 240
 }
 
-// 已折叠分组 id 集合持久化(仅展开态侧栏生效;当前路由所在分组恒展示其子项)
+// 已折叠分组 id 集合持久化(仅展开态侧栏生效)
 function loadFolded(): Set<string> {
   try {
     const raw = localStorage.getItem(GROUP_FOLD_KEY)
@@ -50,19 +50,17 @@ function SideGroup({
   g,
   collapsed,
   folded,
-  active,
   onToggleFold,
   onNavigate,
 }: {
   g: MenuGroup
   collapsed: boolean
   folded: boolean
-  active: boolean
   onToggleFold: () => void
   onNavigate: () => void
 }) {
   const t = useT()
-  const showItems = collapsed || !folded || active
+  const showItems = collapsed || !folded
   const label = t.menu.groups[g.id] ?? g.label
   return (
     <section className="">
@@ -225,7 +223,6 @@ export function Sidebar({ groups, collapsed, drawerOpen, onToggleCollapse, onClo
             g={g}
             collapsed={collapsed}
             folded={folded.has(g.id)}
-            active={g.items.some((it) => pathname.startsWith(it.path))}
             onToggleFold={() => toggleFold(g.id)}
             onNavigate={onCloseDrawer}
           />
