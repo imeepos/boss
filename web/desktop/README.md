@@ -3,7 +3,7 @@
 用 Rust + Tauri 2 将 `web/admin` 包装成 macOS/Windows 桌面客户端。前端零改动:
 
 - dev:窗口加载 `http://localhost:5173`(admin 的 Vite dev server);
-- prod:内嵌 `web/admin/dist` 静态资源。
+- prod:内嵌 `web/admin/dist` 静态资源，不加载远程 URL。
 
 API 访问:admin 前端一律直连所选服务端的绝对接口地址(后端已配置 CORS;
 登录页/服务端配置页切换,localStorage 记忆,内置默认 `http://192.168.0.102:28080`)。
@@ -21,9 +21,12 @@ API 访问:admin 前端一律直连所选服务端的绝对接口地址(后端�
 cd web/admin && pnpm dev          # 5173
 cd web/desktop && pnpm install && pnpm desktop:dev
 
-# 生产打包
-cd web/admin && pnpm build        # 产出 web/admin/dist
-cd web/desktop && pnpm desktop:build
+# 生产打包(一步到位:beforeBuildCommand 自动先构建 admin 静态资源再打桌面包)
+cd web/desktop && pnpm install && pnpm desktop:build
+
+# 等价手动两段(无 beforeBuildCommand 的旧流程):
+# cd web/admin && pnpm build        # 产出 web/admin/dist
+# cd web/desktop && pnpm desktop:build
 ```
 
 纯 `cargo run`(不经 tauri-cli)时使用 `frontendDist`(需先构建 admin dist);

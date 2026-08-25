@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.ymm.boss.desktop",
   "build": {
+    "beforeDevCommand": "pnpm --dir ../admin dev --host 127.0.0.1",
+    "beforeBuildCommand": "pnpm --dir ../admin build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../admin/dist"
   },
