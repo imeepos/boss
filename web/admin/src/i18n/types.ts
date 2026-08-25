@@ -341,6 +341,14 @@ export interface Translations {
       importedGeo: string
       addrColumns: string[]
       geoSections: string[]
+      entityTitle: string
+      entityHint: string
+      entityNames: Record<string, string>
+      entityProgress: string
+      entityDone: string
+      entityRowFail: string
+      entityAborted: string
+      reasonEntityBadRow: string
     }
     account: {
       title: string
