@@ -1,4 +1,4 @@
-// 积分任务规则 Tab:列表 + 新建 + 停用。周期 ONE_TIME/DAILY/MONTHLY。
+// 积分任务规则 Tab:列表 + 抽屉式新建 + 停用。周期 ONE_TIME/DAILY/MONTHLY。
 import { useEffect, useState } from 'react'
 import { listTasks, createTask, disableTask, type LoyTask } from '../../../api/marketing'
 import { useT } from '../../../i18n'
@@ -7,6 +7,7 @@ import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { ErrorBanner, EmptyState, ToolbarButton, FormField } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
+import { Drawer } from '../../../components/Drawer'
 
 const PERIOD_OPTIONS = [
   { value: 'ONE_TIME', label: '一次性' },
@@ -14,14 +15,17 @@ const PERIOD_OPTIONS = [
   { value: 'MONTHLY', label: '每月' },
 ]
 
+const EMPTY_FORM = { code: '', name: '', points: '', period: 'ONE_TIME' }
+
 export default function TasksTab() {
   const t = useT()
   const m = t.pages.marketing
   const [items, setItems] = useState<LoyTask[]>([])
   const [error, setError] = useState('')
+  const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [formError, setFormError] = useState('')
-  const [form, setForm] = useState({ code: '', name: '', points: '', period: 'ONE_TIME' })
+  const [form, setForm] = useState(EMPTY_FORM)
 
   const load = () => {
     setError('')
@@ -30,6 +34,12 @@ export default function TasksTab() {
       .catch((e) => setError(e instanceof Error ? e.message : m.loadFail))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const closeForm = () => {
+    setOpen(false)
+    setForm(EMPTY_FORM)
+    setFormError('')
+  }
 
   const submit = async () => {
     if (creating) return
@@ -43,7 +53,7 @@ export default function TasksTab() {
         code: form.code.trim(), name: form.name.trim(),
         points: Number(form.points), period: form.period as LoyTask['period'],
       })
-      setForm({ code: '', name: '', points: '', period: 'ONE_TIME' })
+      closeForm()
       load()
     } catch (e) {
       setFormError(e instanceof Error ? e.message : m.loadFail)
@@ -60,31 +70,10 @@ export default function TasksTab() {
 
   return (
     <div>
-      <Card className="mb-3 p-4">
-        <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <FormField label={m.taskCode} required>
-            <input className="w-full" value={form.code}
-              onChange={(e) => setForm({ ...form, code: e.target.value })} />
-          </FormField>
-          <FormField label={m.colName} required>
-            <input className="w-full" value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </FormField>
-          <FormField label={m.taskPoints} required>
-            <input className="w-full" inputMode="numeric" value={form.points}
-              onChange={(e) => setForm({ ...form, points: e.target.value })} />
-          </FormField>
-          <FormField label={m.taskPeriod}>
-            <Dropdown value={form.period} options={PERIOD_OPTIONS} ariaLabel={m.taskPeriod}
-              onChange={(v) => setForm({ ...form, period: v })} />
-          </FormField>
-        </div>
-        {formError && <ErrorBanner message={formError} />}
-        <div className="flex justify-end">
-          <ToolbarButton onClick={submit}>{creating ? m.creating : m.create}</ToolbarButton>
-        </div>
-      </Card>
       <Card className="p-4">
+        <div className="mb-3 flex justify-end">
+          <ToolbarButton primary onClick={() => setOpen(true)}>+ {m.create}</ToolbarButton>
+        </div>
         {error ? <ErrorBanner message={error} /> : (
           <Table>
             <TableHeader>
@@ -122,6 +111,39 @@ export default function TasksTab() {
           </Table>
         )}
       </Card>
+      {open && (
+        <Drawer title={m.create} onClose={closeForm}
+          footer={
+            <>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={closeForm}>
+                {t.common.confirmDialog.cancel}
+              </button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={creating} onClick={submit}>
+                {creating ? m.creating : m.create}
+              </button>
+            </>
+          }>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={m.taskCode} required>
+              <input className="w-full" value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })} />
+            </FormField>
+            <FormField label={m.colName} required>
+              <input className="w-full" value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </FormField>
+            <FormField label={m.taskPoints} required>
+              <input className="w-full" inputMode="numeric" value={form.points}
+                onChange={(e) => setForm({ ...form, points: e.target.value })} />
+            </FormField>
+            <FormField label={m.taskPeriod}>
+              <Dropdown value={form.period} options={PERIOD_OPTIONS} ariaLabel={m.taskPeriod}
+                onChange={(v) => setForm({ ...form, period: v })} />
+            </FormField>
+          </div>
+          {formError && <div className="mt-3"><ErrorBanner message={formError} /></div>}
+        </Drawer>
+      )}
     </div>
   )
 }

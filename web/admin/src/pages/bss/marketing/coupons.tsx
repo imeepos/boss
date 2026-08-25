@@ -1,4 +1,4 @@
-// 券模板管理 Tab:列表 + 新建 + 停用。券类型/门槛/面值单位见 promotion.yaml。
+// 券模板管理 Tab:列表 + 抽屉式新建 + 停用。券类型/门槛/面值单位见 promotion.yaml。
 import { useEffect, useState } from 'react'
 import {
   listCouponTemplates, createCouponTemplate, disableCouponTemplate, type CouponTemplate,
@@ -9,12 +9,17 @@ import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { ErrorBanner, EmptyState, ToolbarButton, FormField } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
+import { Drawer } from '../../../components/Drawer'
 
 const TYPE_OPTIONS = [
   { value: 'CASH', label: '代金券' },
   { value: 'FULL_CUT', label: '满减券' },
   { value: 'DISCOUNT', label: '折扣券' },
 ]
+
+const EMPTY_FORM = {
+  name: '', type: 'CASH', faceValueYuan: '', thresholdYuan: '', validDays: '', totalQty: '',
+}
 
 /** 分转元展示(营销域金额单位一律为分)。 */
 function yuan(cents: number): string {
@@ -26,11 +31,10 @@ export default function CouponTemplatesTab() {
   const m = t.pages.marketing
   const [items, setItems] = useState<CouponTemplate[]>([])
   const [error, setError] = useState('')
+  const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [formError, setFormError] = useState('')
-  const [form, setForm] = useState({
-    name: '', type: 'CASH', faceValueYuan: '', thresholdYuan: '', validDays: '', totalQty: '',
-  })
+  const [form, setForm] = useState(EMPTY_FORM)
 
   const load = () => {
     setError('')
@@ -39,6 +43,12 @@ export default function CouponTemplatesTab() {
       .catch((e) => setError(e instanceof Error ? e.message : m.loadFail))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const closeForm = () => {
+    setOpen(false)
+    setForm(EMPTY_FORM)
+    setFormError('')
+  }
 
   const submit = async () => {
     if (creating) return
@@ -57,7 +67,7 @@ export default function CouponTemplatesTab() {
         validDays: Number(form.validDays || 0),
         totalQty: Number(form.totalQty || 0),
       })
-      setForm({ name: '', type: 'CASH', faceValueYuan: '', thresholdYuan: '', validDays: '', totalQty: '' })
+      closeForm()
       load()
     } catch (e) {
       setFormError(e instanceof Error ? e.message : m.loadFail)
@@ -67,49 +77,17 @@ export default function CouponTemplatesTab() {
   }
 
   const disable = async (id: number) => {
-    try {
-      await disableCouponTemplate(id); load()
-    } catch (e) {
+    try { await disableCouponTemplate(id); load() } catch (e) {
       setError(e instanceof Error ? e.message : m.loadFail)
     }
   }
 
-  const inputStyle = { width: '100%' }
   return (
     <div>
-      <Card className="mb-3 p-4">
-        <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-          <FormField label={m.couponName} required>
-            <input className="w-full" style={inputStyle} value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </FormField>
-          <FormField label={m.couponType}>
-            <Dropdown value={form.type} options={TYPE_OPTIONS} ariaLabel={m.couponType}
-              onChange={(v) => setForm({ ...form, type: v })} />
-          </FormField>
-          <FormField label={m.couponFaceYuan} required>
-            <input style={inputStyle} inputMode="decimal" value={form.faceValueYuan}
-              onChange={(e) => setForm({ ...form, faceValueYuan: e.target.value })} />
-          </FormField>
-          <FormField label={m.couponThresholdYuan}>
-            <input style={inputStyle} inputMode="decimal" value={form.thresholdYuan}
-              onChange={(e) => setForm({ ...form, thresholdYuan: e.target.value })} />
-          </FormField>
-          <FormField label={m.couponValidDays}>
-            <input style={inputStyle} inputMode="numeric" value={form.validDays}
-              onChange={(e) => setForm({ ...form, validDays: e.target.value })} />
-          </FormField>
-          <FormField label={m.couponTotalQty}>
-            <input style={inputStyle} inputMode="numeric" value={form.totalQty}
-              onChange={(e) => setForm({ ...form, totalQty: e.target.value })} />
-          </FormField>
-        </div>
-        {formError && <ErrorBanner message={formError} />}
-        <div className="flex justify-end">
-          <ToolbarButton onClick={submit}>{creating ? m.creating : m.create}</ToolbarButton>
-        </div>
-      </Card>
       <Card className="p-4">
+        <div className="mb-3 flex justify-end">
+          <ToolbarButton primary onClick={() => setOpen(true)}>+ {m.create}</ToolbarButton>
+        </div>
         {error ? <ErrorBanner message={error} /> : (
           <Table>
             <TableHeader>
@@ -151,6 +129,47 @@ export default function CouponTemplatesTab() {
           </Table>
         )}
       </Card>
+      {open && (
+        <Drawer title={m.create} onClose={closeForm}
+          footer={
+            <>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={closeForm}>
+                {t.common.confirmDialog.cancel}
+              </button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={creating} onClick={submit}>
+                {creating ? m.creating : m.create}
+              </button>
+            </>
+          }>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={m.couponName} required>
+              <input className="w-full" value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </FormField>
+            <FormField label={m.couponType}>
+              <Dropdown value={form.type} options={TYPE_OPTIONS} ariaLabel={m.couponType}
+                onChange={(v) => setForm({ ...form, type: v })} />
+            </FormField>
+            <FormField label={m.couponFaceYuan} required>
+              <input className="w-full" inputMode="decimal" value={form.faceValueYuan}
+                onChange={(e) => setForm({ ...form, faceValueYuan: e.target.value })} />
+            </FormField>
+            <FormField label={m.couponThresholdYuan}>
+              <input className="w-full" inputMode="decimal" value={form.thresholdYuan}
+                onChange={(e) => setForm({ ...form, thresholdYuan: e.target.value })} />
+            </FormField>
+            <FormField label={m.couponValidDays}>
+              <input className="w-full" inputMode="numeric" value={form.validDays}
+                onChange={(e) => setForm({ ...form, validDays: e.target.value })} />
+            </FormField>
+            <FormField label={m.couponTotalQty}>
+              <input className="w-full" inputMode="numeric" value={form.totalQty}
+                onChange={(e) => setForm({ ...form, totalQty: e.target.value })} />
+            </FormField>
+          </div>
+          {formError && <div className="mt-3"><ErrorBanner message={formError} /></div>}
+        </Drawer>
+      )}
     </div>
   )
 }
