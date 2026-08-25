@@ -3,7 +3,8 @@
 // 公开侧由后端详情端点重写为 /site/posts/:slug/img/:id(见 site_img.go)。
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { fetchAttachmentFile, uploadAttachment } from '../../../api/attachments'
+import { fetchAttachmentFile } from '../../../api/attachments'
+import { AttachmentPickerDialog } from '../../../components/AttachmentManager/PickerDialog'
 
 // att/N 引用 → 附件 id;非该形态返回 null。
 const attId = (src: string): number | null => {
@@ -44,7 +45,6 @@ export function MarkdownEditor({
   texts: { uploadImg: string; uploadFail: string }
 }) {
   const ref = useRef<HTMLTextAreaElement>(null)
-  const [err, setErr] = useState('')
 
   // 用选区包裹/行前缀插入;无选区时插入占位符并选中,便于直接键入。
   const apply = (wrap: [string, string] | null, prefix: string, placeholder: string) => {
@@ -68,15 +68,11 @@ export function MarkdownEditor({
     onChange(value.slice(0, s) + text + value.slice(s))
   }
 
-  const uploadImg = async (f: File | undefined) => {
-    if (!f) return
-    setErr('')
-    try {
-      const at = await uploadAttachment(f)
-      if (at) insert(`![${at.fileName.replace(/[[\]]/g, '')}](att/${at.id})`)
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : texts.uploadFail)
-    }
+  const [pickImg, setPickImg] = useState(false)
+
+  // 选择器(可多选)回填:每张图插入一行 ](att/N) 引用,alt 用文件名去括号。
+  const insertPicked = (items: { id: number; fileName: string }[]) => {
+    for (const at of items) insert(`![${at.fileName.replace(/[[\]]/g, '')}](att/${at.id})`)
   }
 
   return <div>
@@ -88,12 +84,8 @@ export function MarkdownEditor({
       <button type="button" className={tbBtn} title="Code" onClick={() => apply(['`', '`'], '', 'code')}>{'<>'}</button>
       <button type="button" className={tbBtn} title="Link" onClick={() => apply(['[', '](https://)'], '', '链接文字')}>Link</button>
       <button type="button" className={tbBtn} title="List" onClick={() => apply(null, '- ', '列表项')}>List</button>
-      <label className={tbBtn + ' inline-flex cursor-pointer items-center'} title={texts.uploadImg}>
-        Image
-        <input type="file" accept="image/*" className="hidden" onChange={(e) => { uploadImg(e.target.files?.[0]); e.currentTarget.value = '' }} />
-      </label>
-      {err && <span className="text-xs text-[var(--color-danger)]">{err}</span>}
-    </div>
+      <button type="button" className={tbBtn} title={texts.uploadImg} onClick={() => setPickImg(true)}>Image</button>
+      </div>
     <div className="grid gap-3 md:grid-cols-2">
       <textarea
         ref={ref}
@@ -108,5 +100,6 @@ export function MarkdownEditor({
         </ReactMarkdown>
       </div>
     </div>
+    <AttachmentPickerDialog open={pickImg} onClose={() => setPickImg(false)} multiple imageOnly onPick={insertPicked} />
   </div>
 }

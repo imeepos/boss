@@ -140,6 +140,10 @@ const msMY: Translations = {
   },
   attachmentManager: {
     title: 'Lampiran',
+    pickerTitle: 'Pilih lampiran',
+    pickerTitleMulti: 'Pilih lampiran (pelbagai)',
+    pickerUse: 'Guna pilihan',
+    pickerImageOnlyHint: 'Tiada lampiran imej dalam paparan ini; muat naik dahulu',
     searchPlaceholder: 'Cari nama fail',
     search: 'Cari',
     upload: 'Muat naik',
@@ -1121,6 +1125,7 @@ const msMY: Translations = {
       fCover: 'Imej muka depan',
       fCoverRemove: 'Buang muka depan',
       filterAll: 'Semua',
+      pickCover: 'Pilih daripada lampiran',
       newTitle: 'Kandungan Baharu',
       editTitle: 'Sunting Kandungan',
       back: 'Kembali ke senarai',

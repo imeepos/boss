@@ -31,10 +31,12 @@ export interface AttachmentManagerProps {
   selectable?: boolean
   selectedIds?: number[]
   onSelectionChange?: (ids: number[]) => void
+  /** 当前页条目快照回调(选择器弹窗回填 DTO 用;随每次加载触发)。 */
+  onItemsLoaded?: (items: AttachmentDTO[]) => void
 }
 
 export function AttachmentManager({
-  uploaderType, uploaderId, selectable = false, selectedIds = [], onSelectionChange,
+  uploaderType, uploaderId, selectable = false, selectedIds = [], onSelectionChange, onItemsLoaded,
 }: AttachmentManagerProps) {
   const { attachmentManager: t, common } = useT()
   const confirmDialog = useConfirm()
@@ -69,6 +71,7 @@ export function AttachmentManager({
       }))
       setItems(data.items ?? [])
       setTotal(data.total ?? 0)
+      onItemsLoaded?.(data.items ?? [])
     } catch (e) {
       setItems([])
       setTotal(0)
@@ -76,7 +79,7 @@ export function AttachmentManager({
     } finally {
       setLoading(false)
     }
-  }, [effectiveType, effectiveId, kw, pageSize])
+  }, [effectiveType, effectiveId, kw, pageSize, onItemsLoaded])
 
   useEffect(() => { void load(page) }, [load, page])
 

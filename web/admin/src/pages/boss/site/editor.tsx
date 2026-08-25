@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
-import { uploadAttachment } from '../../../api/attachments'
+import { AttachmentPickerDialog } from '../../../components/AttachmentManager/PickerDialog'
 import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { Dropdown } from '../../../components/Dropdown'
@@ -55,15 +55,7 @@ export default function SitePostEditorPage() {
       nav('/boss/site')
     } catch (e) { setError(e instanceof Error ? e.message : s.saveFail); setBusy(false) }
   }
-  const uploadCover = async (f: File | undefined) => {
-    if (!f) return
-    setBusy(true)
-    try {
-      const at = await uploadAttachment(f)
-      if (at) setForm((v) => ({ ...v, coverAttachmentId: at.id }))
-    } catch (e) { setError(e instanceof Error ? e.message : s.actionFail) }
-    setBusy(false)
-  }
+  const [pickCover, setPickCover] = useState(false)
   const stLabel = (v: string) => (v === 'PUBLISHED' ? s.stPublished : v === 'OFFLINE' ? s.stOffline : s.stDraft)
   const catName = (code: string) => cats.find((c) => c.code === code)?.name ?? code
 
@@ -81,19 +73,23 @@ export default function SitePostEditorPage() {
           <div className="mt-1"><Dropdown options={[{ value: 'DRAFT', label: s.stDraft }, { value: 'PUBLISHED', label: s.stPublished }, { value: 'OFFLINE', label: s.stOffline }]} value={stLabel(form.status)} onChange={(v) => setForm({ ...form, status: v })} ariaLabel={s.fStatus} /></div>
         </label>
         <label className="text-xs">{s.fAuthor}<input className={inputCls + ' mt-1'} value={form.authorName} onChange={(e) => setForm({ ...form, authorName: e.target.value })} /></label>
-        <label className="text-xs">{s.fCover}
-          <input className="mt-1 block w-full text-xs text-[var(--shell-content-text)] file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-[var(--shell-input-border)] file:bg-[var(--shell-input-bg)] file:px-3 file:py-1.5 file:text-xs" type="file" accept="image/*" onChange={(e) => uploadCover(e.target.files?.[0])} />
-        </label>
-        {form.coverAttachmentId > 0 && <div className="flex items-center gap-3 text-xs text-[var(--shell-content-text)]">
-          <span>#{form.coverAttachmentId}</span>
-          <button type="button" className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] px-3 text-xs" onClick={() => setForm({ ...form, coverAttachmentId: 0 })}>{s.fCoverRemove}</button>
-        </div>}
+        <div className="text-xs">{s.fCover}
+          <div className="mt-1 flex items-center gap-3">
+            <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]" onClick={() => setPickCover(true)}>{s.pickCover}</button>
+            {form.coverAttachmentId > 0 && <>
+              <span className="text-xs text-[var(--shell-content-text)]">#{form.coverAttachmentId}</span>
+              <button type="button" className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] px-3 text-xs" onClick={() => setForm({ ...form, coverAttachmentId: 0 })}>{s.fCoverRemove}</button>
+            </>}
+          </div>
+        </div>
         <label className="text-xs md:col-span-2">{s.fSummary}<input className={inputCls + ' mt-1'} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} /></label>
       </div>
       <div className="mt-4">
         <div className="mb-1 text-xs">{s.fContent}</div>
         <MarkdownEditor value={form.content} onChange={(v) => setForm({ ...form, content: v })} texts={{ uploadImg: s.uploadImg, uploadFail: s.uploadFail }} />
       </div>
+      <AttachmentPickerDialog open={pickCover} onClose={() => setPickCover(false)} imageOnly
+        onPick={(items) => { if (items[0]) setForm((v) => ({ ...v, coverAttachmentId: items[0].id })) }} />
       <div className="mt-4 flex gap-3">
         <button type="button" className="primary h-8 cursor-pointer rounded-sm px-4 text-[13px]" disabled={busy} onClick={save}>{s.save}</button>
         <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)]" onClick={() => nav('/boss/site')}>{s.back}</button>
