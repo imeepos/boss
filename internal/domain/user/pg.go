@@ -291,7 +291,6 @@ func inSubtree(scopePath, ownerPath string) bool {
 	return ownerPath == scopePath || strings.HasPrefix(ownerPath, scopePath+".")
 }
 
-// parentOf 由 ltree 物化路径反查父路径(subpath(path,0,-1) 的应用层等价实现)。
 func parentOf(path string) string {
 	if i := strings.LastIndex(path, "."); i >= 0 {
 		return path[:i]
