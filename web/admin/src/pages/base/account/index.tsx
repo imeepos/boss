@@ -10,6 +10,7 @@ import { DetailDrawer } from '../../org/shared'
 import { filterAccounts, pageSlice, type AccountRow } from './list'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from './form'
 import { AccountFormDrawer } from './AccountForm'
+import { BatchImportEntry } from '../importer/BatchImportEntry'
 import { TableStateRow } from '../../../components/business'
 
 export default function AccountListPage() {
@@ -113,6 +114,7 @@ export default function AccountListPage() {
             ariaLabel={t.pages.account.allStatus}
           />
           <span className="spacer" />
+          <BatchImportEntry kind="account" onImported={load} />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setForm(emptyForm())}>
             {t.pages.account.create}

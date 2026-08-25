@@ -5,6 +5,7 @@ import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
 const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
@@ -12,6 +13,8 @@ const FIELD = 'flex flex-col gap-1'
 const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 type Tab = 'grids' | 'facilities' | 'sites' | 'devices'
+/** tab → 批量导入实体 kind(与 base/importer/entities.ts 对齐)。 */
+const TAB_KIND: Record<Tab, string> = { grids: 'odn_grid', facilities: 'odn_facility', sites: 'odn_site', devices: 'odn_device' }
 type Grid = { prvCode: string; cityPrefix: string; gridCode: number; name: string; coverage: string; status: string; facilities: number; warn: boolean }
 type Facility = { code: string; kind: string; prvCode: string; cityPrefix: string; gridCode: number; name: string; lat: number | null; lng: number | null; status: string }
 type Site = { prvCode: string; cityPrefix: string; siteNo: number; name: string; lat: number | null; lng: number | null; status: string }
@@ -70,7 +73,7 @@ export default function ODNPage() {
   }
 
   return <div>
-    <div className="mb-4 flex items-center justify-between"><div><h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{g.title}</h2><p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{g.subtitle}</p></div><ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? g.cancel : g.add}</ToolbarButton></div>
+    <div className="mb-4 flex items-center justify-between"><div><h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{g.title}</h2><p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{g.subtitle}</p></div><div className="flex items-center gap-2"><BatchImportEntry kind={TAB_KIND[tab]} onImported={load} /><ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? g.cancel : g.add}</ToolbarButton></div></div>
     <div className="mb-4 flex gap-6 border-b border-[var(--shell-side-border)]">{(['grids', 'facilities', 'sites', 'devices'] as Tab[]).map((key) => <button key={key} className={`cursor-pointer border-b-2 px-1 py-3 text-sm ${tab === key ? 'border-[var(--color-brand-gold-500)] font-semibold text-[var(--shell-heading)]' : 'border-transparent text-[var(--shell-content-text)]'}`} onClick={() => { setTab(key); setShowForm(false) }}>{g.tabs[key]}</button>)}</div>
     <CityFilter prv={prv} city={city} setPrv={setPrv} setCity={setCity} />
     {error && <ErrorBanner message={error} className="mt-3" />}

@@ -10,6 +10,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { SERVICE_STATUSES, filterCustomers, pageSlice } from './filter'
 import type { CustomerRow } from './types'
 import { VerifyLogsDrawer } from './VerifyLogsDrawer'
+import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { fmtTime } from '../../../lib/format'
 import { TableStateRow } from '../../../components/business'
 
@@ -59,6 +60,7 @@ export default function CustomerPage() {
             ariaLabel={c.allStatus}
           />
           <span className="spacer" />
+          <BatchImportEntry kind="customer" onImported={load} />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (

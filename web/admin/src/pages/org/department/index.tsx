@@ -6,6 +6,7 @@ import { useT } from '../../../i18n'
 import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterDepartments, pageSlice, type DepartmentRow } from './filter'
 import { DeptFormDrawer, emptyDeptForm, rowToDeptForm, type DeptFormValues } from './DeptForm'
+import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
 
@@ -57,6 +58,7 @@ export default function DepartmentPage() {
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.department.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
+          <BatchImportEntry kind="department" onImported={load} />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setForm(emptyDeptForm())}>
             {t.pages.department.create}

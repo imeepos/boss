@@ -10,6 +10,7 @@ import type { ProductRow } from './types'
 import { fmtFee, fmtTime } from '../../../lib/format'
 import { PriceHistoryDrawer } from './PriceHistoryDrawer'
 import { emptyProductForm, ProductFormDrawer, type ProductFormValues } from './ProductForm'
+import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { TableStateRow } from '../../../components/business'
 
 function pageSlice<T>(rows: T[], page: number, pageSize: number): T[] {
@@ -85,6 +86,7 @@ export default function ProductPage() {
             ariaLabel={p.allCompany}
           />
           <span className="spacer" />
+          <BatchImportEntry kind="product" onImported={load} />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setForm(emptyProductForm())}>{p.create}</button>
         </div>
