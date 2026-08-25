@@ -95,5 +95,17 @@ done
 dur=$(( $(date +%s)-start ))
 total=$((OK+FAIL)); rate=$(python3 -c "print(f'{$OK/$total*100:.1f}' if $total else '0.0')")
 echo "结果: $OK/$total 成功率 $rate%  总耗时 ${dur}s"
-[ "$FAIL" -eq 0 ] && exit 0
+
+# 收尾自清理(2026-08-29 固化):验收造数不过夜——按 acc_ 标记回收本轮及历史造数
+# (备份+单事务,见 acceptance-cleanup.sh);SKIP_CLEANUP=1 可跳过。
+rc=0
+if [ "${SKIP_CLEANUP:-0}" != "1" ]; then
+  echo "收尾: 造数自清理"
+  "$ROOT/scripts/ops/acceptance-cleanup.sh" --apply || rc=1
+fi
+# 巡检门禁:任一孤儿类 >0 即失败,防造数泄漏无人察觉(2026-08-25 审计 §五.2)。
+echo "收尾: 孤儿巡检门禁"
+"$ROOT/scripts/ops/db-patrol-gate.sh" || rc=1
+
+[ "$FAIL" -eq 0 ] && [ "$rc" -eq 0 ] && exit 0
 exit 1
