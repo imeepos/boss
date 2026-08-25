@@ -665,3 +665,8 @@
 - 哪个坑浪费最多时间:无大坑;pgxmock 既有用例因 advance 新增前置查询集体红,逐 mock 补期望耗时最多。
 - skill 是否提前警告:红线#1(编辑前先 read,worktree 路径与主树路径不同文件)命中两次,靠规则避免。
 - 重来一次:改被多测试锁 SQL 的函数前,先 grep 所有 `ExpectQuery.*SELECT stage` 一次性列出受影响 mock。
+
+## 2026-09-22 admin 批量导入功能(importer 扩展)
+- 哪个坑浪费最多时间:cdp-capture 三次失败(127.0.0.1 连不上 vite、eval const 撞名、跨 run localStorage 不保留),skill 文档只写了注入键名没写"每次都是新 profile"。
+- skill 有没有提前警告我:部分(注入方法有),profile 不保留没警告。
+- 重来一次:先读 cdp-capture.mjs 源码确认 eval 语义,再一次性写完整 eval 链。
