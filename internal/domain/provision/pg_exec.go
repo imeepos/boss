@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // ErrIllegalTransition 非法任务状态迁移。
@@ -15,13 +17,35 @@ var ErrIllegalTransition = errors.New("provision: illegal transition")
 // ErrTaskNotFound 任务不存在。
 var ErrTaskNotFound = errors.New("provision: task not found")
 
-// ExecuteTask 执行下发任务:PENDING→DOING→DONE,成功写 SUCCESS 日志。
-// 设备协议交互由 provisioner 守护进程在两次迁移之间执行;此处固化状态机与留痕。
-func (s *PGStore) ExecuteTask(ctx context.Context, taskID int64) error {
-	if err := s.transit(ctx, taskID, "DOING", "PENDING"); err != nil {
-		return err
+// ClaimTask 原子领取一个 PENDING 任务:UPDATE ... RETURNING 单语句完成
+// 状态占位(DOING)与返回,FOR UPDATE SKIP LOCKED 防止多 provisioner 重复下发。
+// 无待办返回 (nil, nil)。
+func (s *PGStore) ClaimTask(ctx context.Context) (*Task, error) {
+	var t Task
+	err := s.db.QueryRow(ctx, `
+		UPDATE provision_tasks SET status = 'DOING'
+		WHERE id = (
+			SELECT id FROM provision_tasks
+			WHERE status = 'PENDING'
+			ORDER BY id
+			LIMIT 1
+			FOR UPDATE SKIP LOCKED
+		)
+		RETURNING id, task_no, order_id, stage_event, lo_account_id, template_id, status`,
+	).Scan(&t.ID, &t.TaskNo, &t.OrderID, &t.StageEvent, &t.LoAccountID, &t.TemplateID, &t.Status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
 	}
-	if err := s.transit(ctx, taskID, "DONE", "DOING"); err != nil {
+	if err != nil {
+		return nil, fmt.Errorf("provision: claim task: %w", err)
+	}
+	return &t, nil
+}
+
+// ExecuteTask 完成下发任务:DOING 或 PENDING→DONE,成功写 SUCCESS 日志。
+// PENDING 直接完成仅用于直调/测试;provisioner 守护进程先 ClaimTask(DOING)再执行。
+func (s *PGStore) ExecuteTask(ctx context.Context, taskID int64) error {
+	if err := s.transit(ctx, taskID, "DONE", "DOING", "PENDING"); err != nil {
 		return err
 	}
 	_, err := s.AppendLog(ctx, Log{TaskID: taskID, Result: "SUCCESS"})

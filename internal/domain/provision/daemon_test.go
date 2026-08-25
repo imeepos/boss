@@ -9,12 +9,23 @@ import (
 
 type fakeProvSvc struct {
 	ProvisionService
-	tasks  []Task
-	failed []string
-	done   []int64
+	tasks   []Task
+	claimAt int // 按序领取,超量返回 nil
+	failed  []string
+	done    []int64
 }
 
-func (f *fakeProvSvc) ListTasks(context.Context) ([]Task, error) { return f.tasks, nil }
+func (f *fakeProvSvc) ClaimTask(context.Context) (*Task, error) {
+	for i := f.claimAt; i < len(f.tasks); i++ {
+		if f.tasks[i].Status == "PENDING" {
+			f.claimAt = i + 1
+			t := f.tasks[i]
+			t.Status = "DOING"
+			return &t, nil
+		}
+	}
+	return nil, nil
+}
 func (f *fakeProvSvc) FailTask(_ context.Context, id int64, reason string) error {
 	f.failed = append(f.failed, reason)
 	return nil
