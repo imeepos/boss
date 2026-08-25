@@ -71,3 +71,4 @@ portal_sms_codes, emulator, 10.0.2.2, adb reverse
 | 21 | lessons（2026-08-21） | build.gradle.kts 默认端口与真实服务不一致时(`8080` vs `28080`),用 `-PbossBaseUrl=...` 覆盖;建 feature 前先 `grep -n "BOSS_BASE_URL" build.gradle.kts` 确认 debug 端口 |
 | 22 | lessons（2026-08-21） | dev-mode 降级:后端 BOSS_DEBUG_SMS=0 时 /debug/sms-code 404,Android 侧 `devAutoFillSms` catch Exception 返回 false,不填入验证码也不报错——正确降级行为 |
 | 23 | techniques（2026-08-21） | 开发模式开关持久化:SharedPreferences 读写(`boss_user_dev` prefs + `boss_user_dev_mode` key),与 LangStore/TokenStore 同源但不同 prefs 文件,避免 token 被清时连带丢失开发配置 |
+| 24 | techniques（2026-08-25） | gradle wrapper 分发版缓存缺 `.ok` 标记时,每次构建都联网 forceFetch 下载失败(SSL read timeout, networkTimeout=10000);直接用 `~/.gradle/wrapper/dists/gradle-8.14.3-bin/<hash>/gradle-8.14.3/bin/gradle` 绕开下载环节;构建退出码禁止经管道 tail 取(吞码假 EXIT=0),重定向日志文件后单独读 |
