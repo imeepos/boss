@@ -417,6 +417,9 @@ const msMY: Translations = {
       entityRowFail: 'Baris {row} gagal: {msg}',
       entityAborted: 'Sesi tamat, dihentikan ({done}/{total} selesai)',
       reasonEntityBadRow: 'Baris {row}: medan {field} hilang atau tidak sah',
+      entityTooMany: '{count} baris melebihi had {max} sekali import, sila import secara berkelompok',
+      entityFailMore: '{count} baris gagal lagi tidak ditunjukkan',
+      entityExportFail: 'Eksport baris gagal (JSON, boleh diimport semula)',
     },
     account: {
       title: 'Akaun & Peranan',

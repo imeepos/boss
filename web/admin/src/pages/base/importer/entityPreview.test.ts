@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
 import { findEntity, IMPORT_ENTITIES } from './entities'
-import { coerceEntityRow, entityTemplateJson, parseEntityRows } from './entityPreview'
+import { coerceEntityRow, entityTemplateJson, MAX_IMPORT_ROWS, parseEntityRows } from './entityPreview'
 import { entityExcelTemplate, parseEntityExcel } from './excel'
 
 describe('实体定义', () => {
@@ -42,9 +42,15 @@ describe('parseEntityRows', () => {
   const dept = findEntity('department') as NonNullable<ReturnType<typeof findEntity>>
   it('接受数组与 {rows} 信封,数值列转数值', () => {
     expect(parseEntityRows(dept, [{ legalEntityId: 1, name: 'A' }, { legalEntityId: '2', name: 'B' }]))
-      .toEqual({ ok: true, rows: [{ legalEntityId: 1, name: 'A' }, { legalEntityId: 2, name: 'B' }] })
-    expect(parseEntityRows(dept, { rows: [{ legalEntityId: 1, name: 'A' }] }))
-      .toEqual({ ok: true, rows: [{ legalEntityId: 1, name: 'A' }] })
+      .toMatchObject({ ok: true, rows: [{ legalEntityId: 1, name: 'A' }, { legalEntityId: 2, name: 'B' }] })
+    const env = parseEntityRows(dept, { rows: [{ legalEntityId: 1, name: 'A' }] })
+    expect(env).toMatchObject({ ok: true, rows: [{ legalEntityId: 1, name: 'A' }] })
+    expect(env.ok && env.rawRows).toEqual([{ legalEntityId: 1, name: 'A' }])
+  })
+  it('超过单次上限报 tooMany(含实际行数)', () => {
+    const many = Array.from({ length: MAX_IMPORT_ROWS + 1 }, (_, i) => ({ legalEntityId: 1, name: `D${i}` }))
+    expect(parseEntityRows(dept, many)).toEqual({ ok: false, reason: 'tooMany', count: many.length })
+    expect(parseEntityRows(dept, many.slice(0, MAX_IMPORT_ROWS)).ok).toBe(true)
   })
   it('非数组/坏行定位行号与字段', () => {
     expect(parseEntityRows(dept, { x: 1 })).toEqual({ ok: false, reason: 'notArray' })

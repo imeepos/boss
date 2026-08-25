@@ -417,6 +417,9 @@ const zhCN: Translations = {
       entityRowFail: '第 {row} 行失败:{msg}',
       entityAborted: '登录已失效,已中止(完成 {done}/{total})',
       reasonEntityBadRow: '第 {row} 行字段 {field} 缺失或类型错误',
+      entityTooMany: '行数 {count} 超过单次上限 {max},请分批导入',
+      entityFailMore: '还有 {count} 条失败行未展示',
+      entityExportFail: '导出失败行(JSON,可直接再导入)',
     },
     account: {
       title: '账号与角色',

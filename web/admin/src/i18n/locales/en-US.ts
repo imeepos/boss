@@ -417,6 +417,9 @@ const enUS: Translations = {
       entityRowFail: 'Row {row} failed: {msg}',
       entityAborted: 'Session expired, aborted ({done}/{total} done)',
       reasonEntityBadRow: 'Row {row}: field {field} missing or invalid',
+      entityTooMany: '{count} rows exceed the per-run limit {max}, please import in batches',
+      entityFailMore: '{count} more failed rows not shown',
+      entityExportFail: 'Export failed rows (JSON, re-importable)',
     },
     account: {
       title: 'Accounts & Roles',

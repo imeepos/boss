@@ -349,6 +349,9 @@ export interface Translations {
       entityRowFail: string
       entityAborted: string
       reasonEntityBadRow: string
+      entityTooMany: string
+      entityFailMore: string
+      entityExportFail: string
     }
     account: {
       title: string

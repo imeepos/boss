@@ -7,8 +7,11 @@ export type RowResult =
   | { ok: false; field: string }
 
 export type EntityParseResult =
-  | { ok: true; rows: Array<Record<string, unknown>> }
-  | { ok: false; reason: 'notArray' | 'badRow'; row?: number; field?: string }
+  | { ok: true; rows: Array<Record<string, unknown>>; rawRows: unknown[] }
+  | { ok: false; reason: 'notArray' | 'badRow' | 'tooMany'; row?: number; field?: string; count?: number }
+
+/** 单次导入行数上限:防万行级请求打满创建端点(社区实践:硬上限+分批)。 */
+export const MAX_IMPORT_ROWS = 500
 
 /** 单行矫正:trim 字符串、number 转数值、list 按中英逗号/分号拆数组;可选列空值剔除。 */
 export function coerceEntityRow(def: EntityDef, row: Record<string, unknown>): RowResult {
@@ -50,6 +53,7 @@ function toList(raw: unknown): string[] | null {
 export function parseEntityRows(def: EntityDef, value: unknown): EntityParseResult {
   const arr = Array.isArray(value) ? value : rowsEnvelope(value)
   if (!arr) return { ok: false, reason: 'notArray' }
+  if (arr.length > MAX_IMPORT_ROWS) return { ok: false, reason: 'tooMany', count: arr.length }
   const rows: Array<Record<string, unknown>> = []
   for (let i = 0; i < arr.length; i++) {
     const it = arr[i]
@@ -60,7 +64,7 @@ export function parseEntityRows(def: EntityDef, value: unknown): EntityParseResu
     if (!r.ok) return { ok: false, reason: 'badRow', row: i + 1, field: r.field }
     rows.push(r.body)
   }
-  return { ok: true, rows }
+  return { ok: true, rows, rawRows: arr }
 }
 
 /** 容错:也接受 {"rows":[...]} 信封形态。 */
