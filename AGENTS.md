@@ -63,5 +63,11 @@ worktree 只隔离文件，不隔离全局共享的流水资源（迁移号/路�
 - 巨石提交仅限纯结构迁移（零行为变更）；行为变更禁止一锅端（不许 feat+fix+重构混装、不许多个不相关能力塞一个提交）。
 - 判断标准：这个提交能否被单独 revert 而不伤邻居？不能就拆。
 
+## 数据核查与改动自查红线（2026-08-29，全文见 docs/notes/adopted/2026-08-29-audit-closeout-rulings.md §7）
+- **先查库、再接口复核**：任何"孤儿/不一致"结论必须先 SQL 直查权威表，再以接口复核读路径（"孤儿支付"先例系读路径假象）。
+- **改动文件前自查余量**：目标文件行数（红线 300）+ 磁盘剩余空间；make check C 项机械兜底行数。
+- **并行会话基线**：合并前核对本地 main 与远端一致再 ff-only；测试运行与工作区改写严禁对同一 worktree 并发。
+- 验收/E2E 造数不过夜：mainchain-acceptance.sh 收尾自动 acc_ 清理 + 孤儿巡检门禁；102 每日 cron 见 docs/ops/patrol-cron.md。
+
 ## 已知环境事实
 brew 和 graphviz 都在 /opt/homebrew/bin
