@@ -311,3 +311,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - (2026-08-24 重复缓存清理)多代缓存共存根因:同一工具的缓存位置被历史配置改过三代(默认内置盘→sker USB盘→ext512),每代迁移都没删旧副本。清理 sker 旧副本约 60G(sker 用量 347G→287G)+ 内置 ~/Library/pnpm/store 2G + /tmp 隔离缓存。两个坑:①go 模块缓存文件只读,rm 报 Permission denied,先 chmod -R u+w 再删(等价 go clean -modcache);②Kotlin daemon classpath 钉在旧盘 jar 上,须等 daemon 闲置自退(sker/.gradle 留待后续删)再清。t3-release 13G 是构建产物非缓存,留待业务确认。
 - rsync -a 迁移含符号链接的工具链时会原样保留绝对路径链接:指向旧位置的链接迁移后全变死链(vite-plus/bin/dsh 指向已删的 sker 路径,致 dsh 在用户 shell MISSING)。迁移后必须 find -type l 逐个 readlink 检查旧盘前缀,改相对路径或新绝对路径;仅凭"目录复制 rc=0"不够。
 - 死 PATH 条目无害但可顺手报:/etc/paths.d/dotnet-cli-tools 的 ~/.dotnet/tools 是 dotnet 安装器不展开 ~ 的已知 bug,/pkg/env/global 来自 pmk;清理性质,非故障。
+- Android 资源字符串含撇号必须转义为 \\'(反斜杠+撇号);双引号包裹法 \"...\" 在 aapt2 string-array 场景下触发 NPE(StartElement.getAttributeByName 返回 null),不可用(2026-08-28 round6)
+- aapt2 报错常带混淆行号("Failed to flatten XML at line N")实际指向被合并的 merged.dir/values-XX/values-XX.xml 资源条目,需逐键验证;尤其 values-en 中历史 string-array item 直含撇号未转义会被本次构建暴露(本次踩坑)
+- Kotlin Composable 中回调 lambda(permissionLauncher / pickers)若引用 ctx,ctx 声明必须在其前;Compose 顺序敏感且编译器不报"use before declaration"而是"Unresolved reference"(2026-08-28 round6)
+- 资源字符串拼接模板 "${x} 张" 不能直接复用为 <string>:Android 资源需 <string>%1\$d 张</string> 占位符,Kotlin 侧 stringResource(R.string.key, x) 传入;OptionRow/Dropdown 的 listOf(...) 在 Composable scope 内 stringResource 即可(2026-08-28 round6)
