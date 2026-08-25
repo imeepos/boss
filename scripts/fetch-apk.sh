@@ -41,23 +41,42 @@ sha="${1:-}"
 if [ -z "$sha" ] || [ "$sha" = "--latest" ]; then
   sha="$(ssh_remote "docker run --rm -v $VOL:/out $ALPINE sh -c 'ls -1t /out | head -n1'")"
 fi
-[ -n "$sha" ] || die "no artifact found in volume $VOL"
+# 前缀展开(用法承诺"前缀可"但旧版从未实现,短前缀直拼路径必 No such file——
+# 2026-08-25 fetch 全空排查半天,根因即此):前缀唯一命中补全,多命中/未命中报错。
+full="$(ssh_remote "docker run --rm -v $VOL:/out $ALPINE sh -c 'ls -1 /out | grep ^$sha'")"
+case "$(echo "$full" | grep -c .)" in
+  1) sha="$full" ;;
+  0) die "no artifact dir matching '$sha' in volume $VOL" ;;
+  *) die "prefix '$sha' ambiguous: $(echo $full | tr '\n' ' ')" ;;
+esac
 
+# 取件改"docker run cat 流式 stdout 直落本地":单命令单连接,不经
+# holder 容器/mktemp/scp 三段接力(实测 docker create 与 CI 并发时偶发失败,
+# 旧版把一切 cp 错误误报成 "not present",排查被带偏——worker 包其实一直在卷里)。
+# 重试 2 次骑过归档竞态:CI 侧 mkdir sha 目录与逐文件 docker cp 之间有窗口,
+# 恰好撞上会三个文件全 "No such file"(f237fe9a 实例),几秒后重取即成功。
 echo "fetching artifacts/$sha from $SSH_HOST ..."
 out_dir="./apk-$sha"
 mkdir -p "$out_dir"
-holder="$(ssh_remote "docker create -v $VOL:/out $ALPINE true")"
-remote_tmp="$(ssh_remote "mktemp -d /tmp/fetch-apk-XXXXXX")"
+got=0
+fetch_one() {
+  local f="$1" try
+  for try in 1 2 3; do
+    if ssh_remote "docker run --rm -v $VOL:/out $ALPINE cat /out/$sha/$f" > "$out_dir/$f" 2>/tmp/fetch-apk-err; then
+      return 0
+    fi
+    [ "$try" -lt 3 ] && sleep 3
+  done
+  rm -f "$out_dir/$f"
+  echo "warn: fetch $f failed for $sha: $(tr '\n' ' ' </tmp/fetch-apk-err)" >&2
+  return 1
+}
 for f in boss-worker.apk boss-user.apk SHA256SUMS; do
-  if ssh_remote "docker cp $holder:/out/$sha/$f $remote_tmp/$f" 2>/dev/null; then
-    scp -q "$SSH_HOST:$remote_tmp/$f" "$out_dir/" 2>/dev/null || echo "warn: scp $f failed" >&2
-  else
-    echo "warn: $f not present for $sha" >&2
-  fi
+  fetch_one "$f" && got=$((got+1))
 done
-ssh_remote "rm -rf $remote_tmp; docker rm $holder >/dev/null" >/dev/null
+[ "$got" -gt 0 ] || die "no artifact fetched for $sha (check volume: scripts/fetch-apk.sh --list)"
 if [ -f "$out_dir/SHA256SUMS" ]; then
   (cd "$out_dir" && shasum -a 256 -c SHA256SUMS 2>&1 | tail -1) || true
 fi
-echo "done: $out_dir"
+echo "done: $out_dir ($got files)"
 ls -la "$out_dir"
