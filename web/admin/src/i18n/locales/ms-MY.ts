@@ -411,7 +411,7 @@ const msMY: Translations = {
       geoSections: ['countries', 'countryNames', 'subdivisions', 'subdivisionNames'],
       entityTitle: 'Import Kelompok Data Perniagaan',
       entityHint: 'Pilih sasaran, muat turun templat, kemudian import; setiap baris memanggil API cipta berkaitan dan memerlukan kebenaran menu. Pengepala Excel mesti mengandungi semua kunci lajur',
-      entityNames: { account: 'Akaun', legalEntity: 'Entiti Undang-undang', department: 'Jabatan', post: 'Jawatan', product: 'Tawaran Produk', odnSite: 'Tapak ODN', odnGrid: 'Grid ODN' },
+      entityNames: { account: 'Akaun', legal_entity: 'Entiti Undang-undang', department: 'Jabatan', post: 'Jawatan', product: 'Tawaran Produk', odn_site: 'Tapak ODN', odn_grid: 'Grid ODN' },
       entityProgress: 'Kemajuan {done}/{total}',
       entityDone: 'Selesai: {ok} berjaya · {fail} gagal',
       entityRowFail: 'Baris {row} gagal: {msg}',
@@ -421,6 +421,7 @@ const msMY: Translations = {
       entityFailMore: '{count} baris gagal lagi tidak ditunjukkan',
       entityExportFail: 'Eksport baris gagal (JSON, boleh diimport semula)',
       entityNoPerm: 'Akaun semasa tiada {perm}, import dilumpuhkan untuk sasaran ini',
+      entityUnprocessed: '{count} baris lagi tidak diproses dan tidak dikira sebagai kegagalan',
     },
     account: {
       title: 'Akaun & Peranan',

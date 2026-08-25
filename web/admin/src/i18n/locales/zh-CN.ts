@@ -411,7 +411,7 @@ const zhCN: Translations = {
       geoSections: ['国家 countries', '国家译名 countryNames', '行政区划 subdivisions', '区划译名 subdivisionNames'],
       entityTitle: '业务数据批量导入',
       entityHint: '选择项目后下载模板填写,逐行调用对应创建接口;需相应菜单权限,Excel 首行表头须含全部列名',
-      entityNames: { account: '账号', legalEntity: '法人公司', department: '部门', post: '岗位', product: '产品资费', odnSite: 'ODN 局点', odnGrid: 'ODN 网格分区' },
+      entityNames: { account: '账号', legal_entity: '法人公司', department: '部门', post: '岗位', product: '产品资费', odn_site: 'ODN 局点', odn_grid: 'ODN 网格分区' },
       entityProgress: '进度 {done}/{total}',
       entityDone: '完成:成功 {ok} · 失败 {fail}',
       entityRowFail: '第 {row} 行失败:{msg}',
@@ -421,6 +421,7 @@ const zhCN: Translations = {
       entityFailMore: '还有 {count} 条失败行未展示',
       entityExportFail: '导出失败行(JSON,可直接再导入)',
       entityNoPerm: '当前账号无 {perm} 权限,禁止导入该项目',
+      entityUnprocessed: '另有 {count} 行未处理,不计入失败数',
     },
     account: {
       title: '账号与角色',

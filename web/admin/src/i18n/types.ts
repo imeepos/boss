@@ -353,6 +353,7 @@ export interface Translations {
       entityFailMore: string
       entityExportFail: string
       entityNoPerm: string
+      entityUnprocessed: string
     }
     account: {
       title: string

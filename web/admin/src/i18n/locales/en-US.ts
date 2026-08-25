@@ -411,7 +411,7 @@ const enUS: Translations = {
       geoSections: ['countries', 'countryNames', 'subdivisions', 'subdivisionNames'],
       entityTitle: 'Business Data Batch Import',
       entityHint: 'Pick a target, download the template, then import; each row calls the corresponding create API and requires its menu permission. Excel header must include all column keys',
-      entityNames: { account: 'Account', legalEntity: 'Legal Entity', department: 'Department', post: 'Post', product: 'Product Offer', odnSite: 'ODN Site', odnGrid: 'ODN Grid' },
+      entityNames: { account: 'Account', legal_entity: 'Legal Entity', department: 'Department', post: 'Post', product: 'Product Offer', odn_site: 'ODN Site', odn_grid: 'ODN Grid' },
       entityProgress: 'Progress {done}/{total}',
       entityDone: 'Done: {ok} succeeded · {fail} failed',
       entityRowFail: 'Row {row} failed: {msg}',
@@ -421,6 +421,7 @@ const enUS: Translations = {
       entityFailMore: '{count} more failed rows not shown',
       entityExportFail: 'Export failed rows (JSON, re-importable)',
       entityNoPerm: 'Current account lacks {perm}, import disabled for this target',
+      entityUnprocessed: '{count} more rows were not processed and are not counted as failures',
     },
     account: {
       title: 'Accounts & Roles',

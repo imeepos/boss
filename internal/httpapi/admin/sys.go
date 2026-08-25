@@ -14,8 +14,8 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// entityTaskKindRe 客户端登记的 kind 白名单:entity:<小写字母数字>(与前端 entities.ts kind 对齐)。
-var entityTaskKindRe = regexp.MustCompile(`^entity:[a-z][a-z0-9]{0,31}$`)
+// entityTaskKindRe 客户端登记的 kind 白名单:entity:<蛇形小写>(与前端 entities.ts kind 对齐;前端单测镜像本正则防漂移)。
+var entityTaskKindRe = regexp.MustCompile(`^entity:[a-z][a-z0-9_]{0,31}$`)
 
 // registerSysRoutes 注册 sys 横切路由。
 func registerSysRoutes(g *gin.RouterGroup, a *app.Application) {

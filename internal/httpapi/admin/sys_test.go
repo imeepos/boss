@@ -99,7 +99,7 @@ func TestSysRoutes(t *testing.T) {
 	t.Run("导入结果登记 非法 kind/负数 拒绝", func(t *testing.T) {
 		r := newTestRouter(&fakeUser{permOk: true}, mgr)
 		for _, body := range []string{
-			`{"kind":"addresses"}`, `{"kind":"entity:Drop Table"}`, `{"kind":"entity:ok","imported":-1}`,
+			`{"kind":"addresses"}`, `{"kind":"entity:Drop Table"}`, `{"kind":"entity:LegalEntity"}`, `{"kind":"entity:ok","imported":-1}`,
 		} {
 			w := postBodyAuth(t, r, "/api/admin/v1/import-tasks", body, token)
 			var env struct {

@@ -6,8 +6,15 @@ import { coerceEntityRow, entityTemplateJson, MAX_IMPORT_ROWS, parseEntityRows, 
 import { entityExcelTemplate, parseEntityExcel } from './excel'
 
 describe('实体定义', () => {
-  it('5 个项目均含端点与必填列', () => {
-    expect(IMPORT_ENTITIES.map((e) => e.kind)).toEqual(['account', 'legalEntity', 'department', 'post', 'product', 'odnSite', 'odnGrid'])
+  it('kind 全部匹配后端登记白名单正则且唯一(防漂移:internal/httpapi/admin/sys.go entityTaskKindRe)', () => {
+    // 与 internal/httpapi/admin/sys.go entityTaskKindRe 保持一致
+    const re = /^[a-z][a-z0-9_]{0,31}$/
+    const kinds = IMPORT_ENTITIES.map((e) => e.kind)
+    expect(kinds.length).toBe(new Set(kinds).size)
+    for (const k of kinds) expect(k).toMatch(re)
+  })
+  it('9 个项目均含端点、必填列与权限码', () => {
+    expect(IMPORT_ENTITIES.map((e) => e.kind)).toEqual(['account', 'legal_entity', 'department', 'post', 'product', 'odn_site', 'odn_grid'])
     expect(new Set(IMPORT_ENTITIES.map((e) => e.perm)).size).toBeGreaterThan(0)
     for (const e of IMPORT_ENTITIES) {
       expect(e.endpoint.startsWith('/')).toBe(true)
@@ -62,7 +69,7 @@ describe('parseEntityRows', () => {
 
 describe('splitQueryRow', () => {
   it('queryColumns 列进 query,其余进 body', () => {
-    const site = findEntity('odnSite') as NonNullable<ReturnType<typeof findEntity>>
+    const site = findEntity('odn_site') as NonNullable<ReturnType<typeof findEntity>>
     const parsed = parseEntityRows(site, [{ prvCode: 'PHL001', cityPrefix: 'MNL', siteNo: 88, name: 'X' }])
     expect(parsed.ok).toBe(true)
     if (!parsed.ok) return

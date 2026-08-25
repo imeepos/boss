@@ -44,7 +44,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     ],
   },
   {
-    kind: 'legalEntity',
+    kind: 'legal_entity',
     perm: 'menu:company',
     endpoint: '/legal-entities',
     columns: [
@@ -100,7 +100,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     ],
   },
   {
-    kind: 'odnSite',
+    kind: 'odn_site',
     perm: 'menu:odn',
     endpoint: '/odn/sites',
     queryColumns: ['prvCode', 'cityPrefix'],
@@ -117,7 +117,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     ],
   },
   {
-    kind: 'odnGrid',
+    kind: 'odn_grid',
     perm: 'menu:odn',
     endpoint: '/odn/grids',
     queryColumns: ['prvCode', 'cityPrefix'],

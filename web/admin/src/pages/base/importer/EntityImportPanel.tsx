@@ -124,7 +124,9 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
       } catch (e) {
         const msg = e instanceof Error ? e.message : text.loadFail
         if (e instanceof ApiError && e.unauthorized) {
-          setSummary(text.entityAborted.replace('{done}', String(i)).replace('{total}', String(rows.length)))
+          const unprocessed = rows.length - i
+          setSummary(text.entityAborted.replace('{done}', String(i)).replace('{total}', String(rows.length))
+            + (unprocessed > 0 ? ' · ' + text.entityUnprocessed.replace('{count}', String(unprocessed)) : ''))
           setFailures([...fails])
           setProgress({ done: i, total: rows.length })
           registerTask(ok, fails.length)
