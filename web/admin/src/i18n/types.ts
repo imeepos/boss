@@ -354,6 +354,8 @@ export interface Translations {
       entityExportFail: string
       entityNoPerm: string
       entityUnprocessed: string
+      entityDedupSkipped: string
+      entitySkipped: string
     }
     account: {
       title: string

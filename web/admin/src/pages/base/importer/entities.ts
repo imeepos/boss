@@ -18,6 +18,10 @@ export interface EntityDef {
   perm: string
   /** 走 query string 而非 body 的列(如 ODN 的 prvCode/cityPrefix;仍须登记在 columns 中)。 */
   queryColumns?: string[]
+  /** 自然唯一键(导入前去重:文件内先到先得 + 与现有数据比对);缺省=不去重。 */
+  uniqueKey?: string[]
+  /** 现有数据清单端点(去重数据源;返回数组或 {items} 数组;缺省=仅文件内去重)。 */
+  listEndpoint?: string
   columns: EntityColumn[]
   /** 模板样例行(与 columns 同序的字段集)。 */
   samples: Array<Record<string, string | number | string[]>>
@@ -28,6 +32,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     kind: 'account',
     perm: 'menu:account',
     endpoint: '/accounts',
+    uniqueKey: ['username'],
+    listEndpoint: '/accounts',
     columns: [
       { key: 'username', required: true, type: 'string' },
       { key: 'password', required: true, type: 'string' },
@@ -47,6 +53,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     kind: 'legal_entity',
     perm: 'menu:company',
     endpoint: '/legal-entities',
+    uniqueKey: ['code'],
+    listEndpoint: '/legal-entities',
     columns: [
       { key: 'code', required: true, type: 'string' },
       { key: 'name', required: true, type: 'string' },
@@ -61,6 +69,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     kind: 'department',
     perm: 'menu:department',
     endpoint: '/departments',
+    uniqueKey: ['legalEntityId', 'name'],
+    listEndpoint: '/departments',
     columns: [
       { key: 'legalEntityId', required: true, type: 'number' },
       { key: 'name', required: true, type: 'string' },
@@ -73,6 +83,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     kind: 'post',
     perm: 'menu:post',
     endpoint: '/posts',
+    uniqueKey: ['deptId', 'code'],
+    listEndpoint: '/posts',
     columns: [
       { key: 'deptId', required: true, type: 'number' },
       { key: 'code', required: true, type: 'string' },
@@ -87,6 +99,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     kind: 'product',
     perm: 'menu:product',
     endpoint: '/products',
+    uniqueKey: ['legalEntityId', 'name'],
+    listEndpoint: '/products',
     columns: [
       { key: 'legalEntityId', required: true, type: 'number' },
       { key: 'name', required: true, type: 'string' },
@@ -103,6 +117,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     kind: 'odn_site',
     perm: 'menu:odn',
     endpoint: '/odn/sites',
+    uniqueKey: ['prvCode', 'cityPrefix', 'siteNo'],
     queryColumns: ['prvCode', 'cityPrefix'],
     columns: [
       { key: 'prvCode', required: true, type: 'string' },
@@ -120,6 +135,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     kind: 'odn_grid',
     perm: 'menu:odn',
     endpoint: '/odn/grids',
+    uniqueKey: ['prvCode', 'cityPrefix', 'gridCode'],
     queryColumns: ['prvCode', 'cityPrefix'],
     columns: [
       { key: 'prvCode', required: true, type: 'string' },

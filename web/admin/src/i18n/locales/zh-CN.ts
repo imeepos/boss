@@ -422,6 +422,8 @@ const zhCN: Translations = {
       entityExportFail: '导出失败行(JSON,可直接再导入)',
       entityNoPerm: '当前账号无 {perm} 权限,禁止导入该项目',
       entityUnprocessed: '另有 {count} 行未处理,不计入失败数',
+      entityDedupSkipped: '去重跳过 {count} 行(与现有数据或文件内重复)',
+      entitySkipped: '跳过重复 {count} 行',
     },
     account: {
       title: '账号与角色',

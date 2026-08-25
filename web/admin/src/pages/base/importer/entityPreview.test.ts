@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
 import { findEntity, IMPORT_ENTITIES } from './entities'
-import { coerceEntityRow, entityTemplateJson, MAX_IMPORT_ROWS, parseEntityRows, splitQueryRow } from './entityPreview'
+import { coerceEntityRow, entityTemplateJson, MAX_IMPORT_ROWS, parseEntityRows, splitQueryRow, dedupeIndexes } from './entityPreview'
 import { entityExcelTemplate, parseEntityExcel } from './excel'
 
 describe('实体定义', () => {
@@ -66,6 +66,31 @@ describe('parseEntityRows', () => {
     expect(parseEntityRows(dept, { x: 1 })).toEqual({ ok: false, reason: 'notArray' })
     expect(parseEntityRows(dept, [{ legalEntityId: 1, name: 'A' }, { legalEntityId: 1 }]))
       .toEqual({ ok: false, reason: 'badRow', row: 2, field: 'name' })
+  })
+})
+
+describe('dedupeIndexes', () => {
+  it('无 uniqueKey 返回空集', () => {
+    const dept = findEntity('department') as NonNullable<ReturnType<typeof findEntity>>
+    expect(dedupeIndexes(dept, [{ legalEntityId: 1, name: 'A' }], null).skipped).toBe(0)
+  })
+  it('文件内去重保留先到先得', () => {
+    const acct = findEntity('account') as NonNullable<ReturnType<typeof findEntity>>
+    const rows = [
+      { username: 'u1', password: 'p1', realName: 'R1', roleCode: 'op' },
+      { username: 'u2', password: 'p2', realName: 'R2', roleCode: 'op' },
+      { username: 'u1', password: 'p3', realName: 'R3', roleCode: 'op' },
+    ]
+    const { skip, skipped } = dedupeIndexes(acct, rows, null)
+    expect(skipped).toBe(1)
+    expect(skip.has(0)).toBe(false)
+    expect(skip.has(2)).toBe(true)
+  })
+  it('与现有数据比对去重', () => {
+    const acct = findEntity('account') as NonNullable<ReturnType<typeof findEntity>>
+    const rows = [{ username: 'u1', password: 'p1', realName: 'R1', roleCode: 'op' }]
+    const existing = [{ username: 'u1' }, { username: 'u2' }]
+    expect(dedupeIndexes(acct, rows, existing).skipped).toBe(1)
   })
 })
 

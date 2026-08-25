@@ -93,3 +93,29 @@ export function splitQueryRow(
   }
   return { query, body }
 }
+
+/** 去重计算:文件内先到先得 + 与现有数据比对;返回需跳过的行号集合。 */
+export function dedupeIndexes(
+  def: EntityDef,
+  rows: Array<Record<string, unknown>>,
+  existing: unknown[] | null,
+): { skip: Set<number>; skipped: number } {
+  const skip = new Set<number>()
+  const uk = def.uniqueKey
+  if (!uk || uk.length === 0) return { skip, skipped: 0 }
+  const seen = new Set<string>()
+  if (existing) {
+    for (const it of existing) {
+      const o = it as Record<string, unknown>
+      const key = uk.map((k) => String(o[k] ?? '')).join('\u0000')
+      if (key) seen.add(key)
+    }
+  }
+  let skipped = 0
+  for (let i = 0; i < rows.length; i++) {
+    const key = uk.map((k) => String(rows[i][k] ?? '')).join('\u0000')
+    if (seen.has(key)) { skip.add(i); skipped++ }
+    else seen.add(key)
+  }
+  return { skip, skipped }
+}

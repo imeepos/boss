@@ -7,7 +7,7 @@ import { ToolbarButton } from '../../../components/business/page-head'
 import { Badge } from '../../../components/ui/badge'
 import type { Translations } from '../../../i18n/types'
 import { MAX_BYTES, PREVIEW_ROWS, parseJson } from './preview'
-import { entityTemplateJson, parseEntityRows, splitQueryRow, MAX_IMPORT_ROWS } from './entityPreview'
+import { entityTemplateJson, parseEntityRows, splitQueryRow, dedupeIndexes, MAX_IMPORT_ROWS } from './entityPreview'
 import { entityExcelTemplate, isExcelFile, parseEntityExcel, type ExcelParseResult } from './excel'
 import { AttachmentPickerDialog } from './AttachmentPickerDialog'
 import type { EntityDef } from './entities'
@@ -68,6 +68,25 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
   const rows = parsed?.ok ? parsed.rows : null
   /** 原始行(未经矫正):失败行导出重试文件的数据源,与 rows 下标一一对齐。 */
   const rawRows = parsed?.ok ? parsed.rawRows : null
+  /** 现有数据(去重数据源):listEndpoint 拉取,失败不阻断。 */
+  const [existing, setExisting] = useState<unknown[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    setExisting(null)
+    if (!def.listEndpoint) return
+    apiFetch<unknown[] | { items: unknown[] }>(def.listEndpoint)
+      .then((d) => {
+        if (!alive) return
+        setExisting(Array.isArray(d) ? d : d?.items ?? [])
+      })
+      .catch(() => undefined)
+    return () => { alive = false }
+  }, [def])
+  /** 去重:文件内先到先得 + 与现有数据比对,行号集合为跳过项。 */
+  const dedupe = useMemo(
+    () => (rows ? dedupeIndexes(def, rows, existing) : { skip: new Set<number>(), skipped: 0 }),
+    [def, rows, existing],
+  )
 
   /** 失败行导出重试:原始输入行组装为可直接再导入的 JSON 数组文件。 */
   const exportFailed = () => {
@@ -128,10 +147,12 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
     setError('')
     setFailures([])
     setSummary('')
-    setProgress({ done: 0, total: rows.length })
+    const total = rows.length - dedupe.skipped
+    setProgress({ done: 0, total })
     const fails: RowFailure[] = []
     let ok = 0
     for (let i = 0; i < rows.length; i++) {
+      if (dedupe.skip.has(i)) continue
       try {
         const { query, body } = splitQueryRow(def, rows[i])
         await apiFetch(def.endpoint, { method: 'POST', query, body })
@@ -139,20 +160,20 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
       } catch (e) {
         const msg = e instanceof Error ? e.message : text.loadFail
         if (e instanceof ApiError && e.unauthorized) {
-          const unprocessed = rows.length - i
-          setSummary(text.entityAborted.replace('{done}', String(i)).replace('{total}', String(rows.length))
-            + (unprocessed > 0 ? ' · ' + text.entityUnprocessed.replace('{count}', String(unprocessed)) : ''))
+          setSummary(text.entityAborted.replace('{done}', String(ok + fails.length)).replace('{total}', String(rows.length))
+            + (total - ok - fails.length > 0 ? ' · ' + text.entityUnprocessed.replace('{count}', String(total - ok - fails.length)) : ''))
           setFailures([...fails])
-          setProgress({ done: i, total: rows.length })
+          setProgress({ done: ok + fails.length, total })
           registerTask(ok, fails.length)
           setBusy(false)
           return
         }
         fails.push({ row: i + 1, msg })
       }
-      setProgress({ done: i + 1, total: rows.length })
+      setProgress({ done: ok + fails.length, total })
     }
-    setSummary(text.entityDone.replace('{ok}', String(ok)).replace('{fail}', String(fails.length)))
+    setSummary(text.entityDone.replace('{ok}', String(ok)).replace('{fail}', String(fails.length))
+      + (dedupe.skipped > 0 ? ' · ' + text.entitySkipped.replace('{count}', String(dedupe.skipped)) : ''))
     setFailures(fails)
     registerTask(ok, fails.length)
     if (ok > 0 || fails.length > 0) onImported()
@@ -214,6 +235,11 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
           <p className="m-0 px-3 pt-2.5 text-xs text-[var(--shell-content-text)]">
             {text.previewOf.replace('{count}', String(rows.length))}
           </p>
+          {dedupe.skipped > 0 && (
+            <p className="m-0 px-3 pt-1 text-[11px] text-[var(--color-brand-gold-500)]">
+              {text.entityDedupSkipped.replace('{count}', String(dedupe.skipped))}
+            </p>
+          )}
           <div className="mt-2 overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead>

@@ -422,6 +422,8 @@ const msMY: Translations = {
       entityExportFail: 'Eksport baris gagal (JSON, boleh diimport semula)',
       entityNoPerm: 'Akaun semasa tiada {perm}, import dilumpuhkan untuk sasaran ini',
       entityUnprocessed: '{count} baris lagi tidak diproses dan tidak dikira sebagai kegagalan',
+      entityDedupSkipped: 'Dedupe langkau {count} baris (duplikat dengan data sedia ada atau dalam fail)',
+      entitySkipped: 'Langkau {count} pendua',
     },
     account: {
       title: 'Akaun & Peranan',

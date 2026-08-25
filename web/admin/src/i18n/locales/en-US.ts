@@ -422,6 +422,8 @@ const enUS: Translations = {
       entityExportFail: 'Export failed rows (JSON, re-importable)',
       entityNoPerm: 'Current account lacks {perm}, import disabled for this target',
       entityUnprocessed: '{count} more rows were not processed and are not counted as failures',
+      entityDedupSkipped: 'Dedupe skipped {count} rows (duplicate with existing or within file)',
+      entitySkipped: 'Skipped {count} duplicates',
     },
     account: {
       title: 'Accounts & Roles',
