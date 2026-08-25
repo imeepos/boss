@@ -211,8 +211,15 @@ SELECT id, subject_id, method, real_name, id_card_no, result, reject_reason,
 }
 
 // Verify 后台核验:仅作用于 PENDING 记录;PASS 同步 customers.real_name_status=VERIFIED,FAIL 记驳回原因。
+// 一致性门禁(2026-08-25 审计 §2.3.1):PASS 前核对该 PENDING 单证件号与 customers.id_no——
+// 主档证件号非空且不一致 → 拒绝(ErrRealNameMismatch);主档为空 → 以核验单回填主档。
 // 采用原子更新(受影响行>0),避免并发双重通过。
 func (s *PGStore) Verify(ctx context.Context, customerID int64, result, reason, operatorName string, operatorAccountID int64) error {
+	if result == RealNamePass {
+		if err := s.guardRealNameIdentity(ctx, customerID); err != nil {
+			return err
+		}
+	}
 	res, err := s.db.Exec(ctx, `
 UPDATE verifications
  SET result=$1, reject_reason=$2, operator_account_id=$3, operator_name=$4, verified_at=now()
@@ -229,6 +236,32 @@ UPDATE verifications
 			`UPDATE customers SET real_name_status='VERIFIED' WHERE id=$1`, customerID); err != nil {
 			return fmt.Errorf("customer: verify sync status: %w", err)
 		}
+	}
+	return nil
+}
+
+// guardRealNameIdentity PASS 一致性门禁:待核验单 id_card_no 对照 customers 主档。
+// 主档 id_no 为空(新客补登)→ 回填 id_no/real_name_status 前置数据;非空不一致 → ErrRealNameMismatch。
+func (s *PGStore) guardRealNameIdentity(ctx context.Context, customerID int64) error {
+	var pendingIDNo, masterIDNo string
+	err := s.db.QueryRow(ctx, `
+SELECT (SELECT id_card_no FROM verifications
+         WHERE subject_type='customer' AND subject_id=$1 AND result=$2
+         ORDER BY verified_at DESC LIMIT 1),
+       COALESCE(id_no, '')`, customerID, RealNamePending).Scan(&pendingIDNo, &masterIDNo)
+	if err != nil {
+		return fmt.Errorf("customer: verify identity guard: %w", err)
+	}
+	if masterIDNo == "" {
+		// 主档无证件号:以核验单回填,保证 PASS 后两侧一致。
+		if _, err := s.db.Exec(ctx,
+			`UPDATE customers SET id_no=$2 WHERE id=$1 AND COALESCE(id_no,'')=''`, customerID, pendingIDNo); err != nil {
+			return fmt.Errorf("customer: verify backfill id_no: %w", err)
+		}
+		return nil
+	}
+	if pendingIDNo != masterIDNo {
+		return ErrRealNameMismatch
 	}
 	return nil
 }

@@ -27,7 +27,7 @@
 | 产品资费 | 产品资费 | `productId` / `products` | `offer` | `product_offers.offer_id` |
 | 认证账号 | LOID | `loid` / `loids`（路径 `/lo-accounts`） | `loid` | `lo_accounts.loid` |
 | 报障工单 | 报障 | `repairTickets` | （无独立） | `complaints`（报障+投诉，`type` 区分） |
-| 实名核验 | 实名核验 | `verify-logs` | （无独立） | `real_name_verifications` |
+| 实名核验 | 实名核验 | `verify-logs` | （无独立） | `verifications`（000059 归一，subject_type='customer'；聚合/列表取数同源，PASS 前主档证件号一致性门禁 2026-08-29） |
 | 调拨类型 | 类型 | `type`（`ASSET/PORT/DEVICE`） | （无独立） | `transfers.resource_id`（资产/端口维度待扩展） |
 
 > 规则：禁止为求「同名」而改 API 契约或 DB 表名（两者分属不同层，耦合即反模式）；

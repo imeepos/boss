@@ -138,9 +138,11 @@ func (s *PGStore) ListUserComplaints(ctx context.Context) ([]map[string]any, err
 		cp.type, cp.ticket_no AS content, cp.status FROM complaints cp ORDER BY cp.id`)
 }
 
+// 实名权威态在 verifications(000059 归一,subject_type='customer');
+// user_verify_records(000046)归一后无写入方,列表改读权威表,列形状不变。
 func (s *PGStore) ListUserVerifyRecords(ctx context.Context) ([]map[string]any, error) {
-	return s.listMaps(ctx, `SELECT id, customer_id AS "customerId", step, result,
-		created_at AS "createdAt" FROM user_verify_records ORDER BY id`)
+	return s.listMaps(ctx, `SELECT id, subject_id AS "customerId", method AS step, result,
+		verified_at AS "createdAt" FROM verifications WHERE subject_type = 'customer' ORDER BY id`)
 }
 
 func (s *PGStore) ListProductSpecs(ctx context.Context) ([]map[string]any, error) {

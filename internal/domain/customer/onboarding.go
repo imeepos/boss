@@ -12,6 +12,7 @@ var (
 	ErrRegistrationConflict = errors.New("customer: registration status conflict") // 非 PENDING 重复审核
 	ErrRealNameNotFound     = errors.New("customer: real name verification not found")
 	ErrRealNameConflict     = errors.New("customer: real name verification conflict") // 非 PENDING 重复核验
+	ErrRealNameMismatch     = errors.New("customer: real name identity mismatch")     // 核验证件号与主档不一致
 )
 
 // 注册申请状态枚举(terms.md 通用枚举延伸,对标 worker)。

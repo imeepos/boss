@@ -80,9 +80,10 @@ func (s *PGStore) GetUserDetail(ctx context.Context, customerID int64) (map[stri
 	cust["complaints"] = pick(s.listMaps(ctx,
 		`SELECT id::text AS "complaintId", type, ticket_no AS content, status
 		 FROM complaints WHERE customer_id = $1 ORDER BY id`, customerID))
+	// 实名权威态在 verifications(000059 归一);user_verify_records(000046)已无写入方,不再作为聚合来源。
 	cust["verifyRecords"] = pick(s.listMaps(ctx,
-		`SELECT id, step, result, created_at AS "createdAt"
-		 FROM user_verify_records WHERE customer_id = $1 ORDER BY id`, customerID))
+		`SELECT id, method AS step, result, verified_at AS "createdAt"
+		 FROM verifications WHERE subject_type = 'customer' AND subject_id = $1 ORDER BY id`, customerID))
 	cust["bills"] = pick(s.listMaps(ctx,
 		`SELECT id, bill_no AS "billNo", amount::float8 AS amount, status, period
 		 FROM bills WHERE customer_id = $1 ORDER BY id DESC`, customerID))

@@ -109,6 +109,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, partner.ErrStaffScope),
 		errors.Is(err, partner.ErrApplicationDuplicate),
 		errors.Is(err, customer.ErrRealNameConflict),
+		errors.Is(err, customer.ErrRealNameMismatch),
 		errors.Is(err, worker.ErrRegistrationConflict),
 		errors.Is(err, worker.ErrRealNameConflict),
 		errors.Is(err, worker.ErrInvalidReviewFields):
