@@ -39,6 +39,15 @@
 ## 已知边界
 
 - 实体导入是前端逐行调用真实创建端点；重复由列表预检和后端约束共同防护，失败行可导出重试。
-- 导入任务表当前保存 `imported/failed/detail`，没有独立 `skipped` 列；跳过数在当前会话预览和完成提示中展示，未持久化。
-- 任务登记需要 `menu:importer`；实体创建还需要对应实体菜单权限。登记失败不会回滚已完成的实体创建。
-- 地址导入与部分旧后端路径的事务/重复错误映射仍需后续服务端专项修复，本批不改变接口语义。
+- 任务登记需要 `menu:importer`；实体创建还需要对应实体菜单权限。登记失败不会回滚已完成的实体创建，但会向用户显示明确提示。
+
+## 已收敛事项（2026-09-03 复核）
+
+- `import_tasks` 已增加 `total/skipped` 持久化列（迁移 000145），导入中心支持按类型/操作人/时间范围筛选。
+- 地址批量导入已改为单事务原子提交，重复地址返回 409 冲突而非 500。
+- `isUniqueViolation` 已按 SQLSTATE 23505 统一判定，全部实体唯一冲突均映射为 409。
+- 数据库唯一约束核查结论（此前"客户手机号无 DB UNIQUE"为过时结论）：全部实体已具备库级唯一约束——
+  `customers.phone`（uq_customers_app_login_phone，000043）、`legal_entities.code`、
+  `uq_departments_entity_name`、`uq_posts_dept_code`、`uq_product_offers_entity_name`、
+  `odn_device` 复合唯一(prv,city,code)+SNW 部分唯一（000081）、`odn_facility.code` 主键、
+  `odn_grid`/`odn_site` 复合主键、`addresses.path` 唯一。预检仅为体验优化，约束即最终防线。
