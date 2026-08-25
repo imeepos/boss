@@ -249,6 +249,9 @@ func expectChargeAdvance(mock pgxmock.PgxPoolIface) {
 	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(3), "RESERVED", "ORD-7"))
+	mock.ExpectQuery(`SELECT result FROM order_stages WHERE order_id=\$1 AND stage=\$2`).
+		WithArgs(int64(7), int8(3)).
+		WillReturnRows(mock.NewRows([]string{"result"}).AddRow("DONE"))
 	mock.ExpectExec(`UPDATE orders SET stage`).
 		WithArgs(int64(7), int8(4), "RESERVED").
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))

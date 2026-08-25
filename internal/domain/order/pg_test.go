@@ -274,6 +274,9 @@ func TestPGStore_Reserve(t *testing.T) {
 		mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(2), "PENDING", "ORD-1"))
+		mock.ExpectQuery(`SELECT result FROM order_stages WHERE order_id=\$1 AND stage=\$2`).
+			WithArgs(int64(1), int8(2)).
+			WillReturnRows(mock.NewRows([]string{"result"}).AddRow("DONE"))
 		mock.ExpectExec(`UPDATE orders SET stage`).
 			WithArgs(int64(1), int8(3), "RESERVED").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))

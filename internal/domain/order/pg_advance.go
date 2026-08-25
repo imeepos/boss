@@ -37,6 +37,23 @@ func (s *PGStore) advance(ctx context.Context, orderID int64, event string) erro
 		}
 		nextStatus = ns
 	}
+	// 前置环节完成守卫(2026-08-25 审计 §2.3.2 环节乱序防线):推进到 N(≥3)要求
+	// 环节 N-1 日志行 result='DONE'。此前只看 orders.stage 计数器,环节2 PENDING
+	// (资源不可用等待)时后续环节仍可推进,产生"引用有效但环节乱序"悬案(335/336/337/377/383)。
+	if step.stage >= 3 {
+		var prevResult string
+		perr := s.db.QueryRow(ctx,
+			`SELECT result FROM order_stages WHERE order_id=$1 AND stage=$2`, orderID, step.stage-1).Scan(&prevResult)
+		if errors.Is(perr, pgx.ErrNoRows) {
+			return ErrIllegalTransition
+		}
+		if perr != nil {
+			return fmt.Errorf("order: advance prev-stage check: %w", perr)
+		}
+		if prevResult != "DONE" {
+			return ErrIllegalTransition
+		}
+	}
 	if _, err := s.db.Exec(ctx, `UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, step.stage, nextStatus); err != nil {
 		return fmt.Errorf("order: advance update: %w", err)
 	}
