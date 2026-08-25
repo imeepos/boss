@@ -6,7 +6,7 @@ import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { CountryPanel } from './CountryPanel'
 import { SubdivisionPanel } from './SubdivisionPanel'
-import { BaseImportEntry } from '../importer/BaseImportEntry'
+import { BatchImportEntry } from '../importer/BatchImportEntry'
 import { PageHead } from '../../../components/business/page-head'
 import { TabBar } from '../../../components/business/tab-bar'
 
