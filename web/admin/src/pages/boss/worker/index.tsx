@@ -1,7 +1,8 @@
-// 师傅管理页:契约 GET /worker-groups + GET /workers?groupId(在职/离职状态)。
-import { useEffect, useState } from 'react'
+// 师傅管理页:契约 GET /worker-groups + GET /workers?groupId&keyword(在职/离职状态)。
+import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { useQueryState } from '../../../lib/useQueryState'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
@@ -15,6 +16,8 @@ export default function WorkerPage() {
   const [rows, setRows] = useState<WorkerRow[]>([])
   const [groups, setGroups] = useState<WorkerGroupRow[]>([])
   const [error, setError] = useState('')
+  const [urlKeyword, setUrlKeyword] = useQueryState('kw', '')
+  const [keyword, setKeyword] = useState(urlKeyword)
   const [groupId, setGroupId] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -23,7 +26,7 @@ export default function WorkerPage() {
   const load = () => {
     setError('')
     setBusy(true)
-    apiFetch<{ items: WorkerRow[] }>('/workers', { query: { groupId: groupId || undefined } })
+    apiFetch<{ items: WorkerRow[] }>('/workers', { query: { groupId: groupId || undefined, keyword: keyword || undefined } })
       .then((d) => setRows(d?.items ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : w.loadFail))
       .finally(() => setBusy(false))
@@ -36,13 +39,20 @@ export default function WorkerPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const groupName = (id: number) => groups.find((g) => g.id === id)?.name ?? `#${id}`
-  const slice = pageSlice(rows, page, pageSize)
+  const filtered = useMemo(() => {
+    const k = keyword.trim().toLowerCase()
+    if (!k) return rows
+    return rows.filter((r) => r.name.toLowerCase().includes(k) || r.staffNo.toLowerCase().includes(k) || (r.phone || '').toLowerCase().includes(k))
+  }, [rows, keyword])
+  const slice = pageSlice(filtered, page, pageSize)
 
   return (
     <div>
       <PageHead title={w.title} desc={w.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={w.searchPlaceholder}
+            value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
           <Dropdown
             value={groupId ? String(groupId) : ''}
             options={[{ value: '', label: w.allGroup }, ...groups.map((g) => ({ value: String(g.id), label: g.name }))]}

@@ -116,8 +116,8 @@ export function QuickSearch({ profile }: { profile: Profile }) {
   }
 
   const goDomain = (domain: SearchDomain) => {
-    // 客户/用户/订单页支持 ?kw= 预填;师傅页暂无关键字筛选,仅落地列表。
-    const withKw = debounced !== '' && domain !== 'worker'
+    // 四域目标页均支持 ?kw= 预填(客户/用户/师傅/订单),直达过滤态。
+    const withKw = debounced !== ''
     nav(withKw ? `${DOMAIN_ROUTE[domain]}?kw=${encodeURIComponent(debounced)}` : DOMAIN_ROUTE[domain])
     close()
   }
