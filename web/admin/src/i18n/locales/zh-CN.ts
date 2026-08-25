@@ -140,6 +140,10 @@ const zhCN: Translations = {
   },
   attachmentManager: {
     title: '附件管理',
+    pickerTitle: '选择附件',
+    pickerTitleMulti: '选择附件(可多选)',
+    pickerUse: '使用所选',
+    pickerImageOnlyHint: '当前筛选无图片附件,可先在上方上传',
     searchPlaceholder: '搜索文件名',
     search: '查询',
     upload: '上传附件',
@@ -1121,6 +1125,7 @@ const zhCN: Translations = {
       fCover: '封面图',
       fCoverRemove: '移除封面',
       filterAll: '全部',
+      pickCover: '从附件选择',
       newTitle: '新建内容',
       editTitle: '编辑内容',
       back: '返回列表',

@@ -51,6 +51,10 @@ export interface Translations {
   }
   attachmentManager: {
     title: string
+    pickerTitle: string
+    pickerTitleMulti: string
+    pickerUse: string
+    pickerImageOnlyHint: string
     searchPlaceholder: string
     search: string
     upload: string
@@ -1083,6 +1087,7 @@ export interface Translations {
       fCover: string
       fCoverRemove: string
       filterAll: string
+      pickCover: string
       categoryOptions: string[]
       statusOptions: string[]
       catNews: string

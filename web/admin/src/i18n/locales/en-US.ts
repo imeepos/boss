@@ -140,6 +140,10 @@ const enUS: Translations = {
   },
   attachmentManager: {
     title: 'Attachments',
+    pickerTitle: 'Pick attachment',
+    pickerTitleMulti: 'Pick attachments (multi)',
+    pickerUse: 'Use selected',
+    pickerImageOnlyHint: 'No image attachments in current view; upload above first',
     searchPlaceholder: 'Search file name',
     search: 'Search',
     upload: 'Upload',
@@ -1121,6 +1125,7 @@ const enUS: Translations = {
       fCover: 'Cover image',
       fCoverRemove: 'Remove cover',
       filterAll: 'All',
+      pickCover: 'Pick from attachments',
       newTitle: 'New Post',
       editTitle: 'Edit Post',
       back: 'Back to list',
