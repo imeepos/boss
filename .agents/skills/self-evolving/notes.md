@@ -632,3 +632,10 @@
 - skill 有没有提前警告:worktree 收尾协议和“ff-merge 失败禁止删除 worktree”红线直接命中；契约 fields.md 明确 accounts 的 legalEntityId/regionScope 是数据范围来源。
 - 重来一次:创建 worktree 后先记录 main HEAD，合并前每次都重新核对主树；数据范围必须从 handler 注入领域 Query，由 PG WHERE 约束，不能在前端过滤或只返回展示字段。
 - 结果:客户列表 GET /customers 已自动使用当前账号的 legalEntityId 与 regionScope；全量 Go 测试通过，102 admin、reviewer1、kefu_xu 三个账号实测，受限账号分别得到空集或本公司客户。
+
+## 2026-09-01 数据权限第二步：订单列表范围约束
+
+- 哪个坑浪费最多时间:订单查询的默认 limit 在实现内部是 100，admin API handler 没有把 limit/offset 接到 OrderQuery，导致验证脚本传 `limit=3` 仍返回完整 100 条；这不是本次权限逻辑错误，但暴露了列表契约的分页接线缺口。
+- skill 有没有提前警告:契约字段和数据权限接入原则已提前命中；本轮没有违反 worktree 红线，独立分支先测试再合并。
+- 重来一次:实现范围过滤时同时核对列表的分页参数是否已经从 HTTP 层透传，避免把权限正确与分页表现混在一起；对 102 API 断言时先检查响应结构和实际条数。
+- 结果:订单列表 GET /orders 已自动使用账号 legalEntityId + regionScope；PG/Memory 两套实现均过滤，Go 全量测试与 build 通过；102 的 admin、kefu_xu、reviewer1 实测分别看到全量、LEG-MAIN 订单、空集。
