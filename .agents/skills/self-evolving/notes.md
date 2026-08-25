@@ -567,3 +567,7 @@
 ## 2026-08-28 阶段复盘(纯盘点)
 - 坑:主树留有未提交运行时改动(client_release.go 缺省修复+回归测试),且 go build/test 全程无输出挂起——根因是并行会话的 go build 同刻在跑,疑似共享 GOCACHE 锁/资源竞争,本轮未能验证测试,复盘里必须如实标"未验证"。
 - 重来一次:动手跑门禁前先 `ps aux | grep "go build"` 看是否有并行会话在编译,有则错峰或换 GOFLAGS/GOCACHE 隔离,不空等 10 分钟。
+
+## 2026-08-22 补侧边栏图标(knowledge/release)
+- 坑:无。menu.def.ts key 与 public/icons/items/<key>.svg 一一对应,缺文件即无图标,纯静态资产零 TS 影响。
+- 教训:main 树 tsc 有并行会话未收敛的报错,门禁只跑 vite build + dist 资产断言即可定位静态变更。
