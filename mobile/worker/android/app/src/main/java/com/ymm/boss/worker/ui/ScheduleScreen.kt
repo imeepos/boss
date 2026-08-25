@@ -25,9 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ProfileApi
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
@@ -38,11 +40,14 @@ import org.json.JSONArray
 // 排期日历(对齐 docs/worker/schedule.html):月历忙碌日 + 今日排期 + 工时打卡
 @Composable
 fun ScheduleScreen(nav: NavHost) {
+    val clockInOkLabel = stringResource(R.string.sched_clock_in_ok)
+    val clockOutOkLabel = stringResource(R.string.sched_clock_out_ok)
     var clockHint by remember { mutableStateOf("") }
     var clocking by remember { mutableStateOf(false) }
     val state by loadOnce { ProfileApi.schedule() }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val titleLabel = stringResource(R.string.sched_title)
 
     fun clock(type: String) {
         if (clocking) return
@@ -50,27 +55,29 @@ fun ScheduleScreen(nav: NavHost) {
         scope.launch {
             clockHint = try {
                 val r = ProfileApi.clock(type)
-                (if (type == "IN") "上班打卡成功" else "下班打卡成功") + "：" + r.optString("clockedAt")
-            } catch (e: Exception) { "打卡失败：${e.message}" }
+                ctx.getString(R.string.sched_clock_ok_fmt,
+                    if (type == "IN") clockInOkLabel else clockOutOkLabel,
+                    r.optString("clockedAt"))
+            } catch (e: Exception) { ctx.getString(R.string.sched_clock_fail, e.message ?: "") }
             clocking = false
         }
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         when (val s = state) {
-            is Load.Loading -> { TopBar("排期日历", onBack = { nav.pop() }); Loading() }
+            is Load.Loading -> { TopBar(titleLabel, onBack = { nav.pop() }); Loading() }
             is Load.Fail -> {
-                TopBar("排期日历", onBack = { nav.pop() })
-                Card(Modifier.padding(14.dp)) { Notice("排期加载失败：${s.message}", red = true) }
+                TopBar(titleLabel, onBack = { nav.pop() })
+                Card(Modifier.padding(14.dp)) { Notice(ctx.getString(R.string.sched_load_fail, s.message ?: ""), red = true) }
             }
             is Load.Ok -> {
                 val d = s.data
-                TopBar("排期日历", onBack = { nav.pop() }, action = d.optString("month", "-"))
+                TopBar(titleLabel, onBack = { nav.pop() }, action = d.optString("month", "-"))
                 CalendarCard(d.optString("month", "-"), d.optJSONArray("busyDays"))
                 Card(Modifier.padding(12.dp)) {
                     val today = d.optJSONArray("today") ?: JSONArray()
-                    SectionTitle("今日排期", more = "${today.length()} 单")
-                    if (today.length() == 0) Empty("今日暂无排期")
+                    SectionTitle(stringResource(R.string.sched_section_today), more = ctx.getString(R.string.sched_today_count, today.length()))
+                    if (today.length() == 0) Empty(stringResource(R.string.sched_today_empty))
                     for (i in 0 until today.length()) {
                         val it0 = today.optJSONObject(i)
                         val no = it0.optString("ticketNo")
@@ -80,10 +87,10 @@ fun ScheduleScreen(nav: NavHost) {
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("工时打卡")
-                    PrimaryButton("上班打卡", enabled = !clocking, modifier = Modifier.fillMaxWidth()) { clock("IN") }
+                    SectionTitle(stringResource(R.string.sched_section_clock))
+                    PrimaryButton(stringResource(R.string.sched_btn_in), enabled = !clocking, modifier = Modifier.fillMaxWidth()) { clock("IN") }
                     Spacer(Modifier.height(8.dp))
-                    PrimaryButton("下班打卡", enabled = !clocking, modifier = Modifier.fillMaxWidth()) { clock("OUT") }
+                    PrimaryButton(stringResource(R.string.sched_btn_out), enabled = !clocking, modifier = Modifier.fillMaxWidth()) { clock("OUT") }
                     if (clockHint.isNotEmpty()) Notice(clockHint)
                 }
             }
@@ -100,9 +107,18 @@ private fun CalendarCard(month: String, busyDays: JSONArray?) {
     val yearMonth = java.time.YearMonth.of(year, monthValue)
     val firstOffset = yearMonth.atDay(1).dayOfWeek.value - 1
     val totalCells = firstOffset + yearMonth.lengthOfMonth()
+    val weekdays = listOf(
+        stringResource(R.string.sched_weekday_mon),
+        stringResource(R.string.sched_weekday_tue),
+        stringResource(R.string.sched_weekday_wed),
+        stringResource(R.string.sched_weekday_thu),
+        stringResource(R.string.sched_weekday_fri),
+        stringResource(R.string.sched_weekday_sat),
+        stringResource(R.string.sched_weekday_sun),
+    )
     Card(Modifier.padding(12.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-            listOf("一", "二", "三", "四", "五", "六", "日").forEach {
+            weekdays.forEach {
                 Text(it, fontSize = 12.sp, color = Muted, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier.weight(1f))
             }

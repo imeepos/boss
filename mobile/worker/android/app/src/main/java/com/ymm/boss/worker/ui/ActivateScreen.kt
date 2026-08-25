@@ -23,10 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ScanApi
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
@@ -40,23 +42,24 @@ fun ActivateScreen(nav: NavHost, no: String) {
     val info by loadOnce(no) { ScanApi.activation(no) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val toastOk = stringResource(R.string.act_toast_ok)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("激活", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.act_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("激活信息加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.act_load_fail), red = true) }
             is Load.Ok -> {
                 val d = s.data
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("工单号", d.optString("ticketNo"))
-                    KvRow("LOID", d.optString("loid", "-"))
+                    KvRow(stringResource(R.string.td_ticket_no), d.optString("ticketNo"))
+                    KvRow(stringResource(R.string.act_kv_loid), d.optString("loid", "-"))
                     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp),
                         horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("状态", fontSize = 13.sp, color = Muted)
+                        Text(stringResource(R.string.act_kv_status), fontSize = 13.sp, color = Muted)
                         StatusTag(d.optString("statusLabel", "-"), d.optString("status"))
                     }
-                    KvRow("上次尝试", d.optString("lastTry", "-"))
+                    KvRow(stringResource(R.string.act_kv_last_try), d.optString("lastTry", "-"))
                 }
                 Card(Modifier.padding(12.dp)) {
                     Box(Modifier.fillMaxWidth()
@@ -65,11 +68,11 @@ fun ActivateScreen(nav: NavHost, no: String) {
                         .padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("↻", fontSize = 40.sp, color = Primary, fontWeight = FontWeight.Bold)
-                            Text("激活回调未返回成功", fontSize = 13.sp, color = Muted)
-                            Text("请确认光猫在线后重试激活", fontSize = 12.sp, color = Muted)
+                            Text(stringResource(R.string.act_prompt_fail), fontSize = 13.sp, color = Muted)
+                            Text(stringResource(R.string.act_prompt_retry), fontSize = 12.sp, color = Muted)
                         }
                     }
-                    Text("重新激活", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                    Text(stringResource(R.string.act_btn_retry), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
                         modifier = Modifier.fillMaxWidth()
                             .padding(top = 12.dp)
                             .clip(RoundedCornerShape(10.dp))
@@ -78,16 +81,16 @@ fun ActivateScreen(nav: NavHost, no: String) {
                                 scope.launch {
                                     try {
                                         val r = ScanApi.activate(no)
-                                        toast(ctx, r.optString("message", "激活成功"))
+                                        toast(ctx, r.optString("message", toastOk))
                                         nav.push(Screen.Report(no))
-                                    } catch (e: Exception) { toast(ctx, "激活失败：${e.message}") }
+                                    } catch (e: Exception) { toast(ctx, ctx.getString(R.string.act_toast_fail, e.message ?: "")) }
                                 }
                             }
                             .padding(vertical = 12.dp),
                         textAlign = TextAlign.Center)
                 }
                 Card(Modifier.padding(12.dp)) {
-                    Notice("激活失败不丢数据，可反复重试；连续失败将自动转告警派单。")
+                    Notice(stringResource(R.string.act_notice))
                 }
             }
         }

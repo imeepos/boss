@@ -15,7 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.AssetApi
 import com.ymm.boss.worker.ui.theme.Success
 
@@ -27,50 +29,52 @@ fun ToolScreen(nav: NavHost, no: String?) {
     val ctx = LocalContext.current
     val measure by loadOnce(ticketNo, refresh) { AssetApi.measure(ticketNo) }
     val resources by loadOnce(ticketNo, refresh) { AssetApi.resources(ticketNo) }
+    val refreshLabel = stringResource(R.string.tool_action_refresh)
+    val auditClean = stringResource(R.string.tool_audit_clean)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("现场工具", onBack = { nav.pop() }, action = "刷新", onAction = { refresh++ })
+        TopBar(stringResource(R.string.tool_title), onBack = { nav.pop() }, action = refreshLabel, onAction = { refresh++ })
         if (ticketNo.isEmpty()) {
-            Card(Modifier.padding(12.dp)) { Notice("请从工单详情进入现场工具。", red = true) }
+            Card(Modifier.padding(12.dp)) { Notice(stringResource(R.string.tool_no_ticket), red = true) }
             return@Column
         }
         Card(Modifier.padding(12.dp)) {
-            SectionTitle("工单 $ticketNo")
+            SectionTitle(stringResource(R.string.tool_section_measure, ticketNo))
             when (val m = measure) {
                 is Load.Loading -> Loading()
-                is Load.Fail -> Notice("测速加载失败：${m.message}", red = true)
+                is Load.Fail -> Notice(ctx.getString(R.string.tool_measure_fail, m.message ?: ""), red = true)
                 is Load.Ok -> {
                     val p = m.data
-                    KvRow("光功率", "${p.optDouble("opticalPowerDbm")} dBm（${p.optString("opticalPowerLabel", "正常")}）",
+                    KvRow(stringResource(R.string.tool_kv_optical), ctx.getString(R.string.tool_optical_fmt, p.optDouble("opticalPowerDbm").toString(), p.optString("opticalPowerLabel", ctx.getString(R.string.tool_normal))),
                         valueColor = Success)
-                    KvRow("下载测速", "${p.optDouble("downloadMbps")} Mbps")
-                    KvRow("上传测速", "${p.optDouble("uploadMbps")} Mbps")
-                    KvRow("丢包率", "${p.optDouble("packetLossRate")}%", valueColor = Success)
+                    KvRow(stringResource(R.string.tool_kv_down), ctx.getString(R.string.tool_speed_fmt, p.optDouble("downloadMbps").toString()))
+                    KvRow(stringResource(R.string.tool_kv_up), ctx.getString(R.string.tool_speed_fmt, p.optDouble("uploadMbps").toString()))
+                    KvRow(stringResource(R.string.tool_kv_loss), ctx.getString(R.string.tool_loss_fmt, p.optDouble("packetLossRate").toString()), valueColor = Success)
                 }
             }
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("重新测速", modifier = Modifier.fillMaxWidth()) { refresh++ }
+            PrimaryButton(stringResource(R.string.tool_btn_remeasure), modifier = Modifier.fillMaxWidth()) { refresh++ }
         }
         Card(Modifier.padding(12.dp)) {
-            SectionTitle("资源查询")
+            SectionTitle(stringResource(R.string.tool_section_resource))
             when (val r = resources) {
                 is Load.Loading -> Loading()
-                is Load.Fail -> Notice("资源查询失败：${r.message}", red = true)
+                is Load.Fail -> Notice(ctx.getString(R.string.tool_resource_fail, r.message ?: ""), red = true)
                 is Load.Ok -> {
                     val d = r.data
-                    KvRow("片区空闲端口", "${d.optInt("idlePorts")} 个")
-                    KvRow("最近分光器", d.optString("nearestSplitter", "-"))
+                    KvRow(stringResource(R.string.tool_kv_idle_ports), ctx.getString(R.string.tool_idle_fmt, d.optInt("idlePorts")))
+                    KvRow(stringResource(R.string.tool_kv_splitter), d.optString("nearestSplitter", "-"))
                     val pon = d.optJSONArray("idlePonPorts")
-                    KvRow("PON 空闲口", pon?.let { arr -> List(arr.length()) { arr.optString(it) } }
+                    KvRow(stringResource(R.string.tool_kv_pon), pon?.let { arr -> List(arr.length()) { arr.optString(it) } }
                         ?.joinToString(" / ") ?: "-")
                 }
             }
         }
         Card(Modifier.padding(12.dp)) {
-            SectionTitle("台账自查")
-            Notice("扫码核对该区域资产台账，差异将自动生成清单上报。")
+            SectionTitle(stringResource(R.string.tool_section_self_audit))
+            Notice(stringResource(R.string.tool_audit_notice))
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("扫码核对", modifier = Modifier.fillMaxWidth()) { toast(ctx, "台账核对无差异。") }
+            PrimaryButton(stringResource(R.string.tool_btn_scan_audit), modifier = Modifier.fillMaxWidth()) { toast(ctx, auditClean) }
         }
         Spacer(Modifier.height(12.dp))
     }

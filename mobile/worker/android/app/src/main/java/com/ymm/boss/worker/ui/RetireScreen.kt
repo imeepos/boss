@@ -24,8 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.AssetApi
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
@@ -40,26 +42,27 @@ fun RetireScreen(nav: NavHost, no: String) {
     val state by loadOnce(refresh) { AssetApi.materials() }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val toastOk = stringResource(R.string.ret_toast_ok)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("旧件回收", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.ret_title), onBack = { nav.pop() })
         when (val s = state) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("加载失败：${s.message}", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(ctx.getString(R.string.ret_load_fail, s.message ?: ""), red = true) }
             is Load.Ok -> {
                 val items = s.data.optJSONArray("pendingReturn") ?: JSONArray()
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("待回收旧件")
-                    if (items.length() == 0) Empty("暂无待回收旧件")
+                    SectionTitle(stringResource(R.string.ret_section_pending))
+                    if (items.length() == 0) Empty(stringResource(R.string.ret_empty))
                     for (i in 0 until items.length()) {
                         val it0 = items.optJSONObject(i)
                         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("光猫 ${it0.optString("epc")}", fontSize = 14.sp, color = Ink)
+                                Text(stringResource(R.string.ret_kv_modem, it0.optString("epc")), fontSize = 14.sp, color = Ink)
                                 Text(it0.optString("reason"), fontSize = 12.sp, color = Muted)
                             }
-                            Text("返库", fontSize = 13.sp, color = Color.White,
+                            Text(stringResource(R.string.ret_btn_return), fontSize = 13.sp, color = Color.White,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(Primary)
@@ -67,9 +70,9 @@ fun RetireScreen(nav: NavHost, no: String) {
                                         scope.launch {
                                             try {
                                                 val r = AssetApi.returnAsset(it0.optString("epc"))
-                                                toast(ctx, r.optString("message", "已登记返库"))
+                                                toast(ctx, r.optString("message", toastOk))
                                                 refresh++
-                                            } catch (e: Exception) { toast(ctx, "返库失败：${e.message}") }
+                                            } catch (e: Exception) { toast(ctx, ctx.getString(R.string.ret_toast_fail, e.message ?: "")) }
                                         }
                                     }
                                     .padding(horizontal = 12.dp, vertical = 6.dp))
@@ -77,13 +80,13 @@ fun RetireScreen(nav: NavHost, no: String) {
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("已回收记录", more = "本月")
+                    SectionTitle(stringResource(R.string.ret_section_recorded), more = stringResource(R.string.ret_period_this_month))
                     val returned = s.data.optJSONObject("returned")
-                    KvRow("返修件", "${returned?.optInt("repairCount", 0) ?: 0} 件")
-                    KvRow("拆机回收", "${returned?.optInt("dismantleCount", 0) ?: 0} 件")
+                    KvRow(stringResource(R.string.ret_kv_repair), stringResource(R.string.ret_count_fmt, returned?.optInt("repairCount", 0) ?: 0))
+                    KvRow(stringResource(R.string.ret_kv_dismantle), stringResource(R.string.ret_count_fmt, returned?.optInt("dismantleCount", 0) ?: 0))
                 }
                 Card(Modifier.padding(12.dp)) {
-                    Notice("旧件回收须扫码留痕，返修件与拆机件分流处理。")
+                    Notice(stringResource(R.string.ret_notice))
                 }
             }
         }

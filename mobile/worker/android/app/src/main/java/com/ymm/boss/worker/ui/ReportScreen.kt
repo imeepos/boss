@@ -18,7 +18,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ScanApi
 import com.ymm.boss.worker.api.TicketApi
 import kotlinx.coroutines.launch
@@ -33,38 +35,39 @@ fun ReportScreen(nav: NavHost, no: String) {
     var err by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val toastOk = stringResource(R.string.report_toast_ok)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("完工上报", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.report_title), onBack = { nav.pop() })
         when (val s = info) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("工单加载失败，请刷新重试。", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(stringResource(R.string.report_load_fail), red = true) }
             is Load.Ok -> {
                 val d = s.data
                 Card(Modifier.padding(12.dp)) {
-                    KvRow("工单号", d.optString("ticketNo"))
-                    KvRow("客户", "${d.optString("customerName")}(${d.optString("customerPhoneMasked")})")
-                    KvRow("地址", d.optString("address"))
+                    KvRow(stringResource(R.string.td_ticket_no), d.optString("ticketNo"))
+                    KvRow(stringResource(R.string.td_customer), "${d.optString("customerName")}(${d.optString("customerPhoneMasked")})")
+                    KvRow(stringResource(R.string.scan_kv_address), d.optString("address"))
                 }
             }
         }
         if (err.isNotEmpty()) Card(Modifier.padding(12.dp)) { Notice(err, red = true) }
         Card(Modifier.padding(12.dp)) {
-            FieldLabel("备注")
+            FieldLabel(stringResource(R.string.report_field_remark))
             OutlinedTextField(value = remark, onValueChange = { remark = it },
-                placeholder = { Text("填写完工备注（可选）") }, minLines = 3,
+                placeholder = { Text(stringResource(R.string.report_remark_hint)) }, minLines = 3,
                 modifier = Modifier.fillMaxWidth())
         }
         Card(Modifier.padding(12.dp)) {
-            PrimaryButton("提交上报", enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            PrimaryButton(stringResource(R.string.report_btn_submit), enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                 busy = true
                 scope.launch {
                     try {
                         val r = ScanApi.submitReport(no, remark.trim())
-                        toast(ctx, r.optString("message", "上报成功"))
+                        toast(ctx, r.optString("message", toastOk))
                         nav.pop()
                     } catch (e: Exception) {
-                        err = "上报失败：${e.message}"
+                        err = ctx.getString(R.string.report_toast_fail, e.message ?: "")
                         busy = false
                     }
                 }

@@ -23,9 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.HallApi
 import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.Success
@@ -40,39 +41,42 @@ fun HallScreen(nav: NavHost) {
     val state by loadOnce(refresh) { HallApi.list() }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val refreshLabel = stringResource(R.string.tool_action_refresh)
+    val toastOk = stringResource(R.string.hall_grab_ok)
+    val grabFail = stringResource(R.string.hall_grab_fail)
 
     fun grab(no: String) {
         scope.launch {
             try {
                 val r = HallApi.grab(no)
-                toast(ctx, r.optString("message", "抢单成功"))
+                toast(ctx, r.optString("message", toastOk))
                 grabbed = grabbed + no
                 refresh++
-            } catch (e: Exception) { toast(ctx, "抢单失败，请重试。") }
+            } catch (e: Exception) { toast(ctx, grabFail) }
         }
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("任务池", onBack = { nav.pop() }, action = "刷新", onAction = { refresh++ })
+        TopBar(stringResource(R.string.hall_title), onBack = { nav.pop() }, action = refreshLabel, onAction = { refresh++ })
         Card(Modifier.padding(12.dp)) {
             when (val s = state) {
-                is Load.Loading -> { SectionTitle("可抢工单 · 加载中…"); Loading() }
-                is Load.Fail -> { SectionTitle("可抢工单"); Notice("任务池加载失败，请刷新重试。", red = true) }
+                is Load.Loading -> { SectionTitle(stringResource(R.string.hall_section_grab_loading)); Loading() }
+                is Load.Fail -> { SectionTitle(stringResource(R.string.hall_section_grab)); Notice(stringResource(R.string.hall_load_fail), red = true) }
                 is Load.Ok -> {
                     val items = s.data.optJSONArray("items") ?: JSONArray()
-                    SectionTitle("可抢工单 (${items.length()} 单)")
-                    if (items.length() == 0) Empty("暂无可抢工单")
+                    SectionTitle(stringResource(R.string.hall_section_grab_count, items.length()))
+                    if (items.length() == 0) Empty(stringResource(R.string.hall_empty))
                     for (i in 0 until items.length()) {
                         val it0 = items.optJSONObject(i)
                         val no = it0.optString("ticketNo")
-                        val dist = if (it0.isNull("distanceKm")) "" else " · 距您 ${it0.optDouble("distanceKm")}km"
+                        val dist = if (it0.isNull("distanceKm")) "" else ctx.getString(R.string.hall_distance_fmt, it0.optDouble("distanceKm").toString())
                         val isGrabbed = grabbed.contains(no)
                         Cell(
                             title = "$no · ${it0.optString("typeLabel")}",
                             desc = it0.optString("address") + dist,
                             onClick = if (isGrabbed) ({ nav.push(ticketScreen(no)) }) else null,
                         ) {
-                            Text(if (isGrabbed) "已抢" else "抢单", fontSize = 13.sp,
+                            Text(if (isGrabbed) stringResource(R.string.hall_btn_grabbed) else stringResource(R.string.hall_btn_grab), fontSize = 13.sp,
                                 color = if (isGrabbed) Success else Color.White,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
@@ -85,7 +89,7 @@ fun HallScreen(nav: NavHost) {
             }
         }
         Card(Modifier.padding(12.dp)) {
-            Notice("任务池按区域与技能公开，先到先得；抢单后进入「我的工单」。")
+            Notice(stringResource(R.string.hall_notice))
         }
         Spacer(Modifier.height(12.dp))
     }

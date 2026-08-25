@@ -22,8 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.AssetApi
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
@@ -38,17 +40,21 @@ fun PickupScreen(nav: NavHost) {
     val materials by loadOnce(refresh) { AssetApi.materials() }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val refreshLabel = stringResource(R.string.tool_action_refresh)
+    val outOk = stringResource(R.string.pick_out_ok)
+    val borrowOk = stringResource(R.string.pick_borrow_ok)
+    val returnOk = stringResource(R.string.pick_return_ok)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("领料 / 借还", onBack = { nav.pop() }, action = "刷新", onAction = { refresh++ })
+        TopBar(stringResource(R.string.pick_title), onBack = { nav.pop() }, action = refreshLabel, onAction = { refresh++ })
         when (val m = materials) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("加载失败：${m.message}", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(ctx.getString(R.string.pick_load_fail, m.message ?: ""), red = true) }
             is Load.Ok -> {
                 val items = m.data.optJSONArray("items") ?: JSONArray()
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("今日领用清单", more = "${items.length()} 项")
-                    if (items.length() == 0) Empty("暂无领用")
+                    SectionTitle(stringResource(R.string.pick_section_today), more = ctx.getString(R.string.pick_count_items, items.length()))
+                    if (items.length() == 0) Empty(stringResource(R.string.pick_empty_today))
                     for (i in 0 until items.length()) {
                         val it0 = items.optJSONObject(i)
                         val id = it0.optString("itemId")
@@ -57,7 +63,7 @@ fun PickupScreen(nav: NavHost) {
                             title = "${it0.optString("name")} ×${it0.optInt("qty")}",
                             desc = it0.optString("spec"),
                         ) {
-                            Text(if (out) "已出库" else "扫码出库", fontSize = 12.sp,
+                            Text(if (out) stringResource(R.string.pick_status_out) else stringResource(R.string.pick_btn_out), fontSize = 12.sp,
                                 color = if (out) Muted else Color.White,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
@@ -66,9 +72,9 @@ fun PickupScreen(nav: NavHost) {
                                         scope.launch {
                                             try {
                                                 val r = AssetApi.materialOut(id)
-                                                toast(ctx, r.optString("message", "已扫码出库。"))
+                                                toast(ctx, r.optString("message", outOk))
                                                 refresh++
-                                            } catch (e: Exception) { toast(ctx, "出库失败：${e.message}") }
+                                            } catch (e: Exception) { toast(ctx, ctx.getString(R.string.pick_out_fail, e.message ?: "")) }
                                         }
                                     }
                                     .padding(horizontal = 10.dp, vertical = 5.dp))
@@ -78,14 +84,14 @@ fun PickupScreen(nav: NavHost) {
                 val toolsState by loadOnce(refresh) { AssetApi.tools() }
                 val tools = (toolsState as? Load.Ok)?.data?.optJSONArray("items") ?: JSONArray()
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("工具借还", more = "${tools.length()} 件")
-                    if (tools.length() == 0) Empty("暂无工具")
+                    SectionTitle(stringResource(R.string.pick_section_tools), more = ctx.getString(R.string.pick_count_tools, tools.length()))
+                    if (tools.length() == 0) Empty(stringResource(R.string.pick_empty_tools))
                     for (i in 0 until tools.length()) {
                         val t = tools.optJSONObject(i)
                         val id = t.optString("toolId")
                         val borrowed = t.optBoolean("borrowed")
                         Cell(title = t.optString("name")) {
-                            Text(if (borrowed) "归还" else "借用", fontSize = 12.sp, color = Color.White,
+                            Text(if (borrowed) stringResource(R.string.pick_btn_return) else stringResource(R.string.pick_btn_borrow), fontSize = 12.sp, color = Color.White,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(if (borrowed) Muted else Primary)
@@ -94,9 +100,10 @@ fun PickupScreen(nav: NavHost) {
                                             try {
                                                 val r = if (borrowed) AssetApi.giveBackTool(id)
                                                 else AssetApi.borrowTool(id)
-                                                toast(ctx, r.optString("message", if (borrowed) "已登记归还。" else "已登记借用。"))
+                                                toast(ctx, r.optString("message",
+                                                    if (borrowed) returnOk else borrowOk))
                                                 refresh++
-                                            } catch (e: Exception) { toast(ctx, "操作失败：${e.message}") }
+                                            } catch (e: Exception) { toast(ctx, ctx.getString(R.string.pick_op_fail, e.message ?: "")) }
                                         }
                                     }
                                     .padding(horizontal = 10.dp, vertical = 5.dp))
@@ -104,7 +111,7 @@ fun PickupScreen(nav: NavHost) {
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    Notice("库存不足或安全库存预警时自动提醒，缺货将触发补货申请。")
+                    Notice(stringResource(R.string.pick_inventory_notice))
                 }
             }
         }
