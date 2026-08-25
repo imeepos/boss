@@ -17,12 +17,12 @@ type odnSiteReq struct {
 	Lng    float64 `json:"lng"`
 }
 
-// odnDeviceReq 设备新建请求体。
+// odnDeviceReq 设备新建请求体(prvCode/cityPrefix 可空:handler 回退 query,与 site 一致)。
 type odnDeviceReq struct {
 	Code       string   `json:"code" binding:"required"`
 	Kind       string   `json:"kind" binding:"required,oneof=SNW OLT ODF OCC ODB SDB PRT TBP"`
-	PrvCode    string   `json:"prvCode" binding:"required,len=6"`
-	CityPrefix string   `json:"cityPrefix" binding:"required,min=3,max=5"`
+	PrvCode    string   `json:"prvCode"`
+	CityPrefix string   `json:"cityPrefix"`
 	SiteNo     int16    `json:"siteNo" binding:"min=0,max=999"`
 	ParentID   int64    `json:"parentId"`
 	Name       string   `json:"name"`

@@ -83,8 +83,21 @@ func odnCreateDeviceHandler(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
-		d := odn.Device{Code: req.Code, Kind: req.Kind, PrvCode: req.PrvCode,
-			CityPrefix: req.CityPrefix, SiteNo: req.SiteNo, ParentID: req.ParentID,
+		// prvCode/cityPrefix 兼容 body 与 query(前端放 query,与 site/facility 一致)。
+		prv := req.PrvCode
+		if prv == "" {
+			prv = c.Query("prvCode")
+		}
+		city := req.CityPrefix
+		if city == "" {
+			city = c.Query("cityPrefix")
+		}
+		if prv == "" || city == "" {
+			respond(c, apitypes.CodeInvalidParam, nil)
+			return
+		}
+		d := odn.Device{Code: req.Code, Kind: req.Kind, PrvCode: prv,
+			CityPrefix: city, SiteNo: req.SiteNo, ParentID: req.ParentID,
 			Name: req.Name, Lat: req.Lat, Lng: req.Lng}
 		if err := a.ODN.CreateDevice(c.Request.Context(), d); err != nil {
 			respondErr(c, err)

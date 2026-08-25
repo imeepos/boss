@@ -150,4 +150,13 @@ func TestODNSiteDeviceHandlers(t *testing.T) {
 			t.Fatalf("期望 42200,body=%s", w.Body.String())
 		}
 	})
+	t.Run("POST /odn/devices query 传省市区(前端用法)成功", func(t *testing.T) {
+		f := &fakeODN{}
+		w := doJSON(odnRouter(f), http.MethodPost,
+			"/api/admin/v1/odn/devices?prvCode=PHL001&cityPrefix=MNL",
+			`{"code":"OLT001","kind":"OLT","siteNo":1}`)
+		if w.Code != http.StatusOK {
+			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
+		}
+	})
 }
