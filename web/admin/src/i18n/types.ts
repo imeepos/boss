@@ -941,7 +941,7 @@ export interface Translations {
       title: string
       desc: string
       searchPlaceholder: string
-      allGroup: string
+      allMembers: string
       columns: string[]
       active: string
       left: string
@@ -954,6 +954,37 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      // 装维队管理(000141)
+      teamTitle: string
+      newTeam: string
+      editTeam: string
+      teamName: string
+      teamCode: string
+      teamEntity: string
+      captain: string
+      captainEmpty: string
+      memberCount: string
+      setCaptain: string
+      transfer: string
+      transferTitle: string
+      transferTo: string
+      reasonLabel: string
+      reasonPlaceholder: string
+      disband: string
+      disbandConfirmText: string
+      confirmDisband: string
+      perfBtn: string
+      perfTitle: string
+      periodLabel: string
+      perfCols: string[]
+      captainTag: string
+      memberTag: string
+      save: string
+      cancel: string
+      actionFail: string
+      eNameRequired: string
+      eCodeRequired: string
+      eEntityRequired: string
     }
     workerRegPage: {
       title: string
