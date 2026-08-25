@@ -78,3 +78,18 @@ function rowsEnvelope(v: unknown): unknown[] | null {
 export function entityTemplateJson(def: EntityDef): string {
   return JSON.stringify(def.samples, null, 2)
 }
+
+/** 拆分 query/body:queryColumns 列进 query string(如 ODN prvCode/cityPrefix),其余进 POST body。 */
+export function splitQueryRow(
+  def: EntityDef,
+  row: Record<string, unknown>,
+): { query: Record<string, string | number>; body: Record<string, unknown> } {
+  const q = new Set(def.queryColumns ?? [])
+  const query: Record<string, string | number> = {}
+  const body: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(row)) {
+    if (q.has(k)) query[k] = v as string | number
+    else body[k] = v
+  }
+  return { query, body }
+}

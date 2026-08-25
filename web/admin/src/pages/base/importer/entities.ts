@@ -16,6 +16,8 @@ export interface EntityDef {
   endpoint: string
   /** 创建端点所需菜单权限码(权限前置:无权限置灰禁止导入)。 */
   perm: string
+  /** 走 query string 而非 body 的列(如 ODN 的 prvCode/cityPrefix;仍须登记在 columns 中)。 */
+  queryColumns?: string[]
   columns: EntityColumn[]
   /** 模板样例行(与 columns 同序的字段集)。 */
   samples: Array<Record<string, string | number | string[]>>
@@ -95,6 +97,40 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     ],
     samples: [
       { legalEntityId: 1, name: '示例套餐 100M', monthlyFee: 99, bandwidth: '100M', category: 'broadband', status: 'DRAFT' },
+    ],
+  },
+  {
+    kind: 'odnSite',
+    perm: 'menu:odn',
+    endpoint: '/odn/sites',
+    queryColumns: ['prvCode', 'cityPrefix'],
+    columns: [
+      { key: 'prvCode', required: true, type: 'string' },
+      { key: 'cityPrefix', required: true, type: 'string' },
+      { key: 'siteNo', required: true, type: 'number' },
+      { key: 'name', required: false, type: 'string' },
+      { key: 'lat', required: false, type: 'number' },
+      { key: 'lng', required: false, type: 'number' },
+    ],
+    samples: [
+      { prvCode: 'PHL001', cityPrefix: 'MNL', siteNo: 88, name: '示例局点', lat: 14.6, lng: 121.0 },
+    ],
+  },
+  {
+    kind: 'odnGrid',
+    perm: 'menu:odn',
+    endpoint: '/odn/grids',
+    queryColumns: ['prvCode', 'cityPrefix'],
+    columns: [
+      { key: 'prvCode', required: true, type: 'string' },
+      { key: 'cityPrefix', required: true, type: 'string' },
+      { key: 'gridCode', required: true, type: 'number' },
+      { key: 'name', required: false, type: 'string' },
+      { key: 'coverage', required: false, type: 'string' },
+      { key: 'status', required: true, type: 'string' },
+    ],
+    samples: [
+      { prvCode: 'PHL001', cityPrefix: 'MNL', gridCode: 12, name: '示例网格', coverage: 'Makati', status: 'ACTIVE' },
     ],
   },
 ]

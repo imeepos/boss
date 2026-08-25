@@ -2,12 +2,13 @@
 import { describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
 import { findEntity, IMPORT_ENTITIES } from './entities'
-import { coerceEntityRow, entityTemplateJson, MAX_IMPORT_ROWS, parseEntityRows } from './entityPreview'
+import { coerceEntityRow, entityTemplateJson, MAX_IMPORT_ROWS, parseEntityRows, splitQueryRow } from './entityPreview'
 import { entityExcelTemplate, parseEntityExcel } from './excel'
 
 describe('实体定义', () => {
   it('5 个项目均含端点与必填列', () => {
-    expect(IMPORT_ENTITIES.map((e) => e.kind)).toEqual(['account', 'legalEntity', 'department', 'post', 'product'])
+    expect(IMPORT_ENTITIES.map((e) => e.kind)).toEqual(['account', 'legalEntity', 'department', 'post', 'product', 'odnSite', 'odnGrid'])
+    expect(new Set(IMPORT_ENTITIES.map((e) => e.perm)).size).toBeGreaterThan(0)
     for (const e of IMPORT_ENTITIES) {
       expect(e.endpoint.startsWith('/')).toBe(true)
       expect(e.columns.some((c) => c.required)).toBe(true)
@@ -56,6 +57,24 @@ describe('parseEntityRows', () => {
     expect(parseEntityRows(dept, { x: 1 })).toEqual({ ok: false, reason: 'notArray' })
     expect(parseEntityRows(dept, [{ legalEntityId: 1, name: 'A' }, { legalEntityId: 1 }]))
       .toEqual({ ok: false, reason: 'badRow', row: 2, field: 'name' })
+  })
+})
+
+describe('splitQueryRow', () => {
+  it('queryColumns 列进 query,其余进 body', () => {
+    const site = findEntity('odnSite') as NonNullable<ReturnType<typeof findEntity>>
+    const parsed = parseEntityRows(site, [{ prvCode: 'PHL001', cityPrefix: 'MNL', siteNo: 88, name: 'X' }])
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    const { query, body } = splitQueryRow(site, parsed.rows[0])
+    expect(query).toEqual({ prvCode: 'PHL001', cityPrefix: 'MNL' })
+    expect(body).toEqual({ siteNo: 88, name: 'X' })
+  })
+  it('无 queryColumns 的实体 body 原样', () => {
+    const dept = findEntity('department') as NonNullable<ReturnType<typeof findEntity>>
+    const { query, body } = splitQueryRow(dept, { legalEntityId: 1, name: 'A' })
+    expect(query).toEqual({})
+    expect(body).toEqual({ legalEntityId: 1, name: 'A' })
   })
 })
 

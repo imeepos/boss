@@ -7,7 +7,7 @@ import { ToolbarButton } from '../../../components/business/page-head'
 import { Badge } from '../../../components/ui/badge'
 import type { Translations } from '../../../i18n/types'
 import { MAX_BYTES, PREVIEW_ROWS, parseJson } from './preview'
-import { entityTemplateJson, parseEntityRows, MAX_IMPORT_ROWS } from './entityPreview'
+import { entityTemplateJson, parseEntityRows, splitQueryRow, MAX_IMPORT_ROWS } from './entityPreview'
 import { entityExcelTemplate, isExcelFile, parseEntityExcel, type ExcelParseResult } from './excel'
 import { AttachmentPickerDialog } from './AttachmentPickerDialog'
 import type { EntityDef } from './entities'
@@ -118,7 +118,8 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
     let ok = 0
     for (let i = 0; i < rows.length; i++) {
       try {
-        await apiFetch(def.endpoint, { method: 'POST', body: rows[i] })
+        const { query, body } = splitQueryRow(def, rows[i])
+        await apiFetch(def.endpoint, { method: 'POST', query, body })
         ok++
       } catch (e) {
         const msg = e instanceof Error ? e.message : text.loadFail
