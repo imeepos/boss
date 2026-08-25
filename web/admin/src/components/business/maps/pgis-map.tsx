@@ -31,7 +31,7 @@ export function PgisMap({
   onViewportChange?: (b: ViewportBbox) => void
   /** 不传时按 [data-theme] 自动切换;传了以传入为准。 */
   theme?: Theme
-  /** 不传时按 theme 选默认 URL(light→OSM,dark→CartoDB)。 */
+  /** 不传时按 theme 选默认 URL(light→高德,dark→CartoDB)。 */
   tileUrl?: string
 }) {
   const ref = useRef<HTMLDivElement | null>(null)

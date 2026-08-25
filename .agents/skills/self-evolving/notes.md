@@ -698,3 +698,9 @@
 - skill 有没有提前警告我:cdp-capture eval 语义已在 boss-admin-web.md 有记载,但 mousedown 这条没有。
 - 重来一次:① CI 卡死先查 action_task.status 与 job log 一致性,再决定手动部署;② 验证 Dropdown 交互统一用 mousedown;③ 脚本里的凭据用完即删。
 - 交付:队伍卡片操作下拉、头部添加装维队按钮、业绩统计右侧抽屉、师傅选择器选人入组;门禁全绿,102 手动部署后 DOM 断言逐项验证通过。
+
+## 2026-08-25 AMap 收尾与并行分支安全
+- 哪个坑浪费最多时间:初版把根 `.env` 作为前端 `VITE_AMAP_KEY` 直接依赖，worktree 没有根环境文件时测试/构建不具备可重复性；同时曾尝试用 `import.meta` 全局 stub 测 key，ESM 元对象不可安全替换。
+- skill 有没有提前警告:并行 worktree 不得触碰别人的 WIP、提交前必须核对显式 pathspec 与 status；但环境变量从 monorepo 根到 Vite 子项目的构建边界需要在计划阶段先验证。
+- 重来一次:先在独立 worktree 复制/注入可控测试 key，使用 Vite `loadEnv` 将根 `AMAP_KEY` 映射到公开客户端变量；`AMAP_SECRET` 永不下发浏览器；暗色底图优先使用独立 dark 瓦片，避免全图 CSS filter 反转点位层。
+- 交付:高德亮色瓦片、CartoDB 暗色瓦片、AMAP_KEY 构建时注入和 `.env.example` 文档已测试并合并；25 个地图相关测试、TypeScript 类型检查和 Vite 生产构建通过。
