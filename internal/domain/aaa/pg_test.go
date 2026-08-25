@@ -44,6 +44,10 @@ func TestPGStore_CreateLoAccount(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 关联完整性:customers/product_offers/legal_entities 存在性校验。
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(4)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(2)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO lo_accounts`).
 		WithArgs("LOID-88A2", int64(4), int64(1), "主品牌·企业", int64(11), "马尼拉市", nil, int64(2), int64(1), "ACTIVE", "PREPAID").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -63,6 +67,33 @@ func TestPGStore_CreateLoAccount(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
 	}
+}
+
+// TestPGStore_CreateLoAccount_RejectsOrphanRefs 契约:关联实体缺失/为零时拒建,
+// 不落孤儿 LO 账号(customer_id 无外键,应用层门禁)。
+func TestPGStore_CreateLoAccount_RejectsOrphanRefs(t *testing.T) {
+	t.Run("customer 不存在", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(999)).
+			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+		_, err := NewPGStore(mock).CreateLoAccount(context.Background(), LoAccount{
+			Loid: "LOID-X", CustomerID: 999, LegalEntityID: 1, OfferID: 2, Status: "ACTIVE",
+		})
+		if !errors.Is(err, ErrForeignKeyViolation) {
+			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+		}
+	})
+	t.Run("customer_id 为零", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		_, err := NewPGStore(mock).CreateLoAccount(context.Background(), LoAccount{
+			Loid: "LOID-X", LegalEntityID: 1, OfferID: 2, Status: "ACTIVE",
+		})
+		if !errors.Is(err, ErrForeignKeyViolation) {
+			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+		}
+	})
 }
 
 func TestPGStore_GetLoAccountByLoid(t *testing.T) {
@@ -250,6 +281,9 @@ func TestPGStore_CreateLoAccountBillingModeDefault(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(5)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(2)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`SELECT billing_mode FROM orders`).
 		WithArgs(int64(5)).
 		WillReturnError(pgx.ErrNoRows)
@@ -277,6 +311,9 @@ func TestPGStore_CreateLoAccountBillingModeInherit(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(6)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(2)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`SELECT billing_mode FROM orders`).
 		WithArgs(int64(6)).
 		WillReturnRows(mock.NewRows([]string{"billing_mode"}).AddRow("PREPAID"))

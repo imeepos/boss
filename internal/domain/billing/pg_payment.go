@@ -15,9 +15,22 @@ func (s *PGStore) RecordPayment(ctx context.Context, p Payment) (int64, error) {
 
 // RecordPaymentWithCoupon 带券落账:先插全额流水取 id,再同事务行锁核销券,
 // 最后把流水金额改写为实收;核销失败整笔回滚(券不可用则缴费不成立)。
+// 关联完整性:账单流水必须锚定已存在账单;无账单流水(充值/续费)必须带 customer_id
+// 归属,否则落账即孤儿(payments 曾 2 条 bill_id/customer_id 双空,audit 2026-08-25)。
 func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (PaymentReceipt, error) {
 	if p.Status == "" {
 		p.Status = "SUCCESS"
+	}
+	if p.BillID > 0 {
+		ok, err := s.exists(ctx, "bills", p.BillID)
+		if err != nil {
+			return PaymentReceipt{}, err
+		}
+		if !ok {
+			return PaymentReceipt{}, fmt.Errorf("billing: bill %d: %w", p.BillID, ErrForeignKeyViolation)
+		}
+	} else if p.CustomerID <= 0 {
+		return PaymentReceipt{}, fmt.Errorf("billing: payment needs bill_id or customer_id: %w", ErrForeignKeyViolation)
 	}
 	if p.CouponID != "" && s.couponDeduc == nil {
 		return PaymentReceipt{}, fmt.Errorf("billing: coupon deductor not configured")
@@ -29,9 +42,9 @@ func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (Payme
 	defer tx.Rollback(ctx)
 	var id int64
 	err = tx.QueryRow(ctx, `
-		INSERT INTO payments(pay_no, bill_id, amount, method, status)
-		VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		p.PayNo, p.BillID, p.Amount, p.Method, p.Status).Scan(&id)
+		INSERT INTO payments(pay_no, bill_id, customer_id, amount, method, status)
+		VALUES($1,NULLIF($2,0),NULLIF($3,0),$4,$5,$6) RETURNING id`,
+		p.PayNo, p.BillID, p.CustomerID, p.Amount, p.Method, p.Status).Scan(&id)
 	if err != nil {
 		return PaymentReceipt{}, fmt.Errorf("billing: insert payment: %w", err)
 	}

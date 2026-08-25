@@ -123,7 +123,9 @@ func (s *PGStore) GetBill(ctx context.Context, id int64) (*Bill, error) {
 	return &b, nil
 }
 
-const paymentCols = `id, pay_no, COALESCE(bill_id,0), amount, method, status`
+// paymentCols 含 customer_id(000068 充值归属列);读路径此前漏读导致 API 恒返回
+// customerId=0,孤儿流水无法从接口观测(audit 2026-08-25)。
+const paymentCols = `id, pay_no, COALESCE(bill_id,0), COALESCE(customer_id,0), amount, method, status`
 
 // ListPayments 列出缴费流水;billID=0 返回全部,否则按账单过滤。
 func (s *PGStore) ListPayments(ctx context.Context, billID int64) ([]Payment, error) {
@@ -136,7 +138,7 @@ func (s *PGStore) ListPayments(ctx context.Context, billID int64) ([]Payment, er
 	out := make([]Payment, 0)
 	for rows.Next() {
 		var p Payment
-		if err := rows.Scan(&p.ID, &p.PayNo, &p.BillID, &p.Amount, &p.Method, &p.Status); err != nil {
+		if err := rows.Scan(&p.ID, &p.PayNo, &p.BillID, &p.CustomerID, &p.Amount, &p.Method, &p.Status); err != nil {
 			return nil, fmt.Errorf("billing: scan payment: %w", err)
 		}
 		out = append(out, p)
@@ -193,8 +195,8 @@ func (s *PGStore) ListPaymentsByCustomer(ctx context.Context, customerID int64) 
 	out := make([]Payment, 0)
 	for rows.Next() {
 		var p Payment
-		if err := rows.Scan(&p.ID, &p.PayNo, &p.BillID, &p.Amount, &p.Method, &p.Status); err != nil {
-			return nil, fmt.Errorf("billing: scan payment: %w", err)
+		if err := rows.Scan(&p.ID, &p.PayNo, &p.BillID, &p.CustomerID, &p.Amount, &p.Method, &p.Status); err != nil {
+			return nil, fmt.Errorf("billing: scan payment by customer: %w", err)
 		}
 		out = append(out, p)
 	}

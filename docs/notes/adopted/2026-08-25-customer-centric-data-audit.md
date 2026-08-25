@@ -91,3 +91,29 @@
 - docs/contract/fields.md(§2.1 客户/§3.1-3.3 订单/计费/§4.1 资产/§5.1 四码)
 - migrations/000004(客户)、000010/000017/000018(订单/工单)、000011/000024/000048(账务/发票)、000012(四码)、000046/000051(用户子表/实名)、000105(LOY)
 - 服务端巡检端点:GET /db-patrol/orphans、GET /reports/recon/latest
+
+## 六、Addendum(2026-08-29):接口门禁加固实施
+
+按用户指令「接口加紧限制关联数据能不为空就不为空;检测关联数据是否存在/状态是否正常;
+流程数据在状态流转中完善关联数据;孤儿数据优先从接口门禁出发优化」,本节落地了门禁层修复
+(commit feat/api-gate-hardening)。原则:数据库层软引用不加 FK(历史裁定),改在写入域
+(domain 层,handler 全部委托)加存在性/非空门禁,新数据不再产生孤儿;存量孤儿清理
+(建议 §五.1)单列后续任务。
+
+| 写入口 | 门禁 | 关闭的孤儿类 |
+|---|---|---|
+| order.Submit(环节1) | 已有:customer/address 存在 + offer PUBLISHED + channel ACTIVE | orders 三列悬空(140/135/135) |
+| aaa.CreateLoAccount | 新增:customer_id/offer_id/legal_entity_id 必填且存在 | lo_accounts.customer_id(18) |
+| resource.CreateTransfer | 收紧:resource_id/legal_entity_id 必填且存在(原 0 可放过) | transfers.resource_id(22) |
+| resource.AppendReserveRecord | 新增:port_id/order_id 必填且存在 | reserve_records.port_id(11) |
+| resource.AppendPortHistory | 新增:port_id 必填且存在 | port_change_history.port_id |
+| billing.RecordPaymentWithCoupon | 新增:bill_id>0 时账单必须存在;bill/customer 双空拒收;INSERT 落 customer_id | payments 双空孤儿(2) |
+| order.CreateComplaint | 收紧:customer_id 必填,未传时经订单推导(师傅端投诉只带 OrderID) | complaints.customer_id=0 |
+| order.CreateDispatchTicket / AppendScanLog | 收紧:order_id 必填且存在 | dispatch_tickets/scan_logs 孤儿 |
+| device.CreateAlarm | 新增:resource_id>0 时资源必须存在(NULL 保留平台告警) | alarms.resource_id 悬空(12) |
+| order.DispatchOrder + Automation | 流程:派单幂等自愈——已到环节8 时重调仅补落缺失工单;updateMap 同为 selfHeal 环节 | 环节8 DONE 无工单(≥5,含 330/331/332/333/350 存量,重调自愈) |
+| billing 读路径 | paymentCols 补 COALESCE(customer_id,0),API 不再恒返回 customerId=0 | 孤儿流水可观测 |
+
+放弃的方案:对软引用列补 DB FK 约束(会拦历史脏数据导致迁移失败,且与「软引用」历史裁定
+冲突);对存量孤儿做批量 DELETE(需单独死数据任务,不在门禁提交内)。门禁全部走
+pgxmock 单测锁定 SQL 契约,`make check` 全绿。

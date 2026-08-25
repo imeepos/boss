@@ -101,16 +101,17 @@ func TestAutomation(t *testing.T) {
 		}
 	})
 
-	// 12 环节全部完成时重调为 no-op(重试幂等)。
-	t.Run("段12已完成 → AutoPostScan 全跳过", func(t *testing.T) {
+	// 12 环节全部完成时,普通环节全跳过;updateMap 为 selfHeal 环节仍执行一次
+	// 幂等自愈(补落 USED 端口/计提佣金,重跑无害),故仅剩 updateMap 被调用。
+	t.Run("段12已完成 → AutoPostScan 仅 selfHeal updateMap", func(t *testing.T) {
 		o := &autoOrder{}
 		o.track = &order.Order{OrderNo: "ORD-T", Stage: 12}
 		m := NewAutomation(o, nil)
 		if err := m.AutoPostScan(context.Background(), 1); err != nil {
 			t.Fatal(err)
 		}
-		if len(o.calls) != 0 {
-			t.Fatalf("calls=%v, want empty", o.calls)
+		if len(o.calls) != 1 || o.calls[0] != "updateMap" {
+			t.Fatalf("calls=%v, want [updateMap]", o.calls)
 		}
 	})
 

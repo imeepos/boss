@@ -9,11 +9,25 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// ErrForeignKeyViolation 关联实体不存在(孤儿数据防护:lo_accounts 无外键约束)。
+var ErrForeignKeyViolation = errors.New("aaa: referenced entity not found")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+// exists 校验单表存在性(lo_accounts 无外键,关联完整性由本域应用层保证)。
+func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, error) {
+	var ok bool
+	err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM `+table+` WHERE id = $1)`, id).Scan(&ok)
+	if err != nil {
+		return false, fmt.Errorf("aaa: check %s %d: %w", table, id, err)
+	}
+	return ok, nil
 }
 
 // PGStore 是 AaaService 接口的 PostgreSQL 实现(阶段7:LO账号/话单/认证日志)。
@@ -48,7 +62,32 @@ func (s *PGStore) ListLoAccounts(ctx context.Context) ([]LoAccount, error) {
 
 // CreateLoAccount 新建 LO 账号,返回自增 id;BillingMode 空时继承该客户最近订单的
 // 付费模式(fields.md §3.1,只读跨表与 GenerateBills 同惯例),仍空回退 POSTPAID。
+// 关联完整性:customer_id/offer_id/legal_entity_id 为 NOT NULL 软引用,缺失直接拒,
+// 防止孤儿 LO 账号(customer_id 曾 18 条孤儿,audit 2026-08-25)。
 func (s *PGStore) CreateLoAccount(ctx context.Context, a LoAccount) (int64, error) {
+	if a.CustomerID <= 0 {
+		return 0, fmt.Errorf("aaa: customer_id required: %w", ErrForeignKeyViolation)
+	}
+	for _, ref := range []struct {
+		table string
+		id    int64
+		label string
+	}{
+		{"customers", a.CustomerID, "customer"},
+		{"product_offers", a.OfferID, "offer"},
+		{"legal_entities", a.LegalEntityID, "legal entity"},
+	} {
+		if ref.id <= 0 {
+			return 0, fmt.Errorf("aaa: %s_id required: %w", ref.label, ErrForeignKeyViolation)
+		}
+		ok, err := s.exists(ctx, ref.table, ref.id)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("aaa: %s %d: %w", ref.label, ref.id, ErrForeignKeyViolation)
+		}
+	}
 	if a.BillingMode == "" {
 		a.BillingMode = s.inheritBillingMode(ctx, a.CustomerID)
 	}

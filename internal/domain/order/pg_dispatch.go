@@ -124,3 +124,43 @@ func (s *PGStore) UpdateScheduleSlot(ctx context.Context, ticketNo string, sched
 	}
 	return nil
 }
+
+// DispatchOrder 环节8 派单(status: RESERVED→INSTALLING)+ 生成待派工单入池。
+// 幂等自愈:订单已到环节8 时不再推进状态机,仅确保工单存在(createTicketOnDispatch
+// ON CONFLICT DO NOTHING)。闭环了「派单已推进但工单落库失败 → Automation 幂等续推
+// 跳过 → 环节8 无工单」的孤儿类(audit 2026-08-25:330/331/332/333/350)。
+func (s *PGStore) DispatchOrder(ctx context.Context, orderID int64) error {
+	var stage int8
+	err := s.db.QueryRow(ctx, `SELECT stage FROM orders WHERE id = $1`, orderID).Scan(&stage)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrOrderNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("order: dispatch select stage: %w", err)
+	}
+	if stage >= 8 {
+		return s.createTicketOnDispatch(ctx, orderID)
+	}
+	if err := s.advance(ctx, orderID, "dispatchOrder"); err != nil {
+		return err
+	}
+	return s.createTicketOnDispatch(ctx, orderID)
+}
+
+// createTicketOnDispatch 派单时落工单(worker 空=PENDING 入池);order_id 唯一约束 +
+// ON CONFLICT DO NOTHING 保证 Automation 失败重试幂等。ticket_no 由 order_no 派生
+// (ORD-→DT-)保证唯一可追溯;区域/班组快照留空,由指派时回填。
+func (s *PGStore) createTicketOnDispatch(ctx context.Context, orderID int64) error {
+	if _, err := s.db.Exec(ctx, `
+		INSERT INTO dispatch_tickets(ticket_no, order_id, legal_entity_id, legal_entity_name, status)
+		SELECT 'DT-' || substr(o.order_no, 5), o.id, o.legal_entity_id, COALESCE(le.name, ''), 'PENDING'
+		FROM orders o
+		LEFT JOIN legal_entities le ON le.id = o.legal_entity_id
+		WHERE o.id = $1
+		ON CONFLICT (order_id) DO NOTHING`,
+		orderID,
+	); err != nil {
+		return fmt.Errorf("order: dispatch create ticket: %w", err)
+	}
+	return nil
+}

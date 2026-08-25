@@ -2,9 +2,13 @@ package device
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
+
+// ErrForeignKeyViolation 关联实体不存在(孤儿告警防护:alarms.resource_id 软引用)。
+var ErrForeignKeyViolation = errors.New("device: referenced entity not found")
 
 // idOrNil 把 0 归一为 NULL(可空约定:0=空)。
 func idOrNil(id int64) any {
@@ -12,6 +16,17 @@ func idOrNil(id int64) any {
 		return nil
 	}
 	return id
+}
+
+// exists 校验单表存在性(alarms.resource_id 无外键,关联完整性由本域应用层保证)。
+func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, error) {
+	var ok bool
+	err := s.db.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM `+table+` WHERE id = $1)`, id).Scan(&ok)
+	if err != nil {
+		return false, fmt.Errorf("device: check %s %d: %w", table, id, err)
+	}
+	return ok, nil
 }
 
 // ListAlarms 列出告警;resourceID=0 返回全部,否则按设备过滤。
@@ -35,7 +50,18 @@ func (s *PGStore) ListAlarms(ctx context.Context, resourceID int64) ([]Alarm, er
 }
 
 // CreateAlarm 新增告警,返回自增 id。
+// 关联完整性:resource_id 非零时校验资源存在(曾 12 条悬空资源告警,audit
+// 2026-08-25);零/NULL 保留给平台级告警(source 非 device)。
 func (s *PGStore) CreateAlarm(ctx context.Context, a Alarm) (int64, error) {
+	if a.ResourceID > 0 {
+		ok, err := s.exists(ctx, "resources", a.ResourceID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("device: resource %d: %w", a.ResourceID, ErrForeignKeyViolation)
+		}
+	}
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO alarms(alarm_no, level, source, content, resource_id, status, created_at)

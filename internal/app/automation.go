@@ -26,29 +26,32 @@ func NewAutomation(o order.OrderService, pub events.Publisher) *Automation {
 	return &Automation{Order: o, Pub: pub}
 }
 
+// autoStep 一个自动推进环节;selfHeal=true 时即使当前 stage 已达目标仍执行
+// (dispatchOrder/updateMap 幂等自愈:补齐「推进成功但关联数据落库失败」的孤儿,
+// 见 order.DispatchOrder 自愈语义)。
+type autoStep struct {
+	event    string
+	run      func(context.Context, int64) error
+	selfHeal bool
+}
+
 // AutoPreScan 收费后→扫码前的自动段:环节 5 标签预绑定、6 建档、7 预配置、8 派单。
 func (m *Automation) AutoPreScan(ctx context.Context, orderID int64) error {
-	steps := []struct {
-		event string
-		run   func(context.Context, int64) error
-	}{
-		{"applyTag", m.Order.ApplyTag},
-		{"createUserProfile", m.Order.CreateUserProfile},
-		{"preConfigOLT", m.Order.PreConfigOLT},
-		{"dispatchOrder", m.Order.DispatchOrder},
+	steps := []autoStep{
+		{event: "applyTag", run: m.Order.ApplyTag},
+		{event: "createUserProfile", run: m.Order.CreateUserProfile},
+		{event: "preConfigOLT", run: m.Order.PreConfigOLT},
+		{event: "dispatchOrder", run: m.Order.DispatchOrder, selfHeal: true},
 	}
 	return m.run(ctx, orderID, steps)
 }
 
 // AutoPostScan 扫码(9)后的自动段:环节 10 激活、11 通知、12 上图。
 func (m *Automation) AutoPostScan(ctx context.Context, orderID int64) error {
-	steps := []struct {
-		event string
-		run   func(context.Context, int64) error
-	}{
-		{"activateUser", m.Order.ActivateUser},
-		{"notifyActivation", m.Order.NotifyActivation},
-		{"updateMap", m.Order.UpdateMap},
+	steps := []autoStep{
+		{event: "activateUser", run: m.Order.ActivateUser},
+		{event: "notifyActivation", run: m.Order.NotifyActivation},
+		{event: "updateMap", run: m.Order.UpdateMap, selfHeal: true},
 	}
 	return m.run(ctx, orderID, steps)
 }
@@ -56,13 +59,11 @@ func (m *Automation) AutoPostScan(ctx context.Context, orderID int64) error {
 // run 顺序推进并逐环节发事件;失败即停(调用方重试从失败环节续推,顺序守卫保证幂等)。
 // 已完成环节(当前 stage ≥ 目标 stage)直接跳过:worker/admin 激活不对称时
 // (worker 只推段10,admin activate 重调 AutoPostScan)可从段11 续推而非 42200。
-func (m *Automation) run(ctx context.Context, orderID int64, steps []struct {
-	event string
-	run   func(context.Context, int64) error
-}) error {
+// selfHeal 环节不因「已完成」跳过——重跑本身幂等,用于补落缺失的关联数据。
+func (m *Automation) run(ctx context.Context, orderID int64, steps []autoStep) error {
 	cur := m.currentStage(ctx, orderID)
 	for i, st := range steps {
-		if stage, ok := order.StageOf(st.event); ok && cur >= stage {
+		if stage, ok := order.StageOf(st.event); ok && cur >= stage && !st.selfHeal {
 			continue // 该环节已完成(含他端推进),幂等续推
 		}
 		if err := st.run(ctx, orderID); err != nil {

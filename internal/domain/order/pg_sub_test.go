@@ -114,6 +114,53 @@ func TestPGStore_CreateComplaint(t *testing.T) {
 	}
 }
 
+// TestPGStore_CreateComplaint_DerivesCustomerFromOrder 契约:工单域投诉未带
+// customer_id 时经订单推导归属(师傅端投诉只带 tk.OrderID,流程数据完善)。
+func TestPGStore_CreateComplaint_DerivesCustomerFromOrder(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT customer_id FROM orders WHERE id = \$1`).
+		WithArgs(int64(77)).WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(213)))
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM customers WHERE id = \$1\)`).
+		WithArgs(int64(213)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM orders WHERE id = \$1\)`).
+		WithArgs(int64(77)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`INSERT INTO complaints`).
+		WithArgs("TKT-DERIVED", int64(213), int64(77), int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "", "").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
+
+	s := NewPGStore(mock, stubExists{})
+	id, err := s.CreateComplaint(context.Background(), Complaint{
+		TicketNo: "TKT-DERIVED", OrderID: 77, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
+		Type: "SLOW_NET", Status: "OPEN",
+	})
+	if err != nil {
+		t.Fatalf("CreateComplaint: %v", err)
+	}
+	if id != 9 {
+		t.Fatalf("id=%d, want 9", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_CreateComplaint_RejectsNoAnchor 契约:无客户且无订单时拒建投诉。
+func TestPGStore_CreateComplaint_RejectsNoAnchor(t *testing.T) {
+	mock, _ := pgxmock.NewPool()
+	defer mock.Close()
+	_, err := NewPGStore(mock, stubExists{}).CreateComplaint(context.Background(), Complaint{
+		TicketNo: "TKT-X", LegalEntityID: 1, LegalEntityName: "主品牌·企业", Type: "SLOW_NET", Status: "OPEN",
+	})
+	if !errors.Is(err, ErrForeignKeyViolation) {
+		t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+	}
+}
+
 func TestPGStore_ListScanLogs(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -147,6 +194,9 @@ func TestPGStore_AppendScanLog(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 关联完整性:order 存在性校验。
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM orders`).
+		WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO scan_logs`).
 		WithArgs(int64(1), int64(1024), "张师傅", int64(1001), "MISMATCH").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -163,6 +213,19 @@ func TestPGStore_AppendScanLog(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_AppendScanLog_RejectsOrphanOrder 契约:order 缺失拒写扫码日志。
+func TestPGStore_AppendScanLog_RejectsOrphanOrder(t *testing.T) {
+	mock, _ := pgxmock.NewPool()
+	defer mock.Close()
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM orders`).
+		WithArgs(int64(999)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+	_, err := NewPGStore(mock, stubExists{}).AppendScanLog(context.Background(),
+		ScanLog{OrderID: 999, WorkerID: 1, WorkerName: "张", TagID: 1, Result: "MATCH"})
+	if !errors.Is(err, ErrOrderNotFound) {
+		t.Fatalf("err=%v, want ErrOrderNotFound", err)
 	}
 }
 

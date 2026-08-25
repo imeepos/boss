@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -42,9 +43,12 @@ func TestPGStore_CreateTransfer(t *testing.T) {
 	}
 	defer mock.Close()
 
-	// FK validation: resource exists
+	// FK validation: resource + legal entity exist
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(2)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO transfers`).
@@ -65,6 +69,33 @@ func TestPGStore_CreateTransfer(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
 	}
+}
+
+// TestPGStore_CreateTransfer_RejectsOrphanRefs 契约:resource_id/legal_entity_id
+// 缺失或不存在时拒建,不落孤儿调拨单(resource_id 曾 22 条孤儿,audit 2026-08-25)。
+func TestPGStore_CreateTransfer_RejectsOrphanRefs(t *testing.T) {
+	t.Run("resource 不存在", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(999)).
+			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+		_, err := NewPGStore(mock).CreateTransfer(context.Background(), Transfer{
+			TransferNo: "TRF-X", ResourceID: 999, LegalEntityID: 1, Status: "PENDING",
+		})
+		if !errors.Is(err, ErrForeignKeyViolation) {
+			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+		}
+	})
+	t.Run("resource_id 为零", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		_, err := NewPGStore(mock).CreateTransfer(context.Background(), Transfer{
+			TransferNo: "TRF-X", LegalEntityID: 1, Status: "PENDING",
+		})
+		if !errors.Is(err, ErrForeignKeyViolation) {
+			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+		}
+	})
 }
 
 func TestPGStore_ListExpansions(t *testing.T) {
@@ -156,6 +187,11 @@ func TestPGStore_AppendReserveRecord(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 关联完整性:port + order 存在性校验。
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(1002)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO reserve_records`).
 		WithArgs(int64(1), int64(1002), "RELEASED").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -170,6 +206,20 @@ func TestPGStore_AppendReserveRecord(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_AppendReserveRecord_RejectsOrphanPort 契约:port 不存在拒写预占记录
+// (port_id 曾 11 条孤儿,audit 2026-08-25)。
+func TestPGStore_AppendReserveRecord_RejectsOrphanPort(t *testing.T) {
+	mock, _ := pgxmock.NewPool()
+	defer mock.Close()
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(999)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+	_, err := NewPGStore(mock).AppendReserveRecord(context.Background(),
+		ReserveRecord{PortID: 999, OrderID: 1, Status: "HELD"})
+	if !errors.Is(err, ErrForeignKeyViolation) {
+		t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
 	}
 }
 
@@ -206,6 +256,9 @@ func TestPGStore_AppendPortHistory(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 关联完整性:port 存在性校验。
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO port_change_history`).
 		WithArgs(int64(1), "USED", int64(1001), ts).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))

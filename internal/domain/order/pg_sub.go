@@ -163,21 +163,22 @@ func computeSlaLeft(complaintType, slaDeadline string) int {
 }
 
 // CreateDispatchTicket 新建派单工单,返回自增 id。
-// 校验 order_id 存在性,防止孤儿工单。
+// 关联完整性:order_id NOT NULL 外键,必须存在(order_id=0 直接拒,防孤儿工单)。
 func (s *PGStore) CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error) {
 	// 关联完整性校验
-	if t.OrderID > 0 {
-		ok, err := s.exists(ctx, "orders", t.OrderID, "")
-		if err != nil {
-			return 0, err
-		}
-		if !ok {
-			return 0, fmt.Errorf("order: order %d not found for dispatch ticket: %w", t.OrderID, ErrOrderNotFound)
-		}
+	if t.OrderID <= 0 {
+		return 0, fmt.Errorf("order: order_id required: %w", ErrOrderNotFound)
+	}
+	ok, err := s.exists(ctx, "orders", t.OrderID, "")
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("order: order %d not found for dispatch ticket: %w", t.OrderID, ErrOrderNotFound)
 	}
 
 	var id int64
-	err := s.db.QueryRow(ctx, `
+	err = s.db.QueryRow(ctx, `
 		INSERT INTO dispatch_tickets(ticket_no, order_id, worker_id, worker_name, group_id, group_name, region_id, region_name, legal_entity_id, legal_entity_name, status)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
 		t.TicketNo, t.OrderID, idOrNil(t.WorkerID), t.WorkerName, idOrNil(t.GroupID), t.GroupName,
@@ -208,9 +209,20 @@ func (s *PGStore) ListScanLogs(ctx context.Context, orderID int64) ([]ScanLog, e
 }
 
 // AppendScanLog 追加扫码绑定记录,返回自增 id。
+// 关联完整性:order_id NOT NULL 外键,必须存在,缺失直接拒。
 func (s *PGStore) AppendScanLog(ctx context.Context, l ScanLog) (int64, error) {
+	if l.OrderID <= 0 {
+		return 0, fmt.Errorf("order: order_id required: %w", ErrOrderNotFound)
+	}
+	ok, err := s.exists(ctx, "orders", l.OrderID, "")
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("order: order %d: %w", l.OrderID, ErrOrderNotFound)
+	}
 	var id int64
-	err := s.db.QueryRow(ctx, `
+	err = s.db.QueryRow(ctx, `
 		INSERT INTO scan_logs(order_id, worker_id, worker_name, tag_id, result)
 		VALUES($1,$2,$3,$4,$5) RETURNING id`,
 		l.OrderID, l.WorkerID, l.WorkerName, l.TagID, l.Result).Scan(&id)

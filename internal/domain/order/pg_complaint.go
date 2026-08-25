@@ -34,18 +34,24 @@ func (s *PGStore) ListComplaints(ctx context.Context) ([]Complaint, error) {
 }
 
 // CreateComplaint 新建报障工单,返回自增 id。
-// 校验 customer_id 和 order_id(若非零)存在性,防止孤儿投诉。
+// 关联完整性:customer_id NOT NULL 必须存在——未显式传入时从订单推导(工单域
+// 投诉挂订单,tk.OrderID 可溯源客户);order_id 非零时校验存在性。防孤儿投诉。
 // Caller 可传 RemoteDiagnosis 和 SlaDeadline(格式 YYYY-MM-DD HH24:MI);空值走 DEFAULT。
 func (s *PGStore) CreateComplaint(ctx context.Context, c Complaint) (int64, error) {
-	// 关联完整性校验
-	if c.CustomerID > 0 {
-		ok, err := s.exists(ctx, "customers", c.CustomerID, "")
-		if err != nil {
-			return 0, err
-		}
-		if !ok {
-			return 0, fmt.Errorf("order: customer %d: %w", c.CustomerID, ErrForeignKeyViolation)
-		}
+	// 关联完整性校验:客户缺失时经订单推导归属(流程数据完善),仍无归属直接拒。
+	if c.CustomerID == 0 && c.OrderID > 0 {
+		_ = s.db.QueryRow(ctx,
+			`SELECT customer_id FROM orders WHERE id = $1`, c.OrderID).Scan(&c.CustomerID)
+	}
+	if c.CustomerID <= 0 {
+		return 0, fmt.Errorf("order: customer_id required: %w", ErrForeignKeyViolation)
+	}
+	ok, err := s.exists(ctx, "customers", c.CustomerID, "")
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("order: customer %d: %w", c.CustomerID, ErrForeignKeyViolation)
 	}
 	if c.OrderID > 0 {
 		ok, err := s.exists(ctx, "orders", c.OrderID, "")
@@ -58,7 +64,7 @@ func (s *PGStore) CreateComplaint(ctx context.Context, c Complaint) (int64, erro
 	}
 
 	var id int64
-	err := s.db.QueryRow(ctx, `
+	err = s.db.QueryRow(ctx, `
 		INSERT INTO complaints(ticket_no, customer_id, order_id, legal_entity_id, legal_entity_name,
 		                       type, status, remote_diagnosis, sla_deadline)
 		VALUES($1,$2,$3,$4,$5,$6,$7,

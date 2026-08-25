@@ -126,18 +126,18 @@ func TestPGStore_ListPayments(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "pay_no", "bill_id", "amount", "method", "status"}
-	mock.ExpectQuery(`SELECT id, pay_no, COALESCE\(bill_id,0\), amount, method, status FROM payments`).
+	cols := []string{"id", "pay_no", "bill_id", "customer_id", "amount", "method", "status"}
+	mock.ExpectQuery(`SELECT id, pay_no, COALESCE\(bill_id,0\), COALESCE\(customer_id,0\), amount, method, status FROM payments`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "PAY-20260820-001", int64(1), 158.0, "wechat", "SUCCESS"))
+			AddRow(int64(1), "PAY-20260820-001", int64(1), int64(213), 158.0, "wechat", "SUCCESS"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListPayments(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("ListPayments: %v", err)
 	}
-	if len(got) != 1 || got[0].PayNo != "PAY-20260820-001" {
+	if len(got) != 1 || got[0].PayNo != "PAY-20260820-001" || got[0].CustomerID != 213 {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

@@ -178,8 +178,10 @@ func TestPGStore_RecordPayment(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer mock.Close()
+	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
-	mock.ExpectQuery(`INSERT INTO payments`).WithArgs("PAY-20260818-001", int64(1), 999.0, "wechat", "SUCCESS").
+	mock.ExpectQuery(`INSERT INTO payments`).WithArgs("PAY-20260818-001", int64(1), int64(0), 999.0, "wechat", "SUCCESS").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 	mock.ExpectExec(`UPDATE bills SET status = 'PAID'`).WithArgs(int64(1)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))

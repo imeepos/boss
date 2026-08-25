@@ -26,21 +26,33 @@ func (s *PGStore) ListTransfers(ctx context.Context) ([]Transfer, error) {
 }
 
 // CreateTransfer 新建调拨单,返回自增 id。
-// 校验 resource_id 存在性,防止孤儿调拨单。
+// 关联完整性:resource_id/legal_entity_id 为 NOT NULL 软引用,必须存在(曾 22 条
+// resource 孤儿调拨单,audit 2026-08-25),缺失直接拒。
 func (s *PGStore) CreateTransfer(ctx context.Context, t Transfer) (int64, error) {
 	// 关联完整性校验
-	if t.ResourceID > 0 {
-		ok, err := s.exists(ctx, "resources", t.ResourceID)
-		if err != nil {
-			return 0, err
-		}
-		if !ok {
-			return 0, fmt.Errorf("resource: resource %d: %w", t.ResourceID, ErrForeignKeyViolation)
-		}
+	if t.ResourceID <= 0 {
+		return 0, fmt.Errorf("resource: resource_id required: %w", ErrForeignKeyViolation)
+	}
+	ok, err := s.exists(ctx, "resources", t.ResourceID)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("resource: resource %d: %w", t.ResourceID, ErrForeignKeyViolation)
+	}
+	if t.LegalEntityID <= 0 {
+		return 0, fmt.Errorf("resource: legal_entity_id required: %w", ErrForeignKeyViolation)
+	}
+	ok, err = s.exists(ctx, "legal_entities", t.LegalEntityID)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("resource: legal entity %d: %w", t.LegalEntityID, ErrForeignKeyViolation)
 	}
 
 	var id int64
-	err := s.db.QueryRow(ctx, `
+	err = s.db.QueryRow(ctx, `
 		INSERT INTO transfers(transfer_no, resource_id, legal_entity_id, legal_entity_name, from_region_id, to_region_id, status)
 		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
 		t.TransferNo, t.ResourceID, t.LegalEntityID, t.LegalEntityName, t.FromRegionID, t.ToRegionID, t.Status).Scan(&id)
@@ -70,21 +82,22 @@ func (s *PGStore) ListExpansions(ctx context.Context) ([]Expansion, error) {
 }
 
 // CreateExpansion 新建扩容单,返回自增 id。
-// 校验 legal_entity_id 存在性,防止孤儿扩容单。
+// 关联完整性:legal_entity_id NOT NULL 外键,必须存在(缺失直接拒,防孤儿扩容单)。
 func (s *PGStore) CreateExpansion(ctx context.Context, e Expansion) (int64, error) {
 	// 关联完整性校验
-	if e.LegalEntityID > 0 {
-		ok, err := s.exists(ctx, "legal_entities", e.LegalEntityID)
-		if err != nil {
-			return 0, err
-		}
-		if !ok {
-			return 0, fmt.Errorf("resource: legal entity %d: %w", e.LegalEntityID, ErrForeignKeyViolation)
-		}
+	if e.LegalEntityID <= 0 {
+		return 0, fmt.Errorf("resource: legal_entity_id required: %w", ErrForeignKeyViolation)
+	}
+	ok, err := s.exists(ctx, "legal_entities", e.LegalEntityID)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("resource: legal entity %d: %w", e.LegalEntityID, ErrForeignKeyViolation)
 	}
 
 	var id int64
-	err := s.db.QueryRow(ctx, `
+	err = s.db.QueryRow(ctx, `
 		INSERT INTO expansions(legal_entity_id, expansion_no, region_id, expected_ports, status)
 		VALUES($1,$2,$3,$4,$5) RETURNING id`,
 		e.LegalEntityID, e.ExpansionNo, e.RegionID, e.ExpectedPorts, e.Status).Scan(&id)
@@ -114,9 +127,31 @@ func (s *PGStore) ListReserveRecords(ctx context.Context, portID int64) ([]Reser
 }
 
 // AppendReserveRecord 追加预占记录,返回自增 id。
+// 关联完整性:port_id/order_id NOT NULL 软引用,必须存在(曾 11 条 port 孤儿
+// 预占记录,audit 2026-08-25),缺失直接拒。
 func (s *PGStore) AppendReserveRecord(ctx context.Context, r ReserveRecord) (int64, error) {
+	if r.PortID <= 0 {
+		return 0, fmt.Errorf("resource: port_id required: %w", ErrForeignKeyViolation)
+	}
+	ok, err := s.exists(ctx, "ports", r.PortID)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("resource: port %d: %w", r.PortID, ErrForeignKeyViolation)
+	}
+	if r.OrderID <= 0 {
+		return 0, fmt.Errorf("resource: order_id required: %w", ErrForeignKeyViolation)
+	}
+	ok, err = s.exists(ctx, "orders", r.OrderID)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("resource: order %d: %w", r.OrderID, ErrForeignKeyViolation)
+	}
 	var id int64
-	err := s.db.QueryRow(ctx,
+	err = s.db.QueryRow(ctx,
 		`INSERT INTO reserve_records(port_id, order_id, status) VALUES($1,$2,$3) RETURNING id`,
 		r.PortID, r.OrderID, r.Status).Scan(&id)
 	if err != nil {
@@ -146,9 +181,20 @@ func (s *PGStore) ListPortHistory(ctx context.Context, portID int64) ([]PortChan
 }
 
 // AppendPortHistory 追加端口变更历史,返回自增 id。
+// 关联完整性:port_id NOT NULL 外键,必须存在,缺失直接拒。
 func (s *PGStore) AppendPortHistory(ctx context.Context, h PortChangeHistory) (int64, error) {
+	if h.PortID <= 0 {
+		return 0, fmt.Errorf("resource: port_id required: %w", ErrForeignKeyViolation)
+	}
+	ok, err := s.exists(ctx, "ports", h.PortID)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("resource: port %d: %w", h.PortID, ErrForeignKeyViolation)
+	}
 	var id int64
-	err := s.db.QueryRow(ctx,
+	err = s.db.QueryRow(ctx,
 		`INSERT INTO port_change_history(port_id, status, order_id, changed_at) VALUES($1,$2,$3,$4) RETURNING id`,
 		h.PortID, h.Status, idOrNil(h.OrderID), h.ChangedAt).Scan(&id)
 	if err != nil {

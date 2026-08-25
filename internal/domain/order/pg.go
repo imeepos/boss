@@ -207,23 +207,6 @@ func (s *PGStore) Reserve(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "reservePort")
 }
 
-// findByRequestID 幂等键回读(000116);不存在返回 (nil,nil) 由调用方继续建单。
-func (s *PGStore) findByRequestID(ctx context.Context, customerID int64, requestID string) (*Order, error) {
-	var o Order
-	err := s.db.QueryRow(ctx,
-		`SELECT `+orderCols+` FROM orders WHERE customer_id = $1 AND request_id = $2`,
-		customerID, requestID,
-	).Scan(&o.ID, &o.OrderNo, &o.CustomerID, &o.OfferID, &o.AddressID, &o.Stage, &o.Status,
-		&o.ChannelID, &o.LegalEntityID, &o.RegionPath, &o.BillingMode, &o.BuyMonths, &o.GiftMonths, &o.CreatedAt)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("order: find by request_id: %w", err)
-	}
-	return &o, nil
-}
-
 // Track 跟踪:返回订单 + 环节时间轴。
 func (s *PGStore) Track(ctx context.Context, orderID int64) (*Order, []StageLog, error) {
 	var o Order
