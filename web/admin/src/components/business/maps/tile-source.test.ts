@@ -16,8 +16,8 @@ describe('tile-source', () => {
   })
   describe('resolveTileUrl', () => {
     it('light 默认=高德,暗色默认=CartoDB Dark Matter', () => {
-      expect(resolveTileUrl('light')).toBe(LIGHT_TILE_URL)
-      expect(resolveTileUrl('dark')).toBe(DARK_TILE_URL)
+      expect(resolveTileUrl('light', undefined, '')).toBe(LIGHT_TILE_URL)
+      expect(resolveTileUrl('dark', undefined, '')).toBe(DARK_TILE_URL)
     })
     it('显式传 URL 优先于主题默认值', () => {
       expect(resolveTileUrl('dark', 'https://example.com/{z}/{x}/{y}.png')).toBe('https://example.com/{z}/{x}/{y}.png')
