@@ -365,7 +365,7 @@ const enUS: Translations = {
       title: 'ODN Passive Network', subtitle: 'Grids · Infrastructure · Sites & Core Devices',
       tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices' },
       add: 'Add', cancel: 'Cancel', save: 'Save', saving: 'Saving…', loadFail: 'Load failed', saveFail: 'Save failed', empty: 'No data', retire: 'Retire', retireConfirm: 'Retire this ODN resource? This cannot be undone.', warn: 'Capacity warning',
-      gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type',
+      gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type', lat: 'Latitude', lng: 'Longitude',
     },
     importer: {
       title: 'Data Import Center',
@@ -1484,6 +1484,12 @@ const enUS: Translations = {
       statInBbox: 'In Viewport',
       statOnline: 'Online Points',
       statAvgCount: 'Avg Children',
+      // ODN layer (odn-points)
+      odnLayerTitle: 'ODN Layer',
+      odnLayerOff: 'Off',
+      odnLayerFacility: 'Facilities',
+      odnLayerSite: 'Sites',
+      odnLayerDevice: 'Devices',
     },
     analyticsPage: {
       title: 'Analytics',

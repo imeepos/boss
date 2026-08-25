@@ -365,7 +365,7 @@ const msMY: Translations = {
       title: 'Rangkaian Pasif ODN', subtitle: 'Grid · Infrastruktur · Tapak & Peranti Teras',
       tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras' },
       add: 'Tambah', cancel: 'Batal', save: 'Simpan', saving: 'Menyimpan…', loadFail: 'Gagal memuatkan', saveFail: 'Gagal menyimpan', empty: 'Tiada data', retire: 'Lupus', retireConfirm: 'Lupuskan sumber ODN ini? Tindakan ini tidak boleh dibuat asal.', warn: 'Amaran kapasiti',
-      gridCode: 'Kod grid', name: 'Nama', coverage: 'Liputan', usage: 'Penggunaan', status: 'Status', actions: 'Tindakan', code: 'Kod', kind: 'Jenis', nodeCode: 'NodeCode', siteNo: 'Nombor tapak', parentId: 'ID induk', deviceCode: 'Kod peranti', deviceKind: 'Jenis peranti',
+      gridCode: 'Kod grid', name: 'Nama', coverage: 'Liputan', usage: 'Penggunaan', status: 'Status', actions: 'Tindakan', code: 'Kod', kind: 'Jenis', nodeCode: 'NodeCode', siteNo: 'Nombor tapak', parentId: 'ID induk', deviceCode: 'Kod peranti', deviceKind: 'Jenis peranti', lat: 'Latitud', lng: 'Longitud',
     },
     importer: {
       title: 'Pusat Import Data',
@@ -1484,6 +1484,12 @@ const msMY: Translations = {
       statInBbox: 'Dalam Pandangan',
       statOnline: 'Titik Dalam Talian',
       statAvgCount: 'Purata Anak',
+      // Lapisan ODN (odn-points)
+      odnLayerTitle: 'Lapisan ODN',
+      odnLayerOff: 'Mati',
+      odnLayerFacility: 'Kemudahan',
+      odnLayerSite: 'Tapak',
+      odnLayerDevice: 'Peranti',
     },
     analyticsPage: {
       title: 'Analitik',

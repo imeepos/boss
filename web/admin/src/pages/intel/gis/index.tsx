@@ -31,6 +31,9 @@ export default function GisPage() {
   const [detail, setDetail] = useState<GisResourceDetail | null>(null)
   const [detailError, setDetailError] = useState('')
   const [theme, setTheme] = useLocalStorage<Theme>('intel.gis.theme', 'light')
+  // ODN 图层(odn-points):'off'|'facility'|'site'|'device'。
+  const [odnLayer, setOdnLayer] = useState<'off' | 'facility' | 'site' | 'device'>('off')
+  const [odnPoints, setOdnPoints] = useState<GisPoint[]>([])
 
   const load = (lv: number, pid: number) => {
     setError('')
@@ -53,10 +56,28 @@ export default function GisPage() {
   }
   useEffect(() => { load(1, 0); loadPoints(1, 0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const refreshAll = () => { load(level, parentId); loadPoints(level, parentId) }
+  const refreshAll = () => { load(level, parentId); loadPoints(level, parentId); loadOdnPoints() }
   const changeLevel = (lv: number) => {
     setLevel(lv); setParentId(0); setPage(1)
     load(lv, 0); loadPoints(lv, 0)
+  }
+
+  // ODN 图层点位:entity 变化即重拉;bbox 空=全量(图层为概览层,不随视域收缩)。
+  const loadOdnPoints = (entity: 'facility' | 'site' | 'device' = odnLayer === 'off' ? 'facility' : odnLayer) => {
+    if (odnLayer === 'off') { setOdnPoints([]); return }
+    setPointsError('')
+    apiFetch<{ items: GisPointRow[] }>('/gis/odn-points', { query: { entity } })
+      .then((d) => setOdnPoints((d?.items ?? []).map((r) => ({
+        id: r.id, level: r.level, name: r.name,
+        lng: r.lng, lat: r.lat, status: r.status,
+        count: r.count, parentId: r.parentId,
+      }))))
+      .catch((e) => setPointsError(e instanceof Error ? e.message : g.mapLoadFail))
+  }
+  const switchOdnLayer = (v: 'off' | 'facility' | 'site' | 'device') => {
+    setOdnLayer(v)
+    if (v === 'off') setOdnPoints([])
+    else loadOdnPoints(v)
   }
 
   const openDetail = (resourceId: number) => {
@@ -68,27 +89,29 @@ export default function GisPage() {
   }
 
   const slice = pageSlice(nodes, page, pageSize)
+  // 地图点位 = 当前层级点位 + ODN 图层点位(开关非 off 时叠加)。
+  const mapPoints = odnLayer === 'off' ? points : [...points, ...odnPoints]
 
   // 顶部 4 张统计卡:当前层级点位/视域内点位/在线点位/平均子级数。
-  // 视域内点位由 map.onViewportChange(B2)持续更新,inBbox 在 points 变化时重置。
-  const onlineCount = useMemo(() => points.filter((p) => p.status === 'ONLINE').length, [points])
+  // 视域内点位由 map.onViewportChange(B2)持续更新,inBbox 在 mapPoints 变化时重置。
+  const onlineCount = useMemo(() => mapPoints.filter((p) => p.status === 'ONLINE').length, [mapPoints])
   const avgCount = useMemo(() => {
-    if (points.length === 0) return 0
-    return Math.round(points.reduce((s, p) => s + p.count, 0) / points.length)
-  }, [points])
-  // 视域内点位:bbox 变化 + points 变化时重算。
+    if (mapPoints.length === 0) return 0
+    return Math.round(mapPoints.reduce((s, p) => s + p.count, 0) / mapPoints.length)
+  }, [mapPoints])
+  // 视域内点位:bbox 变化 + mapPoints 变化时重算。
   const [inBbox, setInBbox] = useState(0)
   const bboxRef = useRef<{ minLng: number; minLat: number; maxLng: number; maxLat: number } | null>(null)
   const onViewportChange = (b: { minLng: number; minLat: number; maxLng: number; maxLat: number }) => {
     bboxRef.current = b
-    setInBbox(points.filter((p) => p.lng >= b.minLng && p.lng <= b.maxLng && p.lat >= b.minLat && p.lat <= b.maxLat).length)
+    setInBbox(mapPoints.filter((p) => p.lng >= b.minLng && p.lng <= b.maxLng && p.lat >= b.minLat && p.lat <= b.maxLat).length)
   }
-  // points 变化时用上次 bbox 重算
+  // mapPoints 变化时用上次 bbox 重算
   useEffect(() => {
     const b = bboxRef.current
     if (!b) return
-    setInBbox(points.filter((p) => p.lng >= b.minLng && p.lng <= b.maxLng && p.lat >= b.minLat && p.lat <= b.maxLat).length)
-  }, [points])
+    setInBbox(mapPoints.filter((p) => p.lng >= b.minLng && p.lng <= b.maxLng && p.lat >= b.minLat && p.lat <= b.maxLat).length)
+  }, [mapPoints])
 
   return (
     <div>
@@ -104,13 +127,24 @@ export default function GisPage() {
           value={parentId || ''} onChange={(e) => { setParentId(Number(e.target.value) || 0); setPage(1) }} />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={refreshAll}>{t.pages.audit.refresh}</button>
         <span className="flex-1" />
+        <Dropdown
+          value={odnLayer}
+          options={[
+            { value: 'off', label: g.odnLayerOff },
+            { value: 'facility', label: g.odnLayerFacility },
+            { value: 'site', label: g.odnLayerSite },
+            { value: 'device', label: g.odnLayerDevice },
+          ]}
+          onChange={(v) => switchOdnLayer(v as 'off' | 'facility' | 'site' | 'device')}
+          ariaLabel={g.odnLayerTitle}
+        />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" title={g.themeSwitchHint} onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
           {theme === 'light' ? g.themeDark : g.themeLight}
         </button>
       </div>
 
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={g.statLevelNodes} value={points.length} />
+        <StatCard label={g.statLevelNodes} value={mapPoints.length} />
         <StatCard label={g.statInBbox} value={inBbox} />
         <StatCard label={g.statOnline} value={onlineCount} />
         <StatCard label={g.statAvgCount} value={avgCount} />
@@ -125,8 +159,8 @@ export default function GisPage() {
           <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{pointsError}</div>
         ) : null}
         <div className="relative h-[480px]">
-          <PgisMap points={points} onSelect={(p) => p.level >= 6 && openDetail(p.id)} theme={theme} onViewportChange={onViewportChange} />
-          {!points.length && !pointsError ? (
+          <PgisMap points={mapPoints} onSelect={(p) => p.level >= 6 && p.level <= 8 && openDetail(p.id)} theme={theme} onViewportChange={onViewportChange} />
+          {!mapPoints.length && !pointsError ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-[var(--shell-group-title)]">
               {g.mapEmpty}
             </div>

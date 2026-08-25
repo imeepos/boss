@@ -298,6 +298,8 @@ export interface Translations {
       parentId: string
       deviceCode: string
       deviceKind: string
+      lat: string
+      lng: string
     }
     importer: {
       title: string
@@ -1449,6 +1451,12 @@ export interface Translations {
       statInBbox: string
       statOnline: string
       statAvgCount: string
+      // ODN 图层(odn-points)
+      odnLayerTitle: string
+      odnLayerOff: string
+      odnLayerFacility: string
+      odnLayerSite: string
+      odnLayerDevice: string
     }
     analyticsPage: {
       title: string

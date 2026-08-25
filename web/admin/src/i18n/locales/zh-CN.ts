@@ -365,7 +365,7 @@ const zhCN: Translations = {
       title: 'ODN 无源网络', subtitle: '网格分区 · 基础设施 · 局点与核心链路设备',
       tabs: { grids: '网格分区', facilities: '基础设施', sites: '局点', devices: '核心设备' },
       add: '新增', cancel: '取消', save: '保存', saving: '保存中…', loadFail: '加载失败', saveFail: '保存失败', empty: '暂无数据', retire: '退役', retireConfirm: '确认退役该 ODN 资源?退役后不可恢复。', warn: '容量预警',
-      gridCode: '网格码', name: '名称', coverage: '覆盖区域', usage: '占用', status: '状态', actions: '操作', code: '编码', kind: '类型', nodeCode: 'NodeCode', siteNo: '局点序号', parentId: '上级 ID', deviceCode: '设备编码', deviceKind: '设备类型',
+      gridCode: '网格码', name: '名称', coverage: '覆盖区域', usage: '占用', status: '状态', actions: '操作', code: '编码', kind: '类型', nodeCode: 'NodeCode', siteNo: '局点序号', parentId: '上级 ID', deviceCode: '设备编码', deviceKind: '设备类型', lat: '纬度', lng: '经度',
     },
     importer: {
       title: '数据导入中心',
@@ -1484,6 +1484,12 @@ const zhCN: Translations = {
       statInBbox: '视域内点位',
       statOnline: '在线点位',
       statAvgCount: '平均子级数',
+      // ODN 图层(odn-points)
+      odnLayerTitle: 'ODN 图层',
+      odnLayerOff: '关闭',
+      odnLayerFacility: '设施',
+      odnLayerSite: '局点',
+      odnLayerDevice: '设备',
     },
     analyticsPage: {
       title: '经营分析',
