@@ -11,6 +11,9 @@ var ErrNotFound = errors.New("aaa: profile not found")
 // ErrSuspended 账号已停(停复机:停机后拒绝认证接入)。
 var ErrSuspended = errors.New("aaa: profile suspended")
 
+// ErrClosed 账号已注销(CLOSED:永久拒绝认证接入,与停服语义分离)。
+var ErrClosed = errors.New("aaa: profile closed")
+
 // Decision 一次授权决策结果(RADIUS Access-Accept 的属性来源)。
 type Decision struct {
 	LOID        string

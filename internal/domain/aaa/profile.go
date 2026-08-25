@@ -19,6 +19,7 @@ type Status string
 const (
 	StatusActive    Status = "ACTIVE"
 	StatusSuspended Status = "SUSPENDED"
+	StatusClosed    Status = "CLOSED"
 )
 
 // ProfileRepo 认证档案查询口(只读,供 RADIUS 认证与授权决策使用)。

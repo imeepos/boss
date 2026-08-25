@@ -44,6 +44,20 @@ func TestPGAuthorizer_Decide(t *testing.T) {
 		}
 	})
 
+	t.Run("CLOSED → ErrClosed(注销)", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`FROM lo_accounts`).
+			WithArgs("LOID-C").
+			WillReturnRows(mock.NewRows(cols).AddRow("CLOSED", "", ""))
+
+		s := NewPGAuthorizer(mock)
+		d, err := s.Decide(context.Background(), "LOID-C")
+		if !errors.Is(err, ErrClosed) || d.Authorize {
+			t.Fatalf("d=%+v err=%v, want ErrClosed", d, err)
+		}
+	})
+
 	t.Run("不存在 → ErrNotFound", func(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()
