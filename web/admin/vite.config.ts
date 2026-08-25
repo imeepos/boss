@@ -1,11 +1,18 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // 后端已配置 CORS,前端直连绝对接口地址(服务端配置页/登录页选择器,localStorage 记忆)。
 // 禁止再挂 /api 开发代理:请求通道唯一 = client.ts 的 apiBaseUrl()。
 // 注意：集成测试必须使用真实后端数据，不能使用 mock 服务器。
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, '../..', '')
+  return {
+  // 读仓库根 .env,将 AMAP_KEY 映射为客户端公开变量;CI 可直接注入 AMAP_KEY。
+  envDir: '../..',
+  define: {
+    'import.meta.env.VITE_AMAP_KEY': JSON.stringify(env.AMAP_KEY ?? ''),
+  },
   plugins: [react()],
   build: {
     rollupOptions: {
@@ -22,8 +29,9 @@ export default defineConfig({
   server: {
     port: 5173,
   },
-  test: {
-    environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}'],
-  },
+    test: {
+      environment: 'node',
+      include: ['src/**/*.test.{ts,tsx}'],
+    },
+  }
 })
