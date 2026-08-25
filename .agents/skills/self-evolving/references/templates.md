@@ -70,3 +70,81 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 2. 不泄露存在性:非公开状态一律统一 404,不区分"不存在"与"未发布"。
 3. 挂靠既有先例:admin 前缀 public 子路由(registerPartnerPublicRoutes 模式),
    不新开无鉴权路由组。
+
+## 模板 E:前端 UI 改动 cdp 调试固定模板(2026-08-29 固化,来源:表单抽屉化批量重构)
+
+> 模板 C 的注入有缺漏(见下方修正);本模板是它的升级版,覆盖"填表→点按钮→断言"全链路。
+
+**第 1 步 免登录注入(修正模板 C:servers 元素必须带 `id`,`boss.server.active` 存 id 而非 name,
+缺 id 会被 `serverConfig.readStored` 静默过滤 → 弹"未配置服务端"并弹回登录页,极易误判为 token 失效):**
+
+```bash
+TOKEN=$(curl -s http://192.168.0.102:28080/api/admin/v1/auth/login -X POST \
+  -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin123"}' \
+  | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["token"])')
+node .agents/skills/self-evolving/scripts/cdp-capture.mjs 'http://localhost:<port>/' out.png \
+  --eval "localStorage.setItem('boss.token','$TOKEN');localStorage.setItem('boss.servers',JSON.stringify([{id:'s102',name:'102',baseUrl:'http://192.168.0.102:28080'}]));localStorage.setItem('boss.server.active','s102');location.href='/<路由>'" \
+  --settle 3500
+```
+
+**第 2 步 React 受控输入填值(直接 `el.value=` 不触发 onChange,必须原生 setter + input 事件):**
+
+```js
+const s = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
+s.call(el, '文本'); el.dispatchEvent(new Event('input', { bubbles: true }))
+```
+
+坑:Dropdown 组件渲染的是 **button 不是 input**,`querySelectorAll('input')` 的下标会跳过下拉位
+——填表前先打印每个 input 的 placeholder 对齐下标,再动手(2026-08-28 券模板抽屉实测踩过)。
+
+**第 3 步 交互断言(DOM 证据优先于截图像素):**
+
+```js
+// 抽屉/弹框打开断言(role=dialog 是项目 Drawer 组件的稳定契约)
+document.querySelector('aside[role=dialog] h3')?.textContent   // 期望抽屉标题
+// 提交后断言:抽屉关闭 + 数据出现在列表
+'dialog=' + (document.querySelector('aside[role=dialog]') ? 'open' : 'closed')
+ + ' | row=' + document.body.innerText.includes('<新数据关键字>')
+```
+
+**第 4 步 失败定位:** 加 `--logs out.json`,先看 console errors 与失败请求响应体;
+负路径顺带验证(故意漏填必填 → 断言出现"请补全必填项"类文案)。
+
+## 模板 F:解题思路固定模板(通用排障八步,2026-08-29 固化)
+
+> 任何"东西不工作/要加新能力"的任务套这个骨架;顺序不可换,每步有产物。
+
+1. **复现并固化**:最小可重复的命令/URL/操作;不能稳定复现先别改代码。
+2. **取证不求猜**:console/--logs/HTTP 状态码/response body/curl 复打;一次拿全。
+3. **读源头对契约**:行为冲突时以 `docs/contract/*` 为准;实现疑点直接读源码
+   (如 serverConfig.readStored 过滤逻辑),不靠记忆拼 API。
+4. **定位到唯一根因**:能一句话说清"X 因为 Y";说不清就回到 2。
+5. **最小修改**:只动根因半径内的代码;顺手重构=另开任务。
+6. **门禁**:typecheck + test + build;改动页面必须有模板 E 的 DOM 断言,不写"已验证"空话。
+7. **立刻存档**:小簇 commit(type(scope): subject,正文写 why);worktree 内编辑完即提交,
+   不留无 commit 文件过夜。
+8. **反思回喂**:坑进 recidivism/lessons,可复用手法进 techniques,固定流程进本文件。
+
+## 模板 G:admin 表单抽屉化布局固定模板(2026-08-29 固化,来源:13 处平铺表单重构)
+
+> 全局约定:**表单一律 Drawer/Dialog,页面不平铺 form**(登录/公开申请页/富文本编辑器/搜索筛选工具栏除外)。
+
+**列表页新建型**(先例 `pages/bss/marketing/coupons.tsx`):
+
+- 列表卡片工具栏右侧 `+ 新建` 主按钮(`ToolbarButton primary`),点开 `Drawer`;
+- 抽屉 footer 固定三件:取消(plain 类)+ 提交(primary 类);提交中 `disabled={busy}` 文案切换;
+- 提交成功:关抽屉 + 重置表单 + `load()`;校验错误用 `ErrorBanner` 显示在抽屉表单下方。
+
+**配置页摘要型**(先例 `pages/base/pushconfig/index.tsx`):
+
+- 页面卡片 = 只读摘要:标题 + 启停徽标(Badge success/default)+ 每字段一行
+  `label(w-32 灰) + value`(密钥只显"已配置",绝不回显);右上 `编辑` primary 按钮;
+- 抽屉内保留原字段/开关 + 试发/试核控件(放抽屉底部 border-t 分隔区),footer 取消/保存。
+
+**按钮/间距速查(上级叮嘱的机械化)**:
+
+- 主按钮:`bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] h-8 px-4 text-[13px]`;
+- 次按钮:`border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] ... h-8 px-4 text-[13px]`;
+- 按钮文字居中,上下左右留够边距;元素间距 4 的倍数,语义亲密的用小档(4/8),分组用大档(12/16);
+- 图标与周围文字比例不能失衡,不使用 emoji 图标;
+- 下拉一律 `components/Dropdown.tsx`(禁原生 select),输入框统一 shell-input-* 令牌类。
