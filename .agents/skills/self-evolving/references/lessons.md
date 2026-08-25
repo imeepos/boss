@@ -299,3 +299,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-28 前端本地 pnpm store 被并行 worktree 抢锁时,不要无限重试 install;保留已完成 Go/契约门禁,先 commit 原子变更让 CI 构建成为第二道 web 门禁,但最终 102 回放必须补齐 typecheck/build 证据。
 - 2026-08-28 SEO SPA 元数据应在异步文章数据到达后设置并在卸载还原(title/meta);og:image 必须使用匿名可访问的受控封面流,不能引用带 JWT 的 /attachments/:id/content。
 - 2026-08-28 nginx 缓存修复的正确配对是 index.html/no-cache + /assets hash 文件 immutable;只改一侧会分别导致旧入口或资产缓存问题。
+- check-contract-sync E 项要求 menu.def key 与 menu: 权限码同名(camelCase 一一对应,无下划线);初版 menu:crash_logs 与菜单 key crashlogs 不匹配即红,且涉及迁移/handler/契约/i18n 错误文本多文件同步更名,宜首次命名即对齐
+- admin handler 单元测试不拉全 Register,自建最小路由仅装目标 handler + admin Authn 中间件更省力(避免依赖全部 user.Service fake)
+- ssh HOST arg1 arg2 ... 把 argv 按空格拼接发给远端 shell,含管道/重定向的命令必须整体作为一个字符串参数('ssh HOST "cmd | head"' 而非 'ssh HOST cmd head'),否则远端 shell 按字面管道解析;此坑在取件脚本 docker 链式调用反复出现
