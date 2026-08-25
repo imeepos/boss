@@ -1,5 +1,6 @@
 package com.ymm.boss.worker.ui
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,7 @@ import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.StatusBarSolid
 import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.push.DeepLink
+import com.ymm.boss.worker.location.LocationTrackService
 
 // 底部 Tab(对齐 nav.js:工作台/工单/我的);文案走三语资源
 private data class Tab(val screen: Screen, val labelRes: Int, val glyph: String)
@@ -59,6 +61,14 @@ fun AppRoot(loggedIn: Boolean) {
         }
         onDispose {
             if (Api.onUnauthorized != null) Api.onUnauthorized = null
+        }
+    }
+    LaunchedEffect(loggedIn) {
+        val context = Api.context()
+        if (loggedIn) {
+            androidx.core.content.ContextCompat.startForegroundService(context, Intent(context, LocationTrackService::class.java))
+        } else {
+            context.stopService(Intent(context, LocationTrackService::class.java))
         }
     }
     // 系统返回键:压栈页逐个弹出,栈底则退出

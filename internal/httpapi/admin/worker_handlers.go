@@ -84,6 +84,25 @@ func workerGetWorkerHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+func workerLatestLocationHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		workerID, ok := httpx.ParsePathParamInt64(c, "workerId")
+		if !ok {
+			return
+		}
+		if a.WorkerLocation == nil {
+			respond(c, apitypes.CodeOK, gin.H{"location": nil})
+			return
+		}
+		location, err := a.WorkerLocation.LatestLocation(c.Request.Context(), workerID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"location": location})
+	}
+}
+
 // workerUpdateSettingsHandler PUT /workers/{workerId}/settings:修改接单设置(在线/半径/接单类型),师傅1:1 即时生效(worker.yaml /workers/{id}/settings)。
 func workerUpdateSettingsHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {

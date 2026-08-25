@@ -85,9 +85,18 @@ func orderGetHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		var location any
+		if a.WorkerLocation != nil {
+			location, err = a.WorkerLocation.LatestLocationForOrder(c.Request.Context(), o.ID)
+			if err != nil {
+				respondErr(c, err)
+				return
+			}
+		}
 		respond(c, apitypes.CodeOK, gin.H{
-			"order":    o,
-			"timeline": buildTimeline(o, logs),
+			"order":          o,
+			"timeline":       buildTimeline(o, logs),
+			"latestLocation": location,
 		})
 	}
 }

@@ -33,6 +33,16 @@ export interface CheckDetail {
   devices: CheckDeviceRow[]
 }
 
+export interface WorkerLocationRow {
+  workerId: number
+  lat: number
+  lng: number
+  accuracyM: number
+  speedMps: number
+  bearing: number
+  reportedAt: string
+}
+
 export interface TimelineRow {
   stage: number
   name: string

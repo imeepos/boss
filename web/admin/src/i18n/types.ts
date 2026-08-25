@@ -939,6 +939,9 @@ export interface Translations {
       expand: string
       transfer: string
       trackTitle: string
+      locationTitle: string
+      locationEmpty: string
+      locationUpdated: string
       timelineColumns: string[]
       total: string
       empty: string

@@ -53,6 +53,17 @@ paths:
                 type: object
                 properties:
                   order: { type: object }
+                  latestLocation:
+                    nullable: true
+                    type: object
+                    properties:
+                      workerId: { type: integer, format: int64 }
+                      lat: { type: number, format: double }
+                      lng: { type: number, format: double }
+                      accuracyM: { type: number, format: float }
+                      speedMps: { type: number, format: float }
+                      bearing: { type: number, format: float }
+                      reportedAt: { type: string, format: date-time }
                   timeline:
                     type: array
                     items:

@@ -1,5 +1,29 @@
 # 杂项域:消息/公告/排障手册/联系调度/安全上报。
 paths:
+  /location/report:
+    post:
+      tags: [Misc]
+      summary: 周期性上报师傅实时位置
+      operationId: reportWorkerLocation
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lat, lng]
+              properties:
+                lat: { type: number, format: double, minimum: -90, maximum: 90 }
+                lng: { type: number, format: double, minimum: -180, maximum: 180 }
+                accuracyM: { type: number, format: float, minimum: 0 }
+                speedMps: { type: number, format: float, minimum: 0 }
+                bearing: { type: number, format: float, minimum: 0, exclusiveMaximum: 360 }
+                timestampMs: { type: integer, format: int64, minimum: 0 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+
   /messages:
     get:
       tags: [Misc]

@@ -177,6 +177,23 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /workers/{workerId}/location:
+    get:
+      tags: [Worker]
+      summary: 查询师傅最新实时位置
+      operationId: getWorkerLatestLocation
+      parameters:
+        - { name: workerId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 最新位置；尚未上报时 location 为 null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  location: { nullable: true, type: object }
+
   /workers/{workerId}:
     get:
       tags: [Worker]

@@ -659,6 +659,22 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | `joinedAt` | joined_at | 入职时间 |
 | `leftAt` | left_at | 离职时间，null=在职 |
 
+### 7.2 worker_locations（师傅实时位置，迁移 000142）
+
+位置上报只保存师傅端身份对应的实时轨迹，当前点按 `reportedAt` 倒序取最新；订单详情通过派单工单的 `workerId` 关联读取。
+
+| 页面列名 | API 字段 | DB 列 | 类型/说明 |
+|:---------|:---------|:------|:----------|
+| 师傅 | `workerId` | worker_id | BIGINT → workers |
+| 纬度 | `lat` | lat | WGS84，-90~90 |
+| 经度 | `lng` | lng | WGS84，-180~180 |
+| 定位精度 | `accuracyM` | accuracy_m | 米，>=0 |
+| 速度 | `speedMps` | speed_mps | 米/秒，>=0 |
+| 航向 | `bearing` | bearing | 度，0~<360 |
+| 上报时间 | `reportedAt` | reported_at | TIMESTAMPTZ |
+
+> Worker API：`POST /api/worker/v1/location/report`；后台查询 `GET /api/admin/v1/workers/{workerId}/location`；订单详情返回 `latestLocation`。位置服务不信任请求体中的 workerId，以 JWT/API key 主体为准。
+
 ### 7.2 worker_group_memberships（班组归属台账，新增）
 
 换班组只新增行、不覆盖；历史归属与当前 `group` 解耦。
