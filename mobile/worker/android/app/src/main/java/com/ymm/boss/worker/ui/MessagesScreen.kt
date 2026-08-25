@@ -20,8 +20,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.MiscApi
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -33,21 +35,24 @@ fun MessagesScreen(nav: NavHost) {
     val state by loadOnce(refresh) { MiscApi.messages() }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val markAllLabel = stringResource(R.string.msg_btn_mark_all)
+    val toastMarkAll = stringResource(R.string.msg_mark_all_ok)
+    val toastClear = stringResource(R.string.msg_clear_ok)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("消息中心", onBack = { nav.pop() }, action = "全部已读", onAction = {
+        TopBar(stringResource(R.string.msg_title), onBack = { nav.pop() }, action = markAllLabel, onAction = {
             scope.launch {
-                try { toast(ctx, MiscApi.readAll().optString("message", "全部标记已读")); refresh++ }
-                catch (e: Exception) { toast(ctx, "操作失败：${e.message}") }
+                try { toast(ctx, MiscApi.readAll().optString("message", toastMarkAll)); refresh++ }
+                catch (e: Exception) { toast(ctx, ctx.getString(R.string.msg_op_fail, e.message ?: "")) }
             }
         })
         Card(Modifier.padding(12.dp)) {
             when (val s = state) {
                 is Load.Loading -> Loading()
-                is Load.Fail -> Notice("消息加载失败：${s.message}", red = true)
+                is Load.Fail -> Notice(ctx.getString(R.string.msg_load_fail, s.message ?: ""), red = true)
                 is Load.Ok -> {
                     val items = s.data.optJSONArray("items") ?: JSONArray()
-                    if (items.length() == 0) Empty("暂无消息")
+                    if (items.length() == 0) Empty(stringResource(R.string.msg_empty))
                     for (i in 0 until items.length()) {
                         val m = items.optJSONObject(i)
                         MsgBanner(m.optString("level", "info"),
@@ -58,10 +63,10 @@ fun MessagesScreen(nav: NavHost) {
             }
         }
         Card(Modifier.padding(12.dp)) {
-            PrimaryButton("清空已读", modifier = Modifier.fillMaxWidth()) {
+            PrimaryButton(stringResource(R.string.msg_btn_clear_read), modifier = Modifier.fillMaxWidth()) {
                 scope.launch {
-                    try { toast(ctx, MiscApi.clear().optString("message", "已清空已读消息")); refresh++ }
-                    catch (e: Exception) { toast(ctx, "操作失败：${e.message}") }
+                    try { toast(ctx, MiscApi.clear().optString("message", toastClear)); refresh++ }
+                    catch (e: Exception) { toast(ctx, ctx.getString(R.string.msg_op_fail, e.message ?: "")) }
                 }
             }
         }

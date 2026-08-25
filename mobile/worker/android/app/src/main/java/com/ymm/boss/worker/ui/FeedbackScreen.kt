@@ -10,7 +10,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ProfileApi
 import com.ymm.boss.worker.ui.theme.Err
 import com.ymm.boss.worker.ui.theme.Success
@@ -21,37 +24,40 @@ import org.json.JSONObject
 @Composable
 fun FeedbackScreen(nav: NavHost) {
     val state by loadOnce { ProfileApi.feedbacks() }
+    val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("满意度反馈", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.fb_title), onBack = { nav.pop() })
         when (val s = state) {
             is Load.Loading -> Loading()
-            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice("反馈加载失败：${s.message}", red = true) }
+            is Load.Fail -> Card(Modifier.padding(14.dp)) { Notice(ctx.getString(R.string.fb_load_fail, s.message ?: ""), red = true) }
             is Load.Ok -> {
                 val d = s.data
                 val latest = d.optJSONObject("latest") ?: JSONObject()
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("最近回访")
-                    KvRow(latest.optString("ticketNo", "-"), "${latest.optDouble("score")} 分", valueColor = Success)
-                    KvRow("本月平均", "${d.optDouble("monthAvgScore")} 分", valueColor = Success)
-                    KvRow("评价回收率", "${d.optDouble("replyRate")}%")
+                    SectionTitle(stringResource(R.string.fb_section_recent))
+                    KvRow(latest.optString("ticketNo", "-"), ctx.getString(R.string.fb_score_fmt, latest.optDouble("score")), valueColor = Success)
+                    KvRow(stringResource(R.string.fb_section_avg), ctx.getString(R.string.fb_score_fmt, d.optDouble("monthAvgScore")), valueColor = Success)
+                    KvRow(stringResource(R.string.fb_recovery), "${d.optDouble("replyRate")}%")
                 }
                 val items = d.optJSONArray("items") ?: JSONArray()
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("客户反馈", more = "低分需复核")
-                    if (items.length() == 0) Empty("暂无反馈")
+                    SectionTitle(stringResource(R.string.fb_kv_customer), more = stringResource(R.string.fb_low_review_note))
+                    if (items.length() == 0) Empty(stringResource(R.string.fb_empty))
                     for (i in 0 until items.length()) {
                         val it0 = items.optJSONObject(i)
                         val needReview = it0.optBoolean("needReview")
+                        val comment = it0.optString("comment")
                         KvRow(
                             it0.optString("customerName"),
-                            "${it0.optDouble("score")} 分${it0.optString("comment").let { if (it.isEmpty()) "" else " · $it" }}",
+                            if (comment.isEmpty()) ctx.getString(R.string.fb_score_fmt, it0.optDouble("score"))
+                            else ctx.getString(R.string.fb_score_with_label_fmt, it0.optDouble("score"), comment),
                             valueColor = if (needReview) Err else Success,
                         )
                     }
                 }
                 Card(Modifier.padding(12.dp)) {
-                    Notice("满意度 < 3 分自动升级主管复核，避免争议。")
+                    Notice(stringResource(R.string.fb_low_review_notice))
                 }
             }
         }

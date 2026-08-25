@@ -12,8 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.MiscApi
 import com.ymm.boss.worker.ui.theme.Muted
 import org.json.JSONArray
@@ -25,14 +27,14 @@ fun NoticeScreen(nav: NavHost) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("服务公告", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.notice_title), onBack = { nav.pop() })
         Card(Modifier.padding(12.dp)) {
             when (val s = state) {
                 is Load.Loading -> Loading()
-                is Load.Fail -> Notice("公告加载失败：${s.message}", red = true)
+                is Load.Fail -> Notice(ctx.getString(R.string.notice_load_fail, s.message ?: ""), red = true)
                 is Load.Ok -> {
                     val items = s.data.optJSONArray("items") ?: JSONArray()
-                    if (items.length() == 0) Empty("暂无公告")
+                    if (items.length() == 0) Empty(stringResource(R.string.notice_empty))
                     for (i in 0 until items.length()) {
                         val n = items.optJSONObject(i)
                         Cell(
@@ -42,14 +44,14 @@ fun NoticeScreen(nav: NavHost) {
                                 n.optString("category").takeIf { it.isNotEmpty() },
                             ).joinToString(" · "),
                             onClick = { toast(ctx, "${n.optString("category")} · ${n.optString("publishedAt")}") },
-                            right = { Text("已发布", fontSize = 12.sp, color = Muted) },
+                            right = { Text(stringResource(R.string.notice_kv_status), fontSize = 12.sp, color = Muted) },
                         )
                     }
                 }
             }
         }
         Card(Modifier.padding(12.dp)) {
-            Notice("公告与消息中心联动，重要通告同步推送到师傅端。")
+            Notice(stringResource(R.string.notice_intro))
         }
         Spacer(Modifier.height(12.dp))
     }

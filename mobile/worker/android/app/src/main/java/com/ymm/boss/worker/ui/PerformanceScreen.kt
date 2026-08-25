@@ -12,7 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ProfileApi
 import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.Success
@@ -23,31 +26,33 @@ import org.json.JSONArray
 @Composable
 fun PerformanceScreen(nav: NavHost) {
     val state by loadOnce { ProfileApi.performance() }
+    val ctx = LocalContext.current
+    val title = stringResource(R.string.perf_section_commission)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         when (val s = state) {
-            is Load.Loading -> { TopBar("绩效明细", onBack = { nav.pop() }); Loading() }
+            is Load.Loading -> { TopBar(title, onBack = { nav.pop() }); Loading() }
             is Load.Fail -> {
-                TopBar("绩效明细", onBack = { nav.pop() })
-                Card(Modifier.padding(14.dp)) { Notice("绩效加载失败：${s.message}", red = true) }
+                TopBar(title, onBack = { nav.pop() })
+                Card(Modifier.padding(14.dp)) { Notice(ctx.getString(R.string.perf_load_fail, s.message ?: ""), red = true) }
             }
             is Load.Ok -> {
                 val d = s.data
                 val period = d.optString("period", "-")
-                TopBar("绩效明细", onBack = { nav.pop() }, action = period)
+                TopBar(title, onBack = { nav.pop() }, action = period)
                 val sum = d.optJSONObject("summary") ?: org.json.JSONObject()
                 StatCard(
-                    "本月绩效", period,
+                    stringResource(R.string.perf_title), period,
                     listOf(
-                        Triple(sum.optString("finished", "0"), "完成", Primary),
-                        Triple(sum.optString("onTimeRate", "0") + "%", "按时率", Success),
-                        Triple(sum.optString("score", "0"), "评分", Warn),
+                        Triple(sum.optString("finished", "0"), stringResource(R.string.perf_stat_done), Primary),
+                        Triple(sum.optString("onTimeRate", "0") + "%", stringResource(R.string.perf_stat_on_time), Success),
+                        Triple(sum.optString("score", "0"), stringResource(R.string.perf_kv_score), Warn),
                     ),
                 )
                 val commissions = d.optJSONArray("commissions") ?: JSONArray()
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("提成明细")
-                    if (commissions.length() == 0) Empty("暂无提成明细")
+                    SectionTitle(stringResource(R.string.perf_section_commission))
+                    if (commissions.length() == 0) Empty(stringResource(R.string.perf_empty_commission))
                     for (i in 0 until commissions.length()) {
                         val c = commissions.optJSONObject(i)
                         val formula = c.optString("formula")
@@ -56,12 +61,12 @@ fun PerformanceScreen(nav: NavHost) {
                             (if (formula.isNotEmpty()) "$formula = " else "") + "¥$amt")
                     }
                     val total = d.optDouble("totalAmount", 0.0)
-                    KvRow("合计", "¥$total", valueColor = Primary)
+                    KvRow(stringResource(R.string.perf_stat_total), "¥$total", valueColor = Primary)
                 }
                 val ranking = d.optJSONArray("ranking") ?: JSONArray()
                 Card(Modifier.padding(12.dp)) {
-                    SectionTitle("小组排名")
-                    if (ranking.length() == 0) Empty("暂无排名数据")
+                    SectionTitle(stringResource(R.string.perf_stat_rank))
+                    if (ranking.length() == 0) Empty(stringResource(R.string.perf_empty_rank))
                     for (i in 0 until ranking.length()) {
                         val r = ranking.optJSONObject(i)
                         KvRow(r.optString("name"), "#${r.optInt("rank")}")

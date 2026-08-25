@@ -17,8 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.MiscApi
 import com.ymm.boss.worker.ui.theme.Muted
 import org.json.JSONArray
@@ -31,17 +33,17 @@ fun HelpScreen(nav: NavHost) {
     val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("排障手册", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.help_title), onBack = { nav.pop() })
         Card(Modifier.padding(12.dp)) {
             OutlinedTextField(value = kw, onValueChange = { kw = it },
-                placeholder = { Text("检索 FAQ / SOP") }, singleLine = true,
+                placeholder = { Text(stringResource(R.string.help_search_hint)) }, singleLine = true,
                 modifier = Modifier.fillMaxWidth())
         }
         Card(Modifier.padding(12.dp)) {
-            SectionTitle("高频 SOP")
+            SectionTitle(stringResource(R.string.help_section_hot))
             when (val s = state) {
                 is Load.Loading -> Loading()
-                is Load.Fail -> Notice("排障手册加载失败：${s.message}", red = true)
+                is Load.Fail -> Notice(ctx.getString(R.string.help_load_fail, s.message ?: ""), red = true)
                 is Load.Ok -> {
                     val all = s.data.optJSONArray("items") ?: JSONArray()
                     val query = kw.trim()
@@ -50,7 +52,7 @@ fun HelpScreen(nav: NavHost) {
                         val it0 = all.optJSONObject(i)
                         it0.optString("title").contains(query) || it0.optString("summary").contains(query)
                     }
-                    if (matched.isEmpty()) Empty("未找到相关 SOP")
+                    if (matched.isEmpty()) Empty(stringResource(R.string.help_empty))
                     for (i in matched) {
                         val it0 = all.optJSONObject(i)
                         Cell(
@@ -64,7 +66,7 @@ fun HelpScreen(nav: NavHost) {
             }
         }
         Card(Modifier.padding(12.dp)) {
-            Notice("知识库多语言（中/英/菲）可检索，装维与客服共用。")
+            Notice(stringResource(R.string.help_intro))
         }
         Spacer(Modifier.height(12.dp))
     }

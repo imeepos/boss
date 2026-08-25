@@ -26,9 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.MiscApi
 import com.ymm.boss.worker.api.ProfileApi
 import com.ymm.boss.worker.ui.theme.Primary
@@ -41,15 +43,23 @@ import org.json.JSONObject
 fun ProfileScreen(nav: NavHost) {
     val profile by loadOnce { ProfileApi.get() }
     val msgs by loadOnce { MiscApi.messages() }
+    val d = (profile as? Load.Ok)?.data
+    val month = d?.optJSONObject("month")
+    val unread = unreadCount(msgs)
+    val subs = QuickSubs(
+        performance = month?.let { stringResource(R.string.profile_stat_score_fmt, it.optDouble("score")) } ?: stringResource(R.string.profile_stat_commission),
+        history = month?.let { stringResource(R.string.profile_stat_orders_fmt, it.optInt("finished")) } ?: stringResource(R.string.profile_stat_orders),
+        messages = if (unread > 0) stringResource(R.string.profile_unread_count, unread) else stringResource(R.string.profile_unread_empty),
+    )
 
     PinnedGradientPage(
         gradient = Brush.linearGradient(listOf(Primary, Primary2)),
         headerContent = { ProfileHeadContent(profile, nav) },
     ) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            QuickEntriesCard(quickSubs(profile, msgs), nav)
+            QuickEntriesCard(subs, nav)
             ToolsCard(nav)
-            SettingsCard(nav, unread = unreadCount(msgs) > 0)
+            SettingsCard(nav, unread = unread > 0)
             LogoutCard(nav)
             Spacer(Modifier.height(16.dp))
         }
@@ -64,7 +74,7 @@ private fun ProfileHeadContent(profile: Load<JSONObject>, nav: NavHost) {
         Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
-        val name = d?.optString("name").orEmpty().ifBlank { "师傅" }
+        val name = d?.optString("name").orEmpty().ifBlank { stringResource(R.string.profile_role_tech) }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(56.dp)
@@ -76,16 +86,16 @@ private fun ProfileHeadContent(profile: Load<JSONObject>, nav: NavHost) {
             Column {
                 Text(name, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "${d?.optString("groupName").orEmpty()} · 工号 ${d?.optString("staffNo").orEmpty()}",
+                    "${d?.optString("groupName").orEmpty()} · ${stringResource(R.string.profile_kv_staff_no, d?.optString("staffNo").orEmpty())}",
                     color = Color.White.copy(alpha = 0.85f), fontSize = 12.5.sp,
                 )
                 if (d != null) {
-                    StatusLine("${if (d.optBoolean("online")) "在线接单" else "已停接单"} · 服务 ${d.optInt("serveYears")} 年")
+                    StatusLine("${if (d.optBoolean("online")) stringResource(R.string.profile_status_on) else stringResource(R.string.profile_status_off)} · ${stringResource(R.string.profile_kv_service_fmt, d.optInt("serveYears"))}")
                 }
             }
         }
         Icon(
-            Icons.Filled.Settings, contentDescription = "接单设置", tint = Color.White,
+            Icons.Filled.Settings, contentDescription = stringResource(R.string.profile_btn_settings), tint = Color.White,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(40.dp)
@@ -95,18 +105,7 @@ private fun ProfileHeadContent(profile: Load<JSONObject>, nav: NavHost) {
     }
 }
 
-/** 三入口副文案:绩效(本月评分) / 历史(完成单数) / 消息(未读数),取不到时给默认占位。 */
-private fun quickSubs(profile: Load<JSONObject>, msgs: Load<JSONObject>): QuickSubs {
-    val d = (profile as? Load.Ok)?.data
-    val month = d?.optJSONObject("month")
-    val unread = unreadCount(msgs)
-    return QuickSubs(
-        performance = month?.let { "评分 ${it.optDouble("score")}" } ?: "提成 · 排名",
-        history = month?.let { "本月完成 ${it.optInt("finished")} 单" } ?: "全部工单",
-        messages = if (unread > 0) "${unread}条未读" else "无未读",
-    )
-}
-
+/** 未读消息计数:ProfileScreen 在 Composable scope 内通过 unreadCount 复用。 */
 private fun unreadCount(msgs: Load<JSONObject>): Int = (msgs as? Load.Ok)
     ?.data?.optJSONArray("items")?.let { a: JSONArray ->
         (0 until a.length()).count { i -> !a.optJSONObject(i).optBoolean("read") }

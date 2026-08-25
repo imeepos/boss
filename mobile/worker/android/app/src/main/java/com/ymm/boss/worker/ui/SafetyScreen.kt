@@ -20,40 +20,48 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.MiscApi
 import com.ymm.boss.worker.ui.theme.Primary
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 
-private val WORK_TYPES = listOf("高空作业（爬杆/登高）", "带电作业", "密闭/井道作业", "常规入户")
-private val CHECK_ITEMS = listOf(
-    "安全帽 / 绝缘鞋已佩戴",
-    "安全带 / 防坠措施已就位",
-    "作业区域已围挡警示",
-    "已告知客户作业风险",
-)
-
 // 安全作业上报(对齐 docs/worker/safety.html):作业类型 + 确认清单
 @Composable
 fun SafetyScreen(nav: NavHost) {
-    var workType by remember { mutableStateOf(WORK_TYPES[0]) }
+    val ctx = LocalContext.current
+    val workTypes = listOf(
+        stringResource(R.string.safety_type_heights),
+        stringResource(R.string.safety_type_live),
+        stringResource(R.string.safety_type_confined),
+        stringResource(R.string.safety_type_general),
+    )
+    val checkItems = listOf(
+        stringResource(R.string.safety_item_helmet),
+        stringResource(R.string.safety_item_harness),
+        stringResource(R.string.safety_item_barrier),
+        stringResource(R.string.safety_item_aware),
+    )
+    val errEmpty = stringResource(R.string.safety_err_empty)
+    val toastOk = stringResource(R.string.safety_submit_ok)
+    var workType by remember { mutableStateOf(workTypes[0]) }
     var checked by remember { mutableStateOf(setOf<String>()) }
     var tip by remember { mutableStateOf("") }
     var submitting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val ctx = LocalContext.current
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("安全作业上报", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.safety_title), onBack = { nav.pop() })
         Card(Modifier.padding(12.dp)) {
-            SectionTitle("作业类型")
-            OptionRow(WORK_TYPES, workType) { workType = it }
+            SectionTitle(stringResource(R.string.safety_kv_type))
+            OptionRow(workTypes, workType) { workType = it }
         }
         Card(Modifier.padding(12.dp)) {
-            SectionTitle("安全确认清单")
-            CHECK_ITEMS.forEach { item ->
+            SectionTitle(stringResource(R.string.safety_section_checks))
+            checkItems.forEach { item ->
                 val on = item in checked
                 Row(Modifier.fillMaxWidth().clickable {
                     checked = if (on) checked - item else checked + item
@@ -64,27 +72,27 @@ fun SafetyScreen(nav: NavHost) {
                 }
             }
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("提交安全确认", enabled = !submitting, modifier = Modifier.fillMaxWidth()) {
+            PrimaryButton(stringResource(R.string.safety_submit), enabled = !submitting, modifier = Modifier.fillMaxWidth()) {
                 if (checked.isEmpty()) {
-                    tip = "请先完成至少一项安全确认"
+                    tip = errEmpty
                     return@PrimaryButton
                 }
                 submitting = true
                 scope.launch {
                     tip = try {
                         val list = JSONArray()
-                        CHECK_ITEMS.filter { it in checked }.forEach { list.put(it) }
+                        checkItems.filter { it in checked }.forEach { list.put(it) }
                         val r = MiscApi.safetyCheck(workType, list)
-                        toast(ctx, r.optString("message", "安全确认已上报留痕"))
+                        toast(ctx, r.optString("message", toastOk))
                         ""
-                    } catch (e: Exception) { "上报失败：${e.message}" }
+                    } catch (e: Exception) { ctx.getString(R.string.safety_submit_fail, e.message ?: "") }
                     submitting = false
                 }
             }
             if (tip.isNotEmpty()) Notice(tip, red = true)
         }
         Card(Modifier.padding(12.dp)) {
-            Notice("高风险作业须先完成安全确认方可开始，确认记录留痕可追溯。")
+            Notice(stringResource(R.string.safety_notice))
         }
         Spacer(Modifier.height(12.dp))
     }

@@ -40,8 +40,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.api.AuthApi
 import com.ymm.boss.worker.api.UpdateApi
@@ -90,9 +92,9 @@ private data class MenuEntry(val label: String, val icon: ImageVector, val tint:
 internal fun QuickEntriesCard(subs: QuickSubs, nav: NavHost) {
     HomeCard(topPadding = 0) {
         Row(Modifier.fillMaxWidth()) {
-            QuickEntry(Icons.Filled.TrendingUp, Primary, "绩效明细", subs.performance, Modifier.weight(1f)) { nav.push(Screen.Performance) }
-            QuickEntry(Icons.AutoMirrored.Filled.ReceiptLong, Warn, "历史工单", subs.history, Modifier.weight(1f)) { nav.push(Screen.History) }
-            QuickEntry(Icons.Filled.Notifications, Success, "消息通知", subs.messages, Modifier.weight(1f)) { nav.push(Screen.Messages) }
+            QuickEntry(Icons.Filled.TrendingUp, Primary, stringResource(R.string.pc_card_perf), subs.performance, Modifier.weight(1f)) { nav.push(Screen.Performance) }
+            QuickEntry(Icons.AutoMirrored.Filled.ReceiptLong, Warn, stringResource(R.string.pc_card_history), subs.history, Modifier.weight(1f)) { nav.push(Screen.History) }
+            QuickEntry(Icons.Filled.Notifications, Success, stringResource(R.string.pc_card_msgs), subs.messages, Modifier.weight(1f)) { nav.push(Screen.Messages) }
         }
     }
 }
@@ -113,13 +115,13 @@ private fun QuickEntry(icon: ImageVector, tint: Color, label: String, sub: Strin
 @Composable
 internal fun ToolsCard(nav: NavHost) {
     val entries = listOf(
-        MenuEntry("测速 / 光功率", Icons.Filled.Speed, Primary, Screen.Tool()),
-        MenuEntry("领料 / 借还", Icons.Filled.Storefront, Warn, Screen.Pickup),
-        MenuEntry("排障手册", Icons.AutoMirrored.Filled.Help, Success, Screen.Help),
-        MenuEntry("联系调度", Icons.AutoMirrored.Filled.Chat, Primary, Screen.Service),
+        MenuEntry(stringResource(R.string.pc_card_speed), Icons.Filled.Speed, Primary, Screen.Tool()),
+        MenuEntry(stringResource(R.string.pc_card_materials), Icons.Filled.Storefront, Warn, Screen.Pickup),
+        MenuEntry(stringResource(R.string.pc_card_troubleshoot), Icons.AutoMirrored.Filled.Help, Success, Screen.Help),
+        MenuEntry(stringResource(R.string.pc_card_contact), Icons.AutoMirrored.Filled.Chat, Primary, Screen.Service),
     )
     HomeCard {
-        CardTitle("常用工具")
+        CardTitle(stringResource(R.string.pc_card_tools))
         entries.forEach { e -> MenuRow(e.icon, e.tint, e.label) { nav.push(e.screen) } }
     }
 }
@@ -132,11 +134,11 @@ internal fun SettingsCard(nav: NavHost, unread: Boolean) {
     var update by remember { mutableStateOf<UpdateApi.UpdateInfo?>(null) }
     var upToDate by remember { mutableStateOf(false) }
     HomeCard {
-        CardTitle("账号与设置")
-        MenuRow(Icons.Filled.Settings, Primary, "接单设置") { nav.push(Screen.Settings) }
-        MenuRow(Icons.Filled.Campaign, Warn, "服务公告", showDot = unread) { nav.push(Screen.Notice) }
-        MenuRow(Icons.AutoMirrored.Filled.Help, Success, "帮助与反馈") { nav.push(Screen.Feedback) }
-        MenuRow(Icons.Filled.SystemUpdate, Primary, "检查更新") {
+        CardTitle(stringResource(R.string.pc_card_account))
+        MenuRow(Icons.Filled.Settings, Primary, stringResource(R.string.pc_card_jobs)) { nav.push(Screen.Settings) }
+        MenuRow(Icons.Filled.Campaign, Warn, stringResource(R.string.pc_card_notices), showDot = unread) { nav.push(Screen.Notice) }
+        MenuRow(Icons.AutoMirrored.Filled.Help, Success, stringResource(R.string.pc_card_help)) { nav.push(Screen.Feedback) }
+        MenuRow(Icons.Filled.SystemUpdate, Primary, stringResource(R.string.pc_btn_check_update)) {
             upToDate = false
             scope.launch {
                 val info = UpdateApi.check(context)
@@ -148,10 +150,10 @@ internal fun SettingsCard(nav: NavHost, unread: Boolean) {
     if (upToDate) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { upToDate = false },
-            title = { Text("已是最新版本") },
-            text = { Text("当前版本 v${com.ymm.boss.worker.BuildConfig.VERSION_NAME} 已是最新。") },
+            title = { Text(stringResource(R.string.pc_up_to_date_title)) },
+            text = { Text(stringResource(R.string.pc_version_current, com.ymm.boss.worker.BuildConfig.VERSION_NAME)) },
             confirmButton = {
-                androidx.compose.material3.TextButton(onClick = { upToDate = false }) { Text("知道了") }
+                androidx.compose.material3.TextButton(onClick = { upToDate = false }) { Text(stringResource(R.string.pc_btn_dismiss_update)) }
             },
         )
     }
@@ -181,7 +183,7 @@ internal fun LogoutCard(nav: NavHost) {
         ) {
             Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Err, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
-            Text("退出登录", fontSize = 15.sp, fontWeight = FontWeight.W500, color = Err)
+            Text(stringResource(R.string.pc_btn_logout), fontSize = 15.sp, fontWeight = FontWeight.W500, color = Err)
         }
     }
 }

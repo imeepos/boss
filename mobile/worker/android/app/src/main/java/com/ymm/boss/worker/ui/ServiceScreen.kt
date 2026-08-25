@@ -25,8 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.MiscApi
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -40,16 +42,18 @@ fun ServiceScreen(nav: NavHost) {
     val state by loadOnce(refresh) { MiscApi.serviceMessages() }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+    val placeholder = stringResource(R.string.svc_hint)
+    val svcPlaceholder = stringResource(R.string.svc_placeholder)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("联系调度", onBack = { nav.pop() })
+        TopBar(stringResource(R.string.svc_btn_contact), onBack = { nav.pop() })
         Card(Modifier.padding(12.dp)) {
             when (val s = state) {
                 is Load.Loading -> Loading()
-                is Load.Fail -> Notice("会话加载失败：${s.message}", red = true)
+                is Load.Fail -> Notice(ctx.getString(R.string.svc_load_fail, s.message ?: ""), red = true)
                 is Load.Ok -> {
                     val items = s.data.optJSONArray("items") ?: JSONArray()
-                    if (items.length() == 0) Empty("暂无会话")
+                    if (items.length() == 0) Empty(stringResource(R.string.svc_empty))
                     for (i in 0 until items.length()) {
                         val m = items.optJSONObject(i)
                         val mine = m.optString("from") == "worker"
@@ -73,12 +77,12 @@ fun ServiceScreen(nav: NavHost) {
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
-                placeholder = { Text("请输入要发送给调度的内容") },
+                placeholder = { Text(placeholder) },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(8.dp))
-            PrimaryButton("发送消息", enabled = !sending && content.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+            PrimaryButton(stringResource(R.string.svc_btn_send), enabled = !sending && content.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
                 sending = true
                 scope.launch {
                     try {
@@ -86,7 +90,7 @@ fun ServiceScreen(nav: NavHost) {
                         content = ""
                         refresh++
                     } catch (e: Exception) {
-                        toast(ctx, "发送失败：${e.message}")
+                        toast(ctx, ctx.getString(R.string.svc_send_fail, e.message ?: ""))
                     }
                     sending = false
                 }
@@ -94,10 +98,10 @@ fun ServiceScreen(nav: NavHost) {
         }
         Row(Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
-            PrimaryButton("拨号", modifier = Modifier.weight(1f)) {
+            PrimaryButton(stringResource(R.string.svc_btn_call), modifier = Modifier.weight(1f)) {
                 ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:10086")))
             }
-            PrimaryButton("转单/改派", modifier = Modifier.weight(1f)) { toast(ctx, "请从具体工单进入转单") }
+            PrimaryButton(stringResource(R.string.svc_title), modifier = Modifier.weight(1f)) { toast(ctx, svcPlaceholder) }
         }
         Spacer(Modifier.height(12.dp))
     }

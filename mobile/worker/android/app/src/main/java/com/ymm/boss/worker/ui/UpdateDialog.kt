@@ -10,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.UpdateApi
 
 /**
@@ -33,16 +35,17 @@ fun UpdateGate() {
 @Composable
 fun UpdateDialog(info: UpdateApi.UpdateInfo?, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val ctx = context
     val cur = info ?: return
     AlertDialog(
         onDismissRequest = { if (!cur.force) onDismiss() },
-        title = { Text("发现新版本 v${cur.version}") },
+        title = { Text(stringResource(R.string.upd_available, cur.version)) },
         text = {
             Text(
                 buildString {
-                    append(cur.notes.ifBlank { "优化体验,修复已知问题。" })
-                    if (cur.sizeMb.isNotEmpty()) append("\n\n安装包大小:${cur.sizeMb}")
-                    if (cur.force) append("\n\n当前版本过低,需更新后继续使用。")
+                    append(cur.notes.ifBlank { stringResource(R.string.upd_optimize) })
+                    if (cur.sizeMb.isNotEmpty()) append(ctx.getString(R.string.upd_size_fmt, cur.sizeMb))
+                    if (cur.force) append(ctx.getString(R.string.upd_force_fmt, ""))
                 },
             )
         },
@@ -50,10 +53,10 @@ fun UpdateDialog(info: UpdateApi.UpdateInfo?, onDismiss: () -> Unit) {
             TextButton(onClick = {
                 UpdateApi.openDownload(context, cur)
                 if (!cur.force) onDismiss()
-            }) { Text("立即更新") }
+            }) { Text(stringResource(R.string.upd_now)) }
         },
         dismissButton = {
-            if (!cur.force) TextButton(onClick = onDismiss) { Text("忽略") }
+            if (!cur.force) TextButton(onClick = onDismiss) { Text(stringResource(R.string.upd_ignore)) }
         },
     )
 }
