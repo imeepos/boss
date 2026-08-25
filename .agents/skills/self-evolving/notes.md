@@ -704,3 +704,9 @@
 - skill 有没有提前警告:并行 worktree 不得触碰别人的 WIP、提交前必须核对显式 pathspec 与 status；但环境变量从 monorepo 根到 Vite 子项目的构建边界需要在计划阶段先验证。
 - 重来一次:先在独立 worktree 复制/注入可控测试 key，使用 Vite `loadEnv` 将根 `AMAP_KEY` 映射到公开客户端变量；`AMAP_SECRET` 永不下发浏览器；暗色底图优先使用独立 dark 瓦片，避免全图 CSS filter 反转点位层。
 - 交付:高德亮色瓦片、CartoDB 暗色瓦片、AMAP_KEY 构建时注入和 `.env.example` 文档已测试并合并；25 个地图相关测试、TypeScript 类型检查和 Vite 生产构建通过。
+
+## 2026-08-25 师傅端登录页勘察/设计/任务提示词
+- 哪个坑浪费最多时间:① gradle wrapper 分发版缓存缺 `.ok` 标记,两次构建都联网 forceFetch 失败(SSL 超时),第一次还用管道 tail 取退出码得到假 EXIT=0——knowledge/android.md #6 已警告过,再犯;② 设计稿首稿按旧习惯放根 `designs/`,用户点名纠正 worker 端稿应放 `mobile/worker/design`。
+- skill 有没有提前警告:管道吞退出码有 #6 记录;设计稿存放位置 skill 未提"按端分目录",是勘察遗漏(只看了根 designs/,没查 mobile/user/design 的既有约定)。
+- 重来一次:① 构建验证先查 wrapper 分发缓存完整性,退出码重定向文件后单独读;② 生成设计稿前先 `find mobile/<role>/design` 确认存放约定。
+- 交付:勘察结论(登录页已实现已接线/编译绿/真实后端 28080)、worker-login-states-v1.png+spec、任务提示词 docs/plan/worker-login-page-task-prompt.md,已按 worktree 协议合并 main 并清理。
