@@ -1,7 +1,8 @@
-// 装维队管理对话框集(000141):新建/编辑队伍、解散确认、成员调队、业绩统计。
+// 装维队管理对话框集(000141):新建/编辑队伍、解散确认、成员调队;业绩统计走右侧抽屉。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import type { TeamPerfRow, WorkerGroupRow, WorkerRow } from '../types'
@@ -221,9 +222,9 @@ export function TeamDialogs({ mode, groups, workers, onClose, onDone }: DialogsP
         <TransferForm worker={mode.worker} groups={groups} onClose={onClose} onDone={onDone} />
       </Shell>
     case 'perf':
-      return <Shell title={`${w.perfTitle} · ${mode.group.name}`} onClose={onClose}>
+      return <Drawer title={`${w.perfTitle} · ${mode.group.name}`} onClose={onClose}>
         <PerfPanel group={mode.group} />
-      </Shell>
+      </Drawer>
     case 'disband':
       return <Shell title={w.disband} onClose={onClose}>
         <p className="mb-4 text-[13px] text-[var(--shell-content-text)]">{w.disbandConfirmText}</p>

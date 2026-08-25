@@ -999,6 +999,12 @@ export interface Translations {
       eNameRequired: string
       eCodeRequired: string
       eEntityRequired: string
+      // 装维队 UI 优化(000141 迭代):卡片操作下拉 / 头部添加按钮 / 抽屉业绩 / 选师入组
+      teamOps: string
+      pickWorker: string
+      pickWorkerPlaceholder: string
+      addToGroupHint: string
+      needSelectGroup: string
     }
     workerRegPage: {
       title: string

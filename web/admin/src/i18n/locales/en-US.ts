@@ -1035,6 +1035,11 @@ const enUS: Translations = {
       eNameRequired: 'Team name required',
       eCodeRequired: 'Team code required',
       eEntityRequired: 'Company required',
+      teamOps: 'Actions',
+      pickWorker: 'Pick worker',
+      pickWorkerPlaceholder: 'Search staff no / name',
+      addToGroupHint: 'Pick a worker to add to the current team',
+      needSelectGroup: 'Select a team on the left first',
     },
     workerRegPage: {
       title: 'Worker Registration',

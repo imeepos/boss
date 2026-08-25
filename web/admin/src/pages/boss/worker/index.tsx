@@ -1,18 +1,20 @@
-// 师傅管理页(装维队视图,000141):左侧队伍卡片 + 右侧成员表;
-// 支持新建/编辑/解散队伍、指定队长、成员调队、队伍业绩统计。
+// 师傅管理页(装维队视图,000141):左侧队伍卡片(操作下拉) + 右侧成员表;
+// 头部添加装维队按钮;业绩统计走右侧抽屉;选择师傅添加到当前装维队。
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
+import { Dropdown } from '../../../components/Dropdown'
+import { ResourcePicker } from '../../../components/ResourcePicker'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type WorkerGroupRow, type WorkerRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { TeamDialogs, type DialogMode } from './TeamDialogs'
 
 const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
-const primarySmallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--color-brand-bg)] bg-[var(--color-brand-bg)] px-3 text-[12px] text-white hover:opacity-80'
+const primaryBtn = 'h-8 cursor-pointer rounded-sm border border-[var(--color-brand-bg)] bg-[var(--color-brand-bg)] px-4 text-[13px] text-white hover:opacity-80'
 
 export default function WorkerPage() {
   const t = useT()
@@ -27,6 +29,7 @@ export default function WorkerPage() {
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
   const [dialog, setDialog] = useState<DialogMode>(null)
+  const [pickWorker, setPickWorker] = useState('')
 
   const load = useCallback(() => {
     setError('')
@@ -59,6 +62,19 @@ export default function WorkerPage() {
     }
   }
 
+  // 选择师傅后添加到当前装维队(目标 = 左侧选中的队伍)。
+  const addWorkerToGroup = async (wid: string) => {
+    if (!selGroup || !wid) return
+    try {
+      await apiFetch(`/workers/${wid}/transfer`, { method: 'POST', body: { groupId: selGroup, reason: w.addToGroupHint } })
+      setPickWorker('')
+      load()
+    } catch (e) {
+      setPickWorker('')
+      alert(e instanceof Error ? e.message : w.actionFail)
+    }
+  }
+
   const cardCls = (id: number) =>
     `cursor-pointer rounded-md border p-3 text-left transition-colors ${selGroup === id
       ? 'border-[var(--color-brand-bg)] bg-[color-mix(in_srgb,var(--color-brand-bg)_8%,transparent)]'
@@ -67,12 +83,15 @@ export default function WorkerPage() {
   return (
     <div>
       <PageHead title={w.title} desc={w.desc} />
+      {/* 页面级操作栏:添加装维队 */}
+      <div className="mb-4 flex items-center justify-end">
+        <button className={primaryBtn} onClick={() => setDialog({ type: 'create' })}>{w.newTeam}</button>
+      </div>
       <div className="mb-4 flex flex-col gap-4 lg:flex-row">
         {/* 装维队卡片列 */}
         <div className="w-full shrink-0 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)] lg:w-72">
-          <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="mb-3">
             <span className="text-sm font-medium text-[var(--shell-heading)]">{w.teamTitle}</span>
-            <button className={primarySmallBtn} onClick={() => setDialog({ type: 'create' })}>{w.newTeam}</button>
           </div>
           <div className="flex flex-col gap-2">
             <button className={cardCls(0)} onClick={() => { setSelGroup(0); setPage(1) }}>
@@ -91,10 +110,22 @@ export default function WorkerPage() {
                   <span>{w.captain}: {g.leaderName || w.captainEmpty}</span>
                   <span>{w.memberCount}: {g.memberCount}</span>
                 </div>
-                <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  <button className={smallBtn} onClick={() => setDialog({ type: 'edit', group: g })}>{w.editTeam}</button>
-                  <button className={smallBtn} onClick={() => setDialog({ type: 'perf', group: g })}>{w.perfBtn}</button>
-                  <button className={smallBtn} onClick={() => setDialog({ type: 'disband', group: g })}>{w.disband}</button>
+                {/* 卡片操作下拉:编辑 / 业绩统计 / 解散 */}
+                <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                  <Dropdown
+                    value=""
+                    options={[
+                      { value: 'edit', label: w.editTeam },
+                      { value: 'perf', label: w.perfBtn },
+                      { value: 'disband', label: w.disband },
+                    ]}
+                    onChange={(op) => {
+                      if (op === 'edit') setDialog({ type: 'edit', group: g })
+                      else if (op === 'perf') setDialog({ type: 'perf', group: g })
+                      else if (op === 'disband') setDialog({ type: 'disband', group: g })
+                    }}
+                    ariaLabel={w.teamOps}
+                  />
                 </div>
               </div>
             ))}
@@ -108,6 +139,21 @@ export default function WorkerPage() {
               value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
             <span className="text-sm text-[var(--shell-group-title)]">{selGroup ? groupName(selGroup) : w.allMembers}</span>
             <span className="spacer" />
+            {!selGroup ? (
+              <span className="text-xs text-[var(--shell-group-title)]">{w.needSelectGroup}</span>
+            ) : (
+              <ResourcePicker
+                key={selGroup}
+                value={pickWorker}
+                onChange={(v) => { setPickWorker(v); if (v) addWorkerToGroup(v) }}
+                load={() => Promise.resolve(rows.filter((r) => r.status === 1 && r.groupId !== selGroup))}
+                toOption={(r) => ({ value: String(r.id), label: `${r.name}(${r.staffNo})` })}
+                ariaLabel={w.pickWorker}
+                searchPlaceholder={w.pickWorkerPlaceholder}
+                errorText={w.loadFail}
+                minWidth={180}
+              />
+            )}
             <button className={smallBtn} disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           </div>
           {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (

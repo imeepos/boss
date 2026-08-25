@@ -1035,6 +1035,11 @@ const msMY: Translations = {
       eNameRequired: 'Nama pasukan diperlukan',
       eCodeRequired: 'Kod pasukan diperlukan',
       eEntityRequired: 'Syarikat diperlukan',
+      teamOps: 'Tindakan',
+      pickWorker: 'Pilih pekerja',
+      pickWorkerPlaceholder: 'Cari no. staf / nama',
+      addToGroupHint: 'Pilih pekerja untuk ditambah ke pasukan semasa',
+      needSelectGroup: 'Pilih pasukan di sebelah kiri dahulu',
     },
     workerRegPage: {
       title: 'Semakan Pendaftaran Pekerja',
