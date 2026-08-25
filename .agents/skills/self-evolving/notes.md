@@ -602,3 +602,9 @@
 - 哪个坑浪费最多时间:并行 worktree 抢 pnpm store 导致 install 挂死;本轮改用 Go/契约先行 commit + CI 构建 + 102 真机补证据,没有继续无效重试。
 - skill 有没有提前警告:nginx immutable 配对、匿名图片不能复用鉴权附件端点、部署探针区分度的经验都直接命中;pnpm store 并行锁只在本轮新增。
 - 重来一次会怎么做:开 worktree 后第一步检查 node_modules/store 是否被其他 worktree 占用;前端验证优先复用已安装依赖或把 CI build 状态纳入明确回放门禁,并在计划中标出"本地门禁受阻时的降级证据链"。
+
+## 2026-08-28 客户端版本管理全链路(apprelease 域)交付
+- 最大坑:GOPATH 在 ~/go → /Volumes/sker 外置卷,会话中途卷 I/O 停摆,go build 无输出挂死(连 go build -x 都零输出=模块缓存读取阶段卡死);本地 GOPATH 绕行后定位。
+- 102 冒烟抓出三个真 bug(单测全绿也挡不住):multipart 缺省 minSupportedCode=0 撞 validate;pgx 把 nil []int64 编码 NULL 撞 NOT NULL(显式列不吃表 DEFAULT);缺省 minSupported=本版码导致所有存量客户端被强升(语义反了)。结论:multipart+DB 落库链路必须 102 实测,域单测覆盖不到编码层。
+- 违规:两个 fix 直接提交在 main 上(AGENTS 禁止);下不为例,冒烟发现的热修也走 worktree。
+- 教训:gin 同一路径段 :id 与 static/latest 冲突会注册期 panic,公开面用 /site/downloads 独立段;UI 验证用 cdp-capture --eval 打 innerText 断言,比截图可靠(本模型看不了图)。
