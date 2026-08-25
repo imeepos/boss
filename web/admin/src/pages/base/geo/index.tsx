@@ -24,8 +24,7 @@ export default function GeoPage() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageHead title={t.pages.geo.title} desc="ISO 3166-1 / ISO 3166-2 · CLDR · UN M49" />
-        <BaseImportEntry kind="geo" title={im.geoTitle} hint={im.geoHint}
-          endpoint="/geo/import" onImported={() => setRev((v) => v + 1)} />
+        <BatchImportEntry kind="geo" onImported={() => setRev((v) => v + 1)} />
       </div>
       <TabBar
         tabs={[
