@@ -133,10 +133,10 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
   }
 
   /** 导入结果登记(POST /import-tasks):结果可追溯;登记失败不阻断、不打扰(仅 console)。 */
-  const registerTask = (imported: number, failed: number) => {
+  const registerTask = (total: number, imported: number, failed: number, skipped: number) => {
     apiFetch('/import-tasks', {
       method: 'POST',
-      body: { kind: `entity:${def.kind}`, imported, failed },
+      body: { kind: `entity:${def.kind}`, total, imported, failed, skipped },
     }).catch((e: unknown) => console.warn('import-task register failed', e))
   }
 
@@ -164,7 +164,7 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
             + (total - ok - fails.length > 0 ? ' · ' + text.entityUnprocessed.replace('{count}', String(total - ok - fails.length)) : ''))
           setFailures([...fails])
           setProgress({ done: ok + fails.length, total })
-          registerTask(ok, fails.length)
+          registerTask(rows.length, ok, fails.length, dedupe.skipped)
           setBusy(false)
           return
         }
@@ -175,7 +175,7 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
     setSummary(text.entityDone.replace('{ok}', String(ok)).replace('{fail}', String(fails.length))
       + (dedupe.skipped > 0 ? ' · ' + text.entitySkipped.replace('{count}', String(dedupe.skipped)) : ''))
     setFailures(fails)
-    registerTask(ok, fails.length)
+    registerTask(rows.length, ok, fails.length, dedupe.skipped)
     if (ok > 0 || fails.length > 0) onImported()
     setBusy(false)
   }

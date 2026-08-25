@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE import_tasks DROP COLUMN total, DROP COLUMN skipped;
+COMMIT;

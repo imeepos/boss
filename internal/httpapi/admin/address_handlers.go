@@ -188,7 +188,7 @@ func addrImportAddresses(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		_ = a.User.RecordImportTask(c.Request.Context(), "addresses", httpx.ClaimsAccountID(c), int(imported), 0, nil)
+		_ = a.User.RecordImportTask(c.Request.Context(), "addresses", httpx.ClaimsAccountID(c), int(imported), int(imported), 0, 0, nil)
 		emitTask(c.Request.Context(), a, refImporter, "addr-"+fmt.Sprint(time.Now().Unix()),
 			"地址导入完成:"+strconv.Itoa(int(imported))+" 行", linkImporter, false)
 		respond(c, apitypes.CodeOK, gin.H{"imported": imported})

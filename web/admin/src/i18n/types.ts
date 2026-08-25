@@ -315,6 +315,9 @@ export interface Translations {
       loadFail: string
       tasksTitle: string
       taskColumns: string[]
+      totalRows: string
+      skippedRows: string
+      taskKindFilter: string
       taskKindAddr: string
       taskKindGeo: string
       fileButton: string

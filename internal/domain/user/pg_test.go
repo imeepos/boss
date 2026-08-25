@@ -410,6 +410,7 @@ func TestPGStore_ImportAddresses(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectBegin()
 	// 顶层节点 bj(无父):直接 insert(带国家锚点)
 	mock.ExpectExec(`INSERT INTO addresses`).
 		WithArgs("bj", int8(1), "北京市", nil, "CN", "CN-BJ").
@@ -421,6 +422,7 @@ func TestPGStore_ImportAddresses(t *testing.T) {
 	mock.ExpectExec(`INSERT INTO addresses`).
 		WithArgs("bj.chaoyang", int8(2), "朝阳区", int64(1), "", "").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	imported, err := s.ImportAddresses(context.Background(), []AddressRow{
