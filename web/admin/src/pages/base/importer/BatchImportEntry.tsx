@@ -1,11 +1,14 @@
-// 页面级批量导入入口:按钮 + Drawer + 业务实体导入面板。
-// 只接收实体 kind,权限(useProfile)与文案(useT)内部装配;导入完成后回调 onImported。
+// 页面级批量导入入口:按钮 + Drawer + 导入面板。
+// 实体 kind(account/legal_entity/...)走 EntityImportPanel(逐行调用创建端点);
+// addr/geo 复用 ImportPanel(服务端信封导入 /addresses/import、/geo/import)。
+// 权限(useProfile)与文案(useT)内部装配;导入完成后回调 onImported。
 import { useState } from 'react'
 import { useT } from '../../../i18n'
 import { useProfile } from '../../../layouts/profile'
 import { Drawer } from '../../../components/Drawer'
 import { ToolbarButton } from '../../../components/business/page-head'
 import { EntityImportPanel } from './EntityImportPanel'
+import { ImportPanel } from './ImportPanel'
 import { findEntity } from './entities'
 
 export function BatchImportEntry({ kind, onImported, label }: {
@@ -20,18 +23,29 @@ export function BatchImportEntry({ kind, onImported, label }: {
   const profile = useProfile()
   const [open, setOpen] = useState(false)
   const def = findEntity(kind)
-  if (!def) return null
-  const name = im.entityNames[def.kind] ?? def.kind
-  const noPerm = !(profile.permissionCodes ?? []).includes(def.perm)
+  const panel = kind === 'addr' || kind === 'geo'
+  if (!def && !panel) return null
+  const name = def ? im.entityNames[def.kind] ?? def.kind : (kind === 'addr' ? im.entryAddr : im.entryGeo)
+  const btnLabel = def ? `${im.importBtn} ${name}` : name
+  const drawerTitle = def ? `${im.entityTitle} · ${name}` : (kind === 'addr' ? im.addrTitle : im.geoTitle)
+  const noPerm = def ? !(profile.permissionCodes ?? []).includes(def.perm) : false
 
   return (
     <>
-      <ToolbarButton primary disabled={noPerm} onClick={() => setOpen(true)}>
-        {label ?? `${im.importBtn} ${name}`}
-      </ToolbarButton>
+      <span title={noPerm ? im.entityNoPerm.replace('{perm}', def?.perm ?? '') : undefined}>
+        <ToolbarButton primary onClick={() => setOpen(true)}>
+          {label ?? btnLabel}
+        </ToolbarButton>
+      </span>
       {open && (
-        <Drawer title={`${im.entityTitle} · ${name}`} onClose={() => setOpen(false)}>
-          <EntityImportPanel def={def} noPerm={noPerm} text={im} onImported={onImported} />
+        <Drawer title={drawerTitle} onClose={() => setOpen(false)}>
+          {def ? (
+            <EntityImportPanel def={def} noPerm={noPerm} text={im} onImported={onImported} />
+          ) : kind === 'addr' ? (
+            <ImportPanel kind="addr" title={im.addrTitle} hint={im.addrHint} endpoint="/addresses/import" text={im} onImported={onImported} />
+          ) : (
+            <ImportPanel kind="geo" title={im.geoTitle} hint={im.geoHint} endpoint="/geo/import" text={im} onImported={onImported} />
+          )}
         </Drawer>
       )}
     </>

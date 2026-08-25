@@ -374,6 +374,8 @@ const zhCN: Translations = {
       geoTitle: 'ISO 地理数据导入',
       geoHint: 'JSON 对象 {countries, countryNames, subdivisions, subdivisionNames},upsert 语义,需 geo 菜单权限',
       importBtn: '导入',
+      entryAddr: '导入地址',
+      entryGeo: '导入地理数据',
       parseFail: 'JSON 解析失败',
       imported: '已导入 {count} 条',
       loadFail: '导入失败',

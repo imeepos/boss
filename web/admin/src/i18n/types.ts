@@ -308,6 +308,8 @@ export interface Translations {
       geoTitle: string
       geoHint: string
       importBtn: string
+      entryAddr: string
+      entryGeo: string
       parseFail: string
       imported: string
       loadFail: string

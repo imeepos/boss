@@ -8,6 +8,7 @@ import { Badge } from '../../../components/ui/badge'
 import { Input } from '../../../components/ui/input'
 import { AddressGeoDrawer, type AddressRow, type CountryRow } from './AddressGeoDrawer'
 import { AddressNodeDrawer } from './AddressNodeDrawer'
+import { BatchImportEntry } from '../importer/BatchImportEntry'
 import { CARD, TOOLBAR, SPACER, ADDR_ROW, ADDR_TOGGLE, ADDR_NAME, ACT_BTN, SEP } from '../geo/styles'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
@@ -114,6 +115,7 @@ export default function AddressPage() {
           onClick={() => setUnlinked(unlinked === '1' ? '' : '1')}>
           {unlinked === '1' ? a.unlinkedAll : a.unlinked}
         </ToolbarButton>
+        <BatchImportEntry kind="addr" onImported={loadRoots} />
         <ToolbarButton primary
           onClick={() => setNodeForm({ mode: 'create', parent: undefined })}>+ {a.addRoot}</ToolbarButton>
       </div>

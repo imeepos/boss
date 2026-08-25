@@ -46,7 +46,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
       { key: 'regionScope', required: false, type: 'string' },
     ],
     samples: [
-      { username: 'op102', password: 'Init@1024', realName: '运营一号', roleCode: 'operator', phone: '09170000001', legalEntityId: 1, deptId: 1, postId: 1, regionScope: '' },
+      { username: 'op102', password: 'Init@1024', realName: '运营一号', roleCode: 'ops', phone: '09170000001', legalEntityId: 1, deptId: 1, postId: 1, regionScope: '' },
     ],
   },
   {
@@ -92,7 +92,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
       { key: 'roles', required: false, type: 'list' },
     ],
     samples: [
-      { deptId: 1, code: 'POST-IMP-01', name: '示例岗位', roles: 'operator,worker' },
+      { deptId: 1, code: 'POST-IMP-01', name: '示例岗位', roles: 'ops,analyst' },
     ],
   },
   {
@@ -118,6 +118,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     perm: 'menu:odn',
     endpoint: '/odn/sites',
     uniqueKey: ['prvCode', 'cityPrefix', 'siteNo'],
+    listEndpoint: '/odn/sites',
     queryColumns: ['prvCode', 'cityPrefix'],
     columns: [
       { key: 'prvCode', required: true, type: 'string' },
@@ -136,6 +137,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     perm: 'menu:odn',
     endpoint: '/odn/grids',
     uniqueKey: ['prvCode', 'cityPrefix', 'gridCode'],
+    listEndpoint: '/odn/grids',
     queryColumns: ['prvCode', 'cityPrefix'],
     columns: [
       { key: 'prvCode', required: true, type: 'string' },
@@ -172,7 +174,9 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     kind: 'odn_device',
     perm: 'menu:odn',
     endpoint: '/odn/devices',
-    uniqueKey: ['code'],
+    uniqueKey: ['prvCode', 'cityPrefix', 'code'],
+    listEndpoint: '/odn/devices',
+    queryColumns: ['prvCode', 'cityPrefix'],
     columns: [
       { key: 'code', required: true, type: 'string' },
       { key: 'kind', required: true, type: 'string' },
@@ -191,6 +195,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
     perm: 'menu:odn',
     endpoint: '/odn/facilities',
     uniqueKey: ['code'],
+    listEndpoint: '/odn/facilities',
+    queryColumns: ['prvCode', 'cityPrefix'],
     columns: [
       { key: 'code', required: true, type: 'string' },
       { key: 'kind', required: true, type: 'string' },

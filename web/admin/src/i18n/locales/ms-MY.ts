@@ -374,6 +374,8 @@ const msMY: Translations = {
       geoTitle: 'Import Data Geografi ISO',
       geoHint: 'Objek JSON {countries, countryNames, subdivisions, subdivisionNames}, upsert, perlukan kebenaran geo',
       importBtn: 'Import',
+      entryAddr: 'Import Alamat',
+      entryGeo: 'Import Data Geo',
       parseFail: 'JSON tidak sah',
       imported: '{count} baris diimport',
       loadFail: 'Import gagal',

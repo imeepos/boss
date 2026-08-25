@@ -374,6 +374,8 @@ const enUS: Translations = {
       geoTitle: 'ISO Geo Data Import',
       geoHint: 'JSON object {countries, countryNames, subdivisions, subdivisionNames}, upsert, requires geo menu permission',
       importBtn: 'Import',
+      entryAddr: 'Import Addresses',
+      entryGeo: 'Import Geo Data',
       parseFail: 'Invalid JSON',
       imported: '{count} rows imported',
       loadFail: 'Import failed',
