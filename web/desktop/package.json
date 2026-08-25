@@ -5,8 +5,10 @@
   "description": "BOSS 管理端桌面客户端:Tauri 2 壳,内嵌 web/admin 构建产物,/api 由壳内反代转发 Go 后端",
   "scripts": {
     "tauri": "tauri",
+    "admin:build": "pnpm --dir ../admin build",
     "desktop:dev": "tauri dev",
-    "desktop:build": "tauri build"
+    "desktop:build": "tauri build",
+    "desktop:build:static": "pnpm admin:build && tauri build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"
