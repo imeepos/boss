@@ -3,6 +3,8 @@ package workerapi
 // W 师傅端门户扫码绑定闭环(worker/scan.yaml):环节9/10、取证、签收、现场收款。
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -112,12 +114,27 @@ func workerReportSubmitHandler(a *app.Application) gin.HandlerFunc {
 		if !workerOwnedTicket(c, tk) {
 			return
 		}
-		if err := a.Order.ActivateUser(c.Request.Context(), tk.OrderID); err != nil {
+		if err := activateWorkerOrder(c, a, tk.OrderID); err != nil {
 			respondErr(c, err)
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
+}
+
+// activateWorkerOrder 激活统一入口：只在当前订单尚未完成环节10时推进一次。
+func activateWorkerOrder(c *gin.Context, a *app.Application, orderID int64) error {
+	ord, _, err := a.Order.Track(c.Request.Context(), orderID)
+	if err != nil {
+		return err
+	}
+	if ord.Stage < 9 {
+		return fmt.Errorf("worker: scan bind required before activation")
+	}
+	if ord.Stage == 9 {
+		return a.Order.ActivateUser(c.Request.Context(), orderID)
+	}
+	return nil
 }
 
 // activationState 激活状态视图:订单环节 >10 视为 SUCCESS,=10 为 PENDING。
@@ -152,7 +169,7 @@ func workerActivateHandler(a *app.Application) gin.HandlerFunc {
 		if !workerOwnedTicket(c, tk) {
 			return
 		}
-		if err := a.Order.ActivateUser(c.Request.Context(), tk.OrderID); err != nil {
+		if err := activateWorkerOrder(c, a, tk.OrderID); err != nil {
 			respondErr(c, err)
 			return
 		}
