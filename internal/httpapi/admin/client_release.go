@@ -77,7 +77,7 @@ func clientReleaseCreate(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		if r.MinSupportedCode, _ = strconv.Atoi(c.PostForm("minSupportedCode")); r.MinSupportedCode < 1 {
-			r.MinSupportedCode = r.VersionCode // 缺省=本版码,即"本版不强制任何人"
+			r.MinSupportedCode = 1 // 缺省=1:任何存量客户端都不被强升(需求默认不强制)
 		}
 		r.RolloutPercent, _ = strconv.Atoi(c.PostForm("rolloutPercent"))
 		r.Force = c.PostForm("force") == "true"

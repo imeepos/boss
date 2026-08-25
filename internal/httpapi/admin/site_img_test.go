@@ -4,13 +4,17 @@ package adminapi
 // image/* 附件;未被引用/草稿/非图片一律 404。详情端点把 att/N 重写为该 URL。
 
 import (
+	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/cms"
+	"github.com/ymm-001/boss/internal/pkg/auth"
 )
 
 func newImgRouter(content string, status string, at *attachment.Attachment) *gin.Engine {
@@ -42,6 +46,61 @@ func TestSiteImg_OnlyReferencedImageOfPublishedPost(t *testing.T) {
 				t.Fatalf("status=%d want %d body=%s", w.Code, tc.want, w.Body.String())
 			}
 		})
+	}
+}
+
+// fakeAtStoreMulti 支持多附件的桩(fakeAtStore 只回填单个)。
+type fakeAtStoreMulti struct{ m map[int64]*attachment.Attachment }
+
+func (f *fakeAtStoreMulti) Create(context.Context, *attachment.Attachment) (*attachment.Attachment, error) {
+	return nil, nil
+}
+func (f *fakeAtStoreMulti) Get(_ context.Context, id int64) (*attachment.Attachment, error) {
+	if a := f.m[id]; a != nil {
+		return a, nil
+	}
+	return nil, attachment.ErrNotFound
+}
+func (f *fakeAtStoreMulti) ListByUploader(context.Context, string, int64, int) ([]attachment.Attachment, error) {
+	return nil, nil
+}
+func (f *fakeAtStoreMulti) List(context.Context, attachment.ListFilter) ([]attachment.Attachment, int, error) {
+	return nil, 0, nil
+}
+func (f *fakeAtStoreMulti) Delete(context.Context, int64) error { return nil }
+func (f *fakeAtStoreMulti) GetByIDs(context.Context, []int64) ([]attachment.Attachment, error) {
+	return nil, nil
+}
+
+// TestSiteImg_CrossSlugAntiEnumeration 契约:附件被 post A 引用但未被 post B 引用时,
+// 通过 post B 的 slug 请求该附件应 404(防枚举)。
+func TestSiteImg_CrossSlugAntiEnumeration(t *testing.T) {
+	img9 := &attachment.Attachment{ID: 9, FileName: "a.png", ContentType: "image/png"}
+	img8 := &attachment.Attachment{ID: 8, FileName: "b.png", ContentType: "image/png"}
+	store := &fakeAtStoreMulti{m: map[int64]*attachment.Attachment{9: img9, 8: img8}}
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	a := &app.Application{
+		User: &fakeUser{},
+		CMS: &fakeCMS{listed: []cms.Post{
+			{ID: 1, Slug: "post-a", Status: cms.StatusPublished, Content: "![x](att/9)"},
+			{ID: 2, Slug: "post-b", Status: cms.StatusPublished, Content: "![y](att/8)"},
+		}},
+		Attachment: &attachment.Service{St: store, Obj: &fakeObjStorage{content: "IMG"}},
+	}
+	Register(r, a, auth.NewManager("t", time.Hour))
+
+	// post-a 引用 att/9 → 200
+	if w := getJSON(t, r, "/api/admin/v1/site/posts/post-a/img/9", ""); w.Code != 200 {
+		t.Fatalf("post-a img/9 status=%d want 200", w.Code)
+	}
+	// post-b 未引用 att/9 → 404(防枚举)
+	if w := getJSON(t, r, "/api/admin/v1/site/posts/post-b/img/9", ""); w.Code != 404 {
+		t.Fatalf("post-b img/9 status=%d want 404 (cross-slug anti-enumeration)", w.Code)
+	}
+	// post-b 引用 att/8 → 200
+	if w := getJSON(t, r, "/api/admin/v1/site/posts/post-b/img/8", ""); w.Code != 200 {
+		t.Fatalf("post-b img/8 status=%d want 200", w.Code)
 	}
 }
 
