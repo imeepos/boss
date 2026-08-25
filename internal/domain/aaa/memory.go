@@ -29,13 +29,14 @@ func (a *MemoryAuthorizer) Decide(ctx context.Context, loid string) (Decision, e
 	if !ok {
 		return Decision{}, ErrNotFound
 	}
-	if p.Status != StatusActive {
+	switch p.Status {
+	case StatusActive:
+		return Decision{
+			LOID: loid, Authorize: true, Bandwidth: p.Bandwidth, SessionTTL: p.SessionTTL,
+		}, nil
+	case StatusClosed:
+		return Decision{LOID: loid, Authorize: false}, ErrClosed
+	default:
 		return Decision{LOID: loid, Authorize: false}, ErrSuspended
 	}
-	return Decision{
-		LOID:       loid,
-		Authorize:  true,
-		Bandwidth:  p.Bandwidth,
-		SessionTTL: p.SessionTTL,
-	}, nil
 }

@@ -45,14 +45,15 @@ func (s *aaaGRPC) Resume(ctx context.Context, req *aaav1.ResumeRequest) (*aaav1.
 	return &aaav1.OpResponse{Code: commonv1.Code_CODE_OK, Effective: true}, nil
 }
 
-// GetAuthorization 授权查询:LOID → 状态/带宽/QoS(停机亦返回 status=SUSPENDED)。
+// GetAuthorization 授权查询:LOID → 状态/带宽/QoS(停机返回 status=SUSPENDED,注销返回 CLOSED)。
 func (s *aaaGRPC) GetAuthorization(ctx context.Context, req *aaav1.GetAuthorizationRequest) (*aaav1.Authorization, error) {
 	lo, err := s.aaaSvc.GetLoAccountByLoid(ctx, req.Loid)
 	if err != nil {
 		return &aaav1.Authorization{Code: grpcCodeFor(err, aaaErrMap)}, nil
 	}
 	dec, err := s.auth.Decide(ctx, req.Loid)
-	if err != nil && !errors.Is(err, aaa.ErrSuspended) {
+	// ErrSuspended/ErrClosed 是有业务的拒绝态:标记已查到的账号状态而非按错误码返回。
+	if err != nil && !errors.Is(err, aaa.ErrSuspended) && !errors.Is(err, aaa.ErrClosed) {
 		return &aaav1.Authorization{Code: grpcCodeFor(err, aaaErrMap)}, nil
 	}
 	return &aaav1.Authorization{

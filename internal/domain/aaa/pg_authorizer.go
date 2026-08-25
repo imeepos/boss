@@ -27,6 +27,7 @@ type PGAuthorizer struct {
 func NewPGAuthorizer(db dbtx) *PGAuthorizer { return &PGAuthorizer{db: db} }
 
 // Decide 判定 LOID 是否可接入:ACTIVE 放行(带宽=套餐带宽,QoS 码兜底),否则拒。
+// CLOSED(注销)与 SUSPENDED(停服)语义分离,避免注销账号被误报为停服。
 func (s *PGAuthorizer) Decide(ctx context.Context, loid string) (Decision, error) {
 	var status, bandwidth, qos string
 	err := s.db.QueryRow(ctx, `
@@ -41,13 +42,17 @@ func (s *PGAuthorizer) Decide(ctx context.Context, loid string) (Decision, error
 	if err != nil {
 		return Decision{}, fmt.Errorf("aaa: decide: %w", err)
 	}
-	if Status(status) != StatusActive {
+	switch Status(status) {
+	case StatusActive:
+		if bandwidth == "" {
+			bandwidth = qos
+		}
+		return Decision{LOID: loid, Authorize: true, Bandwidth: bandwidth, QosTemplate: qos, SessionTTL: defaultSessionTTL}, nil
+	case StatusClosed:
+		return Decision{LOID: loid, Authorize: false, QosTemplate: qos}, ErrClosed
+	default: // SUSPENDED 及其余非 ACTIVE 视为停服
 		return Decision{LOID: loid, Authorize: false, QosTemplate: qos}, ErrSuspended
 	}
-	if bandwidth == "" {
-		bandwidth = qos
-	}
-	return Decision{LOID: loid, Authorize: true, Bandwidth: bandwidth, QosTemplate: qos, SessionTTL: defaultSessionTTL}, nil
 }
 
 // SuspendLoAccount 停机(欠费/人工):ACTIVE→SUSPENDED;仅 ACTIVE 可停。

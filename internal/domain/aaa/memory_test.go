@@ -9,6 +9,7 @@ func TestMemoryAuthorizerDecide(t *testing.T) {
 	auth := NewMemoryAuthorizer([]Profile{
 		{LOID: "active", Status: StatusActive, Bandwidth: "100M/50M", SessionTTL: 60},
 		{LOID: "suspended", Status: StatusSuspended},
+		{LOID: "closed", Status: StatusClosed},
 	})
 
 	tests := []struct {
@@ -20,6 +21,7 @@ func TestMemoryAuthorizerDecide(t *testing.T) {
 	}{
 		{"active", "active", true, nil, "100M/50M"},
 		{"suspended", "suspended", false, ErrSuspended, ""},
+		{"closed", "closed", false, ErrClosed, ""},
 		{"missing", "nope", false, ErrNotFound, ""},
 	}
 

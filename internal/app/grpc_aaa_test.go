@@ -127,6 +127,21 @@ func TestAaaGRPC_GetAuthorization(t *testing.T) {
 		}
 	})
 
+	t.Run("注销账号返回 CLOSED 状态", func(t *testing.T) {
+		svc := &stubAaaSvc{lo: &aaa.LoAccount{Status: "CLOSED"}}
+		auth := &stubAuthorizer{err: aaa.ErrClosed}
+		conn := newBufConnServer(t, func(s *grpc.Server) {
+			aaav1.RegisterAaaServiceServer(s, aaaGRPCWith(svc, auth, &stubEmitter{}))
+		})
+		resp, err := aaav1.NewAaaServiceClient(conn).GetAuthorization(ctx, &aaav1.GetAuthorizationRequest{Loid: "LOID-1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.Code != commonv1.Code_CODE_OK || resp.Status != "CLOSED" {
+			t.Fatalf("resp=%+v", resp)
+		}
+	})
+
 	t.Run("账号不存在 404", func(t *testing.T) {
 		svc := &stubAaaSvc{loErr: aaa.ErrNotFound}
 		conn := newBufConnServer(t, func(s *grpc.Server) {
