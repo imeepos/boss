@@ -288,3 +288,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 死会话的卡死 go 进程特征:PPID=1 + stdout unix socket "->(none)"(对端已消失);确认孤儿后 kill 不影响在途会话。
 - cdp-capture 免登录注入:守卫页先载会重定向到 /login,reload 无效;注入 localStorage 后必须 location.href='/目标路径'。boss.servers 元素需含 id/name/baseUrl 三字段。
 - 接手无主 worktree 双证法:ps 无归属进程 + 文件 mtime 超 6 小时,即可安全当归属者完成收尾。
+- (修正上条)~/go/pkg/mod 挂起根因已确诊:~/go 是符号链接→外置卷 /Volumes/sker(USB APFS),该卷 I/O 停摆时所有依赖它的 go/pnpm 命令集体卡死在 open();停摆常自愈(复查时 ls 7ms、go list 0.2s)。若复发,根治方案是把 ~/go 指回内置盘;应急仍是隔离 GOPATH/GOCACHE=/tmp。外置盘上还住着 .vite-plus node 运行时,同停摆会连带 pnpm。
