@@ -363,6 +363,7 @@ export interface Translations {
       entityUnprocessed: string
       entityDedupSkipped: string
       entitySkipped: string
+      taskRegisterFail: string
     }
     account: {
       title: string

@@ -429,6 +429,7 @@ const enUS: Translations = {
       entityUnprocessed: '{count} more rows were not processed and are not counted as failures',
       entityDedupSkipped: 'Dedupe skipped {count} rows (duplicate with existing or within file)',
       entitySkipped: 'Skipped {count} duplicates',
+      taskRegisterFail: 'Rows were processed, but the import record could not be saved. Retry from the import center or contact an administrator.',
     },
     account: {
       title: 'Accounts & Roles',

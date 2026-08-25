@@ -429,6 +429,7 @@ const msMY: Translations = {
       entityUnprocessed: '{count} baris lagi tidak diproses dan tidak dikira sebagai kegagalan',
       entityDedupSkipped: 'Dedupe langkau {count} baris (duplikat dengan data sedia ada atau dalam fail)',
       entitySkipped: 'Langkau {count} pendua',
+      taskRegisterFail: 'Baris telah diproses tetapi rekod import gagal disimpan. Cuba semula dari pusat import atau hubungi pentadbir.',
     },
     account: {
       title: 'Akaun & Peranan',

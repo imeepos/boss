@@ -429,6 +429,7 @@ const zhCN: Translations = {
       entityUnprocessed: '另有 {count} 行未处理,不计入失败数',
       entityDedupSkipped: '去重跳过 {count} 行(与现有数据或文件内重复)',
       entitySkipped: '跳过重复 {count} 行',
+      taskRegisterFail: '业务数据已处理,但导入记录登记失败,请稍后在导入中心重试或联系管理员',
     },
     account: {
       title: '账号与角色',
