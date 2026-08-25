@@ -12,6 +12,16 @@ node scripts/cdp-capture.mjs http://localhost:5173/login /tmp/a.png \
   --eval '/* 可选:页面加载后执行的 JS,如填表登录 */' --settle 2500
 ```
 
+## cdp-capture 异步登录后采集 DOM(2026-09-01 实证)
+
+场景 → 用 --eval 做 fetch 登录再断言登录后页面(侧栏菜单/正文文本),直接跟一个采集 eval 会拿到空串——eval 是顺序立即执行的,fetch 的 .then 未完成、location.reload 未生效。
+怎么用 → 采集断言放进 `new Promise(res=>setTimeout(()=>{console.log('KEY:',...);res()},3000~4000))` 让 eval 本身阻塞到登录完成;且 --logs 每次运行覆盖,重跑同一 out.json 不带 --logs 会丢之前的采集。选择器别依赖具体 class,`document.body.innerText.replace(/\n+/g,'|')` 全文前 600 字最稳。
+
+## read_image 不回传视觉内容时的替代(2026-09-01 实证)
+
+场景 → read_image 连续两次只返回 "has been processed" 而无图像内容(当前模型通道限制,与红线 7 同源)。
+怎么用 → 不假装"看到了截图";改走 DOM 文本断言(上一条技巧)或 console 采集,结论里只写有真实证据支撑的判断。
+
 ## 浏览器 console + 网络请求采集(截图的"为什么"层)
 
 场景 → 页面白屏/行为不符/接口报错,截图只能看到"结果",定位"原因"必须看浏览器 console 报错和实际发出的网络请求(用户经验传授:这是调试分析最有价值的信息)。

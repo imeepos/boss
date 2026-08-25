@@ -617,3 +617,10 @@
 ## 2026-08-25 fetch-apk "worker 未归档"误判复盘
 - 根因不是 CI:worker/user 双包一直在卷里,真凶是 fetch-apk.sh 用法承诺"sha 前缀可"但代码从未实现前缀展开,短前缀直拼路径必 No such file;且旧版把一切 cp 错误吞成 "not present",把传输层故障伪装成"文件不存在"。
 - 教训:①结论"X 不存在"前先绕过中间脚本直接对底层(docker run cat)验证一次;②warning 文案必须区分"真缺席"与"取失败",吞 stderr 的 warn 会把排查带偏一整轮;③ls 输出接 head 截断会静默丢字段——上一轮就是被自己 head -5 截断的列表带偏的。
+
+## 2026-09-01 账号与角色全链路实测(用户要求优先搞账号/角色/自定义权限)
+
+- 哪个坑浪费最多时间:cdp-capture 的 eval 异步时序——fetch 登录后直接跟采集 eval 拿到空菜单,试了 3 轮才悟出要用 Promise+setTimeout 阻塞采集;read_image 两次不回传视觉内容,只能放弃截图路线改 DOM 断言。
+- skill 有没有提前警告:红线 7 警告过模型图像限制,但 cdp-capture eval 时序没有记录——已补进 techniques.md。
+- 重来一次:登录+采集合并进同一个 Promise eval;不依赖 read_image,直接 console.log 页面文本断言。
+- 结论:账号/角色/权限链路(后端 roles CRUD + RBAC 中间件 + 前端 menu:<key> 动态菜单 + 403)在代码库已完整,102 实测全通,无需写码;唯一发现是全链路已有实现的完成度超出预期,先实测再动手避免了重复造轮子。
