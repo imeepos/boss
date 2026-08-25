@@ -29,6 +29,9 @@
 
 ## CI/部署(deploy-102)
 
+- **未修复(2026-08-25 记录)｜工具 bug｜act_runner 0.2.11 丢失 job 中间步骤日志**:actions_log/sker/boss/NN/<task>.log.zst 只含 Clone 步骤首尾行(Cloning into/notice)与最终 Job succeeded/failed,中间所有步骤(Classify/docker build/push/compose/healthcheck)输出全部丢失——成功 run(任务 2846 android-apk)与失败 run(2847/2849 deploy)同样丢。后果:deploy 失败无法从日志定位失败步骤。排查时只能手动重跑 workflow 各步骤(2026-08-25 实例:手动全流程 build/push/compose/verify/healthcheck/patrol 全过,线上已手动部署,CI 精确失败点仍未知)。
+- **未修复(2026-08-25 记录)｜部署怪象｜deploy-102 连续 failure(16:53-18:33 run 1716-1732 无一成功)**:所有 run 在 Clone 成功后数秒内 Job failed,期间 boss-server 未被替换。同窗口手动执行全部等价步骤(docker build server/admin-web、push 5000、compose up、healthcheck、patrol gate)均成功,排除代码/凭据/磁盘/registry 因素。疑与并发 run 抢 runner(android-apk 同窗口占用)或 act_runner 状态相关;android-apk workflow 已按用户裁定删除(1d5bae9),若 deploy-102 后续恢复全绿则根因即为资源争抢。
+
 - **已修复(2026-08-24, 4e68347)｜部署怪象｜`docker-compose up -d --force-recreate` 后容器滞留 Created 不启动**:deploy-102 workflow 的 Deploy 步骤执行后,boss-server/boss-report/boss-admin-web 常处于 "Created" 状态而非 Up,需人工 `docker start`。根因(任务 2289/2291 日志):compose 固定 `container_name` 被其他项目(手工 deployments 部署/无 label docker run)的同名容器占用,`--force-recreate` 在 `Conflict. The container name "/boss-admin-web" is already in use` 处中止,已 Recreate 的容器滞留 Created。修复:Deploy 步骤先 `docker rm -f boss-server boss-aaa boss-report boss-admin-web` 清残留,up 后逐容器断言 running(新增 Verify all containers running 步骤);任务 2579 起全绿。
 - **已修复(2026-08-24, eee7fd9)｜信息缺失｜compose 未设 `BOSS_CORS_ORIGINS`,5180 直连 28080 必挂**:后端 CORS 白名单默认仅 localhost:5173/5174(internal/pkg/config/config.go:130),102 上 admin-web(5180)若在"服务端配置"里填 `http://192.168.0.102:28080` 直连,预检 OPTIONS 404 全端不可用。修复:compose server environment 显式加 `BOSS_CORS_ORIGINS: "http://192.168.0.102:5180,http://localhost:5173,http://localhost:5174"`(中间件 477ec0b 起任意 Origin 回显放行,此值作显式配置与收紧护栏);102 实测 OPTIONS 预检 204 + `Access-Control-Allow-Origin: http://192.168.0.102:5180`。
 
