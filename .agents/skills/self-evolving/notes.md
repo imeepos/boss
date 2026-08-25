@@ -625,3 +625,10 @@
 - skill 有没有提前警告:红线 7 警告过模型图像限制,但 cdp-capture eval 时序没有记录——已补进 techniques.md。
 - 重来一次:登录+采集合并进同一个 Promise eval;不依赖 read_image,直接 console.log 页面文本断言。
 - 结论:账号/角色/权限链路(后端 roles CRUD + RBAC 中间件 + 前端 menu:<key> 动态菜单 + 403)在代码库已完整,102 实测全通,无需写码;唯一发现是全链路已有实现的完成度超出预期,先实测再动手避免了重复造轮子。
+
+## 2026-09-01 数据权限第一步：客户列表范围约束
+
+- 哪个坑浪费最多时间:主树在 worktree 合并期间被并行提交再次推进，第一次 rebase 后 ff-merge 又失败；按协议重新检查并再次 rebase 后才安全合并。另一个风险是把数据权限只接到页面展示而没有接到 SQL 查询。
+- skill 有没有提前警告:worktree 收尾协议和“ff-merge 失败禁止删除 worktree”红线直接命中；契约 fields.md 明确 accounts 的 legalEntityId/regionScope 是数据范围来源。
+- 重来一次:创建 worktree 后先记录 main HEAD，合并前每次都重新核对主树；数据范围必须从 handler 注入领域 Query，由 PG WHERE 约束，不能在前端过滤或只返回展示字段。
+- 结果:客户列表 GET /customers 已自动使用当前账号的 legalEntityId 与 regionScope；全量 Go 测试通过，102 admin、reviewer1、kefu_xu 三个账号实测，受限账号分别得到空集或本公司客户。
