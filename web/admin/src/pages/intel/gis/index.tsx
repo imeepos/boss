@@ -56,15 +56,15 @@ export default function GisPage() {
   }
   useEffect(() => { load(1, 0); loadPoints(1, 0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const refreshAll = () => { load(level, parentId); loadPoints(level, parentId); loadOdnPoints() }
+  const refreshAll = () => { load(level, parentId); loadPoints(level, parentId); loadOdnPoints(odnLayer === 'off' ? 'facility' : odnLayer) }
   const changeLevel = (lv: number) => {
     setLevel(lv); setParentId(0); setPage(1)
     load(lv, 0); loadPoints(lv, 0)
   }
 
-  // ODN 图层点位:entity 变化即重拉;bbox 空=全量(图层为概览层,不随视域收缩)。
-  const loadOdnPoints = (entity: 'facility' | 'site' | 'device' = odnLayer === 'off' ? 'facility' : odnLayer) => {
-    if (odnLayer === 'off') { setOdnPoints([]); return }
+  // ODN 图层点位:entity 显式传入(不用闭包 odnLayer,避免 state 未刷新误判 off);
+  // bbox 空=全量(图层为概览层,不随视域收缩)。
+  const loadOdnPoints = (entity: 'facility' | 'site' | 'device') => {
     setPointsError('')
     apiFetch<{ items: GisPointRow[] }>('/gis/odn-points', { query: { entity } })
       .then((d) => setOdnPoints((d?.items ?? []).map((r) => ({
