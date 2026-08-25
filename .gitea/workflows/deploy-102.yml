@@ -28,7 +28,10 @@ jobs:
           # 待执行的旧 run,若中途夹一个 docs-only 推送,仅看 github.event.before
           # 会把此前未部署的 runtime 变更漏判为 docs-only 跳过部署(2026-09-22
           # 装维队/批量导入两会话同坑:run 被 docs 提交取代取消,feature 未上线)。
-          deployed=$(docker images --format '{{.Tag}}' 192.168.0.102:5000/boss/server 2>/dev/null | grep -Ev '^latest$|^$' | head -1)
+          # || true 兜底 SIGPIPE 竞态:head -1 提前关闭管道时上游 grep 收 141,
+          # pipefail 放大为整管道失败 → set -e 杀步骤(2026-08-25 deploy run 1716-1743
+          # 全部 5s 内死于本行,本地镜像 sha tag 累积增多后竞态窗口必现;task 2862 实证 exitcode 141)。
+          deployed=$(docker images --format '{{.Tag}}' 192.168.0.102:5000/boss/server 2>/dev/null | grep -Ev '^latest$|^$' | head -1 || true)
           if [ -n "$deployed" ]; then
             git fetch -q --depth=200 origin main 2>/dev/null || true
             if git rev-parse --verify -q "$deployed^{commit}" >/dev/null 2>&1; then
