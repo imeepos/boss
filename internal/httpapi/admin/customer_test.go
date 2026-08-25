@@ -190,7 +190,9 @@ func TestCustomerCreate(t *testing.T) {
 	r := newCustomerRouter(fc, &fakeProduct{}, mgr)
 	w := postBodyAuth(t, r, "/api/admin/v1/customers",
 		`{"name":"批量导入客户","phone":"09170000001","legalEntityId":1,"addressId":1,"regionId":1}`, authToken(t, mgr))
-	var env struct{ Code int `json:"code"` }
+	var env struct {
+		Code int `json:"code"`
+	}
 	_ = json.Unmarshal(w.Body.Bytes(), &env)
 	if w.Code != 200 || env.Code != 0 {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())

@@ -11,9 +11,8 @@ import (
 )
 
 // ErrNotFound 记录不存在。
-var ErrNotFound = errors.New("user: not found")
-
 // ErrUnauthorized 账号不存在/口令错误/已停用。
+var ErrNotFound = errors.New("user: not found")
 var ErrUnauthorized = errors.New("user: unauthorized")
 
 // dbtx 是 PGStore 依赖的最小数据库接口:*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
