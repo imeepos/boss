@@ -10,6 +10,12 @@
 - 这个 skill 有没有提前警告我？有，AGENTS.md 与后端经验明确要求逐分支检查迁移号；首次检查命令错误地只覆盖了部分 refs，说明必须直接用 `git for-each-ref` + `git ls-tree` 并验证门禁。
 - 重来一次我会怎么做？创建迁移前先 `git fetch --prune`，遍历本地和远端所有 refs 的 migrations 文件，再创建；Android 构建前先检查 Gradle wrapper 缓存/网络，失败时明确记录未验证而不声称 APK 构建成功。
 
+## 2026-09-03 后台批量导入页面审计
+
+- 哪个坑浪费了最多时间？主分支在 feature 审计期间被并行会话推进，首次 `ff-only` 合并失败；按协议回到 feature 同步 `gitea/main` 后再推送并快进合并，未丢提交。另一个实际环境坑是默认 `go` 不在 PATH，改用 `/opt/homebrew/bin/go` 后测试通过。
+- 这个 skill 有没有提前警告我？有：worktree 合并失败不得删除、必须在 feature 侧同步主分支；环境工具链必须先检查。前端权限/追踪修复也遵循先 read 再 edit，门禁通过后分批 commit。
+- 重来一次我会怎么做？开工时同时记录远端 main 基线并在合并前主动 fetch/merge，避免先尝试必然失败的 ff-only；Go/Pnpm 门禁统一使用绝对工具路径或显式 PATH。审计报告应把“普通导入能力”与“逐行调用创建端点”严格区分，并把所有菜单路径和未部署状态一并列出。
+
 ## 跨任务提炼（按复发频次排序）
 
 ### 累犯TOP（5次以上）
