@@ -41,6 +41,15 @@ func (s *responseStub) Write(p *radius.Packet) error {
 	return nil
 }
 
+type authLogStub struct {
+	logs []aaa.AuthLog
+}
+
+func (s *authLogStub) AppendAuthLog(_ context.Context, l aaa.AuthLog) (int64, error) {
+	s.logs = append(s.logs, l)
+	return int64(len(s.logs)), nil
+}
+
 func accessRequest(loid string) *radius.Request {
 	p := radius.New(radius.CodeAccessRequest, []byte("secret"))
 	if loid != "" {
@@ -75,6 +84,27 @@ func TestServeAuthBranches(t *testing.T) {
 				t.Fatalf("loid=%q want %q", a.loid, tt.wantLOID)
 			}
 		})
+	}
+}
+
+func TestServeAuthWritesLog(t *testing.T) {
+	logger := &authLogStub{}
+	h := &Handler{Auth: &authStub{decision: aaa.Decision{Authorize: true, Bandwidth: "B-100"}}, Log: logger}
+	w := &responseStub{}
+	h.ServeRADIUS(w, accessRequest("LOID-1"))
+	if w.packet == nil || w.packet.Code != radius.CodeAccessAccept {
+		t.Fatalf("accept failed: %v", w.packet)
+	}
+	if len(logger.logs) != 1 || logger.logs[0].Loid != "LOID-1" || logger.logs[0].Result != "SUCCESS" {
+		t.Fatalf("auth log: %+v", logger.logs)
+	}
+
+	// 拒绝场景也写日志
+	logger2 := &authLogStub{}
+	h2 := &Handler{Auth: &authStub{err: aaa.ErrNotFound}, Log: logger2}
+	h2.ServeRADIUS(&responseStub{}, accessRequest("LOID-2"))
+	if len(logger2.logs) != 1 || logger2.logs[0].Loid != "LOID-2" || logger2.logs[0].Result != "FAILED" {
+		t.Fatalf("reject auth log: %+v", logger2.logs)
 	}
 }
 

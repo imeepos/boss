@@ -4,6 +4,7 @@ package radius
 
 import (
 	"context"
+	"log"
 
 	"layeh.com/radius"
 	"layeh.com/radius/rfc2865"
@@ -14,10 +15,16 @@ import (
 	aaability "github.com/ymm-001/boss/internal/domain/aaa/billing"
 )
 
+// AuthLogWriter 认证日志写口(实现为 aaa.PGStore)。
+type AuthLogWriter interface {
+	AppendAuthLog(ctx context.Context, l aaa.AuthLog) (int64, error)
+}
+
 // Handler 处理 RADIUS 认证与计费请求,依赖域接口注入。
 type Handler struct {
 	Auth aaa.Authorizer
 	CDR  aaability.Emitter
+	Log  AuthLogWriter // 认证日志写口;nil=不记录(降级)
 }
 
 // ServeRADIUS 实现 radius.Handler,按 Code 分流认证/计费。
@@ -32,19 +39,22 @@ func (h *Handler) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
 	}
 }
 
-// serveAuth 处理 Access-Request:按 User-Name(即 LOID)授权,放行或拒绝。
+// serveAuth 处理 Access-Request:按 User-Name(即 LOID)授权,放行或拒绝;结果写认证日志。
 func (h *Handler) serveAuth(w radius.ResponseWriter, r *radius.Request) {
 	loid := rfc2865.UserName_GetString(r.Packet)
 	if loid == "" {
 		h.reject(w, r)
+		h.logAuth(loid, "FAILED")
 		return
 	}
 	dec, err := h.Auth.Decide(context.Background(), loid)
 	if err != nil || !dec.Authorize {
 		h.reject(w, r)
+		h.logAuth(loid, "FAILED")
 		return
 	}
 	h.accept(w, r, dec)
+	h.logAuth(loid, "SUCCESS")
 }
 
 // accept 组装 Access-Accept,下发带宽模板与 Session 超时。
@@ -64,11 +74,22 @@ func (h *Handler) reject(w radius.ResponseWriter, r *radius.Request) {
 }
 
 // serveAccounting 处理 Accounting-Request:转话单投递后回 Accounting-Response。
+// 投递失败仍返回成功(RADIUS 计费协议层面不可拒绝),但记录错误供运维排查。
 func (h *Handler) serveAccounting(w radius.ResponseWriter, r *radius.Request) {
 	if h.CDR != nil {
-		_ = h.CDR.Emit(context.Background(), h.toCDR(r))
+		if err := h.CDR.Emit(context.Background(), h.toCDR(r)); err != nil {
+			log.Printf("radius acct: cdr emit: %v", err)
+		}
 	}
 	w.Write(r.Response(radius.CodeAccountingResponse))
+}
+
+// logAuth 写认证日志;降级静默失败。
+func (h *Handler) logAuth(loid, result string) {
+	if h.Log == nil || loid == "" {
+		return
+	}
+	_, _ = h.Log.AppendAuthLog(context.Background(), aaa.AuthLog{Loid: loid, Result: result})
 }
 
 // toCDR 从计费请求提取话单字段。
