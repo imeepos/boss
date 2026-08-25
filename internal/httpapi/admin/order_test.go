@@ -13,6 +13,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 )
 
@@ -24,6 +25,7 @@ type fakeOrder struct {
 	trackLog  []order.StageLog
 	submitted *order.Order
 	submitErr error
+	lastQ     order.OrderQuery
 }
 
 func (f *fakeOrder) Submit(ctx context.Context, r order.SubmitReq) (*order.Order, error) {
@@ -50,6 +52,7 @@ func (f *fakeOrder) RollbackStage(ctx context.Context, id int64) error {
 	return nil
 }
 func (f *fakeOrder) List(ctx context.Context, q order.OrderQuery) ([]order.OrderListItem, error) {
+	f.lastQ = q
 	return f.list, nil
 }
 func (f *fakeOrder) GetByNo(ctx context.Context, no string) (*order.Order, error) {
@@ -104,6 +107,20 @@ func TestOrderListHandler(t *testing.T) {
 	if len(body.Data.Items) != 1 || body.Data.Items[0].ID != 42 || body.Data.Items[0].OrderNo != "ORD-1" ||
 		body.Data.Items[0].StageLabel != "端口预占" || len(body.Data.Items[0].Ops) == 0 {
 		t.Fatalf("body=%+v", body)
+	}
+}
+
+func TestOrderListHandlerAppliesDataScope(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	f := &fakeOrder{}
+	u := &fakeUser{permOk: true, dataScope: user.DataScope{LegalEntityID: 3, RegionScope: "root.luzon"}}
+	r := newOrderRouter(f, u, mgr)
+	w := getJSON(t, r, "/api/admin/v1/orders", authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d", w.Code)
+	}
+	if f.lastQ.LegalEntityID != 3 || f.lastQ.RegionScope != "root.luzon" {
+		t.Fatalf("scope not applied: %+v", f.lastQ)
 	}
 }
 

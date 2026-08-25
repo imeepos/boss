@@ -14,9 +14,16 @@ import (
 // orderListHandler GET /orders:订单列表。
 func orderListHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		scope, err := a.User.GetDataScope(c.Request.Context(), httpx.ClaimsAccountID(c))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		list, err := a.Order.List(c.Request.Context(), order.OrderQuery{
-			Keyword: c.Query("keyword"),
-			Status:  c.Query("status"),
+			Keyword:       c.Query("keyword"),
+			Status:        c.Query("status"),
+			LegalEntityID: scope.LegalEntityID,
+			RegionScope:   scope.RegionScope,
 		})
 		if err != nil {
 			respondErr(c, err)

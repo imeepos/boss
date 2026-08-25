@@ -156,6 +156,12 @@ func (s *MemoryService) List(ctx context.Context, q OrderQuery) ([]OrderListItem
 		if q.CustomerID != 0 && o.CustomerID != q.CustomerID {
 			continue
 		}
+		if q.LegalEntityID != 0 && o.LegalEntityID != q.LegalEntityID {
+			continue
+		}
+		if q.RegionScope != "" && o.RegionPath != q.RegionScope && !strings.HasPrefix(o.RegionPath, q.RegionScope+".") {
+			continue
+		}
 		if q.Keyword != "" && !strings.Contains(o.OrderNo, q.Keyword) {
 			continue
 		}

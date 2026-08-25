@@ -28,9 +28,11 @@ func (s *PGStore) List(ctx context.Context, q OrderQuery) ([]OrderListItem, erro
 		WHERE ($1 = '' OR o.order_no ILIKE '%' || $1 || '%')
 		  AND ($2 = '' OR o.status = ANY(string_to_array($2, ',')))
 		  AND ($3::bigint = 0 OR o.customer_id = $3)
+		  AND ($4::bigint = 0 OR o.legal_entity_id = $4)
+		  AND ($5 = '' OR o.region_path = $5 OR o.region_path LIKE $5 || '.%')
 		ORDER BY o.id DESC
-		LIMIT $4 OFFSET $5`,
-		q.Keyword, q.Status, q.CustomerID, limit, q.Offset)
+		LIMIT $6 OFFSET $7`,
+		q.Keyword, q.Status, q.CustomerID, q.LegalEntityID, q.RegionScope, limit, q.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("order: list: %w", err)
 	}
