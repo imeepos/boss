@@ -30,7 +30,7 @@ func (s *PGStore) ListSites(ctx context.Context, prvCode, cityPrefix string) ([]
 // CreateSite 新建局点(NodeCode 由规划部分配;唯一冲突→ErrDuplicate)。
 func (s *PGStore) CreateSite(ctx context.Context, st Site) error {
 	_, err := s.db.Exec(ctx, `INSERT INTO odn_site (prv_code, city_prefix, site_no, name, lat, lng)
-		VALUES ($1,$2,$3,$4,NULLIF($5,0),NULLIF($6,0))`,
+		VALUES ($1,$2,$3,$4,NULLIF($5,0.0),NULLIF($6,0.0))`,
 		st.PrvCode, st.CityPrefix, st.SiteNo, st.Name, st.Lat, st.Lng)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create site: %w", err), ErrNotFound)

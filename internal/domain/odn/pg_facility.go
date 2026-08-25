@@ -31,7 +31,7 @@ func (s *PGStore) insertGridFacility(ctx context.Context, f Facility) error {
 	}
 	_, err := s.db.Exec(ctx, `INSERT INTO odn_facility
 			(code, kind, prv_code, city_prefix, grid_code, name, lat, lng)
-		VALUES ($1,$2,$3,$4,$5,$6,NULLIF($7,0),NULLIF($8,0))`,
+		VALUES ($1,$2,$3,$4,$5,$6,NULLIF($7,0.0),NULLIF($8,0.0))`,
 		f.Code, f.Kind, f.PrvCode, f.CityPrefix, f.GridCode, f.Name, f.Lat, f.Lng)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create facility: %w", err), ErrNotFound)
@@ -63,7 +63,7 @@ func (s *PGStore) checkGridForInsert(ctx context.Context, f Facility) error {
 func (s *PGStore) insertSeqFacility(ctx context.Context, f Facility) error {
 	_, err := s.db.Exec(ctx, `INSERT INTO odn_facility
 			(code, kind, prv_code, city_prefix, grid_code, name, lat, lng)
-		VALUES ($1,$2,$3,$4,NULL,$5,NULLIF($6,0),NULLIF($7,0))`,
+		VALUES ($1,$2,$3,$4,NULL,$5,NULLIF($6,0.0),NULLIF($7,0.0))`,
 		f.Code, f.Kind, f.PrvCode, f.CityPrefix, f.Name, f.Lat, f.Lng)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create facility: %w", err), ErrNotFound)
