@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import type { Translations } from '../../../i18n/types'
 import { formatTime } from '../../base/audit/logic'
 import { EmptyState } from '../../../components/business'
 
@@ -13,6 +14,13 @@ export interface ImportTaskRow {
   failed: number
   detail?: string
   createdAt: string
+}
+
+/** kind 展示:geo/地址沿用旧文案;entity:<kind> 映射实体名,其余原样。 */
+export function taskKindLabel(im: Translations['pages']['importer'], kind: string): string {
+  if (kind === 'geo') return im.taskKindGeo
+  if (kind.startsWith('entity:')) return im.entityNames[kind.slice('entity:'.length)] ?? kind
+  return im.taskKindAddr
 }
 
 export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
@@ -42,7 +50,7 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
           {rows.map((r) => (
             <tr key={r.id}>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.id}</td>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.kind === 'geo' ? im.taskKindGeo : im.taskKindAddr}</td>
+              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{taskKindLabel(im, r.kind)}</td>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.operator || '—'}</td>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.imported}</td>
               <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.failed}</td>

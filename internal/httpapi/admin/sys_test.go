@@ -5,6 +5,7 @@ package adminapi
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,6 +22,8 @@ func newTestRouterWithAudit(f *fakeUser, aw audit.Writer, mgr *auth.Manager) *gi
 	Register(r, &app.Application{User: f, Audit: aw}, mgr)
 	return r
 }
+
+func jsonContains(s, sub string) bool { return strings.Contains(s, sub) }
 
 type fakeAudit struct{ entries []audit.Entry }
 
@@ -81,6 +84,39 @@ func TestSysRoutes(t *testing.T) {
 		w := getJSON(t, r, "/api/admin/v1/import-tasks", token)
 		if w.Code != 200 {
 			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("导入结果登记 合法 kind 落库", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{permOk: true}, mgr)
+		w := postBodyAuth(t, r, "/api/admin/v1/import-tasks",
+			`{"kind":"entity:department","imported":2,"failed":1}`, token)
+		if w.Code != 200 || !jsonContains(w.Body.String(), `"ok":true`) {
+			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("导入结果登记 非法 kind/负数 拒绝", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{permOk: true}, mgr)
+		for _, body := range []string{
+			`{"kind":"addresses"}`, `{"kind":"entity:Drop Table"}`, `{"kind":"entity:ok","imported":-1}`,
+		} {
+			w := postBodyAuth(t, r, "/api/admin/v1/import-tasks", body, token)
+			var env struct {
+				Code int `json:"code"`
+			}
+			_ = json.Unmarshal(w.Body.Bytes(), &env)
+			if w.Code != 200 || env.Code == 0 {
+				t.Fatalf("body=%s status=%d env=%+v", body, w.Code, env)
+			}
+		}
+	})
+
+	t.Run("导入结果登记 无权限 403", func(t *testing.T) {
+		r := newTestRouter(&fakeUser{permOk: false}, mgr)
+		w := postBodyAuth(t, r, "/api/admin/v1/import-tasks", `{"kind":"entity:post"}`, token)
+		if w.Code != 403 {
+			t.Fatalf("status=%d want 403", w.Code)
 		}
 	})
 

@@ -4,6 +4,8 @@ package adminapi
 // storage-config handler 见 storageconfig.go;此处仅 sys 域 handler 实现。
 
 import (
+	"regexp"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -12,11 +14,15 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
+// entityTaskKindRe 客户端登记的 kind 白名单:entity:<小写字母数字>(与前端 entities.ts kind 对齐)。
+var entityTaskKindRe = regexp.MustCompile(`^entity:[a-z][a-z0-9]{0,31}$`)
+
 // registerSysRoutes 注册 sys 横切路由。
 func registerSysRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/audit-logs", requirePerm(a.User, "menu:audit"), sysAuditLogsHandler(a))
 	g.GET("/params", requirePerm(a.User, "menu:params"), sysListParamsHandler(a))
 	g.GET("/import-tasks", requirePerm(a.User, "menu:importer"), sysListImportTasksHandler(a))
+	g.POST("/import-tasks", requirePerm(a.User, "menu:importer"), sysRecordImportTaskHandler(a))
 	g.PUT("/params/:key", requirePerm(a.User, "menu:params"), sysUpdateParamHandler(a))
 
 	g.GET("/storage-config", requirePerm(a.User, "menu:params"), adminStorageConfigGet(a))
@@ -71,6 +77,36 @@ func sysListImportTasksHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	}
+}
+
+// sysRecordImportTaskHandler POST /import-tasks:客户端批量导入结果登记(menu:importer)。
+// 业务批量导入为前端逐行调用各域创建端点,完成后经此落一条任务记录(kind 形如 entity:department)。
+func sysRecordImportTaskHandler(a *app.Application) gin.HandlerFunc {
+	type recordReq struct {
+		Kind     string         `json:"kind"`
+		Imported int            `json:"imported"`
+		Failed   int            `json:"failed"`
+		Detail   map[string]any `json:"detail"`
+	}
+	return func(c *gin.Context) {
+		var req recordReq
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Kind, "kind", 64),
+			)
+		}) {
+			return
+		}
+		if !entityTaskKindRe.MatchString(req.Kind) || req.Imported < 0 || req.Failed < 0 {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "kind must be entity:<name>, counts must be >= 0"})
+			return
+		}
+		if err := a.User.RecordImportTask(c.Request.Context(), req.Kind, httpx.ClaimsAccountID(c), req.Imported, req.Failed, req.Detail); err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
 }
 

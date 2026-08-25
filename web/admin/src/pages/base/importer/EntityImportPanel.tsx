@@ -92,6 +92,14 @@ export function EntityImportPanel({ def, text, onImported }: { def: EntityDef; t
     URL.revokeObjectURL(url)
   }
 
+  /** 导入结果登记(POST /import-tasks):结果可追溯;登记失败不阻断、不打扰(仅 console)。 */
+  const registerTask = (imported: number, failed: number) => {
+    apiFetch('/import-tasks', {
+      method: 'POST',
+      body: { kind: `entity:${def.kind}`, imported, failed },
+    }).catch((e: unknown) => console.warn('import-task register failed', e))
+  }
+
   /** 逐行 POST;401(登录失效)中止剩余行,业务失败逐条记录不中断。 */
   const run = async () => {
     if (!rows || busy) return
@@ -112,6 +120,7 @@ export function EntityImportPanel({ def, text, onImported }: { def: EntityDef; t
           setSummary(text.entityAborted.replace('{done}', String(i)).replace('{total}', String(rows.length)))
           setFailures([...fails])
           setProgress({ done: i, total: rows.length })
+          registerTask(ok, fails.length)
           setBusy(false)
           return
         }
@@ -121,7 +130,8 @@ export function EntityImportPanel({ def, text, onImported }: { def: EntityDef; t
     }
     setSummary(text.entityDone.replace('{ok}', String(ok)).replace('{fail}', String(fails.length)))
     setFailures(fails)
-    if (ok > 0) onImported()
+    registerTask(ok, fails.length)
+    if (ok > 0 || fails.length > 0) onImported()
     setBusy(false)
   }
 

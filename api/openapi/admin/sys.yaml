@@ -609,6 +609,34 @@ paths:
                             failed: { type: integer }
                             detail: { type: string, description: JSON 明细(geo 子计数) }
                             createdAt: { type: string }
+    post:
+      tags: [Sys]
+      summary: 客户端批量导入结果登记(permCode menu:importer;kind 形如 entity:department)
+      operationId: recordImportTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind]
+              properties:
+                kind: { type: string, description: "entity:<kind>,与前端批量导入实体对齐" }
+                imported: { type: integer, minimum: 0 }
+                failed: { type: integer, minimum: 0 }
+                detail: { type: object, description: 可选明细 }
+      responses:
+        '200':
+          description: data={ok:true}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean }
 
   /attachments/upload:
     post:
