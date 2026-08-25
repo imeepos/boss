@@ -284,3 +284,9 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - ff-merge 在多人并行仓库可能连续失败 2-3 次(main 实时前进),协议动作是"merge main→门禁→push→ff-only"循环,不是放弃或删树。
 - Gitea Actions job 容器内写文件的持久化只有宿主 docker 资源(命名卷/镜像/registry):job 容器文件系统随任务销毁,"绿了但产物没落盘"比红更隐蔽(run 1526 打印产物路径后 /srv/boss/apk 实不存在);跨容器传文件用 docker create+cp,bind mount 的 $PWD 对宿主 daemon 不可见(2026-08-28 android-apk 两连修)
 - 102 出网受限:registry-1.docker.io 直连超时,daocloud 镜像源仅白名单(library/* 可,cimg/mobiledevops 不可);但 dl.google.com/services.gradle.org/maven central 可达,自建镜像走 daocloud 基座+Google 源是正解(android-builder:1 已推 192.168.0.102:5000)
+- 共享 GOMODCACHE(~ /go/pkg/mod)文件系统异常时,go 命令全部无输出挂起(open 卡死);隔离 GOPATH+GOCACHE 到 /tmp 即可绕过完成验证,修法先于根因。
+- 死会话的卡死 go 进程特征:PPID=1 + stdout unix socket "->(none)"(对端已消失);确认孤儿后 kill 不影响在途会话。
+- cdp-capture 免登录注入:守卫页先载会重定向到 /login,reload 无效;注入 localStorage 后必须 location.href='/目标路径'。boss.servers 元素需含 id/name/baseUrl 三字段。
+- 接手无主 worktree 双证法:ps 无归属进程 + 文件 mtime 超 6 小时,即可安全当归属者完成收尾。
+- (修正上条)~/go/pkg/mod 挂起根因已确诊:~/go 是符号链接→外置卷 /Volumes/sker(USB APFS),该卷 I/O 停摆时所有依赖它的 go/pnpm 命令集体卡死在 open();停摆常自愈(复查时 ls 7ms、go list 0.2s)。若复发,根治方案是把 ~/go 指回内置盘;应急仍是隔离 GOPATH/GOCACHE=/tmp。外置盘上还住着 .vite-plus node 运行时,同停摆会连带 pnpm。
+- (落地)2026-08-24 已把 ~/go 从外置卷 /Volumes/sker 迁回内置盘 ~/.local/go(原符号链接原子替换,缓存 1.7G rsync 保留,旧副本留在 sker 作备份可删)。此后外置盘停摆不再影响 go 门禁。

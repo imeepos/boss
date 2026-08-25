@@ -571,3 +571,9 @@
 ## 2026-08-22 补侧边栏图标(knowledge/release)
 - 坑:无。menu.def.ts key 与 public/icons/items/<key>.svg 一一对应,缺文件即无图标,纯静态资产零 TS 影响。
 - 教训:main 树 tsc 有并行会话未收敛的报错,门禁只跑 vite build + dist 资产断言即可定位静态变更。
+
+## 2026-08-28 复盘待办执行(P0-P2 六项全清)
+- 最大坑:共享 ~/go/pkg/mod 文件系统异常(open 卡死,连 ls 都 Interrupted system call),所有默认环境 go 命令挂起;解法=隔离 GOPATH=/tmp GOCACHE=/tmp 跑通全部验证。另发现卡死 go 进程是死会话孤儿(PPID=1,stdout unix socket ->(none)),确认孤儿后可安全 kill。
+- 次坑:cdp 免登录注入后 location.reload() 无效——首载已被守卫重定向到 /login,reload 的是 /login;正确做法=注入后 location.href='/目标路径'。boss.servers 数组元素必须含 id 字段(readStored 过滤无 id 项)。
+- 半成品捡漏:etl-disable 遗留 Enabled 零值 false 缺省 bug(测试 freshness=[] 即症状);docMeta.test 是 main 上门禁红(SEO 提交自带),捡到即修,独立 worktree 独立 revert。
+- 重来一次:接手 7 小时无人碰的 worktree 前,先 ps 查归属进程 + stat 查 mtime,双证死会话再动手;跑门禁前先 ps 查并行 go 进程。

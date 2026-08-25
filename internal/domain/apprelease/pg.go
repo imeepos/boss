@@ -40,6 +40,9 @@ func (s *PGStore) Create(ctx context.Context, r *Release) error {
 		return err
 	}
 	now := time.Now().Format(time.RFC3339)
+	if r.WhitelistIDs == nil {
+		r.WhitelistIDs = []int64{} // pgx 对 nil 切片编码 NULL,撞 NOT NULL 约束
+	}
 	return s.db.QueryRow(ctx, `
 		INSERT INTO client_releases (app, platform, version, version_code, min_supported_code,
 			notes, force, status, rollout_percent, whitelist_ids, apk_object_key, apk_size, sha256, created_at, updated_at)
@@ -94,6 +97,9 @@ func (s *PGStore) List(ctx context.Context, app string) ([]Release, error) {
 func (s *PGStore) Update(ctx context.Context, r *Release) error {
 	if err := r.validate(); err != nil {
 		return err
+	}
+	if r.WhitelistIDs == nil {
+		r.WhitelistIDs = []int64{} // 同 Create:nil 切片编码 NULL 撞约束
 	}
 	tag, err := s.db.Exec(ctx, `
 		UPDATE client_releases SET
