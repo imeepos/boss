@@ -979,6 +979,7 @@ const zhCN: Translations = {
     workerPage: {
       title: '师傅管理',
       desc: '装维师傅归属班组 · 服务区域须落班组公司经营区域 · 在职/离职状态',
+      searchPlaceholder: '搜索工号/姓名/电话',
       allGroup: '全部班组',
       columns: ['工号', '姓名', '班组', '电话', '状态', '入职时间'],
       active: '在职',

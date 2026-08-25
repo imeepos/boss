@@ -979,6 +979,7 @@ const msMY: Translations = {
     workerPage: {
       title: 'Pengurusan Pekerja',
       desc: 'Pekerja lapangan milik kumpulan · wilayah perkhidmatan mesti dalam skop syarikat kumpulan',
+      searchPlaceholder: 'Cari no. staf / nama / telefon',
       allGroup: 'Semua kumpulan',
       columns: ['No. Staf', 'Nama', 'Kumpulan', 'Telefon', 'Status', 'Sertai Pada'],
       active: 'Aktif',

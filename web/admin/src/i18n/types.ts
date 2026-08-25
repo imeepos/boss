@@ -940,6 +940,7 @@ export interface Translations {
     workerPage: {
       title: string
       desc: string
+      searchPlaceholder: string
       allGroup: string
       columns: string[]
       active: string

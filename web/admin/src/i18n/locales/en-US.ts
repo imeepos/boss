@@ -979,6 +979,7 @@ const enUS: Translations = {
     workerPage: {
       title: 'Workers',
       desc: 'Field workers belong to groups · service regions must fall in the group company scope · active/left status',
+      searchPlaceholder: 'Search staff no / name / phone',
       allGroup: 'All groups',
       columns: ['Staff No', 'Name', 'Group', 'Phone', 'Status', 'Joined At'],
       active: 'Active',
