@@ -383,6 +383,7 @@ paths:
   # ---------- Intel ----------
   /gis/levels: { $ref: './admin/intel.yaml#/paths/~1gis~1levels' }
   /gis/points: { $ref: './admin/intel.yaml#/paths/~1gis~1points' }
+  /gis/odn-points: { $ref: './admin/intel.yaml#/paths/~1gis~1odn-points' }
   /gis/drill: { $ref: './admin/intel.yaml#/paths/~1gis~1drill' }
   /gis/resources/{resourceId}/detail: { $ref: './admin/intel.yaml#/paths/~1gis~1resources~1{resourceId}~1detail' }
   /analytics/indicators: { $ref: './admin/intel.yaml#/paths/~1analytics~1indicators' }

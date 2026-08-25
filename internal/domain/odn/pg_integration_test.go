@@ -8,6 +8,9 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/database"
 )
 
+// f64p float64 指针(设备坐标可空字段测试用)。
+func f64p(v float64) *float64 { return &v }
+
 // TestODNPassive_Integration 网格分区 + 基础设施端到端(需真实 PostgreSQL,
 // BOSS_PG_TEST_DSN 未设置时跳过)。以 000075 的 PHL001/MNL 为样例城市。
 func TestODNPassive_Integration(t *testing.T) {
@@ -192,9 +195,21 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 998}); err != nil {
 		t.Fatalf("CreateDevice SNW990: %v", err)
 	}
-	// E16:site_no 无 FK,域层守护——挂未备案局点必须拒绝。
+	// 设备坐标(000142):带 lat/lng 创建 → 列表回读。
+	if err := s.CreateDevice(ctx, Device{Code: "OLT990", Kind: DevOLT,
+		PrvCode: "PHL001", CityPrefix: "MNL", Lat: f64p(14.55), Lng: f64p(120.98)}); err != nil {
+		t.Fatalf("CreateDevice OLT990(带坐标): %v", err)
+	}
+	olts, err := s.ListDevices(ctx, DevOLT, "PHL001", "MNL")
+	if err != nil || len(olts) != 1 {
+		t.Fatalf("ListDevices OLT: %v %d", err, len(olts))
+	}
+	if olts[0].Lat == nil || olts[0].Lng == nil || *olts[0].Lat != 14.55 || *olts[0].Lng != 120.98 {
+		t.Fatalf("设备坐标回读失败: lat=%v lng=%v", olts[0].Lat, olts[0].Lng)
+	}
+	// 无坐标设备 Lat/Lng 为 nil。
 	if err := s.CreateDevice(ctx, Device{Code: "OLT991", Kind: DevOLT,
-		PrvCode: "PHL001", CityPrefix: "MNL", SiteNo: 997}); err == nil {
+		PrvCode: "PHL001", CityPrefix: "MNL"}); err == nil {
 		t.Fatal("OLT 挂未备案局点 997 应拒绝(ErrSiteMissing)")
 	}
 	if err := s.CreateDevice(ctx, Device{Code: "OCC990", Kind: DevOCC,

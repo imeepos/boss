@@ -15,5 +15,6 @@ func registerGisRoutes(g *gin.RouterGroup, a *app.Application) {
 	gi.GET("/gis/drill", gisDrill(a))
 	gi.GET("/gis/levels", gisLevelCounts(a))
 	gi.GET("/gis/points", gisPoints(a))
+	gi.GET("/gis/odn-points", gisODNPoints(a))
 	gi.GET("/gis/resources/:resourceId/detail", gisResourceDetail(a))
 }

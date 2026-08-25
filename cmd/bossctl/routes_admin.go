@@ -127,6 +127,7 @@ var adminRoutes = []routeEntry{
 	{"POST", "/geo/import", "批量导入(单事务 upsert,译名/区划四类载荷;PSGC 内置见 migration)"},
 	{"GET", "/gis/levels", "GIS 层级清单(八级钻取层级;对齐 Go 实现 GET /gis/levels,permCode menu:gis)"},
 	{"GET", "/gis/points", "地图点位(Point 列表;前端自行拼 GeoJSON;permCode menu:gis)"},
+	{"GET", "/gis/odn-points", "ODN 无源物理层点位(entity=facility|site|device;自带 lat/lng 作地图图层;permCode menu:gis)"},
 	{"GET", "/gis/drill", "GIS 下钻(按 level 逐级;对齐 Go 实现 GET /gis/drill,permCode menu:gis)"},
 	{"GET", "/gis/resources/:resourceId/detail", "GIS 实体详情(端口/设备/链路;对齐 Go 实现,permCode menu:gis)"},
 	{"GET", "/analytics/indicators", "经营分析核心指标(对齐 Go 实现 GET /analytics/indicators,permCode menu:analytics)"},
