@@ -45,7 +45,15 @@ func (s *PGStore) RecordImportTask(ctx context.Context, kind string, operatorID 
 }
 
 // ListImportTasks 导入记录清单(近 200 条,时间倒序),支持类型/操作人/时间范围筛选。
+// from/to 为空时传 NULL:PG 的 OR 不保证惰性求值,空串参与 ::timestamptz 转换会 22007。
 func (s *PGStore) ListImportTasks(ctx context.Context, kind, operator, from, to string) ([]ImportTask, error) {
+	var fromArg, toArg any
+	if from != "" {
+		fromArg = from
+	}
+	if to != "" {
+		toArg = to
+	}
 	rows, err := s.db.Query(ctx, `
 		SELECT t.id, t.kind, COALESCE(a.real_name, ''), t.total, t.imported, t.failed, t.skipped,
 		       COALESCE(t.detail::text, '{}'), t.created_at
@@ -53,10 +61,10 @@ func (s *PGStore) ListImportTasks(ctx context.Context, kind, operator, from, to 
 		LEFT JOIN accounts a ON a.id = t.operator_id
 		WHERE ($1 = '' OR t.kind = $1)
 		  AND ($2 = '' OR a.real_name ILIKE '%' || $2 || '%')
-		  AND ($3 = '' OR t.created_at >= $3::timestamptz)
-		  AND ($4 = '' OR t.created_at < $4::timestamptz)
+		  AND ($3::timestamptz IS NULL OR t.created_at >= $3::timestamptz)
+		  AND ($4::timestamptz IS NULL OR t.created_at < $4::timestamptz)
 		ORDER BY t.created_at DESC
-		LIMIT 200`, kind, operator, from, to)
+		LIMIT 200`, kind, operator, fromArg, toArg)
 	if err != nil {
 		return nil, fmt.Errorf("user: list import tasks: %w", err)
 	}
