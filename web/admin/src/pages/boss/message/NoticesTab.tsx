@@ -1,9 +1,11 @@
-// 消息中心 · 公告页签:列表含已下架(GET /notices) + 发布(POST) + 上下架(PUT /notices/{id}/toggle)。
+// 消息中心 · 公告页签:列表含已下架(GET /notices) + 抽屉式发布(POST) + 上下架(PUT /notices/{id}/toggle)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { DataTable } from '../../../components/business/data-table'
+import { Drawer } from '../../../components/Drawer'
+import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
 import { filterNotices, fmtTime, type NoticeEntry } from './logic'
 import { ctl } from './WorkerMessagesTab'
@@ -11,13 +13,15 @@ import { ctl } from './WorkerMessagesTab'
 type Ns = Translations['pages']['message']
 
 export function NoticesTab({ t }: { t: Ns }) {
+  const cancelText = useT().common.confirmDialog.cancel
   const [rows, setRows] = useState<NoticeEntry[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
   const [activeOnly, setActiveOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  // 发布表单
+  // 发布表单(抽屉)
+  const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
   const [hint, setHint] = useState('')
@@ -36,12 +40,19 @@ export function NoticesTab({ t }: { t: Ns }) {
   const filtered = filterNotices(rows, keyword, activeOnly)
   const slice = filtered.slice((page - 1) * pageSize, page * pageSize)
 
+  const closeForm = () => {
+    setOpen(false)
+    setTitle('')
+    setCategory('')
+    setHint('')
+  }
+
   const publish = () => {
     if (!title.trim()) { setHint(t.sendNeedTitle); return }
     setBusy(true)
     setHint('')
     apiFetch('/notices', { method: 'POST', body: { title: title.trim(), category: category.trim() } })
-      .then(() => { setBusy(false); setTitle(''); setCategory(''); setHint(t.published); load() })
+      .then(() => { setBusy(false); closeForm(); setHint(t.published); load() })
       .catch(() => { setBusy(false); setHint(t.publishFail) })
   }
 
@@ -62,12 +73,8 @@ export function NoticesTab({ t }: { t: Ns }) {
           {t.onShelf}
         </label>
         <span style={{ flex: 1 }} />
-        <input style={{ ...ctl, width: 180 }} placeholder={t.noticeTitlePlaceholder} value={title}
-          onChange={(e) => setTitle(e.target.value)} />
-        <input style={{ ...ctl, width: 120 }} placeholder={t.noticeCategoryPlaceholder} value={category}
-          onChange={(e) => setCategory(e.target.value)} />
         <button style={{ ...ctl, cursor: 'pointer', background: '#1677ff', borderColor: '#1677ff', color: '#fff' }}
-          disabled={busy} onClick={publish}>{t.publish}</button>
+          onClick={() => setOpen(true)}>+ {t.publish}</button>
         {hint && <span style={{ fontSize: 12, color: hint === t.published ? '#52c41a' : '#e54545' }}>{hint}</span>}
       </div>
       {error ? <div style={{ color: '#e54545', fontSize: 13, padding: '12px 0' }}>{error}</div> : (
@@ -93,6 +100,35 @@ export function NoticesTab({ t }: { t: Ns }) {
             rangeText={t.rangeText} prevText={t.prev} nextText={t.next} perPageText={t.perPage}
             jumpText={t.jump} pageUnitText={t.pageUnit} />
         </>
+      )}
+      {open && (
+        <Drawer title={t.publish} onClose={closeForm}
+          footer={
+            <>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={closeForm}>
+                {cancelText}
+              </button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={publish}>
+                {t.publish}
+              </button>
+            </>
+          }>
+          <div style={{ display: 'grid', gap: 12 }}>
+            <label style={{ fontSize: 13, color: '#666' }}>
+              {t.noticeColumns[0]}
+              <input style={{ ...ctl, width: '100%', marginTop: 4 }} placeholder={t.noticeTitlePlaceholder} value={title}
+                onChange={(e) => setTitle(e.target.value)} />
+            </label>
+            <label style={{ fontSize: 13, color: '#666' }}>
+              {t.noticeColumns[1]}
+              <input style={{ ...ctl, width: '100%', marginTop: 4 }} placeholder={t.noticeCategoryPlaceholder} value={category}
+                onChange={(e) => setCategory(e.target.value)} />
+            </label>
+            {hint && hint !== t.published && (
+              <span style={{ fontSize: 12, color: '#e54545' }}>{hint}</span>
+            )}
+          </div>
+        </Drawer>
       )}
     </div>
   )

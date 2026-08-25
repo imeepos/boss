@@ -1,4 +1,4 @@
-// 消息中心 · 师傅消息页签:查询(GET /worker-messages?workerId=) + 下发(POST /worker-messages)。
+// 消息中心 · 师傅消息页签:查询(GET /worker-messages?workerId=) + 抽屉式下发(POST /worker-messages)。
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Dropdown } from '../../../components/Dropdown'
@@ -6,6 +6,7 @@ import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { StatusTag } from '../../../components/StatusTag'
 import { DataTable } from '../../../components/business/data-table'
+import { Drawer } from '../../../components/Drawer'
 import { searchWorkers } from '../../../api/pickers'
 import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
@@ -23,6 +24,7 @@ export const td: CSSProperties = { padding: '8px 10px', borderBottom: '1px solid
 
 export function WorkerMessagesTab({ t }: { t: Ns }) {
   const p = useT().pages.pickers
+  const cancelText = useT().common.confirmDialog.cancel
   const [rows, setRows] = useState<WorkerMessageEntry[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -31,7 +33,8 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
   const [workerId, setWorkerId] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  // 下发表单
+  // 下发表单(抽屉)
+  const [sendOpen, setSendOpen] = useState(false)
   const [sendWorker, setSendWorker] = useState('')
   const [sendLevel, setSendLevel] = useState<string>('INFO')
   const [sendTitle, setSendTitle] = useState('')
@@ -60,6 +63,14 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
   const filtered = filterMessages(rows, keyword, level, read)
   const slice = filtered.slice((page - 1) * pageSize, page * pageSize)
 
+  const closeSend = () => {
+    setSendOpen(false)
+    setSendWorker('')
+    setSendTitle('')
+    setSendContent('')
+    setHint('')
+  }
+
   const send = () => {
     const wid = toId(sendWorker)
     if (!wid) { setHint(t.sendNeedWorker); return }
@@ -72,6 +83,8 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
     })
       .then(() => {
         setSending(false)
+        setSendOpen(false)
+        setSendWorker('')
         setSendTitle('')
         setSendContent('')
         setHint(t.sent)
@@ -115,29 +128,8 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
         <button style={{ ...ctl, cursor: 'pointer' }} onClick={load}>{t.refresh}</button>
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: 13, color: '#666' }}>{t.sendTitle}:</span>
-        <ResourcePicker
-          value={sendWorker}
-          onChange={setSendWorker}
-          search={searchWorkers}
-          toOption={(w) => ({ value: String(w.id), label: `${w.name} · ${w.staffNo}` })}
-          ariaLabel={t.workerIdPlaceholder}
-          emptyLabel={p.common.all}
-          searchPlaceholder={p.common.placeholder}
-          errorText={t.loadFail}
-        />
-        <Dropdown
-          value={sendLevel}
-          options={MESSAGE_LEVELS.map((lv) => ({ value: lv, label: lv }))}
-          onChange={(v) => setSendLevel(v)}
-          ariaLabel={t.sendLevel}
-        />
-        <input style={{ ...ctl, width: 180 }} placeholder={t.sendTitlePlaceholder} value={sendTitle}
-          onChange={(e) => setSendTitle(e.target.value)} />
-        <input style={{ ...ctl, width: 220 }} placeholder={t.sendContentPlaceholder} value={sendContent}
-          onChange={(e) => setSendContent(e.target.value)} />
         <button style={{ ...ctl, cursor: 'pointer', background: '#1677ff', borderColor: '#1677ff', color: '#fff' }}
-          disabled={sending} onClick={send}>{sending ? t.sending : t.send}</button>
+          onClick={() => setSendOpen(true)}>+ {t.send}</button>
         {hint && <span style={{ fontSize: 12, color: hint === t.sent ? '#52c41a' : '#e54545' }}>{hint}</span>}
       </div>
       <div style={{ fontWeight: 600, marginBottom: 12 }}>
@@ -164,6 +156,61 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
             rangeText={t.rangeText} prevText={t.prev} nextText={t.next} perPageText={t.perPage}
             jumpText={t.jump} pageUnitText={t.pageUnit} />
         </>
+      )}
+      {sendOpen && (
+        <Drawer title={t.send} onClose={closeSend}
+          footer={
+            <>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={closeSend}>
+                {cancelText}
+              </button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={sending} onClick={send}>
+                {sending ? t.sending : t.send}
+              </button>
+            </>
+          }>
+          <div style={{ display: 'grid', gap: 12 }}>
+            <label style={{ fontSize: 13, color: '#666' }}>
+              {t.msgColumns[1]}
+              <div style={{ marginTop: 4 }}>
+                <ResourcePicker
+                  value={sendWorker}
+                  onChange={setSendWorker}
+                  search={searchWorkers}
+                  toOption={(w) => ({ value: String(w.id), label: `${w.name} · ${w.staffNo}` })}
+                  ariaLabel={t.workerIdPlaceholder}
+                  emptyLabel={p.common.all}
+                  searchPlaceholder={p.common.placeholder}
+                  errorText={t.loadFail}
+                />
+              </div>
+            </label>
+            <label style={{ fontSize: 13, color: '#666' }}>
+              {t.sendLevel}
+              <div style={{ marginTop: 4 }}>
+                <Dropdown
+                  value={sendLevel}
+                  options={MESSAGE_LEVELS.map((lv) => ({ value: lv, label: lv }))}
+                  onChange={(v) => setSendLevel(v)}
+                  ariaLabel={t.sendLevel}
+                />
+              </div>
+            </label>
+            <label style={{ fontSize: 13, color: '#666' }}>
+              {t.msgColumns[2]}
+              <input style={{ ...ctl, width: '100%', marginTop: 4 }} placeholder={t.sendTitlePlaceholder} value={sendTitle}
+                onChange={(e) => setSendTitle(e.target.value)} />
+            </label>
+            <label style={{ fontSize: 13, color: '#666' }}>
+              {t.msgColumns[3]}
+              <input style={{ ...ctl, width: '100%', marginTop: 4 }} placeholder={t.sendContentPlaceholder} value={sendContent}
+                onChange={(e) => setSendContent(e.target.value)} />
+            </label>
+            {hint && hint !== t.sent && (
+              <span style={{ fontSize: 12, color: '#e54545' }}>{hint}</span>
+            )}
+          </div>
+        </Drawer>
       )}
     </div>
   )
