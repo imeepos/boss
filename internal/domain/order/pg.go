@@ -35,6 +35,8 @@ type PGStore struct {
 	commission PartnerCommissionAccrual
 	notifier   StageNotifier // 可选:环节推进广播(开放平台 Webhook,nil=未启用)
 	params     PartnerCommissionRate
+	prof       UserProfileCreator   // 跨域:创建认证账号(环节6)
+	prov       ProvisionTaskCreator // 跨域:创建下发任务(环节7)
 }
 
 // NewPGStore 构造 PGStore;cust 由 app 装配层注入 customer 域实现。
@@ -55,6 +57,10 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 			s.commission = v
 		case PartnerCommissionRate:
 			s.params = v
+		case UserProfileCreator:
+			s.prof = v
+		case ProvisionTaskCreator:
+			s.prov = v
 		}
 	}
 	return s

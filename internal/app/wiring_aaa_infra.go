@@ -19,9 +19,9 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/push"
 )
 
-func wireAAAInfra(app *Application, pool *pgxpool.Pool, aaastore *aaa.PGStore, pushSender push.Sender) {
+func wireAAAInfra(app *Application, pool *pgxpool.Pool, aaastore *aaa.PGStore, pushSender push.Sender, provStore *provision.PGStore) {
 	app.Aaa = aaastore
-	app.Provision = provision.NewPGStore(pool)
+	app.Provision = provStore
 	app.QuadLink = quadlink.NewPGStore(pool)
 	app.Asset = asset.NewPGStore(pool)
 	app.APIKey = apikey.NewPGStore(pool)

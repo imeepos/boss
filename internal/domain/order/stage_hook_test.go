@@ -25,13 +25,16 @@ func (r *recordingNotifier) Emit(_ context.Context, eventType, eventID string, _
 	return len(r.calls), r.err
 }
 
-// newAdvanceMock 准备 advance("PreConfigOLT") 的 SQL 期望(环节7,stage 6→7)。
+// newAdvanceMock 准备 PreConfigOLT 的 SQL 期望(环节7,stage 6→7)。
 func newAdvanceMock(t *testing.T) pgxmock.PgxPoolIface {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
 	}
+	mock.ExpectQuery(`SELECT customer_id FROM orders`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(1)))
 	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(6), "RESERVED", "ORD-20250817-001"))
@@ -48,7 +51,7 @@ func TestAdvanceEmitsStageDone(t *testing.T) {
 	mock := newAdvanceMock(t)
 	defer mock.Close()
 
-	s := NewPGStore(mock, stubExists{ok: true})
+	s := NewPGStore(mock, stubExists{ok: true}, &stubProfileCreator{}, &stubProvCreator{})
 	n := &recordingNotifier{}
 	s.SetStageNotifier(n)
 
@@ -70,7 +73,7 @@ func TestAdvanceWithoutNotifierStillWorks(t *testing.T) {
 	mock := newAdvanceMock(t)
 	defer mock.Close()
 
-	s := NewPGStore(mock, stubExists{ok: true})
+	s := NewPGStore(mock, stubExists{ok: true}, &stubProfileCreator{}, &stubProvCreator{})
 	if err := s.PreConfigOLT(context.Background(), 7); err != nil {
 		t.Fatalf("ApplyTag without notifier: %v", err)
 	}
@@ -83,7 +86,7 @@ func TestAdvanceEmitErrorDoesNotFailStep(t *testing.T) {
 	mock := newAdvanceMock(t)
 	defer mock.Close()
 
-	s := NewPGStore(mock, stubExists{ok: true})
+	s := NewPGStore(mock, stubExists{ok: true}, &stubProfileCreator{}, &stubProvCreator{})
 	s.SetStageNotifier(&recordingNotifier{err: context.Canceled}) // Emit 失败
 	if err := s.PreConfigOLT(context.Background(), 7); err != nil {
 		t.Fatalf("emit error must not fail advance: %v", err)

@@ -15,6 +15,25 @@ type stubExists struct{ ok bool }
 
 func (s stubExists) Exists(context.Context, int64) (bool, error) { return s.ok, nil }
 
+// stubProfileCreator 桩 UserProfileCreator。
+type stubProfileCreator struct {
+	UserProfileCreator
+	err error
+}
+
+func (s *stubProfileCreator) GetLoAccountByCustomer(context.Context, int64) (*LoidAccount, error) {
+	return &LoidAccount{ID: 88, Loid: "LOID-TEST"}, s.err
+}
+func (s *stubProfileCreator) CreateLoAccount(context.Context, LoidReq) (int64, error) { return 1, nil }
+
+// stubProvCreator 桩 ProvisionTaskCreator。
+type stubProvCreator struct {
+	ProvisionTaskCreator
+	err error
+}
+
+func (s *stubProvCreator) CreateTask(context.Context, ProvisionTask) (int64, error) { return 1, s.err }
+
 var ts = time.Date(2025, 8, 17, 10, 0, 0, 0, time.UTC)
 
 // expectRefExists 桩 Submit 关联存在性校验(addresses/product_offers/channels,均返回存在)。

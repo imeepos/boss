@@ -51,6 +51,57 @@ type QuadLinkPrebinder interface {
 	CreateLink(ctx context.Context, q QuadLinkBindReq) (linkID int64, err error)
 }
 
+// UserProfileCreator 创建 LO 认证账号跨域依赖口(环节6)。
+// 由 aaa 域提供,幂等创建 lo_accounts;已存在则返回已有账号。
+type UserProfileCreator interface {
+	CreateLoAccount(ctx context.Context, lo LoidReq) (int64, error)
+	GetLoAccountByCustomer(ctx context.Context, customerID int64) (*LoidAccount, error)
+}
+
+// LoidReq 创建 LO 认证账号请求(order 域定义,由 app 装配层映射到 aaa.LoAccount)。
+type LoidReq struct {
+	Loid            string
+	CustomerID      int64
+	LegalEntityID   int64
+	LegalEntityName string
+	RegionID        int64
+	RegionName      string
+	RegionPath      string
+	OfferID         int64
+	QosTemplateID   int64
+	Status          string
+	BillingMode     string
+}
+
+// LoidAccount LO 账号查询结果(order 域使用的最小视图)。
+type LoidAccount struct {
+	ID    int64
+	Loid  string
+	OfferID int64
+}
+
+// ProvisionTaskCreator 创建配置下发任务跨域依赖口(环节7)。
+// 由 provision 域提供,幂等创建下发任务。
+type ProvisionTaskCreator interface {
+	CreateTask(ctx context.Context, t ProvisionTask) (int64, error)
+}
+
+// ProvisionTask 下发任务请求(order 域定义,由 app 装配层映射到 provision.Task)。
+type ProvisionTask struct {
+	TaskNo      string
+	OrderID     int64
+	StageEvent  string
+	LoAccountID int64
+	TemplateID  int64
+	Status      string
+}
+
+// ProvisionTaskTemplate 配置模板查询(环节7 按订单产品找模板)。
+type ProvisionTaskTemplate struct {
+	ID   int64
+	Code string
+}
+
 // OrderService 订单域服务口(阶段5)。
 // 契约:CT-002 订单-资源核查、CT-003 端口预占;环节标识见 terms.md §1;状态/环节正交见 terms.md §3。
 type OrderService interface {
