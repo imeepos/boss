@@ -115,6 +115,8 @@ func (s *MemoryETLStore) UpsertJob(_ context.Context, j ETLJob) (*ETLJob, error)
 	if ok {
 		j.ID = old.ID
 		j.CreatedAt = old.CreatedAt
+	} else {
+		j.Enabled = true // 新建缺省启用,对齐 000132 的 DEFAULT TRUE
 	}
 	if j.ID == 0 {
 		j.ID = s.NextID
@@ -189,6 +191,9 @@ func (s *MemoryETLStore) ListFreshness(_ context.Context) ([]Freshness, error) {
 	now := time.Now()
 	out := []Freshness{}
 	for _, j := range s.Jobs {
+		if !j.Enabled {
+			continue // 禁用任务不监控:尚未部署真实执行器的台账保持静默,不产逾期派单
+		}
 		out = append(out, Freshness{JobKey: j.JobKey, Name: j.Name, Status: freshness(now, j), LastRunAt: j.LastRunAt, LatenessThreshold: j.LatenessThreshold})
 	}
 	return out, nil

@@ -60,3 +60,28 @@ func TestNormalizeRunCompletesMissingFinishedAt(t *testing.T) {
 }
 
 func ptr(t time.Time) *time.Time { return &t }
+
+// TestFreshnessExcludesDisabledJobs 禁用任务不进新鲜度看板/不产逾期派单。
+func TestFreshnessExcludesDisabledJobs(t *testing.T) {
+	s := NewMemoryETLStore()
+	if _, err := s.UpsertJob(context.Background(), ETLJob{JobKey: "live", Name: "有执行器", LatenessThreshold: 60}); err != nil {
+		t.Fatal(err)
+	}
+	noExec, _ := s.UpsertJob(context.Background(), ETLJob{JobKey: "placeholder", Name: "无执行器", LatenessThreshold: 15})
+	noExec.Enabled = false
+	if _, err := s.UpsertJob(context.Background(), *noExec); err != nil {
+		t.Fatal(err)
+	}
+	fs, err := s.ListFreshness(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range fs {
+		if f.JobKey == "placeholder" {
+			t.Fatalf("disabled job leaked into freshness: %+v", fs)
+		}
+	}
+	if len(fs) != 1 || fs[0].JobKey != "live" {
+		t.Fatalf("freshness=%+v", fs)
+	}
+}

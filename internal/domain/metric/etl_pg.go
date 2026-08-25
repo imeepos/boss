@@ -60,7 +60,7 @@ func (s *PGStore) RecordRun(ctx context.Context, r ETLJobRun) error {
 	return err
 }
 func (s *PGStore) ListFreshness(ctx context.Context) ([]Freshness, error) {
-	rows, e := s.db.Query(ctx, `SELECT job_key,name,last_run_at,lateness_threshold,CASE WHEN last_run_at IS NULL OR now()-last_run_at > (lateness_threshold*2)*interval '1 minute' THEN 'overdue' WHEN now()-last_run_at > lateness_threshold*interval '1 minute' THEN 'stale' ELSE 'fresh' END FROM etl_job ORDER BY job_key`)
+	rows, e := s.db.Query(ctx, `SELECT job_key,name,last_run_at,lateness_threshold,CASE WHEN last_run_at IS NULL OR now()-last_run_at > (lateness_threshold*2)*interval '1 minute' THEN 'overdue' WHEN now()-last_run_at > lateness_threshold*interval '1 minute' THEN 'stale' ELSE 'fresh' END FROM etl_job WHERE enabled ORDER BY job_key`)
 	if e != nil {
 		return nil, e
 	}
