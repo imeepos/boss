@@ -14,6 +14,7 @@ const GROUP_FOLD_KEY = 'admin.side-group-folded'
 
 const SIDE_BASE = 'relative flex flex-none flex-col border-r border-[var(--shell-side-border)] bg-[var(--shell-side-bg)] transition-[width] duration-200 group w-[var(--side-w,240px)] max-[1199px]:w-16 max-[959px]:fixed max-[959px]:bottom-8 max-[959px]:left-0 max-[959px]:top-14 max-[959px]:z-40 max-[959px]:w-60 max-[959px]:-translate-x-full max-[959px]:transition-transform max-[959px]:duration-200'
 const SIDE_ITEM = 'relative flex h-11 items-center gap-2.5 px-4 text-sm whitespace-nowrap no-underline text-[var(--shell-menu-text)] hover:bg-[var(--shell-menu-hover-bg)] hover:text-[var(--shell-menu-active-text)] [&_.mask-icon]:text-[var(--shell-menu-icon)]'
+const SIDE_SUBITEM = 'pl-8 max-[1199px]:pl-4'
 const SIDE_ITEM_ACTIVE = 'bg-[var(--shell-menu-active-bg)] font-semibold text-[var(--shell-menu-active-text)] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r-sm before:bg-[var(--color-brand-gold-500)] [&_.mask-icon]:text-[var(--color-brand-gold-500)]'
 const SIDE_COLLAPSE = 'flex h-11 flex-none cursor-pointer items-center gap-2 border-0 border-t border-[var(--shell-side-border)] bg-none px-5 text-[13px] text-[var(--shell-menu-icon)] hover:text-[var(--shell-menu-active-text)]'
 const LABEL = 'max-[1199px]:hidden max-[959px]:inline'
@@ -79,21 +80,25 @@ function SideGroup({
           <span className={LABEL}><ChevronIcon open={!folded} /></span>
         </button>
       )}
-      {showItems && g.items.map((it) => {
-        const label = t.menu.items[it.key] ?? it.label
-        return (
-          <NavLink
-            key={it.key}
-            to={it.path}
-            title={label}
-            onClick={onNavigate}
-            className={({ isActive }) => cn(SIDE_ITEM, isActive && SIDE_ITEM_ACTIVE, collapsed && 'justify-center px-0')}
-          >
-            <MaskIcon url={`/icons/items/${it.key}.svg`} />
-            {!collapsed && <span className={cn('overflow-hidden text-ellipsis', LABEL)}>{label}</span>}
-          </NavLink>
-        )
-      })}
+      {showItems && (
+        <div className={!collapsed ? 'mt-2' : undefined}>
+          {g.items.map((it) => {
+            const label = t.menu.items[it.key] ?? it.label
+            return (
+              <NavLink
+                key={it.key}
+                to={it.path}
+                title={label}
+                onClick={onNavigate}
+                className={({ isActive }) => cn(SIDE_ITEM, !collapsed && SIDE_SUBITEM, isActive && SIDE_ITEM_ACTIVE, collapsed && 'justify-center px-0')}
+              >
+                <MaskIcon url={`/icons/items/${it.key}.svg`} />
+                {!collapsed && <span className={cn('overflow-hidden text-ellipsis', LABEL)}>{label}</span>}
+              </NavLink>
+            )
+          })}
+        </div>
+      )}
     </section>
   )
 }
