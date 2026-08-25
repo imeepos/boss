@@ -1,6 +1,6 @@
 // 顶栏:品牌区 + 分组主导航 + 搜索/主题/通知/语言/用户工具区。规格见 design-spec.md §2.1/§3.1。
 // 样式:tailwind 原子类(原 shell.css 已删除)。
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Profile } from '../api/auth'
 import { adminLogout } from '../api/auth'
@@ -8,8 +8,9 @@ import type { MenuGroup } from '../router/menu.def'
 import logoMark from '../assets/brand/logo-mark-navy.png'
 import { useT, useLang, localeOptions } from '../i18n'
 import { useTheme } from '../theme/context'
-import { CheckIcon, GlobeIcon, LogoutIcon, MaskIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, UserIcon } from './icons'
+import { CheckIcon, GlobeIcon, LogoutIcon, MaskIcon, MenuIcon, MoonIcon, SunIcon, UserIcon } from './icons'
 import { NotifBell } from './NotifBell'
+import { QuickSearch } from '../components/QuickSearch'
 import { POPOVER, POPOVER_ITEM } from './popover'
 import { cn } from '../lib/cn'
 
@@ -41,57 +42,6 @@ function TopNav({ groups, activeGroupId }: { groups: MenuGroup[]; activeGroupId?
         </button>
       ))}
     </nav>
-  )
-}
-
-/** 顶栏搜索:默认仅一个工具按钮,点击展开输入框;清空失焦或 Esc 收起。 */
-function SearchBox({ groups }: { groups: MenuGroup[] }) {
-  const t = useT()
-  const nav = useNavigate()
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  const expand = () => {
-    setOpen(true)
-    requestAnimationFrame(() => inputRef.current?.focus())
-  }
-  const collapse = () => {
-    if (!query) setOpen(false)
-  }
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    const q = query.trim().toLowerCase()
-    if (!q) return
-    const hit = groups
-      .flatMap((g) => g.items)
-      .find((it) => (t.menu.items[it.key] ?? it.label).toLowerCase().includes(q))
-    if (hit) {
-      nav(hit.path)
-      setQuery('')
-      inputRef.current?.blur()
-    }
-  }
-  if (!open) {
-    return (
-      <button className={TOOL_BTN} onClick={expand} title={t.shell.searchPlaceholder} aria-label="search">
-        <SearchIcon size={18} />
-      </button>
-    )
-  }
-  return (
-    <form className="flex h-[34px] items-center gap-2 rounded-[17px] bg-[var(--shell-search-bg)] px-3 text-white/60 transition-colors focus-within:bg-[var(--shell-search-bg-focus)]" onSubmit={onSubmit} role="search">
-      <SearchIcon />
-      <input
-        ref={inputRef}
-        className="w-[180px] border-0 bg-none text-[13px] text-white outline-none transition-[width] placeholder:text-white/45 max-[959px]:w-[108px]"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onBlur={collapse}
-        onKeyDown={(e) => e.key === 'Escape' && (setQuery(''), setOpen(false))}
-        placeholder={t.shell.searchPlaceholder}
-        aria-label={t.shell.searchPlaceholder}
-      />
-    </form>
   )
 }
 
@@ -223,7 +173,7 @@ export function TopBar({ profile, groups, activeGroupId, onOpenDrawer }: TopBarP
       </Link>
       <TopNav groups={groups} activeGroupId={activeGroupId} />
       <div className="ml-auto flex items-center gap-3">
-        <SearchBox groups={groups} />
+        <QuickSearch profile={profile} />
         <RightTools profile={profile} />
       </div>
     </header>

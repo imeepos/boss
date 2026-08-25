@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { useQueryState } from '../../../lib/useQueryState'
 import { DetailDrawer, PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
@@ -17,7 +18,8 @@ export default function CustomerPage() {
   const c = t.pages.customer
   const [rows, setRows] = useState<CustomerRow[]>([])
   const [error, setError] = useState('')
-  const [keyword, setKeyword] = useState('')
+  const [urlKeyword, setUrlKeyword] = useQueryState('kw', '')
+  const [keyword, setKeyword] = useState(urlKeyword)
   const [phone, setPhone] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
@@ -47,7 +49,7 @@ export default function CustomerPage() {
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={c.searchPlaceholder}
-            value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
+            value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={c.phonePlaceholder}
             value={phone} onChange={(e) => { setPhone(e.target.value); setPage(1) }} />
           <Dropdown

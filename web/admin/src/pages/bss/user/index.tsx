@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { useQueryState } from '../../../lib/useQueryState'
 import { PageHead } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
@@ -14,7 +15,8 @@ export default function UserListPage() {
   const u = t.pages.userPage
   const [rows, setRows] = useState<UserRow[]>([])
   const [error, setError] = useState('')
-  const [keyword, setKeyword] = useState('')
+  const [urlKeyword, setUrlKeyword] = useQueryState('kw', '')
+  const [keyword, setKeyword] = useState(urlKeyword)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null)
@@ -48,7 +50,7 @@ export default function UserListPage() {
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={u.searchPlaceholder}
-            value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
+            value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
