@@ -1885,7 +1885,7 @@ const enUS: Translations = {
       desc: 'Client crash reports uploaded on app start (migration 000136). Shows the most recent 100; tap row to expand stack',
       refresh: 'Refresh',
       empty: 'No crash logs',
-      loadFail: 'Load failed (no menu:crash_logs permission or service unavailable)',
+      loadFail: 'Load failed (no menu:crashlogs permission or service unavailable)',
       colTime: 'Time',
       colApp: 'App',
       colSubject: 'Subject',

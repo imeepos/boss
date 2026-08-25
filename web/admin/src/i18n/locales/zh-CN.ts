@@ -1885,7 +1885,7 @@ const zhCN: Translations = {
       desc: 'App 启动补传的服务端崩溃留痕(迁移 000136),仅展示最近 100 条;堆栈单条展开',
       refresh: '刷新',
       empty: '暂无崩溃日志',
-      loadFail: '加载失败(无 menu:crash_logs 权限或服务不可用)',
+      loadFail: '加载失败(无 menu:crashlogs 权限或服务不可用)',
       colTime: '时间',
       colApp: 'App',
       colSubject: '主体',

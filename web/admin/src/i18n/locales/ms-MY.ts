@@ -1885,7 +1885,7 @@ const msMY: Translations = {
       desc: 'Laporan ralat aplikasi dimuat naik pada permulaan (migrasi 000136). Papar 100 terkini; klik baris untuk kembangkan',
       refresh: 'Muat semula',
       empty: 'Tiada log ralat',
-      loadFail: 'Gagal memuatkan (tiada kebenaran menu:crash_logs atau perkhidmatan tidak tersedia)',
+      loadFail: 'Gagal memuatkan (tiada kebenaran menu:crashlogs atau perkhidmatan tidak tersedia)',
       colTime: 'Masa',
       colApp: 'Aplikasi',
       colSubject: 'Subjek',

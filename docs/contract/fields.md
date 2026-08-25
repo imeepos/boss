@@ -356,7 +356,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 崩溃日志 | `Log` | log | 服务端截断 64KB 保尾部 |
 | 时间 | `CreatedAt` | created_at | — |
 
-> 上报接口：`POST /api/worker/v1/client/crash`（worker/misc.yaml，wauth）；管理端查询 `GET /api/admin/v1/crash-logs?limit=N`（admin/sys.yaml，permCode `menu:crash_logs`，迁移 000140）。
+> 上报接口：`POST /api/worker/v1/client/crash`（worker/misc.yaml，wauth）；管理端查询 `GET /api/admin/v1/crash-logs?limit=N`（admin/sys.yaml，permCode `menu:crashlogs`，迁移 000140）。
 
 ### 1.7 api_keys（免登录 API key，internal/domain/apikey，迁移 000042/000043/000045）
 

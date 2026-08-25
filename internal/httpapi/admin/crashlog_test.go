@@ -1,6 +1,6 @@
 package adminapi
 
-// 契约:GET /crash-logs(menu:crash_logs);列表按 created_at DESC,limit 1..200 默认 50。
+// 契约:GET /crash-logs(menu:crashlogs);列表按 created_at DESC,limit 1..200 默认 50。
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 )
 
 // newCrashRouter 仅构造 crash-logs 路由,避免全 Register 拉起其它依赖。
-// 鉴权走 admin 标准链:API key 免登录 + JWT(admin aud);权限码 menu:crash_logs。
+// 鉴权走 admin 标准链:API key 免登录 + JWT(admin aud);权限码 menu:crashlogs。
 func newCrashRouter(store crashdomain.Store, permOk bool, mgr *auth.Manager) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
