@@ -1035,6 +1035,11 @@ const zhCN: Translations = {
       eNameRequired: '请输入队伍名称',
       eCodeRequired: '请输入队伍编码',
       eEntityRequired: '请选择所属公司',
+      teamOps: '操作',
+      pickWorker: '选择师傅',
+      pickWorkerPlaceholder: '搜索工号/姓名',
+      addToGroupHint: '选择师傅后添加到当前装维队',
+      needSelectGroup: '请先在左侧选择装维队',
     },
     workerRegPage: {
       title: '师傅注册审核',
