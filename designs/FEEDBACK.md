@@ -269,3 +269,8 @@
   2. 共享 i18n 文件（types.ts + 三份 locale）被多个并行会话争抢时，会出现"自己写的 key 丢失"现象（typeScript 被 reset 后我自己加的 key 没了），必须**最后 git diff 验证自己的 key 仍存在**，否则从头补一次。
   3. `.afti-*` CSS 变量按 [data-theme] 双套是简单可靠的多主题配色方案：无需 JS 读 `data-theme`，只需 CSS 选择器覆盖；组件代码零分支。
   4. 网格/列表视图的 toggle 按钮 aria-label 必须用人类可读文本（"grid"），不能拼字符串（`'文件名 list'`）——前者稳定，后者对前端可控性差。
+
+### A2. 设计稿存放位置（2026-08-25 用户点名）
+- 2026-08-25 worker-login-states-v1：首稿按旧习惯放根目录 `designs/`，用户点名纠正——worker 端设计稿必须放 `mobile/worker/design/`（与 `mobile/user/design` 同款"按端分目录"约定），禁止散落。
+  根因：勘察时只看了根 `designs/`，没查 `mobile/user/design` 的按端存放约定。
+  规则：生成前先查 `mobile/<role>/design` 是否存在与命名约定（`<page>-<desc>.png` + 同名 `.spec.md`）；worker 端设计稿一律落 `mobile/worker/design/`，根 `designs/` 只放跨端/管理后台稿。
