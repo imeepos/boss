@@ -8,3 +8,6 @@
 .externalNativeBuild
 .cxx
 /.kotlin
+# 签名密钥文件(CI 解码 repo secret 落地,绝不入库)
+release.keystore
+keystore.properties
