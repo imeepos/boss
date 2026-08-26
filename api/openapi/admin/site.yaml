@@ -70,7 +70,7 @@ paths:
       operationId: listPublicSitePosts
       parameters:
         - { name: category, in: query, schema: { type: string, description: cms_categories.code } }
-        - { name: limit, in: query, schema: { type: integer, default: 10, maximum: 50 } }
+        - { name: limit, in: query, schema: { type: integer, default: 10, minimum: 1, maximum: 50, description: 超出 1-50 范围时服务端回退默认值 10 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 

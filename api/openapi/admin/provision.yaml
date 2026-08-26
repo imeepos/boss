@@ -1,3 +1,15 @@
+components:
+  schemas:
+    ProvisionTemplateInput:
+      type: object
+      required: [legalEntityId, code, name]
+      properties:
+        legalEntityId: { type: integer, format: int64, minimum: 1 }
+        code: { type: string, maxLength: 64 }
+        name: { type: string, maxLength: 128 }
+        content: { type: object, description: 配置内容 JSON }
+        status: { type: string, enum: [ENABLED, DISABLED], default: ENABLED }
+
 paths:
   /provision-tasks:
     get:
@@ -28,7 +40,12 @@ paths:
       tags: [Provision]
       summary: 新建/复制配置模板
       operationId: createProvisionTemplate
-      requestBody: { content: { application/json: { schema: { type: object } } } }
+      requestBody:
+         required: true
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ProvisionTemplateInput'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
@@ -38,7 +55,12 @@ paths:
       summary: 编辑配置模板(内容 JSON、版本自增)
       operationId: updateProvisionTemplate
       parameters: [{ name: templateId, in: path, required: true, schema: { type: integer, format: int64 } }]
-      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      requestBody:
+         required: true
+         content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/ProvisionTemplateInput'
       responses: { '200': { $ref: './schemas.yaml#/components/responses/Ok' } }
     delete:
       tags: [Provision]

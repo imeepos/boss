@@ -34,6 +34,7 @@ func provisionCreateTemplateHandler(a *app.Application) gin.HandlerFunc {
 				httpx.RequirePositiveID(t.LegalEntityID, "legalEntityId"),
 				httpx.RequireString(t.Code, "code", 64),
 				httpx.RequireString(t.Name, "name", 128),
+				httpx.RequireEnumOrDefault(&t.Status, "status", "ENABLED", "ENABLED", "DISABLED"),
 			)
 		}) {
 			return

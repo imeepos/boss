@@ -102,6 +102,16 @@ paths:
       operationId: approveWorkerRegistration
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [groupId, regionId]
+              properties:
+                groupId: { type: integer, format: int64, minimum: 1 }
+                regionId: { type: integer, format: int64, minimum: 1 }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
