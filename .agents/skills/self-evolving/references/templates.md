@@ -148,3 +148,36 @@ document.querySelector('aside[role=dialog] h3')?.textContent   // 期望抽屉�
 - 按钮文字居中,上下左右留够边距;元素间距 4 的倍数,语义亲密的用小档(4/8),分组用大档(12/16);
 - 图标与周围文字比例不能失衡,不使用 emoji 图标;
 - 下拉一律 `components/Dropdown.tsx`(禁原生 select),输入框统一 shell-input-* 令牌类。
+
+## 模板 H:Stripe/支付通道 E2E 验收模板(真实 102 + 真实渠道测试账号)
+
+适用:任何"收单发起 → 渠道收款 → webhook 回调落账"闭环验收。纪律:走真实渠道与真实回调,
+不 mock;造数前缀统一(acc_/BILL-E2E-xxx/2099-xx 独立账期),验收后按序清理,孤儿巡检门禁兜底。
+
+```bash
+#!/usr/bin/env bash
+# 用法:BASE / SK(渠道密钥) / WH(回调签名密钥) 经环境变量注入,不落盘不 commit。
+set -u
+BASE=${BASE:-http://192.168.0.102:28080/api/user/v1}
+SK=${SK:?STRIPE secret key}; WH=${WH:?webhook signing secret}
+TS=$(date +%s); PHONE="138$((RANDOM%9+1))$((RANDOM%89999999))"   # E.164 +86,否则 42200
+# 1 渠道就绪探针:未配置应 503/降级特征,已配置走到验签(400)= env 生效
+curl -s -X POST $BASE/webhooks/stripe -d '{}' -o /dev/null -w 'probe=%{http_code}\n'
+# 2 门户账号:注册(合成负 id)→ 建真实 customers 行 → UPDATE portal_accounts 改指 → 密码重登
+#   (自定义 customers 必填列先查 live information_schema 防迁移漂移)
+# 3 插 UNPAID 账单(period 2099-xx,避开 uq(customer_id,period) 撞真实出账)
+# 4 POST /payments/stripe/intent {billNo,amount} → intentId/payNo(账单归属校验 404/已缴 409)
+# 5 渠道确认:curl -u $SK: -X POST /v1/payment_intents/$PI/confirm \
+#     -d payment_method_data[type]=card -d payment_method_data[card][token]=tok_visa \
+#     -d "return_url=https://example.com/pay-done"   # 账号启用重定向方式时必带,否则 400
+# 6 轮询 ~7s:payments 行 method=card status=SUCCESS、bills 置 PAID、pay_no 唯一
+# 7 幂等:同 payload 用 WH 自签(t.v1 = HMAC-SHA256(WH, "$t.$payload"))重投 → 200 且行数不变
+# 8 失败路径:tok_chargeDeclined → payment_intent.payment_failed → FAILED 行 + 账单仍 UNPAID
+# 9 无账单(充值)意图:渠道直建 intent,metadata 带 pay_no/customer_id → SUCCESS 行 bill_id NULL
+#    且 customer_id 必填(双空=0)
+# 10 清理按序:payments(bill_id 归属兜底)-> bills -> customers -> addresses -> portal_accounts
+#     -> portal_sms_codes;最后跑孤儿巡检门禁
+```
+
+要点:webhook endpoint 凭 SK 用 REST 建(POST /v1/webhook_endpoints),whsec 创建时一次返回;
+快速隧道 URL 重启即变,换 URL 需重建 endpoint(流程见 adopted note 2026-08-26)。
