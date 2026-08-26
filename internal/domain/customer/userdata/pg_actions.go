@@ -38,6 +38,20 @@ func (s *PGStore) CreateUserAddress(ctx context.Context, a UserAddress) (int64, 
 		a.CustomerID, a.AddrCode, a.Contact, a.Phone, a.Detail, a.IsDefault)
 }
 
+func (s *PGStore) UpdateUserAddress(ctx context.Context, customerID, id int64, a UserAddress) error {
+	return s.execAffected(ctx, "update user address", `
+		UPDATE user_addresses
+		   SET addr_code=$3, contact=$4, phone=$5, detail=$6, is_default=$7
+		 WHERE id=$1 AND customer_id=$2`,
+		id, customerID, a.AddrCode, a.Contact, a.Phone, a.Detail, a.IsDefault)
+}
+
+func (s *PGStore) DeleteUserAddress(ctx context.Context, customerID, id int64) error {
+	return s.execAffected(ctx, "delete user address",
+		`DELETE FROM user_addresses WHERE id=$1 AND customer_id=$2`,
+		id, customerID)
+}
+
 func (s *PGStore) CreateUserPlan(ctx context.Context, p UserPlan) (int64, error) {
 	return s.insertReturning(ctx, "create user plan", `
 		INSERT INTO user_plans(customer_id, product_id, plan_name, status, effective_at)

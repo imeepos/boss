@@ -35,6 +35,12 @@ func (f *fakeUserdata) ListUserAddresses(context.Context) ([]map[string]any, err
 func (f *fakeUserdata) CreateUserAddress(context.Context, userdata.UserAddress) (int64, error) {
 	return 1, nil
 }
+func (f *fakeUserdata) UpdateUserAddress(context.Context, int64, int64, userdata.UserAddress) error {
+	return nil
+}
+func (f *fakeUserdata) DeleteUserAddress(context.Context, int64, int64) error {
+	return nil
+}
 func (f *fakeUserdata) ListUserPlans(context.Context) ([]map[string]any, error) {
 	return f.ok(), nil
 }
