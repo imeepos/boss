@@ -855,3 +855,15 @@
   Android 新页 OrderConfirmScreen(套餐+地址选择+Stripe PaymentSheet),
   ProductScreen 跳 OrderConfirm 替代直接 submit,Stripe Android SDK 21.19.0 依赖,
   PageRenderTest 加 OrderConfirm 冒烟;7 个 commit 按 feature 拆开,主工作树干净,worktree 已清理。
+- 实名审核页看不到姓名/证件号排查(2026-08-26 连续两次修复):
+  - 坑1(浪费最多时间): 前端字段名 nameMasked/idNoMasked 与契约一致,先查前端误判,实为服务端 ListVerifications
+    SQL 只 SELECT 审计列(real_name/id_card_no 没读),合成客户(无 customers 主档)走 else 分支写死空串。
+    教训: 先查库(verifications 表有值)+ 接口实测响应(空串),再定位代码;前端字段名对了不代表后端真填了。
+  - 坑2(引入安全回归): 第一次修复让 latest 携带明文 realName/idCardNo 兜底,却用 for k,v := range latest
+    全量透出到响应 → /auth/verify 泄漏姓名+完整身份证号。教训: gin.H 聚合对象一旦被 range 批量透出,
+    内部兜底字段也会外泄;中部状态对象必须是"可外发值",脱敏应在生成处做,不在出口做。
+  - skill 有没有提前警告: red-lines 有"接口返回字段必须覆盖 schema"和"健康检查≠部署成功"两条,但都没覆盖
+    "gin.H 批量透出泄漏内部字段"这一类;本次已补进 red-lines。
+  - 重来一次: ① 后端字段缺失先 SQL 直查权威表,别信前端;② 任何 gin.H 如果会被 range 全量透出,
+    字段在写入时就该是终态(脱敏/空串),明文只活在 handler 局部变量。
+  - 交付: 两个 commit 走 worktree 协议(ff-merge + 清理),102 实测 /auth/verify 返回 nameMasked=杨**/idNoMasked=410***********4876,无明文。

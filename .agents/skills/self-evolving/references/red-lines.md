@@ -42,3 +42,10 @@
 - 复发计数 +1(2026-09-22 死循环)。正确做法:写文件脚本一律幂等 + 每次写后 `git diff --stat`/`wc -l` 确认单次增量。
 - 禁止未验证远端身份就假设隧道/代理/网关已指向目标服务，因为容器名与网络别名不可信(cf-stripe 实指 release-platform-integration-api,401 文案仓库 grep 不到,白烧一轮探测);必须先验 /healthz + 未配置端点的降级特征再使用。
 - 禁止在 main 直接提交任何内容(含 .agents/docs-only 技能喂食)，因为 worktree 合并协议是全流程红线;技能喂食同样走 worktree → merge → 清理，不留直接提交前例。
+- 禁止在 gin.H 聚合对象(latest/summary 等)里放"仅供内部兜底"的明文字段,因为 handler 常见
+  `for k,v := range latest { payload[k]=v }` 批量透出会把内部字段一起漏给前端——2026-08-26 实名
+  回显修复在 latest 里放 realName/idCardNo 明文兜底,实测 /auth/verify 泄漏姓名+完整身份证号;
+  中部对象字段一律在写入时就做成可外发终态(脱敏/空串),明文只活在 handler 局部变量。
+- 禁止前端字段名对了就认定后端没问题——2026-08-26 实名审核页看不到姓名/证件号,前端 nameMasked/
+  idNoMasked 与契约一致,实际是服务端 ListVerifications SQL 没 SELECT real_name/id_card_no +
+  合成客户分支写死空串;定位路径:先 SQL 直查权威表确认有数,再 curl 接口看响应字段值,最后才对代码。
