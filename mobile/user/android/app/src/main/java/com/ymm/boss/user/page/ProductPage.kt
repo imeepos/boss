@@ -28,7 +28,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ymm.boss.user.api.OrderApi
 import com.ymm.boss.user.api.ProductApi
 import com.ymm.boss.user.api.toObjList
 import com.ymm.boss.user.ui.AppCard
@@ -50,22 +48,19 @@ import com.ymm.boss.user.ui.PricePill
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.json.JSONObject
-
-private const val DEMO_ADDRESS_ID = "ADDR-001"
 
 // 套餐详情页。视觉基准 designs/product-detail-v1.png:TopBar + 主信息卡 + 规格卡 +
 // 对比卡(含"当前套餐"徽章)+ 合约说明卡 + 底部固定 CTA 通栏按钮。
 // 价格胶囊复用 PricePill,卡片复用 AppCard/CardTitle/CellRow/EmptyState/Notice,Tag 复用 Widgets.kt。
+// CTA:点击"立即办理" → 跳 OrderConfirmScreen 选地址 + Stripe 支付(原逻辑直接 POST /orders
+// 用 DEMO_ADDRESS_ID="ADDR-001",backend portalID 解析失败导致"下单失败,请稍后重试")。
 @Composable
 fun ProductScreen(nav: Nav, id: String) {
     var product by remember { mutableStateOf<JSONObject?>(null) }
     var specs by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var compare by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var err by remember { mutableStateOf("") }
-    var submitErr by remember { mutableStateOf("") }
     LaunchedEffect(id, nav.refreshTick) {
         try {
             val d = ProductApi.detail(id)
@@ -75,31 +70,18 @@ fun ProductScreen(nav: Nav, id: String) {
             err = ""
         } catch (e: Exception) { err = "套餐详情加载失败" }
     }
-    val scope = rememberCoroutineScope()
 
     Box(Modifier.fillMaxSize().background(Palette.bg)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             TopBar("套餐详情", onBack = { nav.pop() })
             if (err.isNotEmpty()) Notice(err, Palette.err)
-            if (submitErr.isNotEmpty()) Notice(submitErr, Palette.err)
             DetailCard(product)
             if (specs.isNotEmpty()) SpecsCard(specs)
             CompareCard(compare, id, nav)
             ContractCard()
             Spacer(Modifier.height(96.dp))
         }
-        CtaBar(
-            product = product,
-            onClick = {
-                submitErr = ""
-                scope.launch {
-                    try {
-                        val o = OrderApi.submit(id, DEMO_ADDRESS_ID)
-                        nav.push(Route.Order(o.optString("orderNo")))
-                    } catch (e: Exception) { submitErr = "下单失败,请稍后重试" }
-                }
-            },
-        )
+        CtaBar(product = product, onClick = { nav.push(Route.OrderConfirm(id)) })
     }
 }
 
