@@ -218,6 +218,8 @@ func (f *fakeBilling) ListPaymentsByCustomer(context.Context, int64) ([]billing.
 	return nil, nil
 }
 func (f *fakeBilling) CreatePayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
+func (f *fakeBilling) PaymentExistsByPayNo(context.Context, string) (bool, error)    { return false, nil }
+func (f *fakeBilling) RecordTopup(context.Context, billing.Payment) (int64, error)   { return 0, nil }
 func (f *fakeBilling) RecordPayment(context.Context, billing.Payment) (int64, error) { return 0, nil }
 func (f *fakeBilling) RecordPaymentWithCoupon(_ context.Context, p billing.Payment) (billing.PaymentReceipt, error) {
 	f.pays = append(f.pays, p)
