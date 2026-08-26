@@ -29,7 +29,21 @@
     if (body !== undefined) opt.body = JSON.stringify(body);
     return fetch(BASE + path, opt).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
+      return r.json().then(function (env) {
+        // 真实 user API 返回 {code, msg, data} 信封;老 demo 页按平铺响应消费
+        // 会拿不到 .items/.currentDue,故在网关层统一拆封,失败时仍把整 envelope
+        // 抛出以便页面按 code 走错误分支。
+        if (env && typeof env === 'object' && 'code' in env) {
+          if (env.code !== 0 && env.code !== 200) {
+            var err = new Error(env.msg || ('API error ' + env.code));
+            err.code = env.code;
+            err.data = env.data;
+            throw err;
+          }
+          return env.data === undefined ? env : env.data;
+        }
+        return env;
+      });
     });
   }
 
