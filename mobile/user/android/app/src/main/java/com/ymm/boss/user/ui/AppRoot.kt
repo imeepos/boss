@@ -25,6 +25,7 @@ import com.ymm.boss.user.page.NotifyScreen
 import com.ymm.boss.user.page.OrderScreen
 import com.ymm.boss.user.page.OrdersScreen
 import com.ymm.boss.user.page.OrderChangeAddressScreen
+import com.ymm.boss.user.page.OrderConfirmScreen
 import com.ymm.boss.user.page.PayResultScreen
 import com.ymm.boss.user.page.PayScreen
 import com.ymm.boss.user.page.ProductScreen
@@ -51,6 +52,7 @@ fun RouteScreen(route: Route, nav: Nav) {
         Route.Home -> UserHomeScreen(nav)
         Route.Products -> ProductsScreen(nav)
         is Route.Product -> ProductScreen(nav, route.id)
+        is Route.OrderConfirm -> OrderConfirmScreen(nav, route.id)
         Route.Orders -> OrdersScreen(nav)
         is Route.Order -> OrderScreen(nav, route.no)
         is Route.Rate -> RateScreen(nav, route.no)

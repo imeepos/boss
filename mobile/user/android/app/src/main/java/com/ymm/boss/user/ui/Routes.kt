@@ -10,6 +10,8 @@ sealed interface Route {
     data object Home : Route
     data object Products : Route
     data class Product(val id: String) : Route
+    /** 订单确认页:套餐确认 + 安装地址选择 + Stripe 支付,productId 进栈后服务端建账并跳 PaymentSheet。 */
+    data class OrderConfirm(val id: String) : Route
     data object Orders : Route
     data class Order(val no: String) : Route
     data class Rate(val no: String) : Route
