@@ -44,15 +44,15 @@ func TestGenerateBills_PeriodIdempotent(t *testing.T) {
 	}
 }
 
-// 边界3:缴费置 PAID 从 UNPAID/OVERDUE 迁移;已 PAID 不重复改账单状态。
+// 边界3:缴费置 PAID 从 UNPAID/OVERDUE 迁移;已 PAID 不重复改账单状态;customer_id 双挂回填。
 func TestRecordPayment_BillPaidTransitionGuard(t *testing.T) {
 	mock, _ := pgxmock.NewPool()
 	defer mock.Close()
-	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(1)).
-		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT customer_id FROM bills`).WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(7)))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO payments`).
-		WithArgs("PAY-B1", int64(1), int64(0), 100.0, "cash", "SUCCESS").
+		WithArgs("PAY-B1", int64(1), int64(7), 100.0, "cash", "SUCCESS").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
 	mock.ExpectExec(`UPDATE bills SET status = 'PAID' WHERE id = .* AND status IN \('UNPAID','OVERDUE'\)`).
 		WithArgs(int64(1)).
@@ -71,15 +71,15 @@ func TestRecordPayment_BillPaidTransitionGuard(t *testing.T) {
 	}
 }
 
-// 边界4:FAILED 缴费不置 PAID。
+// 边界4:FAILED 缴费不置 PAID;customer_id 同样双挂回填。
 func TestRecordPayment_FailedNotMarkPaid(t *testing.T) {
 	mock, _ := pgxmock.NewPool()
 	defer mock.Close()
-	mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(2)).
-		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT customer_id FROM bills`).WithArgs(int64(2)).
+		WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(8)))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO payments`).
-		WithArgs("PAY-B2", int64(2), int64(0), 50.0, "card", "FAILED").
+		WithArgs("PAY-B2", int64(2), int64(8), 50.0, "card", "FAILED").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(12)))
 	// 无 UPDATE bills 期望:出现即 ExpectationsWereMet 失败
 	mock.ExpectCommit()
@@ -92,15 +92,26 @@ func TestRecordPayment_FailedNotMarkPaid(t *testing.T) {
 	}
 }
 
-// 边界6:落账锚定门禁——账单不存在拒收;bill_id/customer_id 双空拒收(防孤儿流水)。
+// 边界6:落账锚定门禁——账单不存在拒收;bill_id/customer_id 双空拒收;双挂不一致拒收。
 func TestRecordPayment_RejectsOrphanPayment(t *testing.T) {
 	t.Run("账单不存在", func(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()
-		mock.ExpectQuery(`SELECT EXISTS`).WithArgs(int64(999)).
-			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+		mock.ExpectQuery(`SELECT customer_id FROM bills`).WithArgs(int64(999)).
+			WillReturnRows(mock.NewRows([]string{"customer_id"}))
 		_, err := NewPGStore(mock).RecordPaymentWithCoupon(context.Background(),
 			Payment{PayNo: "PAY-X", BillID: 999, Amount: 10, Method: "cash"})
+		if !errors.Is(err, ErrForeignKeyViolation) {
+			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+		}
+	})
+	t.Run("双挂不一致", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT customer_id FROM bills`).WithArgs(int64(1)).
+			WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(7)))
+		_, err := NewPGStore(mock).RecordPaymentWithCoupon(context.Background(),
+			Payment{PayNo: "PAY-X", BillID: 1, CustomerID: 99, Amount: 10, Method: "cash"})
 		if !errors.Is(err, ErrForeignKeyViolation) {
 			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
 		}
