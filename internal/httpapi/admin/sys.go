@@ -28,6 +28,10 @@ func registerSysRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/storage-config", requirePerm(a.User, "menu:params"), adminStorageConfigGet(a))
 	g.PUT("/storage-config", requirePerm(a.User, "menu:params"), adminStorageConfigPut(a))
 	g.POST("/storage-config/rotate-secret", requirePerm(a.User, "menu:params"), adminStorageConfigRotateSecret(a))
+
+	// 运维脚本上报通道(cron/巡检/隧道自愈):account 主体 API key 调用,
+	// refType 白名单防脏数据;实现见 ops_notify.go。
+	g.POST("/ops/notify-emit", requirePerm(a.User, "menu:dispatch"), opsNotifyEmitHandler(a))
 }
 
 // sysAuditLogsHandler GET /audit-logs:审计日志(按人/类型/目标类型过滤 + 分页,sys.yaml listAuditLogs)。
