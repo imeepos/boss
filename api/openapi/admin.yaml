@@ -99,6 +99,7 @@ paths:
   /stripe-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1stripe-config~1channel~1test' }
   /storage-config: { $ref: './admin/sys.yaml#/paths/~1storage-config' }
   /storage-config/rotate-secret: { $ref: './admin/sys.yaml#/paths/~1storage-config~1rotate-secret' }
+  /ops/notify-emit: { $ref: './admin/sys.yaml#/paths/~1ops~1notify-emit' }
   /push-config: { $ref: './admin/sys.yaml#/paths/~1push-config' }
   /push-config/{group}: { $ref: './admin/sys.yaml#/paths/~1push-config~1{group}' }
   /push-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1push-config~1channel~1test' }
