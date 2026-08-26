@@ -81,6 +81,11 @@ fun AddressScreen(nav: Nav) {
             page = p
             hasMore = resp.optBoolean("hasMore", false)
             err = ""
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // LaunchedEffect 取消/页面退出 → IO 协程抛 CancellationException 必须重抛，
+            // 否则 friendlyMessage 兜底会把 "The coroutine scope left the composition"
+            // 当成真实错误展示给用户。
+            throw e
         } catch (e: Exception) {
             err = "地址加载失败," + Api.friendlyMessage(e)
         } finally {
