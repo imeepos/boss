@@ -15,6 +15,8 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/billing"
+	"github.com/ymm-001/boss/internal/domain/customer"
+	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/stripe"
@@ -50,7 +52,13 @@ type settleBilling struct {
 func (f *settleBilling) ListBills(context.Context, int64) ([]billing.Bill, error) {
 	return f.bills, nil
 }
-func (f *settleBilling) CreateBill(context.Context, billing.Bill) (int64, error) { return 0, nil }
+func (f *settleBilling) CreateBill(_ context.Context, b billing.Bill) (int64, error) {
+	if b.BillID == 0 {
+		b.BillID = int64(len(f.bills) + 1)
+	}
+	f.bills = append(f.bills, b)
+	return b.BillID, nil
+}
 func (f *settleBilling) GetBill(context.Context, int64) (*billing.Bill, error)   { return nil, nil }
 func (f *settleBilling) ListPayments(context.Context, int64) ([]billing.Payment, error) {
 	return f.pays, nil
@@ -92,6 +100,12 @@ func (f *settleBilling) RefundPayment(_ context.Context, _ int64, _ string) (*bi
 
 // newStripeRouter gw 为 nil 表示通道未配置(无 APIKey → 动态判未配置,发起端点 400)。
 func newStripeRouter(bill billing.BillingService, gw billing.PaymentGateway, wh stripe.Webhook) *gin.Engine {
+	return newStripeRouterFull(bill, gw, wh, nil, nil, nil)
+}
+
+// newStripeRouterFull 支持注入订单(portalOrderStripe* 端点需要);products/order 均可为 nil。
+func newStripeRouterFull(bill billing.BillingService, gw billing.PaymentGateway, wh stripe.Webhook,
+	products []customer.ProductOffer, byNo *order.Order, byNoErr error) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	apiKey := ""
 	if gw != nil {
@@ -102,7 +116,9 @@ func newStripeRouter(bill billing.BillingService, gw billing.PaymentGateway, wh 
 	})
 	a := &app.Application{
 		Customer: &userPortalCustSvc{c: userPortalCust()}, Billing: bill,
-		Portal: portal.NewMemory(), Stripe: dyn,
+		Product: &fakeProduct{list: products},
+		Order:   &fakeOrder{byNo: byNo, byNoErr: byNoErr},
+		Portal:  portal.NewMemory(), Stripe: dyn,
 	}
 	if gw != nil {
 		a.PayGateway = billing.NewPaymentGatewayRegistry(gw)
@@ -285,5 +301,101 @@ func TestStripeWebhookUnattributable(t *testing.T) {
 	w := webhookDo(r, payload, wh.SignPayload([]byte(payload), time.Now()))
 	if w.Code != http.StatusOK || len(bill.created) != 0 || len(bill.recorded) != 0 {
 		t.Fatalf("unattributable resp=%d created=%d recorded=%d", w.Code, len(bill.created), len(bill.recorded))
+	}
+}
+
+// TestOrderStripeIntent 契约:订单收款 intent 端点校验订单归属 + 自动建账 + 派 payNo + 通道就绪;
+// 非归属 404;已取消/已 DONE 409;未配置通道 400;无产品月费 404。
+func TestOrderStripeIntent(t *testing.T) {
+	cust := userPortalCust()
+	ord := &order.Order{ID: 9, OrderNo: "ORD-9", CustomerID: cust.ID, OfferID: 11,
+		LegalEntityID: 1, RegionPath: "root.luzon", Status: "PENDING", BuyMonths: 0,
+		CreatedAt: time.Date(2026, 8, 22, 10, 0, 0, 0, time.Local)}
+	bill := &settleBilling{}
+	gw := &fakeStripeGW{}
+	tok := stripeCustToken(cust.ID)
+
+	// Happy path:订单 PENDING + 产品月费 158 → 元转分 15800;同 period 复用已建账单。
+	r := newStripeRouterFull(bill, gw, stripe.Webhook{Secret: "whsec_x"},
+		[]customer.ProductOffer{{ID: 11, LegalEntityID: 1, Name: "300M 宽带", MonthlyFee: 158.0, Status: "PUBLISHED"}}, ord, nil)
+	w := userPortalDo(r, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-intent", `{}`, tok)
+	code, data := userPortalCode(t, w)
+	if code != int(apitypes.CodeOK) {
+		t.Fatalf("intent resp=%s", w.Body.String())
+	}
+	if data["billNo"] == nil || data["payNo"] == nil || data["clientSecret"] != "pi_t_secret" ||
+		data["orderNo"] != "ORD-9" {
+		t.Fatalf("intent data=%+v", data)
+	}
+	if gw.lastCents != 15800 || gw.lastMeta["bill_no"] == "" ||
+		gw.lastMeta["order_no"] != "ORD-9" || gw.lastMeta["customer_id"] != "7" {
+		t.Fatalf("gw cents=%d meta=%v", gw.lastCents, gw.lastMeta)
+	}
+
+	// DONE 订单 → 409;非归属订单 → 404;通道未配置 → 400;产品不存在 → 404。
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-intent", `{}`, tok)
+	// 此时 bill 已建并被复用,status=UNPAID,所以再次返回 200。改测 DONE:
+	r2 := newStripeRouterFull(&settleBilling{}, gw, stripe.Webhook{Secret: "whsec_x"},
+		[]customer.ProductOffer{{ID: 11, MonthlyFee: 158.0, Status: "PUBLISHED"}},
+		&order.Order{ID: 9, OrderNo: "ORD-9", CustomerID: cust.ID, OfferID: 11, Status: "DONE", CreatedAt: time.Now()}, nil)
+	w = userPortalDo(r2, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-intent", `{}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeConflict) {
+		t.Fatalf("done order resp=%s", w.Body.String())
+	}
+	r3 := newStripeRouterFull(&settleBilling{}, gw, stripe.Webhook{Secret: "whsec_x"}, nil,
+		&order.Order{ID: 9, OrderNo: "ORD-9", CustomerID: cust.ID + 1, OfferID: 11, Status: "PENDING", CreatedAt: time.Now()}, nil)
+	w = userPortalDo(r3, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-intent", `{}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeNotFound) {
+		t.Fatalf("foreign order resp=%s", w.Body.String())
+	}
+	r4 := newStripeRouterFull(&settleBilling{}, nil, stripe.Webhook{Secret: "whsec_x"},
+		[]customer.ProductOffer{{ID: 11, MonthlyFee: 158.0, Status: "PUBLISHED"}}, ord, nil)
+	w = userPortalDo(r4, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-intent", `{}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeInvalidParam) {
+		t.Fatalf("unconfigured gateway resp=%s", w.Body.String())
+	}
+	r5 := newStripeRouterFull(&settleBilling{}, gw, stripe.Webhook{Secret: "whsec_x"},
+		nil, ord, nil) // products=nil → 找不到 offer → 映射 40400
+	w = userPortalDo(r5, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-intent", `{}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeNotFound) {
+		t.Fatalf("no offer resp=%s", w.Body.String())
+	}
+}
+
+// TestOrderStripeCheckout 契约:订单 checkout 端点建账 → 返回 checkoutUrl;非法 URL 42200。
+func TestOrderStripeCheckout(t *testing.T) {
+	cust := userPortalCust()
+	ord := &order.Order{ID: 9, OrderNo: "ORD-9", CustomerID: cust.ID, OfferID: 11,
+		LegalEntityID: 1, RegionPath: "root.luzon", Status: "PENDING", BuyMonths: 0,
+		CreatedAt: time.Date(2026, 8, 22, 10, 0, 0, 0, time.Local)}
+	bill := &settleBilling{}
+	gw := &fakeStripeGW{}
+	tok := stripeCustToken(cust.ID)
+
+	r := newStripeRouterFull(bill, gw, stripe.Webhook{Secret: "whsec_x"},
+		[]customer.ProductOffer{{ID: 11, MonthlyFee: 158.0, Status: "PUBLISHED"}}, ord, nil)
+
+	body := `{"successUrl":"https://app.example/ok","cancelUrl":"https://app.example/cancel"}`
+	w := userPortalDo(r, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-checkout", body, tok)
+	code, data := userPortalCode(t, w)
+	if code != int(apitypes.CodeOK) || data["checkoutUrl"] != "https://checkout.example/cs_t" ||
+		data["sessionId"] != "cs_t" {
+		t.Fatalf("checkout resp=%s", w.Body.String())
+	}
+	if gw.lastCents != 15800 {
+		t.Fatalf("gw cents=%d", gw.lastCents)
+	}
+
+	// 缺省 success/cancel URL:相对路径合法(走 /pay/stripe/done 静态页)。
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-checkout", `{}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeOK) {
+		t.Fatalf("default url resp=%s", w.Body.String())
+	}
+
+	// 非法 URL:42200。
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/orders/ORD-9/stripe-checkout",
+		`{"successUrl":"ftp://bad","cancelUrl":"https://ok"}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeInvalidParam) {
+		t.Fatalf("bad url resp=%s", w.Body.String())
 	}
 }

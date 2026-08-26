@@ -409,3 +409,29 @@ components:
               title: { type: string }
               desc: { type: string }
 
+    StripeIntent:
+      type: object
+      description: 订单收款 Stripe PaymentIntent(原生表单 SDK 入口)。
+      properties:
+        payNo: { type: string, example: 'PAY-20260822-01' }
+        billNo: { type: string }
+        orderNo: { type: string, description: '订单号冗余回传(便于前端交叉对账)' }
+        amount: { type: number, example: 158.0 }
+        clientSecret: { type: string, example: 'pi_xxx_secret' }
+        intentId: { type: string, example: 'pi_xxx' }
+        currency: { type: string, example: php }
+        ephemeralKey: { type: string, description: '可选;PaymentSheet 需 customer 时由服务端签发' }
+        customerId: { type: string, description: '可选;Stripe Customer 标识' }
+        publishableKey: { type: string, description: '可选;PaymentSheet 必传(服务端托管可减少前端耦合)' }
+
+    StripeCheckout:
+      type: object
+      description: 订单收款 Stripe Hosted Checkout(浏览器跳页入口)。
+      properties:
+        payNo: { type: string, example: 'PAY-20260823-01' }
+        billNo: { type: string }
+        orderNo: { type: string }
+        amount: { type: number, example: 158.0 }
+        checkoutUrl: { type: string, format: uri }
+        sessionId: { type: string, example: 'cs_xxx' }
+              desc: { type: string }

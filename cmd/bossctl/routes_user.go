@@ -76,6 +76,8 @@ var userRoutes = []routeEntry{
 	{"POST", "/plans/:planId/cancel", "确认退订拆机"},
 	{"GET", "/orders/:orderNo/rate", "评价详情(待评价订单)"},
 	{"POST", "/orders/:orderNo/rate", "提交服务评价"},
+	{"POST", "/orders/:orderNo/stripe-intent", "订单发起 Stripe 卡收款(返回 clientSecret 交原生表单;账单按订单自动建账,幂等)"},
+	{"POST", "/orders/:orderNo/stripe-checkout", "订单发起 Stripe 托管收银台(免客户端 SDK,前端直接跳 checkoutUrl;落账等回调)"},
 	{"GET", "/products", "产品套餐列表(可按分类过滤)"},
 	{"GET", "/products/:productId", "套餐详情"},
 	{"GET", "/addons", "增值服务(可订购 + 已订购)"},

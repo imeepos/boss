@@ -301,3 +301,61 @@ paths:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
 
+  /orders/{orderNo}/stripe-intent:
+    post:
+      tags: [Order]
+      summary: 订单发起 Stripe 卡收款(返回 clientSecret 交原生表单;账单按订单自动建账,幂等)
+      operationId: createOrderStripeIntent
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                buyMonths: { type: integer, minimum: 0, maximum: 60, default: 0, description: '预缴月数;0=首月按 1 个月月费,>0 按 N 月合计(订单提交时已锁定此处沿用,未传时回退订单值)' }
+      responses:
+        '200':
+          description: 意图已创建(落账等回调)
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/StripeIntent' }
+        '404': { description: 订单不存在或非归属客户 }
+        '409': { description: 订单已收款/已取消,不可发起收款 }
+        '400': { description: Stripe 通道未配置(无密钥)或参数非法 }
+
+  /orders/{orderNo}/stripe-checkout:
+    post:
+      tags: [Order]
+      summary: 订单发起 Stripe 托管收银台(免客户端 SDK,前端直接跳 checkoutUrl;落账等回调)
+      operationId: createOrderStripeCheckout
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                buyMonths: { type: integer, minimum: 0, maximum: 60, default: 0 }
+                successUrl: { type: string, format: uri, description: '可选;缺省走 /pay/stripe/done 静态提示页' }
+                cancelUrl: { type: string, format: uri, description: '可选;缺省走 /pay/stripe/cancel 静态提示页' }
+      responses:
+        '200':
+          description: 会话已创建
+          content:
+            application/json:
+              schema: { $ref: './schemas.yaml#/components/schemas/StripeCheckout' }
+        '404': { description: 订单不存在或非归属客户 }
+        '409': { description: 订单已收款/已取消,不可发起收款 }
+        '400': { description: Stripe 通道未配置(无密钥)或参数非法 }
+

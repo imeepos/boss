@@ -12,7 +12,7 @@ import (
 )
 
 // registerPortalOrderRoutes 客户视角产品/套餐/订单路由入口。
-// 各 handler 拆分于 portal_orders.go / portal_plans.go / portal_addons.go / trade_handlers.go。
+// 各 handler 拆分于 portal_orders.go / portal_orders_stripe.go / portal_plans.go / portal_addons.go / trade_handlers.go。
 func registerPortalOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/products", portalListProducts(a))
 	g.GET("/products/:id", portalProductDetail(a))
@@ -26,6 +26,8 @@ func registerPortalOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/orders/:orderNo/cancel", portalOrderCancel(a))
 	g.POST("/orders/:orderNo/urge", portalOrderUrge(a))
 	g.POST("/orders/:orderNo/change-address", portalOrderChangeAddr(a))
+	g.POST("/orders/:orderNo/stripe-intent", portalOrderStripeIntent(a))
+	g.POST("/orders/:orderNo/stripe-checkout", portalOrderStripeCheckout(a))
 	g.GET("/orders/:orderNo/rate", portalRateGet(a))
 	g.POST("/orders/:orderNo/rate", portalRatePost(a))
 	g.GET("/plans/:planId/cancel", portalPlanCancelPreview(a))
