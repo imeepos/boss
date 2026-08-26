@@ -75,5 +75,7 @@
 | 2026-08-29 | 客户中心审计收尾裁定:实名三表 000059 归一为既定设计+PASS 一致性门禁;乱序 5 单补正+advance 前置守卫;address 288 双四码=0009 生命周期合法;投诉 orderId 维持可空;37 无评价单豁免;验收造数自清理+巡检门禁三通道;核查先查库再接口/行数磁盘余量/并行基线三项流程固化 | adopted/2026-08-29-audit-closeout-rulings.md |
 | 2026-09-03 | 导入权限边界:地址使用 menu:importer,Geo 使用 menu:geo,暂不追加地址双权限 | adopted/2026-09-03-importer-permission-scope.md |
 | 2026-09-03 | 导入任务登记幂等键 clientKey 与下单幂等键 requestId 语义区分(upsert 写入 vs 查询返回,作用域/命名不统一) | adopted/2026-09-03-import-task-idempotency.md |
+| 2026-09-03 | 充值余额是预存(只进不出)不是可用余额;未来接消费需补 portal_wallet_transactions 流水表+CHECK>=0 约束 | adopted/2026-09-03-portal-wallet-balance-semantic.md |
+| 2026-09-03 | 合成客户(隔离空间负数 ID)充值边界:拒绝(走 42200);不动 FK、不建旁路;真实收费场景不覆盖合成客户 | adopted/2026-09-03-synthetic-customer-recharge-boundary.md |
 
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。

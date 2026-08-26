@@ -254,9 +254,17 @@ func portalBalanceGet(a *app.Application) gin.HandlerFunc {
 }
 
 // portalTopup POST /topups:充值入余额(支付通道接入前仅记账;余额/单号已落库)。
+//
+// 合成客户(隔离空间负数 ID,见 2026-09-03-synthetic-customer-recharge-boundary.md)
+// 拒绝充值:`payments.customer_id` 是硬 FK(000068 起,NULL→customers 双向),
+// 负数 ID 在 customers 表无对应行会触发 23503;同时合成客户不在真实收费场景。
 func portalTopup(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
+		if cid <= 0 {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "合成客户不支持充值"})
+			return
+		}
 		var req portalTopupReq
 		if !httpx.BindBody(c, &req) {
 			return
