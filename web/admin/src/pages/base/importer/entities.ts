@@ -187,7 +187,7 @@ export const IMPORT_ENTITIES: EntityDef[] = [
       { key: 'name', required: false, type: 'string' },
     ],
     samples: [
-      { code: 'ODN-DEV-001', kind: 'OLT', prvCode: 'PHL001', cityPrefix: 'MNL', siteNo: 88, parentId: 0, name: '示例核心设备' },
+      { code: 'OLT001', kind: 'OLT', prvCode: 'PHL001', cityPrefix: 'MNL', siteNo: 88, parentId: 0, name: '示例核心设备' },
     ],
   },
   {
