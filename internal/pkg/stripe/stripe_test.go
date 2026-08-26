@@ -79,7 +79,9 @@ func TestCreateCheckoutSession(t *testing.T) {
 		t.Fatalf("session: %+v err=%v", s, err)
 	}
 	for _, want := range []string{"mode=payment", "success_url=https%3A%2F%2Fapp.example%2Fpay%2Fok",
-		"cancel_url=", "unit_amount%5D=9900", "currency%5D=php", "metadata%5Bpay_no%5D=PAY-3", "metadata%5Bbill_no%5D=B-1"} {
+		"cancel_url=", "unit_amount%5D=9900", "currency%5D=php", "metadata%5Bpay_no%5D=PAY-3", "metadata%5Bbill_no%5D=B-1",
+		// 关键:Session 级 metadata 必须同时透传到 PaymentIntent(payment_intent.succeeded 事件只带 PI)
+		"payment_intent_data%5Bmetadata%5D%5Bpay_no%5D=PAY-3", "payment_intent_data%5Bmetadata%5D%5Bbill_no%5D=B-1"} {
 		if !strings.Contains(gotForm, want) {
 			t.Fatalf("form missing %s: %s", want, gotForm)
 		}

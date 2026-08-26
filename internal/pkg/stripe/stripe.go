@@ -82,6 +82,9 @@ type CheckoutSession struct {
 
 // CreateCheckoutSession 创建 Checkout Session(mode=payment);metadata 透传至底层
 // PaymentIntent,支付完成的 payment_intent.succeeded 回调沿用同一落账链路。
+// 注意:Session 级 metadata 不会自动出现在 PaymentIntent 上(payment_intent.succeeded
+// 事件只带 PI 对象),必须同时经 payment_intent_data[metadata][...] 显式透传,
+// 否则 checkout 支付落账链路的 pay_no/bill_no/customer_id 寻址失效(2026-08-26 实测)。
 func (c *Client) CreateCheckoutSession(ctx context.Context, payNo string, amountCents int64,
 	metadata map[string]string, successURL, cancelURL string) (CheckoutSession, error) {
 	form := url.Values{}
@@ -93,8 +96,10 @@ func (c *Client) CreateCheckoutSession(ctx context.Context, payNo string, amount
 	form.Set("line_items[0][price_data][unit_amount]", strconv.FormatInt(amountCents, 10))
 	form.Set("line_items[0][price_data][product_data][name]", "BOSS Bill "+payNo)
 	form.Set("metadata[pay_no]", payNo)
+	form.Set("payment_intent_data[metadata][pay_no]", payNo)
 	for k, v := range metadata {
 		form.Set("metadata["+k+"]", v)
+		form.Set("payment_intent_data[metadata]["+k+"]", v)
 	}
 	body, err := c.postForm(ctx, "/v1/checkout/sessions", form, payNo)
 	if err != nil {
