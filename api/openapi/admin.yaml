@@ -485,3 +485,7 @@ paths:
 
   # ---------- Search(聚合搜索) ----------
   /search: { $ref: './admin/search.yaml#/paths/~1search' }
+
+  # ---------- 实名审核中心(主体证件聚合;由 realname_review.go 暴露) ----------
+  /verifications: { $ref: './admin/customer.yaml#/paths/~1verifications' }
+  /verifications/{subjectType}/{subjectId}/verify: { $ref: './admin/customer.yaml#/paths/~1verifications~1{subjectType}~1{subjectId}~1verify' }
