@@ -113,7 +113,7 @@ func TestPGStore_AppendActivationCallback(t *testing.T) {
 }
 
 func TestPGStore_RetryActivationCallback(t *testing.T) {
-	t.Run("订单已DONE:仅计数", func(t *testing.T) {
+	t.Run("订单已DONE:恢复SUCCESS并计数", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		if err != nil {
 			t.Fatal(err)
@@ -122,11 +122,11 @@ func TestPGStore_RetryActivationCallback(t *testing.T) {
 		mock.ExpectQuery(`SELECT id, order_id, result, retries FROM activation_callbacks`).
 			WithArgs(int64(7)).
 			WillReturnRows(mock.NewRows([]string{"id", "order_id", "result", "retries"}).
-				AddRow(int64(7), int64(9), "SUCCESS", int16(1)))
+				AddRow(int64(7), int64(9), "FAILED", int16(1)))
 		mock.ExpectQuery(`SELECT status FROM orders`).
 			WithArgs(int64(9)).
 			WillReturnRows(mock.NewRows([]string{"status"}).AddRow("DONE"))
-		mock.ExpectExec(`UPDATE activation_callbacks SET retries = retries \+ 1`).
+		mock.ExpectExec(`UPDATE activation_callbacks SET result = 'SUCCESS', retries = retries \+ 1`).
 			WithArgs(int64(7)).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		s := NewPGStore(mock, stubExists{})

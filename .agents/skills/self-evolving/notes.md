@@ -912,3 +912,15 @@
 - 哪个坑浪费了最多时间？①真库演练 .up.sql 忘了文件内含 COMMIT,尾部追加 ROLLBACK 变 no-op——数据提前落进 102,靠幂等 SQL(ON CONFLICT DO NOTHING)才没造成分叉;②真机旧 token 指向已不存在的 customer,保存地址 FK 违约报"服务开小差",排查走了 server 日志才定位不是新代码 bug;③adb input keyevent 111(ESC)会关掉 ModalBottomSheet,收键盘要用 keyevent 4(BACK)且不能在 sheet 层按。
 - 这个 skill 有没有提前警告我？红 #6(真环境验证)方向对了,但"演练含 COMMIT 的迁移必须先 sed 掉 COMMIT 再包 ROLLBACK"没有沉淀;FK 违约排查路径(docker logs boss-server)倒是靠本仓库 oncall 文档快速命中。
 - 重来一次我会怎么做？迁移演练前 `sed '/^COMMIT;$/d' file > /tmp/x.sql && echo ROLLBACK >> /tmp/x.sql`;真机联调先 pm clear 重登,避免吃到上一会话的陈旧 token;Compose sheet 内收键盘一律 BACK。
+
+## 2026-08-27 激活回调闭环(feat/activation-callback-closure)
+
+- 哪个坑浪费了最多时间？依赖 CI 自动部署的假设崩了两次:第一次 push 后 CI 正常跑完;第二次 push 后 gitea-runner 被一堆 release-platform 任务占满,deploy-102 任务(3116)只创建未执行,镜像停在旧 commit,靠轮询容器镜像 sha 才发现"部署没发生"。最后放弃 CI,rsync 源码到 102 手动 docker build+push+compose up,一步到位。另:bossctl 的 user: 前缀映射到 /api/v1,而服务端实际注册 /api/user/v1(CLI 技术债),customer 下单必须拼完整路径 /api/user/v1/orders;ssh 会话里没有 GITHUB_TOKEN(gitea clone 凭据只在 runner 环境),102 上手动 clone 失败。
+- 这个 skill 有没有提前警告我？红 #2a(bundle 验证)方向对但那是前端;后端缺少"部署完成后必须验证运行镜像/迁移版本,而非假设 CI 完成"的红线。recidivism 里没有部署协调教训。
+- 重来一次我会怎么做？推 main 后 30 秒内核对 boss-server 镜像 sha 是否等于最新 commit;若 CI 队列明显拥堵(runner 日志全是别的项目)立即转手动:rsync 源码到 102 + docker build/push + compose up,不干等。bossctl 调 user 端一律写完整路径。
+
+## 2026-08-27 oltsim 设备仿真接入程序(feat/oltsim-device-simulator)
+
+- 哪个坑浪费了最多时间？①102 端口冲突:oltsim 默认 HTTP 8081 被 goproxy 占用,8088 被别的服务占,最后换 18099 才对;②102 的 /tmp 100% 满(runc/psql 全挂)——历史构建残留 boss-build-* 各 2.2G,清了才恢复;③nohup+& 经 ssh 起来后被会话收割,setsid + </dev/null + disown 才脱离;④102 go 1.24.4 但 go.mod 要 1.25,toolchain 自动下载超时,改本地交叉编译(GOOS=linux GOARCH=amd64)传二进制。
+- 这个 skill 有没有提前警告我？教训 5"(改完 curl 验证)"方向对;但"102 端口冲突换端口""/tmp 满了先 df""ssh 起长驻进程用 setsid"都没有沉淀。
+- 重来一次我会怎么做？102 起新服务先 `ss -tln | grep 端口` 查占用,避免盲绑;起长驻进程用 setsid;大文件同步到 /tmp 前先 df 查空间;跨版本编译用本地交叉编译。

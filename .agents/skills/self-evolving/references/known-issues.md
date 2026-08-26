@@ -275,3 +275,4 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 
 **修法**：`catch (e: SpecificFailure)` + `catch (e: Exception)` 双层；Failure 子类型把对应 message 写入 err 文案位。
 
+- 症状: bossctl --server ... call POST user:/orders 返回 404 非 JSON,但服务端确实注册了 /api/user/v1/orders。原因:cmd/bossctl/routes.go 的 portalPrefixes 里 user 前缀 = "/api/v1"(历史遗留),与服务端实际 "/api/user/v1" 不一致;upload_test.go 也固化旧值。修法:调 user 端一律写完整路径,或修 routes.go 前缀。

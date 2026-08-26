@@ -377,3 +377,8 @@ suspend fun current(ctx: Context): Location? {
 - **不要删**（不是自己会话产物）
 - `git worktree remove --force` 跳过清理，保留分支
 - 在 `notes.md` 记录"曾出现 X 残留文件，未清理"
+- CI 拥堵/未触发时的手动部署路径:本地 rsync 源码到 102 /tmp/boss-deploy-src(排除 .git/web 构建产物)→ ssh 上 docker build -t 192.168.0.102:5000/boss/server:<sha> -t ...:latest -f deployments/docker/server.Dockerfile . → docker push 两个 tag → docker rm -f boss-server boss-aaa boss-report → docker-compose -f deployments/docker-compose.102.app.yml -p boss-app up -d --force-recreate --remove-orphans(2026-08-27 实录;gitea clone 的 GITHUB_TOKEN 只在 runner 环境,ssh 会话拿不到)。
+- bossctl 调用户端接口不要用 user: 前缀(CLI 映射 /api/v1,服务端实际 /api/user/v1),直接写完整路径 /api/user/v1/...(2026-08-27 实测 404)。
+- 102 部署新二进制:本地 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build 后 scp,比在 102 编(go.toolchain 自动下载易超时)快且稳(2026-08-27 oltsim 实录)。
+- 102 起长驻进程:setsid 二进制 ... > log 2>&1 < /dev/null & 再 disown,普通 nohup+& 经 ssh 会被会话收割(2026-08-27 实录)。
+- 102 新服务开监听前先 ss -tln 查端口占用,避免撞 goproxy/其他服务;撞了就换高位端口(2026-08-27 oltsim 8081/8088 均被占,18099 才净)。

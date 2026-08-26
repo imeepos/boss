@@ -358,3 +358,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 迁移 .up.sql 上真库演练必须先 sed 删掉文件内 COMMIT 再追加 ROLLBACK,否则"演练"变直接提交(2026-08-26,NCR 物化靠幂等 SQL 兜底无分叉)。
 - ModalBottomSheet 内收起软键盘用 input keyevent 4(BACK);keyevent 111(ESC)会把整个 sheet 关掉,真机自动化断流(2026-08-26)。
 - 真机保存报 50000 先 docker logs boss-server 查 SQLSTATE:FK 违约多半是陈旧 token 指向已删 customer,pm clear 重登即愈,不是新代码 bug(2026-08-26)。
+- 推 main 后部署是否发生必须以 boss-server 运行镜像 sha / schema_migrations 最新版为准去核对,不能假设 CI 已完成;CI runner 被其他项目任务占满时 deploy 任务会只创建不执行(2026-08-27 激活回调闭环,3116 任务未执行)。
