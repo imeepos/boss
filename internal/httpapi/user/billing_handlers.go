@@ -236,10 +236,6 @@ func portalTopup(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
-		if err := a.Portal.AdjustBalance(c.Request.Context(), cid, req.Amount); err != nil {
-			respondErr(c, err)
-			return
-		}
 		payNo, ok := topupRecordPayment(c, a, cid, req)
 		if !ok {
 			return
@@ -256,15 +252,15 @@ type portalTopupReq struct {
 	PayMethod string  `json:"payMethod" binding:"required"`
 }
 
-// topupRecordPayment 充值派单号 + 落缴费流水(bill_id NULL + customer_id 归属,
-// 否则 /payments 与凭证端点查不到);失败已回写响应。
+// topupRecordPayment 充值派单号 + 原子落账(bill_id NULL + customer_id 归属,
+// RecordTopup 同事务增余额;否则 /payments 与凭证端点查不到);失败已回写响应。
 func topupRecordPayment(c *gin.Context, a *app.Application, cid int64, req portalTopupReq) (string, bool) {
 	payNo, err := a.Portal.NextNo(c.Request.Context(), "PAY")
 	if err != nil {
 		respondErr(c, err)
 		return "", false
 	}
-	if _, err := a.Billing.CreatePayment(c.Request.Context(), billing.Payment{
+	if _, err := a.Billing.RecordTopup(c.Request.Context(), billing.Payment{
 		PayNo: payNo, CustomerID: cid, Amount: req.Amount,
 		Method: req.PayMethod, Status: "SUCCESS",
 	}); err != nil {
