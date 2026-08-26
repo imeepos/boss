@@ -45,6 +45,18 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
       .catch((e) => setError(e instanceof Error ? e.message : im.loadFail))
   }
   useEffect(load, [refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+    // Filters are read from the current render when listeners are installed.
+  }, [kind, operator, from, to]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="overflow-x-auto px-4 pb-4">
