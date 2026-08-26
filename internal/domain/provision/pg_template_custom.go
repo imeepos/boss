@@ -23,7 +23,7 @@ func (s *PGStore) UpdateTemplate(ctx context.Context, t Template) error {
 	tag, err := s.db.Exec(ctx, `
 		UPDATE provision_templates SET legal_entity_id=$2, code=$3, name=$4, content=$5::jsonb,
 			version=version+1, status=$6, updated_at=now()
-		WHERE id=$1`, t.ID, t.LegalEntityID, t.Code, t.Name, raw, normalizedStatus(t.Status))
+		WHERE id=$1`, t.ID, t.LegalEntityID, t.Code, t.Name, string(raw), normalizedStatus(t.Status))
 	if err != nil {
 		return fmt.Errorf("provision: update template: %w", err)
 	}
