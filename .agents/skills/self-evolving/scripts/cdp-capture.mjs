@@ -2,12 +2,13 @@
 // cdp-capture: 零依赖网页截图(Node>=22 + macOS 系统 Chrome)。自带 Chrome 启停,全新临时 profile 防状态泄漏。
 // 用法:
 //   node cdp-capture.mjs <url> <out.png> [--eval 'js'] [--settle 2500] [--width 1600] [--height 900]
-//                          [--logs out.json]
+//                          [--logs out.json] [--user-data-dir /tmp/boss-cdp-profile]
 //   --eval 可重复多次,按顺序在页面加载后执行(如填表登录);返回 Promise 会被 await。
 //   --logs 把浏览器 console 输出 + 网络请求(含失败响应体)写成 JSON,截图外补充"为什么"层面的调试信息。
+//   --user-data-dir 指定持久 Chrome profile,多次调用复用 cookie/localStorage;未指定仍用一次性临时 profile。
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -28,8 +29,9 @@ function parseArgs(argv) {
   return args
 }
 
-async function launchChrome(width, height) {
-  const profile = mkdtempSync(join(tmpdir(), 'cdp-shot-'))
+async function launchChrome(width, height, userDataDir) {
+  const profile = userDataDir || mkdtempSync(join(tmpdir(), 'cdp-shot-'))
+  if (userDataDir && !existsSync(userDataDir)) mkdirSync(userDataDir, { recursive: true })
   const proc = spawn(CHROME, [
     '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
     `--window-size=${width},${height}`, 'about:blank',
@@ -124,7 +126,8 @@ async function createCollector(cdp) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  const { proc, profile, port } = await launchChrome(args.width, args.height)
+  const persistentProfile = args['user-data-dir'] || ''
+  const { proc, profile, port } = await launchChrome(args.width, args.height, persistentProfile)
   try {
     const targets = await fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json())
     const page = targets.find((t) => t.type === 'page')
@@ -150,7 +153,7 @@ async function main() {
   } finally {
     proc.kill('SIGTERM')
     await Promise.race([once(proc, 'exit'), sleep(2000)])
-    rmSync(profile, { recursive: true, force: true })
+    if (!persistentProfile) rmSync(profile, { recursive: true, force: true })
   }
 }
 
