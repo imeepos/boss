@@ -78,5 +78,6 @@
 | 2026-09-03 | 充值余额是预存(只进不出)不是可用余额;未来接消费需补 portal_wallet_transactions 流水表+CHECK>=0 约束 | adopted/2026-09-03-portal-wallet-balance-semantic.md |
 | 2026-09-03 | 合成客户(隔离空间负数 ID)充值边界:拒绝(走 42200);不动 FK、不建旁路;真实收费场景不覆盖合成客户 | adopted/2026-09-03-synthetic-customer-recharge-boundary.md |
 | 2026-09-03 | 支付链路收口后续:隧道驻留 + 演示门户 + 缴费口径 + 余额/合成客户 6 项验收收尾汇总(commit 留证 + 102 实测留证) | adopted/2026-09-03-payment-followup-rollout.md |
+| 2026-09-04 | 真实环境证据补录:102 隧道 URL 变化→Stripe endpoint 自愈、用户门户真实登录→4 条缴费记录、bossctl 运维端点冒烟 | adopted/2026-09-04-real-environment-evidence.md |
 
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。
