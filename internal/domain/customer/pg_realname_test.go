@@ -15,18 +15,21 @@ func TestPGStore_ListVerifications(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, subject_id, method, verified_at, result, reject_reason, COALESCE\(operator_account_id, 0\), COALESCE\(operator_name, ''\)`).
+	mock.ExpectQuery(`SELECT id, subject_id, method, COALESCE\(real_name, ''\), COALESCE\(id_card_no, ''\), verified_at, result, reject_reason, COALESCE\(operator_account_id, 0\), COALESCE\(operator_name, ''\)`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{
-			"id", "customer_id", "method", "verified_at", "result", "reject_reason", "operator_account_id", "operator_name",
-		}).AddRow(int64(1), int64(1), "人脸", fixedTime, "PASS", "", int64(3), "张三"))
+			"id", "customer_id", "method", "real_name", "id_card_no",
+			"verified_at", "result", "reject_reason", "operator_account_id", "operator_name",
+		}).AddRow(int64(1), int64(1), "人脸", "张三", "110101199001011234",
+			fixedTime, "PASS", "", int64(3), "李四"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListVerifications(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("ListVerifications: %v", err)
 	}
-	if len(got) != 1 || got[0].Method != "人脸" || got[0].Result != "PASS" || got[0].OperatorName != "张三" {
+	if len(got) != 1 || got[0].Method != "人脸" || got[0].Result != "PASS" ||
+		got[0].OperatorName != "李四" || got[0].RealName != "张三" || got[0].IDCardNo != "110101199001011234" {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
