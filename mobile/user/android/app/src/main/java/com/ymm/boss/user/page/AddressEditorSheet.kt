@@ -242,7 +242,16 @@ private fun CommunityField(value: String, options: List<String>, onChange: (Stri
             placeholder = { Text("请输入小区名", fontSize = 13.sp, color = Palette.subtle) },
             singleLine = true,
             shape = RoundedCornerShape(10.dp),
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            trailingIcon = {
+                if (value.isNotBlank()) {
+                    IconButton(onClick = { onChange(""); expanded = false }) {
+                        Icon(Icons.Outlined.Close, contentDescription = "清除",
+                            tint = Palette.muted, modifier = Modifier.size(18.dp))
+                    }
+                } else {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                }
+            },
             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .padding(bottom = 8.dp),
         )
