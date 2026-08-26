@@ -99,6 +99,14 @@
 
 > 区域硬关联（TS 实体）：楼栋级地址挂 `region_id`（→ regions，经营区域）+ `region_name` 快照，固化「地址→经营区域」映射；客户/资产/端口/LO账号经此继承区域，杜绝「有地址无订单则不知属哪个区域」的孤儿。
 
+#### 1.5.0a 用户端地址树查询（user 端契约 misc.yaml，2026-08-26）
+
+| 页面列名 | 字段名 | 端点/字段 | 说明 |
+|:---------|:-------|:------|:----------|
+| 所在地区 | `AddressPath` | user_addresses.address_path + AddressInfo.addressPath | ltree 字符串，空=历史自由文本地址（迁移 000152） |
+| 子节点列表 | — | GET /address-tree?parentId= | 级联懒加载，返回 AddressNode（id/level/name/hasChildren/锚点） |
+| 全树搜索 | — | GET /address-tree/search?q= | 命中+祖先链，与 admin /addresses/search 同语义 |
+
 ### 1.5.1 geo_country / geo_subdivision（国际地理基础数据，迁移 000038）
 
 > 依据 ISO 3166-1/2 + UN M49 + CLDR；国家主键 = alpha-2，区划主键 = 完整 ISO 3166-2 码；停用码软删除保留。
