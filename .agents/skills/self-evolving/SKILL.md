@@ -22,6 +22,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 7. **【已犯 1 次】禁止假设模型支持图像输入** —— Kimi-k3 不支持图像分析，需要图像分析时应使用专门的工具（如 cdp-capture.mjs + 代码审查）或明确说明"未验证"。
 8. **【已犯 1 次】禁止在未检查环境依赖时使用工具** —— 使用 Playwright/Puppeteer 等工具前必须先检查是否已安装，避免运行时报错浪费时间。
 9. **【已犯 3 次】worktree 收尾 ff-merge 失败时严禁删 worktree + branch -D** —— 并行会话推新 commit → 本地 main 前进 → worktree 分支 ff-merge 失败是常态(diverging 分支)。唯一允许操作:`git rebase main` 在 worktree 内 → 重试 ff-merge;**绝不允许**"`merge` 失败就算没合并上,直接 worktree remove + branch -D"——commit 在 worktree + refs/heads/<branch> 里安全,但 worktree remove 会触发 GC 不可逆丢失。落入此坑 3 次,A2/A4/A5 都丢过 commit;**下次再犯立刻停手重读本文**。
+9a. **【已犯 2 次】禁止经 ssh+psql/嵌套 bash 执行 SQL 时叠引号** —— 外层 bash 把引号吞掉,`-c "..."` 里再叠双引号必报 column does not exist/syntax error(2026-08-26 同会话两连炸);一律 `ssh host 'docker exec -i pg psql -U u -d d' <<'SQL'` 单引号 heredoc 传 stdin,SQL 字符串字面量用单引号。
 
 
 # 上级叮嘱
