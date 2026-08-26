@@ -351,3 +351,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - cloudflared 快速隧道(--url)URL 重启即变:webhook endpoint 需重建,重建步骤写进 adopted note。
 - E2E 造数清理按序:payments(含 bill_id 兜底)->bills->customers->addresses->portal_accounts->portal_sms_codes;孤儿巡检门禁兜底。
 - pgx v5 向 jsonb 列写参时 `[]byte` 默认按 bytea 编码,即使 SQL cast `$4::jsonb` 也报 SQLSTATE 22P02;必须传 `string`(text 编码,`text::jsonb` 合法)——与 import_tasks $7::jsonb+string 成功先例一致,pgxmock 模拟不出该行为,只在真库暴露。
+- 2026-09-04: 102 cron 脚本提交前先在目标机真实路径跑正常/DOWN 两路,本地 shell 通过不代表远端 ROOT/JSON 拼接安全;外发 JSON 字段统一清洗 CR/LF。
+- 2026-09-04: check-contract-sync 的 OpenAPI 路径扫描应按 portal 隔离并同时读取根 manifest 与对应子目录,不能把同行 `$ref` 当作唯一 path 形态。
+- 2026-09-04: cdp-capture 需要跨命令保留登录态时使用 `--user-data-dir`;默认临时 profile 仍保留以防状态泄漏。
