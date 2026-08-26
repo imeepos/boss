@@ -9,4 +9,5 @@ type Config struct {
 	WebhookSecret  string // whsec_...(回调验签)
 	Currency       string // 记账币种小写,如 php
 	APIBaseURL     string // 覆盖官方 API 地址(测试/代理),空=官方
+	WebhookURL     string // 期望回调 URL(隧道快速 URL + webhook 路径;自愈循环比对用)
 }

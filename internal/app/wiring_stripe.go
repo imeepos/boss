@@ -23,6 +23,7 @@ func stripeConfigResolver(lister paramLister, cfg *config.Config) func(context.C
 			WebhookSecret: cfg.Stripe.WebhookSec,
 			Currency:      cfg.Stripe.Currency,
 			APIBaseURL:    cfg.Stripe.APIBaseURL,
+			WebhookURL:    cfg.Stripe.WebhookURL,
 		}
 		list, err := lister.ListParams(ctx)
 		if err != nil {
@@ -60,6 +61,9 @@ func stripeApplyParams(out *stripe.Config, stored map[string]string) {
 	}
 	if v := stored["stripe.apiBaseUrl"]; v != "" {
 		out.APIBaseURL = v
+	}
+	if v := stored["stripe.webhookUrl"]; v != "" {
+		out.WebhookURL = v
 	}
 }
 
