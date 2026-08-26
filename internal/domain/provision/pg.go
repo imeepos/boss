@@ -81,12 +81,16 @@ func (s *PGStore) CreateTemplate(ctx context.Context, t Template) (int64, error)
 	}
 
 	var id int64
-	raw, err := json.Marshal(t.Content)
+	content := t.Content
+	if content == nil {
+		content = map[string]any{}
+	}
+	raw, err := json.Marshal(content)
 	if err != nil {
 		return 0, fmt.Errorf("provision: encode template content: %w", err)
 	}
 	err = s.db.QueryRow(ctx,
-		`INSERT INTO provision_templates(legal_entity_id, code, name, content, version, status) VALUES($1,$2,$3,$4,1,$5) RETURNING id`,
+		`INSERT INTO provision_templates(legal_entity_id, code, name, content, version, status) VALUES($1,$2,$3,$4::jsonb,1,$5) RETURNING id`,
 		t.LegalEntityID, t.Code, t.Name, raw, normalizedStatus(t.Status)).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("provision: create template: %w", err)

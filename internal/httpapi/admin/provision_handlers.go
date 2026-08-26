@@ -32,7 +32,7 @@ func provisionCreateTemplateHandler(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindAndValidate(c, &t, func() error {
 			return httpx.CollectErrors(
 				httpx.RequirePositiveID(t.LegalEntityID, "legalEntityId"),
-				httpx.RequireString(t.Code, "code", 64),
+				httpx.RequireString(t.Code, "code", 32),
 				httpx.RequireString(t.Name, "name", 128),
 				httpx.RequireEnumOrDefault(&t.Status, "status", "ENABLED", "ENABLED", "DISABLED"),
 			)

@@ -49,7 +49,7 @@ func TestPGStore_CreateTemplate(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO provision_templates`).
-		WithArgs(int64(1), "TPL-GPON", "GPON标准开通", []byte(`null`), "ENABLED").
+		WithArgs(int64(1), "TPL-GPON", "GPON标准开通", []byte(`{}`), "ENABLED").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)

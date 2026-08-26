@@ -5,7 +5,7 @@ components:
       required: [legalEntityId, code, name]
       properties:
         legalEntityId: { type: integer, format: int64, minimum: 1 }
-        code: { type: string, maxLength: 64 }
+        code: { type: string, maxLength: 32 }
         name: { type: string, maxLength: 128 }
         content: { type: object, description: 配置内容 JSON }
         status: { type: string, enum: [ENABLED, DISABLED], default: ENABLED }

@@ -39,6 +39,7 @@ func TestRespondErrMapping(t *testing.T) {
 		{user.ErrRoleNotFound, apitypes.CodeInvalidParam},
 		{user.ErrFKViolation, apitypes.CodeInvalidParam},
 		{ErrGeoInvalidParam, apitypes.CodeInvalidParam},
+		{provision.ErrForeignKeyViolation, apitypes.CodeInvalidParam},
 		{user.ErrNotFound, apitypes.CodeNotFound},
 		{resource.ErrNotFound, apitypes.CodeNotFound},
 		{asset.ErrNotFound, apitypes.CodeNotFound},

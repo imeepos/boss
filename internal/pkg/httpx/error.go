@@ -53,6 +53,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, customer.ErrForeignKeyViolation),
 		errors.Is(err, quadlink.ErrForeignKeyViolation),
 		errors.Is(err, worker.ErrForeignKeyViolation),
+		errors.Is(err, provision.ErrForeignKeyViolation),
 		errors.Is(err, backup.ErrInvalidInput),
 		errors.Is(err, order.ErrInvalidInput),
 		errors.Is(err, ErrGeoInvalidParam),
