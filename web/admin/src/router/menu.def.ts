@@ -25,6 +25,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'pushconfig', label: '推送配置', path: '/base/pushconfig' },
     { key: 'crashlogs', label: '崩溃日志', path: '/base/crashlogs' },
     { key: 'realidconfig', label: '实名核验配置', path: '/base/realidconfig' },
+    { key: 'realname-review', label: '实名审核中心', path: '/base/realname-review' },
     { key: 'stripeconfig', label: '支付配置', path: '/base/stripeconfig' },
     { key: 'storageconfig', label: 'MinIO 存储配置', path: '/base/storageconfig' },
     { key: 'servers', label: '服务端配置', path: '/base/servers' },

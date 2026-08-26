@@ -886,6 +886,31 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 000059 起本表并入统一 `verifications`（subject_type='customer'）；000070 起新增上表三列。
 > 2026-08-24 起支持阿里云二要素自动核验：通道配置后提交即判定，结论记录 operator_name=「阿里云二要素」、operator_account_id=0；通道未配置/调用失败保持 PENDING 走人工核验（adopted/2026-08-24-realid-channel-aliyun-cloudauth.md）。
 
+### 7.7 实名审核中心（admin 页面 `/base/realname-review`，迁移 000149，菜单码 `menu:realname-review`）
+
+> 横跨 customer/worker 两类主体的待办与历史轨迹聚合列表（既有 `/customers/:id/real-name/*`、`/workers/:workerId/real-name/*` 是单主体核验端点；本页面提供"批量扫一眼"的运营视角）。
+
+`verifications`（`/verifications` 列表聚合，`subjectType`/`result`/`keyword` 过滤，`page`/`pageSize` 分页，最大 100/页）：
+
+| 字段名 | DB 列 / 来源 | 说明 |
+|:------|:-------------|:-----|
+| `subjectType` | `verifications.subject_type` | `customer` \| `worker` |
+| `subjectId` | `verifications.subject_id` | 软引用 customers.id / workers.id |
+| `subjectName` | `customers.name` / `workers.name` | LEFT JOIN 快照，孤儿行回退空串 |
+| `subjectPhone` | `customers.phone` / `workers.phone` | 同上 |
+| `idCardNoMasked` | `verifications.id_card_no` | 后端按"首 4 尾 2 中间 \*\*\*"规则掩码 |
+| `realName` | `verifications.real_name` | 申报实名（核验基准） |
+| `method` | `verifications.method` | 人脸/证件OCR/人工/第三方/自助提交 |
+| `result` | `verifications.result` | PENDING / PASS / FAIL |
+| `rejectReason` | `verifications.reject_reason` | FAIL 时填写 |
+| `verifiedAt` | `verifications.verified_at` | ISO8601 字符串 |
+| `operatorName` | `verifications.operator_name` | 核验人姓名快照（"阿里云二要素" 等自动通道也算） |
+| `idCardFrontId` / `idCardBackId` | `verifications.id_card_front_id` / `id_card_back_id` | 软引用 attachments.id（000070），0=未传 |
+
+> 行内核验：`POST /verifications/:subjectType/:subjectId/verify` body `{result: PASS|FAIL, reason?}`。
+> 仅作用于 PENDING 行；PASS 复用既有 `customers.real_name_status=VERIFIED` 同步与主档证件号一致性门禁（`internal/domain/customer/pg_onboarding.go:guardRealNameIdentity`）；师傅端不写 `real_name_status`（worker 主档无该字段）。
+> 权限 `menu:realname-review`：sysadmin 全权；其余角色不授，与既有 `menu:realidconfig`（基础配置·实名核验配置）同级。
+
 ## 8B. Q1 客服与应收信用基础（internal/domain/cs + internal/domain/ar，000118）
 
 > CS 扩展既有 `complaints` 工单；AR 扩展既有 `arrears` 快照。跨域只保存稳定 ID，不复制订单、客户、账单、资源或告警事实。
