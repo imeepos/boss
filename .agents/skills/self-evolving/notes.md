@@ -826,3 +826,26 @@
   之后手工 psql 一分钟定位。skill 顶部红线 9a 已警告,还是踩了第三遍;教训:查询返空先手工 psql 复核,别急着给功能定性。
 - skill 有没有提前警告:cdp-capture 模型不支持看图(红线 7)有用,第一时间改 CDP 驱动;ssh 引号(9a)警告过但没形成肌肉记忆。
 - 重来一次:验收脚本的 DB 查询一律 heredoc 传 stdin;Stripe checkout 先查 PI metadata 再断言落账;cdp 驱动先探测 frame 结构再填表。
+
+## 2026-08-26 套餐详情"立即办理"对接 Stripe(后端端点 + Android OrderConfirm)
+
+- 哪个坑浪费最多时间:开场违反"禁止主分支修改"红线——直接在主工作树编辑 api/openapi/user/{order,schemas}.yaml,
+  `git status` 一查才发现 2 个 modified,立即 `git checkout` 回退并 `git apply` 进 worktree。
+  应在 worktree 创建后**所有 edit/write/bash 都显式 workdir**,不能依赖默认 cwd。
+  另一坑:Android SDK 缺 JAVA_HOME / ANDROID_HOME,build 失败两轮才配好
+  (/opt/homebrew/opt/openjdk@17 + share/android-commandlinetools);应在第一次 gradle 前先自检。
+- skill 有没有提前警告:red-line #11 警告过,这次首犯。AGENTS.md 明确禁止主分支修改,
+  也明确要求对接 102 部署地址而非本地起服务——本次均遵守,后端真机测试走 SSH psql + 直连 102 接口。
+- 重来一次:① 开新 worktree 后**所有命令显式 workdir**;② 后端编辑分两步走契约(YAML)与代码(Go),
+  先 gen-bossctl-routes 再写 handler;handler 直接引用既有 portalStripeAcquire 复用支付网关就绪逻辑;
+  ③ Android 第一次 gradle 调用前先 export JAVA_HOME + ANDROID_HOME;④ Stripe Android SDK 21.19.0
+  接入 PaymentSheet(rememberPaymentSheet deprecated 但仍可用),客户端 clientSecret 由后端
+  /orders/{orderNo}/stripe-intent 返回;⑤ 工作量拆分按"后端端点→Android 路由→Android SDK→Android 新页"
+  逐项 commit,message 含机理(why)而非仅描述(what);⑥ 收尾走 worktree 协议四步:
+  push 分支 → ff-merge → worktree remove → branch -d + push --delete;
+  ⑦ 端到端未联调(需 102 真部署 + Stripe webhook 配 whsec + 测试卡),仅本机代码+单测验证,
+  留给用户/QA 在 102 验收。
+- 交付:后端 /orders/{orderNo}/{stripe-intent,stripe-checkout} 两个新端点(契约+handler+测试+routes_user.go),
+  Android 新页 OrderConfirmScreen(套餐+地址选择+Stripe PaymentSheet),
+  ProductScreen 跳 OrderConfirm 替代直接 submit,Stripe Android SDK 21.19.0 依赖,
+  PageRenderTest 加 OrderConfirm 冒烟;7 个 commit 按 feature 拆开,主工作树干净,worktree 已清理。
