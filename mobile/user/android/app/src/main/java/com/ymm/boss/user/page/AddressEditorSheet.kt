@@ -3,9 +3,6 @@ package com.ymm.boss.user.page
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,12 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -57,6 +53,8 @@ import org.json.JSONObject
  * 新增/编辑地址底部弹窗。
  * 顶部"使用当前位置"按钮：拿 GPS → 把"GPS: N, E"预填到门牌号（可改）。
  * 小区输入带历史下拉（recentCommunities 调用方注入），减少重复输入。
+ * 真机拒绝过一次定位权限后，再次点按钮会先弹 rationale 对话框解释用途，
+ * 用户同意后再走 permissionLauncher（否则系统不再弹权限框）。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +67,7 @@ fun AddressEditorSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val activity = context as? android.app.Activity
 
     var community by remember { mutableStateOf(initial?.optString("community").orEmpty()) }
     var building by remember { mutableStateOf(initial?.optString("building").orEmpty()) }
@@ -78,18 +77,38 @@ fun AddressEditorSheet(
     var err by remember { mutableStateOf("") }
     var locationHint by remember { mutableStateOf("") }
     var locating by remember { mutableStateOf(false) }
+    var rationaleVisible by remember { mutableStateOf(false) }
     val communityOptions = remember(recentCommunities, community) {
         recentCommunities.filter { it.isNotBlank() && it != community }.distinct()
     }
+
+    fun launchLocation() = doLocate(
+        context, scope,
+        setLocating = { locating = it },
+        setHint = { locationHint = it },
+        setDoor = { door = it },
+    )
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { granted ->
         val ok = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (ok) doLocate(context, scope, setLocating = { locating = it },
-            setHint = { locationHint = it }, setDoor = { door = it })
-        else { err = "未授予定位权限"; locationHint = "" }
+        if (ok) launchLocation() else { err = "未授予定位权限"; locationHint = "" }
+    }
+
+    fun startPermissionFlow() {
+        // Activity 上报：true 表示用户拒绝过且未勾"不再询问"；此时直接再 launch
+        // 系统不会再弹窗，必须先 rationale。
+        if (activity != null && activity.shouldShowRequestPermissionRationale(
+                Manifest.permission.ACCESS_FINE_LOCATION)) {
+            rationaleVisible = true
+        } else {
+            permissionLauncher.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            ))
+        }
     }
 
     ModalBottomSheet(
@@ -105,15 +124,8 @@ fun AddressEditorSheet(
                 hint = locationHint,
                 onClick = {
                     err = ""
-                    if (LocationProvider.hasPermission(context)) {
-                        doLocate(context, scope, setLocating = { locating = it },
-                            setHint = { locationHint = it }, setDoor = { door = it })
-                    } else {
-                        permissionLauncher.launch(arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION,
-                        ))
-                    }
+                    if (LocationProvider.hasPermission(context)) launchLocation()
+                    else startPermissionFlow()
                 },
             )
             Spacer(Modifier.height(8.dp))
@@ -155,6 +167,26 @@ fun AddressEditorSheet(
             Spacer(Modifier.height(8.dp))
         }
     }
+
+    if (rationaleVisible) {
+        AlertDialog(
+            onDismissRequest = { rationaleVisible = false },
+            title = { Text("需要定位权限") },
+            text = { Text("获取当前位置用于把经纬度填入门牌号参考，地址仍可手动修改。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    rationaleVisible = false
+                    permissionLauncher.launch(arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                    ))
+                }) { Text("继续") }
+            },
+            dismissButton = {
+                TextButton(onClick = { rationaleVisible = false }) { Text("暂不开启") }
+            },
+        )
+    }
 }
 
 private fun doLocate(
@@ -177,36 +209,6 @@ private fun doLocate(
         } finally {
             setLocating(false)
         }
-    }
-}
-
-@Composable
-private fun LocateAction(locating: Boolean, hint: String, onClick: () -> Unit) {
-    val border = if (hint.isNotBlank()) Palette.primary else Palette.line
-    Row(
-        Modifier.fillMaxWidth()
-            .background(Palette.panel, RoundedCornerShape(10.dp))
-            .border(1.dp, border, RoundedCornerShape(10.dp))
-            .clickable(enabled = !locating, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            Icons.Outlined.MyLocation, contentDescription = "定位",
-            tint = Palette.primary, modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                if (locating) "正在获取位置…" else "使用当前位置",
-                fontSize = 13.sp, fontWeight = FontWeight.W500, color = Palette.ink,
-            )
-            if (hint.isNotBlank()) {
-                Text(hint, fontSize = 11.5.sp, color = Palette.muted,
-                    modifier = Modifier.padding(top = 2.dp))
-            }
-        }
-        if (locating) Text("…", fontSize = 14.sp, color = Palette.primary)
     }
 }
 
