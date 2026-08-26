@@ -255,18 +255,25 @@ private fun CommunityField(value: String, options: List<String>, onChange: (Stri
             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .padding(bottom = 8.dp),
         )
-        if (options.isEmpty()) {
-            DropdownMenuItem(
-                text = { Text("暂无历史小区", fontSize = 13.sp, color = Palette.muted) },
-                onClick = { expanded = false },
-                enabled = false,
-            )
-        } else {
-            options.forEach { item ->
+        // 必须在 ExposedDropdownMenuBoxScope 内调用 ExposedDropdownMenu，否则
+        // DropdownMenuItem 会渲染到 anchor 里（真机已重现 placeholder 跟"暂无历史小区"重叠）。
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            if (options.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text(item, fontSize = 13.sp, color = Palette.ink) },
-                    onClick = { onChange(item); expanded = false },
+                    text = { Text("暂无历史小区", fontSize = 13.sp, color = Palette.muted) },
+                    onClick = { expanded = false },
+                    enabled = false,
                 )
+            } else {
+                options.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(item, fontSize = 13.sp, color = Palette.ink) },
+                        onClick = { onChange(item); expanded = false },
+                    )
+                }
             }
         }
     }
