@@ -3,6 +3,7 @@ package userapi
 // 用户端门户 Billing 域:handler 实现(billing.go 仅留路由表 + 数据视图)。
 
 import (
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -144,7 +145,12 @@ func recordDurationGift(c *gin.Context, a *app.Application, cid int64, req porta
 	return rule.GiftMonths
 }
 
-// portalListPayments GET /payments:我的缴费记录(缴费+充值,按客户聚合)。
+// portalListPayments GET /payments:我的缴费记录(默认仅 SUCCESS,
+// ?include=failed,refunded 时把 FAILED/REFUNDED 一并返回)。
+//
+// 业务口径(terms.md §4 payment.status 枚举):SUCCESS 是对用户有意义的"缴费完成"事件;
+// FAILED 仅留痕待人工排查,REFUNDED 由财务侧冲账,不向终端用户展示默认列表。
+// 状态字段无论是否过滤都回传,便于前端识别"被过滤掉"的项。
 func portalListPayments(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
@@ -153,18 +159,37 @@ func portalListPayments(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		includeFailed := strings.Contains(c.Query("include"), "failed")
+		includeRefunded := strings.Contains(c.Query("include"), "refunded")
 		periodByBill := portalBillPeriods(a, c, cid)
 		items := make([]gin.H, 0, len(pays))
 		for _, p := range pays {
+			if p.Status != billing.PaymentStatusSuccess && !portalPaymentIncluded(p, includeFailed, includeRefunded) {
+				continue
+			}
 			items = append(items, gin.H{
 				"payNo": p.PayNo, "amount": p.Amount,
 				"period":    portalPaymentPeriod(p, periodByBill),
 				"payMethod": p.Method,
 				"paidAt":    time.Now().Format(time.RFC3339),
+				"status":    p.Status,
 			})
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": items})
 	}
+}
+
+// portalPaymentIncluded 失败/退款类流水在 include 标志下的可见性判定。
+// includeFailed=false 时 FAILED 一律不展示(免用户误解为已缴费);
+// includeRefunded=false 时 REFUNDED 不展示(财务冲账流程不向终端用户解释)。
+func portalPaymentIncluded(p billing.Payment, includeFailed, includeRefunded bool) bool {
+	switch p.Status {
+	case billing.PaymentStatusFailed:
+		return includeFailed
+	case billing.PaymentStatusRefunded:
+		return includeRefunded
+	}
+	return true
 }
 
 // portalBillDetail GET /bills/:billNo:我的账单明细(按客户过滤)。

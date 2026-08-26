@@ -20,6 +20,14 @@ type Bill struct {
 	Status          string  `json:"status"` // UNPAID/PAID/OVERDUE
 }
 
+// 缴费流水 Payment 状态枚举(对齐 terms.md §4 payment.status)。
+// 命名空间前缀 PaymentStatusXxx 避免与其他域(Coupon/Arrears...)冲突。
+const (
+	PaymentStatusSuccess  = "SUCCESS"  // 缴费/充值成功,落到余额或账单勾销
+	PaymentStatusFailed   = "FAILED"   // 通道失败,仅留痕不动账,排查用
+	PaymentStatusRefunded = "REFUNDED" // 已退款(财务侧冲账),不影响余额正向入账
+)
+
 // Payment 缴费/充值流水(充值无账单,bill_id 为 NULL → BillID=0)。
 type Payment struct {
 	ID         int64   `json:"id"`

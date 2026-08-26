@@ -69,11 +69,21 @@ paths:
 
     get:
       tags: [Billing]
-      summary: 缴费记录
+      summary: 缴费记录(默认仅 SUCCESS;FAILED/REFUNDED 经 ?include=failed,refunded 才回传)
+      description: |
+        默认按业务口径仅返回 SUCCESS(terms.md §4 payment.status):
+        FAILED 仅留痕排查用,REFUNDED 由财务冲账——都不向终端用户默认展示。
+        调试或工单排查可经 ?include=failed,refunded 显式带回,状态字段原样回传。
       operationId: listPayments
+      parameters:
+        - name: include
+          in: query
+          schema:
+            type: string
+          description: '逗号分隔,可填 failed / refunded;默认空=仅 SUCCESS'
       responses:
         '200':
-          description: 缴费记录
+          description: 缴费记录(按 include 过滤)
           content:
             application/json:
               schema:

@@ -221,12 +221,14 @@ components:
 
     PaymentRecord:
       type: object
+      description: 缴费/充值流水行;默认仅 SUCCESS,FAILED/REFUNDED 经 include 才回传。
       properties:
         payNo: { type: string }
         amount: { type: number }
         period: { type: string }
         payMethod: { type: string }
         paidAt: { type: string }
+        status: { type: string, enum: [SUCCESS, FAILED, REFUNDED], description: 流水状态(terms.md §4) }
 
     Receipt:
       type: object

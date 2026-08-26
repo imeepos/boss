@@ -564,6 +564,11 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 退款原因 | `RefundReason` | refund_reason | 000112 全额退款留痕,未退为空 |
 | 退款时间 | `RefundedAt` | refunded_at | 000112;可空,退款时落 now() |
 
+> **门户缴费记录口径**(2026-09-03 收口):用户端 `GET /api/user/v1/payments` 默认仅返回
+> `Status=SUCCESS`,FAILED 仅留痕排查、REFUNDED 由财务冲账——都不向终端用户默认展示。
+> 调试或工单排查经 `?include=failed,refunded` 显式带回,`status` 字段原样回传以便前端
+> 识别被过滤项。admin `GET /api/admin/v1/payments` 不在此限,继续全量回传(财务审计需要)。
+
 > 000068 起 payments 同时挂 `bill_id`(可空) 与 `customer_id`：账单缴费走 bill，充值类流水仅挂 customer；
 > 存量行已回填 customer_id（取 bill.customer_id）。2026-08-30 收口：落账源头
 > `RecordPaymentWithCoupon` 强制双挂——账单流水按 bill 回填 customer_id、显式传错客户拒收，
