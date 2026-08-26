@@ -175,3 +175,26 @@ func TestParseEvent(t *testing.T) {
 		t.Fatalf("event: %+v", ev)
 	}
 }
+
+// TestProbeBalance 自检探活:2xx 通过;4xx/5xx 报错带状态。
+func TestProbeBalance(t *testing.T) {
+	status := 200
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if status == 200 {
+			w.Write([]byte(`{"available":[]}`))
+			return
+		}
+		w.WriteHeader(status)
+		w.Write([]byte(`{"error":{"message":"invalid api_key"}}`))
+	}))
+	defer srv.Close()
+
+	c := &Client{APIKey: "sk_test_x", BaseURL: srv.URL, HTTP: srv.Client()}
+	if err := c.ProbeBalance(context.Background()); err != nil {
+		t.Fatalf("probe 200: %v", err)
+	}
+	status = 401
+	if err := c.ProbeBalance(context.Background()); err == nil {
+		t.Fatal("probe 401 should error")
+	}
+}

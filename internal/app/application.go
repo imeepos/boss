@@ -94,11 +94,11 @@ type Application struct {
 	// ReconAuto 自动对账编排(渠道源注册表 ReconSources);admin POST /reconciliations/auto。
 	ReconAuto    *billing.AutoReconciler
 	ReconSources *billing.ChannelSourceRegistry
-	// PayGateway 支付渠道网关注册表(Stripe 卡收单);nil/未注册=模拟直落账(现状)。
+	// PayGateway 支付渠道网关注册表(Stripe 卡收单);动态网关,配置驱动(DB/env,60s 热生效)。
 	PayGateway *billing.PaymentGatewayRegistry
-	// StripeWebhook Stripe 回调验签上下文;密钥未配置时 webhook 端点直接 503。
-	StripeWebhook stripe.Webhook
-	Tax           billing.TaxService
+	// Stripe Stripe 卡收单动态配置;未配置/未启用时发起端点 400、webhook 503 降级。
+	Stripe *stripe.Dynamic
+	Tax    billing.TaxService
 	// TaxGateway 税局网关注册表(CN 数电票/PH BIR eIS);nil=全人工模式(回填票号)。
 	TaxGateway *billing.TaxGatewayRegistry
 

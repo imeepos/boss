@@ -110,6 +110,26 @@ func (c *Client) CreateCheckoutSession(ctx context.Context, payNo string, amount
 func toStr(v any) string { s, _ := v.(string); return s }
 func toInt(v any) int64  { f, _ := v.(float64); return int64(f) }
 
+// ProbeBalance 凭据自检:GET /v1/balance 2xx 即密钥可用(零副作用,后台配置页用)。
+func (c *Client) ProbeBalance(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		strings.TrimRight(c.BaseURL, "/")+"/v1/balance", nil)
+	if err != nil {
+		return fmt.Errorf("stripe: probe: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+c.APIKey)
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return fmt.Errorf("stripe: probe: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<16))
+		return fmt.Errorf("stripe: probe status %d: %s", resp.StatusCode, truncate(body))
+	}
+	return nil
+}
+
 // postForm 发 form-encoded POST 并读响应体;非 2xx 返回带状态码与正文的错误。
 func (c *Client) postForm(ctx context.Context, path string, form url.Values, idemKey string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.BaseURL, "/")+path,

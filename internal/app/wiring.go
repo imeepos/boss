@@ -188,7 +188,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	if cfg.HostCtl.URL != "" && cfg.HostCtl.HMACKey != "" {
 		app.HostCtl = hostctl.New(cfg.HostCtl.URL, cfg.HostCtl.HMACKey)
 	}
-	wireStripe(app, cfg) // 卡收单通道:密钥齐备才注册(见 wiring_stripe.go)
+	wireStripe(app, usr, cfg) // 卡收单通道:配置驱动(DB/env,60s 热生效,见 wiring_stripe.go)
 
 	// 阶段9:经营分析 + 自动报告。
 	reportStore := report.NewPGStore(pool)

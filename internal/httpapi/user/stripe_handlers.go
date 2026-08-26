@@ -78,9 +78,13 @@ func portalStripeIntent(a *app.Application) gin.HandlerFunc {
 
 // portalStripeAcquire 通道就绪 + 派单 payNo(checkout/intent 共用前置);失败已回写响应。
 func portalStripeAcquire(c *gin.Context, a *app.Application, cid int64, billNo string) (billing.PaymentGateway, string, bool) {
+	if a.Stripe == nil || !a.Stripe.Configured(c.Request.Context()) {
+		respond(c, apitypes.CodeInvalidParam, nil) // 通道未配置(无密钥/未启用)
+		return nil, "", false
+	}
 	gw := a.PayGateway.Get("stripe")
 	if gw == nil {
-		respond(c, apitypes.CodeInvalidParam, nil) // 通道未配置(无密钥)
+		respond(c, apitypes.CodeInvalidParam, nil) // 兜底:动态网关缺席
 		return nil, "", false
 	}
 	payNo, ok := stripeAcquirePayNo(a, c, cid, billNo)
@@ -113,16 +117,21 @@ func stripeAcquirePayNo(a *app.Application, c *gin.Context, cid int64, billNo st
 // 已存在同 payNo 流水直接 200(渠道重投幂等);失败返回 4xx 让 Stripe 重试。
 func stripeWebhook(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if a.StripeWebhook.Secret == "" {
+		secret := ""
+		if a.Stripe != nil {
+			secret = a.Stripe.WebhookSecret(c.Request.Context())
+		}
+		if secret == "" {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "stripe webhook not configured"})
 			return
 		}
+		wh := stripe.Webhook{Secret: secret}
 		payload, err := io.ReadAll(io.LimitReader(c.Request.Body, 1<<20))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "read body"})
 			return
 		}
-		if err := a.StripeWebhook.Verify(payload, c.GetHeader("Stripe-Signature")); err != nil {
+		if err := wh.Verify(payload, c.GetHeader("Stripe-Signature")); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

@@ -77,12 +77,19 @@ func (f *settleBilling) RefundPayment(_ context.Context, _ int64, _ string) (*bi
 	return nil, nil
 }
 
-// newStripeRouter gw 为 nil 表示通道未配置(空注册表)。
+// newStripeRouter gw 为 nil 表示通道未配置(无 APIKey → 动态判未配置,发起端点 400)。
 func newStripeRouter(bill billing.BillingService, gw billing.PaymentGateway, wh stripe.Webhook) *gin.Engine {
 	gin.SetMode(gin.TestMode)
+	apiKey := ""
+	if gw != nil {
+		apiKey = "sk_test_x"
+	}
+	dyn := stripe.NewDynamic(func(context.Context) (stripe.Config, error) {
+		return stripe.Config{Enabled: true, APIKey: apiKey, WebhookSecret: wh.Secret, Currency: "php"}, nil
+	})
 	a := &app.Application{
 		Customer: &userPortalCustSvc{c: userPortalCust()}, Billing: bill,
-		Portal: portal.NewMemory(), StripeWebhook: wh,
+		Portal: portal.NewMemory(), Stripe: dyn,
 	}
 	if gw != nil {
 		a.PayGateway = billing.NewPaymentGatewayRegistry(gw)
