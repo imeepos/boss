@@ -6,9 +6,11 @@ import (
 )
 
 // ListVerifications 列出实名核验记录;customerID=0 返回全部。
+// 读回 real_name/id_card_no 给前端脱敏回显(合成客户没 customers 主档,nameMasked 兜底从核验单拿)。
 func (s *PGStore) ListVerifications(ctx context.Context, customerID int64) ([]RealNameVerification, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT id, subject_id, method, verified_at, result, reject_reason,
+		SELECT id, subject_id, method, COALESCE(real_name, ''), COALESCE(id_card_no, ''),
+		       verified_at, result, reject_reason,
 		       COALESCE(operator_account_id, 0), COALESCE(operator_name, '')
 		FROM verifications
 		WHERE subject_type = 'customer' AND ($1::bigint = 0 OR subject_id = $1)
@@ -20,8 +22,8 @@ func (s *PGStore) ListVerifications(ctx context.Context, customerID int64) ([]Re
 	out := make([]RealNameVerification, 0)
 	for rows.Next() {
 		var v RealNameVerification
-		if err := rows.Scan(&v.ID, &v.CustomerID, &v.Method, &v.VerifiedAt, &v.Result,
-			&v.RejectReason, &v.OperatorAccountID, &v.OperatorName); err != nil {
+		if err := rows.Scan(&v.ID, &v.CustomerID, &v.Method, &v.RealName, &v.IDCardNo,
+			&v.VerifiedAt, &v.Result, &v.RejectReason, &v.OperatorAccountID, &v.OperatorName); err != nil {
 			return nil, fmt.Errorf("customer: scan verification: %w", err)
 		}
 		out = append(out, v)

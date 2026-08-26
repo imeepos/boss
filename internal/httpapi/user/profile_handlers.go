@@ -29,31 +29,35 @@ func portalVerifyStatusPayload(c *gin.Context, a *app.Application, cid int64) gi
 	for k, v := range latest {
 		payload[k] = v
 	}
-	// 优先从 customers 主档取,合成客户(隔离空间)回退 portal_accounts
+	// 优先从 customers 主档取,合成客户(隔离空间)回退 portal_accounts + 最近一次核验单的姓名/证件号。
 	if v, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
 		status = v.RealNameStatus
 		payload["nameMasked"] = portalMaskName(v.Name)
 		payload["idNoMasked"] = portalMaskIDNo(v.IdNo)
 		payload["phoneMasked"] = portalMaskPhone(v.Phone)
 	} else {
-		// 合成客户:从 portal_accounts 取手机号
-		phone := portalCustomerPhone(c.Request.Context(), a, cid)
-		payload["phoneMasked"] = portalMaskPhone(phone)
-		payload["nameMasked"] = ""
-		payload["idNoMasked"] = ""
+		// 合成客户:姓名/证件号取最近一次核验单(没提交过则为空),手机号取 portal_accounts。
+		payload["nameMasked"] = portalMaskName(latest["realName"].(string))
+		payload["idNoMasked"] = portalMaskIDNo(latest["idCardNo"].(string))
+		payload["phoneMasked"] = portalMaskPhone(portalCustomerPhone(c.Request.Context(), a, cid))
 	}
 	payload["status"] = status
 	return payload
 }
 
-// portalVerifyRecords 核验记录列表 + 最新一单(latest.*)。
+// portalVerifyRecords 核验记录列表 + 最新一单(latest.*);real_name/id_card_no 仅兜底合成客户的 nameMasked/idNoMasked,不入 items 避免明文泄露。
 func portalVerifyRecords(records []customer.RealNameVerification) ([]gin.H, gin.H) {
 	items := make([]gin.H, 0, len(records))
-	latest := gin.H{"latestResult": "", "submitTime": "", "rejectReason": ""}
+	latest := gin.H{
+		"latestResult": "", "submitTime": "", "rejectReason": "",
+		"realName": "", "idCardNo": "",
+	}
 	for _, r := range records {
 		items = append(items, gin.H{"method": r.Method, "time": r.VerifiedAt, "result": r.Result, "reason": r.RejectReason})
 		latest["latestResult"] = r.Result
 		latest["submitTime"] = r.VerifiedAt
+		latest["realName"] = r.RealName
+		latest["idCardNo"] = r.IDCardNo
 		if r.Result == customer.RealNameFail {
 			latest["rejectReason"] = r.RejectReason
 		}
