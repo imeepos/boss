@@ -8,14 +8,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	udcustomer "github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
 // ---- Misc 域 ----
 
-// registerPortalMiscRoutes Misc 域:首页聚合/消息/优惠券/地址/用量/自助排障/协议。
+// registerPortalMiscRoutes Misc 域:首页聚合/消息/优惠券/用量/自助排障/协议。
+// 家庭地址路由见 registerPortalAddressRoutes,本函数保持单文件 ≤300 行。
 func registerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/home", portalHome(a))
 	g.GET("/messages", portalListMessages(a))
@@ -25,8 +25,7 @@ func registerPortalMiscRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/coupons", portalListCoupons(a))
 	g.POST("/coupons/redeem", portalRedeemCoupon(a))
 	g.POST("/coupons/:couponId/gift", portalGiftCoupon(a))
-	g.GET("/addresses", portalListAddresses(a))
-	g.POST("/addresses", portalCreateAddress(a))
+	registerPortalAddressRoutes(g, a)
 	g.GET("/usage", portalUsage)
 	g.GET("/diy/steps", portalDiySteps)
 	g.GET("/agreement", portalAgreement)
@@ -107,63 +106,7 @@ func portalListCouponsInvite(c *gin.Context, a *app.Application) string {
 	return toStr(cfg[0]["inviteLink"])
 }
 
-// portalListAddresses GET /addresses:我的家庭地址(契约 AddressInfo)。
-func portalListAddresses(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		rows, err := a.UserData.ListUserAddresses(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		items := make([]gin.H, 0)
-		for _, r := range rows {
-			if toInt64(r["customerId"]) != cid {
-				continue
-			}
-			items = append(items, gin.H{
-				"addressId": toStr(r["id"]), "label": toStr(r["detail"]),
-				"isDefault": r["isDefault"], "contact": toStr(r["contact"]),
-				"phoneMasked": httpx.MaskPhone(toStr(r["phone"])),
-				"community":   toStr(r["addrCode"]), "building": "", "door": "",
-			})
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": items})
-	}
-}
-
-// portalCreateAddress POST /addresses:新增家庭地址(user_addresses 落库)。
-func portalCreateAddress(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cid, _ := requireCustomer(c)
-		var req struct {
-			Community string `json:"community" binding:"required"`
-			Building  string `json:"building"`
-			Door      string `json:"door"`
-			Contact   string `json:"contact" binding:"required"`
-			Phone     string `json:"phone"`
-		}
-		if !httpx.BindBody(c, &req) {
-			return
-		}
-		phone := req.Phone
-		if phone == "" {
-			if cust, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
-				phone = cust.Phone
-			}
-		}
-		if _, err := a.UserData.CreateUserAddress(c.Request.Context(), udcustomer.UserAddress{
-			CustomerID: cid, AddrCode: req.Community,
-			Contact: req.Contact, Phone: phone,
-			Detail:    req.Community + " " + req.Building + " " + req.Door,
-			IsDefault: false,
-		}); err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
-	}
-}
+// portalListAddresses GET /addresses?page=&pageSize= 已迁出至 portal_address.go。
 
 func portalListMessages(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -27,9 +27,20 @@ object ProfileApi {
     suspend fun setLanguage(language: String): JSONObject =
         Api.put("/profile/language", JSONObject().put("language", language))
 
-    suspend fun addresses(): JSONObject = Api.get("/addresses")
+    /** 分页拉取家庭地址(契约 misc.yaml /addresses,后端返回 page/pageSize/total/hasMore)。 */
+    suspend fun addresses(page: Int = 1, pageSize: Int = 20): JSONObject =
+        Api.get("/addresses" + Api.qs(
+            mapOf("page" to page.toString(), "pageSize" to pageSize.toString())
+        ))
 
     suspend fun createAddress(payload: JSONObject): JSONObject = Api.post("/addresses", payload)
+
+    suspend fun updateAddress(addressId: String, payload: JSONObject): JSONObject =
+        Api.put("/addresses/$addressId", payload)
+
+    /** 删除家庭地址;后端 404 → Api.HttpError(40400),页面据此区分"已被删除/已撤回"。 */
+    suspend fun deleteAddress(addressId: String): JSONObject =
+        Api.delete("/addresses/$addressId")
 
     suspend fun readAllMessages(): JSONObject = Api.post("/messages/read-all")
 

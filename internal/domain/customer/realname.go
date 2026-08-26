@@ -9,9 +9,9 @@ import (
 type RealNameVerification struct {
 	ID                int64     `json:"id"`
 	CustomerID        int64     `json:"customerId"`
-	Method            string    `json:"method"` // 人脸/证件OCR/人工/第三方
-	RealName          string    `json:"realName"`   // 提交时填写的姓名(回显/脱敏用)
-	IDCardNo          string    `json:"idCardNo"`   // 提交时填写的身份证号(同上)
+	Method            string    `json:"method"`   // 人脸/证件OCR/人工/第三方
+	RealName          string    `json:"realName"` // 提交时填写的姓名(回显/脱敏用)
+	IDCardNo          string    `json:"idCardNo"` // 提交时填写的身份证号(同上)
 	VerifiedAt        time.Time `json:"verifiedAt"`
 	Result            string    `json:"result"`            // PASS通过/FAIL不通过
 	RejectReason      string    `json:"rejectReason"`      // FAIL 时的驳回原因
