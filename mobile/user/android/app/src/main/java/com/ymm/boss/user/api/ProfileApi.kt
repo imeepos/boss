@@ -42,6 +42,14 @@ object ProfileApi {
     suspend fun deleteAddress(addressId: String): JSONObject =
         Api.delete("/addresses/$addressId")
 
+    /** 地址层级树子节点(parentId=0 顶层),级联选择逐层懒加载;契约 misc.yaml /address-tree。 */
+    suspend fun addressTree(parentId: Long = 0): List<JSONObject> =
+        Api.get("/address-tree?parentId=$parentId").optJSONArray("items").toObjectList()
+
+    /** 地址全树搜索(命中+祖先链);q 空串会被后端 42200 拒绝,调用方自行拦截。 */
+    suspend fun addressTreeSearch(q: String): List<JSONObject> =
+        Api.get("/address-tree/search" + Api.qs(mapOf("q" to q))).optJSONArray("items").toObjectList()
+
     suspend fun readAllMessages(): JSONObject = Api.post("/messages/read-all")
 
     /**
