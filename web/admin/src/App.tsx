@@ -22,6 +22,7 @@ const SmsConfigPage = lazy(() => import('./pages/base/smsconfig'))
 const PushConfigPage = lazy(() => import('./pages/base/pushconfig'))
 const CrashLogsPage = lazy(() => import('./pages/base/crashlogs'))
 const RealIDConfigPage = lazy(() => import('./pages/base/realidconfig'))
+const StripeConfigPage = lazy(() => import('./pages/base/stripeconfig'))
 const StorageConfigPage = lazy(() => import('./pages/base/storageconfig'))
 const ServersPage = lazy(() => import('./pages/base/servers'))
 const AuditPage = lazy(() => import('./pages/base/audit'))
@@ -121,6 +122,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'pushconfig') return <PushConfigPage />
   if (pageKey === 'crashlogs') return <CrashLogsPage />
   if (pageKey === 'realidconfig') return <RealIDConfigPage />
+  if (pageKey === 'stripeconfig') return <StripeConfigPage />
   if (pageKey === 'storageconfig') return <StorageConfigPage />
   if (pageKey === 'servers') return <ServersPage />
   if (pageKey === 'audit') return <AuditPage />

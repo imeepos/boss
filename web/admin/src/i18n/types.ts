@@ -1817,6 +1817,39 @@ export interface Translations {
       testOk: string
       testFail: string
     }
+    stripeconfig: {
+      title: string
+      desc: string
+      edit: string
+      chTitle: string
+      whTitle: string
+      enabledReady: string
+      disabled: string
+      pending: string
+      apiKey: string
+      apiKeyHint: string
+      publishableKey: string
+      publishableKeyHint: string
+      currency: string
+      currencyHint: string
+      apiBaseUrl: string
+      apiBaseUrlHint: string
+      webhookSecret: string
+      webhookSecretHint: string
+      secretSet: string
+      envNote: string
+      testBtn: string
+      testing: string
+      testOk: string
+      testFail: string
+      testHint: string
+      save: string
+      saving: string
+      saved: string
+      saveFail: string
+      loadFail: string
+      retry: string
+    }
     pushconfig: {
       title: string
       desc: string
