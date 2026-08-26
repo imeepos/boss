@@ -90,5 +90,5 @@
 
 | 磁盘余量耗尽时把 go test 的 build failed 当代码错误排查 | 1 | 2026-09-01(13G go-build 缓存占满,make check test 阶段全 build failed,重跑 2 次才归因 ENOSPC) | 先 df -h + go clean -cache 再谈代码 |
 | make check 与 git rebase 并发执行,gate 结果作废 | 1 | 2026-09-01(测试运行中 rebase 改写工作区,重跑 gate 才有效) | 任何会改写工作区的操作与 gate 严格串行 |
-| ssh+psql/嵌套 bash 执行 SQL 时叠引号,外层 bash 吞掉 → column does not exist / syntax error | 2 | 2026-08-26(清理 PAY-12 双引号被当标识符), 2026-08-26(checkout 探针内联 bash -c 双引号全炸) | 一律 `psql ... <<'SQL'` 单引号 heredoc 传 stdin;SQL 字面量单引号,绝不在 -c 字符串里叠双引号 |
+| ssh+psql/嵌套 bash 执行 SQL 时叠引号,外层 bash 吞掉 → column does not exist / syntax error / 查询静默返空 | 3 | 2026-08-26(清理 PAY-12 双引号被当标识符), 2026-08-26(checkout 探针内联 bash -c 双引号全炸), 2026-08-26(webhook 验收脚本 db() 用 -c 包 SQL,查询返空误判'未落账',实为引号被吞) | 一律 `psql ... <<'SQL'` 单引号 heredoc 传 stdin;SQL 字面量单引号,绝不在 -c 字符串里叠双引号;查询返空先手工 psql 复核再下'功能坏'结论 |
 | 隧道/代理身份未验证就断言指向目标服务 | 1 | 2026-08-26(cf-stripe 实指 release-platform-integration-api,401 文案 grep 不到) | 用前三验:/healthz 返回体 + 未配置端点降级特征 + 错误文案仓库 grep 命中 |

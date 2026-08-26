@@ -217,3 +217,16 @@
 ## 症状: /auth/sms-code 或注册 42200 参数非法
 - 原因: 短信通道对 phone 做 E.164 归一化,当前仅支持 +86/+60 区号(Region() 决定),639xxx 等其他开头被拒。
 - 修法: 测试用 138 开头的 11 位中国手机号;新市场需 internal/pkg/sms 的 Region() 追加区号并配通道。
+
+## 症状: Stripe Checkout 支付成功但 payment_intent.succeeded 事件 metadata 为空 → settle 静默跳过
+- 原因: Checkout Session 上的 metadata(如 pay_no/bill_no/customer_id)不会自动出现在底层 PaymentIntent
+  上,payment_intent.succeeded 事件只带 PI 对象,寻址字段全空,webhook 返回 200 但不落账(静默失效)。
+- 修法: `CreateCheckoutSession` 表单同时写 `payment_intent_data[metadata][key]` 才透传;Session 级
+  metadata 保留双保险。验签层查 Stripe: `GET /v1/payment_intents?created[gte]=...` 看 PI metadata。
+- 排查线索: webhook 200 但无新 payments 行 → 查 Stripe PI 的 metadata 是否为空。
+
+## 症状: docs/user 静态演示页列表全空(locale.js 语法错 + 信封不匹配)
+- 原因: ① docs/user/locale.js 被模板片段污染(~30 行 ×3 语区,如 `'user.profile.text11': '在用'' : '...`)js 解析挂;
+  ② 13 个 demo 页都写 `d.items`(平铺响应),真实 user API 返回 `{code,data:{items},msg}` 信封。
+- 修法: demo 页消费处改 `(d.data||d).items`;locale.js 需按语区重建被污染键。此系既有 demo 缺口
+  (domain-map PORT 待完善),与支付链路本身无关;真实门户客户端(Android)按信封消费正常。

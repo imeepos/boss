@@ -51,3 +51,11 @@
 - 症状与 2026-09-22 会话记录完全一致:deploy-102 run 1716-1741 连续 5 秒内死于 Clone 后,日志只剩首尾行,docs-only run 同样失败。
 - 本次新增动作:重启 gitea-runner 容器(上次未尝试);重启后本条 push 触发的 run 结果见 gitea UI。
 - 服务恢复方式同上次:ssh 102 手动复刻 CI 步骤(clone/build/push/compose up),boss-server 已更新至 c683a55b。
+
+## docs/user 静态演示门户与真实 user API 信封不匹配 + locale.js 污染(2026-08-26 支付验收发现)
+
+- **信息不准｜demo 页消费平铺响应**:docs/user 全部 13 个页面写 `d.items`(如 bills.html:49 / pay.html:47-58),
+  真实 user API 返回 `{code,data:{items},msg}` 信封 → 浏览器列表全空。修法:消费处改 `(d.data||d).items`。
+- **信息缺失｜locale.js 模板污染**:docs/user/locale.js 约 30 行被 JS 模板片段污染(如 `'user.profile.text11': '在用'' : ''tag-gray">未用'') + ''',`
+  ×3 语区,js 解析直接挂(locale.js 加载后 window.L 为 undefined)。需按语区重建被污染键的值。
+- 影响:web 演示门户不可用;不影响 Android 用户端(按信封消费)。属 domain-map「PORT 待完善」既有项,非支付链路缺陷。

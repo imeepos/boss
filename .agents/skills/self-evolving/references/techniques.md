@@ -324,3 +324,9 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - python/脚本插入结构化块(i18n/JSON/TS)时,锚点只包含"上一块块尾闭合行+下一键名",绝不把上一块的正文尾部行(如 testOk/testFail)带进锚点,否则整块插进上一块内部、闭合乱序;插完立刻 typecheck/渲染校验。
 - 动态配置(Dynamic 类)缓存策略:先缓存配置本身,客户端按需懒建;与客户端构造无关的取值(如 WebhookSecret)不得被"缺主凭据"短路,否则误伤 webhook 路径。
 - cdp-capture 注入 SPA 登录态:模块启动(localStorage 读取)先于 eval,直接 setItem 无效;须 eval 里先写 localStorage 再 location.href 重载到目标页,二次加载后才带 token。
+- Stripe 托管收银台浏览器级测试驱动:cdp-capture 截图看不到时,写 CDP 脚本按 execution context 逐 frame
+  evaluate(跨域 iframe 也能填):`Runtime.enable` 收集 executionContextCreated(frameId→contextId),对
+  js.stripe.com 或 checkout.stripe.com 顶层 frame 用原生 setter+input 事件填 cardNumber/cardExpiry/
+  cardCvc(测试卡 4242...),找 Pay 按钮 click,轮询 location.href 落出 checkout 域即支付成功。
+  注意 checkout URL 的 #hash fragment 不能截断(截断报 CheckoutInitError)。
+- Page.navigate 到完全相同的 URL 是 no-op(不重载脚本);要强制重载加 query 参数或 Page.reload。

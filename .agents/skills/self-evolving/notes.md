@@ -819,3 +819,10 @@
 - skill 有没有提前警告:red-line #2 手工 edit 前必读;python 脚本幂等有教训,但"锚点特异性/只锚块尾闭合行"没有专门条目,本轮复现同型(先例:lessons 里替换脚本锚点特异性)。
 - 重来一次:① 插结构化块(JSON/i18n/TS)锚点只取"块尾闭合行 + 下一键名"且两块合一定位后先渲染校验;② Dynamic 类配置缓存先缓存配置、按需懒建客户端(WebhookSecret 等无客户端依赖项单独可取);③ cdp-capture 注入登录态需先写 localStorage 再 location.href 重载(模块启动即读 token),直接注入无效。
 - 交付:stripe.Dynamic 动态配置(60s 热更,env 兜底)、admin /stripe-config 三端点+菜单权限 000147+openapi+bossctl、前端支付配置页(三语+图标)、fields.md §1.6.9+adopted note;102 实测 DB 源支付闭环四路径全过、页面 API 200、无报错;两轮 CI 部署验证。
+
+## 2026-08-26 支付链路健壮性收口(P0-1/P0-2/P1-1/P1-2/P2-1/P2-2)
+
+- 哪个坑浪费最多时间:ssh+psql `-c` 叠引号——webhook 验收脚本 db() 查询返空,误判"落账失败"约 20 分钟,
+  之后手工 psql 一分钟定位。skill 顶部红线 9a 已警告,还是踩了第三遍;教训:查询返空先手工 psql 复核,别急着给功能定性。
+- skill 有没有提前警告:cdp-capture 模型不支持看图(红线 7)有用,第一时间改 CDP 驱动;ssh 引号(9a)警告过但没形成肌肉记忆。
+- 重来一次:验收脚本的 DB 查询一律 heredoc 传 stdin;Stripe checkout 先查 PI metadata 再断言落账;cdp 驱动先探测 frame 结构再填表。
