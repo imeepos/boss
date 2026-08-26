@@ -316,3 +316,8 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 场景 → 用 python 往现有 TS/Go 文件插入字段/实体,防重复执行污染。
 怎么用 → 每处插入先查标记:`if '  uniqueKey?: string[]' not in s:` 才插;每个 kind 块用 `if marker not in s.split(kind_line)[1].split('  {')[0]: continue` 防重;结尾打印 `s.count(标记)` 断言插入次数正确。写完立即 `git diff --stat | wc -l` + `wc -l <file>` 确认单次增量(本次死循环:输出每次都是 "entities ok",但文件从 140→1388 行)。
 - Stripe 测试环境:webhook endpoint 可用 sk 直接调 POST /v1/webhook_endpoints 创建(url+enabled_events),whsec 创建响应一次返回;确认 PaymentIntent 需 return_url(账号启用重定向支付方式时);排查隧道时先验后端身份(/healthz + 未配置 webhook 的 503 特征),容器名不可信。
+- 隧道后端身份三验:① /healthz 返回体;② 未配置端点的降级特征(如 stripe webhook 未配置=503 {"error":"stripe webhook not configured"});③ 401/错误文案在仓库 grep 是否命中——不命中即非自家服务。
+- Stripe webhook endpoint 重建(REST,免 OAuth/CLI):POST /v1/webhook_endpoints(url=隧道+回调路径,enabled_events[]=payment_intent.succeeded/payment_intent.payment_failed)→ 响应 secret 即新 whsec;旧错路径 endpoint 可 DELETE。
+- PaymentIntent API confirm 遇 400 要求 return_url:账号启用重定向型支付方式所致;测试确认卡加 `-d "return_url=https://example.com/pay-done"`。
+- psql 经 ssh/嵌套 bash 执行 SQL:引号会被外层吃掉,`-c "..."` 里叠双引号必炸(column does not exist/syntax error);一律 `ssh host 'docker exec -i pg psql -U u -d d' <<'SQL' ... SQL` 单引号 heredoc 传 stdin,SQL 字符串字面量用单引号。
+- portal E2E 客户映射套路:注册(合成负 id) → 查 live customers 必填列 → 建真实 customers 行 → UPDATE portal_accounts SET customer_id → 密码模式重登拿真实 id token。

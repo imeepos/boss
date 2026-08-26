@@ -344,3 +344,9 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 给数组(如 IMPORT_ENTITIES)加元素后,toEqual 断言会因"插入位置与测试预期顺序不一致"失败:新增元素要么按现有顺序插入,要么同步改测试期望顺序(看 diff 的 -/+ 定谁错)。
 - 加域方法会把文件顶过 300 行红线(contract-sync C 项):写前 `wc -l`,超了压缩空行或换文件。
 - 大段手改后跑 `gofmt -l <file>`,非空就 `gofmt -w`,再 build(空白被脚本合并后 gofmt 会补齐)。
+- 隧道/代理容器名不可信:先验后端身份(/healthz + 未配置端点的降级特征),再注册回调或断言连通。
+- Stripe webhook endpoint 凭 sk 用 REST 建(POST /v1/webhook_endpoints),whsec 创建时一次返回、随 endpoint 长期有效。
+- 账号启用重定向支付方式时,API confirm PaymentIntent 必须带 return_url,否则 400。
+- portal 注册给合成负 id 不在 customers 表;支付/账单 E2E 先建真实 customers 行再 UPDATE portal_accounts 改指 + 密码重登。
+- cloudflared 快速隧道(--url)URL 重启即变:webhook endpoint 需重建,重建步骤写进 adopted note。
+- E2E 造数清理按序:payments(含 bill_id 兜底)->bills->customers->addresses->portal_accounts->portal_sms_codes;孤儿巡检门禁兜底。

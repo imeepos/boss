@@ -195,3 +195,25 @@
 - 症状:deploy-102 全部 run 5 秒内死于 Clone 后,run 日志(zst)丢失全部中间步骤输出;build/push/compose 手动执行全过;重启 gitea-runner 无效。
 - 原因:act_runner 0.2.11 run 日志流丢失(工具 bug);真实失败=workflow 脚本 `$(docker images | grep | head -1)` 在 pipefail 下的 SIGPIPE 竞态(exitcode 141),本地镜像 tag 累积增多后必现。
 - 修法:① 定位:runner config.yaml level 改 debug → docker logs gitea-runner 看步骤名+exitcode(排查完调回 info);② 根治:管道尾加 `|| true`(c2a2df61);③ 预防:pipefail 脚本禁裸 `| head -N`。
+
+## 症状: Stripe confirm 返回 400 "This PaymentIntent is configured to accept payment methods enabled in your Dashboard..."
+- 原因: 测试账号启用了重定向型支付方式(Dashboard 配置),API 直接 confirm 未带 return_url 被拒。
+- 修法: confirm 请求带 `return_url=...`;或建 intent 时设置 `automatic_payment_methods[enabled]=true` + `allow_redirects=never`(仅当允许降级非重定向方式时才需要后者)。
+- 排查线索: 400 body 的 error.message 含 "provide a `return_url`"。
+
+## 症状: cloudflared 快速隧道打到别的服务(返回的 401/JSON 文案非本仓库所有)
+- 原因: 隧道容器名(`cf-stripe`)不保证指向 boss-server;其 `--url http://api:8080` 在所属网络里解析到
+  release-platform-integration-api(另一项目),返回别家 401 文案。
+- 修法: 建新隧道容器挂目标项目网络(如 boss-app)用服务名 `--url http://server:8080`;用前先验后端身份
+  (/healthz + 未配置端点降级特征,见 techniques)。
+- 排查线索: 响应的 error code/文案在仓库 grep 不到 = 不是自己的服务。
+
+## 症状: 门户注册成功但返回 customerId=-1,账单插入报 bills_customer_id_fkey
+- 原因: portal 注册走合成客户空间(portal_seq 负数 id,000057),不在 customers 表;而 bills/payments 硬 FK 指向 customers。
+- 修法: E2E 先建真实 customers 行(注意 customer_code/legal_entity_id/address_id 等必填列,查 live 表防迁移漂移),
+  再 UPDATE portal_accounts 把 phone 改指该 id,密码模式重登拿新 token。
+- 排查线索: `SELECT customer_id FROM portal_accounts WHERE phone=...` 看符号是否负数。
+
+## 症状: /auth/sms-code 或注册 42200 参数非法
+- 原因: 短信通道对 phone 做 E.164 归一化,当前仅支持 +86/+60 区号(Region() 决定),639xxx 等其他开头被拒。
+- 修法: 测试用 138 开头的 11 位中国手机号;新市场需 internal/pkg/sms 的 Region() 追加区号并配通道。
