@@ -36,28 +36,29 @@ func portalVerifyStatusPayload(c *gin.Context, a *app.Application, cid int64) gi
 		payload["idNoMasked"] = portalMaskIDNo(v.IdNo)
 		payload["phoneMasked"] = portalMaskPhone(v.Phone)
 	} else {
-		// 合成客户:姓名/证件号取最近一次核验单(没提交过则为空),手机号取 portal_accounts。
-		payload["nameMasked"] = portalMaskName(latest["realName"].(string))
-		payload["idNoMasked"] = portalMaskIDNo(latest["idCardNo"].(string))
+		// 合成客户:脱敏姓名/证件号取最近一次核验单(latest 已脱敏),手机号取 portal_accounts。
+		payload["nameMasked"] = latest["nameMasked"].(string)
+		payload["idNoMasked"] = latest["idNoMasked"].(string)
 		payload["phoneMasked"] = portalMaskPhone(portalCustomerPhone(c.Request.Context(), a, cid))
 	}
 	payload["status"] = status
 	return payload
 }
 
-// portalVerifyRecords 核验记录列表 + 最新一单(latest.*);real_name/id_card_no 仅兜底合成客户的 nameMasked/idNoMasked,不入 items 避免明文泄露。
+// portalVerifyRecords 核验记录列表 + 最新一单(latest.*全部为可外发值)。
+// nameMasked/idNoMasked 已脱敏,供合成客户兜底回显;永不携带明文 realName/idCardNo。
 func portalVerifyRecords(records []customer.RealNameVerification) ([]gin.H, gin.H) {
 	items := make([]gin.H, 0, len(records))
 	latest := gin.H{
 		"latestResult": "", "submitTime": "", "rejectReason": "",
-		"realName": "", "idCardNo": "",
+		"nameMasked": "", "idNoMasked": "",
 	}
 	for _, r := range records {
 		items = append(items, gin.H{"method": r.Method, "time": r.VerifiedAt, "result": r.Result, "reason": r.RejectReason})
 		latest["latestResult"] = r.Result
 		latest["submitTime"] = r.VerifiedAt
-		latest["realName"] = r.RealName
-		latest["idCardNo"] = r.IDCardNo
+		latest["nameMasked"] = portalMaskName(r.RealName)
+		latest["idNoMasked"] = portalMaskIDNo(r.IDCardNo)
 		if r.Result == customer.RealNameFail {
 			latest["rejectReason"] = r.RejectReason
 		}
