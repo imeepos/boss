@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons)
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.exifinterface)
     implementation(libs.stripe.android)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

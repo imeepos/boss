@@ -9,6 +9,7 @@ junit = "4.13.2"
 junitExt = "1.2.1"
 espressoCore = "3.6.1"
 securityCrypto = "1.1.0-alpha06"
+exifInterface = "1.3.7"
 stripe = "21.19.0"
 
 [libraries]
@@ -26,6 +27,7 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifInterface" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 stripe-android = { group = "com.stripe", name = "stripe-android", version.ref = "stripe" }

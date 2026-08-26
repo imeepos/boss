@@ -1,6 +1,9 @@
 package com.ymm.boss.user.page
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -41,12 +44,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
+import com.ymm.boss.user.api.Api
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import kotlin.math.max
 
 // 单面上传状态:待上传(虚线+相机) / 上传中(进度) / 已上传(预览+绿对勾) / 失败(红标,点击重试)。
 private enum class UploadState { IDLE, UPLOADING, DONE, FAILED }
+
+// 长边压到该值以下:JPEG q=80 输出,身份证照片通常 < 500KB,远低于任何中间件限制
+// (公网反代 nginx 默认 client_max_body_size 1m,debug 包走的公网路径曾因此抛 413)。
+private const val MAX_EDGE_PX = 1600
+private const val JPEG_QUALITY = 80
+private const val MAX_BYTES = 32_000_000
 
 // Screen2 证件上传:拍摄要点 + 人像面/国徽面上传卡 + 提交认证(两面完成前禁用)。
 @Composable
@@ -86,13 +98,13 @@ internal fun RNUploadStep(
     }
 }
 
-/** 上传卡:自持状态机;选图→上传→DONE 回调附件 id;失败可点击重选。 */
+/** 上传卡:自持状态机;选图→压缩→上传→DONE 回调附件 id;失败可点击重选。 */
 @Composable
 private fun UploadCard(label: String, modifier: Modifier = Modifier, onUploaded: (Long) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var state by remember { mutableStateOf(UploadState.IDLE) }
-    var preview by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var preview by remember { mutableStateOf<Bitmap?>(null) }
     var hint by remember { mutableStateOf("") }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -147,30 +159,100 @@ private fun UploadCard(label: String, modifier: Modifier = Modifier, onUploaded:
     }
 }
 
-/** 读图(降采样预览+原始字节)→ POST /attachments/upload;结果回推状态机。 */
+/** 选图→读字节→压缩→上传;IOException 等中间件层错误(nginx 413)走 Api.friendlyMessage 统一映射。 */
 private fun startUpload(
     scope: kotlinx.coroutines.CoroutineScope,
-    context: android.content.Context, uri: Uri,
-    onResult: (UploadState, android.graphics.Bitmap?, Long, String) -> Unit,
+    context: Context, uri: Uri,
+    onResult: (UploadState, Bitmap?, Long, String) -> Unit,
 ) {
     scope.launch {
         onResult(UploadState.UPLOADING, decodePreview(context, uri), 0, "")
         try {
             val id = withContext(Dispatchers.IO) {
-                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    ?: throw IllegalStateException("读取图片失败")
-                if (bytes.size > 32_000_000) throw IllegalStateException("图片超过 32MB 上限")
-                AccountApi.uploadAttachment("idcard.jpg", "image/jpeg", bytes).optLong("id", 0L)
+                val compressed = compressForUpload(context, uri)
+                    ?: throw IllegalStateException("图片处理失败")
+                if (compressed.size > MAX_BYTES) throw IllegalStateException("图片超过 32MB 上限")
+                AccountApi.uploadAttachment("idcard.jpg", "image/jpeg", compressed).optLong("id", 0L)
             }
             if (id > 0) onResult(UploadState.DONE, null, id, "")
             else throw IllegalStateException("上传响应缺少附件 id")
         } catch (e: Exception) {
-            onResult(UploadState.FAILED, null, 0, e.message ?: "上传失败")
+            // 上传是 multipart:本仓库 Api.HTTP 层只翻 2xx 外的 status,413/网络错走 friendlyMessage;
+            // 这里再加一层 "过大" 兜底文案,直白告诉用户怎么修。
+            val friendly = Api.friendlyMessage(e)
+            val msg = when {
+                e is Api.HttpError && e.status == 413 -> "图片过大，请重新拍照或选择（建议 ≤2MB）"
+                e is java.io.IOException && friendly.contains("网络", ignoreCase = true) ->
+                    "网络异常，请检查 Wi-Fi 后重试"
+                else -> friendly
+            }
+            onResult(UploadState.FAILED, null, 0, msg)
         }
     }
 }
 
-private fun decodePreview(context: android.content.Context, uri: Uri): android.graphics.Bitmap? = runCatching {
+/** 读取 EXIF 朝向后解码,长边限制到 MAX_EDGE_PX,JPEG q=80 输出。 */
+private fun compressForUpload(context: Context, uri: Uri): ByteArray? {
+    val resolver = context.contentResolver
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        ?: return null
+    val (w, h) = bounds.outWidth to bounds.outHeight
+    if (w <= 0 || h <= 0) return null
+    val sample = computeInSampleSize(w, h, MAX_EDGE_PX)
+    val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+    val raw = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) } ?: return null
+    val rotated = applyExifOrientation(resolver, uri, raw)
+    val scaled = scaleLongEdge(rotated, MAX_EDGE_PX)
+    return ByteArrayOutputStream().use { out ->
+        scaled.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
+        out.toByteArray()
+    }
+}
+
+/** inSampleSize 必须是 2 的幂;按长边算出最大样本,既能降内存又能保清晰。 */
+internal fun computeInSampleSize(w: Int, h: Int, maxEdge: Int): Int {
+    var sample = 1
+    val longEdge = max(w, h)
+    while (longEdge / sample > maxEdge * 2) sample *= 2
+    return sample
+}
+
+/** 等比缩放到长边 ≤ maxEdge;原图已 ≤ maxEdge 时直接返回。 */
+private fun scaleLongEdge(src: Bitmap, maxEdge: Int): Bitmap {
+    val longEdge = max(src.width, src.height)
+    if (longEdge <= maxEdge) return src
+    val ratio = maxEdge.toFloat() / longEdge
+    val nw = (src.width * ratio).toInt().coerceAtLeast(1)
+    val nh = (src.height * ratio).toInt().coerceAtLeast(1)
+    return Bitmap.createScaledBitmap(src, nw, nh, true)
+}
+
+/** 读取 EXIF orientation 并旋转;部分相机竖拍未旋转时直接压出会侧躺。 */
+private fun applyExifOrientation(
+    resolver: android.content.ContentResolver, uri: Uri, bitmap: Bitmap,
+): Bitmap {
+    val deg = runCatching {
+        resolver.openInputStream(uri)?.use { input ->
+            val exif = androidx.exifinterface.media.ExifInterface(input)
+            when (exif.getAttributeInt(
+                androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
+                androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL,
+            )) {
+                androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                else -> 0f
+            }
+        } ?: 0f
+    }.getOrDefault(0f)
+    if (deg == 0f) return bitmap
+    val matrix = Matrix().apply { postRotate(deg) }
+    return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+}
+
+/** UI 预览缩略图,大尺寸仍用 inSampleSize=4 降内存。 */
+private fun decodePreview(context: Context, uri: Uri): Bitmap? = runCatching {
     val opts = BitmapFactory.Options().apply { inSampleSize = 4 }
     context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
 }.getOrNull()
