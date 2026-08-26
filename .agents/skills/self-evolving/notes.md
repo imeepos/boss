@@ -801,3 +801,9 @@
 - 根因:Classify 的 `$(docker images | grep | head -1)` 在 pipefail 下 head 提前关管道 → grep 收 SIGPIPE(141) → set -e 杀步骤。102 本地镜像 sha tag 累积后竞态必现——代码零变化却连败,极易误判为"环境坏了"。
 - skill 有没有提前警告我:没有。2026-09-22 notes.md 记过同症状("任务状态机卡死,5s 死于 Clone 后")但误判了根因;本次实证是脚本层 SIGPIPE,重启 runner 无效。
 - 重来一次:① gitea actions run 日志不完整时,第一时间开 runner debug 日志(runner config level: debug),别盲猜环境;② set -o pipefail 的脚本里凡是 ...| head -N 管道一律 `|| true` 兜底或改 awk;③ 排查"同症状历史记录"要先于"重新推理"。
+
+## 2026-08-26 Stripe 卡收单端到端接通(102 测试 env)
+- 哪个坑浪费最多时间:先入为主以为 `cf-stripe` 容器(cloudflared)已经指向 boss-server,实际它 `--url http://api:8080` 打到的是 release-platform-integration 项目容器,代理回来 401;浪费一轮探测+排查。另试 E.164 之外格式手机号注册被短信区号路由拒(42200),再试 portal 注册返回合成负 id(-1)不在 customers 表,bills FK 插不进——门户 E2E 需要"账号改指真实客户行"。
+- skill 有没有提前警告:无 stripe 相关;但"先验证再断言/不假设环境已就绪"是教训的重演。
+- 重来一次:① 隧道先验证后端身份(/healthz+webhook 未配置 503 特征),不要只看容器名;② Stripe webhook endpoint 可以仅凭 sk 用 REST API 建(免 OAuth/CLI),whsec 创建时一次性返回;③ 测试卡确认 PaymentIntent 时账号若启用重定向型支付方式,confirm 必须带 return_url;④ portal 客户注册走合成 id,账单/支付 E2E 需先建真实 customers 行并把 portal_accounts 改指过去再密码登录。
+- 交付:compose 接 BOSS_STRIPE_*(sk/whsec/php)、H5 缴费页卡通道走托管收银台(toup 移除卡选项对齐 Android)、adopted note 记录接线与隧道重建步骤;E2E 成功/失败/幂等/充值四路径全过,孤儿巡检 11 项全过,已按 worktree 协议合并 main 并清理,CI 自动部署验证通过。

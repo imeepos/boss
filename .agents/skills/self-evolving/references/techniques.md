@@ -315,3 +315,4 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 ## 幂等文件修改脚本模板(2026-09-22)
 场景 → 用 python 往现有 TS/Go 文件插入字段/实体,防重复执行污染。
 怎么用 → 每处插入先查标记:`if '  uniqueKey?: string[]' not in s:` 才插;每个 kind 块用 `if marker not in s.split(kind_line)[1].split('  {')[0]: continue` 防重;结尾打印 `s.count(标记)` 断言插入次数正确。写完立即 `git diff --stat | wc -l` + `wc -l <file>` 确认单次增量(本次死循环:输出每次都是 "entities ok",但文件从 140→1388 行)。
+- Stripe 测试环境:webhook endpoint 可用 sk 直接调 POST /v1/webhook_endpoints 创建(url+enabled_events),whsec 创建响应一次返回;确认 PaymentIntent 需 return_url(账号启用重定向支付方式时);排查隧道时先验后端身份(/healthz + 未配置 webhook 的 503 特征),容器名不可信。
