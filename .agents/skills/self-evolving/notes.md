@@ -807,3 +807,9 @@
 - skill 有没有提前警告:无 stripe 相关;但"先验证再断言/不假设环境已就绪"是教训的重演。
 - 重来一次:① 隧道先验证后端身份(/healthz+webhook 未配置 503 特征),不要只看容器名;② Stripe webhook endpoint 可以仅凭 sk 用 REST API 建(免 OAuth/CLI),whsec 创建时一次性返回;③ 测试卡确认 PaymentIntent 时账号若启用重定向型支付方式,confirm 必须带 return_url;④ portal 客户注册走合成 id,账单/支付 E2E 需先建真实 customers 行并把 portal_accounts 改指过去再密码登录。
 - 交付:compose 接 BOSS_STRIPE_*(sk/whsec/php)、H5 缴费页卡通道走托管收银台(toup 移除卡选项对齐 Android)、adopted note 记录接线与隧道重建步骤;E2E 成功/失败/幂等/充值四路径全过,孤儿巡检 11 项全过,已按 worktree 协议合并 main 并清理,CI 自动部署验证通过。
+
+## 2026-08-26 Stripe 支付配置页化(biz_params 热更模式对齐短信/实名)
+- 哪个坑浪费最多时间:i18n 四文件用 python 插块时,锚点把上一块(smsconfig)的尾部行(testOk/testFail)也包含进去,整块被插进 smsconfig 内部,闭合乱序 + 缺逗号,typecheck 连续两阶段报错才修干净;另 Dynamic 首版在缺 apiKey 时把整份配置(含 webhookSecret)一起丢掉,webhook 测试 503 才暴露"配置与客户端要分开缓存"。
+- skill 有没有提前警告:red-line #2 手工 edit 前必读;python 脚本幂等有教训,但"锚点特异性/只锚块尾闭合行"没有专门条目,本轮复现同型(先例:lessons 里替换脚本锚点特异性)。
+- 重来一次:① 插结构化块(JSON/i18n/TS)锚点只取"块尾闭合行 + 下一键名"且两块合一定位后先渲染校验;② Dynamic 类配置缓存先缓存配置、按需懒建客户端(WebhookSecret 等无客户端依赖项单独可取);③ cdp-capture 注入登录态需先写 localStorage 再 location.href 重载(模块启动即读 token),直接注入无效。
+- 交付:stripe.Dynamic 动态配置(60s 热更,env 兜底)、admin /stripe-config 三端点+菜单权限 000147+openapi+bossctl、前端支付配置页(三语+图标)、fields.md §1.6.9+adopted note;102 实测 DB 源支付闭环四路径全过、页面 API 200、无报错;两轮 CI 部署验证。

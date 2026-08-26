@@ -321,3 +321,6 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
 - PaymentIntent API confirm 遇 400 要求 return_url:账号启用重定向型支付方式所致;测试确认卡加 `-d "return_url=https://example.com/pay-done"`。
 - psql 经 ssh/嵌套 bash 执行 SQL:引号会被外层吃掉,`-c "..."` 里叠双引号必炸(column does not exist/syntax error);一律 `ssh host 'docker exec -i pg psql -U u -d d' <<'SQL' ... SQL` 单引号 heredoc 传 stdin,SQL 字符串字面量用单引号。
 - portal E2E 客户映射套路:注册(合成负 id) → 查 live customers 必填列 → 建真实 customers 行 → UPDATE portal_accounts SET customer_id → 密码模式重登拿真实 id token。
+- python/脚本插入结构化块(i18n/JSON/TS)时,锚点只包含"上一块块尾闭合行+下一键名",绝不把上一块的正文尾部行(如 testOk/testFail)带进锚点,否则整块插进上一块内部、闭合乱序;插完立刻 typecheck/渲染校验。
+- 动态配置(Dynamic 类)缓存策略:先缓存配置本身,客户端按需懒建;与客户端构造无关的取值(如 WebhookSecret)不得被"缺主凭据"短路,否则误伤 webhook 路径。
+- cdp-capture 注入 SPA 登录态:模块启动(localStorage 读取)先于 eval,直接 setItem 无效;须 eval 里先写 localStorage 再 location.href 重载到目标页,二次加载后才带 token。
