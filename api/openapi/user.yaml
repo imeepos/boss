@@ -86,6 +86,7 @@ paths:
   /faults/{ticketNo}/urge: { $ref: './user/customer-service.yaml#/paths/~1faults~1{ticketNo}~1urge' }
   /faults/{ticketNo}/contact: { $ref: './user/customer-service.yaml#/paths/~1faults~1{ticketNo}~1contact' }
   /complaints: { $ref: './user/customer-service.yaml#/paths/~1complaints' }
+  /complaints/{ticketNo}: { $ref: './user/customer-service.yaml#/paths/~1complaints~1{ticketNo}' }
   /service/chat: { $ref: './user/customer-service.yaml#/paths/~1service~1chat' }
   /service/faq: { $ref: './user/customer-service.yaml#/paths/~1service~1faq' }
   # ---------- Misc ----------

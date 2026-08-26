@@ -209,3 +209,65 @@ paths:
                 effectiveAt: { type: string }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /verifications:
+    get:
+      tags: [Customer]
+      summary: 实名审核中心列表(主体+证件+审核结论聚合)
+      operationId: listVerifications
+      parameters:
+        - $ref: './schemas.yaml#/components/parameters/keyword'
+        - { name: subjectType, in: query, schema: { type: string, enum: [customer, worker] } }
+        - { name: status, in: query, schema: { type: string, enum: [PENDING, PASS, FAIL] } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: 审核中心列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, format: int64 }
+                        subjectType: { type: string }
+                        subjectId: { type: integer, format: int64 }
+                        subjectName: { type: string }
+                        subjectPhone: { type: string }
+                        idCardNoMasked: { type: string }
+                        method: { type: string }
+                        realName: { type: string }
+                        result: { type: string }
+                        rejectReason: { type: string }
+                        verifiedAt: { type: string }
+                        operatorName: { type: string }
+                        operatorAccountId: { type: integer, format: int64 }
+                        idCardFrontId: { type: integer, format: int64 }
+                        idCardBackId: { type: integer, format: int64 }
+                  total: { type: integer }
+
+  /verifications/{subjectType}/{subjectId}/verify:
+    post:
+      tags: [Customer]
+      summary: 审核中心行内 PASS/FAIL 处置
+      operationId: verifyFromCenter
+      parameters:
+        - { name: subjectType, in: path, required: true, schema: { type: string, enum: [customer, worker] } }
+        - { name: subjectId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [result]
+              properties:
+                result: { type: string, enum: [PASS, FAIL] }
+                rejectReason: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

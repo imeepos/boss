@@ -8,6 +8,7 @@ import com.ymm.boss.user.page.BillScreen
 import com.ymm.boss.user.page.BillsScreen
 import com.ymm.boss.user.page.CancelScreen
 import com.ymm.boss.user.page.ChangeScreen
+import com.ymm.boss.user.page.ComplaintDetailScreen
 import com.ymm.boss.user.page.ComplaintScreen
 import com.ymm.boss.user.page.CouponScreen
 import com.ymm.boss.user.page.DiyScreen
@@ -72,6 +73,7 @@ fun RouteScreen(route: Route, nav: Nav) {
         Route.Fault -> FaultScreen(nav)
         is Route.FaultDetail -> FaultDetailScreen(nav, route.no)
         Route.Complaint -> ComplaintScreen(nav)
+        is Route.ComplaintDetail -> ComplaintDetailScreen(nav, route.ticketNo)
         Route.Service -> ServiceScreen(nav)
         Route.Diy -> DiyScreen(nav)
         Route.Help -> HelpScreen(nav)

@@ -22,6 +22,10 @@ type DispatchTicket struct {
 }
 
 // Complaint 报障工单(客服域,客户报障与处理)。
+//
+// Description/Contact/RelOrderNo 三列是用户端投诉与建议页改造(迁移 000151)
+// 引入的：装维报障走 remote_diagnosis；用户端投诉走 description 字段，语义
+// 不冲突。RelOrderNo 让用户报修/下单关联订单时把订单号落库，列表/详情可回显。
 type Complaint struct {
 	ID              int64      `json:"id"`
 	TicketNo        string     `json:"ticketNo"`
@@ -30,10 +34,13 @@ type Complaint struct {
 	LegalEntityID   int64      `json:"legalEntityId"`
 	LegalEntityName string     `json:"legalEntityName"`
 	Type            string     `json:"type"`
-	Status          string     `json:"status"` // OPEN/PROCESSING/CLOSED
+	Status          string     `json:"status"`      // OPEN/PROCESSING/CLOSED
+	Description     string     `json:"description"` // 用户端投诉/建议描述
+	Contact         string     `json:"contact"`     // 用户端联系方式(手机/座机)
+	RelOrderNo      string     `json:"relOrderNo"`  // 用户端关联订单/报修单号
 	CreatedAt       string     `json:"createdAt"`
-	RemoteDiagnosis string     `json:"remoteDiagnosis"`
-	SlaDeadline     string     `json:"slaDeadline"` // SLA 截止时间(派单时写入,空=无 SLA 或已过期)
+	RemoteDiagnosis string     `json:"remoteDiagnosis"` // 装维诊断字段(师傅端)
+	SlaDeadline     string     `json:"slaDeadline"`     // SLA 截止时间(派单时写入,空=无 SLA 或已过期)
 	ClosedAt        *time.Time `json:"closedAt,omitempty"`
 	ClosedBy        int64      `json:"closedBy,omitempty"`
 	Resolution      string     `json:"resolution,omitempty"`
@@ -132,6 +139,11 @@ type WorkOrderService interface {
 	UpdateScheduleSlot(ctx context.Context, ticketNo string, scheduleSlot string) error
 	CreateDispatchTicket(ctx context.Context, t DispatchTicket) (int64, error)
 	ListComplaints(ctx context.Context) ([]Complaint, error)
+	// ListComplaintsByCustomerPaged 按 customer_id 过滤分页(用户端 /complaints 用,
+	// page 从 1 起;pageSize 由调用方夹紧到 [1,50])。返回 items + hasMore。
+	ListComplaintsByCustomerPaged(ctx context.Context, customerID int64, page, pageSize int) ([]Complaint, bool, error)
+	// GetComplaintByNoAndCustomer 按工单号 + 客户双重寻址,详情页防越权。
+	GetComplaintByNoAndCustomer(ctx context.Context, ticketNo string, customerID int64) (*Complaint, error)
 	CreateComplaint(ctx context.Context, c Complaint) (int64, error)
 	// CloseComplaint 投诉办结(ticketNo 寻址,status→CLOSED)。
 	CloseComplaint(ctx context.Context, ticketNo string) error

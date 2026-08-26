@@ -71,6 +71,16 @@ func (f *fakeDispatchOrder) UpdateScheduleSlot(context.Context, string, string) 
 func (f *fakeDispatchOrder) ListComplaints(context.Context) ([]order.Complaint, error) {
 	return nil, nil
 }
+func (f *fakeDispatchOrder) ListComplaintsByCustomerPaged(context.Context, int64, int, int) ([]order.Complaint, bool, error) {
+	return nil, false, nil
+}
+func (f *fakeDispatchOrder) GetComplaintByNoAndCustomer(_ context.Context, no string, _ int64) (*order.Complaint, error) {
+	if f.byNo == nil {
+		return nil, order.ErrOrderNotFound
+	}
+	c := order.Complaint{TicketNo: no}
+	return &c, nil
+}
 func (f *fakeDispatchOrder) CreateComplaint(context.Context, order.Complaint) (int64, error) {
 	return 0, nil
 }

@@ -31,6 +31,8 @@ sealed interface Route {
     data object Fault : Route
     data class FaultDetail(val no: String) : Route
     data object Complaint : Route
+    /** 投诉详情页:ticketNo 即 complaintId,展示描述 + cs_ticket_events 派生处理历史。 */
+    data class ComplaintDetail(val ticketNo: String) : Route
     data object Service : Route
     data object Diy : Route
     data object Help : Route

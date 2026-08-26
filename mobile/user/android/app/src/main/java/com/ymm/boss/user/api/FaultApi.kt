@@ -2,9 +2,9 @@ package com.ymm.boss.user.api
 
 import org.json.JSONObject
 
-// 报障/投诉域端点封装,契约 api/openapi/user/customer-service.yaml。
+// 报障端点封装,契约 api/openapi/user/customer-service.yaml。
+// 投诉与建议拆见 ComplaintApi.kt。
 
-// faults 端点:列表/提交/详情(报障 6 环节时间轴)。
 object FaultApi {
 
     // GET /faults 报修记录列表(items: Fault)。
@@ -26,19 +26,4 @@ object FaultApi {
 
     // GET /faults/{ticketNo}/contact 师傅明文联系方式 {technicianName, technicianPhone},未指派时 404。
     suspend fun contact(ticketNo: String): JSONObject = Api.get("/faults/$ticketNo/contact")
-}
-
-// complaints 端点:我的投诉列表/提交投诉建议。
-object ComplaintApi {
-
-    // GET /complaints 我的投诉列表(items: Complaint)。
-    suspend fun list(): JSONObject = Api.get("/complaints")
-
-    // POST /complaints 提交投诉/建议,type: attitude/quality/billing/suggestion/other。
-    suspend fun submit(type: String, relOrderNo: String, description: String, contact: String): JSONObject =
-        Api.post(
-            "/complaints",
-            JSONObject().put("type", type).put("relOrderNo", relOrderNo)
-                .put("description", description).put("contact", contact),
-        )
 }
