@@ -188,7 +188,7 @@ func addrImportAddresses(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		if err := a.User.RecordImportTask(c.Request.Context(), "addresses", httpx.ClaimsAccountID(c), int(imported), int(imported), 0, 0, nil); err != nil {
+		if err := a.User.RecordImportTask(c.Request.Context(), "addresses", httpx.ClaimsAccountID(c), int(imported), int(imported), 0, 0, nil, ""); err != nil {
 			respondErr(c, err)
 			return
 		}

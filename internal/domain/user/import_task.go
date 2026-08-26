@@ -24,7 +24,7 @@ type ImportTask struct {
 }
 
 // RecordImportTask 落一条导入记录;total 为空时由成功/失败/跳过数推导;detail 可为 nil。
-func (s *PGStore) RecordImportTask(ctx context.Context, kind string, operatorID int64, total, imported, failed, skipped int, detail map[string]any) error {
+func (s *PGStore) RecordImportTask(ctx context.Context, kind string, operatorID int64, total, imported, failed, skipped int, detail map[string]any, clientKey string) error {
 	if total == 0 {
 		total = imported + failed + skipped
 	}
@@ -36,9 +36,12 @@ func (s *PGStore) RecordImportTask(ctx context.Context, kind string, operatorID 
 		}
 		d = string(b)
 	}
-	if _, err := s.db.Exec(ctx,
-		`INSERT INTO import_tasks(kind, operator_id, total, imported, failed, skipped, detail) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)`,
-		kind, operatorID, total, imported, failed, skipped, d); err != nil {
+	query := `INSERT INTO import_tasks(kind, operator_id, total, imported, failed, skipped, detail, client_key) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8)`
+	args := []any{kind, operatorID, total, imported, failed, skipped, d, clientKey}
+	if clientKey != "" {
+		query += ` ON CONFLICT (client_key) WHERE client_key IS NOT NULL DO UPDATE SET total=EXCLUDED.total, imported=EXCLUDED.imported, failed=EXCLUDED.failed, skipped=EXCLUDED.skipped, detail=EXCLUDED.detail, created_at=now()`
+	}
+	if _, err := s.db.Exec(ctx, query, args...); err != nil {
 		return fmt.Errorf("user: record import task: %w", err)
 	}
 	return nil

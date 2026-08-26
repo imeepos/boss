@@ -12,6 +12,10 @@ import { entityExcelTemplate, isExcelFile, parseEntityExcel, type ExcelParseResu
 import { AttachmentPickerDialog } from './AttachmentPickerDialog'
 import type { EntityDef } from './entities'
 
+function importClientKey(kind: string): string {
+  return `${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
 type Text = Translations['pages']['importer']
 
 const AREA_CLS = 'min-h-35 resize-y rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 py-2 font-mono text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]'
@@ -45,6 +49,7 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
   const fileRef = useRef<HTMLInputElement>(null)
   /** 单次行数上限:业务参数 importer.maxRows 覆盖,缺省 500(读取失败不阻断)。 */
   const [maxRows, setMaxRows] = useState(MAX_IMPORT_ROWS)
+  const clientKeyRef = useRef('')
   const [maxRowsFallback, setMaxRowsFallback] = useState(false)
   const [existingLoadFailed, setExistingLoadFailed] = useState(false)
 
@@ -141,7 +146,7 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
     try {
       await apiFetch('/import-tasks', {
         method: 'POST',
-        body: { kind: `entity:${def.kind}`, total, imported, failed, skipped },
+        body: { kind: `entity:${def.kind}`, total, imported, failed, skipped, clientKey: clientKeyRef.current },
       })
       return true
     } catch (e: unknown) {
@@ -158,6 +163,7 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
     setError('')
     setFailures([])
     setSummary('')
+    clientKeyRef.current = importClientKey(def.kind)
     const total = rows.length - dedupe.skipped
     setProgress({ done: 0, total })
     const fails: RowFailure[] = []

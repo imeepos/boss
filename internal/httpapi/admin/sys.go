@@ -84,27 +84,30 @@ func sysListImportTasksHandler(a *app.Application) gin.HandlerFunc {
 // 业务批量导入为前端逐行调用各域创建端点,完成后经此落一条任务记录(kind 形如 entity:department)。
 func sysRecordImportTaskHandler(a *app.Application) gin.HandlerFunc {
 	type recordReq struct {
-		Kind     string         `json:"kind"`
-		Total    int            `json:"total"`
-		Imported int            `json:"imported"`
-		Failed   int            `json:"failed"`
-		Skipped  int            `json:"skipped"`
-		Detail   map[string]any `json:"detail"`
+		Kind      string         `json:"kind"`
+		Total     int            `json:"total"`
+		Imported  int            `json:"imported"`
+		Failed    int            `json:"failed"`
+		Skipped   int            `json:"skipped"`
+		Detail    map[string]any `json:"detail"`
+		ClientKey string         `json:"clientKey"`
 	}
 	return func(c *gin.Context) {
 		var req recordReq
 		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequireString(req.Kind, "kind", 64),
-			)
+			return httpx.CollectErrors(httpx.RequireString(req.Kind, "kind", 64))
 		}) {
+			return
+		}
+		if len([]rune(req.ClientKey)) > 96 {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "clientKey exceeds 96 characters"})
 			return
 		}
 		if !entityTaskKindRe.MatchString(req.Kind) || req.Total < 0 || req.Imported < 0 || req.Failed < 0 || req.Skipped < 0 || req.Imported+req.Failed+req.Skipped > req.Total {
 			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "kind must be entity:<name>, counts must be >= 0 and not exceed total"})
 			return
 		}
-		if err := a.User.RecordImportTask(c.Request.Context(), req.Kind, httpx.ClaimsAccountID(c), req.Total, req.Imported, req.Failed, req.Skipped, req.Detail); err != nil {
+		if err := a.User.RecordImportTask(c.Request.Context(), req.Kind, httpx.ClaimsAccountID(c), req.Total, req.Imported, req.Failed, req.Skipped, req.Detail, req.ClientKey); err != nil {
 			respondErr(c, err)
 			return
 		}

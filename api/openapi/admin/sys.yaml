@@ -624,6 +624,7 @@ paths:
                 imported: { type: integer, minimum: 0 }
                 failed: { type: integer, minimum: 0 }
                 detail: { type: object, description: 可选明细 }
+                 clientKey: { type: string, maxLength: 96, description: 客户端幂等键；重复登记更新同一任务 }
       responses:
         '200':
           description: data={ok:true}

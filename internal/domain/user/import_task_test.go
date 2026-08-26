@@ -28,6 +28,24 @@ func TestPGStore_ListImportTasks_EmptyTimeParamsPassNull(t *testing.T) {
 	}
 }
 
+func TestPGStore_RecordImportTask_UsesIdempotencyKey(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectExec(`INSERT INTO import_tasks.*ON CONFLICT \(client_key\)`).
+		WithArgs("entity:department", int64(7), 2, 1, 1, 0, "{}", "department-run-1").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	if err := NewPGStore(mock).RecordImportTask(context.Background(), "entity:department", 7, 2, 1, 1, 0, nil, "department-run-1"); err != nil {
+		t.Fatalf("RecordImportTask: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
 // 非空时间以字符串参数下发,由 SQL 侧显式 ::timestamptz 转换。
 func TestPGStore_ListImportTasks_TimeParamsPassedThrough(t *testing.T) {
 	mock, err := pgxmock.NewPool()

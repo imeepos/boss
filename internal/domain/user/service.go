@@ -76,7 +76,7 @@ type Service interface {
 	ListParams(ctx context.Context) ([]Param, error)
 	UpdateParam(ctx context.Context, key, value string, updatedBy int64) error
 	// 导入任务记录(menu:importer)。
-	RecordImportTask(ctx context.Context, kind string, operatorID int64, total, imported, failed, skipped int, detail map[string]any) error
+	RecordImportTask(ctx context.Context, kind string, operatorID int64, total, imported, failed, skipped int, detail map[string]any, clientKey string) error
 	ListImportTasks(ctx context.Context, kind, operator, from, to string) ([]ImportTask, error)
 	CreateLegalEntity(ctx context.Context, e LegalEntity) (int64, error)
 	UpdateLegalEntity(ctx context.Context, id int64, e LegalEntity) error
