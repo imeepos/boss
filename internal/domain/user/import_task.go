@@ -37,7 +37,11 @@ func (s *PGStore) RecordImportTask(ctx context.Context, kind string, operatorID 
 		d = string(b)
 	}
 	query := `INSERT INTO import_tasks(kind, operator_id, total, imported, failed, skipped, detail, client_key) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8)`
-	args := []any{kind, operatorID, total, imported, failed, skipped, d, clientKey}
+	var keyArg any
+	if clientKey != "" {
+		keyArg = clientKey
+	}
+	args := []any{kind, operatorID, total, imported, failed, skipped, d, keyArg}
 	if clientKey != "" {
 		query += ` ON CONFLICT (client_key) WHERE client_key IS NOT NULL DO UPDATE SET total=EXCLUDED.total, imported=EXCLUDED.imported, failed=EXCLUDED.failed, skipped=EXCLUDED.skipped, detail=EXCLUDED.detail, created_at=now()`
 	}
