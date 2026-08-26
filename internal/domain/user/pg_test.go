@@ -236,9 +236,9 @@ func TestPGStore_ListAddresses(t *testing.T) {
 
 	mock.ExpectQuery(`SELECT a\.id, COALESCE\(a\.parent_id, 0\), a\.level, a\.name`).
 		WithArgs(int64(1)).
-		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "country_code", "admin_code", "has_children"}).
-			AddRow(int64(2), int64(1), int8(2), "朝阳区", "CN", "CN-BJ", true).
-			AddRow(int64(3), int64(1), int8(2), "海淀区", "CN", "CN-BJ", false))
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "country_code", "admin_code", "has_children"}).
+			AddRow(int64(2), int64(1), int8(2), "朝阳区", "bj.chaoyang", "CN", "CN-BJ", true).
+			AddRow(int64(3), int64(1), int8(2), "海淀区", "bj.haidian", "CN", "CN-BJ", false))
 
 	s := NewPGStore(mock)
 	got, err := s.ListAddresses(context.Background(), 1)
@@ -247,6 +247,9 @@ func TestPGStore_ListAddresses(t *testing.T) {
 	}
 	if len(got) != 2 || got[0].Name != "朝阳区" || got[1].ParentID != 1 {
 		t.Fatalf("got=%+v", got)
+	}
+	if got[0].Path != "bj.chaoyang" {
+		t.Fatalf("path not returned: %+v", got[0])
 	}
 	if got[0].CountryCode != "CN" || got[0].AdminCode != "CN-BJ" {
 		t.Fatalf("geo anchor not inherited: %+v", got[0])

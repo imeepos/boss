@@ -222,7 +222,7 @@ func (s *PGStore) GetProfile(ctx context.Context, accountID int64) (*Profile, er
 // ListAddresses 按 parentID 列子节点(parentID=0 顶层);锚点经树根 join 继承(迁移 000040)。
 func (s *PGStore) ListAddresses(ctx context.Context, parentID int64) ([]Address, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT a.id, COALESCE(a.parent_id, 0), a.level, a.name,
+		SELECT a.id, COALESCE(a.parent_id, 0), a.level, a.name, a.path::text,
 		       COALESCE(r.country_code, ''), COALESCE(r.admin_code, ''),
 		       EXISTS(SELECT 1 FROM addresses c WHERE c.parent_id = a.id)
 		FROM addresses a
@@ -236,7 +236,7 @@ func (s *PGStore) ListAddresses(ctx context.Context, parentID int64) ([]Address,
 	out := make([]Address, 0)
 	for rows.Next() {
 		var a Address
-		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name,
+		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name, &a.Path,
 			&a.CountryCode, &a.AdminCode, &a.HasChildren); err != nil {
 			return nil, fmt.Errorf("user: scan address: %w", err)
 		}

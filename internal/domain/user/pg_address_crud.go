@@ -21,9 +21,9 @@ var ErrDuplicate = errors.New("user: duplicate")
 var addrLabelRe = regexp.MustCompile(`^[a-z0-9_]+$`)
 
 // addressHitRow 搜索命中内部行(带 path 文本,用于派生祖先链)。
+// addressHitRow 搜索命中内部行;Path 并入 Address.Path(服务层透出契约)。
 type addressHitRow struct {
 	Address
-	path string
 }
 
 // CreateAddress 新增节点。parentID=0 建根(可带锚点);label 即 path 末段,path 拼接派生。
@@ -132,7 +132,7 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 	var hits []hit
 	for rows.Next() {
 		var h hit
-		if err := rows.Scan(&h.ID, &h.ParentID, &h.Level, &h.Name, &h.path,
+		if err := rows.Scan(&h.ID, &h.ParentID, &h.Level, &h.Name, &h.Path,
 			&h.CountryCode, &h.AdminCode, &h.HasChildren); err != nil {
 			return nil, fmt.Errorf("user: scan search hit: %w", err)
 		}
@@ -152,7 +152,7 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 func (s *PGStore) attachAncestors(ctx context.Context, hits []addressHitRow) ([]AddressHit, error) {
 	prefixes := map[string]bool{}
 	for _, h := range hits {
-		for _, p := range ancestorPaths(h.path) {
+		for _, p := range ancestorPaths(h.Path) {
 			prefixes[p] = true
 		}
 	}
@@ -169,11 +169,10 @@ func (s *PGStore) attachAncestors(ctx context.Context, hits []addressHitRow) ([]
 	byPath := map[string]Address{}
 	for rows.Next() {
 		var a Address
-		var p string
-		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name, &p); err != nil {
+		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name, &a.Path); err != nil {
 			return nil, fmt.Errorf("user: scan ancestor: %w", err)
 		}
-		byPath[p] = a
+		byPath[a.Path] = a
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
@@ -182,7 +181,7 @@ func (s *PGStore) attachAncestors(ctx context.Context, hits []addressHitRow) ([]
 	out := make([]AddressHit, 0, len(hits))
 	for _, h := range hits {
 		chain := []Address{}
-		for _, p := range ancestorPaths(h.path) {
+		for _, p := range ancestorPaths(h.Path) {
 			if a, ok := byPath[p]; ok {
 				chain = append(chain, a)
 			}

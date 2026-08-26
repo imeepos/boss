@@ -428,6 +428,7 @@ components:
         parentId: { type: integer, format: int64 }
         level: { type: integer }
         name: { type: string }
+        path: { type: string, description: ltree 路径字符串,选点后存 AddressInfo.addressPath }
         countryCode: { type: string, description: 所在树根国家锚点(alpha-2,空=未挂接) }
         adminCode: { type: string, description: 所在树根一级行政区锚点 }
         hasChildren: { type: boolean }

@@ -33,9 +33,12 @@ func (f *fakeAddressTree) SearchAddresses(_ context.Context, _ string) ([]user.A
 }
 
 func addressTreeFixture() *fakeAddressTree {
-	ncr := user.Address{ID: 900, Level: 1, Name: "Metro Manila", CountryCode: "PH", HasChildren: true}
-	qc := user.Address{ID: 901, ParentID: 900, Level: 2, Name: "Quezon City", HasChildren: true}
-	bgy := user.Address{ID: 902, ParentID: 901, Level: 3, Name: "Barangay Commonwealth"}
+	ncr := user.Address{ID: 900, Level: 1, Name: "Metro Manila", Path: "ph1300000000",
+		CountryCode: "PH", HasChildren: true}
+	qc := user.Address{ID: 901, ParentID: 900, Level: 2, Name: "Quezon City",
+		Path: "ph1300000000.ph1381300000", HasChildren: true}
+	bgy := user.Address{ID: 902, ParentID: 901, Level: 3, Name: "Barangay Commonwealth",
+		Path: "ph1300000000.ph1381300000.ph138130112"}
 	return &fakeAddressTree{
 		children: map[int64][]user.Address{0: {ncr}, 900: {qc}, 901: {bgy}},
 		hits:     []user.AddressHit{{Node: bgy, Ancestors: []user.Address{ncr, qc}}},
@@ -73,6 +76,9 @@ func TestPortal_AddressTreeChildren_Cascade(t *testing.T) {
 	root, _ := items[0].(map[string]any)
 	if root["name"] != "Metro Manila" || root["hasChildren"] != true {
 		t.Fatalf("root=%v", root)
+	}
+	if root["path"] != "ph1300000000" {
+		t.Fatalf("root path=%v", root["path"])
 	}
 
 	w = userPortalDo(r, http.MethodGet, "/api/user/v1/address-tree?parentId=900", ``, tok)
