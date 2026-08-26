@@ -44,6 +44,10 @@ object OrderApi {
 
     suspend fun urge(orderNo: String): JSONObject = Api.post("/orders/$orderNo/urge")
 
+    /** POST /orders/{orderNo}/stripe-intent:为该订单建账 + 建 PaymentIntent,回 clientSecret 交原生表单 SDK。 */
+    suspend fun stripeIntent(orderNo: String, buyMonths: Int = 0): JSONObject =
+        Api.post("/orders/$orderNo/stripe-intent", JSONObject().put("buyMonths", buyMonths))
+
     // POST /orders/{orderNo}/change-address 变更安装地址。
     suspend fun changeAddress(orderNo: String, addressId: String): JSONObject =
         Api.post("/orders/$orderNo/change-address", JSONObject().put("addressId", addressId))
