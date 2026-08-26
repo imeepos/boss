@@ -93,4 +93,6 @@ func wrapRefTypeErr(err error) *httpx.ValidationError {
 // opsNotifyRefTypeError refType 不在白名单时的具体错误(便于日志定位)。
 type opsNotifyRefTypeError struct{ refType string }
 
-func (e *opsNotifyRefTypeError) Error() string { return "opsNotify refType 不在白名单: " + e.refType }
+func (e *opsNotifyRefTypeError) Error() string {
+	return "opsNotify refType 不在白名单: " + e.refType
+}

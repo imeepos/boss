@@ -242,4 +242,3 @@ func portalReceipt(a *app.Application) gin.HandlerFunc {
 
 // portalBalanceGet / portalTopup / topupRecordPayment / portalTopupReq 已迁至 billing_topup.go
 // (超 300 行拆分,handler 接口不变)。
-

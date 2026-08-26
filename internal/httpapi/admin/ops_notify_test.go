@@ -51,7 +51,7 @@ func TestOpsNotifyEmit(t *testing.T) {
 			t.Fatalf("expected refType validation failure, status=%d body=%s", w.Code, w.Body.String())
 		}
 		var env struct {
-			Code int    `json:"code"`
+			Code  int    `json:"code"`
 			Error string `json:"error"`
 		}
 		_ = json.Unmarshal(w.Body.Bytes(), &env)
