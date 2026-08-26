@@ -64,6 +64,7 @@
 | 2026-08-25 | 三端全量支持 API key 鉴权:worker 端补 worker 主体密钥,主体边界不跨端,对接 AI 操作系统 | adopted/2026-08-25-api-key-three-portal.md |
 | 2026-08-25 | 后台提醒中心:广播+读回执/30s 轮询/来源域 handler 层接入 | adopted/2026-08-25-admin-notify-broadcast-read-receipt.md |
 | 2026-08-25 | 附件删除采用软删除(attachments.deleted_at,000093):引用面不可穷举禁物理删,MinIO 对象保留可审计 | adopted/2026-08-25-attachment-soft-delete.md |
+| 2026-08-26 | Stripe 测试环境接线:webhook endpoint 经 REST API 创建,隧道/凭据固定入 102 compose;充值页银行卡选项对齐 Android 移除 | adopted/2026-08-26-stripe-test-env-wiring.md |
 | 2026-08-26 | 最小 LOY 积分域(000104):账本+流水+积分换券;跨域兑换用补偿模式(先扣后发,失败回补),不做跨域同事务 | adopted/2026-08-26-loy-minimal.md |
 | 2026-08-26 | 新建 promotion 营销促销域(000102):券模板/兑换/转赠/缴费抵扣核销从 userdata 独立;billing 经 CouponDeductor 注入实现同事务核销 | adopted/2026-08-26-promotion-domain.md |
 | 2026-08-27 | 税务属地配置挂法人(000109):legal_entities.tax_jurisdiction/tax_channel 为配置源,开票经 bills.legal_entity_id 快照落票;区域定属地/独立配置表/手工指定被否决 | adopted/2026-08-27-tax-jurisdiction-on-legal-entity.md |
