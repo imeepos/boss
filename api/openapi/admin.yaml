@@ -94,6 +94,9 @@ paths:
   /realid-config: { $ref: './admin/sys.yaml#/paths/~1realid-config' }
   /realid-config/{group}: { $ref: './admin/sys.yaml#/paths/~1realid-config~1{group}' }
   /realid-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1realid-config~1channel~1test' }
+  /stripe-config: { $ref: './admin/sys.yaml#/paths/~1stripe-config' }
+  /stripe-config/{group}: { $ref: './admin/sys.yaml#/paths/~1stripe-config~1{group}' }
+  /stripe-config/channel/test: { $ref: './admin/sys.yaml#/paths/~1stripe-config~1channel~1test' }
   /storage-config: { $ref: './admin/sys.yaml#/paths/~1storage-config' }
   /storage-config/rotate-secret: { $ref: './admin/sys.yaml#/paths/~1storage-config~1rotate-secret' }
   /push-config: { $ref: './admin/sys.yaml#/paths/~1push-config' }

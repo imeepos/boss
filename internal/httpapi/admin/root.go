@@ -59,6 +59,7 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerSMSConfigRoutes(authed, a)
 	registerPushConfigRoutes(authed, a)
 	registerRealIDConfigRoutes(authed, a)
+	registerStripeConfigRoutes(authed, a)
 	registerAIRoutes(authed, a)
 	registerAPIKeyRoutes(authed, a)
 	registerOpenPlatRoutes(authed, a)
