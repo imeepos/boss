@@ -174,15 +174,21 @@ func checkFaceRoutes(root, face string, faceRoutes map[string]bool, base map[str
 // 兼容两种场景:
 //   - 顶层 {face}.yaml 里形如 `  /foo: { $ref: '...' }` 的 $ref 转发;
 //   - {face}/*.yaml 子文件里形如 `  /foo:` 后接 `    get:` / `    post:` 等方法块;
+//
 // 均由同一正则捕获,故不再限定末尾必须是 $ref。
 //
 // 排除 YAML 锚点(&foo:)、更深缩进的 operationId/summary 等子项。
 var specPathLineRe = regexp.MustCompile(`^  (/[^:\s]+):\s*(\{|$)`)
 
-// collectSpecPaths 扫描 api/openapi/<face>.yaml 与该目录下所有 *.yaml 子文件,
-// 任何形如 `  /path:` 的 path 项都登记到 out(同源多文件重复视为同一路径,后写先到)。
+// collectSpecPaths 扫描 api/openapi/<face>.yaml 与 api/openapi/<face>/ 下的子文件,
+// 仅收集当前 face 的契约,防 admin/user 文件互相污染;任何形如 `  /path:` 的 path 项
+// 都登记到 out(同源多文件重复视为同一路径)。
 func collectSpecPaths(root, face string, out map[string]bool) error {
-	dir := filepath.Join(root, "api/openapi")
+	base := filepath.Join(root, "api/openapi")
+	if err := scanSpecFile(filepath.Join(base, face+".yaml"), out); err != nil {
+		return err
+	}
+	dir := filepath.Join(base, face)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
