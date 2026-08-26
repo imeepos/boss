@@ -83,11 +83,20 @@ paths:
   /complaints:
     get:
       tags: [CustomerService]
-      summary: 我的投诉列表
+      summary: 我的投诉与处理记录(分页)
       operationId: listComplaints
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
       responses:
         '200':
-          description: 投诉列表
+          description: 投诉列表(按 created_at DESC)
           content:
             application/json:
               schema:
@@ -96,6 +105,9 @@ paths:
                   items:
                     type: array
                     items: { $ref: './schemas.yaml#/components/schemas/Complaint' }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  hasMore: { type: boolean }
 
     post:
       tags: [CustomerService]
@@ -112,15 +124,40 @@ paths:
                 type:
                   type: string
                   enum: [attitude, quality, billing, suggestion, other]
-                relOrderNo: { type: string }
-                description: { type: string }
-                contact: { type: string }
+                description: { type: string, minLength: 4, maxLength: 500 }
+                contact: { type: string, maxLength: 32 }
+                relOrderNo: { type: string, maxLength: 64 }
       responses:
         '200':
           description: 已受理
           content:
             application/json:
               schema: { $ref: './schemas.yaml#/components/schemas/Ok' }
+
+  /complaints/{ticketNo}:
+    get:
+      tags: [CustomerService]
+      summary: 我的投诉详情(含处理历史 timeline)
+      operationId: getComplaint
+      parameters:
+        - name: ticketNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 投诉详情 + 时间轴
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  complaint: { $ref: './schemas.yaml#/components/schemas/Complaint' }
+                  timeline:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/ComplaintTimelineItem' }
+        '404':
+          description: 工单不存在或不属于当前用户
 
   /service/chat:
     post:

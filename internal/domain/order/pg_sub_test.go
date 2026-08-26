@@ -68,10 +68,10 @@ func TestPGStore_ListComplaints(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
+	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
 	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "TKT-20250817-012", int64(8), int64(0), int64(1), "主品牌·企业", "SINGLE_OUTAGE", "PROCESSING", "2025-08-17 10:00", "", "", nil, int64(0), ""))
+			AddRow(int64(1), "TKT-20250817-012", int64(8), int64(0), int64(1), "主品牌·企业", "SINGLE_OUTAGE", "PROCESSING", "光功率过低", "13800001234", "ORD-20250817-001", "2025-08-17 10:00", "", "", nil, int64(0), ""))
 
 	s := NewPGStore(mock, stubExists{})
 	got, err := s.ListComplaints(context.Background())
@@ -80,6 +80,88 @@ func TestPGStore_ListComplaints(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].TicketNo != "TKT-20250817-012" {
 		t.Fatalf("got=%+v", got)
+	}
+	if got[0].Description != "光功率过低" || got[0].Contact != "13800001234" || got[0].RelOrderNo != "ORD-20250817-001" {
+		t.Fatalf("user fields not populated: %+v", got[0])
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_ListComplaintsByCustomerPaged 契约:按 customer_id 过滤 + 分页;
+// 多取 1 条判 hasMore;created_at DESC 排序。
+func TestPGStore_ListComplaintsByCustomerPaged(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
+	// page=1 size=10 服务端取 LIMIT 11;我们模拟 5 行 → hasMore=false。
+	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
+		WithArgs(int64(8), 11, 0).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(5), "TKT-5", int64(8), int64(0), int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "网速慢", "13800001234", "", "2025-08-20 09:00", "", "", nil, int64(0), "").
+			AddRow(int64(4), "TKT-4", int64(8), int64(0), int64(1), "主品牌·企业", "OTHER", "CLOSED", "其他", "", "", "2025-08-19 09:00", "", "", nil, int64(0), ""))
+
+	s := NewPGStore(mock, stubExists{})
+	got, hasMore, err := s.ListComplaintsByCustomerPaged(context.Background(), 8, 1, 10)
+	if err != nil {
+		t.Fatalf("ListComplaintsByCustomerPaged: %v", err)
+	}
+	if hasMore || len(got) != 2 || got[0].TicketNo != "TKT-5" {
+		t.Fatalf("got=%+v hasMore=%v", got, hasMore)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_GetComplaintByNoAndCustomer 契约:工单号 + customer 双重寻址;
+// 未命中 ErrOrderNotFound;越权(no 与 cid 不匹配)同样 ErrOrderNotFound。
+func TestPGStore_GetComplaintByNoAndCustomer(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
+	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
+		WithArgs("TKT-9", int64(8)).
+		WillReturnRows(mock.NewRows(cols).
+			AddRow(int64(9), "TKT-9", int64(8), int64(0), int64(1), "主品牌·企业", "BILLING", "PROCESSING", "计费问题", "13800001234", "ORD-20250817-001", "2025-08-21 10:00", "", "", nil, int64(0), ""))
+
+	s := NewPGStore(mock, stubExists{})
+	got, err := s.GetComplaintByNoAndCustomer(context.Background(), "TKT-9", 8)
+	if err != nil {
+		t.Fatalf("GetComplaintByNoAndCustomer: %v", err)
+	}
+	if got.TicketNo != "TKT-9" || got.Description != "计费问题" {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_GetComplaintByNoAndCustomer_NotFound 契约:未命中 ErrOrderNotFound。
+func TestPGStore_GetComplaintByNoAndCustomer_NotFound(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
+		WithArgs("TKT-X", int64(8)).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}))
+
+	_, err = NewPGStore(mock, stubExists{}).GetComplaintByNoAndCustomer(context.Background(), "TKT-X", 8)
+	if !errors.Is(err, ErrOrderNotFound) {
+		t.Fatalf("err=%v, want ErrOrderNotFound", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
@@ -96,12 +178,14 @@ func TestPGStore_CreateComplaint(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM customers WHERE id = \$1\)`).
 		WithArgs(int64(1)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO complaints`).
-		WithArgs("TKT-20250817-013", int64(1), nil, int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "", "").
+		WithArgs("TKT-20250817-013", int64(1), nil, int64(1), "主品牌·企业", "用户投诉: attitude", "OPEN", "服务态度差", "13800001234", "ORD-20250817-001", "", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock, stubExists{})
 	id, err := s.CreateComplaint(context.Background(), Complaint{
-		TicketNo: "TKT-20250817-013", CustomerID: 1, LegalEntityID: 1, LegalEntityName: "主品牌·企业", Type: "SLOW_NET", Status: "OPEN",
+		TicketNo: "TKT-20250817-013", CustomerID: 1, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
+		Type: "用户投诉: attitude", Status: "OPEN",
+		Description: "服务态度差", Contact: "13800001234", RelOrderNo: "ORD-20250817-001",
 	})
 	if err != nil {
 		t.Fatalf("CreateComplaint: %v", err)
@@ -130,7 +214,7 @@ func TestPGStore_CreateComplaint_DerivesCustomerFromOrder(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM orders WHERE id = \$1\)`).
 		WithArgs(int64(77)).WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`INSERT INTO complaints`).
-		WithArgs("TKT-DERIVED", int64(213), int64(77), int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "", "").
+		WithArgs("TKT-DERIVED", int64(213), int64(77), int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "", "", "", "", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
 
 	s := NewPGStore(mock, stubExists{})

@@ -34,7 +34,9 @@ func (f *userPortalCustSvc) List(_ context.Context, q customer.CustomerQuery) ([
 	return nil, nil
 }
 
-// userPortalWo 桩 WorkOrderService:CreateComplaint 记录入参,ListComplaints 返回可配置列表。
+// userPortalWo 桩 WorkOrderService:CreateComplaint 记录入参,
+// ListComplaints / ListComplaintsByCustomerPaged 返回可配置列表;
+// GetComplaintByNoAndCustomer 返回按工单号寻址的桩工单。
 type userPortalWo struct {
 	order.WorkOrderService
 	created []order.Complaint
@@ -48,6 +50,28 @@ func (f *userPortalWo) CreateComplaint(_ context.Context, c order.Complaint) (in
 
 func (f *userPortalWo) ListComplaints(context.Context) ([]order.Complaint, error) {
 	return f.complts, nil
+}
+
+// ListComplaintsByCustomerPaged 桩:不区分 customerID,直接返回预置列表全量。
+// hasMore 简单判 len>pageSize;测试用 list 元素少于 pageSize 即一次性返回。
+func (f *userPortalWo) ListComplaintsByCustomerPaged(_ context.Context, _ int64, _ int, pageSize int) ([]order.Complaint, bool, error) {
+	out := f.complts
+	hasMore := false
+	if pageSize > 0 && len(out) > pageSize {
+		out = out[:pageSize]
+		hasMore = true
+	}
+	return out, hasMore, nil
+}
+
+// GetComplaintByNoAndCustomer 桩:按工单号 + customerID(忽略)寻址,未命中返回 ErrOrderNotFound。
+func (f *userPortalWo) GetComplaintByNoAndCustomer(_ context.Context, ticketNo string, _ int64) (*order.Complaint, error) {
+	for i := range f.complts {
+		if f.complts[i].TicketNo == ticketNo {
+			return &f.complts[i], nil
+		}
+	}
+	return nil, order.ErrOrderNotFound
 }
 
 func newUserPortalRouter(cust *customer.Customer, bills []billing.Bill, byNo *order.Order) (*gin.Engine, *auth.Manager, *userPortalWo) {

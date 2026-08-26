@@ -19,6 +19,7 @@ func registerPortalServiceRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/faults/:ticketNo/contact", portalFaultContact(a))
 	g.GET("/complaints", portalListComplaints(a))
 	g.POST("/complaints", portalCreateComplaint(a))
+	g.GET("/complaints/:ticketNo", portalComplaintDetail(a))
 	g.POST("/service/chat", portalChat)
 	g.GET("/service/faq", portalFaq)
 }

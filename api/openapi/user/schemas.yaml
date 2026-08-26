@@ -298,15 +298,39 @@ components:
 
     Complaint:
       type: object
+      description: |
+        投诉/建议工单视图(用户端)。
+        complaintId 即 ticketNo;status 取值 OPEN/PROCESSING/CLOSED;
+        description/contact/relOrderNo 在用户端 POST /complaints 时真实落库
+        (迁移 000151),列表/详情可直接回显。
       properties:
-        complaintId: { type: string }
-        type: { type: string }
+        complaintId: { type: string, description: 工单号 ticketNo }
+        type: { type: string, enum: [attitude, quality, billing, suggestion, other] }
         typeLabel: { type: string }
-        relOrderNo: { type: string }
-        description: { type: string }
-        status: { type: string }
+        relOrderNo: { type: string, description: 关联订单/报修单号,选填 }
+        description: { type: string, description: 用户端投诉/建议描述 }
+        contact: { type: string, description: 用户端联系方式 }
+        status: { type: string, enum: [OPEN, PROCESSING, CLOSED] }
         statusLabel: { type: string }
-        createdAt: { type: string }
+        createdAt: { type: string, description: 提交时间 YYYY-MM-DD HH:MM }
+        slaDeadline: { type: string, description: SLA 截止时间(报障使用,投诉为空) }
+        remoteDiag: { type: string, description: 装维诊断(报障使用,投诉为空) }
+        closedAt: { type: string, description: 关闭时间(未关闭为空串) }
+
+    ComplaintTimelineItem:
+      type: object
+      description: |
+        投诉处理时间轴节点。第 1 项固定为提交投诉(DONE),其后每条对应
+        cs_ticket_events 一行(状态变更/升级)。result 全为 DONE(已发生)。
+      properties:
+        step: { type: integer, description: 节点序号,从 1 起 }
+        title: { type: string, description: 节点中文标题 }
+        result: { type: string, enum: [DONE, DOING, PENDING] }
+        meta: { type: string, description: 节点发生时间 YYYY-MM-DD HH:MM }
+        eventType: { type: string, description: SUBMITTED/STATUS_CHANGED/ESCALATED }
+        fromStatus: { type: string }
+        toStatus: { type: string }
+        note: { type: string, description: 处理备注 }
 
     Faq:
       type: object
