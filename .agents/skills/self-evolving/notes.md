@@ -876,3 +876,27 @@
   `git worktree remove --force` 跳过清理。
 - 交付：8 文件 + 1 测试 + 1 决策 note，`docs/notes/adopted/2026-09-04-user-android-address-locator.md`
   记录 why；ff-merge + 清理后 main 干净。
+
+---
+
+## 2026-09-04 feat/user-addr-locator-followup（真机自检发现 3 个真 bug）
+
+- **哪个坑浪费最多时间**：原始定位 feature 已合并但**没真机自检**，导致 3 个真环境 bug 漏网：
+  1. **CancellationException 被吞**（已合并 main 的代码）→ `AddressPage.load()` `catch (e: Exception)` 把 IO 协程取消异常吞了，friendlyMessage 兜底显示"The coroutine scope left the composition"误导用户
+  2. **ExposedDropdownMenu 没用 scope 函数** → `DropdownMenuItem` 直接放 ExposedDropdownMenuBox content 被识别为 anchor 子项，渲染到输入框位置跟 placeholder 重叠
+  3. **Failure 三态静默吞** → `catch (_: Exception)` 把 `Failure.Timeout/Unavailable/PermissionDenied` 一并吞掉，用户点完按钮 hint 和门牌号都清空无任何反馈
+- **skill 有没有提前警告**：红 #6（"禁止在总结里声称已验证而没有验证动作"）预警——上一轮总结写了"已通过 typecheck/lint/unit-test"但**没真机点按钮**就是没验证。这一轮直接撞线。
+- **重来一次**：
+  ① 完成任何 UI feature 第一时间 `bash scripts/build-install-user-android.sh` + adb 真机点一次关键路径（不是只跑 ./gradlew test）
+  ② `catch (e: Exception)` 必须先 catch CancellationException rethrow；`catch (e: SpecificFailure)` 才有可读反馈
+  ③ Material3 ExposedDropdownMenu 必须在 ExposedDropdownMenuBox content lambda 内调用（API 1.3.x 是 ExposedDropdownMenuBoxScope 的扩展函数，不是顶层 Composable）
+  ④ 并行会话 main 分支在 worktree 创建后又推进，必须 worktree 内 `git merge gitea/main`（今天合并到 feat/user-addr-locator-followup 的 commit 信息正确带了 sync 来源）
+  ⑤ 真机无 GPS 注入路径时（redmi 22122RK93C 物理设备 + Play Services），超时/Failure 三态验证即覆盖大部分用户场景；emulator geo fix 或 mock location app 是次优路径。
+- **交付**：7 个独立 commit 全部合到 main（4 feat/fix + 1 reverse-sync merge）：
+  `48a76487` fix: location timeout via withTimeoutOrNull
+  `f4be26b7` feat: permission rationale dialog on second deny  
+  `82f78bc7` feat: clear button on community dropdown
+  `92358f2b` fix: rethrow CancellationException in address load（真机发现）
+  `3e0346e5` fix: wrap community dropdown items in ExposedDropdownMenu（真机发现）
+  `542cc857` fix: distinguish location failure types in editor sheet（真机发现）
+  全部基于真机 adb 截图 + uiautomator dump + input tap 验证；worktree 已清理。

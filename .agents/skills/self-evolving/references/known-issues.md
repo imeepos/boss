@@ -251,3 +251,27 @@ coroutines = "1.10.2"
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 ```
 `app/build.gradle.kts` 加 `implementation(libs.kotlinx.coroutines.play.services)`，再 `import kotlinx.coroutines.tasks.await`。
+
+## Material3 ExposedDropdownMenu 的 API 路径：必须 ExposedDropdownMenuBox scope 上下文
+
+**症状**：写 `androidx.compose.material3.ExposedDropdownMenu(expanded=..., onDismissRequest=...) { items }` 编译报 `Unresolved reference 'ExposedDropdownMenu'`；在 ExposedDropdownMenuBox content lambda 里直接放 `DropdownMenuItem(...)` 不报编译错但**渲染时菜单项被识别为 anchor 子项**，跟输入框 placeholder 重叠显示。
+
+**原因**：Material3 1.3.x（含 2026.06 BOM）的 `ExposedDropdownMenu` 是 `androidx.compose.material3.ExposedDropdownMenuBoxScope` 的**扩展函数**，不是顶层 Composable；Box content lambda 里的第一个非 TextField 子项会被识别为 anchor 内容的一部分。
+
+**修法**：
+```kotlin
+ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+    OutlinedTextField(value = value, ..., modifier = Modifier.menuAnchor(...))
+    // 必须用 ExposedDropdownMenu 包裹菜单项
+    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        options.forEach { item ->
+            DropdownMenuItem(text = { Text(item) }, onClick = { onChange(item); expanded = false })
+        }
+    }
+}
+```
+
+**症状**：`catch (e: Exception)` 之后 launchLocation 静默失败，hint 和 door 都 set("") 用户没反馈。
+
+**修法**：`catch (e: SpecificFailure)` + `catch (e: Exception)` 双层；Failure 子类型把对应 message 写入 err 文案位。
+
