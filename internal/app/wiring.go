@@ -63,7 +63,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
 	aaastore := aaa.NewPGStore(pool)
-	aw := audit.NewAsyncWriter(audit.NewPGWriter(pool), 1024)
+	// 审计必须与业务请求同步落库，避免进程崩溃或队列满时丢失关键操作留痕。
+	aw := audit.NewPGWriter(pool)
 	// E14:预建当月起 2 个月的审计分区(见 wiring_events.go)。
 	if err := ensureAuditPartitions(ctx, pool); err != nil {
 		return nil, err
@@ -225,7 +226,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		stopETLOverdue()      // ETL overdue 自动派单
 		stopETLProjection()   // ETL 真实投影执行器
 		stopStripeGuard()     // Stripe webhook endpoint 自愈/告警循环
-		aw.Close()            // 排空审计队列
+		// PGWriter 为同步写入器，无需排空进程内队列。
 		if em.closeCdr != nil {
 			em.closeCdr()
 		}

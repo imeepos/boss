@@ -180,7 +180,7 @@ type Application struct {
 	WorkerOnboarding worker.OnboardingService
 	WorkerRealName   worker.RealNameService
 
-	Audit audit.Writer // 关键操作审计(异步写,见 pkg/audit)
+	Audit audit.Writer // 关键操作审计(同步写入 PG，避免进程重启丢失)
 
 	// Pool PG 连接池(指标采集用,pkg/server 注册 gauge;只读快照不接管生命周期)。
 	Pool *pgxpool.Pool

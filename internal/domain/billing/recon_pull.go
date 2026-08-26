@@ -22,7 +22,8 @@ type ChannelSource interface {
 	PullStatement(ctx context.Context, channel string, date time.Time) ([]ChannelStatementRow, error)
 }
 
-// ChannelSourceRegistry 源注册表(线程安全,启动期注册)。
+// ChannelSourceRegistry 源注册表(启动期注册)。
+// 注册信息必须由装配配置重建；运行期注册不会跨重启保留。
 type ChannelSourceRegistry struct {
 	byChannel map[string]ChannelSource
 }
