@@ -148,8 +148,8 @@ func checkRoutes(root string) int {
 
 func checkFaceRoutes(root, face string, faceRoutes map[string]bool, base map[string]bool) int {
 	specPaths := map[string]bool{}
-	if err := collectSpecPaths(filepath.Join(root, "api/openapi", face+".yaml"), specPaths); err != nil {
-		fmt.Println("A: 解析", face+".yaml", "失败:", err)
+	if err := collectSpecPaths(root, face, specPaths); err != nil {
+		fmt.Println("A: 解析", face+"/*", "失败:", err)
 		return 1
 	}
 	var miss []string
@@ -170,15 +170,42 @@ func checkFaceRoutes(root, face string, faceRoutes map[string]bool, base map[str
 	return fails
 }
 
-var specPathRe = regexp.MustCompile(`^  (/[^:\s]+):\s*\{?\s*\$ref`)
+// specPathLineRe 匹配 OpenAPI path 项行:`  /foo: ...`(两空格缩进的 path key)。
+// 兼容两种场景:
+//   - 顶层 {face}.yaml 里形如 `  /foo: { $ref: '...' }` 的 $ref 转发;
+//   - {face}/*.yaml 子文件里形如 `  /foo:` 后接 `    get:` / `    post:` 等方法块;
+// 均由同一正则捕获,故不再限定末尾必须是 $ref。
+//
+// 排除 YAML 锚点(&foo:)、更深缩进的 operationId/summary 等子项。
+var specPathLineRe = regexp.MustCompile(`^  (/[^:\s]+):\s*(\{|$)`)
 
-func collectSpecPaths(path string, out map[string]bool) error {
+// collectSpecPaths 扫描 api/openapi/<face>.yaml 与该目录下所有 *.yaml 子文件,
+// 任何形如 `  /path:` 的 path 项都登记到 out(同源多文件重复视为同一路径,后写先到)。
+func collectSpecPaths(root, face string, out map[string]bool) error {
+	dir := filepath.Join(root, "api/openapi")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
+			continue
+		}
+		if err := scanSpecFile(filepath.Join(dir, e.Name()), out); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// scanSpecFile 单文件扫描:提取所有 `  /path:` 行。
+func scanSpecFile(path string, out map[string]bool) error {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 	for _, line := range strings.Split(string(b), "\n") {
-		if m := specPathRe.FindStringSubmatch(line); m != nil {
+		if m := specPathLineRe.FindStringSubmatch(line); m != nil {
 			out[m[1]] = true
 		}
 	}
