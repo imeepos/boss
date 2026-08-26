@@ -33,17 +33,17 @@ func (s *PGStore) UpdateUserAccount(ctx context.Context, customerID int64, u Use
 
 func (s *PGStore) CreateUserAddress(ctx context.Context, a UserAddress) (int64, error) {
 	return s.insertReturning(ctx, "create user address", `
-		INSERT INTO user_addresses(customer_id, addr_code, contact, phone, detail, is_default)
-		VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
-		a.CustomerID, a.AddrCode, a.Contact, a.Phone, a.Detail, a.IsDefault)
+		INSERT INTO user_addresses(customer_id, addr_code, contact, phone, detail, is_default, address_path)
+		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		a.CustomerID, a.AddrCode, a.Contact, a.Phone, a.Detail, a.IsDefault, a.AddressPath)
 }
 
 func (s *PGStore) UpdateUserAddress(ctx context.Context, customerID, id int64, a UserAddress) error {
 	return s.execAffected(ctx, "update user address", `
 		UPDATE user_addresses
-		   SET addr_code=$3, contact=$4, phone=$5, detail=$6, is_default=$7
+		   SET addr_code=$3, contact=$4, phone=$5, detail=$6, is_default=$7, address_path=$8
 		 WHERE id=$1 AND customer_id=$2`,
-		id, customerID, a.AddrCode, a.Contact, a.Phone, a.Detail, a.IsDefault)
+		id, customerID, a.AddrCode, a.Contact, a.Phone, a.Detail, a.IsDefault, a.AddressPath)
 }
 
 func (s *PGStore) DeleteUserAddress(ctx context.Context, customerID, id int64) error {

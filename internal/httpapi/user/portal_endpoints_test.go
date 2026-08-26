@@ -30,6 +30,8 @@ type fakeUserData struct {
 	plans   []map[string]any
 	invite  []map[string]any
 	created int
+	// lastAddr 新增地址落库快照,addressPath 透传断言用。
+	lastAddr udcustomer.UserAddress
 	// 续费桩:renewFee 0 = 套餐未命中;renewedMonths/renewEnd 供断言。
 	renewProductID int64
 	renewFee       int
@@ -52,8 +54,9 @@ func (f *fakeUserData) ListUserAccounts(context.Context) ([]map[string]any, erro
 func (f *fakeUserData) ListUserAddresses(context.Context) ([]map[string]any, error) {
 	return f.addrs, nil
 }
-func (f *fakeUserData) CreateUserAddress(context.Context, udcustomer.UserAddress) (int64, error) {
+func (f *fakeUserData) CreateUserAddress(_ context.Context, a udcustomer.UserAddress) (int64, error) {
 	f.created++
+	f.lastAddr = a
 	return int64(f.created), nil
 }
 func (f *fakeUserData) UpdateUserAddress(context.Context, int64, int64, udcustomer.UserAddress) error {
@@ -331,6 +334,19 @@ func TestPortal_CouponsAddresses(t *testing.T) {
 	}
 	if ud.created != 1 {
 		t.Fatalf("expected address persisted, created=%d", ud.created)
+	}
+	if ud.lastAddr.AddressPath != "" {
+		t.Fatalf("legacy create should keep empty addressPath, got %q", ud.lastAddr.AddressPath)
+	}
+
+	// 级联选点后的新增:addressPath 透传落库,列表侧回读(迁移 000152 回归)。
+	w = userPortalDo(r, http.MethodPost, "/api/user/v1/addresses",
+		`{"community":"Barangay Commonwealth","building":"B8","door":"502","contact":"王先生","phone":"13800001234","addressPath":"ph1300000000.ph1374000000.ph1374020189"}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeOK) {
+		t.Fatalf("create address with path resp=%s", w.Body.String())
+	}
+	if ud.lastAddr.AddressPath != "ph1300000000.ph1374000000.ph1374020189" {
+		t.Fatalf("addressPath passthrough got %q", ud.lastAddr.AddressPath)
 	}
 }
 

@@ -101,6 +101,9 @@ type UserAddress struct {
 	Phone      string `json:"phone" binding:"required"`
 	Detail     string `json:"detail" binding:"required"`
 	IsDefault  bool   `json:"isDefault"`
+	// AddressPath 地址层级树 ltree 字符串(addresses.path 同构,弱引用,迁移 000152);
+	// 空串=历史自由文本地址。
+	AddressPath string `json:"addressPath"`
 }
 
 // UserPlan 套餐订购关系。

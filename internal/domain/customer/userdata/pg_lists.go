@@ -23,7 +23,8 @@ func (s *PGStore) ListUserAccounts(ctx context.Context) ([]map[string]any, error
 
 func (s *PGStore) ListUserAddresses(ctx context.Context) ([]map[string]any, error) {
 	return s.listMaps(ctx, `SELECT id, customer_id AS "customerId", addr_code AS "addrCode",
-		contact, phone, detail, is_default AS "isDefault" FROM user_addresses ORDER BY id`)
+		contact, phone, detail, is_default AS "isDefault",
+		address_path AS "addressPath" FROM user_addresses ORDER BY id`)
 }
 
 func (s *PGStore) ListUserPlans(ctx context.Context) ([]map[string]any, error) {

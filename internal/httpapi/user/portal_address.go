@@ -75,11 +75,12 @@ func portalCreateAddress(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cid, _ := requireCustomer(c)
 		var req struct {
-			Community string `json:"community" binding:"required"`
-			Building  string `json:"building"`
-			Door      string `json:"door"`
-			Contact   string `json:"contact" binding:"required"`
-			Phone     string `json:"phone"`
+			Community   string `json:"community" binding:"required"`
+			Building    string `json:"building"`
+			Door        string `json:"door"`
+			Contact     string `json:"contact" binding:"required"`
+			Phone       string `json:"phone"`
+			AddressPath string `json:"addressPath"`
 		}
 		if !httpx.BindBody(c, &req) {
 			return
@@ -93,8 +94,9 @@ func portalCreateAddress(a *app.Application) gin.HandlerFunc {
 		if _, err := a.UserData.CreateUserAddress(c.Request.Context(), udcustomer.UserAddress{
 			CustomerID: cid, AddrCode: req.Community,
 			Contact: req.Contact, Phone: phone,
-			Detail:    req.Community + " " + req.Building + " " + req.Door,
-			IsDefault: false,
+			Detail:      req.Community + " " + req.Building + " " + req.Door,
+			IsDefault:   false,
+			AddressPath: req.AddressPath,
 		}); err != nil {
 			respondErr(c, err)
 			return
@@ -113,11 +115,12 @@ func portalUpdateAddress(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		var req struct {
-			Community string `json:"community" binding:"required"`
-			Building  string `json:"building"`
-			Door      string `json:"door"`
-			Contact   string `json:"contact" binding:"required"`
-			Phone     string `json:"phone"`
+			Community   string `json:"community" binding:"required"`
+			Building    string `json:"building"`
+			Door        string `json:"door"`
+			Contact     string `json:"contact" binding:"required"`
+			Phone       string `json:"phone"`
+			AddressPath string `json:"addressPath"`
 		}
 		if !httpx.BindBody(c, &req) {
 			return
@@ -131,8 +134,9 @@ func portalUpdateAddress(a *app.Application) gin.HandlerFunc {
 		err := a.UserData.UpdateUserAddress(c.Request.Context(), cid, id, udcustomer.UserAddress{
 			CustomerID: cid, AddrCode: req.Community,
 			Contact: req.Contact, Phone: phone,
-			Detail:    req.Community + " " + req.Building + " " + req.Door,
-			IsDefault: false,
+			Detail:      req.Community + " " + req.Building + " " + req.Door,
+			IsDefault:   false,
+			AddressPath: req.AddressPath,
 		})
 		if err != nil {
 			respondErr(c, err)
@@ -169,5 +173,6 @@ func addressInfoOf(r map[string]any) gin.H {
 		"community":   toStr(r["addrCode"]),
 		"building":    "",
 		"door":        "",
+		"addressPath": toStr(r["addressPath"]),
 	}
 }
