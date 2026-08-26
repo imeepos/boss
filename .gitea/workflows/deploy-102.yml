@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
 
+# 线上部署操作宿主 Docker，必须串行；新提交取消尚未开始的旧部署。
+concurrency:
+  group: deploy-102
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: deploy-102
