@@ -191,9 +191,40 @@ func (s *PGStore) ActivateUser(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "activateUser")
 }
 
-// NotifyActivation 环节11 激活回调(status: INSTALLING→DONE)。
+// NotifyActivation 环节11 激活回调:本地确认入网凭证(LO 账号)后推进并落回调行。
+// 落账闭环(000154):SUCCESS/FAILED 均写 activation_callbacks(幂等 upsert),
+// 失败(凭证缺失)不推进订单——留 INSTALLING 可重试,补偿台账扫 FAILED 可见。
+// 确认语义:LO 账号存在即视为凭证已发(环节6 建档),杜绝伪造成功。
 func (s *PGStore) NotifyActivation(ctx context.Context, orderID int64) error {
-	return s.advance(ctx, orderID, "notifyActivation")
+	if err := s.confirmLoAccount(ctx, orderID); err != nil {
+		_, _ = s.AppendActivationCallback(ctx, ActivationCallback{OrderID: orderID, Result: "FAILED"})
+		return fmt.Errorf("order: notifyActivation confirm: %w", err)
+	}
+	if err := s.advance(ctx, orderID, "notifyActivation"); err != nil {
+		return err
+	}
+	_, err := s.AppendActivationCallback(ctx, ActivationCallback{OrderID: orderID, Result: "SUCCESS"})
+	return err
+}
+
+// confirmLoAccount 激活确认:订单客户须已有 LO 账号(入网凭证环节6 建档)。
+func (s *PGStore) confirmLoAccount(ctx context.Context, orderID int64) error {
+	if s.prof == nil {
+		return nil // 未接线(测试桩)视为可确认
+	}
+	var customerID int64
+	err := s.db.QueryRow(ctx, `SELECT customer_id FROM orders WHERE id = $1`, orderID).Scan(&customerID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrOrderNotFound
+		}
+		return fmt.Errorf("order: notifyActivation select: %w", err)
+	}
+	lo, err := s.prof.GetLoAccountByCustomer(ctx, customerID)
+	if err != nil || lo == nil {
+		return fmt.Errorf("lo account missing for customer %d", customerID)
+	}
+	return nil
 }
 
 // UpdateMap 环节12 更新 GIS;订单终态 DONE 后端口转在用(terms.md §4:IDLE→RESERVED→USED)。

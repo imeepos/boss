@@ -8,6 +8,69 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
+// TestPGStore_NotifyActivationWritesCallback 回归(000154):环节11 激活回调必须落账
+// activation_callbacks(SUCCESS/FAILED 均写,幂等 upsert),消费端(补偿台账/重试)才有数据源。
+func TestPGStore_NotifyActivationWritesCallback(t *testing.T) {
+	t.Run("凭证就绪:推进并落SUCCESS", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		// confirmLoAccount:查订单客户。
+		mock.ExpectQuery(`SELECT customer_id FROM orders`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(3)))
+		// advance(notifyActivation,stage10→11, INSTALLING→DONE)。
+		mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(10), "INSTALLING", "ORD-7"))
+		mock.ExpectQuery(`SELECT result FROM order_stages WHERE order_id=\$1 AND stage=\$2`).
+			WithArgs(int64(7), int8(10)).
+			WillReturnRows(mock.NewRows([]string{"result"}).AddRow("DONE"))
+		mock.ExpectExec(`UPDATE orders SET stage`).
+			WithArgs(int64(7), int8(11), "DONE").WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectExec(`INSERT INTO order_stages`).
+			WithArgs(int64(7), int8(11), "DONE").WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		// 落账 SUCCESS(幂等 upsert)。
+		mock.ExpectQuery(`INSERT INTO activation_callbacks`).
+			WithArgs(int64(7), "SUCCESS", int16(0)).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
+
+		s := NewPGStore(mock, stubExists{}, &stubProfileCreator{})
+		if err := s.NotifyActivation(context.Background(), 7); err != nil {
+			t.Fatalf("NotifyActivation: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("凭证缺失:落FAILED且不推进", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		// confirmLoAccount:客户3 查无 LO 账号。
+		mock.ExpectQuery(`SELECT customer_id FROM orders`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(3)))
+		// 落账 FAILED(幂等 upsert)。
+		mock.ExpectQuery(`INSERT INTO activation_callbacks`).
+			WithArgs(int64(7), "FAILED", int16(0)).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
+
+		s := NewPGStore(mock, stubExists{}, &stubProfileCreator{err: errors.New("no lo account")})
+		if err := s.NotifyActivation(context.Background(), 7); err == nil {
+			t.Fatal("want error when lo account missing")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+}
+
 // TestPGStore_CancelReleasesPorts 回归:取消订单必须回收本订单预占端口(RESERVED→IDLE),
 // 否则端口死占泄漏(修复前 Cancel 只做 status 迁移,ReleasePortByOrder 全仓库无调用方)。
 func TestPGStore_CancelReleasesPorts(t *testing.T) {

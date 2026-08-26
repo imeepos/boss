@@ -2,7 +2,10 @@ package order
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // ListDismantles 列出全部拆机单。
@@ -70,10 +73,14 @@ func (s *PGStore) ListActivationCallbacks(ctx context.Context) ([]ActivationCall
 }
 
 // AppendActivationCallback 追加激活回调,返回自增 id。
+// 幂等(000154):同订单唯一行(uq_activation_callbacks_order),重复确认/重试
+// 只更新 result/retries,不新增行——保证环节11 可反复重放不产生重复回执。
 func (s *PGStore) AppendActivationCallback(ctx context.Context, c ActivationCallback) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO activation_callbacks(order_id, result, retries) VALUES($1,$2,$3) RETURNING id`,
+		INSERT INTO activation_callbacks(order_id, result, retries) VALUES($1,$2,$3)
+		ON CONFLICT (order_id) DO UPDATE SET result = EXCLUDED.result, retries = EXCLUDED.retries
+		RETURNING id`,
 		c.OrderID, c.Result, c.Retries).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("order: append activation callback: %w", err)
@@ -81,8 +88,37 @@ func (s *PGStore) AppendActivationCallback(ctx context.Context, c ActivationCall
 	return id, nil
 }
 
-// RetryActivationCallback 回调重试:retries+1;未命中返回 ErrNotFound。
+// RetryActivationCallback 回调重试:重放环节11 确认(而非仅计数)。
+//   - 回调行不存在:ErrOrderNotFound。
+//   - 订单已 DONE(环节11 曾成功):回调已是成功历史,仅计数(幂等确认)。
+//   - 订单未 DONE(前次确认失败留 FAILED):重跑 NotifyActivation,
+//     凭证已补则落 SUCCESS 并推进订单;仍缺则保持 FAILED 可再试(补偿台账可见)。
 func (s *PGStore) RetryActivationCallback(ctx context.Context, id int64) error {
+	var cb ActivationCallback
+	err := s.db.QueryRow(ctx,
+		`SELECT id, order_id, result, retries FROM activation_callbacks WHERE id = $1`, id).
+		Scan(&cb.ID, &cb.OrderID, &cb.Result, &cb.Retries)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrOrderNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("order: retry activation callback select: %w", err)
+	}
+	// 订单已 DONE:回调为历史成功态,仅计重试次数。
+	var status string
+	_ = s.db.QueryRow(ctx, `SELECT status FROM orders WHERE id = $1`, cb.OrderID).Scan(&status)
+	if status == "DONE" {
+		return s.bumpActivationRetry(ctx, id)
+	}
+	// 重放确认:重新执行环节11(幂等 upsert 落账),失败重试计数。
+	if err := s.NotifyActivation(ctx, cb.OrderID); err != nil {
+		_ = s.bumpActivationRetry(ctx, id)
+		return err
+	}
+	return nil
+}
+
+func (s *PGStore) bumpActivationRetry(ctx context.Context, id int64) error {
 	tag, err := s.db.Exec(ctx, `UPDATE activation_callbacks SET retries = retries + 1 WHERE id=$1`, id)
 	if err != nil {
 		return fmt.Errorf("order: retry activation callback: %w", err)

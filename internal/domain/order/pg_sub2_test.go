@@ -2,8 +2,10 @@ package order
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 )
 
@@ -92,6 +94,7 @@ func TestPGStore_AppendActivationCallback(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 幂等(000154):同订单 upsert,ON CONFLICT (order_id) DO UPDATE result/retries。
 	mock.ExpectQuery(`INSERT INTO activation_callbacks`).
 		WithArgs(int64(1), "SUCCESS", int16(0)).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -107,6 +110,84 @@ func TestPGStore_AppendActivationCallback(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
 	}
+}
+
+func TestPGStore_RetryActivationCallback(t *testing.T) {
+	t.Run("订单已DONE:仅计数", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id, order_id, result, retries FROM activation_callbacks`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"id", "order_id", "result", "retries"}).
+				AddRow(int64(7), int64(9), "SUCCESS", int16(1)))
+		mock.ExpectQuery(`SELECT status FROM orders`).
+			WithArgs(int64(9)).
+			WillReturnRows(mock.NewRows([]string{"status"}).AddRow("DONE"))
+		mock.ExpectExec(`UPDATE activation_callbacks SET retries = retries \+ 1`).
+			WithArgs(int64(7)).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		s := NewPGStore(mock, stubExists{})
+		if err := s.RetryActivationCallback(context.Background(), 7); err != nil {
+			t.Fatalf("RetryActivationCallback: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("订单未DONE:重放确认失败保持FAILED并计数", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id, order_id, result, retries FROM activation_callbacks`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"id", "order_id", "result", "retries"}).
+				AddRow(int64(7), int64(9), "FAILED", int16(1)))
+		mock.ExpectQuery(`SELECT status FROM orders`).
+			WithArgs(int64(9)).
+			WillReturnRows(mock.NewRows([]string{"status"}).AddRow("INSTALLING"))
+		// NotifyActivation 重放:确认 LO 账号缺失 → 落 FAILED 行,不推进。
+		mock.ExpectQuery(`SELECT customer_id FROM orders`).
+			WithArgs(int64(9)).
+			WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(3)))
+		mock.ExpectQuery(`INSERT INTO activation_callbacks`).
+			WithArgs(int64(9), "FAILED", int16(0)).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
+		mock.ExpectExec(`UPDATE activation_callbacks SET retries = retries \+ 1`).
+			WithArgs(int64(7)).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+		s := NewPGStore(mock, stubExists{}, &stubProfileCreator{err: errors.New("no lo")})
+		if err := s.RetryActivationCallback(context.Background(), 7); err == nil {
+			t.Fatal("want error when confirm still fails")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("回调不存在:ErrOrderNotFound", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id, order_id, result, retries FROM activation_callbacks`).
+			WithArgs(int64(99)).
+			WillReturnError(pgx.ErrNoRows)
+
+		s := NewPGStore(mock, stubExists{})
+		if err := s.RetryActivationCallback(context.Background(), 99); err != ErrOrderNotFound {
+			t.Fatalf("err=%v, want ErrOrderNotFound", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
 }
 
 func TestPGStore_ListDispatchTransfers(t *testing.T) {
