@@ -1955,6 +1955,51 @@ export interface Translations {
       testOk: string
       testFail: string
     }
+    realnameReview: {
+      title: string
+      desc: string
+      total: string
+      refresh: string
+      loadFail: string
+      actionFail: string
+      empty: string
+      all: string
+      allSubject: string
+      subjectCustomer: string
+      subjectWorker: string
+      allResult: string
+      resultPending: string
+      resultPass: string
+      resultFail: string
+      keywordPlaceholder: string
+      subject: string
+      subjectName: string
+      phone: string
+      idCard: string
+      realName: string
+      method: string
+      result: string
+      operator: string
+      verifiedAt: string
+      rejectReason: string
+      operate: string
+      pass: string
+      fail: string
+      rejectTitle: string
+      rejectReasonLabel: string
+      rejectReasonPh: string
+      cancel: string
+      confirm: string
+      prev: string
+      next: string
+      pageOf: string
+      pageUnit: string
+      attachments: string
+      columns: string[]
+      idCardFront: string
+      idCardBack: string
+      viewImage: string
+    }
     servers: {
       title: string
       desc: string
