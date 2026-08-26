@@ -6,6 +6,7 @@ package adminapi
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -74,14 +75,15 @@ func stripeConfigPutHandler(a *app.Application) gin.HandlerFunc {
 var stripeProbe = stripeProbeBalance
 
 // stripeConfigTestHandler POST /stripe-config/channel/test:通道自检
-// (完整性校验跨 channel/webhook 两组;完整性通过后以草稿+已存配置真实探活余额)。
+// (完整性校验跨 channel/webhook 两组;草稿合并也跨两组——webhookSecret 未保存即可参与;
+// 完整性通过后以草稿+已存配置真实探活余额,并核对 Stripe 后台 webhook endpoint 一致性)。
 func stripeConfigTestHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req struct {
 			Values map[string]string `json:"values"`
 		}
 		_ = c.ShouldBindJSON(&req)
-		cur, err := stripeMergedParams(c, a, req.Values, "channel")
+		cur, err := stripeMergedParams(c, a, req.Values)
 		if err != nil {
 			respondErr(c, err)
 			return
@@ -95,16 +97,17 @@ func stripeConfigTestHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		start := time.Now()
-		err = stripeProbe(c.Request.Context(), cur)
-		if err != nil {
+		if err = stripeProbe(c.Request.Context(), cur); err != nil {
 			respond(c, apitypes.CodeOK, gin.H{
 				"ok": false, "latencyMs": time.Since(start).Milliseconds(),
 				"message": "余额探活失败: " + err.Error(),
 			})
 			return
 		}
+		msg := stripeEndpointCheckFunc(c.Request.Context(), cur)
 		respond(c, apitypes.CodeOK, gin.H{
-			"ok": true, "latencyMs": time.Since(start).Milliseconds(), "message": "配置完整,余额探活成功",
+			"ok": true, "latencyMs": time.Since(start).Milliseconds(),
+			"message": "配置完整,余额探活成功" + msg,
 		})
 	}
 }
@@ -120,8 +123,8 @@ func stripeKeysInGroup(values map[string]string, group string) bool {
 	return true
 }
 
-// stripeMergedParams 已存 biz_params(含默认值)叠加草稿 secret 解密后合并。
-func stripeMergedParams(c *gin.Context, a *app.Application, draft map[string]string, group string) (map[string]string, error) {
+// stripeMergedParams 已存 biz_params(含默认值)叠加草稿(跨全部组)解密后合并。
+func stripeMergedParams(c *gin.Context, a *app.Application, draft map[string]string) (map[string]string, error) {
 	list, err := a.User.ListParams(c.Request.Context())
 	if err != nil {
 		return nil, err
@@ -141,7 +144,7 @@ func stripeMergedParams(c *gin.Context, a *app.Application, draft map[string]str
 		}
 	}
 	for k, v := range draft {
-		if f, ok := stripeFieldByKey(k); ok && f.Group == group && !(f.Secret && v == "") {
+		if f, ok := stripeFieldByKey(k); ok && !(f.Secret && v == "") {
 			cur[k] = v
 		}
 	}
@@ -172,4 +175,38 @@ func stripeProbeBalance(ctx context.Context, cur map[string]string) error {
 		client.BaseURL = base
 	}
 	return client.ProbeBalance(ctx)
+}
+
+// stripeEndpointCheckFunc 后台 endpoint 一致性核对(测试可注入;默认真实查询,零副作用)。
+var stripeEndpointCheckFunc = stripeEndpointCheckImpl
+
+// stripeEndpointCheckImpl 核对 Stripe 后台 webhook endpoint 与期望 URL 一致性(只读,零副作用)。
+// 返回拼接进自检 message 的说明:URL 失配/缺失/期望未配置都会明确提示(隧道变化后静默失效的
+// 根因——endpoint 重建导致 whsec 过期,URL 检查是唯一可经 API 观测的代理指标)。
+func stripeEndpointCheckImpl(ctx context.Context, cur map[string]string) string {
+	want := strings.TrimRight(cur["stripe.webhookUrl"], "/")
+	if want == "" {
+		return "。提示:未配置期望回调 URL(回调卡片 webhookUrl),隧道变化时无法自愈/自检比对"
+	}
+	client := stripe.New(cur["stripe.apiKey"], cur["stripe.currency"])
+	if client == nil {
+		return ""
+	}
+	if base := cur["stripe.apiBaseUrl"]; base != "" {
+		client.BaseURL = base
+	}
+	endpoints, err := client.ListWebhookEndpoints(ctx)
+	if err != nil {
+		return "。提示:查询 Stripe webhook endpoint 失败: " + err.Error()
+	}
+	for _, ep := range endpoints {
+		if !strings.Contains(ep.URL, "/api/user/v1/webhooks/stripe") {
+			continue
+		}
+		if strings.TrimRight(ep.URL, "/") == want {
+			return "。后台 webhook endpoint 与期望 URL 一致"
+		}
+		return "。警告:后台 webhook endpoint URL(" + ep.URL + ")与期望不一致(" + want + "),回调将静默失效,自愈循环会自动同步"
+	}
+	return "。警告:后台未注册本系统 webhook endpoint,回调将静默失效,自愈循环会自动重建"
 }

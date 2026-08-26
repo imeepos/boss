@@ -1847,6 +1847,8 @@ const msMY: Translations = {
       apiBaseUrlHint: 'Untuk ujian/proksi; kosong = api.stripe.com rasmi',
       webhookSecret: 'Kunci tandatangan webhook',
       webhookSecretHint: 'Bermula dengan whsec_; untuk sahkan panggilan balik; sepadan dengan endpoint webhook di dashboard Stripe',
+      webhookUrl: 'URL panggil balik yang dijangka',
+      webhookUrlHint: 'URL terowong pantas + /api/user/v1/webhooks/stripe; gelung penyembuhan sendiri menyelaras endpoint Stripe bila terowong berubah',
       secretSet: 'Dikonfigurasi (tidak dipaparkan); biarkan kosong untuk kekal',
       envNote: '1) Kosong = guna env BOSS_STRIPE_*; 2) dalam persekitaran ujian webhook guna terowong intranet; bina semula endpoint bila URL terowong berubah (lihat dokumen)',
       testBtn: 'Uji saluran',

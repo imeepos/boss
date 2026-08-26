@@ -11,7 +11,7 @@ export const CH_KEYS = [
   'stripe.enabled', 'stripe.apiKey', 'stripe.publishableKey', 'stripe.currency', 'stripe.apiBaseUrl',
 ] as const
 
-export const WH_KEYS = ['stripe.webhookSecret'] as const
+export const WH_KEYS = ['stripe.webhookSecret', 'stripe.webhookUrl'] as const
 
 export const STRIPE_SECRET_KEYS = new Set(['stripe.apiKey', 'stripe.webhookSecret'])
 

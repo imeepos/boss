@@ -1020,7 +1020,7 @@ components:
   /stripe-config/channel/test:
     post:
       tags: [Sys]
-      summary: 通道自检(完整性校验跨 channel/webhook;通过后以草稿+已存配置真实探活余额,零副作用)
+      summary: 通道自检(完整性校验跨两组;草稿跨两组合并;通过后真实探活余额 + 核对 webhook endpoint 与期望 URL 一致性,零副作用)
       operationId: testStripeConfig
       requestBody:
         required: false

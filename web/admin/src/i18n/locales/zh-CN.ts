@@ -1848,6 +1848,8 @@ const zhCN: Translations = {
       apiBaseUrlHint: '测试/代理用，留空走官方 api.stripe.com',
       webhookSecret: 'Webhook 签名密钥',
       webhookSecretHint: 'whsec_ 开头，回调验签用；与 Stripe 后台 webhook endpoint 一一对应',
+      webhookUrl: '期望回调 URL',
+      webhookUrlHint: '隧道快速 URL + /api/user/v1/webhooks/stripe；隧道变化后自愈循环会同步 Stripe 后台 endpoint',
       secretSet: '已配置（不回显），留空表示不修改',
       envNote: '① 凭据留空时回退环境变量 BOSS_STRIPE_*；② 测试环境 webhook 走内网隧道，隧道 URL 变化需重建 endpoint（见文档记录）',
       testBtn: '测试通道',

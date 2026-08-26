@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -13,22 +14,37 @@ func (s *PGStore) RecordPayment(ctx context.Context, p Payment) (int64, error) {
 	return r.PaymentID, err
 }
 
+// resolveBillCustomer 查账单归属客户;账单不存在返回 ErrForeignKeyViolation(防孤儿)。
+func (s *PGStore) resolveBillCustomer(ctx context.Context, billID int64) (int64, error) {
+	var cust int64
+	err := s.db.QueryRow(ctx, `SELECT customer_id FROM bills WHERE id = $1`, billID).Scan(&cust)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, fmt.Errorf("billing: bill %d: %w", billID, ErrForeignKeyViolation)
+	}
+	if err != nil {
+		return 0, fmt.Errorf("billing: resolve bill %d customer: %w", billID, err)
+	}
+	return cust, nil
+}
+
 // RecordPaymentWithCoupon 带券落账:先插全额流水取 id,再同事务行锁核销券,
 // 最后把流水金额改写为实收;核销失败整笔回滚(券不可用则缴费不成立)。
-// 关联完整性:账单流水必须锚定已存在账单;无账单流水(充值/续费)必须带 customer_id
-// 归属,否则落账即孤儿(payments 曾 2 条 bill_id/customer_id 双空,audit 2026-08-25)。
+// 关联完整性:账单流水必须锚定已存在账单且回填 customer_id(双挂语义,000068);
+// 无账单流水(充值/续费)必须带 customer_id 归属,否则落账即孤儿
+// (payments 曾 2 条 bill_id/customer_id 双空,audit 2026-08-25)。
 func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (PaymentReceipt, error) {
 	if p.Status == "" {
 		p.Status = "SUCCESS"
 	}
 	if p.BillID > 0 {
-		ok, err := s.exists(ctx, "bills", p.BillID)
+		billCust, err := s.resolveBillCustomer(ctx, p.BillID)
 		if err != nil {
 			return PaymentReceipt{}, err
 		}
-		if !ok {
-			return PaymentReceipt{}, fmt.Errorf("billing: bill %d: %w", p.BillID, ErrForeignKeyViolation)
+		if p.CustomerID != 0 && p.CustomerID != billCust {
+			return PaymentReceipt{}, fmt.Errorf("billing: payment customer %d mismatch bill customer %d: %w", p.CustomerID, billCust, ErrForeignKeyViolation)
 		}
+		p.CustomerID = billCust // 强制双挂:落账行 customer_id = 账单客户
 	} else if p.CustomerID <= 0 {
 		return PaymentReceipt{}, fmt.Errorf("billing: payment needs bill_id or customer_id: %w", ErrForeignKeyViolation)
 	}

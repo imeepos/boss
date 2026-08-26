@@ -51,6 +51,11 @@ type BillingService interface {
 	// ListPaymentsByCustomer 按客户聚合缴费+充值流水(customer_id 优先,账单归属兜底)。
 	ListPaymentsByCustomer(ctx context.Context, customerID int64) ([]Payment, error)
 	CreatePayment(ctx context.Context, p Payment) (int64, error)
+	// PaymentExistsByPayNo 同 pay_no 流水是否已存在(渠道重投幂等直查)。
+	PaymentExistsByPayNo(ctx context.Context, payNo string) (bool, error)
+	// RecordTopup 充值落账:无账单流水 + 余额增加同事务,pay_no 唯一幂等;
+	// 仅 SUCCESS 增余额,FAILED 只留痕不动余额。
+	RecordTopup(ctx context.Context, p Payment) (int64, error)
 	// RecordPayment 收款落账:缴费流水 + 账单置 PAID 同事务,pay_no 唯一幂等。
 	RecordPayment(ctx context.Context, p Payment) (int64, error)
 	// RecordPaymentWithCoupon 带券缴费:CouponID 非空时同事务核销(promotion 注入),

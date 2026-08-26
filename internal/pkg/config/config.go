@@ -117,6 +117,7 @@ type Config struct {
 		WebhookSec string // endpoint signing secret(whsec_...)
 		Currency   string // 记账币种小写(如 php)
 		APIBaseURL string // 覆盖 API 地址(测试/代理用,空=官方)
+		WebhookURL string // 期望回调 URL(隧道快速 URL+路径;自愈循环比对用)
 	}
 }
 
@@ -181,6 +182,7 @@ func Load() *Config {
 	c.Stripe.WebhookSec = getenv("BOSS_STRIPE_WEBHOOK_SECRET", "")
 	c.Stripe.Currency = getenv("BOSS_STRIPE_CURRENCY", "php")
 	c.Stripe.APIBaseURL = getenv("BOSS_STRIPE_API_BASE", "")
+	c.Stripe.WebhookURL = getenv("BOSS_STRIPE_WEBHOOK_URL", "")
 
 	c.Business.Timezone = getenv("BOSS_TIMEZONE", "Asia/Manila")
 	if err := clock.Set(c.Business.Timezone); err != nil {

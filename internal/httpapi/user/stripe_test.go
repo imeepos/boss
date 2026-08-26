@@ -63,6 +63,19 @@ func (f *settleBilling) CreatePayment(_ context.Context, p billing.Payment) (int
 	f.pays = append(f.pays, p)
 	return int64(len(f.pays)), nil
 }
+func (f *settleBilling) PaymentExistsByPayNo(_ context.Context, payNo string) (bool, error) {
+	for _, p := range f.pays {
+		if p.PayNo == payNo {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+func (f *settleBilling) RecordTopup(_ context.Context, p billing.Payment) (int64, error) {
+	f.created = append(f.created, p)
+	f.pays = append(f.pays, p)
+	return int64(len(f.pays)), nil
+}
 func (f *settleBilling) RecordPayment(_ context.Context, p billing.Payment) (int64, error) {
 	f.recorded = append(f.recorded, p)
 	f.pays = append(f.pays, p)
@@ -223,7 +236,8 @@ func TestStripeWebhook(t *testing.T) {
 	}
 }
 
-// TestStripeWebhookTopup 无账单意图(customer_id 有、bill_no 空):落充值流水。
+// TestStripeWebhookTopup 无账单意图(customer_id 有、bill_no 空):落充值流水(流水+余额同事务);
+// 重投幂等不重复落账。
 func TestStripeWebhookTopup(t *testing.T) {
 	cust := userPortalCust()
 	bill := &settleBilling{}
@@ -236,5 +250,40 @@ func TestStripeWebhookTopup(t *testing.T) {
 	if w.Code != http.StatusOK || len(bill.created) != 1 || bill.created[0].CustomerID != cust.ID ||
 		bill.created[0].Amount != 50 || bill.created[0].BillID != 0 {
 		t.Fatalf("topup resp=%d created=%v", w.Code, bill.created)
+	}
+	// 重投:不再新增落账(余额不重复到账)。
+	w = webhookDo(r, payload, wh.SignPayload([]byte(payload), time.Now()))
+	if w.Code != http.StatusOK || len(bill.created) != 1 || len(bill.pays) != 1 {
+		t.Fatalf("topup replay resp=%d created=%d pays=%d", w.Code, len(bill.created), len(bill.pays))
+	}
+}
+
+// TestStripeWebhookTopupFailed 无账单失败意图:只落 FAILED 流水,不走充值落账(无余额动作)。
+func TestStripeWebhookTopupFailed(t *testing.T) {
+	cust := userPortalCust()
+	bill := &settleBilling{}
+	wh := stripe.Webhook{Secret: "whsec_x"}
+	r := newStripeRouter(bill, nil, wh)
+	payload := fmt.Sprintf(`{"type":"payment_intent.payment_failed","data":{"object":{"id":"pi_t","amount":5000,
+		"currency":"php","metadata":{"pay_no":"PAY-TF","customer_id":"%d"}}}}`, cust.ID)
+
+	w := webhookDo(r, payload, wh.SignPayload([]byte(payload), time.Now()))
+	if w.Code != http.StatusOK || len(bill.created) != 1 || bill.created[0].Status != "FAILED" ||
+		bill.created[0].CustomerID != cust.ID {
+		t.Fatalf("topup failed resp=%d created=%v", w.Code, bill.created)
+	}
+}
+
+// TestStripeWebhookUnattributable 无 bill_no 且无 customer_id:不落账(防孤儿),ack 等渠道重试。
+func TestStripeWebhookUnattributable(t *testing.T) {
+	bill := &settleBilling{}
+	wh := stripe.Webhook{Secret: "whsec_x"}
+	r := newStripeRouter(bill, nil, wh)
+	payload := `{"type":"payment_intent.succeeded","data":{"object":{"id":"pi_t","amount":5000,
+		"currency":"php","metadata":{"pay_no":"PAY-NA"}}}}`
+
+	w := webhookDo(r, payload, wh.SignPayload([]byte(payload), time.Now()))
+	if w.Code != http.StatusOK || len(bill.created) != 0 || len(bill.recorded) != 0 {
+		t.Fatalf("unattributable resp=%d created=%d recorded=%d", w.Code, len(bill.created), len(bill.recorded))
 	}
 }

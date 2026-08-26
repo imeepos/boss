@@ -12,8 +12,9 @@ var stripeFields = []authField{
 	{Key: "stripe.currency", Group: "channel", Default: "php"}, // 记账币种小写
 	{Key: "stripe.apiBaseUrl", Group: "channel"},               // 覆盖 API 地址(测试/代理),空=官方
 
-	// 回调:webhook 验签
+	// 回调:webhook 验签 + 期望 URL(隧道自愈比对源)
 	{Key: "stripe.webhookSecret", Group: "webhook", Secret: true}, // whsec_...
+	{Key: "stripe.webhookUrl", Group: "webhook"},                  // 期望回调 URL(隧道快速 URL+路径)
 }
 
 // stripeFieldByGroup 组内字段(channel/webhook)。

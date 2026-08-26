@@ -1837,6 +1837,8 @@ export interface Translations {
       apiBaseUrlHint: string
       webhookSecret: string
       webhookSecretHint: string
+      webhookUrl: string
+      webhookUrlHint: string
       secretSet: string
       envNote: string
       testBtn: string

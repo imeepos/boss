@@ -1847,6 +1847,8 @@ const enUS: Translations = {
       apiBaseUrlHint: 'For tests/proxies; leave empty for official api.stripe.com',
       webhookSecret: 'Webhook signing secret',
       webhookSecretHint: 'whsec_ prefixed; used to verify callbacks; matches the Stripe dashboard webhook endpoint',
+      webhookUrl: 'Expected callback URL',
+      webhookUrlHint: 'Tunnel quick URL + /api/user/v1/webhooks/stripe; the self-heal loop syncs the Stripe endpoint when the tunnel changes',
       secretSet: 'Configured (not echoed); leave blank to keep',
       envNote: '1) Leave blank to fall back to env BOSS_STRIPE_*; 2) in the test env webhook goes through an intranet tunnel; recreate the endpoint when the tunnel URL changes (see docs)',
       testBtn: 'Test channel',
