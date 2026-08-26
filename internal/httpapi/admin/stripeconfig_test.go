@@ -89,6 +89,9 @@ func TestStripeConfigRoutes(t *testing.T) {
 		orig := stripeProbe
 		stripeProbe = func(context.Context, map[string]string) error { return nil }
 		defer func() { stripeProbe = orig }()
+		origEP := stripeEndpointCheckFunc
+		stripeEndpointCheckFunc = func(context.Context, map[string]string) string { return "" }
+		defer func() { stripeEndpointCheckFunc = origEP }()
 
 		f := &fakeAuthUser{fakeUser: fakeUser{permOk: true}, params: map[string]string{}}
 		r := newAuthTestRouter(f, mgr)
@@ -134,6 +137,51 @@ func TestStripeConfigTestProbeFail(t *testing.T) {
 	w := postJSONAuth(t, r, "/api/admin/v1/stripe-config/channel/test", `{}`, token)
 	if !strings.Contains(w.Body.String(), `"ok":false`) || !strings.Contains(w.Body.String(), "探活失败") {
 		t.Fatalf("probe fail should surface: %s", w.Body.String())
+	}
+}
+
+// 跨组草稿自检(P2-2):apiKey(webhook 组)与 webhookSecret(webhook 组)都仅以草稿提交
+// 未落库,自检也应通过(草稿跨两组合并);endpoint 一致性检查消息透出。
+func TestStripeConfigTestCrossGroupDraft(t *testing.T) {
+	mgr := auth.NewManager("test-secret", time.Hour)
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
+	orig := stripeProbe
+	stripeProbe = func(context.Context, map[string]string) error { return nil }
+	defer func() { stripeProbe = orig }()
+	origEP := stripeEndpointCheckFunc
+	stripeEndpointCheckFunc = func(_ context.Context, cur map[string]string) string {
+		if cur["stripe.webhookSecret"] != "whsec_draft" {
+			return "draft-missing"
+		}
+		return "。警告:后台 webhook endpoint URL 与期望不一致"
+	}
+	defer func() { stripeEndpointCheckFunc = origEP }()
+
+	f := &fakeAuthUser{fakeUser: fakeUser{permOk: true}, params: map[string]string{}}
+	r := newAuthTestRouter(f, mgr)
+	// webhookSecret 属于 webhook 组,仅作草稿(不 PUT)提交,apiKey 同理草稿。
+	w := postJSONAuth(t, r, "/api/admin/v1/stripe-config/channel/test",
+		`{"values":{"stripe.apiKey":"sk_test_x","stripe.webhookSecret":"whsec_draft"}}`, token)
+	if !strings.Contains(w.Body.String(), `"ok":true`) || !strings.Contains(w.Body.String(), "后台 webhook endpoint URL 与期望不一致") {
+		t.Fatalf("cross-group draft should pass and surface endpoint warn: %s", w.Body.String())
+	}
+}
+
+// endpoint 一致性:期望 URL 未配置时自检透出提示(提示而非失败)。
+func TestStripeConfigTestEndpointCheckNoWant(t *testing.T) {
+	mgr := auth.NewManager("test-secret", time.Hour)
+	token, _ := mgr.Sign(auth.AudAdmin, 1, "boss", "sysadmin")
+	orig := stripeProbe
+	stripeProbe = func(context.Context, map[string]string) error { return nil }
+	defer func() { stripeProbe = orig }()
+
+	f := &fakeAuthUser{fakeUser: fakeUser{permOk: true}, params: map[string]string{
+		"stripe.apiKey": "sk_test_x", "stripe.webhookSecret": "whsec_x",
+	}}
+	r := newAuthTestRouter(f, mgr)
+	w := postJSONAuth(t, r, "/api/admin/v1/stripe-config/channel/test", `{}`, token)
+	if !strings.Contains(w.Body.String(), "未配置期望回调 URL") {
+		t.Fatalf("no-want hint should surface: %s", w.Body.String())
 	}
 }
 
