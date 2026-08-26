@@ -435,6 +435,7 @@ const enUS: Translations = {
       entityExistingLoadFail: 'Existing-data precheck failed; only file duplicates will be skipped. Database constraints still apply.',
       entityMaxRowsFallback: 'Could not load the import limit; using the default limit of {max}.',
       taskRegisterFail: 'Rows were processed, but the import record could not be saved. Retry from the import center or contact an administrator.',
+      taskRetryRegister: 'Retry registering the import record',
     },
     account: {
       title: 'Accounts & Roles',

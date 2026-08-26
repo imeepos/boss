@@ -369,6 +369,7 @@ export interface Translations {
       entityExistingLoadFail: string
       entityMaxRowsFallback: string
       taskRegisterFail: string
+      taskRetryRegister: string
     }
     account: {
       title: string

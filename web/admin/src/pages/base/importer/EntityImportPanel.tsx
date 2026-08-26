@@ -52,6 +52,8 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
   const clientKeyRef = useRef('')
   const [maxRowsFallback, setMaxRowsFallback] = useState(false)
   const [existingLoadFailed, setExistingLoadFailed] = useState(false)
+  /** 登记失败后保留的待登记统计(用同一 clientKey 支持重试,不重复执行创建行)。 */
+  const [pendingTask, setPendingTask] = useState<{ total: number; imported: number; failed: number; skipped: number } | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -141,19 +143,31 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
     URL.revokeObjectURL(url)
   }
 
-  /** 导入结果登记(POST /import-tasks):结果可追溯;登记失败不阻断、不打扰(仅 console)。 */
+  /** 导入结果登记(POST /import-tasks):结果可追溯;登记失败保留待登记统计供同 key 重试。 */
   const registerTask = async (total: number, imported: number, failed: number, skipped: number): Promise<boolean> => {
     try {
       await apiFetch('/import-tasks', {
         method: 'POST',
         body: { kind: `entity:${def.kind}`, total, imported, failed, skipped, clientKey: clientKeyRef.current },
       })
+      setPendingTask(null)
       return true
     } catch (e: unknown) {
       console.warn('import-task register failed', e)
       setError(text.taskRegisterFail)
+      setPendingTask({ total, imported, failed, skipped })
       return false
     }
+  }
+
+  /** 登记重试:只重发登记端点,复用本次 clientKey,不重复执行业务创建行。 */
+  const retryRegister = async () => {
+    if (!pendingTask || busy) return
+    setBusy(true)
+    setError('')
+    const okReg = await registerTask(pendingTask.total, pendingTask.imported, pendingTask.failed, pendingTask.skipped)
+    if (okReg) onImported()
+    setBusy(false)
   }
 
   /** 逐行 POST;401(登录失效)中止剩余行,业务失败逐条记录不中断。 */
@@ -297,6 +311,9 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
         </ToolbarButton>
         {noPerm && <span className="text-xs text-[var(--color-danger)]">{text.entityNoPerm.replace('{perm}', def.perm)}</span>}
         {progress && !busy && <Badge variant={failures.length ? 'warning' : 'success'}>{summary}</Badge>}
+        {pendingTask && !busy && (
+          <ToolbarButton onClick={retryRegister}>{text.taskRetryRegister}</ToolbarButton>
+        )}
         {busy && progress && (
           <span className="text-xs text-[var(--shell-group-title)]">
             {text.entityProgress.replace('{done}', String(progress.done)).replace('{total}', String(progress.total))}

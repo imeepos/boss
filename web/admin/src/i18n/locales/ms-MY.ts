@@ -435,6 +435,7 @@ const msMY: Translations = {
       entityExistingLoadFail: 'Prasemak data sedia ada gagal; hanya pendua dalam fail akan dilangkau. Kekangan pangkalan data masih terpakai.',
       entityMaxRowsFallback: 'Had import gagal dimuatkan; had lalai {max} digunakan.',
       taskRegisterFail: 'Baris telah diproses tetapi rekod import gagal disimpan. Cuba semula dari pusat import atau hubungi pentadbir.',
+      taskRetryRegister: 'Cuba daftar semula rekod import',
     },
     account: {
       title: 'Akaun & Peranan',

@@ -435,6 +435,7 @@ const zhCN: Translations = {
       entityExistingLoadFail: '现有数据预检失败,本次仅执行文件内去重,数据库约束仍会校验重复',
       entityMaxRowsFallback: '导入上限参数读取失败,本次使用默认上限 {max}',
       taskRegisterFail: '业务数据已处理,但导入记录登记失败,请稍后在导入中心重试或联系管理员',
+      taskRetryRegister: '重试登记导入记录',
     },
     account: {
       title: '账号与角色',
