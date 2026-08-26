@@ -418,6 +418,28 @@ components:
         community: { type: string }
         building: { type: string }
         door: { type: string }
+        addressPath: { type: string, description: 地址层级树 ltree 路径,空=历史自由文本地址 }
+
+    AddressNode:
+      type: object
+      description: 地址层级树节点(ltree 权威,ADR-002);level 1市 2区 3街道 4小区 5楼栋
+      properties:
+        id: { type: integer, format: int64 }
+        parentId: { type: integer, format: int64 }
+        level: { type: integer }
+        name: { type: string }
+        countryCode: { type: string, description: 所在树根国家锚点(alpha-2,空=未挂接) }
+        adminCode: { type: string, description: 所在树根一级行政区锚点 }
+        hasChildren: { type: boolean }
+
+    AddressTreeHit:
+      type: object
+      description: 搜索命中:节点 + 按 level 升序祖先链
+      properties:
+        node: { $ref: '#/components/schemas/AddressNode' }
+        ancestors:
+          type: array
+          items: { $ref: '#/components/schemas/AddressNode' }
 
     DiySection:
       type: object

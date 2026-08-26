@@ -14,11 +14,13 @@ import (
 )
 
 // registerPortalAddressRoutes /addresses 系列:分页 list + create + update + delete。
+// 地址层级树(/address-tree)见 portal_address_tree.go,在此统一挂载。
 func registerPortalAddressRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/addresses", portalListAddresses(a))
 	g.POST("/addresses", portalCreateAddress(a))
 	g.PUT("/addresses/:addressId", portalUpdateAddress(a))
 	g.DELETE("/addresses/:addressId", portalDeleteAddress(a))
+	registerPortalAddressTreeRoutes(g, a)
 }
 
 // portalListAddresses GET /addresses?page=&pageSize= 我的家庭地址分页(契约 AddressInfo)。

@@ -236,6 +236,52 @@ paths:
         '404':
           description: 地址不存在或不属于当前客户
 
+  /address-tree:
+    get:
+      tags: [Misc]
+      summary: 地址层级树子节点(级联选择逐层懒加载)
+      operationId: listAddressTreeChildren
+      parameters:
+        - name: parentId
+          in: query
+          schema: { type: integer, format: int64, default: 0 }
+          description: 父节点ID,0=顶层
+      responses:
+        '200':
+          description: 子节点列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/AddressNode' }
+
+  /address-tree/search:
+    get:
+      tags: [Misc]
+      summary: 地址全树搜索(命中节点+祖先链,与 admin /addresses/search 同语义)
+      operationId: searchAddressTree
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: 命中列表(上限 20)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/AddressTreeHit' }
+        '42200':
+          description: q 为空
+
   /diy/steps:
     get:
       tags: [Misc]

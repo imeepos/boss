@@ -105,6 +105,8 @@ paths:
   /points/tasks/{id}/complete: { $ref: './user/loy.yaml#/paths/~1points~1tasks~1{id}~1complete' }
   /usage: { $ref: './user/misc.yaml#/paths/~1usage' }
   /addresses: { $ref: './user/misc.yaml#/paths/~1addresses' }
+  /address-tree: { $ref: './user/misc.yaml#/paths/~1address-tree' }
+  /address-tree/search: { $ref: './user/misc.yaml#/paths/~1address-tree~1search' }
   /diy/steps: { $ref: './user/misc.yaml#/paths/~1diy~1steps' }
   /agreement: { $ref: './user/misc.yaml#/paths/~1agreement' }
   /attachments/upload: { $ref: './user/misc.yaml#/paths/~1attachments~1upload' }
