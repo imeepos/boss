@@ -900,3 +900,9 @@
   `3e0346e5` fix: wrap community dropdown items in ExposedDropdownMenu（真机发现）
   `542cc857` fix: distinguish location failure types in editor sheet（真机发现）
   全部基于真机 adb 截图 + uiautomator dump + input tap 验证；worktree 已清理。
+
+## 2026-08-26 家庭地址添加方案调研(docs/research)
+
+- 哪个坑浪费了最多时间？调研本身顺,事故在收尾:`git worktree add ../boss-wt-addr-research` 建在仓库**外侧**,我却把文件写到仓库内嵌套路径 `boss/boss-wt-addr-research/`,随后在该目录 `git add+commit`,git 向上解析到主仓库,commit 静默落在 main(违反"禁止主分支改代码")。靠 commit 输出标记 `[main 71bb240e]` 才当场发现,soft-reset 保留并行会话未提交的 .agents 改动后重做。另:合并前 fetch 发现本地 main 领先 gitea/main 两个提交(上一会话没推),一并推齐。
+- 这个 skill 有没有提前警告我？红 #5(commit 后核对状态)间接救场——正因为盯输出才发现落错分支;但"worktree 是兄弟目录、嵌套路径会被主仓库吞掉"没有明确红线,已补为红 #10 并把累犯台账"跑错树"行 +1 到 2。
+- 重来一次我会怎么做？worktree 建好后立即 `git worktree list` 拿绝对路径再写文件;每条 bash 开头 `pwd && git branch --show-current` 自检;merge 前 fetch 并核对 main 与 gitea/main 双向差异(领先也要处理,不只是落后)。

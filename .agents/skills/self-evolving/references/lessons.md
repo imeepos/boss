@@ -354,3 +354,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-09-04: 102 cron 脚本提交前先在目标机真实路径跑正常/DOWN 两路,本地 shell 通过不代表远端 ROOT/JSON 拼接安全;外发 JSON 字段统一清洗 CR/LF。
 - 2026-09-04: check-contract-sync 的 OpenAPI 路径扫描应按 portal 隔离并同时读取根 manifest 与对应子目录,不能把同行 `$ref` 当作唯一 path 形态。
 - 2026-09-04: cdp-capture 需要跨命令保留登录态时使用 `--user-data-dir`;默认临时 profile 仍保留以防状态泄漏。
+- `git worktree add ../name` 建的是仓库外兄弟目录;往仓库内 `./name` 写文件再 commit,git 向上解析到主仓库,commit 静默落 main。写前 `git worktree list` 核绝对路径,commit 输出方括号看分支名(2026-08-26)。
