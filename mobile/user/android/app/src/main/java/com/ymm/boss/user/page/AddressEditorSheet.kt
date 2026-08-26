@@ -1,5 +1,11 @@
 package com.ymm.boss.user.page
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,11 +20,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -28,36 +39,58 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ymm.boss.user.ui.FieldLabel
+import com.ymm.boss.user.api.LocationProvider
 import com.ymm.boss.user.ui.Palette
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /**
- * 新增/编辑地址底部弹窗:小区、楼栋、门牌、联系人、手机号(label 由后端拼装)。
- * 提交前基础校验:小区/联系人非空;手机号格式正确。
- * existing==null → 新增;否则编辑。
+ * 新增/编辑地址底部弹窗。
+ * 顶部"使用当前位置"按钮：拿 GPS → 把"GPS: N, E"预填到门牌号（可改）。
+ * 小区输入带历史下拉（recentCommunities 调用方注入），减少重复输入。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddressEditorSheet(
     initial: JSONObject?,
+    recentCommunities: List<String>,
     onDismiss: () -> Unit,
     onSubmit: (JSONObject) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     var community by remember { mutableStateOf(initial?.optString("community").orEmpty()) }
     var building by remember { mutableStateOf(initial?.optString("building").orEmpty()) }
     var door by remember { mutableStateOf(initial?.optString("door").orEmpty()) }
     var contact by remember { mutableStateOf(initial?.optString("contact").orEmpty()) }
-    var phone by remember { mutableStateOf("") } // phoneMasked 不回填,避免误导;后端空值取账户默认手机
+    var phone by remember { mutableStateOf("") }
     var err by remember { mutableStateOf("") }
+    var locationHint by remember { mutableStateOf("") }
+    var locating by remember { mutableStateOf(false) }
+    val communityOptions = remember(recentCommunities, community) {
+        recentCommunities.filter { it.isNotBlank() && it != community }.distinct()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        val ok = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (ok) doLocate(context, scope, setLocating = { locating = it },
+            setHint = { locationHint = it }, setDoor = { door = it })
+        else { err = "未授予定位权限"; locationHint = "" }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -66,9 +99,26 @@ fun AddressEditorSheet(
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
             SheetHeader(title = if (initial == null) "新增家庭地址" else "编辑家庭地址", onClose = onDismiss)
+            Spacer(Modifier.height(4.dp))
+            LocateAction(
+                locating = locating,
+                hint = locationHint,
+                onClick = {
+                    err = ""
+                    if (LocationProvider.hasPermission(context)) {
+                        doLocate(context, scope, setLocating = { locating = it },
+                            setHint = { locationHint = it }, setDoor = { door = it })
+                    } else {
+                        permissionLauncher.launch(arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION,
+                        ))
+                    }
+                },
+            )
             Spacer(Modifier.height(8.dp))
             FieldLabel("小区 / 楼盘")
-            AddrInput(community, "请输入小区名", KeyboardType.Text) { community = it; err = "" }
+            CommunityField(community, communityOptions) { community = it; err = "" }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) {
                     FieldLabel("楼栋")
@@ -107,6 +157,59 @@ fun AddressEditorSheet(
     }
 }
 
+private fun doLocate(
+    context: android.content.Context,
+    scope: kotlinx.coroutines.CoroutineScope,
+    setLocating: (Boolean) -> Unit,
+    setHint: (String) -> Unit,
+    setDoor: (String) -> Unit,
+) {
+    setLocating(true)
+    scope.launch {
+        try {
+            val p = LocationProvider.current(context)
+            val s = LocationProvider.format(p)
+            setHint("当前位置：$s（已填入门牌号，可修改）")
+            setDoor("GPS: $s")
+        } catch (_: Exception) {
+            setHint("")
+            setDoor("")
+        } finally {
+            setLocating(false)
+        }
+    }
+}
+
+@Composable
+private fun LocateAction(locating: Boolean, hint: String, onClick: () -> Unit) {
+    val border = if (hint.isNotBlank()) Palette.primary else Palette.line
+    Row(
+        Modifier.fillMaxWidth()
+            .background(Palette.panel, RoundedCornerShape(10.dp))
+            .border(1.dp, border, RoundedCornerShape(10.dp))
+            .clickable(enabled = !locating, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Outlined.MyLocation, contentDescription = "定位",
+            tint = Palette.primary, modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                if (locating) "正在获取位置…" else "使用当前位置",
+                fontSize = 13.sp, fontWeight = FontWeight.W500, color = Palette.ink,
+            )
+            if (hint.isNotBlank()) {
+                Text(hint, fontSize = 11.5.sp, color = Palette.muted,
+                    modifier = Modifier.padding(top = 2.dp))
+            }
+        }
+        if (locating) Text("…", fontSize = 14.sp, color = Palette.primary)
+    }
+}
+
 @Composable
 private fun SheetHeader(title: String, onClose: () -> Unit) {
     Row(
@@ -118,6 +221,42 @@ private fun SheetHeader(title: String, onClose: () -> Unit) {
         IconButton(onClick = onClose) {
             Icon(Icons.Outlined.Close, contentDescription = "关闭", tint = Palette.muted,
                 modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CommunityField(value: String, options: List<String>, onChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onChange,
+            placeholder = { Text("请输入小区名", fontSize = 13.sp, color = Palette.subtle) },
+            singleLine = true,
+            shape = RoundedCornerShape(10.dp),
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .padding(bottom = 8.dp),
+        )
+        if (options.isEmpty()) {
+            DropdownMenuItem(
+                text = { Text("暂无历史小区", fontSize = 13.sp, color = Palette.muted) },
+                onClick = { expanded = false },
+                enabled = false,
+            )
+        } else {
+            options.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(item, fontSize = 13.sp, color = Palette.ink) },
+                    onClick = { onChange(item); expanded = false },
+                )
+            }
         }
     }
 }
@@ -151,6 +290,11 @@ private fun SubmitButton(text: String, enabled: Boolean, onClick: () -> Unit) {
 }
 
 private fun phoneOk(phone: String): Boolean {
-    if (phone.isBlank()) return true // 后端会用账户手机兜底
+    if (phone.isBlank()) return true
     return Regex("^1\\d{10}$").matches(phone.trim())
+}
+
+@Composable
+private fun FieldLabel(text: String) {
+    Text(text, fontSize = 13.sp, color = Palette.muted, modifier = Modifier.padding(bottom = 4.dp))
 }

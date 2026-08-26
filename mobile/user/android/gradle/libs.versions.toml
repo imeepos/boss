@@ -11,6 +11,8 @@ espressoCore = "3.6.1"
 securityCrypto = "1.1.0-alpha06"
 exifInterface = "1.3.7"
 stripe = "21.19.0"
+playLocation = "21.3.0"
+coroutines = "1.10.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -31,6 +33,8 @@ androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterfa
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 stripe-android = { group = "com.stripe", name = "stripe-android", version.ref = "stripe" }
+play-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playLocation" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

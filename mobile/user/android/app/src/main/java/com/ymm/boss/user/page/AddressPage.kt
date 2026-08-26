@@ -135,6 +135,7 @@ fun AddressScreen(nav: Nav) {
     editor?.let { target ->
         AddressEditorSheet(
             initial = target.existing,
+            recentCommunities = items.mapNotNull { it.optString("community").takeIf { c -> c.isNotBlank() } },
             onDismiss = { editor = null },
             onSubmit = { payload ->
                 editor = null

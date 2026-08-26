@@ -83,6 +83,8 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.exifinterface)
     implementation(libs.stripe.android)
+    implementation(libs.play.location)
+    implementation(libs.kotlinx.coroutines.play.services)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.junit)
