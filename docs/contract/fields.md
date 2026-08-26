@@ -437,8 +437,9 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 记账币种 | `stripe.currency` | ISO 小写三字码,默认 php |
 | API 地址覆盖 | `stripe.apiBaseUrl` | 测试/代理用,空=官方 api.stripe.com |
 | Webhook 签名密钥 | `stripe.webhookSecret` | whsec_ 开头,secret,密文落库;空串=不修改 |
+| 期望回调 URL | `stripe.webhookUrl` | 隧道快速 URL + `/api/user/v1/webhooks/stripe`,自愈循环比对源;env 兜底 `BOSS_STRIPE_WEBHOOK_URL` |
 
-> 接口：`GET /stripe-config`、`PUT /stripe-config/{channel|webhook}`、`POST /stripe-config/channel/test`（完整性校验跨两组,通过后以草稿+已存配置真实探活余额,零副作用;permCode `menu:stripeconfig`,迁移 000147,openapi sys.yaml）。env 兜底：`BOSS_STRIPE_API_KEY`/`BOSS_STRIPE_WEBHOOK_SECRET`/`BOSS_STRIPE_CURRENCY`/`BOSS_STRIPE_API_BASE`。
+> 接口：`GET /stripe-config`、`PUT /stripe-config/{channel|webhook}`、`POST /stripe-config/channel/test`（完整性校验跨两组,草稿跨 channel/webhook 组合并——webhookSecret 未保存即可参与;通过后真实探活余额 + 核对后台 webhook endpoint 与期望 URL 一致性,零副作用;permCode `menu:stripeconfig`,迁移 000147,openapi sys.yaml）。env 兜底：`BOSS_STRIPE_API_KEY`/`BOSS_STRIPE_WEBHOOK_SECRET`/`BOSS_STRIPE_CURRENCY`/`BOSS_STRIPE_API_BASE`/`BOSS_STRIPE_WEBHOOK_URL`。
 
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
@@ -564,7 +565,9 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 退款时间 | `RefundedAt` | refunded_at | 000112;可空,退款时落 now() |
 
 > 000068 起 payments 同时挂 `bill_id`(可空) 与 `customer_id`：账单缴费走 bill，充值类流水仅挂 customer；
-> 存量行已回填 customer_id（取 bill.customer_id）。
+> 存量行已回填 customer_id（取 bill.customer_id）。2026-08-30 收口：落账源头
+> `RecordPaymentWithCoupon` 强制双挂——账单流水按 bill 回填 customer_id、显式传错客户拒收，
+> 迁移 000148 补清后增空行。
 > 缴费成功自动复机（Q3）：SUCCESS 落账后若客户 LO 账号 SUSPENDED 即自动 RESUME（迁移+`stop_resume_tasks` RESUME 流水留痕；
 > 失败任务留 FAILED 经 `POST /stop-resume-tasks/:id/retry` 重试），入口覆盖 admin 收款/门户缴费/门户续费/Stripe webhook。
 > 欠费催收批处理（Q3）：`POST /dunning-runs`（graceDays 宽限/stopAfterDays 停机线，缺省 15/30）→ 宽限外 UNPAID 账单置

@@ -64,6 +64,7 @@
 | 2026-08-25 | 三端全量支持 API key 鉴权:worker 端补 worker 主体密钥,主体边界不跨端,对接 AI 操作系统 | adopted/2026-08-25-api-key-three-portal.md |
 | 2026-08-25 | 后台提醒中心:广播+读回执/30s 轮询/来源域 handler 层接入 | adopted/2026-08-25-admin-notify-broadcast-read-receipt.md |
 | 2026-08-25 | 附件删除采用软删除(attachments.deleted_at,000093):引用面不可穷举禁物理删,MinIO 对象保留可审计 | adopted/2026-08-25-attachment-soft-delete.md |
+| 2026-08-26 | 支付链路健壮性收口:充值原子落账(RecordTopup 流水+余额同事务)、webhook 隧道自愈(期望 URL+周期比对,UPDATE 保密钥/CREATE 换密钥落 biz_params)、账单流水强制双挂(000148) | adopted/2026-08-26-payment-hardening.md |
 | 2026-08-26 | Stripe 测试环境接线:webhook endpoint 经 REST API 创建,隧道/凭据固定入 102 compose;充值页银行卡选项对齐 Android 移除 | adopted/2026-08-26-stripe-test-env-wiring.md |
 | 2026-08-26 | Stripe 支付配置页化:沿用 biz_params+Dynamic 热更(60s),env 降级兜底;apiKey/whsec 分组密文存储,自检真实探活余额 | adopted/2026-08-26-stripe-config-page.md |
 | 2026-08-26 | 最小 LOY 积分域(000104):账本+流水+积分换券;跨域兑换用补偿模式(先扣后发,失败回补),不做跨域同事务 | adopted/2026-08-26-loy-minimal.md |
