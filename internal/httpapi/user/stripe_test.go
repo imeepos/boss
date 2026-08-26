@@ -59,7 +59,7 @@ func (f *settleBilling) CreateBill(_ context.Context, b billing.Bill) (int64, er
 	f.bills = append(f.bills, b)
 	return b.BillID, nil
 }
-func (f *settleBilling) GetBill(context.Context, int64) (*billing.Bill, error)   { return nil, nil }
+func (f *settleBilling) GetBill(context.Context, int64) (*billing.Bill, error) { return nil, nil }
 func (f *settleBilling) ListPayments(context.Context, int64) ([]billing.Payment, error) {
 	return f.pays, nil
 }

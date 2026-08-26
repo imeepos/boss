@@ -28,26 +28,26 @@ func registerRealnameReviewRoutes(g *gin.RouterGroup, a *app.Application) {
 // VerificationRow 列表项:verifications 单行 + 主体(customer/worker)快照。
 // 证件号与手机号不回明文,前端展示走 masked 函数或后端按掩码规则。
 type VerificationRow struct {
-	ID               int64  `json:"id"`
-	SubjectType      string `json:"subjectType"`
-	SubjectID        int64  `json:"subjectId"`
-	SubjectName      string `json:"subjectName"`
-	SubjectPhone     string `json:"subjectPhone"`
-	IDCardNoMasked   string `json:"idCardNoMasked"`
-	Method           string `json:"method"`
-	RealName         string `json:"realName"`
-	Result           string `json:"result"`
-	RejectReason     string `json:"rejectReason"`
-	VerifiedAt       string `json:"verifiedAt"`
-	OperatorName     string `json:"operatorName"`
-	OperatorAccount  int64  `json:"operatorAccountId"`
-	IDCardFrontID    int64  `json:"idCardFrontId"`
-	IDCardBackID     int64  `json:"idCardBackId"`
+	ID              int64  `json:"id"`
+	SubjectType     string `json:"subjectType"`
+	SubjectID       int64  `json:"subjectId"`
+	SubjectName     string `json:"subjectName"`
+	SubjectPhone    string `json:"subjectPhone"`
+	IDCardNoMasked  string `json:"idCardNoMasked"`
+	Method          string `json:"method"`
+	RealName        string `json:"realName"`
+	Result          string `json:"result"`
+	RejectReason    string `json:"rejectReason"`
+	VerifiedAt      string `json:"verifiedAt"`
+	OperatorName    string `json:"operatorName"`
+	OperatorAccount int64  `json:"operatorAccountId"`
+	IDCardFrontID   int64  `json:"idCardFrontId"`
+	IDCardBackID    int64  `json:"idCardBackId"`
 }
 
 // listVerificationsHandler GET /verifications:实名审核中心列表。
-// query: subjectType(customer|worker|''=全部) + result(PENDING|PASS|FAIL|''=全部)
-//        + keyword(姓名/手机号/证件号 substring) + page(默认 1) + pageSize(默认 20,上限 100)。
+// query: subjectType(customer|worker|”=全部) + result(PENDING|PASS|FAIL|”=全部)
+//   - keyword(姓名/手机号/证件号 substring) + page(默认 1) + pageSize(默认 20,上限 100)。
 func listVerificationsHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		subjectType := strings.TrimSpace(c.Query("subjectType"))
