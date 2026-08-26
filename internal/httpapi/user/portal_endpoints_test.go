@@ -56,6 +56,12 @@ func (f *fakeUserData) CreateUserAddress(context.Context, udcustomer.UserAddress
 	f.created++
 	return int64(f.created), nil
 }
+func (f *fakeUserData) UpdateUserAddress(context.Context, int64, int64, udcustomer.UserAddress) error {
+	return nil
+}
+func (f *fakeUserData) DeleteUserAddress(context.Context, int64, int64) error {
+	return nil
+}
 func (f *fakeUserData) ListUserPlans(context.Context) ([]map[string]any, error) {
 	return f.plans, nil
 }
