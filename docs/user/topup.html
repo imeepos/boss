@@ -22,7 +22,7 @@
     <div class="c-title" style="font-size:13.5px;color:var(--muted);">支付方式</div>
     <div class="cell"><div class="main"><div class="t">微信支付</div></div><div class="right"><input type="radio" name="pay" value="wechat" checked></div></div>
     <div class="cell"><div class="main"><div class="t">支付宝</div></div><div class="right"><input type="radio" name="pay" value="alipay"></div></div>
-    <div class="cell"><div class="main"><div class="t">银行卡</div></div><div class="right"><input type="radio" name="pay" value="card"></div></div>
+    <!-- 充值无 Stripe 卡收单端点,银行卡选项对齐 Android 用户端(充值仅微信/支付宝),2026-08-26 -->
     <div class="cell"><div class="main"><div class="t">预付券</div></div><div class="right"><input type="radio" name="pay" value="prepaid"></div></div>
     <button class="btn-block" style="margin-top:14px;" onclick="topup()" data-i18n="user.topup.text3">确认充值</button>
   </div>

@@ -61,6 +61,14 @@
 
   function pay() {
     var method = document.querySelector('input[name="pay"]:checked').value;
+    if (method === 'card') {
+      // Stripe 托管收银台:与 Android 用户端同一走法,落账等 webhook 回调。
+      API.payment.stripeCheckout({
+        billNo: currentBillNo, amount: currentAmount,
+        successUrl: API.config.base + '/pay/stripe/done', cancelUrl: API.config.base + '/pay/stripe/cancel',
+      }).then(function (d) { location.href = d.checkoutUrl; });
+      return;
+    }
     API.payment.create({ billNo: currentBillNo, amount: currentAmount, payMethod: method }).then(function (d) {
       location.href = 'payresult.html?no=' + encodeURIComponent(d.payNo);
     });

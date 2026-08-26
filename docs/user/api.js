@@ -105,6 +105,7 @@
       create: function (payload) { return post('/payments', payload); },
       list: function () { return get('/payments'); },
       receipt: function (payNo) { return get('/payments/' + payNo + '/receipt'); },
+      stripeCheckout: function (payload) { return post('/payments/stripe/checkout', payload); },
     },
 
     topup: {
