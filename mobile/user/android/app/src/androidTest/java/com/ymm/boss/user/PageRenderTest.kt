@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ymm.boss.user.page.FaultDetailScreen
 import com.ymm.boss.user.page.MessagesScreen
+import com.ymm.boss.user.page.OrderConfirmScreen
 import com.ymm.boss.user.page.ProductScreen
 import com.ymm.boss.user.page.ReceiptScreen
 import com.ymm.boss.user.ui.Nav
@@ -50,6 +51,14 @@ class PageRenderTest {
         // AppCard 为 Column:详情/对比/合约三张卡的标题都应同时可见可点
         compose.onNodeWithText("套餐对比").assertIsDisplayed()
         compose.onNodeWithText("合约与说明").assertIsDisplayed()
+    }
+
+    @Test
+    fun orderConfirmShowsCardsAndPickTitle() {
+        compose.setContent { OrderConfirmScreen(Nav(Route.OrderConfirm("101")), "101") }
+        // 套餐信息 + 安装地址选择两张卡标题必现;无网络数据时地址列表为空提示
+        compose.onNodeWithText("套餐信息").assertIsDisplayed()
+        compose.onNodeWithText("选择安装地址").assertIsDisplayed()
     }
 
     /**
