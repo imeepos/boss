@@ -424,6 +424,22 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 幂等键 | `EventID` | open_webhook_deliveries.event_id | 同订阅+事件唯一（UNIQUE + DO NOTHING），重放不重复执行业务动作 |
 | 重试次数 | `Attempts` | attempts | 失败按 30s×2^n 指数退避（封顶 1h），`NextAttemptAt` 排下次 |
 | 投递结果 | `HTTPStatus` / `LastError` | http_status / last_error | 2xx 成功；非 2xx/网络错误记错误进重试 |
+
+### 1.6.9 stripe.* 支付配置（页面 `/base/stripeconfig`「支付配置」，迁移 000147）
+
+存储复用 `biz_params`（key 前缀 `stripe.`，与 auth.*/realid.*/minio.* 同一套加密/掩码约定）。运行时由 `stripe.Dynamic` 消费（60s 热生效；`internal/app/wiring_stripe.go`，DB 配置非空覆盖 env `BOSS_STRIPE_*` 兜底）；未启用/缺 `stripe.apiKey` → 发起端点 400、webhook 503（既有"密钥未配即降级"裁定）。
+
+| 页面字段 | key（API/DB 同名） | 枚举/说明 |
+|:--------|:-------------------|:----------|
+| 启用开关 | `stripe.enabled` | true/false，默认 true |
+| Secret Key | `stripe.apiKey` | sk_ 开头,secret,密文落库;空串=不修改 |
+| Publishable Key | `stripe.publishableKey` | pk_ 开头,前端 Stripe.js 预留(托管收银台不需要) |
+| 记账币种 | `stripe.currency` | ISO 小写三字码,默认 php |
+| API 地址覆盖 | `stripe.apiBaseUrl` | 测试/代理用,空=官方 api.stripe.com |
+| Webhook 签名密钥 | `stripe.webhookSecret` | whsec_ 开头,secret,密文落库;空串=不修改 |
+
+> 接口：`GET /stripe-config`、`PUT /stripe-config/{channel|webhook}`、`POST /stripe-config/channel/test`（完整性校验跨两组,通过后以草稿+已存配置真实探活余额,零副作用;permCode `menu:stripeconfig`,迁移 000147,openapi sys.yaml）。env 兜底：`BOSS_STRIPE_API_KEY`/`BOSS_STRIPE_WEBHOOK_SECRET`/`BOSS_STRIPE_CURRENCY`/`BOSS_STRIPE_API_BASE`。
+
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
 ### 2.1 customers（普通用户/客户主体，源自 customer.html）
