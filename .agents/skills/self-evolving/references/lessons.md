@@ -355,3 +355,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-09-04: check-contract-sync 的 OpenAPI 路径扫描应按 portal 隔离并同时读取根 manifest 与对应子目录,不能把同行 `$ref` 当作唯一 path 形态。
 - 2026-09-04: cdp-capture 需要跨命令保留登录态时使用 `--user-data-dir`;默认临时 profile 仍保留以防状态泄漏。
 - `git worktree add ../name` 建的是仓库外兄弟目录;往仓库内 `./name` 写文件再 commit,git 向上解析到主仓库,commit 静默落 main。写前 `git worktree list` 核绝对路径,commit 输出方括号看分支名(2026-08-26)。
+- 迁移 .up.sql 上真库演练必须先 sed 删掉文件内 COMMIT 再追加 ROLLBACK,否则"演练"变直接提交(2026-08-26,NCR 物化靠幂等 SQL 兜底无分叉)。
+- ModalBottomSheet 内收起软键盘用 input keyevent 4(BACK);keyevent 111(ESC)会把整个 sheet 关掉,真机自动化断流(2026-08-26)。
+- 真机保存报 50000 先 docker logs boss-server 查 SQLSTATE:FK 违约多半是陈旧 token 指向已删 customer,pm clear 重登即愈,不是新代码 bug(2026-08-26)。

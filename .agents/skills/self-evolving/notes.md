@@ -906,3 +906,9 @@
 - 哪个坑浪费了最多时间？调研本身顺,事故在收尾:`git worktree add ../boss-wt-addr-research` 建在仓库**外侧**,我却把文件写到仓库内嵌套路径 `boss/boss-wt-addr-research/`,随后在该目录 `git add+commit`,git 向上解析到主仓库,commit 静默落在 main(违反"禁止主分支改代码")。靠 commit 输出标记 `[main 71bb240e]` 才当场发现,soft-reset 保留并行会话未提交的 .agents 改动后重做。另:合并前 fetch 发现本地 main 领先 gitea/main 两个提交(上一会话没推),一并推齐。
 - 这个 skill 有没有提前警告我？红 #5(commit 后核对状态)间接救场——正因为盯输出才发现落错分支;但"worktree 是兄弟目录、嵌套路径会被主仓库吞掉"没有明确红线,已补为红 #10 并把累犯台账"跑错树"行 +1 到 2。
 - 重来一次我会怎么做？worktree 建好后立即 `git worktree list` 拿绝对路径再写文件;每条 bash 开头 `pwd && git branch --show-current` 自检;merge 前 fetch 并核对 main 与 gitea/main 双向差异(领先也要处理,不只是落后)。
+
+## 2026-08-26 用户地址树级联全链路(feat/user-address-tree)
+
+- 哪个坑浪费了最多时间？①真库演练 .up.sql 忘了文件内含 COMMIT,尾部追加 ROLLBACK 变 no-op——数据提前落进 102,靠幂等 SQL(ON CONFLICT DO NOTHING)才没造成分叉;②真机旧 token 指向已不存在的 customer,保存地址 FK 违约报"服务开小差",排查走了 server 日志才定位不是新代码 bug;③adb input keyevent 111(ESC)会关掉 ModalBottomSheet,收键盘要用 keyevent 4(BACK)且不能在 sheet 层按。
+- 这个 skill 有没有提前警告我？红 #6(真环境验证)方向对了,但"演练含 COMMIT 的迁移必须先 sed 掉 COMMIT 再包 ROLLBACK"没有沉淀;FK 违约排查路径(docker logs boss-server)倒是靠本仓库 oncall 文档快速命中。
+- 重来一次我会怎么做？迁移演练前 `sed '/^COMMIT;$/d' file > /tmp/x.sql && echo ROLLBACK >> /tmp/x.sql`;真机联调先 pm clear 重登,避免吃到上一会话的陈旧 token;Compose sheet 内收键盘一律 BACK。

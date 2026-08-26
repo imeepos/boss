@@ -95,3 +95,4 @@
 | 102 cron 脚本未在目标机用真实 ROOT/异常状态实跑 | 1 | 2026-09-04(stripe-tunnel-url.sh 本地 python3 -c 通过,102 因嵌套引号 SyntaxError;DOWN STATE 换行又破坏 JSON) | 部署到 102 后再发现;脚本提交前必须 bash -n + 目标机真实路径实跑正常/DOWN 两路,JSON 外发字段先清洗 CR/LF |
 | cdp-capture 多次独立调用丢失 localStorage/session | 1 | 2026-09-04(admin-web 登录链路反复回 /login,根因每次新临时 profile) | 使用新增 --user-data-dir 持久 profile;无状态调试仍用默认临时 profile |
 | edit/write 命令未带 workdir,默认 cwd 在主工作树执行,违反"禁止主分支修改" | 1 | 2026-08-26(api/openapi/user/{order,schemas}.yaml 两文件被 git status 检出,立即 checkout 回退 + git apply 进 worktree) | 每条会修改文件的命令都显式带 workdir,不依赖默认 cwd;开工先 cd 进 worktree 后再做任何 edit/write |
+| 真库演练含 COMMIT 的迁移 SQL 未去 COMMIT 就包 ROLLBACK,数据提前落库 | 1 | 2026-08-26(NCR 物化 up.sql 演练,靠幂等 ON CONFLICT 兜底无分叉) | 演练前 sed '/^COMMIT;$/d' 再 echo ROLLBACK,演练后 SELECT 计数核对 |
