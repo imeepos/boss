@@ -100,7 +100,8 @@ export default function StripeConfigPage() {
     if (testing) return
     setTesting(true)
     try {
-      const values = stripePayloadFor(CH_KEYS, draft, loaded)
+      // 草稿跨两组一起参与自检:webhookSecret/webhookUrl 未保存也可先验(见后端跨组合并)。
+      const values = { ...stripePayloadFor(CH_KEYS, draft, loaded), ...stripePayloadFor(WH_KEYS, draft, loaded) }
       const d = await apiFetch<{ ok: boolean; message: string }>('/stripe-config/channel/test', {
         method: 'POST',
         body: { values },
@@ -172,7 +173,8 @@ export default function StripeConfigPage() {
             <ToolbarButton primary onClick={() => setEditing('webhook')}>{a.edit}</ToolbarButton>
           </div>
           {summaryRow(a.webhookSecret, secretSet['stripe.webhookSecret'] ? a.secretSet : '')}
-          <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.webhookSecretHint}</div>
+          {summaryRow(a.webhookUrl, draft['stripe.webhookUrl'])}
+          <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.webhookUrlHint}</div>
         </Card>
       </div>
 
@@ -219,6 +221,14 @@ export default function StripeConfigPage() {
                 onChange={(v) => set('stripe.webhookSecret', v)}
                 placeholder={a.secretSet}
                 hasValue={!!secretSet['stripe.webhookSecret']}
+              />
+            </FormField>
+            <FormField label={a.webhookUrl} hint={a.webhookUrlHint}>
+              <Input
+                className="w-72"
+                value={draft['stripe.webhookUrl'] ?? ''}
+                onChange={(e) => set('stripe.webhookUrl', e.target.value)}
+                placeholder="https://xxx.trycloudflare.com/api/user/v1/webhooks/stripe"
               />
             </FormField>
           </div>
