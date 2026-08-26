@@ -75,6 +75,8 @@ object Api {
     suspend fun getArray(path: String): JSONArray = requestArray("GET", path, null)
     suspend fun post(path: String, body: JSONObject? = JSONObject()): JSONObject = request("POST", path, body ?: JSONObject())
     suspend fun put(path: String, body: JSONObject): JSONObject = request("PUT", path, body)
+    /** DELETE 方法:204/200 信封 data=空对象{};后端已删 → 404 抛 HttpError。 */
+    suspend fun delete(path: String): JSONObject = request("DELETE", path, null)
 
     /** multipart 单文件上传(带 Bearer,字段名 file),返回信封 data;非 2xx 抛 HttpError。 */
     suspend fun upload(path: String, fileName: String, contentType: String, bytes: ByteArray): JSONObject =
