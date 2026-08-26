@@ -104,11 +104,11 @@ func (s *PGStore) RetryActivationCallback(ctx context.Context, id int64) error {
 	if err != nil {
 		return fmt.Errorf("order: retry activation callback select: %w", err)
 	}
-	// 订单已 DONE:回调为历史成功态,仅计重试次数。
+	// 订单已 DONE:激活曾成功,回调行恢复 SUCCESS(幂等重放)并计重试次数。
 	var status string
 	_ = s.db.QueryRow(ctx, `SELECT status FROM orders WHERE id = $1`, cb.OrderID).Scan(&status)
 	if status == "DONE" {
-		return s.bumpActivationRetry(ctx, id)
+		return s.restoreActivationSuccess(ctx, id)
 	}
 	// 重放确认:重新执行环节11(幂等 upsert 落账),失败重试计数。
 	if err := s.NotifyActivation(ctx, cb.OrderID); err != nil {
@@ -122,6 +122,19 @@ func (s *PGStore) bumpActivationRetry(ctx context.Context, id int64) error {
 	tag, err := s.db.Exec(ctx, `UPDATE activation_callbacks SET retries = retries + 1 WHERE id=$1`, id)
 	if err != nil {
 		return fmt.Errorf("order: retry activation callback: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrOrderNotFound
+	}
+	return nil
+}
+
+// restoreActivationSuccess 订单已 DONE 时回调行恢复 SUCCESS(幂等重放),retries+1。
+func (s *PGStore) restoreActivationSuccess(ctx context.Context, id int64) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE activation_callbacks SET result = 'SUCCESS', retries = retries + 1 WHERE id=$1`, id)
+	if err != nil {
+		return fmt.Errorf("order: restore activation callback: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return ErrOrderNotFound
