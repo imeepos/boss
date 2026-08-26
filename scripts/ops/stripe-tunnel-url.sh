@@ -9,7 +9,14 @@ set -u
 BASE_URL="${BASE_URL:-http://192.168.0.102:28080}"
 API="${BASE_URL}/api/admin/v1"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-KEY="${ADMIN_API_KEY:-$(python3 -c "import json;print(json.load(open('$ROOT/.agents/skills/bossctl-cli/test-accounts.json'))['admin']['apiKeys'][0]['key']") 2>/dev/null || true)}"
+# ADMIN_API_KEY 兜底从 test-accounts.json 取 ops-main;heredoc 防引号嵌套吃字段
+# (EOF 未加引号,允许 bash 展开 $ROOT;路径无空格/无 shell 元元字符,无注入面)。
+KEY="${ADMIN_API_KEY:-$(python3 <<EOF 2>/dev/null || true
+import json
+with open("$ROOT/.agents/skills/bossctl-cli/test-accounts.json") as f:
+    print(json.load(f)['admin']['apiKeys'][0]['key'])
+EOF
+)}"
 CONTAINER="${STRIPE_TUNNEL_CONTAINER:-cf-stripe-boss}"
 
 if [ -z "${KEY:-}" ]; then
@@ -28,7 +35,7 @@ emit_alert() {
 
 # 1) 容器存活探测(进程 DOWN 直接告警,不再依赖日志)。
 if ! docker inspect -f '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -q '^true$'; then
-  STATE=$(docker inspect -f '{{.State.Status}}' "$CONTAINER" 2>/dev/null || echo "missing")
+  STATE=$(docker inspect -f '{{.State.Status}}' "$CONTAINER" 2>/dev/null | tr -d '\r\n' || echo "missing")
   emit_alert "Stripe 隧道容器 DOWN" "容器 $CONTAINER 状态=$STATE,webhook 回调将静默失效" URGENT
   echo "tunnel container $CONTAINER state=$STATE"; exit 1
 fi
