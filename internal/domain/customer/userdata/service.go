@@ -207,6 +207,11 @@ type Service interface {
 	ListUserAccounts(ctx context.Context) ([]map[string]any, error)
 	ListUserAddresses(ctx context.Context) ([]map[string]any, error)
 	CreateUserAddress(ctx context.Context, a UserAddress) (int64, error)
+	// UpdateUserAddress 修改家庭地址明细;按 customerId + id 归属校验,
+	// 未命中或归属不符返回 ErrNotFound;详情字段全量替换(detail/contact/phone/isDefault/addrCode)。
+	UpdateUserAddress(ctx context.Context, customerID, id int64, a UserAddress) error
+	// DeleteUserAddress 删除家庭地址;按 customerId 归属校验,未命中返回 ErrNotFound。
+	DeleteUserAddress(ctx context.Context, customerID, id int64) error
 	ListUserPlans(ctx context.Context) ([]map[string]any, error)
 	CreateUserPlan(ctx context.Context, p UserPlan) (int64, error)
 
