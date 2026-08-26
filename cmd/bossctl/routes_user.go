@@ -16,7 +16,7 @@ var userRoutes = []routeEntry{
 	{"GET", "/bills", "我的账单列表"},
 	{"GET", "/bills/:billNo", "账单明细"},
 	{"POST", "/payments", "发起缴费(生成支付单)"},
-	{"GET", "/payments", "缴费记录"},
+	{"GET", "/payments", "缴费记录(默认仅 SUCCESS;FAILED/REFUNDED 经 ?include=failed,refunded 才回传)"},
 	{"POST", "/payments/stripe/intent", "发起 Stripe 卡收款(生成 PaymentIntent,clientSecret 交前端渠道 SDK)"},
 	{"POST", "/payments/stripe/checkout", "发起 Stripe 托管收银台(免客户端 SDK,前端直接跳 checkoutUrl;落账等回调)"},
 	{"GET", "/pay/stripe/done", "收银台支付回跳提示页(静态 HTML,结果以缴费记录为准)"},
