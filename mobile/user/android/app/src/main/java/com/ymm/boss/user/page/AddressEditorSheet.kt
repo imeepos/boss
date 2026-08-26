@@ -87,6 +87,7 @@ fun AddressEditorSheet(
         setLocating = { locating = it },
         setHint = { locationHint = it },
         setDoor = { door = it },
+        setErr = { err = it },
     )
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -195,6 +196,7 @@ private fun doLocate(
     setLocating: (Boolean) -> Unit,
     setHint: (String) -> Unit,
     setDoor: (String) -> Unit,
+    setErr: (String) -> Unit,
 ) {
     setLocating(true)
     scope.launch {
@@ -203,9 +205,17 @@ private fun doLocate(
             val s = LocationProvider.format(p)
             setHint("当前位置：$s（已填入门牌号，可修改）")
             setDoor("GPS: $s")
+            setErr("")
+        } catch (e: LocationProvider.Failure) {
+            // 区分 Failure 三态：拒绝 / 不可用 / 超时，给用户可读反馈而不是静默清空。
+            // 真机 102 联调发现无定位设备静默清空 hint+door 用户没反馈，会怀疑按钮坏了。
+            setHint("")
+            setDoor("")
+            setErr(e.message ?: "定位失败，请重试")
         } catch (_: Exception) {
             setHint("")
             setDoor("")
+            setErr("定位失败，请重试")
         } finally {
             setLocating(false)
         }
