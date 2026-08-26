@@ -230,3 +230,24 @@
   ② 13 个 demo 页都写 `d.items`(平铺响应),真实 user API 返回 `{code,data:{items},msg}` 信封。
 - 修法: demo 页消费处改 `(d.data||d).items`;locale.js 需按语区重建被污染键。此系既有 demo 缺口
   (domain-map PORT 待完善),与支付链路本身无关;真实门户客户端(Android)按信封消费正常。
+
+## Material3 2026.06+ BOM：ExposedDropdownMenu 已不能作为顶层 Composable 调用
+
+**症状**：写 `androidx.compose.material3.ExposedDropdownMenu(expanded=..., onDismissRequest=...) { items }` 编译报 `Unresolved reference 'ExposedDropdownMenu'`；`ExposedDropdownMenuBox` 内 content lambda 也报 `@Composable invocations can only happen from the context of a @Composable function`。
+
+**原因**：Material3 新版 API 把菜单直接吸收进了 `ExposedDropdownMenuBox` 的 `content: @Composable ExposedDropdownMenuBoxScope.() -> Unit`，不再提供独立的 `ExposedDropdownMenu` Composable；旧 import 完全限定名 `androidx.compose.material3.ExposedDropdownMenu(...)` 已经移除。
+
+**修法**：在 `ExposedDropdownMenuBox { ... }` 的 content lambda 里**直接**放 `DropdownMenuItem(...)`，不要再包一层。`menuAnchor(...)` 仍照旧。详细见 `knowledge/android.md`。
+
+## Google Play Services Tasks 在 Kotlin 协程里 .await() 编译报 Unresolved reference
+
+**症状**：写 `client.getCurrentLocation(...).await()` 编译报 `Unresolved reference 'await'`。
+
+**原因**：`play-services-location`、`play-services-tasks` 等不内置 `kotlinx-coroutines-play-services` 的 `.await()` 扩展，需要单独依赖。
+
+**修法**：`gradle/libs.versions.toml` 加
+```toml
+coroutines = "1.10.2"
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
+```
+`app/build.gradle.kts` 加 `implementation(libs.kotlinx.coroutines.play.services)`，再 `import kotlinx.coroutines.tasks.await`。

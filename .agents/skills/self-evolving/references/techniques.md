@@ -330,3 +330,50 @@ node .agents/skills/self-evolving/scripts/cdp-capture.mjs \
   cardCvc(测试卡 4242...),找 Pay 按钮 click,轮询 location.href 落出 checkout 域即支付成功。
   注意 checkout URL 的 #hash fragment 不能截断(截断报 CheckoutInitError)。
 - Page.navigate 到完全相同的 URL 是 no-op(不重载脚本);要强制重载加 query 参数或 Page.reload。
+
+## Android Compose + play-services 的最小依赖配置（Material3 BOM 2026.06+）
+
+拉取 GPS 等 Google Play 服务 + 在 Kotlin 协程里 `.await()`，最小依赖组合：
+
+```toml
+# gradle/libs.versions.toml
+[versions]
+playLocation = "21.3.0"
+coroutines = "1.10.2"
+
+[libraries]
+play-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playLocation" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
+```
+
+```kotlin
+// app/build.gradle.kts
+implementation(libs.play.location)
+implementation(libs.kotlinx.coroutines.play.services)
+```
+
+```kotlin
+// 运行时位置
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import kotlinx.coroutines.tasks.await
+
+@SuppressLint("MissingPermission")
+suspend fun current(ctx: Context): Location? {
+    val cts = CancellationTokenSource()
+    return try {
+        LocationServices.getFusedLocationProviderClient(ctx)
+            .getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cts.token).await()
+            ?: LocationServices.getFusedLocationProviderClient(ctx).lastLocation.await()
+    } finally { cts.cancel() }
+}
+```
+
+**Manifest**：`ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION`。**运行时权限**用 `ActivityResultContracts.RequestMultiplePermissions()`，在 Compose 里 `rememberLauncherForActivityResult` 调起。
+
+## worktree 出现非自己创建的本地文件时
+
+并行 worktree 残留的 0 字节临时文件（比如其他会话创建未跟踪的 `行政区划` 之类）：
+- **不要删**（不是自己会话产物）
+- `git worktree remove --force` 跳过清理，保留分支
+- 在 `notes.md` 记录"曾出现 X 残留文件，未清理"
