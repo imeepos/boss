@@ -366,6 +366,8 @@ export interface Translations {
       entityUnprocessed: string
       entityDedupSkipped: string
       entitySkipped: string
+      entityExistingLoadFail: string
+      entityMaxRowsFallback: string
       taskRegisterFail: string
     }
     account: {

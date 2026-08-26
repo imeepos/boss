@@ -45,6 +45,8 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
   const fileRef = useRef<HTMLInputElement>(null)
   /** 单次行数上限:业务参数 importer.maxRows 覆盖,缺省 500(读取失败不阻断)。 */
   const [maxRows, setMaxRows] = useState(MAX_IMPORT_ROWS)
+  const [maxRowsFallback, setMaxRowsFallback] = useState(false)
+  const [existingLoadFailed, setExistingLoadFailed] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -54,8 +56,9 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
         if (!it || !alive) return
         const n = Number(JSON.parse(it.value))
         if (Number.isInteger(n) && n > 0) setMaxRows(n)
+         else setMaxRowsFallback(true)
       })
-      .catch(() => undefined)
+      .catch(() => { if (alive) setMaxRowsFallback(true) })
     return () => { alive = false }
   }, [])
 
@@ -73,13 +76,14 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
   useEffect(() => {
     let alive = true
     setExisting(null)
+    setExistingLoadFailed(false)
     if (!def.listEndpoint) return
     apiFetch<unknown[] | { items: unknown[] }>(def.listEndpoint)
       .then((d) => {
         if (!alive) return
         setExisting(Array.isArray(d) ? d : d?.items ?? [])
       })
-      .catch(() => undefined)
+      .catch(() => { if (alive) setExistingLoadFailed(true) })
     return () => { alive = false }
   }, [def])
   /** 去重:文件内先到先得 + 与现有数据比对,行号集合为跳过项。 */
@@ -237,6 +241,14 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
               : text.reasonNotArray}
           {'line' in parsed && parsed.line !== undefined ? ` (${text.parseFailAt.replace('{line}', String(parsed.line))})` : ''}
         </p>
+      )}
+      {maxRowsFallback && (
+        <p className="m-0 text-xs text-[var(--color-brand-gold-500)]">
+          {text.entityMaxRowsFallback.replace('{max}', String(maxRows))}
+        </p>
+      )}
+      {existingLoadFailed && (
+        <p className="m-0 text-xs text-[var(--color-brand-gold-500)]">{text.entityExistingLoadFail}</p>
       )}
       {rows && (
         <div className="mt-1 rounded-sm border border-[var(--shell-side-border)]">

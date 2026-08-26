@@ -432,6 +432,8 @@ const zhCN: Translations = {
       entityUnprocessed: '另有 {count} 行未处理,不计入失败数',
       entityDedupSkipped: '去重跳过 {count} 行(与现有数据或文件内重复)',
       entitySkipped: '跳过重复 {count} 行',
+      entityExistingLoadFail: '现有数据预检失败,本次仅执行文件内去重,数据库约束仍会校验重复',
+      entityMaxRowsFallback: '导入上限参数读取失败,本次使用默认上限 {max}',
       taskRegisterFail: '业务数据已处理,但导入记录登记失败,请稍后在导入中心重试或联系管理员',
     },
     account: {
