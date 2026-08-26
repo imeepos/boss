@@ -3,6 +3,7 @@ package userapi
 // 用户端 Stripe handler 实现(stripe.go 仅留路由表 + 通用辅助)。
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -152,22 +153,29 @@ func stripeWebhook(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// stripeSettle 按事件类型落账;succeeded 走 RecordPayment(流水+账单 PAID 同事务),
-// failed 落 FAILED 流水留痕;重投(payNo 已存在)直接幂等通过。
+// stripeSettle 按事件类型落账:
+// succeeded → 账单寻址成功走 RecordPayment(流水+账单 PAID 同事务)+ 自动复机;
+//
+//	无账单/寻址失败走 RecordTopup(流水+余额同事务,充值到账);
+//
+// failed → 落 FAILED 流水留痕(无余额动作);重投(同 payNo 已落账/并发唯一冲突)幂等通过。
 func stripeSettle(a *app.Application, c *gin.Context, ev stripe.Event) error {
 	if ev.Type != "payment_intent.succeeded" && ev.Type != "payment_intent.payment_failed" {
 		return nil
 	}
-	if stripeIsAlreadyPaid(a, c, ev.PayNo) {
-		return nil // 已落账,重投幂等
+	// 渠道重投幂等:同 payNo 已落账 → 直接 200。
+	if paid, err := a.Billing.PaymentExistsByPayNo(c.Request.Context(), ev.PayNo); err != nil {
+		return err
+	} else if paid {
+		return nil
 	}
 	amount := float64(ev.AmountCents) / 100
-	status := map[bool]string{true: "SUCCESS", false: "FAILED"}[ev.Type == "payment_intent.succeeded"]
-	if ev.BillNo != "" && ev.CustomerID > 0 {
-		if b, ok := findBillByNo(a, c, ev.CustomerID, ev.BillNo); ok {
-			if status == "SUCCESS" {
+	if ev.Type == "payment_intent.succeeded" {
+		if ev.BillNo != "" && ev.CustomerID > 0 {
+			if b, ok := findBillByNo(a, c, ev.CustomerID, ev.BillNo); ok {
 				_, err := a.Billing.RecordPayment(c.Request.Context(), billing.Payment{
-					PayNo: ev.PayNo, BillID: b.BillID, Amount: amount, Method: "card", Status: status,
+					PayNo: ev.PayNo, BillID: b.BillID, CustomerID: ev.CustomerID,
+					Amount: amount, Method: "card", Status: "SUCCESS",
 				})
 				if err != nil {
 					return err
@@ -176,24 +184,29 @@ func stripeSettle(a *app.Application, c *gin.Context, ev stripe.Event) error {
 				return nil
 			}
 		}
+		// 充值意图 / 账单寻址失败:充值落账(流水+余额同事务)。
+		if ev.CustomerID == 0 {
+			return nil // 无归属线索不落账(防孤儿),ack 等渠道重试
+		}
+		_, err := a.Billing.RecordTopup(c.Request.Context(), billing.Payment{
+			PayNo: ev.PayNo, CustomerID: ev.CustomerID, Amount: amount, Method: "card", Status: "SUCCESS",
+		})
+		return settleErr(err)
 	}
-	// 充值意图 / 账单寻址失败:落无账单流水(customer_id 归属),failed 留痕。
+	// 失败留痕:无余额动作,仅落 FAILED 流水(customer_id 归属;无归属不落账)。
+	if ev.CustomerID == 0 {
+		return nil
+	}
 	_, err := a.Billing.CreatePayment(c.Request.Context(), billing.Payment{
-		PayNo: ev.PayNo, CustomerID: ev.CustomerID, Amount: amount, Method: "card", Status: status,
+		PayNo: ev.PayNo, CustomerID: ev.CustomerID, Amount: amount, Method: "card", Status: "FAILED",
 	})
 	return err
 }
 
-// stripeIsAlreadyPaid 同一 payNo 已落账则跳过(渠道重投幂等)。
-func stripeIsAlreadyPaid(a *app.Application, c *gin.Context, payNo string) bool {
-	pays, err := a.Billing.ListPayments(c.Request.Context(), 0)
-	if err != nil {
-		return false
+// settleErr 落账错误:并发唯一冲突(payNo 已落账)按幂等成功,其余上抛让渠道重试。
+func settleErr(err error) error {
+	if err == nil || errors.Is(err, billing.ErrPayNoExists) {
+		return nil
 	}
-	for _, p := range pays {
-		if p.PayNo == payNo {
-			return true
-		}
-	}
-	return false
+	return err
 }
