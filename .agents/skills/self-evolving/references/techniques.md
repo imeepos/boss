@@ -412,3 +412,16 @@ suspend fun current(ctx: Context): Location? {
 - 场景:页面用了 `var(--x)` 但 `--x:` 在全部 css 里无定义,var() 解析失败属性按 initial 渲染——主按钮白字透明底、徽章丢色,**亮暗主题双双坏**,且不报错、无 lint 拦截,极易上线数月无人察觉(本次 --color-brand-bg/--color-info/--color-warning 三令牌散布 5 个文件)。
 - 手法(node 一行流):收集 dist 构建产物或源码里所有 `var(--` 引用名,减去所有 ` --xxx:` 定义名,差集即幽灵令牌。源码版:`grep -rhoE 'var\(--[a-z-]+' src --include='*.tsx' | sed 's/var(//' | sort -u > /tmp/use.txt; grep -rhoE '^  --[a-z0-9-]+:' src/theme/tokens.css src/styles.css | tr -d ' :' | sort -u > /tmp/def.txt; comm -23 /tmp/use.txt /tmp/def.txt`
 - 注意:定义可能分散在 tokens.css/styles.css/组件自带 css 块三处,def 集要收全否则误报;tailwind 任意值类 `bg-[var(--x)]` 也走同一 grep 能覆盖。
+
+## i18n 引用键门禁:规格 walker 测试(2026-09-26,用户详情抽屉首例)
+
+- 场景:页面文案键走宽松 `Record<string,string>` 字典,typecheck 拦不住打错的引用键,线上直接露出英文键值。
+- 手法:把页面规格(列/枚举映射/段名/页签名)抽成纯数据模块(detail-view.ts,无 React/i18n 依赖),vitest 里 `import 规格 + 三份 locale`,walker 自动收集全部引用键(col.k、enum map 值、section key、tab key、`d_` 主档键、抽屉字面量清单),断言三语言字典全覆盖;特殊段(非字典渲染)用共享常量标记并在 walker 跳过。
+- 价值:新增列/枚举自动纳入,人为制造失配即红灯(本例首跑就抓出 usages 段名三语言全缺的存量静默 bug);文案键零硬编码有了机械对账面。
+- 位置参照:`web/admin/src/pages/bss/user/detail-i18n.test.ts` + `detail-view.ts` 的 DRAWER_D_KEYS。
+
+## 枚举→展示文案映射前,先查真库取值域(2026-09-26,faults type 双口径)
+
+- 场景:给某列写"枚举值→i18n 键"映射,契约文档已列出枚举,直接照抄开写。
+- 坑:complaint-type-map.md 只登记了装维域 6 码(SINGLE_OUTAGE...),真库 complaints.type 还有一整套用户端落库值(`用户报障: no_internet|slow|ont_fault|other`、`用户投诉: attitude|...`),照抄上线即原样露出英文/复合前缀。
+- 手法:动手前 `SELECT DISTINCT type FROM complaints` 对齐真实取值域;复合前缀在聚合 SQL 侧 `replace(type,'用户报障: ','')` 归一(对齐 service.go portalFaultTypeLabelFromStored 先例),前端映射只收干净值;未知值回退原文是兜底不是借口。
