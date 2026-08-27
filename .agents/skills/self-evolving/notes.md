@@ -1167,3 +1167,9 @@
 - 重来一次? 先在 worktree 里用 `bash -x` 干跑一遍脚本逻辑(mock 一个假 BASE)再打真环境;部署后第一步先 `docker images` 对齐镜像 tag 与预期 sha 再开测。
 
 喂回:lessons.md +4 条(全角字符进变量名/BSD head/业务码断言/CD 镜像 tag 对齐);techniques.md +1(cdp busy-wait 断言异步抽屉)。
+
+## 2026-09-?? 导入抽屉附件选择器被遮罩盖住(z-index 层级事故)
+
+- 哪个坑浪费了最多时间? ①用 sed 临时把 z-[130] 改回 z-50 验证"测试确实会红"后,`git checkout -- dialog.tsx` 把真修复也一并撤掉了——checkout 恢复的是整个文件,不是刚才那次 sed;靠 `git diff --stat` 复查才发现,重做了三处 edit。②GLM-5.3-Flash 模型不支持 read_image(红线 #7 再次应验),截图验证改为 CDP elementFromPoint 命中测试,反而拿到更硬的证据。
+- skill 有没有提前预警? 红线 #4(edit 对称性)中途救了一命——第一次 edit 误删三个常量定义,立即发现恢复;红线 #7 避免了在 read_image 报错上浪费时间。但「临时改动用 checkout 恢复会冲掉真修复」没有预警。
+- 重来一次? 验证测试红/绿对照不要动工作区文件——用 `git stash` 或干脆信任断言语义(z-50 类名不匹配 z-[N] 正则必返 0);要动就用 sed 双向改回,绝不用 checkout。

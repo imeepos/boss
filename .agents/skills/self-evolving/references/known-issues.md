@@ -349,3 +349,8 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 **原因**：web/admin 的 vite.config.ts test.environment=node 且 pnpm-lock.yaml 无 @testing-library/react,项目 vitest 只支持纯函数 + SSR 渲染测试。
 **修法**：交互用例改写为 SSR 骨架测试(renderToStaticMarkup + 断言 html 包含 i18n 文案/列名/占位符)+ 把交互逻辑(filter/sort/review)抽成纯函数单独 vitest。
 **检测**：开工前 `grep -E "fireEvent|@testing-library" src` 统计引用 + `grep "environment" vite.config.ts` + `grep testing-library pnpm-lock.yaml` 三件套。
+## Radix Dialog 在 Drawer 内被遮罩盖住(2026-09 导入抽屉附件选择器)
+- 症状:抽屉(Drawer)里打开共享 Dialog(如附件选择器),弹窗渲染在抽屉遮罩下面,点不到也看不见。
+- 原因:Radix Dialog 经 Portal 挂 document.body,与 Drawer 内联渲染的 fixed 遮罩同处根层叠上下文;Dialog 遮罩/内容 z-50 < Drawer 遮罩 z-[100]/面板 z-[101],纯 z 值对决 Dialog 必输。
+- 修法:web/admin/src/components/ui/dialog.tsx 的 DialogOverlay+DialogContent 统一 z-[130];全局层级阶梯(注释已落在 dialog.tsx 与 Drawer.tsx):Drawer 100/101 < 页面临时遮罩 120 < 共享 Dialog 130 < Dropdown/DatePicker/MultiSelect 1000。新增浮层组件时按此阶梯取值。
+- 回归:web/admin/src/pages/base/importer/drawerDialogLayer.test.tsx,jsdom 交互断言 130>101>100,层级改回去测试即红。

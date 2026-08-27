@@ -395,3 +395,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - BSD/macOS `head` 不支持负行数(`head -n -1` 直接报错);「取除末行外全部」用 `sed -e '$d'`。后端 envelope HTTP 恒 200、业务码在 body 的 `.code`,E2E/脚本断言必须看业务码,断言 HTTP 状态码会静默漏判。
 - push 后 CD 部署竞态:上一 run 的镜像可能盖住你的 push(并发取消只对未开始的 run 生效)。部署验证第一步先 `docker images --format '{{.Tag}}'` 对齐镜像 tag 与预期 commit sha,再开测;没触发就推空提交重触发(classify 按「已部署 sha」比对,runtime diff 会补部署)。
 - pgxmock v4 的 `NewPool()` 返回 `PgxPoolIface` 接口而不是 `*Pool`,helper 函数签名要写接口类型。
+- 当 Portal 弹层(Portal 挂 body)与内联 fixed 遮罩同现时,修复是先确认两者处于同一层叠上下文,再比 z 数值;Portal 不改变层叠上下文归属,别被"弹层在 DOM 更深处"迷惑。
+- 当用 checkout/stash 之外的方式临时篡改工作区验证测试时,修复是用 stash push/pop 或 sed 双向改回;`git checkout -- file` 会抹掉该文件全部未提交修改,包括真正的修复。

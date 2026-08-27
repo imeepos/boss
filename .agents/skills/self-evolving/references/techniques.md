@@ -550,3 +550,5 @@ SQL
 - 教训:看代码前先量化"哪一侧有数据、哪一侧没数据",再针对性补写入路径;不要上来就写清理脚本(可能误删真数据)。
 - 工具路径:102 真库 = `ssh imeepos@192.168.0.102 'docker exec -i boss-infra-postgres-1 psql -U boss -d boss' <<'SQL' ... SQL`,SQL 字符串字面量用单引号避免叠引号(红线 #9a)。
 - cdp 断言「点击后才异步加载的抽屉/弹层」:cdp-admin-capture 的 --eval 不 await Promise,返回 {} / undefined;用同步 busy-wait(`(()=>{const end=Date.now()+3000;while(Date.now()<end){if(ready())break}})()`)在单个 eval 内等 DOM 就绪再返回断言文本。
+- 验证"弹窗被遮罩挡住/无法点击"类 bug:cdp-admin-capture --eval 返回 `elementFromPoint(弹窗中心)` 的命中结果 + `getComputedStyle(el).zIndex`,命中遮罩=bug 复现,命中弹窗内部控件=修复生效;比截图更硬且不依赖模型读图能力(GLM 系不支持 read_image)。
+- 临时回退工作区文件做红/绿对照后恢复:禁用 `git checkout -- <file>`(会把该文件全部未提交改动一起抹掉);用 `git stash push <file>` → 测试 → `git stash pop`,或 sed 双向改回。
