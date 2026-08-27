@@ -72,6 +72,7 @@ func TestRespondErrMapping(t *testing.T) {
 		{ai.ErrDownstream, apitypes.CodeDownstreamErr},
 		{portal.ErrSmsCooldown, apitypes.CodeResourceBusy},
 		{sms.ErrUnsupportedRegion, apitypes.CodeInvalidParam},
+		{asset.ErrBindingConflict, apitypes.CodeConflict},
 		{errors.New("boom"), apitypes.CodeInternal},
 	}
 	for _, tc := range cases {

@@ -345,6 +345,80 @@ func TestPGStore_CreateTag_AssetAlreadyBound(t *testing.T) {
 	}
 }
 
+// CreateAsset 幂等:重复提交同一 asset+tag,PG 行为 = 值已相等仍 UPDATE 1 行
+// (实测 PG 16:UPDATE 命中条件且新值=旧值仍报 1,见 102 真表测试)。代码不依赖
+// RowsAffected 区分"幂等"vs"已变更",只要没冲突都算成功。
+func TestPGStore_CreateAsset_ResubmitIdempotent(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`INSERT INTO assets`).
+		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+	// PG 16 行为:条件命中且值已相等仍返 1 行(并非 0 行)。
+	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
+		WithArgs(int64(9), int64(3)).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	s := NewPGStore(mock)
+	id, err := s.CreateAsset(context.Background(), Asset{
+		AssetCode: "A-20260003", BatchID: 1, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
+		TagID: 9, Type: "ONU", Status: "IN_STOCK",
+	})
+	if err != nil {
+		t.Fatalf("CreateAsset resubmit should be idempotent: %v", err)
+	}
+	if id != 3 {
+		t.Fatalf("id=%d, want 3", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// CreateTag 幂等:同 asset+tag 重复预绑定,PG 行为 = UPDATE 1 行。
+func TestPGStore_CreateTag_ResubmitIdempotent(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(5)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`INSERT INTO tags`).
+		WithArgs(int64(1), "TAG-0007", "EPC-0007", "UHF", int64(5), "BOUND", "95%").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(12)))
+	mock.ExpectExec(`UPDATE assets SET tag_id`).
+		WithArgs(int64(5), int64(12)).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	s := NewPGStore(mock)
+	id, err := s.CreateTag(context.Background(), Tag{
+		LegalEntityID: 1, TagNo: "TAG-0007", EpcCode: "EPC-0007", Band: "UHF",
+		BoundAssetID: 5, Status: "BOUND", Battery: "95%",
+	})
+	if err != nil {
+		t.Fatalf("CreateTag resubmit should be idempotent: %v", err)
+	}
+	if id != 12 {
+		t.Fatalf("id=%d, want 12", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
 func TestPGStore_GetAsset(t *testing.T) {
 	t.Run("命中", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
