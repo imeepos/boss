@@ -504,3 +504,8 @@ SQL
 ```
 
 - 断言 = 计数 0 才算清理闭环;测试 seed 一律用「语义前缀 + unixnano」专用命名(如 `op_app_insert_<nan>`),LIKE 前缀一查全中。
+
+## grep 检索以短横线开头的 CSS token
+
+- 场景 → 搜索 `--shell-*`、`--color-*` 等以 `-` 开头的变量名。
+- 怎么用 → 优先使用 grep 工具；shell 中使用 `grep -e "--shell-input-border" file` 或 `grep -- "--shell-input-border" file`，否则模式会被当成 grep 选项。

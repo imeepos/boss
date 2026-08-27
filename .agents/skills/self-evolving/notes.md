@@ -1058,3 +1058,10 @@
 - skill 有没有提前预警? 红线 #1 涵盖"读后编辑"但没点破"按绝对路径跟踪"这个细节;102 psql 核对造数时容器名猜错,`docker ps --format` 按 ports grep 一步定位 boss-infra-postgres-1(25432)。
 - 重来一次会怎么做? 建 worktree 后第一轮就把要改的文件按 worktree 路径全部 read 再动手;Go 门禁命令固定带 PATH 前缀。
 - 收获:调研双证据法(代码 grep + 102 curl 运行时复核)一轮锁定根因——订阅事件下拉只有一项不是渲染 bug,是 eventCatalog 登记制下 emit 侧只挂了 order.stage.done 一个业务事件,如实反映;顺藤摸瓜发现更真的 bug:管理端测试事件注释说"全部启用订阅",InsertDeliveries 却按事件类型精确匹配,openplat.test 不在目录永远命中 0 条空转,新增 EmitToApp/InsertAppDeliveries 按应用匹配修复(fake + 真实 PG 双回归);契约对账红的归属判定——先在主树复跑,同红=并行会话存量(license 24 项不碰),只修自己调研域内的存量缺口(event-types 路由未登记 + eventTypes[] 批量口径漂移,独立小提交);收尾后 102 库核对造数零残留。
+
+## 2026-10 知识库页三语/双主题适配
+
+- 哪个坑浪费了最多时间? worktree 页面覆写时先读了主树副本,write 按绝对路径检查后拒绝,补读 worktree 副本才继续;另外首次用 `grep "--shell-input-border"` 被当成选项,需改用 `-e` 或 grep 工具。
+- skill 有没有提前预警? 有:红线 #1 说明编辑前必须 Read,但本次再次证明 Read 状态按绝对路径跟踪;红线 #6 要求 CSS token grep 与真实 DOM 断言;红线 #7 已提示不要假设模型支持图像输入,GLM-5.3-Flash 也不支持。
+- 重来一次会怎么做? 建 worktree 后立即按 worktree 绝对路径批量 Read;检索 `--` 开头模式固定使用 grep 工具或 `grep -e`;视觉验证先做 cdp-capture DOM/计算样式断言,截图仅在模型声明支持图像时读取。
+- 收获:知识库页三语采集真实通过:zh/en/ms 表头、空态、状态下拉、状态行与分页文案均命中;light/dark cardBg 分别为 rgb(255,255,255)/rgb(16,32,63);console 与网络失败均为 0;102 冒烟文章创建后立即删除,列表回空。业务提交前后门禁 typecheck/test/build 全过(321 tests)。
