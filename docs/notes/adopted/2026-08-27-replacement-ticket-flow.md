@@ -53,7 +53,7 @@ terms.md §4 亦从未登记 replacement.status 枚举——换新单是阶段3 
 
 ## 四、契约明细(实现同步项)
 
-- 迁移(预留 **000157**,实现日重查 main 与未合并分支):
+- 迁移(预留 **000159**,实现日重查 main 与未合并分支):
   `ALTER TABLE replacements ADD COLUMN worker_id BIGINT REFERENCES workers(id),
    ADD COLUMN worker_name VARCHAR(64) NOT NULL DEFAULT '', ADD COLUMN finished_at TIMESTAMPTZ;`
 - terms.md §4 增行:`换新单 replacement.status | PENDING / DOING / DONE / FAILED | 待执行/执行中/完成/失败(复用 task.status 枚举,本 note 裁定)`
