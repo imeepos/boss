@@ -12,6 +12,7 @@
 - **dev 免登录**：~~`node web/admin/scripts/dev-token.mjs`~~ **已失效(HTTP 404,脚本仍按旧前缀 /auth/login 请求,2026-08-20 查证)**。现用:`curl -s http://192.168.0.102:28080/api/admin/v1/auth/login -X POST -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin123"}'` 取 `data.token`,浏览器 localStorage 注入 `boss.token` + `boss.servers`(JSON 数组含 baseUrl) + `boss.server.active` 后直访目标页;登录页表单无 id/selector,不要走表单 eval
   - **2026-08-28 修正**:`boss.servers` 数组元素必须有 `id` 字段(string),`boss.server.active` 存的是该 **id 而非 name**;缺 id 会被 serverConfig.readStored 过滤掉 → 页面弹"未配置服务端"并被弹回登录页。可用注入:`localStorage.setItem('boss.servers',JSON.stringify([{id:'s102',name:'102',baseUrl:'http://192.168.0.102:28080'}]));localStorage.setItem('boss.server.active','s102')`
   - React 受控输入用 cdp eval 填值必须走原生 setter + input 事件:`Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,v); el.dispatchEvent(new Event('input',{bubbles:true}))`;注意 Dropdown 组件渲染的是 button 不是 input,querySelectorAll('input') 下标会跳过下拉位
+  - **2026-08-27 修正(servers 先于 token)**:`?token=` 一次性覆盖只写 boss.token;若 boss.servers 未配置,AuthGuard 启动预取 /auth/me 网络失败 → adminLogout() **静默 removeItem('boss.token')** 并弹回 /login,表象是"token 参数没生效"。cdp 采集固定顺序:先访任意页(如 /login)eval 注入 boss.servers+boss.server.active,再 `location.href='/目标页?theme=dark&lang=en-US&token=<jwt>'`;boss.token 莫名消失先查这条登出路径
 
 ## 门禁
 

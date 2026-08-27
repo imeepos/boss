@@ -1009,3 +1009,10 @@
 - 重来一次会怎么做? CDP 鉴权注入一律两步持久 profile 或 eval 内 location.reload();新 worktree 装 node_modules 前先 `pnpm config get store-dir` 探活,不可达即显式 --store-dir。
 - 收获:① 详情链路三批独立提交+每批全门禁,合并日 main 被并行会话推进两次,按协议两次 merge gitea/main 反向同步后 ff-only 一次过;② 线上部署产物验证用 bundle grep 新 i18n 键(zh/en/ms 三语串),部署中途轮询误匹配他人容器名(deploy-102 是公共子串),最终以 compose 容器名精确过滤+镜像 sha 判定;③ 线上交互冒烟被并行会话启用的 LicenseGate(activated:false,业务 API 全 403 LICENSE_REQUIRED)阻断——外部环境冲突如实记录未验证之事,本地 vite dev+102 真实后端/账号的等价冒烟作主要证据。
 
+
+## 2026-08-27 营销与积分规则弹框多主题多语言适配(marketing-dialog)
+
+- 哪个坑浪费了最多时间? ① dev 免登录采集首两次全落 /login:?token= 只写 boss.token,而 AuthGuard 启动预取 /auth/me 在 servers 未配置时网络失败 → adminLogout() 静默 removeItem(boss.token),表象像"urlPrefs 没生效",probe localStorage token:false 才定位。正确顺序:先访 /login 注入 boss.servers,再 location.href 带 ?theme=&lang=&token=。② 收尾 git commit 没带 workdir 在主树执行,输出"On branch main, nothing to commit"暴露——主树恰为 clean 才零损伤,是 recidivism「命令未带 workdir」第二犯。
+- skill 有没有提前预警? 部分有:红线#10(worktree 路径核对)、速查手册 boss.servers 注入法都在,但手册没写"servers 必须先于 ?token=",这次补上了;红线#1 的 worktree 变体(edit 前须 read 同一路径文件,主树读过≠worktree 读过)被 edit 工具拦了两轮。
+- 重来一次会怎么做? cdp 鉴权采集直接套两步模板(/login 注入→带参跳转),不走"先直访试试"的侥幸路径;所有 git 写操作命令一律显式 workdir + 前置 pwd/branch 自检。
+- 收获:DOM 断言先于截图——本模型不收图,但 getComputedStyle(input).backgroundColor/borderColor + [role=option] 文本断言(light=#FFF/#D7DDE7,dark=#10203F/rgba(255,255,255,.14),en=Cash Coupon/Spend & Save/Discount,ms=Sekali/Harian/Bulanan)把双主题双语言验证做成了机械可复核证据;页面级适配任务的验证模板:grep 裸中文/裸 hex/裸 input → cdp 双主题 computed style → 双语言下拉 option 文本。
