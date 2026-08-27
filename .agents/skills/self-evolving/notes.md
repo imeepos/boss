@@ -1234,3 +1234,9 @@
 - 哪个坑浪费了最多时间? 无。审计法再次高效: 按木子完成定义逐页找「只有展示无动作」的 UI,FAQ 行(question+箭头无答案)命中;客服对话核验为真实现(chat API+错误反馈)。
 - skill 有没有提前预警? 无新坑;沿用「完成定义=动作有结果反馈」审计视角。
 - 重来一次? 死功能清单化逐页过(FAQ/客服/帮助中心),比凭印象扫描省事。
+
+## 2026-08-27 user Android 佳宁走查量化轮+提交中反馈
+
+- 哪个坑浪费了最多时间? ①误把 OrderConfirm 编辑落主树(worktree 纪律红线)当场发现并纠正:建 worktree 前 diff 落在主树,git checkout -- 恢复后再在 worktree 重做——citation:教训=编辑前先核 pwd/工作树。②UI 驱动登录两次失败:agreement 是行首 18dp 圆不是整行,点文字不生效;uiautomator 定位要读实现代码。
+- skill 有没有提前预警? worktree 红线 #10(commit 后看分支名)邻近但没查 pwd;已在 notes 记录。
+- 重来一次? ①任何文件编辑先 `git worktree list`+`pwd` 核对;②UI 驱动的勾选类交互先读组件源码找可点区域。
