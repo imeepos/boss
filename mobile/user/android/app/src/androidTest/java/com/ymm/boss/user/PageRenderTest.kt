@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ymm.boss.user.page.FaultDetailScreen
+import com.ymm.boss.user.page.InvoiceScreen
 import com.ymm.boss.user.page.MessagesScreen
 import com.ymm.boss.user.page.OrderConfirmScreen
 import com.ymm.boss.user.page.ProductScreen
@@ -69,6 +70,15 @@ class PageRenderTest {
         compose.onNodeWithText("宽带").assertIsDisplayed()
         compose.onNodeWithText("5G").assertIsDisplayed()
         compose.onNodeWithText("增值服务").assertIsDisplayed()
+    }
+
+    @Test
+    fun invoiceShowsCardsAndTerminals() {
+        // 发票页(佳宁冒烟项)骨架:标题与卡片标题与网络无关恒渲染;空数据态有明示空态/占位
+        compose.setContent { InvoiceScreen(Nav(Route.Invoice)) }
+        compose.onNodeWithText("电子发票").assertIsDisplayed()
+        compose.onNodeWithText("开票信息").assertIsDisplayed()
+        compose.onNodeWithText("可开票账期").assertIsDisplayed()
     }
 
     /**
