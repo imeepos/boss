@@ -74,6 +74,38 @@ func TestResolveHidesTodo(t *testing.T) {
 	}
 }
 
+// 回归(实名驳回→重提场景):已办结 todo 再次 Emit 同键必须复活为未办、
+// 刷新标题并清读回执;行 id 不变(不产生第二条)。task 类同契约。
+func TestEmitRevivesResolvedTodo(t *testing.T) {
+	s := NewMemStore()
+	ctx := context.Background()
+	in := Input{Category: CategoryTodo, Title: "实名待审核:张*生", RefType: "realname", RefID: "customer/88"}
+	emitT(t, s, in)
+	if err := s.Resolve(ctx, "realname", "customer/88"); err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	_ = s.MarkRead(ctx, "sysadmin", 1, nil)
+
+	emitT(t, s, Input{Category: CategoryTodo, Level: LevelWarn,
+		Title: "实名待审核:张*生(重提)", RefType: "realname", RefID: "customer/88"})
+
+	items, total, err := s.List(ctx, "sysadmin", 1, Filter{HideResolved: true})
+	if err != nil || total != 1 || len(items) != 1 {
+		t.Fatalf("revive should yield exactly one unresolved item, total=%d len=%d err=%v", total, len(items), err)
+	}
+	it := items[0]
+	if it.Resolved || it.ID == 0 {
+		t.Fatalf("revived item wrong state: %+v", it)
+	}
+	if it.Title != "实名待审核:张*生(重提)" || it.Level != LevelWarn {
+		t.Fatalf("revive should refresh content: %+v", it)
+	}
+	un, _ := s.UnreadCount(ctx, "sysadmin", 1)
+	if un != 1 {
+		t.Fatalf("revive must clear read receipts, unread=%d", un)
+	}
+}
+
 func TestFilterAndPaging(t *testing.T) {
 	s := NewMemStore()
 	emitT(t, s, Input{Category: CategoryTask, Level: LevelWarn, Title: "w", RefType: "r", RefID: "1"})

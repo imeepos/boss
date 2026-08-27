@@ -33,7 +33,9 @@ const itemCols = `n.id, n.category, n.level, n.title, n.content, n.link,
 	n.ref_type, n.ref_id, n.resolved, n.created_at, n.due_at, n.resolved_at,
 	(r.notification_id IS NOT NULL) AS read`
 
-// Emit 幂等写入:同 (ref_type, ref_id, category) 已存在时跳过(INSERT...SELECT...WHERE NOT EXISTS)。
+// Emit 幂等写入 + 复活:同 (ref_type, ref_id, category) 已存在时更新为未办并刷新
+// 标题/时限/时间(实体重入待办态的标准 UPSERT-revive 语义,如驳回后重新提交实名),
+// 并清读回执让已读账号重新可见;不存在时插入。单条数据修改 CTE 原子完成。
 func (s *PGStore) Emit(ctx context.Context, in Input) error {
 	if !in.Valid() {
 		return ErrInvalidInput
@@ -43,19 +45,25 @@ func (s *PGStore) Emit(ctx context.Context, in Input) error {
 	if in.Category == CategoryTodo && in.DueHours > 0 {
 		dueAt = time.Now().Add(time.Duration(in.DueHours) * time.Hour)
 	}
-	tag, err := s.db.Exec(ctx, `
+	_, err := s.db.Exec(ctx, `
+		WITH revived AS (
+			UPDATE admin_notifications
+			   SET resolved = FALSE, resolved_at = NULL, title = $3, level = $2,
+			       content = $4, link = $5, due_at = $9, created_at = now()
+			 WHERE ref_type = $6 AND ref_id = $7 AND category = $1
+			RETURNING id
+		), reads_cleared AS (
+			DELETE FROM admin_notification_reads
+			 WHERE notification_id IN (SELECT id FROM revived)
+		)
 		INSERT INTO admin_notifications
 			(category, level, title, content, link, ref_type, ref_id, target_role, due_at)
 		SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9
-		WHERE NOT EXISTS (
-			SELECT 1 FROM admin_notifications
-			WHERE ref_type = $6 AND ref_id = $7 AND category = $1
-		)`,
+		 WHERE NOT EXISTS (SELECT 1 FROM revived)`,
 		in.Category, in.Level, in.Title, in.Content, in.Link, in.RefType, in.RefID, in.TargetRole, dueAt)
 	if err != nil {
 		return fmt.Errorf("notify: emit: %w", err)
 	}
-	_ = tag
 	return nil
 }
 

@@ -17,13 +17,20 @@ type MemStore struct {
 // NewMemStore 构造内存实现。
 func NewMemStore() *MemStore { return &MemStore{reads: map[int64]map[int64]bool{}} }
 
-// Emit 幂等写入;同 (refType, refID, category) 已存在时跳过。
+// Emit 幂等写入 + 复活;同 (refType, refID, category) 已存在时重置为未办并刷新内容(与 PG 实现同语义)。
 func (m *MemStore) Emit(_ context.Context, in Input) error {
 	if !in.Valid() {
 		return ErrInvalidInput
 	}
-	for _, it := range m.items {
+	for i := range m.items {
+		it := &m.items[i]
 		if it.RefType == in.RefType && it.RefID == in.RefID && it.Category == in.Category {
+			it.Level, it.Title, it.Content, it.Link = in.Level, in.Title, in.Content, in.Link
+			it.Resolved, it.ResolvedAt, it.DueAt = false, "", ""
+			delete(m.reads, it.ID) // 复活清读回执:已读账号重新计未读
+			if in.Category == CategoryTodo && in.DueHours > 0 {
+				it.DueAt = time.Now().Add(time.Duration(in.DueHours) * time.Hour).UTC().Format(time.RFC3339)
+			}
 			return nil
 		}
 	}
