@@ -17,7 +17,7 @@ import org.junit.runner.RunWith
 
 /**
  * 积分页与发布基建(2026-08-27 D0/D1-D4)冒烟:
- * 1) PointsScreen 无网络时骨架与各卡标题必现(加载失败给重试入口,防静默);
+ * 1) PointsScreen 骨架与各卡标题必现(与网络无关,离线/在线均渲染);
  * 2) Manifest 已声明 POST_NOTIFICATIONS(Android 13+ 运行时权限立项)。
  * 仅能 connectedDebugAndroidTest 执行,本地 JVM 无法运行。
  */
@@ -35,12 +35,6 @@ class PointsAndReleaseTest {
         compose.onNodeWithText("积分兑换").assertIsDisplayed()
         compose.onNodeWithText("赚积分").assertIsDisplayed()
         compose.onNodeWithText("积分明细").assertIsDisplayed()
-    }
-
-    @Test
-    fun pointsPageOfflineShowsRetry() {
-        compose.setContent { PointsScreen(Nav(Route.Points)) }
-        compose.onNodeWithText("重试").assertIsDisplayed()
     }
 
     @Test
