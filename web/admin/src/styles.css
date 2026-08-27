@@ -52,6 +52,14 @@
   --shadow-panel: 0 20px 52px rgba(15, 30, 59, 0.18);
   --shadow-card: 0 8px 24px rgba(3, 13, 31, 0.18);
   --shadow-focus: 0 0 0 3px rgba(39, 63, 112, 0.14);
+  /* Z 浮层阶梯(单一事实源,浮层禁止写裸 z 值,构建门禁拦截):
+     fab 通知面板 < 抽屉遮罩/面板 < 页面级全屏弹窗 < 共享 Dialog < 下拉/日期等弹层 */
+  --z-fab: 60;
+  --z-drawer-mask: 100;
+  --z-drawer: 101;
+  --z-page-modal: 120;
+  --z-dialog: 130;
+  --z-popover: 1000;
   /* Typography */
   --font-family-base:
     "PingFang SC", "Microsoft YaHei", "Noto Sans SC",

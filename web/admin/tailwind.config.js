@@ -96,6 +96,15 @@ export default {
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
       },
+      /* 浮层 z 语义类:唯一合法来源是 styles.css --z-* 令牌,裸数值被构建门禁拦截 */
+      zIndex: {
+        'drawer-mask': 'var(--z-drawer-mask)',
+        drawer: 'var(--z-drawer)',
+        'page-modal': 'var(--z-page-modal)',
+        dialog: 'var(--z-dialog)',
+        fab: 'var(--z-fab)',
+        popover: 'var(--z-popover)',
+      },
       fontFamily: {
         base: ['"PingFang SC"', '"Microsoft YaHei"', '"Noto Sans SC"', '"Helvetica Neue"', 'Arial', 'sans-serif'],
         brand: ['Inter', 'Arial', '"Helvetica Neue"', 'sans-serif'],
