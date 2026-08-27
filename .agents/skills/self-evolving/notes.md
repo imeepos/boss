@@ -1078,3 +1078,10 @@
 - **哪个坑浪费了最多时间？** pnpm store-dir 指向未挂载的 /Volumes/sker,worktree 无 node_modules 装不上(pnpm store path 与 config list 显示不一致,实际以 store path 为准)。修法:install 显式 `--store-dir /Users/imeepos/ext512/dev-cache/pnpm-store`。另一次:并行会话两次推进 main,ff-merge 失败→rebase→三次重解同一批 locale 冲突(机械重复,可用脚本化 resolution)。
 - **skill 有没有提前警告？** 有:worktree ff 失败严禁删 worktree/rd 红线、并行会话推 commit 常态、edit 前必须 read、模型不支持图像(用 DOM 断言替代)。
 - **重来一次我会怎么做？** ① 先查 pnpm store path 而不是 config list(pnpm v10 两级配置不一致);② locale 冲突解析先写成 sed 脚本一把梭(每文件的冲突块结构完全一致);③ contract-sync 有 24 项存量失败(license 域),改进前先跑一次 main 基线 diff,避免被"多了 1 项"误导(实际是并行会话新增 openplat 契约登记的时差)。
+
+## 2026-10 service-metrics 三语/双主题适配
+
+- 哪个坑浪费了最多时间？ 本次几乎无排坑——i18n keys.test 的 keyPaths 用 Object.entries 递归生成 key 集,所以 `Record<string, string>` 类型只要三语平铺同样的键名就自然通过。读懂这一点就能一次插入 ~30 个键而不需逐字段调测。
+- skill 有没有提前警告？ 有:红线 #1(编辑前 Read)、红线 #6(主题断言要先 grep token 定义,本任务里所有 shell-* 令牌在 tokens.css 第 19-120 行 light/dark 两套都查到了)、红线 #7(模型可能不支持图像,本会话再次确认)。
+- 重来一次会怎么做？ ① 用 read_image 解析 cdp 截图前,把"双主题×三语言=6 张"先一次性拍齐一次性读,避免分次 IO。② 在 types.ts 选插入位置时,优先选已有性质接近的页面相邻位置(reportPage/analyticsPage 都是 boss 域统计页,放在 reportPage 后比放在末尾更利于后人 grep)。③ AR summary 的 dt/dd 和账龄桶数值原本无主题色,顺手补 text-[var(--shell-content-text)] / text-[var(--shell-heading)],与全站令牌约定统一,比单纯翻译更稳。
+- 收获:boss/service-metrics 三语采集真实通过;light 卡背景白色、卡背景 #FFFFFF;dark 卡背景 #10203F,文本清晰对比;console 0 错误。typecheck/test(321)/build 全过;Protocol 走完 worktree→commit→push→ff-merge→push main→worktree remove→branch -d→push delete。改动主控 5 文件/+162/−13。
