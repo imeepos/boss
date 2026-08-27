@@ -9,7 +9,7 @@ import { TabBar } from '../../../components/business/tab-bar'
 import { EmptyState } from '../../../components/business/page-head'
 import { fmtFee, fmtTime } from '../../../lib/format'
 import type { UserRow } from './filter'
-import { DETAIL_TABS, NOTIFY_CARD_KEY, PROFILE_FIELDS, latestPlanName,
+import { DETAIL_TABS, NOTIFY_CARD_KEY, PROFILE_FIELDS, SECTION_LIMIT, latestPlanName,
   type ColSpec, type DetailCol, type DetailSection } from './detail-view'
 
 type Detail = Record<string, unknown>
@@ -37,8 +37,12 @@ function SectionBlock({ section, detail, empty }: {
   const t = useT()
   const u = t.pages.userPage
   const d = u.d
+  const [expanded, setExpanded] = useState(false)
   if (section.key === NOTIFY_CARD_KEY) return <NotifyPrefsCard detail={detail} />
   const rows = (detail[section.key] as Record<string, unknown>[] | undefined) ?? []
+  const limit = section.limit ?? SECTION_LIMIT
+  const capped = rows.length > limit
+  const visible = expanded ? rows : rows.slice(0, limit)
   return (
     <section className="mb-5">
       <h4 className="mb-2 mt-0 flex items-center gap-2 text-[13px] font-semibold text-[var(--shell-heading)]">
@@ -46,26 +50,33 @@ function SectionBlock({ section, detail, empty }: {
         <span className="rounded-full bg-[var(--shell-menu-hover-bg)] px-2 text-[11px] leading-4 text-[var(--shell-group-title)]">{rows.length}</span>
       </h4>
       {rows.length === 0 ? <EmptyState text={empty} /> : (
-        <div className="overflow-x-auto rounded-sm border border-[var(--shell-card-border)]">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {section.cols.map((c) => (
-                  <th key={c.key} className="h-9 bg-[var(--shell-menu-hover-bg)] px-3 text-left text-[11px] font-medium whitespace-nowrap text-[var(--shell-group-title)]">{d[c.k] ?? c.key}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={i} className="hover:bg-[var(--shell-menu-hover-bg)]">
-                  {section.cols.map((c: DetailCol) => (
-                    <td key={c.key} className={cellBase}>{renderCell(row[c.key], c.spec, d)}</td>
+        <>
+          <div className="overflow-x-auto rounded-sm border border-[var(--shell-card-border)]">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  {section.cols.map((c) => (
+                    <th key={c.key} className="h-9 bg-[var(--shell-menu-hover-bg)] px-3 text-left text-[11px] font-medium whitespace-nowrap text-[var(--shell-group-title)]">{d[c.k] ?? c.key}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {visible.map((row, i) => (
+                  <tr key={i} className="hover:bg-[var(--shell-menu-hover-bg)]">
+                    {section.cols.map((c: DetailCol) => (
+                      <td key={c.key} className={cellBase}>{renderCell(row[c.key], c.spec, d)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {capped && (
+            <button className="mt-2 cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-border-focus)] hover:underline" onClick={() => setExpanded(!expanded)}>
+              {expanded ? d.dCollapse : d.dSeeAll.replace('{count}', String(rows.length))}
+            </button>
+          )}
+        </>
       )}
     </section>
   )

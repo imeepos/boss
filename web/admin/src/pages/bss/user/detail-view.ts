@@ -22,6 +22,8 @@ export interface DetailCol {
   /** 聚合返回的数组段名(= userPage.sectionNames 的键);notifyPrefs 为特殊卡片段。 */
   key: string
   cols: DetailCol[]
+  /** 分段列表展示上限(超限折叠,抽屉内可展开查看全部);缺省 SECTION_LIMIT。 */
+  limit?: number
 }
 
 export interface DetailTab {
@@ -33,6 +35,10 @@ export interface DetailTab {
  * 门禁 walker 跳过它——它不是字典引用键。 */
 export const NOTIFY_CARD_KEY = 'notifyPrefs'
 
+/** 分段列表展示上限(默认 5 行,超限折叠、展开查看全部——'有节制地展示')。
+ * 覆盖策略:plans 收缩为 3(当前在用套餐),usages 放宽到 6(月度流量粒度)。 */
+export const SECTION_LIMIT = 5
+
 // 订单环节文案键(terms.md 第 1 节 12 环节)。
 const STAGE: Record<string, string> = Object.fromEntries(
   Array.from({ length: 12 }, (_, i) => [String(i + 1), `dStage${i + 1}`]),
@@ -42,7 +48,7 @@ export const DETAIL_TABS: DetailTab[] = [
   {
     key: 'service',
     sections: [
-      { key: 'plans', cols: [
+      { key: 'plans', limit: 3, cols: [
         { key: 'planName', k: 'dPlanName' },
         { key: 'status', k: 'dStatus', spec: { kind: 'enum', map: { ACTIVE: 'dActive', active: 'dActive', EXPIRED: 'dCpnExpired' } } },
         { key: 'effectiveAt', k: 'dEffectiveAt', spec: { kind: 'time' } },
@@ -53,7 +59,7 @@ export const DETAIL_TABS: DetailTab[] = [
         { key: 'action', k: 'dAction', spec: { kind: 'enum', map: { subscribe: 'dSubscribe', unsubscribe: 'dUnsubscribe' } } },
         { key: 'createdAt', k: 'dCreatedAt', spec: { kind: 'time' } },
       ] },
-      { key: 'usages', cols: [
+      { key: 'usages', limit: 6, cols: [
         { key: 'month', k: 'dMonth' },
         { key: 'uploadGb', k: 'dUploadGb' },
         { key: 'downloadGb', k: 'dDownloadGb' },
@@ -152,7 +158,7 @@ export const PROFILE_FIELDS = ['phone', 'idType', 'idNo', 'regionName'] as const
 export const DRAWER_D_KEYS = [
   'dStatBalance', 'dStatPlan', 'dStatOrders', 'dStatCoupons',
   'dNotifyBusiness', 'dNotifyMarketing', 'dNotifyChannel', 'dOn', 'dOff',
-  'dYes', 'dNo',
+  'dYes', 'dNo', 'dSeeAll', 'dCollapse',
 ] as const
 
 /** 概览统计:dBalances=余额段,套餐取 plans 最后一条(ORDER BY id 升序即最新)。 */

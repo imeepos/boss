@@ -1623,6 +1623,7 @@ const enUS: Translations = {
         dStatBalance: 'Balance', dStatPlan: 'Current Plan', dStatOrders: 'Orders', dStatCoupons: 'Coupons',
         d_phone: 'Phone', d_idType: 'ID Type', d_idNo: 'ID No.', d_regionName: 'Region',
         dYes: 'Yes', dNo: 'No', dStatus: 'Status', dAction: 'Action', dResult: 'Result',
+        dSeeAll: 'View all {count}', dCollapse: 'Collapse',
       },
       back: 'Close',
       loading: 'Loading…',

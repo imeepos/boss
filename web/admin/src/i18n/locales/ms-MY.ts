@@ -1623,6 +1623,7 @@ const msMY: Translations = {
         dStatBalance: 'Baki', dStatPlan: 'Pelan Semasa', dStatOrders: 'Pesanan', dStatCoupons: 'Kupon',
         d_phone: 'Telefon', d_idType: 'Jenis ID', d_idNo: 'No. ID', d_regionName: 'Wilayah',
         dYes: 'Ya', dNo: 'Tidak', dStatus: 'Status', dAction: 'Tindakan', dResult: 'Keputusan',
+        dSeeAll: 'Lihat semua {count}', dCollapse: 'Runtuhkan',
       },
       back: 'Tutup',
       loading: 'Memuatkan…',

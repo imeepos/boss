@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import zhCN from '../../../i18n/locales/zh-CN'
 import enUS from '../../../i18n/locales/en-US'
 import msMY from '../../../i18n/locales/ms-MY'
-import { DETAIL_TABS, DRAWER_D_KEYS, NOTIFY_CARD_KEY, PROFILE_FIELDS } from './detail-view'
+import { DETAIL_TABS, DRAWER_D_KEYS, NOTIFY_CARD_KEY, PROFILE_FIELDS, SECTION_LIMIT } from './detail-view'
 
 interface RefKeys { dKeys: Set<string>; sections: Set<string>; tabs: Set<string> }
 
@@ -48,5 +48,15 @@ describe('用户详情抽屉 i18n 引用键门禁', () => {
     expect(missingS, '缺 sectionNames 段名键').toEqual([])
     const missingT = [...ref.tabs].filter((k) => !(k in locale.pages.userPage.detailTabs))
     expect(missingT, '缺 detailTabs 页签键').toEqual([])
+  })
+
+  it('每段列表上限为明确正整数(缺省走 SECTION_LIMIT,超限即折叠)', () => {
+    for (const tab of DETAIL_TABS) {
+      for (const s of tab.sections) {
+        if (s.key === NOTIFY_CARD_KEY) continue
+        const limit = s.limit ?? SECTION_LIMIT
+        expect(Number.isInteger(limit) && limit > 0, `${s.key} 段上限应为正整数`).toBe(true)
+      }
+    }
   })
 })

@@ -1623,6 +1623,7 @@ const zhCN: Translations = {
         dStatBalance: '余额', dStatPlan: '当前套餐', dStatOrders: '订单', dStatCoupons: '优惠券',
         d_phone: '手机号', d_idType: '证件类型', d_idNo: '证件号码', d_regionName: '所属区域',
         dYes: '是', dNo: '否', dStatus: '状态', dAction: '动作', dResult: '结果',
+        dSeeAll: '查看全部 {count} 条', dCollapse: '收起',
       },
       back: '关闭',
       loading: '加载中…',
