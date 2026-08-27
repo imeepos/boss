@@ -1023,3 +1023,10 @@
 - skill 有没有提前预警? 速查手册已记"Dropdown 渲染 button 不是 input,querySelectorAll('input') 下标跳位",同族问题(下拉类组件的按钮定位)但没给正向解法;typed-nil 无预警。
 - 重来一次会怎么做? CDP 定位表单控件一律"语义锚点+作用域":button[aria-haspopup=listbox] + closest('label') 文本匹配,先 dump 候选清单再点,不盲选下标;返回具体指针的校验函数进 error 返回值必须过 CollectErrors/判 nil。
 - 收获:worktree node_modules 用绝对路径 symlink 主树即可跑全门禁(相对路径 ../../ 在该环境解析失败);102 后端未部署新接口时,CDP 降级路径断言(空目录 无匹配事件+加载失败提示+空提交被拒)也能构成真实 DOM 证据,happy path 明确标注"handler 层已测、部署环境未验证"。
+
+## 2026-09 用户列表注册时间 undefined + 登录名为空(bugfix)
+
+- 哪个坑浪费了最多时间? ① 部署验证轮询脚本第一版以"healthz 有响应"为部署完成信号,服务本来就常驻,第一轮就 break 拿到旧响应误判未生效,重写为 grep 响应体新键才对;② worktree pnpm install 撞 /Volumes/sker 未挂载卷 EACCES(与 08-27 同坑),这次改 --store-dir 抄主树 .modules.yaml 的 storeDir 完整安装。
+- skill 有没有提前预警? 部分:notes 里有 store-dir 坑的 symlink 解法,没写"完整安装"替代路径;部署验证要校验特征字段这一点无预警(速查手册只写了 healthz/容器名判定)。
+- 重来一次会怎么做? 轮询部署永远 grep 目标特征(grep '"createdAt"' 响应体),不拿健康检查当发布信号;开工先读 notes.md 相关节(本次开工前没翻 notes,重复踩 store-dir)。
+- 收获:根因双层——102 库 user_accounts 0 行(测试数据缺,且全仓库无任何写入方,只有建表迁移)暴露接口 schema 缺陷(usersSQL 压根没查 createdAt);按用户裁定"数据有问题=接口必须兜底"双向修:SQL COALESCE(ua.registered_at,c.created_at) + 前端列渲染抽 loginNameCell/createdAtCell 禁 String() 强转;两侧回归测试;push main → CI 部署 → API 响应体断言 + CDP DOM 断言(表格单元格文本"213 | 采购经理·王 | ... | 2026-08-19 03:26:16 | 详情")双证据闭环。本模型不收图,DOM 文本断言替代截图(read_image 报 GLM-5.3-Flash 无图像输入,红线#7 生效)。

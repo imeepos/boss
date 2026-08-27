@@ -442,3 +442,8 @@ suspend fun current(ctx: Context): Location? {
 
 - 场景:页面有多个 aria-haspopup="listbox"/aria-label 按钮(顶栏语言切换、菜单、业务下拉)时,querySelector('button[aria-label]') 或 .at(-1) 会点错。
 - 手法:先 dump 候选 `[...document.querySelectorAll('button')].map((b,i)=>i+':'+b.textContent.trim())` 核对,再用组合锚点定位,如 `[...document.querySelectorAll('button[aria-haspopup="listbox"]')].find(b=>b.closest('label')?.textContent.includes('订阅事件'))`。
+
+## 新 worktree 装前端依赖:store-dir 抄主树 .modules.yaml
+
+- 场景:worktree 里 `pnpm install` 撞全局 store-dir(/Volumes/sker 卷未挂载)EACCES;symlink 主树 node_modules 之外的另一条路。
+- 手法:`grep storeDir 主树/web/admin/node_modules/.modules.yaml` 拿到实际 store 路径,再 `pnpm install --store-dir <该路径>` 完整安装(worktree 自带 node_modules,pnpm test/build 原生可跑,不依赖主树结构)。
