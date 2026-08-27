@@ -152,6 +152,25 @@ export interface ActivationCallbackRow {
   retries: number
 }
 
+/** worker_feedbacks 行(GET /worker-feedbacks,fields.md §7.3/§7.5 隶属师傅事件级事实)。
+ * 评价低分(<3)由事件记录侧写入 needReview=true,后台复核后置 false(events.go)。 */
+export interface FeedbackRow {
+  id: number
+  workerId: number
+  workerName: string
+  groupId: number
+  groupName: string
+  legalEntityId: number
+  legalEntityName: string
+  regionId: number
+  regionName: string
+  ticketId: number
+  customerId: number
+  customerName: string
+  score: number // 1~5
+  needReview: boolean
+}
+
 export function pageSlice<T>(rows: T[], page: number, pageSize: number): T[] {
   return rows.slice((page - 1) * pageSize, page * pageSize)
 }
