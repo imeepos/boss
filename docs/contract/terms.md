@@ -92,6 +92,9 @@
 | 实名核验 verifications.result | PENDING / PASS / FAIL | 待核验 / 通过 / 不通过（000059 归一，subject_type=customer/worker；用户详情 verifyRecords 段三态） |
 | 接单设置 worker_settings | accepting 布尔 + accept_types CSV | 后端当前仅识别工单作业类型 `INSTALL`（`internal/httpapi/worker/ticket_gate.go` portalTicketType）；P2 接单类型枚举待扩展 |
 | 派单工单作业类型 dispatch_tickets.work_type（派生口径） | INSTALL / REPAIR | 报障单（complaints 联表有值）→ REPAIR，否则 INSTALL（`internal/httpapi/worker/ticket.go` portalTicketTypeOf；admin 看板只落 INSTALL） |
+| 盘点任务 stocktake.status | DOING / DONE | 在盘 / 已关单（000156 起：差异明细全处置完才可关单，存在 OPEN 差异返回 40900；口径见 fields.md §4.2.1） |
+| 盘点差异 stocktake_items.kind | PENDING / OK / MISMATCH / MISSING / EXTRA | 未扫 / 账实一致 / 状态不符 / 关单时仍未扫 / 计划外多扫 |
+| 盘点处置 stocktake_items.resolution | OPEN / CONFIRMED / FIXED / ESCALATED | 待处置 / 确认差异(按实盘修正台账) / 现场核实台账为准 / 上报转人工 |
 
 ## 5. 关键术语
 
