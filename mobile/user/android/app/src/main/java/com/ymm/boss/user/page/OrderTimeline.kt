@@ -44,9 +44,13 @@ import org.json.JSONObject
 
 // 12 环节装维时间线:进度条 + 4 里程碑分组折叠卡。纯逻辑抽出为可测顶层函数。
 
-/** 当前里程碑 = timeline 最大 stage 所在分组,1~4。 */
+/**
+ * 当前里程碑 = timeline 最大 stage 所在分组,1~4。
+ * 映射与设计稿 OrderCard.milestoneOf 同一事实源:stage≤1→1 / 2-7→2 / 8-11→3 / 12→4。
+ * 曾误用 (stage-1)/3 按 3 个一组分桶,导致环节 10-11(激活中)落入「完成」组(装维中显示已完成=欺诈级体验事故)。
+ */
 internal fun currentMilestoneOf(stages: List<Int>): Int =
-    (((stages.maxOrNull() ?: 1) - 1) / 3 + 1).coerceIn(1, 4)
+    milestoneOf(stages.maxOrNull() ?: 1)
 
 /** 里程碑状态:依据该里程碑下各阶段 result 推导。 */
 internal enum class MilestoneState { DONE, DOING, PENDING }

@@ -6,11 +6,19 @@ import org.junit.Test
 class OrderTimelineLogicTest {
 
     @Test
-    fun `currentMilestoneOf groups 12 stages into 4 milestones`() {
-        assertEquals(1, currentMilestoneOf(listOf(1, 2, 3)))
-        assertEquals(2, currentMilestoneOf(listOf(3, 4)))
-        assertEquals(3, currentMilestoneOf(listOf(7, 8, 9)))
-        assertEquals(4, currentMilestoneOf(listOf(10, 12)))
+    fun `currentMilestoneOf maps 12 stages to spec milestones`() {
+        // 设计稿映射(contract/terms.md §1 12 环节):stage≤1→1 / 2-7→2 / 8-11→3 / 12→4。
+        // 曾按 3 个一组分桶,环节 10-11(激活中)误落「完成」组,这里逐 stage 断言防回归。
+        val expect = mapOf(
+            1 to 1, 2 to 2, 3 to 2, 4 to 2, 5 to 2, 6 to 2, 7 to 2,
+            8 to 3, 9 to 3, 10 to 3, 11 to 3, 12 to 4,
+        )
+        expect.forEach { (stage, milestone) ->
+            assertEquals("stage=$stage", milestone, currentMilestoneOf(listOf(stage)))
+        }
+        // 组内最大 stage 定组:group 2 含 2-7,group 3 含 8-11
+        assertEquals(2, currentMilestoneOf(listOf(2, 7)))
+        assertEquals(3, currentMilestoneOf(listOf(8, 11)))
     }
 
     @Test
