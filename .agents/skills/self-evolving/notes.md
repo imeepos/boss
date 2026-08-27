@@ -1030,3 +1030,10 @@
 - skill 有没有提前预警? 红线"写完的东西要立刻测试"有:实跑第一轮就抓出解析 bug,门禁式验证再次证明比肉眼审查可靠;负路径(坏 theme exit 2)也在同轮补测。
 - 重来一次会怎么做? 包装器坚持"生成参数→spawn 既有工具"而非复制 CDP 内核(零重复、行为免费继承);参数解析写完先跑一条双 --eval 命令再接着写文档;repeatable flag 解析模板 = 与普通 flag 同构,不加特判。
 - 收获:沉淀的最终形态是"别人可直接跑的东西"——把 templates 模板 C/E 的手工五步压缩成一个脚本后,模板 K 只剩一行用法;事实手册区分"速查"与"不可更改事实"(源码查证+日期)两节,后者防并行会话凭记忆改契约。
+
+## 2026-09 用户列表注册时间 undefined + 登录名为空(bugfix)
+
+- 哪个坑浪费了最多时间? ① 部署验证轮询脚本第一版以"healthz 有响应"为部署完成信号,服务本来就常驻,第一轮就 break 拿到旧响应误判未生效,重写为 grep 响应体新键才对;② worktree pnpm install 撞 /Volumes/sker 未挂载卷 EACCES(与 08-27 同坑),这次改 --store-dir 抄主树 .modules.yaml 的 storeDir 完整安装。
+- skill 有没有提前预警? 部分:notes 里有 store-dir 坑的 symlink 解法,没写"完整安装"替代路径;部署验证要校验特征字段这一点无预警(速查手册只写了 healthz/容器名判定)。
+- 重来一次会怎么做? 轮询部署永远 grep 目标特征(grep '"createdAt"' 响应体),不拿健康检查当发布信号;开工先读 notes.md 相关节(本次开工前没翻 notes,重复踩 store-dir)。
+- 收获:根因双层——102 库 user_accounts 0 行(测试数据缺,且全仓库无任何写入方,只有建表迁移)暴露接口 schema 缺陷(usersSQL 压根没查 createdAt);按用户裁定"数据有问题=接口必须兜底"双向修:SQL COALESCE(ua.registered_at,c.created_at) + 前端列渲染抽 loginNameCell/createdAtCell 禁 String() 强转;两侧回归测试;push main → CI 部署 → API 响应体断言 + CDP DOM 断言(表格单元格文本"213 | 采购经理·王 | ... | 2026-08-19 03:26:16 | 详情")双证据闭环。本模型不收图,DOM 文本断言替代截图(read_image 报 GLM-5.3-Flash 无图像输入,红线#7 生效)。

@@ -465,3 +465,8 @@ suspend fun current(ctx: Context): Location? {
   ③ 修复=servers 先于 token:先访任意页(如 /login)写 boss.servers+active,再带 token 跳目标页;
   ④ 全链路已封装 `scripts/cdp-admin-capture.mjs`,手写 eval 场景照 templates 模板 C/E。
 - 铁律:boss.token 消失先怀疑代码内登出路径(adminLogout),不要怀疑 urlPrefs/浏览器存储。
+
+## 新 worktree 装前端依赖:store-dir 抄主树 .modules.yaml
+
+- 场景:worktree 里 `pnpm install` 撞全局 store-dir(/Volumes/sker 卷未挂载)EACCES;symlink 主树 node_modules 之外的另一条路。
+- 手法:`grep storeDir 主树/web/admin/node_modules/.modules.yaml` 拿到实际 store 路径,再 `pnpm install --store-dir <该路径>` 完整安装(worktree 自带 node_modules,pnpm test/build 原生可跑,不依赖主树结构)。

@@ -375,3 +375,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 页面组件里裸 `<input className="w-full">` 在 color-scheme:dark 下渲染 UA 默认样式,与 tokens 体系观感割裂;表单输入一律用 ui/Input(shell-input-* 全令牌),下拉用 Dropdown,label 一律 i18n——audit 关键词:grep '<input className="w-full"'。
 - httpx.RequireString/RequireNonNegativeFloat 返回具体指针 *ValidationError,在返回 error 的函数里直接 return 构成 typed-nil(接口非 nil、打印 <nil>);修复是 httpx.CollectErrors(...) 包一层再 return——2026-08-27 openplat 订阅校验三用例同坑。
 - 返回"副本"的枚举函数(EventCatalog 等)要配"返回长度=源长度"的测试,防止后人改成直接返回内部 slice 被调用方污染。
+- 格式化函数已兜底 undefined,调用方 `String(r.createdAt)` 强转会击穿兜底把 undefined 渲染成字面量(fmtTime 收 undefined 返回 '—',String 后成真字符串绕过判空);修复是列渲染抽纯函数传原值,测试锁定"缺字段渲染占位符"——2026-09 用户列表注册时间 undefined 事故。
+- 部署后验证接口新字段,轮询条件必须是"目标特征字段出现"而不是"服务有响应":服务常驻时后者恒真,第一轮就 break 拿到旧版本假阴性(2026-09 用户列表 createdAt 验证空转一轮);正确姿势 grep 响应体里的新键名,40 次×20s 内等到即判成功。
