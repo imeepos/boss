@@ -79,7 +79,16 @@ jobs:
 
       - name: Build server image
         if: steps.change.outputs.runtime == 'true'
-        run: docker build -f deployments/docker/server.Dockerfile -t 192.168.0.102:5000/boss/server:${GITHUB_SHA} -t 192.168.0.102:5000/boss/server:latest .
+        # 生产镜像注入授权公钥(B 档强制门禁)。公钥非机密(验签公钥),直接内联——
+        # 不依赖仓库 secret(公钥轮换时改此处 + buildinfo 同源),禁止空值交付。
+        # 当前公钥对应 release-platform 签发密钥 boss-integration-v1(102)。
+        run: |
+          BOSS_LICENSE_PUBLIC_KEY_HEX="f82d2db7a72efc66f8ffca0a67a7f8a29c6c6ea8f720fe5c139afdaa8869ff63"
+          docker build \
+            -f deployments/docker/server.Dockerfile \
+            --build-arg BOSS_LICENSE_PUBLIC_KEY_HEX="$BOSS_LICENSE_PUBLIC_KEY_HEX" \
+            -t 192.168.0.102:5000/boss/server:${GITHUB_SHA} \
+            -t 192.168.0.102:5000/boss/server:latest .
 
       - name: Build admin-web image
         if: steps.change.outputs.runtime == 'true'

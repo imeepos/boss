@@ -6,7 +6,16 @@ COPY go.mod go.sum* ./
 RUN go mod download || true
 COPY . .
 ARG BINARIES="server collector provisioner report aaa"
-RUN set -e; for b in ${BINARIES}; do CGO_ENABLED=0 go build -o /out/boss-$b ./cmd/$b; done
+# 授权公钥(B 档强制门禁):仅 server 注入;空=开发态(门禁不启用,打 ALERT 日志)。
+# 生产 CI 必须传 BOSS_LICENSE_PUBLIC_KEY_HEX,否则交付镜像门禁不生效。
+ARG BOSS_LICENSE_PUBLIC_KEY_HEX=""
+RUN set -e; for b in ${BINARIES}; do \
+    LDFLAGS="-s -w"; \
+    if [ "$b" = "server" ] && [ -n "$BOSS_LICENSE_PUBLIC_KEY_HEX" ]; then \
+      LDFLAGS="$LDFLAGS -X github.com/ymm-001/boss/internal/pkg/buildinfo.LicensePublicKeyHex=$BOSS_LICENSE_PUBLIC_KEY_HEX"; \
+    fi; \
+    CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o /out/boss-$b ./cmd/$b; \
+  done
 
 FROM alpine:3.20
 RUN adduser -D app && apk add --no-cache ca-certificates
