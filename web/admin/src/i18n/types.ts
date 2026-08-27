@@ -683,6 +683,27 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    collectionTasksPage: {
+      title: string
+      desc: string
+      /** 状态过滤按钮文案;key = CollectionTaskRow.status(PENDING/DOING/DONE/FAILED)。 */
+      statuses: Record<string, string>
+      columns: string[]
+      actionStart: string
+      actionDone: string
+      actionFail: string
+      actionConfirm: string
+      actionFailMsg: string
+      empty: string
+      loadFail: string
+      total: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
     stopsrv: {
       title: string
       desc: string
