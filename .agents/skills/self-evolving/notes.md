@@ -988,3 +988,10 @@
 - 这个 skill 有没有提前警告我?红 #7(不读图模型)提前警告有效:当前 harness 模型 deepseek-v4-flash 同样不吃 read_image,立即切 DOM 断言冒烟零浪费;worktree 协议两次顶住 main 被并行会话推进(两轮 rebase 后 ff-only 一次过);红 #2a(bundle 部署验证)照做,curl 远端 JS grep 到新文案键即证生效。skill 未提前覆盖的两点已沉淀:真库枚举词汇表先查再写映射(techniques)、cdp 断言精确匹配(known-issues)。
 - 重来一次我会怎么做?任何"枚举值→展示文案"映射动手前先 `SELECT DISTINCT type FROM <表>` 看真实取值域,契约文档只当佐证;DOM 断言统一用 trim+=== 精确匹配或带上下文容器再 includes。
 - 验证:三批各自门禁(tsc+vitest+build+make check 含 contract-sync)全绿;人为制造 i18n 键失配→3 红,恢复→绿;102 部署后 API 实证 faults=3(前缀已 strip)/complaints=1(plans 仅 ACTIVE),7 轮 CDP 冒烟(zh/en/ms × light/dark × 空态 × 开合 × 展开/收起)console 0 错误、0 失败请求。
+
+## 2026-09-25 令牌治理与 StatusTag 三语化(web-token-governance)
+
+- 哪个坑浪费了最多时间? CDP 老 profile 缓存竞态:第一轮 en-US 线上断言拿到"中文标签+en locale"的矛盾样本,排查半天 bundle/组件/字典,最后换全新 profile + 渲染就绪轮询(.st-tag 出现再取值)立刻转绿——老 profile 的 DOM 是 reload 竞态下 zh 初始渲染残留,属红线 #2a"先怀疑缓存"的变体。
+- skill 有没有提前预警? 红线 #2a 有提示但我没第一时间执行:当时先入为主怀疑新代码逻辑。另外临时生成脚本在验证编译前就 rm 了,二次运行时 write 工具拒绝重建已删路径(gen-status-tags.cjs→被迫改名 gen-st.cjs)——教训:临时脚本的生命周期终点是「验证通过」不是「首次跑完」。
+- 重来一次会怎么做? 机械生成类改动(locale 批量插入)一律:生成→tsc 即验→成功才删脚本;CDP 断言统一 fresh profile 模板。
+- 收获手法:① 门禁挂 pnpm build 前置,Dockerfile/Makefile 零改动进 CI(本次审计门禁真实拦下一处 --color-primary);② Lazy chunk 取证:入口包只含字典,组件字符串要去 route chunk grep;③ LocaleProvider 加 localeOverride 可选 prop 实现 SSR/测试注入不动存量调用。
