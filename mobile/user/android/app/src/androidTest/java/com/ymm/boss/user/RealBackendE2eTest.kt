@@ -7,7 +7,9 @@ import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.BillApi
 import com.ymm.boss.user.api.DebugApi
 import com.ymm.boss.user.api.OrderApi
+import com.ymm.boss.user.api.PlanApi
 import com.ymm.boss.user.api.ProductApi
+import com.ymm.boss.user.api.ProfileApi
 import com.ymm.boss.user.api.UserApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
@@ -54,5 +56,15 @@ class RealBackendE2eTest {
         val bills = BillApi.bills()
         assertTrue("账单响应应含契约键 currentDue", bills.has("currentDue"))
         assertTrue("账单响应应含契约键 items", bills.has("items"))
+
+        // 「我的」读路径(6 条关键路径之五):套餐在用在网(家庭宽带100M),plan 应收敛
+        val plan = PlanApi.profile().optJSONObject("plan")
+        assertTrue("套餐信息应收敛(账号在网)", plan != null)
+
+        // 地址读:信封契约键 items(账号 0 地址只断契约不断量)
+        assertTrue("地址响应应含契约键 items", ProfileApi.addresses().has("items"))
+
+        // 券读:信封契约键 items
+        assertTrue("券响应应含契约键 items", BillApi.coupons().has("items"))
     }
 }
