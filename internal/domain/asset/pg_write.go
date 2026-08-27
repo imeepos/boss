@@ -171,25 +171,68 @@ func (s *PGStore) CreateReplacement(ctx context.Context, r Replacement) (int64, 
 
 // ListStocktakes 列出全部盘点任务。
 
-// CreateStocktake 新建盘点任务,返回自增 id。
+// CreateStocktake 新建盘点任务并冻结资产快照,返回自增 id。
+// 校验 legal_entity_id 存在性;scope=全库/空 → 主体全部资产,否则按 region_name 精确匹配。
 func (s *PGStore) CreateStocktake(ctx context.Context, st Stocktake) (int64, error) {
+	ok, err := s.exists(ctx, "legal_entities", st.LegalEntityID)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, fmt.Errorf("asset: legal entity %d: %w", st.LegalEntityID, ErrForeignKeyViolation)
+	}
 	var id int64
-	err := s.db.QueryRow(ctx, `
+	err = s.db.QueryRow(ctx, `
 		INSERT INTO stocktakes(legal_entity_id, scope, progress, diff_count, status)
-		VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		st.LegalEntityID, st.Scope, st.Progress, st.DiffCount, st.Status).Scan(&id)
+		VALUES($1,$2,0,0,$3) RETURNING id`,
+		st.LegalEntityID, st.Scope, stocktakeStatus(st)).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("asset: create stocktake: %w", err)
+	}
+	if err := s.snapshotStocktake(ctx, id, st); err != nil {
+		return 0, err
 	}
 	return id, nil
 }
 
-// HandleStocktakeDiff 盘点差异项处理(asset.yaml handleStocktakeDiff):差异处理完任务置 DONE。
+// stocktakeStatus 状态缺省 DOING。
+func stocktakeStatus(st Stocktake) string {
+	if st.Status == "" {
+		return "DOING"
+	}
+	return st.Status
+}
 
-// HandleStocktakeDiff 盘点差异项处理(asset.yaml handleStocktakeDiff):差异处理完任务置 DONE。
+// snapshotStocktake 把范围内资产冻结为 PENDING 明细行(S10:建单即快照,后续台账变动不影响在盘任务)。
+func (s *PGStore) snapshotStocktake(ctx context.Context, taskID int64, st Stocktake) error {
+	if _, err := s.db.Exec(ctx, `
+		INSERT INTO stocktake_items(task_id, asset_id, expected_status, kind, resolution)
+		SELECT $1, id, status, 'PENDING', 'OPEN' FROM assets
+		WHERE legal_entity_id = $2 AND ($3 IN ('全库','') OR COALESCE(region_name,'') = $3)`,
+		taskID, st.LegalEntityID, st.Scope); err != nil {
+		return fmt.Errorf("asset: snapshot stocktake %d: %w", taskID, err)
+	}
+	return nil
+}
+
+// HandleStocktakeDiff 关单(asset.yaml handleStocktakeDiff):未扫明细置 MISSING,
+// 存在未处置差异(非 OK 且 OPEN)时拒绝;全处置完任务置 DONE、进度 100。
 func (s *PGStore) HandleStocktakeDiff(ctx context.Context, taskID int64) error {
+	if _, err := s.db.Exec(ctx,
+		`UPDATE stocktake_items SET kind = 'MISSING' WHERE task_id = $1 AND kind = 'PENDING'`, taskID); err != nil {
+		return fmt.Errorf("asset: mark missing %d: %w", taskID, err)
+	}
+	var open int
+	if err := s.db.QueryRow(ctx,
+		`SELECT count(*) FROM stocktake_items WHERE task_id = $1 AND kind <> 'OK' AND resolution = 'OPEN'`,
+		taskID).Scan(&open); err != nil {
+		return fmt.Errorf("asset: count open diffs %d: %w", taskID, err)
+	}
+	if open > 0 {
+		return fmt.Errorf("asset: stocktake %d has %d open diffs: %w", taskID, open, ErrDiffPending)
+	}
 	tag, err := s.db.Exec(ctx,
-		`UPDATE stocktakes SET status = 'DONE' WHERE id = $1 AND status = 'DOING'`, taskID)
+		`UPDATE stocktakes SET status = 'DONE', progress = 100 WHERE id = $1 AND status = 'DOING'`, taskID)
 	if err != nil {
 		return fmt.Errorf("asset: handle stocktake diff: %w", err)
 	}

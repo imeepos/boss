@@ -83,9 +83,24 @@ type Stocktake struct {
 	ID            int64  `json:"id"`
 	LegalEntityID int64  `json:"legalEntityId"`
 	Scope         string `json:"scope"`
-	Progress      int16  `json:"progress"` // 0~100
+	Progress      int16  `json:"progress"` // 0~100,实扫/计划快照行
 	DiffCount     int32  `json:"diffCount"`
 	Status        string `json:"status"` // DOING/DONE
+}
+
+// StocktakeItem 盘点差异明细(建单冻结快照,扫码回填,逐条处置)。
+type StocktakeItem struct {
+	ID             int64      `json:"id"`
+	TaskID         int64      `json:"taskId"`
+	AssetID        int64      `json:"assetId"`
+	ExpectedStatus string     `json:"expectedStatus"` // ""=计划外(EXTRA 行)
+	ScannedStatus  string     `json:"scannedStatus"`  // ""=未扫
+	ScannedAt      *time.Time `json:"scannedAt,omitempty"`
+	Kind           string     `json:"kind"`       // PENDING/OK/MISMATCH/MISSING/EXTRA
+	Resolution     string     `json:"resolution"` // OPEN/CONFIRMED/FIXED/ESCALATED
+	HandledBy      int64      `json:"handledBy"`  // 0=未处置
+	HandledAt      *time.Time `json:"handledAt,omitempty"`
+	Note           string     `json:"note"`
 }
 
 // AssetService 资产域服务口(阶段3):入库批次/电子标签/资产台账/状态轨迹/换新/盘点。
@@ -104,7 +119,13 @@ type AssetService interface {
 	CreateReplacement(ctx context.Context, r Replacement) (int64, error)
 	ListStocktakes(ctx context.Context) ([]Stocktake, error)
 	CreateStocktake(ctx context.Context, s Stocktake) (int64, error)
-	// HandleStocktakeDiff 盘点差异项处理:处理完任务置 DONE。
+	// ListStocktakeItems 盘点差异明细清单。
+	ListStocktakeItems(ctx context.Context, taskID int64) ([]StocktakeItem, error)
+	// ScanStocktake 回填一次扫码,返回(明细 id, kind)。
+	ScanStocktake(ctx context.Context, taskID, assetID int64, scannedStatus string) (int64, string, error)
+	// HandleStocktakeItem 逐条处置差异(action: CONFIRM/FIX/ESCALATE)。
+	HandleStocktakeItem(ctx context.Context, taskID, itemID int64, action string, accountID int64) error
+	// HandleStocktakeDiff 关单:未处置差异非 0 时拒绝,全处置完任务置 DONE。
 	HandleStocktakeDiff(ctx context.Context, taskID int64) error
 
 	ListAssignments(ctx context.Context, assetID int64) ([]AssetAssignment, error)
