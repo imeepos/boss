@@ -245,10 +245,12 @@ UPDATE verifications
 func (s *PGStore) guardRealNameIdentity(ctx context.Context, customerID int64) error {
 	var pendingIDNo, masterIDNo string
 	err := s.db.QueryRow(ctx, `
-SELECT (SELECT id_card_no FROM verifications
-         WHERE subject_type='customer' AND subject_id=$1 AND result=$2
-         ORDER BY verified_at DESC LIMIT 1),
-       COALESCE(id_no, '')`, customerID, RealNamePending).Scan(&pendingIDNo, &masterIDNo)
+SELECT (SELECT v.id_card_no FROM verifications v
+         WHERE v.subject_type='customer' AND v.subject_id=c.id AND v.result=$2
+         ORDER BY v.verified_at DESC, v.id DESC LIMIT 1),
+       COALESCE(c.id_no, '')
+  FROM customers c
+ WHERE c.id = $1`, customerID, RealNamePending).Scan(&pendingIDNo, &masterIDNo)
 	if err != nil {
 		return fmt.Errorf("customer: verify identity guard: %w", err)
 	}

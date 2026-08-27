@@ -406,3 +406,9 @@ suspend fun current(ctx: Context): Location? {
 - 场景:管理页有数据为空,要判断"未对接"还是"真没数据"。
 - 顺序:① curl 探路由(401=挂载,404=缺路由)→ ② ssh psql heredoc 查表迁移+行数 → ③ 用 test-accounts.json 里 worker key 走真实业务路径 POST 一条探针(app 带 probe 标记)→ ④ admin key 读回确认 JSON 形状 → ⑤ DELETE WHERE app='probe...' RETURNING id 清理并核对行数归零。
 - 坑:链路三层(App/后端/DB)代码在 ≠ 线上有数据;功能合入时间 vs 镜像构建时间 vs 设备 APK 版本三方对表才解释得了 0 行。
+
+## 幽灵 CSS 令牌全量审计(2026-09-25,实名审核页主题失效)
+
+- 场景:页面用了 `var(--x)` 但 `--x:` 在全部 css 里无定义,var() 解析失败属性按 initial 渲染——主按钮白字透明底、徽章丢色,**亮暗主题双双坏**,且不报错、无 lint 拦截,极易上线数月无人察觉(本次 --color-brand-bg/--color-info/--color-warning 三令牌散布 5 个文件)。
+- 手法(node 一行流):收集 dist 构建产物或源码里所有 `var(--` 引用名,减去所有 ` --xxx:` 定义名,差集即幽灵令牌。源码版:`grep -rhoE 'var\(--[a-z-]+' src --include='*.tsx' | sed 's/var(//' | sort -u > /tmp/use.txt; grep -rhoE '^  --[a-z0-9-]+:' src/theme/tokens.css src/styles.css | tr -d ' :' | sort -u > /tmp/def.txt; comm -23 /tmp/use.txt /tmp/def.txt`
+- 注意:定义可能分散在 tokens.css/styles.css/组件自带 css 块三处,def 集要收全否则误报;tailwind 任意值类 `bg-[var(--x)]` 也走同一 grep 能覆盖。

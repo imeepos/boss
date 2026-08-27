@@ -148,6 +148,7 @@ func workerVerifyRealNameHandler(a *app.Application) gin.HandlerFunc {
 		httpx.RecordAudit(a, c, "worker_realname.verify", "worker_realname", c.Param("workerId"),
 			gin.H{"result": req.Result})
 		resolveRealnameTodo(a, c, "worker", workerID)
+		notifyWorkerRealnameResult(a, c, workerID, req.Result)
 		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
 	}
 }

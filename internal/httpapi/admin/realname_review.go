@@ -207,6 +207,8 @@ func verifyFromCenterHandler(a *app.Application) gin.HandlerFunc {
 		resolveRealnameTodo(a, c, subjectType, subjectID)
 		if subjectType == "customer" {
 			notifyCustomerRealnameResult(a, c, subjectID, req.Result, req.Reason)
+		} else if subjectType == "worker" {
+			notifyWorkerRealnameResult(a, c, subjectID, req.Result)
 		}
 		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
 	}

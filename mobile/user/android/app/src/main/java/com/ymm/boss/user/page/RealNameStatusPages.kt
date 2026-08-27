@@ -31,7 +31,7 @@ import org.json.JSONObject
 
 @Composable
 internal fun RNReviewingPage(data: JSONObject?) {
-    StatusHero(RN.primary, Icons.Filled.Schedule, "审核中", "预计 1-2 个工作日完成审核，结果将以短信通知")
+    StatusHero(RN.primary, Icons.Filled.Schedule, "审核中", "预计 1-2 个工作日完成审核，结果将在消息中心通知")
     SummaryCard(data)
     TimelineCard(data)
 }

@@ -95,7 +95,7 @@ func TestPGStore_Verify_PassSyncsStatus(t *testing.T) {
 	defer mock.Close()
 
 	// PASS 一致性门禁:待核验单证件号与主档一致。
-	mock.ExpectQuery(`SELECT \(SELECT id_card_no FROM verifications`).
+	mock.ExpectQuery(`SELECT \(SELECT v.id_card_no FROM verifications v`).
 		WithArgs(int64(88), RealNamePending).
 		WillReturnRows(pgxmock.NewRows([]string{"pending", "master"}).AddRow("110101198811110011", "110101198811110011"))
 	mock.ExpectExec(`UPDATE verifications SET result=\$1, reject_reason=\$2, operator_account_id=\$3, operator_name=\$4, verified_at=now\(\) WHERE subject_type='customer' AND subject_id=\$5 AND result=\$6`).
@@ -122,7 +122,7 @@ func TestPGStore_Verify_PassIdentityMismatchRejected(t *testing.T) {
 	defer mock.Close()
 
 	// 门禁:待核验单证件号(他人证件)与主档不一致 → ErrRealNameMismatch,不落 PASS。
-	mock.ExpectQuery(`SELECT \(SELECT id_card_no FROM verifications`).
+	mock.ExpectQuery(`SELECT \(SELECT v.id_card_no FROM verifications v`).
 		WithArgs(int64(88), RealNamePending).
 		WillReturnRows(pgxmock.NewRows([]string{"pending", "master"}).AddRow("110101199001011234", "110101198811110011"))
 
@@ -145,7 +145,7 @@ func TestPGStore_Verify_PassBackfillsEmptyMaster(t *testing.T) {
 	defer mock.Close()
 
 	// 门禁:主档 id_no 为空(新客补登)→ 以核验单回填后正常 PASS。
-	mock.ExpectQuery(`SELECT \(SELECT id_card_no FROM verifications`).
+	mock.ExpectQuery(`SELECT \(SELECT v.id_card_no FROM verifications v`).
 		WithArgs(int64(88), RealNamePending).
 		WillReturnRows(pgxmock.NewRows([]string{"pending", "master"}).AddRow("110101198811110011", ""))
 	mock.ExpectExec(`UPDATE customers SET id_no=\$2 WHERE id=\$1 AND COALESCE\(id_no,''\)=''`).
