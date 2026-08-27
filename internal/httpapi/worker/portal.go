@@ -126,15 +126,19 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	registerWorkerPortalAuth(pub, a)
 	registerWorkerClientReleaseRoutes(pub, a)
 	wauth := r.Group("/api/worker/v1", middleware.APIKeyAuth(a.APIKey, workerSubjectResolver(a)), workerAuth())
-	registerWorkerPortalTicketRoutes(wauth, a)
-	registerWorkerPortalScanRoutes(wauth, a)
-	registerWorkerPortalAssetRoutes(wauth, a)
-	registerWorkerPortalProfileRoutes(wauth, a)
-	registerWorkerPortalMiscRoutes(wauth, a)
-	registerWorkerPortalAttachmentRoutes(wauth, a)
-	registerWorkerPushDeviceRoutes(wauth, a)
-	registerWorkerCrashRoutes(wauth, a)
-	registerWorkerLocationRoutes(wauth, a)
+	// 系统级授权门禁:师傅业务接口须持有有效离线证书;登出自服务豁免。
+	// 见 adopted license-gate note;License 为 nil 时完全放行。
+	biz := wauth.Group("")
+	biz.Use(middleware.LicenseGate(a.License, "/api/worker/v1/auth/logout"))
+	registerWorkerPortalTicketRoutes(biz, a)
+	registerWorkerPortalScanRoutes(biz, a)
+	registerWorkerPortalAssetRoutes(biz, a)
+	registerWorkerPortalProfileRoutes(biz, a)
+	registerWorkerPortalMiscRoutes(biz, a)
+	registerWorkerPortalAttachmentRoutes(biz, a)
+	registerWorkerPushDeviceRoutes(biz, a)
+	registerWorkerCrashRoutes(biz, a)
+	registerWorkerLocationRoutes(biz, a)
 }
 
 // registerWorkerPortalAuth 公开组:验证码/登录/退出(worker/auth.yaml)。

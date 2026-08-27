@@ -71,6 +71,7 @@ const SitePostsPage = lazy(() => import('./pages/boss/site'))
 const SitePostEditorPage = lazy(() => import('./pages/boss/site/editor'))
 const SiteCategoriesPage = lazy(() => import('./pages/boss/site/categories'))
 const ClientReleasePage = lazy(() => import('./pages/boss/release'))
+const LicensePage = lazy(() => import('./pages/boss/license'))
 const ServiceMetricsPage = lazy(() => import('./pages/boss/service-metrics'))
 const FeedbackPage = lazy(() => import('./pages/boss/feedback'))
 const CallbackPage = lazy(() => import('./pages/boss/callback'))
@@ -176,6 +177,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'site') return <SitePostsPage />
   if (pageKey === 'site-cats') return <SiteCategoriesPage />
   if (pageKey === 'release') return <ClientReleasePage />
+  if (pageKey === 'license') return <LicensePage />
   if (pageKey === 'service-metrics') return <ServiceMetricsPage />
   if (pageKey === 'feedback') return <FeedbackPage />
   if (pageKey === 'callback') return <CallbackPage />

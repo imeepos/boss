@@ -1166,3 +1166,25 @@ API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATC
 2. 未定字段（本文件无该实体）时，字段名遵循第 0 节命名规则，并**回写本文件**补一节，避免下个 Agent 再猜。
 3. 页面列名与字段名必须一一对应；页面新增列时，同步在此登记英文字段名与枚举。
 4. 状态枚举一律引用 `terms.md`，本文件不重复定义枚举值（仅标注引用来源）。
+
+## 8G. 系统授权域（internal/domain/license，release-platform 离线授权）
+
+无本地表：授权证书为 release-platform 签发的 Ed25519 离线令牌（admin 页可读到
+claims 并非本地权威事实，仅展示）。门禁语义见 adopted/2026-09-01-license-gate-release-platform.md。
+
+「系统授权」页（base 组，登录即可达）：
+
+| 页面列 | 字段名 | 来源 | 枚举/说明 |
+|:------|:------|:------|:----------|
+| 已激活 | `activated` | license/status claims 校验结果 | bool；false 时业务接口 403 LICENSE_REQUIRED |
+| 授权编号 | `licenseId` | license_id | release-platform activation code id |
+| 产品 | `productId` | product_id | release-platform 产品 ID（如 boss-server） |
+| 授权类型 | `licenseType` | license_type | duration / lifetime / trial |
+| 绑定设备 | `deviceId` | device_id | 激活时上报的本实例标识 |
+| 有效期至 | `expiresAt` | expires_at | RFC3339；宽限期内 still 可用（grace） |
+| 宽限期 | `graceEndsAt` / `inGrace` | grace_ends_at | inGrace=true 表示已过期但未出宽限 |
+
+激活：admin `POST /license/activate`（体 `activationCode`）→ release-platform
+`POST /v1/activations` 兑码 + `POST /v1/licenses/{id}/offline-token` 取令牌 →
+本地落盘 `/var/lib/boss/license.json`。门禁豁免路径：`/license/status`、
+`/license/activate`、各端 `/auth/*`（登录/注册/登出）与 `/client/latest`（版检）。

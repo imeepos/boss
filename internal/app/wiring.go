@@ -166,6 +166,10 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 			Conf: minioFallback(cfg),
 		},
 
+		// License 系统级授权门禁(release-platform 离线授权)。
+		// Enabled=false 时保持 nil(完全放行);Enabled 但缺公钥视为配置错误,启动即失败。
+		License: wireLicenseService(cfg),
+
 		Worker:         wrk,
 		WorkerTeam:     wrk,
 		WorkerLedger:   wrk,

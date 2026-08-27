@@ -119,6 +119,18 @@ type Config struct {
 		APIBaseURL string // 覆盖 API 地址(测试/代理用,空=官方)
 		WebhookURL string // 期望回调 URL(隧道快速 URL+路径;自愈循环比对用)
 	}
+	// License 系统级授权门禁(release-platform 离线授权,B 档强制门禁)。
+	// 公钥编译期内嵌(buildinfo.LicensePublicKeyHex,-ldflags -X),无环境变量开关;
+	// 注入公钥即强制门禁,未注入 = 开发构建门禁不启用(打 ALERT 日志)。
+	License struct {
+		ProductID     string // release-platform 产品 ID(激活兑码)
+		CertPath      string // 本地证书文件路径(默认 /var/lib/boss/license.json)
+		DeviceID      string // 本部署实例标识(默认 hostname)
+		Fingerprint   string // 机器指纹(激活上报;空则用机器指纹函数)
+		APIBaseURL    string // release-platform API 地址
+		APIToken      string // release-platform API token(rpat_)
+		LeewayMinutes int    // 时钟容忍分钟数(默认 5)
+	}
 }
 
 // Load 从环境变量读取;文件/Nacos 热更新在阶段1迭代中接入。
@@ -184,6 +196,15 @@ func Load() *Config {
 	c.Stripe.APIBaseURL = getenv("BOSS_STRIPE_API_BASE", "")
 	c.Stripe.WebhookURL = getenv("BOSS_STRIPE_WEBHOOK_URL", "")
 
+	hostname, _ := os.Hostname()
+	c.License.ProductID = getenv("BOSS_LICENSE_PRODUCT_ID", "boss-server")
+	c.License.CertPath = getenv("BOSS_LICENSE_CERT_PATH", "/var/lib/boss/license.json")
+	c.License.DeviceID = getenv("BOSS_LICENSE_DEVICE_ID", hostname)
+	c.License.Fingerprint = getenv("BOSS_LICENSE_FINGERPRINT", "")
+	c.License.APIBaseURL = getenv("BOSS_LICENSE_API_BASE_URL", "http://192.168.0.102:38080")
+	c.License.APIToken = readEnvOrFile("BOSS_LICENSE_API_TOKEN", "BOSS_LICENSE_API_TOKEN_FILE")
+	c.License.LeewayMinutes = getint("BOSS_LICENSE_LEEWAY_MINUTES", 5)
+
 	c.Business.Timezone = getenv("BOSS_TIMEZONE", "Asia/Manila")
 	if err := clock.Set(c.Business.Timezone); err != nil {
 		// 未知名回落 UTC 并保留配置原值,启动日志可见;不阻断进程。
@@ -215,6 +236,16 @@ func getfloat(k string, d float64) float64 {
 	if v := os.Getenv(k); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil {
 			return f
+		}
+	}
+	return d
+}
+
+// getint 环境变量取整数,缺省 d。
+func getint(k string, d int) int {
+	if v := os.Getenv(k); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
 		}
 	}
 	return d

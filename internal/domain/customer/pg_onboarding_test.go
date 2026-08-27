@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 )
 
@@ -108,6 +109,26 @@ func TestPGStore_Verify_PassSyncsStatus(t *testing.T) {
 	s := NewPGStore(mock)
 	if err := s.Verify(context.Background(), 88, RealNamePass, "", "admin", 1000); err != nil {
 		t.Fatalf("Verify: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+func TestPGStore_Verify_MissingCustomerReturnsNotFound(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT \(SELECT v.id_card_no FROM verifications v`).
+		WithArgs(int64(999), RealNamePending).
+		WillReturnError(pgx.ErrNoRows)
+
+	s := NewPGStore(mock)
+	if err := s.Verify(context.Background(), 999, RealNamePass, "", "admin", 1000); !errors.Is(err, ErrCustomerNotFound) {
+		t.Fatalf("Verify: err=%v, want ErrCustomerNotFound", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)

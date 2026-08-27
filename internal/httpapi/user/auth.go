@@ -78,15 +78,19 @@ func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 
 	uauth := r.Group("/api/user/v1")
 	uauth.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudUser), portalCustomerOnly())
-	registerPortalProfileRoutes(uauth, a)
-	registerPortalMiscRoutes(uauth, a)
-	registerPortalOrderRoutes(uauth, a)
-	registerPortalBillingRoutes(uauth, a)
-	registerPortalLoyRoutes(uauth, a)
-	registerPortalServiceRoutes(uauth, a)
-	registerPortalAttachmentRoutes(uauth, a)
-	registerPortalPushDeviceRoutes(uauth, a)
-	registerStripeRoutes(pub, uauth, a)
+	// 系统级授权门禁:客户业务接口须持有有效离线证书;仅登出自服务豁免。
+	// 见 adopted license-gate note;License 为 nil 时完全放行。
+	biz := uauth.Group("")
+	biz.Use(middleware.LicenseGate(a.License, "/api/user/v1/auth/logout"))
+	registerPortalProfileRoutes(biz, a)
+	registerPortalMiscRoutes(biz, a)
+	registerPortalOrderRoutes(biz, a)
+	registerPortalBillingRoutes(biz, a)
+	registerPortalLoyRoutes(biz, a)
+	registerPortalServiceRoutes(biz, a)
+	registerPortalAttachmentRoutes(biz, a)
+	registerPortalPushDeviceRoutes(biz, a)
+	registerStripeRoutes(pub, biz, a)
 }
 
 // portalCustomerOnly 非客户身份(含 admin JWT)一律 401,客户视角端点不与后台 RBAC 混用。

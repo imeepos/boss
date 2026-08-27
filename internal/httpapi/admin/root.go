@@ -14,7 +14,11 @@ import (
 func Register(r *gin.Engine, a *app.Application, mgr *auth.Manager) {
 	authed := registerAdminAuthRoot(r, a, mgr)
 	registerAdminAuthRoutes(authed, a, mgr)
-	registerAdminDomainRoutes(authed, a)
+	// 业务域路由额外套系统级授权门禁(authed 已含登录态;biz 再校验离线证书)。
+	biz := adminBizGroup(authed, a)
+	registerAdminDomainRoutes(biz, a)
+	// 授权页自身路由(豁免门禁,见 adminBizGroup 豁免清单)。
+	registerLicenseRoutes(authed, a)
 }
 
 // registerAdminAuthRoot 装配 /api/admin/v1 根组 + 鉴权链。
@@ -33,6 +37,15 @@ func registerAdminAuthRoot(r *gin.Engine, a *app.Application, mgr *auth.Manager)
 	authed := api.Group("")
 	authed.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudAdmin))
 	return authed
+}
+
+// adminBizGroup 业务子组:套系统级授权门禁。
+// 豁免:认证自服务(auth/* 已在 authed 注册,不经过本组)与授权页(license/*)。
+// License 为 nil 时门禁完全放行(未启用)。详见 adopted license-gate note。
+func adminBizGroup(authed *gin.RouterGroup, a *app.Application) *gin.RouterGroup {
+	biz := authed.Group("")
+	biz.Use(middleware.LicenseGate(a.License, "/api/admin/v1/license/"))
+	return biz
 }
 
 // registerAdminAuthRoutes 鉴权组内的自身认证端点(me/logout/改密/改资料/续期)。
