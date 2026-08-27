@@ -432,3 +432,13 @@ suspend fun current(ctx: Context): Location? {
 - 场景:给某列写"枚举值→i18n 键"映射,契约文档已列出枚举,直接照抄开写。
 - 坑:complaint-type-map.md 只登记了装维域 6 码(SINGLE_OUTAGE...),真库 complaints.type 还有一整套用户端落库值(`用户报障: no_internet|slow|ont_fault|other`、`用户投诉: attitude|...`),照抄上线即原样露出英文/复合前缀。
 - 手法:动手前 `SELECT DISTINCT type FROM complaints` 对齐真实取值域;复合前缀在聚合 SQL 侧 `replace(type,'用户报障: ','')` 归一(对齐 service.go portalFaultTypeLabelFromStored 先例),前端映射只收干净值;未知值回退原文是兜底不是借口。
+
+## worktree 复用主树 node_modules(pnpm store 不可达时)
+
+- 场景:worktree 里跑前端门禁,`pnpm install` 撞全局 store-dir(如 /Volumes/sker 卷未挂载)EACCES。
+- 手法:`ln -s /主树绝对路径/web/admin/node_modules worktree/web/admin/node_modules`(必须绝对路径,相对 ../.. 在该环境解析失败),之后直接调 `./node_modules/.bin/tsc|vitest|vite` 绕过 pnpm;门禁结果与主树一致。
+
+## CDP 定位表单控件:语义锚点+作用域,禁盲选下标
+
+- 场景:页面有多个 aria-haspopup="listbox"/aria-label 按钮(顶栏语言切换、菜单、业务下拉)时,querySelector('button[aria-label]') 或 .at(-1) 会点错。
+- 手法:先 dump 候选 `[...document.querySelectorAll('button')].map((b,i)=>i+':'+b.textContent.trim())` 核对,再用组合锚点定位,如 `[...document.querySelectorAll('button[aria-haspopup="listbox"]')].find(b=>b.closest('label')?.textContent.includes('订阅事件'))`。

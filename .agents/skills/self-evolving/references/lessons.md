@@ -373,3 +373,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 老持久 profile 做 i18n/主题切换断言会拿到"localStorage 已变而 DOM 未变"的竞态假样本;修复是 fresh user-data-dir + 「目标节点渲染就绪」条件等待(.st-tag 出现再取文本),不要固定 sleep 后直接读。
 - ?token= 写入的 boss.token 会被 AuthGuard 的失败预取静默清掉:先配 boss.servers 再带 token 导航,顺序反了就"未配置服务端"弹回登录页;localStorage 里 token 莫名消失 ≠ urlPrefs 失效,先查 adminLogout 调用链。
 - 页面组件里裸 `<input className="w-full">` 在 color-scheme:dark 下渲染 UA 默认样式,与 tokens 体系观感割裂;表单输入一律用 ui/Input(shell-input-* 全令牌),下拉用 Dropdown,label 一律 i18n——audit 关键词:grep '<input className="w-full"'。
+- httpx.RequireString/RequireNonNegativeFloat 返回具体指针 *ValidationError,在返回 error 的函数里直接 return 构成 typed-nil(接口非 nil、打印 <nil>);修复是 httpx.CollectErrors(...) 包一层再 return——2026-08-27 openplat 订阅校验三用例同坑。
+- 返回"副本"的枚举函数(EventCatalog 等)要配"返回长度=源长度"的测试,防止后人改成直接返回内部 slice 被调用方污染。

@@ -1016,3 +1016,10 @@
 - skill 有没有提前预警? 部分有:红线#10(worktree 路径核对)、速查手册 boss.servers 注入法都在,但手册没写"servers 必须先于 ?token=",这次补上了;红线#1 的 worktree 变体(edit 前须 read 同一路径文件,主树读过≠worktree 读过)被 edit 工具拦了两轮。
 - 重来一次会怎么做? cdp 鉴权采集直接套两步模板(/login 注入→带参跳转),不走"先直访试试"的侥幸路径;所有 git 写操作命令一律显式 workdir + 前置 pwd/branch 自检。
 - 收获:DOM 断言先于截图——本模型不收图,但 getComputedStyle(input).backgroundColor/borderColor + [role=option] 文本断言(light=#FFF/#D7DDE7,dark=#10203F/rgba(255,255,255,.14),en=Cash Coupon/Spend & Save/Discount,ms=Sekali/Harian/Bulanan)把双主题双语言验证做成了机械可复核证据;页面级适配任务的验证模板:grep 裸中文/裸 hex/裸 input → cdp 双主题 computed style → 双语言下拉 option 文本。
+
+## 2026-08-27 开放平台订阅事件选择器(openplat-event-selector)
+
+- 哪个坑浪费了最多时间? ① httpx.RequireString 返回具体指针 *ValidationError,在返回 error 的 validate() 里直接 `return RequireString(...)` 构成 typed-nil 陷阱——err!=nil 但打印 <nil>,三个合法用例全挂;看 CollectErrors 的实现才明白既有代码为何都包一层。② cdp-capture 断言用 querySelector('button[aria-label]') 命中顶栏语言下拉(中文/English 断言假阳性),querySelectorAll('button').at(-1) 又点中空按钮——两个选择器事故各浪费一轮采集。
+- skill 有没有提前预警? 速查手册已记"Dropdown 渲染 button 不是 input,querySelectorAll('input') 下标跳位",同族问题(下拉类组件的按钮定位)但没给正向解法;typed-nil 无预警。
+- 重来一次会怎么做? CDP 定位表单控件一律"语义锚点+作用域":button[aria-haspopup=listbox] + closest('label') 文本匹配,先 dump 候选清单再点,不盲选下标;返回具体指针的校验函数进 error 返回值必须过 CollectErrors/判 nil。
+- 收获:worktree node_modules 用绝对路径 symlink 主树即可跑全门禁(相对路径 ../../ 在该环境解析失败);102 后端未部署新接口时,CDP 降级路径断言(空目录 无匹配事件+加载失败提示+空提交被拒)也能构成真实 DOM 证据,happy path 明确标注"handler 层已测、部署环境未验证"。
