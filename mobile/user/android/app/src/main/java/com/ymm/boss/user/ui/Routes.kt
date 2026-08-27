@@ -38,6 +38,8 @@ sealed interface Route {
     data object Help : Route
     data object Messages : Route
     data object Notify : Route
+    /** 我的积分:余额/等级/任务/流水,契约 loy.yaml(/points*)。 */
+    data object Points : Route
     data object Profile : Route
     data object Security : Route
     data object Usage : Route

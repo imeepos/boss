@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -96,6 +97,7 @@ internal fun ServiceEntriesCard(nav: Nav, unread: Int) {
         MenuEntry("报障记录", Icons.Filled.Build, Palette.purple, Route.Fault),
         MenuEntry("消息中心", Icons.AutoMirrored.Filled.Chat, Palette.purple, Route.Messages),
         MenuEntry("优惠券与活动", Icons.Filled.LocalOffer, Palette.orange, Route.Coupon),
+        MenuEntry("我的积分", Icons.Filled.Star, Palette.purple, Route.Points),
         MenuEntry("电子发票", Icons.Filled.Receipt, Palette.primary, Route.Invoice),
     )
     AppCard(outer = PaddingValues(vertical = 6.dp)) {
