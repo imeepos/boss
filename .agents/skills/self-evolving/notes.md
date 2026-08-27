@@ -1106,3 +1106,18 @@
 - 重来一次我会怎么做？
   - 写新 i18n namespace 前 grep 同域既有 namespace(arrearsPage/stopsrv/paycheck)的 key 命名规律;组件 import 前 grep re-export 链;按钮文案/列名一次到位,不二次借 namespace。
 - 验证:typecheck/test(328,含新增 collection-tasks/i18n.test.tsx)/build/web-ui-audit 全绿;worktree→commit→push→ff-merge→push main→worktree remove→branch -d→push delete 收尾,主树 commit 75d8a6a4。
+
+## 2026-08-27 资产台账↔电子标签双绑缺口修复
+
+- 哪个坑浪费了最多时间?
+  - 先 SQL 直查权威表(assets/tags)确认"数据没关联上"是**历史测试数据 + 接口双向回填缺失**,124 条 B 端孤儿 + 1 条 A 端孤儿全部为 e2e 测试期间产生。问题定级后才动手,避免乱写迁移/清存量。
+  - 历史修复 ISSUE.md d397e40 用了 `WHERE bound_asset_id IS NULL` 哑条件 → 业务流(e2e 先建标签并填 bound 时)静默跳过,资产变孤儿。CreateTag 完全无反向回填 → 124 条孤儿由此产生。两条问题合起来正好解释用户的"未关联"现象。
+- 这个 skill 有没有提前警告我?
+  - 有:AGENTS.md 红线 6"先查库、再接口复核"拦住了我——没有直接看接口就动代码;决策记录制度"不可逆裁定当天过账"也提示了写 adopted note。
+- 重来一次我会怎么做?
+  - 收到"数据没关联上"类反馈第一动作:SQL 查表给出数量级证据(双向一致 / A 端孤儿 / B 端孤儿),再判断是历史数据还是接口问题;
+  - 看 d397e40 这类"已修复"记录时,**用 git blame 确认回填逻辑还在**,不要被 ISSUE.md 的"已修复"误导——历史修复往往有局部漏洞;
+  - 写反向回填 SQL 时,**去掉 `IS NULL` 哑条件改为 `IS NULL OR = $expected`**,这样 UPDATE 0 行必然是冲突,可被 ErrBindingConflict 可靠拦截,避免静默跳过;
+  - 失败路径留 ALERT 日志(`slog.WarnContext("[asset] TAG BIND CONFLICT", ...)`),含双向 id + 资产码/标签号 + 冲突原因,排查时 grep 即可定位;
+  - pgxmock 单测必须覆盖正常回填 + 资产不存在 + 资产已被绑 + 标签已被绑 4 种场景(只测成功路径会漏掉哑条件 bug)。
+- 验证:`go test ./internal/domain/asset/` 7 个 case 全 PASS(含 4 个新增);`go build/vet/gofmt` 全空;`go test ./...` 全包通过;worktree→commit→push gitea→主树 ff-merge→worktree remove→branch -d→push delete 收尾,主树 commit 744abd23。adopted note docs/notes/adopted/2026-08-27-asset-tag-bidirectional-binding.md 同 commit。

@@ -384,3 +384,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 列表页 `columns` 数组若存字段标识符(code/name/sort)而非译文,三语 locale 下表头都裸英文(zh-CN 界面也显示 code);列头数组要直接放本地化标签(如 ['标识码','名称','排序','启用']),与 releasePage/customer 等既有页面口径一致——2026-10-01 siteCatsPage 修正,sitePage/knowledgePage 仍留同源缺口。
 
 - 项目 vitest environment=node 且无 @testing-library/react 时,组件测试走 renderToStaticMarkup(SSR 骨架)+ 抽纯函数单测,不写 useState 异步交互测试。开工前 grep vite.config.ts test.environment + pnpm-lock.yaml testing-library/react + 项目内 fireEvent 引用计数三件套。
+- 写反向回填 SQL 时,严禁 `WHERE x IS NULL` 哑条件(业务流先填 x 时 UPDATE 静默跳过 0 行,无法区分"已绑别人"与"无须回填");改用 `WHERE x IS NULL OR x = $expected`,UPDATE 0 行**必然**是冲突,可靠触发 ErrXxxConflict,不留下孤儿。配套必须有可观测 slog 日志(冲突对象 id + 原因字段),便于排查时 grep。skill 没提前警告我。
+- 收到"数据没关联上/对不上"类反馈,第一动作是 SQL 查表给出数量级证据(双向一致 / A 端孤儿 / B 端孤儿),再判断是历史数据还是接口问题;直接看接口或写迁移容易越界。skill 没明确沉淀"双向孤儿诊断三件套"(一致性对 / A 单向 / B 单向)。

@@ -525,3 +525,27 @@ SQL
 - 场景:要用 NavLink 的 `isActive` prop 做自定义激活,或依赖某 React Router API 行为。
 - 手法:写码前 `grep -n "isActive" node_modules/.pnpm/react-router-dom@*/node_modules/react-router-dom/dist/index.d.ts`(或 dev 版 index.js 的 NavLink props 解构),确认当前版本(本项目 6.30.4)有没有该 API——6.30.4 已把 `isActive` 从 NavLink props 移除,只剩 `className/children/style` 函数收 `{isActive,isPending,isTransitioning}`;dist/index.js 的 `_excluded2` 数组列的就是被剥离的 props。
 - 教训:按旧版 API 先写方案再回头翻源码浪费一轮;API 边界问题一律先查 installed 包类型/实现,不靠记忆。
+
+## 双向关联表的孤儿诊断 SQL 模板(2026-08-27)
+
+- 场景:用户报"两表数据没关联上",需要先量化是历史数据还是接口 bug。
+- 手法:对双向外键表(A.x_id ↔ B.a_id)跑 6 个查询(以 assets↔tags 为例):
+
+  ```sql
+  -- 1) A 端有 x_id 且能反查到 B(正向可达)
+  SELECT COUNT(*) FROM assets a JOIN tags t ON t.id = a.tag_id WHERE a.tag_id IS NOT NULL;
+  -- 2) B 端有 a_id 且能反查到 A(反向可达)
+  SELECT COUNT(*) FROM tags t JOIN assets a ON a.id = t.bound_asset_id WHERE t.bound_asset_id IS NOT NULL;
+  -- 3) 双向完全一致(真关联)
+  SELECT COUNT(*) FROM assets a JOIN tags t ON t.id = a.tag_id AND a.id = t.bound_asset_id WHERE a.tag_id IS NOT NULL;
+  -- 4) A 端孤儿(x_id 指向不存在的 B)
+  SELECT COUNT(*) FROM assets a WHERE a.tag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM tags WHERE id = a.tag_id);
+  -- 5) B 端孤儿(a_id 指向不存在的 A)
+  SELECT COUNT(*) FROM tags t WHERE t.bound_asset_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM assets WHERE id = t.bound_asset_id);
+  -- 6) 单向不一致(A 有 B 无 / B 有 A 无)——通常是写入路径回填缺失
+  SELECT COUNT(*) FROM assets a WHERE a.tag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM tags t WHERE t.id = a.tag_id AND t.bound_asset_id = a.id);
+  SELECT COUNT(*) FROM tags t WHERE t.bound_asset_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM assets a WHERE a.tag_id = t.id AND a.id = t.bound_asset_id);
+  ```
+- 解读:1=2=3 时双向一致;4>0 是 A 端写入脏数据(基本不可能,FK 约束挡);5>0 是 B 端写入脏数据(同 FK);6>0 是写入路径缺回填——本次资产↔标签 124 条 B 单向孤儿即此因(CreateTag 完全无反向回填)。
+- 教训:看代码前先量化"哪一侧有数据、哪一侧没数据",再针对性补写入路径;不要上来就写清理脚本(可能误删真数据)。
+- 工具路径:102 真库 = `ssh imeepos@192.168.0.102 'docker exec -i boss-infra-postgres-1 psql -U boss -d boss' <<'SQL' ... SQL`,SQL 字符串字面量用单引号避免叠引号(红线 #9a)。
