@@ -1,6 +1,8 @@
 // Webhook 投递领取的真实 PG 集成验证(持久化整改回归)。
-// 运行: BOSS_PG_TEST_DSN="host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable" \
-//   go test ./internal/domain/openplat/ -run TestWebhookPGIntegration -v -count=1
+// 运行(需真实 PG):
+//
+//	BOSS_PG_TEST_DSN="host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable" \
+//	  go test ./internal/domain/openplat/ -run TestWebhookPGIntegration -v -count=1
 package openplat
 
 import (
