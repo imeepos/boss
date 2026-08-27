@@ -1030,3 +1030,10 @@
 - skill 有没有提前预警? 部分:notes 里有 store-dir 坑的 symlink 解法,没写"完整安装"替代路径;部署验证要校验特征字段这一点无预警(速查手册只写了 healthz/容器名判定)。
 - 重来一次会怎么做? 轮询部署永远 grep 目标特征(grep '"createdAt"' 响应体),不拿健康检查当发布信号;开工先读 notes.md 相关节(本次开工前没翻 notes,重复踩 store-dir)。
 - 收获:根因双层——102 库 user_accounts 0 行(测试数据缺,且全仓库无任何写入方,只有建表迁移)暴露接口 schema 缺陷(usersSQL 压根没查 createdAt);按用户裁定"数据有问题=接口必须兜底"双向修:SQL COALESCE(ua.registered_at,c.created_at) + 前端列渲染抽 loginNameCell/createdAtCell 禁 String() 强转;两侧回归测试;push main → CI 部署 → API 响应体断言 + CDP DOM 断言(表格单元格文本"213 | 采购经理·王 | ... | 2026-08-19 03:26:16 | 详情")双证据闭环。本模型不收图,DOM 文本断言替代截图(read_image 报 GLM-5.3-Flash 无图像输入,红线#7 生效)。
+
+## 2026-09-28 产品资费页编辑/调价/上下架(缺能力补齐)
+
+- 哪个坑浪费了最多时间? ① cdp-capture 用 `/#/bss/product` hash URL 连拍两张全是落地页,才发现部署态 admin-web 是 BrowserRouter,必须真实路径 `/bss/product`;② 部署态免登录注入,`--eval setItem` 在 boot 之后执行,已被认证重定向弹回落地页——改持久 profile 分两趟(先注入落库再开目标路由)才进得去;③ TS `??` 与 `||` 混用不加括号直接 tsc 报错。
+- skill 有没有提前预警? 部分:knowledge/前端.md 有免登录注入与 servers-先-token-后,但没有"部署态 BrowserRouter + 持久 profile 两趟法";幽灵令牌红线(GO 版 #6)帮我 grep 拦下了自造 --color-brand-solid,没踩实。
+- 重来一次会怎么做? 断言部署态 SPA 一律先 `grep -n "BrowserRouter" web/admin/src/App.tsx` 确认路由形态再拼 URL;带登录的部署态验证默认走 `--user-data-dir` 持久 profile 两趟法;写完 JSX 先自查 `??`/`||` 混用。
+- 收获:后端新增 PUT /products/{id}(编辑基础信息)与 PUT /products/{id}/status(上下架,发布刷新 effective_at),月费强制走既有调价台账留痕;契约 customer.yaml 同步;handler 测试覆盖成功+非法枚举。102 实测:下架/上架/编辑全 200,上架把 effectiveAt 从零值刷到当前时间,审计 product.update/update_status 落库;admin-web 部署后 bundle 哈希与本地 build 一致,CDP 真机断言:8 列表头含分类、首行操作 详情|编辑|调价|下架|调价记录、编辑抽屉预填+公司只读、调价抽屉显示当前月费+新月费/原因、下架确认文案命中。本模型不收图,DOM 文本断言替代截图(红线#7)。
