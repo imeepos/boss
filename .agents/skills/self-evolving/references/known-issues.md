@@ -358,3 +358,6 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状:本地 `pnpm build` 产物 dist 的 index-<hash>.js 与 102:5180 线上 index.html 引用的 hash 不同,但两者体积完全一致。
 - 原因:CI 构建注入的环境变量(如 vite.config 里 `import.meta.env.VITE_AMAP_KEY` 读 `env.AMAP_KEY`)、mode 差异会让同源码产出不同内容 hash;Rollup content hash 对任意字符差异敏感。
 - 修法:不要以 hash 相等作为部署判断;直接 grep 线上 bundle 内的新标记文本(`grep -c 新分组标签 <线上 js>`)+ 对照旧文案归零 + 面板 DOM 断言三件套确认(见 boss-admin-web.md §部署验证事实)。
+- 症状: Kotlin withContext 内 while(true) 重试 + label return,编译报 "actual type is 'Unit', but 'JSONObject' was expected"。
+  原因: while 循环是 Unit 型语句,label(return@withContext)不参与 lambda 返回类型推断,尾表达式退回 Unit。
+  修法: 循环抽到显式声明返回类型的 helper 函数,withContext 里只调它(2026-08-27 Api.kt 弱网重试实例)。

@@ -1197,3 +1197,9 @@
 - 哪个坑浪费了最多时间? ①connected 测试首跑编译失败:androidTest 里 `getPackageInfo(..., GET_PERMISSIONS).requestedPermissions` 在当前 API 是可空 Array,直接 `.contains` 编译不过——写断言前没核对可空性,多跑一轮 build+emulator。②`git log --oneline` 不带 -n 打印全仓 700+ 提交,输出被 harness 截断成一堆看似陌生的中间历史,虚惊以为 commit 落错分支——核实用 `git log --oneline -8` + reflog 直接看真相。
 - skill 有没有提前预警? 有:红线 #5(任务完成必须 commit 且 status 干净)——本回合每次都即时提交,收尾 main 干净;worktree merge 协议(AGENTS.md)全程护航:ff-merge 前核对 cwd 在主树、远端名 gitea。
 - 重来一次? ①新 worktree 首次构建前先复制 gitignored 的机器本地文件(mobile/user/android/local.properties 含 sdk.dir,worktree 无此文件会构建失败);②密钥类资产不得放 worktree 内(worktree remove 会连文件一起删,本次 keystore 生成在 worktree 里,收尾后被迫在主树重生成并重新留档指纹);③git log 一律 -n 限制条数。
+
+## 2026-08-27 user Android 上线计划 D-3 轮(里程碑映射修复+弱网三横切点)
+
+- 哪个坑浪费了最多时间? ①Api.kt 重试改造把 while(true) 放进 withContext 尾表达式,lambda 返回类型推断成 Unit 编译失败——循环是 Unit 型语句,label return 不计入推断,须抽出显式返回类型 helper。②commit -m 消息带全角括号/箭头号时 bash 把 -m 参数拆裂(pathspec '3' 报错),改用 commit -F 消息文件(仓库既有 lesson 再次应验)。
+- skill 有没有提前预警? 有:commit -F 教训(2e1d7c90);"守卫模式"无预警,靠自己读页面对照 busy/submitting 发现谁缺守卫。
+- 重来一次? ①带非 ASCII 符号的 commit 消息一律 -F 文件;②改映射类逻辑先把"固化旧行为的测试"重写为逐项 spec 断言(OrderTimelineLogicTest 旧例把按 3 分桶当正确行为锁死);③循环包裹在 lambda 里时给 helper 显式返回类型。

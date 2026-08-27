@@ -407,3 +407,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当生成密钥/证书类资产时,修复是放在主树 gitignored 位置而非 worktree——git worktree remove 会物理删除目录,worktree 内的 keystore 随之丢失,须重生成+重新留档指纹。
 - 当 Android instrumented 测试用 PackageManager 拿权限声明时,修复是 `requestedPermissions?.contains(...) == true` 安全调用——当前 API 返回可空 Array,直接 contains 编译不过。
 - 当本地有 AVD 且要跑 connectedDebugAndroidTest 时,修复是 `-no-window -gpu swiftshader_indirect` 无头启动,轮询 `sys.boot_completed=1` 后再连测,收尾 `adb emu kill`。
+- 当在 withContext/coroutine lambda 里写 while(true) 重试循环时,修复是把循环抽到显式返回类型的 private suspend helper——循环语句类型是 Unit,label return 不计入 lambda 返回类型推断,直接内联必报 "Argument type mismatch: actual type is Unit"。
+- 当 commit 消息含全角括号「」、箭头 →、冒号等字符时,修复是一律用 `git commit -F 消息文件`(git commit -q + 多行 -m 会被 bash 拆裂,报 pathspec 错)。
+- 当修复"映射/枚举转换"类 bug 时,修复是重写测试为逐项 spec 断言(如逐 stage 12 个输入断期望里程碑)——不要只换两三个采样值,旧的采样测试会把错误公式锁成"正确行为"。
