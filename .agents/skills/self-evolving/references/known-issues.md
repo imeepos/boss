@@ -322,3 +322,11 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 **症状**:断言"收起"按钮是否存在用了 `b.innerText.includes('收起')`,匹配到侧栏菜单项"收起菜单",点击是 no-op,断言读回行数不变 → collapse 功能"假阴性"。首轮报 ok:false,实为选择器错。
 
 **修法**:断言目标按钮一律 `innerText.trim() === '精确文案'`,或先锚定业务容器(section/table 祖先)再在其内查;外壳(侧栏/顶栏/菜单)文案与页面按钮共享常用词(关闭/收起/展开/刷新)是常态。
+
+## 侧栏兄弟菜单双击亮:NavLink 前缀匹配(NavLink isActive prop 已移除)(2026-10-01)
+
+**症状**:访问 `/boss/site/cats`(官网分类),侧栏 `/boss/site`(官网内容)与 `/boss/site/cats` 同时高亮(CDP 断言 nav aria-current 返回两条)。
+
+**原因**:react-router-dom 6.30.4 的 NavLink 默认 `end=false` 前缀匹配(`locationPathname.startsWith(toPathname)`),`/boss/site` 是 `/boss/site/cats` 前缀即算 active。此版本 NavLink **已无 `isActive` prop**(6.26 有,6.30 从 props 移除,只剩 className/children 函数收 `{isActive,isPending,isTransitioning}`)。
+
+**修法**:Sidebar 从 NavLink 改 Link + 显式 `aria-current={active?'page':undefined}`;激活判定抽到 `router/menu.def.ts` 的 `isNavActive(to,pathname)`:精确路径激活;深层路由仅当其不是其它菜单项完整路径时算同页(如 `/boss/site/new` 仍高亮官网内容,`/boss/site/cats` 不高亮)。同一缺陷顺带修掉 `/bss/marketing` vs `/bss/marketing-recon`。改动前先 `grep -n isActive node_modules/.../react-router-dom/dist/index.d.ts` 确认版本 API。
