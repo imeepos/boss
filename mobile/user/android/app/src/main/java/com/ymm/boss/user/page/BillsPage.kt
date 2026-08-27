@@ -30,6 +30,7 @@ import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
+import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.PillTab
 import com.ymm.boss.user.ui.Route
@@ -44,14 +45,17 @@ fun BillsScreen(nav: Nav) {
     var period by remember { mutableStateOf("—") }
     var items by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var filter by remember { mutableStateOf("") }
+    // loading 守卫:加载中不误显「暂无账单」空态。
+    var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(nav.refreshTick) {
+        loading = true
         try {
             val d = BillApi.bills()
             due = d.optDouble("currentDue", 0.0)
             period = d.optString("currentPeriod", "—")
             items = d.optJSONArray("items").optList()
-        } catch (e: Exception) { /* 骨架保留默认值 */ }
+        } catch (e: Exception) { /* 骨架保留默认值 */ } finally { loading = false }
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -65,7 +69,7 @@ fun BillsScreen(nav: Nav) {
                 else -> items
             }
             if (shown.isEmpty()) {
-                EmptyState("暂无账单")
+                if (loading) Notice("账单加载中…") else EmptyState("暂无账单")
             }
             shown.forEach { b -> BillCell(b) { nav.push(Route.Bill(b.optString("billNo"))) } }
         }

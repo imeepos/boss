@@ -1,5 +1,10 @@
 package com.ymm.boss.user.page
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -68,13 +74,16 @@ fun ProductsScreen(nav: Nav) {
     var products by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var addons by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var err by remember { mutableStateOf("") }
+    // 首屏/分类切换 loading:骨架屏替代误显空态(木子红线:产品卡首屏必须骨架屏)。
+    var loading by remember { mutableStateOf(true) }
     LaunchedEffect(cat, nav.refreshTick) {
+        loading = true
         try {
             val d = ProductApi.list(cat)
             products = d.optJSONArray("items").toObjList()
             addons = d.optJSONArray("addons").toObjList()
             err = ""
-        } catch (e: Exception) { err = "套餐加载失败,请稍后重试" }
+        } catch (e: Exception) { err = "套餐加载失败,请稍后重试" } finally { loading = false }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -86,11 +95,59 @@ fun ProductsScreen(nav: Nav) {
                 it.optString("description").contains(query, true)
         }
         LazyColumn {
-            item { if (err.isNotEmpty()) Notice(err, Palette.err) }
-            if (shown.isEmpty() && err.isEmpty()) item { EmptyState("未找到匹配的产品") }
-            items(shown) { p -> ProductCard(p, nav) }
-            if (cat == "addon") item { AddonCard(addons, nav) }
+            if (loading) {
+                item { SkeletonProducts() }
+            } else {
+                item { if (err.isNotEmpty()) Notice(err, Palette.err) }
+                if (shown.isEmpty() && err.isEmpty()) item { EmptyState("未找到匹配的产品") }
+                items(shown) { p -> ProductCard(p, nav) }
+                if (cat == "addon") item { AddonCard(addons, nav) }
+            }
             item { Spacer(Modifier.height(12.dp)) }
+        }
+    }
+}
+
+/** 首屏骨架屏:与 ProductCard 同构的灰色占位卡(脉冲呼吸),数据到达即消失。 */
+@Composable
+private fun SkeletonProducts() {
+    val alpha by rememberInfiniteTransition(label = "skeleton").animateFloat(
+        initialValue = 0.40f, targetValue = 0.80f,
+        animationSpec = infiniteRepeatable(tween(durationMillis = 700), RepeatMode.Reverse),
+        label = "skeleton-alpha",
+    )
+    Column(Modifier.fillMaxWidth()) {
+        repeat(3) {
+            AppCard {
+                Column(
+                    Modifier.fillMaxWidth().graphicsLayer { this.alpha = alpha },
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier.weight(1f).height(15.dp)
+                                .background(Palette.line, RoundedCornerShape(4.dp)),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Box(Modifier.width(60.dp).height(20.dp).background(Palette.line, RoundedCornerShape(4.dp)))
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(44.dp).background(Palette.line, RoundedCornerShape(10.dp)))
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Box(
+                                Modifier.fillMaxWidth().height(12.dp)
+                                    .background(Palette.line, RoundedCornerShape(4.dp)),
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Box(
+                                Modifier.fillMaxWidth(0.6f).height(12.dp)
+                                    .background(Palette.line, RoundedCornerShape(4.dp)),
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

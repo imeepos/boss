@@ -12,6 +12,7 @@ import com.ymm.boss.user.page.FaultDetailScreen
 import com.ymm.boss.user.page.MessagesScreen
 import com.ymm.boss.user.page.OrderConfirmScreen
 import com.ymm.boss.user.page.ProductScreen
+import com.ymm.boss.user.page.ProductsScreen
 import com.ymm.boss.user.page.ReceiptScreen
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Route
@@ -59,6 +60,15 @@ class PageRenderTest {
         // 套餐信息 + 安装地址选择两张卡标题必现;无网络数据时地址列表为空提示
         compose.onNodeWithText("套餐信息").assertIsDisplayed()
         compose.onNodeWithText("选择安装地址").assertIsDisplayed()
+    }
+
+    @Test
+    fun productsShowsCategoryCaps() {
+        // 服务 tab 渲染冒烟:分类胶囊与搜索框与网络无关恒渲染(数据态为骨架屏/列表/空态)
+        compose.setContent { ProductsScreen(Nav(Route.Products)) }
+        compose.onNodeWithText("宽带").assertIsDisplayed()
+        compose.onNodeWithText("5G").assertIsDisplayed()
+        compose.onNodeWithText("增值服务").assertIsDisplayed()
     }
 
     /**
