@@ -106,9 +106,9 @@ export default function OpenPlatPage() {
           ))}</tr></thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className={r.id === selected ? 'bg-[var(--shell-menu-hover-bg)]' : ''}>
+              <tr key={r.id} className="hover:bg-[var(--shell-menu-hover-bg)]">
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
-                  <button className="cursor-pointer text-[var(--shell-fab-bg)] underline-offset-2 hover:underline" onClick={() => setSelected(r.id === selected ? 0 : r.id)}>{r.name}</button>
+                  <button className="cursor-pointer text-[var(--shell-fab-bg)] underline-offset-2 hover:underline" onClick={() => setSelected(r.id)}>{r.name}</button>
                 </td>
                 <td className="break-all px-3 py-2 border-b border-[var(--shell-side-border)] font-mono text-xs">{r.appId}</td>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{r.status === 1 ? t.pages.openplat.active : t.pages.openplat.disabled}</td>
@@ -116,7 +116,11 @@ export default function OpenPlatPage() {
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{r.rateLimitRpm} / {r.dailyQuota}</td>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{r.lastUsedAt ? formatTime(r.lastUsedAt) : t.pages.openplat.neverUsed}</td>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
-                  <button disabled={busy} onClick={() => toggleStatus(r)}>{r.status === 1 ? t.pages.openplat.disable : t.pages.openplat.enable}</button>
+                  <span className="inline-flex items-center gap-3">
+                    <button className="cursor-pointer text-[var(--color-text-link)] hover:underline disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={() => setSelected(r.id)}>{t.pages.openplat.view}</button>
+                    <span className="text-[var(--shell-side-border)]">|</span>
+                    <button className="cursor-pointer hover:underline disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={() => toggleStatus(r)}>{r.status === 1 ? t.pages.openplat.disable : t.pages.openplat.enable}</button>
+                  </span>
                 </td>
               </tr>
             ))}
@@ -126,7 +130,7 @@ export default function OpenPlatPage() {
         {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
       </div>
 
-      {sel && <AppDetail app={sel} onRefreshApps={load} />}
+      {sel && <AppDetail app={sel} onRefreshApps={load} onClose={() => setSelected(0)} />}
 
       <AppFormDrawer
         open={form !== null}

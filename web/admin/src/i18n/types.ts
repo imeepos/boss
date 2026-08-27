@@ -1759,6 +1759,17 @@ export interface Translations {
       noDeliveries: string
       requeue: string
       testEvent: string
+      view: string
+      subsTab: string
+      dlvTab: string
+      appIdLabel: string
+      sandboxLabel: string
+      statusLabel: string
+      endpointLabel: string
+      createdLabel: string
+      actionLabel: string
+      eventIdLabel: string
+      responseLabel: string
     },
     region: {
       title: string
