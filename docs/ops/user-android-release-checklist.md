@@ -71,6 +71,18 @@
 ### 每日回归记录
 
 - 2026-08-27(轮15):connected 11/11 全绿零跳过(含 E2E 8 读腿真实后端);消息中心真实数据抽样(3 条消息 + 分类胶囊/全部已读动作在位);无 FATAL/ANR。
+- 2026-08-27(轮16):connected 12/12 全绿零跳过(E2E 补负路径:错码登录=40100 且客户端路由验证码文案);D-7 错误码语义实证入台账。
+
+### 出包记录（首发候选包,2026-08-27）
+
+- 包:`mobile/user/android/app/build/outputs/apk/release/app-release.apk`
+- 版本: versionCode=2 / versionName=0.1.0 / minSdk=26 / targetSdk=36 / 无 minify
+- 签名: 独立 release keystore(alias boss-user-release),apksigner verify 通过;
+  证书 SHA-256 `1cacb3e103ce876e9e22c9fdc8d2087cedbf4558a41092f8ec25021600eef2da`(与 adopted note 归档一致,≠debug)
+- 大小: 23,727,225 B;SHA-256 `abd9f700580a37a0...`(完整值以发布时 shasum 为准)
+- 真装冒烟(模拟器): 冷启弹 POST_NOTIFICATIONS(Android13+ 立项生效)→ Allow → 登录页双模式渲染 ✓;release 默认 base=192.168.0.102 内网
+- 复现: `scripts/user-android-release-sign.sh`(keystore.properties 本机 gitignored 持钥)
+- 发布前: 真机权限追问/安装到目标设备/UpdateApi 发版数据注入后重签同 key
 
 ## 回滚通道
 
