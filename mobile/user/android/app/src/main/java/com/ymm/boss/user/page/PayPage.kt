@@ -84,7 +84,7 @@ private fun AmountHead(amount: Double, target: JSONObject?) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("缴费金额", fontSize = 12.5.sp, color = Palette.muted)
         Text("¥" + "%.2f".format(amount), fontSize = 30.sp, fontWeight = FontWeight.Bold,
-            color = Palette.ink, modifier = Modifier.padding(vertical = 6.dp))
+            color = Palette.primary, modifier = Modifier.padding(vertical = 6.dp))
         Text("账期 ${target?.optString("period") ?: "—"}$suffix", fontSize = 12.sp, color = Palette.muted)
     }
 }

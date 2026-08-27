@@ -63,6 +63,7 @@ fun ComplaintScreen(nav: Nav) {
     var hasMore by remember { mutableStateOf(true) }
     var loading by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf("") }
+    var submitted by remember { mutableStateOf("") }
     var showForm by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -98,6 +99,7 @@ fun ComplaintScreen(nav: Nav) {
 
     Column(Modifier.fillMaxSize()) {
         TopBar("投诉与建议", onBack = { nav.pop() }, action = "立即投诉", onAction = { showForm = true })
+        if (submitted.isNotEmpty()) Notice(submitted, Palette.success)
         if (err.isNotEmpty()) Notice(err, Palette.err)
         LazyColumn(state = listState) {
             if (items.isEmpty() && err.isEmpty() && !loading) item { EmptyState("暂无投诉记录,点右上角发起") }
@@ -128,6 +130,8 @@ fun ComplaintScreen(nav: Nav) {
                 scope.launch {
                     try {
                         ComplaintApi.submit(type, description, contact, relOrderNo)
+                        // 成功终态文案,禁止静默成功(木子红线:流程结束必须终态)
+                        submitted = "投诉已提交,我们将尽快核实处理"
                         load(1, replace = true)
                     } catch (e: Exception) { err = "提交失败," + Api.friendlyMessage(e) }
                 }

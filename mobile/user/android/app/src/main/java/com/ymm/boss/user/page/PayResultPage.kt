@@ -1,5 +1,6 @@
 package com.ymm.boss.user.page
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,7 +66,10 @@ fun PayResultScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("支付结果", onBack = { nav.pop() })
+        // 支付成功页返回栈必须重置(木子红线):顶栏返回与系统返回都回首页,
+        // 禁止退回仍显示「待支付」的缴费/充值页;BackHandler 覆盖 PageScaffold 的 pop。
+        BackHandler { nav.resetTo(Route.Home) }
+        TopBar("支付结果", onBack = { nav.resetTo(Route.Home) })
         ResultCard(nav, payNo, amountLine, payMethod)
         Notice("若未到账,30 分钟内未到将自动生成工单并人工跟进。")
         Spacer(Modifier.height(12.dp))
