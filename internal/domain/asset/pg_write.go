@@ -156,6 +156,19 @@ func (s *PGStore) AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64,
 
 // ListReplacements 列出全部换新单。
 
+// SetAssetStatus 直改资产当前状态(换新完成联动:旧件→MAINTENANCE/新件→DEPLOYED);
+// 历史轨迹由调用方 AppendLifecycle 另行落行。
+func (s *PGStore) SetAssetStatus(ctx context.Context, assetID int64, status string) error {
+	tag, err := s.db.Exec(ctx, `UPDATE assets SET status = $2 WHERE id = $1`, assetID, status)
+	if err != nil {
+		return fmt.Errorf("asset: set asset status: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // ListStocktakes 列出全部盘点任务。
 
 // CreateStocktake 新建盘点任务,返回自增 id。

@@ -105,6 +105,8 @@ type AssetService interface {
 
 	ListLifecycles(ctx context.Context, assetID int64) ([]AssetLifecycle, error)
 	AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64, error)
+	// SetAssetStatus 直改资产当前状态(换新完成联动);未命中返回 ErrNotFound。
+	SetAssetStatus(ctx context.Context, assetID int64, status string) error
 	ListReplacements(ctx context.Context) ([]Replacement, error)
 	CreateReplacement(ctx context.Context, r Replacement) (int64, error)
 	// GetReplacement 按 id 查换新单;未命中返回 ErrNotFound。
