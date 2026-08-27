@@ -6,6 +6,7 @@ export interface ProductRow {
   name: string
   bandwidth: string
   monthlyFee: number
+  category: string // broadband/fusion/addon(空回退 broadband)
   effectiveAt: string
   status: string // DRAFT/PUBLISHED/OFFLINE
 }
@@ -23,3 +24,6 @@ export interface PriceHistoryRow {
 
 export const PRODUCT_STATUSES = ['DRAFT', 'PUBLISHED', 'OFFLINE'] as const
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number]
+
+export const PRODUCT_CATEGORIES = ['broadband', 'fusion', 'addon'] as const
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number]
