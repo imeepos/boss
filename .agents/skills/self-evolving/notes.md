@@ -1203,3 +1203,9 @@
 - 哪个坑浪费了最多时间? ①Api.kt 重试改造把 while(true) 放进 withContext 尾表达式,lambda 返回类型推断成 Unit 编译失败——循环是 Unit 型语句,label return 不计入推断,须抽出显式返回类型 helper。②commit -m 消息带全角括号/箭头号时 bash 把 -m 参数拆裂(pathspec '3' 报错),改用 commit -F 消息文件(仓库既有 lesson 再次应验)。
 - skill 有没有提前预警? 有:commit -F 教训(2e1d7c90);"守卫模式"无预警,靠自己读页面对照 busy/submitting 发现谁缺守卫。
 - 重来一次? ①带非 ASCII 符号的 commit 消息一律 -F 文件;②改映射类逻辑先把"固化旧行为的测试"重写为逐项 spec 断言(OrderTimelineLogicTest 旧例把按 3 分桶当正确行为锁死);③循环包裹在 lambda 里时给 helper 显式返回类型。
+
+## 2026-08-27 user Android 上线计划 D5-D9 首轮打磨(加载态+交互终态)
+
+- 哪个坑浪费了最多时间? 无大坑。审计先行策略有效:先列木子红线×实际代码逐条对照(骨架屏/空态/金额高亮/终态文案/返回栈),一次性定位 5 处问题(产品误显空态、账单误显空态、投诉静默成功、支付结果返回栈未重置、金额非主色),重依赖(Stripe/play-location)确认本就懒加载,零改动。
+- skill 有没有提前预警? commit -F 教训再应验(继续用消息文件,全程零报错)。
+- 重来一次? 打磨类任务先做「红线×代码」对照表再动刀,避免凭印象乱改;BackHandler 覆盖 PageScaffold 自带 pop 的写法(后组合的 enabled handler 生效)可直接复用。
