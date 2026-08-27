@@ -11,20 +11,25 @@ import (
 )
 
 // InsertDeliveries 为匹配订阅批量建投递行;幂等(UNIQUE + DO NOTHING)。
+// 载荷以 text 入参 + $3::jsonb 显式转型:pgx 默认把 []byte 当 bytea 发送,而 bytea→jsonb
+// 隐式转型不存在(22P02);改为 string + ::jsonb 后走 text→jsonb,与 internal/domain/billing/
+// pg_ar_closure.go 等既有的 JSONB 入参处理一致。修复前:首次出现匹配订阅时 InsertDeliveries
+// 必返 22P02,投递循环每轮失败、任务永久滞留待投(环境从未配置订阅时未暴露)。
+// 同时 INSERT...SELECT 无 RETURNING:用 Exec + RowsAffected 读取插入行数,避免 QueryRow.Scan
+// 在无返回行时返 ErrNoRows 把本该成功的 0 插入也判为失败。
 func (s *PGStore) InsertDeliveries(ctx context.Context, eventType, eventID string, payload []byte) (int64, error) {
-	var n int64
-	err := s.db.QueryRow(ctx, `
+	tag, err := s.db.Exec(ctx, `
 		INSERT INTO open_webhook_deliveries (subscription_id, event_id, event_type, payload)
-		SELECT sub.id, $1, sub.event_type, $3
+		SELECT sub.id, $1, sub.event_type, $3::jsonb
 		FROM open_webhook_subscriptions sub
 		JOIN open_apps app ON app.id = sub.app_id
 		WHERE sub.event_type = $2 AND sub.status = 1 AND app.status = 1
 		ON CONFLICT (subscription_id, event_id) DO NOTHING`,
-		eventID, eventType, payload).Scan(&n)
+		eventID, eventType, string(payload))
 	if err != nil {
 		return 0, fmt.Errorf("openplat: insert deliveries: %w", err)
 	}
-	return n, nil
+	return tag.RowsAffected(), nil
 }
 
 const dueCols = `d.id, d.subscription_id, d.event_id, d.event_type, d.payload::text,
