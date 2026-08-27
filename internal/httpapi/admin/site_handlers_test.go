@@ -24,21 +24,36 @@ type fakeCMS struct {
 	created cms.Post
 	updated bool
 	deleted bool
+	pubLang string // ListPublished 收到的 lang(000155 透传断言)
 }
 
 func (f *fakeCMS) ListPosts(context.Context) ([]cms.Post, error) { return f.listed, nil }
 
-func (f *fakeCMS) ListPublished(_ context.Context, category string, limit int) ([]cms.Post, error) {
+func (f *fakeCMS) ListPublished(_ context.Context, _ string, lang string, limit int) ([]cms.Post, error) {
+	f.pubLang = lang
 	return f.listed[:min(limit, len(f.listed))], nil
 }
 
-func (f *fakeCMS) GetPublishedBySlug(_ context.Context, slug string) (*cms.Post, error) {
-	for _, p := range f.listed {
-		if p.Slug == slug && p.Status == cms.StatusPublished {
-			return &p, nil
+func (f *fakeCMS) GetPublishedBySlug(_ context.Context, slug, lang string) (*cms.Post, error) {
+	if p, ok := f.findPublished(slug, lang); ok {
+		return p, nil
+	}
+	if lang != cms.LangDefault {
+		if p, ok := f.findPublished(slug, cms.LangDefault); ok {
+			return p, nil
 		}
 	}
 	return nil, cms.ErrPostNotFound
+}
+
+func (f *fakeCMS) findPublished(slug, lang string) (*cms.Post, bool) {
+	for i := range f.listed {
+		p := &f.listed[i]
+		if p.Slug == slug && p.Lang == lang && p.Status == cms.StatusPublished {
+			return p, true
+		}
+	}
+	return nil, false
 }
 
 func (f *fakeCMS) CreatePost(_ context.Context, p cms.Post) (int64, error) {
@@ -64,7 +79,7 @@ func newSiteTestRouter(f *fakeUser, cmsSvc cms.Service) (*gin.Engine, *fakeCMS) 
 // 官网匿名列表:无 token 200,投影不含 version/authorName 管理字段。
 func TestSitePublicList_NoAuth_MinimalProjection(t *testing.T) {
 	r, _ := newSiteTestRouter(&fakeUser{}, &fakeCMS{listed: []cms.Post{{
-		ID: 1, Slug: "hello", Title: "标题", Status: cms.StatusPublished,
+		ID: 1, Slug: "hello", Lang: "zh-CN", Title: "标题", Category: "NEWS", Status: cms.StatusPublished,
 		Version: 9, AuthorName: "内部作者", PublishedAt: "2026-08-28 10:00",
 	}}})
 	w := getJSON(t, r, "/api/admin/v1/site/posts", "")
@@ -86,6 +101,45 @@ func TestSitePublicList_NoAuth_MinimalProjection(t *testing.T) {
 	item := env.Data.Items[0]
 	if item["slug"] != "hello" || item["version"] != nil || item["authorName"] != nil {
 		t.Fatalf("projection leaked admin fields: %v", item)
+	}
+	if item["lang"] != "zh-CN" || item["categoryName"] != "动态" {
+		t.Fatalf("projection missing lang/categoryName: %v", item)
+	}
+}
+
+// 官网匿名列表:lang 参数透传域层(000155),非法值归一默认。
+func TestSitePublicList_LangPassthrough(t *testing.T) {
+	r, fc := newSiteTestRouter(&fakeUser{}, &fakeCMS{})
+	getJSON(t, r, "/api/admin/v1/site/posts?lang=en-US", "")
+	if fc.pubLang != "en-US" {
+		t.Fatalf("pubLang=%q want en-US", fc.pubLang)
+	}
+	getJSON(t, r, "/api/admin/v1/site/posts?lang=fr-FR", "")
+	if fc.pubLang != cms.LangDefault {
+		t.Fatalf("pubLang=%q want default %q", fc.pubLang, cms.LangDefault)
+	}
+}
+
+// 官网匿名详情:lang 变体精确命中;缺变体回退默认语言(000155)。
+func TestSitePublicDetail_LangVariantAndFallback(t *testing.T) {
+	r, _ := newSiteTestRouter(&fakeUser{}, &fakeCMS{listed: []cms.Post{
+		{ID: 1, Slug: "a", Lang: "zh-CN", Title: "中文", Status: cms.StatusPublished},
+		{ID: 2, Slug: "a", Lang: "en-US", Title: "English", Status: cms.StatusPublished},
+	}})
+	var env struct {
+		Code int `json:"code"`
+		Data struct {
+			Title string `json:"title"`
+			Lang  string `json:"lang"`
+		} `json:"data"`
+	}
+	w := getJSON(t, r, "/api/admin/v1/site/posts/a?lang=en-US", "")
+	if err := json.Unmarshal(w.Body.Bytes(), &env); err != nil || env.Data.Title != "English" || env.Data.Lang != "en-US" {
+		t.Fatalf("en variant: env=%+v err=%v", env, err)
+	}
+	w = getJSON(t, r, "/api/admin/v1/site/posts/a?lang=ms-MY", "")
+	if err := json.Unmarshal(w.Body.Bytes(), &env); err != nil || env.Data.Title != "中文" || env.Data.Lang != "zh-CN" {
+		t.Fatalf("fallback: env=%+v err=%v", env, err)
 	}
 }
 

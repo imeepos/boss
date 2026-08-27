@@ -55,7 +55,7 @@ func newCoverRouter(published bool, cover int64, at *attachment.Attachment) *gin
 	r := gin.New()
 	a := &app.Application{
 		User: &fakeUser{},
-		CMS: &fakeCMS{listed: []cms.Post{{ID: 1, Slug: "a",
+		CMS: &fakeCMS{listed: []cms.Post{{ID: 1, Slug: "a", Lang: "zh-CN",
 			Status: coverStatus(published), CoverAttachment: cover}}},
 		Attachment: &attachment.Service{St: &fakeAtStore{at: at}, Obj: &fakeObjStorage{content: "IMG"}},
 	}
@@ -69,7 +69,7 @@ func newContentRouter(content, status string, at *attachment.Attachment) *gin.En
 	r := gin.New()
 	a := &app.Application{
 		User: &fakeUser{},
-		CMS: &fakeCMS{listed: []cms.Post{{ID: 1, Slug: "a",
+		CMS: &fakeCMS{listed: []cms.Post{{ID: 1, Slug: "a", Lang: "zh-CN",
 			Status: status, Content: content}}},
 		Attachment: &attachment.Service{St: &fakeAtStore{at: at}, Obj: &fakeObjStorage{content: "IMG"}},
 	}

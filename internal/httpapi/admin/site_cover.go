@@ -9,6 +9,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/attachment"
+	"github.com/ymm-001/boss/internal/domain/cms"
 )
 
 // maxCoverBytes 封面读侧上限(图片远小于此,防滥用下载通道)。
@@ -22,7 +23,7 @@ func sitePublicCoverHandler(a *app.Application) gin.HandlerFunc {
 			c.Status(404)
 			return
 		}
-		p, err := a.CMS.GetPublishedBySlug(c.Request.Context(), c.Param("slug"))
+		p, err := a.CMS.GetPublishedBySlug(c.Request.Context(), c.Param("slug"), cms.NormalizeLang(c.Query("lang")))
 		if err != nil {
 			c.Status(404)
 			return

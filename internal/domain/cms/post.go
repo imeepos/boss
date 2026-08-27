@@ -17,6 +17,19 @@ const (
 	StatusOffline   = "OFFLINE"
 )
 
+// 语言维度(000155):与 web/admin i18n Locale 集一致;公开读缺变体回退 LangDefault。
+const LangDefault = "zh-CN"
+
+var langAllowed = map[string]bool{"zh-CN": true, "en-US": true, "ms-MY": true}
+
+// NormalizeLang 非法/空语言归一到默认;公开端 query 参数入口统一走这里。
+func NormalizeLang(v string) string {
+	if langAllowed[v] {
+		return v
+	}
+	return LangDefault
+}
+
 // 分类已改字典表(cms_categories,000137);NEWS/ARTICLE 为迁移种子值,
 // 不再作枚举常量校验,存在性+启用由 store 层 categoryUsable 保证。
 
@@ -32,9 +45,11 @@ var (
 var slugRe = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
 // Post cms_posts 行投影;时间为展示格式字符串(与 cs 域一致)。
+// 同 slug 可有多个语言变体(唯一键 slug+lang),公开 URL /news/:slug?lang= 切换。
 type Post struct {
 	ID              int64  `json:"id"`
 	Slug            string `json:"slug"`
+	Lang            string `json:"lang"`
 	Title           string `json:"title"`
 	Category        string `json:"category"`
 	Summary         string `json:"summary"`
@@ -64,14 +79,18 @@ func (p *Post) validate() error {
 	if len(p.Summary) > 500 || p.Content == "" {
 		return ErrInvalidPost
 	}
+	if !langAllowed[p.Lang] {
+		return ErrInvalidPost
+	}
 	return nil
 }
 
 // Service 域接口:admin 管理面 + 官网匿名只读面 + 分类字典面。
+// ListPublished/GetPublishedBySlug 的 lang 已归一(NormalizeLang),公开读缺变体回退默认语言。
 type Service interface {
 	ListPosts(ctx context.Context) ([]Post, error)
-	ListPublished(ctx context.Context, category string, limit int) ([]Post, error)
-	GetPublishedBySlug(ctx context.Context, slug string) (*Post, error)
+	ListPublished(ctx context.Context, category, lang string, limit int) ([]Post, error)
+	GetPublishedBySlug(ctx context.Context, slug, lang string) (*Post, error)
 	CreatePost(ctx context.Context, p Post) (int64, error)
 	UpdatePost(ctx context.Context, p Post) error
 	DeletePost(ctx context.Context, id int64) error

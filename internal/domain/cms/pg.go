@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -18,7 +19,7 @@ type dbtx interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
-const cols = `id, slug, title, category, summary, COALESCE(cover_attachment_id, 0), content, status,
+const cols = `id, slug, lang, title, category, summary, COALESCE(cover_attachment_id, 0), content, status,
 	COALESCE(TO_CHAR(published_at, '` + timeFmt + `'), ''),
 	version, COALESCE(author_name, ''), COALESCE(TO_CHAR(updated_at, '` + timeFmt + `'), '')`
 
@@ -28,7 +29,7 @@ type PGStore struct{ db dbtx }
 func NewPGStore(db dbtx) *PGStore { return &PGStore{db: db} }
 
 func scanPost(rows pgx.Rows, p *Post) error {
-	return rows.Scan(&p.ID, &p.Slug, &p.Title, &p.Category, &p.Summary, &p.CoverAttachment,
+	return rows.Scan(&p.ID, &p.Slug, &p.Lang, &p.Title, &p.Category, &p.Summary, &p.CoverAttachment,
 		&p.Content, &p.Status, &p.PublishedAt, &p.Version, &p.AuthorName, &p.UpdatedAt)
 }
 
@@ -49,18 +50,19 @@ func (s *PGStore) ListPosts(ctx context.Context) ([]Post, error) {
 	return out, rows.Err()
 }
 
-// ListPublished 官网匿名读:仅 PUBLISHED,发布时间倒序,limit 上限 50。
-func (s *PGStore) ListPublished(ctx context.Context, category string, limit int) ([]Post, error) {
+// ListPublished 官网匿名读:仅 PUBLISHED,按语言过滤,发布时间倒序,limit 上限 50。
+func (s *PGStore) ListPublished(ctx context.Context, category, lang string, limit int) ([]Post, error) {
 	if limit <= 0 || limit > 50 {
 		limit = 10
 	}
-	q := `SELECT ` + cols + ` FROM cms_posts WHERE status='PUBLISHED'`
-	args := []any{limit}
+	q := `SELECT ` + cols + ` FROM cms_posts WHERE status='PUBLISHED' AND lang=$1`
+	args := []any{lang}
 	if category != "" {
-		q += ` AND category=$2`
 		args = append(args, category)
+		q += ` AND category=$2`
 	}
-	q += ` ORDER BY published_at DESC LIMIT $1`
+	args = append(args, limit)
+	q += ` ORDER BY published_at DESC LIMIT $` + strconv.Itoa(len(args))
 	rows, err := s.db.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("cms: list published: %w", err)
@@ -78,11 +80,20 @@ func (s *PGStore) ListPublished(ctx context.Context, category string, limit int)
 }
 
 // GetPublishedBySlug 官网详情读:非 PUBLISHED 一律 ErrPostNotFound(不泄露草稿存在性)。
-func (s *PGStore) GetPublishedBySlug(ctx context.Context, slug string) (*Post, error) {
+// 请求语言缺变体时回退默认语言(官网切语言不因未翻译而 404)。
+func (s *PGStore) GetPublishedBySlug(ctx context.Context, slug, lang string) (*Post, error) {
+	p, err := s.getPublishedLang(ctx, slug, lang)
+	if errors.Is(err, ErrPostNotFound) && lang != LangDefault {
+		return s.getPublishedLang(ctx, slug, LangDefault)
+	}
+	return p, err
+}
+
+func (s *PGStore) getPublishedLang(ctx context.Context, slug, lang string) (*Post, error) {
 	var p Post
 	err := s.db.QueryRow(ctx,
-		`SELECT `+cols+` FROM cms_posts WHERE slug=$1 AND status='PUBLISHED'`, slug).
-		Scan(&p.ID, &p.Slug, &p.Title, &p.Category, &p.Summary, &p.CoverAttachment,
+		`SELECT `+cols+` FROM cms_posts WHERE slug=$1 AND lang=$2 AND status='PUBLISHED'`, slug, lang).
+		Scan(&p.ID, &p.Slug, &p.Lang, &p.Title, &p.Category, &p.Summary, &p.CoverAttachment,
 			&p.Content, &p.Status, &p.PublishedAt, &p.Version, &p.AuthorName, &p.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrPostNotFound
@@ -103,10 +114,10 @@ func (s *PGStore) CreatePost(ctx context.Context, p Post) (int64, error) {
 	}
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO cms_posts(slug, title, category, summary, cover_attachment_id, content, status, author_name,
-			published_at)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $7='PUBLISHED' THEN now() END) RETURNING id`,
-		p.Slug, p.Title, p.Category, p.Summary, intOrNil(p.CoverAttachment), p.Content, p.Status, p.AuthorName).
+		INSERT INTO cms_posts(slug, lang, title, category, summary, cover_attachment_id, content, status,
+			author_name, published_at)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9, CASE WHEN $7='PUBLISHED' THEN now() END) RETURNING id`,
+		p.Slug, p.Lang, p.Title, p.Category, p.Summary, intOrNil(p.CoverAttachment), p.Content, p.Status, p.AuthorName).
 		Scan(&id)
 	if isUniqueViolation(err) {
 		return 0, ErrSlugTaken
@@ -126,12 +137,12 @@ func (s *PGStore) UpdatePost(ctx context.Context, p Post) error {
 		return err
 	}
 	tag, err := s.db.Exec(ctx, `
-		UPDATE cms_posts SET slug=$2, title=$3, category=$4, summary=$5, cover_attachment_id=$6,
-			content=$7, status=$8, author_name=$9,
-			published_at=CASE WHEN $8='PUBLISHED' AND published_at IS NULL THEN now() ELSE published_at END,
+		UPDATE cms_posts SET slug=$2, lang=$3, title=$4, category=$5, summary=$6, cover_attachment_id=$7,
+			content=$8, status=$9, author_name=$10,
+			published_at=CASE WHEN $9='PUBLISHED' AND published_at IS NULL THEN now() ELSE published_at END,
 			version=version+1, updated_at=now()
 		WHERE id=$1`,
-		p.ID, p.Slug, p.Title, p.Category, p.Summary, intOrNil(p.CoverAttachment), p.Content, p.Status, p.AuthorName)
+		p.ID, p.Slug, p.Lang, p.Title, p.Category, p.Summary, intOrNil(p.CoverAttachment), p.Content, p.Status, p.AuthorName)
 	if isUniqueViolation(err) {
 		return ErrSlugTaken
 	}
@@ -155,7 +166,7 @@ func (s *PGStore) DeletePost(ctx context.Context, id int64) error {
 	return nil
 }
 
-// normalize 空 category/status 落默认值,减少前端必传字段。
+// normalize 空 category/status/lang 落默认值,减少前端必传字段。
 func (p *Post) normalize() {
 	if p.Category == "" {
 		p.Category = "NEWS"
@@ -163,6 +174,7 @@ func (p *Post) normalize() {
 	if p.Status == "" {
 		p.Status = StatusDraft
 	}
+	p.Lang = NormalizeLang(p.Lang)
 }
 
 func intOrNil(v int64) any {

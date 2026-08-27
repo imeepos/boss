@@ -85,8 +85,8 @@ func TestSiteImg_CrossSlugAntiEnumeration(t *testing.T) {
 	a := &app.Application{
 		User: &fakeUser{},
 		CMS: &fakeCMS{listed: []cms.Post{
-			{ID: 1, Slug: "post-a", Status: cms.StatusPublished, Content: "![x](att/9)"},
-			{ID: 2, Slug: "post-b", Status: cms.StatusPublished, Content: "![y](att/8)"},
+			{ID: 1, Slug: "post-a", Lang: "zh-CN", Status: cms.StatusPublished, Content: "![x](att/9)"},
+			{ID: 2, Slug: "post-b", Lang: "zh-CN", Status: cms.StatusPublished, Content: "![y](att/8)"},
 		}},
 		Attachment: &attachment.Service{St: store, Obj: &fakeObjStorage{content: "IMG"}},
 	}

@@ -27,7 +27,7 @@ func sitePublicImgHandler(a *app.Application) gin.HandlerFunc {
 			c.Status(404)
 			return
 		}
-		p, err := a.CMS.GetPublishedBySlug(c.Request.Context(), c.Param("slug"))
+		p, err := a.CMS.GetPublishedBySlug(c.Request.Context(), c.Param("slug"), cms.NormalizeLang(c.Query("lang")))
 		if err != nil {
 			c.Status(404)
 			return

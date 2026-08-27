@@ -12,14 +12,14 @@ import (
 )
 
 func catTestCols() []string {
-	return []string{"id", "code", "name", "sort_no", "enabled", "updated_at"}
+	return []string{"id", "code", "name", "sort_no", "enabled", "name_i18n", "updated_at"}
 }
 
 func catRow(id int64, code string, enabled bool) *pgxmock.Rows {
-	return pgxmock.NewRows(catTestCols()).AddRow(id, code, "名称", 0, enabled, "2026-08-28 10:00")
+	return pgxmock.NewRows(catTestCols()).AddRow(id, code, "名称", 0, enabled, `{}`, "2026-08-28 10:00")
 }
 
-// TestCategoryValidate 契约:code 大写蛇形 2~32,name 非空 ≤64。
+// TestCategoryValidate 契约:code 大写蛇形 2~32,name 非空 ≤64;names 键限语言集、值 ≤64(000155)。
 func TestCategoryValidate(t *testing.T) {
 	for _, code := range []string{"", "N", "blog", "NEWS_X_超长_________________________", "A-B"} {
 		c := &Category{Code: code, Name: "n"}
@@ -30,6 +30,25 @@ func TestCategoryValidate(t *testing.T) {
 	if err := (&Category{Code: "NEWS", Name: "动态"}).validate(); err != nil {
 		t.Fatal(err)
 	}
+	if err := (&Category{Code: "NEWS", Name: "动态", Names: map[string]string{"fr-FR": "x"}}).validate(); !errors.Is(err, ErrInvalidCategory) {
+		t.Fatal("names 语言集外应非法")
+	}
+}
+
+// TestCategoryNameFor 契约:语言覆盖 → 默认名回退;空覆盖值视为未填。
+func TestCategoryNameFor(t *testing.T) {
+	c := &Category{Code: "NEWS", Name: "动态", Names: map[string]string{
+		"en-US": "News", "ms-MY": "", "zh-CN": "中文名",
+	}}
+	if got := c.NameFor("en-US"); got != "News" {
+		t.Fatalf("en-US=%q", got)
+	}
+	if got := c.NameFor("ms-MY"); got != "动态" {
+		t.Fatalf("ms-MY 空覆盖应回退默认, got %q", got)
+	}
+	if got := c.NameFor("fr-FR"); got != "动态" {
+		t.Fatalf("未知语言应回退默认, got %q", got)
+	}
 }
 
 // TestPGStore_CategoryCRUD 契约:创建/更新/删除 SQL 形状与冲突映射。
@@ -37,7 +56,7 @@ func TestPGStore_CategoryCRUD(t *testing.T) {
 	mock := newMock(t)
 
 	// create:唯一冲突 → ErrCategoryTaken
-	mock.ExpectQuery(`INSERT INTO cms_categories`).WithArgs("FAQ", "常见问题", 0, true).
+	mock.ExpectQuery(`INSERT INTO cms_categories`).WithArgs("FAQ", "常见问题", 0, true, "{}").
 		WillReturnError(&pgconn.PgError{Code: "23505"})
 	if _, err := NewPGStore(mock).CreateCategory(context.Background(),
 		Category{Code: "FAQ", Name: "常见问题", Enabled: true}); !errors.Is(err, ErrCategoryTaken) {
@@ -59,7 +78,7 @@ func TestPGStore_CategoryCRUD(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"code"}).AddRow("NEWS"))
 	mock.ExpectQuery(`FROM cms_posts p JOIN cms_categories`).WithArgs(int64(1)).
 		WillReturnRows(pgxmock.NewRows([]string{"1"}).AddRow(1))
-	mock.ExpectExec(`UPDATE cms_categories`).WithArgs(int64(1), "NEWS", "动态", 2, false).
+	mock.ExpectExec(`UPDATE cms_categories`).WithArgs(int64(1), "NEWS", "动态", 2, false, "{}").
 		WillReturnResult(pgconn.NewCommandTag("UPDATE 1"))
 	if err := NewPGStore(mock).UpdateCategory(context.Background(),
 		Category{ID: 1, Code: "NEWS", Name: "动态", SortNo: 2, Enabled: false}); err != nil {
@@ -75,10 +94,13 @@ func TestPGStore_CategoryCRUD(t *testing.T) {
 
 	// list:sort_no, code 排序
 	mock.ExpectQuery(`ORDER BY sort_no, code`).WillReturnRows(catRow(1, "NEWS", true).AddRow(
-		[]interface{}{int64(2), "ARTICLE", "文章", 1, true, "2026-08-28 10:00"}...))
+		[]interface{}{int64(2), "ARTICLE", "文章", 1, true, `{"en-US":"Article"}`, "2026-08-28 10:00"}...))
 	got, err := NewPGStore(mock).ListCategories(context.Background())
 	if err != nil || len(got) != 2 {
 		t.Fatalf("got=%v err=%v", got, err)
+	}
+	if got[1].NameFor("en-US") != "Article" || got[1].NameFor("zh-CN") != "文章" {
+		t.Fatalf("name_i18n decode broken: %+v", got[1])
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

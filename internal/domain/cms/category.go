@@ -1,9 +1,11 @@
 // 分类字典:cms_categories,code 全局唯一(大写蛇形),name 展示名。
 // posts.category 软引用 code;启用态只影响新文章可选,已发布文章不受影响。
+// name_i18n(000155) 按语言覆盖展示名,缺失语言回退 name。
 package cms
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -25,14 +27,23 @@ var (
 // codeRe 大写字母数字蛇形,2~32 位(与迁移 VARCHAR(32) 对齐)。
 var codeRe = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,31}$`)
 
-// Category cms_categories 行投影。
+// Category cms_categories 行投影;Names 语言→展示名(缺省回退 Name),键限 langAllowed。
 type Category struct {
-	ID        int64  `json:"id"`
-	Code      string `json:"code"`
-	Name      string `json:"name"`
-	SortNo    int    `json:"sortNo"`
-	Enabled   bool   `json:"enabled"`
-	UpdatedAt string `json:"updatedAt"`
+	ID        int64             `json:"id"`
+	Code      string            `json:"code"`
+	Name      string            `json:"name"`
+	Names     map[string]string `json:"names,omitempty"`
+	SortNo    int               `json:"sortNo"`
+	Enabled   bool              `json:"enabled"`
+	UpdatedAt string            `json:"updatedAt"`
+}
+
+// NameFor 取语言展示名:语言覆盖 → 默认名。空覆盖值视为未填。
+func (c *Category) NameFor(lang string) string {
+	if v := c.Names[lang]; v != "" {
+		return v
+	}
+	return c.Name
 }
 
 func (c *Category) validate() error {
@@ -41,6 +52,11 @@ func (c *Category) validate() error {
 	}
 	if c.Name == "" || len(c.Name) > 64 {
 		return ErrInvalidCategory
+	}
+	for lang, name := range c.Names {
+		if !langAllowed[lang] || len(name) > 64 {
+			return ErrInvalidCategory
+		}
 	}
 	return nil
 }
@@ -53,10 +69,35 @@ type CategoryStore interface {
 	DeleteCategory(ctx context.Context, id int64) error
 }
 
-const catCols = `id, code, name, sort_no, enabled, TO_CHAR(updated_at, '` + timeFmt + `')`
+const catCols = `id, code, name, sort_no, enabled, name_i18n, TO_CHAR(updated_at, '` + timeFmt + `')`
 
+// scanCategory name_i18n 经 []byte 中转再反序列化,JSONB 扫描与 pgxmock 均稳定。
 func scanCategory(rows pgx.Rows, c *Category) error {
-	return rows.Scan(&c.ID, &c.Code, &c.Name, &c.SortNo, &c.Enabled, &c.UpdatedAt)
+	var namesRaw []byte
+	if err := rows.Scan(&c.ID, &c.Code, &c.Name, &c.SortNo, &c.Enabled, &namesRaw, &c.UpdatedAt); err != nil {
+		return err
+	}
+	return decodeNames(namesRaw, &c.Names)
+}
+
+func decodeNames(b []byte, into *map[string]string) error {
+	if len(b) == 0 {
+		*into = nil
+		return nil
+	}
+	return json.Unmarshal(b, into)
+}
+
+// namesJSON Names 落库序列化;空表落 {} 以满足 JSONB NOT NULL。
+func namesJSON(m map[string]string) string {
+	if len(m) == 0 {
+		return "{}"
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
 }
 
 // ListCategories 全量字典,sort_no 升序再 code 升序;给下拉与字典页共用。
@@ -83,8 +124,8 @@ func (s *PGStore) CreateCategory(ctx context.Context, c Category) (int64, error)
 	}
 	var id int64
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO cms_categories(code, name, sort_no, enabled) VALUES($1,$2,$3,$4) RETURNING id`,
-		c.Code, c.Name, c.SortNo, c.Enabled).Scan(&id)
+		`INSERT INTO cms_categories(code, name, sort_no, enabled, name_i18n) VALUES($1,$2,$3,$4,$5::jsonb) RETURNING id`,
+		c.Code, c.Name, c.SortNo, c.Enabled, namesJSON(c.Names)).Scan(&id)
 	if isUniqueViolation(err) {
 		return 0, ErrCategoryTaken
 	}
@@ -116,9 +157,9 @@ func (s *PGStore) UpdateCategory(ctx context.Context, c Category) error {
 		return ErrCategoryInUse
 	}
 	tag, err := s.db.Exec(ctx, `
-		UPDATE cms_categories SET code=$2, name=$3, sort_no=$4, enabled=$5, updated_at=now()
+		UPDATE cms_categories SET code=$2, name=$3, sort_no=$4, enabled=$5, name_i18n=$6::jsonb, updated_at=now()
 		WHERE id=$1`,
-		c.ID, c.Code, c.Name, c.SortNo, c.Enabled)
+		c.ID, c.Code, c.Name, c.SortNo, c.Enabled, namesJSON(c.Names))
 	if isUniqueViolation(err) {
 		return ErrCategoryTaken
 	}
