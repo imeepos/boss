@@ -88,3 +88,33 @@ func TestPGStore_LookupActiveNotFound(t *testing.T) {
 		t.Fatal("expected error for missing app")
 	}
 }
+
+// TestPGStore_ListDueClaimsBatch 回归(持久化整改):ListDue 必须单语句原子领取
+// (UPDATE ... FOR UPDATE SKIP LOCKED + next_attempt_at 推进租约窗口),
+// 并发投递循环/多实例重复调用批次互不相交,同一行不会被同时 POST 两次。
+func TestPGStore_ListDueClaimsBatch(t *testing.T) {
+	mock, _ := pgxmock.NewPool()
+	defer mock.Close()
+	now := time.Now()
+	rows := mock.NewRows([]string{
+		"id", "subscription_id", "event_id", "event_type", "payload",
+		"status", "attempts", "next_attempt_at", "http_status", "last_error", "delivered_at", "created_at",
+		"endpoint_url", "secret",
+	}).AddRow(int64(9), int64(2), "ORD-1:stage:12", "order.stage.done", []byte(`{"ok":true}`),
+		int16(0), 0, now, nil, "", nil, now, "https://ex.test/hook", "ops_s")
+	mock.ExpectQuery(`WITH claimed AS `).
+		WithArgs(pgxmock.AnyArg(), DeliveryBatchMax, float64(claimLeaseSeconds)).
+		WillReturnRows(rows)
+
+	s := NewPGStore(mock)
+	due, err := s.ListDue(context.Background(), now, DeliveryBatchMax)
+	if err != nil || len(due) != 1 {
+		t.Fatalf("ListDue: n=%d err=%v", len(due), err)
+	}
+	if due[0].ID != 9 || due[0].EndpointURL != "https://ex.test/hook" || due[0].Secret != "ops_s" {
+		t.Fatalf("unexpected row: %+v", due[0])
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}

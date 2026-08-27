@@ -1,4 +1,6 @@
 // Webhook 投递循环(M2):周期调用 DeliverDue,清空到期 outbox;失败仅记日志下轮重试。
+// outbox 行持久于 PG,重启不丢;DeliverDue 经 ListDue 原子领取(SKIP LOCKED+租约),
+// 多实例并发运行同一行不会被重复投递。
 package app
 
 import (

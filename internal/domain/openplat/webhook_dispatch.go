@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 )
@@ -22,7 +23,9 @@ func (d *WebhookDispatcher) Emit(ctx context.Context, eventType, eventID string,
 	return int(n), nil
 }
 
-// DeliverDue 处理一批到期投递:逐条 POST(带 HMAC 签名头),按结果落库。
+// DeliverDue 处理一批到期投递(ListDue 原子领取):逐条 POST(带 HMAC 签名头),按结果落库。
+// MarkResult 失败必须留日志:结果写不回时行会在租约到期后重投,静默吞掉会造成
+// 「同一事件反复重投且无迹可查」。返回 error 会中止同批后续投递,故仅记录不中断。
 func (d *WebhookDispatcher) DeliverDue(ctx context.Context) (int, error) {
 	due, err := d.store.ListDue(ctx, time.Now(), DeliveryBatchMax)
 	if err != nil {
@@ -39,15 +42,21 @@ func (d *WebhookDispatcher) DeliverDue(ctx context.Context) (int, error) {
 			"X-BOSS-Signature": "t=" + ts + ",v1=" + SignPayload(dl.Secret, ts, body),
 		}
 		status, postErr := d.poster.Post(dl.EndpointURL, headers, body)
-		if postErr != nil {
-			_ = d.store.MarkResult(ctx, dl.ID, false, 0, postErr.Error())
-			continue
+		switch {
+		case postErr != nil:
+			d.markLogged(ctx, dl.ID, false, 0, postErr.Error())
+		case status >= 200 && status < 300:
+			d.markLogged(ctx, dl.ID, true, status, "")
+		default:
+			d.markLogged(ctx, dl.ID, false, status, fmt.Sprintf("http %d", status))
 		}
-		if status >= 200 && status < 300 {
-			_ = d.store.MarkResult(ctx, dl.ID, true, status, "")
-			continue
-		}
-		_ = d.store.MarkResult(ctx, dl.ID, false, status, fmt.Sprintf("http %d", status))
 	}
 	return len(due), nil
+}
+
+// markLogged 落投递结果;失败仅记日志(投递器循环下一轮按租约重新领取)。
+func (d *WebhookDispatcher) markLogged(ctx context.Context, id int64, ok bool, status int, errMsg string) {
+	if err := d.store.MarkResult(ctx, id, ok, status, errMsg); err != nil {
+		log.Printf("[openplat-webhook] mark result id=%d ok=%v: %v", id, ok, err)
+	}
 }

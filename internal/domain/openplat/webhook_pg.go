@@ -30,15 +30,37 @@ func (s *PGStore) InsertDeliveries(ctx context.Context, eventType, eventID strin
 const dueCols = `d.id, d.subscription_id, d.event_id, d.event_type, d.payload::text,
 	d.status, d.attempts, d.next_attempt_at, d.http_status, d.last_error, d.delivered_at, d.created_at`
 
-// ListDue 取到期投递(含订阅端点与应用 Secret)。
+// claimLeaseSeconds 领取租约(秒):ListDue 把到期行的 next_attempt_at 推进到
+// now()+租约窗口。同批投递最长耗时约 DeliveryBatchMax×10s(HTTP 超时),取 120s 覆盖
+// 正常批次;投递器崩溃时行在租约到期后自动重新可见,不丢失、不永久滞留。
+const claimLeaseSeconds = 120
+
+// ListDue 原子领取一批到期投递并返回行数据(含订阅端点与应用 Secret)。
+// 单语句 UPDATE...FOR UPDATE SKIP LOCKED 完成「领取」:并发循环/多实例重复调用
+// 拿到的批次互不相交,同一行不会被同时投给订阅端点两次;崩溃恢复见 claimLeaseSeconds。
 func (s *PGStore) ListDue(ctx context.Context, now time.Time, limit int) ([]DueDelivery, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT `+dueCols+`, sub.endpoint_url, app.secret
-		FROM open_webhook_deliveries d
+		WITH claimed AS (
+			UPDATE open_webhook_deliveries d
+			SET next_attempt_at = now() + ($3::float8 * interval '1 second')
+			WHERE d.id IN (
+				SELECT d2.id FROM open_webhook_deliveries d2
+				JOIN open_webhook_subscriptions s2 ON s2.id = d2.subscription_id
+				JOIN open_apps a2 ON a2.id = s2.app_id
+				WHERE d2.status = 0 AND d2.next_attempt_at <= $1
+				ORDER BY d2.next_attempt_at LIMIT $2
+				FOR UPDATE OF d2 SKIP LOCKED
+			)
+			RETURNING `+dueCols+`
+		)
+		SELECT c.id, c.subscription_id, c.event_id, c.event_type, c.payload,
+			c.status, c.attempts, c.next_attempt_at, c.http_status, c.last_error, c.delivered_at, c.created_at,
+			sub.endpoint_url, app.secret
+		FROM claimed c
+		JOIN open_webhook_deliveries d ON d.id = c.id
 		JOIN open_webhook_subscriptions sub ON sub.id = d.subscription_id
 		JOIN open_apps app ON app.id = sub.app_id
-		WHERE d.status = 0 AND d.next_attempt_at <= $1
-		ORDER BY d.next_attempt_at LIMIT $2`, now, limit)
+		ORDER BY c.next_attempt_at`, now, limit, float64(claimLeaseSeconds))
 	if err != nil {
 		return nil, fmt.Errorf("openplat: list due: %w", err)
 	}
@@ -47,11 +69,17 @@ func (s *PGStore) ListDue(ctx context.Context, now time.Time, limit int) ([]DueD
 	for rows.Next() {
 		var dl DueDelivery
 		var next, delivered, created pgtype.Timestamptz
+		// http_status/last_error 允许 NULL(从未投递过的行),必须可空扫描;
+		// 此前固定 *int 扫描使首轮领取即报错,待投递任务永远无法处理。
+		var httpStatus pgtype.Int4
+		var lastErr pgtype.Text
 		if err := rows.Scan(&dl.ID, &dl.SubscriptionID, &dl.EventID, &dl.EventType, &dl.Payload,
-			&dl.Status, &dl.Attempts, &next, &dl.HTTPStatus, &dl.LastError, &delivered, &created,
+			&dl.Status, &dl.Attempts, &next, &httpStatus, &lastErr, &delivered, &created,
 			&dl.EndpointURL, &dl.Secret); err != nil {
 			return nil, fmt.Errorf("openplat: scan due: %w", err)
 		}
+		dl.HTTPStatus = int(httpStatus.Int32)
+		dl.LastError = lastErr.String
 		dl.NextAttemptAt = fmtTime(next)
 		dl.DeliveredAt = fmtTime(delivered)
 		dl.CreatedAt = fmtTime(created)
@@ -101,10 +129,15 @@ func (s *PGStore) ListDeliveries(ctx context.Context, subscriptionID int64) ([]D
 	for rows.Next() {
 		var dl Delivery
 		var next, delivered, created pgtype.Timestamptz
+		// http_status/last_error 允许 NULL,可空扫描(与 ListDue 同口径)。
+		var httpStatus pgtype.Int4
+		var lastErr pgtype.Text
 		if err := rows.Scan(&dl.ID, &dl.SubscriptionID, &dl.EventID, &dl.EventType, &dl.Payload,
-			&dl.Status, &dl.Attempts, &next, &dl.HTTPStatus, &dl.LastError, &delivered, &created); err != nil {
+			&dl.Status, &dl.Attempts, &next, &httpStatus, &lastErr, &delivered, &created); err != nil {
 			return nil, fmt.Errorf("openplat: scan delivery: %w", err)
 		}
+		dl.HTTPStatus = int(httpStatus.Int32)
+		dl.LastError = lastErr.String
 		dl.NextAttemptAt = fmtTime(next)
 		dl.DeliveredAt = fmtTime(delivered)
 		dl.CreatedAt = fmtTime(created)
