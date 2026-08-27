@@ -309,32 +309,6 @@ func TestPGStore_ListStocktakes(t *testing.T) {
 	}
 }
 
-func TestPGStore_CreateStocktake(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer mock.Close()
-
-	mock.ExpectQuery(`INSERT INTO stocktakes`).
-		WithArgs(int64(1), "root.luzon.ncr", int16(0), int32(0), "DOING").
-		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
-
-	s := NewPGStore(mock)
-	id, err := s.CreateStocktake(context.Background(), Stocktake{
-		LegalEntityID: 1, Scope: "root.luzon.ncr", Progress: 0, DiffCount: 0, Status: "DOING",
-	})
-	if err != nil {
-		t.Fatalf("CreateStocktake: %v", err)
-	}
-	if id != 2 {
-		t.Fatalf("id=%d, want 2", id)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("unmet: %v", err)
-	}
-}
-
 func TestPGStore_ListAssignments(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {

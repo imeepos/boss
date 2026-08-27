@@ -173,34 +173,7 @@ func (s *PGStore) SetAssetStatus(ctx context.Context, assetID int64, status stri
 }
 
 // ListStocktakes 列出全部盘点任务。
-
-// CreateStocktake 新建盘点任务,返回自增 id。
-func (s *PGStore) CreateStocktake(ctx context.Context, st Stocktake) (int64, error) {
-	var id int64
-	err := s.db.QueryRow(ctx, `
-		INSERT INTO stocktakes(legal_entity_id, scope, progress, diff_count, status)
-		VALUES($1,$2,$3,$4,$5) RETURNING id`,
-		st.LegalEntityID, st.Scope, st.Progress, st.DiffCount, st.Status).Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("asset: create stocktake: %w", err)
-	}
-	return id, nil
-}
-
-// HandleStocktakeDiff 盘点差异项处理(asset.yaml handleStocktakeDiff):差异处理完任务置 DONE。
-
-// HandleStocktakeDiff 盘点差异项处理(asset.yaml handleStocktakeDiff):差异处理完任务置 DONE。
-func (s *PGStore) HandleStocktakeDiff(ctx context.Context, taskID int64) error {
-	tag, err := s.db.Exec(ctx,
-		`UPDATE stocktakes SET status = 'DONE' WHERE id = $1 AND status = 'DOING'`, taskID)
-	if err != nil {
-		return fmt.Errorf("asset: handle stocktake diff: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
+// CreateStocktake / HandleStocktakeDiff 见 pg_stocktake.go(S10 盘点差异闭环)。
 
 // ListAssignments 列出资产持有台账,按生效时间升序。
 

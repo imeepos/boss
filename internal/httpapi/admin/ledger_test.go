@@ -58,6 +58,15 @@ type fakeAsset struct {
 	asset.AssetService
 	stocktake    *asset.Stocktake
 	diffTaskID   int64
+	diffErr      error
+	scanned      struct {
+		taskID, assetID int64
+		status          string
+	}
+	itemHandle   struct {
+		taskID, itemID int64
+		action, note   string
+	}
 	replacement  *asset.Replacement
 	assignedID   int64
 	assignedUser struct {
@@ -72,6 +81,18 @@ func (f *fakeAsset) CreateStocktake(_ context.Context, s asset.Stocktake) (int64
 }
 func (f *fakeAsset) HandleStocktakeDiff(_ context.Context, id int64) error {
 	f.diffTaskID = id
+	return f.diffErr
+}
+func (f *fakeAsset) ScanStocktake(_ context.Context, taskID, assetID int64, status string) (int64, string, error) {
+	f.scanned.taskID, f.scanned.assetID, f.scanned.status = taskID, assetID, status
+	return 3, "MISMATCH", nil
+}
+func (f *fakeAsset) ListStocktakeItems(_ context.Context, taskID int64) ([]asset.StocktakeItem, error) {
+	return []asset.StocktakeItem{{ID: 3, TaskID: taskID, AssetID: 7,
+		ExpectedStatus: "IN_STOCK", ScannedStatus: "DEPLOYED", Kind: "MISMATCH", Resolution: "OPEN"}}, nil
+}
+func (f *fakeAsset) HandleStocktakeItem(_ context.Context, taskID, itemID int64, action, note string, _ int64) error {
+	f.itemHandle.taskID, f.itemHandle.itemID, f.itemHandle.action, f.itemHandle.note = taskID, itemID, action, note
 	return nil
 }
 func (f *fakeAsset) CreateReplacement(_ context.Context, r asset.Replacement) (int64, error) {
@@ -235,6 +256,76 @@ func TestLedgerWriteHandlers(t *testing.T) {
 		_ = json.NewDecoder(w2.Body).Decode(&out2)
 		if out2.Code != int(apitypes.CodeInvalidParam) || fa2.assignedID != 0 {
 			t.Fatalf("left worker code=%d assignedID=%d", out2.Code, fa2.assignedID)
+		}
+	})
+	t.Run("POST /stocktakes/:id/scans 扫码回填+非法状态拒绝", func(t *testing.T) {
+		fa := &fakeAsset{}
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/1/scans", `{"assetId":7,"status":"DEPLOYED"}`)
+		var out struct {
+			Code int `json:"code"`
+			Data struct {
+				ItemId int64  `json:"itemId"`
+				Kind   string `json:"kind"`
+			}
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || out.Data.ItemId != 3 || out.Data.Kind != "MISMATCH" {
+			t.Fatalf("code=%d data=%+v", out.Code, out.Data)
+		}
+		if fa.scanned.status != "DEPLOYED" || fa.scanned.assetID != 7 {
+			t.Fatalf("scanned=%+v", fa.scanned)
+		}
+		if w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/1/scans", `{"assetId":7,"status":"NOPE"}`); w.Code != 200 {
+			t.Fatal(w.Code)
+		}
+	})
+
+	t.Run("GET /stocktakes/:id/items 明细清单", func(t *testing.T) {
+		eng := ledgerRouter(&fakeResourceSub{}, &fakeAsset{}, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
+		w := doJSON(eng, http.MethodGet, "/api/admin/v1/stocktakes/1/items", "")
+		var out struct {
+			Code int `json:"code"`
+			Data struct {
+				Items []asset.StocktakeItem `json:"items"`
+			}
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || len(out.Data.Items) != 1 || out.Data.Items[0].Kind != "MISMATCH" {
+			t.Fatalf("code=%d items=%+v", out.Code, out.Data.Items)
+		}
+	})
+
+	t.Run("POST items/:id/handle 处置+FIX缺note拒绝", func(t *testing.T) {
+		fa := &fakeAsset{}
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/1/items/3/handle", `{"action":"FIX"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeInvalidParam) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeInvalidParam)
+		}
+		if w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/1/items/3/handle",
+			`{"action":"ESCALATE","note":"资产下落不明,上报处理"}`); w.Code != 200 {
+			t.Fatal(w.Code)
+		}
+		if fa.itemHandle.action != "ESCALATE" || fa.itemHandle.itemID != 3 || fa.itemHandle.note == "" {
+			t.Fatalf("itemHandle=%+v", fa.itemHandle)
+		}
+	})
+
+	t.Run("POST diff-handle 存在未处置差异→40900", func(t *testing.T) {
+		fa := &fakeAsset{diffErr: asset.ErrDiffPending}
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/1/diff-handle", "")
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeConflict) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeConflict)
 		}
 	})
 }

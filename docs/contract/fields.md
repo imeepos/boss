@@ -629,7 +629,37 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 状态变更历史（TS 实体）：`port_change_history`，端口每次状态/占用变化一行（变更后 status + order_id 快照 + changed_at），历史不随当前状态漂移。
 > 区域/企业锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域）、`legal_entity_id`/`legal_entity_name`（所属设备企业），按地区/企业统计端口；`lo_accounts` 同挂 `region_id`/`region_name`（客户所在经营区域）。
 
-### 4.3 replacements（换新单/设备更换单，000007 + 000157 派单三列）
+### 4.2.1 stocktakes / stocktake_items（盘点任务与差异明细，迁移 000007/000156，S10 流程）
+
+stocktakes（盘点任务，页面 `/ams/stock`「盘点管理」）：
+
+| 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |
+|:---------|:-------|:--------------|:----------|
+| 盘点任务 | `ID` | id | BIGSERIAL PK |
+| 所属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities（建单快照范围） |
+| 范围 | `Scope` | scope | `全库`/空=主体全部资产;否则 region_name 精确匹配 |
+| 进度 | `Progress` | progress | SMALLINT 0~100,实扫/计划快照行,扫码自动重算 |
+| 差异项 | `DiffCount` | diff_count | MISMATCH/MISSING/EXTRA 行数 |
+| 状态 | `Status` | status | DOING/DONE（见 terms.md 第 4 节;存在未处置差异禁止 DONE） |
+
+stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐条处置）：
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:-------|:------|:----------|
+| `TaskID` | task_id | BIGINT → stocktakes |
+| `AssetID` | asset_id | BIGINT 软引用 assets,(task_id,asset_id) 唯一 |
+| `ExpectedStatus` | expected_status | 建单时资产状态快照;NULL=计划外(EXTRA 行) |
+| `ScannedStatus` | scanned_status | 实盘所见状态;NULL=未扫 |
+| `Kind` | kind | PENDING/OK/MISMATCH/MISSING/EXTRA(关单时未扫置 MISSING) |
+| `Resolution` | resolution | OPEN/CONFIRMED/FIXED/ESCALATED(确认/修正/上报) |
+| `HandledBy/HandledAt` | handled_by / handled_at | 处置人账号/时间 |
+| `Note` | note | 处理说明(FIX/ESCALATE 必填,≤255) |
+
+> 流程口径（S10）：建任务→扫码回填（预期行判 OK/MISMATCH、计划外行记 EXTRA、进度自动重算）→差异逐条处置
+> （CONFIRM=MISMATCH 时按实盘修正 assets.status 并落 asset_lifecycles；FIX=台账为准；ESCALATE=上报转人工）→全处置完才可关单
+> （`POST /stocktakes/{taskId}/diff-handle`,存在 OPEN 差异返回 40900）。
+
+### 4.3 replacements（换新单/设备更换单，000007 + 000159 派单三列）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
 |:---------|:-------|:------|:----------|
@@ -638,7 +668,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 原因 | `Reason` | reason | 如 光猫故障 |
 | 优先级 | `Priority` | priority | HIGH/MEDIUM/LOW |
 | 状态 | `Status` | status | PENDING/DOING/DONE/FAILED（见 terms.md 第 4 节） |
-| 派单师傅 | `WorkerID`/`WorkerName` | worker_id/worker_name | 000157；worker_id FK→workers，name 快照（0/空=未派） |
+| 派单师傅 | `WorkerID`/`WorkerName` | worker_id/worker_name | 000159；worker_id FK→workers，name 快照（0/空=未派） |
 | 完成时间 | `FinishedAt` | finished_at | TIMESTAMPTZ 可空；DONE/FAILED 时回填 |
 
 > 状态机：PENDING --assign(派单,POST /admin/replacements/{id}/assign)→ DOING --complete(师傅端 POST /api/worker/v1/replacements/{id}/complete)→ DONE/FAILED；终态不可再流转（adopted note 2026-08-27-replacement-ticket-flow）。

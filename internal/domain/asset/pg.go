@@ -20,6 +20,12 @@ var ErrForeignKeyViolation = errors.New("asset: foreign key violation")
 // 用于 POST /provision/{assets,tags} 同步回填时,反向记录已被占用的场景。
 var ErrBindingConflict = errors.New("asset: tag-asset binding conflict")
 
+// ErrDiffPending 盘点存在未处置差异,禁止关单。
+var ErrDiffPending = errors.New("asset: stocktake diff items pending")
+
+// ErrStocktakeState 盘点任务/明细状态不允许该操作(已关单/已处置/无需处置)。
+var ErrStocktakeState = errors.New("asset: stocktake state invalid")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)

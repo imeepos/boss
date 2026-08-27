@@ -69,6 +69,13 @@ var orphanChecks = []struct {
 	{"orders.stage vs order_stages rows", `SELECT count(*), COALESCE((array_agg(o.id ORDER BY o.id))[1:10], '{}'::bigint[])
 		FROM orders o
 		WHERE (SELECT count(*)::int FROM order_stages os WHERE os.order_id = o.id) <> o.stage`},
+	// 资产↔标签双向关联一致性(internal/domain/asset/pg_write.go 双绑回填防线):
+	// 历史 124 条 B 端孤儿由此类单边写入产生;DB 部分唯一约束 000158 已部署,
+	// 但应用层遗漏/未来回归仍可能产生,本巡检作为每日防线。
+	{"assets.tag_id -> tags", `SELECT count(*), COALESCE((array_agg(a.id ORDER BY a.id))[1:10], '{}'::bigint[])
+		FROM assets a WHERE a.tag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM tags WHERE id = a.tag_id AND bound_asset_id = a.id)`},
+	{"tags.bound_asset_id -> assets", `SELECT count(*), COALESCE((array_agg(t.id ORDER BY t.id))[1:10], '{}'::bigint[])
+		FROM tags t WHERE t.bound_asset_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM assets WHERE id = t.bound_asset_id AND tag_id = t.id)`},
 }
 
 // PatrolOrphans 逐项跑巡检;单项 SQL 失败即中止(巡检只读,失败=连接问题)。
