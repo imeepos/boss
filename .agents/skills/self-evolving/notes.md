@@ -1085,3 +1085,12 @@
 - skill 有没有提前警告？ 有:红线 #1(编辑前 Read)、红线 #6(主题断言要先 grep token 定义,本任务里所有 shell-* 令牌在 tokens.css 第 19-120 行 light/dark 两套都查到了)、红线 #7(模型可能不支持图像,本会话再次确认)。
 - 重来一次会怎么做？ ① 用 read_image 解析 cdp 截图前,把"双主题×三语言=6 张"先一次性拍齐一次性读,避免分次 IO。② 在 types.ts 选插入位置时,优先选已有性质接近的页面相邻位置(reportPage/analyticsPage 都是 boss 域统计页,放在 reportPage 后比放在末尾更利于后人 grep)。③ AR summary 的 dt/dd 和账龄桶数值原本无主题色,顺手补 text-[var(--shell-content-text)] / text-[var(--shell-heading)],与全站令牌约定统一,比单纯翻译更稳。
 - 收获:boss/service-metrics 三语采集真实通过;light 卡背景白色、卡背景 #FFFFFF;dark 卡背景 #10203F,文本清晰对比;console 0 错误。typecheck/test(321)/build 全过;Protocol 走完 worktree→commit→push→ff-merge→push main→worktree remove→branch -d→push delete。改动主控 5 文件/+162/−13。
+
+## 2026-10-01 回访评价页多语言+多主题适配
+
+- 哪个坑浪费了最多时间？
+  - 测试栈错配:环境 environment=node 又无 @testing-library/react,首版 6 个测试 (含 SSR + useState 异步交互) 全红,反复试 renderToStaticMarkup 配合 await Promise.resolve 期望 setState 落地的伪方案。正确做法是改 SSR 骨架测试 + 抽 filterFeedback 纯函数测试。
+- 这个 skill 有没有提前警告我？
+  - 没有明确写过"web/admin 项目 vitest 仅纯函数/SSR 测试栈"。已在 references/lessons.md + known-issues.md 沉淀三件套检测 (grep environment + testing-library + fireEvent)。
+- 重来一次我会怎么做？
+  - 开工前先 `grep "environment" web/admin/vite.config.ts` + `grep testing-library web/admin/pnpm-lock.yaml` + `grep -E "fireEvent|@testing-library" web/admin/src --include "*.test.*" | wc -l`,确认测试栈范围;绝不写 useState 异步 + fireEvent 的交互测试。

@@ -342,3 +342,10 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - pnpm 装依赖报 "EACCES: mkdir '/Volumes/sker'":store-dir 全局配置指向未挂载卷(pnpm v10 store path 与 config list 不一致,以 `pnpm store path` 为准);修法 `pnpm install --store-dir /Users/imeepos/ext512/dev-cache/pnpm-store`,别改全局配置。
 - pgxmock JSONB 列 AddRow 喂裸 JSON 字符串(如 `{}` 或 `{"en":"x"}`),不要带 SQL 单引号(`'{}'` 会进 json.Unmarshal 报 invalid character '\'')。
 - contract-sync 门禁在主树有 24 项存量失败(license 域 snake_case json tag + /license 路由未登记 + menu.def license key),与业务改动无关;对比基线须先跑一次 main 再 diff,别被数量差误导。
+
+## vitest 组件测试栈缺 testing-library
+
+**症状**：写 fireEvent / screen.getByText / waitFor 用例报 `Failed to load url @testing-library/react (resolved id: ...)`。
+**原因**：web/admin 的 vite.config.ts test.environment=node 且 pnpm-lock.yaml 无 @testing-library/react,项目 vitest 只支持纯函数 + SSR 渲染测试。
+**修法**：交互用例改写为 SSR 骨架测试(renderToStaticMarkup + 断言 html 包含 i18n 文案/列名/占位符)+ 把交互逻辑(filter/sort/review)抽成纯函数单独 vitest。
+**检测**：开工前 `grep -E "fireEvent|@testing-library" src` 统计引用 + `grep "environment" vite.config.ts` + `grep testing-library pnpm-lock.yaml` 三件套。

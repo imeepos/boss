@@ -382,3 +382,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当门禁(check-contract-sync 等)在 feature 分支红时,修复是先回主树复跑同门禁:同红=并行会话存量(不碰、不修、总结里注明),仅自己改动引入的红才属于本次修复范围;若存量红恰好落在本任务调研域内,做成独立小提交(零行为变更)单独 revert。
 - 当侧栏兄弟菜单项互为路径前缀(官网内容 /boss/site 与官网分类 /boss/site/cats)时,NavLink 默认前缀匹配会让访问子项时父项也高亮(双击亮);修复是激活判定精确化:精确路径激活,深层路由仅当其自身不是其它菜单项完整路径时算"同页"(如 /boss/site/new 高亮官网内容,/boss/site/cats 不高亮)——2026-10-01 抽成 menu.def.ts 的 isNavActive 纯函数,配 vitest;react-router 6.30.4 已移除 NavLink isActive prop,改前先查 d.ts。
 - 列表页 `columns` 数组若存字段标识符(code/name/sort)而非译文,三语 locale 下表头都裸英文(zh-CN 界面也显示 code);列头数组要直接放本地化标签(如 ['标识码','名称','排序','启用']),与 releasePage/customer 等既有页面口径一致——2026-10-01 siteCatsPage 修正,sitePage/knowledgePage 仍留同源缺口。
+
+- 项目 vitest environment=node 且无 @testing-library/react 时,组件测试走 renderToStaticMarkup(SSR 骨架)+ 抽纯函数单测,不写 useState 异步交互测试。开工前 grep vite.config.ts test.environment + pnpm-lock.yaml testing-library/react + 项目内 fireEvent 引用计数三件套。
