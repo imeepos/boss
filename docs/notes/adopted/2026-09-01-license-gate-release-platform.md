@@ -49,3 +49,23 @@ boss 系统拿到授权证书才能正常使用全部功能,授权采用**激活
 - 代码零迁移(无新表)。新增 `internal/domain/license`(验签内核/service/store/client),
   `internal/pkg/middleware/license.go`(门禁),admin 授权页(web/admin/src/pages/boss/license),i18n/menu/路由注册。
 - 契约同步:docs/contract/fields.md 追加"系统授权"页列。
+---
+
+## Amended(B 档):去掉开关,公钥编译期内嵌强制门禁
+
+原裁定第 4 条"门禁开关 `BOSS_LICENSE_ENABLED`"被推翻(2026-09-01 用户质疑:
+开关能被部署方直接关闭,授权码失去意义)。新裁定:
+
+1. **删除 `BOSS_LICENSE_ENABLED` 环境变量开关**——运行时没有任何配置可以关闭门禁。
+2. **公钥编译期内嵌**:`internal/pkg/buildinfo.LicensePublicKeyHex` 经
+   `-ldflags -X` 注入(见 Makefile `build-server`);wiring 从 buildinfo 读公钥,
+   不再读环境变量。内嵌的意义不是藏公钥(公钥本可公开),而是**防止公钥被替换**:
+   公钥若在 env/配置文件里,攻击者可把自己的公钥写进去再用自己的私钥签假证书绕过;
+   内嵌后换公钥必须重新编译,绕过门槛从"改一行配置"变成"破解二进制"。
+3. **门禁语义**:注入公钥 → 强制门禁(无证书/失效 → 403 LICENSE_REQUIRED,激活页豁免可达);
+   未注入 → 开发构建,打 ALERT 日志(`[license] ALERT: 未内嵌授权公钥...`)后放行,
+   便于无证书环境开发调试。内嵌公钥非法 → ALERT 日志,门禁不装配(不静默)。
+4. **证书下发不受影响**:证书仍是运行时文件(`/var/lib/boss/license.json`),
+   激活页(在线兑码)与预签文件(离线)两条通道都保留。内嵌的是验签基准,
+   下发的是每台机器的证书——两回事,互不冲突。
+5. **放弃**:环境变量开关(可被关闭);`BOSS_LICENSE_PUBLIC_KEY_HEX` 运行时配置(可被替换)。
