@@ -16,6 +16,10 @@ var ErrNotFound = errors.New("asset: not found")
 // ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
 var ErrForeignKeyViolation = errors.New("asset: foreign key violation")
 
+// ErrBindingConflict 资产/标签双绑冲突:目标已被另一方绑定。
+// 用于 POST /provision/{assets,tags} 同步回填时,反向记录已被占用的场景。
+var ErrBindingConflict = errors.New("asset: tag-asset binding conflict")
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)

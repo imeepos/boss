@@ -5,6 +5,7 @@ package asset
 import (
 	"context"
 	"fmt"
+	"log/slog"
 )
 
 // CreateBatch 新建入库批次,返回自增 id。
@@ -34,7 +35,22 @@ func (s *PGStore) CreateBatch(ctx context.Context, b AssetBatch) (int64, error) 
 // ListTags 列出全部电子标签。
 
 // CreateTag 新建电子标签,返回自增 id。
+// 预绑定资产时同步回填 assets.tag_id,并校验双绑一致性:
+// - 资产不存在 → ErrForeignKeyViolation(置备侧孤儿防御)
+// - 资产已被其他标签绑定 → ErrBindingConflict(阻断隐性双绑)
+// - 资产已被本标签占用 → 静幂等(回填 0 行,ALERT 留痕便于人工核对)
 func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
+	// 预绑定前先校验资产存在(防孤儿标签)
+	if t.BoundAssetID > 0 {
+		ok, err := s.exists(ctx, "assets", t.BoundAssetID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("asset: bound asset %d: %w", t.BoundAssetID, ErrForeignKeyViolation)
+		}
+	}
+
 	var id int64
 	err := s.db.QueryRow(ctx,
 		`INSERT INTO tags(legal_entity_id, tag_no, epc_code, band, bound_asset_id, status, battery)
@@ -42,6 +58,25 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 		t.LegalEntityID, t.TagNo, t.EpcCode, t.Band, idOrNil(t.BoundAssetID), t.Status, t.Battery).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("asset: create tag: %w", err)
+	}
+
+	// 预绑定时回填 assets.tag_id;冲突即返 ErrBindingConflict 让上层显式拒绝。
+	if t.BoundAssetID > 0 {
+		tag, err := s.db.Exec(ctx,
+			`UPDATE assets SET tag_id = $2
+			 WHERE id = $1 AND (tag_id IS NULL OR tag_id = $2)`,
+			t.BoundAssetID, id)
+		if err != nil {
+			return 0, fmt.Errorf("asset: backfill asset tag_id: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			// 资产.tag_id 已被其他标签占用 → 阻断隐性双绑。
+			slog.WarnContext(ctx, "[asset] TAG BIND CONFLICT",
+				"asset_id", t.BoundAssetID, "new_tag_id", id, "tag_no", t.TagNo,
+				"reason", "asset.tag_id already bound to another tag")
+			return 0, fmt.Errorf("asset: asset %d already bound to another tag: %w",
+				t.BoundAssetID, ErrBindingConflict)
+		}
 	}
 	return id, nil
 }
@@ -83,11 +118,22 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 	}
 	// tag 双向绑定回填:assets.tag_id 写入时同步 tags.bound_asset_id/status,
 	// 与环节9 扫码核对(VerifyScan 要求 bound_asset_id 非空)口径对齐。
+	// 历史修复(d397e40)用 `bound_asset_id IS NULL` 哑条件会在标签侧先建并填 bound 时
+	// 静默跳过回填 → 资产变孤儿。改为显式比对目标值,冲突即返 ErrBindingConflict。
 	if a.TagID > 0 {
-		if _, err := s.db.Exec(ctx,
+		tag, err := s.db.Exec(ctx,
 			`UPDATE tags SET bound_asset_id = $2, status = 'BOUND'
-			 WHERE id = $1 AND bound_asset_id IS NULL`, a.TagID, id); err != nil {
-			return 0, fmt.Errorf("asset: bind tag: %w", err)
+			 WHERE id = $1 AND (bound_asset_id IS NULL OR bound_asset_id = $2)`,
+			a.TagID, id)
+		if err != nil {
+			return 0, fmt.Errorf("asset: backfill tag bound_asset_id: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			slog.WarnContext(ctx, "[asset] TAG BIND CONFLICT",
+				"tag_id", a.TagID, "new_asset_id", id, "asset_code", a.AssetCode,
+				"reason", "tag.bound_asset_id already bound to another asset")
+			return 0, fmt.Errorf("asset: tag %d already bound to another asset: %w",
+				a.TagID, ErrBindingConflict)
 		}
 	}
 	return id, nil
