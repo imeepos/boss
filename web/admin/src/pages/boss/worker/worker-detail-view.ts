@@ -88,6 +88,14 @@ export const WORKER_STATUS_KEY: Record<number, string> = {
   0: 'left',
 }
 
+/** 抽屉级字面量文案键:worker-detail-drawer.tsx 直接引用、不在规格列 k / 字段 labelKey 内
+ * (概览芯片/展开收起/段内布尔)。保持与 worker-detail-drawer.tsx 字面量同步,
+ * 由 worker-detail-i18n.test.ts 兜底——打错引用键即门禁红灯,而非线上露出英文键。 */
+export const DRAWER_W_KEYS = [
+  'dStatTickets', 'dStatTotalTickets', 'dStatMessages', 'dStatFeedbacks',
+  'dYes', 'dNo', 'dSeeAll', 'dCollapse', 'dLeftAt', 'dJoinedAt',
+] as const
+
 /** 主档展示字段:值取 GET /workers/{workerId} 主档;groupId → 组名由列表行传入,
  * regionId → 区域名尽力经 /regions 映射(无权限时降级显示 id)。 */
 export const WORKER_PROFILE_FIELDS = [
