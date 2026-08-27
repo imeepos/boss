@@ -1508,7 +1508,6 @@ const enUS: Translations = {
       stDraft: 'Draft',
       stPublished: 'Published',
       stOffline: 'Offline',
-      statusOptions: ['DRAFT','PUBLISHED','OFFLINE'],
       saveFail: 'Save failed',
       actionFail: 'Action failed',
       total: '{count} records',

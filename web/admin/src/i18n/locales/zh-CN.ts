@@ -1508,7 +1508,6 @@ const zhCN: Translations = {
       stDraft: '草稿',
       stPublished: '已发布',
       stOffline: '已下线',
-      statusOptions: ['DRAFT','PUBLISHED','OFFLINE'],
       saveFail: '保存失败',
       actionFail: '操作失败',
       total: '共 {count} 条',

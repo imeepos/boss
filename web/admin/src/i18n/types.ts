@@ -1333,7 +1333,6 @@ export interface Translations {
       stDraft: string
       stPublished: string
       stOffline: string
-      statusOptions: string[]
       saveFail: string
       actionFail: string
       total: string

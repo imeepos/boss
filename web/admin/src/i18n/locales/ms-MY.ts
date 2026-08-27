@@ -1508,7 +1508,6 @@ const msMY: Translations = {
       stDraft: 'Draf',
       stPublished: 'Diterbitkan',
       stOffline: 'Luar talian',
-      statusOptions: ['DRAFT','PUBLISHED','OFFLINE'],
       saveFail: 'Gagal simpan',
       actionFail: 'Tindakan gagal',
       total: '{count} rekod',
