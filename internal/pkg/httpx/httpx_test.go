@@ -1,11 +1,14 @@
 package httpx
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -132,6 +135,64 @@ func TestRecordAudit(t *testing.T) {
 	e := fw.events[0]
 	if e.Action != "create" || e.TargetType != "order" || e.TargetID != "9" || e.IP == "" {
 		t.Fatalf("event = %+v", e)
+	}
+}
+
+// flakyAuditWriter 首次返回错误、其后成功的瞬时故障替身。
+type flakyAuditWriter struct {
+	fails  int
+	writes int
+}
+
+func (f *flakyAuditWriter) Write(context.Context, audit.Event) error {
+	f.writes++
+	if f.writes <= f.fails {
+		return errors.New("db connection reset")
+	}
+	return nil
+}
+
+func (*flakyAuditWriter) List(context.Context, audit.Query) ([]audit.Entry, error) { return nil, nil }
+
+// TestRecordAuditTransientFailureRetries 回归(持久化整改):瞬时故障重试后成功,
+// 审计不丢——此前 `_ = Write` 直接吞错,一次抖动即永久丢失该操作留痕。
+func TestRecordAuditTransientFailureRetries(t *testing.T) {
+	c, _ := testCtx()
+	fw := &flakyAuditWriter{fails: 1}
+	a := &app.Application{Audit: fw}
+	RecordAudit(a, c, "charge", "order", "12", map[string]any{"amount": 199})
+	if fw.writes < 2 {
+		t.Fatalf("writes = %d, want retry after transient failure", fw.writes)
+	}
+}
+
+// alwaysFailWriter 永远失败的持久故障替身。
+type alwaysFailWriter struct{ writes int }
+
+func (f *alwaysFailWriter) Write(context.Context, audit.Event) error {
+	f.writes++
+	return errors.New("pg down")
+}
+
+func (*alwaysFailWriter) List(context.Context, audit.Query) ([]audit.Entry, error) { return nil, nil }
+
+// TestRecordAuditPermanentFailureLogsPayload 回归:最终失败必须留下含完整载荷的告警日志
+// ([audit] WRITE FAILED),供人工补记,不允许无迹可查地静默丢失。
+func TestRecordAuditPermanentFailureLogsPayload(t *testing.T) {
+	c, _ := testCtx()
+	c.Set(middleware.CtxClaims, &auth.Claims{AccountID: 42})
+	fw := &alwaysFailWriter{}
+	a := &app.Application{Audit: fw}
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+
+	RecordAudit(a, c, "role.grant", "account", "7", map[string]any{"role": "ADMIN"})
+	out := buf.String()
+	if !strings.Contains(out, "[audit] WRITE FAILED") ||
+		!strings.Contains(out, "role.grant") || !strings.Contains(out, `"role":"ADMIN"`) {
+		t.Fatalf("missing loud failure log:\n%s", out)
 	}
 }
 

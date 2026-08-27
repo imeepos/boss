@@ -2,7 +2,11 @@ package httpx
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -22,15 +26,49 @@ func Respond(c *gin.Context, code apitypes.Code, data any) {
 	c.JSON(200, gin.H{"code": code, "msg": code.Message(), "data": data})
 }
 
-// RecordAudit 记录关键操作审计(异步、尽力而为);未装配审计 writer 时静默跳过。
+// auditWriteParams 审计写入的失败处理参数:同步落库后单次快速重试,
+// 覆盖连接抖动等瞬时故障;仍失败则以告警日志留全量载荷供人工补记。
+const (
+	auditWriteAttempts = 2
+	auditWriteTimeout  = 5 * time.Second
+	auditRetryGap      = 200 * time.Millisecond
+)
+
+// RecordAudit 记录关键操作审计(同步落库);未装配审计 writer 时静默跳过。
+// 与请求上下文解耦(WithoutCancel):客户端中途断开不得丢业务留痕。
+// 写入瞬时失败重试一次;最终失败记 [audit] WRITE FAILED 日志并附完整事件,
+// 运维可据此补记——审计是业务事实的一部分,静默丢弃等于事实缺口。
 func RecordAudit(a *app.Application, c *gin.Context, action, targetType, targetID string, detail map[string]any) {
 	if a == nil || a.Audit == nil {
 		return
 	}
-	_ = a.Audit.Write(c.Request.Context(), audit.Event{
+	ev := audit.Event{
 		AccountID: ClaimsAccountID(c), Action: action, TargetType: targetType, TargetID: targetID,
 		Detail: detail, IP: c.ClientIP(),
-	})
+	}
+	var err error
+	for i := 0; i < auditWriteAttempts; i++ {
+		if i > 0 {
+			time.Sleep(auditRetryGap)
+		}
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), auditWriteTimeout)
+		err = a.Audit.Write(ctx, ev)
+		cancel()
+		if err == nil {
+			return
+		}
+	}
+	logAuditFailure(ev, err)
+}
+
+// logAuditFailure 最终失败兜底:一行日志携带重建审计所需的全部字段。
+func logAuditFailure(e audit.Event, err error) {
+	d, merr := json.Marshal(e.Detail)
+	if merr != nil {
+		d = []byte(fmt.Sprintf("%v", e.Detail))
+	}
+	log.Printf("[audit] WRITE FAILED need-manual-recovery account=%d action=%s target=%s/%s ip=%s detail=%s err=%v",
+		e.AccountID, e.Action, e.TargetType, e.TargetID, e.IP, d, err)
 }
 
 // ClaimsAccountID 取当前请求账号 id(未认证返回 0)。
