@@ -554,3 +554,4 @@ SQL
 - 临时回退工作区文件做红/绿对照后恢复:禁用 `git checkout -- <file>`(会把该文件全部未提交改动一起抹掉);用 `git stash push <file>` → 测试 → `git stash pop`,或 sed 双向改回。
 - 102 真实环境 API 闭环测试:admin 用 X-API-Key: boss_a852...(test-accounts.json),worker 端同 header 用 worker 段 key(只认 subject=worker);SQL 直查 docker exec -i boss-infra-postgres-1 psql -U boss -d boss(容器名不是 pg,库名=user 也是 boss);部署验证看 docker images tag=commit sha + 容器 Up seconds。
 - cdp-admin-capture 自定义端口 dev server:必须显式 `--base http://localhost:<port>`(默认 5173);否则采集落在不存在的端口,tokens/交互断言全空,像"代码没生效"。断言输出里先带 location.pathname/url 字段自证页面正确,再信后续数值。
+- 冷启耗时测量(Android): `adb shell am start -W -S -n <pkg>/.MainActivity` 读 TotalTime;若 TotalTime=0 且 topResumedActivity 是 GrantPermissionsActivity,是运行时权限弹窗顶替了前台 Activity(启动 intent 被投递给顶层实例),先 `pm grant <pkg> <perm>` 再测(2026-08-27 user Android D10 实测)。

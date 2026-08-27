@@ -1209,3 +1209,9 @@
 - 哪个坑浪费了最多时间? 无大坑。审计先行策略有效:先列木子红线×实际代码逐条对照(骨架屏/空态/金额高亮/终态文案/返回栈),一次性定位 5 处问题(产品误显空态、账单误显空态、投诉静默成功、支付结果返回栈未重置、金额非主色),重依赖(Stripe/play-location)确认本就懒加载,零改动。
 - skill 有没有提前预警? commit -F 教训再应验(继续用消息文件,全程零报错)。
 - 重来一次? 打磨类任务先做「红线×代码」对照表再动刀,避免凭印象乱改;BackHandler 覆盖 PageScaffold 自带 pop 的写法(后组合的 enabled handler 生效)可直接复用。
+
+## 2026-08-27 user Android 上线计划 D10 冷启基线+发版 checklist
+
+- 哪个坑浪费了最多时间? 冷启测量 TotalTime 恒 0 排查:权限弹窗(GrantPermissionsActivity)顶替 topResumedActivity,am start -W 把 intent 投给顶层实例;pm grant POST_NOTIFICATIONS 后即得真值(1229/1196/1179ms,均值 1.2s<3s 红线)。
+- skill 有没有提前预警? 无(新坑);已将测量手法与坑记入 technique(见 checklist 文档)。
+- 重来一次? ①测量类任务先 dumpsys 看 topResumedActivity 排除遮罩层;②红线×代码对照继续按审计先行,本轮实名三态/空态/时间空串/懒加载全数核验通过零改动,只有发票冒烟测试与 checklist 文档是新产出。
