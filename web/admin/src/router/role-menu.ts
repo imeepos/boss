@@ -16,9 +16,10 @@ export const ROLE_GROUPS: Record<RoleCode, string[]> = {
   sysadmin: MENU_GROUPS.map((g) => g.id).filter((id) => !PARTNER_GROUPS.includes(id)),
   partner_admin: [...PARTNER_GROUPS],
   partner_staff: [OVERVIEW, ...PARTNER_GROUPS],
-  ops: [OVERVIEW, 'bss', 'billing', 'boss', 'quad', 'alarm', 'aaa', 'intel', 'provision'],
+  // 告警并入 aaa(认证与告警);boss 拆出 worker/cms,ops 职责覆盖履约+装维+内容触达。
+  ops: [OVERVIEW, 'bss', 'billing', 'boss', 'worker', 'quad', 'aaa', 'cms', 'intel', 'provision'],
   asset_admin: [OVERVIEW, 'ams'],
-  resource_admin: [OVERVIEW, 'oss', 'provision', 'alarm'],
+  resource_admin: [OVERVIEW, 'oss', 'provision', 'aaa'],
   analyst: [OVERVIEW, 'intel', 'aaa'],
 }
 

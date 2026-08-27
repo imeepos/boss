@@ -2,15 +2,34 @@ import { describe, expect, it } from 'vitest'
 import { MENU_GROUPS, PAGE_BY_KEY, isNavActive } from './menu.def'
 import { visibleGroupIds, visiblePages } from './role-menu'
 
-// 契约:docs/admin/menu.js 13 组结构照抄 + partner 企业工作台组(000098 入驻域,仅 partner_* 角色);
-// 分组 id/页面 key 唯一;sysadmin 可见全部平台组(不含 partner)。
+// 契约:2026-08-27 按实际内容重组为 16 组(决策见 docs/notes/adopted/2026-08-27-sidebar-regroup.md);
+// 页面 key/path 与重组前完全一致;分组 id/页面 key 唯一;sysadmin 可见全部平台组(不含 partner)。
 describe('menu.def', () => {
-  it('14 个分组(原型 13 组 + partner 企业工作台)', () => {
-    expect(MENU_GROUPS).toHaveLength(14)
+  it('16 个分组(按内容重组,总览→业务→资源→监控→内容→管理→企业工作台)', () => {
+    expect(MENU_GROUPS).toHaveLength(16)
     expect(MENU_GROUPS.map((g) => g.id)).toEqual([
-      'overview', 'base', 'org', 'bss', 'billing', 'ams', 'oss',
-      'boss', 'quad', 'provision', 'alarm', 'aaa', 'partner', 'intel',
+      'overview', 'bss', 'billing', 'boss', 'worker', 'ams', 'oss',
+      'provision', 'quad', 'aaa', 'cms', 'intel', 'org', 'channel', 'system', 'partner',
     ])
+  })
+
+  it('页面总数不变(81 页,key 集合与重组前一致)', () => {
+    expect(MENU_GROUPS.flatMap((g) => g.items)).toHaveLength(81)
+  })
+
+  it('重组后关键页面归属新分组(2026-08-27)', () => {
+    const grp = (k: string) => PAGE_BY_KEY.get(k)?.groupId
+    expect(grp('realname-review')).toBe('bss')
+    expect(grp('account')).toBe('org')
+    expect(grp('apikey')).toBe('channel')
+    expect(grp('openplat')).toBe('channel')
+    expect(grp('worker')).toBe('worker')
+    expect(grp('alarm')).toBe('aaa')
+    expect(grp('message')).toBe('cms')
+    expect(grp('knowledge')).toBe('cms')
+    expect(grp('release')).toBe('cms')
+    expect(grp('license')).toBe('system')
+    expect(grp('crashlogs')).toBe('system')
   })
 
   it('分组 id 与页面 key 全局唯一', () => {
@@ -54,8 +73,8 @@ describe('isNavActive 侧栏激活判定', () => {
 })
 
 describe('role-menu 可见性', () => {
-  it('sysadmin 可见 13 个平台组(不含 partner 企业工作台)', () => {
-    expect(visibleGroupIds('sysadmin')).toHaveLength(13)
+  it('sysadmin 可见 15 个平台组(不含 partner 企业工作台)', () => {
+    expect(visibleGroupIds('sysadmin')).toHaveLength(15)
     expect(visibleGroupIds('sysadmin')).not.toContain('partner')
   })
 
