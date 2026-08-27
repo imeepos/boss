@@ -410,3 +410,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当在 withContext/coroutine lambda 里写 while(true) 重试循环时,修复是把循环抽到显式返回类型的 private suspend helper——循环语句类型是 Unit,label return 不计入 lambda 返回类型推断,直接内联必报 "Argument type mismatch: actual type is Unit"。
 - 当 commit 消息含全角括号「」、箭头 →、冒号等字符时,修复是一律用 `git commit -F 消息文件`(git commit -q + 多行 -m 会被 bash 拆裂,报 pathspec 错)。
 - 当修复"映射/枚举转换"类 bug 时,修复是重写测试为逐项 spec 断言(如逐 stage 12 个输入断期望里程碑)——不要只换两三个采样值,旧的采样测试会把错误公式锁成"正确行为"。
+- 当探测后端端点可用性时,修复是先读 openapi 契约确认 HTTP method——同一 path 的 GET/POST 路由可分别存在,P**OST-only 端点用 GET 探测恒 404 会误报"契约-部署漂移"(2026-08-27 /push/device 实例,ISSUE.md 误报到更正)。
+- 当客户端调后端"注册类"端点时,修复是读服务端入参校验(形态/长度/字符集)——本仓 push validRegistrationID 仅收 [0-9a-zA-Z],UUID 带横线必 42200,须先规范化。
