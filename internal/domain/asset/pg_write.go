@@ -156,19 +156,6 @@ func (s *PGStore) AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64,
 
 // ListReplacements 列出全部换新单。
 
-// CreateReplacement 新建换新单,返回自增 id。
-func (s *PGStore) CreateReplacement(ctx context.Context, r Replacement) (int64, error) {
-	var id int64
-	err := s.db.QueryRow(ctx, `
-		INSERT INTO replacements(replacement_no, asset_id, legal_entity_id, legal_entity_name, reason, priority, status)
-		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-		r.ReplacementNo, r.AssetID, r.LegalEntityID, r.LegalEntityName, r.Reason, r.Priority, r.Status).Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("asset: create replacement: %w", err)
-	}
-	return id, nil
-}
-
 // ListStocktakes 列出全部盘点任务。
 
 // CreateStocktake 新建盘点任务,返回自增 id。

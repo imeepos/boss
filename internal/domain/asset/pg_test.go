@@ -448,57 +448,7 @@ func TestPGStore_AppendLifecycle(t *testing.T) {
 	}
 }
 
-func TestPGStore_ListReplacements(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer mock.Close()
-
-	cols := []string{"id", "replacement_no", "asset_id", "legal_entity_id", "legal_entity_name", "reason", "priority", "status"}
-	mock.ExpectQuery(`SELECT id, replacement_no, asset_id, legal_entity_id, legal_entity_name, reason, priority, status FROM replacements`).
-		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "RPL-20260817-001", int64(5), int64(1), "主品牌·企业", "光猫故障", "HIGH", "PENDING"))
-
-	s := NewPGStore(mock)
-	got, err := s.ListReplacements(context.Background())
-	if err != nil {
-		t.Fatalf("ListReplacements: %v", err)
-	}
-	if len(got) != 1 || got[0].ReplacementNo != "RPL-20260817-001" {
-		t.Fatalf("got=%+v", got)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("unmet: %v", err)
-	}
-}
-
-func TestPGStore_CreateReplacement(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer mock.Close()
-
-	mock.ExpectQuery(`INSERT INTO replacements`).
-		WithArgs("RPL-20260817-002", int64(6), int64(1), "主品牌·企业", "光猫故障", "MEDIUM", "PENDING").
-		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
-
-	s := NewPGStore(mock)
-	id, err := s.CreateReplacement(context.Background(), Replacement{
-		ReplacementNo: "RPL-20260817-002", AssetID: 6, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
-		Reason: "光猫故障", Priority: "MEDIUM", Status: "PENDING",
-	})
-	if err != nil {
-		t.Fatalf("CreateReplacement: %v", err)
-	}
-	if id != 2 {
-		t.Fatalf("id=%d, want 2", id)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("unmet: %v", err)
-	}
-}
+// ListReplacements/CreateReplacement/状态机用例迁 pg_replacement_test.go(单文件 ≤300 行)。
 
 func TestPGStore_ListStocktakes(t *testing.T) {
 	mock, err := pgxmock.NewPool()

@@ -53,15 +53,20 @@ type AssetLifecycle struct {
 }
 
 // Replacement 换新单(故障资产换新流程)。
+// 状态机: PENDING --Assign--> DOING --Complete--> DONE/FAILED(adopted note
+// 2026-08-27-replacement-ticket-flow);终态不可再流转,重做走新单。
 type Replacement struct {
-	ID              int64  `json:"id"`
-	ReplacementNo   string `json:"replacementNo"`
-	AssetID         int64  `json:"assetId"`
-	LegalEntityID   int64  `json:"legalEntityId"`
-	LegalEntityName string `json:"legalEntityName"`
-	Reason          string `json:"reason"`
-	Priority        string `json:"priority"` // HIGH/MEDIUM/LOW
-	Status          string `json:"status"`   // PENDING/DOING/DONE/FAILED
+	ID              int64      `json:"id"`
+	ReplacementNo   string     `json:"replacementNo"`
+	AssetID         int64      `json:"assetId"`
+	LegalEntityID   int64      `json:"legalEntityId"`
+	LegalEntityName string     `json:"legalEntityName"`
+	Reason          string     `json:"reason"`
+	Priority        string     `json:"priority"` // HIGH/MEDIUM/LOW
+	Status          string     `json:"status"`   // PENDING/DOING/DONE/FAILED
+	WorkerID        int64      `json:"workerId"` // 0=未派
+	WorkerName      string     `json:"workerName"`
+	FinishedAt      *time.Time `json:"finishedAt,omitempty"` // nil=未完成
 }
 
 // AssetAssignment 资产持有台账(每次领用/部署/归还的时间段,历史不随当前值漂移)。
@@ -102,6 +107,16 @@ type AssetService interface {
 	AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64, error)
 	ListReplacements(ctx context.Context) ([]Replacement, error)
 	CreateReplacement(ctx context.Context, r Replacement) (int64, error)
+	// GetReplacement 按 id 查换新单;未命中返回 ErrNotFound。
+	GetReplacement(ctx context.Context, id int64) (*Replacement, error)
+	// ListReplacementsByWorker 列出师傅名下的换新单(师傅端任务列表)。
+	ListReplacementsByWorker(ctx context.Context, workerID int64) ([]Replacement, error)
+	// AssignReplacement 派单:回填师傅快照并 PENDING→DOING;
+	// 单不存在返回 ErrNotFound,状态非 PENDING 返回 ErrInvalidTransition。
+	AssignReplacement(ctx context.Context, id, workerID int64, workerName string) (*Replacement, error)
+	// CompleteReplacement 完成/失败:DOING→DONE|FAILED 并回填 finished_at;
+	// 状态非 DOING 返回 ErrInvalidTransition。result 仅接受 DONE/FAILED。
+	CompleteReplacement(ctx context.Context, id int64, result string) (*Replacement, error)
 	ListStocktakes(ctx context.Context) ([]Stocktake, error)
 	CreateStocktake(ctx context.Context, s Stocktake) (int64, error)
 	// HandleStocktakeDiff 盘点差异项处理:处理完任务置 DONE。
