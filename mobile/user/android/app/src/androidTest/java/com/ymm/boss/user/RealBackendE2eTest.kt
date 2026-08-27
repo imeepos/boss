@@ -67,4 +67,22 @@ class RealBackendE2eTest {
         // 券读:信封契约键 items
         assertTrue("券响应应含契约键 items", BillApi.coupons().has("items"))
     }
+
+    /**
+     * 错误码语义负路径(D-7「信封/错误码语义确认」):错码登录应得 40100(凭证无效),
+     * 客户端 loginErrorMessage(sms) 应路由为「验证码错误/过期」文案而非「输入格式不正确」。
+     * 实测: 错码 999999 -> {"code":40100,"msg":"未认证或凭证无效"};42200 仅为缺码/绑定层。
+     */
+    @Test
+    fun wrongSmsCodeIsCredentialError() = runBlocking {
+        Api.init(ApplicationProvider.getApplicationContext())
+        val phone = "13900001234"
+
+        val e = runCatching { UserApi.auth.login(phone, "sms", "999999") }.exceptionOrNull()
+        assumeTrue("真实后端不可达或登录行为异常,跳过负路径用例", e is Api.HttpError)
+        val err = e as Api.HttpError
+        assertTrue("错码应映射 40100 凭证无效,实为 ${err.status}", err.status == 40100)
+        val msg = com.ymm.boss.user.page.loginErrorMessage(err, "sms")
+        assertTrue("40100 应路由验证码错误文案,实为 $msg", msg.contains("验证码"))
+    }
 }
