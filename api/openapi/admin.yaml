@@ -140,6 +140,7 @@ paths:
   /api-key-templates: { $ref: './admin/sys.yaml#/paths/~1api-key-templates' }
   /openplat/apps: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps' }
   /openplat/apps/{id}/status: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1status' }
+  /openplat/event-types: { $ref: './admin/openplat.yaml#/paths/~1openplat~1event-types' }
   /openplat/apps/{id}/subscriptions: { $ref: './admin/openplat.yaml#/paths/~1openplat~1apps~1{id}~1subscriptions' }
   /openplat/subscriptions/{id}: { $ref: './admin/openplat.yaml#/paths/~1openplat~1subscriptions~1{id}' }
   /openplat/deliveries: { $ref: './admin/openplat.yaml#/paths/~1openplat~1deliveries' }

@@ -64,6 +64,28 @@ paths:
         '200':
           description: data 为 null
 
+  /openplat/event-types:
+    get:
+      tags: [OpenPlat]
+      summary: 可订阅事件目录(登记制;订阅事件选择器数据源,未登记事件不对外)
+      operationId: listOpenEventTypes
+      responses:
+        '200':
+          description: data.items 为事件目录(type + description)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [type, description]
+                      properties:
+                        type: { type: string, example: order.stage.done }
+                        description: { type: string }
+
   /openplat/apps/{id}/subscriptions:
     get:
       tags: [OpenPlat]
@@ -87,7 +109,7 @@ paths:
                     items: { $ref: './schemas.yaml#/components/schemas/OpenPlatSubscription' }
     post:
       tags: [OpenPlat]
-      summary: 新增事件订阅(同 app+事件+端点唯一;M2 投递器消费)
+      summary: 新增事件订阅(同 app+事件+端点唯一;一个端点订阅多事件=多行,重复幂等跳过)
       operationId: createOpenSubscription
       parameters:
         - name: id
@@ -100,13 +122,29 @@ paths:
           application/json:
             schema:
               type: object
-              required: [eventType, endpointUrl]
+              required: [endpointUrl]
               properties:
-                eventType: { type: string, example: order.activated }
+                eventTypes:
+                  type: array
+                  maxItems: 32
+                  items: { type: string, maxLength: 64 }
+                  description: 批量事件类型;与单数 eventType 合并去重,合并后至少一个
+                eventType:
+                  type: string
+                  maxLength: 64
+                  description: 单数兼容字段(旧客户端)
                 endpointUrl: { type: string, maxLength: 512 }
       responses:
         '200':
-          description: data 为新建订阅
+          description: data.items 为该端点命中的订阅行(含幂等跳过的已有行)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: './schemas.yaml#/components/schemas/OpenPlatSubscription' }
 
   /openplat/subscriptions/{id}:
     delete:
