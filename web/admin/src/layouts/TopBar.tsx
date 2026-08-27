@@ -1,14 +1,13 @@
-// 顶栏:品牌区 + 分组主导航 + 搜索/主题/通知/语言/用户工具区。规格见 design-spec.md §2.1/§3.1。
+// 顶栏:品牌区 + 搜索/主题/通知/语言/用户工具区。分组导航只在侧栏呈现(2026-08-27 移除顶部分组主导航)。
 // 样式:tailwind 原子类(原 shell.css 已删除)。
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { Profile } from '../api/auth'
 import { adminLogout } from '../api/auth'
-import type { MenuGroup } from '../router/menu.def'
 import logoMark from '../assets/brand/logo-mark-navy.png'
 import { useT, useLang, localeOptions } from '../i18n'
 import { useTheme } from '../theme/context'
-import { CheckIcon, GlobeIcon, LogoutIcon, MaskIcon, MenuIcon, MoonIcon, SunIcon, UserIcon } from './icons'
+import { CheckIcon, GlobeIcon, LogoutIcon, MenuIcon, MoonIcon, SunIcon, UserIcon } from './icons'
 import { NotifBell } from './NotifBell'
 import { QuickSearch } from '../components/QuickSearch'
 import { POPOVER, POPOVER_ITEM } from './popover'
@@ -18,31 +17,7 @@ const TOOL_BTN = 'grid h-[34px] w-[34px] cursor-pointer place-items-center round
 
 interface TopBarProps {
   profile: Profile
-  groups: MenuGroup[]
-  activeGroupId?: string
   onOpenDrawer: () => void
-}
-
-function TopNav({ groups, activeGroupId }: { groups: MenuGroup[]; activeGroupId?: string }) {
-  const t = useT()
-  const nav = useNavigate()
-  return (
-    <nav className="flex h-full items-stretch gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {groups.map((g) => (
-        <button
-          key={g.id}
-          className={cn(
-            'relative inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap border-0 bg-none px-3.5 text-sm font-medium text-[var(--shell-nav-text)] hover:text-[var(--shell-nav-active)]',
-            g.id === activeGroupId && 'text-[var(--shell-nav-active)] after:absolute after:right-3.5 after:bottom-0 after:left-3.5 after:h-[3px] after:rounded-t-sm after:bg-[var(--shell-nav-line)] after:content-[\'\']',
-          )}
-          onClick={() => nav(g.items[0].path)}
-        >
-          <MaskIcon url={`/icons/${g.id}.svg`} size={16} />
-          <span>{t.menu.groups[g.id] ?? g.label}</span>
-        </button>
-      ))}
-    </nav>
-  )
 }
 
 /** 语言切换:地球图标按钮 + 自定义下拉浮层,风格与其余工具按钮一致。 */
@@ -161,7 +136,7 @@ function RightTools({ profile }: { profile: Profile }) {
   )
 }
 
-export function TopBar({ profile, groups, activeGroupId, onOpenDrawer }: TopBarProps) {
+export function TopBar({ profile, onOpenDrawer }: TopBarProps) {
   return (
     <header className="flex h-14 flex-none items-center gap-4 border-b border-[var(--shell-topbar-border)] bg-[var(--shell-topbar-bg)] px-4 text-white shadow-[var(--shell-topbar-shadow)]">
       <button className="hidden cursor-pointer border-0 bg-none p-1 text-white max-[959px]:grid max-[959px]:place-items-center" onClick={onOpenDrawer} aria-label="menu">
@@ -171,7 +146,6 @@ export function TopBar({ profile, groups, activeGroupId, onOpenDrawer }: TopBarP
         <img className="h-7 w-7 rounded-full bg-white p-px" src={logoMark} alt="Sphere Boss" />
         <span>Sphere Boss</span>
       </Link>
-      <TopNav groups={groups} activeGroupId={activeGroupId} />
       <div className="ml-auto flex items-center gap-3">
         <QuickSearch profile={profile} />
         <RightTools profile={profile} />
