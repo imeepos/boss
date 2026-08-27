@@ -183,13 +183,15 @@ func (s *PGStore) upsertScan(ctx context.Context, taskID, assetID int64, scanned
 	return nil
 }
 
-// recalcScanProgress 进度 = 实扫/计划快照行;差异数 = MISMATCH/MISSING/EXTRA 行数。
+// recalcScanProgress 进度 = 计划快照行实扫比(计划外 EXTRA 不入分母,见 fields.md §4.2.1);
+// 差异数 = MISMATCH/MISSING/EXTRA 行数。
 func (s *PGStore) recalcScanProgress(ctx context.Context, taskID int64) error {
 	if _, err := s.db.Exec(ctx, `
 		UPDATE stocktakes SET progress = CASE WHEN agg.total = 0 THEN 0
 		        ELSE ROUND(100.0 * agg.scanned / agg.total)::smallint END,
 		    diff_count = agg.diffs
-		FROM (SELECT count(*) AS total, count(scanned_status) AS scanned,
+		FROM (SELECT count(expected_status) AS total,
+		             count(expected_status) FILTER (WHERE scanned_status IS NOT NULL) AS scanned,
 		             count(*) FILTER (WHERE kind IN ('MISMATCH','MISSING','EXTRA')) AS diffs
 		      FROM stocktake_items WHERE task_id = $1) agg
 		WHERE id = $1`, taskID); err != nil {
