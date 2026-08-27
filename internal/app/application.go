@@ -11,6 +11,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/analytics"
 	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/domain/apprelease"
+	"github.com/ymm-001/boss/internal/domain/license"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/backup"
@@ -85,6 +86,9 @@ type Application struct {
 	CrashLogs crashdomain.Store
 	// AppRelease 客户端版本发布域(000137):双端 APK 上传/灰度/发布;nil 安全。
 	AppRelease *apprelease.Service
+
+	// License 系统级授权门禁(release-platform 离线授权);nil=未启用完全放行。
+	License *license.Service
 
 	Billing billing.BillingService
 	Arrears billing.ArrearsService
