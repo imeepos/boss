@@ -74,6 +74,10 @@ type WebhookStore interface {
 	// InsertDeliveries 为匹配的启用订阅批量建投递行(ON CONFLICT DO NOTHING)。
 	InsertDeliveries(ctx context.Context, eventType, eventID string, payload []byte) (int64, error)
 
+	// InsertAppDeliveries 为指定应用的全部启用订阅批量建投递行(测试事件自检用:
+	// 不按事件类型过滤;投递行事件类型记测试事件名,投递时 X-BOSS-Event 头即测试事件)。
+	InsertAppDeliveries(ctx context.Context, appID int64, eventType, eventID string, payload []byte) (int64, error)
+
 	// ListDue 原子领取一批到期投递(含端点/Secret):并发调用批次互不相交,
 	// 领取时把 next_attempt_at 推进租约窗口,投递器崩溃后行自动重回待投。
 	ListDue(ctx context.Context, now time.Time, limit int) ([]DueDelivery, error)
