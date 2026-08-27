@@ -918,6 +918,11 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 行内核验：`POST /verifications/:subjectType/:subjectId/verify` body `{result: PASS|FAIL, reason?}`。
 > 仅作用于 PENDING 行；PASS 复用既有 `customers.real_name_status=VERIFIED` 同步与主档证件号一致性门禁（`internal/domain/customer/pg_onboarding.go:guardRealNameIdentity`）；师傅端不写 `real_name_status`（worker 主档无该字段）。
 > 权限 `menu:realname-review`：sysadmin 全权；其余角色不授，与既有 `menu:realidconfig`（基础配置·实名核验配置）同级。
+>
+> 2026-08-26 流程补齐（通知闭环 + 后台代录）：
+> - 待办通知：PENDING 落单（用户端自助 `POST /auth/verify`、后台代录 customer、师傅代录 worker）Emit 消息中心 todo，refType=`realname`、refID=`{subjectType}/{subjectId}`（同一主体多条 PENDING 共享一个待办，Link `/base/realname-review`）；审核终态 Resolve。自动通道即时判定（PASS/FAIL）不落待办。
+> - 审核回执：人工审核终态向客户 portal_messages 写 category=`system` 站内消息（PASS「实名认证已通过」/ FAIL「实名认证未通过」含驳回原因），App 端未知分类回退默认图标并展示于"全部"页签。
+> - 后台代录入口：客户档案页行操作「实名代录」抽屉——回显 `GET /customers/:id/real-name` 最新单（40410=暂无核验单，含证件照预览），以 `{realName,idCardNo,method}` 提交同端点落 PENDING/自动判定；客户核验记录抽屉结果列三态 PASS/FAIL/PENDING（PENDING 不再渲染为不通过）。
 
 ## 8B. Q1 客服与应收信用基础（internal/domain/cs + internal/domain/ar，000118）
 
