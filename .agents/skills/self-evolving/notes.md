@@ -961,3 +961,17 @@
 - skill 有没有提前预警? 有且有效:菜单图标审计手法(techniques #400)一跑就锁定了 realname-review 缺失;worktree 收尾四步照做顺利。教训 #54(未定义令牌)只救了单点,这次靠 DOM 断言(computed style=transparent)才顺藤摸出全站三个幽灵令牌——单点 grep 不够,已升级为全量审计手法补进 techniques。
 - 重来一次会怎么做? 接到"缺图标"类报障时,第一轮就把 menu keys vs icons diff、幽灵令牌 diff、JSX 硬编码色值 grep 三件套并行跑完再动手,本轮是改着改着才发现令牌未定义,顺序偏晚。
 - 验证:门禁 typecheck+286 用例+build 全绿;CDP DOM 断言 light/dark 双主题(按钮/对话框/徽章计算样式逐一对上主题令牌值)+ en-US/ms-MY 语言切换断言;当前模型不读图,全部用 DOM 断言替代截图目测(红线 #7 执行正常)。
+
+## 2026-08-27 业务持久化可靠性收尾整改(item1-6 实战)
+
+- 哪个坑浪费了最多时间？**端到端自验脚本(item3)反向暴露了"subscriptions=0 长期未暴露"的两处 InsertDeliveries 隐蔽断链**:`[]byte→JSONB` 22P02(pgx 把 []byte 当 bytea 发,bytea→jsonb 隐式转型不存在)+ `INSERT...SELECT ON CONFLICT DO NOTHING` 无 RETURNING 却用 QueryRow.Scan(&n) 必返 ErrNoRows。两者叠加,即使订阅存在,Emit 也会因 22P02 失败;即使没有 22P02,0 匹配订阅时 ErrNoRows 仍把"成功的 0"判失败。本想写个验证脚本,结果脚本直接证伪了"验证对象"。这印证 item1 的 NULL-scan 排查不能只盯 NULL,还要盯"参数编码/语句形态/扫描语义"三件套;真实验证脚本比静态审计更可能撞出隐蔽 bug——**审计+自验两手都要**。  
+  第二大坑:t.Cleanup 里复用了 `defer pool.Close()` 的 pool,defer 在 t.Cleanup 之前运行,清理跑在已关闭池上静默失败,102 真实数据库残留一行 test order。手动 psql 清掉后才修测试为独立连接。教训早就登过(#13 recidivism,"t.Cleanup vs defer pool.Close 顺序"),本会话二次踩坑——**清理逻辑与资源释放的生命周期边界,要么用独立连接,要么把 Close 移进 t.Cleanup 注册链最末**。
+  第三大坑:并行会话(feat/realname-p0-hardening)在我工作期间合入 main(195cce97),需反向同步 13 commit。merge main 进我的 worktree 零冲突(文件完全不相交),但若两个会话动了同一注册类文件(menu.def/i18n/fields)就会撞——**接任务前先 grep 并行分支的 ls-tree 看是否触动中央登记文件**,本会话避免了。
+- 这个 skill 有没有提前警告我？红 #1(edit 前必读)救了 webhook_pg.go/AGENTS.md 两次 edit 被拒;红 #5(commit 闭环)促成每改即 commit 再反思;红 #9a(ssh+psql 叠引号)又中招两次(构造分叉单 + 查询),验证已累计 5 次,**复杂多行 SQL 一律 scp 到 /tmp + `docker exec ... psql -f`,绝不内嵌**。新沉淀 known-issues #N+M:JSONB 22P02 与 INSERT...SELECT 无 RETURNING 两类隐蔽断链(均因"零行/零订阅长期不暴露"型),前者用 `string(payload)`+`::jsonb`(对齐 pg_ar_closure.go 既有写法),后者用 Exec+RowsAffected。  
+  audit subagent 让它 fan-out 失败(想用 workflow 调 sub-subagent),改成我自己用窄域 grep+精读更稳——**大型代码审计 subagent 容易过界,要么给死命令"不许派 sub-subagent",要么自己干**。
+- 重来一次我会怎么做？  
+  1) 排查"首次读取一行尚未写入过任何结果的记录"类缺陷时,扫描维度从"是否 NULL"扩展到"参数编码(bytea vs text)/语句形态(RETURNING)/扫描语义(Scan 目标类型)三件套"——把 bytea→jsonb 和 no-RETURNING 两类也纳入。  
+  2) 任何 E2E/自验脚本先作为"探针"写,不要预设它会 PASS——它最容易暴露审计没看见的 bug。脚本必须支持 docker psql 真零残留清理,清理走独立连接避开 defer/t.Cleanup 顺序坑。  
+  3) 接到"无前端调用方的接口"或"长期 0 行的表"类线索,优先级最高:这些是隐蔽 bug 的温床。  
+  4) 接任务前 `git worktree list` + `git log main --oneline -5` 看并行分支走向,确认中央登记类文件无人同期动。  
+  5) 已修记录:`internal/domain/openplat/webhook_pg.go InsertDeliveries` 改 `string(payload)`+`$3::jsonb`+Exec+RowsAffected,回归测试 `webhook_pg_insert_integration_test.go` 真实 PG 通过且零残留;`scripts/openplat-webhook-e2e.mjs` 6/6 PASS 于 102 部署环境。

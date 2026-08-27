@@ -47,6 +47,7 @@ worktree 只隔离文件，不隔离全局共享的流水资源（迁移号/路�
 - 不要使用emoji图标
 - 读文件请使用Read工具
 - 编辑文件前请务必先读取文件
+- 失败路径必须留有可观测信号（告警日志或显式状态），禁止静默吞错：MarkResult / RecordAudit / 配置解密 / 投递结果写回等下游副作用一旦失败，必须输出 `[module] ... FAILED|ALERT` 级可 grep 日志并附载荷上下文，不得仅返 error 而无留痕（参照 2026-08-30 持久化阶段2：config_secrets.go `[config-secrets] DECRYPT FAILED`、webhook_dispatch.go `[openplat-webhook] mark result ...`、httpx.go `[audit] WRITE FAILED`）。
 
 
 ## 决策记录制度（不可逆裁定当天过账）

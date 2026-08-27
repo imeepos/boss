@@ -90,7 +90,7 @@
 
 | 磁盘余量耗尽时把 go test 的 build failed 当代码错误排查 | 1 | 2026-09-01(13G go-build 缓存占满,make check test 阶段全 build failed,重跑 2 次才归因 ENOSPC) | 先 df -h + go clean -cache 再谈代码 |
 | make check 与 git rebase 并发执行,gate 结果作废 | 1 | 2026-09-01(测试运行中 rebase 改写工作区,重跑 gate 才有效) | 任何会改写工作区的操作与 gate 严格串行 |
-| ssh+psql/嵌套 bash 执行 SQL 时叠引号,外层 bash 吞掉 → column does not exist / syntax error / 查询静默返空 | 3 | 2026-08-26(清理 PAY-12 双引号被当标识符), 2026-08-26(checkout 探针内联 bash -c 双引号全炸), 2026-08-26(webhook 验收脚本 db() 用 -c 包 SQL,查询返空误判'未落账',实为引号被吞) | 一律 `psql ... <<'SQL'` 单引号 heredoc 传 stdin;SQL 字面量单引号,绝不在 -c 字符串里叠双引号;查询返空先手工 psql 复核再下'功能坏'结论 |
+| ssh+psql/嵌套 bash 执行 SQL 时叠引号,外层 bash 吞掉 → column does not exist / syntax error / 查询静默返空 | 5 | 2026-08-26(清理 PAY-12 双引号被当标识符), 2026-08-26(checkout 探针内联 bash -c 双引号全炸), 2026-08-26(webhook 验收脚本 db() 用 -c 包 SQL,查询返空误判'未落账',实为引号被吞); 2026-08-27(构造分叉单 ssh+heredoc+反斜杠转义单引号失败 3 次才换 scp+<<'SQL'); 2026-08-27(查询用 `psql -c \"...'...'...'...\"` 外双内单也炸) | 一律 `psql ... <<'SQL'` 单引号 heredoc 传 stdin;SQL 字面量单引号,绝不在 -c 字符串里叠双引号;查询返空先手工 psql 复核再下'功能坏'结论;复杂多行 SQL 先 scp 到远端 /tmp 再 `docker exec ... psql -f`,避免嵌套引号地狱 |
 | 隧道/代理身份未验证就断言指向目标服务 | 1 | 2026-08-26(cf-stripe 实指 release-platform-integration-api,401 文案 grep 不到) | 用前三验:/healthz 返回体 + 未配置端点降级特征 + 错误文案仓库 grep 命中 |
 | 102 cron 脚本未在目标机用真实 ROOT/异常状态实跑 | 1 | 2026-09-04(stripe-tunnel-url.sh 本地 python3 -c 通过,102 因嵌套引号 SyntaxError;DOWN STATE 换行又破坏 JSON) | 部署到 102 后再发现;脚本提交前必须 bash -n + 目标机真实路径实跑正常/DOWN 两路,JSON 外发字段先清洗 CR/LF |
 | cdp-capture 多次独立调用丢失 localStorage/session | 1 | 2026-09-04(admin-web 登录链路反复回 /login,根因每次新临时 profile) | 使用新增 --user-data-dir 持久 profile;无状态调试仍用默认临时 profile |
