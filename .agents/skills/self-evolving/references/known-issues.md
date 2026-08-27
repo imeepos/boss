@@ -302,3 +302,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 **症状**:`INSERT INTO t SELECT ... ON CONFLICT DO NOTHING` 没有 RETURNING 子句,代码却 `db.QueryRow(...).Scan(&n)` 读取插入行数。SELECT 0 行时(无匹配),整条 INSERT 返回 0 行结果集,Scan 必报 `pgx.ErrNoRows`,调用方把"本该成功的 0 插入"判为失败并向上冒泡 50000。即使修好 JSONB 转型,该 bug 仍让首条 InsertDeliveries 走 ErrNoRows 路径,Emit 永远返错。环境从未配置订阅时 0 插入 = 永远 ErrNoRows,与 JSONB 22P02 叠加形成双重假失败。
 
 **修法**:无 RETURNING 的 INSERT/UPDATE 一律用 `db.Exec(...)` + `tag.RowsAffected()` 读取行数;QueryRow.Scan 只用于有 RETURNING 的语句或 SELECT。Code review 对 `QueryRow(...).Scan(&n)` 必查 SQL 是否含 RETURNING。
+
+## cdp-capture DOM 断言 innerText.includes 撞上外壳同子串文案(2026-09-26)
+
+**症状**:断言"收起"按钮是否存在用了 `b.innerText.includes('收起')`,匹配到侧栏菜单项"收起菜单",点击是 no-op,断言读回行数不变 → collapse 功能"假阴性"。首轮报 ok:false,实为选择器错。
+
+**修法**:断言目标按钮一律 `innerText.trim() === '精确文案'`,或先锚定业务容器(section/table 祖先)再在其内查;外壳(侧栏/顶栏/菜单)文案与页面按钮共享常用词(关闭/收起/展开/刷新)是常态。

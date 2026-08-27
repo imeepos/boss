@@ -87,3 +87,11 @@
 - admin-web 前端部署在 http://192.168.0.102:5180(nginx 同源代理 /api/);CI deploy-102 的 compose 常把容器留在 Created,需 ssh 上去 docker start
 - git remote 名是 `gitea`(ssh://git@192.168.0.102:222/sker/boss.git),没有 origin;push gitea main 触发 CI(后端 28080 与前端 5180 一起出新构建)
 - 部署验证(2026-09-22 装维队):push 后查 gitea actions 最新 run——DB `action_run` 按 `index` 排序,status 3=被更新 push 取代(非成功),deploy 成功会重建镜像(tag=commit sha)并重启容器;并行会话推进 main 会取代我的 run,等最新 main 的 run 完成再验接口。验证后端新路由:`curl http://192.168.0.102:28080/api/admin/v1/<新路径>` 未部署=404 page not found,部署后=401/业务信封。
+
+## 用户详情抽屉冒烟数据(2026-09-26 查证,102 库)
+
+- 路由 `/bss/user`(menu key user);详情抽屉数据源 `GET /users/{customerId}`
+- 客户 213(采购经理·王):富数据——addons 10 条(>默认上限 5,可验"查看全部/收起")、orders 45、faults 3、complaints 1、plans 1(ACTIVE)、addresses 4
+- 客户 215(王经理):仅 orders 4 条,其余段全空——空态断言对象;orders 4 ≤ 5 可验"无展开按钮"
+- complaints 同源双口径:faults 段=报障(`用户报障: ` 前缀已 strip 成 no_internet/slow/...+装维 6 码)、complaints 段=投诉(`用户投诉: ` 前缀保留),见 fields.md §2.1.1
+- 当前 harness 模型(deepseek-v4-flash)不接受 read_image,冒烟一律 DOM 断言(innerText/querySelector)+ --logs 查 console/网络,截图仅供人工复核

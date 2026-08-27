@@ -981,3 +981,10 @@
 - 哪个坑浪费了最多时间?E2E 脚本三连败都是低级壳问题(COALESCE 出 0 被 RequirePositiveID 拒、ssh 回传换行打穿 JSON 数字位、shell 参数展开 ${REST##*/} 笔误),每次只有一层薄线索;真正的大鱼是冒烟第一轮就抓出 guard SQL 缺 FROM 的产线级 bug——mock 全绿放行的第二次现形(上次 webhook 可空列),这次当场闭环修掉再部署再验证。
 - 这个 skill 有没有提前警告我?有:上一轮刚沉淀"mock 验不出 SQL 合法性,要真库集成",本次等于该教训的实弹复验;worktree 收尾四步零失误;boss-admin-web.md 的 localStorage 注入(boss.servers 必须带 id 字段)一次过。
 - 重来一次我会怎么做?"是否缺失/是否有 bug"类任务把真环境冒烟脚本放在编码之前先写好,让它当验收靶;upload=5180(admin-web)、菜单路径以 menu.def.ts 为准而不是猜 URL(?kw 只对了一半,路由是 /bss/customer)。
+
+## 2026-09-26 用户详情页遗留缺陷收敛(i18n 门禁/分段限流/同源语义拆分)
+
+- 哪个坑浪费了最多时间?写 FAULT_TYPE 枚举映射时先信了 complaint-type-map.md 的 6 个装维故障码,提交前查 102 真库才发现 complaints.type 里还有"用户报障: no_internet/slow/ont_fault/other"这套用户端口径——契约文档与真实数据词汇表不一致,若不查库直接上线,faults 段会原样露出"用户报障: no_internet"。另外 cdp DOM 断言里 `innerText.includes('收起')` 匹配到了侧栏"收起菜单"造成 collapse 假阴性,换成 `trim()==='收起'` 精确匹配后通过——共享子串会撞上外壳 UI 文案。
+- 这个 skill 有没有提前警告我?红 #7(不读图模型)提前警告有效:当前 harness 模型 deepseek-v4-flash 同样不吃 read_image,立即切 DOM 断言冒烟零浪费;worktree 协议两次顶住 main 被并行会话推进(两轮 rebase 后 ff-only 一次过);红 #2a(bundle 部署验证)照做,curl 远端 JS grep 到新文案键即证生效。skill 未提前覆盖的两点已沉淀:真库枚举词汇表先查再写映射(techniques)、cdp 断言精确匹配(known-issues)。
+- 重来一次我会怎么做?任何"枚举值→展示文案"映射动手前先 `SELECT DISTINCT type FROM <表>` 看真实取值域,契约文档只当佐证;DOM 断言统一用 trim+=== 精确匹配或带上下文容器再 includes。
+- 验证:三批各自门禁(tsc+vitest+build+make check 含 contract-sync)全绿;人为制造 i18n 键失配→3 红,恢复→绿;102 部署后 API 实证 faults=3(前缀已 strip)/complaints=1(plans 仅 ACTIVE),7 轮 CDP 冒烟(zh/en/ms × light/dark × 空态 × 开合 × 展开/收起)console 0 错误、0 失败请求。
