@@ -22,6 +22,7 @@ func TestPGStore_NotifyActivationWritesCallback(t *testing.T) {
 			WithArgs(int64(7)).
 			WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(3)))
 		// advance(notifyActivation,stage10→11, INSTALLING→DONE)。
+		mock.ExpectBegin()
 		mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 			WithArgs(int64(7)).
 			WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(10), "INSTALLING", "ORD-7"))
@@ -32,6 +33,7 @@ func TestPGStore_NotifyActivationWritesCallback(t *testing.T) {
 			WithArgs(int64(7), int8(11), "DONE").WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectExec(`INSERT INTO order_stages`).
 			WithArgs(int64(7), int8(11), "DONE").WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectCommit()
 		// 落账 SUCCESS(幂等 upsert)。
 		mock.ExpectQuery(`INSERT INTO activation_callbacks`).
 			WithArgs(int64(7), "SUCCESS", int16(0)).
@@ -108,9 +110,11 @@ func TestPGStore_UpdateMapRepairsReservedPort(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectBegin() // advance 事务;环节已完成拒绝后回滚走自愈
 	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(12), "DONE", "ORD-7"))
+	mock.ExpectRollback()
 	mock.ExpectQuery(`SELECT stage, status FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(12), "DONE"))
@@ -307,8 +311,9 @@ func (f *fakePrepaidCollector) Collect(_ context.Context, customerID int64, amou
 	return f.gift, f.err
 }
 
-// expectChargeAdvance 环节4 推进(advance)的 mock 序列:select → update → 环节日志。
+// expectChargeAdvance 环节4 推进(advance)的 mock 序列:begin → select → update → 环节日志 → commit。
 func expectChargeAdvance(mock pgxmock.PgxPoolIface) {
+	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(3), "RESERVED", "ORD-7"))
@@ -321,6 +326,7 @@ func expectChargeAdvance(mock pgxmock.PgxPoolIface) {
 	mock.ExpectExec(`INSERT INTO order_stages`).
 		WithArgs(int64(7), int8(4), "DONE").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
 }
 
 // TestPGStore_ChargeContractPrepaid 契约:预付费订单环节4 先当场收款再推进(REQ-CL-001);

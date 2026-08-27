@@ -11,57 +11,93 @@ import (
 
 // advance 推进一个环节:顺序守卫(stage 必须等于上一环节)+ status 迁移(经 orderSM)+ 环节日志。
 // 单事实源:所有环节推进都必须过此原语,禁止直接改 stage/status。
-// 推进成功后广播 order.stage.done(开放平台 Webhook,尽力而为;事件键 orderNo+stage 幂等)。
+// 计数器(orders.stage)与留痕(order_stages)必须同事务落库:进程崩溃或单条语句失败
+// 不再产生「计数器已前进而环节日志缺失」的悬案(该分叉曾导致订单永久 42200 无法续推)。
+// 提交成功后广播 order.stage.done(开放平台 Webhook,尽力而为;事件键 orderNo+stage 幂等)。
 func (s *PGStore) advance(ctx context.Context, orderID int64, event string) error {
 	step, ok := workflowByEvent[event]
 	if !ok {
 		return fmt.Errorf("order: unknown event %q", event)
 	}
-	var stage int8
-	var status, orderNo string
-	err := s.db.QueryRow(ctx, `SELECT stage, status, order_no FROM orders WHERE id = $1`, orderID).Scan(&stage, &status, &orderNo)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrOrderNotFound
+	tdb, ok := s.db.(transactionalDB)
+	if !ok {
+		return fmt.Errorf("order: advance requires transaction support")
+	}
+	tx, err := tdb.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("order: advance begin: %w", err)
+	}
+	stage, status, orderNo, err := s.advanceGuarded(ctx, tx, orderID, step)
+	if err == nil {
+		if err = tx.Commit(ctx); err != nil {
+			err = fmt.Errorf("order: advance commit: %w", err)
+		}
 	}
 	if err != nil {
-		return fmt.Errorf("order: advance select: %w", err)
+		_ = tx.Rollback(ctx)
+		return err
+	}
+	s.emitStageDone(ctx, orderNo, stage, status)
+	return nil
+}
+
+// advanceGuarded 在给定事务上完成守卫校验与迁移写入,返回提交后用于广播的订单快照。
+func (s *PGStore) advanceGuarded(ctx context.Context, db dbtx, orderID int64, step stageStep) (int8, string, string, error) {
+	var stage int8
+	var status, orderNo string
+	err := db.QueryRow(ctx, `SELECT stage, status, order_no FROM orders WHERE id = $1`, orderID).Scan(&stage, &status, &orderNo)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, "", "", ErrOrderNotFound
+	}
+	if err != nil {
+		return 0, "", "", fmt.Errorf("order: advance select: %w", err)
 	}
 	if stage != step.stage-1 {
-		return ErrIllegalTransition
+		return 0, "", "", ErrIllegalTransition
 	}
 	nextStatus := status
 	if step.statusEvent != "" {
-		ns, err := transition(status, step.statusEvent)
-		if err != nil {
-			return err
+		ns, terr := transition(status, step.statusEvent)
+		if terr != nil {
+			return 0, "", "", terr
 		}
 		nextStatus = ns
 	}
 	// 前置环节完成守卫(2026-08-25 审计 §2.3.2 环节乱序防线):推进到 N(≥3)要求
 	// 环节 N-1 日志行 result='DONE'。此前只看 orders.stage 计数器,环节2 PENDING
 	// (资源不可用等待)时后续环节仍可推进,产生"引用有效但环节乱序"悬案(335/336/337/377/383)。
-	if step.stage >= 3 {
-		var prevResult string
-		perr := s.db.QueryRow(ctx,
-			`SELECT result FROM order_stages WHERE order_id=$1 AND stage=$2`, orderID, step.stage-1).Scan(&prevResult)
-		if errors.Is(perr, pgx.ErrNoRows) {
-			return ErrIllegalTransition
-		}
-		if perr != nil {
-			return fmt.Errorf("order: advance prev-stage check: %w", perr)
-		}
-		if prevResult != "DONE" {
-			return ErrIllegalTransition
-		}
+	if err = requirePrevStageDone(ctx, db, orderID, step.stage); err != nil {
+		return 0, "", "", err
 	}
-	if _, err := s.db.Exec(ctx, `UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, step.stage, nextStatus); err != nil {
-		return fmt.Errorf("order: advance update: %w", err)
+	if _, err = db.Exec(ctx, `UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, step.stage, nextStatus); err != nil {
+		return 0, "", "", fmt.Errorf("order: advance update: %w", err)
 	}
-	s.syncDispatchTicket(ctx, orderID, nextStatus)
-	if err := s.appendStage(ctx, orderID, step.stage, "DONE"); err != nil {
-		return err
+	txSync := *s
+	txSync.db = db
+	txSync.syncDispatchTicket(ctx, orderID, nextStatus)
+	if err = appendStage(ctx, db, orderID, step.stage, "DONE"); err != nil {
+		return 0, "", "", err
 	}
-	s.emitStageDone(ctx, orderNo, step.stage, nextStatus)
+	return step.stage, nextStatus, orderNo, nil
+}
+
+// requirePrevStageDone 前置环节日志行 result='DONE' 校验(stage<3 无前置可跳过)。
+func requirePrevStageDone(ctx context.Context, db dbtx, orderID int64, stage int8) error {
+	if stage < 3 {
+		return nil
+	}
+	var prevResult string
+	perr := db.QueryRow(ctx,
+		`SELECT result FROM order_stages WHERE order_id=$1 AND stage=$2`, orderID, stage-1).Scan(&prevResult)
+	if errors.Is(perr, pgx.ErrNoRows) {
+		return ErrIllegalTransition
+	}
+	if perr != nil {
+		return fmt.Errorf("order: advance prev-stage check: %w", perr)
+	}
+	if prevResult != "DONE" {
+		return ErrIllegalTransition
+	}
 	return nil
 }
 
@@ -76,9 +112,9 @@ func (s *PGStore) emitStageDone(ctx context.Context, orderNo string, stage int8,
 	})
 }
 
-// appendStage 落环节日志(order_stages)。
-func (s *PGStore) appendStage(ctx context.Context, orderID int64, stage int8, result string) error {
-	if _, err := s.db.Exec(ctx,
+// appendStage 落环节日志(order_stages);db 由调用方给定(池或事务)。
+func appendStage(ctx context.Context, db dbtx, orderID int64, stage int8, result string) error {
+	if _, err := db.Exec(ctx,
 		`INSERT INTO order_stages(order_id, stage, result) VALUES($1,$2,$3)`, orderID, stage, result); err != nil {
 		return fmt.Errorf("order: append stage: %w", err)
 	}

@@ -42,6 +42,7 @@ func TestPGStore_DispatchOrder_CreatesTicket(t *testing.T) {
 	mock.ExpectQuery(`SELECT stage FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(pgxmock.NewRows([]string{"stage"}).AddRow(int16(7)))
+	mock.ExpectBegin() // advance 事务
 	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(pgxmock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int16(7), "RESERVED", "ORD-7"))
@@ -54,6 +55,7 @@ func TestPGStore_DispatchOrder_CreatesTicket(t *testing.T) {
 	mock.ExpectExec(`INSERT INTO order_stages`).
 		WithArgs(int64(7), int8(8), "DONE").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
 	mock.ExpectExec(`INSERT INTO dispatch_tickets`).
 		WithArgs(int64(7)).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))

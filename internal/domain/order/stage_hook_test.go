@@ -35,6 +35,7 @@ func newAdvanceMock(t *testing.T) pgxmock.PgxPoolIface {
 	mock.ExpectQuery(`SELECT customer_id FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(1)))
+	mock.ExpectBegin() // advance 事务:计数器+环节日志原子落库
 	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).
 		WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(6), "RESERVED", "ORD-20250817-001"))
@@ -47,6 +48,7 @@ func newAdvanceMock(t *testing.T) pgxmock.PgxPoolIface {
 	mock.ExpectExec(`INSERT INTO order_stages`).
 		WithArgs(int64(7), int8(7), "DONE").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
 	return mock
 }
 

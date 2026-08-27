@@ -271,6 +271,7 @@ func TestPGStore_Reserve(t *testing.T) {
 		}
 		defer mock.Close()
 
+		mock.ExpectBegin() // advance 事务
 		mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(2), "PENDING", "ORD-1"))
@@ -283,6 +284,7 @@ func TestPGStore_Reserve(t *testing.T) {
 		mock.ExpectExec(`INSERT INTO order_stages`).
 			WithArgs(int64(1), int8(3), "DONE").
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectCommit()
 
 		s := NewPGStore(mock, stubExists{})
 		if err := s.Reserve(context.Background(), 1); err != nil {
@@ -299,9 +301,11 @@ func TestPGStore_Reserve(t *testing.T) {
 		}
 		defer mock.Close()
 
+		mock.ExpectBegin() // advance 事务;非法流转拒绝后回滚
 		mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(2), "RESERVED", "ORD-1"))
+		mock.ExpectRollback()
 
 		s := NewPGStore(mock, stubExists{})
 		err = s.Reserve(context.Background(), 1)

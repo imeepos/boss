@@ -283,4 +283,7 @@ func (s *PGStore) platformFallback(ctx context.Context) (AddressOwnership, error
 	return own, nil
 }
 
-// appendStage 写环节日志。
+// appendStage 在默认连接上写环节日志(事务内写入走 advanceGuarded/appendStage 自由函数)。
+func (s *PGStore) appendStage(ctx context.Context, orderID int64, stage int8, result string) error {
+	return appendStage(ctx, s.db, orderID, stage, result)
+}
