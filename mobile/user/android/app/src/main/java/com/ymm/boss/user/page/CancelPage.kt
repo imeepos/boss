@@ -32,8 +32,10 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.rememberSubmitGuard
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -55,6 +57,8 @@ fun CancelScreen(nav: Nav, planId: String) {
     var err by remember { mutableStateOf("") }
     var done by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    // 防重复提交:弱网连点是重复生成拆机单。
+    val guard = rememberSubmitGuard()
 
     LaunchedEffect(nav.refreshTick) {
         try { loadCancelPreview(planId, { unpaid = it.first; penalty = it.second; penaltyDesc = it.third }) }
@@ -68,9 +72,11 @@ fun CancelScreen(nav: Nav, planId: String) {
             NoticeCard()
             UnpaidCard(unpaid, penalty, penaltyDesc)
             ReasonCard(reason, onPick = { reason = it })
-            SubmitBar("确认退订 · 生成拆机单", onSubmit = {
-                submitCancel(scope, planId, reason,
-                    onDone = { done = it }, onErr = { err = it })
+            SubmitBar("确认退订 · 生成拆机单", enabled = !guard.active, onSubmit = {
+                if (guard.acquire()) {
+                    submitCancel(scope, planId, reason,
+                        onDone = { done = it }, onErr = { err = it }, guard = guard)
+                }
             })
         }
         Spacer(Modifier.height(16.dp))
@@ -87,12 +93,13 @@ private suspend fun loadCancelPreview(planId: String, set: (Triple<List<JSONObje
 private fun submitCancel(
     scope: kotlinx.coroutines.CoroutineScope, planId: String, reason: String,
     onDone: (String) -> Unit, onErr: (String) -> Unit,
+    guard: SubmitGuard,
 ) {
     scope.launch {
         try {
             val o = PlanApi.cancel(planId, reason)
             onDone("退订申请已提交,拆机工单号 ${o.optString("orderNo")}")
-        } catch (e: Exception) { onErr("提交失败,请稍后重试") }
+        } catch (e: Exception) { onErr("提交失败,请稍后重试") } finally { guard.release() }
     }
 }
 

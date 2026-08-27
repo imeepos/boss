@@ -30,8 +30,10 @@ import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.rememberSubmitGuard
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -48,6 +50,8 @@ fun MoveScreen(nav: Nav, planId: String) {
     var err by remember { mutableStateOf("") }
     var done by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    // 防重复提交:弱网连点是重复生成迁址工单。
+    val guard = rememberSubmitGuard()
 
     LaunchedEffect(nav.refreshTick) { loadOldAddress { oldAddr = it.first; oldPlan = it.second } }
 
@@ -59,8 +63,10 @@ fun MoveScreen(nav: Nav, planId: String) {
                 onCommunity = { community = it }, onBuilding = { building = it },
                 onDoor = { door = it }, onDate = { expectDate = it },
                 onSubmit = {
-                    submitMove(scope, planId, community, building, door, expectDate,
-                        onDone = { done = it }, onErr = { err = it })
+                    if (guard.acquire()) {
+                        submitMove(scope, planId, community, building, door, expectDate,
+                            onDone = { done = it }, onErr = { err = it }, guard = guard)
+                    }
                 })
         }
         Spacer(Modifier.height(16.dp))
@@ -103,12 +109,13 @@ private fun submitMove(
     scope: kotlinx.coroutines.CoroutineScope, planId: String,
     community: String, building: String, door: String, expectDate: String,
     onDone: (String) -> Unit, onErr: (String) -> Unit,
+    guard: SubmitGuard,
 ) {
     scope.launch {
         try {
             val o = PlanApi.move(planId, community, building, door, expectDate)
             onDone("迁址申请已提交,工单号 ${o.optString("orderNo")}")
-        } catch (e: Exception) { onErr("提交失败,请稍后重试") }
+        } catch (e: Exception) { onErr("提交失败,请稍后重试") } finally { guard.release() }
     }
 }
 

@@ -39,8 +39,10 @@ import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.rememberSubmitGuard
 import kotlinx.coroutines.launch
 
 /** 对应草稿 docs/user/topup.html:余额充值。GET/POST /topups。 */
@@ -70,6 +72,8 @@ private fun TopupFormCard(nav: Nav, balance: Double, denoms: List<Int>) {
     var method by remember { mutableStateOf("wechat") }
     var err by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    // 防重复提交:弱网连点是重复充值创建(重复扣款风险),提交完成前禁用。
+    val guard = rememberSubmitGuard()
 
     AppCard {
         BalanceHead(balance)
@@ -88,10 +92,14 @@ private fun TopupFormCard(nav: Nav, balance: Double, denoms: List<Int>) {
         MethodList(method) { method = it }
         if (err.isNotEmpty()) Text(err, fontSize = 12.5.sp, color = Palette.err)
         Button(
-            onClick = { doTopup(scope, nav, amountText, method) { err = it } },
+            onClick = {
+                if (!guard.acquire()) return@Button
+                doTopup(scope, nav, amountText, method, guard) { err = it }
+            },
+            enabled = !guard.active,
             colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
             modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(44.dp),
-        ) { Text("确认充值") }
+        ) { Text(if (guard.active) "充值中…" else "确认充值") }
     }
 }
 
@@ -144,6 +152,7 @@ private fun MethodRow(label: String, selected: Boolean, onSelect: () -> Unit) {
 private fun doTopup(
     scope: kotlinx.coroutines.CoroutineScope,
     nav: Nav, amountText: String, method: String,
+    guard: SubmitGuard,
     onErr: (String) -> Unit,
 ) {
     val amount = amountText.toDoubleOrNull()
@@ -153,7 +162,7 @@ private fun doTopup(
             val r = BillApi.topup(amount, method)
             BillApi.lastPayNo = r.optString("payNo")
             nav.push(Route.PayResult)
-        } catch (e: Exception) { onErr("充值失败,请重试") }
+        } catch (e: Exception) { onErr("充值失败,请重试") } finally { guard.release() }
     }
 }
 

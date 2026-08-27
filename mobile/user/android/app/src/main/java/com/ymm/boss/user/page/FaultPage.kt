@@ -46,8 +46,10 @@ import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.rememberSubmitGuard
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -96,6 +98,8 @@ private fun FaultFormCard(
     scope: kotlinx.coroutines.CoroutineScope,
     nav: Nav, form: FaultFormState, onResult: (String) -> Unit,
 ) {
+    // 防重复提交:弱网连点是重复建报障单。
+    val guard = rememberSubmitGuard()
     AppCard {
         CardTitle("我要报修")
         FieldLabel("故障类型")
@@ -109,16 +113,21 @@ private fun FaultFormCard(
         OutlinedTextField(value = form.contact, onValueChange = { form.contact = it }, label = { Text("联系方式") },
             singleLine = true, modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp))
         Button(
-            onClick = { submitFault(scope, form, nav, onResult) },
+            onClick = {
+                if (!guard.acquire()) return@Button
+                submitFault(scope, form, nav, onResult, guard)
+            },
+            enabled = !guard.active,
             colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
             modifier = Modifier.fillMaxWidth().height(44.dp),
-        ) { Text("提交报修") }
+        ) { Text(if (guard.active) "提交中…" else "提交报修") }
     }
 }
 
 private fun submitFault(
     scope: kotlinx.coroutines.CoroutineScope,
     form: FaultFormState, nav: Nav, onResult: (String) -> Unit,
+    guard: SubmitGuard,
 ) {
     if (form.address.isBlank() || form.desc.isBlank()) { onResult("请填写故障地址与描述"); return }
     scope.launch {
@@ -127,7 +136,7 @@ private fun submitFault(
             onResult("已受理")
             val ticketNo = f.optString("ticketNo")
             if (ticketNo.isNotBlank()) nav.push(Route.FaultDetail(ticketNo))
-        } catch (e: Exception) { onResult("提交失败，请稍后重试") }
+        } catch (e: Exception) { onResult("提交失败，请稍后重试") } finally { guard.release() }
     }
 }
 

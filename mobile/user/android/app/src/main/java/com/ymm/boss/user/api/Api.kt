@@ -3,6 +3,7 @@ package com.ymm.boss.user.api
 import android.content.Context
 import com.ymm.boss.user.BuildConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -10,6 +11,18 @@ import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+
+/**
+ * 弱网最小保障版统一参数(2026-08-27 上线计划 D-3):
+ * 8s 超时满足「弱网 10s 必有反馈」红线;GET 重试一次 + 500ms 间隔兜底瞬时抖动。
+ */
+private const val CONNECT_TIMEOUT_MS = 8000
+private const val READ_TIMEOUT_MS = 8000
+private const val MAX_ATTEMPTS = 2
+private const val RETRY_DELAY_MS = 500L
+/** multipart 上传体积大、大文件慢链路需更长窗口,独立于统一 8s(保留原 15s/30s 语义)。 */
+private const val UPLOAD_CONNECT_TIMEOUT_MS = 15000
+private const val UPLOAD_READ_TIMEOUT_MS = 30000
 
 /**
  * 用户端统一接口层,对齐 docs/user/api.js。
@@ -85,8 +98,8 @@ object Api {
             val conn = URL(base + path).openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.doOutput = true
-            conn.connectTimeout = 15000
-            conn.readTimeout = 30000
+            conn.connectTimeout = UPLOAD_CONNECT_TIMEOUT_MS
+            conn.readTimeout = UPLOAD_READ_TIMEOUT_MS
             conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
             token().takeIf { it.isNotEmpty() }?.let { conn.setRequestProperty("Authorization", "Bearer $it") }
             java.io.DataOutputStream(conn.outputStream).use { out ->
@@ -132,22 +145,21 @@ object Api {
         return obj.optJSONObject("data") ?: JSONObject()
     }
 
+    /**
+     * 弱网最小保障版(2026-08-27 上线计划 D-3 三横切点):
+     * 统一超时 8s + 幂等 GET 网络失败重试一次(500ms 间隔)。
+     * 重试仅限 IOException(断网/超时),HttpError(业务失败/4xx/5xx)不重试;POST 等非幂等不重试。
+     */
     private suspend fun request(method: String, path: String, body: JSONObject?): JSONObject =
-        withContext(Dispatchers.IO) {
-            val conn = open(method, path, body)
-            try {
-                val code = conn.responseCode
-                val text = streamText(conn, code)
-                if (code !in 200..299) {
-                    handleUnauthorized(code)
-                    throw HttpError(code, "HTTP $code")
-                }
-                if (text.isBlank()) JSONObject() else unwrap(text)
-            } finally { conn.disconnect() }
-        }
+        withContext(Dispatchers.IO) { retryingCall(method, path, body) }
 
     private suspend fun requestArray(method: String, path: String, body: JSONObject?): JSONArray =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.IO) { retryingArrayCall(method, path, body) }
+
+    private suspend fun retryingCall(method: String, path: String, body: JSONObject?): JSONObject {
+        var attempt = 0
+        while (true) {
+            attempt++
             val conn = open(method, path, body)
             try {
                 val code = conn.responseCode
@@ -156,7 +168,30 @@ object Api {
                     handleUnauthorized(code)
                     throw HttpError(code, "HTTP $code")
                 }
-                if (text.isBlank()) return@withContext JSONArray()
+                return if (text.isBlank()) JSONObject() else unwrap(text)
+            } catch (e: java.io.IOException) {
+                if (method == "GET" && attempt < MAX_ATTEMPTS) {
+                    delay(RETRY_DELAY_MS)
+                    continue
+                }
+                throw e
+            } finally { conn.disconnect() }
+        }
+    }
+
+    private suspend fun retryingArrayCall(method: String, path: String, body: JSONObject?): JSONArray {
+        var attempt = 0
+        while (true) {
+            attempt++
+            val conn = open(method, path, body)
+            try {
+                val code = conn.responseCode
+                val text = streamText(conn, code)
+                if (code !in 200..299) {
+                    handleUnauthorized(code)
+                    throw HttpError(code, "HTTP $code")
+                }
+                if (text.isBlank()) return JSONArray()
                 // 数组载荷包在信封 data 内:data 本身为数组,或 data.items
                 val obj = JSONObject(text)
                 val envelopeCode = obj.optInt("code", -1)
@@ -164,21 +199,28 @@ object Api {
                     handleUnauthorized(envelopeCode)
                     throw HttpError(envelopeCode, obj.optString("msg"))
                 }
-                when (val d = obj.opt("data")) {
+                return when (val d = obj.opt("data")) {
                     is JSONArray -> d
                     is JSONObject -> d.optJSONArray("items") ?: JSONArray()
                     else -> JSONArray()
                 }
+            } catch (e: java.io.IOException) {
+                if (method == "GET" && attempt < MAX_ATTEMPTS) {
+                    delay(RETRY_DELAY_MS)
+                    continue
+                }
+                throw e
             } finally { conn.disconnect() }
         }
+    }
 
     private fun open(method: String, path: String, body: JSONObject?): HttpURLConnection {
         val conn = URL(base + path).openConnection() as HttpURLConnection
         conn.requestMethod = method
         // PUT/PATCH/POST 写 body 必须 setDoOutput(true),否则 outputStream 抛 ProtocolException。
         if (body != null && method != "GET") conn.doOutput = true
-        conn.connectTimeout = 8000
-        conn.readTimeout = 8000
+        conn.connectTimeout = CONNECT_TIMEOUT_MS
+        conn.readTimeout = READ_TIMEOUT_MS
         conn.setRequestProperty("Content-Type", "application/json")
         token().takeIf { it.isNotEmpty() }?.let { conn.setRequestProperty("Authorization", "Bearer $it") }
         if (body != null) conn.outputStream.use { it.write(body.toString().toByteArray()) }

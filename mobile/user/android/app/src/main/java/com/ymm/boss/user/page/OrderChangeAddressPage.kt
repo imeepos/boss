@@ -36,6 +36,7 @@ import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.rememberSubmitGuard
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -47,6 +48,8 @@ fun OrderChangeAddressScreen(nav: Nav, orderNo: String) {
     var err by remember { mutableStateOf("") }
     var done by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    // 防重复提交:弱网连点是重复提交地址变更。
+    val guard = rememberSubmitGuard()
 
     LaunchedEffect(nav.refreshTick) {
         items = try {
@@ -68,13 +71,14 @@ fun OrderChangeAddressScreen(nav: Nav, orderNo: String) {
                 AddressPickCard(items, selected) { selected = it }
                 Notice("仅装维中及之前状态的订单可变更地址;变更后师傅按新地址上门。")
                 SubmitBar(
-                    "确认变更地址", enabled = selected.isNotBlank(),
+                    "确认变更地址", enabled = selected.isNotBlank() && !guard.active,
                     onSubmit = {
+                        if (!guard.acquire()) return@SubmitBar
                         scope.launch {
                             try {
                                 OrderApi.changeAddress(orderNo, selected)
                                 done = true
-                            } catch (e: Exception) { err = "变更失败,请稍后重试" }
+                            } catch (e: Exception) { err = "变更失败,请稍后重试" } finally { guard.release() }
                         }
                     },
                 )

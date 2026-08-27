@@ -35,7 +35,9 @@ import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.rememberSubmitGuard
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -94,12 +96,17 @@ private fun ConfirmButton(
     onErr: (String) -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    // 防重复提交:弱网下连点是重复建支付会话(Stripe 意图 ×2),提交完成前禁用。
+    val guard = rememberSubmitGuard()
     Button(
-        onClick = { doPay(context, scope, nav, billNo, amount, method, onErr) },
-        enabled = billNo != null && amount > 0,
+        onClick = {
+            if (!guard.acquire()) return@Button
+            doPay(context, scope, nav, billNo, amount, method, onErr, guard)
+        },
+        enabled = billNo != null && amount > 0 && !guard.active,
         colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
         modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(44.dp),
-    ) { Text("确认支付 ¥" + "%.2f".format(amount)) }
+    ) { Text(if (guard.active) "支付中…" else "确认支付 ¥" + "%.2f".format(amount)) }
 }
 
 @Composable
@@ -120,6 +127,7 @@ private fun doPay(
     scope: kotlinx.coroutines.CoroutineScope,
     nav: Nav, billNo: String?, amount: Double, method: String,
     onErr: (String) -> Unit,
+    guard: SubmitGuard,
 ) {
     if (billNo == null) { onErr("暂无待缴账单"); return }
     scope.launch {
@@ -137,7 +145,7 @@ private fun doPay(
                 BillApi.lastPayNo = r.optString("payNo")
                 nav.push(Route.PayResult)
             }
-        } catch (e: Exception) { onErr("支付发起失败,请重试") }
+        } catch (e: Exception) { onErr("支付发起失败,请重试") } finally { guard.release() }
     }
 }
 
