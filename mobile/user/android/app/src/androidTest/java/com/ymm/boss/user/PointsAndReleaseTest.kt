@@ -41,6 +41,6 @@ class PointsAndReleaseTest {
     fun manifestDeclaresPostNotifications() {
         val pm = ApplicationProvider.getApplicationContext<Context>().packageManager
         val info = pm.getPackageInfo("com.ymm.boss.user", PackageManager.GET_PERMISSIONS)
-        assertTrue(info.requestedPermissions.contains("android.permission.POST_NOTIFICATIONS"))
+        assertTrue(info.requestedPermissions?.contains("android.permission.POST_NOTIFICATIONS") == true)
     }
 }
