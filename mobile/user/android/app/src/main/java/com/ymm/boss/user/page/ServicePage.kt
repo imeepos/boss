@@ -51,6 +51,8 @@ fun ServiceScreen(nav: Nav) {
     var faqs by remember { mutableStateOf(emptyList<JSONObject>()) }
     var input by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    // FAQ 展开态:question+answer 可读,消除「只有箭头无答案」的死功能。
+    var expandedFaqId by remember { mutableStateOf("") }
 
     LaunchedEffect(nav.refreshTick) {
         try { faqs = ServiceApi.faq().optJSONArray("items").toList() } catch (e: Exception) { /* 保留骨架 */ }
@@ -69,7 +71,21 @@ fun ServiceScreen(nav: Nav) {
             AppCard {
                 CardTitle("常见问题", "更多") { nav.push(Route.Help) }
                 if (faqs.isEmpty()) EmptyState("暂无常见问题")
-                faqs.forEach { f -> CellRow(title = f.optString("question"), right = { Text("›", color = Palette.subtle) }) }
+                faqs.forEach { f ->
+                    val id = f.optString("id")
+                    val expanded = id == expandedFaqId
+                    CellRow(
+                        title = f.optString("question"),
+                        onClick = { expandedFaqId = if (expanded) "" else id },
+                        right = { Text(if (expanded) "⌃" else "›", color = Palette.subtle) },
+                    )
+                    if (expanded && f.optString("answer").isNotBlank()) {
+                        Text(
+                            f.optString("answer"), fontSize = 12.5.sp, color = Palette.muted,
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
+                        )
+                    }
+                }
             }
         }
         ChatInput(input, { input = it }) { send(scope, msgs, input) { input = "" } }

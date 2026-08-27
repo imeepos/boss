@@ -2,6 +2,7 @@ package com.ymm.boss.user
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ymm.boss.user.api.AccountApi
 import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.DebugApi
 import com.ymm.boss.user.api.ProductApi
@@ -38,5 +39,9 @@ class RealBackendE2eTest {
 
         val items = ProductApi.list("broadband").optJSONArray("items")
         assertTrue("宽带产品列表应非空", items != null && items.length() > 0)
+
+        // 实名读路径(6 条关键路径之一):测试账号已实名(唯一事实源),状态应为 VERIFIED
+        val status = AccountApi.verifyStatus().optString("status")
+        assertTrue("实名状态应为 VERIFIED,实为 $status", status == "VERIFIED")
     }
 }

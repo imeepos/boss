@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ymm.boss.user.page.ComplaintScreen
 import com.ymm.boss.user.page.FaultDetailScreen
 import com.ymm.boss.user.page.InvoiceScreen
 import com.ymm.boss.user.page.MessagesScreen
@@ -98,5 +99,13 @@ class PageRenderTest {
         compose.onNodeWithText("消息中心").assertIsDisplayed()
         compose.onNodeWithText("全部消息").assertIsDisplayed()
         compose.onNodeWithText("未读消息").assertIsDisplayed()
+    }
+
+    @Test
+    fun complaintShowsHeaderAndEntry() {
+        // 投诉页(佳宁冒烟集末项):标题与右上发起入口恒渲染
+        compose.setContent { ComplaintScreen(Nav(Route.Complaint)) }
+        compose.onNodeWithText("投诉与建议").assertIsDisplayed()
+        compose.onNodeWithText("立即投诉").assertIsDisplayed()
     }
 }
