@@ -1221,3 +1221,10 @@
 - 哪个坑浪费了最多时间? aapt2 dump xmltree 对 release 包静默无输出,换 aapt(v1) 即得 networkSecurityConfig 属性;其余为审计+文档,零代码改动(安全侧 R1/R2 前序已做扎实:Token 加密、debug-only 开关、无背景定位)。
 - skill 有没有提前预警? 无;新手法入 techniques。
 - 重来一次? 审计结论先落成可执行文档(https 迁移方案)再收口,避免知识只存在聊天里。
+
+## 2026-08-27 user Android D-1 门禁-真实后端关键路径 E2E
+
+- 哪个坑浪费了最多时间? 无大坑。关键前置: 102 dev 模式开启(/debug/sms-code 200)使真码可取;
+  测试号唯一事实源 test-accounts.json customers[0]。connected 与联调一样须 -PbossBaseUrl=192.168.0.102 覆盖(debug 默认公网 IP)。
+- skill 有没有提前预警? lessons #5(新页面直连 102 真服务)+ #21(debug 端口覆盖)直接应验。
+- 重来一次? E2E 前置依赖一律 Assume 跳过(dev 未开/取码失败),真实断言(登录 token/列表非空)不舍糊——既能在 CI 无 dev 环境静默跳过,又保证真实链路不造假。
