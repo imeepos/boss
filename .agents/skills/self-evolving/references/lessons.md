@@ -359,3 +359,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - ModalBottomSheet 内收起软键盘用 input keyevent 4(BACK);keyevent 111(ESC)会把整个 sheet 关掉,真机自动化断流(2026-08-26)。
 - 真机保存报 50000 先 docker logs boss-server 查 SQLSTATE:FK 违约多半是陈旧 token 指向已删 customer,pm clear 重登即愈,不是新代码 bug(2026-08-26)。
 - 推 main 后部署是否发生必须以 boss-server 运行镜像 sha / schema_migrations 最新版为准去核对,不能假设 CI 已完成;CI runner 被其他项目任务占满时 deploy 任务会只创建不执行(2026-08-27 激活回调闭环,3116 任务未执行)。
+- pgx 列可空性必须真库验证一次:mock 桩永远返回你写的非 NULL 行,`*int` 扫 NULL 列在 mock 下全绿、首个 fresh 行(如 open_webhook_deliveries.http_status)即炸,整条投递循环每轮报错。凡"从零第一次读"的行优先用 pgtype.Int4/Text 或 COALESCE(2026-08-30 webhook 集成测试当场抓获,单测全绿未能预警)。
+- SQL 语义改动(SKIP LOCKED 领取/租约窗口/事务边界)先上真库 EXPLAIN 验证语法与计划再写代码;pgxmock 只能对字符串做正则匹配,验不出 `FOR UPDATE OF 别名` 级别的合法性。
+- DSH 工具的后台执行靠工具参数(如 run_in_background: true),把它当环境变量写进命令体不会生效,命令会被前台超时杀掉。

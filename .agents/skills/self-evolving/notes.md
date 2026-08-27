@@ -930,3 +930,9 @@
 - 哪个坑浪费了最多时间？①102 端口冲突:oltsim 默认 HTTP 8081 被 goproxy 占用,8088 被别的服务占,最后换 18099 才对;②102 的 /tmp 100% 满(runc/psql 全挂)——历史构建残留 boss-build-* 各 2.2G,清了才恢复;③nohup+& 经 ssh 起来后被会话收割,setsid + </dev/null + disown 才脱离;④102 go 1.24.4 但 go.mod 要 1.25,toolchain 自动下载超时,改本地交叉编译(GOOS=linux GOARCH=amd64)传二进制。
 - 这个 skill 有没有提前警告我？教训 5"(改完 curl 验证)"方向对;但"102 端口冲突换端口""/tmp 满了先 df""ssh 起长驻进程用 setsid"都没有沉淀。
 - 重来一次我会怎么做？102 起新服务先 `ss -tln | grep 端口` 查占用,避免盲绑;起长驻进程用 setsid;大文件同步到 /tmp 前先 df 查空间;跨版本编译用本地交叉编译。
+
+## 2026-08-30 业务持久化可靠性整改阶段2(fix/persist-reliability-r2)
+
+- 哪个坑浪费了最多时间？真实 PG 集成测试当场抓获 mock 全绿放行的产线级断链(open_webhook_deliveries fresh 行 http_status=NULL,*int 扫描必炸,部署环境 subscriptions=0 才未爆发)——排查本身快,但反思耗时:为什么单测没拦?因为 pgxmock 桩永远返回非 NULL 假行。另有一笔 60s 浪费:把 run_in_background 当环境变量写进 bash 字符串,前台超时被杀,正确做法是工具参数。
+- 这个 skill 有没有提前警告我?有两条红线救场:开工前 git worktree list/pwd 核对(worktree 兄弟目录坑零踩踏),以及"推 main 后必须核对运行镜像 sha 而非假设 CI"——本次 CI 一分钟内部署新镜像,poll 循环抓到 sha 变化并复测审计写入路径(id=1418)。但"pgxmock 验不出列可空性/SQL 合法性"没有沉淀,已补 lessons 三条。
+- 重来一次我会怎么做?SQL 重的批次(SKIP LOCKED 领取、事务化)在写单测之前先上真库 EXPLAIN+行为集成测试,让真库约束倒逼 SQL 设计;mock 单测只留给控制流分支。
