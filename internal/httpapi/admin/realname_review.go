@@ -204,6 +204,10 @@ func verifyFromCenterHandler(a *app.Application) gin.HandlerFunc {
 		httpx.RecordAudit(a, c, "realname_review.verify", "verification",
 			fmt.Sprintf("%s/%d", subjectType, subjectID),
 			gin.H{"result": req.Result, "reason": req.Reason})
+		resolveRealnameTodo(a, c, subjectType, subjectID)
+		if subjectType == "customer" {
+			notifyCustomerRealnameResult(a, c, subjectID, req.Result, req.Reason)
+		}
 		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
 	}
 }

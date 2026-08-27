@@ -188,7 +188,7 @@ SELECT id, subject_id, method, real_name, id_card_no, result, reject_reason,
        id_card_front_id, id_card_back_id, verified_at, operator_account_id, operator_name
  FROM verifications
  WHERE subject_type = 'customer' AND subject_id = $1
- ORDER BY verified_at DESC
+ ORDER BY verified_at DESC, id DESC
  LIMIT 1`, customerID)
 	var v CustomerRealNameVerification
 	var op pgtype.Int8

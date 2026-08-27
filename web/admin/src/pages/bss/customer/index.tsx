@@ -10,6 +10,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { SERVICE_STATUSES, filterCustomers, pageSlice } from './filter'
 import type { CustomerRow } from './types'
 import { VerifyLogsDrawer } from './VerifyLogsDrawer'
+import { RealNameDrawer } from './RealNameDrawer'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { fmtTime } from '../../../lib/format'
 import { TableStateRow } from '../../../components/business'
@@ -27,6 +28,7 @@ export default function CustomerPage() {
   const [pageSize, setPageSize] = useState(10)
   const [detail, setDetail] = useState<CustomerRow | null>(null)
   const [verifyId, setVerifyId] = useState<CustomerRow | null>(null)
+  const [rnId, setRnId] = useState<CustomerRow | null>(null)
   const [busy, setBusy] = useState(false)
 
   const load = () => {
@@ -80,6 +82,8 @@ export default function CustomerPage() {
                       <span className="inline-flex items-center">
                         <button onClick={() => setDetail(r)}>{c.detail}</button>
                         <span className="text-[var(--shell-side-border)]">|</span>
+                        <button onClick={() => setRnId(r)}>{c.rnBtn}</button>
+                        <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setVerifyId(r)}>{c.verify}</button>
                       </span>
                     </td>
@@ -115,6 +119,9 @@ export default function CustomerPage() {
       )}
       {verifyId && (
         <VerifyLogsDrawer customerId={verifyId.id} customerName={verifyId.name} onClose={() => setVerifyId(null)} />
+      )}
+      {rnId && (
+        <RealNameDrawer customerId={rnId.id} customerName={rnId.name} onClose={() => setRnId(null)} onSubmitted={load} />
       )}
     </div>
   )

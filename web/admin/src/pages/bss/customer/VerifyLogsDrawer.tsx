@@ -34,7 +34,7 @@ export function VerifyLogsDrawer({
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{i + 1}</td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.method}</td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.verifiedAt)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.result === 'PASS' ? '通过' : '不通过'}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><VerifyResultBadge result={r.result} labels={c.verifyResultLabels} /></td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.operatorName || `#${r.operatorAccountId}` || '—'}</td>
                 </tr>
               ))}
@@ -46,5 +46,17 @@ export function VerifyLogsDrawer({
         </div>
       )}
     </Drawer>
+  )
+}
+
+/** 核验结论三态徽标:PENDING(自助提交在途)不得渲染成"不通过"。 */
+function VerifyResultBadge({ result, labels }: { result: string; labels: Record<string, string> }) {
+  const color = result === 'PASS' ? 'var(--color-success)' : result === 'FAIL' ? 'var(--color-danger)' : 'var(--color-warning)'
+  const label = labels[result] ?? result
+  return (
+    <span className="inline-flex h-6 items-center rounded-full px-2 text-[11px] font-medium"
+      style={{ color, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
+      {label}
+    </span>
   )
 }
