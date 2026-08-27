@@ -129,6 +129,41 @@ func (s *PGStore) CreateSubscription(ctx context.Context, appID int64, eventType
 	return &Subscription{ID: id, AppID: appID, EventType: eventType, EndpointURL: endpointURL, Status: 1, CreatedAt: fmtTime(createdAt)}, nil
 }
 
+// CreateSubscriptions 一个端点批量订阅多个事件:单条 INSERT..SELECT unnest 原子写入,
+// 唯一约束 (app_id,event_type,endpoint_url) 让重复订阅幂等跳过;返回该端点命中的订阅行。
+func (s *PGStore) CreateSubscriptions(ctx context.Context, appID int64, eventTypes []string, endpointURL string) ([]Subscription, error) {
+	if len(eventTypes) == 0 {
+		return nil, nil
+	}
+	_, err := s.db.Exec(ctx, `
+		INSERT INTO open_webhook_subscriptions (app_id, event_type, endpoint_url)
+		SELECT $1, t, $2 FROM unnest($3::text[]) t
+		ON CONFLICT (app_id, event_type, endpoint_url) DO NOTHING`, appID, endpointURL, eventTypes)
+	if err != nil {
+		return nil, fmt.Errorf("openplat: create subscriptions: %w", err)
+	}
+	rows, err := s.db.Query(ctx, `
+		SELECT id, app_id, event_type, endpoint_url, status, created_at
+		FROM open_webhook_subscriptions
+		WHERE app_id = $1 AND endpoint_url = $2 AND event_type = ANY($3)
+		ORDER BY id`, appID, endpointURL, eventTypes)
+	if err != nil {
+		return nil, fmt.Errorf("openplat: list created subscriptions: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Subscription, 0, len(eventTypes))
+	for rows.Next() {
+		var sub Subscription
+		var createdAt pgtype.Timestamptz
+		if err := rows.Scan(&sub.ID, &sub.AppID, &sub.EventType, &sub.EndpointURL, &sub.Status, &createdAt); err != nil {
+			return nil, fmt.Errorf("openplat: scan created subscription: %w", err)
+		}
+		sub.CreatedAt = fmtTime(createdAt)
+		out = append(out, sub)
+	}
+	return out, rows.Err()
+}
+
 // ListSubscriptions 列出应用的事件订阅。
 func (s *PGStore) ListSubscriptions(ctx context.Context, appID int64) ([]Subscription, error) {
 	rows, err := s.db.Query(ctx, `

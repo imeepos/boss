@@ -5,9 +5,19 @@
 package adminapi
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
+
+// makeEvents 生成 n 个互不相同的事件类型。
+func makeEvents(n int) []string {
+	out := make([]string, 0, n)
+	for i := 0; i < n; i++ {
+		out = append(out, fmt.Sprintf("evt.%02d", i))
+	}
+	return out
+}
 
 // TestOpenPlatAppCreateReqValidate 覆盖修复后的校验语义。
 func TestOpenPlatAppCreateReqValidate(t *testing.T) {
@@ -52,5 +62,48 @@ func TestOpenPlatAppCreateMethodValueCapturesZeroReceiver(t *testing.T) {
 	good := func() error { return req.validate() } // 闭包,延迟到调用时 deref
 	if err := good(); err != nil {
 		t.Fatalf("闭包应看到已填充的 Name,但报: %v", err)
+	}
+}
+
+// TestOpenPlatSubCreateReqValidate 新增订阅请求:批量事件合并/去重/上限与端点校验。
+func TestOpenPlatSubCreateReqValidate(t *testing.T) {
+	cases := []struct {
+		name   string
+		req    openPlatSubCreateReq
+		wantOK bool
+	}{
+		{name: "批量事件+端点", req: openPlatSubCreateReq{EventTypes: []string{"order.stage.done", "order.activated"}, EndpointURL: "https://a.b/hook"}, wantOK: true},
+		{name: "单数兼容字段", req: openPlatSubCreateReq{EventType: "order.stage.done", EndpointURL: "https://a.b/hook"}, wantOK: true},
+		{name: "单数+批量合并去重", req: openPlatSubCreateReq{EventType: "order.stage.done", EventTypes: []string{"order.stage.done"}, EndpointURL: "https://a.b/hook"}, wantOK: true},
+		{name: "无事件", req: openPlatSubCreateReq{EndpointURL: "https://a.b/hook"}, wantOK: false},
+		{name: "全空白事件", req: openPlatSubCreateReq{EventTypes: []string{"  ", ""}, EndpointURL: "https://a.b/hook"}, wantOK: false},
+		{name: "缺端点", req: openPlatSubCreateReq{EventTypes: []string{"order.stage.done"}}, wantOK: false},
+		{name: "事件超长", req: openPlatSubCreateReq{EventTypes: []string{strings.Repeat("x", 65)}, EndpointURL: "https://a.b/hook"}, wantOK: false},
+		{name: "超过批量上限", req: openPlatSubCreateReq{EventTypes: makeEvents(33), EndpointURL: "https://a.b/hook"}, wantOK: false},
+		{name: "上限 32 合法", req: openPlatSubCreateReq{EventTypes: makeEvents(32), EndpointURL: "https://a.b/hook"}, wantOK: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.req.validate()
+			if tc.wantOK && err != nil {
+				t.Fatalf("期望通过但报错: %v", err)
+			}
+			if !tc.wantOK && err == nil {
+				t.Fatal("期望报错但通过")
+			}
+		})
+	}
+}
+
+// TestOpenPlatSubCreateReqEventList eventList 合并语义:批量在前、单数追加,trim/去空/去重保序。
+func TestOpenPlatSubCreateReqEventList(t *testing.T) {
+	req := openPlatSubCreateReq{EventType: " b.b ", EventTypes: []string{" a.a ", "b.b", ""}}
+	got := req.eventList()
+	if len(got) != 2 || got[0] != "a.a" || got[1] != "b.b" {
+		t.Fatalf("eventList = %v, want [a.a b.b]", got)
+	}
+	onlySingle := openPlatSubCreateReq{EventType: "c.c"}.eventList()
+	if len(onlySingle) != 1 || onlySingle[0] != "c.c" {
+		t.Fatalf("eventList = %v, want [c.c]", onlySingle)
 	}
 }

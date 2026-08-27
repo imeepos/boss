@@ -4,7 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { formatTime } from '../../base/audit/logic'
 import { EmptyState } from '../../../components/business'
-import { Drawer } from '../../../components/Drawer'
+import { SubForm } from './SubForm'
 import type { OpenAppRow } from './index'
 
 interface SubRow {
@@ -38,10 +38,7 @@ export function AppDetail({ app, onRefreshApps }: { app: OpenAppRow; onRefreshAp
   const [subs, setSubs] = useState<SubRow[]>([])
   const [deliveries, setDeliveries] = useState<DeliveryRow[]>([])
   const [error, setError] = useState('')
-  const [evType, setEvType] = useState('order.stage.done')
-  const [endpoint, setEndpoint] = useState('')
   const [subOpen, setSubOpen] = useState(false)
-  const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(() => {
@@ -55,30 +52,7 @@ export function AppDetail({ app, onRefreshApps }: { app: OpenAppRow; onRefreshAp
   }, [app.id, t])
   useEffect(load, [load]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const closeSubForm = () => {
-    setSubOpen(false)
-    setEvType('order.stage.done')
-    setEndpoint('')
-    setFormError('')
-  }
-
-  const addSub = async () => {
-    if (busy) return
-    if (!evType.trim() || !endpoint.trim()) { setFormError(t.pages.openplat.saveFail); return }
-    setBusy(true)
-    try {
-      await apiFetch(`/openplat/apps/${app.id}/subscriptions`, {
-        method: 'POST',
-        body: { eventType: evType.trim(), endpointUrl: endpoint.trim() },
-      })
-      closeSubForm()
-      load()
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : t.pages.openplat.saveFail)
-    } finally {
-      setBusy(false)
-    }
-  }
+  const closeSubForm = () => setSubOpen(false)
 
   const delSub = async (id: number) => {
     if (busy) return
@@ -116,7 +90,6 @@ export function AppDetail({ app, onRefreshApps }: { app: OpenAppRow; onRefreshAp
     }
   }
 
-  const inputCls = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
   const appDeliveries = filterAppDeliveries(deliveries, subs)
   const statusLabel = (s: number) => s === 1 ? t.pages.openplat.dlvDone : s === 2 ? t.pages.openplat.dlvDead : t.pages.openplat.dlvPending
 
@@ -167,29 +140,8 @@ export function AppDetail({ app, onRefreshApps }: { app: OpenAppRow; onRefreshAp
       {error && <div className="mt-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
 
       {subOpen && (
-        <Drawer title={t.pages.openplat.addSub} onClose={closeSubForm}
-          footer={
-            <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={closeSubForm}>
-                {t.common.confirmDialog.cancel}
-              </button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={addSub}>
-                {t.pages.openplat.addSub}
-              </button>
-            </>
-          }>
-          <div className="grid gap-3">
-            <label className="text-xs text-[var(--shell-crumb-text)]">
-              Event Type
-              <input className={inputCls + ' mt-1 w-44'} value={evType} placeholder="order.stage.done" onChange={(e) => setEvType(e.target.value)} />
-            </label>
-            <label className="text-xs text-[var(--shell-crumb-text)]">
-              {t.pages.openplat.pEndpoint}
-              <input className={inputCls + ' mt-1 w-full'} value={endpoint} placeholder={t.pages.openplat.pEndpoint} onChange={(e) => setEndpoint(e.target.value)} />
-            </label>
-            {formError && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{formError}</div>}
-          </div>
-        </Drawer>
+        <SubForm appId={app.id} onClose={closeSubForm}
+          onCreated={() => { closeSubForm(); load() }} />
       )}
     </div>
   )

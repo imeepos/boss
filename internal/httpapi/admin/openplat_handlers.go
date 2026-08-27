@@ -96,12 +96,19 @@ func openPlatSubCreateHandler(a *app.Application) gin.HandlerFunc {
 		if !ok {
 			return
 		}
-		sub, err := a.OpenPlat.CreateSubscription(c.Request.Context(), id, req.EventType, req.EndpointURL)
+		subs, err := a.OpenPlat.CreateSubscriptions(c.Request.Context(), id, req.eventList(), req.EndpointURL)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, sub)
+		respond(c, apitypes.CodeOK, gin.H{"items": subs})
+	}
+}
+
+// openPlatEventTypeListHandler GET /openplat/event-types:可订阅事件目录(事件选择器数据源)。
+func openPlatEventTypeListHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		respond(c, apitypes.CodeOK, gin.H{"items": openplat.EventCatalog()})
 	}
 }
 

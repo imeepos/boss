@@ -30,6 +30,9 @@ func (selftestFake) SetAppStatus(context.Context, int64, int16) error { return n
 func (selftestFake) CreateSubscription(context.Context, int64, string, string) (*openplat.Subscription, error) {
 	return nil, errors.New("not implemented")
 }
+func (selftestFake) CreateSubscriptions(context.Context, int64, []string, string) ([]openplat.Subscription, error) {
+	return nil, errors.New("not implemented")
+}
 func (selftestFake) ListSubscriptions(context.Context, int64) ([]openplat.Subscription, error) {
 	return nil, nil
 }

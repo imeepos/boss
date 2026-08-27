@@ -35,6 +35,9 @@ func (f *fakeOpenPlat) ListSubscriptions(context.Context, int64) ([]openplat.Sub
 func (f *fakeOpenPlat) CreateSubscription(context.Context, int64, string, string) (*openplat.Subscription, error) {
 	return nil, errors.New("not implemented")
 }
+func (f *fakeOpenPlat) CreateSubscriptions(context.Context, int64, []string, string) ([]openplat.Subscription, error) {
+	return nil, errors.New("not implemented")
+}
 func (f *fakeOpenPlat) DeleteSubscription(context.Context, int64) error { return nil }
 func (f *fakeOpenPlat) ListDeliveries(context.Context, int64) ([]openplat.Delivery, error) {
 	return nil, nil

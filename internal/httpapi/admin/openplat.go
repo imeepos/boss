@@ -3,12 +3,15 @@
 package adminapi
 
 import (
+	"fmt"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/openplat"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 )
 
@@ -18,6 +21,7 @@ func registerOpenPlatRoutes(g *gin.RouterGroup, a *app.Application) {
 	op.GET("/openplat/apps", openPlatAppListHandler(a))
 	op.POST("/openplat/apps", openPlatAppCreateHandler(a))
 	op.PUT("/openplat/apps/:id/status", openPlatAppStatusHandler(a))
+	op.GET("/openplat/event-types", openPlatEventTypeListHandler(a))
 	op.GET("/openplat/apps/:id/subscriptions", openPlatSubListHandler(a))
 	op.POST("/openplat/apps/:id/subscriptions", openPlatSubCreateHandler(a))
 	op.DELETE("/openplat/subscriptions/:id", openPlatSubDeleteHandler(a))
@@ -43,10 +47,12 @@ type openPlatAppStatusReq struct {
 	Status int16 `json:"status" binding:"oneof=0 1"`
 }
 
-// openPlatSubCreateReq 新增 Webhook 订阅请求体。
+// openPlatSubCreateReq 新增 Webhook 订阅请求体:eventTypes 批量(一个端点订阅多个事件),
+// eventType 单数保留兼容旧客户端;两者同给时合并去重。
 type openPlatSubCreateReq struct {
-	EventType   string `json:"eventType"`
-	EndpointURL string `json:"endpointUrl"`
+	EventType   string   `json:"eventType"`
+	EventTypes  []string `json:"eventTypes"`
+	EndpointURL string   `json:"endpointUrl"`
 }
 
 // validate 校验创建应用请求:trim 后非空 + 长度 ≤ 64;rpm/quota 非负。
@@ -64,10 +70,28 @@ func (r openPlatAppCreateReq) validate() error {
 	)
 }
 
-// validate 校验新增订阅请求。
+// eventList 合并批量与单数(兼容)事件字段,trim/去空/去重保序;批量在前,单数追加其后。
+func (r openPlatSubCreateReq) eventList() []string {
+	list := r.EventTypes
+	if r.EventType != "" {
+		list = append(slices.Clone(r.EventTypes), r.EventType)
+	}
+	return openplat.NormalizeEventTypes(list)
+}
+
+// validate 校验新增订阅请求:至少一个事件、单事件 ≤64 字符、批量 ≤ 上限、端点非空 ≤512。
 func (r openPlatSubCreateReq) validate() error {
-	return httpx.CollectErrors(
-		httpx.RequireString(r.EventType, "eventType", 64),
-		httpx.RequireString(r.EndpointURL, "endpointUrl", 512),
-	)
+	events := r.eventList()
+	if len(events) == 0 {
+		return &httpx.ValidationError{Field: "eventTypes", Message: "is required"}
+	}
+	if len(events) > openplat.MaxSubEventsPerRequest {
+		return &httpx.ValidationError{Field: "eventTypes", Message: fmt.Sprintf("max %d event types", openplat.MaxSubEventsPerRequest)}
+	}
+	for _, et := range events {
+		if utf8.RuneCountInString(et) > 64 {
+			return &httpx.ValidationError{Field: "eventTypes", Message: "max 64 characters per event type"}
+		}
+	}
+	return httpx.CollectErrors(httpx.RequireString(r.EndpointURL, "endpointUrl", 512))
 }

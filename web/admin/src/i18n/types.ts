@@ -1687,6 +1687,14 @@ export interface Translations {
       subsTitle: string
       pEndpoint: string
       addSub: string
+      fEvents: string
+      evPlaceholder: string
+      evSearch: string
+      evNone: string
+      evRequired: string
+      epRequired: string
+      evHint: string
+      evLoadFail: string
       delSub: string
       noSubs: string
       dlvTitle: string

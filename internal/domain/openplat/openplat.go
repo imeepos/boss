@@ -71,6 +71,8 @@ type Service interface {
 
 	// CreateSubscription / ListSubscriptions / DeleteSubscription 管理 Webhook 订阅。
 	CreateSubscription(ctx context.Context, appID int64, eventType, endpointURL string) (*Subscription, error)
+	// CreateSubscriptions 一个端点批量订阅多个事件(单语句原子写入,重复订阅幂等跳过)。
+	CreateSubscriptions(ctx context.Context, appID int64, eventTypes []string, endpointURL string) ([]Subscription, error)
 	ListSubscriptions(ctx context.Context, appID int64) ([]Subscription, error)
 	DeleteSubscription(ctx context.Context, id int64) error
 

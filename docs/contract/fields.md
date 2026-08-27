@@ -426,7 +426,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 配额 | `DailyQuota` | daily_quota | 日调用配额，缺省 10000（open_usage_day 计数） |
 | 沙箱 | `Sandbox` | sandbox | true=沙箱应用（M4 沙箱环境） |
 | — | `LastUsedAt` | last_used_at | 供审计/巡检 |
-| 订阅事件 | `EventType` | open_webhook_subscriptions.event_type | 如 order.activated；同 app+事件+端点唯一 |
+| 订阅事件 | `EventType` / `EventTypes` | open_webhook_subscriptions.event_type | 如 order.stage.done；同 app+事件+端点唯一。新增订阅请求 `eventTypes[]` 批量（一个端点订阅多事件=多行，单语句原子写入、重复幂等跳过，≤32 个/次），单数 `eventType` 保留兼容；目录接口 `GET /openplat/event-types`（登记制：emit 侧落地后在 internal/domain/openplat/events.go 登记，未登记不对外） |
 | 回调端点 | `EndpointURL` | endpoint_url | HTTPS 回调地址（M2 投递器消费） |
 | 投递状态 | `Status` | open_webhook_deliveries.status | 0待投递 / 1已投递 / 2死信（超过 6 次重试，迁移 000125） |
 | 幂等键 | `EventID` | open_webhook_deliveries.event_id | 同订阅+事件唯一（UNIQUE + DO NOTHING），重放不重复执行业务动作 |
