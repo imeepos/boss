@@ -33,6 +33,12 @@ services:
       BOSS_HOSTCTL_HMAC_KEY_FILE: "/run/hostctl-hmac/hmac.key"
       # 数据备份迁移归档目录(迁移 000095,/backup/* API);命名卷持久化
       BOSS_BACKUP_DIR: "/data/backups"
+      # 系统授权激活链路(release-platform):rpat_ operator token,兑码+取离线令牌专用;
+      # 铸造于 release-platform /v1/tokens(id=boss-activation),轮换=重铸后改此处。
+      # 同"内网私有 gitea 简化 CI 直接入库"裁定落 env;API 地址走 config 默认 38080。
+      BOSS_LICENSE_API_TOKEN: "rpat_b32374e327a0771d1786001192cbc82045d7ec5405dacb1cf13b356054e8e877"
+      BOSS_LICENSE_API_BASE_URL: "http://192.168.0.102:38080"
+      BOSS_LICENSE_PRODUCT_ID: "boss-server"
     volumes:
       # hostctl HMAC key:宿主机 /etc/boss-host-ctl/hmac.key(0600)
       - /etc/boss-host-ctl/hmac.key:/run/hostctl-hmac/hmac.key:ro
