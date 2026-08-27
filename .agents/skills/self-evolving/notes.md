@@ -1215,3 +1215,9 @@
 - 哪个坑浪费了最多时间? 冷启测量 TotalTime 恒 0 排查:权限弹窗(GrantPermissionsActivity)顶替 topResumedActivity,am start -W 把 intent 投给顶层实例;pm grant POST_NOTIFICATIONS 后即得真值(1229/1196/1179ms,均值 1.2s<3s 红线)。
 - skill 有没有提前预警? 无(新坑);已将测量手法与坑记入 technique(见 checklist 文档)。
 - 重来一次? ①测量类任务先 dumpsys 看 topResumedActivity 排除遮罩层;②红线×代码对照继续按审计先行,本轮实名三态/空态/时间空串/懒加载全数核验通过零改动,只有发票冒烟测试与 checklist 文档是新产出。
+
+## 2026-08-27 user Android 上线计划 D13-D14 安全收口轮
+
+- 哪个坑浪费了最多时间? aapt2 dump xmltree 对 release 包静默无输出,换 aapt(v1) 即得 networkSecurityConfig 属性;其余为审计+文档,零代码改动(安全侧 R1/R2 前序已做扎实:Token 加密、debug-only 开关、无背景定位)。
+- skill 有没有提前预警? 无;新手法入 techniques。
+- 重来一次? 审计结论先落成可执行文档(https 迁移方案)再收口,避免知识只存在聊天里。
