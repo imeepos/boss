@@ -386,3 +386,8 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 项目 vitest environment=node 且无 @testing-library/react 时,组件测试走 renderToStaticMarkup(SSR 骨架)+ 抽纯函数单测,不写 useState 异步交互测试。开工前 grep vite.config.ts test.environment + pnpm-lock.yaml testing-library/react + 项目内 fireEvent 引用计数三件套。
 - 写反向回填 SQL 时,严禁 `WHERE x IS NULL` 哑条件(业务流先填 x 时 UPDATE 静默跳过 0 行,无法区分"已绑别人"与"无须回填");改用 `WHERE x IS NULL OR x = $expected`,UPDATE 0 行**必然**是冲突,可靠触发 ErrXxxConflict,不留下孤儿。配套必须有可观测 slog 日志(冲突对象 id + 原因字段),便于排查时 grep。skill 没提前警告我。
 - 收到"数据没关联上/对不上"类反馈,第一动作是 SQL 查表给出数量级证据(双向一致 / A 端孤儿 / B 端孤儿),再判断是历史数据还是接口问题;直接看接口或写迁移容易越界。skill 没明确沉淀"双向孤儿诊断三件套"(一致性对 / A 单向 / B 单向)。
+- 收到"真实验证失败"反馈时,先 SSH 102 看服务端日志找真实 SQLSTATE(23505/22001/42P07 等),针对性拆解 pgconn.PgError 按 ConstraintName 分类映射为业务错误;不要笼统返 50000,那样前端只能看到"内部错误"。
+- DB 唯一约束触发后,pgxmock 的 `pgxmock.NewResult("UPDATE", 0)` 模拟的是"冲突"场景,但 PG 真实行为是 `UPDATE 值相等仍返 1 行`;写幂等测试时必须用 `WillReturnResult(pgxmock.NewResult("UPDATE", 1))` 模拟幂等场景。
+- Docker 容器内替换镜像层文件必须用 bind mount 注入或 docker commit 保留可写层,docker cp 改的二进制/文件**容器重启即丢失**(因为镜像层只读、cp 只写可写层、commit 不显式保留就没了)。
+- 真实验证脚本应走业务接口(免 license gate/admin token),不走 license status(被 license gate 拦截)。102 dev 环境镜像里 LicensePublicKeyHex 已注入,门禁启用;本地 build 没注入公钥,二进制行为不同。skill 没沉淀"license-gated vs dev build"的环境差异。
+- 迁移让号:同时改 schema_migrations.version + 改 up.sql 用 `CREATE INDEX IF NOT EXISTS`(兼容已落库索引);否则 server 启动时撞 42P07 触发重启循环。skill 没沉淀"迁移让号 + 已落库兼容"完整三步。

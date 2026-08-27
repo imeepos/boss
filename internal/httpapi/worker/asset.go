@@ -17,6 +17,8 @@ func registerWorkerPortalAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/tickets/:ticketNo/dismantle/scan", workerDismantleScanHandler(a))
 	g.GET("/tickets/:ticketNo/replace", workerReplaceGetHandler(a))
 	g.POST("/tickets/:ticketNo/replace", workerReplacePostHandler(a))
+	g.GET("/replacements", workerReplacementsHandler(a))
+	g.POST("/replacements/:id/complete", workerReplacementCompleteHandler(a))
 	g.POST("/assets/:epc/return", workerAssetReturnHandler(a))
 	g.GET("/materials", workerMaterialsHandler(a))
 	g.POST("/materials/:itemId/out", workerMaterialOutHandler(a))

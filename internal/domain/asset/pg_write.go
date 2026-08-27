@@ -159,17 +159,17 @@ func (s *PGStore) AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64,
 
 // ListReplacements 列出全部换新单。
 
-// CreateReplacement 新建换新单,返回自增 id。
-func (s *PGStore) CreateReplacement(ctx context.Context, r Replacement) (int64, error) {
-	var id int64
-	err := s.db.QueryRow(ctx, `
-		INSERT INTO replacements(replacement_no, asset_id, legal_entity_id, legal_entity_name, reason, priority, status)
-		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-		r.ReplacementNo, r.AssetID, r.LegalEntityID, r.LegalEntityName, r.Reason, r.Priority, r.Status).Scan(&id)
+// SetAssetStatus 直改资产当前状态(换新完成联动:旧件→MAINTENANCE/新件→DEPLOYED);
+// 历史轨迹由调用方 AppendLifecycle 另行落行。
+func (s *PGStore) SetAssetStatus(ctx context.Context, assetID int64, status string) error {
+	tag, err := s.db.Exec(ctx, `UPDATE assets SET status = $2 WHERE id = $1`, assetID, status)
 	if err != nil {
-		return 0, fmt.Errorf("asset: create replacement: %w", err)
+		return fmt.Errorf("asset: set asset status: %w", err)
 	}
-	return id, nil
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // ListStocktakes 列出全部盘点任务。

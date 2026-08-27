@@ -30,3 +30,15 @@ ssh imeepos@192.168.0.102 'crontab -l 2>/dev/null | grep -v db-patrol-gate; \
 - mainchain-acceptance.sh(每次验收): 造数自清理 + 收尾自检,源头不泄漏。
 
 三者共用同一脚本 `scripts/ops/db-patrol-gate.sh`(支持 `--selftest` 离线自检)。
+
+## 资产↔标签双向一致性(2026-08-27 追加)
+
+internal/domain/report/pg_patrol.go 巡检清单新增两项:
+
+- `assets.tag_id -> tags`:资产.tag_id 指向不存在或反向未绑的标签 → 孤儿数
+- `tags.bound_asset_id -> assets`:标签.bound_asset_id 指向不存在或反向未绑的资产 → 孤儿数
+
+历史 124 条 B 端孤儿由此类单边写入产生(internal/domain/asset/pg_write.go
+双绑回填漏了 CreateTag 反向);DB 部分唯一约束 000158 已部署兜底,但应用层遗漏
+或未来回归仍可能产生——本巡检作为每日 cron + db-patrol-gate 兜底,任一 >0 即
+ORPHAN-GATE FAIL 拦截验收/部署。

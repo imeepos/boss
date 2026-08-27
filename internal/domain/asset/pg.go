@@ -173,27 +173,7 @@ func (s *PGStore) ListLifecycles(ctx context.Context, assetID int64) ([]AssetLif
 
 // AppendLifecycle 记录一次状态/位置变更,返回自增 id。
 
-// ListReplacements 列出全部换新单。
-func (s *PGStore) ListReplacements(ctx context.Context) ([]Replacement, error) {
-	rows, err := s.db.Query(ctx,
-		`SELECT id, replacement_no, asset_id, legal_entity_id, legal_entity_name, reason, priority, status
-		 FROM replacements ORDER BY id`)
-	if err != nil {
-		return nil, fmt.Errorf("asset: list replacements: %w", err)
-	}
-	defer rows.Close()
-	out := make([]Replacement, 0)
-	for rows.Next() {
-		var r Replacement
-		if err := rows.Scan(&r.ID, &r.ReplacementNo, &r.AssetID, &r.LegalEntityID, &r.LegalEntityName, &r.Reason, &r.Priority, &r.Status); err != nil {
-			return nil, fmt.Errorf("asset: scan replacement: %w", err)
-		}
-		out = append(out, r)
-	}
-	return out, rows.Err()
-}
-
-// CreateReplacement 新建换新单,返回自增 id。
+// ListReplacements/CreateReplacement/状态机流转见 pg_replacement.go(单文件 ≤300 行)。
 
 // ListStocktakes 列出全部盘点任务。
 func (s *PGStore) ListStocktakes(ctx context.Context) ([]Stocktake, error) {

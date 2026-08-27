@@ -659,6 +659,22 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 > （CONFIRM=MISMATCH 时按实盘修正 assets.status 并落 asset_lifecycles；FIX=台账为准；ESCALATE=上报转人工）→全处置完才可关单
 > （`POST /stocktakes/{taskId}/diff-handle`,存在 OPEN 差异返回 40900）。
 
+### 4.3 replacements（换新单/设备更换单，000007 + 000159 派单三列）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 更换单 | `ReplacementNo` | replacement_no | RPL-YYYYMMDD-序列，后端生成 |
+| 设备 | `AssetID` | asset_id | BIGINT 软引用 assets（被更换资产） |
+| 原因 | `Reason` | reason | 如 光猫故障 |
+| 优先级 | `Priority` | priority | HIGH/MEDIUM/LOW |
+| 状态 | `Status` | status | PENDING/DOING/DONE/FAILED（见 terms.md 第 4 节） |
+| 派单师傅 | `WorkerID`/`WorkerName` | worker_id/worker_name | 000159；worker_id FK→workers，name 快照（0/空=未派） |
+| 完成时间 | `FinishedAt` | finished_at | TIMESTAMPTZ 可空；DONE/FAILED 时回填 |
+
+> 状态机：PENDING --assign(派单,POST /admin/replacements/{id}/assign)→ DOING --complete(师傅端 POST /api/worker/v1/replacements/{id}/complete)→ DONE/FAILED；终态不可再流转（adopted note 2026-08-27-replacement-ticket-flow）。
+> 完成时落 `worker_replace_logs`（ticket_no=更换单号展示快照，dispatch_ticket_id=0）+ 资产联动：旧件→MAINTENANCE、新件（newEpc 反解）→DEPLOYED，各留 `asset_lifecycles`。
+> 企业锚点（fields.md §8.1）：`legal_entity_id`/`legal_entity_name` 建单时自资产主档回填。
+
 ## 5. 阶段6 · 四码合一（internal/domain/quadlink）
 
 ### 5.1 quad_link（四码关联，源自全案 4.2 + REQ-AMS-003）

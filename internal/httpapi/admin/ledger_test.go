@@ -17,6 +17,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -55,18 +56,23 @@ func (f *fakeResourceSub) ReleaseReserve(_ context.Context, id int64) error {
 // fakeAsset 桩 asset.AssetService。
 type fakeAsset struct {
 	asset.AssetService
-	stocktake  *asset.Stocktake
-	diffTaskID int64
-	diffErr    error
-	scanned    struct {
+	stocktake    *asset.Stocktake
+	diffTaskID   int64
+	diffErr      error
+	scanned      struct {
 		taskID, assetID int64
 		status          string
 	}
-	itemHandle struct {
+	itemHandle   struct {
 		taskID, itemID int64
 		action, note   string
 	}
-	replacement *asset.Replacement
+	replacement  *asset.Replacement
+	assignedID   int64
+	assignedUser struct {
+		workerID   int64
+		workerName string
+	}
 }
 
 func (f *fakeAsset) CreateStocktake(_ context.Context, s asset.Stocktake) (int64, error) {
@@ -93,11 +99,17 @@ func (f *fakeAsset) CreateReplacement(_ context.Context, r asset.Replacement) (i
 	f.replacement = &r
 	return 1, nil
 }
+func (f *fakeAsset) AssignReplacement(_ context.Context, id, workerID int64, workerName string) (*asset.Replacement, error) {
+	f.assignedID = id
+	f.assignedUser.workerID, f.assignedUser.workerName = workerID, workerName
+	return &asset.Replacement{ID: id, ReplacementNo: "RPL-1", Status: "DOING",
+		WorkerID: workerID, WorkerName: workerName}, nil
+}
 
 // ledgerRouter 构造带写侧路由的测试引擎(登录态 + 全权限)。
-func ledgerRouter(fr *fakeResourceSub, fa *fakeAsset) *gin.Engine {
+func ledgerRouter(fr *fakeResourceSub, fa *fakeAsset, ws *fakeWorkerSvc) *gin.Engine {
 	r := gin.New()
-	a := &app.Application{User: &fakeUser{permOk: true}, ResourceSub: fr, Asset: fa}
+	a := &app.Application{User: &fakeUser{permOk: true}, ResourceSub: fr, Asset: fa, Worker: ws}
 	mgr := auth.NewManager("test-secret", time.Hour)
 	g := r.Group("/api/admin/v1", middleware.Authn(mgr, auth.AudAdmin)) // 真实 JWT,与 RegisterRoutes 同构
 	registerResourceRoutes(g, a)
@@ -120,7 +132,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 
 	t.Run("POST /transfers 建单+默认单号", func(t *testing.T) {
 		fr := &fakeResourceSub{}
-		eng := ledgerRouter(fr, &fakeAsset{})
+		eng := ledgerRouter(fr, &fakeAsset{}, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/transfers",
 			`{"resourceId":2,"legalEntityId":1,"legalEntityName":"主品牌","fromRegionId":11,"toRegionId":13}`)
 		var out struct {
@@ -140,7 +152,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 
 	t.Run("approve/reject 调拨", func(t *testing.T) {
 		fr := &fakeResourceSub{}
-		eng := ledgerRouter(fr, &fakeAsset{})
+		eng := ledgerRouter(fr, &fakeAsset{}, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		if w := doJSON(eng, http.MethodPost, "/api/admin/v1/transfers/TRF-1/approve", ""); w.Code != 200 {
 			t.Fatal(w.Code)
 		}
@@ -154,7 +166,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 
 	t.Run("release 预占不存在→40400", func(t *testing.T) {
 		fr := &fakeResourceSub{releaseErr: resource.ErrNotFound}
-		eng := ledgerRouter(fr, &fakeAsset{})
+		eng := ledgerRouter(fr, &fakeAsset{}, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/reserves/9/release", "")
 		var out struct {
 			Code int `json:"code"`
@@ -166,7 +178,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 	})
 
 	t.Run("POST /expansions 建单", func(t *testing.T) {
-		eng := ledgerRouter(&fakeResourceSub{}, &fakeAsset{})
+		eng := ledgerRouter(&fakeResourceSub{}, &fakeAsset{}, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/expansions",
 			`{"legalEntityId":1,"regionId":13,"expectedPorts":48}`)
 		var out struct {
@@ -180,7 +192,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 
 	t.Run("POST /stocktakes + diff-handle", func(t *testing.T) {
 		fa := &fakeAsset{}
-		eng := ledgerRouter(&fakeResourceSub{}, fa)
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes", `{"legalEntityId":1,"scope":"root.luzon"}`)
 		var out struct {
 			Code int `json:"code"`
@@ -200,7 +212,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 
 	t.Run("POST /replacements 建单+默认单号", func(t *testing.T) {
 		fa := &fakeAsset{}
-		eng := ledgerRouter(&fakeResourceSub{}, fa)
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/replacements", `{"assetId":7,"reason":"光衰"}`)
 		var out struct {
 			Code int `json:"code"`
@@ -214,9 +226,41 @@ func TestLedgerWriteHandlers(t *testing.T) {
 		}
 	})
 
+	t.Run("POST /replacements/1/assign 派单+在职校验", func(t *testing.T) {
+		fa := &fakeAsset{}
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/replacements/1/assign", `{"workerId":5}`)
+		var out struct {
+			Code int `json:"code"`
+			Data struct {
+				Status    string `json:"status"`
+				WorkerID  int64  `json:"workerId"`
+				WorkerNam string `json:"workerName"`
+			}
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || out.Data.Status != "DOING" || out.Data.WorkerID != 5 {
+			t.Fatalf("code=%d data=%+v", out.Code, out.Data)
+		}
+		if fa.assignedID != 1 || fa.assignedUser.workerName != "张师傅" {
+			t.Fatalf("assigned=%d user=%+v", fa.assignedID, fa.assignedUser)
+		}
+
+		// 离职师傅不可派(对齐 workerAssignable 口径)。
+		fa2 := &fakeAsset{}
+		eng2 := ledgerRouter(&fakeResourceSub{}, fa2, &fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅", Status: 0}})
+		w2 := doJSON(eng2, http.MethodPost, "/api/admin/v1/replacements/1/assign", `{"workerId":6}`)
+		var out2 struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w2.Body).Decode(&out2)
+		if out2.Code != int(apitypes.CodeInvalidParam) || fa2.assignedID != 0 {
+			t.Fatalf("left worker code=%d assignedID=%d", out2.Code, fa2.assignedID)
+		}
+	})
 	t.Run("POST /stocktakes/:id/scans 扫码回填+非法状态拒绝", func(t *testing.T) {
 		fa := &fakeAsset{}
-		eng := ledgerRouter(&fakeResourceSub{}, fa)
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/1/scans", `{"assetId":7,"status":"DEPLOYED"}`)
 		var out struct {
 			Code int `json:"code"`
@@ -238,7 +282,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 	})
 
 	t.Run("GET /stocktakes/:id/items 明细清单", func(t *testing.T) {
-		eng := ledgerRouter(&fakeResourceSub{}, &fakeAsset{})
+		eng := ledgerRouter(&fakeResourceSub{}, &fakeAsset{}, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodGet, "/api/admin/v1/stocktakes/1/items", "")
 		var out struct {
 			Code int `json:"code"`
@@ -254,7 +298,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 
 	t.Run("POST items/:id/handle 处置+FIX缺note拒绝", func(t *testing.T) {
 		fa := &fakeAsset{}
-		eng := ledgerRouter(&fakeResourceSub{}, fa)
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/1/items/3/handle", `{"action":"FIX"}`)
 		var out struct {
 			Code int `json:"code"`
@@ -274,7 +318,7 @@ func TestLedgerWriteHandlers(t *testing.T) {
 
 	t.Run("POST diff-handle 存在未处置差异→40900", func(t *testing.T) {
 		fa := &fakeAsset{diffErr: asset.ErrDiffPending}
-		eng := ledgerRouter(&fakeResourceSub{}, fa)
+		eng := ledgerRouter(&fakeResourceSub{}, fa, &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1}})
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/stocktakes/1/diff-handle", "")
 		var out struct {
 			Code int `json:"code"`

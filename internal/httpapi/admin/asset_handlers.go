@@ -146,6 +146,41 @@ func replacementCreateHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// replacementAssignHandler POST /replacements/{id}/assign:派单(指派师傅,PENDING→DOING)。
+func replacementAssignHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		var req struct {
+			WorkerID int64 `json:"workerId"`
+		}
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(httpx.RequirePositiveID(req.WorkerID, "workerId"))
+		}) {
+			return
+		}
+		w, err := a.Worker.GetWorker(c.Request.Context(), req.WorkerID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		if !workerAssignable(w) {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "worker not active"})
+			return
+		}
+		r, err := a.Asset.AssignReplacement(c.Request.Context(), id, w.ID, w.Name)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "状态变更", "replacement", r.ReplacementNo,
+			map[string]any{"workerId": r.WorkerID, "workerName": r.WorkerName})
+		respond(c, apitypes.CodeOK, r)
+	}
+}
+
 // stocktakeListHandler GET /stocktakes:盘点任务列表。
 func stocktakeListHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
