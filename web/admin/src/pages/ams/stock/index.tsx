@@ -10,6 +10,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { pageSlice, type StocktakeRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow } from '../../../components/business'
+import { ItemsDrawer } from './ItemsDrawer'
 
 export default function StockPage() {
   const t = useT()
@@ -25,6 +26,7 @@ export default function StockPage() {
   const [legalEntityId, setLegalEntityId] = useState(0)
   const [scope, setScope] = useState('')
   const [formError, setFormError] = useState('')
+  const [detailTask, setDetailTask] = useState<StocktakeRow | null>(null)
 
   const load = () => {
     setError('')
@@ -99,11 +101,12 @@ export default function StockPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.diffCount}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={r.status} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      {r.status === 'DOING' ? (
-                        <span className="inline-flex items-center">
+                      <span className="inline-flex items-center gap-3">
+                        <button disabled={busy} onClick={() => setDetailTask(r)}>{s.detail}</button>
+                        {r.status === 'DOING' && (
                           <button disabled={busy} onClick={() => diffHandle(r.id)}>{s.diffHandle}</button>
-                        </span>
-                      ) : '—'}
+                        )}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -146,6 +149,10 @@ export default function StockPage() {
             {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
         </Drawer>
+      )}
+      {detailTask && (
+        <ItemsDrawer taskId={detailTask.id} canEdit={detailTask.status === 'DOING'}
+          onClose={() => setDetailTask(null)} onChanged={load} />
       )}
     </div>
   )

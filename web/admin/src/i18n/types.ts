@@ -801,6 +801,30 @@ export interface Translations {
       eScope: string
       diffHandle: string
       diffConfirm: string
+      detail: string
+      itemCols: string[]
+      fAssetId: string
+      pAssetId: string
+      fScanStatus: string
+      scan: string
+      scanOk: string
+      scanFail: string
+      kindPENDING: string
+      kindOK: string
+      kindMISMATCH: string
+      kindMISSING: string
+      kindEXTRA: string
+      resOPEN: string
+      resCONFIRMED: string
+      resFIXED: string
+      resESCALATED: string
+      actConfirm: string
+      actFix: string
+      actEscalate: string
+      notePrompt: string
+      noteRequired: string
+      emptyItems: string
+      handledBy: string
       actionFail: string
       progress: string
       total: string

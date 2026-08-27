@@ -58,6 +58,23 @@ export interface StocktakeRow {
   status: string // DOING/DONE
 }
 
+export interface StocktakeItemRow {
+  id: number
+  taskId: number
+  assetId: number
+  expectedStatus: string // ''=计划外(EXTRA)
+  scannedStatus: string // ''=未扫
+  scannedAt?: string
+  kind: string // PENDING/OK/MISMATCH/MISSING/EXTRA
+  resolution: string // OPEN/CONFIRMED/FIXED/ESCALATED
+  handledBy: number // 0=未处置
+  handledAt?: string
+  note: string
+}
+
+export const SCAN_STATUSES = ['IN_STOCK', 'DEPLOYED', 'MAINTENANCE', 'SCRAPPED'] as const
+export const STOCKTAKE_ACTIONS = ['CONFIRM', 'FIX', 'ESCALATE'] as const
+
 export interface ReplacementRow {
   id: number
   replacementNo: string
