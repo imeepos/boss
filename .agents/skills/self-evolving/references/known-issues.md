@@ -2,6 +2,12 @@
 
 <!-- 格式：症状 → 原因 → 修法。排查超过 5 分钟的 bug 才值得记。 -->
 
+## 新 worktree pnpm install 报 EACCES: permission denied, mkdir '/Volumes/sker'
+
+症状 → worktree 内 `pnpm install --frozen-lockfile` 全部依赖解析完成后死于 `EACCES mkdir '/Volumes/sker'`(主仓库目录能装)。
+原因 → 宿主全局 `pnpm config get store-dir` = `/Volumes/sker/dev-cache/pnpm-store`,该卷当前未挂载;主仓库 node_modules 是旧卷在线时装的,新目录无缓存可用才触发建 store。
+修法 → 显式覆盖存储位置:`pnpm install --frozen-lockfile --store-dir ~/.pnpm-store-boss`(本地可写目录,~30s 装完);新环境跑 pnpm 前先 `pnpm config get store-dir` 探活。
+
 ## edit 报 "edit requires reading the file first"，但该文件明明看过
 
 症状 → 用 bash `cat` 看过文件内容后调用 edit/write 覆盖，被拒："edit requires reading ... first — read the file, then retry"。

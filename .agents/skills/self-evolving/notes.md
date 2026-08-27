@@ -1002,3 +1002,10 @@
 - 这个 skill 有没有提前预警？有:红线 #1(edit 前必须 read 最新内容)写得很清楚,执行时在"哪个文件、哪一轮"上松懈了。
 - 重来一次会怎么做？所有 references/notes 追加统一固定动作:read 目标文件末尾 ~10 行 → 拿到精确锚点 → edit 一次成型;沉淀与代码修复合并当天完成,不留跨 turn 记忆缺口。
 
+## 2026-09-26 师傅详情视图落地 + 详情链路契约对账(worker-detail)
+
+- 哪个坑浪费了最多时间? 两处:① cdp-capture 的 --eval 在 Page.navigate+settle 之后才执行,首屏注入 localStorage 时 React 已启动完,"注入后直访业务页"不生效——改用持久 profile 两步(seed 会话→复用 profile 导航)才稳定登入;② worktree 内 pnpm install 撞全局 store-dir=/Volumes/sker(卷未挂载)EACCES,换 --store-dir ~/.pnpm-store-boss 本地目录解决。
+- 这个 skill 有没有提前预警? 部分:速查手册已记 boss.servers 注入法但没写"eval 时机在导航后";红线 #8(先查环境依赖)没覆盖 pnpm store 这类宿主环境漂移。
+- 重来一次会怎么做? CDP 鉴权注入一律两步持久 profile 或 eval 内 location.reload();新 worktree 装 node_modules 前先 `pnpm config get store-dir` 探活,不可达即显式 --store-dir。
+- 收获:① 详情链路三批独立提交+每批全门禁,合并日 main 被并行会话推进两次,按协议两次 merge gitea/main 反向同步后 ff-only 一次过;② 线上部署产物验证用 bundle grep 新 i18n 键(zh/en/ms 三语串),部署中途轮询误匹配他人容器名(deploy-102 是公共子串),最终以 compose 容器名精确过滤+镜像 sha 判定;③ 线上交互冒烟被并行会话启用的 LicenseGate(activated:false,业务 API 全 403 LICENSE_REQUIRED)阻断——外部环境冲突如实记录未验证之事,本地 vite dev+102 真实后端/账号的等价冒烟作主要证据。
+
