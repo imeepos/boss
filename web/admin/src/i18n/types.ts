@@ -1628,6 +1628,30 @@ export interface Translations {
       trendDesc: string
       trendEmpty: string
     }
+    serviceMetricsPage: {
+      title: string
+      desc: string
+      // CS 工单指标卡
+      csCards: {
+        open: string
+        processing: string
+        slaBreached: string
+        avgCloseHours: string
+      }
+      csSummaryTitle: string
+      // AR 应收指标卡
+      arAgingTitle: string
+      arSummaryTitle: string
+      arSummary: {
+        totalAmount: string
+        customers: string
+        stopped: string
+        overdueBills: string
+      }
+      /** AR 账龄桶键(对齐 ARMetrics.agingBuckets 字段名 d0To15…d90Plus)。 */
+      agingBuckets: Record<string, string>
+      loadFail: string
+    }
     userPage: {
       title: string
       desc: string
