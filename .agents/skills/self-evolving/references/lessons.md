@@ -369,4 +369,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 幽灵令牌不止害一个文件:发现一个未定义 var() 时应立即跑全量审计(techniques.md「幽灵 CSS 令牌全量审计」),同类错误往往成批潜伏(一次揪出三个)。修复只用已定义等价物:主按钮 --shell-fab-bg 系列(亮藏青暗金自适应)、待审/警示色用 --color-brand-gold-600、文字链用 --color-text-link,不要现造新令牌除非在 tokens.css 双主题块里成对补齐。
 - 外层 SELECT 无 FROM 时引用任何列名必报 42703(PG 无法解析裸列);2026-08-26 实名 PASS 门禁 guardRealNameIdentity 因此在线上全量 500 而 pgxmock 正则匹配全绿——正则只对字符串,不校验列归属。
 - "字段在表里存在"推不出"SQL 能跑":子查询外的裸列属于外层作用域,靠真库一次真实调用兜底,别信 mock。
+- 当 102 API 返回 `LICENSE_REQUIRED` 而健康检查仍为 ok 时,修复是把它记录为部署环境不可验收事实:healthz 只能证明进程存活,不能证明业务路由或授权链路可用;不得把该响应误判为代码回归失败。
 - 老持久 profile 做 i18n/主题切换断言会拿到"localStorage 已变而 DOM 未变"的竞态假样本;修复是 fresh user-data-dir + 「目标节点渲染就绪」条件等待(.st-tag 出现再取文本),不要固定 sleep 后直接读。

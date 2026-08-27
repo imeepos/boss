@@ -303,6 +303,14 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 
 **修法**:无 RETURNING 的 INSERT/UPDATE 一律用 `db.Exec(...)` + `tag.RowsAffected()` 读取行数;QueryRow.Scan 只用于有 RETURNING 的语句或 SELECT。Code review 对 `QueryRow(...).Scan(&n)` 必查 SQL 是否含 RETURNING。
 
+## 102 健康检查通过但业务 API 被 LICENSE_REQUIRED 阻断(2026-09-26)
+
+**症状**: `GET /healthz` 返回 `{"status":"ok"}`,登录接口可用,但带 token 请求业务 API 返回 `{"code":"LICENSE_REQUIRED","msg":"system license required"}`。
+
+**原因**: healthz 只检查 HTTP 进程存活;授权中间件在业务路由前阻断,与代码是否已部署是两个独立事实。
+
+**修法**:部署验收分三层记录:健康检查、登录/鉴权、目标业务路由。目标路由遇 `LICENSE_REQUIRED` 时标记为环境授权阻断,保留响应证据,不要修改业务代码绕过授权或声称已完成真实回归。
+
 ## cdp-capture DOM 断言 innerText.includes 撞上外壳同子串文案(2026-09-26)
 
 **症状**:断言"收起"按钮是否存在用了 `b.innerText.includes('收起')`,匹配到侧栏菜单项"收起菜单",点击是 no-op,断言读回行数不变 → collapse 功能"假阴性"。首轮报 ok:false,实为选择器错。

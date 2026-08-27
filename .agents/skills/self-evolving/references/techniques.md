@@ -420,6 +420,13 @@ suspend fun current(ctx: Context): Location? {
 - 价值:新增列/枚举自动纳入,人为制造失配即红灯(本例首跑就抓出 usages 段名三语言全缺的存量静默 bug);文案键零硬编码有了机械对账面。
 - 位置参照:`web/admin/src/pages/bss/user/detail-i18n.test.ts` + `detail-view.ts` 的 DRAWER_D_KEYS。
 
+## 102 业务回归三层证据采集(2026-09-26,实名审核中心)
+
+- 场景:修复 Go SQL/业务接口后需要确认 102 是否已部署且可回归。
+- 固定顺序:① `curl /healthz` 记录进程存活;② POST `/api/admin/v1/auth/login` 记录登录 code;③ 带 token 请求目标列表和写接口,记录完整响应体。三层必须分开判定,`healthz=ok` 不覆盖业务 API 的授权失败。
+- 判定模板:目标接口 `code=0` 才能继续业务断言;`LICENSE_REQUIRED` 是环境授权阻断;`403` 查权限迁移;`50000` 先取服务端日志/SQLSTATE;`40400` 查数据主体或路由。
+- 对 SQL 修复必须同时保留 pgxmock 回归和真实路径结果;mock 只验证调用形状,不验证 PostgreSQL 列作用域、NULL 扫描和实际迁移。
+
 ## 枚举→展示文案映射前,先查真库取值域(2026-09-26,faults type 双口径)
 
 - 场景:给某列写"枚举值→i18n 键"映射,契约文档已列出枚举,直接照抄开写。

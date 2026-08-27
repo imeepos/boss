@@ -181,3 +181,23 @@ curl -s -X POST $BASE/webhooks/stripe -d '{}' -o /dev/null -w 'probe=%{http_code
 
 要点:webhook endpoint 凭 SK 用 REST 建(POST /v1/webhook_endpoints),whsec 创建时一次返回;
 快速隧道 URL 重启即变,换 URL 需重建 endpoint(流程见 adopted note 2026-08-26)。
+
+## 模板 I:admin API 50000 内部错误排障固定模板(2026-09-26 固化,来源:实名审核中心 PASS 500)
+
+> 前置:模板 F 已走到第 4 步"定位到唯一根因";本模板专治 Go 后端信封 `{code:50000,msg:"内部错误"}`
+> (= `internal/pkg/httpx/error.go` RespondErr 的 default 分支:sentinel 未登记或底层 SQL/Scan 报错)。
+
+1. **复打取证**:对同一接口 `curl -i` 完整响应体 + `X-Request-Id`;页面截图不算证据。
+2. **定位错误通道**:grep 路由找到 handler;50000 只有两种来源——领域 sentinel 没在 error.go 登记,
+   或 pgx 返回了未被 errors.Is 覆盖的错误(ErrNoRows 包装/SQLSTATE)。
+3. **数据态核对先行**:用列表接口或直查权威表确认触发行的关联主体是否真实存在;
+   聚合表的软引用行(verifications.subject_id 等,无 FK)合法允许指向已删除主档,先排除数据态再怀疑代码。
+4. **底层归类**:`QueryRow(...).Scan` 报 `pgx.ErrNoRows` = SELECT 匹配 0 行,是可预期分支不是崩溃;
+   其余错误解包看 SQLSTATE(42703 列作用域/22P02 类型/42P18 占位符)。
+5. **对照映射表**:error.go 是否已有该领域 NotFound→40400 通道(customer.ErrCustomerNotFound 等);
+   没有就补 errors.Is 分支,让语义错误返回 40400/42200,绝不静默落 500。
+6. **最小修复**:SQL 错改 SQL、缺映射补映射;同提交附 pgxmock 回归(期望正则照抄同文件既有锚点),
+   先 `go test ./...` 全量再合并。
+7. **合并即验证**:push 分支 → 主树 `git fetch gitea main` + `merge --ff-only` → push main 触发 CI。
+8. **真实复核走三层**(techniques「102 业务回归三层证据采集」):/healthz → 登录 → 目标接口;
+   目标层返回 `LICENSE_REQUIRED` 属环境授权阻断,如实记录,不修改代码绕授权、不谎报回归通过。

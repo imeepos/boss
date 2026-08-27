@@ -995,3 +995,10 @@
 - skill 有没有提前预警? 红线 #2a 有提示但我没第一时间执行:当时先入为主怀疑新代码逻辑。另外临时生成脚本在验证编译前就 rm 了,二次运行时 write 工具拒绝重建已删路径(gen-status-tags.cjs→被迫改名 gen-st.cjs)——教训:临时脚本的生命周期终点是「验证通过」不是「首次跑完」。
 - 重来一次会怎么做? 机械生成类改动(locale 批量插入)一律:生成→tsc 即验→成功才删脚本;CDP 断言统一 fresh profile 模板。
 - 收获手法:① 门禁挂 pnpm build 前置,Dockerfile/Makefile 零改动进 CI(本次审计门禁真实拦下一处 --color-primary);② Lazy chunk 取证:入口包只含字典,组件字符串要去 route chunk grep;③ LocaleProvider 加 localeOverride 可选 prop 实现 SSR/测试注入不动存量调用。
+
+## 2026-09-26 实名审核中心经验沉淀(50000 排障模板化)
+
+- 哪个坑浪费了最多时间？修复本身一轮完成;真正返工的是经验沉淀环节——跨 turn 凭记忆向 notes.md 追加,old_string 与最新文件尾部不符被拒一次。追加型编辑没有先 read 文件尾。
+- 这个 skill 有没有提前预警？有:红线 #1(edit 前必须 read 最新内容)写得很清楚,执行时在"哪个文件、哪一轮"上松懈了。
+- 重来一次会怎么做？所有 references/notes 追加统一固定动作:read 目标文件末尾 ~10 行 → 拿到精确锚点 → edit 一次成型;沉淀与代码修复合并当天完成,不留跨 turn 记忆缺口。
+
