@@ -252,6 +252,9 @@ SELECT (SELECT v.id_card_no FROM verifications v
   FROM customers c
  WHERE c.id = $1`, customerID, RealNamePending).Scan(&pendingIDNo, &masterIDNo)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrCustomerNotFound
+		}
 		return fmt.Errorf("customer: verify identity guard: %w", err)
 	}
 	if masterIDNo == "" {
