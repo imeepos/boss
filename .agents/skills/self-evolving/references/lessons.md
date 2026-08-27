@@ -403,3 +403,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当师傅端"任务列表"类接口按 worker_id 查询时,修复是显式带 status 过滤(DOING)——单测 mock 不会暴露漏过滤,只有真实环境回归会抓到。
 - 当写 dated artifact(决策 note 文件名/注释/commit message 日期)时,修复是先 `date +%F` 取系统时钟为准——本仓库存在会话间日期漂移(main 上已有未来日期的 note),凭印象写日期必返工。
 - 当 commit 后链式 `git status --short` 看到未预期文件时,修复是 `git show --stat HEAD` 确认提交内容——status 输出的是未提交改动,不是提交内容。
+- 当在全新 worktree 里首次构建 Android 时,修复是先复制 gitignored 的机器本地文件(local.properties 的 sdk.dir 等)——worktree 是干净的检出,缺它 gradle 直接找不到 SDK。
+- 当生成密钥/证书类资产时,修复是放在主树 gitignored 位置而非 worktree——git worktree remove 会物理删除目录,worktree 内的 keystore 随之丢失,须重生成+重新留档指纹。
+- 当 Android instrumented 测试用 PackageManager 拿权限声明时,修复是 `requestedPermissions?.contains(...) == true` 安全调用——当前 API 返回可空 Array,直接 contains 编译不过。
+- 当本地有 AVD 且要跑 connectedDebugAndroidTest 时,修复是 `-no-window -gpu swiftshader_indirect` 无头启动,轮询 `sys.boot_completed=1` 后再连测,收尾 `adb emu kill`。

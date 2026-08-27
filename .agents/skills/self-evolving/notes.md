@@ -1191,3 +1191,9 @@
 - 哪个坑浪费了最多时间? ①写 dated artifact(决策 note 文件名/注释/commit message)时凭感觉写"2026-08-31",实际系统时钟是 08-27,且本仓库存在会话间日期漂移(main 已有 09-03/09-04 的 note)——修正日期引用被迫把已提交的两笔 soft-reset 重做一遍。②commit 后链式 `git status --short` 输出的 ` M` 行让我误以为"登记文件提交混入了布局文件",实际提交是干净的,虚惊一场。
 - skill 有没有提前预警? 红线 #2a(修完前端先 curl 远端 bundle 验证)在部署验证环节有效救场:远程 bundle hash 与本地 build 不同但内容一致(CI 环境变量 AMAP_KEY/mode 使同内容产出不同 hash),靠 grep 新标记文本确认已部署,没有误判回滚。日期漂移与 commit 后误读 status 无预警。
 - 重来一次? 写任何日期前先 `date +%F`;验证已提交内容看 `git show --stat HEAD` 而非信任链式 status 输出;dev server 用非默认端口时 cdp-admin-capture 第一参数就带 --base(techniques 已有,再次应验)。
+
+## 2026-08-27 user Android 上线计划 D0+D1-D4(发布基建+积分页)
+
+- 哪个坑浪费了最多时间? ①connected 测试首跑编译失败:androidTest 里 `getPackageInfo(..., GET_PERMISSIONS).requestedPermissions` 在当前 API 是可空 Array,直接 `.contains` 编译不过——写断言前没核对可空性,多跑一轮 build+emulator。②`git log --oneline` 不带 -n 打印全仓 700+ 提交,输出被 harness 截断成一堆看似陌生的中间历史,虚惊以为 commit 落错分支——核实用 `git log --oneline -8` + reflog 直接看真相。
+- skill 有没有提前预警? 有:红线 #5(任务完成必须 commit 且 status 干净)——本回合每次都即时提交,收尾 main 干净;worktree merge 协议(AGENTS.md)全程护航:ff-merge 前核对 cwd 在主树、远端名 gitea。
+- 重来一次? ①新 worktree 首次构建前先复制 gitignored 的机器本地文件(mobile/user/android/local.properties 含 sdk.dir,worktree 无此文件会构建失败);②密钥类资产不得放 worktree 内(worktree remove 会连文件一起删,本次 keystore 生成在 worktree 里,收尾后被迫在主树重生成并重新留档指纹);③git log 一律 -n 限制条数。
