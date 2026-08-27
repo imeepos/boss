@@ -8,10 +8,12 @@ import (
 
 // usersSQL 用户列表:客户主档 join 账户/套餐/余额/欠费/在途业务(keyword 过滤)。
 // 裁定 D1: 余额/autoPay 读权威表 portal_wallets/portal_billing_prefs,user_* 双胞胎不再被读。
+// createdAt 注册时间:无 user_accounts 行(纯建档客户)回退 customers.created_at,页面不出现缺字段。
 const usersSQL = `
 SELECT c.id AS "customerId", c.name, c.phone, c.real_name_status AS "realNameStatus",
        c.service_status AS "serviceStatus",
        COALESCE(ua.login_name, '') AS "loginName",
+       COALESCE(ua.registered_at, c.created_at) AS "createdAt",
        COALESCE(bp.auto_pay_enabled, FALSE) AS "autoPay",
        COALESCE(up.plan_name, '') AS "planName",
        COALESCE(pw.balance, 0)::float8 AS balance,

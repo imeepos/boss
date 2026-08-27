@@ -3,6 +3,7 @@ package userdata
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pashagolub/pgxmock/v4"
 )
@@ -38,10 +39,11 @@ func TestPGStore_ListUsers_Keyword(t *testing.T) {
 	}
 	defer mock.Close()
 
+	registered := time.Date(2026, 8, 21, 16, 53, 41, 0, time.UTC)
 	mock.ExpectQuery(`FROM customers c`).
 		WithArgs("王").
-		WillReturnRows(mock.NewRows([]string{"customerId", "name", "phone", "balance", "activeOrders"}).
-			AddRow(int64(1), "王先生", "13800000000", int64(5000), int64(0)))
+		WillReturnRows(mock.NewRows([]string{"customerId", "name", "phone", "loginName", "createdAt", "balance", "activeOrders"}).
+			AddRow(int64(1), "王先生", "13800000000", "", registered, int64(5000), int64(0)))
 
 	s := NewPGStore(mock)
 	got, err := s.ListUsers(context.Background(), "王")
@@ -50,6 +52,10 @@ func TestPGStore_ListUsers_Keyword(t *testing.T) {
 	}
 	if len(got) != 1 || got[0]["name"] != "王先生" {
 		t.Fatalf("got=%+v", got)
+	}
+	// 回归: 注册时间列必须由 SQL 兜底返回,缺失即页面渲染字面量 undefined(2026-09 事故)。
+	if ts, ok := got[0]["createdAt"].(time.Time); !ok || !ts.Equal(registered) {
+		t.Fatalf("createdAt=%v, want %v", got[0]["createdAt"], registered)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
