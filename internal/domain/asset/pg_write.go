@@ -4,8 +4,11 @@ package asset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // CreateBatch 新建入库批次,返回自增 id。
@@ -57,7 +60,7 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 		 VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
 		t.LegalEntityID, t.TagNo, t.EpcCode, t.Band, idOrNil(t.BoundAssetID), t.Status, t.Battery).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("asset: create tag: %w", err)
+		return 0, fmt.Errorf("asset: create tag: %w", classifyTagInsertErr(ctx, err, t))
 	}
 
 	// 预绑定时回填 assets.tag_id;冲突即返 ErrBindingConflict 让上层显式拒绝。
@@ -114,7 +117,7 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 		a.AssetCode, a.BatchID, a.LegalEntityID, a.LegalEntityName,
 		idOrNil(a.TagID), idOrNil(a.AddressID), idOrNil(a.RegionID), a.RegionName, a.Type, a.Status).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("asset: create asset: %w", err)
+		return 0, fmt.Errorf("asset: create asset: %w", classifyAssetInsertErr(ctx, err, a))
 	}
 	// tag 双向绑定回填:assets.tag_id 写入时同步 tags.bound_asset_id/status,
 	// 与环节9 扫码核对(VerifyScan 要求 bound_asset_id 非空)口径对齐。
@@ -257,4 +260,44 @@ func (s *PGStore) AssignAsset(ctx context.Context, a AssetAssignment) (int64, er
 		return 0, fmt.Errorf("asset: assign asset: %w", err)
 	}
 	return id, nil
+}
+
+// classifyTagInsertErr 把 tags INSERT 23505 拆解为双绑冲突或普通唯一冲突:
+// - uq_tags_bound_asset_notnull → 双绑冲突(ErrBindingConflict)
+// - uq_tags_tag_no_key / uq_tags_epc_code_key → tag_no/epc_code 重复(原 error 透传,
+//   httpx.RespondErr 不映射 23505,返回 50000;若需精确业务码后续在 httpx 增加 23505 通用映射)
+// 其他错误原样返回。
+func classifyTagInsertErr(ctx context.Context, err error, t Tag) error {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
+		return err
+	}
+	switch pgErr.ConstraintName {
+	case "uq_tags_bound_asset_notnull":
+		slog.WarnContext(ctx, "[asset] TAG BIND CONFLICT",
+			"asset_id", t.BoundAssetID, "new_tag_no", t.TagNo,
+			"reason", "DB uq_tags_bound_asset_notnull violation")
+		return fmt.Errorf("asset: bound asset %d already bound to another tag: %w",
+			t.BoundAssetID, ErrBindingConflict)
+	}
+	return err
+}
+
+// classifyAssetInsertErr 把 assets INSERT 23505 拆解为双绑冲突或普通唯一冲突:
+// - uq_assets_tag_notnull → 双绑冲突(ErrBindingConflict)
+// 其他错误原样返回。
+func classifyAssetInsertErr(ctx context.Context, err error, a Asset) error {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
+		return err
+	}
+	switch pgErr.ConstraintName {
+	case "uq_assets_tag_notnull":
+		slog.WarnContext(ctx, "[asset] TAG BIND CONFLICT",
+			"tag_id", a.TagID, "new_asset_code", a.AssetCode,
+			"reason", "DB uq_assets_tag_notnull violation")
+		return fmt.Errorf("asset: tag %d already bound to another asset: %w",
+			a.TagID, ErrBindingConflict)
+	}
+	return err
 }
