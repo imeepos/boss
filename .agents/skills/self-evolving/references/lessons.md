@@ -367,3 +367,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 页面首访被守卫(Navigate to /login)弹回后,eval 里的 location.reload() 重载的是 login 页而非目标页;带着 token 回内页要显式 location.href='/目标路由',reload 不会还原被替换掉的 URL。
 - 判断 Tailwind 任意值 utility 是否真的进了产物:`grep -o ".\{0,60\}令牌名.\{0,80\}" dist/assets/*.css` 直查构建产物最权威;vite dev 的 CSSOM 遍历有 @layer 嵌套盲区,扁平 for cssRules 会漏,需递归 walk。
 - 幽灵令牌不止害一个文件:发现一个未定义 var() 时应立即跑全量审计(techniques.md「幽灵 CSS 令牌全量审计」),同类错误往往成批潜伏(一次揪出三个)。修复只用已定义等价物:主按钮 --shell-fab-bg 系列(亮藏青暗金自适应)、待审/警示色用 --color-brand-gold-600、文字链用 --color-text-link,不要现造新令牌除非在 tokens.css 双主题块里成对补齐。
+- 外层 SELECT 无 FROM 时引用任何列名必报 42703(PG 无法解析裸列);2026-08-26 实名 PASS 门禁 guardRealNameIdentity 因此在线上全量 500 而 pgxmock 正则匹配全绿——正则只对字符串,不校验列归属。
+- "字段在表里存在"推不出"SQL 能跑":子查询外的裸列属于外层作用域,靠真库一次真实调用兜底,别信 mock。

@@ -975,3 +975,9 @@
   3) 接到"无前端调用方的接口"或"长期 0 行的表"类线索,优先级最高:这些是隐蔽 bug 的温床。  
   4) 接任务前 `git worktree list` + `git log main --oneline -5` 看并行分支走向,确认中央登记类文件无人同期动。  
   5) 已修记录:`internal/domain/openplat/webhook_pg.go InsertDeliveries` 改 `string(payload)`+`$3::jsonb`+Exec+RowsAffected,回归测试 `webhook_pg_insert_integration_test.go` 真实 PG 通过且零残留;`scripts/openplat-webhook-e2e.mjs` 6/6 PASS 于 102 部署环境。
+
+## 2026-08-26 实名流程 P0 加固与真环境实证(feat/realname-p0-hardening)
+
+- 哪个坑浪费了最多时间?E2E 脚本三连败都是低级壳问题(COALESCE 出 0 被 RequirePositiveID 拒、ssh 回传换行打穿 JSON 数字位、shell 参数展开 ${REST##*/} 笔误),每次只有一层薄线索;真正的大鱼是冒烟第一轮就抓出 guard SQL 缺 FROM 的产线级 bug——mock 全绿放行的第二次现形(上次 webhook 可空列),这次当场闭环修掉再部署再验证。
+- 这个 skill 有没有提前警告我?有:上一轮刚沉淀"mock 验不出 SQL 合法性,要真库集成",本次等于该教训的实弹复验;worktree 收尾四步零失误;boss-admin-web.md 的 localStorage 注入(boss.servers 必须带 id 字段)一次过。
+- 重来一次我会怎么做?"是否缺失/是否有 bug"类任务把真环境冒烟脚本放在编码之前先写好,让它当验收靶;upload=5180(admin-web)、菜单路径以 menu.def.ts 为准而不是猜 URL(?kw 只对了一半,路由是 /bss/customer)。

@@ -96,3 +96,4 @@
 | cdp-capture 多次独立调用丢失 localStorage/session | 1 | 2026-09-04(admin-web 登录链路反复回 /login,根因每次新临时 profile) | 使用新增 --user-data-dir 持久 profile;无状态调试仍用默认临时 profile |
 | edit/write 命令未带 workdir,默认 cwd 在主工作树执行,违反"禁止主分支修改" | 1 | 2026-08-26(api/openapi/user/{order,schemas}.yaml 两文件被 git status 检出,立即 checkout 回退 + git apply 进 worktree) | 每条会修改文件的命令都显式带 workdir,不依赖默认 cwd;开工先 cd 进 worktree 后再做任何 edit/write |
 | 真库演练含 COMMIT 的迁移 SQL 未去 COMMIT 就包 ROLLBACK,数据提前落库 | 1 | 2026-08-26(NCR 物化 up.sql 演练,靠幂等 ON CONFLICT 兜底无分叉) | 演练前 sed '/^COMMIT;$/d' 再 echo ROLLBACK,演练后 SELECT 计数核对 |
+| SQL 合法性/表结构假设未经真库验证(占位符数、列可空、FOR UPDATE 别名、缺 FROM) | 2 | 2026-08-30(webhook http_status NULL 扫描,mock 全绿), 2026-08-26(guardRealNameIdentity 外层 SELECT 漏 FROM customers,真库 42703 致人工 PASS 全量 500) | 涉及新 SQL 的修复:pgxmock 回归之外,当天在 102 真库跑一次真实路径冒烟(scripts/realname-e2e-smoke.sh 模式),mock 绿≠SQL 对 |
