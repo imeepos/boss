@@ -1212,6 +1212,26 @@ const zhCN: Translations = {
       pickWorkerPlaceholder: '搜索工号/姓名',
       addToGroupHint: '选择师傅后添加到当前装维队',
       needSelectGroup: '请先在左侧选择装维队',
+      // 师傅详情抽屉(2026-08-30)
+      detail: '详情',
+      detailTitle: '师傅详情',
+      sectionNames: {
+        tickets: '派单工单',
+        messages: '站内消息',
+        performances: '月度绩效',
+        feedbacks: '客户评价',
+      },
+      d: {
+        dPhone: '联系电话', dRegion: '服务区域', dGroup: '装维队',
+        dJoinedAt: '入职时间', dLeftAt: '离职时间',
+        dTicketNo: '工单号', dStatus: '状态', dCreatedAt: '时间',
+        dLevel: '级别', dTitle: '标题', dRead: '已读', dYes: '是', dNo: '否',
+        dPeriod: '月份', dFinished: '完成单量', dOnTimeRate: '准时率', dScore: '评分',
+        dCustomer: '客户', dScoreStar: '评分', dNeedReview: '待复核',
+        dStatTickets: '在途工单', dStatTotalTickets: '累计工单', dStatMessages: '消息', dStatFeedbacks: '评价',
+        dSeeAll: '查看全部 {count} 条', dCollapse: '收起',
+      },
+      loading: '加载中…',
     },
     workerRegPage: {
       title: '师傅注册审核',

@@ -1046,6 +1046,17 @@ export interface Translations {
       pickWorkerPlaceholder: string
       addToGroupHint: string
       needSelectGroup: string
+      // 师傅详情抽屉(2026-08-30):列表入口 + 主档头 + 概览芯片 + 关联子集段
+      detail: string
+      detailTitle: string
+      sectionNames: {
+        tickets: string
+        messages: string
+        performances: string
+        feedbacks: string
+      }
+      d: Record<string, string>
+      loading: string
     }
     workerRegPage: {
       title: string

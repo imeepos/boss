@@ -1212,6 +1212,26 @@ const msMY: Translations = {
       pickWorkerPlaceholder: 'Cari no. staf / nama',
       addToGroupHint: 'Pilih pekerja untuk ditambah ke pasukan semasa',
       needSelectGroup: 'Pilih pasukan di sebelah kiri dahulu',
+      // Detail pekerja (2026-08-30)
+      detail: 'Butiran',
+      detailTitle: 'Butiran Pekerja',
+      sectionNames: {
+        tickets: 'Tiket Tugasan',
+        messages: 'Mesej',
+        performances: 'Prestasi Bulanan',
+        feedbacks: 'Ulasan Pelanggan',
+      },
+      d: {
+        dPhone: 'Telefon', dRegion: 'Rantau Perkhidmatan', dGroup: 'Pasukan',
+        dJoinedAt: 'Mula Bertugas', dLeftAt: 'Tarikh Berhenti',
+        dTicketNo: 'No. Tiket', dStatus: 'Status', dCreatedAt: 'Masa',
+        dLevel: 'Tahap', dTitle: 'Tajuk', dRead: 'Dibaca', dYes: 'Ya', dNo: 'Tidak',
+        dPeriod: 'Bulan', dFinished: 'Selesai', dOnTimeRate: 'Tepat Masa %', dScore: 'Skor',
+        dCustomer: 'Pelanggan', dScoreStar: 'Skor', dNeedReview: 'Perlu Semakan',
+        dStatTickets: 'Tiket Aktif', dStatTotalTickets: 'Jumlah Tiket', dStatMessages: 'Mesej', dStatFeedbacks: 'Ulasan',
+        dSeeAll: 'Lihat semua {count}', dCollapse: 'Tutup',
+      },
+      loading: 'Memuat…',
     },
     workerRegPage: {
       title: 'Semakan Pendaftaran Pekerja',

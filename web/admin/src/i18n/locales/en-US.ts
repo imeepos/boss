@@ -1212,6 +1212,26 @@ const enUS: Translations = {
       pickWorkerPlaceholder: 'Search staff no / name',
       addToGroupHint: 'Pick a worker to add to the current team',
       needSelectGroup: 'Select a team on the left first',
+      // Worker detail drawer (2026-08-30)
+      detail: 'Detail',
+      detailTitle: 'Worker Detail',
+      sectionNames: {
+        tickets: 'Dispatch Tickets',
+        messages: 'Messages',
+        performances: 'Monthly Performance',
+        feedbacks: 'Customer Reviews',
+      },
+      d: {
+        dPhone: 'Phone', dRegion: 'Service Region', dGroup: 'Team',
+        dJoinedAt: 'Joined At', dLeftAt: 'Left At',
+        dTicketNo: 'Ticket No', dStatus: 'Status', dCreatedAt: 'Time',
+        dLevel: 'Level', dTitle: 'Title', dRead: 'Read', dYes: 'Yes', dNo: 'No',
+        dPeriod: 'Month', dFinished: 'Finished', dOnTimeRate: 'On-time %', dScore: 'Score',
+        dCustomer: 'Customer', dScoreStar: 'Score', dNeedReview: 'Needs Review',
+        dStatTickets: 'Active Tickets', dStatTotalTickets: 'Total Tickets', dStatMessages: 'Messages', dStatFeedbacks: 'Reviews',
+        dSeeAll: 'View all {count}', dCollapse: 'Collapse',
+      },
+      loading: 'Loading…',
     },
     workerRegPage: {
       title: 'Worker Registration',
