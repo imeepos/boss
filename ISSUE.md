@@ -61,3 +61,12 @@
 - **信息缺失｜locale.js 模板污染**:docs/user/locale.js 约 30 行被 JS 模板片段污染(如 `'user.profile.text11': '在用'' : ''tag-gray">未用'') + ''',`
   ×3 语区,js 解析直接挂(locale.js 加载后 window.L 为 undefined)。需按语区重建被污染键的值。
 - 影响:web 演示门户不可用;不影响 Android 用户端(按信封消费)。属 domain-map「PORT 待完善」既有项,非支付链路缺陷。
+
+## user Android 两周上线-后端依赖缺口(2026-08-27 上线计划 D1-D4 发现)
+
+- **信息缺失｜积分兑换无可兑换券模板列表端点**:api/openapi/user/loy.yaml 的 `/points/exchange` 契约要求 `templateId`,
+  但 user 侧没有任何端点能列出可兑换券模板(`coupon_templates.points_price>0`,fields.md §8D-2)。
+  promotion.yaml user 视图仅有 `/plans/{planId}/renew`。→ Android 端当前按"未就绪占位"处理(PointsPage 兑换入口明示建设中,
+  不静默假功能);需明远补齐列表端点(或明确复用端点),D-3 前答复,否则兑换保持占位。
+- **信息缺失｜`/push/device` 契约-部署漂移(102 实测 404)**:api/openapi/user/misc.yaml 已定义,
+  后端未落地(会议纪要 B 轨)。→ D-3 硬截止:落地则 Android 注册设备 token;未落地 Android 降级兜底(入口隐藏/置灰),禁止静默假功能。
