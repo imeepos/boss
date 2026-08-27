@@ -1179,3 +1179,9 @@
 - skill 有没有提前预警? 部分有(AGENTS.md 迁移编号规则),但未强调"长任务中途并行占号"场景。
 - 重来一次怎么做? store 层写完先跑 check-contract-sync 再写后续层,及早暴露撞号。
 - 新经验已喂回: lessons.md(typed-nil/pgxmock/pgtype)、known-issues.md(DOING 过滤)、techniques.md(102 闭环测试脚本)。
+
+## 2026-08-27 z-index 语义令牌化(令牌+门禁+全量迁移)
+
+- 哪个坑浪费了最多时间? cdp-admin-capture 未传 --base,默认打 5173,而本次 dev server 在 5174——tokens 全空+弹窗全 false,一轮排查才发现是采集打到不存在的端口;补 --base 即全绿。
+- skill 有没有提前预警? techniques 已有 cdp 条目但没写 --base 陷阱;正则字符类手滑混入无关单词,靠跑测试立刻暴露(先读后改+改完就验兜底)。
+- 重来一次? 起非默认端口 dev server 时,采集命令第一参数就带 --base;验证脚本输出先看 url/page 断言再相信 z 断言。
