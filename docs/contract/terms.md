@@ -87,6 +87,11 @@
 | 税局轨迹 invoice_tax_event.event | RECEIPT / BACKFILL / VOID / REISSUE | 网关回执 / 人工回填票号 / 发票作废 / 原票作废重开；轨迹与 invoice.status、tax_status 正交，时间正序回放，见 docs/design/q3-tax-trail.md |
 | 客户端发版 client_releases.status | DRAFT / GRAY / PUBLISHED / ROLLED_BACK | 草稿 / 灰度（按比例+白名单分桶投放）/ 全量（公开可下载）/ 已回滚（不可再投放） |
 | 客户端发版 client_releases.app | user / worker | 用户端 App / 师傅端 App |
+| 师傅 workers.status | 1 / 0 | 1在职 / 0离职（后台师傅管理页 active/left 文案；`workerAssignable` 要求 status=1 且 left_at 为空才可接单） |
+| 师傅注册 worker_registrations.status | PENDING / APPROVED / REJECTED | 待审核 / 已通过 / 已驳回（审核通过建 workers 主档 + 回填 worker_id） |
+| 实名核验 verifications.result | PENDING / PASS / FAIL | 待核验 / 通过 / 不通过（000059 归一，subject_type=customer/worker；用户详情 verifyRecords 段三态） |
+| 接单设置 worker_settings | accepting 布尔 + accept_types CSV | 后端当前仅识别工单作业类型 `INSTALL`（`internal/httpapi/worker/ticket_gate.go` portalTicketType）；P2 接单类型枚举待扩展 |
+| 派单工单作业类型 dispatch_tickets.work_type（派生口径） | INSTALL / REPAIR | 报障单（complaints 联表有值）→ REPAIR，否则 INSTALL（`internal/httpapi/worker/ticket.go` portalTicketTypeOf；admin 看板只落 INSTALL） |
 
 ## 5. 关键术语
 

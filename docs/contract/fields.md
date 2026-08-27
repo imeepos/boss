@@ -477,7 +477,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 聚合段 | 页面语义 | 取数口径 | 说明 |
 |:-------|:---------|:---------|:-----|
 | `plans` | 当前在用套餐 | `user_plans` 仅 `upper(status)='ACTIVE'` | 对齐用户端 `portalHomePlan`（ACTIVE 优先）；无在用套餐则段为空；「当前套餐」芯片同源派生 |
-| `faults` | 报障工单 | `complaints` 且 `type NOT LIKE '用户投诉:%'`；`type` 展示侧 strip「用户报障: 」前缀 | 双口径：用户端 `POST /faults`（`no_internet/slow/ont_fault/other`）+ 装维域故障码（SINGLE_OUTAGE 等，见 complaint-type-map.md）；strip 同 `portalFaultTypeLabelFromStored` |
+| `faults` | 报障工单 | `complaints` 且 `type NOT LIKE '用户投诉:%'`；`type` 展示侧 strip「用户报障: 」前缀 | 双口径：用户端 `POST /faults`（`no_internet/slow/ont_fault/other`）+ 装维域故障码（SINGLE_OUTAGE 等，见 complaint-type-map.md §2 用户端口径）；strip 同 `portalFaultTypeLabelFromStored` |
 | `complaints` | 投诉工单 | `complaints` 且 `type LIKE '用户投诉:%'` | 用户端 `POST /complaints` 落库前缀「用户投诉: 」，见 complaint_handlers.go |
 
 > 变更背景：此前两段都直读全量 `complaints`（同源重复、语义重叠），收口后按 type 前缀区隔；`faults` 与 `complaints` 不再同时出现重复行。
@@ -699,9 +699,13 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | `group` | group_id | BIGINT → worker_groups（当前归属，可变更） |
 | `regionId` | region_id | 服务区域，须落班组公司经营区域 |
 | `phone` | phone | 联系电话（脱敏） |
-| `status` | status | 1在职 / 0离职 |
+| `status` | status | 1在职 / 0离职（terms.md §4 登记；师傅详情/列表同口径） |
 | `joinedAt` | joined_at | 入职时间 |
 | `leftAt` | left_at | 离职时间，null=在职 |
+
+> 师傅详情（admin `GET /workers/{workerId}`，worker.yaml）：后端主档单条返回上述全字段；
+> admin 前端详情抽屉展示主档 + 关联子集（工单/绩效/消息/评价，各取第一段，超限折叠）。
+> 关联子取数口径见 `api/openapi/admin/worker.yaml` 各 `/worker-*` 端点；`worker_settings` 无 GET 只读路由（仅 PUT），详情不展示接单设置。
 
 ### 7.2 worker_locations（师傅实时位置，迁移 000144）
 

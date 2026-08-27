@@ -218,3 +218,13 @@
 
 > 澄清（非缺陷）：worker_registrations.group_id 可空（000089）与 workers.group_id NOT NULL 不矛盾——
 > Approve 强制审核员显式补正 groupID/regionID 才建工人（internal/domain/worker/onboarding.go ErrInvalidReviewFields 守护）。
+
+## 12. 师傅详情链路契约对账（2026-08-30，D 类补登）
+
+> 范围：`complaints.type` 用户端口径 vs 真库取值域；师傅详情涉及的全部枚举登记（terms.md §4）。
+> 实测基座：102 库 `SELECT DISTINCT type FROM complaints` 与 `\d complaints`。
+
+| # | 发现 | 矛盾/风险 | 处置 | 状态 |
+|:-:|:-----|:-----|:-----|:----:|
+| D3 | `complaint-type-map.md` 只登记装维域裸码（SINGLE_OUTAGE…），未登用户端 `POST /faults`（no_internet/slow/ont_fault/other）与 `POST /complaints`（attitude/quality/billing/suggestion/other）落库带前缀的需求口径 | 新链路（师傅详情/用户详情 faults/complaints 段）按契约找不到用户端口径 → 误以为裸码、无法核对真库取值域 | complaint-type-map.md 新增 §2 用户端口径表（前缀串 + strip 后值 + binding 白名单），真库三值实测留痕 | ✅ 本文档 |
+| D4 | `terms.md` §4 缺 workers.status（1/0）、worker_registrations.status（PENDING/APPROVED/REJECTED）、verifications.result（PENDING/PASS/FAIL） | 师傅详情渲染状态无权威枚举源，前端易自行造键 | terms.md §4 增登 4 行（含接单设置/工单作业类型派生口径） | ✅ 本文档 |
