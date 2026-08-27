@@ -116,7 +116,7 @@ export default function WorkerRegistrationPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.submittedAt)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       <div className="flex gap-2">
-                        <button className="h-7 cursor-pointer rounded-sm border border-[var(--color-brand-bg)] bg-[var(--color-brand-bg)] px-3 text-[12px] text-white hover:opacity-80" onClick={() => { setActId(r.id); setActMode('approve') }}>{w.approve}</button>
+                        <button className="h-7 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-3 text-[12px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setActId(r.id); setActMode('approve') }}>{w.approve}</button>
                         <button className="h-7 cursor-pointer rounded-sm border border-[var(--color-danger)] bg-transparent px-3 text-[12px] text-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)]" onClick={() => { setActId(r.id); setActMode('reject') }}>{w.reject}</button>
                       </div>
                     </td>
@@ -136,11 +136,11 @@ export default function WorkerRegistrationPage() {
       {/* 审批对话框 */}
       {actId != null && actMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeDialog}>
-          <div className="w-96 rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-4 text-lg font-semibold">{actMode === 'approve' ? w.approveTitle : w.rejectTitle}</h3>
+          <div className="w-96 rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6 shadow-[var(--shell-card-shadow)]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-lg font-semibold text-[var(--shell-heading)]">{actMode === 'approve' ? w.approveTitle : w.rejectTitle}</h3>
             {actMode === 'approve' ? (
               <>
-                <label className="mb-1 block text-sm text-gray-600">{w.groupId}</label>
+                <label className="mb-1 block text-sm text-[var(--shell-group-title)]">{w.groupId}</label>
                 <div className="mb-3">
                   <ResourcePicker
                     value={groupId}
@@ -152,7 +152,7 @@ export default function WorkerRegistrationPage() {
                     errorText={w.loadFail}
                   />
                 </div>
-                <label className="mb-1 block text-sm text-gray-600">{w.regionId}</label>
+                <label className="mb-1 block text-sm text-[var(--shell-group-title)]">{w.regionId}</label>
                 <div className="mb-3">
                   <ResourcePicker
                     value={regionId}
@@ -167,14 +167,14 @@ export default function WorkerRegistrationPage() {
               </>
             ) : (
               <>
-                <label className="mb-1 block text-sm text-gray-600">{w.rejectNote}</label>
-                <textarea className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm" rows={3} placeholder={w.rejectNotePlaceholder} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} />
+                <label className="mb-1 block text-sm text-[var(--shell-group-title)]">{w.rejectNote}</label>
+                <textarea className="mb-3 w-full rounded border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 py-2 text-sm text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" rows={3} placeholder={w.rejectNotePlaceholder} value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} />
               </>
             )}
-            {formError && <div className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div>}
+            {formError && <div className="mb-3 rounded border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-sm text-[var(--color-danger)]">{formError}</div>}
             <div className="flex justify-end gap-2">
-              <button className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100" onClick={closeDialog}>{w.cancel}</button>
-              <button className={`rounded px-4 py-2 text-sm text-white ${actMode === 'approve' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'}`} disabled={busy} onClick={actMode === 'approve' ? handleApprove : handleReject}>{actMode === 'approve' ? w.confirmApprove : w.confirmReject}</button>
+              <button className="rounded px-4 py-2 text-sm text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" onClick={closeDialog}>{w.cancel}</button>
+              <button className={`rounded px-4 py-2 text-sm ${actMode === 'approve' ? 'bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]' : 'bg-[var(--color-danger)] text-white hover:opacity-80'}`} disabled={busy} onClick={actMode === 'approve' ? handleApprove : handleReject}>{actMode === 'approve' ? w.confirmApprove : w.confirmReject}</button>
             </div>
           </div>
         </div>

@@ -14,7 +14,7 @@ import { TableStateRow } from '../../../components/business'
 import { TeamDialogs, type DialogMode } from './TeamDialogs'
 
 const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
-const primaryBtn = 'h-8 cursor-pointer rounded-sm border border-[var(--color-brand-bg)] bg-[var(--color-brand-bg)] px-4 text-[13px] text-white hover:opacity-80'
+const primaryBtn = 'h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]'
 
 export default function WorkerPage() {
   const t = useT()

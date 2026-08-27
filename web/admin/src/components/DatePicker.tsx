@@ -130,7 +130,7 @@ export function DatePicker({ value, onChange, ariaLabel, placeholder, disabled, 
                   className={'h-8 cursor-pointer rounded-sm border-none bg-none p-0 text-[13px] transition-colors hover:bg-[var(--shell-menu-hover-bg)]'
                     + (inMonth ? ' text-[var(--shell-content-text)]' : ' text-[var(--shell-input-placeholder)] opacity-60')
                     + (isToday && !selected ? ' font-semibold text-[var(--shell-fab-bg)]' : '')
-                    + (selected ? ' bg-[var(--shell-fab-bg)] font-semibold text-white hover:bg-[var(--shell-fab-bg)]' : '')}
+                    + (selected ? ' bg-[var(--shell-fab-bg)] font-semibold text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]' : '')}
                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault() }}
                   onClick={() => { onChange(iso); setOpen(false) }}
                 >
