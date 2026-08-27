@@ -3,11 +3,13 @@
 import { useEffect, type ReactNode } from 'react'
 
 export function Drawer({
-  title, onClose, footer, children,
+  title, onClose, footer, children, width = 520,
 }: {
   title: string
   onClose: () => void
   footer?: ReactNode
+  /** 抽屉宽度(px),受 92vw 上限约束;默认 520。 */
+  width?: number
   children: ReactNode
 }) {
   useEffect(() => {
@@ -19,7 +21,7 @@ export function Drawer({
   return (
     <>
       <div className="fixed inset-0 z-[100] animate-in fade-in duration-200 bg-[rgba(15,30,59,0.45)]" onClick={onClose} />
-      <aside className="fixed right-0 top-0 bottom-0 z-[101] flex w-[min(520px,92vw)] animate-in slide-in-from-right duration-200 flex-col border-l border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] shadow-[-8px_0_24px_rgba(3,13,31,0.18)]" role="dialog" aria-label={title}>
+      <aside className="fixed right-0 top-0 bottom-0 z-[101] flex animate-in slide-in-from-right duration-200 flex-col border-l border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] shadow-[-8px_0_24px_rgba(3,13,31,0.18)]" style={{ width: `min(${width}px, 92vw)` }} role="dialog" aria-label={title}>
         <header className="flex items-center justify-between border-b border-[var(--shell-side-border)] px-5 py-4">
           <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{title}</h3>
           <button className="h-7 w-7 cursor-pointer rounded-sm border-none bg-none text-base leading-none text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)] hover:text-[var(--shell-heading)]" onClick={onClose} aria-label="close">×</button>

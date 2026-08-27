@@ -1,14 +1,14 @@
-// 用户列表页:GET /users(keyword 过滤)+ GET /users/{customerId} 14 段详情聚合抽屉。
+// 用户列表页:GET /users(keyword 过滤)+ 详情抽屉(GET /users/{customerId} 14 段聚合,见 detail-drawer)。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { PageHead } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
-import { Drawer } from '../../../components/Drawer'
 import { DataTable } from '../../../components/business/data-table'
 import { fmtTime } from '../../../lib/format'
 import { filterUsers, pageSlice, type UserRow } from './filter'
+import { UserDetailDrawer } from './detail-drawer'
 
 export default function UserListPage() {
   const t = useT()
@@ -19,8 +19,7 @@ export default function UserListPage() {
   const [keyword, setKeyword] = useState(urlKeyword)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [detail, setDetail] = useState<Record<string, unknown> | null>(null)
-  const [detailId, setDetailId] = useState(0)
+  const [detailId, setDetailId] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
 
   const load = () => {
@@ -33,16 +32,9 @@ export default function UserListPage() {
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const openDetail = (id: number) => {
-    setDetailId(id)
-    apiFetch<Record<string, unknown>>(`/users/${id}`)
-      .then((d) => setDetail(d))
-      .catch((e) => setError(e instanceof Error ? e.message : u.loadFail))
-  }
-
   const filtered = useMemo(() => filterUsers(rows, keyword), [rows, keyword])
   const slice = pageSlice(filtered, page, pageSize)
-  const sections = detail ? (Object.keys(detail).filter((k) => Array.isArray(detail[k]))) : []
+  const activeRow = detailId !== null ? rows.find((r) => r.customerId === detailId) : undefined
 
   return (
     <div>
@@ -67,7 +59,7 @@ export default function UserListPage() {
                 { key: 'planName', label: u.columns[4], render: (r) => String(r.planName || '—') },
                 { key: 'createdAt', label: u.columns[5], render: (r) => fmtTime(String(r.createdAt)) },
                 { key: 'op', label: u.columns[6], render: (r) => (
-                  <button onClick={() => openDetail(Number(r.customerId))}>{u.detail}</button>
+                  <button onClick={() => setDetailId(Number(r.customerId))}>{u.detail}</button>
                 ) },
               ]}
             />
@@ -78,32 +70,7 @@ export default function UserListPage() {
           rangeText={u.rangeText} prevText={u.prev} nextText={u.next}
           perPageText={u.perPage} jumpText={u.jumpText} pageUnitText={u.pageUnit} />
       </div>
-      {detail && (
-      <Drawer title={`${u.detailTitle} #${detailId}`} onClose={() => setDetail(null)}>
-        {detail && (
-          <div>
-            {sections.map((k) => {
-              const arr = detail[k] as Record<string, unknown>[]
-              return (
-                <details key={k} open={sections.indexOf(k) < 4}
-                  className="border-b border-dashed border-border py-1.5">
-                  <summary className="cursor-pointer font-medium">{u.sectionNames[k] ?? k}({arr.length})</summary>
-                  {arr.length === 0 ? <p className="pl-3 text-[var(--shell-crumb-text)]">{u.empty}</p> : (
-                    arr.slice(0, 20).map((item, i) => (
-                      <div key={i} className="flex flex-wrap gap-x-3.5 gap-y-1 py-1 pl-3 text-xs">
-                        {Object.entries(item).map(([fk, fv]) => (
-                          <span key={fk}><b className="mr-0.5 font-medium text-[var(--shell-crumb-text)]">{fk}</b>: {String(fv ?? '—')}</span>
-                        ))}
-                      </div>
-                    ))
-                  )}
-                </details>
-              )
-            })}
-          </div>
-        )}
-      </Drawer>
-      )}
+      {detailId !== null && <UserDetailDrawer id={detailId} summary={activeRow} onClose={() => setDetailId(null)} />}
     </div>
   )
 }

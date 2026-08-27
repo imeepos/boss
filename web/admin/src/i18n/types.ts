@@ -1549,6 +1549,12 @@ export interface Translations {
       detail: string
       detailTitle: string
       sectionNames: Record<string, string>
+      /** 详情抽屉页签。 */
+      detailTabs: Record<string, string>
+      /** 详情抽屉列名/枚举/标签文案字典(键见 pages/bss/user/detail-view.ts)。 */
+      d: Record<string, string>
+      back: string
+      loading: string
       total: string
       empty: string
       loadFail: string
