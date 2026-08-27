@@ -122,6 +122,7 @@ fun OrderConfirmScreen(nav: Nav, productId: String) {
         CtaBar(
             product = product,
             enabled = !submitting && product != null && selectedAddressId.isNotBlank(),
+            submitting = submitting,
             onClick = {
                 if (submitting) return@CtaBar
                 submitting = true
@@ -200,7 +201,7 @@ private fun AddressRow(a: JSONObject, isSelected: Boolean, onClick: () -> Unit) 
 }
 
 @Composable
-private fun BoxScope.CtaBar(product: JSONObject?, enabled: Boolean, onClick: () -> Unit) {
+private fun BoxScope.CtaBar(product: JSONObject?, enabled: Boolean, submitting: Boolean, onClick: () -> Unit) {
     val fee = product?.optString("monthlyFee")?.takeIf { it.isNotBlank() } ?: "—"
     Surface(
         tonalElevation = 2.dp,
@@ -218,7 +219,12 @@ private fun BoxScope.CtaBar(product: JSONObject?, enabled: Boolean, onClick: () 
             modifier = Modifier.fillMaxWidth().padding(14.dp).height(44.dp),
         ) {
             Text(
-                if (enabled) "确认并支付 ¥$fee/月" else "暂不可提交",
+                // 提交中给「提交中…」正向反馈,不能误显「暂不可提交」(弱网 8s 等待期的即时按压反馈)
+                when {
+                    submitting -> "提交中…"
+                    enabled -> "确认并支付 ¥$fee/月"
+                    else -> "暂不可提交"
+                },
                 fontSize = 14.sp, fontWeight = FontWeight.W500, color = Color.White,
             )
         }
