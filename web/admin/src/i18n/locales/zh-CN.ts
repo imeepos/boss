@@ -1602,7 +1602,7 @@ const zhCN: Translations = {
       columns: ['客户ID', '姓名', '手机号', '登录名', '当前套餐', '注册时间', '操作'],
       detail: '详情',
       detailTitle: '用户详情',
-      sectionNames: { notify: '通知设置', addresses: '地址簿', balances: '余额', plans: '套餐', addons: '增值服务', orders: '订单', faults: '报障', bills: '账单', payments: '缴费', invoices: '发票', messages: '消息', coupons: '优惠券', complaints: '投诉', verifyRecords: '核验记录' },
+      sectionNames: { notify: '通知设置', addresses: '地址簿', balances: '余额', plans: '套餐', addons: '增值服务', usages: '流量使用', orders: '订单', faults: '报障', bills: '账单', payments: '缴费', invoices: '发票', messages: '消息', coupons: '优惠券', complaints: '投诉', verifyRecords: '核验记录' },
       detailTabs: { service: '服务套餐', finance: '账务发票', orders: '订单工单', profile: '资料偏好', marketing: '营销消息' },
       d: {
         dPlanName: '套餐名称', dEffectiveAt: '生效时间', dActive: '生效中',

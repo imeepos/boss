@@ -1602,7 +1602,7 @@ const msMY: Translations = {
       columns: ['ID Pelanggan', 'Nama', 'Telefon', 'Log Masuk', 'Pelan Semasa', 'Daftar', 'Tindakan'],
       detail: 'Butiran',
       detailTitle: 'Butiran Pengguna',
-      sectionNames: { notify: 'Notifikasi', addresses: 'Alamat', balances: 'Baki', plans: 'Pelan', addons: 'Tambahan', orders: 'Pesanan', faults: 'Kerosakan', bills: 'Bil', payments: 'Bayaran', invoices: 'Invois', messages: 'Mesej', coupons: 'Kupon', complaints: 'Aduan', verifyRecords: 'Pengesahan' },
+      sectionNames: { notify: 'Notifikasi', addresses: 'Alamat', balances: 'Baki', plans: 'Pelan', addons: 'Tambahan', usages: 'Penggunaan', orders: 'Pesanan', faults: 'Kerosakan', bills: 'Bil', payments: 'Bayaran', invoices: 'Invois', messages: 'Mesej', coupons: 'Kupon', complaints: 'Aduan', verifyRecords: 'Pengesahan' },
       detailTabs: { service: 'Pelan & Tambahan', finance: 'Pengebilan', orders: 'Pesanan & Tiket', profile: 'Profil', marketing: 'Pemasaran' },
       d: {
         dPlanName: 'Pelan', dEffectiveAt: 'Mula Berkuat Kuasa', dActive: 'Aktif',

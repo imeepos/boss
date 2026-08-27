@@ -1602,7 +1602,7 @@ const enUS: Translations = {
       columns: ['Customer ID', 'Name', 'Phone', 'Login', 'Current Plan', 'Registered', 'Actions'],
       detail: 'Detail',
       detailTitle: 'User Detail',
-      sectionNames: { notify: 'Notify', addresses: 'Addresses', balances: 'Balance', plans: 'Plans', addons: 'Add-ons', orders: 'Orders', faults: 'Faults', bills: 'Bills', payments: 'Payments', invoices: 'Invoices', messages: 'Messages', coupons: 'Coupons', complaints: 'Complaints', verifyRecords: 'Verifications' },
+      sectionNames: { notify: 'Notify', addresses: 'Addresses', balances: 'Balance', plans: 'Plans', addons: 'Add-ons', usages: 'Usage', orders: 'Orders', faults: 'Faults', bills: 'Bills', payments: 'Payments', invoices: 'Invoices', messages: 'Messages', coupons: 'Coupons', complaints: 'Complaints', verifyRecords: 'Verifications' },
       detailTabs: { service: 'Plans & Add-ons', finance: 'Billing', orders: 'Orders & Tickets', profile: 'Profile', marketing: 'Marketing' },
       d: {
         dPlanName: 'Plan', dEffectiveAt: 'Effective At', dActive: 'Active',

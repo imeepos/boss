@@ -9,7 +9,7 @@ import { TabBar } from '../../../components/business/tab-bar'
 import { EmptyState } from '../../../components/business/page-head'
 import { fmtFee, fmtTime } from '../../../lib/format'
 import type { UserRow } from './filter'
-import { DETAIL_TABS, PROFILE_FIELDS, latestPlanName,
+import { DETAIL_TABS, NOTIFY_CARD_KEY, PROFILE_FIELDS, latestPlanName,
   type ColSpec, type DetailCol, type DetailSection } from './detail-view'
 
 type Detail = Record<string, unknown>
@@ -37,7 +37,7 @@ function SectionBlock({ section, detail, empty }: {
   const t = useT()
   const u = t.pages.userPage
   const d = u.d
-  if (section.key === 'notifyPrefs') return <NotifyPrefsCard detail={detail} />
+  if (section.key === NOTIFY_CARD_KEY) return <NotifyPrefsCard detail={detail} />
   const rows = (detail[section.key] as Record<string, unknown>[] | undefined) ?? []
   return (
     <section className="mb-5">

@@ -29,6 +29,10 @@ export interface DetailTab {
   sections: DetailSection[]
 }
 
+/** 特殊卡片段:非表格,不经 sectionNames 渲染(detail-drawer 直读 sectionNames.notify)。
+ * 门禁 walker 跳过它——它不是字典引用键。 */
+export const NOTIFY_CARD_KEY = 'notifyPrefs'
+
 // 订单环节文案键(terms.md 第 1 节 12 环节)。
 const STAGE: Record<string, string> = Object.fromEntries(
   Array.from({ length: 12 }, (_, i) => [String(i + 1), `dStage${i + 1}`]),
@@ -105,7 +109,7 @@ export const DETAIL_TABS: DetailTab[] = [
   {
     key: 'profile',
     sections: [
-      { key: 'notifyPrefs', cols: [] },
+      { key: NOTIFY_CARD_KEY, cols: [] },
       { key: 'addresses', cols: [
         { key: 'addrCode', k: 'dAddrCode' },
         { key: 'contact', k: 'dContact' },
@@ -141,6 +145,15 @@ export const DETAIL_TABS: DetailTab[] = [
 
 /** 主档展示项:k → dFields 键,value 取聚合主档字段。 */
 export const PROFILE_FIELDS = ['phone', 'idType', 'idNo', 'regionName'] as const
+
+/** 抽屉级字面量文案键:detail-drawer.tsx 直接引用、不在 DETAIL_TABS 列规格内
+ * (概览芯片/通知偏好/布尔标记)。保持与 detail-drawer.tsx 字面量同步,
+ * 由 detail-i18n.test.ts 兜底——打错引用键即门禁红灯,而非线上露出英文键。 */
+export const DRAWER_D_KEYS = [
+  'dStatBalance', 'dStatPlan', 'dStatOrders', 'dStatCoupons',
+  'dNotifyBusiness', 'dNotifyMarketing', 'dNotifyChannel', 'dOn', 'dOff',
+  'dYes', 'dNo',
+] as const
 
 /** 概览统计:dBalances=余额段,套餐取 plans 最后一条(ORDER BY id 升序即最新)。 */
 export function latestPlanName(plans: unknown): string {
