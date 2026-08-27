@@ -149,6 +149,15 @@ document.querySelector('aside[role=dialog] h3')?.textContent   // 期望抽屉�
 - 图标与周围文字比例不能失衡,不使用 emoji 图标;
 - 下拉一律 `components/Dropdown.tsx`(禁原生 select),输入框统一 shell-input-* 令牌类。
 
+**输入框组件化补充(2026-08-27 修正,来源:营销弹框适配)**:
+
+- 抽屉/弹框表单输入一律 `<Input>`(`components/ui/input.tsx`:h-8 w-full 全令牌,双主题自适应,
+  含 focus ring 与 disabled 态),**不要手写 `className="w-full"` 裸 input**——暗色下渲染 UA 默认样式,
+  color-scheme:dark 兜底观感仍与 tokens 体系割裂;审计 grep:`'<input className="w-full"'`;
+- 字段包装统一 `FormField`(label+必填星+hint+error),提示文案 11px 走 `--shell-group-title`;
+- 选项型表单值(枚举下拉)的 options 数组禁模块级硬编码 label,组件内由 i18n 派生:
+  `const opts = TYPE_VALUES.map(v => ({ value: v, label: labels[v] }))`,列表列映射复用同一数组。
+
 ## 模板 H:Stripe/支付通道 E2E 验收模板(真实 102 + 真实渠道测试账号)
 
 适用:任何"收单发起 → 渠道收款 → webhook 回调落账"闭环验收。纪律:走真实渠道与真实回调,
@@ -201,3 +210,43 @@ curl -s -X POST $BASE/webhooks/stripe -d '{}' -o /dev/null -w 'probe=%{http_code
 7. **合并即验证**:push 分支 → 主树 `git fetch gitea main` + `merge --ff-only` → push main 触发 CI。
 8. **真实复核走三层**(techniques「102 业务回归三层证据采集」):/healthz → 登录 → 目标接口;
    目标层返回 `LICENSE_REQUIRED` 属环境授权阻断,如实记录,不修改代码绕授权、不谎报回归通过。
+
+## 模板 J:页面双主题双语言适配固定模板(2026-08-27 固化,来源:营销与积分规则弹框适配)
+
+> 适用:任何"页面/组件没适配多主题或多语言"的任务;硬性规则=文案全走 i18n、颜色全走 tokens.css
+> 变量,禁止 JSX 硬编码文案或色值。顺序不可换,第 1 步先证伪再修。
+
+1. **证伪取证**:cdp 打开目标页,断言当前缺陷证据(暗色下 input computed style 非 tokens 值 /
+   非 zh 语言下 option 文本仍是中文)——先有证据再动代码。
+2. **审计 grep 三连**(改动前圈定全部违规点,一次修完):
+   裸中文 `grep -n "[一-龥]" *.tsx`(排除注释行)、裸色值 `grep -n "#[0-9a-fA-F]\{3,6\}"`、
+   裸输入框 `grep -n '<input className="w-full"'`。
+3. **文案 i18n 闭环**:新 key 四处同步——`i18n/types.ts`(漏了 tsc TS2353 抓) +
+   `locales/zh-CN|en-US|ms-MY.ts` 三语言;模块级常量数组的 label 一律改为组件内由 `m` 派生
+   (见模板 G 输入框组件化补充),列表列展示复用同一数组,不另写第二份映射。
+4. **颜色令牌化**:裸 input 换 `ui/Input`;引用任何 var(--x) 前 grep `theme/tokens.css` +
+   `styles.css` 确认双主题都有定义(幽灵令牌审计见 techniques)。
+5. **门禁**:`pnpm typecheck && pnpm test && pnpm build`。
+6. **矩阵回归**:cdp 四组 capture(light/dark × zh/en|ms),断言模板见
+   techniques「CDP 双主题双语言矩阵断言」——主题看 computed style 命中 tokens 值,
+   语言看 `[role=option]`/列文本等于当前 locale 译文;工具 `scripts/cdp-admin-capture.mjs`。
+7. **存档**:一个页面域一个 commit(fix(web-admin): ...适配多主题与多语言),正文写根因
+   (裸 input=UA 默认样式、label 硬编码)与验证证据。
+
+## 模板 K:boss admin 免登录采集脚本用法(cdp-admin-capture,2026-08-27 固化)
+
+> 模板 C/E 的脚本化封装:自动 login 取 token + servers/token 两步注入 + theme/lang URL 透传,
+> dev(5173/自起 vite)与生产(102:5180)通用;断言/截图产物语义与 cdp-capture 完全一致。
+
+```bash
+# 冒烟目标页(dark 主题英文),追加任意断言 eval,返回值打印 stdout
+node .agents/skills/self-evolving/scripts/cdp-admin-capture.mjs out.png \
+  --path /bss/marketing --theme dark --lang en-US \
+  --base http://localhost:5173 \
+  --eval "const b=[...document.querySelectorAll('button')].find(x=>/^\+/.test(x.textContent.trim()));b&&b.click()" \
+  --eval "JSON.stringify({dialog:!!document.querySelector('[role=dialog]')})"
+# 手动指定 token(免一次 login 请求):--token <jwt>;生产环境 --base http://192.168.0.102:5180
+```
+
+要点:token 经 localStorage 注入而非 `?token=`(后者 devOnly,生产被剥离);
+`servers 先于受保护页启动`是硬前提,脚本已内置;坏 theme/lang 秒退 exit 2。

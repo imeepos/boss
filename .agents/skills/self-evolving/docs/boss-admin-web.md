@@ -46,6 +46,16 @@
 - 可视化验证：`.agents/skills/self-evolving/scripts/cdp-capture.mjs`（零依赖 CDP 截图）
 - 硬性规则（用户明令）：任何组件/页面必须同时考虑多主题与多语言——文案一律走 i18n（types.ts + 三份 locale 闭环），颜色一律走 `tokens.css` 变量/主题 token，禁止 JSX 内硬编码文案或色值；交付前 grep 裸字符串与裸色值
 
+## 不可更改事实（登录/主题/组件契约，2026-08-27 查证源码后固化）
+
+- **AuthGuard 会清 token**：`src/layouts/AuthGuard.tsx` 启动预取 `/auth/me`，任何失败（含 servers 未配置导致 apiBaseUrl 为空的网络错）走 catch → `adminLogout()` → `removeItem('boss.token')` 并 `<Navigate to="/login">`。所以 boss.servers 必须先于受保护页启动存在，`?token=` 单独直访业务页必被弹回且 token 消失
+- **无 vite 代理通道**：`api/client.ts` 注释明令"禁止再引入 vite 代理通道"；全部请求 = `apiBaseUrl()`(来自 boss.servers) + `API_PREFIX(/api/admin/v1)` 直连，102 后端已配 CORS。vite.config 只有 port 5173，不配 proxy
+- **urlPrefs 边界**：`?theme=|?lang=` 双端生效，`?token=` 仅 `import.meta.env.DEV`（生产剥离不写入）；权威存储是 localStorage，URL 只一次性覆盖
+- **表单输入唯一入口** `components/ui/input.tsx`（Input）：h-8 w-full 全 shell-input-* 令牌含 focus/disabled 态；裸 `<input className="w-full">` 暗色下 UA 默认样式，适配任务一律替换
+- **断言稳定选择器契约**：Drawer 根 = `aside[role=dialog]`（标题在其 h3/aria-label）；Dropdown 触发器 = `button[aria-haspopup=listbox]`（渲染的是 button 不是 input）；选项 = `[role=option]`。CDP 断言只准用语义锚点
+- **主题令牌只有两块**：`src/theme/tokens.css` 仅 `:root[data-theme='light']`/`'dark'` 两个定义块；引用任何 var 前先 grep 该文件确认双主题都有，styles.css 的 `--color-*` 是不分主题的静态色
+- **免登录采集脚本**：`scripts/cdp-admin-capture.mjs` 已封装 login 取 token + servers/token 注入 + theme/lang 透传（用法见 templates 模板 K）
+
 ## geo 域速查（2026-08-18 查证）
 
 - 页面 `/base/geo`（国家+区划双页签）；API 前缀 `/api/admin/v1/geo/*`（全站统一 `/api/admin/v1`，见 serverConfig.ts API_PREFIX），门禁 `menu:geo`（仅 sysadmin，迁移 000039 授予）

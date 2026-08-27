@@ -442,3 +442,26 @@ suspend fun current(ctx: Context): Location? {
 
 - 场景:页面有多个 aria-haspopup="listbox"/aria-label 按钮(顶栏语言切换、菜单、业务下拉)时,querySelector('button[aria-label]') 或 .at(-1) 会点错。
 - 手法:先 dump 候选 `[...document.querySelectorAll('button')].map((b,i)=>i+':'+b.textContent.trim())` 核对,再用组合锚点定位,如 `[...document.querySelectorAll('button[aria-haspopup="listbox"]')].find(b=>b.closest('label')?.textContent.includes('订阅事件'))`。
+
+## CDP 双主题×双语言矩阵断言(2026-08-27,营销弹框适配)
+
+- 场景:验收"组件/页面适配多主题多语言",模型不吃图、肉眼看像素不可复核。
+- 手法:四组 capture( light/dark × zh/en|ms ),每组两发 DOM 断言当产物:
+  主题断言 `getComputedStyle(input).backgroundColor/borderColor` 命中 tokens 实测值
+  (light=#FFFFFF/#D7DDE7,dark=#10203F/rgba(255,255,255,.14),值源 theme/tokens.css);
+  语言断言 `[role=dialog] [role=option]` 逐项文本等于当前 locale 译文。
+- 工具:`scripts/cdp-admin-capture.mjs`(自动 login 取 token+两步注入+theme/lang 透传),
+  断言经 `--eval` 走 stdout,不读图。改造前后各跑一遍,先证伪再修。
+- 稳定选择器契约:Drawer 根=`aside[role=dialog]`,Dropdown 触发器=`button[aria-haspopup=listbox]`,
+  选项=`[role=option]`;断言只准靠这些语义锚点,禁视觉坐标。
+
+## boss.token 莫名消失排查树(2026-08-27)
+
+- 症状:`?token=` 直访业务页必落 /login,probe `localStorage.getItem('boss.token')`=null,
+  像"URL 参数没生效"。
+- 排查序:① probe localStorage 三键(token/servers/active)定位丢的是哪个;
+  ② token 丢 = AuthGuard(`layouts/AuthGuard.tsx`)启动预取 /auth/me 失败 catch 分支
+  走 `adminLogout()` → `removeItem('boss.token')`——servers 未配置时 apiBaseUrl() 为空必失败;
+  ③ 修复=servers 先于 token:先访任意页(如 /login)写 boss.servers+active,再带 token 跳目标页;
+  ④ 全链路已封装 `scripts/cdp-admin-capture.mjs`,手写 eval 场景照 templates 模板 C/E。
+- 铁律:boss.token 消失先怀疑代码内登出路径(adminLogout),不要怀疑 urlPrefs/浏览器存储。

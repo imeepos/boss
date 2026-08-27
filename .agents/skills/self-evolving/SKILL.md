@@ -96,6 +96,8 @@ self-evolving/
 └── scripts/
     ├── cdp-capture.mjs       # 零依赖 CDP 工具（Node>=22 + 系统 Chrome）：网页截图 + console/网络采集，
                               #   --eval 自动填表登录，--logs 输出 console 报错与失败请求响应体
+    ├── cdp-admin-capture.mjs # boss admin 免登录采集包装器：自动 login 取 token + servers/token 两步注入
+                              #   + --theme/--lang/--path 透传，dev 与生产 5180 通用（用法见 templates 模板 K）
     ├── gpt-image-generate.mjs # 零依赖 gpt-image-2 页面设计稿生成（Node>=22 + .env）
     └── .env                  # API 密钥（不要泄露！）
 
