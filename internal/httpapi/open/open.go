@@ -15,11 +15,11 @@ import (
 	"github.com/ymm-001/boss/internal/pkg/middleware"
 )
 
-// Register 注册开放平台路由:验签 → 限流 → 业务。
+// Register 注册开放平台路由:验签 → 授权门禁 → 限流 → 业务。
 func Register(r *gin.Engine, a *app.Application) {
 	limiter := middleware.NewOpenRateLimiter()
 	v1 := r.Group("/api/open/v1")
-	v1.Use(middleware.OpenAuth(a.OpenPlat), limiter.OpenRateLimit())
+	v1.Use(middleware.OpenAuth(a.OpenPlat), middleware.LicenseGate(a.License, "/api/open/v1/ping"), limiter.OpenRateLimit())
 	registerOpenRoutes(v1, a)
 }
 
