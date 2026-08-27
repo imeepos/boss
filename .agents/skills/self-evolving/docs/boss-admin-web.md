@@ -106,3 +106,19 @@
 - 客户 215(王经理):仅 orders 4 条,其余段全空——空态断言对象;orders 4 ≤ 5 可验"无展开按钮"
 - complaints 同源双口径:faults 段=报障(`用户报障: ` 前缀已 strip 成 no_internet/slow/...+装维 6 码)、complaints 段=投诉(`用户投诉: ` 前缀保留),见 fields.md §2.1.1
 - 当前 harness 模型(deepseek-v4-flash)不接受 read_image,冒烟一律 DOM 断言(innerText/querySelector)+ --logs 查 console/网络,截图仅供人工复核
+
+## 侧栏激活与 react-router 事实(2026-10-01 查证源码后固化)
+
+- 依赖版本:react-router-dom **6.30.4**(pnpm .pnpm 目录);该版 **NavLink 已无 `isActive` prop**(d.ts 的 NavLinkProps 只剩 children/className/style/caseSensitive/end/viewTransition),className 函数收 `{isActive,isPending,isTransitioning}`
+- NavLink 默认 `end=false` 前缀匹配:访问 `/boss/site/cats` 时 `/boss/site`(官网内容)也被判 active → 兄弟菜单双击亮
+- 侧栏激活判定统一走 `router/menu.def.ts` 的 `isNavActive(to,pathname)`(精确路径激活;深层路由自身是其它菜单项完整路径不高亮父项);Sidebar 用 Link + 显式 `aria-current={active?'page':undefined}`,不靠 NavLink 前缀匹配
+- 同源前缀兄弟项:官网内容 `/boss/site` ↔ 官网分类 `/boss/site/cats`;`/bss/marketing` ↔ `/bss/marketing-recon`(均已按 isNavActive 精确化)
+
+## 部署验证事实(2026-10-01 实证)
+
+- 前端确认上线:远端 `index.html` 的 bundle hash 名 ↔ 本地 `pnpm build` 产物 dist/assets 同名 hash;两者一致=部署的就是本地版本;再 grep bundle 内新标记文本双重确认
+- 102:5180 nginx assets 命中 immutable(max-age=31536000),bundle 名带 hash,index.html 已 no-cache——修完前端 push 后看 index.html 引用的 hash 是否更新
+
+## 遗留缺口(2026-10-01 查证,勿与已修项混淆)
+
+- `/boss/site`(官网内容列表,sitePage)的 `columns` 数组仍是**裸字段标识符**(title/slug/category/status/publishedAt/version),zh-CN 界面下列头裸英文——siteCatsPage 与 knowledgePage 均已本地化(knowledge 页由 feat/knowledge-i18n-theme 修复,columns ['标识码','标题','内容','状态','版本']),sitePage 待同样处理

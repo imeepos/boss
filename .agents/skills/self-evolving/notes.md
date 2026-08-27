@@ -1065,3 +1065,10 @@
 - skill 有没有提前预警? 有:红线 #1 说明编辑前必须 Read,但本次再次证明 Read 状态按绝对路径跟踪;红线 #6 要求 CSS token grep 与真实 DOM 断言;红线 #7 已提示不要假设模型支持图像输入,GLM-5.3-Flash 也不支持。
 - 重来一次会怎么做? 建 worktree 后立即按 worktree 绝对路径批量 Read;检索 `--` 开头模式固定使用 grep 工具或 `grep -e`;视觉验证先做 cdp-capture DOM/计算样式断言,截图仅在模型声明支持图像时读取。
 - 收获:知识库页三语采集真实通过:zh/en/ms 表头、空态、状态下拉、状态行与分页文案均命中;light/dark cardBg 分别为 rgb(255,255,255)/rgb(16,32,63);console 与网络失败均为 0;102 冒烟文章创建后立即删除,列表回空。业务提交前后门禁 typecheck/test/build 全过(321 tests)。
+
+## 2026-10-01 技能沉淀专项(导航激活/列头 i18n/部署验证 三处回喂)
+
+- 哪个坑浪费了最多时间? 本会话无排障坑;最大时间花在盘点——skill 已积累 91 lessons/22 known-issues/19 red-lines/39 techniques/11 模板,沉淀前必须先扫索引防重复投喂。
+- skill 有没有提前预警? 有:红线 #44"技能喂食同样走 worktree → merge → 清理"——上一会话(官网分类)把 docs(skill) 反思直接提交 main(0ba72a0d),本次已纠正,回喂走 worktree 全流程;recidivism 对应登记 +1。
+- 重来一次会怎么做? 沉淀前先 `grep -n "^## " techniques.md / lessons.md 尾条` 盘点去重;一次会话只投喂"确有新知识"的条目,不凑数。
+- 收获:本次回喂三块——① 导航激活:react-router 6.30.4 移除 NavLink isActive prop + 前缀匹配致兄弟菜单双击亮,沉淀 isNavActive 精确判定模式(lessons/前端索引/templates 模板 M);② 列头 i18n:siteCatsPage.columns 存字段标识符导致三语下表头裸英文,沉淀"列头数组直接放译文"教训,并登记同源遗留缺口(knowledgePage 随后被并行会话 feat/knowledge-i18n-theme 修复,现仅剩 sitePage);③ 部署验证:沉淀"远端 bundle grep 标记 + 与本地 build hash 对照"的前端上线确认技术(techniques),并修正上一会话直接提交 main 的 recidivism。回喂与并行会话(boss-skill-deposits)撞模板编号 L,让号改名 M;rebase 两次撞并行会话同文件冲突,均按"只增不改"双留解决。

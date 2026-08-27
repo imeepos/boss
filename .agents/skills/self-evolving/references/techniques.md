@@ -509,3 +509,19 @@ SQL
 
 - 场景 → 搜索 `--shell-*`、`--color-*` 等以 `-` 开头的变量名。
 - 怎么用 → 优先使用 grep 工具；shell 中使用 `grep -e "--shell-input-border" file` 或 `grep -- "--shell-input-border" file`，否则模式会被当成 grep 选项。
+
+## 前端部署确认"新代码已上线":远端 bundle grep 标记 + 本地 build hash 对照(2026-10-01)
+
+- 场景:改完前端(web/admin)push main 触发 CI 部署 102,要确认 5180 上跑的是本地这份代码,而不是"有响应但旧 bundle"。
+- 手法(三连,可脚本化成轮询):
+  1. `curl -s http://192.168.0.102:5180/ | grep -o 'src="/assets/[^"]*"'` 取 index.html 引用的 bundle hash 名(assets 命中 immutable,hash 变=真的换了);
+  2. `curl -s .../$bundle | grep -c '<新代码的标记文本>'`(如 zh-CN locale 里改动后的文案/新 key 名),≥1 即新代码在内;
+  3. 对照:本地 `pnpm build` 产物的 dist/assets 里同名 hash 文件存在 = 部署的就是本地版本(bundle 哈希一致是铁证,比"有响应"硬)。
+- 轮询骨架:每次 `index.html → bundle → grep 标记`,15s 间隔,超时 ~12min 判超时;不要拿"页面 200"当部署完成信号(nginx 常驻旧 index.html)。
+- 关联:模板 B 的"制造可观测差异再轮询"是 API 层,本条是前端 bundle 层;修复前端后用户报"看不到变化"先走本条(红线 #2a)。
+
+## react-router 版本 API 先查 d.ts 再动手(2026-10-01)
+
+- 场景:要用 NavLink 的 `isActive` prop 做自定义激活,或依赖某 React Router API 行为。
+- 手法:写码前 `grep -n "isActive" node_modules/.pnpm/react-router-dom@*/node_modules/react-router-dom/dist/index.d.ts`(或 dev 版 index.js 的 NavLink props 解构),确认当前版本(本项目 6.30.4)有没有该 API——6.30.4 已把 `isActive` 从 NavLink props 移除,只剩 `className/children/style` 函数收 `{isActive,isPending,isTransitioning}`;dist/index.js 的 `_excluded2` 数组列的就是被剥离的 props。
+- 教训:按旧版 API 先写方案再回头翻源码浪费一轮;API 边界问题一律先查 installed 包类型/实现,不靠记忆。

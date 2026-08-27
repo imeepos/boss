@@ -275,3 +275,21 @@ node .agents/skills/self-evolving/scripts/cdp-admin-capture.mjs out.png \
    (checker A 项只匹配带 `$ref` 的行);`fields.md` 订阅事件行同步。
 6. **验证组合**:fake 单测(参数透传/载荷序列化)+ 真库集成(匹配维度/幂等重放/停用过滤)+
    `make contract-sync` 域关键词范围断言;新增事件本身无需迁移(复用 open_webhook_deliveries)。
+
+## 模板 M:侧栏导航激活 + 列头 i18n 双修固定模板(2026-10-01 固化,来源:官网分类激活连带高亮)
+
+> 适用:侧栏菜单"访问子项父项也高亮"或"列表页列头裸英文"。顺序不可换,先取证再改。
+
+1. **取证**:cdp 打开目标路由,断言当前缺陷证据——`Array.from(document.querySelectorAll('nav a[aria-current]')).map(a=>a.getAttribute('href'))`
+   应只有当前项,实际多出父项(`["/boss/site","/boss/site/cats"]`=双击亮实锤);列头 `[...document.querySelectorAll('thead th')].map(t=>t.textContent)`
+   在 zh-CN 下应显示中文,实际英文=columns 存了字段标识符。
+2. **改激活判定**:在 `router/menu.def.ts`(与 KEY_BY_PATH 同文件)加 `isNavActive(to,pathname)` 纯函数:
+   精确路径激活 + 深层路由仅当其不在 KEY_BY_PATH 时算同页;Sidebar 从 NavLink 改 Link + 显式 `aria-current`,
+   className 直接拼 active 类(react-router 6.30.4 NavLink 已无 isActive prop,别按旧 API 写)。
+3. **配单测**:menu.def.test.ts 锁四组——精确匹配、深层非菜单项(编辑页高亮父项)、深层是菜单项(不高亮父项)、兄弟前缀项互不高亮。
+4. **列头 i18n**:三语 locale 的 `columns` 数组直接放译文标签(如 ['标识码','名称','排序','启用']),不放字段名;
+   同步 i18n/types.ts(columns: string[] 已有则不改);页面 `<th key={x}>{x}</th>` 原样渲染即得三语。
+5. **门禁**:`pnpm typecheck && pnpm test && pnpm build`(单测含模板 M 第 3 步)。
+6. **矩阵回归**:cdp 断言——目标路由 nav 仅当前项、/boss/site/new 仍高亮官网内容、三语列头(zh/en/ms 各拍一次)、暗色无 console 报错。
+7. **部署确认**:push → CI → 用 techniques「前端部署确认新代码已上线」(远端 bundle grep 标记 + 本地 build hash 对照),再对 102:5180 重拍第 6 步。
+8. **存档**:导航激活与 i18n 是两个独立可 revert 的提交(fix(admin): 侧栏激活精确化 / fix(admin): 列头三语),不混装。
