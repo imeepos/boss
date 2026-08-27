@@ -72,6 +72,7 @@
 | 2026-08-27 | 税务属地配置挂法人(000109):legal_entities.tax_jurisdiction/tax_channel 为配置源,开票经 bills.legal_entity_id 快照落票;区域定属地/独立配置表/手工指定被否决 | adopted/2026-08-27-tax-jurisdiction-on-legal-entity.md |
 | 2026-08-27 | 设备更换单接入执行流:asset 域自治状态机(PENDING→assign→DOING→complete→DONE/FAILED),不生成派单工单(dispatch_tickets.order_id 1:1 订单强约束不动);师傅端经 /api/worker/v1/replacements 两端点接入,完成落既有 worker_replace_logs;放宽 order_id/换新套订单 12 环节/FAILED 回退被否决 | adopted/2026-08-27-replacement-ticket-flow.md |
 | 2026-08-27 | 侧边栏菜单按实际内容重划 16 组(key/path/权限码不变,aaa 吸并 alarm,新增 worker/cms/channel/system 四组);顶栏分组主导航移除,分组导航只在侧栏;domain-map D 列维持原型分组不回填 | adopted/2026-08-27-sidebar-regroup.md |
+| 2026-08-27 | user Android 发布签名与版号:独立 release keystore(不入库)+apksigner 指纹验签门禁;首发 versionCode=2/0.1.0(历史内测占 1);cleartext 白名单收敛;POST_NOTIFICATIONS 立项 | adopted/2026-08-27-user-android-release-signing.md |
 | 2026-08-28 | 客户端版本发布域 apprelease(000137):双门槛升级判定+确定性灰度分桶;APK 入 MinIO;免登录检查挂各端 pub 组;不做差分/渠道/热修复 | adopted/2026-08-28-app-release-domain.md |
 | 2026-08-28 | worktree 合并协议止损线:同一分支连续 re-sync 达 3 次未合入即停止竞速,推送保安全后与活跃会话错峰;无限重试(活锁)与中央合入队列被否决 | adopted/2026-08-28-worktree-merge-circuit-breaker.md |
 | 2026-08-29 | 客户中心审计收尾裁定:实名三表 000059 归一为既定设计+PASS 一致性门禁;乱序 5 单补正+advance 前置守卫;address 288 双四码=0009 生命周期合法;投诉 orderId 维持可空;37 无评价单豁免;验收造数自清理+巡检门禁三通道;核查先查库再接口/行数磁盘余量/并行基线三项流程固化 | adopted/2026-08-29-audit-closeout-rulings.md |

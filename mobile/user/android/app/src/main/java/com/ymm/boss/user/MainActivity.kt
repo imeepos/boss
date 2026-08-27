@@ -1,11 +1,16 @@
 package com.ymm.boss.user
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -28,9 +33,21 @@ class MainActivity : ComponentActivity() {
         Api.init(this)
         DevModeStore.init(this)
         enableEdgeToEdge()
+        // 上线计划 D0 立项:Android 13+ 通知运行时权限,启动即弹窗(Manifest 已声明)。
+        requestNotificationPermission()
         // 状态栏区域由 PageScaffold 统一画固定纯色带(与首页一致,不透明),此处只保证图标为白色。
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         setContent { BossTheme { AppRoot() } }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < 33) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            == PackageManager.PERMISSION_GRANTED
+        ) return
+        ActivityCompat.requestPermissions(
+            this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001,
+        )
     }
 }
 
