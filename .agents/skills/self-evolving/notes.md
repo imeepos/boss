@@ -1051,3 +1051,10 @@
 - skill 有没有提前预警? 有:worktree 合并协议(ff-merge 失败=常态,rebase 后重试)在并行会话推进 main 时直接命中并照做,一次通过;未预警 react-router 6.30 NavLink API 变化。
 - 重来一次会怎么做? 动 NavLink 前先 `grep -n "isActive" node_modules/.../react-router-dom/dist/index.d.ts` 确认版本 API;worktree 分支创建统一 `git worktree add ../name -b fix/xxx` 一步到位,不在主树 checkout。
 - 收获:侧栏 NavLink 默认前缀匹配导致 /boss/site/cats 激活时 /boss/site(官网内容)同时高亮(部署态 CDP 实锤 nav=["/boss/site","/boss/site/cats"]);修法=menu.def.ts 加 isNavActive 精确判定(精确匹配激活;深层路由自身是菜单项不高亮父项),Sidebar 从 NavLink 改 Link+显式 aria-current,同一缺陷顺带修掉 /bss/marketing vs marketing-recon 兄弟项。i18n:siteCatsPage.columns 原为字段标识符,zh-CN 界面表头裸英文;改为三语本地化标签+fCodePh 占位。门禁 typecheck/test/build 全过,dev+CDP 断言:nav 只剩 /boss/site/cats、三语列头(标识码/Code/Kod)、/boss/site/new 仍高亮官网内容、暗色无 console 报错。
+
+## 2026-08-27 调研"订阅事件只有一个"→ 顺手修测试事件投递空转
+
+- 哪个坑浪费了最多时间? ① worktree 编辑连拒两次:同一文件主树读过不算数,read 状态按绝对路径跟踪,worktree 副本必须按 worktree 路径重读(recidivism 再 +2);② bash 每次 fresh shell,gofmt/go 不在默认 PATH,每条命令都要 export PATH=/opt/homebrew/bin:$PATH。
+- skill 有没有提前预警? 红线 #1 涵盖"读后编辑"但没点破"按绝对路径跟踪"这个细节;102 psql 核对造数时容器名猜错,`docker ps --format` 按 ports grep 一步定位 boss-infra-postgres-1(25432)。
+- 重来一次会怎么做? 建 worktree 后第一轮就把要改的文件按 worktree 路径全部 read 再动手;Go 门禁命令固定带 PATH 前缀。
+- 收获:调研双证据法(代码 grep + 102 curl 运行时复核)一轮锁定根因——订阅事件下拉只有一项不是渲染 bug,是 eventCatalog 登记制下 emit 侧只挂了 order.stage.done 一个业务事件,如实反映;顺藤摸瓜发现更真的 bug:管理端测试事件注释说"全部启用订阅",InsertDeliveries 却按事件类型精确匹配,openplat.test 不在目录永远命中 0 条空转,新增 EmitToApp/InsertAppDeliveries 按应用匹配修复(fake + 真实 PG 双回归);契约对账红的归属判定——先在主树复跑,同红=并行会话存量(license 24 项不碰),只修自己调研域内的存量缺口(event-types 路由未登记 + eventTypes[] 批量口径漂移,独立小提交);收尾后 102 库核对造数零残留。
