@@ -107,7 +107,7 @@ type Address struct {
 	ParentID    int64  `json:"parentId"`
 	Level       int8   `json:"level"` // 1市 2区 3街道 4小区 5楼栋
 	Name        string `json:"name"`
-	Path        string `json:"path"`                // ltree 路径字符串;用户端选点后存 user_addresses.address_path
+	Path        string `json:"path"`        // ltree 路径字符串;用户端选点后存 user_addresses.address_path
 	CountryCode string `json:"countryCode"` // 所在树根的国家锚点(alpha-2,空=未挂接)
 	AdminCode   string `json:"adminCode"`   // 所在树根的一级行政区锚点(ISO 3166-2,可空)
 	HasChildren bool   `json:"hasChildren"` // 是否存在子级
