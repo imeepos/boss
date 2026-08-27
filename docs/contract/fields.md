@@ -921,7 +921,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 >
 > 2026-08-26 流程补齐（通知闭环 + 后台代录）：
 > - 待办通知：PENDING 落单（用户端自助 `POST /auth/verify`、后台代录 customer、师傅代录 worker）Emit 消息中心 todo，refType=`realname`、refID=`{subjectType}/{subjectId}`（同一主体多条 PENDING 共享一个待办，Link `/base/realname-review`）；审核终态 Resolve；已办结后同主体再次落单 → Emit 复活该待办（重置未办/刷新标题/清读回执，行数不增）。自动通道即时判定（PASS/FAIL）不落待办。
-> - 审核回执：人工审核终态向客户 portal_messages 写 category=`system` 站内消息（PASS「实名认证已通过」/ FAIL「实名认证未通过」含驳回原因），App 端未知分类回退默认图标并展示于"全部"页签。
+> - 审核回执：人工审核终态向客户 portal_messages 写 category=`system` 站内消息（PASS「实名认证已通过」/ FAIL「实名认证未通过」含驳回原因），App 端未知分类回退默认图标并展示于"全部"页签；师傅侧同终态写 worker_messages（INFO/WARN，§7.4，无驳回原因字段故用通用指引文案）。
 > - 后台代录入口：客户档案页行操作「实名代录」抽屉——回显 `GET /customers/:id/real-name` 最新单（40410=暂无核验单，含证件照预览），以 `{realName,idCardNo,method}` 提交同端点落 PENDING/自动判定；客户核验记录抽屉结果列三态 PASS/FAIL/PENDING（PENDING 不再渲染为不通过）。
 
 ## 8B. Q1 客服与应收信用基础（internal/domain/cs + internal/domain/ar，000118）

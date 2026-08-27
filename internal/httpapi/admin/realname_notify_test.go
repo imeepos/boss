@@ -13,6 +13,7 @@ import (
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 )
 
@@ -98,4 +99,42 @@ func TestCustomerRealnameVerifyPassNotifiesPass(t *testing.T) {
 	if len(msgs) != 1 || msgs[0].Payload["title"] != "实名认证已通过" {
 		t.Fatalf("messages=%+v", msgs)
 	}
+}
+
+// 回归:师傅实名审核终态 → worker_messages 回执(WARN/FAIL、INFO/PASS)。
+func TestWorkerRealnameVerifyNotifiesWorkerMessage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mgr := auth.NewManager("s", time.Hour)
+	r := gin.New()
+	wf := &fakeOnboarding{}
+	led := &recordingLedger{fakeWorkerOps: &fakeWorkerOps{}}
+	ja := &app.Application{
+		User:           &fakeUser{permOk: true},
+		WorkerRealName: wf,
+		WorkerLedger:   led,
+	}
+	Register(r, ja, mgr)
+	tok := authToken(t, mgr)
+
+	w := postBodyAuth(t, r, "/api/admin/v1/verifications/worker/5/verify", `{"result":"FAIL"}`, tok)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if len(led.sent) != 1 || led.sent[0].Level != "WARN" || led.sent[0].WorkerID != 5 {
+		t.Fatalf("sent=%+v", led.sent)
+	}
+	if led.sent[0].Title != "实名认证未通过" {
+		t.Fatalf("title=%q", led.sent[0].Title)
+	}
+}
+
+// recordingLedger 嵌入既有全桩,只覆写 SendMessage 记录下发内容。
+type recordingLedger struct {
+	*fakeWorkerOps
+	sent []worker.Message
+}
+
+func (r *recordingLedger) SendMessage(_ context.Context, m worker.Message) (int64, error) {
+	r.sent = append(r.sent, m)
+	return int64(len(r.sent)), nil
 }

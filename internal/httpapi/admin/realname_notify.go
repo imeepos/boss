@@ -16,6 +16,7 @@ import (
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/notify"
+	"github.com/ymm-001/boss/internal/domain/worker"
 )
 
 const realnameRefType = "realname"
@@ -68,5 +69,21 @@ func notifyCustomerRealnameResult(a *app.Application, c *gin.Context, customerID
 		"messageId": msgID, "category": "system", "title": title,
 		"content": content, "tag": "实名", "tagLevel": tagLevel,
 		"createdAt": time.Now(), "read": false,
+	})
+}
+
+// notifyWorkerRealnameResult 师傅实名终态写 worker_messages(fields.md §7.4);
+// worker 域核验单不带驳回原因,FAIL 用通用指引文案。
+func notifyWorkerRealnameResult(a *app.Application, c *gin.Context, workerID int64, result string) {
+	if a.WorkerLedger == nil {
+		return
+	}
+	level, title, content := "INFO", "实名认证已通过", "您的实名认证已通过审核"
+	if result != worker.RealNamePass {
+		level, title = "WARN", "实名认证未通过"
+		content = "您提交的实名认证未通过审核，请核对姓名、证件号与证件照片后重新提交"
+	}
+	_, _ = a.WorkerLedger.SendMessage(c.Request.Context(), worker.Message{
+		WorkerID: workerID, Level: level, Title: title, Content: content, SentAt: time.Now(),
 	})
 }
