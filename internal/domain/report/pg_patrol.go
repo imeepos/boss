@@ -62,6 +62,13 @@ var orphanChecks = []struct {
 		FROM invoices i WHERE i.customer_id > 0 AND NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = i.customer_id)`},
 	{"provision_logs.task_id -> provision_tasks", `SELECT count(*), COALESCE((array_agg(l.id ORDER BY l.id))[1:10], '{}'::bigint[])
 		FROM provision_logs l WHERE l.task_id > 0 AND NOT EXISTS (SELECT 1 FROM provision_tasks t WHERE t.id = l.task_id)`},
+	// 订单环节计数器与环节日志一致性:orders.stage 必须等于该订单 order_stages 行数。
+	// 进程在 advance 两条语句之间崩溃或第二条失败时会产生「计数器到 N 而日志缺 N」的分叉单,
+	// 重试恒撞 ErrIllegalTransition 永久卡死(2026-08-30 持久化阶段2 修复了写入路径);
+	// 本巡检作为防线:任何 count != stage 的订单视为悬案,通过 db-patrol-gate 每日告警。
+	{"orders.stage vs order_stages rows", `SELECT count(*), COALESCE((array_agg(o.id ORDER BY o.id))[1:10], '{}'::bigint[])
+		FROM orders o
+		WHERE (SELECT count(*)::int FROM order_stages os WHERE os.order_id = o.id) <> o.stage`},
 }
 
 // PatrolOrphans 逐项跑巡检;单项 SQL 失败即中止(巡检只读,失败=连接问题)。
