@@ -6,8 +6,7 @@ import { useQueryState } from '../../../lib/useQueryState'
 import { PageHead } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { DataTable } from '../../../components/business/data-table'
-import { fmtTime } from '../../../lib/format'
-import { filterUsers, pageSlice, type UserRow } from './filter'
+import { filterUsers, pageSlice, createdAtCell, loginNameCell, type UserRow } from './filter'
 import { UserDetailDrawer } from './detail-drawer'
 
 export default function UserListPage() {
@@ -55,9 +54,9 @@ export default function UserListPage() {
                 { key: 'customerId', label: u.columns[0], render: (r) => String(r.customerId) },
                 { key: 'name', label: u.columns[1], render: (r) => String(r.name ?? '') },
                 { key: 'phone', label: u.columns[2], render: (r) => String(r.phone ?? '') },
-                { key: 'loginName', label: u.columns[3], render: (r) => String(r.loginName || '—') },
+                { key: 'loginName', label: u.columns[3], render: (r) => loginNameCell(r as UserRow) },
                 { key: 'planName', label: u.columns[4], render: (r) => String(r.planName || '—') },
-                { key: 'createdAt', label: u.columns[5], render: (r) => fmtTime(String(r.createdAt)) },
+                { key: 'createdAt', label: u.columns[5], render: (r) => createdAtCell(r as UserRow) },
                 { key: 'op', label: u.columns[6], render: (r) => (
                   <button onClick={() => setDetailId(Number(r.customerId))}>{u.detail}</button>
                 ) },
