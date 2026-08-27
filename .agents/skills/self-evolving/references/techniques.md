@@ -382,3 +382,6 @@ suspend fun current(ctx: Context): Location? {
 - 102 部署新二进制:本地 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build 后 scp,比在 102 编(go.toolchain 自动下载易超时)快且稳(2026-08-27 oltsim 实录)。
 - 102 起长驻进程:setsid 二进制 ... > log 2>&1 < /dev/null & 再 disown,普通 nohup+& 经 ssh 会被会话收割(2026-08-27 实录)。
 - 102 新服务开监听前先 ss -tln 查端口占用,避免撞 goproxy/其他服务;撞了就换高位端口(2026-08-27 oltsim 8081/8088 均被占,18099 才净)。
+
+## 接口/页面对账手法:抓"接口有、页面无"(2026-08-26 实名代录)
+场景:审查某业务流程两端是否闭环。做法:对后端路由文件(internal/httpapi/**)注册的每个端点路径,拿路径字面量去 web/mobile 前端源码 grep;零命中即"接口有页面无"(本次 POST /customers/:id/real-name 藏在 admin/customer.yaml 但无任何 apiFetch 调用)。反向同理:前端 apiFetch 的每个路径回 grep 后端路由注册,防端上写了死链。

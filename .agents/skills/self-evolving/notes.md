@@ -936,3 +936,9 @@
 - 哪个坑浪费了最多时间？真实 PG 集成测试当场抓获 mock 全绿放行的产线级断链(open_webhook_deliveries fresh 行 http_status=NULL,*int 扫描必炸,部署环境 subscriptions=0 才未爆发)——排查本身快,但反思耗时:为什么单测没拦?因为 pgxmock 桩永远返回非 NULL 假行。另有一笔 60s 浪费:把 run_in_background 当环境变量写进 bash 字符串,前台超时被杀,正确做法是工具参数。
 - 这个 skill 有没有提前警告我?有两条红线救场:开工前 git worktree list/pwd 核对(worktree 兄弟目录坑零踩踏),以及"推 main 后必须核对运行镜像 sha 而非假设 CI"——本次 CI 一分钟内部署新镜像,poll 循环抓到 sha 变化并复测审计写入路径(id=1418)。但"pgxmock 验不出列可空性/SQL 合法性"没有沉淀,已补 lessons 三条。
 - 重来一次我会怎么做?SQL 重的批次(SKIP LOCKED 领取、事务化)在写单测之前先上真库 EXPLAIN+行为集成测试,让真库约束倒逼 SQL 设计;mock 单测只留给控制流分支。
+
+## 2026-08-26 用户实名认证流程审查补缺(feat/realname-flow-gaps)
+
+- 哪个坑浪费了最多时间？make lint 无 golangci-lint 时兜底 `gofmt -l .` 拦下了 main 存量未格式化文件(user/service.go,07afe42a 引入),门禁红在别人遗留而非本次改动;定位只花几分钟,但值得前置。
+- 这个 skill 有没有提前警告我？worktree 协议 + ff-only 收尾红线全程生效:先 merge main(no-op)、push gitea、主树 pwd+branch 核对后 ff-only、清理远端分支,一次通过。另,先读契约(fields.md §7.6/§7.7)再动手避免了重复造审核中心已有能力。
+- 重来一次我会怎么做？接手"是否有缺失"类审查任务,首轮就把"接口存在但无前端调用方"(grep 前端源码对端点路径)列为固定检查项——本次 POST /customers/:id/real-name 就是靠这个手法抓出来的;已沉淀 techniques。

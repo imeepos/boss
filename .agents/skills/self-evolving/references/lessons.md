@@ -362,3 +362,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - pgx 列可空性必须真库验证一次:mock 桩永远返回你写的非 NULL 行,`*int` 扫 NULL 列在 mock 下全绿、首个 fresh 行(如 open_webhook_deliveries.http_status)即炸,整条投递循环每轮报错。凡"从零第一次读"的行优先用 pgtype.Int4/Text 或 COALESCE(2026-08-30 webhook 集成测试当场抓获,单测全绿未能预警)。
 - SQL 语义改动(SKIP LOCKED 领取/租约窗口/事务边界)先上真库 EXPLAIN 验证语法与计划再写代码;pgxmock 只能对字符串做正则匹配,验不出 `FOR UPDATE OF 别名` 级别的合法性。
 - DSH 工具的后台执行靠工具参数(如 run_in_background: true),把它当环境变量写进命令体不会生效,命令会被前台超时杀掉。
+- 当 make lint 红在 `gofmt -l` 且文件不在本次改动集:是 golangci-lint 缺席时的存量兜底拦截,gofmt -w 单独 style 提交修掉,不要混进 feature 提交(2026-08-26)。
