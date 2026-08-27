@@ -586,6 +586,24 @@ export interface Translations {
       detail: string
       create: string
       createTitle: string
+      edit: string
+      editTitle: string
+      fCategory: string
+      categoryOptions: string[]
+      feeLocked: string
+      priceChange: string
+      priceChangeTitle: string
+      currentFee: string
+      fNewFee: string
+      eNewFee: string
+      fReason: string
+      pReason: string
+      priceChangeTip: string
+      publish: string
+      unpublish: string
+      publishConfirm: string
+      unpublishConfirm: string
+      actFail: string
       saveFail: string,
       loadFail: string
       history: string
