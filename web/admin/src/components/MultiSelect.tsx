@@ -88,7 +88,7 @@ export function MultiSelect({ values, options, onChange, ariaLabel, placeholder,
         </span>
       </button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-[1000] max-h-[264px] min-w-full overflow-y-auto rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] p-1 shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+        <div className="absolute left-0 top-[calc(100%+6px)] z-popover max-h-[264px] min-w-full overflow-y-auto rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] p-1 shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
           role="listbox" aria-label={ariaLabel} aria-multiselectable="true" onMouseDown={(e) => e.stopPropagation()}>
           <div className="sticky top-0 border-b border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] px-1 pb-1">
             <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={searchPlaceholder}

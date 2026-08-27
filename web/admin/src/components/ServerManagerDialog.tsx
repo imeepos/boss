@@ -73,7 +73,7 @@ export function ServerManagerDialog({ blocking, onClose, onApply }: ServerManage
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45">
+    <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/45">
       <div className="max-h-[80vh] w-130 overflow-auto rounded-md bg-[var(--shell-card-bg)] p-5 shadow-[var(--shadow-panel)]" onClick={(e) => e.stopPropagation()}>
         <h3 className="mb-3 text-base font-semibold text-[var(--shell-heading)]">{t.pages.servers.manageTitle}</h3>
         {blocking && <p className="mb-2.5 text-xs text-[var(--shell-crumb-text)]">{t.pages.servers.gateHint}</p>}

@@ -191,7 +191,7 @@ export default function AccountListPage() {
       />
 
       {confirmDisable && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45" onClick={() => setConfirmDisable(null)}>
+        <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/45" onClick={() => setConfirmDisable(null)}>
           <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5" onClick={(e) => e.stopPropagation()}>
             <p className="m-0 mb-4 text-sm text-[var(--shell-content-text)]">{t.pages.account.disableConfirm.replace('{name}', confirmDisable.username)}</p>
             <div className="flex justify-end gap-2">

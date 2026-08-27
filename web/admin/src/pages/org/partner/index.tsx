@@ -150,7 +150,7 @@ export default function PartnerReviewPage() {
       )}
 
       {approveResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45"
+        <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/45"
           onClick={() => setApproveResult(null)}>
           <div className="w-105 rounded-md bg-[var(--shell-card-bg)] p-5 shadow-[var(--shadow-panel)]"
             onClick={(e) => e.stopPropagation()}>

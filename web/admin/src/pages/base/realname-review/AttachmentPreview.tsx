@@ -21,7 +21,7 @@ export function AttachmentPreview({ attachmentId, onClose }: Props) {
     return () => { if (url) URL.revokeObjectURL(url) }
   }, [attachmentId]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/60" onClick={onClose}>
       <div className="max-h-[90vh] max-w-[90vw] rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]" onClick={(e) => e.stopPropagation()}>
         {error
           ? <div className="px-4 py-8 text-sm text-[var(--color-danger)]">{error}</div>

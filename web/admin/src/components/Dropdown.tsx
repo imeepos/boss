@@ -71,7 +71,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
       </button>
       {open && (
         <div
-          className={'absolute left-0 top-[calc(100%+6px)] z-[1000] max-h-[264px] min-w-full overflow-y-auto rounded-md border p-1 ' + (onDark
+          className={'absolute left-0 top-[calc(100%+6px)] z-popover max-h-[264px] min-w-full overflow-y-auto rounded-md border p-1 ' + (onDark
             ? 'border-white/10 bg-[var(--color-brand-navy-900)] shadow-[0_12px_32px_rgba(0,0,0,0.4)]'
             : 'border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] shadow-[0_6px_16px_rgba(0,0,0,0.08)]')}
           role="listbox"

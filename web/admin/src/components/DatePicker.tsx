@@ -102,7 +102,7 @@ export function DatePicker({ value, onChange, ariaLabel, placeholder, disabled, 
       </button>
       {open && (
         <div
-          className="absolute left-0 top-[calc(100%+6px)] z-[1000] w-[252px] rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] p-2 shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+          className="absolute left-0 top-[calc(100%+6px)] z-popover w-[252px] rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] p-2 shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
           role="dialog"
           aria-label={ariaLabel}
           onMouseDown={(e) => e.stopPropagation()}

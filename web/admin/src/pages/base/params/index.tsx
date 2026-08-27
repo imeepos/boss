@@ -135,7 +135,7 @@ export default function ParamsPage() {
         </div>
       </Card>
       {detailRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45" onClick={() => setDetail(null)}>
+        <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/45" onClick={() => setDetail(null)}>
           <div className="w-95 rounded-md bg-[var(--shell-card-bg)] p-5 shadow-[var(--shadow-panel)]" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-3 text-base font-semibold text-[var(--shell-heading)]">{t.pages.params.detailTitle}</h3>
             <dl className="mb-4 grid grid-cols-[80px_1fr] gap-x-3 gap-y-2 text-[13px]">

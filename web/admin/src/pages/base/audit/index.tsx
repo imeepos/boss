@@ -128,6 +128,6 @@ export default function AuditPage() {
 const ctl: React.CSSProperties = { padding: '6px 10px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 13, background: '#fff' }
 const btn: React.CSSProperties = { padding: '6px 14px', border: '1px solid #d9d9d9', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 13 }
 const tag: React.CSSProperties = { padding: '1px 8px', borderRadius: 4, fontSize: 12, background: '#f0f5ff', color: '#2f54eb', border: '1px solid #adc6ff' }
-const mask: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
+const mask: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--z-page-modal)' }
 const modal: React.CSSProperties = { background: '#fff', borderRadius: 8, padding: 20, width: 380 }
 const dtStyle: React.CSSProperties = { color: '#888' }

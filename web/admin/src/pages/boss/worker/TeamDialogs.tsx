@@ -30,7 +30,7 @@ const plainBtn = 'h-8 cursor-pointer rounded-sm border border-[var(--shell-input
 // Modal 外壳:遮罩点击关闭 + 令牌化底色。
 function Shell({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="max-h-[85vh] w-[26rem] overflow-y-auto rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <h3 className="mb-4 text-base font-semibold text-[var(--shell-heading)]">{title}</h3>
         {children}

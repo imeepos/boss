@@ -1,6 +1,6 @@
 // Drawer:右侧抽屉(antd 布局惯例),主题经 shell 令牌自适应;ESC/遮罩可关闭。
 // 样式:tailwind 原子类(原 Drawer.css 已删除),动画走 tailwindcss-animate。
-// 层级阶梯:本组件遮罩 100/面板 101 < 页面临时遮罩 120 < 共享 ui/dialog 130 < Dropdown 等弹层 1000。
+// 层级走语义类 z-drawer-mask/z-drawer(styles.css --z-* 令牌),裸 z 值被构建门禁拦截。
 import { useEffect, type ReactNode } from 'react'
 
 export function Drawer({
@@ -21,8 +21,8 @@ export function Drawer({
 
   return (
     <>
-      <div className="fixed inset-0 z-[100] animate-in fade-in duration-200 bg-[rgba(15,30,59,0.45)]" onClick={onClose} />
-      <aside className="fixed right-0 top-0 bottom-0 z-[101] flex animate-in slide-in-from-right duration-200 flex-col border-l border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] shadow-[-8px_0_24px_rgba(3,13,31,0.18)]" style={{ width: `min(${width}px, 92vw)` }} role="dialog" aria-label={title}>
+      <div className="fixed inset-0 z-drawer-mask animate-in fade-in duration-200 bg-[rgba(15,30,59,0.45)]" onClick={onClose} />
+      <aside className="fixed right-0 top-0 bottom-0 z-drawer flex animate-in slide-in-from-right duration-200 flex-col border-l border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] shadow-[-8px_0_24px_rgba(3,13,31,0.18)]" style={{ width: `min(${width}px, 92vw)` }} role="dialog" aria-label={title}>
         <header className="flex items-center justify-between border-b border-[var(--shell-side-border)] px-5 py-4">
           <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{title}</h3>
           <button className="h-7 w-7 cursor-pointer rounded-sm border-none bg-none text-base leading-none text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)] hover:text-[var(--shell-heading)]" onClick={onClose} aria-label="close">×</button>

@@ -100,7 +100,7 @@ export function ApiKeySection() {
         </div>
       )}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-5">
+        <div className="fixed inset-0 z-page-modal grid place-items-center bg-black/45 p-5">
           <div className="w-[min(440px,100%)] rounded-md bg-[var(--shell-card-bg)] p-6 shadow-[var(--shadow-panel)]" role="dialog" aria-modal="true">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="m-0 text-[17px] text-[var(--shell-heading)]">{k.create}</h2>

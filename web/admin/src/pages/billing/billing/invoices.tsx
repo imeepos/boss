@@ -103,7 +103,7 @@ export function InvoicePanel() {
       </div>
 
       {act && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45">
+        <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/45">
           <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5">
             <p>{actText}</p>
             {act.kind !== 'reissue' && (

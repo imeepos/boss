@@ -135,7 +135,7 @@ export default function WorkerRegistrationPage() {
 
       {/* 审批对话框 */}
       {actId != null && actMode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeDialog}>
+        <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/40" onClick={closeDialog}>
           <div className="w-96 rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6 shadow-[var(--shell-card-shadow)]" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-4 text-lg font-semibold text-[var(--shell-heading)]">{actMode === 'approve' ? w.approveTitle : w.rejectTitle}</h3>
             {actMode === 'approve' ? (
