@@ -7,6 +7,7 @@ import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { ErrorBanner, EmptyState, ToolbarButton, FormField } from '../../../components/business'
 import { Drawer } from '../../../components/Drawer'
+import { Input } from '../../../components/ui/input'
 
 const EMPTY_FORM = { name: '', minPoints: '' }
 
@@ -111,11 +112,11 @@ export default function LevelsTab() {
           }>
           <div className="grid gap-3">
             <FormField label={m.colName} required>
-              <input className="w-full" value={form.name}
+              <Input value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </FormField>
             <FormField label={m.levelMinPoints} required>
-              <input className="w-full" inputMode="numeric" value={form.minPoints}
+              <Input inputMode="numeric" value={form.minPoints}
                 onChange={(e) => setForm({ ...form, minPoints: e.target.value })} />
             </FormField>
           </div>

@@ -10,12 +10,15 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { ErrorBanner, EmptyState, ToolbarButton, FormField } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
+import { Input } from '../../../components/ui/input'
 
-const TYPE_OPTIONS = [
-  { value: 'CASH', label: '代金券' },
-  { value: 'FULL_CUT', label: '满减券' },
-  { value: 'DISCOUNT', label: '折扣券' },
-]
+const TYPE_VALUES = ['CASH', 'FULL_CUT', 'DISCOUNT'] as const
+
+/** 券类型下拉选项:label 走 i18n,随语言切换。 */
+function typeOptions(m: ReturnType<typeof useT>['pages']['marketing']) {
+  const labels = { CASH: m.couponTypeCash, FULL_CUT: m.couponTypeFullCut, DISCOUNT: m.couponTypeDiscount }
+  return TYPE_VALUES.map((value) => ({ value, label: labels[value] }))
+}
 
 const EMPTY_FORM = {
   name: '', type: 'CASH', faceValueYuan: '', thresholdYuan: '', validDays: '', totalQty: '',
@@ -29,6 +32,7 @@ function yuan(cents: number): string {
 export default function CouponTemplatesTab() {
   const t = useT()
   const m = t.pages.marketing
+  const typeOpts = typeOptions(m)
   const [items, setItems] = useState<CouponTemplate[]>([])
   const [error, setError] = useState('')
   const [open, setOpen] = useState(false)
@@ -106,7 +110,7 @@ export default function CouponTemplatesTab() {
               {items.map((r) => (
                 <TableRow key={r.templateId}>
                   <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>{TYPE_OPTIONS.find((o) => o.value === r.type)?.label ?? r.type}</TableCell>
+                  <TableCell>{typeOpts.find((o) => o.value === r.type)?.label ?? r.type}</TableCell>
                   <TableCell>{yuan(r.faceValue)}</TableCell>
                   <TableCell>{r.threshold > 0 ? yuan(r.threshold) : '-'}</TableCell>
                   <TableCell>{r.validDays > 0 ? r.validDays : '-'}</TableCell>
@@ -143,27 +147,27 @@ export default function CouponTemplatesTab() {
           }>
           <div className="grid grid-cols-2 gap-3">
             <FormField label={m.couponName} required>
-              <input className="w-full" value={form.name}
+              <Input value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </FormField>
             <FormField label={m.couponType}>
-              <Dropdown value={form.type} options={TYPE_OPTIONS} ariaLabel={m.couponType}
+              <Dropdown value={form.type} options={typeOpts} ariaLabel={m.couponType}
                 onChange={(v) => setForm({ ...form, type: v })} />
             </FormField>
             <FormField label={m.couponFaceYuan} required>
-              <input className="w-full" inputMode="decimal" value={form.faceValueYuan}
+              <Input inputMode="decimal" value={form.faceValueYuan}
                 onChange={(e) => setForm({ ...form, faceValueYuan: e.target.value })} />
             </FormField>
             <FormField label={m.couponThresholdYuan}>
-              <input className="w-full" inputMode="decimal" value={form.thresholdYuan}
+              <Input inputMode="decimal" value={form.thresholdYuan}
                 onChange={(e) => setForm({ ...form, thresholdYuan: e.target.value })} />
             </FormField>
             <FormField label={m.couponValidDays}>
-              <input className="w-full" inputMode="numeric" value={form.validDays}
+              <Input inputMode="numeric" value={form.validDays}
                 onChange={(e) => setForm({ ...form, validDays: e.target.value })} />
             </FormField>
             <FormField label={m.couponTotalQty}>
-              <input className="w-full" inputMode="numeric" value={form.totalQty}
+              <Input inputMode="numeric" value={form.totalQty}
                 onChange={(e) => setForm({ ...form, totalQty: e.target.value })} />
             </FormField>
           </div>

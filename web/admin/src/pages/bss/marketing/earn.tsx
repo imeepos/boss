@@ -6,6 +6,7 @@ import { Card } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
 import { ErrorBanner, ToolbarButton, FormField } from '../../../components/business'
 import { Drawer } from '../../../components/Drawer'
+import { Input } from '../../../components/ui/input'
 
 const EMPTY_FORM = { pointsPerYuan: '', minCentsYuan: '', expireDays: '' }
 
@@ -100,15 +101,15 @@ export default function EarnRuleTab() {
           }>
           <div className="grid gap-3">
             <FormField label={m.earnPointsPerYuan} required hint={m.earnPointsPerYuanHint}>
-              <input className="w-full" inputMode="numeric" value={form.pointsPerYuan}
+              <Input inputMode="numeric" value={form.pointsPerYuan}
                 onChange={(e) => setForm({ ...form, pointsPerYuan: e.target.value })} />
             </FormField>
             <FormField label={m.earnMinYuan}>
-              <input className="w-full" inputMode="decimal" value={form.minCentsYuan}
+              <Input inputMode="decimal" value={form.minCentsYuan}
                 onChange={(e) => setForm({ ...form, minCentsYuan: e.target.value })} />
             </FormField>
             <FormField label={m.earnExpireDays} hint={m.earnExpireDaysHint}>
-              <input className="w-full" inputMode="numeric" value={form.expireDays}
+              <Input inputMode="numeric" value={form.expireDays}
                 onChange={(e) => setForm({ ...form, expireDays: e.target.value })} />
             </FormField>
           </div>

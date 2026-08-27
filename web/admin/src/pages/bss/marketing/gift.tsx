@@ -7,6 +7,7 @@ import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { ErrorBanner, EmptyState, ToolbarButton, FormField } from '../../../components/business'
 import { Drawer } from '../../../components/Drawer'
+import { Input } from '../../../components/ui/input'
 
 const EMPTY_FORM = { name: '', buyMonths: '', giftMonths: '' }
 
@@ -114,15 +115,15 @@ export default function GiftRulesTab() {
           }>
           <div className="grid gap-3">
             <FormField label={m.colName} required>
-              <input className="w-full" value={form.name}
+              <Input value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </FormField>
             <FormField label={m.giftBuyMonths} required>
-              <input className="w-full" inputMode="numeric" value={form.buyMonths}
+              <Input inputMode="numeric" value={form.buyMonths}
                 onChange={(e) => setForm({ ...form, buyMonths: e.target.value })} />
             </FormField>
             <FormField label={m.giftGiftMonths} required>
-              <input className="w-full" inputMode="numeric" value={form.giftMonths}
+              <Input inputMode="numeric" value={form.giftMonths}
                 onChange={(e) => setForm({ ...form, giftMonths: e.target.value })} />
             </FormField>
           </div>

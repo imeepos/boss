@@ -2306,12 +2306,14 @@ export interface Translations {
       create: string; creating: string; disable: string; formIncomplete: string
       couponName: string; couponType: string; couponFaceYuan: string; couponThresholdYuan: string
       couponValidDays: string; couponTotalQty: string; couponIssued: string
+      couponTypeCash: string; couponTypeFullCut: string; couponTypeDiscount: string
       giftBuyMonths: string; giftGiftMonths: string
       earnCurrent: string; earnPerYuan: string; earnMin: string; earnExpire: string; earnNever: string
       earnNone: string; earnPointsPerYuan: string; earnPointsPerYuanHint: string; earnMinYuan: string
       earnExpireDays: string; earnExpireDaysHint: string; earnSave: string; earnSaved: string
       levelMinPoints: string
       taskCode: string; taskPoints: string; taskPeriod: string
+      taskPeriodOnce: string; taskPeriodDaily: string; taskPeriodMonthly: string
       reconTitle: string; reconDesc: string; reconSummaryTpl: string; reconPointsSummaryTpl: string
       reconDriftOnly: string; reconRefresh: string; reconIssuedQty: string; reconActualIssued: string
       reconUsed: string; reconRedeemedAmount: string; reconFaceValueTotal: string; reconDiff: string
