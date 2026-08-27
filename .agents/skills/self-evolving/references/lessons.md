@@ -363,3 +363,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - SQL 语义改动(SKIP LOCKED 领取/租约窗口/事务边界)先上真库 EXPLAIN 验证语法与计划再写代码;pgxmock 只能对字符串做正则匹配,验不出 `FOR UPDATE OF 别名` 级别的合法性。
 - DSH 工具的后台执行靠工具参数(如 run_in_background: true),把它当环境变量写进命令体不会生效,命令会被前台超时杀掉。
 - 当 make lint 红在 `gofmt -l` 且文件不在本次改动集:是 golangci-lint 缺席时的存量兜底拦截,gofmt -w 单独 style 提交修掉,不要混进 feature 提交(2026-08-26)。
+- 双主题断言在同一个同步 eval 内改 data-theme 并立即读 computed style,读到的是 CSS transition(如 duration-200)的中间值——必然产生"没生效"的假阴性;改属性与读结果必须隔开一次 await/settle(2026-09 用户详情重构,浪费最多时间的一坑)。
+- 页面首访被守卫(Navigate to /login)弹回后,eval 里的 location.reload() 重载的是 login 页而非目标页;带着 token 回内页要显式 location.href='/目标路由',reload 不会还原被替换掉的 URL。
+- 判断 Tailwind 任意值 utility 是否真的进了产物:`grep -o ".\{0,60\}令牌名.\{0,80\}" dist/assets/*.css` 直查构建产物最权威;vite dev 的 CSSOM 遍历有 @layer 嵌套盲区,扁平 for cssRules 会漏,需递归 walk。

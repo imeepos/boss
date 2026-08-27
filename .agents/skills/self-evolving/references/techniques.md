@@ -385,3 +385,14 @@ suspend fun current(ctx: Context): Location? {
 
 ## 接口/页面对账手法:抓"接口有、页面无"(2026-08-26 实名代录)
 场景:审查某业务流程两端是否闭环。做法:对后端路由文件(internal/httpapi/**)注册的每个端点路径,拿路径字面量去 web/mobile 前端源码 grep;零命中即"接口有页面无"(本次 POST /customers/:id/real-name 藏在 admin/customer.yaml 但无任何 apiFetch 调用)。反向同理:前端 apiFetch 的每个路径回 grep 后端路由注册,防端上写了死链。
+## 需要登录的内页 CDP 冒烟(2026-09 用户详情重构)
+
+场景:admin 前端内页需 token+serverConfig,直接访问会被 AuthGuard 弹回 /login。
+
+用法:首个 eval 注入 `boss.token` + `boss.servers`(数组元素必须含 id)+ `boss.server.active` 后,**用 `location.href='/目标路由'` 显式导航**(reload 会停在 login);后续每个 eval 之间自带 settle,可完成"点击行按钮开抽屉→逐页签点击→innerText/th 枚举断言"的全链路 DOM 断言;双主题切换单独一次 eval 并用 Promise/setTimeout 等 ≥300ms 过渡结束再读 computed style。零 console 报错/失败请求检查交给 --logs。
+
+## Tailwind utility 是否进了构建产物(2026-09)
+
+场景:怀疑任意值类(bg-[var(--x)])没被生成时,vite dev 的 CSSOM 扁平遍历有 @layer 盲区,不要信。
+
+用法:`grep -o ".\{0,60\}令牌名.\{0,80\}" dist/assets/*.css`——产物里有即已生成;要找"谁覆盖了背景"再做递归 cssRules walk(matches 按选择器过滤)。

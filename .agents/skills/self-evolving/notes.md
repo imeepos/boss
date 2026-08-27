@@ -942,3 +942,9 @@
 - 哪个坑浪费了最多时间？make lint 无 golangci-lint 时兜底 `gofmt -l .` 拦下了 main 存量未格式化文件(user/service.go,07afe42a 引入),门禁红在别人遗留而非本次改动;定位只花几分钟,但值得前置。
 - 这个 skill 有没有提前警告我？worktree 协议 + ff-only 收尾红线全程生效:先 merge main(no-op)、push gitea、主树 pwd+branch 核对后 ff-only、清理远端分支,一次通过。另,先读契约(fields.md §7.6/§7.7)再动手避免了重复造审核中心已有能力。
 - 重来一次我会怎么做？接手"是否有缺失"类审查任务,首轮就把"接口存在但无前端调用方"(grep 前端源码对端点路径)列为固定检查项——本次 POST /customers/:id/real-name 就是靠这个手法抓出来的;已沉淀 techniques。
+
+## 2026-09-? 后台用户详情抽屉重构(feat/user-detail-redesign)
+
+- 哪个坑浪费了最多时间？双主题验证的假阴性:CDP 同步 eval 里 setAttribute('data-theme','dark') 后立刻读 getComputedStyle().backgroundColor,拿到的是 200ms CSS transition 的起点值(仍是亮色白),误判"抽屉背景在暗色下没换色",绕了 CSSOM 规则扫描/getMatchedStyles/build grep 三条歧路,最后用 classList 摘类 + 分次 eval(间隔≥过渡时长)才复现出"其实早就对了"。
+- 这个 skill 有没有提前警告我？红 #6(双主题必须真验证)在,但只说"要验",没警告"同步读 computed style 会吃进 transition 中间值造成假阴性";首访路由被 AuthGuard 弹回 /login 后 eval 里 location.reload() 重载的是 login 页(该跳转目标必须显式 location.href),skill 也没记。
+- 重来一次我会怎么做？主题切换断言一律分两次 eval 且中间留 settle;进入内页前先注入 localStorage 再 location.href 到目标路由,不依赖 reload;样式来源存疑先 grep dist/assets/*.css 确认 utility 是否生成(生成即在,vite dev CSSOM 遍历有 @layer 嵌套盲区)。

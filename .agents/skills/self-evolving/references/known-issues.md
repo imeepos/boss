@@ -276,3 +276,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 **修法**：`catch (e: SpecificFailure)` + `catch (e: Exception)` 双层；Failure 子类型把对应 message 写入 err 文案位。
 
 - 症状: bossctl --server ... call POST user:/orders 返回 404 非 JSON,但服务端确实注册了 /api/user/v1/orders。原因:cmd/bossctl/routes.go 的 portalPrefixes 里 user 前缀 = "/api/v1"(历史遗留),与服务端实际 "/api/user/v1" 不一致;upload_test.go 也固化旧值。修法:调 user 端一律写完整路径,或修 routes.go 前缀。
+
+## UI 双主题断言假阴性:同步读 computed style 吃进 transition 中间值(2026-09)
+
+**症状**:CDP/Puppeteer 同步 eval 中 `documentElement.setAttribute('data-theme','dark')` 后立即 `getComputedStyle(el).backgroundColor`,返回仍是亮色值,误判"暗色令牌没生效",实际元素带 `duration-200` 等过渡类,200ms 内读到的是插值起点。
+
+**修法**:改属性与读结果拆成两次 eval,中间走工具的 settle(≥2500ms);或 eval 内 `new Promise(r=>setTimeout(()=>r(getComputedStyle(el).backgroundColor),600))` 返回 Promise 由 awaitPromise 接住。
