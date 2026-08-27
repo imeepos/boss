@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // ListProducts 列出产品;legalEntityID=0 返回全部,否则按公司过滤。
@@ -142,4 +143,42 @@ func (s *PGStore) ChangeProductPrice(ctx context.Context, offerID int64, newFee 
 		return 0, fmt.Errorf("customer: commit price change: %w", err)
 	}
 	return historyID, nil
+}
+
+// UpdateProduct 编辑产品基础信息(名称/带宽/分类);公司归属与月费/状态不在此口(分别防孤儿/走台账/走状态机)。
+func (s *PGStore) UpdateProduct(ctx context.Context, offerID int64, name, bandwidth, category string) error {
+	tag, err := s.db.Exec(ctx, `
+		UPDATE product_offers
+		SET name=$2, bandwidth=$3, category=COALESCE(NULLIF($4,''),'broadband'), updated_at=now()
+		WHERE id=$1`, offerID, name, bandwidth, category)
+	if err != nil {
+		return fmt.Errorf("customer: update product: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrProductNotFound
+	}
+	return nil
+}
+
+// UpdateProductStatus 上下架;发布即生效,刷新 effective_at(与调价同口径,fields.md §2.2)。
+func (s *PGStore) UpdateProductStatus(ctx context.Context, offerID int64, status string) error {
+	if status != "DRAFT" && status != "PUBLISHED" && status != "OFFLINE" {
+		return ErrInvalidProductStatus
+	}
+	var tag pgconn.CommandTag
+	var err error
+	if status == "PUBLISHED" {
+		tag, err = s.db.Exec(ctx,
+			`UPDATE product_offers SET status=$2, effective_at=now(), updated_at=now() WHERE id=$1`, offerID, status)
+	} else {
+		tag, err = s.db.Exec(ctx,
+			`UPDATE product_offers SET status=$2, updated_at=now() WHERE id=$1`, offerID, status)
+	}
+	if err != nil {
+		return fmt.Errorf("customer: update product status: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrProductNotFound
+	}
+	return nil
 }

@@ -51,6 +51,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, user.ErrRoleNotFound),
 		errors.Is(err, user.ErrFKViolation),
 		errors.Is(err, customer.ErrForeignKeyViolation),
+		errors.Is(err, customer.ErrInvalidProductStatus),
 		errors.Is(err, quadlink.ErrForeignKeyViolation),
 		errors.Is(err, worker.ErrForeignKeyViolation),
 		errors.Is(err, provision.ErrForeignKeyViolation),

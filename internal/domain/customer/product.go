@@ -36,4 +36,8 @@ type ProductService interface {
 	CreateRegionOffer(ctx context.Context, r RegionOffer) (int64, error)
 	// ChangeProductPrice 产品调价:更新月费并追加调价台账,返回台账 id;产品不存在返回 ErrProductNotFound。
 	ChangeProductPrice(ctx context.Context, offerID int64, newFee float64, effectiveAt time.Time, reason string, operatorAccountID int64) (int64, error)
+	// UpdateProduct 编辑产品基础信息(名称/带宽/分类);月费走调价、状态走 UpdateStatus,公司归属不可改(防区域包孤儿)。
+	UpdateProduct(ctx context.Context, offerID int64, name, bandwidth, category string) error
+	// UpdateProductStatus 上下架;发布时刷新生效时间(与调价同口径),产品不存在返回 ErrProductNotFound。
+	UpdateProductStatus(ctx context.Context, offerID int64, status string) error
 }

@@ -183,6 +183,44 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /products/{id}:
+    put:
+      tags: [Customer]
+      summary: 编辑产品基础信息(名称/带宽/分类;月费走调价、状态走 /status)
+      operationId: updateProduct
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 产品ID }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 128 }
+                bandwidth: { type: string }
+                category: { type: string, enum: [broadband, fusion, addon], default: broadband }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /products/{id}/status:
+    put:
+      tags: [Customer]
+      summary: 产品上下架(DRAFT/PUBLISHED/OFFLINE;发布即生效刷新生效时间)
+      operationId: updateProductStatus
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 产品ID }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE] }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /products/{id}/price-history:
     get:
       tags: [Customer]

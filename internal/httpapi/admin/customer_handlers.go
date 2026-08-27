@@ -201,3 +201,53 @@ func productChangePriceHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, gin.H{"id": historyID})
 	}
 }
+
+// productUpdateHandler PUT /products/{id}:编辑产品基础信息(名称/带宽/分类)。
+// 月费不可在此改(必须走调价台账),状态走 /status,公司归属不可改(防区域包孤儿)。
+func productUpdateHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		var req updateProductReq
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(req.Name, "name", 128),
+				httpx.RequireEnumOrDefault(&req.Category, "category", "broadband", "broadband", "fusion", "addon"),
+			)
+		}) {
+			return
+		}
+		if err := a.Product.UpdateProduct(c.Request.Context(), id, req.Name, req.Bandwidth, req.Category); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "product.update", "product_offer", strconv.FormatInt(id, 10), gin.H{"name": req.Name})
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	}
+}
+
+// productUpdateStatusHandler PUT /products/{id}/status:上下架;发布即生效刷新 effective_at。
+func productUpdateStatusHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		var req updateProductStatusReq
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireEnum(req.Status, "status", "DRAFT", "PUBLISHED", "OFFLINE"),
+			)
+		}) {
+			return
+		}
+		if err := a.Product.UpdateProductStatus(c.Request.Context(), id, req.Status); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "product.update_status", "product_offer", strconv.FormatInt(id, 10), gin.H{"status": req.Status})
+		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": req.Status})
+	}
+}

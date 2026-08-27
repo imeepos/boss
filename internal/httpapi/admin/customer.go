@@ -22,6 +22,8 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 	prod := g.Group("/products", requirePerm(a.User, "menu:product"))
 	prod.GET("", productListHandler(a))
 	prod.POST("", productCreateHandler(a))
+	prod.PUT("/:id", productUpdateHandler(a))
+	prod.PUT("/:id/status", productUpdateStatusHandler(a))
 	prod.GET("/:id/price-history", productPriceHistoryHandler(a))
 	prod.POST("/:id/price-history", productChangePriceHandler(a))
 }
@@ -31,4 +33,16 @@ type changeProductPriceReq struct {
 	NewPrice    float64   `json:"newPrice"`
 	EffectiveAt time.Time `json:"effectiveAt"`
 	Reason      string    `json:"reason"`
+}
+
+// updateProductReq 产品编辑请求体:仅基础信息;月费走调价、状态走 status 口(见 customer.yaml updateProduct)。
+type updateProductReq struct {
+	Name      string `json:"name"`
+	Bandwidth string `json:"bandwidth"`
+	Category  string `json:"category"`
+}
+
+// updateProductStatusReq 产品上下架请求体(DRAFT/PUBLISHED/OFFLINE)。
+type updateProductStatusReq struct {
+	Status string `json:"status"`
 }

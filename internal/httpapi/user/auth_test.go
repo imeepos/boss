@@ -335,6 +335,12 @@ func (f *fakeProduct) ChangeProductPrice(_ context.Context, offerID int64, newFe
 	f.changed = &customer.ProductOffer{ID: offerID, MonthlyFee: newFee}
 	return 11, nil
 }
+func (f *fakeProduct) UpdateProduct(context.Context, int64, string, string, string) error {
+	return nil
+}
+func (f *fakeProduct) UpdateProductStatus(context.Context, int64, string) error {
+	return nil
+}
 
 // TestPortal_PasswordLogin 注册后账密登录闭环(/auth/login 前缀分离后可用)。
 func TestPortal_PasswordLogin(t *testing.T) {

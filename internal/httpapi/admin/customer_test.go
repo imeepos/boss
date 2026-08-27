@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,8 +29,10 @@ func (f *fakeCustomer) List(_ context.Context, q customer.CustomerQuery) ([]cust
 }
 
 type fakeProduct struct {
-	list    []customer.ProductOffer
-	changed *customer.ProductOffer // 记录最近一次调价入参
+	list     []customer.ProductOffer
+	changed  *customer.ProductOffer // 记录最近一次调价入参
+	updated  *customer.ProductOffer // 记录最近一次编辑入参
+	statusTo string                 // 记录最近一次状态入参
 }
 
 func (f *fakeProduct) ListProducts(context.Context, int64) ([]customer.ProductOffer, error) {
@@ -47,6 +50,14 @@ func (f *fakeProduct) CreateRegionOffer(context.Context, customer.RegionOffer) (
 func (f *fakeProduct) ChangeProductPrice(_ context.Context, offerID int64, newFee float64, _ time.Time, reason string, _ int64) (int64, error) {
 	f.changed = &customer.ProductOffer{ID: offerID, MonthlyFee: newFee}
 	return 11, nil
+}
+func (f *fakeProduct) UpdateProduct(_ context.Context, offerID int64, name, bandwidth, category string) error {
+	f.updated = &customer.ProductOffer{ID: offerID, Name: name, Bandwidth: bandwidth, Category: category}
+	return nil
+}
+func (f *fakeProduct) UpdateProductStatus(_ context.Context, offerID int64, status string) error {
+	f.statusTo = status
+	return nil
 }
 
 type fakeRealName struct{}
@@ -211,5 +222,50 @@ func TestChangeProductPrice(t *testing.T) {
 	}
 	if p.changed == nil || p.changed.ID != 1 || p.changed.MonthlyFee != 169 {
 		t.Fatalf("changed=%+v", p.changed)
+	}
+}
+
+// TestUpdateProduct 契约:PUT /products/{id} 编辑基础信息(名称/带宽/分类),不触碰月费与状态。
+func TestUpdateProduct(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	p := &fakeProduct{}
+	r := newCustomerRouter(&fakeCustomer{}, p, mgr)
+
+	w := putJSONAuth(t, r, "/api/admin/v1/products/1",
+		`{"name":"1000M fusion","bandwidth":"1000M","category":"fusion"}`, authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if p.updated == nil || p.updated.ID != 1 || p.updated.Name != "1000M fusion" || p.updated.Category != "fusion" {
+		t.Fatalf("updated=%+v", p.updated)
+	}
+	if p.changed != nil || p.statusTo != "" {
+		t.Fatalf("edit must not touch fee/status: changed=%+v statusTo=%q", p.changed, p.statusTo)
+	}
+
+	// 名称缺失 → 信封 42200 参数非法(HTTP 200,信封 code 才是业务码)
+	w = putJSONAuth(t, r, "/api/admin/v1/products/1", `{"bandwidth":"1G"}`, authToken(t, mgr))
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"code":42200`) {
+		t.Fatalf("missing name: status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+// TestUpdateProductStatus 契约:PUT /products/{id}/status 上下架;非法枚举 400。
+func TestUpdateProductStatus(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	p := &fakeProduct{}
+	r := newCustomerRouter(&fakeCustomer{}, p, mgr)
+
+	w := putJSONAuth(t, r, "/api/admin/v1/products/1/status", `{"status":"PUBLISHED"}`, authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if p.statusTo != "PUBLISHED" {
+		t.Fatalf("statusTo=%q", p.statusTo)
+	}
+
+	w = putJSONAuth(t, r, "/api/admin/v1/products/1/status", `{"status":"PAUSED"}`, authToken(t, mgr))
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"code":42200`) {
+		t.Fatalf("invalid enum: status=%d body=%s", w.Code, w.Body.String())
 	}
 }
