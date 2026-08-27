@@ -287,3 +287,18 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状:侧边栏菜单项文字前空白,Network 里 /icons/items/<key>.svg 404。
 - 原因:Sidebar 的 MaskIcon 按 menu.def.ts 的 key 映射 public/icons/items/<key>.svg;新增菜单项(如 crashlogs)时只登记了 key 没放 SVG 文件。
 - 修法:补一个 24x24 stroke 风格 SVG(stroke=#8b98a5, stroke-width=1.8, 参考同目录 audit.svg/storageconfig.svg 画法),CI 推 main 自动构建 admin-web 镜像上线。先例:stripeconfig.svg(5cedb1d8)、crashlogs.svg(8f6b6c34)。realname-review 也缺,归属并行分支 fix/realname-review-icon-theme。
+
+## pgx []byte 入参 vs JSONB 列:bytea→jsonb 隐式转型不存在,必 22P02(2026-08-27)
+
+**症状**:`INSERT INTO t (..., jsonb_col) SELECT ..., $N FROM ...` 中 `$N` 绑定 Go `[]byte`(如 `json.Marshal(payload)` 结果)。pgx 默认把 `[]byte` 按 bytea 编码(`\x...` hex),PG 的 bytea→jsonb 隐式转型不存在,执行报 SQLSTATE 22P02 `invalid input syntax for type json`。该 bug 在匹配订阅数=0 时**完全不暴露**(SELECT 0 行,PG 不对 `$N` 求值/转型),仅在环境首次出现匹配订阅时触发——典型"subscriptions=0 长期未暴露"型隐蔽断链。首例:`internal/domain/openplat/webhook_pg.go InsertDeliveries`。
+
+**修法**:两种,与 `internal/domain/billing/pg_ar_closure.go` 等既有 JSONB 入参写法对齐:
+- 入口侧:`string(payload)` 传 Go 字符串(pgx 发 text),SQL 用 `$N::jsonb` 显式转型(text→jsonb 走 PG 内置 cast);
+- 或 SQL 侧加 `$N::jsonb` + 确保 pgx 发的是 text(用 string 而非 []byte)。
+任何 INSERT/SELECT 带 JSONB 参数的语句,code review 必查入参是 string 还是 []byte。
+
+## INSERT...SELECT 无 RETURNING 用 QueryRow.Scan 必返 ErrNoRows(2026-08-27)
+
+**症状**:`INSERT INTO t SELECT ... ON CONFLICT DO NOTHING` 没有 RETURNING 子句,代码却 `db.QueryRow(...).Scan(&n)` 读取插入行数。SELECT 0 行时(无匹配),整条 INSERT 返回 0 行结果集,Scan 必报 `pgx.ErrNoRows`,调用方把"本该成功的 0 插入"判为失败并向上冒泡 50000。即使修好 JSONB 转型,该 bug 仍让首条 InsertDeliveries 走 ErrNoRows 路径,Emit 永远返错。环境从未配置订阅时 0 插入 = 永远 ErrNoRows,与 JSONB 22P02 叠加形成双重假失败。
+
+**修法**:无 RETURNING 的 INSERT/UPDATE 一律用 `db.Exec(...)` + `tag.RowsAffected()` 读取行数;QueryRow.Scan 只用于有 RETURNING 的语句或 SELECT。Code review 对 `QueryRow(...).Scan(&n)` 必查 SQL 是否含 RETURNING。
