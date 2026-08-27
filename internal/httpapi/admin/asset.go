@@ -22,6 +22,7 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/stocktakes", requirePerm(a.User, "menu:stock"), stocktakeCreateHandler(a))
 	g.POST("/stocktakes/:taskId/diff-handle", requirePerm(a.User, "menu:stock"), stocktakeHandleDiffHandler(a))
 	g.POST("/replacements", requirePerm(a.User, "menu:replace"), replacementCreateHandler(a))
+	g.POST("/replacements/:id/assign", requirePerm(a.User, "menu:replace"), replacementAssignHandler(a))
 
 	g.GET("/stocktakes", requirePerm(a.User, "menu:stock"), stocktakeListHandler(a))
 	g.GET("/replacements", requirePerm(a.User, "menu:replace"), replacementListHandler(a))

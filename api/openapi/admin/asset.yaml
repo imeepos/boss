@@ -114,7 +114,7 @@ paths:
                 status: { type: string, description: 状态,缺省 PENDING }
       responses:
         '200':
-          description: 更换单已创建(data 返回新单 id 与单号)
+          description: 更换单已创建(data 返回新单 id 与单号;法人快照自资产主档回填)
           content:
             application/json:
               schema:
@@ -127,3 +127,38 @@ paths:
                     properties:
                       id: { type: integer, format: int64 }
                       replacementNo: { type: string }
+
+  /replacements/{id}/assign:
+    post:
+      tags: [Asset]
+      summary: 换新单派单(指派师傅,PENDING→DOING;adopted note 2026-08-27-replacement-ticket-flow)
+      operationId: assignReplacement
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workerId]
+              properties:
+                workerId: { type: integer, format: int64, description: 指派师傅 ID(必填,在职) }
+      responses:
+        '200':
+          description: 派单成功(data 返回更新后的更换单)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  msg: { type: string, example: ok }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      replacementNo: { type: string }
+                      status: { type: string, description: DOING }
+                      workerId: { type: integer, format: int64 }
+                      workerName: { type: string }

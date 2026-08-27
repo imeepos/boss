@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// ErrInvalidTransition 换新单状态流转非法(终态不可再流转/重复派单)。
-var ErrInvalidTransition = errors.New("asset: replacement status transition not allowed")
+// ErrIllegalTransition 换新单状态流转非法(终态不可再流转/重复派单)。
+var ErrIllegalTransition = errors.New("asset: replacement status transition not allowed")
 
 // scanReplacement 列 → Replacement(可空列 COALESCE/pgtype 归零值)。
 func scanReplacement(row pgx.Row) (*Replacement, error) {
@@ -129,7 +129,7 @@ func (s *PGStore) AssignReplacement(ctx context.Context, id, workerID int64, wor
 // CompleteReplacement 完成/失败:DOING→DONE|FAILED 并回填 finished_at。
 func (s *PGStore) CompleteReplacement(ctx context.Context, id int64, result string) (*Replacement, error) {
 	if result != "DONE" && result != "FAILED" {
-		return nil, fmt.Errorf("asset: replacement complete result %q: %w", result, ErrInvalidTransition)
+		return nil, fmt.Errorf("asset: replacement complete result %q: %w", result, ErrIllegalTransition)
 	}
 	r, err := scanReplacement(s.db.QueryRow(ctx, `
 		UPDATE replacements SET status = $2, finished_at = now()
@@ -153,5 +153,5 @@ func (s *PGStore) transitionFailReason(ctx context.Context, id int64, expect str
 	if err != nil {
 		return err
 	}
-	return fmt.Errorf("asset: replacement %d status is not %s: %w", id, expect, ErrInvalidTransition)
+	return fmt.Errorf("asset: replacement %d status is not %s: %w", id, expect, ErrIllegalTransition)
 }

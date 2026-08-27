@@ -134,8 +134,8 @@ func TestPGStore_AssignReplacement_WrongStatus(t *testing.T) {
 		WillReturnRows(mock.NewRows(replCols).AddRow(replRow(1, "RPL-1", "DONE", 7)...))
 
 	s := NewPGStore(mock)
-	if _, err := s.AssignReplacement(context.Background(), 1, 7, "张三"); !errors.Is(err, ErrInvalidTransition) {
-		t.Fatalf("err=%v, want ErrInvalidTransition", err)
+	if _, err := s.AssignReplacement(context.Background(), 1, 7, "张三"); !errors.Is(err, ErrIllegalTransition) {
+		t.Fatalf("err=%v, want ErrIllegalTransition", err)
 	}
 }
 
@@ -174,7 +174,7 @@ func TestPGStore_CompleteReplacement_BadResult(t *testing.T) {
 	defer mock.Close()
 
 	s := NewPGStore(mock)
-	if _, err := s.CompleteReplacement(context.Background(), 1, "DOING"); !errors.Is(err, ErrInvalidTransition) {
-		t.Fatalf("err=%v, want ErrInvalidTransition", err)
+	if _, err := s.CompleteReplacement(context.Background(), 1, "DOING"); !errors.Is(err, ErrIllegalTransition) {
+		t.Fatalf("err=%v, want ErrIllegalTransition", err)
 	}
 }
