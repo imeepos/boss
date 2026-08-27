@@ -60,9 +60,11 @@ func (s *PGStore) GetUserDetail(ctx context.Context, customerID int64) (map[stri
 	cust["balances"] = pick(s.listMaps(ctx,
 		`SELECT balance::float8, 0::bigint AS "warnLine", (balance < 0) AS "lowWarn"
 		 FROM portal_wallets WHERE customer_id = $1`, customerID))
+	// 当前在用套餐口径:仅 status=ACTIVE(对齐用户端 portalHomePlan 的 ACTIVE 优先),
+	// 让页面回答"现在在用哪个套餐"而非展示订购流水;无在用套餐则整段为空。
 	cust["plans"] = pick(s.listMaps(ctx,
 		`SELECT id, product_id AS "productId", plan_name AS "planName", status, effective_at AS "effectiveAt"
-		 FROM user_plans WHERE customer_id = $1 ORDER BY id`, customerID))
+		 FROM user_plans WHERE customer_id = $1 AND upper(status) = 'ACTIVE' ORDER BY id`, customerID))
 	cust["addons"] = pick(s.listMaps(ctx,
 		`SELECT s.addon_id AS "addonId", a.name, s.action, s.created_at AS "createdAt"
 		 FROM addon_subscriptions s JOIN addons a ON a.addon_id = s.addon_id
@@ -77,9 +79,11 @@ func (s *PGStore) GetUserDetail(ctx context.Context, customerID int64) (map[stri
 	cust["coupons"] = pick(s.listMaps(ctx,
 		`SELECT coupon_id AS "couponId", name, amount, status, expire_at AS "expireAt"
 		 FROM coupons WHERE customer_id = $1 ORDER BY coupon_id`, customerID))
+	// 投诉工单 = complaints 中 type 带"用户投诉: "前缀者(用户端 POST /complaints 落库口径,
+	// complaint_handlers.go;与报障工单同源,经 type 前缀区隔——消除详情页两段语义重叠)。
 	cust["complaints"] = pick(s.listMaps(ctx,
 		`SELECT id::text AS "complaintId", type, ticket_no AS content, status
-		 FROM complaints WHERE customer_id = $1 ORDER BY id`, customerID))
+		 FROM complaints WHERE customer_id = $1 AND type LIKE '用户投诉:%' ORDER BY id`, customerID))
 	// 实名权威态在 verifications(000059 归一);user_verify_records(000046)已无写入方,不再作为聚合来源。
 	cust["verifyRecords"] = pick(s.listMaps(ctx,
 		`SELECT id, method AS step, result, verified_at AS "createdAt"
@@ -97,8 +101,12 @@ func (s *PGStore) GetUserDetail(ctx context.Context, customerID int64) (map[stri
 	cust["orders"] = pick(s.listMaps(ctx,
 		`SELECT id, order_no AS "orderNo", stage, status, created_at AS "createdAt"
 		 FROM orders WHERE customer_id = $1 ORDER BY id DESC`, customerID))
+	// 报障工单 = complaints 中 type 为故障类型者(排除"用户投诉: "前缀的投诉工单),
+	// 含两套口径:用户端 POST /faults 落库的"用户报障: {no_internet|slow|ont_fault|other}"
+	// (展示侧 strip 前缀,同 service.go portalFaultTypeLabelFromStored)与装维域故障码
+	// (SINGLE_OUTAGE 等,见 complaint-type-map.md);与 complaints 段同源不同子集。
 	cust["faults"] = pick(s.listMaps(ctx,
-		`SELECT id, ticket_no AS "ticketNo", type, status
-		 FROM complaints WHERE customer_id = $1 ORDER BY id DESC`, customerID))
+		`SELECT id, ticket_no AS "ticketNo", replace(type, '用户报障: ', '') AS type, status
+		 FROM complaints WHERE customer_id = $1 AND type NOT LIKE '用户投诉:%' ORDER BY id DESC`, customerID))
 	return cust, nil
 }

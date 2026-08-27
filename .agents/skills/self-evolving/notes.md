@@ -954,3 +954,10 @@
 - 哪个坑浪费了最多时间？无大坑;10 分钟内走完。唯一犹豫点:顺手补了 realname-review.svg 后发现并行会话分支 fix/realname-review-icon-theme 与之撞车,立即 rm 让号——"分支名即归属声明",没等对方半成品出现。
 - 这个 skill 有没有提前警告我？worktree 协议+收尾四步全程零失误(加 worktree→mv 未跟踪文件进树→commit→push gitea→主树 pwd 核对 ff-only→remove/-d/--delete);红 #5 促成先验证后 commit 的顺序。菜单图标缺文件的手法(diff menu.def keys vs ls icons/items)本次新沉淀 techniques。
 - 重来一次我会怎么做？新增任何"同名注册资产"(icon/i18n key/route)前先 `git for-each-ref refs/heads | grep <关键词>` 查并行占号,第一步就避开;E2E 探针 INSERT 前带上可识别标记(app='probe-xxx'),DELETE RETURNING 拿到行数才算清理完成。
+
+## 2026-09-25 实名审核中心缺图标 + 多主题多语言适配
+
+- 哪个坑浪费了最多时间? 无大坑。最险的一步是差点把 crashlogs.svg 与并行分支撞车——push 前惯例性 `git log main` 发现并行会话已合入同名图标,按"已进 main 者优先"删自己的版本再 merge main,零冲突收尾。
+- skill 有没有提前预警? 有且有效:菜单图标审计手法(techniques #400)一跑就锁定了 realname-review 缺失;worktree 收尾四步照做顺利。教训 #54(未定义令牌)只救了单点,这次靠 DOM 断言(computed style=transparent)才顺藤摸出全站三个幽灵令牌——单点 grep 不够,已升级为全量审计手法补进 techniques。
+- 重来一次会怎么做? 接到"缺图标"类报障时,第一轮就把 menu keys vs icons diff、幽灵令牌 diff、JSX 硬编码色值 grep 三件套并行跑完再动手,本轮是改着改着才发现令牌未定义,顺序偏晚。
+- 验证:门禁 typecheck+286 用例+build 全绿;CDP DOM 断言 light/dark 双主题(按钮/对话框/徽章计算样式逐一对上主题令牌值)+ en-US/ms-MY 语言切换断言;当前模型不读图,全部用 DOM 断言替代截图目测(红线 #7 执行正常)。
