@@ -1,5 +1,6 @@
 // Drawer:右侧抽屉(antd 布局惯例),主题经 shell 令牌自适应;ESC/遮罩可关闭。
 // 样式:tailwind 原子类(原 Drawer.css 已删除),动画走 tailwindcss-animate。
+// 层级阶梯:本组件遮罩 100/面板 101 < 页面临时遮罩 120 < 共享 ui/dialog 130 < Dropdown 等弹层 1000。
 import { useEffect, type ReactNode } from 'react'
 
 export function Drawer({
