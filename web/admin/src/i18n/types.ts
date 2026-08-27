@@ -1212,6 +1212,7 @@ export interface Translations {
       deleteConfirm: string
       fSlug: string
       fTitle: string
+      fLang: string
       fCategory: string
       fSummary: string
       fContent: string
@@ -1221,16 +1222,23 @@ export interface Translations {
       fCoverRemove: string
       filterAll: string
       pickCover: string
-      categoryOptions: string[]
-      statusOptions: string[]
-      catNews: string
-      catArticle: string
       newTitle: string
       editTitle: string
       back: string
       manageCats: string
       uploadImg: string
       uploadFail: string
+      /** MarkdownEditor 工具栏/占位文案(2026-08-27 i18n 化,去硬编码)。 */
+      mdBold: string
+      mdItalic: string
+      mdH2: string
+      mdH3: string
+      mdCode: string
+      mdLink: string
+      mdList: string
+      mdImage: string
+      mdLoading: string
+      mdPlaceholder: string
       stDraft: string
       stPublished: string
       stOffline: string
@@ -1251,6 +1259,10 @@ export interface Translations {
       fCode: string
       fCodePh: string
       fName: string
+      /** 多语言名(000155):name 为默认/回退,三语言覆盖可留空。 */
+      fNameZh: string
+      fNameEn: string
+      fNameMy: string
       fSort: string
       fEnabled: string
       enabledOn: string
