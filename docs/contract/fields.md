@@ -629,6 +629,22 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 状态变更历史（TS 实体）：`port_change_history`，端口每次状态/占用变化一行（变更后 status + order_id 快照 + changed_at），历史不随当前状态漂移。
 > 区域/企业锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域）、`legal_entity_id`/`legal_entity_name`（所属设备企业），按地区/企业统计端口；`lo_accounts` 同挂 `region_id`/`region_name`（客户所在经营区域）。
 
+### 4.3 replacements（换新单/设备更换单，000007 + 000157 派单三列）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 更换单 | `ReplacementNo` | replacement_no | RPL-YYYYMMDD-序列，后端生成 |
+| 设备 | `AssetID` | asset_id | BIGINT 软引用 assets（被更换资产） |
+| 原因 | `Reason` | reason | 如 光猫故障 |
+| 优先级 | `Priority` | priority | HIGH/MEDIUM/LOW |
+| 状态 | `Status` | status | PENDING/DOING/DONE/FAILED（见 terms.md 第 4 节） |
+| 派单师傅 | `WorkerID`/`WorkerName` | worker_id/worker_name | 000157；worker_id FK→workers，name 快照（0/空=未派） |
+| 完成时间 | `FinishedAt` | finished_at | TIMESTAMPTZ 可空；DONE/FAILED 时回填 |
+
+> 状态机：PENDING --assign(派单,POST /admin/replacements/{id}/assign)→ DOING --complete(师傅端 POST /api/worker/v1/replacements/{id}/complete)→ DONE/FAILED；终态不可再流转（adopted note 2026-08-27-replacement-ticket-flow）。
+> 完成时落 `worker_replace_logs`（ticket_no=更换单号展示快照，dispatch_ticket_id=0）+ 资产联动：旧件→MAINTENANCE、新件（newEpc 反解）→DEPLOYED，各留 `asset_lifecycles`。
+> 企业锚点（fields.md §8.1）：`legal_entity_id`/`legal_entity_name` 建单时自资产主档回填。
+
 ## 5. 阶段6 · 四码合一（internal/domain/quadlink）
 
 ### 5.1 quad_link（四码关联，源自全案 4.2 + REQ-AMS-003）
