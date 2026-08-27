@@ -1185,3 +1185,9 @@
 - 哪个坑浪费了最多时间? cdp-admin-capture 未传 --base,默认打 5173,而本次 dev server 在 5174——tokens 全空+弹窗全 false,一轮排查才发现是采集打到不存在的端口;补 --base 即全绿。
 - skill 有没有提前预警? techniques 已有 cdp 条目但没写 --base 陷阱;正则字符类手滑混入无关单词,靠跑测试立刻暴露(先读后改+改完就验兜底)。
 - 重来一次? 起非默认端口 dev server 时,采集命令第一参数就带 --base;验证脚本输出先看 url/page 断言再相信 z 断言。
+
+## 2026-08-27 侧边栏 16 组重组+移除顶栏分组导航
+
+- 哪个坑浪费了最多时间? ①写 dated artifact(决策 note 文件名/注释/commit message)时凭感觉写"2026-08-31",实际系统时钟是 08-27,且本仓库存在会话间日期漂移(main 已有 09-03/09-04 的 note)——修正日期引用被迫把已提交的两笔 soft-reset 重做一遍。②commit 后链式 `git status --short` 输出的 ` M` 行让我误以为"登记文件提交混入了布局文件",实际提交是干净的,虚惊一场。
+- skill 有没有提前预警? 红线 #2a(修完前端先 curl 远端 bundle 验证)在部署验证环节有效救场:远程 bundle hash 与本地 build 不同但内容一致(CI 环境变量 AMAP_KEY/mode 使同内容产出不同 hash),靠 grep 新标记文本确认已部署,没有误判回滚。日期漂移与 commit 后误读 status 无预警。
+- 重来一次? 写任何日期前先 `date +%F`;验证已提交内容看 `git show --stat HEAD` 而非信任链式 status 输出;dev server 用非默认端口时 cdp-admin-capture 第一参数就带 --base(techniques 已有,再次应验)。

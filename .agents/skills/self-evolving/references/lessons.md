@@ -401,3 +401,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 pgx/pgxmock Scan 目标是 **time.Time 时,修复是用 pgtype.Timestamptz 扫描再取 .Time(仓库 ListAssignments 既有模式),pgx 不支持 double pointer 目标。
 - 当长任务跨多个提交窗口时,修复是每次 merge 回 main 前 git fetch + 重新跑 check-contract-sync D 项——并行会话会随时占走迁移号,开工时查过的号中途会失效。
 - 当师傅端"任务列表"类接口按 worker_id 查询时,修复是显式带 status 过滤(DOING)——单测 mock 不会暴露漏过滤,只有真实环境回归会抓到。
+- 当写 dated artifact(决策 note 文件名/注释/commit message 日期)时,修复是先 `date +%F` 取系统时钟为准——本仓库存在会话间日期漂移(main 上已有未来日期的 note),凭印象写日期必返工。
+- 当 commit 后链式 `git status --short` 看到未预期文件时,修复是 `git show --stat HEAD` 确认提交内容——status 输出的是未提交改动,不是提交内容。

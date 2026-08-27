@@ -354,3 +354,7 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 原因:Radix Dialog 经 Portal 挂 document.body,与 Drawer 内联渲染的 fixed 遮罩同处根层叠上下文;Dialog 遮罩/内容 z-50 < Drawer 遮罩 z-[100]/面板 z-[101],纯 z 值对决 Dialog 必输。
 - 修法:web/admin/src/components/ui/dialog.tsx 的 DialogOverlay+DialogContent 统一 z-[130];全局层级阶梯(注释已落在 dialog.tsx 与 Drawer.tsx):Drawer 100/101 < 页面临时遮罩 120 < 共享 Dialog 130 < Dropdown/DatePicker/MultiSelect 1000。新增浮层组件时按此阶梯取值。
 - 回归:web/admin/src/pages/base/importer/drawerDialogLayer.test.tsx,jsdom 交互断言 130>101>100,层级改回去测试即红。
+## 远程 bundle hash 与本地 build 不一致 ≠ 未部署(2026-08-27 侧边栏重组)
+- 症状:本地 `pnpm build` 产物 dist 的 index-<hash>.js 与 102:5180 线上 index.html 引用的 hash 不同,但两者体积完全一致。
+- 原因:CI 构建注入的环境变量(如 vite.config 里 `import.meta.env.VITE_AMAP_KEY` 读 `env.AMAP_KEY`)、mode 差异会让同源码产出不同内容 hash;Rollup content hash 对任意字符差异敏感。
+- 修法:不要以 hash 相等作为部署判断;直接 grep 线上 bundle 内的新标记文本(`grep -c 新分组标签 <线上 js>`)+ 对照旧文案归零 + 面板 DOM 断言三件套确认(见 boss-admin-web.md §部署验证事实)。
