@@ -1373,6 +1373,29 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    feedbackPage: {
+      title: string
+      desc: string
+      filterWorker: string
+      filterWorkerPh: string
+      filterReviewOnly: string
+      columns: string[]
+      scoreFmt: string
+      needReviewYes: string
+      needReviewNo: string
+      review: string
+      reviewConfirm: string
+      actionFail: string
+      total: string
+      empty: string
+      loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
     quadLinkPage: {
       title: string
       desc: string
