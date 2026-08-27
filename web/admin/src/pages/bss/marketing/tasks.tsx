@@ -8,18 +8,22 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { ErrorBanner, EmptyState, ToolbarButton, FormField } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
+import { Input } from '../../../components/ui/input'
 
-const PERIOD_OPTIONS = [
-  { value: 'ONE_TIME', label: '一次性' },
-  { value: 'DAILY', label: '每日' },
-  { value: 'MONTHLY', label: '每月' },
-]
+const PERIOD_VALUES = ['ONE_TIME', 'DAILY', 'MONTHLY'] as const
+
+/** 任务周期下拉选项:label 走 i18n,随语言切换。 */
+function periodOptions(m: ReturnType<typeof useT>['pages']['marketing']) {
+  const labels = { ONE_TIME: m.taskPeriodOnce, DAILY: m.taskPeriodDaily, MONTHLY: m.taskPeriodMonthly }
+  return PERIOD_VALUES.map((value) => ({ value, label: labels[value] }))
+}
 
 const EMPTY_FORM = { code: '', name: '', points: '', period: 'ONE_TIME' }
 
 export default function TasksTab() {
   const t = useT()
   const m = t.pages.marketing
+  const periodOpts = periodOptions(m)
   const [items, setItems] = useState<LoyTask[]>([])
   const [error, setError] = useState('')
   const [open, setOpen] = useState(false)
@@ -92,7 +96,7 @@ export default function TasksTab() {
                   <TableCell className="font-medium">{r.code}</TableCell>
                   <TableCell>{r.name}</TableCell>
                   <TableCell>{r.points}</TableCell>
-                  <TableCell>{PERIOD_OPTIONS.find((o) => o.value === r.period)?.label ?? r.period}</TableCell>
+                  <TableCell>{periodOpts.find((o) => o.value === r.period)?.label ?? r.period}</TableCell>
                   <TableCell>
                     <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{r.status}</Badge>
                   </TableCell>
@@ -125,19 +129,19 @@ export default function TasksTab() {
           }>
           <div className="grid grid-cols-2 gap-3">
             <FormField label={m.taskCode} required>
-              <input className="w-full" value={form.code}
+              <Input value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value })} />
             </FormField>
             <FormField label={m.colName} required>
-              <input className="w-full" value={form.name}
+              <Input value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </FormField>
             <FormField label={m.taskPoints} required>
-              <input className="w-full" inputMode="numeric" value={form.points}
+              <Input inputMode="numeric" value={form.points}
                 onChange={(e) => setForm({ ...form, points: e.target.value })} />
             </FormField>
             <FormField label={m.taskPeriod}>
-              <Dropdown value={form.period} options={PERIOD_OPTIONS} ariaLabel={m.taskPeriod}
+              <Dropdown value={form.period} options={periodOpts} ariaLabel={m.taskPeriod}
                 onChange={(v) => setForm({ ...form, period: v })} />
             </FormField>
           </div>
