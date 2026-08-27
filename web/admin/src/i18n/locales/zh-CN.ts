@@ -6,6 +6,138 @@ const zhCN: Translations = {
     brand: 'Sphere Boss · BOSS 管理端',
     tagline: 'BOSS 综合业务支撑平台',
     footer: 'Sphere Boss · 综合业务支撑平台',
+    statusTags: {
+      // order
+      'order.PENDING': "待核查",
+      'order.RESERVED': "已预占",
+      'order.INSTALLING': "装维中",
+      'order.DONE': "已完成",
+      'order.CANCELLED': "已取消",
+
+      // port
+      'port.IDLE': "空闲",
+      'port.RESERVED': "已预占",
+      'port.USED': "已占用",
+      'port.DISABLED': "已停用",
+
+      // asset
+      'asset.IN_STOCK': "在库",
+      'asset.DEPLOYED': "在用",
+      'asset.MAINTENANCE': "维护中",
+      'asset.SCRAPPED': "已报废",
+
+      // bill
+      'bill.UNPAID': "未支付",
+      'bill.PAID': "已支付",
+      'bill.OVERDUE': "已逾期",
+
+      // payment
+      'payment.SUCCESS': "成功",
+      'payment.FAILED': "失败",
+      'payment.REFUNDED': "已退款",
+
+      // service
+      'service.ACTIVE': "在服",
+      'service.ARREARS': "欠费",
+      'service.SUSPENDED': "停机",
+
+      // realName
+      'realName.VERIFIED': "已实名",
+      'realName.PENDING': "待补登",
+
+      // recon
+      'recon.DIFF_PENDING': "差异挂起",
+      'recon.SETTLED': "已平账",
+
+      // ledgerRecon
+      'ledgerRecon.UNPAID': "未收",
+      'ledgerRecon.PARTIAL': "部分收",
+      'ledgerRecon.OVERPAID': "多收",
+      'ledgerRecon.REFUNDED': "退款未补",
+      'ledgerRecon.PAID_NO_INVOICE': "已收未开票",
+      'ledgerRecon.MATCH': "一致",
+
+      // reserve
+      'reserve.HELD': "预占中",
+      'reserve.RELEASED': "已释放",
+      'reserve.CONSUMED': "已占用",
+
+      // product
+      'product.DRAFT': "草稿",
+      'product.PUBLISHED': "已发布",
+      'product.OFFLINE': "已下线",
+
+      // quad
+      'quad.LINKED': "已关联",
+      'quad.CONFLICT': "冲突",
+      'quad.UNLINKED': "未关联",
+
+      // tag
+      'tag.UNBOUND': "未绑定",
+      'tag.BOUND': "已绑定",
+      'tag.DISABLED': "已停用",
+
+      // resource
+      'resource.ONLINE': "在线",
+      'resource.OFFLINE': "离线",
+      'resource.FAULT': "故障",
+
+      // loAccount
+      'loAccount.ACTIVE': "正常",
+      'loAccount.SUSPENDED': "暂停",
+      'loAccount.CLOSED': "已销户",
+
+      // ticket
+      'ticket.PENDING': "待处理",
+      'ticket.DOING': "处理中",
+      'ticket.DONE': "已完成",
+      'ticket.CANCELED': "已取消",
+
+      // task
+      'task.PENDING': "待执行",
+      'task.DOING': "执行中",
+      'task.DONE': "已完成",
+      'task.FAILED': "失败",
+
+      // complaint
+      'complaint.OPEN': "待受理",
+      'complaint.PROCESSING': "处理中",
+      'complaint.CLOSED': "已关闭",
+
+      // scan
+      'scan.MATCH': "匹配",
+      'scan.MISMATCH': "不匹配",
+      'scan.OFFLINE_CACHED': "离线缓存",
+
+      // alarmLevel
+      'alarmLevel.CRITICAL': "紧急",
+      'alarmLevel.WARNING': "警告",
+      'alarmLevel.INFO': "提示",
+
+      // alarmStatus
+      'alarmStatus.OPEN': "未确认",
+      'alarmStatus.ACKED': "已确认",
+      'alarmStatus.CLOSED': "已关闭",
+
+      // maintPriority
+      'maintPriority.MUST_REPLACE': "必须更换",
+      'maintPriority.SUGGEST': "建议更换",
+      'maintPriority.WATCH': "观察",
+
+      // accountStatus
+      'accountStatus.1': "启用",
+      'accountStatus.0': "停用",
+
+      // message
+      'message.INFO': "信息",
+      'message.WARN': "警告",
+      'message.URGENT': "紧急",
+
+      // backupStatus
+      'backupStatus.running': "执行中",
+      'backupStatus.succeeded': "成功",
+      'backupStatus.failed': "失败",
+    },
     logout: '退出',
     profile: '个人设置',
     loading: '加载中…',

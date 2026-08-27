@@ -34,8 +34,8 @@ function readStoredLocale(): Locale {
   return 'zh-CN'
 }
 
-export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(readStoredLocale)
+export function LocaleProvider({ children, localeOverride }: { children: ReactNode; localeOverride?: Locale }) {
+  const [locale, setLocaleState] = useState<Locale>(() => localeOverride ?? readStoredLocale())
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l)

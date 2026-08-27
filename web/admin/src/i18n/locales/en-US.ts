@@ -6,6 +6,138 @@ const enUS: Translations = {
     brand: 'Sphere Boss · BOSS Admin',
     tagline: 'BOSS Integrated Business Support Platform',
     footer: 'Sphere Boss · Integrated Business Support Platform',
+    statusTags: {
+      // order
+      'order.PENDING': "Pending review",
+      'order.RESERVED': "Reserved",
+      'order.INSTALLING': "Installing",
+      'order.DONE': "Done",
+      'order.CANCELLED': "Cancelled",
+
+      // port
+      'port.IDLE': "Idle",
+      'port.RESERVED': "Reserved",
+      'port.USED': "In use",
+      'port.DISABLED': "Disabled",
+
+      // asset
+      'asset.IN_STOCK': "In stock",
+      'asset.DEPLOYED': "Deployed",
+      'asset.MAINTENANCE': "Maintenance",
+      'asset.SCRAPPED': "Scrapped",
+
+      // bill
+      'bill.UNPAID': "Unpaid",
+      'bill.PAID': "Paid",
+      'bill.OVERDUE': "Overdue",
+
+      // payment
+      'payment.SUCCESS': "Success",
+      'payment.FAILED': "Failed",
+      'payment.REFUNDED': "Refunded",
+
+      // service
+      'service.ACTIVE': "Active",
+      'service.ARREARS': "Arrears",
+      'service.SUSPENDED': "Suspended",
+
+      // realName
+      'realName.VERIFIED': "Verified",
+      'realName.PENDING': "Pending",
+
+      // recon
+      'recon.DIFF_PENDING': "Diff pending",
+      'recon.SETTLED': "Settled",
+
+      // ledgerRecon
+      'ledgerRecon.UNPAID': "Unreceived",
+      'ledgerRecon.PARTIAL': "Partial",
+      'ledgerRecon.OVERPAID': "Overpaid",
+      'ledgerRecon.REFUNDED': "Refund outstanding",
+      'ledgerRecon.PAID_NO_INVOICE': "Paid no invoice",
+      'ledgerRecon.MATCH': "Match",
+
+      // reserve
+      'reserve.HELD': "Held",
+      'reserve.RELEASED': "Released",
+      'reserve.CONSUMED': "Consumed",
+
+      // product
+      'product.DRAFT': "Draft",
+      'product.PUBLISHED': "Published",
+      'product.OFFLINE': "Offline",
+
+      // quad
+      'quad.LINKED': "Linked",
+      'quad.CONFLICT': "Conflict",
+      'quad.UNLINKED': "Unlinked",
+
+      // tag
+      'tag.UNBOUND': "Unbound",
+      'tag.BOUND': "Bound",
+      'tag.DISABLED': "Disabled",
+
+      // resource
+      'resource.ONLINE': "Online",
+      'resource.OFFLINE': "Offline",
+      'resource.FAULT': "Fault",
+
+      // loAccount
+      'loAccount.ACTIVE': "Normal",
+      'loAccount.SUSPENDED': "Suspended",
+      'loAccount.CLOSED': "Closed",
+
+      // ticket
+      'ticket.PENDING': "Pending",
+      'ticket.DOING': "Processing",
+      'ticket.DONE': "Done",
+      'ticket.CANCELED': "Cancelled",
+
+      // task
+      'task.PENDING': "Pending",
+      'task.DOING': "Running",
+      'task.DONE': "Done",
+      'task.FAILED': "Failed",
+
+      // complaint
+      'complaint.OPEN': "Open",
+      'complaint.PROCESSING': "Processing",
+      'complaint.CLOSED': "Closed",
+
+      // scan
+      'scan.MATCH': "Match",
+      'scan.MISMATCH': "Mismatch",
+      'scan.OFFLINE_CACHED': "Offline cached",
+
+      // alarmLevel
+      'alarmLevel.CRITICAL': "Critical",
+      'alarmLevel.WARNING': "Warning",
+      'alarmLevel.INFO': "Info",
+
+      // alarmStatus
+      'alarmStatus.OPEN': "Unconfirmed",
+      'alarmStatus.ACKED': "Acknowledged",
+      'alarmStatus.CLOSED': "Closed",
+
+      // maintPriority
+      'maintPriority.MUST_REPLACE': "Must replace",
+      'maintPriority.SUGGEST': "Suggested",
+      'maintPriority.WATCH': "Watch",
+
+      // accountStatus
+      'accountStatus.1': "Enabled",
+      'accountStatus.0': "Disabled",
+
+      // message
+      'message.INFO': "Info",
+      'message.WARN': "Warning",
+      'message.URGENT': "Urgent",
+
+      // backupStatus
+      'backupStatus.running': "Running",
+      'backupStatus.succeeded': "Succeeded",
+      'backupStatus.failed': "Failed",
+    },
     logout: 'Logout',
     profile: 'Profile',
     loading: 'Loading…',

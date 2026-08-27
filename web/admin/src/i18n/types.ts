@@ -12,6 +12,8 @@ export interface Translations {
     loading: string
     dataScope: string
     dataScopeAll: string
+    /** StatusTag 状态标签:平铺键 'domain.VALUE'(枚举全集见 StatusTag/registry,缺键回退注册值原文)。 */
+    statusTags: Record<string, string>
     confirmDialog: { title: string; ok: string; cancel: string }
     copy: string
     copied: string

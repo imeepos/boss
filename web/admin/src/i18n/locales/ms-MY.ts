@@ -6,6 +6,138 @@ const msMY: Translations = {
     brand: 'Sphere Boss · Pentadbir BOSS',
     tagline: 'Platform Sokongan Perniagaan Bersepadu BOSS',
     footer: 'Sphere Boss · Platform Sokongan Perniagaan Bersepadu',
+    statusTags: {
+      // order
+      'order.PENDING': "Menunggu semakan",
+      'order.RESERVED': "Ditempah",
+      'order.INSTALLING': "Pemasangan",
+      'order.DONE': "Selesai",
+      'order.CANCELLED': "Dibatalkan",
+
+      // port
+      'port.IDLE': "Tersedia",
+      'port.RESERVED': "Ditempah",
+      'port.USED': "Sedang diguna",
+      'port.DISABLED': "Dilumpuhkan",
+
+      // asset
+      'asset.IN_STOCK': "Dalam stok",
+      'asset.DEPLOYED': "Digunakan",
+      'asset.MAINTENANCE': "Penyelenggaraan",
+      'asset.SCRAPPED': "Dilotai",
+
+      // bill
+      'bill.UNPAID': "Belum dibayar",
+      'bill.PAID': "Telah dibayar",
+      'bill.OVERDUE': "Tertunggak",
+
+      // payment
+      'payment.SUCCESS': "Berjaya",
+      'payment.FAILED': "Gagal",
+      'payment.REFUNDED': "Dikembalikan",
+
+      // service
+      'service.ACTIVE': "Aktif",
+      'service.ARREARS': "Tunggakan",
+      'service.SUSPENDED': "Digantung",
+
+      // realName
+      'realName.VERIFIED': "Disahkan",
+      'realName.PENDING': "Menunggu",
+
+      // recon
+      'recon.DIFF_PENDING': "Perbezaan tertunda",
+      'recon.SETTLED': "Seimbang",
+
+      // ledgerRecon
+      'ledgerRecon.UNPAID': "Belum diterima",
+      'ledgerRecon.PARTIAL': "Sebahagian",
+      'ledgerRecon.OVERPAID': "Bayaran lebih",
+      'ledgerRecon.REFUNDED': "Refund tertunggak",
+      'ledgerRecon.PAID_NO_INVOICE': "Dibayar tanpa invois",
+      'ledgerRecon.MATCH': "Padan",
+
+      // reserve
+      'reserve.HELD': "Ditahan",
+      'reserve.RELEASED': "Dilepaskan",
+      'reserve.CONSUMED': "Digunakan",
+
+      // product
+      'product.DRAFT': "Draf",
+      'product.PUBLISHED': "Diterbitkan",
+      'product.OFFLINE': "Luar talian",
+
+      // quad
+      'quad.LINKED': "Terpaut",
+      'quad.CONFLICT': "Konflik",
+      'quad.UNLINKED': "Tidak terpaut",
+
+      // tag
+      'tag.UNBOUND': "Tidak terikat",
+      'tag.BOUND': "Terikat",
+      'tag.DISABLED': "Dilumpuhkan",
+
+      // resource
+      'resource.ONLINE': "Dalam talian",
+      'resource.OFFLINE': "Luar talian",
+      'resource.FAULT': "Masalah",
+
+      // loAccount
+      'loAccount.ACTIVE': "Normal",
+      'loAccount.SUSPENDED': "Digantung",
+      'loAccount.CLOSED': "Ditutup",
+
+      // ticket
+      'ticket.PENDING': "Menunggu",
+      'ticket.DOING': "Diproses",
+      'ticket.DONE': "Selesai",
+      'ticket.CANCELED': "Dibatalkan",
+
+      // task
+      'task.PENDING': "Menunggu",
+      'task.DOING': "Sedang jalan",
+      'task.DONE': "Selesai",
+      'task.FAILED': "Gagal",
+
+      // complaint
+      'complaint.OPEN': "Dibuka",
+      'complaint.PROCESSING': "Diproses",
+      'complaint.CLOSED': "Ditutup",
+
+      // scan
+      'scan.MATCH': "Padan",
+      'scan.MISMATCH': "Tak padan",
+      'scan.OFFLINE_CACHED': "Cache luar talian",
+
+      // alarmLevel
+      'alarmLevel.CRITICAL': "Kritikal",
+      'alarmLevel.WARNING': "Amaran",
+      'alarmLevel.INFO': "Makluman",
+
+      // alarmStatus
+      'alarmStatus.OPEN': "Tidak disahkan",
+      'alarmStatus.ACKED': "Disahkan",
+      'alarmStatus.CLOSED': "Ditutup",
+
+      // maintPriority
+      'maintPriority.MUST_REPLACE': "Wajib ditukar",
+      'maintPriority.SUGGEST': "Disyorkan",
+      'maintPriority.WATCH': "Pemantauan",
+
+      // accountStatus
+      'accountStatus.1': "Aktif",
+      'accountStatus.0': "Dilumpuhkan",
+
+      // message
+      'message.INFO': "Maklumat",
+      'message.WARN': "Amaran",
+      'message.URGENT': "Segera",
+
+      // backupStatus
+      'backupStatus.running': "Sedang berjalan",
+      'backupStatus.succeeded': "Berjaya",
+      'backupStatus.failed': "Gagal",
+    },
     logout: 'Log Keluar',
     profile: 'Profil',
     loading: 'Memuatkan…',
