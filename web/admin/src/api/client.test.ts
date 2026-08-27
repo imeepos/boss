@@ -34,3 +34,39 @@ describe('apiFetch body 序列化', () => {
     expect(calls[0].init.body).toBe('{"name":"abc"}')
   })
 })
+
+describe('apiFetch LICENSE_REQUIRED 拦截', () => {
+  it('403 + LICENSE_REQUIRED 触发全局跳转事件并抛 LicenseRequiredError', async () => {
+    const realFetch = globalThis.fetch
+    globalThis.fetch = (async () =>
+      new Response('{"code":"LICENSE_REQUIRED","msg":"system license required"}', {
+        status: 403, headers: { 'Content-Type': 'application/json' },
+      })) as typeof fetch
+
+    const { apiFetch, LicenseRequiredError, onLicenseRequired } = await import('./client')
+    let fired = 0
+    const off = onLicenseRequired(() => { fired += 1 })
+
+    await expect(apiFetch('/api/admin/v1/dashboard')).rejects.toBeInstanceOf(LicenseRequiredError)
+    expect(fired).toBe(1)
+    off()
+    globalThis.fetch = realFetch
+  })
+
+  it('403 但非 LICENSE_REQUIRED(如 RBAC 无权)不触发跳转', async () => {
+    const realFetch = globalThis.fetch
+    globalThis.fetch = (async () =>
+      new Response('{"code":"FORBIDDEN","msg":"no permission"}', {
+        status: 403, headers: { 'Content-Type': 'application/json' },
+      })) as typeof fetch
+
+    const { apiFetch, onLicenseRequired } = await import('./client')
+    let fired = 0
+    const off = onLicenseRequired(() => { fired += 1 })
+
+    await expect(apiFetch('/api/admin/v1/x')).rejects.toThrow()
+    expect(fired).toBe(0)
+    off()
+    globalThis.fetch = realFetch
+  })
+})

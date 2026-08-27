@@ -1,11 +1,12 @@
 // 路由:登录页独立;受保护区 AuthGuard→AdminLayout(Outlet);45 页全集 + 403/404。
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { AttachmentManager } from './components/AttachmentManager'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { AdminLayout } from './layouts/AdminLayout'
 import { UCenterLayout } from './layouts/UCenterLayout'
 import { AuthGuard } from './layouts/AuthGuard'
 import { useProfile } from './layouts/profile'
+import { onLicenseRequired } from './api/client'
 const LoginPage = lazy(() => import('./pages/login'))
 const HomePage = lazy(() => import('./pages/home'))
 const NewsDetailPage = lazy(() => import('./pages/news'))
@@ -218,11 +219,26 @@ function SiteEditorRoute() {
   return <SitePostEditorPage />
 }
 
+/** 系统授权跳转监听:业务接口被门禁拦截(无证书/证书失效)时,自动跳转系统授权页引导激活。
+ *  事件由 apiFetch 在 LICENSE_REQUIRED 时 dispatch(见 api/client.ts)。 */
+function LicenseRequiredWatcher() {
+  const navigate = useNavigate()
+  useEffect(
+    () =>
+      onLicenseRequired(() => {
+        navigate('/base/license', { replace: true })
+      }),
+    [navigate],
+  )
+  return null
+}
+
 export default function App() {
   return (
     <ConfirmProvider>
     <Suspense fallback={<RouteFallback />}>
     <BrowserRouter>
+      <LicenseRequiredWatcher />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/partner/apply" element={<PartnerApplyPage />} />
@@ -258,6 +274,9 @@ export default function App() {
           <Route path="dev/attachments" element={<AttachmentManagerPreview />} />
           <Route path="boss/site/new" element={<SiteEditorRoute />} />
           <Route path="boss/site/:postId" element={<SiteEditorRoute />} />
+          {/* 系统授权页直达路由:不经 MenuPage 的 canAccess(后端 /license/status 仅要求登录,
+              无菜单权限码;未激活跳转必须对所有登录角色可达,否则引导失效)。 */}
+          <Route path="base/license" element={<LicensePage />} />
           {MENU_GROUPS.flatMap((g) => g.items).map((it) => (
             <Route key={it.key} path={it.path} element={<MenuPage pageKey={it.key} />} />
           ))}
