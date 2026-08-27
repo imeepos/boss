@@ -88,7 +88,7 @@ export default function SiteCategoriesPage() {
 
     {editing !== undefined && <div className="mt-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
       <div className="grid max-w-2xl gap-3 md:grid-cols-2">
-        <label className="text-xs">{s.fCode}<input className={inputCls + ' mt-1'} value={form.code} placeholder="FAQ" onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></label>
+        <label className="text-xs">{s.fCode}<input className={inputCls + ' mt-1'} value={form.code} placeholder={s.fCodePh} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></label>
         <label className="text-xs">{s.fName}<input className={inputCls + ' mt-1'} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
         <label className="text-xs">{s.fSort}<input className={inputCls + ' mt-1'} type="number" value={form.sortNo} onChange={(e) => setForm({ ...form, sortNo: Number(e.target.value) })} /></label>
         <label className="text-xs">{s.fEnabled}

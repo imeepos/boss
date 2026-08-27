@@ -43,7 +43,8 @@ func openPlatDeliveryRequeueHandler(a *app.Application) gin.HandlerFunc {
 }
 
 // openPlatTestEventHandler POST /openplat/apps/{id}/test-event:
-// 向该应用全部启用订阅发一条 openplat.test 事件,集成方据此自助验收签名与连通性。
+// 向该应用全部启用订阅发一条 openplat.test 事件(按应用匹配,不限订阅事件类型,
+// 否则目录外的测试事件类型永远命中 0 条订阅、自检空转),集成方据此自助验收签名与连通性。
 // event_id 带时间戳,同一应用可反复触发(不与业务幂等键冲突)。
 func openPlatTestEventHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -52,7 +53,7 @@ func openPlatTestEventHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		eventID := fmt.Sprintf("test-%d-%s", id, time.Now().UTC().Format("20060102T150405"))
-		n, err := a.OpenWebhook.Emit(c.Request.Context(), "openplat.test", eventID, gin.H{
+		n, err := a.OpenWebhook.EmitToApp(c.Request.Context(), id, "openplat.test", eventID, gin.H{
 			"type": "openplat.test", "eventId": eventID, "appId": id, "sentAt": time.Now().UTC().Format(time.RFC3339),
 		})
 		if err != nil {

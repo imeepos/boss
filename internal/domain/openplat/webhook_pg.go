@@ -32,6 +32,23 @@ func (s *PGStore) InsertDeliveries(ctx context.Context, eventType, eventID strin
 	return tag.RowsAffected(), nil
 }
 
+// InsertAppDeliveries 为指定应用全部启用订阅批量建投递行(测试事件自检用):
+// 不按事件类型过滤;投递行事件类型记测试事件名,投递时 X-BOSS-Event 头即测试事件。
+func (s *PGStore) InsertAppDeliveries(ctx context.Context, appID int64, eventType, eventID string, payload []byte) (int64, error) {
+	tag, err := s.db.Exec(ctx, `
+		INSERT INTO open_webhook_deliveries (subscription_id, event_id, event_type, payload)
+		SELECT sub.id, $1, $2, $4::jsonb
+		FROM open_webhook_subscriptions sub
+		JOIN open_apps app ON app.id = sub.app_id
+		WHERE sub.app_id = $3 AND sub.status = 1 AND app.status = 1
+		ON CONFLICT (subscription_id, event_id) DO NOTHING`,
+		eventID, eventType, appID, string(payload))
+	if err != nil {
+		return 0, fmt.Errorf("openplat: insert app deliveries: %w", err)
+	}
+	return tag.RowsAffected(), nil
+}
+
 const dueCols = `d.id, d.subscription_id, d.event_id, d.event_type, d.payload::text,
 	d.status, d.attempts, d.next_attempt_at, d.http_status, d.last_error, d.delivered_at, d.created_at`
 

@@ -23,6 +23,20 @@ func (d *WebhookDispatcher) Emit(ctx context.Context, eventType, eventID string,
 	return int(n), nil
 }
 
+// EmitToApp 向指定应用的全部启用订阅广播事件(不按事件类型过滤):
+// 用于 openplat.test 测试事件自检,集成方无需预先订阅该事件类型即可收到。
+func (d *WebhookDispatcher) EmitToApp(ctx context.Context, appID int64, eventType, eventID string, payload any) (int, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return 0, fmt.Errorf("openplat: emit marshal: %w", err)
+	}
+	n, err := d.store.InsertAppDeliveries(ctx, appID, eventType, eventID, body)
+	if err != nil {
+		return 0, err
+	}
+	return int(n), nil
+}
+
 // DeliverDue 处理一批到期投递(ListDue 原子领取):逐条 POST(带 HMAC 签名头),按结果落库。
 // MarkResult 失败必须留日志:结果写不回时行会在租约到期后重投,静默吞掉会造成
 // 「同一事件反复重投且无迹可查」。返回 error 会中止同批后续投递,故仅记录不中断。

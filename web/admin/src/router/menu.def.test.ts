@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MENU_GROUPS, PAGE_BY_KEY } from './menu.def'
+import { MENU_GROUPS, PAGE_BY_KEY, isNavActive } from './menu.def'
 import { visibleGroupIds, visiblePages } from './role-menu'
 
 // 契约:docs/admin/menu.js 13 组结构照抄 + partner 企业工作台组(000098 入驻域,仅 partner_* 角色);
@@ -25,6 +25,31 @@ describe('menu.def', () => {
       for (const it of g.items) expect(it.path.startsWith('/')).toBe(true)
     }
     expect(PAGE_BY_KEY.get('dashboard')).toBeDefined()
+  })
+})
+
+describe('isNavActive 侧栏激活判定', () => {
+  it('精确路径激活;深层路由非菜单项时算同页', () => {
+    expect(isNavActive('/boss/site', '/boss/site')).toBe(true)
+    expect(isNavActive('/boss/site', '/boss/site/new')).toBe(true)
+    expect(isNavActive('/boss/site', '/boss/site/123')).toBe(true)
+  })
+
+  it('深层路由自身是菜单项时不高亮父项(官网分类不再连带官网内容)', () => {
+    expect(isNavActive('/boss/site', '/boss/site/cats')).toBe(false)
+    expect(isNavActive('/boss/site/cats', '/boss/site/cats')).toBe(true)
+    expect(isNavActive('/boss/site/cats', '/boss/site')).toBe(false)
+  })
+
+  it('同前缀菜单兄弟项互不高亮(/bss/marketing vs /bss/marketing-recon)', () => {
+    expect(isNavActive('/bss/marketing', '/bss/marketing-recon')).toBe(false)
+    expect(isNavActive('/bss/marketing-recon', '/bss/marketing-recon')).toBe(true)
+    expect(isNavActive('/bss/marketing', '/bss/marketing')).toBe(true)
+  })
+
+  it('不同路径不高亮', () => {
+    expect(isNavActive('/boss/site', '/boss/release')).toBe(false)
+    expect(isNavActive('/boss/site', '/')).toBe(false)
   })
 })
 

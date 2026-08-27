@@ -132,3 +132,11 @@ export const PAGE_BY_KEY: Map<string, { item: MenuItem; groupId: string }> = new
 export const KEY_BY_PATH: Map<string, string> = new Map(
   MENU_GROUPS.flatMap((g) => g.items.map((item) => [item.path, item.key])),
 )
+
+/** 侧栏激活判定:精确路径激活;深层路由仅当其不是其它菜单项的完整路径时算"同页"
+ *  (如 /boss/site/new 高亮官网内容,而 /boss/site/cats 自身是菜单项,不高亮官网内容)。 */
+export function isNavActive(to: string, pathname: string): boolean {
+  if (pathname === to) return true
+  if (!pathname.startsWith(`${to}/`)) return false
+  return !KEY_BY_PATH.has(pathname)
+}

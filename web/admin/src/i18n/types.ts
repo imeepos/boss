@@ -1249,6 +1249,7 @@ export interface Translations {
       delete: string
       deleteConfirm: string
       fCode: string
+      fCodePh: string
       fName: string
       fSort: string
       fEnabled: string

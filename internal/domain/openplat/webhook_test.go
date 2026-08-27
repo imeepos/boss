@@ -15,6 +15,7 @@ import (
 type fakeWebhookStore struct {
 	mu         sync.Mutex
 	inserted   int64
+	appIDs     []int64 // InsertAppDeliveries 收到的 appID 序列
 	due        []DueDelivery
 	results    map[int64]string // id -> "ok"/"fail"
 	markCalls  int
@@ -26,6 +27,13 @@ func (f *fakeWebhookStore) InsertDeliveries(context.Context, string, string, []b
 	defer f.mu.Unlock()
 	f.inserted++
 	return f.inserted, nil
+}
+func (f *fakeWebhookStore) InsertAppDeliveries(_ context.Context, appID int64, _, _ string, _ []byte) (int64, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.inserted++
+	f.appIDs = append(f.appIDs, appID)
+	return 1, nil
 }
 func (f *fakeWebhookStore) ListDue(context.Context, time.Time, int) ([]DueDelivery, error) {
 	f.mu.Lock()
@@ -158,6 +166,29 @@ func TestEmitSerializesPayload(t *testing.T) {
 func TestEmitRejectsBadPayload(t *testing.T) {
 	d := NewWebhookDispatcher(&fakeWebhookStore{}, nil)
 	_, err := d.Emit(context.Background(), "e", "id", func() {}) // 通道不可序列化
+	if err == nil {
+		t.Fatal("expected marshal error")
+	}
+}
+
+// TestEmitToAppPassesAppID 测试事件自检走按应用投递(不限事件类型);
+// 旧行为用 Emit 精确匹配 openplat.test 事件类型,目录外类型命中 0 条订阅、自检空转。
+func TestEmitToAppPassesAppID(t *testing.T) {
+	store := &fakeWebhookStore{}
+	d := NewWebhookDispatcher(store, nil)
+	n, err := d.EmitToApp(context.Background(), 42, "openplat.test", "test-42-1",
+		map[string]string{"type": "openplat.test"})
+	if err != nil || n != 1 {
+		t.Fatalf("EmitToApp: n=%d err=%v", n, err)
+	}
+	if len(store.appIDs) != 1 || store.appIDs[0] != 42 {
+		t.Fatalf("EmitToApp 必须把 appID 传给 store, got %v", store.appIDs)
+	}
+}
+
+func TestEmitToAppRejectsBadPayload(t *testing.T) {
+	d := NewWebhookDispatcher(&fakeWebhookStore{}, nil)
+	_, err := d.EmitToApp(context.Background(), 1, "e", "id", func() {})
 	if err == nil {
 		t.Fatal("expected marshal error")
 	}

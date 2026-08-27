@@ -1,8 +1,9 @@
 // 侧栏:分组标题 + 平铺菜单项,240px/64px 折叠,移动端抽屉;右缘手柄拖拽调宽并持久化。
 // 样式:tailwind 原子类(cn 合并),窄屏断点走 max-[1199px]/max-[959px] 变体。
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import type { MenuGroup } from '../router/menu.def'
+import { isNavActive } from '../router/menu.def'
 import { useT } from '../i18n'
 import { cn } from '../lib/cn'
 import { ChevronIcon, CollapseIcon, MaskIcon } from './icons'
@@ -51,12 +52,14 @@ function SideGroup({
   g,
   collapsed,
   folded,
+  pathname,
   onToggleFold,
   onNavigate,
 }: {
   g: MenuGroup
   collapsed: boolean
   folded: boolean
+  pathname: string
   onToggleFold: () => void
   onNavigate: () => void
 }) {
@@ -84,17 +87,19 @@ function SideGroup({
         <div className={!collapsed ? 'mt-2' : undefined}>
           {g.items.map((it) => {
             const label = t.menu.items[it.key] ?? it.label
+            const active = isNavActive(it.path, pathname)
             return (
-              <NavLink
+              <Link
                 key={it.key}
                 to={it.path}
                 title={label}
                 onClick={onNavigate}
-                className={({ isActive }) => cn(SIDE_ITEM, !collapsed && SIDE_SUBITEM, isActive && SIDE_ITEM_ACTIVE, collapsed && 'justify-center px-0')}
+                aria-current={active ? 'page' : undefined}
+                className={cn(SIDE_ITEM, !collapsed && SIDE_SUBITEM, active && SIDE_ITEM_ACTIVE, collapsed && 'justify-center px-0')}
               >
                 <MaskIcon url={`/icons/items/${it.key}.svg`} />
                 {!collapsed && <span className={cn('overflow-hidden text-ellipsis', LABEL)}>{label}</span>}
-              </NavLink>
+              </Link>
             )
           })}
         </div>
@@ -228,6 +233,7 @@ export function Sidebar({ groups, collapsed, drawerOpen, onToggleCollapse, onClo
             g={g}
             collapsed={collapsed}
             folded={folded.has(g.id)}
+            pathname={pathname}
             onToggleFold={() => toggleFold(g.id)}
             onNavigate={onCloseDrawer}
           />

@@ -1044,3 +1044,17 @@
 - skill 有没有提前预警? 部分:knowledge/前端.md 有免登录注入与 servers-先-token-后,但没有"部署态 BrowserRouter + 持久 profile 两趟法";幽灵令牌红线(GO 版 #6)帮我 grep 拦下了自造 --color-brand-solid,没踩实。
 - 重来一次会怎么做? 断言部署态 SPA 一律先 `grep -n "BrowserRouter" web/admin/src/App.tsx` 确认路由形态再拼 URL;带登录的部署态验证默认走 `--user-data-dir` 持久 profile 两趟法;写完 JSX 先自查 `??`/`||` 混用。
 - 收获:后端新增 PUT /products/{id}(编辑基础信息)与 PUT /products/{id}/status(上下架,发布刷新 effective_at),月费强制走既有调价台账留痕;契约 customer.yaml 同步;handler 测试覆盖成功+非法枚举。102 实测:下架/上架/编辑全 200,上架把 effectiveAt 从零值刷到当前时间,审计 product.update/update_status 落库;admin-web 部署后 bundle 哈希与本地 build 一致,CDP 真机断言:8 列表头含分类、首行操作 详情|编辑|调价|下架|调价记录、编辑抽屉预填+公司只读、调价抽屉显示当前月费+新月费/原因、下架确认文案命中。本模型不收图,DOM 文本断言替代截图(红线#7)。
+
+## 2026-10-01 官网分类激活连带高亮 + 列头 i18n
+
+- 哪个坑浪费了最多时间? ① react-router-dom 6.30.4 NavLink 已无 isActive prop(改 className 函数签名),先按旧 API 想方案又回头翻 node_modules 源码/类型确认,浪费一轮;② 开工在 main 树直接 `git checkout -b` 创建分支,导致 worktree add 同分支失败——应先在主树建分支再 worktree add,或 worktree add 时用 -b。
+- skill 有没有提前预警? 有:worktree 合并协议(ff-merge 失败=常态,rebase 后重试)在并行会话推进 main 时直接命中并照做,一次通过;未预警 react-router 6.30 NavLink API 变化。
+- 重来一次会怎么做? 动 NavLink 前先 `grep -n "isActive" node_modules/.../react-router-dom/dist/index.d.ts` 确认版本 API;worktree 分支创建统一 `git worktree add ../name -b fix/xxx` 一步到位,不在主树 checkout。
+- 收获:侧栏 NavLink 默认前缀匹配导致 /boss/site/cats 激活时 /boss/site(官网内容)同时高亮(部署态 CDP 实锤 nav=["/boss/site","/boss/site/cats"]);修法=menu.def.ts 加 isNavActive 精确判定(精确匹配激活;深层路由自身是菜单项不高亮父项),Sidebar 从 NavLink 改 Link+显式 aria-current,同一缺陷顺带修掉 /bss/marketing vs marketing-recon 兄弟项。i18n:siteCatsPage.columns 原为字段标识符,zh-CN 界面表头裸英文;改为三语本地化标签+fCodePh 占位。门禁 typecheck/test/build 全过,dev+CDP 断言:nav 只剩 /boss/site/cats、三语列头(标识码/Code/Kod)、/boss/site/new 仍高亮官网内容、暗色无 console 报错。
+
+## 2026-08-27 调研"订阅事件只有一个"→ 顺手修测试事件投递空转
+
+- 哪个坑浪费了最多时间? ① worktree 编辑连拒两次:同一文件主树读过不算数,read 状态按绝对路径跟踪,worktree 副本必须按 worktree 路径重读(recidivism 再 +2);② bash 每次 fresh shell,gofmt/go 不在默认 PATH,每条命令都要 export PATH=/opt/homebrew/bin:$PATH。
+- skill 有没有提前预警? 红线 #1 涵盖"读后编辑"但没点破"按绝对路径跟踪"这个细节;102 psql 核对造数时容器名猜错,`docker ps --format` 按 ports grep 一步定位 boss-infra-postgres-1(25432)。
+- 重来一次会怎么做? 建 worktree 后第一轮就把要改的文件按 worktree 路径全部 read 再动手;Go 门禁命令固定带 PATH 前缀。
+- 收获:调研双证据法(代码 grep + 102 curl 运行时复核)一轮锁定根因——订阅事件下拉只有一项不是渲染 bug,是 eventCatalog 登记制下 emit 侧只挂了 order.stage.done 一个业务事件,如实反映;顺藤摸瓜发现更真的 bug:管理端测试事件注释说"全部启用订阅",InsertDeliveries 却按事件类型精确匹配,openplat.test 不在目录永远命中 0 条空转,新增 EmitToApp/InsertAppDeliveries 按应用匹配修复(fake + 真实 PG 双回归);契约对账红的归属判定——先在主树复跑,同红=并行会话存量(license 24 项不碰),只修自己调研域内的存量缺口(event-types 路由未登记 + eventTypes[] 批量口径漂移,独立小提交);收尾后 102 库核对造数零残留。
