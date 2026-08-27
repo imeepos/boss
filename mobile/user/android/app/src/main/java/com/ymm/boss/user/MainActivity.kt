@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.ymm.boss.user.api.Api
@@ -68,6 +69,11 @@ fun AppRoot() {
         }
         // 启动静默检查更新:有新版弹可忽略提醒(fields.md 8F),每进程一次。
         com.ymm.boss.user.page.UpdateGate()
+        // 已登录态启动:上报设备注册(B 轨 /push/device,幂等,失败静默)。
+        val context = androidx.compose.ui.platform.LocalContext.current
+        LaunchedEffect(Unit) {
+            if (Api.token().isNotEmpty()) com.ymm.boss.user.api.PushApi.registerDevice(context)
+        }
     }
 }
 

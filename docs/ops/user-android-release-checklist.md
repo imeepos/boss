@@ -46,8 +46,16 @@
 - 逐页深度打磨剩余(List 动画/过渡、下拉刷新炫技、图片懒加载优化——会议明确砍)。
 - 积分兑换实际链路(待后端可兑换券模板列表端点,见 ISSUE.md)。
 - https 公网迁移(见 user-android-https-migration.md,视产品用户群确认提级)。
-- /push/device 推送注册(待后端 B 轨 D-3 落地,Android 降级兜底)。
+- 真实推送通道(推送 SDK 接入后本处换真实 RegistrationID;通知权限/设备注册已就绪)。
 - 下单→支付 destruct E2E(造单后 cancel 清理,待回收通道强化后再自动化)。
+
+### B 轨 /push/device 闭环(2026-08-27 完成)
+
+- 后端端点已落地:P**OST** /api/user/v1/push/device(曾用 GET 探测误报 404,handler user/push_device.go 与路由早已注册);
+- Android 接线完成:PushApi(规范化 registrationId 去横线,因后端 validRegistrationID 仅收 [0-9a-zA-Z])+
+  登录成功/已登录启动两时机幂等上报,失败静默留 Log;
+- 全链路实证:UI 真登录后 push_devices 新增 user 行(客户 213 ↔ 设备 UUID ef3e1ccf67b14c3a8ee867057814bba7, vendor=app_track),
+  两次启动同 UUID 仍单行(幂等);connected 11/11 全绿。
 
 ### 无复现崩溃/ANR 观测(多轮 walkthrough 全程)
 

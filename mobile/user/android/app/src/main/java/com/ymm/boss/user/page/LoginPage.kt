@@ -60,6 +60,7 @@ fun LoginScreen(nav: Nav) {
     var busy by remember { mutableStateOf(false) }
     var countdown by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(countdown) { while (countdown > 0) { delay(1000); countdown-- } }
 
@@ -102,7 +103,7 @@ fun LoginScreen(nav: Nav) {
                 RNPrimaryButton("登录", enabled = agreed && !busy, loading = busy,
                     onClick = {
                         busy = true
-                        doLogin(scope, nav, phone, mode, if (mode == "sms") code else password) {
+                        doLogin(scope, nav, context, phone, mode, if (mode == "sms") code else password) {
                             err = it; busy = false
                         }
                     })
@@ -179,7 +180,7 @@ private fun sendCode(
 
 private fun doLogin(
     scope: kotlinx.coroutines.CoroutineScope,
-    nav: Nav, phone: String, mode: String, credential: String,
+    nav: Nav, context: android.content.Context, phone: String, mode: String, credential: String,
     onErr: (String) -> Unit,
 ) {
     if (phone.isBlank() || credential.isBlank()) { onErr("请输入手机号与" + if (mode == "sms") "验证码" else "密码"); return }
@@ -188,6 +189,8 @@ private fun doLogin(
             val tk = UserApi.auth.login(phone, mode, credential).optString("token")
             if (tk.isEmpty()) { onErr("登录响应缺少 token"); return@launch }
             Api.setToken(tk)
+            // B 轨:上报设备注册(幂等,失败静默),独立协程不阻塞登录跳转。
+            scope.launch { com.ymm.boss.user.api.PushApi.registerDevice(context) }
             nav.resetTo(com.ymm.boss.user.ui.Route.Home)
         } catch (e: Exception) { onErr(loginErrorMessage(e, mode)) }
     }

@@ -68,5 +68,7 @@
   但 user 侧没有任何端点能列出可兑换券模板(`coupon_templates.points_price>0`,fields.md §8D-2)。
   promotion.yaml user 视图仅有 `/plans/{planId}/renew`。→ Android 端当前按"未就绪占位"处理(PointsPage 兑换入口明示建设中,
   不静默假功能);需明远补齐列表端点(或明确复用端点),D-3 前答复,否则兑换保持占位。
-- **信息缺失｜`/push/device` 契约-部署漂移(102 实测 404)**:api/openapi/user/misc.yaml 已定义,
-  后端未落地(会议纪要 B 轨)。→ D-3 硬截止:落地则 Android 注册设备 token;未落地 Android 降级兜底(入口隐藏/置灰),禁止静默假功能。
+- **已修复(2026-08-27, 实测 POST 401=路由在)｜信息缺失｜`/push/device` 契约-部署漂移**:api/openapi/user/misc.yaml 已定义,
+  曾用 **GET** 探测误报 404;实为 **POST** 端点且后端已落地(GET 当然 404)。修正:POST /api/user/v1/push/device → 401(需鉴权),
+  handler `internal/httpapi/user/push_device.go` + 路由已注册(auth.go biz 组),push_devices 表 000095 PG 持久化,
+  RegisterDevice 幂等(同 registrationId 换绑主体)。→ Android B 轨接线完成(登录/启动上报 deviceId,见 feat(user-android): push-device 注册)。
