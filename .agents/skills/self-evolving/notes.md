@@ -1252,3 +1252,9 @@
 - 哪个坑浪费了最多时间? 两处:①探测方法错(GET 探 POST 端点得 404,误报"契约-部署漂移" 10 轮——ISSUE.md 更正,教训=契约先读 method 再探测);②注册 42200 参数非法:UUID 含连字符,后端 validRegistrationID 仅收 [0-9a-zA-Z](JPush 形态),去横线后通过。
 - skill 有没有提前预警? 无;两条都进 techniques/lessons。
 - 重来一次? ①接口可用性探测先看 openapi 的 method(path 相同 method 不同 404/405 语义完全不同);②调用后端前先读其入参校验(尤其"形态合法"类校验)。
+
+## 2026-08-27 user Android 首发候选包出包轮 + 主树直接编辑再犯
+
+- 哪个坑浪费了最多时间? 出包归档文档又直接编辑到主树(R8 后第二次)——worktree 合并完成后的"文档收尾"路径默认用了主树绝对路径,而 discipline 要求一切变更走 worktree。当场恢复+worktree 重做。教训:任何 write/edit 前先核文件路径前缀是 /Users/imeepos/ext512/ymm-001/boss(主树)还是 /wt-*。
+- skill 有没有提前预警? 红线 #10(worktree 路径)有警告场景(commit 落 main),但"非代码文档改主树"漏预警——其实同源。
+- 重来一次? 写文件前 grep 路径是否含 /wt-user-android;或统一"文档也走 worktree"的习惯。
