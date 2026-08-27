@@ -67,7 +67,7 @@ export function RealNameDrawer({
       footer={
         <>
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]" onClick={onClose}>{t.common.confirmDialog.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--color-brand-bg)] bg-[var(--color-brand-bg)] px-4 text-[13px] text-white hover:opacity-80 disabled:opacity-50"
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:opacity-50"
             disabled={busy || !realName.trim() || !idCardNo.trim() || !method} onClick={submit}>{c.rnSubmit}</button>
         </>
       }>
@@ -119,7 +119,7 @@ function LatestCard({ row, c, onPreview }: {
   c: ReturnType<typeof useT>['pages']['customer']
   onPreview: (id: number) => void
 }) {
-  const color = row.result === 'PASS' ? 'var(--color-success)' : row.result === 'FAIL' ? 'var(--color-danger)' : 'var(--color-warning)'
+  const color = row.result === 'PASS' ? 'var(--color-success)' : row.result === 'FAIL' ? 'var(--color-danger)' : 'var(--color-brand-gold-600)'
   const kv: Array<[string, string]> = [
     ['ID', String(row.id)],
     [c.verifyColumns[0], row.method],
@@ -152,8 +152,8 @@ function LatestCard({ row, c, onPreview }: {
         <div className="flex gap-2 py-0.5">
           <span className="w-24 shrink-0 text-[var(--shell-group-title)]">{c.rnAttachments}</span>
           <span className="flex gap-3">
-            {row.idCardFrontId > 0 && <button className="cursor-pointer text-[var(--color-brand-bg)] hover:underline" onClick={() => onPreview(row.idCardFrontId)}>{c.rnFront}</button>}
-            {row.idCardBackId > 0 && <button className="cursor-pointer text-[var(--color-brand-bg)] hover:underline" onClick={() => onPreview(row.idCardBackId)}>{c.rnBack}</button>}
+            {row.idCardFrontId > 0 && <button className="cursor-pointer text-[var(--color-text-link)] hover:underline" onClick={() => onPreview(row.idCardFrontId)}>{c.rnFront}</button>}
+            {row.idCardBackId > 0 && <button className="cursor-pointer text-[var(--color-text-link)] hover:underline" onClick={() => onPreview(row.idCardBackId)}>{c.rnBack}</button>}
           </span>
         </div>
       )}

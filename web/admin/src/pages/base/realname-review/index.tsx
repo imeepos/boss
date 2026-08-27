@@ -145,7 +145,7 @@ export default function RealnameReviewPage() {
             onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); load() } }}
           />
           <button
-            className="h-9 cursor-pointer rounded-sm border border-[var(--color-brand-bg)] bg-[var(--color-brand-bg)] px-4 text-[13px] text-white hover:opacity-80"
+            className="h-9 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]"
             disabled={busy}
             onClick={() => { setPage(1); load() }}
           >
@@ -174,7 +174,7 @@ export default function RealnameReviewPage() {
                 {rows.map((r) => (
                   <tr key={r.id}>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className={`inline-flex h-6 items-center rounded-full px-2 text-[11px] font-medium ${r.subjectType === 'customer' ? 'bg-[color-mix(in_srgb,var(--color-brand-bg)_15%,transparent)] text-[var(--color-brand-bg)]' : 'bg-[color-mix(in_srgb,var(--color-info)_15%,transparent)] text-[var(--color-info)]'}`}>
+                      <span className={`inline-flex h-6 items-center rounded-full px-2 text-[11px] font-medium ${r.subjectType === 'customer' ? 'bg-[color-mix(in_srgb,var(--shell-fab-bg)_15%,transparent)] text-[var(--shell-fab-bg)]' : 'bg-[color-mix(in_srgb,var(--color-brand-gold-500)_15%,transparent)] text-[var(--color-brand-gold-600)]'}`}>
                         {r.subjectType === 'customer' ? w.subjectCustomer : w.subjectWorker}
                       </span>
                     </td>
@@ -189,17 +189,17 @@ export default function RealnameReviewPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {r.operatorName || '—'}
                       {r.idCardFrontId > 0 && (
-                        <button className="ml-2 cursor-pointer text-[11px] text-[var(--color-brand-bg)] hover:underline" onClick={() => setPreviewId(r.idCardFrontId)}>{w.idCardFront}</button>
+                        <button className="ml-2 cursor-pointer text-[11px] text-[var(--color-text-link)] hover:underline" onClick={() => setPreviewId(r.idCardFrontId)}>{w.idCardFront}</button>
                       )}
                       {r.idCardBackId > 0 && (
-                        <button className="ml-2 cursor-pointer text-[11px] text-[var(--color-brand-bg)] hover:underline" onClick={() => setPreviewId(r.idCardBackId)}>{w.idCardBack}</button>
+                        <button className="ml-2 cursor-pointer text-[11px] text-[var(--color-text-link)] hover:underline" onClick={() => setPreviewId(r.idCardBackId)}>{w.idCardBack}</button>
                       )}
                     </td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.verifiedAt)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {r.result === 'PENDING' ? (
                         <div className="flex gap-2">
-                          <button className="h-7 cursor-pointer rounded-sm border border-[var(--color-brand-bg)] bg-[var(--color-brand-bg)] px-3 text-[12px] text-white hover:opacity-80" onClick={() => { setActId(r.id); setActSubject({ type: r.subjectType, id: r.subjectId }); setActMode('pass') }}>{w.pass}</button>
+                          <button className="h-7 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-3 text-[12px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setActId(r.id); setActSubject({ type: r.subjectType, id: r.subjectId }); setActMode('pass') }}>{w.pass}</button>
                           <button className="h-7 cursor-pointer rounded-sm border border-[var(--color-danger)] bg-transparent px-3 text-[12px] text-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)]" onClick={() => { setActId(r.id); setActSubject({ type: r.subjectType, id: r.subjectId }); setActMode('fail') }}>{w.fail}</button>
                         </div>
                       ) : <span className="text-[12px] text-[var(--shell-group-title)]">—</span>}
@@ -229,13 +229,13 @@ export default function RealnameReviewPage() {
       {/* 驳回原因对话框 */}
       {actId != null && actMode && actSubject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeDialog}>
-          <div className="w-96 rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-4 text-lg font-semibold">{actMode === 'pass' ? w.pass : w.rejectTitle}</h3>
+          <div className="w-96 rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6 shadow-[var(--shell-card-shadow)]" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-lg font-semibold text-[var(--shell-heading)]">{actMode === 'pass' ? w.pass : w.rejectTitle}</h3>
             {actMode === 'fail' && (
               <>
-                <label className="mb-1 block text-sm text-gray-600">{w.rejectReasonLabel}</label>
+                <label className="mb-1 block text-sm text-[var(--shell-group-title)]">{w.rejectReasonLabel}</label>
                 <textarea
-                  className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  className="mb-3 w-full rounded border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 py-2 text-sm text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
                   rows={3}
                   placeholder={w.rejectReasonPh}
                   value={rejectReason}
@@ -243,11 +243,11 @@ export default function RealnameReviewPage() {
                 />
               </>
             )}
-            {formError && <div className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div>}
+            {formError && <div className="mb-3 rounded border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-sm text-[var(--color-danger)]">{formError}</div>}
             <div className="flex justify-end gap-2">
-              <button className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100" onClick={closeDialog}>{w.cancel}</button>
+              <button className="rounded px-4 py-2 text-sm text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" onClick={closeDialog}>{w.cancel}</button>
               <button
-                className={`rounded px-4 py-2 text-sm text-white ${actMode === 'pass' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'}`}
+                className={`rounded px-4 py-2 text-sm text-[var(--shell-fab-icon)] ${actMode === 'pass' ? 'bg-[var(--shell-fab-bg)] hover:bg-[var(--shell-fab-bg-hover)]' : 'bg-[var(--color-danger)] hover:opacity-80'}`}
                 disabled={busy}
                 onClick={actMode === 'pass' ? handlePass : handleFail}
               >
@@ -267,5 +267,5 @@ export default function RealnameReviewPage() {
 function ResultBadge({ result, w }: { result: VerificationRow['result']; w: ReturnType<typeof useT>['pages']['realnameReview'] }) {
   if (result === 'PASS') return <span className="inline-flex h-6 items-center rounded-full bg-[color-mix(in_srgb,var(--color-success)_15%,transparent)] px-2 text-[11px] font-medium text-[var(--color-success)]">{w.resultPass}</span>
   if (result === 'FAIL') return <span className="inline-flex h-6 items-center rounded-full bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] px-2 text-[11px] font-medium text-[var(--color-danger)]">{w.resultFail}</span>
-  return <span className="inline-flex h-6 items-center rounded-full bg-[color-mix(in_srgb,var(--color-warning)_15%,transparent)] px-2 text-[11px] font-medium text-[var(--color-warning)]">{w.resultPending}</span>
+  return <span className="inline-flex h-6 items-center rounded-full bg-[color-mix(in_srgb,var(--color-brand-gold-600)_15%,transparent)] px-2 text-[11px] font-medium text-[var(--color-brand-gold-600)]">{w.resultPending}</span>
 }
