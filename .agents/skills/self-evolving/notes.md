@@ -1173,3 +1173,9 @@
 - 哪个坑浪费了最多时间? ①用 sed 临时把 z-[130] 改回 z-50 验证"测试确实会红"后,`git checkout -- dialog.tsx` 把真修复也一并撤掉了——checkout 恢复的是整个文件,不是刚才那次 sed;靠 `git diff --stat` 复查才发现,重做了三处 edit。②GLM-5.3-Flash 模型不支持 read_image(红线 #7 再次应验),截图验证改为 CDP elementFromPoint 命中测试,反而拿到更硬的证据。
 - skill 有没有提前预警? 红线 #4(edit 对称性)中途救了一命——第一次 edit 误删三个常量定义,立即发现恢复;红线 #7 避免了在 read_image 报错上浪费时间。但「临时改动用 checkout 恢复会冲掉真修复」没有预警。
 - 重来一次? 验证测试红/绿对照不要动工作区文件——用 `git stash` 或干脆信任断言语义(z-50 类名不匹配 z-[N] 正则必返 0);要动就用 sed 双向改回,绝不用 checkout。
+
+## 2026-08-27 设备更换单执行流(方案B变体+102真实环境验证)
+- 哪个坑浪费了最多时间? 迁移撞号:开工时查了两处,但并行会话在实现期间又把 000157/000158 合进 main,check-contract-sync D 项拦下后让号 000159 重命名+merge main 浪费一轮。"开工前查"不够,合并回 main 前必须 re-fetch 再查。
+- skill 有没有提前预警? 部分有(AGENTS.md 迁移编号规则),但未强调"长任务中途并行占号"场景。
+- 重来一次怎么做? store 层写完先跑 check-contract-sync 再写后续层,及早暴露撞号。
+- 新经验已喂回: lessons.md(typed-nil/pgxmock/pgtype)、known-issues.md(DOING 过滤)、techniques.md(102 闭环测试脚本)。

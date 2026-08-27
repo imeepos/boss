@@ -397,3 +397,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - pgxmock v4 的 `NewPool()` 返回 `PgxPoolIface` 接口而不是 `*Pool`,helper 函数签名要写接口类型。
 - 当 Portal 弹层(Portal 挂 body)与内联 fixed 遮罩同现时,修复是先确认两者处于同一层叠上下文,再比 z 数值;Portal 不改变层叠上下文归属,别被"弹层在 DOM 更深处"迷惑。
 - 当用 checkout/stash 之外的方式临时篡改工作区验证测试时,修复是用 stash push/pop 或 sed 双向改回;`git checkout -- file` 会抹掉该文件全部未提交修改,包括真正的修复。
+- 当 httpx.BindAndValidate 的 extraChecks 里 return RequireXxx(...) 直接返回时,修复是包一层 CollectErrors——Require* 返回 *ValidationError,nil 指针被装箱成非 nil error 接口,校验通过路径也会 panic(typed-nil)。
+- 当 pgx/pgxmock Scan 目标是 **time.Time 时,修复是用 pgtype.Timestamptz 扫描再取 .Time(仓库 ListAssignments 既有模式),pgx 不支持 double pointer 目标。
+- 当长任务跨多个提交窗口时,修复是每次 merge 回 main 前 git fetch + 重新跑 check-contract-sync D 项——并行会话会随时占走迁移号,开工时查过的号中途会失效。
+- 当师傅端"任务列表"类接口按 worker_id 查询时,修复是显式带 status 过滤(DOING)——单测 mock 不会暴露漏过滤,只有真实环境回归会抓到。
