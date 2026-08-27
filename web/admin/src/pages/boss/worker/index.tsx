@@ -12,6 +12,7 @@ import { fmtTime } from '../../../lib/format'
 import { pageSlice, type WorkerGroupRow, type WorkerRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { TeamDialogs, type DialogMode } from './TeamDialogs'
+import { WorkerDetailDrawer } from './worker-detail-drawer'
 
 const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
 const primaryBtn = 'h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]'
@@ -30,6 +31,7 @@ export default function WorkerPage() {
   const [busy, setBusy] = useState(false)
   const [dialog, setDialog] = useState<DialogMode>(null)
   const [pickWorker, setPickWorker] = useState('')
+  const [detailId, setDetailId] = useState<number | null>(null)
 
   const load = useCallback(() => {
     setError('')
@@ -170,12 +172,15 @@ export default function WorkerPage() {
                       <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.status === 1 ? w.active : w.left}</td>
                       <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.joinedAt)}</td>
                       <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
-                        {r.status === 1 && (
-                          <div className="flex gap-2">
-                            <button className={smallBtn} onClick={() => setCaptain(r)}>{w.setCaptain}</button>
-                            <button className={smallBtn} onClick={() => setDialog({ type: 'transfer', worker: r })}>{w.transfer}</button>
-                          </div>
-                        )}
+                        <div className="flex gap-2">
+                          <button className={smallBtn} onClick={() => setDetailId(r.id)}>{w.detail}</button>
+                          {r.status === 1 && (
+                            <>
+                              <button className={smallBtn} onClick={() => setCaptain(r)}>{w.setCaptain}</button>
+                              <button className={smallBtn} onClick={() => setDialog({ type: 'transfer', worker: r })}>{w.transfer}</button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -192,6 +197,9 @@ export default function WorkerPage() {
       </div>
 
       <TeamDialogs mode={dialog} groups={groups} workers={rows} onClose={() => setDialog(null)} onDone={load} />
+      {detailId !== null && (
+        <WorkerDetailDrawer id={detailId} groupName={detailId ? groupName(rows.find((r) => r.id === detailId)?.groupId ?? 0) : ''} onClose={() => setDetailId(null)} />
+      )}
     </div>
   )
 }
