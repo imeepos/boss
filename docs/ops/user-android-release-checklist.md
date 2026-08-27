@@ -10,8 +10,9 @@
 |---|------|-----------------|------|
 | 1 | 签名验证 | `scripts/user-android-release-sign.sh`：apksigner verify 通过 + release 指纹 ≠ debug 指纹；指纹见 adopted note 出包留档 | 本轮已跑通 |
 | 2 | 版本号对齐 | `app/build.gradle.kts` versionCode/versionName；单调递增表见 adopted note（首发 2/0.1.0）；UpdateApi 自更新判定依赖同表 | 已定档 |
-| 3 | cleartext 收敛 | Manifest 无 `usesCleartextTraffic`，`res/xml/network_security_config.xml` 仅白名单 102 内网/联调/模拟器回环；`aapt dump xmltree app-release.apk AndroidManifest.xml` 核对 | 已实现 |
+| 3 | cleartext 收敛 | Manifest 无 `usesCleartextTraffic`，`res/xml/network_security_config.xml` 仅白名单 102 内网/联调/模拟器回环；`aapt dump xmltree app-release.apk AndroidManifest.xml` 核对 | 已实现+物证（release 包：usesCleartextTraffic 0 处、networkSecurityConfig=@0x7f140002、无 ACCESS_BACKGROUND_LOCATION） |
 | 4 | 权限实测 | 真机(Android 13+)冷启弹 POST_NOTIFICATIONS；拒绝/允许两条路径不崩溃；定位权限按场景触发（确认无 ACCESS_BACKGROUND_LOCATION） | 模拟器已实测，真机待测 |
+| 4b | 脱敏验收 | 页面展示一律 `phoneMasked/idNoMasked`；明文手机号仅拨号盘 ACTION_DIAL（联系师傅设计意图），不落屏幕文案 | 审计通过 |
 | 5 | UpdateApi 全链路 | `GET /client/latest` 出新版本 → App 启动弹升级提示 → 下载安装（后端版本元数据端点由后端 D-7 补齐；未就绪时回滚仅剩 adb 人工） | 后端待交付 |
 | 6 | 多语言+实名回归 | 语言切换失败保留本地高亮；实名三态(未提交/审核中/驳回)+驳回重新提交入口走查 | 已核验 |
 | 7 | 出包记录归档 | release 证书 SHA-256 指纹 + 版本 + 构建时间落 adopted note（本次:`1C:AC:B3:E1:03:CE:87:6E:9E:22:C9:FD:C8:D2:08:7C:ED:BF:45:58:A4:10:92:F8:EC:25:02:16:00:EE:F2:DA`） | 已归档 |
