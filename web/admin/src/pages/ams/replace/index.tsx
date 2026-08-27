@@ -1,4 +1,5 @@
-// 设备更换单页:契约 GET /replacements、POST /replacements(单号后端自动生成 RPL-*)。
+// 设备更换单页:契约 GET /replacements、POST /replacements、POST /replacements/{id}/assign
+// (单号后端自动生成 RPL-*;派单 PENDING→DOING,adopted note 2026-08-27-replacement-ticket-flow)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -10,6 +11,7 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { pageSlice, PRIORITIES, type AssetRow, type ReplacementRow } from '../types'
 import { TableStateRow } from '../../../components/business'
+import { WorkerPicker, type PickedWorker } from '../../boss/dispatch/WorkerPicker'
 
 export default function ReplacePage() {
   const t = useT()
@@ -24,6 +26,10 @@ export default function ReplacePage() {
   const [reason, setReason] = useState('')
   const [priority, setPriority] = useState<string>('MEDIUM')
   const [formError, setFormError] = useState('')
+  const [dispatchRow, setDispatchRow] = useState<ReplacementRow | null>(null)
+  const [picked, setPicked] = useState<PickedWorker | null>(null)
+  const [dispatchError, setDispatchError] = useState('')
+  const [toast, setToast] = useState('')
 
   const load = () => {
     setError('')
@@ -55,6 +61,27 @@ export default function ReplacePage() {
     }
   }
 
+  const submitDispatch = async () => {
+    if (busy || !dispatchRow || !picked) return
+    setBusy(true)
+    setDispatchError('')
+    try {
+      await apiFetch(`/replacements/${dispatchRow.id}/assign`, {
+        method: 'POST',
+        body: { workerId: picked.id },
+      })
+      setDispatchRow(null)
+      setPicked(null)
+      setToast(r.dispatchOk)
+      setTimeout(() => setToast(''), 3000)
+      load()
+    } catch (e) {
+      setDispatchError(e instanceof Error ? e.message : r.dispatchFail)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const slice = pageSlice(rows, page, pageSize)
   const priorityLabel = (v: string) => r.priorities[PRIORITIES.indexOf(v as typeof PRIORITIES[number])] ?? v
   const assetOk = /^\d+$/.test(assetId) && Number(assetId) > 0
@@ -62,6 +89,7 @@ export default function ReplacePage() {
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
+      {toast && <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-success)]">{toast}</div>}
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
@@ -80,9 +108,16 @@ export default function ReplacePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.reason || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{priorityLabel(x.priority)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      {x.status === 'PENDING' && (
+                        <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-xs text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
+                          onClick={() => { setDispatchRow(x); setPicked(null); setDispatchError('') }}>{r.dispatch}</button>
+                      )}
+                      {x.status !== 'PENDING' && <span>—</span>}
+                    </td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={5} loading={busy} text={r.empty} />}
+                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={r.empty} />}
               </tbody>
             </table>
           </div>
@@ -130,6 +165,22 @@ export default function ReplacePage() {
               />
             </div>
             {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
+          </div>
+        </Drawer>
+      )}
+      {dispatchRow && (
+        <Drawer title={r.dispatchTitle.replace('{no}', dispatchRow.replacementNo || `#${dispatchRow.id}`)} onClose={() => setDispatchRow(null)}
+          footer={
+            <>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setDispatchRow(null)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50" disabled={busy || !picked} onClick={submitDispatch}>
+                {busy ? t.pages.account.submitting : r.dispatchConfirm}
+              </button>
+            </>
+          }>
+          <div className="flex flex-col gap-3.5">
+            <WorkerPicker selectedId={picked ? String(picked.id) : ''} onSelect={setPicked} />
+            {dispatchError && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{dispatchError}</div>}
           </div>
         </Drawer>
       )}

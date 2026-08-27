@@ -828,6 +828,11 @@ export interface Translations {
       pReason: string
       fPriority: string
       priorities: string[]
+      dispatch: string
+      dispatchTitle: string
+      dispatchConfirm: string
+      dispatchOk: string
+      dispatchFail: string
       total: string
       empty: string
       loadFail: string
