@@ -1401,8 +1401,6 @@ const msMY: Translations = {
       editTitle: 'Sunting Kandungan',
       back: 'Kembali ke senarai',
       manageCats: 'Kategori',
-      uploadImg: 'Muat naik imej',
-      uploadFail: 'Muat naik imej gagal',
       mdBold: 'Tebal',
       mdItalic: 'Condong',
       mdH2: 'Tajuk 2',

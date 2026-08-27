@@ -1226,8 +1226,6 @@ export interface Translations {
       editTitle: string
       back: string
       manageCats: string
-      uploadImg: string
-      uploadFail: string
       /** MarkdownEditor 工具栏/占位文案(2026-08-27 i18n 化,去硬编码)。 */
       mdBold: string
       mdItalic: string

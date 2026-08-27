@@ -1,9 +1,10 @@
 // 官网内容列表页:cms_posts 列表 + 删除;新增/编辑跳独立编辑页 /boss/site(/new|/:postId)。
-// 菜单 key=site,权限 menu:site。分类列展示字典名(懒加载 /site-categories)。
+// 菜单 key=site,权限 menu:site。分类列展示字典本地化名(懒加载 /site-categories);
+// 语言列(000155):同 slug 多语言变体各一行,可按语言筛选。
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
-import { useT } from '../../../i18n'
+import { useT, useLocale, localeOptions } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
@@ -11,23 +12,25 @@ import { useConfirm } from '../../../components/ConfirmDialog'
 import { Dropdown } from '../../../components/Dropdown'
 
 type Post = {
-  id: number; slug: string; title: string; category: string; summary: string
+  id: number; slug: string; lang: string; title: string; category: string; summary: string
   coverAttachmentId: number; content: string; status: string; publishedAt: string
   version: number; authorName: string; updatedAt: string
 }
-type Cat = { code: string; name: string }
+type Cat = { code: string; name: string; names?: Record<string, string> }
 
 export default function SitePostsPage() {
   const t = useT(); const s = t.pages.sitePage; const confirm = useConfirm()
+  const locale = useLocale()
   const nav = useNavigate()
   const [rows, setRows] = useState<Post[]>([])
-  const [cats, setCats] = useState<Record<string, string>>({})
+  const [cats, setCats] = useState<Record<string, Cat>>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [fCat, setFCat] = useState('')
   const [fSt, setFSt] = useState('')
+  const [fLang, setFLang] = useState('')
 
   const load = () => {
     setBusy(true); setError('')
@@ -40,8 +43,8 @@ export default function SitePostsPage() {
   useEffect(() => {
     apiFetch<{ items: Cat[] }>('/site-categories')
       .then((d) => {
-        const m: Record<string, string> = {}
-        for (const c of d?.items ?? []) m[c.code] = c.name
+        const m: Record<string, Cat> = {}
+        for (const c of d?.items ?? []) m[c.code] = c
         setCats(m)
       })
       .catch(() => setCats({}))
@@ -55,7 +58,12 @@ export default function SitePostsPage() {
   }
 
   const stLabel = (v: string) => (v === 'PUBLISHED' ? s.stPublished : v === 'OFFLINE' ? s.stOffline : s.stDraft)
-  const filtered = rows.filter((p) => (!fCat || p.category === fCat) && (!fSt || p.status === fSt))
+  const catLabel = (code: string) => {
+    const c = cats[code]
+    return c ? c.names?.[locale] || c.name : code
+  }
+  const langLabel = (v: string) => localeOptions().find((o) => o.value === v)?.label ?? v
+  const filtered = rows.filter((p) => (!fCat || p.category === fCat) && (!fSt || p.status === fSt) && (!fLang || p.lang === fLang))
   const slice = filtered.slice((page - 1) * pageSize, page * pageSize)
   const td = 'border-b border-[var(--shell-side-border)] px-3 py-2'
 
@@ -68,12 +76,15 @@ export default function SitePostsPage() {
     <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
       {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
       <div className="mb-3 flex items-center gap-3">
-        <Dropdown ariaLabel={s.fCategory} value={fCat ? cats[fCat] ?? fCat : s.filterAll}
+        <Dropdown ariaLabel={s.fCategory} value={fCat ? catLabel(fCat) : s.filterAll}
           onChange={(v) => { setFCat(v); setPage(1) }}
-          options={[{ value: '', label: s.filterAll }, ...Object.entries(cats).map(([code, name]) => ({ value: code, label: name }))]} />
+          options={[{ value: '', label: s.filterAll }, ...Object.entries(cats).map(([code, c]) => ({ value: code, label: c.names?.[locale] || c.name }))]} />
         <Dropdown ariaLabel={s.fStatus} value={fSt ? stLabel(fSt) : s.filterAll}
           onChange={(v) => { setFSt(v); setPage(1) }}
           options={[{ value: '', label: s.filterAll }, { value: 'DRAFT', label: s.stDraft }, { value: 'PUBLISHED', label: s.stPublished }, { value: 'OFFLINE', label: s.stOffline }]} />
+        <Dropdown ariaLabel={s.fLang} value={fLang ? langLabel(fLang) : s.filterAll}
+          onChange={(v) => { setFLang(v); setPage(1) }}
+          options={[{ value: '', label: s.filterAll }, ...localeOptions()]} />
       </div>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
@@ -82,7 +93,8 @@ export default function SitePostsPage() {
             {slice.map((p) => <tr key={p.id}>
               <td className={td}>{p.title}</td>
               <td className={td}>{p.slug}</td>
-              <td className={td}>{cats[p.category] ?? p.category}</td>
+              <td className={td}>{langLabel(p.lang)}</td>
+              <td className={td}>{catLabel(p.category)}</td>
               <td className={td}>{stLabel(p.status)}</td>
               <td className={td}>{p.publishedAt || '—'}</td>
               <td className={td}>v{p.version}</td>
@@ -91,7 +103,7 @@ export default function SitePostsPage() {
                 <button className="ml-3 cursor-pointer border-none bg-none text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline" onClick={() => remove(p)}>{s.delete}</button>
               </td>
             </tr>)}
-            {!slice.length && <TableStateRow colSpan={7} loading={busy} text={s.empty} />}
+            {!slice.length && <TableStateRow colSpan={8} loading={busy} text={s.empty} />}
           </tbody>
         </table>
       </div>

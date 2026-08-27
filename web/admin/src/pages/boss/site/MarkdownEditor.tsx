@@ -1,10 +1,12 @@
 // Markdown 富编辑器:工具栏(加粗/斜体/标题/链接/代码/图片上传) + 左右双栏实时预览。
 // 预览基于 react-markdown;正文内附件引用 ](att/N) 由 AttImg 走登录态附件端点转 blob 渲染,
-// 公开侧由后端详情端点重写为 /site/posts/:slug/img/:id(见 site_img.go)。
+// 公开侧由后端详情端点重写为 /site/posts/:slug/img/:id?lang=(见 site_img.go)。
+// 文案走 i18n(sitePage.md*),颜色走 shell 令牌随主题。
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { fetchAttachmentFile } from '../../../api/attachments'
 import { AttachmentPickerDialog } from '../../../components/AttachmentManager/PickerDialog'
+import { useT } from '../../../i18n'
 
 // att/N 引用 → 附件 id;非该形态返回 null。
 const attId = (src: string): number | null => {
@@ -16,6 +18,7 @@ const attId = (src: string): number | null => {
 const blobCache = new Map<number, string>()
 
 function AttImg({ src, alt }: { src?: string; alt?: string }) {
+  const t = useT()
   const id = src ? attId(src) : null
   const [url, setUrl] = useState<string | null>(id ? blobCache.get(id) ?? null : null)
   useEffect(() => {
@@ -31,19 +34,19 @@ function AttImg({ src, alt }: { src?: string; alt?: string }) {
     return () => { alive = false }
   }, [id, url])
   if (!id) return <img src={src} alt={alt} />
-  if (url === null) return <span className="text-xs text-[var(--shell-group-title)]">[{alt || `att/${id}`} 加载中…]</span>
+  if (url === null) return <span className="text-xs text-[var(--shell-group-title)]">[{alt || `att/${id}`} {t.pages.sitePage.mdLoading}]</span>
   return <img src={url} alt={alt} />
 }
 
 const tbBtn = 'h-7 min-w-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-xs text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]'
 
 export function MarkdownEditor({
-  value, onChange, texts,
+  value, onChange,
 }: {
   value: string
   onChange: (v: string) => void
-  texts: { uploadImg: string; uploadFail: string }
 }) {
+  const t = useT(); const s = t.pages.sitePage
   const ref = useRef<HTMLTextAreaElement>(null)
 
   // 用选区包裹/行前缀插入;无选区时插入占位符并选中,便于直接键入。
@@ -77,14 +80,14 @@ export function MarkdownEditor({
 
   return <div>
     <div className="mb-1 flex flex-wrap items-center gap-1.5">
-      <button type="button" className={tbBtn} title="Bold" onClick={() => apply(['**', '**'], '', '粗体')}><b>B</b></button>
-      <button type="button" className={tbBtn} title="Italic" onClick={() => apply(['*', '*'], '', '斜体')}><i>I</i></button>
-      <button type="button" className={tbBtn} title="H2" onClick={() => apply(null, '## ', '标题')}>H2</button>
-      <button type="button" className={tbBtn} title="H3" onClick={() => apply(null, '### ', '标题')}>H3</button>
-      <button type="button" className={tbBtn} title="Code" onClick={() => apply(['`', '`'], '', 'code')}>{'<>'}</button>
-      <button type="button" className={tbBtn} title="Link" onClick={() => apply(['[', '](https://)'], '', '链接文字')}>Link</button>
-      <button type="button" className={tbBtn} title="List" onClick={() => apply(null, '- ', '列表项')}>List</button>
-      <button type="button" className={tbBtn} title={texts.uploadImg} onClick={() => setPickImg(true)}>Image</button>
+      <button type="button" className={tbBtn} title={s.mdBold} onClick={() => apply(['**', '**'], '', s.mdBold)}><b>B</b></button>
+      <button type="button" className={tbBtn} title={s.mdItalic} onClick={() => apply(['*', '*'], '', s.mdItalic)}><i>I</i></button>
+      <button type="button" className={tbBtn} title={s.mdH2} onClick={() => apply(null, '## ', s.mdH2)}>H2</button>
+      <button type="button" className={tbBtn} title={s.mdH3} onClick={() => apply(null, '### ', s.mdH3)}>H3</button>
+      <button type="button" className={tbBtn} title={s.mdCode} onClick={() => apply(['`', '`'], '', s.mdCode)}>{'<>'}</button>
+      <button type="button" className={tbBtn} title={s.mdLink} onClick={() => apply(['[', '](https://)'], '', s.mdLink)}>Link</button>
+      <button type="button" className={tbBtn} title={s.mdList} onClick={() => apply(null, '- ', s.mdList)}>List</button>
+      <button type="button" className={tbBtn} title={s.mdImage} onClick={() => setPickImg(true)}>Image</button>
       </div>
     <div className="grid gap-3 md:grid-cols-2">
       <textarea
@@ -92,7 +95,7 @@ export function MarkdownEditor({
         className="min-h-96 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] p-3 font-mono text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Markdown 正文,图片经 Image 按钮上传后以 ](att/N) 引用"
+        placeholder={s.mdPlaceholder}
       />
       <div className="min-h-96 overflow-auto rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-card-bg)] p-3 text-[13px] text-[var(--shell-content-text)] [&_h2]:mt-3 [&_h2]:text-base [&_h3]:mt-2 [&_h3]:text-sm [&_img]:max-w-full [&_p]:my-2 [&_pre]:my-2 [&_pre]:rounded-sm [&_pre]:bg-[var(--shell-input-bg)] [&_pre]:p-2">
         <ReactMarkdown components={{ img: ({ src, alt }) => <AttImg src={src} alt={alt} /> }}>

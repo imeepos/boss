@@ -1,24 +1,29 @@
 // 官网分类管理页:cms_categories 字典 CRUD,菜单 key=site-cats,权限 menu:site-cats。
 // code 被文章引用时后端拒删/拒改 code(40900),前端转成可读提示。
+// 名称多语言(000155):name 为默认/回退,zh/en/ms 覆盖名可留空(官网按语言展示)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
-import { useT } from '../../../i18n'
+import { useT, useLocale } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { TableStateRow } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Dropdown } from '../../../components/Dropdown'
 
-type Cat = { id: number; code: string; name: string; sortNo: number; enabled: boolean; updatedAt: string }
+type Cat = {
+  id: number; code: string; name: string; names?: Record<string, string>
+  sortNo: number; enabled: boolean; updatedAt: string
+}
 
-type Form = Pick<Cat, 'code' | 'name' | 'sortNo' | 'enabled'>
+type Form = Pick<Cat, 'code' | 'name' | 'sortNo' | 'enabled'> & { names: Record<string, string> }
 
-const emptyForm: Form = { code: '', name: '', sortNo: 0, enabled: true }
+const emptyForm: Form = { code: '', name: '', names: {}, sortNo: 0, enabled: true }
 const inputCls = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 
 const isConflict = (e: unknown) => e instanceof Error && e.message.includes('40900')
 
 export default function SiteCategoriesPage() {
   const t = useT(); const s = t.pages.siteCatsPage; const confirm = useConfirm()
+  const locale = useLocale()
   const [rows, setRows] = useState<Cat[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -36,12 +41,18 @@ export default function SiteCategoriesPage() {
 
   const open = (c?: Cat) => {
     setEditing(c ?? null)
-    setForm(c ? { code: c.code, name: c.name, sortNo: c.sortNo, enabled: c.enabled } : emptyForm)
+    setForm(c ? { code: c.code, name: c.name, names: c.names ?? {}, sortNo: c.sortNo, enabled: c.enabled } : emptyForm)
+  }
+  // 空串覆盖名视为未填,不入 names(后端 NameFor 空值同样回退默认名)。
+  const namesBody = () => {
+    const out: Record<string, string> = {}
+    for (const [k, v] of Object.entries(form.names)) if (v.trim()) out[k] = v.trim()
+    return out
   }
   const save = async () => {
     setBusy(true)
     try {
-      await apiFetch(editing ? `/site-categories/${editing.id}` : '/site-categories', { method: editing ? 'PUT' : 'POST', body: form })
+      await apiFetch(editing ? `/site-categories/${editing.id}` : '/site-categories', { method: editing ? 'PUT' : 'POST', body: { ...form, names: namesBody() } })
       setEditing(undefined); load()
     } catch (e) {
       setError(isConflict(e) ? s.inUse : e instanceof Error ? e.message : s.saveFail)
@@ -59,6 +70,8 @@ export default function SiteCategoriesPage() {
   }
 
   const td = 'border-b border-[var(--shell-side-border)] px-3 py-2'
+  // 名称列按界面语言展示本地化名(缺覆盖回退默认名)。
+  const localName = (c: Cat) => c.names?.[locale] || c.name
   return <div>
     <PageHead title={s.title} desc={s.desc} />
     <div className="mb-4 flex justify-end">
@@ -72,7 +85,7 @@ export default function SiteCategoriesPage() {
           <tbody>
             {rows.map((c) => <tr key={c.id}>
               <td className={td}>{c.code}</td>
-              <td className={td}>{c.name}</td>
+              <td className={td}>{localName(c)}</td>
               <td className={td}>{c.sortNo}</td>
               <td className={td}>{c.enabled ? s.enabledOn : s.enabledOff}</td>
               <td className={td}>
@@ -90,6 +103,9 @@ export default function SiteCategoriesPage() {
       <div className="grid max-w-2xl gap-3 md:grid-cols-2">
         <label className="text-xs">{s.fCode}<input className={inputCls + ' mt-1'} value={form.code} placeholder={s.fCodePh} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></label>
         <label className="text-xs">{s.fName}<input className={inputCls + ' mt-1'} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+        <label className="text-xs">{s.fNameZh}<input className={inputCls + ' mt-1'} value={form.names['zh-CN'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'zh-CN': e.target.value } })} /></label>
+        <label className="text-xs">{s.fNameEn}<input className={inputCls + ' mt-1'} value={form.names['en-US'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'en-US': e.target.value } })} /></label>
+        <label className="text-xs">{s.fNameMy}<input className={inputCls + ' mt-1'} value={form.names['ms-MY'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'ms-MY': e.target.value } })} /></label>
         <label className="text-xs">{s.fSort}<input className={inputCls + ' mt-1'} type="number" value={form.sortNo} onChange={(e) => setForm({ ...form, sortNo: Number(e.target.value) })} /></label>
         <label className="text-xs">{s.fEnabled}
           <div className="mt-1"><Dropdown options={[{ value: 'on', label: s.enabledOn }, { value: 'off', label: s.enabledOff }]} value={form.enabled ? s.enabledOn : s.enabledOff} onChange={(v) => setForm({ ...form, enabled: v === 'on' })} ariaLabel={s.fEnabled} /></div>

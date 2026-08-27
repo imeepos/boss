@@ -1,5 +1,6 @@
-// 官网新闻/文章详情页(公开路由 /news/:slug):匿名读已发布内容,Markdown 安全渲染
-// (react-markdown,无 dangerouslySetInnerHTML);非已发布 404 → 友好空态。
+// 官网新闻/文章详情页(公开路由 /news/:slug):匿名读已发布内容(按界面语言,
+// 后端缺变体回退默认语言),Markdown 安全渲染(react-markdown,无 dangerouslySetInnerHTML);
+// 非已发布 404 → 友好空态。
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
@@ -11,7 +12,10 @@ import { TopNav } from '../home/TopNav'
 import { Footer } from '../home/Footer'
 import '../home/home.css'
 
-interface PostDTO { slug: string; title: string; category: string; summary: string; coverAttachmentId: number; content: string; publishedAt: string }
+interface PostDTO {
+  slug: string; title: string; category: string; categoryName?: string
+  summary: string; coverAttachmentId: number; content: string; publishedAt: string
+}
 
 export default function NewsDetailPage() {
   const t = useT(); const h = t.pages.home
@@ -24,18 +28,18 @@ export default function NewsDetailPage() {
 
   useEffect(() => {
     let alive = true
-    apiFetch<PostDTO>(`/site/posts/${slug}`)
+    apiFetch<PostDTO>(`/site/posts/${slug}`, { query: { lang: locale } })
       .then((d) => { if (alive) setPost(d) })
       .catch(() => { if (alive) setMiss(true) })
     window.scrollTo(0, 0)
     return () => { alive = false }
-  }, [slug])
+  }, [slug, locale])
 
-  // SEO 元数据:title/description/og 分享卡;封面走公开流绝对地址。
+  // SEO 元数据:title/description/og 分享卡;封面走公开流绝对地址(带 lang 取同变体封面)。
   useEffect(() => {
     if (!post) return
     const base = apiBaseUrl().replace(/\/api\/admin\/v1$/, '')
-    const img = post.coverAttachmentId > 0 ? `${base}/api/admin/v1/site/posts/${post.slug}/cover` : undefined
+    const img = post.coverAttachmentId > 0 ? `${base}/api/admin/v1/site/posts/${post.slug}/cover?lang=${locale}` : undefined
     return setDocMeta(post.title, {
       description: post.summary || post.title,
       'og:title': post.title,
@@ -43,7 +47,7 @@ export default function NewsDetailPage() {
       'og:type': 'article',
       ...(img ? { 'og:image': img } : {}),
     })
-  }, [post])
+  }, [post, locale])
 
   const MD_H = 'font-brand font-semibold tracking-tight text-[var(--shell-heading)] mt-8 mb-3'
   const md = {
@@ -72,13 +76,13 @@ export default function NewsDetailPage() {
           <article>
             <div className="mb-3 flex items-center gap-3">
               <span className="flex h-6 items-center rounded-full border border-[var(--home-hero-badge-border)] bg-[var(--home-hero-badge-bg)] px-3 text-xs font-medium text-[var(--home-gold-fg)]">
-                {post.category === 'ARTICLE' ? h.newsCatArticle : h.newsCatNews}
+                {post.categoryName || (post.category === 'ARTICLE' ? h.newsCatArticle : h.newsCatNews)}
               </span>
               <time className="text-xs text-[var(--shell-group-title)]">{post.publishedAt}</time>
             </div>
             <h1 className="font-brand text-3xl font-bold tracking-tight text-[var(--shell-heading)]">{post.title}</h1>
             {post.coverAttachmentId > 0 && (
-              <img className="mt-6 w-full rounded-xl border border-[var(--shell-card-border)] object-cover" src={`${apiBaseUrl()}/site/posts/${post.slug}/cover`} alt={post.title} />
+              <img className="mt-6 w-full rounded-xl border border-[var(--shell-card-border)] object-cover" src={`${apiBaseUrl()}/site/posts/${post.slug}/cover?lang=${locale}`} alt={post.title} />
             )}
             <div className="mt-6">
               <ReactMarkdown components={md}>{post.content}</ReactMarkdown>

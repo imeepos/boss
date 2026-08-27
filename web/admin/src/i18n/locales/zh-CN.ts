@@ -1401,8 +1401,6 @@ const zhCN: Translations = {
       editTitle: '编辑内容',
       back: '返回列表',
       manageCats: '分类管理',
-      uploadImg: '上传图片',
-      uploadFail: '图片上传失败',
       mdBold: '加粗',
       mdItalic: '斜体',
       mdH2: '二级标题',

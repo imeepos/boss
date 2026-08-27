@@ -1401,8 +1401,6 @@ const enUS: Translations = {
       editTitle: 'Edit Post',
       back: 'Back to list',
       manageCats: 'Categories',
-      uploadImg: 'Upload image',
-      uploadFail: 'Image upload failed',
       mdBold: 'Bold',
       mdItalic: 'Italic',
       mdH2: 'Heading 2',
