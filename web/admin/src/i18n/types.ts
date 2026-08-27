@@ -1331,7 +1331,9 @@ export interface Translations {
       fTitle: string
       fContent: string
       fStatus: string
-      statusOptions: string[]
+      stDraft: string
+      stPublished: string
+      stOffline: string
       saveFail: string
       actionFail: string
       total: string
