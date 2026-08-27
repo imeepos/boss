@@ -108,7 +108,7 @@ export default function OpenPlatPage() {
             {rows.map((r) => (
               <tr key={r.id} className={r.id === selected ? 'bg-[var(--shell-menu-hover-bg)]' : ''}>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
-                  <button className="cursor-pointer text-[var(--color-primary,var(--shell-fab-bg))] underline-offset-2 hover:underline" onClick={() => setSelected(r.id === selected ? 0 : r.id)}>{r.name}</button>
+                  <button className="cursor-pointer text-[var(--shell-fab-bg)] underline-offset-2 hover:underline" onClick={() => setSelected(r.id === selected ? 0 : r.id)}>{r.name}</button>
                 </td>
                 <td className="break-all px-3 py-2 border-b border-[var(--shell-side-border)] font-mono text-xs">{r.appId}</td>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{r.status === 1 ? t.pages.openplat.active : t.pages.openplat.disabled}</td>

@@ -39,6 +39,11 @@
   /* Status */
   --color-success: #2F8F63;
   --color-danger: #D94B4B;
+  /* 待审/警示与信息色:对齐 StatusTag 色板(ORANGE/BLUE),静态色双主题可读 */
+  --color-warning: #fa8c16;
+  --color-info: #1677FF;
+  /* 品牌实底按钮底色:白字场景恒用藏青,不随主题翻转(暗色下金底需配深字,页面未引 fab-icon) */
+  --color-brand-bg: #273F70;
   /* Radius */
   --radius-sm: 5px;
   --radius-md: 8px;
