@@ -549,3 +549,4 @@ SQL
 - 解读:1=2=3 时双向一致;4>0 是 A 端写入脏数据(基本不可能,FK 约束挡);5>0 是 B 端写入脏数据(同 FK);6>0 是写入路径缺回填——本次资产↔标签 124 条 B 单向孤儿即此因(CreateTag 完全无反向回填)。
 - 教训:看代码前先量化"哪一侧有数据、哪一侧没数据",再针对性补写入路径;不要上来就写清理脚本(可能误删真数据)。
 - 工具路径:102 真库 = `ssh imeepos@192.168.0.102 'docker exec -i boss-infra-postgres-1 psql -U boss -d boss' <<'SQL' ... SQL`,SQL 字符串字面量用单引号避免叠引号(红线 #9a)。
+- cdp 断言「点击后才异步加载的抽屉/弹层」:cdp-admin-capture 的 --eval 不 await Promise,返回 {} / undefined;用同步 busy-wait(`(()=>{const end=Date.now()+3000;while(Date.now()<end){if(ready())break}})()`)在单个 eval 内等 DOM 就绪再返回断言文本。

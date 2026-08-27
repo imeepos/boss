@@ -391,3 +391,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - Docker 容器内替换镜像层文件必须用 bind mount 注入或 docker commit 保留可写层,docker cp 改的二进制/文件**容器重启即丢失**(因为镜像层只读、cp 只写可写层、commit 不显式保留就没了)。
 - 真实验证脚本应走业务接口(免 license gate/admin token),不走 license status(被 license gate 拦截)。102 dev 环境镜像里 LicensePublicKeyHex 已注入,门禁启用;本地 build 没注入公钥,二进制行为不同。skill 没沉淀"license-gated vs dev build"的环境差异。
 - 迁移让号:同时改 schema_migrations.version + 改 up.sql 用 `CREATE INDEX IF NOT EXISTS`(兼容已落库索引);否则 server 启动时撞 42P07 触发重启循环。skill 没沉淀"迁移让号 + 已落库兼容"完整三步。
+- macOS bash 3.2 会把全角标点(如「」)字节并入 `$VAR` 变量名——`"$SCOPE」"` 报 unbound variable;中文旁引用变量一律写 `${VAR}`。
+- BSD/macOS `head` 不支持负行数(`head -n -1` 直接报错);「取除末行外全部」用 `sed -e '$d'`。后端 envelope HTTP 恒 200、业务码在 body 的 `.code`,E2E/脚本断言必须看业务码,断言 HTTP 状态码会静默漏判。
+- push 后 CD 部署竞态:上一 run 的镜像可能盖住你的 push(并发取消只对未开始的 run 生效)。部署验证第一步先 `docker images --format '{{.Tag}}'` 对齐镜像 tag 与预期 commit sha,再开测;没触发就推空提交重触发(classify 按「已部署 sha」比对,runtime diff 会补部署)。
+- pgxmock v4 的 `NewPool()` 返回 `PgxPoolIface` 接口而不是 `*Pool`,helper 函数签名要写接口类型。

@@ -1159,3 +1159,11 @@
   - /api/admin/v1/db-patrol/orphans 14 项全 0,含新增 assets.tag_id → tags + tags.bound_asset_id → assets
   - 102 cron /home/imeepos/boss/scripts/ops/db-patrol-gate.sh `ORPHAN-GATE OK: 14 checks, all <= 0`
   - 三 commits 合并入 main:6793bdca / 57375a30 / ab5f1c8b
+
+## 2026-08-27 盘点管理半成品补全(S10 全流程闭环)
+
+- 哪个坑浪费了最多时间? ①E2E 脚本三连坑(BSD head 不支持 head -n -1;api() 帮手函数标志位与 body 参数错位发出字面量 1;场景4 循环把明细 id 当资产 id 用)——都是跑真实环境才暴露,`bash -n` 语法检查抓不住语义错。②CD 部署竞态:push 后旧 run 的镜像盖住新 push,以为代码已上线实际没有(端点 404 vs 200 envelope 的误判浪费一轮排查)。
+- skill 有没有提前预警? 高频红线 5(完成必须 commit)、9a(ssh heredoc 引号)都躲过了;但「HTTP 恒 200、业务码在 body」这条 envelope 惯例没有预警,断言 HTTP 状态码静默漏判。
+- 重来一次? 先在 worktree 里用 `bash -x` 干跑一遍脚本逻辑(mock 一个假 BASE)再打真环境;部署后第一步先 `docker images` 对齐镜像 tag 与预期 sha 再开测。
+
+喂回:lessons.md +4 条(全角字符进变量名/BSD head/业务码断言/CD 镜像 tag 对齐);techniques.md +1(cdp busy-wait 断言异步抽屉)。
