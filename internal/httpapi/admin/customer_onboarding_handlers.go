@@ -91,6 +91,9 @@ func customerSubmitRealNameHandler(a *app.Application) gin.HandlerFunc {
 		}
 		// 阿里云二要素自动核验;通道未配置时保持 PENDING 走下方人工核验端点。
 		result := a.AutoVerifyRealName(c.Request.Context(), customerID, req.RealName, req.IDCardNo)
+		if result == customer.RealNamePending {
+			emitRealnamePendingTodo(a, c, "customer", customerID, req.RealName)
+		}
 		respond(c, apitypes.CodeOK, gin.H{"id": id, "result": result})
 	}
 }
@@ -134,6 +137,8 @@ func customerVerifyRealNameHandler(a *app.Application) gin.HandlerFunc {
 		}
 		httpx.RecordAudit(a, c, "customer_realname.verify", "customer_realname", c.Param("id"),
 			gin.H{"result": req.Result, "reason": req.Reason})
+		resolveRealnameTodo(a, c, "customer", customerID)
+		notifyCustomerRealnameResult(a, c, customerID, req.Result, req.Reason)
 		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
 	}
 }

@@ -103,6 +103,7 @@ func workerSubmitRealNameHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		emitRealnamePendingTodo(a, c, "worker", workerID, req.RealName)
 		respond(c, apitypes.CodeOK, gin.H{"id": id, "result": worker.RealNamePending})
 	}
 }
@@ -146,6 +147,7 @@ func workerVerifyRealNameHandler(a *app.Application) gin.HandlerFunc {
 		}
 		httpx.RecordAudit(a, c, "worker_realname.verify", "worker_realname", c.Param("workerId"),
 			gin.H{"result": req.Result})
+		resolveRealnameTodo(a, c, "worker", workerID)
 		respond(c, apitypes.CodeOK, gin.H{"result": req.Result})
 	}
 }

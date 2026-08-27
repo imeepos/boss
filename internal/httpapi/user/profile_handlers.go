@@ -112,6 +112,9 @@ func portalVerifySubmit(a *app.Application) gin.HandlerFunc {
 		}
 		// 阿里云二要素自动核验(通道未配置时保持 PENDING 人工核验,见 app.AutoVerifyRealName)。
 		result := a.AutoVerifyRealName(c.Request.Context(), cid, req.Name, req.IdNo)
+		if result == customer.RealNamePending {
+			emitPortalRealnameTodo(a, c, cid, req.Name)
+		}
 		respond(c, apitypes.CodeOK, gin.H{"ok": true, "result": result})
 	}
 }
