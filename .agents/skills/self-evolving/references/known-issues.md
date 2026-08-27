@@ -338,3 +338,7 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 **原因**:注释与 SQL 语义相反。handler 走通用 `Emit` → `InsertDeliveries` 的 `WHERE sub.event_type = $2` 按**事件类型精确匹配**;而 `openplat.test` 是目录外测试事件(登记制目录 UI 选不到、建不出该类型订阅,且订阅创建不校验目录成员)——「发全部订阅」的意图撞上「按类型精确匹配」的实现,双重锁死恒命中 0 行。
 
 **修法**:新增按应用匹配通道 `EmitToApp`/`InsertAppDeliveries`(`WHERE sub.app_id=$3 AND sub.status=1 AND app.status=1`;投递行 event_type 记 `openplat.test`,使投递时 `X-BOSS-Event` 头与负载 type 一致,不冒充业务事件);业务事件 `Emit` 路径不动。回归:fake 桩断言 appID 透传 + 真实 PG 集成(启用/停用订阅各一、均不订 openplat.test → n=1 + 幂等重放 n=0)。**教训:新 emitter 消费方接线时必须核对匹配维度(按事件类型还是按应用),注释声称的集合语义要与 SQL WHERE 逐词对表。**
+
+- pnpm 装依赖报 "EACCES: mkdir '/Volumes/sker'":store-dir 全局配置指向未挂载卷(pnpm v10 store path 与 config list 不一致,以 `pnpm store path` 为准);修法 `pnpm install --store-dir /Users/imeepos/ext512/dev-cache/pnpm-store`,别改全局配置。
+- pgxmock JSONB 列 AddRow 喂裸 JSON 字符串(如 `{}` 或 `{"en":"x"}`),不要带 SQL 单引号(`'{}'` 会进 json.Unmarshal 报 invalid character '\'')。
+- contract-sync 门禁在主树有 24 项存量失败(license 域 snake_case json tag + /license 路由未登记 + menu.def license key),与业务改动无关;对比基线须先跑一次 main 再 diff,别被数量差误导。

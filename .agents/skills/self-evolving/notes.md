@@ -1072,3 +1072,9 @@
 - skill 有没有提前预警? 有:红线 #44"技能喂食同样走 worktree → merge → 清理"——上一会话(官网分类)把 docs(skill) 反思直接提交 main(0ba72a0d),本次已纠正,回喂走 worktree 全流程;recidivism 对应登记 +1。
 - 重来一次会怎么做? 沉淀前先 `grep -n "^## " techniques.md / lessons.md 尾条` 盘点去重;一次会话只投喂"确有新知识"的条目,不凑数。
 - 收获:本次回喂三块——① 导航激活:react-router 6.30.4 移除 NavLink isActive prop + 前缀匹配致兄弟菜单双击亮,沉淀 isNavActive 精确判定模式(lessons/前端索引/templates 模板 M);② 列头 i18n:siteCatsPage.columns 存字段标识符导致三语下表头裸英文,沉淀"列头数组直接放译文"教训,并登记同源遗留缺口(knowledgePage 随后被并行会话 feat/knowledge-i18n-theme 修复,现仅剩 sitePage);③ 部署验证:沉淀"远端 bundle grep 标记 + 与本地 build hash 对照"的前端上线确认技术(techniques),并修正上一会话直接提交 main 的 recidivism。回喂与并行会话(boss-skill-deposits)撞模板编号 L,让号改名 M;rebase 两次撞并行会话同文件冲突,均按"只增不改"双留解决。
+
+## 2026-08-27 官网内容多语言适配(feat/cms-multilang)
+
+- **哪个坑浪费了最多时间？** pnpm store-dir 指向未挂载的 /Volumes/sker,worktree 无 node_modules 装不上(pnpm store path 与 config list 显示不一致,实际以 store path 为准)。修法:install 显式 `--store-dir /Users/imeepos/ext512/dev-cache/pnpm-store`。另一次:并行会话两次推进 main,ff-merge 失败→rebase→三次重解同一批 locale 冲突(机械重复,可用脚本化 resolution)。
+- **skill 有没有提前警告？** 有:worktree ff 失败严禁删 worktree/rd 红线、并行会话推 commit 常态、edit 前必须 read、模型不支持图像(用 DOM 断言替代)。
+- **重来一次我会怎么做？** ① 先查 pnpm store path 而不是 config list(pnpm v10 两级配置不一致);② locale 冲突解析先写成 sed 脚本一把梭(每文件的冲突块结构完全一致);③ contract-sync 有 24 项存量失败(license 域),改进前先跑一次 main 基线 diff,避免被"多了 1 项"误导(实际是并行会话新增 openplat 契约登记的时差)。
