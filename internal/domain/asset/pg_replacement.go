@@ -66,10 +66,11 @@ func (s *PGStore) GetReplacement(ctx context.Context, id int64) (*Replacement, e
 	return r, nil
 }
 
-// ListReplacementsByWorker 列出师傅名下的换新单(师傅端任务列表)。
+// ListReplacementsByWorker 列出师傅名下执行中的换新单(师傅端任务列表,仅 DOING;
+// 终态单完成任务即消失,102 真实环境回归发现的实现漏过滤,对齐 worker/asset.yaml 契约)。
 func (s *PGStore) ListReplacementsByWorker(ctx context.Context, workerID int64) ([]Replacement, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT `+replacementCols+` FROM replacements WHERE worker_id = $1 ORDER BY id`, workerID)
+		`SELECT `+replacementCols+` FROM replacements WHERE worker_id = $1 AND status = 'DOING' ORDER BY id`, workerID)
 	if err != nil {
 		return nil, fmt.Errorf("asset: list replacements by worker: %w", err)
 	}

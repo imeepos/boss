@@ -178,3 +178,27 @@ func TestPGStore_CompleteReplacement_BadResult(t *testing.T) {
 		t.Fatalf("err=%v, want ErrIllegalTransition", err)
 	}
 }
+
+func TestPGStore_ListReplacementsByWorker_OnlyDoing(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`FROM replacements WHERE worker_id = \$1 AND status = 'DOING' ORDER BY id`).
+		WithArgs(int64(7)).
+		WillReturnRows(mock.NewRows(replCols).AddRow(replRow(1, "RPL-1", "DOING", 7)...))
+
+	s := NewPGStore(mock)
+	got, err := s.ListReplacementsByWorker(context.Background(), 7)
+	if err != nil {
+		t.Fatalf("ListReplacementsByWorker: %v", err)
+	}
+	if len(got) != 1 || got[0].Status != "DOING" {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
