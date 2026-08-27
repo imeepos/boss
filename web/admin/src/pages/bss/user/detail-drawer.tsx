@@ -9,7 +9,7 @@ import { TabBar } from '../../../components/business/tab-bar'
 import { EmptyState } from '../../../components/business/page-head'
 import { fmtFee, fmtTime } from '../../../lib/format'
 import type { UserRow } from './filter'
-import { DETAIL_TABS, NOTIFY_CARD_KEY, PROFILE_FIELDS, SECTION_LIMIT, latestPlanName,
+import { DETAIL_TABS, NOTIFY_CARD_KEY, PROFILE_FIELDS, SECTION_LIMIT, currentPlanName,
   type ColSpec, type DetailCol, type DetailSection } from './detail-view'
 
 type Detail = Record<string, unknown>
@@ -138,7 +138,7 @@ export function UserDetailDrawer({ id, summary, onClose }: {
   const name = typeof detail?.name === 'string' && detail.name ? detail.name : summary?.name ?? ''
   const balances = Array.isArray(detail?.balances) ? (detail.balances as Record<string, unknown>[]) : []
   const wallet = balances[0]
-  const planName = latestPlanName(detail?.plans)
+  const planName = currentPlanName(detail?.plans)
 
   return (
     <Drawer title={`${u.detailTitle} #${id}`} onClose={onClose} width={720}

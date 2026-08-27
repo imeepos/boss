@@ -44,6 +44,32 @@ const STAGE: Record<string, string> = Object.fromEntries(
   Array.from({ length: 12 }, (_, i) => [String(i + 1), `dStage${i + 1}`]),
 )
 
+// 报障类型 → 文案键(faults 段,后端已 strip "用户报障: " 前缀)。
+// 两套口径:用户端 POST /faults(no_internet/slow/ont_fault/other)+ 装维域故障码
+// (SINGLE_OUTAGE 等,complaint-type-map.md);未知值回退显示原文。
+const FAULT_TYPE: Record<string, string> = {
+  no_internet: 'dFaultNoInternet',
+  slow: 'dFaultSlow',
+  ont_fault: 'dFaultOntFault',
+  other: 'dFaultOtherUser',
+  SINGLE_OUTAGE: 'dFaultSingleOutage',
+  PARTIAL_OUTAGE: 'dFaultPartialOutage',
+  SLOW_NET: 'dFaultSlowNet',
+  WIFI_ISSUE: 'dFaultWifiIssue',
+  DEVICE_FAULT: 'dFaultDeviceFault',
+  OTHER: 'dFaultOther',
+}
+
+// 投诉分类 → 文案键(用户端 POST /complaints type,落库带"用户投诉: "前缀,
+// 见 internal/httpapi/user/complaint_handlers.go;后端按该前缀归入 complaints 段)。
+const COMPLAINT_CATEGORY: Record<string, string> = {
+  '用户投诉: attitude': 'dCpnAttitude',
+  '用户投诉: quality': 'dCpnQuality',
+  '用户投诉: billing': 'dCpnBilling',
+  '用户投诉: suggestion': 'dCpnSuggestion',
+  '用户投诉: other': 'dCpnOther',
+}
+
 export const DETAIL_TABS: DetailTab[] = [
   {
     key: 'service',
@@ -101,12 +127,12 @@ export const DETAIL_TABS: DetailTab[] = [
       ] },
       { key: 'faults', cols: [
         { key: 'ticketNo', k: 'dTicketNo' },
-        { key: 'type', k: 'dFaultType' },
+        { key: 'type', k: 'dFaultType', spec: { kind: 'enum', map: FAULT_TYPE } },
         { key: 'status', k: 'dStatus', spec: { kind: 'tag', domain: 'complaint' } },
       ] },
       { key: 'complaints', cols: [
         { key: 'complaintId', k: 'dComplaintId' },
-        { key: 'type', k: 'dFaultType' },
+        { key: 'type', k: 'dCpnType', spec: { kind: 'enum', map: COMPLAINT_CATEGORY } },
         { key: 'content', k: 'dBizNo' },
         { key: 'status', k: 'dStatus', spec: { kind: 'tag', domain: 'complaint' } },
       ] },
@@ -161,9 +187,14 @@ export const DRAWER_D_KEYS = [
   'dYes', 'dNo', 'dSeeAll', 'dCollapse',
 ] as const
 
-/** 概览统计:dBalances=余额段,套餐取 plans 最后一条(ORDER BY id 升序即最新)。 */
-export function latestPlanName(plans: unknown): string {
+/** 当前在用套餐名(派生口径,对齐用户端 portalHomePlan):取 ACTIVE 中最近生效者,
+ * 无 ACTIVE 回退列表末条;后端 plans 段已按 ACTIVE 过滤,此函数为口径兜底。 */
+export function currentPlanName(plans: unknown): string {
   if (!Array.isArray(plans) || plans.length === 0) return ''
-  const last = plans[plans.length - 1] as Record<string, unknown>
-  return typeof last.planName === 'string' ? last.planName : ''
+  let active: Record<string, unknown> | undefined
+  for (const p of plans as Record<string, unknown>[]) {
+    if (String(p.status).toUpperCase() === 'ACTIVE') active = p
+  }
+  const pick = active ?? (plans[plans.length - 1] as Record<string, unknown>)
+  return typeof pick.planName === 'string' ? pick.planName : ''
 }

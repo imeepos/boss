@@ -470,6 +470,18 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 
 > 区域锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域），`legal_entity_id`（归属公司），按地区/企业统计客户；客户搬家/转品牌经 `customer_histories` 台账快照事发区域。
 
+#### 2.1.1 用户详情聚合口径（admin `GET /users/{customerId}`，bss/user 详情抽屉，2026-09 收口）
+
+> 详情页回答「现在是什么状态」，不展示「发生过哪些记录」；以下口径为权威，前端 detail-view.ts 与契约同步。
+
+| 聚合段 | 页面语义 | 取数口径 | 说明 |
+|:-------|:---------|:---------|:-----|
+| `plans` | 当前在用套餐 | `user_plans` 仅 `upper(status)='ACTIVE'` | 对齐用户端 `portalHomePlan`（ACTIVE 优先）；无在用套餐则段为空；「当前套餐」芯片同源派生 |
+| `faults` | 报障工单 | `complaints` 且 `type NOT LIKE '用户投诉:%'`；`type` 展示侧 strip「用户报障: 」前缀 | 双口径：用户端 `POST /faults`（`no_internet/slow/ont_fault/other`）+ 装维域故障码（SINGLE_OUTAGE 等，见 complaint-type-map.md）；strip 同 `portalFaultTypeLabelFromStored` |
+| `complaints` | 投诉工单 | `complaints` 且 `type LIKE '用户投诉:%'` | 用户端 `POST /complaints` 落库前缀「用户投诉: 」，见 complaint_handlers.go |
+
+> 变更背景：此前两段都直读全量 `complaints`（同源重复、语义重叠），收口后按 type 前缀区隔；`faults` 与 `complaints` 不再同时出现重复行。
+
 ### 2.2 资费三级模型（源自 product.html；V1.1 修正：不同公司/区域产品与价格不同）
 
 | 实体 | 页面列名 | 字段名 | DB 列（约定） | 枚举/说明 |

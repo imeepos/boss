@@ -16,6 +16,10 @@ paths:
     get:
       tags: [Userdata]
       summary: 用户详情聚合(customer/notify/balance/usage/addresses/plans/addons/orders/faults/bills/payments/invoices/messages/coupons/complaints/verifyRecords)
+      description: |
+        口径收口(2026-09):plans 仅当前在用(ACTIVE,对齐用户端 portalHomePlan);
+        faults=报障工单(type NOT LIKE '用户投诉:%')、complaints=投诉工单(type LIKE
+        '用户投诉:%'),两段同源不同子集,不再重复。详见 docs/contract/fields.md §2.1.1。
       parameters: [{ name: customerId, in: path, required: true, schema: { type: integer } }]
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
