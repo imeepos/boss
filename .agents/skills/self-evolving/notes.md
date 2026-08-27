@@ -1240,3 +1240,9 @@
 - 哪个坑浪费了最多时间? ①误把 OrderConfirm 编辑落主树(worktree 纪律红线)当场发现并纠正:建 worktree 前 diff 落在主树,git checkout -- 恢复后再在 worktree 重做——citation:教训=编辑前先核 pwd/工作树。②UI 驱动登录两次失败:agreement 是行首 18dp 圆不是整行,点文字不生效;uiautomator 定位要读实现代码。
 - skill 有没有提前预警? worktree 红线 #10(commit 后看分支名)邻近但没查 pwd;已在 notes 记录。
 - 重来一次? ①任何文件编辑先 `git worktree list`+`pwd` 核对;②UI 驱动的勾选类交互先读组件源码找可点区域。
+
+## 2026-08-27 user Android E2E 读路径扩展+四 tab 走查收口
+
+- 哪个坑浪费了最多时间? ①验证码 60s 冷却:连续两次取码 42300「资源被占用」(E2E 发码与 UI 驱动登录取码冲突);②工具命令 60s cap 在 sleep 65 处被杀,后续 tap 全没执行,屏幕状态难猜——长等待拆段跑。
+- skill 有没有提前预警? 无新坑;UI 驱动序列已是熟悉流程。
+- 重来一次? ①登录取码前先查冷却间隔(连续发码会 42300);②任何 sleep>50s 的 adb 序列拆成多段避免命中 cap。
