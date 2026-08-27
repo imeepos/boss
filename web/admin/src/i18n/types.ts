@@ -544,6 +544,27 @@ export interface Translations {
       verify: string
       verifyTitle: string
       verifyColumns: string[]
+      verifyResultLabels: Record<string, string>
+      rnBtn: string
+      rnTitle: string
+      rnLatestHead: string
+      rnLatestNone: string
+      rnFormHead: string
+      rnMethod: string
+      rnMethodAll: string
+      rnMethods: string[]
+      rnRealName: string
+      rnRealNamePh: string
+      rnIdCardNo: string
+      rnIdCardNoPh: string
+      rnSubmit: string
+      rnSubmitted: string
+      rnLoadFail: string
+      rnFail: string
+      rnRejectReason: string
+      rnAttachments: string
+      rnFront: string
+      rnBack: string
       total: string
       empty: string
       loadFail: string
