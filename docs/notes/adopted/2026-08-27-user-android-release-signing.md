@@ -30,6 +30,13 @@
 - keystore.properties 入库或 CI 明文存密码（被否决：密钥方案不落地仓库，沿用 CI repo secret 解码落地约定）。
 - 首发即上 https / 商店渠道（被否决：两周内渠道不现实，内网直装 + cleartext 白名单收敛首发；https 列首发后第一技术债，见会议纪要 b 部分）。
 
+## 出包留档（2026-08-27 D0 验收）
+
+- 当前机器 keystore：`mobile/user/android/release.keystore`（gitignored，alias `boss-user-release`），
+  对应证书 SHA-256 指纹：`1C:AC:B3:E1:03:CE:87:6E:9E:22:C9:FD:C8:D2:08:7C:ED:BF:45:58:A4:10:92:F8:EC:25:02:16:00:EE:F2:DA`。
+- 该 keystore 仅存本机且不入库，**必须备份**（升级/回滚通道依赖同一把 key，丢失即换钥，存量 APK 无法平滑升级）。
+- release 包指纹验签门禁：`scripts/user-android-release-sign.sh`（apksigner verify + 与 debug 包指纹强对比阻断回落）。
+
 ## 关联
 
 - 会议纪要 `meeting-minutes/2026-08-27-user-android-two-week-launch.md`（二、Battle 与 五、行动建议 D-5/D-1）
