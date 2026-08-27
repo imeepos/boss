@@ -32,20 +32,22 @@ H_AUTH="Authorization: Bearer $TOKEN"
 H_JSON="Content-Type: application/json"
 
 # 取一个 IN_STOCK 未绑资产作为基线
-echo "==> 取基线资产(IN_STOCK, 无 tag_id)..."
+echo "==> 取基线资产(tagId=0;未绑)..."
 BEFORE=$(curl -s "$BASE/api/admin/v1/assets" -H "$H_AUTH")
-BASE_ASSET_ID=$(echo "$BEFORE" | jq -r '[.data.items[] | select(.tagId == 0 and .status == "IN_STOCK")][0].assetId')
-BASE_ASSET_CODE=$(echo "$BEFORE" | jq -r '[.data.items[] | select(.tagId == 0 and .status == "IN_STOCK")][0].assetCode')
+BASE_ASSET_ID=$(echo "$BEFORE" | jq -r '[.data.items[] | select(.tagId == 0)][0].assetId')
+BASE_ASSET_CODE=$(echo "$BEFORE" | jq -r '[.data.items[] | select(.tagId == 0)][0].assetCode')
 if [ -z "$BASE_ASSET_ID" ] || [ "$BASE_ASSET_ID" = "null" ]; then
-  echo "FAIL: 未找到 IN_STOCK 且无 tag_id 的基线资产" >&2
+  echo "FAIL: 未找到 tag_id 为空的基线资产(全部资产都已绑定)" >&2
   exit 1
 fi
 echo "  base asset: $BASE_ASSET_CODE (id=$BASE_ASSET_ID)"
 
-# 唯一标签编号/EPC(纳秒后缀,防冲突)
-TS=$(date +%s%N)
-TAG_NO="VERIFY-$TS"
-EPC_CODE="VERIFY-EPC-$TS"
+# 唯一标签编号/EPC(秒级后缀,必须 ≤32 字符:tag_no/epc_code VARCHAR(32))
+TS=$(date +%s)
+TAG_NO="V-$TS-1"
+EPC_CODE="V-$TS-1-EPC"
+TAG_NO2="V-$TS-2"
+EPC_CODE2="V-$TS-2-EPC"
 
 # 场景 1: POST /provision/tags 预绑定 → 应自动回填 assets.tag_id
 echo ""
@@ -53,8 +55,8 @@ echo "==> 场景 1: POST /provision/tags 预绑定资产 $BASE_ASSET_ID"
 RESP=$(curl -s -w '\n%{http_code}' "$BASE/api/admin/v1/provision/tags" -X POST \
   -H "$H_AUTH" -H "$H_JSON" \
   -d "{\"legalEntityId\":1,\"tagNo\":\"$TAG_NO\",\"epcCode\":\"$EPC_CODE\",\"band\":\"UHF\",\"boundAssetId\":$BASE_ASSET_ID,\"status\":\"BOUND\",\"battery\":\"95%\"}")
-HTTP_BODY=$(echo "$RESP" | head -n -1)
 HTTP_CODE=$(echo "$RESP" | tail -n 1)
+HTTP_BODY=$(echo "$RESP" | sed '$d')
 echo "  http=$HTTP_CODE"
 echo "  body=$HTTP_BODY"
 
@@ -78,13 +80,11 @@ echo "  PASS: 资产 $BASE_ASSET_CODE tagId=$ASSET_AFTER (=new_tag_id)"
 # 场景 2: 同资产绑第二个标签 → 应 40900
 echo ""
 echo "==> 场景 2: 同资产绑第二个标签(应返 40900)"
-TAG_NO2="VERIFY-$TS-DUP"
-EPC_CODE2="VERIFY-EPC-$TS-DUP"
 RESP=$(curl -s -w '\n%{http_code}' "$BASE/api/admin/v1/provision/tags" -X POST \
   -H "$H_AUTH" -H "$H_JSON" \
   -d "{\"legalEntityId\":1,\"tagNo\":\"$TAG_NO2\",\"epcCode\":\"$EPC_CODE2\",\"band\":\"UHF\",\"boundAssetId\":$BASE_ASSET_ID,\"status\":\"BOUND\",\"battery\":\"95%\"}")
-HTTP_BODY=$(echo "$RESP" | head -n -1)
 HTTP_CODE=$(echo "$RESP" | tail -n 1)
+HTTP_BODY=$(echo "$RESP" | sed '$d')
 echo "  http=$HTTP_CODE"
 echo "  body=$HTTP_BODY"
 
@@ -97,7 +97,7 @@ if [ "$ERR_CODE" != "40900" ]; then
   echo "FAIL: 场景 2 期望业务码 40900,实际 $ERR_CODE" >&2
   exit 1
 fi
-REASON=$(echo "$HTTP_BODY" | jq -r '.reason')
+REASON=$(echo "$HTTP_BODY" | jq -r '.data.reason // ""')
 echo "  PASS: 双绑冲突返 40900, reason=$REASON"
 
 # 场景 3: 重复 POST 同一 tag 编号(幂等)→ 应 200
@@ -106,8 +106,8 @@ echo "==> 场景 3: 重复 POST 同 tag(幂等)"
 RESP=$(curl -s -w '\n%{http_code}' "$BASE/api/admin/v1/provision/tags" -X POST \
   -H "$H_AUTH" -H "$H_JSON" \
   -d "{\"legalEntityId\":1,\"tagNo\":\"$TAG_NO\",\"epcCode\":\"$EPC_CODE\",\"band\":\"UHF\",\"boundAssetId\":$BASE_ASSET_ID,\"status\":\"BOUND\",\"battery\":\"95%\"}")
-HTTP_BODY=$(echo "$RESP" | head -n -1)
 HTTP_CODE=$(echo "$RESP" | tail -n 1)
+HTTP_BODY=$(echo "$RESP" | sed '$d')
 echo "  http=$HTTP_CODE"
 echo "  body=$HTTP_BODY"
 

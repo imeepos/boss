@@ -13,11 +13,12 @@
 BEGIN;
 
 -- tags.bound_asset_id 非空时唯一:一资产最多绑一个标签。
-CREATE UNIQUE INDEX uq_tags_bound_asset_notnull
+-- IF NOT EXISTS:兼容 102 真库已手动应用此索引的现状(2026-08-27 让号前已落库)。
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tags_bound_asset_notnull
   ON tags(bound_asset_id) WHERE bound_asset_id IS NOT NULL;
 
 -- assets.tag_id 非空时唯一:一标签最多绑一个资产。
-CREATE UNIQUE INDEX uq_assets_tag_notnull
+CREATE UNIQUE INDEX IF NOT EXISTS uq_assets_tag_notnull
   ON assets(tag_id) WHERE tag_id IS NOT NULL;
 
 COMMIT;
