@@ -1266,6 +1266,28 @@ export interface Translations {
       actionFail: string
       empty: string
     },
+    licensePage: {
+      title: string
+      desc: string
+      notEnabled: string
+      activeState: string
+      inactiveState: string
+      fLicenseId: string
+      fProductId: string
+      fLicenseType: string
+      fDeviceId: string
+      fExpiresAt: string
+      fGrace: string
+      inGraceYes: string
+      inGraceNo: string
+      activateTitle: string
+      codePlaceholder: string
+      activateBtn: string
+      activating: string
+      codeRequired: string
+      activateFail: string
+      loadFail: string
+    },
     knowledgePage: {
       title: string
       desc: string

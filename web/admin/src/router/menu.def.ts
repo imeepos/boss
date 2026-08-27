@@ -16,6 +16,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'dashboard', label: '工作台', path: '/dashboard' },
   ]},
   { id: 'base', label: '基础配置', items: [
+    { key: 'license', label: '系统授权', path: '/base/license' },
     { key: 'account', label: '账号与角色', path: '/base/account' },
     { key: 'address', label: '地址层级', path: '/base/address' },
     { key: 'geo', label: '国家与行政区划', path: '/base/geo' },
