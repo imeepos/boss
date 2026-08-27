@@ -36,3 +36,20 @@ cs_knowledge_articles（000118）。
    放弃了：引入 TipTap 类所见即所得（HTML 输出重新打开 XSS 面 + 重依赖）。
 3. 新增裁定：添加/编辑走独立路由页（/boss/site/new、/:postId），
    列表页只留列表，内联表单废弃。
+
+## Amended（2026-08-27 本轮修订，见 feat/cms-multilang）
+
+1. **决策 1（内容模型）修订：cms_posts 加语言维度 `lang`（000155）**。
+   Why：官网界面已三语言（zh-CN/en-US/ms-MY），内容仍单语言导致切语言后文章
+   文案不跟随，是产品级缺口。方案：同 slug 多语言变体各存一行，唯一键从 slug
+   改为 `(slug, lang)`，公开 URL `/news/:slug?lang=` 不变换路径只换参数；
+   公开读缺变体回退默认语言（不 404）。放弃了：独立 i18n 翻译子表
+   `cms_post_i18n(post_id, lang, ...)`（文章身份/版本/状态需在父子表间拆解，
+   现有 version 自增与发布语义会翻倍复杂）；放弃了：slug 按语言本地化
+   （/news/hello-world 与 /news/zh-hi 双 URL 体系，SEO 收益不确定）。
+2. **新增裁定：cms_categories 加 `name_i18n` JSONB 多语言名（000155）**。
+   `name` 保留为默认/回退；语言覆盖值缺失、或覆盖值为空串时回退 `name`。
+   放弃了：分类名独立 i18n 表（字典表加一列即可，独立表过重）。
+3. 前端配套：编辑页加语言下拉；MarkdownEditor 硬编码文案 i18n 化；
+   公开端 NewsSection/详情按界面语言传 `lang`，分类标签优先用后端本地化
+   `categoryName`（缺省回落 NEWS/ARTICLE 枚举标签）。

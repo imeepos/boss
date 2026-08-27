@@ -1096,37 +1096,42 @@ PAYMENT_* 时为 payment id，(reason,ref_id) 部分唯一索引保幂等）、
 | 页面列 | 字段名 | DB 列 | 枚举/说明 |
 |:------|:------|:------|:----------|
 | 标题 | `title` | title | 非空，≤160 |
-| 别名 | `slug` | slug | URL 友好唯一键，小写字母数字连字符 |
+| 别名 | `slug` | slug | URL 友好键，小写字母数字连字符；唯一键 `(slug, lang)`（000155 起，同 slug 多语言变体共用 URL） |
+| 语言 | `lang` | lang | zh-CN / en-US / ms-MY（000155），公开 URL `/news/:slug?lang=` 切换，缺变体回退 zh-CN |
 | 分类 | `category` | category | 引用 `cms_categories.code`（000138 起自定义字典，NEWS/ARTICLE 为种子值） |
 | 摘要 | `summary` | summary | 列表展示，≤500 |
 | 封面 | `coverAttachmentId` | cover_attachment_id | 引用 attachments(id)，可空 |
-| 正文 | `content` | content | Markdown，TEXT 非空；正文图片引用 `](att/N)`，公开读重写为 `/site/posts/:slug/img/N` |
+| 正文 | `content` | content | Markdown，TEXT 非空；正文图片引用 `](att/N)`，公开读重写为 `/site/posts/:slug/img/N?lang=` |
 | 状态 | `status` | status | DRAFT / PUBLISHED / OFFLINE（terms.md 登记） |
 | 定时发布 | `publishedAt` | published_at | 置 PUBLISHED 时落 now()；公开读按 `status=PUBLISHED` 过滤 |
 | 版本 | `version` | version | 每次更新自增 |
 | 作者 | `authorName` | author_name | 展示用冗余名，可空 |
 | 创建/更新 | `createdAt`/`updatedAt` | created_at/updated_at | TIMESTAMPTZ |
 
-API：admin `/site-posts`（GET/POST/PUT/DELETE，menu:site 权限）；
+API：admin `/site-posts`（GET/POST/PUT/DELETE，menu:site 权限，body 带 lang）；
 官网匿名只读 `/site/posts`（列表，仅 status=PUBLISHED，按 published_at 倒序，
-支持 category 过滤与 limit）与 `/site/posts/:slug`（详情，仅 PUBLISHED）。
+支持 `category`/`lang` 过滤与 limit）与 `/site/posts/:slug`（详情，仅 PUBLISHED，
+`lang` 参数缺变体时落入默认语言兜底返回，官网切语言不因此 404）。
 免鉴权公开读沿用 partner 入驻公开提交先例（admin 前缀内 public 子路由）。
 封面 `/site/posts/:slug/cover`；正文图片 `/site/posts/:slug/img/:attId`
-（匿名，仅"该文 Markdown 确实引用 + image/*"，防附件枚举）。
+（匿名，仅"该文 Markdown 确实引用 + image/*"，防附件枚举；二者均接受 `lang`
+以锁定同一变体的封面/引用，图片端点带 `?lang=` 前缀由详情重写生成）。
 
 分类字典 `cms_categories`（000138，页面 `/boss/site/cats`，menu key `site-cats`，权限 `menu:site-cats`）：
 
 | 页面列 | 字段名 | DB 列 | 枚举/说明 |
 |:------|:------|:------|:----------|
 | 标识码 | `code` | code | 大写蛇形 2~32，唯一；被文章引用时禁删/禁改 |
-| 名称 | `name` | name | 非空，≤64 |
+| 名称 | `name` | name | 非空，≤64，作为展示名默认/回退 |
+| 多语言名 | `names` | name_i18n | JSONB（000155）：`{zh-CN, en-US, ms-MY}`→名，键限语言集，值 ≤64；缺语言回退 name |
 | 排序 | `sortNo` | sort_no | 升序展示 |
 | 启用 | `enabled` | enabled | 停用不影响存量文章，仅新文章不可选 |
 
 API：admin `/site-categories`（GET/POST/PUT/DELETE，menu:site 权限）。
 
-前端编辑页：`/boss/site/new`（新建）、`/boss/site/:postId`（编辑），与列表页同用
-menu:site 守卫；正文 MarkdownEditor 双栏编辑（工具栏 + react-markdown 预览），
+前端编辑页：`/boss/site/new`（新建，语言取默认 zh-CN 可切换）、`/boss/site/:postId`（编辑，
+语言与正文同表单维护，同 slug 多语言各存一行）；列表页有语言列与语言筛选。
+与列表页同用 menu:site 守卫；正文 MarkdownEditor 双栏编辑（工具栏 + react-markdown 预览），
 图片上传走附件域（MinIO/S3）后以 `](att/N)` 引用。
 
 ## 8F. 客户端版本发布域（internal/domain/apprelease，000137）
