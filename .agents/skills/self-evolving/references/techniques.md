@@ -396,3 +396,13 @@ suspend fun current(ctx: Context): Location? {
 场景:怀疑任意值类(bg-[var(--x)])没被生成时,vite dev 的 CSSOM 扁平遍历有 @layer 盲区,不要信。
 
 用法:`grep -o ".\{0,60\}令牌名.\{0,80\}" dist/assets/*.css`——产物里有即已生成;要找"谁覆盖了背景"再做递归 cssRules walk(matches 按选择器过滤)。
+
+## 菜单图标缺文件一键审计(2026-08-27,崩溃日志菜单空位)
+- 场景:后台菜单某项无图标;MaskIcon 按 menu.def key 取 public/icons/items/<key>.svg,缺文件即 404+空白。
+- 手法:`grep -o "key: '[^']*'" web/admin/src/router/menu.def.ts | cut -d"'" -f2 | sort > /tmp/want.txt && ls web/admin/public/icons/items/*.svg | xargs -n1 basename | sed 's/.svg//' | sort > /tmp/have.txt && comm -23 /tmp/want.txt /tmp/have.txt`
+- 注意:macOS grep 无 -P;用 -o "key: 'xx'" + cut。新增同名资产前先查并行分支是否已占(`git branch -a | grep 关键词`)。
+
+## 崩溃日志(或任何客户端上报)链路端到端验证(2026-08-27)
+- 场景:管理页有数据为空,要判断"未对接"还是"真没数据"。
+- 顺序:① curl 探路由(401=挂载,404=缺路由)→ ② ssh psql heredoc 查表迁移+行数 → ③ 用 test-accounts.json 里 worker key 走真实业务路径 POST 一条探针(app 带 probe 标记)→ ④ admin key 读回确认 JSON 形状 → ⑤ DELETE WHERE app='probe...' RETURNING id 清理并核对行数归零。
+- 坑:链路三层(App/后端/DB)代码在 ≠ 线上有数据;功能合入时间 vs 镜像构建时间 vs 设备 APK 版本三方对表才解释得了 0 行。

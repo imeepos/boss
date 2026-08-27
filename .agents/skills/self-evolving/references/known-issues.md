@@ -282,3 +282,8 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 **症状**:CDP/Puppeteer 同步 eval 中 `documentElement.setAttribute('data-theme','dark')` 后立即 `getComputedStyle(el).backgroundColor`,返回仍是亮色值,误判"暗色令牌没生效",实际元素带 `duration-200` 等过渡类,200ms 内读到的是插值起点。
 
 **修法**:改属性与读结果拆成两次 eval,中间走工具的 settle(≥2500ms);或 eval 内 `new Promise(r=>setTimeout(()=>r(getComputedStyle(el).backgroundColor),600))` 返回 Promise 由 awaitPromise 接住。
+
+## 后台菜单某项不显示图标(2026-08-27)
+- 症状:侧边栏菜单项文字前空白,Network 里 /icons/items/<key>.svg 404。
+- 原因:Sidebar 的 MaskIcon 按 menu.def.ts 的 key 映射 public/icons/items/<key>.svg;新增菜单项(如 crashlogs)时只登记了 key 没放 SVG 文件。
+- 修法:补一个 24x24 stroke 风格 SVG(stroke=#8b98a5, stroke-width=1.8, 参考同目录 audit.svg/storageconfig.svg 画法),CI 推 main 自动构建 admin-web 镜像上线。先例:stripeconfig.svg(5cedb1d8)、crashlogs.svg(8f6b6c34)。realname-review 也缺,归属并行分支 fix/realname-review-icon-theme。

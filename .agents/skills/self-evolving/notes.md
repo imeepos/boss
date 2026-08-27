@@ -948,3 +948,9 @@
 - 哪个坑浪费了最多时间？双主题验证的假阴性:CDP 同步 eval 里 setAttribute('data-theme','dark') 后立刻读 getComputedStyle().backgroundColor,拿到的是 200ms CSS transition 的起点值(仍是亮色白),误判"抽屉背景在暗色下没换色",绕了 CSSOM 规则扫描/getMatchedStyles/build grep 三条歧路,最后用 classList 摘类 + 分次 eval(间隔≥过渡时长)才复现出"其实早就对了"。
 - 这个 skill 有没有提前警告我？红 #6(双主题必须真验证)在,但只说"要验",没警告"同步读 computed style 会吃进 transition 中间值造成假阴性";首访路由被 AuthGuard 弹回 /login 后 eval 里 location.reload() 重载的是 login 页(该跳转目标必须显式 location.href),skill 也没记。
 - 重来一次我会怎么做？主题切换断言一律分两次 eval 且中间留 settle;进入内页前先注入 localStorage 再 location.href 到目标路由,不依赖 reload;样式来源存疑先 grep dist/assets/*.css 确认 utility 是否生成(生成即在,vite dev CSSOM 遍历有 @layer 嵌套盲区)。
+
+## 2026-08-27 崩溃日志菜单图标缺失+链路核查(直接 main 树起步后转 worktree)
+
+- 哪个坑浪费了最多时间？无大坑;10 分钟内走完。唯一犹豫点:顺手补了 realname-review.svg 后发现并行会话分支 fix/realname-review-icon-theme 与之撞车,立即 rm 让号——"分支名即归属声明",没等对方半成品出现。
+- 这个 skill 有没有提前警告我？worktree 协议+收尾四步全程零失误(加 worktree→mv 未跟踪文件进树→commit→push gitea→主树 pwd 核对 ff-only→remove/-d/--delete);红 #5 促成先验证后 commit 的顺序。菜单图标缺文件的手法(diff menu.def keys vs ls icons/items)本次新沉淀 techniques。
+- 重来一次我会怎么做？新增任何"同名注册资产"(icon/i18n key/route)前先 `git for-each-ref refs/heads | grep <关键词>` 查并行占号,第一步就避开;E2E 探针 INSERT 前带上可识别标记(app='probe-xxx'),DELETE RETURNING 拿到行数才算清理完成。
