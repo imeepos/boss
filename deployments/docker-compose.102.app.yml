@@ -6,6 +6,7 @@ services:
   server:
     image: 192.168.0.102:5000/boss/server:latest
     container_name: boss-server
+    hostname: boss-server # 授权证书绑定机器指纹(hostname sha256);固定防容器重建后证书失效
     restart: unless-stopped
     ports:
       - "28080:8080" # HTTP(/healthz /metrics /api)
@@ -43,6 +44,8 @@ services:
       # hostctl HMAC key:宿主机 /etc/boss-host-ctl/hmac.key(0600)
       - /etc/boss-host-ctl/hmac.key:/run/hostctl-hmac/hmac.key:ro
       - boss_backup_data:/data/backups
+      # 系统授权证书(激活后离线令牌落盘);命名卷持久化,跨部署重建不丢授权
+      - boss_license_data:/var/lib/boss
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 15s
@@ -86,3 +89,4 @@ services:
 
 volumes:
   boss_backup_data:
+  boss_license_data:

@@ -4,6 +4,7 @@ package adminapi
 
 import (
 	"errors"
+	"log"
 
 	"github.com/gin-gonic/gin"
 
@@ -11,6 +12,14 @@ import (
 	"github.com/ymm-001/boss/internal/domain/license"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
+
+// maskCode 激活码日志脱敏:仅留前 5 位,避免完整凭证进日志。
+func maskCode(code string) string {
+	if len(code) <= 5 {
+		return "***"
+	}
+	return code[:5] + "***"
+}
 
 // registerLicenseRoutes 注册 /license/* 授权路由;License 为 nil 时返回未配置。
 func registerLicenseRoutes(g *gin.RouterGroup, a *app.Application) {
@@ -59,7 +68,9 @@ func licenseActivateHandler(svc *license.Service) gin.HandlerFunc {
 		}
 		st, err := svc.Activate(c.Request.Context(), body.ActivationCode)
 		if err != nil {
-			// 兑码/取令牌失败属下游(release-platform)错误,映射 502;留可 grep 日志。
+			// 兑码/取令牌/落盘失败:前端回通用文案,服务端必须留可 grep 日志附原因
+			// (2026-08-27 落盘权限故障因无日志全靠人工复现定位,违规整改)。
+			log.Printf("[license] ACTIVATE FAILED code=%s err=%v", maskCode(body.ActivationCode), err)
 			respond(c, apitypes.CodeDownstreamErr, gin.H{"message": "activation failed"})
 			return
 		}

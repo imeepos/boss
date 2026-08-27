@@ -27,5 +27,8 @@ COPY migrations /app/migrations
 RUN chmod -R a+rX /app/migrations
 # 备份归档目录(BOSS_BACKUP_DIR):镜像内预建属主 app,命名卷首挂时继承该属主。
 RUN mkdir -p /data/backups && chown app:app /data/backups
+# 授权证书目录(BOSS_LICENSE_CERT_PATH 默认 /var/lib/boss/license.json):
+# 预建属主 app——运行用户无权在 /var/lib 下建目录,激活落盘曾因此全链路失败。
+RUN mkdir -p /var/lib/boss && chown app:app /var/lib/boss
 USER app
 ENTRYPOINT ["boss-server"]
