@@ -1094,3 +1094,15 @@
   - 没有明确写过"web/admin 项目 vitest 仅纯函数/SSR 测试栈"。已在 references/lessons.md + known-issues.md 沉淀三件套检测 (grep environment + testing-library + fireEvent)。
 - 重来一次我会怎么做？
   - 开工前先 `grep "environment" web/admin/vite.config.ts` + `grep testing-library web/admin/pnpm-lock.yaml` + `grep -E "fireEvent|@testing-library" web/admin/src --include "*.test.*" | wc -l`,确认测试栈范围;绝不写 useState 异步 + fireEvent 的交互测试。
+
+## 2026-10-01 催收任务队列页多语言+多主题适配
+
+- 哪个坑浪费了最多时间？
+  - ErrorBanner/ToolbarButton 误以为在 `pages/org/shared.tsx`,首次 typecheck 红;实际两个都在 `components/business/index.ts`,反馈页 import 路径是 `../../components/business`。教训:引用前先 grep re-export 链(`grep -n "ErrorBanner\|ToolbarButton" src/components/business/index.ts`)。
+  - 原页 status 过滤硬编码 `['PENDING','DOING','DONE','FAILED'].map(...)`,按钮文案是原始枚举名 — 走 i18n 后必须用 `c.statuses[x] ?? x` 双保险(键缺失回退),防 i18n 漂移时空渲染;列表列名不能偷 `a.columns[0]` 跨 namespace 借文案(arrearsPage.columns[0]=客户,arrearsPage.columns[1]=欠费金额)。
+  - 自定 key 名 `actionLoadFail` 与 `actionFail_` 一开始设计冲突,合并为 `actionFailMsg`(与既有 arrearsPage.actionFail 同形)。所有 namespace 命名按既有约定收敛。
+- 这个 skill 有没有提前警告我？
+  - 有:references/lessons.md 已强调"先 grep 后 edit";但"i18n key 命名按既定 namespace 收敛"这条没明确沉淀过,本次凭既往约定做。
+- 重来一次我会怎么做？
+  - 写新 i18n namespace 前 grep 同域既有 namespace(arrearsPage/stopsrv/paycheck)的 key 命名规律;组件 import 前 grep re-export 链;按钮文案/列名一次到位,不二次借 namespace。
+- 验证:typecheck/test(328,含新增 collection-tasks/i18n.test.tsx)/build/web-ui-audit 全绿;worktree→commit→push→ff-merge→push main→worktree remove→branch -d→push delete 收尾,主树 commit 75d8a6a4。
