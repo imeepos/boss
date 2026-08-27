@@ -83,10 +83,72 @@ paths:
   /stocktakes/{taskId}/diff-handle:
     post:
       tags: [Asset]
-      summary: 盘点差异项处理
+      summary: 盘点关单(未处置差异非 0 → 40900;全处置完置 DONE)
       operationId: handleStocktakeDiff
       parameters:
         - { name: taskId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /stocktakes/{taskId}/scans:
+    post:
+      tags: [Asset]
+      summary: 盘点扫码回填(预期行判 OK/MISMATCH,计划外行记 EXTRA,重算进度与差异数)
+      operationId: scanStocktake
+      parameters:
+        - { name: taskId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetId, status]
+              properties:
+                assetId: { type: integer, format: int64, description: 资产 ID(必填,非 0) }
+                status: { type: string, enum: [IN_STOCK, DEPLOYED, MAINTENANCE, SCRAPPED], description: 实盘所见状态 }
+      responses:
+        '200':
+          description: 已回填(data 返回明细 id 与差异判定)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      itemId: { type: integer, format: int64 }
+                      kind: { type: string, enum: [OK, MISMATCH, EXTRA] }
+
+  /stocktakes/{taskId}/items:
+    get:
+      tags: [Asset]
+      summary: 盘点差异明细清单(kind: PENDING/OK/MISMATCH/MISSING/EXTRA;resolution: OPEN/CONFIRMED/FIXED/ESCALATED)
+      operationId: listStocktakeItems
+      parameters:
+        - { name: taskId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /stocktakes/{taskId}/items/{itemId}/handle:
+    post:
+      tags: [Asset]
+      summary: 差异逐条处置(CONFIRM 确认差异并按实盘修正台账 / FIX 现场核实台账为准 / ESCALATE 上报;FIX/ESCALATE 必填 note)
+      operationId: handleStocktakeItem
+      parameters:
+        - { name: taskId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: itemId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [CONFIRM, FIX, ESCALATE] }
+                note: { type: string, maxLength: 255, description: 处理说明(FIX/ESCALATE 必填) }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 

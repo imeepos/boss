@@ -124,7 +124,7 @@ type AssetService interface {
 	// ScanStocktake 回填一次扫码,返回(明细 id, kind)。
 	ScanStocktake(ctx context.Context, taskID, assetID int64, scannedStatus string) (int64, string, error)
 	// HandleStocktakeItem 逐条处置差异(action: CONFIRM/FIX/ESCALATE)。
-	HandleStocktakeItem(ctx context.Context, taskID, itemID int64, action string, accountID int64) error
+	HandleStocktakeItem(ctx context.Context, taskID, itemID int64, action, note string, accountID int64) error
 	// HandleStocktakeDiff 关单:未处置差异非 0 时拒绝,全处置完任务置 DONE。
 	HandleStocktakeDiff(ctx context.Context, taskID int64) error
 

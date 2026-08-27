@@ -131,7 +131,7 @@ func (s *PGStore) recalcScanProgress(ctx context.Context, taskID int64) error {
 // HandleStocktakeItem 逐条处置差异:
 // CONFIRM 承认差异(MISMATCH 时按实盘修正台账+留轨迹;MISSING/EXTRA 仅留痕);
 // FIX 现场核实台账为准;ESCALATE 上报转人工。均要求任务在盘、差异行 OPEN。
-func (s *PGStore) HandleStocktakeItem(ctx context.Context, taskID, itemID int64, action string, accountID int64) error {
+func (s *PGStore) HandleStocktakeItem(ctx context.Context, taskID, itemID int64, action, note string, accountID int64) error {
 	res, ok := stocktakeResolution[action]
 	if !ok {
 		return fmt.Errorf("asset: action %q: %w", action, ErrStocktakeState)
@@ -146,9 +146,9 @@ func (s *PGStore) HandleStocktakeItem(ctx context.Context, taskID, itemID int64,
 		}
 	}
 	if _, err := s.db.Exec(ctx, `
-		UPDATE stocktake_items SET resolution = $3, handled_by = $4, handled_at = $5
+		UPDATE stocktake_items SET resolution = $3, handled_by = $4, handled_at = $5, note = $6
 		WHERE id = $1 AND task_id = $2`,
-		itemID, taskID, res, idOrNil(accountID), time.Now()); err != nil {
+		itemID, taskID, res, idOrNil(accountID), time.Now(), note); err != nil {
 		return fmt.Errorf("asset: resolve item %d: %w", itemID, err)
 	}
 	return nil

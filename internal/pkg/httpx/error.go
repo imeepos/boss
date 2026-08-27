@@ -89,8 +89,11 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, backup.ErrBusy):
 		Respond(c, apitypes.CodeResourceBusy, nil)
 	// 装维队管理(000141):队非空软删/同队调队 → 冲突;队长非本队成员 → 参数非法。
+	// 盘点差异(S10):存在未处置差异禁止关单 / 任务或明细状态不允许该操作 → 冲突。
 	case errors.Is(err, worker.ErrGroupNotEmpty),
-		errors.Is(err, worker.ErrSameGroup):
+		errors.Is(err, worker.ErrSameGroup),
+		errors.Is(err, asset.ErrDiffPending),
+		errors.Is(err, asset.ErrStocktakeState):
 		Respond(c, apitypes.CodeConflict, nil)
 	case errors.Is(err, worker.ErrLeaderNotMember):
 		Respond(c, apitypes.CodeInvalidParam, nil)

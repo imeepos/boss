@@ -215,6 +215,9 @@ paths:
   /tags: { $ref: './admin/asset.yaml#/paths/~1tags' }
   /stocktakes: { $ref: './admin/asset.yaml#/paths/~1stocktakes' }
   /stocktakes/{taskId}/diff-handle: { $ref: './admin/asset.yaml#/paths/~1stocktakes~1{taskId}~1diff-handle' }
+  /stocktakes/{taskId}/scans: { $ref: './admin/asset.yaml#/paths/~1stocktakes~1{taskId}~1scans' }
+  /stocktakes/{taskId}/items: { $ref: './admin/asset.yaml#/paths/~1stocktakes~1{taskId}~1items' }
+  /stocktakes/{taskId}/items/{itemId}/handle: { $ref: './admin/asset.yaml#/paths/~1stocktakes~1{taskId}~1items~1{itemId}~1handle' }
   /replacements: { $ref: './admin/asset.yaml#/paths/~1replacements' }
 
   # ---------- Oss ----------

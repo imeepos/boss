@@ -190,10 +190,10 @@ func TestPGStore_HandleStocktakeItem(t *testing.T) {
 			WithArgs(int64(7), "DEPLOYED").
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		mock.ExpectExec(`UPDATE stocktake_items SET resolution`).
-			WithArgs(int64(3), int64(1), "CONFIRMED", int64(55), pgxmock.AnyArg()).
+			WithArgs(int64(3), int64(1), "CONFIRMED", int64(55), pgxmock.AnyArg(), "").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		s := NewPGStore(mock)
-		if err := s.HandleStocktakeItem(context.Background(), 1, 3, "CONFIRM", 55); err != nil {
+		if err := s.HandleStocktakeItem(context.Background(), 1, 3, "CONFIRM", "", 55); err != nil {
 			t.Fatalf("HandleStocktakeItem: %v", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -206,10 +206,10 @@ func TestPGStore_HandleStocktakeItem(t *testing.T) {
 		defer mock.Close()
 		loadOpenDiff(mock)
 		mock.ExpectExec(`UPDATE stocktake_items SET resolution`).
-			WithArgs(int64(3), int64(1), "FIXED", int64(55), pgxmock.AnyArg()).
+			WithArgs(int64(3), int64(1), "FIXED", int64(55), pgxmock.AnyArg(), "现场核实台账正确").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		s := NewPGStore(mock)
-		if err := s.HandleStocktakeItem(context.Background(), 1, 3, "FIX", 55); err != nil {
+		if err := s.HandleStocktakeItem(context.Background(), 1, 3, "FIX", "现场核实台账正确", 55); err != nil {
 			t.Fatalf("HandleStocktakeItem: %v", err)
 		}
 	})
@@ -218,7 +218,7 @@ func TestPGStore_HandleStocktakeItem(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()
 		s := NewPGStore(mock)
-		if err := s.HandleStocktakeItem(context.Background(), 1, 3, "NOPE", 55); !errors.Is(err, ErrStocktakeState) {
+		if err := s.HandleStocktakeItem(context.Background(), 1, 3, "NOPE", "", 55); !errors.Is(err, ErrStocktakeState) {
 			t.Fatalf("action err=%v", err)
 		}
 		mock.ExpectQuery(`SELECT status FROM stocktakes WHERE id = \$1`).
@@ -228,7 +228,7 @@ func TestPGStore_HandleStocktakeItem(t *testing.T) {
 			WithArgs(int64(3), int64(1)).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "task_id", "asset_id", "expected_status", "scanned_status", "kind", "resolution"}).
 				AddRow(int64(3), int64(1), int64(7), "IN_STOCK", "IN_STOCK", "OK", "OPEN"))
-		if err := s.HandleStocktakeItem(context.Background(), 1, 3, "CONFIRM", 55); !errors.Is(err, ErrStocktakeState) {
+		if err := s.HandleStocktakeItem(context.Background(), 1, 3, "CONFIRM", "", 55); !errors.Is(err, ErrStocktakeState) {
 			t.Fatalf("ok-line err=%v", err)
 		}
 	})
