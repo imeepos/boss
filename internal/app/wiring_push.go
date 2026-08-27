@@ -10,7 +10,6 @@ import (
 	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/push"
-	"github.com/ymm-001/boss/internal/pkg/secretbox"
 )
 
 // pushConfigResolver 读取 biz_params → 明文 ChannelConfig;读库失败回退 env 形态。
@@ -49,9 +48,7 @@ func pushApplyParams(out *push.ChannelConfig, stored map[string]string) {
 		out.AppKey = v
 	}
 	if v := stored["push.jpush.masterSecret"]; v != "" {
-		if plain, err := secretbox.Open(v); err == nil {
-			out.MasterSecret = plain
-		}
+		out.MasterSecret = decryptConfigSecret("push.jpush.masterSecret", v)
 	}
 	if v := stored["push.jpush.apiUrl"]; v != "" {
 		out.APIURL = v

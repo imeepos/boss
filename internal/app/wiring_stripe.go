@@ -10,7 +10,6 @@ import (
 
 	"github.com/ymm-001/boss/internal/domain/billing"
 	"github.com/ymm-001/boss/internal/pkg/config"
-	"github.com/ymm-001/boss/internal/pkg/secretbox"
 	"github.com/ymm-001/boss/internal/pkg/stripe"
 )
 
@@ -44,17 +43,13 @@ func stripeApplyParams(out *stripe.Config, stored map[string]string) {
 		out.Enabled = v != "false"
 	}
 	if v := stored["stripe.apiKey"]; v != "" {
-		if plain, err := secretbox.Open(v); err == nil {
-			out.APIKey = plain
-		}
+		out.APIKey = decryptConfigSecret("stripe.apiKey", v)
 	}
 	if v := stored["stripe.publishableKey"]; v != "" {
 		out.PublishableKey = v
 	}
 	if v := stored["stripe.webhookSecret"]; v != "" {
-		if plain, err := secretbox.Open(v); err == nil {
-			out.WebhookSecret = plain
-		}
+		out.WebhookSecret = decryptConfigSecret("stripe.webhookSecret", v)
 	}
 	if v := stored["stripe.currency"]; v != "" {
 		out.Currency = v

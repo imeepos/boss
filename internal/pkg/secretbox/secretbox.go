@@ -11,14 +11,19 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
+	"sync"
 )
 
 const prefix = "enc:v1:"
 
 // keyFn 密钥来源函数,可注入替换以便单测覆盖 newGCM 错误分支。
 var keyFn = Key
+
+// defaultKeyWarned 内置默认密钥只告警一次(Seal/Open 高频调用)。
+var defaultKeyWarned sync.Once
 
 // Key 从 env 派生 32 字节 AES 密钥。
 func Key() []byte {
@@ -27,6 +32,10 @@ func Key() []byte {
 		secret = os.Getenv("BOSS_JWT_SECRET")
 	}
 	if secret == "" {
+		defaultKeyWarned.Do(func() {
+			log.Printf("[secretbox] WARNING 未设置 BOSS_AUTH_SECRET_KEY/BOSS_JWT_SECRET,使用内置默认密钥加密配置 secret;" +
+				"换用正式密钥需先在后台重存各通道密钥再轮换环境变量")
+		})
 		secret = "boss-auth-secret"
 	}
 	k := sha256.Sum256([]byte(secret))

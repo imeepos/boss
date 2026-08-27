@@ -6,7 +6,6 @@ import (
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/pkg/config"
-	"github.com/ymm-001/boss/internal/pkg/secretbox"
 )
 
 func minioConfigResolver(svc user.Service, fallback attachment.MinIOConfig) func(context.Context) (attachment.MinIOConfig, error) {
@@ -27,9 +26,7 @@ func minioConfigResolver(svc user.Service, fallback attachment.MinIOConfig) func
 			cfg.AccessKey = v
 		}
 		if v := stored["minio.secretKey"]; v != "" {
-			if plain, openErr := secretbox.Open(v); openErr == nil {
-				cfg.SecretKey = plain
-			}
+			cfg.SecretKey = decryptConfigSecret("minio.secretKey", v)
 		}
 		if v := stored["minio.bucket"]; v != "" {
 			cfg.Bucket = v

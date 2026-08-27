@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/ymm-001/boss/internal/pkg/config"
-	"github.com/ymm-001/boss/internal/pkg/secretbox"
 	"github.com/ymm-001/boss/internal/pkg/sms"
 )
 
@@ -46,9 +45,7 @@ func smsApplyParams(out *sms.ChannelConfig, stored map[string]string) {
 		out.AccessKeyID = v
 	}
 	if v := stored["sms.accessKeySecret"]; v != "" {
-		if plain, err := secretbox.Open(v); err == nil {
-			out.AccessKeySecret = plain
-		}
+		out.AccessKeySecret = decryptConfigSecret("sms.accessKeySecret", v)
 	}
 	out.ContentCodeCN = stored["sms.contentCode.cn"]
 	out.ContentCodeMY = stored["sms.contentCode.my"]

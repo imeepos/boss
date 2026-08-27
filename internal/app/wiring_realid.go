@@ -9,7 +9,6 @@ import (
 	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/realid"
-	"github.com/ymm-001/boss/internal/pkg/secretbox"
 )
 
 // realidConfigResolver 读取 biz_params → 明文 ChannelConfig;读库失败回退 env 形态。
@@ -42,9 +41,7 @@ func realidApplyParams(out *realid.ChannelConfig, stored map[string]string) {
 		out.AccessKeyID = v
 	}
 	if v := stored["realid.accessKeySecret"]; v != "" {
-		if plain, err := secretbox.Open(v); err == nil {
-			out.AccessKeySecret = plain
-		}
+		out.AccessKeySecret = decryptConfigSecret("realid.accessKeySecret", v)
 	}
 	if v := stored["realid.endpoint"]; v != "" {
 		out.Endpoint = v
