@@ -88,7 +88,10 @@ func (c *APIClient) Exchange(ctx context.Context, activationCode, productID, dev
 	if err != nil {
 		return nil, nil, fmt.Errorf("license: %w", err)
 	}
-	data, err := json.Marshal(tok)
+	// 只 marshal 令牌本体 {payload,key_id,signature,algorithm}:Verify 严格解析
+	// (DisallowUnknownFields),外层响应的 license_id/expires_at 等会被拒——
+	// 2026-08-27 实测 bug(整个 response 拿去验签,激活全链路 502)。
+	data, err := json.Marshal(tok.Token)
 	if err != nil {
 		return nil, nil, err
 	}
