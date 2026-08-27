@@ -250,3 +250,28 @@ node .agents/skills/self-evolving/scripts/cdp-admin-capture.mjs out.png \
 
 要点:token 经 localStorage 注入而非 `?token=`(后者 devOnly,生产被剥离);
 `servers 先于受保护页启动`是硬前提,脚本已内置;坏 theme/lang 秒退 exit 2。
+
+## 模板 L:开放平台新增可订阅 Webhook 业务事件(2026-08-27 固化,来源:订阅事件调研+测试事件投递修复)
+
+> 登记制目录:emit 侧落地后才登记,未登记不进目录、不可被集成方订阅;
+> 目录唯一事实源 `internal/domain/openplat/events.go` eventCatalog。按序执行:
+
+1. **emit 侧**:业务域定义事件类型常量 + 负载 struct(参照 `internal/domain/order/stage_hook.go`
+   的 `StageEventType`/`StageEventPayload`),经 Emitter 接口发射,幂等键业务化(如 `orderNo:stage:N`);
+   业务域不 import openplat(避免域耦合),app 装配层注入(`ord.SetStageNotifier(app.OpenWebhook)` 模式;
+   守护测试跨域 import 发射方包,测试向 import 无环)。
+2. **目录登记**:eventCatalog 追加 `{Type: "x.y.z", Description: "英文基准文案"}`
+   (多语言展示由 admin 前端 i18n 承担);`events_test.go` 的
+   `TestEventCatalogCoversEmittedEvents` 补守护断言(目录必须覆盖已发射事件)。
+3. **匹配语义核对**(本步是测试事件空转 bug 的出生地):业务事件走 `Emit`——按事件类型精确匹配;
+   测试事件自检走 `EmitToApp`——按应用匹配全部启用订阅(`InsertAppDeliveries`)。
+   新增匹配语义 = `WebhookStore` 接口加方法 + `fakeWebhookStore` 补桩
+   (`go vet ./...` 让编译器罗列缺失方法,一次补全,别撞一个补一个)。
+4. **真实 PG 集成回归**(`webhook_pg_*_integration_test.go` 模式):`BOSS_PG_TEST_DSN` 未设即 skip;
+   seed 用语义前缀 + unixnano 专用命名(`op_<语义>_<nan>`,open_apps.app_id 仅 UNIQUE 无 CHECK);
+   t.Cleanup 按依赖逆序删 deliveries → subscriptions → apps;收尾 ssh psql 按前缀计数 = 0
+   (容器按端口定位,见 techniques「102 PG 容器定位」)。
+5. **契约**:`api/openapi/admin/openplat.yaml` 登记路径 + 顶层 `admin.yaml` 加同行 `$ref`
+   (checker A 项只匹配带 `$ref` 的行);`fields.md` 订阅事件行同步。
+6. **验证组合**:fake 单测(参数透传/载荷序列化)+ 真库集成(匹配维度/幂等重放/停用过滤)+
+   `make contract-sync` 域关键词范围断言;新增事件本身无需迁移(复用 open_webhook_deliveries)。

@@ -330,3 +330,11 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 **原因**:react-router-dom 6.30.4 的 NavLink 默认 `end=false` 前缀匹配(`locationPathname.startsWith(toPathname)`),`/boss/site` 是 `/boss/site/cats` 前缀即算 active。此版本 NavLink **已无 `isActive` prop**(6.26 有,6.30 从 props 移除,只剩 className/children 函数收 `{isActive,isPending,isTransitioning}`)。
 
 **修法**:Sidebar 从 NavLink 改 Link + 显式 `aria-current={active?'page':undefined}`;激活判定抽到 `router/menu.def.ts` 的 `isNavActive(to,pathname)`:精确路径激活;深层路由仅当其不是其它菜单项完整路径时算同页(如 `/boss/site/new` 仍高亮官网内容,`/boss/site/cats` 不高亮)。同一缺陷顺带修掉 `/bss/marketing` vs `/bss/marketing-recon`。改动前先 `grep -n isActive node_modules/.../react-router-dom/dist/index.d.ts` 确认版本 API。
+
+## 开放平台测试事件自检空转:queued 恒 0(2026-08-27 实证,e350757a 已合并)
+
+**症状**:管理端对应用发测试事件(`POST /openplat/apps/{id}/test-event`)响应 `queued=0`,集成方收不到,签名/连通性自检链路整体空转;代码"看起来对"——handler 注释写的就是"向该应用全部启用订阅发一条"。
+
+**原因**:注释与 SQL 语义相反。handler 走通用 `Emit` → `InsertDeliveries` 的 `WHERE sub.event_type = $2` 按**事件类型精确匹配**;而 `openplat.test` 是目录外测试事件(登记制目录 UI 选不到、建不出该类型订阅,且订阅创建不校验目录成员)——「发全部订阅」的意图撞上「按类型精确匹配」的实现,双重锁死恒命中 0 行。
+
+**修法**:新增按应用匹配通道 `EmitToApp`/`InsertAppDeliveries`(`WHERE sub.app_id=$3 AND sub.status=1 AND app.status=1`;投递行 event_type 记 `openplat.test`,使投递时 `X-BOSS-Event` 头与负载 type 一致,不冒充业务事件);业务事件 `Emit` 路径不动。回归:fake 桩断言 appID 透传 + 真实 PG 集成(启用/停用订阅各一、均不订 openplat.test → n=1 + 幂等重放 n=0)。**教训:新 emitter 消费方接线时必须核对匹配维度(按事件类型还是按应用),注释声称的集合语义要与 SQL WHERE 逐词对表。**

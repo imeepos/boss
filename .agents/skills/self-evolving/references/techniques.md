@@ -470,3 +470,37 @@ suspend fun current(ctx: Context): Location? {
 
 - 场景:worktree 里 `pnpm install` 撞全局 store-dir(/Volumes/sker 卷未挂载)EACCES;symlink 主树 node_modules 之外的另一条路。
 - 手法:`grep storeDir 主树/web/admin/node_modules/.modules.yaml` 拿到实际 store 路径,再 `pnpm install --store-dir <该路径>` 完整安装(worktree 自带 node_modules,pnpm test/build 原生可跑,不依赖主树结构)。
+
+## 「清单/下拉只有一项」反常调研双证据法(2026-08-27 实证:订阅事件选择器)
+
+- 场景 → 用户报"XX 只有一个/很反常",对象是下拉选项、事件目录、清单类供给数据。
+- 怎么用 → 五步定位:
+  1. **grep 找数据源**:前端渲染哪个 API(如 `SubForm.tsx` → `GET /openplat/event-types`),后端该端点原样返回什么(`openplat.EventCatalog()`);渲染链路每层核对,排除前端过滤假象。
+  2. **判定供给模式**:登记制(emit 侧落地才登记,如 `eventCatalog`)、配置制还是字典表——**登记制下"目录小"可能是如实反映而非缺陷**。
+  3. **数 emit 侧调用点**:`grep -rn "Emit(" --include="*.go" internal/ | grep -v _test` 对准目标 emitter,核对「已发射事件 ⊆ 已登记事件」与「已登记 ⊆ 已发射」两个方向(后者漏登是 bug,前者缺口是覆盖度)。
+  4. **102 运行时复核**:`curl -s -H "X-API-Key: $ADMIN_KEY" http://192.168.0.102:28080/api/admin/v1/openplat/event-types`(key 取 `.agents/skills/bossctl-cli/test-accounts.json`),与代码比对排除部署代差。
+  5. **结论三档**:渲染链路 bug / 登记缺漏(发射了没登记) / 覆盖度缺口(发射侧就没挂)——前两档是代码缺陷直接修,第三档如实汇报交用户拍板(扩展事件=产品决策)。
+
+## 门禁红归属判定:先回主树复跑 + 关键词范围断言(2026-08-27 实证:contract-sync 24 项红)
+
+- 场景 → feature/worktree 分支跑 `make check`/`make contract-sync` 出红,而树里混着并行会话的改动。
+- 怎么用 →
+  1. **回主树复跑同一门禁**:同红 = 存量(并行会话引入),不碰不修,总结里注明归属;仅自己改动引入的红才属于本次修复范围。
+  2. **修完做范围断言**:`make contract-sync 2>&1 | grep -ci "openplat"` 为 0,证明自己域内全绿,不背他人存量——用域关键词而不是数总数(总数随并行会话浮动)。
+  3. **存量红落在本任务调研域内**:可顺手修,但必须压成独立小提交(零行为变更、可单独 revert),不埋进 feature 提交。
+
+## 102 PG 容器定位与造数零残留核对(2026-08-27 实证)
+
+- 场景 → 集成测试跑完真库(`BOSS_PG_TEST_DSN`)后核对无残留;或手工查 102 库本机无 psql。
+- 怎么用 → 容器名不可猜(102 上并存 7 个 postgres),**按端口定位**:
+
+```bash
+# 1 定位容器:boss-infra-postgres-1 才是 25432;weibo-pro-postgres 占 5432 别混
+ssh imeepos@192.168.0.102 'docker ps --format "{{.Names}} {{.Ports}}"' | grep 25432
+# 2 残留计数:heredoc 传 stdin,SQL 字面量直接写单引号(红线 9a,不叠引号)
+ssh imeepos@192.168.0.102 'docker exec -i boss-infra-postgres-1 psql -U boss -d boss -tA' <<'SQL'
+SELECT 'apps_left=' || count(*) FROM open_apps WHERE app_id LIKE 'op_app_insert_%';
+SQL
+```
+
+- 断言 = 计数 0 才算清理闭环;测试 seed 一律用「语义前缀 + unixnano」专用命名(如 `op_app_insert_<nan>`),LIKE 前缀一查全中。
