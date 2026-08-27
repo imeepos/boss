@@ -119,11 +119,10 @@ type Config struct {
 		APIBaseURL string // 覆盖 API 地址(测试/代理用,空=官方)
 		WebhookURL string // 期望回调 URL(隧道快速 URL+路径;自愈循环比对用)
 	}
-	// License 系统级授权门禁(release-platform 离线授权)。
-	// Enabled 时业务接口须携带有效离线证书;未启用保持完全放行(开发/演示)。
+	// License 系统级授权门禁(release-platform 离线授权,B 档强制门禁)。
+	// 公钥编译期内嵌(buildinfo.LicensePublicKeyHex,-ldflags -X),无环境变量开关;
+	// 注入公钥即强制门禁,未注入 = 开发构建门禁不启用(打 ALERT 日志)。
 	License struct {
-		Enabled       bool   // BOSS_LICENSE_ENABLED=true 启用门禁
-		PublicKeyHex  string // release-platform 离线签发公钥(hex ed25519)
 		ProductID     string // release-platform 产品 ID(激活兑码)
 		CertPath      string // 本地证书文件路径(默认 /var/lib/boss/license.json)
 		DeviceID      string // 本部署实例标识(默认 hostname)
@@ -198,8 +197,6 @@ func Load() *Config {
 	c.Stripe.WebhookURL = getenv("BOSS_STRIPE_WEBHOOK_URL", "")
 
 	hostname, _ := os.Hostname()
-	c.License.Enabled = getenv("BOSS_LICENSE_ENABLED", "") == "true"
-	c.License.PublicKeyHex = getenv("BOSS_LICENSE_PUBLIC_KEY_HEX", "")
 	c.License.ProductID = getenv("BOSS_LICENSE_PRODUCT_ID", "boss-server")
 	c.License.CertPath = getenv("BOSS_LICENSE_CERT_PATH", "/var/lib/boss/license.json")
 	c.License.DeviceID = getenv("BOSS_LICENSE_DEVICE_ID", hostname)

@@ -8,6 +8,12 @@ MODULE := github.com/ymm-001/boss
 bossctl:
 	$(GO) build -ldflags="-s -w" -o bossctl ./cmd/bossctl
 
+## 构建业务单体(生产):注入 release-platform 授权公钥(B 档强制门禁;未注入=开发态)
+## 用法: BOSS_LICENSE_PUBLIC_KEY_HEX=<hex> make build-server
+build-server:
+	@test -n "$(BOSS_LICENSE_PUBLIC_KEY_HEX)" || (echo "[build-server] BOSS_LICENSE_PUBLIC_KEY_HEX 为空:将构建为开发态(门禁不启用);生产必须注入公钥" && exit 1)
+	$(GO) build -ldflags="-s -w -X github.com/ymm-001/boss/internal/pkg/buildinfo.LicensePublicKeyHex=$(BOSS_LICENSE_PUBLIC_KEY_HEX)" -o server ./cmd/server
+
 ## 由 api/openapi 重新生成 bossctl 三端路由目录(routes_*.go,契约变更后执行)
 bossctl-routes:
 	node scripts/gen-bossctl-routes.mjs

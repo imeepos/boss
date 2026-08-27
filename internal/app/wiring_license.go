@@ -9,31 +9,38 @@ import (
 	"time"
 
 	"github.com/ymm-001/boss/internal/domain/license"
+	"github.com/ymm-001/boss/internal/pkg/buildinfo"
 	"github.com/ymm-001/boss/internal/pkg/config"
 )
 
-// wireLicenseService 装配系统级授权门禁服务。
+// wireLicenseService 装配系统级授权门禁服务(B 档强制门禁)。
 //
-// 语义:BOSS_LICENSE_ENABLED=true 时启用——业务接口须持有 release-platform
-// 签发的有效离线证书(本地 Ed25519 验签,不依赖网络);未启用返回 nil(完全放行)。
-// 启用但缺公钥/API 配置视为配置错误,启动即失败(显式失败优于静默放行)。
+// 语义:公钥**编译期注入**(buildinfo.LicensePublicKeyHex,经 -ldflags -X)。
+//   - 已注入公钥 → 强制门禁:业务接口须持有 release-platform 签发的有效离线证书,
+//     本地 Ed25519 验签;无证书/失效 → 403 LICENSE_REQUIRED(激活页仍可达)。
+//   - 未注入公钥 → 开发构建:门禁不启用,打 ALERT 日志(明确"未内嵌授权公钥"状态),
+//     业务完全放行,便于无证书环境开发调试。
+//
+// 无"环境变量开关"可关(B 档):绕过门禁的唯一途径是重新编译替换二进制,
+// 而非改配置文件。裁定见 adopted license-gate note(Amended)。
 func wireLicenseService(cfg *config.Config) *license.Service {
-	lc := cfg.License
-	if !lc.Enabled {
+	if buildinfo.LicensePublicKeyHex == "" {
+		log.Printf("[license] ALERT: 未内嵌授权公钥(buildinfo.LicensePublicKeyHex 为空),门禁未启用——业务放行;生产构建必须注入公钥")
 		return nil
 	}
-	if lc.PublicKeyHex == "" {
-		log.Fatalf("[license] ALERT: BOSS_LICENSE_ENABLED=true but BOSS_LICENSE_PUBLIC_KEY_HEX empty")
-	}
-	verifier, err := license.NewVerifier(lc.PublicKeyHex)
+	verifier, err := license.NewVerifier(buildinfo.LicensePublicKeyHex)
 	if err != nil {
-		log.Fatalf("[license] ALERT: bad public key: %v", err)
+		// 内嵌公钥非法 = 构建产物损坏:不装配门禁并打 ALERT(门禁缺位等同放行,
+		// 但日志明确记录原因,避免静默);正常构建链路不会产出此状态。
+		log.Printf("[license] ALERT: bad embedded public key (%v), gate disabled", err)
+		return nil
 	}
+	lc := cfg.License
 	svc := &license.Service{
 		Verifier: verifier,
 		Store:    &license.Store{Path: lc.CertPath},
 		Cfg: license.Config{
-			PublicKeyHex: lc.PublicKeyHex,
+			PublicKeyHex: buildinfo.LicensePublicKeyHex,
 			ProductID:    lc.ProductID,
 			CertPath:     lc.CertPath,
 			DeviceID:     lc.DeviceID,
@@ -52,7 +59,7 @@ func wireLicenseService(cfg *config.Config) *license.Service {
 	}
 	// 激活客户端:仅当 API 地址与 token 齐备时接入;否则激活端点报 not configured。
 	if lc.APIBaseURL != "" && lc.APIToken != "" {
-		svc.API = license.NewAPIClient(lc.APIBaseURL, lc.APIToken, "", lc.PublicKeyHex)
+		svc.API = license.NewAPIClient(lc.APIBaseURL, lc.APIToken, "", buildinfo.LicensePublicKeyHex)
 	} else {
 		log.Printf("[license] WARN: API 配置缺失,激活端点不可用(仅验签门禁生效)")
 	}
