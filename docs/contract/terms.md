@@ -96,6 +96,11 @@
 | 盘点任务 stocktake.status | DOING / DONE | 在盘 / 已关单（000156 起：差异明细全处置完才可关单，存在 OPEN 差异返回 40900；口径见 fields.md §4.2.1） |
 | 盘点差异 stocktake_items.kind | PENDING / OK / MISMATCH / MISSING / EXTRA | 未扫 / 账实一致 / 状态不符 / 关单时仍未扫 / 计划外多扫 |
 | 盘点处置 stocktake_items.resolution | OPEN / CONFIRMED / FIXED / ESCALATED | 待处置 / 确认差异(按实盘修正台账) / 现场核实台账为准 / 上报转人工 |
+| 供应商 procurement_suppliers.status | ENABLED / DISABLED | 启用 / 停用（adopted 2026-08-28；迁移 000163） |
+| 采购单 procurement_orders.status | DRAFT / SUBMITTED / PARTIAL / RECEIVED / CANCELLED | 草稿 / 已提交 / 部分到货 / 全部到货 / 已取消；CONFIRMED 自动从 SUBMITTED→PARTIAL→RECEIVED 推进；任意非 RECEIVED 状态可 CANCELLED（adopted 2026-08-28；迁移 000163） |
+| 入库单 procurement_receipts.status | DRAFT / CONFIRMED / REJECTED | 草稿 / 已确认（建 asset_batches+逐台建 assets IN_STOCK 同事务）/ 拒收（adopted 2026-08-28；迁移 000163） |
+| 施工回单 install_logs.status | OPEN / COMPLETED / REJECTED | 已提交待签收 / 已签收 / 已拒签；工单同一时刻最多一条 OPEN（uq_install_logs_ticket_open 部分唯一，adopted 2026-08-28；迁移 000164） |
+| 派单工单到场 dispatch_tickets.arrived_at | TIMESTAMPTZ 可空 | 师傅到场打卡事实（不写回订单状态；GIS 施工实时图层读 arrive_lat/lng；adopted 2026-08-28；迁移 000164） |
 | 授权类型 license_type | duration / lifetime / trial | 按时长 / 终身 / 试用（release-platform 发行契约，claims 内透传展示） |
 | 授权 status（release-platform 侧） | issued / activated / consumed / expired / revoked | 已签发 / 已激活 / 已兑码 / 已过期 / 已吊销；boss 仅核验 `revoked`/`expired` 拒绝（verify.go checkStatus），其余透传展示 |
 

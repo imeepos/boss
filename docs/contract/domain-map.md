@@ -53,6 +53,7 @@
 | AI 能力网关 | AI | （横切，平台级，非 21 域） | `ai` | 增量 | 无专用页（复用 base/settings 参数页） | ai.openai.* 配置经 /params 或 /ai/openai/config 热更 |
 | 营销促销 | PROMO | （横切营销；LOY 积分待建，积分换券未来经契约） | `promotion` | 增量(000102) | bss（券仓入用户详情聚合;模板/赠送规则经 admin API,无专用页面） | 券模板/发放/兑换码/转赠/缴费抵扣/赠送时长规则;设计见 docs/design/promotion-coupon.md |
 | ODN 无源物理层 | ODN | （横切,与 OSS/AMS 同源;规范见 docs/pdfs《Suniway ODN 地理空间编码规范》） | `odn` | 阶段7/8(增量) | oss（`menu:odn`,sysadmin+resource_admin） | 局点/核心链路设备/光缆段落纤芯/网格与设施(规范第 2-5 章);`/odn/sites\|devices\|grids\|facilities\|segments` |
+| 采购-库存 | PUR | （横切,增量挂靠,不开阶段 10;adopted 2026-08-28） | `procurement` | 增量(000163) | ams（`menu:purchase`、`menu:inventory`,sysadmin） | 供应商/采购单/库存查询（与 asset 域共用 asset_batches/资产台账但域边界独立;GIS 库存分布图层读 asset_batches.warehouse_lat/lng） |
 | 官网内容发布 | CMS | （平台级,非 21 域） | `cms`(000134) | 增量 | boss(官网内容) | `/boss/site` 文章管理(动态/新闻/文章)；公开读 `/api/admin/v1/site/posts` 免鉴权供官网首页 |
 | 开放平台 | OPEN | （横切,平台级,非 21 域） | `openplat`(000122) | 增量(Q4) | org（开发者门户,`/openplat`） | AppId+Secret HMAC 鉴权、Webhook 订阅与投递、配额与限流、回放工具;契约 `/api/open/v1` |
 | 客户端版本发布 | APPREL | （横切,平台级,非 21 域） | `apprelease`(000137) | 增量 | boss(版本发布) | `/boss/release` 双端 APK 上传/灰度(比例+白名单)/发布/回滚;客户端匿名查 `/api/{worker,user}/v1/client/latest`;官网下载入口读 admin 匿名 latest |
@@ -73,8 +74,9 @@ menu.js 共 13 分组 49 菜单页（另 `login.html` 为登录散页，不进�
 | bss 客户与资费 | CRM + PROD | `customer` | 阶段2 | customer/product/user/userdata |
 | billing 计费与账务 | BIL + PAY + AR | `billing` | 阶段5 | billing/payment/arrears/stopsrv/paycheck |
 | ams 资产与标签 | AMS | `asset` | 阶段3 | asset/tag/stock/replace |
+| ams 资产与标签 | PUR | `procurement` | 增量(000163) | purchase/inventory |
 | oss 网络资源 | OSS + DEV + AAA(认证账号) | `resource`/`device`/`aaa` | 阶段4/7 | resource/reserve/transfer/device/loaccount/expand |
-| boss 订单与工单 | ORD + CS | `order` | 阶段5 | order/worker/worker-ops/dispatch/dismantle/complaint/callback |
+| boss 订单与工单 | ORD + CS | `order` | 阶段5 | order/worker/worker-ops/dispatch/dismantle/complaint/callback/install-board |
 | quad 四码合一 | QUAD | `quadlink` | 阶段6 | quadlink/check/scanlog |
 | provision 配置下发 | PROV | `provision` | 阶段7 | provision/template/provlog |
 | alarm 告警中心 | MON | `device` | 阶段7 | alarm |

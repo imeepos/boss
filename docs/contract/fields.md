@@ -1211,7 +1211,100 @@ API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATC
 客户端匿名检查 `GET /api/{worker,user}/v1/client/latest`（免登录，启动即查）；
 官网匿名 `GET /api/admin/v1/client-releases/latest?app=`（仅 PUBLISHED，首页下载入口）。
 
-## 9. 字段字典的使用规则（写入 Agent 输入包）
+## 9. 采购域 + 施工回单（internal/domain/procurement + order.install_logs，迁移 000163/000164）
+
+> 决策依据：docs/notes/adopted/2026-08-28-procurement-install-gis-linkage.md
+> 阶段：增量挂靠（不开阶段 10）；菜单分组：ams 资产与标签（采购/库存）+ boss 订单与履约（施工看板）
+
+### 9.1 procurement_suppliers（供应商，迁移 000163）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| — | `ID` | id | BIGSERIAL PK |
+| 编码 | `Code` | code | VARCHAR(64) UNIQUE（如 S-001） |
+| 名称 | `Name` | name | VARCHAR(128) |
+| 联系人 | `ContactName` | contact_name | VARCHAR(64) 可空 |
+| 联系电话 | `ContactPhone` | contact_phone | VARCHAR(32) 可空 |
+| 所属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities（企业锚点 §8.1） |
+| 状态 | `Status` | status | ENABLED / DISABLED（terms.md §4） |
+| 备注 | `Remark` | remark | VARCHAR(255) |
+
+### 9.2 procurement_orders（采购单头，迁移 000163）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| — | `ID` | id | BIGSERIAL PK |
+| 单号 | `ProcurementNo` | procurement_no | VARCHAR(32) UNIQUE（PO-YYYYMMDD-NNNNN，后端生成兜底） |
+| 所属公司 | `LegalEntityID`+`LegalEntityName` | legal_entity_id+name | §8.1 企业锚点铁律 |
+| 供应商 | `SupplierID`+`SupplierName` | supplier_id+name | FK → procurement_suppliers + 名称快照 |
+| 状态 | `Status` | status | DRAFT / SUBMITTED / PARTIAL / RECEIVED / CANCELLED（terms.md §4） |
+| 总金额 | `TotalAmount` | total_amount | NUMERIC(14,2) |
+| 预计到货 | `ExpectedDate` | expected_date | DATE 可空 |
+| — | `CreatedBy` | created_by | BIGINT → accounts |
+| — | `SubmittedAt` / `ReceivedAt` / `CancelledAt` | 同 | 状态流转时间戳 |
+
+### 9.3 procurement_order_items（采购单明细，迁移 000163）
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:-------|:------|:----------|
+| `OrderID` | order_id | BIGINT → procurement_orders（ON DELETE CASCADE） |
+| `MaterialCode` | material_code | VARCHAR(64) 对齐 material_items.code（L0 全局主档，data-layers §1） |
+| `Spec` | spec | VARCHAR(128) 可空 |
+| `Quantity` | quantity | INTEGER > 0 |
+| `ReceivedQty` | received_qty | INTEGER ≥ 0，CHECK ≤ quantity |
+| `UnitAmount` | unit_amount | NUMERIC(14,2) |
+
+### 9.4 procurement_receipts（到货入库单，迁移 000163）
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| — | `ID` | id | BIGSERIAL PK |
+| 单号 | `ReceiptNo` | receipt_no | VARCHAR(32) UNIQUE（RC-YYYYMMDD-NNNNN） |
+| 采购单 | `OrderID`+`OrderNo` | order_id+order_no | FK → procurement_orders + 单号快照 |
+| 入库批次 | `BatchID` | batch_id | BIGINT → asset_batches（CONFIRMED 同事务建批次后回填） |
+| 所属公司 | `LegalEntityID`+`LegalEntityName` | legal_entity_id+name | §8.1 |
+| 接收人 | `ReceivedBy` | received_by | BIGINT → accounts |
+| 接收时间 | `ReceivedAt` | received_at | TIMESTAMPTZ |
+| 状态 | `Status` | status | DRAFT / CONFIRMED / REJECTED（terms.md §4） |
+| 备注 | `Remark` | remark | VARCHAR(255) |
+
+### 9.5 install_logs（施工回单，迁移 000164）
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:-------|:------|:----------|
+| `TicketID` | ticket_id | BIGINT → dispatch_tickets（N:1，同 ticket 同一时刻最多一条 OPEN） |
+| `OrderID` | order_id | BIGINT → orders |
+| `WorkerID`+`WorkerName` | worker_id+name | FK → workers + 姓名快照 |
+| `Photos` | photos | JSONB（attachments.id 数组，MinIO 证据） |
+| `SignName` | sign_name | VARCHAR(64) 用户签收姓名 |
+| `SignImageURL` | sign_image_url | VARCHAR(255) 签收图片 |
+| `SignedAt` | signed_at | TIMESTAMPTZ |
+| `Note` | note | VARCHAR(500) |
+| `Status` | status | OPEN / COMPLETED / REJECTED（terms.md §4） |
+
+> 唯一约束：`(ticket_id) WHERE status='OPEN'` 部分唯一（uq_install_logs_ticket_open）。
+
+### 9.6 dispatch_tickets 增列（迁移 000164）
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:-------|:------|:----------|
+| `ArrivedAt` | arrived_at | TIMESTAMPTZ 可空（师傅到场打卡事实） |
+| `ArriveLat` | arrive_lat | DOUBLE PRECISION [-90,90] 可空，WGS84 |
+| `ArriveLng` | arrive_lng | DOUBLE PRECISION [-180,180] 可空，WGS84 |
+
+> 派生事实不写回订单状态；GIS 施工实时图层读 arrive_lat/lng 出图。
+> 旧版本师傅端无打卡动作时 NULL 兜底；标记作业 DOING + 师傅匹配 + arrived_at IS NULL 才允许 UPDATE（幂等首打卡）。
+
+### 9.7 asset_batches 增列（迁移 000163，GIS 库存分布图层用）
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:-------|:------|:----------|
+| `WarehouseLat` | warehouse_lat | DOUBLE PRECISION 可空，CHECK [-90,90] |
+| `WarehouseLng` | warehouse_lng | DOUBLE PRECISION 可空，CHECK [-180,180] |
+
+> 入库确认时由 ConfirmReceipt 入参 warehouseLat/Lng 一并写入；GIS `GET /gis/inventory-points?entity=warehouse&bbox` 读此列做聚合图层。
+
+## 10. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。
 2. 未定字段（本文件无该实体）时，字段名遵循第 0 节命名规则，并**回写本文件**补一节，避免下个 Agent 再猜。
