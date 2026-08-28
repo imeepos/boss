@@ -46,6 +46,12 @@
 - **修复与回归（✅ 关闭）**：并行会话 commit `cbcd9d35`（依 nav.js 契约改 tab 标签为"订单"）；真机回归：点"订单"tab → "我的订单"页，名实相符（证据 `d12-bug01-regression.png`）
 - 测试基线警示：并行迭代快于测试基线——本轮中并行又提交 `00fcc6d3`（积分/优惠券/发票菜单进入 ProfileMenu），需重装最新版再测（见已验证页面更新）
 
+## 真机协调阻塞（08-28 凌晨，待主持人协调）
+
+- 现象：com.ymm.boss.user 在 ee9999eb 上被并行会话反复卸载/重装（我 install -r Success → 数秒后 pm path 空）；App 前台被 MIUI recents 反复抢占；曾出现 focus=null、launcher 焦点
+- 影响：测试基线不可稳定，剩余流程（注册/密码登录/地址保存成功路径/支付）无法在可复现基线上执行
+- 请求：①并行会话对 ee9999eb 的安装/卸载操作与测试窗口错峰（或排他）；②Android 13+ 设备（POST_NOTIFICATIONS 实测）；③后续测试用 lastUpdateTime 复核包版本（既有红线）
+
 ## 已验证页面（D0-D1 凌晨，真机 MI 9 SE；21:00 后=最新版 APK 重装后）
 
 - ✅ 登录（真码链路：获取验证码→查 portal_sms_codes→登录→token 写 secure prefs；首页呈现"下午好，用户"）
