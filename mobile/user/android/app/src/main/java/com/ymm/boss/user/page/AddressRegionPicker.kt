@@ -1,5 +1,6 @@
 package com.ymm.boss.user.page
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -69,6 +70,13 @@ internal fun AddressRegionPickerSheet(
     var loading by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf("") }
+
+    // 系统返回=回上一级而非整层关闭;链空时不拦截,交还弹层自身关闭。
+    // 不清 filter 会残留上一层的过滤词,回到下层时列表被误过滤。
+    BackHandler(enabled = chain.isNotEmpty()) {
+        chain.removeAt(chain.size - 1)
+        filter = ""
+    }
 
     LaunchedEffect(chain.size) { loadChildren(chain, setLoading = { loading = it }, setErr = { err = it }) { children = it } }
 
