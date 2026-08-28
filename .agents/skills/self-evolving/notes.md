@@ -1312,3 +1312,10 @@
 - 边界正则 `[^a-zA-Z]Name\(` 会漏行首调用;计数结论须写明"文件数≠调用点数、含定义文件",否则被当成页面数引用。
 - 沿用上游简报数字("18 文件 60+ 硬编码")前要自己拆分: theme/Color.kt 是合法令牌文件也被计入,违规数高估,严重度结论过报——引二手数据前先核口径。
 - 只读审查也要自查"该查没查": 签名级对照≠实现对照(内边距/圆角/字号/状态色映射未比);两端同名文件(AuthForm.kt 各 4 处硬编码)本身就是跨端复制证据,看到了却没点破。
+
+## 2026-09-06 陈端·PointsPage 死返回键修复(P0-3)
+
+- 哪个坑浪费了最多时间? 裸 shell 无 java(报 "Unable to locate a Java Runtime"),第一次想当然按脚本里的 `/opt/homebrew/Cellar/openjdk@17` glob 找也扑空,多绕两查;实际 `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` 一直可用。另一个小坑:`gradlew -q` 成功时零输出,无证据感,须去掉 -q 重跑一次拿 `BUILD SUCCESSFUL` 关键行。
+- skill 有没有提前预警? 红线 #1(编辑前 read)与 #6(无验证动作不声称已验证)都生效,零拒绝;但"Android 构建环境三件套(JAVA_HOME/ANDROID_HOME/local.properties 缺一报 SDK location not found)"没有现成条目,本次补上。
+- 重来一次? 开工先 `ls /opt/homebrew/opt | grep jdk` + `ls ~/Library/Android/sdk` 一步定位,再跑 gradlew;验证命令固定模板:`export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=~/Library/Android/sdk && ./gradlew compileDebugKotlin --console=plain`(不带 -q)。
+- 超范围发现要上报不越界: 本任务只许改 PointsPage.kt,但查证中发现 MainActivity.kt `tabKeyOf` 缺 `Route.Points -> "points"` 映射(积分页 showTabs=false,底栏不显示、栈深1时系统返回直接退出)——写进汇报交主持人派单,不擅自改。
