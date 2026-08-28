@@ -3,6 +3,9 @@ package adminapi
 // 订单域路由 handler 实现(承接 registerOrderRoutes)。
 
 import (
+	"errors"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -57,6 +60,10 @@ func orderSubmitHandler(a *app.Application) gin.HandlerFunc {
 		}
 		o, err := a.Order.Submit(c.Request.Context(), req)
 		if err != nil {
+			if errors.Is(err, order.ErrDirectPhoneCap) || errors.Is(err, order.ErrDirectAddressCap) {
+				httpx.RecordAudit(a, c, "order.risk.blocked", "customer",
+					strconv.FormatInt(req.CustomerID, 10), map[string]any{"reason": err.Error()})
+			}
 			respondErr(c, err)
 			return
 		}

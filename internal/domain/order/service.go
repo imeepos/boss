@@ -13,6 +13,10 @@ var ErrIllegalTransition = errors.New("order: illegal transition")
 var ErrPartnerDailyCap = errors.New("order: partner daily order cap exceeded")
 var ErrPartnerCustomerCooldown = errors.New("order: partner customer cooldown")
 
+// 直营下单风控哨兵(阈值经 biz_params risk.direct.* 可调,见 pg_risk_direct.go)。
+var ErrDirectPhoneCap = errors.New("order: direct phone order cap exceeded")
+var ErrDirectAddressCap = errors.New("order: direct address in-flight cap exceeded")
+
 // ResourceChecker 资源核查跨域依赖口(契约 CT-002)。
 // 由 resource 域(阶段4)提供、app 装配层注入;order 域不 import resource 域实现。
 type ResourceChecker interface {

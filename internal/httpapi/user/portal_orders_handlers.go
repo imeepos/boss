@@ -3,6 +3,8 @@ package userapi
 // 用户端门户 Order 域 handler 实现。
 
 import (
+	"errors"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -145,6 +147,10 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 			RequestID:   req.RequestID,   // 幂等键(000116)
 		})
 		if err != nil {
+			if errors.Is(err, order.ErrDirectPhoneCap) || errors.Is(err, order.ErrDirectAddressCap) {
+				httpx.RecordAudit(a, c, "order.risk.blocked", "customer",
+					strconv.FormatInt(cid, 10), map[string]any{"reason": err.Error()})
+			}
 			respondErr(c, err)
 			return
 		}

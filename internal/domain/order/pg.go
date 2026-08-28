@@ -146,6 +146,10 @@ func (s *PGStore) submitRegular(ctx context.Context, req SubmitReq) (*Order, err
 	if !chOK {
 		return nil, fmt.Errorf("order: channel %d: %w", req.ChannelID, ErrChannelNotActive)
 	}
+	// 直营风控(放量 FMS 前哨):渠道路径已有独立风控,此处只拦直营。
+	if err := s.checkDirectRisk(ctx, req); err != nil {
+		return nil, err
+	}
 	own, err := s.resolveOwnership(ctx, req.AddressID)
 	if err != nil {
 		return nil, err

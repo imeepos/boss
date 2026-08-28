@@ -50,6 +50,16 @@ func expectSubmitRefs(mock pgxmock.PgxPoolIface, offerID, channelID int64) {
 	expectRefExists(mock, "channels", channelID)
 }
 
+// expectDirectRiskClean 桩直营风控两条计数(默认阈值下双 0 放行)。
+func expectDirectRiskClean(mock pgxmock.PgxPoolIface, customerID, addressID int64) {
+	mock.ExpectQuery(`SELECT count\(\*\) FROM orders o JOIN customers`).
+		WithArgs(customerID).
+		WillReturnRows(mock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery(`SELECT count\(\*\) FROM orders\s+WHERE address_id`).
+		WithArgs(addressID).
+		WillReturnRows(mock.NewRows([]string{"count"}).AddRow(0))
+}
+
 func TestPGStore_Submit(t *testing.T) {
 	t.Run("成功", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -59,6 +69,7 @@ func TestPGStore_Submit(t *testing.T) {
 		defer mock.Close()
 
 		expectSubmitRefs(mock, 10, 5)
+		expectDirectRiskClean(mock, 1, 100)
 		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(1), "root.luzon"))
@@ -97,6 +108,7 @@ func TestPGStore_Submit(t *testing.T) {
 		defer mock.Close()
 
 		expectSubmitRefs(mock, 10, 5)
+		expectDirectRiskClean(mock, 1, 100)
 		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnError(pgx.ErrNoRows)
@@ -132,6 +144,7 @@ func TestPGStore_Submit(t *testing.T) {
 		defer mock.Close()
 
 		expectSubmitRefs(mock, 0, 5)
+		expectDirectRiskClean(mock, 1, 100)
 		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnError(pgx.ErrNoRows)
@@ -155,6 +168,7 @@ func TestPGStore_Submit(t *testing.T) {
 		defer mock.Close()
 
 		expectSubmitRefs(mock, 0, 5)
+		expectDirectRiskClean(mock, 1, 100)
 		mock.ExpectQuery(`SELECT cov.legal_entity_id`).
 			WithArgs(int64(100)).
 			WillReturnRows(mock.NewRows([]string{"legal_entity_id", "path"}).AddRow(int64(2), "root.luzon"))
