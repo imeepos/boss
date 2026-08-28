@@ -18,10 +18,10 @@ type DispatchTicket struct {
 	RegionName      string     `json:"regionName"`
 	LegalEntityID   int64      `json:"legalEntityId"`
 	LegalEntityName string     `json:"legalEntityName"`
-	Status          string     `json:"status"` // PENDING/DOING/DONE/CANCELED
-	ArrivedAt       *time.Time `json:"arrivedAt,omitempty"`     // 师傅到场打卡(派生事实,GIS 施工实时图层读 arrive_lat/lng)
-	ArriveLat       *float64   `json:"arriveLat,omitempty"`     // WGS84
-	ArriveLng       *float64   `json:"arriveLng,omitempty"`     // WGS84
+	Status          string     `json:"status"`              // PENDING/DOING/DONE/CANCELED
+	ArrivedAt       *time.Time `json:"arrivedAt,omitempty"` // 师傅到场打卡(派生事实,GIS 施工实时图层读 arrive_lat/lng)
+	ArriveLat       *float64   `json:"arriveLat,omitempty"` // WGS84
+	ArriveLng       *float64   `json:"arriveLng,omitempty"` // WGS84
 }
 
 // Complaint 报障工单(客服域,客户报障与处理)。

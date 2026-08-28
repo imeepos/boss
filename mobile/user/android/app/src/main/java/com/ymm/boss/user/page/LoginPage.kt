@@ -100,8 +100,13 @@ fun LoginScreen(nav: Nav) {
                 }
                 AuthAgreeRow(agreed, onToggle = { agreed = it },
                     onAgreement = { nav.push(com.ymm.boss.user.ui.Route.Agreement) })
-                RNPrimaryButton("登录", enabled = agreed && !busy, loading = busy,
+                RNPrimaryButton("登录", enabled = !busy, loading = busy,
                     onClick = {
+                        if (!agreed) {
+                            // OB-06:未勾协议给原因提示而非静默无响应(灰底禁用无解释,新用户困惑)
+                            err = "请先阅读并同意《用户协议》"
+                            return@RNPrimaryButton
+                        }
                         busy = true
                         doLogin(scope, nav, context, phone, mode, if (mode == "sms") code else password) {
                             err = it; busy = false
