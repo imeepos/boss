@@ -84,5 +84,3 @@ func mustVerifierPub(t *testing.T, pubHex string) *Verifier {
 	}
 	return v
 }
-
-
