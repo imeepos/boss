@@ -154,6 +154,9 @@ func transferResolve(c *gin.Context, a *app.Application, ticketNo string, req tr
 		respondErr(c, err)
 		return nil, nil, false
 	}
+	if !requireTicketInScope(c, a, ticket) {
+		return nil, nil, false
+	}
 	// 终态工单不可转派;转派目标即当前师傅视为无效操作。
 	if ticket.Status == "DONE" || ticket.Status == "CANCELED" {
 		respond(c, apitypes.CodeInvalidParam, gin.H{"error": "ticket already " + ticket.Status})

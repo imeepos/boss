@@ -140,6 +140,9 @@ func orderActivateHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !requireTicketInScope(c, a, tk) {
+			return
+		}
 		if err := a.Automation.AutoPostScan(c.Request.Context(), tk.OrderID); err != nil {
 			respondErr(c, err)
 			return

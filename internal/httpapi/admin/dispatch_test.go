@@ -11,6 +11,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -380,5 +381,69 @@ func TestTransferTicketRegionMismatchForce(t *testing.T) {
 		`{"toMasterId":6,"reason":"跨区","force":true}`, authToken(t, mgr))
 	if w.Code != http.StatusOK || wo.assigned == nil || wo.assigned.workerID != 6 {
 		t.Fatalf("forced transfer should pass: status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+// newTicketRouter 工单寻址路由(activate/transfer)测试装配:Automation 用 fakeOrder 兜底。
+func newTicketRouter(wo *fakeDispatchOrder, u *fakeUser) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	Register(r, &app.Application{
+		User: u, WorkOrder: wo, OrderLedger: &fakeOrderLedger{}, Worker: &fakeWorkerSvc{},
+		Automation: app.NewAutomation(&fakeOrder{}, nil),
+	}, auth.NewManager("s", time.Hour))
+	return r
+}
+
+// TestTicketScopedWriteDeniedAsNotFound 契约:数据范围外的工单推进/转派与不存在
+// 同响应不可区分(2026-08-28 battle oracle;activate/transfer 曾无任何范围守卫)。
+func TestTicketScopedWriteDeniedAsNotFound(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	// 区域越子树:工单 region_id=8(fakeUser.GetRegion 恒返 root.test),scope 区域为 visayas
+	wo := &fakeDispatchOrder{byNo: &order.DispatchTicket{TicketID: 7, LegalEntityID: 1, RegionID: 8, Status: "DOING"}}
+	u := &fakeUser{permOk: true, dataScope: user.DataScope{LegalEntityID: 1, RegionScope: "root.visayas"}}
+	r := newTicketRouter(wo, u)
+
+	wOut := postJSONAuth(t, r, "/api/admin/v1/tickets/TK-1/activate", "{}", authToken(t, mgr))
+	wMiss := postJSONAuth(t, r, "/api/admin/v1/tickets/TK-404/activate", "{}", authToken(t, mgr))
+	if wOut.Code != wMiss.Code || wOut.Body.String() != wMiss.Body.String() {
+		t.Fatalf("越权推进与不存在可区分: out=%d %s miss=%d %s",
+			wOut.Code, wOut.Body.String(), wMiss.Code, wMiss.Body.String())
+	}
+
+	// 实体不符:转派同样拦截
+	wo2 := &fakeDispatchOrder{byNo: &order.DispatchTicket{TicketID: 7, LegalEntityID: 2, RegionID: 8, Status: "DOING"}}
+	u2 := &fakeUser{permOk: true, dataScope: user.DataScope{LegalEntityID: 1, RegionScope: "root.test"}}
+	wX := postJSONAuth(t, newTicketRouter(wo2, u2), "/api/admin/v1/dispatch/tickets/TK-1/transfer",
+		`{"toMasterId":5,"reason":"e2e"}`, authToken(t, mgr))
+	if wX.Code != http.StatusOK || wX.Body.String() == "" {
+		t.Fatalf("transfer status=%d", wX.Code)
+	}
+	var body struct {
+		Code apitypes.Code `json:"code"`
+		Msg  string        `json:"msg"`
+	}
+	if err := json.Unmarshal(wX.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body.Code != apitypes.CodeNotFound {
+		t.Fatalf("实体不符未被范围守卫拦截: %+v", body)
+	}
+
+	// 范围内放行:守卫通过后到达既有终态校验(ticket already DONE)
+	wo3 := &fakeDispatchOrder{byNo: &order.DispatchTicket{TicketID: 7, LegalEntityID: 1, RegionID: 8, Status: "DONE"}}
+	wIn := postJSONAuth(t, newTicketRouter(wo3, u2), "/api/admin/v1/dispatch/tickets/TK-1/transfer",
+		`{"toMasterId":5,"reason":"e2e"}`, authToken(t, mgr))
+	var bodyIn struct {
+		Code apitypes.Code `json:"code"`
+		Data struct {
+			Error string `json:"error"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(wIn.Body.Bytes(), &bodyIn); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if bodyIn.Code != apitypes.CodeInvalidParam || bodyIn.Data.Error != "ticket already DONE" {
+		t.Fatalf("范围内工单被误拦: %+v", bodyIn)
 	}
 }

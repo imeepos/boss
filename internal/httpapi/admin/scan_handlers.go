@@ -33,6 +33,9 @@ func scanBindHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !requireTicketInScope(c, a, tk) {
+			return
+		}
 		if !scanVerifyAndAdvance(c, a, tk, req) {
 			return
 		}
@@ -55,6 +58,9 @@ func scanDismantleHandler(a *app.Application) gin.HandlerFunc {
 		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), ticketNo)
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		if !requireTicketInScope(c, a, tk) {
 			return
 		}
 		if err := a.QuadLink.UnbindRequireScan(c.Request.Context(), tk.OrderID, req.EPC); err != nil {
