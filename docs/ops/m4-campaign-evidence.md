@@ -32,15 +32,25 @@ LOY 配套（此前为空，本批配置）：等级 白银(500)/黄金(2000)、
 - 券/积分发放-兑换-核销-补偿-对账全链真实闭环，两个活动上线 → **3.2 达成**。
 - 官网落地页/转化埋点（3.4）与老带新推荐码未含在本批（见 §5 遗留）。
 
-## 4. 3.3 首单风控现状
+## 4. 3.3 首单风控
 
 - 渠道链路风控已在跑（M3 证据）：PartnerOrderRisk 日限额(100/法人/日)+客户 24h 冷却+审计留痕。
-- 直营下单风控（同号多单/异常地址）尚未接直营 Submit 路径——列入下批代码项：
-  规则引擎挂 order.SubmitRegular（biz_params 可配阈值 + audit 拦截留痕），与 3.3 验收对齐。
+- **直营风控 v1 已落码并实测（2026-08-28，commit 91454e4f）**：
+  - 规则：同手机号 24h 多单（默认 5）+ 同地址在途堆积（默认 3），挂 `order.submitRegular`；
+  - 配置：biz_params `risk.direct.enabled/phoneCap/addressCap` 可调（PUT /params/{key}）；
+  - 留痕三重：`[order-risk] BLOCKED` 可 grep 日志（覆盖全部入口）+ 审计 `order.risk.blocked` +
+    响应 42300（CodeResourceBusy，与渠道 cap 对齐）；
+  - 单测 5 例（放行/PHONE_CAP/ADDRESS_CAP/关停/自定义阈值）+ 既有 Submit 测试补风控期望。
+- **102 实测拦截实录**（部署后）：
+  1. `PUT /params/risk.direct.phoneCap`=1 →
+  2. 下单 A 放行（ORD-20260828-000560）→ 下单 B **42300 拦截**；
+  3. 日志 `[order-risk] BLOCKED reason=PHONE_CAP customer=213 count=1 cap=1`；
+  4. 审计行 `order.risk.blocked|customer|213`；
+  5. 阈值恢复 5，演练单已取消（造数不过夜）。
+- **3.3 达成**：规则可配置 + 拦截/放行有留痕（渠道+直营双链路）。
 
 ## 5. 遗留（下轮）
 
-1. 3.3 直营首单风控规则 v1 落码（同号多单/异常地址，biz_params 配置 + 审计）。
-2. 3.4 官网获客闭环：CMS 活动 → 注册转化追踪（utm/来源字段）。
-3. 老带新推荐码活动（需推荐关系建模，排 M4 后段）。
-4. M3 渠道目录归属口径 A/B/C 仍待拍板（`m3-channel-evidence.md` §3）。
+1. 3.4 官网获客闭环：CMS 活动 → 注册转化追踪（utm/来源字段）。
+2. 老带新推荐码活动（需推荐关系建模，排 M4 后段）。
+3. M3 渠道目录归属口径 A/B/C 仍待拍板（`m3-channel-evidence.md` §3）。

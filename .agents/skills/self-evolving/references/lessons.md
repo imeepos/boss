@@ -415,3 +415,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当脚本判断 API 调用成败时,修复是以响应信封 code==0(或 ok:true)为准,不能只看 http_code——本仓错误信封 42200/40100 也返回 HTTP 200(2026-08-28 slo-cruise emit 静默失败实例)。HTTP 200 + grep '"code":0' 双条件才对。
 - 当要调用存在枚举/白名单的端点时,修复是先读契约与实现确认枚举值(如 ops/notify-emit 的 refType 白名单 stripe_tunnel/slo_cruise,见 ops_notify.go),别按语义猜一个新值——白名单外必 42200。
 - 当复用现成"对账/巡检"口径做根因分析时,修复是先 grep 该指标在代码里的权威 SQL 定义(如 pg_recon_counts.go),再照抄直查——自拼表名/列名(port_reserves/reserve_expires_at)会连撞两回(2026-08-28 孤儿端口实例)。
+- 当把 merge/cleanup 串在同一条 bash 链里时,修复是先跑 merge 看结果再单独清理——ff-merge 失败(并行会话推进 main)后链式 worktree remove 仍会执行,靠 branch -d 拒绝才保住 commit(2026-08-28 实例,recidivism #9 变体)。
+- 当给既有 pgxmock 提交流程加新查询时,修复是同步补 mock 期望并提供 helper(如 expectDirectRiskClean)——漏补会让 4 个存量子测试一起红,报"could not match actual sql"。
