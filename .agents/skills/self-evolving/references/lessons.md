@@ -433,3 +433,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当后端在 handler 里调 domain 且 domain 内部修改入参副本字段(如兜底生成 payNo)时,handler 拿不到新值:让 domain 返回回执结构体带该字段,或 handler 层先生成。
 - 当 102 部署验收(真环境)时,先 bossctl 打一发只读端点确认服务健康再跑迁移类操作;真实验证会暴露 mock 层永远拦不住的 SQL NULL/约束类缺陷,验收预算不能省。
 - 当 docker build 走远程 builder(102-remote)时,先查 .dockerignore 是否排除本仓大型编译产物(web/desktop/target 等),否则上下文传输+写入层会撑爆远端盘。
+- (2026-08-29 郑稳) ModalBottomSheet 表单 IME 开启时 sheet 按聚焦字段上移平移(实测~111px),陈旧坐标的 tap 会打在搜狗候选条上——把拼音组字连同候选词一起提交进**错误字段**(字段出现"bar be"=键入bar+候选be,即此坑签名)。铁律:每次焦点变化/键盘开合后必须重新 uiautomator dump 取坐标再 tap;见到"值=键入串+空格+意外词"先查候选条误触,别判产品缺陷。
+- (2026-08-29 郑稳) 断言"打字过程浮层保持展开":比对 dumpsys 弹出式窗口的 **Window hash**——同一 hash 贯穿按键全程=浮层从未关闭(比 frame 有无更硬);注意光标手柄窗(62×75px)也计为弹出式窗口,frame 尺寸按 192px/行折算行数区分,别被 refs 计数假阳性骗。
