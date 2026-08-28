@@ -84,8 +84,11 @@ fun AddressEditorSheet(
     }
     // 编辑态回显:addressPath 有值但面包屑空 → /address-tree/lookup 精确反查祖先链回填
     // (search 是模糊 ILIKE+LIMIT,匹配不了 ltree 编码 path,不能反查)。
-    // 失败降级:显示 path 末段 code+重试入口;403 服务授权异常必须明示,禁止静默吞掉。
+    // 失败分两类(HTTP/网络异常=可重试 lookupFailed;响应成功但 path 在 missing[]=
+    // 确定性失配 lookupStale,旧格式标签重试永远失败,只展示不提供重试入口);
+    // 403 服务授权异常必须明示,禁止静默吞掉。
     var lookupFailed by remember { mutableStateOf(false) }
+    var lookupStale by remember { mutableStateOf(false) }
     var lookupForbidden by remember { mutableStateOf(false) }
     var lookupTick by remember { mutableIntStateOf(0) }
 
@@ -93,12 +96,18 @@ fun AddressEditorSheet(
         val path = addressPath.trim()
         if (path.isBlank() || regionBreadcrumb.isNotBlank()) return@LaunchedEffect
         lookupFailed = false
+        lookupStale = false
         lookupForbidden = false
         try {
-            val items = ProfileApi.lookupAddressTree(listOf(path)).optJSONArray("items").toObjectList()
+            val resp = ProfileApi.lookupAddressTree(listOf(path))
+            val items = resp.optJSONArray("items").toObjectList()
             val hit = items.firstOrNull { it.optString("path") == path } ?: items.firstOrNull()
             if (hit == null) {
-                lookupFailed = true
+                // missing[] 是字符串数组(契约 misc.yaml):path 在内=确定性失配,不重试。
+                val missing = resp.optJSONArray("missing")
+                val missed = missing != null &&
+                        (0 until missing.length()).any { missing.optString(it) == path }
+                if (missed) lookupStale = true else lookupFailed = true
                 return@LaunchedEffect
             }
             val names = hit.optJSONArray("ancestors").toObjectList().map { it.optString("name") } +
@@ -171,6 +180,7 @@ fun AddressEditorSheet(
                 breadcrumb = regionBreadcrumb,
                 addressPath = addressPath,
                 lookupFailed = lookupFailed,
+                lookupStale = lookupStale,
                 lookupForbidden = lookupForbidden,
                 onRetry = { lookupTick++ },
                 onClick = { pickerVisible = true },
