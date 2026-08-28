@@ -140,6 +140,10 @@ type OrderService interface {
 	// Track 跟踪(order.html 时间轴):返回订单 + 环节日志。
 	Track(ctx context.Context, orderID int64) (*Order, []StageLog, error)
 
+	// PrepaidAmount 预付费订单应收(环节4/师傅现场收款同口径):金额=月数×月费,
+	// 后付费返回 prepaid=false。2026-09-05 师傅端现场收款落账用。
+	PrepaidAmount(ctx context.Context, orderID int64) (amount float64, months int, prepaid bool, err error)
+
 	// ChangeAddress 变更安装地址(用户端 change-address)。
 	ChangeAddress(ctx context.Context, orderID, addressID int64) error
 

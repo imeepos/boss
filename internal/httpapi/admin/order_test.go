@@ -34,7 +34,10 @@ func (f *fakeOrder) Submit(ctx context.Context, r order.SubmitReq) (*order.Order
 func (f *fakeOrder) CheckResource(ctx context.Context, id int64) error  { return nil }
 func (f *fakeOrder) Reserve(ctx context.Context, id int64) error        { return nil }
 func (f *fakeOrder) ChargeContract(ctx context.Context, id int64) error { return nil }
-func (f *fakeOrder) ApplyTag(ctx context.Context, id int64) error       { return nil }
+func (f *fakeOrder) PrepaidAmount(ctx context.Context, id int64) (float64, int, bool, error) {
+	return 0, 0, false, nil
+}
+func (f *fakeOrder) ApplyTag(ctx context.Context, id int64) error { return nil }
 func (f *fakeOrder) CreateUserProfile(ctx context.Context, id int64) error {
 	return nil
 }

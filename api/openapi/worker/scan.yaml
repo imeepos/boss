@@ -161,7 +161,7 @@ paths:
   /tickets/{ticketNo}/charge:
     get:
       tags: [ScanBind]
-      summary: 现场收款预取(应收金额/方式)
+      summary: 现场收款预取(应收金额/方式;额度=预付费订单月数x月费,额度按 stripe 通道配置动态下发)
       operationId: getCharge
       parameters:
         - $ref: './schemas.yaml#/components/parameters/TicketNo'
@@ -173,7 +173,7 @@ paths:
               schema: { $ref: './schemas.yaml#/components/schemas/Charge' }
     post:
       tags: [ScanBind]
-      summary: 确认现场收款(即时更新账务,同步生成电子收据)
+      summary: 确认现场收款(pay_no 落账 payments 流水,同步生成电子收据)
       operationId: submitCharge
       parameters:
         - $ref: './schemas.yaml#/components/parameters/TicketNo'
@@ -186,7 +186,7 @@ paths:
               required: [amount, payMethod]
               properties:
                 amount: { type: number }
-                payMethod: { type: string, enum: [QR, CASH, POS] }
+                payMethod: { type: string, enum: [CARD, CASH, QR, POS], description: 'CARD 仅 stripe 通道已配置时可用;落账 method: CARD→card,其余→offline' }
       responses:
         '200':
           description: 收款结果
@@ -195,5 +195,6 @@ paths:
               schema:
                 type: object
                 properties:
+                  ok: { type: boolean }
                   payNo: { type: string }
                   receiptUrl: { type: string }

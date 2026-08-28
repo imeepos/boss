@@ -56,6 +56,34 @@ func (s *PGStore) collectPrepaid(ctx context.Context, orderID int64) error {
 	return s.writebackGiftMonths(ctx, orderID, gift)
 }
 
+// PrepaidAmount 预付费订单应收(环节4/师傅现场收款同口径):金额=月数 x 月费,
+// 月数=orders.buy_months(0 视为按月缴 1 个月);后付费返回 prepaid=false。
+func (s *PGStore) PrepaidAmount(ctx context.Context, orderID int64) (float64, int, bool, error) {
+	var mode string
+	var buyMonths int64
+	err := s.db.QueryRow(ctx,
+		`SELECT billing_mode, buy_months FROM orders WHERE id = $1`, orderID).
+		Scan(&mode, &buyMonths)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, 0, false, ErrOrderNotFound
+	}
+	if err != nil {
+		return 0, 0, false, fmt.Errorf("order: charge select: %w", err)
+	}
+	if mode != BillingModePrepaid {
+		return 0, 0, false, nil
+	}
+	months := buyMonths
+	if months < 1 {
+		months = 1
+	}
+	fee, err := s.prepaidMonthlyFee(ctx, orderID)
+	if err != nil {
+		return 0, 0, false, err
+	}
+	return fee * float64(months), int(months), true, nil
+}
+
 // writebackGiftMonths 赠送月数回填快照;0 不写。
 func (s *PGStore) writebackGiftMonths(ctx context.Context, orderID int64, gift int) error {
 	if gift <= 0 {

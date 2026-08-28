@@ -10,7 +10,6 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
-	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -25,7 +24,7 @@ func registerWorkerPortalScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/tickets/:ticketNo/activation", workerActivationGetHandler(a))
 	g.POST("/tickets/:ticketNo/activate", workerActivateHandler(a))
 	g.POST("/tickets/:ticketNo/sign", workerAuditOK(a, "sign"))
-	g.GET("/tickets/:ticketNo/charge", workerChargeGetHandler)
+	g.GET("/tickets/:ticketNo/charge", workerChargeGetHandler(a))
 	g.POST("/tickets/:ticketNo/charge", workerChargePostHandler(a))
 }
 
@@ -197,47 +196,6 @@ func workerActivateHandler(a *app.Application) gin.HandlerFunc {
 		}
 		loid := workerOrderLoid(c, a, ord.CustomerID)
 		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage, loid))
-	}
-}
-
-// workerChargeGetHandler 现场收款预取:订单价格快照未暴露,金额待 DB 商议。
-func workerChargeGetHandler(c *gin.Context) {
-	respond(c, apitypes.CodeOK, gin.H{
-		"ticketNo": c.Param("ticketNo"), "amountDue": 0, "amountDesc": "",
-		"payMethods": []string{"QR", "CASH", "POS"},
-	})
-}
-
-// workerChargeReq 现场收款确认。
-type workerChargeReq struct {
-	Amount    float64 `json:"amount" binding:"required"`
-	PayMethod string  `json:"payMethod" binding:"required"`
-}
-
-// workerChargePostHandler 确认收款:账务联动缺口见报告,先审计留痕。
-func workerChargePostHandler(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		tk, _, err := ticketOrder(c, a)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		if !workerOwnedTicket(c, tk) {
-			return
-		}
-		var req workerChargeReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			if req.Amount <= 0 {
-				return &httpx.ValidationError{Field: "amount", Message: "must be greater than 0"}
-			}
-			return nil
-		}) {
-			return
-		}
-		httpx.RecordAudit(a, c, "数据变更", "worker_charge", c.Param("ticketNo"), map[string]any{
-			"amount": req.Amount, "payMethod": req.PayMethod,
-		})
-		respond(c, apitypes.CodeOK, gin.H{"ok": true, "payNo": "", "receiptUrl": ""})
 	}
 }
 

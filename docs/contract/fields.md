@@ -435,7 +435,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 
 ### 1.6.9 stripe.* 支付配置（页面 `/base/stripeconfig`「支付配置」，迁移 000147）
 
-存储复用 `biz_params`（key 前缀 `stripe.`，与 auth.*/realid.*/minio.* 同一套加密/掩码约定）。运行时由 `stripe.Dynamic` 消费（60s 热生效；`internal/app/wiring_stripe.go`，DB 配置非空覆盖 env `BOSS_STRIPE_*` 兜底）；未启用/缺 `stripe.apiKey` → 发起端点 400、webhook 503（既有"密钥未配即降级"裁定）。
+存储复用 `biz_params`（key 前缀 `stripe.`，与 auth.*/realid.*/minio.* 同一套加密/掩码约定）。运行时由 `stripe.Dynamic` 消费（60s 热生效；`internal/app/wiring_stripe.go`）。**2026-09-05 裁定：env 兜底 `BOSS_STRIPE_*` 移除，凭据仅存 DB**（docker-compose 不再注入；App 端支付方式/师傅端现场收款方式也以本配置为准）；未启用/缺 `stripe.apiKey` → 发起端点 400、webhook 503、支付方式默认线下（"密钥未配即降级"裁定）。
 
 | 页面字段 | key（API/DB 同名） | 枚举/说明 |
 |:--------|:-------------------|:----------|
@@ -445,9 +445,9 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 记账币种 | `stripe.currency` | ISO 小写三字码,默认 php |
 | API 地址覆盖 | `stripe.apiBaseUrl` | 测试/代理用,空=官方 api.stripe.com |
 | Webhook 签名密钥 | `stripe.webhookSecret` | whsec_ 开头,secret,密文落库;空串=不修改 |
-| 期望回调 URL | `stripe.webhookUrl` | 隧道快速 URL + `/api/user/v1/webhooks/stripe`,自愈循环比对源;env 兜底 `BOSS_STRIPE_WEBHOOK_URL` |
+| 期望回调 URL | `stripe.webhookUrl` | 隧道快速 URL + `/api/user/v1/webhooks/stripe`,自愈循环比对源 |
 
-> 接口：`GET /stripe-config`、`PUT /stripe-config/{channel|webhook}`、`POST /stripe-config/channel/test`（完整性校验跨两组,草稿跨 channel/webhook 组合并——webhookSecret 未保存即可参与;通过后真实探活余额 + 核对后台 webhook endpoint 与期望 URL 一致性,零副作用;permCode `menu:stripeconfig`,迁移 000147,openapi sys.yaml）。env 兜底：`BOSS_STRIPE_API_KEY`/`BOSS_STRIPE_WEBHOOK_SECRET`/`BOSS_STRIPE_CURRENCY`/`BOSS_STRIPE_API_BASE`/`BOSS_STRIPE_WEBHOOK_URL`。
+> 接口：`GET /stripe-config`、`PUT /stripe-config/{channel|webhook}`、`POST /stripe-config/channel/test`（完整性校验跨两组,草稿跨 channel/webhook 组合并——webhookSecret 未保存即可参与;通过后真实探活余额 + 核对后台 webhook endpoint 与期望 URL 一致性,零副作用;permCode `menu:stripeconfig`,迁移 000147,openapi sys.yaml）。env 兜底已于 2026-09-05 移除（同 commit 清理 config.Stripe 结构 + deployments 环境变量；102 测试账号凭据需在配置页重新录入）。配置消费方：用户端 `GET /payments/methods`（stripe 可用才下发银行卡）、师傅端 `GET /tickets/:no/charge` payMethods（可用才含 CARD）。
 
 ## 2. 阶段2 · 客户与资费（internal/domain/customer）
 
@@ -579,7 +579,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 客户 | `CustomerID` | customer_id | BIGINT → customers（000068 新增硬 FK，冗余直挂） |
 | 账单号 | `BillID` | bill_id | BIGINT → bills（000068 起**可空**：充值/预存无账单） |
 | 金额 | `Amount` | amount | NUMERIC |
-| 方式 | `Method` | method | wechat/alipay/card/cash（见 terms.md 第 4 节） |
+| 方式 | `Method` | method | wechat/alipay/card/cash/offline（见 terms.md 第 4 节；offline=线下收款,师傅现场 CASH/QR/POS 统一记 offline,2026-09-05） |
 | 状态 | `Status` | status | SUCCESS/FAILED/REFUNDED |
 | 退款原因 | `RefundReason` | refund_reason | 000112 全额退款留痕,未退为空 |
 | 退款时间 | `RefundedAt` | refunded_at | 000112;可空,退款时落 now() |
