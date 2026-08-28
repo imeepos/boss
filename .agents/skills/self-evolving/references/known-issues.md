@@ -382,3 +382,6 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状: 小区名联想浮层在软键盘弹出瞬间被收起,无法"边打字边看候选"。
   原因: M3 1.4.0 ExposedDropdownMenu 已重构为私有实现(公开面仅 menuAnchor/exposedDropdownSize),浮层窗口焦点策略写死内部,IME 取焦点时 dismiss 是固有行为;公开 API 无开关。
   修法: 产品裁定(2026-08-28 苏晚裁定后跟进);技术侧低成本绕过不存在——M3 升级验证或 fork 弹层均为中高成本,勿在无裁定下手改(反编译证据: material3-android 1.4.0 classes.jar)。
+- 症状: 非空输入后浮层永远唤不出(5 条路径全失败),过滤功能"不可达";空输入点开看全量正常。
+  原因: menuAnchor(MenuAnchorType.PrimaryNotEditable) 挂在**可编辑** OutlinedTextField 上的已知冲突——首次 tap 聚焦→IME 弹出→Popup 被焦点切换 dismiss;此后已聚焦字段把点击消费为光标定位,不再触发 onExpandedChange toggle;失焦→再 tap 又被 IME 弹出打断,形成死锁(2026-08-29 郑稳补验实锤,AddressFormFields.kt CommunityField)。
+  修法: 可编辑字段的下拉锚点须用 Editable 变体(或补 shouldDismissOnFocusLoss=false 语义),PrimaryNotEditable 只用于不可编辑触发器;修复后必须复验"输入后重开浮层显示过滤结果"断言(2026-08-29 复议中)。
