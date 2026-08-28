@@ -104,3 +104,5 @@
 
 | 临时回退工作区文件做红/绿对照后用 `git checkout -- file` 恢复,把真正的修复一并抹掉 | 1 | 2026-08-27(z-index 修复 sed 临时改回 z-50 验证测试红,checkout 把 dialog.tsx 三处 edit 全冲掉,靠 diff --stat 复查才发现重做) | 恢复用 `git stash push <file>` → `git stash pop` 或 sed 双向改回,禁 checkout;任何"恢复"动作后必须 git diff 复查剩余改动是否符合预期 |
 | license/证书激活成功即认为修复,未验证持久层文件落盘,重部署后复发 | 1 | 2026-08-28(102 compose 缺 license 卷挂载,激活写容器层,17:10Z CI 重部署即 403 全面回归,QA 验收被挡) | 激活后必做 `docker exec <容器> ls /var/lib/boss/license.json`;activated:false 无 reason=文件缺失,有 reason=验签失败 |
+| 会议/审查型 subagent 成员首轮或中途 failed 需重启 | 2 | 2026-08-28(二级页面UI审查,5个成员3个因整目录通读过载failed重启5次), 2026-08-28(权限评审会,5个成员4个首轮failed且无closing message) | 主持人重催消息里明确"纯文字作答、禁调工具、限字数"后一次成功;重催模板见 lessons.md |
+| subagent 收尾 git add -A 把多议题文件混进一个主题提交 | 1 | 2026-08-28(fc0bd47c"地址选择器"commit 混入权限测试执行纪要+他人未完成的主纪要草稿+lessons,破坏可独立revert性) | 授权 subagent 提交时必须限定 `git add <具体文件>`,禁止 add -A;并行会议场景主持人最后统一提交 |
