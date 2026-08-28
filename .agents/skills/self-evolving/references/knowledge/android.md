@@ -33,6 +33,7 @@
 | 6 | lessons（2026-08-28 实测 MI 9 SE / MIUI） | MIUI 真机 adb 实测可用性：shell/getprop/screencap/dumpsys/pm/am start/uiautomator dump 全可用（uiautomator 会吐一段 ThemeCompatibility ENOENT 堆栈但 dump 正常落盘，勿误判失败）；`input keyevent/tap/text` 一律 SecurityException INJECT_EVENTS——MIUI 拦截注入，需开发者选项开「USB 调试（安全设置）」（要求插 SIM + 登录小米账号）才能解除；导航可改用 `am start -a android.intent.action.MAIN -c android.intent.category.HOME` 等 am 意图绕过。另：手机刚重启（uptime 分钟级）会连带 adb 掉线重连+重新授权；`adb shell date` 与 Mac 时钟可差十几小时，比对日志时间戳前先对表 |
 | 7 | lessons（2026-08-28 已验证解除） | 上一条 INJECT_EVENTS 拦截的解除方法已实测生效：手机上开「USB 调试（安全设置）」后**无需重启 adb/重插线**，`input keyevent 3(HOME)/4(BACK)/tap/swipe` 立即全部可用，不再报 SecurityException；无需 root。真机做 UI 自动化前可先跑一条 `input keyevent 3` 探测注入权限，报 SecurityException 就请用户开该开关 |
 | 8 | known-issues/lessons（2026-08-28） | Compose 浮层（Popup）开着时 adb input text/keyevent 丢字或提交杂值（MIUI IME composer 竞态）：注入一律在浮层关闭态做；IME composing 回滚会伪装"值变/浮层闪关"，先受控重测再判产品行为；改完代码先 commit 再上真机做长验证（worktree 可能被收尾进程随时清掉） |
+| 9 | lessons（2026-08-29） | 断言 Compose 浮层是否渲染，uiautomator 树**看不见** Popup 内的行文本、dumpsys 里窗口名是 MIUI 的「弹出式窗口」而非 "Popup"（grep Popup 全假阴性）；权威判别法：`dumpsys window windows` 按「弹出式窗口」头部抓 `mFrame=`，菜单=[48,y][1032,y+行数×192px]、光标手柄≈62×75px 小窗，按 frame 尺寸区分；光标位置用键码注入单字符看落点（如 `Barxangay 6` ⇒ offset3） |
 
 ## 4. 共享工作区协作（Android 端高发）
 
