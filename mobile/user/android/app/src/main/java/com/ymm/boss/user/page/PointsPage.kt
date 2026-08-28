@@ -24,7 +24,7 @@ import com.ymm.boss.user.api.toObjectList
 import com.ymm.boss.user.ui.AppCard
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
-import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.TabHeader
 import com.ymm.boss.user.ui.rememberSubmitGuard
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -71,7 +71,8 @@ fun PointsScreen(nav: Nav) {
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("我的积分", onBack = { nav.pop() })
+        // 一级 tab 页(Nav.TABS 第 5 项):标题栏用 TabHeader,无返回键,对齐订单 tab 标准。
+        TabHeader("我的积分")
         if (loadErr.isNotEmpty()) {
             AppCard {
                 Text(loadErr, fontSize = 13.sp, color = Palette.err)
