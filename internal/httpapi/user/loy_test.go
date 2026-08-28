@@ -14,8 +14,19 @@ import (
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/pkg/auth"
 )
+
+// fakePromotion 嵌入 Service 接口,仅实现 exchange-offers 用到的读方法(其余走 nil)。
+type fakePromotion struct {
+	promotion.Service
+	offers []promotion.Template
+}
+
+func (f *fakePromotion) ListExchangeOffers(context.Context) ([]promotion.Template, error) {
+	return f.offers, nil
+}
 
 type fakeLoy struct {
 	balance int64
@@ -72,6 +83,10 @@ func TestPortalPoints(t *testing.T) {
 		Customer: &userPortalCustSvc{c: cust},
 		Portal:   portal.NewMemory(),
 		Points:   fl,
+		Promotion: &fakePromotion{offers: []promotion.Template{
+			{TemplateID: 5, Name: "10元话费券", Type: "CASH", FaceValue: 1000, PointsPrice: 100},
+			{TemplateID: 7, Name: "20元满减券", Type: "FULL_CUT", FaceValue: 2000, Threshold: 10000, PointsPrice: 180},
+		}},
 	}, mgr)
 	tok, _ := signCustomerToken(mgr, cust.ID, cust.Phone)
 
@@ -94,5 +109,24 @@ func TestPortalPoints(t *testing.T) {
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &ex); err != nil || ex.Data.CouponID != "CPN-loy" {
 		t.Fatalf("exchange resp=%s", w.Body.String())
+	}
+
+	w = userPortalDo(r, http.MethodGet, "/api/user/v1/points/exchange-offers", ``, tok)
+	var offers struct {
+		Code int `json:"code"`
+		Data struct {
+			Items []struct {
+				TemplateID  int64  `json:"templateId"`
+				Name        string `json:"name"`
+				PointsPrice int64  `json:"pointsPrice"`
+			} `json:"items"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &offers); err != nil || offers.Code != 0 {
+		t.Fatalf("exchange-offers resp=%s", w.Body.String())
+	}
+	if len(offers.Data.Items) != 2 || offers.Data.Items[0].TemplateID != 5 ||
+		offers.Data.Items[0].Name != "10元话费券" || offers.Data.Items[0].PointsPrice != 100 {
+		t.Fatalf("exchange-offers items unexpected: %s", w.Body.String())
 	}
 }

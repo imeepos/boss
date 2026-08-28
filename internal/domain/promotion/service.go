@@ -87,6 +87,8 @@ type CouponCode struct {
 // Service 营销促销域接口。
 type Service interface {
 	ListTemplates(ctx context.Context) ([]Template, error)
+	// ListExchangeOffers 积分可兑换模板(启用且 points_price>0,按积分价升序)。
+	ListExchangeOffers(ctx context.Context) ([]Template, error)
 	CreateTemplate(ctx context.Context, t Template) (int64, error)
 	DisableTemplate(ctx context.Context, templateID int64) error
 

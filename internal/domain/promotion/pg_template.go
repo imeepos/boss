@@ -32,6 +32,27 @@ func (s *PGStore) ListTemplates(ctx context.Context) ([]Template, error) {
 	return out, rows.Err()
 }
 
+// ListExchangeOffers 积分可兑换模板:仅 ENABLED 且 points_price>0,按积分价升序。
+// 用户端积分兑换入口的数据源(契约 loy.yaml /points/exchange-offers)。
+func (s *PGStore) ListExchangeOffers(ctx context.Context) ([]Template, error) {
+	rows, err := s.db.Query(ctx, `SELECT `+templateCols+`
+		FROM coupon_templates WHERE status = 'ENABLED' AND points_price > 0
+		ORDER BY points_price, template_id`)
+	if err != nil {
+		return nil, fmt.Errorf("promotion: list exchange offers: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Template, 0)
+	for rows.Next() {
+		t, err := scanTemplate(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *t)
+	}
+	return out, rows.Err()
+}
+
 func scanTemplate(row pgx.Row) (*Template, error) {
 	var t Template
 	if err := row.Scan(&t.TemplateID, &t.LegalEntityID, &t.Name, &t.Type, &t.FaceValue,

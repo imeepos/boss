@@ -15,10 +15,35 @@ import (
 // registerPortalLoyRoutes 注册积分域路由。
 func registerPortalLoyRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/points", portalPoints(a))
+	g.GET("/points/exchange-offers", portalPointsExchangeOffers(a))
 	g.POST("/points/exchange", portalPointsExchange(a))
 	g.GET("/points/tier", portalPointsTier(a))
 	g.GET("/points/tasks", portalPointsTasks(a))
 	g.POST("/points/tasks/:id/complete", portalPointsTaskComplete(a))
+}
+
+// portalPointsExchangeOffers GET /points/exchange-offers:积分可兑换券模板列表
+// (promotion 域 ENABLED 且 points_price>0;契约 loy.yaml)。
+func portalPointsExchangeOffers(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if a.Promotion == nil {
+			respond(c, apitypes.CodeOK, gin.H{"items": []gin.H{}})
+			return
+		}
+		offers, err := a.Promotion.ListExchangeOffers(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		items := make([]gin.H, 0, len(offers))
+		for _, o := range offers {
+			items = append(items, gin.H{
+				"templateId": o.TemplateID, "name": o.Name, "type": o.Type,
+				"faceValue": o.FaceValue, "threshold": o.Threshold, "pointsPrice": o.PointsPrice,
+			})
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": items})
+	}
 }
 
 // portalPointsTier GET /points/tier:我的等级(累计获得积分匹配,可为 null)。

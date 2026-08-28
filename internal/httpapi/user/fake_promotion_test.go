@@ -18,6 +18,9 @@ type fakePromo struct {
 }
 
 func (f *fakePromo) ListTemplates(context.Context) ([]promotion.Template, error) { return nil, nil }
+func (f *fakePromo) ListExchangeOffers(context.Context) ([]promotion.Template, error) {
+	return nil, nil
+}
 func (f *fakePromo) CreateTemplate(context.Context, promotion.Template) (int64, error) {
 	return 0, nil
 }

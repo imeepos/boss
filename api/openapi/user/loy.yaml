@@ -30,6 +30,33 @@ paths:
                             reason: { type: string }
                             createdAt: { type: string }
 
+  /points/exchange-offers:
+    get:
+      summary: 积分可兑换券模板列表(promotion 域 ENABLED 且 points_price>0,按积分价升序)
+      tags: [Loyalty]
+      operationId: listExchangeOffers
+      responses:
+        '200':
+          description: 可兑换模板
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            templateId: { type: integer, format: int64 }
+                            name: { type: string }
+                            type: { type: string, enum: [FULL_CUT, DISCOUNT, CASH] }
+                            faceValue: { type: integer, format: int64 }
+                            threshold: { type: integer, format: int64 }
+                            pointsPrice: { type: integer, format: int64 }
   /points/exchange:
     post:
       summary: 积分换券(模板须配置 pointsPrice;先扣积分后发券,发券失败补偿回补)
