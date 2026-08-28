@@ -84,5 +84,6 @@
 | 2026-09-03 | 合成客户(隔离空间负数 ID)充值边界:拒绝(走 42200);不动 FK、不建旁路;真实收费场景不覆盖合成客户 | adopted/2026-09-03-synthetic-customer-recharge-boundary.md |
 | 2026-09-03 | 支付链路收口后续:隧道驻留 + 演示门户 + 缴费口径 + 余额/合成客户 6 项验收收尾汇总(commit 留证 + 102 实测留证) | adopted/2026-09-03-payment-followup-rollout.md |
 | 2026-09-04 | 真实环境证据补录:102 隧道 URL 变化→Stripe endpoint 自愈、用户门户真实登录→4 条缴费记录、bossctl 运维端点冒烟 | adopted/2026-09-04-real-environment-evidence.md |
+| 2026-09-05 | Stripe 配置后端化(去 env 兜底,凭据仅存 biz_params)+ 支付方式 App 端配置驱动(未配默认线下)+ 师傅端现场收款完整落账(payments 新增 offline 枚举) | adopted/2026-09-05-stripe-config-backend-and-worker-charge.md |
 
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。
