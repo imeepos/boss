@@ -1284,3 +1284,10 @@
 - skill 有没有提前预警? 红线 #5(及时 commit)与 worktree 协议全部生效,零事故;"接手从未被解析器消费的 YAML 先全树扫描"与"门禁输出别 grep 预期标记"已补进 techniques.md。
 - 重来一次? 开工第一步就写全树扫描并作为验收基线;make 全量输出落 tail 而非 grep;风险点:pnpm 11 会往 pnpm-workspace.yaml 写 "set this to true or false" 占位(已还原,防 CI frozen-lockfile 差异)。
 - 沉淀: 聚合器四不变式测试(外部引用清零/组件并根/内部引用保留/未知 portal 报错)落在 bundle_test.go,契约再坏会当场红。
+
+## 2026-09-06 师傅端二级页 UI 一致性审查(会议成员林师,只读发言)
+
+- 哪个坑浪费了最多时间? 无坑。纯只读审查:主持人已代采统计数据,我只做最小抽查(grep PinnedGradientPage 全端 + 局部 read 2 文件,55+25 行,守住 ≤3 文件/200 行预算),证据链即闭合。
+- skill 有没有提前预警? 红线 #1(read 工具观察后才可 edit)生效——bash tail 预览 notes.md 后补了一次 read offset 再 append,零拒绝。
+- 重来一次? 流程照旧。可复用手法:审查类任务先 grep 目标符号全端分布(4 处命中即证骨架覆盖面),再挑"统计声称的例外页"局部 read 实证,比全文件读省 90% 上下文。
+- 沉淀: 无新失败,不喂 references;审查手法入本条备查。
