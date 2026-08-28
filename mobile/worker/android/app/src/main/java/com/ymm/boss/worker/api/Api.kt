@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import com.ymm.boss.worker.BuildConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -39,6 +40,7 @@ object Api {
     var onUnauthorized: (() -> Unit)? = null
     private const val TOKEN_KEY = "boss_worker_token"
     private const val PREFS = "boss_worker"
+    private const val MAX_GET_RETRIES = 2
     private lateinit var appContext: Context
 
     fun init(ctx: Context) {
@@ -58,9 +60,28 @@ object Api {
 
     private fun prefs() = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    suspend fun get(path: String): JSONObject = request("GET", path, null)
+    // 只读请求弱网重试:IOException/5xx 退避重试(1s/2s),4xx 与业务信封错误不重试;
+    // 写操作(post/put/upload)不重试,防非幂等重复提交。
+    private suspend fun <T> retry(block: suspend () -> T): T {
+        var attempt = 0
+        while (true) {
+            attempt += 1
+            try {
+                return block()
+            } catch (e: Exception) {
+                val retryable = e is java.io.IOException || (e is ApiException && e.status in 500..599)
+                if (retryable && attempt < MAX_GET_RETRIES) {
+                    delay(1000L * attempt)
+                } else {
+                    throw e
+                }
+            }
+        }
+    }
 
-    suspend fun getArray(path: String): JSONArray = requestArray("GET", path)
+    suspend fun get(path: String): JSONObject = retry { request("GET", path, null) }
+
+    suspend fun getArray(path: String): JSONArray = retry { requestArray("GET", path) }
 
     suspend fun post(path: String, body: JSONObject = JSONObject()): JSONObject =
         request("POST", path, body)
