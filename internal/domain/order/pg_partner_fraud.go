@@ -32,6 +32,9 @@ func (s *PGStore) submitPartnerAtomic(ctx context.Context, req SubmitReq) (*Orde
 	if err = checkPartnerLimits(ctx, tx, req); err != nil {
 		return nil, err
 	}
+	// C 案: 渠道法人只做佣金归属(PartnerEntity),不参与地址归属冲突校验。
+	// 清零后 submitRegular 的 checkOwnershipConflict 跳过,订单法人由地址推导。
+	req.LegalEntityID = 0
 	store := *s
 	store.db = tx
 	result, err := store.submitRegular(ctx, req)
