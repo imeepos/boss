@@ -210,9 +210,9 @@ func (c *CLI) releaseList(args []string) error {
 	return c.doReleaseRequest(req)
 }
 
-// doReleaseRequest 发请求并原样打印信封 data。
+// doReleaseRequest 发请求并原样打印信封 data;业务失败返回 error(退出码 1)。
 func (c *CLI) doReleaseRequest(req *http.Request) error {
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := uploadClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("http do: %w", err)
 	}
@@ -223,8 +223,7 @@ func (c *CLI) doReleaseRequest(req *http.Request) error {
 		return fmt.Errorf("响应 %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 	if ar.Code != 0 {
-		fmt.Printf("失败: code=%d msg=%s\n", ar.Code, ar.Msg)
-		os.Exit(1)
+		return ar.errBiz("操作")
 	}
 	printJSON(ar.Data)
 	return nil

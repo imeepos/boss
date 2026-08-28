@@ -120,6 +120,7 @@ func (c *CLI) identity(args []string) error {
 }
 
 // applyIdentity 按 --as 名称加载身份密钥(优先级高于 --api-key/env)。
+// 记录 identityName,401 时主程序给出档案过期的修复提示。
 func (c *CLI) applyIdentity(name string) error {
 	ids, err := loadIdentities()
 	if err != nil {
@@ -133,6 +134,7 @@ func (c *CLI) applyIdentity(name string) error {
 		return err
 	}
 	c.cfg.APIKey = key
+	c.identityName = name
 	return nil
 }
 

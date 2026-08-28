@@ -42,26 +42,27 @@ func TestUploadMultipart(t *testing.T) {
 	}
 }
 
-// TestUploadBizError 业务错误码走提示分支而非报错。
+// TestUploadBizError 业务错误码必须返回 error(退出码 1,CI 可感知失败)。
 func TestUploadBizError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"code": 40100, "msg": "invalid api key"})
 	}))
 	defer srv.Close()
 	c := &CLI{cfg: &config{Server: srv.URL}}
-	if err := c.upload([]string{"testdata/upload.txt"}); err != nil {
-		t.Fatalf("upload 业务错误应提示不报错: %v", err)
+	if err := c.upload([]string{"testdata/upload.txt"}); err == nil {
+		t.Fatal("upload 业务错误应返回 error(退出码 1),实际 nil")
 	}
 }
 
-// TestResolvePath 校验三端路径补全。
+// TestResolvePath 校验三端路径补全(user 端真实前缀是 /api/user/v1,不是 /api/v1)。
 func TestResolvePath(t *testing.T) {
 	cases := map[string]string{
 		"/orders":                "/api/admin/v1/orders",
-		"user:/orders":           "/api/v1/orders",
+		"user:/orders":           "/api/user/v1/orders",
 		"worker:/home":           "/api/worker/v1/home",
-		"/api/v1/orders":         "/api/v1/orders",
+		"/api/user/v1/orders":    "/api/user/v1/orders",
 		"/api/worker/v1/tickets": "/api/worker/v1/tickets",
+		"/api/admin/v1/accounts": "/api/admin/v1/accounts",
 	}
 	for in, want := range cases {
 		if got := resolvePath(in); got != want {

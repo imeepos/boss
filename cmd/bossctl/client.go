@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 // config CLI 全局配置。
@@ -20,7 +23,15 @@ type config struct {
 // CLI 持有配置和 HTTP 客户端。
 type CLI struct {
 	cfg *config
+	// identityName --as 启用的身份档案名;401 时用于给出档案过期的修复提示。
+	identityName string
 }
+
+// http 客户端:JSON 调用 60s;multipart 上传(APK 可达 32MB)放宽到 15min。
+var (
+	jsonClient   = &http.Client{Timeout: 60 * time.Second}
+	uploadClient = &http.Client{Timeout: 15 * time.Minute}
+)
 
 // authHeaderValue 返回认证请求头名称和值。
 // API key: X-API-Key 头; JWT: Authorization: Bearer <token>。
@@ -75,37 +86,21 @@ type apiResp struct {
 	Data json.RawMessage `json:"data"`
 }
 
+// errBiz 业务失败(code != 0)统一转 error:主程序打印到 stderr 并以退出码 1 结束,
+// CI/脚本可据此感知失败(此前 call/upload 业务失败退出码 0,流水线误判成功)。
+func (r *apiResp) errBiz(context string) error {
+	return fmt.Errorf("%s失败: code=%d msg=%s", context, r.Code, r.Msg)
+}
+
 // do 发送 HTTP 请求并解析响应信封。
 // data 为 nil 时跳过 body;query 可空。
 func (c *CLI) do(method, path string, data any, query map[string]string) (*apiResp, error) {
-	url := c.cfg.Server + path
-	if len(query) > 0 {
-		url += "?" + encodeQuery(query)
-	}
-
-	var body io.Reader
-	if data != nil {
-		b, err := json.Marshal(data)
-		if err != nil {
-			return nil, fmt.Errorf("marshal body: %w", err)
-		}
-		body = bytes.NewReader(b)
-	}
-
-	req, err := http.NewRequest(method, url, body)
+	req, err := c.newRequest(method, path, data, query)
 	if err != nil {
-		return nil, fmt.Errorf("new request: %w", err)
+		return nil, err
 	}
 
-	// 设置认证头
-	if name, value := c.authHeaderValue(); name != "" {
-		req.Header.Set(name, value)
-	}
-	if data != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := jsonClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("http do: %w", err)
 	}
@@ -132,21 +127,45 @@ func (c *CLI) do(method, path string, data any, query map[string]string) (*apiRe
 	return &ar, nil
 }
 
-// encodeQuery 编码查询参数。
+// newRequest 构造带认证头与 Content-Type 的请求。
+func (c *CLI) newRequest(method, path string, data any, query map[string]string) (*http.Request, error) {
+	full := c.cfg.Server + path
+	if len(query) > 0 {
+		full += "?" + encodeQuery(query)
+	}
+
+	var body io.Reader
+	if data != nil {
+		b, err := json.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("marshal body: %w", err)
+		}
+		body = bytes.NewReader(b)
+	}
+
+	req, err := http.NewRequest(method, full, body)
+	if err != nil {
+		return nil, fmt.Errorf("new request: %w", err)
+	}
+	if name, value := c.authHeaderValue(); name != "" {
+		req.Header.Set(name, value)
+	}
+	if data != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	return req, nil
+}
+
+// encodeQuery 编码查询参数(值经 url.QueryEscape,中文/空格/& 不再破坏 URL)。
 func encodeQuery(q map[string]string) string {
 	if len(q) == 0 {
 		return ""
 	}
-	var buf bytes.Buffer
+	vals := url.Values{}
 	for k, v := range q {
-		if buf.Len() > 0 {
-			buf.WriteByte('&')
-		}
-		buf.WriteString(k)
-		buf.WriteByte('=')
-		buf.WriteString(v)
+		vals.Set(k, v)
 	}
-	return buf.String()
+	return vals.Encode()
 }
 
 // decodeEnvelope 解析统一响应信封 {code,msg,data}。
@@ -165,32 +184,55 @@ func printJSON(v any) {
 }
 
 // queryFromArgs 从命令行参数解析 --query k=v 和 --data JSON。
-func queryFromArgs(args []string) (data any, query map[string]string, positional []string) {
+// --data 支持 @file 语法从文件读大载荷;解析失败的 JSON 按原样字符串发送。
+func queryFromArgs(args []string) (data any, query map[string]string, positional []string, err error) {
 	query = make(map[string]string)
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--data":
-			if i+1 < len(args) {
-				var v any
-				if err := json.Unmarshal([]byte(args[i+1]), &v); err == nil {
-					data = v
-				} else {
-					data = args[i+1]
-				}
-				i++
+			if i+1 >= len(args) {
+				return nil, nil, nil, fmt.Errorf("--data 缺少值")
 			}
+			v, e := loadDataArg(args[i+1])
+			if e != nil {
+				return nil, nil, nil, e
+			}
+			data = v
+			i++
 		case "--query":
-			if i+1 < len(args) {
-				if k, v, ok := splitKV(args[i+1]); ok {
-					query[k] = v
-				}
-				i++
+			if i+1 >= len(args) {
+				return nil, nil, nil, fmt.Errorf("--query 缺少值(应为 k=v)")
 			}
+			if k, v, ok := splitKV(args[i+1]); ok {
+				query[k] = v
+			}
+			i++
 		default:
 			positional = append(positional, args[i])
 		}
 	}
-	return
+	return data, query, positional, nil
+}
+
+// loadDataArg 解析 --data 值:@file 读文件,否则按 JSON 字面量(非法 JSON 原样字符串)。
+func loadDataArg(arg string) (any, error) {
+	if !strings.HasPrefix(arg, "@") {
+		var v any
+		if err := json.Unmarshal([]byte(arg), &v); err == nil {
+			return v, nil
+		}
+		return arg, nil
+	}
+	file := strings.TrimPrefix(arg, "@")
+	b, err := os.ReadFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("读取 --data 文件: %w", err)
+	}
+	var v any
+	if err := json.Unmarshal(b, &v); err != nil {
+		return nil, fmt.Errorf("--data @%s 不是合法 JSON: %v", file, err)
+	}
+	return v, nil
 }
 
 // splitKV 分割 k=v 格式。

@@ -30,11 +30,14 @@ func (c *CLI) apikey(args []string) error {
 	}
 }
 
-// parseSubject 解析 account/7 形式的主体标识。
+// parseSubject 解析 account/7 形式的主体标识(ID 必须为纯数字,Sscanf 会放过 "5abc")。
 func parseSubject(s string) (string, int64, error) {
 	parts := strings.SplitN(s, "/", 2)
 	if len(parts) != 2 {
 		return "", 0, fmt.Errorf("主体格式应为 <account|worker|customer>/<id>,如 worker/5,收到 %q", s)
+	}
+	if !isDigits(parts[1]) {
+		return "", 0, fmt.Errorf("主体 ID 非法(应为正整数): %q", parts[1])
 	}
 	var ref int64
 	if _, err := fmt.Sscanf(parts[1], "%d", &ref); err != nil || ref <= 0 {
@@ -45,6 +48,19 @@ func parseSubject(s string) (string, int64, error) {
 		return parts[0], ref, nil
 	}
 	return "", 0, fmt.Errorf("主体类型非法: %q(应为 account|worker|customer)", parts[0])
+}
+
+// isDigits 判断字符串是否为非空纯数字。
+func isDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // apiKeyList 列出所有 API key。

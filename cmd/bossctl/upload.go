@@ -65,7 +65,7 @@ func (c *CLI) upload(args []string) error {
 		req.Header.Set(name, value)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := uploadClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("http do: %w", err)
 	}
@@ -77,8 +77,7 @@ func (c *CLI) upload(args []string) error {
 		return fmt.Errorf("响应 %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 	if ar.Code != 0 {
-		fmt.Printf("上传失败: code=%d msg=%s\n", ar.Code, ar.Msg)
-		return nil
+		return ar.errBiz("上传")
 	}
 	printJSON(ar.Data)
 	return nil

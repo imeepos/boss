@@ -12,8 +12,8 @@ type routeEntry struct {
 	Desc   string
 }
 
-// routeCatalog 全部路由目录(由 api/openapi 生成,见 routes_{admin,user,worker}.go;
-// 再生成: node scripts/gen-bossctl-routes.mjs)。
+// routeCatalog 全部路由目录合集,仅用于总量校验(单端目录见 portalPrefixes;
+// 由 api/openapi 生成,再生成: node scripts/gen-bossctl-routes.mjs)。
 var routeCatalog = append(append(append([]routeEntry{}, adminRoutes...), userRoutes...), workerRoutes...)
 
 // portalPrefixes 各端 API 前缀(call 路径补全与目录展示共用)。
@@ -23,7 +23,7 @@ var portalPrefixes = []struct {
 	Routes []routeEntry
 }{
 	{"admin", "/api/admin/v1", adminRoutes},
-	{"user", "/api/v1", userRoutes},
+	{"user", "/api/user/v1", userRoutes},
 	{"worker", "/api/worker/v1", workerRoutes},
 }
 
@@ -42,7 +42,7 @@ func (c *CLI) routes(args []string) {
 	for _, p := range portalPrefixes {
 		printPortalRoutes(p.Name, p.Prefix, p.Routes)
 	}
-	fmt.Println("用法: bossctl call METHOD PATH [--data JSON] [--query k=v]")
+	fmt.Println("用法: bossctl call METHOD PATH [--data JSON|@file] [--query k=v]")
 	fmt.Println("路径可带端前缀: user:/orders / worker:/home(缺省 admin);bossctl upload FILE 同理")
 }
 
