@@ -28,6 +28,9 @@
 | 2 | techniques（2026-08-20） | 真机 App 内部状态直查（免抓包）：debug 包 `adb shell run-as <pkg> cat shared_prefs/<prefs>.xml`，空 `<map/>` 即没写过 |
 | 3 | lessons（2026-08-20） | 真机与电脑时间对不上先 `adb shell date` 对时区差（本例差 9 小时），再比对 `dumpsys package <pkg> | grep lastUpdateTime` 判断 APK 是否被覆盖安装 |
 | 4 | lessons（2026-08-20） | 并行 agent 共享真机：装完 APK 用 lastUpdateTime 确认没被覆盖再下结论 |
+| 5 | techniques（2026-10-16） | **adb 路径**：`/Users/imeepos/Library/Android/sdk/platform-tools/adb`（SDK 版，首选）；备选 `/opt/homebrew/bin/adb`（Homebrew cask，软链到 Caskroom/android-platform-tools/37.0.0）。两版均 v37.0.0。**bash 沙箱 PATH 不含这两个目录**，`adb` 裸命令报 command not found，必须用绝对路径；macOS 上 ifconfig/system_profiler/timeout 裸命令也可能不可用（用 /usr/sbin 全路径或换 lsof/ioreg） |
+| 6 | lessons（2026-08-28 实测 MI 9 SE / MIUI） | MIUI 真机 adb 实测可用性：shell/getprop/screencap/dumpsys/pm/am start/uiautomator dump 全可用（uiautomator 会吐一段 ThemeCompatibility ENOENT 堆栈但 dump 正常落盘，勿误判失败）；`input keyevent/tap/text` 一律 SecurityException INJECT_EVENTS——MIUI 拦截注入，需开发者选项开「USB 调试（安全设置）」（要求插 SIM + 登录小米账号）才能解除；导航可改用 `am start -a android.intent.action.MAIN -c android.intent.category.HOME` 等 am 意图绕过。另：手机刚重启（uptime 分钟级）会连带 adb 掉线重连+重新授权；`adb shell date` 与 Mac 时钟可差十几小时，比对日志时间戳前先对表 |
+| 7 | lessons（2026-08-28 已验证解除） | 上一条 INJECT_EVENTS 拦截的解除方法已实测生效：手机上开「USB 调试（安全设置）」后**无需重启 adb/重插线**，`input keyevent 3(HOME)/4(BACK)/tap/swipe` 立即全部可用，不再报 SecurityException；无需 root。真机做 UI 自动化前可先跑一条 `input keyevent 3` 探测注入权限，报 SecurityException 就请用户开该开关 |
 
 ## 4. 共享工作区协作（Android 端高发）
 

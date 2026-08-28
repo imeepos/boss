@@ -1277,3 +1277,10 @@
 - skill 有没有提前预警? 无;顶层 return 与"探测前先读参数校验"均已在本文件有先例,但仍是新形态。
 - 重来一次? 给脚本加模式参数先想清楚执行上下文(模块顶层 vs 函数内);公开端点探测前 grep handler 的 Query 必填清单。
 - 测试残留登记: 102 release id=8(version=9.9.9-cli-verify,DRAFT,notes 已标"勿发布")——服务端无 DELETE /client-releases 端点,DRAFT 对 site/downloads 与 user/worker client/latest 均不可见,留档观察;若后续加清理通道优先回收该行。
+
+## 2026-09-06 API 在线文档(openapidoc 聚合器 + /base/apidocs Swagger UI)
+
+- 哪个坑浪费了最多时间? 契约 YAML 存量债务逐个炸:重复键/错位 components 块/悬空 $ref/admin 根缺 securitySchemes,前几轮是"改一个→跑测试→炸下一个";写了 /tmp 全树扫描脚本(dbg3.go)后一轮见全集。另外 `make check` 输出被 grep "A OK|B OK..." 过滤,bossctl-routes-check 失败被吞,直到反向同步 main 后才暴露(合并带的生成器升级使校验生效)。
+- skill 有没有提前预警? 红线 #5(及时 commit)与 worktree 协议全部生效,零事故;"接手从未被解析器消费的 YAML 先全树扫描"与"门禁输出别 grep 预期标记"已补进 techniques.md。
+- 重来一次? 开工第一步就写全树扫描并作为验收基线;make 全量输出落 tail 而非 grep;风险点:pnpm 11 会往 pnpm-workspace.yaml 写 "set this to true or false" 占位(已还原,防 CI frozen-lockfile 差异)。
+- 沉淀: 聚合器四不变式测试(外部引用清零/组件并根/内部引用保留/未知 portal 报错)落在 bundle_test.go,契约再坏会当场红。

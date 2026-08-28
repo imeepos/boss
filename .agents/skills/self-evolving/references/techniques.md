@@ -559,3 +559,5 @@ SQL
 - 编辑 openapi yaml 新增 path 块后,跑一次依赖它的生成脚本(gen-bossctl-routes.mjs)并肉眼审查输出 diff——YAML 缩进错(如把 get 顶成 2 空格)会表现为生成器输出 summary 错位/路由丢失,一次暴露结构破坏。
 - Android 构建前置检查(worktree 场景): local.properties 是 untracked 不进 worktree,从主树 cp;JAVA_HOME 用 /opt/homebrew/opt/openjdk@17;缺任一都只有 "SDK location not found / Unable to locate Java Runtime",与代码无关却最耗定位(2026-09-05 实例)。
 - apitypes 信封 code 与 portalWorkerDo 的 _status 反序列化后是 int(非 float64),测试断言数值写 asNum(v) 兼容类型开关,别假定 JSON 数字全是 float64。
+- 接手"只被正则/生成器消费过、从未被真解析器加载"的 YAML/OpenAPI 资产时,先写一次性全树扫描(逐文件 yaml.Unmarshal + 收集 paths/components 键 + 遍历全部 $ref 核对目标存在),一次列出语法错误/重复键/错位块/悬空引用全集;逐个报错改一版跑一版测试会拖十轮(2026-09-06 openapidoc 聚合器接入实测:admin/user/worker/open 共 10+ 存量坏点一次扫清)。
+- `make check` 输出要用 tail 看完整结尾,不要 grep 自己预期的 "X OK" 标记——grep 模式外的门禁步骤(bossctl-routes-check 等)失败会被过滤吞掉,绿了假象直到合并后才炸(2026-09-06 实例)。
