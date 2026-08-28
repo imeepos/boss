@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MENU_GROUPS, PAGE_BY_KEY, isNavActive } from './menu.def'
-import { visibleGroupIds, visiblePages } from './role-menu'
+import { visibleGroupIds, visiblePages, landingPathFor } from './role-menu'
 
 // 契约:2026-08-27 按实际内容重组为 16 组(决策见 docs/notes/adopted/2026-08-27-sidebar-regroup.md);
 // 页面 key/path 与重组前完全一致;分组 id/页面 key 唯一;sysadmin 可见全部平台组(不含 partner)。
@@ -90,8 +90,22 @@ describe('role-menu 可见性', () => {
     }
   })
 
-  it('未知 roleCode 只见 overview(接口级权限由后端 permCode 兜底)', () => {
-    expect(visibleGroupIds('nobody' as never)).toEqual(['overview'])
+  it('未知 roleCode 无组级授权(侧栏走权限码推导,接口级由后端 permCode 兜底)', () => {
+    expect(visibleGroupIds('nobody' as never)).toEqual([])
+  })
+
+  it('landingPathFor 按菜单定义序取权限码首个有权页(落地页裁定A)', () => {
+    // 持 dashboard → 落工作台
+    expect(landingPathFor(['menu:dashboard'])).toBe('/dashboard')
+    // 定义序优先于权限码罗列序:dashboard 在前即落工作台
+    expect(landingPathFor(['menu:customer', 'menu:dashboard'])).toBe('/dashboard')
+    // ops 不持 dashboard → 落定义序首个有权页(客户与资费组首位)
+    expect(landingPathFor(['menu:order', 'menu:customer'])).toBe('/bss/customer')
+    // technician 持派单 → 落派单管理
+    expect(landingPathFor(['menu:dispatch'])).toBe('/boss/dispatch')
+    // 无任何权限码 → null(由调用方落 403 页)
+    expect(landingPathFor([])).toBeNull()
+    expect(landingPathFor(undefined)).toBeNull()
   })
 
   it('visiblePages 只含可见分组的页面', () => {

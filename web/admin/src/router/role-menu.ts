@@ -23,10 +23,21 @@ export const ROLE_GROUPS: Record<RoleCode, string[]> = {
   analyst: [OVERVIEW, 'intel', 'aaa'],
 }
 
-/** 可见分组(保序按 MENU_GROUPS;未知角色兜底仅工作台)。 */
+/** 可见分组(保序按 MENU_GROUPS;未知角色无组级授权,走权限码推导)。 */
 export function visibleGroupIds(role: string): string[] {
-  const allowed = new Set(ROLE_GROUPS[role as RoleCode] ?? [OVERVIEW])
+  const allowed = new Set(ROLE_GROUPS[role as RoleCode] ?? [])
   return MENU_GROUPS.filter((g) => allowed.has(g.id)).map((g) => g.id)
+}
+
+/** 登录落地页:按权限码(menu:<key>)取菜单定义序首个有权页;后端权限为单一事实源(2026-08-28 裁定A)。 */
+export function landingPathFor(permCodes?: string[]): string | null {
+  const held = new Set(permCodes ?? [])
+  for (const g of MENU_GROUPS) {
+    for (const it of g.items) {
+      if (held.has(`menu:${it.key}`)) return it.path
+    }
+  }
+  return null
 }
 
 export interface VisiblePage extends MenuItem {

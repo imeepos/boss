@@ -103,7 +103,7 @@ const PartnerHomePage = lazy(() => import('./pages/partner/home'))
 const PartnerStaffPage = lazy(() => import('./pages/partner/staff'))
 const PartnerOrdersPage = lazy(() => import('./pages/partner/orders'))
 import { MENU_GROUPS } from './router/menu.def'
-import { canAccess } from './router/role-menu'
+import { canAccess, landingPathFor } from './router/role-menu'
 import { useT } from './i18n'
 import { getAuthToken } from './api/client'
 import { ConfirmProvider } from './components/ConfirmDialog'
@@ -113,6 +113,15 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   const t = useT()
   const profile = useProfile()
   const label = t.menu.items[pageKey] ?? pageKey
+  // 落地页裁定A(2026-08-28):/dashboard 是登录默认落点,未持 menu:dashboard 的角色
+  // 分流到权限码序首个有权页,消除"登录即 403";无可落地权限码时维持 403 页。
+  if (pageKey === 'dashboard') {
+    const held = new Set(profile.permissionCodes)
+    if (!held.has('menu:dashboard')) {
+      const to = landingPathFor(profile.permissionCodes)
+      if (to) return <Navigate to={to} replace />
+    }
+  }
   if (!canAccess(profile.roleCode, pageKey, profile.permissionCodes)) {
     // 入驻企业角色误落平台页(如登录后默认 /dashboard):送回企业工作台首页。
     if (profile.roleCode.startsWith('partner_')) return <Navigate to="/partner/home" replace />
