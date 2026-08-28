@@ -152,3 +152,18 @@
 
 验证:slo-rules.yml(8 条)promtool SUCCESS;prometheus /api/v1/rules 8 条全部加载(inactive=正常);alertmanager /-/healthy OK。
 部署说明:单文件 ro bind 挂载为启动快照,改规则后须 `docker restart boss-prometheus` 才生效(已在 102 执行);规则已同步本地 deployments/observability/slo-rules.yml。
+
+## 十三、https 硬门槛后端动作(2026-08-28,明远)
+
+> 触发：用户拍板「首发含公网/异地用户，https 公网域名提为首发硬门槛」(原方案升级为硬门槛)。
+
+| 项 | 结果 | 证据 |
+|---|---|---|
+| ① 反代 443→28080 | ✅ 独立 nginx 实例监听 443 | https://192.168.0.102 全端点可达(401=路由在/200=公开)；真码 token 走 /orders /points /profile 全 200 |
+| ② /client/latest 正式发布记录 | ✅ id=7 user v0.1.0 versionCode=4 PUBLISHED 注入 | 旧包 vc=1/2/3 均 updateAvailable=true→v4；https 下载 200=23,727,225B sha256=607857fa… 与本仓 release APK 完全一致；灰度字段 status/rollout_percent/whitelist_ids **已存在**(建表 000137)无需补 |
+| ③ https 通道压测 | ✅ 30VU P95=99.7ms 0 失败 | k6 https-probe(3509 req, 87 rps) |
+
+**部署要点**：
+- 主 nginx reload 受存量冲突阻塞(minio.conf 39093 被 hostctl 占用)——**boss 反代用独立实例** /etc/boss-nginx/boss-user-https.conf(pid 记录、独立日志)，避开主 nginx；正式域名证书签发后替换 cert/key 两行即可。
+- 发布记录注入走 admin 契约端点(POST /client-releases multipart + PATCH→PUBLISHED)，versionCode 单调+1 规则；v2(2048B 占位)保留非正式，v4 为正式首发。
+- 遗留：正式公网域名+DNS+Let's Encrypt 仍由安然/域名侧执行(执行计划 ①②)；客户端 release baseUrl 换 https 域(执行计划 ④，阿澈)。
