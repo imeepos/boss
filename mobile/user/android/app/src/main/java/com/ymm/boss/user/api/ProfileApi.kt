@@ -50,6 +50,12 @@ object ProfileApi {
     suspend fun addressTreeSearch(q: String): List<JSONObject> =
         Api.get("/address-tree/search" + Api.qs(mapOf("q" to q))).optJSONArray("items").toObjectList()
 
+    /** 地址层级精确反查(ltree path→节点+祖先链),契约 misc.yaml /address-tree/lookup。
+     *  响应 {items:[{path,node,ancestors}],missing:[...]}:search 是模糊 ILIKE+LIMIT,
+     *  匹配不了 ltree 编码 path,编辑态面包屑回显必须走精确反查。 */
+    suspend fun lookupAddressTree(paths: List<String>): JSONObject =
+        Api.get("/address-tree/lookup" + Api.qs(mapOf("paths" to paths.filter { it.isNotBlank() }.joinToString(","))))
+
     suspend fun readAllMessages(): JSONObject = Api.post("/messages/read-all")
 
     /**

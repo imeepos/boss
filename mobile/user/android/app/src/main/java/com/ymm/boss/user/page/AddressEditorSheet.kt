@@ -3,8 +3,6 @@ package com.ymm.boss.user.page
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
@@ -30,7 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,8 +40,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.LocationProvider
+import com.ymm.boss.user.api.ProfileApi
+import com.ymm.boss.user.api.toObjectList
 import com.ymm.boss.user.ui.Palette
+import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
 
 /**
@@ -78,6 +81,38 @@ fun AddressEditorSheet(
     var rationaleVisible by remember { mutableStateOf(false) }
     val communityOptions = remember(recentCommunities, community) {
         recentCommunities.filter { it.isNotBlank() && it != community }.distinct()
+    }
+    // 编辑态回显:addressPath 有值但面包屑空 → /address-tree/lookup 精确反查祖先链回填
+    // (search 是模糊 ILIKE+LIMIT,匹配不了 ltree 编码 path,不能反查)。
+    // 失败降级:显示 path 末段 code+重试入口;403 服务授权异常必须明示,禁止静默吞掉。
+    var lookupFailed by remember { mutableStateOf(false) }
+    var lookupForbidden by remember { mutableStateOf(false) }
+    var lookupTick by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(addressPath, lookupTick) {
+        val path = addressPath.trim()
+        if (path.isBlank() || regionBreadcrumb.isNotBlank()) return@LaunchedEffect
+        lookupFailed = false
+        lookupForbidden = false
+        try {
+            val items = ProfileApi.lookupAddressTree(listOf(path)).optJSONArray("items").toObjectList()
+            val hit = items.firstOrNull { it.optString("path") == path } ?: items.firstOrNull()
+            if (hit == null) {
+                lookupFailed = true
+                return@LaunchedEffect
+            }
+            val names = hit.optJSONArray("ancestors").toObjectList().map { it.optString("name") } +
+                    hit.optJSONObject("node")?.optString("name").orEmpty()
+            val crumb = names.filter { it.isNotBlank() }.joinToString(" · ")
+            if (crumb.isBlank()) lookupFailed = true else regionBreadcrumb = crumb
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Api.HttpError) {
+            // HTTP 403 与信封 40300 都按服务授权异常处理(102 实测 403 LICENSE_REQUIRED)
+            if (e.status == 403 || e.status == 40300) lookupForbidden = true else lookupFailed = true
+        } catch (e: Exception) {
+            lookupFailed = true
+        }
     }
 
     fun launchLocation() = doLocate(
@@ -132,7 +167,14 @@ fun AddressEditorSheet(
             )
             Spacer(Modifier.height(8.dp))
             FieldLabel("所在地区（级联选择）")
-            RegionRow(breadcrumb = regionBreadcrumb, addressPath = addressPath, onClick = { pickerVisible = true })
+            RegionRow(
+                breadcrumb = regionBreadcrumb,
+                addressPath = addressPath,
+                lookupFailed = lookupFailed,
+                lookupForbidden = lookupForbidden,
+                onRetry = { lookupTick++ },
+                onClick = { pickerVisible = true },
+            )
             FieldLabel("小区 / 街道名")
             CommunityField(community, communityOptions) { community = it; err = "" }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -207,36 +249,3 @@ fun AddressEditorSheet(
     }
 }
 
-/** 所在地区行:未选=灰字"点击选择";已选=面包屑 + 已绑定 path 标记。 */
-@Composable
-private fun RegionRow(breadcrumb: String, addressPath: String, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth()
-            .background(Palette.bg, RoundedCornerShape(10.dp))
-            .border(1.dp, if (addressPath.isNotBlank()) Palette.primary else Palette.line, RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            Icons.Outlined.Place, contentDescription = null,
-            tint = if (addressPath.isNotBlank()) Palette.primary else Palette.muted,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        Column(Modifier.weight(1f)) {
-            if (breadcrumb.isBlank()) {
-                Text("大区 / 市 / 街道（Barangay）", fontSize = 13.sp, color = Palette.subtle)
-            } else {
-                Text(breadcrumb, fontSize = 13.sp, color = Palette.ink, maxLines = 2)
-                if (addressPath.isNotBlank()) {
-                    Text("已绑定层级路径", fontSize = 11.sp, color = Palette.primary,
-                        modifier = Modifier.padding(top = 2.dp))
-                }
-            }
-        }
-        Icon(Icons.Outlined.ArrowDropDown, contentDescription = "选择",
-            tint = Palette.muted, modifier = Modifier.size(20.dp))
-    }
-    Spacer(Modifier.height(8.dp))
-}
