@@ -1333,3 +1333,9 @@
 - 最大价值时刻:102 真实验证暴露 3 个单测没拦住的缺陷(NULLIF 空串转 NULL 违反 NOT NULL、退款锁行 Scan 不适配可空 bill_id 的 000068 存量缺陷、payNo 副本赋值不回传)。门禁绿≠功能对,上线前真实端到端验收不可省。
 - 小坑:域内 `INSERT ... NULLIF($7,'')` 对 NOT NULL DEFAULT '' 列是画蛇添足——空串本合法,NULLIF 转成 NULL 反而 23502。
 - 流程坑:ff-only 失败后先 worktree remove 再 branch -d 报 not fully merged——顺序应反过来;commit 因分支 ref 在而安全,重建 worktree 即可恢复(红线9变体)。
+
+## 2026-08-29 安栋·obs2 PrimaryEditable 真机实施
+- 最耗时坑:MIUI dumpsys 窗口名是「弹出式窗口」,grep "Popup" 假阴性浪费多轮;uiautomator 树完全看不到浮层行文本,最终以 mFrame 尺寸判别(菜单 984×192/行,手柄 62×75)。
+- skill 预警了残缺树/静置重试,但没预警窗口命名,已补 android.md 第9条。
+- 重来一次:第一轮就用 frame 判别,不要靠窗口名 grep;坐标每步重取(sheet scroll 回弹+IME 遮挡双重漂移)。
+- 产品发现移交主持人:空输入 6 行全量层上翻覆盖字段+tap-through(DOWN开层UP点行,一击直接选Commonwealth×2复现);菜单行 onChange 保留旧光标偏移(光标不停末尾)。
