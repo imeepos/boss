@@ -19,6 +19,7 @@ import (
 var opsNotifyRefTypes = map[string]struct{}{
 	"stripe_webhook_guard": {}, // Stripe 隧道/endpoint 自愈告警(stripe_webhook_guard.go 复用)
 	"stripe_tunnel":        {}, // 隧道 URL 上报脚本(stripe-tunnel-url.sh)
+	"slo_cruise":           {}, // 每日 SLO 巡航告警(slo-cruise.sh,放量守夜)
 }
 
 // opsNotifyEmitHandler POST /ops/notify-emit:运维脚本上报提醒(仅 account 主体)。

@@ -896,7 +896,7 @@ components:
       description: 运维脚本上报请求体(refType 白名单见 internal/httpapi/admin/ops_notify.go)
       required: [refType, refID, level, title, content]
       properties:
-        refType: { type: string, description: 白名单 refType(stripe_webhook_guard / stripe_tunnel) }
+        refType: { type: string, description: 白名单 refType(stripe_webhook_guard / stripe_tunnel / slo_cruise) }
         refID:   { type: string, description: 幂等键,同 refType+refID 不重复入库 }
         level:   { type: string, enum: [INFO, WARN, URGENT] }
         title:   { type: string, maxLength: 128 }
