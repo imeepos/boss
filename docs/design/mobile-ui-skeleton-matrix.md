@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/AddonPage.kt | TopBar | 0 | 1 | Bold,W500 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/AddressEditorSheet.kt | 无 | 0 | 0 | - |
-| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/AddressFormFields.kt | 无 | 0 | 1 | W600 |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/AddressFormFields.kt | 无 | 0 | 0 | W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/AddressLocate.kt | 无 | 0 | 0 | - |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/AddressPage.kt | TopBar | 0 | 0 | W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/AddressRegionPicker.kt | 无 | 0 | 0 | - |
@@ -34,17 +34,17 @@
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/MessagesSummary.kt | 无 | 0 | 0 | Bold,W500 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/MovePage.kt | TopBar | 0 | 0 | - |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/MyPlanPage.kt | TopBar | 0 | 0 | Bold,W500,W600 |
-| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/NotifyPage.kt | TopBar | 0 | 1 | W500 |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/NotifyPage.kt | TopBar | 0 | 0 | W500 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderActions.kt | 无 | 0 | 2 | W500,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderCard.kt | 无 | 0 | 0 | Normal,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderChangeAddressPage.kt | TopBar | 0 | 0 | - |
-| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderConfirmScreen.kt | TopBar | 0 | 1 | W500,W600 |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderConfirmScreen.kt | TopBar | 0 | 0 | W500,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderInfoCard.kt | 无 | 0 | 0 | - |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderPage.kt | TopBar | 0 | 0 | Bold,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderProgressCards.kt | 无 | 0 | 0 | W500,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrderTimeline.kt | 无 | 0 | 0 | Bold,W500,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/OrdersPage.kt | 无 | 0 | 0 | - |
-| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/PayPage.kt | TopBar | 0 | 1 | Bold |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/PayPage.kt | TopBar | 0 | 0 | Bold |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/PayResultPage.kt | TopBar | 0 | 1 | Bold |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/PointsCards.kt | 无 | 0 | 2 | Bold,W500 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/PointsPage.kt | 无 | 0 | 0 | - |
@@ -53,7 +53,7 @@
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/ProductsPage.kt | 无 | 0 | 0 | - |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/ProfileMenu.kt | 无 | 0 | 0 | W500 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/ProfilePage.kt | PinnedGradientPage | 0 | 0 | Bold,W500 |
-| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RatePage.kt | TopBar | 0 | 1 | Bold |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RatePage.kt | TopBar | 0 | 0 | Bold |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameFormStep.kt | 无 | 3 | 0 | Bold,Medium,W500,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNamePage.kt | TopBar | 12 | 0 | Normal,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameStatusPages.kt | 无 | 1 | 0 | Bold,Medium,Normal,W600 |
@@ -62,7 +62,7 @@
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RegisterPage.kt | TopBar | 0 | 0 | Bold,W500 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/SecurityPage.kt | TopBar | 0 | 3 | - |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/ServicePage.kt | TopBar | 0 | 1 | W600 |
-| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/TopupPage.kt | TopBar | 0 | 1 | W500,W600 |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/TopupPage.kt | TopBar | 0 | 0 | W500,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/UpdateDialog.kt | 无 | 0 | 0 | - |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/UsagePage.kt | TopBar | 0 | 0 | Bold |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/UserHomeCards.kt | 无 | 0 | 0 | Bold,Medium |
@@ -86,7 +86,7 @@
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ChargeScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/CheckinScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ComplaintScreen.kt | TopBar | 1 | 0 | - |
-| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/DetailActions.kt | 无 | 10 | 0 | Bold,Medium,SemiBold |
+| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/DetailActions.kt | 无 | 0 | 0 | Bold,Medium,SemiBold |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/DismantleScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/FeedbackScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/FieldLabel.kt | 无 | 0 | 0 | Medium |
@@ -98,7 +98,7 @@
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/Load.kt | 无 | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/LoginScreen.kt | 无 | 5 | 0 | Bold,W500 |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/MaintenanceScreen.kt | TopBar | 0 | 0 | - |
-| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/MessagesScreen.kt | TopBar | 7 | 0 | - |
+| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/MessagesScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/Nav.kt | 无 | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/NaviScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/NoticeScreen.kt | TopBar | 0 | 0 | - |
@@ -112,7 +112,7 @@
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ProfileCards.kt | 无 | 0 | 0 | Bold,W500 |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ProfileScreen.kt | PinnedGradientPage | 0 | 0 | Bold |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/PullRefresh.kt | 无 | 0 | 0 | - |
-| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/RepairScreen.kt | TopBar | 1 | 0 | Medium,SemiBold |
+| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/RepairScreen.kt | TopBar | 0 | 0 | Medium,SemiBold |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ReplaceScreen.kt | TopBar | 1 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ReportScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/RescheduleScreen.kt | TopBar | 1 | 0 | - |
@@ -125,11 +125,11 @@
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SettingsScreen.kt | TopBar | 2 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SignScreen.kt | TopBar | 0 | 0 | SemiBold |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TicketCell.kt | 无 | 0 | 0 | - |
-| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TicketDetailCards.kt | 无 | 17 | 0 | Bold,Medium,SemiBold |
+| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TicketDetailCards.kt | 无 | 0 | 0 | Bold,Medium,SemiBold |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TicketDetailScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ToolScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TransferScreen.kt | TopBar | 4 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/UpdateDialog.kt | 无 | 0 | 0 | - |
-| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/Widgets.kt | TopBar | 8 | 0 | Bold,Medium,SemiBold |
-| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/theme/Color.kt | 无 | 22 | 0 | - |
+| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/Widgets.kt | TopBar | 6 | 0 | Bold,Medium,SemiBold |
+| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/theme/Color.kt | 无 | 24 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/theme/Theme.kt | 无 | 0 | 0 | - |
