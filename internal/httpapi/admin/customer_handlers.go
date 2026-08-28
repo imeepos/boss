@@ -85,14 +85,19 @@ func customerListHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// customerGetHandler GET /customers/{id}:客户详情;未命中回 NotFound。
+// customerGetHandler GET /customers/{id}:客户详情;数据范围外与不存在同回 NotFound。
 func customerGetHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, ok := httpx.ParsePathParamInt64(c, "id")
 		if !ok {
 			return
 		}
-		det, err := a.Customer.Get(c.Request.Context(), id)
+		scope, err := a.User.GetDataScope(c.Request.Context(), httpx.ClaimsAccountID(c))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		det, err := a.Customer.GetInScope(c.Request.Context(), id, scope.LegalEntityID, scope.RegionScope)
 		if err != nil {
 			respondErr(c, err)
 			return

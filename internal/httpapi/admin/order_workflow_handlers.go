@@ -19,6 +19,9 @@ func orderCheckPreviewHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !requireOrderInScope(c, a, o) {
+			return
+		}
 		detail, err := a.Resource.CheckDetail(c.Request.Context(), o.AddressID)
 		if err != nil {
 			respondErr(c, err)
@@ -34,6 +37,9 @@ func orderCheckResourceHandler(a *app.Application) gin.HandlerFunc {
 		o, err := a.Order.GetByNo(c.Request.Context(), c.Param("orderNo"))
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		if !requireOrderInScope(c, a, o) {
 			return
 		}
 		available, idlePorts, err := a.Resource.Check(c.Request.Context(), o.AddressID)
@@ -56,6 +62,9 @@ func orderReserveHandler(a *app.Application) gin.HandlerFunc {
 		o, err := a.Order.GetByNo(c.Request.Context(), c.Param("orderNo"))
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		if !requireOrderInScope(c, a, o) {
 			return
 		}
 		portID, err := a.Resource.ReserveFirstAvailable(c.Request.Context(), o.AddressID, o.ID)
@@ -85,6 +94,9 @@ func orderChargeHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !requireOrderInScope(c, a, o) {
+			return
+		}
 		if o.Stage < 4 {
 			if err := a.Order.ChargeContract(c.Request.Context(), o.ID); err != nil {
 				respondErr(c, err)
@@ -106,6 +118,9 @@ func orderCancelHandler(a *app.Application) gin.HandlerFunc {
 		o, err := a.Order.GetByNo(c.Request.Context(), c.Param("orderNo"))
 		if err != nil {
 			respondErr(c, err)
+			return
+		}
+		if !requireOrderInScope(c, a, o) {
 			return
 		}
 		if err := a.Order.Cancel(c.Request.Context(), o.ID); err != nil {

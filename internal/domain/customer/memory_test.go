@@ -59,3 +59,41 @@ func TestMemoryServiceList(t *testing.T) {
 		})
 	}
 }
+
+func TestMemoryServiceGetInScope(t *testing.T) {
+	s := NewMemoryService()
+	inID, _ := s.Create(context.Background(), Customer{Name: "范围内", LegalEntityID: 7, RegionName: "马尼拉"})
+	_, _ = s.Create(context.Background(), Customer{Name: "他企客户", LegalEntityID: 8, RegionName: "马尼拉"})
+	_, _ = s.Create(context.Background(), Customer{Name: "区域外", LegalEntityID: 7, RegionName: "达沃"})
+
+	tests := []struct {
+		name    string
+		id      int64
+		le      int64
+		region  string
+		wantErr error
+	}{
+		{"范围内命中", inID, 7, "马尼拉", nil},
+		{"范围不限全命中", inID, 0, "", nil},
+		{"他企越界按不存在", 2, 7, "马尼拉", ErrCustomerNotFound},
+		{"区域外越界按不存在", 3, 7, "马尼拉", ErrCustomerNotFound},
+		{"不存在同错误", 999, 0, "", ErrCustomerNotFound},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := s.GetInScope(context.Background(), tt.id, tt.le, tt.region)
+			if tt.wantErr != nil {
+				if err != tt.wantErr {
+					t.Fatalf("err = %v, want %v", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("GetInScope err = %v", err)
+			}
+			if c.ID != tt.id {
+				t.Fatalf("id = %d, want %d", c.ID, tt.id)
+			}
+		})
+	}
+}

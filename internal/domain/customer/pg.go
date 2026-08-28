@@ -123,6 +123,27 @@ func (s *PGStore) Get(ctx context.Context, id int64) (*Customer, error) {
 	return c, nil
 }
 
+// GetInScope 按 id 查客户,镜像 List 的数据范围语义(实体相等+region_id 落 scope 子树);
+// 未命中与越界一律 ErrCustomerNotFound,保证两类情形同码同响应不可区分。
+func (s *PGStore) GetInScope(ctx context.Context, id int64, legalEntityID int64, regionScope string) (*Customer, error) {
+	c, err := scanCustomer(s.db.QueryRow(ctx, `
+		SELECT `+customerCols+`
+		FROM customers
+		WHERE id = $1
+		  AND ($2 = 0 OR legal_entity_id = $2)
+		  AND ($3 = '' OR region_id IN (
+			SELECT r.id FROM regions r
+			WHERE r.path <@ text2ltree($3)
+		  ))`, id, legalEntityID, regionScope))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrCustomerNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("customer: get in scope: %w", err)
+	}
+	return c, nil
+}
+
 // List 按条件分页查询;Limit<=0 视为不限。
 func (s *PGStore) List(ctx context.Context, q CustomerQuery) ([]Customer, error) {
 	limit := q.Limit
