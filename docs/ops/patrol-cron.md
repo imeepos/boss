@@ -42,3 +42,49 @@ internal/domain/report/pg_patrol.go 巡检清单新增两项:
 双绑回填漏了 CreateTag 反向);DB 部分唯一约束 000158 已部署兜底,但应用层遗漏
 或未来回归仍可能产生——本巡检作为每日 cron + db-patrol-gate 兜底,任一 >0 即
 ORPHAN-GATE FAIL 拦截验收/部署。
+
+## 放量守夜锚点总表(2026-09 M0 冻结)
+
+> 对齐 `docs/plan/q4-launch-growth-plan.md` 辅线 4.1/4.2(每日轧账 + SLO 巡航)。
+> 职责分工:业务态对账/补偿在服务端循环内,环境侧巡检/采集在 102 crontab。
+
+| 锚点 | 载体 | 触发 | 脚本/实现 | 状态 |
+|---|---|------|-----------|------|
+| 五域每日对账 | 服务端循环 | 每日 03:00(30min 粒度补跑) | `internal/app/daily_recon_loop.go`(refType=daily_recon,幂等) | 已内建 |
+| 话单补偿 | 服务端循环 | 周期轮询 | `internal/app/cdr_compensation_loop.go` | 已内建 |
+| ETL 逾期自动派单 | 服务端循环 | 周期轮询 | `internal/app/etl_autodispatch_loop.go` | 已内建 |
+| 孤儿巡检门禁 | 102 cron | 每日 08:10 | `db-patrol-gate.sh`(见上) | 已装 |
+| 备份 | 102 cron | 每日 03:30 | `/backup/jobs` | 已装 |
+| Stripe 隧道守卫+告警 | 102 cron | 每 3 分钟 | `stripe-tunnel-url.sh`(refType=stripe_tunnel) | 已装 |
+| **SLO 巡航采集+告警** | 102 cron | 每日 03:40 | `slo-cruise.sh`(refType=slo_cruise,新 2026-09) | 本批安装 |
+| **SLO 周报** | 102 cron | 每周日 03:50 | `slo-cruise.sh --weekly` | 本批安装 |
+| Gitea 清理 | 102 cron | 每日 03:00 | gitea cleanup.sh | 已装 |
+| 市场对账 | 102 cron | 每月 1 日 04:30 | market-reconciliation-cron.sh | 已装 |
+
+### SLO 巡航(slo-cruise.sh)要点
+
+- 双模式:102 本机直接 docker exec;其它主机经 ssh(**slo-collect.sh 2026-09 起支持**,
+  修复原脚本 102 本机自连 host key 失败坑)。
+- 阈值:待办超 24h >1(SLO_TODO_ALERT)、近 7d 未入账话单 >100(SLO_UNBILLED_ALERT)、
+  日报滞后 >8h(SLO_LAG_ALERT_SEC);超阈值经 `/ops/notify-emit`(refType=slo_cruise,
+  按日幂等)推提醒中心,并写 `/tmp/slo-cruise-YYYYMM.jsonl` 留痕。
+- S4 订单完成率为窗口口径,当前只上报数值不自动告警(等 M1 轧账口径细化,防误报)。
+- 告警发出后 exit 1;采集/留痕失败发 URGENT 且 exit 1,禁止静默。
+
+### 安装(2026-09 M0,须先 scp 新脚本到 ~/boss)
+
+```bash
+scp scripts/ops/slo-collect.sh scripts/ops/slo-cruise.sh imeepos@192.168.0.102:~/boss/scripts/ops/
+ssh imeepos@192.168.0.102 'crontab -l 2>/dev/null | grep -v "slo-cruise"; \
+  echo "40 3 * * * cd ~/boss && ./scripts/ops/slo-cruise.sh >> /tmp/slo-cruise.log 2>&1 # slo-cruise-daily"; \
+  echo "50 3 * * 0 cd ~/boss && ./scripts/ops/slo-cruise.sh --weekly >> /tmp/slo-cruise-weekly.log 2>&1 # slo-cruise-weekly"' \
+  | ssh imeepos@192.168.0.102 'crontab -'
+```
+
+### 应急口径
+
+- 巡航 WARN 提示待办积压/话单残留/报表滞后 → 先查对应补偿任务中心队列,再查
+  `/tmp/slo-cruise-YYYYMM.jsonl` 该日上下文;连续 3 天同一 WARN 且无人工处置 →
+  升级 URGENT(值班红线)。
+- `ops/notify-emit` refType 白名单在 `internal/httpapi/admin/ops_notify.go`
+  (stripe_webhook_guard / stripe_tunnel / slo_cruise),新增脚本 refType 必须先登记。
