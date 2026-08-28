@@ -22,10 +22,12 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -62,23 +64,24 @@ class Nav(initial: Route) {
     fun resetTo(route: Route) { stack.clear(); stack.add(route) }
 
     companion object {
-        /** 底部 tab:与 docs/user/nav.js 一致(首页/服务/订单/我的),orders tab 指向 Route.Orders 订单列表。 */
+        /** 底部 tab:与 docs/user/nav.js 一致(首页/服务/订单/我的/积分),积分 2026-08-27 升 tab。 */
         val TABS = listOf(
-            "home" to "首页", "products" to "服务", "orders" to "订单", "profile" to "我的",
+            "home" to "首页", "products" to "服务", "orders" to "订单", "profile" to "我的", "points" to "积分",
         )
 
-        /** tab 图标:选中实心、未选中描边(material-icons-core 随 material3 自带)。 */
+        /** tab 图标:选中实心、未选中描边(material-icons-extended 提供 Star 积分图标)。 */
         fun tabIcon(key: String, active: Boolean) = when (key) {
             "home" -> if (active) Icons.Filled.Home else Icons.Outlined.Home
             "products" -> if (active) Icons.Filled.ShoppingCart else Icons.Outlined.ShoppingCart
             "orders" -> if (active) Icons.Filled.List else Icons.Outlined.List
+            "points" -> if (active) Icons.Filled.Star else Icons.Outlined.Star
             else -> if (active) Icons.Filled.Person else Icons.Outlined.Person
         }
 
         /** tab key → 路由,PageScaffold 与页面内 Scaffold 底栏共用一份映射。 */
         fun tabRoute(key: String): Route = when (key) {
             "home" -> Route.Home; "products" -> Route.Products
-            "orders" -> Route.Orders; else -> Route.Profile
+            "orders" -> Route.Orders; "points" -> Route.Points; else -> Route.Profile
         }
     }
 }

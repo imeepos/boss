@@ -117,4 +117,28 @@ class PageRenderTest {
         compose.onNodeWithText("订单").assertIsDisplayed()
         compose.onNodeWithText("账单").assertDoesNotExist()
     }
+
+    @Test
+    fun pointsTabRegisteredPerNavJs() {
+        // 积分升 tab(2026-08-27):nav.js 5 tab 含「积分」,label 与路由一致。
+        compose.setContent { BottomTabBar(Nav(Route.Points), "points") {} }
+        compose.onNodeWithText("积分").assertIsDisplayed()
+    }
+
+    @Test
+    fun fiveTabsFitNarrow360dpViewport() {
+        // 5 tab 360dp 窄屏不溢出(2026-08-21 曾 5 胶囊溢出):ForcedSize 强制 360dp 视口断言 5 项全可见。
+        compose.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.ForcedSize(DpSize(360.dp, 800.dp)),
+            ) {
+                BottomTabBar(Nav(Route.Home), "home") {}
+            }
+        }
+        compose.onNodeWithText("首页").assertIsDisplayed()
+        compose.onNodeWithText("服务").assertIsDisplayed()
+        compose.onNodeWithText("订单").assertIsDisplayed()
+        compose.onNodeWithText("我的").assertIsDisplayed()
+        compose.onNodeWithText("积分").assertIsDisplayed()
+    }
 }
