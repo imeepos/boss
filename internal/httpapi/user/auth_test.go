@@ -27,6 +27,9 @@ type userPortalCustSvc struct{ c *customer.Customer }
 
 func (f *userPortalCustSvc) Create(context.Context, customer.Customer) (int64, error) { return 0, nil }
 func (f *userPortalCustSvc) Get(context.Context, int64) (*customer.Customer, error)   { return f.c, nil }
+func (f *userPortalCustSvc) GetInScope(context.Context, int64, int64, string) (*customer.Customer, error) {
+	return f.c, nil
+}
 func (f *userPortalCustSvc) List(_ context.Context, q customer.CustomerQuery) ([]customer.Customer, error) {
 	if q.Phone != "" && q.Phone == f.c.Phone {
 		return []customer.Customer{*f.c}, nil
