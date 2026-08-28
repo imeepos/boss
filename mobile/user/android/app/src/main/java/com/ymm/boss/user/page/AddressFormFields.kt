@@ -3,15 +3,12 @@ package com.ymm.boss.user.page
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -126,20 +123,6 @@ internal fun AddrInput(value: String, placeholder: String, keyboard: KeyboardTyp
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
     )
-}
-
-@Composable
-internal fun SubmitButton(text: String, enabled: Boolean, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(containerColor = Palette.primary,
-            disabledContainerColor = Palette.primary.copy(alpha = 0.4f)),
-        shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.fillMaxWidth().height(44.dp),
-    ) {
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.W600, color = Palette.panel)
-    }
 }
 
 // 菲律宾市场手机号:09 开头共 11 位(如 09171234567);留空=回退账户手机号,语义保留。

@@ -212,3 +212,24 @@ fun PricePill(fee: String, recommended: Boolean = false) {
         Text("/月", fontSize = 10.sp, color = fg, modifier = Modifier.padding(bottom = 1.dp))
     }
 }
+
+/**
+ * 主提交按钮:两端折中标准 48dp 高 / 10dp 圆角 / 15sp W600 / 主色实底白字,签名对齐师傅端。
+ * 禁用态选 40% 透明主色而非 Palette.subtle 灰:沿用地址表单提交按钮收编前的既有禁用色,
+ * 且与师傅端 PrimaryButton 半透明禁用惯例一致;灰底会把主 CTA 禁用态退化成次要按钮观感。
+ */
+@Composable
+fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .height(48.dp)
+            .background(
+                if (enabled) Palette.primary else Palette.primary.copy(alpha = 0.4f),
+                RoundedCornerShape(10.dp),
+            )
+            .clickable(enabled = enabled) { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, fontSize = 15.sp, fontWeight = FontWeight.W600, color = Color.White)
+    }
+}

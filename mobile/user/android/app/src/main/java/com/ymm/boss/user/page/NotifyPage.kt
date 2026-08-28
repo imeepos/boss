@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
@@ -34,6 +32,7 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
 import kotlinx.coroutines.launch
@@ -141,10 +140,6 @@ private fun ToggleCell(title: String, desc: String?, checked: Boolean, onChecked
 private fun SaveButton(msg: String, onSave: () -> Unit) {
     AppCard {
         Notice(msg)
-        Button(
-            onClick = onSave,
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            modifier = Modifier.fillMaxWidth().height(44.dp),
-        ) { Text("保存设置") }
+        PrimaryButton(text = "保存设置", modifier = Modifier.fillMaxWidth(), onClick = onSave)
     }
 }

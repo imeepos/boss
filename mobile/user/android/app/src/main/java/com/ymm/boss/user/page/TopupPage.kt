@@ -14,8 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -38,6 +36,7 @@ import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.Tag
@@ -106,15 +105,15 @@ private fun TopupFormCard(nav: Nav, balance: Double, denoms: List<Int>) {
         FieldLabel("支付方式")
         MethodList(method, payMethods) { method = it }
         if (err.isNotEmpty()) Text(err, fontSize = 12.5.sp, color = Palette.err)
-        Button(
+        PrimaryButton(
+            text = if (guard.active) "充值中…" else "确认充值",
+            enabled = !guard.active,
+            modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
             onClick = {
-                if (!guard.acquire()) return@Button
+                if (!guard.acquire()) return@PrimaryButton
                 doTopup(scope, nav, amountText, method, guard) { err = it }
             },
-            enabled = !guard.active,
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(44.dp),
-        ) { Text(if (guard.active) "充值中…" else "确认充值") }
+        )
     }
 }
 

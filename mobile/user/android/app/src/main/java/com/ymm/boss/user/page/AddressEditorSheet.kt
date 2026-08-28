@@ -45,6 +45,7 @@ import com.ymm.boss.user.api.LocationProvider
 import com.ymm.boss.user.api.ProfileApi
 import com.ymm.boss.user.api.toObjectList
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
 
@@ -219,9 +220,10 @@ fun AddressEditorSheet(
                 modifier = Modifier.padding(top = 4.dp))
 
             Spacer(Modifier.height(12.dp))
-            SubmitButton(
+            PrimaryButton(
                 text = if (initial == null) "保存地址" else "保存修改",
                 enabled = community.isNotBlank() && contact.isNotBlank() && phoneOk(phone),
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 val payload = JSONObject()
                     .put("community", community.trim())

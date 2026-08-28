@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +32,7 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.TopBar
@@ -114,15 +113,15 @@ private fun ConfirmButton(
     val context = androidx.compose.ui.platform.LocalContext.current
     // 防重复提交:弱网下连点是重复建支付会话(Stripe 意图 ×2),提交完成前禁用。
     val guard = rememberSubmitGuard()
-    Button(
+    PrimaryButton(
+        text = if (guard.active) "支付中…" else "确认支付 ¥" + "%.2f".format(amount),
+        enabled = billNo != null && amount > 0 && !guard.active,
+        modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
         onClick = {
-            if (!guard.acquire()) return@Button
+            if (!guard.acquire()) return@PrimaryButton
             doPay(context, scope, nav, billNo, amount, method, onErr, guard)
         },
-        enabled = billNo != null && amount > 0 && !guard.active,
-        colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-        modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(44.dp),
-    ) { Text(if (guard.active) "支付中…" else "确认支付 ¥" + "%.2f".format(amount)) }
+    )
 }
 
 @Composable

@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +32,7 @@ import com.ymm.boss.user.ui.FieldLabel
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.TopBar
 import kotlinx.coroutines.launch
 
@@ -46,6 +45,7 @@ fun RateScreen(nav: Nav, no: String) {
     var quality by remember { mutableIntStateOf(5) }
     var comment by remember { mutableStateOf("") }
     var err by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
     LaunchedEffect(no, nav.refreshTick) {
         try {
             val d = OrderApi.rateInfo(no)
@@ -68,7 +68,18 @@ fun RateScreen(nav: Nav, no: String) {
                 minLines = 3, modifier = Modifier.fillMaxWidth(),
             )
             if (err.isNotEmpty()) Text(err, fontSize = 12.sp, color = Palette.err, modifier = Modifier.padding(top = 8.dp))
-            SubmitButton(nav, no, stars, attitude, quality, comment) { err = it }
+            PrimaryButton(
+                text = "提交评价",
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                onClick = {
+                    scope.launch {
+                        try {
+                            OrderApi.submitRate(no, stars, attitude, quality, comment)
+                            nav.pop()
+                        } catch (e: Exception) { err = "提交失败,请稍后重试" }
+                    }
+                },
+            )
             Notice("评分低于 3 分将自动升级主管复核并回访。")
         }
         Spacer(Modifier.height(12.dp))
@@ -96,24 +107,4 @@ private fun StarRow(label: String, value: Int, onChange: (Int) -> Unit) {
 
 private fun scoreLabel(v: Int) = when (v) {
     5 -> "5 分 · 非常满意"; 4 -> "4 分 · 满意"; 3 -> "3 分 · 一般"; 2 -> "2 分 · 不满意"; else -> "1 分 · 很不满意"
-}
-
-@Composable
-private fun SubmitButton(
-    nav: Nav, no: String, stars: Int, attitude: Int, quality: Int, comment: String,
-    onErr: (String) -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    Button(
-        onClick = {
-            scope.launch {
-                try {
-                    OrderApi.submitRate(no, stars, attitude, quality, comment)
-                    nav.pop()
-                } catch (e: Exception) { onErr("提交失败,请稍后重试") }
-            }
-        },
-        colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp).height(44.dp),
-    ) { Text("提交评价") }
 }

@@ -12,10 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,6 +42,7 @@ import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
@@ -208,26 +206,17 @@ private fun BoxScope.CtaBar(product: JSONObject?, enabled: Boolean, submitting: 
         color = Color.White,
         modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
     ) {
-        Button(
-            onClick = onClick,
+        // 提交中给「提交中…」正向反馈,不能误显「暂不可提交」(弱网 8s 等待期的即时按压反馈)
+        PrimaryButton(
+            text = when {
+                submitting -> "提交中…"
+                enabled -> "确认并支付 ¥$fee/月"
+                else -> "暂不可提交"
+            },
             enabled = enabled,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Palette.primary,
-                disabledContainerColor = Palette.muted,
-            ),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.fillMaxWidth().padding(14.dp).height(44.dp),
-        ) {
-            Text(
-                // 提交中给「提交中…」正向反馈,不能误显「暂不可提交」(弱网 8s 等待期的即时按压反馈)
-                when {
-                    submitting -> "提交中…"
-                    enabled -> "确认并支付 ¥$fee/月"
-                    else -> "暂不可提交"
-                },
-                fontSize = 14.sp, fontWeight = FontWeight.W500, color = Color.White,
-            )
-        }
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            onClick = onClick,
+        )
     }
 }
 
