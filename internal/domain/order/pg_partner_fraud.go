@@ -52,15 +52,21 @@ func lockPartnerTenant(ctx context.Context, tx pgx.Tx, entityID int64) error {
 	return nil
 }
 
+// checkPartnerOwnership 渠道下单归属校验(C 案):客户/产品属渠道法人 **或** 平台法人(1)
+// 均放行;渠道代售平台产品时订单法人由地址推导,佣金归 partner_entity_id(见 pg_workflow.go)。
 func checkPartnerOwnership(ctx context.Context, tx pgx.Tx, req SubmitReq) error {
 	var ok bool
-	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM customers WHERE id=$1 AND legal_entity_id=$2)`, req.CustomerID, req.LegalEntityID).Scan(&ok); err != nil {
+	if err := tx.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM customers WHERE id=$1 AND (legal_entity_id=$2 OR legal_entity_id=1))`,
+		req.CustomerID, req.LegalEntityID).Scan(&ok); err != nil {
 		return err
 	}
 	if !ok {
 		return fmt.Errorf("order: partner customer ownership: %w", ErrInvalidInput)
 	}
-	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM product_offers WHERE id=$1 AND legal_entity_id=$2 AND status='PUBLISHED')`, req.OfferID, req.LegalEntityID).Scan(&ok); err != nil {
+	if err := tx.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM product_offers WHERE id=$1 AND (legal_entity_id=$2 OR legal_entity_id=1) AND status='PUBLISHED')`,
+		req.OfferID, req.LegalEntityID).Scan(&ok); err != nil {
 		return err
 	}
 	if !ok {

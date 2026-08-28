@@ -182,14 +182,15 @@ func (s *PGStore) submitRegular(ctx context.Context, req SubmitReq) (*Order, err
 		Status:        "PENDING",
 		ChannelID:     req.ChannelID,
 		LegalEntityID: own.LegalEntityID,
+		PartnerEntity: req.PartnerEntity,
 		RegionPath:    own.RegionPath,
 		BillingMode:   req.BillingMode,
 		BuyMonths:     req.BuyMonths,
 	}
 	err = s.db.QueryRow(ctx, `
-		INSERT INTO orders(order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, buy_months, request_id)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NULLIF($12,'')) RETURNING id`,
-		o.OrderNo, o.CustomerID, o.OfferID, o.AddressID, o.Stage, o.Status, o.ChannelID, o.LegalEntityID, o.RegionPath, o.BillingMode, o.BuyMonths, req.RequestID).Scan(&o.ID)
+		INSERT INTO orders(order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, partner_entity_id, region_path, billing_mode, buy_months, request_id)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,NULLIF($9,0),$10,$11,$12,NULLIF($13,'')) RETURNING id`,
+		o.OrderNo, o.CustomerID, o.OfferID, o.AddressID, o.Stage, o.Status, o.ChannelID, o.LegalEntityID, o.PartnerEntity, o.RegionPath, o.BillingMode, o.BuyMonths, req.RequestID).Scan(&o.ID)
 	if err != nil {
 		// 并发重放:唯一索引 uq_orders_customer_request 撞号 → 回读已有订单。
 		var pgErr *pgconn.PgError

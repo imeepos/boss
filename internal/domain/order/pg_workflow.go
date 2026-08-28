@@ -262,7 +262,7 @@ func (s *PGStore) accruePartnerCommission(ctx context.Context, orderID int64) {
 	var entityID int64
 	var amount float64
 	err := s.db.QueryRow(ctx, `
-SELECT o.legal_entity_id, po.monthly_fee * GREATEST(o.buy_months, 1)
+SELECT COALESCE(o.partner_entity_id, o.legal_entity_id), po.monthly_fee * GREATEST(o.buy_months, 1)
 FROM orders o JOIN channels ch ON ch.id=o.channel_id
 JOIN product_offers po ON po.id=o.offer_id
 WHERE o.id=$1 AND ch.code='AGENT'`, orderID).Scan(&entityID, &amount)

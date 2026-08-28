@@ -12,8 +12,9 @@ type Order struct {
 	AddressID     int64     `json:"addressId"`
 	Stage         int8      `json:"stage"`         // 1~12(见 terms.md 第 1 节)
 	Status        string    `json:"status"`        // PENDING / RESERVED / INSTALLING / DONE
-	ChannelID     int64     `json:"channelId"`     // 渠道 → channels,REQ-ORD-006 必填不可改
-	LegalEntityID int64     `json:"legalEntityId"` // 品牌=运营主体(legal_entities, 品牌隔离最小单元)
+	ChannelID     int64     `json:"channelId"`       // 渠道 → channels,REQ-ORD-006 必填不可改
+	LegalEntityID int64     `json:"legalEntityId"`   // 品牌=运营主体(legal_entities, 品牌隔离最小单元)
+	PartnerEntity int64     `json:"partnerEntity"`   // 渠道法人(C 案 000162);0=直营。佣金计提归此法人
 	RegionPath    string    `json:"regionPath"`
 	BillingMode   string    `json:"billingMode"` // PREPAID/POSTPAID(000102);空回退 POSTPAID
 	BuyMonths     int       `json:"buyMonths"`   // 预缴月数(000104);0=按月缴
@@ -51,4 +52,5 @@ type SubmitReq struct {
 	BuyMonths     int    `json:"buyMonths"`   // 预缴月数,0=按月缴(环节4 收 1 个月);1~60
 	RequestID     string `json:"requestId"`   // 可选幂等键(000116):同客户重放返回已有订单
 	PartnerOrder  bool   `json:"-"`           // 服务端标记，禁止由外部 JSON 设置
+	PartnerEntity int64  `json:"-"`           // 渠道法人(C 案 000162);handler 从 partner profile 取,禁止外部 JSON 设置
 }

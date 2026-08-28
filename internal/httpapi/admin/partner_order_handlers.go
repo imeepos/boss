@@ -35,6 +35,7 @@ func partnerOrderSubmitHandler(a *app.Application) gin.HandlerFunc {
 		}
 		req.LegalEntityID = profile.LegalEntityID
 		req.PartnerOrder = true
+		req.PartnerEntity = profile.LegalEntityID
 		if a.PartnerOrderRisk != nil {
 			decision, riskErr := a.PartnerOrderRisk.CheckOrderRisk(c.Request.Context(), claims.AccountID, req.CustomerID)
 			if riskErr != nil {
