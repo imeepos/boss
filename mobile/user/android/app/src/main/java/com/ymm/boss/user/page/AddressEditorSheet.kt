@@ -51,8 +51,8 @@ import org.json.JSONObject
 /**
  * 新增/编辑地址底部弹窗。
  * 顶部"使用当前位置"：GPS 坐标预填门牌号参考（可改写）。
- * "所在地区"行：级联选择地址层级树（大区→市→街道/Barangay），选中回填
- * addressPath(ltree) + 小区名；未选时仍可手填小区（历史下拉兜底）。
+ * "所在区域"行：级联选择地址层级树（大区→市→街道/Barangay），选中回填
+ * addressPath(ltree) + 小区名(仅原值为空时覆盖)；未选时仍可手填小区（历史下拉兜底）。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,7 +166,7 @@ fun AddressEditorSheet(
                 },
             )
             Spacer(Modifier.height(8.dp))
-            FieldLabel("所在地区（级联选择）")
+            FieldLabel("所在区域")
             RegionRow(
                 breadcrumb = regionBreadcrumb,
                 addressPath = addressPath,
@@ -222,7 +222,8 @@ fun AddressEditorSheet(
                 pickerVisible = false
                 addressPath = sel.addressPath
                 regionBreadcrumb = sel.breadcrumb
-                community = sel.community
+                // 仅原值为空才回填:用户手填的小区名(历史下拉兜底)不被选区覆盖。
+                if (community.isBlank()) community = sel.community
                 err = ""
             },
         )
