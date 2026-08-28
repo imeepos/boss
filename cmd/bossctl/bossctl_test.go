@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -156,6 +158,44 @@ func TestCheckAPIKey(t *testing.T) {
 	}
 	if err := checkAPIKey("x", "boss_00ff\n中文"); err == nil {
 		t.Error("带换行/中文尾巴的 key 应报错")
+	}
+}
+
+// TestAuthHintTypedError 401 走 AuthError 类型识别(errors.As),非 401 不给提示。
+func TestAuthHintTypedError(t *testing.T) {
+	r401 := &apiResp{Code: 401, Msg: "invalid api key"}
+	err401 := r401.errBiz("查询身份")
+	var authErr *AuthError
+	if !errors.As(err401, &authErr) {
+		t.Fatalf("401 应包成 *AuthError,实际 %T", err401)
+	}
+	if got := authHint(err401, "admin"); !strings.Contains(got, `identity save admin`) {
+		t.Errorf("带身份提示 = %q,期望含重存命令", got)
+	}
+	if got := authHint(err401, ""); !strings.Contains(got, "bossctl login") {
+		t.Errorf("无身份提示 = %q,期望指向 login", got)
+	}
+
+	r404 := &apiResp{Code: 40400, Msg: "资源不存在"}
+	if got := authHint(r404.errBiz("请求"), "admin"); got != "" {
+		t.Errorf("非 401 不应给提示,实际 %q", got)
+	}
+	if got := authHint(errors.New("http do: timeout"), ""); got != "" {
+		t.Errorf("普通 error 不应给提示,实际 %q", got)
+	}
+}
+
+// TestMe401AuthError me 遇 401 返回 AuthError(此前是自由文本,无法类型识别)。
+func TestMe401AuthError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"code": 401, "msg": "invalid api key"})
+	}))
+	defer srv.Close()
+	c := &CLI{cfg: &config{Server: srv.URL, APIKey: "boss_dead"}}
+	err := c.me()
+	var authErr *AuthError
+	if !errors.As(err, &authErr) {
+		t.Fatalf("me 401 应返回 *AuthError,实际 %v", err)
 	}
 }
 

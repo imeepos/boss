@@ -86,9 +86,25 @@ type apiResp struct {
 	Data json.RawMessage `json:"data"`
 }
 
+// AuthError 认证失败(信封 code=401):main 用 errors.As 识别后给出修复提示
+// (--as 身份提示档案重存,否则提示登录),取代旧实现对错误文本做字符串匹配。
+type AuthError struct {
+	Context string
+	Code    int
+	Msg     string
+}
+
+func (e *AuthError) Error() string {
+	return fmt.Sprintf("%s失败: code=%d msg=%s", e.Context, e.Code, e.Msg)
+}
+
 // errBiz 业务失败(code != 0)统一转 error:主程序打印到 stderr 并以退出码 1 结束,
 // CI/脚本可据此感知失败(此前 call/upload 业务失败退出码 0,流水线误判成功)。
+// 401 单独包成 AuthError 供调用方识别。
 func (r *apiResp) errBiz(context string) error {
+	if r.Code == 401 {
+		return &AuthError{Context: context, Code: r.Code, Msg: r.Msg}
+	}
 	return fmt.Errorf("%s失败: code=%d msg=%s", context, r.Code, r.Msg)
 }
 
