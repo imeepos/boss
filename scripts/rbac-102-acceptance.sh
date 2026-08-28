@@ -98,5 +98,16 @@ LEFT=$(ssh imeepos@192.168.0.102 "docker exec -i boss-infra-postgres-1 psql -U b
 LEFT2=$(ssh imeepos@192.168.0.102 "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -tAc \"SELECT count(*) FROM customers WHERE name LIKE 'e2e-rbac2-%'\"")
 [ "$LEFT" = "0" ] && [ "$LEFT2" = "0" ] && ok "清理复核 0 残留" || bad "残留 acc=$LEFT cust=$LEFT2"
 
+echo "===== V2 组: 工单寻址端点数据范围守卫(fix7, 2026-08-28 二轮) ====="
+# 前置: 造 rs=root.luzon 的 ops 号 + 无区域工单 TK-TEST-L1 + luzon 子树工单 TK-20260822-374
+RSOPS_ID=$(req POST /accounts "$AT" "{\"username\":\"e2e-rbac2-rsops\",\"password\":\"$PW\",\"realName\":\"e2e rsops\",\"roleCode\":\"ops\",\"regionScope\":\"root.luzon\"}" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("data",{}).get("id",""))')
+RTOK=$(tok e2e-rbac2-rsops "$PW")
+OT1=$(req POST "/tickets/TK-TEST-L1/activate" "$RTOK" | jcode)
+OT2=$(req POST "/tickets/TK-TEST-L1/scan-bind" "$RTOK" '{"epc":"X"}' | jcode)
+OT3=$(req POST "/dispatch/tickets/TK-TEST-L1/transfer" "$RTOK" '{"toMasterId":5,"reason":"e2e"}' | jcode)
+[ "$OT1" = "40400" ] && [ "$OT2" = "40400" ] && [ "$OT3" = "40400" ] && ok "V2 区域受限 ops 对无区域工单三端点全 40400" || bad "V2 activate=$OT1 scan=$OT2 transfer=$OT3"
+req PUT "/accounts/$RSOPS_ID" "$AT" '{"status":0,"username":"x","realName":"x","roleCode":"ops"}' > /dev/null
+req DELETE "/accounts/$RSOPS_ID" "$AT" > /dev/null
+
 echo "===== 结果: PASS=$PASS FAIL=$FAIL ====="
 [ "$FAIL" = "0" ]

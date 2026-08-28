@@ -16,11 +16,12 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
 function parseArgs(argv) {
   const args = { url: argv[0], out: argv[1], evals: [], settle: 2500, width: 1600, height: 900 }
-  for (let i = 2; i < argv.length; i += 2) {
+  for (let i = 2; i < argv.length; i++) {
     const key = argv[i].replace(/^--/, '')
-    const val = argv[i + 1]
-    if (key === 'eval') args.evals.push(val)
-    else args[key] = /^\d+$/.test(val) ? Number(val) : val
+    if (key === 'eval') { args.evals.push(argv[i + 1]); i += 1; continue }
+    if (key === 'no-proxy') { args.noProxy = true; continue } // 布尔旗标:内网直连,绕过系统代理
+    args[key] = /^\d+$/.test(argv[i + 1] ?? '') ? Number(argv[i + 1]) : argv[i + 1]
+    i += 1
   }
   if (!args.url || !args.out) {
     console.error('usage: cdp-capture.mjs <url> <out.png> [--eval js]... [--settle ms] [--width px] [--height px] [--logs out.json]')
@@ -29,12 +30,12 @@ function parseArgs(argv) {
   return args
 }
 
-async function launchChrome(width, height, userDataDir) {
+async function launchChrome(width, height, userDataDir, noProxy) {
   const profile = userDataDir || mkdtempSync(join(tmpdir(), 'cdp-shot-'))
   if (userDataDir && !existsSync(userDataDir)) mkdirSync(userDataDir, { recursive: true })
   const proc = spawn(CHROME, [
     '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
-    `--window-size=${width},${height}`, 'about:blank',
+    `--window-size=${width},${height}`, ...(noProxy ? ['--no-proxy-server'] : []), 'about:blank',
   ], { stdio: ['ignore', 'ignore', 'pipe'] })
   const wsUrl = await new Promise((resolve, reject) => {
     let buf = ''
@@ -127,7 +128,7 @@ async function createCollector(cdp) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const persistentProfile = args['user-data-dir'] || ''
-  const { proc, profile, port } = await launchChrome(args.width, args.height, persistentProfile)
+  const { proc, profile, port } = await launchChrome(args.width, args.height, persistentProfile, args.noProxy)
   try {
     const targets = await fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json())
     const page = targets.find((t) => t.type === 'page')
