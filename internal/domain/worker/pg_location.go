@@ -37,8 +37,10 @@ func (s *PGStore) LatestLocation(ctx context.Context, workerID int64) (*Location
 
 func (s *PGStore) LatestLocationForOrder(ctx context.Context, orderID int64) (*Location, error) {
 	var location Location
+	// 列必须 l. 限定:JOIN dispatch_tickets 后 id/worker_id 两表同名,裸列名 PG 解析期即报歧义(42702)。
 	err := s.db.QueryRow(ctx, `
-		SELECT `+locationCols+` FROM worker_locations l
+		SELECT l.id, l.worker_id, l.lat, l.lng, l.accuracy_m, l.speed_mps, l.bearing, l.reported_at
+		FROM worker_locations l
 		JOIN dispatch_tickets t ON t.worker_id=l.worker_id AND t.order_id=$1
 		ORDER BY l.reported_at DESC, l.id DESC LIMIT 1`, orderID).
 		Scan(&location.ID, &location.WorkerID, &location.Lat, &location.Lng, &location.AccuracyM, &location.SpeedMPS, &location.Bearing, &location.ReportedAt)
