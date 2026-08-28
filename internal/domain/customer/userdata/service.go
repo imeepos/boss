@@ -213,6 +213,8 @@ type Service interface {
 	// UpdateUserAddress 修改家庭地址明细;按 customerId + id 归属校验,
 	// 未命中或归属不符返回 ErrNotFound;详情字段全量替换(detail/contact/phone/isDefault/addrCode)。
 	UpdateUserAddress(ctx context.Context, customerID, id int64, a UserAddress) error
+	// GetUserAddress 按归属查单条地址,未命中返回 ErrNotFound;编辑空 phone 保持原值的取数源(列表仅回 phoneMasked)。
+	GetUserAddress(ctx context.Context, customerID, id int64) (UserAddress, error)
 	// DeleteUserAddress 删除家庭地址;按 customerId 归属校验,未命中返回 ErrNotFound。
 	DeleteUserAddress(ctx context.Context, customerID, id int64) error
 	ListUserPlans(ctx context.Context) ([]map[string]any, error)

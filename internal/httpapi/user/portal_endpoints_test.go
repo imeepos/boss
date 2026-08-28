@@ -32,6 +32,11 @@ type fakeUserData struct {
 	created int
 	// lastAddr 新增地址落库快照,addressPath 透传断言用。
 	lastAddr udcustomer.UserAddress
+	// origAddr GetUserAddress 桩返回的原地址(空 phone 保持原值断言用);
+	// updatedAddr 更新落库快照。
+	origAddr    udcustomer.UserAddress
+	updatedAddr udcustomer.UserAddress
+	updated     bool
 	// 续费桩:renewFee 0 = 套餐未命中;renewedMonths/renewEnd 供断言。
 	renewProductID int64
 	renewFee       int
@@ -59,8 +64,13 @@ func (f *fakeUserData) CreateUserAddress(_ context.Context, a udcustomer.UserAdd
 	f.lastAddr = a
 	return int64(f.created), nil
 }
-func (f *fakeUserData) UpdateUserAddress(context.Context, int64, int64, udcustomer.UserAddress) error {
+func (f *fakeUserData) UpdateUserAddress(_ context.Context, _ int64, _ int64, a udcustomer.UserAddress) error {
+	f.updated = true
+	f.updatedAddr = a
 	return nil
+}
+func (f *fakeUserData) GetUserAddress(context.Context, int64, int64) (udcustomer.UserAddress, error) {
+	return f.origAddr, nil
 }
 func (f *fakeUserData) DeleteUserAddress(context.Context, int64, int64) error {
 	return nil
@@ -347,6 +357,38 @@ func TestPortal_CouponsAddresses(t *testing.T) {
 	}
 	if ud.lastAddr.AddressPath != "ph1300000000.ph1374000000.ph1374020189" {
 		t.Fatalf("addressPath passthrough got %q", ud.lastAddr.AddressPath)
+	}
+}
+
+// TestPortal_UpdateAddress_KeepsPhoneWhenEmpty:编辑时空 phone 保持原值,
+// 不回填账户手机号(自定义手机号防静默覆盖;列表只回 phoneMasked 无法预填)。
+func TestPortal_UpdateAddress_KeepsPhoneWhenEmpty(t *testing.T) {
+	cust := userPortalCust()
+	ud := &fakeUserData{origAddr: udcustomer.UserAddress{Phone: "13911112222"}}
+	r, mgr, _ := newFullPortalRouter(cust, ud, nil, nil, nil, nil, nil)
+	tok, _ := signCustomerToken(mgr, cust.ID, cust.Phone)
+
+	w := userPortalDo(r, http.MethodPut, "/api/user/v1/addresses/1",
+		`{"community":"Sunrise","building":"8","door":"502","contact":"王先生","phone":""}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeOK) {
+		t.Fatalf("update resp=%s", w.Body.String())
+	}
+	if !ud.updated {
+		t.Fatalf("update not persisted")
+	}
+	if ud.updatedAddr.Phone != "13911112222" {
+		t.Fatalf("phone=%q, want original 13911112222 (not account %q)",
+			ud.updatedAddr.Phone, cust.Phone)
+	}
+
+	// 显式新手机号仍正常替换。
+	w = userPortalDo(r, http.MethodPut, "/api/user/v1/addresses/1",
+		`{"community":"Sunrise","building":"8","door":"502","contact":"王先生","phone":"13766665555"}`, tok)
+	if code, _ := userPortalCode(t, w); code != int(apitypes.CodeOK) {
+		t.Fatalf("update with phone resp=%s", w.Body.String())
+	}
+	if ud.updatedAddr.Phone != "13766665555" {
+		t.Fatalf("phone=%q, want explicit 13766665555", ud.updatedAddr.Phone)
 	}
 }
 

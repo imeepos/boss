@@ -125,11 +125,17 @@ func portalUpdateAddress(a *app.Application) gin.HandlerFunc {
 		if !httpx.BindBody(c, &req) {
 			return
 		}
+		// 编辑语义:空 phone=保持该地址原值,不回填账户手机号。
+		// 列表只回 phoneMasked,客户端无法预填原值;若回填账户手机号,会把用户
+		// 存的自定义手机号静默覆盖掉(且 API 无"清空/保持"的表达路径)。
 		phone := req.Phone
 		if phone == "" {
-			if cust, err := a.Customer.Get(c.Request.Context(), cid); err == nil {
-				phone = cust.Phone
+			orig, err := a.UserData.GetUserAddress(c.Request.Context(), cid, id)
+			if err != nil {
+				respondErr(c, err)
+				return
 			}
+			phone = orig.Phone
 		}
 		err := a.UserData.UpdateUserAddress(c.Request.Context(), cid, id, udcustomer.UserAddress{
 			CustomerID: cid, AddrCode: req.Community,
