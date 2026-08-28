@@ -117,6 +117,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'storageconfig', label: 'MinIO 存储配置', path: '/base/storageconfig' },
     { key: 'apikey', label: 'API Key', path: '/org/apikey' },
     { key: 'openplat', label: '开放平台', path: '/org/openplat' },
+    { key: 'apidocs', label: 'API 文档', path: '/base/apidocs' },
   ]},
   { id: 'system', label: '系统管理', items: [
     { key: 'license', label: '系统授权', path: '/base/license' },

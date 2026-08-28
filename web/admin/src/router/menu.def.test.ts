@@ -13,8 +13,8 @@ describe('menu.def', () => {
     ])
   })
 
-  it('页面总数不变(84 页,key 集合与重组前一致;+3 = procurement/install/install-board)', () => {
-    expect(MENU_GROUPS.flatMap((g) => g.items)).toHaveLength(84)
+  it('页面总数不变(85 页;+3 = procurement/install/install-board,+1 = apidocs 在线文档)', () => {
+    expect(MENU_GROUPS.flatMap((g) => g.items)).toHaveLength(85)
   })
 
   it('重组后关键页面归属新分组(2026-08-27)', () => {

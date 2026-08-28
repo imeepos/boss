@@ -1,0 +1,143 @@
+/* API 文档页:Swagger UI 与本站双主题的桥接层。
+   swagger-ui.css 为全局注入,结构性样式自带 .swagger-ui 命名空间;
+   此处只做两件事:① 容器高度与外壳卡片底色对齐;② 暗色主题覆盖主表面
+   (令牌全部来自 theme/tokens.css,未定义令牌会被 web-ui-audit 拦截)。 */
+
+.apidocs-root .swagger-ui {
+  background: transparent;
+}
+
+.apidocs-root .swagger-ui .wrapper {
+  padding: 0;
+  max-width: none;
+}
+
+/* 暗色主题:主表面(信息区/opblock/模型/表格/按钮)对齐 --shell 令牌 */
+[data-theme='dark'] .apidocs-root .swagger-ui {
+  background: var(--shell-card-bg);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .info .title,
+[data-theme='dark'] .apidocs-root .swagger-ui .info h1,
+[data-theme='dark'] .apidocs-root .swagger-ui .info h2,
+[data-theme='dark'] .apidocs-root .swagger-ui .title small pre {
+  color: var(--shell-heading);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .info p,
+[data-theme='dark'] .apidocs-root .swagger-ui .info li,
+[data-theme='dark'] .apidocs-root .swagger-ui .info table,
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock .opblock-summary-description,
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock-description-wrapper p,
+[data-theme='dark'] .apidocs-root .swagger-ui .responses-inner h4,
+[data-theme='dark'] .apidocs-root .swagger-ui .response-col_description__inner,
+[data-theme='dark'] .apidocs-root .swagger-ui .response-col_status,
+[data-theme='dark'] .apidocs-root .swagger-ui .response-col_links,
+[data-theme='dark'] .apidocs-root .swagger-ui .parameter__name,
+[data-theme='dark'] .apidocs-root .swagger-ui .parameter__type,
+[data-theme='dark'] .apidocs-root .swagger-ui .parameter__in,
+[data-theme='dark'] .apidocs-root .swagger-ui .parameter__extension,
+[data-theme='dark'] .apidocs-root .swagger-ui table.headers td,
+[data-theme='dark'] .apidocs-root .swagger-ui .models h4 span,
+[data-theme='dark'] .apidocs-root .swagger-ui .model-box,
+[data-theme='dark'] .apidocs-root .swagger-ui .model-title {
+  color: var(--shell-content-text);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .scheme-container {
+  background: var(--shell-card-bg);
+  box-shadow: none;
+  border-bottom: 1px solid var(--shell-card-border);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--shell-card-border);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock .opblock-body,
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock-section-header,
+[data-theme='dark'] .apidocs-root .swagger-ui .models,
+[data-theme='dark'] .apidocs-root .swagger-ui .model-container {
+  background: transparent;
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock-section-header {
+  box-shadow: none;
+  border-bottom: 1px solid var(--shell-card-border);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock-section-header h4,
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock-section-header label,
+[data-theme='dark'] .apidocs-root .swagger-ui .models h4,
+[data-theme='dark'] .apidocs-root .swagger-ui .responses-inner h4 {
+  color: var(--shell-heading);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui table thead tr td,
+[data-theme='dark'] .apidocs-root .swagger-ui table thead tr th {
+  color: var(--shell-heading);
+  border-bottom: 1px solid var(--shell-card-border);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui table tbody tr td {
+  border-bottom: 1px solid var(--shell-card-border);
+  color: var(--shell-content-text);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui input,
+[data-theme='dark'] .apidocs-root .swagger-ui select,
+[data-theme='dark'] .apidocs-root .swagger-ui textarea {
+  background: var(--shell-input-bg);
+  color: var(--shell-input-text);
+  border-color: var(--shell-input-border);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .btn {
+  color: var(--shell-content-text);
+  background: var(--shell-input-bg);
+  border-color: var(--shell-input-border);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .btn-sm {
+  color: var(--shell-content-text);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .copy-to-clipboard button,
+[data-theme='dark'] .apidocs-root .swagger-ui button.authorization__btn {
+  background: var(--shell-input-bg);
+  border-color: var(--shell-input-border);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .highlight-code .microlight,
+[data-theme='dark'] .apidocs-root .swagger-ui .responses-inner .microlight,
+[data-theme='dark'] .apidocs-root .swagger-ui pre.microlight {
+  background: var(--shell-input-bg);
+  color: var(--shell-content-text);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .dialog-ux .modal-ux,
+[data-theme='dark'] .apidocs-root .swagger-ui .auth-container,
+[data-theme='dark'] .apidocs-root .swagger-ui .modal-ux-content p {
+  background: var(--shell-card-bg);
+  color: var(--shell-content-text);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .dialog-ux .modal-ux-header h3,
+[data-theme='dark'] .apidocs-root .swagger-ui .auth-container h2 {
+  color: var(--shell-heading);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .dialog-ux .modal-ux-header {
+  border-bottom: 1px solid var(--shell-card-border);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui select[multiple] {
+  background: var(--shell-input-bg);
+}
+
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock-tag,
+[data-theme='dark'] .apidocs-root .swagger-ui .opblock-tag small {
+  color: var(--shell-heading);
+  border-bottom: 1px solid var(--shell-card-border);
+}

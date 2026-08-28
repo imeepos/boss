@@ -1849,6 +1849,17 @@ export interface Translations {
       revokeConfirm: string
       plainOnce: string
     },
+    apidocs: {
+      title: string
+      desc: string
+      portalAdmin: string
+      portalUser: string
+      portalWorker: string
+      portalOpen: string
+      tryHint: string
+      loadFailed: string
+      retry: string
+    },
     openplat: {
       title: string
       desc: string

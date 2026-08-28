@@ -27,6 +27,7 @@ const RealnameReviewPage = lazy(() => import('./pages/base/realname-review'))
 const StripeConfigPage = lazy(() => import('./pages/base/stripeconfig'))
 const StorageConfigPage = lazy(() => import('./pages/base/storageconfig'))
 const ServersPage = lazy(() => import('./pages/base/servers'))
+const ApiDocsPage = lazy(() => import('./pages/base/apidocs'))
 const AuditPage = lazy(() => import('./pages/base/audit'))
 const CompanyPage = lazy(() => import('./pages/org/company'))
 const DepartmentPage = lazy(() => import('./pages/org/department'))
@@ -132,6 +133,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'stripeconfig') return <StripeConfigPage />
   if (pageKey === 'storageconfig') return <StorageConfigPage />
   if (pageKey === 'servers') return <ServersPage />
+  if (pageKey === 'apidocs') return <ApiDocsPage />
   if (pageKey === 'audit') return <AuditPage />
   if (pageKey === 'company') return <CompanyPage />
   if (pageKey === 'staff') return <StaffOrgPage />
