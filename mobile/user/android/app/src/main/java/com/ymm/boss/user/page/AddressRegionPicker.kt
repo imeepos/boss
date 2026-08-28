@@ -1,6 +1,7 @@
 package com.ymm.boss.user.page
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.Api
@@ -67,6 +72,9 @@ internal fun AddressRegionPickerSheet(
     var searchVisible by remember { mutableStateOf(false) }
     // 错误重试触发器:reloadTick 变化即整链重载(网络瞬断后不必关弹层重开)。
     var reloadTick by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    // 加载/错误占位面沿用上一帧列表高度(下限 200dp),见下方内容区注释。
+    var paneHeight by remember { mutableStateOf(200.dp) }
 
     // 返回键语义全接管:M3 弹层的内置返回处理(禁用前)与上滑/点遮罩统一走
     // onDismissRequest,内容里的 BackHandler 抢不过它,层2/层3 返回被整层关闭。
@@ -126,17 +134,25 @@ internal fun AddressRegionPickerSheet(
                 Spacer(Modifier.height(8.dp))
             }
             // 高度自适应:内容少时弹层随内容收缩,上限 420dp 防超高(原固定 420 常留大片空白)。
+            // 加载/错误态锁定上一帧内容高度:弹层缩水会让原列表区域的点击落到遮罩上误关弹层;
+            // 两态整面吞噬点击(重试按钮是子级,自身仍可点)。
             Box(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
                 when {
-                    loading -> Box(Modifier.align(Alignment.Center)) {
+                    loading -> StatusPane(paneHeight) {
                         CircularProgressIndicator(color = Palette.primary, modifier = Modifier.size(28.dp))
                     }
-                    err.isNotBlank() -> Column(Modifier.align(Alignment.Center)) {
-                        EmptyState(err)
-                        Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { reloadTick++ }) { Text("重试") }
+                    err.isNotBlank() -> StatusPane(paneHeight) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            EmptyState(err)
+                            Spacer(Modifier.height(8.dp))
+                            TextButton(onClick = { reloadTick++ }) { Text("重试") }
+                        }
                     }
-                    else -> {
+                    else -> Box(
+                        Modifier.fillMaxWidth().onSizeChanged {
+                            paneHeight = with(density) { it.height.toDp() }.coerceIn(200.dp, 420.dp)
+                        },
+                    ) {
                         val shown = if (level >= 3 && filter.isNotBlank()) {
                             children.filter { it.optString("name").contains(filter, ignoreCase = true) }
                         } else children
@@ -211,3 +227,13 @@ private fun selectionOf(chain: List<JSONObject>, leaf: JSONObject): RegionSelect
         community = leaf.optString("name"),
         breadcrumb = (chain.map { it.optString("name") } + leaf.optString("name")).joinToString(" · "),
     )
+
+/** 加载/错误占位面:锁定上一帧列表高度防弹层缩水把原列表区域的点击漏到遮罩;整面吞噬点击。 */
+@Composable
+private fun StatusPane(height: Dp, content: @Composable () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().height(height)
+            .pointerInput(Unit) { detectTapGestures { } },
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}
