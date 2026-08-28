@@ -202,6 +202,7 @@ func (s *PGStore) LookupAddresses(ctx context.Context, paths []string) ([]Addres
 }
 
 // attachAncestors 批量反查命中节点全部祖先(path 前缀段),组装按 level 升序的祖先链。
+// hasChildren 一并回填:此前祖先该字段恒 false(零值),客户端据其判断能否继续下钻会误判叶节点。
 func (s *PGStore) attachAncestors(ctx context.Context, hits []addressHitRow) ([]AddressHit, error) {
 	prefixes := map[string]bool{}
 	for _, h := range hits {
@@ -214,15 +215,16 @@ func (s *PGStore) attachAncestors(ctx context.Context, hits []addressHitRow) ([]
 		paths = append(paths, p)
 	}
 	rows, err := s.db.Query(ctx, `
-		SELECT id, COALESCE(parent_id,0), level, name, path::text
-		FROM addresses WHERE path::text = ANY($1) ORDER BY path`, paths)
+		SELECT a.id, COALESCE(a.parent_id,0), a.level, a.name, a.path::text,
+		       EXISTS(SELECT 1 FROM addresses c WHERE c.parent_id = a.id)
+		FROM addresses a WHERE a.path::text = ANY($1) ORDER BY path`, paths)
 	if err != nil {
 		return nil, fmt.Errorf("user: search ancestors: %w", err)
 	}
 	byPath := map[string]Address{}
 	for rows.Next() {
 		var a Address
-		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name, &a.Path); err != nil {
+		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name, &a.Path, &a.HasChildren); err != nil {
 			return nil, fmt.Errorf("user: scan ancestor: %w", err)
 		}
 		byPath[a.Path] = a

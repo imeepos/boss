@@ -69,8 +69,8 @@ func TestSearchAddresses(t *testing.T) {
 			AddRow(int64(3), int64(2), int8(2), "朝阳区", "bj.chaoyang", "CN", "CN-BJ", false))
 	mock.ExpectQuery(`= ANY`).
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path"}).
-			AddRow(int64(1), int64(0), int8(1), "北京市", "bj"))
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "has_children"}).
+			AddRow(int64(1), int64(0), int8(1), "北京市", "bj", true))
 
 	s := NewPGStore(mock)
 	hits, hasMore, err := s.SearchAddresses(context.Background(), "朝阳")
@@ -85,6 +85,9 @@ func TestSearchAddresses(t *testing.T) {
 	}
 	if len(hits[0].Ancestors) != 1 || hits[0].Ancestors[0].Name != "北京市" {
 		t.Fatalf("ancestors=%+v", hits[0].Ancestors)
+	}
+	if !hits[0].Ancestors[0].HasChildren {
+		t.Fatalf("ancestor hasChildren not backfilled: %+v", hits[0].Ancestors[0])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)
@@ -105,7 +108,7 @@ func TestSearchAddresses_HasMore(t *testing.T) {
 	}
 	mock.ExpectQuery(`LIMIT 21`).WithArgs("%x%").WillReturnRows(rows)
 	mock.ExpectQuery(`= ANY`).WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path"}))
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "has_children"}))
 
 	s := NewPGStore(mock)
 	hits, hasMore, err := s.SearchAddresses(context.Background(), "x")
@@ -134,8 +137,8 @@ func TestLookupAddresses(t *testing.T) {
 			AddRow(int64(3), int64(2), int8(2), "朝阳区", "bj.chaoyang", "CN", "CN-BJ", true))
 	mock.ExpectQuery(`= ANY`).
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path"}).
-			AddRow(int64(1), int64(0), int8(1), "北京市", "bj"))
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "has_children"}).
+			AddRow(int64(1), int64(0), int8(1), "北京市", "bj", true))
 
 	s := NewPGStore(mock)
 	hits, missing, err := s.LookupAddresses(context.Background(),
