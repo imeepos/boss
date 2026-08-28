@@ -11,6 +11,7 @@
 | 1 | known-issues（2026-08-20） | Compose 尾随 lambda 绑渲染插槽 → 组合期执行导航：多参数组件末位是 `@Composable` 插槽（如 Cell 的 right）时，裸尾随 lambda 必绑错位且编译器不报错；动作一律 `onClick = {...}` 显式命名传 |
 | 2 | techniques（2026-08-20） | 导航幽灵跳转插桩法：push/switchTab 临时加 `Log.d(tag, msg, Throwable())`，栈顶在 `Recomposer.performRecompose` = 渲染期执行，在 `ClickableNode.handleUpEvent` = 真实点击；定位后删插桩再提交 |
 | 3 | lessons（2026-08-19） | edge-to-edge 下顶栏被状态栏遮挡致返回键点不到：根布局加 `windowInsetsPadding(WindowInsets.safeDrawing)`；自维护导航栈必须配 `BackHandler(enabled = stack.size > 1) { pop() }`，否则系统返回直接退出 App |
+| 4 | known-issues/techniques（2026-08-28） | ExposedDropdownMenuBox+PrimaryNotEditable 挂可编辑 TextField：未聚焦首点=仅聚焦，聚焦后再点=切换浮层；uiautomator 在 Popup+IME 切换期吐残缺树（text/desc 空、节点缺），静置重试或用浮层行内容反推字段值、「清除」desc 作非空探针 |
 
 ## 2. 网络 / 登录 / 数据
 
@@ -31,6 +32,7 @@
 | 5 | techniques（2026-10-16） | **adb 路径**：`/Users/imeepos/Library/Android/sdk/platform-tools/adb`（SDK 版，首选）；备选 `/opt/homebrew/bin/adb`（Homebrew cask，软链到 Caskroom/android-platform-tools/37.0.0）。两版均 v37.0.0。**bash 沙箱 PATH 不含这两个目录**，`adb` 裸命令报 command not found，必须用绝对路径；macOS 上 ifconfig/system_profiler/timeout 裸命令也可能不可用（用 /usr/sbin 全路径或换 lsof/ioreg） |
 | 6 | lessons（2026-08-28 实测 MI 9 SE / MIUI） | MIUI 真机 adb 实测可用性：shell/getprop/screencap/dumpsys/pm/am start/uiautomator dump 全可用（uiautomator 会吐一段 ThemeCompatibility ENOENT 堆栈但 dump 正常落盘，勿误判失败）；`input keyevent/tap/text` 一律 SecurityException INJECT_EVENTS——MIUI 拦截注入，需开发者选项开「USB 调试（安全设置）」（要求插 SIM + 登录小米账号）才能解除；导航可改用 `am start -a android.intent.action.MAIN -c android.intent.category.HOME` 等 am 意图绕过。另：手机刚重启（uptime 分钟级）会连带 adb 掉线重连+重新授权；`adb shell date` 与 Mac 时钟可差十几小时，比对日志时间戳前先对表 |
 | 7 | lessons（2026-08-28 已验证解除） | 上一条 INJECT_EVENTS 拦截的解除方法已实测生效：手机上开「USB 调试（安全设置）」后**无需重启 adb/重插线**，`input keyevent 3(HOME)/4(BACK)/tap/swipe` 立即全部可用，不再报 SecurityException；无需 root。真机做 UI 自动化前可先跑一条 `input keyevent 3` 探测注入权限，报 SecurityException 就请用户开该开关 |
+| 8 | known-issues/lessons（2026-08-28） | Compose 浮层（Popup）开着时 adb input text/keyevent 丢字或提交杂值（MIUI IME composer 竞态）：注入一律在浮层关闭态做；IME composing 回滚会伪装"值变/浮层闪关"，先受控重测再判产品行为；改完代码先 commit 再上真机做长验证（worktree 可能被收尾进程随时清掉） |
 
 ## 4. 共享工作区协作（Android 端高发）
 

@@ -370,3 +370,12 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状: 102 重部署后 user 端全部业务接口 403 LICENSE_REQUIRED,license/status 返回 activated:false 且无 reason 字段。
   原因: 部署工作区 compose 副本缺 boss_license_data:/var/lib/boss 挂载,激活的证书落在容器层,重部署即蒸发(status 无 reason=ErrNoLicense=文件缺失,有 reason=验签失败,可据此分流)。
   修法: docker inspect boss-server 查 Mounts 确认卷挂载 → 补挂载重建 → 重新激活 → docker exec ls /var/lib/boss 验证 license.json 真实落卷才算修复(2026-08-28 两次复发实例)。
+- 症状: Compose 浮层(ExposedDropdownMenu 等 Popup)开着时 adb input text/keyevent 注入丢字或提交杂值(gre→8gre),字段值脏、后续断言全歪。
+  原因: MIUI 输入法在 Popup 窗口切换期对注入文本的 composer 处理不定,注入时序与弹层动画竞态。
+  修法: 注入一律在浮层关闭态做(点字段关层→input text→再点字段开层断言);开层态的注入结果不可信(2026-08-28 MI 9 SE 社区联想实测)。
+- 症状: uiautomator dump 在 Compose+Popup+IME 切换期返回残缺树:EditText 节点缺失/text 属性为空/content-desc 全空,据此断言"值被清/控件消失"全是假象。
+  原因: 弹层/键盘动画与可访问性树快照竞态,非应用 bug。
+  修法: 静置 1.5s 后重试 dump 2~3 次再下结论;仍拿不到文本就用行为判别(techniques: 浮层行内容反推字段值、清除 X desc 作非空探针)。
+- 症状: IME composing 回滚伪装成"值变了/浮层自动关":输入框显示 gre 但应用值回滚为空,浮层按空值全量展开又收起,像"前缀过滤失效+闪关"。
+  原因: MIUI 输入法取消 composing 时回滚已显示文本,屏幕显示与应用状态短暂不一致。
+  修法: 菜单关闭态注入+静置断言,排除 composer 干扰后再判产品行为(2026-08-28 实测,曾差点误判前缀过滤不生效)。
