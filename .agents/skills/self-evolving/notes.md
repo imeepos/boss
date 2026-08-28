@@ -1264,3 +1264,9 @@
 - 哪个坑浪费了最多时间? ①编辑 billing.yaml 新 path 时把原 /payments 的 get 缩进破坏，导致 gen-bossctl-routes.mjs summary 错位、路由丢失；②edit 的 old_string 多带相邻 ApplyTag 尾行，误删后才靠 diff 补回；③全量生成路由带出 main 存量漂移；④Android worktree 缺 local.properties 且未设置 JAVA_HOME。
 - skill 有没有提前预警? 红线 #4 提醒了 edit 对称问题，但没有覆盖 YAML 结构校验、生成器暴露存量漂移、Android worktree 构建前置检查。
 - 重来一次? 多行 edit 后立即 grep 被删符号；YAML 改动后立即运行生成器审查 diff；发现他人存量漂移时还原生成文件并手工增量；Android 构建前检查 local.properties 并设置 JAVA_HOME=/opt/homebrew/opt/openjdk@17。
+
+## 2026-09-06 bossctl CLI 查漏补缺 + 102 实测轮
+
+- 哪个坑浪费了最多时间? ①业务失败退出码改 1 后,api_test.sh 的 `set -e` + `result=$(bossctl ...)` 捕获被新退出码当场杀脚本(卡 quadlink 段、无摘要输出)——退出码是接口,改语义必须 grep 全部消费方;②api_test.sh 自身还残留 /api/v1 错误前缀 + 裸 curl 混用,与 bossctl 修的 user: 前缀 bug 同源;③测试载荷连错三次(products 的 bandwidth 是字符串、调价字段名是 newPrice 不是 monthlyFee)——每次都是 CLI 正确转发 42200,先读 handler 的 BindAndValidate 再造载荷能省三轮。
+- skill 有没有提前预警? 无"退出码是接口"类红线;本次沉淀进 lessons。
+- 重来一次? ①改 CLI 退出码/输出格式前先 `grep -rn "bossctl" scripts/` 找消费方;②给后端造测试载荷先读对应 handler 的 httpx.Require* 校验;③本地身份档案 401 时先比对 test-accounts.json 是否换 key(本次 admin 档案即过期 key)。

@@ -418,3 +418,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当把 merge/cleanup 串在同一条 bash 链里时,修复是先跑 merge 看结果再单独清理——ff-merge 失败(并行会话推进 main)后链式 worktree remove 仍会执行,靠 branch -d 拒绝才保住 commit(2026-08-28 实例,recidivism #9 变体)。
 - 当给既有 pgxmock 提交流程加新查询时,修复是同步补 mock 期望并提供 helper(如 expectDirectRiskClean)——漏补会让 4 个存量子测试一起红,报"could not match actual sql"。
 - 当全量生成工具(gen-*.mjs)的输出 diff 混入他人未同步的路由时,修复是 git checkout 还原生成文件再手工增量——不代偿别人的欠债,也不被工具"顺带同步"绑架。
+- 当 CLI/工具的退出码语义要变更时,修复是先 grep 仓库内全部消费方(scripts/、CI、`set -e` 脚本里 `result=$(cmd)` 的 command substitution 会被新非零退出码杀掉),再改默认值——退出码是接口,不是实现细节(2026-09-06 bossctl 退出码改 1 杀死 api_test.sh)。
+- 当本地身份档案/凭证文件 401 时,修复是先与唯一事实源(test-accounts.json)逐 key 比对有效期,过期档案直接刷新,而不是反复重试调用(2026-09-06 admin 档案旧 key 已吊销)。
+- 当给后端接口造测试载荷连报 42200 时,修复是先读 handler 的 httpx.BindAndValidate/Require* 校验清单(字段名、类型形态如字符串带宽"100M" vs 数字)再重试,不要猜(2026-09-06 products/price-history 连错三次)。
