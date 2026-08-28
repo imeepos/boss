@@ -412,3 +412,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当修复"映射/枚举转换"类 bug 时,修复是重写测试为逐项 spec 断言(如逐 stage 12 个输入断期望里程碑)——不要只换两三个采样值,旧的采样测试会把错误公式锁成"正确行为"。
 - 当探测后端端点可用性时,修复是先读 openapi 契约确认 HTTP method——同一 path 的 GET/POST 路由可分别存在,P**OST-only 端点用 GET 探测恒 404 会误报"契约-部署漂移"(2026-08-27 /push/device 实例,ISSUE.md 误报到更正)。
 - 当客户端调后端"注册类"端点时,修复是读服务端入参校验(形态/长度/字符集)——本仓 push validRegistrationID 仅收 [0-9a-zA-Z],UUID 带横线必 42200,须先规范化。
+- 当脚本判断 API 调用成败时,修复是以响应信封 code==0(或 ok:true)为准,不能只看 http_code——本仓错误信封 42200/40100 也返回 HTTP 200(2026-08-28 slo-cruise emit 静默失败实例)。HTTP 200 + grep '"code":0' 双条件才对。
+- 当要调用存在枚举/白名单的端点时,修复是先读契约与实现确认枚举值(如 ops/notify-emit 的 refType 白名单 stripe_tunnel/slo_cruise,见 ops_notify.go),别按语义猜一个新值——白名单外必 42200。
+- 当复用现成"对账/巡检"口径做根因分析时,修复是先 grep 该指标在代码里的权威 SQL 定义(如 pg_recon_counts.go),再照抄直查——自拼表名/列名(port_reserves/reserve_expires_at)会连撞两回(2026-08-28 孤儿端口实例)。

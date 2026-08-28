@@ -361,3 +361,6 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状: Kotlin withContext 内 while(true) 重试 + label return,编译报 "actual type is 'Unit', but 'JSONObject' was expected"。
   原因: while 循环是 Unit 型语句,label(return@withContext)不参与 lambda 返回类型推断,尾表达式退回 Unit。
   修法: 循环抽到显式声明返回类型的 helper 函数,withContext 里只调它(2026-08-27 Api.kt 弱网重试实例)。
+- 症状: 脚本 curl POST 返回 HTTP 200 但提醒中心没入库,且无任何报错输出。
+  原因: 本仓 API 错误信封(如 refType 白名单外 42200)同样走 HTTP 200;只查 http_code 等于静默吞错。
+  修法: 判成败用信封 code==0 或 ok:true;失败把信封原文打进日志(2026-08-28 slo-cruise emit_alert 修复)。
