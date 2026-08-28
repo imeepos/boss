@@ -23,6 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,20 +79,26 @@ internal fun PickerHeader(chain: List<JSONObject>, onBack: (Boolean) -> Unit, on
 /** 面包屑 chip:高≥48dp 保证触控区;active=末位当前层(点击为 no-op)。 */
 @Composable
 internal fun ChainChip(node: JSONObject, active: Boolean, onClick: () -> Unit) {
+    val name = node.optString("name")
     Box(
         Modifier
             .background(
                 if (active) Palette.primary else Palette.primary.copy(alpha = 0.08f),
                 RoundedCornerShape(12.dp),
             )
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick, onClickLabel = "跳回$name")
+            // chip 文本提到可点击节点自身:Compose 文本子节点在 a11y 树单独暴露
+            // (clickable=false 纯文本行),QA 据 dump 误判 chip 不可点;隐藏子节点
+            // 文本、把 text 放到 chip 节点上,uiautomator 可见 text+clickable 同行。
+            .semantics { text = AnnotatedString(name) }
             .padding(horizontal = 12.dp)
             .heightIn(min = 48.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
-            node.optString("name"), fontSize = 12.sp, maxLines = 1,
+            name, fontSize = 12.sp, maxLines = 1,
             color = if (active) Palette.panel else Palette.primary,
+            modifier = Modifier.clearAndSetSemantics { },
         )
     }
 }
