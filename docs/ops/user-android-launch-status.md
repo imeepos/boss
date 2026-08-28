@@ -98,3 +98,15 @@
 | 错码登录 | POST /auth/login smsCode=999999 → 40100「未认证或凭证无效」 | loginErrorMessage(sms) → 「验证码错误或已过期」✓(E2E 负路径用例锁定) |
 | 缺码/绑定层 | smsCode 空 → 42200 | 客户端前置校验非空,不产生该态 |
 | 信封/幂等/分页 | bills/orders/addresses/points 信封键实测 | E2E 8 读腿 + 契约键断言 ✓ |
+
+## 十、第二轮执行(2026-08-27,积分兑换+UpdateApi 发版全链真实环境闭环)
+
+| 原阻塞项 | 处置 | 真实环境测试证据(102 实测) |
+|---|---|---|
+| 积分兑换无可兑换模板端点 | 实现 GET /points/exchange-offers(c8c5bb7a) | 带真实 token curl → items 返回真实模板(templateId=6, CASH ¥10, 200 积分) |
+| Android 兑换占位 | PointsPage 兑换真实化(6340b413):模板列表+确认弹窗+防重+终态文案 | 真机(模拟器)真实点兑: 余额 300→100,按钮变「积分不足」,终态「兑换成功,优惠券已放入券仓」,流水 EXCHANGE -200,新券 CPN-794d0a056556 ISSUED 落库 |
+| UpdateApi 无发版数据 | admin API 发布 v3 记录(DRAFT→GRAY→PUBLISHED) | GRAY(50%) deviceId 未命中→false;PUBLISHED(100%)→updateAvailable=true+versionCode=3+sha256+downloadUrl;下载 /client/apk/6 200=23,727,225B sha256 一致;Android 冷启弹「发现新版本 v0.1.1」(22.6MB 解析+忽略/立即更新) |
+| 回滚通道演练 | PATCH→ROLLED_BACK | 回滚后 /client/latest 恢复 updateAvailable=false ✓ |
+
+- 造数治理: 测试积分/流水/券已还原(客户 213 原状,既有 C-DEMO-001 券保留);测试模板 6 已 DISABLE(审计留痕);发布记录 6 已 ROLLED_BACK,均不影响生产判定。
+- 契约/D-7 项: /points/exchange-offers 契约入 loy.yaml,check-contract-sync 通过。

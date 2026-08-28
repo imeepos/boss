@@ -64,10 +64,11 @@
 
 ## user Android 两周上线-后端依赖缺口(2026-08-27 上线计划 D1-D4 发现)
 
-- **信息缺失｜积分兑换无可兑换券模板列表端点**:api/openapi/user/loy.yaml 的 `/points/exchange` 契约要求 `templateId`,
-  但 user 侧没有任何端点能列出可兑换券模板(`coupon_templates.points_price>0`,fields.md §8D-2)。
-  promotion.yaml user 视图仅有 `/plans/{planId}/renew`。→ Android 端当前按"未就绪占位"处理(PointsPage 兑换入口明示建设中,
-  不静默假功能);需明远补齐列表端点(或明确复用端点),D-3 前答复,否则兑换保持占位。
+- **已修复(2026-08-27, c8c5bb7a/6340b413)｜信息缺失｜积分兑换无可兑换券模板列表端点**:api/openapi/user/loy.yaml 的 `/points/exchange` 契约要求 `templateId`,
+   但 user 侧没有任何端点能列出可兑换券模板(`coupon_templates.points_price>0`,fields.md §8D-2)。
+   → 已实现 `GET /points/exchange-offers`(契约+promotion ListExchangeOffers(ENABLED 且 points_price>0)+user handler);
+   Android PointsPage 兑换区真实化(模板列表+确认兑换+终态文案)。真实环境验证: 带 token 返回真实模板,
+   Android 真实点兑 300→100 积分、新券 ISSUED 落库、流水 EXCHANGE -200。(原"建设中占位"已移除)
 - **已修复(2026-08-27, 实测 POST 401=路由在)｜信息缺失｜`/push/device` 契约-部署漂移**:api/openapi/user/misc.yaml 已定义,
   曾用 **GET** 探测误报 404;实为 **POST** 端点且后端已落地(GET 当然 404)。修正:POST /api/user/v1/push/device → 401(需鉴权),
   handler `internal/httpapi/user/push_device.go` + 路由已注册(auth.go biz 组),push_devices 表 000095 PG 持久化,
