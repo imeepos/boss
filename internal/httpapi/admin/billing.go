@@ -16,6 +16,11 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/payments", requirePerm(a.User, "menu:payment"), listPayments(a))
 	// 全额退款(000112):流水 REFUNDED 留痕 + 账单回 UNPAID;发票不自动作废。
 	g.POST("/payments/:id/refund", requirePerm(a.User, "menu:payment"), refundPayment(a))
+	// 柜台日结(纪要 2026-08-28):cash 流水按网点+操作员汇总(收入/退款分列)+
+	// 实点回填(不平落 [paycheck] DIFF 日志)+ 逐笔下钻。回填属柜面收款岗动作。
+	g.GET("/daily-closings/summary", requirePerm(a.User, "menu:daily-close"), dailyCashSummary(a))
+	g.GET("/daily-closings/items", requirePerm(a.User, "menu:daily-close"), dailyCashItems(a))
+	g.POST("/daily-closings", requirePerm(a.User, "menu:payment:cash"), saveDailyClosing(a))
 	g.GET("/arrears", requirePerm(a.User, "menu:arrears"), listArrears(a))
 	g.GET("/ar-metrics", requirePerm(a.User, "menu:arrears"), arMetricsHandler(a))
 	g.GET("/collection-tasks", requirePerm(a.User, "menu:arrears"), listCollectionTasksHandler(a))

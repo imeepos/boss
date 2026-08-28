@@ -18,8 +18,10 @@ func registerTaxRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/invoices", requirePerm(a.User, "menu:billing"), listInvoices(a))
 	// 出账:批量生成账单 → 自动开票(CT-007:同账期不重复开票,失败账单返回人工处理)。
 	g.POST("/billing-runs", requirePerm(a.User, "menu:billing"), runBilling(a))
-	// 收款:缴费流水落账 + 账单置 PAID(同事务);pay_no 唯一幂等。
-	g.POST("/payments", requirePerm(a.User, "menu:payment"), recordPayment(a))
+	// 收款:缴费流水落账 + 账单条件置 PAID(同事务);pay_no 唯一幂等。
+	// 柜面现金收款高风险资金入口:独立按钮级权限码(纪要 2026-08-28 Battle A,
+	// 与只读看流水 menu:payment、退款 menu:payment 分离,ops 不默认授予)。
+	g.POST("/payments", requirePerm(a.User, "menu:payment:cash"), recordPayment(a))
 	g.POST("/invoices/:id/void", requirePerm(a.User, "menu:billing"), voidInvoice(a))
 	// 重开:原票 VOID 保留编号 + 新票新 ARN(TAX-003)。
 	g.POST("/invoices/:id/reissue", requirePerm(a.User, "menu:billing"), reissueInvoice(a))

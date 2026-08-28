@@ -36,6 +36,12 @@ func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (Payme
 	if p.Status == "" {
 		p.Status = "SUCCESS"
 	}
+	if !validMethod(p.Method) {
+		return PaymentReceipt{}, fmt.Errorf("billing: method %q: %w", p.Method, ErrInvalidMethod)
+	}
+	if p.PayNo == "" {
+		p.PayNo = genPayNo() // 兜底生成:防脏空值撞 pay_no 唯一约束
+	}
 	if p.BillID > 0 {
 		billCust, err := s.resolveBillCustomer(ctx, p.BillID)
 		if err != nil {
@@ -58,9 +64,10 @@ func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (Payme
 	defer tx.Rollback(ctx)
 	var id int64
 	err = tx.QueryRow(ctx, `
-		INSERT INTO payments(pay_no, bill_id, customer_id, amount, method, status)
-		VALUES($1,NULLIF($2,0),NULLIF($3,0),$4,$5,$6) RETURNING id`,
-		p.PayNo, p.BillID, p.CustomerID, p.Amount, p.Method, p.Status).Scan(&id)
+		INSERT INTO payments(pay_no, bill_id, customer_id, amount, method, status, site_name, counter_code, operator_name)
+		VALUES($1,NULLIF($2,0),NULLIF($3,0),$4,$5,$6,NULLIF($7,''),NULLIF($8,''),NULLIF($9,'')) RETURNING id`,
+		p.PayNo, p.BillID, p.CustomerID, p.Amount, p.Method, p.Status,
+		p.SiteName, p.CounterCode, p.OperatorName).Scan(&id)
 	if err != nil {
 		return PaymentReceipt{}, fmt.Errorf("billing: insert payment: %w", err)
 	}
@@ -77,10 +84,15 @@ func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (Payme
 			}
 		}
 	}
-	if p.Status == "SUCCESS" {
-		// OVERDUE 账单缴清同样置 PAID(dunning 置逾期后缴费闭环)。
-		if _, err := tx.Exec(ctx,
-			`UPDATE bills SET status = 'PAID' WHERE id = $1 AND status IN ('UNPAID','OVERDUE')`, p.BillID); err != nil {
+	if p.Status == "SUCCESS" && p.BillID > 0 {
+		// 条件置 PAID(纪要 2026-08-28 待定项①,陈磊裁定):累计实收≥应收才置,
+		// 未收齐维持原状态,ledger_recon 金额三角自然呈现 PARTIAL;
+		// 金额比较按分取整防浮点误差。同事务内刚插流水对本语句可见。
+		if _, err := tx.Exec(ctx, `
+			UPDATE bills SET status = 'PAID'
+			WHERE id = $1 AND status IN ('UNPAID','OVERDUE')
+			  AND (COALESCE((SELECT SUM(amount) FROM payments WHERE bill_id = $1 AND status = 'SUCCESS'), 0) * 100 + 0.5)::bigint
+			      >= (amount * 100 + 0.5)::bigint`, p.BillID); err != nil {
 			return PaymentReceipt{}, fmt.Errorf("billing: mark bill paid: %w", err)
 		}
 	}

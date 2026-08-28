@@ -55,7 +55,7 @@
 | 激活回调 result | SUCCESS / FAILED | 成功 / 失败（RETRYING 重试中为展示态，由 FAILED+重试派生） |
 | 激活(环节10) status | PENDING / SUCCESS / FAILED | 待激活 / 成功 / 失败（师傅端视图，非回调结果） |
 | 消息 level | INFO / WARN / URGENT | 信息 / 警告 / 紧急 |
-| 缴费 method | wechat / alipay / card / cash / offline | 微信 / 支付宝 / 银行卡 / 现金 / 线下收款（师傅现场当面收，2026-09-05 加：现场 CASH/QR/POS 统一记 offline，CARD 记 card） |
+| 缴费 method | wechat / alipay / card / cash / offline | 微信 / 支付宝 / 银行卡（线上网关/柜面 POS 收单）/ 现金 / 线下收款（师傅现场当面收）。2026-09-05：师傅现场 CASH/QR/POS 统一记 offline，CARD 记 card。2026-08-28 柜面归类裁定（纪要 2026-08-28-柜面现金收款）：按资金入账通道归类不按物理动作——柜面现金记 cash、柜面扫码记 wechat/alipay、柜面 POS 记 card；offline 专属师傅个人代收，柜面不得占用；人员归因由 payments 网点/操作员列承载（正交） |
 | 告警 alarm.level | CRITICAL / WARNING / INFO | 严重 / 警告 / 提示 |
 | 告警 alarm.status | OPEN / ACKED / CLOSED | 待处理 / 已确认 / 已关闭 |
 | 话单 cdr.billing_status | UNBILLED / BILLED | 未入账 / 已入账 |

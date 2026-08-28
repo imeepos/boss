@@ -22,7 +22,7 @@ type fakeCustomer struct {
 }
 
 func (f *fakeCustomer) Create(context.Context, customer.Customer) (int64, error) { return 0, nil }
-func (f *fakeCustomer) Get(context.Context, int64) (*customer.Customer, error) { return nil, nil }
+func (f *fakeCustomer) Get(context.Context, int64) (*customer.Customer, error)   { return nil, nil }
 func (f *fakeCustomer) GetInScope(context.Context, int64, int64, string) (*customer.Customer, error) {
 	return nil, nil
 }

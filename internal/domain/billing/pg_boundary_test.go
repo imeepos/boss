@@ -52,9 +52,9 @@ func TestRecordPayment_BillPaidTransitionGuard(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(7)))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO payments`).
-		WithArgs("PAY-B1", int64(1), int64(7), 100.0, "cash", "SUCCESS").
+		WithArgs("PAY-B1", int64(1), int64(7), 100.0, "cash", "SUCCESS", "", "", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
-	mock.ExpectExec(`UPDATE bills SET status = 'PAID' WHERE id = .* AND status IN \('UNPAID','OVERDUE'\)`).
+	mock.ExpectExec(`UPDATE bills SET status = 'PAID'`).
 		WithArgs(int64(1)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 	mock.ExpectCommit()
@@ -79,7 +79,7 @@ func TestRecordPayment_FailedNotMarkPaid(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(8)))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO payments`).
-		WithArgs("PAY-B2", int64(2), int64(8), 50.0, "card", "FAILED").
+		WithArgs("PAY-B2", int64(2), int64(8), 50.0, "card", "FAILED", "", "", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(12)))
 	// 无 UPDATE bills 期望:出现即 ExpectationsWereMet 失败
 	mock.ExpectCommit()

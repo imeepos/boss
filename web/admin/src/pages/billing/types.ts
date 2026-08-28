@@ -41,6 +41,20 @@ export interface PaymentRow {
   amount: number
   method: string // wechat/alipay/card/cash
   status: string // SUCCESS/FAILED/REFUNDED
+  siteName?: string // 000167 柜面凭证要素
+  counterCode?: string
+  operatorName?: string
+  refundReason?: string
+}
+
+// 柜台日结汇总行(收入/退款分列,退款按流水发生日归属;周敏口径)。
+export interface DailyCloseRow {
+  siteName: string
+  operatorName: string
+  inAmount: number
+  refundAmount: number
+  netAmount: number
+  countedAmount?: number // 已回填钱箱实点;undefined=未回填
 }
 
 export interface ArrearsRow {

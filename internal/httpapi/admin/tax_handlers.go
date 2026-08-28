@@ -51,11 +51,17 @@ func runBilling(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// recordPayment 收款:缴费流水落账 + 账单置 PAID。
+// recordPayment 收款:缴费流水落账 + 账单条件置 PAID(同事务,domain 层)。
+// 柜面凭证要素:siteName/counterCode 表单录入,operatorName 服务端取登录态;
+// method 白名单外 domain 拒收(42200);cash 单笔超限额拒绝并写审计留痕。
 func recordPayment(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var p billing.Payment
 		if !httpx.BindBody(c, &p) {
+			return
+		}
+		p.OperatorName = httpx.ClaimsUsername(c)
+		if !enforceCashLimit(c, a, p) {
 			return
 		}
 		id, err := a.Billing.RecordPayment(c.Request.Context(), p)
@@ -64,8 +70,12 @@ func recordPayment(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		resumeCustomerAfterPay(c, a, p)
-		httpx.RecordAudit(a, c, "payment.record", "payment", p.PayNo, nil)
-		respond(c, apitypes.CodeOK, gin.H{"id": id})
+		// 审计补金额/方式/客户(纪要待定项③,郑凯:追责四问必须能答全)。
+		httpx.RecordAudit(a, c, "payment.record", "payment", p.PayNo, gin.H{
+			"amount": p.Amount, "method": p.Method, "customerId": p.CustomerID,
+			"siteName": p.SiteName, "counterCode": p.CounterCode, "operator": p.OperatorName,
+		})
+		respond(c, apitypes.CodeOK, gin.H{"id": id, "payNo": p.PayNo})
 	}
 }
 

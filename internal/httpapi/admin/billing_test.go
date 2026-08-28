@@ -40,6 +40,15 @@ func (f *fakeBilling) GenerateBills(context.Context, string) (int, error) { retu
 func (f *fakeBilling) RefundPayment(_ context.Context, _ int64, _ string) (*billing.Payment, error) {
 	return nil, nil
 }
+func (f *fakeBilling) DailyCashSummary(context.Context, string) ([]billing.DailyCashRow, error) {
+	return nil, nil
+}
+func (f *fakeBilling) SaveDailyClosing(context.Context, billing.DailyClosing) (billing.DailyClosingResult, error) {
+	return billing.DailyClosingResult{Balanced: true}, nil
+}
+func (f *fakeBilling) CashPaymentsByDate(context.Context, string) ([]billing.Payment, error) {
+	return nil, nil
+}
 
 // fakeArrears 桩 billing.ArrearsService。
 type fakeArrears struct {

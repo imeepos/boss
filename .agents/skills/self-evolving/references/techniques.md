@@ -561,3 +561,6 @@ SQL
 - apitypes 信封 code 与 portalWorkerDo 的 _status 反序列化后是 int(非 float64),测试断言数值写 asNum(v) 兼容类型开关,别假定 JSON 数字全是 float64。
 - 接手"只被正则/生成器消费过、从未被真解析器加载"的 YAML/OpenAPI 资产时,先写一次性全树扫描(逐文件 yaml.Unmarshal + 收集 paths/components 键 + 遍历全部 $ref 核对目标存在),一次列出语法错误/重复键/错位块/悬空引用全集;逐个报错改一版跑一版测试会拖十轮(2026-09-06 openapidoc 聚合器接入实测:admin/user/worker/open 共 10+ 存量坏点一次扫清)。
 - `make check` 输出要用 tail 看完整结尾,不要 grep 自己预期的 "X OK" 标记——grep 模式外的门禁步骤(bossctl-routes-check 等)失败会被过滤吞掉,绿了假象直到合并后才炸(2026-09-06 实例)。
+- Compose ExposedDropdownMenuBox(menuAnchor PrimaryNotEditable 挂在可编辑 TextField 上)真机行为:未聚焦字段首点=仅聚焦(不弹层),聚焦后再点=切换浮层;断言开层逻辑前先把字段弄到聚焦态(2026-08-28 MI 9 SE 实测)。
+- Compose 字段值读不出时(uiautomator text 属性空)用浮层行内容反推值:候选=值的前缀命中项,浮层全量=值为空、仅一行命中=值为对应前缀;另清除钮 content-desc「清除」出现即值非空,都是免读文本的行为判别(2026-08-28 社区联想实测)。
+- 真机验证"点建议行整体替换"免 IME 注入法:值空→点字段开全量浮层→直接点某行→清除钮出现+浮层收起即选择路径生效;绕开 MIUI 注入不稳(2026-08-28 实测)。

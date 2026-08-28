@@ -1319,3 +1319,11 @@
 - skill 有没有提前预警? 红线 #1(编辑前 read)与 #6(无验证动作不声称已验证)都生效,零拒绝;但"Android 构建环境三件套(JAVA_HOME/ANDROID_HOME/local.properties 缺一报 SDK location not found)"没有现成条目,本次补上。
 - 重来一次? 开工先 `ls /opt/homebrew/opt | grep jdk` + `ls ~/Library/Android/sdk` 一步定位,再跑 gradlew;验证命令固定模板:`export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=~/Library/Android/sdk && ./gradlew compileDebugKotlin --console=plain`(不带 -q)。
 - 超范围发现要上报不越界: 本任务只许改 PointsPage.kt,但查证中发现 MainActivity.kt `tabKeyOf` 缺 `Route.Points -> "points"` 映射(积分页 showTabs=false,底栏不显示、栈深1时系统返回直接退出)——写进汇报交主持人派单,不擅自改。
+
+## 2026-08-28 安栋·小区名联想前缀过滤(obs2)修复+真机自测
+
+- 哪个坑浪费了最多时间? 真机 UI 断言三连坑:开层态 adb input text 丢字/提交杂值(gre→8gre)、MIUI composing 回滚伪装"值变/浮层闪关"、uiautomator 在 Popup+IME 切换期吐残缺树(EditText 缺失/text 空)。合计耗掉约一半工时,且两次差点得出"过滤不生效"的错误结论。
+- skill 有没有提前预警? 部分——lessons 已有"MIUI 搜狗吞 input text,改走选区回填"(#426),但没覆盖"浮层开着时注入不可信"与"composing 回滚伪装产品缺陷"这两个新形态。
+- 重来一次? 顺序应为:改完代码立刻 commit(本例源码在未提交状态下被收尾进程连 worktree 一起清掉,侥幸被收尾 commit 原样带走)→ 构建装机 → 断言全部走"菜单关闭态注入+静置 dump 重试+行为判别"模板。
+- 另一个误报:向主持人上报"协议① push gitea 未执行",实际收尾进程已推——我 grep refs/remotes/gitea 找分支名,而分支合并后已删;应比对 gitea/main 的文件 blob。已喂 lessons。
+- 做得对的:裁定逐条映射到代码注释与测试矩阵;测试零数据落库(不点保存);device 弹窗(全局搜索/安全中心)用 force-stop 处理且未授予任何权限;main 上出现同题并行 commit 时先 git show 比对内容再行动,没重建 worktree 制造重复提交。
