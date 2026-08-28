@@ -122,3 +122,10 @@
 ## 遗留缺口(2026-10-01 查证,勿与已修项混淆)
 
 - `/boss/site`(官网内容列表,sitePage)的 `columns` 数组仍是**裸字段标识符**(title/slug/category/status/publishedAt/version),zh-CN 界面下列头裸英文——siteCatsPage 与 knowledgePage 均已本地化(knowledge 页由 feat/knowledge-i18n-theme 修复,columns ['标识码','标题','内容','状态','版本']),sitePage 待同样处理
+
+## API 文档页(/base/apidocs,2026-09-06 接入)
+
+- 页面:GET /docs/openapi?portal=admin|user|worker|open 取聚合契约,Swagger UI 渲染;四端 tab 切换
+- 免登录采集:cdp-admin-capture --path /base/apidocs 即可(sysadmin 默认可见 channel 组)
+- 端点验收:scripts/ops/apidocs-acceptance.sh(envelope/四端无外部 $ref/401 门禁/非法 portal)
+- 注意:102 license 失效时该页接口与其他业务接口一样 403 LICENSE_REQUIRED;恢复路径=release-platform 铸码(ops-renewal-30d batch 先例)→ /license/activate 兹码,见 adopted/2026-09-06-api-docs-openapidoc.md
