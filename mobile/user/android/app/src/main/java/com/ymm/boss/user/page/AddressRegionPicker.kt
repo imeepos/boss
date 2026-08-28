@@ -1,6 +1,5 @@
 package com.ymm.boss.user.page
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,10 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,29 +75,23 @@ internal fun AddressRegionPickerSheet(
     // 加载/错误占位面沿用上一帧列表高度(下限 200dp),见下方内容区注释。
     var paneHeight by remember { mutableStateOf(200.dp) }
 
-    // 返回键语义全接管:M3 弹层的内置返回处理(禁用前)与上滑/点遮罩统一走
-    // onDismissRequest,内容里的 BackHandler 抢不过它,层2/层3 返回被整层关闭。
-    // 故 properties 禁用内置返回后在此分层:链非空回上一级,链空才真关闭。
-    // 不清 filter 会残留上一层的过滤词,回到下层时列表被误过滤。
-    BackHandler {
-        if (chain.isNotEmpty()) {
-            chain.removeAt(chain.size - 1)
-            filter = ""
-        } else {
-            onDismiss()
-        }
-    }
-
-    LaunchedEffect(chain.size, reloadTick) { loadChildren(chain, setLoading = { loading = it }, setErr = { err = it }) { children = it } }
-
+    // 返回键语义:M3 弹窗层统一把返回键/点遮罩路由进 onDismissRequest,内容层
+    // BackHandler 注册在 Activity 的 dispatcher 上,弹窗聚焦期间收不到事件(真机实测)。
+    // 上滑关闭则先 settle 到 Hidden 再回调,据此区分:Hidden=上滑,链非空也真关闭;
+    // Expanded 且链非空=返回键(或点遮罩,M3 无公开信号区分),回上一级;链空真关闭。
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (sheetState.currentValue == SheetValue.Hidden || chain.isEmpty()) {
+                onDismiss()
+            } else {
+                chain.removeAt(chain.size - 1)
+                filter = ""
+            }
+        },
         sheetState = sheetState,
         containerColor = Palette.panel,
-        // 禁用弹层内置返回关闭:返回键归上面的 BackHandler 分层处理;
-        // 上滑拖拽与点遮罩不受影响,仍走 onDismissRequest 真关闭,不会被误判成回上一级。
-        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
     ) {
+        LaunchedEffect(chain.size, reloadTick) { loadChildren(chain, setLoading = { loading = it }, setErr = { err = it }) { children = it } }
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             PickerHeader(
                 chain = chain,
