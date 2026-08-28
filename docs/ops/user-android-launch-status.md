@@ -167,3 +167,16 @@
 - 主 nginx reload 受存量冲突阻塞(minio.conf 39093 被 hostctl 占用)——**boss 反代用独立实例** /etc/boss-nginx/boss-user-https.conf(pid 记录、独立日志)，避开主 nginx；正式域名证书签发后替换 cert/key 两行即可。
 - 发布记录注入走 admin 契约端点(POST /client-releases multipart + PATCH→PUBLISHED)，versionCode 单调+1 规则；v2(2048B 占位)保留非正式，v4 为正式首发。
 - 遗留：正式公网域名+DNS+Let's Encrypt 仍由安然/域名侧执行(执行计划 ①②)；客户端 release baseUrl 换 https 域(执行计划 ④，阿澈)。
+
+## 十四、产品裁决执行(2026-08-28,木子裁定→明远执行)
+
+| 裁决项 | 执行结果 | 证据 |
+|---|---|---|
+| ① 注册验收=真链路 | 后端支撑确认：注册三步(ConsumeSms 核销→portalRegisterCustomerID 建档→UpsertAccount 建号)已具备，新手机号即可走通 | auth_handlers.go:179-196；失败路径(重复手机号/验证码错=40100/风控)均现成 |
+| ② 风控 A 档 20/10 | ✅ biz_params 已调：risk.direct.phoneCap=5→**20**、risk.direct.addressCap 缺省→add **10**；enabled 保持 true+`[order-risk]` 审计，未关停 | PUT /params 审计「数据变更」；291 地址真实下单 200 验证新阈值 |
+| ③ 预热预案开关化 | 方案要点见下「预热开关」 | 待首发前执行 |
+
+**预热开关(预案要点)**：
+- 开关位置：`risk.direct.enabled`(biz_params)=true/false（现 true）；另有 phoneCap/addressCap 两旋钮，共三处，均走 PUT /params 即时生效无需重启。
+- 预热执行：脚本 `scripts/load/user-load.sh`(60VU 读) + `user-cleanup.sh`(--apply 清理 perf- 造数) 已就绪；预热验证=压测 P95<1.5s 且 0 风控拦截(42300=0)，否则回调参数。
+- ≥10 倍缓冲：26 单余量预算 → 首发峰值预估 <3 在途/地址时无需动作；接近 10 单/地址即触发预热+临时调 phoneCap/addressCap。
