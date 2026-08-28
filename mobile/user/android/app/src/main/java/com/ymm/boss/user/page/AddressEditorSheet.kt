@@ -191,6 +191,11 @@ fun AddressEditorSheet(
             AddrInput(contact, "联系人姓名", KeyboardType.Text) { contact = it; err = "" }
             FieldLabel("联系电话")
             AddrInput(phone, "留空则使用账户手机号", KeyboardType.Phone) { phone = it; err = "" }
+            // 非法且非空必须明示原因,不许静默禁用保存按钮(QA 缺陷:菲律宾号码被大陆正则拒掉无提示)。
+            if (phone.isNotBlank() && !phoneOk(phone)) {
+                Text("手机号格式：09 开头共 11 位", fontSize = 12.sp, color = Palette.err,
+                    modifier = Modifier.padding(top = 4.dp))
+            }
 
             if (err.isNotBlank()) Text(err, fontSize = 12.sp, color = Palette.err,
                 modifier = Modifier.padding(top = 4.dp))

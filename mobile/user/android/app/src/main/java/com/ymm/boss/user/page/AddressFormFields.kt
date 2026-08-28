@@ -131,9 +131,10 @@ internal fun SubmitButton(text: String, enabled: Boolean, onClick: () -> Unit) {
     }
 }
 
+// 菲律宾市场手机号:09 开头共 11 位(如 09171234567);留空=回退账户手机号,语义保留。
 internal fun phoneOk(phone: String): Boolean {
     if (phone.isBlank()) return true
-    return Regex("^1\\d{10}$").matches(phone.trim())
+    return Regex("^09\\d{9}$").matches(phone.trim())
 }
 
 @Composable
