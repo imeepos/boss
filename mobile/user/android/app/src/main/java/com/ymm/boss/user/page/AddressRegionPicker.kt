@@ -70,6 +70,7 @@ internal fun AddressRegionPickerSheet(
     var loading by remember { mutableStateOf(false) }
     var err by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf("") }
+    var searchVisible by remember { mutableStateOf(false) }
 
     // 系统返回=回上一级而非整层关闭;链空时不拦截,交还弹层自身关闭。
     // 不清 filter 会残留上一层的过滤词,回到下层时列表被误过滤。
@@ -94,6 +95,12 @@ internal fun AddressRegionPickerSheet(
                     singleLine = true, shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 )
+            }
+            // 首层搜索入口(对辩折中案):菲律宾用户多只知 Barangay 名,入口常驻但
+            // 仍是入口样式,树形浏览保持默认主视图,搜索在独立浮层内完成。
+            if (chain.isEmpty()) {
+                SearchEntryRow(onClick = { searchVisible = true })
+                Spacer(Modifier.height(8.dp))
             }
             Box(Modifier.height(420.dp)) {
                 when {
@@ -127,6 +134,24 @@ internal fun AddressRegionPickerSheet(
             }
             Spacer(Modifier.height(12.dp))
         }
+    }
+
+    // 搜索浮层:叶命中直接回传选区;非叶命中以「祖先+节点」重建 chain 继续懒加载下钻
+    // (保留祖先链上下文,面包屑与后续选中结果不断层)。
+    if (searchVisible) {
+        AddressRegionSearchOverlay(
+            onDismiss = { searchVisible = false },
+            onPickLeaf = { sel ->
+                searchVisible = false
+                onSelected(sel)
+            },
+            onDrillDown = { seed ->
+                searchVisible = false
+                chain.clear()
+                chain.addAll(seed)
+                filter = ""
+            },
+        )
     }
 }
 
