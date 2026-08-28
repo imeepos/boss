@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# SLO 采集脚本:在 102 上聚合 S4/S5/S6/S7 的 DB 侧 SLI,输出 JSON。
+# SLO 采集脚本:聚合 S4/S5/S6/S7 的 DB 侧 SLI,输出 JSON。
 # 用法: ./scripts/ops/slo-collect.sh [ssh-host]   (默认 imeepos@192.168.0.102)
-# 指标定义见 docs/ops/slo.md;本脚本只做采集,不判达标(由看板/报告消费)。
+# 指标定义见 docs/ops/slo.md;本脚本只做采集,不判达标(由巡航/看板消费)。
+# 双模式:102 本机(cron)直接 docker exec;其它主机经 ssh 免密。
 set -uo pipefail
 HOST="${1:-imeepos@192.168.0.102}"
 
@@ -38,4 +39,9 @@ SELECT json_build_object(
 EOF
 )
 
-ssh -o BatchMode=yes "$HOST" "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -Atq" <<< "$SQL"
+# 102 本机:hostname -I 命中即视为本地(BSD hostname 无 -I,2>/dev/null 兜底走 ssh)。
+if command -v hostname >/dev/null 2>&1 && hostname -I 2>/dev/null | grep -q '192.168.0.102'; then
+  docker exec -i boss-infra-postgres-1 psql -U boss -d boss -Atq <<< "$SQL"
+else
+  ssh -o BatchMode=yes "$HOST" "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -Atq" <<< "$SQL"
+fi
