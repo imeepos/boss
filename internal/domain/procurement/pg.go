@@ -197,7 +197,6 @@ func (s *PGStore) loadOrderItems(ctx context.Context, orderID int64) ([]OrderIte
 // CreateOrder 新建采购单(头 + items 同事务);items 空数组允许,后续可补。
 // 见 pg_order.go。
 
-
 // CancelOrder 取消订单(非 RECEIVED 状态可取消;终态拒绝)。
 func (s *PGStore) CancelOrder(ctx context.Context, id int64) error {
 	tag, err := s.db.Exec(ctx,

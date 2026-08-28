@@ -11,13 +11,13 @@ import (
 // InventoryEvent Kafka inventory.changed 事件载荷(boss-order-events topic, type 区分)。
 // 与 cmd/gis 现有 order.stage.changed 同 topic;GIS 消费者按 type 路由。
 type InventoryEvent struct {
-	Type         string  `json:"type"`         // 固定 "inventory.changed"
-	InventoryID  int64   `json:"inventoryId"`  // batch_id(批次=库存聚合单位)
-	WarehouseID  int64   `json:"warehouseId"`  // legal_entity_id(企业=仓库主体)
-	MaterialCode string  `json:"materialCode"` // 物料(可空=整批)
-	DeltaQty     int32   `json:"deltaQty"`     // 变化量(入库为正)
-	AfterQty     int32   `json:"afterQty"`     // 变化后数量
-	Timestamp    string  `json:"timestamp"`    // RFC3339
+	Type         string `json:"type"`         // 固定 "inventory.changed"
+	InventoryID  int64  `json:"inventoryId"`  // batch_id(批次=库存聚合单位)
+	WarehouseID  int64  `json:"warehouseId"`  // legal_entity_id(企业=仓库主体)
+	MaterialCode string `json:"materialCode"` // 物料(可空=整批)
+	DeltaQty     int32  `json:"deltaQty"`     // 变化量(入库为正)
+	AfterQty     int32  `json:"afterQty"`     // 变化后数量
+	Timestamp    string `json:"timestamp"`    // RFC3339
 }
 
 // publishInventoryChanged 异步发布 inventory.changed 事件。

@@ -32,8 +32,8 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
-	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/domain/procurement"
+	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push" // 设备注册表(域侧);通道 Sender 在 pkg/push
 	"github.com/ymm-001/boss/internal/domain/quadlink"
