@@ -58,6 +58,8 @@ tags:
     description: 师傅管理(档案与接单设置/绩效提成/评价/消息/公告/FAQ/物料工具/旧件回收/设备健康/抢单池/调度会话/排期)
   - name: Search
     description: 聚合搜索(客户/用户/师傅/订单 四域统一检索,按权限返回)
+  - name: License
+    description: 系统授权(授权状态查询/激活码兑换,release-platform 离线授权)
 
 paths:
   # ---------- Auth ----------
@@ -71,6 +73,10 @@ paths:
 
   # ---------- Dashboard ----------
   /dashboard: { $ref: './admin/dashboard.yaml#/paths/~1dashboard' }
+
+  # ---------- License(系统授权) ----------
+  /license/status: { $ref: './admin/license.yaml#/paths/~1license~1status' }
+  /license/activate: { $ref: './admin/license.yaml#/paths/~1license~1activate' }
 
   # ---------- Sys(基础配置) ----------
   /accounts: { $ref: './admin/sys.yaml#/paths/~1accounts' }

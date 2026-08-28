@@ -1,0 +1,62 @@
+# 系统授权域(fields.md 8G,adopted/2026-09-01-license-gate-release-platform.md):
+# admin 页「系统授权」:查询状态 + 激活码兑换。无本地表,证书为 release-platform
+# 签发的 Ed25519 离线令牌;路由豁免授权门禁(没证书也能进激活入口)。
+paths:
+  /license/status:
+    get:
+      tags: [License]
+      summary: 授权状态(activated=false=未激活/证书失效,前端据此跳激活页)
+      operationId: getLicenseStatus
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: envelope;data 为授权状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data: { $ref: '#/components/schemas/LicenseStatus' }
+  /license/activate:
+    post:
+      tags: [License]
+      summary: 激活码兑换(release-platform 兑码→取离线令牌→本地落盘)
+      operationId: activateLicense
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [activationCode]
+              properties:
+                activationCode: { type: string, description: release-platform 激活码 }
+      responses:
+        '200':
+          description: envelope;data 为激活后授权状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data: { $ref: '#/components/schemas/LicenseStatus' }
+components:
+  schemas:
+    LicenseStatus:
+      type: object
+      properties:
+        activated: { type: boolean, description: false 时业务接口 403 LICENSE_REQUIRED }
+        enabled: { type: boolean, description: 门禁是否启用;License 为 nil(未启用)时 false }
+        licenseId: { type: string }
+        productId: { type: string }
+        licenseType: { type: string, enum: [duration, lifetime, trial] }
+        deviceId: { type: string }
+        fingerprint: { type: string }
+        expiresAt: { type: string, description: RFC3339;宽限期内仍可用 }
+        graceEndsAt: { type: string }
+        inGrace: { type: boolean }
+        checkedAt: { type: string, format: date-time }
+        reason: { type: string, description: 证书失效原因(展示用,不暴露签名细节) }
