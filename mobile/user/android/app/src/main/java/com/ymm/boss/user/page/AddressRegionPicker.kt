@@ -123,7 +123,8 @@ internal fun AddressRegionPickerSheet(
                 SearchEntryRow(onClick = { searchVisible = true })
                 Spacer(Modifier.height(8.dp))
             }
-            Box(Modifier.height(420.dp)) {
+            // 高度自适应:内容少时弹层随内容收缩,上限 420dp 防超高(原固定 420 常留大片空白)。
+            Box(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
                 when {
                     loading -> Box(Modifier.align(Alignment.Center)) {
                         CircularProgressIndicator(color = Palette.primary, modifier = Modifier.size(28.dp))
