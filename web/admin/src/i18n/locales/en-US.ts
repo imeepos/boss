@@ -1057,6 +1057,7 @@ const enUS: Translations = {
       subtitle: 'Supplier -> PO -> Confirm receipt in same tx (batch + assets IN_STOCK)',
       extra: 'Adopted 2026-08-28 procurement domain',
       statusFilter: 'Status',
+      allStatus: 'All status',
       newOrder: '+ New PO',
       submit: 'Submit',
       confirmReceipt: 'Confirm Receipt',

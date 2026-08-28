@@ -842,6 +842,7 @@ export interface Translations {
       subtitle: string
       extra: string
       statusFilter: string
+      allStatus: string
       newOrder: string
       submit: string
       confirmReceipt: string

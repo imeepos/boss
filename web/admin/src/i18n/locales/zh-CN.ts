@@ -1057,6 +1057,7 @@ const zhCN: Translations = {
       subtitle: '供应商 → 采购单 → 入库确认同事务建批次+资产',
       extra: '决策依据:docs/notes/adopted/2026-08-28-procurement-install-gis-linkage.md',
       statusFilter: '状态',
+      allStatus: '全部状态',
       newOrder: '+ 新建采购单',
       submit: '提交',
       confirmReceipt: '入库确认',

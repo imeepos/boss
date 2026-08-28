@@ -1057,6 +1057,7 @@ const msMY: Translations = {
       subtitle: 'Pembekal -> PO -> Sahkan penerimaan (tx sama: kelompok + aset IN_STOCK)',
       extra: 'Diterima 2026-08-28',
       statusFilter: 'Status',
+      allStatus: 'Semua status',
       newOrder: '+ PO Baharu',
       submit: 'Hantar',
       confirmReceipt: 'Sahkan Penerimaan',
