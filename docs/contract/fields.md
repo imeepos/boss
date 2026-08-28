@@ -571,7 +571,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 外部回执标识 | `ExternalID` | invoice_tax_events.external_id | 外部请求/回执标识；同一发票重复回执唯一幂等，乱序回执不得回退已 ISSUED |
 | 税务轨迹 | `TaxEvents` | invoice_tax_events | RECEIPT/BACKFILL/VOID/REISSUE；按 created_at、id 正序查询；失败详情、重试、回放经 `/invoices/{id}/tax-failure|tax-retry|tax-replay` |
 
-> ARN 发号：`arn_sequences` 计数表（`doc_type` INVOICE/RECEIPT 各一序列），事务内 `UPDATE..RETURNING` 原子占号、行锁串行、回滚号回退（决策 note：2026-08-18-tax-invoice-arn-numbering）。链路：收款 `POST /payments`（流水+账单 PAID 同事务）→ 出账+自动开票 `POST /billing-runs`（幂等，失败账单入 `failedIds`）→ 作废/重开 `POST /invoices/:id/{void,reissue}`。
+> ARN 发号：`arn_sequences` 计数表（`doc_type` INVOICE/RECEIPT 各一序列），事务内 `UPDATE..RETURNING` 原子占号、行锁串行、回滚号回退（决策 note：2026-08-18-tax-invoice-arn-numbering）。链路：收款 `POST /payments`（流水+账单**条件**置 PAID 同事务,000167 起）→ 出账+自动开票 `POST /billing-runs`（幂等，失败账单入 `failedIds`）→ 作废/重开 `POST /invoices/:id/{void,reissue}`。
 
 ### 3.5 payments（缴费流水，源自 payment.html；000068 双挂改版）
 
@@ -581,8 +581,11 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 客户 | `CustomerID` | customer_id | BIGINT → customers（000068 新增硬 FK，冗余直挂） |
 | 账单号 | `BillID` | bill_id | BIGINT → bills（000068 起**可空**：充值/预存无账单） |
 | 金额 | `Amount` | amount | NUMERIC |
-| 方式 | `Method` | method | wechat/alipay/card/cash/offline（见 terms.md 第 4 节；offline=线下收款,师傅现场 CASH/QR/POS 统一记 offline,2026-09-05） |
+| 方式 | `Method` | method | wechat/alipay/card/cash/offline（见 terms.md 第 4 节；offline=线下收款,师傅现场 CASH/QR/POS 统一记 offline,2026-09-05;柜面归类按资金通道 2026-08-28:现金 cash/扫码 wechat|alipay/POS card） |
 | 状态 | `Status` | status | SUCCESS/FAILED/REFUNDED |
+| 网点 | `SiteName` | site_name | 000167 柜面凭证要素;可空(线上渠道为空) |
+| 柜台/班次 | `CounterCode` | counter_code | 000167 柜面凭证要素;可空 |
+| 操作员 | `OperatorName` | operator_name | 000167 柜面凭证要素;服务端取登录态,前端不传;可空 |
 | 退款原因 | `RefundReason` | refund_reason | 000112 全额退款留痕,未退为空 |
 | 退款时间 | `RefundedAt` | refunded_at | 000112;可空,退款时落 now() |
 
@@ -599,6 +602,16 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 失败任务留 FAILED 经 `POST /stop-resume-tasks/:id/retry` 重试），入口覆盖 admin 收款/门户缴费/门户续费/Stripe webhook。
 > 欠费催收批处理（Q3）：`POST /dunning-runs`（graceDays 宽限/stopAfterDays 停机线，缺省 15/30）→ 宽限外 UNPAID 账单置
 > OVERDUE → `arrears` 快照更新（COLLECTING/STOPPED）→ 超停机线 LO 自动 STOP+流水留痕；账龄自 `bills.created_at` 起算。
+
+> **柜面收款与柜台日结**（000167，纪要 2026-08-28-柜面现金收款）：admin `POST /payments`
+> 权限码拆为 `menu:payment:cash`（按钮级写操作，ops 不默认授予，不相容岗位分离；看流水
+> 仍 `menu:payment`）；method 白名单外 42200 拒收；cash 单笔限额 `biz_params/payment.cash.singleLimit`
+> （元,热调,0/缺失不拦）超限拒绝+审计留痕；`payment.record` 审计 detail 补金额/方式/客户/网点。
+> 账单置 PAID 改**条件迁移**：累计实收（按分）≥应收才置，未收齐维持原状态（ledger_recon 金额三角
+> 自然呈现 PARTIAL）。柜台日结（T+0 只读汇总+实点回填）：`GET /daily-closings/summary|items`
+> （perm `menu:daily-close`，收入/退款分列，退款按流水发生日归属）、`POST /daily-closings`
+> （perm `menu:payment:cash`，实点回填 UPSERT `payment_daily_closings`，不平输出 `[paycheck] DIFF`
+> 可 grep 日志附网点/操作员上下文）。柜面 POS 收单 manual 渠道源登记列入 paycheck 二期配套。
 
 ## 4. 阶段3/4 · 资产与资源（internal/domain/{asset,resource}）
 
