@@ -19,13 +19,9 @@ services:
       BOSS_ADMIN_PASSWORD: "admin123"
       BOSS_DEBUG_SMS: "1" # 102 联调机开启 /debug/sms-code;严禁带到线上
       BOSS_DEV_MODE: "true" # 102 联调机开启 dev 端点(验证码回显等);生产严禁开启
-      # Stripe 卡收单(测试环境,2026-08-26):sk_test+whsec 为 Stripe 测试账号凭据,随既有
-      # "内网私有 gitea 简化 CI 直接入库"裁定落这里;whsec 对应 webhook endpoint 的 URL 走
-      # cloudflared 快速隧道(smithsonian-seem-worker-camcorder.trycloudflare.com,
-      # 容器 cf-stripe-boss),隧道重启后 URL 变化需重新注册 endpoint(见 adopted 2026-08-26)。
-      BOSS_STRIPE_API_KEY: "sk_test_51TawSGHlhSTc9fdKBjxGkFVIEEgJmjuFKcKvxbUZPMGenEraHvitwH1ejnG3DToS1H9PfNYneSADGfprQqQ8Br3M00vDuHX7jV"
-      BOSS_STRIPE_WEBHOOK_SECRET: "whsec_E6Ht51JQgqINts66F7OsZ6ISL4RtjkyV"
-      BOSS_STRIPE_CURRENCY: "php" # 记账币种,经 Stripe 测试账号实测支持
+      # Stripe 卡收单凭据 2026-09-05 起只走后台支付配置页(biz_params stripe.*,secret 密文落库),
+      # 不再经环境变量注入;未配置时收款方式默认线下。102 测试账号凭据(sk_test/whsec)需在
+      # admin「支付配置」页重新录入(自检页可真实探活),webhook endpoint 自愈循环仍按既有隧道制。
       # 前端直连后端(admin-web 5180 → server 28080)的 CORS 白名单:
       # 中间件现为任意 Origin 回显放行,此值作为显式配置与未来收紧时的护栏。
       BOSS_CORS_ORIGINS: "http://192.168.0.102:5180,http://localhost:5173,http://localhost:5174"

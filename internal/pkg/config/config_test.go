@@ -44,9 +44,6 @@ func TestLoadDefaults(t *testing.T) {
 	if c.MinIO.UseSSL {
 		t.Fatal("minio UseSSL default want false")
 	}
-	if c.Stripe.Currency != "php" || c.Stripe.APIKey != "" || c.Stripe.APIBaseURL != "" {
-		t.Fatalf("stripe defaults: %+v", c.Stripe)
-	}
 	if c.SMS.AccessKeyID != "" || c.RealID.AccessKeyID != "" {
 		t.Fatalf("sms/realid defaults: %+v %+v", c.SMS, c.RealID)
 	}
@@ -93,10 +90,6 @@ func TestLoadEnvOverrides(t *testing.T) {
 		"BOSS_SMS_ALIYUN_AK_SECRET":    "sms-sec",
 		"BOSS_REALID_ALIYUN_AK_ID":     "rid-id",
 		"BOSS_REALID_ALIYUN_AK_SECRET": "rid-sec",
-		"BOSS_STRIPE_API_KEY":          "sk_x",
-		"BOSS_STRIPE_WEBHOOK_SECRET":   "whsec_x",
-		"BOSS_STRIPE_CURRENCY":         "usd",
-		"BOSS_STRIPE_API_BASE":         "http://stripe.test",
 		"BOSS_MINIO_ENDPOINT":          "minio:9000",
 		"BOSS_MINIO_ACCESS_KEY":        "ak",
 		"BOSS_MINIO_SECRET_KEY":        "sk",
@@ -154,9 +147,6 @@ func TestLoadEnvOverrides(t *testing.T) {
 	}
 	if c.RealID.AccessKeyID != "rid-id" || c.RealID.AccessKeySecret != "rid-sec" {
 		t.Fatalf("realid: %+v", c.RealID)
-	}
-	if c.Stripe.APIKey != "sk_x" || c.Stripe.WebhookSec != "whsec_x" || c.Stripe.Currency != "usd" || c.Stripe.APIBaseURL != "http://stripe.test" {
-		t.Fatalf("stripe: %+v", c.Stripe)
 	}
 	if c.MinIO.Endpoint != "minio:9000" || c.MinIO.AccessKey != "ak" || c.MinIO.SecretKey != "sk" || c.MinIO.Bucket != "bkt" || !c.MinIO.UseSSL {
 		t.Fatalf("minio: %+v", c.MinIO)

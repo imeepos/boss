@@ -111,14 +111,6 @@ type Config struct {
 	Business struct {
 		Timezone string // IANA 名,默认 Asia/Manila
 	}
-	// Stripe 支付通道(卡收单;APIKey 为空时通道不注册,缴费走既有模拟直落账)。
-	Stripe struct {
-		APIKey     string // sk_... 密钥(引用不存值)
-		WebhookSec string // endpoint signing secret(whsec_...)
-		Currency   string // 记账币种小写(如 php)
-		APIBaseURL string // 覆盖 API 地址(测试/代理用,空=官方)
-		WebhookURL string // 期望回调 URL(隧道快速 URL+路径;自愈循环比对用)
-	}
 	// License 系统级授权门禁(release-platform 离线授权,B 档强制门禁)。
 	// 公钥编译期内嵌(buildinfo.LicensePublicKeyHex,-ldflags -X),无环境变量开关;
 	// 注入公钥即强制门禁,未注入 = 开发构建门禁不启用(打 ALERT 日志)。
@@ -189,12 +181,6 @@ func Load() *Config {
 
 	c.RealID.AccessKeyID = getenv("BOSS_REALID_ALIYUN_AK_ID", "")
 	c.RealID.AccessKeySecret = getenv("BOSS_REALID_ALIYUN_AK_SECRET", "")
-
-	c.Stripe.APIKey = getenv("BOSS_STRIPE_API_KEY", "")
-	c.Stripe.WebhookSec = getenv("BOSS_STRIPE_WEBHOOK_SECRET", "")
-	c.Stripe.Currency = getenv("BOSS_STRIPE_CURRENCY", "php")
-	c.Stripe.APIBaseURL = getenv("BOSS_STRIPE_API_BASE", "")
-	c.Stripe.WebhookURL = getenv("BOSS_STRIPE_WEBHOOK_URL", "")
 
 	hostname, _ := os.Hostname()
 	c.License.ProductID = getenv("BOSS_LICENSE_PRODUCT_ID", "boss-server")

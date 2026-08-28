@@ -1,7 +1,8 @@
 package app
 
-// Stripe 卡收单通道配置解析:biz_params(stripe.* keys,后台支付配置页)优先,env 凭据兜底。
-// 60s 热生效;未配置/未启用 → 发起端点 400、webhook 503,与既有"密钥未配即降级"裁定一致。
+// Stripe 卡收单通道配置解析:仅读 biz_params(stripe.* keys,后台支付配置页)。
+// 60s 热生效;未配置/未启用 → 发起端点 400、webhook 503,与既有"密钥未配即降级"裁定一致;
+// 2026-09-05 裁定:env 兜底 BOSS_STRIPE_* 移除(App 端收款方式也以 Stripe 通道配置为准)。
 
 import (
 	"context"
@@ -9,24 +10,16 @@ import (
 	"time"
 
 	"github.com/ymm-001/boss/internal/domain/billing"
-	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/stripe"
 )
 
-// stripeConfigResolver 读取 biz_params → 明文 Config;读库失败回退 env 形态。
-func stripeConfigResolver(lister paramLister, cfg *config.Config) func(context.Context) (stripe.Config, error) {
+// stripeConfigResolver 读取 biz_params → 明文 Config;读库失败按未配置形态返回(不阻塞收单)。
+func stripeConfigResolver(lister paramLister) func(context.Context) (stripe.Config, error) {
 	return func(ctx context.Context) (stripe.Config, error) {
-		out := stripe.Config{
-			Enabled:       true,
-			APIKey:        cfg.Stripe.APIKey,
-			WebhookSecret: cfg.Stripe.WebhookSec,
-			Currency:      cfg.Stripe.Currency,
-			APIBaseURL:    cfg.Stripe.APIBaseURL,
-			WebhookURL:    cfg.Stripe.WebhookURL,
-		}
+		out := stripe.Config{Enabled: true}
 		list, err := lister.ListParams(ctx)
 		if err != nil {
-			return out, nil // DB 不可读:退回 env 兜底,不阻塞收单
+			return out, nil // DB 不可读:按未配置(无凭据)返回,不阻塞收单
 		}
 		stored := make(map[string]string, len(list))
 		for _, p := range list {
@@ -37,7 +30,7 @@ func stripeConfigResolver(lister paramLister, cfg *config.Config) func(context.C
 	}
 }
 
-// stripeApplyParams DB 值覆盖 env 兜底;secret 解密失败视为未配置。
+// stripeApplyParams DB 值应用;secret 解密失败视为未配置。
 func stripeApplyParams(out *stripe.Config, stored map[string]string) {
 	if v, ok := stored["stripe.enabled"]; ok {
 		out.Enabled = v != "false"
@@ -62,9 +55,15 @@ func stripeApplyParams(out *stripe.Config, stored map[string]string) {
 	}
 }
 
-// wireStripe 装配 Stripe 通道:动态配置驱动(DB/env 任一来源,60s 热生效)。
-func wireStripe(app *Application, lister paramLister, cfg *config.Config) {
-	dyn := stripe.NewDynamic(stripeConfigResolver(lister, cfg))
+// StripeReady Stripe 卡收单通道是否可用(后台配置页已配密钥且启用;未配置则收款方式默认线下)。
+// 2026-09-05 起凭据仅存 biz_params(env BOSS_STRIPE_* 兜底已移除),60s 热生效。
+func (a *Application) StripeReady(ctx context.Context) bool {
+	return a.Stripe != nil && a.Stripe.Configured(ctx)
+}
+
+// wireStripe 装配 Stripe 通道:动态配置驱动(DB,60s 热生效)。
+func wireStripe(app *Application, lister paramLister) {
+	dyn := stripe.NewDynamic(stripeConfigResolver(lister))
 	app.Stripe = dyn
 	app.PayGateway = billing.NewPaymentGatewayRegistry(stripeDynamicGateway{dyn: dyn})
 	app.ReconSources.Register("stripe", stripeDynamicSource{dyn: dyn}) // 自动对账渠道源
