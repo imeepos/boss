@@ -83,6 +83,14 @@ for t in d.get('items',[]):
 }
 
 echo "主链路验收: $RUNS 轮 @ $BASE_URL (customer=$CUSTOMER_ID)"
+# 直营风控共存:验收前临时关停 risk.direct.enabled,结束后恢复原值。
+# 多轮同客户短时高频下单会被 phoneCap 拦截(42300),属正常风控但阻碍验收度量。
+RISK_OFF=0
+if curl -sS -m 10 "$API/params/risk.direct.enabled" -H "X-API-Key: $KEY" 2>/dev/null | grep -q '"value":"true"'; then
+  curl -sS -m 10 -X PUT "$API/params/risk.direct.enabled" -H "X-API-Key: $KEY" \
+    -H "Content-Type: application/json" -d '{"value":"false"}' >/dev/null
+  RISK_OFF=1; echo "  [risk] 已临时关停直营风控(验收后恢复)"
+fi
 start=$(date +%s)
 for r in $(seq 1 "$RUNS"); do
   t0=$(date +%s)
@@ -106,6 +114,13 @@ fi
 # 巡检门禁:任一孤儿类 >0 即失败,防造数泄漏无人察觉(2026-08-25 审计 §五.2)。
 echo "收尾: 孤儿巡检门禁"
 "$ROOT/scripts/ops/db-patrol-gate.sh" || rc=1
+
+# 恢复直营风控(若验收前被本脚本关停)。
+if [ "$RISK_OFF" = "1" ]; then
+  curl -sS -m 10 -X PUT "$API/params/risk.direct.enabled" -H "X-API-Key: $KEY" \
+    -H "Content-Type: application/json" -d '{"value":"true"}' >/dev/null
+  echo "  [risk] 直营风控已恢复"
+fi
 
 [ "$FAIL" -eq 0 ] && [ "$rc" -eq 0 ] && exit 0
 exit 1

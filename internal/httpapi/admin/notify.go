@@ -17,6 +17,7 @@ func registerNotifyRoutes(g *gin.RouterGroup, a *app.Application) {
 	authed.GET("/notifications/sla-stats", notifySLAStats(a))
 	authed.GET("/notifications/unread-count", notifyUnreadCount(a))
 	authed.POST("/notifications/read", notifyMarkRead(a))
+	authed.POST("/notifications/resolve", notifyResolve(a))
 }
 
 func roleOf(c *gin.Context) string {

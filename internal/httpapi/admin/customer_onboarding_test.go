@@ -41,6 +41,9 @@ func (f *fakeCustOnboard) Submit(_ context.Context, reg customer.Registration) (
 func (f *fakeCustOnboard) ListRegistrations(_ context.Context, _ string) ([]customer.Registration, error) {
 	return f.list, nil
 }
+func (f *fakeCustOnboard) SourceStats(_ context.Context) ([]customer.SourceStat, error) {
+	return nil, nil
+}
 func (f *fakeCustOnboard) Approve(_ context.Context, id, _ int64) (int64, error) {
 	if f.apxErr != nil {
 		return 0, f.apxErr

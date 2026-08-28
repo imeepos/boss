@@ -7,6 +7,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/notify"
+	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -53,6 +54,27 @@ func notifyMarkRead(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
+// notifyResolve POST /notifications/resolve:按 refType+refID 办结待办(置 resolved+resolved_at)。
+// 用于运维/管理员显式关闭已处置的 URGENT/WARN 待办;渠道/域回调自动办结走域层 Resolve 调用。
+func notifyResolve(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req struct {
+			RefType string `json:"refType"`
+			RefID   string `json:"refID"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || req.RefType == "" || req.RefID == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "refType and refID required"})
+			return
+		}
+		if err := a.Notify.Resolve(c.Request.Context(), req.RefType, req.RefID); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "notification.resolve", "notification", req.RefType+"/"+req.RefID, nil)
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
 	}
 }

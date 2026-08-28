@@ -98,6 +98,27 @@ SELECT `+custRegCols+` FROM customer_registrations
 	return out, rows.Err()
 }
 
+// SourceStats 按来源聚合注册数(官网获客转化 3.4);空 source 归"未携带"。
+func (s *PGStore) SourceStats(ctx context.Context) ([]SourceStat, error) {
+	rows, err := s.db.Query(ctx, `
+SELECT COALESCE(NULLIF(source,''),'未携带') AS src, count(*) AS cnt,
+       count(*) FILTER (WHERE status='APPROVED') AS approved
+FROM customer_registrations GROUP BY 1 ORDER BY cnt DESC`)
+	if err != nil {
+		return nil, fmt.Errorf("customer: source stats: %w", err)
+	}
+	defer rows.Close()
+	var out []SourceStat
+	for rows.Next() {
+		var st SourceStat
+		if err := rows.Scan(&st.Source, &st.Total, &st.Approved); err != nil {
+			return nil, fmt.Errorf("customer: scan source stats: %w", err)
+		}
+		out = append(out, st)
+	}
+	return out, rows.Err()
+}
+
 // Approve 审核通过:校验 PENDING,创建 customers 主档,更新申请回填 customer_id。
 // 返回新创建的 customer_id;status 冲突返回 ErrRegistrationConflict。
 // 乐观锁:UPDATE ... WHERE status=PENDING 原子置状态,避免并发双重通过。

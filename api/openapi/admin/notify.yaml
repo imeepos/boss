@@ -61,3 +61,21 @@ paths:
                 ids: { type: array, items: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /notifications/resolve:
+    post:
+      tags: [Notify]
+      summary: 办结待办(refType+refID 置 resolved+resolved_at;SLA onTimeRate 计入)
+      operationId: resolveNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refType, refID]
+              properties:
+                refType: { type: string }
+                refID: { type: string }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

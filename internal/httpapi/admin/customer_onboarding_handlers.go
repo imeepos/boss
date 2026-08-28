@@ -26,6 +26,18 @@ func customerRegistrationListHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// customerSourceStatsHandler GET /customer-registrations/source-stats:按来源聚合注册转化(3.4)。
+func customerSourceStatsHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		stats, err := a.CustomerOnboarding.SourceStats(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": stats})
+	}
+}
+
 // customerRegistrationApproveHandler POST /customer-registrations/{id}/approve:审核通过,建 customers 主档 + 回填。
 func customerRegistrationApproveHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {

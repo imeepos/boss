@@ -13,6 +13,7 @@ import (
 // registerCustomerOnboardingRoutes 注册客户注册 / 审核 / 实名认证 子域路由(迁移 000051)。
 func registerCustomerOnboardingRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/customer-registrations", requirePerm(a.User, "menu:customer"), customerRegistrationListHandler(a))
+	g.GET("/customer-registrations/source-stats", requirePerm(a.User, "menu:customer"), customerSourceStatsHandler(a))
 	g.POST("/customer-registrations/:id/approve", requirePerm(a.User, "menu:customer"), customerRegistrationApproveHandler(a))
 	g.POST("/customer-registrations/:id/reject", requirePerm(a.User, "menu:customer"), customerRegistrationRejectHandler(a))
 

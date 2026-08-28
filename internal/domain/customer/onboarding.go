@@ -47,6 +47,13 @@ type Registration struct {
 	ReviewedAt        *time.Time `json:"reviewedAt,omitempty"`
 }
 
+// SourceStat 注册来源聚合(官网获客转化 3.4)。
+type SourceStat struct {
+	Source   string `json:"source"`
+	Total    int64  `json:"total"`
+	Approved int64  `json:"approved"`
+}
+
 // CustomerRealNameVerification 客户实名核验(与 customers 1:1 当前态)。
 type CustomerRealNameVerification struct {
 	ID                int64     `json:"id"`
@@ -72,5 +79,7 @@ type OnboardingService interface {
 	// Approve 审核通过:状态 PENDING→APPROVED,并建 customers 主档,回填 customer_id。
 	Approve(ctx context.Context, id, reviewerAccountID int64) (customerID int64, err error)
 	// Reject 审核驳回:状态 PENDING→REJECTED,记审核意见(幂等仅作用于 PENDING)。
+	// SourceStats 按来源聚合注册转化(官网获客 3.4)。
+	SourceStats(ctx context.Context) ([]SourceStat, error)
 	Reject(ctx context.Context, id, reviewerAccountID int64, note string) error
 }

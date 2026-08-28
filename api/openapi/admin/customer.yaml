@@ -136,6 +136,13 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     # 自助注册提交在 user 端契约(api/openapi/user/auth.yaml),admin 只管审核。
+  /customer-registrations/source-stats:
+    get:
+      tags: [Customer]
+      summary: 注册来源转化统计(按 source 聚合 total/approved;官网获客 3.4)
+      operationId: customerSourceStats
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /customer-registrations/{id}/approve:
     post:
