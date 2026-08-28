@@ -14,6 +14,7 @@ export type StatusDomain =
   | 'task' | 'complaint' | 'scan' | 'alarmLevel' | 'alarmStatus' | 'maintPriority'
   | 'accountStatus' | 'message' | 'realName' | 'recon' | 'reserve' | 'ledgerRecon'
   | 'backupStatus'
+  | 'procurement' | 'receipt' | 'installLog'
 
 type Registry = Partial<Record<StatusDomain, Record<string, string>>>
 
@@ -149,5 +150,22 @@ export const REGISTRY: Registry = {
     running: BLUE,
     succeeded: GREEN,
     failed: RED,
+  },
+  procurement: {
+    DRAFT: GRAY,
+    SUBMITTED: BLUE,
+    PARTIAL: ORANGE,
+    RECEIVED: GREEN,
+    CANCELLED: GRAY,
+  },
+  receipt: {
+    DRAFT: GRAY,
+    CONFIRMED: GREEN,
+    REJECTED: RED,
+  },
+  installLog: {
+    OPEN: ORANGE,
+    COMPLETED: GREEN,
+    REJECTED: RED,
   },
 }

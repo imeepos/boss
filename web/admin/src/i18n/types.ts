@@ -837,6 +837,51 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    purchasePage: {
+      title: string
+      subtitle: string
+      extra: string
+      statusFilter: string
+      newOrder: string
+      submit: string
+      confirmReceipt: string
+      empty: string
+      loadFail: string
+      opFail: string
+      colNo: string
+      colSupplier: string
+      colEntity: string
+      colStatus: string
+      colTotal: string
+      colActions: string
+      remark: string
+      items: string
+      spec: string
+      qty: string
+      unitAmount: string
+      addItem: string
+      errSupplier: string
+      errItems: string
+      batchCode: string
+      batchName: string
+      historyReceipt: string
+      cancel: string
+      save: string
+      submitting: string
+    }
+    inventoryPage: {
+      title: string
+      subtitle: string
+      extra: string
+      metricBatches: string
+      metricInStock: string
+      filterPlaceholder: string
+      colBatch: string
+      colBatchId: string
+      colQty: string
+      empty: string
+      loadFail: string
+    }
     replacePage: {
       title: string
       desc: string
@@ -1232,6 +1277,21 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+    }
+    installBoardPage: {
+      title: string
+      subtitle: string
+      extra: string
+      metricPending: string
+      metricDoing: string
+      metricArrived: string
+      colTicketNo: string
+      colWorker: string
+      colStatus: string
+      colArrived: string
+      colCoords: string
+      empty: string
+      loadFail: string
     }
     complaintPage: {
       title: string

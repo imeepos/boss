@@ -53,6 +53,8 @@ const AssetPage = lazy(() => import('./pages/ams/asset'))
 const TagPage = lazy(() => import('./pages/ams/tag'))
 const StockPage = lazy(() => import('./pages/ams/stock'))
 const ReplacePage = lazy(() => import('./pages/ams/replace'))
+const PurchasePage = lazy(() => import('./pages/ams/purchase'))
+const InventoryPage = lazy(() => import('./pages/ams/inventory'))
 const ResourcePage = lazy(() => import('./pages/oss/resource'))
 const ODNPage = lazy(() => import('./pages/oss/odn'))
 const ReservePage = lazy(() => import('./pages/oss/reserve'))
@@ -65,6 +67,7 @@ const WorkerPage = lazy(() => import('./pages/boss/worker'))
 const WorkerRegPage = lazy(() => import('./pages/boss/worker-registration'))
 const WorkerOpsPage = lazy(() => import('./pages/boss/worker-ops'))
 const DispatchPage = lazy(() => import('./pages/boss/dispatch'))
+const InstallBoardPage = lazy(() => import('./pages/boss/install-board'))
 const DismantlePage = lazy(() => import('./pages/boss/dismantle'))
 const ComplaintPage = lazy(() => import('./pages/boss/complaint'))
 const KnowledgePage = lazy(() => import('./pages/boss/knowledge'))
@@ -160,6 +163,8 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'tag') return <TagPage />
   if (pageKey === 'stock') return <StockPage />
   if (pageKey === 'replace') return <ReplacePage />
+  if (pageKey === 'purchase') return <PurchasePage />
+  if (pageKey === 'inventory') return <InventoryPage />
   if (pageKey === 'resource') return <ResourcePage />
   if (pageKey === 'odn') return <ODNPage />
   if (pageKey === 'reserve') return <ReservePage />
@@ -172,6 +177,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'worker-reg') return <WorkerRegPage />
   if (pageKey === 'worker-ops') return <WorkerOpsPage />
   if (pageKey === 'dispatch') return <DispatchPage />
+  if (pageKey === 'install-board') return <InstallBoardPage />
   if (pageKey === 'dismantle') return <DismantlePage />
   if (pageKey === 'complaint') return <ComplaintPage />
   if (pageKey === 'knowledge') return <KnowledgePage />

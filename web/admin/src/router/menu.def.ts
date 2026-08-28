@@ -1,6 +1,9 @@
-// 菜单定义:按页面实际内容重划分组(2026-08-27 重组,16 组 81 页;决策见
-// docs/notes/adopted/2026-08-27-sidebar-regroup.md)。页面 key 与 path 保持原值,
-// 权限码 menu:<key>、路由生成、收藏均不受分组调整影响;分组语义以能力域为准
+// 菜单定义:按页面实际内容重划分组(2026-08-27 重组 16 组 81 页;
+// 2026-08-28 增 procurement-install-gis 联动功能 +3 页 = 16 组 84 页;决策见
+// docs/notes/adopted/2026-08-27-sidebar-regroup.md 与
+// docs/notes/adopted/2026-08-28-procurement-install-gis-linkage.md)。
+// 页面 key 与 path 保持原值,权限码 menu:<key>、路由生成、收藏均不受分组调整影响;
+// 分组语义以能力域为准
 // (docs/contract/domain-map.md A 列),原型分组留档 docs/admin/menu.js。
 export interface MenuItem {
   key: string

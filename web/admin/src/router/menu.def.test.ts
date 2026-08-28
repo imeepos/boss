@@ -13,8 +13,8 @@ describe('menu.def', () => {
     ])
   })
 
-  it('页面总数不变(81 页,key 集合与重组前一致)', () => {
-    expect(MENU_GROUPS.flatMap((g) => g.items)).toHaveLength(81)
+  it('页面总数不变(84 页,key 集合与重组前一致;+3 = procurement/install/install-board)', () => {
+    expect(MENU_GROUPS.flatMap((g) => g.items)).toHaveLength(84)
   })
 
   it('重组后关键页面归属新分组(2026-08-27)', () => {

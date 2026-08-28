@@ -72,6 +72,57 @@ export interface StocktakeItemRow {
   note: string
 }
 
+// 采购-库存域(决策 1:internal/domain/procurement,迁移 000163)。
+export interface SupplierRow {
+  id: number
+  code: string
+  name: string
+  contactName: string
+  contactPhone: string
+  legalEntityId: number
+  status: 'ENABLED' | 'DISABLED'
+  remark: string
+}
+
+export interface OrderItemRow {
+  materialCode: string
+  spec: string
+  quantity: number
+  unitAmount: number
+}
+
+export interface OrderRow {
+  id: number
+  procurementNo: string
+  legalEntityId: number
+  legalEntityName: string
+  supplierId: number
+  supplierName: string
+  status: 'DRAFT' | 'SUBMITTED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED'
+  totalAmount: number
+  expectedDate?: string
+  remark: string
+  createdAt: string
+}
+
+export interface ReceiptRow {
+  id: number
+  receiptNo: string
+  orderId: number
+  orderNo: string
+  batchId: number
+  legalEntityId: number
+  legalEntityName: string
+  status: 'DRAFT' | 'CONFIRMED' | 'REJECTED'
+  receivedAt: string
+}
+
+export interface InventoryRow {
+  materialCode: string
+  batchId: number
+  inStockQty: number
+}
+
 export const SCAN_STATUSES = ['IN_STOCK', 'DEPLOYED', 'MAINTENANCE', 'SCRAPPED'] as const
 export const STOCKTAKE_ACTIONS = ['CONFIRM', 'FIX', 'ESCALATE'] as const
 
