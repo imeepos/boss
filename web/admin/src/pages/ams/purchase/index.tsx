@@ -1,6 +1,7 @@
 // 采购单页:契约 GET/POST /procurement/orders + /:id/submit + /:id/cancel +
 // /procurement/suppliers + /procurement/receipts + /:id/confirm。
 // 决策依据:docs/notes/adopted/2026-08-28-procurement-install-gis-linkage.md。
+// 样式对齐 stock:大卡片 + TableStateRow + Drawer footer + CSS 变量主题适配。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -9,6 +10,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { TableStateRow } from '../../../components/business'
 import {
   pageSlice,
   type SupplierRow,
@@ -16,6 +18,8 @@ import {
   type OrderItemRow,
   type ReceiptRow,
 } from '../types'
+
+const STATUS_FILTERS = ['DRAFT', 'SUBMITTED', 'PARTIAL', 'RECEIVED', 'CANCELLED'] as const
 
 export default function PurchasePage() {
   const t = useT()
@@ -38,7 +42,7 @@ export default function PurchasePage() {
       .catch((e) => setError(e instanceof Error ? e.message : d.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(load, [statusFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [statusFilter])
 
   useEffect(() => {
     apiFetch<{ items: SupplierRow[] }>('/procurement/suppliers')
@@ -53,100 +57,96 @@ export default function PurchasePage() {
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : d.opFail)
-    } finally {
       setBusy(false)
     }
   }
 
-  const slice = pageSlice(orders, page, pageSize)
+  const filtered = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders
+  const slice = pageSlice(filtered, page, pageSize)
   const statusOpts = [
-    { value: '', label: '全部' },
-    { value: 'DRAFT', label: '草稿' },
-    { value: 'SUBMITTED', label: '已提交' },
-    { value: 'PARTIAL', label: '部分到货' },
-    { value: 'RECEIVED', label: '全部到货' },
-    { value: 'CANCELLED', label: '已取消' },
+    { value: '', label: d.allStatus },
+    ...STATUS_FILTERS.map((s) => ({ value: s, label: t.common.statusTags[`procurement.${s}`] || s })),
   ]
 
   return (
-    <div className="space-y-4">
+    <div>
       <PageHead title={d.title} desc={d.subtitle} />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Dropdown
-          value={statusFilter}
-          options={statusOpts}
-          onChange={setStatusFilter}
-          ariaLabel={d.statusFilter}
-        />
-        <button
-          type="button"
-          className="ml-auto h-9 px-4 rounded-md bg-brand-primary text-white text-sm"
-          onClick={() => setCreateOpen(true)}
-        >
-          {d.newOrder}
-        </button>
+      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <Dropdown
+            value={statusFilter}
+            options={statusOpts}
+            onChange={setStatusFilter}
+            ariaLabel={d.statusFilter}
+          />
+          <span className="spacer" />
+          <button
+            type="button"
+            onClick={load}
+            className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
+          >
+            {t.pages.audit.refresh}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]"
+          >
+            {d.newOrder}
+          </button>
+        </div>
+        {error ? (
+          <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
+        ) : (
+          <div className="overflow-x-auto px-4 pb-4">
+            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+              <thead>
+                <tr>
+                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colNo}</th>
+                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colSupplier}</th>
+                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colEntity}</th>
+                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colStatus}</th>
+                  <th className="h-11 px-3 text-right text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colTotal}</th>
+                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colActions}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slice.map((o) => (
+                  <tr key={o.id} className="hover:bg-[var(--shell-menu-hover-bg)]">
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono">{o.procurementNo}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{o.supplierName}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{o.legalEntityName}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]"><StatusTag domain="procurement" value={o.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right">{o.totalAmount.toFixed(2)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
+                      <span className="inline-flex items-center gap-2">
+                        {o.status === 'DRAFT' && (
+                          <button type="button" disabled={busy} onClick={() => submitOrder(o.id)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.submit}</button>
+                        )}
+                        {(o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
+                          <button type="button" disabled={busy} onClick={() => setConfirming(o)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.confirmReceipt}</button>
+                        )}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+          <Pagination
+            total={filtered.length}
+            page={page}
+            pageSize={pageSize}
+            onPage={setPage}
+            onSize={setPageSize}
+            {...pagerTexts(t.pages.company)}
+          />
+        </div>
       </div>
-
-      {error && <div className="text-sm text-status-danger">{error}</div>}
-
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-shell-fg-muted">
-            <th className="py-2 pr-4">{d.colNo}</th>
-            <th className="py-2 pr-4">{d.colSupplier}</th>
-            <th className="py-2 pr-4">{d.colEntity}</th>
-            <th className="py-2 pr-4">{d.colStatus}</th>
-            <th className="py-2 pr-4">{d.colTotal}</th>
-            <th className="py-2 pr-4">{d.colActions}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {slice.map((o) => (
-            <tr key={o.id} className="border-t border-shell-divider">
-              <td className="py-2 pr-4 font-mono">{o.procurementNo}</td>
-              <td className="py-2 pr-4">{o.supplierName}</td>
-              <td className="py-2 pr-4">{o.legalEntityName}</td>
-              <td className="py-2 pr-4"><StatusTag domain="procurement" value={o.status} /></td>
-              <td className="py-2 pr-4">{o.totalAmount.toFixed(2)}</td>
-              <td className="py-2 pr-4 space-x-2">
-                {o.status === 'DRAFT' && (
-                  <button
-                    type="button"
-                    className="h-7 px-2 rounded border border-shell-divider text-xs"
-                    onClick={() => submitOrder(o.id)}
-                    disabled={busy}
-                  >
-                    {d.submit}
-                  </button>
-                )}
-                {(o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
-                  <button
-                    type="button"
-                    className="h-7 px-2 rounded border border-shell-divider text-xs"
-                    onClick={() => setConfirming(o)}
-                    disabled={busy}
-                  >
-                    {d.confirmReceipt}
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-          {orders.length === 0 && !busy && (
-            <tr><td colSpan={6} className="py-6 text-center text-shell-fg-muted">{d.empty}</td></tr>
-          )}
-        </tbody>
-      </table>
-
-      <Pagination
-        page={page}
-        pageSize={pageSize}
-        total={orders.length}
-        onPage={setPage}
-        onSize={setPageSize}
-        {...pagerTexts(t.pages.company)}
-      />
 
       {createOpen && (
         <CreateOrderDrawer
@@ -205,76 +205,76 @@ function CreateOrderDrawer({
     <Drawer title={d.newOrder} onClose={onClose}
       footer={
         <>
-          <button className="h-8 px-4 rounded border border-shell-divider text-sm" onClick={onClose}>{d.cancel}</button>
-          <button className="h-8 px-4 rounded bg-brand-primary text-white text-sm" disabled={busy} onClick={submit}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{d.cancel}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>
             {busy ? d.submitting : d.save}
           </button>
         </>
       }>
-      <div className="space-y-3">
-        {err && <div className="text-sm text-status-danger">{err}</div>}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-shell-fg-muted">{d.colSupplier}</label>
+      <div className="flex flex-col gap-3.5">
+        {err && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{err}</div>}
+        <div className="flex flex-col gap-1.5">
+          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.colSupplier}</label>
           <Dropdown
             value={String(supplierId)}
-            options={suppliers.map((s) => ({ value: String(s.id), label: s.name }))}
-            onChange={(v) => setSupplierId(Number(v))}
+            options={[{ value: '', label: d.colSupplier }, ...suppliers.map((s) => ({ value: String(s.id), label: s.name }))]}
+            onChange={(v) => setSupplierId(Number(v) || 0)}
             ariaLabel={d.colSupplier}
           />
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-shell-fg-muted">{d.colEntity} ID</label>
+        <div className="flex flex-col gap-1.5">
+          <label>{d.colEntity} ID</label>
           <input
             type="number"
             value={legalEntityId}
             onChange={(e) => setLegalEntityId(Number(e.target.value))}
-            className="h-9 px-3 rounded border border-shell-divider bg-shell-bg-card text-sm"
+            className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
           />
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-shell-fg-muted">{d.remark}</label>
+        <div className="flex flex-col gap-1.5">
+          <label>{d.remark}</label>
           <input
             type="text"
             value={remark}
             onChange={(e) => setRemark(e.target.value)}
-            className="h-9 px-3 rounded border border-shell-divider bg-shell-bg-card text-sm"
+            className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
           />
         </div>
         <div>
-          <div className="text-sm text-shell-fg-muted mb-2">{d.items}</div>
+          <div className="mb-2 text-[13px] text-[var(--shell-content-text)]">{d.items}</div>
           {items.map((it, idx) => (
-            <div key={idx} className="grid grid-cols-12 gap-2 mb-2">
+            <div key={idx} className="mb-2 grid grid-cols-12 gap-2">
               <input
                 placeholder="MI-ONU"
                 value={it.materialCode}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, materialCode: e.target.value } : x))}
-                className="col-span-4 h-9 px-2 rounded border border-shell-divider bg-shell-bg-card text-sm"
+                className="col-span-4 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
               />
               <input
                 placeholder={d.spec}
                 value={it.spec}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, spec: e.target.value } : x))}
-                className="col-span-3 h-9 px-2 rounded border border-shell-divider bg-shell-bg-card text-sm"
+                className="col-span-3 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
               />
               <input
                 type="number"
                 placeholder={d.qty}
                 value={it.quantity}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value) } : x))}
-                className="col-span-2 h-9 px-2 rounded border border-shell-divider bg-shell-bg-card text-sm"
+                className="col-span-2 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border)] focus:border-[var(--color-border-focus)]"
               />
               <input
                 type="number"
                 placeholder={d.unitAmount}
                 value={it.unitAmount}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, unitAmount: Number(e.target.value) } : x))}
-                className="col-span-3 h-9 px-2 rounded border border-shell-divider bg-shell-bg-card text-sm"
+                className="col-span-3 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
               />
             </div>
           ))}
           <button
             type="button"
-            className="h-7 px-2 rounded border border-shell-divider text-xs"
+            className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
             onClick={() => setItems([...items, { materialCode: '', spec: '', quantity: 1, unitAmount: 0 }])}
           >
             {d.addItem}
@@ -332,46 +332,46 @@ function ConfirmReceiptDrawer({
     <Drawer title={`${d.confirmReceipt} · ${order.procurementNo}`} onClose={onClose}
       footer={
         <>
-          <button className="h-8 px-4 rounded border border-shell-divider text-sm" onClick={onClose}>{d.cancel}</button>
-          <button className="h-8 px-4 rounded bg-brand-primary text-white text-sm" disabled={busy} onClick={submit}>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{d.cancel}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>
             {busy ? d.submitting : d.confirmReceipt}
           </button>
         </>
       }>
-      <div className="space-y-3">
-        {err && <div className="text-sm text-status-danger">{err}</div>}
+      <div className="flex flex-col gap-3.5">
+        {err && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{err}</div>}
         {receipts.length > 0 && (
-          <div className="text-xs text-shell-fg-muted">
-            {d.historyReceipt}: {receipts.map((r) => `${r.receiptNo}(${r.status})`).join(', ')}
+          <div className="text-[12px] text-[var(--shell-group-title)]">
+            {d.historyReceipt}: {receipts.map((r) => `${r.receiptNo}(${t.common.statusTags[`receipt.${r.status}`] || r.status})`).join(', ')}
           </div>
         )}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-shell-fg-muted">{d.batchCode}</label>
+        <div className="flex flex-col gap-1.5">
+          <label>{d.batchCode}</label>
           <input value={batchCode} onChange={(e) => setBatchCode(e.target.value)}
-            className="h-9 px-3 rounded border border-shell-divider bg-shell-bg-card text-sm"
-            placeholder="RK-20260828-001" />
+            placeholder="RK-20260828-001"
+            className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" />
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-shell-fg-muted">{d.batchName}</label>
+        <div className="flex flex-col gap-1.5">
+          <label>{d.batchName}</label>
           <input value={batchName} onChange={(e) => setBatchName(e.target.value)}
-            className="h-9 px-3 rounded border border-shell-divider bg-shell-bg-card text-sm" />
+            className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" />
         </div>
         <div>
-          <div className="text-sm text-shell-fg-muted mb-2">{d.items}</div>
+          <div className="mb-2 text-[13px] text-[var(--shell-content-text)]">{d.items}</div>
           {items.map((it, idx) => (
-            <div key={idx} className="grid grid-cols-12 gap-2 mb-2">
+            <div key={idx} className="mb-2 grid grid-cols-12 gap-2">
               <input placeholder="MI-ONU" value={it.materialCode}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, materialCode: e.target.value } : x))}
-                className="col-span-4 h-9 px-2 rounded border border-shell-divider bg-shell-bg-card text-sm" />
+                className="col-span-4 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" />
               <input placeholder={d.spec} value={it.spec}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, spec: e.target.value } : x))}
-                className="col-span-3 h-9 px-2 rounded border border-shell-divider bg-shell-bg-card text-sm" />
+                className="col-span-3 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" />
               <input type="number" placeholder={d.qty} value={it.quantity}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value) } : x))}
-                className="col-span-2 h-9 px-2 rounded border border-shell-divider bg-shell-bg-card text-sm" />
+                className="col-span-2 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" />
               <input type="number" placeholder={d.unitAmount} value={it.unitAmount}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, unitAmount: Number(e.target.value) } : x))}
-                className="col-span-3 h-9 px-2 rounded border border-shell-divider bg-shell-bg-card text-sm" />
+                className="col-span-3 h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" />
             </div>
           ))}
         </div>
