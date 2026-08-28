@@ -17,12 +17,13 @@ const (
 
 // 域错误。
 var (
-	ErrApplicationNotFound  = errors.New("partner: application not found")
-	ErrApplicationConflict  = errors.New("partner: application status conflict") // 非 PENDING 重复审核
-	ErrApplicationDuplicate = errors.New("partner: duplicate pending application")
-	ErrNotPartner           = errors.New("partner: account is not a partner member")
-	ErrStaffNotFound        = errors.New("partner: staff not found")
-	ErrStaffScope           = errors.New("partner: staff outside own legal entity")
+	ErrApplicationNotFound     = errors.New("partner: application not found")
+	ErrApplicationConflict     = errors.New("partner: application status conflict") // 非 PENDING 重复审核
+	ErrApplicationDuplicate    = errors.New("partner: duplicate pending application")
+	ErrNotPartner              = errors.New("partner: account is not a partner member")
+	ErrRegionOutsideEnterprise = errors.New("partner: region outside enterprise") // 区域不在本企业可管范围(含公共区域误判防护)
+	ErrStaffNotFound           = errors.New("partner: staff not found")
+	ErrStaffScope              = errors.New("partner: staff outside own legal entity")
 )
 
 // Application 入驻申请(审核前不入 legal_entities/accounts)。

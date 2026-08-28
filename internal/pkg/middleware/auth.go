@@ -46,6 +46,40 @@ type PermChecker func(ctx context.Context, accountID int64, permCode string) (bo
 // DataScopeChecker 数据范围判定:资源属主组织是否落在账号数据范围内。
 type DataScopeChecker func(ctx context.Context, accountID int64, owner any) (bool, error)
 
+// StatusChecker 账号有效性查询(实现走 accounts 表 status)。
+type StatusChecker func(ctx context.Context, accountID int64) (bool, error)
+
+// AccountActive 停用账号拒已签发 token:JWT 验签不查库,停用后旧 token 在有效期内
+// 仍全权可用(2026-08-28 权限实测缺陷3);API key 主体无账号概念,随 Authz 先例放行。
+func AccountActive(check StatusChecker) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if SubjectFrom(c) != nil {
+			c.Next()
+			return
+		}
+		v, exists := c.Get(CtxClaims)
+		if !exists {
+			c.Next()
+			return
+		}
+		claims, ok := v.(*auth.Claims)
+		if !ok {
+			c.Next()
+			return
+		}
+		active, err := check(c.Request.Context(), claims.AccountID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "account status check failed"})
+			return
+		}
+		if !active {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"code": 401, "msg": "account disabled"})
+			return
+		}
+		c.Next()
+	}
+}
+
 // Authz RBAC 授权:受限 API key 先按模板校验，普通账号走角色权限。
 func Authz(check PermChecker, permCode string) gin.HandlerFunc {
 	return func(c *gin.Context) {

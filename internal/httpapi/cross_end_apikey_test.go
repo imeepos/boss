@@ -94,6 +94,8 @@ type permUser struct {
 func (permUser) GetProfile(_ context.Context, accountID int64) (*user.Profile, error) {
 	return &user.Profile{AccountID: accountID, Username: "ops", RoleCode: "ADMIN"}, nil
 }
+
+func (permUser) AccountActive(context.Context, int64) (bool, error) { return true, nil }
 func (permUser) HasPermission(context.Context, int64, string) (bool, error) {
 	return false, nil
 }

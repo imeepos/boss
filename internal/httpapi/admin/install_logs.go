@@ -17,5 +17,6 @@ import (
 )
 
 func registerInstallLogRoutes(g *gin.RouterGroup, a *app.Application) {
-	g.GET("/install-logs", installLogListHandler(a))
+	// 施工回单属履约管理面:menu:install-board(000165)门禁;师傅端回单走 worker 通道不经此处。
+	g.GET("/install-logs", requirePerm(a.User, "menu:install-board"), installLogListHandler(a))
 }

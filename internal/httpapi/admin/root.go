@@ -1,6 +1,8 @@
 package adminapi
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -35,7 +37,14 @@ func registerAdminAuthRoot(r *gin.Engine, a *app.Application, mgr *auth.Manager)
 	// 客户端最新版匿名读(官网首页下载入口,仅 PUBLISHED)。
 	registerClientReleasePublicRoutes(api, a)
 	authed := api.Group("")
-	authed.Use(middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)), middleware.Authn(mgr, auth.AudAdmin))
+	authed.Use(
+		middleware.APIKeyAuth(a.APIKey, httpx.APIKeySubjectResolver(a)),
+		middleware.Authn(mgr, auth.AudAdmin),
+		// 停用账号逐请求拒止:JWT 验签不查库,否则停用后旧 token 在有效期内仍全权可用。
+		middleware.AccountActive(func(ctx context.Context, accountID int64) (bool, error) {
+			return a.User.AccountActive(ctx, accountID)
+		}),
+	)
 	return authed
 }
 
