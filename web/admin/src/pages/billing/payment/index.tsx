@@ -1,4 +1,5 @@
-// 缴费管理页:列名按 fields.md 裁剪(后端 Payment 无客户/时间/凭证列);契约 GET /payments(billId 过滤)。
+// 缴费管理页:列名按 fields.md 裁剪;契约 GET /payments(billId 过滤)。
+// 柜面收款入口(纪要 2026-08-28):menu:payment:cash 权限持有者可登记现金/柜面收款。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -8,12 +9,18 @@ import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type PaymentRow } from '../types'
 import { fmtFee } from '../../../lib/format'
 import { TableStateRow } from '../../../components/business'
+import { useProfile } from '../../../layouts/profile'
+import { CounterPaymentForm } from './CounterPaymentForm'
 
 export default function PaymentPage() {
   const t = useT()
   const p = t.pages.payment
+  const profile = useProfile()
+  const canCollect = (profile.permissionCodes ?? []).includes('menu:payment:cash')
   const [rows, setRows] = useState<PaymentRow[]>([])
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [formOpen, setFormOpen] = useState(false)
   const [billId, setBillId] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -36,11 +43,15 @@ export default function PaymentPage() {
   return (
     <div>
       <PageHead title={p.title} desc={p.desc} />
+      {notice && <div className="mb-4 rounded-md border border-[color-mix(in_srgb,var(--color-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_8%,transparent)] px-4 py-2 text-[13px] text-[var(--color-success)]">{notice}</div>}
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={p.filterBill}
             value={billId} onChange={(e) => { setBillId(e.target.value); setPage(1) }} />
           <span className="spacer" />
+          {canCollect && (
+            <button className="h-8 cursor-pointer rounded-sm bg-[var(--color-brand-bg)] px-4 text-[13px] text-white hover:opacity-90" onClick={() => { setNotice(''); setFormOpen(true) }}>{p.addBtn}</button>
+          )}
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
@@ -67,6 +78,12 @@ export default function PaymentPage() {
             onPage={setPage} onSize={setPageSize} {...pagerTexts(p)} />
         </div>
       </div>
+      {formOpen && (
+        <CounterPaymentForm
+          onClose={() => setFormOpen(false)}
+          onDone={(payNo) => { setFormOpen(false); setNotice(p.success.replace('{payNo}', payNo)); load() }}
+        />
+      )}
     </div>
   )
 }
