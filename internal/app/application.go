@@ -33,6 +33,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/promotion"
+	"github.com/ymm-001/boss/internal/domain/procurement"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push" // 设备注册表(域侧);通道 Sender 在 pkg/push
 	"github.com/ymm-001/boss/internal/domain/quadlink"
@@ -141,6 +142,7 @@ type Application struct {
 	Provision   provision.ProvisionService
 	QuadLink    quadlink.QuadLinkService
 	Asset       asset.AssetService
+	Procurement procurement.Service
 	APIKey      apikey.Service
 	OpenPlat    openplat.Service            // 开放平台(Q4):外部应用凭证/签名/配额/Webhook 订阅
 	OpenWebhook *openplat.WebhookDispatcher // Webhook 投递器(outbox/退避重试,迁移 000124)

@@ -226,6 +226,19 @@ paths:
   /stocktakes/{taskId}/items/{itemId}/handle: { $ref: './admin/asset.yaml#/paths/~1stocktakes~1{taskId}~1items~1{itemId}~1handle' }
   /replacements: { $ref: './admin/asset.yaml#/paths/~1replacements' }
 
+  # ---------- Procurement(增量挂靠,不开阶段 10;迁移 000163) ----------
+  /procurement/suppliers: { $ref: './admin/procurement.yaml#/paths/~1procurement~1suppliers' }
+  /procurement/suppliers/{id}/disable: { $ref: './admin/procurement.yaml#/paths/~1procurement~1suppliers~1{id}~1disable' }
+  /procurement/orders: { $ref: './admin/procurement.yaml#/paths/~1procurement~1orders' }
+  /procurement/orders/{id}/submit: { $ref: './admin/procurement.yaml#/paths/~1procurement~1orders~1{id}~1submit' }
+  /procurement/orders/{id}/cancel: { $ref: './admin/procurement.yaml#/paths/~1procurement~1orders~1{id}~1cancel' }
+  /procurement/receipts: { $ref: './admin/procurement.yaml#/paths/~1procurement~1receipts' }
+  /procurement/receipts/{id}/confirm: { $ref: './admin/procurement.yaml#/paths/~1procurement~1receipts~1{id}~1confirm' }
+  /procurement/inventory: { $ref: './admin/procurement.yaml#/paths/~1procurement~1inventory' }
+
+  # ---------- Install Logs(迁移 000164) ----------
+  /install-logs: { $ref: './admin/install-logs.yaml#/paths/~1install-logs' }
+
   # ---------- Oss ----------
   /resources: { $ref: './admin/oss.yaml#/paths/~1resources' }
   /ports: { $ref: './admin/oss.yaml#/paths/~1ports' }

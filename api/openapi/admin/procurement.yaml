@@ -1,0 +1,177 @@
+paths:
+  /procurement/suppliers:
+    get:
+      tags: [Procurement]
+      summary: '供应商列表(status: ENABLED/DISABLED;legalEntityId 过滤,0=全部)'
+      operationId: listSuppliers
+      parameters:
+        - { name: legalEntityId, in: query, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Procurement]
+      summary: 新建供应商(决策 1:独立 procurement 域)
+      operationId: createSupplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, legalEntityId]
+              properties:
+                code:          { type: string, maxLength: 64 }
+                name:          { type: string, maxLength: 128 }
+                contactName:   { type: string, maxLength: 64 }
+                contactPhone:  { type: string, maxLength: 32 }
+                legalEntityId: { type: integer, format: int64 }
+                remark:        { type: string, maxLength: 255 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/suppliers/{id}/disable:
+    post:
+      tags: [Procurement]
+      summary: 禁用供应商(ENABLED→DISABLED)
+      operationId: disableSupplier
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/orders:
+    get:
+      tags: [Procurement]
+      summary: '采购单列表(status: DRAFT/SUBMITTED/PARTIAL/RECEIVED/CANCELLED;legalEntityId=0=全部)'
+      operationId: listOrders
+      parameters:
+        - { name: legalEntityId, in: query, schema: { type: integer, format: int64 } }
+        - { name: status, in: query, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Procurement]
+      summary: 新建采购单(头 + items 同事务)
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supplierId, legalEntityId]
+              properties:
+                procurementNo: { type: string }
+                supplierId:    { type: integer, format: int64 }
+                legalEntityId: { type: integer, format: int64 }
+                expectedDate:  { type: string, format: date }
+                remark:        { type: string }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [materialCode, quantity]
+                    properties:
+                      materialCode: { type: string }
+                      spec:         { type: string }
+                      quantity:     { type: integer }
+                      unitAmount:   { type: number, format: float }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/orders/{id}/submit:
+    post:
+      tags: [Procurement]
+      summary: 提交采购单(DRAFT→SUBMITTED)
+      operationId: submitOrder
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/orders/{id}/cancel:
+    post:
+      tags: [Procurement]
+      summary: 取消采购单(任意非 RECEIVED 状态可取消)
+      operationId: cancelOrder
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/receipts:
+    get:
+      tags: [Procurement]
+      summary: '入库单列表(status: DRAFT/CONFIRMED/REJECTED;orderId 过滤,0=全部)'
+      operationId: listReceipts
+      parameters:
+        - { name: orderId, in: query, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Procurement]
+      summary: 新建入库单头(DRAFT 态)
+      operationId: createReceipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId, legalEntityId]
+              properties:
+                orderId:        { type: integer, format: int64 }
+                orderNo:        { type: string }
+                legalEntityId:  { type: integer, format: int64 }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      materialCode: { type: string }
+                      quantity:     { type: integer }
+                      unitAmount:   { type: number, format: float }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/receipts/{id}/confirm:
+    post:
+      tags: [Procurement]
+      summary: '入库确认(同事务:建 asset_batches + 逐台建 assets IN_STOCK + 回填 receipt;触发 inventory.changed 事件)'
+      operationId: confirmReceipt
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                batchCode:    { type: string }
+                batchName:    { type: string }
+                warehouseLat: { type: number, format: float, nullable: true }
+                warehouseLng: { type: number, format: float, nullable: true }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [materialCode, quantity]
+                    properties:
+                      materialCode: { type: string }
+                      spec:         { type: string }
+                      quantity:     { type: integer }
+                      unitAmount:   { type: number, format: float }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/inventory:
+    get:
+      tags: [Procurement]
+      summary: '库存查询(按物料 code 聚合 IN_STOCK 数量;实时聚合不走视图)'
+      operationId: listInventory
+      parameters:
+        - { name: legalEntityId, in: query, schema: { type: integer, format: int64 } }
+        - { name: materialCode, in: query, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

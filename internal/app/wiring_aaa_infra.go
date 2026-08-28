@@ -13,6 +13,7 @@ import (
 	crashdomain "github.com/ymm-001/boss/internal/domain/crash"
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/openplat"
+	"github.com/ymm-001/boss/internal/domain/procurement"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
@@ -31,6 +32,8 @@ func wireAAAInfra(app *Application, pool *pgxpool.Pool, aaastore *aaa.PGStore, p
 	app.OpenWebhook = openplat.NewWebhookDispatcher(openstore, openplat.NewHTTPPoster())
 	app.AI = ai.NewService(ai.NewPGStore(pool))
 	app.Notify = notify.NewPGStore(pool)
+	// Procurement 采购-库存域(增量挂靠,迁移 000163)。
+	app.Procurement = procurement.NewPGStore(pool)
 
 	app.CrashLogs = crashdomain.NewPGStore(pool)
 

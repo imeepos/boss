@@ -7,18 +7,21 @@ import (
 
 // DispatchTicket 派单工单(订单1:1,指派师傅)。
 type DispatchTicket struct {
-	TicketID        int64  `json:"ticketId"`
-	TicketNo        string `json:"ticketNo"`
-	OrderID         int64  `json:"orderId"`
-	WorkerID        int64  `json:"workerId"` // 0=未派
-	WorkerName      string `json:"workerName"`
-	GroupID         int64  `json:"groupId"` // 0=无
-	GroupName       string `json:"groupName"`
-	RegionID        int64  `json:"regionId"` // 0=无
-	RegionName      string `json:"regionName"`
-	LegalEntityID   int64  `json:"legalEntityId"`
-	LegalEntityName string `json:"legalEntityName"`
-	Status          string `json:"status"` // PENDING/DOING/DONE/CANCELED
+	TicketID        int64      `json:"ticketId"`
+	TicketNo        string     `json:"ticketNo"`
+	OrderID         int64      `json:"orderId"`
+	WorkerID        int64      `json:"workerId"` // 0=未派
+	WorkerName      string     `json:"workerName"`
+	GroupID         int64      `json:"groupId"` // 0=无
+	GroupName       string     `json:"groupName"`
+	RegionID        int64      `json:"regionId"` // 0=无
+	RegionName      string     `json:"regionName"`
+	LegalEntityID   int64      `json:"legalEntityId"`
+	LegalEntityName string     `json:"legalEntityName"`
+	Status          string     `json:"status"` // PENDING/DOING/DONE/CANCELED
+	ArrivedAt       *time.Time `json:"arrivedAt,omitempty"`     // 师傅到场打卡(派生事实,GIS 施工实时图层读 arrive_lat/lng)
+	ArriveLat       *float64   `json:"arriveLat,omitempty"`     // WGS84
+	ArriveLng       *float64   `json:"arriveLng,omitempty"`     // WGS84
 }
 
 // Complaint 报障工单(客服域,客户报障与处理)。
@@ -149,4 +152,11 @@ type WorkOrderService interface {
 	CloseComplaint(ctx context.Context, ticketNo string) error
 	ListScanLogs(ctx context.Context, orderID int64) ([]ScanLog, error)
 	AppendScanLog(ctx context.Context, l ScanLog) (int64, error)
+
+	// SubmitInstallLog 师傅提交施工回单(迁移 000164)。
+	SubmitInstallLog(ctx context.Context, l InstallLog) (int64, error)
+	// MarkArrived 师傅到场打卡(回填 dispatch_tickets.arrived_at/arrive_lat/lng)。
+	MarkArrived(ctx context.Context, ticketNo string, in ArriveInput, workerID int64) error
+	// ListInstallLogs 按 ticket 列出回单。
+	ListInstallLogs(ctx context.Context, ticketID int64) ([]InstallLog, error)
 }

@@ -1,0 +1,10 @@
+paths:
+  /install-logs:
+    get:
+      tags: [Order]
+      summary: '施工回单列表(迁移 000164;status: OPEN/COMPLETED/REJECTED;按 ticketId 过滤必填)'
+      operationId: listInstallLogs
+      parameters:
+        - { name: ticketId, in: query, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }

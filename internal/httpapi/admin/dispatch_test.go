@@ -93,6 +93,15 @@ func (f *fakeDispatchOrder) ListScanLogs(context.Context, int64) ([]order.ScanLo
 func (f *fakeDispatchOrder) AppendScanLog(context.Context, order.ScanLog) (int64, error) {
 	return 0, nil
 }
+func (f *fakeDispatchOrder) SubmitInstallLog(context.Context, order.InstallLog) (int64, error) {
+	return 0, nil
+}
+func (f *fakeDispatchOrder) MarkArrived(context.Context, string, order.ArriveInput, int64) error {
+	return nil
+}
+func (f *fakeDispatchOrder) ListInstallLogs(context.Context, int64) ([]order.InstallLog, error) {
+	return nil, nil
+}
 
 // fakeOrderLedger 桩 order.OrderLedgerService(仅改派台账落账)。
 type fakeOrderLedger struct {

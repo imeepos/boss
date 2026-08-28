@@ -43,6 +43,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'complaint', label: '报障与投诉', path: '/boss/complaint' },
     { key: 'feedback', label: '回访评价', path: '/boss/feedback' },
     { key: 'service-metrics', label: '客户服务指标', path: '/boss/service-metrics' },
+    { key: 'install-board', label: '施工看板', path: '/boss/install-board' },
   ]},
   { id: 'worker', label: '装维管理', items: [
     { key: 'worker', label: '师傅管理', path: '/boss/worker' },
@@ -54,6 +55,8 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'tag', label: '电子标签', path: '/ams/tag' },
     { key: 'stock', label: '盘点管理', path: '/ams/stock' },
     { key: 'replace', label: '设备更换单', path: '/ams/replace' },
+    { key: 'purchase', label: '采购单', path: '/ams/purchase' },
+    { key: 'inventory', label: '库存查询', path: '/ams/inventory' },
   ]},
   { id: 'oss', label: '网络资源', items: [
     { key: 'resource', label: '端口台账', path: '/oss/resource' },

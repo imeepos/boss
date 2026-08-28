@@ -15,10 +15,10 @@ func TestPGStore_ListDispatchTickets(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "ticket_no", "order_id", "worker_id", "worker_name", "group_id", "group_name", "region_id", "region_name", "legal_entity_id", "legal_entity_name", "status"}
+	cols := []string{"id", "ticket_no", "order_id", "worker_id", "worker_name", "group_id", "group_name", "region_id", "region_name", "legal_entity_id", "legal_entity_name", "status", "arrived_at", "arrive_lat", "arrive_lng"}
 	mock.ExpectQuery(`SELECT id, ticket_no, order_id, COALESCE\(worker_id, 0\)`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "WO-01", int64(1), int64(1024), "张师傅", int64(1), "装机一组", int64(11), "马尼拉市", int64(1), "主品牌·企业", "DOING"))
+			AddRow(int64(1), "WO-01", int64(1), int64(1024), "张师傅", int64(1), "装机一组", int64(11), "马尼拉市", int64(1), "主品牌·企业", "DOING", nil, nil, nil))
 
 	s := NewPGStore(mock, stubExists{})
 	got, err := s.ListDispatchTickets(context.Background())
@@ -411,8 +411,9 @@ func TestPGStore_GetDispatchTicketByNo(t *testing.T) {
 	mock.ExpectQuery(`FROM dispatch_tickets`).
 		WithArgs("TIC-1").
 		WillReturnRows(mock.NewRows([]string{"id", "ticket_no", "order_id", "worker_id", "worker_name",
-			"group_id", "group_name", "region_id", "region_name", "legal_entity_id", "legal_entity_name", "status"}).
-			AddRow(int64(1), "TIC-1", int64(7), int64(2), "张师傅", int64(0), "", int64(0), "", int64(1), "主品牌", "DOING"))
+			"group_id", "group_name", "region_id", "region_name", "legal_entity_id", "legal_entity_name", "status",
+			"arrived_at", "arrive_lat", "arrive_lng"}).
+			AddRow(int64(1), "TIC-1", int64(7), int64(2), "张师傅", int64(0), "", int64(0), "", int64(1), "主品牌", "DOING", nil, nil, nil))
 
 	s := NewPGStore(mock, stubExists{ok: true})
 	tk, err := s.GetDispatchTicketByNo(context.Background(), "TIC-1")

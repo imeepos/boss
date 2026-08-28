@@ -19,6 +19,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
+	"github.com/ymm-001/boss/internal/domain/procurement"
 	"github.com/ymm-001/boss/internal/domain/provision"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/resource"
@@ -59,6 +60,9 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrForeignKeyViolation),
 		errors.Is(err, provision.ErrForeignKeyViolation),
 		errors.Is(err, asset.ErrForeignKeyViolation),
+		errors.Is(err, procurement.ErrForeignKey),
+		errors.Is(err, procurement.ErrInvalidTransition),
+		errors.Is(err, order.ErrInstallInput),
 		errors.Is(err, backup.ErrInvalidInput),
 		errors.Is(err, order.ErrInvalidInput),
 		errors.Is(err, ErrGeoInvalidParam),
@@ -68,6 +72,7 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, user.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
 		errors.Is(err, asset.ErrNotFound),
+		errors.Is(err, procurement.ErrNotFound),
 		errors.Is(err, customer.ErrCustomerNotFound),
 		errors.Is(err, customer.ErrProductNotFound),
 		errors.Is(err, order.ErrOrderNotFound),

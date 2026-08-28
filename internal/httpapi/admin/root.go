@@ -107,6 +107,8 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerQuadlinkRoutes(authed, a)
 	registerWorkerRoutes(authed, a)
 	registerWorkerOnboardingRoutes(authed, a)
+	registerProcurementRoutes(authed, a)
+	registerInstallLogRoutes(authed, a)
 	registerUserdataRoutes(authed, a)
 	registerUserdataMoreRoutes(authed, a)
 	registerUserdataGapRoutes(authed, a)
