@@ -23,8 +23,9 @@ import (
 	"strings"
 )
 
-// bossctlVersion 语义化版本(release 命令发版、issue 报障时请附带)。
-const bossctlVersion = "1.1.0"
+// bossctlVersion 构建时由 ldflags -X 注入 git describe(未注入显示 dev,
+// 便于识别"源码 go run"与"发布构建");报障请附带。
+var bossctlVersion = "dev"
 
 // defaultServer 缺省服务端:项目约定的 102 部署环境(不要本机起服务)。
 const defaultServer = "http://192.168.0.102:28080"
