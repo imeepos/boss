@@ -148,6 +148,53 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 	return s.attachAncestors(ctx, hits)
 }
 
+// LookupAddresses 按 path 精确批量反查节点+祖先链;SQL 与 attachAncestors 反查同形状(ANY($1))。
+// 命中按入参顺序返回(保序去重);缺失路径进 missing 不报错(address_path 弱引用,节点可删)。
+func (s *PGStore) LookupAddresses(ctx context.Context, paths []string) ([]AddressHit, []string, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT a.id, COALESCE(a.parent_id,0), a.level, a.name, a.path::text,
+		       COALESCE(r.country_code,''), COALESCE(r.admin_code,''),
+		       EXISTS(SELECT 1 FROM addresses c WHERE c.parent_id = a.id)
+		FROM addresses a
+		JOIN addresses r ON r.path = subpath(a.path, 0, 1)
+		WHERE a.path::text = ANY($1)`, paths)
+	if err != nil {
+		return nil, nil, fmt.Errorf("user: lookup addresses: %w", err)
+	}
+	found := map[string]addressHitRow{}
+	for rows.Next() {
+		var h addressHitRow
+		if err := rows.Scan(&h.ID, &h.ParentID, &h.Level, &h.Name, &h.Path,
+			&h.CountryCode, &h.AdminCode, &h.HasChildren); err != nil {
+			return nil, nil, fmt.Errorf("user: scan lookup hit: %w", err)
+		}
+		found[h.Path] = h
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("user: lookup addresses rows: %w", err)
+	}
+	ordered := make([]addressHitRow, 0, len(paths))
+	missing := []string{}
+	seen := map[string]bool{}
+	for _, p := range paths {
+		if seen[p] {
+			continue
+		}
+		seen[p] = true
+		if h, ok := found[p]; ok {
+			ordered = append(ordered, h)
+		} else {
+			missing = append(missing, p)
+		}
+	}
+	hits, err := s.attachAncestors(ctx, ordered)
+	if err != nil {
+		return nil, nil, err
+	}
+	return hits, missing, nil
+}
+
 // attachAncestors 批量反查命中节点全部祖先(path 前缀段),组装按 level 升序的祖先链。
 func (s *PGStore) attachAncestors(ctx context.Context, hits []addressHitRow) ([]AddressHit, error) {
 	prefixes := map[string]bool{}

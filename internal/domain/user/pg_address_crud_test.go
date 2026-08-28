@@ -86,3 +86,40 @@ func TestSearchAddresses(t *testing.T) {
 		t.Fatalf("unmet expectations: %v", err)
 	}
 }
+
+// TestLookupAddresses 契约:命中保入参顺序;缺失路径进 missing 不报错;祖先链同 search。
+func TestLookupAddresses(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`= ANY`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "country_code", "admin_code", "has_children"}).
+			AddRow(int64(3), int64(2), int8(2), "朝阳区", "bj.chaoyang", "CN", "CN-BJ", true))
+	mock.ExpectQuery(`= ANY`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path"}).
+			AddRow(int64(1), int64(0), int8(1), "北京市", "bj"))
+
+	s := NewPGStore(mock)
+	hits, missing, err := s.LookupAddresses(context.Background(),
+		[]string{"bj.chaoyang", "bj.gone", "bj.chaoyang"})
+	if err != nil {
+		t.Fatalf("LookupAddresses: %v", err)
+	}
+	if len(hits) != 1 || hits[0].Node.Path != "bj.chaoyang" || !hits[0].Node.HasChildren {
+		t.Fatalf("hits=%+v", hits)
+	}
+	if len(hits[0].Ancestors) != 1 || hits[0].Ancestors[0].Name != "北京市" {
+		t.Fatalf("ancestors=%+v", hits[0].Ancestors)
+	}
+	if len(missing) != 1 || missing[0] != "bj.gone" {
+		t.Fatalf("missing=%+v", missing)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}

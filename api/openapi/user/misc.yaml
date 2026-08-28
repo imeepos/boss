@@ -282,6 +282,43 @@ paths:
         '42200':
           description: q 为空
 
+  /address-tree/lookup:
+    get:
+      tags: [Misc]
+      summary: 按 path 批量精确反查节点+祖先链(地址簿/编辑地址反显面包屑)
+      operationId: lookupAddressTree
+      description: paths 逗号分隔(去空白/保序去重),上限 50;缺失路径进 missing 不整体 404(address_path 弱引用,节点可删)。
+      parameters:
+        - name: paths
+          in: query
+          required: true
+          schema: { type: string, minLength: 1 }
+          description: ltree 路径清单,逗号分隔,如 ph1300000000.ph1381300000.ph138130112
+      responses:
+        '200':
+          description: 反查结果(命中按入参顺序)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path: { type: string, description: 与请求 path 一致 }
+                        node: { $ref: './schemas.yaml#/components/schemas/AddressNode' }
+                        ancestors:
+                          type: array
+                          items: { $ref: './schemas.yaml#/components/schemas/AddressNode' }
+                  missing:
+                    type: array
+                    items: { type: string }
+                    description: 未命中的请求路径(节点已删/路径非法)
+        '42200':
+          description: paths 为空或超 50 条
+
   /diy/steps:
     get:
       tags: [Misc]
