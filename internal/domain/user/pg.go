@@ -59,6 +59,20 @@ func (s *PGStore) Login(ctx context.Context, username, password string) (*LoginR
 	return &LoginResult{AccountID: id, Username: username, RealName: realName, RoleCode: roleCode, RoleName: roleName}, nil
 }
 
+// AccountActive 账号是否有效(status=1);不存在或停用一律 false。
+// JWT 无状态不查库,停用账号的已签发 token 靠本查询逐请求拒止。
+func (s *PGStore) AccountActive(ctx context.Context, accountID int64) (bool, error) {
+	var status int16
+	err := s.db.QueryRow(ctx, `SELECT status FROM accounts WHERE id = $1`, accountID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("user: account active: %w", err)
+	}
+	return status == 1, nil
+}
+
 // ListLegalEntities 列出全部子公司/法人(含平台总公司标志)。
 func (s *PGStore) ListLegalEntities(ctx context.Context) ([]LegalEntity, error) {
 	rows, err := s.db.Query(ctx, `SELECT id, code, name, is_platform, tax_jurisdiction, tax_channel FROM legal_entities ORDER BY id`)

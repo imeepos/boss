@@ -97,6 +97,8 @@ type Service interface {
 	DeleteDepartment(ctx context.Context, id int64) error
 	DeletePost(ctx context.Context, id int64) error
 	GetDataScope(ctx context.Context, accountID int64) (DataScope, error)
+	// AccountActive 账号是否有效(status=1);不存在/停用 false。停用即拒已签发 token。
+	AccountActive(ctx context.Context, accountID int64) (bool, error)
 	GetProfile(ctx context.Context, accountID int64) (*Profile, error)
 
 	// 自定义角色维护(migrations/000100):内置角色只读,派生角色权限集全量替换。

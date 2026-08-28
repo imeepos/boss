@@ -34,6 +34,8 @@ func (crossEndUser) GetProfile(_ context.Context, accountID int64) (*user.Profil
 	return &user.Profile{AccountID: accountID, Username: "ops", RoleCode: "ADMIN"}, nil
 }
 
+func (crossEndUser) AccountActive(context.Context, int64) (bool, error) { return true, nil }
+
 // crossEndLoy 覆盖 user 端 GET /points 所需方法,其余经嵌入零值不触达。
 type crossEndLoy struct {
 	loy.Service
