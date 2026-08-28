@@ -31,6 +31,68 @@ paths:
         - { name: billId, in: query, schema: { type: integer, format: int64 }, description: 按账单过滤(0=全部) }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Billing]
+      summary: 收款落账(流水+账单条件置 PAID 同事务;permCode menu:payment:cash;method 白名单外 42200;cash 单笔限额 biz_params payment.cash.singleLimit,超限拒绝+审计留痕)
+      operationId: recordPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, method]
+              properties:
+                payNo: { type: string, description: 流水号;空则后端 PAY- 序列生成(幂等以显式单号为准) }
+                billId: { type: integer, format: int64, description: 账单;与 customerId 至少其一 }
+                customerId: { type: integer, format: int64, description: 客户;充值/预存类无账单时必填 }
+                amount: { type: number, description: "金额(元,大于0)" }
+                method: { type: string, enum: [wechat, alipay, card, cash, offline], description: "缴费方式;柜面按资金通道归类(现金 cash、扫码 wechat/alipay、POS card)" }
+                couponId: { type: string, description: 可选抵扣券 }
+                siteName: { type: string, description: 网点(柜面凭证要素) }
+                counterCode: { type: string, description: 柜台/班次(柜面凭证要素) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /daily-closings/summary:
+    get:
+      tags: [Billing]
+      summary: 柜台日结汇总(当日 cash 流水按网点+操作员聚合,收入/退款分列,退款按流水发生日归属;permCode menu:daily-close)
+      operationId: dailyCashSummary
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date }, description: 结算日(缺省当日) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /daily-closings/items:
+    get:
+      tags: [Billing]
+      summary: 柜台日结明细(当日 cash 流水逐笔,含 REFUNDED 凭证与退款原因;permCode menu:daily-close)
+      operationId: dailyCashItems
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date }, description: 结算日(缺省当日) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /daily-closings:
+    post:
+      tags: [Billing]
+      summary: 柜台日结实点回填(UPSERT 当日快照;不平不阻塞,输出 [paycheck] DIFF 可 grep 日志;permCode menu:payment:cash)
+      operationId: saveDailyClosing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [siteName, operatorName, countedAmount]
+              properties:
+                date: { type: string, format: date, description: 结算日(缺省当日) }
+                siteName: { type: string, description: 网点(必填,归因维度) }
+                operatorName: { type: string, description: 操作员(必填,归因维度) }
+                countedAmount: { type: number, description: 钱箱实点金额 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
   /payments/{id}/refund:
     post:
