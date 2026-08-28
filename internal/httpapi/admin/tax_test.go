@@ -176,15 +176,15 @@ func TestRecordPaymentHandler(t *testing.T) {
 	}
 }
 
-// fakePaid 记录 RecordPayment 入参的桩。
+// fakePaid 记录 RecordPaymentWithCoupon 入参的桩(recordPayment handler 走带券回执)。
 type fakePaid struct {
 	fakeBilling
 	recorded *billing.Payment
 }
 
-func (f *fakePaid) RecordPayment(_ context.Context, p billing.Payment) (int64, error) {
+func (f *fakePaid) RecordPaymentWithCoupon(_ context.Context, p billing.Payment) (billing.PaymentReceipt, error) {
 	f.recorded = &p
-	return 1, nil
+	return billing.PaymentReceipt{PaymentID: 1, PayNo: p.PayNo, Amount: p.Amount}, nil
 }
 
 // TestTaxBackfillHandler 契约(人工通道):税局平台开具后回填票号。
