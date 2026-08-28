@@ -1327,3 +1327,9 @@
 - 重来一次? 顺序应为:改完代码立刻 commit(本例源码在未提交状态下被收尾进程连 worktree 一起清掉,侥幸被收尾 commit 原样带走)→ 构建装机 → 断言全部走"菜单关闭态注入+静置 dump 重试+行为判别"模板。
 - 另一个误报:向主持人上报"协议① push gitea 未执行",实际收尾进程已推——我 grep refs/remotes/gitea 找分支名,而分支合并后已删;应比对 gitea/main 的文件 blob。已喂 lessons。
 - 做得对的:裁定逐条映射到代码注释与测试矩阵;测试零数据落库(不点保存);device 弹窗(全局搜索/安全中心)用 force-stop 处理且未授予任何权限;main 上出现同题并行 commit 时先 git show 比对内容再行动,没重建 worktree 制造重复提交。
+
+## 2026-08-28 柜面现金收款(会议主持+实施+102部署验收)
+- 最耗时坑:102 /srv/fast 100% 满(构建上下文含 web/desktop tauri target 1.9G + 已删除文件句柄未释放),docker build/builder prune 全部超时;后自行恢复(并行会话重启 docker)。已补 .dockerignore 排除清单。
+- 最大价值时刻:102 真实验证暴露 3 个单测没拦住的缺陷(NULLIF 空串转 NULL 违反 NOT NULL、退款锁行 Scan 不适配可空 bill_id 的 000068 存量缺陷、payNo 副本赋值不回传)。门禁绿≠功能对,上线前真实端到端验收不可省。
+- 小坑:域内 `INSERT ... NULLIF($7,'')` 对 NOT NULL DEFAULT '' 列是画蛇添足——空串本合法,NULLIF 转成 NULL 反而 23502。
+- 流程坑:ff-only 失败后先 worktree remove 再 branch -d 报 not fully merged——顺序应反过来;commit 因分支 ref 在而安全,重建 worktree 即可恢复(红线9变体)。
