@@ -2,8 +2,11 @@ package userdata
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // strOrNil 空串归一为 NULL(可空时间戳入参约定)。
@@ -44,6 +47,23 @@ func (s *PGStore) UpdateUserAddress(ctx context.Context, customerID, id int64, a
 		   SET addr_code=$3, contact=$4, phone=$5, detail=$6, is_default=$7, address_path=$8
 		 WHERE id=$1 AND customer_id=$2`,
 		id, customerID, a.AddrCode, a.Contact, a.Phone, a.Detail, a.IsDefault, a.AddressPath)
+}
+
+// GetUserAddress 按 customerId+id 查单条家庭地址,归属不符返回 ErrNotFound。
+func (s *PGStore) GetUserAddress(ctx context.Context, customerID, id int64) (UserAddress, error) {
+	var a UserAddress
+	err := s.db.QueryRow(ctx, `
+		SELECT addr_code, contact, phone, detail, is_default, address_path
+		FROM user_addresses WHERE id = $1 AND customer_id = $2`, id, customerID).
+		Scan(&a.AddrCode, &a.Contact, &a.Phone, &a.Detail, &a.IsDefault, &a.AddressPath)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return UserAddress{}, ErrNotFound
+	}
+	if err != nil {
+		return UserAddress{}, fmt.Errorf("userdata: get user address: %w", err)
+	}
+	a.CustomerID = customerID
+	return a, nil
 }
 
 func (s *PGStore) DeleteUserAddress(ctx context.Context, customerID, id int64) error {

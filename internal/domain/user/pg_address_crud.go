@@ -113,8 +113,9 @@ func (s *PGStore) DeleteAddress(ctx context.Context, id int64) error {
 	return nil
 }
 
-// SearchAddresses 全树关键字搜索(名称/path/锚点),带祖先链;上限 20 条命中。
-func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit, error) {
+// SearchAddresses 全树关键字搜索(名称/path/锚点),带祖先链;单页上限 20 条,
+// 多取 1 条探测截断返回 hasMore(此前静默截断,调用方无法感知结果不完整)。
+func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit, bool, error) {
 	like := "%" + kw + "%"
 	rows, err := s.db.Query(ctx, `
 		SELECT a.id, COALESCE(a.parent_id,0), a.level, a.name, a.path::text,
@@ -124,9 +125,9 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 		JOIN addresses r ON r.path = subpath(a.path, 0, 1)
 		WHERE a.name ILIKE $1 OR a.path::text ILIKE $1
 		   OR r.country_code ILIKE $1 OR r.admin_code ILIKE $1
-		ORDER BY a.path LIMIT 20`, like)
+		ORDER BY a.path LIMIT 21`, like)
 	if err != nil {
-		return nil, fmt.Errorf("user: search addresses: %w", err)
+		return nil, false, fmt.Errorf("user: search addresses: %w", err)
 	}
 	type hit = addressHitRow
 	var hits []hit
@@ -134,21 +135,74 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 		var h hit
 		if err := rows.Scan(&h.ID, &h.ParentID, &h.Level, &h.Name, &h.Path,
 			&h.CountryCode, &h.AdminCode, &h.HasChildren); err != nil {
-			return nil, fmt.Errorf("user: scan search hit: %w", err)
+			return nil, false, fmt.Errorf("user: scan search hit: %w", err)
 		}
 		hits = append(hits, h)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("user: search addresses rows: %w", err)
+		return nil, false, fmt.Errorf("user: search addresses rows: %w", err)
+	}
+	hasMore := len(hits) > 20
+	if hasMore {
+		hits = hits[:20]
 	}
 	if len(hits) == 0 {
-		return []AddressHit{}, nil
+		return []AddressHit{}, false, nil
 	}
-	return s.attachAncestors(ctx, hits)
+	out, err := s.attachAncestors(ctx, hits)
+	return out, hasMore, err
+}
+
+// LookupAddresses 按 path 精确批量反查节点+祖先链;SQL 与 attachAncestors 反查同形状(ANY($1))。
+// 命中按入参顺序返回(保序去重);缺失路径进 missing 不报错(address_path 弱引用,节点可删)。
+func (s *PGStore) LookupAddresses(ctx context.Context, paths []string) ([]AddressHit, []string, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT a.id, COALESCE(a.parent_id,0), a.level, a.name, a.path::text,
+		       COALESCE(r.country_code,''), COALESCE(r.admin_code,''),
+		       EXISTS(SELECT 1 FROM addresses c WHERE c.parent_id = a.id)
+		FROM addresses a
+		JOIN addresses r ON r.path = subpath(a.path, 0, 1)
+		WHERE a.path::text = ANY($1)`, paths)
+	if err != nil {
+		return nil, nil, fmt.Errorf("user: lookup addresses: %w", err)
+	}
+	found := map[string]addressHitRow{}
+	for rows.Next() {
+		var h addressHitRow
+		if err := rows.Scan(&h.ID, &h.ParentID, &h.Level, &h.Name, &h.Path,
+			&h.CountryCode, &h.AdminCode, &h.HasChildren); err != nil {
+			return nil, nil, fmt.Errorf("user: scan lookup hit: %w", err)
+		}
+		found[h.Path] = h
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("user: lookup addresses rows: %w", err)
+	}
+	ordered := make([]addressHitRow, 0, len(paths))
+	missing := []string{}
+	seen := map[string]bool{}
+	for _, p := range paths {
+		if seen[p] {
+			continue
+		}
+		seen[p] = true
+		if h, ok := found[p]; ok {
+			ordered = append(ordered, h)
+		} else {
+			missing = append(missing, p)
+		}
+	}
+	hits, err := s.attachAncestors(ctx, ordered)
+	if err != nil {
+		return nil, nil, err
+	}
+	return hits, missing, nil
 }
 
 // attachAncestors 批量反查命中节点全部祖先(path 前缀段),组装按 level 升序的祖先链。
+// hasChildren 一并回填:此前祖先该字段恒 false(零值),客户端据其判断能否继续下钻会误判叶节点。
 func (s *PGStore) attachAncestors(ctx context.Context, hits []addressHitRow) ([]AddressHit, error) {
 	prefixes := map[string]bool{}
 	for _, h := range hits {
@@ -161,15 +215,16 @@ func (s *PGStore) attachAncestors(ctx context.Context, hits []addressHitRow) ([]
 		paths = append(paths, p)
 	}
 	rows, err := s.db.Query(ctx, `
-		SELECT id, COALESCE(parent_id,0), level, name, path::text
-		FROM addresses WHERE path::text = ANY($1) ORDER BY path`, paths)
+		SELECT a.id, COALESCE(a.parent_id,0), a.level, a.name, a.path::text,
+		       EXISTS(SELECT 1 FROM addresses c WHERE c.parent_id = a.id)
+		FROM addresses a WHERE a.path::text = ANY($1) ORDER BY path`, paths)
 	if err != nil {
 		return nil, fmt.Errorf("user: search ancestors: %w", err)
 	}
 	byPath := map[string]Address{}
 	for rows.Next() {
 		var a Address
-		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name, &a.Path); err != nil {
+		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name, &a.Path, &a.HasChildren); err != nil {
 			return nil, fmt.Errorf("user: scan ancestor: %w", err)
 		}
 		byPath[a.Path] = a

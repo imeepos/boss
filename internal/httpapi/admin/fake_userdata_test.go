@@ -38,6 +38,9 @@ func (f *fakeUserdata) CreateUserAddress(context.Context, userdata.UserAddress) 
 func (f *fakeUserdata) UpdateUserAddress(context.Context, int64, int64, userdata.UserAddress) error {
 	return nil
 }
+func (f *fakeUserdata) GetUserAddress(context.Context, int64, int64) (userdata.UserAddress, error) {
+	return userdata.UserAddress{}, nil
+}
 func (f *fakeUserdata) DeleteUserAddress(context.Context, int64, int64) error {
 	return nil
 }
