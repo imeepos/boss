@@ -70,7 +70,9 @@ func addrSearchAddresses(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeInvalidParam, nil)
 			return
 		}
-		hits, err := a.User.SearchAddresses(c.Request.Context(), kw)
+		// hasMore 暂不透出:admin 响应保持纯数组形状不变(懒加载树按需展开,
+		// 截断提示先只做用户端);用户端 /address-tree/search 已透出。
+		hits, _, err := a.User.SearchAddresses(c.Request.Context(), kw)
 		if err != nil {
 			respondErr(c, err)
 			return

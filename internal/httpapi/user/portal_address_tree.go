@@ -93,6 +93,7 @@ func portalAddressChildren(a *app.Application) gin.HandlerFunc {
 
 // portalAddressTreeSearch GET /address-tree/search?q= 全树关键字搜索(命中+祖先链)。
 // 语义与 admin /addresses/search 一致;App 小区/街道层搜索直达,免逐级翻页。
+// hasMore=true 表示超 20 条被截断,客户端应提示收紧关键字(菲律宾 San/Santa 前缀常见)。
 func portalAddressTreeSearch(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if a.User == nil {
@@ -104,11 +105,11 @@ func portalAddressTreeSearch(a *app.Application) gin.HandlerFunc {
 			respond(c, apitypes.CodeInvalidParam, nil)
 			return
 		}
-		hits, err := a.User.SearchAddresses(c.Request.Context(), q)
+		hits, hasMore, err := a.User.SearchAddresses(c.Request.Context(), q)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"items": hits})
+		respond(c, apitypes.CodeOK, gin.H{"items": hits, "hasMore": hasMore})
 	}
 }

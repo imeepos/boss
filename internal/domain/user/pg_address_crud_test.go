@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v4"
@@ -62,7 +63,7 @@ func TestSearchAddresses(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`LIMIT 20`).
+	mock.ExpectQuery(`LIMIT 21`).
 		WithArgs("%朝阳%").
 		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "country_code", "admin_code", "has_children"}).
 			AddRow(int64(3), int64(2), int8(2), "朝阳区", "bj.chaoyang", "CN", "CN-BJ", false))
@@ -72,15 +73,47 @@ func TestSearchAddresses(t *testing.T) {
 			AddRow(int64(1), int64(0), int8(1), "北京市", "bj"))
 
 	s := NewPGStore(mock)
-	hits, err := s.SearchAddresses(context.Background(), "朝阳")
+	hits, hasMore, err := s.SearchAddresses(context.Background(), "朝阳")
 	if err != nil {
 		t.Fatalf("SearchAddresses: %v", err)
+	}
+	if hasMore {
+		t.Fatalf("single hit must not set hasMore")
 	}
 	if len(hits) != 1 || hits[0].Node.Name != "朝阳区" {
 		t.Fatalf("hits=%+v", hits)
 	}
 	if len(hits[0].Ancestors) != 1 || hits[0].Ancestors[0].Name != "北京市" {
 		t.Fatalf("ancestors=%+v", hits[0].Ancestors)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+// TestSearchAddresses_HasMore 契约:21 条命中取前 20 条并置 hasMore(截断可感知)。
+func TestSearchAddresses_HasMore(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	rows := mock.NewRows([]string{"id", "parent_id", "level", "name", "path", "country_code", "admin_code", "has_children"})
+	for i := 0; i < 21; i++ {
+		rows.AddRow(int64(i+1), int64(0), int8(1), fmt.Sprintf("n%d", i), fmt.Sprintf("p%d", i), "CN", "CN-BJ", false)
+	}
+	mock.ExpectQuery(`LIMIT 21`).WithArgs("%x%").WillReturnRows(rows)
+	mock.ExpectQuery(`= ANY`).WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path"}))
+
+	s := NewPGStore(mock)
+	hits, hasMore, err := s.SearchAddresses(context.Background(), "x")
+	if err != nil {
+		t.Fatalf("SearchAddresses: %v", err)
+	}
+	if !hasMore || len(hits) != 20 {
+		t.Fatalf("hasMore=%v len=%d, want true/20", hasMore, len(hits))
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)

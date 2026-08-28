@@ -57,7 +57,8 @@ type Service interface {
 	// DeleteAddress 删除叶节点;有子节点或被业务表引用则拒(ErrConflict)。
 	DeleteAddress(ctx context.Context, id int64) error
 	// SearchAddresses 关键字搜全树(名称/path/锚点),返回命中节点及其祖先链(前端自动展开用)。
-	SearchAddresses(ctx context.Context, kw string) ([]AddressHit, error)
+	// hasMore=true 表示命中超出单页 20 条被截断,调用方应提示用户收紧关键字。
+	SearchAddresses(ctx context.Context, kw string) (hits []AddressHit, hasMore bool, err error)
 	// LookupAddresses 按 path 精确批量反查节点+祖先链(地址簿 address_path 弱引用反显面包屑用)。
 	// 命中按入参顺序返回;缺失路径列入 missing 而非报错(树节点可删,弱引用允许悬挂)。
 	LookupAddresses(ctx context.Context, paths []string) (hits []AddressHit, missing []string, err error)

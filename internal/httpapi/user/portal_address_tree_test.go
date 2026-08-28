@@ -23,6 +23,7 @@ type fakeAddressTree struct {
 	user.Service
 	children map[int64][]user.Address
 	hits     []user.AddressHit
+	hasMore  bool
 	// lookup 按 path 反查桩;missingPath 存在则该路径进 missing。
 	lookup      map[string]user.AddressHit
 	missingPath string
@@ -32,8 +33,8 @@ func (f *fakeAddressTree) ListAddresses(_ context.Context, parentID int64) ([]us
 	return f.children[parentID], nil
 }
 
-func (f *fakeAddressTree) SearchAddresses(_ context.Context, _ string) ([]user.AddressHit, error) {
-	return f.hits, nil
+func (f *fakeAddressTree) SearchAddresses(_ context.Context, _ string) ([]user.AddressHit, bool, error) {
+	return f.hits, f.hasMore, nil
 }
 
 func (f *fakeAddressTree) LookupAddresses(_ context.Context, paths []string) ([]user.AddressHit, []string, error) {
@@ -135,6 +136,21 @@ func TestPortal_AddressTreeSearch_EmptyQ(t *testing.T) {
 	w := userPortalDo(r, http.MethodGet, "/api/user/v1/address-tree/search", ``, tok)
 	if code, _ := userPortalCode(t, w); code == 0 {
 		t.Fatalf("empty q should fail: %s", w.Body.String())
+	}
+}
+
+// TestPortal_AddressTreeSearch_HasMore 契约:截断标志透传到响应,客户端据此提示收紧关键字。
+func TestPortal_AddressTreeSearch_HasMore(t *testing.T) {
+	f := addressTreeFixture()
+	f.hasMore = true
+	r, tok := newAddressTreeRouter(t, f)
+	w := userPortalDo(r, http.MethodGet, "/api/user/v1/address-tree/search?q=Common", ``, tok)
+	_, data := userPortalCode(t, w)
+	if data["hasMore"] != true {
+		t.Fatalf("hasMore=%v, want true", data["hasMore"])
+	}
+	if items, _ := data["items"].([]any); len(items) == 0 {
+		t.Fatalf("items empty: %s", w.Body.String())
 	}
 }
 

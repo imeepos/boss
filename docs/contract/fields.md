@@ -105,7 +105,7 @@
 |:---------|:-------|:------|:----------|
 | 所在地区 | `AddressPath` | user_addresses.address_path + AddressInfo.addressPath | ltree 字符串，空=历史自由文本地址（迁移 000152） |
 | 子节点列表 | — | GET /address-tree?parentId= | 级联懒加载，返回 AddressNode（id/level/name/hasChildren/锚点） |
-| 全树搜索 | — | GET /address-tree/search?q= | 命中+祖先链，与 admin /addresses/search 同语义 |
+| 全树搜索 | — | GET /address-tree/search?q= | 命中+祖先链，与 admin /addresses/search 同语义；hasMore=true=超 20 条截断（客户端提示收紧关键字） |
 | 路径批量反查 | — | GET /address-tree/lookup?paths= | 逗号分隔≤50；items=[{path,node,ancestors}]（与 search 同形）+missing；缺失路径不整体 404（address_path 弱引用，节点可删），编辑地址/地址簿反显面包屑用 |
 
 ### 1.5.1 geo_country / geo_subdivision（国际地理基础数据，迁移 000038）

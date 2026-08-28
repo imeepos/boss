@@ -55,8 +55,11 @@ func (f *fakeUser) CreateAddress(context.Context, int64, string, string, string,
 }
 func (f *fakeUser) UpdateAddressName(context.Context, int64, string) error { return nil }
 func (f *fakeUser) DeleteAddress(context.Context, int64) error             { return nil }
-func (f *fakeUser) SearchAddresses(context.Context, string) ([]user.AddressHit, error) {
-	return nil, nil
+func (f *fakeUser) SearchAddresses(context.Context, string) ([]user.AddressHit, bool, error) {
+	return nil, false, nil
+}
+func (f *fakeUser) LookupAddresses(context.Context, []string) ([]user.AddressHit, []string, error) {
+	return nil, nil, nil
 }
 func (f *fakeUser) GetRegion(_ context.Context, id int64) (*user.Region, error) {
 	if id == 0 {

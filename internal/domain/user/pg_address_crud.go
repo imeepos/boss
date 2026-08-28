@@ -113,8 +113,9 @@ func (s *PGStore) DeleteAddress(ctx context.Context, id int64) error {
 	return nil
 }
 
-// SearchAddresses 全树关键字搜索(名称/path/锚点),带祖先链;上限 20 条命中。
-func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit, error) {
+// SearchAddresses 全树关键字搜索(名称/path/锚点),带祖先链;单页上限 20 条,
+// 多取 1 条探测截断返回 hasMore(此前静默截断,调用方无法感知结果不完整)。
+func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit, bool, error) {
 	like := "%" + kw + "%"
 	rows, err := s.db.Query(ctx, `
 		SELECT a.id, COALESCE(a.parent_id,0), a.level, a.name, a.path::text,
@@ -124,9 +125,9 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 		JOIN addresses r ON r.path = subpath(a.path, 0, 1)
 		WHERE a.name ILIKE $1 OR a.path::text ILIKE $1
 		   OR r.country_code ILIKE $1 OR r.admin_code ILIKE $1
-		ORDER BY a.path LIMIT 20`, like)
+		ORDER BY a.path LIMIT 21`, like)
 	if err != nil {
-		return nil, fmt.Errorf("user: search addresses: %w", err)
+		return nil, false, fmt.Errorf("user: search addresses: %w", err)
 	}
 	type hit = addressHitRow
 	var hits []hit
@@ -134,18 +135,23 @@ func (s *PGStore) SearchAddresses(ctx context.Context, kw string) ([]AddressHit,
 		var h hit
 		if err := rows.Scan(&h.ID, &h.ParentID, &h.Level, &h.Name, &h.Path,
 			&h.CountryCode, &h.AdminCode, &h.HasChildren); err != nil {
-			return nil, fmt.Errorf("user: scan search hit: %w", err)
+			return nil, false, fmt.Errorf("user: scan search hit: %w", err)
 		}
 		hits = append(hits, h)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("user: search addresses rows: %w", err)
+		return nil, false, fmt.Errorf("user: search addresses rows: %w", err)
+	}
+	hasMore := len(hits) > 20
+	if hasMore {
+		hits = hits[:20]
 	}
 	if len(hits) == 0 {
-		return []AddressHit{}, nil
+		return []AddressHit{}, false, nil
 	}
-	return s.attachAncestors(ctx, hits)
+	out, err := s.attachAncestors(ctx, hits)
+	return out, hasMore, err
 }
 
 // LookupAddresses 按 path 精确批量反查节点+祖先链;SQL 与 attachAncestors 反查同形状(ANY($1))。
