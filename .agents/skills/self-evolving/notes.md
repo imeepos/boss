@@ -1298,3 +1298,24 @@
 - skill 有没有提前预警? 没有——红线全是编码类,没有"会议/审查型 subagent 阅读量预算"的条目。
 - 重来一次? 一上来就用最终奏效的模式:主持人先 bash grep 代采证据(PinnedGradientPage 分布/Color(0x 分布/圆角/字号/边距直方图),subagent 只做"精读 ≤6 个基线文件 + 基于代采数据裁决",总输出限 120~200 行。
 - 沉淀: 喂 lessons.md 一条——多文件审查型 subagent 必须给阅读预算,主持人先代采统计再让成员解释,比让成员自己通读省 5 次重启。
+
+## 2026-08-28 会议主持:不同角色账号数据/菜单权限验证(102 RBAC 实测)
+
+- 哪个坑浪费了最多时间? 5 个成员 subagent 首轮 4 个 failed(与上午 UI 审查会同根),重催一轮全部恢复;另外 psql 容器名猜错(pg→boss-infra-postgres-1)多花一查。
+- skill 有没有提前预警? 无 subagent 失败处置条目,靠现场摸索出"纯文字重催"修法,已喂 lessons+recidivism(第 2 次)。
+- 重来一次? 开会前就把"重催模板"备好;主持人会前事实核查(库实查+读码+只读探测)继续保留——battle 裁决、疑点复核全靠它,老周的 GetByNo 发现我也是先复核再进纪要,零返工。
+- 做得对的: 造号/清理单人串行(陈静)避免并行撞号;battle 一轮收敛不空转;何平两处产品裁定都当场要"可执行判据+验收落点"。
+- 沉淀: recidivism.md 两条(会议型成员failed 第2次、add -A 扫脏新坑),lessons.md 一条(纯文字重催法)。
+
+## 2026-XX-XX 赵构·组件复用审查复盘(只读 grep 型任务)
+- 最大坑: 第一轮 `grep -P` 在 macOS BSD grep 上报 invalid option,师傅端 12 项计数全 0 险些当真引用——统计类命令先小样本试跑再批量;两端计数口径必须一致(worker 用边界正则复核过,user 端朴素匹配没复核,不对称)。
+- 边界正则 `[^a-zA-Z]Name\(` 会漏行首调用;计数结论须写明"文件数≠调用点数、含定义文件",否则被当成页面数引用。
+- 沿用上游简报数字("18 文件 60+ 硬编码")前要自己拆分: theme/Color.kt 是合法令牌文件也被计入,违规数高估,严重度结论过报——引二手数据前先核口径。
+- 只读审查也要自查"该查没查": 签名级对照≠实现对照(内边距/圆角/字号/状态色映射未比);两端同名文件(AuthForm.kt 各 4 处硬编码)本身就是跨端复制证据,看到了却没点破。
+
+## 2026-09-06 陈端·PointsPage 死返回键修复(P0-3)
+
+- 哪个坑浪费了最多时间? 裸 shell 无 java(报 "Unable to locate a Java Runtime"),第一次想当然按脚本里的 `/opt/homebrew/Cellar/openjdk@17` glob 找也扑空,多绕两查;实际 `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` 一直可用。另一个小坑:`gradlew -q` 成功时零输出,无证据感,须去掉 -q 重跑一次拿 `BUILD SUCCESSFUL` 关键行。
+- skill 有没有提前预警? 红线 #1(编辑前 read)与 #6(无验证动作不声称已验证)都生效,零拒绝;但"Android 构建环境三件套(JAVA_HOME/ANDROID_HOME/local.properties 缺一报 SDK location not found)"没有现成条目,本次补上。
+- 重来一次? 开工先 `ls /opt/homebrew/opt | grep jdk` + `ls ~/Library/Android/sdk` 一步定位,再跑 gradlew;验证命令固定模板:`export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ANDROID_HOME=~/Library/Android/sdk && ./gradlew compileDebugKotlin --console=plain`(不带 -q)。
+- 超范围发现要上报不越界: 本任务只许改 PointsPage.kt,但查证中发现 MainActivity.kt `tabKeyOf` 缺 `Route.Points -> "points"` 映射(积分页 showTabs=false,底栏不显示、栈深1时系统返回直接退出)——写进汇报交主持人派单,不擅自改。

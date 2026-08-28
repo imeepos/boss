@@ -195,3 +195,30 @@ func TestOrderDetailHandler(t *testing.T) {
 		t.Fatalf("timeline=%+v", body.Data.Timeline)
 	}
 }
+
+// TestOrderDetailHandlerOutOfScopeAsNotFound 契约:数据范围外订单与不存在订单同码同响应
+// 不可区分(2026-08-28 battle oracle);范围子树内正常放行。
+func TestOrderDetailHandlerOutOfScopeAsNotFound(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	u := &fakeUser{permOk: true, dataScope: user.DataScope{LegalEntityID: 3, RegionScope: "root.luzon"}}
+
+	// 范围外:实体不符 + 区域越子树
+	fOut := &fakeOrder{byNo: &order.Order{ID: 7, OrderNo: "ORD-7", LegalEntityID: 9, RegionPath: "root.davao"}}
+	wOut := getJSON(t, newOrderRouter(fOut, u, mgr), "/api/admin/v1/orders/ORD-7", authToken(t, mgr))
+
+	// 真不存在:两类情形响应必须逐字节一致
+	fMiss := &fakeOrder{byNoErr: order.ErrOrderNotFound}
+	wMiss := getJSON(t, newOrderRouter(fMiss, u, mgr), "/api/admin/v1/orders/ORD-404", authToken(t, mgr))
+
+	if wOut.Code != wMiss.Code || wOut.Body.String() != wMiss.Body.String() {
+		t.Fatalf("越界与不存在可区分: out=%d %s miss=%d %s",
+			wOut.Code, wOut.Body.String(), wMiss.Code, wMiss.Body.String())
+	}
+
+	// 子树内放行:区域 path 前缀匹配(root.luzon ⊇ root.luzon.makati)
+	fIn := &fakeOrder{byNo: &order.Order{ID: 7, OrderNo: "ORD-7", LegalEntityID: 3, RegionPath: "root.luzon.makati"}}
+	wIn := getJSON(t, newOrderRouter(fIn, u, mgr), "/api/admin/v1/orders/ORD-7", authToken(t, mgr))
+	if wIn.Code != http.StatusOK {
+		t.Fatalf("子树内被误拦: status=%d body=%s", wIn.Code, wIn.Body.String())
+	}
+}

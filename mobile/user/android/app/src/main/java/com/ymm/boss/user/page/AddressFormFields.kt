@@ -55,14 +55,25 @@ internal fun SheetHeader(title: String, onClose: () -> Unit) {
 @Composable
 internal fun CommunityField(value: String, options: List<String>, onChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    // 非空输入只保留 ignoreCase 前缀命中项:候选变少,浮层变短,打字时误点建议行覆盖已输入文本的窗口随之收窄。
+    val candidates = if (value.isBlank()) options
+    else options.filter { it.startsWith(value, ignoreCase = true) }
+    // 无命中不弹层(收起优先简洁);空输入维持全量历史(排除当前值逻辑留在调用方)。
+    val menuShown = expanded && (value.isBlank() || candidates.isNotEmpty())
     ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
+        expanded = menuShown,
+        onExpandedChange = { want -> expanded = want },
         modifier = Modifier.fillMaxWidth(),
     ) {
         OutlinedTextField(
             value = value,
-            onValueChange = onChange,
+            onValueChange = { next ->
+                onChange(next)
+                // 本次输入已无前缀命中即撤销展开请求:浮层收起后退格回命中区也不自动重弹,不让弹层压在打字手指下
+                if (next.isNotBlank() && options.none { item -> item.startsWith(next, ignoreCase = true) }) {
+                    expanded = false
+                }
+            },
             placeholder = { Text("请输入小区名", fontSize = 13.sp, color = Palette.subtle) },
             singleLine = true,
             shape = RoundedCornerShape(10.dp),
@@ -82,7 +93,7 @@ internal fun CommunityField(value: String, options: List<String>, onChange: (Str
         // 必须在 ExposedDropdownMenuBoxScope 内调用 ExposedDropdownMenu，否则
         // DropdownMenuItem 会渲染到 anchor 里（真机已重现 placeholder 跟"暂无历史小区"重叠）。
         ExposedDropdownMenu(
-            expanded = expanded,
+            expanded = menuShown,
             onDismissRequest = { expanded = false },
         ) {
             if (options.isEmpty()) {
@@ -92,7 +103,7 @@ internal fun CommunityField(value: String, options: List<String>, onChange: (Str
                     enabled = false,
                 )
             } else {
-                options.forEach { item ->
+                candidates.forEach { item ->
                     DropdownMenuItem(
                         text = { Text(item, fontSize = 13.sp, color = Palette.ink) },
                         onClick = { onChange(item); expanded = false },

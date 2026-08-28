@@ -81,6 +81,7 @@ fun tabKeyOf(route: Route): String = when (route) {
     Route.Home -> "home"
     Route.Products -> "products"
     Route.Orders -> "orders"
+    Route.Points -> "points"
     Route.Profile -> "profile"
     else -> ""
 }

@@ -2,7 +2,7 @@ GO ?= $(or $(shell command -v go 2>/dev/null),/opt/homebrew/bin/go)
 GOFMT ?= $(or $(shell command -v gofmt 2>/dev/null),/opt/homebrew/bin/gofmt)
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check proto docker-build load bossctl bossctl-routes bossctl-routes-check check-conn-test-user check-conn-test-worker
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check ui-consistency-check proto docker-build load bossctl bossctl-routes bossctl-routes-check check-conn-test-user check-conn-test-worker
 
 ## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证;版本注入 git describe)
 BOSSCTL_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -65,7 +65,7 @@ lint:
 	fi
 
 ## check:CI 等价门禁(本地一键复现 .github/workflows/ci.yml)
-check: test lint contract-sync bossctl-routes-check
+check: test lint contract-sync bossctl-routes-check ui-consistency-check
 	$(GO) build ./...
 
 ## 契约同步门禁:路由<->OpenAPI 对账 + json tag 命名 + 文件行数红线
@@ -78,6 +78,10 @@ web-admin-check:
 	pnpm --dir web/admin test
 	pnpm --dir web/admin build
 	node scripts/check-ds-adoption.js
+
+## UI 一致性门禁:两端 Android 硬编码颜色只减不增(基线 scripts/ui-consistency-baseline.json)
+ui-consistency-check:
+	node scripts/check-ui-consistency.mjs
 
 ## 连接态测试(需模拟器/真机):connectedDebugAndroidTest + 断言 tests 数>0
 check-conn-test-user:
