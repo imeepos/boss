@@ -67,14 +67,15 @@ sys.exit(0)
 }
 
 # emit_alert: 复用提醒中心(与 stripe-tunnel 同源),refType=slo_cruise 按日幂等。
-# 非 200(如 refType 白名单外/鉴权失败)必须留痕,禁止静默吞错。
+# 成败判定以信封 code=0 为准(HTTP 200 也可能带 42200 信封错误,如 refType 白名单外),
+# 失败必须留痕,禁止静默吞错。
 emit_alert() {
-  local title="$1" content="$2" level="${3:-WARN}" code
+  local title="$1" content="$2" level="${3:-WARN}" resp
   [ -n "$KEY" ] || { echo "slo-cruise: no admin key, alert skipped: $title"; return 0; }
-  code="$(curl -sS -m 10 -o /dev/null -w '%{http_code}' -X POST "$API/ops/notify-emit" \
+  resp="$(curl -sS -m 10 -X POST "$API/ops/notify-emit" \
     -H "X-API-Key: $KEY" -H "Content-Type: application/json" \
     -d "{\"refType\":\"slo_cruise\",\"refID\":\"$(date +%F)\",\"level\":\"$level\",\"title\":\"$title\",\"content\":\"$content\",\"link\":\"/intel/analytics\"}")"
-  [ "$code" = "200" ] || echo "slo-cruise: alert emit failed http=$code: $title"
+  echo "$resp" | grep -q '"code":0\|"ok":true' || echo "slo-cruise: alert emit failed: $resp"
 }
 
 case "${1:-daily}" in
