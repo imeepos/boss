@@ -55,10 +55,10 @@ func publishInventoryChanged(batchID, orderID int64, orderNo string, accountID i
 		"payload", string(payload))
 }
 
-// ListInventory 实时聚合库存视图(按物料 code 聚合 IN_STOCK 数量)。
+// ListInventory 实时聚合库存视图(按物料 type 聚合 IN_STOCK 数量 + 批次分布)。
 // materialCode=""=全部。
 func (s *PGStore) ListInventory(ctx context.Context, legalEntityID int64, materialCode string) ([]InventoryRow, error) {
-	q := `SELECT b.code, b.id AS batch_id, COUNT(a.id) AS in_stock_qty
+	q := `SELECT a.type AS material_code, b.id AS batch_id, COUNT(a.id) AS in_stock_qty
 	      FROM assets a
 	      JOIN asset_batches b ON b.id = a.batch_id
 	      WHERE a.status='IN_STOCK'`
@@ -71,7 +71,7 @@ func (s *PGStore) ListInventory(ctx context.Context, legalEntityID int64, materi
 		args = append(args, materialCode)
 		q += fmt.Sprintf(` AND a.type=$%d`, len(args))
 	}
-	q += ` GROUP BY b.code, b.id ORDER BY b.id DESC`
+	q += ` GROUP BY a.type, b.id ORDER BY b.id DESC`
 	rows, err := s.db.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("procurement: list inventory: %w", err)

@@ -75,12 +75,19 @@ func procurementCreateOrder(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		id, err := a.Procurement.CreateOrder(c.Request.Context(), in)
+		in.CreatedBy = currentAccountID(c, a)
+		created, err := a.Procurement.CreateOrder(c.Request.Context(), in)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "procurementNo": in.ProcurementNo})
+		// 回传单号(后端生成兜底,前端无需拼)
+		po, err := a.Procurement.GetOrder(c.Request.Context(), created)
+		if err != nil || po == nil {
+			respond(c, apitypes.CodeOK, gin.H{"id": created})
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"id": created, "procurementNo": po.ProcurementNo})
 	}
 }
 
