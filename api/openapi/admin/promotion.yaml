@@ -98,6 +98,41 @@ paths:
       responses:
         '200': { description: OK }
 
+  /coupon-recon:
+    get:
+      summary: 券对账报表(模板计数/实例分布/核销金额三角,diff=drift 只看差异行)
+      tags: [Promotion]
+      parameters:
+        - { name: diff, in: query, schema: { type: string, enum: [drift] } }
+      responses:
+        '200':
+          description: 对账行与汇总
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      rows:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            templateId: { type: integer, format: int64 }
+                            name: { type: string }
+                            issuedQty: { type: integer, format: int64 }
+                            actualIssued: { type: integer, format: int64 }
+                            byStatus: { type: object }
+                            usedCount: { type: integer, format: int64 }
+                            redemptionCnt: { type: integer, format: int64 }
+                            redeemedAmount: { type: integer, format: int64 }
+                            faceValueTotal: { type: integer, format: int64 }
+                            diffKind: { type: string, enum: [MATCH, COUNTER_DRIFT, REDEMPTION_LOST] }
+                      summary: { type: object }
+
 components:
   schemas:
     CouponTemplate:
@@ -133,37 +168,3 @@ components:
         buyMonths: { type: integer, minimum: 1 }
         giftMonths: { type: integer, minimum: 1 }
         status: { type: string, enum: [ENABLED, DISABLED] }
-  /coupon-recon:
-    get:
-      summary: 券对账报表(模板计数/实例分布/核销金额三角,diff=drift 只看差异行)
-      tags: [Promotion]
-      parameters:
-        - { name: diff, in: query, schema: { type: string, enum: [drift] } }
-      responses:
-        '200':
-          description: 对账行与汇总
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code: { type: integer }
-                  data:
-                    type: object
-                    properties:
-                      rows:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            templateId: { type: integer, format: int64 }
-                            name: { type: string }
-                            issuedQty: { type: integer, format: int64 }
-                            actualIssued: { type: integer, format: int64 }
-                            byStatus: { type: object }
-                            usedCount: { type: integer, format: int64 }
-                            redemptionCnt: { type: integer, format: int64 }
-                            redeemedAmount: { type: integer, format: int64 }
-                            faceValueTotal: { type: integer, format: int64 }
-                            diffKind: { type: string, enum: [MATCH, COUNTER_DRIFT, REDEMPTION_LOST] }
-                      summary: { type: object }

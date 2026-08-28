@@ -28,6 +28,15 @@ components:
               code: { type: integer, example: 0, description: 0=成功,非 0 见 pkg/apitypes 错误码 }
               msg: { type: string, example: ok }
               data: { description: 业务载荷(本文件各 schema 定义的是 data 内的形态) }
+    NotFound:
+      description: 未命中(code=40400,data 为空)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code: { type: integer, example: 40400 }
+              msg: { type: string }
 
   schemas:
     Ticket:

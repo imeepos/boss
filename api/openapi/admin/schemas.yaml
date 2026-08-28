@@ -22,59 +22,6 @@ components:
         overdueBillCount: { type: integer }
         agingBuckets: { type: object }
         lastRunAt: { type: string }
-
-  responses:
-    Ok:
-      description: 操作成功(code=0,data 由各接口定义或为空)
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              code: { type: integer, example: 0 }
-              msg: { type: string, example: ok }
-    List:
-      description: 列表(data 为对象,含 items 数组)
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              code: { type: integer, example: 0 }
-              msg: { type: string, example: ok }
-              data:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items: { type: object }
-                  total: { type: integer }
-                  page: { type: integer }
-                  pageSize: { type: integer }
-    Item:
-      description: 单条记录(data 为平铺对象;未命中 code=404)
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              code: { type: integer, example: 0 }
-              msg: { type: string, example: ok }
-              data: { type: object }
-
-  parameters:
-    keyword:
-      name: keyword
-      in: query
-      schema: { type: string }
-      description: 关键字搜索(单号/客户/编码等,按页面占位提示)
-    status:
-      name: status
-      in: query
-      schema: { type: string }
-      description: 状态过滤(枚举见 docs/contract/terms.md 第 3/4 节)
-
-  schemas:
     OpenPlatApp:
       type: object
       description: 开放应用元数据(不含 Secret,迁移 000122)
@@ -120,3 +67,73 @@ components:
         lastError: { type: string }
         deliveredAt: { type: string }
         createdAt: { type: string }
+
+  responses:
+    Ok:
+      description: 操作成功(code=0,data 由各接口定义或为空)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code: { type: integer, example: 0 }
+              msg: { type: string, example: ok }
+    NotFound:
+      description: 未命中(code=40400,data 为空)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code: { type: integer, example: 40400 }
+              msg: { type: string }
+    Conflict:
+      description: 状态冲突(code=40900/40910,data 为空)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code: { type: integer, example: 40900 }
+              msg: { type: string }
+    List:
+      description: 列表(data 为对象,含 items 数组)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code: { type: integer, example: 0 }
+              msg: { type: string, example: ok }
+              data:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { type: object }
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+    Item:
+      description: 单条记录(data 为平铺对象;未命中 code=404)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code: { type: integer, example: 0 }
+              msg: { type: string, example: ok }
+              data: { type: object }
+
+  parameters:
+    keyword:
+      name: keyword
+      in: query
+      schema: { type: string }
+      description: 关键字搜索(单号/客户/编码等,按页面占位提示)
+    status:
+      name: status
+      in: query
+      schema: { type: string }
+      description: 状态过滤(枚举见 docs/contract/terms.md 第 3/4 节)
+

@@ -11,7 +11,20 @@ paths:
       requestBody:
         required: true
         content:
-          application/json: { schema: { $ref: './schemas.yaml#/components/schemas/Item' } }
+          application/json:
+            schema:
+              type: object
+              required: [jobKey, name]
+              properties:
+                jobKey: { type: string }
+                name: { type: string }
+                sourceDomain: { type: string }
+                targetDomain: { type: string }
+                cronExpr: { type: string }
+                refreshCadence: { type: string }
+                owner: { type: string }
+                enabled: { type: boolean }
+                latenessThreshold: { type: integer }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Item' }
   /etl-jobs/{jobKey}:

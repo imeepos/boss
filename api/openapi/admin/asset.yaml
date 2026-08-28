@@ -124,7 +124,7 @@ paths:
   /stocktakes/{taskId}/items:
     get:
       tags: [Asset]
-      summary: 盘点差异明细清单(kind: PENDING/OK/MISMATCH/MISSING/EXTRA;resolution: OPEN/CONFIRMED/FIXED/ESCALATED)
+      summary: "盘点差异明细清单(kind: PENDING/OK/MISMATCH/MISSING/EXTRA;resolution: OPEN/CONFIRMED/FIXED/ESCALATED)"
       operationId: listStocktakeItems
       parameters:
         - { name: taskId, in: path, required: true, schema: { type: integer, format: int64 } }

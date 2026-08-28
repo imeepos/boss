@@ -110,11 +110,11 @@ paths:
   /service/messages: { $ref: './worker/misc.yaml#/paths/~1service~1messages' }
   /safety/checks: { $ref: './worker/misc.yaml#/paths/~1safety~1checks' }
   /attachments/upload: { $ref: './worker/misc.yaml#/paths/~1attachments~1upload' }
+  /client/latest: { $ref: './worker/client.yaml#/paths/~1client~1latest' }
+  /client/apk/{id}: { $ref: './worker/client.yaml#/paths/~1client~1apk~1{id}' }
 
 components:
   securitySchemes:
     $ref: './worker/schemas.yaml#/components/securitySchemes'
   schemas:
     $ref: './worker/schemas.yaml#/components/schemas'
-  /client/latest: { $ref: './worker/client.yaml#/paths/~1client~1latest' }
-  /client/apk/{id}: { $ref: './worker/client.yaml#/paths/~1client~1apk~1{id}' }

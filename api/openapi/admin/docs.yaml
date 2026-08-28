@@ -1,0 +1,22 @@
+# API 在线文档域:仓库内 OpenAPI 契约的运行时聚合端点(页面 /base/apidocs)。
+# data 为自包含 OpenAPI 3.0 文档树(外部 $ref 已解析、components 已并根),
+# 供 Swagger UI 渲染;portal 参数选择四端聚合根,缺省 admin。
+paths:
+  /docs/openapi:
+    get:
+      tags: [Docs]
+      summary: 聚合 OpenAPI 契约 JSON(Swagger UI 数据源)
+      operationId: getApiDocsSpec
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: portal, in: query, required: false, schema: { type: string, enum: [admin, user, worker, open], default: admin }, description: 文档门户(对应四端聚合根) }
+      responses:
+        '200':
+          description: envelope;data 为 OpenAPI 3.0 文档树(info/servers/tags/paths/components)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data: { type: object, description: OpenAPI 文档树(体量较大,此处不展开结构) }

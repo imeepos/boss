@@ -106,7 +106,7 @@ paths:
       parameters:
         - { name: ruleKey, in: path, required: true, schema: { type: string } }
       responses:
-        '200': { $ref: './schemas.yaml#/components/responses/OK' }
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
         '404': { $ref: './schemas.yaml#/components/responses/NotFound' }
 
   /metric-quality-scan:

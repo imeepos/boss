@@ -481,4 +481,4 @@ components:
         amount: { type: number, example: 158.0 }
         checkoutUrl: { type: string, format: uri }
         sessionId: { type: string, example: 'cs_xxx' }
-              desc: { type: string }
+

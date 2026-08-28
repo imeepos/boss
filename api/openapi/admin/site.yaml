@@ -23,7 +23,7 @@ paths:
                 category: { type: string, description: cms_categories.code, default: NEWS }
                 summary: { type: string }
                 coverAttachmentId: { type: integer, format: int64 }
-                content: { type: string, description: Markdown, 正文图片引用 ](att/N) }
+                content: { type: string, description: "Markdown, 正文图片引用 ](att/N)" }
                 status: { type: string, enum: [DRAFT, PUBLISHED, OFFLINE], default: DRAFT }
                 authorName: { type: string }
       responses:

@@ -60,6 +60,8 @@ tags:
     description: 聚合搜索(客户/用户/师傅/订单 四域统一检索,按权限返回)
   - name: License
     description: 系统授权(授权状态查询/激活码兑换,release-platform 离线授权)
+  - name: Docs
+    description: API 在线文档(契约聚合 JSON,/base/apidocs 页 Swagger UI 数据源)
 
 paths:
   # ---------- Auth ----------
@@ -179,7 +181,6 @@ paths:
   /payments/{id}/refund: { $ref: './admin/billing.yaml#/paths/~1payments~1{id}~1refund' }
   /dunning-runs: { $ref: './admin/billing.yaml#/paths/~1dunning-runs' }
   /billing-runs: { $ref: './admin/billing.yaml#/paths/~1billing-runs' }
-  /dunning-runs: { $ref: './admin/billing.yaml#/paths/~1dunning-runs' }
   /invoices: { $ref: './admin/billing.yaml#/paths/~1invoices' }
   /invoices/{id}/void: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1void' }
   /invoices/{id}/reissue: { $ref: './admin/billing.yaml#/paths/~1invoices~1{id}~1reissue' }
@@ -248,7 +249,6 @@ paths:
   /transfers: { $ref: './admin/oss.yaml#/paths/~1transfers' }
   /transfers/{transferNo}/approve: { $ref: './admin/oss.yaml#/paths/~1transfers~1{transferNo}~1approve' }
   /transfers/{transferNo}/reject: { $ref: './admin/oss.yaml#/paths/~1transfers~1{transferNo}~1reject' }
-  /olt-devices: { $ref: './admin/oss.yaml#/paths/~1olt-devices' }
   /device/metrics: { $ref: './admin/oss.yaml#/paths/~1device~1metrics' }
   /device/maintenances: { $ref: './admin/oss.yaml#/paths/~1device~1maintenances' }
   /lo-accounts: { $ref: './admin/oss.yaml#/paths/~1lo-accounts' }
@@ -512,3 +512,14 @@ paths:
   # ---------- 实名审核中心(主体证件聚合;由 realname_review.go 暴露) ----------
   /verifications: { $ref: './admin/customer.yaml#/paths/~1verifications' }
   /verifications/{subjectType}/{subjectId}/verify: { $ref: './admin/customer.yaml#/paths/~1verifications~1{subjectType}~1{subjectId}~1verify' }
+
+  # ---------- Docs(API 在线文档) ----------
+  /docs/openapi: { $ref: './admin/docs.yaml#/paths/~1docs~1openapi' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: admin 端 JWT(aud=admin;登录 /auth/login 获取)

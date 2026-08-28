@@ -624,7 +624,7 @@ paths:
                 imported: { type: integer, minimum: 0 }
                 failed: { type: integer, minimum: 0 }
                 detail: { type: object, description: 可选明细 }
-                 clientKey: { type: string, maxLength: 96, description: 客户端幂等键；重复登记更新同一任务 }
+                clientKey: { type: string, maxLength: 96, description: 客户端幂等键；重复登记更新同一任务 }
       responses:
         '200':
           description: data={ok:true}
@@ -803,7 +803,7 @@ paths:
       operationId: getPushConfig
       responses:
         '200':
-          description: envelope;data.fields 为 {key: {value, hasValue}}
+          description: "envelope;data.fields 为 {key: {value, hasValue}}"
           content:
             application/json:
               schema:
@@ -889,8 +889,294 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /attachments/{id}/content:
+    get:
+      tags: [Sys]
+      summary: 附件内容流(按 contentType 回流;软删/不存在 40400)
+      operationId: getAttachmentContent
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 文件字节流(非 envelope)
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+
+  /stripe-config:
+    get:
+      tags: [Sys]
+      summary: 支付(Stripe)配置全量(permCode menu:stripeconfig;secret 只回 hasValue 掩码标记)
+      operationId: getStripeConfig
+      responses:
+        '200':
+          description: data.fields 以全 key(stripe.apiKey 等)为索引;secret 字段 value 恒空
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      fields:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          properties:
+                            value: { type: string }
+                            hasValue: { type: boolean }
+  /stripe-config/{group}:
+    put:
+      tags: [Sys]
+      summary: 分组部分更新(group∈channel/webhook;permCode menu:stripeconfig;secret 空串=不修改,密文落库)
+      operationId: updateStripeConfig
+      parameters:
+        - { name: group, in: path, required: true, schema: { type: string, enum: [channel, webhook] } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [values]
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+                  description: 全 key map,如 {"stripe.currency":"php"};越组 key 42200
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+  /stripe-config/channel/test:
+    post:
+      tags: [Sys]
+      summary: 通道自检(完整性校验跨两组;草稿跨两组合并;通过后真实探活余额 + 核对 webhook endpoint 与期望 URL 一致性,零副作用)
+      operationId: testStripeConfig
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        '200':
+          description: data={ok,latencyMs,message}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean }
+                      latencyMs: { type: integer }
+                      message: { type: string }
+
+  /backup/tables:
+    get:
+      tags: [Sys]
+      summary: 可备份表清单(public schema 全集,menu:backup 门禁)
+      operationId: listBackupTables
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: envelope;data 为 {items:[表名]}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      items: { type: array, items: { type: string } }
+
+  /backup/jobs:
+    get:
+      tags: [Sys]
+      summary: 备份/恢复任务列表(kind/status 过滤)
+      operationId: listBackupJobs
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [backup, restore] } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        '200':
+          description: envelope;data 为 {items:[BackupJob],total}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/BackupJob' } }
+                      total: { type: integer }
+    post:
+      tags: [Sys]
+      summary: 创建备份任务(tables 空=public 全表;异步执行)
+      operationId: createBackupJob
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tables: { type: array, items: { type: string }, description: 空=全表(scope=all) }
+      responses:
+        '200':
+          description: envelope;data 为 {id}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+
+  /backup/jobs/{id}:
+    get:
+      tags: [Sys]
+      summary: 任务详情
+      operationId: getBackupJob
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: envelope;data 为 BackupJob
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data: { $ref: '#/components/schemas/BackupJob' }
+    delete:
+      tags: [Sys]
+      summary: 删除任务记录(归档文件一并清理)
+      operationId: deleteBackupJob
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: envelope;data={ok:true}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean }
+
+  /backup/jobs/{id}/file:
+    get:
+      tags: [Sys]
+      summary: 下载归档文件(仅 backup 且已完成)
+      operationId: downloadBackupJobFile
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 归档文件流(非 envelope)
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+
+  /backup/restore:
+    post:
+      tags: [Sys]
+      summary: 上传归档恢复数据(multipart file;异步执行)
+      operationId: restoreBackup
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary, description: 备份归档文件 }
+      responses:
+        '200':
+          description: envelope;data 为 {id}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+
+  /crash-logs:
+    get:
+      summary: 客户端崩溃日志列表(管理端排查;permCode menu:crash_logs)
+      tags: [Misc]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: 最新 N 条按 created_at DESC;单条 log 文本服务端已截断至 64KB 保尾部
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    subjectType: { type: string, example: worker }
+                    subjectId: { type: integer }
+                    app: { type: string, example: "boss-worker/0.1.0" }
+                    log: { type: string }
+                    createdAt: { type: string, format: date-time }
+
 components:
   schemas:
+    BackupJob:
+      type: object
+      description: 备份/恢复任务行(fields.md 1.5.6;domain/backup.Job)
+      properties:
+        id: { type: integer, format: int64 }
+        kind: { type: string, enum: [backup, restore] }
+        scope: { type: string, enum: [all, tables] }
+        tables: { type: array, items: { type: string } }
+        status: { type: string }
+        fileName: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+        tableCount: { type: integer }
+        rowCount: { type: integer, format: int64 }
+        error: { type: string }
+        operator: { type: string }
+        createdAt: { type: string }
+        finishedAt: { type: string }
     OpsNotifyInput:
       type: object
       description: 运维脚本上报请求体(refType 白名单见 internal/httpapi/admin/ops_notify.go)
@@ -972,107 +1258,3 @@ components:
         lastUsedAt: { type: string, description: ISO8601,空=从未使用 }
         expiresAt: { type: string, description: ISO8601,空=永不过期 }
         createdAt: { type: string }
-  /api-key-templates:
-    get:
-      summary: 列出受限权限模板(2028 Q1 渠道受限 key 契约)
-      tags: [APIKey]
-      responses:
-        '200': { description: 模板列表 }
-  /crash-logs:
-    get:
-      summary: 客户端崩溃日志列表(管理端排查;permCode menu:crash_logs)
-      tags: [Misc]
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
-      responses:
-        '200':
-          description: 最新 N 条按 created_at DESC;单条 log 文本服务端已截断至 64KB 保尾部
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id: { type: integer }
-                    subjectType: { type: string, example: worker }
-                    subjectId: { type: integer }
-                    app: { type: string, example: "boss-worker/0.1.0" }
-                    log: { type: string }
-                    createdAt: { type: string, format: date-time }
-  /stripe-config:
-    get:
-      tags: [Sys]
-      summary: 支付(Stripe)配置全量(permCode menu:stripeconfig;secret 只回 hasValue 掩码标记)
-      operationId: getStripeConfig
-      responses:
-        '200':
-          description: data.fields 以全 key(stripe.apiKey 等)为索引;secret 字段 value 恒空
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code: { type: integer }
-                  data:
-                    type: object
-                    properties:
-                      fields:
-                        type: object
-                        additionalProperties:
-                          type: object
-                          properties:
-                            value: { type: string }
-                            hasValue: { type: boolean }
-  /stripe-config/{group}:
-    put:
-      tags: [Sys]
-      summary: 分组部分更新(group∈channel/webhook;permCode menu:stripeconfig;secret 空串=不修改,密文落库)
-      operationId: updateStripeConfig
-      parameters:
-        - { name: group, in: path, required: true, schema: { type: string, enum: [channel, webhook] } }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [values]
-              properties:
-                values:
-                  type: object
-                  additionalProperties: { type: string }
-                  description: 全 key map,如 {"stripe.currency":"php"};越组 key 42200
-      responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
-  /stripe-config/channel/test:
-    post:
-      tags: [Sys]
-      summary: 通道自检(完整性校验跨两组;草稿跨两组合并;通过后真实探活余额 + 核对 webhook endpoint 与期望 URL 一致性,零副作用)
-      operationId: testStripeConfig
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                values:
-                  type: object
-                  additionalProperties: { type: string }
-      responses:
-        '200':
-          description: data={ok,latencyMs,message}
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code: { type: integer }
-                  data:
-                    type: object
-                    properties:
-                      ok: { type: boolean }
-                      latencyMs: { type: integer }
-                      message: { type: string }
