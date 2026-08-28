@@ -92,7 +92,7 @@ fun RepairScreen(nav: NavHost, no: String) = TicketDetailScreen(nav, no)
 // 主按钮(蓝实底)
 @Composable
 private fun PrimaryBtn(text: String, modifier: Modifier, onClick: () -> Unit) {
-    Box(modifier = modifier.background(Color(0xFF086CF5), RoundedCornerShape(10.dp))
+    Box(modifier = modifier.background(Primary, RoundedCornerShape(10.dp))
         .clickable { onClick() }.padding(vertical = 12.dp),
         contentAlignment = Alignment.Center) {
         Text(text, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)

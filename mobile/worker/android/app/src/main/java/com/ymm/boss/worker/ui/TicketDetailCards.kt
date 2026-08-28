@@ -25,9 +25,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.Api
+import com.ymm.boss.worker.ui.theme.Err
+import com.ymm.boss.worker.ui.theme.ErrBorder
 import com.ymm.boss.worker.ui.theme.Ink
+import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
+import com.ymm.boss.worker.ui.theme.Panel
 import com.ymm.boss.worker.ui.theme.Primary
+import com.ymm.boss.worker.ui.theme.Success
+import com.ymm.boss.worker.ui.theme.SuccessBorder
+import com.ymm.boss.worker.ui.theme.Warn
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -61,7 +68,7 @@ internal fun DetailHeaderCard(d: JSONObject, type: String) {
         if (type == "REPAIR") {
             val fault = d.optString("faultTypeLabel")
             if (fault.isNotEmpty()) Text(fault, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                color = Color(0xFFFF4D4F), modifier = Modifier.padding(bottom = 4.dp))
+                color = Err, modifier = Modifier.padding(bottom = 4.dp))
         } else {
             val product = d.optString("product")
             if (product.isNotEmpty()) KvRow(stringResource(R.string.td_product), product)
@@ -88,7 +95,7 @@ internal fun DetailHeaderCard(d: JSONObject, type: String) {
             val sla = d.optInt("slaLeftMinutes", -1)
             if (sla >= 0) {
                 KvRow(stringResource(R.string.td_sla_left), "%d:%02d".format(sla / 60, sla % 60),
-                    valueColor = Color(0xFFFA8C16))
+                    valueColor = Warn)
             }
             val diag = d.optString("remoteDiagnosis")
             if (diag.isNotEmpty()) {
@@ -169,9 +176,9 @@ internal fun QuadCard(quad: JSONObject?) {
         if (quad == null) { Notice(stringResource(R.string.td_quad_missing)); return@Card }
         val status = quad.optString("status")
         val (cellColor, stText) = when (status) {
-            "CONFLICT" -> Color(0xFFFF4D4F) to stringResource(R.string.td_quad_conflict)
-            "LINKED"   -> Color(0xFF0AA847) to stringResource(R.string.td_quad_passed)
-            else       -> Color(0xFFAEB4BE) to stringResource(R.string.td_quad_pending)
+            "CONFLICT" -> Err to stringResource(R.string.td_quad_conflict)
+            "LINKED"   -> Success to stringResource(R.string.td_quad_passed)
+            else       -> Muted to stringResource(R.string.td_quad_pending)
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -189,12 +196,11 @@ internal fun QuadCard(quad: JSONObject?) {
 @Composable
 private fun QuadCell(label: String, value: String, st: String, color: Color, modifier: Modifier) {
     val border = when (color) {
-        Color(0xFF0AA847) -> Color(0xFF6FD18B)
-        Color(0xFFFF4D4F) -> Color(0xFFFF9B9D)
-        Color(0xFFAEB4BE) -> Color(0xFFE7EAF0)
-        else -> Color(0xFFE7EAF0)
+        Success -> SuccessBorder
+        Err -> ErrBorder
+        else -> Line
     }
-    Box(modifier = modifier.background(Color.White, RoundedCornerShape(8.dp))
+    Box(modifier = modifier.background(Panel, RoundedCornerShape(8.dp))
         .border(1.dp, border, RoundedCornerShape(8.dp)).padding(12.dp)) {
         Column {
             Text(label, fontSize = 12.sp, color = Muted)
@@ -211,7 +217,7 @@ internal fun RiskCard(risk: JSONObject?) {
         SectionTitle(stringResource(R.string.td_risk_title), more = stringResource(R.string.td_risk_more))
         val hit = risk?.optBoolean("blacklistHit", false) == true
                 || risk?.optBoolean("graylistHit", false) == true
-        val color = if (hit) Color(0xFFFF2D2F) else Color(0xFF0AA847)
+        val color = if (hit) Err else Success
         val text = if (hit) stringResource(R.string.td_risk_hit) else stringResource(R.string.td_risk_miss)
         Row(Modifier.fillMaxWidth().padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween) {
@@ -231,17 +237,17 @@ internal fun ReceiptCard() {
         Row(verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(vertical = 4.dp)) {
-            Box(modifier = Modifier.background(Color(0xFF0AA847), androidx.compose.foundation.shape.CircleShape)
+            Box(modifier = Modifier.background(Success, androidx.compose.foundation.shape.CircleShape)
                 .padding(4.dp)) {
-                Text("✓", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("✓", color = Panel, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Text(stringResource(R.string.td_receipt_confirmed), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF0AA847))
+                color = Success)
         }
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.td_signature), fontSize = 12.sp, color = Muted)
         Box(modifier = Modifier.fillMaxWidth().height(56.dp)
-            .border(1.dp, Color(0xFFD9D9D9), RoundedCornerShape(8.dp))
+            .border(1.dp, Line, RoundedCornerShape(8.dp))
             .padding(8.dp), contentAlignment = Alignment.Center) {
             Text(stringResource(R.string.td_signature_placeholder), fontSize = 12.sp, color = Muted)
         }
@@ -254,7 +260,7 @@ internal fun BottomActionBar(d: JSONObject, nav: NavHost, no: String,
                               onAccept: () -> Unit, onRollback: () -> Unit, onRetry: () -> Unit) {
     val status = d.optString("status")
     val type = inferTicketType(d)
-    Row(modifier = Modifier.fillMaxWidth().background(Color.White)
+    Row(modifier = Modifier.fillMaxWidth().background(Panel)
         .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         when {

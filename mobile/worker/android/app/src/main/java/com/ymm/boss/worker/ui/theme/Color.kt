@@ -30,6 +30,10 @@ val TagRed = TagColor(Color(0xFFCF1322), Color(0xFFFFF1F0))
 val TagGray = TagColor(Color(0xFF595959), Color(0xFFFAFAFA))
 val TagCyan = TagColor(Color(0xFF08979C), Color(0xFFE6FFFB))
 
+// QuadCell 状态浅色边框(状态色的弱化描边,TicketDetailCards 存量值成对收编)
+val SuccessBorder = Color(0xFF6FD18B)
+val ErrBorder = Color(0xFFFF9B9D)
+
 fun tagColor(status: String?): TagColor = when (status) {
     "DONE" -> TagGreen
     "ACCEPTED", "TODO" -> TagOrange

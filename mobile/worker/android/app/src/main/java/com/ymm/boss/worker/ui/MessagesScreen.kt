@@ -18,13 +18,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.MiscApi
+import com.ymm.boss.worker.ui.theme.Ink
+import com.ymm.boss.worker.ui.theme.TagBlue
+import com.ymm.boss.worker.ui.theme.TagOrange
+import com.ymm.boss.worker.ui.theme.TagRed
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 
@@ -77,17 +80,17 @@ fun MessagesScreen(nav: NavHost) {
 @Composable
 private fun MsgBanner(level: String, title: String, content: String, sentAt: String) {
     val bg = when (level.uppercase()) {
-        "WARN" -> Color(0xFFFFF7E6)
-        "URGENT" -> Color(0xFFFFF1F0)
-        else -> Color(0xFFF0F5FF)
+        "WARN" -> TagOrange.bg
+        "URGENT" -> TagRed.bg
+        else -> TagBlue.bg
     }
     val fg = when (level.uppercase()) {
-        "WARN" -> Color(0xFFD46B08)
-        "URGENT" -> Color(0xFFCF1322)
-        else -> Color(0xFF0958D9)
+        "WARN" -> TagOrange.fg
+        "URGENT" -> TagRed.fg
+        else -> TagBlue.fg
     }
     Column(Modifier.fillMaxWidth().background(bg, RoundedCornerShape(10.dp)).padding(12.dp)) {
         Text("$title · $sentAt", fontSize = 13.sp, color = fg)
-        Text(content, fontSize = 13.sp, color = Color(0xFF333333), modifier = Modifier.padding(top = 4.dp))
+        Text(content, fontSize = 13.sp, color = Ink, modifier = Modifier.padding(top = 4.dp))
     }
 }

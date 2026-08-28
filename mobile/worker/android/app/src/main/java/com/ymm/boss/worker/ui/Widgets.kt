@@ -188,8 +188,8 @@ fun Empty(text: String = "暂无数据") {
 // 行内动作按钮(白底蓝边/蓝实底,卡片内快捷操作用)
 @Composable
 fun ActionBtn(text: String, modifier: Modifier = Modifier, primary: Boolean = false, onClick: () -> Unit) {
-    val bg = if (primary) Color(0xFF086CF5) else Color.White
-    val fg = if (primary) Color.White else Color(0xFF086CF5)
+    val bg = if (primary) Primary else Color.White
+    val fg = if (primary) Color.White else Primary
     Text(text, fontSize = 13.sp, color = fg,
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))

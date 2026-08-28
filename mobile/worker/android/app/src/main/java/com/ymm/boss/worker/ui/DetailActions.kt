@@ -17,10 +17,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.worker.ui.theme.Line
+import com.ymm.boss.worker.ui.theme.Muted
+import com.ymm.boss.worker.ui.theme.Panel
+import com.ymm.boss.worker.ui.theme.Primary
+import com.ymm.boss.worker.ui.theme.Success
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -51,23 +55,23 @@ internal fun nodeStateOf(result: String): NodeState = when (result) {
 @Composable
 internal fun NodeDot(state: NodeState, num: Int) {
     when (state) {
-        NodeState.DONE -> Box(Modifier.size(14.dp).background(Color(0xFF0AA847), CircleShape),
+        NodeState.DONE -> Box(Modifier.size(14.dp).background(Success, CircleShape),
             contentAlignment = Alignment.Center) {
-            Text("✓", color = Color.White, fontSize = 10.sp, lineHeight = 10.sp,
+            Text("✓", color = Panel, fontSize = 10.sp, lineHeight = 10.sp,
                 fontWeight = FontWeight.Bold)
         }
-        NodeState.DOING -> Box(Modifier.size(20.dp).background(Color(0x33086CF5), CircleShape),
+        NodeState.DOING -> Box(Modifier.size(20.dp).background(Primary.copy(alpha = 0.2f), CircleShape),
             contentAlignment = Alignment.Center) {
-            Box(Modifier.size(14.dp).background(Color(0xFF086CF5), CircleShape),
+            Box(Modifier.size(14.dp).background(Primary, CircleShape),
                 contentAlignment = Alignment.Center) {
-                Text("$num", color = Color.White, fontSize = 10.sp, lineHeight = 10.sp,
+                Text("$num", color = Panel, fontSize = 10.sp, lineHeight = 10.sp,
                     fontWeight = FontWeight.Bold)
             }
         }
-        NodeState.PENDING -> Box(Modifier.size(14.dp).background(Color.White, CircleShape)
-            .border(1.dp, Color(0xFFAEB4BE), CircleShape),
+        NodeState.PENDING -> Box(Modifier.size(14.dp).background(Panel, CircleShape)
+            .border(1.dp, Line, CircleShape),
             contentAlignment = Alignment.Center) {
-            Text("$num", color = Color(0xFFAEB4BE), fontSize = 10.sp, lineHeight = 10.sp)
+            Text("$num", color = Muted, fontSize = 10.sp, lineHeight = 10.sp)
         }
     }
 }
@@ -75,27 +79,27 @@ internal fun NodeDot(state: NodeState, num: Int) {
 // 时间轴连接线(DONE→DONE 绿,其他段灰;2dp 实线)
 @Composable
 internal fun TimelineConnector(green: Boolean, modifier: Modifier) {
-    val color = if (green) Color(0xFF0AA847) else Color(0xFFE7EAF0)
+    val color = if (green) Success else Line
     Box(modifier = modifier.height(2.dp).padding(horizontal = 2.dp).background(color))
 }
 
-// 底栏主按钮(蓝实底 #086CF5)
+// 底栏主按钮(蓝实底 Primary)
 @Composable
 internal fun PrimaryAction(text: String, modifier: Modifier, onClick: () -> Unit) {
-    Box(modifier = modifier.background(Color(0xFF086CF5), RoundedCornerShape(10.dp))
+    Box(modifier = modifier.background(Primary, RoundedCornerShape(10.dp))
         .clickable { onClick() }.padding(vertical = 12.dp),
         contentAlignment = Alignment.Center) {
-        Text(text, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, color = Panel, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
 // 底栏描边次按钮(白底蓝边)
 @Composable
 internal fun OutlinedAction(text: String, modifier: Modifier, onClick: () -> Unit) {
-    Box(modifier = modifier.background(Color.White, RoundedCornerShape(10.dp))
-        .border(1.dp, Color(0xFF086CF5), RoundedCornerShape(10.dp))
+    Box(modifier = modifier.background(Panel, RoundedCornerShape(10.dp))
+        .border(1.dp, Primary, RoundedCornerShape(10.dp))
         .clickable { onClick() }.padding(vertical = 12.dp),
         contentAlignment = Alignment.Center) {
-        Text(text, color = Color(0xFF086CF5), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text(text, color = Primary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }

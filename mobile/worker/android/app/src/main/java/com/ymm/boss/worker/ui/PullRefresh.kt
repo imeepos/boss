@@ -23,7 +23,7 @@ private const val MIN_INDICATOR_MS = 500L
 /**
  * 页面级下拉刷新容器:
  * - onRefresh 回调自增 nav.refreshTick,触发本页面 loadOnce 重拉
- * - 指示器居中顶部,配色取主蓝 Primary(#086CF5)
+ * - 指示器居中顶部,配色取主蓝 Primary
  *
  * 要求内容是 LazyColumn / LazyList(内置 NestedScroll),否则 Material3
  * PullToRefreshBox 抓不到 nested scroll 事件,手势不响应。
