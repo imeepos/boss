@@ -12,7 +12,7 @@ TOKEN=$(curl -sf -m 10 "$API/auth/login" -X POST -H 'Content-Type: application/j
 fails=0
 for p in admin user worker open; do
   out=$(curl -sf -m 30 "$API/docs/openapi?portal=$p" -H "Authorization: Bearer $TOKEN")
-  [ "$(printf '%s' "$out" | head -c 12)" = '{"code":0,' ] || { echo "FAIL $p envelope"; fails=$((fails+1)); continue; }
+  [ "$(printf '%s' "$out" | head -c 10)" = '{"code":0,' ] || { echo "FAIL $p envelope"; fails=$((fails+1)); continue; }
   paths=$(printf '%s' "$out" | grep -o '"path[a-z]*":' | wc -l | tr -d ' ')
   dang=$(printf '%s' "$out" | grep -o '"\$ref":"\./' | wc -l | tr -d ' ')
   [ "$dang" = "0" ] || { echo "FAIL $p 残余外部 \$ref=$dang"; fails=$((fails+1)); }
