@@ -87,6 +87,9 @@ func orderGetHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if !requireOrderInScope(c, a, o) {
+			return
+		}
 		_, logs, err := a.Order.Track(c.Request.Context(), o.ID)
 		if err != nil {
 			respondErr(c, err)
