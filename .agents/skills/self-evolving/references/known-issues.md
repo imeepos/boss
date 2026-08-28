@@ -364,3 +364,6 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状: 脚本 curl POST 返回 HTTP 200 但提醒中心没入库,且无任何报错输出。
   原因: 本仓 API 错误信封(如 refType 白名单外 42200)同样走 HTTP 200;只查 http_code 等于静默吞错。
   修法: 判成败用信封 code==0 或 ok:true;失败把信封原文打进日志(2026-08-28 slo-cruise emit_alert 修复)。
+- 症状: 重跑 gen-bossctl-routes.mjs 后 diff 混入 replacements/license/points-exchange-offers 等与任务无关的路由行。
+  原因: main 上存在 openapi 已更新但 routes_*.go 未同步的存量漂移(他人欠债),全量生成工具会一并写回。
+  修法: 确认漂移属他人未同步(git show HEAD 对 openapi 与 routes 逐条比对)后,git checkout 还原生成文件,再手工只加本任务路由行(2026-09-05 stripe-config-backend 实例)。

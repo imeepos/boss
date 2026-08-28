@@ -1258,3 +1258,9 @@
 - 哪个坑浪费了最多时间? 出包归档文档又直接编辑到主树(R8 后第二次)——worktree 合并完成后的"文档收尾"路径默认用了主树绝对路径,而 discipline 要求一切变更走 worktree。当场恢复+worktree 重做。教训:任何 write/edit 前先核文件路径前缀是 /Users/imeepos/ext512/ymm-001/boss(主树)还是 /wt-*。
 - skill 有没有提前预警? 红线 #10(worktree 路径)有警告场景(commit 落 main),但"非代码文档改主树"漏预警——其实同源。
 - 重来一次? 写文件前 grep 路径是否含 /wt-user-android;或统一"文档也走 worktree"的习惯。
+
+## 2026-09-05 Stripe 配置后端化 + 师傅端现场收款
+
+- 哪个坑浪费了最多时间? ①编辑 billing.yaml 新 path 时把原 /payments 的 get 缩进破坏，导致 gen-bossctl-routes.mjs summary 错位、路由丢失；②edit 的 old_string 多带相邻 ApplyTag 尾行，误删后才靠 diff 补回；③全量生成路由带出 main 存量漂移；④Android worktree 缺 local.properties 且未设置 JAVA_HOME。
+- skill 有没有提前预警? 红线 #4 提醒了 edit 对称问题，但没有覆盖 YAML 结构校验、生成器暴露存量漂移、Android worktree 构建前置检查。
+- 重来一次? 多行 edit 后立即 grep 被删符号；YAML 改动后立即运行生成器审查 diff；发现他人存量漂移时还原生成文件并手工增量；Android 构建前检查 local.properties 并设置 JAVA_HOME=/opt/homebrew/opt/openjdk@17。

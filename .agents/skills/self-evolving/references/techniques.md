@@ -556,3 +556,6 @@ SQL
 - cdp-admin-capture 自定义端口 dev server:必须显式 `--base http://localhost:<port>`(默认 5173);否则采集落在不存在的端口,tokens/交互断言全空,像"代码没生效"。断言输出里先带 location.pathname/url 字段自证页面正确,再信后续数值。
 - 冷启耗时测量(Android): `adb shell am start -W -S -n <pkg>/.MainActivity` 读 TotalTime;若 TotalTime=0 且 topResumedActivity 是 GrantPermissionsActivity,是运行时权限弹窗顶替了前台 Activity(启动 intent 被投递给顶层实例),先 `pm grant <pkg> <perm>` 再测(2026-08-27 user Android D10 实测)。
 - Release 清单物证: `aapt2 dump` 对二进制 manifest 有时静默无输出,改用 build-tools 内 `aapt dump xmltree <apk> AndroidManifest.xml`(v1)可读(2026-08-27 cleartext 收敛物证实例)。
+- 编辑 openapi yaml 新增 path 块后,跑一次依赖它的生成脚本(gen-bossctl-routes.mjs)并肉眼审查输出 diff——YAML 缩进错(如把 get 顶成 2 空格)会表现为生成器输出 summary 错位/路由丢失,一次暴露结构破坏。
+- Android 构建前置检查(worktree 场景): local.properties 是 untracked 不进 worktree,从主树 cp;JAVA_HOME 用 /opt/homebrew/opt/openjdk@17;缺任一都只有 "SDK location not found / Unable to locate Java Runtime",与代码无关却最耗定位(2026-09-05 实例)。
+- apitypes 信封 code 与 portalWorkerDo 的 _status 反序列化后是 int(非 float64),测试断言数值写 asNum(v) 兼容类型开关,别假定 JSON 数字全是 float64。
