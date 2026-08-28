@@ -15,10 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,7 @@ import com.ymm.boss.user.api.ProfileApi
 import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Palette
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /** 级联选点结果:path 存 user_addresses.address_path,community 自动填街道/小区名。 */
@@ -75,17 +77,20 @@ internal fun AddressRegionPickerSheet(
     // 加载/错误占位面沿用上一帧列表高度(下限 200dp),见下方内容区注释。
     var paneHeight by remember { mutableStateOf(200.dp) }
 
-    // 返回键语义:M3 弹窗层统一把返回键/点遮罩路由进 onDismissRequest,内容层
-    // BackHandler 注册在 Activity 的 dispatcher 上,弹窗聚焦期间收不到事件(真机实测)。
-    // 上滑关闭则先 settle 到 Hidden 再回调,据此区分:Hidden=上滑,链非空也真关闭;
-    // Expanded 且链非空=返回键(或点遮罩,M3 无公开信号区分),回上一级;链空真关闭。
+    // 关闭请求三路合流(真机日志+1.4.0 反编译实证):返回键与上滑都会先把面板
+    // hide 到 Hidden 再回调 onDismissRequest;点遮罩不 hide,到达时仍 Expanded。
+    // Hidden 且链非空统一按「返回一级」处理:弹尾节点+show() 把面板弹回上一级;
+    // 链空或 Expanded 才真关闭。代价:层2+ 上滑关闭变为回上一级(逐级退出),
+    // 换来返回键语义确定正确,且深层操作不会误触整层全关。
+    val scope = rememberCoroutineScope()
     ModalBottomSheet(
         onDismissRequest = {
-            if (sheetState.currentValue == SheetValue.Hidden || chain.isEmpty()) {
-                onDismiss()
-            } else {
+            if (chain.isNotEmpty() && sheetState.currentValue == SheetValue.Hidden) {
                 chain.removeAt(chain.size - 1)
                 filter = ""
+                scope.launch { sheetState.show() }
+            } else {
+                onDismiss()
             }
         },
         sheetState = sheetState,
