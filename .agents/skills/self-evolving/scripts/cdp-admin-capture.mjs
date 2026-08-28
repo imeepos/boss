@@ -29,7 +29,8 @@ function parseArgs(argv) {
   for (let i = 1; i < argv.length; i += 2) {
     const key = argv[i].replace(/^--/, '')
     const val = argv[i + 1]
-    if (key === 'eval') args.evals.push(val) // 可重复:与普通旗标同样消耗 flag+value 两格
+    if (key === 'eval') { args.evals.push(val); i += 1; continue } // 可重复:消耗 flag+value 两格
+    if (key === 'no-proxy') { args['no-proxy'] = true; continue } // 布尔旗标:透传给 cdp-capture
     else args[key] = /^\d+$/.test(val) ? Number(val) : val
   }
   if (!args.out) {
@@ -73,6 +74,7 @@ async function main() {
   if (args.width) passthrough.push('--width', String(args.width))
   if (args.height) passthrough.push('--height', String(args.height))
   if (args['user-data-dir']) passthrough.push('--user-data-dir', args['user-data-dir'])
+  if (args['no-proxy']) passthrough.push('--no-proxy')
   const child = spawn(process.execPath, [script, `${args.base}/login`, args.out, '--eval', seed, ...passthrough], { stdio: 'inherit' })
   const code = await new Promise((res) => child.on('exit', res))
   process.exit(code ?? 1)

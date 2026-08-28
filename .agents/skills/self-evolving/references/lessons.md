@@ -429,3 +429,9 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当会议型 subagent 成员首轮/中途 failed 且无 closing message 时,修复是重催消息明确三点:纯文字作答、禁调任何工具、限字数(如600字)——老周连续两次失败后按此一次成功;成员自行大量读文件/调接口是会话失败头号诱因,与"审查型成员给阅读预算"同根(2026-08-28 权限评审会 4/5 首轮失败实证)。
 - 当要断言"远端是否已有某修复"时,修复是比对 gitea/main 的文件 blob 或 git show 远端内容,而不是 grep refs/remotes/gitea 找分支名——合并后功能分支按协议删除,查分支必误报"未推送"(2026-08-28 obs2 收口向主持人误报 push 缺失,被回执纠正)。
 - 当代码改完还要做长周期真机验证时,修复是先 git commit 存档再上设备——验证中途收尾进程会按协议把"未提交的 worktree"提交+合并+清理,目录随时可能消失;本例侥幸被收尾 commit 原样带走,重来就是重写(2026-08-28 obs2 实例,是"验证通过立即 commit"红线的前移变体:改完即 commit,别等验证)。
+- 当 SQL 列是 NOT NULL DEFAULT '' 时,插入侧不要包 NULLIF(x,''):NULLIF 把空串转 NULL 直接 23502;NULLIF 只用于真正可空列(如 bill_id NULLIF(0))。
+- 当后端在 handler 里调 domain 且 domain 内部修改入参副本字段(如兜底生成 payNo)时,handler 拿不到新值:让 domain 返回回执结构体带该字段,或 handler 层先生成。
+- 当 102 部署验收(真环境)时,先 bossctl 打一发只读端点确认服务健康再跑迁移类操作;真实验证会暴露 mock 层永远拦不住的 SQL NULL/约束类缺陷,验收预算不能省。
+- 当 docker build 走远程 builder(102-remote)时,先查 .dockerignore 是否排除本仓大型编译产物(web/desktop/target 等),否则上下文传输+写入层会撑爆远端盘。
+- (2026-08-29 郑稳) ModalBottomSheet 表单 IME 开启时 sheet 按聚焦字段上移平移(实测~111px),陈旧坐标的 tap 会打在搜狗候选条上——把拼音组字连同候选词一起提交进**错误字段**(字段出现"bar be"=键入bar+候选be,即此坑签名)。铁律:每次焦点变化/键盘开合后必须重新 uiautomator dump 取坐标再 tap;见到"值=键入串+空格+意外词"先查候选条误触,别判产品缺陷。
+- (2026-08-29 郑稳) 断言"打字过程浮层保持展开":比对 dumpsys 弹出式窗口的 **Window hash**——同一 hash 贯穿按键全程=浮层从未关闭(比 frame 有无更硬);注意光标手柄窗(62×75px)也计为弹出式窗口,frame 尺寸按 192px/行折算行数区分,别被 refs 计数假阳性骗。

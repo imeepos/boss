@@ -1327,3 +1327,20 @@
 - 重来一次? 顺序应为:改完代码立刻 commit(本例源码在未提交状态下被收尾进程连 worktree 一起清掉,侥幸被收尾 commit 原样带走)→ 构建装机 → 断言全部走"菜单关闭态注入+静置 dump 重试+行为判别"模板。
 - 另一个误报:向主持人上报"协议① push gitea 未执行",实际收尾进程已推——我 grep refs/remotes/gitea 找分支名,而分支合并后已删;应比对 gitea/main 的文件 blob。已喂 lessons。
 - 做得对的:裁定逐条映射到代码注释与测试矩阵;测试零数据落库(不点保存);device 弹窗(全局搜索/安全中心)用 force-stop 处理且未授予任何权限;main 上出现同题并行 commit 时先 git show 比对内容再行动,没重建 worktree 制造重复提交。
+
+## 2026-08-28 柜面现金收款(会议主持+实施+102部署验收)
+- 最耗时坑:102 /srv/fast 100% 满(构建上下文含 web/desktop tauri target 1.9G + 已删除文件句柄未释放),docker build/builder prune 全部超时;后自行恢复(并行会话重启 docker)。已补 .dockerignore 排除清单。
+- 最大价值时刻:102 真实验证暴露 3 个单测没拦住的缺陷(NULLIF 空串转 NULL 违反 NOT NULL、退款锁行 Scan 不适配可空 bill_id 的 000068 存量缺陷、payNo 副本赋值不回传)。门禁绿≠功能对,上线前真实端到端验收不可省。
+- 小坑:域内 `INSERT ... NULLIF($7,'')` 对 NOT NULL DEFAULT '' 列是画蛇添足——空串本合法,NULLIF 转成 NULL 反而 23502。
+- 流程坑:ff-only 失败后先 worktree remove 再 branch -d 报 not fully merged——顺序应反过来;commit 因分支 ref 在而安全,重建 worktree 即可恢复(红线9变体)。
+
+## 2026-08-29 安栋·obs2 PrimaryEditable 真机实施
+- 最耗时坑:MIUI dumpsys 窗口名是「弹出式窗口」,grep "Popup" 假阴性浪费多轮;uiautomator 树完全看不到浮层行文本,最终以 mFrame 尺寸判别(菜单 984×192/行,手柄 62×75)。
+- skill 预警了残缺树/静置重试,但没预警窗口命名,已补 android.md 第9条。
+- 重来一次:第一轮就用 frame 判别,不要靠窗口名 grep;坐标每步重取(sheet scroll 回弹+IME 遮挡双重漂移)。
+- 产品发现移交主持人:空输入 6 行全量层上翻覆盖字段+tap-through(DOWN开层UP点行,一击直接选Commonwealth×2复现);菜单行 onChange 保留旧光标偏移(光标不停末尾)。
+
+## 2026-08-29 郑稳·obs2 方案B验收重建(6断言完整重测)
+- 最耗时坑:坐标漂移三重奏——IME 开合 sheet 平移 111px、聚焦字段不同平移量不同、搜狗候选条恰在平移后坐标带上。首轮 A5 探测 tap 打到候选条,把"bar+候选be"提交进门牌号,差点误判焦点/浮层行为;按"每次焦点变化重新 dump"重跑后 3 步全中。
+- skill 预警了残缺树/静置重试/键码注入,但没预警候选条坐标陷阱与"同窗 hash 判浮层存活",已喂 lessons。
+- 做得对的:zzz 误打成 xxx(52=X非Z)后识别出与断言等效继续用,没浪费一轮;git -S 溯源光标问题到 56c7b9db 实锤"既有实现";报告落盘后立刻 commit(防前两会话式丢失);数据零改动+App退后台+网络复核。

@@ -22,8 +22,10 @@ func (s *PGStore) RefundPayment(ctx context.Context, paymentID int64, reason str
 	}
 	defer tx.Rollback(ctx)
 	var billID int64
+	// 000068 起 bill_id 可空(充值类流水),必须 COALESCE 成 0 再 Scan(int64),
+	// 否则充值退款即 "cannot scan NULL into *int64"(102 验收暴露)。
 	err = tx.QueryRow(ctx,
-		`SELECT bill_id FROM payments WHERE id = $1 FOR UPDATE`, paymentID).Scan(&billID)
+		`SELECT COALESCE(bill_id, 0) FROM payments WHERE id = $1 FOR UPDATE`, paymentID).Scan(&billID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
