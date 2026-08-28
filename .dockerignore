@@ -13,6 +13,18 @@ scripts/
 designs/
 mobile/
 web/h5/
+# web/desktop 为 tauri/rust 工程,target 产物数 GB;镜像只出 Go 二进制,
+# 严禁进构建上下文(102 曾因上下文含 target 撑爆 /srv/fast)。
+web/desktop/
+web/admin/node_modules/
+web/user/node_modules/
+web/worker/node_modules/
+meeting-minutes/
+.agents/
+compose-bundles/
+release-platform/
+*.png
+*.apk
 web/admin/.vite/
 web/admin/dist/
 web/admin/playwright-report/
