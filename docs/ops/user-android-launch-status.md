@@ -10,8 +10,8 @@
 |---|---|---|
 | 独立 release keystore(不入库)+ apksigner verify | ✅ | adopted note 2026-08-27-user-android-release-signing.md;验证脚本 `scripts/user-android-release-sign.sh`;release 指纹 ≠ debug |
 | versionCode/versionName 单调递增表(首发 2/0.1.0) | ✅ | 同上(表入 note);历史内测占 1,首发定 2 防降级 |
-| cleartext 收敛(release 白名单内网 IP) | ✅ | release 包 aapt 物证:usesCleartextTraffic 0、networkSecurityConfig 引用、无背景定位 |
-| POST_NOTIFICATIONS 立项(声明+运行时弹窗+用例) | ✅ | Manifest + MainActivity(API33+)+ connected 断言;模拟器实测(真机待测仍在 checklist 注明) |
+| POST_NOTIFICATIONS 立项(声明+运行时弹窗+用例) | ✅ | Manifest + MainActivity(API33+)+ connected 断言;API 35 模拟器三态实测(允许 granted=true / 拒绝 granted=false 不崩溃,证据 docs/notes/user-android-evidence/2026-08-27/notification-permission.md) |
+| cleartext 收敛 + https 硬门槛(release) | ✅ | release 走 https://192.168.0.102(反代),BuildConfig 实证;白名单移除内网明文,仅留 debug 联调/模拟器回环(commit b34a55b2) |
 | 定位场景确认(无背景定位) | ✅ | 仅前台 FINE/COARSE,无 ACCESS_BACKGROUND_LOCATION |
 
 ## 二、功能补齐(D1-D4,阿澈+明远)
