@@ -58,7 +58,7 @@ private const val PAGE_SIZE = 10
 
 /**
  * 家庭地址管理:顶部 48dp 蓝带 + 右上"新增"→ 编辑弹窗;
- * 列表卡(默认地址主标 + 次行联系/详细 + 编辑/删除操作);
+ * 列表卡(默认地址主标 + 区域副行(市·Barangay,lookup 反查) + 次行联系/详细 + 编辑/删除操作);
  * 下拉刷新由全局 PageRefresh 驱动(nav.refreshTick);上拉分页 pageSize=10。
  */
 @Composable
@@ -108,6 +108,31 @@ fun AddressScreen(nav: Nav) {
         if (nearEnd && hasMore && !loading) load(page + 1, replace = false)
     }
 
+    // 卡片副行:批量精确反查 path→「市 · Barangay」。端点未就绪/失败时跳过,
+    // 不阻塞列表主流程;留 [addr-lookup] FAILED 可 grep 日志,禁止静默吞掉。
+    var regionSubs by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    LaunchedEffect(items) {
+        val paths = items.mapNotNull { it.optString("addressPath").takeIf { p -> p.isNotBlank() } }
+            .filter { it !in regionSubs }.distinct()
+        if (paths.isEmpty()) return@LaunchedEffect
+        try {
+            val subs = mutableMapOf<String, String>()
+            ProfileApi.lookupAddressTree(paths).optJSONArray("items").toObjectList().forEach { item ->
+                val node = item.optJSONObject("node") ?: JSONObject()
+                val ancestors = item.optJSONArray("ancestors").toObjectList()
+                val city = ancestors.getOrNull(1)?.optString("name").orEmpty()
+                    .ifBlank { ancestors.lastOrNull()?.optString("name").orEmpty() }
+                val sub = listOf(city, node.optString("name")).filter { it.isNotBlank() }.joinToString(" · ")
+                if (sub.isNotBlank()) subs[item.optString("path")] = sub
+            }
+            regionSubs = regionSubs + subs
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.w("[addr-lookup]", "LOOKUP FAILED paths=$paths err=${e.message}")
+        }
+    }
+
     Column(Modifier.fillMaxSize()) {
         TopBar("家庭地址管理", onBack = { nav.pop() }, action = "新增", onAction = {
             editor = EditorTarget(null)
@@ -117,6 +142,7 @@ fun AddressScreen(nav: Nav) {
             if (items.isEmpty() && err.isEmpty() && !loading) item { EmptyState("暂无地址,点右上角新增") }
             items(items, key = { it.optString("addressId") }) { a ->
                 AddressCard(a,
+                    regionSub = regionSubs[a.optString("addressPath")].orEmpty(),
                     onEdit = { editor = EditorTarget(a) },
                     onDelete = { pendingDelete = a },
                 )
@@ -179,7 +205,7 @@ fun AddressScreen(nav: Nav) {
 private data class EditorTarget(val existing: JSONObject?)
 
 @Composable
-private fun AddressCard(a: JSONObject, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun AddressCard(a: JSONObject, regionSub: String, onEdit: () -> Unit, onDelete: () -> Unit) {
     val isDefault = a.optBoolean("isDefault")
     val label = a.optString("label").ifBlank { "未命名地址" }
     Row(
@@ -211,6 +237,10 @@ private fun AddressCard(a: JSONObject, onEdit: () -> Unit, onDelete: () -> Unit)
                 Tag(if (isDefault) "默认" else "备用", if (isDefault) Palette.success else Palette.muted)
             }
             Spacer(Modifier.height(4.dp))
+            // 区域副行:人读「市 · Barangay」,替代裸 ltree path;反查未命中时不占位。
+            if (regionSub.isNotBlank()) {
+                Text(regionSub, fontSize = 12.5.sp, lineHeight = 16.sp, color = Palette.muted, maxLines = 1)
+            }
             Text(
                 "${a.optString("contact")} · ${a.optString("phoneMasked")}",
                 fontSize = 12.5.sp, lineHeight = 16.sp, color = Palette.muted,
