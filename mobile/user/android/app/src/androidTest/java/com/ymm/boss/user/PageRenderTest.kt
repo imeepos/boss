@@ -1,5 +1,6 @@
 package com.ymm.boss.user
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.ForcedSize
@@ -16,6 +17,7 @@ import com.ymm.boss.user.page.OrderConfirmScreen
 import com.ymm.boss.user.page.ProductScreen
 import com.ymm.boss.user.page.ProductsScreen
 import com.ymm.boss.user.page.ReceiptScreen
+import com.ymm.boss.user.ui.BottomTabBar
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Route
 import org.junit.Rule
@@ -107,5 +109,13 @@ class PageRenderTest {
         compose.setContent { ComplaintScreen(Nav(Route.Complaint)) }
         compose.onNodeWithText("投诉与建议").assertIsDisplayed()
         compose.onNodeWithText("立即投诉").assertIsDisplayed()
+    }
+
+    @Test
+    fun ordersTabLabelIsDingDanPerNavJs() {
+        // BUG-01:orders tab 文案按 docs/user/nav.js 契约为「订单」(曾误绑为「账单」)。
+        compose.setContent { BottomTabBar(Nav(Route.Orders), "orders") {} }
+        compose.onNodeWithText("订单").assertIsDisplayed()
+        compose.onNodeWithText("账单").assertDoesNotExist()
     }
 }

@@ -62,9 +62,9 @@ class Nav(initial: Route) {
     fun resetTo(route: Route) { stack.clear(); stack.add(route) }
 
     companion object {
-        /** 底部 tab:与 docs/user/nav.js 一致(首页/服务/账单/我的)。 */
+        /** 底部 tab:与 docs/user/nav.js 一致(首页/服务/订单/我的),orders tab 指向 Route.Orders 订单列表。 */
         val TABS = listOf(
-            "home" to "首页", "products" to "服务", "orders" to "账单", "profile" to "我的",
+            "home" to "首页", "products" to "服务", "orders" to "订单", "profile" to "我的",
         )
 
         /** tab 图标:选中实心、未选中描边(material-icons-core 随 material3 自带)。 */
