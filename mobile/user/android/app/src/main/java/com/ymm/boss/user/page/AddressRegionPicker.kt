@@ -28,10 +28,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,6 +76,8 @@ internal fun AddressRegionPickerSheet(
     var err by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf("") }
     var searchVisible by remember { mutableStateOf(false) }
+    // 错误重试触发器:reloadTick 变化即整链重载(网络瞬断后不必关弹层重开)。
+    var reloadTick by remember { mutableIntStateOf(0) }
 
     // 系统返回=回上一级而非整层关闭;链空时不拦截,交还弹层自身关闭。
     // 不清 filter 会残留上一层的过滤词,回到下层时列表被误过滤。
@@ -82,7 +86,7 @@ internal fun AddressRegionPickerSheet(
         filter = ""
     }
 
-    LaunchedEffect(chain.size) { loadChildren(chain, setLoading = { loading = it }, setErr = { err = it }) { children = it } }
+    LaunchedEffect(chain.size, reloadTick) { loadChildren(chain, setLoading = { loading = it }, setErr = { err = it }) { children = it } }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = Palette.panel) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
@@ -124,7 +128,11 @@ internal fun AddressRegionPickerSheet(
                     loading -> Box(Modifier.align(Alignment.Center)) {
                         CircularProgressIndicator(color = Palette.primary, modifier = Modifier.size(28.dp))
                     }
-                    err.isNotBlank() -> EmptyState(err, modifier = Modifier.align(Alignment.Center))
+                    err.isNotBlank() -> Column(Modifier.align(Alignment.Center)) {
+                        EmptyState(err)
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { reloadTick++ }) { Text("重试") }
+                    }
                     else -> {
                         val shown = if (level >= 3 && filter.isNotBlank()) {
                             children.filter { it.optString("name").contains(filter, ignoreCase = true) }
