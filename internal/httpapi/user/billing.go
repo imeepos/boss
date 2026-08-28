@@ -14,6 +14,7 @@ func registerPortalBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/bills", portalListBills(a))
 	g.GET("/bills/:billNo", portalBillDetail(a))
 	g.GET("/payments", portalListPayments(a))
+	g.GET("/payments/methods", portalPayMethods(a)) // 2026-09-05:支付方式后端下发(stripe 可用才含银行卡)
 	g.POST("/payments", portalCreatePayment(a))
 	g.GET("/payments/:payNo/receipt", portalReceipt(a))
 	g.GET("/payments/:payNo/receipt.pdf", portalReceiptPdf(a))

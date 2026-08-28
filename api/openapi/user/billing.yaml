@@ -56,7 +56,7 @@ paths:
               properties:
                 billNo: { type: string }
                 amount: { type: number }
-                payMethod: { type: string, enum: [wechat, alipay, card, cash] }
+                payMethod: { type: string, enum: [wechat, alipay, card, cash], description: 'card 需 Stripe 通道已配置;cash=线下收款;offline 为师傅端现场收款专用(worker charge)' }
                 couponId: { type: string, description: 可选抵扣券,核销与落账同事务,实收=amount-抵扣 }
                 buyMonths: { type: integer, description: 预缴实购月数,>0 时按赠送阶梯规则落痕并返回 giftMonths }
                 productId: { type: integer, format: int64, description: 赠送规则匹配产品范围,0=全店规则 }
@@ -92,6 +92,28 @@ paths:
                   items:
                     type: array
                     items: { $ref: './schemas.yaml#/components/schemas/PaymentRecord' }
+
+  /payments/methods:
+    get:
+      tags: [Billing]
+      summary: 支付方式下发(stripe 通道已配置才含银行卡,未配置默认线下收款)
+      operationId: listPayMethods
+      responses:
+        '200':
+          description: 可用支付方式
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  default: { type: string, enum: [card, cash], description: 默认方式:stripe 可用=card,否则 cash=线下收款 }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key: { type: string, enum: [wechat, alipay, card, cash] }
+                        label: { type: string }
 
   /payments/stripe/intent:
     post:
