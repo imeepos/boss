@@ -110,3 +110,9 @@
 
 - 造数治理: 测试积分/流水/券已还原(客户 213 原状,既有 C-DEMO-001 券保留);测试模板 6 已 DISABLE(审计留痕);发布记录 6 已 ROLLED_BACK,均不影响生产判定。
 - 契约/D-7 项: /points/exchange-offers 契约入 loy.yaml,check-contract-sync 通过。
+
+## 十一、UpdateApi 发布/回滚链加固验证(2026-08-27 续)
+
+- 回滚门控:ROLLED_BACK 后 /client/apk/:id 拒发(40400 JSON 50B),PUBLISHED 恢复 200 全量包——服务端正确;
+- 客户端健壮:UpdateDialog 下载走系统浏览器(ACTION_VIEW),坏体不进安装器,无「解析包失败」风险;P2 改进项(in-app 下载器+40400 处理)留档;
+- 服务端下发包可装可跑:200 包 23,727,225B 于模拟器安装/启动正常(此前轮已验)。
