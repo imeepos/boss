@@ -65,7 +65,7 @@ func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (Payme
 	var id int64
 	err = tx.QueryRow(ctx, `
 		INSERT INTO payments(pay_no, bill_id, customer_id, amount, method, status, site_name, counter_code, operator_name)
-		VALUES($1,NULLIF($2,0),NULLIF($3,0),$4,$5,$6,NULLIF($7,''),NULLIF($8,''),NULLIF($9,'')) RETURNING id`,
+		VALUES($1,NULLIF($2,0),NULLIF($3,0),$4,$5,$6,$7,$8,$9) RETURNING id`,
 		p.PayNo, p.BillID, p.CustomerID, p.Amount, p.Method, p.Status,
 		p.SiteName, p.CounterCode, p.OperatorName).Scan(&id)
 	if err != nil {
@@ -99,7 +99,7 @@ func (s *PGStore) RecordPaymentWithCoupon(ctx context.Context, p Payment) (Payme
 	if err := tx.Commit(ctx); err != nil {
 		return PaymentReceipt{}, fmt.Errorf("billing: commit payment tx: %w", err)
 	}
-	return PaymentReceipt{PaymentID: id, Amount: p.Amount - float64(deducted)/100, DeductedCents: deducted}, nil
+	return PaymentReceipt{PaymentID: id, PayNo: p.PayNo, Amount: p.Amount - float64(deducted)/100, DeductedCents: deducted}, nil
 }
 
 // redeemCoupon 券核销:解析缴费归属客户(账单兜底),单位 元→分 后调注入核销器。

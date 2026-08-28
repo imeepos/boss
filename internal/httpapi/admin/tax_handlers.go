@@ -64,18 +64,20 @@ func recordPayment(a *app.Application) gin.HandlerFunc {
 		if !enforceCashLimit(c, a, p) {
 			return
 		}
-		id, err := a.Billing.RecordPayment(c.Request.Context(), p)
+		// 用带券回执(券码为空即纯收款):回执带兜底生成后的 payNo,响应可回显。
+		receipt, err := a.Billing.RecordPaymentWithCoupon(c.Request.Context(), p)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
+		p.PayNo = receipt.PayNo
 		resumeCustomerAfterPay(c, a, p)
 		// 审计补金额/方式/客户(纪要待定项③,郑凯:追责四问必须能答全)。
 		httpx.RecordAudit(a, c, "payment.record", "payment", p.PayNo, gin.H{
 			"amount": p.Amount, "method": p.Method, "customerId": p.CustomerID,
 			"siteName": p.SiteName, "counterCode": p.CounterCode, "operator": p.OperatorName,
 		})
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "payNo": p.PayNo})
+		respond(c, apitypes.CodeOK, gin.H{"id": receipt.PaymentID, "payNo": receipt.PayNo})
 	}
 }
 

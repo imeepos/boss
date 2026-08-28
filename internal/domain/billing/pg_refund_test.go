@@ -13,7 +13,7 @@ import (
 func expectRefundTx(t *testing.T, m pgxmock.PgxPoolIface, paymentID, billID int64) {
 	t.Helper()
 	m.ExpectBegin()
-	m.ExpectQuery(`SELECT bill_id FROM payments WHERE id = \$1 FOR UPDATE`).WithArgs(paymentID).
+	m.ExpectQuery(`SELECT COALESCE\(bill_id, 0\) FROM payments WHERE id = \$1 FOR UPDATE`).WithArgs(paymentID).
 		WillReturnRows(m.NewRows([]string{"bill_id"}).AddRow(billID))
 	m.ExpectExec(`UPDATE payments SET status = 'REFUNDED'`).WithArgs(paymentID, "客户申请").
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))

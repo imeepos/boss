@@ -80,6 +80,7 @@ type DailyClosingResult struct {
 // PaymentReceipt 落账回执(含券抵扣明细)。
 type PaymentReceipt struct {
 	PaymentID     int64   `json:"paymentId"`
+	PayNo         string  `json:"payNo"`         // 落账流水号(调用方未传时为兜底生成值)
 	Amount        float64 `json:"amount"`        // 实收(元)
 	DeductedCents int64   `json:"deductedCents"` // 券抵扣(分),0=无券
 }
