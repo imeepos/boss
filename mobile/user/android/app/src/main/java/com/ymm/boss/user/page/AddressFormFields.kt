@@ -84,7 +84,7 @@ internal fun CommunityField(value: String, options: List<String>, onChange: (Str
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 }
             },
-            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryEditable)
                 .padding(bottom = 8.dp),
         )
         // 必须在 ExposedDropdownMenuBoxScope 内调用 ExposedDropdownMenu，否则
