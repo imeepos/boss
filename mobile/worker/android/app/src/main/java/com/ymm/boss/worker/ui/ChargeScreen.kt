@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 fun ChargeScreen(nav: NavHost, no: String) {
     val charge by loadOnce(no) { ScanApi.charge(no) }
     var tip by remember { mutableStateOf("") }
+    var done by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
     val defaultMethod = stringResource(R.string.charge_default_method)
@@ -67,18 +68,21 @@ fun ChargeScreen(nav: NavHost, no: String) {
                     FieldLabel(stringResource(R.string.charge_method_label))
                     OptionRow(methods, method) { method = it }
                     Spacer(Modifier.height(12.dp))
-                    PrimaryButton(stringResource(R.string.charge_submit), modifier = Modifier.fillMaxWidth()) {
+                    PrimaryButton(stringResource(R.string.charge_submit), enabled = !done,
+                        modifier = Modifier.fillMaxWidth()) {
                         val v = amount.toDoubleOrNull() ?: 0.0
                         if (v <= 0) { tip = ctx.getString(R.string.charge_invalid_amount); return@PrimaryButton }
                         scope.launch {
                             tip = try {
-                                ScanApi.submitCharge(no, v, method)
-                                nav.push(Screen.Sign(no))
-                                ""
+                                val r = ScanApi.submitCharge(no, v, method)
+                                done = true // 防误重复提交(需返回 Sign 再进入)
+                                val payNo = r.optString("payNo")
+                                if (payNo.isNotBlank()) ctx.getString(R.string.charge_done_fmt, payNo)
+                                else ctx.getString(R.string.charge_done)
                             } catch (e: Exception) { ctx.getString(R.string.charge_submit_fail, e.message ?: "") }
                         }
                     }
-                    if (tip.isNotEmpty()) Notice(tip, red = true)
+                    if (tip.isNotEmpty()) { Spacer(Modifier.height(8.dp)); Notice(tip, red = !done) }
                 }
                 Card(Modifier.padding(12.dp)) {
                     Notice(stringResource(R.string.charge_notice))

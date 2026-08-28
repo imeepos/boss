@@ -262,6 +262,8 @@
     <string name="charge_submit">Confirm payment and sign</string>
     <string name="charge_invalid_amount">Please enter a valid received amount.</string>
     <string name="charge_submit_fail">Payment submit failed: %1$s</string>
+    <string name="charge_done">Payment recorded.</string>
+    <string name="charge_done_fmt">Payment recorded. Voucher No: %1$s</string>
     <string name="charge_default_method">Scan to Pay</string>
     <string name="charge_notice">Payment is posted to ledger instantly; a payment voucher and electronic receipt are auto-generated.</string>
     <string name="td_ticket_no">Ticket No.</string>

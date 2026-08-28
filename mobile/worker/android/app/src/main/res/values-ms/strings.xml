@@ -257,6 +257,8 @@
     <string name="charge_submit">Sahkan bayaran dan tandatangani</string>
     <string name="charge_invalid_amount">Sila masukkan jumlah yang diterima yang sah.</string>
     <string name="charge_submit_fail">Hantaran bayaran gagal: %1$s</string>
+    <string name="charge_done">Bayaran direkodkan.</string>
+    <string name="charge_done_fmt">Bayaran direkodkan. No baucar: %1$s</string>
     <string name="charge_default_method">Imbas untuk Bayar</string>
     <string name="charge_notice">Bayaran dikemaskini ke lejar dengan segera; resit bayaran dan resit elektronik dijana auto.</string>
     <string name="td_ticket_no">No. Tiket</string>
