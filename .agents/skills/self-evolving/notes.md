@@ -1270,3 +1270,10 @@
 - 哪个坑浪费了最多时间? ①业务失败退出码改 1 后,api_test.sh 的 `set -e` + `result=$(bossctl ...)` 捕获被新退出码当场杀脚本(卡 quadlink 段、无摘要输出)——退出码是接口,改语义必须 grep 全部消费方;②api_test.sh 自身还残留 /api/v1 错误前缀 + 裸 curl 混用,与 bossctl 修的 user: 前缀 bug 同源;③测试载荷连错三次(products 的 bandwidth 是字符串、调价字段名是 newPrice 不是 monthlyFee)——每次都是 CLI 正确转发 42200,先读 handler 的 BindAndValidate 再造载荷能省三轮。
 - skill 有没有提前预警? 无"退出码是接口"类红线;本次沉淀进 lessons。
 - 重来一次? ①改 CLI 退出码/输出格式前先 `grep -rn "bossctl" scripts/` 找消费方;②给后端造测试载荷先读对应 handler 的 httpx.Require* 校验;③本地身份档案 401 时先比对 test-accounts.json 是否换 key(本次 admin 档案即过期 key)。
+
+## 2026-09-06 bossctl 计划执行轮(漂移门禁/typed 401/版本注入/release 实弹)
+
+- 哪个坑浪费了最多时间? ①生成器 --check 的 return 写在 ESM 模块顶层,SyntaxError: Illegal return statement——模块顶层没有函数上下文,if/else 替代;②/user/v1/client/latest 探测漏了 deviceId 必填参数报 42200,读 handler 才知 versionCode+deviceId 双必填。
+- skill 有没有提前预警? 无;顶层 return 与"探测前先读参数校验"均已在本文件有先例,但仍是新形态。
+- 重来一次? 给脚本加模式参数先想清楚执行上下文(模块顶层 vs 函数内);公开端点探测前 grep handler 的 Query 必填清单。
+- 测试残留登记: 102 release id=8(version=9.9.9-cli-verify,DRAFT,notes 已标"勿发布")——服务端无 DELETE /client-releases 端点,DRAFT 对 site/downloads 与 user/worker client/latest 均不可见,留档观察;若后续加清理通道优先回收该行。
