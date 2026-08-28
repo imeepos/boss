@@ -34,12 +34,19 @@ const (
 	auditRetryGap      = 200 * time.Millisecond
 )
 
-// RecordAudit 记录关键操作审计(同步落库);未装配审计 writer 时静默跳过。
+// RecordAudit 记录关键操作审计(同步落库);未装配审计 writer 时输出告警留痕。
 // 与请求上下文解耦(WithoutCancel):客户端中途断开不得丢业务留痕。
 // 写入瞬时失败重试一次;最终失败记 [audit] WRITE FAILED 日志并附完整事件,
-// 运维可据此补记——审计是业务事实的一部分,静默丢弃等于事实缺口。
+// 运维可据此补记——审计是业务事实的一部分,静默丢弃等于事实缺口
+// (纪要 2026-08-28 待定项③:writer 未装配同样不得静默,降级放行但留告警)。
 func RecordAudit(a *app.Application, c *gin.Context, action, targetType, targetID string, detail map[string]any) {
-	if a == nil || a.Audit == nil {
+	if a == nil {
+		return
+	}
+	if a.Audit == nil {
+		// 生产装配恒非空,nil 仅测试/降级场景;告警可 grep,提示人工补记。
+		log.Printf("[audit] WRITER NIL need-manual-recovery action=%s target=%s/%s ip=%s detail=%v",
+			action, targetType, targetID, c.ClientIP(), detail)
 		return
 	}
 	ev := audit.Event{

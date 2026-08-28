@@ -65,6 +65,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, order.ErrInstallInput),
 		errors.Is(err, backup.ErrInvalidInput),
 		errors.Is(err, order.ErrInvalidInput),
+		errors.Is(err, billing.ErrInvalidMethod),
 		errors.Is(err, ErrGeoInvalidParam),
 		errors.Is(err, cms.ErrInvalidPost),
 		errors.Is(err, cms.ErrInvalidCategory):

@@ -138,6 +138,20 @@ func TestRecordAudit(t *testing.T) {
 	}
 }
 
+// writer 未装配不得静默(纪要 2026-08-28 待定项③):必须留 [audit] WRITER NIL 可 grep 告警。
+func TestRecordAudit_WriterNilLogsAlert(t *testing.T) {
+	c, _ := testCtx()
+	var buf bytes.Buffer
+	prev := log.Writer()
+	log.SetOutput(&buf)
+	defer log.SetOutput(prev)
+	RecordAudit(&app.Application{}, c, "payment.record", "payment", "PAY-1", map[string]any{"amount": 5})
+	out := buf.String()
+	if !strings.Contains(out, "[audit] WRITER NIL") || !strings.Contains(out, "payment.record") {
+		t.Fatalf("alert missing: %q", out)
+	}
+}
+
 // flakyAuditWriter 首次返回错误、其后成功的瞬时故障替身。
 type flakyAuditWriter struct {
 	fails  int
