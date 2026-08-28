@@ -37,6 +37,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'collection-tasks', label: '催收任务队列', path: '/billing/collection-tasks' },
     { key: 'stopsrv', label: '停复机执行', path: '/billing/stopsrv' },
     { key: 'paycheck', label: '渠道对账', path: '/billing/paycheck' },
+    { key: 'daily-close', label: '柜台日结', path: '/billing/daily-close' },
   ]},
   { id: 'boss', label: '订单与履约', items: [
     { key: 'order', label: '订单管理', path: '/boss/order' },

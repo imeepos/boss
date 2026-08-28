@@ -663,6 +663,40 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      /** 柜面收款表单(纪要 2026-08-28)。 */
+      addBtn: string
+      formTitle: string
+      customer: string
+      bill: string
+      customerOrBill: string
+      amount: string
+      method: string
+      site: string
+      counter: string
+      submit: string
+      submitting: string
+      success: string
+      fail: string
+      confirmText: string
+    }
+    /** 柜台日结(纪要 2026-08-28:T+0 只读汇总+实点回填)。 */
+    dailyClose: {
+      title: string
+      desc: string
+      date: string
+      columns: string[]
+      countedPlaceholder: string
+      save: string
+      saving: string
+      saved: string
+      balanced: string
+      diff: string
+      noPerm: string
+      empty: string
+      loadFail: string
+      detailTitle: string
+      detailColumns: string[]
+      noCounted: string
     }
     arrearsPage: {
       title: string
