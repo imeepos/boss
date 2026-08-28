@@ -96,6 +96,8 @@
 | 盘点任务 stocktake.status | DOING / DONE | 在盘 / 已关单（000156 起：差异明细全处置完才可关单，存在 OPEN 差异返回 40900；口径见 fields.md §4.2.1） |
 | 盘点差异 stocktake_items.kind | PENDING / OK / MISMATCH / MISSING / EXTRA | 未扫 / 账实一致 / 状态不符 / 关单时仍未扫 / 计划外多扫 |
 | 盘点处置 stocktake_items.resolution | OPEN / CONFIRMED / FIXED / ESCALATED | 待处置 / 确认差异(按实盘修正台账) / 现场核实台账为准 / 上报转人工 |
+| 授权类型 license_type | duration / lifetime / trial | 按时长 / 终身 / 试用（release-platform 发行契约，claims 内透传展示） |
+| 授权 status（release-platform 侧） | issued / activated / consumed / expired / revoked | 已签发 / 已激活 / 已兑码 / 已过期 / 已吊销；boss 仅核验 `revoked`/`expired` 拒绝（verify.go checkStatus），其余透传展示 |
 
 ## 5. 关键术语
 

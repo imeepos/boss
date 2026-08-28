@@ -1228,12 +1228,16 @@ claims 并非本地权威事实，仅展示）。门禁语义见 adopted/2026-09
 | 页面列 | 字段名 | 来源 | 枚举/说明 |
 |:------|:------|:------|:----------|
 | 已激活 | `activated` | license/status claims 校验结果 | bool；false 时业务接口 403 LICENSE_REQUIRED |
+| 门禁启用 | `enabled` | License 是否注入(未启用返回 false) | bool；svc=nil(开发/演示)时 false |
 | 授权编号 | `licenseId` | license_id | release-platform activation code id |
 | 产品 | `productId` | product_id | release-platform 产品 ID（如 boss-server） |
 | 授权类型 | `licenseType` | license_type | duration / lifetime / trial |
 | 绑定设备 | `deviceId` | device_id | 激活时上报的本实例标识 |
+| 机器指纹 | `fingerprint` | fingerprint_hash | 防复制绑定维度(与 deviceId 双验) |
 | 有效期至 | `expiresAt` | expires_at | RFC3339；宽限期内 still 可用（grace） |
 | 宽限期 | `graceEndsAt` / `inGrace` | grace_ends_at | inGrace=true 表示已过期但未出宽限 |
+| 核验时间 | `checkedAt` | 服务端核验时刻 | RFC3339；每次授权检查都刷新 |
+| 失效原因 | `reason` | 核验失败原因(展示用) | 不暴露签名细节；仅未激活/失效时出现 |
 
 激活：admin `POST /license/activate`（体 `activationCode`）→ release-platform
 `POST /v1/activations` 兑码 + `POST /v1/licenses/{id}/offline-token` 取令牌 →
