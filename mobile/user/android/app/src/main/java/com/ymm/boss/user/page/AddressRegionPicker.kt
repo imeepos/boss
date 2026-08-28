@@ -135,14 +135,14 @@ internal fun AddressRegionPickerSheet(
                         } else {
                             LazyColumn {
                                 items(shown, key = { it.optLong("id") }) { node ->
-                                    NodeRow(node) {
+                                    NodeRow(node = node, enabled = !loading, onClick = {
                                         val hasNext = node.optBoolean("hasChildren")
                                         if (hasNext && node.optInt("level") < 5) {
                                             chain.add(node); filter = ""
                                         } else {
                                             onSelected(selectionOf(chain, node))
                                         }
-                                    }
+                                    })
                                 }
                             }
                         }
@@ -263,9 +263,10 @@ private fun ChainChip(node: JSONObject, active: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun NodeRow(node: JSONObject, onClick: () -> Unit) {
+private fun NodeRow(node: JSONObject, enabled: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
+        // loading 禁点:同一节点双击会连续入栈两次,链错层。
+        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
