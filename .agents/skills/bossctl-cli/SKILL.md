@@ -138,14 +138,20 @@ bossctl login admin your-password
 
 `--as 身份名` > `--api-key` > `--jwt` > `~/.bossctl/token` > 无认证(仅公开端点)
 
+### 服务端地址
+
+`--server URL` > `BOSS_SERVER` 环境变量 > 缺省 `http://192.168.0.102:28080`(102 部署环境)。
+日常无需传 `--server`;本机起服务调试时才需要 `BOSS_SERVER=http://localhost:8080 bossctl ...`。
+
 ## 命令参考
 
 | 命令 | 说明 |
 |------|------|
-| `call METHOD PATH [--data JSON] [--query k=v]` | 调用任意 API 端点;路径可带端前缀 `user:` / `worker:`(缺省 admin) |
+| `call METHOD PATH [--data JSON\|@file] [--query k=v]` | 调用任意 API 端点;路径可带端前缀 `user:` / `worker:`(缺省 admin);`--data @file` 从文件读大载荷 |
 | `login USERNAME PASSWORD` | 登录获取 JWT |
-| `me` | 查看当前身份 |
-| `routes [admin\|user\|worker]` | 列出三端 API 路由(382 条,由 api/openapi 生成) |
+| `logout` | 退出登录并清除本地缓存 JWT |
+| `me` | 查看当前身份(三类主体各自返回身份视图) |
+| `routes [admin\|user\|worker]` | 列出三端 API 路由(626 条 = admin 464 + user 95 + worker 67,由 api/openapi 生成) |
 | `upload [--portal admin\|user\|worker] FILE` | 附件上传(multipart,字段 file,单文件 32MB) |
 | `apikey list` | 列出 API key |
 | `apikey create <account\|worker\|customer>/<id> <name>` | 为指定主体创建 API key |
@@ -159,15 +165,24 @@ bossctl login admin your-password
 | `ai config [--url URL] [--key KEY] [--model M]` | 查看/更新 OpenAI 集中配置(apiKey/apiUrl 平台统一管理) |
 | `ai chat [--model M] <文本>` | AI 对话补全 |
 | `ai embed [--model M] <文本...>` | 文本向量化(需网关支持 embedding 模型) |
+| `version` | 打印版本号(报障请附带) |
+
+**退出码约定**: 0 成功;1 失败(HTTP 错误、业务 `code!=0`、认证 401)。CI/脚本以退出码判断成败;
+`--as` 身份遇 401 时会提示档案 key 可能已吊销及重新保存命令。
+
+**注意**: 全局 flag(`--server`/`--api-key`/`--as`/`--jwt`)必须放在子命令之前。
 
 ### call 命令详解
 
 ```bash
-# GET 请求(查询参数)
-bossctl call GET /orders --query page=1 --query status=active
+# GET 请求(查询参数,值自动 URL 编码,中文/空格/& 安全)
+bossctl call GET /orders --query page=1 --query keyword=宽带安装
 
 # POST 请求(JSON body)
 bossctl call POST /orders --data '{"customerId":100,"productId":200}'
+
+# 大载荷从文件读
+bossctl call POST /products --data @product.json
 
 # PUT/DELETE
 bossctl call PUT /legal-entities/1 --data '{"name":"新公司名"}'
@@ -175,9 +190,9 @@ bossctl call DELETE /addresses/42
 
 # 路径端前缀与自动补全
 bossctl call GET /orders        # admin 端,自动补全为 /api/admin/v1/orders
-bossctl call GET user:/orders   # user 端,即 /api/v1/orders
+bossctl call GET user:/orders   # user 端,即 /api/user/v1/orders
 bossctl call GET worker:/home   # worker 端,即 /api/worker/v1/home
-bossctl call GET /api/v1/orders # 完整路径原样发送
+bossctl call GET /api/user/v1/orders # 完整路径原样发送
 ```
 
 ## API 路由发现

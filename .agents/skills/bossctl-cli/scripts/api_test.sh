@@ -38,11 +38,11 @@ test_get() {
   fi
 }
 
-# 测试 POST 端点(带 body)
+# 测试 POST 端点(带 body;业务失败退出码 1,须容忍)
 test_post() {
   local desc="$1" path="$2" body="$3"
   local result
-  result=$($BOSS --server "$SERVER" $AUTH call POST "$path" --data "$body" 2>&1)
+  result=$($BOSS --server "$SERVER" $AUTH call POST "$path" --data "$body" 2>&1 || true)
   if echo "$result" | grep -qE '"code":0|"id":'; then
     ok "$desc ($path)"
   else
@@ -54,7 +54,7 @@ test_post() {
 test_not_found() {
   local desc="$1" path="$2"
   local result
-  result=$($BOSS --server "$SERVER" $AUTH call GET "$path" 2>&1)
+  result=$($BOSS --server "$SERVER" $AUTH call GET "$path" 2>&1 || true)
   if echo "$result" | grep -qE "請求失敗|404|not found"; then
     ok "$desc ($path) 返回预期错误"
   else
@@ -180,7 +180,7 @@ test_get "四码关联列表" "/quad-links"
 test_quadlink_missing_param() {
   local desc="$1" path="$2"
   local result
-  result=$($BOSS --server "$SERVER" $AUTH call GET "$path" 2>&1)
+  result=$($BOSS --server "$SERVER" $AUTH call GET "$path" 2>&1 || true)
   if echo "$result" | grep -q "code=42200"; then
     ok "$desc 缺失参数正确返回422"
   else
@@ -207,10 +207,9 @@ test_get "消息" "/worker-messages"
 test_get "公告列表" "/notices"
 
 # ====== 新功能模块 ======
-echo "[apikey] API key 管理(新功能)"
-echo -n "  GET /api-keys: "
-curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $(cat ~/.bossctl/token 2>/dev/null)" "$SERVER/api/v1/api-keys"
-echo " (预期 200, 若 404 说明服务器镜像未更新)"
+echo "[apikey] API key 管理"
+test_get "API key 清单" "/api-keys"
+test_get "受限权限模板" "/api-key-templates"
 
 echo ""
 echo "=========================================="

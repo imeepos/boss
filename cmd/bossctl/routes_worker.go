@@ -4,6 +4,8 @@
 package main
 
 var workerRoutes = []routeEntry{
+	{"GET", "/replacements", "我的换新任务(设备更换单派给本人且执行中;adopted note 2026-08-27-replacement-ticket-flow)"},
+	{"POST", "/replacements/:id/complete", "换新任务现场完成(result=SUCCESS 落换件流水+DONE,FAILED 仅标记失败;资产状态联动)"},
 	{"POST", "/tickets/:ticketNo/dismantle/scan", "拆机扫码解绑(强制,未解绑拆机被系统拦截)"},
 	{"GET", "/tickets/:ticketNo/replace", "换件登记预取(旧件/新件/流程步骤)"},
 	{"POST", "/tickets/:ticketNo/replace", "完成换件(旧件返修,新件沿用绑定,四码自动迁移)"},
@@ -52,7 +54,7 @@ var workerRoutes = []routeEntry{
 	{"GET", "/tickets/:ticketNo/activation", "激活状态(LOID / 激活结果 / 上次尝试)"},
 	{"POST", "/tickets/:ticketNo/activate", "重新激活(环节 10,失败可反复重试,连续失败转告警派单)"},
 	{"POST", "/tickets/:ticketNo/sign", "客户电子签收(留痕回执,工单流转为完成)"},
-	{"GET", "/tickets/:ticketNo/charge", "现场收款预取(应收金额/方式;预付费订单月数x月费,payMethods 按 stripe 通道配置动态下发)"},
+	{"GET", "/tickets/:ticketNo/charge", "现场收款预取(应收金额/方式;额度=预付费订单月数x月费,额度按 stripe 通道配置动态下发)"},
 	{"POST", "/tickets/:ticketNo/charge", "确认现场收款(pay_no 落账 payments 流水,同步生成电子收据)"},
 	{"GET", "/home", "工作台首页(今日业绩 + 进行中工单)"},
 	{"GET", "/tickets", "我的工单列表(按状态筛选)"},

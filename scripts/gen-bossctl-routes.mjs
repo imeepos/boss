@@ -32,10 +32,21 @@ function parseFile(file) {
 
 for (const p of PORTALS) {
   const dir = path.join('api/openapi', p.name);
-  const routes = [];
+  const collected = [];
   for (const f of fs.readdirSync(dir).filter(x => x.endsWith('.yaml') && x !== 'schemas.yaml').sort()) {
-    routes.push(...parseFile(path.join(dir, f)));
+    collected.push(...parseFile(path.join(dir, f)));
   }
+  // 同一路由在多个 yaml 重复登记时只保留首次出现,目录计数与真实路由一致。
+  function dedupe(routes) {
+    const seen = new Set();
+    return routes.filter(r => {
+      const k = r.method + ' ' + r.path;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+  const routes = dedupe(collected);
   const goParam = s => s.replace(/{([a-zA-Z]+)}/g, ':$1');
   const esc = s => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const lines = [
