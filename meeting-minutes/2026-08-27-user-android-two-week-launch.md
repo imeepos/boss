@@ -135,8 +135,10 @@
 | 契约端点（api/openapi/user/） | Android 端现状 | 102 实测（明远 curl） |
 |---|---|---|
 | 积分体系 loy.yaml：/points、/points/tasks、/points/exchange、/points/tier | 全仓 89 文件零调用（页面缺失） | /points 四端点可达（401=路由在） |
-| /push/device（推送设备注册） | 零调用 | **404：契约-部署漂移，后端未落地** |
-| /customer-registrations（客户登记） | 无引用 | **404：后端未落地** |
+| /push/device（推送设备注册） | 零调用 | 复测(8-27 复盘)：POST 401=路由在（后端 8-21 落地 b31a2173，Android 接线 aa570137） |
+| /customer-registrations（客户登记） | 无引用 | 复测(8-27 复盘)：POST 200=42200 校验信封（后端契约 8-20 对齐/8-22 修正），**非漂移** |
+
+> Amended(2026-08-27 复盘，明远)：首次勘测用 GET 探测仅定义 POST 的端点，404=方法不存在而非路由缺失，B 轨「404 漂移」系勘察方法学错误，已纠正——两端点路由均在 102，无漂移；建表核验 customer_registrations 无空壳记录（6 行均为 8-19~8-21 正常业务数据，空 body 复测返回 42200 未落库）。
 | /service/chat、/service/faq（客服/FAQ） | ServiceApi.kt 有调用，页面覆盖待核 | /service/faq 可达（401） |
 | /billing/auto-pay、/topups、/profile/notify-settings | 已实现（BillPage/TopupPage/NotifyPage） | — |
 
@@ -168,5 +170,5 @@
 ## 十、残余分歧与未决项
 
 1. 积分 exchange（兑换）端点在两周内是否落地：阿澈可先占位，明远需确认后端兑换数据就绪度并给出交付清单（D3 前答复）。
-2. /push/device 与 /customer-registrations 的 404：后端 D-3 前必须表态落地 or 砍，不表态默认 Android 降级。
+2. /push/device 与 /customer-registrations：已复测确认路由在（见七节 Amended），不再有 404 漂移；投入 Android 接线/页面入口即可。
 3. 「补功能」与「打磨」工期墙：功能补齐 D1–D4 独立排期，不占打磨时间（木子交锋点已获阿澈认可）。
