@@ -68,6 +68,10 @@
 | payments.bill_id=0 且 customer_id 不可推导 | **2** | PAY-3/PAY-4 amount=1 无账单无客户 | 否(不可见) |
 | 派单工单缺口 | **≥5** | 客户 213 有 10 笔 stage≥8 订单,仅 2 笔(358/359)有真实工单;330/331/332/333/350 环节 8「派单」DONE 但 dispatch_tickets 无记录 | **是** |
 
+> Amended 2026-08-28:「端口 RESERVED 但无在途 RESERVED 订单」行内 314 判为孤儿有误——端口在环节 12
+> （UpdateMap）才消费,INSTALLING 单端口保持 RESERVED 属合法在途;内嵌的"INSTALLING 僵尸单"
+> 信号改由 recon 新检查 installingStuck 暴露。见 2026-08-28-port-reserved-installing-inflight.md。
+
 ## 四、根因分析
 
 1. **E2E 造数污染**:140 笔孤儿订单、18 条孤儿 LOID、11 条孤儿预占、22 条孤儿调配单、12 条孤儿告警全部来自 E2E/联调测试数据,直接 INSERT 未走业务校验(软引用无 FK 约束),且未随 2026-08-21 死数据清理一并清除。
