@@ -95,6 +95,10 @@ fun AddressScreen(nav: Nav) {
 
     // nav.refreshTick=0 是初始合成态,跳过避免空触发;>0 表示全局下拉刷新一次。
     LaunchedEffect(nav.refreshTick) { if (nav.refreshTick > 0) load(1, replace = true) }
+    // 首次进页补加载:refreshTick 残留 >0 时此前靠 L97 的 LaunchedEffect 初轮触发
+    // 偶发有数据,残留为 0(冷启动首进)则无人调 load → 必现空列表。==0/>0 两条
+    // 路径互斥,不会双请求。
+    LaunchedEffect(Unit) { if (nav.refreshTick == 0) load(1, replace = true) }
 
     val listState = rememberLazyListState()
     val nearEnd by remember {
