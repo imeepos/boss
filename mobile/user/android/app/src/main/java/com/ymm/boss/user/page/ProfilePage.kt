@@ -63,12 +63,17 @@ import org.json.JSONObject
 fun ProfileScreen(nav: Nav) {
     var data by remember { mutableStateOf<JSONObject?>(null) }
     var unread by remember { mutableIntStateOf(0) }
+    var addrCount by remember { mutableIntStateOf(0) }
     LaunchedEffect(nav.refreshTick) {
         try { data = ProfileApi.get() } catch (e: Exception) { data = null }
         try {
             unread = UserApi.misc.messages().optJSONArray("items").toObjectList()
                 .count { !it.optBoolean("read") }
         } catch (e: Exception) { } // 无红点降级
+        // 徽标计数:此前读 /profile 的 addresses 字段,但 portalProfile 响应无该字段,
+        // optJSONArray 恒 null → 徽标恒"0个地址"。改拉 /addresses total(pageSize=1
+        // 轻量);失败降级 0 不阻塞页面;从地址页返回/下拉刷新会重跑本 effect 联动。
+        try { addrCount = ProfileApi.addresses(1, 1).optInt("total") } catch (e: Exception) { }
     }
     // 与首页共用 PinnedGradientPage 骨架,几何参数完全一致;用户信息层填满头部槽位恒可见
     PinnedGradientPage(
@@ -76,7 +81,7 @@ fun ProfileScreen(nav: Nav) {
         headerContent = { ProfileHeadContent(data, nav) },
     ) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            QuickEntriesCard(data, nav)
+            QuickEntriesCard(data, addrCount, nav)
             ServiceEntriesCard(nav, unread)
             SettingsCard(nav)
             LogoutCard(nav)
@@ -152,9 +157,8 @@ private fun VerifiedBadge() {
 }
 
 @Composable
-private fun QuickEntriesCard(data: JSONObject?, nav: Nav) {
+private fun QuickEntriesCard(data: JSONObject?, addrCount: Int, nav: Nav) {
     val verified = data?.optJSONObject("realName")?.optString("status") == "VERIFIED"
-    val addrCount = data?.optJSONArray("addresses")?.length() ?: 0
     val planName = data?.optJSONObject("plan")?.optString("name").orEmpty().ifBlank { "—" }
     // 首卡紧贴滚动区顶(圆角由区域裁剪呈现),仅保留下间距
     AppCard(Modifier.fillMaxWidth(), outer = PaddingValues(top = 0.dp, bottom = 6.dp)) {
