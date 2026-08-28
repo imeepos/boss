@@ -17,13 +17,18 @@ type reconQuery struct {
 	sql    string
 }
 
-// reconQueries 检查清单(订单×2/四码/资源/账务/GIS/发票/积分/Webhook 口径)。
+// reconQueries 检查清单(订单×3/四码/资源/账务/GIS/发票/积分/Webhook 口径)。
 var reconQueries = []reconQuery{
 	{
 		domain: "order", name: "stuckReserved", detail: "RESERVED 超 24h 未推进(超时释放循环应清零)",
 		sql: `SELECT count(*) FROM orders o WHERE o.status = 'RESERVED'
 		      AND COALESCE((SELECT max(st.finished_at) FROM order_stages st
 		                    WHERE st.order_id = o.id AND st.stage = 3), o.created_at) < now() - interval '24 hours'`,
+	},
+	{
+		domain: "order", name: "installingStuck", detail: "INSTALLING 超 7 天未完成(僵尸单,应处置)",
+		sql: `SELECT count(*) FROM orders WHERE status = 'INSTALLING'
+		      AND created_at < now() - interval '7 days'`,
 	},
 	{
 		domain: "order", name: "doneStageMismatch", detail: "status=DONE 但环节未到 12",
@@ -34,9 +39,11 @@ var reconQueries = []reconQuery{
 		sql: `SELECT count(*) FROM quad_links WHERE status = 'CONFLICT'`,
 	},
 	{
-		domain: "resource", name: "orphanReservedPorts", detail: "端口 RESERVED 但无在途 RESERVED 订单",
+		domain: "resource", name: "orphanReservedPorts",
+		detail: "端口 RESERVED 但无在途订单(在途=RESERVED/INSTALLING;环节 12 才消费端口,见 2026-08-28 裁定)",
 		sql: `SELECT count(*) FROM ports p WHERE p.status = 'RESERVED'
-		      AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = p.order_id AND o.status = 'RESERVED')`,
+		      AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = p.order_id
+		                      AND o.status IN ('RESERVED','INSTALLING'))`,
 	},
 	{
 		domain: "billing", name: "diffPendingOld", detail: "缴费对账批次差异挂起超 48h 未平账",

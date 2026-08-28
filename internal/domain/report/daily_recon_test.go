@@ -8,7 +8,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-// ReconCounts(每日对账)形状回归:十条 count 全部执行且结果保序。
+// ReconCounts(每日对账)形状回归:十一条 count 全部执行且结果保序。
 func TestPGStore_ReconCounts(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -16,8 +16,8 @@ func TestPGStore_ReconCounts(t *testing.T) {
 	}
 	defer mock.Close()
 
-	// 10 项检查:仅 quadlink.conflicts 非 0,其余为 0。
-	for i, n := range []int64{0, 0, 3, 0, 0, 0, 0, 0, 0, 0} {
+	// 11 项检查:仅 quadlink.conflicts 非 0,其余为 0。
+	for i, n := range []int64{0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0} {
 		mock.ExpectQuery(`SELECT count\(\*\)`).
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(n))
 		_ = i
@@ -28,20 +28,23 @@ func TestPGStore_ReconCounts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReconCounts: %v", err)
 	}
-	if len(checks) != 10 {
-		t.Fatalf("checks=%d, want 10", len(checks))
+	if len(checks) != 11 {
+		t.Fatalf("checks=%d, want 11", len(checks))
 	}
-	wantDomains := []string{"order", "order", "quadlink", "resource", "billing", "gis", "billing", "loy", "gis", "openplat"}
+	wantDomains := []string{"order", "order", "order", "quadlink", "resource", "billing", "gis", "billing", "loy", "gis", "openplat"}
 	for i, c := range checks {
 		if c.Domain != wantDomains[i] {
 			t.Fatalf("checks[%d].Domain=%s, want %s", i, c.Domain, wantDomains[i])
 		}
 	}
-	if checks[2].Count != 3 || checks[2].OK() {
-		t.Fatalf("quadlink check=%+v, want count=3 not OK", checks[2])
+	if checks[3].Count != 3 || checks[3].OK() {
+		t.Fatalf("quadlink check=%+v, want count=3 not OK", checks[3])
 	}
 	if !checks[0].OK() {
 		t.Fatalf("order check should be OK: %+v", checks[0])
+	}
+	if !checks[1].OK() || checks[1].Name != "installingStuck" {
+		t.Fatalf("installingStuck check should be OK: %+v", checks[1])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
