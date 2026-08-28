@@ -12,6 +12,7 @@ import com.ymm.boss.user.api.ProductApi
 import com.ymm.boss.user.api.ProfileApi
 import com.ymm.boss.user.api.UserApi
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -32,10 +33,11 @@ class RealBackendE2eTest {
         Api.init(ApplicationProvider.getApplicationContext())
         val phone = "13900001234"
 
-        UserApi.auth.smsCode(phone, "login")
-        val code = runCatching { DebugApi.latestSmsCode(phone, "login").optString("code") }
-            .getOrDefault("")
-        assumeTrue("102 dev 模式未开或真码获取失败,跳过真实链路用例", code.isNotBlank())
+        val code = runCatching {
+            UserApi.auth.smsCode(phone, "login")
+            DebugApi.latestSmsCode(phone, "login").optString("code")
+        }.getOrDefault("")
+        assumeTrue("发码被冷却(测试号共享 60s 冷却)/102 dev 未开/真码失败,跳过真实链路用例", code.isNotBlank())
 
         val tk = UserApi.auth.login(phone, "sms", code).optString("token")
         assertTrue("登录应返回 token", tk.isNotBlank())
@@ -84,5 +86,33 @@ class RealBackendE2eTest {
         assertTrue("错码应映射 40100 凭证无效,实为 ${err.status}", err.status == 40100)
         val msg = com.ymm.boss.user.page.loginErrorMessage(err, "sms")
         assertTrue("40100 应路由验证码错误文案,实为 $msg", msg.contains("验证码"))
+    }
+
+    /**
+     * BUG-02 修复验证:业务 40100(错码登录/改密旧口令错)不得清除会话 token。
+     * 修复前旧口令错即全会话闪断回登录页;修复后仅 HTTP 401(凭证真失效)清除。
+     */
+    @Test
+    fun business40100DoesNotClearSession() = runBlocking {
+        Api.init(ApplicationProvider.getApplicationContext())
+        val phone = "13900001234"
+
+        val code = runCatching {
+            UserApi.auth.smsCode(phone, "login")
+            DebugApi.latestSmsCode(phone, "login").optString("code")
+        }.getOrDefault("")
+        assumeTrue("发码被冷却(测试号共享 60s 冷却)或真码获取失败,跳过", code.isNotBlank())
+
+        val tk = UserApi.auth.login(phone, "sms", code).optString("token")
+        assertTrue("登录应返回 token", tk.isNotBlank())
+        Api.setToken(tk)
+
+        // 1) 错码登录:业务 40100(验证码校验失败)——不得清会话
+        runCatching { UserApi.auth.login(phone, "sms", "999999") }
+        assertEquals("错码登录 40100 不得清除已登录 token", tk, Api.token())
+
+        // 2) 改密旧口令错:业务 40100(portal_security 口令校验失败)——不得清会话
+        runCatching { ProfileApi.changePassword("wrong-old-${System.currentTimeMillis()}", "NewPass123456") }
+        assertEquals("旧口令错不得清除已登录 token", tk, Api.token())
     }
 }

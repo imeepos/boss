@@ -47,14 +47,15 @@ object Api {
 
     fun setToken(t: String?) = TokenStore.write(t)
 
-    private fun handleUnauthorized(status: Int) {
-        if (isUnauthorized(status)) {
-            setToken(null)
-            onUnauthorized?.invoke()
-        }
+    /** 会话失效播报:仅「会话从有到无」触发。首个 401 清除 token 后,并发/重复 401
+     * 读到空 token(hadToken=false)天然去重,无需时间冷却(时间字段跨测试/跨调用残留有害)。 */
+    internal fun handleUnauthorized(status: Int, path: String) {
+        if (status != 401) return
+        val hadToken = token().isNotEmpty()
+        setToken(null)
+        android.util.Log.w("[android-user]", "UNAUTHORIZED path=$path status=$status hadToken=$hadToken")
+        if (hadToken) onUnauthorized?.invoke()
     }
-
-    private fun isUnauthorized(status: Int): Boolean = status == 401 || status == 40100
 
     class HttpError(val status: Int, message: String) : Exception(message)
 
@@ -64,7 +65,7 @@ object Api {
      */
     fun friendlyMessage(e: Exception): String = when {
         e is HttpError && e.status >= 1000 -> when (e.status) {
-            40100 -> "凭证无效，请重新操作"
+            40100 -> "校验不通过，请检查输入后重试"
             40300 -> "暂无权限，请联系客服"
             40400 -> "账号不存在，请先注册"
             40900, 40910, 40920 -> "操作冲突，请刷新后重试"
@@ -112,10 +113,10 @@ object Api {
                 val code = conn.responseCode
                 val text = streamText(conn, code)
                 if (code !in 200..299) {
-                    handleUnauthorized(code)
+                    handleUnauthorized(code, path)
                     throw HttpError(code, "HTTP $code")
                 }
-                if (text.isBlank()) JSONObject() else unwrap(text)
+                if (text.isBlank()) JSONObject() else unwrap(text, path)
             } finally { conn.disconnect() }
     }
 
@@ -125,7 +126,7 @@ object Api {
         try {
             val code = conn.responseCode
             if (code !in 200..299) {
-                handleUnauthorized(code)
+                handleUnauthorized(code, path)
                 throw HttpError(code, "HTTP $code")
             }
             val buf = ByteArrayOutputStream()
@@ -135,11 +136,11 @@ object Api {
     }
 
     /** 解信封 {code,msg,data}:code!=0 抛 HttpError,成功返回 data(缺省空对象)。 */
-    private fun unwrap(text: String): JSONObject {
+    private fun unwrap(text: String, path: String): JSONObject {
         val obj = JSONObject(text)
         val code = obj.optInt("code", -1)
         if (code != 0) {
-            handleUnauthorized(code)
+            handleUnauthorized(code, path)
             throw HttpError(code, obj.optString("msg").ifBlank { "code $code" })
         }
         return obj.optJSONObject("data") ?: JSONObject()
@@ -165,10 +166,10 @@ object Api {
                 val code = conn.responseCode
                 val text = streamText(conn, code)
                 if (code !in 200..299) {
-                    handleUnauthorized(code)
+                    handleUnauthorized(code, path)
                     throw HttpError(code, "HTTP $code")
                 }
-                return if (text.isBlank()) JSONObject() else unwrap(text)
+                return if (text.isBlank()) JSONObject() else unwrap(text, path)
             } catch (e: java.io.IOException) {
                 if (method == "GET" && attempt < MAX_ATTEMPTS) {
                     delay(RETRY_DELAY_MS)
@@ -188,7 +189,7 @@ object Api {
                 val code = conn.responseCode
                 val text = streamText(conn, code)
                 if (code !in 200..299) {
-                    handleUnauthorized(code)
+                    handleUnauthorized(code, path)
                     throw HttpError(code, "HTTP $code")
                 }
                 if (text.isBlank()) return JSONArray()
@@ -196,7 +197,7 @@ object Api {
                 val obj = JSONObject(text)
                 val envelopeCode = obj.optInt("code", -1)
                 if (envelopeCode != 0) {
-                    handleUnauthorized(envelopeCode)
+                    handleUnauthorized(envelopeCode, path)
                     throw HttpError(envelopeCode, obj.optString("msg"))
                 }
                 return when (val d = obj.opt("data")) {
