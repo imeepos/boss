@@ -38,9 +38,43 @@ type Payment struct {
 	Method     string  `json:"method"`   // wechat/alipay/card/cash
 	Status     string  `json:"status"`   // SUCCESS/FAILED/REFUNDED
 	CouponID   string  `json:"couponId"` // 可选:缴费抵扣券,核销与落账同事务
+	// 柜面凭证要素(000167,纪要 2026-08-28):网点/柜台班次/操作员;
+	// method 管资金通道,三列管人员归因(柜面现金 cash、扫码 wechat/alipay、POS card)。
+	SiteName     string `json:"siteName"`
+	CounterCode  string `json:"counterCode"`
+	OperatorName string `json:"operatorName"` // 服务端取登录态,前端不传
 	// 退款留痕(000112):全额退款后 reason/时间落流水;未退为空/nil。
 	RefundReason string     `json:"refundReason"`
 	RefundedAt   *time.Time `json:"refundedAt,omitempty"`
+}
+
+// DailyCashRow 柜台日结汇总行(按网点+操作员聚合当日 cash 流水;周敏口径:
+// 收入/退款分列,退款按流水发生日归属——跨日冲销不得污染当日实点勾对)。
+type DailyCashRow struct {
+	SiteName      string   `json:"siteName"`
+	OperatorName  string   `json:"operatorName"`
+	InAmount      float64  `json:"inAmount"`                // 当日 cash SUCCESS 合计
+	RefundAmount  float64  `json:"refundAmount"`            // 当日 cash REFUNDED 合计
+	NetAmount     float64  `json:"netAmount"`               // 净额=收入-退款,仅汇总展示
+	CountedAmount *float64 `json:"countedAmount,omitempty"` // 当日已回填钱箱实点
+}
+
+// DailyClosing 日结实点回填请求。
+type DailyClosing struct {
+	Date          string  `json:"date"` // YYYY-MM-DD
+	SiteName      string  `json:"siteName"`
+	OperatorName  string  `json:"operatorName"`
+	CountedAmount float64 `json:"countedAmount"` // 钱箱实点
+	CreatedBy     string  `json:"createdBy"`     // 回填人(服务端取登录态)
+}
+
+// DailyClosingResult 回填结果:差异=系统净额-实点;不平不阻塞回填,
+// 差异经 [paycheck] DIFF 日志留痕供人工追缴/盘点。
+type DailyClosingResult struct {
+	ID           int64   `json:"id"`
+	SystemAmount float64 `json:"systemAmount"` // 回填时系统净额快照
+	DiffAmount   float64 `json:"diffAmount"`
+	Balanced     bool    `json:"balanced"`
 }
 
 // PaymentReceipt 落账回执(含券抵扣明细)。
@@ -66,6 +100,14 @@ type BillingService interface {
 	RecordTopup(ctx context.Context, p Payment) (int64, error)
 	// RecordPayment 收款落账:缴费流水 + 账单置 PAID 同事务,pay_no 唯一幂等。
 	RecordPayment(ctx context.Context, p Payment) (int64, error)
+	// DailyCashSummary 柜台日结汇总:按网点+操作员聚合指定日期 cash 流水
+	// (收入=SUCCESS 合计,退款=REFUNDED 合计,净额仅汇总),附当日已回填实点。
+	DailyCashSummary(ctx context.Context, date string) ([]DailyCashRow, error)
+	// SaveDailyClosing 柜台日结实点回填:UPSERT 当日快照并返回系统净额与差异;
+	// 不平不阻塞回填,差异由 handler 输出 [paycheck] DIFF 可 grep 日志。
+	SaveDailyClosing(ctx context.Context, cl DailyClosing) (DailyClosingResult, error)
+	// CashPaymentsByDate 指定日期 cash 流水逐笔(日结报表下钻,含 REFUNDED 凭证)。
+	CashPaymentsByDate(ctx context.Context, date string) ([]Payment, error)
 	// RecordPaymentWithCoupon 带券缴费:CouponID 非空时同事务核销(promotion 注入),
 	// payments.amount 记实收,抵扣额见回执 DeductedCents。
 	RecordPaymentWithCoupon(ctx context.Context, p Payment) (PaymentReceipt, error)

@@ -97,6 +97,15 @@ func (f *settleBilling) GenerateBills(context.Context, string) (int, error) { re
 func (f *settleBilling) RefundPayment(_ context.Context, _ int64, _ string) (*billing.Payment, error) {
 	return nil, nil
 }
+func (f *settleBilling) DailyCashSummary(context.Context, string) ([]billing.DailyCashRow, error) {
+	return nil, nil
+}
+func (f *settleBilling) SaveDailyClosing(context.Context, billing.DailyClosing) (billing.DailyClosingResult, error) {
+	return billing.DailyClosingResult{Balanced: true}, nil
+}
+func (f *settleBilling) CashPaymentsByDate(context.Context, string) ([]billing.Payment, error) {
+	return nil, nil
+}
 
 // newStripeRouter gw 为 nil 表示通道未配置(无 APIKey → 动态判未配置,发起端点 400)。
 func newStripeRouter(bill billing.BillingService, gw billing.PaymentGateway, wh stripe.Webhook) *gin.Engine {

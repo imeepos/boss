@@ -88,6 +88,16 @@ func ClaimsAccountID(c *gin.Context) int64 {
 	return 0
 }
 
+// ClaimsUsername 取当前请求账号名(未认证返回空);柜面收款 operator_name 归因用。
+func ClaimsUsername(c *gin.Context) string {
+	if v, ok := c.Get(middleware.CtxClaims); ok {
+		if claims, ok := v.(*auth.Claims); ok {
+			return claims.Username
+		}
+	}
+	return ""
+}
+
 // APIKeySubjectResolver 构造中间件用的 SubjectResolver:
 // account 主体注入完整 RBAC 身份,worker/customer 注入受限身份。
 func APIKeySubjectResolver(a *app.Application) middleware.SubjectResolver {
