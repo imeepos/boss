@@ -51,7 +51,9 @@ android {
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("http://192.168.0.102:28080/api/user/v1")}\"")
+            // https 硬门槛(2026-08-27 用户拍板:首发含公网用户):release 走 https,正式域名
+            // 定稿后仅需替换此处 host(https://192.168.0.102 为当前反代验证地址)。
+            buildConfigField("String", "BOSS_BASE_URL", "\"${bossBaseUrl("https://192.168.0.102/api/user/v1")}\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
