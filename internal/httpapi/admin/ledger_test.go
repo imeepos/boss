@@ -56,14 +56,14 @@ func (f *fakeResourceSub) ReleaseReserve(_ context.Context, id int64) error {
 // fakeAsset 桩 asset.AssetService。
 type fakeAsset struct {
 	asset.AssetService
-	stocktake    *asset.Stocktake
-	diffTaskID   int64
-	diffErr      error
-	scanned      struct {
+	stocktake  *asset.Stocktake
+	diffTaskID int64
+	diffErr    error
+	scanned    struct {
 		taskID, assetID int64
 		status          string
 	}
-	itemHandle   struct {
+	itemHandle struct {
 		taskID, itemID int64
 		action, note   string
 	}

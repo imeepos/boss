@@ -178,7 +178,6 @@ func TestPGStore_CreateAsset(t *testing.T) {
 	}
 }
 
-
 func TestPGStore_GetAsset(t *testing.T) {
 	t.Run("命中", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()

@@ -193,9 +193,10 @@ func (s *PGStore) AssignAsset(ctx context.Context, a AssetAssignment) (int64, er
 }
 
 // classifyTagInsertErr 把 tags INSERT 23505 拆解为双绑冲突或普通唯一冲突:
-// - uq_tags_bound_asset_notnull → 双绑冲突(ErrBindingConflict)
-// - uq_tags_tag_no_key / uq_tags_epc_code_key → tag_no/epc_code 重复(原 error 透传,
-//   httpx.RespondErr 不映射 23505,返回 50000;若需精确业务码后续在 httpx 增加 23505 通用映射)
+//   - uq_tags_bound_asset_notnull → 双绑冲突(ErrBindingConflict)
+//   - uq_tags_tag_no_key / uq_tags_epc_code_key → tag_no/epc_code 重复(原 error 透传,
+//     httpx.RespondErr 不映射 23505,返回 50000;若需精确业务码后续在 httpx 增加 23505 通用映射)
+//
 // 其他错误原样返回。
 func classifyTagInsertErr(ctx context.Context, err error, t Tag) error {
 	var pgErr *pgconn.PgError
