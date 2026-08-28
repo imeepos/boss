@@ -2,11 +2,12 @@ GO ?= $(or $(shell command -v go 2>/dev/null),/opt/homebrew/bin/go)
 GOFMT ?= $(or $(shell command -v gofmt 2>/dev/null),/opt/homebrew/bin/gofmt)
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check proto docker-build load bossctl bossctl-routes check-conn-test-user check-conn-test-worker
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check proto docker-build load bossctl bossctl-routes bossctl-routes-check check-conn-test-user check-conn-test-worker
 
-## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证)
+## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证;版本注入 git describe)
+BOSSCTL_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 bossctl:
-	$(GO) build -ldflags="-s -w" -o bossctl ./cmd/bossctl
+	$(GO) build -ldflags="-s -w -X main.bossctlVersion=$(BOSSCTL_VERSION)" -o bossctl ./cmd/bossctl
 
 ## 构建业务单体(生产):注入 release-platform 授权公钥(B 档强制门禁;未注入=开发态)
 ## 用法: BOSS_LICENSE_PUBLIC_KEY_HEX=<hex> make build-server
@@ -17,6 +18,10 @@ build-server:
 ## 由 api/openapi 重新生成 bossctl 三端路由目录(routes_*.go,契约变更后执行)
 bossctl-routes:
 	node scripts/gen-bossctl-routes.mjs
+
+## bossctl 路由目录漂移门禁(内存比对不写盘;漏再生成在此拦截)
+bossctl-routes-check:
+	node scripts/gen-bossctl-routes.mjs --check
 
 ## W11 压测:种子压测账号 → 起服务 → k6 → 摘服务(真实 PG 需 BOSS_DATABASE_DSN;端口可经 BOSS_HTTP_PORT 覆盖)
 load:
@@ -60,7 +65,7 @@ lint:
 	fi
 
 ## check:CI 等价门禁(本地一键复现 .github/workflows/ci.yml)
-check: test lint contract-sync
+check: test lint contract-sync bossctl-routes-check
 	$(GO) build ./...
 
 ## 契约同步门禁:路由<->OpenAPI 对账 + json tag 命名 + 文件行数红线

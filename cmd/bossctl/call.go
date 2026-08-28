@@ -58,7 +58,7 @@ func (c *CLI) me() error {
 		return err
 	}
 	if resp.Code != 0 {
-		return fmt.Errorf("未认证(code=%d msg=%s)。使用 --api-key 或 --jwt 指定认证信息,或运行 bossctl login", resp.Code, resp.Msg)
+		return resp.errBiz("查询身份")
 	}
 	printJSON(resp.Data)
 	return nil

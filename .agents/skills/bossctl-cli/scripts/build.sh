@@ -28,7 +28,8 @@ OUT_NAME="bossctl-${GOOS:-$("$GO" env GOOS)}-${GOARCH:-$("$GO" env GOARCH)}"
 OUT="${OUT:-$SKILL_DIR/assets/$OUT_NAME}"
 
 cd "$REPO_ROOT"
-echo "构建 bossctl -> $OUT (GOOS=${GOOS:-$("$GO" env GOOS)} GOARCH=${GOARCH:-$("$GO" env GOARCH)})"
-"$GO" build -ldflags="-s -w" -o "$OUT" ./cmd/bossctl
+VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo dev)"
+echo "构建 bossctl -> $OUT (GOOS=${GOOS:-$("$GO" env GOOS)} GOARCH=${GOARCH:-$("$GO" env GOARCH)} 版本=$VERSION)"
+"$GO" build -ldflags="-s -w -X main.bossctlVersion=$VERSION" -o "$OUT" ./cmd/bossctl
 chmod +x "$OUT"
 echo "完成: $OUT"

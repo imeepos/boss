@@ -16,14 +16,16 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
 )
 
-// bossctlVersion 语义化版本(release 命令发版、issue 报障时请附带)。
-const bossctlVersion = "1.1.0"
+// bossctlVersion 构建时由 ldflags -X 注入 git describe(未注入显示 dev,
+// 便于识别"源码 go run"与"发布构建");报障请附带。
+var bossctlVersion = "dev"
 
 // defaultServer 缺省服务端:项目约定的 102 部署环境(不要本机起服务)。
 const defaultServer = "http://192.168.0.102:28080"
@@ -105,12 +107,24 @@ func main() {
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "错误: %v\n", err)
-		// 401 + --as 身份:档案里的 key 大概率已吊销/重建,给出修复路径
-		if strings.Contains(err.Error(), "code=401") && cli.identityName != "" {
-			fmt.Fprintf(os.Stderr, "提示: 身份 %q 档案里的 key 可能已吊销或主体被重建,重新保存: bossctl identity save %s --api-key NEW_KEY\n", cli.identityName, cli.identityName)
+		if hint := authHint(err, cli.identityName); hint != "" {
+			fmt.Fprintf(os.Stderr, "提示: %s\n", hint)
 		}
 		os.Exit(1)
 	}
+}
+
+// authHint 认证失败(401)时的修复提示:--as 身份提示档案重存,
+// 否则提示登录途径;非 401 错误返回空串不打扰。
+func authHint(err error, identityName string) string {
+	var authErr *AuthError
+	if !errors.As(err, &authErr) {
+		return ""
+	}
+	if identityName != "" {
+		return fmt.Sprintf("身份 %q 档案里的 key 可能已吊销或主体被重建,重新保存: bossctl identity save %s --api-key NEW_KEY", identityName, identityName)
+	}
+	return "未认证。使用 --api-key / --jwt 指定认证信息,或运行 bossctl login 获取 JWT"
 }
 
 // printHelp 输出帮助文本。

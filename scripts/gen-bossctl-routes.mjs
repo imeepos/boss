@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 // 生成 bossctl 路由目录: api/openapi/{admin,user,worker}/*.yaml -> cmd/bossctl/routes_<portal>.go
 // 目录漂移由此收敛:openapi 为单一事实源,勿手改生成文件。
-// 用法: node scripts/gen-bossctl-routes.mjs   (在仓库根执行)
+// 用法: node scripts/gen-bossctl-routes.mjs          (在仓库根执行,写盘)
+//       node scripts/gen-bossctl-routes.mjs --check  (内存比对不写盘,漂移 exit 1;make check 门禁)
 import fs from 'node:fs';
 import path from 'node:path';
 const NL = String.fromCharCode(10);
+const CHECK = process.argv.includes('--check');
 const METHODS = ['get', 'post', 'put', 'delete', 'patch'];
 const PORTALS = [
   { name: 'admin', prefix: '/api/admin/v1', out: 'cmd/bossctl/routes_admin.go', var: 'adminRoutes' },
@@ -61,6 +63,18 @@ for (const p of PORTALS) {
     '}',
     '',
   ];
-  fs.writeFileSync(p.out, lines.join(NL));
-  console.log(`${p.out}: ${routes.length} 条路由`);
+  const content = lines.join(NL);
+  if (CHECK) {
+    // 门禁模式:只比对不写盘,漂移即失败(契约变更后忘了再生成在此拦截)
+    const onDisk = fs.existsSync(p.out) ? fs.readFileSync(p.out, 'utf8') : '';
+    if (onDisk !== content) {
+      console.error(`DRIFT ${p.out}: 与 api/openapi 不一致,执行 node scripts/gen-bossctl-routes.mjs 后随契约变更同提交`);
+      process.exitCode = 1;
+    } else {
+      console.log(`CHECK OK ${p.out}: ${routes.length} 条路由`);
+    }
+  } else {
+    fs.writeFileSync(p.out, content);
+    console.log(`${p.out}: ${routes.length} 条路由`);
+  }
 }
