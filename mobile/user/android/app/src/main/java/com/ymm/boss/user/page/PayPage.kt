@@ -55,13 +55,25 @@ fun PayScreen(nav: Nav) {
 @Composable
 private fun PayFormCard(nav: Nav) {
     var target by remember { mutableStateOf<JSONObject?>(null) }
-    var method by remember { mutableStateOf("wechat") }
+    var method by remember { mutableStateOf("cash") }
+    var payMethods by remember { mutableStateOf(fallbackPayMethods()) }
     var err by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(nav.refreshTick) {
         target = runCatching { loadUnpaidBill() }.getOrNull()
         if (target == null) err = "账单加载失败"
+        // 支付方式后端下发(stripe 可用才含银行卡,未配置默认线下收款);失败回落兜底数组不阻塞缴费。
+        runCatching { BillApi.payMethods() }.onSuccess { m ->
+            val items = m.optJSONArray("items").optList()
+            if (items.isNotEmpty()) {
+                payMethods = items.mapNotNull {
+                    val key = it.optString("key"); val label = it.optString("label")
+                    if (key.isNotBlank()) key to label else null
+                }
+            }
+            if (m.optString("default").isNotBlank()) method = m.optString("default")
+        }
     }
 
     AppCard {
@@ -69,11 +81,15 @@ private fun PayFormCard(nav: Nav) {
         AmountHead(amount, target)
         Spacer(Modifier.height(8.dp))
         FieldLabel("支付方式")
-        MethodGroup(method) { method = it }
+        MethodGroup(method, payMethods) { method = it }
         if (err.isNotEmpty()) Text(err, fontSize = 12.5.sp, color = Palette.err)
         ConfirmButton(amount, target?.optString("billNo"), method, scope, nav) { err = it }
     }
 }
+
+// fallbackPayMethods 后端未下发时的兜底(不含银行卡:card 需 stripe 通道,避免误发起 checkout)。
+private fun fallbackPayMethods(): List<Pair<String, String>> =
+    listOf("wechat" to "微信支付", "alipay" to "支付宝", "cash" to "线下收款")
 
 private suspend fun loadUnpaidBill(): JSONObject? =
     BillApi.bills().optJSONArray("items").optList().firstOrNull { it.optString("status") == "UNPAID" }
@@ -110,8 +126,8 @@ private fun ConfirmButton(
 }
 
 @Composable
-private fun MethodGroup(current: String, onSelect: (String) -> Unit) {
-    listOf("wechat" to "微信支付", "alipay" to "支付宝", "card" to "银行卡").forEach { (key, label) ->
+private fun MethodGroup(current: String, methods: List<Pair<String, String>>, onSelect: (String) -> Unit) {
+    methods.forEach { (key, label) ->
         Row(
             Modifier.fillMaxWidth().clickable { onSelect(key) }.padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

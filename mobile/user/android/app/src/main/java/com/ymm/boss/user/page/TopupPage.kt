@@ -69,11 +69,26 @@ fun TopupScreen(nav: Nav) {
 @Composable
 private fun TopupFormCard(nav: Nav, balance: Double, denoms: List<Int>) {
     var amountText by remember { mutableStateOf("100") }
-    var method by remember { mutableStateOf("wechat") }
+    var method by remember { mutableStateOf("cash") }
+    var payMethods by remember { mutableStateOf(fallbackTopupMethods()) }
     var err by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     // 防重复提交:弱网连点是重复充值创建(重复扣款风险),提交完成前禁用。
     val guard = rememberSubmitGuard()
+
+    LaunchedEffect(nav.refreshTick) {
+        // 支付方式后端下发(stripe 可用才含银行卡,未配置默认线下收款);失败回落兜底不阻塞充值。
+        runCatching { BillApi.payMethods() }.onSuccess { m ->
+            val items = m.optJSONArray("items").optList()
+            if (items.isNotEmpty()) {
+                payMethods = items.mapNotNull {
+                    val key = it.optString("key"); val label = it.optString("label")
+                    if (key.isNotBlank()) key to label else null
+                }
+            }
+            if (m.optString("default").isNotBlank()) method = m.optString("default")
+        }
+    }
 
     AppCard {
         BalanceHead(balance)
@@ -89,7 +104,7 @@ private fun TopupFormCard(nav: Nav, balance: Double, denoms: List<Int>) {
         )
         Spacer(Modifier.height(12.dp))
         FieldLabel("支付方式")
-        MethodList(method) { method = it }
+        MethodList(method, payMethods) { method = it }
         if (err.isNotEmpty()) Text(err, fontSize = 12.5.sp, color = Palette.err)
         Button(
             onClick = {
@@ -102,6 +117,10 @@ private fun TopupFormCard(nav: Nav, balance: Double, denoms: List<Int>) {
         ) { Text(if (guard.active) "充值中…" else "确认充值") }
     }
 }
+
+// fallbackTopupMethods 后端未下发时的兜底(同 PayScreen:不含银行卡)。
+private fun fallbackTopupMethods(): List<Pair<String, String>> =
+    listOf("wechat" to "微信支付", "alipay" to "支付宝", "cash" to "线下收款")
 
 @Composable
 private fun BalanceHead(balance: Double) {
@@ -131,11 +150,11 @@ private fun DenomRow(denoms: List<Int>, onPick: (String) -> Unit) {
 }
 
 @Composable
-private fun MethodList(current: String, onSelect: (String) -> Unit) {
-    listOf(
-        "wechat" to "微信支付", "alipay" to "支付宝",
-        "card" to "银行卡", "prepaid" to "预付券",
-    ).forEach { (key, label) -> MethodRow(label, current == key) { onSelect(key) } }
+private fun MethodList(current: String, methods: List<Pair<String, String>>, onSelect: (String) -> Unit) {
+    // 后端下发支付方式 + 本站特殊项"预付券"(券核销走既有 topup 记账口径)。
+    (methods + listOf("prepaid" to "预付券")).forEach { (key, label) ->
+        MethodRow(label, current == key) { onSelect(key) }
+    }
 }
 
 @Composable
@@ -170,5 +189,12 @@ private fun org.json.JSONArray?.optIntList(): List<Int> {
     if (this == null) return emptyList()
     val out = ArrayList<Int>(length())
     for (i in 0 until length()) out.add(optInt(i))
+    return out
+}
+
+private fun org.json.JSONArray?.optList(): List<org.json.JSONObject> {
+    if (this == null) return emptyList()
+    val out = ArrayList<org.json.JSONObject>(length())
+    for (i in 0 until length()) optJSONObject(i)?.let { out.add(it) }
     return out
 }

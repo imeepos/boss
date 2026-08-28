@@ -43,6 +43,9 @@ object BillApi {
     /** GET /payments,返回 items(PaymentRecord)。 */
     suspend fun payments(): JSONArray = Api.getArray("/payments")
 
+    /** GET /payments/methods,返回 {default, items:[{key,label}]};stripe 未配置默认 cash 线下收款。 */
+    suspend fun payMethods(): JSONObject = Api.get("/payments/methods")
+
     /** GET /payments/{payNo}/receipt,返回 receiptNo/customerName/amount/period/payMethod/paidAt。 */
     suspend fun receipt(payNo: String): JSONObject = Api.get("/payments/$payNo/receipt")
 
