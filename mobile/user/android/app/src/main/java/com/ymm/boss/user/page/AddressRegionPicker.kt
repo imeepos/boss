@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -67,16 +68,29 @@ internal fun AddressRegionPickerSheet(
     // 错误重试触发器:reloadTick 变化即整链重载(网络瞬断后不必关弹层重开)。
     var reloadTick by remember { mutableIntStateOf(0) }
 
-    // 系统返回=回上一级而非整层关闭;链空时不拦截,交还弹层自身关闭。
+    // 返回键语义全接管:M3 弹层的内置返回处理(禁用前)与上滑/点遮罩统一走
+    // onDismissRequest,内容里的 BackHandler 抢不过它,层2/层3 返回被整层关闭。
+    // 故 properties 禁用内置返回后在此分层:链非空回上一级,链空才真关闭。
     // 不清 filter 会残留上一层的过滤词,回到下层时列表被误过滤。
-    BackHandler(enabled = chain.isNotEmpty()) {
-        chain.removeAt(chain.size - 1)
-        filter = ""
+    BackHandler {
+        if (chain.isNotEmpty()) {
+            chain.removeAt(chain.size - 1)
+            filter = ""
+        } else {
+            onDismiss()
+        }
     }
 
     LaunchedEffect(chain.size, reloadTick) { loadChildren(chain, setLoading = { loading = it }, setErr = { err = it }) { children = it } }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = Palette.panel) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Palette.panel,
+        // 禁用弹层内置返回关闭:返回键归上面的 BackHandler 分层处理;
+        // 上滑拖拽与点遮罩不受影响,仍走 onDismissRequest 真关闭,不会被误判成回上一级。
+        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
+    ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             PickerHeader(
                 chain = chain,
