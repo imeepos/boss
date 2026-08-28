@@ -27,3 +27,48 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "S2 读时延达标率跌破 99%(10m 窗口 P95 口径)"
+
+      # ── user 端关键路径告警(2026-08-28 明远, user-android 上线保障) ──
+      # 路径级 5xx 率与 P95 时延;user 端体验×3 关键路径=登录/下单/支付/实名。
+      - alert: UserAuthLogin5xx
+        expr: |
+          sum(rate(boss_http_requests_total{code=~"5..",path="/api/user/v1/auth/login"}[5m]))
+          / sum(rate(boss_http_requests_total{path="/api/user/v1/auth/login"}[5m])) > 0.01
+        for: 3m
+        labels: { severity: critical, channel: user }
+        annotations:
+          summary: "user 登录接口 5xx 率 >1%(5m 窗口)"
+
+      - alert: UserOrder5xx
+        expr: |
+          sum(rate(boss_http_requests_total{code=~"5..",path=~"/api/user/v1/orders.*"}[5m]))
+          / sum(rate(boss_http_requests_total{path=~"/api/user/v1/orders.*"}[5m])) > 0.01
+        for: 3m
+        labels: { severity: critical, channel: user }
+        annotations:
+          summary: "user 下单接口 5xx 率 >1%(5m 窗口)"
+
+      - alert: UserPay5xx
+        expr: |
+          sum(rate(boss_http_requests_total{code=~"5..",path=~"/api/user/v1/orders/.*/stripe.*|/api/user/v1/payments.*"}[5m]))
+          / sum(rate(boss_http_requests_total{path=~"/api/user/v1/orders/.*/stripe.*|/api/user/v1/payments.*"}[5m])) > 0.01
+        for: 3m
+        labels: { severity: critical, channel: user }
+        annotations:
+          summary: "user 支付接口 5xx 率 >1%(5m 窗口)"
+
+      - alert: UserProfile5xx
+        expr: |
+          sum(rate(boss_http_requests_total{code=~"5..",path="/api/user/v1/profile"}[5m]))
+          / sum(rate(boss_http_requests_total{path="/api/user/v1/profile"}[5m])) > 0.01
+        for: 3m
+        labels: { severity: warning, channel: user }
+        annotations:
+          summary: "user 实名/资料接口 5xx 率 >1%(5m 窗口)"
+
+      - alert: UserKeyPathP95Latency
+        expr: histogram_quantile(0.95, sum by (le) (rate(boss_http_request_duration_seconds_bucket{path=~"/api/user/v1/auth/login|/api/user/v1/orders.*|/api/user/v1/profile"}[10m]))) > 1.5
+        for: 5m
+        labels: { severity: warning, channel: user }
+        annotations:
+          summary: "user 关键路径(登录/下单/实名) P95 时延 >1.5s(10m 窗口)"
