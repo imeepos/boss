@@ -40,6 +40,18 @@ func (s *MemoryService) Get(ctx context.Context, id int64) (*Customer, error) {
 	return &cp, nil
 }
 
+// GetInScope 按 id 查客户并套范围过滤(实体+区域);越界与不存在同回 ErrCustomerNotFound。
+func (s *MemoryService) GetInScope(ctx context.Context, id int64, legalEntityID int64, regionScope string) (*Customer, error) {
+	c, err := s.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !match(*c, CustomerQuery{LegalEntityID: legalEntityID, RegionScope: regionScope}) {
+		return nil, ErrCustomerNotFound
+	}
+	return c, nil
+}
+
 // List 按条件过滤,未匹配返回空片(非 nil)。
 func (s *MemoryService) List(ctx context.Context, q CustomerQuery) ([]Customer, error) {
 	s.mu.RLock()

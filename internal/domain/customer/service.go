@@ -21,6 +21,8 @@ type CustomerService interface {
 	Create(ctx context.Context, c Customer) (int64, error)
 	// Get 按 id 查客户。
 	Get(ctx context.Context, id int64) (*Customer, error)
+	// GetInScope 按 id 查客户并套数据范围(实体相等+区域子树);越界与不存在同回 ErrCustomerNotFound。
+	GetInScope(ctx context.Context, id int64, legalEntityID int64, regionScope string) (*Customer, error)
 	// List 按条件分页查询。
 	List(ctx context.Context, q CustomerQuery) ([]Customer, error)
 }
