@@ -11,7 +11,7 @@ import (
 
 // custRegCols 注册申请列表查询列。
 const custRegCols = `id, name, phone, id_card_no, legal_entity_id, address_id, region_id, status,
- review_note, reviewer_account_id, customer_id, submitted_at, reviewed_at`
+ review_note, reviewer_account_id, customer_id, submitted_at, reviewed_at, source`
 
 // Submit 新建客户注册申请(落 PENDING);submitted_at 由 DB 默认 now() 生成。
 // 校验 legal_entity_id, address_id, region_id 存在性,防止孤儿申请。
@@ -47,9 +47,9 @@ func (s *PGStore) Submit(ctx context.Context, reg Registration) (int64, error) {
 
 	var id int64
 	err := s.db.QueryRow(ctx, `
-INSERT INTO customer_registrations(name, phone, id_card_no, legal_entity_id, address_id, region_id)
-VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
-		reg.Name, reg.Phone, reg.IDCardNo, reg.LegalEntityID, reg.AddressID, reg.RegionID).Scan(&id)
+INSERT INTO customer_registrations(name, phone, id_card_no, legal_entity_id, address_id, region_id, source)
+VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		reg.Name, reg.Phone, reg.IDCardNo, reg.LegalEntityID, reg.AddressID, reg.RegionID, reg.Source).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("customer: submit registration: %w", err)
 	}
@@ -77,7 +77,7 @@ SELECT `+custRegCols+` FROM customer_registrations
 		)
 		if err := rows.Scan(&r.ID, &r.Name, &r.Phone, &r.IDCardNo, &r.LegalEntityID, &r.AddressID,
 			&r.RegionID, &r.Status, &reviewNote, &reviewerAccount, &customerID,
-			&r.SubmittedAt, &reviewedAt); err != nil {
+			&r.SubmittedAt, &reviewedAt, &r.Source); err != nil {
 			return nil, fmt.Errorf("customer: scan registration: %w", err)
 		}
 		if reviewedAt.Valid {

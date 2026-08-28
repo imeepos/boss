@@ -38,6 +38,7 @@ type Registration struct {
 	LegalEntityID     int64      `json:"legalEntityId"`
 	AddressID         int64      `json:"addressId"`
 	RegionID          int64      `json:"regionId"`
+	Source            string     `json:"source"` // 注册来源(获客追踪,如 landing-m4;空=未携带)
 	Status            string     `json:"status"`
 	ReviewNote        string     `json:"reviewNote"`
 	ReviewerAccountID int64      `json:"reviewerAccountId"`

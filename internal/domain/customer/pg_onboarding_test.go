@@ -29,8 +29,8 @@ func TestPGStore_SubmitRegistration(t *testing.T) {
 		WithArgs(int64(4)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
-	mock.ExpectQuery(`INSERT INTO customer_registrations\(name, phone, id_card_no, legal_entity_id, address_id, region_id\)`).
-		WithArgs("张先生", "13800001234", "110101199001011234", int64(1), int64(100), int64(4)).
+	mock.ExpectQuery(`INSERT INTO customer_registrations\(name, phone, id_card_no, legal_entity_id, address_id, region_id, source\)`).
+		WithArgs("张先生", "13800001234", "110101199001011234", int64(1), int64(100), int64(4), "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
 
 	s := NewPGStore(mock)

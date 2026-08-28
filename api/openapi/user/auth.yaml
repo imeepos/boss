@@ -102,6 +102,7 @@ paths:
                 legalEntityId: { type: integer, format: int64 }
                 addressId: { type: integer, format: int64 }
                 regionId: { type: integer, format: int64 }
+                source: { type: string, maxLength: 32, description: 注册来源(获客追踪,如 landing-m4;可空) }
       responses:
         '200':
           description: 受理结果
