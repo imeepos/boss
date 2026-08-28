@@ -144,8 +144,9 @@ internal fun AddressRegionPickerSheet(
                             LazyColumn {
                                 items(shown, key = { it.optLong("id") }) { node ->
                                     NodeRow(node = node, enabled = !loading, onClick = {
-                                        val hasNext = node.optBoolean("hasChildren")
-                                        if (hasNext && node.optInt("level") < 5) {
+                                        // 直选判定只认 hasChildren:level<5 硬编码在树加深/
+                                        // 层级变动时会把叶子当中间层,hasChildren 才是权威信号。
+                                        if (node.optBoolean("hasChildren")) {
                                             chain.add(node); filter = ""
                                         } else {
                                             onSelected(selectionOf(chain, node))
