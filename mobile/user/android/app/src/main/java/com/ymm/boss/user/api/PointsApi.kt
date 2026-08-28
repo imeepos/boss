@@ -5,7 +5,7 @@ import org.json.JSONObject
 
 /**
  * 用户端积分域封装,契约 api/openapi/user/loy.yaml(LOGO 000119)。
- * 读为主:概览/等级/任务;兑为辅:/points/exchange 需兑换券模板(后端暂未提供列表端点,页面占位)。
+ * 读为主:概览/等级/任务/可兑换模板;兑为辅:/points/exchange 先扣后发(发券失败后端补偿回补)。
  * 禁止改动 UserApi.kt 与 Api.kt,新接口一律走这里。
  */
 object PointsApi {
@@ -22,7 +22,11 @@ object PointsApi {
     /** 完成任务领积分(周期内幂等,重复调后端返回冲突)。返回 data.balance。 */
     suspend fun completeTask(taskId: Long): JSONObject = Api.post("/points/tasks/$taskId/complete")
 
-    /** 积分换券(契约端点;templateId 需模板列表,后端就绪前页面不走此路径)。 */
+    /** 积分可兑换券模板列表:data.items(templateId/name/type/faceValue/threshold/pointsPrice)。 */
+    suspend fun exchangeOffers(): JSONArray =
+        Api.get("/points/exchange-offers").optJSONArray("items") ?: JSONArray()
+
+    /** 积分换券(先扣后发,发券失败后端补偿回补)。返回 data.couponId/cost。 */
     suspend fun exchange(templateId: Long): JSONObject =
         Api.post("/points/exchange", JSONObject().put("templateId", templateId))
 }

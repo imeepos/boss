@@ -1,6 +1,5 @@
 package com.ymm.boss.user.page
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.PointsApi
 import com.ymm.boss.user.api.toObjectList
 import com.ymm.boss.user.ui.AppCard
@@ -44,6 +43,7 @@ import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.rememberSubmitGuard
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -55,16 +55,37 @@ fun PointsScreen(nav: Nav) {
     var overview by remember { mutableStateOf<JSONObject?>(null) }
     var tierName by remember { mutableStateOf("") }
     var tasks by remember { mutableStateOf(emptyList<JSONObject>()) }
+    var offers by remember { mutableStateOf(emptyList<JSONObject>()) }
     var loadErr by remember { mutableStateOf("") }
+    var notice by remember { mutableStateOf("") }
+    var exchangeErr by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val guard = rememberSubmitGuard()
+    var confirmOffer by remember { mutableStateOf<JSONObject?>(null) }
 
     suspend fun load() {
         loadErr = ""
         try { overview = PointsApi.overview() } catch (e: Exception) { loadErr = "积分加载失败，请检查网络" }
         try { tierName = PointsApi.tier().optJSONObject("tier")?.optString("name").orEmpty() } catch (e: Exception) {}
         try { tasks = PointsApi.tasks().toObjectList() } catch (e: Exception) {}
+        try { offers = PointsApi.exchangeOffers().toObjectList() } catch (e: Exception) {}
     }
     LaunchedEffect(nav.refreshTick) { load() }
+
+    fun doExchange(templateId: Long) {
+        if (!guard.acquire()) return
+        exchangeErr = ""
+        notice = ""
+        scope.launch {
+            try {
+                val r = PointsApi.exchange(templateId)
+                notice = "兑换成功，优惠券已放入券仓"
+                load() // 刷新余额/流水
+            } catch (e: Exception) {
+                exchangeErr = Api.friendlyMessage(e).ifBlank { "兑换失败，请稍后重试" }
+            } finally { guard.release() }
+        }
+    }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("我的积分", onBack = { nav.pop() })
@@ -75,10 +96,30 @@ fun PointsScreen(nav: Nav) {
             }
         }
         BalanceCard(overview, tierName)
-        ExchangeEntryCard(overview)
+        ExchangeCard(
+            offers = offers,
+            balance = overview?.optLong("balance", 0) ?: 0L,
+            notice = notice,
+            err = exchangeErr,
+            onExchange = { o -> confirmOffer = offers.firstOrNull { it.optLong("templateId") == o } },
+        )
         TaskCard(tasks, onDone = { scope.launch { load() } })
         EntriesCard(overview)
         Spacer(Modifier.height(12.dp))
+    }
+    confirmOffer?.let { o ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmOffer = null },
+            title = { Text("确认兑换") },
+            text = { Text("将消耗 ${o.optLong("pointsPrice")} 积分兑换「${o.optString("name")}」？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmOffer = null
+                    doExchange(o.optLong("templateId"))
+                }) { Text("确认兑换", color = Palette.primary) }
+            },
+            dismissButton = { TextButton(onClick = { confirmOffer = null }) { Text("取消") } },
+        )
     }
 }
 
@@ -105,31 +146,62 @@ private fun BalanceCard(overview: JSONObject?, tierName: String) {
     }
 }
 
-/** 兑换入口(占位):后端未提供可兑换券模板列表端点,按契约占位并明示终态,禁止静默假功能。 */
+/**
+ * 积分兑换卡:可兑换券模板列表(契约 /points/exchange-offers)。
+ * offers 为空时保持占位终态(暂无兑换券),不渲染假功能;
+ * 兑换走 /points/exchange(先扣后发,后端补偿回补),成功余额刷新 + 券到账终态文案。
+ */
 @Composable
-private fun ExchangeEntryCard(overview: JSONObject?) {
-    var showDialog by remember { mutableStateOf(false) }
+private fun ExchangeCard(
+    offers: List<JSONObject>,
+    balance: Long,
+    notice: String,
+    err: String,
+    onExchange: (Long) -> Unit,
+) {
     AppCard {
-        Row(
-            Modifier.fillMaxWidth().clickable { showDialog = true }.padding(vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconTile(Icons.Filled.CardGiftcard, Palette.orange, size = 40.dp, corner = 12.dp)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text("积分兑换", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.ink)
-                Text("兑换通道建设中，敬请期待", fontSize = 12.sp, color = Palette.muted)
+        CardTitle("积分兑换")
+        if (offers.isEmpty()) {
+            EmptyState("暂无可兑换券")
+        } else {
+            offers.forEachIndexed { i, o ->
+                val price = o.optLong("pointsPrice")
+                val affordable = balance >= price
+                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconTile(Icons.Filled.CardGiftcard, Palette.orange, size = 40.dp, corner = 12.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(o.optString("name"), fontSize = 14.sp, fontWeight = FontWeight.W500, color = Palette.ink, maxLines = 1)
+                        Spacer(Modifier.height(3.dp))
+                        Text(offerDesc(o) + " · $price 积分", fontSize = 11.5.sp, color = Palette.muted)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    if (affordable) {
+                        Button(
+                            onClick = { onExchange(o.optLong("templateId")) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                            modifier = Modifier.height(34.dp),
+                        ) { Text("兑换", fontSize = 13.sp) }
+                    } else {
+                        Tag("积分不足", Palette.subtle)
+                    }
+                }
+                if (i < offers.lastIndex) HorizontalDivider(color = Palette.line, thickness = 0.5.dp)
             }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Palette.subtle, modifier = Modifier.size(20.dp))
         }
+        if (notice.isNotBlank()) Text(notice, fontSize = 12.5.sp, color = Palette.success, modifier = Modifier.padding(top = 4.dp))
+        if (err.isNotBlank()) Text(err, fontSize = 12.5.sp, color = Palette.err, modifier = Modifier.padding(top = 4.dp))
     }
-    if (showDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("积分兑换") },
-            text = { Text("兑换功能正在建设中，上线后可用积分兑换优惠券。") },
-            confirmButton = { TextButton(onClick = { showDialog = false }) { Text("知道了") } },
-        )
+}
+
+private fun offerDesc(o: JSONObject): String {
+    val face = o.optLong("faceValue")
+    val threshold = o.optLong("threshold")
+    return when (o.optString("type")) {
+        "CASH" -> "¥%.2f 无门槛券".format(face / 100.0)
+        "FULL_CUT" -> "满 ¥%.2f 减 ¥%.2f".format(threshold / 100.0, face / 100.0)
+        else -> "优惠券"
     }
 }
 
