@@ -421,3 +421,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 CLI/工具的退出码语义要变更时,修复是先 grep 仓库内全部消费方(scripts/、CI、`set -e` 脚本里 `result=$(cmd)` 的 command substitution 会被新非零退出码杀掉),再改默认值——退出码是接口,不是实现细节(2026-09-06 bossctl 退出码改 1 杀死 api_test.sh)。
 - 当本地身份档案/凭证文件 401 时,修复是先与唯一事实源(test-accounts.json)逐 key 比对有效期,过期档案直接刷新,而不是反复重试调用(2026-09-06 admin 档案旧 key 已吊销)。
 - 当给后端接口造测试载荷连报 42200 时,修复是先读 handler 的 httpx.BindAndValidate/Require* 校验清单(字段名、类型形态如字符串带宽"100M" vs 数字)再重试,不要猜(2026-09-06 products/price-history 连错三次)。
+- 当 M3 1.4.0 ModalBottomSheet 内要自定义系统返回语义时,修复是把返回路由进 onDismissRequest(「到达时面板 Hidden 且栈非空=回上一级,否则真关闭」的确定性语义)——内容层 BackHandler 收不到弹窗期返回事件(注册在 Activity dispatcher),触摸时间戳也区分不了返回/上滑(两者都先 hide 再回调,2026-08-28 地址选择器 A3 三轮实证)。
+- 当 uiautomator dump 断言 Compose 控件可点性时,修复是找文本的包裹节点而不是文本子节点——Compose 文本子节点会单独暴露成 clickable=false 幽灵行,QA 按它断言会误报"按钮不可点"(2026-08-28 面包屑 chip 误判实例)。
+- 当真机 input text 打不进字母时,先怀疑 MIUI 搜狗输入法吞事件,修复是改走选区回填路径造数,不与 IME 纠缠(2026-08-28 MI 9 SE 实测)。
+- 当 license/证书类"激活成功"后,修复是必须验证持久层文件真实落盘(docker exec ls 卷挂载路径)——激活写的是容器层时,任何重部署都会静默蒸发证书,activated:false 且无 reason 即文件缺失(2026-08-28 102 license 卷挂载缺失事故,两次复发)。

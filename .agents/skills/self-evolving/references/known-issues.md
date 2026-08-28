@@ -367,3 +367,6 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状: 重跑 gen-bossctl-routes.mjs 后 diff 混入 replacements/license/points-exchange-offers 等与任务无关的路由行。
   原因: main 上存在 openapi 已更新但 routes_*.go 未同步的存量漂移(他人欠债),全量生成工具会一并写回。
   修法: 确认漂移属他人未同步(git show HEAD 对 openapi 与 routes 逐条比对)后,git checkout 还原生成文件,再手工只加本任务路由行(2026-09-05 stripe-config-backend 实例)。
+- 症状: 102 重部署后 user 端全部业务接口 403 LICENSE_REQUIRED,license/status 返回 activated:false 且无 reason 字段。
+  原因: 部署工作区 compose 副本缺 boss_license_data:/var/lib/boss 挂载,激活的证书落在容器层,重部署即蒸发(status 无 reason=ErrNoLicense=文件缺失,有 reason=验签失败,可据此分流)。
+  修法: docker inspect boss-server 查 Mounts 确认卷挂载 → 补挂载重建 → 重新激活 → docker exec ls /var/lib/boss 验证 license.json 真实落卷才算修复(2026-08-28 两次复发实例)。

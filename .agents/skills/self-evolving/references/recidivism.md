@@ -103,3 +103,4 @@
 | 写组件测试前未先核对 vitest environment + 是否已装 @testing-library/react | 1 | 2026-10-01(回访评价页交互测试,useState setState 异步 + 无 testing-library,首版 6 个测试全红;改 SSR 骨架 + 抽 filterFeedback 纯函数测试才通) | 先 grep vite.config.ts 的 test.environment 与 pnpm-lock.yaml 的 testing-library/react + 项目内 fireEvent 引用计数;environment=node 项目走 SSR + 纯函数测试,不写 useState/事件交互测试 |
 
 | 临时回退工作区文件做红/绿对照后用 `git checkout -- file` 恢复,把真正的修复一并抹掉 | 1 | 2026-08-27(z-index 修复 sed 临时改回 z-50 验证测试红,checkout 把 dialog.tsx 三处 edit 全冲掉,靠 diff --stat 复查才发现重做) | 恢复用 `git stash push <file>` → `git stash pop` 或 sed 双向改回,禁 checkout;任何"恢复"动作后必须 git diff 复查剩余改动是否符合预期 |
+| license/证书激活成功即认为修复,未验证持久层文件落盘,重部署后复发 | 1 | 2026-08-28(102 compose 缺 license 卷挂载,激活写容器层,17:10Z CI 重部署即 403 全面回归,QA 验收被挡) | 激活后必做 `docker exec <容器> ls /var/lib/boss/license.json`;activated:false 无 reason=文件缺失,有 reason=验签失败 |
