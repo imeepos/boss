@@ -46,6 +46,13 @@
 - **修复与回归（✅ 关闭）**：并行会话 commit `cbcd9d35`（依 nav.js 契约改 tab 标签为"订单"）；真机回归：点"订单"tab → "我的订单"页，名实相符（证据 `d12-bug01-regression.png`）
 - 测试基线警示：并行迭代快于测试基线——本轮中并行又提交 `00fcc6d3`（积分/优惠券/发票菜单进入 ProfileMenu），需重装最新版再测（见已验证页面更新）
 
+## 静态审查补充（08-28，等待真机窗口期完成）
+
+- ✅ POST_NOTIFICATIONS：MainActivity 46-50 行已有 `checkSelfPermission`+`requestPermissions`(1001) 运行时请求实现；Android 11 无弹窗属平台行为，待 13+ 设备实测弹窗
+- ✅ LocationProvider 权限检查与实测 granted=true 一致
+- ✅ 12 环节契约对账：terms.md 12 环节固定版；Android 端 OrderTimeline/OrderCard 映射集中（4 里程碑=1/2-7/8-11/12），历史"环节 10-11 落入完成组"事故已在 OrderTimeline.kt L50 修复；OrderConfirmScreen 提交=环节1、PayResultPage BackHandler 防退回待支付页——静态一致
+- 📋 待真机造单后验证：订单详情 12 环节时间线、取消分支（CancelInfoCard 环节1~12 取消说明）、服务评价 RatePage
+
 ## 真机协调阻塞（08-28 凌晨，待主持人协调）
 
 - 现象：com.ymm.boss.user 在 ee9999eb 上被并行会话反复卸载/重装（我 install -r Success → 数秒后 pm path 空）；App 前台被 MIUI recents 反复抢占；曾出现 focus=null、launcher 焦点
