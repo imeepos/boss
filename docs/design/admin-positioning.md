@@ -59,11 +59,27 @@ admin 的"客户"是**企业内部人员**——装维师傅、客服坐席、�
 |:--|:--|:--|:--|:--|:--|
 | 内部系统要 API 免登对接 | 网络运维/开发 | API key 签发/吊销（bossctl 即消费者） | org/apikey | GET/POST /api-keys、DELETE /:id | 已上线（签发/吊销/明文一次展示） |
 
+### E. 代客受理（客户无法/不便自助时的后台代办，2026-08-29 裁定）
+
+> 裁定依据：后台代客闭环目标——客户到厅/来电等线下场景，操作员应能在 admin 内
+> 替客户完成开户到下单的全部动作；正常自助口径仍是 user 端（REQ-PORT-007）。
+> 选项数据源走"受理目录端点"（menu:customer / menu:order 本域门禁），不给 ops
+> 放宽组织/资源域菜单，裁定见 adopted/2026-08-29-admin-onbehalf-catalog.md。
+
+| 场景 | 求助人 | admin 能力 | 页面 | 端点 | 现状 |
+|:--|:--|:--|:--|:--|:--|
+| 客户到厅开户 | 客服坐席 | 客户直建（区域/主体/地址目录选择） | bss/customer「新建客户」 | POST /customers、GET /customers/onboarding-catalog | 已上线（102 验证） |
+| 客户自助注册待审 | 客服坐席 | 注册审核队列（通过建档/驳回留痕） | bss/customer「注册审核」 | GET /customer-registrations、POST /:id/approve、/:id/reject | 已上线（102 验证） |
+| 客户证件不在手边 | 客服坐席 | 实名代录+核验 | bss/customer「实名代录」 | GET/POST /customers/:id/real-name、/verify | 已上线（迁移 000051/000070） |
+| 客户到厅办理新装 | 客服坐席 | 代客下单（在售产品/渠道目录+地址检索，预付费可选月数） | boss/order「代客下单」 | POST /orders、GET /orders/catalog | 已上线（102 验证） |
+| 代客单后续推进 | 客服/调度 | 环节 2-4 人工推进+8-12 作业（既有能力） | boss/order、boss/dispatch | /orders/:no/{check-resource,reserve,charge}、/dispatch/* | 已上线 |
+
 ## 3. 明确不属于 admin 的
 
-- 客户侧自助（注册/充值/报障）：客户门户 PORT（user 端，REQ-PORT-007），admin 不代客操作。
+- 客户侧自助（注册/充值/报障）的**常态入口**：客户门户 PORT（user 端，REQ-PORT-007）。
+  admin 只在客户无法自助时按上表 E 做**线下代客受理**，不做客户自助的第二个常态入口。
 - 日常业务作业（派单/扫码/出账/缴费）：boss/billing/ams 分组页面属运营作业，按角色权限开放，
-  但"求助型"场景只有上表 A–D 四类。
+  但"求助型"场景只有上表 A–E 五类。
 - 师傅端内容：boss/worker-ops，非 sysadmin 独占。
 
 ## 4. 缺口 backlog（按优先级）
