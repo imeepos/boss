@@ -572,3 +572,7 @@ SQL
 - 验证 ldflags `-X` 注入是否生效:对两个镜像分别 `docker run --rm --entrypoint sh <img> -c "strings 二进制 | grep -E ^格式\$ | sort -u"` 再 `comm -23` 求差,独有行即注入值;比翻 CI 配置可靠(2026-08-29 授权公钥取证实测)。
 - **docker 卷按 compose 项目名隔离**:目录名=项目名=卷名前缀(CI 在 boss-app → 卷 boss-app_boss_license_data;手工在 deployments 跑 → 新建 deployments_* 空卷)。接手容器先 `docker inspect --format '{{.Mounts}}'` 核对卷身份;跨项目 up 会静默挂新空卷,持久化文件"消失"(2026-08-29 license.json 事故,postmortem 0010)。
 - pgxmock 的 WillReturnRows 对 NULL 列不触发真驱动 Scan 校验——**可空列 Scan 缺陷(如 `Scan(&int64)` 撞 bill_id NULL)单测全绿,真库必炸**;制度:可空列一律 `SELECT COALESCE(col,0)` 再 Scan(充值流水退款事故实证)。
+
+## 2026-08-29 验收/巡检脚本取 JSON 字段:先打印原文再接字段;sampleIds 先读 SQL 再下结论
+- 一次性 shell+python 脚本先 dry 跑一轮只 `head -c 200` 打印响应原文,肉眼确认 envelope 形状({code,data,msg})后再写字段提取;envelope 取字段先 `d.get('data',d)`。
+- 巡检/告警输出里的 `sampleIds`/`sample [N]` 是**命中行自身的主键**,不是被引用列的值;下结论前先读巡检 SQL(如 pg_patrol.go)确认 array_agg 的是哪一列。本轮 sample [100] 被误读成 customer_id,直查库才发现 100 是 lo_accounts.id。

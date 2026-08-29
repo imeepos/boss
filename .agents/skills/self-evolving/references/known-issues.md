@@ -398,3 +398,8 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状: worker 端 createComposeRule 的 androidTest 4 用例全挂,`java.lang.RuntimeException: Intent in process com.ymm.boss.worker resolved to different process com.ymm.boss.worker.test: Intent { ... cmp=com.ymm.boss.worker.test/androidx.activity.ComponentActivity }`,100% 确定性复现(user 端同款同设备同日全绿)。
   原因: `androidx.compose.ui:ui-test-manifest` 挂在 **androidTestImplementation** 时,占位 ComponentActivity 被合并进**测试 APK**(`*.test` 包)manifest;测试启动它时 activity 落在 `*.test` 独立进程,与 instrumentation 进程(目标包)不一致,框架 `Instrumentation.startActivitySync` 进程归属校验直接抛异常。
   修法: 改挂 **debugImplementation**(对齐 user 端,Compose 官方推荐写法)——ComponentActivity 合入主 APK debug manifest,与 instrumentation 同进程;改一行 configuration 即可,勿动依赖本身(2026-08-29 wt-ui-p7 worker 端实测,改后 4 用例全绿)。
+
+## ssh 远端 `cmd1 && cmd2` 链共享 stdin,heredoc 被前一条吞掉(2026-08-29)
+- 症状:`ssh host 'docker exec -i pg pg_dump ... > bak.sql && docker exec -i pg psql ...' <<'SQL' ... SQL` 不报错但 DELETE 未执行,后续巡检才暴露。
+- 原因:heredoc 挂在 ssh 的 stdin 上,`&&` 链里**第一条**命令(pg_dump)同样继承 stdin 且把内容消费掉,psql 收到空输入,psql 无输入时静默退出码 0。
+- 修法:heredoc 单独一条 ssh,喂给唯一读 stdin 的命令;备份/删除拆两条执行。红线 9a(叠引号)的姊妹坑:stdin 抢占。

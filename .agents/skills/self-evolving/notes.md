@@ -1377,3 +1377,10 @@
 - skill 有没有提前警告？#28/#29 拦住了前两坑（是并行会话当天刚写的，直接命中）；但 ui-test-manifest 的 configuration 放置差异没登记——最后靠"user 端同款测试 3 分钟前同设备全绿"这一事实反向逐行 diff 两端 build.gradle.kts 才定位。
 - 重来一次会怎么做？同款任务先跑通**参照模块**的既有测试再写新测试（基线绿=环境绿，失败即环境问题，省掉误判环节）；两端 CI 同模 twin 组件出现设备差异时，第一动作是 diff 两端依赖配置而不是怀疑设备。
 - 沉淀：ui-test-manifest 必须 debugImplementation 写进 known-issues + android.md #30。
+
+## 2026-08-29 后台代客闭环(目录端点+三抽屉+102全链路验收)
+
+- 哪个坑浪费了最多时间? 两处小坑各耗一轮:(1) 一次性验收脚本里 python 辅助函数写成 `json.loads(sys.stdin)`(应为 json.load),且忘了 envelope 要先解 data 再取字段,resource/port/orderNo 全取空;(2) ssh 单条命令 `pg_dump && psql` 共享 stdin,heredoc 被前一条吞掉,DELETE 静默未执行还以为成功了(靠复跑巡检门禁才暴露)。
+- skill 有没有提前预警? 红线9a(ssh+psql 叠引号)预警了引号问题但没覆盖"stdin 被同链前命令抢占"这个变体;patrol 告警 sample [100] 我先误读成 customer_id,靠"先查库再接口复核"红线兜住——查库发现列语义读错了。
+- 重来一次? heredoc 永远单独一条 ssh、只喂唯一读 stdin 的命令;验收脚本先 dry 跑一次只打印响应原文再接字段;告警 sampleIds 先读巡检 SQL 确认列语义再行动。
+- 本轮增量: 后台代客闭环上线(受理目录端点+新建客户/注册审核/代客下单三抽屉),102 全链路实测(开户→实名→下单→环节8)+UI DOM 断言;发现并修复 acceptance-cleanup 缺 lo_accounts 的清缺口(环节6建档产物),patrol 门禁复绿。
