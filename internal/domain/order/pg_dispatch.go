@@ -31,6 +31,28 @@ func (s *PGStore) GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*
 	return &t, nil
 }
 
+// GetDispatchTicketByOrder 按订单寻址工单(order_id 唯一约束保证至多一行);
+// 无工单(环节8前)返回 nil,nil——调用方按"未派单"渲染,非错误态。
+func (s *PGStore) GetDispatchTicketByOrder(ctx context.Context, orderID int64) (*DispatchTicket, error) {
+	var t DispatchTicket
+	err := s.db.QueryRow(ctx, `
+		SELECT id, ticket_no, order_id, COALESCE(worker_id, 0), COALESCE(worker_name, ''),
+		       COALESCE(group_id, 0), COALESCE(group_name, ''), COALESCE(region_id, 0), COALESCE(region_name, ''),
+		       legal_entity_id, legal_entity_name, status,
+		       arrived_at, arrive_lat, arrive_lng
+		FROM dispatch_tickets WHERE order_id = $1`, orderID).
+		Scan(&t.TicketID, &t.TicketNo, &t.OrderID, &t.WorkerID, &t.WorkerName,
+			&t.GroupID, &t.GroupName, &t.RegionID, &t.RegionName, &t.LegalEntityID, &t.LegalEntityName, &t.Status,
+			&t.ArrivedAt, &t.ArriveLat, &t.ArriveLng)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("order: get dispatch ticket by order: %w", err)
+	}
+	return &t, nil
+}
+
 // AssignDispatchTicket 指派师傅:回填 worker_id/worker_name + 可选 schedule_slot/pre_bind_tag。
 // opt 非空时追加写入(空串不覆盖已有值);未命中返回 ErrOrderNotFound。
 func (s *PGStore) AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string, opt ...AssignOpt) error {

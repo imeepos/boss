@@ -133,6 +133,9 @@ type WorkOrderService interface {
 	// GetTicketItemByNo 详情读模型:同 ListTicketItems 联表语义,按 ticketNo 寻址单行。
 	GetTicketItemByNo(ctx context.Context, ticketNo string) (*TicketItem, error)
 	GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*DispatchTicket, error)
+	// GetDispatchTicketByOrder 按订单寻址工单(订单详情聚合派单状态;
+	// 未到派单环节返回 nil,nil——非错误态)。
+	GetDispatchTicketByOrder(ctx context.Context, orderID int64) (*DispatchTicket, error)
 	// AssignDispatchTicket 指派师傅(workerID/workerName 回填工单);opt 可选写入预约/预绑定。
 	AssignDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string, opt ...AssignOpt) error
 	AssignPendingDispatchTicket(ctx context.Context, ticketNo string, workerID int64, workerName string, opt ...AssignOpt) error

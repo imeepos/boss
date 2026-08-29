@@ -99,6 +99,17 @@ paths:
                 type: object
                 properties:
                   order: { type: object }
+                  ticket:
+                    nullable: true
+                    type: object
+                    description: 派单工单(未到派单环节为 null;开户工作台指派/激活寻址用)
+                    properties:
+                      ticketId: { type: integer, format: int64 }
+                      ticketNo: { type: string }
+                      orderId: { type: integer, format: int64 }
+                      workerId: { type: integer }
+                      workerName: { type: string }
+                      status: { type: string }
                   latestLocation:
                     nullable: true
                     type: object

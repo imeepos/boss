@@ -105,10 +105,21 @@ func orderGetHandler(a *app.Application) gin.HandlerFunc {
 				return
 			}
 		}
+		// 派单状态聚合(开户工作台/订单跟踪用):工单未创建(环节8前)为 null,非错误态。
+		var ticket any
+		if a.WorkOrder != nil {
+			tk, err := a.WorkOrder.GetDispatchTicketByOrder(c.Request.Context(), o.ID)
+			if err != nil {
+				respondErr(c, err)
+				return
+			}
+			ticket = tk
+		}
 		respond(c, apitypes.CodeOK, gin.H{
 			"order":          o,
 			"timeline":       buildTimeline(o, logs),
 			"latestLocation": location,
+			"ticket":         ticket,
 		})
 	}
 }

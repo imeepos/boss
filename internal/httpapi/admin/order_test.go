@@ -127,6 +127,37 @@ func TestOrderListHandlerCustomerFilter(t *testing.T) {
 	}
 }
 
+// TestOrderGetHandlerTicket 聚合工单:有工单回 ticket 对象,供工作台指派/激活寻址。
+func TestOrderGetHandlerTicket(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mgr := auth.NewManager("s", time.Hour)
+	fo := &fakeOrder{byNo: &order.Order{ID: 42, OrderNo: "ORD-1", Stage: 8, Status: "INSTALLING"}}
+	fw := &fakeDispatchOrder{tickets: []order.DispatchTicket{
+		{TicketID: 9, TicketNo: "TK-1", OrderID: 42, WorkerID: 7, WorkerName: "李师傅", Status: "DOING"},
+	}}
+	r := gin.New()
+	Register(r, &app.Application{User: &fakeUser{permOk: true}, Order: fo, WorkOrder: fw}, mgr)
+	w := getJSON(t, r, "/api/admin/v1/orders/ORD-1", authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var body struct {
+		Data struct {
+			Ticket *struct {
+				TicketNo   string `json:"ticketNo"`
+				WorkerID   int64  `json:"workerId"`
+				WorkerName string `json:"workerName"`
+			} `json:"ticket"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body.Data.Ticket == nil || body.Data.Ticket.TicketNo != "TK-1" || body.Data.Ticket.WorkerID != 7 {
+		t.Fatalf("ticket=%+v", body.Data.Ticket)
+	}
+}
+
 func TestOrderListHandlerAppliesDataScope(t *testing.T) {
 	mgr := auth.NewManager("s", time.Hour)
 	f := &fakeOrder{}

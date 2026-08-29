@@ -44,6 +44,14 @@ func (f *fakeDispatchOrder) GetDispatchTicketByNo(_ context.Context, no string) 
 	}
 	return f.byNo, nil
 }
+func (f *fakeDispatchOrder) GetDispatchTicketByOrder(_ context.Context, id int64) (*order.DispatchTicket, error) {
+	for i := range f.tickets {
+		if f.tickets[i].OrderID == id {
+			return &f.tickets[i], nil
+		}
+	}
+	return nil, nil
+}
 func (f *fakeDispatchOrder) AssignDispatchTicket(_ context.Context, no string, id int64, name string, _ ...order.AssignOpt) error {
 	f.assigned = &struct {
 		ticketNo   string
