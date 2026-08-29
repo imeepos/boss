@@ -81,6 +81,8 @@ SELECT 'cust_registrations(acc)', count(*) FROM customer_registrations g WHERE g
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%');
 SELECT 'customers(acc)', count(*) FROM customers c WHERE c.address_id IN
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%');
+SELECT 'lo_accounts(acc)', count(*) FROM lo_accounts l WHERE l.customer_id IN
+  (SELECT id FROM customers WHERE address_id IN (SELECT id FROM addresses WHERE name LIKE '验收地址-%'));
 SELECT 'resource_assignments(acc)', count(*) FROM resource_assignments ra
   WHERE ra.address_id IN (SELECT id FROM addresses WHERE name LIKE '验收地址-%')
   OR ra.resource_id IN (SELECT id FROM resources WHERE code LIKE 'SPL-ACC-%');
@@ -106,7 +108,7 @@ ssh "$SSH_HOST" "docker exec -i boss-infra-postgres-1 pg_dump -U boss -d boss \
   -t dismantles -t install_logs -t partner_commission_ledger \
   -t reserve_records -t ports -t port_change_history -t assets -t asset_assignments -t asset_lifecycles \
   -t tags -t worker_replace_logs -t asset_batches -t resources -t resource_assignments \
-  -t customer_histories -t customer_registrations -t customers -t addresses \
+  -t customer_histories -t customer_registrations -t customers -t lo_accounts -t addresses \
   > /tmp/boss_acc_backup_$STAMP.sql" || { echo "FAIL: backup failed, abort"; exit 2; }
 
 # 单事务删除:任一步失败整体回滚(ON_ERROR_STOP)。
@@ -153,6 +155,9 @@ DELETE FROM customer_histories WHERE address_id IN
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%');
 DELETE FROM customer_registrations WHERE address_id IN
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%');
+DELETE FROM lo_accounts WHERE customer_id IN
+  (SELECT id FROM customers WHERE address_id IN
+    (SELECT id FROM addresses WHERE name LIKE '验收地址-%'));
 DELETE FROM customers WHERE address_id IN
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%');
 DELETE FROM resources WHERE code LIKE 'SPL-ACC-%';
