@@ -25,6 +25,8 @@ type Profile struct {
 	RegionScope     string `json:"regionScope"` // 空=全集团
 	// PermissionCodes 角色持有的权限码全集;自定义角色经此驱动前端动态菜单。
 	PermissionCodes []string `json:"permissionCodes"`
+	// TemplateCode 受限 API key 模板码(仅模板主体回填;空=无模板限制)。
+	TemplateCode string `json:"templateCode,omitempty"`
 }
 
 type Service interface {

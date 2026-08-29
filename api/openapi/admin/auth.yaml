@@ -67,7 +67,7 @@ paths:
   /auth/me:
     get:
       tags: [Auth]
-      summary: 当前登录用户信息(header 展示;不含菜单树,菜单可见性由 roleCode 前端映射)
+      summary: 当前登录用户信息(header 展示;含 permissionCodes 权限码全集,MCP 目录按其过滤)
       operationId: adminMe
       responses:
         '200':
@@ -82,7 +82,7 @@ paths:
                   data:
                     oneOf:
                       - type: object
-                        description: 账号主体完整 profile
+                        description: 账号主体完整 profile(受限模板 key 的 permissionCodes 为模板授权码集)
                         properties:
                           accountId: { type: integer }
                           username: { type: string }
@@ -92,6 +92,8 @@ paths:
                           roleName: { type: string }
                           legalEntityName: { type: string }
                           regionScope: { type: string, description: 区域数据范围(空=全集团) }
+                          permissionCodes: { type: array, items: { type: string }, description: 账号权限码全集(模板 key=模板授权码集) }
+                          templateCode: { type: string, description: 受限 API key 模板码(仅模板主体回填;空=无模板限制) }
                       - type: object
                         description: API key worker/customer 主体(非账号,无 RBAC profile)
                         properties:

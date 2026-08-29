@@ -65,6 +65,8 @@ func adminLoginHandler(a *app.Application, mgr *auth.Manager) gin.HandlerFunc {
 }
 
 // adminMeHandler GET /auth/me:当前账号/主体信息。
+// 受限模板 API key(account 主体+templateCode)回模板授权码集而非角色全集:
+// Authz 对模板 key 只放行模板码,profile 回角色全集会令调用方高估可用面(bossmcp 目录过滤依赖此真相)。
 func adminMeHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// API key worker/customer 主体:返回主体身份(非账号,无 RBAC profile)
@@ -80,8 +82,31 @@ func adminMeHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
+		if s := middleware.SubjectFrom(c); s != nil && s.TemplateCode != "" {
+			codes, terr := templatePermCodes(c, a, s.TemplateCode)
+			if terr != nil {
+				respondErr(c, terr)
+				return
+			}
+			p.PermissionCodes = codes
+			p.TemplateCode = s.TemplateCode
+		}
 		respond(c, apitypes.CodeOK, p)
 	}
+}
+
+// templatePermCodes 受限模板的授权码集;未知模板返回空集(与 Authz 恒拒一致)。
+func templatePermCodes(c *gin.Context, a *app.Application, code string) ([]string, error) {
+	templates, err := a.APIKey.ListTemplates(c.Request.Context())
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range templates {
+		if t.Code == code {
+			return t.Permissions, nil
+		}
+	}
+	return []string{}, nil
 }
 
 // adminLogoutHandler POST /auth/logout:无状态 JWT,前端清本地 token 即可。
