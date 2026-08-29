@@ -293,3 +293,17 @@ node .agents/skills/self-evolving/scripts/cdp-admin-capture.mjs out.png \
 6. **矩阵回归**:cdp 断言——目标路由 nav 仅当前项、/boss/site/new 仍高亮官网内容、三语列头(zh/en/ms 各拍一次)、暗色无 console 报错。
 7. **部署确认**:push → CI → 用 techniques「前端部署确认新代码已上线」(远端 bundle grep 标记 + 本地 build hash 对照),再对 102:5180 重拍第 6 步。
 8. **存档**:导航激活与 i18n 是两个独立可 revert 的提交(fix(admin): 侧栏激活精确化 / fix(admin): 列头三语),不混装。
+
+## 模板 N:功能上线 CI 部署 + 真实环境验收固定模板(2026-08-29 固化,来源:柜面收款 8 项断言表)
+
+> 前置:代码已合 main 并 push(=CI Build-Deploy-to-ECS 自动部署+自动迁移);
+> 部署期间与之后**禁止手动 docker build/compose**(0010 事故红线)。
+> 断言工具:bossctl(读 test-accounts.json 取分角色 key)+ cdp-capture/cdp-admin-capture。
+
+1. **环境就绪**:`docker ps` 目标容器 healthy + `GET /healthz` 200;`GET /license/status` activated:true(未激活走 oncall-102 恢复,不继续验收)。
+2. **迁移确认**:新端点/新列打一发(404/列错误=迁移未跑),或 `scripts/ops/migrate-102.sh status`。
+3. **分角色断言表**(编号 V1..Vn,每行记响应原文):主路径成功×1 + 越权 403×1 + 非法入参 42200×1 + 边界(幂等/限额/空值)各×1;**用真实业务角色的 key 跑主路径**(sysadmin 通过≠柜员可用)。
+4. **暴露缺陷**:当场热修(小步提交 push,CI 重部署),不攒;修完重跑受影响断言并加回归用例。
+5. **UI DOM 断言**(不依赖人眼看图):cdp-capture eval 序列(写 token→跳转→点击业务按钮→`JSON.stringify` innerText 断言)+ 截图文件存档;断言项含按钮存在/列头/关键数据行。
+6. **造数清理**:验收流水走业务留痕动作(如退款)不删数据;纯测试行(回填/参数)DB 删除并 SELECT 确认为 0;权限/参数类上线配置保留并记录。
+7. **档案**:验收断言表+暴露缺陷+清理清单写入 meeting-minutes 或 postmortem,随 commit 入库。

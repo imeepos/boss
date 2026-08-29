@@ -437,3 +437,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - (2026-08-29 郑稳) 断言"打字过程浮层保持展开":比对 dumpsys 弹出式窗口的 **Window hash**——同一 hash 贯穿按键全程=浮层从未关闭(比 frame 有无更硬);注意光标手柄窗(62×75px)也计为弹出式窗口,frame 尺寸按 192px/行折算行数区分,别被 refs 计数假阳性骗。
 - (2026-10-17 陈端) 把 `Color(0xAABBCCDD)` 换成常量引用(如 `RN.error`)时不能照抄原右括号数——`Color(` 自带一个 `)`,换成裸常量后要少写一个;正确做法是按新实参重新数括号(listOf/linearGradient/background 各一个)。症状:Syntax error: Unexpected tokens + 连锁 "Expecting an element"。改完立即 build 可一轮抓出。
 - (2026-10-17 陈端) check-ui-consistency.mjs 基线按文件粒度"只降不升",把字面量收编进某文件的色板区会让该文件计数上升超基线;修正是最小化手改基线里对应文件那一行,严禁 --write-baseline 全量重生成(会把并行 worktree/同事在途文件的新计数一起固化,压缩别人的余量)。
+
+- 当表单需要下拉选择关联实体(客户/工人/用户/法人)时,修复是先查 `web/admin/src/components/pickers/`(CustomerPicker/UserPicker/WorkerPicker/EntityPicker 均带服务端检索+详情抽屉+跳转管理页),禁止手写 remote Dropdown——CustomerPicker 建好未接线,被手写轮子顶替一个提交周期,复盘才被发现(2026-08-29)。
+- 当 domain/handler 需要读业务配置(biz_params)而服务接口不含该方法时,修复是定义单方法接口窄口在调用点断言(`type paramGetter interface{ GetParam(...) }`),测试 fake 零改动;扩公共服务接口是广度膨胀(2026-08-28 cash 限额实测)。
+- 当部署前做真实环境验收时,修复是按编号断言表逐项执行并记录响应原文(V1..Vn + 重验 R1..),暴露的缺陷直接升级热修——本轮 8 项断言表暴露 3 个单测拦不住的缺陷(NULLIF 空串/可空 Scan/payNo 回传),验收预算不可省(2026-08-29)。

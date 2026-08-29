@@ -564,3 +564,11 @@ SQL
 - Compose ExposedDropdownMenuBox(menuAnchor PrimaryNotEditable 挂在可编辑 TextField 上)真机行为:未聚焦字段首点=仅聚焦(不弹层),聚焦后再点=切换浮层;断言开层逻辑前先把字段弄到聚焦态(2026-08-28 MI 9 SE 实测)。
 - Compose 字段值读不出时(uiautomator text 属性空)用浮层行内容反推值:候选=值的前缀命中项,浮层全量=值为空、仅一行命中=值为对应前缀;另清除钮 content-desc「清除」出现即值非空,都是免读文本的行为判别(2026-08-28 社区联想实测)。
 - 真机验证"点建议行整体替换"免 IME 注入法:值空→点字段开全量浮层→直接点某行→清除钮出现+浮层收起即选择路径生效;绕开 MIUI 注入不稳(2026-08-28 实测)。
+
+## 柜面收款轮(2026-08-29)——真实 UI 断言/镜像取证/卷隔离诊断
+
+- cdp-capture 的 `--eval` 序列在 **location.href 跳转后仍按序执行**(CDP 会话存活,settle 等待新页),且每次 evaluate 的返回值直接打印到 stdout——组合出零新代码的真实 UI 断言:① 写 localStorage token ② 跳目标页 ③ 找到业务按钮 click ④ `JSON.stringify({键: innerText.includes(...)})` 返回断言对象;配合截图,人与机器都拿到证据(2026-08-29 柜面收款弹窗断言实证:{"客户下拉":true,"弹窗":true})。
+- `df` 显示满、`du` 几乎为空 = **已删除文件句柄仍被进程持有**(docker 构建崩溃瞬时态典型);按 du 结论"空间充足"是误判,等待构建进程退出或重启 docker 释放,别急着清真实数据。
+- 验证 ldflags `-X` 注入是否生效:对两个镜像分别 `docker run --rm --entrypoint sh <img> -c "strings 二进制 | grep -E ^格式\$ | sort -u"` 再 `comm -23` 求差,独有行即注入值;比翻 CI 配置可靠(2026-08-29 授权公钥取证实测)。
+- **docker 卷按 compose 项目名隔离**:目录名=项目名=卷名前缀(CI 在 boss-app → 卷 boss-app_boss_license_data;手工在 deployments 跑 → 新建 deployments_* 空卷)。接手容器先 `docker inspect --format '{{.Mounts}}'` 核对卷身份;跨项目 up 会静默挂新空卷,持久化文件"消失"(2026-08-29 license.json 事故,postmortem 0010)。
+- pgxmock 的 WillReturnRows 对 NULL 列不触发真驱动 Scan 校验——**可空列 Scan 缺陷(如 `Scan(&int64)` 撞 bill_id NULL)单测全绿,真库必炸**;制度:可空列一律 `SELECT COALESCE(col,0)` 再 Scan(充值流水退款事故实证)。

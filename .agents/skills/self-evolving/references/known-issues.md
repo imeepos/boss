@@ -385,3 +385,13 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状: 非空输入后浮层永远唤不出(5 条路径全失败),过滤功能"不可达";空输入点开看全量正常。
   原因: menuAnchor(MenuAnchorType.PrimaryNotEditable) 挂在**可编辑** OutlinedTextField 上的已知冲突——首次 tap 聚焦→IME 弹出→Popup 被焦点切换 dismiss;此后已聚焦字段把点击消费为光标定位,不再触发 onExpandedChange toggle;失焦→再 tap 又被 IME 弹出打断,形成死锁(2026-08-29 郑稳补验实锤,AddressFormFields.kt CommunityField)。
   修法: 可编辑字段的下拉锚点须用 Editable 变体(或补 shouldDismissOnFocusLoss=false 语义),PrimaryNotEditable 只用于不可编辑触发器;修复后必须复验"输入后重开浮层显示过滤结果"断言(2026-08-29 复议中)。
+
+- 症状: 收款等写接口传不存在 billId 返回 `{code:50000,msg:"内部错误"}`,无任何业务语义。
+  原因: domain 防孤儿校验抛 `billing.ErrForeignKeyViolation`,但 httpx/error.go RespondErr 映射表漏登记 billing 域(customer/asset/procurement 等域同义哨兵都在,唯独 billing 缺)。
+  修法: InvalidParam 组补 `errors.Is(err, billing.ErrForeignKeyViolation)` + error_test.go 映射用例;**制度:新增域哨兵必须双登记(error.go 分支 + error_test.go 表),合并前 grep error_test 里有没有本域 sentinel**(2026-08-29 用户实测暴露,fix ad156d81)。
+- 症状: 充值类流水(bill_id NULL)点退款返回 50000,日志 `lock payment: cannot scan NULL into *int64`。
+  原因: 000112 退款锁行 `SELECT bill_id ... Scan(&int64)`,000068 起 bill_id 可空,充值流水必然 NULL——存量缺陷,单测(pgxmock)拦不住 NULL Scan。
+  修法: `SELECT COALESCE(bill_id,0)` 再 Scan;契约用例"充值流水退款不动账单"本就存在(AddRow(nil)),正则同步即可(2026-08-29 验收暴露,同批热修)。
+- 症状: 部署后系统授权页"未激活·业务功能受限",`/license/status` 返回 activated:false,`/var/lib/boss` 目录为空。
+  原因: 手动在 `~/boss/deployments` 跑 compose,项目名(deployments)与 CI(boss-app)不同,docker 卷按项目名隔离→挂了新建空卷,license.json 不在现挂载点。
+  修法: 从 CI 卷拷回 `boss-app_boss_license_data` → `deployments_boss_license_data`,宿主侧 chown 1000:1000(CI uid)对齐后重启;**根治=部署只走 CI**,见 postmortem 0010 与 red-lines 手动部署红线(2026-08-29)。

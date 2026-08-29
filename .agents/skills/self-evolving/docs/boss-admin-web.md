@@ -129,3 +129,11 @@
 - 免登录采集:cdp-admin-capture --path /base/apidocs 即可(sysadmin 默认可见 channel 组)
 - 端点验收:scripts/ops/apidocs-acceptance.sh(envelope/四端无外部 $ref/401 门禁/非法 portal)
 - 注意:102 license 失效时该页接口与其他业务接口一样 403 LICENSE_REQUIRED;恢复路径=release-platform 铸码(ops-renewal-30d batch 先例)→ /license/activate 兹码,见 adopted/2026-09-06-api-docs-openapidoc.md
+
+## 缴费管理(/billing/payment)与柜台日结(/billing/daily-close,2026-08-29 接入)
+
+- 缴费页:流水列表(billId 过滤)+「登记柜面收款」按钮(仅 permissionCodes 含 menu:payment:cash 可见);表单关联字段全下拉——客户=CustomerPicker(pickers/ 复用,服务端搜索),账单=选客户后联动 /bills(滤 PAID,首项无账单·预存),网点=/daily-closings/sites,方式 cash/wechat/alipay/card(offline 专属师傅代收);操作员服务端取登录态。
+- 柜台日结页:cash 流水按网点+操作员汇总,收入/退款/净额三列分列(退款按流水发生日归属);实点回填仅本人行可写(非 sysadmin,后端 42200 同校验);不平落 [paycheck] DIFF 日志;明细区当日 cash 逐笔含退款凭证。
+- 冒烟账号:test-accounts.json cashier_wang(ops→已切 counter_cashier 柜面收款岗,含 menu:payment:cash/menu:daily-close);sysadmin 全量。
+- 网点主数据:biz_params/counter.sites(JSON 字符串数组),业务参数页维护;上线配置=旗舰店/二店/城北营业厅(102)。
+- 上线验收:模板 N(templates.md)。

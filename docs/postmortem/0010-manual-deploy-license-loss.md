@@ -41,4 +41,4 @@
 
 - [ ] gitea Build-Deploy-to-ECS 触发一次全量部署,消除 deployments 项目
       遗留容器(或运维手工 `docker rm` deployments 项目容器+卷)。
-- [ ] server.Dockerfile 增加 ARG 非空校验(构建期 fail-fast)。
+- [x] server.Dockerfile 增加 ARG 非空校验(构建期 fail-fast):空公钥且未显式 ALLOW_DEV_LICENSE=1 → 构建失败;双向实测(开发态可过/无公钥被拦)2026-08-29。
