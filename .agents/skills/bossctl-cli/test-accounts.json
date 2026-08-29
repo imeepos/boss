@@ -2,8 +2,9 @@
   "meta": {
     "description": "BOSS 业务平台测试账号库(师傅注册/审核/实名认证/开网全流程模拟)",
     "server": "http://192.168.0.102:28080",
-    "storage_note": "本文件为测试账号唯一事实源;新增测试账号必须追加到此文件",
-    "last_updated": "2026-08-21T12:00:00Z",
+    "storage_note": "本文件为测试账号唯一事实源;新增测试账号必须追加到此文件;roleCode 等标注可能与线上 RBAC 漂移,验收/鉴权判断一律以线上 GET /auth/me 实测为准",
+    "last_updated": "2026-08-29T00:00:00Z",
+    "role_audit": "2026-08-29 全账号 /auth/me 实测核对:仅 cashier_wang 漂移(ops→counter_cashier)已修,其余 6 账号标注与线上一致",
     "dead_data_cleanup": "2026-08-21 清理孤儿数据:322条孤儿订单+子表(2008 order_stages+81 dispatch_tickets+106 scan_logs)、56条孤儿预占、113条孤儿调配单、93条孤儿告警、78条孤儿LOID账号、1条PENDING客户注册、1条REJECTED师傅注册;吊销4个未使用API key(id=12/13/14/15)"
   },
   "admin": {
@@ -113,7 +114,7 @@
     "password": "Cash@123",
     "realName": "王财务",
     "accountId": 258,
-    "roleCode": "ops",
+    "roleCode": "counter_cashier",
     "org": {
       "legalEntityId": 1,
       "legalEntityCode": "LEG-MAIN",
