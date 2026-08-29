@@ -117,6 +117,16 @@
 - 现状：用户端页面裸中文，师傅端走 `R.string`（如 `w/ui/ScanScreen.kt` 文案全部 `stringResource`）
 - 统一方向待定（待补验）；先登记分叉事实，新增页面不得继续扩大分叉
 
+### 4.4 近值对齐与令牌立卡裁定（2026-08-28 主持人裁定）
+
+- 近值对齐：色值单通道差 ≤16 且语义相同（页面底色、错误红等功能槽位）视同同色，一律对齐标准槽位值——页面底 → `bg 0xFFF5F6F8`（同 2.2）、错误红 → `err 0xFFFF4D4F`；单通道差超过 16 的不适用本规则
+- 令牌立卡：一次性孤值不新建立卡令牌；同一色值端内复用 ≥3 处、或成对语义（状态灯/边框成组）方可追加；追加位置仅限 `theme/Color.kt`（2.5 白名单门禁豁免文件）
+- 本轮适用实例登记：
+  - 近值对齐：worker `F6F8FA → bg` ×3、`FF2D2F → err` ×2
+  - 成对语义立卡：`DotOnline/DotOffline`、`SuccessBorder/ErrBorder`（`w/ui/theme/Color.kt:34-39`）
+  - 孤值灰阶 `B8BCC2/D1D7E0/B0B3B8/7D8593/EEF0F3/F7F8FA` 等：立卡待复用，暂保留字面量
+- RN 族单源化进度：族内字面量已收敛至 `u/page/RealNamePage.kt::object RN` 色板单源引用；"并入全局 vs 合法化第二主题"仍挂起待设计（同 4.1）
+
 ## 5. 执行机制
 
 - CI 门禁：`make ui-consistency-check`（含于 `make check`，红即不合入）

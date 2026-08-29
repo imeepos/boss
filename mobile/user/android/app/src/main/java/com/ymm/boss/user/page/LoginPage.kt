@@ -44,8 +44,6 @@ import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val pageBg = Color(0xFFF6F8FA)
-
 /** 登录页(designs/login-register-states-v2):渐变 Hero + 悬浮白卡(仅分段+表单行),
  *  协议行/主按钮/注册入口在卡外;验证码/密码双模式,注册降级为小字链接。 */
 @Composable
@@ -65,7 +63,7 @@ fun LoginScreen(nav: Nav) {
     LaunchedEffect(countdown) { while (countdown > 0) { delay(1000); countdown-- } }
 
     Column(
-        Modifier.fillMaxSize().background(pageBg)
+        Modifier.fillMaxSize().background(RN.pageBg)
             .verticalScroll(rememberScrollState()),
     ) {
         Box(Modifier.fillMaxWidth()) {
@@ -96,7 +94,7 @@ fun LoginScreen(nav: Nav) {
                             modifier = Modifier.align(Alignment.End).padding(top = 6.dp)
                                 .clickable { nav.push(com.ymm.boss.user.ui.Route.Forgot) })
                     }
-                    if (err.isNotBlank()) RNFootnote(err, Color(0xFFFF2D2F))
+                    if (err.isNotBlank()) RNFootnote(err, RN.error)
                 }
                 AuthAgreeRow(agreed, onToggle = { agreed = it },
                     onAgreement = { nav.push(com.ymm.boss.user.ui.Route.Agreement) })
@@ -124,7 +122,7 @@ fun LoginScreen(nav: Nav) {
 private fun LoginHero() {
     Box(
         Modifier.fillMaxWidth().height(212.dp).background(
-            Brush.linearGradient(listOf(Color(0xFF0872F4), Color(0xFF0B82F8), Color(0xFF1698FA)))),
+            Brush.linearGradient(listOf(RN.heroStart, RN.heroMid, RN.heroEnd))),
     ) {
         // 柔和光效:两枚半透明白圆
         Box(Modifier.size(160.dp).align(Alignment.TopEnd).offset(x = 44.dp, y = (-44).dp)

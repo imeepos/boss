@@ -435,3 +435,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 docker build 走远程 builder(102-remote)时,先查 .dockerignore 是否排除本仓大型编译产物(web/desktop/target 等),否则上下文传输+写入层会撑爆远端盘。
 - (2026-08-29 郑稳) ModalBottomSheet 表单 IME 开启时 sheet 按聚焦字段上移平移(实测~111px),陈旧坐标的 tap 会打在搜狗候选条上——把拼音组字连同候选词一起提交进**错误字段**(字段出现"bar be"=键入bar+候选be,即此坑签名)。铁律:每次焦点变化/键盘开合后必须重新 uiautomator dump 取坐标再 tap;见到"值=键入串+空格+意外词"先查候选条误触,别判产品缺陷。
 - (2026-08-29 郑稳) 断言"打字过程浮层保持展开":比对 dumpsys 弹出式窗口的 **Window hash**——同一 hash 贯穿按键全程=浮层从未关闭(比 frame 有无更硬);注意光标手柄窗(62×75px)也计为弹出式窗口,frame 尺寸按 192px/行折算行数区分,别被 refs 计数假阳性骗。
+- (2026-10-17 陈端) 把 `Color(0xAABBCCDD)` 换成常量引用(如 `RN.error`)时不能照抄原右括号数——`Color(` 自带一个 `)`,换成裸常量后要少写一个;正确做法是按新实参重新数括号(listOf/linearGradient/background 各一个)。症状:Syntax error: Unexpected tokens + 连锁 "Expecting an element"。改完立即 build 可一轮抓出。
+- (2026-10-17 陈端) check-ui-consistency.mjs 基线按文件粒度"只降不升",把字面量收编进某文件的色板区会让该文件计数上升超基线;修正是最小化手改基线里对应文件那一行,严禁 --write-baseline 全量重生成(会把并行 worktree/同事在途文件的新计数一起固化,压缩别人的余量)。
