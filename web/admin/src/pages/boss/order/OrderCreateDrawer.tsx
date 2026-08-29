@@ -10,6 +10,7 @@ import { ResourcePicker } from '../../../components/ResourcePicker'
 import { CustomerPicker } from '../../../components/pickers/CustomerPicker'
 import { FormField } from '../../../components/business/form-field'
 import { useT } from '../../../i18n'
+import { AddressChainDrawer, type ChainPickResult } from './AddressChainDrawer'
 
 interface CatalogProduct { id: number; name: string; monthlyFee: number; bandwidth: string }
 interface CatalogChannel { id: number; code: string; name: string; status: string }
@@ -29,6 +30,8 @@ export function OrderCreateDrawer({
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [channels, setChannels] = useState<CatalogChannel[]>([])
   const [customerAddr, setCustomerAddr] = useState(0)
+  const [chainOpen, setChainOpen] = useState(false)
+  const [chainPinned, setChainPinned] = useState<ChainPickResult | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -65,8 +68,14 @@ export function OrderCreateDrawer({
 
   const reset = () => {
     setCustomerId(''); setOfferId(0); setAddressId(0); setChannelId(0)
-    setBillingMode('POSTPAID'); setBuyMonths('1'); setError('')
+    setBillingMode('POSTPAID'); setBuyMonths('1'); setError(''); setChainPinned(null)
   }
+
+  // 钉选回显:档案地址 + 内联建址结果(新建地址不在检索索引时仍保证回显),按 value 去重。
+  const pinnedOptions = [
+    ...(customerAddr > 0 ? [{ value: String(customerAddr), label: o.addrPinned.replace('{id}', String(customerAddr)) }] : []),
+    ...(chainPinned ? [{ value: String(chainPinned.addressId), label: chainPinned.fullPath }] : []),
+  ].filter((p, i, arr) => arr.findIndex((x) => x.value === p.value) === i)
 
   const monthsOk = billingMode !== 'PREPAID' || (/^\d+$/.test(buyMonths) && Number(buyMonths) >= 1 && Number(buyMonths) <= 60)
   const ok = Number(customerId) > 0 && offerId > 0 && addressId > 0 && channelId > 0 && monthsOk
@@ -114,17 +123,22 @@ export function OrderCreateDrawer({
             onChange={(v) => setOfferId(Number(v) || 0)} />
         </FormField>
         <FormField label={o.fAddress} required hint={customerAddr > 0 ? o.fAddressHint.replace('{id}', String(customerAddr)) : undefined}>
-          <ResourcePicker<AddressOption>
-            value={addressId ? String(addressId) : ''}
-            onChange={(v) => setAddressId(Number(v) || 0)}
-            search={searchAddresses}
-            toOption={(a) => ({ value: String(a.id), label: a.fullPath })}
-            ariaLabel={o.fAddress}
-            emptyLabel={o.addrPick}
-            pinnedOptions={customerAddr > 0 ? [{ value: String(customerAddr), label: o.addrPinned.replace('{id}', String(customerAddr)) }] : undefined}
-            searchPlaceholder={o.addrSearchPh}
-            errorText={o.addrSearchFail}
-          />
+          <div className="flex items-center gap-2">
+            <ResourcePicker<AddressOption>
+              value={addressId ? String(addressId) : ''}
+              onChange={(v) => setAddressId(Number(v) || 0)}
+              search={searchAddresses}
+              toOption={(a) => ({ value: String(a.id), label: a.fullPath })}
+              ariaLabel={o.fAddress}
+              emptyLabel={o.addrPick}
+              pinnedOptions={pinnedOptions}
+              searchPlaceholder={o.addrSearchPh}
+              errorText={o.addrSearchFail}
+            />
+            <button type="button" aria-label={o.chainEntry}
+              className="h-8 shrink-0 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] whitespace-nowrap"
+              onClick={() => setChainOpen(true)}>{o.chainEntry}</button>
+          </div>
         </FormField>
         <div className="grid grid-cols-2 gap-3">
           <FormField label={o.fChannel} required>
@@ -145,6 +159,16 @@ export function OrderCreateDrawer({
         )}
         {error && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
       </div>
+      {chainOpen && (
+        <AddressChainDrawer customerId={customerId}
+          backfillCustomer={Number(customerId) > 0 && customerAddr === 0}
+          onDone={(r) => {
+            setChainPinned(r)
+            setAddressId(r.addressId)
+            setChainOpen(false)
+          }}
+          onClose={() => setChainOpen(false)} />
+      )}
     </Drawer>
   )
 }

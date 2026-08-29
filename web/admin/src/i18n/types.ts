@@ -255,6 +255,8 @@ export interface Translations {
       attach: string
       unlinked: string
       unlinkedAll: string
+      pending: string
+      pendingOn: string
       searchAll: string
       noHit: string
       addRoot: string
@@ -1202,6 +1204,23 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      chainEntry: string
+      chainTitle: string
+      chainLevels: string[]
+      chainPick: string
+      chainStepLabel: string
+      chainNewOption: string
+      chainSearching: string
+      chainSearchDown: string
+      chainCreate: string
+      chainCreating: string
+      chainFail: string
+      chainReady: string
+      chainDone: string
+      chainOwner: string
+      chainOwnerFallback: string
+      chainNeedsReview: string
+      chainConfirm: string
     }
     onboardingPage: {
       title: string
