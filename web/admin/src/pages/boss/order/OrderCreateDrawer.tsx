@@ -16,8 +16,8 @@ interface CatalogChannel { id: number; code: string; name: string; status: strin
 interface AddressOption { id: number; name: string; fullPath: string }
 
 export function OrderCreateDrawer({
-  open, onClose, onCreated,
-}: { open: boolean; onClose: () => void; onCreated: (orderNo: string) => void }) {
+  open, onClose, onCreated, fixedCustomerId,
+}: { open: boolean; onClose: () => void; onCreated: (orderNo: string) => void; fixedCustomerId?: string }) {
   const t = useT()
   const o = t.pages.orderPage
   const [customerId, setCustomerId] = useState('')
@@ -31,6 +31,11 @@ export function OrderCreateDrawer({
   const [customerAddr, setCustomerAddr] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!open) return
+    if (fixedCustomerId) setCustomerId(fixedCustomerId)
+  }, [open, fixedCustomerId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!open) return
@@ -93,7 +98,11 @@ export function OrderCreateDrawer({
       }>
       <div className="flex flex-col gap-3.5">
         <FormField label={o.fCustomer} required>
-          <CustomerPicker value={customerId} onChange={setCustomerId} />
+          {fixedCustomerId ? (
+            <div className="flex h-8 items-center rounded-sm border border-dashed border-[var(--shell-input-border)] bg-[var(--shell-menu-hover-bg)] px-2.5 text-[13px] text-[var(--shell-group-title)]">#{fixedCustomerId}</div>
+          ) : (
+            <CustomerPicker value={customerId} onChange={setCustomerId} />
+          )}
         </FormField>
         <FormField label={o.fProduct} required hint={o.fProductHint}>
           <Dropdown value={offerId ? String(offerId) : ''} ariaLabel={o.fProduct} searchable
