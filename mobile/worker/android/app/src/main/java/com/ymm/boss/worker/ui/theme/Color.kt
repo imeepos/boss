@@ -16,6 +16,8 @@ val Panel = Color(0xFFFFFFFF)
 val Line = Color(0xFFE8EAED)
 val Ink = Color(0xFF1F2329)
 val Muted = Color(0xFF8C8C8C)
+// 源头 --subtle 对应,未选中/禁用弱灰
+val Subtle = Color(0xFFB0B3B8)
 val Success = Color(0xFF52C41A)
 val Warn = Color(0xFFFAAD14)
 val Err = Color(0xFFFF4D4F)

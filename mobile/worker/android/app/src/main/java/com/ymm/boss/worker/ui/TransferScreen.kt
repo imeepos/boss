@@ -31,6 +31,7 @@ import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Primary
+import com.ymm.boss.worker.ui.theme.Subtle
 import com.ymm.boss.worker.ui.theme.TagRed
 import kotlinx.coroutines.launch
 
@@ -114,7 +115,7 @@ fun OptionRow(options: List<String>, selected: String, onSelect: (String) -> Uni
                 Text(opt, fontSize = 14.sp, color = Ink)
                 Text(if (opt == selected) "●" else "○", fontSize = 14.sp,
                     color = if (opt == selected) Primary
-                    else androidx.compose.ui.graphics.Color(0xFFB0B3B8))
+                    else Subtle)
             }
         }
     }
