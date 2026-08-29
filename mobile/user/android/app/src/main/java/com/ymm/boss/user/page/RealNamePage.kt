@@ -42,9 +42,12 @@ import org.json.JSONObject
 // 实名认证分步流程(designs/realname-flow-states-v1):3 步 + 4 状态页。
 // 端点: GET /auth/verify + POST /auth/verify/sms-code + POST /auth/verify + POST /attachments/upload
 
-/** 实名流程专属 token(designs/realname-flow-states-v1.spec.md;与全局 Palette 同族)。 */
+/** 实名流程专属 token(designs/realname-flow-states-v1.spec.md;与全局 Palette 同族)。
+ *  本族色板挂起待设计裁决(并入全局 or 合法化为第二主题):裁决前冻结新增色值,族内仅允许引用本区常量。 */
 internal object RN {
     val primary = Color(0xFF086CF5)
+    val heroStart = Color(0xFF0872F4) // 品牌渐变起点(Stepper/登录 Hero)
+    val heroMid = Color(0xFF0B82F8) // 品牌渐变中点(登录 Hero 三段)
     val heroEnd = Color(0xFF1698FA)
     val success = Color(0xFF0AA847)
     val successBg = Color(0xFFEFFFF4)
@@ -54,6 +57,12 @@ internal object RN {
     val muted = Color(0xFF5F6671)
     val placeholder = Color(0xFFAEB4BE)
     val line = Color(0xFFE7EAF0)
+    val error = Color(0xFFFF2D2F) // 错误/失败提示红
+    val pageBg = Color(0xFFF6F8FA) // 登录页底
+    val fieldBg = Color(0xFFF7F8FA) // 输入行填充底
+    val iconTint = Color(0xFF7D8593) // 输入行前缀图标
+    val segmentBg = Color(0xFFF5F6F8) // 分段控件槽底
+    val checkBorder = Color(0xFFD1D7E0) // 协议勾选未选中描边
 }
 
 /** 流程阶段:两步表单 + 三个互斥状态页(verifyStatus/latestResult 条件渲染)。 */
@@ -134,7 +143,7 @@ private fun RNStepper(current: Int) {
     val labels = listOf("填写信息", "证件上传", "审核状态")
     Box(
         Modifier.fillMaxWidth()
-            .background(Brush.linearGradient(listOf(Color(0xFF0872F4), Color(0xFF1698FA))))
+            .background(Brush.linearGradient(listOf(RN.heroStart, RN.heroEnd)))
             .padding(vertical = 14.dp),
     ) {
         Row(

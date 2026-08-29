@@ -29,7 +29,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -73,14 +72,14 @@ internal fun RNFormStep(
                 if (cd) countdown = 59 else notice = msg  // spec: 起始即 "59s后重发"
             }
         })
-        if (notice.isNotBlank()) RNFootnote(notice, Color(0xFFFF2D2F))
+        if (notice.isNotBlank()) RNFootnote(notice, RN.error)
         if (err in setOf("name", "idNo", "sms")) RNFootnote(when (err) {
             "name" -> "请填写真实姓名"; "idNo" -> "身份证号需 18 位"; else -> "请输入短信验证码"
-        }, Color(0xFFFF2D2F))
+        }, RN.error)
     }
     AgreeRow(agreed, onToggle = { agreed = it; if (err == "agree") err = "" },
         onAgreement = onAgreement)
-    if (err == "agree") RNFootnote("请先阅读并同意认证服务协议", Color(0xFFFF2D2F))
+    if (err == "agree") RNFootnote("请先阅读并同意认证服务协议", RN.error)
     RNPrimaryButton("下一步", enabled = agreed) {
         val e = when {
             name.isBlank() -> "name"

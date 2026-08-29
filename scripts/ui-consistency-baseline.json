@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T01:44:02.963Z",
+  "generatedAt": "2026-08-29T02:05:57.812Z",
   "exempt": {
     "user": [
       "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/Theme.kt",
@@ -10,16 +10,10 @@
     ]
   },
   "violations": {
-    "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/AuthForm.kt": 4,
-    "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/LoginPage.kt": 5,
-    "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameFormStep.kt": 3,
-    "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNamePage.kt": 12,
-    "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameStatusPages.kt": 1,
-    "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameUploadStep.kt": 3,
+    "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNamePage.kt": 18,
     "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/PinnedGradientPage.kt": 2,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/AuthForm.kt": 3,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/LoginScreen.kt": 5,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/OnboardScreen.kt": 3,
+    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/LoginScreen.kt": 3,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/OrdersScreen.kt": 2,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SafetyScreen.kt": 1,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SettingsScreen.kt": 1,

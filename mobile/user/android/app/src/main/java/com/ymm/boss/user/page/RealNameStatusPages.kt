@@ -61,7 +61,7 @@ internal fun RNRejectedPage(data: JSONObject?, onResubmit: () -> Unit) {
 /** 状态大卡:图标+标题+副文案,success/warning 底色(spec 状态卡规格)。 */
 @Composable
 private fun StatusHero(tint: Color, icon: androidx.compose.ui.graphics.vector.ImageVector,
-                       title: String, sub: String, bg: Color = Color(0xFFEFFFF4)) {
+                       title: String, sub: String, bg: Color = RN.successBg) {
     Box(
         Modifier.fillMaxWidth().padding(vertical = 4.dp)
             .background(bg, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))

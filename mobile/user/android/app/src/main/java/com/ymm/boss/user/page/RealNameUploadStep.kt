@@ -36,7 +36,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -83,7 +82,7 @@ internal fun RNUploadStep(
             UploadCard("国徽面", Modifier.weight(1f), onUploaded = onBack_)
         }
     }
-    if (submitErr.isNotBlank()) RNFootnote(submitErr, Color(0xFFFF2D2F))
+    if (submitErr.isNotBlank()) RNFootnote(submitErr, RN.error)
     RNPrimaryButton("提交认证", enabled = frontId > 0 && backId > 0, loading = submitting) {
         submitting = true; submitErr = ""
         scope.launch {
@@ -143,7 +142,7 @@ private fun UploadCard(label: String, modifier: Modifier = Modifier, onUploaded:
                 Icons.Filled.CheckCircle, contentDescription = null, tint = RN.success,
                 modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(20.dp))
             if (state == UploadState.FAILED) Icon(
-                Icons.Filled.ErrorOutline, contentDescription = null, tint = Color(0xFFFF2D2F),
+                Icons.Filled.ErrorOutline, contentDescription = null, tint = RN.error,
                 modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(20.dp))
         }
         Spacer(Modifier.height(6.dp))
@@ -155,7 +154,7 @@ private fun UploadCard(label: String, modifier: Modifier = Modifier, onUploaded:
                 else -> "$label · 待上传"
             },
             fontSize = 12.sp, color = if (state == UploadState.DONE) RN.success else RN.muted)
-        if (hint.isNotBlank() && state == UploadState.FAILED) Text(hint, fontSize = 11.sp, color = Color(0xFFFF2D2F))
+        if (hint.isNotBlank() && state == UploadState.FAILED) Text(hint, fontSize = 11.sp, color = RN.error)
     }
 }
 

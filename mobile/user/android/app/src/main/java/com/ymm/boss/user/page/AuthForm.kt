@@ -48,9 +48,6 @@ import androidx.compose.ui.unit.sp
 // 登录/注册/找回共用认证表单组件(designs/login-register-states-v2):
 // 浅灰填充圆角输入行(无下划线/无浮动标签,focus 蓝描边) + 灰槽蓝块分段控件 + 圆形协议勾选。
 
-private val fieldBg = Color(0xFFF7F8FA)
-private val iconTint = Color(0xFF7D8593)
-
 /** 单行填充输入:52dp 高,#F7F8FA 底,#E7EAF0 描边,12dp 圆角,左线性图标,内置占位文字。 */
 @Composable
 internal fun AuthInputRow(
@@ -63,12 +60,12 @@ internal fun AuthInputRow(
     val shape: Shape = RoundedCornerShape(12.dp)
     Row(
         Modifier.fillMaxWidth().padding(top = 8.dp).height(52.dp)
-            .background(fieldBg, shape)
+            .background(RN.fieldBg, shape)
             .border(1.dp, if (focused) RN.primary else RN.line, shape)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = RN.iconTint, modifier = Modifier.size(20.dp))
         BasicTextField(
             value = value, onValueChange = onChange, singleLine = true,
             textStyle = TextStyle(fontSize = 15.sp, color = RN.ink),
@@ -129,7 +126,7 @@ internal fun AuthPwdRow(
 internal fun AuthSegment(options: List<Pair<String, String>>, selected: String, onSelect: (String) -> Unit) {
     Row(
         Modifier.fillMaxWidth()
-            .background(Color(0xFFF5F6F8), RoundedCornerShape(10.dp))
+            .background(RN.segmentBg, RoundedCornerShape(10.dp))
             .padding(3.dp),
     ) {
         options.forEach { (k, label) ->
@@ -159,7 +156,7 @@ internal fun AuthAgreeRow(
     ) {
         Box(
             Modifier.size(18.dp).clickable { onToggle(!agreed) }
-                .border(1.dp, if (agreed) RN.primary else Color(0xFFD1D7E0), CircleShape)
+                .border(1.dp, if (agreed) RN.primary else RN.checkBorder, CircleShape)
                 .padding(4.dp),
             contentAlignment = Alignment.Center,
         ) { if (agreed) Box(Modifier.size(8.dp).background(RN.primary, CircleShape)) }
