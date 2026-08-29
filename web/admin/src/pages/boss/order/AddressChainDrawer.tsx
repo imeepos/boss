@@ -31,9 +31,9 @@ export interface ChainPickResult { addressId: number; fullPath: string }
 
 const LEVEL_COUNT = 5
 
-export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClose }: {
+export function AddressChainDrawer({ customerId, customerAddressId, onDone, onClose }: {
   customerId: string
-  backfillCustomer: boolean
+  customerAddressId: number
   onDone: (r: ChainPickResult) => void
   onClose: () => void
 }) {
@@ -99,15 +99,16 @@ export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClo
     setKw(''); setOpts([]); setSearchDown(false); setError('')
   }
 
-  const submit = async () => {
+  const submit = async (withBackfill: boolean) => {
     if (busy || !allDone || !Number(customerId)) return // customerId=0 会被 binding required 拒为 42200,入口已防呆,此处兜底。
     setBusy(true); setError('')
     try {
       // §1.5.0b:五级平铺必填 name(后端 lookup-miss-then-create,复用语义服务端保证);发 id 会 422。
+      // 首建恒不带回填;档案更新走结果区征询后 withBackfill=true 重发(同链幂等复用)。
       const [city, district, street, compound, building] = stages.map((s) => s!.name)
       const resp = await apiFetch<OrderAddressResp>('/orders/address', {
         method: 'POST',
-        body: { customerId: Number(customerId), city, district, street, compound, building, backfillCustomer },
+        body: { customerId: Number(customerId), city, district, street, compound, building, backfillCustomer: withBackfill },
       })
       if (!resp) {
         setError(o.chainFail)
@@ -132,6 +133,9 @@ export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClo
     onDone({ addressId: result.addressId, fullPath: result.fullPathNames ?? result.fullPath })
   }
 
+  // 征询同意后带 backfillCustomer=true 重发:同链幂等复用同一 addressId,仅档案被覆盖更新。
+  const refill = () => submit(true)
+
   const key = kw.trim()
   const options: DropdownOption[] = [
     ...opts.map((x) => ({ value: `id:${x.id}`, label: `${x.name} · ${[...x.ancestors, x.name].join(' / ')}` })),
@@ -153,9 +157,15 @@ export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClo
           <div className="text-[13px] text-[var(--shell-content-text)]">{o.chainDone}</div>
           <ChainSummary stages={stages.filter(Boolean) as ChainStage[]} fullPath={result.fullPathNames ?? result.fullPath} reviewText={o.chainNeedsReview} />
           <OwnerWarningBar entity={entity} fallback={fallback}
-            ownerText={o.chainOwner} fallbackText={o.chainOwnerFallback} />
+            ownerText={o.chainOwner} fallbackText={o.chainOwnerFallback} fallbackHint={o.chainOwnerFallbackHint} />
           {result.backfilled === true && (
             <div className="text-[12px] text-[var(--shell-group-title)]">{o.chainBackfilled}</div>
+          )}
+          {result.backfilled !== true && customerAddressId > 0 && customerAddressId !== result.addressId && (
+            <div className="flex items-center justify-between gap-2 rounded-sm border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] px-3 py-2">
+              <span className="text-[12px] text-[var(--shell-content-text)]">{o.chainAskBackfill}</span>
+              <ToolbarishButton onClick={refill}>{busy ? o.chainRefilling : o.chainAskBackfillConfirm}</ToolbarishButton>
+            </div>
           )}
         </div>
       </Drawer>
@@ -168,7 +178,7 @@ export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClo
         <>
           {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
           <ToolbarishButton onClick={onClose}>{t.pages.company.cancel}</ToolbarishButton>
-          <PrimaryishButton disabled={busy || !allDone} onClick={submit}>
+          <PrimaryishButton disabled={busy || !allDone} onClick={() => submit(false)}>
             {busy ? o.chainCreating : o.chainCreate}
           </PrimaryishButton>
         </>

@@ -45,18 +45,20 @@ export function ChainCrumb({ stages, active, labels, reviewText, onJump }: {
 }
 
 // 归属警示条:建址响应回传 legalEntityId 后常驻展示;兜底场景黄色警示但不拦提交。
-export function OwnerWarningBar({ entity, fallback, ownerText, fallbackText }: {
+// fallback=true 时主句直出三要素(发生什么/影响什么/接下来什么),去向句另起一行;不拦提交。
+export function OwnerWarningBar({ entity, fallback, ownerText, fallbackText, fallbackHint }: {
   entity: string
   fallback: boolean
   ownerText: string
   fallbackText: string
+  fallbackHint: string
 }) {
   return (
     <div className={'rounded-sm border px-3 py-2 text-[12px] ' + (fallback
       ? 'border-[color-mix(in_srgb,var(--color-warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-warning)_10%,transparent)] text-[var(--color-warning)]'
       : 'border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-content-text)]')}>
-      {ownerText.replace('{entity}', entity)}
-      {fallback && <span className="ml-1.5">{fallbackText}</span>}
+      <div>{fallback ? fallbackText : ownerText.replace('{entity}', entity)}</div>
+      {fallback && <div className="mt-0.5">{fallbackHint}</div>}
     </div>
   )
 }

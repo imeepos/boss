@@ -1222,6 +1222,10 @@ export interface Translations {
       chainNeedsReview: string
       chainConfirm: string
       chainDuplicate: string
+      chainOwnerFallbackHint: string
+      chainAskBackfill: string
+      chainAskBackfillConfirm: string
+      chainRefilling: string
       chainNeedCustomer: string
       chainBackfilled: string
     }

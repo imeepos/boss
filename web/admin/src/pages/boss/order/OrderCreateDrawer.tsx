@@ -161,8 +161,7 @@ export function OrderCreateDrawer({
         {error && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
       </div>
       {chainOpen && (
-        <AddressChainDrawer customerId={customerId}
-          backfillCustomer={Number(customerId) > 0 && customerAddr === 0}
+        <AddressChainDrawer customerId={customerId} customerAddressId={customerAddr}
           onDone={(r) => {
             setChainPinned(r)
             setAddressId(r.addressId)
