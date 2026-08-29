@@ -585,3 +585,7 @@ SQL
 - dsh 接外部 MCP 三件套:① profile 目录(~/.dsh/profiles/<name>/)package.json 的 dependencies 加 `"@deepseek-ai/dsh-mcp-client": "link:<vendor>/node_modules/@deepseek-ai/dsh-mcp-client"` 后 pnpm install;② cordis.patch.yml 写 `insert: [{id: mcp-boss, name: '@deepseek-ai/dsh-mcp-client', config: {serverName, transport: stdio, command, env, failOnStartupError}}]`;③ 无头单发 `dsh --profile <name> "任务"`。工具名 = `mcp__<serverName>__<原始名>`。
 - **cordis id-targeted 覆盖是整体替换**:--patch 里按 id 覆盖某条目时 config 必须写全(只写变更字段会把其余字段抹掉,schema 校验直接红);没有深合并。
 - dsh headless 单发默认模型走 settings.yaml agent-default-model,LLM key 经 `launchctl setenv` 注入 GUI 系进程;shell 里跑无头要手动 `BIGMODEL_API_KEY=$(launchctl getenv BIGMODEL_API_KEY)` 带上(2026-09-06 bossmcp 鉴权实测:有效 key 双端真数据,无效 key isError 原文 HTTP 401 invalid api key 透传到 agent)。
+
+## 2026-09-06 dsh profile 运维——装依赖/HMR 重载
+- 给运行中的 dsh profile 加依赖,**全量 pnpm install 大概率走不通**(npmmirror 缺历史版本元数据,--offline 也缺);最小侵入 = `ln -sfn <vendor>/node_modules/<pkg> <profile>/node_modules/<pkg>`,等价 link: 依赖,Node 按 realpath 向上解析不破坏既有依赖。
+- mcp-client 的 HMR 只对**语义 diff** 重载(改 config 值),纯注释追加不触发;验证重载看 bossmcp 子进程 pid 是否变化(ps aux | grep bossmcp),重启后子进程自动从新二进制拉起。
