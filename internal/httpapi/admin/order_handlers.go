@@ -14,7 +14,8 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// orderListHandler GET /orders:订单列表。
+// orderListHandler GET /orders:订单列表(keyword/status/customerId 过滤;
+// customerId 供开户工作台按客户聚合展示)。
 func orderListHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		scope, err := a.User.GetDataScope(c.Request.Context(), httpx.ClaimsAccountID(c))
@@ -25,6 +26,7 @@ func orderListHandler(a *app.Application) gin.HandlerFunc {
 		list, err := a.Order.List(c.Request.Context(), order.OrderQuery{
 			Keyword:       c.Query("keyword"),
 			Status:        c.Query("status"),
+			CustomerID:    queryInt64(c, "customerId"),
 			LegalEntityID: scope.LegalEntityID,
 			RegionScope:   scope.RegionScope,
 		})

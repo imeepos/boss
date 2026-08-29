@@ -113,6 +113,20 @@ func TestOrderListHandler(t *testing.T) {
 	}
 }
 
+// TestOrderListHandlerCustomerFilter customerId 过滤透传域层(开户工作台聚合展示)。
+func TestOrderListHandlerCustomerFilter(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	f := &fakeOrder{}
+	r := newOrderRouter(f, &fakeUser{permOk: true}, mgr)
+	w := getJSON(t, r, "/api/admin/v1/orders?customerId=88", authToken(t, mgr))
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d", w.Code)
+	}
+	if f.lastQ.CustomerID != 88 {
+		t.Fatalf("customerId 未透传: %+v", f.lastQ)
+	}
+}
+
 func TestOrderListHandlerAppliesDataScope(t *testing.T) {
 	mgr := auth.NewManager("s", time.Hour)
 	f := &fakeOrder{}
