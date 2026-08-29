@@ -90,3 +90,5 @@ make bossctl-routes-check                      # 路由目录漂移门禁(含 in
 
 102 实测记录(2026-09-06):双端 `boss_whoami` 返回真实客户/师傅档案,
 `boss_call` 双端列表接口返回真实业务数据;跨端路径/无效 key/未知端三负路径全部按预期拒绝。
+真实环境冒烟已固化:`make mcp-smoke`(6 断言,直连 102,不经 LLM)。
+linux-amd64 资产已在 102 主机(linux)真机实测:initialize 握手 + 双端 whoami 真档案 3/3 通过。

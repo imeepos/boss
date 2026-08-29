@@ -1405,3 +1405,10 @@
 - skill 有没有提前预警? 页面模式规范(docs/admin/page-patterns.md)写在文档里但 skill 未提示"新建页面必查 ds-adoption 与菜单图标"这两个机械门禁。
 - 重来一次? 新页面骨架直接从参考实现(payment 列表页)复制导入头,模式件与图标一步到位;CDP 下拉交互统一封装"trigger click + option mousedown"再开始断言。
 - 本轮增量: /bss/onboarding 工作台上线并在 102 完成 UI 全流程(建档→实名→下单→核查→预占→收费→指派,全程未跳页);发现并修复 OrderCreateDrawer 地址"默认带出"文案与实现不符(d79ed8a3)。
+
+## 2026-09-06 MCP 收尾轮(错误data透传/分发/专用key/web接入)
+
+- 哪个坑浪费了最多时间? web profile 全量 pnpm install 走不通(镜像源缺 0.1.1-rc.3 老版本元数据,--offline 也缺),装一个 link: 依赖被迫绕行——手工 ln -s 到 node_modules 等价解决。另外 HMR 对"仅注释变更"不重载,语义变更(改 toolCallTimeoutMs)才触发子进程重生。
+- skill 有没有提前警告? 无;本轮两条均是新环境事实,已进 techniques。
+- 重来一次? 给运行中的 dsh profile 加依赖:先试 symlink 最小侵入,别碰全量 install;HMR 验证用语义 diff 不用注释。
+- 真实环境证据: 新专用 key 双端 whoami(customerId 213/王测试 workerId=6)、资产二进制 102 全链路、GUI daemon 200 存活 + mcp-boss 子进程重生。
