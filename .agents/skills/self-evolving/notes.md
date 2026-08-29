@@ -1425,3 +1425,9 @@
 - skill 有没有提前预警? mcp-smoke 注释里已有"管道 while 进子shell 丢计数"预警(直接避开了);但 bash 3.2 heredoc×进程替换这个组合坑未记录,本轮已喂回 known-issues。
 - 重来一次? 开工先读 domain 结构体(Profile 早就带 permissionCodes,/auth/me 直接可用,少加一个端点);生成器第一步就过 go/format;bash 断言脚本统一"落盘文件+简单命令"模板。
 - 本轮增量: admin 端 MCP 上线——路由→permCode AST 静态投影(genrouteperms 491 条)+ boss_routes 按账号权限过滤(fail-closed)+ 模板 key /auth/me 回模板真相;102 验收 14/14(三岗位正反例成对+跨组织互查零串数据),mcp-smoke 10/10 零回归,已合并 main 清理 worktree。
+
+## 2026-08-29 admin 内联建址 AddressChainDrawer
+- 最耗时:cdp-admin-capture 多 --eval 只透传第一个(parseArgs 步进 bug),两次采集以为断言失败,实际 eval 没执行。教训:共享脚本输出异常时先验证脚本自身参数解析,再怀疑被测页面;已登记 ISSUE。
+- worktree add 打印成功但 checkout 未落地(无 .git 指针),3 个新组件写进了 git 管辖外的孤儿目录。教训已上高频红线候选:add 后必须 ls .git 再写文件;commit 后必看方括号分支名(本次因此及时发现)。
+- element.click() 不触发 React onMouseDown(Dropdown 选项选择走 onMouseDown),断言点击必须派发完整 mousedown/mouseup/click 序列——此前轮已沉淀过受控 input 的原生 setter,本次是同族问题的按钮侧变体。
+- 做得对:三处 i18n 文件+types 全闭环、grep 令牌后再引用(--color-warning)、失败路径当一等公民实测(后端未就绪时断言层级保留+可重试),联调面收敛到单一类型定义文件。

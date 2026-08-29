@@ -23,6 +23,7 @@ export default function AddressPage() {
   const [childrenOf, setChildrenOf] = useState<Record<number, AddressRow[]>>({})
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [unlinked, setUnlinked] = useQueryState('unlinked', '')
+  const [pending, setPending] = useQueryState('pending', '')
   const [keyword, setKeyword] = useQueryState('kw', '')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -37,11 +38,13 @@ export default function AddressPage() {
   }, [a])
 
   const loadRoots = useCallback(() => {
-    const q = unlinked === '1' ? 'unlinked=1' : 'parentId=0'
+    // 待治理过滤优先(开单内联建址的治理队列入口);与 unlinked 互斥。
+    const q = pending === '1' ? 'needsReview=1'
+      : unlinked === '1' ? 'unlinked=1' : 'parentId=0'
     apiFetch<AddressRow[]>(`/addresses?${q}`)
       .then((d) => { setRoots(filterTopLevel(d ?? [])); setChildrenOf({}); setExpanded(new Set()) })
       .catch(() => setError(a.loadFail))
-  }, [unlinked, a])
+  }, [pending, unlinked, a])
   useEffect(loadRoots, [loadRoots])
 
   // toggle 懒展开:首次展开按 parentId 拉子级并缓存;无子级则标记叶节点(children=[])。
@@ -111,8 +114,12 @@ export default function AddressPage() {
           onKeyDown={(e) => { if (e.key === 'Enter') search() }} />
         <ToolbarButton disabled={busy} onClick={search}>{a.searchAll}</ToolbarButton>
         <div className={SPACER} />
+        <ToolbarButton primary={pending === '1'}
+          onClick={() => { setPending(pending === '1' ? '' : '1'); if (pending !== '1') setUnlinked('') }}>
+          {pending === '1' ? a.pendingOn : a.pending}
+        </ToolbarButton>
         <ToolbarButton primary={unlinked === '1'}
-          onClick={() => setUnlinked(unlinked === '1' ? '' : '1')}>
+          onClick={() => { setUnlinked(unlinked === '1' ? '' : '1'); if (unlinked !== '1') setPending('') }}>
           {unlinked === '1' ? a.unlinkedAll : a.unlinked}
         </ToolbarButton>
         <ToolbarButton primary
