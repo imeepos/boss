@@ -589,3 +589,7 @@ SQL
 ## 2026-09-06 dsh profile 运维——装依赖/HMR 重载
 - 给运行中的 dsh profile 加依赖,**全量 pnpm install 大概率走不通**(npmmirror 缺历史版本元数据,--offline 也缺);最小侵入 = `ln -sfn <vendor>/node_modules/<pkg> <profile>/node_modules/<pkg>`,等价 link: 依赖,Node 按 realpath 向上解析不破坏既有依赖。
 - mcp-client 的 HMR 只对**语义 diff** 重载(改 config 值),纯注释追加不触发;验证重载看 bossmcp 子进程 pid 是否变化(ps aux | grep bossmcp),重启后子进程自动从新二进制拉起。
+
+## 2026-09-06 冒烟脚本轮——while 计数器与字段序
+- `python | while read` 管道会让 while 进子shell,计数器改动全部丢失(退出码也对不上);用进程替换 `done < <(python ...)` 保持当前 shell。
+- 断言输出协议定死"状态在前":首字段必须是 PASS/FAIL,壳侧 `case "$status"`,别让 tag 打头否则 PASS/FAIL 全被误读成 detail。
