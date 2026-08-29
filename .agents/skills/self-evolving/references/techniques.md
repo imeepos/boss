@@ -576,3 +576,7 @@ SQL
 ## 2026-08-29 验收/巡检脚本取 JSON 字段:先打印原文再接字段;sampleIds 先读 SQL 再下结论
 - 一次性 shell+python 脚本先 dry 跑一轮只 `head -c 200` 打印响应原文,肉眼确认 envelope 形状({code,data,msg})后再写字段提取;envelope 取字段先 `d.get('data',d)`。
 - 巡检/告警输出里的 `sampleIds`/`sample [N]` 是**命中行自身的主键**,不是被引用列的值;下结论前先读巡检 SQL(如 pg_patrol.go)确认 array_agg 的是哪一列。本轮 sample [100] 被误读成 customer_id,直查库才发现 100 是 lo_accounts.id。
+
+## 2026-09-06 MCP/HTTP 客户端轮——WriteHeader 嗅探坑 + MCP stdio 手写子集
+- Go net/http handler **显式调用 WriteHeader 后不再做内容嗅探**,Content-Type 缺省 text/plain(即使 body 是合法 JSON);判定响应形状时 content-type 命中与首字节嗅探({/[)应取"或",误判交给 json.Unmarshal 失败兜底,不要让 text/plain 短路 JSON 解析(bossmcp 业务错误信封漏解析实证)。
+- MCP server 无需官方 SDK:**stdio 每行一条 JSON-RPC 2.0**,实现 initialize(回显客户端 protocolVersion)+ tools/list + tools/call + ping 即可被主流客户端连;通知(无 id)静默不回包;工具执行失败按规范走 result.isError=true 而非 RPC error;日志只准写 stderr(stdout 是协议通道)。cmd/bossmcp 是仓内可抄的完整参照。
