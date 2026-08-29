@@ -2,12 +2,16 @@ GO ?= $(or $(shell command -v go 2>/dev/null),/opt/homebrew/bin/go)
 GOFMT ?= $(or $(shell command -v gofmt 2>/dev/null),/opt/homebrew/bin/gofmt)
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check ui-consistency-check proto docker-build load bossctl bossctl-routes bossctl-routes-check check-conn-test-user check-conn-test-worker
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check ui-consistency-check proto docker-build load bossctl bossmcp bossctl-routes bossctl-routes-check check-conn-test-user check-conn-test-worker
 
 ## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证;版本注入 git describe)
 BOSSCTL_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 bossctl:
 	$(GO) build -ldflags="-s -w -X main.bossctlVersion=$(BOSSCTL_VERSION)" -o bossctl ./cmd/bossctl
+
+## 构建 bossmcp MCP server(stdio;agent 经 MCP 操作用户端/师傅端全部接口,见 docs/mcp.md)
+bossmcp:
+	$(GO) build -ldflags="-s -w -X main.bossmcpVersion=$(BOSSCTL_VERSION)" -o bossmcp ./cmd/bossmcp
 
 ## 构建业务单体(生产):注入 release-platform 授权公钥(B 档强制门禁;未注入=开发态)
 ## 用法: BOSS_LICENSE_PUBLIC_KEY_HEX=<hex> make build-server
