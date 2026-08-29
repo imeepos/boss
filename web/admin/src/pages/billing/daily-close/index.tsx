@@ -87,6 +87,8 @@ export default function DailyClosePage() {
               <tbody>
                 {rows.map((r) => {
                   const k = key(r)
+                  // 写侧本人约束:非 sysadmin 只能回填自己名下的日结(后端同强校验)。
+                  const canFillRow = canCollect && (profile.roleCode === 'sysadmin' || r.operatorName === profile.username)
                   return (
                     <tr key={k}>
                       <td className={tdCls}>{r.siteName}</td>
@@ -95,7 +97,7 @@ export default function DailyClosePage() {
                       <td className={tdCls}>{fmtFee(r.refundAmount)}</td>
                       <td className={tdCls}>{fmtFee(r.netAmount)}</td>
                       <td className={tdCls}>
-                        {canCollect ? (
+                        {canFillRow ? (
                           <input className={`${inputCls} w-28`} type="number" min="0" step="0.01" placeholder={p.countedPlaceholder}
                             defaultValue={r.countedAmount} onChange={(e) => setCounted((m) => ({ ...m, [k]: e.target.value }))} />
                         ) : (r.countedAmount !== undefined ? fmtFee(r.countedAmount) : p.noCounted)}
@@ -103,7 +105,7 @@ export default function DailyClosePage() {
                       <td className={tdCls}>
                         {r.countedAmount !== undefined
                           ? <span className="text-[var(--color-success)]">{p.balanced}</span>
-                          : canCollect && (
+                          : canFillRow && (
                             <button className="h-7 cursor-pointer rounded-sm bg-[var(--color-brand-bg)] px-3 text-xs text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                               disabled={savingKey === k || counted[k] === undefined} onClick={() => saveCounted(r)}>
                               {savingKey === k ? p.saving : p.save}

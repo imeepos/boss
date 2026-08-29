@@ -870,7 +870,7 @@ const msMY: Translations = {
       title: 'Pengurusan Bayaran',
       desc: 'Rekod bayaran bagi bil · kaedah wechat/alipay/kad/tunai · status berjaya/gagal/dikembalikan',
       filterBill: 'Tapis ikut ID bil (0=semua)',
-      columns: ['No. Bayaran', 'ID Bil', 'Jumlah', 'Kaedah', 'Status'],
+      columns: ['No Bayaran', 'ID Bil', 'Jumlah', 'Kaedah', 'Status', 'Lokasi', 'Operator'],
       total: '{count} rekod',
       empty: 'Tiada data',
       loadFail: 'Gagal dimuatkan',

@@ -870,7 +870,7 @@ const enUS: Translations = {
       title: 'Payments',
       desc: 'Payment records against bills · methods wechat/alipay/card/cash · status success/failed/refunded',
       filterBill: 'Filter by bill ID (0=all)',
-      columns: ['Pay No', 'Bill ID', 'Amount', 'Method', 'Status'],
+      columns: ['Pay No', 'Bill ID', 'Amount', 'Method', 'Status', 'Site', 'Operator'],
       total: '{count} records',
       empty: 'No data',
       loadFail: 'Failed to load',
