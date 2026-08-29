@@ -77,6 +77,7 @@
 | 2026-08-28 | worktree 合并协议止损线:同一分支连续 re-sync 达 3 次未合入即停止竞速,推送保安全后与活跃会话错峰;无限重试(活锁)与中央合入队列被否决 | adopted/2026-08-28-worktree-merge-circuit-breaker.md |
 | 2026-08-29 | 客户中心审计收尾裁定:实名三表 000059 归一为既定设计+PASS 一致性门禁;乱序 5 单补正+advance 前置守卫;address 288 双四码=0009 生命周期合法;投诉 orderId 维持可空;37 无评价单豁免;验收造数自清理+巡检门禁三通道;核查先查库再接口/行数磁盘余量/并行基线三项流程固化 | adopted/2026-08-29-audit-closeout-rulings.md |
 | 2026-08-29 | 后台代客受理闭环:新增受理目录端点 /orders/catalog+/customers/onboarding-catalog(跟随 menu:order/menu:customer 本域门禁,否决给 ops 补授组织/资源域菜单码);注册审核挂客户页抽屉不设独立菜单页;admin-positioning 增 E 类代客受理矩阵修正"不代客操作"表述 | adopted/2026-08-29-admin-onbehalf-catalog.md |
+| 2026-08-29 | 开户工作台聚合页 /bss/onboarding(menu:onboarding 迁移000170 授 sysadmin/ops):建档→实名→下单→环节推进→派单 一页完成;GET /orders 补 customerId 过滤;工单按订单寻址复用 dispatch/pool 不加新查询;步骤条仅展示不做前端业务校验门禁 | adopted/2026-08-29-onboarding-workbench.md |
 | 2026-08-30 | 审计写入改同步落库:生产装配 PGWriter 替代进程内队列 AsyncWriter,关键留痕崩溃/队列满不丢 | adopted/2026-08-30-audit-sync-persistence.md |
 | 2026-08-30 | 业务持久化可靠性阶段2:订单推进计数器与环节日志同事务、webhook 投递 SKIP LOCKED 原子领取+租约、审计写失败重试+全量载荷告警、配置密文解密失败显性化;限流/渠道注册边界与内存态分类登记 | adopted/2026-08-30-persist-reliability-phase2.md |
 | 2026-09-03 | 导入权限边界:地址使用 menu:importer,Geo 使用 menu:geo,暂不追加地址双权限 | adopted/2026-09-03-importer-permission-scope.md |

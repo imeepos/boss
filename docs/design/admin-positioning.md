@@ -68,11 +68,12 @@ admin 的"客户"是**企业内部人员**——装维师傅、客服坐席、�
 
 | 场景 | 求助人 | admin 能力 | 页面 | 端点 | 现状 |
 |:--|:--|:--|:--|:--|:--|
-| 客户到厅开户 | 客服坐席 | 客户直建（区域/主体/地址目录选择） | bss/customer「新建客户」 | POST /customers、GET /customers/onboarding-catalog | 已上线（102 验证） |
-| 客户自助注册待审 | 客服坐席 | 注册审核队列（通过建档/驳回留痕） | bss/customer「注册审核」 | GET /customer-registrations、POST /:id/approve、/:id/reject | 已上线（102 验证） |
-| 客户证件不在手边 | 客服坐席 | 实名代录+核验 | bss/customer「实名代录」 | GET/POST /customers/:id/real-name、/verify | 已上线（迁移 000051/000070） |
-| 客户到厅办理新装 | 客服坐席 | 代客下单（在售产品/渠道目录+地址检索，预付费可选月数） | boss/order「代客下单」 | POST /orders、GET /orders/catalog | 已上线（102 验证） |
-| 代客单后续推进 | 客服/调度 | 环节 2-4 人工推进+8-12 作业（既有能力） | boss/order、boss/dispatch | /orders/:no/{check-resource,reserve,charge}、/dispatch/* | 已上线 |
+| 全流程一站式办理 | 客服坐席 | 开户工作台：建档→实名→下单→环节推进→派单 一页完成 | bss/onboarding | 聚合既有端点（见下行）+ GET /orders?customerId= | 已上线（102 全流程 UI 验证，adopted/2026-08-29-onboarding-workbench.md） |
+| 客户到厅开户 | 客服坐席 | 客户直建（区域/主体/地址目录选择） | bss/customer「新建客户」、bss/onboarding | POST /customers、GET /customers/onboarding-catalog | 已上线（102 验证） |
+| 客户自助注册待审 | 客服坐席 | 注册审核队列（通过建档/驳回留痕） | bss/customer「注册审核」、bss/onboarding | GET /customer-registrations、POST /:id/approve、/:id/reject | 已上线（102 验证） |
+| 客户证件不在手边 | 客服坐席 | 实名代录+核验 | bss/customer「实名代录」、bss/onboarding | GET/POST /customers/:id/real-name、/verify | 已上线（迁移 000051/000070） |
+| 客户到厅办理新装 | 客服坐席 | 代客下单（在售产品/渠道目录+地址检索，预付费可选月数） | boss/order「代客下单」、bss/onboarding | POST /orders、GET /orders/catalog | 已上线（102 验证） |
+| 代客单后续推进 | 客服/调度 | 环节 2-4 人工推进+8-12 作业（既有能力） | boss/order、boss/dispatch、bss/onboarding | /orders/:no/{check-resource,reserve,charge}、/dispatch/* | 已上线 |
 
 ## 3. 明确不属于 admin 的
 
