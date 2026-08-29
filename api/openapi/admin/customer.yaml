@@ -44,6 +44,51 @@ paths:
                     properties:
                       id: { type: integer }
 
+  /customers/onboarding-catalog:
+    get:
+      tags: [Customer]
+      summary: '代客开户选项目录(经营区域+运营主体;带 q 附地址搜索,fullPath=祖先链拍平)'
+      operationId: customerOnboardingCatalog
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: 地址关键字(空=不返回地址) }
+      responses:
+        '200':
+          description: 目录
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  regions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, format: int64 }
+                        name: { type: string }
+                        path: { type: string }
+                        level: { type: integer }
+                        legalEntityId: { type: integer, format: int64 }
+                        legalEntityName: { type: string }
+                  legalEntities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, format: int64 }
+                        code: { type: string }
+                        name: { type: string }
+                        isPlatform: { type: boolean }
+                  addresses:
+                    type: array
+                    description: q 非空时返回
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, format: int64 }
+                        name: { type: string }
+                        fullPath: { type: string }
+
   /customers/{id}:
     get:
       tags: [Customer]

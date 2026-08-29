@@ -97,6 +97,7 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerTaxRoutes(authed, a)
 	registerCustomerRoutes(authed, a)
 	registerCustomerOnboardingRoutes(authed, a)
+	registerOnbehalfCatalogRoutes(authed, a)
 	registerPartnerRoutes(authed, a)
 	registerResourceRoutes(authed, a)
 	registerScanRoutes(authed, a)

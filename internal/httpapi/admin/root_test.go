@@ -29,6 +29,8 @@ type fakeUser struct {
 	roleRes   *user.RoleDetail
 	roleErr   error
 	dataScope user.DataScope
+	regions   []user.Region
+	addrHits  []user.AddressHit
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -56,7 +58,7 @@ func (f *fakeUser) CreateAddress(context.Context, int64, string, string, string,
 func (f *fakeUser) UpdateAddressName(context.Context, int64, string) error { return nil }
 func (f *fakeUser) DeleteAddress(context.Context, int64) error             { return nil }
 func (f *fakeUser) SearchAddresses(context.Context, string) ([]user.AddressHit, bool, error) {
-	return nil, false, nil
+	return f.addrHits, false, nil
 }
 func (f *fakeUser) LookupAddresses(context.Context, []string) ([]user.AddressHit, []string, error) {
 	return nil, nil, nil
@@ -67,7 +69,9 @@ func (f *fakeUser) GetRegion(_ context.Context, id int64) (*user.Region, error) 
 	}
 	return &user.Region{ID: id, Name: "测试区域", Path: "root.test", Level: 2, LegalEntityID: 1, LegalEntityName: "测试公司"}, nil
 }
-func (f *fakeUser) ListRegions(context.Context, string) ([]user.Region, error) { return nil, nil }
+func (f *fakeUser) ListRegions(context.Context, string) ([]user.Region, error) {
+	return f.regions, nil
+}
 func (f *fakeUser) ListLegalEntities(context.Context) ([]user.LegalEntity, error) {
 	return f.entities, nil
 }
