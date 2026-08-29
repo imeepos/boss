@@ -20,6 +20,7 @@ import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Route
+import com.ymm.boss.user.ui.theme.RnPalette
 import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,7 +55,7 @@ fun ForgotScreen(nav: Nav) {
             modifier = Modifier.padding(top = 8.dp))
         RNPrimaryButton("确认重置", enabled = !busy, loading = busy,
             onClick = { busy = true; doReset(scope, nav, phone, code, np, np2) { err = it; busy = false } })
-        Text("返回登录", fontSize = 12.sp, color = RN.primary, fontWeight = FontWeight.W500,
+        Text("返回登录", fontSize = 12.sp, color = RnPalette.primary, fontWeight = FontWeight.W500,
             modifier = Modifier.padding(top = 12.dp).clickable { nav.pop() })
     }
 }

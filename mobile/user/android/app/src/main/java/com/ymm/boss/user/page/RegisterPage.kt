@@ -31,6 +31,7 @@ import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.TopBar
+import com.ymm.boss.user.ui.theme.RnPalette
 import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -70,7 +71,7 @@ fun RegisterScreen(nav: Nav) {
                 busy = true
                 doRegister(scope, nav, phone, code, pwd, pwd2) { err = it; busy = false }
             })
-        Text("已有账号，去登录", fontSize = 12.sp, color = RN.primary, fontWeight = FontWeight.W500,
+        Text("已有账号，去登录", fontSize = 12.sp, color = RnPalette.primary, fontWeight = FontWeight.W500,
             modifier = Modifier.padding(top = 12.dp).clickable { nav.pop() })
     }
 }

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
 import com.ymm.boss.user.api.Api
+import com.ymm.boss.user.ui.theme.RnPalette
 import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -72,14 +73,14 @@ internal fun RNFormStep(
                 if (cd) countdown = 59 else notice = msg  // spec: 起始即 "59s后重发"
             }
         })
-        if (notice.isNotBlank()) RNFootnote(notice, RN.error)
+        if (notice.isNotBlank()) RNFootnote(notice, RnPalette.error)
         if (err in setOf("name", "idNo", "sms")) RNFootnote(when (err) {
             "name" -> "请填写真实姓名"; "idNo" -> "身份证号需 18 位"; else -> "请输入短信验证码"
-        }, RN.error)
+        }, RnPalette.error)
     }
     AgreeRow(agreed, onToggle = { agreed = it; if (err == "agree") err = "" },
         onAgreement = onAgreement)
-    if (err == "agree") RNFootnote("请先阅读并同意认证服务协议", RN.error)
+    if (err == "agree") RNFootnote("请先阅读并同意认证服务协议", RnPalette.error)
     RNPrimaryButton("下一步", enabled = agreed) {
         val e = when {
             name.isBlank() -> "name"
@@ -111,10 +112,10 @@ private fun SafetyCard() {
     RNSharedCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.VerifiedUser, contentDescription = null,
-                tint = RN.primary, modifier = Modifier.size(22.dp))
+                tint = RnPalette.primary, modifier = Modifier.size(22.dp))
             Spacer(Modifier.size(8.dp))
             Column {
-                Text("信息安全保障", fontSize = 14.sp, fontWeight = FontWeight.W600, color = RN.ink)
+                Text("信息安全保障", fontSize = 14.sp, fontWeight = FontWeight.W600, color = RnPalette.ink)
                 RNFootnote("认证信息加密传输，仅用于入网实名登记，不会用于其他用途")
             }
         }
@@ -123,7 +124,7 @@ private fun SafetyCard() {
 
 @Composable
 internal fun CardHead(title: String) {
-    Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RN.ink,
+    Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = RnPalette.ink,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
 }
 
@@ -145,7 +146,7 @@ private fun ReadOnlyField(label: String, value: String) {
     OutlinedTextField(
         value = value, onValueChange = {}, readOnly = true, label = { Text(label) },
         singleLine = true,
-        textStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = RN.muted),
+        textStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = RnPalette.muted),
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     )
 }
@@ -162,7 +163,7 @@ private fun SmsField(code: String, countdown: Int, onSms: (String) -> Unit, onSe
             Text(
                 if (countdown > 0) "${countdown}s后重发" else "获取验证码",
                 fontSize = 12.sp, fontWeight = FontWeight.W500,
-                color = if (countdown > 0) RN.placeholder else RN.primary,
+                color = if (countdown > 0) RnPalette.placeholder else RnPalette.primary,
                 modifier = if (countdown > 0) Modifier.padding(end = 8.dp)
                 else Modifier.padding(end = 8.dp).clickable { onSend() },
             )
@@ -175,16 +176,16 @@ private fun AgreeRow(agreed: Boolean, onToggle: (Boolean) -> Unit, onAgreement: 
     Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier.size(18.dp).clickable { onToggle(!agreed) }
-                .border(1.dp, if (agreed) RN.primary else RN.placeholder, CircleShape)
+                .border(1.dp, if (agreed) RnPalette.primary else RnPalette.placeholder, CircleShape)
                 .padding(4.dp),
             contentAlignment = Alignment.Center,
         ) {
-            if (agreed) Box(Modifier.size(8.dp).background(RN.primary, CircleShape))
+            if (agreed) Box(Modifier.size(8.dp).background(RnPalette.primary, CircleShape))
         }
         Spacer(Modifier.size(8.dp))
-        Text("已阅读并同意", fontSize = 12.sp, color = RN.muted)
-        Text("《实名认证服务协议》", fontSize = 12.sp, color = RN.primary,
+        Text("已阅读并同意", fontSize = 12.sp, color = RnPalette.muted)
+        Text("《实名认证服务协议》", fontSize = 12.sp, color = RnPalette.primary,
             fontWeight = FontWeight.W500, modifier = Modifier.clickable { onAgreement() })
-        Text("，认证信息真实有效", fontSize = 12.sp, color = RN.muted)
+        Text("，认证信息真实有效", fontSize = 12.sp, color = RnPalette.muted)
     }
 }

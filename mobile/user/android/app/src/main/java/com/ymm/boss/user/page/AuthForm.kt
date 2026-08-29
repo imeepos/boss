@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.user.ui.theme.RnPalette
 
 // 登录/注册/找回共用认证表单组件(designs/login-register-states-v2):
 // 浅灰填充圆角输入行(无下划线/无浮动标签,focus 蓝描边) + 灰槽蓝块分段控件 + 圆形协议勾选。
@@ -60,22 +61,22 @@ internal fun AuthInputRow(
     val shape: Shape = RoundedCornerShape(12.dp)
     Row(
         Modifier.fillMaxWidth().padding(top = 8.dp).height(52.dp)
-            .background(RN.fieldBg, shape)
-            .border(1.dp, if (focused) RN.primary else RN.line, shape)
+            .background(RnPalette.fieldBg, shape)
+            .border(1.dp, if (focused) RnPalette.primary else RnPalette.line, shape)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = RN.iconTint, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = RnPalette.iconTint, modifier = Modifier.size(20.dp))
         BasicTextField(
             value = value, onValueChange = onChange, singleLine = true,
-            textStyle = TextStyle(fontSize = 15.sp, color = RN.ink),
+            textStyle = TextStyle(fontSize = 15.sp, color = RnPalette.ink),
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             visualTransformation = visualTransformation,
             modifier = Modifier.weight(1f).padding(horizontal = 10.dp)
                 .onFocusChanged { focused = it.isFocused },
             decorationBox = { inner ->
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
-                    if (value.isEmpty()) Text(hint, fontSize = 15.sp, color = RN.placeholder)
+                    if (value.isEmpty()) Text(hint, fontSize = 15.sp, color = RnPalette.placeholder)
                     inner()
                 }
             },
@@ -98,7 +99,7 @@ internal fun AuthCodeRow(code: String, countdown: Int, onCode: (String) -> Unit,
             Text(
                 if (countdown > 0) "${countdown}s后重发" else "获取验证码",
                 fontSize = 13.sp, fontWeight = FontWeight.W500,
-                color = if (countdown > 0) RN.placeholder else RN.primary,
+                color = if (countdown > 0) RnPalette.placeholder else RnPalette.primary,
                 modifier = Modifier.clickable(enabled = countdown == 0) { onSend() },
             )
         })
@@ -115,7 +116,7 @@ internal fun AuthPwdRow(
         trailing = {
             Icon(
                 if (visible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                contentDescription = null, tint = RN.placeholder,
+                contentDescription = null, tint = RnPalette.placeholder,
                 modifier = Modifier.size(20.dp).clickable { onToggle() },
             )
         })
@@ -126,17 +127,17 @@ internal fun AuthPwdRow(
 internal fun AuthSegment(options: List<Pair<String, String>>, selected: String, onSelect: (String) -> Unit) {
     Row(
         Modifier.fillMaxWidth()
-            .background(RN.segmentBg, RoundedCornerShape(10.dp))
+            .background(RnPalette.segmentBg, RoundedCornerShape(10.dp))
             .padding(3.dp),
     ) {
         options.forEach { (k, label) ->
             val active = selected == k
             Text(
                 label, fontSize = 14.sp, textAlign = TextAlign.Center,
-                color = if (active) Color.White else RN.muted,
+                color = if (active) Color.White else RnPalette.muted,
                 fontWeight = if (active) FontWeight.W600 else FontWeight.Normal,
                 modifier = Modifier.weight(1f)
-                    .background(if (active) RN.primary else Color.Transparent, RoundedCornerShape(8.dp))
+                    .background(if (active) RnPalette.primary else Color.Transparent, RoundedCornerShape(8.dp))
                     .clickable { onSelect(k) }
                     .padding(vertical = 9.dp),
             )
@@ -156,13 +157,13 @@ internal fun AuthAgreeRow(
     ) {
         Box(
             Modifier.size(18.dp).clickable { onToggle(!agreed) }
-                .border(1.dp, if (agreed) RN.primary else RN.checkBorder, CircleShape)
+                .border(1.dp, if (agreed) RnPalette.primary else RnPalette.checkBorder, CircleShape)
                 .padding(4.dp),
             contentAlignment = Alignment.Center,
-        ) { if (agreed) Box(Modifier.size(8.dp).background(RN.primary, CircleShape)) }
+        ) { if (agreed) Box(Modifier.size(8.dp).background(RnPalette.primary, CircleShape)) }
         Spacer(Modifier.width(8.dp))
-        Text("我已阅读并同意", fontSize = 12.sp, color = RN.muted)
-        Text("《用户协议》", fontSize = 12.sp, color = RN.primary,
+        Text("我已阅读并同意", fontSize = 12.sp, color = RnPalette.muted)
+        Text("《用户协议》", fontSize = 12.sp, color = RnPalette.primary,
             fontWeight = FontWeight.W500, modifier = Modifier.clickable { onAgreement() })
     }
 }

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
 import com.ymm.boss.user.api.Api
+import com.ymm.boss.user.ui.theme.RnPalette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,7 +72,7 @@ internal fun RNUploadStep(
     val scope = rememberCoroutineScope()
 
     RNSharedCard {
-        Text("拍摄要点", fontSize = 14.sp, fontWeight = FontWeight.W600, color = RN.ink)
+        Text("拍摄要点", fontSize = 14.sp, fontWeight = FontWeight.W600, color = RnPalette.ink)
         RNFootnote("· 证件原件拍摄，四角完整、清晰无反光\n· 字迹、头像、有效期清晰可辨\n· 请勿翻拍复印件或屏幕照片")
     }
     Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
@@ -82,7 +83,7 @@ internal fun RNUploadStep(
             UploadCard("国徽面", Modifier.weight(1f), onUploaded = onBack_)
         }
     }
-    if (submitErr.isNotBlank()) RNFootnote(submitErr, RN.error)
+    if (submitErr.isNotBlank()) RNFootnote(submitErr, RnPalette.error)
     RNPrimaryButton("提交认证", enabled = frontId > 0 && backId > 0, loading = submitting) {
         submitting = true; submitErr = ""
         scope.launch {
@@ -117,8 +118,8 @@ private fun UploadCard(label: String, modifier: Modifier = Modifier, onUploaded:
         Box(
             Modifier.fillMaxWidth().height(110.dp)
                 .let { m ->
-                    if (state == UploadState.IDLE) m.border(1.dp, RN.placeholder, RoundedCornerShape(8.dp))
-                    else m.background(RN.line.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    if (state == UploadState.IDLE) m.border(1.dp, RnPalette.placeholder, RoundedCornerShape(8.dp))
+                    else m.background(RnPalette.line.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                 }
                 .clickable {
                     picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -128,21 +129,21 @@ private fun UploadCard(label: String, modifier: Modifier = Modifier, onUploaded:
             when (state) {
                 UploadState.IDLE -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Outlined.PhotoCamera, contentDescription = null,
-                        tint = RN.placeholder, modifier = Modifier.size(28.dp))
+                        tint = RnPalette.placeholder, modifier = Modifier.size(28.dp))
                     Spacer(Modifier.height(6.dp))
-                    Text("上传证件$label", fontSize = 12.sp, color = RN.muted)
+                    Text("上传证件$label", fontSize = 12.sp, color = RnPalette.muted)
                 }
                 UploadState.UPLOADING -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                 else -> preview?.let {
                     Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxWidth().height(110.dp))
-                } ?: Text("已上传", fontSize = 12.sp, color = RN.muted)
+                } ?: Text("已上传", fontSize = 12.sp, color = RnPalette.muted)
             }
             if (state == UploadState.DONE) Icon(
-                Icons.Filled.CheckCircle, contentDescription = null, tint = RN.success,
+                Icons.Filled.CheckCircle, contentDescription = null, tint = RnPalette.success,
                 modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(20.dp))
             if (state == UploadState.FAILED) Icon(
-                Icons.Filled.ErrorOutline, contentDescription = null, tint = RN.error,
+                Icons.Filled.ErrorOutline, contentDescription = null, tint = RnPalette.error,
                 modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(20.dp))
         }
         Spacer(Modifier.height(6.dp))
@@ -153,8 +154,8 @@ private fun UploadCard(label: String, modifier: Modifier = Modifier, onUploaded:
                 UploadState.FAILED -> "$label · 上传失败，点击重试"
                 else -> "$label · 待上传"
             },
-            fontSize = 12.sp, color = if (state == UploadState.DONE) RN.success else RN.muted)
-        if (hint.isNotBlank() && state == UploadState.FAILED) Text(hint, fontSize = 11.sp, color = RN.error)
+            fontSize = 12.sp, color = if (state == UploadState.DONE) RnPalette.success else RnPalette.muted)
+        if (hint.isNotBlank() && state == UploadState.FAILED) Text(hint, fontSize = 11.sp, color = RnPalette.error)
     }
 }
 
