@@ -1,0 +1,196 @@
+{
+  "capturedAt": "2026-08-29T01:35:06.718Z",
+  "base": "http://192.168.0.102:28080",
+  "roles": {
+    "technician": {
+      "roleName": "装维师傅",
+      "isBuiltin": true,
+      "be": [
+        "menu:dispatch",
+        "menu:order",
+        "menu:provision",
+        "menu:provlog",
+        "menu:quadlink",
+        "menu:scanlog"
+      ]
+    },
+    "asset_admin": {
+      "roleName": "资产管理员",
+      "isBuiltin": true,
+      "be": [
+        "menu:asset",
+        "menu:replace",
+        "menu:stock",
+        "menu:tag"
+      ]
+    },
+    "resource_admin": {
+      "roleName": "资源运维管理员",
+      "isBuiltin": true,
+      "be": [
+        "menu:aaadashboard",
+        "menu:aaalog",
+        "menu:alarm",
+        "menu:check",
+        "menu:device",
+        "menu:expand",
+        "menu:loaccount",
+        "menu:odn",
+        "menu:reserve",
+        "menu:resource",
+        "menu:template",
+        "menu:transfer"
+      ]
+    },
+    "ops": {
+      "roleName": "业务运营/客服人员",
+      "isBuiltin": true,
+      "be": [
+        "menu:arrears",
+        "menu:billing",
+        "menu:callback",
+        "menu:complaint",
+        "menu:customer",
+        "menu:daily-close",
+        "menu:dismantle",
+        "menu:dispatch",
+        "menu:install-board",
+        "menu:order",
+        "menu:paycheck",
+        "menu:payment",
+        "menu:product",
+        "menu:stopsrv"
+      ]
+    },
+    "analyst": {
+      "roleName": "经营分析人员",
+      "isBuiltin": true,
+      "be": [
+        "menu:aaadashboard",
+        "menu:analytics",
+        "menu:dashboard",
+        "menu:gis",
+        "menu:report"
+      ]
+    },
+    "sysadmin": {
+      "roleName": "系统管理员",
+      "isBuiltin": true,
+      "be": [
+        "menu:aaadashboard",
+        "menu:aaalog",
+        "menu:account",
+        "menu:address",
+        "menu:ai",
+        "menu:alarm",
+        "menu:analytics",
+        "menu:apidocs",
+        "menu:apikey",
+        "menu:arrears",
+        "menu:asset",
+        "menu:audit",
+        "menu:authconfig",
+        "menu:backup",
+        "menu:billing",
+        "menu:callback",
+        "menu:check",
+        "menu:collection-tasks",
+        "menu:company",
+        "menu:complaint",
+        "menu:crashlogs",
+        "menu:customer",
+        "menu:daily-close",
+        "menu:dashboard",
+        "menu:datascope",
+        "menu:department",
+        "menu:device",
+        "menu:dismantle",
+        "menu:dispatch",
+        "menu:expand",
+        "menu:feedback",
+        "menu:geo",
+        "menu:gis",
+        "menu:importer",
+        "menu:install-board",
+        "menu:inventory",
+        "menu:knowledge",
+        "menu:license",
+        "menu:loaccount",
+        "menu:marketing",
+        "menu:marketing-recon",
+        "menu:menuperm",
+        "menu:message",
+        "menu:odn",
+        "menu:openplat",
+        "menu:order",
+        "menu:params",
+        "menu:partner",
+        "menu:partner-audit",
+        "menu:partner-home",
+        "menu:partner-orders",
+        "menu:partner-staff",
+        "menu:paycheck",
+        "menu:payment",
+        "menu:payment:cash",
+        "menu:post",
+        "menu:product",
+        "menu:provision",
+        "menu:provlog",
+        "menu:purchase",
+        "menu:pushconfig",
+        "menu:quadlink",
+        "menu:realidconfig",
+        "menu:realname-review",
+        "menu:region",
+        "menu:release",
+        "menu:replace",
+        "menu:report",
+        "menu:reserve",
+        "menu:resource",
+        "menu:scanlog",
+        "menu:servers",
+        "menu:service-metrics",
+        "menu:site",
+        "menu:site-cats",
+        "menu:smsconfig",
+        "menu:staff",
+        "menu:stock",
+        "menu:stopsrv",
+        "menu:storageconfig",
+        "menu:stripeconfig",
+        "menu:tag",
+        "menu:template",
+        "menu:transfer",
+        "menu:user",
+        "menu:userdata",
+        "menu:worker",
+        "menu:worker-ops",
+        "menu:worker-reg"
+      ]
+    },
+    "partner_admin": {
+      "roleName": "入驻企业管理员",
+      "isBuiltin": true,
+      "be": [
+        "menu:partner-audit",
+        "menu:partner-home",
+        "menu:partner-orders",
+        "menu:partner-staff"
+      ]
+    },
+    "partner_staff": {
+      "roleName": "入驻企业员工",
+      "isBuiltin": true,
+      "be": [
+        "menu:partner-audit",
+        "menu:partner-home",
+        "menu:partner-orders"
+      ]
+    },
+    "customer": {
+      "roleName": "客户",
+      "isBuiltin": true,
+      "be": []
+    }
+  }
+}

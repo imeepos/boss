@@ -47,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.R
+import com.ymm.boss.worker.ui.theme.Bg
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
@@ -137,7 +138,7 @@ internal fun AuthPwdRow(
 internal fun AuthSegment(options: List<Pair<String, String>>, selected: String, onSelect: (String) -> Unit) {
     Row(
         Modifier.fillMaxWidth()
-            .background(Color(0xFFF5F6F8), RoundedCornerShape(10.dp))
+            .background(Bg, RoundedCornerShape(10.dp))
             .padding(3.dp),
     ) {
         options.forEach { (k, label) ->

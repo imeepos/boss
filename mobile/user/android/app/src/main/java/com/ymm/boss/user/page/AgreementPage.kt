@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +25,7 @@ import com.ymm.boss.user.ui.EmptyState
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.TopBar
 import org.json.JSONArray
 
@@ -50,11 +49,10 @@ fun AgreementScreen(nav: Nav) {
         TopBar("用户协议与隐私政策", onBack = { nav.pop() })
         AgreementCard("用户协议", if (failed) FALLBACK_AGREEMENT else userAgreement)
         AgreementCard("隐私政策", if (failed) FALLBACK_PRIVACY else privacyPolicy)
-        Button(
-            onClick = { nav.pop() },
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            modifier = Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 14.dp, vertical = 6.dp),
-        ) { Text("返回登录") }
+        PrimaryButton(
+            text = "返回登录",
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+        ) { nav.pop() }
         Spacer(Modifier.height(14.dp))
     }
 }

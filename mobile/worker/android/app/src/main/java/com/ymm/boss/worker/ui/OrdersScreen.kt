@@ -53,6 +53,7 @@ import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.Success
+import com.ymm.boss.worker.ui.theme.TagRed
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -154,7 +155,7 @@ fun OrdersScreen(nav: NavHost) {
         FilterTabs(cur) { cur = it }
         if (tip != null) {
             val (ok, msg) = tip!!
-            Text(msg, fontSize = 12.sp, color = if (ok) Success else Color(0xFFCF1322),
+            Text(msg, fontSize = 12.sp, color = if (ok) Success else TagRed.fg,
                 modifier = Modifier.padding(horizontal = 16.dp))
         }
         when {

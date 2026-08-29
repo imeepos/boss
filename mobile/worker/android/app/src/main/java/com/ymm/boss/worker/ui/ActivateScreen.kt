@@ -33,6 +33,8 @@ import com.ymm.boss.worker.api.ScanApi
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
+import com.ymm.boss.worker.ui.theme.Success
+import com.ymm.boss.worker.ui.theme.TagBlue
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -64,7 +66,7 @@ fun ActivateScreen(nav: NavHost, no: String) {
                 Card(Modifier.padding(12.dp)) {
                     Box(Modifier.fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFE6F4FF))
+                        .background(TagBlue.bg)
                         .padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("↻", fontSize = 40.sp, color = Primary, fontWeight = FontWeight.Bold)
@@ -76,7 +78,7 @@ fun ActivateScreen(nav: NavHost, no: String) {
                         modifier = Modifier.fillMaxWidth()
                             .padding(top = 12.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF52C41A))
+                            .background(Success)
                             .clickable {
                                 scope.launch {
                                     try {

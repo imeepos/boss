@@ -17,8 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.HeadsetMic
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,6 +43,7 @@ import com.ymm.boss.user.ui.IconTile
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.Tag
@@ -112,15 +111,14 @@ private fun FaultFormCard(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
         OutlinedTextField(value = form.contact, onValueChange = { form.contact = it }, label = { Text("联系方式") },
             singleLine = true, modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp))
-        Button(
-            onClick = {
-                if (!guard.acquire()) return@Button
-                submitFault(scope, form, nav, onResult, guard)
-            },
+        PrimaryButton(
+            text = if (guard.active) "提交中…" else "提交报修",
             enabled = !guard.active,
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            modifier = Modifier.fillMaxWidth().height(44.dp),
-        ) { Text(if (guard.active) "提交中…" else "提交报修") }
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (!guard.acquire()) return@PrimaryButton
+            submitFault(scope, form, nav, onResult, guard)
+        }
     }
 }
 

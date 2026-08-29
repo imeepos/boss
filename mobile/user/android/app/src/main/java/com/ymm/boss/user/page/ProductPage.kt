@@ -18,8 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,6 +43,7 @@ import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.PricePill
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
@@ -201,13 +200,8 @@ private fun BoxScope.CtaBar(product: JSONObject?, onClick: () -> Unit) {
         color = Color.White,
         modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
     ) {
-        Button(
-            onClick = onClick,
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.fillMaxWidth().padding(14.dp).height(44.dp),
-        ) {
-            Text("立即办理 ¥$fee/月", fontSize = 14.sp, fontWeight = FontWeight.W500, color = Color.White)
+        PrimaryButton("立即办理 ¥$fee/月", modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+            onClick()
         }
     }
 }

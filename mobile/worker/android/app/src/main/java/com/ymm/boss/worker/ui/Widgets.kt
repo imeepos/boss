@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.ui.theme.Bg
+import com.ymm.boss.worker.ui.theme.DotOffline
+import com.ymm.boss.worker.ui.theme.DotOnline
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Line
 import com.ymm.boss.worker.ui.theme.Muted
@@ -34,6 +36,8 @@ import com.ymm.boss.worker.ui.theme.Primary
 import com.ymm.boss.worker.ui.theme.Primary2
 import com.ymm.boss.worker.ui.theme.Success
 import com.ymm.boss.worker.ui.theme.TagColor
+import com.ymm.boss.worker.ui.theme.TagOrange
+import com.ymm.boss.worker.ui.theme.TagRed
 import com.ymm.boss.worker.ui.theme.Warn
 import com.ymm.boss.worker.ui.theme.tagColor
 
@@ -109,8 +113,8 @@ fun StatusTag(label: String, status: String? = null, color: TagColor = tagColor(
 // 提示块(对齐 .notice)
 @Composable
 fun Notice(text: String, red: Boolean = false) {
-    val fg = if (red) Color(0xFFCF1322) else Color(0xFFD46B08)
-    val bg = if (red) Color(0xFFFFF1F0) else Color(0xFFFFF7E6)
+    val fg = if (red) TagRed.fg else TagOrange.fg
+    val bg = if (red) TagRed.bg else TagOrange.bg
     Text(text, fontSize = 12.sp, color = fg, modifier = Modifier
         .fillMaxWidth().background(bg, RoundedCornerShape(10.dp))
         .padding(horizontal = 12.dp, vertical = 10.dp))
@@ -163,7 +167,7 @@ fun ErrorRetry(message: String, onRetry: () -> Unit) {
 @Composable
 fun StatusLine(text: String, online: Boolean = true) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.size(8.dp).background(if (online) Color(0xFFA6E9A0) else Color(0xFFFFA39E), CircleShape))
+        Box(Modifier.size(8.dp).background(if (online) DotOnline else DotOffline, CircleShape))
         Text(text, fontSize = 13.sp, color = Color.White.copy(alpha = 0.92f))
     }
 }

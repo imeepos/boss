@@ -29,6 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
+import com.ymm.boss.worker.ui.theme.Ink
+import com.ymm.boss.worker.ui.theme.Primary
+import com.ymm.boss.worker.ui.theme.TagRed
 import kotlinx.coroutines.launch
 
 // 转单(对齐 docs/worker/transfer.html)
@@ -91,7 +94,7 @@ fun TransferScreen(nav: NavHost, no: String) {
                     } catch (e: Exception) { ctx.getString(R.string.transfer_toast_fail, e.message ?: "") }
                 }
             }
-            if (tip.isNotEmpty()) Text(tip, color = androidx.compose.ui.graphics.Color(0xFFCF1322),
+            if (tip.isNotEmpty()) Text(tip, color = TagRed.fg,
                 fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
         }
         Card(Modifier.padding(12.dp)) {
@@ -108,9 +111,9 @@ fun OptionRow(options: List<String>, selected: String, onSelect: (String) -> Uni
         options.forEach { opt ->
             Row(Modifier.fillMaxWidth().clickable { onSelect(opt) }.padding(vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(opt, fontSize = 14.sp, color = androidx.compose.ui.graphics.Color(0xFF1F2329))
+                Text(opt, fontSize = 14.sp, color = Ink)
                 Text(if (opt == selected) "●" else "○", fontSize = 14.sp,
-                    color = if (opt == selected) androidx.compose.ui.graphics.Color(0xFF1677FF)
+                    color = if (opt == selected) Primary
                     else androidx.compose.ui.graphics.Color(0xFFB0B3B8))
             }
         }

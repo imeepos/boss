@@ -41,6 +41,7 @@ import com.ymm.boss.worker.BuildConfig
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
+import com.ymm.boss.worker.ui.theme.TagBlue
 import com.ymm.boss.worker.util.CameraScanner
 import com.ymm.boss.worker.util.ScanCallback
 import kotlinx.coroutines.launch
@@ -132,7 +133,7 @@ private fun ManualBindBox(epc: String, onInput: (String) -> Unit, onBind: (Strin
         Text(stringResource(R.string.scan_manual_input), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink,
             modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFFE6F4FF)).padding(vertical = 36.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(TagBlue.bg).padding(vertical = 36.dp), contentAlignment = Alignment.Center) {
             Text("▣", fontSize = 52.sp, color = Primary, fontWeight = FontWeight.Bold)
         }
         OutlinedTextField(value = epc, onValueChange = onInput, label = { Text(stringResource(R.string.scan_epc_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
