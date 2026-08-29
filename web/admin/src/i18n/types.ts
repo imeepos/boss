@@ -677,9 +677,6 @@ export interface Translations {
       submitting: string
       success: string
       fail: string
-      selectCustomer: string
-      searchCustomer: string
-      selectBill: string
       noBill: string
       searchFail: string
       confirmText: string
