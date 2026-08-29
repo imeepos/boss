@@ -15,6 +15,9 @@ RUN set -e; if [ -z "$BOSS_LICENSE_PUBLIC_KEY_HEX" ] && [ "$ALLOW_DEV_LICENSE" !
     echo "[server.Dockerfile] FAIL: BOSS_LICENSE_PUBLIC_KEY_HEX 为空且未声明 ALLOW_DEV_LICENSE=1——拒绝产出无门禁镜像(postmortem 0010)" >&2; \
     exit 1; \
   fi
+# 路由→permCode 映射漂移门禁:internal/httpapi/admin 权限装配变更而未再生成
+# admin_perms_gen.go 时,admin MCP 目录会按陈旧映射过滤(目录面失真)——陈旧即拒绝出镜像。
+RUN go run ./scripts/genrouteperms --check
 RUN set -e; for b in ${BINARIES}; do \
     LDFLAGS="-s -w"; \
     if [ "$b" = "server" ] && [ -n "$BOSS_LICENSE_PUBLIC_KEY_HEX" ]; then \
