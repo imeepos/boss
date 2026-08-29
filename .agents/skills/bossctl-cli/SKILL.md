@@ -61,6 +61,11 @@ cp assets/bossctl-darwin-arm64 /usr/local/bin/bossctl
 bossctl --help
 ```
 
+同目录另预编译 MCP server `bossmcp-darwin-arm64` / `bossmcp-linux-amd64`
+(`cmd/bossmcp`,agent 经 MCP 操作用户端/师傅端全部接口;鉴权与 key 签发同 bossctl 体系):
+配置方法见仓库 `docs/mcp.md`,`BOSS_USER_API_KEY`/`BOSS_WORKER_API_KEY` 可取
+`test-accounts.json` 各主体的 `apiKeys` 里 MCP 专用 key。
+
 ## 从源码构建
 
 技能包含构建脚本,可在任意平台重新编译:
