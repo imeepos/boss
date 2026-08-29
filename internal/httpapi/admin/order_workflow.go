@@ -21,7 +21,9 @@ func registerOrderWorkflowRoutes(g *gin.RouterGroup, a *app.Application) {
 	wf.POST("/:orderNo/cancel", orderCancelHandler(a))
 
 	// 环节10 激活(上门扫码后,师傅上报装维结果):自动段 10-12(激活/回调/更新GIS)→ 订单 DONE。
-	// 与扫码路由同门禁:任何已认证主体可调(worker 主体/账号),身份经 Subject 或 claims 识别。
-	tic := g.Group("/tickets")
+	// 师傅上报走 worker 端独立镜像入口(/api/worker/v1/tickets/:ticketNo/activate);
+	// admin 侧调用方为调度,须持 menu:dispatch(2026-08-28 审计:原无任何门禁,
+	// 任意登录角色持工单号即可推进订单 DONE;数据范围另由 requireTicketInScope 把守)。
+	tic := g.Group("/tickets", requirePerm(a.User, "menu:dispatch"))
 	tic.POST("/:ticketNo/activate", orderActivateHandler(a))
 }

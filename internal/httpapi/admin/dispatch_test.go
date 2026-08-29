@@ -447,3 +447,15 @@ func TestTicketScopedWriteDeniedAsNotFound(t *testing.T) {
 		t.Fatalf("范围内工单被误拦: %+v", bodyIn)
 	}
 }
+
+// TestActivateRequiresDispatchPerm 契约:activate 须持 menu:dispatch(2026-08-28 审计补门禁);
+// 数据范围由 requireTicketInScope 另行把守,此处断言功能权限层。
+func TestActivateRequiresDispatchPerm(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	wo := &fakeDispatchOrder{byNo: &order.DispatchTicket{TicketID: 7, Status: "DOING"}}
+	r := newTicketRouter(wo, &fakeUser{permOk: false})
+	w := postJSONAuth(t, r, "/api/admin/v1/tickets/TK-1/activate", "{}", authToken(t, mgr))
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
