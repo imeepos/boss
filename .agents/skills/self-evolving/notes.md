@@ -1384,3 +1384,10 @@
 - skill 有没有提前预警? 红线9a(ssh+psql 叠引号)预警了引号问题但没覆盖"stdin 被同链前命令抢占"这个变体;patrol 告警 sample [100] 我先误读成 customer_id,靠"先查库再接口复核"红线兜住——查库发现列语义读错了。
 - 重来一次? heredoc 永远单独一条 ssh、只喂唯一读 stdin 的命令;验收脚本先 dry 跑一次只打印响应原文再接字段;告警 sampleIds 先读巡检 SQL 确认列语义再行动。
 - 本轮增量: 后台代客闭环上线(受理目录端点+新建客户/注册审核/代客下单三抽屉),102 全链路实测(开户→实名→下单→环节8)+UI DOM 断言;发现并修复 acceptance-cleanup 缺 lo_accounts 的清缺口(环节6建档产物),patrol 门禁复绿。
+
+## 2026-09-06 MCP server(bossmcp stdio)落地轮
+
+- 哪个坑浪费了最多时间? 唯一一轮返工:apiclient 的 isJSONBody 先判 content-type 含 json 才解析,而测试后端显式 `w.WriteHeader(403)` 后 Go 不再做内容嗅探,Content-Type 缺省 text/plain → 业务错误信封没被解析成 Envelope。改法:content-type 命中 json **或** 首字节为 {/[ 都按 JSON 解析,误判由解析失败兜底(HTML 404 页解析不出信封,天然安全)。
+- skill 有没有提前警告? 没有 Go net/http 嗅探行为这条;红线体系(读后编辑/worktree/及时 commit/验证留证)全程命中无违例。
+- 重来一次? HTTP 响应形状判定类逻辑,测试用例从第一天就要包含"显式 WriteHeader + 无 Content-Type"这个 Go 特有形态;只按 content-type 判形状是脆弱设计。
+- 沉淀: Go WriteHeader 嗅探行为 + MCP stdio 手写协议子集两条进 techniques.md。
