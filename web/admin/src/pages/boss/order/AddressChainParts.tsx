@@ -1,6 +1,41 @@
-// 内联建址弹层展示子件:面包屑/归属警示条/待治理黄标/链汇总。
+// 内联建址弹层展示子件:面包屑/归属警示条/待治理黄标/链汇总/命名参照。
 // 从 AddressChainDrawer 拆出独立文件,守 300 行红线。
+import { useState } from 'react'
 import { ReviewBadge } from './AddressChainBadge'
+import type { AddressRow } from '../../base/address/AddressGeoDrawer'
+
+// 命名参照:同层已有节点名常显(防「3栋/3号楼」并存);点击即复用;超 5 个折叠可展开。
+const SIBLING_LIMIT = 5
+
+export function SiblingHint({ nodes, pickText, moreText, onPick }: {
+  nodes: AddressRow[]
+  pickText: string
+  moreText: string
+  onPick: (n: AddressRow) => void
+}) {
+  const [open, setOpen] = useState(false)
+  if (nodes.length === 0) return null
+  const shown = open ? nodes : nodes.slice(0, SIBLING_LIMIT)
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="shrink-0 text-[11px] text-[var(--shell-group-title)]">
+        {open ? moreText.replace('{count}', String(nodes.length)) : pickText}
+      </span>
+      {shown.map((n) => (
+        <button key={n.id} type="button"
+          className="inline-flex cursor-pointer items-center rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-1.5 py-0.5 text-[11px] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)]"
+          onClick={() => onPick(n)}>{n.name}</button>
+      ))}
+      {nodes.length > SIBLING_LIMIT && (
+        <button type="button"
+          className="cursor-pointer border-none bg-none px-1 text-[11px] text-[var(--color-brand-gold-500)] hover:underline"
+          onClick={() => setOpen(!open)}>
+          {open ? '−' : moreText.replace('{count}', String(nodes.length))}
+        </button>
+      )}
+    </div>
+  )
+}
 
 export interface ChainStage {
   id?: number

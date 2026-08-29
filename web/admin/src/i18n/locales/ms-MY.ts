@@ -1410,6 +1410,8 @@ const msMY: Translations = {
       chainAskBackfill: 'Kemas kini alamat profil pelanggan kepada alamat baharu?',
       chainAskBackfillConfirm: 'Kemas kini alamat profil',
       chainRefilling: 'Mengemas kini...',
+      chainSiblings: 'Sedia ada di peringkat ini:',
+      chainSiblingsMore: '{count} nod di peringkat ini',
       chainNeedsReview: 'Semakan',
       chainConfirm: 'Sahkan & isi alamat',
       chainDuplicate: 'Alamat sama nama wujud di peringkat ini, klik breadcrumb untuk kembali dan pilih nod sedia ada',

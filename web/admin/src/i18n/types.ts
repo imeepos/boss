@@ -1226,6 +1226,8 @@ export interface Translations {
       chainAskBackfill: string
       chainAskBackfillConfirm: string
       chainRefilling: string
+      chainSiblings: string
+      chainSiblingsMore: string
       chainNeedCustomer: string
       chainBackfilled: string
     }

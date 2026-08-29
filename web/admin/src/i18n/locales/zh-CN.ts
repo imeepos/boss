@@ -1410,6 +1410,8 @@ const zhCN: Translations = {
       chainAskBackfill: '是否将客户档案地址更新为新地址?',
       chainAskBackfillConfirm: '更新档案地址',
       chainRefilling: '更新中...',
+      chainSiblings: '同层已有:',
+      chainSiblingsMore: '同层已有 {count} 个节点',
       chainNeedsReview: '待治理',
       chainConfirm: '确认回填该地址',
       chainDuplicate: '该层级已存在同名地址,请点击面包屑返回对应层级选择已有节点',

@@ -1410,6 +1410,8 @@ const enUS: Translations = {
       chainAskBackfill: 'Update the customer profile address to the new one?',
       chainAskBackfillConfirm: 'Update profile address',
       chainRefilling: 'Updating...',
+      chainSiblings: 'Existing at this level:',
+      chainSiblingsMore: '{count} nodes at this level',
       chainNeedsReview: 'Review',
       chainConfirm: 'Confirm & fill address',
       chainDuplicate: 'A same-name address exists at this level, click the breadcrumb to go back and pick the existing node',

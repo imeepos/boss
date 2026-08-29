@@ -10,7 +10,7 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
 import type { AddressRow } from '../../base/address/AddressGeoDrawer'
-import { ChainCrumb, ChainSummary, OwnerWarningBar, type ChainStage } from './AddressChainParts'
+import { ChainCrumb, ChainSummary, OwnerWarningBar, SiblingHint, type ChainStage } from './AddressChainParts'
 
 interface ChainHit { node: AddressRow; ancestors: AddressRow[] }
 interface ChainOpt { id: number; name: string; ancestors: string[] }
@@ -52,6 +52,18 @@ export function AddressChainDrawer({ customerId, customerAddressId, onDone, onCl
 
   const labels = o.chainLevels
   const allDone = stages.every(Boolean)
+
+  // 命名参照:上级已定(或有 id)时加载同层已有节点,输入侧防「3栋/3号楼」并存;数据源既有 /addresses?parentId=。
+  const parentId = active === 0 ? 0 : stages[active - 1]?.id ?? -1
+  const [siblings, setSiblings] = useState<AddressRow[]>([])
+  useEffect(() => {
+    if (result || parentId < 0) { setSiblings([]); return }
+    let alive = true
+    apiFetch<AddressRow[]>(`/addresses?parentId=${parentId}`)
+      .then((d) => { if (alive) setSiblings(d ?? []) })
+      .catch(() => { if (alive) setSiblings([]) })
+    return () => { alive = false }
+  }, [parentId, result])
 
   // 先搜后建:关键字防抖走 /addresses/search,候选限定「已选前缀之下」的本级节点;失败降级只影响候选可见性,新建路径不受阻。
   useEffect(() => {
@@ -196,6 +208,8 @@ export function AddressChainDrawer({ customerId, customerAddressId, onDone, onCl
               onChange={pick} ariaLabel={labels[active]} searchable remote
               onKeywordChange={setKw} searchPlaceholder={o.chainPick}
               triggerStyle={{ width: '100%' }} />
+            <SiblingHint nodes={siblings} pickText={o.chainSiblings} moreText={o.chainSiblingsMore}
+              onPick={(n) => commit({ id: n.id, name: n.name })} />
           </div>
         )}
         {allDone && <div className="text-[12px] text-[var(--shell-group-title)]">{o.chainReady}</div>}
