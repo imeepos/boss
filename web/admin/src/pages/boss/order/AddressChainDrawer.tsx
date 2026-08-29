@@ -1,9 +1,11 @@
 // 内联建址弹层:订单抽屉之上逐级先搜后建,全链 5 级(市/区/街道/小区/楼栋)。
-// 契约:POST /orders/address {customerId, backfillCustomer, levels:[{id}|{name}]×5}
-//   → {addressId, fullPath, legalEntityId, needsReview[]}(联调适配点集中在本文件类型区)。
+// 契约 fields.md §1.5.0b:POST /orders/address {customerId, city..building 五级平铺必填, backfillCustomer}
+//   → {addressId, fullPath, fullPathNames, legalEntityId, regionPath, fallback, needsReview:[{id,level,name}], backfilled}。
+// 后端逐级 lookup-miss-then-create:选中已有节点与本地名都只发 name,复用语义由服务端保证。
 // 零阻塞:搜索不可用时仍可输入名称逐级新建;兜底归属/并发重名不拦提交,警示条+待治理黄标承接。
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { apiFetch } from '../../../api/client'
+import { ApiError } from '../../../api/envelope'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
@@ -13,14 +15,16 @@ import { ChainCrumb, ChainSummary, OwnerWarningBar, type ChainStage } from './Ad
 interface ChainHit { node: AddressRow; ancestors: AddressRow[] }
 interface ChainOpt { id: number; name: string; ancestors: string[] }
 
-// POST /orders/address 契约(以陈默合入 fields.md 为准,出入只改这里)。
-// needsReview:待治理层级 level(1..5)列表;1-3 级客服所建节点强制在内。
+// fields.md §1.5.0b 契约(出入只改这里)。40900=UNIQUE(path) 撞库→前端引导复用;42200=参数缺失。
 interface OrderAddressResp {
   addressId: number
   fullPath: string
+  fullPathNames?: string
   legalEntityId: number
-  legalEntityName?: string
-  needsReview?: number[]
+  regionPath?: string
+  fallback?: boolean
+  needsReview?: { id: number; level: number; name: string }[]
+  backfilled?: boolean
 }
 
 export interface ChainPickResult { addressId: number; fullPath: string }
@@ -96,25 +100,28 @@ export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClo
   }
 
   const submit = async () => {
-    if (busy || !allDone) return
+    if (busy || !allDone || !Number(customerId)) return // customerId=0 会被 binding required 拒为 42200,入口已防呆,此处兜底。
     setBusy(true); setError('')
     try {
+      // §1.5.0b:五级平铺必填 name(后端 lookup-miss-then-create,复用语义服务端保证);发 id 会 422。
+      const [city, district, street, compound, building] = stages.map((s) => s!.name)
       const resp = await apiFetch<OrderAddressResp>('/orders/address', {
         method: 'POST',
-        body: {
-          customerId: Number(customerId),
-          backfillCustomer,
-          levels: stages.map((s) => (s!.id != null ? { id: s!.id } : { name: s!.name })),
-        },
+        body: { customerId: Number(customerId), city, district, street, compound, building, backfillCustomer },
       })
       if (!resp) {
         setError(o.chainFail)
         return
       }
-      const marks = new Set(resp.needsReview ?? [])
+      const marks = new Set((resp.needsReview ?? []).map((n) => n.level))
       setStages(stages.map((s, idx) => ({ ...s!, needsReview: marks.has(idx + 1) })))
       setResult(resp)
     } catch (e) {
+      // 40900=同父同名 UNIQUE(path) 撞库:软提示引导复用已有节点,不作为终止分支。
+      if (e instanceof ApiError && e.code === 40900) {
+        setError(o.chainDuplicate)
+        return
+      }
       // 统一失败提示(可重试、层级保留)+ 原始细节并置,客服不必理解 HTTP 码。
       setError(o.chainFail + (e instanceof Error && e.message ? `(${e.message})` : ''))
     } finally { setBusy(false) }
@@ -122,7 +129,7 @@ export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClo
 
   const confirm = () => {
     if (!result) return
-    onDone({ addressId: result.addressId, fullPath: result.fullPath })
+    onDone({ addressId: result.addressId, fullPath: result.fullPathNames ?? result.fullPath })
   }
 
   const key = kw.trim()
@@ -132,8 +139,8 @@ export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClo
   ]
 
   if (result) {
-    const entity = result.legalEntityName ?? `#${result.legalEntityId}`
-    const fallback = (result.needsReview ?? []).length > 0
+    const entity = `ID:${result.legalEntityId}`
+    const fallback = result.fallback === true
     return (
       <Drawer title={o.chainTitle} onClose={onClose}
         footer={
@@ -144,9 +151,12 @@ export function AddressChainDrawer({ customerId, backfillCustomer, onDone, onClo
         }>
         <div className="flex flex-col gap-3">
           <div className="text-[13px] text-[var(--shell-content-text)]">{o.chainDone}</div>
-          <ChainSummary stages={stages.filter(Boolean) as ChainStage[]} fullPath={result.fullPath} reviewText={o.chainNeedsReview} />
+          <ChainSummary stages={stages.filter(Boolean) as ChainStage[]} fullPath={result.fullPathNames ?? result.fullPath} reviewText={o.chainNeedsReview} />
           <OwnerWarningBar entity={entity} fallback={fallback}
             ownerText={o.chainOwner} fallbackText={o.chainOwnerFallback} />
+          {result.backfilled === true && (
+            <div className="text-[12px] text-[var(--shell-group-title)]">{o.chainBackfilled}</div>
+          )}
         </div>
       </Drawer>
     )

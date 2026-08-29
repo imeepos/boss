@@ -135,8 +135,9 @@ export function OrderCreateDrawer({
               searchPlaceholder={o.addrSearchPh}
               errorText={o.addrSearchFail}
             />
-            <button type="button" aria-label={o.chainEntry}
-              className="h-8 shrink-0 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] whitespace-nowrap"
+            <button type="button" aria-label={o.chainEntry} title={customerId ? undefined : o.chainNeedCustomer}
+              disabled={!customerId}
+              className="h-8 shrink-0 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[12px] text-[var(--shell-content-text)] whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 hover:border-[var(--color-border-focus)] enabled:cursor-pointer"
               onClick={() => setChainOpen(true)}>{o.chainEntry}</button>
           </div>
         </FormField>

@@ -1221,6 +1221,9 @@ export interface Translations {
       chainOwnerFallback: string
       chainNeedsReview: string
       chainConfirm: string
+      chainDuplicate: string
+      chainNeedCustomer: string
+      chainBackfilled: string
     }
     onboardingPage: {
       title: string
