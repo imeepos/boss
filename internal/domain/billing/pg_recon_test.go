@@ -125,7 +125,8 @@ func TestPGStore_RecordChannelStatement(t *testing.T) {
 			"id", "batch_no", "channel", "channel_amount", "system_amount", "status", "created_at", "settled_at",
 		}).AddRow(int64(4), "PC-20250816-04", "支付宝", 0, 0, "DIFF_PENDING", created, nil))
 	dayStart, dayEnd := clock.DayBounds(created)
-	mock.ExpectQuery(`FROM payments`).WithArgs(dayStart, dayEnd).
+	// 批次渠道=支付宝→系统侧按 method=alipay 分流(channelMethods),methods 作 $3 传入。
+	mock.ExpectQuery(`FROM payments`).WithArgs(dayStart, dayEnd, []string{"alipay"}).
 		WillReturnRows(mock.NewRows([]string{"id", "pay_no", "amount"}).
 			AddRow(int64(11), "PAY-1", 100.00))
 	mock.ExpectExec(`DELETE FROM reconciliation_items`).WithArgs(int64(4)).

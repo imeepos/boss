@@ -17,6 +17,24 @@ var ErrChannelManual = errors.New("billing: channel is manual-reconcile only")
 // ErrChannelNotConfigured 渠道未注册任何源(拼写错误或未接入)。
 var ErrChannelNotConfigured = errors.New("billing: channel source not configured")
 
+// channelMethods 渠道→缴费方式资金通道归类(terms.md 缴费 method 柜面裁定 2026-08-28):
+// 系统侧比对只取本渠道资金通道的流水,渠道间互不污染——此前全量 SUCCESS 进每个
+// 批次,柜面 card/cash 流水在微信/支付宝批挂 MISSING_CHANNEL 噪音。
+// 未登记映射的渠道返回 nil=全量(自定义渠道兜底,行为不变)。
+func channelMethods(channel string) []string {
+	switch channel {
+	case "微信":
+		return []string{"wechat"}
+	case "支付宝":
+		return []string{"alipay"}
+	case "线下营业厅":
+		return []string{"cash", "offline"}
+	case "柜面收单":
+		return []string{"card"}
+	}
+	return nil
+}
+
 // ChannelSource 渠道流水源:按日期拉取该渠道对账单(金额单位元,与 payments 对齐)。
 type ChannelSource interface {
 	PullStatement(ctx context.Context, channel string, date time.Time) ([]ChannelStatementRow, error)

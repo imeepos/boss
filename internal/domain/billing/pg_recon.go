@@ -92,7 +92,7 @@ func (s *PGStore) RecordChannelStatement(ctx context.Context, batchID int64, row
 	if b.Status == "SETTLED" {
 		return ErrIllegalReconTransition
 	}
-	pays, err := s.loadDailyPayments(ctx, b.CreatedAt)
+	pays, err := s.loadDailyPayments(ctx, b.CreatedAt, channelMethods(b.Channel))
 	if err != nil {
 		return err
 	}
@@ -128,17 +128,19 @@ func (s *PGStore) getReconBatchByID(ctx context.Context, batchID int64) (*ReconB
 	return &b, nil
 }
 
-// loadDailyPayments 系统侧比对范围:批次创建同日(批次号 PC-YYYYMMDD-NN 按日出批)的 SUCCESS 缴费。
+// loadDailyPayments 系统侧比对范围:批次创建同日(批次号 PC-YYYYMMDD-NN 按日出批)的 SUCCESS 缴费;
+// methods 非空时再按资金通道过滤(渠道分流,柜面裁定 2026-08-28),nil=全部(自定义渠道兜底)。
 // 日界由 clock.DayBounds 按业务时区在 Go 侧切好传入——date_trunc 依赖会话时区(UTC),
 // 与批次号的业务日口径不一致会在马尼拉 00:00-08:00 错切一天。
-func (s *PGStore) loadDailyPayments(ctx context.Context, day time.Time) ([]PaymentRef, error) {
+func (s *PGStore) loadDailyPayments(ctx context.Context, day time.Time, methods []string) ([]PaymentRef, error) {
 	start, end := clock.DayBounds(day)
 	rows, err := s.db.Query(ctx, `
 		SELECT id, pay_no, amount FROM payments
 		WHERE status='SUCCESS'
+		  AND ($3::text[] IS NULL OR method = ANY($3::text[]))
 		  AND created_at >= $1
 		  AND created_at < $2
-		ORDER BY id`, start, end)
+		ORDER BY id`, start, end, methods)
 	if err != nil {
 		return nil, fmt.Errorf("billing: load daily payments: %w", err)
 	}

@@ -98,6 +98,16 @@ func ClaimsUsername(c *gin.Context) string {
 	return ""
 }
 
+// ClaimsRoleCode 取当前请求账号角色码(未认证返回空);日结回填本人约束判定用。
+func ClaimsRoleCode(c *gin.Context) string {
+	if v, ok := c.Get(middleware.CtxClaims); ok {
+		if claims, ok := v.(*auth.Claims); ok {
+			return claims.RoleCode
+		}
+	}
+	return ""
+}
+
 // APIKeySubjectResolver 构造中间件用的 SubjectResolver:
 // account 主体注入完整 RBAC 身份,worker/customer 注入受限身份。
 func APIKeySubjectResolver(a *app.Application) middleware.SubjectResolver {

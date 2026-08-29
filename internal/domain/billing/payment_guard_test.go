@@ -12,6 +12,28 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
+// 渠道→资金通道映射(terms.md 柜面裁定 2026-08-28):各渠道只取本通道流水,未知渠道全量兜底。
+func TestChannelMethods(t *testing.T) {
+	cases := map[string][]string{
+		"微信":    {"wechat"},
+		"支付宝":   {"alipay"},
+		"线下营业厅": {"cash", "offline"},
+		"柜面收单":  {"card"},
+		"自定义渠道": nil,
+	}
+	for ch, want := range cases {
+		got := channelMethods(ch)
+		if len(got) != len(want) {
+			t.Fatalf("%s: %v, want %v", ch, got, want)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Fatalf("%s: %v, want %v", ch, got, want)
+			}
+		}
+	}
+}
+
 // 边界7:method 白名单外拒收(脏 method 毁渠道对账);拒收发生在任何 SQL 之前。
 func TestRecordPayment_InvalidMethodRejected(t *testing.T) {
 	mock, _ := pgxmock.NewPool()

@@ -99,6 +99,9 @@ func dailyCashItems(a *app.Application) gin.HandlerFunc {
 
 // saveDailyClosing POST /daily-closings:实点金额当日回填(登记义务);
 // 不平不阻塞回填,差异输出 [paycheck] DIFF 可 grep 日志附网点/操作员上下文。
+// 写侧本人强约束(纪要待定项收口 2026-08-28,Item2 裁决):非 sysadmin 只能回填
+// 自己名下(operatorName=登录名)的日结,防柜员篡改他柜账目;读侧放开给对账岗,
+// 与 admin payments 全量回传口径一致。
 func saveDailyClosing(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cl billing.DailyClosing
@@ -108,11 +111,19 @@ func saveDailyClosing(a *app.Application) gin.HandlerFunc {
 		if cl.Date == "" {
 			cl.Date = time.Now().Format("2006-01-02")
 		}
+		operator := httpx.ClaimsUsername(c)
+		if cl.OperatorName == "" {
+			cl.OperatorName = operator
+		}
 		if cl.SiteName == "" || cl.OperatorName == "" {
 			respond(c, apitypes.CodeInvalidParam, gin.H{"reason": "网点与操作员为日结归因必填项"})
 			return
 		}
-		cl.CreatedBy = httpx.ClaimsUsername(c)
+		if httpx.ClaimsRoleCode(c) != "sysadmin" && cl.OperatorName != operator {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"reason": "只能回填本人名下的柜台日结"})
+			return
+		}
+		cl.CreatedBy = operator
 		res, err := a.Billing.SaveDailyClosing(c.Request.Context(), cl)
 		if err != nil {
 			respondErr(c, err)

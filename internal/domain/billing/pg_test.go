@@ -126,11 +126,11 @@ func TestPGStore_ListPayments(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "pay_no", "bill_id", "customer_id", "amount", "method", "status"}
-	mock.ExpectQuery(`SELECT id, pay_no, COALESCE\(bill_id,0\), COALESCE\(customer_id,0\), amount, method, status FROM payments`).
+	cols := []string{"id", "pay_no", "bill_id", "customer_id", "amount", "method", "status", "site_name", "counter_code", "operator_name"}
+	mock.ExpectQuery(`SELECT id, pay_no, COALESCE\(bill_id,0\), COALESCE\(customer_id,0\), amount, method, status, COALESCE\(site_name,''\), COALESCE\(counter_code,''\), COALESCE\(operator_name,''\) FROM payments`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "PAY-20260820-001", int64(1), int64(213), 158.0, "wechat", "SUCCESS"))
+			AddRow(int64(1), "PAY-20260820-001", int64(1), int64(213), 158.0, "wechat", "SUCCESS", "旗舰店", "01", "alice"))
 
 	s := NewPGStore(mock)
 	got, err := s.ListPayments(context.Background(), 1)

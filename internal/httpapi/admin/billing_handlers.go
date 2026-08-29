@@ -265,7 +265,7 @@ func autoReconcile(a *app.Application) gin.HandlerFunc {
 			}
 			date = parsed
 		}
-		channels := []string{"微信", "支付宝", "线下营业厅"} // 默认渠道目录(000035 注释口径)
+		channels := []string{"微信", "支付宝", "线下营业厅", "柜面收单"} // 默认渠道目录(000035 注释口径;柜面收单 2026-08-28 增,card 流水归此批)
 		if cs := c.Query("channels"); cs != "" {
 			channels = strings.Split(cs, ",")
 		}
