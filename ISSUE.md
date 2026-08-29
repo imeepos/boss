@@ -100,3 +100,17 @@
   2026-08-29 复现一次,prune/remove 需用相对名 `git worktree remove --force wt-admin-address-chain`
   (绝对路径报 not a working tree),随后删目录重建才正常 checkout。
   → 修法(流程非工具):worktree add 后必须 `ls <dir>/.git` 确认指针存在再写任何文件。
+
+## 工具·deploy-102 流水线(2026-08-29,内联建址联调轮发现)
+
+- **待 owner 修｜编排缺陷｜chore(deploy) 空提交重触发手法对 Classify 失效**:deploy-102.yml 的
+  Classify 按触发提交 diff 判 runtime,空提交 diff 为空 → files 空 → runtime=false → 部署被
+  skip(run 空转但显示完成)。陈默 ac1902d7 重触发即踩此坑(run 起了但没部署),林晓实测窗口内
+  102 仍是旧 server(POST /orders/address 40400)+旧前端(Cb7RTl8M),三路验收被误判 Gate0。
+  同窗叠加因素:concurrency cancel-in-progress 会吞掉排队中的旧 run;admin-web 全量构建
+  ~28min,部署窗口内 index.html 可能长时间指向旧 bundle。
+  → 本次实际生效部署=1afb5afe(其 Classify 恰取到旧 deployed tag,diff 含 web/admin → true)。
+  修法建议(归属流水线 owner,未擅动):①Classify 对「diff 为空」显式输出 no-op 原因而非静默
+  skip,或空提交触发时强制 runtime=true;②部署完成后 run 摘要打印当前 GITHUB_SHA 与
+  admin-web bundle 指纹,供免登录复验;③admin-web nginx 对 index.html 加 no-cache。
+  复验口诀(部署后):curl :5180 取 index-*.js 文件名 + grep 特征串,双端各一个。
