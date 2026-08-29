@@ -27,9 +27,12 @@
 
 ## 放弃了什么
 
-- 工作台内嵌"工单按订单寻址"新查询（GetDispatchTicketByOrder）：接口面+接口测试成本
-  高于收益，复用 /dispatch/pool（orderId 字段在响应中）与派单页同模式即可；
-  若日后工单量级变大再补专用查询。
+- ~~工作台内嵌"工单按订单寻址"新查询（GetDispatchTicketByOrder）~~ **后续已落地（同日复盘 P1）**：
+  WorkOrderService 新增 GetDispatchTicketByOrder（order_id 唯一；无工单返回 nil,nil 非错误态），
+  GET /orders/{orderNo} 响应聚合 ticket 对象——工单指派离池后工作台仍可寻址，
+  补上激活能力（环节9 → 自动 11-12 → DONE），12 环节人工动作全部收敛进工作台。
+  复盘结论：这不是推翻"不加查询"的取舍，而是激活寻址只有此路的硬需求兑现；
+  /dispatch/pool 全量扫描仍保留给跨客户工单池页。
 - 步骤条不做强制门禁（未实名也可下单——与后端口径一致：下单仅要求客户存在），
   只做状态展示，避免前端重复实现业务校验。
 
@@ -48,3 +51,13 @@
 - 过程中发现并修复：OrderCreateDrawer 档案地址"默认带出"只改提示未改表单值
   （保存不可用），d79ed8a3 修复。
 - 验收造数全部 acc_ 标记，收尾 acceptance-cleanup --apply + 孤儿巡检 OK。
+
+## 追加验证（同日 v2：指派/激活寻址落地后）
+
+- 102 真实环境 UI 全流程复测（12 环节全部人工动作收敛进工作台）：
+  API 造数建单推到环节8 → 工作台派单卡（detail 驱动）指派王测试 →
+  scan-bind（装维扫码模拟）推环节9 → 工作台激活（确认弹窗）→
+  **stage=12 / DONE**，12 环节全闭环。造数 acc_ 回收 + 孤儿巡检 OK。
+- 顺带收敛：实名核验通过/驳回收进 RealNameDrawer（latest PENDING 内联，
+  FAIL 理由必填）；订单页状态下拉补 CANCELLED 第5文案；
+  OrderCreateDrawer 地址钉选回显（ResourcePicker pinnedOptions）。
