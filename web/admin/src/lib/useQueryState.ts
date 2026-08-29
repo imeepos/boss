@@ -8,15 +8,13 @@ export function useQueryState(key: string, fallback: string): [string, (v: strin
   const value = params.get(key) ?? fallback
   const setValue = useCallback(
     (v: string) => {
-      setParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          if (v === '' || v === fallback) next.delete(key)
-          else next.set(key, v)
-          return next
-        },
-        { replace: true },
-      )
+      // prev 取 window.location.search 而非函数式入参:同批次连续两次 setParams(如
+      // 过滤器互斥双写)时,第二次的函数式 prev 仍是未提交导航前的旧值,会用旧参数集
+      // 覆盖第一次写入,表现为「URL query 被整体清空」;history 同步写,直读即权威值。
+      const cur = new URLSearchParams(window.location.search)
+      if (v === '' || v === fallback) cur.delete(key)
+      else cur.set(key, v)
+      setParams(cur, { replace: true })
     },
     [key, fallback, setParams],
   )
