@@ -38,6 +38,49 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /orders/address:
+    post:
+      tags: [Order]
+      summary: '开单内联建址(零阻塞;逐级补建到楼栋级,单事务;契约细节见 fields.md §1.5.0b)'
+      operationId: orderInlineAddress
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customerId, city, district, street, compound, building]
+              properties:
+                customerId: { type: integer, format: int64 }
+                city: { type: string, maxLength: 60 }
+                district: { type: string, maxLength: 60 }
+                street: { type: string, maxLength: 60 }
+                compound: { type: string, maxLength: 60 }
+                building: { type: string, maxLength: 60 }
+                backfillCustomer: { type: boolean, description: true=同事务回填客户档案装机地址 }
+      responses:
+        '200':
+          description: 楼栋定位+归属预览(addressId/fullPath/fullPathNames/legalEntityId/regionPath/fallback/needsReview/backfilled)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  addressId: { type: integer, format: int64 }
+                  fullPath: { type: string }
+                  fullPathNames: { type: string }
+                  legalEntityId: { type: integer, format: int64 }
+                  regionPath: { type: string }
+                  fallback: { type: boolean }
+                  needsReview:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, format: int64 }
+                        level: { type: integer, minimum: 1, maximum: 5 }
+                        name: { type: string }
+                  backfilled: { type: boolean }
+
   /orders/catalog:
     get:
       tags: [Order]

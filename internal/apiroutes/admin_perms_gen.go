@@ -364,6 +364,7 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/openplat/deliveries/{id}/requeue":                    {"menu:openplat"},
 	"POST /api/admin/v1/ops/notify-emit":                                     {"menu:dispatch"},
 	"POST /api/admin/v1/orders":                                              {"menu:order"},
+	"POST /api/admin/v1/orders/address":                                      {"menu:order"},
 	"POST /api/admin/v1/orders/{orderNo}/cancel":                             {"menu:order"},
 	"POST /api/admin/v1/orders/{orderNo}/charge":                             {"menu:order"},
 	"POST /api/admin/v1/orders/{orderNo}/check-resource":                     {"menu:order"},

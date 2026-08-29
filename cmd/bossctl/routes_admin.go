@@ -220,6 +220,7 @@ var adminRoutes = []routeEntry{
 	{"POST", "/openplat/apps/:id/test-event", "发测试事件(openplat.test)到该应用全部启用订阅,集成方自助验收签名/连通"},
 	{"GET", "/orders", "订单列表(12 环节跟踪;status: PENDING/RESERVED/INSTALLING/DONE)"},
 	{"POST", "/orders", "新建订单(仅限线下代客极少数场景;正常下单口径是 user 端 /api/user/v1/orders)"},
+	{"POST", "/orders/address", "开单内联建址(零阻塞;逐级补建到楼栋级,单事务;契约细节见 fields.md §1.5.0b)"},
 	{"GET", "/orders/catalog", "代客下单选项目录(在售产品+渠道;带 q 附地址搜索,fullPath=祖先链拍平)"},
 	{"GET", "/orders/:orderNo", "订单详情(含 12 环节时间轴: 完成时间/耗时/重试/结果)"},
 	{"GET", "/dispatch/pool", "调度工作台·跨区工单池"},

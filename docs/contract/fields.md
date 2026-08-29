@@ -109,6 +109,26 @@
 | 路径批量反查 | — | GET /address-tree/lookup?paths= | 逗号分隔≤50；items=[{path,node,ancestors}]（与 search 同形）+missing；缺失路径不整体 404（address_path 弱引用，节点可删），编辑地址/地址簿反显面包屑用 |
 | 家庭地址 phone | `Phone` | user_addresses.phone | PUT /addresses/{id}：空=保持原值（列表仅回 phoneMasked，防自定义手机号被账户号静默覆盖）；POST /addresses：空=沿用账户手机号 |
 
+#### 1.5.0b admin 订单域内联建址（POST /api/admin/v1/orders/address，迁移 000171，2026-08-29）
+
+> 开单零阻塞（meeting-minutes/2026-08-29 §九）：开单流程内新用户无地址时就地建址，门禁 `menu:order`（能开单就能建址）；地址管理页 `menu:address` 仍是治理入口。
+
+| 请求字段 | 字段名 | 说明 |
+|:---------|:-------|:------|
+| 客户 | `customerId` | 必填，客户须已存在（缺失 40400） |
+| 五级地址名 | `city`/`district`/`street`/`compound`/`building` | 自上而下全必填（空缺 42200）；单级 ≤60 字；逐级 lookup-miss-then-create 单事务补建，中间层缺失不阻断 |
+| 回填客户档案 | `backfillCustomer` | 显式布尔；true=同事务把 customers.address_id 更新为新楼栋并同步 legal_entity_id/region_id 快照（customers.address_id 现网 NOT NULL，故为覆盖式回填，非"仅空时回填"） |
+
+| 响应字段 | 字段名 | 说明 |
+|:---------|:-------|:------|
+| 楼栋地址 | `addressId` / `fullPath` / `fullPathNames` | 楼栋级（level=5）节点 id / ltree path / 「 / 」连接的展示名链 |
+| 归属预览 | `legalEntityId` / `regionPath` / `fallback` | 与下单归属推导同口径（000076/000077）；fallback=true=祖先链无区域覆盖、兜底平台总公司，服务端同时打 `[order-ownership] REGION UNCOVERED ALERT` 日志并生成归属修正 P1 待办（notify todo，幂等键 order-inline-addr:path，DueHours=4） |
+| 治理标记 | `needsReview` | 本次内联新建的 1-3 级节点列表（id/level/name），落库 addresses.needs_review=true；4-5 级新建 false。全部新建节点 source='order-inline' |
+| 回填结果 | `backfilled` | 本次是否实际更新了客户档案 |
+| 冲突语义 | — | 同父同名命中即复用既有节点；`UNIQUE(path)` 撞库（23505）返回 40900（user.ErrDuplicate），label 自动加 `_N` 后缀重试；模糊去重提示由前端 search 承担 |
+
+> label 规则：name 转小写、空白转 `_` 后满足 `^[a-z0-9_]+$` 则直接用（≤48 字符）；否则 `n_`+sha1 前 8 位稳定后缀（中文 name 无法转写，回显靠 name，客服不感知 label）。region 继承：新建节点取最近挂 region_id 祖先；父链全空为 NULL，由归属推导层兜底。
+
 ### 1.5.1 geo_country / geo_subdivision（国际地理基础数据，迁移 000038）
 
 > 依据 ISO 3166-1/2 + UN M49 + CLDR；国家主键 = alpha-2，区划主键 = 完整 ISO 3166-2 码；停用码软删除保留。
