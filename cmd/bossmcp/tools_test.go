@@ -109,6 +109,26 @@ func TestToolCallBusinessErrorIsErrorResult(t *testing.T) {
 	}
 }
 
+func TestToolCallBusinessErrorCarriesData(t *testing.T) {
+	srv, _ := backendWith(t, 200, `{"code":40900,"msg":"端口已被预占","data":{"suggestPort":"P-1/2"}}`)
+	s := serverWithKey(srv.URL, "k", "k")
+
+	text, isErr := callTool(t, s, "boss_call", `{"portal":"user","method":"POST","path":"/orders","body":{}}`)
+	if !isErr || !strings.Contains(text, "40900") || !strings.Contains(text, "suggestPort") {
+		t.Errorf("error data must reach agent: isErr=%v text=%s", isErr, text)
+	}
+}
+
+func TestRenderResultNullDataStaysClean(t *testing.T) {
+	srv, _ := backendWith(t, 200, `{"code":40004,"msg":"不存在","data":null}`)
+	s := serverWithKey(srv.URL, "k", "k")
+
+	text, isErr := callTool(t, s, "boss_call", `{"portal":"user","method":"GET","path":"/orders/X"}`)
+	if !isErr || strings.Contains(text, "data") {
+		t.Errorf("null data must not render data block: isErr=%v text=%s", isErr, text)
+	}
+}
+
 func TestToolCallUnknownPortalAndMethod(t *testing.T) {
 	srv, _ := backendWith(t, 200, `{"code":0,"msg":"ok","data":null}`)
 	s := serverWithKey(srv.URL, "k", "k")

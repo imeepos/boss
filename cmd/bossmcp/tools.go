@@ -213,22 +213,38 @@ func (s *server) toolWhoami(args json.RawMessage) (string, error) {
 	return renderResult(res, err)
 }
 
+// formatData 信封 data 美化为缩进 JSON;null/空返回空串,解析失败原样返回。
+func formatData(data json.RawMessage) string {
+	if len(data) == 0 || string(data) == "null" {
+		return ""
+	}
+	var pretty bytes.Buffer
+	if json.Indent(&pretty, data, "", "  ") != nil {
+		return string(data)
+	}
+	return pretty.String()
+}
+
 // renderResult 把调用结果渲染为 agent 可读文本。
-// 业务失败(code!=0)与 HTTP 错误以 error 返回 → isError=true;非 JSON 响应原样截断回传。
+// 业务失败(code!=0)与 HTTP 错误以 error 返回 → isError=true,非空 data 一并回传
+// (字段校验/冲突类错误的载荷是 agent 自纠的关键输入);非 JSON 响应原样截断回传。
 func renderResult(res *apiclient.Result, err error) (string, error) {
 	if err != nil {
 		return "", err
 	}
 	if res.Envelope != nil {
 		if res.Envelope.Code != 0 || res.StatusCode >= 400 {
-			return "", fmt.Errorf("HTTP %d code=%d msg=%s",
+			text := fmt.Sprintf("HTTP %d code=%d msg=%s",
 				res.StatusCode, res.Envelope.Code, res.Envelope.Msg)
+			if d := formatData(res.Envelope.Data); d != "" {
+				text += "\ndata:\n" + d
+			}
+			return "", fmt.Errorf("%s", text)
 		}
-		var pretty bytes.Buffer
-		if json.Indent(&pretty, res.Envelope.Data, "", "  ") != nil {
-			return fmt.Sprintf("code=0 msg=%q data=%s", res.Envelope.Msg, string(res.Envelope.Data)), nil
+		if d := formatData(res.Envelope.Data); d != "" {
+			return fmt.Sprintf("code=0 msg=%q\ndata:\n%s", res.Envelope.Msg, d), nil
 		}
-		return fmt.Sprintf("code=0 msg=%q\ndata:\n%s", res.Envelope.Msg, pretty.String()), nil
+		return fmt.Sprintf("code=0 msg=%q data=%s", res.Envelope.Msg, string(res.Envelope.Data)), nil
 	}
 	return fmt.Sprintf("HTTP %d %s\n%s", res.StatusCode, res.ContentType, apiclient.Truncate(res.Body)), nil
 }
