@@ -2,7 +2,7 @@ GO ?= $(or $(shell command -v go 2>/dev/null),/opt/homebrew/bin/go)
 GOFMT ?= $(or $(shell command -v gofmt 2>/dev/null),/opt/homebrew/bin/gofmt)
 MODULE := github.com/ymm-001/boss
 
-.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check ui-consistency-check proto docker-build load bossctl bossmcp bossctl-routes bossctl-routes-check check-conn-test-user check-conn-test-worker
+.PHONY: infra-up infra-down migrate-up migrate-down run test lint check contract-sync web-admin-check ui-consistency-check proto docker-build load bossctl bossmcp mcp-smoke bossctl-routes bossctl-routes-check check-conn-test-user check-conn-test-worker
 
 ## 构建 bossctl CLI 工具(操作全部 API 接口,支持免登录 API key 认证;版本注入 git describe)
 BOSSCTL_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -26,6 +26,10 @@ bossctl-routes:
 ## bossctl 路由目录漂移门禁(内存比对不写盘;漏再生成在此拦截)
 bossctl-routes-check:
 	node scripts/gen-bossctl-routes.mjs --check
+
+## bossmcp 真实环境冒烟(直连 BOSS_SERVER 默认 102,不经 LLM;手动触发,不进 check 门禁)
+mcp-smoke:
+	bash scripts/mcp-smoke.sh
 
 ## W11 压测:种子压测账号 → 起服务 → k6 → 摘服务(真实 PG 需 BOSS_DATABASE_DSN;端口可经 BOSS_HTTP_PORT 覆盖)
 load:
