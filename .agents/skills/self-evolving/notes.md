@@ -1431,3 +1431,9 @@
 - worktree add 打印成功但 checkout 未落地(无 .git 指针),3 个新组件写进了 git 管辖外的孤儿目录。教训已上高频红线候选:add 后必须 ls .git 再写文件;commit 后必看方括号分支名(本次因此及时发现)。
 - element.click() 不触发 React onMouseDown(Dropdown 选项选择走 onMouseDown),断言点击必须派发完整 mousedown/mouseup/click 序列——此前轮已沉淀过受控 input 的原生 setter,本次是同族问题的按钮侧变体。
 - 做得对:三处 i18n 文件+types 全闭环、grep 令牌后再引用(--color-warning)、失败路径当一等公民实测(后端未就绪时断言层级保留+可重试),联调面收敛到单一类型定义文件。
+
+## 2026-08-29 MINOR URL 态取证链
+- 8 轮 cdp 二分定位「切过滤器 URL 清空」:死节点假说→事件断链假说→直调 handler 分离事件/handler→对比实验(菜单 Link 活)→hook history.replaceState 抓到双 replace→stack 实锤 useQueryState 双写竞态。教训:URL 类问题直接 hook history+stack,一轮定位,别在事件层打转。
+- react-router 函数式 setParams 的 prev 在同批 transition 未提交时是旧值,连续双写互相覆盖——useQueryState 修为直读 window.location.search(history 同步写,权威)。
+- cdp-admin-capture --path 含 ? 时与包装器 ?theme= 拼接冲突,生成 unlinked=%3Ftheme%3Ddark 假信号;带参场景用 eval 内 location.href/history.pushState+popstate 替代。
+- 整页 reload 放 eval 内会销毁上下文致 evaluate 返回 undefined;reload 前必须先 return。
