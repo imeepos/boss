@@ -65,6 +65,10 @@ type Service interface {
 	// LookupAddresses 按 path 精确批量反查节点+祖先链(地址簿 address_path 弱引用反显面包屑用)。
 	// 命中按入参顺序返回;缺失路径列入 missing 而非报错(树节点可删,弱引用允许悬挂)。
 	LookupAddresses(ctx context.Context, paths []string) (hits []AddressHit, missing []string, err error)
+	// CreateInlineAddressChain 开单内联建址(meeting-minutes 2026-08-29 §九):
+	// 自上而下逐级 lookup-miss-then-create,单事务补齐缺失层级到楼栋级;
+	// 新节点继承最近祖先 region_id,回执含归属推导(000076/000077 口径)。
+	CreateInlineAddressChain(ctx context.Context, in InlineAddressInput) (InlineAddressResult, error)
 
 	// 组织实体(子公司/部门/岗位/经营区域)的只读查询与管理。
 	GetRegion(ctx context.Context, id int64) (*Region, error)
