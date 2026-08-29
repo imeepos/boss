@@ -593,3 +593,8 @@ SQL
 ## 2026-09-06 冒烟脚本轮——while 计数器与字段序
 - `python | while read` 管道会让 while 进子shell,计数器改动全部丢失(退出码也对不上);用进程替换 `done < <(python ...)` 保持当前 shell。
 - 断言输出协议定死"状态在前":首字段必须是 PASS/FAIL,壳侧 `case "$status"`,别让 tag 打头否则 PASS/FAIL 全被误读成 detail。
+
+## 代码生成器输出必须过 go/format.Source(gofmt 门禁 vs 漂移门禁打架)
+
+场景 → 生成 Go 代码的生成器(genrouteperms/routes_gen 等)渲染手写缩进,`gofmt -l` 会微调对齐,导致 make lint 红、再生成又让 --check 漂移门禁红,来回拉锯。
+做法 → 渲染完统一 `format.Source(src)` 再写盘/比对:生成物与 gofmt 天然一致,两道门禁同时稳定。参照 scripts/genrouteperms/main.go render()。

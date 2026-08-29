@@ -1418,3 +1418,10 @@
 - skill 有没有提前预警? 上轮沉淀的"Dropdown 选项 mousedown/触发器 click"直接复用,本轮 UI 断言零交互失败——沉淀有效。
 - 重来一次? 无变化;唯一提醒:worktree 建立时机放在调查完成后,减少 worktree 空转。
 - 本轮增量: 12环节人工动作全部收敛进工作台(激活打通,stage12/DONE);实名核验收进抽屉;地址钉选回显;订单页 CANCELLED 文案补齐。
+
+## 2026-08-29d admin MCP 接入轮(目录=账号权限/AST提取/三真机验收)
+
+- 哪个坑浪费了最多时间? macOS bash 3.2 的 heredoc 放在进程替换 `< <(python3 - <<'PY')` 里,内容行会被静默打乱/截断(python SyntaxError 且同一脚本断言重复跑),换管道又丢计数器——来回改三版才收敛"断言脚本先落盘再 `< <(python3 文件)` 引用"。另外生成器手写缩进被 gofmt 微调,lint 门禁与 --check 漂移门禁互相打架,一轮才定位。
+- skill 有没有提前预警? mcp-smoke 注释里已有"管道 while 进子shell 丢计数"预警(直接避开了);但 bash 3.2 heredoc×进程替换这个组合坑未记录,本轮已喂回 known-issues。
+- 重来一次? 开工先读 domain 结构体(Profile 早就带 permissionCodes,/auth/me 直接可用,少加一个端点);生成器第一步就过 go/format;bash 断言脚本统一"落盘文件+简单命令"模板。
+- 本轮增量: admin 端 MCP 上线——路由→permCode AST 静态投影(genrouteperms 491 条)+ boss_routes 按账号权限过滤(fail-closed)+ 模板 key /auth/me 回模板真相;102 验收 14/14(三岗位正反例成对+跨组织互查零串数据),mcp-smoke 10/10 零回归,已合并 main 清理 worktree。

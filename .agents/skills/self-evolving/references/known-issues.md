@@ -403,3 +403,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状:`ssh host 'docker exec -i pg pg_dump ... > bak.sql && docker exec -i pg psql ...' <<'SQL' ... SQL` 不报错但 DELETE 未执行,后续巡检才暴露。
 - 原因:heredoc 挂在 ssh 的 stdin 上,`&&` 链里**第一条**命令(pg_dump)同样继承 stdin 且把内容消费掉,psql 收到空输入,psql 无输入时静默退出码 0。
 - 修法:heredoc 单独一条 ssh,喂给唯一读 stdin 的命令;备份/删除拆两条执行。红线 9a(叠引号)的姊妹坑:stdin 抢占。
+
+## bash 3.2(macOS)进程替换内嵌 heredoc 内容被打乱
+
+症状 → `< <(python3 - "$ARG" <<'PY' ... PY)` 里的 python 脚本报 SyntaxError,且报错内容行序错乱、同一脚本的断言重复执行;换成 `... | judge_fn` 管道又让计数器困在子 shell(shell 函数自增丢失)。
+原因 → macOS 自带 bash 3.2 对"过程替换 + 内嵌 heredoc"组合解析有缺陷,heredoc 行被重新分块喂给 python。
+修法 → 断言/过滤脚本先在顶层 heredoc 写入临时文件(`cat >/tmp/x.py <<'PY'`),过程替换里只放简单命令:`judge x < <(python3 /tmp/x.py args)`;计数器留在当前 shell。
