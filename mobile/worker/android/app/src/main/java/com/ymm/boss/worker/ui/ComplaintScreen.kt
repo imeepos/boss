@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.TicketApi
+import com.ymm.boss.worker.ui.theme.TagRed
 import kotlinx.coroutines.launch
 
 // 报障(对齐 docs/worker/complaint.html)
@@ -72,7 +73,7 @@ fun ComplaintScreen(nav: NavHost, no: String) {
                     } catch (e: Exception) { ctx.getString(R.string.complaint_toast_fail, e.message ?: "") }
                 }
             }
-            if (tip.isNotEmpty()) Text(tip, color = androidx.compose.ui.graphics.Color(0xFFCF1322),
+            if (tip.isNotEmpty()) Text(tip, color = TagRed.fg,
                 fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
         }
         Spacer(Modifier.height(12.dp))

@@ -34,6 +34,10 @@ val TagCyan = TagColor(Color(0xFF08979C), Color(0xFFE6FFFB))
 val SuccessBorder = Color(0xFF6FD18B)
 val ErrBorder = Color(0xFFFF9B9D)
 
+// StatusLine 状态灯(蓝底渐变头部上的在线/离线小圆点,Widgets.kt 存量值成对收编)
+val DotOnline = Color(0xFFA6E9A0)
+val DotOffline = Color(0xFFFFA39E)
+
 fun tagColor(status: String?): TagColor = when (status) {
     "DONE" -> TagGreen
     "ACCEPTED", "TODO" -> TagOrange

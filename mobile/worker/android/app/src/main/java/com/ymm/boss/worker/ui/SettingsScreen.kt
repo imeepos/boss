@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.ProfileApi
+import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -84,7 +85,7 @@ fun SettingsScreen(nav: NavHost) {
                 Text(if (online) stringResource(R.string.settings_status_on) else stringResource(R.string.settings_status_off), fontSize = 13.sp,
                     color = Color.White,
                     modifier = Modifier
-                        .background(if (online) Primary else Color(0xFF8C8C8C), RoundedCornerShape(6.dp))
+                        .background(if (online) Primary else Muted, RoundedCornerShape(6.dp))
                         .padding(horizontal = 10.dp, vertical = 5.dp))
             }
             KvRow(stringResource(R.string.settings_kv_radius), "$radiusKm km")

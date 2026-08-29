@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.AssetApi
+import com.ymm.boss.worker.ui.theme.Primary
 import kotlinx.coroutines.launch
 
 // 换机(对齐 docs/worker/replace.html):旧 EPC + 新 EPC 登记
@@ -90,6 +91,6 @@ fun ReplaceScreen(nav: NavHost, no: String) {
 
 @Composable
 private fun ActionLink(text: String, onClick: () -> Unit) {
-    Text(text, fontSize = 14.sp, color = androidx.compose.ui.graphics.Color(0xFF1677FF),
+    Text(text, fontSize = 14.sp, color = Primary,
         modifier = Modifier.padding(vertical = 8.dp).clickable { onClick() })
 }

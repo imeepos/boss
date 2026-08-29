@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.worker.R
 import com.ymm.boss.worker.api.MiscApi
+import com.ymm.boss.worker.ui.theme.Muted
+import com.ymm.boss.worker.ui.theme.Primary
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 
@@ -64,7 +66,7 @@ fun ServiceScreen(nav: NavHost) {
                             Text(m.optString("content"), fontSize = 13.sp, color = Color.White,
                                 modifier = Modifier
                                     .background(
-                                        if (mine) Color(0xFF1677FF) else Color(0xFF8C8C8C),
+                                        if (mine) Primary else Muted,
                                         RoundedCornerShape(10.dp),
                                     )
                                     .padding(horizontal = 12.dp, vertical = 8.dp))
