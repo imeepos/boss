@@ -57,6 +57,7 @@ func registerOrderRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	ord.GET("", orderListHandler(a))
 	ord.POST("", orderSubmitHandler(a))
+	ord.POST("/address", orderInlineAddressHandler(a))
 	ord.GET("/:orderNo", orderGetHandler(a))
 }
 

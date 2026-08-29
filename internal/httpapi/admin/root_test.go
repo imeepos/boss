@@ -31,6 +31,10 @@ type fakeUser struct {
 	dataScope user.DataScope
 	regions   []user.Region
 	addrHits  []user.AddressHit
+	// 内联建址桩:入参捕获 + 可配置回执/错误。
+	chainIn  user.InlineAddressInput
+	chainRes user.InlineAddressResult
+	chainErr error
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -62,6 +66,10 @@ func (f *fakeUser) SearchAddresses(context.Context, string) ([]user.AddressHit, 
 }
 func (f *fakeUser) LookupAddresses(context.Context, []string) ([]user.AddressHit, []string, error) {
 	return nil, nil, nil
+}
+func (f *fakeUser) CreateInlineAddressChain(_ context.Context, in user.InlineAddressInput) (user.InlineAddressResult, error) {
+	f.chainIn = in
+	return f.chainRes, f.chainErr
 }
 func (f *fakeUser) GetRegion(_ context.Context, id int64) (*user.Region, error) {
 	if id == 0 {
