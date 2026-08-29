@@ -1,22 +1,21 @@
 {
-  "generatedAt": "2026-08-29T02:05:57.812Z",
+  "generatedAt": "2026-08-29T02:37:08.389Z",
   "exempt": {
     "user": [
       "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/Theme.kt",
-      "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/theme/Color.kt"
+      "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/theme/Color.kt",
+      "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/theme/RnPalette.kt"
     ],
     "worker": [
       "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/theme/Color.kt"
     ]
   },
   "violations": {
-    "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNamePage.kt": 18,
     "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/PinnedGradientPage.kt": 2,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/AuthForm.kt": 3,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/LoginScreen.kt": 3,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/OrdersScreen.kt": 2,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SafetyScreen.kt": 1,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SettingsScreen.kt": 1,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TransferScreen.kt": 1
+    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SettingsScreen.kt": 1
   }
 }

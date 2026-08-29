@@ -20,7 +20,7 @@ const SCANS = [
   {
     end: 'user',
     dirs: [`${USER_ROOT}/page`, `${USER_ROOT}/ui`],
-    exempt: [`${USER_ROOT}/ui/Theme.kt`, `${USER_ROOT}/ui/theme/Color.kt`],
+    exempt: [`${USER_ROOT}/ui/Theme.kt`, `${USER_ROOT}/ui/theme/Color.kt`, `${USER_ROOT}/ui/theme/RnPalette.kt`],
   },
   { end: 'worker', dirs: [WORKER_ROOT], exempt: [`${WORKER_ROOT}/theme/Color.kt`] },
 ];

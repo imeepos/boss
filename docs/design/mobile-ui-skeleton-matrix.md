@@ -55,7 +55,7 @@
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/ProfilePage.kt | PinnedGradientPage | 0 | 0 | Bold,W500 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RatePage.kt | TopBar | 0 | 0 | Bold |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameFormStep.kt | 无 | 0 | 0 | Bold,Medium,W500,W600 |
-| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNamePage.kt | TopBar | 18 | 0 | Normal,W600 |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNamePage.kt | TopBar | 0 | 0 | Normal,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameStatusPages.kt | 无 | 0 | 0 | Bold,Medium,Normal,W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameUploadStep.kt | 无 | 0 | 0 | W600 |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/page/ReceiptPage.kt | TopBar | 0 | 0 | Bold |
@@ -78,7 +78,8 @@
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/SubmitGuard.kt | 无 | 0 | 1 | - |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/Theme.kt | 无 | 10 | 0 | - |
 | mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/Widgets.kt | TopBar | 0 | 0 | Bold,Normal,W500,W600 |
-| mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/theme/Color.kt | 无 | 20 | 0 | - |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/theme/Color.kt | 无 | 9 | 0 | - |
+| mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/theme/RnPalette.kt | 无 | 18 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ActivateScreen.kt | TopBar | 0 | 0 | Bold,SemiBold |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/AgreementScreen.kt | TopBar | 0 | 0 | Bold,W600 |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/AppRoot.kt | 无 | 0 | 0 | Bold |
@@ -128,8 +129,8 @@
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TicketDetailCards.kt | 无 | 0 | 0 | Bold,Medium,SemiBold |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TicketDetailScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ToolScreen.kt | TopBar | 0 | 0 | - |
-| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TransferScreen.kt | TopBar | 1 | 0 | - |
+| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TransferScreen.kt | TopBar | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/UpdateDialog.kt | 无 | 0 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/Widgets.kt | TopBar | 0 | 0 | Bold,Medium,SemiBold |
-| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/theme/Color.kt | 无 | 26 | 0 | - |
+| mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/theme/Color.kt | 无 | 27 | 0 | - |
 | mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/theme/Theme.kt | 无 | 0 | 0 | - |
