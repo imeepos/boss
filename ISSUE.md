@@ -85,3 +85,18 @@
   → 修法:dsh 侧把 GLM-5.3-Flash 的输入能力声明补上 image,或 read_image 的能力校验放宽为
   "尝试投递、上游拒绝再报错"。在修好前,涉及截图审阅的任务请改用 DOM 断言路径
   (见 .agents/skills/self-evolving 高频红线 7 的替代用法)。
+
+## 工具·self-evolving 脚本(2026-08-29,内联建址轮发现)
+
+- **未修复｜脚本 bug｜cdp-admin-capture.mjs parseArgs 只透传第一个 --eval**:eval 分支内
+  `i += 1` 后 `continue`,而 for 循环 update 又执行 `i += 2`,实际步进 3 格,把第 2 个及以后的
+  `--eval` 值误解析为垃圾键(如 `args['E3']='--settle'`),后续 eval 全部静默丢失。
+  表象:多个 --eval 只有第 1 个业务 eval 执行,其余无输出无报错(2026-08-29 两次复现)。
+  → 临时绕过:把全部交互装进单个 async IIFE(内部自管 sleep 节奏)。修法:eval 分支去掉分支内
+  `i += 1`,只靠 continue 走 update 步进;或改用 while+显式游标。
+- **未修复｜worktree 陷阱｜git worktree add 后 checkout 可能未落地即返回 success**:
+  `git worktree add <dir> -b <branch>` 打印 "HEAD is now at <sha>" 但目标目录内无 .git 指针、
+  无任何仓库文件(worktree list 却显示已注册);其后向该目录写文件全部落在 git 管辖外。
+  2026-08-29 复现一次,prune/remove 需用相对名 `git worktree remove --force wt-admin-address-chain`
+  (绝对路径报 not a working tree),随后删目录重建才正常 checkout。
+  → 修法(流程非工具):worktree add 后必须 `ls <dir>/.git` 确认指针存在再写任何文件。

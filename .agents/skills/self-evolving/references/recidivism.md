@@ -108,3 +108,6 @@
 | subagent 收尾 git add -A 把多议题文件混进一个主题提交 | 1 | 2026-08-28(fc0bd47c"地址选择器"commit 混入权限测试执行纪要+他人未完成的主纪要草稿+lessons,破坏可独立revert性) | 授权 subagent 提交时必须限定 `git add <具体文件>`,禁止 add -A;并行会议场景主持人最后统一提交 |
 
 | 多 worktree 会话中 bash 默认 cwd 是主树,相对路径 grep/cat 读到主树旧内容,误判"edit 没生效" | 1 | 2026-10-01(wt-ui-p2 收尾批:edit 走绝对路径已改对,bash 相对路径 grep 仍显示旧 Color(0x,险些误判编辑丢失;pwd 核对后发现 bash cwd=boss 主树) | edit/read 用绝对路径,bash 一律带 workdir 或先 pwd+git branch --show-current 核对;grep 结果与预期不符先怀疑树不对,不要怀疑编辑丢失 |
+
+- worktree add 后未验证 checkout 落地即写文件(2026-08-29,1 次):git 打印成功但目录无 .git 指针,文件落入 git 管辖外;幸 commit 前核对分支名发现。规则:worktree add 后 `ls <dir>/.git` 再动笔。
+- 共享脚本多 --eval 静默丢参当被测代码 bug 排查(2026-08-29,1 次):cdp-admin-capture parseArgs 步进 bug;工具行为异常先自证工具。已登记 ISSUE.md,绕过=单 eval IIFE。
