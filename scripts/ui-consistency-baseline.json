@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-28T21:19:24.283Z",
+  "generatedAt": "2026-08-29T01:44:02.963Z",
   "exempt": {
     "user": [
       "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/Theme.kt",
@@ -17,19 +17,12 @@
     "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameStatusPages.kt": 1,
     "mobile/user/android/app/src/main/java/com/ymm/boss/user/page/RealNameUploadStep.kt": 3,
     "mobile/user/android/app/src/main/java/com/ymm/boss/user/ui/PinnedGradientPage.kt": 2,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ActivateScreen.kt": 2,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/AuthForm.kt": 4,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ComplaintScreen.kt": 1,
+    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/AuthForm.kt": 3,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/LoginScreen.kt": 5,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/OnboardScreen.kt": 3,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/OrdersScreen.kt": 3,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ReplaceScreen.kt": 1,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/RescheduleScreen.kt": 1,
+    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/OrdersScreen.kt": 2,
     "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SafetyScreen.kt": 1,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ScanScreen.kt": 1,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/ServiceScreen.kt": 2,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SettingsScreen.kt": 2,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TransferScreen.kt": 4,
-    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/Widgets.kt": 6
+    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/SettingsScreen.kt": 1,
+    "mobile/worker/android/app/src/main/java/com/ymm/boss/worker/ui/TransferScreen.kt": 1
   }
 }
