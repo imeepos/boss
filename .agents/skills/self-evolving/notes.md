@@ -1366,3 +1366,14 @@
 - skill 有没有提前预警? 红线#5"git status 干净才算收尾"若被严格执行即可拦住——我当时看了 status 但只扫了 head -2。
 - 重来一次? 提交前 git status 全量核对改动文件集==提交文件集;门禁用 set -o pipefail 或 grep 输出文本判失败;worktree remove 被拒先逐文件查归属再决定强删。
 - 沉淀: 三条进 minutes 附六,候选红线(再犯即升):管道吞退出码、add 圈定不完整、强删信号无视。
+
+## 2026-09-26 TopBar 契约 instrumented 测试（wt-ui-p7 worktree）
+- 哪个坑浪费了最多时间？两条各浪费一轮构建：①照任务给的命令用 `--tests` 跑 connected 测试，AGP 8.13.1 直接 `Unknown command-line option` 秒失败，得换 `-Pandroid.testInstrumentationRunnerArguments.class=`；②给 `assertDoesNotExist()` 多写了 import（它是成员函数不是扩展函数），编译报 Unresolved reference。
+- skill 有没有提前警告？部分有：android.md #24 早写了"gradle 退出码别经管道 tail 取"，所以两轮都用日志文件+单独 echo EXIT，秒判失败原因；但 `--tests` 对 connected 无效、成员函数不 import 这两条此前没登记，已补进 knowledge/android.md #28/#29。
+- 重来一次会怎么做？写 androidTest 前先逐行对照同目录既有测试的 import 块（PageRenderTest 里 assertDoesNotExist 就没 import，当时没细看）；AGP 命令先小步 `help --task` 验选项再全跑。
+
+## 2026-08-29 林师·worker 端 TopBar 契约 instrumented 测试（wt-ui-p7）
+- 哪个坑浪费了最多时间？4 用例全绿前共 4 轮构建：`--tests` 秒败一轮、assertDoesNotExist import 编译败一轮、最贵的是 `resolved to different process` 连败两轮（含一次误判为 user 端并发干扰，清场重跑复现才死心）。
+- skill 有没有提前警告？#28/#29 拦住了前两坑（是并行会话当天刚写的，直接命中）；但 ui-test-manifest 的 configuration 放置差异没登记——最后靠"user 端同款测试 3 分钟前同设备全绿"这一事实反向逐行 diff 两端 build.gradle.kts 才定位。
+- 重来一次会怎么做？同款任务先跑通**参照模块**的既有测试再写新测试（基线绿=环境绿，失败即环境问题，省掉误判环节）；两端 CI 同模 twin 组件出现设备差异时，第一动作是 diff 两端依赖配置而不是怀疑设备。
+- 沉淀：ui-test-manifest 必须 debugImplementation 写进 known-issues + android.md #30。

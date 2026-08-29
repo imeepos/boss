@@ -395,3 +395,6 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状: 部署后系统授权页"未激活·业务功能受限",`/license/status` 返回 activated:false,`/var/lib/boss` 目录为空。
   原因: 手动在 `~/boss/deployments` 跑 compose,项目名(deployments)与 CI(boss-app)不同,docker 卷按项目名隔离→挂了新建空卷,license.json 不在现挂载点。
   修法: 从 CI 卷拷回 `boss-app_boss_license_data` → `deployments_boss_license_data`,宿主侧 chown 1000:1000(CI uid)对齐后重启;**根治=部署只走 CI**,见 postmortem 0010 与 red-lines 手动部署红线(2026-08-29)。
+- 症状: worker 端 createComposeRule 的 androidTest 4 用例全挂,`java.lang.RuntimeException: Intent in process com.ymm.boss.worker resolved to different process com.ymm.boss.worker.test: Intent { ... cmp=com.ymm.boss.worker.test/androidx.activity.ComponentActivity }`,100% 确定性复现(user 端同款同设备同日全绿)。
+  原因: `androidx.compose.ui:ui-test-manifest` 挂在 **androidTestImplementation** 时,占位 ComponentActivity 被合并进**测试 APK**(`*.test` 包)manifest;测试启动它时 activity 落在 `*.test` 独立进程,与 instrumentation 进程(目标包)不一致,框架 `Instrumentation.startActivitySync` 进程归属校验直接抛异常。
+  修法: 改挂 **debugImplementation**(对齐 user 端,Compose 官方推荐写法)——ComponentActivity 合入主 APK debug manifest,与 instrumentation 同进程;改一行 configuration 即可,勿动依赖本身(2026-08-29 wt-ui-p7 worker 端实测,改后 4 用例全绿)。
