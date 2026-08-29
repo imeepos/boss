@@ -73,3 +73,15 @@
   曾用 **GET** 探测误报 404;实为 **POST** 端点且后端已落地(GET 当然 404)。修正:POST /api/user/v1/push/device → 401(需鉴权),
   handler `internal/httpapi/user/push_device.go` + 路由已注册(auth.go biz 组),push_devices 表 000095 PG 持久化,
   RegisterDevice 幂等(同 registrationId 换绑主体)。→ Android B 轨接线完成(登录/启动上报 deviceId,见 feat(user-android): push-device 注册)。
+
+## 工具·DSH 宿主(2026-08-29,后台代客闭环轮发现)
+
+- **未修复｜工具限制｜read_image 被运行时模型能力声明拒绝,与实际模型能力不符**:本会话模型
+  GLM-5.3-Flash 实际可理解图像,但 dsh 运行时的模型能力声明(role manifest / model metadata)
+  未包含图像输入标志,`read_image` 一律报
+  `model "GLM-5.3-Flash" does not declare image input; switch to an image-capable model`
+  (2026-08-29 会话两次重试一致复现;PNG 文件本身有效,`file` 确认 1600x900 RGB 非损坏)。
+  影响:浏览器截图(cdp-capture 产物)无法直接目检,只能靠 --eval DOM 断言或转发给图像模型会话。
+  → 修法:dsh 侧把 GLM-5.3-Flash 的输入能力声明补上 image,或 read_image 的能力校验放宽为
+  "尝试投递、上游拒绝再报错"。在修好前,涉及截图审阅的任务请改用 DOM 断言路径
+  (见 .agents/skills/self-evolving 高频红线 7 的替代用法)。
