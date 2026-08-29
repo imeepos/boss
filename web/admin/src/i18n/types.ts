@@ -677,6 +677,11 @@ export interface Translations {
       submitting: string
       success: string
       fail: string
+      selectCustomer: string
+      searchCustomer: string
+      selectBill: string
+      noBill: string
+      searchFail: string
       confirmText: string
     }
     /** 柜台日结(纪要 2026-08-28:T+0 只读汇总+实点回填)。 */
