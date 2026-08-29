@@ -45,11 +45,15 @@ export function OrderCreateDrawer({
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 选定客户后带出档案地址作为默认装机地址(可检索覆盖)。
+  // 未手动选择地址时直接默认档案地址,保证保存可用(102 UI 实测发现仅提示不生效)。
   useEffect(() => {
     const id = Number(customerId)
     if (!open || !id) { setCustomerAddr(0); return }
     apiFetch<{ addressId: number }>(`/customers/${id}`)
-      .then((d) => setCustomerAddr(d?.addressId ?? 0))
+      .then((d) => {
+        setCustomerAddr(d?.addressId ?? 0)
+        setAddressId((prev) => (prev === 0 && d?.addressId ? d.addressId : prev))
+      })
       .catch(() => setCustomerAddr(0))
   }, [customerId, open]) // eslint-disable-line react-hooks/exhaustive-deps
 
