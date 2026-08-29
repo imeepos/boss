@@ -40,6 +40,7 @@ var adminRoutes = []routeEntry{
 	{"POST", "/payments", "收款落账(流水+账单条件置 PAID 同事务;permCode menu:payment:cash;method 白名单外 42200;cash 单笔限额 biz_params payment.cash.singleLimit,超限拒绝+审计留痕)"},
 	{"GET", "/daily-closings/summary", "柜台日结汇总(当日 cash 流水按网点+操作员聚合,收入/退款分列,退款按流水发生日归属;permCode menu:daily-close)"},
 	{"GET", "/daily-closings/items", "柜台日结明细(当日 cash 流水逐笔,含 REFUNDED 凭证与退款原因;permCode menu:daily-close)"},
+	{"GET", "/daily-closings/sites", "网点清单下拉数据源(biz_params counter.sites JSON 数组;permCode menu:daily-close)"},
 	{"POST", "/daily-closings", "柜台日结实点回填(UPSERT 当日快照;不平不阻塞,输出 [paycheck] DIFF 可 grep 日志;permCode menu:payment:cash)"},
 	{"POST", "/payments/:id/refund", "全额退款(000112;流水 REFUNDED 留痕+账单回 UNPAID;permCode menu:payment)"},
 	{"GET", "/ar-metrics", "应收信用账龄与停机指标"},
