@@ -1398,3 +1398,10 @@
 - skill 有没有提前警告? 无;dsh mcp-client README 写了配置形状但没写覆盖语义,这次实测补上。
 - 重来一次? 写 --patch 覆盖前先 `dsh --dump-config` 看合成树;覆盖条目永远自包含完整 config。
 - 沉淀: dsh MCP 桥接三件套(profile + link: 依赖 + insert 条目)与覆盖语义进 techniques.md。
+
+## 2026-08-29b 开户工作台聚合页(菜单页全链路:迁移→快照→UI全流程实测)
+
+- 哪个坑浪费了最多时间? UI 全流程 CDP 实测中 Dropdown 语义踩两下:trigger 用 click 开、option 用 mousedown 选(click 被 preventDefault),第一次用 click 点选项静默无效;另外 ds-adoption/web-ui-audit 两个门禁在 build/test 全绿后才红(新页面没引用 business/ui 模式件、缺菜单图标 svg),收尾多跑一轮。
+- skill 有没有提前预警? 页面模式规范(docs/admin/page-patterns.md)写在文档里但 skill 未提示"新建页面必查 ds-adoption 与菜单图标"这两个机械门禁。
+- 重来一次? 新页面骨架直接从参考实现(payment 列表页)复制导入头,模式件与图标一步到位;CDP 下拉交互统一封装"trigger click + option mousedown"再开始断言。
+- 本轮增量: /bss/onboarding 工作台上线并在 102 完成 UI 全流程(建档→实名→下单→核查→预占→收费→指派,全程未跳页);发现并修复 OrderCreateDrawer 地址"默认带出"文案与实现不符(d79ed8a3)。
