@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -35,6 +33,7 @@ import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
 import com.ymm.boss.user.ui.PricePill
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.SubmitGuard
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
@@ -178,22 +177,17 @@ private fun EffOption(title: String, desc: String, value: String, current: Strin
 
 @Composable
 internal fun SubmitBar(label: String, enabled: Boolean = true, onSubmit: () -> Unit) {
-    Button(
-        onClick = onSubmit,
+    PrimaryButton(
+        text = label,
         enabled = enabled,
-        colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp).height(44.dp),
-    ) { Text(label) }
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+    ) { onSubmit() }
 }
 
 @Composable
 internal fun DoneCard(message: String, onBack: () -> Unit) {
     AppCard {
         Text(message, fontSize = 14.sp, color = Palette.ink)
-        Button(
-            onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(40.dp),
-        ) { Text("返回上一页") }
+        PrimaryButton("返回上一页", modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { onBack() }
     }
 }

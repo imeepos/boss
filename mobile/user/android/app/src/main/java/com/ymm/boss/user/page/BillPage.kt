@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +31,7 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
@@ -62,11 +61,10 @@ fun BillScreen(nav: Nav, no: String) {
         TopBar("账单明细", onBack = { nav.pop() }, action = "开发票", onAction = { nav.push(Route.Invoice) })
         DetailCard(bill, items, total, failed)
         AutoPayCard(autoPay) { enabled -> scope.launch { toggleAutoPay(enabled) { autoPay = it } } }
-        Button(
-            onClick = { nav.push(Route.Pay) },
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp).height(44.dp),
-        ) { Text("立即缴费 ¥" + "%.2f".format(total)) }
+        PrimaryButton(
+            text = "立即缴费 ¥" + "%.2f".format(total),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+        ) { nav.push(Route.Pay) }
         Spacer(Modifier.height(8.dp))
     }
 }

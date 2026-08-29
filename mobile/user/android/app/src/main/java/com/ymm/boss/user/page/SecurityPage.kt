@@ -35,6 +35,7 @@ import com.ymm.boss.user.ui.CellRow
 import com.ymm.boss.user.ui.Nav
 import com.ymm.boss.user.ui.Notice
 import com.ymm.boss.user.ui.Palette
+import com.ymm.boss.user.ui.PrimaryButton
 import com.ymm.boss.user.ui.Route
 import com.ymm.boss.user.ui.Tag
 import com.ymm.boss.user.ui.TopBar
@@ -100,16 +101,12 @@ private fun PasswordForm() {
         OutlinedTextField(value = newPwd, onValueChange = { newPwd = it }, label = { Text("新密码(≥10位,含大小写与数字)") },
             singleLine = true, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
         Notice(msg)
-        Button(
-            onClick = {
-                scope.launch {
-                    try { ProfileApi.changePassword(oldPwd, newPwd); msg = "密码已修改" }
-                    catch (e: Exception) { msg = "修改失败,请检查当前密码" }
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            modifier = Modifier.fillMaxWidth().height(42.dp),
-        ) { Text("确认修改") }
+        PrimaryButton("确认修改", modifier = Modifier.fillMaxWidth()) {
+            scope.launch {
+                try { ProfileApi.changePassword(oldPwd, newPwd); msg = "密码已修改" }
+                catch (e: Exception) { msg = "修改失败,请检查当前密码" }
+            }
+        }
     }
 }
 
@@ -151,16 +148,12 @@ private fun PhoneForm() {
             ) { Text("获取验证码", fontSize = 12.5.sp, color = Palette.primary) }
         }
         Notice(msg)
-        Button(
-            onClick = {
-                scope.launch {
-                    try { ProfileApi.changePhone(phone, code); msg = "手机号已更换" }
-                    catch (e: Exception) { msg = "更换失败,请稍后重试" }
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.primary),
-            modifier = Modifier.fillMaxWidth().height(42.dp),
-        ) { Text("确认更换") }
+        PrimaryButton("确认更换", modifier = Modifier.fillMaxWidth()) {
+            scope.launch {
+                try { ProfileApi.changePhone(phone, code); msg = "手机号已更换" }
+                catch (e: Exception) { msg = "更换失败,请稍后重试" }
+            }
+        }
     }
 }
 
