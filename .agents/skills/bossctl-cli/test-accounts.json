@@ -165,7 +165,13 @@
       "status": "APPROVED",
       "realNameStatus": "PASS",
       "apiKey": "boss_e209cfccd96540580980a48e5fa2af5f",
-      "note": "场景A正常流程:注册→审核通过→实名核验PASS"
+      "note": "场景A正常流程:注册→审核通过→实名核验PASS",
+      "apiKeys": [
+        {
+          "name": "mcp-worker-20260906",
+          "key": "boss_234ad3714fb83d166cc0ba17e6e47ee8"
+        }
+      ]
     },
     {
       "workerId": null,
@@ -200,7 +206,13 @@
       "username": null,
       "password": null,
       "apiKey": "boss_a7c676b7d33083cffc00820664e1d539",
-      "note": "场景A正常流程:注册→后台审核通过→实名核验PASS;customer 主体无菜单权限(RBAC 恒拒),只能访问客户身份对应接口;账号/密码为 null 因 BOSS 客户主档无登录口令,鉴权用 API key"
+      "note": "场景A正常流程:注册→后台审核通过→实名核验PASS;customer 主体无菜单权限(RBAC 恒拒),只能访问客户身份对应接口;账号/密码为 null 因 BOSS 客户主档无登录口令,鉴权用 API key",
+      "apiKeys": [
+        {
+          "name": "mcp-user-20260906",
+          "key": "boss_f66aa5b96cfd97a0c4daddefa205c683"
+        }
+      ]
     },
     {
       "customerId": 214,
