@@ -7,8 +7,14 @@ RUN go mod download || true
 COPY . .
 ARG BINARIES="server collector provisioner report aaa"
 # 授权公钥(B 档强制门禁):仅 server 注入;空=开发态(门禁不启用,打 ALERT 日志)。
-# 生产 CI 必须传 BOSS_LICENSE_PUBLIC_KEY_HEX,否则交付镜像门禁不生效。
+# 生产 CI 必须传 BOSS_LICENSE_PUBLIC_KEY_HEX;空公钥镜像须显式传
+# ALLOW_DEV_LICENSE=1 声明开发态,否则构建即失败(0010 事故 fail-fast)。
 ARG BOSS_LICENSE_PUBLIC_KEY_HEX=""
+ARG ALLOW_DEV_LICENSE=""
+RUN set -e; if [ -z "$BOSS_LICENSE_PUBLIC_KEY_HEX" ] && [ "$ALLOW_DEV_LICENSE" != "1" ]; then \
+    echo "[server.Dockerfile] FAIL: BOSS_LICENSE_PUBLIC_KEY_HEX 为空且未声明 ALLOW_DEV_LICENSE=1——拒绝产出无门禁镜像(postmortem 0010)" >&2; \
+    exit 1; \
+  fi
 RUN set -e; for b in ${BINARIES}; do \
     LDFLAGS="-s -w"; \
     if [ "$b" = "server" ] && [ -n "$BOSS_LICENSE_PUBLIC_KEY_HEX" ]; then \
