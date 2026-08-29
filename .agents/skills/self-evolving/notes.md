@@ -1354,3 +1354,8 @@
 ## 2026-10-17 陈端·P2-1 用户端 RN 族色板单源化(wt-ui-p3)
 - 踩坑一次:把 Color(0x...) 字面量换成 RN.xxx 引用时照抄了原右括号数(Color( 自带一个 `)`),3 处各多一个右括号,编译失败一轮;按新实参重算括号后一次通过。教训已喂 lessons——"字面量→常量"类替换的括号必须重配对,不能平移。
 - 做对的:①改前 grep 盘点 25 处字面量按值聚类,≥2 次与 1 次全收进 RN 色板,0xFF1698FA/0xFFEFFFF4 命中已有常量直接引用不新增;②发现门禁基线按文件"只降不升",色板文件会 12→18 超基线,做了只动该文件一条的最小基线修正(12→18)并在汇报披露,避免 --write-baseline 全量重生成把并行同事 worker 端的预算(5→3)一起改掉;③worktree 里混入并行同事 worker 端未提交改动与 docs 改动,全程未碰,汇报只圈自己的 7 个文件。
+
+## 2026-08-29 证书事故复盘(手动部署踩卷隔离)
+- 最大教训:runbook(docs/deploy/oncall-102.md)第一页就写明"部署=gitea CI,push 即部署",我没读就开始 docker build——单一事实源只读不猜的原则在"部署"这一类操作上同样适用。
+- docker 卷按 compose 项目名隔离:换目录跑 compose=换卷。证书/持久化文件类操作前,先 `docker inspect <容器> --format '{{.Mounts}}'` 核对卷身份。
+- 亮点:事故恢复走对了路——从 CI 卷找回 license.json、uid 对齐、/license/status 验证 activated:true,并按制度立 postmortem 0010。
