@@ -1,3 +1,5 @@
 <resources>
+    <!-- i18n 约定(mobile-ui-standard.md §4.5 方案 C):新增文案一律先进本文件并经
+         stringResource 引用,禁止页面再新增裸中文;存量裸中文待出海需求立项迁移。 -->
     <string name="app_name">BOSS用户端</string>
 </resources>

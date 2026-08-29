@@ -132,6 +132,12 @@
 - 新增文案一律进 `strings.xml`，对齐师傅端 `R.string`/`stringResource` 惯例；两端一致执行，禁止再新增裸中文
 - 存量裸中文不迁移；出海需求出现时作为独立结构迁移单独立项，不随 UI 收编顺手改
 - 本条成文即解除 4.3"统一方向待定"挂起；4.3 降级为分叉事实登记
+- 基建现状：师傅端 strings.xml 600 条已成惯例；用户端已立约定头（values/strings.xml），新增文案从本条生效起走资源化
+
+### 4.6 平台范围登记
+
+- iOS 端（mobile/user/ios、mobile/worker/ios）为空目录未启动，本标准仅覆盖 Android 双端；iOS 立项时须先按本标准建立等价令牌与骨架组件，不得直连硬编码
+- H5 端实为设计原型（docs/user、docs/worker 的 HTML/CSS），非交付物；其 `:root` 色板与 App 令牌的对账见 docs/design/*-source-audit.md
 
 ## 5. 执行机制
 
