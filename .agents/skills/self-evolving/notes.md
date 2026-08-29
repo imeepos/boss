@@ -1391,3 +1391,10 @@
 - skill 有没有提前警告? 没有 Go net/http 嗅探行为这条;红线体系(读后编辑/worktree/及时 commit/验证留证)全程命中无违例。
 - 重来一次? HTTP 响应形状判定类逻辑,测试用例从第一天就要包含"显式 WriteHeader + 无 Content-Type"这个 Go 特有形态;只按 content-type 判形状是脆弱设计。
 - 沉淀: Go WriteHeader 嗅探行为 + MCP stdio 手写协议子集两条进 techniques.md。
+
+## 2026-09-06 dsh 桥接 bossmcp 鉴权实测轮
+
+- 哪个坑浪费了最多时间? 一轮:cordis 的 id-targeted config 覆盖是**整体替换非深合并**——补丁里只写 `config: {env: {...}}` 会把 serverName/transport/command 全抹掉,启动即 config schema 校验失败;必须带完整 config。
+- skill 有没有提前警告? 无;dsh mcp-client README 写了配置形状但没写覆盖语义,这次实测补上。
+- 重来一次? 写 --patch 覆盖前先 `dsh --dump-config` 看合成树;覆盖条目永远自包含完整 config。
+- 沉淀: dsh MCP 桥接三件套(profile + link: 依赖 + insert 条目)与覆盖语义进 techniques.md。

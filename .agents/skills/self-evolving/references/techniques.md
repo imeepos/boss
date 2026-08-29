@@ -580,3 +580,8 @@ SQL
 ## 2026-09-06 MCP/HTTP 客户端轮——WriteHeader 嗅探坑 + MCP stdio 手写子集
 - Go net/http handler **显式调用 WriteHeader 后不再做内容嗅探**,Content-Type 缺省 text/plain(即使 body 是合法 JSON);判定响应形状时 content-type 命中与首字节嗅探({/[)应取"或",误判交给 json.Unmarshal 失败兜底,不要让 text/plain 短路 JSON 解析(bossmcp 业务错误信封漏解析实证)。
 - MCP server 无需官方 SDK:**stdio 每行一条 JSON-RPC 2.0**,实现 initialize(回显客户端 protocolVersion)+ tools/list + tools/call + ping 即可被主流客户端连;通知(无 id)静默不回包;工具执行失败按规范走 result.isError=true 而非 RPC error;日志只准写 stderr(stdout 是协议通道)。cmd/bossmcp 是仓内可抄的完整参照。
+
+## 2026-09-06 dsh 桥接外部 MCP server(bossmcp 实测)
+- dsh 接外部 MCP 三件套:① profile 目录(~/.dsh/profiles/<name>/)package.json 的 dependencies 加 `"@deepseek-ai/dsh-mcp-client": "link:<vendor>/node_modules/@deepseek-ai/dsh-mcp-client"` 后 pnpm install;② cordis.patch.yml 写 `insert: [{id: mcp-boss, name: '@deepseek-ai/dsh-mcp-client', config: {serverName, transport: stdio, command, env, failOnStartupError}}]`;③ 无头单发 `dsh --profile <name> "任务"`。工具名 = `mcp__<serverName>__<原始名>`。
+- **cordis id-targeted 覆盖是整体替换**:--patch 里按 id 覆盖某条目时 config 必须写全(只写变更字段会把其余字段抹掉,schema 校验直接红);没有深合并。
+- dsh headless 单发默认模型走 settings.yaml agent-default-model,LLM key 经 `launchctl setenv` 注入 GUI 系进程;shell 里跑无头要手动 `BIGMODEL_API_KEY=$(launchctl getenv BIGMODEL_API_KEY)` 带上(2026-09-06 bossmcp 鉴权实测:有效 key 双端真数据,无效 key isError 原文 HTTP 401 invalid api key 透传到 agent)。
