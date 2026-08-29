@@ -98,6 +98,14 @@ paths:
                 name: { type: string }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [Org]
+      summary: 删除部门(有子部门/在编账号引用则拒;permCode menu:department)
+      operationId: deleteDepartment
+      parameters:
+        - { name: deptId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
   /posts:
     get:
@@ -165,6 +173,14 @@ paths:
                 code: { type: string }
                 name: { type: string }
                 roles: { type: array, items: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [Org]
+      summary: 删除岗位(被账号引用则拒;permCode menu:post)
+      operationId: deletePost
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: integer } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 

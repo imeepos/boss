@@ -32,6 +32,15 @@ function parseFile(file) {
       const m = t.slice(0, -1);
       if (METHODS.includes(m)) { curMethod = m; routes.push({ method: m.toUpperCase(), path: curPath, desc: '' }); continue; }
     }
+    // 内联 flow 风格方法条目(post: { summary: ..., tags: [...] }),与块状等价
+    if (curPath && ind === 4 && /^[a-z]+: \{/.test(t)) {
+      const m = t.slice(0, t.indexOf(':'));
+      if (METHODS.includes(m)) {
+        const sm = t.match(/summary:\s*([^,}]+)/);
+        routes.push({ method: m.toUpperCase(), path: curPath, desc: sm ? sm[1].trim().replace(/^['"]|['"]$/g, '') : '' });
+        curMethod = null; continue;
+      }
+    }
     if (curMethod && ind === 6 && t.startsWith('summary:')) {
       routes[routes.length - 1].desc = t.slice(8).trim().replace(/^['"]|['"]$/g, '');
     }

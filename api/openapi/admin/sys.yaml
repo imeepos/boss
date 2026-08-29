@@ -133,6 +133,25 @@ paths:
                   code: { type: integer }
                   msg: { type: string }
                   data: { type: array, items: { type: object } }
+    post:
+      tags: [Sys]
+      summary: 新增地址节点(parentID=0 为根,可挂国家锚点;permCode menu:address)
+      operationId: createAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [parentID, label, name]
+              properties:
+                parentID: { type: integer, description: 0=根节点 }
+                label: { type: string, description: path 段(小写字母数字) }
+                name: { type: string }
+                countryCode: { type: string, description: 可选,国家锚点 }
+                adminCode: { type: string, description: 可选,一级行政区锚点 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
   /addresses/import:
     post:
