@@ -156,7 +156,7 @@ bossctl login admin your-password
 | `login USERNAME PASSWORD` | 登录获取 JWT |
 | `logout` | 退出登录并清除本地缓存 JWT |
 | `me` | 查看当前身份(三类主体各自返回身份视图) |
-| `routes [admin\|user\|worker]` | 列出三端 API 路由(626 条 = admin 464 + user 95 + worker 67,由 api/openapi 生成) |
+| `routes [admin\|user\|worker]` | 列出三端 API 路由(642 条 = admin 480 + user 95 + worker 67,由 api/openapi 生成) |
 | `upload [--portal admin\|user\|worker] FILE` | 附件上传(multipart,字段 file,单文件 32MB) |
 | `apikey list` | 列出 API key |
 | `apikey create <account\|worker\|customer>/<id> <name>` | 为指定主体创建 API key |
