@@ -39,6 +39,7 @@ const ApiKeyPage = lazy(() => import('./pages/org/apikey'))
 const OpenPlatPage = lazy(() => import('./pages/org/openplat'))
 const MessageCenterPage = lazy(() => import('./pages/boss/message'))
 const CustomerPage = lazy(() => import('./pages/bss/customer'))
+const OnboardingPage = lazy(() => import('./pages/bss/onboarding'))
 const ProductPage = lazy(() => import('./pages/bss/product'))
 const UserListPage = lazy(() => import('./pages/bss/user'))
 const UserDataPage = lazy(() => import('./pages/bss/userdata'))
@@ -160,6 +161,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'partner-orders') return <PartnerOrdersPage />
   if (pageKey === 'message') return <MessageCenterPage />
   if (pageKey === 'customer') return <CustomerPage />
+  if (pageKey === 'onboarding') return <OnboardingPage />
   if (pageKey === 'product') return <ProductPage />
   if (pageKey === 'user') return <UserListPage />
   if (pageKey === 'userdata') return <UserDataPage />

@@ -1197,6 +1197,44 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    onboardingPage: {
+      title: string
+      desc: string
+      createBtn: string
+      regBtn: string
+      steps: string[]
+      stepPick: string
+      stepTodo: string
+      stepAdvanced: string
+      verified: string
+      notVerified: string
+      loadFail: string
+      actionFail: string
+      profileName: string
+      profilePhone: string
+      profileRealName: string
+      profileService: string
+      profileCreatedAt: string
+      realNameTitle: string
+      realNameEntry: string
+      verifyPass: string
+      verifyReject: string
+      verifyPassConfirm: string
+      rejectReasonPh: string
+      eReasonRequired: string
+      realNameRejected: string
+      orderTitle: string
+      orderBtn: string
+      orderColumns: string[]
+      emptyOrders: string
+      activate: string
+      waitWorker: string
+      stageUnit: string
+      noTicket: string
+      dispatchTitle: string
+      assign: string
+      assignedTo: string
+    }
     workerPage: {
       title: string
       desc: string

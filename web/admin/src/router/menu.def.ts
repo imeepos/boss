@@ -23,6 +23,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   ]},
   { id: 'bss', label: '客户与资费', items: [
     { key: 'customer', label: '客户档案', path: '/bss/customer' },
+    { key: 'onboarding', label: '开户工作台', path: '/bss/onboarding' },
     { key: 'user', label: '用户列表', path: '/bss/user' },
     { key: 'userdata', label: '用户端配置', path: '/bss/userdata' },
     { key: 'realname-review', label: '实名审核中心', path: '/base/realname-review' },

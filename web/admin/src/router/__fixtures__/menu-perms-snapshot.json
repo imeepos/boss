@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-08-29T02:03:02.024Z",
+  "capturedAt": "2026-08-29T08:36:11.529Z",
   "base": "http://192.168.0.102:28080",
   "roles": {
     "technician": {
@@ -55,6 +55,7 @@
         "menu:dismantle",
         "menu:dispatch",
         "menu:install-board",
+        "menu:onboarding",
         "menu:order",
         "menu:paycheck",
         "menu:payment",
@@ -121,6 +122,7 @@
         "menu:menuperm",
         "menu:message",
         "menu:odn",
+        "menu:onboarding",
         "menu:openplat",
         "menu:order",
         "menu:params",
