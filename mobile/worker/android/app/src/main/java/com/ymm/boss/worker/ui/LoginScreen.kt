@@ -45,6 +45,8 @@ import com.ymm.boss.worker.api.friendlyMessage
 import com.ymm.boss.worker.push.PushRegistrar
 import com.ymm.boss.worker.api.AuthApi
 import com.ymm.boss.worker.api.ApiException
+import com.ymm.boss.worker.ui.theme.Bg
+import com.ymm.boss.worker.ui.theme.Err
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
@@ -57,7 +59,7 @@ import kotlinx.coroutines.launch
 // 渐变 Hero + 悬浮白卡(仅分段+表单行),协议行/主按钮/入驻入口在卡外;
 // 验证码/密码双模式,入驻入口降级为小字链接。
 
-private val pageBg = Color(0xFFF6F8FA)
+private val pageBg = Bg
 
 @Composable
 fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit, onAgreement: () -> Unit = {}) {
@@ -107,7 +109,7 @@ fun LoginScreen(onLoggedIn: () -> Unit, onOnboard: () -> Unit, onAgreement: () -
                     } else {
                         AuthPwdRow(password, { password = it }, stringResource(R.string.auth_hint_password), pwdVisible) { pwdVisible = !pwdVisible }
                     }
-                    if (err.isNotBlank()) AuthFootnote(err, Color(0xFFFF2D2F))
+                    if (err.isNotBlank()) AuthFootnote(err, Err)
                 }
                 // 协议行
                 AuthAgreeRow(agreed, onToggle = { agreed = it }, onAgreement = onAgreement)

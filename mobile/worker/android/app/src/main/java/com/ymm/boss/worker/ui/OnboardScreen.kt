@@ -51,6 +51,8 @@ import com.ymm.boss.worker.api.Api
 import com.ymm.boss.worker.api.ApiException
 import com.ymm.boss.worker.api.friendlyMessage
 import com.ymm.boss.worker.api.AuthApi
+import com.ymm.boss.worker.ui.theme.Bg
+import com.ymm.boss.worker.ui.theme.Err
 import com.ymm.boss.worker.ui.theme.Ink
 import com.ymm.boss.worker.ui.theme.Muted
 import com.ymm.boss.worker.ui.theme.Primary
@@ -85,7 +87,7 @@ fun OnboardScreen(onBack: () -> Unit, onAgreement: () -> Unit = {}) {
     }
 
     Column(
-        Modifier.fillMaxSize().background(Color(0xFFF6F8FA))
+        Modifier.fillMaxSize().background(Bg)
             .verticalScroll(rememberScrollState()),
     ) {
         // 顶部渐变标题栏
@@ -115,7 +117,7 @@ fun OnboardScreen(onBack: () -> Unit, onAgreement: () -> Unit = {}) {
                 // 班组/区域 ID 可留空,0 表示待后台补正
                 AuthInputRow(groupId, { groupId = it }, stringResource(R.string.auth_hint_group), Icons.Outlined.Group, KeyboardType.Number)
                 AuthInputRow(regionId, { regionId = it }, stringResource(R.string.auth_hint_region), Icons.Outlined.LocationOn, KeyboardType.Number)
-                if (err.isNotBlank()) AuthFootnote(err, Color(0xFFFF2D2F))
+                if (err.isNotBlank()) AuthFootnote(err, Err)
             }
 
             // 协议行
@@ -166,7 +168,7 @@ private fun OnboardHeader(onBack: () -> Unit) {
 @Composable
 private fun OnboardSuccess(onBack: () -> Unit) {
     Column(
-        Modifier.fillMaxSize().background(Color(0xFFF6F8FA))
+        Modifier.fillMaxSize().background(Bg)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
