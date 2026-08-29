@@ -1359,3 +1359,10 @@
 - 最大教训:runbook(docs/deploy/oncall-102.md)第一页就写明"部署=gitea CI,push 即部署",我没读就开始 docker build——单一事实源只读不猜的原则在"部署"这一类操作上同样适用。
 - docker 卷按 compose 项目名隔离:换目录跑 compose=换卷。证书/持久化文件类操作前,先 `docker inspect <容器> --format '{{.Mounts}}'` 核对卷身份。
 - 亮点:事故恢复走对了路——从 CI 卷找回 license.json、uid 对齐、/license/status 验证 activated:true,并按制度立 postmortem 0010。
+
+## 2026-08-28 主持人·git add 圈定不完整致合并带病入库
+
+- 哪个坑浪费了最多时间? 第六轮提交时按成员汇报清单圈定 git add,漏 8 个页面文件;合并后 RN object 与 RnPalette 并存、门禁 FAIL 且带病推了远端;worktree remove 报"contains modified files"被我误判为 local.properties,差点强删丢改动。
+- skill 有没有提前预警? 红线#5"git status 干净才算收尾"若被严格执行即可拦住——我当时看了 status 但只扫了 head -2。
+- 重来一次? 提交前 git status 全量核对改动文件集==提交文件集;门禁用 set -o pipefail 或 grep 输出文本判失败;worktree remove 被拒先逐文件查归属再决定强删。
+- 沉淀: 三条进 minutes 附六,候选红线(再犯即升):管道吞退出码、add 圈定不完整、强删信号无视。
