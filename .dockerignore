@@ -9,7 +9,6 @@ build/
 server
 bossctl
 docs/
-scripts/
 designs/
 mobile/
 web/h5/
