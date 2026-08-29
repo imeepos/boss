@@ -87,13 +87,16 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.kotlinx.coroutines.android)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    // 必须走 debugImplementation(对齐 user 端):manifest 合入主 APK,createComposeRule 的
+    // ComponentActivity 才与 instrumentation 同进程;放 androidTestImplementation 会合入
+    // *.test 包,启动即抛 "Intent ... resolved to different process"(2026-08-29 实测)。
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.junit)
     testImplementation("org.json:json:20231013") // 本地单测用真 org.json(android.jar 里是抛异常的 stub,与 user 端一致)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.compose.ui.test.manifest)
 
     // CameraX 相机
     implementation(libs.androidx.camerax.core)
