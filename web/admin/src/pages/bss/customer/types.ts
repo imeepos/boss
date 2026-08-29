@@ -25,3 +25,21 @@ export interface VerifyLogRow {
   operatorAccountId: number
   operatorName: string
 }
+
+// 自助注册申请行(fields.md §7.6 customer_registrations,脱敏字段)。
+export interface RegistrationRow {
+  id: number
+  name: string
+  phone: string
+  idCardNo: string
+  legalEntityId: number
+  addressId: number
+  regionId: number
+  source: string
+  status: string // PENDING / APPROVED / REJECTED
+  reviewNote: string
+  reviewerAccountId: number
+  customerId: number // 0=未建主档
+  submittedAt: string
+  reviewedAt: string
+}

@@ -567,6 +567,42 @@ export interface Translations {
       rnAttachments: string
       rnFront: string
       rnBack: string
+      createBtn: string
+      createTitle: string
+      fName: string
+      pName: string
+      fPhone: string
+      pPhone: string
+      fIdType: string
+      fIdNo: string
+      pIdNo: string
+      fEntity: string
+      entityPick: string
+      entityPlatform: string
+      fRegion: string
+      regionPick: string
+      fAddress: string
+      addrPick: string
+      addrSearchPh: string
+      addrSearchFail: string
+      addrHint: string
+      createFail: string
+      regBtn: string
+      regTitle: string
+      regStatusAll: string
+      regStatusOptions: string[]
+      regColumns: string[]
+      regApprove: string
+      regReject: string
+      regRejectTitle: string
+      regRejectConfirm: string
+      regNotePh: string
+      regNoteRequired: string
+      regApproved: string
+      regRejected: string
+      regEmpty: string
+      regLoadFail: string
+      regActionFail: string
       total: string
       empty: string
       loadFail: string
@@ -1131,6 +1167,25 @@ export interface Translations {
       locationEmpty: string
       locationUpdated: string
       timelineColumns: string[]
+      createBtn: string
+      createTitle: string
+      fCustomer: string
+      fProduct: string
+      fProductHint: string
+      productPick: string
+      fAddress: string
+      addrPick: string
+      addrSearchPh: string
+      addrSearchFail: string
+      fAddressHint: string
+      fChannel: string
+      channelPick: string
+      fBillingMode: string
+      billingOptions: string[]
+      fBuyMonths: string
+      fBuyMonthsHint: string
+      eBuyMonths: string
+      loadCatalogFail: string
       total: string
       empty: string
       loadFail: string

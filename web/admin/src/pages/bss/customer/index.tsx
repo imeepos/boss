@@ -1,4 +1,5 @@
 // 客户档案页:列名以 fields.md §2.1 为准;契约 GET /customers(keyword/phone/status 过滤)。
+// 代客开户一站式入口:直建(POST /customers)与自助注册审核队列同页挂载。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -11,6 +12,8 @@ import { SERVICE_STATUSES, filterCustomers, pageSlice } from './filter'
 import type { CustomerRow } from './types'
 import { VerifyLogsDrawer } from './VerifyLogsDrawer'
 import { RealNameDrawer } from './RealNameDrawer'
+import { CustomerCreateDrawer } from './CustomerCreateDrawer'
+import { RegistrationQueueDrawer } from './RegistrationQueueDrawer'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { fmtTime } from '../../../lib/format'
 import { TableStateRow } from '../../../components/business'
@@ -29,6 +32,8 @@ export default function CustomerPage() {
   const [detail, setDetail] = useState<CustomerRow | null>(null)
   const [verifyId, setVerifyId] = useState<CustomerRow | null>(null)
   const [rnId, setRnId] = useState<CustomerRow | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [regOpen, setRegOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const load = () => {
@@ -62,6 +67,8 @@ export default function CustomerPage() {
             ariaLabel={c.allStatus}
           />
           <span className="spacer" />
+          <button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{c.createBtn}</button>
+          <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setRegOpen(true)}>{c.regBtn}</button>
           <BatchImportEntry kind="customer" onImported={load} />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
@@ -122,6 +129,12 @@ export default function CustomerPage() {
       )}
       {rnId && (
         <RealNameDrawer customerId={rnId.id} customerName={rnId.name} onClose={() => setRnId(null)} onSubmitted={load} />
+      )}
+      {createOpen && (
+        <CustomerCreateDrawer open onClose={() => setCreateOpen(false)} onCreated={load} />
+      )}
+      {regOpen && (
+        <RegistrationQueueDrawer open onClose={() => setRegOpen(false)} onChanged={load} />
       )}
     </div>
   )

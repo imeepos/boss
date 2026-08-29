@@ -1,5 +1,6 @@
 // 订单管理页:契约 GET /orders(keyword/status 过滤);跟踪抽屉 GET /orders/:orderNo(order+timeline);
-// 环节推进 POST /orders/:orderNo/{check-resource,reserve,charge,cancel}(order_workflow.go)。
+// 环节推进 POST /orders/:orderNo/{check-resource,reserve,charge,cancel}(order_workflow.go);
+// 代客下单 POST /orders(线下受理场景)。
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
@@ -14,6 +15,7 @@ import { fmtTime } from '../../../lib/format'
 import { pageSlice, type CheckDetail, type OrderListRow, type TimelineRow, type WorkerLocationRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
+import { OrderCreateDrawer } from './OrderCreateDrawer'
 
 const STATUSES = ['PENDING', 'RESERVED', 'INSTALLING', 'DONE', 'CANCELLED'] as const
 
@@ -38,6 +40,7 @@ export default function OrderPage() {
   const [track, setTrack] = useState<{ order: OrderListRow; timeline: TimelineRow[]; latestLocation: WorkerLocationRow | null } | null>(null)
   const [trackError, setTrackError] = useState('')
   const [check, setCheck] = useState<{ row: OrderListRow; detail: CheckDetail | null; result: boolean | null; message: string } | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const load = () => {
     setError('')
@@ -137,6 +140,7 @@ export default function OrderPage() {
             value={keyword} onChange={(e) => updateKeyword(e.target.value)} />
           <Dropdown value={status} options={statusOptions} onChange={updateStatus} ariaLabel={o.allStatus} />
           <span className="spacer" />
+          <button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{o.createBtn}</button>
           <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
@@ -231,6 +235,9 @@ export default function OrderPage() {
           </div>
         )}
       </Drawer>
+      )}
+      {createOpen && (
+        <OrderCreateDrawer open onClose={() => setCreateOpen(false)} onCreated={load} />
       )}
     </div>
   )
