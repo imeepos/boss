@@ -116,6 +116,11 @@ cd web/admin && pnpm install && pnpm dev
 
 前端门禁(与 CI admin-web job 同构):`pnpm typecheck && pnpm test && pnpm build`,详见 `web/admin/README.md`。
 
+## Agent 接入(MCP / CLI)
+
+- **MCP server(`cmd/bossmcp`)**:agent 经 MCP 操作用户端/师傅端全部 REST 接口;构建 `make bossmcp`,真实环境冒烟 `make mcp-smoke`,客户端配置与安全边界见 `docs/mcp.md`。
+- **CLI(`cmd/bossctl`)**:免登录 API key 操作三端接口;构建 `make bossctl`,用法见 `.agents/skills/bossctl-cli/SKILL.md`。
+
 ## 基础设施清单(102 服务器)
 
 基础 7 组件见 `docker-compose.102.yml`;扩展组件见 `docker-compose.102.extend.yml`(复用同一 `boss-infra_default` 网络,网关/可观测/OLAP/流计算全部就位)。
