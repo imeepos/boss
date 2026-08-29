@@ -30,13 +30,15 @@ func backendWith(t *testing.T, respCode int, envelope string) (*httptest.Server,
 	return srv, rec
 }
 
-// serverWithKey 装配两端指向同一 backend;apiKey 为空串模拟未配置 key。
-func serverWithKey(backend string, userKey, workerKey string) *server {
+// serverWithKey 装配三端指向同一 backend;apiKey 为空串模拟未配置 key。
+func serverWithKey(backend, userKey, workerKey string) *server {
 	s := newServer(func(string) string { return "" })
 	s.Portals["user"] = &portalCfg{Name: "user", Prefix: "/api/user/v1",
 		Client: apiclient.New(backend, userKey), EnvKeys: []string{"BOSS_USER_API_KEY"}}
 	s.Portals["worker"] = &portalCfg{Name: "worker", Prefix: "/api/worker/v1",
 		Client: apiclient.New(backend, workerKey), EnvKeys: []string{"BOSS_WORKER_API_KEY"}}
+	s.Portals["admin"] = &portalCfg{Name: "admin", Prefix: "/api/admin/v1",
+		Client: apiclient.New(backend, ""), EnvKeys: []string{"BOSS_ADMIN_API_KEY"}}
 	return s
 }
 
@@ -133,8 +135,8 @@ func TestToolCallUnknownPortalAndMethod(t *testing.T) {
 	srv, _ := backendWith(t, 200, `{"code":0,"msg":"ok","data":null}`)
 	s := serverWithKey(srv.URL, "k", "k")
 
-	if text, isErr := callTool(t, s, "boss_call", `{"portal":"admin","method":"GET","path":"/orders"}`); !isErr || !strings.Contains(text, "未知端") {
-		t.Errorf("admin rejected: isErr=%v text=%s", isErr, text)
+	if text, isErr := callTool(t, s, "boss_call", `{"portal":"x","method":"GET","path":"/orders"}`); !isErr || !strings.Contains(text, "未知端") {
+		t.Errorf("unknown portal rejected: isErr=%v text=%s", isErr, text)
 	}
 	if text, isErr := callTool(t, s, "boss_call", `{"portal":"user","method":"CONNECT","path":"/orders"}`); !isErr || !strings.Contains(text, "不支持的方法") {
 		t.Errorf("bad method rejected: isErr=%v text=%s", isErr, text)

@@ -22,13 +22,14 @@ func toolDefs() []toolDef {
 	return []toolDef{
 		{
 			Name: "boss_routes",
-			Description: "列出 BOSS 平台指定端的 API 路由目录(user=用户端/客户门户,worker=师傅端)。" +
-				"先用本工具发现接口,再用 boss_call 调用;filter 可按子串过滤。",
+			Description: "列出 BOSS 平台指定端的 API 路由目录(user=用户端/客户门户,worker=师傅端,admin=管理后台)。" +
+				"admin 端目录已按当前账号权限过滤,只含该账号可调用的接口;先用本工具发现接口,再用 boss_call 调用;" +
+				"filter 可按子串过滤。",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
-					"portal": map[string]any{"type": "string", "enum": []string{"user", "worker"},
-						"description": "端: user=用户端(客户主体), worker=师傅端(装维主体)"},
+					"portal": map[string]any{"type": "string", "enum": []string{"user", "worker", "admin"},
+						"description": "端: user=用户端(客户主体), worker=师傅端(装维主体), admin=管理后台(account 主体)"},
 					"filter": map[string]any{"type": "string",
 						"description": "可选子串过滤,匹配方法/路径/描述"},
 				},
@@ -38,12 +39,13 @@ func toolDefs() []toolDef {
 		{
 			Name: "boss_call",
 			Description: "调用 BOSS 平台 REST API。path 相对端前缀(如 /orders),也可传完整路径但必须属于该端" +
-				"(customer/worker key 不通用,跨端路径直接拒绝)。body 为 JSON 请求体,query 为查询参数键值对。" +
-				"认证按端自动注入: user 端用 BOSS_USER_API_KEY,worker 端用 BOSS_WORKER_API_KEY。",
+				"(customer/worker/account key 不通用,跨端路径直接拒绝)。body 为 JSON 请求体,query 为查询参数键值对。" +
+				"认证按端自动注入: user 端用 BOSS_USER_API_KEY,worker 端用 BOSS_WORKER_API_KEY,admin 端用 BOSS_ADMIN_API_KEY;" +
+				"admin 端权限外接口服务端一律 403 拒绝。",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
-					"portal": map[string]any{"type": "string", "enum": []string{"user", "worker"}},
+					"portal": map[string]any{"type": "string", "enum": []string{"user", "worker", "admin"}},
 					"method": map[string]any{"type": "string",
 						"enum": []string{"GET", "POST", "PUT", "DELETE", "PATCH"}},
 					"path": map[string]any{"type": "string", "description": "接口路径,如 /orders 或 /orders/{orderNo} 的实值路径"},
@@ -55,12 +57,13 @@ func toolDefs() []toolDef {
 			},
 		},
 		{
-			Name:        "boss_whoami",
-			Description: "查看当前端认证身份(user 端查 GET /profile,worker 端查 GET /profile)。开工前先确认 key 有效、主体正确。",
+			Name: "boss_whoami",
+			Description: "查看当前端认证身份(user/worker 端查 GET /profile,admin 端查 GET /auth/me 含权限码)。" +
+				"开工前先确认 key 有效、主体正确。",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
-					"portal": map[string]any{"type": "string", "enum": []string{"user", "worker"}},
+					"portal": map[string]any{"type": "string", "enum": []string{"user", "worker", "admin"}},
 				},
 				"required": []string{"portal"},
 			},
@@ -117,7 +120,7 @@ func errorResult(text string) map[string]any {
 	}
 }
 
-// toolRoutes boss_routes:列端路由目录,filter 子串过滤。
+// toolRoutes boss_routes:列端路由目录,filter 子串过滤;admin 端先按账号权限过滤。
 func (s *server) toolRoutes(args json.RawMessage) (string, error) {
 	var in struct {
 		Portal string `json:"portal"`
@@ -129,6 +132,9 @@ func (s *server) toolRoutes(args json.RawMessage) (string, error) {
 	p, err := s.portal(in.Portal)
 	if err != nil {
 		return "", err
+	}
+	if p.Name == "admin" {
+		return s.adminRoutes(p, in.Filter)
 	}
 	dir := apiroutes.ByName(p.Name)
 	var b strings.Builder
@@ -191,8 +197,8 @@ func (s *server) toolCall(args json.RawMessage) (string, error) {
 	return renderResult(res, err)
 }
 
-// whoamiPath 各端身份查看端点(契约内端点,不新造)。
-var whoamiPath = map[string]string{"user": "/profile", "worker": "/profile"}
+// whoamiPath 各端身份查看端点(契约内端点,不新造);admin 为 /auth/me(含权限码)。
+var whoamiPath = map[string]string{"user": "/profile", "worker": "/profile", "admin": "/auth/me"}
 
 // toolWhoami boss_whoami:查当前端认证身份。
 func (s *server) toolWhoami(args json.RawMessage) (string, error) {
