@@ -36,34 +36,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.AccountApi
+import com.ymm.boss.user.ui.theme.RnPalette
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 // 实名认证分步流程(designs/realname-flow-states-v1):3 步 + 4 状态页。
 // 端点: GET /auth/verify + POST /auth/verify/sms-code + POST /auth/verify + POST /attachments/upload
-
-/** 实名流程专属 token(designs/realname-flow-states-v1.spec.md;与全局 Palette 同族)。
- *  本族色板挂起待设计裁决(并入全局 or 合法化为第二主题):裁决前冻结新增色值,族内仅允许引用本区常量。 */
-internal object RN {
-    val primary = Color(0xFF086CF5)
-    val heroStart = Color(0xFF0872F4) // 品牌渐变起点(Stepper/登录 Hero)
-    val heroMid = Color(0xFF0B82F8) // 品牌渐变中点(登录 Hero 三段)
-    val heroEnd = Color(0xFF1698FA)
-    val success = Color(0xFF0AA847)
-    val successBg = Color(0xFFEFFFF4)
-    val warn = Color(0xFFF57900)
-    val warnBg = Color(0xFFFFF5E8)
-    val ink = Color(0xFF171B23)
-    val muted = Color(0xFF5F6671)
-    val placeholder = Color(0xFFAEB4BE)
-    val line = Color(0xFFE7EAF0)
-    val error = Color(0xFFFF2D2F) // 错误/失败提示红
-    val pageBg = Color(0xFFF6F8FA) // 登录页底
-    val fieldBg = Color(0xFFF7F8FA) // 输入行填充底
-    val iconTint = Color(0xFF7D8593) // 输入行前缀图标
-    val segmentBg = Color(0xFFF5F6F8) // 分段控件槽底
-    val checkBorder = Color(0xFFD1D7E0) // 协议勾选未选中描边
-}
 
 /** 流程阶段:两步表单 + 三个互斥状态页(verifyStatus/latestResult 条件渲染)。 */
 internal enum class RNPhase { FORM, UPLOAD, REVIEWING, APPROVED, REJECTED }
@@ -143,7 +121,7 @@ private fun RNStepper(current: Int) {
     val labels = listOf("填写信息", "证件上传", "审核状态")
     Box(
         Modifier.fillMaxWidth()
-            .background(Brush.linearGradient(listOf(RN.heroStart, RN.heroEnd)))
+            .background(Brush.linearGradient(listOf(RnPalette.heroStart, RnPalette.heroEnd)))
             .padding(vertical = 14.dp),
     ) {
         Row(
@@ -173,10 +151,10 @@ private fun RNStepNode(step: Int, label: String, current: Boolean, done: Boolean
         ) {
             if (done) androidx.compose.material3.Icon(
                 Icons.Filled.Check, contentDescription = null,
-                tint = RN.primary, modifier = Modifier.size(12.dp))
+                tint = RnPalette.primary, modifier = Modifier.size(12.dp))
             else androidx.compose.material3.Text(
                 "$step", fontSize = 10.sp,
-                color = if (done || current) RN.primary else Color.White,
+                color = if (done || current) RnPalette.primary else Color.White,
                 fontWeight = FontWeight.W600)
         }
         Spacer(Modifier.width(6.dp))
@@ -190,7 +168,7 @@ private fun RNStepNode(step: Int, label: String, current: Boolean, done: Boolean
 /** 主操作按钮:≥44dp,禁用灰,loading 转圈。 */
 @Composable
 internal fun RNPrimaryButton(text: String, enabled: Boolean, loading: Boolean = false, onClick: () -> Unit) {
-    val bg = if (enabled) RN.primary else RN.placeholder
+    val bg = if (enabled) RnPalette.primary else RnPalette.placeholder
     Box(
         Modifier.fillMaxWidth().padding(vertical = 4.dp).height(46.dp)
             .background(bg, RoundedCornerShape(10.dp))
@@ -209,17 +187,17 @@ internal fun RNWarnButton(text: String, onClick: () -> Unit) {
     Box(
         Modifier.fillMaxWidth().padding(vertical = 4.dp).height(46.dp)
             .background(Color.White, RoundedCornerShape(10.dp))
-            .border(1.dp, RN.warn, RoundedCornerShape(10.dp))
+            .border(1.dp, RnPalette.warn, RoundedCornerShape(10.dp))
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
-        androidx.compose.material3.Text(text, fontSize = 15.sp, color = RN.warn, fontWeight = FontWeight.W600)
+        androidx.compose.material3.Text(text, fontSize = 15.sp, color = RnPalette.warn, fontWeight = FontWeight.W600)
     }
 }
 
 /** 辅助/说明小字。 */
 @Composable
-internal fun RNFootnote(text: String, color: Color = RN.muted) {
+internal fun RNFootnote(text: String, color: Color = RnPalette.muted) {
     androidx.compose.material3.Text(
         text, fontSize = 12.sp, color = color, modifier = Modifier.padding(vertical = 4.dp))
 }

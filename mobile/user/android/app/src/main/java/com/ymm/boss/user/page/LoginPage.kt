@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.ymm.boss.user.api.Api
 import com.ymm.boss.user.api.UserApi
 import com.ymm.boss.user.ui.Nav
+import com.ymm.boss.user.ui.theme.RnPalette
 import com.ymm.boss.user.util.devAutoFillSms
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -63,7 +64,7 @@ fun LoginScreen(nav: Nav) {
     LaunchedEffect(countdown) { while (countdown > 0) { delay(1000); countdown-- } }
 
     Column(
-        Modifier.fillMaxSize().background(RN.pageBg)
+        Modifier.fillMaxSize().background(RnPalette.pageBg)
             .verticalScroll(rememberScrollState()),
     ) {
         Box(Modifier.fillMaxWidth()) {
@@ -90,11 +91,11 @@ fun LoginScreen(nav: Nav) {
                             })
                     } else {
                         AuthPwdRow(password, { password = it }, "请输入密码", pwdVisible) { pwdVisible = !pwdVisible }
-                        Text("忘记密码", fontSize = 12.sp, color = RN.muted,
+                        Text("忘记密码", fontSize = 12.sp, color = RnPalette.muted,
                             modifier = Modifier.align(Alignment.End).padding(top = 6.dp)
                                 .clickable { nav.push(com.ymm.boss.user.ui.Route.Forgot) })
                     }
-                    if (err.isNotBlank()) RNFootnote(err, RN.error)
+                    if (err.isNotBlank()) RNFootnote(err, RnPalette.error)
                 }
                 AuthAgreeRow(agreed, onToggle = { agreed = it },
                     onAgreement = { nav.push(com.ymm.boss.user.ui.Route.Agreement) })
@@ -122,7 +123,7 @@ fun LoginScreen(nav: Nav) {
 private fun LoginHero() {
     Box(
         Modifier.fillMaxWidth().height(212.dp).background(
-            Brush.linearGradient(listOf(RN.heroStart, RN.heroMid, RN.heroEnd))),
+            Brush.linearGradient(listOf(RnPalette.heroStart, RnPalette.heroMid, RnPalette.heroEnd))),
     ) {
         // 柔和光效:两枚半透明白圆
         Box(Modifier.size(160.dp).align(Alignment.TopEnd).offset(x = 44.dp, y = (-44).dp)
@@ -158,8 +159,8 @@ private fun RegisterEntry(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("还没有账号？", fontSize = 12.sp, color = RN.muted)
-        Text("立即注册", fontSize = 12.sp, color = RN.primary, fontWeight = FontWeight.W500,
+        Text("还没有账号？", fontSize = 12.sp, color = RnPalette.muted)
+        Text("立即注册", fontSize = 12.sp, color = RnPalette.primary, fontWeight = FontWeight.W500,
             modifier = Modifier.clickable { onClick() })
     }
 }

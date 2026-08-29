@@ -25,20 +25,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ymm.boss.user.ui.theme.RnPalette
 import org.json.JSONObject
 
 // Screen3 审核中 + Screen4 状态结果(已认证/驳回 互斥,按 verifyStatus 条件渲染)。
 
 @Composable
 internal fun RNReviewingPage(data: JSONObject?) {
-    StatusHero(RN.primary, Icons.Filled.Schedule, "审核中", "预计 1-2 个工作日完成审核，结果将在消息中心通知")
+    StatusHero(RnPalette.primary, Icons.Filled.Schedule, "审核中", "预计 1-2 个工作日完成审核，结果将在消息中心通知")
     SummaryCard(data)
     TimelineCard(data)
 }
 
 @Composable
 internal fun RNApprovedPage(data: JSONObject?) {
-    StatusHero(RN.success, Icons.Filled.CheckCircle, "已认证", "实名认证已通过 · ${data?.optString("submitTime").orEmpty().take(19).replace("T", " ")}")
+    StatusHero(RnPalette.success, Icons.Filled.CheckCircle, "已认证", "实名认证已通过 · ${data?.optString("submitTime").orEmpty().take(19).replace("T", " ")}")
     SummaryCard(data)
     RNSharedCard {
         RNFootnote("认证信息已加密存储；办理入网、停机复机等业务时无需重复认证。")
@@ -47,9 +48,9 @@ internal fun RNApprovedPage(data: JSONObject?) {
 
 @Composable
 internal fun RNRejectedPage(data: JSONObject?, onResubmit: () -> Unit) {
-    StatusHero(RN.warn, Icons.Filled.Warning, "未通过认证",
+    StatusHero(RnPalette.warn, Icons.Filled.Warning, "未通过认证",
         data?.optString("rejectReason").orEmpty().ifBlank { "提交的信息未通过核验" },
-        bg = RN.warnBg)
+        bg = RnPalette.warnBg)
     SummaryCard(data)
     RNSharedCard {
         RNFootnote("驳回时间：${data?.optString("submitTime").orEmpty().take(19).replace("T", " ")}")
@@ -61,7 +62,7 @@ internal fun RNRejectedPage(data: JSONObject?, onResubmit: () -> Unit) {
 /** 状态大卡:图标+标题+副文案,success/warning 底色(spec 状态卡规格)。 */
 @Composable
 private fun StatusHero(tint: Color, icon: androidx.compose.ui.graphics.vector.ImageVector,
-                       title: String, sub: String, bg: Color = RN.successBg) {
+                       title: String, sub: String, bg: Color = RnPalette.successBg) {
     Box(
         Modifier.fillMaxWidth().padding(vertical = 4.dp)
             .background(bg, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
@@ -71,7 +72,7 @@ private fun StatusHero(tint: Color, icon: androidx.compose.ui.graphics.vector.Im
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(44.dp))
             Spacer(Modifier.height(8.dp))
             Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = tint)
-            if (sub.isNotBlank()) Text(sub, fontSize = 12.sp, color = RN.muted,
+            if (sub.isNotBlank()) Text(sub, fontSize = 12.sp, color = RnPalette.muted,
                 modifier = Modifier.padding(top = 4.dp, start = 16.dp, end = 16.dp))
         }
     }
@@ -95,9 +96,9 @@ private fun SummaryCard(data: JSONObject?) {
 @Composable
 private fun SummaryRow(label: String, value: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, fontSize = 14.sp, color = RN.muted)
+        Text(label, fontSize = 14.sp, color = RnPalette.muted)
         Spacer(Modifier.weight(1f))
-        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = RN.ink)
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = RnPalette.ink)
     }
 }
 
@@ -120,19 +121,19 @@ private fun TimelineNode(title: String, sub: String, state: Int) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             when (state) {
-                0 -> Box(Modifier.size(12.dp).background(RN.primary, CircleShape))
-                1 -> Box(Modifier.size(12.dp).background(RN.primary.copy(alpha = 0.25f), CircleShape)
-                    .border(2.dp, RN.primary, CircleShape))
-                else -> Box(Modifier.size(12.dp).border(1.5.dp, RN.placeholder, CircleShape))
+                0 -> Box(Modifier.size(12.dp).background(RnPalette.primary, CircleShape))
+                1 -> Box(Modifier.size(12.dp).background(RnPalette.primary.copy(alpha = 0.25f), CircleShape)
+                    .border(2.dp, RnPalette.primary, CircleShape))
+                else -> Box(Modifier.size(12.dp).border(1.5.dp, RnPalette.placeholder, CircleShape))
             }
             if (state < 2) Box(Modifier.padding(top = 2.dp).width(2.dp).height(22.dp)
-                .background(RN.line))
+                .background(RnPalette.line))
         }
         Spacer(Modifier.size(12.dp))
         Column {
             Text(title, fontSize = 14.sp, fontWeight = if (state <= 1) FontWeight.W600 else FontWeight.Normal,
-                color = if (state <= 1) RN.ink else RN.muted)
-            Text(sub, fontSize = 12.sp, color = RN.muted)
+                color = if (state <= 1) RnPalette.ink else RnPalette.muted)
+            Text(sub, fontSize = 12.sp, color = RnPalette.muted)
         }
     }
 }
