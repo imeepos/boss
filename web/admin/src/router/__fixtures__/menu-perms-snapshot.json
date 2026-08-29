@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-08-29T01:35:06.718Z",
+  "capturedAt": "2026-08-29T02:03:02.024Z",
   "base": "http://192.168.0.102:28080",
   "roles": {
     "technician": {
@@ -134,6 +134,7 @@
         "menu:payment:cash",
         "menu:post",
         "menu:product",
+        "menu:product-write",
         "menu:provision",
         "menu:provlog",
         "menu:purchase",
@@ -191,6 +192,26 @@
       "roleName": "客户",
       "isBuiltin": true,
       "be": []
+    },
+    "counter_cashier": {
+      "roleName": "柜面收款岗",
+      "isBuiltin": false,
+      "be": [
+        "menu:arrears",
+        "menu:billing",
+        "menu:callback",
+        "menu:complaint",
+        "menu:customer",
+        "menu:daily-close",
+        "menu:dismantle",
+        "menu:dispatch",
+        "menu:order",
+        "menu:paycheck",
+        "menu:payment",
+        "menu:payment:cash",
+        "menu:product",
+        "menu:stopsrv"
+      ]
     }
   }
 }

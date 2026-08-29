@@ -1,6 +1,6 @@
 {
   "note": "采集日已接受漂移;门禁=只减不增;修复后重跑 fetch-menu-perms.mjs + MENU_REGEN=1 刷新",
-  "capturedAt": "2026-08-29T01:35:06.718Z",
+  "capturedAt": "2026-08-29T02:03:02.024Z",
   "drift": {
     "technician": {
       "feOnly": [],
@@ -73,7 +73,8 @@
         "menu:partner-home",
         "menu:partner-orders",
         "menu:partner-staff",
-        "menu:payment:cash"
+        "menu:payment:cash",
+        "menu:product-write"
       ]
     },
     "partner_admin": {
@@ -94,6 +95,12 @@
     "customer": {
       "feOnly": [],
       "beOnly": []
+    },
+    "counter_cashier": {
+      "feOnly": [],
+      "beOnly": [
+        "menu:payment:cash"
+      ]
     }
   }
 }
