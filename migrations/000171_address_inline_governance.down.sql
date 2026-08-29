@@ -1,0 +1,4 @@
+BEGIN;
+ALTER TABLE addresses DROP COLUMN IF EXISTS source;
+ALTER TABLE addresses DROP COLUMN IF EXISTS needs_review;
+COMMIT;
