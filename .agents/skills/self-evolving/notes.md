@@ -1344,3 +1344,9 @@
 - 最耗时坑:坐标漂移三重奏——IME 开合 sheet 平移 111px、聚焦字段不同平移量不同、搜狗候选条恰在平移后坐标带上。首轮 A5 探测 tap 打到候选条,把"bar+候选be"提交进门牌号,差点误判焦点/浮层行为;按"每次焦点变化重新 dump"重跑后 3 步全中。
 - skill 预警了残缺树/静置重试/键码注入,但没预警候选条坐标陷阱与"同窗 hash 判浮层存活",已喂 lessons。
 - 做得对的:zzz 误打成 xxx(52=X非Z)后识别出与断言等效继续用,没浪费一轮;git -S 溯源光标问题到 56c7b9db 实锤"既有实现";报告落盘后立刻 commit(防前两会话式丢失);数据零改动+App退后台+网络复核。
+
+## 2026-10-16 陈晓·P1-2 用户端原生主按钮收编第二批(wt-ui-p2)
+- 顺利批次:9 处收编一次编译通过。做对的三件事:①收编前先 grep PrimaryButton 现有调用先例对齐写法(命名参数 text=/enabled=/modifier=+尾随 lambda);②每处先 read 现场,按"通栏主 CTA 才收编,并排操作组/行内小按钮/Outlined 一律保留"逐点裁定,剩余 12 处实心 Button 全部有保留理由;③同口径 grep 数字自洽(63→54,净减=收编数)。
+- 判定经验:并排组(OutlinedButton+Button 各 weight 一半)单边收编到 48dp 会高度不齐,是保留而非收编的关键信号;SecondaryButton 语义组件永不顺手改样式。
+- 并行 worktree 注意:git status 混入师傅端批次(worker/ui/*)的改动,汇报清单必须只圈自己的文件,严禁顺手 git 操作(本任务明确禁止 commit/add,收尾由主会话统一)。
+- Kotlin 尾随 lambda 内 return@标签 随函数名变(Button→PrimaryButton),换组件时必须同步,否则编译错。

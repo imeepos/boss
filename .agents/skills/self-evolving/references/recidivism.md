@@ -106,3 +106,5 @@
 | license/证书激活成功即认为修复,未验证持久层文件落盘,重部署后复发 | 1 | 2026-08-28(102 compose 缺 license 卷挂载,激活写容器层,17:10Z CI 重部署即 403 全面回归,QA 验收被挡) | 激活后必做 `docker exec <容器> ls /var/lib/boss/license.json`;activated:false 无 reason=文件缺失,有 reason=验签失败 |
 | 会议/审查型 subagent 成员首轮或中途 failed 需重启 | 2 | 2026-08-28(二级页面UI审查,5个成员3个因整目录通读过载failed重启5次), 2026-08-28(权限评审会,5个成员4个首轮failed且无closing message) | 主持人重催消息里明确"纯文字作答、禁调工具、限字数"后一次成功;重催模板见 lessons.md |
 | subagent 收尾 git add -A 把多议题文件混进一个主题提交 | 1 | 2026-08-28(fc0bd47c"地址选择器"commit 混入权限测试执行纪要+他人未完成的主纪要草稿+lessons,破坏可独立revert性) | 授权 subagent 提交时必须限定 `git add <具体文件>`,禁止 add -A;并行会议场景主持人最后统一提交 |
+
+| 多 worktree 会话中 bash 默认 cwd 是主树,相对路径 grep/cat 读到主树旧内容,误判"edit 没生效" | 1 | 2026-10-01(wt-ui-p2 收尾批:edit 走绝对路径已改对,bash 相对路径 grep 仍显示旧 Color(0x,险些误判编辑丢失;pwd 核对后发现 bash cwd=boss 主树) | edit/read 用绝对路径,bash 一律带 workdir 或先 pwd+git branch --show-current 核对;grep 结果与预期不符先怀疑树不对,不要怀疑编辑丢失 |
