@@ -125,6 +125,24 @@ elif mode == "E":
     leak_c = [c for c in markers.get("xu_cust_sample", []) if c in customers]
     emit("ISO_CUSTOMERS", not r.get("isError") and not leak_c,
          f"对方客户样例泄漏={leak_c or '无'}(本组织可见 {len(customers)} 条)")
+
+elif mode == "FD":
+    markers = json.load(open(sys.argv[3]))
+    r, t = res(1)
+    order_no = markers.get("xu_order", "")
+    emit("POS_DETAIL", not r.get("isError") and "code=0" in t and order_no in t,
+         f"属主直查 {order_no} code=0(合法读取对照)")
+
+elif mode == "FE":
+    markers = json.load(open(sys.argv[3]))
+    order_no = markers.get("xu_order", "")
+    r, t = res(1)
+    leaked = "code=0" in t
+    emit("ISO_DETAIL", r.get("isError") and "40400" in t and not leaked,
+         f"跨组织直查 {order_no} → 40400 资源不存在,数据零泄漏")
+    r, t = res(2)
+    emit("CTRL_INDISTINGUISHABLE", r.get("isError") and "40400" in t,
+         "真不存在的单同响应 40400(越界与不存在不可区分,battle oracle)")
 PYEOF
 
 log "admin MCP 真实环境验收: bin=$(basename "$BIN") server=$SERVER"
@@ -182,7 +200,26 @@ proto /tmp/acc-e.proto <<'PROTO'
 PROTO
 batch kefu_zhao /tmp/acc-e.proto
 judge kefu_zhao < <(python3 "$ASSERT" E "$BATCH_OUT" "$MARKERS")
-rm -f "$BATCH_OUT" "$MARKERS" /tmp/acc-e.proto "$ASSERT"
+rm -f "$BATCH_OUT" /tmp/acc-e.proto
+
+# ---------- F. 数据范围·单资源直查:属主成功/跨组织 40400/真不存在同响应 ----------
+XU_ORDER="$(python3 -c "import json;print(json.load(open('$MARKERS')).get('xu_order',''))")"
+log "F1 数据范围·单资源 kefu_xu 直查本组织订单"
+proto /tmp/acc-f1.proto <<PROTO
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"boss_call","arguments":{"portal":"admin","method":"GET","path":"/orders/$XU_ORDER"}}}
+PROTO
+batch kefu_xu /tmp/acc-f1.proto
+judge kefu_xu < <(python3 "$ASSERT" FD "$BATCH_OUT" "$MARKERS")
+rm -f "$BATCH_OUT" /tmp/acc-f1.proto
+
+log "F2 数据范围·单资源 kefu_zhao 跨组织直查同单 + 不存在单对照"
+proto /tmp/acc-f2.proto <<PROTO
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"boss_call","arguments":{"portal":"admin","method":"GET","path":"/orders/$XU_ORDER"}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"boss_call","arguments":{"portal":"admin","method":"GET","path":"/orders/ORD-20990101-999999"}}}
+PROTO
+batch kefu_zhao /tmp/acc-f2.proto
+judge kefu_zhao < <(python3 "$ASSERT" FE "$BATCH_OUT" "$MARKERS")
+rm -f "$BATCH_OUT" "$MARKERS" /tmp/acc-f2.proto /tmp/acc-f1.proto "$ASSERT"
 
 log "结果: PASS=$PASS_CNT FAIL=$FAIL_CNT(日志 $LOG)"
 [ "$FAIL_CNT" = "0" ] && exit 0
