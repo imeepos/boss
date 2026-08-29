@@ -272,3 +272,30 @@ func TestUpdateProductStatus(t *testing.T) {
 		t.Fatalf("invalid enum: status=%d body=%s", w.Code, w.Body.String())
 	}
 }
+
+// productPermUser 模拟 ops:持产品读码、不持写码(000169 拆码后的角色形态)。
+type productPermUser struct{ *fakeUser }
+
+func (p productPermUser) HasPermission(_ context.Context, _ int64, code string) (bool, error) {
+	return code == "menu:product", nil
+}
+
+// TestProductWritePermSplit 契约:产品目录读通(menu:product)、写拦(menu:product-write)。
+func TestProductWritePermSplit(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	Register(r, &app.Application{
+		User: productPermUser{&fakeUser{permOk: true}}, Customer: &fakeCustomer{},
+		Product: &fakeProduct{}, RealName: &fakeRealName{}, CustomerLedger: &fakeLedger{},
+	}, mgr)
+
+	tok := authToken(t, mgr)
+	if w := getJSON(t, r, "/api/admin/v1/products", tok); w.Code != http.StatusOK {
+		t.Fatalf("读被误拦: status=%d", w.Code)
+	}
+	w := postJSONAuth(t, r, "/api/admin/v1/products", "{}", tok)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("写未被拦: status=%d body=%s", w.Code, w.Body.String())
+	}
+}

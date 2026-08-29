@@ -19,13 +19,15 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 	cus.GET("/:id", customerGetHandler(a))
 	cus.GET("/:id/verify-logs", customerVerifyLogsHandler(a))
 
+	// 产品资费读写分离(迁移 000169,何平 2026-08-28 裁定):menu:product=读(目录可见),
+	// menu:product-write=写(建档/编辑/状态/调价,仅 sysadmin);ops 保留读保住受理体验。
 	prod := g.Group("/products", requirePerm(a.User, "menu:product"))
 	prod.GET("", productListHandler(a))
-	prod.POST("", productCreateHandler(a))
-	prod.PUT("/:id", productUpdateHandler(a))
-	prod.PUT("/:id/status", productUpdateStatusHandler(a))
+	prod.POST("", requirePerm(a.User, "menu:product-write"), productCreateHandler(a))
+	prod.PUT("/:id", requirePerm(a.User, "menu:product-write"), productUpdateHandler(a))
+	prod.PUT("/:id/status", requirePerm(a.User, "menu:product-write"), productUpdateStatusHandler(a))
 	prod.GET("/:id/price-history", productPriceHistoryHandler(a))
-	prod.POST("/:id/price-history", productChangePriceHandler(a))
+	prod.POST("/:id/price-history", requirePerm(a.User, "menu:product-write"), productChangePriceHandler(a))
 }
 
 // changeProductPriceReq 产品调价请求体(对齐 customer.yaml changeProductPrice)。
