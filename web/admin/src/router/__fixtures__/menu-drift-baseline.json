@@ -1,0 +1,99 @@
+{
+  "note": "采集日已接受漂移;门禁=只减不增;修复后重跑 fetch-menu-perms.mjs + MENU_REGEN=1 刷新",
+  "capturedAt": "2026-08-29T01:35:06.718Z",
+  "drift": {
+    "technician": {
+      "feOnly": [],
+      "beOnly": []
+    },
+    "asset_admin": {
+      "feOnly": [
+        "dashboard",
+        "inventory",
+        "purchase"
+      ],
+      "beOnly": []
+    },
+    "resource_admin": {
+      "feOnly": [
+        "dashboard",
+        "provision",
+        "provlog"
+      ],
+      "beOnly": [
+        "menu:check"
+      ]
+    },
+    "ops": {
+      "feOnly": [
+        "aaadashboard",
+        "aaalog",
+        "alarm",
+        "analytics",
+        "check",
+        "collection-tasks",
+        "dashboard",
+        "feedback",
+        "gis",
+        "knowledge",
+        "marketing",
+        "marketing-recon",
+        "message",
+        "provision",
+        "provlog",
+        "quadlink",
+        "realname-review",
+        "release",
+        "report",
+        "scanlog",
+        "service-metrics",
+        "site",
+        "site-cats",
+        "template",
+        "user",
+        "userdata",
+        "worker",
+        "worker-ops",
+        "worker-reg"
+      ],
+      "beOnly": []
+    },
+    "analyst": {
+      "feOnly": [
+        "aaalog",
+        "alarm"
+      ],
+      "beOnly": []
+    },
+    "sysadmin": {
+      "feOnly": [],
+      "beOnly": [
+        "menu:ai",
+        "menu:partner-audit",
+        "menu:partner-home",
+        "menu:partner-orders",
+        "menu:partner-staff",
+        "menu:payment:cash"
+      ]
+    },
+    "partner_admin": {
+      "feOnly": [],
+      "beOnly": [
+        "menu:partner-audit"
+      ]
+    },
+    "partner_staff": {
+      "feOnly": [
+        "dashboard",
+        "partner-staff"
+      ],
+      "beOnly": [
+        "menu:partner-audit"
+      ]
+    },
+    "customer": {
+      "feOnly": [],
+      "beOnly": []
+    }
+  }
+}
