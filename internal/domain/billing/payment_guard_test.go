@@ -174,3 +174,16 @@ func TestCashPaymentsByDate(t *testing.T) {
 		t.Fatalf("items query: %v", err)
 	}
 }
+
+// 边界13:网点清单 JSON 解析——合法数组/空串/非法 JSON 的三分支(下拉数据源)。
+func TestParseCounterSites(t *testing.T) {
+	if got := ParseCounterSites(`["旗舰店","二店"]`); len(got) != 2 || got[0] != "旗舰店" {
+		t.Fatalf("got=%v", got)
+	}
+	if got := ParseCounterSites(""); len(got) != 0 {
+		t.Fatalf("empty: %v", got)
+	}
+	if got := ParseCounterSites(`{bad`); len(got) != 0 {
+		t.Fatalf("bad json: %v", got)
+	}
+}

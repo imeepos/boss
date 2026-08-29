@@ -63,6 +63,27 @@ func cashLimitValue(ctx context.Context, a *app.Application) (float64, error) {
 	return strconv.ParseFloat(v, 64)
 }
 
+// counterSitesParam 网点主数据参数键(biz_params,JSON 字符串数组;基params 页可维护)。
+const counterSitesParam = "counter.sites"
+
+// listCounterSites GET /daily-closings/sites:网点清单下拉数据源。
+// 网点为对账归因主数据,清单经 biz_params/counter.sites 维护(零新表零新权限)。
+func listCounterSites(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		pg, ok := a.User.(paramGetter)
+		if !ok {
+			respond(c, apitypes.CodeOK, gin.H{"items": []string{}})
+			return
+		}
+		v, err := pg.GetParam(c.Request.Context(), counterSitesParam)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": billing.ParseCounterSites(v)})
+	}
+}
+
 // dailyCashSummary GET /daily-closings/summary?date=:
 // cash 流水按网点+操作员汇总,收入/退款分列(退款按流水发生日归属),附已回填实点。
 func dailyCashSummary(a *app.Application) gin.HandlerFunc {

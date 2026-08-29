@@ -2,6 +2,7 @@ package billing
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -27,4 +28,15 @@ func genPayNo() string {
 	var b [2]byte
 	_, _ = rand.Read(b[:])
 	return fmt.Sprintf("PAY-%s-%04X", time.Now().Format("20060102150405"), b)
+}
+
+// ParseCounterSites 解析网点主数据清单(biz_params counter.sites,JSON 字符串数组);
+// 空串/非法 JSON 返回空切片——网点下拉数据源,主数据经业务参数页维护。
+func ParseCounterSites(v string) []string {
+	sites := []string{}
+	if v == "" {
+		return sites
+	}
+	_ = json.Unmarshal([]byte(v), &sites)
+	return sites
 }

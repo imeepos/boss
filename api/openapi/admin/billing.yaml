@@ -74,6 +74,14 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /daily-closings/sites:
+    get:
+      tags: [Billing]
+      summary: 网点清单下拉数据源(biz_params counter.sites JSON 数组;permCode menu:daily-close)
+      operationId: listCounterSites
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /daily-closings:
     post:
       tags: [Billing]

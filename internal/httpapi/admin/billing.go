@@ -20,6 +20,8 @@ func registerBillingRoutes(g *gin.RouterGroup, a *app.Application) {
 	// 实点回填(不平落 [paycheck] DIFF 日志)+ 逐笔下钻。回填属柜面收款岗动作。
 	g.GET("/daily-closings/summary", requirePerm(a.User, "menu:daily-close"), dailyCashSummary(a))
 	g.GET("/daily-closings/items", requirePerm(a.User, "menu:daily-close"), dailyCashItems(a))
+	// 网点清单下拉数据源(biz_params counter.sites,零新表)。
+	g.GET("/daily-closings/sites", requirePerm(a.User, "menu:daily-close"), listCounterSites(a))
 	g.POST("/daily-closings", requirePerm(a.User, "menu:payment:cash"), saveDailyClosing(a))
 	g.GET("/arrears", requirePerm(a.User, "menu:arrears"), listArrears(a))
 	g.GET("/ar-metrics", requirePerm(a.User, "menu:arrears"), arMetricsHandler(a))
