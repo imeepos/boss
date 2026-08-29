@@ -38,6 +38,8 @@ export function RealNameDrawer({
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [previewId, setPreviewId] = useState<number | null>(null)
+  const [verifying, setVerifying] = useState(false)
+  const [reason, setReason] = useState('')
 
   useEffect(() => {
     apiFetch<LatestRealName>(`/customers/${customerId}/real-name`)
@@ -55,6 +57,24 @@ export function RealNameDrawer({
         body: { realName: realName.trim(), idCardNo: idCardNo.trim(), method },
       })
       setNotice(c.rnSubmitted.replace('{result}', c.verifyResultLabels[d?.result ?? ''] ?? d?.result ?? ''))
+      onSubmitted()
+      apiFetch<LatestRealName>(`/customers/${customerId}/real-name`).then((v) => setLatest(v))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : c.rnFail)
+    } finally { setBusy(false) }
+  }
+
+  // 后台核验(latest PENDING 时):PASS 直改;FAIL 必填理由。核验后刷新 latest + 外层列表。
+  const verify = async (result: 'PASS' | 'FAIL') => {
+    if (busy) return
+    if (result === 'FAIL' && !reason.trim()) { setError(c.rnReasonRequired); return }
+    setBusy(true); setError(''); setNotice('')
+    try {
+      await apiFetch(`/customers/${customerId}/real-name/verify`, {
+        method: 'POST', body: { result, reason: reason.trim() || undefined },
+      })
+      setNotice(c.verifyResultLabels[result] ?? result)
+      setVerifying(false); setReason('')
       onSubmitted()
       apiFetch<LatestRealName>(`/customers/${customerId}/real-name`).then((v) => setLatest(v))
     } catch (e) {
@@ -82,6 +102,23 @@ export function RealNameDrawer({
       {!loaded ? <p className="text-[13px] text-[var(--shell-group-title)]">{t.common.loading}</p>
         : latest == null ? <p className="text-[13px] text-[var(--shell-group-title)]">{c.rnLatestNone}</p>
           : <LatestCard row={latest} c={c} onPreview={setPreviewId} />}
+      {loaded && latest?.result === 'PENDING' && (
+        <div className="mt-3 rounded-md border border-[var(--shell-side-border)] p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[13px] font-medium text-[var(--shell-heading)]">{c.rnVerifyHead}</span>
+            <span className="spacer" />
+            <button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--color-success)] px-4 text-[13px] text-white disabled:opacity-50" disabled={busy}
+              onClick={() => verify('PASS')}>{c.rnVerifyPass}</button>
+            <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--color-danger)] bg-transparent px-4 text-[13px] text-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)]" onClick={() => setVerifying((v) => !v)}>{c.rnVerifyReject}</button>
+          </div>
+          {verifying && (
+            <div className="mt-2">
+              <textarea className="mb-2 h-16 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] p-2 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={reason} placeholder={c.rnReasonPh} onChange={(e) => setReason(e.target.value)} />
+              <button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--color-danger)] px-4 text-[13px] text-white disabled:opacity-50" disabled={busy} onClick={() => verify('FAIL')}>{c.rnVerifyReject}</button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mt-5 mb-2 text-[13px] font-medium text-[var(--shell-group-title)]">{c.rnFormHead}</div>
       <div className="flex flex-col gap-3">

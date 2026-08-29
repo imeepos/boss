@@ -567,6 +567,11 @@ export interface Translations {
       rnAttachments: string
       rnFront: string
       rnBack: string
+      rnVerifyHead: string
+      rnVerifyPass: string
+      rnVerifyReject: string
+      rnReasonPh: string
+      rnReasonRequired: string
       createBtn: string
       createTitle: string
       fName: string
@@ -1177,6 +1182,7 @@ export interface Translations {
       addrPick: string
       addrSearchPh: string
       addrSearchFail: string
+      addrPinned: string
       fAddressHint: string
       fChannel: string
       channelPick: string
@@ -1217,22 +1223,19 @@ export interface Translations {
       profileCreatedAt: string
       realNameTitle: string
       realNameEntry: string
-      verifyPass: string
-      verifyReject: string
-      verifyPassConfirm: string
-      rejectReasonPh: string
-      eReasonRequired: string
-      realNameRejected: string
       orderTitle: string
       orderBtn: string
       orderColumns: string[]
       emptyOrders: string
       activate: string
-      waitWorker: string
+      activateConfirm: string
+      waitScan: string
       stageUnit: string
-      noTicket: string
+      noActiveTicket: string
+      notDispatched: string
       dispatchTitle: string
       assign: string
+      pickWorkerFirst: string
       assignedTo: string
     }
     workerPage: {

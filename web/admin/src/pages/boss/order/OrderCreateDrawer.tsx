@@ -121,6 +121,7 @@ export function OrderCreateDrawer({
             toOption={(a) => ({ value: String(a.id), label: a.fullPath })}
             ariaLabel={o.fAddress}
             emptyLabel={o.addrPick}
+            pinnedOptions={customerAddr > 0 ? [{ value: String(customerAddr), label: o.addrPinned.replace('{id}', String(customerAddr)) }] : undefined}
             searchPlaceholder={o.addrSearchPh}
             errorText={o.addrSearchFail}
           />

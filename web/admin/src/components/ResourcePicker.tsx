@@ -17,6 +17,8 @@ export interface ResourcePickerProps<T> {
   ariaLabel: string
   /** 提供时追加 value='' 的空选项(可选空值)。 */
   emptyLabel?: string
+  /** 钉选选项:已选值不在检索结果内(如默认带出的档案地址)时保证回显;按 value 去重。 */
+  pinnedOptions?: DropdownOption[]
   searchPlaceholder?: string
   /** 加载失败文案;缺失时兜底为 ariaLabel,仅就地展示不阻止继续填表。 */
   errorText?: string
@@ -24,7 +26,7 @@ export interface ResourcePickerProps<T> {
   minWidth?: number
 }
 
-export function ResourcePicker<T>({ value, onChange, load, search, debounceMs = 300, toOption, ariaLabel, emptyLabel, searchPlaceholder, errorText, disabled, minWidth = 220 }: ResourcePickerProps<T>) {
+export function ResourcePicker<T>({ value, onChange, load, search, debounceMs = 300, toOption, ariaLabel, emptyLabel, pinnedOptions, searchPlaceholder, errorText, disabled, minWidth = 220 }: ResourcePickerProps<T>) {
   const [items, setItems] = useState<T[]>([])
   const [loadError, setLoadError] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -58,9 +60,12 @@ export function ResourcePicker<T>({ value, onChange, load, search, debounceMs = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword])
 
+  const mapped = items.map(toOption)
+  const pinnedVals = new Set((pinnedOptions ?? []).map((p) => p.value))
   const options: DropdownOption[] = [
     ...(emptyLabel ? [{ value: '', label: emptyLabel }] : []),
-    ...items.map(toOption),
+    ...(pinnedOptions ?? []),
+    ...mapped.filter((o) => !pinnedVals.has(o.value)),
   ]
 
   return (

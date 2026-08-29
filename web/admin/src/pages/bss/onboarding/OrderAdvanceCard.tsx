@@ -9,7 +9,7 @@ import { OrderCreateDrawer } from '../../boss/order/OrderCreateDrawer'
 import type { OrderListRow } from '../../boss/types'
 import { useT } from '../../../i18n'
 
-type Action = 'check-resource' | 'reserve' | 'charge' | 'cancel' | 'activate'
+type Action = 'check-resource' | 'reserve' | 'charge' | 'cancel'
 
 export function OrderAdvanceCard({
   customerId, orders, onChanged,
@@ -42,12 +42,12 @@ export function OrderAdvanceCard({
     } finally { setBusyNo('') }
   }
 
-  const nextAction = (r: OrderListRow): { key: Action | ''; label: string } => {
+  // 推进动作只覆盖环节2-4(人工推进);环节9 激活需工单寻址,由派单卡负责。
+  const nextAction = (r: OrderListRow): { key: 'check-resource' | 'reserve' | 'charge' | ''; label: string } => {
     if (r.status === 'PENDING' && r.stage === 1) return { key: 'check-resource', label: o.actCheck }
     if (r.status === 'PENDING' && r.stage === 2) return { key: 'reserve', label: o.actReserve }
     if (r.status === 'RESERVED' && r.stage === 3) return { key: 'charge', label: o.actCharge }
-    if (r.status === 'INSTALLING' && r.stage === 9) return { key: 'activate', label: w.activate }
-    return { key: '', label: r.status === 'INSTALLING' ? w.waitWorker : '—' }
+    return { key: '', label: r.status === 'INSTALLING' ? w.waitScan : '—' }
   }
 
   const columns: ColumnDef[] = [
