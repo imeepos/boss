@@ -23,9 +23,13 @@ func addrListAddresses(a *app.Application) gin.HandlerFunc {
 			list []user.Address
 			err  error
 		)
-		if c.Query("unlinked") == "1" {
+		// 待治理过滤优先(治理队列入口,fields.md §1.5.0b);与 unlinked 互斥,与前端 toggle 行为对齐。
+		switch {
+		case c.Query("needsReview") == "1":
+			list, err = a.User.ListNeedsReview(c.Request.Context())
+		case c.Query("unlinked") == "1":
 			list, err = a.User.ListUnlinkedRoots(c.Request.Context())
-		} else {
+		default:
 			list, err = a.User.ListAddresses(c.Request.Context(), queryInt64(c, "parentId"))
 		}
 		if err != nil {

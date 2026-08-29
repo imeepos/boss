@@ -49,6 +49,33 @@ func (s *PGStore) SetAddressGeo(ctx context.Context, id int64, countryCode, admi
 	return nil
 }
 
+// ListNeedsReview 待治理节点清单(needs_review=TRUE,开单内联建址治理队列读取路径)。
+// 列形状与 ListAddresses 一致,前端 AddressTree 同构渲染;根锚点经 subpath 根联取。
+func (s *PGStore) ListNeedsReview(ctx context.Context) ([]Address, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT a.id, COALESCE(a.parent_id, 0), a.level, a.name, a.path::text,
+		       COALESCE(r.country_code, ''), COALESCE(r.admin_code, ''),
+		       EXISTS(SELECT 1 FROM addresses c WHERE c.parent_id = a.id)
+		FROM addresses a
+		JOIN addresses r ON r.path = subpath(a.path, 0, 1)
+		WHERE a.needs_review = TRUE
+		ORDER BY a.path`)
+	if err != nil {
+		return nil, fmt.Errorf("user: list needs review: %w", err)
+	}
+	defer rows.Close()
+	out := make([]Address, 0)
+	for rows.Next() {
+		var a Address
+		if err := rows.Scan(&a.ID, &a.ParentID, &a.Level, &a.Name, &a.Path,
+			&a.CountryCode, &a.AdminCode, &a.HasChildren); err != nil {
+			return nil, fmt.Errorf("user: scan needs review: %w", err)
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
 // ListUnlinkedRoots 未挂国家锚点的根节点清单(回填工作台,走 000040 部分索引)。
 func (s *PGStore) ListUnlinkedRoots(ctx context.Context) ([]Address, error) {
 	rows, err := s.db.Query(ctx, `

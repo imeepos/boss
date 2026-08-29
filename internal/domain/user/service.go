@@ -52,6 +52,8 @@ type Service interface {
 	SetAddressGeo(ctx context.Context, id int64, countryCode, adminCode string) error
 	// ListUnlinkedRoots 未挂国家的根节点清单(回填工作台)。
 	ListUnlinkedRoots(ctx context.Context) ([]Address, error)
+	// ListNeedsReview 待治理节点清单(needs_review=TRUE,治理队列读取路径,fields.md §1.5.0b)。
+	ListNeedsReview(ctx context.Context) ([]Address, error)
 	// CreateAddress 新增节点:parentID=0 为根节点(可带锚点),label 为 path 段(小写字母数字)。
 	CreateAddress(ctx context.Context, parentID int64, label, name, countryCode, adminCode string) (int64, error)
 	// UpdateAddressName 改名(path 权威不可变,见 ADR-002)。

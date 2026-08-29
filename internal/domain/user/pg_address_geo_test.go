@@ -53,3 +53,29 @@ func TestPGStore_ListUnlinkedRoots(t *testing.T) {
 		t.Fatalf("unmet expectations: %v", err)
 	}
 }
+
+// TestPGStore_ListNeedsReview 契约:仅返回 needs_review=TRUE 节点,列形状与 ListAddresses 同构。
+func TestPGStore_ListNeedsReview(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`WHERE a.needs_review = TRUE`).
+		WillReturnRows(mock.NewRows([]string{"id", "parent_id", "level", "name", "path",
+			"country_code", "admin_code", "has_children"}).
+			AddRow(int64(4010), int64(4009), int8(5), "3号楼", "n_a.n_b.n_c.n_d.n_e", "", "", true))
+
+	s := NewPGStore(mock)
+	got, err := s.ListNeedsReview(context.Background())
+	if err != nil {
+		t.Fatalf("ListNeedsReview: %v", err)
+	}
+	if len(got) != 1 || got[0].ID != 4010 || got[0].Level != 5 || got[0].Path == "" || !got[0].HasChildren {
+		t.Fatalf("got=%+v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}

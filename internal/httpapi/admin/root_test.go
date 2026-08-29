@@ -35,6 +35,12 @@ type fakeUser struct {
 	chainIn  user.InlineAddressInput
 	chainRes user.InlineAddressResult
 	chainErr error
+	// 地址列表桩:分支选择捕获 + 可配置回执。
+	listParentID  int64
+	listCalled    bool
+	unlinkedCall  bool
+	needsReviewOn bool
+	needsReview   []user.Address
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -52,10 +58,20 @@ func (f *fakeUser) HasPermission(context.Context, int64, string) (bool, error)  
 func (f *fakeUser) HasDataScope(context.Context, int64, user.DataScope) (bool, error) {
 	return false, nil
 }
-func (f *fakeUser) ListAddresses(context.Context, int64) ([]user.Address, error)    { return nil, nil }
+func (f *fakeUser) ListAddresses(_ context.Context, parentID int64) ([]user.Address, error) {
+	f.listCalled, f.listParentID = true, parentID
+	return nil, nil
+}
 func (f *fakeUser) ImportAddresses(context.Context, []user.AddressRow) (int, error) { return 0, nil }
 func (f *fakeUser) SetAddressGeo(context.Context, int64, string, string) error      { return nil }
-func (f *fakeUser) ListUnlinkedRoots(context.Context) ([]user.Address, error)       { return nil, nil }
+func (f *fakeUser) ListUnlinkedRoots(context.Context) ([]user.Address, error) {
+	f.unlinkedCall = true
+	return nil, nil
+}
+func (f *fakeUser) ListNeedsReview(context.Context) ([]user.Address, error) {
+	f.needsReviewOn = true
+	return f.needsReview, nil
+}
 func (f *fakeUser) CreateAddress(context.Context, int64, string, string, string, string) (int64, error) {
 	return 0, nil
 }

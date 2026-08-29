@@ -99,6 +99,8 @@
 
 > 区域硬关联（TS 实体）：楼栋级地址挂 `region_id`（→ regions，经营区域）+ `region_name` 快照，固化「地址→经营区域」映射；客户/资产/端口/LO账号经此继承区域，杜绝「有地址无订单则不知属哪个区域」的孤儿。
 
+> 治理标记读取路径（2026-08-29 对账补齐）：admin `GET /addresses?needsReview=1` 仅返回 `needs_review=TRUE` 节点（列形状同 parentId 树分支，前端地址管理页「待治理」toggle 治理队列入口）；与 `unlinked=1` 互斥，needsReview 优先；`=0`/缺省行为不变。写路径见 §1.5.0b。
+
 #### 1.5.0a 用户端地址树查询（user 端契约 misc.yaml，2026-08-26）
 
 | 页面列名 | 字段名 | 端点/字段 | 说明 |

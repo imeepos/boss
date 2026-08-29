@@ -122,6 +122,7 @@ paths:
       parameters:
         - { name: parentId, in: query, schema: { type: integer, format: int64 }, description: 父地址ID层级过滤 }
         - { name: unlinked, in: query, schema: { type: string }, description: 值为 1 时仅返回未挂接根节点 }
+        - { name: needsReview, in: query, schema: { type: string }, description: 值为 1 时仅返回待治理节点(needs_review=TRUE,治理队列,fields.md §1.5.0b);与 unlinked 互斥,本参数优先 }
       responses:
         '200':
           description: data 为裸数组(代码 respond(c,OK,list),非 {items} 包装)
