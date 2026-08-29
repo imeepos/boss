@@ -326,7 +326,7 @@ func permArgs(args []ast.Expr, scope map[string]argVal) map[string]bool {
 }
 
 // asRequirePerm 识别 requirePerm(a.User, <code>):code 为字面量或字符串值 ident
-//(requirePerm 是包内唯一 Authz 包装点)。
+// (requirePerm 是包内唯一 Authz 包装点)。
 func asRequirePerm(ce *ast.CallExpr, scope map[string]argVal) (map[string]bool, bool) {
 	id, ok := ce.Fun.(*ast.Ident)
 	if !ok || id.Name != "requirePerm" || len(ce.Args) < 2 {
