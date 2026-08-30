@@ -16,11 +16,18 @@ import (
 
 var httpMethods = map[string]bool{"GET": true, "POST": true, "PUT": true, "DELETE": true, "PATCH": true}
 
+// routeSets 一次 AST 提取的两种视图:paths 仅路径(A 检查用),methoded 带
+// 方法前缀 "GET /orders"(A2 方法级对账用);key 均经 normalizePath 归一。
+type routeSets struct {
+	paths    map[string]map[string]bool
+	methoded map[string]map[string]bool
+}
+
 // extractRoutes 识别两种模式: <id> := <recv>.Group("pfx") 与 <recv>.METHOD("/path")。
 // 路由已从 internal/app 迁至 internal/httpapi(2026-08 三端拆分),此处跟随迁移;
 // 按端分别归集,与 api/openapi/{admin,user,worker}.yaml 逐端对账(三端路径可重名)。
-func extractRoutes(root string) (map[string]map[string]bool, error) {
-	routes := map[string]map[string]bool{}
+func extractRoutes(root string) (routeSets, error) {
+	rs := routeSets{paths: map[string]map[string]bool{}, methoded: map[string]map[string]bool{}}
 	fset := token.NewFileSet()
 	for _, face := range []string{"admin", "user", "worker", "open"} {
 		dir := filepath.Join(root, "internal", "httpapi", face)
@@ -28,22 +35,24 @@ func extractRoutes(root string) (map[string]map[string]bool, error) {
 			return !strings.HasSuffix(fi.Name(), "_test.go")
 		}, 0)
 		if err != nil {
-			return nil, err
+			return rs, err
 		}
-		faceRoutes := map[string]bool{}
+		facePaths := map[string]bool{}
+		faceMethoded := map[string]bool{}
 		for _, pkg := range pkgs {
 			for _, f := range pkg.Files {
 				for _, decl := range f.Decls {
-					routesFromDecl(decl, faceRoutes)
+					routesFromDecl(decl, facePaths, faceMethoded)
 				}
 			}
 		}
-		routes[face] = faceRoutes
+		rs.paths[face] = facePaths
+		rs.methoded[face] = faceMethoded
 	}
-	return routes, nil
+	return rs, nil
 }
 
-func routesFromDecl(decl ast.Decl, routes map[string]bool) {
+func routesFromDecl(decl ast.Decl, paths, methoded map[string]bool) {
 	fn, ok := decl.(*ast.FuncDecl)
 	if !ok || !strings.HasPrefix(strings.ToLower(fn.Name.Name), "register") {
 		return
@@ -63,8 +72,10 @@ func routesFromDecl(decl ast.Decl, routes map[string]bool) {
 			return true
 		}
 		if st, ok := n.(*ast.ExprStmt); ok {
-			if recv, path, ok := methodCall(st.X); ok {
-				routes[normalizePath(prefix[recv]+path)] = true
+			if recv, method, path, ok := methodCall(st.X); ok {
+				p := normalizePath(prefix[recv] + path)
+				paths[p] = true
+				methoded[method+" "+p] = true
 			}
 		}
 		return true
@@ -92,25 +103,25 @@ func groupPrefix(exprs []ast.Expr) (recvID, pfx string, ok bool) {
 	return id.Name, unquote(lit.Value), true
 }
 
-// methodCall 识别 <recv>.METHOD("/path") 调用。
-func methodCall(e ast.Expr) (recvID, path string, ok bool) {
+// methodCall 识别 <recv>.METHOD("/path") 调用,返回 recv、HTTP 方法与路径。
+func methodCall(e ast.Expr) (recvID, method, path string, ok bool) {
 	ce, ok := e.(*ast.CallExpr)
 	if !ok {
-		return "", "", false
+		return "", "", "", false
 	}
 	sel, ok := ce.Fun.(*ast.SelectorExpr)
 	if !ok || !httpMethods[sel.Sel.Name] || len(ce.Args) == 0 {
-		return "", "", false
+		return "", "", "", false
 	}
 	lit, ok := ce.Args[0].(*ast.BasicLit)
 	if !ok || lit.Kind != token.STRING {
-		return "", "", false
+		return "", "", "", false
 	}
 	id, _ := sel.X.(*ast.Ident)
 	if id == nil {
-		return "", "", false
+		return "", "", "", false
 	}
-	return id.Name, unquote(lit.Value), true
+	return id.Name, sel.Sel.Name, unquote(lit.Value), true
 }
 
 // normalizePath gin :param → openapi {param};剥离三端 /api/{face}/v1 前缀。
@@ -128,7 +139,7 @@ func normalizePath(p string) string {
 }
 
 func checkRoutes(root string) int {
-	routes, err := extractRoutes(root)
+	rs, err := extractRoutes(root)
 	if err != nil {
 		fmt.Println("A: 解析路由失败:", err)
 		return 1
@@ -137,12 +148,13 @@ func checkRoutes(root string) int {
 	fails := 0
 	total := 0
 	for _, face := range []string{"admin", "user", "worker", "open"} {
-		fails += checkFaceRoutes(root, face, routes[face], base)
-		total += len(routes[face])
+		fails += checkFaceRoutes(root, face, rs.paths[face], base)
+		total += len(rs.paths[face])
 	}
 	if fails == 0 {
 		fmt.Printf("A OK 三端 %d 条路由全部有契约\n", total)
 	}
+	fails += checkA2(root, rs, base)
 	return fails
 }
 

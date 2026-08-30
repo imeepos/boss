@@ -16,3 +16,19 @@ route:/products/{id}
 mig:000044
 mig:000095
 
+# ---- A2. 方法级对账存量(2026-09-07 A2 检查落地首扫,6 条,整改方向见各条) ----
+# geo names ×2:契约把 DELETE 登记在父路径 /names,实现用深层路径
+# /names/{locale}/{nameType} 定位单条——契约侧改成深层路径即消除。
+a2:method:admin DELETE /geo/countries/{code}/names
+a2:method:admin DELETE /geo/subdivisions/{code}/names
+# GET /faqs:实现在 udList 通用 helper 内经变量注册(g.GET(path,...)),AST 提取器
+# 仅识别字面量 g.GET("/path")——假阳性,提取器补 helper 形态后移除本条。
+a2:method:admin GET /faqs
+# stripe done/cancel:契约登记为 API 端点,实为 H5 静态提示页(order.yaml successUrl
+# 描述"缺省走 /pay/stripe/done 静态提示页")——契约标注非 API 或移除即消除。
+a2:spec:user GET /pay/stripe/done
+a2:spec:user GET /pay/stripe/cancel
+# 产品详情:契约同路径登记了 {productId} 写法,实现为 {id}(与上 A 段同因,
+# 契约多文件重复登记口径不一)——契约统一参数名后移除本条。
+a2:spec:user GET /products/{productId}
+

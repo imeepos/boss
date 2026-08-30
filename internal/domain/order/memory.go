@@ -265,9 +265,8 @@ func (s *MemoryService) RollbackStage(_ context.Context, orderID int64) (int8, i
 	before := o.Stage
 	o.Status = next
 	o.Stage--
-	logs := s.logs[orderID]
-	if n := len(logs); n > 0 && logs[n-1].Stage == o.Stage+1 {
-		s.logs[orderID] = logs[:n-1]
+	if logs := s.logs[orderID]; len(logs) > 0 && logs[len(logs)-1].Stage == o.Stage+1 {
+		s.logs[orderID] = logs[:len(logs)-1]
 	}
 	return before, o.Stage, nil
 }
