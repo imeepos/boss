@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { VERSION_SEEN_KEY, healthzUrl, shouldShowVersionBadge } from '../lib/version'
 
-const POLL_MS = 60_000
+const POLL_MS = 120_000
 const FETCH_TIMEOUT_MS = 5_000
 
 export function VersionBadge() {
