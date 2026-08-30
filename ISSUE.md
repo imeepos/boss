@@ -119,3 +119,8 @@
   「diff 为空显式输出 no-op 原因」仍待 owner(现为静默 skip 文案,无强制 runtime)。
   复验口诀(部署后):curl :5180 取 index-*.js 文件名 + grep 特征串,双端各一个;
   或直接 `bash scripts/ops/verify-deploy.sh --expect-sha <sha>`。
+
+## 工具/环境(2026-08-30 session-handoff DSH 插件开发轮发现)
+
+- **未修复｜工具 bug｜dsh-plugin-dev check.sh 在 macOS 上 sed 报错**：`scripts/check.sh` 守卫 E 段第 88 行 `tr \' \n\' | sed \'/^$/d\'` 引号嵌套在 bash/macOS BSD sed 下炸出 `sed: 1: "'/^$/d'": invalid command code '`，只是噪音（守卫结论仍正确），但每次交卷都刷屏。→ 改为 `grep -v '^$'` 或独立管道段。
+- **未修复｜环境｜npm 默认缓存目录 root 属主**：`/Users/imeepos/ext512/dev-cache/npm` 内有 root 属主文件，任何 npm install/pack 直接 EPERM。→ 要么 `sudo chown -R 501:20` 修属主，要么本轮做法：npm 命令一律加 `--cache /tmp/npm-cache-<场景>`。

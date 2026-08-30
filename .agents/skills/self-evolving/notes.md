@@ -1458,3 +1458,8 @@
 - 沙箱环境级限制定案:CDP over WebSocket 悬挂、over pipe 则 Chrome SIGTRAP,浏览器交互测试在本环境不可行——用「纯函数单测 + 线上特征串断言」替代并如实标注,勿反复撞墙。
 - bash 每次调用是新 shell:export GOCACHE 忘在同命令里,make check 就回退默认缓存路径被沙箱拦(本轮二次踩)。
 - 做得对:verify-deploy 上线两次实测全绿;A2 豁免 6→0 全部闭环;ISSUE/alignment-audit/决策 note 三套台账同步不欠账。
+
+## 2026-08-30 session-handoff DSH 插件（会话收尾盘点+后续任务生成）
+- 哪个坑最浪费时间：① dsh-plugin-dev check.sh 守卫 E 的服务名白名单没有 shell/fs——写进 static inject 必红，只能 ctx.get()+判 undefined 的可选形态；先读 check.sh 全文再定 inject 形态，省两轮返工。② npm 缓存 /Users/imeepos/ext512/dev-cache/npm 有 root 属主文件 EPERM——--cache /tmp 绕过；@deepseek-ai 符号链接与 npm 装包互相踩（npm 试图往链接目标里 mkdir）——devDependencies 去掉 scope 包、先 npm i 再补符号链接。③ cd ../../.. 相对层级数错导致 git -C 落空——红线#10 活案例，bash 调用一律 workdir 传绝对路径根治。
+- skill 有没有提前警告：dsh-plugin-dev 的 workflow/check.sh 覆盖了大部分；两条没讲——「async 函数 return 同一 Promise 后 p2 !== p1（语言语义，比较应 await 后比值对象身份）」「git status --porcelain 的行首状态码空格会被 trim 破坏列对位（lines() 必须 rawLine 变体）」。本轮各吃掉一次测试返工。
+- 重来一次会怎么做：先读 check.sh 再写代码；测试夹具（FakeShell）第一步就抽公共 tests/fixtures.ts（后补 config-paths.spec 时被迫复制一份）；每完成一个能力面立即跑 check.sh（本次守住了，最后只有行数比一次返工）。

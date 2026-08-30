@@ -448,3 +448,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当脚本调 102 admin API 时,认证头是 X-API-Key: <key>,用 Bearer 返回 401 invalid token;写脚本前先 curl 探认证格式(2026-09-07 stripe-recon 实测)。
 - 当沙箱环境跑 go 报 ~/Library/Caches/go-build operation not permitted,修复是 export GOCACHE=<repo>/.cache/<name>(该目录已在 .gitignore);~/go/pkg/mod 只读可用,无需升权(2026-09-07)。
 - 当 pgx v5 判写操作是否生效,用 res.RowsAffected()(单返回值 int,非 database/sql 的 (int64,error));0 行即假成功应显性报错(2026-09-07 RollbackStage 守卫)。
+- 当 vitest 断言两个 Promise 引用相等时（toBe），必然为假——async 函数 return 另一个 Promise 会新建包装；改断言 `expect(await p2).toBe(await p1)` 比较底层值对象身份（2026-08-30 session-handoff）。
+- 当解析 `git status --porcelain` 时，禁止对整行 trim——行首两个状态码列（如 ` M`）被 trim 后 slice(3) 错位；解析前只去 \r 和空行，保留行首空格（2026-08-30 session-handoff）。
+- 当 npm 需要装包而 vendor 用符号链接提供 @deepseek-ai/* 时，先从 devDependencies 去掉 scope 包再 npm i，装完再补符号链接；否则 npm 试图写链接目标目录 EPERM（2026-08-30 session-handoff）。
