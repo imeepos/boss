@@ -44,6 +44,37 @@ func TestScanSpecRoutesFile(t *testing.T) {
 	}
 }
 
+// 回归(A5):单引号包裹的 path key(geo.yaml 深层路径形态)必须正确归属方法,
+// 否则深层路径的方法块被误记到上一个未引号 path——A2 首扫 geo names 假阳性根因。
+func TestScanSpecRoutesFileQuotedKeys(t *testing.T) {
+	dir := t.TempDir()
+	yaml := "openapi: 3.0.0\n" +
+		"paths:\n" +
+		"  /geo/countries/{code}/names:\n" +
+		"    post:\n" +
+		"      operationId: addGeoCountryName\n" +
+		"  '/geo/countries/{code}/names/{locale}/{nameType}':\n" +
+		"    delete:\n" +
+		"      operationId: deleteGeoCountryName\n"
+	file := filepath.Join(dir, "admin.yaml")
+	if err := os.WriteFile(file, []byte(yaml), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]bool{}
+	if err := scanSpecRoutesFile(file, out); err != nil {
+		t.Fatal(err)
+	}
+	if !out["POST /geo/countries/{code}/names"] {
+		t.Fatalf("missing parent POST: %v", out)
+	}
+	if !out["DELETE /geo/countries/{code}/names/{locale}/{nameType}"] {
+		t.Fatalf("missing quoted deep DELETE: %v", out)
+	}
+	if out["DELETE /geo/countries/{code}/names"] {
+		t.Fatalf("deep DELETE misattributed to parent: %v", out)
+	}
+}
+
 func TestA2Core(t *testing.T) {
 	implPaths := map[string]bool{"/orders": true, "/push/device": true}
 	implMethods := map[string]bool{"POST /orders": true, "POST /push/device": true}

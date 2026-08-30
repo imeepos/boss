@@ -184,7 +184,9 @@ func checkFaceRoutes(root, face string, faceRoutes map[string]bool, base map[str
 	return fails
 }
 
-// specPathLineRe 匹配 OpenAPI path 项行:`  /foo: ...`(两空格缩进的 path key)。
+// specPathLineRe 匹配 OpenAPI path 项行:`  /foo: ...` 或带引号 `  '/foo/{x}': ...`
+// (两空格缩进的 path key;geo.yaml 深层路径用单引号包裹含 {param} 的 key,
+// 不容引号会把其方法块误记到上一个未引号 path——A2 首扫 geo names 假阳性根因)。
 // 兼容两种场景:
 //   - 顶层 {face}.yaml 里形如 `  /foo: { $ref: '...' }` 的 $ref 转发;
 //   - {face}/*.yaml 子文件里形如 `  /foo:` 后接 `    get:` / `    post:` 等方法块;
@@ -192,7 +194,7 @@ func checkFaceRoutes(root, face string, faceRoutes map[string]bool, base map[str
 // 均由同一正则捕获,故不再限定末尾必须是 $ref。
 //
 // 排除 YAML 锚点(&foo:)、更深缩进的 operationId/summary 等子项。
-var specPathLineRe = regexp.MustCompile(`^  (/[^:\s]+):\s*(\{|$)`)
+var specPathLineRe = regexp.MustCompile(`^  '?(/[^:'\s]+)'?:\s*(\{|$)`)
 
 // collectSpecPaths 扫描 api/openapi/<face>.yaml 与 api/openapi/<face>/ 下的子文件,
 // 仅收集当前 face 的契约,防 admin/user 文件互相污染;任何形如 `  /path:` 的 path 项

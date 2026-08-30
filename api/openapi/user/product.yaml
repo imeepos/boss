@@ -24,23 +24,6 @@ paths:
                     type: array
                     items: { $ref: './schemas.yaml#/components/schemas/Addon' }
 
-  /products/{productId}:
-    get:
-      tags: [Product]
-      summary: 套餐详情
-      operationId: getProduct
-      parameters:
-        - name: productId
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: 套餐详情
-          content:
-            application/json:
-              schema: { $ref: './schemas.yaml#/components/schemas/ProductDetail' }
-
   /addons:
     get:
       tags: [Product]

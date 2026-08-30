@@ -43,20 +43,25 @@ func declIndexFromPkgs(pkgs map[string]*ast.Package) map[string]*ast.FuncDecl {
 }
 
 // evalHelperRoutes 对每个 register 入口做 helper 递归求值,结果并入 paths/methoded。
+// 入口的所有 *gin.RouterGroup 形参播种为空前缀(等价 routesFromDecl 的缺省 0 值)。
 func evalHelperRoutes(decls map[string]*ast.FuncDecl, paths, methoded map[string]bool) {
 	h := &helperEval{decls: decls, paths: paths, methoded: methoded, visited: map[string]bool{}}
 	for name, fn := range decls {
 		if !strings.HasPrefix(strings.ToLower(name), "register") {
 			continue
 		}
-		if g := firstGroupParam(fn); g != "" {
-			h.eval(fn, evalCtx{groupPrefix: map[string]string{g: ""}, strArgs: map[string]string{}})
+		gp := map[string]string{}
+		for _, g := range groupParams(fn) {
+			gp[g] = ""
 		}
+		if len(gp) == 0 {
+			continue
+		}
+		h.eval(fn, evalCtx{groupPrefix: gp, strArgs: map[string]string{}})
 	}
 }
 
-// eval 单函数求值:字面量 METHOD/组前缀赋值与 routesFromDecl 同规则;
-// 命中 helper 调用(首参组前缀已知)则递归。
+// eval 单函数求值入口:防环后交给 walk。
 func (h *helperEval) eval(fn *ast.FuncDecl, ctx evalCtx) {
 	key := fn.Name.Name + "\x00" + ctxKey(ctx)
 	if h.visited[key] {
@@ -66,14 +71,25 @@ func (h *helperEval) eval(fn *ast.FuncDecl, ctx evalCtx) {
 	if fn.Body == nil {
 		return
 	}
-	gp := ctx.groupPrefix
-	sa := ctx.strArgs
-	ast.Inspect(fn.Body, func(n ast.Node) bool {
+	h.walk(fn.Body, ctx.groupPrefix, ctx.strArgs)
+}
+
+// walk 遍历语句:组前缀赋值 / 字面量或已绑定变量的 METHOD 调用 / helper 递归 /
+// for-range 字符串字面量切片(循环变量逐值绑定后重走循环体——stripe.go
+// /pay/stripe/{done,cancel} 即此形态,A/A2 曾双双漏检)。
+func (h *helperEval) walk(body ast.Node, gp map[string]string, sa map[string]string) {
+	ast.Inspect(body, func(n ast.Node) bool {
 		if as, ok := n.(*ast.AssignStmt); ok && len(as.Lhs) == 1 {
 			if id, ok := as.Lhs[0].(*ast.Ident); ok {
 				if recv, pfx, ok := groupPrefix(as.Rhs); ok {
 					gp[id.Name] = gp[recv] + pfx
 				}
+			}
+			return true
+		}
+		if rs, ok := n.(*ast.RangeStmt); ok {
+			if h.bindRangeLoop(rs, gp, sa) {
+				return false // 循环体已按逐值绑定重走,不再按裸树遍历
 			}
 			return true
 		}
@@ -90,6 +106,41 @@ func (h *helperEval) eval(fn *ast.FuncDecl, ctx evalCtx) {
 		}
 		return true
 	})
+}
+
+// bindRangeLoop 识别 `for _, p := range []string{"a","b"}`:逐字面量绑定循环变量,
+// 重走循环体;非该形态(变量切片/表达式/匿名 `_`)返回 false 交回普通遍历(不猜)。
+func (h *helperEval) bindRangeLoop(rs *ast.RangeStmt, gp map[string]string, sa map[string]string) bool {
+	loopVar := ""
+	if id, ok := rs.Value.(*ast.Ident); ok {
+		loopVar = id.Name
+	} else if id, ok := rs.Key.(*ast.Ident); ok {
+		loopVar = id.Name
+	}
+	if loopVar == "" || loopVar == "_" {
+		return false
+	}
+	lit, ok := rs.X.(*ast.CompositeLit)
+	if !ok {
+		return false
+	}
+	elems := make([]string, 0, len(lit.Elts))
+	for _, e := range lit.Elts {
+		if b, ok := e.(*ast.BasicLit); ok && b.Kind == token.STRING {
+			elems = append(elems, unquote(b.Value))
+		} else {
+			return false
+		}
+	}
+	for _, v := range elems {
+		sub := make(map[string]string, len(sa)+1)
+		for k, val := range sa {
+			sub[k] = val
+		}
+		sub[loopVar] = v
+		h.walk(rs.Body, gp, sub)
+	}
+	return true
 }
 
 // evalCall 递归被调 helper:首参组前缀已知才进入;字符串字面量按位置绑定形参。
@@ -164,19 +215,36 @@ func callOf(n ast.Node) (*ast.CallExpr, bool) {
 }
 
 func firstGroupParam(fd *ast.FuncDecl) string {
-	if fd.Type.Params == nil || numParams(fd) == 0 {
-		return ""
-	}
-	seg := fd.Type.Params.List[0].Type
-	if star, ok := seg.(*ast.StarExpr); ok {
-		seg = star.X
-	}
-	if sel, ok := seg.(*ast.SelectorExpr); ok && sel.Sel.Name == "RouterGroup" {
-		if id, ok := sel.X.(*ast.Ident); ok && id.Name == "gin" && len(fd.Type.Params.List[0].Names) > 0 {
-			return fd.Type.Params.List[0].Names[0].Name
-		}
+	for _, g := range groupParams(fd) {
+		return g
 	}
 	return ""
+}
+
+// groupParams 列出函数全部 *gin.RouterGroup 形参名(入口播种与 helper 绑定共用)。
+func groupParams(fd *ast.FuncDecl) []string {
+	out := []string{}
+	if fd.Type.Params == nil {
+		return out
+	}
+	for _, field := range fd.Type.Params.List {
+		seg := field.Type
+		if star, ok := seg.(*ast.StarExpr); ok {
+			seg = star.X
+		}
+		sel, ok := seg.(*ast.SelectorExpr)
+		if !ok || sel.Sel.Name != "RouterGroup" {
+			continue
+		}
+		id, ok := sel.X.(*ast.Ident)
+		if !ok || id.Name != "gin" {
+			continue
+		}
+		for _, name := range field.Names {
+			out = append(out, name.Name)
+		}
+	}
+	return out
 }
 
 func numParams(fd *ast.FuncDecl) int {

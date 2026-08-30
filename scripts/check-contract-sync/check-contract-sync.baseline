@@ -6,9 +6,10 @@
 # addresses 系列已拆 http_address.go,http_org.go 豁免已移除(2026-08-18)
 
 # ---- A. 路由参数命名历史差异 ----
-# 用户端产品详情实现使用 :id,对外 OpenAPI 使用 {productId};路径形状相同,
-# Gin 不允许同路径仅更换参数名,待统一契约实现时一次迁移。
-route:/products/{id}
+# 2026-09-07:route:/products/{id} 历史条目移除——该键缺 face 前缀从未生效;
+# 同日 A2 假阳性链查实后,契约删除幻影 /products/{productId} 块(product.yaml
+# getProduct/string 版,无实现且 schema 与实现不符),实现 :id 与存留契约
+# /products/{id} 一致,本段不再有差异。
 
 # ---- D. 迁移编号历史撞号(D 项门禁上线时体检发现,2026-08-22) ----
 # migrator 以完整文件名为版本键,两者均已应用、功能正常;编号唯一惯例自此门禁起
@@ -16,18 +17,9 @@ route:/products/{id}
 mig:000044
 mig:000095
 
-# ---- A2. 方法级对账存量(2026-09-07 A2 检查落地首扫,登记 6 条) ----
-# geo names ×2:契约把 DELETE 登记在父路径 /names,实现用深层路径
-# /names/{locale}/{nameType} 定位单条——契约侧改成深层路径即消除。
-a2:method:admin DELETE /geo/countries/{code}/names
-a2:method:admin DELETE /geo/subdivisions/{code}/names
-# GET /faqs 假阳性已消除(2026-09-07 提取器补 helper 形态,helper_routes.go),
-# 本条按其整改方向移除;stripe×2 与 products ×3 条仍待契约侧整改。
-# stripe done/cancel:契约登记为 API 端点,实为 H5 静态提示页(order.yaml successUrl
-# 描述"缺省走 /pay/stripe/done 静态提示页")——契约标注非 API 或移除即消除。
-a2:spec:user GET /pay/stripe/done
-a2:spec:user GET /pay/stripe/cancel
-# 产品详情:契约同路径登记了 {productId} 写法,实现为 {id}(与上 A 段同因,
-# 契约多文件重复登记口径不一)——契约统一参数名后移除本条。
-a2:spec:user GET /products/{productId}
-
+# ---- A2. 方法级对账存量:2026-09-07 首扫登记 6 条,当日全部清零 ----
+# geo names ×2 / stripe done,cancel ×2:系扫描器与提取器盲区(引号路径键、
+# for-range 字面量循环注册,见 alignment-audit.md §13 A5/A6),修复后假阳性
+# 自然消失,豁免条目移除;
+# products ×1:契约幻影块(见 §13 A7)删除后消除。
+# 豁免规则不变:新增差异必须凭「存量债务 + 整改方向」登记。

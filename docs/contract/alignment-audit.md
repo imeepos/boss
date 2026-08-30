@@ -228,3 +228,16 @@
 |:-:|:-----|:-----|:-----|:----:|
 | D3 | `complaint-type-map.md` 只登记装维域裸码（SINGLE_OUTAGE…），未登用户端 `POST /faults`（no_internet/slow/ont_fault/other）与 `POST /complaints`（attitude/quality/billing/suggestion/other）落库带前缀的需求口径 | 新链路（师傅详情/用户详情 faults/complaints 段）按契约找不到用户端口径 → 误以为裸码、无法核对真库取值域 | complaint-type-map.md 新增 §2 用户端口径表（前缀串 + strip 后值 + binding 白名单），真库三值实测留痕 | ✅ 本文档 |
 | D4 | `terms.md` §4 缺 workers.status（1/0）、worker_registrations.status（PENDING/APPROVED/REJECTED）、verifications.result（PENDING/PASS/FAIL） | 师傅详情渲染状态无权威枚举源，前端易自行造键 | terms.md §4 增登 4 行（含接单设置/工单作业类型派生口径） | ✅ 本文档 |
+
+## 13. 契约对账 A2 检查首扫（2026-09-07，A 类补登）
+
+> 范围：A2 检查（方法级契约对账）首扫 6 条差异逐条核实处置；其中 4 条为提取器/扫描器
+> 盲区假阳性（已修机器），1 条为契约幻影块（已删），1 条为历史遗留豁免键（从未生效，已除名）。
+> 机器修复：引号路径键解析、for-range 字面量循环注册提取、helper 变量注册提取
+> （scripts/check-contract-sync/{routes,a2,helper_routes}.go）。
+
+| # | 发现 | 矛盾/风险 | 处置 | 状态 |
+|:-:|:-----|:-----|:-----|:----:|
+| A5 | spec 扫描正则不容引号路径键：geo.yaml 深层路径 `'/geo/countries/{code}/names/{locale}/{nameType}':` 不被识别，其 delete 方法块误记到父路径 | A2 假报「DELETE 父路径方法错位」×2；深层 DELETE 契约实际存在且已实现 | specPathLineRe 容单引号并剥引号；单测锁定引号键归属 | ✅ 本文档 |
+| A6 | 路由提取不容 `for _, p := range []string{...}` 循环注册：user/stripe.go `/pay/stripe/{done,cancel}` 对 A/A2 双双不可见（作者注释声称「路由登记走契约门禁」实未被检） | 契约门禁对循环注册零覆盖；本例恰有契约故未暴露缺口 | helperEval.walk 支持 range 字面量切片逐值绑定重走循环体；A 计数 543→545 全过 | ✅ 本文档 |
+| A7 | product.yaml 幻影块：`/products/{productId}`（getProduct，productId:string）无实现、schema 与实现（/products/{id} int64 getProductDetail）不符，系多轮登记口径漂移残留 | A2 假报「契约登记未实现」；客户端按契约写 {productId} 调用必 404 | 删幻影块，以实现侧 `/products/{id}`（getProductDetail）为准；A 段历史遗留键 `route:/products/{id}`（缺 face 前缀从未生效）一并除名 | ✅ 本文档 |
