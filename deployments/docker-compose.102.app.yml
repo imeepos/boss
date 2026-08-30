@@ -74,6 +74,20 @@ services:
       BOSS_KAFKA_BROKERS: "192.168.0.102:29092"
       BOSS_REPORT_PERIOD: "daily"
 
+  # W7 配置下发守护进程:轮询 provision_tasks PENDING → Telnet 到 OLT 下发模板。
+  # 102 接 oltsim 仿真 OLT(宿主机 systemd boss-oltsim.service,telnet 2323);
+  # 接真实 OLT 时只改 BOSS_PROVISION_OLT_ADDR/USER/PASS,链路不变。
+  provisioner:
+    image: 192.168.0.102:5000/boss/server:latest
+    container_name: boss-provisioner
+    entrypoint: ["boss-provisioner"]
+    restart: unless-stopped
+    environment:
+      BOSS_PG_DSN: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
+      BOSS_PROVISION_OLT_ADDR: "172.26.0.1:2323" # docker 网桥宿主网关 → oltsim
+      BOSS_PROVISION_OLT_USER: "admin"
+      BOSS_PROVISION_OLT_PASS: "admin"
+
   admin-web:
     image: 192.168.0.102:5000/boss/admin-web:latest
     container_name: boss-admin-web
