@@ -7,6 +7,7 @@ package adminapi
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -168,6 +169,17 @@ func maskIDCard(s string) string {
 	return s[:4] + strings.Repeat("*", len(s)-6) + s[len(s)-2:]
 }
 
+// parseSubjectID 审核中心路径主体 ID:合成客户为负数段(隔离空间),合法主体 ID 可负,
+// 不走仅正数的通用 ParsePathParamInt64;仅拒 0 与非整数。
+func parseSubjectID(c *gin.Context) (int64, bool) {
+	v, err := strconv.ParseInt(c.Param("subjectId"), 10, 64)
+	if err != nil || v == 0 {
+		respond(c, apitypes.CodeInvalidParam, gin.H{"error": `path param "subjectId" must be a non-zero integer`})
+		return 0, false
+	}
+	return v, true
+}
+
 // verifyFromCenterHandler POST /verifications/:subjectType/:subjectId/verify:行内 PASS/FAIL,
 // 转发到既有单主体核验端点(避免在两处维护审核逻辑)。
 func verifyFromCenterHandler(a *app.Application) gin.HandlerFunc {
@@ -177,7 +189,7 @@ func verifyFromCenterHandler(a *app.Application) gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		subjectType := c.Param("subjectType")
-		subjectID, ok := httpx.ParsePathParamInt64(c, "subjectId")
+		subjectID, ok := parseSubjectID(c)
 		if !ok {
 			return
 		}

@@ -5,6 +5,7 @@ package adminapi
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -137,4 +138,26 @@ type recordingLedger struct {
 func (r *recordingLedger) SendMessage(_ context.Context, m worker.Message) (int64, error) {
 	r.sent = append(r.sent, m)
 	return int64(len(r.sent)), nil
+}
+
+// 回归:审核中心行内核验 subjectId 接受负数段合成客户(隔离空间 ID),仅拒 0/非整数;
+// 修复前走通用 ParsePathParamInt64 的 `<=0` 校验,负数主体一律 42200,新注册合成客户无法过审。
+func TestReviewCenterVerifyAcceptsSyntheticNegativeSubject(t *testing.T) {
+	f := &fakeCustOnboard{}
+	ns := notify.NewMemStore()
+	r, mgr := newRealnameNotifyRouter(f, ns, nil)
+	tok := authToken(t, mgr)
+
+	w := postBodyAuth(t, r, "/api/admin/v1/verifications/customer/-9/verify", `{"result":"PASS"}`, tok)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if len(f.rnVerify) != 1 || f.rnVerify[0].CustomerID != -9 || f.rnVerify[0].Result != "PASS" {
+		t.Fatalf("rnVerify=%+v", f.rnVerify)
+	}
+
+	w0 := postBodyAuth(t, r, "/api/admin/v1/verifications/customer/0/verify", `{"result":"PASS"}`, tok)
+	if w0.Code != http.StatusOK || !strings.Contains(w0.Body.String(), "42200") {
+		t.Fatalf("subjectId=0 应 42200: status=%d body=%s", w0.Code, w0.Body.String())
+	}
 }
