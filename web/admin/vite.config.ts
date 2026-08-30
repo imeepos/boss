@@ -29,11 +29,20 @@ export default defineConfig(({ mode }) => {
   build: {
     rollupOptions: {
       output: {
-        // vendor 拆分:react 全家桶独立 chunk,业务改动不失效浏览器缓存。
+        // vendor 拆分:react 全家桶与重型三方库独立 chunk——业务改动不失效缓存,
+        // 主包只装业务源码;按模块分组不改变加载时机(仍由 import 图决定是否拉取)。
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return undefined
           if (/[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) return 'vendor'
-          return undefined
+          if (/[\\/](ol|pmtiles)[\\/]/.test(id)) return 'vendor-map'
+          if (/[\\/](recharts|d3-|victory-vendor|internmap|decimal\.js)/.test(id)) return 'vendor-charts'
+          if (/[\\/]swagger-ui-react[\\/]/.test(id)) return 'vendor-swagger'
+          if (/[\\/]xlsx[\\/]/.test(id)) return 'vendor-xlsx'
+          // 其余三方逐包成 chunk:取「最后一个 node_modules 段」的包名——pnpm 虚拟存储
+          // (node_modules/.pnpm/<pkg>@ver/node_modules/<pkg>/) 若取首段会全并进 np-.pnpm。
+          const tail = id.split(/[\\/]node_modules[\\/]/).pop() ?? ''
+          const pkg = tail.match(/^(@[^\\/]+[\\/])?([^\\/]+)/)?.[2]
+          return pkg ? `np-${pkg}` : 'vendor-misc'
         },
       },
     },
