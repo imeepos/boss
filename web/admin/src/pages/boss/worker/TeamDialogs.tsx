@@ -5,6 +5,8 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
+import { Button } from '../../../components/ui/button'
+import { Input } from '../../../components/ui/input'
 import type { TeamPerfRow, WorkerGroupRow, WorkerRow } from '../types'
 
 export type DialogMode =
@@ -23,9 +25,8 @@ interface DialogsProps {
   onDone: () => void // 任一动作成功后刷新列表
 }
 
-const inputCls = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-const primaryBtn = 'h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50'
-const plainBtn = 'h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]'
+// 表单控件统一 ui Input / ui Button;紧凑表单密度用 className 覆盖(h-8 px-4 text-[13px])。
+const compact = 'h-8 px-4 text-[13px]'
 
 // Modal 外壳:遮罩点击关闭 + 令牌化底色。
 function Shell({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
@@ -78,11 +79,11 @@ function TeamForm({ group, workers, onClose, onDone }: { group: WorkerGroupRow |
   return (
     <div>
       <label className="mb-1 block text-[13px] text-[var(--shell-group-title)]">{w.teamName}</label>
-      <div className="mb-3"><input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} /></div>
+      <div className="mb-3"><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
       {!group && (
         <>
           <label className="mb-1 block text-[13px] text-[var(--shell-group-title)]">{w.teamCode}</label>
-          <div className="mb-3"><input className={inputCls} value={code} onChange={(e) => setCode(e.target.value)} /></div>
+          <div className="mb-3"><Input value={code} onChange={(e) => setCode(e.target.value)} /></div>
           <label className="mb-1 block text-[13px] text-[var(--shell-group-title)]">{w.teamEntity}</label>
           <div className="mb-3">
             <ResourcePicker
@@ -110,8 +111,8 @@ function TeamForm({ group, workers, onClose, onDone }: { group: WorkerGroupRow |
       )}
       <Err msg={err} />
       <div className="flex justify-end gap-2">
-        <button className={plainBtn} onClick={onClose}>{w.cancel}</button>
-        <button className={primaryBtn} disabled={busy} onClick={submit}>{w.save}</button>
+        <Button variant="outline" size="sm" className={compact} onClick={onClose}>{w.cancel}</Button>
+        <Button size="sm" className={compact} disabled={busy} onClick={submit}>{w.save}</Button>
       </div>
     </div>
   )
@@ -148,11 +149,11 @@ function TransferForm({ worker, groups, onClose, onDone }: { worker: WorkerRow; 
         />
       </div>
       <label className="mb-1 block text-[13px] text-[var(--shell-group-title)]">{w.reasonLabel}</label>
-      <div className="mb-3"><input className={inputCls} placeholder={w.reasonPlaceholder} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
+      <div className="mb-3"><Input placeholder={w.reasonPlaceholder} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
       <Err msg={err} />
       <div className="flex justify-end gap-2">
-        <button className={plainBtn} onClick={onClose}>{w.cancel}</button>
-        <button className={primaryBtn} disabled={busy || !groupId} onClick={submit}>{w.transfer}</button>
+        <Button variant="outline" size="sm" className={compact} onClick={onClose}>{w.cancel}</Button>
+        <Button size="sm" className={compact} disabled={busy || !groupId} onClick={submit}>{w.transfer}</Button>
       </div>
     </div>
   )
@@ -175,7 +176,7 @@ function PerfPanel({ group }: { group: WorkerGroupRow }) {
   return (
     <div>
       <label className="mb-1 block text-[13px] text-[var(--shell-group-title)]">{w.periodLabel}</label>
-      <div className="mb-3"><input type="month" className={inputCls} value={period} onChange={(e) => setPeriod(e.target.value)} /></div>
+      <div className="mb-3"><Input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} /></div>
       <Err msg={err} />
       <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
         <thead><tr>{w.perfCols.map((x) => <th key={x} className="h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
@@ -229,8 +230,8 @@ export function TeamDialogs({ mode, groups, workers, onClose, onDone }: DialogsP
       return <Shell title={w.disband} onClose={onClose}>
         <p className="mb-4 text-[13px] text-[var(--shell-content-text)]">{w.disbandConfirmText}</p>
         <div className="flex justify-end gap-2">
-          <button className={plainBtn} onClick={onClose}>{w.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--color-danger)] bg-transparent px-4 text-[13px] text-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)]" onClick={() => disband(mode.group.id)}>{w.confirmDisband}</button>
+          <Button variant="outline" size="sm" className={compact} onClick={onClose}>{w.cancel}</Button>
+          <Button variant="destructive" size="sm" className={compact} onClick={() => disband(mode.group.id)}>{w.confirmDisband}</Button>
         </div>
       </Shell>
   }

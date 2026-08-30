@@ -1,11 +1,13 @@
 // Markdown 富编辑器:工具栏(加粗/斜体/标题/链接/代码/图片上传) + 左右双栏实时预览。
 // 预览基于 react-markdown;正文内附件引用 ](att/N) 由 AttImg 走登录态附件端点转 blob 渲染,
 // 公开侧由后端详情端点重写为 /site/posts/:slug/img/:id?lang=(见 site_img.go)。
-// 文案走 i18n(sitePage.md*),颜色走 shell 令牌随主题。
+// 文案走 i18n(sitePage.md*);工具栏按钮/编辑框接入 ui Button / ui Textarea,紧凑形态用 className 覆盖。
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { fetchAttachmentFile } from '../../../api/attachments'
 import { AttachmentPickerDialog } from '../../../components/AttachmentManager/PickerDialog'
+import { Button } from '../../../components/ui/button'
+import { Textarea } from '../../../components/ui/textarea'
 import { useT } from '../../../i18n'
 
 // att/N 引用 → 附件 id;非该形态返回 null。
@@ -38,7 +40,8 @@ function AttImg({ src, alt }: { src?: string; alt?: string }) {
   return <img src={url} alt={alt} />
 }
 
-const tbBtn = 'h-7 min-w-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-xs text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]'
+// 工具栏紧凑按钮:DS Button outline+sm 打底,覆盖为 7px 高微型工具钮。
+const tbBtn = 'h-7 min-w-7 px-2 text-xs font-normal'
 
 export function MarkdownEditor({
   value, onChange,
@@ -80,19 +83,19 @@ export function MarkdownEditor({
 
   return <div>
     <div className="mb-1 flex flex-wrap items-center gap-1.5">
-      <button type="button" className={tbBtn} title={s.mdBold} onClick={() => apply(['**', '**'], '', s.mdBold)}><b>B</b></button>
-      <button type="button" className={tbBtn} title={s.mdItalic} onClick={() => apply(['*', '*'], '', s.mdItalic)}><i>I</i></button>
-      <button type="button" className={tbBtn} title={s.mdH2} onClick={() => apply(null, '## ', s.mdH2)}>H2</button>
-      <button type="button" className={tbBtn} title={s.mdH3} onClick={() => apply(null, '### ', s.mdH3)}>H3</button>
-      <button type="button" className={tbBtn} title={s.mdCode} onClick={() => apply(['`', '`'], '', s.mdCode)}>{'<>'}</button>
-      <button type="button" className={tbBtn} title={s.mdLink} onClick={() => apply(['[', '](https://)'], '', s.mdLink)}>Link</button>
-      <button type="button" className={tbBtn} title={s.mdList} onClick={() => apply(null, '- ', s.mdList)}>List</button>
-      <button type="button" className={tbBtn} title={s.mdImage} onClick={() => setPickImg(true)}>Image</button>
-      </div>
+      <Button type="button" variant="outline" size="sm" className={tbBtn} title={s.mdBold} onClick={() => apply(['**', '**'], '', s.mdBold)}><b>B</b></Button>
+      <Button type="button" variant="outline" size="sm" className={tbBtn} title={s.mdItalic} onClick={() => apply(['*', '*'], '', s.mdItalic)}><i>I</i></Button>
+      <Button type="button" variant="outline" size="sm" className={tbBtn} title={s.mdH2} onClick={() => apply(null, '## ', s.mdH2)}>H2</Button>
+      <Button type="button" variant="outline" size="sm" className={tbBtn} title={s.mdH3} onClick={() => apply(null, '### ', s.mdH3)}>H3</Button>
+      <Button type="button" variant="outline" size="sm" className={tbBtn} title={s.mdCode} onClick={() => apply(['`', '`'], '', s.mdCode)}>{'<>'}</Button>
+      <Button type="button" variant="outline" size="sm" className={tbBtn} title={s.mdLink} onClick={() => apply(['[', '](https://)'], '', s.mdLink)}>Link</Button>
+      <Button type="button" variant="outline" size="sm" className={tbBtn} title={s.mdList} onClick={() => apply(null, '- ', s.mdList)}>List</Button>
+      <Button type="button" variant="outline" size="sm" className={tbBtn} title={s.mdImage} onClick={() => setPickImg(true)}>Image</Button>
+    </div>
     <div className="grid gap-3 md:grid-cols-2">
-      <textarea
+      <Textarea
         ref={ref}
-        className="min-h-96 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] p-3 font-mono text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]"
+        className="min-h-96 rounded-sm p-3 font-mono text-[13px]"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={s.mdPlaceholder}
