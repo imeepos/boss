@@ -1437,3 +1437,11 @@
 - react-router 函数式 setParams 的 prev 在同批 transition 未提交时是旧值,连续双写互相覆盖——useQueryState 修为直读 window.location.search(history 同步写,权威)。
 - cdp-admin-capture --path 含 ? 时与包装器 ?theme= 拼接冲突,生成 unlinked=%3Ftheme%3Ddark 假信号;带参场景用 eval 内 location.href/history.pushState+popstate 替代。
 - 整页 reload 放 eval 内会销毁上下文致 evaluate 返回 undefined;reload 前必须先 return。
+
+## 2026-09-07 build-top5 五连发(版本自证/假成功守卫/契约A2/CURRENT.md/stripe对账)
+
+- 最耗时: stripe-recon 实测 401——admin API key 认证头是 X-API-Key 而非 Bearer,凭直觉写了 Bearer;写脚本前先用 curl 探一下认证格式可省一轮(已喂回 lessons)。
+- .gitignore 第 59 行 `server`(根目录 56MB 二进制名)误伤一切同名目录: internal/pkg/server/ 下新文件 git add 被拒,须 add -f;已跟踪文件用 add -u。git add 报 ignored 时先查根 .gitignore 名字碰撞。
+- DSH 沙箱挡 ~/Library/Caches/go-build 写入: export GOCACHE=<repo>/.cache/<name>(该目录已 ignore)即可,~/go/pkg/mod 只读仍可用,不必升权。
+- A2 首扫 6 条"漂移"逐条核实才登记 baseline: geo names×2 是契约路径层级、faqs 是提取器 helper 盲区假阳性(udList 经变量 g.GET(path) 注册)、stripe done/cancel×2 是静态页误登记为 API、products 是参数名双写——新门禁上线首日的存量要有耐心判真伪,不能一键全豁免。
+- 做得对: verify-deploy 合并当天实测就抓到 102 服务端旧二进制(工具当天产证);stripe-recon 修完认证头实测即产出首条待裁议差异(PAY-20260829015320-06E1 渠道侧无对应 PI);自己把 memory.go 顶到 301 行破红线,当场压缩回 299。

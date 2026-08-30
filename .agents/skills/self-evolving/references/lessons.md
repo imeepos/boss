@@ -444,3 +444,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当自动化流水线(订单环节6建档等)会新建表行时,验收造数清理脚本(acceptance-cleanup.sh)的计数/备份/DELETE 三处清单必须同步补该表,否则孤儿巡检门禁拦部署(2026-08-29 lo_accounts 实证)。
 - 给表单选项"补数据源"前先盘点各目录端点的权限门禁:跨域目录(组织/资源域)挂的是管理菜单码,受理角色读不到;正确做法是新增跟随受理域本域权限的只读目录端点,而不是放宽既有菜单码授权(2026-08-29 代客受理目录裁定)。
 - 新后台能力若做成独立菜单页,会触发 menu-sync 快照对账(需 102 部署迁移后重新采集基线)与 menu.def 总数测试;挂进既有同权限页做抽屉可完全绕开登记链(2026-08-29 注册审核抽屉裁定)。
+- 当在仓库新建与根 .gitignore 条目同名的目录下加文件时(internal/pkg/server/ 撞根二进制名 `server`),修复是新文件 git add -f、已跟踪文件 git add -u;git add 报 ignored 先查根 .gitignore 名字碰撞(2026-09-07)。
+- 当脚本调 102 admin API 时,认证头是 X-API-Key: <key>,用 Bearer 返回 401 invalid token;写脚本前先 curl 探认证格式(2026-09-07 stripe-recon 实测)。
+- 当沙箱环境跑 go 报 ~/Library/Caches/go-build operation not permitted,修复是 export GOCACHE=<repo>/.cache/<name>(该目录已在 .gitignore);~/go/pkg/mod 只读可用,无需升权(2026-09-07)。
+- 当 pgx v5 判写操作是否生效,用 res.RowsAffected()(单返回值 int,非 database/sql 的 (int64,error));0 行即假成功应显性报错(2026-09-07 RollbackStage 守卫)。
