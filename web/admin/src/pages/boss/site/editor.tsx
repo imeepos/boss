@@ -9,6 +9,9 @@ import { AttachmentPickerDialog } from '../../../components/AttachmentManager/Pi
 import { useT, useLocale, localeOptions, type Locale } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { Dropdown } from '../../../components/Dropdown'
+import { Button } from '../../../components/ui/button'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
 import { MarkdownEditor } from './MarkdownEditor'
 
 type Post = {
@@ -21,7 +24,6 @@ type Cat = { id: number; code: string; name: string; names?: Record<string, stri
 type Form = Pick<Post, 'slug' | 'lang' | 'title' | 'category' | 'summary' | 'content' | 'status' | 'authorName' | 'coverAttachmentId'>
 
 const emptyForm: Form = { slug: '', lang: 'zh-CN', title: '', category: '', summary: '', content: '', status: 'DRAFT', authorName: '', coverAttachmentId: 0 }
-const inputCls = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 
 export default function SitePostEditorPage() {
   const t = useT(); const s = t.pages.sitePage
@@ -67,11 +69,11 @@ export default function SitePostEditorPage() {
 
   return <div>
     <PageHead title={editing ? s.editTitle : s.newTitle} desc={s.desc} />
-    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
+    <Card className="p-4">
       {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
       <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-xs">{s.fTitle}<input className={inputCls + ' mt-1'} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
-        <label className="text-xs">{s.fSlug}<input className={inputCls + ' mt-1'} value={form.slug} placeholder="hello-world" onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>
+        <label className="text-xs">{s.fTitle}<Input className="mt-1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
+        <label className="text-xs">{s.fSlug}<Input className="mt-1" value={form.slug} placeholder="hello-world" onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>
         <label className="text-xs">{s.fLang}
           <div className="mt-1"><Dropdown options={localeOptions()} value={localeOptions().find((o) => o.value === form.lang)?.label ?? form.lang} onChange={(v) => setForm({ ...form, lang: v as Locale })} ariaLabel={s.fLang} /></div>
         </label>
@@ -81,17 +83,17 @@ export default function SitePostEditorPage() {
         <label className="text-xs">{s.fStatus}
           <div className="mt-1"><Dropdown options={[{ value: 'DRAFT', label: s.stDraft }, { value: 'PUBLISHED', label: s.stPublished }, { value: 'OFFLINE', label: s.stOffline }]} value={stLabel(form.status)} onChange={(v) => setForm({ ...form, status: v })} ariaLabel={s.fStatus} /></div>
         </label>
-        <label className="text-xs">{s.fAuthor}<input className={inputCls + ' mt-1'} value={form.authorName} onChange={(e) => setForm({ ...form, authorName: e.target.value })} /></label>
+        <label className="text-xs">{s.fAuthor}<Input className="mt-1" value={form.authorName} onChange={(e) => setForm({ ...form, authorName: e.target.value })} /></label>
         <div className="text-xs">{s.fCover}
           <div className="mt-1 flex items-center gap-3">
-            <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]" onClick={() => setPickCover(true)}>{s.pickCover}</button>
+            <Button variant="outline" type="button" onClick={() => setPickCover(true)}>{s.pickCover}</Button>
             {form.coverAttachmentId > 0 && <>
               <span className="text-xs text-[var(--shell-content-text)]">#{form.coverAttachmentId}</span>
-              <button type="button" className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] px-3 text-xs" onClick={() => setForm({ ...form, coverAttachmentId: 0 })}>{s.fCoverRemove}</button>
+              <Button variant="outline" size="sm" type="button" onClick={() => setForm({ ...form, coverAttachmentId: 0 })}>{s.fCoverRemove}</Button>
             </>}
           </div>
         </div>
-        <label className="text-xs md:col-span-2">{s.fSummary}<input className={inputCls + ' mt-1'} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} /></label>
+        <label className="text-xs md:col-span-2">{s.fSummary}<Input className="mt-1" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} /></label>
       </div>
       <div className="mt-4">
         <div className="mb-1 text-xs">{s.fContent}</div>
@@ -100,9 +102,9 @@ export default function SitePostEditorPage() {
       <AttachmentPickerDialog open={pickCover} onClose={() => setPickCover(false)} imageOnly
         onPick={(items) => { if (items[0]) setForm((v) => ({ ...v, coverAttachmentId: items[0].id })) }} />
       <div className="mt-4 flex gap-3">
-        <button type="button" className="primary h-8 cursor-pointer rounded-sm px-4 text-[13px]" disabled={busy} onClick={save}>{s.save}</button>
-        <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)]" onClick={() => nav('/boss/site')}>{s.back}</button>
+        <Button type="button" disabled={busy} onClick={save}>{s.save}</Button>
+        <Button variant="outline" type="button" onClick={() => nav('/boss/site')}>{s.back}</Button>
       </div>
-    </div>
+    </Card>
   </div>
 }

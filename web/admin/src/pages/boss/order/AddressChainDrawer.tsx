@@ -3,12 +3,13 @@
 //   → {addressId, fullPath, fullPathNames, legalEntityId, regionPath, fallback, needsReview:[{id,level,name}], backfilled}。
 // 后端逐级 lookup-miss-then-create:选中已有节点与本地名都只发 name,复用语义由服务端保证。
 // 零阻塞:搜索不可用时仍可输入名称逐级新建;兜底归属/并发重名不拦提交,警示条+待治理黄标承接。
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { ApiError } from '../../../api/envelope'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
+import { Button } from '../../../components/ui/button'
 import type { AddressRow } from '../../base/address/AddressGeoDrawer'
 import { ChainCrumb, ChainSummary, OwnerWarningBar, SiblingHint, type ChainStage } from './AddressChainParts'
 
@@ -161,8 +162,8 @@ export function AddressChainDrawer({ customerId, customerAddressId, onDone, onCl
       <Drawer title={o.chainTitle} onClose={onClose}
         footer={
           <>
-            <ToolbarishButton onClick={onClose}>{t.pages.company.cancel}</ToolbarishButton>
-            <PrimaryishButton disabled={busy} onClick={confirm}>{o.chainConfirm}</PrimaryishButton>
+            <Button variant="outline" size="sm" onClick={onClose}>{t.pages.company.cancel}</Button>
+            <Button size="sm" disabled={busy} onClick={confirm}>{o.chainConfirm}</Button>
           </>
         }>
         <div className="flex flex-col gap-3">
@@ -176,7 +177,7 @@ export function AddressChainDrawer({ customerId, customerAddressId, onDone, onCl
           {result.backfilled !== true && customerAddressId > 0 && customerAddressId !== result.addressId && (
             <div className="flex items-center justify-between gap-2 rounded-sm border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] px-3 py-2">
               <span className="text-[12px] text-[var(--shell-content-text)]">{o.chainAskBackfill}</span>
-              <ToolbarishButton onClick={refill}>{busy ? o.chainRefilling : o.chainAskBackfillConfirm}</ToolbarishButton>
+              <Button variant="outline" size="sm" onClick={refill}>{busy ? o.chainRefilling : o.chainAskBackfillConfirm}</Button>
             </div>
           )}
         </div>
@@ -189,10 +190,10 @@ export function AddressChainDrawer({ customerId, customerAddressId, onDone, onCl
       footer={
         <>
           {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
-          <ToolbarishButton onClick={onClose}>{t.pages.company.cancel}</ToolbarishButton>
-          <PrimaryishButton disabled={busy || !allDone} onClick={() => submit(false)}>
+          <Button variant="outline" size="sm" onClick={onClose}>{t.pages.company.cancel}</Button>
+          <Button size="sm" disabled={busy || !allDone} onClick={() => submit(false)}>
             {busy ? o.chainCreating : o.chainCreate}
-          </PrimaryishButton>
+          </Button>
         </>
       }>
       <div className="flex flex-col gap-3">
@@ -246,15 +247,3 @@ function DownHint({ text }: { text: string }) {
   )
 }
 
-function ToolbarishButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
-  return (
-    <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]" onClick={onClick}>{children}</button>
-  )
-}
-
-function PrimaryishButton({ disabled, onClick, children }: { disabled?: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-      disabled={disabled} onClick={onClick}>{children}</button>
-  )
-}
