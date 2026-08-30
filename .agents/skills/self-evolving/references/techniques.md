@@ -598,3 +598,13 @@ SQL
 
 场景 → 生成 Go 代码的生成器(genrouteperms/routes_gen 等)渲染手写缩进,`gofmt -l` 会微调对齐,导致 make lint 红、再生成又让 --check 漂移门禁红,来回拉锯。
 做法 → 渲染完统一 `format.Source(src)` 再写盘/比对:生成物与 gofmt 天然一致,两道门禁同时稳定。参照 scripts/genrouteperms/main.go render()。
+
+## 长门禁的机械验收模式:HEAD 键控 rc（2026-08-30 上线审计轮）
+
+场景 → 验收器（devloop_accept 等）内置等待窗口跑不完全量门禁;又必须防"陈旧绿"和自报通过。
+做法 → 后台跑全量门禁,产物写 `.devloop/gates/<task>-$(git rev-parse --short HEAD).{log,rc}`;账本验收命令只做一件事:断言"当前 HEAD 的 rc 文件存在且 =0"。HEAD 前进旧结果自动失效必须重跑;日志随时人工抽查;目录加 `.git/info/exclude` 不污染 status。铁律:wrapper 退出码 0 不算数,门禁本体 rc 才算（本轮 T2 wrapper 0/门禁 2 的教训）。
+
+## 子代理跨目录任务派发模式（2026-08-30）
+
+场景 → worktree 协议要求目录在仓库外,但子代理沙箱 scope=主仓库目录且审批禁用,写不出去;`git worktree add` 会留下「分支已建/工作树缺失」半完成态。
+做法 → 主会话先在工作区内建 worktree（`git worktree add .worktrees/<name> <branch>`,目录 info/exclude 排除）,再派发/续话给子代理并给出绝对路径;子代理大文件成品可写 /tmp,主会话 shasum 校验后 cp 进 worktree commit。

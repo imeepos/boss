@@ -451,3 +451,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 vitest 断言两个 Promise 引用相等时（toBe），必然为假——async 函数 return 另一个 Promise 会新建包装；改断言 `expect(await p2).toBe(await p1)` 比较底层值对象身份（2026-08-30 session-handoff）。
 - 当解析 `git status --porcelain` 时，禁止对整行 trim——行首两个状态码列（如 ` M`）被 trim 后 slice(3) 错位；解析前只去 \r 和空行，保留行首空格（2026-08-30 session-handoff）。
 - 当 npm 需要装包而 vendor 用符号链接提供 @deepseek-ai/* 时，先从 devDependencies 去掉 scope 包再 npm i，装完再补符号链接；否则 npm 试图写链接目标目录 EPERM（2026-08-30 session-handoff）。
+- 当验收器/devloop_accept 等待窗口短于长门禁（make check 全量 -race）时长,修复是把门禁放后台跑、rc/log 按 `git rev-parse --short HEAD` 落盘,验收命令只对当前 HEAD 断言 rc=0;HEAD 一动旧结果自动失效,不吃陈旧绿（2026-08-30 上线审计）。
+- 当子代理要写主仓库工作区外的路径,先由主会话把 worktree 建在工作区内（`<repo>/.worktrees/<name>` + .git/info/exclude）再派发;子代理会话审批禁用,sandbox_permissions 对其不可用,成品可落 /tmp 由主会话 cp+commit（2026-08-30）。
+- 当 pnpm 报 ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY,用 CI=true 重跑（非交互环境允许 purge modules）;且 wrapper 退出码 0 ≠ 门禁本体过,必须读真实 rc（2026-08-30 T2 假红）。

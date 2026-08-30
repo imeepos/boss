@@ -409,3 +409,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 症状 → `< <(python3 - "$ARG" <<'PY' ... PY)` 里的 python 脚本报 SyntaxError,且报错内容行序错乱、同一脚本的断言重复执行;换成 `... | judge_fn` 管道又让计数器困在子 shell(shell 函数自增丢失)。
 原因 → macOS 自带 bash 3.2 对"过程替换 + 内嵌 heredoc"组合解析有缺陷,heredoc 行被重新分块喂给 python。
 修法 → 断言/过滤脚本先在顶层 heredoc 写入临时文件(`cat >/tmp/x.py <<'PY'`),过程替换里只放简单命令:`judge x < <(python3 /tmp/x.py args)`;计数器留在当前 shell。
+
+## pnpm 无 TTY 拒绝 purge node_modules,门禁假红（2026-08-30）
+
+症状 → `make web-admin-check` 报 `[ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY] Aborted removal of modules directory due to no TTY`,失败点在 pnpm install 依赖状态检查,不是代码。
+原因 → modules 目录与 lockfile 不一致触发隐式重装,pnpm 非交互环境拒绝删除 modules 目录,直接 Abort。
+修法 → `CI=true make web-admin-check`（视同 CI 环境允许 purge）。连锁坑:make 的 wrapper 若写成 `cmd > log; echo $? > rc`,外层命令退出码恒 0,判定必须读 rc 文件里门禁本体的退出码。

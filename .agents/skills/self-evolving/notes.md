@@ -1463,3 +1463,8 @@
 - 哪个坑最浪费时间：① dsh-plugin-dev check.sh 守卫 E 的服务名白名单没有 shell/fs——写进 static inject 必红，只能 ctx.get()+判 undefined 的可选形态；先读 check.sh 全文再定 inject 形态，省两轮返工。② npm 缓存 /Users/imeepos/ext512/dev-cache/npm 有 root 属主文件 EPERM——--cache /tmp 绕过；@deepseek-ai 符号链接与 npm 装包互相踩（npm 试图往链接目标里 mkdir）——devDependencies 去掉 scope 包、先 npm i 再补符号链接。③ cd ../../.. 相对层级数错导致 git -C 落空——红线#10 活案例，bash 调用一律 workdir 传绝对路径根治。
 - skill 有没有提前警告：dsh-plugin-dev 的 workflow/check.sh 覆盖了大部分；两条没讲——「async 函数 return 同一 Promise 后 p2 !== p1（语言语义，比较应 await 后比值对象身份）」「git status --porcelain 的行首状态码空格会被 trim 破坏列对位（lines() 必须 rawLine 变体）」。本轮各吃掉一次测试返工。
 - 重来一次会怎么做：先读 check.sh 再写代码；测试夹具（FakeShell）第一步就抽公共 tests/fixtures.ts（后补 config-paths.spec 时被迫复制一份）；每完成一个能力面立即跑 check.sh（本次守住了，最后只有行数比一次返工）。
+
+## 2026-08-30 上线前审计轮（devloop-auto A/B 循环：五任务账本+双子代理）
+- 哪个坑最浪费时间：① devloop_accept 内置等待窗口跑不完 make check 全量（实测 SIGTERM Terminated，白跑一次）——改「后台全量跑 + rc/log 按 HEAD 落盘 + 验收命令对当前 HEAD 断言」，判定依然机械且杜绝陈旧绿。② 子代理沙箱 scope 固定在主仓库目录且审批禁用不能扩权——两个子代理都卡在 `git worktree add` 兄弟目录：分支建进了仓库内 .git、工作树目录建不出去（半完成态：branch exists / no worktree）。修复=主会话把 worktree 建进工作区内 `.worktrees/<name>` 再通知子代理路径；子代理成品走 /tmp 中转由主会话 cp+commit。③ pnpm 无 TTY 拒绝 purge node_modules 让 T2 首跑假红——CI=true 即解，但差点误判成代码缺陷。
+- skill 有没有提前警告：红线#10（worktree 真实路径）预判了 commit 落错分支风险，本轮以「worktree 建在工作区内 + commit 后核对方括号分支名」双保险守住；没有预警的是「子代理审批禁用、sandbox_permissions 对子代理不可用」——派发跨目录写任务前必须先替子代理把路径准备好。另踩红线#1 变体：bash tail 读过不算观察，edit 前必须 read 工具读目标文件。
+- 重来一次会怎么做：派发子代理前先看它的沙箱边界能不能碰到目标路径（不能就在工作区内预建 worktree）；门禁类任务第一件事确认 TTY/CI 环境变量；「文档说已收敛」一律以机械门禁复跑为准——本轮 page-patterns.md 声称 boss 0 未采用，实际新增 6 页已破功，机械门禁（T2）抓住了它。
