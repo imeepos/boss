@@ -15,3 +15,19 @@ export function healthzUrl(): string | null {
   const base = activeServer()?.baseUrl
   return base ? `${normalizeBaseUrl(base)}/healthz` : null
 }
+
+/** 角标提示键:记录用户已对哪个服务端 commit 点过刷新(每次部署只提示一次)。 */
+export const VERSION_SEEN_KEY = 'boss.version.seen'
+
+/**
+ * 是否应提示:存在漂移 且 用户尚未对该服务端 commit 提示过。
+ * server-only 部署时 web 内容不变,刷新后 commit 仍不匹配——
+ * 无 seen 记忆角标会永久驻留成噪音(b2a1d950 上线当日实测推演)。
+ */
+export function shouldShowVersionBadge(
+  buildCommit: string,
+  serverCommit: string,
+  seenCommit: string,
+): boolean {
+  return isVersionDrift(buildCommit, serverCommit) && seenCommit !== serverCommit
+}
