@@ -81,6 +81,7 @@
 | 2026-08-29 | 开户工作台聚合页 /bss/onboarding(menu:onboarding 迁移000170 授 sysadmin/ops):建档→实名→下单→环节推进→派单 一页完成;GET /orders 补 customerId 过滤;工单按订单寻址复用 dispatch/pool 不加新查询;步骤条仅展示不做前端业务校验门禁 | adopted/2026-08-29-onboarding-workbench.md |
 | 2026-08-30 | 审计写入改同步落库:生产装配 PGWriter 替代进程内队列 AsyncWriter,关键留痕崩溃/队列满不丢 | adopted/2026-08-30-audit-sync-persistence.md |
 | 2026-08-30 | 业务持久化可靠性阶段2:订单推进计数器与环节日志同事务、webhook 投递 SKIP LOCKED 原子领取+租约、审计写失败重试+全量载荷告警、配置密文解密失败显性化;限流/渠道注册边界与内存态分类登记 | adopted/2026-08-30-persist-reliability-phase2.md |
+| 2026-08-30 | 合成客户实名核验边界:审核 PASS 放行(结论只落 verifications,主档同步 0 行 no-op)+ 证件照上传仅拒 uploaderId==0;转正/拒绝两案否决 | adopted/2026-08-30-synthetic-customer-realname-boundary.md |
 | 2026-09-03 | 导入权限边界:地址使用 menu:importer,Geo 使用 menu:geo,暂不追加地址双权限 | adopted/2026-09-03-importer-permission-scope.md |
 | 2026-09-03 | 导入任务登记幂等键 clientKey 与下单幂等键 requestId 语义区分(upsert 写入 vs 查询返回,作用域/命名不统一) | adopted/2026-09-03-import-task-idempotency.md |
 | 2026-09-03 | 充值余额是预存(只进不出)不是可用余额;未来接消费需补 portal_wallet_transactions 流水表+CHECK>=0 约束 | adopted/2026-09-03-portal-wallet-balance-semantic.md |

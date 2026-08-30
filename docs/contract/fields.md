@@ -1016,6 +1016,7 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 
 > 行内核验：`POST /verifications/:subjectType/:subjectId/verify` body `{result: PASS|FAIL, reason?}`。
 > 仅作用于 PENDING 行；PASS 复用既有 `customers.real_name_status=VERIFIED` 同步与主档证件号一致性门禁（`internal/domain/customer/pg_onboarding.go:guardRealNameIdentity`）；师傅端不写 `real_name_status`（worker 主档无该字段）。
+> 合成客户（负数段隔离空间 ID，无 customers 主档）PASS 放行：门禁无主档可对照即跳过，结论只落 verifications，主档同步为 0 行 no-op，用户端经核验单回退显示结论（adopted/2026-08-30-synthetic-customer-realname-boundary.md）；证件照上传同步仅拒 `uploaderId==0`，负数合成客户为合法上传者。
 > 权限 `menu:realname-review`：sysadmin 全权；其余角色不授，与既有 `menu:realidconfig`（基础配置·实名核验配置）同级。
 >
 > 2026-08-26 流程补齐（通知闭环 + 后台代录）：
