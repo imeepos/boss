@@ -29,7 +29,7 @@ function parseArgs(argv) {
   for (let i = 1; i < argv.length; i += 2) {
     const key = argv[i].replace(/^--/, '')
     const val = argv[i + 1]
-    if (key === 'eval') { args.evals.push(val); i += 1; continue } // 可重复:消耗 flag+value 两格
+    if (key === 'eval') { args.evals.push(val); continue } // 可重复:continue 仍走 for-update i+=2,恰好消耗 flag+value 两格
     if (key === 'no-proxy') { args['no-proxy'] = true; continue } // 布尔旗标:透传给 cdp-capture
     else args[key] = /^\d+$/.test(val) ? Number(val) : val
   }

@@ -88,12 +88,13 @@
 
 ## 工具·self-evolving 脚本(2026-08-29,内联建址轮发现)
 
-- **未修复｜脚本 bug｜cdp-admin-capture.mjs parseArgs 只透传第一个 --eval**:eval 分支内
+- **已修复(2026-09-07)｜脚本 bug｜cdp-admin-capture.mjs parseArgs 只透传第一个 --eval**:eval 分支内
   `i += 1` 后 `continue`,而 for 循环 update 又执行 `i += 2`,实际步进 3 格,把第 2 个及以后的
   `--eval` 值误解析为垃圾键(如 `args['E3']='--settle'`),后续 eval 全部静默丢失。
   表象:多个 --eval 只有第 1 个业务 eval 执行,其余无输出无报错(2026-08-29 两次复现)。
-  → 临时绕过:把全部交互装进单个 async IIFE(内部自管 sleep 节奏)。修法:eval 分支去掉分支内
-  `i += 1`,只靠 continue 走 update 步进;或改用 while+显式游标。
+  → 修复:eval 分支去掉分支内 `i += 1`,只靠 continue 走 update 步进;内联样例验证双 eval
+  均入列。另录环境限制:DSH 沙箱内 Chrome CDP 的 WebSocket 悬挂不开、--remote-debugging-pipe
+  模式 Chrome SIGTRAP 自毁——浏览器级交互测试在本沙箱不可行,须在沙箱外跑 cdp 工具族。
 - **未修复｜worktree 陷阱｜git worktree add 后 checkout 可能未落地即返回 success**:
   `git worktree add <dir> -b <branch>` 打印 "HEAD is now at <sha>" 但目标目录内无 .git 指针、
   无任何仓库文件(worktree list 却显示已注册);其后向该目录写文件全部落在 git 管辖外。
@@ -103,14 +104,18 @@
 
 ## 工具·deploy-102 流水线(2026-08-29,内联建址联调轮发现)
 
-- **待 owner 修｜编排缺陷｜chore(deploy) 空提交重触发手法对 Classify 失效**:deploy-102.yml 的
+- **部分修复(2026-09-07)｜编排缺陷｜chore(deploy) 空提交重触发手法对 Classify 失效**:deploy-102.yml 的
   Classify 按触发提交 diff 判 runtime,空提交 diff 为空 → files 空 → runtime=false → 部署被
   skip(run 空转但显示完成)。陈默 ac1902d7 重触发即踩此坑(run 起了但没部署),林晓实测窗口内
   102 仍是旧 server(POST /orders/address 40400)+旧前端(Cb7RTl8M),三路验收被误判 Gate0。
   同窗叠加因素:concurrency cancel-in-progress 会吞掉排队中的旧 run;admin-web 全量构建
   ~28min,部署窗口内 index.html 可能长时间指向旧 bundle。
   → 本次实际生效部署=1afb5afe(其 Classify 恰取到旧 deployed tag,diff 含 web/admin → true)。
-  修法建议(归属流水线 owner,未擅动):①Classify 对「diff 为空」显式输出 no-op 原因而非静默
-  skip,或空提交触发时强制 runtime=true;②部署完成后 run 摘要打印当前 GITHUB_SHA 与
-  admin-web bundle 指纹,供免登录复验;③admin-web nginx 对 index.html 加 no-cache。
-  复验口诀(部署后):curl :5180 取 index-*.js 文件名 + grep 特征串,双端各一个。
+  修法进展(2026-09-07):②已落地——deploy-102.yml 新增「Verify deployment fingerprint」步,
+  跑 scripts/ops/verify-deploy.sh --expect-sha $GITHUB_SHA,服务端 healthz commit(ldflags
+  GIT_SHA 注入)+bundle 指纹任一不过即红,复验口诀流水线化;③已存在——admin-web.nginx.conf
+  对 index.html 与 SPA fallback 均 no-cache(复查确认);①部分覆盖——Classify 已有「与 102
+  实际部署镜像 sha 比对」优先策略,先前未部署的 runtime 变更不会被后续 docs-only 提交漏判,
+  「diff 为空显式输出 no-op 原因」仍待 owner(现为静默 skip 文案,无强制 runtime)。
+  复验口诀(部署后):curl :5180 取 index-*.js 文件名 + grep 特征串,双端各一个;
+  或直接 `bash scripts/ops/verify-deploy.sh --expect-sha <sha>`。
