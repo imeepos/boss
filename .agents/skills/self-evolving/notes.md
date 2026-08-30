@@ -1445,3 +1445,9 @@
 - DSH 沙箱挡 ~/Library/Caches/go-build 写入: export GOCACHE=<repo>/.cache/<name>(该目录已 ignore)即可,~/go/pkg/mod 只读仍可用,不必升权。
 - A2 首扫 6 条"漂移"逐条核实才登记 baseline: geo names×2 是契约路径层级、faqs 是提取器 helper 盲区假阳性(udList 经变量 g.GET(path) 注册)、stripe done/cancel×2 是静态页误登记为 API、products 是参数名双写——新门禁上线首日的存量要有耐心判真伪,不能一键全豁免。
 - 做得对: verify-deploy 合并当天实测就抓到 102 服务端旧二进制(工具当天产证);stripe-recon 修完认证头实测即产出首条待裁议差异(PAY-20260829015320-06E1 渠道侧无对应 PI);自己把 memory.go 顶到 301 行破红线,当场压缩回 299。
+
+## 2026-09-07b 继续推进轮(部署贯通/Stripe裁议/角标+seen/提取器helper形态)
+- 版本自证按预案走完否决分支:容器 docker build 上下文无 .git,buildvcs 戳必缺,healthz 实测 'dev' 即此因;改走仓内既有 buildinfo ldflags 模式(GIT_SHA build-arg),一次上线即 'b2a1d95'。教训:本机 go build 有效 ≠ 容器构建有效,VCS 注入类方案在容器里必须走 ldflags。
+- helper 提取器首版翻车:gp 上下文多组变量时 recordMethodCall 任取 map 键当日实测就红——接收者 ident 精确取前缀才对。另:自己两度把测试文件写成残稿就落盘,写文件必须一次写完整。
+- pnpm 在沙箱 worktree 安装要显式 --store-dir <repo>/.cache/pnpm-store,否则试图 mkdir /Volumes/sker EPERM;别把默认 .pnpm-store 清了又用默认路径重装。
+- 假警报的正确处理示范:stripe-recon 首跑 MISMATCH → 查库 + 审计留痕 + 渠道双侧反查 → 定位 method='card' 双语义 → 口径裁定过账 dated note + 脚本判别式修复,三通道全闭环。
