@@ -31,9 +31,16 @@ def load(p):
 payments = load(sys.argv[1]).get("data", {}).get("items", [])
 pis = load(sys.argv[2]).get("data", [])
 
-# 本地侧: card(Stripe 卡通道) SUCCESS 流水,键 payNo
+# 口径裁定(2026-09-07 实证 PAY-20260829015320-06E1):method='card' 同时承载
+# 柜面 POS 线下刷卡与 Stripe 线上卡通道两个语义;柜面动作带三要素
+# (siteName/counterCode/operatorName,000167),三要素非空即剔除出 Stripe 对账范围。
+counter_card = [p for p in payments
+                if p.get("method") == "card"
+                and (p.get("siteName") or p.get("counterCode") or p.get("operatorName"))]
+# 本地侧: Stripe 线上卡通道 SUCCESS 流水(柜面 card 已剔除),键 payNo
 local = {p.get("payNo"): p for p in payments
-         if p.get("method") == "card" and p.get("status") == "SUCCESS"}
+         if p.get("method") == "card" and p.get("status") == "SUCCESS"
+         and not (p.get("siteName") or p.get("counterCode") or p.get("operatorName"))}
 # 渠道侧: succeeded 的 PI,键 metadata.payNo
 remote = {pi.get("metadata", {}).get("payNo"): pi for pi in pis
           if pi.get("status") == "succeeded" and pi.get("metadata", {}).get("payNo")}
@@ -46,7 +53,7 @@ for k in sorted(set(local) & set(remote)):
     if cents != remote[k]["amount"]:
         amount_bad.append((k, cents, remote[k]["amount"]))
 
-print(f"  本地 card SUCCESS: {len(local)} 条 / 渠道 succeeded: {len(remote)} 条 / 对平: {len(set(local) & set(remote)) - len(amount_bad)} 条")
+print(f"  本地 Stripe 口径 card SUCCESS: {len(local)} 条(柜面 POS card 另计 {len(counter_card)} 条,不对账) / 渠道 succeeded: {len(remote)} 条 / 对平: {len(set(local) & set(remote)) - len(amount_bad)} 条")
 bad = 0
 if missing_remote:
     bad += 1
@@ -69,11 +76,13 @@ LOCAL_JSON="$TMP/local.json"
 STRIPE_JSON="$TMP/stripe.json"
 
 if [ "$SELFTEST" = 1 ]; then
-  echo "[selftest] 全对平样例:"
+  echo "[selftest] 全对平样例(含柜面 POS card 必须被剔除):"
   cat > "$LOCAL_JSON" <<'EOF'
 {"code":0,"data":{"items":[
   {"payNo":"PAY-1","amount":299.00,"method":"card","status":"SUCCESS"},
-  {"payNo":"PAY-2","amount":150.50,"method":"cash","status":"SUCCESS"}]}}
+  {"payNo":"PAY-2","amount":150.50,"method":"cash","status":"SUCCESS"},
+  {"payNo":"PAY-3","amount":88.00,"method":"card","status":"SUCCESS",
+   "siteName":"验收旗舰店","counterCode":"02","operatorName":"cashier_wang"}]}}
 EOF
   cat > "$STRIPE_JSON" <<'EOF'
 {"data":[
