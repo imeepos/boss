@@ -108,6 +108,7 @@ import { canAccess, landingPathFor } from './router/role-menu'
 import { useT } from './i18n'
 import { getAuthToken } from './api/client'
 import { ConfirmProvider } from './components/ConfirmDialog'
+import { VersionBadge } from './components/VersionBadge'
 
 /** 菜单页:越权直访 403;已接入页正式渲染,其余占位(A1 起逐页替换)。 */
 function MenuPage({ pageKey }: { pageKey: string }) {
@@ -305,6 +306,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      <VersionBadge />
     </BrowserRouter>
     </Suspense>
     </ConfirmProvider>
