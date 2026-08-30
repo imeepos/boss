@@ -247,28 +247,29 @@ func (s *MemoryService) Release(ctx context.Context, orderID int64) error {
 	return s.transitionStatusLocked(orderID, "release")
 }
 
-// RollbackStage 回退至上一完成环节;逻辑与 PGStore.RollbackStage 一致。
-func (s *MemoryService) RollbackStage(_ context.Context, orderID int64) error {
+// RollbackStage 回退至上一完成环节;逻辑与 PGStore.RollbackStage 一致,返回 before/after。
+func (s *MemoryService) RollbackStage(_ context.Context, orderID int64) (int8, int8, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	o, ok := s.m[orderID]
 	if !ok {
-		return ErrOrderNotFound
+		return 0, 0, ErrOrderNotFound
 	}
 	if o.Stage < 2 {
-		return ErrIllegalTransition
+		return o.Stage, o.Stage, ErrIllegalTransition
 	}
 	next, err := alignStatusToStage(o.Status, o.Stage-1)
 	if err != nil {
-		return err
+		return o.Stage, o.Stage, err
 	}
+	before := o.Stage
 	o.Status = next
 	o.Stage--
 	logs := s.logs[orderID]
 	if n := len(logs); n > 0 && logs[n-1].Stage == o.Stage+1 {
 		s.logs[orderID] = logs[:n-1]
 	}
-	return nil
+	return before, o.Stage, nil
 }
 
 func (s *MemoryService) adv(orderID int64, event string) error {

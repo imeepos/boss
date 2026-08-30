@@ -131,7 +131,8 @@ type OrderService interface {
 	Cancel(ctx context.Context, orderID int64) error
 	Release(ctx context.Context, orderID int64) error
 	// RollbackStage 回退至上一完成环节(worker 端 rollback):删最新日志、stage 前移、status 逆向迁移。
-	RollbackStage(ctx context.Context, orderID int64) error
+	// 返回 before/after 环节供调用方做副作用回执(after==before 即 0 行生效,不得静默 200)。
+	RollbackStage(ctx context.Context, orderID int64) (before, after int8, err error)
 
 	// List 订单列表读模型(listOrders);GetByNo 按订单号寻址(getOrder)。
 	List(ctx context.Context, q OrderQuery) ([]OrderListItem, error)

@@ -274,8 +274,12 @@ func TestPGStore_RollbackStage(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		s := NewPGStore(mock, stubExists{ok: true})
-		if err := s.RollbackStage(context.Background(), 7); err != nil {
+		before, after, err := s.RollbackStage(context.Background(), 7)
+		if err != nil {
 			t.Fatalf("RollbackStage: %v", err)
+		}
+		if before != 11 || after != 10 {
+			t.Fatalf("rollback receipt before=%d after=%d, want 11/10", before, after)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet: %v", err)
@@ -289,8 +293,26 @@ func TestPGStore_RollbackStage(t *testing.T) {
 			WithArgs(int64(7)).
 			WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(1), "PENDING"))
 		s := NewPGStore(mock, stubExists{ok: true})
-		if err := s.RollbackStage(context.Background(), 7); err != ErrIllegalTransition {
+		if _, _, err := s.RollbackStage(context.Background(), 7); err != ErrIllegalTransition {
 			t.Fatalf("err=%v, want ErrIllegalTransition", err)
+		}
+	})
+
+	t.Run("UPDATE 0 行显性报错(假成功守卫)", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT stage, status FROM orders`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"stage", "status"}).AddRow(int8(11), "DONE"))
+		mock.ExpectExec(`DELETE FROM order_stages`).
+			WithArgs(int64(7), int8(11)).
+			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mock.ExpectExec(`UPDATE orders SET stage`).
+			WithArgs(int64(7), int8(10), "INSTALLING").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0)) // 并发删除竞态
+		s := NewPGStore(mock, stubExists{ok: true})
+		if _, _, err := s.RollbackStage(context.Background(), 7); err == nil {
+			t.Fatal("0 行 UPDATE 未报错——假成功守卫失效")
 		}
 	})
 }

@@ -5,6 +5,7 @@ package workerapi
 
 import (
 	"errors"
+	"log"
 
 	"github.com/gin-gonic/gin"
 
@@ -92,6 +93,8 @@ func workerAuditOK(a *app.Application, action string) gin.HandlerFunc {
 
 // workerRollbackHandler 回退上一环节:真实落库(删最新环节日志、stage 前移、
 // status 逆向迁移、DONE 工单随动 DOING),前端刷新时间轴即可见。
+// 假成功守卫:RollbackStage 回执 after==before 即 0 行生效,显性 5xx +
+// [fake-success] ALERT 留痕——回归史:rollback 曾只审计不落库仍返回成功。
 func workerRollbackHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tk, err := a.WorkOrder.GetDispatchTicketByNo(c.Request.Context(), c.Param("ticketNo"))
@@ -102,13 +105,20 @@ func workerRollbackHandler(a *app.Application) gin.HandlerFunc {
 		if !workerOwnedTicket(c, tk) {
 			return
 		}
-		if err := a.Order.RollbackStage(c.Request.Context(), tk.OrderID); err != nil {
+		before, after, err := a.Order.RollbackStage(c.Request.Context(), tk.OrderID)
+		if err != nil {
 			respondErr(c, err)
 			return
 		}
+		if after == before {
+			log.Printf("[fake-success] ALERT rollback no-effect ticket=%s order=%d stage=%d",
+				tk.TicketNo, tk.OrderID, before)
+			respond(c, apitypes.CodeInternal, nil)
+			return
+		}
 		httpx.RecordAudit(a, c, "状态变更", "worker_ticket", tk.TicketNo,
-			map[string]any{"action": "rollback"})
-		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+			map[string]any{"action": "rollback", "before": before, "after": after})
+		respond(c, apitypes.CodeOK, gin.H{"ok": true, "before": before, "after": after})
 	}
 }
 

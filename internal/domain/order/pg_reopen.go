@@ -35,33 +35,38 @@ func (s *PGStore) Release(ctx context.Context, orderID int64) error {
 // 删除最新环节日志 + stage 前移一位 + status 与回退后环节对齐(级联逆向:
 // DONE←undone←INSTALLING←undispatch←RESERVED←release←PENDING)+ 工单随动。
 // 重新推进时 advance 会重写环节日志,故删除而非标废(result 枚举无 ROLLED_BACK)。
-func (s *PGStore) RollbackStage(ctx context.Context, orderID int64) error {
+// 返回 before/after;UPDATE 0 行(并发删除竞态)显性报错——假成功等价数据事故。
+func (s *PGStore) RollbackStage(ctx context.Context, orderID int64) (int8, int8, error) {
 	var stage int8
 	var status string
 	err := s.db.QueryRow(ctx, `SELECT stage, status FROM orders WHERE id = $1`, orderID).Scan(&stage, &status)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrOrderNotFound
+		return stage, stage, ErrOrderNotFound
 	}
 	if err != nil {
-		return fmt.Errorf("order: rollback select: %w", err)
+		return stage, stage, fmt.Errorf("order: rollback select: %w", err)
 	}
 	if stage < 2 {
-		return ErrIllegalTransition
+		return stage, stage, ErrIllegalTransition
 	}
 	nextStatus, err := alignStatusToStage(status, stage-1)
 	if err != nil {
-		return err
+		return stage, stage, err
 	}
 	if _, err := s.db.Exec(ctx,
 		`DELETE FROM order_stages WHERE order_id = $1 AND stage = $2`, orderID, stage); err != nil {
-		return fmt.Errorf("order: rollback delete log: %w", err)
+		return stage, stage, fmt.Errorf("order: rollback delete log: %w", err)
 	}
-	if _, err := s.db.Exec(ctx,
-		`UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, stage-1, nextStatus); err != nil {
-		return fmt.Errorf("order: rollback update: %w", err)
+	res, err := s.db.Exec(ctx,
+		`UPDATE orders SET stage = $2, status = $3 WHERE id = $1`, orderID, stage-1, nextStatus)
+	if err != nil {
+		return stage, stage, fmt.Errorf("order: rollback update: %w", err)
+	}
+	if n := res.RowsAffected(); n == 0 {
+		return stage, stage, fmt.Errorf("order: rollback update affected 0 rows orderID=%d", orderID)
 	}
 	s.syncDispatchTicket(ctx, orderID, nextStatus)
-	return nil
+	return stage, stage - 1, nil
 }
 
 // alignStatusToStage status 逆向对齐到目标环节:status 由环节3(reserve)/8(install)/

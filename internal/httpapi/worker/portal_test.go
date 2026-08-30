@@ -132,6 +132,8 @@ type fakePortalOrder struct {
 	order.OrderService
 	activated  int64
 	rolledBack int64
+	rbFrom     int8 // RollbackStage 回执桩:from→to;相等即模拟 0 行生效
+	rbTo       int8
 }
 
 // fakePortalQuad 四码桩:详情页 quad 视图按未绑定兜底。
@@ -155,9 +157,10 @@ func (f *fakePortalOrder) ActivateUser(_ context.Context, id int64) error {
 func (f *fakePortalOrder) NotifyActivation(_ context.Context, _ int64) error { return nil }
 func (f *fakePortalOrder) UpdateMap(_ context.Context, _ int64) error        { return nil }
 
-func (f *fakePortalOrder) RollbackStage(_ context.Context, id int64) error {
+// RollbackStage 桩:默认回执 9→8;rbFrom/rbTo 相等可模拟 0 行生效(假成功守卫回归)。
+func (f *fakePortalOrder) RollbackStage(_ context.Context, id int64) (int8, int8, error) {
 	f.rolledBack = id
-	return nil
+	return f.rbFrom, f.rbTo, nil
 }
 
 func portalTestRouter(t *testing.T, fw *fakePortalWorkOrder, fo *fakePortalOrder) *gin.Engine {
@@ -335,24 +338,44 @@ func TestWorkerTicketDetailType(t *testing.T) {
 }
 
 // TestWorkerRollback 回归(ISSUE.md rollback 仅审计不落库):
-// 本人工单回退真实调用 RollbackStage;他人工单拒绝。
+// 本人工单回退真实调用 RollbackStage 且回执 before/after;他人工单拒绝。
 func TestWorkerRollback(t *testing.T) {
 	tok := portalGrabToken(t)
 	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
 		{TicketID: 1, TicketNo: "DT-1", OrderID: 5, WorkerID: 7, Status: "DOING"},
 		{TicketID: 2, TicketNo: "DT-2", OrderID: 6, WorkerID: 8, Status: "DOING"},
 	}}
-	fo := &fakePortalOrder{}
+	fo := &fakePortalOrder{rbFrom: 9, rbTo: 8}
 	r := portalTestRouter(t, fw, fo)
 
 	res := portalWorkerDo(r, "POST", "/api/worker/v1/tickets/DT-1/rollback", "", tok)
 	if res["code"].(float64) != 0 || fo.rolledBack != 5 {
 		t.Fatalf("rollback res=%v rolledBack=%d, want ok/5", res, fo.rolledBack)
 	}
+	data, _ := res["data"].(map[string]any)
+	if data["before"].(float64) != 9 || data["after"].(float64) != 8 {
+		t.Fatalf("rollback receipt=%v, want before 9 after 8", data)
+	}
 	// 他人工单:拒绝且不动订单。
 	res = portalWorkerDo(r, "POST", "/api/worker/v1/tickets/DT-2/rollback", "", tok)
 	if res["code"].(float64) == 0 || fo.rolledBack != 5 {
 		t.Fatalf("foreign ticket rollback should be rejected: %v", res)
+	}
+}
+
+// TestWorkerRollbackNoEffectGuard 回归:回退 0 行生效(before==after)必须显性失败,
+// 不得静默 200——假成功曾让师傅端"回退成功"toast 后时间轴纹丝不动。
+func TestWorkerRollbackNoEffectGuard(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketID: 1, TicketNo: "DT-1", OrderID: 5, WorkerID: 7, Status: "DOING"},
+	}}
+	fo := &fakePortalOrder{rbFrom: 5, rbTo: 5}
+	r := portalTestRouter(t, fw, fo)
+
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/tickets/DT-1/rollback", "", tok)
+	if res["code"].(float64) == 0 {
+		t.Fatalf("no-effect rollback must not be ok: %v", res)
 	}
 }
 

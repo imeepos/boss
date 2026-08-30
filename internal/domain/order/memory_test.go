@@ -99,8 +99,8 @@ func TestRollbackStage(t *testing.T) {
 			t.Fatalf("advance: %v", err)
 		}
 	}
-	if err := s.RollbackStage(ctx, o.ID); err != nil {
-		t.Fatalf("RollbackStage: %v", err)
+	if before, after, err := s.RollbackStage(ctx, o.ID); err != nil || before != 12 || after != 11 {
+		t.Fatalf("RollbackStage: err=%v before=%d after=%d, want 12/11", err, before, after)
 	}
 	got, logs, _ := s.Track(ctx, o.ID)
 	// 环节12(updateMap)不产生 status,回退到 11 时 DONE 保持(done 由环节11产生)。
@@ -111,7 +111,7 @@ func TestRollbackStage(t *testing.T) {
 		t.Fatalf("logs=%d, want 11", n)
 	}
 	// 再回退一次:离开环节11 → DONE→INSTALLING。
-	if err := s.RollbackStage(ctx, o.ID); err != nil {
+	if _, _, err := s.RollbackStage(ctx, o.ID); err != nil {
 		t.Fatalf("RollbackStage(2): %v", err)
 	}
 	got, _, _ = s.Track(ctx, o.ID)
@@ -130,7 +130,7 @@ func TestRollbackStage(t *testing.T) {
 	}
 	// stage<2 拒绝回退。
 	o2, _ := s.Submit(ctx, SubmitReq{CustomerID: 1, OfferID: 10, AddressID: 100, ChannelID: 5})
-	if err := s.RollbackStage(ctx, o2.ID); err != ErrIllegalTransition {
+	if _, _, err := s.RollbackStage(ctx, o2.ID); err != ErrIllegalTransition {
 		t.Fatalf("stage1 rollback err=%v, want ErrIllegalTransition", err)
 	}
 }
