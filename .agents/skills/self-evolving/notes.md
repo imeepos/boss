@@ -1468,3 +1468,8 @@
 - 哪个坑最浪费时间：① devloop_accept 内置等待窗口跑不完 make check 全量（实测 SIGTERM Terminated，白跑一次）——改「后台全量跑 + rc/log 按 HEAD 落盘 + 验收命令对当前 HEAD 断言」，判定依然机械且杜绝陈旧绿。② 子代理沙箱 scope 固定在主仓库目录且审批禁用不能扩权——两个子代理都卡在 `git worktree add` 兄弟目录：分支建进了仓库内 .git、工作树目录建不出去（半完成态：branch exists / no worktree）。修复=主会话把 worktree 建进工作区内 `.worktrees/<name>` 再通知子代理路径；子代理成品走 /tmp 中转由主会话 cp+commit。③ pnpm 无 TTY 拒绝 purge node_modules 让 T2 首跑假红——CI=true 即解，但差点误判成代码缺陷。
 - skill 有没有提前警告：红线#10（worktree 真实路径）预判了 commit 落错分支风险，本轮以「worktree 建在工作区内 + commit 后核对方括号分支名」双保险守住；没有预警的是「子代理审批禁用、sandbox_permissions 对子代理不可用」——派发跨目录写任务前必须先替子代理把路径准备好。另踩红线#1 变体：bash tail 读过不算观察，edit 前必须 read 工具读目标文件。
 - 重来一次会怎么做：派发子代理前先看它的沙箱边界能不能碰到目标路径（不能就在工作区内预建 worktree）；门禁类任务第一件事确认 TTY/CI 环境变量；「文档说已收敛」一律以机械门禁复跑为准——本轮 page-patterns.md 声称 boss 0 未采用，实际新增 6 页已破功，机械门禁（T2）抓住了它。
+
+## 2026-08-30 实名认证「资源不存在」修复轮（合成客户负数 ID 三道闸）
+- 哪个坑最浪费时间：① 复现脚本两次猜错请求形状——门户登录 body 是 `{phone,mode,smsCode}` 不是 `{phone,method,code}`（admin 侧又另是一套），对着 curl 瞎试浪费 3+ 轮还撞 60s 短信冷却；先 grep handler 的 req struct 再 curl。② 第二轮部署轮询把 healthz 的 7 位短 sha（`2ffa9ad`）与全 8 位提交号比对，全等永不中，白等 10 分钟才发现已上线——healthz commit 永远按前缀比。③ portal_messages.payload 是 jsonb，LIKE 直接报 operator does not exist，事务回滚整个清理脚本白跑——jsonb 模糊匹配必须 `payload::text LIKE`。
+- skill 有没有提前警告：known-issues #合成客户 负数 id 已有条目（充值 FK 场景），但没警告它是「横切隐患」——本轮实证同一个负数 ID 要连过三道独立闸：① `attachment.Service.Upload` 的 `UploaderID<=0` → 50000；② `guardRealNameIdentity` 查无主档 ErrNoRows → 40400（用户报的原句「资源不存在」）；③ `ParsePathParamInt64` 的 `v<=0` → 42200。修掉前一道闸后一道才显形，串行复现才能全部抓出来。
+- 重来一次会怎么做：凡是涉及合成客户旅程的修复，写完先全链路跑一遍（注册→上传→提交→审核→回读）再宣布完成——本轮第一次验收 PASS 步骤仍 42200，当场抓出第三道闸；验证脚本一律自带冷却重试循环（本轮做对了）+ 造数清理 SQL 收尾（jsonb 修正后全零确认 + 巡检门禁）。

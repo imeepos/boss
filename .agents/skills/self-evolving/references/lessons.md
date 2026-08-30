@@ -454,3 +454,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当验收器/devloop_accept 等待窗口短于长门禁（make check 全量 -race）时长,修复是把门禁放后台跑、rc/log 按 `git rev-parse --short HEAD` 落盘,验收命令只对当前 HEAD 断言 rc=0;HEAD 一动旧结果自动失效,不吃陈旧绿（2026-08-30 上线审计）。
 - 当子代理要写主仓库工作区外的路径,先由主会话把 worktree 建在工作区内（`<repo>/.worktrees/<name>` + .git/info/exclude）再派发;子代理会话审批禁用,sandbox_permissions 对其不可用,成品可落 /tmp 由主会话 cp+commit（2026-08-30）。
 - 当 pnpm 报 ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY,用 CI=true 重跑（非交互环境允许 purge modules）;且 wrapper 退出码 0 ≠ 门禁本体过,必须读真实 rc（2026-08-30 T2 假红）。
+- 当合成客户（负数段 ID,无 customers 主档）走任何旅程,默认它要连过 N 道独立校验闸（uploader_id<=0 / 路径参数<=0 / 主档 LEFT JOIN 查无行）,修掉一道闸下一道才显形——必须全链路复现到终点再宣布修复完成（2026-08-30 实名三道闸:50000→40400→42200 串行显形）。
+- 当 curl 复现接口先 grep handler 的 req struct 对齐 JSON 形状,不要凭端上代码或直觉猜字段名（门户登录 mode/smsCode ≠ 猜的 method/code,同会话浪费 3 轮还撞短信冷却）。
+- 当轮询 healthz 等 deploy,commit 字段是 7 位短 sha,必须前缀比对而非全等（拿 8 位比对永不命中,白等一个轮询周期）。
+- 当对 jsonb 列做 LIKE 模糊匹配,先 `payload::text` 转型,否则 operator does not exist 且整事务回滚（清理脚本半途而废,须重跑）。
