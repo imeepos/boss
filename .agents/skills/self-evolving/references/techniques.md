@@ -608,3 +608,13 @@ SQL
 
 场景 → worktree 协议要求目录在仓库外,但子代理沙箱 scope=主仓库目录且审批禁用,写不出去;`git worktree add` 会留下「分支已建/工作树缺失」半完成态。
 做法 → 主会话先在工作区内建 worktree（`git worktree add .worktrees/<name> <branch>`,目录 info/exclude 排除）,再派发/续话给子代理并给出绝对路径;子代理大文件成品可写 /tmp,主会话 shasum 校验后 cp 进 worktree commit。
+
+## 沙箱会话内 Go 编译与 worktree 形态（2026-08-30）
+
+场景 → 会话沙箱只放行工作区内写入;go 默认缓存(`~/Library/Caches/go-build`、`~/go/pkg/mod`)全在工作区外,`go build` 报 operation not permitted;worktree 协议要求仓库外兄弟目录同样写不出。
+做法 → ① `export GOCACHE=<工作区内已排除目录>/$USER-cache` 再编译(模块只读缓存可复用,stat cache 写失败提示非致命);② worktree 建仓库内注册形态 `git worktree add .wt/<name> -b <branch>` + `.git/info/exclude` 加 `.wt/`,commit 输出方括号确认分支名,收尾 `git worktree remove` + `git branch -d` 即净;worktree add 半完成态(分支在目录无)先 `git branch -D` 再重试。铁律:嵌套 worktree 必须是 git 注册的(有 .git 文件),手建同名目录再 cd 进去 commit 会静默落主树。
+
+## 常驻服务落地 102 的端口与验证纪律（2026-08-30）
+
+场景 → 102 是多会话共享机,18081/18082/18083 这类「顺延端口号」会在你 ss 检查和起服务之间被并行会话抢走;systemd 服务部分子监听失败时整体仍 active,假绿。
+做法 → 选端口前 `ss -ltn` 全量列出已监听端口挑真空闲的(不要从被占端口顺延);服务启动后 journalctl -u <name> 必须逐行确认每个监听成功、curl 打通每个端口;telnet 类服务用 `/dev/tcp` 或真实客户端走一遍完整协议(login→命令→应答)。镜像化服务先查部署形态(compose 服务表/Dockerfile BINARIES/CI workflow),「二进制在镜像里但 compose 没这个服务」= 功能从未上线。

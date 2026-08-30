@@ -1473,3 +1473,8 @@
 - 哪个坑最浪费时间：① 复现脚本两次猜错请求形状——门户登录 body 是 `{phone,mode,smsCode}` 不是 `{phone,method,code}`（admin 侧又另是一套），对着 curl 瞎试浪费 3+ 轮还撞 60s 短信冷却；先 grep handler 的 req struct 再 curl。② 第二轮部署轮询把 healthz 的 7 位短 sha（`2ffa9ad`）与全 8 位提交号比对，全等永不中，白等 10 分钟才发现已上线——healthz commit 永远按前缀比。③ portal_messages.payload 是 jsonb，LIKE 直接报 operator does not exist，事务回滚整个清理脚本白跑——jsonb 模糊匹配必须 `payload::text LIKE`。
 - skill 有没有提前警告：known-issues #合成客户 负数 id 已有条目（充值 FK 场景），但没警告它是「横切隐患」——本轮实证同一个负数 ID 要连过三道独立闸：① `attachment.Service.Upload` 的 `UploaderID<=0` → 50000；② `guardRealNameIdentity` 查无主档 ErrNoRows → 40400（用户报的原句「资源不存在」）；③ `ParsePathParamInt64` 的 `v<=0` → 42200。修掉前一道闸后一道才显形，串行复现才能全部抓出来。
 - 重来一次会怎么做：凡是涉及合成客户旅程的修复，写完先全链路跑一遍（注册→上传→提交→审核→回读）再宣布完成——本轮第一次验收 PASS 步骤仍 42200，当场抓出第三道闸；验证脚本一律自带冷却重试循环（本轮做对了）+ 造数清理 SQL 收尾（jsonb 修正后全零确认 + 巡检门禁）。
+
+## 2026-08-30 环节7 offer_id≡template_id 错配修复轮（含 102 provisioner 首次常驻落地）
+- 哪个坑最浪费时间：① 本机沙箱写不了仓库外目录，`git worktree add ../name` 炸出「分支已建/目录缺失」半完成态——重试前必须先 `git branch -D`，否则 `already exists` 连环堵（本轮踩中一次）。② 102 端口占用是动态的：ss 查时 18082 空闲、起服务时已被并行会话抢走，journal `bind: address already in use` 而 systemctl 仍显示 active（telnet 子服务活着掩盖 http 失败）——起监听服务后必须 journalctl + curl 双确认。③ seed 模板撞 code 全局唯一：给法人 6 补 seed 用同 code 被 ON CONFLICT 静默吞掉（INSERT 0），换成带实体前缀的 code 才进。
+- skill 有没有提前警告：无沙箱/GOCACHE 相关条目。本轮新增两条高价值事实：go 构建缓存 `~/Library/Caches/go-build` 与 `~/go/pkg/mod` 在工作区外，会话内编译必须 `export GOCACHE=<工作区内路径>`（stat cache 写失败非致命可忽略）；`git worktree add` 注册的仓库内嵌套目录（`.wt/<name>` + info/exclude）commit 会正确落分支，是沙箱环境下的合法 worktree 形态，收尾 remove + branch -d 即净。
+- 重来一次会怎么做：先 SQL 实证再动数据（本轮孤儿任务先验 created_at 3 天前 + 订单确删 + 无在途写入三点才 DELETE）；验收脚本是最好的 E2E 车（mainchain-acceptance 自带造数/断言/清理/巡检，不要手搓全流程）；改运行时行为前先看它的部署形态（compose/BINARIES/CI workflow），否则代码修完发现根本没部署载体（provisioner 二进制在镜像里睡了三周）。
