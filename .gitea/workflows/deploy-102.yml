@@ -87,6 +87,7 @@ jobs:
           docker build \
             -f deployments/docker/server.Dockerfile \
             --build-arg BOSS_LICENSE_PUBLIC_KEY_HEX="$BOSS_LICENSE_PUBLIC_KEY_HEX" \
+            --build-arg GIT_SHA="${GITHUB_SHA}" \
             -t 192.168.0.102:5000/boss/server:${GITHUB_SHA} \
             -t 192.168.0.102:5000/boss/server:latest .
 

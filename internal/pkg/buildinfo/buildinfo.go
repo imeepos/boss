@@ -10,3 +10,11 @@ package buildinfo
 //
 //	go build -ldflags "-X github.com/ymm-001/boss/internal/pkg/buildinfo.LicensePublicKeyHex=<hex>" ./cmd/server
 var LicensePublicKeyHex string
+
+// Commit 部署 commit(完整 SHA 或短 SHA)。容器化构建上下文无 .git,
+// debug.ReadBuildInfo 的 vcs.revision 拿不到值,必须经流水线
+// --build-arg GIT_SHA + ldflags 注入;/healthz 以此自报版本,verify-deploy.sh
+// 机器复验"上没上线"。注入:
+//
+//	go build -ldflags "-X github.com/ymm-001/boss/internal/pkg/buildinfo.Commit=<sha>"
+var Commit string

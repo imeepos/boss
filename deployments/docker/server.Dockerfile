@@ -6,6 +6,9 @@ COPY go.mod go.sum* ./
 RUN go mod download || true
 COPY . .
 ARG BINARIES="server collector provisioner report aaa"
+# 部署 commit(流水线传 GITHUB_SHA):容器上下文无 .git,vcs 戳拿不到,
+# 经 ldflags 注入 buildinfo.Commit,/healthz 自报 + verify-deploy.sh 复验用。
+ARG GIT_SHA=""
 # 授权公钥(B 档强制门禁):仅 server 注入;空=开发态(门禁不启用,打 ALERT 日志)。
 # 生产 CI 必须传 BOSS_LICENSE_PUBLIC_KEY_HEX;空公钥镜像须显式传
 # ALLOW_DEV_LICENSE=1 声明开发态,否则构建即失败(0010 事故 fail-fast)。
@@ -20,6 +23,9 @@ RUN set -e; if [ -z "$BOSS_LICENSE_PUBLIC_KEY_HEX" ] && [ "$ALLOW_DEV_LICENSE" !
 RUN go run ./scripts/genrouteperms --check
 RUN set -e; for b in ${BINARIES}; do \
     LDFLAGS="-s -w"; \
+    if [ -n "$GIT_SHA" ]; then \
+      LDFLAGS="$LDFLAGS -X github.com/ymm-001/boss/internal/pkg/buildinfo.Commit=$GIT_SHA"; \
+    fi; \
     if [ "$b" = "server" ] && [ -n "$BOSS_LICENSE_PUBLIC_KEY_HEX" ]; then \
       LDFLAGS="$LDFLAGS -X github.com/ymm-001/boss/internal/pkg/buildinfo.LicensePublicKeyHex=$BOSS_LICENSE_PUBLIC_KEY_HEX"; \
     fi; \

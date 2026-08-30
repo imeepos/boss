@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/ymm-001/boss/internal/pkg/buildinfo"
 )
 
 func TestHealthzReportsCommit(t *testing.T) {
@@ -28,5 +30,20 @@ func TestHealthzReportsCommit(t *testing.T) {
 	}
 	if body["status"] != "ok" {
 		t.Fatalf("healthz status=%v", body["status"])
+	}
+}
+
+// 容器构建上下文无 .git,流水线经 ldflags 注入 buildinfo.Commit,
+// 必须优先于 buildvcs(其缺省缺值),并截短到 7 位。
+func TestBuildCommitLdflagsPriority(t *testing.T) {
+	old := buildinfo.Commit
+	defer func() { buildinfo.Commit = old }()
+	buildinfo.Commit = "856513e8deadbeefdeadbeefdeadbeefdeadbeef"
+	if got := buildCommit(); got != "856513e" {
+		t.Fatalf("buildCommit=%q, want 856513e", got)
+	}
+	buildinfo.Commit = "   "
+	if got := buildCommit(); got == "" {
+		t.Fatal("空白注入应回退而非产出空串")
 	}
 }

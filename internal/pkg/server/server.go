@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/ymm-001/boss/internal/pkg/buildinfo"
 	"github.com/ymm-001/boss/internal/pkg/middleware"
 )
 
@@ -39,9 +40,13 @@ func New(cfg Config) *gin.Engine {
 	return r
 }
 
-// buildCommit 取编译期 VCS 版本(go build 在 git 树内 -buildvcs=auto 默认注入);
-// 取不到(测试二进制/缓存构建)回退 dev——字段恒存在,消费方无需判空。
+// buildCommit 部署 commit 取值优先级:流水线 ldflags 注入(buildinfo.Commit,
+// 容器构建上下文无 .git,vcs 打不进戳)→ 本地 git 树 buildvcs → dev。
+// 恒非空,消费方无需判空。
 func buildCommit() string {
+	if c := strings.TrimSpace(buildinfo.Commit); c != "" {
+		return shortSha(c)
+	}
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return "dev"
@@ -55,10 +60,14 @@ func buildCommit() string {
 	if rev == "" {
 		return "dev"
 	}
+	return shortSha(rev)
+}
+
+func shortSha(rev string) string {
 	if len(rev) > 7 {
 		rev = rev[:7]
 	}
-	return strings.TrimSpace(rev)
+	return rev
 }
 
 func cors(_ []string) gin.HandlerFunc {
