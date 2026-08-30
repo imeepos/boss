@@ -32,9 +32,9 @@ func newAdvanceMock(t *testing.T) pgxmock.PgxPoolIface {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mock.ExpectQuery(`SELECT customer_id FROM orders`).
+	mock.ExpectQuery(`SELECT customer_id, legal_entity_id FROM orders`).
 		WithArgs(int64(7)).
-		WillReturnRows(mock.NewRows([]string{"customer_id"}).AddRow(int64(1)))
+		WillReturnRows(mock.NewRows([]string{"customer_id", "legal_entity_id"}).AddRow(int64(1), int64(1)))
 	mock.ExpectBegin() // advance 事务:计数器+环节日志原子落库
 	mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
 		WithArgs(int64(7)).

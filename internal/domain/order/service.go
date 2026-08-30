@@ -85,9 +85,18 @@ type LoidAccount struct {
 }
 
 // ProvisionTaskCreator 创建配置下发任务跨域依赖口(环节7)。
-// 由 provision 域提供,幂等创建下发任务。
+// 由 provision 域提供,幂等创建下发任务(同 task_no 复用,FAILED 重置 PENDING)。
 type ProvisionTaskCreator interface {
 	CreateTask(ctx context.Context, t ProvisionTask) (int64, error)
+}
+
+// ProvisionTemplateFinder 环节7 按订单套餐解析下发模板(跨域依赖口,由 provision 域提供)。
+// 修复:此前 PreConfigOLT 直接把 product_offers.id 当 provision_templates.id 传入,
+// 两表 ID 空间重叠时静默错配,新套餐无同号模板行则外键违规卡死环节7。
+type ProvisionTemplateFinder interface {
+	// FindTemplateForOffer 返回套餐应套用的模板 ID:
+	// 优先按套餐带宽匹配同法人 ENABLED 模板(content->>'bandwidth'),无命中回退法人默认模板。
+	FindTemplateForOffer(ctx context.Context, offerID, legalEntityID int64) (int64, error)
 }
 
 // ProvisionTask 下发任务请求(order 域定义,由 app 装配层映射到 provision.Task)。
@@ -98,12 +107,6 @@ type ProvisionTask struct {
 	LoAccountID int64
 	TemplateID  int64
 	Status      string
-}
-
-// ProvisionTaskTemplate 配置模板查询(环节7 按订单产品找模板)。
-type ProvisionTaskTemplate struct {
-	ID   int64
-	Code string
 }
 
 // OrderService 订单域服务口(阶段5)。

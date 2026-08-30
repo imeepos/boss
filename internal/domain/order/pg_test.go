@@ -18,21 +18,33 @@ func (s stubExists) Exists(context.Context, int64) (bool, error) { return s.ok, 
 // stubProfileCreator 桩 UserProfileCreator。
 type stubProfileCreator struct {
 	UserProfileCreator
-	err error
+	err   error
+	offer int64 // GetLoAccountByCustomer 返回的 OfferID(环节7 模板解析用)
 }
 
 func (s *stubProfileCreator) GetLoAccountByCustomer(context.Context, int64) (*LoidAccount, error) {
-	return &LoidAccount{ID: 88, Loid: "LOID-TEST"}, s.err
+	return &LoidAccount{ID: 88, Loid: "LOID-TEST", OfferID: s.offer}, s.err
 }
 func (s *stubProfileCreator) CreateLoAccount(context.Context, LoidReq) (int64, error) { return 1, nil }
 
-// stubProvCreator 桩 ProvisionTaskCreator。
+// stubProvCreator 桩 ProvisionTaskCreator + ProvisionTemplateFinder(环节7 双口)。
 type stubProvCreator struct {
 	ProvisionTaskCreator
-	err error
+	err      error
+	tplID    int64         // FindTemplateForOffer 返回值
+	resolved [2]int64      // FindTemplateForOffer 收到的 (offerID, legalEntityID)
+	created  ProvisionTask // CreateTask 收到的任务
 }
 
-func (s *stubProvCreator) CreateTask(context.Context, ProvisionTask) (int64, error) { return 1, s.err }
+func (s *stubProvCreator) CreateTask(_ context.Context, t ProvisionTask) (int64, error) {
+	s.created = t
+	return 1, s.err
+}
+
+func (s *stubProvCreator) FindTemplateForOffer(_ context.Context, offerID, legalEntityID int64) (int64, error) {
+	s.resolved = [2]int64{offerID, legalEntityID}
+	return s.tplID, s.err
+}
 
 var ts = time.Date(2025, 8, 17, 10, 0, 0, 0, time.UTC)
 

@@ -96,6 +96,9 @@ func TestPGStore_CreateTask(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectQuery(`SELECT id, status FROM provision_tasks WHERE task_no = \$1`).
+		WithArgs("TASK-20260817-01").
+		WillReturnError(pgx.ErrNoRows)
 	mock.ExpectQuery(`INSERT INTO provision_tasks`).
 		WithArgs("TASK-20260817-01", int64(9), "preConfigOLT", int64(88), int64(1), "PENDING").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
@@ -114,6 +117,80 @@ func TestPGStore_CreateTask(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
 	}
+}
+
+// TestPGStore_CreateTaskIdempotent 回归:同 task_no 重入(环节7回退重推进)不再撞唯一索引,
+// FAILED 任务重置 PENDING 留 RETRY 痕,PENDING/DONE 原样复用。
+func TestPGStore_CreateTaskIdempotent(t *testing.T) {
+	newMock := func(t *testing.T) pgxmock.PgxPoolIface {
+		t.Helper()
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return mock
+	}
+	req := Task{TaskNo: "PRV-O7", OrderID: 7, StageEvent: "preConfigOLT", LoAccountID: 88, TemplateID: 16, Status: "PENDING"}
+
+	t.Run("已存在PENDING:复用不重复建", func(t *testing.T) {
+		mock := newMock(t)
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id, status FROM provision_tasks WHERE task_no = \$1`).
+			WithArgs("PRV-O7").
+			WillReturnRows(mock.NewRows([]string{"id", "status"}).AddRow(int64(5), "PENDING"))
+
+		s := NewPGStore(mock)
+		id, err := s.CreateTask(context.Background(), req)
+		if err != nil || id != 5 {
+			t.Fatalf("id=%d err=%v, want 5/nil", id, err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("已存在FAILED:重置PENDING留RETRY痕", func(t *testing.T) {
+		mock := newMock(t)
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id, status FROM provision_tasks WHERE task_no = \$1`).
+			WithArgs("PRV-O7").
+			WillReturnRows(mock.NewRows([]string{"id", "status"}).AddRow(int64(5), "FAILED"))
+		mock.ExpectExec(`UPDATE provision_tasks SET status = \$2 WHERE id = \$1 AND status = ANY`).
+			WithArgs(int64(5), "PENDING", []string{"FAILED"}).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectQuery(`INSERT INTO provision_logs`).
+			WithArgs(int64(5), int64(0), "", int64(0), "", "RETRY", int16(1)).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
+
+		s := NewPGStore(mock)
+		id, err := s.CreateTask(context.Background(), req)
+		if err != nil || id != 5 {
+			t.Fatalf("id=%d err=%v, want 5/nil", id, err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("不存在:正常新建", func(t *testing.T) {
+		mock := newMock(t)
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id, status FROM provision_tasks WHERE task_no = \$1`).
+			WithArgs("PRV-O7").
+			WillReturnError(pgx.ErrNoRows)
+		mock.ExpectQuery(`INSERT INTO provision_tasks`).
+			WithArgs("PRV-O7", int64(7), "preConfigOLT", int64(88), int64(16), "PENDING").
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(6)))
+
+		s := NewPGStore(mock)
+		id, err := s.CreateTask(context.Background(), req)
+		if err != nil || id != 6 {
+			t.Fatalf("id=%d err=%v, want 6/nil", id, err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
 }
 
 func TestPGStore_GetTaskByNo(t *testing.T) {

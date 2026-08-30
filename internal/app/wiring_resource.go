@@ -58,3 +58,8 @@ func (p provisionTaskCreator) CreateTask(ctx context.Context, t order.ProvisionT
 	}
 	return id, nil
 }
+
+// FindTemplateForOffer 同一适配器实现 order.ProvisionTemplateFinder(环节7 模板解析)。
+func (p provisionTaskCreator) FindTemplateForOffer(ctx context.Context, offerID, legalEntityID int64) (int64, error) {
+	return p.svc.FindTemplateForOffer(ctx, offerID, legalEntityID)
+}

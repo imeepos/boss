@@ -117,9 +117,14 @@ func (s *PGStore) ListTasks(ctx context.Context) ([]Task, error) {
 }
 
 // CreateTask 新建下发任务,返回自增 id;task_no 为空时自动生成。
+// 幂等(环节7重推进场景,原实现注释声称幂等但撞 task_no 唯一索引必报错):
+// 同 task_no 已存在时复用既有任务,FAILED 则重置 PENDING 并留 RETRY 痕。
 func (s *PGStore) CreateTask(ctx context.Context, t Task) (int64, error) {
 	if t.TaskNo == "" {
 		t.TaskNo = fmt.Sprintf("TASK-%d", time.Now().UnixNano())
+	}
+	if id, reused, err := s.reuseTask(ctx, t.TaskNo); reused || err != nil {
+		return id, err
 	}
 	var id int64
 	err := s.db.QueryRow(ctx,
@@ -130,6 +135,26 @@ func (s *PGStore) CreateTask(ctx context.Context, t Task) (int64, error) {
 		return 0, fmt.Errorf("provision: create task: %w", err)
 	}
 	return id, nil
+}
+
+// reuseTask 同 task_no 已有任务时的幂等处置:FAILED→PENDING 重试留痕,其余原样复用。
+func (s *PGStore) reuseTask(ctx context.Context, taskNo string) (int64, bool, error) {
+	var id int64
+	var status string
+	err := s.db.QueryRow(ctx,
+		`SELECT id, status FROM provision_tasks WHERE task_no = $1`, taskNo).Scan(&id, &status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("provision: reuse task: %w", err)
+	}
+	if status == "FAILED" {
+		if err := s.RetryTask(ctx, id, 0); err != nil {
+			return 0, false, fmt.Errorf("provision: reuse task retry: %w", err)
+		}
+	}
+	return id, true, nil
 }
 
 // GetTaskByNo 按外部 task_no 寻址;未命中返回 ErrTaskNotFound。

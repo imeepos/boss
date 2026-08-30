@@ -145,42 +145,6 @@ func (s *PGStore) CreateUserProfile(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "createUserProfile")
 }
 
-// PreConfigOLT 环节7 预下发配置:读订单产品找模板,幂等创建 provision 任务。
-func (s *PGStore) PreConfigOLT(ctx context.Context, orderID int64) error {
-	if s.prov == nil {
-		return errors.New("order: provision task creator not wired")
-	}
-	if s.prof == nil {
-		return errors.New("order: user profile creator not wired for provisioning")
-	}
-	var customerID int64
-	err := s.db.QueryRow(ctx, `SELECT customer_id FROM orders WHERE id = $1`, orderID).Scan(&customerID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrOrderNotFound
-		}
-		return fmt.Errorf("order: preConfigOLT select: %w", err)
-	}
-	lo, err := s.prof.GetLoAccountByCustomer(ctx, customerID)
-	if err != nil {
-		return fmt.Errorf("order: preConfigOLT get lo: %w", err)
-	}
-	if lo == nil {
-		return fmt.Errorf("order: preConfigOLT: no lo account for customer %d", customerID)
-	}
-	taskNo := fmt.Sprintf("PRV-O%d", orderID)
-	// 幂等:已存在同 order_id 的任务跳过
-	existing, err := s.prov.CreateTask(ctx, ProvisionTask{
-		TaskNo: taskNo, OrderID: orderID, StageEvent: "preConfigOLT",
-		LoAccountID: lo.ID, TemplateID: lo.OfferID, Status: "PENDING",
-	})
-	if err != nil {
-		return fmt.Errorf("order: preConfigOLT create task: %w", err)
-	}
-	_ = existing
-	return s.advance(ctx, orderID, "preConfigOLT")
-}
-
 // ScanBind 环节9 扫码绑定。
 func (s *PGStore) ScanBind(ctx context.Context, orderID int64) error {
 	return s.advance(ctx, orderID, "scanBind")
