@@ -33,6 +33,7 @@
 ## 渠道与密钥
 
 - Stripe 卡通道:发起建意图/回调验签落账,pay_no 幂等;凭据仅存 biz_params 密文,env 兜底已移除(2026-08-23/2026-09-05, stripe-card-channel, stripe-config-backend-and-worker-charge)
+- method='card' 双语义对账口径:柜面 POS(三要素非空)不进 Stripe 渠道对账范围(2026-09-07, payment-method-card-dual-semantics)
 - 验证码短信:阿里云国际单通道起步,区号路由留国内注入口(2026-08-22, sms-channel-aliyun-intl)
 - 实名二要素:阿里云 Id2MetaVerify 提交即核验,凭据未配保持人工(2026-08-24, realid-channel-aliyun-cloudauth)
 - 开放平台密钥:AppId+Secret HMAC,Secret 原文落库(验签必需)(2026-08-22, open-platform-secret)
