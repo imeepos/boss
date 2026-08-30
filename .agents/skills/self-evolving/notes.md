@@ -1451,3 +1451,10 @@
 - helper 提取器首版翻车:gp 上下文多组变量时 recordMethodCall 任取 map 键当日实测就红——接收者 ident 精确取前缀才对。另:自己两度把测试文件写成残稿就落盘,写文件必须一次写完整。
 - pnpm 在沙箱 worktree 安装要显式 --store-dir <repo>/.cache/pnpm-store,否则试图 mkdir /Volumes/sker EPERM;别把默认 .pnpm-store 清了又用默认路径重装。
 - 假警报的正确处理示范:stripe-recon 首跑 MISMATCH → 查库 + 审计留痕 + 渠道双侧反查 → 定位 method='card' 双语义 → 口径裁定过账 dated note + 脚本判别式修复,三通道全闭环。
+
+## 2026-09-07c 继续修复轮(契约盲区A5-A7/流水线复验步/沙箱CDP限制)
+- A2 首扫 6 条"差异"逐条核实后真相反转三连:geo×2 是扫描器不容引号路径键(方法块误记到父路径)、stripe×2 是提取器不容 for-range 字面量循环注册、products×1 是契约幻影块——「修复前先判真伪」再次值回票价,盲区修机器而非改数据。
+- 删契约块牵出隐藏消费者:openapidoc 聚合器跨端 $ref 幻影路径、路由目录生成器 DRIFT 拦截——契约资产是网状依赖,动一块必须跑全量门禁(单包测试全绿≠全绿)。
+- 沙箱环境级限制定案:CDP over WebSocket 悬挂、over pipe 则 Chrome SIGTRAP,浏览器交互测试在本环境不可行——用「纯函数单测 + 线上特征串断言」替代并如实标注,勿反复撞墙。
+- bash 每次调用是新 shell:export GOCACHE 忘在同命令里,make check 就回退默认缓存路径被沙箱拦(本轮二次踩)。
+- 做得对:verify-deploy 上线两次实测全绿;A2 豁免 6→0 全部闭环;ISSUE/alignment-audit/决策 note 三套台账同步不欠账。
