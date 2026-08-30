@@ -415,3 +415,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 症状 → `make web-admin-check` 报 `[ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY] Aborted removal of modules directory due to no TTY`,失败点在 pnpm install 依赖状态检查,不是代码。
 原因 → modules 目录与 lockfile 不一致触发隐式重装,pnpm 非交互环境拒绝删除 modules 目录,直接 Abort。
 修法 → `CI=true make web-admin-check`（视同 CI 环境允许 purge）。连锁坑:make 的 wrapper 若写成 `cmd > log; echo $? > rc`,外层命令退出码恒 0,判定必须读 rc 文件里门禁本体的退出码。
+
+## pnpm 虚拟存储按包名拆 chunk:取首段包名全并进 np-.pnpm（2026-08-30）
+
+症状 → vite manualChunks 逐包拆分后仍有一个 ~1.1MB 大 chunk `np-.pnpm-*.js`,且 vite 体积榜上看不见它(文件名含点号,提取正则 `[a-zA-Z0-9_-]+` 在点号处截断)。
+原因 → pnpm 路径是 `node_modules/.pnpm/<pkg>@ver/node_modules/<pkg>/...`,对 id 取「第一个 node_modules 段后的包名」命中的是 `.pnpm` 本身,所有包共用一个 chunk 名。
+修法 → `id.split(/\/node_modules\//).pop()` 取最后一个 node_modules 段再提取包名(参照 web/admin/vite.config.ts);测量脚本的正则也要容许文件名点号。
