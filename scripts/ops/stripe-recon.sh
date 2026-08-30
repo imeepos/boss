@@ -96,7 +96,7 @@ if [ -z "${STRIPE_SK:-}" ]; then
   exit 2
 fi
 
-curl -sf -H "Authorization: Bearer $API_KEY" "$BASE_URL/api/admin/v1/payments" -o "$LOCAL_JSON" \
+curl -sf -H "X-API-Key: $API_KEY" "$BASE_URL/api/admin/v1/payments" -o "$LOCAL_JSON" \
   || { echo "[recon] FETCH FAILED 本地 payments 拉取失败 $BASE_URL"; exit 1; }
 curl -sf "https://api.stripe.com/v1/payment_intents?limit=100" -u "$STRIPE_SK:" -o "$STRIPE_JSON" \
   || { echo "[recon] FETCH FAILED Stripe payment_intents 拉取失败(检查 STRIPE_SK/网络)"; exit 1; }
