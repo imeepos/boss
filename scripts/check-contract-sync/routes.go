@@ -46,6 +46,8 @@ func extractRoutes(root string) (routeSets, error) {
 				}
 			}
 		}
+		// 增量:helper 经变量注册路由的形态(udList 类),见 helper_routes.go。
+		evalHelperRoutes(declIndexFromPkgs(pkgs), facePaths, faceMethoded)
 		rs.paths[face] = facePaths
 		rs.methoded[face] = faceMethoded
 	}
