@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
+	"strings"
 	"syscall"
 	"time"
 
@@ -25,14 +27,38 @@ type Config struct {
 
 // New 构建一个具备健康检查与 recover 的 gin engine。
 // 健康检查端点 /healthz 供 K8s liveness/readiness 探活;业务路由由 app 层在此 engine 上注册。
+// /healthz 同时自报 buildCommit:部署后「上没上线」由机器核验(verify-deploy.sh),
+// 不再靠人工 curl bundle 指纹猜(2026-08-29 deploy 空转误判事故的根治项)。
 func New(cfg Config) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.TraceID(), middleware.AccessLog(), PrometheusMiddleware(), cors(cfg.CORSOrigins))
 	r.GET("/healthz", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "commit": buildCommit()})
 	})
 	registerMetrics(r)
 	return r
+}
+
+// buildCommit 取编译期 VCS 版本(go build 在 git 树内 -buildvcs=auto 默认注入);
+// 取不到(测试二进制/缓存构建)回退 dev——字段恒存在,消费方无需判空。
+func buildCommit() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "dev"
+	}
+	rev := ""
+	for _, s := range info.Settings {
+		if s.Key == "vcs.revision" {
+			rev = s.Value
+		}
+	}
+	if rev == "" {
+		return "dev"
+	}
+	if len(rev) > 7 {
+		rev = rev[:7]
+	}
+	return strings.TrimSpace(rev)
 }
 
 func cors(_ []string) gin.HandlerFunc {
