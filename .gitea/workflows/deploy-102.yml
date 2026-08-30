@@ -141,6 +141,14 @@ jobs:
           done
           echo "admin-web failed"; docker logs boss-admin-web --tail 20; exit 1
 
+      # 版本自证复验(2026-09-07):部署尾部机器核验「上没上线」——服务端 healthz
+      # 自报 commit(容器构建经 GIT_SHA ldflags 注入)+ admin-web bundle 指纹,
+      # 任一不过即红,替代人工 curl 指纹猜(ISSUE.md 复验口诀的流水线化,
+      # 2026-08-29 空提交重触发误判事故的根治项之一)。
+      - name: Verify deployment fingerprint
+        if: steps.change.outputs.runtime == 'true'
+        run: bash scripts/ops/verify-deploy.sh --expect-sha "${GITHUB_SHA}"
+
       # 孤儿巡检门禁(2026-08-29):部署后打 /db-patrol/orphans,任一软引用孤儿类 >0
       # 即失败,拦截 E2E 造数泄漏随部署进入 102(2026-08-25 审计 §五.2;脚本自带解析)。
       - name: Patrol orphans gate
