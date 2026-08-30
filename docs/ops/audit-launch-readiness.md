@@ -54,3 +54,15 @@
 - 场景审计脚本：`scripts/audit-admin-core-scenarios.sh`（60f59439 并入）
 - DS 修复提交：`e7f59890`（rebase 后主线 sha 3701e0b9）
 - 账本：`.devloop/loop-state.json`（五任务全 done，验收命令可随时重放）
+
+## 7. 收尾轮（2026-08-30 同日续，消化非阻断项 + 部署复核）
+
+最终 HEAD `83b9ad4a`，七项证据全绿：
+
+- **T6 · 102 部署复核（rc=0）**：server healthz 与 admin-web 5180 双 200；部署镜像 tag=`e3e4f2e0`（出处链完整：CI 按推送 sha 构建，含首轮 DS 修复 `3701e0b9`）；RBAC 复验 PASS=17 FAIL=0。方法论勘误：资产哈希清单比对因 `VITE_BUILD_COMMIT` 注入构建 sha 两端必异，属无效证据，已改用镜像 tag 出处链验证（见 `.devloop/gates/T6-e3e4f2e0.log` v2 段）。
+- **T7 · DS 残留消化（rc=0）**：3 页真实迁移——ReviewBadge→ui Badge warning 变体；MarkdownEditor 工具栏 8 钮→ui Button outline+sm、编辑框→ui Textarea；TeamDialogs 手写 inputCls/primaryBtn/plainBtn 常量整体退役→ui Input/Button（解散确认走 destructive）。采用率 **28/29=97%**（below=0）。`3bcc1894`。
+- **T8 · 大 chunk 分割（rc=0）**：manualChunks 扩展——ol/pmtiles→vendor-map、recharts+d3 系→vendor-charts、swagger-ui-react/xlsx 独立、其余三方按「最后一个 node_modules 段」逐包成 chunk（pnpm `.pnpm` 虚拟存储首段陷阱已注释）。业务主包 **1290→422KB**，最大单 chunk **422KB<1MB**（432241B 断言过），340 chunks 缓存粒度到包级。`83b9ad4a`。
+- **最终 HEAD 全量复绿**：T1 `make check` rc=0（-race 全量）；T2 web 门禁 rc=0；T3 场景齐全性 59/59 PASS；T4 RBAC PASS=17 FAIL=0。
+- **残余风险**：①逐包拆分后的浏览器运行时加载行为未实测（本环境 CDP 受限），本次推送将再触发 102 部署，建议人工过一遍核心页面；②AddressChainParts 保持自绘微型 chips/面包屑（DS 无同密度组件，强套 Button 撑破布局，诚实跳过）；③TeamDialogs 的 PerfPanel 仍用原生 table（语义等价未强迁）。
+
+**结论维持：放行。** F-1/F-4 两个非阻断项已消化闭环，唯一开放项为残余风险①的人工过页建议。
