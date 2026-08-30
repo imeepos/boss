@@ -1,0 +1,12 @@
+# session-handoff 插件行清单：dsh plugin add 后自动 join layer stack。
+# 行 config 是默认值；部署可在上层 patch 覆盖（patch 整行替换 config，不合并）。
+- insert:
+    - id: session-handoff
+      name: '@ymm/dsh-session-handoff'
+      config:
+        outputDir: .handoff
+        fileName: LATEST.md
+        minIntervalMs: 30000
+        mainBranch: main
+        remote: gitea
+        autoExclude: true
