@@ -263,6 +263,8 @@ UPDATE verifications
 
 // guardRealNameIdentity PASS 一致性门禁:待核验单 id_card_no 对照 customers 主档。
 // 主档 id_no 为空(新客补登)→ 回填 id_no/real_name_status 前置数据;非空不一致 → ErrRealNameMismatch。
+// 查无主档(合成客户,负数段隔离空间)→ 无门禁可施,直接放行:PASS 只落 verifications,
+// 后续 customers 状态同步为 0 行 no-op,用户端以最新核验单回显结论(profile_handlers 合成客户回退)。
 func (s *PGStore) guardRealNameIdentity(ctx context.Context, customerID int64) error {
 	var pendingIDNo, masterIDNo string
 	err := s.db.QueryRow(ctx, `
@@ -274,7 +276,7 @@ SELECT (SELECT v.id_card_no FROM verifications v
  WHERE c.id = $1`, customerID, RealNamePending).Scan(&pendingIDNo, &masterIDNo)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrCustomerNotFound
+			return nil
 		}
 		return fmt.Errorf("customer: verify identity guard: %w", err)
 	}

@@ -87,6 +87,25 @@ func TestUploadRejectsInvalidUploader(t *testing.T) {
 	}
 }
 
+// 合成客户(负数段隔离空间 ID)上传证件照:修复前 UploaderID<=0 一刀切拒绝 →
+// App 实名上传 50000 内部错误;现仅拒 0,负数合法。
+func TestUploadSyntheticCustomerID(t *testing.T) {
+	svc := &Service{St: &fakeStore{}, Obj: &fakeObj{key: "k"}, Conf: MinIOConfig{Bucket: "b"}}
+	at, err := svc.Upload(context.Background(), &Attachment{
+		FileName: "id_front.png", ContentType: "image/png",
+		UploaderType: UploaderCustomer, UploaderID: -9,
+	}, strings.NewReader("x"), 1)
+	if err != nil {
+		t.Fatalf("synthetic customer upload: %v", err)
+	}
+	if at.UploaderID != -9 {
+		t.Fatalf("uploader id not echoed: %+v", at)
+	}
+	if st := svc.St.(*fakeStore).saved; st.UploaderID != -9 {
+		t.Fatalf("uploader id not recorded: %+v", st)
+	}
+}
+
 func TestValidUploaderType(t *testing.T) {
 	for _, ok := range []string{"account", "worker", "customer"} {
 		if !ValidUploaderType(ok) {

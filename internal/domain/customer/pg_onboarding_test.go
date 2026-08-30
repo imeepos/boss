@@ -115,20 +115,29 @@ func TestPGStore_Verify_PassSyncsStatus(t *testing.T) {
 	}
 }
 
-func TestPGStore_Verify_MissingCustomerReturnsNotFound(t *testing.T) {
+// 合成客户(负数段隔离空间,无 customers 主档)PASS:门禁放行,verifications 落 PASS,
+// customers 状态同步 0 行 no-op——修复前 guard ErrNoRows → 40400 资源不存在,审核中心无法通过。
+func TestPGStore_Verify_SyntheticCustomerPasses(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer mock.Close()
 
+	// 门禁查询:customers 无主档行 → ErrNoRows → 放行。
 	mock.ExpectQuery(`SELECT \(SELECT v.id_card_no FROM verifications v`).
-		WithArgs(int64(999), RealNamePending).
+		WithArgs(int64(-9), RealNamePending).
 		WillReturnError(pgx.ErrNoRows)
+	mock.ExpectExec(`UPDATE verifications SET result=\$1, reject_reason=\$2, operator_account_id=\$3, operator_name=\$4, verified_at=now\(\) WHERE subject_type='customer' AND subject_id=\$5 AND result=\$6`).
+		WithArgs(RealNamePass, "", int64(1000), "admin", int64(-9), RealNamePending).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	// customers 同步:合成客户无主档,0 行受影响(无害 no-op)。
+	mock.ExpectExec(`UPDATE customers SET real_name_status='VERIFIED' WHERE id=\$1`).
+		WithArgs(int64(-9)).WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
 	s := NewPGStore(mock)
-	if err := s.Verify(context.Background(), 999, RealNamePass, "", "admin", 1000); !errors.Is(err, ErrCustomerNotFound) {
-		t.Fatalf("Verify: err=%v, want ErrCustomerNotFound", err)
+	if err := s.Verify(context.Background(), -9, RealNamePass, "", "admin", 1000); err != nil {
+		t.Fatalf("Verify synthetic: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)

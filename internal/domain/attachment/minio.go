@@ -117,8 +117,9 @@ type Service struct {
 }
 
 // Upload 上传并登记;at 需已填 UploaderType/UploaderID。
+// UploaderID 仅拒绝 0:合成客户为负数段 ID(隔离空间,portal.syntheticID),同样是合法上传者。
 func (s *Service) Upload(ctx context.Context, at *Attachment, reader io.Reader, size int64) (*Attachment, error) {
-	if !ValidUploaderType(at.UploaderType) || at.UploaderID <= 0 {
+	if !ValidUploaderType(at.UploaderType) || at.UploaderID == 0 {
 		return nil, ErrInvalidUploader
 	}
 	cfg := s.Conf
