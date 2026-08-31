@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
-	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -33,9 +32,20 @@ func hallItemsForWorker(c *gin.Context, a *app.Application, workerRegionID int64
 		respondErr(c, err)
 		return false
 	}
-	inRegion := make(map[string]bool, len(tickets))
+	ids := make([]int64, 0, len(tickets))
+	regionByNo := make(map[string]int64, len(tickets)) // TicketItem 无 region 列,经 ListDispatchTickets 对齐
+	seen := make(map[int64]bool, len(tickets))
 	for _, t := range tickets {
-		inRegion[t.TicketNo] = worker.RegionMatched(workerRegionID, t.RegionID)
+		regionByNo[t.TicketNo] = t.RegionID
+		if !seen[t.RegionID] {
+			seen[t.RegionID] = true
+			ids = append(ids, t.RegionID)
+		}
+	}
+	matched, err := a.Worker.MatchedRegionIDs(c.Request.Context(), workerRegionID, ids)
+	if err != nil {
+		respondErr(c, err)
+		return false
 	}
 	list, err := a.WorkOrder.ListTicketItems(c.Request.Context())
 	if err != nil {
@@ -44,7 +54,7 @@ func hallItemsForWorker(c *gin.Context, a *app.Application, workerRegionID int64
 	}
 	items := make([]gin.H, 0)
 	for _, it := range list {
-		if it.WorkerID == 0 && it.Status == "PENDING" && inRegion[it.TicketNo] {
+		if it.WorkerID == 0 && it.Status == "PENDING" && matched[regionByNo[it.TicketNo]] {
 			items = append(items, portalTicketOf(it, 0))
 		}
 	}

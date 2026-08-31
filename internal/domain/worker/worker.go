@@ -39,15 +39,6 @@ type Worker struct {
 	LeftAt   *time.Time `json:"leftAt,omitempty"` // nil=在职
 }
 
-// RegionMatched 师傅与工单区域是否匹配:任一方区域缺失(0=无区域)视为匹配
-// (未设区域=不限区域);双方均非空且不同才算跨区。
-func RegionMatched(workerRegionID, ticketRegionID int64) bool {
-	if workerRegionID == 0 || ticketRegionID == 0 {
-		return true
-	}
-	return workerRegionID == ticketRegionID
-}
-
 // WorkerService 师傅域服务口(阶段2):班组/师傅。
 type WorkerService interface {
 	ListGroups(ctx context.Context) ([]Group, error)
@@ -56,6 +47,11 @@ type WorkerService interface {
 	ListWorkers(ctx context.Context, groupID int64, keyword string) ([]Worker, error)
 	CreateWorker(ctx context.Context, w Worker) (int64, error)
 	GetWorker(ctx context.Context, id int64) (*Worker, error)
+	// MatchedRegionIDs 区域子树匹配(祖先或自身):工单区域须落在师傅负责区域
+	// 子树内(ltree path <@),对齐 H3 式"粗区域先行"分层派单口径;
+	// 师傅区域 0=不限区域全放行,工单区域 0=无区域放行(历史口径)。
+	// 返回映射只含判定为 true 的工单区域 id。
+	MatchedRegionIDs(ctx context.Context, workerRegionID int64, ticketRegionIDs []int64) (map[int64]bool, error)
 	// CreateWorkerWithPassword 新建师傅并写入登录密码(admin 录入);password 为空=不可密码登录。
 	CreateWorkerWithPassword(ctx context.Context, w Worker, password string) (int64, error)
 	// SetPassword 重置师傅登录密码(bcrypt 落库);长度 < PasswordMin 返回 ErrInvalidPassword。

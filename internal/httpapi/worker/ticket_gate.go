@@ -18,7 +18,7 @@ import (
 const portalTicketType = "INSTALL"
 
 // workerMayAccept 接单/抢单资格闸门:未通过时已写响应并返回 false。
-// radiusKm 需工单坐标,当前工单无经纬度,暂不参与校验(仅展示)。
+// radiusKm 闸门见 radiusGate(工单坐标快照 000174 起可校验)。
 func workerMayAccept(c *gin.Context, a *app.Application, workerID int64, tk *order.DispatchTicket) bool {
 	w, err := a.Worker.GetWorker(c.Request.Context(), workerID)
 	if err != nil {
@@ -29,11 +29,25 @@ func workerMayAccept(c *gin.Context, a *app.Application, workerID int64, tk *ord
 		respond(c, apitypes.CodeForbidden, gin.H{"error": "worker not active"})
 		return false
 	}
-	if !worker.RegionMatched(w.RegionID, tk.RegionID) {
-		respond(c, apitypes.CodeForbidden, gin.H{"error": "ticket not in worker region"})
+	if !regionGateOK(c, a, w.RegionID, tk) {
 		return false
 	}
 	return workerSettingsAllow(c, a, workerID)
+}
+
+// regionGateOK 区域子树闸门(祖先或自身):工单区域须落在师傅区域子树内;
+// 查询失败按拒绝处理并留错误响应(资格判定不允许静默放行)。
+func regionGateOK(c *gin.Context, a *app.Application, workerRegionID int64, tk *order.DispatchTicket) bool {
+	matched, err := a.Worker.MatchedRegionIDs(c.Request.Context(), workerRegionID, []int64{tk.RegionID})
+	if err != nil {
+		respondErr(c, err)
+		return false
+	}
+	if !matched[tk.RegionID] {
+		respond(c, apitypes.CodeForbidden, gin.H{"error": "ticket not in worker region"})
+		return false
+	}
+	return true
 }
 
 // workerSettingsAllow 接单设置闸门:停接单/接单类型不符拒绝;
@@ -76,8 +90,7 @@ func workerTransferTargetOK(c *gin.Context, a *app.Application, targetID int64, 
 		respond(c, apitypes.CodeForbidden, gin.H{"error": "target worker not active"})
 		return nil, false
 	}
-	if !worker.RegionMatched(w.RegionID, tk.RegionID) {
-		respond(c, apitypes.CodeForbidden, gin.H{"error": "target worker region mismatch"})
+	if !regionGateOK(c, a, w.RegionID, tk) {
 		return nil, false
 	}
 	return w, true

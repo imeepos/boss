@@ -75,11 +75,24 @@ func assignResolve(c *gin.Context, a *app.Application, ticketNo string, req assi
 		return nil, nil, false
 	}
 	// 跨区指派:默认拒绝并回 40900 提醒,前端二次确认后带 force 强派。
-	if ticket != nil && !worker.RegionMatched(w.RegionID, ticket.RegionID) && !req.Force {
-		respondRegionMismatch(c, ticket, w.RegionID)
+	if ticket != nil && !assignRegionGateOK(c, a, w.RegionID, ticket, req.Force) {
 		return nil, nil, false
 	}
 	return w, ticket, true
+}
+
+// assignRegionGateOK 跨区判定(区域子树祖先或自身);force=调度强派旁路。
+// 子树判定查询失败按跨区提醒处理(可 force 降级),不静默放行。
+func assignRegionGateOK(c *gin.Context, a *app.Application, workerRegionID int64, ticket *order.DispatchTicket, force bool) bool {
+	if force {
+		return true
+	}
+	matched, err := a.Worker.MatchedRegionIDs(c.Request.Context(), workerRegionID, []int64{ticket.RegionID})
+	if err == nil && matched[ticket.RegionID] {
+		return true
+	}
+	respondRegionMismatch(c, ticket, workerRegionID)
+	return false
 }
 
 // respondRegionMismatch 跨区指派/转派的 40900 提醒(forceRequired 前端二次确认)。
@@ -176,8 +189,7 @@ func transferResolve(c *gin.Context, a *app.Application, ticketNo string, req tr
 		return nil, nil, false
 	}
 	// 跨区转派:同指派,默认 40900 提醒,force 确认后放行。
-	if !worker.RegionMatched(to.RegionID, ticket.RegionID) && !req.Force {
-		respondRegionMismatch(c, ticket, to.RegionID)
+	if !assignRegionGateOK(c, a, to.RegionID, ticket, req.Force) {
 		return nil, nil, false
 	}
 	return ticket, to, true

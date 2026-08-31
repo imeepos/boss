@@ -42,6 +42,15 @@ func (f *fakePortalWorkerSvc) GetWorker(_ context.Context, id int64) (*worker.Wo
 		Status: 1, RegionID: f.region}, nil
 }
 
+// MatchedRegionIDs 桩:沿用旧 RegionMatched 精确相等口径,保持既有用例语义。
+func (f *fakePortalWorkerSvc) MatchedRegionIDs(_ context.Context, workerRegionID int64, ticketRegionIDs []int64) (map[int64]bool, error) {
+	out := make(map[int64]bool, len(ticketRegionIDs))
+	for _, id := range ticketRegionIDs {
+		out[id] = workerRegionID == 0 || id == 0 || id == workerRegionID
+	}
+	return out, nil
+}
+
 func (f *fakePortalWorkerSvc) VerifyPassword(context.Context, int64, string) (bool, error) {
 	return f.pwdOK, nil
 }

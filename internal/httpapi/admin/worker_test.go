@@ -58,6 +58,15 @@ func (f *fakeWorkerOps) VerifyPassword(context.Context, int64, string) (bool, er
 func (f *fakeWorkerOps) GetWorker(context.Context, int64) (*worker.Worker, error) {
 	return f.w, nil
 }
+
+// MatchedRegionIDs 桩:全放行(worker 运维用例不覆盖区域子树语义)。
+func (f *fakeWorkerOps) MatchedRegionIDs(_ context.Context, _ int64, ticketRegionIDs []int64) (map[int64]bool, error) {
+	out := make(map[int64]bool, len(ticketRegionIDs))
+	for _, id := range ticketRegionIDs {
+		out[id] = true
+	}
+	return out, nil
+}
 func (f *fakeWorkerOps) ListMemberships(context.Context, int64) ([]worker.Membership, error) {
 	return nil, nil
 }

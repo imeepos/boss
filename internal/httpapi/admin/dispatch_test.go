@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -142,7 +143,10 @@ func (f *fakeOrderLedger) AppendDispatchTransfer(_ context.Context, t order.Disp
 }
 
 // fakeWorkerSvc 桩 worker.WorkerService。
-type fakeWorkerSvc struct{ w *worker.Worker }
+type fakeWorkerSvc struct {
+	w        *worker.Worker
+	mismatch []int64 // MatchedRegionIDs 判 false 的工单区域 id
+}
 
 func (f *fakeWorkerSvc) ListGroups(context.Context) ([]worker.Group, error) { return nil, nil }
 func (f *fakeWorkerSvc) CreateGroup(context.Context, worker.Group) (int64, error) {
@@ -163,6 +167,15 @@ func (f *fakeWorkerSvc) VerifyPassword(context.Context, int64, string) (bool, er
 }
 func (f *fakeWorkerSvc) GetWorker(context.Context, int64) (*worker.Worker, error) {
 	return f.w, nil
+}
+
+// MatchedRegionIDs 桩:默认全放行保持既有用例语义;mismatch 中的工单区域判 false。
+func (f *fakeWorkerSvc) MatchedRegionIDs(_ context.Context, workerRegionID int64, ticketRegionIDs []int64) (map[int64]bool, error) {
+	out := make(map[int64]bool, len(ticketRegionIDs))
+	for _, id := range ticketRegionIDs {
+		out[id] = workerRegionID == 0 || id == 0 || !slices.Contains(f.mismatch, id)
+	}
+	return out, nil
 }
 
 func newDispatchRouter(wo *fakeDispatchOrder, ol *fakeOrderLedger, ws *fakeWorkerSvc, mgr *auth.Manager) *gin.Engine {
@@ -348,7 +361,7 @@ func TestAssignTicketRegionMismatchForce(t *testing.T) {
 	wo := &fakeDispatchOrder{byNo: &order.DispatchTicket{
 		TicketNo: "TK-X", RegionID: 2, RegionName: "南区", Status: "PENDING",
 	}}
-	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1, RegionID: 1}}
+	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 5, Name: "张师傅", Status: 1, RegionID: 1}, mismatch: []int64{2}}
 	r := newDispatchRouter(wo, &fakeOrderLedger{}, ws, mgr)
 
 	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/pool/TK-X/assign",
@@ -377,7 +390,7 @@ func TestTransferTicketRegionMismatchForce(t *testing.T) {
 		TicketID: 3, TicketNo: "TK-X", WorkerID: 5, RegionID: 2, RegionName: "南区", Status: "DOING",
 	}}
 	ol := &fakeOrderLedger{}
-	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅", Status: 1, RegionID: 1}}
+	ws := &fakeWorkerSvc{w: &worker.Worker{ID: 6, Name: "李师傅", Status: 1, RegionID: 1}, mismatch: []int64{2}}
 	r := newDispatchRouter(wo, ol, ws, mgr)
 
 	w := postBodyAuth(t, r, "/api/admin/v1/dispatch/tickets/TK-X/transfer",

@@ -55,6 +55,15 @@ func (f *fakeWorkerSvc) GetWorker(_ context.Context, id int64) (*worker.Worker, 
 	return f.byID[id], nil
 }
 
+// MatchedRegionIDs 桩:全放行(用户端动作用例不覆盖区域语义)。
+func (f *fakeWorkerSvc) MatchedRegionIDs(_ context.Context, _ int64, ticketRegionIDs []int64) (map[int64]bool, error) {
+	out := make(map[int64]bool, len(ticketRegionIDs))
+	for _, id := range ticketRegionIDs {
+		out[id] = true
+	}
+	return out, nil
+}
+
 // billingWithPays 桩 Billing:ListPayments 返回可配置流水。
 type billingWithPays struct {
 	fakeBilling
