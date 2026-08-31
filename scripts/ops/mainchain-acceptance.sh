@@ -13,7 +13,9 @@ KEY="${ADMIN_API_KEY:-$(python3 -c "import json,sys;print(json.load(open('$ROOT/
 CUSTOMER_ID="${CUSTOMER_ID:-214}"   # 已实名客户(test-accounts.json)
 OFFER_ID="${OFFER_ID:-101}"         # PUBLISHED 产品
 CHANNEL_ID="${CHANNEL_ID:-102}"     # HALL 营业厅
-MASTER_ID="${MASTER_ID:-6}"         # 师傅 王测试
+MASTER_ID="${MASTER_ID:-7}"         # 师傅 杨明明(区域1 集团):geo-unify 派单强匹配
+# 工单区域=师傅区域,验收地址不带 region 时工单解析为根区域"集团",师傅须同在区域1
+# (6 号王测试在区域4 马尼拉必 40900 region mismatch);跨区域场景用 MASTER_ID 覆盖。
 
 OK=0; FAIL=0; FAILED_RUNS=()
 
