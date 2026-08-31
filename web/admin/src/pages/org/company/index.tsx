@@ -8,6 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { PageHead, pagerTexts } from '../shared'
 import { filterLegalEntities, pageSlice, type LegalEntityRow } from './filter'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
+import { EntityStaffPanel } from './EntityStaffPanel'
 import { TableStateRow } from '../../../components/business'
 
 export default function CompanyPage() {
@@ -23,6 +24,7 @@ export default function CompanyPage() {
   } | null>(null)
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [staffEntity, setStaffEntity] = useState<LegalEntityRow | null>(null)
 
   const load = () => {
     setError('')
@@ -82,6 +84,8 @@ export default function CompanyPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.taxChannel === 'leqi' ? t.pages.company.channelLeqi : r.taxChannel === 'bir_eis' ? t.pages.company.channelBIR : t.pages.company.channelManual}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       <span className="inline-flex items-center">
+                        <button onClick={() => setStaffEntity(r)}>{t.pages.company.staff.action}</button>
+                        <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setForm({ id: r.id, code: r.code, name: r.name, taxJurisdiction: r.taxJurisdiction ?? '', taxChannel: r.taxChannel ?? 'manual' })}>{t.pages.company.edit}</button>
                         <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setDetail(r)}>{t.pages.company.detail}</button>
@@ -150,6 +154,9 @@ export default function CompanyPage() {
             {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
         </Drawer>
+      )}
+      {staffEntity && (
+        <EntityStaffPanel entityId={staffEntity.id} entityName={staffEntity.name} onClose={() => setStaffEntity(null)} />
       )}
     </div>
   )

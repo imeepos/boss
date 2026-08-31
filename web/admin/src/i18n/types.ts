@@ -458,6 +458,41 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      staff: {
+        action: string
+        panelTitle: string
+        columns: string[]
+        roleAdmin: string
+        roleStaff: string
+        statusOn: string
+        statusOff: string
+        add: string
+        createTitle: string
+        staffNo: string
+        staffNoPh: string
+        username: string
+        usernamePh: string
+        password: string
+        passwordHint: string
+        realName: string
+        phone: string
+        role: string
+        resetPwd: string
+        resetPwdTitle: string
+        resetPwdConfirmText: string
+        enable: string
+        disable: string
+        enableConfirm: string
+        disableConfirm: string
+        eUsernameRequired: string
+        ePasswordShort: string
+        eRealNameRequired: string
+        save: string
+        cancel: string
+        empty: string
+        loadFail: string
+        actionFail: string
+      }
     }
     staff: {
       title: string
