@@ -26,10 +26,10 @@ interface DialogsProps {
 }
 
 // 表单控件统一 ui Input / ui Button;紧凑表单密度用 className 覆盖(h-8 px-4 text-[13px])。
-const compact = 'h-8 px-4 text-[13px]'
+export const compact = 'h-8 px-4 text-[13px]'
 
-// Modal 外壳:遮罩点击关闭 + 令牌化底色。
-function Shell({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+// Modal 外壳:遮罩点击关闭 + 令牌化底色。(师傅录入/重置密码对话框复用,WorkerDialogs)
+export function Shell({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="max-h-[85vh] w-[26rem] overflow-y-auto rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
@@ -40,7 +40,7 @@ function Shell({ title, children, onClose }: { title: string; children: React.Re
   )
 }
 
-function Err({ msg }: { msg: string }) {
+export function Err({ msg }: { msg: string }) {
   if (!msg) return null
   return <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{msg}</div>
 }

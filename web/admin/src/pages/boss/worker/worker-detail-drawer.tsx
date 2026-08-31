@@ -101,11 +101,13 @@ async function nameMap(url: string): Promise<Record<number, string>> {
   }
 }
 
-export function WorkerDetailDrawer({ id, groupName, onClose }: {
+export function WorkerDetailDrawer({ id, groupName, onClose, onResetPwd }: {
   id: number
   /** 列表行已知班组名,主档渲染前先展示。 */
   groupName?: string
   onClose: () => void
+  /** 提供即展示"重置密码"(师傅端登录密码,WorkerDialogs 承接)。 */
+  onResetPwd?: (workerId: number, name: string) => void
 }) {
   const t = useT()
   const w = t.pages.workerPage
@@ -161,7 +163,15 @@ export function WorkerDetailDrawer({ id, groupName, onClose }: {
 
   return (
     <Drawer title={`${w.detailTitle} #${id}`} onClose={onClose} width={720}
-      footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{w.cancel}</button>}>
+      footer={
+        <div className="flex justify-end gap-2">
+          {onResetPwd && status === 1 && (
+            <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
+              onClick={() => onResetPwd(id, name)}>{w.resetPwd}</button>
+          )}
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{w.cancel}</button>
+        </div>
+      }>
       {error ? (
         <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
       ) : !detail ? (
