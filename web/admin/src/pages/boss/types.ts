@@ -80,6 +80,7 @@ export interface WorkerRow {
   name: string
   groupId: number
   regionId: number
+  regionIds: number[] // 全部负责区域(000175;主区域首位;未配置回退 [regionId])
   phone: string
   status: number // 1在职 0离职
   joinedAt: string

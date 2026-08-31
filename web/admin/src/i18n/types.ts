@@ -1374,6 +1374,10 @@ export interface Translations {
       workerRegion: string
       workerPassword: string
       workerPasswordHint: string
+      workerRegionHint: string
+      eRegionsRequired: string
+      editRegions: string
+      regionsTitle: string
       eStaffNoRequired: string
       eWorkerNameRequired: string
       ePhoneRequired: string
