@@ -332,3 +332,38 @@ func TestPGStore_CreateLoAccountBillingModeInherit(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+// TestPGStore_AlignLoAccountOffer 回归:改套餐对齐只有值变化才 UPDATE(0 行 no-op 返回 false),
+// RADIUS 授权实时 JOIN lo_accounts,对齐即下次认证生效新档(TMF change order 语义)。
+func TestPGStore_AlignLoAccountOffer(t *testing.T) {
+	t.Run("套餐变化:UPDATE 返回 true", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		mock.ExpectExec(`UPDATE lo_accounts SET offer_id = \$2`).
+			WithArgs(int64(3), int64(20), "POSTPAID").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		s := NewPGStore(mock)
+		ok, err := s.AlignLoAccountOffer(context.Background(), 3, 20, "POSTPAID")
+		if err != nil || !ok {
+			t.Fatalf("ok=%v err=%v, want true/nil", ok, err)
+		}
+	})
+	t.Run("套餐未变:no-op 返回 false", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		mock.ExpectExec(`UPDATE lo_accounts SET offer_id = \$2`).
+			WithArgs(int64(3), int64(20), "POSTPAID").
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+		s := NewPGStore(mock)
+		ok, err := s.AlignLoAccountOffer(context.Background(), 3, 20, "POSTPAID")
+		if err != nil || ok {
+			t.Fatalf("ok=%v err=%v, want false/nil", ok, err)
+		}
+	})
+}

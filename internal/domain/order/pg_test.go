@@ -18,14 +18,22 @@ func (s stubExists) Exists(context.Context, int64) (bool, error) { return s.ok, 
 // stubProfileCreator 桩 UserProfileCreator。
 type stubProfileCreator struct {
 	UserProfileCreator
-	err   error
-	offer int64 // GetLoAccountByCustomer 返回的 OfferID(环节7 模板解析用)
+	err     error
+	offer   int64    // GetLoAccountByCustomer 返回的 OfferID(环节7 模板解析用)
+	realign [2]int64 // AlignLoAccount 收到的 (customerID, offerID);nil=未调用
+	billing string
+	aligned bool
 }
 
 func (s *stubProfileCreator) GetLoAccountByCustomer(context.Context, int64) (*LoidAccount, error) {
 	return &LoidAccount{ID: 88, Loid: "LOID-TEST", OfferID: s.offer}, s.err
 }
 func (s *stubProfileCreator) CreateLoAccount(context.Context, LoidReq) (int64, error) { return 1, nil }
+func (s *stubProfileCreator) AlignLoAccount(_ context.Context, customerID, offerID int64, billingMode string) (bool, error) {
+	s.realign = [2]int64{customerID, offerID}
+	s.billing = billingMode
+	return s.aligned, nil
+}
 
 // stubProvCreator 桩 ProvisionTaskCreator + ProvisionTemplateFinder(环节7 双口)。
 type stubProvCreator struct {

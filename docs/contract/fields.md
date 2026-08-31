@@ -562,6 +562,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 赠送月数 | `GiftMonths` | gift_months | 0~60（000104）；环节 4 收款时按 gift_duration_rules 阶梯命中回填（如 6送1/12送3/24送6，取 ≤预缴月数的最大档），未命中为 0 |
 
 > lo_accounts 同名列 `billing_mode`（000102）：订购关系上的付费模式权威态；PREPAID 客户不进月度出账（GenerateBills 过滤），预付费在环节 4 合同收费当场收款落缴费流水。
+> LO 生效套餐对齐（adopted 2026-09-01-provision-correctness-followup）：`lo_accounts.offer_id`/`billing_mode` 是"当前生效套餐"权威态，环节 6 幂等复用已有 LO 时若与订单套餐不一致，自动对齐到订单套餐（TMF change order 语义）并打 `[order] LO OFFER REALIGN` 留痕——保证环节 7 按新套餐下发模板、RADIUS 按新档限速。
 
 > 快照列（TS 实体）：`customer_name`（客户姓名）、`offer_name`（产品名），下单时冻结，改名/调价不影响历史订单（与 `price_snapshot` 同规则）。
 

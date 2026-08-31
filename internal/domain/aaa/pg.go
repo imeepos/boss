@@ -150,6 +150,20 @@ func (s *PGStore) GetLoAccountByCustomer(ctx context.Context, customerID int64) 
 	return &a, nil
 }
 
+// AlignLoAccountOffer 把已有 LO 账号的生效套餐/计费模式对齐到变更单套餐(改套餐,TMF change order 语义)。
+// 值未变化时 0 行 no-op 返回 false;RADIUS 授权实时 JOIN lo_accounts,对齐即下次认证生效新档。
+func (s *PGStore) AlignLoAccountOffer(ctx context.Context, customerID, offerID int64, billingMode string) (bool, error) {
+	tag, err := s.db.Exec(ctx, `
+		UPDATE lo_accounts SET offer_id = $2, billing_mode = $3
+		WHERE customer_id = $1
+		  AND (offer_id IS DISTINCT FROM $2 OR COALESCE(billing_mode,'POSTPAID') IS DISTINCT FROM COALESCE(NULLIF($3,''),'POSTPAID'))`,
+		customerID, offerID, billingMode)
+	if err != nil {
+		return false, fmt.Errorf("aaa: align lo_account offer: %w", err)
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
 const cdrCols = `id, loid, COALESCE(username, ''), acct_status, COALESCE(session_id, ''), session_time, input_octets, output_octets, COALESCE(nas_ip, ''), billing_status, started_at`
 
 // AppendCdr 追加话单,返回自增 id。
