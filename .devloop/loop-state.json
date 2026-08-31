@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "project": "boss",
+  "goal": "上线收尾完成：102 部署复核 + 非阻断项消化（DS 残留/chunk 分割）+ 全量门禁复绿 @ 83b9ad4a + 报告收尾",
+  "createdAt": "2026-08-30T00:00:00.000Z",
+  "updatedAt": "2026-08-30T00:00:00.000Z",
+  "tasks": [
+    {
+      "id": "T6",
+      "title": "102 部署复核：healthz + admin-web 出处链 + RBAC 冒烟复验",
+      "goal": "三项复核全过（已达成）",
+      "priority": "P0",
+      "status": "done",
+      "phase": "部署复核",
+      "acceptanceCommand": "bash -c 'SHA=$(git rev-parse --short HEAD); f=.devloop/gates/T6-$SHA.rc; test -f \"$f\" && echo \"[T6] sha=$SHA rc=$(cat $f)\" && test \"$(cat $f)\" = \"0\"'",
+      "notes": "已过 @ e3e4f2e0：双服务 200、镜像 tag 出处链验证（哈希清单比对法因 VITE_BUILD_COMMIT 作废，v2 段留痕）、RBAC PASS=17 FAIL=0"
+    },
+    {
+      "id": "T7",
+      "title": "剩余页面接入 DS：Badge/MarkdownEditor/TeamDialogs 三页真实迁移，Parts 诚实跳过",
+      "goal": "门禁绿且采用率 28/29=97%（已达成）",
+      "priority": "P1",
+      "status": "done",
+      "phase": "非阻断消化",
+      "acceptanceCommand": "bash -c 'SHA=$(git rev-parse --short HEAD); f=.devloop/gates/T7-$SHA.rc; test -f \"$f\" && echo \"[T7] sha=$SHA rc=$(cat $f)\" && test \"$(cat $f)\" = \"0\"'",
+      "notes": "已过 @ 83b9ad4a：commit 3bcc1894，boss 28/29=97% below=0；Parts 跳过理由=微型 chips 无同密度 DS 组件；PerfPanel 原生 table 语义等价未强迁"
+    },
+    {
+      "id": "T8",
+      "title": "admin 前端大 chunk 代码分割：manualChunks 扩展+逐包拆分",
+      "goal": "门禁绿且 dist 最大单 chunk < 1MB（已达成：432241B）",
+      "priority": "P2",
+      "status": "done",
+      "phase": "非阻断消化",
+      "acceptanceCommand": "bash -c 'SHA=$(git rev-parse --short HEAD); f=.devloop/gates/T8-$SHA.rc; test -f \"$f\" && test \"$(cat $f)\" = \"0\" && node -e \"const fs=require(\\\"fs\\\"),d=\\\"web/admin/dist/assets\\\";const m=Math.max(...fs.readdirSync(d).filter(f=>f.endsWith(\\\".js\\\")).map(f=>fs.statSync(d+\\\"/\\\"+f).size));console.log(\\\"max_chunk_bytes=\\\"+m);process.exit(m<1048576?0:1)\"'",
+      "notes": "已过 @ 83b9ad4a：commit 83b9ad4a，业务主包 1290→422KB、340 chunks；两轮返工教训（.pnpm 取名陷阱/体积榜点号隐身）已入 skill 与 vite 注释；运行时浏览器行为未实测=残余风险①"
+    },
+    {
+      "id": "T9",
+      "title": "审计报告收尾轮更新：T6 复核结论 + T7/T8 消化结果 + 残余风险清单",
+      "goal": "报告 §7 收尾章节落盘（已达成）",
+      "priority": "P1",
+      "status": "done",
+      "phase": "收口",
+      "acceptanceCommand": "bash -c 'f=docs/ops/audit-launch-readiness.md; grep -q \"收尾轮\" \"$f\" && grep -q \"T6\" \"$f\" && grep -q \"T7\" \"$f\" && grep -q \"T8\" \"$f\" && grep -q \"残余风险\" \"$f\"'",
+      "notes": "已过：c88a82b4 落盘并推送；主链 83b9ad4a 七项证据全绿（T1/T2/T3/T4/T6/T7/T8）；docs 推送 8b84bcc3 触发的部署终态待 bash-30 轮询确认（tag 应为 c88a82b4 或 8b84bcc3，二者运行时内容一致）"
+    }
+  ]
+}
