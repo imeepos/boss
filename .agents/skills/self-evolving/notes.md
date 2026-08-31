@@ -1488,3 +1488,8 @@
 - 哪个坑最浪费时间：① 往 portal_test.go 插新测试时,old_string 吃进了下个函数的开头两行(t.Setenv/signWorkerToken)而 new_string 没带回去,误删相邻测试两行——edit 后立即 read 复查发现当场补回,没有废 build,但这已是红线条目第 4 次(台账已 +1)。② worker.yaml 的 flow map 里 description 写了未引号的「师傅端登录密码,>=6 位」,`,` 终结 plain scalar 后 `>` 无法开头,bundle 测试红了一轮 make check(本地拦住,没浪费 CI)。③ 明知 GLM-5.3-Flash 不支持图像输入还是试着 read_image 了截图(红线条目第 3 次),改用 cdp --eval DOM 断言(hasNewWorker:true)当证据。
 - skill 有没有提前警告：红线#4(edit 对称性)和红线#7(图像输入)都在,是执行时没对号入座,不是 skill 缺警示;"接口加方法的正确姿势"(后端.md 2026-08-29)对本轮三包 fake 补 stub 预判直接命中,零惊讶。
 - 重来一次会怎么做：① 改宽接口的 commit 前先 `grep -rn "实现接口名的手写桩"` 列全再动手;② flow map 描述一律带引号,省一轮门禁;③ 部署验证用「后台轮询新路由 401 + 预备好的验证脚本」组合,轮询命中即跑,全程无空等;④ 验收造数同一脚本内收尾 DELETE(本轮 staff_no 时间戳后缀+SQL 直删,0 残留)。
+
+## 2026-09-01 产品/套餐↔下发模板绑定轮(方案B 全链路落地)
+- 哪个坑最浪费时间：① edit 前已读文件被拒 8 连击——本轮全程在 worktree 干活,要么读过主树同内容副本、要么只用 bash cat/sed 看过,read 状态按绝对路径跟踪,换树/换路径必须用 read 工具重读(台账已 +8)。② make check D 项在 fix worktree 红了:并行会话 feat/entity-staff-admin-entry 占了 000172——首次实战应用「已合并进 main 且已落库者优先,后来者让号」规则,判定撞号责任在对方,session_link_send 发让号提醒(改名 000173)后继续合并,没有自己让号也没有进 baseline。③ pgxmock 对新增 SQL 极敏感:ListTemplates 加 count 子查询、RetryTask 链路加 taskTemplateInfo 查询,三处测试 mock 期望连带更新,好在全在本地门禁拦住。
+- skill 有没有提前警告：红线#1(edit 前必 read)在但按「同内容换路径」变体连犯;后端.md「接口加方法先列全手写桩」预判命中(fakeProvision 一次补齐 4 个新方法零返工);AGENTS.md 迁移让号规则直接给出裁决依据。
+- 重来一次会怎么做：① worktree 开工第一步:对将要 edit 的每个文件先 read worktree 绝对路径,别信主树读过的记忆;② worktree 无 node_modules 直接 `ln -s 主checkout/node_modules`(根+web/admin 两层),typecheck/build 即可用,免装依赖;③ 契约变更四件套(yaml+admin_perms_gen+routes_gen+回归测试)跑 `make check` 一次收敛,bossctl-routes 顺带修了 main 上 dispatch-tickets 的存量漂移;④ 部署验证三件套提前备好:后台轮询 healthz commit sha + curl 绑定 API 冒烟(含错误路径)+ bundle grep UI 文案,一轮全验完。
