@@ -17,11 +17,11 @@ func (s *PGStore) GetDispatchTicketByNo(ctx context.Context, ticketNo string) (*
 		SELECT id, ticket_no, order_id, COALESCE(worker_id, 0), COALESCE(worker_name, ''),
 		       COALESCE(group_id, 0), COALESCE(group_name, ''), COALESCE(region_id, 0), COALESCE(region_name, ''),
 		       legal_entity_id, legal_entity_name, status,
-		       arrived_at, arrive_lat, arrive_lng
+		       arrived_at, arrive_lat, arrive_lng, site_lat, site_lng
 		FROM dispatch_tickets WHERE ticket_no = $1`, ticketNo).
 		Scan(&t.TicketID, &t.TicketNo, &t.OrderID, &t.WorkerID, &t.WorkerName,
 			&t.GroupID, &t.GroupName, &t.RegionID, &t.RegionName, &t.LegalEntityID, &t.LegalEntityName, &t.Status,
-			&t.ArrivedAt, &t.ArriveLat, &t.ArriveLng)
+			&t.ArrivedAt, &t.ArriveLat, &t.ArriveLng, &t.SiteLat, &t.SiteLng)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrOrderNotFound
 	}
@@ -39,11 +39,11 @@ func (s *PGStore) GetDispatchTicketByOrder(ctx context.Context, orderID int64) (
 		SELECT id, ticket_no, order_id, COALESCE(worker_id, 0), COALESCE(worker_name, ''),
 		       COALESCE(group_id, 0), COALESCE(group_name, ''), COALESCE(region_id, 0), COALESCE(region_name, ''),
 		       legal_entity_id, legal_entity_name, status,
-		       arrived_at, arrive_lat, arrive_lng
+		       arrived_at, arrive_lat, arrive_lng, site_lat, site_lng
 		FROM dispatch_tickets WHERE order_id = $1`, orderID).
 		Scan(&t.TicketID, &t.TicketNo, &t.OrderID, &t.WorkerID, &t.WorkerName,
 			&t.GroupID, &t.GroupName, &t.RegionID, &t.RegionName, &t.LegalEntityID, &t.LegalEntityName, &t.Status,
-			&t.ArrivedAt, &t.ArriveLat, &t.ArriveLng)
+			&t.ArrivedAt, &t.ArriveLat, &t.ArriveLng, &t.SiteLat, &t.SiteLng)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -173,13 +173,24 @@ func (s *PGStore) DispatchOrder(ctx context.Context, orderID int64) error {
 
 // createTicketOnDispatch 派单时落工单(worker 空=PENDING 入池);order_id 唯一约束 +
 // ON CONFLICT DO NOTHING 保证 Automation 失败重试幂等。ticket_no 由 order_no 派生
-// (ORD-→DT-)保证唯一可追溯;区域/班组快照留空,由指派时回填。
+// (ORD-→DT-)保证唯一可追溯;班组快照由指派时回填。区域取 orders.region_path 的
+// 最近祖先或自身(regions 树),站点坐标自 addresses.geom 物化——均留空安全降级,
+// 不阻断派单主流程(区域解析失败闸门回落 0=放行,与历史行为一致)。
 func (s *PGStore) createTicketOnDispatch(ctx context.Context, orderID int64) error {
 	if _, err := s.db.Exec(ctx, `
-		INSERT INTO dispatch_tickets(ticket_no, order_id, legal_entity_id, legal_entity_name, status)
-		SELECT 'DT-' || substr(o.order_no, 5), o.id, o.legal_entity_id, COALESCE(le.name, ''), 'PENDING'
+		INSERT INTO dispatch_tickets(ticket_no, order_id, legal_entity_id, legal_entity_name, status,
+			region_id, region_name, site_lat, site_lng)
+		SELECT 'DT-' || substr(o.order_no, 5), o.id, o.legal_entity_id, COALESCE(le.name, ''), 'PENDING',
+		       r.id, r.name, ST_Y(a.geom::geometry), ST_X(a.geom::geometry)
 		FROM orders o
 		LEFT JOIN legal_entities le ON le.id = o.legal_entity_id
+		LEFT JOIN LATERAL (
+			SELECT id, name FROM regions
+			WHERE COALESCE(o.region_path, '') <> ''
+			  AND (path = o.region_path OR o.region_path LIKE path || '.%')
+			ORDER BY nlevel(path) DESC LIMIT 1
+		) r ON true
+		LEFT JOIN addresses a ON a.id = o.address_id AND a.geom IS NOT NULL
 		WHERE o.id = $1
 		ON CONFLICT (order_id) DO NOTHING`,
 		orderID,

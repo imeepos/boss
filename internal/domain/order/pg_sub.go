@@ -25,7 +25,7 @@ func (s *PGStore) ListDispatchTickets(ctx context.Context) ([]DispatchTicket, er
 		SELECT id, ticket_no, order_id, COALESCE(worker_id, 0), COALESCE(worker_name, ''),
 		       COALESCE(group_id, 0), COALESCE(group_name, ''), COALESCE(region_id, 0), COALESCE(region_name, ''),
 		       legal_entity_id, legal_entity_name, status,
-		       arrived_at, arrive_lat, arrive_lng
+		       arrived_at, arrive_lat, arrive_lng, site_lat, site_lng
 		FROM dispatch_tickets ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("order: list dispatch tickets: %w", err)
@@ -36,7 +36,7 @@ func (s *PGStore) ListDispatchTickets(ctx context.Context) ([]DispatchTicket, er
 		var t DispatchTicket
 		if err := rows.Scan(&t.TicketID, &t.TicketNo, &t.OrderID, &t.WorkerID, &t.WorkerName,
 			&t.GroupID, &t.GroupName, &t.RegionID, &t.RegionName, &t.LegalEntityID, &t.LegalEntityName, &t.Status,
-			&t.ArrivedAt, &t.ArriveLat, &t.ArriveLng); err != nil {
+			&t.ArrivedAt, &t.ArriveLat, &t.ArriveLng, &t.SiteLat, &t.SiteLng); err != nil {
 			return nil, fmt.Errorf("order: scan dispatch ticket: %w", err)
 		}
 		out = append(out, t)

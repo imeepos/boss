@@ -22,6 +22,8 @@ type DispatchTicket struct {
 	ArrivedAt       *time.Time `json:"arrivedAt,omitempty"` // 师傅到场打卡(派生事实,GIS 施工实时图层读 arrive_lat/lng)
 	ArriveLat       *float64   `json:"arriveLat,omitempty"` // WGS84
 	ArriveLng       *float64   `json:"arriveLng,omitempty"` // WGS84
+	SiteLat         *float64   `json:"siteLat,omitempty"`   // 站点坐标快照(派单时刻自 addresses.geom 物化;空=地址树无 geom)
+	SiteLng         *float64   `json:"siteLng,omitempty"`   // WGS84
 }
 
 // Complaint 报障工单(客服域,客户报障与处理)。

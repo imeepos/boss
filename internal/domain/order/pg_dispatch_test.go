@@ -56,7 +56,8 @@ func TestPGStore_DispatchOrder_CreatesTicket(t *testing.T) {
 		WithArgs(int64(7), int8(8), "DONE").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
-	mock.ExpectExec(`INSERT INTO dispatch_tickets`).
+	// 契约:派单落工单必须带区域解析与站点坐标快照列(000174)。
+	mock.ExpectExec(`INSERT INTO dispatch_tickets.*region_id, region_name, site_lat, site_lng`).
 		WithArgs(int64(7)).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	if err := NewPGStore(mock, nil, nil).DispatchOrder(context.Background(), 7); err != nil {
@@ -75,7 +76,7 @@ func TestPGStore_DispatchOrder_SelfHealsMissingTicket(t *testing.T) {
 	mock.ExpectQuery(`SELECT stage FROM orders`).
 		WithArgs(int64(8)).
 		WillReturnRows(pgxmock.NewRows([]string{"stage"}).AddRow(int16(8)))
-	mock.ExpectExec(`INSERT INTO dispatch_tickets`).
+	mock.ExpectExec(`INSERT INTO dispatch_tickets.*region_id, region_name, site_lat, site_lng`).
 		WithArgs(int64(8)).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	if err := NewPGStore(mock, nil, nil).DispatchOrder(context.Background(), 8); err != nil {
