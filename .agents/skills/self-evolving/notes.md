@@ -1508,3 +1508,9 @@
 - 哪个坑最浪费时间：① merge main 时发现并行会话已落 000175 多区域模型(Worker.MatchesRegion),我的子树匹配与其语义重叠——好在开工前先 fetch+定期反向同步,冲突只在 2 个文件,正交合并(候选根=负责区域集合任一,子树判定一次 SQL);若拖到收尾才发现,返工面翻倍。② 测试桩 map 以 TicketID 为键,fake 工单 TicketID 全 0 键碰撞,真实库不会暴露的 bug 被自己的测试数据撞出来(hall 用例空列表假失败);改回 TicketNo 键。③ workerSettingsOf 命名撞 profile.go 同名函数,声明前没 grep 包内符号。④ edit 对称性红线再犯:替换 TestDeleteAddress 时 new_string 只写了函数头,整段函数体被删,立刻 go test 抓住当场补回——多行替换后必须先 grep 被删符号仍在。
 - skill 有没有提前警告：红线#4(对称性)在台账里但执行时没对号,本次属第 5 次累犯;「迁移占号先 fetch 再定号」直接避开了与 000175 的撞号(我先定 000174,fetch 后发现并行占了 000175,无需让号但流程对了);后端.md 的 envelope 断言(42200 而非 http status)这轮先查了没踩。
 - 重来一次会怎么做：① 涉接口签名的任务(T4 改 WorkerService)开工先 grep 所有 fakes 清单再动手,而不是编译报错后逐个补;② hall 之类"列表对齐映射"默认沿用原实现的键(TicketNo),不换键;③ 并行会话活跃时段,feature 分支每完成一个任务就 merge main 一次,把冲突拆成小口消化,不要攒到最后一次性合。
+
+## 2026-09-01 师傅多负责区域(000175)
+- 哪个坑浪费了最多时间？MultiSelect 选项勾选绑在 onMouseDown，CDP eval 用 .click() 勾不上，白跑一轮 UI 往返还误判"保存没落库"——先直查接口分清"没选中"还是"没提交"，10 秒定位。
+- skill 有没有提前警告？没有。 boss-admin-web.md 只记了受控 input 的原生 setter 套路，没记 Dropdown/MultiSelect 系组件的 mousedown 契约。已喂回 knowledge/前端.md。
+- 重来一次会怎么做？凡"按钮无 <input> 无 form"，先 grep 组件源码确认事件绑在 mousedown/click 哪个上，再写 eval。
+- 迁移占号：按新规"先 fetch 再定号"取了 000174（当时全局空闲），并行会话随后也占了 000174——check-contract-sync D 项拦截，改名 000175。结论：同步规则只能降概率，机械门禁才是兜底，红了让号改名 2 分钟解决，不要挣扎。
