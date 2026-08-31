@@ -16,6 +16,7 @@ import (
 func registerAddressRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/addresses", requirePerm(a.User, "menu:address"), addrListAddresses(a))
 	g.PUT("/addresses/:id/geo", requirePerm(a.User, "menu:address"), addrSetGeo(a))
+	g.PUT("/addresses/:id/geom", requirePerm(a.User, "menu:address"), addrSetGeom(a))
 	g.GET("/addresses/search", requirePerm(a.User, "menu:address"), addrSearchAddresses(a))
 	g.POST("/addresses", requirePerm(a.User, "menu:address"), addrCreateAddress(a))
 	g.PUT("/addresses/:id", requirePerm(a.User, "menu:address"), addrUpdateAddressName(a))

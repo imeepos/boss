@@ -456,6 +456,7 @@ var AdminRoutePerms = map[string][]string{
 	"PUT /api/admin/v1/addons/{addonId}/toggle":                                   {"menu:userdata"},
 	"PUT /api/admin/v1/addresses/{id}":                                            {"menu:address"},
 	"PUT /api/admin/v1/addresses/{id}/geo":                                        {"menu:address"},
+	"PUT /api/admin/v1/addresses/{id}/geom":                                       {"menu:address"},
 	"PUT /api/admin/v1/agreements/{agreementId}":                                  {"menu:userdata"},
 	"PUT /api/admin/v1/ai/openai/config":                                          {"menu:ai"},
 	"PUT /api/admin/v1/auth-config/{group}":                                       {"menu:authconfig"},

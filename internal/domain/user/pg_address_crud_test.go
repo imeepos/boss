@@ -34,6 +34,40 @@ func TestCreateAddress(t *testing.T) {
 	}
 }
 
+// TestSetAddressGeom 契约:范围越界先拒;合法坐标落 ST_MakePoint(lng,lat);未命中 ErrNotFound。
+func TestSetAddressGeom(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	s := NewPGStore(mock)
+	if err := s.SetAddressGeom(context.Background(), 1, 91, 120); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("lat=91: got %v, want ErrInvalidInput", err)
+	}
+	if err := s.SetAddressGeom(context.Background(), 1, 14.599, -181); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("lng=-181: got %v, want ErrInvalidInput", err)
+	}
+
+	mock.ExpectExec(`UPDATE addresses SET geom = ST_SetSRID\(ST_MakePoint\(\$2, \$3\), 4326\)::geography`).
+		WithArgs(int64(3), 120.984, 14.599).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	if err := s.SetAddressGeom(context.Background(), 3, 14.599, 120.984); err != nil {
+		t.Fatalf("set geom: %v", err)
+	}
+
+	mock.ExpectExec(`UPDATE addresses SET geom`).
+		WithArgs(int64(404), 120.984, 14.599).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+	if err := s.SetAddressGeom(context.Background(), 404, 14.599, 120.984); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing: got %v, want ErrNotFound", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
 // TestDeleteAddress 契约:有子节点返回 ErrConflict。
 func TestDeleteAddress(t *testing.T) {
 	mock, err := pgxmock.NewPool()

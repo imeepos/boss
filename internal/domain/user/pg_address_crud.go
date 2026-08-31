@@ -77,6 +77,24 @@ func joinPath(parentPath, label string) string {
 	return parentPath + "." + label
 }
 
+// SetAddressGeom 写入节点坐标(WGS84);ST_MakePoint 惯例 lng 在前,勿颠倒。
+// 范围越界在应用层先拒(ErrInvalidInput),DB CHECK 兜底。
+func (s *PGStore) SetAddressGeom(ctx context.Context, id int64, lat, lng float64) error {
+	if lat < -90 || lat > 90 || lng < -180 || lng > 180 {
+		return ErrInvalidInput
+	}
+	tag, err := s.db.Exec(ctx, `
+		UPDATE addresses SET geom = ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography WHERE id = $1`,
+		id, lng, lat)
+	if err != nil {
+		return fmt.Errorf("user: set address geom: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // UpdateAddressName 仅改名;path 为权威不可变(ADR-002)。
 func (s *PGStore) UpdateAddressName(ctx context.Context, id int64, name string) error {
 	tag, err := s.db.Exec(ctx, `UPDATE addresses SET name = $2 WHERE id = $1`, id, name)

@@ -50,6 +50,9 @@ type Service interface {
 	ImportAddresses(ctx context.Context, rows []AddressRow) (imported int, err error)
 	// SetAddressGeo 挂接国家/一级行政区锚点(仅 level=1 根节点,承接迁移 000040)。
 	SetAddressGeo(ctx context.Context, id int64, countryCode, adminCode string) error
+	// SetAddressGeom 写入节点坐标(WGS84 → geography POINT),地址树唯一的 geom 写入路径;
+	// 派单工单坐标快照(000174)与逆地理最近邻查询都从这里取数。
+	SetAddressGeom(ctx context.Context, id int64, lat, lng float64) error
 	// ListUnlinkedRoots 未挂国家的根节点清单(回填工作台)。
 	ListUnlinkedRoots(ctx context.Context) ([]Address, error)
 	// ListNeedsReview 待治理节点清单(needs_review=TRUE,治理队列读取路径,fields.md §1.5.0b)。

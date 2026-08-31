@@ -399,6 +399,7 @@ var Portals = []Portal{
 		{"PUT", "/addresses/{id}", "编辑地址节点(menu:address)"},
 		{"DELETE", "/addresses/{id}", "删除地址节点(有子节点/引用时拒绝)"},
 		{"PUT", "/addresses/{id}/geo", "设置地址国际锚点(countryCode 两位 + adminCode,经 geo 域校验)"},
+		{"PUT", "/addresses/{id}/geom", "设置地址节点坐标(WGS84 lat/lng → geography POINT;派单快照与逆地理取数源)"},
 		{"GET", "/addresses/search", "全树搜索(命中节点+祖先链,懒加载树展开用)"},
 		{"GET", "/params", "业务参数清单(permCode menu:params;data.items=[{key,value,desc}])"},
 		{"PUT", "/params/{key}", "修改业务参数(不存在则插入;permCode menu:params;审计\"数据变更\")"},

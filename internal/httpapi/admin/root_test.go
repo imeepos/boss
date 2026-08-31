@@ -41,6 +41,10 @@ type fakeUser struct {
 	unlinkedCall  bool
 	needsReviewOn bool
 	needsReview   []user.Address
+	// 坐标写入桩:入参捕获 + 可配置错误。
+	geomID         int64
+	geomLat, geomLng float64
+	geomErr        error
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -64,6 +68,10 @@ func (f *fakeUser) ListAddresses(_ context.Context, parentID int64) ([]user.Addr
 }
 func (f *fakeUser) ImportAddresses(context.Context, []user.AddressRow) (int, error) { return 0, nil }
 func (f *fakeUser) SetAddressGeo(context.Context, int64, string, string) error      { return nil }
+func (f *fakeUser) SetAddressGeom(_ context.Context, id int64, lat, lng float64) error {
+	f.geomID, f.geomLat, f.geomLng = id, lat, lng
+	return f.geomErr
+}
 func (f *fakeUser) ListUnlinkedRoots(context.Context) ([]user.Address, error) {
 	f.unlinkedCall = true
 	return nil, nil

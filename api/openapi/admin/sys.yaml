@@ -230,6 +230,26 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /addresses/{id}/geom:
+    put:
+      tags: [Sys]
+      summary: 设置地址节点坐标(WGS84 lat/lng → geography POINT;派单快照与逆地理取数源)
+      operationId: setAddressGeom
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lat, lng]
+              properties:
+                lat: { type: number, format: double, minimum: -90, maximum: 90 }
+                lng: { type: number, format: double, minimum: -180, maximum: 180 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /addresses/search:
     get:
       tags: [Sys]

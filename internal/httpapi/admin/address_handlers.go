@@ -67,6 +67,34 @@ func addrSetGeo(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+func addrSetGeom(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		var body struct {
+			Lat float64 `json:"lat" binding:"required"`
+			Lng float64 `json:"lng" binding:"required"`
+		}
+		if !httpx.BindAndValidate(c, &body) {
+			return
+		}
+		// 范围前置拒(域层同校验兜底);binding:required 顺带拦 0,0(几内亚湾,非法语义)。
+		if body.Lat < -90 || body.Lat > 90 || body.Lng < -180 || body.Lng > 180 {
+			respondErr(c, user.ErrInvalidInput)
+			return
+		}
+		if err := a.User.SetAddressGeom(c.Request.Context(), id, body.Lat, body.Lng); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "address.set-geom", "addresses", strconv.FormatInt(id, 10),
+			map[string]any{"lat": body.Lat, "lng": body.Lng})
+		respond(c, apitypes.CodeOK, nil)
+	}
+}
+
 func addrSearchAddresses(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		kw := c.Query("q")

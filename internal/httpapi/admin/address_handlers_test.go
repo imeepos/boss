@@ -86,3 +86,31 @@ func TestAddrListNeedsReviewPriority(t *testing.T) {
 		t.Fatalf("并存应 needsReview 优先: status=%d nr=%v unl=%v", w.Code, u.needsReviewOn, u.unlinkedCall)
 	}
 }
+
+// TestAddrSetGeom 契约:PUT /addresses/:id/geom 透传坐标并留审计;越界 422 拒。
+func TestAddrSetGeom(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	t.Run("写入透传", func(t *testing.T) {
+		u := &fakeUser{permOk: true}
+		r := newRouterForAddress(u, mgr)
+		w := putJSONAuth(t, r, "/api/admin/v1/addresses/9/geom", `{"lat":14.599,"lng":120.984}`, authToken(t, mgr))
+		if w.Code != http.StatusOK {
+			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+		}
+		if u.geomID != 9 || u.geomLat != 14.599 || u.geomLng != 120.984 {
+			t.Fatalf("坐标未透传: id=%d lat=%v lng=%v", u.geomID, u.geomLat, u.geomLng)
+		}
+	})
+	t.Run("越界拒绝", func(t *testing.T) {
+		u := &fakeUser{permOk: true}
+		r := newRouterForAddress(u, mgr)
+		w := putJSONAuth(t, r, "/api/admin/v1/addresses/9/geom", `{"lat":91,"lng":120.984}`, authToken(t, mgr))
+		// envelope 惯例:HTTP 200 + 业务码 42200(CodeInvalidParam)。
+		if !strings.Contains(w.Body.String(), "42200") {
+			t.Fatalf("lat=91 应回 42200: %s", w.Body.String())
+		}
+		if u.geomID != 0 {
+			t.Fatalf("越界请求不应落域层: id=%d", u.geomID)
+		}
+	})
+}
