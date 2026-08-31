@@ -4,6 +4,7 @@ package provision
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -82,8 +83,8 @@ func TestPGStore_UpsertOfferBinding(t *testing.T) {
 
 		s := NewPGStore(mock)
 		_, err := s.UpsertOfferBinding(ctx, 101, 152, "")
-		if err == nil || !strings.Contains(err.Error(), "entity mismatch") {
-			t.Fatalf("want entity mismatch, got %v", err)
+		if err == nil || !errors.Is(err, ErrBindingInvalid) || !strings.Contains(err.Error(), "entity mismatch") {
+			t.Fatalf("want ErrBindingInvalid entity mismatch, got %v", err)
 		}
 	})
 
@@ -96,8 +97,8 @@ func TestPGStore_UpsertOfferBinding(t *testing.T) {
 
 		s := NewPGStore(mock)
 		_, err := s.UpsertOfferBinding(ctx, 101, 142, "")
-		if err == nil || !strings.Contains(err.Error(), "disabled template") {
-			t.Fatalf("want disabled template error, got %v", err)
+		if err == nil || !errors.Is(err, ErrBindingInvalid) || !strings.Contains(err.Error(), "disabled template") {
+			t.Fatalf("want ErrBindingInvalid disabled template, got %v", err)
 		}
 	})
 

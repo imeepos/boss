@@ -33,6 +33,9 @@ func (s *PGStore) GetOfferBinding(ctx context.Context, offerID int64) (*OfferTem
 	return &b, nil
 }
 
+// ErrBindingInvalid 绑定校验失败(跨法人/模板停用);httpapi 映射 42200 并透传原因。
+var ErrBindingInvalid = errors.New("provision: invalid binding")
+
 // UpsertOfferBinding 绑定/改绑套餐→模板(幂等,同套餐 ON CONFLICT 更新)。
 // 校验:套餐与模板均存在、属同一法人、模板 ENABLED(禁用模板不可绑,防环节7 静默降级)。
 func (s *PGStore) UpsertOfferBinding(ctx context.Context, offerID, templateID int64, remark string) (int64, error) {
@@ -50,10 +53,12 @@ func (s *PGStore) UpsertOfferBinding(ctx context.Context, offerID, templateID in
 		return 0, fmt.Errorf("provision: bind validate: %w", err)
 	}
 	if offerEntity != tplEntity {
-		return 0, fmt.Errorf("provision: bind entity mismatch: offer entity=%d template entity=%d", offerEntity, tplEntity)
+		return 0, fmt.Errorf("provision: bind entity mismatch: offer entity=%d template entity=%d: %w",
+			offerEntity, tplEntity, ErrBindingInvalid)
 	}
 	if tplStatus != "ENABLED" {
-		return 0, fmt.Errorf("provision: bind disabled template: template=%d status=%s", templateID, tplStatus)
+		return 0, fmt.Errorf("provision: bind disabled template: template=%d status=%s: %w",
+			templateID, tplStatus, ErrBindingInvalid)
 	}
 
 	var id int64
