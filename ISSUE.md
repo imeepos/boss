@@ -124,3 +124,21 @@
 
 - **未修复｜工具 bug｜dsh-plugin-dev check.sh 在 macOS 上 sed 报错**：`scripts/check.sh` 守卫 E 段第 88 行 `tr \' \n\' | sed \'/^$/d\'` 引号嵌套在 bash/macOS BSD sed 下炸出 `sed: 1: "'/^$/d'": invalid command code '`，只是噪音（守卫结论仍正确），但每次交卷都刷屏。→ 改为 `grep -v '^$'` 或独立管道段。
 - **未修复｜环境｜npm 默认缓存目录 root 属主**：`/Users/imeepos/ext512/dev-cache/npm` 内有 root 属主文件，任何 npm install/pack 直接 EPERM。→ 要么 `sudo chown -R 501:20` 修属主，要么本轮做法：npm 命令一律加 `--cache /tmp/npm-cache-<场景>`。
+
+## 下发链路验证轮(2026-09-01 offer-provision-binding/POQ 会话发现)
+
+- **未修复｜行为缺口(geo-unify/多区域域内)｜mainchain-acceptance.sh 与派单区域强匹配不兼容**:
+  geo-unify/多区域合流后,`POST /dispatch/pool/:ticketNo/assign` 强制"工单区域=师傅区域"
+  (40900 + forceRequired:true),但验收车 `scripts/ops/mainchain-acceptance.sh` 造的验收地址
+  不带 region → 工单区域解析为根区域"集团"(region 1),与 MASTER(如 6 号王测试=区域4 马尼拉,
+  workerRegionIds=[4])必然 mismatch → 验收车在 assign 步骤 FAIL(2026-09-01 03:44 实测
+  DT-20260901-000598)。修法二选一,由 geo-unify/worker 会话裁决:
+  ①验收车 POST /addresses 带上与 MASTER 同域的 regionId/region_path(顺带真实化区域派单覆盖);
+  ②或验收脚本走 force 指派通道(如存在)。另:派单建单 LATERAL 的 ltree=varchar 42883 已由
+  fix fd235d4e 修复上线(path::text 显式转型),本条只余区域匹配语义部分。
+- **已修复(2026-09-01, fd235d4e)｜行为怪象｜createTicketOnDispatch LATERAL ltree 与 varchar 裸比较**:
+  regions.path(ltree) 与 orders.region_path(varchar) 直接等值/LIKE,区域非空即报
+  `operator does not exist: ltree = character varying (42883)`,环节8 派单建单失败 →
+  AutoPreScan 50000、主链全断。geo-unify/多区域合流后新单必现(orders.region_path 开始
+  非空填充)。修复:`path::text = o.region_path OR o.region_path LIKE path::text || '.%'`。
+  注:pgxmock 单测无法拦截此类 SQL 类型错误,真实库回归(mainchain)才是防线。
