@@ -12,7 +12,7 @@ import (
 // ErrUsernameTaken 登录名已存在。
 var ErrUsernameTaken = errors.New("user: username taken")
 
-// ErrStaffNoTaken 工号已存在(accounts.staff_no,000172)。
+// ErrStaffNoTaken 工号已存在(accounts.staff_no,000173)。
 var ErrStaffNoTaken = errors.New("user: staff no taken")
 
 // ErrInvalidInput 入参不合法(长度/字符集)。

@@ -1,6 +1,6 @@
 package adminapi
 
-// 企业员工后台录入 handler(000172,路由注册见 org.go):
+// 企业员工后台录入 handler(000173,路由注册见 org.go):
 // 后台按企业维度录入员工登录信息(工号/登录名/密码/角色),menu:company 保护。
 // 与企业工作台自助建号(partner_staff handler)平行;密码只在录入/重置请求出现,审计不落明文。
 

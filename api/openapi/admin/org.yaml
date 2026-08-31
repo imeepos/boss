@@ -37,7 +37,7 @@ paths:
   /legal-entities/{legalEntityId}/staff:
     get:
       tags: [Org]
-      summary: 企业员工列表(000172;partner_admin/partner_staff,含工号;permCode menu:company)
+      summary: 企业员工列表(000173;partner_admin/partner_staff,含工号;permCode menu:company)
       operationId: listEntityStaff
       parameters:
         - { name: legalEntityId, in: path, required: true, schema: { type: integer } }
@@ -57,7 +57,7 @@ paths:
                       items: { type: array, items: { type: object } }
     post:
       tags: [Org]
-      summary: 后台录入企业员工(000172;工号可空,密码 bcrypt 落库;角色白名单限 partner_admin/partner_staff;40900=登录名/工号已存在,42200=入参不合法;permCode menu:company)
+      summary: 后台录入企业员工(000173;工号可空,密码 bcrypt 落库;角色白名单限 partner_admin/partner_staff;40900=登录名/工号已存在,42200=入参不合法;permCode menu:company)
       operationId: createEntityStaff
       parameters:
         - { name: legalEntityId, in: path, required: true, schema: { type: integer } }
@@ -81,7 +81,7 @@ paths:
   /legal-entities/{legalEntityId}/staff/{accountId}/password:
     put:
       tags: [Org]
-      summary: 重置企业员工登录密码(000172;密码不入审计;permCode menu:company)
+      summary: 重置企业员工登录密码(000173;密码不入审计;permCode menu:company)
       operationId: resetEntityStaffPassword
       parameters:
         - { name: legalEntityId, in: path, required: true, schema: { type: integer } }
@@ -101,7 +101,7 @@ paths:
   /legal-entities/{legalEntityId}/staff/{accountId}/status:
     put:
       tags: [Org]
-      summary: 企业员工启用(1)/停用(0)(000172;跨企业/非 partner 角色 404;permCode menu:company)
+      summary: 企业员工启用(1)/停用(0)(000173;跨企业/非 partner 角色 404;permCode menu:company)
       operationId: setEntityStaffStatus
       parameters:
         - { name: legalEntityId, in: path, required: true, schema: { type: integer } }

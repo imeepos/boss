@@ -15,7 +15,7 @@ type AccountRow struct {
 	Username        string `json:"username"`
 	RealName        string `json:"realName"`
 	Phone           string `json:"phone"`
-	StaffNo         string `json:"staffNo"` // 工号(000172,空=未编)
+	StaffNo         string `json:"staffNo"` // 工号(000173,空=未编)
 	RoleCode        string `json:"roleCode"`
 	RoleName        string `json:"roleName"`
 	LegalEntityID   int64  `json:"legalEntityId"`

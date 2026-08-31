@@ -60,7 +60,7 @@ func registerOrgRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/legal-entities", requirePerm(a.User, "menu:company"), orgCreateLegalEntityHandler(a))
 	g.PUT("/legal-entities/:legalEntityId", requirePerm(a.User, "menu:company"), orgUpdateLegalEntityHandler(a))
 
-	// 企业员工后台录入(000172):按企业维度录入员工登录信息(工号/密码),menu:company 保护。
+	// 企业员工后台录入(000173):按企业维度录入员工登录信息(工号/密码),menu:company 保护。
 	g.GET("/legal-entities/:legalEntityId/staff", requirePerm(a.User, "menu:company"), orgListEntityStaffHandler(a))
 	g.POST("/legal-entities/:legalEntityId/staff", requirePerm(a.User, "menu:company"), orgCreateEntityStaffHandler(a))
 	g.PUT("/legal-entities/:legalEntityId/staff/:accountId/password", requirePerm(a.User, "menu:company"), orgEntityStaffPasswordHandler(a))

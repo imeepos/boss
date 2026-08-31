@@ -85,7 +85,7 @@ type Service interface {
 	// CreateAccount/UpdateAccount 受权建号/改号(封闭模型,menu:account 保护)。
 	CreateAccount(ctx context.Context, in AccountInput) (int64, error)
 	UpdateAccount(ctx context.Context, id int64, in AccountInput) error
-	// 企业员工后台录入(000172,menu:company 保护):按企业维度维护员工登录信息。
+	// 企业员工后台录入(000173,menu:company 保护):按企业维度维护员工登录信息。
 	ListEntityStaff(ctx context.Context, entityID int64) ([]AccountRow, error)
 	CreateEntityStaff(ctx context.Context, entityID int64, in AccountInput) (int64, error)
 	SetEntityStaffPassword(ctx context.Context, entityID, accountID int64, password string) error

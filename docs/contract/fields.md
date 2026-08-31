@@ -45,7 +45,7 @@
 | — | `PasswordHash` | password_hash | TEXT |
 | — | `RealName` | real_name | VARCHAR(64) |
 | — | `Phone` | phone | VARCHAR(32) |
-| 工号 | `StaffNo` | staff_no | VARCHAR(32)，可空；非空全局唯一（000172，企业员工登录标识） |
+| 工号 | `StaffNo` | staff_no | VARCHAR(32)，可空；非空全局唯一（000173，企业员工登录标识） |
 | — | `RoleID` | role_id | BIGINT → roles |
 | 状态 | `Status` | status | 1启用 / 0停用 |
 | — | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities（可空） |
@@ -53,7 +53,7 @@
 | — | `PostID` | post_id | BIGINT → posts（可空） |
 | — | `RegionScope` | region_scope | LTREE，空=全集团 |
 
-> 企业员工后台录入（000172，公司管理页「员工」入口，permCode `menu:company`）：
+> 企业员工后台录入（000173，公司管理页「员工」入口，permCode `menu:company`）：
 > `GET /legal-entities/{id}/staff` 列表（partner_admin/partner_staff，含工号）、
 > `POST /legal-entities/{id}/staff` 录入（staffNo 工号可空 / username 登录名 / password bcrypt 落库 /
 > realName / phone / roleCode 白名单限企业两角色；工号冲突 40900、登录名冲突 40900、入参不合法 42200）、
@@ -530,7 +530,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | | 区域名称 | `Name` | name | 可空;展示名回退: 区域名→公司名 |
 | | 区域月费 | `MonthlyFee` | monthly_fee | 生效价覆盖基础价 |
 | orders(订单侧) | 成交价 | `PriceSnapshot` | price_snapshot | 下单时生效价快照 |
-| offer_provision_bindings(套餐↔下发模板绑定,000172) | 下发模板 | `TemplateID` | template_id | BIGINT → provision_templates;`offer_id` UNIQUE 一套餐一模板 |
+| offer_provision_bindings(套餐↔下发模板绑定,000173) | 下发模板 | `TemplateID` | template_id | BIGINT → provision_templates;`offer_id` UNIQUE 一套餐一模板 |
 | | 备注 | `Remark` | remark | 可空;冗余 legal_entity_id 企业锚点 |
 
 > 计价规则：生效价 = 区域价(前缀匹配) ?? 公司基础价；展示名两级回退；订单只存快照。

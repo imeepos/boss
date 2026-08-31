@@ -17,7 +17,7 @@ type AccountInput struct {
 	Password      string  `json:"password"` // 新建必填;修改留空=不改
 	RealName      string  `json:"realName"`
 	Phone         string  `json:"phone"`
-	StaffNo       string  `json:"staffNo"` // 工号(000172,可空;企业员工登录标识)
+	StaffNo       string  `json:"staffNo"` // 工号(000173,可空;企业员工登录标识)
 	RoleCode      string  `json:"roleCode"`
 	LegalEntityID *int64  `json:"legalEntityId"` // nil/0=NULL(不限)
 	DeptID        *int64  `json:"deptId"`

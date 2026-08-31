@@ -1,6 +1,6 @@
 package user
 
-// 企业员工后台录入(CH 渠道经销商域,000172):管理后台按企业维度维护员工登录信息。
+// 企业员工后台录入(CH 渠道经销商域,000173):管理后台按企业维度维护员工登录信息。
 // 企业员工=accounts 绑定 legal_entity_id + partner_admin/partner_staff 角色(fields.md 8C);
 // 与企业工作台自助建号(partner.CreateStaff)平行,本文件是后台受权视角,可编工号/建管理员。
 
