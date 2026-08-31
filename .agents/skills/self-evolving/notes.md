@@ -1503,3 +1503,8 @@
 - 哪个坑最浪费时间：① 验证车用固定客户 214,其 LO 账号在环节6 幂等复用**不更新 offer_id**,导致第一次"绑定优先"实验(订单 106/300M)实际按 LO 旧套餐 101(100M) 解析出 152——结果全错但每步都"合理",排查花了一轮;正确做法是先读 PreConfigOLT 源码确认它用 lo.OfferID 而非订单 offer,再用无 LO 的干净客户或绑 LO 实际持有的套餐。② 直建客户 verify 播 50000(既有 NULL 崩溃,修掉)后又撞 42200(Verify 只翻转已存在 PENDING 核验单,0 行→ErrRealNameConflict)——同一端点两层语义,修一层后还有一层产品语义拦截,SQL 预插 PENDING 单才走通。③ 用了已删 worktree 里的脚本路径跑验收车,No such file or directory 白跑一轮。
 - skill 有没有提前警告：mainchain-acceptance 是最好的 E2E 车(2026-08-30 notes)直接命中,SKIP_CLEANUP=1 + 官方清理脚本组合让造数全程可回收;红线#1(edit 前 read)本轮 0 犯——worktree 轮开工先 read 的对策生效。
 - 重来一次会怎么做：① 验证"解析用的是哪个 offer"类问题,第一步永远先 SQL 看 LO 账号实际值再跑流程;② 端到端实验设计先画"输入(订单/LO/绑定)→解析→任务"数据流图,变量只动一个;③ 验收车+SKIP_CLEANUP+定点取证(SQL 查任务/日志)+统一收尾清理,是可复用的验证四件套。
+
+## 2026-09-01 位置/地址统一改造轮(000174+KNN+子树匹配+半径闸门)
+- 哪个坑最浪费时间：① merge main 时发现并行会话已落 000175 多区域模型(Worker.MatchesRegion),我的子树匹配与其语义重叠——好在开工前先 fetch+定期反向同步,冲突只在 2 个文件,正交合并(候选根=负责区域集合任一,子树判定一次 SQL);若拖到收尾才发现,返工面翻倍。② 测试桩 map 以 TicketID 为键,fake 工单 TicketID 全 0 键碰撞,真实库不会暴露的 bug 被自己的测试数据撞出来(hall 用例空列表假失败);改回 TicketNo 键。③ workerSettingsOf 命名撞 profile.go 同名函数,声明前没 grep 包内符号。④ edit 对称性红线再犯:替换 TestDeleteAddress 时 new_string 只写了函数头,整段函数体被删,立刻 go test 抓住当场补回——多行替换后必须先 grep 被删符号仍在。
+- skill 有没有提前警告：红线#4(对称性)在台账里但执行时没对号,本次属第 5 次累犯;「迁移占号先 fetch 再定号」直接避开了与 000175 的撞号(我先定 000174,fetch 后发现并行占了 000175,无需让号但流程对了);后端.md 的 envelope 断言(42200 而非 http status)这轮先查了没踩。
+- 重来一次会怎么做：① 涉接口签名的任务(T4 改 WorkerService)开工先 grep 所有 fakes 清单再动手,而不是编译报错后逐个补;② hall 之类"列表对齐映射"默认沿用原实现的键(TicketNo),不换键;③ 并行会话活跃时段,feature 分支每完成一个任务就 merge main 一次,把冲突拆成小口消化,不要攒到最后一次性合。
