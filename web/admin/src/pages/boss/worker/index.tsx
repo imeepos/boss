@@ -12,6 +12,7 @@ import { fmtTime } from '../../../lib/format'
 import { pageSlice, type WorkerGroupRow, type WorkerRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { TeamDialogs, type DialogMode } from './TeamDialogs'
+import { WorkerDialogs, type WorkerDialogMode } from './WorkerDialogs'
 import { WorkerDetailDrawer } from './worker-detail-drawer'
 
 const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
@@ -30,6 +31,7 @@ export default function WorkerPage() {
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
   const [dialog, setDialog] = useState<DialogMode>(null)
+  const [workerDialog, setWorkerDialog] = useState<WorkerDialogMode>(null)
   const [pickWorker, setPickWorker] = useState('')
   const [detailId, setDetailId] = useState<number | null>(null)
 
@@ -85,8 +87,9 @@ export default function WorkerPage() {
   return (
     <div>
       <PageHead title={w.title} desc={w.desc} />
-      {/* 页面级操作栏:添加装维队 */}
-      <div className="mb-4 flex items-center justify-end">
+      {/* 页面级操作栏:新增师傅(录入主档+登录密码) / 添加装维队 */}
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <button className={primaryBtn} onClick={() => setWorkerDialog({ type: 'create' })}>{w.newWorker}</button>
         <button className={primaryBtn} onClick={() => setDialog({ type: 'create' })}>{w.newTeam}</button>
       </div>
       <div className="mb-4 flex flex-col gap-4 lg:flex-row">
@@ -197,8 +200,11 @@ export default function WorkerPage() {
       </div>
 
       <TeamDialogs mode={dialog} groups={groups} workers={rows} onClose={() => setDialog(null)} onDone={load} />
+      <WorkerDialogs mode={workerDialog} groups={groups} onClose={() => setWorkerDialog(null)} onDone={load} />
       {detailId !== null && (
-        <WorkerDetailDrawer id={detailId} groupName={detailId ? groupName(rows.find((r) => r.id === detailId)?.groupId ?? 0) : ''} onClose={() => setDetailId(null)} />
+        <WorkerDetailDrawer id={detailId} groupName={detailId ? groupName(rows.find((r) => r.id === detailId)?.groupId ?? 0) : ''}
+          onResetPwd={(wid, wname) => { setDetailId(null); setWorkerDialog({ type: 'resetPwd', workerId: wid, name: wname }) }}
+          onClose={() => setDetailId(null)} />
       )}
     </div>
   )

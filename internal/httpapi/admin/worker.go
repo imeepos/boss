@@ -20,9 +20,11 @@ func registerWorkerRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/workers/:workerId/transfer", requirePerm(a.User, "menu:order"), workerTransferHandler(a))
 
 	g.GET("/workers", requirePerm(a.User, "menu:dispatch"), workerListWorkersHandler(a))
+	g.POST("/workers", requirePerm(a.User, "menu:dispatch"), workerCreateHandler(a))
 	g.GET("/workers/:workerId", requirePerm(a.User, "menu:dispatch"), workerGetWorkerHandler(a))
 	g.GET("/workers/:workerId/location", requirePerm(a.User, "menu:dispatch"), workerLatestLocationHandler(a))
 	g.PUT("/workers/:workerId/settings", requirePerm(a.User, "menu:dispatch"), workerUpdateSettingsHandler(a))
+	g.PUT("/workers/:workerId/password", requirePerm(a.User, "menu:dispatch"), workerSetPasswordHandler(a))
 
 	g.GET("/worker-performances", requirePerm(a.User, "menu:order"), workerListPerformancesHandler(a))
 	g.GET("/worker-commissions", requirePerm(a.User, "menu:order"), workerListCommissionsHandler(a))

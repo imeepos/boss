@@ -1329,6 +1329,25 @@ export interface Translations {
       pickWorkerPlaceholder: string
       addToGroupHint: string
       needSelectGroup: string
+      // 后台录入师傅(2026-09-01):新增师傅含师傅端登录密码;详情抽屉重置密码
+      newWorker: string
+      newWorkerTitle: string
+      workerStaffNo: string
+      workerName: string
+      workerPhone: string
+      workerGroup: string
+      workerRegion: string
+      workerPassword: string
+      workerPasswordHint: string
+      eStaffNoRequired: string
+      eWorkerNameRequired: string
+      ePhoneRequired: string
+      eGroupRequired: string
+      eRegionRequired: string
+      ePasswordShort: string
+      resetPwd: string
+      resetPwdTitle: string
+      resetPwdConfirmText: string
       // 师傅详情抽屉(2026-08-30):列表入口 + 主档头 + 概览芯片 + 关联子集段
       detail: string
       detailTitle: string

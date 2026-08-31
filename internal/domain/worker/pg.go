@@ -122,29 +122,10 @@ func (s *PGStore) ListWorkers(ctx context.Context, groupID int64, keyword string
 	return out, rows.Err()
 }
 
-// CreateWorker 新建师傅,返回自增 id。
-// 校验 group_id 存在性,防止孤儿师傅。
+// CreateWorker 新建师傅(无登录密码),返回自增 id。
+// 由 CreateWorkerWithPassword(ctx, w, "") 承接,详见 pg_password.go。
 func (s *PGStore) CreateWorker(ctx context.Context, w Worker) (int64, error) {
-	// 关联完整性校验
-	if w.GroupID > 0 {
-		ok, err := s.exists(ctx, "worker_groups", w.GroupID)
-		if err != nil {
-			return 0, err
-		}
-		if !ok {
-			return 0, fmt.Errorf("worker: group %d: %w", w.GroupID, ErrForeignKeyViolation)
-		}
-	}
-
-	var id int64
-	err := s.db.QueryRow(ctx, `
-		INSERT INTO workers(staff_no, name, group_id, region_id, phone, status, joined_at, left_at)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-		w.StaffNo, w.Name, w.GroupID, w.RegionID, w.Phone, w.Status, w.JoinedAt, w.LeftAt).Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("worker: create worker: %w", err)
-	}
-	return id, nil
+	return s.CreateWorkerWithPassword(ctx, w, "")
 }
 
 // GetWorker 按 id 查师傅;未命中返回 ErrNotFound。

@@ -477,6 +477,8 @@ var adminRoutes = []routeEntry{
 	{"POST", "/workers/:workerId/real-name", "提交实名认证资料"},
 	{"POST", "/workers/:workerId/real-name/verify", "后台实名核验(PASS/FAIL)"},
 	{"GET", "/workers", "师傅台账(主档×接单设置×月绩效,含在途工单数)"},
+	{"POST", "/workers", "后台录入师傅(主档 + 师傅端登录密码,bcrypt 落库;工号/手机号冲突 40900)"},
+	{"PUT", "/workers/:workerId/password", "重置师傅登录密码(bcrypt;师傅端手机号+密码登录用)"},
 	{"GET", "/workers/:workerId/location", "查询师傅最新实时位置"},
 	{"GET", "/workers/:workerId", "师傅详情"},
 	{"PUT", "/workers/:workerId/settings", "修改接单设置(在线/半径/接单类型),即时生效于师傅端"},

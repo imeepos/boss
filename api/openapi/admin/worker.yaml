@@ -186,6 +186,45 @@ paths:
         - $ref: './schemas.yaml#/components/parameters/keyword'
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Worker]
+      summary: 后台录入师傅(主档 + 师傅端登录密码,bcrypt 落库;工号/手机号冲突 40900)
+      operationId: createWorker
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [staffNo, name, phone, groupId, regionId, password]
+              properties:
+                staffNo: { type: string }
+                name: { type: string }
+                phone: { type: string, description: 师傅端登录名(手机号) }
+                groupId: { type: integer, format: int64 }
+                regionId: { type: integer, format: int64 }
+                password: { type: string, description: '师傅端登录密码,>=6 位' }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /workers/{workerId}/password:
+    put:
+      tags: [Worker]
+      summary: 重置师傅登录密码(bcrypt;师傅端手机号+密码登录用)
+      operationId: setWorkerPassword
+      parameters:
+        - { name: workerId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: '新密码,>=6 位' }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
   /workers/{workerId}/location:
     get:

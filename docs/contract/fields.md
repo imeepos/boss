@@ -778,16 +778,17 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 
 `workers`（安装师傅/师傅端用户）：
 
-> 固定用途：仅承载上门安装师傅及师傅端登录主体。师傅使用 `staffNo` 作为登录名，凭 `passwordHash` 登录师傅端；仅 `status=1`（在职）允许登录。不得使用 `accounts` 登录后台。
+> 固定用途：仅承载上门安装师傅及师傅端登录主体。师傅端登录名 = `phone`（手机号，worker/auth.yaml `required:[phone,mode]`），凭 `passwordHash` 以 `mode=password` 登录（Amended 2026-09-01：旧文"staffNo 作为登录名"与 worker/auth.yaml、师傅端 App 实现不符，按实现现况修正；staffNo 仅为工号标识）；仅 `status=1`（在职）允许登录。不得使用 `accounts` 登录后台。
+> 登录密码管理（2026-09-01）：admin `POST /workers` 录入师傅必带 `password`（bcrypt 落库）；`PUT /workers/{workerId}/password` 重置；`passwordHash` 为空不可密码登录（仅验证码模式）。
 
 | 字段名(TS实体) | DB 列 | 枚举/说明 |
 |:---------|:------|:----------|
-| `staffNo` | staff_no | 工号，如 WK-1024（唯一，师傅端登录名） |
-| `passwordHash` | password_hash | 师傅端密码哈希，仅存哈希，不存明文，可空（首次设置前不可登录） |
+| `staffNo` | staff_no | 工号，如 WK-1024（唯一，页面展示/检索标识） |
+| `passwordHash` | password_hash | 师傅端密码哈希，仅存哈希，不存明文，可空（首次设置前不可密码登录） |
 | `name` | name | 师傅姓名 |
 | `group` | group_id | BIGINT → worker_groups（当前归属，可变更） |
 | `regionId` | region_id | 服务区域，须落班组公司经营区域 |
-| `phone` | phone | 联系电话（脱敏） |
+| `phone` | phone | 联系电话（列表/详情脱敏展示；师傅端登录名） |
 | `status` | status | 1在职 / 0离职（terms.md §4 登记；师傅详情/列表同口径） |
 | `joinedAt` | joined_at | 入职时间 |
 | `leftAt` | left_at | 离职时间，null=在职 |

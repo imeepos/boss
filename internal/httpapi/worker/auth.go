@@ -1,8 +1,8 @@
 package workerapi
 
 // W 师傅端门户登录:手机号 + 验证码/密码(worker/auth.yaml)。
-// 验证码落 portal_sms_codes(与用户端共用表,scene=login);密码模式待 worker 域
-// 暴露 LoginByStaffNo 后接入(password_hash 不经 app 层暴露)。
+// 验证码落 portal_sms_codes(与用户端共用表,scene=login);密码模式经 worker 域
+// VerifyPassword 比对 workers.password_hash(哈希不经 app 层暴露)。
 
 import (
 	"context"
@@ -118,8 +118,12 @@ func checkWorkerLogin(a *app.Application, c *gin.Context, w *worker.Worker, req 
 		}
 		return ""
 	case "password":
-		// worker 域未暴露密码校验服务;待域补 LoginByStaffNo 后接入。
-		return "password mode not supported yet"
+		// 密码校验收敛在 worker 域(VerifyPassword 只比对哈希,password_hash 不经 app 层暴露)。
+		ok, err := a.Worker.VerifyPassword(c.Request.Context(), w.ID, strings.TrimSpace(req.Password))
+		if err != nil || !ok {
+			return "invalid password"
+		}
+		return ""
 	default:
 		return "unknown mode"
 	}

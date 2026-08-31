@@ -25,6 +25,11 @@ type fakeWorkerOps struct {
 	toggled   int64
 	reviewed  int64
 	confirmed int64
+	// 录入师傅/重置密码落账(worker_account_handlers 测试)。
+	createdWorker   *worker.Worker
+	createdPassword string
+	pwdWorkerID     int64
+	pwdPassword     string
 }
 
 func (f *fakeWorkerOps) ListGroups(context.Context) ([]worker.Group, error) { return nil, nil }
@@ -36,6 +41,19 @@ func (f *fakeWorkerOps) ListWorkers(context.Context, int64, string) ([]worker.Wo
 }
 func (f *fakeWorkerOps) CreateWorker(context.Context, worker.Worker) (int64, error) {
 	return 0, nil
+}
+func (f *fakeWorkerOps) CreateWorkerWithPassword(_ context.Context, w worker.Worker, password string) (int64, error) {
+	f.createdWorker = &w
+	f.createdPassword = password
+	return 501, nil
+}
+func (f *fakeWorkerOps) SetPassword(_ context.Context, workerID int64, password string) error {
+	f.pwdWorkerID = workerID
+	f.pwdPassword = password
+	return nil
+}
+func (f *fakeWorkerOps) VerifyPassword(context.Context, int64, string) (bool, error) {
+	return false, nil
 }
 func (f *fakeWorkerOps) GetWorker(context.Context, int64) (*worker.Worker, error) {
 	return f.w, nil

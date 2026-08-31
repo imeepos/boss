@@ -48,7 +48,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, cms.ErrSlugTaken),
 		errors.Is(err, cms.ErrCategoryTaken),
 		errors.Is(err, cms.ErrCategoryInUse),
-		errors.Is(err, asset.ErrBindingConflict):
+		errors.Is(err, asset.ErrBindingConflict),
+		errors.Is(err, worker.ErrDuplicate):
 		// 资产/标签双绑冲突:40900 + 透传 err.Error()(含具体资产/标签 id),
 		// 调用方能区分"标签已绑"vs"资产已绑",与 40920 扫码不一致明确区分。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
@@ -59,6 +60,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, customer.ErrInvalidProductStatus),
 		errors.Is(err, quadlink.ErrForeignKeyViolation),
 		errors.Is(err, worker.ErrForeignKeyViolation),
+		errors.Is(err, worker.ErrInvalidPassword),
 		errors.Is(err, provision.ErrForeignKeyViolation),
 		errors.Is(err, asset.ErrForeignKeyViolation),
 		errors.Is(err, procurement.ErrForeignKey),
