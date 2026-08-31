@@ -87,3 +87,12 @@ paths:
         - { name: taskId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /provision-bindings:
+    get:
+      tags: [Provision]
+      summary: 产品/套餐↔下发模板绑定清单(admin 产品页"下发模板"列;方案B adopted 2026-09-01)
+      operationId: listOfferProvisionBindings
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+

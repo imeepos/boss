@@ -530,9 +530,15 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | | 区域名称 | `Name` | name | 可空;展示名回退: 区域名→公司名 |
 | | 区域月费 | `MonthlyFee` | monthly_fee | 生效价覆盖基础价 |
 | orders(订单侧) | 成交价 | `PriceSnapshot` | price_snapshot | 下单时生效价快照 |
+| offer_provision_bindings(套餐↔下发模板绑定,000172) | 下发模板 | `TemplateID` | template_id | BIGINT → provision_templates;`offer_id` UNIQUE 一套餐一模板 |
+| | 备注 | `Remark` | remark | 可空;冗余 legal_entity_id 企业锚点 |
 
 > 计价规则：生效价 = 区域价(前缀匹配) ?? 公司基础价；展示名两级回退；订单只存快照。
 > 约束（seed 已校验）：未经营区域不得设区域价、不得下单；账单金额 = 快照价。
+> 开通绑定（方案B，adopted 2026-09-01-offer-provision-binding）：环节7 模板解析顺序
+> ①显式绑定（本表,模板须 ENABLED）→ ②带宽兜底（同法人 ENABLED 模板 `content->>'bandwidth'`=套餐带宽,无带宽套餐不参与）
+> → ③`TEMPLATE UNRESOLVED` 显性失败（禁止回退法人任意模板）。
+> 无带宽套餐（IPTV/云存储等 addon）必须显式绑定模板,否则环节7 失败。
 
 ## 3. 阶段5 · 订单与计费（internal/domain/{order,billing}）
 

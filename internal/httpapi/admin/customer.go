@@ -28,6 +28,10 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 	prod.PUT("/:id/status", requirePerm(a.User, "menu:product-write"), productUpdateStatusHandler(a))
 	prod.GET("/:id/price-history", productPriceHistoryHandler(a))
 	prod.POST("/:id/price-history", requirePerm(a.User, "menu:product-write"), productChangePriceHandler(a))
+	// 产品↔下发模板绑定(方案B):读 menu:product,写 menu:product-write。
+	prod.GET("/:id/provision-binding", productGetProvisionBindingHandler(a))
+	prod.PUT("/:id/provision-binding", requirePerm(a.User, "menu:product-write"), productUpsertProvisionBindingHandler(a))
+	prod.DELETE("/:id/provision-binding", requirePerm(a.User, "menu:product-write"), productDeleteProvisionBindingHandler(a))
 }
 
 // changeProductPriceReq 产品调价请求体(对齐 customer.yaml changeProductPrice)。

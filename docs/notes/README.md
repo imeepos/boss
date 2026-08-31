@@ -83,6 +83,7 @@
 | 2026-08-30 | 业务持久化可靠性阶段2:订单推进计数器与环节日志同事务、webhook 投递 SKIP LOCKED 原子领取+租约、审计写失败重试+全量载荷告警、配置密文解密失败显性化;限流/渠道注册边界与内存态分类登记 | adopted/2026-08-30-persist-reliability-phase2.md |
 | 2026-08-30 | 合成客户实名核验边界:审核 PASS 放行(结论只落 verifications,主档同步 0 行 no-op)+ 证件照上传仅拒 uploaderId==0;转正/拒绝两案否决 | adopted/2026-08-30-synthetic-customer-realname-boundary.md |
 | 2026-08-30 | 环节7 下发模板解析规则:按套餐带宽匹配同法人 ENABLED 模板+默认回退留痕,否决 offer→template 外键列与任务表带宽列;CreateTask 补真幂等;102 provisioner 常驻+oltsim 仿真 OLT 落地 | adopted/2026-08-30-preconfig-template-resolution.md |
+| 2026-09-01 | 产品/套餐↔下发模板显式绑定(方案B):新表 offer_provision_bindings(000172),环节7 解析=显式绑定→带宽兜底→显性失败(推翻 08-30"回退默认"裁定);admin 产品/模板页双向绑定可见;下发日志补记模板可追踪 | adopted/2026-09-01-offer-provision-binding.md |
 | 2026-09-01 | 后台录入师傅(POST /workers 必带密码+PUT /workers/{id}/password 重置,bcrypt);师傅端登录名裁定=phone,fields.md 旧文"staffNo 登录名"按实现现况修正 | adopted/2026-09-01-worker-create-with-password.md |
 | 2026-09-03 | 导入权限边界:地址使用 menu:importer,Geo 使用 menu:geo,暂不追加地址双权限 | adopted/2026-09-03-importer-permission-scope.md |
 | 2026-09-03 | 导入任务登记幂等键 clientKey 与下单幂等键 requestId 语义区分(upsert 写入 vs 查询返回,作用域/命名不统一) | adopted/2026-09-03-import-task-idempotency.md |

@@ -618,3 +618,6 @@ SQL
 
 场景 → 102 是多会话共享机,18081/18082/18083 这类「顺延端口号」会在你 ss 检查和起服务之间被并行会话抢走;systemd 服务部分子监听失败时整体仍 active,假绿。
 做法 → 选端口前 `ss -ltn` 全量列出已监听端口挑真空闲的(不要从被占端口顺延);服务启动后 journalctl -u <name> 必须逐行确认每个监听成功、curl 打通每个端口;telnet 类服务用 `/dev/tcp` 或真实客户端走一遍完整协议(login→命令→应答)。镜像化服务先查部署形态(compose 服务表/Dockerfile BINARIES/CI workflow),「二进制在镜像里但 compose 没这个服务」= 功能从未上线。
+- worktree 无 node_modules 时(2026-09-01 产品绑定轮):`ln -s 主checkout绝对路径/node_modules node_modules`(仓库根)+ `ln -s 主checkout/web/admin/node_modules web/admin/node_modules`,pnpm typecheck/vitest/vite build 全部可用,免 pnpm install;用完随 worktree 一起 remove(链接是 ignored 不挡 remove)。
+- make check D 项撞号裁决实操(2026-09-01):先 `git ls-tree main -- migrations/ | grep <号>` 确认自己已合并+已落库,再 `git ls-tree <对方分支> -- migrations/` 确认对方未合并——按「已合并者优先」判对方让号,session_link_send 发提醒附改名目标号,自己继续合并不被环境性 D FAIL 阻塞。
+- 部署后验证三件套一轮过(2026-09-01):后台轮询 `healthz` 的 commit 字段等新 sha(取代人工猜)→ 用 test-accounts.json 的 admin api key curl 新 API 冒烟(正路径+错误路径都要打)→ `curl 5180` 拿 index.html 里 assets/index-*.js 再 grep 新 UI 文案确认前端指纹。

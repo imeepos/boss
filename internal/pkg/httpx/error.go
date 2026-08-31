@@ -54,6 +54,9 @@ func RespondErr(c *gin.Context, err error) {
 		// 资产/标签双绑冲突:40900 + 透传 err.Error()(含具体资产/标签 id),
 		// 调用方能区分"标签已绑"vs"资产已绑",与 40920 扫码不一致明确区分。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
+	case errors.Is(err, provision.ErrBindingInvalid):
+		// 绑定校验失败(跨法人/模板停用):42200 + 透传原因,管理员可见为什么绑不上。
+		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
 	case errors.Is(err, user.ErrInvalidInput),
 		errors.Is(err, user.ErrRoleNotFound),
 		errors.Is(err, user.ErrFKViolation),

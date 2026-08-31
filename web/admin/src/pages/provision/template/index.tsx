@@ -108,6 +108,7 @@ export default function ProvisionTemplatePage() {
                       <span className={x.status === 'ENABLED' ? 'text-[var(--color-success)]' : 'text-[var(--shell-group-title)]'}>{x.status}</span>
                     </td>
                     <td className={TD}>v{x.version}</td>
+                    <td className={TD}>{x.boundOffers > 0 ? x.boundOffers : <span className="text-[var(--shell-group-title)]">0</span>}</td>
                     <td className={TD}>
                       <button className={ACT} disabled={busy} onClick={() => setEditing(x)}>{p.edit}</button>
                       <button className={ACT} disabled={busy} onClick={() => toggleStatus(x)}>{x.status === 'ENABLED' ? 'DISABLE' : 'ENABLE'}</button>

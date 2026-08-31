@@ -19,6 +19,8 @@ func registerProvisionRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/provision-tasks", requirePerm(a.User, "menu:provision"), provisionListTasksHandler(a))
 	g.GET("/provision-logs", requirePerm(a.User, "menu:provlog"), provisionListLogsHandler(a))
 	g.POST("/provision-tasks/:taskNo/retry", requirePerm(a.User, "menu:provision"), provisionRetryTaskHandler(a))
+	// 产品↔下发模板绑定清单(admin 产品页"下发模板"列;读菜单 menu:product)。
+	g.GET("/provision-bindings", requirePerm(a.User, "menu:product"), provisionListOfferBindingsHandler(a))
 }
 
 // latestRetries 取任务日志中的最大重试计数,供 RetryTask 递增留痕。

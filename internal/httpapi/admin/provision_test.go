@@ -22,6 +22,9 @@ type fakeProvision struct {
 		id      int64
 		retries int16
 	}
+	bound   *provision.OfferTemplateBinding
+	bindRec *struct{ offerID, templateID int64 }
+	delRec  int64
 }
 
 func (f *fakeProvision) ListTemplates(context.Context) ([]provision.Template, error) { return nil, nil }
@@ -51,6 +54,20 @@ func (f *fakeProvision) RetryTask(_ context.Context, id int64, retries int16) er
 		retries int16
 	}{id, retries}
 	return nil
+}
+func (f *fakeProvision) GetOfferBinding(context.Context, int64) (*provision.OfferTemplateBinding, error) {
+	return f.bound, nil
+}
+func (f *fakeProvision) UpsertOfferBinding(_ context.Context, offerID, templateID int64, _ string) (int64, error) {
+	f.bindRec = &struct{ offerID, templateID int64 }{offerID, templateID}
+	return 1, nil
+}
+func (f *fakeProvision) DeleteOfferBinding(_ context.Context, offerID int64) error {
+	f.delRec = offerID
+	return nil
+}
+func (f *fakeProvision) ListOfferBindings(context.Context) ([]provision.OfferTemplateBinding, error) {
+	return nil, nil
 }
 
 // TestRetryProvisionTask 契约:失败任务按 taskNo 重试,重试计数取日志最大值+1。

@@ -49,3 +49,10 @@
 - 历史 DONE 任务的 `template_id=101` 错位留痕不重放（审计事实不动）；
 - 102 曾发现验收清理漏删 `provision_tasks`（订单删了任务残留 PENDING），
   已手工清理 14 条孤儿，巡检脚本覆盖待后续。
+
+## Amended
+
+2026-09-01 被 `2026-09-01-offer-provision-binding.md` 推翻两点：
+①"不加 offer→template 外键列"改为**方案B 绑定表** `offer_provision_bindings`（迁移 000172）；
+②"回退法人默认模板"改为**显性失败**（TEMPLATE UNRESOLVED，禁止静默降级）。
+带宽匹配保留为"显式绑定缺失时的兜底"，不再作为唯一解析规则。

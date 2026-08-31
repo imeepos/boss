@@ -42,9 +42,12 @@ func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, err
 	return ok, nil
 }
 
-// ListTemplates 列出全部下发模板。
+// ListTemplates 列出全部下发模板(含绑定套餐数 bound_offers,admin 可见性)。
 func (s *PGStore) ListTemplates(ctx context.Context) ([]Template, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, legal_entity_id, code, name, content, version, status, updated_at FROM provision_templates ORDER BY id`)
+	rows, err := s.db.Query(ctx, `
+		SELECT t.id, t.legal_entity_id, t.code, t.name, t.content, t.version, t.status, t.updated_at,
+		       COALESCE((SELECT count(*) FROM offer_provision_bindings b WHERE b.template_id = t.id), 0)
+		FROM provision_templates t ORDER BY t.id`)
 	if err != nil {
 		return nil, fmt.Errorf("provision: list templates: %w", err)
 	}
@@ -53,7 +56,7 @@ func (s *PGStore) ListTemplates(ctx context.Context) ([]Template, error) {
 	for rows.Next() {
 		var t Template
 		var raw []byte
-		if err := rows.Scan(&t.ID, &t.LegalEntityID, &t.Code, &t.Name, &raw, &t.Version, &t.Status, &t.UpdatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.LegalEntityID, &t.Code, &t.Name, &raw, &t.Version, &t.Status, &t.UpdatedAt, &t.BoundOffers); err != nil {
 			return nil, fmt.Errorf("provision: scan template: %w", err)
 		}
 		if len(raw) > 0 && string(raw) != "null" {

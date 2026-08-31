@@ -666,6 +666,15 @@ export interface Translations {
       createTitle: string
       edit: string
       editTitle: string
+      templateBind: string
+      templateUnbound: string
+      bindTemplateTitle: string
+      fTemplate: string
+      pTemplate: string
+      fRemark: string
+      bindTip: string
+      unbind: string
+      unbindConfirm: string
       fCategory: string
       categoryOptions: string[]
       feeLocked: string

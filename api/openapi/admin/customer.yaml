@@ -300,6 +300,41 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /products/{id}/provision-binding:
+    get:
+      tags: [Customer]
+      summary: 查询套餐已绑下发模板(未绑定返回 offerId+templateId=0)
+      operationId: getProductProvisionBinding
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 产品ID }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    put:
+      tags: [Customer]
+      summary: 绑定/改绑套餐→下发模板(幂等;校验同法人+模板 ENABLED;方案B adopted 2026-09-01)
+      operationId: upsertProductProvisionBinding
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 产品ID }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [templateId]
+              properties:
+                templateId: { type: integer, format: int64 }
+                remark: { type: string, maxLength: 128 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    delete:
+      tags: [Customer]
+      summary: 解绑套餐→下发模板(幂等;解绑后回退带宽兜底)
+      operationId: deleteProductProvisionBinding
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 }, description: 产品ID }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /verifications:
     get:
       tags: [Customer]

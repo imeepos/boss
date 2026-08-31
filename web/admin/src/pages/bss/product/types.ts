@@ -22,6 +22,17 @@ export interface PriceHistoryRow {
   operatorAccountId: number
 }
 
+// 产品↔下发模板绑定行(GET/PUT/DELETE /products/{id}/provision-binding)。
+export interface OfferBindingRow {
+  id: number
+  legalEntityId: number
+  offerId: number
+  templateId: number
+  templateCode: string
+  templateName: string
+  remark: string
+}
+
 export const PRODUCT_STATUSES = ['DRAFT', 'PUBLISHED', 'OFFLINE'] as const
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number]
 
