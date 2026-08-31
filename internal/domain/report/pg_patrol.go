@@ -62,6 +62,11 @@ var orphanChecks = []struct {
 		FROM invoices i WHERE i.customer_id > 0 AND NOT EXISTS (SELECT 1 FROM customers c WHERE c.id = i.customer_id)`},
 	{"provision_logs.task_id -> provision_tasks", `SELECT count(*), COALESCE((array_agg(l.id ORDER BY l.id))[1:10], '{}'::bigint[])
 		FROM provision_logs l WHERE l.task_id > 0 AND NOT EXISTS (SELECT 1 FROM provision_tasks t WHERE t.id = l.task_id)`},
+	// 下发任务→订单孤儿(2026-09-01 补,adopted note preconfig-template-resolution 遗留项):
+	// 环节7 任务以 order_id 挂订单,验收/流程中断后订单删除而任务残留时由此告警
+	// (清理脚本 acceptance-cleanup.sh 已同步补扫,本巡检兜底非 acc_ 路径的泄漏)。
+	{"provision_tasks.order_id -> orders", `SELECT count(*), COALESCE((array_agg(t.id ORDER BY t.id))[1:10], '{}'::bigint[])
+		FROM provision_tasks t WHERE t.order_id > 0 AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = t.order_id)`},
 	// 订单环节计数器与环节日志一致性:orders.stage 必须等于该订单 order_stages 行数。
 	// 进程在 advance 两条语句之间崩溃或第二条失败时会产生「计数器到 N 而日志缺 N」的分叉单,
 	// 重试恒撞 ErrIllegalTransition 永久卡死(2026-08-30 持久化阶段2 修复了写入路径);
