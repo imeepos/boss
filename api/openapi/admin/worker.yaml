@@ -188,7 +188,7 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Worker]
-      summary: 后台录入师傅(主档 + 师傅端登录密码,bcrypt 落库;工号/手机号冲突 40900)
+      summary: 后台录入师傅(主档 + 登录密码 + 负责区域;工号/手机号冲突 40900)
       operationId: createWorker
       requestBody:
         required: true
@@ -196,14 +196,41 @@ paths:
           application/json:
             schema:
               type: object
-              required: [staffNo, name, phone, groupId, regionId, password]
+              # 负责区域:regionIds 多区域(000175)或兼容单值 regionId,二者至少其一;regionIds 首位为主区域。
+              required: [staffNo, name, phone, groupId, password]
               properties:
                 staffNo: { type: string }
                 name: { type: string }
                 phone: { type: string, description: 师傅端登录名(手机号) }
                 groupId: { type: integer, format: int64 }
-                regionId: { type: integer, format: int64 }
+                regionId: { type: integer, format: int64, description: 服务区域(单值兼容;与 regionIds 至少其一) }
+                regionIds:
+                  type: array
+                  items: { type: integer, format: int64 }
+                  description: 负责区域集合(迁移 000175;首位为主区域,与单值 regionId 至少其一)
                 password: { type: string, description: '师傅端登录密码,>=6 位' }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /workers/{workerId}/regions:
+    put:
+      tags: [Worker]
+      summary: 配置师傅负责区域(000175;regionIds 覆盖式,首位为主区域回写 workers.region_id)
+      operationId: setWorkerRegions
+      parameters:
+        - { name: workerId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [regionIds]
+              properties:
+                regionIds:
+                  type: array
+                  items: { type: integer, format: int64 }
+                  description: 负责区域集合(首位为主区域;区域不存在 404)
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 

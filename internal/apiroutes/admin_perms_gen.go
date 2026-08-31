@@ -511,5 +511,6 @@ var AdminRoutePerms = map[string][]string{
 	"PUT /api/admin/v1/users/{customerId}/account":                                {"menu:user"},
 	"PUT /api/admin/v1/worker-groups/{groupId}":                                   {"menu:order"},
 	"PUT /api/admin/v1/workers/{workerId}/password":                               {"menu:dispatch"},
+	"PUT /api/admin/v1/workers/{workerId}/regions":                                {"menu:dispatch"},
 	"PUT /api/admin/v1/workers/{workerId}/settings":                               {"menu:dispatch"},
 }

@@ -797,11 +797,29 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 | `passwordHash` | password_hash | 师傅端密码哈希，仅存哈希，不存明文，可空（首次设置前不可密码登录） |
 | `name` | name | 师傅姓名 |
 | `group` | group_id | BIGINT → worker_groups（当前归属，可变更） |
-| `regionId` | region_id | 服务区域，须落班组公司经营区域 |
+| `regionId` | region_id | 主区域（第一负责区域；000175 起为 regionIds 首位镜像，兼容派单快照/月度统计链路），须落班组公司经营区域 |
+| `regionIds` | worker_regions（§7.1a） | 全部负责区域（000175 多区域；列表/详情回填，主区域首位；未配置时回退 [regionId]） |
 | `phone` | phone | 联系电话（列表/详情脱敏展示；师傅端登录名） |
 | `status` | status | 1在职 / 0离职（terms.md §4 登记；师傅详情/列表同口径） |
 | `joinedAt` | joined_at | 入职时间 |
 | `leftAt` | left_at | 离职时间，null=在职 |
+
+### 7.1a worker_regions（师傅负责区域，迁移 000175）
+
+> 一个师傅可配置多个负责区域（2026-09-01 后台需求）；`workers.region_id` 保留为主区域（第一负责区域），
+> 扩展区域落本表；存量数据由迁移种子（region_id > 0 → 本表一行）无缝衔接。
+
+| 字段名(TS实体) | DB 列 | 枚举/说明 |
+|:---------|:------|:----------|
+| `workerId` | worker_id | BIGINT → workers（级联删除） |
+| `regionId` | region_id | INTEGER → regions；PK(worker_id, region_id) |
+
+> 端点（admin，perm `menu:dispatch`，worker.yaml）：
+> `POST /workers` 录入支持 `regionIds` 数组（首位为主区域；与单值 `regionId` 兼容路径二者至少其一）；
+> `PUT /workers/{workerId}/regions` 覆盖式配置（regionIds 首位为主区域，回写 workers.region_id；
+> 空集合=仅清空扩展区域、主区域保留；区域不存在 404/40900）。
+> 匹配口径：工单区域 ∈ 师傅负责区域集合（主区域 ∪ 扩展区域）即放行——师傅端任务池/抢单/转单目标闸门
+> 与 admin 派单/转派跨区 40900 闸门统一走 `Worker.MatchesRegion`；任一方区域缺失（0）仍视为不限区域。
 
 > 师傅详情（admin `GET /workers/{workerId}`，worker.yaml）：后端主档单条返回上述全字段；
 > admin 前端详情抽屉展示主档 + 关联子集（工单/绩效/消息/评价，各取第一段，超限折叠）。

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/internal/pkg/clock"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -19,14 +20,14 @@ func workerHallHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		if !hallItemsForWorker(c, a, w.RegionID) {
+		if !hallItemsForWorker(c, a, w) {
 			return
 		}
 	}
 }
 
-// hallItemsForWorker 输出任务池:工单须未指派、待派且区域匹配(0=不限区域)。
-func hallItemsForWorker(c *gin.Context, a *app.Application, workerRegionID int64) bool {
+// hallItemsForWorker 输出任务池:工单须未指派、待派且区域命中师傅任一负责区域子树(0=不限区域)。
+func hallItemsForWorker(c *gin.Context, a *app.Application, w *worker.Worker) bool {
 	tickets, err := a.WorkOrder.ListDispatchTickets(c.Request.Context())
 	if err != nil {
 		respondErr(c, err)
@@ -42,7 +43,7 @@ func hallItemsForWorker(c *gin.Context, a *app.Application, workerRegionID int64
 			ids = append(ids, t.RegionID)
 		}
 	}
-	matched, err := a.Worker.MatchedRegionIDs(c.Request.Context(), workerRegionID, ids)
+	matched, err := a.Worker.MatchedRegionIDs(c.Request.Context(), w, ids)
 	if err != nil {
 		respondErr(c, err)
 		return false

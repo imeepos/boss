@@ -21,8 +21,8 @@ func isUniqueViolation(err error) bool {
 }
 
 // CreateWorkerWithPassword 新建师傅并写入登录密码,返回自增 id。
-// 校验 group_id/region_id 存在性,防止孤儿师傅;password 非空且长度 < PasswordMin 拒绝;
-// 工号已占用返回 ErrDuplicate。
+// 校验 group_id/负责区域存在性,防止孤儿师傅;password 非空且长度 < PasswordMin 拒绝;
+// 工号已占用返回 ErrDuplicate。负责区域(RegionIDs,主区域首位)单事务落 worker_regions(000175)。
 func (s *PGStore) CreateWorkerWithPassword(ctx context.Context, w Worker, password string) (int64, error) {
 	if password != "" && utf8.RuneCountInString(password) < PasswordMin {
 		return 0, ErrInvalidPassword
@@ -36,13 +36,21 @@ func (s *PGStore) CreateWorkerWithPassword(ctx context.Context, w Worker, passwo
 			return 0, fmt.Errorf("worker: group %d: %w", w.GroupID, ErrForeignKeyViolation)
 		}
 	}
+	// 负责区域归一:主区域并入集合首位(单值 regionId 兼容路径同样校验+落表)。
+	all := make([]int64, 0, len(w.RegionIDs)+1)
 	if w.RegionID > 0 {
-		ok, err := s.exists(ctx, "regions", w.RegionID)
+		all = append(all, w.RegionID)
+	}
+	all = append(all, w.RegionIDs...)
+	regionIDs, primary := NormalizeRegionIDs(all, w.RegionID)
+	w.RegionID = primary
+	for _, id := range regionIDs {
+		ok, err := s.exists(ctx, "regions", id)
 		if err != nil {
 			return 0, err
 		}
 		if !ok {
-			return 0, fmt.Errorf("worker: region %d: %w", w.RegionID, ErrForeignKeyViolation)
+			return 0, fmt.Errorf("worker: region %d: %w", id, ErrForeignKeyViolation)
 		}
 	}
 	hash := ""
@@ -53,8 +61,13 @@ func (s *PGStore) CreateWorkerWithPassword(ctx context.Context, w Worker, passwo
 		}
 		hash = string(h)
 	}
+	tx, err := s.db.(beginner).Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("worker: begin create worker tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
 	var id int64
-	err := s.db.QueryRow(ctx, `
+	err = tx.QueryRow(ctx, `
 		INSERT INTO workers(staff_no, name, group_id, region_id, phone, status, joined_at, left_at, password_hash)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
 		w.StaffNo, w.Name, w.GroupID, w.RegionID, w.Phone, w.Status, w.JoinedAt, w.LeftAt, hash).Scan(&id)
@@ -63,6 +76,15 @@ func (s *PGStore) CreateWorkerWithPassword(ctx context.Context, w Worker, passwo
 	}
 	if err != nil {
 		return 0, fmt.Errorf("worker: create worker: %w", err)
+	}
+	for _, rid := range regionIDs {
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO worker_regions(worker_id, region_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, id, rid); err != nil {
+			return 0, fmt.Errorf("worker: insert worker region %d: %w", rid, err)
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("worker: commit create worker tx: %w", err)
 	}
 	return id, nil
 }

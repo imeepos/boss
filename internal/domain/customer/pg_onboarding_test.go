@@ -167,6 +167,34 @@ func TestPGStore_Verify_PassIdentityMismatchRejected(t *testing.T) {
 	}
 }
 
+// 直建客户(POST /customers 镜像插入,无 PENDING 核验单)PASS:门禁跳过放行,正常落 PASS 并同步状态。
+// 修复前 pending 子查询 NULL 直扫 *string → "cannot scan NULL into *string" 50000,直建客户无法核验。
+func TestPGStore_Verify_DirectCreatedCustomerPasses(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	// 门禁:无 PENDING 核验单(NULL)→ 跳过门禁。
+	mock.ExpectQuery(`SELECT \(SELECT v.id_card_no FROM verifications v`).
+		WithArgs(int64(88), RealNamePending).
+		WillReturnRows(pgxmock.NewRows([]string{"pending", "master"}).AddRow(nil, "110101198811110011"))
+	mock.ExpectExec(`UPDATE verifications SET result=\$1, reject_reason=\$2, operator_account_id=\$3, operator_name=\$4, verified_at=now\(\) WHERE subject_type='customer' AND subject_id=\$5 AND result=\$6`).
+		WithArgs(RealNamePass, "", int64(1000), "admin", int64(88), RealNamePending).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectExec(`UPDATE customers SET real_name_status='VERIFIED' WHERE id=\$1`).
+		WithArgs(int64(88)).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	s := NewPGStore(mock)
+	if err := s.Verify(context.Background(), 88, RealNamePass, "", "admin", 1000); err != nil {
+		t.Fatalf("Verify direct-created: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
 func TestPGStore_Verify_PassBackfillsEmptyMaster(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {

@@ -75,32 +75,35 @@ func assignResolve(c *gin.Context, a *app.Application, ticketNo string, req assi
 		return nil, nil, false
 	}
 	// 跨区指派:默认拒绝并回 40900 提醒,前端二次确认后带 force 强派。
-	if ticket != nil && !assignRegionGateOK(c, a, w.RegionID, ticket, req.Force) {
+	// 区域口径=师傅负责区域集合(000175)的子树(祖先或自身)。
+	if ticket != nil && !assignRegionGateOK(c, a, w, ticket, req.Force) {
 		return nil, nil, false
 	}
 	return w, ticket, true
 }
 
-// assignRegionGateOK 跨区判定(区域子树祖先或自身);force=调度强派旁路。
+// assignRegionGateOK 跨区判定(负责区域集合子树,祖先或自身);force=调度强派旁路。
 // 子树判定查询失败按跨区提醒处理(可 force 降级),不静默放行。
-func assignRegionGateOK(c *gin.Context, a *app.Application, workerRegionID int64, ticket *order.DispatchTicket, force bool) bool {
+func assignRegionGateOK(c *gin.Context, a *app.Application, w *worker.Worker, ticket *order.DispatchTicket, force bool) bool {
 	if force {
 		return true
 	}
-	matched, err := a.Worker.MatchedRegionIDs(c.Request.Context(), workerRegionID, []int64{ticket.RegionID})
+	matched, err := a.Worker.MatchedRegionIDs(c.Request.Context(), w, []int64{ticket.RegionID})
 	if err == nil && matched[ticket.RegionID] {
 		return true
 	}
-	respondRegionMismatch(c, ticket, workerRegionID)
+	respondRegionMismatch(c, ticket, w)
 	return false
 }
 
-// respondRegionMismatch 跨区指派/转派的 40900 提醒(forceRequired 前端二次确认)。
-func respondRegionMismatch(c *gin.Context, ticket *order.DispatchTicket, workerRegionID int64) {
+// respondRegionMismatch 跨区指派/转派的 40900 提醒(forceRequired 前端二次确认);
+// workerRegionId=主区域(兼容旧字段),workerRegionIds=全部负责区域。
+func respondRegionMismatch(c *gin.Context, ticket *order.DispatchTicket, w *worker.Worker) {
 	respond(c, apitypes.CodeConflict, gin.H{
 		"error": "region mismatch", "forceRequired": true,
 		"ticketRegionId": ticket.RegionID, "ticketRegionName": ticket.RegionName,
-		"workerRegionId": workerRegionID,
+		"workerRegionId":  w.RegionID,
+		"workerRegionIds": w.RegionIDs,
 	})
 }
 
@@ -189,7 +192,8 @@ func transferResolve(c *gin.Context, a *app.Application, ticketNo string, req tr
 		return nil, nil, false
 	}
 	// 跨区转派:同指派,默认 40900 提醒,force 确认后放行。
-	if !assignRegionGateOK(c, a, to.RegionID, ticket, req.Force) {
+	// 跨区转派:同指派,默认 40900 提醒,force 确认后放行(负责区域集合子树口径)。
+	if !assignRegionGateOK(c, a, to, ticket, req.Force) {
 		return nil, nil, false
 	}
 	return ticket, to, true

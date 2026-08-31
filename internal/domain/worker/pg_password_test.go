@@ -27,9 +27,14 @@ func TestPGStore_CreateWorkerWithPassword(t *testing.T) {
 		mock.ExpectQuery(`SELECT EXISTS`).
 			WithArgs(int64(11)).
 			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectBegin()
 		mock.ExpectQuery(`INSERT INTO workers`).
 			WithArgs("WK-2001", "赵师傅", int64(1), int64(11), "13900002233", int16(1), ts, (*time.Time)(nil), pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
+		mock.ExpectExec(`INSERT INTO worker_regions`).
+			WithArgs(int64(9), int64(11)).
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectCommit()
 
 		s := NewPGStore(mock)
 		id, err := s.CreateWorkerWithPassword(context.Background(), Worker{
@@ -70,10 +75,12 @@ func TestPGStore_CreateWorkerWithPassword(t *testing.T) {
 		mock.ExpectQuery(`SELECT EXISTS`).
 			WithArgs(int64(11)).
 			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectBegin()
 		mock.ExpectQuery(`INSERT INTO workers`).
 			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(),
 				pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 			WillReturnError(&pgconn.PgError{Code: "23505", ConstraintName: "workers_staff_no_key"})
+		mock.ExpectRollback()
 
 		s := NewPGStore(mock)
 		if _, err := s.CreateWorkerWithPassword(context.Background(), Worker{

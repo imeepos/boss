@@ -1,10 +1,10 @@
 // 师傅账号对话框集(2026-09-01 后台录入师傅):新增师傅(含师傅端登录密码)/重置密码。
 // 表单密度与视觉复用 TeamDialogs 的 Shell/Err/compact;师傅端用手机号+密码登录。
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
-import { ResourcePicker } from '../../../components/ResourcePicker'
+import { MultiSelect } from '../../../components/MultiSelect'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import type { WorkerGroupRow } from '../types'
@@ -22,19 +22,28 @@ interface DialogsProps {
   onDone: () => void
 }
 
-interface RegionOption { id: number; name: string }
+export interface RegionOption { id: number; name: string }
 
-// WorkerForm 新增师傅:工号/姓名/手机号(登录名)/装维队/服务区域/登录密码。
+/** loadRegionOptions 经营区域下拉数据源(GET /regions 裸数组)。 */
+export async function loadRegionOptions(): Promise<RegionOption[]> {
+  const x = await apiFetch<RegionOption[]>('/regions')
+  return Array.isArray(x) ? x : []
+}
+
+// WorkerForm 新增师傅:工号/姓名/手机号(登录名)/装维队/负责区域(多选,首个为主区域)/登录密码。
 function WorkerForm({ groups, onClose, onDone }: { groups: WorkerGroupRow[]; onClose: () => void; onDone: () => void }) {
   const w = useT().pages.workerPage
   const [staffNo, setStaffNo] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [groupId, setGroupId] = useState('')
-  const [regionId, setRegionId] = useState('')
+  const [regionIds, setRegionIds] = useState<string[]>([])
+  const [regions, setRegions] = useState<RegionOption[]>([])
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+
+  useEffect(() => { loadRegionOptions().then(setRegions).catch(() => setRegions([])) }, [])
 
   const submit = async () => {
     if (busy) return
@@ -42,7 +51,7 @@ function WorkerForm({ groups, onClose, onDone }: { groups: WorkerGroupRow[]; onC
     if (!name.trim()) { setErr(w.eWorkerNameRequired); return }
     if (!phone.trim()) { setErr(w.ePhoneRequired); return }
     if (!groupId) { setErr(w.eGroupRequired); return }
-    if (!regionId) { setErr(w.eRegionRequired); return }
+    if (!regionIds.length) { setErr(w.eRegionsRequired); return }
     if (password.length < 6) { setErr(w.ePasswordShort); return }
     setBusy(true); setErr('')
     try {
@@ -50,7 +59,7 @@ function WorkerForm({ groups, onClose, onDone }: { groups: WorkerGroupRow[]; onC
         method: 'POST',
         body: {
           staffNo: staffNo.trim(), name: name.trim(), phone: phone.trim(),
-          groupId: Number(groupId), regionId: Number(regionId), password,
+          groupId: Number(groupId), regionIds: regionIds.map(Number), password,
         },
       })
       onClose(); onDone()
@@ -79,15 +88,16 @@ function WorkerForm({ groups, onClose, onDone }: { groups: WorkerGroupRow[]; onC
       </div>
       <label className={label}>{w.workerRegion}</label>
       <div className="mb-3">
-        <ResourcePicker
-          value={regionId}
-          onChange={setRegionId}
-          load={() => apiFetch<RegionOption[]>('/regions').then((x) => (Array.isArray(x) ? x : []))}
-          toOption={(x) => ({ value: String(x.id), label: x.name })}
+        <MultiSelect
+          values={regionIds}
+          options={regions.map((r) => ({ value: String(r.id), label: r.name }))}
+          onChange={setRegionIds}
           ariaLabel={w.workerRegion}
-          errorText={w.loadFail}
+          placeholder={w.workerRegion}
+          searchPlaceholder={w.searchPlaceholder}
         />
       </div>
+      <p className="mb-3 text-xs text-[var(--shell-group-title)]">{w.workerRegionHint}</p>
       <label className={label}>{w.workerPassword}</label>
       <div className="mb-1"><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
       <p className="mb-3 text-xs text-[var(--shell-group-title)]">{w.workerPasswordHint}</p>

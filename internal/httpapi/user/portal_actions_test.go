@@ -51,12 +51,13 @@ func (f *fakeWorkerSvc) SetPassword(context.Context, int64, string) error { retu
 func (f *fakeWorkerSvc) VerifyPassword(context.Context, int64, string) (bool, error) {
 	return false, nil
 }
+func (f *fakeWorkerSvc) SetWorkerRegions(context.Context, int64, []int64) error { return nil }
 func (f *fakeWorkerSvc) GetWorker(_ context.Context, id int64) (*worker.Worker, error) {
 	return f.byID[id], nil
 }
 
 // MatchedRegionIDs 桩:全放行(用户端动作用例不覆盖区域语义)。
-func (f *fakeWorkerSvc) MatchedRegionIDs(_ context.Context, _ int64, ticketRegionIDs []int64) (map[int64]bool, error) {
+func (f *fakeWorkerSvc) MatchedRegionIDs(_ context.Context, _ *worker.Worker, ticketRegionIDs []int64) (map[int64]bool, error) {
 	out := make(map[int64]bool, len(ticketRegionIDs))
 	for _, id := range ticketRegionIDs {
 		out[id] = true

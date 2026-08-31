@@ -30,6 +30,9 @@ type fakeWorkerOps struct {
 	createdPassword string
 	pwdWorkerID     int64
 	pwdPassword     string
+	// 负责区域配置落账(000175 worker_account_handlers 测试)。
+	regionsWorkerID int64
+	regionsSet      []int64
 }
 
 func (f *fakeWorkerOps) ListGroups(context.Context) ([]worker.Group, error) { return nil, nil }
@@ -55,12 +58,17 @@ func (f *fakeWorkerOps) SetPassword(_ context.Context, workerID int64, password 
 func (f *fakeWorkerOps) VerifyPassword(context.Context, int64, string) (bool, error) {
 	return false, nil
 }
+func (f *fakeWorkerOps) SetWorkerRegions(_ context.Context, workerID int64, regionIDs []int64) error {
+	f.regionsWorkerID = workerID
+	f.regionsSet = regionIDs
+	return nil
+}
 func (f *fakeWorkerOps) GetWorker(context.Context, int64) (*worker.Worker, error) {
 	return f.w, nil
 }
 
 // MatchedRegionIDs 桩:全放行(worker 运维用例不覆盖区域子树语义)。
-func (f *fakeWorkerOps) MatchedRegionIDs(_ context.Context, _ int64, ticketRegionIDs []int64) (map[int64]bool, error) {
+func (f *fakeWorkerOps) MatchedRegionIDs(_ context.Context, _ *worker.Worker, ticketRegionIDs []int64) (map[int64]bool, error) {
 	out := make(map[int64]bool, len(ticketRegionIDs))
 	for _, id := range ticketRegionIDs {
 		out[id] = true

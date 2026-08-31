@@ -165,15 +165,20 @@ func (f *fakeWorkerSvc) SetPassword(context.Context, int64, string) error { retu
 func (f *fakeWorkerSvc) VerifyPassword(context.Context, int64, string) (bool, error) {
 	return false, nil
 }
+func (f *fakeWorkerSvc) SetWorkerRegions(context.Context, int64, []int64) error { return nil }
 func (f *fakeWorkerSvc) GetWorker(context.Context, int64) (*worker.Worker, error) {
 	return f.w, nil
 }
 
 // MatchedRegionIDs 桩:默认全放行保持既有用例语义;mismatch 中的工单区域判 false。
-func (f *fakeWorkerSvc) MatchedRegionIDs(_ context.Context, workerRegionID int64, ticketRegionIDs []int64) (map[int64]bool, error) {
+func (f *fakeWorkerSvc) MatchedRegionIDs(_ context.Context, w *worker.Worker, ticketRegionIDs []int64) (map[int64]bool, error) {
 	out := make(map[int64]bool, len(ticketRegionIDs))
 	for _, id := range ticketRegionIDs {
-		out[id] = workerRegionID == 0 || id == 0 || !slices.Contains(f.mismatch, id)
+		if w == nil || (w.RegionID == 0 && len(w.RegionIDs) == 0) {
+			out[id] = true
+			continue
+		}
+		out[id] = id == 0 || !slices.Contains(f.mismatch, id)
 	}
 	return out, nil
 }

@@ -57,6 +57,10 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, provision.ErrBindingInvalid):
 		// 绑定校验失败(跨法人/模板停用):42200 + 透传原因,管理员可见为什么绑不上。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
+	case errors.Is(err, provision.ErrTemplateUnresolved),
+		errors.Is(err, provision.ErrBoundTemplateDisabled):
+		// 环节7 模板不可解析(配置缺失/绑定模板停用):40900 + 透传原因,运营可见为什么开不了。
+		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, user.ErrInvalidInput),
 		errors.Is(err, user.ErrRoleNotFound),
 		errors.Is(err, user.ErrFKViolation),
