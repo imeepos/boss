@@ -261,38 +261,7 @@ UPDATE verifications
 	return nil
 }
 
-// guardRealNameIdentity PASS 一致性门禁:待核验单 id_card_no 对照 customers 主档。
-// 主档 id_no 为空(新客补登)→ 回填 id_no/real_name_status 前置数据;非空不一致 → ErrRealNameMismatch。
-// 查无主档(合成客户,负数段隔离空间)→ 无门禁可施,直接放行:PASS 只落 verifications,
-// 后续 customers 状态同步为 0 行 no-op,用户端以最新核验单回显结论(profile_handlers 合成客户回退)。
-func (s *PGStore) guardRealNameIdentity(ctx context.Context, customerID int64) error {
-	var pendingIDNo, masterIDNo string
-	err := s.db.QueryRow(ctx, `
-SELECT (SELECT v.id_card_no FROM verifications v
-         WHERE v.subject_type='customer' AND v.subject_id=c.id AND v.result=$2
-         ORDER BY v.verified_at DESC, v.id DESC LIMIT 1),
-       COALESCE(c.id_no, '')
-  FROM customers c
- WHERE c.id = $1`, customerID, RealNamePending).Scan(&pendingIDNo, &masterIDNo)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-		return fmt.Errorf("customer: verify identity guard: %w", err)
-	}
-	if masterIDNo == "" {
-		// 主档无证件号:以核验单回填,保证 PASS 后两侧一致。
-		if _, err := s.db.Exec(ctx,
-			`UPDATE customers SET id_no=$2 WHERE id=$1 AND COALESCE(id_no,'')=''`, customerID, pendingIDNo); err != nil {
-			return fmt.Errorf("customer: verify backfill id_no: %w", err)
-		}
-		return nil
-	}
-	if pendingIDNo != masterIDNo {
-		return ErrRealNameMismatch
-	}
-	return nil
-}
+// guardRealNameIdentity 迁至 pg_realname.go(实名域同族;本文件超 300 行红线拆出)。
 
 // compile-time: PGStore 满足 OnboardingService。
 var _ OnboardingService = (*PGStore)(nil)

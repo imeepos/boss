@@ -1498,3 +1498,8 @@
 - 哪个坑最浪费时间：① 修正版验收首跑 2 个假失败都是脚本自身的坑——登录失败是 HTTP 200 + envelope 40100,我按 http_code 断言,停用/改密用例假绿假红各一次;清理 SQL `psql -tAc` 再接 heredoc,-c 吃不到参数白跑一轮。真 bug([]byte→bytea 落库)反而是脚本"假绿"遮挡后靠逐层下钻(库直查 hash 前缀 \x 前缀)抓到的。② admin_perms_gen.go 漏再生成——台账 2026-08-30 已有,执行时仍只跑了 gen-bossctl-routes;两份生成物这事不进肌肉记忆就会漏。③ worktree 清理后 2 行 hotfix 直接落 main,违反"禁止主分支修改",图省事的违纪。
 - skill 有没有提前警告：红线#9a 变体(-c+heredoc)与 admin_perms 四件套都有条目,是执行时没对号;[]byte bytea 化是新坑,mock 全绿兜不住,已喂 known-issues+后端.md;登录 envelope 40100 形状后端.md 2026-08-30 实名轮就写过,没先查。
 - 重来一次会怎么做：① 涉及登录/凭据的验收,断言一律业务 code,写脚本前先 curl 一次失败形状;② 新增 admin 路由的生成步骤并成一条命令链(`node gen-bossctl-routes && go run ./scripts/genrouteperms`),不给漏的机会;③ hotfix 也走 worktree,不评估"改动小"。
+
+## 2026-09-01 环节7 自动下发全链路验证轮(绑定优先/带宽兜底/显性失败)
+- 哪个坑最浪费时间：① 验证车用固定客户 214,其 LO 账号在环节6 幂等复用**不更新 offer_id**,导致第一次"绑定优先"实验(订单 106/300M)实际按 LO 旧套餐 101(100M) 解析出 152——结果全错但每步都"合理",排查花了一轮;正确做法是先读 PreConfigOLT 源码确认它用 lo.OfferID 而非订单 offer,再用无 LO 的干净客户或绑 LO 实际持有的套餐。② 直建客户 verify 播 50000(既有 NULL 崩溃,修掉)后又撞 42200(Verify 只翻转已存在 PENDING 核验单,0 行→ErrRealNameConflict)——同一端点两层语义,修一层后还有一层产品语义拦截,SQL 预插 PENDING 单才走通。③ 用了已删 worktree 里的脚本路径跑验收车,No such file or directory 白跑一轮。
+- skill 有没有提前警告：mainchain-acceptance 是最好的 E2E 车(2026-08-30 notes)直接命中,SKIP_CLEANUP=1 + 官方清理脚本组合让造数全程可回收;红线#1(edit 前 read)本轮 0 犯——worktree 轮开工先 read 的对策生效。
+- 重来一次会怎么做：① 验证"解析用的是哪个 offer"类问题,第一步永远先 SQL 看 LO 账号实际值再跑流程;② 端到端实验设计先画"输入(订单/LO/绑定)→解析→任务"数据流图,变量只动一个;③ 验收车+SKIP_CLEANUP+定点取证(SQL 查任务/日志)+统一收尾清理,是可复用的验证四件套。
