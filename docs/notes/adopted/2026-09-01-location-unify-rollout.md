@@ -19,7 +19,9 @@ user_addresses 地址簿 / worker_locations 师傅位置 / dispatch_tickets 打�
    同 orders.price_snapshot;与 000164 arrive_lat/lng(师傅侧事实)互不混用。
    同事务解析 region_id ← orders.region_path 最近祖先或自身,失败降级 NULL 不阻断派单。
 3. **区域匹配升级为子树语义(祖先或自身)。** SQL `ltree path <@`,批量口
-   (MatchedRegionIDs)供任务池防 N+1;师傅区域 0=不限、工单区域 0=放行的历史口径保留。
+   (MatchedRegionIDs)供任务池防 N+1;与并行落地的师傅扩展区域模型(000175,
+   主区域 ∪ 扩展区域)正交合并:候选根=负责区域集合任一,子树判定一次 SQL 完成;
+   师傅未设任何区域=不限、工单区域 0=放行的历史口径保留。
    对齐 H3 式"粗区域先行、距离兜底"分层派单社区共识。
 4. **半径闸门启用但前提缺失一律跳过。** radiusKm>0 + 工单快照 + 师傅最新位置三者齐备才校验;
    无法判定 ≠ 超距,不误拦;位置查询失败按拒绝留痕。
