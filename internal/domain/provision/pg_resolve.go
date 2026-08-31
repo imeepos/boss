@@ -14,6 +14,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// ErrTemplateUnresolved 套餐既无绑定也无带宽档位模板(配置缺失);httpapi 映射 40900+原因透传。
+var ErrTemplateUnresolved = errors.New("provision: template unresolved")
+
+// ErrBoundTemplateDisabled 套餐已绑模板但模板被停用(配置错误);httpapi 映射 40900+原因透传。
+var ErrBoundTemplateDisabled = errors.New("provision: bound template disabled")
+
 // FindTemplateForOffer 套餐 → 下发模板 ID。
 // 命中顺序:①显式绑定(offer_provision_bindings,须模板 ENABLED);
 // ②带宽兜底(同法人 ENABLED 模板 content->>'bandwidth' = 套餐带宽,无带宽套餐不参与);
@@ -43,7 +49,8 @@ func (s *PGStore) FindTemplateForOffer(ctx context.Context, offerID, legalEntity
 
 	// ③显性失败:既不绑也没档位模板,禁止静默降级到任意模板。
 	return 0, fmt.Errorf(
-		"[provision] TEMPLATE UNRESOLVED: offer=%d entity=%d (no binding, no bandwidth match)", offerID, legalEntityID)
+		"[provision] TEMPLATE UNRESOLVED: offer=%d entity=%d (no binding, no bandwidth match): %w",
+		offerID, legalEntityID, ErrTemplateUnresolved)
 }
 
 // boundTemplateID 取套餐显式绑定的模板 ID。
@@ -63,7 +70,8 @@ func (s *PGStore) boundTemplateID(ctx context.Context, offerID int64) (int64, bo
 	}
 	if status != "ENABLED" {
 		return 0, false, fmt.Errorf(
-			"[provision] TEMPLATE BOUND BUT DISABLED: offer=%d template=%d status=%s", offerID, id, status)
+			"[provision] TEMPLATE BOUND BUT DISABLED: offer=%d template=%d status=%s: %w",
+			offerID, id, status, ErrBoundTemplateDisabled)
 	}
 	return id, true, nil
 }

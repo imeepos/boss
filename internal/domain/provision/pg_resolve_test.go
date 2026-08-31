@@ -49,8 +49,8 @@ func TestFindTemplateForOffer(t *testing.T) {
 
 		s := NewPGStore(mock)
 		_, err = s.FindTemplateForOffer(ctx, 101, 1)
-		if err == nil || !strings.Contains(err.Error(), "BOUND BUT DISABLED") {
-			t.Fatalf("want bound-but-disabled error, got %v", err)
+		if err == nil || !errors.Is(err, ErrBoundTemplateDisabled) || !strings.Contains(err.Error(), "BOUND BUT DISABLED") {
+			t.Fatalf("want ErrBoundTemplateDisabled, got %v", err)
 		}
 	})
 
@@ -92,8 +92,8 @@ func TestFindTemplateForOffer(t *testing.T) {
 
 		s := NewPGStore(mock)
 		_, err = s.FindTemplateForOffer(ctx, 178, 1)
-		if err == nil || !strings.Contains(err.Error(), "TEMPLATE UNRESOLVED") {
-			t.Fatalf("want TEMPLATE UNRESOLVED, got %v", err)
+		if err == nil || !errors.Is(err, ErrTemplateUnresolved) || !strings.Contains(err.Error(), "TEMPLATE UNRESOLVED") {
+			t.Fatalf("want ErrTemplateUnresolved, got %v", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet: %v", err)
