@@ -44,6 +44,13 @@ func (f *fakeWorkerSvc) ListWorkers(context.Context, int64, string) ([]worker.Wo
 func (f *fakeWorkerSvc) CreateWorker(context.Context, worker.Worker) (int64, error) {
 	return 0, nil
 }
+func (f *fakeWorkerSvc) CreateWorkerWithPassword(context.Context, worker.Worker, string) (int64, error) {
+	return 0, nil
+}
+func (f *fakeWorkerSvc) SetPassword(context.Context, int64, string) error { return nil }
+func (f *fakeWorkerSvc) VerifyPassword(context.Context, int64, string) (bool, error) {
+	return false, nil
+}
 func (f *fakeWorkerSvc) GetWorker(_ context.Context, id int64) (*worker.Worker, error) {
 	return f.byID[id], nil
 }

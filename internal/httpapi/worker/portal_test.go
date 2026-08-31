@@ -24,6 +24,7 @@ import (
 type fakePortalWorkerSvc struct {
 	worker.WorkerService
 	region int64
+	pwdOK  bool // VerifyPassword 桩:密码模式校验结果
 }
 
 func (f *fakePortalWorkerSvc) ListWorkers(context.Context, int64, string) ([]worker.Worker, error) {
@@ -39,6 +40,10 @@ func (f *fakePortalWorkerSvc) GetWorker(_ context.Context, id int64) (*worker.Wo
 	}
 	return &worker.Worker{ID: 7, StaffNo: "WK-1007", Name: "张师傅", Phone: "13800001234",
 		Status: 1, RegionID: f.region}, nil
+}
+
+func (f *fakePortalWorkerSvc) VerifyPassword(context.Context, int64, string) (bool, error) {
+	return f.pwdOK, nil
 }
 
 // fakePortalLedger 桩接单设置:未配置按 ErrNotFound(=默认在线全类型)。
@@ -275,6 +280,26 @@ func TestPortalLoginAndTickets(t *testing.T) {
 	}
 	if it["statusLabel"] != "进行中" || it["stage"].(float64) != 9 {
 		t.Fatalf("statusLabel/stage wrong: %v", it)
+	}
+}
+
+// TestPortalPasswordLogin 密码模式登录(2026-09-01 接入,此前后端恒拒"not supported yet"):
+// 密码校验收敛在 worker 域 VerifyPassword,不匹配回 40100。
+func TestPortalPasswordLogin(t *testing.T) {
+	r := portalTestRouterWith(t, &fakePortalWorkOrder{}, &fakePortalOrder{},
+		&fakePortalWorkerSvc{pwdOK: true}, nil)
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/auth/login",
+		`{"phone":"13800001234","mode":"password","password":"secret-66"}`, "")
+	if _, ok := res["data"].(map[string]any)["token"].(string); !ok {
+		t.Fatalf("password login failed: %v", res)
+	}
+	// 密码不匹配 → 40100
+	r2 := portalTestRouterWith(t, &fakePortalWorkOrder{}, &fakePortalOrder{},
+		&fakePortalWorkerSvc{pwdOK: false}, nil)
+	res = portalWorkerDo(r2, "POST", "/api/worker/v1/auth/login",
+		`{"phone":"13800001234","mode":"password","password":"wrong-pass"}`, "")
+	if res["code"].(float64) != 40100 {
+		t.Fatalf("wrong password should 40100: %v", res)
 	}
 }
 

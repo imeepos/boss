@@ -443,6 +443,7 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/worker-messages":                                     {"menu:dispatch"},
 	"POST /api/admin/v1/worker-registrations/{id}/approve":                   {"menu:dispatch"},
 	"POST /api/admin/v1/worker-registrations/{id}/reject":                    {"menu:dispatch"},
+	"POST /api/admin/v1/workers":                                             {"menu:dispatch"},
 	"POST /api/admin/v1/workers/{workerId}/real-name":                        {"menu:dispatch"},
 	"POST /api/admin/v1/workers/{workerId}/real-name/verify":                 {"menu:dispatch"},
 	"POST /api/admin/v1/workers/{workerId}/transfer":                         {"menu:order"},
@@ -499,5 +500,6 @@ var AdminRoutePerms = map[string][]string{
 	"PUT /api/admin/v1/user-notify-settings/{customerId}":                    {"menu:userdata"},
 	"PUT /api/admin/v1/users/{customerId}/account":                           {"menu:user"},
 	"PUT /api/admin/v1/worker-groups/{groupId}":                              {"menu:order"},
+	"PUT /api/admin/v1/workers/{workerId}/password":                          {"menu:dispatch"},
 	"PUT /api/admin/v1/workers/{workerId}/settings":                          {"menu:dispatch"},
 }

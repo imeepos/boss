@@ -2,8 +2,18 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"time"
 )
+
+// PasswordMin 师傅端登录密码最短长度(与 accounts 侧 PasswordMin 对齐)。
+const PasswordMin = 6
+
+// ErrDuplicate 工号/手机号已存在(workers.staff_no 唯一约束冲突)。
+var ErrDuplicate = errors.New("worker: duplicate staff no or phone")
+
+// ErrInvalidPassword 登录密码长度不合法。
+var ErrInvalidPassword = errors.New("worker: invalid password")
 
 // Group 师傅班组(UI 别名"装维队",运营主体自定义组织,公司内 code 唯一)。
 type Group struct {
@@ -46,6 +56,12 @@ type WorkerService interface {
 	ListWorkers(ctx context.Context, groupID int64, keyword string) ([]Worker, error)
 	CreateWorker(ctx context.Context, w Worker) (int64, error)
 	GetWorker(ctx context.Context, id int64) (*Worker, error)
+	// CreateWorkerWithPassword 新建师傅并写入登录密码(admin 录入);password 为空=不可密码登录。
+	CreateWorkerWithPassword(ctx context.Context, w Worker, password string) (int64, error)
+	// SetPassword 重置师傅登录密码(bcrypt 落库);长度 < PasswordMin 返回 ErrInvalidPassword。
+	SetPassword(ctx context.Context, workerID int64, password string) error
+	// VerifyPassword 校验师傅登录密码(仅读哈希,不暴露 password_hash);未设置/不匹配返回 false。
+	VerifyPassword(ctx context.Context, workerID int64, password string) (bool, error)
 }
 
 // TeamService 装维队管理服务口(000141):队伍维护/成员调队/队长绩效视图。

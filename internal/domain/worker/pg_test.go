@@ -103,10 +103,14 @@ func TestPGStore_CreateWorker(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: region exists
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(11)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	var nilTime *time.Time
 	mock.ExpectQuery(`INSERT INTO workers`).
-		WithArgs("WK-1026", "王师傅", int64(1), int64(11), "137****3366", int16(1), ts, nilTime).
+		WithArgs("WK-1026", "王师傅", int64(1), int64(11), "137****3366", int16(1), ts, nilTime, "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 
 	s := NewPGStore(mock)
