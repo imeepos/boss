@@ -1,4 +1,4 @@
-// 施工看板:契约 GET /dispatch_tickets(派生 installed_at) + GET /install-logs。
+// 施工看板:契约 GET /dispatch-tickets(全量工单,含到场打卡事实) + GET /install-logs。
 // 状态机:DONE/CANCELED 置底;DOING 突出;展示 arrived_at + coords。
 // 决策依据:docs/notes/adopted/2026-08-28-procurement-install-gis-linkage.md §决策 2。
 // 样式对齐 provision:大卡片 + StatCard + TableStateRow。
@@ -33,7 +33,7 @@ export default function InstallBoardPage() {
   const load = () => {
     setError('')
     setBusy(true)
-    apiFetch<{ items: any[] }>('/dispatch_tickets')
+    apiFetch<{ items: any[] }>('/dispatch-tickets')
       .then((r) => {
         const ts: TicketWithLogs[] = (r?.items ?? []).map((x: any) => ({
           ticketId: x.ticketId,

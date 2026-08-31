@@ -238,6 +238,7 @@ paths:
   /procurement/inventory: { $ref: './admin/procurement.yaml#/paths/~1procurement~1inventory' }
 
   # ---------- Install Logs(迁移 000164) ----------
+  /dispatch-tickets: { $ref: './admin/install-logs.yaml#/paths/~1dispatch-tickets' }
   /install-logs: { $ref: './admin/install-logs.yaml#/paths/~1install-logs' }
 
   # ---------- Oss ----------

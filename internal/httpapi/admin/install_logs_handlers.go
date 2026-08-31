@@ -11,6 +11,18 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
+// installBoardTicketsHandler 施工看板·全量派单工单(含到场打卡事实 arrivedAt/arriveLat/arriveLng)。
+func installBoardTicketsHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		list, err := a.WorkOrder.ListDispatchTickets(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	}
+}
+
 func installLogListHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ticketID := queryInt64(c, "ticketId")

@@ -1,4 +1,12 @@
 paths:
+  /dispatch-tickets:
+    get:
+      tags: [Order]
+      summary: '施工看板·全量派单工单(menu:install-board;含到场打卡事实 arrivedAt/arriveLat/arriveLng,迁移 000164)'
+      operationId: listBoardDispatchTickets
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /install-logs:
     get:
       tags: [Order]
