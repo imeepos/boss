@@ -30,6 +30,9 @@ type fakeWorkerOps struct {
 	createdPassword string
 	pwdWorkerID     int64
 	pwdPassword     string
+	// 负责区域配置落账(000175 worker_account_handlers 测试)。
+	regionsWorkerID int64
+	regionsSet      []int64
 }
 
 func (f *fakeWorkerOps) ListGroups(context.Context) ([]worker.Group, error) { return nil, nil }
@@ -54,6 +57,11 @@ func (f *fakeWorkerOps) SetPassword(_ context.Context, workerID int64, password 
 }
 func (f *fakeWorkerOps) VerifyPassword(context.Context, int64, string) (bool, error) {
 	return false, nil
+}
+func (f *fakeWorkerOps) SetWorkerRegions(_ context.Context, workerID int64, regionIDs []int64) error {
+	f.regionsWorkerID = workerID
+	f.regionsSet = regionIDs
+	return nil
 }
 func (f *fakeWorkerOps) GetWorker(context.Context, int64) (*worker.Worker, error) {
 	return f.w, nil

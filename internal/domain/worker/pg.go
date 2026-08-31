@@ -101,6 +101,7 @@ func (s *PGStore) CreateGroup(ctx context.Context, g Group) (int64, error) {
 const workerCols = `id, staff_no, name, group_id, region_id, phone, status, joined_at, left_at`
 
 // ListWorkers 列出师傅;groupID=0 返回全部,否则按班组过滤;keyword 命中姓名/工号/手机号。
+// 附带负责区域集合(迁移 000175;批量一查询回填,避免 N+1)。
 func (s *PGStore) ListWorkers(ctx context.Context, groupID int64, keyword string) ([]Worker, error) {
 	rows, err := s.db.Query(ctx,
 		`SELECT `+workerCols+` FROM workers
@@ -119,7 +120,17 @@ func (s *PGStore) ListWorkers(ctx context.Context, groupID int64, keyword string
 		}
 		out = append(out, *w)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("worker: list workers rows: %w", err)
+	}
+	ptrs := make([]*Worker, len(out))
+	for i := range out {
+		ptrs[i] = &out[i]
+	}
+	if err := s.attachRegionIDs(ctx, ptrs); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // CreateWorker 新建师傅(无登录密码),返回自增 id。
@@ -128,7 +139,7 @@ func (s *PGStore) CreateWorker(ctx context.Context, w Worker) (int64, error) {
 	return s.CreateWorkerWithPassword(ctx, w, "")
 }
 
-// GetWorker 按 id 查师傅;未命中返回 ErrNotFound。
+// GetWorker 按 id 查师傅;未命中返回 ErrNotFound。附带负责区域集合(迁移 000175)。
 func (s *PGStore) GetWorker(ctx context.Context, id int64) (*Worker, error) {
 	w, err := scanWorker(s.db.QueryRow(ctx, `SELECT `+workerCols+` FROM workers WHERE id = $1`, id))
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -136,6 +147,9 @@ func (s *PGStore) GetWorker(ctx context.Context, id int64) (*Worker, error) {
 	}
 	if err != nil {
 		return nil, fmt.Errorf("worker: get worker: %w", err)
+	}
+	if err := s.attachRegionIDs(ctx, []*Worker{w}); err != nil {
+		return nil, err
 	}
 	return w, nil
 }

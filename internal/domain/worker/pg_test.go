@@ -78,6 +78,11 @@ func TestPGStore_ListWorkers(t *testing.T) {
 		WillReturnRows(mock.NewRows(cols).
 			AddRow(int64(1), "WK-1024", "张师傅", int64(1), int64(11), "138****8899", int16(1), ts, nil).
 			AddRow(int64(2), "WK-1025", "李师傅", int64(1), int64(11), "136****1177", int16(0), ts, ts))
+	// 负责区域批量回填(000175):师傅 2 单区域 11。
+	mock.ExpectQuery(`FROM worker_regions WHERE worker_id = ANY`).
+		WithArgs([]int64{int64(1), int64(2)}).
+		WillReturnRows(mock.NewRows([]string{"worker_id", "region_id"}).
+			AddRow(int64(1), int64(11)).AddRow(int64(2), int64(11)))
 
 	s := NewPGStore(mock)
 	got, err := s.ListWorkers(context.Background(), 1, "")
@@ -86,6 +91,10 @@ func TestPGStore_ListWorkers(t *testing.T) {
 	}
 	if len(got) != 2 || got[0].StaffNo != "WK-1024" || got[0].LeftAt != nil || got[1].LeftAt == nil {
 		t.Fatalf("got=%+v", got)
+	}
+	// 多负责区域回填:主区域首位(000175)。
+	if len(got[0].RegionIDs) != 1 || got[0].RegionIDs[0] != 11 {
+		t.Fatalf("regionIds=%v, want [11]", got[0].RegionIDs)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
@@ -109,9 +118,14 @@ func TestPGStore_CreateWorker(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	var nilTime *time.Time
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO workers`).
 		WithArgs("WK-1026", "王师傅", int64(1), int64(11), "137****3366", int16(1), ts, nilTime, "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+	mock.ExpectExec(`INSERT INTO worker_regions`).
+		WithArgs(int64(3), int64(11)).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateWorker(context.Background(), Worker{
@@ -141,6 +155,10 @@ func TestPGStore_GetWorker(t *testing.T) {
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows(cols).
 				AddRow(int64(1), "WK-1024", "张师傅", int64(1), int64(11), "138****8899", int16(1), ts, nil))
+		mock.ExpectQuery(`FROM worker_regions WHERE worker_id = ANY`).
+			WithArgs([]int64{int64(1)}).
+			WillReturnRows(mock.NewRows([]string{"worker_id", "region_id"}).
+				AddRow(int64(1), int64(11)).AddRow(int64(1), int64(12)))
 
 		s := NewPGStore(mock)
 		w, err := s.GetWorker(context.Background(), 1)
@@ -149,6 +167,10 @@ func TestPGStore_GetWorker(t *testing.T) {
 		}
 		if w.Name != "张师傅" || w.LeftAt != nil {
 			t.Fatalf("w=%+v", w)
+		}
+		// 多负责区域:主区域 11 首位,扩展 12(000175)。
+		if len(w.RegionIDs) != 2 || w.RegionIDs[0] != 11 || w.RegionIDs[1] != 12 {
+			t.Fatalf("regionIds=%v, want [11 12]", w.RegionIDs)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet: %v", err)

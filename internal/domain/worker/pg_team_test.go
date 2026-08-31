@@ -99,6 +99,9 @@ func TestPGStore_TransferWorker_SameGroup(t *testing.T) {
 		WithArgs(int64(9)).
 		WillReturnRows(mock.NewRows(cols("id", "staff_no", "name", "group_id", "region_id", "phone", "status", "joined_at", "left_at")).
 			AddRow(int64(9), "WK-9", "张师傅", int64(2), 1, "13800000000", 1, ts, nil))
+	mock.ExpectQuery(`FROM worker_regions WHERE worker_id = ANY`).
+		WithArgs([]int64{int64(9)}).
+		WillReturnRows(mock.NewRows([]string{"worker_id", "region_id"}))
 
 	s := NewPGStore(mock)
 	err := s.TransferWorker(context.Background(), Transfer{WorkerID: 9, TargetGroupID: 2, Reason: "调整"})

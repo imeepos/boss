@@ -20,14 +20,14 @@ func workerHallHandler(a *app.Application) gin.HandlerFunc {
 			respondErr(c, err)
 			return
 		}
-		if !hallItemsForWorker(c, a, w.RegionID) {
+		if !hallItemsForWorker(c, a, w) {
 			return
 		}
 	}
 }
 
-// hallItemsForWorker 输出任务池:工单须未指派、待派且区域匹配(0=不限区域)。
-func hallItemsForWorker(c *gin.Context, a *app.Application, workerRegionID int64) bool {
+// hallItemsForWorker 输出任务池:工单须未指派、待派且区域命中师傅任一负责区域(0=不限区域)。
+func hallItemsForWorker(c *gin.Context, a *app.Application, w *worker.Worker) bool {
 	tickets, err := a.WorkOrder.ListDispatchTickets(c.Request.Context())
 	if err != nil {
 		respondErr(c, err)
@@ -35,7 +35,7 @@ func hallItemsForWorker(c *gin.Context, a *app.Application, workerRegionID int64
 	}
 	inRegion := make(map[string]bool, len(tickets))
 	for _, t := range tickets {
-		inRegion[t.TicketNo] = worker.RegionMatched(workerRegionID, t.RegionID)
+		inRegion[t.TicketNo] = w.MatchesRegion(t.RegionID)
 	}
 	list, err := a.WorkOrder.ListTicketItems(c.Request.Context())
 	if err != nil {

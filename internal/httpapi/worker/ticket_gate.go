@@ -29,7 +29,7 @@ func workerMayAccept(c *gin.Context, a *app.Application, workerID int64, tk *ord
 		respond(c, apitypes.CodeForbidden, gin.H{"error": "worker not active"})
 		return false
 	}
-	if !worker.RegionMatched(w.RegionID, tk.RegionID) {
+	if !w.MatchesRegion(tk.RegionID) {
 		respond(c, apitypes.CodeForbidden, gin.H{"error": "ticket not in worker region"})
 		return false
 	}
@@ -76,7 +76,7 @@ func workerTransferTargetOK(c *gin.Context, a *app.Application, targetID int64, 
 		respond(c, apitypes.CodeForbidden, gin.H{"error": "target worker not active"})
 		return nil, false
 	}
-	if !worker.RegionMatched(w.RegionID, tk.RegionID) {
+	if !w.MatchesRegion(tk.RegionID) {
 		respond(c, apitypes.CodeForbidden, gin.H{"error": "target worker region mismatch"})
 		return nil, false
 	}

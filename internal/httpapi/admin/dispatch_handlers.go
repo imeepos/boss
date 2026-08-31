@@ -75,19 +75,22 @@ func assignResolve(c *gin.Context, a *app.Application, ticketNo string, req assi
 		return nil, nil, false
 	}
 	// 跨区指派:默认拒绝并回 40900 提醒,前端二次确认后带 force 强派。
-	if ticket != nil && !worker.RegionMatched(w.RegionID, ticket.RegionID) && !req.Force {
-		respondRegionMismatch(c, ticket, w.RegionID)
+	// 区域口径=师傅全部负责区域(000175):命中任一即放行。
+	if ticket != nil && !w.MatchesRegion(ticket.RegionID) && !req.Force {
+		respondRegionMismatch(c, ticket, w)
 		return nil, nil, false
 	}
 	return w, ticket, true
 }
 
-// respondRegionMismatch 跨区指派/转派的 40900 提醒(forceRequired 前端二次确认)。
-func respondRegionMismatch(c *gin.Context, ticket *order.DispatchTicket, workerRegionID int64) {
+// respondRegionMismatch 跨区指派/转派的 40900 提醒(forceRequired 前端二次确认);
+// workerRegionId=主区域(兼容旧字段),workerRegionIds=全部负责区域。
+func respondRegionMismatch(c *gin.Context, ticket *order.DispatchTicket, w *worker.Worker) {
 	respond(c, apitypes.CodeConflict, gin.H{
 		"error": "region mismatch", "forceRequired": true,
 		"ticketRegionId": ticket.RegionID, "ticketRegionName": ticket.RegionName,
-		"workerRegionId": workerRegionID,
+		"workerRegionId":  w.RegionID,
+		"workerRegionIds": w.RegionIDs,
 	})
 }
 
@@ -176,8 +179,8 @@ func transferResolve(c *gin.Context, a *app.Application, ticketNo string, req tr
 		return nil, nil, false
 	}
 	// 跨区转派:同指派,默认 40900 提醒,force 确认后放行。
-	if !worker.RegionMatched(to.RegionID, ticket.RegionID) && !req.Force {
-		respondRegionMismatch(c, ticket, to.RegionID)
+	if !to.MatchesRegion(ticket.RegionID) && !req.Force {
+		respondRegionMismatch(c, ticket, to)
 		return nil, nil, false
 	}
 	return ticket, to, true

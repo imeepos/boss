@@ -161,6 +161,7 @@ func (f *fakeWorkerSvc) SetPassword(context.Context, int64, string) error { retu
 func (f *fakeWorkerSvc) VerifyPassword(context.Context, int64, string) (bool, error) {
 	return false, nil
 }
+func (f *fakeWorkerSvc) SetWorkerRegions(context.Context, int64, []int64) error { return nil }
 func (f *fakeWorkerSvc) GetWorker(context.Context, int64) (*worker.Worker, error) {
 	return f.w, nil
 }
