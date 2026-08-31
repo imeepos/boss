@@ -1493,3 +1493,8 @@
 - 哪个坑最浪费时间：① edit 前已读文件被拒 8 连击——本轮全程在 worktree 干活,要么读过主树同内容副本、要么只用 bash cat/sed 看过,read 状态按绝对路径跟踪,换树/换路径必须用 read 工具重读(台账已 +8)。② make check D 项在 fix worktree 红了:并行会话 feat/entity-staff-admin-entry 占了 000172——首次实战应用「已合并进 main 且已落库者优先,后来者让号」规则,判定撞号责任在对方,session_link_send 发让号提醒(改名 000173)后继续合并,没有自己让号也没有进 baseline。③ pgxmock 对新增 SQL 极敏感:ListTemplates 加 count 子查询、RetryTask 链路加 taskTemplateInfo 查询,三处测试 mock 期望连带更新,好在全在本地门禁拦住。
 - skill 有没有提前警告：红线#1(edit 前必 read)在但按「同内容换路径」变体连犯;后端.md「接口加方法先列全手写桩」预判命中(fakeProvision 一次补齐 4 个新方法零返工);AGENTS.md 迁移让号规则直接给出裁决依据。
 - 重来一次会怎么做：① worktree 开工第一步:对将要 edit 的每个文件先 read worktree 绝对路径,别信主树读过的记忆;② worktree 无 node_modules 直接 `ln -s 主checkout/node_modules`(根+web/admin 两层),typecheck/build 即可用,免装依赖;③ 契约变更四件套(yaml+admin_perms_gen+routes_gen+回归测试)跑 `make check` 一次收敛,bossctl-routes 顺带修了 main 上 dispatch-tickets 的存量漂移;④ 部署验证三件套提前备好:后台轮询 healthz commit sha + curl 绑定 API 冒烟(含错误路径)+ bundle grep UI 文案,一轮全验完。
+
+## 2026-09-01 企业员工后台录入轮(工号/密码,000173)
+- 哪个坑最浪费时间：① 修正版验收首跑 2 个假失败都是脚本自身的坑——登录失败是 HTTP 200 + envelope 40100,我按 http_code 断言,停用/改密用例假绿假红各一次;清理 SQL `psql -tAc` 再接 heredoc,-c 吃不到参数白跑一轮。真 bug([]byte→bytea 落库)反而是脚本"假绿"遮挡后靠逐层下钻(库直查 hash 前缀 \x 前缀)抓到的。② admin_perms_gen.go 漏再生成——台账 2026-08-30 已有,执行时仍只跑了 gen-bossctl-routes;两份生成物这事不进肌肉记忆就会漏。③ worktree 清理后 2 行 hotfix 直接落 main,违反"禁止主分支修改",图省事的违纪。
+- skill 有没有提前警告：红线#9a 变体(-c+heredoc)与 admin_perms 四件套都有条目,是执行时没对号;[]byte bytea 化是新坑,mock 全绿兜不住,已喂 known-issues+后端.md;登录 envelope 40100 形状后端.md 2026-08-30 实名轮就写过,没先查。
+- 重来一次会怎么做：① 涉及登录/凭据的验收,断言一律业务 code,写脚本前先 curl 一次失败形状;② 新增 admin 路由的生成步骤并成一条命令链(`node gen-bossctl-routes && go run ./scripts/genrouteperms`),不给漏的机会;③ hotfix 也走 worktree,不评估"改动小"。

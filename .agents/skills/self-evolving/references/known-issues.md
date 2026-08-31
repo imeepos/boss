@@ -428,3 +428,10 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 原因 → 三道互不相干的校验各自合法:① `attachment.Service.Upload` 拒 `UploaderID<=0`;② `guardRealNameIdentity` 主档查询 ErrNoRows 映射 ErrCustomerNotFound;③ `httpx.ParsePathParamInt64` 拒 `v<=0`。合成客户=负数 ID 在三处都被当非法值。
 修法 → ① 校验收窄为 `==0`;② ErrNoRows 放行(PASS 只落 verifications,主档同步 0 行 no-op,App 端以最新核验单回显);③ 审核中心专用 `parseSubjectID`(非零整数),全局解析器语义不动。裁定见 docs/notes/adopted/2026-08-30-synthetic-customer-realname-boundary.md。教训:负数合成客户是横切隐患,新增校验/端点先问「负数 ID 走到这会不会炸」。
 排查线索 → 哪一道闸看错误码:50000=附件域、40400=主档缺失、42200=参数解析;`SELECT customer_id FROM portal_accounts` 看符号。
+
+## pgx []byte 参数写入 TEXT 列落成 \x 十六进制字面量,密码登录永久失效（2026-09-01）
+
+症状 → 企业员工重置密码接口返回 code=0,但用新密码登录永远 40100;psql 直查 `password_hash` 值是 `\x2432612...` 这样的十六进制串,而不是 `$2a$10...`。
+原因 → `bcrypt.GenerateFromPassword` 返回 `[]byte`,直接作为 SQL 参数传给 pgx;pgx 按 bytea 编码 []byte,PG 隐式 cast bytea→text 落库成 `\x..` 字面量。登录时 `bcrypt.CompareHashAndPassword([]byte(hash))` 比对的是字面 `\x24..`,必然失败。
+修法 → 传参前 `string(hash)`(CreateAccount/UpdateAccount/worker.SetPassword 既有口径)。pgxmock 回归用自定义 `Argument.Match` 断言参数类型为 `$2` 前缀字符串,AnyArg() 测不出类型错误。
+排查线索 → psql 看 hash 前缀:`$2a$`=正常,`\x`=bytea 化;重置接口 200 但新旧密码全登不进 = 哈希写坏,先查存储字节再怀疑逻辑。
