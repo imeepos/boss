@@ -187,7 +187,7 @@ func (s *PGStore) createTicketOnDispatch(ctx context.Context, orderID int64) err
 		LEFT JOIN LATERAL (
 			SELECT id, name FROM regions
 			WHERE COALESCE(o.region_path, '') <> ''
-			  AND (path = o.region_path OR o.region_path LIKE path || '.%')
+			  AND (path::text = o.region_path OR o.region_path LIKE path::text || '.%')
 			ORDER BY nlevel(path) DESC LIMIT 1
 		) r ON true
 		LEFT JOIN addresses a ON a.id = o.address_id AND a.geom IS NOT NULL
