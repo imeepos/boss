@@ -137,6 +137,18 @@ func (f *fakeUser) CreateAccount(context.Context, user.AccountInput) (int64, err
 func (f *fakeUser) UpdateAccount(context.Context, int64, user.AccountInput) error {
 	return nil
 }
+func (f *fakeUser) ListEntityStaff(context.Context, int64) ([]user.AccountRow, error) {
+	return nil, nil
+}
+func (f *fakeUser) CreateEntityStaff(context.Context, int64, user.AccountInput) (int64, error) {
+	return 9, nil
+}
+func (f *fakeUser) SetEntityStaffPassword(context.Context, int64, int64, string) error {
+	return nil
+}
+func (f *fakeUser) SetEntityStaffStatus(context.Context, int64, int64, int16) error {
+	return nil
+}
 func (f *fakeUser) CreateDepartment(context.Context, int64, string) (int64, error) {
 	return 1, nil
 }

@@ -45,12 +45,21 @@
 | — | `PasswordHash` | password_hash | TEXT |
 | — | `RealName` | real_name | VARCHAR(64) |
 | — | `Phone` | phone | VARCHAR(32) |
+| 工号 | `StaffNo` | staff_no | VARCHAR(32)，可空；非空全局唯一（000172，企业员工登录标识） |
 | — | `RoleID` | role_id | BIGINT → roles |
 | 状态 | `Status` | status | 1启用 / 0停用 |
 | — | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities（可空） |
 | — | `DeptID` | dept_id | BIGINT → departments（可空） |
 | — | `PostID` | post_id | BIGINT → posts（可空） |
 | — | `RegionScope` | region_scope | LTREE，空=全集团 |
+
+> 企业员工后台录入（000172，公司管理页「员工」入口，permCode `menu:company`）：
+> `GET /legal-entities/{id}/staff` 列表（partner_admin/partner_staff，含工号）、
+> `POST /legal-entities/{id}/staff` 录入（staffNo 工号可空 / username 登录名 / password bcrypt 落库 /
+> realName / phone / roleCode 白名单限企业两角色；工号冲突 40900、登录名冲突 40900、入参不合法 42200）、
+> `PUT /legal-entities/{id}/staff/{accountId}/password` 重置密码（密码不入审计）、
+> `PUT /legal-entities/{id}/staff/{accountId}/status` 启停。
+> 与企业工作台自助建号（`POST /partner/staff`）平行：工作台=partner_admin 自助（无工号），后台=受权运营视角（可编工号/建管理员）。
 
 ### 1.2 roles / permissions（角色·权限）
 
