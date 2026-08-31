@@ -1483,3 +1483,8 @@
 - 哪个坑最浪费时间：① 本地 make check 全绿推上去,102 镜像构建 genrouteperms --check 红(22s 失败)——`make check` 不含 `route-perms-check`(独立 target),新增 admin 路由漏再生成 admin_perms_gen.go 本地拦不住,白等一轮部署才发现。② ff-merge 被主树同文件未提交改动挡住,链式命令 `| tail -1` 把错误吞成一行"Updating..."像成功,差点按假成功继续删分支——commit 安全在分支 ref 上,`branch -d` 拒绝是最后防线。③ CI run 排障绕了远路:先猜并发取消/查 minio/找 app.ini storage,实际日志就在 `/var/lib/gitea/actions_log/sker/<repo>/<hash>/<task>.log.zst`,docker cp 出来解压即得。
 - skill 有没有提前警告：红线#9(ff-merge 失败严禁删 worktree/分支)救了第二次——`branch -d` 被 git 拒绝后没有强推 -D;但没有"本地门禁≠CI 门禁"的通条,也没有 gitea CI 日志取回路径的事实。CI status 枚举(1=success 2=failure 3=cancelled)靠 DB 对比两轮 run 反推。
 - 重来一次会怎么做：新增 admin 路由的提交清单固定四件套:handler+路由 / OpenAPI yaml / admin_perms_gen.go(`make route-perms-check`)/ 回归测试,一次门禁命令 `make route-perms-check` 排进提交前检查;链式 git 命令关键步骤不吞输出(失败时完整 stderr 必须可见);CI 失败第一动作直接取 actions_log 的 zstd 日志,不走 DB 猜。
+
+## 2026-09-01 后台录入师傅+登录密码轮(POST /workers + 密码登录接入)
+- 哪个坑最浪费时间：① 往 portal_test.go 插新测试时,old_string 吃进了下个函数的开头两行(t.Setenv/signWorkerToken)而 new_string 没带回去,误删相邻测试两行——edit 后立即 read 复查发现当场补回,没有废 build,但这已是红线条目第 4 次(台账已 +1)。② worker.yaml 的 flow map 里 description 写了未引号的「师傅端登录密码,>=6 位」,`,` 终结 plain scalar 后 `>` 无法开头,bundle 测试红了一轮 make check(本地拦住,没浪费 CI)。③ 明知 GLM-5.3-Flash 不支持图像输入还是试着 read_image 了截图(红线条目第 3 次),改用 cdp --eval DOM 断言(hasNewWorker:true)当证据。
+- skill 有没有提前警告：红线#4(edit 对称性)和红线#7(图像输入)都在,是执行时没对号入座,不是 skill 缺警示;"接口加方法的正确姿势"(后端.md 2026-08-29)对本轮三包 fake 补 stub 预判直接命中,零惊讶。
+- 重来一次会怎么做：① 改宽接口的 commit 前先 `grep -rn "实现接口名的手写桩"` 列全再动手;② flow map 描述一律带引号,省一轮门禁;③ 部署验证用「后台轮询新路由 401 + 预备好的验证脚本」组合,轮询命中即跑,全程无空等;④ 验收造数同一脚本内收尾 DELETE(本轮 staff_no 时间戳后缀+SQL 直删,0 残留)。

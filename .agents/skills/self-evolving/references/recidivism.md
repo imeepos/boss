@@ -17,11 +17,11 @@
 | 任务完成后忘记 git commit(工作区留脏) | 6 | 2026-08-18(geo 分页组件遗留到下任务), 2026-08-18(geo 多语言收尾发现交织改动), 2026-08-18(URL 状态+分页+下拉全会话未提交,用户点名), 2026-08-19(geo 批量导入完成未提交,用户点名), 2026-08-19(PSGC 迁移验证完直接总结,000041 未提交,反思第 0 步才补), 2026-08-21(DOM 验证耗时期间改动被并行会话扫进混合提交 2c34af5,消息不合规且无法干净拆分) | 用户需手动提醒,改动长期悬空 |
 | 开工前不检索 skill 既有教训,重新发明已有正解 | 1 | 2026-08-19(brew 装 PG 10 分钟超时,lesson 28 早有"pgx 直连远端库") | 白等一轮,差点真装本地 PG |
 | Compose 大段重写后漏 import / 使用不存在的 FontWeight 枚举 | 1 | 2026-08-20(用户首页视觉重写) | 首次 compileDebugKotlin 失败,修复后通过 |
-| edit 的 new_string 与 old_string 范围不对称(顺手带函数头/只删换行的 no-op) | 3 | 2026-08-19(pg.go ListAddresses 头部重复), 2026-08-19(address/index.tsx 两行并一行致 TS1005), 2026-09-05(auth_test.go 多带相邻 ApplyTag 尾行误删一行,靠 git diff 复查补回) | 各废一轮 build+定位;多行替换后先 grep 确认被删符号仍在 |
+| edit 的 new_string 与 old_string 范围不对称(顺手带函数头/只删换行的 no-op) | 4 | 2026-08-19(pg.go ListAddresses 头部重复), 2026-08-19(address/index.tsx 两行并一行致 TS1005), 2026-09-05(auth_test.go 多带相邻 ApplyTag 尾行误删一行,靠 git diff 复查补回), 2026-09-01(portal_test.go 插入新测试时 old_string 带了下个函数的 Setenv/signWorkerToken 两行而 new_string 没带,误删相邻测试两行,edit 后立刻 read 复查发现当场补回) | 各废一轮 build+定位;多行替换后先 grep 确认被删符号仍在 |
 | pgx 严格参数校验:占位符少于传参数直接 unused argument | 1 | 2026-08-19(e2e 清理六参数喂 $1 语句,整批 DELETE 全灭) | 废一轮全量验证 |
 | t.Cleanup 里用池而资源用 defer 释放,清理跑在池关闭后静默失败 | 1 | 2026-08-19(e2e cleanup 在 defer pool.Close 之后,仅 -v 日志可见) | 废一轮,残留假象误导排查 |
 | 按精确后缀清理测试数据,子测试自造独立后缀漏删 | 1 | 2026-08-19(W8 用 orderNo6() 另起后缀,w8 树永远清不掉) | 废一轮,靠 psql 残留计数才暴露 |
-| 模型不支持图像输入却尝试读图分析 | 2 | 2026-08-18(使用 read_image 读取截图失败), 2026-10(本次 GLM-5.3-Flash 读取截图失败) | 浪费时间尝试不支持的功能,需先检查模型能力,改用 DOM/计算样式断言 |
+| 模型不支持图像输入却尝试读图分析 | 3 | 2026-08-18(使用 read_image 读取截图失败), 2026-10(本次 GLM-5.3-Flash 读取截图失败), 2026-09-01(worker 页截图后再犯,GLM-5.3-Flash 不声明图像输入被拒;改用 cdp --eval DOM 断言为证据) | 浪费时间尝试不支持的功能,需先检查模型能力,改用 DOM/计算样式断言 |
 | 浏览器自动化工具缺失时未提前检查 | 1 | 2026-08-18(尝试使用 Playwright/Puppeteer 失败) | 应先检查环境依赖再选择工具 |
 | 浏览器操作测试误用 playwright 代替 cdp-capture.mjs | 2 | 2026-08-18(本次会话,用 playwright 而非 cdp-capture 做浏览器调试), 2026-08-18(用户再次强调,升级至高频红线 #2) | 用户两轮点名纠正:cdp-capture 含 console 报错+失败请求响应体+网络采集,是调试排查首选;playwright 仅用于项目 E2E 自动化脚本 |
 | 承诺"会保存/已记录"但当场不落盘,被用户连催 | 1 | 2026-08-19(test-accounts.json 只口头答应,连催 4 轮才真正 write) | 浪费 4 轮,用户失去耐心;凡承诺保存必须当场 write+ls |

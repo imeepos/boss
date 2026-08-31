@@ -462,3 +462,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当本地门禁全绿但 CI 失败,第一反应查「CI 有而本地没有的门禁」,不要怀疑代码——镜像构建里的 genrouteperms --check、web-ui-audit 等都不在 make check 默认链(2026-08-30)。
 - 当 git 链式命令关键步骤(merge/push)用 `| tail -1` 看结果,"Updating..." 只是首行不是成功凭证;失败要保留完整 stderr,以 `git log`/`git status` 复核落点为准(2026-08-30 ff-merge 假成功险些连锁删分支)。
 - 当排查 gitea actions 失败,run/job 状态在 gitea-postgres `action_run`/`action_run_job`(status: 1=success 2=failure 3=cancelled),完整日志在宿主 `/var/lib/gitea/actions_log/sker/<repo>/<hash前缀>/<taskId>.log.zst`,`docker cp` 出来 zstd -dc 解压即得,不要在 DB/minio 里绕路(2026-08-30)。
+- 当往 OpenAPI YAML 的内联 flow map(`{ type: ..., description: ... }`)里写含逗号或 `>` 的描述,必须整体加引号——flow 内 `,` 会终结 plain scalar,`>=6 位` 变成"无法作为 token 开头的字符",整个 bundle 测试红(2026-09-01 worker.yaml POST /workers)。
+- 当给 WorkerService 这类跨包宽接口加方法,预期 admin(dispatch_test fakeWorkerSvc、worker_test fakeWorkerOps)、user(portal_actions_test fakeWorkerSvc)三包手写桩各补 3 个 stub;嵌入接口的桩(如 worker 端 fakePortalWorkerSvc)自动吸收但运行期调用即 nil panic,凡新路径过桩必显式 override(2026-09-01)。
+- 当部署 102 验证新路由,起一个后台轮询(未带 token 打新路由,404=旧二进制 / 401=新二进制)同时准备验证脚本,轮询命中即跑,省掉盯 CI 的空等(2026-09-01 POST /workers 约 90s 上线)。
