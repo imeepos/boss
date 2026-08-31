@@ -458,3 +458,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 curl 复现接口先 grep handler 的 req struct 对齐 JSON 形状,不要凭端上代码或直觉猜字段名（门户登录 mode/smsCode ≠ 猜的 method/code,同会话浪费 3 轮还撞短信冷却）。
 - 当轮询 healthz 等 deploy,commit 字段是 7 位短 sha,必须前缀比对而非全等（拿 8 位比对永不命中,白等一个轮询周期）。
 - 当对 jsonb 列做 LIKE 模糊匹配,先 `payload::text` 转型,否则 operator does not exist 且整事务回滚（清理脚本半途而废,须重跑）。
+- 当给 admin 端新增任何路由,提交清单固定四件套:handler+路由注册 / OpenAPI yaml(否则 check-contract-sync 红) / `make route-perms-check` 再生成 admin_perms_gen.go(不在 make check 链里,102 镜像构建才拦) / 回归测试;漏第三件本地全绿照样部署失败(2026-08-30 施工看板轮)。
+- 当本地门禁全绿但 CI 失败,第一反应查「CI 有而本地没有的门禁」,不要怀疑代码——镜像构建里的 genrouteperms --check、web-ui-audit 等都不在 make check 默认链(2026-08-30)。
+- 当 git 链式命令关键步骤(merge/push)用 `| tail -1` 看结果,"Updating..." 只是首行不是成功凭证;失败要保留完整 stderr,以 `git log`/`git status` 复核落点为准(2026-08-30 ff-merge 假成功险些连锁删分支)。
+- 当排查 gitea actions 失败,run/job 状态在 gitea-postgres `action_run`/`action_run_job`(status: 1=success 2=failure 3=cancelled),完整日志在宿主 `/var/lib/gitea/actions_log/sker/<repo>/<hash前缀>/<taskId>.log.zst`,`docker cp` 出来 zstd -dc 解压即得,不要在 DB/minio 里绕路(2026-08-30)。

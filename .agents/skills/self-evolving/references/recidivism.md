@@ -111,3 +111,5 @@
 
 - worktree add 后未验证 checkout 落地即写文件(2026-08-29,1 次):git 打印成功但目录无 .git 指针,文件落入 git 管辖外;幸 commit 前核对分支名发现。规则:worktree add 后 `ls <dir>/.git` 再动笔。
 - 共享脚本多 --eval 静默丢参当被测代码 bug 排查(2026-08-29,1 次):cdp-admin-capture parseArgs 步进 bug;工具行为异常先自证工具。已登记 ISSUE.md,绕过=单 eval IIFE。
+| 本地 make check 全绿但 CI 有独立门禁未跑,镜像构建失败白等一轮部署 | 1 | 2026-08-30(新增 admin 路由漏 `make route-perms-check`,102 镜像 genrouteperms --check 22s 失败;本地 check-contract-sync 系另一套不含此项) | 新增 admin 路由提交前固定四件套:路由+契约+`make route-perms-check`+回归测试;本地门禁≠CI门禁,提交前对照 workflow 步骤清单 |
+| 链式 git 命令用 `| tail -1` 看结果,失败首行像成功信息,误判假成功 | 1 | 2026-08-30(ff-merge 被主树同文件未提交改动挡住,tail 只见"Updating..."当成功,继续链式删分支被 branch -d 拒才暴露;红线#9 兜底防丢) | merge/push 等关键步骤不吞输出;判定以 git log/rev-parse 复核为准,不以命令回显首行印象为准 |
