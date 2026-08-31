@@ -85,6 +85,7 @@
 | 2026-08-30 | 环节7 下发模板解析规则:按套餐带宽匹配同法人 ENABLED 模板+默认回退留痕,否决 offer→template 外键列与任务表带宽列;CreateTask 补真幂等;102 provisioner 常驻+oltsim 仿真 OLT 落地 | adopted/2026-08-30-preconfig-template-resolution.md |
 | 2026-09-01 | 产品/套餐↔下发模板显式绑定(方案B):新表 offer_provision_bindings(000172),环节7 解析=显式绑定→带宽兜底→显性失败(推翻 08-30"回退默认"裁定);admin 产品/模板页双向绑定可见;下发日志补记模板可追踪 | adopted/2026-09-01-offer-provision-binding.md |
 | 2026-09-01 | 后台录入师傅(POST /workers 必带密码+PUT /workers/{id}/password 重置,bcrypt);师傅端登录名裁定=phone,fields.md 旧文"staffNo 登录名"按实现现况修正 | adopted/2026-09-01-worker-create-with-password.md |
+| 2026-09-01 | 开通正确性收口:改套餐订单环节6把 LO 生效套餐对齐到订单套餐(TMF change order 语义,修"按旧套餐下发"),下单预检不可开通即拒单(TMF POQ);qos_templates 死线登记已知债务 | adopted/2026-09-01-provision-correctness-followup.md |
 | 2026-09-03 | 导入权限边界:地址使用 menu:importer,Geo 使用 menu:geo,暂不追加地址双权限 | adopted/2026-09-03-importer-permission-scope.md |
 | 2026-09-03 | 导入任务登记幂等键 clientKey 与下单幂等键 requestId 语义区分(upsert 写入 vs 查询返回,作用域/命名不统一) | adopted/2026-09-03-import-task-idempotency.md |
 | 2026-09-03 | 充值余额是预存(只进不出)不是可用余额;未来接消费需补 portal_wallet_transactions 流水表+CHECK>=0 约束 | adopted/2026-09-03-portal-wallet-balance-semantic.md |

@@ -60,6 +60,9 @@ type QuadLinkPrebinder interface {
 type UserProfileCreator interface {
 	CreateLoAccount(ctx context.Context, lo LoidReq) (int64, error)
 	GetLoAccountByCustomer(ctx context.Context, customerID int64) (*LoidAccount, error)
+	// AlignLoAccount 把已有 LO 账号的生效套餐对齐到订单套餐(改套餐场景,
+	// TMF change order 语义:服务配置必须随变更单刷新);返回是否发生更新。
+	AlignLoAccount(ctx context.Context, customerID, offerID int64, billingMode string) (bool, error)
 }
 
 // LoidReq 创建 LO 认证账号请求(order 域定义,由 app 装配层映射到 aaa.LoAccount)。

@@ -463,3 +463,88 @@ func TestPGStore_ChargeContractPrepaidCollectFail(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+// TestPGStore_CreateUserProfileRealignsLO 回归:改套餐订单在环节6 幂等复用已有 LO 账号时,
+// 必须把 LO 生效套餐对齐到订单套餐(TMF change order 语义),否则环节7 按旧套餐解析下发模板、
+// RADIUS 限速也停在旧档(2026-09-01 验证轮实测:订单 300M 实际按 LO 旧 100M 下发了模板)。
+func TestPGStore_CreateUserProfileRealignsLO(t *testing.T) {
+	t.Run("LO套餐≠订单套餐:对齐并推进", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		// CreateUserProfile:读订单(customer 3, 订单套餐 20, 后付费)。
+		mock.ExpectQuery(`SELECT customer_id, offer_id, legal_entity_id`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"customer_id", "offer_id", "legal_entity_id", "name", "region_path", "billing_mode"}).
+				AddRow(int64(3), int64(20), int64(1), "公司A", "", "POSTPAID"))
+		mock.ExpectQuery(`SELECT COALESCE\(customer_code, ''\) FROM customers`).
+			WithArgs(int64(3)).
+			WillReturnRows(mock.NewRows([]string{"code"}).AddRow(""))
+		// LO 已存在(stub 返回旧套餐 10)→ 对齐 → advance 5→6(RESERVED 不触发工单同步)。
+		mock.ExpectBegin()
+		mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(5), "RESERVED", "ORD-7"))
+		mock.ExpectQuery(`SELECT result FROM order_stages WHERE order_id=\$1 AND stage=\$2`).
+			WithArgs(int64(7), int8(5)).
+			WillReturnRows(mock.NewRows([]string{"result"}).AddRow("DONE"))
+		mock.ExpectExec(`UPDATE orders SET stage`).
+			WithArgs(int64(7), int8(6), "RESERVED").WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectExec(`INSERT INTO order_stages`).
+			WithArgs(int64(7), int8(6), "DONE").WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectCommit()
+
+		prof := &stubProfileCreator{offer: 10, aligned: true}
+		s := NewPGStore(mock, stubExists{}, prof)
+		if err := s.CreateUserProfile(context.Background(), 7); err != nil {
+			t.Fatalf("CreateUserProfile: %v", err)
+		}
+		if prof.realign != [2]int64{3, 20} || prof.billing != "POSTPAID" {
+			t.Fatalf("realign=%v billing=%q, want [3 20]/POSTPAID", prof.realign, prof.billing)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
+	t.Run("LO套餐=订单套餐:不对齐直接推进", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT customer_id, offer_id, legal_entity_id`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"customer_id", "offer_id", "legal_entity_id", "name", "region_path", "billing_mode"}).
+				AddRow(int64(3), int64(10), int64(1), "公司A", "", "POSTPAID"))
+		mock.ExpectQuery(`SELECT COALESCE\(customer_code, ''\) FROM customers`).
+			WithArgs(int64(3)).
+			WillReturnRows(mock.NewRows([]string{"code"}).AddRow(""))
+		mock.ExpectBegin()
+		mock.ExpectQuery(`SELECT stage, status, order_no FROM orders`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"stage", "status", "order_no"}).AddRow(int8(5), "RESERVED", "ORD-7"))
+		mock.ExpectQuery(`SELECT result FROM order_stages WHERE order_id=\$1 AND stage=\$2`).
+			WithArgs(int64(7), int8(5)).
+			WillReturnRows(mock.NewRows([]string{"result"}).AddRow("DONE"))
+		mock.ExpectExec(`UPDATE orders SET stage`).
+			WithArgs(int64(7), int8(6), "RESERVED").WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectExec(`INSERT INTO order_stages`).
+			WithArgs(int64(7), int8(6), "DONE").WillReturnResult(pgxmock.NewResult("INSERT", 1))
+		mock.ExpectCommit()
+
+		prof := &stubProfileCreator{offer: 10}
+		s := NewPGStore(mock, stubExists{}, prof)
+		if err := s.CreateUserProfile(context.Background(), 7); err != nil {
+			t.Fatalf("CreateUserProfile: %v", err)
+		}
+		if prof.realign != [2]int64{} {
+			t.Fatalf("realign=%v, want no align call", prof.realign)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+}

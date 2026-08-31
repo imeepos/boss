@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -122,9 +123,21 @@ func (s *PGStore) CreateUserProfile(ctx context.Context, orderID int64) error {
 	if customerCode == "" {
 		loid = fmt.Sprintf("LOID-C%d", customerID)
 	}
-	// 幂等:已存在则跳过创建
+	// 幂等:已存在则把生效套餐对齐到本订单(改套餐场景,TMF change order 语义:
+	// 服务配置必须随变更单刷新,否则环节7 按旧套餐下发模板、RADIUS 限速也停在旧档),
+	// 再推进;新建分支见下方 CreateLoAccount(offer 取自订单)。
 	existing, err := s.prof.GetLoAccountByCustomer(ctx, customerID)
 	if err == nil && existing != nil {
+		if existing.OfferID != offerID {
+			aligned, err := s.prof.AlignLoAccount(ctx, customerID, offerID, billingMode)
+			if err != nil {
+				return fmt.Errorf("order: createUserProfile align lo: %w", err)
+			}
+			if aligned {
+				log.Printf("[order] LO OFFER REALIGN: customer=%d offer %d -> %d (billing=%s)",
+					customerID, existing.OfferID, offerID, billingMode)
+			}
+		}
 		return s.advance(ctx, orderID, "createUserProfile")
 	}
 	// 查询地址对应的 region_id

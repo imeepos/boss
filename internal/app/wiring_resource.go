@@ -45,6 +45,11 @@ func (u userProfileCreator) GetLoAccountByCustomer(ctx context.Context, customer
 	return &order.LoidAccount{ID: lo.ID, Loid: lo.Loid, OfferID: lo.OfferID}, nil
 }
 
+// AlignLoAccount 改套餐场景把已有 LO 对齐到订单套餐(环节6 幂等复用分支,order pg_workflow 调用)。
+func (u userProfileCreator) AlignLoAccount(ctx context.Context, customerID, offerID int64, billingMode string) (bool, error) {
+	return u.svc.AlignLoAccountOffer(ctx, customerID, offerID, billingMode)
+}
+
 // provisionTaskCreator 包装 provision.PGStore 为 order.ProvisionTaskCreator 接口。
 type provisionTaskCreator struct{ svc *provision.PGStore }
 
