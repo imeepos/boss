@@ -105,6 +105,7 @@
 | — | `Level` | level | 1市 2区 3街道 4小区 5楼栋 |
 | — | `Name` | name | — |
 | — | `ParentID` | parent_id | 派生（=反查 path 父节点） |
+| — | `Geom` | geom | GEOGRAPHY(POINT) 可空，WGS84；写路径 `PUT /addresses/{id}/geom`（menu:address，000174 同期），逆地理最近邻 `GET /addresses/nearest?lat&lng&radiusM`（KNN + ST_DWithin，缺省 500m 上限 50km）从此取数 |
 
 > 区域硬关联（TS 实体）：楼栋级地址挂 `region_id`（→ regions，经营区域）+ `region_name` 快照，固化「地址→经营区域」映射；客户/资产/端口/LO账号经此继承区域，杜绝「有地址无订单则不知属哪个区域」的孤儿。
 
@@ -1348,6 +1349,18 @@ API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATC
 
 > 派生事实不写回订单状态；GIS 施工实时图层读 arrive_lat/lng 出图。
 > 旧版本师傅端无打卡动作时 NULL 兜底；标记作业 DOING + 师傅匹配 + arrived_at IS NULL 才允许 UPDATE（幂等首打卡）。
+
+### 9.6a dispatch_tickets 增列（迁移 000174，站点坐标快照）
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:-------|:------|:----------|
+| `SiteLat` | site_lat | DOUBLE PRECISION [-90,90] 可空，WGS84 |
+| `SiteLng` | site_lng | DOUBLE PRECISION [-180,180] 可空，WGS84 |
+
+> 派单时刻自 orders.address_id → addresses.geom 一次性物化（快照口径同 price_snapshot，
+> 不随地址树后续变更漂移）；与 000164 arrive_lat/lng（师傅侧到场事实）语义互不混用。
+> 同事务解析 region_id/region_name ← orders.region_path 在 regions 树的最近祖先或自身。
+> 半径闸门（worker 接单设置 radiusKm）读此快照；空 = 跳过校验，不误拦。
 
 ### 9.7 asset_batches 增列（迁移 000163，GIS 库存分布图层用）
 

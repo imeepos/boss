@@ -101,6 +101,8 @@
 | 入库单 procurement_receipts.status | DRAFT / CONFIRMED / REJECTED | 草稿 / 已确认（建 asset_batches+逐台建 assets IN_STOCK 同事务）/ 拒收（adopted 2026-08-28；迁移 000163） |
 | 施工回单 install_logs.status | OPEN / COMPLETED / REJECTED | 已提交待签收 / 已签收 / 已拒签；工单同一时刻最多一条 OPEN（uq_install_logs_ticket_open 部分唯一，adopted 2026-08-28；迁移 000164） |
 | 派单工单到场 dispatch_tickets.arrived_at | TIMESTAMPTZ 可空 | 师傅到场打卡事实（不写回订单状态；GIS 施工实时图层读 arrive_lat/lng；adopted 2026-08-28；迁移 000164） |
+| 派单工单站点坐标 dispatch_tickets.site_lat/site_lng | DOUBLE PRECISION 可空 | 派单时刻自 orders.address_id→addresses.geom 物化（快照口径同 price_snapshot；与到场打卡 arrive_lat/lng 师傅侧事实互不混用；半径闸门读此；adopted 2026-09-01；迁移 000174） |
+| 派单区域匹配（派生口径） | regions 树祖先或自身 | 工单区域须落在师傅负责区域子树内（ltree path <@）；师傅区域 0=不限、工单区域 0=放行；adopted 2026-09-01（WorkerService.MatchedRegionIDs） |
 | 授权类型 license_type | duration / lifetime / trial | 按时长 / 终身 / 试用（release-platform 发行契约，claims 内透传展示） |
 | 授权 status（release-platform 侧） | issued / activated / consumed / expired / revoked | 已签发 / 已激活 / 已兑码 / 已过期 / 已吊销；boss 仅核验 `revoked`/`expired` 拒绝（verify.go checkStatus），其余透传展示 |
 

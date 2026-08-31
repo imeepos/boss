@@ -95,5 +95,6 @@
 | 2026-09-06 | API 在线文档 = 契约运行时聚合(embed+openapidoc)+ Swagger UI 入驻 /base/apidocs(menu:apidocs);Try-it-out 带登录态真实调接口;附带修复契约 YAML 存量债 | adopted/2026-09-06-api-docs-openapidoc.md |
 | 2026-09-06 | MCP 接入 = 本地 stdio server(cmd/bossmcp):3 工具(目录/调用/身份)覆盖用户端+师傅端全部端点,路由目录 openapi 生成同门禁;admin 端/HTTP transport/每接口一 tool/复用 bossctl 代码均被否决 | adopted/2026-09-06-mcp-server-user-worker.md |
 | 2026-09-07 | payments.method='card' 双语义(柜面 POS/Stripe 线上)对账口径:柜面三要素非空即剔除渠道对账;拆枚举/加 source 列被否决留契约后续 | adopted/2026-09-07-payment-method-card-dual-semantics.md |
+| 2026-09-01 | 位置/地址统一落地:坐标为唯一空间锚点(geom 写入+KNN 逆地理)、工单坐标派单时刻快照(000174)、区域匹配升级子树语义、radiusKm 半径闸门启用;H3 索引/外部 geocoding/派单打分被否决 | adopted/2026-09-01-location-unify-rollout.md |
 
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。

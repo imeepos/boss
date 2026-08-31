@@ -42,13 +42,13 @@ type fakeUser struct {
 	needsReviewOn bool
 	needsReview   []user.Address
 	// 坐标写入桩:入参捕获 + 可配置错误。
-	geomID         int64
+	geomID           int64
 	geomLat, geomLng float64
-	geomErr        error
+	geomErr          error
 	// 逆地理最近邻桩:入参捕获 + 可配置回执/错误。
 	nearestInLat, nearestInLng, nearestInR float64
-	nearest    *user.AddressNearest
-	nearestErr error
+	nearest                                *user.AddressNearest
+	nearestErr                             error
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
