@@ -5,6 +5,7 @@ package user
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -111,10 +112,10 @@ func TestPGStore_SetEntityStaffPassword(t *testing.T) {
 			t.Fatalf("err=%v, want ErrInvalidInput", err)
 		}
 	})
-	t.Run("重置命中", func(t *testing.T) {
+	t.Run("重置命中且哈希为字符串", func(t *testing.T) {
 		mock := mustMock(t)
 		mock.ExpectExec(`UPDATE accounts a SET password_hash`).
-			WithArgs(int64(1), int64(2), pgxmock.AnyArg()).
+			WithArgs(int64(1), int64(2), bcryptStringArg{}).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		s := NewPGStore(mock)
 		if err := s.SetEntityStaffPassword(context.Background(), 1, 2, "newpass"); err != nil {
@@ -165,6 +166,15 @@ func mustMock(t *testing.T) pgxmock.PgxPoolIface {
 	}
 	t.Cleanup(mock.Close)
 	return mock
+}
+
+// bcryptStringArg 回归守卫(2026-09-01 102 实测):密码哈希参数必须是 string。
+// []byte 会被 pgx 按 bytea 编码,TEXT 列落成 \x.. 字面量,登录永久 40100。
+type bcryptStringArg struct{}
+
+func (bcryptStringArg) Match(v any) bool {
+	s, ok := v.(string)
+	return ok && strings.HasPrefix(s, "$2")
 }
 
 var _ = pgx.ErrNoRows

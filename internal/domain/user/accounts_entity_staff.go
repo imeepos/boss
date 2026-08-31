@@ -64,7 +64,8 @@ func (s *PGStore) SetEntityStaffPassword(ctx context.Context, entityID, accountI
 	if err != nil {
 		return fmt.Errorf("user: bcrypt: %w", err)
 	}
-	return s.execEntityStaff(ctx, entityID, accountID, `password_hash=$3`, hash, "set staff password")
+	// 必须 string(hash):[]byte 被 pgx 按 bytea 编码,TEXT 列落成 \x.. 字面量,密码永久失效
+	return s.execEntityStaff(ctx, entityID, accountID, `password_hash=$3`, string(hash), "set staff password")
 }
 
 // SetEntityStaffStatus 启用/停用企业员工(企业边界校验;后台为受权操作,无防自锁限制)。
