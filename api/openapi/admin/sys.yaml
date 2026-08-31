@@ -250,6 +250,18 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /addresses/nearest:
+    get:
+      tags: [Sys]
+      summary: 逆地理最近邻(坐标 snap 到半径内最近地址节点;KNN + ST_DWithin 信度上限)
+      operationId: nearestAddress
+      parameters:
+        - { name: lat, in: query, required: true, schema: { type: number, format: double, minimum: -90, maximum: 90 } }
+        - { name: lng, in: query, required: true, schema: { type: number, format: double, minimum: -180, maximum: 180 } }
+        - { name: radiusM, in: query, schema: { type: number, format: double, default: 500, maximum: 50000 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /addresses/search:
     get:
       tags: [Sys]

@@ -49,6 +49,41 @@ func (s *PGStore) SetAddressGeo(ctx context.Context, id int64, countryCode, admi
 	return nil
 }
 
+// AddressNearest 逆地理最近邻命中:节点 + 与入参坐标的球面距离(米)。
+type AddressNearest struct {
+	ID        int64   `json:"id"`
+	Path      string  `json:"path"`
+	Name      string  `json:"name"`
+	Level     int8    `json:"level"`
+	DistanceM float64 `json:"distanceM"`
+}
+
+// NearestAddress 逆地理最近邻:坐标 snap 到半径内最近的有坐标地址节点。
+// PostGIS KNN 范式:ST_DWithin 限定信度上限 + ORDER BY geom <-> point LIMIT 1,
+// 单次 GiST 索引扫描同时完成过滤与排序;无命中返回 nil,nil(未命中非错误)。
+func (s *PGStore) NearestAddress(ctx context.Context, lat, lng, radiusM float64) (*AddressNearest, error) {
+	if lat < -90 || lat > 90 || lng < -180 || lng > 180 || radiusM <= 0 {
+		return nil, ErrInvalidInput
+	}
+	var n AddressNearest
+	err := s.db.QueryRow(ctx, `
+		SELECT a.id, a.path::text, a.name, a.level,
+		       ST_Distance(a.geom, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
+		FROM addresses a
+		WHERE a.geom IS NOT NULL
+		  AND ST_DWithin(a.geom, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography, $3)
+		ORDER BY a.geom <-> ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
+		LIMIT 1`, lat, lng, radiusM).
+		Scan(&n.ID, &n.Path, &n.Name, &n.Level, &n.DistanceM)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("user: nearest address: %w", err)
+	}
+	return &n, nil
+}
+
 // ListNeedsReview 待治理节点清单(needs_review=TRUE,开单内联建址治理队列读取路径)。
 // 列形状与 ListAddresses 一致,前端 AddressTree 同构渲染;根锚点经 subpath 根联取。
 func (s *PGStore) ListNeedsReview(ctx context.Context) ([]Address, error) {

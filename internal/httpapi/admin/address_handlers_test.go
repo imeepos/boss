@@ -87,6 +87,46 @@ func TestAddrListNeedsReviewPriority(t *testing.T) {
 	}
 }
 
+// TestAddrNearest 契约:GET /addresses/nearest 透传半径(缺省 500);未命中 data:null;非法参数 42200。
+func TestAddrNearest(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	t.Run("命中透传", func(t *testing.T) {
+		u := &fakeUser{permOk: true, nearest: &user.AddressNearest{ID: 9, Path: "ph.ncr.manila", Name: "马尼拉", Level: 2, DistanceM: 120.5}}
+		r := newRouterForAddress(u, mgr)
+		w := getJSON(t, r, "/api/admin/v1/addresses/nearest?lat=14.599&lng=120.984", authToken(t, mgr))
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"distanceM":120.5`) {
+			t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+		}
+		if u.nearestInLat != 14.599 || u.nearestInR != 500 {
+			t.Fatalf("入参失真: lat=%v r=%v", u.nearestInLat, u.nearestInR)
+		}
+	})
+	t.Run("自定义半径", func(t *testing.T) {
+		u := &fakeUser{permOk: true}
+		r := newRouterForAddress(u, mgr)
+		getJSON(t, r, "/api/admin/v1/addresses/nearest?lat=14.5&lng=120.9&radiusM=3000", authToken(t, mgr))
+		if u.nearestInR != 3000 {
+			t.Fatalf("radiusM 未透传: %v", u.nearestInR)
+		}
+	})
+	t.Run("缺参拒绝", func(t *testing.T) {
+		u := &fakeUser{permOk: true}
+		r := newRouterForAddress(u, mgr)
+		w := getJSON(t, r, "/api/admin/v1/addresses/nearest?lat=14.5", authToken(t, mgr))
+		if !strings.Contains(w.Body.String(), "42200") {
+			t.Fatalf("缺 lng 应回 42200: %s", w.Body.String())
+		}
+	})
+	t.Run("半径越界拒绝", func(t *testing.T) {
+		u := &fakeUser{permOk: true}
+		r := newRouterForAddress(u, mgr)
+		w := getJSON(t, r, "/api/admin/v1/addresses/nearest?lat=14.5&lng=120.9&radiusM=999999", authToken(t, mgr))
+		if !strings.Contains(w.Body.String(), "42200") {
+			t.Fatalf("radiusM>50km 应回 42200: %s", w.Body.String())
+		}
+	})
+}
+
 // TestAddrSetGeom 契约:PUT /addresses/:id/geom 透传坐标并留审计;越界 422 拒。
 func TestAddrSetGeom(t *testing.T) {
 	mgr := auth.NewManager("s", time.Hour)

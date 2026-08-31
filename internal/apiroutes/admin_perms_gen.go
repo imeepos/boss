@@ -35,6 +35,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/addon-subscriptions":                                       {"menu:userdata"},
 	"GET /api/admin/v1/addons":                                                    {"menu:userdata"},
 	"GET /api/admin/v1/addresses":                                                 {"menu:address"},
+	"GET /api/admin/v1/addresses/nearest":                                         {"menu:address"},
 	"GET /api/admin/v1/addresses/search":                                          {"menu:address"},
 	"GET /api/admin/v1/agreements":                                                {"menu:userdata"},
 	"GET /api/admin/v1/ai/openai/config":                                          {"menu:ai"},

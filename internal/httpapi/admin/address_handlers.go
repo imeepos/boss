@@ -113,6 +113,33 @@ func addrSearchAddresses(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// addrNearestAddress 逆地理最近邻:GET /addresses/nearest?lat=&lng=&radiusM=
+// radiusM 缺省 500,上限 50000(信度上限防远距离误配);未命中回 data:null 非错误。
+func addrNearestAddress(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		lat, errLat := strconv.ParseFloat(c.Query("lat"), 64)
+		lng, errLng := strconv.ParseFloat(c.Query("lng"), 64)
+		if errLat != nil || errLng != nil {
+			respondErr(c, user.ErrInvalidInput)
+			return
+		}
+		radius := 500.0
+		if v := c.Query("radiusM"); v != "" {
+			radius, _ = strconv.ParseFloat(v, 64)
+		}
+		if radius <= 0 || radius > 50000 {
+			respondErr(c, user.ErrInvalidInput)
+			return
+		}
+		hit, err := a.User.NearestAddress(c.Request.Context(), lat, lng, radius)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, hit)
+	}
+}
+
 func addrCreateAddress(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var body addrCreateBody

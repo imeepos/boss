@@ -45,6 +45,10 @@ type fakeUser struct {
 	geomID         int64
 	geomLat, geomLng float64
 	geomErr        error
+	// 逆地理最近邻桩:入参捕获 + 可配置回执/错误。
+	nearestInLat, nearestInLng, nearestInR float64
+	nearest    *user.AddressNearest
+	nearestErr error
 }
 
 func (f *fakeUser) Login(ctx context.Context, u, p string) (*user.LoginResult, error) {
@@ -71,6 +75,10 @@ func (f *fakeUser) SetAddressGeo(context.Context, int64, string, string) error  
 func (f *fakeUser) SetAddressGeom(_ context.Context, id int64, lat, lng float64) error {
 	f.geomID, f.geomLat, f.geomLng = id, lat, lng
 	return f.geomErr
+}
+func (f *fakeUser) NearestAddress(_ context.Context, lat, lng, radiusM float64) (*user.AddressNearest, error) {
+	f.nearestInLat, f.nearestInLng, f.nearestInR = lat, lng, radiusM
+	return f.nearest, f.nearestErr
 }
 func (f *fakeUser) ListUnlinkedRoots(context.Context) ([]user.Address, error) {
 	f.unlinkedCall = true

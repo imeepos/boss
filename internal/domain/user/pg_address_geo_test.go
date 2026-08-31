@@ -79,3 +79,40 @@ func TestPGStore_ListNeedsReview(t *testing.T) {
 		t.Fatalf("unmet expectations: %v", err)
 	}
 }
+
+// TestNearestAddress 契约:非法入参先拒;命中返回最近节点+距离;无命中 nil,nil 非错误。
+func TestNearestAddress(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	s := NewPGStore(mock)
+	if _, err := s.NearestAddress(context.Background(), 91, 120, 500); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("lat=91: got %v, want ErrInvalidInput", err)
+	}
+	if _, err := s.NearestAddress(context.Background(), 14.5, 120.9, 0); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("radius=0: got %v, want ErrInvalidInput", err)
+	}
+
+	mock.ExpectQuery(`ST_DWithin\(a\.geom`).
+		WithArgs(14.599, 120.984, 500.0).
+		WillReturnRows(mock.NewRows([]string{"id", "path", "name", "level", "st_distance"}).
+			AddRow(int64(9), "ph.ncr.manila.bgc.xq1", "BGC小区", int8(4), 120.5))
+	hit, err := s.NearestAddress(context.Background(), 14.599, 120.984, 500)
+	if err != nil || hit == nil || hit.Name != "BGC小区" || hit.DistanceM != 120.5 {
+		t.Fatalf("hit=%+v err=%v", hit, err)
+	}
+
+	mock.ExpectQuery(`ORDER BY a.geom <->`).
+		WithArgs(1.0, 2.0, 300.0).
+		WillReturnRows(mock.NewRows([]string{"id", "path", "name", "level", "st_distance"}))
+	miss, err := s.NearestAddress(context.Background(), 1.0, 2.0, 300)
+	if err != nil || miss != nil {
+		t.Fatalf("miss=%+v err=%v, want nil,nil", miss, err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
