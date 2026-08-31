@@ -1514,3 +1514,8 @@
 - skill 有没有提前警告？没有。 boss-admin-web.md 只记了受控 input 的原生 setter 套路，没记 Dropdown/MultiSelect 系组件的 mousedown 契约。已喂回 knowledge/前端.md。
 - 重来一次会怎么做？凡"按钮无 <input> 无 form"，先 grep 组件源码确认事件绑在 mousedown/click 哪个上，再写 eval。
 - 迁移占号：按新规"先 fetch 再定号"取了 000174（当时全局空闲），并行会话随后也占了 000174——check-contract-sync D 项拦截，改名 000175。结论：同步规则只能降概率，机械门禁才是兜底，红了让号改名 2 分钟解决，不要挣扎。
+
+## 2026-09-01 待办清单执行轮(POQ预检/LO对齐/哨兵化/巡检补全)
+- 哪个坑最浪费时间：① 两次把 `git rebase main` 放在 commit 之前跑,被"Please commit or stash them"拒掉白等一轮门禁——正确顺序:commit→rebase→再跑门禁;② 合并时 main 被并行会话连续推进三次(多区域+geo-unify),一次 ff 失败后链式命令因 `| tail` 吞掉退出码继续执行了 worktree remove/branch -d(被 git 拒绝,commit 安全在 ref 上),靠 `merge-base --is-ancestor` 事前判定 ff 可行性更稳;③ 并行会话改写了自己已推送的 docs 提交(a266a5ed),我分支 rebase 撞他们自己的冲突——用 `rebase --onto main <their-commit>` 只重放我方功能提交绕开。
+- skill 有没有提前警告：红线#9(ff 失败严禁删分支)再次保住 commit;"验收车是最好的 E2E 车"命中;SKIP_CLEANUP=1+定点取证+统一清理的验证四件套第二轮实战顺手。
+- 重来一次会怎么做：① 多会话并行期,每个 worktree 的合并序列固化为:commit→fetch→rebase→make check→ff-only merge→push,门禁永远跑在 rebase 之后;② 遇"结果全错但每步自洽"先 SQL 查 LO/订单实际值(LO 旧套餐陷阱本轮又验证一次);③ 发现相邻域 bug(geo 派单 ltree)先修主链保通,域内语义问题(指派区域匹配)发消息留给在途会话,不越界代改。
