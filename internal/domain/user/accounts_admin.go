@@ -17,6 +17,7 @@ type AccountInput struct {
 	Password      string  `json:"password"` // 新建必填;修改留空=不改
 	RealName      string  `json:"realName"`
 	Phone         string  `json:"phone"`
+	StaffNo       string  `json:"staffNo"`       // 工号(000172,可空;企业员工登录标识)
 	RoleCode      string  `json:"roleCode"`
 	LegalEntityID *int64  `json:"legalEntityId"` // nil/0=NULL(不限)
 	DeptID        *int64  `json:"deptId"`
@@ -41,21 +42,27 @@ func (s *PGStore) CreateAccount(ctx context.Context, in AccountInput) (int64, er
 	if err := validatePhone(in.Phone); err != nil {
 		return 0, err
 	}
+	if err := validateStaffNo(in.StaffNo); err != nil {
+		return 0, err
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return 0, fmt.Errorf("user: bcrypt: %w", err)
 	}
 	var id int64
 	err = s.db.QueryRow(ctx, `
-		INSERT INTO accounts (username, password_hash, real_name, phone, role_id,
+		INSERT INTO accounts (username, password_hash, real_name, phone, staff_no, role_id,
 		                      legal_entity_id, dept_id, post_id, region_scope, status)
-		SELECT $1, $2, $3, $4, r.id, NULLIF($5,0), NULLIF($6,0), NULLIF($7,0),
-		       NULLIF($8,'')::ltree, 1
-		FROM roles r WHERE r.code = $9
+		SELECT $1, $2, $3, $4, NULLIF($5,''), r.id, NULLIF($6,0), NULLIF($7,0), NULLIF($8,0),
+		       NULLIF($9,'')::ltree, 1
+		FROM roles r WHERE r.code = $10
 		RETURNING accounts.id`,
-		in.Username, string(hash), in.RealName, in.Phone,
+		in.Username, string(hash), in.RealName, in.Phone, strings.TrimSpace(in.StaffNo),
 		derefInt64(in.LegalEntityID), derefInt64(in.DeptID), derefInt64(in.PostID),
 		derefString(in.RegionScope), in.RoleCode).Scan(&id)
+	if isStaffNoUniqueViolation(err) {
+		return 0, ErrStaffNoTaken
+	}
 	if isUniqueViolation(err) {
 		return 0, ErrUsernameTaken
 	}
@@ -76,14 +83,17 @@ func (s *PGStore) UpdateAccount(ctx context.Context, id int64, in AccountInput) 
 	if err := validatePhone(in.Phone); err != nil {
 		return err
 	}
+	if err := validateStaffNo(in.StaffNo); err != nil {
+		return err
+	}
 	var roleID int64
 	err := s.db.QueryRow(ctx, `SELECT id FROM roles WHERE code=$1`, in.RoleCode).Scan(&roleID)
 	if err != nil {
 		return ErrRoleNotFound
 	}
-	sets := []string{"username=$2", "real_name=$3", "phone=$4", "role_id=$5"}
-	args := []any{id, in.Username, in.RealName, in.Phone, roleID}
-	next := 6
+	sets := []string{"username=$2", "real_name=$3", "phone=$4", "staff_no=NULLIF($5,'')", "role_id=$6"}
+	args := []any{id, in.Username, in.RealName, in.Phone, strings.TrimSpace(in.StaffNo), roleID}
+	next := 7
 	appendSet := func(sql string, v any) { sets = append(sets, fmt.Sprintf(sql, next)); args = append(args, v); next++ }
 	appendSet("legal_entity_id=NULLIF($%d,0)", derefInt64(in.LegalEntityID))
 	appendSet("dept_id=NULLIF($%d,0)", derefInt64(in.DeptID))
@@ -104,6 +114,9 @@ func (s *PGStore) UpdateAccount(ctx context.Context, id int64, in AccountInput) 
 	}
 	tag, err := s.db.Exec(ctx,
 		"UPDATE accounts SET "+strings.Join(sets, ", ")+" WHERE id=$1", args...)
+	if isStaffNoUniqueViolation(err) {
+		return ErrStaffNoTaken
+	}
 	if isUniqueViolation(err) {
 		return ErrUsernameTaken
 	}

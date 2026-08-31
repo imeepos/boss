@@ -38,6 +38,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, partner.ErrRegionOutsideEnterprise):
 		Respond(c, apitypes.CodeForbidden, nil)
 	case errors.Is(err, user.ErrUsernameTaken),
+		errors.Is(err, user.ErrStaffNoTaken),
 		errors.Is(err, user.ErrDuplicate),
 		errors.Is(err, user.ErrConflict),
 		errors.Is(err, customer.ErrDuplicate),

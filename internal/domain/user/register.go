@@ -12,6 +12,9 @@ import (
 // ErrUsernameTaken 登录名已存在。
 var ErrUsernameTaken = errors.New("user: username taken")
 
+// ErrStaffNoTaken 工号已存在(accounts.staff_no,000172)。
+var ErrStaffNoTaken = errors.New("user: staff no taken")
+
 // ErrInvalidInput 入参不合法(长度/字符集)。
 var ErrInvalidInput = errors.New("user: invalid input")
 
@@ -21,6 +24,7 @@ const (
 	UsernameMax = 64
 	PasswordMin = 6
 	RealNameMax = 64
+	StaffNoMax  = 32
 )
 
 // validateRegister 账号三项(登录名/密码/姓名)基础校验,引导建号复用。
@@ -50,8 +54,26 @@ func isLoginName(s string) bool {
 	return true
 }
 
+// validateStaffNo 工号可选;填了则 ≤StaffNoMax 且字符集同登录名(对标 workers.staff_no)。
+func validateStaffNo(staffNo string) error {
+	n := utf8.RuneCountInString(staffNo)
+	if n == 0 {
+		return nil
+	}
+	if n > StaffNoMax || !isLoginName(staffNo) {
+		return ErrInvalidInput
+	}
+	return nil
+}
+
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
-	// 任意唯一约束冲突均视为冲突(账号表唯一键=username,部门/岗位为复合唯一键)。
+	// 任意唯一约束冲突均视为冲突(账号表唯一键=username/staff_no,部门/岗位为复合唯一键)。
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+// isStaffNoUniqueViolation 工号唯一索引(uq_accounts_staff_no)冲突,与登录名冲突区分提示。
+func isStaffNoUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "uq_accounts_staff_no"
 }

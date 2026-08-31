@@ -15,6 +15,7 @@ type AccountRow struct {
 	Username        string `json:"username"`
 	RealName        string `json:"realName"`
 	Phone           string `json:"phone"`
+	StaffNo         string `json:"staffNo"` // 工号(000172,空=未编)
 	RoleCode        string `json:"roleCode"`
 	RoleName        string `json:"roleName"`
 	LegalEntityID   int64  `json:"legalEntityId"`
@@ -28,7 +29,7 @@ type AccountRow struct {
 }
 
 // accountCols 账号列表统一列(ID+名称成对;name 为 COALESCE 空串、id 为 COALESCE 0=不限)。
-const accountCols = `a.id, a.username, a.real_name, COALESCE(a.phone,''),
+const accountCols = `a.id, a.username, a.real_name, COALESCE(a.phone,''), COALESCE(a.staff_no,''),
 		       r.code, r.name,
 		       COALESCE(a.legal_entity_id,0), COALESCE(le.name,''),
 		       COALESCE(a.dept_id,0), COALESCE(d.name,''),
@@ -38,7 +39,7 @@ const accountCols = `a.id, a.username, a.real_name, COALESCE(a.phone,''),
 // scanAccount 按 accountCols 顺序扫描一行。
 func scanAccount(rows pgx.Rows) (AccountRow, error) {
 	var r AccountRow
-	if err := rows.Scan(&r.ID, &r.Username, &r.RealName, &r.Phone, &r.RoleCode, &r.RoleName,
+	if err := rows.Scan(&r.ID, &r.Username, &r.RealName, &r.Phone, &r.StaffNo, &r.RoleCode, &r.RoleName,
 		&r.LegalEntityID, &r.LegalEntityName, &r.DeptID, &r.DeptName, &r.PostID, &r.PostName,
 		&r.RegionScope, &r.Status); err != nil {
 		return r, fmt.Errorf("user: scan account: %w", err)
