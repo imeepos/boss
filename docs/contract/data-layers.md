@@ -50,6 +50,7 @@
 | product_offers | ▲legal_entity + name(必填) + bandwidth + 基础价 | 各公司自己的产品(名称/带宽/价格全属公司) |
 | worker_groups | ▲legal_entity | 班组（运营主体自定义组织数据） |
 | provision_templates / qos_templates | ▲legal_entity | 下发/服务模板（各公司设备与策略不同） |
+| offer_provision_bindings | ▲legal_entity ▲offer ▲provision_template | 套餐↔下发模板显式绑定（000172,方案B;环节7 解析=绑定→带宽兜底→显性失败） |
 | resources(OLT/分光器) | ▲legal_entity ▲address(楼栋/小区) ▲parent(树内上下级) | 各公司建设的网络设备树 |
 
 ### L2 依赖 L0/L1

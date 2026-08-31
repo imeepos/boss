@@ -19,9 +19,9 @@ func TestPGStore_ListTemplates(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, legal_entity_id, code, name, content, version, status, updated_at FROM provision_templates`).
-		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "code", "name", "content", "version", "status", "updated_at"}).
-			AddRow(int64(1), int64(1), "TPL-FTTH", "FTTH标准开通", []byte(`{}`), int32(1), "ENABLED", ts))
+	mock.ExpectQuery(`SELECT t\.id, t\.legal_entity_id.*COALESCE\(\(SELECT count\(\*\) FROM offer_provision_bindings`).
+		WillReturnRows(mock.NewRows([]string{"id", "legal_entity_id", "code", "name", "content", "version", "status", "updated_at", "bound"}).
+			AddRow(int64(1), int64(1), "TPL-FTTH", "FTTH标准开通", []byte(`{}`), int32(1), "ENABLED", ts, int64(3)))
 
 	s := NewPGStore(mock)
 	got, err := s.ListTemplates(context.Background())
@@ -158,8 +158,11 @@ func TestPGStore_CreateTaskIdempotent(t *testing.T) {
 		mock.ExpectExec(`UPDATE provision_tasks SET status = \$2 WHERE id = \$1 AND status = ANY`).
 			WithArgs(int64(5), "PENDING", []string{"FAILED"}).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectQuery(`SELECT t\.id, COALESCE\(t\.code,.*FROM provision_tasks tk`).
+			WithArgs(int64(5)).
+			WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 		mock.ExpectQuery(`INSERT INTO provision_logs`).
-			WithArgs(int64(5), int64(0), "", int64(0), "", "RETRY", int16(1)).
+			WithArgs(int64(5), int64(0), "", int64(16), "TPL-FTTH", "RETRY", int16(1)).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
 
 		s := NewPGStore(mock)

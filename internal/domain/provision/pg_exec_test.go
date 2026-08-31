@@ -17,8 +17,11 @@ func TestPGStore_ExecuteTask(t *testing.T) {
 		mock.ExpectExec(`UPDATE provision_tasks SET status`).
 			WithArgs(int64(1), "DONE", []string{"DOING", "PENDING"}).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectQuery(`SELECT t\.id, COALESCE\(t\.code,.*FROM provision_tasks tk`).
+			WithArgs(int64(1)).
+			WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 		mock.ExpectQuery(`INSERT INTO provision_logs`).
-			WithArgs(int64(1), int64(0), "", int64(0), "", "SUCCESS", int16(0)).
+			WithArgs(int64(1), int64(0), "", int64(16), "TPL-FTTH", "SUCCESS", int16(0)).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(10)))
 
 		s := NewPGStore(mock)
@@ -49,8 +52,11 @@ func TestPGStore_FailTask(t *testing.T) {
 	mock.ExpectExec(`UPDATE provision_tasks SET status`).
 		WithArgs(int64(3), "FAILED", []string{"DOING", "PENDING"}).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectQuery(`SELECT t\.id, COALESCE\(t\.code,.*FROM provision_tasks tk`).
+		WithArgs(int64(3)).
+		WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 	mock.ExpectQuery(`INSERT INTO provision_logs`).
-		WithArgs(int64(3), int64(0), "", int64(0), "", "FAILED: olt connect timeout", int16(0)).
+		WithArgs(int64(3), int64(0), "", int64(16), "TPL-FTTH", "FAILED: olt connect timeout", int16(0)).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
 
 	s := NewPGStore(mock)
@@ -101,8 +107,11 @@ func TestPGStore_RetryTask(t *testing.T) {
 		mock.ExpectExec(`UPDATE provision_tasks SET status`).
 			WithArgs(int64(3), "PENDING", []string{"FAILED"}).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectQuery(`SELECT t\.id, COALESCE\(t\.code,.*FROM provision_tasks tk`).
+			WithArgs(int64(3)).
+			WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 		mock.ExpectQuery(`INSERT INTO provision_logs`).
-			WithArgs(int64(3), int64(0), "", int64(0), "", "RETRY", int16(2)).
+			WithArgs(int64(3), int64(0), "", int64(16), "TPL-FTTH", "RETRY", int16(2)).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(12)))
 
 		s := NewPGStore(mock)

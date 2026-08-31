@@ -14,8 +14,10 @@ import { fmtFee, fmtTime } from '../../../lib/format'
 import { PriceHistoryDrawer } from './PriceHistoryDrawer'
 import { PriceChangeDrawer } from './PriceChangeDrawer'
 import { emptyProductForm, ProductFormDrawer, type ProductFormValues } from './ProductForm'
+import { BindTemplateDrawer } from './BindTemplateDrawer'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { TableStateRow } from '../../../components/business'
+import type { OfferBindingRow } from './types'
 
 function pageSlice<T>(rows: T[], page: number, pageSize: number): T[] {
   return rows.slice((page - 1) * pageSize, page * pageSize)
@@ -27,6 +29,7 @@ export default function ProductPage() {
   const confirmDialog = useConfirm()
   const [rows, setRows] = useState<ProductRow[]>([])
   const [companies, setCompanies] = useState<{ id: number; name: string }[]>([])
+  const [bindings, setBindings] = useState<Map<number, OfferBindingRow>>(new Map())
   const [company, setCompany] = useState(0)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
@@ -34,6 +37,7 @@ export default function ProductPage() {
   const [detail, setDetail] = useState<ProductRow | null>(null)
   const [history, setHistory] = useState<ProductRow | null>(null)
   const [priceTarget, setPriceTarget] = useState<ProductRow | null>(null)
+  const [bindTarget, setBindTarget] = useState<ProductRow | null>(null)
   const [form, setForm] = useState<ProductFormValues | null>(null)
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -46,11 +50,17 @@ export default function ProductPage() {
       .catch((e) => setError(e instanceof Error ? e.message : p.loadFail))
       .finally(() => setBusy(false))
   }
+  const loadBindings = () => {
+    apiFetch<{ items: OfferBindingRow[] }>('/provision-bindings')
+      .then((d) => setBindings(new Map((d?.items ?? []).map((b) => [b.offerId, b]))))
+      .catch(() => setBindings(new Map()))
+  }
   useEffect(() => {
     apiFetch<{ id: number; name: string }[]>('/legal-entities')
       .then((d) => setCompanies(d ?? []))
       .catch(() => setCompanies([]))
-  }, [])
+    loadBindings()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async () => {
@@ -142,6 +152,12 @@ export default function ProductPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.effectiveAt)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="product" value={r.status} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      {(() => {
+                        const b = bindings.get(r.id)
+                        return b ? `${b.templateName} (${b.templateCode})` : <span className="text-[var(--shell-group-title)]">{p.templateUnbound}</span>
+                      })()}
+                    </td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       <span className="inline-flex items-center gap-2">
                         <button className={act} onClick={() => setDetail(r)}>{p.detail}</button>
                         {sep}
@@ -153,6 +169,8 @@ export default function ProductPage() {
                         {sep}
                         <button className={act} onClick={() => setPriceTarget(r)}>{p.priceChange}</button>
                         {sep}
+                        <button className={act} onClick={() => setBindTarget(r)}>{p.templateBind}</button>
+                        {sep}
                         <button className={act} disabled={busy} onClick={() => toggleStatus(r)}>{r.status === 'PUBLISHED' ? p.unpublish : p.publish}</button>
                         {sep}
                         <button className={act} onClick={() => setHistory(r)}>{p.history}</button>
@@ -160,7 +178,7 @@ export default function ProductPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={8} loading={busy} text={p.empty} />}
+                {!slice.length && <TableStateRow colSpan={9} loading={busy} text={p.empty} />}
               </tbody>
             </table>
           </div>
@@ -193,6 +211,10 @@ export default function ProductPage() {
       {priceTarget && (
         <PriceChangeDrawer productId={priceTarget.id} productName={priceTarget.name} currentFee={priceTarget.monthlyFee}
           onClose={() => setPriceTarget(null)} onDone={() => { setPriceTarget(null); load() }} />
+      )}
+      {bindTarget && (
+        <BindTemplateDrawer offerId={bindTarget.id} offerName={bindTarget.name} legalEntityId={bindTarget.legalEntityId}
+          onClose={() => setBindTarget(null)} onDone={() => { setBindTarget(null); loadBindings() }} />
       )}
       <ProductFormDrawer
         open={form !== null}

@@ -22,6 +22,7 @@ export interface ProvisionTemplateRow {
   version: number
   status: string
   updatedAt: string
+  boundOffers: number // 已绑定此模板的套餐数(方案B)
 }
 
 /** 下发日志:GET /provision-logs?taskId(items)。 */

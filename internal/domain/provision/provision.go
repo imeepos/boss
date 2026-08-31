@@ -15,6 +15,19 @@ type Template struct {
 	Version       int32          `json:"version"`
 	Status        string         `json:"status"` // ENABLED/DISABLED
 	UpdatedAt     time.Time      `json:"updatedAt"`
+	BoundOffers   int64          `json:"boundOffers"` // 已绑定此模板的套餐数(admin 可见性)
+}
+
+// OfferTemplateBinding 产品/套餐 → 下发模板绑定行(方案B)。
+// 后台显式绑定,环节7 优先走绑定;无绑定才按带宽兜底。
+type OfferTemplateBinding struct {
+	ID            int64  `json:"id"`
+	LegalEntityID int64  `json:"legalEntityId"`
+	OfferID       int64  `json:"offerId"`
+	TemplateID    int64  `json:"templateId"`
+	TemplateCode  string `json:"templateCode"`
+	TemplateName  string `json:"templateName"`
+	Remark        string `json:"remark"`
 }
 
 // Task 下发任务(按模板向 LO 账号下发配置)。
@@ -65,4 +78,14 @@ type ProvisionService interface {
 	FailTask(ctx context.Context, taskID int64, reason string) error
 	// RetryTask 失败重试:FAILED→PENDING + 重试计数留痕。
 	RetryTask(ctx context.Context, taskID int64, retries int16) error
+
+	// 产品/套餐 ↔ 下发模板显式绑定(方案B)。
+	// GetOfferBinding 查询套餐已绑模板;未绑定返回 (nil, nil)。
+	GetOfferBinding(ctx context.Context, offerID int64) (*OfferTemplateBinding, error)
+	// UpsertOfferBinding 绑定/改绑(幂等,同套餐 ON CONFLICT 更新);校验套餐/模板存在、同法人、模板启用。
+	UpsertOfferBinding(ctx context.Context, offerID, templateID int64, remark string) (int64, error)
+	// DeleteOfferBinding 解绑。
+	DeleteOfferBinding(ctx context.Context, offerID int64) error
+	// ListOfferBindings 列出全部绑定(admin 产品页列绑定状态用)。
+	ListOfferBindings(ctx context.Context) ([]OfferTemplateBinding, error)
 }

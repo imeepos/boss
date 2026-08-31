@@ -42,13 +42,17 @@ func (s *PGStore) ClaimTask(ctx context.Context) (*Task, error) {
 	return &t, nil
 }
 
-// ExecuteTask 完成下发任务:DOING 或 PENDING→DONE,成功写 SUCCESS 日志。
+// ExecuteTask 完成下发任务:DOING 或 PENDING→DONE,成功写 SUCCESS 日志(补记模板信息可追踪)。
 // PENDING 直接完成仅用于直调/测试;provisioner 守护进程先 ClaimTask(DOING)再执行。
 func (s *PGStore) ExecuteTask(ctx context.Context, taskID int64) error {
 	if err := s.transit(ctx, taskID, "DONE", "DOING", "PENDING"); err != nil {
 		return err
 	}
-	_, err := s.AppendLog(ctx, Log{TaskID: taskID, Result: "SUCCESS"})
+	tplID, tplCode, err := s.taskTemplateInfo(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	_, err = s.AppendLog(ctx, Log{TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "SUCCESS"})
 	return err
 }
 
@@ -57,7 +61,11 @@ func (s *PGStore) FailTask(ctx context.Context, taskID int64, reason string) err
 	if err := s.transit(ctx, taskID, "FAILED", "DOING", "PENDING"); err != nil {
 		return err
 	}
-	_, err := s.AppendLog(ctx, Log{TaskID: taskID, Result: "FAILED: " + reason})
+	tplID, tplCode, err := s.taskTemplateInfo(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	_, err = s.AppendLog(ctx, Log{TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "FAILED: " + reason})
 	return err
 }
 
@@ -66,8 +74,30 @@ func (s *PGStore) RetryTask(ctx context.Context, taskID int64, retries int16) er
 	if err := s.transit(ctx, taskID, "PENDING", "FAILED"); err != nil {
 		return err
 	}
-	_, err := s.AppendLog(ctx, Log{TaskID: taskID, Result: "RETRY", Retries: retries + 1})
+	tplID, tplCode, err := s.taskTemplateInfo(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	_, err = s.AppendLog(ctx, Log{TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "RETRY", Retries: retries + 1})
 	return err
+}
+
+// taskTemplateInfo 取任务下发的模板 ID/编码,供执行/失败/重试日志留痕(此前日志 template_id=0 不可追踪)。
+// 任务无模板(异常数据)时返回空值不阻断状态迁移。
+func (s *PGStore) taskTemplateInfo(ctx context.Context, taskID int64) (int64, string, error) {
+	var id int64
+	var code string
+	err := s.db.QueryRow(ctx, `
+		SELECT t.id, COALESCE(t.code,'') FROM provision_tasks tk
+		LEFT JOIN provision_templates t ON t.id = tk.template_id
+		WHERE tk.id = $1`, taskID).Scan(&id, &code)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, "", nil
+	}
+	if err != nil {
+		return 0, "", fmt.Errorf("provision: task template info: %w", err)
+	}
+	return id, code, nil
 }
 
 // transit 状态迁移:仅 from 前置态可迁;0 行命中视为非法迁移。
