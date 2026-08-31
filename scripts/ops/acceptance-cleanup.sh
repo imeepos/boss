@@ -123,6 +123,11 @@ DELETE FROM scan_logs WHERE order_id IN (SELECT id FROM acc_orders);
 DELETE FROM dispatch_tickets WHERE order_id IN (SELECT id FROM acc_orders);
 DELETE FROM order_stages WHERE order_id IN (SELECT id FROM acc_orders);
 DELETE FROM activation_callbacks WHERE order_id IN (SELECT id FROM acc_orders);
+-- 环节7 下发任务/日志(2026-09-01 补,adopted note preconfig-template-resolution 遗留项:
+-- 此前漏删导致订单删后任务残留 PENDING/DONE 孤儿);logs 软引用 task,先删日志再删任务。
+DELETE FROM provision_logs WHERE task_id IN
+  (SELECT id FROM provision_tasks WHERE order_id IN (SELECT id FROM acc_orders));
+DELETE FROM provision_tasks WHERE order_id IN (SELECT id FROM acc_orders);
 DELETE FROM cs_callbacks WHERE ticket_id IN (SELECT id FROM acc_complaints);
 DELETE FROM cs_ticket_events WHERE ticket_id IN (SELECT id FROM acc_complaints);
 DELETE FROM cs_ticket_extensions WHERE ticket_id IN (SELECT id FROM acc_complaints);
