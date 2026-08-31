@@ -102,6 +102,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/device/maintenances":                                  {"menu:device"},
 	"GET /api/admin/v1/device/metrics":                                       {"menu:device"},
 	"GET /api/admin/v1/dismantles":                                           {"menu:dismantle"},
+	"GET /api/admin/v1/dispatch-tickets":                                     {"menu:install-board"},
 	"GET /api/admin/v1/dispatch/my-tickets":                                  {"menu:dispatch"},
 	"GET /api/admin/v1/dispatch/pool":                                        {"menu:dispatch"},
 	"GET /api/admin/v1/dispatch/transfers":                                   {"menu:dispatch"},
