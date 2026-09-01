@@ -50,3 +50,4 @@
   idNoMasked 与契约一致,实际是服务端 ListVerifications SQL 没 SELECT real_name/id_card_no +
   合成客户分支写死空串;定位路径:先 SQL 直查权威表确认有数,再 curl 接口看响应字段值,最后才对代码。
 - **【已犯 1 次】禁止手动部署 102(push main 即 CI 自动部署 Build-Deploy-to-ECS)** —— 2026-08-29 柜面收款轮:手动 docker build+compose up,compose 项目名不同导致挂了新建空卷,license.json"丢失",授权失效(P2 事故,见 docs/postmortem/0010)。部署类操作只允许 push main;动手前必读 docs/deploy/oncall-102.md。
+- **【已犯 1 次】禁止解完冲突补编辑后直接 commit(merge commit 只含已暂存内容)** —— 2026-09-01 死循环修复轮:冲突解完 git add 后又补了三处编辑再 commit,门禁跑在「工作区文件」上全绿而 commit 里没有它们,main 短暂带着缺参组件;最后靠 worktree remove 报脏才兜住。解冲突的顺序固定「编辑→git status 必须空→add→commit」,门禁以 commit 后的干净树为准。

@@ -469,3 +469,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 run_code 程序在一个 program 里连做多个写操作,中途报错退出不会回滚已成功的 edit;重跑前必须先 grep 校验上一轮是否已落盘(fields.md 8D-4 双插教训,2026-09-01)。
 - 当重构老页面,列设计先读后端列表 SQL 的 SELECT ... AS 别名(pg_lists.go 类)再定前端列——旧 UI 的泛化列(名称/状态)会丢真实字段,SQL 别名就是字段契约,还能顺带发现 fields.md 漏登记(2026-09-01 /bss/userdata 七 Tab)。
 - cdp-admin-capture 不带 --base 默认打 localhost:5173;验 102 部署必带 --base http://192.168.0.102:5180。断言先看 bodyHead——页面显示 This site can't be reached 是连错地址,别误判成旧版本未部署(2026-09-01 userdata 验部署绕了 4 分钟)。
+- worktree 收尾协议隐含第五步:ff-merge 后必须 push gitea main——CI(deploy-102)只监听 main push,只推 feature 分支则部署永不发生;「合并完成」的判定标准是 102 上出现对应 SHA 的镜像,不是本地 main 指针动了(2026-09-01 干等 20 分钟教训)。

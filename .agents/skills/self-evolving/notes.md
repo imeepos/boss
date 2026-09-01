@@ -1534,3 +1534,8 @@
 - 哪个坑最浪费时间:①JSX 里动态拼 token 名 `var(--color-${ok ? 'success' : 'danger'})` 被 web-ui-audit 判「幽灵令牌」红了 build——审计是静态 grep,动态拼接必留 --color- 残片;改成 ok ? 静态A : 静态B 两份完整 style 立过。②run_code 程序在中途 bash 报错退出后,先前的 edit 已落盘——重跑同一程序把 fields.md 8D-4 插了两遍,靠 grep -c 兜住去重;run_code 里"必须成对/幂等"的写入要么一程序一动作,要么重跑前先 grep 检查。
 - skill 有没有提前警告:命中三条红线——worktree 新路径 edit 前 read(全程零拒绝);cdp 截图用 cdp-admin-capture(免登录注入直接可用);模型不吃 read_image(DOM 断言即产物,七项断言全走 --eval)。docs/boss-admin-web.md 的 servers 注入顺序/冒烟账号一次到位,没走登录表单弯路。
 - 重来一次会怎么做:①接手「老页面重构」先看后端 SQL 别名(pg_lists.go)再定列设计——真实字段(增值服务 on/off、优惠券 000102 后 ISSUED/USED/DISABLED/EXPIRED)比按旧 UI 猜可靠,还能顺手发现 fields.md 缺登记;②模式件不满足(TabBar 无 extra 插槽)直接扩模式件加测试,不在页面分叉副本,这次做对了;③fields.md 插小节用唯一锚点(下一段标题行)做 old_string,别拼长段——长段里反引号/全角字符在 run_code 字符串里极易引号打架。
+
+## 2026-09-01 补:新建客户死循环修复轮(建档-建址互为前置)
+- 哪个坑最浪费时间:①解冲突后先 git add、又补了三处编辑、再 commit——merge commit 只含「已暂存」内容,后补的编辑漂在未暂存区;门禁跑在工作区文件上全绿,commit 里却没有它们,main 短暂带着缺参组件被 ff 上去(worktree remove 报脏才兜住)。②收尾四步漏了 push gitea main——CI 靠 main push 触发部署,只推 feature 分支则部署永不发生,盯着 102 干等 20 分钟。
+- skill 有没有提前警告:红线 #1(worktree 路径 edit 前 read)全程生效;红线 #9(worktree remove 报脏先查再动)正是这次兜住漏提交的最后一道闸——若习惯性 --force,三处编辑即丢。
+- 重来一次会怎么做:①解完冲突的顺序固定为「编辑→git status 必须空→add→commit」,或干脆 commit 后再补编辑;②worktree 协议心中扩成五步:收尾时补一步 push gitea main(部署触发器);③并行会话已合入同类解法时,先 diff 双方方案的语义边界再选冲突侧——这次 main 侧 endpoint 化 AddressChainDrawer 恰好是本分支要的权限门禁(menu:customer),两人方案是互补不是对立。
