@@ -19,4 +19,14 @@ describe('TabBar', () => {
     expect(html).toContain('2px solid transparent')
     expect(html).toContain('var(--shell-side-border)')
   })
+
+  it('extra 插槽渲染在页签行右侧(缺省不渲染容器)', () => {
+    const withExtra = renderToStaticMarkup(
+      <TabBar tabs={tabs} value="a" onChange={() => {}} extra={<button>刷新</button>} />,
+    )
+    expect(withExtra).toContain('刷新')
+    expect(withExtra).toContain('shrink-0')
+    const withoutExtra = renderToStaticMarkup(<TabBar tabs={tabs} value="a" onChange={() => {}} />)
+    expect(withoutExtra).not.toContain('shrink-0')
+  })
 })

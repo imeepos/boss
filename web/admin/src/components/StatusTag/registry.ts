@@ -14,7 +14,7 @@ export type StatusDomain =
   | 'task' | 'complaint' | 'scan' | 'alarmLevel' | 'alarmStatus' | 'maintPriority'
   | 'accountStatus' | 'message' | 'realName' | 'recon' | 'reserve' | 'ledgerRecon'
   | 'backupStatus'
-  | 'procurement' | 'receipt' | 'installLog'
+  | 'procurement' | 'receipt' | 'installLog' | 'userdata'
 
 type Registry = Partial<Record<StatusDomain, Record<string, string>>>
 
@@ -167,5 +167,17 @@ export const REGISTRY: Registry = {
     OPEN: ORANGE,
     COMPLETED: GREEN,
     REJECTED: RED,
+  },
+  // userdata(用户端配置:增值服务 on/off;优惠券迁移 000102 后 ISSUED/USED/DISABLED,
+  // 小写 disabled 为 userdata_disable 动作现写值;布尔配置映射 active/disabled)
+  userdata: {
+    on: GREEN,
+    off: GRAY,
+    active: GREEN,
+    disabled: GRAY,
+    ISSUED: GREEN,
+    USED: GRAY,
+    DISABLED: GRAY,
+    EXPIRED: ORANGE,
   },
 }

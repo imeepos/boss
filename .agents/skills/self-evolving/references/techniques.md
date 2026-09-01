@@ -621,3 +621,10 @@ SQL
 - worktree 无 node_modules 时(2026-09-01 产品绑定轮):`ln -s 主checkout绝对路径/node_modules node_modules`(仓库根)+ `ln -s 主checkout/web/admin/node_modules web/admin/node_modules`,pnpm typecheck/vitest/vite build 全部可用,免 pnpm install;用完随 worktree 一起 remove(链接是 ignored 不挡 remove)。
 - make check D 项撞号裁决实操(2026-09-01):先 `git ls-tree main -- migrations/ | grep <号>` 确认自己已合并+已落库,再 `git ls-tree <对方分支> -- migrations/` 确认对方未合并——按「已合并者优先」判对方让号,session_link_send 发提醒附改名目标号,自己继续合并不被环境性 D FAIL 阻塞。
 - 部署后验证三件套一轮过(2026-09-01):后台轮询 `healthz` 的 commit 字段等新 sha(取代人工猜)→ 用 test-accounts.json 的 admin api key curl 新 API 冒烟(正路径+错误路径都要打)→ `curl 5180` 拿 index.html 里 assets/index-*.js 再 grep 新 UI 文案确认前端指纹。
+
+## 2026-09-01 部署后特征串验证必须扫懒加载分片(admin web)
+
+- 场景:验证某前端特性是否已部署到 102(5180),往 bundle 里 grep 特征串(如新端点路径)。
+- 坑:Vite 按页面懒加载分包,index-*.js 只是壳(440KB),页面代码在 `assets/<Page>-<hash>.js` 分片;只 grep index 会假 0 命中,误判「部署脑裂」白查一轮(本轮 boss-server 已新、admin-web 实际也已新)。
+- 正解:先 `grep -o 'assets/[A-Za-z0-9_-]*\.js' index.js | sort -u` 拉分片清单,再逐片 grep 特征串;或直接用 `bash scripts/ops/verify-deploy.sh --expect-sha <sha>`(文件名一致性口径)+ 分片内容 grep 双确认。
+- 注意 grep 结果里的文件名有语义:命中分片名可能与特性所在页面组件不同名(共享 chunk 按任一成员命名,如 customer 抽屉代码在 RegistrationQueueDrawer-*.js),文件名不像≠没部署。
