@@ -95,7 +95,7 @@ var adminRoutes = []routeEntry{
 	{"POST", "/comp-tasks/:id/replay", "回放补偿任务(CLOSED→OPEN,清空重试记录)"},
 	{"POST", "/comp-tasks/:id/close", "关闭补偿任务(任意非CLOSED→CLOSED)"},
 	{"GET", "/customers", "客户档案列表(含实名状态)"},
-	{"POST", "/customers", "客户直建(批量导入用;regionName 服务端快照,realName PENDING/service ACTIVE)"},
+	{"POST", "/customers", "客户直建(批量导入用;regionName 服务端快照,realName PENDING/service ACTIVE;地址可缺省)"},
 	{"GET", "/customers/onboarding-catalog", "代客开户选项目录(经营区域+运营主体;带 q 附地址搜索,fullPath=祖先链拍平)"},
 	{"GET", "/customers/:id", "客户档案详情(fields.md §2.1 单档;未命中 40400)"},
 	{"GET", "/customers/:id/verify-logs", "客户实名核验记录"},

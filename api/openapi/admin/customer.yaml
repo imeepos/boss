@@ -14,19 +14,19 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Customer]
-      summary: 客户直建(批量导入用;regionName 服务端快照,realName PENDING/service ACTIVE)
+      summary: 客户直建(批量导入用;regionName 服务端快照,realName PENDING/service ACTIVE;地址可缺省)
       operationId: createCustomer
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              required: [name, phone, legalEntityId, addressId, regionId]
+              required: [name, phone, legalEntityId, regionId]
               properties:
                 name: { type: string }
                 phone: { type: string }
                 legalEntityId: { type: integer, format: int64 }
-                addressId: { type: integer, format: int64 }
+                addressId: { type: integer, format: int64, description: 可缺省(0);先建档后补地址,维护走 POST /orders/address backfillCustomer=true }
                 regionId: { type: integer, format: int64 }
                 idType: { type: string, description: 缺省身份证 }
                 idNo: { type: string }

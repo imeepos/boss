@@ -17,12 +17,16 @@ import (
 )
 
 type fakeCustomer struct {
-	list  []customer.Customer
-	lastQ customer.CustomerQuery
+	list        []customer.Customer
+	lastQ       customer.CustomerQuery
+	lastCreated customer.Customer
 }
 
-func (f *fakeCustomer) Create(context.Context, customer.Customer) (int64, error) { return 0, nil }
-func (f *fakeCustomer) Get(context.Context, int64) (*customer.Customer, error)   { return nil, nil }
+func (f *fakeCustomer) Create(_ context.Context, c customer.Customer) (int64, error) {
+	f.lastCreated = c
+	return 7, nil
+}
+func (f *fakeCustomer) Get(context.Context, int64) (*customer.Customer, error) { return nil, nil }
 func (f *fakeCustomer) GetInScope(context.Context, int64, int64, string) (*customer.Customer, error) {
 	return nil, nil
 }
@@ -198,6 +202,8 @@ func TestProductListHandler(t *testing.T) {
 	}
 }
 
+// TestCustomerCreate 契约:POST /customers 直建;addressId 可缺省(000176 先建档后补地址),
+// 负数拒绝;缺省时域层收到 0,由后续 POST /orders/address backfill 回填。
 func TestCustomerCreate(t *testing.T) {
 	mgr := auth.NewManager("test-secret", time.Hour)
 	fc := &fakeCustomer{}
@@ -210,6 +216,29 @@ func TestCustomerCreate(t *testing.T) {
 	_ = json.Unmarshal(w.Body.Bytes(), &env)
 	if w.Code != 200 || env.Code != 0 {
 		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	if fc.lastCreated.AddressID != 1 {
+		t.Fatalf("addressId=%d, want 1", fc.lastCreated.AddressID)
+	}
+
+	// 无地址建档:轻量受理第一步,不回 422。
+	fc2 := &fakeCustomer{}
+	r2 := newCustomerRouter(fc2, &fakeProduct{}, mgr)
+	w2 := postBodyAuth(t, r2, "/api/admin/v1/customers",
+		`{"name":"轻建档客户","phone":"09170000002","legalEntityId":1,"regionId":1}`, authToken(t, mgr))
+	if w2.Code != 200 || fc2.lastCreated.AddressID != 0 {
+		t.Fatalf("no-address create: status=%d body=%s addr=%d", w2.Code, w2.Body.String(), fc2.lastCreated.AddressID)
+	}
+
+	// 负数地址拒绝(envelope code 42200,HTTP 层仍 200)。
+	w3 := postBodyAuth(t, r2, "/api/admin/v1/customers",
+		`{"name":"负数地址","phone":"09170000003","legalEntityId":1,"addressId":-1,"regionId":1}`, authToken(t, mgr))
+	var env3 struct {
+		Code int `json:"code"`
+	}
+	_ = json.Unmarshal(w3.Body.Bytes(), &env3)
+	if w3.Code != 200 || env3.Code != 42200 {
+		t.Fatalf("negative addressId: status=%d body=%s", w3.Code, w3.Body.String())
 	}
 }
 

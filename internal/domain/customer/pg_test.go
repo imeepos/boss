@@ -60,7 +60,7 @@ func TestPGStore_Get(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, customer_code, name, phone, id_type, id_no, real_name_status, service_status, address_id, legal_entity_id, region_id, region_name, created_at FROM customers WHERE id`).
+		mock.ExpectQuery(`SELECT id, customer_code, name, phone, id_type, id_no, real_name_status, service_status, COALESCE\(address_id, 0\) AS address_id, legal_entity_id, region_id, region_name, created_at FROM customers WHERE id`).
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows([]string{
 				"id", "customer_code", "name", "phone", "id_type", "id_no", "real_name_status", "service_status",

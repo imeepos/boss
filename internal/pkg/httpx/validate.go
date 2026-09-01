@@ -151,6 +151,14 @@ func RequireNonNegativeFloat(value float64, field string) *ValidationError {
 	return nil
 }
 
+// RequireNonNegativeID 非负整数 ID(0=未设置,允许缺省;负数拒绝)。
+func RequireNonNegativeID(value int64, field string) *ValidationError {
+	if value < 0 {
+		return &ValidationError{Field: field, Message: "must not be negative"}
+	}
+	return nil
+}
+
 // RequireEnum 枚举值校验。
 func RequireEnum(value, field string, allowed ...string) *ValidationError {
 	value = strings.TrimSpace(value)

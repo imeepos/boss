@@ -18,22 +18,27 @@ import (
 )
 
 // customerCreateReq 客户直建请求体(批量导入用;regionName 由 regionId 服务端快照)。
+// addressId 可缺省(0):先建档后补地址,维护走 POST /orders/address backfillCustomer。
 type customerCreateReq struct {
 	Name          string `json:"name" binding:"required"`
 	Phone         string `json:"phone" binding:"required"`
 	LegalEntityID int64  `json:"legalEntityId" binding:"required"`
-	AddressID     int64  `json:"addressId" binding:"required"`
+	AddressID     int64  `json:"addressId"`
 	RegionID      int64  `json:"regionId" binding:"required"`
 	IdType        string `json:"idType"`
 	IdNo          string `json:"idNo"`
 }
 
 // customerCreateHandler POST /customers:客户直建(menu:customer;镜像注册审核通过的主档插行,
-// REAL_NAME PENDING / SERVICE ACTIVE 默认,idType 缺省身份证)。
+// REAL_NAME PENDING / SERVICE ACTIVE 默认,idType 缺省身份证;地址可缺省,000176)。
 func customerCreateHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req customerCreateReq
-		if !httpx.BindAndValidate(c, &req) {
+		if !httpx.BindAndValidate(c, &req, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireNonNegativeID(req.AddressID, "addressId"),
+			)
+		}) {
 			return
 		}
 		region, err := a.User.GetRegion(c.Request.Context(), req.RegionID)

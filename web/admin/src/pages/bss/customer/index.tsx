@@ -1,6 +1,7 @@
 // 客户档案页:列名以 fields.md §2.1 为准;契约 GET /customers(keyword/phone/status 过滤)。
 // 代客开户一站式入口:直建(POST /customers)与自助注册审核队列同页挂载。
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
@@ -13,6 +14,7 @@ import type { CustomerRow } from './types'
 import { VerifyLogsDrawer } from './VerifyLogsDrawer'
 import { RealNameDrawer } from './RealNameDrawer'
 import { CustomerCreateDrawer } from './CustomerCreateDrawer'
+import { AddressChainDrawer } from '../../boss/order/AddressChainDrawer'
 import { RegistrationQueueDrawer } from './RegistrationQueueDrawer'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { fmtTime } from '../../../lib/format'
@@ -21,6 +23,7 @@ import { TableStateRow } from '../../../components/business'
 export default function CustomerPage() {
   const t = useT()
   const c = t.pages.customer
+  const navigate = useNavigate()
   const [rows, setRows] = useState<CustomerRow[]>([])
   const [error, setError] = useState('')
   const [urlKeyword, setUrlKeyword] = useQueryState('kw', '')
@@ -32,6 +35,7 @@ export default function CustomerPage() {
   const [detail, setDetail] = useState<CustomerRow | null>(null)
   const [verifyId, setVerifyId] = useState<CustomerRow | null>(null)
   const [rnId, setRnId] = useState<CustomerRow | null>(null)
+  const [addrRow, setAddrRow] = useState<CustomerRow | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [regOpen, setRegOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -91,6 +95,10 @@ export default function CustomerPage() {
                         <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setRnId(r)}>{c.rnBtn}</button>
                         <span className="text-[var(--shell-side-border)]">|</span>
+                        <button onClick={() => setAddrRow(r)}>{c.addrBtn}</button>
+                        <span className="text-[var(--shell-side-border)]">|</span>
+                        <button onClick={() => navigate(`/bss/onboarding?customerId=${r.id}`)}>{c.orderBtn}</button>
+                        <span className="text-[var(--shell-side-border)]">|</span>
                         <button onClick={() => setVerifyId(r)}>{c.verify}</button>
                       </span>
                     </td>
@@ -129,6 +137,10 @@ export default function CustomerPage() {
       )}
       {rnId && (
         <RealNameDrawer customerId={rnId.id} customerName={rnId.name} onClose={() => setRnId(null)} onSubmitted={load} />
+      )}
+      {addrRow && (
+        <AddressChainDrawer customerId={String(addrRow.id)} customerAddressId={addrRow.addressId} backfill
+          onDone={load} onClose={() => setAddrRow(null)} />
       )}
       {createOpen && (
         <CustomerCreateDrawer open onClose={() => setCreateOpen(false)} onCreated={load} />

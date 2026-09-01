@@ -1,17 +1,15 @@
-// 代客开户抽屉:POST /customers(直建,REAL_NAME PENDING/SERVICE ACTIVE 默认)。
-// 区域/主体来自 GET /customers/onboarding-catalog;地址用 ResourcePicker 远程检索
-// (同目录端点带 q,祖先链已由服务端拍平 fullPath,防抖与竞态由选择器兜底)。
+// 新建客户抽屉:POST /customers 轻量建档(REAL_NAME PENDING/SERVICE ACTIVE 默认)。
+// 地址不在建档必填之列(000176):先建档,后经档案行"地址"动作内联建址回填,
+// 再进开户工作台走 下单→支付→开户→施工→通网;区域/主体来自 GET /customers/onboarding-catalog。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
-import { ResourcePicker } from '../../../components/ResourcePicker'
 import { FormField } from '../../../components/business/form-field'
 import { useT } from '../../../i18n'
 
 interface RegionOption { id: number; name: string; path: string; legalEntityName: string }
 interface EntityOption { id: number; name: string; code: string; isPlatform: boolean }
-interface AddressOption { id: number; name: string; fullPath: string }
 
 export function CustomerCreateDrawer({
   open, onClose, onCreated,
@@ -24,7 +22,6 @@ export function CustomerCreateDrawer({
   const [idNo, setIdNo] = useState('')
   const [regionId, setRegionId] = useState(0)
   const [entityId, setEntityId] = useState(0)
-  const [addressId, setAddressId] = useState(0)
   const [regions, setRegions] = useState<RegionOption[]>([])
   const [entities, setEntities] = useState<EntityOption[]>([])
   const [busy, setBusy] = useState(false)
@@ -37,15 +34,9 @@ export function CustomerCreateDrawer({
       .catch((e) => setError(e instanceof Error ? e.message : c.createFail))
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const searchAddresses = (kw: string): Promise<AddressOption[] | null> =>
-    kw === ''
-      ? Promise.resolve([])
-      : apiFetch<{ addresses: AddressOption[] }>('/customers/onboarding-catalog', { query: { q: kw } })
-          .then((d) => d?.addresses ?? [])
-
   const reset = () => {
     setName(''); setPhone(''); setIdType(c.idTypes[0]); setIdNo('')
-    setRegionId(0); setEntityId(0); setAddressId(0); setError('')
+    setRegionId(0); setEntityId(0); setError('')
   }
 
   const submit = async () => {
@@ -56,7 +47,7 @@ export function CustomerCreateDrawer({
         method: 'POST',
         body: {
           name: name.trim(), phone: phone.trim(), idType,
-          idNo: idNo.trim() || undefined, regionId, legalEntityId: entityId, addressId,
+          idNo: idNo.trim() || undefined, regionId, legalEntityId: entityId,
         },
       })
       onCreated(d?.id ?? 0)
@@ -67,7 +58,7 @@ export function CustomerCreateDrawer({
     } finally { setBusy(false) }
   }
 
-  const ok = name.trim() !== '' && phone.trim() !== '' && regionId > 0 && entityId > 0 && addressId > 0
+  const ok = name.trim() !== '' && phone.trim() !== '' && regionId > 0 && entityId > 0
 
   if (!open) return null
   return (
@@ -106,18 +97,6 @@ export function CustomerCreateDrawer({
           <Dropdown value={regionId ? String(regionId) : ''} ariaLabel={c.fRegion} searchable
             options={[{ value: '', label: c.regionPick }, ...regions.map((r) => ({ value: String(r.id), label: `${r.name}(${r.legalEntityName || r.path})` }))]}
             onChange={(v) => setRegionId(Number(v) || 0)} />
-        </FormField>
-        <FormField label={c.fAddress} required hint={c.addrHint}>
-          <ResourcePicker<AddressOption>
-            value={addressId ? String(addressId) : ''}
-            onChange={(v) => setAddressId(Number(v) || 0)}
-            search={searchAddresses}
-            toOption={(a) => ({ value: String(a.id), label: a.fullPath })}
-            ariaLabel={c.fAddress}
-            emptyLabel={c.addrPick}
-            searchPlaceholder={c.addrSearchPh}
-            errorText={c.addrSearchFail}
-          />
         </FormField>
         {error && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
       </div>

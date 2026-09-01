@@ -3,6 +3,7 @@
 // 指派(boss/dispatch);订单按 customerId 过滤(GET /orders?customerId=)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { useQueryState } from '../../../lib/useQueryState'
 import { useT } from '../../../i18n'
 import { PageHead, ErrorBanner } from '../../../components/business/page-head'
 import { StatusTag } from '../../../components/StatusTag'
@@ -21,7 +22,8 @@ const CARD = 'mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(-
 export default function OnboardingPage() {
   const t = useT()
   const w = t.pages.onboardingPage
-  const [customerId, setCustomerId] = useState('')
+  // 客户档案行"开户"动作经 /bss/onboarding?customerId=N 直达预选(先建档后开户动线)。
+  const [customerId, setCustomerId] = useQueryState('customerId', '')
   const [customer, setCustomer] = useState<CustomerRow | null>(null)
   const [orders, setOrders] = useState<OrderListRow[]>([])
   const [createOpen, setCreateOpen] = useState(false)

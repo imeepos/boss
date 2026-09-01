@@ -48,7 +48,8 @@ type rowScanner interface {
 	Scan(dest ...any) error
 }
 
-const customerCols = `id, customer_code, name, phone, id_type, id_no, real_name_status, service_status, address_id, legal_entity_id, region_id, region_name, created_at`
+// address_id 000176 起可空(先建档后补地址),读取统一 COALESCE 归零,扫描侧无感知。
+const customerCols = `id, customer_code, name, phone, id_type, id_no, real_name_status, service_status, COALESCE(address_id, 0) AS address_id, legal_entity_id, region_id, region_name, created_at`
 
 func scanCustomer(r rowScanner) (*Customer, error) {
 	var c Customer
