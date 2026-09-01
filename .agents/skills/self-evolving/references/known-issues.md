@@ -435,3 +435,10 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 原因 → `bcrypt.GenerateFromPassword` 返回 `[]byte`,直接作为 SQL 参数传给 pgx;pgx 按 bytea 编码 []byte,PG 隐式 cast bytea→text 落库成 `\x..` 字面量。登录时 `bcrypt.CompareHashAndPassword([]byte(hash))` 比对的是字面 `\x24..`,必然失败。
 修法 → 传参前 `string(hash)`(CreateAccount/UpdateAccount/worker.SetPassword 既有口径)。pgxmock 回归用自定义 `Argument.Match` 断言参数类型为 `$2` 前缀字符串,AnyArg() 测不出类型错误。
 排查线索 → psql 看 hash 前缀:`$2a$`=正常,`\x`=bytea 化;重置接口 200 但新旧密码全登不进 = 哈希写坏,先查存储字节再怀疑逻辑。
+
+## 代客/自助下单报「资源已被占用」=直营风控拦截,不是资源故障（2026-09-01）
+
+症状 → POST /orders(admin 代客或 user 自助)报 42300「资源已被占用」,无细节。
+原因 → checkDirectRisk 两道闸:同手机号 24h 订单数 ≥ risk.direct.phoneCap;同地址在途(PENDING/RESERVED/INSTALLING)≥ risk.direct.addressCap。102 高发诱因:验收/压测残留 PENDING 单长期占地址额度(造数不过夜红线被违反)。
+排查 → audit_logs 里 action=order.risk.blocked(detail.reason 带维度)+ orders 在途分布直查;阈值在 biz_params risk.direct.*。
+修法 → a073b2b5 起 42300 响应带 data.reason(维度/计数/上限/处置指引),前端 ApiError 自动拼进 message;运维处置=经 API cancel 在途残留单(释放端口预占)或调 biz_params 阈值。

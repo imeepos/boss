@@ -24,6 +24,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 9. **【已犯 3 次】worktree 收尾 ff-merge 失败时严禁删 worktree + branch -D** —— 并行会话推新 commit → 本地 main 前进 → worktree 分支 ff-merge 失败是常态(diverging 分支)。唯一允许操作:`git rebase main` 在 worktree 内 → 重试 ff-merge;**绝不允许**"`merge` 失败就算没合并上,直接 worktree remove + branch -D"——commit 在 worktree + refs/heads/<branch> 里安全,但 worktree remove 会触发 GC 不可逆丢失。落入此坑 3 次,A2/A4/A5 都丢过 commit;**下次再犯立刻停手重读本文**。
 9a. **【已犯 2 次】禁止经 ssh+psql/嵌套 bash 执行 SQL 时叠引号** —— 外层 bash 把引号吞掉,`-c "..."` 里再叠双引号必报 column does not exist/syntax error(2026-08-26 同会话两连炸);一律 `ssh host 'docker exec -i pg psql -U u -d d' <<'SQL'` 单引号 heredoc 传 stdin,SQL 字符串字面量用单引号。
 10. **【已犯 2 次】写文件/跑命令前必须核对 worktree 的真实磁盘路径** —— `git worktree add ../name` 建的是**兄弟目录**(仓库外侧),不是仓库内的 `./name`;把文件写进仓库内同名嵌套目录后在该目录 `git commit`,git 会向上解析到主仓库,commit **静默落在 main**(输出标记 `[main xxx]` 即事故);写前 `git worktree list` 核对绝对路径 + commit 后看输出方括号里的分支名。
+11. **【已犯 2 次】run_code 程序传给 edit/write 的字符串里严禁出现裸反引号或 ${** —— 宿主把程序体包进模板字符串,这两个序列会提前闭合/插值,报 parse error(Expected ',' / got 'ident'),不像代码错像工具坏,白耗两轮才定位到工具层。含这些字符的 old_string 用 String.fromCharCode(96) + 字符串拼接逐字节构造,或改选不含它们的锚点;bash heredoc 里同样注意。
 
 
 # 上级叮嘱

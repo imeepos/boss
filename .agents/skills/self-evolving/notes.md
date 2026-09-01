@@ -1539,3 +1539,8 @@
 - 哪个坑最浪费时间:①解冲突后先 git add、又补了三处编辑、再 commit——merge commit 只含「已暂存」内容,后补的编辑漂在未暂存区;门禁跑在工作区文件上全绿,commit 里却没有它们,main 短暂带着缺参组件被 ff 上去(worktree remove 报脏才兜住)。②收尾四步漏了 push gitea main——CI 靠 main push 触发部署,只推 feature 分支则部署永不发生,盯着 102 干等 20 分钟。
 - skill 有没有提前警告:红线 #1(worktree 路径 edit 前 read)全程生效;红线 #9(worktree remove 报脏先查再动)正是这次兜住漏提交的最后一道闸——若习惯性 --force,三处编辑即丢。
 - 重来一次会怎么做:①解完冲突的顺序固定为「编辑→git status 必须空→add→commit」,或干脆 commit 后再补编辑;②worktree 协议心中扩成五步:收尾时补一步 push gitea main(部署触发器);③并行会话已合入同类解法时,先 diff 双方方案的语义边界再选冲突侧——这次 main 侧 endpoint 化 AddressChainDrawer 恰好是本分支要的权限门禁(menu:customer),两人方案是互补不是对立。
+
+## 2026-09-01 代客下单「资源已被占用」修复轮(直营风控 42300 语义化 a073b2b5)
+- 哪个坑最浪费时间:run_code 传给 edit 的 old_string 里有反引号模板字符串与 ${,被宿主包装层解析,两次 parse error 才反应过来是工具层不是代码层(已升红线#11)。
+- skill 有没有提前警告:红线#1(worktree 副本先 read)照例拦了一次,重读即过;「先查库再接口复核」红线直接定位根因——audit_logs action=order.risk.blocked 一查就见 26 笔地址堆积拦截,5 分钟实锤。
+- 重来一次会怎么做:①报障类任务先查审计表+直查权威表再读代码;②线上验证错误响应用 curl 裸 envelope,别用 bossctl(成功只印 data、失败吞 data.reason);③改风控行为的线上实测=临时调低 biz_params 阈值→触发→还原+取消验证单,零残留闭环。

@@ -117,3 +117,5 @@
 | worktree 已清理后的 hotfix 直接在主树 commit,违反"禁止直接在主分支上修改代码" | 1 | 2026-09-01(entity-staff 轮 E2E 抓出 []byte 落库 bug 后,2 行修复图省事直接 commit 在 main 1a78f3b3;worktree 刚清完,重开成本极低却没做) | worktree 清理后再出修复,重开 `git worktree add ../wt-<fix>` 走完整协议;哪怕 2 行也不留直接提交前例 |
 | CDP eval 用 .click() 操作 Dropdown/MultiSelect 选项(组件绑 onMouseSelect/onMouseDown 选值),勾选不生效误判"保存没落库" | 1 | 2026-09-01(worker 多区域轮:MultiSelect 选项 onMouseDown 选值,eval click 后保存原值,先疑后端;直查接口 10 秒定位是测试侧没选中) | 选项级交互先读组件源码确认事件名;eval 固定 `dispatchEvent(new MouseEvent('mousedown',{bubbles:true}))`;疑"没提交"先 curl 接口分清"没选中/没落库" |
 | merge 解冲突后补编辑未重新暂存,merge commit 缺文件,门禁跑在工作区文件上误绿 | 1 | 2026-09-01(死循环修复轮:backfill/endpoint 三处编辑漂在未暂存区被 ff 上 main;worktree remove 报脏兜住,补提交 6052a930) | 解冲突顺序固定「编辑→git status 必须空→add→commit」;门禁以 commit 后干净树为准,或 commit 后再补编辑单独提交 |
+| run_code 程序字符串里出现反引号或 ${,被宿主模板包装层解析破坏 | 2 | 2026-09-01(envelope.ts 编辑 old_string 含模板字符串,两次 parse error) | 含特殊字符的 old_string 用 String.fromCharCode(96)+拼接构造,或选无反引号锚点;已登 SKILL.md 红线#11 |
+- edit 前未按 worktree 绝对路径 read(红线#1 守卫再拦)(2026-09-01,1 次):worktree 轮开工对将 edit 的每个文件先 read worktree 路径;计数并入红线#1。
