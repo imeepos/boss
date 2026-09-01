@@ -105,7 +105,7 @@
 - 客户 213(采购经理·王):富数据——addons 10 条(>默认上限 5,可验"查看全部/收起")、orders 45、faults 3、complaints 1、plans 1(ACTIVE)、addresses 4
 - 客户 215(王经理):仅 orders 4 条,其余段全空——空态断言对象;orders 4 ≤ 5 可验"无展开按钮"
 - complaints 同源双口径:faults 段=报障(`用户报障: ` 前缀已 strip 成 no_internet/slow/...+装维 6 码)、complaints 段=投诉(`用户投诉: ` 前缀保留),见 fields.md §2.1.1
-- 当前 harness 模型(deepseek-v4-flash)不接受 read_image,冒烟一律 DOM 断言(innerText/querySelector)+ --logs 查 console/网络,截图仅供人工复核
+- 当前 harness 模型(deepseek-v4-flash/GLM-5.3-Flash 实测)不接受 read_image,冒烟一律 DOM 断言(innerText/querySelector,用 cdp-admin-capture 的 --eval 即产物)+ --logs 查 console/网络,截图仅供人工复核
 
 ## 侧栏激活与 react-router 事实(2026-10-01 查证源码后固化)
 

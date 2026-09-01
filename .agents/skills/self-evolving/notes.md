@@ -1529,3 +1529,8 @@
 - 坑:验证 admin-web 是否带上新端点,只 grep 了 index-*.js 得 0 命中,误判「server 新 web 旧」脑裂,差点推补救提交——实为 Vite 懒加载分片,页面代码在 assets/<Page>-*.js。正解是扫分片清单(已喂 techniques.md)。
 - 有效动作:401/404 探针区分路由注册 → 真实建链验契约(needsReview/fallback/backfilled 全对) → 幂等复用验 lookup-hit → SQL 清理+复查 0 残留 → cdp-admin-capture 七断言 UI 冒烟(开抽屉/入口/弹层/五级/取消,零造数)。全链零污染闭环。
 - 观察:0829 轮遗留 4 条死待办(admin_notifications 190/191/193/194,order-inline-addr 指向已删地址)——该轮「零残留」只清了地址没清兜底待办;已报告未代删。
+
+## 2026-09-01 用户端配置页 Tab 化重构(/bss/userdata,antd pro 列表页模式)
+- 哪个坑最浪费时间:①JSX 里动态拼 token 名 `var(--color-${ok ? 'success' : 'danger'})` 被 web-ui-audit 判「幽灵令牌」红了 build——审计是静态 grep,动态拼接必留 --color- 残片;改成 ok ? 静态A : 静态B 两份完整 style 立过。②run_code 程序在中途 bash 报错退出后,先前的 edit 已落盘——重跑同一程序把 fields.md 8D-4 插了两遍,靠 grep -c 兜住去重;run_code 里"必须成对/幂等"的写入要么一程序一动作,要么重跑前先 grep 检查。
+- skill 有没有提前警告:命中三条红线——worktree 新路径 edit 前 read(全程零拒绝);cdp 截图用 cdp-admin-capture(免登录注入直接可用);模型不吃 read_image(DOM 断言即产物,七项断言全走 --eval)。docs/boss-admin-web.md 的 servers 注入顺序/冒烟账号一次到位,没走登录表单弯路。
+- 重来一次会怎么做:①接手「老页面重构」先看后端 SQL 别名(pg_lists.go)再定列设计——真实字段(增值服务 on/off、优惠券 000102 后 ISSUED/USED/DISABLED/EXPIRED)比按旧 UI 猜可靠,还能顺手发现 fields.md 缺登记;②模式件不满足(TabBar 无 extra 插槽)直接扩模式件加测试,不在页面分叉副本,这次做对了;③fields.md 插小节用唯一锚点(下一段标题行)做 old_string,别拼长段——长段里反引号/全角字符在 run_code 字符串里极易引号打架。

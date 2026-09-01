@@ -465,3 +465,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当往 OpenAPI YAML 的内联 flow map(`{ type: ..., description: ... }`)里写含逗号或 `>` 的描述,必须整体加引号——flow 内 `,` 会终结 plain scalar,`>=6 位` 变成"无法作为 token 开头的字符",整个 bundle 测试红(2026-09-01 worker.yaml POST /workers)。
 - 当给 WorkerService 这类跨包宽接口加方法,预期 admin(dispatch_test fakeWorkerSvc、worker_test fakeWorkerOps)、user(portal_actions_test fakeWorkerSvc)三包手写桩各补 3 个 stub;嵌入接口的桩(如 worker 端 fakePortalWorkerSvc)自动吸收但运行期调用即 nil panic,凡新路径过桩必显式 override(2026-09-01)。
 - 当部署 102 验证新路由,起一个后台轮询(未带 token 打新路由,404=旧二进制 / 401=新二进制)同时准备验证脚本,轮询命中即跑,省掉盯 CI 的空等(2026-09-01 POST /workers 约 90s 上线)。
+- 当在 JSX/style 里写设计令牌,禁止动态拼接 var(--前缀+变量) 的 token 名——web-ui-audit 静态 grep 会把残片(如 --color-)判成幽灵令牌红 build;写两份完整静态 style 对象按条件选用(2026-09-01 userdata 页 notice 横幅)。
+- 当 run_code 程序在一个 program 里连做多个写操作,中途报错退出不会回滚已成功的 edit;重跑前必须先 grep 校验上一轮是否已落盘(fields.md 8D-4 双插教训,2026-09-01)。
+- 当重构老页面,列设计先读后端列表 SQL 的 SELECT ... AS 别名(pg_lists.go 类)再定前端列——旧 UI 的泛化列(名称/状态)会丢真实字段,SQL 别名就是字段契约,还能顺带发现 fields.md 漏登记(2026-09-01 /bss/userdata 七 Tab)。
