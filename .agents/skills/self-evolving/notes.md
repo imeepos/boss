@@ -1544,3 +1544,8 @@
 - 哪个坑最浪费时间:run_code 传给 edit 的 old_string 里有反引号模板字符串与 ${,被宿主包装层解析,两次 parse error 才反应过来是工具层不是代码层(已升红线#11)。
 - skill 有没有提前警告:红线#1(worktree 副本先 read)照例拦了一次,重读即过;「先查库再接口复核」红线直接定位根因——audit_logs action=order.risk.blocked 一查就见 26 笔地址堆积拦截,5 分钟实锤。
 - 重来一次会怎么做:①报障类任务先查审计表+直查权威表再读代码;②线上验证错误响应用 curl 裸 envelope,别用 bossctl(成功只印 data、失败吞 data.reason);③改风控行为的线上实测=临时调低 biz_params 阈值→触发→还原+取消验证单,零残留闭环。
+
+## 2026-09-01 数据一致性审计轮(user/aaa/audit/attachment/backup 域 vs schema JSON,零漂移)
+- 哪个坑最浪费时间:schema JSON 只有 type/notnull/check 三个键,没有 DEFAULT/索引/主键信息——CreateJob 漏写 backup_jobs 一串 NOT NULL 列、ON CONFLICT(client_key)/ON CONFLICT(username) 的唯一索引、addresses 23505 去重依赖的 UNIQUE(path),这些"疑似漂移"在 JSON 里无法判定,差点写成存疑长清单。
+- skill 有没有提前警告:没有。schema 快照类审计的边界(JSON 不含约束级事实)是新经验,已喂到 techniques 思路:凡 JSON 判不了又影响定级的,直接 grep migrations/*.sql 拿权威 DDL 一锤定音,本轮 5 个疑点全部当场坐实为无漂移。
+- 重来一次会怎么做:先扫一遍 schema JSON 的键结构再定比对策略;类别4(新旧表并存)先从表名单找同义对(accounts/user_accounts、addresses/user_addresses、verifications/user_verify_records)再回代码证伪,比逐文件猜快得多;结论为零漂移时必须把"查了什么、怎么证伪的"写成证据链,否则上游不敢信。
