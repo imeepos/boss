@@ -623,11 +623,8 @@ export interface Translations {
       entityPlatform: string
       fRegion: string
       regionPick: string
-      fAddress: string
-      addrPick: string
-      addrSearchPh: string
-      addrSearchFail: string
-      addrHint: string
+      addrBtn: string
+      orderBtn: string
       createFail: string
       regBtn: string
       regTitle: string

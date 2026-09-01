@@ -497,7 +497,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 证件号码 | `IdNo` | id_no | — |
 | 实名状态 | `RealNameStatus` | real_name_status | VERIFIED 已实名 / PENDING 待补登 |
 | 服务状态 | `ServiceStatus` | service_status | ACTIVE 在网 / ARREARS 欠费 / SUSPENDED 停机 |
-| 地址 | `AddressID` | address_id | BIGINT → addresses（挂接楼栋） |
+| 地址 | `AddressID` | address_id | BIGINT → addresses（挂接楼栋）；000176 起可空=建档时未登记，接口回 0；维护走档案页"地址"动作（POST /orders/address backfillCustomer=true） |
 | — | `PasswordHash` | password_hash | TEXT，客户 App 密码哈希；空值不可密码登录 |
 | 登录状态 | `AuthStatus` | auth_status | 1允许登录 / 0禁止登录 |
 | 用户码 | `CustomerCode` | customer_code | VARCHAR(32) UNIQUE,前缀 `C-` 后 8 位 = `id` 左零;四码 `quad.customerCode` 展示字段,对账/扫码/外键仍以 `CustomerID` 为权威(adopted 2026-08-21) |
