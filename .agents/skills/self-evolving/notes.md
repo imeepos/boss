@@ -1519,3 +1519,13 @@
 - 哪个坑最浪费时间：① 两次把 `git rebase main` 放在 commit 之前跑,被"Please commit or stash them"拒掉白等一轮门禁——正确顺序:commit→rebase→再跑门禁;② 合并时 main 被并行会话连续推进三次(多区域+geo-unify),一次 ff 失败后链式命令因 `| tail` 吞掉退出码继续执行了 worktree remove/branch -d(被 git 拒绝,commit 安全在 ref 上),靠 `merge-base --is-ancestor` 事前判定 ff 可行性更稳;③ 并行会话改写了自己已推送的 docs 提交(a266a5ed),我分支 rebase 撞他们自己的冲突——用 `rebase --onto main <their-commit>` 只重放我方功能提交绕开。
 - skill 有没有提前警告：红线#9(ff 失败严禁删分支)再次保住 commit;"验收车是最好的 E2E 车"命中;SKIP_CLEANUP=1+定点取证+统一清理的验证四件套第二轮实战顺手。
 - 重来一次会怎么做：① 多会话并行期,每个 worktree 的合并序列固化为:commit→fetch→rebase→make check→ff-only merge→push,门禁永远跑在 rebase 之后;② 遇"结果全错但每步自洽"先 SQL 查 LO/订单实际值(LO 旧套餐陷阱本轮又验证一次);③ 发现相邻域 bug(geo 派单 ltree)先修主链保通,域内语义问题(指派区域匹配)发消息留给在途会话,不越界代改。
+
+## 2026-09-01 代客开户内联建址(/customers/address 复用开单能力)
+- 哪个坑最浪费时间：几乎没踩坑。最大风险点「gin 同前缀 static+param 兄弟路由」开工前先 grep 既有先例(GET /customers/onboarding-catalog 与 GET /customers/:id 已共存)确认安全,没白试。
+- skill 有没有提前警告：命中两点——①「开工前必读契约文档」直接挖出 2026-08-29 内联建址纪要,设计(同一能力 helper+显式权限码/零阻塞门禁原则)全程照裁定执行,零摇摆;② worktree 新路径 edit 前 read 的红线对策生效(worktree 副本与主树路径不同,不 read 必被拒)。
+- 重来一次会怎么做：①「A 域要用 B 域端点」类需求,先查 perms 生成器门禁投影(requirePerm 单码,无 OR)再定路由归属,这次按纪要裁定落到客户域而非放宽开单门禁;② 共用 handler 的差异语义用工厂参数(requireCustomer bool)固化,契约文档 §1.5.0c 只写差异表,不复制整表;③ 生成文件(routes_gen/perms_gen/bossctl)改 openapi 后跑两个生成器再 make check,--check 模式会兜底防漂移。
+
+## 2026-09-01 补:102 部署验证轮(同日追加)
+- 坑:验证 admin-web 是否带上新端点,只 grep 了 index-*.js 得 0 命中,误判「server 新 web 旧」脑裂,差点推补救提交——实为 Vite 懒加载分片,页面代码在 assets/<Page>-*.js。正解是扫分片清单(已喂 techniques.md)。
+- 有效动作:401/404 探针区分路由注册 → 真实建链验契约(needsReview/fallback/backfilled 全对) → 幂等复用验 lookup-hit → SQL 清理+复查 0 残留 → cdp-admin-capture 七断言 UI 冒烟(开抽屉/入口/弹层/五级/取消,零造数)。全链零污染闭环。
+- 观察:0829 轮遗留 4 条死待办(admin_notifications 190/191/193/194,order-inline-addr 指向已删地址)——该轮「零残留」只清了地址没清兜底待办;已报告未代删。
