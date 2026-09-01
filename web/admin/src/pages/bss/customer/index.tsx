@@ -140,7 +140,7 @@ export default function CustomerPage() {
       )}
       {addrRow && (
         <AddressChainDrawer customerId={String(addrRow.id)} customerAddressId={addrRow.addressId} backfill
-          onDone={load} onClose={() => setAddrRow(null)} />
+          endpoint="/customers/address" onDone={load} onClose={() => setAddrRow(null)} />
       )}
       {createOpen && (
         <CustomerCreateDrawer open onClose={() => setCreateOpen(false)} onCreated={load} />

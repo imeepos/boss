@@ -33,10 +33,12 @@ export interface ChainPickResult { addressId: number; fullPath: string }
 
 const LEVEL_COUNT = 5
 
-export function AddressChainDrawer({ customerId = '', customerAddressId = 0, endpoint = '/orders/address', onDone, onClose }: {
+export function AddressChainDrawer({ customerId = '', customerAddressId = 0, endpoint = '/orders/address', backfill = false, onDone, onClose }: {
   customerId?: string
   customerAddressId?: number
   endpoint?: string
+  /** true=建链即回填客户档案(客户档案"地址"动作);默认 false=结果区征询后重发(开单场景) */
+  backfill?: boolean
   onDone: (r: ChainPickResult) => void
   onClose: () => void
 }) {
@@ -198,7 +200,7 @@ export function AddressChainDrawer({ customerId = '', customerAddressId = 0, end
         <>
           {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
           <Button variant="outline" size="sm" onClick={onClose}>{t.pages.company.cancel}</Button>
-          <Button size="sm" disabled={busy || !allDone} onClick={() => submit(false)}>
+          <Button size="sm" disabled={busy || !allDone} onClick={() => submit(backfill)}>
             {busy ? o.chainCreating : o.chainCreate}
           </Button>
         </>
