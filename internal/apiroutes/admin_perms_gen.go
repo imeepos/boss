@@ -318,6 +318,7 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/customer-registrations/{id}/approve":                      {"menu:customer"},
 	"POST /api/admin/v1/customer-registrations/{id}/reject":                       {"menu:customer"},
 	"POST /api/admin/v1/customers":                                                {"menu:customer"},
+	"POST /api/admin/v1/customers/address":                                        {"menu:customer"},
 	"POST /api/admin/v1/customers/{id}/real-name":                                 {"menu:customer"},
 	"POST /api/admin/v1/customers/{id}/real-name/verify":                          {"menu:customer"},
 	"POST /api/admin/v1/daily-closings":                                           {"menu:payment:cash"},

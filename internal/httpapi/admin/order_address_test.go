@@ -22,8 +22,12 @@ const inlineBody = `{"customerId":9,"city":"马尼拉市","district":"奎松区"
 	`"compound":"阳光小区","building":"3号楼","backfillCustomer":true}`
 
 func postInline(t *testing.T, r http.Handler, tok string, body string) *httptest.ResponseRecorder {
+	return postInlineURL(t, r, tok, "/api/admin/v1/orders/address", body)
+}
+
+func postInlineURL(t *testing.T, r http.Handler, tok, url, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/v1/orders/address", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, url, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+tok)
 	w := httptest.NewRecorder()
@@ -158,5 +162,63 @@ func TestOrderInlineAddressNoFallbackNoTodo(t *testing.T) {
 	w := postInline(t, inlineRouter(u, fn, mgr), authToken(t, mgr), inlineBody)
 	if w.Code != http.StatusOK || len(fn.emitted) != 0 {
 		t.Fatalf("resp=%s emitted=%+v", w.Body.String(), fn.emitted)
+	}
+}
+
+const customerInlineURL = "/api/admin/v1/customers/address"
+
+// customerInlineBody 无 customerId 的开户内联建址请求体。
+const customerInlineBody = `{"city":"马尼拉市","district":"奎松区","street":"幸福街道",` +
+	`"compound":"阳光小区","building":"3号楼"}`
+
+// TestCustomerInlineAddressPermission menu:customer 门禁:无权限 403 且不触达域层。
+func TestCustomerInlineAddressPermission(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	u := &fakeUser{permOk: false}
+	r := inlineRouter(u, nil, mgr)
+	w := postInlineURL(t, r, authToken(t, mgr), customerInlineURL, customerInlineBody)
+	if !strings.Contains(w.Body.String(), `"code":403`) {
+		t.Fatalf("want 403, body=%s", w.Body.String())
+	}
+	if u.chainIn.CustomerID != 0 {
+		t.Fatalf("域层不应被触达: %+v", u.chainIn)
+	}
+}
+
+// TestCustomerInlineAddressNoCustomer 未建档开户:customerId 可省,契约照常透传。
+func TestCustomerInlineAddressNoCustomer(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	u := &fakeUser{permOk: true, chainRes: user.InlineAddressResult{
+		AddressID: 502, FullPath: "manila.quesong.xingfu.yangguang.n_3f2a",
+		FullPathNames: "马尼拉市 / 奎松区 / 幸福街道 / 阳光小区 / 3号楼", LegalEntityID: 2,
+	}}
+	r := inlineRouter(u, nil, mgr)
+	w := postInlineURL(t, r, authToken(t, mgr), customerInlineURL, customerInlineBody)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"addressId":502`) {
+		t.Fatalf("resp=%d %s", w.Code, w.Body.String())
+	}
+	if u.chainIn.CustomerID != 0 || u.chainIn.BackfillCustomer || len(u.chainIn.Levels) != 5 {
+		t.Fatalf("入参透传失真: %+v", u.chainIn)
+	}
+}
+
+// TestCustomerInlineAddressBackfillNeedsCustomer 无客户禁回填 → 42200;开单域客户必填契约不变 → 42200。
+func TestCustomerInlineAddressBackfillNeedsCustomer(t *testing.T) {
+	mgr := auth.NewManager("s", time.Hour)
+	u := &fakeUser{permOk: true}
+	r := inlineRouter(u, nil, mgr)
+	noBackfill := `{"city":"a","district":"b","street":"c","compound":"d","building":"e","backfillCustomer":true}`
+	w := postInlineURL(t, r, authToken(t, mgr), customerInlineURL, noBackfill)
+	if !strings.Contains(w.Body.String(), "42200") {
+		t.Fatalf("客户域无客户回填应 42200, body=%s", w.Body.String())
+	}
+	w = postInlineURL(t, r, authToken(t, mgr),
+		"/api/admin/v1/orders/address",
+		`{"city":"a","district":"b","street":"c","compound":"d","building":"e"}`)
+	if !strings.Contains(w.Body.String(), "42200") {
+		t.Fatalf("开单域 customerId 必填契约应保持, body=%s", w.Body.String())
+	}
+	if u.chainIn.CustomerID != 0 {
+		t.Fatalf("校验失败不应触达域层")
 	}
 }

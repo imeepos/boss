@@ -242,4 +242,54 @@ func TestInlineChainValidation(t *testing.T) {
 	if _, err := NewPGStore(mock).CreateInlineAddressChain(context.Background(), chainInput()); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("客户缺失应拒: %v", err)
 	}
+	noBackfillCust := chainInput()
+	noBackfillCust.CustomerID = 0
+	noBackfillCust.BackfillCustomer = true
+	if _, err := NewPGStore(mock).CreateInlineAddressChain(context.Background(), noBackfillCust); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("无客户禁止回填应拒: %v", err)
+	}
+}
+
+// TestInlineChainNoCustomer 未建档开户场景(customerId=0):跳过客户存在性检查,
+// 全链照常补建,不产生任何回填 SQL(2026-09-01 /customers/address)。
+func TestInlineChainNoCustomer(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+	mock.ExpectBegin()
+	// 无 EXISTS(customers) 期望:出现即说明误查,pgxmock 会报未预期查询。
+	mock.ExpectQuery(`SELECT id, path::text FROM addresses`).
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(emptyRows("id", "path"))
+	mock.ExpectQuery(`INSERT INTO addresses`).
+		WithArgs(pgxmock.AnyArg(), int8(1), "马尼拉市", int64(0), pgxmock.AnyArg(), true, inlineSource).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int64(101)))
+	for i := 0; i < 4; i++ {
+		mock.ExpectQuery(`SELECT id, path::text FROM addresses`).
+			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(emptyRows("id", "path"))
+		mock.ExpectQuery(`SELECT region_id FROM addresses`).
+			WithArgs(pgxmock.AnyArg()).WillReturnRows(emptyRows("region_id"))
+		mock.ExpectQuery(`INSERT INTO addresses`).
+			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(),
+				pgxmock.AnyArg(), pgxmock.AnyArg(), inlineSource).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int64(102)))
+	}
+	mock.ExpectQuery(`LEFT JOIN LATERAL`).WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"legal_entity_id", "path", "region_id"}).
+			AddRow(int64(2), "root.luzon", int64(5)))
+	mock.ExpectCommit()
+
+	in := chainInput()
+	in.CustomerID = 0
+	res, err := NewPGStore(mock).CreateInlineAddressChain(context.Background(), in)
+	if err != nil {
+		t.Fatalf("chain: %v", err)
+	}
+	if res.AddressID == 0 || res.Backfilled {
+		t.Fatalf("回执失真: %+v", res)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("SQL 序列: %v", err)
+	}
 }

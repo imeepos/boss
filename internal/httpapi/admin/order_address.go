@@ -1,7 +1,9 @@
 package adminapi
 
-// 开单内联建址端点(meeting-minutes/2026-08-29 §九):POST /orders/address。
-// 门禁 menu:order——能开单就能建址,开单零阻塞;地址管理页(menu:address)仍是治理入口。
+// 开单/开户内联建址端点(meeting-minutes/2026-08-29 §九):
+// POST /orders/address(menu:order,能开单就能建址,开单零阻塞;customerId 必填)。
+// POST /customers/address(menu:customer,能开户就能建址;customerId 可省=未建档开户场景)。
+// 地址管理页(menu:address)仍是治理入口。
 
 import (
 	"fmt"
@@ -18,6 +20,7 @@ import (
 )
 
 // inlineAddressReq 内联建址请求:五级自上而下全必填,缺失层级由域层就地补建。
+// CustomerID 可选:0=未建档(开户场景,此时禁用 backfillCustomer);>0 必须已存在。
 type inlineAddressReq struct {
 	CustomerID       int64  `json:"customerId"`
 	City             string `json:"city"`
@@ -40,21 +43,29 @@ func (r inlineAddressReq) toInlineInput() user.InlineAddressInput {
 	}
 }
 
-// orderInlineAddressHandler 开单流程内联建址:单事务全链补建到楼栋级;
+// validate 校验:开单域 customerId 必填(§1.5.0b 契约不变);客户域可省,
+// 但回填须带客户,负值一律拒;五级自上而下齐全。
+func (r inlineAddressReq) validate(requireCustomer bool) error {
+	var idErr *httpx.ValidationError
+	if requireCustomer || r.CustomerID < 0 || (r.CustomerID == 0 && r.BackfillCustomer) {
+		idErr = httpx.RequirePositiveID(r.CustomerID, "customerId")
+	}
+	return httpx.CollectErrors(idErr,
+		httpx.RequireString(r.City, "city", 60),
+		httpx.RequireString(r.District, "district", 60),
+		httpx.RequireString(r.Street, "street", 60),
+		httpx.RequireString(r.Compound, "compound", 60),
+		httpx.RequireString(r.Building, "building", 60),
+	)
+}
+
+// inlineAddressHandler 内联建址(开单/开户共用):单事务全链补建到楼栋级;
 // 回执含归属推导供前端预览;祖先链无区域覆盖时留 ALERT + 归属修正 P1 待办。
-func orderInlineAddressHandler(a *app.Application) gin.HandlerFunc {
+// requireCustomer=true 开单域(客户须已存在);false 客户域(0=未建档开户场景)。
+func inlineAddressHandler(a *app.Application, requireCustomer bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req inlineAddressReq
-		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequirePositiveID(req.CustomerID, "customerId"),
-				httpx.RequireString(req.City, "city", 60),
-				httpx.RequireString(req.District, "district", 60),
-				httpx.RequireString(req.Street, "street", 60),
-				httpx.RequireString(req.Compound, "compound", 60),
-				httpx.RequireString(req.Building, "building", 60),
-			)
-		}) {
+		if !httpx.BindAndValidate(c, &req, func() error { return req.validate(requireCustomer) }) {
 			return
 		}
 		res, err := a.User.CreateInlineAddressChain(c.Request.Context(), req.toInlineInput())

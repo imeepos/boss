@@ -23,11 +23,12 @@ type InlineAddressLevel struct {
 	Name  string // 展示名(回显靠 name,label 仅作 path 段)
 }
 
-// InlineAddressInput 开单内联建址入参:五级全必填,缺失层级就地补建(零阻塞)。
+// InlineAddressInput 内联建址入参:五级全必填,缺失层级就地补建(零阻塞)。
+// CustomerID 0=未建档(代客开户场景,POST /customers/address);>0 必须已存在(开单场景)。
 type InlineAddressInput struct {
 	CustomerID       int64
 	Levels           []InlineAddressLevel
-	BackfillCustomer bool // true=回填客户档案 address_id(显式操作,非隐式同步)
+	BackfillCustomer bool // true=回填客户档案 address_id(显式操作,非隐式同步);须 CustomerID>0
 }
 
 // InlineAddressNode 本次新建节点回执。
@@ -49,9 +50,9 @@ type InlineAddressResult struct {
 	Backfilled    bool                `json:"backfilled"`
 }
 
-// validateInlineInput 入参校验:客户必填,五级自上而下齐全且 level 连续。
+// validateInlineInput 入参校验:回填须带客户;五级自上而下齐全且 level 连续。
 func validateInlineInput(in InlineAddressInput) error {
-	if in.CustomerID <= 0 {
+	if in.CustomerID < 0 || (in.CustomerID == 0 && in.BackfillCustomer) {
 		return fmt.Errorf("user: customerId %w", ErrInvalidInput)
 	}
 	if len(in.Levels) != 5 {

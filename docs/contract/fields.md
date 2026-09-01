@@ -141,6 +141,17 @@
 
 > label 规则：name 转小写、空白转 `_` 后满足 `^[a-z0-9_]+$` 则直接用（≤48 字符）；否则 `n_`+sha1 前 8 位稳定后缀（中文 name 无法转写，回显靠 name，客服不感知 label）。region 继承：新建节点取最近挂 region_id 祖先；父链全空为 NULL，由归属推导层兜底。
 
+#### 1.5.0c admin 客户域内联建址（POST /api/admin/v1/customers/address，2026-09-01）
+
+> 代客开户场景（meeting-minutes/2026-08-29 同款零阻塞原则延伸）：开户弹框内装机地址树上没有时就地建址，先建址后开户，门禁 `menu:customer`（能开户就能建址）。与 §1.5.0b 同 handler、同请求/响应契约、同治理语义（needsReview/fallback/待办/审计），仅两处差异：
+
+| 差异点 | orders/address | customers/address |
+|:-------|:---------------|:------------------|
+| 门禁 | `menu:order` | `menu:customer` |
+| `customerId` | 必填（缺失 42200），客户须已存在（缺失 40400） | 可省（0=未建档开户场景，跳过存在性检查）；>0 须已存在；`backfillCustomer=true` 时必填（缺失 42200），负值一律 42200 |
+
+> 开户前端用法：建址回执 `addressId` 直接作为 POST /customers 的 `addressId` 入参；开户场景客户尚不存在，恒不传 `backfillCustomer`（`backfilled` 恒 false）。
+
 ### 1.5.1 geo_country / geo_subdivision（国际地理基础数据，迁移 000038）
 
 > 依据 ISO 3166-1/2 + UN M49 + CLDR；国家主键 = alpha-2，区划主键 = 完整 ISO 3166-2 码；停用码软删除保留。

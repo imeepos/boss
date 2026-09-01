@@ -1,5 +1,6 @@
-// 内联建址弹层:订单抽屉之上逐级先搜后建,全链 5 级(市/区/街道/小区/楼栋)。
-// 契约 fields.md §1.5.0b:POST /orders/address {customerId, city..building 五级平铺必填, backfillCustomer}
+// 内联建址弹层:上级表单抽屉之上逐级先搜后建,全链 5 级(市/区/街道/小区/楼栋)。
+// 契约 fields.md §1.5.0b/§1.5.0c:POST /orders/address 或 POST /customers/address(endpoint 参数)
+//   {customerId?, city..building 五级平铺必填, backfillCustomer}
 //   → {addressId, fullPath, fullPathNames, legalEntityId, regionPath, fallback, needsReview:[{id,level,name}], backfilled}。
 // 后端逐级 lookup-miss-then-create:选中已有节点与本地名都只发 name,复用语义由服务端保证。
 // 零阻塞:搜索不可用时仍可输入名称逐级新建;兜底归属/并发重名不拦提交,警示条+待治理黄标承接。
@@ -32,11 +33,10 @@ export interface ChainPickResult { addressId: number; fullPath: string }
 
 const LEVEL_COUNT = 5
 
-export function AddressChainDrawer({ customerId, customerAddressId, backfill, onDone, onClose }: {
-  customerId: string
-  customerAddressId: number
-  /** true=建链即回填客户档案(客户档案"地址"动作);默认 false=开单场景首建不回填,结果区征询 */
-  backfill?: boolean
+export function AddressChainDrawer({ customerId = '', customerAddressId = 0, endpoint = '/orders/address', onDone, onClose }: {
+  customerId?: string
+  customerAddressId?: number
+  endpoint?: string
   onDone: (r: ChainPickResult) => void
   onClose: () => void
 }) {
@@ -115,15 +115,20 @@ export function AddressChainDrawer({ customerId, customerAddressId, backfill, on
   }
 
   const submit = async (withBackfill: boolean) => {
-    if (busy || !allDone || !Number(customerId)) return // customerId=0 会被 binding required 拒为 42200,入口已防呆,此处兜底。
+    if (busy || !allDone) return // 开户场景 customerId=0 合法;开单场景入口已防呆,后端 requireCustomer 兜底 42200。
     setBusy(true); setError('')
     try {
-      // §1.5.0b:五级平铺必填 name(后端 lookup-miss-then-create,复用语义服务端保证);发 id 会 422。
+      // §1.5.0b/§1.5.0c:五级平铺必填 name(后端 lookup-miss-then-create,复用语义服务端保证);发 id 会 422。
       // 首建恒不带回填;档案更新走结果区征询后 withBackfill=true 重发(同链幂等复用)。
+      // customerId 缺省=未建档开户场景(fields.md §1.5.0c),不发该字段。
       const [city, district, street, compound, building] = stages.map((s) => s!.name)
-      const resp = await apiFetch<OrderAddressResp>('/orders/address', {
+      const cid = Number(customerId)
+      const resp = await apiFetch<OrderAddressResp>(endpoint, {
         method: 'POST',
-        body: { customerId: Number(customerId), city, district, street, compound, building, backfillCustomer: withBackfill },
+        body: {
+          ...(cid > 0 ? { customerId: cid } : {}),
+          city, district, street, compound, building, backfillCustomer: withBackfill,
+        },
       })
       if (!resp) {
         setError(o.chainFail)
@@ -193,7 +198,7 @@ export function AddressChainDrawer({ customerId, customerAddressId, backfill, on
         <>
           {error && <span className="mr-auto text-xs text-[var(--color-danger)]">{error}</span>}
           <Button variant="outline" size="sm" onClick={onClose}>{t.pages.company.cancel}</Button>
-          <Button size="sm" disabled={busy || !allDone} onClick={() => submit(backfill === true)}>
+          <Button size="sm" disabled={busy || !allDone} onClick={() => submit(false)}>
             {busy ? o.chainCreating : o.chainCreate}
           </Button>
         </>
