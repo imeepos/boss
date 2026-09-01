@@ -89,6 +89,49 @@ paths:
                         name: { type: string }
                         fullPath: { type: string }
 
+  /customers/address:
+    post:
+      tags: [Customer]
+      summary: '代客开户内联建址(与 POST /orders/address 同 handler 同契约;customerId 可省=未建档;契约细节见 fields.md §1.5.0b/§1.5.0c)'
+      operationId: customerInlineAddress
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [city, district, street, compound, building]
+              properties:
+                customerId: { type: integer, format: int64, description: '可省;>0 须已存在;backfillCustomer=true 时必填' }
+                city: { type: string, maxLength: 60 }
+                district: { type: string, maxLength: 60 }
+                street: { type: string, maxLength: 60 }
+                compound: { type: string, maxLength: 60 }
+                building: { type: string, maxLength: 60 }
+                backfillCustomer: { type: boolean, description: true=同事务回填客户档案装机地址(须带 customerId) }
+      responses:
+        '200':
+          description: 楼栋定位+归属预览(addressId/fullPath/fullPathNames/legalEntityId/regionPath/fallback/needsReview/backfilled)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  addressId: { type: integer, format: int64 }
+                  fullPath: { type: string }
+                  fullPathNames: { type: string }
+                  legalEntityId: { type: integer, format: int64 }
+                  regionPath: { type: string }
+                  fallback: { type: boolean }
+                  needsReview:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, format: int64 }
+                        level: { type: integer, minimum: 1, maximum: 5 }
+                        name: { type: string }
+                  backfilled: { type: boolean }
+
   /customers/{id}:
     get:
       tags: [Customer]

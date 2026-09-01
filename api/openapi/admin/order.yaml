@@ -50,7 +50,7 @@ paths:
               type: object
               required: [customerId, city, district, street, compound, building]
               properties:
-                customerId: { type: integer, format: int64 }
+                customerId: { type: integer, format: int64, description: 必填,客户须已存在(缺失 40400);未建档场景走 POST /customers/address }
                 city: { type: string, maxLength: 60 }
                 district: { type: string, maxLength: 60 }
                 street: { type: string, maxLength: 60 }

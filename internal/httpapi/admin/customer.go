@@ -16,6 +16,9 @@ func registerCustomerRoutes(g *gin.RouterGroup, a *app.Application) {
 	cus := g.Group("/customers", requirePerm(a.User, "menu:customer"))
 	cus.GET("", customerListHandler(a))
 	cus.POST("", customerCreateHandler(a))
+	// 代客开户内联建址(2026-09-01):与 /orders/address 同 handler 同契约,仅门禁与
+	// customerId 必填性不同(此处可省=未建档);先建址后开户,装机地址弹框内闭环。
+	cus.POST("/address", inlineAddressHandler(a, false))
 	cus.GET("/:id", customerGetHandler(a))
 	cus.GET("/:id/verify-logs", customerVerifyLogsHandler(a))
 

@@ -49,9 +49,12 @@ func (s *PGStore) CreateInlineAddressChain(ctx context.Context, in InlineAddress
 }
 
 // buildAddressChain 五级走链:命中即复用,缺失即补建;返回楼栋定位与治理回执。
+// CustomerID>0 时客户必须已存在;0=未建档(开户场景),跳过存在性检查与回填。
 func buildAddressChain(ctx context.Context, tx pgx.Tx, in InlineAddressInput) (InlineAddressResult, error) {
-	if err := ensureCustomerExists(ctx, tx, in.CustomerID); err != nil {
-		return InlineAddressResult{}, err
+	if in.CustomerID > 0 {
+		if err := ensureCustomerExists(ctx, tx, in.CustomerID); err != nil {
+			return InlineAddressResult{}, err
+		}
 	}
 	names := chainNames(in)
 	var (
@@ -192,8 +195,9 @@ func resolveChainOwnership(ctx context.Context, tx pgx.Tx, buildingID int64) (in
 
 // backfillCustomerAddress 显式回填客户档案:address_id 覆盖为新楼栋并同步归属快照;
 // 兜底态无区域(regionID=nil),客户 region_id NOT NULL,COALESCE 保留原值。
+// CustomerID<=0 一律不回填(校验层已拦 0+backfill,此处纵深防御)。
 func backfillCustomerAddress(ctx context.Context, tx pgx.Tx, in InlineAddressInput, buildingID, entityID int64, regionID *int64) (bool, error) {
-	if !in.BackfillCustomer {
+	if !in.BackfillCustomer || in.CustomerID <= 0 {
 		return false, nil
 	}
 	tag, err := tx.Exec(ctx, `

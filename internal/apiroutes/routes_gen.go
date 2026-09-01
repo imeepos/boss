@@ -113,6 +113,7 @@ var Portals = []Portal{
 		{"GET", "/customers", "客户档案列表(含实名状态)"},
 		{"POST", "/customers", "客户直建(批量导入用;regionName 服务端快照,realName PENDING/service ACTIVE)"},
 		{"GET", "/customers/onboarding-catalog", "代客开户选项目录(经营区域+运营主体;带 q 附地址搜索,fullPath=祖先链拍平)"},
+		{"POST", "/customers/address", "代客开户内联建址(与 POST /orders/address 同 handler 同契约;customerId 可省=未建档;契约细节见 fields.md §1.5.0b/§1.5.0c)"},
 		{"GET", "/customers/{id}", "客户档案详情(fields.md §2.1 单档;未命中 40400)"},
 		{"GET", "/customers/{id}/verify-logs", "客户实名核验记录"},
 		{"GET", "/customers/{id}/real-name", "客户当前实名核验(最新一条;未提交 PENDING 报 40410)"},

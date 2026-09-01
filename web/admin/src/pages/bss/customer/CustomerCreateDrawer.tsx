@@ -1,6 +1,8 @@
 // 代客开户抽屉:POST /customers(直建,REAL_NAME PENDING/SERVICE ACTIVE 默认)。
 // 区域/主体来自 GET /customers/onboarding-catalog;地址用 ResourcePicker 远程检索
 // (同目录端点带 q,祖先链已由服务端拍平 fullPath,防抖与竞态由选择器兜底)。
+// 树上无目标地址时点「新增地址」在弹框内逐级先搜后建(POST /customers/address,
+// fields.md §1.5.0c;回执钉选回显,表单零丢失),再以此 addressId 开户。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
@@ -8,6 +10,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { FormField } from '../../../components/business/form-field'
 import { useT } from '../../../i18n'
+import { AddressChainDrawer, type ChainPickResult } from '../../boss/order/AddressChainDrawer'
 
 interface RegionOption { id: number; name: string; path: string; legalEntityName: string }
 interface EntityOption { id: number; name: string; code: string; isPlatform: boolean }
@@ -18,6 +21,7 @@ export function CustomerCreateDrawer({
 }: { open: boolean; onClose: () => void; onCreated: (id: number) => void }) {
   const t = useT()
   const c = t.pages.customer
+  const o = t.pages.orderPage
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [idType, setIdType] = useState(c.idTypes[0])
@@ -27,6 +31,8 @@ export function CustomerCreateDrawer({
   const [addressId, setAddressId] = useState(0)
   const [regions, setRegions] = useState<RegionOption[]>([])
   const [entities, setEntities] = useState<EntityOption[]>([])
+  const [chainOpen, setChainOpen] = useState(false)
+  const [chainPinned, setChainPinned] = useState<ChainPickResult | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -45,7 +51,7 @@ export function CustomerCreateDrawer({
 
   const reset = () => {
     setName(''); setPhone(''); setIdType(c.idTypes[0]); setIdNo('')
-    setRegionId(0); setEntityId(0); setAddressId(0); setError('')
+    setRegionId(0); setEntityId(0); setAddressId(0); setError(''); setChainPinned(null)
   }
 
   const submit = async () => {
@@ -66,6 +72,9 @@ export function CustomerCreateDrawer({
       setError(e instanceof Error ? e.message : c.createFail)
     } finally { setBusy(false) }
   }
+
+  // 钉选回显:内联建址结果(新建地址可能不在检索索引,保证回显不依赖搜索)。
+  const pinnedOptions = chainPinned ? [{ value: String(chainPinned.addressId), label: chainPinned.fullPath }] : []
 
   const ok = name.trim() !== '' && phone.trim() !== '' && regionId > 0 && entityId > 0 && addressId > 0
 
@@ -108,19 +117,34 @@ export function CustomerCreateDrawer({
             onChange={(v) => setRegionId(Number(v) || 0)} />
         </FormField>
         <FormField label={c.fAddress} required hint={c.addrHint}>
-          <ResourcePicker<AddressOption>
-            value={addressId ? String(addressId) : ''}
-            onChange={(v) => setAddressId(Number(v) || 0)}
-            search={searchAddresses}
-            toOption={(a) => ({ value: String(a.id), label: a.fullPath })}
-            ariaLabel={c.fAddress}
-            emptyLabel={c.addrPick}
-            searchPlaceholder={c.addrSearchPh}
-            errorText={c.addrSearchFail}
-          />
+          <div className="flex items-center gap-2">
+            <ResourcePicker<AddressOption>
+              value={addressId ? String(addressId) : ''}
+              onChange={(v) => setAddressId(Number(v) || 0)}
+              search={searchAddresses}
+              toOption={(a) => ({ value: String(a.id), label: a.fullPath })}
+              ariaLabel={c.fAddress}
+              emptyLabel={c.addrPick}
+              pinnedOptions={pinnedOptions}
+              searchPlaceholder={c.addrSearchPh}
+              errorText={c.addrSearchFail}
+            />
+            <button type="button" aria-label={o.chainEntry} title={o.chainEntry}
+              className="h-8 shrink-0 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[12px] text-[var(--shell-content-text)] whitespace-nowrap hover:border-[var(--color-border-focus)]"
+              onClick={() => setChainOpen(true)}>{o.chainEntry}</button>
+          </div>
         </FormField>
         {error && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
       </div>
+      {chainOpen && (
+        <AddressChainDrawer endpoint="/customers/address"
+          onDone={(r) => {
+            setChainPinned(r)
+            setAddressId(r.addressId)
+            setChainOpen(false)
+          }}
+          onClose={() => setChainOpen(false)} />
+      )}
     </Drawer>
   )
 }
