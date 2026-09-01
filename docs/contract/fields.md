@@ -1220,6 +1220,23 @@ PAYMENT_* 时为 payment id，(reason,ref_id) 部分唯一索引保幂等）、
 `/bss/marketing-recon`（menu key `marketing-recon`）两 Tab 复用 8D-2 行结构，附加汇总行
 （`summary`）与 `diff=drift` 过滤；金额列后端为分，页面 ÷100 展示。
 
+### 8D-4. Admin 用户端配置页 /bss/userdata（menu key `userdata`，menu:userdata 门禁）
+
+七 Tab 列表（`internal/domain/customer/userdata/pg_lists.go` 的 SELECT ... AS 别名即字段契约），
+行级动作走对应 PUT 路由；金额列后端为分，页面 fmtFee 展示：
+
+| Tab | 列名 | 字段名 | 行动作 |
+|:----|:-----|:-------|:-------|
+| 通知设置 | 客户/业务通知/营销通知/接收渠道 | `customerId` / `customerName` / `business` / `marketing` / `channel` | — |
+| 增值服务 | 名称/价格/状态/订阅数 | `addonId` / `name` / `price` / `status`（on/off）/ `subscriberCount` | toggle |
+| 优惠券 | 客户/名称/面额/状态/有效期 | `couponId` / `customerId` / `name` / `amount` / `status`（ISSUED/USED/DISABLED/EXPIRED）/ `expireAt` | disable |
+| 充值档位 | 面额/赠送金额/状态 | `denomId` / `amount` / `bonus` / `active` | — |
+| 常见问题 | 分类/问题/状态 | `faqId` / `category` / `question` / `active` | toggle |
+| 自助指南 | 标题/分类/状态 | `guideId` / `title` / `category` / `active` | toggle |
+| 邀请配置 | 邀请链接/奖励金额/状态 | `id` / `inviteLink` / `rewardAmount` / `active` | — |
+
+状态列走 StatusTag `userdata` 域（布尔配置渲染 active/disabled 语义色）。
+
 ## 8E. 官网内容发布域（internal/domain/cms，000134；分类字典 000138）
 
 `cms_posts`（官网动态/文章/新闻，单一内容表 + category 区分；沿用 cs_knowledge_articles 的版本自增与软状态机范式）：

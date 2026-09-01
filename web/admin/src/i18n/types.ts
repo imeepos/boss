@@ -2054,6 +2054,11 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
+      updated: string
+      list: string
+      unlist: string
+      cols: Record<string, string>
+      channels: Record<string, string>
     }
     apikey: {
       title: string
