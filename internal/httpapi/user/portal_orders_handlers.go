@@ -3,8 +3,6 @@ package userapi
 // 用户端门户 Order 域 handler 实现。
 
 import (
-	"errors"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -147,11 +145,10 @@ func portalSubmitOrder(a *app.Application) gin.HandlerFunc {
 			RequestID:   req.RequestID,   // 幂等键(000116)
 		})
 		if err != nil {
-			if errors.Is(err, order.ErrDirectPhoneCap) || errors.Is(err, order.ErrDirectAddressCap) {
-				httpx.RecordAudit(a, c, "order.risk.blocked", "customer",
-					strconv.FormatInt(cid, 10), map[string]any{"reason": err.Error()})
+			// 直营风控拦截:42300+可行动 reason,审计在 helper 内落(与 admin 代客下单同口径)。
+			if !httpx.RespondOrderRiskBlocked(a, c, err, cid) {
+				respondErr(c, err)
 			}
-			respondErr(c, err)
 			return
 		}
 		respond(c, apitypes.CodeOK, portalOrderSummary(o, productName(a, c, offerID),

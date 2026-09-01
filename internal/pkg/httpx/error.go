@@ -2,10 +2,13 @@ package httpx
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/backup"
@@ -171,4 +174,26 @@ func RespondErr(c *gin.Context, err error) {
 		log.Printf("httpx: unmapped error (code=%d): %v", apitypes.CodeInternal, err)
 		Respond(c, apitypes.CodeInternal, nil)
 	}
+}
+
+// RespondOrderRiskBlocked 直营风控拦截统一出口:落 order.risk.blocked 审计 +
+// 回 42300,reason 携带维度/计数/上限的可行动文案(只给"资源已被占用"时客服无从下手)。
+// 返回 false 表示非风控拦截,调用方继续走 RespondErr,避免双写响应。
+func RespondOrderRiskBlocked(a *app.Application, c *gin.Context, err error, customerID int64) bool {
+	var ce *order.CapExceeded
+	if !errors.As(err, &ce) {
+		return false
+	}
+	RecordAudit(a, c, "order.risk.blocked", "customer",
+		strconv.FormatInt(customerID, 10), map[string]any{"reason": err.Error()})
+	Respond(c, apitypes.CodeResourceBusy, gin.H{"reason": riskBusyReason(ce)})
+	return true
+}
+
+// riskBusyReason 面向操作员的中文指引;参数键可在 基础配置-业务参数 页直查调整。
+func riskBusyReason(ce *order.CapExceeded) string {
+	if ce.Kind == order.CapKindPhone {
+		return fmt.Sprintf("该手机号24小时内已下单 %d 单(上限 %d),可明日再试或调大参数 risk.direct.phoneCap", ce.Count, ce.Cap)
+	}
+	return fmt.Sprintf("该地址在途订单已有 %d 笔(上限 %d),请先取消在途订单或调大参数 risk.direct.addressCap", ce.Count, ce.Cap)
 }

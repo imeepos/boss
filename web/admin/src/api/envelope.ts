@@ -10,21 +10,25 @@ export interface Envelope<T = unknown> {
   data?: T | null
 }
 
-/** 业务错误:携带 code 与 msg,unauthorized 标记触发登出。 */
+/** 业务错误:携带 code 与 msg,unauthorized 标记触发登出;reason 为 data.reason 透传(如风控拦截指引)。 */
 export class ApiError extends Error {
   readonly code: number
-  constructor(code: number, msg: string) {
-    super(msg)
+  readonly reason: string
+  constructor(code: number, msg: string, reason = '') {
+    super(reason ? msg + '：' + reason : msg)
     this.name = 'ApiError'
     this.code = code
+    this.reason = reason
   }
   get unauthorized(): boolean {
     return this.code === CODE_UNAUTHORIZED
   }
 }
 
-/** 解包:code=0 → data;否则抛 ApiError。 */
+/** 解包:code=0 → data;否则抛 ApiError(data.reason 拼进 message,页面零改动可读)。 */
 export function unwrap<T>(env: Envelope<T>): T | null {
   if (env.code === CODE_OK) return env.data ?? null
-  throw new ApiError(env.code, env.msg || `业务错误(${env.code})`)
+  const data = env.data as { reason?: unknown } | null | undefined
+  const reason = typeof data?.reason === 'string' ? data.reason : ''
+  throw new ApiError(env.code, env.msg || `业务错误(${env.code})`, reason)
 }

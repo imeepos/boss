@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v4"
@@ -59,6 +60,13 @@ func TestCheckDirectRisk(t *testing.T) {
 		if !errors.Is(err, ErrDirectPhoneCap) {
 			t.Fatalf("want ErrDirectPhoneCap, got %v", err)
 		}
+		var pe *CapExceeded
+		if !errors.As(err, &pe) || pe.Kind != CapKindPhone || pe.Count != 5 || pe.Cap != 5 {
+			t.Fatalf("want CapExceeded phone 5/5, got %v", err)
+		}
+		if strings.Contains(err.Error(), "order: order:") || !strings.Contains(err.Error(), "count=5") {
+			t.Fatalf("Error() 文案异常: %q", err.Error())
+		}
 	})
 
 	t.Run("同地址在途达阈值-拦截 ADDRESS_CAP", func(t *testing.T) {
@@ -73,6 +81,10 @@ func TestCheckDirectRisk(t *testing.T) {
 		err = s.checkDirectRisk(context.Background(), req)
 		if !errors.Is(err, ErrDirectAddressCap) {
 			t.Fatalf("want ErrDirectAddressCap, got %v", err)
+		}
+		var ae *CapExceeded
+		if !errors.As(err, &ae) || ae.Kind != CapKindAddress || ae.Count != 3 || ae.Cap != 3 {
+			t.Fatalf("want CapExceeded address 3/3, got %v", err)
 		}
 	})
 

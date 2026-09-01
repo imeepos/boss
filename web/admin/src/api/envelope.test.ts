@@ -32,4 +32,26 @@ describe('unwrap envelope', () => {
   it('data 缺失时返回 null', () => {
     expect(unwrap({ code: 0, msg: 'ok' })).toBeNull()
   })
+
+  it('data.reason 透传并拼进 message(风控拦截可行动文案,42300)', () => {
+    try {
+      unwrap({ code: 42300, msg: '资源已被占用', data: { reason: '该地址在途订单已有 26 笔(上限 10)' } })
+      throw new Error('should throw')
+    } catch (e) {
+      const err = e as ApiError
+      expect(err.code).toBe(42300)
+      expect(err.reason).toBe('该地址在途订单已有 26 笔(上限 10)')
+      expect(err.message).toBe('资源已被占用：该地址在途订单已有 26 笔(上限 10)')
+    }
+  })
+
+  it('data.reason 非字符串时忽略,不污染 message', () => {
+    try {
+      unwrap({ code: 50000, msg: '内部错误', data: { reason: 42 } })
+      throw new Error('should throw')
+    } catch (e) {
+      expect((e as ApiError).message).toBe('内部错误')
+      expect((e as ApiError).reason).toBe('')
+    }
+  })
 })
