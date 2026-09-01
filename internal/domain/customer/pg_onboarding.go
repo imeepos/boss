@@ -149,10 +149,11 @@ SELECT name, phone, id_card_no, legal_entity_id, address_id, region_id
 	}
 
 	var customerID int64
+	// address_id NULLIF($4,0):注册申请可不带地址(000176 可空+FK 保留),0 落 NULL。
 	err = s.db.QueryRow(ctx, `
 INSERT INTO customers(name, phone, id_type, id_no, real_name_status, service_status,
                       address_id, legal_entity_id, region_id, region_name)
-VALUES($1,$2,'身份证',$3,'PENDING','ACTIVE',$4,$5,$6,$7) RETURNING id`,
+VALUES($1,$2,'身份证',$3,'PENDING','ACTIVE',NULLIF($4,0),$5,$6,$7) RETURNING id`,
 		name, phone, idCardNo, addressID, legalEntityID, regionID, regionName).Scan(&customerID)
 	if err != nil {
 		return 0, fmt.Errorf("customer: approve create customer: %w", err)

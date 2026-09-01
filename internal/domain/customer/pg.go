@@ -95,10 +95,11 @@ func (s *PGStore) Create(ctx context.Context, c Customer) (int64, error) {
 	}
 
 	var id int64
+	// address_id 000176 起可空但保留 FK:0 语义=未登记,落库转 NULL 绕开 FK(0 号地址不存在)。
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO customers(name, phone, id_type, id_no, real_name_status, service_status,
 		                     address_id, legal_entity_id, region_id, region_name)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+		VALUES($1,$2,$3,$4,$5,$6,NULLIF($7,0),$8,$9,$10)
 		RETURNING id`,
 		c.Name, c.Phone, c.IdType, c.IdNo, c.RealNameStatus, c.ServiceStatus,
 		c.AddressID, c.LegalEntityID, c.RegionID, c.RegionName).Scan(&id)

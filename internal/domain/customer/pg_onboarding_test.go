@@ -66,7 +66,7 @@ func TestPGStore_ApproveRegistration_CreatesCustomer(t *testing.T) {
 		WithArgs(int64(4)).
 		WillReturnRows(mock.NewRows([]string{"name"}).AddRow("马尼拉市"))
 	// 3) 建客户主档
-	mock.ExpectQuery(`INSERT INTO customers\(name, phone, id_type, id_no, real_name_status, service_status, address_id, legal_entity_id, region_id, region_name\)`).
+	mock.ExpectQuery(`INSERT INTO customers\(name, phone, id_type, id_no, real_name_status, service_status, address_id, legal_entity_id, region_id, region_name\).*NULLIF\(\$4,0\)`).
 		WithArgs("张先生", "13800001234", "110101199001011234",
 			int64(100), int64(1), int64(4), "马尼拉市").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(88)))

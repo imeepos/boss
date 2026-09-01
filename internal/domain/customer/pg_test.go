@@ -29,7 +29,8 @@ func TestPGStore_Create(t *testing.T) {
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
-	mock.ExpectQuery(`INSERT INTO customers`).
+	// NULLIF($7,0) 锁死:0 地址落 NULL 绕 FK(000176 起可空),回归防护。
+	mock.ExpectQuery(`INSERT INTO customers.*NULLIF\(\$7,0\)`).
 		WithArgs("王先生", "13800001111", "身份证", "110101199001011234", "VERIFIED", "ACTIVE",
 			int64(100), int64(1), int64(11), "root.luzon.ncr.manila").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
