@@ -117,7 +117,7 @@
   对 index.html 与 SPA fallback 均 no-cache(复查确认);①部分覆盖——Classify 已有「与 102
   实际部署镜像 sha 比对」优先策略,先前未部署的 runtime 变更不会被后续 docs-only 提交漏判,
   「diff 为空显式输出 no-op 原因」仍待 owner(现为静默 skip 文案,无强制 runtime)。
-  复验口诀(部署后):curl :5180 取 index-*.js 文件名 + grep 特征串,双端各一个;
+  复验口诀(部署后):curl :5180 取 index-*.js 文件名 + grep 特征串,双端各一个;**特征串 grep 必须扫懒加载分片**(2026-09-01 实证:index-*.js 是壳,页面代码在 assets/<Page>-*.js,只 grep index 假 0 命中误判脑裂;先拉分片清单再逐片 grep);
   或直接 `bash scripts/ops/verify-deploy.sh --expect-sha <sha>`。
 
 ## 工具/环境(2026-08-30 session-handoff DSH 插件开发轮发现)
