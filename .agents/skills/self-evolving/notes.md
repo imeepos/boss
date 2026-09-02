@@ -1554,3 +1554,10 @@
 - 哪个坑最浪费时间:run_code 的 JS 模板串吃反斜杠——pgxmock 正则断言里 \( 写进文件成 (,正则配对错误反复 FAIL 三轮才看破是宿主转义层;BSD sed -i(macOS)无后缀不生效,静默不替换。
 - skill 有没有提前警告:红线#1(read 后 edit)拦下两次 not-found;「先查库再接口复核」直接命中——高危结论全部先在 102 真库/源码逐字复核再进终稿,子代理报告两条 HIGH 被复核修正(quad_links 双约束实为已修复事故、000097 是修复迁移)。
 - 重来一次会怎么做:①含正则/反斜杠的内容一律 String.fromCharCode(92) 或整文件 write,不走内联转义;②子代理高危结论默认亲核再采信;③修探针 SQL 的验收=BOSS_PG_TEST_DSN 真库跑通,不是 mock 绿。
+
+## 2026-09-02 TL1 T3(tl1sim+client+executor) worktree 会话
+- 最耗时的坑:run_code 里用 JS 模板字符串 write Go 文件,Go 字符串字面量的 \\n 被模板字符串先吃成真实换行,resp.go 整文件 string literal not terminated;以及 read 大文件(1556 行)后整体回写,lines 被静默截短,notes.md 丢了 1209 行(靠 git show HEAD~1 恢复)。修法:源码/长文件追加一律 bash heredoc(引号定界符)或行数组组装,禁 read-全量-回写路径。
+- 新坑:外部测试包(package tl1_test)不能给被测包类型加方法,测试辅助一律普通函数。
+- 断言语义坑:sim 留痕文件记收到的指令而非执行成功的指令,被 DENY 的命令也在案;中途 DENY 场景 ADD-PONVLAN 计数应为 1 而非 0。造断言前先明确观测通道语义。
+- 上游接口限制:T2 session.login 只读一次响应不循环等 DELAY,LOGIN 吃到 DELAY 即 ErrAuth;T3 不改既有接口,sim 侧对 LOGIN 豁免 delay 注入,已登 ISSUE.md。
+- 顺畅点:worktree 路径先核对、bash 显式 cd、每写一个文件立刻 go build、gofmt -w 收尾,acceptance+vet+build+函数长度自查一条龙零返工。

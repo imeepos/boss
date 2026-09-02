@@ -1,5 +1,9 @@
 # ISSUE.md（上游/工具问题清单）
 
+## 后端·TL1 会话层(2026-09-02 T3 tl1sim 联测发现)
+
+- **未修(记录边界)｜行为限制｜session.login 不消化 DELAY**:`internal/domain/provision/tl1/session.go::login`(T2 交付)只读一次响应即判 COMPLD/DENY,收到 DELAY 直接落 ErrAuth;而 `Session.Do` 对 DELAY 有追帧循环。真实 U2000 对 LOGIN 也可能回 DELAY(PDF §11 未承诺 LOGIN 免延迟),届时鉴权路径会误报。T3 任务约束不改既有接口,已在 cmd/tl1sim/sim 对 LOGIN 豁免 delay 注入绕开(state.go 有注释)。真实网管联调前建议把 login 改为与 Do 同款的追帧循环(一处 ~6 行改动,归 T2/T6 责任面)。
+
 ## 后端·order 12 环节全流程模拟(2026-08-22 bossctl CLI 演示发现)
 
 - **已修复(2026-08-21, d397e40)｜行为缺口｜置备资产不回填 tag 双向绑定**:`POST /provision/assets`(internal/domain/asset/pg_write.go::CreateAsset)只写 `assets.tag_id`,不回填 `tags.bound_asset_id`/`tags.status`。而环节9 扫码核对(internal/domain/quadlink/pg_scan.go::VerifyScan)要求 `tags.bound_asset_id` 非空且等于 quad_link.asset_id,否则报 40920"扫码与预绑定不一致"。e2e 测试(internal/app/e2e_pg_integration_test.go:224)是建 tag 时手工传 `BoundAssetID + Status="BOUND"` 才绕过。→ 置备端点或 CreateAsset 应在 tag_id 非空时同步 `UPDATE tags SET bound_asset_id=$asset, status='BOUND'`,与 e2e 口径对齐。
