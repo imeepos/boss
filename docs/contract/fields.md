@@ -987,7 +987,7 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 
 | 实体 | 承接页 | 关键列 |
 |:-----|:-------|:-------|
-| provision_logs | admin/provlog.html 下发日志 | task_id/resource_id/template_id/result/retries/created_at |
+| provision_logs | admin/provlog.html 下发日志 | task_id/resource_id/template_id/result/retries/created_at；详情(000179)：commands/device_response(完整指令与设备应答,GET /provision-logs/{logId} 聚合任务/订单/模板维度) |
 | real_name_verifications | admin/customer.html 实名核验 | customer_id/method/verified_at/result/operator_account_id/operator_name |
 | channels | order/dispatch 下单渠道 | code/name/status（REQ-ORD-006 必填不可改） |
 | alarms | admin/alarm.html 告警 | alarm_no/level/source/content/status |
