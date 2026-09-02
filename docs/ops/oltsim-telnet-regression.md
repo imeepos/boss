@@ -50,8 +50,25 @@ scripts/verify-oltsim-provision-e2e.sh [BASE_URL]   # 默认 http://192.168.0.10
   服务未同步加 `BOSS_PROVISION_DRIVER: "telnet"`,部署 latest 后旧链路静默变 noop;Sep 02 12:34(UTC)
   一条存量 PENDING 任务 2 已被 noop 落 DONE(日志可查)。helm values 的「配置真实 OLT 后 Telnet
   执行器生效」注释同样过期。
-- 修复(运维动作,超出本回归任务边界,未执行): compose provisioner 段补
-  `BOSS_PROVISION_DRIVER: "telnet"` 并重建容器(或 docker run 注入该 env);helm values 同步;
-  重建后重跑本脚本,应 PASS(task DONE + SUCCESS + oltsim apply OK)。
-- 存量遗留(非本次产生,未动): provision_templates id=166(TPL-acc_tl1_1788347248)、一个
-  OLT-acc_ 前缀资源,系更早验收残留,建议按各自 ID 人工确认后清理。
+- 修复已执行(2026-09-02): compose 补 `BOSS_PROVISION_DRIVER: "telnet"`(6dd2fa69),helm values 注释
+  同步;102 上 /tmp/docker-compose.102.app.yml 已更新并按 compose 重建
+  (docker compose -p boss-app -f /tmp/docker-compose.102.app.yml up -d provisioner),
+  容器收敛回 compose 管理(project=boss-app;旧手工容器配置快照存 102:/tmp/boss-provisioner.old.json)。
+  注意 compose 副本在 /tmp,机器重启丢文件,后续部署经 deploy-cluster.sh 会重新下发。
+
+## 修复后绿证(2026-09-02 22:02 +08:00)
+
+- 重跑本脚本 exit 0:precheck driver=telnet 无 WARN;resource=525 port=806 template=176,
+  订单 ORD-20260902-000630(id 664),任务 252(isolated,loid=98)。
+- task=252 DONE + provision_logs=SUCCESS;oltsim records 收到
+  `{"template":"176","taskNo":"PRV-O664","event":"preConfigOLT","result":"OK"}`,
+  journal 同秒 `apply ok template=176 task=PRV-O664 event=preConfigOLT`。
+- 清理复核: 本单各表归零、队列空、provisioner running(证据目录 /tmp/verify-oltsim-e2e-1788357750)。
+- 启动日志基准: `provisioner: telnet executor -> 172.26.0.1:2323`(14:01:53 UTC)。
+
+## 存量遗留清理(2026-09-02)
+
+- 已按精确 ID 清理更早 acc_tl1_ 残留: pon_onu_alloc(515,0,7,5)、port 785
+  (P-acc_tl1_1788347248-01,order_id=648 指向已删订单,属孤儿预留)、resource 515、
+  template 166;清理后 acc_ 前缀资源/模板归零,队列空。
+- 教训: 删资源会被 pon_onu_alloc 外键拦截,须先清分配行(与本脚本 cleanup 顺序一致)。
