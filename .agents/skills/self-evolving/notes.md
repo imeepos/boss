@@ -1566,3 +1566,8 @@
 - 顺畅点:先读 adopted note(2026-09-01-offer-provision-binding)拿接口契约(openapi customer.yaml 确认 PUT body=templateId+remark),再 GET 预检四处绑定全为 0,PUT 幂等绑定后 GET /provision-bindings 回读验证,零返工。
 - 经验:bossctl routes 的 summary 就是字段语义说明;绑定期从 openapi yaml 里 grep operationId 段看 requestBody,不用猜参数名。
 - 事实:法人1 档位模板 142=100M/145=500M(content.bandwidth 正确、ENABLED);500M 套餐有 3 个(103/109/114)全绑 145,100M 只有 101→142;绑定表此前全空,存量无绑定不报错,走带宽兜底。
+
+## 2026-09-02 模板垃圾清理（删 36 留 110）
+- 关键前置:DELETE 有硬守卫——provision_tasks 引用过的模板(含历史 DONE,105 个)API 拒删,先 ssh psql 查 DISTINCT template_id 算出"可删 39/删不掉 105",避免盲删撞墙。
+- 用户裁定留了三档兜底模板 143/144/146(未绑定但被 200M/300M/1000M 套餐带宽兜底依赖,E2E 套餐全是 300M 靠 144):全删会把 E2E 环节7 打挂,该风险必须先摆给用户再动手,不能字面执行"全部删除"。
+- 小失分:给用户的选项标签写"删 35 个",实际可删集合是 36(32 旧空模板+4 法人6),数数不细心;批量删除后必须 API 回读+DB 直查双验证(110 对 110)。
