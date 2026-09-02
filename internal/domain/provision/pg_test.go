@@ -162,7 +162,7 @@ func TestPGStore_CreateTaskIdempotent(t *testing.T) {
 			WithArgs(int64(5)).
 			WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 		mock.ExpectQuery(`INSERT INTO provision_logs`).
-			WithArgs(int64(5), int64(0), "", int64(16), "TPL-FTTH", "RETRY", int16(1)).
+			WithArgs(int64(5), int64(0), "", int64(16), "TPL-FTTH", "RETRY", int16(1), "", "").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
 
 		s := NewPGStore(mock)
@@ -272,7 +272,7 @@ func TestPGStore_AppendLog(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO provision_logs`).
-		WithArgs(int64(1), int64(10), "OLT-01", int64(1), "TPL-FTTH", "FAILED", int16(1)).
+		WithArgs(int64(1), int64(10), "OLT-01", int64(1), "TPL-FTTH", "FAILED", int16(1), "", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)

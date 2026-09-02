@@ -26,18 +26,18 @@ func (f *fakeProvSvc) ClaimTask(context.Context) (*Task, error) {
 	}
 	return nil, nil
 }
-func (f *fakeProvSvc) FailTask(_ context.Context, id int64, reason string) error {
+func (f *fakeProvSvc) FailTask(_ context.Context, id int64, reason string, _ ExecTrace) error {
 	f.failed = append(f.failed, reason)
 	return nil
 }
-func (f *fakeProvSvc) ExecuteTask(_ context.Context, id int64) error {
+func (f *fakeProvSvc) ExecuteTask(_ context.Context, id int64, _ ExecTrace) error {
 	f.done = append(f.done, id)
 	return nil
 }
 
 type fakeExec struct{ err error }
 
-func (e fakeExec) Exec(context.Context, Task) error { return e.err }
+func (e fakeExec) Exec(context.Context, Task) (ExecTrace, error) { return ExecTrace{}, e.err }
 
 func TestDaemonTick(t *testing.T) {
 	t.Run("执行成功 → ExecuteTask", func(t *testing.T) {

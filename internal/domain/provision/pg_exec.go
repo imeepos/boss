@@ -42,9 +42,9 @@ func (s *PGStore) ClaimTask(ctx context.Context) (*Task, error) {
 	return &t, nil
 }
 
-// ExecuteTask 完成下发任务:DOING 或 PENDING→DONE,成功写 SUCCESS 日志(补记模板信息可追踪)。
+// ExecuteTask 完成下发任务:DOING 或 PENDING→DONE,成功写 SUCCESS 日志(含设备指令/应答留痕)。
 // PENDING 直接完成仅用于直调/测试;provisioner 守护进程先 ClaimTask(DOING)再执行。
-func (s *PGStore) ExecuteTask(ctx context.Context, taskID int64) error {
+func (s *PGStore) ExecuteTask(ctx context.Context, taskID int64, trace ExecTrace) error {
 	if err := s.transit(ctx, taskID, "DONE", "DOING", "PENDING"); err != nil {
 		return err
 	}
@@ -52,12 +52,15 @@ func (s *PGStore) ExecuteTask(ctx context.Context, taskID int64) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.AppendLog(ctx, Log{TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "SUCCESS"})
+	_, err = s.AppendLog(ctx, Log{
+		TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "SUCCESS",
+		Commands: JoinCommands(trace.Commands), DeviceResp: trace.Response,
+	})
 	return err
 }
 
-// FailTask 任务失败:DOING→FAILED + 失败原因留痕(result=FAILED:reason)。
-func (s *PGStore) FailTask(ctx context.Context, taskID int64, reason string) error {
+// FailTask 任务失败:DOING→FAILED + 失败原因与设备交互留痕(result=FAILED:reason)。
+func (s *PGStore) FailTask(ctx context.Context, taskID int64, reason string, trace ExecTrace) error {
 	if err := s.transit(ctx, taskID, "FAILED", "DOING", "PENDING"); err != nil {
 		return err
 	}
@@ -65,7 +68,10 @@ func (s *PGStore) FailTask(ctx context.Context, taskID int64, reason string) err
 	if err != nil {
 		return err
 	}
-	_, err = s.AppendLog(ctx, Log{TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "FAILED: " + reason})
+	_, err = s.AppendLog(ctx, Log{
+		TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "FAILED: " + reason,
+		Commands: JoinCommands(trace.Commands), DeviceResp: trace.Response,
+	})
 	return err
 }
 

@@ -2,6 +2,7 @@ package provision
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -174,7 +175,7 @@ func (s *PGStore) GetTaskByNo(ctx context.Context, taskNo string) (*Task, error)
 	return &t, nil
 }
 
-// ListLogs 列出下发日志;taskID=0 返回全部,否则按任务过滤。
+// ListLogs 列出下发日志;taskID=0 返回全部,否则按任务过滤(不含指令/应答大字段,详情页另取)。
 func (s *PGStore) ListLogs(ctx context.Context, taskID int64) ([]Log, error) {
 	rows, err := s.db.Query(ctx, `
 		SELECT id, task_id, resource_id, COALESCE(resource_code, ''), template_id, COALESCE(template_code, ''), result, retries, created_at
@@ -194,13 +195,55 @@ func (s *PGStore) ListLogs(ctx context.Context, taskID int64) ([]Log, error) {
 	return out, rows.Err()
 }
 
+// GetLogDetail 日志详情聚合:日志(含指令/应答)+ 任务 + 订单(offer 名)+ 模板。
+// 单查询 JOIN 软引用;订单/模板已删时相应维度留零值,不阻断详情。
+func (s *PGStore) GetLogDetail(ctx context.Context, logID int64) (*LogDetail, error) {
+	var d LogDetail
+	var commands, deviceResp sql.NullString
+	var orderNo, orderStatus, offerName, tplCode, tplName, tplStatus sql.NullString
+	var tplVersion sql.NullInt32
+	var content []byte
+	err := s.db.QueryRow(ctx, `
+		SELECT l.id, l.task_id, l.resource_id, COALESCE(l.resource_code, ''),
+		       l.template_id, COALESCE(l.template_code, ''), l.result, l.retries,
+		       COALESCE(l.commands, ''), COALESCE(l.device_response, ''), l.created_at,
+		       t.id, t.task_no, t.order_id, t.stage_event, t.lo_account_id, t.template_id, t.status,
+		       o.order_no, o.status, COALESCE(po.name, ''),
+		       t2.code, t2.name, t2.status, t2.version, COALESCE(t2.content, '{}')
+		FROM provision_logs l
+		JOIN provision_tasks t ON t.id = l.task_id
+		LEFT JOIN orders o ON o.id = t.order_id
+		LEFT JOIN product_offers po ON po.id = o.offer_id
+		LEFT JOIN provision_templates t2 ON t2.id = l.template_id
+		WHERE l.id = $1`, logID).Scan(
+		&d.Log.ID, &d.Log.TaskID, &d.Log.ResourceID, &d.Log.ResourceCode,
+		&d.Log.TemplateID, &d.Log.TemplateCode, &d.Log.Result, &d.Log.Retries,
+		&commands, &deviceResp, &d.Log.CreatedAt,
+		&d.Task.ID, &d.Task.TaskNo, &d.Task.OrderID, &d.Task.StageEvent, &d.Task.LoAccountID, &d.Task.TemplateID, &d.Task.Status,
+		&orderNo, &orderStatus, &offerName,
+		&tplCode, &tplName, &tplStatus, &tplVersion, &content)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrLogNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("provision: log detail: %w", err)
+	}
+	d.Log.Commands, d.Log.DeviceResp = commands.String, deviceResp.String
+	d.Order = LogOrderInfo{OrderNo: orderNo.String, Status: orderStatus.String, OfferName: offerName.String}
+	d.Template = LogTemplateInfo{Code: tplCode.String, Name: tplName.String, Status: tplStatus.String, Version: tplVersion.Int32}
+	if len(content) > 0 && string(content) != "{}" {
+		_ = json.Unmarshal(content, &d.Template.Content)
+	}
+	return &d, nil
+}
+
 // AppendLog 追加下发日志,返回自增 id。
 func (s *PGStore) AppendLog(ctx context.Context, l Log) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO provision_logs(task_id, resource_id, resource_code, template_id, template_code, result, retries)
-		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-		l.TaskID, l.ResourceID, l.ResourceCode, l.TemplateID, l.TemplateCode, l.Result, l.Retries).Scan(&id)
+		INSERT INTO provision_logs(task_id, resource_id, resource_code, template_id, template_code, result, retries, commands, device_response)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+		l.TaskID, l.ResourceID, l.ResourceCode, l.TemplateID, l.TemplateCode, l.Result, l.Retries, l.Commands, l.DeviceResp).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("provision: append log: %w", err)
 	}

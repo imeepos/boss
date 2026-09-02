@@ -81,12 +81,34 @@ paths:
   /provision-logs:
     get:
       tags: [Provision]
-      summary: 配置下发日志(成功/失败/回滚成功)
+      summary: 配置下发日志(成功/失败/回滚成功;列表不含指令/应答大字段)
       operationId: listProvisionLogs
       parameters:
         - { name: taskId, in: query, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /provision-logs/{logId}:
+    get:
+      tags: [Provision]
+      summary: 下发日志详情(完整下发指令/设备原始应答 + 任务/订单/模板多维上下文;menu:provlog)
+      operationId: getProvisionLogDetail
+      parameters:
+        - { name: logId, in: path, required: true, schema: { type: integer, format: int64 }, description: 日志ID }
+      responses:
+        '200':
+          description: 日志详情聚合
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  log:
+                    type: object
+                    description: 日志本体;commands 为换行分隔的顺序设备指令,deviceResponse 为设备原始应答
+                  task: { type: object, description: 来源下发任务(taskNo/stageEvent/status 等) }
+                  order: { type: object, description: 订单维度(orderNo/status/offerName;无关联或已删为空值) }
+                  template: { type: object, description: 模板维度(code/name/version/status/content;已删为空值) }
 
   /provision-bindings:
     get:

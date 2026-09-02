@@ -11,8 +11,8 @@ import (
 
 // Executor 设备协议执行口(OLT/ONU 配置下发;实现可为 Telnet/SNMP-set/gRPC 到网元)。
 type Executor interface {
-	// Exec 执行一次下发;返回 error 视为失败(写 FAILED 留痕)。
-	Exec(ctx context.Context, t Task) error
+	// Exec 执行一次下发;返回 error 视为失败(写 FAILED 留痕);ExecTrace 留指令与设备应答。
+	Exec(ctx context.Context, t Task) (ExecTrace, error)
 }
 
 // Daemon 下发守护进程。
@@ -55,14 +55,15 @@ func (d *Daemon) tick(ctx context.Context) {
 		if t == nil {
 			return // 无待办任务
 		}
-		if err := d.exec.Exec(ctx, *t); err != nil {
-			if failErr := d.svc.FailTask(ctx, t.ID, err.Error()); failErr != nil {
+		trace, err := d.exec.Exec(ctx, *t)
+		if err != nil {
+			if failErr := d.svc.FailTask(ctx, t.ID, err.Error(), trace); failErr != nil {
 				log.Printf("provision daemon: fail task %d: %v", t.ID, failErr)
 			}
 			d.notifyDone(ctx, *t, err)
 			continue
 		}
-		if err := d.svc.ExecuteTask(ctx, t.ID); err != nil {
+		if err := d.svc.ExecuteTask(ctx, t.ID, trace); err != nil {
 			log.Printf("provision daemon: execute task %d: %v", t.ID, err)
 			continue
 		}

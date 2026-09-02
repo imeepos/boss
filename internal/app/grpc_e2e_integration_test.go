@@ -246,7 +246,7 @@ func TestE2E_GRPC_Services_Integration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := a.Provision.FailTask(ctx, tk.ID, "simulated olt timeout"); err != nil {
+		if err := a.Provision.FailTask(ctx, tk.ID, "simulated olt timeout", provision.ExecTrace{}); err != nil {
 			t.Fatalf("fail task: %v", err)
 		}
 		rt, err := provCli.RetryTask(ctx, &provisionv1.RetryTaskRequest{TaskNo: seed.taskNo})

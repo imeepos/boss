@@ -21,11 +21,11 @@ func TestPGStore_ExecuteTask(t *testing.T) {
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 		mock.ExpectQuery(`INSERT INTO provision_logs`).
-			WithArgs(int64(1), int64(0), "", int64(16), "TPL-FTTH", "SUCCESS", int16(0)).
+			WithArgs(int64(1), int64(0), "", int64(16), "TPL-FTTH", "SUCCESS", int16(0), "provision apply template=16", "OK").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(10)))
 
 		s := NewPGStore(mock)
-		if err := s.ExecuteTask(context.Background(), 1); err != nil {
+		if err := s.ExecuteTask(context.Background(), 1, ExecTrace{Commands: []string{"provision apply template=16"}, Response: "OK"}); err != nil {
 			t.Fatalf("ExecuteTask: %v", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -40,7 +40,7 @@ func TestPGStore_ExecuteTask(t *testing.T) {
 			WithArgs(int64(2), "DONE", []string{"DOING", "PENDING"}).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 		s := NewPGStore(mock)
-		if err := s.ExecuteTask(context.Background(), 2); !errors.Is(err, ErrIllegalTransition) {
+		if err := s.ExecuteTask(context.Background(), 2, ExecTrace{}); !errors.Is(err, ErrIllegalTransition) {
 			t.Fatalf("err=%v", err)
 		}
 	})
@@ -56,11 +56,11 @@ func TestPGStore_FailTask(t *testing.T) {
 		WithArgs(int64(3)).
 		WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 	mock.ExpectQuery(`INSERT INTO provision_logs`).
-		WithArgs(int64(3), int64(0), "", int64(16), "TPL-FTTH", "FAILED: olt connect timeout", int16(0)).
+		WithArgs(int64(3), int64(0), "", int64(16), "TPL-FTTH", "FAILED: olt connect timeout", int16(0), "", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
 
 	s := NewPGStore(mock)
-	if err := s.FailTask(context.Background(), 3, "olt connect timeout"); err != nil {
+	if err := s.FailTask(context.Background(), 3, "olt connect timeout", ExecTrace{}); err != nil {
 		t.Fatalf("FailTask: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -111,7 +111,7 @@ func TestPGStore_RetryTask(t *testing.T) {
 			WithArgs(int64(3)).
 			WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 		mock.ExpectQuery(`INSERT INTO provision_logs`).
-			WithArgs(int64(3), int64(0), "", int64(16), "TPL-FTTH", "RETRY", int16(2)).
+			WithArgs(int64(3), int64(0), "", int64(16), "TPL-FTTH", "RETRY", int16(2), "", "").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(12)))
 
 		s := NewPGStore(mock)

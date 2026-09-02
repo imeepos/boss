@@ -338,7 +338,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := a.Provision.ExecuteTask(ctx, taskID); err != nil {
+		if err := a.Provision.ExecuteTask(ctx, taskID, provision.ExecTrace{}); err != nil {
 			t.Fatalf("ExecuteTask: %v", err)
 		}
 		logs, err := a.Provision.ListLogs(ctx, taskID)
@@ -352,7 +352,7 @@ func TestE2E_OrderLifecycle_Integration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := a.Provision.FailTask(ctx, task2, "e2e 模拟失败"); err != nil {
+		if err := a.Provision.FailTask(ctx, task2, "e2e 模拟失败", provision.ExecTrace{}); err != nil {
 			t.Fatal(err)
 		}
 		if err := a.Provision.RetryTask(ctx, task2, 0); err != nil {

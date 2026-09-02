@@ -192,6 +192,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/products/{id}/provision-binding":                           {"menu:product"},
 	"GET /api/admin/v1/provision-bindings":                                        {"menu:product"},
 	"GET /api/admin/v1/provision-logs":                                            {"menu:provlog"},
+	"GET /api/admin/v1/provision-logs/{logId}":                                    {"menu:provlog"},
 	"GET /api/admin/v1/provision-tasks":                                           {"menu:provision"},
 	"GET /api/admin/v1/provision-templates":                                       {"menu:template"},
 	"GET /api/admin/v1/provision/channels":                                        {"menu:provision"},

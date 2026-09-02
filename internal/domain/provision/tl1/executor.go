@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 
 	"github.com/ymm-001/boss/internal/domain/provision"
 )
@@ -65,32 +67,71 @@ func (e *Executor) useEndpoint(p Params) {
 	}
 }
 
-// Exec 按 StageEvent 分派;任一步失败返回 error,由 Daemon 落 FAILED 留痕。
-func (e *Executor) Exec(ctx context.Context, t provision.Task) error {
-	p, err := e.resolve.Resolve(ctx, t)
-	if err != nil {
-		return e.fail(t, err)
+// Exec 按 StageEvent 分派;任一步失败返回 error,由 Daemon 落 FAILED 留痕;
+// ExecTrace 带全部 TL1 指令与设备原始应答(后台日志详情页展示)。
+func (e *Executor) Exec(ctx context.Context, t provision.Task) (provision.ExecTrace, error) {
+	trace := provision.ExecTrace{Commands: []string{}}
+	rec := &traceSink{trace: &trace}
+	p, rerr := e.resolve.Resolve(ctx, t)
+	if rerr != nil {
+		return trace, e.fail(t, rerr)
 	}
 	e.useEndpoint(p)
+	var err error
 	switch t.StageEvent {
 	case StagePreConfigOLT:
-		return e.fail(t, e.preConfigOLT(ctx, t, p))
+		err = e.segment(ctx, t, rec, func(d CmdSink) error { return applyPreConfig(ctx, d, t, p) })
 	case StageActivateUser:
-		return e.fail(t, e.activateUser(ctx, t, p))
+		err = e.segment(ctx, t, rec, func(d CmdSink) error { return checkActivation(ctx, d, p) })
 	case StageNotifyActivation:
-		return e.fail(t, e.notifyActivation(ctx, t, p))
+		err = e.segment(ctx, t, rec, func(d CmdSink) error {
+			for _, svc := range p.Services {
+				want := svcDesc(p, svc)
+				rows, lerr := lstPONVLAN(ctx, d, p.OLTID, p.PONID, svc.ONUIDType, svc.ONUID)
+				if lerr != nil {
+					return lerr
+				}
+				if !descHit(rows, want) {
+					return fmt.Errorf("service port missing: %s", want)
+				}
+			}
+			return nil
+		})
 	default:
-		return e.fail(t, fmt.Errorf("unsupported stage event %q", t.StageEvent))
+		err = fmt.Errorf("unsupported stage event %q", t.StageEvent)
 	}
+	return trace, e.fail(t, err)
 }
 
-// preConfigOLT 环节7:建 ONU(幂等)+ 逐业务建流(幂等)。
-func (e *Executor) preConfigOLT(ctx context.Context, t provision.Task, p Params) error {
-	return e.segment(ctx, t, func(d CmdSink) error {
-		return applyPreConfig(ctx, d, t, p)
-	})
+// traceSink 记录型命令口:包装真实 sink,逐条留指令与应答原始报文。
+type traceSink struct {
+	inner CmdSink
+	trace *provision.ExecTrace
+	seq   int
 }
 
+func (s *traceSink) Do(ctx context.Context, c Command) (*Response, error) {
+	s.seq++
+	line, _ := Build(c, "TRC"+strconv.Itoa(s.seq))
+	r, err := s.inner.Do(ctx, c)
+	s.trace.Commands = append(s.trace.Commands, string(line))
+	if r != nil && r.Raw != "" {
+		s.trace.Response = joinResp(s.trace.Response, strings.TrimRight(r.Raw, "\n"))
+	} else if err != nil {
+		s.trace.Response = joinResp(s.trace.Response, err.Error())
+	}
+	return r, err
+}
+
+// joinResp 追加一段应答,分隔行隔开多次交互。
+func joinResp(prev, add string) string {
+	if prev == "" {
+		return add
+	}
+	return prev + "\n----\n" + add
+}
+
+// applyPreConfig 环节7:建 ONU(幂等)+ 逐业务建流(幂等)。
 func applyPreConfig(ctx context.Context, d CmdSink, t provision.Task, p Params) error {
 	rows, err := lstONU(ctx, d, p.OLTID, p.PONID, idTypeLOID, p.ONUID)
 	if err != nil {
@@ -125,13 +166,7 @@ func applyServices(ctx context.Context, d CmdSink, t provision.Task, p Params) e
 	return nil
 }
 
-// activateUser 环节10:在线且配置就绪才放行,不伪造成功。
-func (e *Executor) activateUser(ctx context.Context, t provision.Task, p Params) error {
-	return e.segment(ctx, t, func(d CmdSink) error {
-		return checkActivation(ctx, d, p)
-	})
-}
-
+// checkActivation 环节10:在线且配置就绪才放行,不伪造成功。
 func checkActivation(ctx context.Context, d CmdSink, p Params) error {
 	st, err := lstONUState(ctx, d, p.OLTID, p.PONID, idTypeLOID, p.ONUID)
 	if err != nil {
@@ -149,26 +184,13 @@ func checkActivation(ctx context.Context, d CmdSink, p Params) error {
 	return nil
 }
 
-// notifyActivation 环节11:全部业务流 DESC 命中才允许落回调。
-func (e *Executor) notifyActivation(ctx context.Context, t provision.Task, p Params) error {
-	return e.segment(ctx, t, func(d CmdSink) error {
-		for _, svc := range p.Services {
-			want := svcDesc(p, svc)
-			rows, err := lstPONVLAN(ctx, d, p.OLTID, p.PONID, svc.ONUIDType, svc.ONUID)
-			if err != nil {
-				return err
-			}
-			if !descHit(rows, want) {
-				return fmt.Errorf("service port missing: %s", want)
-			}
-		}
-		return nil
+// segment 多命令原子段:整段持锁,断线退避重连后整段重跑(先查后写保证幂等);
+// rec 包装真实 session 采集指令/应答留痕(重连后 inner 随新 session 更新)。
+func (e *Executor) segment(ctx context.Context, t provision.Task, rec *traceSink, fn func(CmdSink) error) error {
+	err := e.m.WithSession(ctx, func(s *Session) error {
+		rec.inner = s
+		return fn(rec)
 	})
-}
-
-// segment 多命令原子段:整段持锁,断线退避重连后整段重跑(先查后写保证幂等)。
-func (e *Executor) segment(ctx context.Context, t provision.Task, fn func(CmdSink) error) error {
-	err := e.m.WithSession(ctx, func(s *Session) error { return fn(s) })
 	return e.fail(t, err)
 }
 

@@ -59,25 +59,33 @@ func TestTelnetExecutor_Exec(t *testing.T) {
 	t.Run("下发成功", func(t *testing.T) {
 		f := startFakeOLT(t, "OK")
 		e := &TelnetExecutor{Addr: f.addr(), User: "admin", Pass: "secret", Timeout: 2 * time.Second}
-		if err := e.Exec(ctx, task); err != nil {
+		trace, err := e.Exec(ctx, task)
+		if err != nil {
 			t.Fatalf("Exec: %v", err)
 		}
-		if len(f.cmds) != 1 || !strings.Contains(f.cmds[0], "template=7") || !strings.Contains(f.cmds[0], "task=TASK-1") {
-			t.Fatalf("cmds=%v", f.cmds)
+		if len(trace.Commands) != 1 || !strings.Contains(trace.Commands[0], "template=7") || !strings.Contains(trace.Commands[0], "task=TASK-1") {
+			t.Fatalf("commands=%v", trace.Commands)
+		}
+		if trace.Response != "OK" {
+			t.Fatalf("response=%q", trace.Response)
 		}
 	})
 
 	t.Run("OLT 应答非 OK", func(t *testing.T) {
 		f := startFakeOLT(t, "ERR config invalid")
 		e := &TelnetExecutor{Addr: f.addr(), User: "admin", Pass: "secret", Timeout: 2 * time.Second}
-		if err := e.Exec(ctx, task); err == nil || !strings.Contains(err.Error(), "nok") {
+		trace, err := e.Exec(ctx, task)
+		if err == nil || !strings.Contains(err.Error(), "nok") {
 			t.Fatalf("err=%v, want nok", err)
+		}
+		if trace.Response != "ERR config invalid" {
+			t.Fatalf("response=%q", trace.Response)
 		}
 	})
 
 	t.Run("连接失败", func(t *testing.T) {
 		e := &TelnetExecutor{Addr: "127.0.0.1:1", User: "admin", Pass: "secret", Timeout: time.Second}
-		if err := e.Exec(ctx, task); err == nil {
+		if _, err := e.Exec(ctx, task); err == nil {
 			t.Fatal("want dial error")
 		}
 	})

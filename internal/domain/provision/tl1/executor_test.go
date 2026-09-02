@@ -139,7 +139,7 @@ func assertCounts(t *testing.T, verbs []string, onu, ponvlan int) {
 func TestExecPreConfigFirstRun(t *testing.T) {
 	_, m, rec := startSim(t, nil)
 	ex := newExec(m, testParams())
-	if err := ex.Exec(context.Background(), taskOf("T-1001", tl1.StagePreConfigOLT)); err != nil {
+	if _, err := ex.Exec(context.Background(), taskOf("T-1001", tl1.StagePreConfigOLT)); err != nil {
 		t.Fatalf("Exec: %v", err)
 	}
 	assertCounts(t, recordVerbs(t, rec), 1, 2)
@@ -151,13 +151,13 @@ func TestExecPreConfigRerunIdempotent(t *testing.T) {
 	ex := newExec(m, testParams())
 	task := taskOf("T-1002", tl1.StagePreConfigOLT)
 	ctx := context.Background()
-	if err := ex.Exec(ctx, task); err != nil {
+	if _, err := ex.Exec(ctx, task); err != nil {
 		t.Fatalf("first Exec: %v", err)
 	}
 	var logs string
 	var err error
 	logs = captureLogs(t, func() {
-		err = ex.Exec(ctx, task)
+		_, err = ex.Exec(ctx, task)
 	})
 	if err != nil {
 		t.Fatalf("rerun Exec: %v", err)
@@ -179,7 +179,7 @@ func TestExecPreConfigDenyMidway(t *testing.T) {
 	ex := newExec(m, testParams())
 	var err error
 	logs := captureLogs(t, func() {
-		err = ex.Exec(context.Background(), taskOf("T-1003", tl1.StagePreConfigOLT))
+		_, err = ex.Exec(context.Background(), taskOf("T-1003", tl1.StagePreConfigOLT))
 	})
 	if err == nil {
 		t.Fatal("want error on DENY")
@@ -200,7 +200,7 @@ func TestExecPreConfigDenyMidway(t *testing.T) {
 func TestExecDelayStillSucceeds(t *testing.T) {
 	_, m, rec := startSim(t, func(o *sim.Options) { o.DelayMs = 60 })
 	ex := newExec(m, testParams())
-	if err := ex.Exec(context.Background(), taskOf("T-1006", tl1.StagePreConfigOLT)); err != nil {
+	if _, err := ex.Exec(context.Background(), taskOf("T-1006", tl1.StagePreConfigOLT)); err != nil {
 		t.Fatalf("Exec: %v", err)
 	}
 	assertCounts(t, recordVerbs(t, rec), 1, 2)

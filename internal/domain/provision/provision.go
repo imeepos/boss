@@ -2,6 +2,8 @@ package provision
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"time"
 )
 
@@ -52,8 +54,46 @@ type Log struct {
 	TemplateCode string    `json:"templateCode"`
 	Result       string    `json:"result"` // SUCCESS/FAILED
 	Retries      int16     `json:"retries"`
+	Commands     string    `json:"commands"`       // 顺序执行的设备指令(换行分隔;空=无设备交互)
+	DeviceResp   string    `json:"deviceResponse"` // 设备原始应答/错误
 	CreatedAt    time.Time `json:"createdAt"`
 }
+
+// ExecTrace 一次设备交互的完整留痕:顺序指令 + 原始应答(执行器回传,落 provision_logs)。
+type ExecTrace struct {
+	Commands []string `json:"commands"`
+	Response string   `json:"response"`
+}
+
+// JoinCommands 指令序列拼为落库文本(空序列→空串)。
+func JoinCommands(cmds []string) string { return strings.Join(cmds, "\n") }
+
+// LogOrderInfo 详情页订单维度(日志→任务→订单软引用,订单已删则为零值)。
+type LogOrderInfo struct {
+	OrderNo   string `json:"orderNo"`
+	Status    string `json:"status"`
+	OfferName string `json:"offerName"`
+}
+
+// LogTemplateInfo 详情页模板维度(模板已删则为零值)。
+type LogTemplateInfo struct {
+	Code    string         `json:"code"`
+	Name    string         `json:"name"`
+	Status  string         `json:"status"`
+	Version int32          `json:"version"`
+	Content map[string]any `json:"content"`
+}
+
+// LogDetail 日志详情页聚合视图:日志本体 + 任务/订单/模板三维上下文。
+type LogDetail struct {
+	Log      Log             `json:"log"`
+	Task     Task            `json:"task"`
+	Order    LogOrderInfo    `json:"order"`
+	Template LogTemplateInfo `json:"template"`
+}
+
+// ErrLogNotFound 下发日志不存在。
+var ErrLogNotFound = errors.New("provision: log not found")
 
 // ProvisionService 配置下发域服务口(阶段7)。
 type ProvisionService interface {
@@ -68,14 +108,16 @@ type ProvisionService interface {
 	GetTaskByNo(ctx context.Context, taskNo string) (*Task, error)
 	ListLogs(ctx context.Context, taskID int64) ([]Log, error)
 	AppendLog(ctx context.Context, l Log) (int64, error)
+	// GetLogDetail 日志详情聚合(日志+任务+订单+模板);日志不存在返回 ErrLogNotFound。
+	GetLogDetail(ctx context.Context, logID int64) (*LogDetail, error)
 
 	// ClaimTask 原子领取一个 PENDING 任务(状态置 DOING)并返回;无待办返回 (nil, nil)。
 	// 用 FOR UPDATE SKIP LOCKED 防止多 provisioner 实例重复下发同一任务。
 	ClaimTask(ctx context.Context) (*Task, error)
-	// ExecuteTask 完成下发:PENDING 或 DOING→DONE + SUCCESS 留痕(设备协议交互由 provisioner 执行)。
-	ExecuteTask(ctx context.Context, taskID int64) error
-	// FailTask 失败:→FAILED + 原因留痕。
-	FailTask(ctx context.Context, taskID int64, reason string) error
+	// ExecuteTask 完成下发:PENDING 或 DOING→DONE + SUCCESS 留痕(trace 为设备交互留痕)。
+	ExecuteTask(ctx context.Context, taskID int64, trace ExecTrace) error
+	// FailTask 失败:→FAILED + 原因与设备交互留痕。
+	FailTask(ctx context.Context, taskID int64, reason string, trace ExecTrace) error
 	// RetryTask 失败重试:FAILED→PENDING + 重试计数留痕。
 	RetryTask(ctx context.Context, taskID int64, retries int16) error
 

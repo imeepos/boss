@@ -45,9 +45,14 @@ func (f *fakeProvision) ListLogs(context.Context, int64) ([]provision.Log, error
 	return f.logs, nil
 }
 func (f *fakeProvision) AppendLog(context.Context, provision.Log) (int64, error) { return 0, nil }
-func (f *fakeProvision) ClaimTask(context.Context) (*provision.Task, error)      { return nil, nil }
-func (f *fakeProvision) ExecuteTask(context.Context, int64) error                { return nil }
-func (f *fakeProvision) FailTask(context.Context, int64, string) error           { return nil }
+func (f *fakeProvision) GetLogDetail(context.Context, int64) (*provision.LogDetail, error) {
+	return nil, provision.ErrLogNotFound
+}
+func (f *fakeProvision) ClaimTask(context.Context) (*provision.Task, error)            { return nil, nil }
+func (f *fakeProvision) ExecuteTask(context.Context, int64, provision.ExecTrace) error { return nil }
+func (f *fakeProvision) FailTask(context.Context, int64, string, provision.ExecTrace) error {
+	return nil
+}
 func (f *fakeProvision) RetryTask(_ context.Context, id int64, retries int16) error {
 	f.retried = &struct {
 		id      int64

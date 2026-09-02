@@ -16,20 +16,20 @@ func TestExecActivateUserStates(t *testing.T) {
 	// UP + CFGSTAT=NORMAL → nil
 	_, m, _ := startSim(t, nil)
 	ex := newExec(m, testParams())
-	if err := ex.Exec(ctx, taskOf("T-1010", tl1.StagePreConfigOLT)); err != nil {
+	if _, err := ex.Exec(ctx, taskOf("T-1010", tl1.StagePreConfigOLT)); err != nil {
 		t.Fatalf("preConfig: %v", err)
 	}
-	if err := ex.Exec(ctx, taskOf("T-1010", tl1.StageActivateUser)); err != nil {
+	if _, err := ex.Exec(ctx, taskOf("T-1010", tl1.StageActivateUser)); err != nil {
 		t.Fatalf("activate UP: %v", err)
 	}
 
 	// Power-Off → error "onu not online: Power-Off"
 	_, m2, _ := startSim(t, func(o *sim.Options) { o.ONUOperState = "Power-Off" })
 	ex2 := newExec(m2, testParams())
-	if err := ex2.Exec(ctx, taskOf("T-1011", tl1.StagePreConfigOLT)); err != nil {
+	if _, err := ex2.Exec(ctx, taskOf("T-1011", tl1.StagePreConfigOLT)); err != nil {
 		t.Fatalf("preConfig: %v", err)
 	}
-	err := ex2.Exec(ctx, taskOf("T-1011", tl1.StageActivateUser))
+	_, err := ex2.Exec(ctx, taskOf("T-1011", tl1.StageActivateUser))
 	if err == nil || !strings.Contains(err.Error(), "onu not online: Power-Off") {
 		t.Fatalf("want not-online err, got %v", err)
 	}
@@ -37,7 +37,7 @@ func TestExecActivateUserStates(t *testing.T) {
 	// 查无 ONU → error "onu not provisioned"
 	_, m3, _ := startSim(t, nil)
 	ex3 := newExec(m3, testParams())
-	err = ex3.Exec(ctx, taskOf("T-1012", tl1.StageActivateUser))
+	_, err = ex3.Exec(ctx, taskOf("T-1012", tl1.StageActivateUser))
 	if err == nil || !strings.Contains(err.Error(), "onu not provisioned") {
 		t.Fatalf("want not-provisioned err, got %v", err)
 	}
@@ -48,10 +48,10 @@ func TestExecNotifyActivation(t *testing.T) {
 	ctx := context.Background()
 	_, m, _ := startSim(t, nil)
 	ex := newExec(m, testParams())
-	if err := ex.Exec(ctx, taskOf("T-1020", tl1.StagePreConfigOLT)); err != nil {
+	if _, err := ex.Exec(ctx, taskOf("T-1020", tl1.StagePreConfigOLT)); err != nil {
 		t.Fatalf("preConfig: %v", err)
 	}
-	if err := ex.Exec(ctx, taskOf("T-1020", tl1.StageNotifyActivation)); err != nil {
+	if _, err := ex.Exec(ctx, taskOf("T-1020", tl1.StageNotifyActivation)); err != nil {
 		t.Fatalf("notify all-hit: %v", err)
 	}
 
@@ -63,7 +63,7 @@ func TestExecNotifyActivation(t *testing.T) {
 		t.Fatalf("AddONU: %v", err)
 	}
 	ex2 := newExec(m2, p)
-	err := ex2.Exec(ctx, taskOf("T-1021", tl1.StageNotifyActivation))
+	_, err := ex2.Exec(ctx, taskOf("T-1021", tl1.StageNotifyActivation))
 	if err == nil || !strings.Contains(err.Error(), "service port missing") {
 		t.Fatalf("want missing err, got %v", err)
 	}
@@ -83,11 +83,11 @@ func TestExecReconnectRerun(t *testing.T) {
 	ex := newExec(m, testParams())
 	task := taskOf("T-1030", tl1.StagePreConfigOLT)
 	ctx := context.Background()
-	if err := ex.Exec(ctx, task); err != nil {
+	if _, err := ex.Exec(ctx, task); err != nil {
 		t.Fatalf("first Exec: %v", err)
 	}
 	srv.DropConns() // 网元侧断线,客户端持死连接
-	if err := ex.Exec(ctx, task); err != nil {
+	if _, err := ex.Exec(ctx, task); err != nil {
 		t.Fatalf("rerun after drop: %v", err)
 	}
 	assertCounts(t, recordVerbs(t, rec), 1, 2)
@@ -97,7 +97,7 @@ func TestExecReconnectRerun(t *testing.T) {
 func TestExecUnsupportedStage(t *testing.T) {
 	_, m, _ := startSim(t, nil)
 	ex := newExec(m, testParams())
-	err := ex.Exec(context.Background(), taskOf("T-1099", "unknownStage"))
+	_, err := ex.Exec(context.Background(), taskOf("T-1099", "unknownStage"))
 	if err == nil || !strings.Contains(err.Error(), "unsupported stage event") {
 		t.Fatalf("want unsupported err, got %v", err)
 	}

@@ -18,6 +18,8 @@ func registerProvisionRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.DELETE("/provision-templates/:templateId", requirePerm(a.User, "menu:template"), provisionDeleteTemplateHandler(a))
 	g.GET("/provision-tasks", requirePerm(a.User, "menu:provision"), provisionListTasksHandler(a))
 	g.GET("/provision-logs", requirePerm(a.User, "menu:provlog"), provisionListLogsHandler(a))
+	// 日志详情(完整指令/设备应答 + 任务/订单/模板多维);读菜单同列表 menu:provlog。
+	g.GET("/provision-logs/:logId", requirePerm(a.User, "menu:provlog"), provisionLogDetailHandler(a))
 	g.POST("/provision-tasks/:taskNo/retry", requirePerm(a.User, "menu:provision"), provisionRetryTaskHandler(a))
 	// 产品↔下发模板绑定清单(admin 产品页"下发模板"列;读菜单 menu:product)。
 	g.GET("/provision-bindings", requirePerm(a.User, "menu:product"), provisionListOfferBindingsHandler(a))

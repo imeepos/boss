@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os/signal"
 	"strconv"
@@ -22,9 +23,11 @@ import (
 // logExecutor 降级桩:OLT 地址未配置时仅记录(协议适配前的安全默认)。
 type logExecutor struct{}
 
-func (logExecutor) Exec(ctx context.Context, t provision.Task) error {
+func (logExecutor) Exec(ctx context.Context, t provision.Task) (provision.ExecTrace, error) {
 	log.Printf("provisioner: exec task %d (template=%d, noop)", t.ID, t.TemplateID)
-	return nil
+	return provision.ExecTrace{Commands: []string{
+		fmt.Sprintf("noop driver=log template=%d task=%s event=%s", t.TemplateID, t.TaskNo, t.StageEvent),
+	}, Response: "log driver noop(未配置设备驱动,未实际下发)"}, nil
 }
 
 // provisionNotify 任务终态 → 后台提醒(成功 INFO/失败 WARN;ref=provision/<taskID> 幂等)。

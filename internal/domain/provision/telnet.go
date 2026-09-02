@@ -26,8 +26,9 @@ type TelnetExecutor struct {
 // defaultTelnetTimeout 缺省单次交互超时。
 const defaultTelnetTimeout = 5 * time.Second
 
-// Exec 执行一次下发:连接 → 登录 → 下发命令 → 校验 OK。
-func (e *TelnetExecutor) Exec(ctx context.Context, t Task) error {
+// Exec 执行一次下发:连接 → 登录 → 下发命令 → 校验 OK;回传指令与设备应答留痕。
+func (e *TelnetExecutor) Exec(ctx context.Context, t Task) (ExecTrace, error) {
+	trace := ExecTrace{Commands: []string{}}
 	dial := e.Dial
 	if dial == nil {
 		dial = func(c context.Context, a string) (net.Conn, error) {
@@ -36,28 +37,30 @@ func (e *TelnetExecutor) Exec(ctx context.Context, t Task) error {
 	}
 	conn, err := dial(ctx, e.Addr)
 	if err != nil {
-		return fmt.Errorf("provision: telnet dial: %w", err)
+		return trace, fmt.Errorf("provision: telnet dial: %w", err)
 	}
 	defer conn.Close()
 	r := bufio.NewReader(conn)
 	if err := e.chat(ctx, conn, r, "login:", e.User); err != nil {
-		return err
+		return trace, err
 	}
 	if err := e.chat(ctx, conn, r, "password:", e.Pass); err != nil {
-		return err
+		return trace, err
 	}
-	cmd := fmt.Sprintf("provision apply template=%d task=%s event=%s\n", t.TemplateID, t.TaskNo, t.StageEvent)
-	if _, err := conn.Write([]byte(cmd)); err != nil {
-		return fmt.Errorf("provision: telnet cmd: %w", err)
+	cmd := fmt.Sprintf("provision apply template=%d task=%s event=%s", t.TemplateID, t.TaskNo, t.StageEvent)
+	trace.Commands = append(trace.Commands, cmd)
+	if _, err := conn.Write([]byte(cmd + "\n")); err != nil {
+		return trace, fmt.Errorf("provision: telnet cmd: %w", err)
 	}
 	line, err := readUntil(ctx, r, "OK", e.timeout())
+	trace.Response = strings.TrimSpace(line)
 	if err != nil {
-		return fmt.Errorf("provision: telnet read: %w", err)
+		return trace, fmt.Errorf("provision: telnet read: %w", err)
 	}
 	if !strings.Contains(line, "OK") {
-		return fmt.Errorf("provision: telnet nok: %s", strings.TrimSpace(line))
+		return trace, fmt.Errorf("provision: telnet nok: %s", trace.Response)
 	}
-	return nil
+	return trace, nil
 }
 
 // chat 等待提示串后回送一行;提示串可能无换行,按子串匹配而非整行读取。
