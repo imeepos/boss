@@ -55,7 +55,7 @@ func (s *PGStore) ListTicketItems(ctx context.Context) ([]TicketItem, error) {
 	rows, err := s.db.Query(ctx, `
 		SELECT t.id, t.ticket_no, t.order_id, COALESCE(t.worker_id, 0), t.status,
 		       COALESCE(o.status, ''), COALESCE(c.name, ''), COALESCE(c.phone, ''), COALESCE(po.name, ''),
-		       COALESCE(a.name, ua.detail, ''), COALESCE(o.stage, 0),
+		       COALESCE(a.name, ''), COALESCE(o.stage, 0),
 		       COALESCE(TO_CHAR(MAX(os.finished_at), 'YYYY-MM-DD HH24:MI'), ''),
 		       COALESCE(t.splitter_port, ''), COALESCE(t.pre_bind_tag, ''), COALESCE(t.schedule_slot, ''),
 		       COALESCE(cmp.type, ''),
@@ -67,10 +67,9 @@ func (s *PGStore) ListTicketItems(ctx context.Context) ([]TicketItem, error) {
 		LEFT JOIN customers c ON o.customer_id = c.id
 		LEFT JOIN product_offers po ON o.offer_id = po.id
 		LEFT JOIN addresses a ON o.address_id = a.id
-		LEFT JOIN user_addresses ua ON o.address_id = ua.id
 		LEFT JOIN order_stages os ON os.order_id = o.id
 		LEFT JOIN complaints cmp ON cmp.order_id = o.id
-		GROUP BY t.id, o.status, c.name, c.phone, po.name, a.name, ua.detail, o.stage,
+		GROUP BY t.id, o.status, c.name, c.phone, po.name, a.name, o.stage,
 		         t.splitter_port, t.pre_bind_tag, t.schedule_slot,
 		         cmp.type, cmp.created_at, cmp.remote_diagnosis, cmp.sla_deadline
 		ORDER BY t.id`)
@@ -105,7 +104,7 @@ func (s *PGStore) GetTicketItemByNo(ctx context.Context, ticketNo string) (*Tick
 	err := s.db.QueryRow(ctx, `
 		SELECT t.id, t.ticket_no, t.order_id, COALESCE(t.worker_id, 0), t.status,
 		       COALESCE(o.status, ''), COALESCE(c.name, ''), COALESCE(c.phone, ''), COALESCE(po.name, ''),
-		       COALESCE(a.name, ua.detail, ''), COALESCE(o.stage, 0),
+		       COALESCE(a.name, ''), COALESCE(o.stage, 0),
 		       COALESCE(TO_CHAR(MAX(os.finished_at), 'YYYY-MM-DD HH24:MI'), ''),
 		       COALESCE(t.splitter_port, ''), COALESCE(t.pre_bind_tag, ''), COALESCE(t.schedule_slot, ''),
 		       COALESCE(cmp.type, ''),
@@ -117,11 +116,10 @@ func (s *PGStore) GetTicketItemByNo(ctx context.Context, ticketNo string) (*Tick
 		LEFT JOIN customers c ON o.customer_id = c.id
 		LEFT JOIN product_offers po ON o.offer_id = po.id
 		LEFT JOIN addresses a ON o.address_id = a.id
-		LEFT JOIN user_addresses ua ON o.address_id = ua.id
 		LEFT JOIN order_stages os ON os.order_id = o.id
 		LEFT JOIN complaints cmp ON cmp.order_id = o.id
 		WHERE t.ticket_no = $1
-		GROUP BY t.id, o.status, c.name, c.phone, po.name, a.name, ua.detail, o.stage,
+		GROUP BY t.id, o.status, c.name, c.phone, po.name, a.name, o.stage,
 		         t.splitter_port, t.pre_bind_tag, t.schedule_slot,
 		         cmp.type, cmp.created_at, cmp.remote_diagnosis, cmp.sla_deadline`,
 		ticketNo).

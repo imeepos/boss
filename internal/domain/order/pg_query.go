@@ -19,12 +19,11 @@ func (s *PGStore) List(ctx context.Context, q OrderQuery) ([]OrderListItem, erro
 	}
 	rows, err := s.db.Query(ctx, `
 		SELECT o.id, o.order_no, COALESCE(c.name,''), COALESCE(p.name,''),
-		       COALESCE(a.name, ua.detail, ''), o.address_id, o.stage, o.status, o.created_at
+		       COALESCE(a.name, ''), o.address_id, o.stage, o.status, o.created_at
 		FROM orders o
 		LEFT JOIN customers c ON o.customer_id = c.id
 		LEFT JOIN product_offers p ON o.offer_id = p.id
 		LEFT JOIN addresses a ON o.address_id = a.id
-		LEFT JOIN user_addresses ua ON o.address_id = ua.id
 		WHERE ($1 = '' OR o.order_no ILIKE '%' || $1 || '%')
 		  AND ($2 = '' OR o.status = ANY(string_to_array($2, ',')))
 		  AND ($3::bigint = 0 OR o.customer_id = $3)

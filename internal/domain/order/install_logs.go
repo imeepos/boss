@@ -22,7 +22,7 @@ type InstallLog struct {
 	Photos       []int64   `json:"photos"` // attachments.id 列表
 	SignName     string    `json:"signName"`
 	SignImageURL string    `json:"signImageUrl"`
-	SignedAt     time.Time `json:"signedAt"`
+	SignedAt     *time.Time `json:"signedAt,omitempty"` // NULL=未签收(OPEN 态),不落 0001-01-01 假时刻
 	Note         string    `json:"note"`
 	Status       string    `json:"status"` // OPEN/COMPLETED/REJECTED
 	CreatedAt    time.Time `json:"createdAt"`
@@ -75,7 +75,7 @@ func (s *PGStore) SubmitInstallLog(ctx context.Context, l InstallLog) (int64, er
 		                          sign_name, sign_image_url, signed_at, note, status)
 		 VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9,$10) RETURNING id`,
 		l.TicketID, l.OrderID, l.WorkerID, l.WorkerName, photosJSON,
-		l.SignName, l.SignImageURL, nullIfZero(l.SignedAt), l.Note, l.Status).Scan(&id)
+		l.SignName, l.SignImageURL, l.SignedAt, l.Note, l.Status).Scan(&id)
 	if err != nil {
 		// uq_install_logs_ticket_open 唯一约束:同 ticket 已有 OPEN 行 → 业务拒绝(非 500)。
 		if isUniqueViolation(err, "uq_install_logs_ticket_open") {
@@ -134,6 +134,7 @@ func (s *PGStore) ListInstallLogs(ctx context.Context, ticketID int64) ([]Instal
 		var photosJSON []byte
 		if err := rows.Scan(&l.ID, &l.TicketID, &l.OrderID, &l.WorkerID, &l.WorkerName, &photosJSON,
 			&l.SignName, &l.SignImageURL, &l.SignedAt, &l.Note, &l.Status, &l.CreatedAt, &l.UpdatedAt); err != nil {
+			// signed_at 可空(OPEN 态未签收):pgx 扫 **time.Time,NULL 行不再炸整张列表
 			return nil, err
 		}
 		ids, _ := jsonToPhotos(photosJSON)

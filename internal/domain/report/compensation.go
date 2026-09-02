@@ -65,30 +65,25 @@ var compQueries = []struct {
 	},
 	{
 		"openplat", "webhookDelivery", "FAILED",
-		"Webhook 投递失败(开放平台回调异常)",
+		"Webhook 投递进死信(超最大重试,人工介入)",
 		"",
-		`SELECT count(*)::text FROM open_webhook_deliveries WHERE status = 'FAILED'`,
+		`SELECT count(*)::text FROM open_webhook_deliveries WHERE status = 2`,
 	},
 	{
 		"promotion", "couponRecon", "DRIFT",
-		"券对账差异(券实例状态与模板计数器不一致)",
+		"券实例模板悬空(实例引用不存在的模板)",
 		"",
-		`SELECT count(*)::text FROM (SELECT 1 FROM coupons c JOIN product_offers o ON c.offer_id = o.offer_id WHERE c.status != 'ISSUED' AND o.offer_id IS NOT NULL LIMIT 100) sub`,
-	},
-	{
-		"loy", "pointsFailed", "FAILED",
-		"积分兑换失败(先扣后发补偿待回放)",
-		"",
-		`SELECT count(*)::text FROM loy_entries WHERE status = 'FAILED'`,
+		`SELECT count(*)::text FROM (SELECT 1 FROM coupons c LEFT JOIN coupon_templates t ON t.template_id = c.template_id WHERE t.template_id IS NULL LIMIT 100) sub`,
 	},
 }
 
 // aggTypes 聚合计数类型(select count(*)::text,不返回单行寻址主键)。
+// 注:原 pointsFailed 探针引用从未存在的 loy_entries 表,已删——loy 兑换失败补偿
+// 是请求内闭环(LOY→PROMO 失败回补,000105 头注),库内无持久化失败标记可巡检。
 var aggTypes = map[string]bool{
 	"cdrKafka":        true,
 	"webhookDelivery": true,
 	"couponRecon":     true,
-	"pointsFailed":    true,
 }
 
 // CompensationTasks 跨域聚合补偿任务清单(只读,单项失败即整轮报错)。

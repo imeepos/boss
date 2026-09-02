@@ -103,7 +103,7 @@ func (s *PGStore) prepaidMonthlyFee(ctx context.Context, orderID int64) (float64
 		SELECT COALESCE(ro.monthly_fee, po.monthly_fee)
 		FROM orders o
 		JOIN product_offers po ON po.id = o.offer_id
-		LEFT JOIN region_offers ro ON ro.offer_id = o.offer_id AND o.region_path <> '' AND o.region_path = o.region_path
+		LEFT JOIN region_offers ro ON ro.offer_id = o.offer_id AND o.region_path <> '' AND ro.region_path = o.region_path
 		WHERE o.id = $1`, orderID).Scan(&amount)
 	if err != nil {
 		return 0, fmt.Errorf("order: prepaid amount: %w", err)

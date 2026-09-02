@@ -85,8 +85,10 @@ type ScanLog struct {
 	Result     string `json:"result"` // MATCH/MISMATCH/OFFLINE_CACHED
 }
 
-// TicketItem 派单工单详情读模型:联表 orders/customers/product_offers/addresses
-// /user_addresses/order_stages + LEFT JOIN complaints(报障工单)。
+// TicketItem 派单工单详情读模型:联表 orders/customers/product_offers
+// /addresses/order_stages + LEFT JOIN complaints(报障工单)。
+// 地址只认 addresses(orders.address_id 权威,下单校验唯一写入方);
+// user_addresses 是 D1 停用的旧门户地址簿,ID 空间无关,禁混联。
 //
 // api/openapi/worker/schemas.yaml::TicketDetail 字段全部覆盖。
 // 报障字段(faultTypeLabel/reportedAt/slaLeftMinutes/remoteDiagnosis)仅当
