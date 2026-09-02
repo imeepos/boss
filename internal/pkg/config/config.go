@@ -66,9 +66,13 @@ type Config struct {
 
 	// Provisioner(阶段7 下发守护进程,债务偿还:真实 Telnet 执行器)。
 	Provisioner struct {
+		Driver   string // log(默认桩)/telnet/tl1
 		OLTAddr  string // OLT 管理地址 host:port
 		OLTUser  string
 		OLTPass  string
+		TL1Addr  string // TL1 NMS 地址 host:port(env 兜底,生产以 provision_nms 行为准)
+		TL1User  string
+		TL1Pass  string
 		Interval time.Duration
 	}
 	// Collector(阶段7 采集器,债务偿还:真实 SNMP 采集源)。
@@ -153,9 +157,13 @@ func Load() *Config {
 	c.Bootstrap.AdminUser = getenv("BOSS_ADMIN_USERNAME", "admin")
 	c.Bootstrap.AdminPass = getenv("BOSS_ADMIN_PASSWORD", "")
 
+	c.Provisioner.Driver = getenv("BOSS_PROVISION_DRIVER", "log")
 	c.Provisioner.OLTAddr = getenv("BOSS_PROVISION_OLT_ADDR", "0")
 	c.Provisioner.OLTUser = getenv("BOSS_PROVISION_OLT_USER", "admin")
 	c.Provisioner.OLTPass = getenv("BOSS_PROVISION_OLT_PASS", "admin")
+	c.Provisioner.TL1Addr = getenv("BOSS_PROVISION_TL1_ADDR", "")
+	c.Provisioner.TL1User = getenv("BOSS_PROVISION_TL1_USER", "")
+	c.Provisioner.TL1Pass = getenv("BOSS_PROVISION_TL1_PASS", "")
 	c.Provisioner.Interval = 5 * time.Second
 
 	c.Collector.Targets = getlist("BOSS_SNMP_TARGETS", nil)

@@ -32,6 +32,9 @@ func TestLoadDefaults(t *testing.T) {
 	if c.AAA.AuthTTL != 60 || c.AAA.AuthAddr != ":1812" || c.AAA.AcctAddr != ":1813" || c.AAA.Secret != "boss-aaa-secret" || c.AAA.CDRTopic != "boss-cdr" {
 		t.Fatalf("aaa defaults: %+v", c.AAA)
 	}
+	if c.Provisioner.Driver != "log" || c.Provisioner.TL1Addr != "" || c.Provisioner.TL1User != "" || c.Provisioner.TL1Pass != "" {
+		t.Fatalf("provisioner defaults: %+v", c.Provisioner)
+	}
 	if c.Provisioner.Interval != 5*time.Second || c.Collector.Interval != 30*time.Second || c.Report.Interval != 6*time.Hour {
 		t.Fatalf("interval defaults: %+v %+v %+v", c.Provisioner, c.Collector, c.Report)
 	}
@@ -73,9 +76,13 @@ func TestLoadEnvOverrides(t *testing.T) {
 		"BOSS_JWT_TTL":                 "720h",
 		"BOSS_ADMIN_USERNAME":          "root",
 		"BOSS_ADMIN_PASSWORD":          "pass",
+		"BOSS_PROVISION_DRIVER":        "tl1",
 		"BOSS_PROVISION_OLT_ADDR":      "1.2.3.4:23",
 		"BOSS_PROVISION_OLT_USER":      "ou",
 		"BOSS_PROVISION_OLT_PASS":      "op",
+		"BOSS_PROVISION_TL1_ADDR":      "10.0.0.1:13027",
+		"BOSS_PROVISION_TL1_USER":      "tu",
+		"BOSS_PROVISION_TL1_PASS":      "tp",
 		"BOSS_SNMP_TARGETS":            "c1@10.0.0.1:161,c2@10.0.0.2:161",
 		"BOSS_SNMP_COMMUNITY":          "private",
 		"BOSS_SNMP_OPTICAL_OID":        "1.1",
@@ -127,7 +134,8 @@ func TestLoadEnvOverrides(t *testing.T) {
 	if c.Bootstrap.AdminUser != "root" || c.Bootstrap.AdminPass != "pass" {
 		t.Fatalf("bootstrap: %+v", c.Bootstrap)
 	}
-	if c.Provisioner.OLTAddr != "1.2.3.4:23" || c.Provisioner.OLTUser != "ou" || c.Provisioner.OLTPass != "op" {
+	if c.Provisioner.Driver != "tl1" || c.Provisioner.OLTAddr != "1.2.3.4:23" || c.Provisioner.OLTUser != "ou" || c.Provisioner.OLTPass != "op" ||
+		c.Provisioner.TL1Addr != "10.0.0.1:13027" || c.Provisioner.TL1User != "tu" || c.Provisioner.TL1Pass != "tp" {
 		t.Fatalf("provisioner: %+v", c.Provisioner)
 	}
 	if got := c.Collector.Targets; len(got) != 2 || got[0] != "c1@10.0.0.1:161" {

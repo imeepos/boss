@@ -1,5 +1,5 @@
 // provisioner 服务入口(W7):轮询下发任务 → 设备协议执行 → 状态机迁移 + 留痕。
-// 债务偿还:默认走真实 Telnet 执行器(BOSS_PROVISION_OLT_ADDR 配置),未配置时降级日志桩。
+// driver 三态(BOSS_PROVISION_DRIVER):log(默认日志桩)/telnet(OLT 行协议)/tl1(U2000 TL1)。
 package main
 
 import (
@@ -10,8 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/provision"
+	"github.com/ymm-001/boss/internal/domain/provision/tl1"
 	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/database"
 )
@@ -53,18 +56,35 @@ func main() {
 	}
 	defer pool.Close()
 
-	var exec provision.Executor = logExecutor{}
-	if cfg.Provisioner.OLTAddr != "0" && cfg.Provisioner.OLTAddr != "" {
-		exec = &provision.TelnetExecutor{
-			Addr: cfg.Provisioner.OLTAddr, User: cfg.Provisioner.OLTUser, Pass: cfg.Provisioner.OLTPass,
-			Timeout: 5 * time.Second,
-		}
-		log.Printf("provisioner: telnet executor -> %s", cfg.Provisioner.OLTAddr)
-	}
-
+	exec := selectExecutor(cfg, pool)
 	d := provision.NewDaemon(provision.NewPGStore(pool), exec, cfg.Provisioner.Interval)
 	d.OnDone = provisionNotify(notify.NewPGStore(pool))
 	log.Println("provisioner: started")
 	d.Run(ctx)
 	log.Println("provisioner: stopped")
+}
+
+// selectExecutor 按 driver 选择设备执行器;OnDone 通知逻辑三态共用(调用方统一挂接)。
+func selectExecutor(cfg *config.Config, pool *pgxpool.Pool) provision.Executor {
+	switch cfg.Provisioner.Driver {
+	case "tl1":
+		m := tl1.NewManager(tl1.Config{
+			Addr: cfg.Provisioner.TL1Addr,
+			User: cfg.Provisioner.TL1User, Pass: cfg.Provisioner.TL1Pass,
+		})
+		log.Printf("provisioner: tl1 executor -> %s", cfg.Provisioner.TL1Addr)
+		return tl1.NewExecutor(m, app.NewTL1ParamResolver(pool))
+	case "telnet":
+		if cfg.Provisioner.OLTAddr == "" || cfg.Provisioner.OLTAddr == "0" {
+			log.Printf("provisioner: telnet driver but OLT_ADDR unset, fallback log")
+			return logExecutor{}
+		}
+		log.Printf("provisioner: telnet executor -> %s", cfg.Provisioner.OLTAddr)
+		return &provision.TelnetExecutor{
+			Addr: cfg.Provisioner.OLTAddr, User: cfg.Provisioner.OLTUser, Pass: cfg.Provisioner.OLTPass,
+			Timeout: 5 * time.Second,
+		}
+	default: // log(默认桩,零影响升级)
+		return logExecutor{}
+	}
 }
