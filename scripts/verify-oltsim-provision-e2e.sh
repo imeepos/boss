@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2029  # 远端命令串在本侧组装注入参数属设计意图(sql/sim_records 等 helper)
 # 旧配置下发链路(telnet -> cmd/oltsim -> provision_tasks)E2E 回归验收。
 # 流程: acc_ 隔离夹具(资源/端口/模板/订单) -> 既有 boss-provisioner(telnet driver)领取
 #       preConfigOLT 任务 -> 宿主 systemd boss-oltsim 收到 provision apply ->
@@ -148,8 +149,8 @@ charge_and_wait() {
     sql "UPDATE provision_tasks SET template_id=$TEMPLATE_ID WHERE id=$TASK_ID AND status='PENDING'" >/dev/null
     save_ids
   fi
-  local i s=""
-  for i in $(seq 1 45); do
+  local s=""
+  for _ in $(seq 1 45); do
     s=$(sql "SELECT status FROM provision_tasks WHERE id=$TASK_ID")
     [ "$s" = "DONE" ] && break
     sleep 2
@@ -164,8 +165,8 @@ charge_and_wait() {
 # oltsim 证据: records 出现本单 apply(result=OK,隔离模式下 template=夹具模板) + journal 留痕。
 assert_sim_evidence() {
   step "assert oltsim received provision apply"
-  local i item=""
-  for i in $(seq 1 30); do
+  local item=""
+  for _ in $(seq 1 30); do
     item=$(sim_records | jq -c --arg t "PRV-O$ORDER_ID" '[.items[] | select(.taskNo == $t and .event == "preConfigOLT")][0] // empty')
     { [ -n "$item" ] && break; } || sleep 2
   done
