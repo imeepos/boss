@@ -1549,3 +1549,8 @@
 - 哪个坑最浪费时间:schema JSON 只有 type/notnull/check 三个键,没有 DEFAULT/索引/主键信息——CreateJob 漏写 backup_jobs 一串 NOT NULL 列、ON CONFLICT(client_key)/ON CONFLICT(username) 的唯一索引、addresses 23505 去重依赖的 UNIQUE(path),这些"疑似漂移"在 JSON 里无法判定,差点写成存疑长清单。
 - skill 有没有提前警告:没有。schema 快照类审计的边界(JSON 不含约束级事实)是新经验,已喂到 techniques 思路:凡 JSON 判不了又影响定级的,直接 grep migrations/*.sql 拿权威 DDL 一锤定音,本轮 5 个疑点全部当场坐实为无漂移。
 - 重来一次会怎么做:先扫一遍 schema JSON 的键结构再定比对策略;类别4(新旧表并存)先从表名单找同义对(accounts/user_accounts、addresses/user_addresses、verifications/user_verify_records)再回代码证伪,比逐文件猜快得多;结论为零漂移时必须把"查了什么、怎么证伪的"写成证据链,否则上游不敢信。
+
+## 2026-09-02 schema 历史升级遗留修复轮(P0/P1 全落,23 条审计中的 12 条代码级缺陷)
+- 哪个坑最浪费时间:run_code 的 JS 模板串吃反斜杠——pgxmock 正则断言里 \( 写进文件成 (,正则配对错误反复 FAIL 三轮才看破是宿主转义层;BSD sed -i(macOS)无后缀不生效,静默不替换。
+- skill 有没有提前警告:红线#1(read 后 edit)拦下两次 not-found;「先查库再接口复核」直接命中——高危结论全部先在 102 真库/源码逐字复核再进终稿,子代理报告两条 HIGH 被复核修正(quad_links 双约束实为已修复事故、000097 是修复迁移)。
+- 重来一次会怎么做:①含正则/反斜杠的内容一律 String.fromCharCode(92) 或整文件 write,不走内联转义;②子代理高危结论默认亲核再采信;③修探针 SQL 的验收=BOSS_PG_TEST_DSN 真库跑通,不是 mock 绿。
