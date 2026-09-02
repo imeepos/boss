@@ -1583,3 +1583,9 @@
 - 两个隐蔽规则踩了两下:①订单法人=地址归属(resolveOwnership(addressID)),不是客户法人——地址288属法人6,客户214是法人1订单照样落6,dispatch_li(法人1)被 requireOrderInScope 拦成误导性 40400"资源不存在";②test-accounts.json 客户213法人字段滞后(档案1/DB 6),已修档。
 - psql 列名三次猜错(orders.product_id→offer_id、provision_tasks.stage、provision_logs.status):先 information_schema.columns 再写查询,省两轮。
 - admin 端环节4 charge 自动推进5-8是主测试路径;法人6订单无对应岗位账号只能 admin 推(数据隔离设计使然,报告中如实说明)。
+
+## 2026-09-03 下发日志详情页(指令/应答采集+详情抽屉,已部署验证)
+- dispatch_task 返回 REJECTED 但正文说全过:裁定块缺"self-check block"格式是拒因,工作本体已完成(commit 落分支)。教训:verdict 与正文矛盾时,先看拒因描述再直接核对实际产物(git log/门禁),不要盲目重派。
+- 本模型(GLM-5.3-Flash)不支持 read_image:截图目检改用 cdp --eval DOM 断言(pre 数量/font-mono/overflow-x/section 标题/指令文本),功能与结构可完全断言,视觉只剩人眼复核。eval 里对象字面量内三元表达式要加括号,否则 SyntaxError。
+- 闭环姿势:push main → deploy-102 runner 自动构建+compose 拉起(~2.5min) → server 启动自跑内嵌迁移(schema_migrations 000179)→ 线上下单即产 trace。契约字段先行(openapi→gen 路由目录→前端类型对齐 json tag),一轮回填零返工。
+- 采集点选择:telnet 单命令单应答直接 Exec 里抓;tl1 用 traceSink 包 CmdSink(Session.Do 唯一出口),Response.Raw 天然带原始报文,Session/Manager 零改动。
