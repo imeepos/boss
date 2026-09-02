@@ -1882,6 +1882,18 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
+      detail: string
+      detailTitle: string
+      sectionCommand: string
+      sectionResponse: string
+      colAction: string
+      labelTask: string
+      labelOrder: string
+      labelOffer: string
+      labelTemplate: string
+      labelResult: string
+      labelRetries: string
+      labelTime: string
       prev: string
       next: string
       perPage: string

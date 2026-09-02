@@ -7,8 +7,9 @@ import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { fmtTime } from '../../../lib/format'
-import { pageSlice, type ProvisionLogRow } from '../types'
+import { pageSlice, type ProvisionLogDetail, type ProvisionLogRow } from '../types'
 import { TableStateRow } from '../../../components/business'
+import { ProvisionLogDetailDrawer } from './detail'
 
 export default function ProvisionLogPage() {
   const t = useT()
@@ -20,6 +21,8 @@ export default function ProvisionLogPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
+  const [detail, setDetail] = useState<ProvisionLogDetail | null>(null)
+  const [detailBusy, setDetailBusy] = useState(false)
 
   const load = () => {
     setError('')
@@ -32,6 +35,16 @@ export default function ProvisionLogPage() {
       .finally(() => setBusy(false))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openDetail = (id: number) => {
+    if (detailBusy) return
+    setError('')
+    setDetailBusy(true)
+    apiFetch<ProvisionLogDetail>(`/provision-logs/${id}`)
+      .then((x) => setDetail(x))
+      .catch((e) => setError(e instanceof Error ? e.message : p.loadFail))
+      .finally(() => setDetailBusy(false))
+  }
 
   const filtered = result ? rows.filter((x) => x.result === result) : rows
   const slice = pageSlice(filtered, page, pageSize)
@@ -74,9 +87,12 @@ export default function ProvisionLogPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.result}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.retries}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.createdAt)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-xs text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50" disabled={detailBusy} onClick={() => openDetail(x.id)}>{p.detail}</button>
+                    </td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={p.empty} />}
+                {!slice.length && <TableStateRow colSpan={p.columns.length} loading={busy} text={p.empty} />}
               </tbody>
             </table>
           </div>
@@ -86,6 +102,7 @@ export default function ProvisionLogPage() {
             onPage={setPage} onSize={setPageSize} {...pagerTexts(p)} />
         </div>
       </div>
+      {detail && <ProvisionLogDetailDrawer detail={detail} onClose={() => setDetail(null)} />}
     </div>
   )
 }
