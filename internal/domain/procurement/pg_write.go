@@ -2,6 +2,7 @@ package procurement
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -87,7 +88,9 @@ func (s *PGStore) ConfirmReceipt(ctx context.Context, receiptID, accountID int64
 
 	batchCode := in.BatchCode
 	if batchCode == "" {
-		batchCode = nextBatchCode(orderNo)
+		batchCode = nextBatchCode()
+	} else if len(batchCode) > 32 {
+		return fmt.Errorf("procurement: batch code %q 超过 asset_batches.code VARCHAR(32)", batchCode)
 	}
 
 	var batchID int64
@@ -103,12 +106,14 @@ func (s *PGStore) ConfirmReceipt(ctx context.Context, receiptID, accountID int64
 	}
 
 	// 逐台建 assets(IN_STOCK);物料 type=光猫/ONU 用 material_items 主档对齐(L0),简化以 materialCode 直接写 type 字段。
+	var assetSeq int64
 	for _, it := range in.Items {
 		if it.Quantity <= 0 {
 			continue
 		}
 		for i := int32(0); i < it.Quantity; i++ {
-			code := fmt.Sprintf("A-%s-%s-%05d", batchCode, it.MaterialCode, i+1)
+			assetSeq++
+			code := nextAssetCode(batchID, assetSeq)
 			_, err = tx.Exec(ctx,
 				`INSERT INTO assets(asset_code, batch_id, legal_entity_id, legal_entity_name, type, status)
 				 SELECT $1, $2, r.legal_entity_id, r.legal_entity_name, $3, 'IN_STOCK'
@@ -177,10 +182,19 @@ func nextReceiptNo() string {
 	return fmt.Sprintf("RC-%s-%05d", now.Format("20060102"), now.UnixNano()%100000)
 }
 
-// nextBatchCode RK-YYYYMMDD-NNNNN(入库批次编码,沿用 asset_batches.code 习惯)。
-func nextBatchCode(orderNo string) string {
+// nextBatchCode RK-YYYYMMDD-NNNNN(17 字符,恒满足 asset_batches.code VARCHAR(32))。
+// 订单关联由 procurement_receipts/order_items 承载,不塞进编码——原实现拼
+// orderNo,orderNo 超 20 字符即超列宽,整笔入库确认必炸(2026-09 审计)。
+func nextBatchCode() string {
 	now := timeNow().UTC()
-	return fmt.Sprintf("RK-%s-%s", now.Format("20060102"), orderNo)
+	return fmt.Sprintf("RK-%s-%05d", now.Format("20060102"), now.UnixNano()%100000)
+}
+
+// nextAssetCode A-{batchID 8 位}-{批内序号 5 位},16 字符恒满足 assets.asset_code
+// VARCHAR(32) 且全局唯一(batchID 唯一);物料语义在 assets.type 与批次关联,
+// 不塞进编码(对齐 000085 惯例:code 仅展示,id 为权威)。
+func nextAssetCode(batchID, seq int64) string {
+	return fmt.Sprintf("A-%08d-%05d", batchID, seq)
 }
 
 // ListReceipts 列入库单(按 order 过滤;orderID=0=全部)。
@@ -202,11 +216,15 @@ func (s *PGStore) ListReceipts(ctx context.Context, orderID int64) ([]Receipt, e
 	out := []Receipt{}
 	for rows.Next() {
 		var r Receipt
-		if err := rows.Scan(&r.ID, &r.ReceiptNo, &r.OrderID, &r.OrderNo, &r.BatchID,
-			&r.LegalEntityID, &r.LegalEntityName, &r.ReceivedBy, &r.ReceivedAt,
+		// batch_id/received_by/received_at 三列可空(DRAFT 未回填),空值安全扫描。
+		var batchID, receivedBy sql.NullInt64
+		var receivedAt sql.NullTime
+		if err := rows.Scan(&r.ID, &r.ReceiptNo, &r.OrderID, &r.OrderNo, &batchID,
+			&r.LegalEntityID, &r.LegalEntityName, &receivedBy, &receivedAt,
 			&r.Status, &r.Remark, &r.CreatedAt, &r.UpdatedAt); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("procurement: scan receipt: %w", err)
 		}
+		r.BatchID, r.ReceivedBy, r.ReceivedAt = batchID.Int64, receivedBy.Int64, receivedAt.Time
 		out = append(out, r)
 	}
 	return out, rows.Err()
