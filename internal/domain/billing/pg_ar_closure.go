@@ -200,13 +200,18 @@ func (s *PGStore) ReplayEvents(ctx context.Context, sourceType string) (int, err
 		if err := rows.Scan(&e.ID, &e.CustomerID, &e.SourceType, &e.SourceID, &e.EventType, &e.Payload, &e.CreatedAt); err != nil {
 			return count, fmt.Errorf("billing: scan replay event: %w", err)
 		}
-		// Replay: recalculate arrears from bills, payments, writeoffs for this customer
+		// Replay: recalculate arrears from bills, payments, writeoffs for this customer.
+		// 三张 1:N 事实表各自聚合成标量再相减(fan-trap 防线):按 customer_id 横向
+		// LEFT JOIN 后 SUM 会因笛卡尔积按行数倍增/倍减。
 		_, err := s.db.Exec(ctx, `
-			UPDATE arrears a SET amount = COALESCE((
-				SELECT COALESCE(SUM(b.amount),0) - COALESCE(SUM(p.amount) FILTER (WHERE p.status='SUCCESS'),0) - COALESCE(SUM(w.amount) FILTER (WHERE w.status='APPROVED'),0)
-				FROM bills b LEFT JOIN payments p ON p.customer_id=b.customer_id AND p.status='SUCCESS' LEFT JOIN ar_writeoffs w ON w.customer_id=b.customer_id AND w.status='APPROVED'
-				WHERE b.customer_id=$1 AND b.status='OVERDUE'
-			), 0) WHERE a.customer_id=$1`, e.CustomerID)
+			UPDATE arrears a SET amount = (
+				(SELECT COALESCE(SUM(b.amount),0) FROM bills b
+				  WHERE b.customer_id=$1 AND b.status='OVERDUE')
+			  - (SELECT COALESCE(SUM(p.amount),0) FROM payments p
+				  WHERE p.customer_id=$1 AND p.status='SUCCESS')
+			  - (SELECT COALESCE(SUM(w.amount),0) FROM ar_writeoffs w
+				  WHERE w.customer_id=$1 AND w.status='APPROVED')
+			) WHERE a.customer_id=$1`, e.CustomerID)
 		if err != nil {
 			return count, fmt.Errorf("billing: replay event %d: %w", e.ID, err)
 		}
