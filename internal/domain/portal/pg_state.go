@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -91,9 +92,13 @@ func (s *pgStore) MarkAllRead(ctx context.Context, customerID int64) error {
 }
 
 func (s *pgStore) MarkRead(ctx context.Context, customerID int64, messageID string) (bool, error) {
+	id, err := strconv.ParseInt(messageID, 10, 64)
+	if err != nil {
+		return false, nil // 非法形态=消息不存在,handler 回 404(与 memory.go 口径一致)
+	}
 	tag, err := s.pool.Exec(ctx,
-		`UPDATE portal_messages SET read=TRUE WHERE customer_id=$1 AND message_id=$2`,
-		customerID, messageID)
+		`UPDATE portal_messages SET read=TRUE WHERE customer_id=$1 AND id=$2`,
+		customerID, id)
 	if err != nil {
 		return false, err
 	}

@@ -62,19 +62,23 @@ var reconQueries = []reconQuery{
 	{
 		domain: "loy", name: "pointsReconDiff", detail: "积分流水与账本差异非零",
 		sql: `SELECT count(*) FROM (
-			SELECT lt.id FROM loy_ledgers lt
-			LEFT JOIN loy_entries le ON le.ledger_id = lt.id
-			WHERE lt.balance != COALESCE((SELECT SUM(le.amount) FROM loy_entries le WHERE le.ledger_id = lt.id), 0)
+			SELECT l.customer_id FROM loy_point_ledgers l
+			LEFT JOIN loy_point_entries e ON e.customer_id = l.customer_id
+			GROUP BY l.customer_id, l.balance
+			HAVING l.balance <> COALESCE(SUM(e.delta), 0)
 			LIMIT 100
 		) sub`,
 	},
 	{
-		domain: "gis", name: "projectionStale", detail: "GIS 投影超过 24h 未更新",
-		sql: `SELECT count(*) FROM gis_points WHERE updated_at < now() - interval '24 hours'`,
+		domain: "gis", name: "activatedTicketNoCoord", detail: "激活后工单缺现场坐标(GIS 呈现缺口)",
+		sql: `SELECT count(*) FROM dispatch_tickets dt
+		      JOIN orders o ON o.id = dt.order_id
+		      WHERE o.status IN ('INSTALLING','DONE')
+		      AND (dt.site_lat IS NULL OR dt.site_lng IS NULL)`,
 	},
 	{
-		domain: "openplat", name: "webhookFailures", detail: "Webhook 投递失败超 3 次",
-		sql: `SELECT count(*) FROM open_webhook_deliveries WHERE status = 'FAILED' AND retry_count >= 3`,
+		domain: "openplat", name: "webhookDeadLetter", detail: "Webhook 投递进死信(超最大重试,人工介入)",
+		sql: `SELECT count(*) FROM open_webhook_deliveries WHERE status = 2`,
 	},
 }
 

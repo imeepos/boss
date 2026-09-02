@@ -3,6 +3,7 @@ package portal
 import (
 	"context"
 	"math"
+	"strconv"
 	"testing"
 )
 
@@ -91,6 +92,24 @@ func TestPGMessages(t *testing.T) {
 	}
 	if unread, _ = s.HasUnread(ctx, cid); unread {
 		t.Fatal("HasUnread after mark = true")
+	}
+	// MarkRead:真实 id 字符串→true;非法形态/不存在 id→(false,nil),handler 回 404 口径。
+	if err := s.PutMessage(ctx, cid, map[string]any{"t": "mark"}); err != nil {
+		t.Fatal(err)
+	}
+	ms, err = s.Messages(ctx, cid)
+	if err != nil || len(ms) == 0 {
+		t.Fatalf("Messages for mark: %+v,%v", ms, err)
+	}
+	found, err := s.MarkRead(ctx, cid, strconv.FormatInt(ms[0].ID, 10))
+	if err != nil || !found {
+		t.Fatalf("MarkRead real id: found=%v err=%v", found, err)
+	}
+	if found, err = s.MarkRead(ctx, cid, "not-a-number"); err != nil || found {
+		t.Fatalf("MarkRead invalid form: found=%v err=%v", found, err)
+	}
+	if found, err = s.MarkRead(ctx, cid, "999999999"); err != nil || found {
+		t.Fatalf("MarkRead missing id: found=%v err=%v", found, err)
 	}
 	// created_at=infinity 无法映射 time.Time,触发 rows.Scan 错误分支。
 	s.(*pgStore).pool.Exec(ctx, `INSERT INTO portal_messages(customer_id, payload, created_at)

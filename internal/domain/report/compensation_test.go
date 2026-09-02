@@ -7,7 +7,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-// CompensationTasks(补偿任务中心)形状回归:九类查询全执行,
+// CompensationTasks(补偿任务中心)形状回归:八类查询全执行,
 // retryPath 按 refID 拼装,cdrKafka/webhookDelivery/couponRecon 聚合 0 不出条目。
 func TestPGStore_CompensationTasks(t *testing.T) {
 	mock, err := pgxmock.NewPool()
@@ -32,8 +32,6 @@ func TestPGStore_CompensationTasks(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
 	mock.ExpectQuery(`FROM coupons`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
-	mock.ExpectQuery(`FROM loy_entries`).
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
 
 	s := NewPGStore(mock)
 	tasks, err := s.CompensationTasks(context.Background())
@@ -41,7 +39,7 @@ func TestPGStore_CompensationTasks(t *testing.T) {
 		t.Fatalf("CompensationTasks: %v", err)
 	}
 	if len(tasks) != 4 {
-		t.Fatalf("tasks=%d, want 4(cdrKafka/webhookDelivery/couponRecon/pointsFailed=0 不出条目): %+v", len(tasks), tasks)
+		t.Fatalf("tasks=%d, want 4(cdrKafka/webhookDelivery/couponRecon=0 不出条目): %+v", len(tasks), tasks)
 	}
 	byType := map[string]CompTaskView{}
 	for _, t := range tasks {
@@ -82,8 +80,6 @@ func TestPGStore_CompensationTasks_CdrAggregate(t *testing.T) {
 	mock.ExpectQuery(`FROM open_webhook_deliveries`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
 	mock.ExpectQuery(`FROM coupons`).
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
-	mock.ExpectQuery(`FROM loy_entries`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow("0"))
 
 	s := NewPGStore(mock)
