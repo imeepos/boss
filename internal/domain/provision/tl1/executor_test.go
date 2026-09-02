@@ -68,7 +68,8 @@ func (f fakeResolver) Resolve(ctx context.Context, t provision.Task) (tl1.Params
 }
 
 func newExec(m *tl1.Manager, p tl1.Params) *tl1.Executor {
-	return tl1.NewExecutor(m, fakeResolver{p: p})
+	p.Endpoint = m.Endpoint()
+	return tl1.NewExecutor(fakeResolver{p: p})
 }
 
 func taskOf(no, stage string) provision.Task {

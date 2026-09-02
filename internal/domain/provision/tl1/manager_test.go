@@ -124,3 +124,15 @@ func TestWithSessionRerunOnBroken(t *testing.T) {
 		t.Fatalf("calls=%d want 2(断线整段重跑)", calls)
 	}
 }
+
+func TestManagerUseResetsEndpointAndBreaker(t *testing.T) {
+	m := NewManager(Config{Addr: "old.example:13027", User: "old", Pass: "old-pass"})
+	m.authFailAt = time.Now()
+	m.Use(Endpoint{Host: "new.example", Port: 14027, User: "new", Pass: "new-pass"})
+	if got := m.Endpoint(); got != (Endpoint{Host: "new.example", Port: 14027, User: "new", Pass: "new-pass"}) {
+		t.Fatalf("endpoint=%+v", got)
+	}
+	if m.inBreaker() {
+		t.Fatal("Use must clear old auth breaker")
+	}
+}

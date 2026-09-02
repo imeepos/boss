@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -25,6 +27,31 @@ type Manager struct {
 // NewManager 归一化配置并构造端点管理器。
 func NewManager(cfg Config) *Manager {
 	return &Manager{cfg: cfg.norm()}
+}
+
+// Use 切换端点并清理旧会话/鉴权熔断；同端点调用仍会重建会话。
+func (m *Manager) Use(endpoint Endpoint) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.sess != nil {
+		_ = m.sess.Close()
+		m.sess = nil
+	}
+	m.authFailAt = time.Time{}
+	m.cfg.Addr = net.JoinHostPort(endpoint.Host, strconv.Itoa(endpoint.Port))
+	m.cfg.User, m.cfg.Pass = endpoint.User, endpoint.Pass
+}
+
+// Endpoint 返回当前端点快照,供测试/诊断使用。
+func (m *Manager) Endpoint() Endpoint {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	host, port, err := net.SplitHostPort(m.cfg.Addr)
+	if err != nil {
+		return Endpoint{Host: m.cfg.Addr, User: m.cfg.User, Pass: m.cfg.Pass}
+	}
+	p, _ := strconv.Atoi(port)
+	return Endpoint{Host: host, Port: p, User: m.cfg.User, Pass: m.cfg.Pass}
 }
 
 // Do 懒建连后执行一条命令;断线退避后重连一次再试,不递归;

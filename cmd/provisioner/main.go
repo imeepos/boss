@@ -68,12 +68,8 @@ func main() {
 func selectExecutor(cfg *config.Config, pool *pgxpool.Pool) provision.Executor {
 	switch cfg.Provisioner.Driver {
 	case "tl1":
-		m := tl1.NewManager(tl1.Config{
-			Addr: cfg.Provisioner.TL1Addr,
-			User: cfg.Provisioner.TL1User, Pass: cfg.Provisioner.TL1Pass,
-		})
-		log.Printf("provisioner: tl1 executor -> %s", cfg.Provisioner.TL1Addr)
-		return tl1.NewExecutor(m, app.NewTL1ParamResolver(pool))
+		log.Printf("provisioner: tl1 executor: endpoint resolved per task")
+		return tl1.NewExecutor(app.NewTL1ParamResolver(pool))
 	case "telnet":
 		if cfg.Provisioner.OLTAddr == "" || cfg.Provisioner.OLTAddr == "0" {
 			log.Printf("provisioner: telnet driver but OLT_ADDR unset, fallback log")

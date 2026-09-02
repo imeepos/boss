@@ -48,13 +48,21 @@ type ParamResolver interface {
 
 // Executor provision.Executor 的 TL1 实现:按 StageEvent 编排先查后写。
 type Executor struct {
-	m       *Manager
-	resolve ParamResolver
+	m        *Manager
+	resolve  ParamResolver
+	endpoint Endpoint
 }
 
-// NewExecutor 构造;Manager 提供断线重连与鉴权熔断。
-func NewExecutor(m *Manager, r ParamResolver) *Executor {
-	return &Executor{m: m, resolve: r}
+// NewExecutor 构造;端点由 resolver 返回后按需切换。
+func NewExecutor(r ParamResolver) *Executor {
+	return &Executor{resolve: r, m: NewManager(Config{})}
+}
+
+func (e *Executor) useEndpoint(p Params) {
+	if e.endpoint != p.Endpoint {
+		e.m.Use(p.Endpoint)
+		e.endpoint = p.Endpoint
+	}
 }
 
 // Exec 按 StageEvent 分派;任一步失败返回 error,由 Daemon 落 FAILED 留痕。
@@ -63,6 +71,7 @@ func (e *Executor) Exec(ctx context.Context, t provision.Task) error {
 	if err != nil {
 		return e.fail(t, err)
 	}
+	e.useEndpoint(p)
 	switch t.StageEvent {
 	case StagePreConfigOLT:
 		return e.fail(t, e.preConfigOLT(ctx, t, p))
