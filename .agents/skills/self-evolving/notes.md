@@ -1577,3 +1577,9 @@
 - 吞错教训:ssh psql 加 2>/dev/null 把 SQL 报错吞了,列名写错(orders 是 offer_id 不是 product_id)被误判成"订单被 cron 删了",幻觉排查了三轮;psql 报错绝不能静默,先 information_schema.columns 核对列名。
 - 事实:provision_tasks 对 orders 无外键→订单删任务残留(本轮 158 条,上次 14 条,巡检未覆盖,已记 ISSUE.md);模板 DELETE 守卫查的是"任何任务引用过"(含 DONE)。
 - 审计红线实例:真实在装订单 637(INSTALLING,offer 101)的 DONE 任务 220 错挂在法人6 模板 152 上,按"审计事实不动"保留模板+任务不重放,页面留 6 条(5 档位+152 审计锚点)。
+
+## 2026-09-03 端到端下单验证(环节7 自动到模板下发,成功)
+- 证据链:客户214下单 ORD-20260903-000633(offer 101)→收费自动推进5-8→任务 PRV-O667 template_id=142 DONE→provision_logs SUCCESS(TPL-FTTH-100M,1.7s)→oltsim 日志 apply ok template=142。绑定解析只按 offer_id 不看订单法人,跨法人也命中显式绑定。
+- 两个隐蔽规则踩了两下:①订单法人=地址归属(resolveOwnership(addressID)),不是客户法人——地址288属法人6,客户214是法人1订单照样落6,dispatch_li(法人1)被 requireOrderInScope 拦成误导性 40400"资源不存在";②test-accounts.json 客户213法人字段滞后(档案1/DB 6),已修档。
+- psql 列名三次猜错(orders.product_id→offer_id、provision_tasks.stage、provision_logs.status):先 information_schema.columns 再写查询,省两轮。
+- admin 端环节4 charge 自动推进5-8是主测试路径;法人6订单无对应岗位账号只能 admin 推(数据隔离设计使然,报告中如实说明)。

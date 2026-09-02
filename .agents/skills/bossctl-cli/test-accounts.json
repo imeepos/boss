@@ -197,7 +197,7 @@
       "name": "采购经理·王",
       "phone": "13900001234",
       "idCardNo": "110101198811110011",
-      "legalEntityId": 1,
+      "legalEntityId": 6,
       "addressId": 288,
       "regionId": 4,
       "status": "APPROVED",
@@ -207,7 +207,7 @@
       "username": null,
       "password": null,
       "apiKey": "boss_a7c676b7d33083cffc00820664e1d539",
-      "note": "场景A正常流程:注册→后台审核通过→实名核验PASS;customer 主体无菜单权限(RBAC 恒拒),只能访问客户身份对应接口;账号/密码为 null 因 BOSS 客户主档无登录口令,鉴权用 API key",
+      "note": "场景A正常流程:注册→后台审核通过→实名核验PASS;customer 主体无菜单权限(RBAC 恒拒),只能访问客户身份对应接口;账号/密码为 null 因 BOSS 客户主档无登录口令,鉴权用 API key;2026-09-03 DB 核对 legal_entity_id=6(地址288归属法人6,订单随之落法人6)",
       "apiKeys": [
         {
           "name": "mcp-user-20260906",
