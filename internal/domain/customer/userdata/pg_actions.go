@@ -159,7 +159,7 @@ func (s *PGStore) CreateCoupon(ctx context.Context, cp Coupon) error {
 
 func (s *PGStore) DisableCoupon(ctx context.Context, couponID string) error {
 	return s.execAffected(ctx, "disable coupon",
-		`UPDATE coupons SET status = 'disabled' WHERE coupon_id = $1`, couponID)
+		`UPDATE coupons SET status = 'DISABLED' WHERE coupon_id = $1`, couponID)
 }
 
 func (s *PGStore) ToggleDiyGuide(ctx context.Context, guideID string) error {
