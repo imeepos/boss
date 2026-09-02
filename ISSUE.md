@@ -146,3 +146,7 @@
   AutoPreScan 50000、主链全断。geo-unify/多区域合流后新单必现(orders.region_path 开始
   非空填充)。修复:`path::text = o.region_path OR o.region_path LIKE path::text || '.%'`。
   注:pgxmock 单测无法拦截此类 SQL 类型错误,真实库回归(mainchain)才是防线。
+
+## 2026-09-02 provision_tasks 孤儿任务堆积(巡检未覆盖,复发)
+- `provision_tasks` 对 `orders` 无外键,订单删除后任务残留;任务又把 `provision_templates` 钉死(DELETE 守卫查"任何任务引用",含 DONE),垃圾模板永远删不掉。2026-08-30 note 已记"验收清理漏删 14 条孤儿,巡检脚本覆盖待后续",2026-09-02 复发积到 158 条(158 任务/275 日志已手工清理)。
+- 建议:订单删除路径级联删任务+日志,或验收巡检 SQL 加"孤儿 provision_tasks/provision_logs 计数"门禁(docs/ops/patrol-cron.md)。
