@@ -34,7 +34,7 @@
 | 网络资源 OSS | OSS | AG-06 | `resource` | 阶段4 | oss | resource/reserve/transfer/expand |
 | 设备与 CPE | DEV | AG-08 | `device` | 阶段7 | oss | device |
 | 网络监控告警 | MON | AG-08 | `device`(告警部分) | 阶段7 | alarm | alarm |
-| 配置下发 | PROV | （并入 device/provision）| `provision` | 阶段7 | provision | provision/template/provlog |
+| 配置下发 | PROV | （并入 device/provision）| `provision`（+tl1 子包 `internal/domain/provision/tl1`，000178） | 阶段7 | provision | provision/template/provlog |
 | 四码合一/一致性 | QUAD | （横切 CONS） | `quadlink` | 阶段6 | quad | quadlink/check/scanlog |
 | GIS | GIS | AG-11 | `gis` | 阶段8 | intel | gis |
 | 国际地理基础数据 | — | — | `geo` | 阶段1 | base（web/admin `/base/geo`；docs/admin menu.js 未列） | geo（国家/行政区划/译名，ISO 3166；服务 addresses 国际化，与 gis 分立见 note 2026-08-18-geo-vs-gis-split） |
@@ -61,6 +61,8 @@
 > 注：`internal/domain/user` 承担 A 体系的 `系统管理` + `品牌区域(Region 部分)` 两类职责；
 > `internal/domain/billing` 承担 `计费账务` + `支付收款`；`internal/domain/device` 承担 `设备CPE` + `网络监控`。
 > 这是"9 阶段"视角对"21 域"的合并，属历史架构决策，本期不强行拆分，但 Agent 落地时须按 A 域边界写清晰注释。
+> 配置下发(TL1 北向,迁移 000178,设计 §8)：`internal/domain/provision/tl1` 为协议子包(codec/session/manager/client/executor)；
+> app 层 resolver 在 `internal/app/provision_tl1.go`(`NewTL1ParamResolver(pool)` 实现 tl1.ParamResolver，取数链含 provision_nms/PON/OLT)。零行为变更，既有 provision/order/aaa 域不改动。
 
 ## 2. 反向索引（以 admin 分组 D 为行主键）
 

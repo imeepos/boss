@@ -690,6 +690,10 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 地址 | `AddressID` | address_id | BIGINT |
 | 状态 | `Status` | status | IDLE/RESERVED/USED/DISABLED（见 terms.md 第 4 节） |
 | 占用订单 | `OrderID` | order_id | BIGINT，RESERVED 时非空 |
+| PON 框号 | `PONFrame` | pon_frame | SMALLINT 可空；NULL=未分配（000178） |
+| PON 槽号 | `PONSlot` | pon_slot | SMALLINT 可空；NULL=未分配（000178） |
+| PON 口号 | `PONPort` | pon_port | SMALLINT 可空；NULL=未分配（000178） |
+| ONUNO | `ONUNO` | onu_no | SMALLINT 可空；NULL=未分配（000178） |
 
 > 状态变更历史（TS 实体）：`port_change_history`，端口每次状态/占用变化一行（变更后 status + order_id 快照 + changed_at），历史不随当前状态漂移。
 > 区域/企业锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域）、`legal_entity_id`/`legal_entity_name`（所属设备企业），按地区/企业统计端口；`lo_accounts` 同挂 `region_id`/`region_name`（客户所在经营区域）。
@@ -739,6 +743,39 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 > 状态机：PENDING --assign(派单,POST /admin/replacements/{id}/assign)→ DOING --complete(师傅端 POST /api/worker/v1/replacements/{id}/complete)→ DONE/FAILED；终态不可再流转（adopted note 2026-08-27-replacement-ticket-flow）。
 > 完成时落 `worker_replace_logs`（ticket_no=更换单号展示快照，dispatch_ticket_id=0）+ 资产联动：旧件→MAINTENANCE、新件（newEpc 反解）→DEPLOYED，各留 `asset_lifecycles`。
 > 企业锚点（fields.md §8.1）：`legal_entity_id`/`legal_entity_name` 建单时自资产主档回填。
+
+### 4.4 provision（配置下发 · TL1/网管北向，迁移 000013 基表 + 000178 增补）
+
+> 配置下发 PROV 域基表 `provision_templates`/`provision_tasks`/`provision_logs` 由迁移 000013 建立（下发模板/任务/日志）。
+> 迁移 000178（TL1 对接，设计 §8）为 NMS 端点与 PON 定位新增以下表/列，供 T5 app resolver 取数（pass_cipher 加解密属 T5）。
+
+`resources` 增列（迁移 000178）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| NMS OLTID | `NMSOLTID` | nms_oltid | VARCHAR(128) 可空；OLT 行的 U2000 侧标识（缺=FAIL "OLT missing nms_oltid"） |
+
+`provision_nms`（法人级 NMS 端点，一法人一行）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 法人 | `LegalEntityID` | legal_entity_id | BIGINT NOT NULL UNIQUE → legal_entities |
+| 主机 | `Host` | host | VARCHAR(128) NOT NULL |
+| 端口 | `Port` | port | INTEGER NOT NULL DEFAULT 13027 |
+| 协议 | `Protocol` | protocol | VARCHAR(8) NOT NULL DEFAULT 'tcp'（P2 扩 ssl） |
+| 用户名 | `Username` | username | VARCHAR(32) NOT NULL |
+| 口令密文 | `PassCipher` | pass_cipher | TEXT NOT NULL；复用 config_secrets 加解密 helpers |
+| 创建/更新 | `CreatedAt`/`UpdatedAt` | created_at/updated_at | TIMESTAMPTZ DEFAULT now() |
+
+`pon_onu_alloc`（每 (OLT,PON) 的 ONUNO 分配器，幂等自增）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| OLT 资源 | `OLTResourceID` | olt_resource_id | BIGINT NOT NULL → resources(id)；PK 四列联合首列 |
+| PON 框/槽/口 | `PONFrame`/`PONSlot`/`PONPort` | pon_frame/pon_slot/pon_port | SMALLINT NOT NULL，与 olt_resource_id 联合主键 |
+| 下一序号 | `NextNo` | next_no | SMALLINT NOT NULL DEFAULT 0；分配器首 0 其后 1,2,... |
+
+> PONID 组装：`PONID="NA-<pon_frame>-<pon_slot>-<pon_port>"`（设计 §4）；`ports` 的 PON 四列与 `onu_no`（NULL=未分配）承载装维定位（§4.2 已增列）。
 
 ## 5. 阶段6 · 四码合一（internal/domain/quadlink）
 
