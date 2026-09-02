@@ -1561,3 +1561,8 @@
 - 断言语义坑:sim 留痕文件记收到的指令而非执行成功的指令,被 DENY 的命令也在案;中途 DENY 场景 ADD-PONVLAN 计数应为 1 而非 0。造断言前先明确观测通道语义。
 - 上游接口限制:T2 session.login 只读一次响应不循环等 DELAY,LOGIN 吃到 DELAY 即 ErrAuth;T3 不改既有接口,sim 侧对 LOGIN 豁免 delay 注入,已登 ISSUE.md。
 - 顺畅点:worktree 路径先核对、bash 显式 cd、每写一个文件立刻 go build、gofmt -w 收尾,acceptance+vet+build+函数长度自查一条龙零返工。
+
+## 2026-09-02 方案B 绑定落地（100M/500M 套餐↔模板）
+- 顺畅点:先读 adopted note(2026-09-01-offer-provision-binding)拿接口契约(openapi customer.yaml 确认 PUT body=templateId+remark),再 GET 预检四处绑定全为 0,PUT 幂等绑定后 GET /provision-bindings 回读验证,零返工。
+- 经验:bossctl routes 的 summary 就是字段语义说明;绑定期从 openapi yaml 里 grep operationId 段看 requestBody,不用猜参数名。
+- 事实:法人1 档位模板 142=100M/145=500M(content.bandwidth 正确、ENABLED);500M 套餐有 3 个(103/109/114)全绑 145,100M 只有 101→142;绑定表此前全空,存量无绑定不报错,走带宽兜底。
