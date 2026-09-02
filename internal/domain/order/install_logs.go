@@ -14,19 +14,19 @@ import (
 // status: OPEN=已提交待签收 / COMPLETED=已签收 / REJECTED=拒签。
 // 决策依据:docs/notes/adopted/2026-08-28-procurement-install-gis-linkage.md §决策 2。
 type InstallLog struct {
-	ID           int64     `json:"id"`
-	TicketID     int64     `json:"ticketId"`
-	OrderID      int64     `json:"orderId"`
-	WorkerID     int64     `json:"workerId"`
-	WorkerName   string    `json:"workerName"`
-	Photos       []int64   `json:"photos"` // attachments.id 列表
-	SignName     string    `json:"signName"`
-	SignImageURL string    `json:"signImageUrl"`
+	ID           int64      `json:"id"`
+	TicketID     int64      `json:"ticketId"`
+	OrderID      int64      `json:"orderId"`
+	WorkerID     int64      `json:"workerId"`
+	WorkerName   string     `json:"workerName"`
+	Photos       []int64    `json:"photos"` // attachments.id 列表
+	SignName     string     `json:"signName"`
+	SignImageURL string     `json:"signImageUrl"`
 	SignedAt     *time.Time `json:"signedAt,omitempty"` // NULL=未签收(OPEN 态),不落 0001-01-01 假时刻
-	Note         string    `json:"note"`
-	Status       string    `json:"status"` // OPEN/COMPLETED/REJECTED
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	Note         string     `json:"note"`
+	Status       string     `json:"status"` // OPEN/COMPLETED/REJECTED
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
 }
 
 // ArriveInput 师傅到场打卡入参(WGS84 经纬度 + 时间戳)。
