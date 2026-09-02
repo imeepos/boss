@@ -39,7 +39,7 @@ env:
   BOSS_AAA_ACCT_ADDR: ":1813"
   BOSS_AAA_SECRET: ""
   BOSS_AAA_CDR_TOPIC: boss-cdr
-  BOSS_PROVISION_OLT_ADDR: "0" # 配置真实 OLT 后 Telnet 执行器生效
+  BOSS_PROVISION_OLT_ADDR: "0" # 配置真实 OLT 后置地址,且需 BOSS_PROVISION_DRIVER=telnet(缺省 log 桩不下发)
   BOSS_SNMP_TARGETS: ""
   BOSS_REPORT_PERIOD: daily
 
