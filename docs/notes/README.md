@@ -89,6 +89,7 @@
 | 2026-09-03 | 导入权限边界:地址使用 menu:importer,Geo 使用 menu:geo,暂不追加地址双权限 | adopted/2026-09-03-importer-permission-scope.md |
 | 2026-09-03 | 导入任务登记幂等键 clientKey 与下单幂等键 requestId 语义区分(upsert 写入 vs 查询返回,作用域/命名不统一) | adopted/2026-09-03-import-task-idempotency.md |
 | 2026-09-03 | 充值余额是预存(只进不出)不是可用余额;未来接消费需补 portal_wallet_transactions 流水表+CHECK>=0 约束 | adopted/2026-09-03-portal-wallet-balance-semantic.md |
+| 2026-09-03 | order_stages.finished_at 写入口径(推进成功即写,与自愈 UPDATE 同源)+ 历史回填裁定(仅权威痕迹可推导行回填:下单→orders.created_at、预下发→provision_tasks.created_at,其余保持 NULL);回填幂等脚本入仓并在 102 执行 | adopted/2026-09-03-stage-finished-at-write-path.md |
 | 2026-09-03 | 合成客户(隔离空间负数 ID)充值边界:拒绝(走 42200);不动 FK、不建旁路;真实收费场景不覆盖合成客户 | adopted/2026-09-03-synthetic-customer-recharge-boundary.md |
 | 2026-09-03 | 支付链路收口后续:隧道驻留 + 演示门户 + 缴费口径 + 余额/合成客户 6 项验收收尾汇总(commit 留证 + 102 实测留证) | adopted/2026-09-03-payment-followup-rollout.md |
 | 2026-09-04 | 真实环境证据补录:102 隧道 URL 变化→Stripe endpoint 自愈、用户门户真实登录→4 条缴费记录、bossctl 运维端点冒烟 | adopted/2026-09-04-real-environment-evidence.md |
