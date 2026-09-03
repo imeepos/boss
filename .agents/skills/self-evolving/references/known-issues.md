@@ -442,3 +442,8 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 原因 → checkDirectRisk 两道闸:同手机号 24h 订单数 ≥ risk.direct.phoneCap;同地址在途(PENDING/RESERVED/INSTALLING)≥ risk.direct.addressCap。102 高发诱因:验收/压测残留 PENDING 单长期占地址额度(造数不过夜红线被违反)。
 排查 → audit_logs 里 action=order.risk.blocked(detail.reason 带维度)+ orders 在途分布直查;阈值在 biz_params risk.direct.*。
 修法 → a073b2b5 起 42300 响应带 data.reason(维度/计数/上限/处置指引),前端 ApiError 自动拼进 message;运维处置=经 API cancel 在途残留单(释放端口预占)或调 biz_params 阈值。
+
+## 2026-09-04 fail() 在命令替换内只杀子 shell——验收假绿候选机理
+- 症状:bash 函数 fail(){ exit 1; } 若在命令替换内被调用,exit 只终止子 shell,主 shell 拿到空/非零返回继续执行;调用点若无显式检查(如 x=$(f) 后接 case 空值断言),断言失败仍可一路跑到 exit 0——验收假绿。verify-tl1-e2e.sh 2026-09-04 exit-0 轮的最可能机制候选(api() 全部经命令替换调用)。
+- 修法:凡被命令替换调用的函数体内禁用 fail();替换返回值必须紧跟显式校验(case 空值/数字形态)再 fail;EXIT trap 用传参式 trap 'cleanup "$?"' EXIT,cleanup 函数体内禁用 fail 不做二次 exit,原始失败码优先透传,清理段自身故障置 1。
+- 实测:错 key 负向轮 api 的 fail 在命令替换内,resource id 的 case 空值检查兜底,修复后最终 exit 1。

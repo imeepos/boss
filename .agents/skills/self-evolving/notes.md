@@ -1630,3 +1630,9 @@
 - 哪个坑浪费了最多时间?红线 1 又犯一次:同一文件 types.ts 只读了主树路径,worktree 路径的 zh-CN.ts 凭主树阅读直接 edit 被拒——多 worktree 并行期,"读过这个文件"必须指认到绝对路径。另 verify-deploy.sh --feature 只 grep index-*.js,对 lazy 路由分包必然误报 FAIL(本任务特征串在 index-Cw6XGS0M.js),首轮验证白报一次失败。
 - skill 有没有提前警告?有——先读后改、ff 失败严禁删 worktree、收尾核对 cwd/分支全部生效;本轮 ff-merge 连续两次撞并行会话推进(picker-lib+docs),按红线 9 回 worktree merge main 后立即重试,一轮收敛,零提交丢失。
 - 重来一次会怎么做?①多 worktree 期把"read+edit 封装在同一 run_code 程序内"当铁律;②部署特征验证先查 App.tsx 是否 lazy 分包,分包页直接扫线上 index 引用的 chunk 清单,别依赖只看 index 的复验脚本(脚本缺口值得单独补);③本地 bossctl 二进制路由前缀已落后线上(auth/me 404)、saved key 在 102 报 invalid token,免登录核对直接按 test-accounts.json 换新 JWT 走 curl,不要在 bossctl 上耗时间。
+
+## 2026-09-04 TL1 E2E 三修复(R1 record 断裂 / R2 清理 SQL / R3 退出码假绿)
+- 哪个坑最耗时:run_code 转义三连(宿主模板化美元花括号、反斜杠 n 被解析成真实换行、单引号串丢反斜杠)+ token 重放 294 行脚本时 body 形态写错,共耗 6+ 轮;E2E 两次中途失败(422 双重编码、瞬态端口归属误报)各耗一轮。
+- skill 是否提前警告:#11 已警告美元花括号与反引号,但未覆盖「bash 命令串整体也被模板化」与「token 重放后转义形态需机械对照」;已喂回 recidivism #11(5→6)并补 known-issues fail-in-subshell 条。
+- 重来一次怎么做:含特殊字符的长内容第一步就写 token 法生成器;生成后立即对关键行(造数 body、sql()、trap)printf 原样对照;造数 API 在完整 E2E 前先单点冒烟;清扫口径一开始就用固定业务前缀(acc_tl1_)而非本轮 stamp——assert 与造数口径解耦,否则自查自嗨假绿(本轮真实踩中并返工一次)。
+- 其他沉淀:102 野实例处置走「协调广播+预声明兜底语义+SIGTERM+文档留痕」零冲突;main 已前进时按协议 worktree 反向 merge 再门禁再 ff,一次通过。
