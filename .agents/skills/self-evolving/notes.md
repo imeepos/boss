@@ -1619,3 +1619,14 @@
 - 哪个坑浪费了最多时间?worktree 里 pnpm build 直接炸(ERR_PNPM_UNSAFE_MODULES_DIR),速查技巧只写了「直调 .bin」没写「pnpm 必炸」,先按习惯跑 pnpm 才撞墙;教训已进 lessons(门禁三步分步直调)。
 - skill 有没有提前警告?有——worktree 合并协议严格执行后真的拦住事故:合并回主树前 merge main 发现 dial-e2e 已先行进 main,带新提交重跑全部门禁再 ff 合并;令牌名以 tokens.css grep 为准,速查手册的 --shell-fab-bg-icon 是幽灵名(实际 --shell-fab-icon),已纠正。
 - 重来一次会怎么做?依然先全量读组件现状(pickers 四件套/ResourcePicker 约 20 调用方/AttachmentManager/ui 与 Pagination 文案契约)再定 API——本轮零返工过全部门禁;纯逻辑下沉 pickerCore 配 vitest 的路子沿用(仓上无 DOM 测试设施,test env 是 node)。
+
+## 2026-09-03 W-0904-UI 波次 U1:geo 区划查询增强+默认国家(后端,wt-geo-api,合并 1d9eab53)
+
+- 哪个坑浪费了最多时间?run_code 里写 Go/YAML 文件的转义与截断三连:双引号 JS 串里混写 ` + BT + ` 被当字面量落盘(geo_test.go 结构体 tag 18 处);JSON 引号字面量两轮才修对;最贵的是 read 分页截断(单次仅回 ~638 行)导致按片段整写 fields.md 丢 1430 行(git checkout 恢复后循环读齐 totalLines 再写)。合计约 5 轮。
+- skill 有没有提前警告?红线 11 讲过裸反引号,但没覆盖「双引号串拼接与模板字面量心智混用」变体;read 分页截断零预警,属新坑,已登台账。
+- 重来一次怎么做?①生成/重写文件前先循环 read 拼齐 totalLines 并核对;②Go 源的反引号在双引号 JS 串里直接写即可,不引入 BT 拼接;③同一文件 splice 补丁超过 2 次就整函数重写;④YAML flow {} 内含 ASCII 逗号/特殊符的 scalar 一律单引号;⑤纯函数化 SQL 拼装+纯单测先行,本次单测抓出 FROM 在 WHERE 之后的真 bug。
+
+## 2026-09-04 W-0904-UI 波次 U4 地图选点选择器(feat/map-location-picker,已合并 8bbb1e23)
+- 哪个坑浪费了最多时间?红线 1 又犯一次:同一文件 types.ts 只读了主树路径,worktree 路径的 zh-CN.ts 凭主树阅读直接 edit 被拒——多 worktree 并行期,"读过这个文件"必须指认到绝对路径。另 verify-deploy.sh --feature 只 grep index-*.js,对 lazy 路由分包必然误报 FAIL(本任务特征串在 index-Cw6XGS0M.js),首轮验证白报一次失败。
+- skill 有没有提前警告?有——先读后改、ff 失败严禁删 worktree、收尾核对 cwd/分支全部生效;本轮 ff-merge 连续两次撞并行会话推进(picker-lib+docs),按红线 9 回 worktree merge main 后立即重试,一轮收敛,零提交丢失。
+- 重来一次会怎么做?①多 worktree 期把"read+edit 封装在同一 run_code 程序内"当铁律;②部署特征验证先查 App.tsx 是否 lazy 分包,分包页直接扫线上 index 引用的 chunk 清单,别依赖只看 index 的复验脚本(脚本缺口值得单独补);③本地 bossctl 二进制路由前缀已落后线上(auth/me 404)、saved key 在 102 报 invalid token,免登录核对直接按 test-accounts.json 换新 JWT 走 curl,不要在 bossctl 上耗时间。
