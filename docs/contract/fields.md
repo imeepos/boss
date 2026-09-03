@@ -594,6 +594,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 结果 | `Result` | result | DONE/DOING/PENDING（见 order.html） |
 
 > 完成时间缺失（finished_at 为 NULL：环节进行中或未回填）时，admin 时间轴显示 i18n 占位文案（zh「未完成」），不显示裸 —。
+> 写入口径（2026-09-03 T17）：推进成功（result=DONE）即写 finished_at=now()，与 CheckResource 自愈 UPDATE 同源；PENDING/DOING（等待/失败/进行中）保持 NULL。环节1 下单成功即 DONE（下单完成时刻=创建时刻）。历史行仅回填可从权威痕迹表精确推导者（下单→orders.created_at；预下发配置→provision_tasks.created_at），其余保持 NULL，见 scripts/ops/stage-finished-at-backfill.sql。
 
 ### 3.3 bills（账单，源自 billing.html）
 
