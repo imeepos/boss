@@ -1614,3 +1614,8 @@
 - 哪个坑浪费了最多时间?A1 首跑才发现 102 provisioner 已切 BOSS_PROVISION_DRIVER=tl1,主链路自举的 SPLITTER+裸端口夹具让环节7 任务 RESOLVE FAILED(port missing PON positioning),而订单状态机照样推进 stage=12/DONE——这恰是 D1 断言要暴露的盲区,但也意味着新脚本首版夹具不可用。TL1 解析链要求 OLT 资源带 nms_oltid、预占端口带 pon_frame/slot/port、模板含 onuType/services,这些字段无管理接口,最终沿用 verify-tl1-e2e.sh 的 SQL 夹具姿势(预建 PENDING 任务靠 task_no 幂等复用保证模板必达)。
 - skill 有没有提前警告我?有——契约先读、E2E 必须真实环境机械验收、停复机禁止直改库;但「部署环境驱动已切 tl1,旧验收夹具静默失配」这一环境事实无沉淀,本轮补齐。
 - 重来一次我会怎么做?写验收脚本前先 docker inspect boss-provisioner 看 BOSS_PROVISION_DRIVER、查最近 provision_tasks 成败,把「夹具必须匹配线上驱动」当前置检查;另外 dial 首版漏了下发终态等待,清理与 provisioner 抢跑(pon_onu_alloc=0 暴露),任何带清理的 E2E 都应在清理前轮询自身任务到终态。
+
+## 2026-09-03 W-0904-UI 波次 U2 选择器公共基座抽离(feat/picker-lib,ff 合并 90721483)
+- 哪个坑浪费了最多时间?worktree 里 pnpm build 直接炸(ERR_PNPM_UNSAFE_MODULES_DIR),速查技巧只写了「直调 .bin」没写「pnpm 必炸」,先按习惯跑 pnpm 才撞墙;教训已进 lessons(门禁三步分步直调)。
+- skill 有没有提前警告?有——worktree 合并协议严格执行后真的拦住事故:合并回主树前 merge main 发现 dial-e2e 已先行进 main,带新提交重跑全部门禁再 ff 合并;令牌名以 tokens.css grep 为准,速查手册的 --shell-fab-bg-icon 是幽灵名(实际 --shell-fab-icon),已纠正。
+- 重来一次会怎么做?依然先全量读组件现状(pickers 四件套/ResourcePicker 约 20 调用方/AttachmentManager/ui 与 Pagination 文案契约)再定 API——本轮零返工过全部门禁;纯逻辑下沉 pickerCore 配 vitest 的路子沿用(仓上无 DOM 测试设施,test env 是 node)。
