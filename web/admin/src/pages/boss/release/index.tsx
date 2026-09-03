@@ -7,6 +7,7 @@ import { TableStateRow, ToolbarButton } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { apiBaseUrl } from '../../../api/client'
+import { fmtTime } from '../../../lib/format'
 import {
   listReleases, patchRelease, uploadRelease,
   type ClientReleaseDTO, type ReleasePatchInput,
@@ -99,7 +100,7 @@ export default function ClientReleasePage() {
               <td className={td}>{stLabel(r.status)}</td>
               <td className={td}>{r.status === 'GRAY' ? `${r.rolloutPercent}% / ${r.whitelistIds.length}` : '—'}</td>
               <td className={td} title={r.sha256}>{(r.apkSize / 1048576).toFixed(1)}MB</td>
-              <td className={td}>{r.updatedAt || '—'}</td>
+              <td className={td}>{fmtTime(r.updatedAt)}</td>
               <td className={td}>
                 <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => { setEditing(r); setPatch({}) }}>{s.edit}</button>
                 <a className="ml-3 text-[13px] text-[var(--shell-fab-bg)] underline-offset-2 hover:underline" href={`${apiBaseUrl()}/client-releases/${r.id}/apk`} download>{s.download}</a>

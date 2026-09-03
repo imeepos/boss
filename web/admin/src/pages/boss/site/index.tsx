@@ -10,6 +10,7 @@ import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Dropdown } from '../../../components/Dropdown'
+import { fmtTime } from '../../../lib/format'
 
 type Post = {
   id: number; slug: string; lang: string; title: string; category: string; summary: string
@@ -96,7 +97,7 @@ export default function SitePostsPage() {
               <td className={td}>{langLabel(p.lang)}</td>
               <td className={td}>{catLabel(p.category)}</td>
               <td className={td}>{stLabel(p.status)}</td>
-              <td className={td}>{p.publishedAt || '—'}</td>
+              <td className={td}>{fmtTime(p.publishedAt)}</td>
               <td className={td}>v{p.version}</td>
               <td className={td}>
                 <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => nav(`/boss/site/${p.id}`)}>{s.edit}</button>

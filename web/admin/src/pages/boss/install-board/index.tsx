@@ -4,6 +4,7 @@
 // 样式对齐 provision:大卡片 + StatCard + TableStateRow。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { fmtTime } from '../../../lib/format'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
@@ -99,7 +100,7 @@ export default function InstallBoardPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono">{r.ticketNo}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{r.workerName}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]"><StatusTag domain="ticket" value={r.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{r.arrivedAt || '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{fmtTime(r.arrivedAt)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono text-xs">
                       {r.arriveLat != null && r.arriveLng != null
                         ? `${r.arriveLat.toFixed(4)}, ${r.arriveLng.toFixed(4)}`

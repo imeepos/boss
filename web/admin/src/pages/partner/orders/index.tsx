@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { listPartnerOrders, type PartnerOrder } from '../../../api/partner'
 import { useT } from '../../../i18n'
+import { fmtTime } from '../../../lib/format'
 import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
@@ -56,7 +57,7 @@ export default function PartnerOrdersPage() {
                   <TableCell>{r.customerName || '-'}</TableCell>
                   <TableCell>{t.pages.partnerOrders.stageUnit.replace('{n}', String(r.stage))}</TableCell>
                   <TableCell><OrderStatusBadge status={r.status} /></TableCell>
-                  <TableCell className="whitespace-nowrap">{r.createdAt.slice(0, 19).replace('T', ' ')}</TableCell>
+                  <TableCell className="whitespace-nowrap">{fmtTime(r.createdAt)}</TableCell>
                 </TableRow>
               ))}
               {!items.length && (
