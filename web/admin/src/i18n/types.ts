@@ -274,6 +274,12 @@ export interface Translations {
       loadFail: string
       saveFail: string,
       empty: string
+      setCoord: string
+      coordLabel: string
+      coordHint: string
+      coordClear: string
+      coordEmpty: string
+      coordSaveHint: string
     }
     odn: {
       title: string

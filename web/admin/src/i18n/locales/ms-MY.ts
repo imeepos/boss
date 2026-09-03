@@ -526,6 +526,12 @@ const msMY: Translations = {
       loadFail: 'Gagal memuatkan',
       saveFail: 'Gagal menyimpan',
       empty: 'Tiada data',
+      setCoord: 'Tetap Koordinat',
+      coordLabel: 'Koordinat nod',
+      coordHint: 'Klik peta untuk letakkan penanda, seret untuk laras halus',
+      coordClear: 'Kosongkan',
+      coordEmpty: 'Tiada lokasi dipilih',
+      coordSaveHint: 'Latitud/longitud perpuluhan WGS84; digunakan untuk cupkeran penghantaran dan geokod balik selepas disimpan',
     },
     odn: {
       title: 'Rangkaian Pasif ODN', subtitle: 'Grid · Infrastruktur · Tapak & Peranti Teras',

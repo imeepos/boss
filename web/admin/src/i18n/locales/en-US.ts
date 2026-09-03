@@ -526,6 +526,12 @@ const enUS: Translations = {
       loadFail: 'Failed to load',
       saveFail: 'Failed to save',
       empty: 'No data',
+      setCoord: 'Set Coords',
+      coordLabel: 'Node coordinates',
+      coordHint: 'Click the map to drop the marker, drag to fine-tune',
+      coordClear: 'Clear',
+      coordEmpty: 'No location picked',
+      coordSaveHint: 'WGS84 decimal lat/lng; used by dispatch snapshot and reverse geocoding once saved',
     },
     odn: {
       title: 'ODN Passive Network', subtitle: 'Grids · Infrastructure · Sites & Core Devices',

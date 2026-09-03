@@ -526,6 +526,12 @@ const zhCN: Translations = {
       loadFail: '加载失败',
       saveFail: '保存失败',
       empty: '暂无数据',
+      setCoord: '设坐标',
+      coordLabel: '节点坐标',
+      coordHint: '点击地图放置标记,拖拽微调',
+      coordClear: '清空',
+      coordEmpty: '未选点',
+      coordSaveHint: 'WGS84 十进制经纬度;保存后用于派单快照与逆地理',
     },
     odn: {
       title: 'ODN 无源网络', subtitle: '网格分区 · 基础设施 · 局点与核心链路设备',
