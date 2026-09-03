@@ -40,6 +40,9 @@ step() { echo "==> $*"; }
 info() { echo "  .. $*"; }
 
 sql() { local q="${1}"; ssh "${HOST}" "docker exec -i boss-infra-postgres-1 psql -q -v ON_ERROR_STOP=1 -U boss -d boss -Atc \"${q}\""; }
+# 清理段 SQL 逐条独立执行: 失败输出可 grep 的 FAIL 行并置非零,不中断收尾(防一错串断)。
+sqln() { local q="${1}"; sql "${q}" >/dev/null || { echo "FAIL: cleanup SQL: ${q:0:100}" >&2; return 1; } }
+collect_ids() { sql "${1}" | tr -d '[:space:]'; }
 
 api() {
   local m="${1}" p="${2}" b="${3:-}" out
@@ -204,28 +207,71 @@ run_order() {
   assert_sim_record "${record}" "${label}"
 }
 
-# 清理: 停自己的 sim;夹具按实际 ID 精确删除;复核队列空 + provisioner 仍 running
-# (全程未触碰 provisioner,非 running 即现场异常,置 FAIL 留观测信号)。
+# 订单集合: 前缀资源/模板反查历史与本轮订单,并入本轮数组(端口/任务未落时兜底)。
+order_id_set() {
+  local ids id
+  ids=$(collect_ids "SELECT string_agg(DISTINCT t.id::text,',') FROM (SELECT order_id AS id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-${PREFIX}%') UNION SELECT order_id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%')) t WHERE t.id IS NOT NULL") || return 1
+  for id in ${ORDERS[@]+"${ORDERS[@]}"}; do [ -n "${id}" ] && ids="${ids:+${ids},}${id}"; done
+  echo "${ids}"
+}
+# R2 订单链清扫: ref_id 按文本比较(实测 text=bigint 报错),orders 8 张外键子表先删。
+sweep_orders() {
+  local oids bad=0
+  oids=$(order_id_set) || return 1
+  [ -n "${oids}" ] || return 0
+  sqln "DELETE FROM admin_notification_reads WHERE notification_id IN (SELECT id FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id::text FROM provision_tasks WHERE order_id IN (${oids})))" || bad=1
+  sqln "DELETE FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id::text FROM provision_tasks WHERE order_id IN (${oids}))" || bad=1
+  sqln "DELETE FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE order_id IN (${oids}))" || bad=1
+  sqln "DELETE FROM order_stages WHERE order_id IN (${oids}); DELETE FROM dispatch_tickets WHERE order_id IN (${oids}); DELETE FROM scan_logs WHERE order_id IN (${oids}); DELETE FROM activation_callbacks WHERE order_id IN (${oids})" || bad=1
+  sqln "DELETE FROM complaints WHERE order_id IN (${oids}); DELETE FROM dismantles WHERE order_id IN (${oids}); DELETE FROM install_logs WHERE order_id IN (${oids}); DELETE FROM partner_commission_ledger WHERE order_id IN (${oids})" || bad=1
+  sqln "DELETE FROM orders WHERE id IN (${oids})" || bad=1
+  return "${bad}"
+}
+# R2 夹具清扫: 任务链(logs→tasks)先于模板(实测 provision_tasks 挡模板删除);
+# 资源路含 resource_assignments 与 parent_id 子资源(外键图)。
+sweep_fixtures() {
+  local rids tids bad=0
+  rids=$(collect_ids "SELECT string_agg(id::text,',') FROM resources WHERE code LIKE 'OLT-${PREFIX}%'") || return 1
+  tids=$(collect_ids "SELECT string_agg(id::text,',') FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%'") || return 1
+  sqln "DELETE FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%'))" || bad=1
+  sqln "DELETE FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%')" || bad=1
+  if [ -n "${rids}" ]; then
+    sqln "DELETE FROM pon_onu_alloc WHERE olt_resource_id IN (${rids})" || bad=1
+    sqln "DELETE FROM resource_assignments WHERE resource_id IN (${rids})" || bad=1
+    sqln "DELETE FROM ports WHERE resource_id IN (${rids})" || bad=1
+    sqln "DELETE FROM resources WHERE parent_id IN (${rids})" || bad=1
+    sqln "DELETE FROM resources WHERE id IN (${rids})" || bad=1
+  fi
+  if [ -n "${tids}" ]; then
+    sqln "DELETE FROM offer_provision_bindings WHERE template_id IN (${tids})" || bad=1
+    sqln "DELETE FROM provision_templates WHERE id IN (${tids})" || bad=1
+  fi
+  return "${bad}"
+}
+# A2 口径复核: acc_tl1_ 前缀资源/模板及其级联任务/日志/订单/通知全量归零(含历史遗留)。
+assert_clean() {
+  local bad=0 c
+  c=$(collect_ids "SELECT count(*) FROM resources WHERE code LIKE 'OLT-${PREFIX}%' UNION ALL SELECT count(*) FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%' UNION ALL SELECT count(*) FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%') OR order_id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-${PREFIX}%')) UNION ALL SELECT count(*) FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%') OR order_id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-${PREFIX}%'))) UNION ALL SELECT count(*) FROM orders WHERE id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-${PREFIX}%') UNION SELECT order_id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%')) UNION ALL SELECT count(*) FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id::text FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%'))")
+  case "${c}" in "000000") ;; *) echo "FAIL: 清扫复核残留(resources/templates/tasks/logs/orders/notifications)=${c:-query-error}" >&2; bad=1 ;; esac
+  return "${bad}"
+}
+# R3 退出码保真: EXIT trap 把原始退出码传参入 cleanup;清理段自身故障置 1,原始失败码
+# 优先透传(2026-09-04 实测 trap 覆盖原始码造成验收假绿)。
 cleanup() {
-  local rc="${?}" id pend
+  local orig="${1:-1}" bad=0 pend
   set +e
   echo "==> cleanup prefix=${PREFIX} evid=${EVID_DIR}"
   stop_sim
-  for id in ${ORDERS[@]+"${ORDERS[@]}"}; do
-    [ -n "${id}" ] || continue
-    sql "DELETE FROM admin_notification_reads WHERE notification_id IN (SELECT id FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id FROM provision_tasks WHERE order_id=${id})); DELETE FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id FROM provision_tasks WHERE order_id=${id}); DELETE FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE order_id=${id}); DELETE FROM provision_tasks WHERE order_id=${id}; DELETE FROM scan_logs WHERE order_id=${id}; DELETE FROM dispatch_tickets WHERE order_id=${id}; DELETE FROM activation_callbacks WHERE order_id=${id}; DELETE FROM order_stages WHERE order_id=${id};" >/dev/null
-  done
-  [ "${RESOURCE_ID}" = "0" ] || sql "DELETE FROM pon_onu_alloc WHERE olt_resource_id=${RESOURCE_ID}; DELETE FROM ports WHERE resource_id=${RESOURCE_ID}; DELETE FROM resources WHERE id=${RESOURCE_ID};" >/dev/null
-  [ "${TEMPLATE_ID}" = "0" ] || sql "DELETE FROM provision_templates WHERE id=${TEMPLATE_ID};" >/dev/null
-  for id in ${ORDERS[@]+"${ORDERS[@]}"}; do [ -n "${id}" ] && sql "DELETE FROM orders WHERE id=${id};" >/dev/null; done
-  pend=$(sql "SELECT count(*) FROM provision_tasks WHERE status IN ('PENDING','DOING')"|tr -d '[:space:]')
-  [ "${pend}" = "0" ] || { echo "FAIL: 清理后队列非空:${pend}" >&2; rc=1; }
-  provisioner_running || { echo 'FAIL: boss-provisioner not running after cleanup' >&2; rc=1; }
-  exit "${rc}"
+  sweep_orders || bad=1
+  sweep_fixtures || bad=1
+  assert_clean || bad=1
+  pend=$(collect_ids "SELECT count(*) FROM provision_tasks WHERE status IN ('PENDING','DOING')")
+  [ "${pend}" = "0" ] || { echo "FAIL: 清理后队列非空:${pend}" >&2; bad=1; }
+  provisioner_running || { echo 'FAIL: boss-provisioner not running after cleanup' >&2; bad=1; }
+  if [ "${orig}" -ne 0 ]; then exit "${orig}"; fi
+  exit "${bad}"
 }
-
-trap cleanup EXIT
-
+trap 'cleanup "$?"' EXIT
 step "TL1 102 main-chain E2E target=${BASE_URL} host=${HOST} prefix=${PREFIX}"
 precheck
 create_fixture
