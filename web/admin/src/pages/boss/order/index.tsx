@@ -11,7 +11,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
-import { fmtTime } from '../../../lib/format'
+import { bizDateKey, fmtTime } from '../../../lib/format'
 import { pageSlice, type CheckDetail, type OrderListRow, type TimelineRow, type WorkerLocationRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
@@ -127,7 +127,7 @@ export default function OrderPage() {
   }
 
   const todayRows = created === 'today'
-    ? rows.filter((row) => new Date(row.createdAt).toDateString() === new Date().toDateString())
+    ? rows.filter((row) => bizDateKey(row.createdAt) === bizDateKey(new Date()))
     : rows
   const slice = pageSlice(todayRows, page, pageSize)
 
