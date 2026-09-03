@@ -1604,3 +1604,8 @@
 - 哪个坑浪费最多时间:gofmt -w 重写 strict_test.go 后凭旧 read 直接 edit 被拒「file changed since read」;另 TestStrictDisabledCompat 首跑失败——负例工厂 addONUCmd 默认 Tag=ADDONT,构造「B 自增 ctag」负例时忘了显式清空。
 - skill 有没有提前警告我:有——红线 1 已写明 file changed since read 也要重读,一轮重读即恢复;负例工厂默认值陷阱 skill 未覆盖,已补 lessons。
 - 重来一次我会怎么做:gofmt/sed 等任何改写命令跑完立即重读再 edit;负例工厂默认全合规,凡构造「去合规」用例就把要偏离的每个字段显式写进 mod,不依赖默认值。
+
+## 2026-09-03 TL1 trace 收口 C3(重连留痕对齐)
+- 哪个坑浪费最多时间:无实质坑,一轮通过。关键是设计先行:traceSink 全局拼接的病根在「边执行边写 trace」,改成按尝试(attempt)分组 entry 缓冲 + Exec 末尾 finalize 收口后,成功/失败取舍变成纯函数决策,测试也只需切 4 横线分隔符对齐。
+- skill 有没有提前警告我:有——先读后改、commit 前核分支名、run_code 禁反引号/${(全部用 lines 数组 join 构造文件内容,零转义事故)。
+- 重来一次我会怎么做:留痕类需求先问「谁在何时消费这份证据」再定取舍规则;joinResp 的 4 横线分隔符与设备表格 5 横线天然可区分,这类分隔符选型应在写第一版时就显式注释,方便测试再切分。
