@@ -7,6 +7,7 @@ import { ErrorBanner, EmptyState, ToolbarButton } from '../../../components/busi
 import { Badge } from '../../../components/ui/badge'
 import { Input } from '../../../components/ui/input'
 import { AddressGeoDrawer, type AddressRow, type CountryRow } from './AddressGeoDrawer'
+import { AddressGeomDrawer } from './AddressGeomDrawer'
 import { AddressNodeDrawer } from './AddressNodeDrawer'
 import { BatchImportEntry } from '../importer/BatchImportEntry'
 import { CARD, TOOLBAR, SPACER, ADDR_ROW, ADDR_TOGGLE, ADDR_NAME, ACT_BTN, SEP } from '../geo/styles'
@@ -28,6 +29,7 @@ export default function AddressPage() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [attachOf, setAttachOf] = useState<AddressRow | null>(null)
+  const [geomOf, setGeomOf] = useState<AddressRow | null>(null)
   const [nodeForm, setNodeForm] =
     useState<{ mode: 'create' | 'rename'; parent?: AddressRow; row?: AddressRow } | null>(null)
 
@@ -128,7 +130,7 @@ export default function AddressPage() {
       </div>
       <AddressTree rows={visible(roots)} childrenOf={childrenOf} expanded={expanded} depth={0}
         countryName={countryName} keyword={kw}
-        onToggle={toggle} onAttach={setAttachOf}
+        onToggle={toggle} onAttach={setAttachOf} onGeom={setGeomOf}
         onAddChild={(r) => setNodeForm({ mode: 'create', parent: r })}
         onRename={(r) => setNodeForm({ mode: 'rename', row: r })}
         onDelete={remove} />
@@ -141,13 +143,17 @@ export default function AddressPage() {
         <AddressGeoDrawer row={attachOf} onDone={() => { setAttachOf(null); loadRoots() }}
           onCancel={() => setAttachOf(null)} />
       )}
+      {geomOf && (
+        <AddressGeomDrawer row={geomOf} onDone={() => setGeomOf(null)}
+          onCancel={() => setGeomOf(null)} />
+      )}
     </div>
   )
 }
 
 // AddressTree 递归渲染一层节点列表;展开态读缓存。
 function AddressTree({ rows, childrenOf, expanded, depth, countryName, keyword,
-  onToggle, onAttach, onAddChild, onRename, onDelete }: {
+  onToggle, onAttach, onGeom, onAddChild, onRename, onDelete }: {
   rows: AddressRow[]
   childrenOf: Record<number, AddressRow[]>
   expanded: Set<number>
@@ -156,6 +162,7 @@ function AddressTree({ rows, childrenOf, expanded, depth, countryName, keyword,
   keyword: string
   onToggle: (row: AddressRow) => void
   onAttach: (row: AddressRow) => void
+  onGeom: (row: AddressRow) => void
   onAddChild: (row: AddressRow) => void
   onRename: (row: AddressRow) => void
   onDelete: (row: AddressRow) => void
@@ -182,7 +189,9 @@ function AddressTree({ rows, childrenOf, expanded, depth, countryName, keyword,
               {r.adminCode && <Badge>{r.adminCode}</Badge>}
               <div className={SPACER} />
               <span className="inline-flex items-center">
-                {r.level === 1 && <button className={ACT_BTN} onClick={() => onAttach(r)}>{a.attach}</button>}
+                <button className={ACT_BTN} onClick={() => onGeom(r)}>{a.setCoord}</button>
+                {r.level === 1 && <><span className={SEP}>|</span>
+                  <button className={ACT_BTN} onClick={() => onAttach(r)}>{a.attach}</button></>}
                 {r.level < 5 && <><span className={SEP}>|</span>
                   <button className={ACT_BTN} onClick={() => onAddChild(r)}>{a.addChild}</button></>}
                 <span className={SEP}>|</span>
@@ -194,7 +203,7 @@ function AddressTree({ rows, childrenOf, expanded, depth, countryName, keyword,
             {open && (
               <AddressTree rows={filterRows(kids ?? [], keyword, childrenOf)} childrenOf={childrenOf}
                 expanded={expanded} depth={depth + 1} countryName={countryName} keyword={keyword}
-                onToggle={onToggle} onAttach={onAttach} onAddChild={onAddChild}
+                onToggle={onToggle} onAttach={onAttach} onGeom={onGeom} onAddChild={onAddChild}
                 onRename={onRename} onDelete={onDelete} />
             )}
           </div>
