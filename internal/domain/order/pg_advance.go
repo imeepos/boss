@@ -113,9 +113,12 @@ func (s *PGStore) emitStageDone(ctx context.Context, orderNo string, stage int8,
 }
 
 // appendStage 落环节日志(order_stages);db 由调用方给定(池或事务)。
+// finished_at 口径(T17):推进成功(result=DONE)即写完成时刻,与 CheckResource 自愈
+// UPDATE 同源(now());PENDING/DOING(等待/失败/进行中)保持 NULL——推进成功才写。
 func appendStage(ctx context.Context, db dbtx, orderID int64, stage int8, result string) error {
 	if _, err := db.Exec(ctx,
-		`INSERT INTO order_stages(order_id, stage, result) VALUES($1,$2,$3)`, orderID, stage, result); err != nil {
+		`INSERT INTO order_stages(order_id, stage, result, finished_at)
+		 VALUES($1,$2,$3, CASE WHEN $3 = 'DONE' THEN now() END)`, orderID, stage, result); err != nil {
 		return fmt.Errorf("order: append stage: %w", err)
 	}
 	return nil

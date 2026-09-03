@@ -88,7 +88,7 @@ func (s *MemoryService) Submit(ctx context.Context, req SubmitReq) (*Order, erro
 		CreatedAt:     time.Now(),
 	}
 	s.m[o.ID] = o
-	s.appendLogLocked(o.ID, 1, "DOING")
+	s.appendLogLocked(o.ID, 1, "DONE")
 	return cloneOrder(o), nil
 }
 

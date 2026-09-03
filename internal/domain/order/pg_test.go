@@ -100,7 +100,7 @@ func TestPGStore_Submit(t *testing.T) {
 			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(1), int64(0), "root.luzon", "POSTPAID", 0, pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
 		mock.ExpectExec(`INSERT INTO order_stages`).
-			WithArgs(int64(7), int8(1), "DOING").
+			WithArgs(int64(7), int8(1), "DONE").
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		s := NewPGStore(mock, stubExists{ok: true})
@@ -141,7 +141,7 @@ func TestPGStore_Submit(t *testing.T) {
 			WithArgs(pgxmock.AnyArg(), int64(1), int64(10), int64(100), int8(1), "PENDING", int64(5), int64(9), int64(0), "root", "POSTPAID", 0, pgxmock.AnyArg()).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(7)))
 		mock.ExpectExec(`INSERT INTO order_stages`).
-			WithArgs(int64(7), int8(1), "DOING").
+			WithArgs(int64(7), int8(1), "DONE").
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		s := NewPGStore(mock, stubExists{ok: true})

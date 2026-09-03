@@ -129,3 +129,26 @@ func TestAdvance_BlockedWhenPrevStageMissing(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+// TestAppendStage_WritesFinishedAtOnDONE 回归(T17):环节推进写 order_stages 必须同口径
+// 落 finished_at——result=DONE(推进成功)写 now(),PENDING/DOING(等待/失败)保持 NULL。
+// 此前 appendStage 只 INSERT (order_id, stage, result),finished_at 全空(102 297 行仅 5 行非空);
+// 时间轴完成时间只能靠 pg_check.go 自愈 UPDATE 补,其余推进路径全部漏写。
+func TestAppendStage_WritesFinishedAtOnDONE(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+	// SQL 必须包含 finished_at 列 + DONE 守卫(CASE WHEN $3='DONE'),且参数仍是 3 个。
+	mock.ExpectExec(`INSERT INTO order_stages.*finished_at.*CASE WHEN.*DONE.*now\(\)`).
+		WithArgs(int64(7), int8(3), "DONE").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+	if err := appendStage(context.Background(), mock, 7, 3, "DONE"); err != nil {
+		t.Fatalf("appendStage: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}

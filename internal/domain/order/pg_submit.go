@@ -125,7 +125,9 @@ func (s *PGStore) submitRegular(ctx context.Context, req SubmitReq) (*Order, err
 		}
 		return nil, fmt.Errorf("order: submit insert: %w", err)
 	}
-	if err := s.appendStage(ctx, o.ID, 1, "DOING"); err != nil {
+	// 下单即完成环节1(terms.md §1):submit 成功落 DONE + finished_at=now()(≈ created_at),
+	// 与 advance 原语同口径——推进成功才写完成时间,时间轴环节1不再永久「未完成」。
+	if err := s.appendStage(ctx, o.ID, 1, "DONE"); err != nil {
 		return nil, err
 	}
 	return o, nil
