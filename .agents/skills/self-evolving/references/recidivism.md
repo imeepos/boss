@@ -121,3 +121,4 @@
 | bash set -u 下可缺省变量未给默认值(裸位置参数/裸环境变量) | 2 | 2026-09-02(verify-oltsim 脚本首跑 OLTSIM_HOST unbound 崩在第 18 行;二次运行 api() 两参调用 $3 unbound 崩在 create_order,夹具已建靠 trap 清理兜底) | set -u 下位置参数与环境变量一律 ${VAR:-default};新脚本提交前本地带 set -u 空参冒烟一次 |
 | heredoc 块结束后在同一命令里继续写行,后续行落回本地执行 | 2 | 2026-09-02(取证 docker/systemctl 跑在本地报 command not found;DELETE 批次整段没到 psql,无输出空返回) | heredoc 块必须是 bash 命令的最后一段;远端多步操作拆成多次 ssh 调用,每步独立验证输出 |
 - edit 前未按 worktree 绝对路径 read(红线#1 守卫再拦)(2026-09-01,1 次):worktree 轮开工对将 edit 的每个文件先 read worktree 路径;计数并入红线#1。
+| read 分页截断(单次约 600+ 行)后按已读片段整写文件 | 1 | 2026-09-03(fields.md 整写丢 1430 行,git checkout 恢复后循环读齐 totalLines 再写;根因:read 单次返回行数有上限,与 limit 请求值无关) | 整文件重写前必须循环 read 拼齐 totalLines 行并核对;能用 edit 锚点的绝不整写 |

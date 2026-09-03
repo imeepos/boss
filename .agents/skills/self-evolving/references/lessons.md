@@ -477,3 +477,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 当看到「指令格式不对却执行成功」类日志时,先查 SUCCESS 的判定条件与对端真实身份——自研仿真器/桩回的 OK 是闭环自证,不代表业务成功(2026-09-03 provision apply telnet 链)。
 - 负例工厂函数默认返回全合规报文时,构造「去合规」用例必须把每个要偏离的字段显式写进 mod(尤其清空默认 Tag/ctag),漏一个默认值就会让负例首跑变正例失败(2026-09-03 tl1sim strict_test loose 模式)。
 - worktree symlink 主树 node_modules 后,前端门禁严禁走 pnpm 脚本:pnpm 11 的 deps-status-check 会报 ERR_PNPM_UNSAFE_MODULES_DIR(modules 目录解析目标不是项目子目录)并试图重装;一律分步直调 node_modules/.bin/tsc|vitest|vite + node scripts/web-ui-audit.mjs(2026-09-03 picker-lib 轮实测)。
+- 当用 read 分页读大文件后要整文件 write 时,修复是循环 read 直到累计行数==totalLines 再写;否则静默截断丢内容(fields.md 曾丢 1430 行,git checkout 恢复)。skill 没提前警告我。
+- 当在 run_code 的 JS 双引号串里写 Go 反引号 raw string 时,修复是直接写反引号字符(无需转义);从模板字面量带来的 ` + BT + ` 拼接会被当字面量落盘。skill 没提前警告我。
+- 当 OpenAPI yaml flow mapping {} 内的 plain scalar 含 ASCII 逗号或以 > 开头的片段时,修复是用单引号包裹 scalar,否则解析报 "found character that cannot start any token"。skill 没提前警告我。
+- 当要改 SQL 拼装逻辑时,修复是抽成纯函数先写纯单测再接 DB——本次纯单测先于集成抓出 FROM 出现在 WHERE 之后的真 bug。skill 有可测性预告,无此具体坑。
