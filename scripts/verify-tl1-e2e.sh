@@ -17,6 +17,9 @@
 #   覆盖原始退出码造成验收假绿 → trap 传参入 cleanup 保真。
 set -uo pipefail
 
+source "$(dirname "$0")/ops/acceptance-lock.sh"
+acquire_acceptance_lock || exit 1
+
 BASE_URL="${1:-http://192.168.0.102:28080}"
 API="${BASE_URL}/api/admin/v1"
 HOST="${TL1_HOST:-imeepos@192.168.0.102}"
@@ -280,6 +283,7 @@ cleanup() {
   pend=$(collect_ids "SELECT count(*) FROM provision_tasks WHERE status IN ('PENDING','DOING')")
   [ "${pend}" = "0" ] || { echo "FAIL: 清理后队列非空:${pend}" >&2; bad=1; }
   provisioner_running || { echo 'FAIL: boss-provisioner not running after cleanup' >&2; bad=1; }
+  release_acceptance_lock
   if [ "${orig}" -ne 0 ]; then exit "${orig}"; fi
   exit "${bad}"
 }

@@ -5,6 +5,10 @@
 # 环境: BASE_URL / ADMIN_API_KEY 可覆盖;缺省 102 + test-accounts.json admin key。
 set -u
 
+source "$(dirname "$0")/acceptance-lock.sh"
+acquire_acceptance_lock || exit 1
+trap release_acceptance_lock EXIT
+
 RUNS="${1:-5}"
 BASE_URL="${BASE_URL:-http://192.168.0.102:28080}"
 API="${BASE_URL}/api/admin/v1"
@@ -220,4 +224,5 @@ if [ "$RISK_OFF" = "1" ]; then
 fi
 
 [ "$FAIL" -eq 0 ] && [ "$rc" -eq 0 ] && exit 0
+release_acceptance_lock
 exit 1
