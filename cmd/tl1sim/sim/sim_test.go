@@ -60,11 +60,11 @@ func TestSimProtocolRegression(t *testing.T) {
 		{K: "AUTHTYPE", V: "LOID"}, {K: "ONUID", V: "loid-1"}, {K: "ONUNO", V: "3"},
 		{K: "DESC", V: "PRV-1"}, {K: "ONUTYPE", V: "FTTH"},
 	}
-	resp, err := s.Do(ctx, tl1.Command{Verb: "ADD-ONU", Access: acc, Payload: pay})
+	resp, err := s.Do(ctx, tl1.Command{Verb: "ADD-ONU", Tag: "ADDONT", Access: acc, Payload: pay})
 	if err != nil || resp.Completion != "COMPLD" {
 		t.Fatalf("ADD-ONU: %v %+v", err, resp)
 	}
-	resp, err = s.Do(ctx, tl1.Command{Verb: "ADD-ONU", Access: acc, Payload: pay})
+	resp, err = s.Do(ctx, tl1.Command{Verb: "ADD-ONU", Tag: "ADDONT", Access: acc, Payload: pay})
 	if err != nil || resp.Completion != "DENY" || resp.EN != enONUExists {
 		t.Fatalf("dup ADD-ONU: %v %+v", err, resp)
 	}

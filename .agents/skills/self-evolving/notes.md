@@ -1599,3 +1599,13 @@
 - 哪个坑浪费最多时间:dispatch_task 多次因报告解析器误报缺少 Self-check 被 rejected,但实现、提交和测试实际均已完成;最终必须回到当前会话直接以命令退出码验收。
 - skill 有没有提前警告我:有——验收退出码是真实判据,worktree 收尾必须核对 cwd/分支后 ff-only;本轮按要求执行并确认主树、远端分支和 worktree 状态。
 - 重来一次我会怎么做:委派验收报告不作为唯一证据,每个提交完成后立即在父会话运行最小机械验收;涉及共享 102 时保留 telnet 仿真回归链,只交付 tl1 切换 runbook,不未经授权改生产 driver。
+
+## 2026-09-03 tl1sim 严格校验 C2(worktree 委派任务)
+- 哪个坑浪费最多时间:gofmt -w 重写 strict_test.go 后凭旧 read 直接 edit 被拒「file changed since read」;另 TestStrictDisabledCompat 首跑失败——负例工厂 addONUCmd 默认 Tag=ADDONT,构造「B 自增 ctag」负例时忘了显式清空。
+- skill 有没有提前警告我:有——红线 1 已写明 file changed since read 也要重读,一轮重读即恢复;负例工厂默认值陷阱 skill 未覆盖,已补 lessons。
+- 重来一次我会怎么做:gofmt/sed 等任何改写命令跑完立即重读再 edit;负例工厂默认全合规,凡构造「去合规」用例就把要偏离的每个字段显式写进 mod,不依赖默认值。
+
+## 2026-09-03 TL1 trace 收口 C3(重连留痕对齐)
+- 哪个坑浪费最多时间:无实质坑,一轮通过。关键是设计先行:traceSink 全局拼接的病根在「边执行边写 trace」,改成按尝试(attempt)分组 entry 缓冲 + Exec 末尾 finalize 收口后,成功/失败取舍变成纯函数决策,测试也只需切 4 横线分隔符对齐。
+- skill 有没有提前警告我:有——先读后改、commit 前核分支名、run_code 禁反引号/${(全部用 lines 数组 join 构造文件内容,零转义事故)。
+- 重来一次我会怎么做:留痕类需求先问「谁在何时消费这份证据」再定取舍规则;joinResp 的 4 横线分隔符与设备表格 5 横线天然可区分,这类分隔符选型应在写第一版时就显式注释,方便测试再切分。

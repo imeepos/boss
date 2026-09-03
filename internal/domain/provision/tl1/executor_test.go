@@ -47,7 +47,7 @@ func startSim(t *testing.T, mod func(*sim.Options)) (*sim.Server, *tl1.Manager, 
 func testParams() tl1.Params {
 	svc := func(name string, hasSVLAN bool) tl1.PONVLANParams {
 		return tl1.PONVLANParams{
-			Name: name, OLTID: "10.0.0.9", PONID: "NA-0-7-5",
+			ServiceName: name, OLTID: "10.0.0.9", PONID: "NA-0-7-5",
 			ONUIDType: "LOID", ONUID: "loid-0001",
 			SVLAN: 1000, CVLAN: 100, UV: 100, SCOS: 5, HasSVLAN: hasSVLAN,
 		}
@@ -208,4 +208,52 @@ func TestExecDelayStillSucceeds(t *testing.T) {
 		t.Fatalf("Exec: %v", err)
 	}
 	assertCounts(t, recordVerbs(t, rec), 1, 2)
+}
+
+// recordCmds 读留痕 JSONL,返回指令原始报文行(recordVerbs 的 cmd 字段版)。
+func recordCmds(t *testing.T, path string) []string {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read record: %v", err)
+	}
+	var cmds []string
+	for _, ln := range strings.Split(strings.TrimSpace(string(b)), "\n") {
+		if ln == "" {
+			continue
+		}
+		var o struct {
+			Cmd string
+		}
+		if err := json.Unmarshal([]byte(ln), &o); err != nil {
+			t.Fatalf("bad record line %q: %v", ln, err)
+		}
+		cmds = append(cmds, o.Cmd)
+	}
+	return cmds
+}
+
+// ⑧ 业务 ctag 落网元黄金断言:ADD-ONU=:ADDONT:、ADD-PONVLAN=:Internet:/:TR069:,
+// DESC 保持 PRV-订单-服务 幂等对账键,TRC 序号占位 ctag 全程不入网。
+func TestExecBusinessCTagOnWire(t *testing.T) {
+	_, m, rec := startSim(t, nil)
+	ex := newExec(m, testParams())
+	if _, err := ex.Exec(context.Background(), taskOf("T-1040", tl1.StagePreConfigOLT)); err != nil {
+		t.Fatalf("Exec: %v", err)
+	}
+	cmds := strings.Join(recordCmds(t, rec), "\n")
+	want := []string{
+		// 留痕行不含结尾终止符 ;(ReadFrame 剥离),断言到载荷末位。
+		"ADD-ONU::OLTID=10.0.0.9,PONID=NA-0-7-5:ADDONT::AUTHTYPE=LOID,ONUID=loid-0001,ONUNO=7,DESC=PRV-ORD-0001,ONUTYPE=FTTH_E8C",
+		"ADD-PONVLAN::OLTID=10.0.0.9,PONID=NA-0-7-5,ONUIDTYPE=LOID,ONUID=loid-0001:Internet::SVLAN=1000,CVLAN=100,UV=100,DESC=PRV-ORD-0001-Internet,SCOS=5",
+		"ADD-PONVLAN::OLTID=10.0.0.9,PONID=NA-0-7-5,ONUIDTYPE=LOID,ONUID=loid-0001:TR069::CVLAN=100,UV=100,DESC=PRV-ORD-0001-TR069,SCOS=5",
+	}
+	for _, w := range want {
+		if !strings.Contains(cmds, w) {
+			t.Fatalf("wire missing golden %q, record:\n%s", w, cmds)
+		}
+	}
+	if strings.Contains(cmds, ":TRC") {
+		t.Fatalf("TRC placeholder ctag must not hit wire:\n%s", cmds)
+	}
 }

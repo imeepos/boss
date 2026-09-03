@@ -116,6 +116,82 @@ func TestBuild_WhitelistReject(t *testing.T) {
 	}
 }
 
+// ---- 业务 ctag(Tag 位)黄金报文 ----
+
+// TestBuild_TagGoldens 精确断言手册业务 ctag 报文:ADD-ONU=ADDONT、
+// ADD-PONVLAN=Internet/TR069;非空 Tag 覆盖入参会话自增 ctag。
+func TestBuild_TagGoldens(t *testing.T) {
+	cases := []struct {
+		name string
+		c    Command
+		ctag string
+		want string
+	}{
+		{
+			name: "ADD-ONU 手册 ctag ADDONT",
+			c: Command{
+				Verb: "ADD-ONU", Tag: "ADDONT",
+				Access: []KV{{"OLTID", "10.0.0.9"}, {"PONID", "NA-0-7-5"}},
+				Payload: []KV{
+					{"AUTHTYPE", "LOID"}, {"ONUID", "loid-0001"},
+					{"ONUNO", "7"}, {"DESC", "PRV-ORD-0001"}, {"ONUTYPE", "FTTH_E8C"},
+				},
+			},
+			ctag: "B000001", // 会话自增值应被业务 Tag 覆盖
+			want: "ADD-ONU::OLTID=10.0.0.9,PONID=NA-0-7-5:ADDONT::AUTHTYPE=LOID,ONUID=loid-0001,ONUNO=7,DESC=PRV-ORD-0001,ONUTYPE=FTTH_E8C;",
+		},
+		{
+			name: "ADD-PONVLAN Internet 双层(带 SVLAN)",
+			c: Command{
+				Verb: "ADD-PONVLAN", Tag: "Internet",
+				Access:  []KV{{"OLTID", "10.0.0.9"}, {"PONID", "NA-0-7-5"}, {"ONUIDTYPE", "LOID"}, {"ONUID", "loid-0001"}},
+				Payload: []KV{{"SVLAN", "1000"}, {"CVLAN", "100"}, {"UV", "100"}, {"DESC", "PRV-ORD-0001-Internet"}, {"SCOS", "5"}},
+			},
+			ctag: "B000002",
+			want: "ADD-PONVLAN::OLTID=10.0.0.9,PONID=NA-0-7-5,ONUIDTYPE=LOID,ONUID=loid-0001:Internet::SVLAN=1000,CVLAN=100,UV=100,DESC=PRV-ORD-0001-Internet,SCOS=5;",
+		},
+		{
+			name: "ADD-PONVLAN TR069 单层(无 SVLAN)",
+			c: Command{
+				Verb: "ADD-PONVLAN", Tag: "TR069",
+				Access:  []KV{{"OLTID", "10.0.0.9"}, {"PONID", "NA-0-7-5"}, {"ONUIDTYPE", "LOID"}, {"ONUID", "loid-0001"}},
+				Payload: []KV{{"CVLAN", "100"}, {"UV", "100"}, {"DESC", "PRV-ORD-0001-TR069"}, {"SCOS", "5"}},
+			},
+			ctag: "B000003",
+			want: "ADD-PONVLAN::OLTID=10.0.0.9,PONID=NA-0-7-5,ONUIDTYPE=LOID,ONUID=loid-0001:TR069::CVLAN=100,UV=100,DESC=PRV-ORD-0001-TR069,SCOS=5;",
+		},
+		{
+			name: "空 Tag 仍用入参会话自增 ctag",
+			c:    Command{Verb: "LST-ONU", Access: []KV{{"OLTID", "10.0.0.9"}}},
+			ctag: "B000001",
+			want: "LST-ONU::OLTID=10.0.0.9:B000001::;",
+		},
+	}
+	for _, tc := range cases {
+		out, err := Build(tc.c, tc.ctag)
+		if err != nil {
+			t.Fatalf("%s: Build: %v", tc.name, err)
+		}
+		if string(out) != tc.want {
+			t.Fatalf("%s: got %q want %q", tc.name, out, tc.want)
+		}
+	}
+}
+
+// TestBuild_TagWhitelistReject ctag 白名单外的 Tag 一律 ErrBadParam,
+// 拒 : ; , = 空格 等分隔/注入字符,报文不产出。
+func TestBuild_TagWhitelistReject(t *testing.T) {
+	for _, tag := range []string{"ADD:ONT", "ADD;ONT", "ADD,ONT", "ADD ONT", "B=1", "TRC.1", "中文"} {
+		out, err := Build(Command{Verb: "ADD-ONU", Tag: tag}, "B000001")
+		if !errors.Is(err, ErrBadParam) {
+			t.Fatalf("tag %q: want ErrBadParam got %v", tag, err)
+		}
+		if out != nil {
+			t.Fatalf("tag %q: want no output got %q", tag, out)
+		}
+	}
+}
+
 func TestBuild_WhitelistAllows(t *testing.T) {
 	out, err := Build(Command{Verb: "ADD-ONU", Payload: []KV{{"DESC", "PRV-ORD-20260902-0001"}}}, "B2")
 	if err != nil {

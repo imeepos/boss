@@ -474,3 +474,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当给存量表补枚举 CHECK,走"数据归一 UPDATE → ADD CONSTRAINT NOT VALID → VALIDATE CONSTRAINT"三步;NOT VALID 不阻塞 DML,VALIDATE 失败即存量脏值曝光(2026-09-02 coupons 000177,102 真库验证 convalidated)。
 - 当展示编码要防超列宽,按 000085 惯例从 id 派生(A-/RK-/C- + lpad(id,N,'0')),别把 orderNo 等变长语义塞进 UNIQUE 码——orders 变长即整笔写入必炸 value too long(2026-09-02 procurement asset_code 39>32)。
 当看到「指令格式不对却执行成功」类日志时,先查 SUCCESS 的判定条件与对端真实身份——自研仿真器/桩回的 OK 是闭环自证,不代表业务成功(2026-09-03 provision apply telnet 链)。
+- 负例工厂函数默认返回全合规报文时,构造「去合规」用例必须把每个要偏离的字段显式写进 mod(尤其清空默认 Tag/ctag),漏一个默认值就会让负例首跑变正例失败(2026-09-03 tl1sim strict_test loose 模式)。
