@@ -142,11 +142,11 @@ precheck() {
 create_fixture() {
   step "create acc_ fixture prefix=${PREFIX}"
   local res p n
-  res=$(api POST /provision/resources "\"{\"code\":\"OLT-${PREFIX}\",\"name\":\"TL1 ${PREFIX}\",\"type\":\"OLT\",\"addressId\":290,\"legalEntityId\":1}")
+  res=$(api POST /provision/resources "{\"code\":\"OLT-${PREFIX}\",\"name\":\"TL1 ${PREFIX}\",\"type\":\"OLT\",\"addressId\":290,\"legalEntityId\":1}")
   RESOURCE_ID=$(echo "${res}" | jq -r '.data.id')
   case "${RESOURCE_ID}" in ''|*[!0-9]*) fail "resource id 异常 response=${res}" ;; esac
   for n in 5 6 7; do
-    p=$(api POST /provision/ports "\"{\"portCode\":\"P-${PREFIX}-0${n}\",\"resourceId\":${RESOURCE_ID},\"addressId\":290,\"legalEntityId\":1}")
+    p=$(api POST /provision/ports "{\"portCode\":\"P-${PREFIX}-0${n}\",\"resourceId\":${RESOURCE_ID},\"addressId\":290,\"legalEntityId\":1}")
     echo "${p}" | jq -e '.data.portId' >/dev/null || fail "port 0${n} id 异常 response=${p}"
   done
   TEMPLATE_ID=$(sql "INSERT INTO provision_templates(legal_entity_id,code,name,content,version,status) VALUES(1,'TPL-${PREFIX}','TL1 ${PREFIX}',jsonb_build_object('bandwidth','100M','onuType','Internet','services',jsonb_build_object('internet',jsonb_build_object('svlan',1113,'cvlan',1,'uv',100,'scos',0,'ccos',0),'tr069',jsonb_build_object('cvlan',1000,'uv',1000,'scos',6,'ccos',6))),1,'ENABLED') RETURNING id"|tr -d '[:space:]')
