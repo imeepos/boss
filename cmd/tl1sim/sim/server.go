@@ -21,6 +21,7 @@ type Options struct {
 	DelayMs      int    // >0 时每条指令先回 DELAY 帧并延迟后回最终响应
 	DenyNext     string // 对下一条该动词的指令 DENY 一次(单次故障注入)
 	RecordPath   string // 指令留痕 JSONL;空不落盘
+	StrictTags   *bool  // 手册严格校验(TRC 占位/业务 ctag/段位);nil=开启,false 仅兼容调试
 }
 
 // Server 可 Start/Stop 的 TL1 仿真网元;测试进程内直接构造。
@@ -64,7 +65,7 @@ func (s *Server) Addr() string { return s.ln.Addr().String() }
 func (s *Server) Start() {
 	s.wg.Add(1)
 	go s.acceptLoop()
-	log.Printf("[tl1sim] listening %s user=%s oper-state=%s", s.Addr(), s.opt.User, s.opt.ONUOperState)
+	log.Printf("[tl1sim] listening %s user=%s oper-state=%s strict=%v", s.Addr(), s.opt.User, s.opt.ONUOperState, s.st.strict)
 }
 
 // Stop 停止监听、断开全部连接并关留痕文件;幂等。

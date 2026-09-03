@@ -75,6 +75,10 @@ SELECT 'replace_logs(acc)', count(*) FROM worker_replace_logs r WHERE r.old_tag_
   OR r.new_tag_id IN (SELECT id FROM tags WHERE tag_no LIKE 'T-ACC-%' OR epc_code LIKE 'EPC-ACC-%');
 SELECT 'batches(acc)', count(*) FROM asset_batches WHERE code LIKE 'RK-ACC-%';
 SELECT 'resources(acc)', count(*) FROM resources WHERE code LIKE 'SPL-ACC-%';
+SELECT 'resources_olt(acc)', count(*) FROM resources WHERE code LIKE 'OLT-ACC-%';
+SELECT 'pon_onu_alloc(acc)', count(*) FROM pon_onu_alloc WHERE olt_resource_id IN
+  (SELECT id FROM resources WHERE code LIKE 'OLT-ACC-%');
+SELECT 'templates(acc)', count(*) FROM provision_templates WHERE code LIKE 'TPL-ACC-%';
 SELECT 'addr_cust_sub(acc)', count(*) FROM customer_histories h WHERE h.address_id IN
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%');
 SELECT 'cust_registrations(acc)', count(*) FROM customer_registrations g WHERE g.address_id IN
@@ -109,6 +113,7 @@ ssh "$SSH_HOST" "docker exec -i boss-infra-postgres-1 pg_dump -U boss -d boss \
   -t reserve_records -t ports -t port_change_history -t assets -t asset_assignments -t asset_lifecycles \
   -t tags -t worker_replace_logs -t asset_batches -t resources -t resource_assignments \
   -t customer_histories -t customer_registrations -t customers -t lo_accounts -t addresses \
+  -t provision_templates -t pon_onu_alloc \
   > /tmp/boss_acc_backup_$STAMP.sql" || { echo "FAIL: backup failed, abort"; exit 2; }
 
 # 单事务删除:任一步失败整体回滚(ON_ERROR_STOP)。
@@ -128,6 +133,7 @@ DELETE FROM activation_callbacks WHERE order_id IN (SELECT id FROM acc_orders);
 DELETE FROM provision_logs WHERE task_id IN
   (SELECT id FROM provision_tasks WHERE order_id IN (SELECT id FROM acc_orders));
 DELETE FROM provision_tasks WHERE order_id IN (SELECT id FROM acc_orders);
+DELETE FROM provision_templates WHERE code LIKE 'TPL-ACC-%';
 DELETE FROM cs_callbacks WHERE ticket_id IN (SELECT id FROM acc_complaints);
 DELETE FROM cs_ticket_events WHERE ticket_id IN (SELECT id FROM acc_complaints);
 DELETE FROM cs_ticket_extensions WHERE ticket_id IN (SELECT id FROM acc_complaints);
@@ -155,7 +161,8 @@ DELETE FROM tags WHERE tag_no LIKE 'T-ACC-%' OR epc_code LIKE 'EPC-ACC-%';
 DELETE FROM asset_batches WHERE code LIKE 'RK-ACC-%';
 DELETE FROM resource_assignments WHERE address_id IN
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%')
-  OR resource_id IN (SELECT id FROM resources WHERE code LIKE 'SPL-ACC-%');
+  OR resource_id IN (SELECT id FROM resources WHERE code LIKE 'SPL-ACC-%')
+  OR resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-ACC-%');
 DELETE FROM customer_histories WHERE address_id IN
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%');
 DELETE FROM customer_registrations WHERE address_id IN
@@ -165,7 +172,10 @@ DELETE FROM lo_accounts WHERE customer_id IN
     (SELECT id FROM addresses WHERE name LIKE '验收地址-%'));
 DELETE FROM customers WHERE address_id IN
   (SELECT id FROM addresses WHERE name LIKE '验收地址-%');
+DELETE FROM pon_onu_alloc WHERE olt_resource_id IN
+  (SELECT id FROM resources WHERE code LIKE 'OLT-ACC-%');
 DELETE FROM resources WHERE code LIKE 'SPL-ACC-%';
+DELETE FROM resources WHERE code LIKE 'OLT-ACC-%';
 DELETE FROM addresses WHERE name LIKE '验收地址-%';
 COMMIT;
 SQL

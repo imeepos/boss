@@ -114,7 +114,7 @@ func (s *Session) readResponse(ctx context.Context, deadline time.Time) (*Respon
 	return Parse(frame)
 }
 
-// Do 串行执行一条命令:自增 ctag 写出,读到同 ctag 终止帧返回。
+// Do 串行执行一条命令:业务 Tag 非空以其为 ctag,否则用自增 B%06d;读到同 ctag 终止帧返回。
 // DELAY 继续追帧;DENY/PRTL/RTRV 原样透传由调用方判定;总时长受 CmdTimeout 与 ctx 截止约束。
 func (s *Session) Do(ctx context.Context, c Command) (*Response, error) {
 	s.mu.Lock()
@@ -122,7 +122,11 @@ func (s *Session) Do(ctx context.Context, c Command) (*Response, error) {
 	if s.closed {
 		return nil, fmt.Errorf("%w: session closed", ErrConnBroken)
 	}
-	ctag := s.nextCtagLocked()
+	// 实际 ctag(业务 Tag 优先)既用于写线也用于响应匹配,与 Build 同源不漂移。
+	ctag, err := c.effectiveCTag(s.nextCtagLocked())
+	if err != nil {
+		return nil, err
+	}
 	line, err := Build(c, ctag)
 	if err != nil {
 		return nil, err

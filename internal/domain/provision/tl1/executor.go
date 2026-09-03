@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 
 	"github.com/ymm-001/boss/internal/domain/provision"
 )
@@ -71,7 +69,7 @@ func (e *Executor) useEndpoint(p Params) {
 // ExecTrace 带全部 TL1 指令与设备原始应答(后台日志详情页展示)。
 func (e *Executor) Exec(ctx context.Context, t provision.Task) (provision.ExecTrace, error) {
 	trace := provision.ExecTrace{Commands: []string{}, Driver: provision.DriverTL1}
-	rec := &traceSink{trace: &trace}
+	rec := newTraceSink(&trace)
 	p, rerr := e.resolve.Resolve(ctx, t)
 	if rerr != nil {
 		return trace, e.fail(t, rerr)
@@ -80,11 +78,11 @@ func (e *Executor) Exec(ctx context.Context, t provision.Task) (provision.ExecTr
 	var err error
 	switch t.StageEvent {
 	case StagePreConfigOLT:
-		err = e.segment(ctx, t, rec, func(d CmdSink) error { return applyPreConfig(ctx, d, t, p) })
+		err = e.segment(ctx, rec, func(d CmdSink) error { return applyPreConfig(ctx, d, t, p) })
 	case StageActivateUser:
-		err = e.segment(ctx, t, rec, func(d CmdSink) error { return checkActivation(ctx, d, p) })
+		err = e.segment(ctx, rec, func(d CmdSink) error { return checkActivation(ctx, d, p) })
 	case StageNotifyActivation:
-		err = e.segment(ctx, t, rec, func(d CmdSink) error {
+		err = e.segment(ctx, rec, func(d CmdSink) error {
 			for _, svc := range p.Services {
 				want := svcDesc(p, svc)
 				rows, lerr := lstPONVLAN(ctx, d, p.OLTID, p.PONID, svc.ONUIDType, svc.ONUID)
@@ -100,35 +98,8 @@ func (e *Executor) Exec(ctx context.Context, t provision.Task) (provision.ExecTr
 	default:
 		err = fmt.Errorf("unsupported stage event %q", t.StageEvent)
 	}
+	rec.finalize(err)
 	return trace, e.fail(t, err)
-}
-
-// traceSink 记录型命令口:包装真实 sink,逐条留指令与应答原始报文。
-type traceSink struct {
-	inner CmdSink
-	trace *provision.ExecTrace
-	seq   int
-}
-
-func (s *traceSink) Do(ctx context.Context, c Command) (*Response, error) {
-	s.seq++
-	line, _ := Build(c, "TRC"+strconv.Itoa(s.seq))
-	r, err := s.inner.Do(ctx, c)
-	s.trace.Commands = append(s.trace.Commands, string(line))
-	if r != nil && r.Raw != "" {
-		s.trace.Response = joinResp(s.trace.Response, strings.TrimRight(r.Raw, "\n"))
-	} else if err != nil {
-		s.trace.Response = joinResp(s.trace.Response, err.Error())
-	}
-	return r, err
-}
-
-// joinResp 追加一段应答,分隔行隔开多次交互。
-func joinResp(prev, add string) string {
-	if prev == "" {
-		return add
-	}
-	return prev + "\n----\n" + add
 }
 
 // applyPreConfig 环节7:建 ONU(幂等)+ 逐业务建流(幂等)。
@@ -158,7 +129,7 @@ func applyServices(ctx context.Context, d CmdSink, t provision.Task, p Params) e
 			continue
 		}
 		w := svc
-		w.Name = want // DESC 落网元为完整对账键
+		w.Name = want // DESC 落网元为完整对账键;ServiceName 原样进 ctag 位
 		if err := addPONVLAN(ctx, d, w); err != nil {
 			return err
 		}
@@ -185,13 +156,16 @@ func checkActivation(ctx context.Context, d CmdSink, p Params) error {
 }
 
 // segment 多命令原子段:整段持锁,断线退避重连后整段重跑(先查后写保证幂等);
-// rec 包装真实 session 采集指令/应答留痕(重连后 inner 随新 session 更新)。
-func (e *Executor) segment(ctx context.Context, t provision.Task, rec *traceSink, fn func(CmdSink) error) error {
-	err := e.m.WithSession(ctx, func(s *Session) error {
+// rec 包装真实 session 采集留痕;重连换 session 时先前尝试降级为被替代
+// 上下文(nextAttempt),失败日志统一由 Exec 末尾 fail 记一次,不重复。
+func (e *Executor) segment(ctx context.Context, rec *traceSink, fn func(CmdSink) error) error {
+	return e.m.WithSession(ctx, func(s *Session) error {
+		if rec.inner != nil && rec.inner != s {
+			rec.nextAttempt()
+		}
 		rec.inner = s
 		return fn(rec)
 	})
-	return e.fail(t, err)
 }
 
 // fail 失败留痕:CmdError 带 EN/ENDESC/ctag 全量格式,其余按 stage 记录;可 grep。
@@ -217,7 +191,8 @@ func (p Params) addONUParams() AddONUParams {
 }
 
 // svcDesc 业务流对账键:Desc 基值-服务名,如 PRV-<orderNo>-Internet。
-func svcDesc(p Params, svc PONVLANParams) string { return p.Desc + "-" + svc.Name }
+// 服务名取 ServiceName(与 Name=DESC 键分离,DESC 不再反哺服务名)。
+func svcDesc(p Params, svc PONVLANParams) string { return p.Desc + "-" + svc.ServiceName }
 
 // descHit 行集里存在 DESC==desc 的行。
 func descHit(rows []map[string]string, desc string) bool {

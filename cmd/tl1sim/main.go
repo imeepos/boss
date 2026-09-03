@@ -20,6 +20,7 @@ func main() {
 	delay := flag.Int("delay-ms", 0, "reply one DELAY frame and wait this long before the final response")
 	denyNext := flag.String("deny-next", "", "deny the next command of this verb once, e.g. ADD-ONU")
 	recordPath := flag.String("record", "", "JSONL file to record received commands")
+	strictTags := flag.Bool("strict-tags", true, "strict manual-conformance validation (ctag/segments); false = compat debug only")
 	flag.Parse()
 
 	srv, err := sim.New(sim.Options{
@@ -30,6 +31,7 @@ func main() {
 		DelayMs:      *delay,
 		DenyNext:     *denyNext,
 		RecordPath:   *recordPath,
+		StrictTags:   strictTags,
 	})
 	if err != nil {
 		log.Fatalf("[tl1sim] START FAILED: %v", err)
