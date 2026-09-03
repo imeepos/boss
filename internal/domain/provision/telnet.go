@@ -28,7 +28,7 @@ const defaultTelnetTimeout = 5 * time.Second
 
 // Exec 执行一次下发:连接 → 登录 → 下发命令 → 校验 OK;回传指令与设备应答留痕。
 func (e *TelnetExecutor) Exec(ctx context.Context, t Task) (ExecTrace, error) {
-	trace := ExecTrace{Commands: []string{}}
+	trace := ExecTrace{Commands: []string{}, Driver: DriverTelnet}
 	dial := e.Dial
 	if dial == nil {
 		dial = func(c context.Context, a string) (net.Conn, error) {

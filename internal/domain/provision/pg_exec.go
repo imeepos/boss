@@ -54,7 +54,7 @@ func (s *PGStore) ExecuteTask(ctx context.Context, taskID int64, trace ExecTrace
 	}
 	_, err = s.AppendLog(ctx, Log{
 		TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "SUCCESS",
-		Commands: JoinCommands(trace.Commands), DeviceResp: trace.Response,
+		Commands: JoinCommands(trace.Commands), DeviceResp: trace.Response, Driver: trace.Driver,
 	})
 	return err
 }
@@ -70,7 +70,7 @@ func (s *PGStore) FailTask(ctx context.Context, taskID int64, reason string, tra
 	}
 	_, err = s.AppendLog(ctx, Log{
 		TaskID: taskID, TemplateID: tplID, TemplateCode: tplCode, Result: "FAILED: " + reason,
-		Commands: JoinCommands(trace.Commands), DeviceResp: trace.Response,
+		Commands: JoinCommands(trace.Commands), DeviceResp: trace.Response, Driver: trace.Driver,
 	})
 	return err
 }

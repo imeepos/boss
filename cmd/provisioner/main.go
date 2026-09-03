@@ -27,7 +27,7 @@ func (logExecutor) Exec(ctx context.Context, t provision.Task) (provision.ExecTr
 	log.Printf("provisioner: exec task %d (template=%d, noop)", t.ID, t.TemplateID)
 	return provision.ExecTrace{Commands: []string{
 		fmt.Sprintf("noop driver=log template=%d task=%s event=%s", t.TemplateID, t.TaskNo, t.StageEvent),
-	}, Response: "log driver noop(未配置设备驱动,未实际下发)"}, nil
+	}, Response: "log driver noop(未配置设备驱动,未实际下发)", Driver: provision.DriverLog}, nil
 }
 
 // provisionNotify 任务终态 → 后台提醒(成功 INFO/失败 WARN;ref=provision/<taskID> 幂等)。

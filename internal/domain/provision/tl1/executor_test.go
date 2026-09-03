@@ -139,8 +139,12 @@ func assertCounts(t *testing.T, verbs []string, onu, ponvlan int) {
 func TestExecPreConfigFirstRun(t *testing.T) {
 	_, m, rec := startSim(t, nil)
 	ex := newExec(m, testParams())
-	if _, err := ex.Exec(context.Background(), taskOf("T-1001", tl1.StagePreConfigOLT)); err != nil {
+	trace, err := ex.Exec(context.Background(), taskOf("T-1001", tl1.StagePreConfigOLT))
+	if err != nil {
 		t.Fatalf("Exec: %v", err)
+	}
+	if trace.Driver != provision.DriverTL1 {
+		t.Fatalf("driver=%q, want tl1", trace.Driver)
 	}
 	assertCounts(t, recordVerbs(t, rec), 1, 2)
 }

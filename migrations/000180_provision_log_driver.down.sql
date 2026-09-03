@@ -1,0 +1,1 @@
+ALTER TABLE provision_logs DROP COLUMN IF EXISTS driver;

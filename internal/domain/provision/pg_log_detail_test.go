@@ -19,13 +19,13 @@ func TestPGStore_GetLogDetail(t *testing.T) {
 			WithArgs(int64(413)).
 			WillReturnRows(mock.NewRows([]string{
 				"id", "task_id", "resource_id", "resource_code", "template_id", "template_code",
-				"result", "retries", "commands", "device_response", "created_at",
+				"result", "retries", "commands", "device_response", "driver", "created_at",
 				"id", "task_no", "order_id", "stage_event", "lo_account_id", "template_id", "status",
 				"order_no", "status", "name",
 				"code", "name", "status", "version", "content",
 			}).AddRow(
 				int64(413), int64(254), int64(0), "", int64(142), "TPL-FTTH-100M",
-				"SUCCESS", int16(0), "provision apply template=142", "OK",
+				"SUCCESS", int16(0), "provision apply template=142", "OK", "tl1",
 				time.Date(2026, 9, 2, 16, 20, 37, 0, time.UTC),
 				int64(254), "PRV-O667", int64(667), "preConfigOLT", int64(99), int64(142), "DONE",
 				"ORD-20260903-000633", "INSTALLING", "家庭宽带100M",
@@ -37,6 +37,9 @@ func TestPGStore_GetLogDetail(t *testing.T) {
 		}
 		if d.Log.Commands != "provision apply template=142" || d.Log.DeviceResp != "OK" {
 			t.Fatalf("trace=%+v", d.Log)
+		}
+		if d.Log.Driver != "tl1" {
+			t.Fatalf("driver=%q, want tl1", d.Log.Driver)
 		}
 		if d.Task.TaskNo != "PRV-O667" || d.Order.OrderNo != "ORD-20260903-000633" {
 			t.Fatalf("task/order=%+v %+v", d.Task, d.Order)

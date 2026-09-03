@@ -56,6 +56,7 @@ type Log struct {
 	Retries      int16     `json:"retries"`
 	Commands     string    `json:"commands"`       // 顺序执行的设备指令(换行分隔;空=无设备交互)
 	DeviceResp   string    `json:"deviceResponse"` // 设备原始应答/错误
+	Driver       string    `json:"driver"`         // 驱动来源(log/telnet/tl1;SUCCESS 语义随通道不同,审计溯源)
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
@@ -63,7 +64,15 @@ type Log struct {
 type ExecTrace struct {
 	Commands []string `json:"commands"`
 	Response string   `json:"response"`
+	Driver   string   `json:"driver"` // 产生本次结果的驱动来源(执行器自标注,落 provision_logs.driver)
 }
+
+// 驱动来源常量(执行器自标注,落 provision_logs.driver;空串=历史数据/未标注)。
+const (
+	DriverLog    = "log"    // 日志桩(OLT 未配置时的安全默认,未实际下发)
+	DriverTelnet = "telnet" // OLT TCP 行协议直连
+	DriverTL1    = "tl1"    // U2000 TL1 北向
+)
 
 // JoinCommands 指令序列拼为落库文本(空序列→空串)。
 func JoinCommands(cmds []string) string { return strings.Join(cmds, "\n") }

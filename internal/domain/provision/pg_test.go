@@ -162,7 +162,7 @@ func TestPGStore_CreateTaskIdempotent(t *testing.T) {
 			WithArgs(int64(5)).
 			WillReturnRows(mock.NewRows([]string{"id", "code"}).AddRow(int64(16), "TPL-FTTH"))
 		mock.ExpectQuery(`INSERT INTO provision_logs`).
-			WithArgs(int64(5), int64(0), "", int64(16), "TPL-FTTH", "RETRY", int16(1), "", "").
+			WithArgs(int64(5), int64(0), "", int64(16), "TPL-FTTH", "RETRY", int16(1), "", "", "").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
 
 		s := NewPGStore(mock)
@@ -272,18 +272,46 @@ func TestPGStore_AppendLog(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO provision_logs`).
-		WithArgs(int64(1), int64(10), "OLT-01", int64(1), "TPL-FTTH", "FAILED", int16(1), "", "").
+		WithArgs(int64(1), int64(10), "OLT-01", int64(1), "TPL-FTTH", "FAILED", int16(1), "", "", "log").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 
 	s := NewPGStore(mock)
 	id, err := s.AppendLog(context.Background(), Log{
 		TaskID: 1, ResourceID: 10, ResourceCode: "OLT-01", TemplateID: 1, TemplateCode: "TPL-FTTH", Result: "FAILED", Retries: 1,
+		Driver: DriverLog,
 	})
 	if err != nil {
 		t.Fatalf("AppendLog: %v", err)
 	}
 	if id != 2 {
 		t.Fatalf("id=%d, want 2", id)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
+// TestPGStore_AppendLog_Driver Driver 随插列入库(执行器自标注溯源,000180)。
+func TestPGStore_AppendLog_Driver(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`INSERT INTO provision_logs`).
+		WithArgs(int64(7), int64(0), "", int64(16), "TPL-FTTH", "SUCCESS", int16(0), "provision apply", "OK", "tl1").
+		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+
+	id, err := NewPGStore(mock).AppendLog(context.Background(), Log{
+		TaskID: 7, TemplateID: 16, TemplateCode: "TPL-FTTH", Result: "SUCCESS",
+		Commands: "provision apply", DeviceResp: "OK", Driver: DriverTL1,
+	})
+	if err != nil {
+		t.Fatalf("AppendLog: %v", err)
+	}
+	if id != 3 {
+		t.Fatalf("id=%d, want 3", id)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)

@@ -69,6 +69,9 @@ func TestTelnetExecutor_Exec(t *testing.T) {
 		if trace.Response != "OK" {
 			t.Fatalf("response=%q", trace.Response)
 		}
+		if trace.Driver != DriverTelnet {
+			t.Fatalf("driver=%q, want telnet", trace.Driver)
+		}
 	})
 
 	t.Run("OLT 应答非 OK", func(t *testing.T) {

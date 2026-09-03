@@ -70,7 +70,7 @@ func (e *Executor) useEndpoint(p Params) {
 // Exec 按 StageEvent 分派;任一步失败返回 error,由 Daemon 落 FAILED 留痕;
 // ExecTrace 带全部 TL1 指令与设备原始应答(后台日志详情页展示)。
 func (e *Executor) Exec(ctx context.Context, t provision.Task) (provision.ExecTrace, error) {
-	trace := provision.ExecTrace{Commands: []string{}}
+	trace := provision.ExecTrace{Commands: []string{}, Driver: provision.DriverTL1}
 	rec := &traceSink{trace: &trace}
 	p, rerr := e.resolve.Resolve(ctx, t)
 	if rerr != nil {

@@ -206,7 +206,7 @@ func (s *PGStore) GetLogDetail(ctx context.Context, logID int64) (*LogDetail, er
 	err := s.db.QueryRow(ctx, `
 		SELECT l.id, l.task_id, l.resource_id, COALESCE(l.resource_code, ''),
 		       l.template_id, COALESCE(l.template_code, ''), l.result, l.retries,
-		       COALESCE(l.commands, ''), COALESCE(l.device_response, ''), l.created_at,
+		       COALESCE(l.commands, ''), COALESCE(l.device_response, ''), l.driver, l.created_at,
 		       t.id, t.task_no, t.order_id, t.stage_event, t.lo_account_id, t.template_id, t.status,
 		       o.order_no, o.status, COALESCE(po.name, ''),
 		       t2.code, t2.name, t2.status, t2.version, COALESCE(t2.content, '{}')
@@ -218,7 +218,7 @@ func (s *PGStore) GetLogDetail(ctx context.Context, logID int64) (*LogDetail, er
 		WHERE l.id = $1`, logID).Scan(
 		&d.Log.ID, &d.Log.TaskID, &d.Log.ResourceID, &d.Log.ResourceCode,
 		&d.Log.TemplateID, &d.Log.TemplateCode, &d.Log.Result, &d.Log.Retries,
-		&commands, &deviceResp, &d.Log.CreatedAt,
+		&commands, &deviceResp, &d.Log.Driver, &d.Log.CreatedAt,
 		&d.Task.ID, &d.Task.TaskNo, &d.Task.OrderID, &d.Task.StageEvent, &d.Task.LoAccountID, &d.Task.TemplateID, &d.Task.Status,
 		&orderNo, &orderStatus, &offerName,
 		&tplCode, &tplName, &tplStatus, &tplVersion, &content)
@@ -241,9 +241,9 @@ func (s *PGStore) GetLogDetail(ctx context.Context, logID int64) (*LogDetail, er
 func (s *PGStore) AppendLog(ctx context.Context, l Log) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO provision_logs(task_id, resource_id, resource_code, template_id, template_code, result, retries, commands, device_response)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-		l.TaskID, l.ResourceID, l.ResourceCode, l.TemplateID, l.TemplateCode, l.Result, l.Retries, l.Commands, l.DeviceResp).Scan(&id)
+		INSERT INTO provision_logs(task_id, resource_id, resource_code, template_id, template_code, result, retries, commands, device_response, driver)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+		l.TaskID, l.ResourceID, l.ResourceCode, l.TemplateID, l.TemplateCode, l.Result, l.Retries, l.Commands, l.DeviceResp, l.Driver).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("provision: append log: %w", err)
 	}
