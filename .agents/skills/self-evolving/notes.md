@@ -1594,3 +1594,8 @@
 - 任务:纯调查,零代码改动。结论:102 跑 BOSS_PROVISION_DRIVER=telnet,指令是 TelnetExecutor 硬编码的自造行协议,对端是自研 oltsim,它收到前缀+三参数非空就回 OK,SUCCESS 是闭环自证。
 - 最有价值的动作:不信部署文档/systemctl(显示 inactive 但进程在跑、compose 与实况有偏差),直接 /proc/<pid>/environ 拿真实环境变量,一步定位。
 - 通用教训:自研仿真器环境里的 SUCCESS 只代表仿真器认可,排查「诡异成功」先问对端是谁、SUCCESS 判定条件是什么(这里只是 strings.Contains(line, "OK"))。
+
+## 2026-09-03 下发驱动来源与 TL1 切换治理
+- 哪个坑浪费最多时间:dispatch_task 多次因报告解析器误报缺少 Self-check 被 rejected,但实现、提交和测试实际均已完成;最终必须回到当前会话直接以命令退出码验收。
+- skill 有没有提前警告我:有——验收退出码是真实判据,worktree 收尾必须核对 cwd/分支后 ff-only;本轮按要求执行并确认主树、远端分支和 worktree 状态。
+- 重来一次我会怎么做:委派验收报告不作为唯一证据,每个提交完成后立即在父会话运行最小机械验收;涉及共享 102 时保留 telnet 仿真回归链,只交付 tl1 切换 runbook,不未经授权改生产 driver。
