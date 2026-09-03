@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2029  # 远端命令串在本侧组装注入参数属设计意图(sql/start_sim 等 helper)
-# TL1 102 主链路 E2E 验收:验收对象就是 102 已部署主链路——
-# docker-compose.102.app.yml 的 boss-provisioner(BOSS_PROVISION_DRIVER=tl1,
-# BOSS_PROVISION_TL1_* 指向 tl1sim 演练地址),镜像即 192.168.0.102:5000/boss/server。
-# 红线: 不停/不改/不重建已部署 provisioner;不启动任何隔离 provisioner 容器
-#       (隔离容器会抢 provision_tasks 队列,2026-09-03 起属禁手);只在宿主机
-#       拉起/停止自己的 tl1sim 实例(pidfile+cmdline 双重校验,不碰他人进程);
-#       夹具全 acc_tl1_ 前缀,按实际 ID 精确清理,失败路径 trap 恢复现场。
-# B 口径: 三笔隔离订单分别验证 UP 正向、Power-Off 负向、UP 恢复正向;
-#       断言 provision_logs.driver=tl1(TL1 通道证据,非 telnet/log)+ result
-#       + 负向订单停留 INSTALLING + tl1sim record 留痕(LOGIN/ADD-ONU/ADD-PONVLAN)。
+# TL1 102 主链路 E2E 验收:验收对象是 102 已部署主链路(docker-compose.102.app.yml 的
+# boss-provisioner,BOSS_PROVISION_DRIVER=tl1,TL1_* 指向 tl1sim 演练地址)。
+# 红线: 不停/不改/不重建已部署 provisioner;不启动隔离 provisioner 容器(会抢队列);
+#       只拉起/停止自己的 tl1sim 实例(pidfile+cmdline 双重校验,不碰他人进程);
+#       夹具全 acc_tl1_ 前缀,收尾按前缀全量清扫(本轮+历史遗留,造数不过夜)。
+# B 口径: 三笔隔离订单验证 UP 正向/Power-Off 负向/UP 恢复正向;断言 provision_logs
+#       .driver=tl1 + result + 负向订单停留 INSTALLING + tl1sim record 留痕。
 # 用法: scripts/verify-tl1-e2e.sh [BASE_URL]   # 默认 http://192.168.0.102:28080
-# 环境变量: TL1_HOST ADMIN_API_KEY USER_API_KEY TL1_SIM_BIN(默认 /home/imeepos/bin/tl1sim)
-#           TL1_SIM_USER/TL1_SIM_PASS(tl1sim 演练账号,默认 admin/admin,非真实凭证)
-#           TL1_EVID_DIR(默认 /tmp/verify-tl1-e2e-<stamp>)
-# tl1sim 监听端口取自已部署 provisioner 的 BOSS_PROVISION_TL1_ADDR(端口段),
-# 保证演练地址与主链路配置一致,不另起炉灶。
+# 环境变量: TL1_HOST ADMIN_API_KEY USER_API_KEY TL1_SIM_BIN TL1_SIM_USER/TL1_SIM_PASS
+#           TL1_EVID_DIR(默认 /tmp/verify-tl1-e2e-<stamp>);sim 端口取 provisioner 的
+#           BOSS_PROVISION_TL1_ADDR,演练地址与主链路一致,不另起炉灶。
+# 2026-09-04 失败轮(acc_tl1_1788458558)三修复:R1 record 目录未在 102 预建,tl1sim
+#   OpenFile 即死,端口被野实例顶替答话,任务 SUCCESS 但证据断裂 → 目录预创建+端口归属
+#   自检+LOGIN 探测落盘自检;R2 清理 SQL 类型/外键/顺序错 → 前缀全量清扫;R3 EXIT trap
+#   覆盖原始退出码造成验收假绿 → trap 传参入 cleanup 保真。
 set -uo pipefail
 
 BASE_URL="${1:-http://192.168.0.102:28080}"
@@ -30,7 +29,7 @@ STAMP="$(date +%s)"
 PREFIX="acc_tl1_${STAMP}"
 EVID_DIR="${TL1_EVID_DIR:-/tmp/verify-tl1-e2e-${STAMP}}"
 PIDFILE=/tmp/tl1sim-mainchain.pid
-mkdir -p "${EVID_DIR}" || exit 1
+SIM_LOG=/tmp/tl1sim-mainchain.log
 
 ORDERS=()
 RESOURCE_ID=0; TEMPLATE_ID=0; SIM_PORT=
@@ -56,27 +55,42 @@ api() {
 }
 
 provisioner_env() { ssh "${HOST}" "docker inspect boss-provisioner --format '{{range .Config.Env}}{{println .}}{{end}}'"; }
-
 provisioner_running() {
   [ "$(ssh "${HOST}" "docker inspect -f '{{.State.Running}}' boss-provisioner 2>/dev/null")" = "true" ]
 }
 
-# 停自己拉起的 tl1sim(pidfile+cmdline 双重校验),绝不 pkill 他人实例。
+# 停自己拉起的 tl1sim(pidfile+cmdline 双重校验),绝不 pkill 他人实例;失败由调用方处置。
 stop_sim() {
-  ssh "${HOST}" "if test -s ${PIDFILE}; then pid=\$(cat ${PIDFILE}); if test -r /proc/\$pid/cmdline && tr '\0' ' ' < /proc/\$pid/cmdline | grep -F -- ${SIM_BIN} >/dev/null; then kill \$pid >/dev/null 2>&1 || true; fi; rm -f ${PIDFILE}; fi" || fail 'stop own tl1sim'
+  ssh "${HOST}" "if test -s ${PIDFILE}; then pid=\$(cat ${PIDFILE}); if test -r /proc/\$pid/cmdline && tr '\0' ' ' < /proc/\$pid/cmdline | grep -F -- ${SIM_BIN} >/dev/null; then kill \$pid >/dev/null 2>&1 || true; fi; rm -f ${PIDFILE}; fi"
 }
-
-# 每场景重启自己的 tl1sim 并切换 ONU oper-state;主链路 provisioner 的 TL1 Manager
-# 断线自动重连,下一任务即打到新实例(状态注入生效)。
+# R1 自检一: sim 进程存活 + 演练端口归属本实例。2026-09-04 事故即本实例启动即死后端口
+# 被无 record 的野实例顶替答话,任务 SUCCESS 而证据断裂,此断言让该形态早失败。
+assert_sim_owner() {
+  local pid owner
+  pid=$(ssh "${HOST}" "cat ${PIDFILE} 2>/dev/null" | tr -d '[:space:]')
+  case "${pid}" in ''|*[!0-9]*) fail 'sim pidfile 无有效 pid(启动即死?查 /tmp/tl1sim-mainchain.log)' ;; esac
+  ssh "${HOST}" "kill -0 ${pid} 2>/dev/null" || fail "sim pid=${pid} 已死:$(ssh "${HOST}" "tail -3 ${SIM_LOG} 2>/dev/null")"
+  owner=$(ssh "${HOST}" "ss -tlnpt \"sport = :${SIM_PORT}\" 2>/dev/null" | grep -o "pid=${pid},")
+  [ -n "${owner}" ] || fail "端口 ${SIM_PORT} 非本实例(pid=${pid})监听:被他人占用,先协调停占口进程再重跑"
+  info "sim pid=${pid} port=${SIM_PORT} owner-ok"
+}
+# R1 自检二: LOGIN 探测——102 本机 /dev/tcp 发标准 LOGIN 帧,读响应验证通道并触发留痕。
+sim_login_probe() {
+  ssh "${HOST}" "bash -c 'exec 3<>/dev/tcp/127.0.0.1/${SIM_PORT} && printf \"LOGIN:::PCHK::UN=${SIM_USER},PWD=${SIM_PASS};\" >&3 && read -t 3 -n 40 _resp <&3; rc=\$?; exec 3<&-; exit \$rc'"
+}
+# 每场景重启自己的 tl1sim 并切换 ONU oper-state;主链路 provisioner 的 TL1 Manager 断线
+# 自动重连,下一任务即打到新实例。record 目录必须先在 102 预建(R1 根因: tl1sim
+# OpenFile 不建父目录,目录缺失启动即死)。
 start_sim() {
-  local state="${1}" record="${2}"
+  local state="${1}" record="${2}" rdir
   stop_sim
   ssh "${HOST}" "test -x ${SIM_BIN}" || fail "missing ${SIM_BIN}"
-  ssh "${HOST}" "rm -f ${record} /tmp/tl1sim-mainchain.log ${PIDFILE}; nohup ${SIM_BIN} -addr 0.0.0.0:${SIM_PORT} -user ${SIM_USER} -pass ${SIM_PASS} -onu-oper-state ${state} -record ${record} >/tmp/tl1sim-mainchain.log 2>&1 & echo \$! > ${PIDFILE}" || fail "start sim state=${state}"
+  rdir=$(dirname "${record}")
+  ssh "${HOST}" "mkdir -p ${rdir} && rm -f ${record} ${SIM_LOG} ${PIDFILE}" || fail "sim 前置失败(record 目录预创建 ${rdir})"
+  ssh "${HOST}" "nohup ${SIM_BIN} -addr 0.0.0.0:${SIM_PORT} -user ${SIM_USER} -pass ${SIM_PASS} -onu-oper-state ${state} -record ${record} >>${SIM_LOG} 2>&1 & echo \$! > ${PIDFILE}" || fail "start sim state=${state}"
   sleep 1
-  ssh "${HOST}" "test -s ${PIDFILE}" || fail 'sim pidfile missing'
+  assert_sim_owner
 }
-
 wait_task() {
   local id="${1}" want="${2}" label="${3}" s=""
   for _ in $(seq 1 45); do
@@ -86,22 +100,19 @@ wait_task() {
   done
   fail "${label} task=${id} expected=${want} got=${s}"
 }
-
 # precheck: 主链路部署假设逐项硬断言,任一不过拒绝注入任务(不碰现场)。
 precheck() {
   step "precheck deployed provisioner / driver=tl1 / queue / tl1sim"
   provisioner_running || fail "boss-provisioner 未运行:102 主链路未部署或已宕"
-  local env drv addr pend nms others="" c ep dockerps logs
+  local env drv addr pend nms occ pre_rec others="" c ep dockerps logs
   env=$(provisioner_env)
   drv=$(echo "${env}" | grep '^BOSS_PROVISION_DRIVER=' | cut -d= -f2)
-  [ "${drv}" = "tl1" ] || fail "boss-provisioner driver=${drv:-<unset>} 非 tl1:TL1 主链路未生效;102 compose 已默认 DRIVER=tl1,按 docs/ops/tl1-driver-cutover.md §4 重建 provisioner 后重跑(legacy telnet 回归请走 scripts/verify-oltsim-provision-e2e.sh)"
+  [ "${drv}" = "tl1" ] || fail "boss-provisioner driver=${drv:-<unset>} 非 tl1:TL1 主链路未生效;按 docs/ops/tl1-driver-cutover.md §4 重建 provisioner 后重跑"
   addr=$(echo "${env}" | grep '^BOSS_PROVISION_TL1_ADDR=' | cut -d= -f2)
   case "${addr}" in *:*) SIM_PORT="${addr##*:}" ;; *) fail "BOSS_PROVISION_TL1_ADDR=${addr} 缺端口,无法对齐 tl1sim 监听" ;; esac
   case "${SIM_PORT}" in ''|*[!0-9]*) fail "TL1_ADDR 端口非法:${addr}" ;; esac
-  # 演练走 env 兜底端点;法人已有 provision_nms 行则取表行,tl1sim 收不到任务
   nms=$(sql "SELECT count(*) FROM provision_nms WHERE legal_entity_id=1")
   [ "${nms}" = "0" ] || fail "legal_entity 1 已有 provision_nms 行(${nms}):端点取表行而非演练 env 兜底;按 docs/ops/tl1-driver-cutover.md §3.1 处置后重跑"
-  # 无其他 provisioner 容器并跑(隔离容器抢队列属禁手,含旧 tl1-e2e 遗留 t6 容器)
   dockerps=$(ssh "${HOST}" "docker ps --format '{{.Names}}'") || fail "docker ps 失败"
   for c in ${dockerps}; do
     [ "${c}" = "boss-provisioner" ] && continue
@@ -111,23 +122,31 @@ precheck() {
   [ -z "${others}" ] || fail "检测到其他 provisioner 容器在跑(拒绝并跑防抢队列):${others}"
   pend=$(sql "SELECT count(*) FROM provision_tasks WHERE status IN ('PENDING','DOING')"|tr -d '[:space:]')
   [ "${pend}" = "0" ] || fail "下发队列非空 PENDING/DOING=${pend},拒绝注入任务"
-  # 启动日志是生效驱动权威(cutover §4);残留 telnet executor = 未切净
   logs=$(ssh "${HOST}" "docker logs --tail 5000 boss-provisioner 2>&1" 2>/dev/null || true)
   echo "${logs}" | grep -q 'provisioner: telnet executor' && fail "容器日志仍见 telnet executor:驱动未切净,拒绝验收"
   echo "${logs}" | grep -q 'provisioner: tl1 executor' && info "startup log: tl1 executor confirmed" || info "startup log 无 tl1 executor 行(可能轮转),以 env driver=tl1 为准"
   ssh "${HOST}" "test -x ${SIM_BIN}" || fail "missing ${SIM_BIN}(tl1sim 演练二进制)"
-  info "provisioner=running driver=tl1 addr=${addr} sim_port=${SIM_PORT} queue=empty"
+  # R1 自检三: 演练端口必须空闲(LISTEN 即他人占用);起 sim 发 LOGIN 验证 record 落盘,
+  # 设备侧证据链不通即早失败,拒绝注入任务。
+  stop_sim
+  occ=$(ssh "${HOST}" "ss -tlnpt \"sport = :${SIM_PORT}\" 2>/dev/null" | grep -o 'pid=[0-9]*' | head -1)
+  [ -z "${occ}" ] || fail "演练端口 ${SIM_PORT} 已被进程 ${occ} 占用(顶替答话=证据断裂):协调停占口进程后重跑"
+  pre_rec="${EVID_DIR}/tl1sim-precheck.jsonl"
+  start_sim "UP" "${pre_rec}"
+  sim_login_probe || fail "precheck LOGIN 探测无响应(port=${SIM_PORT}):sim 通道异常"
+  ssh "${HOST}" "test -s ${pre_rec} && grep -q LOGIN ${pre_rec}" || fail "precheck record 未落盘:${pre_rec}(R1 证据链自检不过)"
+  stop_sim
+  info "provisioner=running driver=tl1 addr=${addr} sim_port=${SIM_PORT} queue=empty record-ok"
 }
-
 # 隔离夹具: acc_tl1_<stamp> 资源/3 端口/模板(admin API)+ nms_oltid 就位。
 create_fixture() {
   step "create acc_ fixture prefix=${PREFIX}"
   local res p n
-  res=$(api POST /provision/resources "{\"code\":\"OLT-${PREFIX}\",\"name\":\"TL1 ${PREFIX}\",\"type\":\"OLT\",\"addressId\":290,\"legalEntityId\":1}")
+  res=$(api POST /provision/resources "\"{\"code\":\"OLT-${PREFIX}\",\"name\":\"TL1 ${PREFIX}\",\"type\":\"OLT\",\"addressId\":290,\"legalEntityId\":1}")
   RESOURCE_ID=$(echo "${res}" | jq -r '.data.id')
   case "${RESOURCE_ID}" in ''|*[!0-9]*) fail "resource id 异常 response=${res}" ;; esac
   for n in 5 6 7; do
-    p=$(api POST /provision/ports "{\"portCode\":\"P-${PREFIX}-0${n}\",\"resourceId\":${RESOURCE_ID},\"addressId\":290,\"legalEntityId\":1}")
+    p=$(api POST /provision/ports "\"{\"portCode\":\"P-${PREFIX}-0${n}\",\"resourceId\":${RESOURCE_ID},\"addressId\":290,\"legalEntityId\":1}")
     echo "${p}" | jq -e '.data.portId' >/dev/null || fail "port 0${n} id 异常 response=${p}"
   done
   TEMPLATE_ID=$(sql "INSERT INTO provision_templates(legal_entity_id,code,name,content,version,status) VALUES(1,'TPL-${PREFIX}','TL1 ${PREFIX}',jsonb_build_object('bandwidth','100M','onuType','Internet','services',jsonb_build_object('internet',jsonb_build_object('svlan',1113,'cvlan',1,'uv',100,'scos',0,'ccos',0),'tr069',jsonb_build_object('cvlan',1000,'uv',1000,'scos',6,'ccos',6))),1,'ENABLED') RETURNING id"|tr -d '[:space:]')
@@ -135,7 +154,6 @@ create_fixture() {
   sql "UPDATE resources SET nms_oltid='${PREFIX}-OLTID' WHERE id=${RESOURCE_ID};" >/dev/null
   info "resource=${RESOURCE_ID} template=${TEMPLATE_ID} ports=P-${PREFIX}-0{5,6,7}"
 }
-
 # 主链路 TL1 留痕断言: result 符合预期 + driver=tl1 + 指令非 telnet 形态。
 assert_tl1_log() {
   local task="${1}" label="${2}" want="${3}" res drv bad
@@ -143,16 +161,14 @@ assert_tl1_log() {
   if [ "${want}" = "SUCCESS" ]; then
     [ "${res}" = "SUCCESS" ] || fail "${label} task=${task} provision_logs.result=${res}(期望 SUCCESS)"
   else
-    # FailTask 留痕是 FAILED: <reason> 前缀(pg_exec.go),负向不与 SUCCESS 同用精确等值
     case "${res}" in FAILED:*) ;; *) fail "${label} task=${task} provision_logs.result=${res:-<null>}(期望 FAILED: 前缀)" ;; esac
   fi
   drv=$(sql "SELECT driver FROM provision_logs WHERE task_id=${task} ORDER BY id DESC LIMIT 1")
-  [ "${drv}" = "tl1" ] || fail "${label} task=${task} provision_logs.driver=${drv:-<null>}(期望 tl1):TL1 主链路未生效或任务走了旁路"
+  [ "${drv}" = "tl1" ] || fail "${label} task=${task} provision_logs.driver=${drv:-<null>}(期望 tl1)"
   bad=$(sql "SELECT count(*) FROM provision_logs WHERE task_id=${task} AND commands LIKE '%provision apply%'"|tr -d '[:space:]')
   [ "${bad}" = "0" ] || fail "${label} task=${task} commands 含 telnet 形态 provision apply(仍是旧链路)"
   info "${label} task=${task} log result=${res} driver=tl1"
 }
-
 # tl1sim 证据断言: record 留痕 LOGIN/ADD-ONU/ADD-PONVLAN(LOGIN 属会话层,不进 provision_logs)。
 assert_sim_record() {
   local record="${1}" label="${2}" pat
@@ -162,11 +178,8 @@ assert_sim_record() {
   done
   info "${label} record tail: $(ssh "${HOST}" "grep -E 'LOGIN|ADD-ONU|ADD-PONVLAN|LST-ONUSTATE' ${record} | tail -8")"
 }
-
-# 单场景: 拉起指定 oper-state 的 tl1sim → 夹具订单推进到 charge → 由「已部署」
-# 主链路 provisioner 领取执行。预建 PENDING preConfigOLT(task_no=PRV-O<oid>,
-# 自动化 CreateTask 同 task_no 幂等复用)保证夹具模板必达设备——常驻 provisioner
-# 随时可能领取任务,禁止 charge 后再补改模板(那是在跟主链路抢跑)。
+# 单场景: 拉起指定 oper-state 的 tl1sim → 夹具订单推进到 charge → 由已部署主链路
+# provisioner 领取执行。预建 PENDING preConfigOLT(task_no=PRV-O<oid>)保证夹具模板必达设备。
 run_order() {
   local state="${1}" label="${2}" port_no="${3}"
   local record="${EVID_DIR}/tl1sim-${label}.jsonl" order no oid port task loid status
@@ -206,7 +219,6 @@ run_order() {
   fi
   assert_sim_record "${record}" "${label}"
 }
-
 # 订单集合: 前缀资源/模板反查历史与本轮订单,并入本轮数组(端口/任务未落时兜底)。
 order_id_set() {
   local ids id
@@ -272,6 +284,7 @@ cleanup() {
   exit "${bad}"
 }
 trap 'cleanup "$?"' EXIT
+
 step "TL1 102 main-chain E2E target=${BASE_URL} host=${HOST} prefix=${PREFIX}"
 precheck
 create_fixture
