@@ -3,6 +3,7 @@
 // search 模式:关键字经 debounce 后请求服务端(keyword 检索),关闭本地过滤。
 import { useEffect, useRef, useState } from 'react'
 import { Dropdown, type DropdownOption } from './Dropdown'
+import { mergeOptions } from './pickers/pickerCore'
 
 export interface ResourcePickerProps<T> {
   value: string
@@ -24,9 +25,11 @@ export interface ResourcePickerProps<T> {
   errorText?: string
   disabled?: boolean
   minWidth?: number
+  /** 值为空时触发器占位文案;缺省回退 ariaLabel。 */
+  placeholder?: string
 }
 
-export function ResourcePicker<T>({ value, onChange, load, search, debounceMs = 300, toOption, ariaLabel, emptyLabel, pinnedOptions, searchPlaceholder, errorText, disabled, minWidth = 220 }: ResourcePickerProps<T>) {
+export function ResourcePicker<T>({ value, onChange, load, search, debounceMs = 300, toOption, ariaLabel, emptyLabel, pinnedOptions, searchPlaceholder, errorText, disabled, minWidth = 220, placeholder }: ResourcePickerProps<T>) {
   const [items, setItems] = useState<T[]>([])
   const [loadError, setLoadError] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -60,13 +63,11 @@ export function ResourcePicker<T>({ value, onChange, load, search, debounceMs = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword])
 
-  const mapped = items.map(toOption)
-  const pinnedVals = new Set((pinnedOptions ?? []).map((p) => p.value))
-  const options: DropdownOption[] = [
-    ...(emptyLabel ? [{ value: '', label: emptyLabel }] : []),
-    ...(pinnedOptions ?? []),
-    ...mapped.filter((o) => !pinnedVals.has(o.value)),
-  ]
+  const options = mergeOptions(
+    emptyLabel ? [{ value: '', label: emptyLabel }] : undefined,
+    pinnedOptions,
+    items.map(toOption),
+  )
 
   return (
     <div>
@@ -80,6 +81,7 @@ export function ResourcePicker<T>({ value, onChange, load, search, debounceMs = 
         remote={!!search}
         onKeywordChange={search ? setKeyword : undefined}
         searchPlaceholder={searchPlaceholder}
+        placeholder={placeholder}
         triggerStyle={{ minWidth }}
       />
       {loadError && <div className="mt-1 text-[11px] text-[var(--color-danger)]">{loadError}</div>}

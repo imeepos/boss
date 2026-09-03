@@ -1,8 +1,8 @@
-// 实体选择器基座:服务端检索下拉 + 选中后"详情/前往管理页"入口。
+// 实体选择器:服务端检索下拉(基于 SimplePicker 小数据量基座)+ 选中后"详情/前往管理页"入口。
 // 详情走各域单档接口(抽屉展示);跳转用 react-router 导航到对应管理页。
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ResourcePicker } from '../ResourcePicker'
+import { SimplePicker } from './SimplePicker'
 import { DetailDrawer } from '../business/detail-drawer'
 import type { DropdownOption } from '../Dropdown'
 import type { DetailItem } from '../../pages/org/shared'
@@ -52,12 +52,12 @@ export function EntityPicker<T>(props: EntityPickerProps<T>) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <ResourcePicker
+      <SimplePicker
         value={value}
         onChange={onChange}
-        search={search}
-        toOption={toOption}
+        search={(kw) => search(kw).then((items) => (items ?? []).map(toOption))}
         ariaLabel={texts.aria}
+        placeholder={texts.placeholder}
         emptyLabel={emptyLabel}
         searchPlaceholder={texts.placeholder}
         errorText={texts.loadFail}
