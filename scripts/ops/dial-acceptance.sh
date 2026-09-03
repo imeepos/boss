@@ -88,6 +88,50 @@ dial() {
 
 dial_field() { echo "$1" | sed -n "s/.*$2=\([^ ]*\).*/\1/p"; }
 
+# assert_provision_success: 该订单全部下发任务终态 DONE 且每任务最新日志 SUCCESS。
+# 拨号前必须确认「网络开通」真实完成(下发未完=LOID 未上电,拨号断言会失真),
+# 同时避免收尾清理与 provisioner 抢跑(任务 PENDING 即被删)。轮询 PROVISION_WAIT 缺省 30s。
+assert_provision_success() {
+  local order_id="$1" order_no="$2" deadline=$(( $(date +%s) + ${PROVISION_WAIT:-30} )) ts cls id logs latest
+  while :; do
+    ts=$(api GET /provision-tasks) || return 1
+    cls=$(python3 -c "
+import json
+d=json.loads('''$ts''')
+ts=[t for t in d.get('items',[]) if t.get('orderId')==$order_id]
+if not ts: print('NONE')
+elif any(t.get('status')!='DONE' for t in ts): print('PENDING')
+else: print('DONE ' + ' '.join(str(t['id']) for t in ts))")
+    case "$cls" in
+      NONE)
+        FAIL_REASON="no provision tasks for order $order_id"
+        echo "[provision-assert] FAIL order=$order_no: $FAIL_REASON" >&2; return 1 ;;
+      PENDING)
+        if [ "$(date +%s)" -lt "$deadline" ]; then sleep 2; continue; fi
+        FAIL_REASON="provision tasks not DONE within ${PROVISION_WAIT:-30}s (order $order_id)"
+        echo "[provision-assert] FAIL order=$order_no: $FAIL_REASON" >&2; return 1 ;;
+    esac
+    break
+  done
+  local n=0
+  for id in $cls; do
+    [ "$id" = "DONE" ] && continue
+    n=$((n+1))
+    logs=$(api GET "/provision-logs?taskId=$id") || return 1
+    latest=$(python3 -c "
+import json
+d=json.loads('''$logs''')
+items=d.get('items',[])
+print(items[-1].get('result','') if items else 'NO-LOG')")
+    case "$latest" in
+      SUCCESS*) : ;;
+      *) FAIL_REASON="provision task $id latest log=<$latest>"
+         echo "[provision-assert] FAIL order=$order_no task=$id latest-log=<$latest>" >&2; return 1 ;;
+    esac
+  done
+  echo "[provision-assert] PASS order=$order_no 下发任务=$n 全部日志 SUCCESS" >&2
+}
+
 # expect_dial PHASE WANT_CODE WANT_BW PROBE_OUT: 断言应答码(与 Accept 时的带宽)。
 expect_dial() {
   local code bw
@@ -158,6 +202,8 @@ for t in d.get('items',[]):
   stage=$(python3 -c "import json;d=json.loads('''$detail''');print(d['order']['stage'])")
   status=$(python3 -c "import json;d=json.loads('''$detail''');print(d['order']['status'])")
   [ "$stage" = "12" ] && [ "$status" = "DONE" ] || { FAIL_REASON="final $stage/$status"; return 1; }
+  # 下发终态硬断言:网络真实开通后才允许拨号(同 mainchain D1 口径)。
+  assert_provision_success "$(j "$order" id)" "$order_no" || return 1
   # 新开通订单的认证账号与套餐权威带宽
   local loid bw_exp
   loid=$(resolve_loid "$CUSTOMER_ID")
