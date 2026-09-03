@@ -473,3 +473,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当审计/巡检类探针 SQL 只有 pgxmock 测试,mock 会把错误表名固化成"绿"——幽灵引用(loy_ledgers/gis_points 类)必须补 BOSS_PG_TEST_DSN 真库回归,一条 ReconCounts 全量执行就能把 CRITICAL 当场炸出(report/probe_sql_integration_test.go 可复制,2026-09-02 补偿巡检轮)。
 - 当给存量表补枚举 CHECK,走"数据归一 UPDATE → ADD CONSTRAINT NOT VALID → VALIDATE CONSTRAINT"三步;NOT VALID 不阻塞 DML,VALIDATE 失败即存量脏值曝光(2026-09-02 coupons 000177,102 真库验证 convalidated)。
 - 当展示编码要防超列宽,按 000085 惯例从 id 派生(A-/RK-/C- + lpad(id,N,'0')),别把 orderNo 等变长语义塞进 UNIQUE 码——orders 变长即整笔写入必炸 value too long(2026-09-02 procurement asset_code 39>32)。
+当看到「指令格式不对却执行成功」类日志时,先查 SUCCESS 的判定条件与对端真实身份——自研仿真器/桩回的 OK 是闭环自证,不代表业务成功(2026-09-03 provision apply telnet 链)。

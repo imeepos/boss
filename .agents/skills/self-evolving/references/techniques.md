@@ -628,3 +628,4 @@ SQL
 - 坑:Vite 按页面懒加载分包,index-*.js 只是壳(440KB),页面代码在 `assets/<Page>-<hash>.js` 分片;只 grep index 会假 0 命中,误判「部署脑裂」白查一轮(本轮 boss-server 已新、admin-web 实际也已新)。
 - 正解:先 `grep -o 'assets/[A-Za-z0-9_-]*\.js' index.js | sort -u` 拉分片清单,再逐片 grep 特征串;或直接用 `bash scripts/ops/verify-deploy.sh --expect-sha <sha>`(文件名一致性口径)+ 分片内容 grep 双确认。
 - 注意 grep 结果里的文件名有语义:命中分片名可能与特性所在页面组件不同名(共享 chunk 按任一成员命名,如 customer 抽屉代码在 RegistrationQueueDrawer-*.js),文件名不像≠没部署。
+查 102 上服务真实运行配置:先 ps 拿 pid,再 ssh 执行 tr '\0' '\n' < /proc/<pid>/environ 看 true env——systemctl status/cat 可能显示 inactive 或与实况不符(进程另有启动来源),部署文档也可能滞后(2026-09-03 验证有效)。

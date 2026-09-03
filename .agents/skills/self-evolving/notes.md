@@ -1589,3 +1589,8 @@
 - 本模型(GLM-5.3-Flash)不支持 read_image:截图目检改用 cdp --eval DOM 断言(pre 数量/font-mono/overflow-x/section 标题/指令文本),功能与结构可完全断言,视觉只剩人眼复核。eval 里对象字面量内三元表达式要加括号,否则 SyntaxError。
 - 闭环姿势:push main → deploy-102 runner 自动构建+compose 拉起(~2.5min) → server 启动自跑内嵌迁移(schema_migrations 000179)→ 线上下单即产 trace。契约字段先行(openapi→gen 路由目录→前端类型对齐 json tag),一轮回填零返工。
 - 采集点选择:telnet 单命令单应答直接 Exec 里抓;tl1 用 traceSink 包 CmdSink(Session.Do 唯一出口),Response.Raw 天然带原始报文,Session/Manager 零改动。
+
+## 2026-09-03 排查「指令格式不对却 SUCCESS」
+- 任务:纯调查,零代码改动。结论:102 跑 BOSS_PROVISION_DRIVER=telnet,指令是 TelnetExecutor 硬编码的自造行协议,对端是自研 oltsim,它收到前缀+三参数非空就回 OK,SUCCESS 是闭环自证。
+- 最有价值的动作:不信部署文档/systemctl(显示 inactive 但进程在跑、compose 与实况有偏差),直接 /proc/<pid>/environ 拿真实环境变量,一步定位。
+- 通用教训:自研仿真器环境里的 SUCCESS 只代表仿真器认可,排查「诡异成功」先问对端是谁、SUCCESS 判定条件是什么(这里只是 strings.Contains(line, "OK"))。
