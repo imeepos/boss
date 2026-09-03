@@ -452,3 +452,4 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状:本地已安装的旧 bossctl 对 102 调 auth 相关端点 404(login/me 路由前缀落后线上),saved api-key 报 invalid token;影响所有用本地旧 bossctl 打 102 的会话,二进制重编译对齐前持续存在。
 - 规避:免登录核对改用 .agents/skills/bossctl-cli/test-accounts.json 凭证换新 JWT 走原始 curl;或从 cmd/bossctl 重新编译安装对齐线上路由后再用。
 - 来源:W-0904-UI U4 地图选点会话 2026-09-04 实测(其 notes 同条目,委托统一入库)。
+- **已修复(2026-09-04, W-0905-T13)｜bossctl 重编译对齐**:S3 会话从 cmd/bossctl 重编译安装并合入 scripts/ops/bossctl-acceptance.sh(commit 40a0d2ef,机械断言 auth/me code=0 + admin routes 509 与 102 一致 + saved api-key 免登录正常);二进制解析优先级 env > PATH > ~/bin > 源码临时编译,不回落过期 assets 产物。
