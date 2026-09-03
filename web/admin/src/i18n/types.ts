@@ -2720,6 +2720,7 @@ export interface Translations {
       worker: { title: string; aria: string; name: string; staffNo: string; phone: string; group: string; region: string; status: string; onDuty: string; left: string; joinedAt: string }
       customer: { title: string; aria: string; code: string; name: string; phone: string; idType: string; idNo: string; realNameStatus: string; serviceStatus: string; region: string; createdAt: string }
       user: { title: string; aria: string; name: string; phone: string; plan: string; balance: string; arrears: string; activeOrders: string; realNameStatus: string; serviceStatus: string; autoPay: string; on: string; off: string }
+      regionCascade: { country: string; levelSearch: string; directSearch: string; loading: string; empty: string; loadFail: string; searchFail: string; clear: string; aria: string }
     }
     profile: {
       title: string

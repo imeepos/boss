@@ -2911,6 +2911,7 @@ columns: ['Kod', 'Nama', 'Susunan', 'Aktif'],
       worker: { title: 'Butiran Pekerja', aria: 'Pilih pekerja', name: 'Nama', staffNo: 'No. Kakitangan', phone: 'Telefon', group: 'Kumpulan', region: 'Wilayah', status: 'Status', onDuty: 'Bertugas', left: 'Berhenti', joinedAt: 'Tarikh menyertai' },
       customer: { title: 'Butiran Pelanggan', aria: 'Pilih pelanggan', code: 'Kod Pelanggan', name: 'Nama', phone: 'Telefon', idType: 'Jenis ID', idNo: 'No. ID', realNameStatus: 'Status Nama Sebenar', serviceStatus: 'Status Perkhidmatan', region: 'Wilayah', createdAt: 'Dicipta pada' },
       user: { title: 'Butiran Pengguna', aria: 'Pilih pengguna', name: 'Nama', phone: 'Telefon', plan: 'Pelan', balance: 'Baki', arrears: 'Tertunggak', activeOrders: 'Pesanan Aktif', realNameStatus: 'Status Nama Sebenar', serviceStatus: 'Status Perkhidmatan', autoPay: 'Bayar Automatik', on: 'Hidup', off: 'Mati' },
+      regionCascade: { country: 'Negara', levelSearch: 'Cari peringkat ini', directSearch: 'Taip nama atau kod kawasan untuk lompat terus', loading: 'Memuat…', empty: 'Tiada data', loadFail: 'Gagal memuatkan kawasan', searchFail: 'Carian kawasan gagal', clear: 'Kosongkan', aria: 'Pilih negara dan kawasan' },
     },
     profile: {
       title: 'Pusat Akaun Pentadbir', activeAccount: 'Akaun aktif', save: 'Simpan perubahan', cancel: 'Batal',
