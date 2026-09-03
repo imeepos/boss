@@ -26,7 +26,7 @@ type TelnetExecutor struct {
 // defaultTelnetTimeout 缺省单次交互超时。
 const defaultTelnetTimeout = 5 * time.Second
 
-// Exec 执行一次下发:连接 → 登录 → 下发命令 → 校验 OK;回传指令与设备应答留痕。
+// Exec 执行一次下发:连接 → 登录 → 下发命令 → 校验应答整行精确为 OK;回传指令与设备应答留痕。
 func (e *TelnetExecutor) Exec(ctx context.Context, t Task) (ExecTrace, error) {
 	trace := ExecTrace{Commands: []string{}, Driver: DriverTelnet}
 	dial := e.Dial
@@ -52,12 +52,13 @@ func (e *TelnetExecutor) Exec(ctx context.Context, t Task) (ExecTrace, error) {
 	if _, err := conn.Write([]byte(cmd + "\n")); err != nil {
 		return trace, fmt.Errorf("provision: telnet cmd: %w", err)
 	}
-	line, err := readUntil(ctx, r, "OK", e.timeout())
+	line, err := readUntil(ctx, r, "\n", e.timeout())
 	trace.Response = strings.TrimSpace(line)
 	if err != nil {
 		return trace, fmt.Errorf("provision: telnet read: %w", err)
 	}
-	if !strings.Contains(line, "OK") {
+	// 只有 TrimSpace 后整行精确等于 OK 才算成功;含 OK 但非完整 OK 行(如 OK applied/NOK)一律 nok。
+	if strings.TrimSpace(line) != "OK" {
 		return trace, fmt.Errorf("provision: telnet nok: %s", trace.Response)
 	}
 	return trace, nil

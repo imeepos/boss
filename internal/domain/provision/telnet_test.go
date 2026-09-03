@@ -86,6 +86,18 @@ func TestTelnetExecutor_Exec(t *testing.T) {
 		}
 	})
 
+	t.Run("应答含 OK 但非完整 OK 行", func(t *testing.T) {
+		f := startFakeOLT(t, "OK applied")
+		e := &TelnetExecutor{Addr: f.addr(), User: "admin", Pass: "secret", Timeout: 2 * time.Second}
+		trace, err := e.Exec(ctx, task)
+		if err == nil || !strings.Contains(err.Error(), "nok") {
+			t.Fatalf("err=%v, want nok", err)
+		}
+		if trace.Response != "OK applied" {
+			t.Fatalf("response=%q", trace.Response)
+		}
+	})
+
 	t.Run("连接失败", func(t *testing.T) {
 		e := &TelnetExecutor{Addr: "127.0.0.1:1", User: "admin", Pass: "secret", Timeout: time.Second}
 		if _, err := e.Exec(ctx, task); err == nil {
