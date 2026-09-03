@@ -11,10 +11,13 @@ import (
 type KV struct{ K, V string }
 
 // Command 一条 TL1 命令。target 恒空,按文档占用冒号位。
+// Tag 非空时作为业务 ctag 占据 ctag 位(ADD-ONU=ADDONT、ADD-PONVLAN=服务名),
+// 须过 tagRe 白名单;空则由 Session 以自增 B%06d 形态填充。
 type Command struct {
 	Verb    string // "ADD-ONU" / "LST-ONUSTATE" ...
 	Access  []KV   // OLTID=...,PONID=NA-0-7-5
 	Payload []KV   // AUTHTYPE=LOID,ONUID=...
+	Tag     string // 业务 ctag;空=会话自增
 }
 
 // Response 解析后的响应;查询类 Rows 为表格行(attrib→value),操作类 Rows 为空。
@@ -29,11 +32,32 @@ type Response struct {
 // whitelistRe 值参数白名单字符集(OCTET STRING):字母数字 +( )_+-./ 与反斜杠。
 var whitelistRe = regexp.MustCompile("^[A-Za-z0-9 ()_+./\\\\-]+$")
 
+// tagRe ctag 白名单:仅字母数字与 _ -,拒 : ; , = 空格等分隔/注入字符
+// (手册业务 ctag 如 ADDONT/Internet/TR069 均在集内)。
+var tagRe = regexp.MustCompile("^[A-Za-z0-9_-]+$")
+
+// effectiveCTag 返回实际入网 ctag:业务 Tag 非空须过白名单并优先,空则回退会话自增值。
+// Build 与 Session.Do 共用,保证写线与响应匹配永不漂移。
+func (c Command) effectiveCTag(fallback string) (string, error) {
+	if c.Tag == "" {
+		return fallback, nil
+	}
+	if !tagRe.MatchString(c.Tag) {
+		return "", fmt.Errorf("%w: tag %q", ErrBadParam, c.Tag)
+	}
+	return c.Tag, nil
+}
+
 // Build 序列化为 "<VERB>::<K=V,K=V>:<ctag>::<K=V...>;",target 恒空留双冒号占位。
+// ctag 位取业务 Tag(非空,须过 tagRe 白名单),否则用入参 ctag(会话自增)。
 // Access 与 Payload 的键值均过白名单,违规即 error(fail fast),防脏参数入网管。
 func Build(c Command, ctag string) ([]byte, error) {
 	if !whitelistRe.MatchString(c.Verb) {
 		return nil, fmt.Errorf("%w: verb %q", ErrBadParam, c.Verb)
+	}
+	tag, err := c.effectiveCTag(ctag)
+	if err != nil {
+		return nil, err
 	}
 	acc, err := kvs(c.Access)
 	if err != nil {
@@ -43,7 +67,7 @@ func Build(c Command, ctag string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	line := c.Verb + "::" + acc + ":" + ctag + "::" + pay + ";"
+	line := c.Verb + "::" + acc + ":" + tag + "::" + pay + ";"
 	return []byte(line), nil
 }
 

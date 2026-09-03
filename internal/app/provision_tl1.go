@@ -238,7 +238,7 @@ func buildServices(p tl1.Params, svcs map[string]tl1SvcConfig) []tl1.PONVLANPara
 	out := make([]tl1.PONVLANParams, 0, len(svcs))
 	for name, s := range svcs {
 		sv := tl1.PONVLANParams{
-			Name: name, OLTID: p.OLTID, PONID: p.PONID,
+			ServiceName: name, OLTID: p.OLTID, PONID: p.PONID,
 			ONUIDType: p.AuthType, ONUID: p.ONUID,
 			CVLAN: s.CVLAN, UV: s.UV, SCOS: s.SCOS, CCOS: s.CCOS,
 		}

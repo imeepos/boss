@@ -28,10 +28,12 @@ type AddONUParams struct {
 }
 
 // PONVLANParams ADD-PONVLAN 业务参数(PDF §12.1.1)。
-// Name 即 DESC 值(业务别名);executor 传入组合后的 PRV-<orderNo>-<svc> 形态。
+// Name 即 DESC 值:executor 传入 PRV-<orderNo>-<svc> 完整幂等对账键。
+// ServiceName 业务服务名(Internet/TR069)进 ctag 位,不与 DESC 对账键混用。
 // SVLAN 仅 HasSVLAN=true 时下发(TR069 单层业务不带)。
 type PONVLANParams struct {
 	Name, OLTID, PONID string
+	ServiceName        string
 	ONUIDType, ONUID   string
 	SVLAN, CVLAN, UV   int
 	SCOS, CCOS         int
@@ -109,6 +111,7 @@ func lstONUState(ctx context.Context, d CmdSink, oltid, ponid, idType, id string
 func addONU(ctx context.Context, d CmdSink, p AddONUParams) error {
 	return writeCmd(ctx, d, Command{
 		Verb:   "ADD-ONU",
+		Tag:    "ADDONT", // 手册业务 ctag,进 ctag 位
 		Access: []KV{{"OLTID", p.OLTID}, {"PONID", p.PONID}},
 		Payload: []KV{
 			{"AUTHTYPE", p.AuthType}, {"ONUID", p.ONUID},
@@ -129,7 +132,13 @@ func addPONVLAN(ctx context.Context, d CmdSink, p PONVLANParams) error {
 	if p.CCOS != 0 {
 		payload = append(payload, KV{"CCOS", strconv.Itoa(p.CCOS)})
 	}
-	return writeCmd(ctx, d, Command{Verb: "ADD-PONVLAN", Access: accessONU(p.OLTID, p.PONID, p.ONUIDType, p.ONUID), Payload: payload})
+	// 业务 ctag 用服务名(Internet/TR069);DESC 对账键仍走 payload 的 DESC 位。
+	return writeCmd(ctx, d, Command{
+		Verb:    "ADD-PONVLAN",
+		Tag:     p.ServiceName,
+		Access:  accessONU(p.OLTID, p.PONID, p.ONUIDType, p.ONUID),
+		Payload: payload,
+	})
 }
 
 func accessONU(oltid, ponid, idType, id string) []KV {

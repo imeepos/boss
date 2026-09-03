@@ -112,8 +112,14 @@ type traceSink struct {
 
 func (s *traceSink) Do(ctx context.Context, c Command) (*Response, error) {
 	s.seq++
-	line, _ := Build(c, "TRC"+strconv.Itoa(s.seq))
 	r, err := s.inner.Do(ctx, c)
+	// 留痕 ctag 与线上对齐:优先取响应实际 ctag(业务 Tag 或会话自增);
+	// 无应答(断线/构建失败)才退回 TRC<seq> 占位,不留 B 位假象。
+	tag := "TRC" + strconv.Itoa(s.seq)
+	if r != nil && r.CTag != "" {
+		tag = r.CTag
+	}
+	line, _ := Build(c, tag)
 	s.trace.Commands = append(s.trace.Commands, string(line))
 	if r != nil && r.Raw != "" {
 		s.trace.Response = joinResp(s.trace.Response, strings.TrimRight(r.Raw, "\n"))
@@ -158,7 +164,7 @@ func applyServices(ctx context.Context, d CmdSink, t provision.Task, p Params) e
 			continue
 		}
 		w := svc
-		w.Name = want // DESC 落网元为完整对账键
+		w.Name = want // DESC 落网元为完整对账键;ServiceName 原样进 ctag 位
 		if err := addPONVLAN(ctx, d, w); err != nil {
 			return err
 		}
@@ -217,7 +223,8 @@ func (p Params) addONUParams() AddONUParams {
 }
 
 // svcDesc 业务流对账键:Desc 基值-服务名,如 PRV-<orderNo>-Internet。
-func svcDesc(p Params, svc PONVLANParams) string { return p.Desc + "-" + svc.Name }
+// 服务名取 ServiceName(与 Name=DESC 键分离,DESC 不再反哺服务名)。
+func svcDesc(p Params, svc PONVLANParams) string { return p.Desc + "-" + svc.ServiceName }
 
 // descHit 行集里存在 DESC==desc 的行。
 func descHit(rows []map[string]string, desc string) bool {
