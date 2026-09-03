@@ -35,6 +35,9 @@ AAA_CONTAINER="${AAA_CONTAINER:-boss-aaa}"
 PG="docker exec -i boss-infra-postgres-1 psql -U boss -d boss"
 PROBE="$ROOT/scripts/ops/radius_probe.py"
 
+# sql: 102 夹具 SQL(仅限无管理面的字段:nms_oltid/PON 三维/预置任务,姿势同 verify-tl1-e2e.sh)。
+sql() { ssh -o ConnectTimeout=10 -o BatchMode=yes "$SSH_HOST" "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -v ON_ERROR_STOP=1 -q -tA"; }
+
 OK=0; FAIL=0; FAILED_RUNS=(); FAIL_REASON=""
 
 # api METHOD PATH [JSON] -> stdout 业务 data;失败时空串 + FAIL_REASON。
@@ -102,11 +105,17 @@ one_run() {
   local run="$1" suffix
   suffix="$(date +%s)%03d$RANDOM"; suffix=$(printf "$suffix" "$run")
   FAIL_REASON=""
-  # 自举资源:地址 + 分光器 + 2端口 + 标签/资产(与 mainchain-acceptance.sh 同一 acc_ 标记体系)
-  local addr res tag asset
+  # 自举资源(TL1 驱动就绪,与 mainchain-acceptance.sh 同一 acc_ 标记体系):
+  # 地址 + OLT(nms_oltid) + 2端口(预留后回填 PON 三维) + TL1 内容模板 + 标签/资产。
+  # 102 已切 TL1 驱动:无 PON 定位夹具会让环节7 任务 RESOLVE FAILED 且订单照样 DONE。
+  local addr res tag asset tpl
   addr=$(api POST /addresses "{\"label\":\"acc_$suffix\",\"name\":\"验收地址-$suffix\"}") || return 1
   local addr_id; addr_id=$(j "$addr" id)
-  res=$(api POST /provision/resources "{\"code\":\"SPL-ACC-$suffix\",\"name\":\"拨号验收分光器$run\",\"type\":\"SPLITTER\",\"addressId\":$addr_id,\"legalEntityId\":1}") || return 1
+  res=$(api POST /provision/resources "{\"code\":\"OLT-ACC-$suffix\",\"name\":\"拨号验收OLT$run\",\"type\":\"OLT\",\"addressId\":$addr_id,\"legalEntityId\":1}") || return 1
+  tpl=$(api POST /provision-templates "{\"legalEntityId\":1,\"code\":\"TPL-ACC-$suffix\",\"name\":\"拨号验收模板$run\",\"content\":{\"bandwidth\":\"100M\",\"onuType\":\"Internet\",\"services\":{\"internet\":{\"svlan\":1113,\"cvlan\":1,\"uv\":100,\"scos\":0,\"ccos\":0},\"tr069\":{\"cvlan\":1000,\"uv\":1000,\"scos\":6,\"ccos\":6}}}}") || return 1
+  local tpl_id; tpl_id=$(j "$tpl" id)
+  echo "UPDATE resources SET nms_oltid='NMS-ACC-$suffix' WHERE id=$(j "$res" id);" | sql || return 1
+  local res_id; res_id=$(j "$res" id)
   local res_id; res_id=$(j "$res" id)
   local pids=()
   for i in 1 2; do
@@ -122,6 +131,16 @@ one_run() {
   order_no=$(j "$order" orderNo)
   api POST "/orders/$order_no/check-resource" >/dev/null || return 1
   api POST "/orders/$order_no/reserve" >/dev/null || return 1
+  # 预置 TL1 下发(姿势同 verify-tl1-e2e.sh):预占端口回填 PON 三维;预建 PENDING 任务
+  # (task_no=PRV-O<oid>,环节7 CreateTask 同号幂等复用)保证 TL1 就绪模板必达设备。
+  local order_id port_id lo_id
+  order_id=$(j "$order" id)
+  port_id=$(echo "SELECT id FROM ports WHERE order_id=$order_id AND status='RESERVED' ORDER BY id LIMIT 1;" | sql | tr -d '[:space:]')
+  [ -n "$port_id" ] || { FAIL_REASON="reserved port not found"; return 1; }
+  echo "UPDATE ports SET pon_frame=0,pon_slot=7,pon_port=$run,onu_no=NULL WHERE id=$port_id;" | sql || return 1
+  lo_id=$(echo "SELECT id FROM lo_accounts WHERE customer_id=$CUSTOMER_ID ORDER BY id LIMIT 1;" | sql | tr -d '[:space:]')
+  [ -n "$lo_id" ] || { FAIL_REASON="lo account missing for customer $CUSTOMER_ID"; return 1; }
+  echo "INSERT INTO provision_tasks(task_no,order_id,stage_event,lo_account_id,template_id,status) VALUES('PRV-O$order_id',$order_id,'preConfigOLT',$lo_id,$tpl_id,'PENDING');" | sql || return 1
   api POST "/orders/$order_no/charge" >/dev/null || return 1
   local pool ticket_no
   pool=$(api GET /dispatch/pool) || return 1
