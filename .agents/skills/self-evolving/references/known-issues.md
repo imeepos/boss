@@ -447,3 +447,8 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状:bash 函数 fail(){ exit 1; } 若在命令替换内被调用,exit 只终止子 shell,主 shell 拿到空/非零返回继续执行;调用点若无显式检查(如 x=$(f) 后接 case 空值断言),断言失败仍可一路跑到 exit 0——验收假绿。verify-tl1-e2e.sh 2026-09-04 exit-0 轮的最可能机制候选(api() 全部经命令替换调用)。
 - 修法:凡被命令替换调用的函数体内禁用 fail();替换返回值必须紧跟显式校验(case 空值/数字形态)再 fail;EXIT trap 用传参式 trap 'cleanup "$?"' EXIT,cleanup 函数体内禁用 fail 不做二次 exit,原始失败码优先透传,清理段自身故障置 1。
 - 实测:错 key 负向轮 api 的 fail 在命令替换内,resource id 的 case 空值检查兜底,修复后最终 exit 1。
+
+## 2026-09-04 本地旧 bossctl 二进制打 102:auth 路由前缀落后 + saved api-key invalid token
+- 症状:本地已安装的旧 bossctl 对 102 调 auth 相关端点 404(login/me 路由前缀落后线上),saved api-key 报 invalid token;影响所有用本地旧 bossctl 打 102 的会话,二进制重编译对齐前持续存在。
+- 规避:免登录核对改用 .agents/skills/bossctl-cli/test-accounts.json 凭证换新 JWT 走原始 curl;或从 cmd/bossctl 重新编译安装对齐线上路由后再用。
+- 来源:W-0904-UI U4 地图选点会话 2026-09-04 实测(其 notes 同条目,委托统一入库)。
