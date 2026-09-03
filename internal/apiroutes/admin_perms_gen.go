@@ -120,6 +120,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/faqs":                                                      {"menu:userdata"},
 	"GET /api/admin/v1/geo/countries":                                             {"menu:geo"},
 	"GET /api/admin/v1/geo/countries/{code}":                                      {"menu:geo"},
+	"GET /api/admin/v1/geo/default-country":                                       {},
 	"GET /api/admin/v1/geo/subdivisions":                                          {"menu:geo"},
 	"GET /api/admin/v1/geo/subdivisions/{code}/names":                             {"menu:geo"},
 	"GET /api/admin/v1/gift-rules":                                                {"menu:userdata"},

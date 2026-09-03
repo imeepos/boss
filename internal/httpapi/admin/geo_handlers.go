@@ -4,6 +4,8 @@ package adminapi
 // 请求体类型与请求体→域对象转换见 geo.go;批量导入见 geo_import.go。
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -124,10 +126,28 @@ func geoReplaceCountryAttrs(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// geoListSubdivisions GET /geo/subdivisions:country/locale 兼容过滤 + parentCode 下钻
+// + keyword 搜索(须配合 country,否则参数错)+ limit 截断(钳制口径在域层,默认 50 最大 200)。
 func geoListSubdivisions(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		list, err := a.Geo.ListSubdivisions(c.Request.Context(),
-			c.Query("country"), c.Query("locale"))
+		f := geo.SubdivisionFilter{
+			CountryCode: c.Query("country"),
+			Locale:      c.Query("locale"),
+			Keyword:     c.Query("keyword"),
+		}
+		// parentCode 三态:缺省不过滤;传空值取顶层节点;传码取直接子节点。
+		if _, ok := c.Request.URL.Query()["parentCode"]; ok {
+			v := c.Query("parentCode")
+			f.ParentCode = &v
+		}
+		if f.Keyword != "" && f.CountryCode == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "keyword requires country"})
+			return
+		}
+		if n, err := strconv.Atoi(c.Query("limit")); err == nil {
+			f.Limit = n
+		}
+		list, err := a.Geo.ListSubdivisions(c.Request.Context(), f)
 		if err != nil {
 			respondErr(c, err)
 			return

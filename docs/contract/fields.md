@@ -173,6 +173,9 @@
 
 关联表（均一对多）：`country_time_zone(tz_name, IANA)`、`country_currency(currency, is_primary, minor_unit)`、`country_calling_code(calling_code, E.164)`。
 
+区划列表响应（GET /geo/subdivisions，选择器懒加载下钻）：行字段 `HasChildren`（hasChildren，存在未停用子节点，无 DB 列，下钻入口渲染用）；查询参数 `parentCode`（非空=直接子节点，传空值=顶层节点，缺省=不过滤）、`keyword`（模糊匹配编码+全部译名，须配合 `country`，缺失拒绝 42200）、`limit`（默认 50，最大 200）。
+默认国家（零迁移，复用 biz_params）：键 `geo.default_country`（值=alpha-2，如 PH）；读端点 GET /geo/default-country（登录管理员即可读，不设 menu 门槛）；写路径复用 PUT /params/:key（menu:params）；未配置/值非法返回空值对象 `{countryCode:"",configured:false}`，不兜底部署主国家。
+
 `addresses` 国际化挂接（迁移 000038，path 权威不变）：`CountryID → country_code`（→ geo_country，空=历史数据未挂）、`AdminCode → admin_code`（→ geo_subdivision，一级行政区锚点）。
 
 ### 1.5.2 odn_region_code / odn_city_code（ODN 地理空间编码映射，迁移 000075）

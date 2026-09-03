@@ -132,41 +132,6 @@ func (s *PGStore) withTx(ctx context.Context, fn func(tx dbtx) error) error {
 	return tx.Commit(ctx)
 }
 
-// ListSubdivisions 区划列表;countryCode 非空按国家过滤,locale 非空联译名(回落 code)。
-func (s *PGStore) ListSubdivisions(ctx context.Context, countryCode, locale string) ([]Subdivision, error) {
-	sql := `SELECT d.code, d.country_code, COALESCE(d.parent_code,''), d.level, d.category,
-		COALESCE(d.osm_admin_level,0), COALESCE(d.geonameid,0), d.is_active`
-	args := []any{}
-	where := ""
-	if countryCode != "" {
-		where = ` WHERE d.country_code = $1`
-		args = append(args, countryCode)
-	}
-	if locale != "" {
-		sql += `, COALESCE((SELECT n.name FROM geo_subdivision_i18n n
-			WHERE n.subdivision_code = d.code AND n.locale = $` +
-			fmt.Sprint(len(args)+1) + ` AND n.name_type = 'STANDARD' LIMIT 1), d.code)`
-		args = append(args, locale)
-	} else {
-		sql += `, d.code`
-	}
-	rows, err := s.db.Query(ctx, sql+` FROM geo_subdivision d`+where+` ORDER BY d.code`, args...)
-	if err != nil {
-		return nil, fmt.Errorf("geo: list subdivisions: %w", err)
-	}
-	defer rows.Close()
-	out := make([]Subdivision, 0)
-	for rows.Next() {
-		var d Subdivision
-		if err := rows.Scan(&d.Code, &d.CountryCode, &d.ParentCode, &d.Level, &d.Category,
-			&d.OSMAdminLevel, &d.GeonameID, &d.IsActive, &d.DisplayName); err != nil {
-			return nil, fmt.Errorf("geo: scan subdivision: %w", err)
-		}
-		out = append(out, d)
-	}
-	return out, rows.Err()
-}
-
 // GetSubdivision 单查区划(挂接校验用)。
 func (s *PGStore) GetSubdivision(ctx context.Context, code string) (*Subdivision, error) {
 	var d Subdivision
