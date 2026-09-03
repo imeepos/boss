@@ -14,6 +14,10 @@
 # 环境: BASE_URL/ADMIN_API_KEY/SSH_HOST/RADIUS_ADDR/OFFER_ID/CUSTOMER_ID/SKIP_CLEANUP 可覆盖。
 set -u
 
+source "$(dirname "$0")/acceptance-lock.sh"
+acquire_acceptance_lock || exit 1
+trap release_acceptance_lock EXIT
+
 NEGATIVE=0; RUNS=1
 for a in "$@"; do
   case "$a" in
@@ -290,4 +294,5 @@ if [ "$RISK_OFF" = "1" ]; then
 fi
 
 [ "$FAIL" -eq 0 ] && [ "$rc" -eq 0 ] && exit 0
+release_acceptance_lock
 exit 1
