@@ -41,6 +41,79 @@ print(json.dumps(d.get('data',d)))")
 # j JSON FIELD -> 取字段值
 j() { python3 -c "import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))" "$1" "$2"; }
 
+# 终态断言(2026-09-04 D1 补全):stage=12/DONE 不再是唯一终态口径——认证账号与下发结果
+# 必须同轮验证,任一失败判本轮 FAIL(此前「开户/拨号上网」两环在 102 零自动化覆盖)。
+
+# assert_lo_account_matches_order: 该订单客户的 LO 账号已建立,生效套餐/付费模式与订单一致。
+# 依据: 环节6 创建账号(pg_workflow CreateUserProfile:客户 1:1 账号,改套餐即对齐 offer)。
+assert_lo_account_matches_order() {
+  local detail="$1" order_no="$2" lo hit loid got_offer got_mode
+  local want_offer want_mode cust_id
+  want_offer=$(python3 -c "import json;print(json.loads('''$detail''')['order'].get('offerId',''))")
+  want_mode=$(python3 -c "import json;print(json.loads('''$detail''')['order'].get('billingMode') or 'POSTPAID')")
+  cust_id=$(python3 -c "import json;print(json.loads('''$detail''')['order'].get('customerId',''))")
+  lo=$(api GET "/lo-accounts?pageSize=200") || return 1
+  hit=$(python3 -c "
+import json
+d=json.loads('''$lo''')
+for i in d.get('items',[]):
+    if i.get('customerId')==$cust_id:
+        print(i.get('loid',''), i.get('offerId',''), i.get('billingMode') or 'POSTPAID'); break")
+  loid=$(echo "$hit" | awk '{print $1}'); got_offer=$(echo "$hit" | awk '{print $2}'); got_mode=$(echo "$hit" | awk '{print $3}')
+  if [ -z "$loid" ]; then
+    FAIL_REASON="lo-account missing for customer $cust_id (order $order_no)"
+    echo "[auth-assert] FAIL order=$order_no: $FAIL_REASON" >&2; return 1
+  fi
+  if [ "$got_offer" != "$want_offer" ] || [ "$got_mode" != "$want_mode" ]; then
+    FAIL_REASON="lo-account mismatch: got(offer=$got_offer mode=$got_mode) want(offer=$want_offer mode=$want_mode)"
+    echo "[auth-assert] FAIL order=$order_no loid=$loid: $FAIL_REASON" >&2; return 1
+  fi
+  echo "[auth-assert] PASS order=$order_no loid=$loid 生效套餐一致=$got_offer 付费模式一致=$got_mode" >&2
+}
+
+# assert_provision_success: 该订单全部下发任务终态 DONE,且每任务最新下发日志终态 SUCCESS。
+# 依据: 环节7/10/11 入队 provision_tasks,provisioner 异步执行,轮询等待(PROVISION_WAIT 缺省 30s)。
+assert_provision_success() {
+  local order_id="$1" order_no="$2" deadline=$(( $(date +%s) + ${PROVISION_WAIT:-30} )) ts cls id logs latest
+  while :; do
+    ts=$(api GET /provision-tasks) || return 1
+    cls=$(python3 -c "
+import json
+d=json.loads('''$ts''')
+ts=[t for t in d.get('items',[]) if t.get('orderId')==$order_id]
+if not ts: print('NONE')
+elif any(t.get('status')!='DONE' for t in ts): print('PENDING')
+else: print('DONE ' + ' '.join(str(t['id']) for t in ts))")
+    case "$cls" in
+      NONE)
+        FAIL_REASON="no provision tasks for order $order_id"
+        echo "[provision-assert] FAIL order=$order_no: $FAIL_REASON" >&2; return 1 ;;
+      PENDING)
+        if [ "$(date +%s)" -lt "$deadline" ]; then sleep 2; continue; fi
+        FAIL_REASON="provision tasks not DONE within ${PROVISION_WAIT:-30}s (order $order_id)"
+        echo "[provision-assert] FAIL order=$order_no: $FAIL_REASON" >&2; return 1 ;;
+    esac
+    break
+  done
+  local n=0
+  for id in $cls; do
+    [ "$id" = "DONE" ] && continue
+    n=$((n+1))
+    logs=$(api GET "/provision-logs?taskId=$id") || return 1
+    latest=$(python3 -c "
+import json
+d=json.loads('''$logs''')
+items=d.get('items',[])
+print(items[-1].get('result','') if items else 'NO-LOG')")
+    case "$latest" in
+      SUCCESS*) : ;;
+      *) FAIL_REASON="provision task $id latest log=<$latest>"
+         echo "[provision-assert] FAIL order=$order_no task=$id latest-log=<$latest>" >&2; return 1 ;;
+    esac
+  done
+  echo "[provision-assert] PASS order=$order_no 下发任务=$n 全部日志 SUCCESS" >&2
+}
+
 one_run() {
   local run="$1" suffix
   suffix="$(date +%s)%03d$RANDOM"; suffix=$(printf "$suffix" "$run")
@@ -81,6 +154,8 @@ for t in d.get('items',[]):
   stage=$(python3 -c "import json;d=json.loads('''$detail''');print(d['order']['stage'])")
   status=$(python3 -c "import json;d=json.loads('''$detail''');print(d['order']['status'])")
   [ "$stage" = "12" ] && [ "$status" = "DONE" ] || { FAIL_REASON="final $stage/$status"; return 1; }
+  assert_lo_account_matches_order "$detail" "$order_no" || return 1
+  assert_provision_success "$(j "$order" id)" "$order_no" || return 1
   echo "$order_no"
 }
 
