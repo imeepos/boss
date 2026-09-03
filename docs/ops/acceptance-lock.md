@@ -8,17 +8,14 @@
 
 ## 处置建议
 
-看到 `LOCK_BUSY` 时不要删除锁或强行重跑：先记录 holder，等待当前验收正常收尾；若确认进程已死且文件已超过 15 分钟，再由新实例自动接管。不要在 102 并行运行这些脚本。
+看到 `LOCK_BUSY` 时不要删除锁或强行重跑：先记录 holder，等待当前验收正常收尾；若确认进程已死且文件已超过 15 分钟，再由新实例自动接管。不要在 102 并行运行这些脚本。排障时请同时确认 tl1sim 在位——dial/mainchain 脚本对 tl1sim 无硬依赖检查，sim 缺位时验收断言按 FAIL 判死属预期环境暴露，并非脚本故障。
 
 ## 轻量自测
 
 自测不访问 102 业务和数据库：
 
 ```bash
-LOCK=/tmp/acceptance-lock-test.$$
-ACCEPTANCE_LOCK_PATH="$LOCK" SELFTEST_SLEEP=3 scripts/ops/acceptance-lock-selftest.sh & p=$!
-ACCEPTANCE_LOCK_PATH="$LOCK" scripts/ops/acceptance-lock-selftest.sh; test $? -ne 0
-wait "$p"
-ACCEPTANCE_LOCK_PATH="$LOCK" scripts/ops/acceptance-lock-selftest.sh
-rm -f "$LOCK"
+bash scripts/ops/accept-lock-selftest.sh   # 全部断言(互斥/TTL);任一项失败退出非 0 并输出 FAIL:
 ```
+
+断言项：①三个验收脚本均含统一锁获取/释放调用点（grep 静态断言）；②持锁互斥（实例 2 立即失败退出码非 0，输出含持锁者）；③TTL 过期接管（锁文件 mtime 改 16 分钟前，新实例可接管）。
