@@ -21,6 +21,9 @@ const (
 	enDenyInject  = 76546103
 	enBadCmd      = 76546104
 	enSvcExists   = 76546105
+	enBadCtag     = 76546106
+	enMissField   = 76546107
+	enSegMisplace = 76546108
 )
 
 // nowStr 响应头时间戳,格式对齐 PDF 示例。
