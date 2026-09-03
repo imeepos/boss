@@ -1,4 +1,5 @@
 // regionCascadeCore 单测：懒加载下钻调用序列、直搜防抖、默认国家兜底、回显展开（node 环境）。
+// 断言口径随 U1 契约：查询参数并入 path（parentCode 空串=顶层，apiFetch toQuery 会丢空值）。
 import { describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_COUNTRY_FALLBACK, RegionCascadeSource, SUBDIV_LIMIT, debounce,
@@ -6,50 +7,61 @@ import {
   type FetchLike, type SubdivRow,
 } from './regionCascadeCore'
 
-// 顺序 fixtures 记录器：每次调用返回 fixtures 下一项，并记录 (path, query)。
+// 顺序 fixtures 记录器：每次调用返回 fixtures 下一项，并记录 path（含查询串）。
 function makeRecorder(fixtures: unknown[]) {
-  const calls: { path: string; query?: Record<string, string | number | undefined> }[] = []
+  const calls: string[] = []
   let i = 0
-  const fetchImpl: FetchLike = async (path, opts) => {
-    calls.push({ path, query: opts?.query })
+  const fetchImpl: FetchLike = async (path) => {
+    calls.push(path)
     return (fixtures[i++] ?? null) as never
   }
-  return { calls, fetchImpl }
+  const paramsOf = (call: string): Record<string, string> => {
+    const q = call.split('?')[1] ?? ''
+    return Object.fromEntries(new URLSearchParams(q))
+  }
+  return { calls, paramsOf, fetchImpl }
 }
 
-describe('fetchSubdivisions 契约参数与行归一化', () => {
-  it('parentCode 下钻带 countryCode 与默认 limit=200', async () => {
-    const { calls, fetchImpl } = makeRecorder([[{ code: 'PH-NCR', name: 'NCR', level: 1, hasChildren: true }]])
-    const rows = await fetchSubdivisions({ countryCode: 'PH', parentCode: 'PH' }, fetchImpl)
+describe('fetchSubdivisions 契约参数映射（U1 实测口径）', () => {
+  it('parentCode 下钻带 country（非 countryCode）与 limit=200', async () => {
+    const { calls, paramsOf, fetchImpl } = makeRecorder([[{ code: 'PH-NCR', name: 'NCR', level: 1, hasChildren: true }]])
+    const rows = await fetchSubdivisions({ countryCode: 'PH', parentCode: 'PH-NCR' }, fetchImpl)
     expect(rows).toHaveLength(1)
-    expect(calls[0].path).toBe('/geo/subdivisions')
-    expect(calls[0].query).toEqual({ countryCode: 'PH', parentCode: 'PH', limit: SUBDIV_LIMIT })
+    expect(calls[0]).toMatch(/^\/geo\/subdivisions\?/)
+    expect(paramsOf(calls[0])).toEqual({ country: 'PH', parentCode: 'PH-NCR', limit: String(SUBDIV_LIMIT) })
   })
 
-  it('keyword 直搜携带 keyword 与 countryCode，limit 可覆盖', async () => {
-    const { calls, fetchImpl } = makeRecorder([[]])
+  it('parentCode 空串保留（顶层节点语义）', async () => {
+    const { calls, paramsOf, fetchImpl } = makeRecorder([[]])
+    await fetchSubdivisions({ countryCode: 'PH', parentCode: '' }, fetchImpl)
+    expect(paramsOf(calls[0])).toEqual({ country: 'PH', parentCode: '', limit: String(SUBDIV_LIMIT) })
+  })
+
+  it('keyword 直搜携带 country 与 keyword，limit 可覆盖', async () => {
+    const { calls, paramsOf, fetchImpl } = makeRecorder([[]])
     await fetchSubdivisions({ countryCode: 'PH', keyword: '马尼拉', limit: 50 }, fetchImpl)
-    expect(calls[0].query).toEqual({ countryCode: 'PH', keyword: '马尼拉', limit: 50 })
+    expect(paramsOf(calls[0])).toMatchObject({ country: 'PH', keyword: '马尼拉', limit: '50' })
   })
 
-  it('name 优先，displayName 回退，hasChildren 布尔化', async () => {
+  it('name 优先，displayName 回退，hasChildren 布尔化，顶层 parentCode 归空串', async () => {
     const { fetchImpl } = makeRecorder([[{ code: 'A', name: '甲', level: 1, hasChildren: 1 } as never]])
     const [a] = await fetchSubdivisions({ countryCode: 'PH' }, fetchImpl)
     expect(a.name).toBe('甲')
     expect(a.hasChildren).toBe(true)
-    const { fetchImpl: f2 } = makeRecorder([[{ code: 'B', displayName: '乙' }]])
+    const { fetchImpl: f2 } = makeRecorder([[{ code: 'B', displayName: '乙', parentCode: '' }]])
     const [b] = await fetchSubdivisions({ countryCode: 'PH' }, f2)
     expect(b.name).toBe('乙')
-    expect(b.level).toBe(0)
+    expect(b.parentCode).toBe('')
     expect(b.hasChildren).toBe(false)
   })
 })
 
 describe('fetchDefaultCountry 空值兜底 PH（契约 N3）', () => {
   it.each([
-    ['对象 alpha2', { alpha2: 'MY' }, 'MY'],
-    ['对象 countryCode', { countryCode: 'sg' }, 'SG'],
+    ['对象 countryCode', { countryCode: 'MY', configured: true }, 'MY'],
+    ['对象 alpha2', { alpha2: 'SG' }, 'SG'],
     ['裸字符串', 'CN', 'CN'],
+    ['未配置空值对象', { countryCode: '', configured: false }, DEFAULT_COUNTRY_FALLBACK],
     ['空对象', {}, DEFAULT_COUNTRY_FALLBACK],
     ['null', null, DEFAULT_COUNTRY_FALLBACK],
     ['undefined', undefined, DEFAULT_COUNTRY_FALLBACK],
@@ -98,15 +110,20 @@ describe('debounce 直搜防抖（契约 N2）', () => {
 describe('resolvePath 回显展开（契约 N4）', () => {
   const manila = { code: 'PH-1300-MNL', name: 'Manila', level: 3, hasChildren: false, parentCode: 'PH-1300' }
   const ncr = { code: 'PH-1300', name: 'NCR', level: 2, hasChildren: true, parentCode: 'PH' }
-  const ph = { code: 'PH', name: 'Philippines', level: 1, hasChildren: true, parentCode: 'PH' }
+  const ph = { code: 'PH', name: 'Philippines', level: 1, hasChildren: true, parentCode: '' }
 
   it('按 code 反查并沿 parentCode 逐级上溯成 [一级..目标] 链', async () => {
     const { calls, fetchImpl } = makeRecorder([[manila], [ncr], [ph]])
     const chain = await resolvePath('PH', 'PH-1300-MNL', fetchImpl)
     expect(chain.map((n) => n.code)).toEqual(['PH', 'PH-1300', 'PH-1300-MNL'])
-    // 调用序列：先找目标，再逐级找父
-    expect(calls.map((c) => c.query?.keyword)).toEqual(['PH-1300-MNL', 'PH-1300', 'PH'])
-    expect(calls.every((c) => c.query?.countryCode === 'PH' && c.query?.limit === 50)).toBe(true)
+    expect(calls).toHaveLength(3)
+    for (const call of calls) {
+      expect(call).toMatch(/country=PH/)
+      expect(call).toMatch(/limit=50/)
+    }
+    expect(calls[0]).toMatch(/keyword=PH-1300-MNL/)
+    expect(calls[1]).toMatch(/keyword=PH-1300/)
+    expect(calls[2]).toMatch(/keyword=PH/)
   })
 
   it('行无 parentCode 增强字段时退化为单节点链（不拉全量）', async () => {
@@ -123,32 +140,33 @@ describe('resolvePath 回显展开（契约 N4）', () => {
 })
 
 describe('RegionCascadeSource 懒加载下钻调用序列（契约 N1）', () => {
-  it('levelOne → children → children 的 parentCode 链与 limit', async () => {
-    const { calls, fetchImpl } = makeRecorder([
+  it('顶层(空 parentCode) → children → children 的 parentCode 链与 limit', async () => {
+    const { calls, paramsOf, fetchImpl } = makeRecorder([
       [{ code: 'PH-NCR', name: 'NCR', level: 1, hasChildren: true }],
       [{ code: 'PH-NCR-MNL', name: 'Manila', level: 2, hasChildren: true }],
       [{ code: 'PH-NCR-MNL-001', name: 'Intramuros', level: 3, hasChildren: false }],
     ])
     const src = new RegionCascadeSource(fetchImpl)
-    const l1 = await src.children('PH', 'PH')
+    const l1 = await src.children('', 'PH')
     const l2 = await src.children(l1[0].code, 'PH')
     const l3 = await src.children(l2[0].code, 'PH')
     expect(l3[0].hasChildren).toBe(false)
-    expect(calls.map((c) => c.query?.parentCode)).toEqual(['PH', 'PH-NCR', 'PH-NCR-MNL'])
-    expect(calls.every((c) => c.query?.countryCode === 'PH' && c.query?.limit === SUBDIV_LIMIT)).toBe(true)
+    expect(calls.map((c) => paramsOf(c).parentCode)).toEqual(['', 'PH-NCR', 'PH-NCR-MNL'])
+    expect(calls.every((c) => paramsOf(c).country === 'PH' && paramsOf(c).limit === String(SUBDIV_LIMIT))).toBe(true)
   })
 
   it('countries 直读 /geo/countries', async () => {
     const { calls, fetchImpl } = makeRecorder([[{ alpha2: 'PH', displayName: 'Philippines' }]])
     const list = await new RegionCascadeSource(fetchImpl).countries()
     expect(list).toHaveLength(1)
-    expect(calls[0].path).toBe('/geo/countries')
+    expect(calls[0]).toBe('/geo/countries')
   })
 
   it('search 走 keyword 参数跨层级直搜', async () => {
     const { calls, fetchImpl } = makeRecorder([[{ code: 'PH-1300-MNL', name: 'Manila', level: 3, hasChildren: false } as SubdivRow]])
     const hits = await new RegionCascadeSource(fetchImpl).search('PH', 'Manila')
     expect(hits[0].code).toBe('PH-1300-MNL')
-    expect(calls[0].query).toMatchObject({ countryCode: 'PH', keyword: 'Manila' })
+    expect(calls[0]).toMatch(/country=PH/)
+    expect(calls[0]).toMatch(/keyword=Manila/)
   })
 })
