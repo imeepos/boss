@@ -2705,7 +2705,12 @@ export interface Translations {
       pageUnit: string
     }
     pickers: {
-      common: { placeholder: string; loadFail: string; viewDetail: string; detailFail: string; close: string; jumpToList: string; all: string }
+      common: { placeholder: string; loadFail: string; viewDetail: string; detailFail: string; close: string; jumpToList: string; all: string; clear: string }
+      dialog: {
+        confirm: string; cancel: string; loadFail: string; empty: string; keywordPh: string
+        selectedCount: string; clearAll: string; remove: string
+        pager: { rangeText: string; prev: string; next: string; perPage: string; jump: string; pageUnit: string }
+      }
       worker: { title: string; aria: string; name: string; staffNo: string; phone: string; group: string; region: string; status: string; onDuty: string; left: string; joinedAt: string }
       customer: { title: string; aria: string; code: string; name: string; phone: string; idType: string; idNo: string; realNameStatus: string; serviceStatus: string; region: string; createdAt: string }
       user: { title: string; aria: string; name: string; phone: string; plan: string; balance: string; arrears: string; activeOrders: string; realNameStatus: string; serviceStatus: string; autoPay: string; on: string; off: string }
