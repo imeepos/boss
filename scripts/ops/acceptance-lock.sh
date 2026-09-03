@@ -14,7 +14,7 @@ acquire_acceptance_lock() {
     mtime=$(stat -c %Y "$ACCEPTANCE_LOCK_PATH" 2>/dev/null || stat -f %m "$ACCEPTANCE_LOCK_PATH")
     age=$((now-mtime))
     if { [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; } || [ "$age" -lt "$ACCEPTANCE_LOCK_TTL_SECONDS" ]; then
-      echo "[acceptance-lock] LOCK_BUSY holder=${holder:-unknown} path=$ACCEPTANCE_LOCK_PATH age=${age}s" >&2
+      echo "[acceptance-lock] LOCK_BUSY holder=${holder:-unknown} path=$ACCEPTANCE_LOCK_PATH age=${age}s (hint: 持锁排障请同时确认 tl1sim 在位;sim 缺位时验收断言按 FAIL 判死属预期环境暴露)" >&2
       return 1
     fi
     echo "[acceptance-lock] LOCK_EXPIRED replacing holder=${holder:-unknown} age=${age}s" >&2
@@ -22,7 +22,7 @@ acquire_acceptance_lock() {
   fi
   ( set -C; printf "%s\n" "$ACCEPTANCE_LOCK_OWNER" > "$ACCEPTANCE_LOCK_PATH" ) 2>/dev/null || {
     holder=$(head -n 1 "$ACCEPTANCE_LOCK_PATH" 2>/dev/null || true)
-    echo "[acceptance-lock] LOCK_BUSY holder=${holder:-unknown} path=$ACCEPTANCE_LOCK_PATH" >&2
+    echo "[acceptance-lock] LOCK_BUSY holder=${holder:-unknown} path=$ACCEPTANCE_LOCK_PATH (hint: 持锁排障请同时确认 tl1sim 在位;sim 缺位时验收断言按 FAIL 判死属预期环境暴露)" >&2
     return 1
   }
   ACCEPTANCE_LOCK_HELD=1
