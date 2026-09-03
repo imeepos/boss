@@ -79,6 +79,7 @@ func selectExecutor(cfg *config.Config, pool *pgxpool.Pool) provision.Executor {
 			return logExecutor{}
 		}
 		log.Printf("provisioner: telnet executor -> %s", cfg.Provisioner.OLTAddr)
+		log.Printf("[provisioner] ALERT driver=telnet simulation/oltsim 仿真链路:非真实 TL1 下发,生产环境请切换 BOSS_PROVISION_DRIVER=tl1")
 		return &provision.TelnetExecutor{
 			Addr: cfg.Provisioner.OLTAddr, User: cfg.Provisioner.OLTUser, Pass: cfg.Provisioner.OLTPass,
 			Timeout: 5 * time.Second,
