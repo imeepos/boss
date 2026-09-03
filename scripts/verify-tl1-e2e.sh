@@ -222,7 +222,7 @@ run_order() {
 # 订单集合: 前缀资源/模板反查历史与本轮订单,并入本轮数组(端口/任务未落时兜底)。
 order_id_set() {
   local ids id
-  ids=$(collect_ids "SELECT string_agg(DISTINCT t.id::text,',') FROM (SELECT order_id AS id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-${PREFIX}%') UNION SELECT order_id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%')) t WHERE t.id IS NOT NULL") || return 1
+  ids=$(collect_ids "SELECT string_agg(DISTINCT t.id::text,',') FROM (SELECT order_id AS id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-acc_tl1_%') UNION SELECT order_id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%')) t WHERE t.id IS NOT NULL") || return 1
   for id in ${ORDERS[@]+"${ORDERS[@]}"}; do [ -n "${id}" ] && ids="${ids:+${ids},}${id}"; done
   echo "${ids}"
 }
@@ -243,10 +243,10 @@ sweep_orders() {
 # 资源路含 resource_assignments 与 parent_id 子资源(外键图)。
 sweep_fixtures() {
   local rids tids bad=0
-  rids=$(collect_ids "SELECT string_agg(id::text,',') FROM resources WHERE code LIKE 'OLT-${PREFIX}%'") || return 1
-  tids=$(collect_ids "SELECT string_agg(id::text,',') FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%'") || return 1
-  sqln "DELETE FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%'))" || bad=1
-  sqln "DELETE FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%')" || bad=1
+  rids=$(collect_ids "SELECT string_agg(id::text,',') FROM resources WHERE code LIKE 'OLT-acc_tl1_%'") || return 1
+  tids=$(collect_ids "SELECT string_agg(id::text,',') FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%'") || return 1
+  sqln "DELETE FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%'))" || bad=1
+  sqln "DELETE FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%')" || bad=1
   if [ -n "${rids}" ]; then
     sqln "DELETE FROM pon_onu_alloc WHERE olt_resource_id IN (${rids})" || bad=1
     sqln "DELETE FROM resource_assignments WHERE resource_id IN (${rids})" || bad=1
@@ -263,7 +263,7 @@ sweep_fixtures() {
 # A2 口径复核: acc_tl1_ 前缀资源/模板及其级联任务/日志/订单/通知全量归零(含历史遗留)。
 assert_clean() {
   local bad=0 c
-  c=$(collect_ids "SELECT count(*) FROM resources WHERE code LIKE 'OLT-${PREFIX}%' UNION ALL SELECT count(*) FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%' UNION ALL SELECT count(*) FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%') OR order_id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-${PREFIX}%')) UNION ALL SELECT count(*) FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%') OR order_id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-${PREFIX}%'))) UNION ALL SELECT count(*) FROM orders WHERE id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-${PREFIX}%') UNION SELECT order_id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%')) UNION ALL SELECT count(*) FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id::text FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-${PREFIX}%'))")
+  c=$(collect_ids "SELECT count(*) FROM resources WHERE code LIKE 'OLT-acc_tl1_%' UNION ALL SELECT count(*) FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%' UNION ALL SELECT count(*) FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%') OR order_id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-acc_tl1_%')) UNION ALL SELECT count(*) FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%') OR order_id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-acc_tl1_%'))) UNION ALL SELECT count(*) FROM orders WHERE id IN (SELECT order_id FROM ports WHERE resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-acc_tl1_%') UNION SELECT order_id FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%')) UNION ALL SELECT count(*) FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id::text FROM provision_tasks WHERE template_id IN (SELECT id FROM provision_templates WHERE code LIKE 'TPL-acc_tl1_%'))")
   case "${c}" in "000000") ;; *) echo "FAIL: 清扫复核残留(resources/templates/tasks/logs/orders/notifications)=${c:-query-error}" >&2; bad=1 ;; esac
   return "${bad}"
 }
