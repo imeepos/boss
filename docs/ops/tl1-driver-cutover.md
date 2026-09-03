@@ -9,9 +9,11 @@
 
 - **适用范围**:已拿到局方 U2000 北向访问权(host:13027、TL1 账号),要把 provisioner 执行器
   从 telnet 切到 tl1 的正式开通环境;也适用于 102 预发上用 tl1sim 演练本流程。
-- **现状**:provisioner 当前以 `BOSS_PROVISION_DRIVER=telnet` 运行,指令发给 cmd/oltsim 仿真器
-  (启动日志 `provisioner: telnet executor -> <addr>`,且每次启动必打
-  `[provisioner] ALERT driver=telnet simulation/oltsim 仿真链路:非真实 TL1 下发,生产环境请切换 BOSS_PROVISION_DRIVER=tl1`)。
+- **现状**:102 compose(deployments/docker-compose.102.app.yml)自 2026-09-03 起默认
+  `BOSS_PROVISION_DRIVER=tl1`,TL1_* 指向 tl1sim 演练地址(未来真实硬件只替换 endpoint/凭证);
+  生产环境仍按本文流程切换。若启动日志见 `provisioner: telnet executor -> <addr>` 及
+  `[provisioner] ALERT driver=telnet simulation/oltsim 仿真链路:非真实 TL1 下发,生产环境请切换 BOSS_PROVISION_DRIVER=tl1`
+  即处于 telnet 旧链(仅剩 legacy 回归用途,见 docs/ops/oltsim-telnet-regression.md)。
 - **风险一(语义)**:telnet/oltsim 链上的 provision_logs.SUCCESS **只代表仿真器认可了
   `provision apply template=...` 这条伪指令**,不等于设备真实开通。禁止把仿真链 SUCCESS
   当生产开通成功向客户/局方交差。
@@ -93,8 +95,10 @@
   go test ./internal/domain/provision/tl1/ ./cmd/tl1sim/ ./internal/app/ -run 'TL1|TestCodec|TestSession|TestExecutor'
   ```
 
-- 102 全链路演练(隔离容器,不碰生产 provisioner):`scripts/verify-tl1-e2e.sh`,
-  断言含 provision_logs.SUCCESS、tl1sim 收到 ADD-ONU/ADD-PONVLAN、Power-Off 负向订单不推进。
+- 102 主链路验收(2026-09-03 起:不停/不换已部署 provisioner,不启隔离容器):`scripts/verify-tl1-e2e.sh`,
+  precheck 硬断言已部署 provisioner driver=tl1、TL1 endpoint 端口与 tl1sim 监听对齐、队列空;
+  断言含 provision_logs result + driver='tl1'、tl1sim record 含 LOGIN/ADD-ONU/ADD-PONVLAN、
+  Power-Off 负向订单停留 INSTALLING。
 - 可选手工探活(局方允许时,仅 LOGIN/LOGOUT,不做写操作):
 
   ```bash
@@ -105,13 +109,14 @@
 ## 4. 切换步骤
 
 1. 确认 §2/§3 全绿(迁移齐全、队列排空、provisioner 已停)。
-2. 设置驱动开关并重建 provisioner(compose 环境改 `deployments/docker-compose.102.app.yml`
-   同款 env,生产走对应部署面):
+2. 设置驱动开关并重建 provisioner(102 compose 已默认 `DRIVER=tl1`+TL1_* 演练地址,
+   2026-09-03 起;生产走对应部署面,按 3.2 结论配 env):
 
    ```bash
-   # 102:
+   # 102:重建 provisioner 即切换(compose 副本在 /tmp,重启丢文件后经 deploy-cluster.sh 重下发)
    docker compose -p boss-app -f /tmp/docker-compose.102.app.yml up -d provisioner
-   # env 关键项:BOSS_PROVISION_DRIVER=tl1(其余 TL1_* 按 3.2 结论)
+   # env 关键项:BOSS_PROVISION_DRIVER=tl1;102 的 TL1_* 已指向 tl1sim 演练地址,
+   # 接真实硬件只替换 TL1_* 三行(或按 §3.1 铺 provision_nms 表行,生产以表为准)
    ```
 
 3. 启动即查生效驱动(启动日志是唯一权威,容器 Running 不算):
@@ -172,6 +177,8 @@
   `scripts/verify-oltsim-provision-e2e.sh` 守住旧链路回归门(改回
   `BOSS_PROVISION_DRIVER=telnet` 并重启,同 §4 口径回读启动日志
   `provisioner: telnet executor -> <addr>` + ALERT 行)。跑完按切换流程切回 tl1。
+  该 legacy 脚本 2026-09-03 起在 driver 非 telnet 时直接拒绝运行(拒绝与 TL1 主链路
+  混用),回滚到 telnet 后它才可跑;两脚本不得同时/交替对同一 provisioner 使用。
 - **禁止把仿真 SUCCESS 当生产成功**:telnet/oltsim 的 provision_logs.SUCCESS 语义=仿真器认可;
   生产开通成功唯一以 driver='tl1' 且 TL1 指令 COMPLD(EN=0)的留痕为准(§5 两条同时满足)。
 - **生产禁止回滚到 log 桩**:log 桩会把任务 noop 落 DONE(伪成功,2026-09-02 事故机理);
@@ -184,3 +191,4 @@
 | 日期 | 变更 | 备注 |
 |:-----|:-----|:-----|
 | 2026-09-03 | 首版(C5) | 依据 tl1-integration-design.md §5-§9、oltsim-telnet-regression.md 2026-09-02 事故、verify-tl1-e2e.sh 实跑口径 |
+| 2026-09-03 | 102 compose 默认切 tl1(DRIVER=tl1+TL1_* 演练地址,真实硬件仅替换 endpoint/凭证);verify-tl1-e2e.sh 改为已部署主链路验收(不启隔离 provisioner);oltsim 脚本硬化为 legacy 专用门(driver 非 telnet 拒跑) | 同提交:deployments/docker-compose.102.app.yml、scripts/verify-{tl1-e2e,oltsim-provision-e2e}.sh、docs/ops/oltsim-telnet-regression.md |

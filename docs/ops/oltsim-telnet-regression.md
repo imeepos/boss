@@ -5,7 +5,19 @@
 固化 2026-09-01 验证过的旧配置下发链路 `telnet -> cmd/oltsim -> provision_tasks` 的可复跑验收。
 本期 TL1 改动(commit cbdddb22 起)把 provisioner 执行器选择从「OLT_ADDR 配置即走 telnet」
 改为「显式 `BOSS_PROVISION_DRIVER` 开关(缺省 log 桩)」,本脚本是防止旧链路被再次静默破坏的回归门。
-只回归旧 telnet 链路,不验证 TL1(TL1 验收见 scripts/verify-tl1-e2e.sh)。
+只回归旧 telnet 链路,不验证 TL1(TL1 主链路验收见 scripts/verify-tl1-e2e.sh)。
+
+## 定位边界(2026-09-03 TL1 主链路切换后)
+
+- 102 compose(deployments/docker-compose.102.app.yml)provisioner 已默认
+  `BOSS_PROVISION_DRIVER=tl1`(TL1_* 指向 tl1sim 演练地址),TL1 是主链路。
+- 本脚本自此仅是 **legacy telnet 回归门**:driver 非 telnet 时前置直接拒绝运行
+  (拒绝与 TL1 主链路混用),不再以 WARN+断言失败的方式"暴露回归"——切净后的
+  稳态是 tl1,继续跑只会制造混用事故。
+- 如需跑本回归:按 `docs/ops/tl1-driver-cutover.md` §7 队列排空后临时切回
+  telnet(回读启动日志),跑完按同文档 §4 切回 tl1。
+- 本脚本全程不停/不换已部署 provisioner,不启隔离 provisioner 容器
+  (与 TL1 验收脚本互斥:任一脚本运行期间不得启动另一链路的 provisioner)。
 
 ## 用法
 
@@ -27,8 +39,10 @@ scripts/verify-oltsim-provision-e2e.sh [BASE_URL]   # 默认 http://192.168.0.10
    环节 7 自动化,由「既有」boss-provisioner 领取执行——不停它、不改它配置。
 4. 断言: task=DONE、provision_logs result=SUCCESS、oltsim /records 出现本单 apply
    (taskNo=PRV-O<orderID>, event=preConfigOLT, result=OK, template=夹具模板)+ journal
-   "apply ok" 留痕(尽力而为)。driver 非 telnet 时前置 WARN,oltsim 断言失败并给出根因提示。
-5. 清理: 按实际 ID 精确删除 订单/任务/日志/资源/端口/模板/order_stages/dispatch_tickets/
+   "apply ok" 留痕(尽力而为)。
+5. 驱动门(2026-09-03 起硬化): precheck 读容器 env,driver 非 telnet 直接拒绝运行
+   (仅 legacy telnet 回归,拒绝与 TL1 主链路混用;处置路径见上文「定位边界」)。
+6. 清理: 按实际 ID 精确删除 订单/任务/日志/资源/端口/模板/order_stages/dispatch_tickets/
    scan_logs/activation_callbacks/admin_notifications,复核逐表归零+队列空+provisioner 仍
    running;失败路径 trap 恢复现场。oltsim 内存台账是服务自身留痕,按设计保留作证据。
 

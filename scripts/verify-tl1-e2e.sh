@@ -1,27 +1,235 @@
 #!/usr/bin/env bash
-# TL1 102 E2E：tl1sim 为测试仿真器，不进生产镜像；验收端使用宿主二进制。
-# B 口径：三笔隔离订单分别验证 UP 正向、Power-Off 负向、UP 恢复正向。
+# shellcheck disable=SC2029  # 远端命令串在本侧组装注入参数属设计意图(sql/start_sim 等 helper)
+# TL1 102 主链路 E2E 验收:验收对象就是 102 已部署主链路——
+# docker-compose.102.app.yml 的 boss-provisioner(BOSS_PROVISION_DRIVER=tl1,
+# BOSS_PROVISION_TL1_* 指向 tl1sim 演练地址),镜像即 192.168.0.102:5000/boss/server。
+# 红线: 不停/不改/不重建已部署 provisioner;不启动任何隔离 provisioner 容器
+#       (隔离容器会抢 provision_tasks 队列,2026-09-03 起属禁手);只在宿主机
+#       拉起/停止自己的 tl1sim 实例(pidfile+cmdline 双重校验,不碰他人进程);
+#       夹具全 acc_tl1_ 前缀,按实际 ID 精确清理,失败路径 trap 恢复现场。
+# B 口径: 三笔隔离订单分别验证 UP 正向、Power-Off 负向、UP 恢复正向;
+#       断言 provision_logs.driver=tl1(TL1 通道证据,非 telnet/log)+ result
+#       + 负向订单停留 INSTALLING + tl1sim record 留痕(LOGIN/ADD-ONU/ADD-PONVLAN)。
+# 用法: scripts/verify-tl1-e2e.sh [BASE_URL]   # 默认 http://192.168.0.102:28080
+# 环境变量: TL1_HOST ADMIN_API_KEY USER_API_KEY TL1_SIM_BIN(默认 /home/imeepos/bin/tl1sim)
+#           TL1_SIM_USER/TL1_SIM_PASS(tl1sim 演练账号,默认 admin/admin,非真实凭证)
+#           TL1_EVID_DIR(默认 /tmp/verify-tl1-e2e-<stamp>)
+# tl1sim 监听端口取自已部署 provisioner 的 BOSS_PROVISION_TL1_ADDR(端口段),
+# 保证演练地址与主链路配置一致,不另起炉灶。
 set -uo pipefail
-BASE_URL="${1:-http://192.168.0.102:28080}"; API="$BASE_URL/api/admin/v1"
-HOST="${TL1_HOST:-imeepos@192.168.0.102}"; ADMIN_KEY="${ADMIN_API_KEY:-boss_a852c8434c1ae6370e454817dd6e497c}"; USER_KEY="${USER_API_KEY:-boss_100e5216b416080d4b95c7f3d648c6c1}"
-STAMP="$(date +%s)"; PREFIX="acc_tl1_$STAMP"; RESOURCE_ID=0; TEMPLATE_ID=0; OLD_STOPPED=0
-ORDERS=(); TASKS=(); RECORDS=(/tmp/tl1sim-up-a.jsonl /tmp/tl1sim-off-b.jsonl /tmp/tl1sim-up-c.jsonl); PIDFILE=/tmp/tl1sim-t6.pid
-fail(){ echo "FAIL: $*" >&2; exit 1; }
-sql(){ local q=$1; ssh "$HOST" "docker exec -i boss-infra-postgres-1 psql -q -v ON_ERROR_STOP=1 -U boss -d boss -Atc \"$q\""; }
-api(){ local m=$1 p=$2 b=${3:-} out; if [ -n "$b" ]; then out=$(curl -sS -f -X "$m" "$API$p" -H "X-API-Key: $ADMIN_KEY" -H 'Content-Type: application/json' -d "$b") || fail "api $m $p"; else out=$(curl -sS -f -X "$m" "$API$p" -H "X-API-Key: $ADMIN_KEY") || fail "api $m $p"; fi; echo "$out" | jq -e '.code == 0 or .code == 200' >/dev/null || fail "api $m $p response=$out"; echo "$out"; }
-stop_sim(){ ssh "$HOST" "if test -s $PIDFILE; then pid=\$(cat $PIDFILE); if test -r /proc/\$pid/cmdline && tr '\0' ' ' < /proc/\$pid/cmdline | grep -F -- /home/imeepos/bin/tl1sim >/dev/null; then kill \$pid >/dev/null 2>&1 || true; fi; rm -f $PIDFILE; fi" || fail 'stop own tl1sim'; }
-start_sim(){ local state=$1 record=$2; stop_sim; ssh "$HOST" "test -x /home/imeepos/bin/tl1sim" || fail 'missing /home/imeepos/bin/tl1sim'; ssh "$HOST" "rm -f $record /tmp/tl1sim-t6.log $PIDFILE; nohup /home/imeepos/bin/tl1sim -addr 0.0.0.0:13027 -user admin -pass admin -onu-oper-state $state -record $record >/tmp/tl1sim-t6.log 2>&1 & echo \$! > $PIDFILE" || fail "start sim $state"; sleep 1; ssh "$HOST" "test -s $PIDFILE" || fail 'sim pidfile missing'; }
-start_t6(){ ssh "$HOST" "docker rm -f boss-provisioner-t6 >/dev/null 2>&1 || true; docker run -d --name boss-provisioner-t6 --network boss-app_default --entrypoint boss-provisioner -e BOSS_PG_DSN='host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable' -e BOSS_PROVISION_DRIVER=tl1 -e BOSS_PROVISION_TL1_ADDR=172.26.0.1:13027 -e BOSS_PROVISION_TL1_USER=admin -e BOSS_PROVISION_TL1_PASS=admin boss/server:tl1-e2e >/dev/null; docker network connect boss-infra_default boss-provisioner-t6" || fail 'start isolated provisioner'; }
-wait_task(){ local id=$1 want=$2 label=$3 s=; for _ in $(seq 1 45); do s=$(sql "SELECT status FROM provision_tasks WHERE id=$id"|tr -d '[:space:]'); [ "$s" = "$want" ] && return 0; sleep 2; done; fail "$label task=$id expected=$want got=$s"; }
-cleanup(){ local rc=$?; set +e; echo "==> cleanup prefix=$PREFIX"; stop_sim; ssh "$HOST" "docker rm -f boss-provisioner-t6 >/dev/null 2>&1 || true; docker start boss-provisioner >/dev/null 2>&1 || true"; for id in "${ORDERS[@]}"; do [ -n "$id" ] || continue; sql "DELETE FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE order_id=$id); DELETE FROM provision_tasks WHERE order_id=$id; DELETE FROM scan_logs WHERE order_id=$id; DELETE FROM dispatch_tickets WHERE order_id=$id; DELETE FROM activation_callbacks WHERE order_id=$id; DELETE FROM order_stages WHERE order_id=$id;" >/dev/null; done; [ "$RESOURCE_ID" = 0 ] || sql "DELETE FROM pon_onu_alloc WHERE olt_resource_id=$RESOURCE_ID; DELETE FROM ports WHERE resource_id=$RESOURCE_ID; DELETE FROM resources WHERE id=$RESOURCE_ID;" >/dev/null; [ "$TEMPLATE_ID" = 0 ] || sql "DELETE FROM provision_templates WHERE id=$TEMPLATE_ID;" >/dev/null; for id in "${ORDERS[@]}"; do [ -n "$id" ] && sql "DELETE FROM orders WHERE id=$id;" >/dev/null; done; ssh "$HOST" "test -x /home/imeepos/bin/tl1sim && rm -f /tmp/tl1sim-t6.log ${RECORDS[*]} $PIDFILE" >/dev/null 2>&1 || true; if [ "$OLD_STOPPED" = 1 ]; then ssh "$HOST" "docker start boss-provisioner >/dev/null 2>&1 || true"; fi; if [ "$(ssh "$HOST" "docker inspect -f '{{.State.Running}}' boss-provisioner 2>/dev/null")" != "true" ]; then echo 'FAIL: boss-provisioner not running after cleanup' >&2; [ "$rc" -eq 0 ] && rc=1; fi; exit $rc; }
+
+BASE_URL="${1:-http://192.168.0.102:28080}"
+API="${BASE_URL}/api/admin/v1"
+HOST="${TL1_HOST:-imeepos@192.168.0.102}"
+ADMIN_KEY="${ADMIN_API_KEY:-boss_a852c8434c1ae6370e454817dd6e497c}"
+USER_KEY="${USER_API_KEY:-boss_100e5216b416080d4b95c7f3d648c6c1}"
+SIM_BIN="${TL1_SIM_BIN:-/home/imeepos/bin/tl1sim}"
+SIM_USER="${TL1_SIM_USER:-admin}"
+SIM_PASS="${TL1_SIM_PASS:-admin}"
+STAMP="$(date +%s)"
+PREFIX="acc_tl1_${STAMP}"
+EVID_DIR="${TL1_EVID_DIR:-/tmp/verify-tl1-e2e-${STAMP}}"
+PIDFILE=/tmp/tl1sim-mainchain.pid
+mkdir -p "${EVID_DIR}" || exit 1
+
+ORDERS=()
+RESOURCE_ID=0; TEMPLATE_ID=0; SIM_PORT=
+
+fail() { echo "FAIL: $*" >&2; exit 1; }
+step() { echo "==> $*"; }
+info() { echo "  .. $*"; }
+
+sql() { local q="${1}"; ssh "${HOST}" "docker exec -i boss-infra-postgres-1 psql -q -v ON_ERROR_STOP=1 -U boss -d boss -Atc \"${q}\""; }
+
+api() {
+  local m="${1}" p="${2}" b="${3:-}" out
+  if [ -n "${b}" ]; then
+    out=$(curl -sS -f -X "${m}" "${API}${p}" -H "X-API-Key: ${ADMIN_KEY}" -H 'Content-Type: application/json' -d "${b}") || fail "api ${m} ${p}"
+  else
+    out=$(curl -sS -f -X "${m}" "${API}${p}" -H "X-API-Key: ${ADMIN_KEY}") || fail "api ${m} ${p}"
+  fi
+  echo "${out}" | jq -e '.code == 0 or .code == 200' >/dev/null || fail "api ${m} ${p} response=${out}"
+  echo "${out}"
+}
+
+provisioner_env() { ssh "${HOST}" "docker inspect boss-provisioner --format '{{range .Config.Env}}{{println .}}{{end}}'"; }
+
+provisioner_running() {
+  [ "$(ssh "${HOST}" "docker inspect -f '{{.State.Running}}' boss-provisioner 2>/dev/null")" = "true" ]
+}
+
+# 停自己拉起的 tl1sim(pidfile+cmdline 双重校验),绝不 pkill 他人实例。
+stop_sim() {
+  ssh "${HOST}" "if test -s ${PIDFILE}; then pid=\$(cat ${PIDFILE}); if test -r /proc/\$pid/cmdline && tr '\0' ' ' < /proc/\$pid/cmdline | grep -F -- ${SIM_BIN} >/dev/null; then kill \$pid >/dev/null 2>&1 || true; fi; rm -f ${PIDFILE}; fi" || fail 'stop own tl1sim'
+}
+
+# 每场景重启自己的 tl1sim 并切换 ONU oper-state;主链路 provisioner 的 TL1 Manager
+# 断线自动重连,下一任务即打到新实例(状态注入生效)。
+start_sim() {
+  local state="${1}" record="${2}"
+  stop_sim
+  ssh "${HOST}" "test -x ${SIM_BIN}" || fail "missing ${SIM_BIN}"
+  ssh "${HOST}" "rm -f ${record} /tmp/tl1sim-mainchain.log ${PIDFILE}; nohup ${SIM_BIN} -addr 0.0.0.0:${SIM_PORT} -user ${SIM_USER} -pass ${SIM_PASS} -onu-oper-state ${state} -record ${record} >/tmp/tl1sim-mainchain.log 2>&1 & echo \$! > ${PIDFILE}" || fail "start sim state=${state}"
+  sleep 1
+  ssh "${HOST}" "test -s ${PIDFILE}" || fail 'sim pidfile missing'
+}
+
+wait_task() {
+  local id="${1}" want="${2}" label="${3}" s=""
+  for _ in $(seq 1 45); do
+    s=$(sql "SELECT status FROM provision_tasks WHERE id=${id}"|tr -d '[:space:]')
+    [ "${s}" = "${want}" ] && return 0
+    sleep 2
+  done
+  fail "${label} task=${id} expected=${want} got=${s}"
+}
+
+# precheck: 主链路部署假设逐项硬断言,任一不过拒绝注入任务(不碰现场)。
+precheck() {
+  step "precheck deployed provisioner / driver=tl1 / queue / tl1sim"
+  provisioner_running || fail "boss-provisioner 未运行:102 主链路未部署或已宕"
+  local env drv addr pend nms others="" c ep dockerps logs
+  env=$(provisioner_env)
+  drv=$(echo "${env}" | grep '^BOSS_PROVISION_DRIVER=' | cut -d= -f2)
+  [ "${drv}" = "tl1" ] || fail "boss-provisioner driver=${drv:-<unset>} 非 tl1:TL1 主链路未生效;102 compose 已默认 DRIVER=tl1,按 docs/ops/tl1-driver-cutover.md §4 重建 provisioner 后重跑(legacy telnet 回归请走 scripts/verify-oltsim-provision-e2e.sh)"
+  addr=$(echo "${env}" | grep '^BOSS_PROVISION_TL1_ADDR=' | cut -d= -f2)
+  case "${addr}" in *:*) SIM_PORT="${addr##*:}" ;; *) fail "BOSS_PROVISION_TL1_ADDR=${addr} 缺端口,无法对齐 tl1sim 监听" ;; esac
+  case "${SIM_PORT}" in ''|*[!0-9]*) fail "TL1_ADDR 端口非法:${addr}" ;; esac
+  # 演练走 env 兜底端点;法人已有 provision_nms 行则取表行,tl1sim 收不到任务
+  nms=$(sql "SELECT count(*) FROM provision_nms WHERE legal_entity_id=1")
+  [ "${nms}" = "0" ] || fail "legal_entity 1 已有 provision_nms 行(${nms}):端点取表行而非演练 env 兜底;按 docs/ops/tl1-driver-cutover.md §3.1 处置后重跑"
+  # 无其他 provisioner 容器并跑(隔离容器抢队列属禁手,含旧 tl1-e2e 遗留 t6 容器)
+  dockerps=$(ssh "${HOST}" "docker ps --format '{{.Names}}'") || fail "docker ps 失败"
+  for c in ${dockerps}; do
+    [ "${c}" = "boss-provisioner" ] && continue
+    ep=$(ssh "${HOST}" "docker inspect '${c}' --format '{{json .Config.Entrypoint}}' 2>/dev/null") || ep=""
+    case "${ep}" in *boss-provisioner*) others="${others} ${c}" ;; esac
+  done
+  [ -z "${others}" ] || fail "检测到其他 provisioner 容器在跑(拒绝并跑防抢队列):${others}"
+  pend=$(sql "SELECT count(*) FROM provision_tasks WHERE status IN ('PENDING','DOING')"|tr -d '[:space:]')
+  [ "${pend}" = "0" ] || fail "下发队列非空 PENDING/DOING=${pend},拒绝注入任务"
+  # 启动日志是生效驱动权威(cutover §4);残留 telnet executor = 未切净
+  logs=$(ssh "${HOST}" "docker logs --tail 5000 boss-provisioner 2>&1" 2>/dev/null || true)
+  echo "${logs}" | grep -q 'provisioner: telnet executor' && fail "容器日志仍见 telnet executor:驱动未切净,拒绝验收"
+  echo "${logs}" | grep -q 'provisioner: tl1 executor' && info "startup log: tl1 executor confirmed" || info "startup log 无 tl1 executor 行(可能轮转),以 env driver=tl1 为准"
+  ssh "${HOST}" "test -x ${SIM_BIN}" || fail "missing ${SIM_BIN}(tl1sim 演练二进制)"
+  info "provisioner=running driver=tl1 addr=${addr} sim_port=${SIM_PORT} queue=empty"
+}
+
+# 隔离夹具: acc_tl1_<stamp> 资源/3 端口/模板(admin API)+ nms_oltid 就位。
+create_fixture() {
+  step "create acc_ fixture prefix=${PREFIX}"
+  local res p n
+  res=$(api POST /provision/resources "{\"code\":\"OLT-${PREFIX}\",\"name\":\"TL1 ${PREFIX}\",\"type\":\"OLT\",\"addressId\":290,\"legalEntityId\":1}")
+  RESOURCE_ID=$(echo "${res}" | jq -r '.data.id')
+  case "${RESOURCE_ID}" in ''|*[!0-9]*) fail "resource id 异常 response=${res}" ;; esac
+  for n in 5 6 7; do
+    p=$(api POST /provision/ports "{\"portCode\":\"P-${PREFIX}-0${n}\",\"resourceId\":${RESOURCE_ID},\"addressId\":290,\"legalEntityId\":1}")
+    echo "${p}" | jq -e '.data.portId' >/dev/null || fail "port 0${n} id 异常 response=${p}"
+  done
+  TEMPLATE_ID=$(sql "INSERT INTO provision_templates(legal_entity_id,code,name,content,version,status) VALUES(1,'TPL-${PREFIX}','TL1 ${PREFIX}',jsonb_build_object('bandwidth','100M','onuType','Internet','services',jsonb_build_object('internet',jsonb_build_object('svlan',1113,'cvlan',1,'uv',100,'scos',0,'ccos',0),'tr069',jsonb_build_object('cvlan',1000,'uv',1000,'scos',6,'ccos',6))),1,'ENABLED') RETURNING id"|tr -d '[:space:]')
+  case "${TEMPLATE_ID}" in ''|*[!0-9]*) fail "template 写入失败" ;; esac
+  sql "UPDATE resources SET nms_oltid='${PREFIX}-OLTID' WHERE id=${RESOURCE_ID};" >/dev/null
+  info "resource=${RESOURCE_ID} template=${TEMPLATE_ID} ports=P-${PREFIX}-0{5,6,7}"
+}
+
+# 主链路 TL1 留痕断言: result 符合预期 + driver=tl1 + 指令非 telnet 形态。
+assert_tl1_log() {
+  local task="${1}" label="${2}" want="${3}" res drv bad
+  res=$(sql "SELECT result FROM provision_logs WHERE task_id=${task} ORDER BY id DESC LIMIT 1")
+  if [ "${want}" = "SUCCESS" ]; then
+    [ "${res}" = "SUCCESS" ] || fail "${label} task=${task} provision_logs.result=${res}(期望 SUCCESS)"
+  else
+    # FailTask 留痕是 FAILED: <reason> 前缀(pg_exec.go),负向不与 SUCCESS 同用精确等值
+    case "${res}" in FAILED:*) ;; *) fail "${label} task=${task} provision_logs.result=${res:-<null>}(期望 FAILED: 前缀)" ;; esac
+  fi
+  drv=$(sql "SELECT driver FROM provision_logs WHERE task_id=${task} ORDER BY id DESC LIMIT 1")
+  [ "${drv}" = "tl1" ] || fail "${label} task=${task} provision_logs.driver=${drv:-<null>}(期望 tl1):TL1 主链路未生效或任务走了旁路"
+  bad=$(sql "SELECT count(*) FROM provision_logs WHERE task_id=${task} AND commands LIKE '%provision apply%'"|tr -d '[:space:]')
+  [ "${bad}" = "0" ] || fail "${label} task=${task} commands 含 telnet 形态 provision apply(仍是旧链路)"
+  info "${label} task=${task} log result=${res} driver=tl1"
+}
+
+# tl1sim 证据断言: record 留痕 LOGIN/ADD-ONU/ADD-PONVLAN(LOGIN 属会话层,不进 provision_logs)。
+assert_sim_record() {
+  local record="${1}" label="${2}" pat
+  ssh "${HOST}" "test -s ${record}" || fail "${label} tl1sim record 空:${record}"
+  for pat in LOGIN ADD-ONU ADD-PONVLAN; do
+    ssh "${HOST}" "grep -q ${pat} ${record}" || fail "${label} tl1sim record 缺 ${pat}:${record}"
+  done
+  info "${label} record tail: $(ssh "${HOST}" "grep -E 'LOGIN|ADD-ONU|ADD-PONVLAN|LST-ONUSTATE' ${record} | tail -8")"
+}
+
+# 单场景: 拉起指定 oper-state 的 tl1sim → 夹具订单推进到 charge → 由「已部署」
+# 主链路 provisioner 领取执行。预建 PENDING preConfigOLT(task_no=PRV-O<oid>,
+# 自动化 CreateTask 同 task_no 幂等复用)保证夹具模板必达设备——常驻 provisioner
+# 随时可能领取任务,禁止 charge 后再补改模板(那是在跟主链路抢跑)。
+run_order() {
+  local state="${1}" label="${2}" port_no="${3}"
+  local record="${EVID_DIR}/tl1sim-${label}.jsonl" order no oid port task loid status
+  step "order ${label} state=${state} port=0${port_no}"
+  start_sim "${state}" "${record}"
+  order=$(curl -sS -f -X POST "${BASE_URL}/api/user/v1/orders" -H "X-API-Key: ${USER_KEY}" -H 'Content-Type: application/json' -d '{"productId":"101","addressId":"290","channelId":"102"}') || fail "create ${label} order"
+  no=$(echo "${order}" | jq -r '.data.orderNo')
+  oid=$(sql "SELECT id FROM orders WHERE order_no='${no}'"|tr -d '[:space:]')
+  case "${oid}" in ''|*[!0-9]*) fail "${label} order id 未落库 order_no=${no}" ;; esac
+  ORDERS+=("${oid}")
+  api POST "/orders/${no}/check-resource" >/dev/null
+  api POST "/orders/${no}/reserve" >/dev/null
+  port=$(sql "SELECT id FROM ports WHERE order_id=${oid} LIMIT 1"|tr -d '[:space:]')
+  case "${port}" in ''|*[!0-9]*) fail "${label} reserved port" ;; esac
+  sql "UPDATE ports SET resource_id=${RESOURCE_ID},pon_frame=0,pon_slot=7,pon_port=${port_no},onu_no=NULL WHERE id=${port};" >/dev/null
+  loid=$(sql "SELECT id FROM lo_accounts WHERE customer_id=(SELECT customer_id FROM orders WHERE id=${oid}) ORDER BY id LIMIT 1"|tr -d '[:space:]')
+  case "${loid}" in ''|*[!0-9]*) fail "${label} 无 lo_account,无法预建隔离任务" ;; esac
+  task=$(sql "INSERT INTO provision_tasks(task_no,order_id,stage_event,lo_account_id,template_id,status) VALUES('PRV-O${oid}',${oid},'preConfigOLT',${loid},${TEMPLATE_ID},'PENDING') RETURNING id"|tr -d '[:space:]')
+  case "${task}" in ''|*[!0-9]*) fail "${label} 预建 preConfigOLT 任务失败" ;; esac
+  api POST "/orders/${no}/charge" >/dev/null
+  wait_task "${task}" DONE "${label} preConfig"
+  assert_tl1_log "${task}" "${label} preConfig" SUCCESS
+  echo "  PASS ${label} preConfig order=${no} task=${task}"
+  task=$(sql "INSERT INTO provision_tasks(task_no,order_id,stage_event,lo_account_id,template_id,status) VALUES('T6-${label}',${oid},'activateUser',${loid},${TEMPLATE_ID},'PENDING') RETURNING id"|tr -d '[:space:]')
+  case "${task}" in ''|*[!0-9]*) fail "${label} 建 activateUser 任务失败" ;; esac
+  if [ "${state}" = "Power-Off" ]; then
+    wait_task "${task}" FAILED "${label} activate"
+    assert_tl1_log "${task}" "${label} activate" FAILED
+    status=$(sql "SELECT status FROM orders WHERE id=${oid}"|tr -d '[:space:]')
+    [ "${status}" = "INSTALLING" ] || fail "${label} order moved to ${status}(负向应停留 INSTALLING)"
+    echo "  PASS ${label} activate FAILED(负向不推进) order=${no} task=${task} status=${status}"
+  else
+    wait_task "${task}" DONE "${label} activate"
+    assert_tl1_log "${task}" "${label} activate" SUCCESS
+    status=$(sql "SELECT status FROM orders WHERE id=${oid}"|tr -d '[:space:]')
+    echo "  PASS ${label} activate DONE order=${no} task=${task} status=${status}"
+  fi
+  assert_sim_record "${record}" "${label}"
+}
+
+# 清理: 停自己的 sim;夹具按实际 ID 精确删除;复核队列空 + provisioner 仍 running
+# (全程未触碰 provisioner,非 running 即现场异常,置 FAIL 留观测信号)。
+cleanup() {
+  local rc="${?}" id pend
+  set +e
+  echo "==> cleanup prefix=${PREFIX} evid=${EVID_DIR}"
+  stop_sim
+  for id in ${ORDERS[@]+"${ORDERS[@]}"}; do
+    [ -n "${id}" ] || continue
+    sql "DELETE FROM admin_notification_reads WHERE notification_id IN (SELECT id FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id FROM provision_tasks WHERE order_id=${id})); DELETE FROM admin_notifications WHERE ref_type='provision' AND ref_id IN (SELECT id FROM provision_tasks WHERE order_id=${id}); DELETE FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE order_id=${id}); DELETE FROM provision_tasks WHERE order_id=${id}; DELETE FROM scan_logs WHERE order_id=${id}; DELETE FROM dispatch_tickets WHERE order_id=${id}; DELETE FROM activation_callbacks WHERE order_id=${id}; DELETE FROM order_stages WHERE order_id=${id};" >/dev/null
+  done
+  [ "${RESOURCE_ID}" = "0" ] || sql "DELETE FROM pon_onu_alloc WHERE olt_resource_id=${RESOURCE_ID}; DELETE FROM ports WHERE resource_id=${RESOURCE_ID}; DELETE FROM resources WHERE id=${RESOURCE_ID};" >/dev/null
+  [ "${TEMPLATE_ID}" = "0" ] || sql "DELETE FROM provision_templates WHERE id=${TEMPLATE_ID};" >/dev/null
+  for id in ${ORDERS[@]+"${ORDERS[@]}"}; do [ -n "${id}" ] && sql "DELETE FROM orders WHERE id=${id};" >/dev/null; done
+  pend=$(sql "SELECT count(*) FROM provision_tasks WHERE status IN ('PENDING','DOING')"|tr -d '[:space:]')
+  [ "${pend}" = "0" ] || { echo "FAIL: 清理后队列非空:${pend}" >&2; rc=1; }
+  provisioner_running || { echo 'FAIL: boss-provisioner not running after cleanup' >&2; rc=1; }
+  exit "${rc}"
+}
+
 trap cleanup EXIT
-echo "==> T6 target=$BASE_URL prefix=$PREFIX"
-PENDING=$(sql "SELECT count(*) FROM provision_tasks WHERE status IN ('PENDING','DOING')"|tr -d '[:space:]'); [ "$PENDING" = 0 ] || fail "queue not empty before stop: $PENDING"
-ssh "$HOST" "docker stop boss-provisioner >/dev/null" || fail 'stop original provisioner'; OLD_STOPPED=1
-RES=$(api POST /provision/resources "{\"code\":\"OLT-$PREFIX\",\"name\":\"TL1 $PREFIX\",\"type\":\"OLT\",\"addressId\":290,\"legalEntityId\":1}"); RESOURCE_ID=$(echo "$RES"|jq -r '.data.id'); [[ "$RESOURCE_ID" =~ ^[0-9]+$ ]] && [ "$RESOURCE_ID" -gt 0 ] || fail "resource id response=$RES"
-for n in 5 6 7; do P=$(api POST /provision/ports "{\"portCode\":\"P-$PREFIX-0$n\",\"resourceId\":$RESOURCE_ID,\"addressId\":290,\"legalEntityId\":1}"); PID=$(echo "$P"|jq -r '.data.portId'); [[ "$PID" =~ ^[0-9]+$ ]] || fail "port id response=$P"; done
-TEMPLATE_ID=$(sql "INSERT INTO provision_templates(legal_entity_id,code,name,content,version,status) VALUES(1,'TPL-$PREFIX','TL1 $PREFIX',jsonb_build_object('bandwidth','100M','onuType','Internet','services',jsonb_build_object('internet',jsonb_build_object('svlan',1113,'cvlan',1,'uv',100,'scos',0,'ccos',0),'tr069',jsonb_build_object('cvlan',1000,'uv',1000,'scos',6,'ccos',6))),1,'ENABLED') RETURNING id"|tr -d '[:space:]'); [[ "$TEMPLATE_ID" =~ ^[0-9]+$ ]] || fail 'template insert failed'
-sql "UPDATE resources SET nms_oltid='$PREFIX-OLTID' WHERE id=$RESOURCE_ID;" >/dev/null
-run_order(){ local state=$1 label=$2 port_no=$3 order no oid port task loid status record=$4; start_sim "$state" "$record"; order=$(curl -sS -f -X POST "$BASE_URL/api/user/v1/orders" -H "X-API-Key: $USER_KEY" -H 'Content-Type: application/json' -d '{"productId":"101","addressId":"290","channelId":"102"}') || fail "create $label order"; no=$(echo "$order"|jq -r '.data.orderNo'); oid=$(sql "SELECT id FROM orders WHERE order_no='$no'"|tr -d '[:space:]'); [[ "$oid" =~ ^[0-9]+$ ]] || fail "order id $label"; ORDERS+=("$oid"); api POST "/orders/$no/check-resource" >/dev/null; api POST "/orders/$no/reserve" >/dev/null; port=$(sql "SELECT id FROM ports WHERE order_id=$oid LIMIT 1"|tr -d '[:space:]'); [[ "$port" =~ ^[0-9]+$ ]] || fail "reserved port $label"; sql "UPDATE ports SET resource_id=$RESOURCE_ID,pon_frame=0,pon_slot=7,pon_port=$port_no,onu_no=NULL WHERE id=$port;" >/dev/null; api POST "/orders/$no/charge" >/dev/null; sql "UPDATE provision_tasks SET template_id=$TEMPLATE_ID WHERE order_id=$oid;" >/dev/null; start_t6; task=$(sql "SELECT id FROM provision_tasks WHERE order_id=$oid AND stage_event='preConfigOLT' ORDER BY id DESC LIMIT 1"|tr -d '[:space:]'); wait_task "$task" DONE "$label preConfig"; echo "  PASS $label preConfig order=$no task=$task"; loid=$(sql "SELECT id FROM lo_accounts WHERE customer_id=(SELECT customer_id FROM orders WHERE id=$oid) ORDER BY id LIMIT 1"|tr -d '[:space:]'); task=$(sql "INSERT INTO provision_tasks(task_no,order_id,stage_event,lo_account_id,template_id,status) VALUES('T6-$label',$oid,'activateUser',$loid,$TEMPLATE_ID,'PENDING') RETURNING id"|tr -d '[:space:]'); if [ "$state" = Power-Off ]; then wait_task "$task" FAILED "$label activate"; reason=$(sql "SELECT result FROM provision_logs WHERE task_id=$task ORDER BY id DESC LIMIT 1"); status=$(sql "SELECT status FROM orders WHERE id=$oid"|tr -d '[:space:]'); [ "$status" = INSTALLING ] || fail "$label order moved to $status"; echo "  PASS $label activate FAILED order=$no task=$task status=$status result=$reason"; else wait_task "$task" DONE "$label activate"; status=$(sql "SELECT status FROM orders WHERE id=$oid"|tr -d '[:space:]'); echo "  PASS $label activate DONE order=$no task=$task status=$status"; fi; echo "  RECORD $label: $(ssh "$HOST" "grep -E 'LOGIN|ADD-ONU|ADD-PONVLAN|LST-ONUSTATE' $record | tail -8")"; }
-run_order UP positive-a 5 "${RECORDS[0]}"; run_order Power-Off negative-poweroff 6 "${RECORDS[1]}"; run_order UP positive-c 7 "${RECORDS[2]}"
-echo "PASS: TL1 102 E2E 三订单正向/Power-Off负向/恢复正向通过"
+
+step "TL1 102 main-chain E2E target=${BASE_URL} host=${HOST} prefix=${PREFIX}"
+precheck
+create_fixture
+run_order UP positive-a 5
+run_order Power-Off negative-poweroff 6
+run_order UP positive-c 7
+echo "PASS: TL1 102 主链路 E2E 三订单(UP 正向/Power-Off 负向/UP 恢复)通过 driver=tl1"

@@ -6,7 +6,12 @@
 #       断言 task=DONE + provision_logs=SUCCESS + oltsim records/journal 留痕。
 # 红线: 不停旧 provisioner;不改其配置;不启停/pkill 任何 oltsim;检测到其他 provisioner
 #       容器(TL1 临时等)拒绝运行防抢队列;夹具全 acc_ 前缀,按实际 ID 精确清理,失败路径
-#       trap 恢复现场。只回归旧 telnet 链路,不验证 TL1。
+#       trap 恢复现场。
+# 定位(2026-09-03 起): 本脚本仅是 legacy telnet 回归门——102 主链路已默认
+#       BOSS_PROVISION_DRIVER=tl1(deployments/docker-compose.102.app.yml),TL1 主链路
+#       验收一律走 scripts/verify-tl1-e2e.sh,两者不得混用。driver 非 telnet 时本脚本
+#       直接拒绝运行;如需跑本回归,先按 docs/ops/tl1-driver-cutover.md §7 队列排空后
+#       临时切回 telnet,跑完按同文档切回 tl1。
 # 用法: scripts/verify-oltsim-provision-e2e.sh [BASE_URL]
 # 环境变量: OLTSIM_HOST ADMIN_API_KEY USER_API_KEY OLTSIM_HTTP_PORT OLTSIM_TELNET_PORT
 #           OLTSIM_EVID_DIR(默认 /tmp/verify-oltsim-e2e-<stamp>)
@@ -63,9 +68,7 @@ precheck() {
   DRV=$(ssh "$HOST" "docker inspect boss-provisioner --format '{{range .Config.Env}}{{println .}}{{end}}'" | grep '^BOSS_PROVISION_DRIVER=' | cut -d= -f2)
   [ -n "$DRV" ] || DRV="log"
   echo "$DRV" > "$EVID_DIR/driver.txt"
-  if [ "$DRV" != "telnet" ]; then
-    echo "WARN: boss-provisioner driver=$DRV(期望 telnet)。commit cbdddb22 起 driver 需显式 BOSS_PROVISION_DRIVER=telnet(旧代码 OLT_ADDR 配置即走 telnet);log 桩只落 DONE 不真实下发,oltsim 断言将失败——这正是本脚本要暴露的旧链路回归。" >&2
-  fi
+  [ "$DRV" = "telnet" ] || fail "boss-provisioner driver=$DRV 非 telnet:本脚本仅 legacy telnet 回归,拒绝与 TL1 主链路混用(102 主链路 2026-09-03 起默认 DRIVER=tl1,见 deployments/docker-compose.102.app.yml)。如需跑本回归:按 docs/ops/tl1-driver-cutover.md §7 队列排空后临时切回 telnet,跑完按同文档切回 tl1;TL1 主链路验收走 scripts/verify-tl1-e2e.sh"
   local others="" c ep dockerps
   dockerps=$(ssh "$HOST" "docker ps --format '{{.Names}}'") || fail "docker ps 失败"
   for c in $dockerps; do

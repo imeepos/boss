@@ -74,10 +74,16 @@ services:
       BOSS_KAFKA_BROKERS: "192.168.0.102:29092"
       BOSS_REPORT_PERIOD: "daily"
 
-  # W7 配置下发守护进程:轮询 provision_tasks PENDING → Telnet 到 OLT 下发模板。
-  # 102 接 oltsim 仿真 OLT(宿主机 systemd boss-oltsim.service,telnet 2323);
-  # driver 缺省 log 桩(cbdddb22 起),102 环境必须显式 telnet,否则任务被静默 noop 落 DONE;
-  # 接真实 OLT 时只改 BOSS_PROVISION_OLT_ADDR/USER/PASS,链路不变。
+  # W7 配置下发守护进程:轮询 provision_tasks PENDING → TL1(U2000 北向语义)下发。
+  # 102 主链路默认 TL1:BOSS_PROVISION_TL1_* 指向 tl1sim 演练地址(宿主二进制
+  # /home/imeepos/bin/tl1sim,演练期由 scripts/verify-tl1-e2e.sh 拉起;容器经 docker 网桥
+  # 宿主网关 172.26.0.1:13027 访问)。admin/admin 是 tl1sim 演练专用账号,非真实凭证。
+  # 未来接真实硬件只替换 TL1 endpoint/凭证:改下方 TL1_* 三行,或按
+  # docs/ops/tl1-driver-cutover.md §3.1 铺 provision_nms 表行(生产以表为准,env 仅兜底);
+  # 真实凭证一律部署时环境注入/加密落库,禁止写入本仓库。
+  # tl1sim 不在线时任务显式 FAILED(dial 失败),可观测可重试,不会静默 noop。
+  # 旧 telnet/oltsim 仅剩 legacy 回归(scripts/verify-oltsim-provision-e2e.sh),
+  # 见 docs/ops/oltsim-telnet-regression.md,不得与 TL1 主链路混用。
   provisioner:
     image: 192.168.0.102:5000/boss/server:latest
     container_name: boss-provisioner
@@ -85,10 +91,10 @@ services:
     restart: unless-stopped
     environment:
       BOSS_PG_DSN: "host=192.168.0.102 port=25432 user=boss password=boss dbname=boss sslmode=disable"
-      BOSS_PROVISION_DRIVER: "telnet" # 缺省 log 桩;缺此行旧链路静默失效(2026-09-02 oltsim 回归)
-      BOSS_PROVISION_OLT_ADDR: "172.26.0.1:2323" # docker 网桥宿主网关 → oltsim
-      BOSS_PROVISION_OLT_USER: "admin"
-      BOSS_PROVISION_OLT_PASS: "admin"
+      BOSS_PROVISION_DRIVER: "tl1" # 缺省 log 桩会把任务 noop 落 DONE(2026-09-02 事故);主链路必须显式驱动
+      BOSS_PROVISION_TL1_ADDR: "172.26.0.1:13027" # 演练指向 tl1sim;真实硬件仅替换此 endpoint
+      BOSS_PROVISION_TL1_USER: "admin" # tl1sim 演练账号;真实凭证禁止入库(部署注入或 provision_nms 密文)
+      BOSS_PROVISION_TL1_PASS: "admin" # 同上
 
   admin-web:
     image: 192.168.0.102:5000/boss/admin-web:latest
