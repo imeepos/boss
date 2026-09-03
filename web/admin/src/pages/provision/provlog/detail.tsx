@@ -53,6 +53,7 @@ export function ProvisionLogDetailDrawer({ detail, onClose }: { detail: Provisio
         <KV k={p.labelOrder} v={order.orderNo || (task.orderId ? `#${task.orderId}` : '')} />
         <KV k={p.labelOffer} v={order.offerName} />
         <KV k={p.labelTemplate} v={templateText} />
+        <KV k={p.labelDriver} v={log.driver} />
         <KV k={p.labelResult} v={log.result} danger={log.result === 'FAILED'} />
         <KV k={p.labelRetries} v={String(log.retries)} />
         <KV k={p.labelTime} v={fmtTime(log.createdAt)} />

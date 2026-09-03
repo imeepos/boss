@@ -51,6 +51,7 @@ export interface ProvisionLogDetail {
     retries: number
     commands: string
     deviceResponse: string
+    driver: string // 下发驱动来源:telnet/tl1/log(空=无设备交互)
     createdAt: string
   }
   task: {

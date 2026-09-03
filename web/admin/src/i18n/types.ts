@@ -1891,6 +1891,7 @@ export interface Translations {
       labelOrder: string
       labelOffer: string
       labelTemplate: string
+      labelDriver: string
       labelResult: string
       labelRetries: string
       labelTime: string
