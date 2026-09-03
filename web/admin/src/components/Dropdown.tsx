@@ -27,9 +27,11 @@ interface DropdownProps {
   onKeywordChange?: (keyword: string) => void
   /** 深色表面上使用(顶栏/页脚等常青藏青底):透明触发器 + 深色浮层,不随亮主题翻白。 */
   onDark?: boolean
+  /** 值为空或无匹配项时触发器的占位文案;缺省回退 ariaLabel。 */
+  placeholder?: string
 }
 
-export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder, remote, onKeywordChange, onDark }: DropdownProps) {
+export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder, remote, onKeywordChange, onDark, placeholder }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
@@ -61,7 +63,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
         aria-label={ariaLabel}
         disabled={disabled}
       >
-        <span className="truncate whitespace-nowrap">{current?.label ?? ariaLabel}</span>
+        <span className="truncate whitespace-nowrap">{current?.label ?? placeholder ?? ariaLabel}</span>
         <span className={`inline-flex text-[var(--shell-group-title)] transition-transform duration-150${open ? ' rotate-180' : ''}`} aria-hidden>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
             strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

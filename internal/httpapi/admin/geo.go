@@ -61,6 +61,8 @@ func registerGeoRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	// 区划:列表/新建/编辑/启停/译名。
 	g.GET("/geo/subdivisions", perm, geoListSubdivisions(a))
+	// 默认国家读:登录管理员即可(不设 menu 门槛,选择器全局兜底);写走 PUT /params/geo.default_country。
+	g.GET("/geo/default-country", geoDefaultCountryHandler(a))
 	g.GET("/geo/subdivisions/:code/names", perm, geoListSubdivisionNames(a))
 	g.POST("/geo/subdivisions", perm, geoCreateSubdivisionHandler(a))
 	g.PUT("/geo/subdivisions/:code", perm, geoUpdateSubdivision(a))

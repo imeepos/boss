@@ -68,6 +68,24 @@ type Subdivision struct {
 	GeonameID     int64  `json:"geonameId"`     // GeoNames 挂接,0=未挂
 	IsActive      bool   `json:"isActive"`
 	DisplayName   string `json:"displayName"` // 按 locale 联译名,空回落 code
+	HasChildren   bool   `json:"hasChildren"` // 存在未停用子节点(下钻入口渲染用)
+}
+
+// SubdivisionFilter 区划列表过滤(GET /geo/subdivisions)。
+// ParentCode 三态:nil=不过滤(兼容旧行为);指空串=顶层节点(parent 为空);指非空=该父码直接子节点。
+type SubdivisionFilter struct {
+	CountryCode string
+	Locale      string
+	ParentCode  *string
+	Keyword     string // 模糊匹配编码+全部译名;须配合 CountryCode 限定范围
+	Limit       int    // 默认 50,最大 200;<=0 取默认
+}
+
+// DefaultCountry 默认国家读视图(biz_params geo.default_country)。
+// 未配置/值非法均返回零值(Configured=false),契约不兜底部署主国家,由前端决定缺省态。
+type DefaultCountry struct {
+	CountryCode string `json:"countryCode"` // alpha-2 大写;未配置为空串
+	Configured  bool   `json:"configured"`
 }
 
 // SubdivisionName 区划译名。
@@ -116,7 +134,9 @@ type GeoService interface {
 	RemoveCountryName(ctx context.Context, alpha2, locale, nameType string) error
 	ReplaceCountryAttrs(ctx context.Context, alpha2 string, attrs CountryAttrs) error
 
-	ListSubdivisions(ctx context.Context, countryCode, locale string) ([]Subdivision, error)
+	ListSubdivisions(ctx context.Context, f SubdivisionFilter) ([]Subdivision, error)
+	// GetDefaultCountry 读默认国家(biz_params geo.default_country);未配置返回空值对象。
+	GetDefaultCountry(ctx context.Context) (DefaultCountry, error)
 	GetSubdivision(ctx context.Context, code string) (*Subdivision, error)
 	ListSubdivisionNames(ctx context.Context, code string) ([]SubdivisionName, error)
 	CreateSubdivision(ctx context.Context, s Subdivision) error

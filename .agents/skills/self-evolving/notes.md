@@ -1599,3 +1599,34 @@
 - 哪个坑浪费最多时间:dispatch_task 多次因报告解析器误报缺少 Self-check 被 rejected,但实现、提交和测试实际均已完成;最终必须回到当前会话直接以命令退出码验收。
 - skill 有没有提前警告我:有——验收退出码是真实判据,worktree 收尾必须核对 cwd/分支后 ff-only;本轮按要求执行并确认主树、远端分支和 worktree 状态。
 - 重来一次我会怎么做:委派验收报告不作为唯一证据,每个提交完成后立即在父会话运行最小机械验收;涉及共享 102 时保留 telnet 仿真回归链,只交付 tl1 切换 runbook,不未经授权改生产 driver。
+
+## 2026-09-03 tl1sim 严格校验 C2(worktree 委派任务)
+- 哪个坑浪费最多时间:gofmt -w 重写 strict_test.go 后凭旧 read 直接 edit 被拒「file changed since read」;另 TestStrictDisabledCompat 首跑失败——负例工厂 addONUCmd 默认 Tag=ADDONT,构造「B 自增 ctag」负例时忘了显式清空。
+- skill 有没有提前警告我:有——红线 1 已写明 file changed since read 也要重读,一轮重读即恢复;负例工厂默认值陷阱 skill 未覆盖,已补 lessons。
+- 重来一次我会怎么做:gofmt/sed 等任何改写命令跑完立即重读再 edit;负例工厂默认全合规,凡构造「去合规」用例就把要偏离的每个字段显式写进 mod,不依赖默认值。
+
+## 2026-09-03 TL1 trace 收口 C3(重连留痕对齐)
+- 哪个坑浪费最多时间:无实质坑,一轮通过。关键是设计先行:traceSink 全局拼接的病根在「边执行边写 trace」,改成按尝试(attempt)分组 entry 缓冲 + Exec 末尾 finalize 收口后,成功/失败取舍变成纯函数决策,测试也只需切 4 横线分隔符对齐。
+- skill 有没有提前警告我:有——先读后改、commit 前核分支名、run_code 禁反引号/${(全部用 lines 数组 join 构造文件内容,零转义事故)。
+- 重来一次我会怎么做:留痕类需求先问「谁在何时消费这份证据」再定取舍规则;joinResp 的 4 横线分隔符与设备表格 5 横线天然可区分,这类分隔符选型应在写第一版时就显式注释,方便测试再切分。
+
+## 2026-09-04 拨号上网 E2E 与主链路验收断言补全(D1/D2)
+- 哪个坑浪费了最多时间?A1 首跑才发现 102 provisioner 已切 BOSS_PROVISION_DRIVER=tl1,主链路自举的 SPLITTER+裸端口夹具让环节7 任务 RESOLVE FAILED(port missing PON positioning),而订单状态机照样推进 stage=12/DONE——这恰是 D1 断言要暴露的盲区,但也意味着新脚本首版夹具不可用。TL1 解析链要求 OLT 资源带 nms_oltid、预占端口带 pon_frame/slot/port、模板含 onuType/services,这些字段无管理接口,最终沿用 verify-tl1-e2e.sh 的 SQL 夹具姿势(预建 PENDING 任务靠 task_no 幂等复用保证模板必达)。
+- skill 有没有提前警告我?有——契约先读、E2E 必须真实环境机械验收、停复机禁止直改库;但「部署环境驱动已切 tl1,旧验收夹具静默失配」这一环境事实无沉淀,本轮补齐。
+- 重来一次我会怎么做?写验收脚本前先 docker inspect boss-provisioner 看 BOSS_PROVISION_DRIVER、查最近 provision_tasks 成败,把「夹具必须匹配线上驱动」当前置检查;另外 dial 首版漏了下发终态等待,清理与 provisioner 抢跑(pon_onu_alloc=0 暴露),任何带清理的 E2E 都应在清理前轮询自身任务到终态。
+
+## 2026-09-03 W-0904-UI 波次 U2 选择器公共基座抽离(feat/picker-lib,ff 合并 90721483)
+- 哪个坑浪费了最多时间?worktree 里 pnpm build 直接炸(ERR_PNPM_UNSAFE_MODULES_DIR),速查技巧只写了「直调 .bin」没写「pnpm 必炸」,先按习惯跑 pnpm 才撞墙;教训已进 lessons(门禁三步分步直调)。
+- skill 有没有提前警告?有——worktree 合并协议严格执行后真的拦住事故:合并回主树前 merge main 发现 dial-e2e 已先行进 main,带新提交重跑全部门禁再 ff 合并;令牌名以 tokens.css grep 为准,速查手册的 --shell-fab-bg-icon 是幽灵名(实际 --shell-fab-icon),已纠正。
+- 重来一次会怎么做?依然先全量读组件现状(pickers 四件套/ResourcePicker 约 20 调用方/AttachmentManager/ui 与 Pagination 文案契约)再定 API——本轮零返工过全部门禁;纯逻辑下沉 pickerCore 配 vitest 的路子沿用(仓上无 DOM 测试设施,test env 是 node)。
+
+## 2026-09-03 W-0904-UI 波次 U1:geo 区划查询增强+默认国家(后端,wt-geo-api,合并 1d9eab53)
+
+- 哪个坑浪费了最多时间?run_code 里写 Go/YAML 文件的转义与截断三连:双引号 JS 串里混写 ` + BT + ` 被当字面量落盘(geo_test.go 结构体 tag 18 处);JSON 引号字面量两轮才修对;最贵的是 read 分页截断(单次仅回 ~638 行)导致按片段整写 fields.md 丢 1430 行(git checkout 恢复后循环读齐 totalLines 再写)。合计约 5 轮。
+- skill 有没有提前警告?红线 11 讲过裸反引号,但没覆盖「双引号串拼接与模板字面量心智混用」变体;read 分页截断零预警,属新坑,已登台账。
+- 重来一次怎么做?①生成/重写文件前先循环 read 拼齐 totalLines 并核对;②Go 源的反引号在双引号 JS 串里直接写即可,不引入 BT 拼接;③同一文件 splice 补丁超过 2 次就整函数重写;④YAML flow {} 内含 ASCII 逗号/特殊符的 scalar 一律单引号;⑤纯函数化 SQL 拼装+纯单测先行,本次单测抓出 FROM 在 WHERE 之后的真 bug。
+
+## 2026-09-04 W-0904-UI 波次 U4 地图选点选择器(feat/map-location-picker,已合并 8bbb1e23)
+- 哪个坑浪费了最多时间?红线 1 又犯一次:同一文件 types.ts 只读了主树路径,worktree 路径的 zh-CN.ts 凭主树阅读直接 edit 被拒——多 worktree 并行期,"读过这个文件"必须指认到绝对路径。另 verify-deploy.sh --feature 只 grep index-*.js,对 lazy 路由分包必然误报 FAIL(本任务特征串在 index-Cw6XGS0M.js),首轮验证白报一次失败。
+- skill 有没有提前警告?有——先读后改、ff 失败严禁删 worktree、收尾核对 cwd/分支全部生效;本轮 ff-merge 连续两次撞并行会话推进(picker-lib+docs),按红线 9 回 worktree merge main 后立即重试,一轮收敛,零提交丢失。
+- 重来一次会怎么做?①多 worktree 期把"read+edit 封装在同一 run_code 程序内"当铁律;②部署特征验证先查 App.tsx 是否 lazy 分包,分包页直接扫线上 index 引用的 chunk 清单,别依赖只看 index 的复验脚本(脚本缺口值得单独补);③本地 bossctl 二进制路由前缀已落后线上(auth/me 404)、saved key 在 102 报 invalid token,免登录核对直接按 test-accounts.json 换新 JWT 走 curl,不要在 bossctl 上耗时间。

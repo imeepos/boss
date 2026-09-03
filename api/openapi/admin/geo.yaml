@@ -118,12 +118,27 @@ paths:
   /geo/subdivisions:
     get:
       tags: [Geo]
-      summary: 行政区划列表(country/locale 过滤)
+      summary: 行政区划列表(country/locale/父码下钻/关键字/limit 截断)
       operationId: listGeoSubdivisions
       parameters:
-        - { name: country, in: query, schema: { type: string }, description: 国家码过滤(代码读取 country) }
-        - { name: locale, in: query, schema: { type: string }, description: 译名 locale 过滤(代码读取 locale) }
-      responses: { '200': { $ref: '#/components/responses/Array' } }
+        - { name: country, in: query, schema: { type: string }, description: '国家码过滤(代码读取 country;keyword 必须配合本参数)' }
+        - { name: locale, in: query, schema: { type: string }, description: '译名 locale 过滤(代码读取 locale;displayName 联译名,回落 code)' }
+        - { name: parentCode, in: query, schema: { type: string }, description: '父码下钻:非空=该父码直接子节点;传空值(parentCode=)=顶层节点;缺省=不过滤(兼容旧行为)' }
+        - { name: keyword, in: query, schema: { type: string }, description: '模糊匹配区划编码与全部译名(ILIKE 大小写不敏感);缺 country 时拒绝 42200' }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 }, description: '截断条数;<=0 取默认 50;>200 钳到 200' }
+      responses:
+        '200':
+          description: envelope;data=区划行数组(每行含 hasChildren)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/GeoSubdivisionRow' }
     post:
       tags: [Geo]
       summary: 新建行政区划
@@ -144,6 +159,26 @@ paths:
                 osmAdminLevel: { type: integer, format: int16, description: OSM 行政层级 2~10 }
                 geonameId: { type: integer, format: int64, description: GeoNames 挂接,0=未挂 }
       responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /geo/default-country:
+    get:
+      tags: [Geo]
+      summary: 默认国家读(登录管理员即可读,不设 menu 门槛;选择器全局兜底)
+      operationId: getDefaultGeoCountry
+      description: >-
+        读 biz_params geo.default_country(值=alpha-2,如 PH);写路径复用既有 PUT /params/geo.default_country(menu:params)。
+        未配置或值非法时返回空值对象 {countryCode:"",configured:false};契约裁定不兜底部署主国家,由前端决定缺省态。
+      responses:
+        '200':
+          description: envelope;data=默认国家读视图 DefaultCountryView
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  msg: { type: string }
+                  data: { $ref: '#/components/schemas/DefaultCountryView' }
 
   /geo/subdivisions/{code}:
     put:
@@ -287,3 +322,25 @@ components:
       content:
         application/json:
           schema: { type: object, properties: { code: { type: integer }, msg: { type: string }, data: { type: array, items: { type: object } } } }
+
+  schemas:
+    GeoSubdivisionRow:
+      type: object
+      description: 区划列表行(GET /geo/subdivisions)
+      properties:
+        code: { type: string, description: ISO 3166-2 完整码,如 PH-NCR }
+        countryCode: { type: string, description: 所属国家 alpha-2 }
+        parentCode: { type: string, description: 父码;顶层节点为空串 }
+        level: { type: integer, format: int16, description: '1~4 各国深度不同' }
+        category: { type: string, description: state/province/region/municipality }
+        osmAdminLevel: { type: integer, format: int16, description: OSM 行政层级 2~10 }
+        geonameId: { type: integer, format: int64, description: GeoNames 挂接,0=未挂 }
+        isActive: { type: boolean }
+        displayName: { type: string, description: locale 译名,回落 code }
+        hasChildren: { type: boolean, description: 存在未停用子节点(下钻入口渲染用) }
+    DefaultCountryView:
+      type: object
+      description: 默认国家读视图(GET /geo/default-country)
+      properties:
+        countryCode: { type: string, description: alpha-2 大写;未配置/非法为空串 }
+        configured: { type: boolean, description: 配置存在且为合法 alpha-2 }

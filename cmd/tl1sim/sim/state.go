@@ -34,15 +34,21 @@ type state struct {
 	onus     map[[3]string]*onuRec
 	svcs     map[[4]string]*svcRec
 	denyNext string
+	strict   bool
 	opt      Options
 	rec      *record
 }
 
 func newState(opt Options, rec *record) *state {
+	strict := true // 手册严格校验默认开启;显式 StrictTags=false 仅兼容调试
+	if opt.StrictTags != nil {
+		strict = *opt.StrictTags
+	}
 	return &state{
 		onus:     map[[3]string]*onuRec{},
 		svcs:     map[[4]string]*svcRec{},
 		denyNext: opt.DenyNext,
+		strict:   strict,
 		opt:      opt,
 		rec:      rec,
 	}
@@ -106,8 +112,12 @@ func (st *state) handle(line string) ([]string, bool) {
 	return append(frames, final), closeConn
 }
 
-// dispatch 按动词分派;denyNext 故障注入优先于业务逻辑,命中一次即解除。
+// dispatch 按动词分派;严格手册校验最先(协议先于会话/业务,违规报文不消耗
+// denyNext 注入额度),注入次之,最后业务逻辑。
 func (st *state) dispatch(cmd cmdReq) (string, bool) {
+	if deny := st.strictCheck(cmd); deny != "" {
+		return deny, false
+	}
 	if st.denyNext == cmd.verb {
 		st.denyNext = ""
 		return denyFrame(cmd.ctag, enDenyInject, "仿真故障注入 DENY。"), false

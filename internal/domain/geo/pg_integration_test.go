@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ymm-001/boss/internal/pkg/database"
 )
 
@@ -44,6 +45,8 @@ func TestPGStore_Integration(t *testing.T) {
 	testCountryCRUD(ctx, t, s)
 	testSubdivisionCRUD(ctx, t, s)
 	testImport(ctx, t, s)
+	testSubdivisionQuery(ctx, t, s)
+	testDefaultCountry(ctx, t, s, pool)
 }
 
 // testCountryCRUD 国家建/查/改/译名/属性/停用闭环。
@@ -110,7 +113,7 @@ func testSubdivisionCRUD(ctx context.Context, t *testing.T, s *PGStore) {
 		t.Fatalf("duplicate want ErrDuplicate, got %v", err)
 	}
 
-	list, err := s.ListSubdivisions(ctx, "ZZ", "")
+	list, err := s.ListSubdivisions(ctx, SubdivisionFilter{CountryCode: "ZZ"})
 	if err != nil || len(list) != 1 {
 		t.Fatalf("ListSubdivisions: %v len=%d", err, len(list))
 	}
@@ -162,8 +165,109 @@ func testImport(ctx context.Context, t *testing.T, s *PGStore) {
 	if d.IsActive {
 		t.Fatalf("import must not reactivate inactive country")
 	}
-	list, err := s.ListSubdivisions(ctx, "ZZ", "")
+	list, err := s.ListSubdivisions(ctx, SubdivisionFilter{CountryCode: "ZZ"})
 	if err != nil || len(list) != 1 || list[0].Category != "province" {
 		t.Fatalf("post-import subdivision mismatch: %+v err=%v", list, err)
+	}
+}
+
+// testSubdivisionQuery 区划列表增强:parentCode 下钻/顶层语义/keyword/limit 截断/hasChildren 两态。
+// 结构:ZZ-Q0(顶层 region) → ZZ-Q1(启用)+ZZ-Q2(停用);译名挂 ZZ-Q1(en STANDARD)。
+func testSubdivisionQuery(ctx context.Context, t *testing.T, s *PGStore) {
+	t.Helper()
+	if err := s.CreateSubdivision(ctx, Subdivision{Code: "ZZ-Q0", CountryCode: "ZZ", Level: 1, Category: "region"}); err != nil {
+		t.Fatalf("create ZZ-Q0: %v", err)
+	}
+	if err := s.CreateSubdivision(ctx, Subdivision{
+		Code: "ZZ-Q1", CountryCode: "ZZ", ParentCode: "ZZ-Q0", Level: 2, Category: "province",
+	}); err != nil {
+		t.Fatalf("create ZZ-Q1: %v", err)
+	}
+	if err := s.CreateSubdivision(ctx, Subdivision{
+		Code: "ZZ-Q2", CountryCode: "ZZ", ParentCode: "ZZ-Q0", Level: 2, Category: "province",
+	}); err != nil {
+		t.Fatalf("create ZZ-Q2: %v", err)
+	}
+	if err := s.SetSubdivisionActive(ctx, "ZZ-Q2", false); err != nil {
+		t.Fatalf("deactivate ZZ-Q2: %v", err)
+	}
+	if err := s.AddSubdivisionName(ctx, "ZZ-Q1", SubdivisionName{Locale: "en", Name: "Quezon Region", NameType: "STANDARD"}); err != nil {
+		t.Fatalf("add name: %v", err)
+	}
+
+	// parentCode 下钻:直接子节点含停用行(停用仅影响 hasChildren,不影响列表可见性)。
+	q0 := "ZZ-Q0"
+	kids, err := s.ListSubdivisions(ctx, SubdivisionFilter{CountryCode: "ZZ", ParentCode: &q0})
+	if err != nil || len(kids) != 2 {
+		t.Fatalf("drilldown: %v len=%d", err, len(kids))
+	}
+	byCode := map[string]bool{}
+	for _, d := range kids {
+		byCode[d.Code] = d.HasChildren
+	}
+	if !byCode["ZZ-Q1"] || byCode["ZZ-Q2"] {
+		t.Fatalf("hasChildren mismatch: %v", byCode)
+	}
+
+	// 顶层语义:parentCode 传空值取 parent 为空的节点。
+	empty := ""
+	roots, err := s.ListSubdivisions(ctx, SubdivisionFilter{CountryCode: "ZZ", ParentCode: &empty})
+	if err != nil {
+		t.Fatalf("roots: %v", err)
+	}
+	rootIn := map[string]bool{}
+	rootHas := map[string]bool{}
+	for _, d := range roots {
+		rootIn[d.Code] = true
+		rootHas[d.Code] = d.HasChildren
+	}
+	if !rootIn["ZZ-Q0"] || !rootIn["ZZ-01"] {
+		t.Fatalf("roots mismatch: %v", rootIn)
+	}
+	if !rootHas["ZZ-Q0"] {
+		t.Fatalf("ZZ-Q0 should have active children")
+	}
+
+	// keyword 译名命中(ILIKE 大小写不敏感)+ locale 译名回显。
+	list, err := s.ListSubdivisions(ctx, SubdivisionFilter{CountryCode: "ZZ", Locale: "en", Keyword: "quezon"})
+	if err != nil || len(list) != 1 || list[0].Code != "ZZ-Q1" || list[0].DisplayName != "Quezon Region" {
+		t.Fatalf("keyword name: %v %+v", err, list)
+	}
+
+	// keyword 编码命中 + limit 截断(命中 3 行只取码序第一)。
+	list, err = s.ListSubdivisions(ctx, SubdivisionFilter{CountryCode: "ZZ", Keyword: "ZZ-Q", Limit: 1})
+	if err != nil || len(list) != 1 || list[0].Code != "ZZ-Q0" {
+		t.Fatalf("keyword code+limit: %v %+v", err, list)
+	}
+}
+
+// testDefaultCountry 默认国家读:未配置→空值对象;已配置→大写 alpha-2;非法→未配置态。
+func testDefaultCountry(ctx context.Context, t *testing.T, s *PGStore, pool *pgxpool.Pool) {
+	t.Helper()
+	cleanup := func(stage string) {
+		if _, err := pool.Exec(ctx, `DELETE FROM biz_params WHERE key='geo.default_country'`); err != nil {
+			t.Fatalf("cleanup param(%s): %v", stage, err)
+		}
+	}
+	cleanup("setup")
+	defer cleanup("teardown")
+
+	d, err := s.GetDefaultCountry(ctx)
+	if err != nil || d.Configured || d.CountryCode != "" {
+		t.Fatalf("unconfigured: %+v err=%v", d, err)
+	}
+
+	if _, err := pool.Exec(ctx, `INSERT INTO biz_params(key,value) VALUES ('geo.default_country','"ph"')`); err != nil {
+		t.Fatalf("seed param: %v", err)
+	}
+	if d, err = s.GetDefaultCountry(ctx); err != nil || !d.Configured || d.CountryCode != "PH" {
+		t.Fatalf("configured: %+v err=%v", d, err)
+	}
+
+	if _, err := pool.Exec(ctx, `UPDATE biz_params SET value='"ZZZ"' WHERE key='geo.default_country'`); err != nil {
+		t.Fatalf("seed invalid: %v", err)
+	}
+	if d, err = s.GetDefaultCountry(ctx); err != nil || d.Configured || d.CountryCode != "" {
+		t.Fatalf("invalid value: %+v err=%v", d, err)
 	}
 }

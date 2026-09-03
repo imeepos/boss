@@ -124,15 +124,15 @@ func TestTL1Resolver_ServicesMapping(t *testing.T) {
 		"tr069":    {false, 0, 1000, 1000},
 	}
 	for _, s := range p.Services {
-		want, ok := svcByName[s.Name]
+		want, ok := svcByName[s.ServiceName]
 		if !ok {
-			t.Fatalf("unexpected service %q", s.Name)
+			t.Fatalf("unexpected service %q", s.ServiceName)
 		}
 		if s.HasSVLAN != want.hasSVLAN || s.SVLAN != want.svlan || s.CVLAN != want.cvlan || s.UV != want.uv {
-			t.Fatalf("svc %s mismatch: %+v", s.Name, s)
+			t.Fatalf("svc %s mismatch: %+v", s.ServiceName, s)
 		}
 		if s.ONUID != "LOID-88A1" || s.OLTID != "OLT-1" || s.PONID != "NA-0-7-5" {
-			t.Fatalf("svc %s ctx mismatch: %+v", s.Name, s)
+			t.Fatalf("svc %s ctx mismatch: %+v", s.ServiceName, s)
 		}
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

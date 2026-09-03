@@ -218,6 +218,7 @@
 86. 画稿"中规中矩"根因是 5 个维度都打 5 分;高级感是在对的维度上克制(颜色/圆角/装饰)、对的维度上极致(节奏/字号/留白)。Linear 用 510/590 字重、Stripe 用 300 细体大字、Vercel 用 box-shadow 代替 border——每个"反常识"决定背后都是反 SaaS 默认值的克制。设计稿前必读 `references/knowledge/design-aesthetics.md`。
 87. 生图 prompt 的 Style 段不要写"现代/简洁/专业"等空词;翻译成可执行的设计语言——editorial / restrained / technical luxury / like Stripe or Linear + 具体的字号跳跃/字距收紧/圆角上限/焦点圈双层。空洞词被模型按"通用 SaaS"理解,正是"中规中矩"的源头(2026-08-25)。
 88. 节拍检测法:设计稿缩到 25% 后眯眼看——能立刻找到 3 个明确"组"说明节奏对,平均分布就是 24/24/24/24 的平庸节奏。节拍三件套=字号敢跳(14→24 不是 14→17)+留白敢空(主标题上下 32px+)+分组敢疏(区块 32-48px、组内 8-16px)。
+- 当 102 验收/E2E 出现「订单 DONE 但 provision 任务 FAILED/卡住」时，修复是先查 boss-provisioner 的 BOSS_PROVISION_DRIVER 与 TL1 解析链四要素(nms_oltid/PON 三维/TL1 内容模板/task_no 预置)，部署驱动切换会让旧验收夹具静默失配。skill 没提前警告我。
 89. 多 worktree 并行时 vite/playwright 默认 5173 易被同机别的工作区占用(测试串台,看着像组件挂掉实则打到了别人的 dev server)。正解:playwright.config 把 baseURL/port/webServer.command 都从环境变量读(PW_PORT),执行时 `PW_PORT=5291 pnpm exec playwright test` 隔离。验证后端端口也别忘同样处理,前端先 curl `/src/App.tsx` 看返回的源码路径就能秒判(2026-08-26 remote-desktop trackC)。
 86. 给领域 service 接口加方法前,先 grep 全部实现方(含测试 fake):embedded interface 的 fake 不受影响,显式逐方法实现的 fake 会漏,build 红一轮才发现一处(2026-08-21 RollbackStage)。
 81. 路由注册必须放在 register* 前缀函数内:check-contract-sync 的提取器只扫 register 开头函数,把 g.POST 写进 setup*/其他命名函数会静默逃出契约对账(362<->363 少计无告警)。重构 root.go 时警惕。
@@ -474,3 +475,9 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当给存量表补枚举 CHECK,走"数据归一 UPDATE → ADD CONSTRAINT NOT VALID → VALIDATE CONSTRAINT"三步;NOT VALID 不阻塞 DML,VALIDATE 失败即存量脏值曝光(2026-09-02 coupons 000177,102 真库验证 convalidated)。
 - 当展示编码要防超列宽,按 000085 惯例从 id 派生(A-/RK-/C- + lpad(id,N,'0')),别把 orderNo 等变长语义塞进 UNIQUE 码——orders 变长即整笔写入必炸 value too long(2026-09-02 procurement asset_code 39>32)。
 当看到「指令格式不对却执行成功」类日志时,先查 SUCCESS 的判定条件与对端真实身份——自研仿真器/桩回的 OK 是闭环自证,不代表业务成功(2026-09-03 provision apply telnet 链)。
+- 负例工厂函数默认返回全合规报文时,构造「去合规」用例必须把每个要偏离的字段显式写进 mod(尤其清空默认 Tag/ctag),漏一个默认值就会让负例首跑变正例失败(2026-09-03 tl1sim strict_test loose 模式)。
+- worktree symlink 主树 node_modules 后,前端门禁严禁走 pnpm 脚本:pnpm 11 的 deps-status-check 会报 ERR_PNPM_UNSAFE_MODULES_DIR(modules 目录解析目标不是项目子目录)并试图重装;一律分步直调 node_modules/.bin/tsc|vitest|vite + node scripts/web-ui-audit.mjs(2026-09-03 picker-lib 轮实测)。
+- 当用 read 分页读大文件后要整文件 write 时,修复是循环 read 直到累计行数==totalLines 再写;否则静默截断丢内容(fields.md 曾丢 1430 行,git checkout 恢复)。skill 没提前警告我。
+- 当在 run_code 的 JS 双引号串里写 Go 反引号 raw string 时,修复是直接写反引号字符(无需转义);从模板字面量带来的 ` + BT + ` 拼接会被当字面量落盘。skill 没提前警告我。
+- 当 OpenAPI yaml flow mapping {} 内的 plain scalar 含 ASCII 逗号或以 > 开头的片段时,修复是用单引号包裹 scalar,否则解析报 "found character that cannot start any token"。skill 没提前警告我。
+- 当要改 SQL 拼装逻辑时,修复是抽成纯函数先写纯单测再接 DB——本次纯单测先于集成抓出 FROM 出现在 WHERE 之后的真 bug。skill 有可测性预告,无此具体坑。

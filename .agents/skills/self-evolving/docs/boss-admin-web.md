@@ -86,7 +86,7 @@
 - `src/components/Pagination.tsx`：对齐 antd 规范（首末页恒显 + 当前±2 + 省略号、区间文案 rangeText、size changer、>10 页出现跳转、aria-current）；文案由调用方 i18n 传入（geo block 的 prev/next/perPage/rangeText/jumpText/pageUnit）
 - 图标规格：描边 SVG，viewBox 24 / stroke 1.8-2 / round cap / currentColor，显示 14px；禁止文字字形当图标
 - 主题：自研组件按 geo.css 模式自带 `:root[data-theme='light'/'dark']` 组件级令牌块；引用任何 var(--x) 前先 grep theme/tokens.css + styles.css 确认存在（曾引用不存在的 --shell-bg 静默翻车）
-- 可复用外壳令牌（双主题）：--shell-card-bg / --shell-card-border / --shell-content-text / --shell-group-title / --shell-menu-hover-bg / --shell-fab-bg（亮藏青/暗金）/ --shell-fab-bg-icon；focus 描边 --color-border-focus（styles.css，不分主题）
+- 可复用外壳令牌（双主题）：--shell-card-bg / --shell-card-border / --shell-content-text / --shell-group-title / --shell-menu-hover-bg / --shell-fab-bg（亮藏青/暗金）/ --shell-fab-icon（亮白/暗深藏青,注意不是 --shell-fab-bg-icon,该名不存在）；focus 描边 --color-border-focus（styles.css，不分主题）
 
 ## 招商入驻域速查(2026-08-22 查证,迁移 000098)
 
