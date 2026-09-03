@@ -1609,3 +1609,8 @@
 - 哪个坑浪费最多时间:无实质坑,一轮通过。关键是设计先行:traceSink 全局拼接的病根在「边执行边写 trace」,改成按尝试(attempt)分组 entry 缓冲 + Exec 末尾 finalize 收口后,成功/失败取舍变成纯函数决策,测试也只需切 4 横线分隔符对齐。
 - skill 有没有提前警告我:有——先读后改、commit 前核分支名、run_code 禁反引号/${(全部用 lines 数组 join 构造文件内容,零转义事故)。
 - 重来一次我会怎么做:留痕类需求先问「谁在何时消费这份证据」再定取舍规则;joinResp 的 4 横线分隔符与设备表格 5 横线天然可区分,这类分隔符选型应在写第一版时就显式注释,方便测试再切分。
+
+## 2026-09-04 拨号上网 E2E 与主链路验收断言补全(D1/D2)
+- 哪个坑浪费了最多时间?A1 首跑才发现 102 provisioner 已切 BOSS_PROVISION_DRIVER=tl1,主链路自举的 SPLITTER+裸端口夹具让环节7 任务 RESOLVE FAILED(port missing PON positioning),而订单状态机照样推进 stage=12/DONE——这恰是 D1 断言要暴露的盲区,但也意味着新脚本首版夹具不可用。TL1 解析链要求 OLT 资源带 nms_oltid、预占端口带 pon_frame/slot/port、模板含 onuType/services,这些字段无管理接口,最终沿用 verify-tl1-e2e.sh 的 SQL 夹具姿势(预建 PENDING 任务靠 task_no 幂等复用保证模板必达)。
+- skill 有没有提前警告我?有——契约先读、E2E 必须真实环境机械验收、停复机禁止直改库;但「部署环境驱动已切 tl1,旧验收夹具静默失配」这一环境事实无沉淀,本轮补齐。
+- 重来一次我会怎么做?写验收脚本前先 docker inspect boss-provisioner 看 BOSS_PROVISION_DRIVER、查最近 provision_tasks 成败,把「夹具必须匹配线上驱动」当前置检查;另外 dial 首版漏了下发终态等待,清理与 provisioner 抢跑(pon_onu_alloc=0 暴露),任何带清理的 E2E 都应在清理前轮询自身任务到终态。

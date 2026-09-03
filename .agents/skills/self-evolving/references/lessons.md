@@ -218,6 +218,7 @@
 86. 画稿"中规中矩"根因是 5 个维度都打 5 分;高级感是在对的维度上克制(颜色/圆角/装饰)、对的维度上极致(节奏/字号/留白)。Linear 用 510/590 字重、Stripe 用 300 细体大字、Vercel 用 box-shadow 代替 border——每个"反常识"决定背后都是反 SaaS 默认值的克制。设计稿前必读 `references/knowledge/design-aesthetics.md`。
 87. 生图 prompt 的 Style 段不要写"现代/简洁/专业"等空词;翻译成可执行的设计语言——editorial / restrained / technical luxury / like Stripe or Linear + 具体的字号跳跃/字距收紧/圆角上限/焦点圈双层。空洞词被模型按"通用 SaaS"理解,正是"中规中矩"的源头(2026-08-25)。
 88. 节拍检测法:设计稿缩到 25% 后眯眼看——能立刻找到 3 个明确"组"说明节奏对,平均分布就是 24/24/24/24 的平庸节奏。节拍三件套=字号敢跳(14→24 不是 14→17)+留白敢空(主标题上下 32px+)+分组敢疏(区块 32-48px、组内 8-16px)。
+- 当 102 验收/E2E 出现「订单 DONE 但 provision 任务 FAILED/卡住」时，修复是先查 boss-provisioner 的 BOSS_PROVISION_DRIVER 与 TL1 解析链四要素(nms_oltid/PON 三维/TL1 内容模板/task_no 预置)，部署驱动切换会让旧验收夹具静默失配。skill 没提前警告我。
 89. 多 worktree 并行时 vite/playwright 默认 5173 易被同机别的工作区占用(测试串台,看着像组件挂掉实则打到了别人的 dev server)。正解:playwright.config 把 baseURL/port/webServer.command 都从环境变量读(PW_PORT),执行时 `PW_PORT=5291 pnpm exec playwright test` 隔离。验证后端端口也别忘同样处理,前端先 curl `/src/App.tsx` 看返回的源码路径就能秒判(2026-08-26 remote-desktop trackC)。
 86. 给领域 service 接口加方法前,先 grep 全部实现方(含测试 fake):embedded interface 的 fake 不受影响,显式逐方法实现的 fake 会漏,build 红一轮才发现一处(2026-08-21 RollbackStage)。
 81. 路由注册必须放在 register* 前缀函数内:check-contract-sync 的提取器只扫 register 开头函数,把 g.POST 写进 setup*/其他命名函数会静默逃出契约对账(362<->363 少计无告警)。重构 root.go 时警惕。
