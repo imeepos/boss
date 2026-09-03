@@ -12,6 +12,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { bizDateKey, fmtTime } from '../../../lib/format'
+import { createdAtText, timelineFinishedText } from './timeCells'
 import { pageSlice, type CheckDetail, type OrderListRow, type TimelineRow, type WorkerLocationRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, EmptyState } from '../../../components/business'
@@ -156,6 +157,7 @@ export default function OrderPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.address || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.stage}. {r.stageLabel}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="order" value={r.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{createdAtText(r.createdAt)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       <span className="inline-flex items-center gap-3">
                         {r.stage === 1 && r.status === 'PENDING' && (
@@ -175,7 +177,7 @@ export default function OrderPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={o.empty} />}
+                {!slice.length && <TableStateRow colSpan={8} loading={busy} text={o.empty} />}
               </tbody>
             </table>
           </div>
@@ -221,7 +223,7 @@ export default function OrderPage() {
                 {(track?.timeline ?? []).map((x) => (
                   <tr key={x.stage}>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.stage}. {x.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.finishedAt ? fmtTime(x.finishedAt) : '—'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{timelineFinishedText(x.finishedAt, o.timelineUnfinished)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.duration || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.retries}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="ticket" value={x.result} /></td>

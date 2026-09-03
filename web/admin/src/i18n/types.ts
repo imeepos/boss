@@ -1221,6 +1221,7 @@ export interface Translations {
       locationEmpty: string
       locationUpdated: string
       timelineColumns: string[]
+      timelineUnfinished: string
       createBtn: string
       createTitle: string
       fCustomer: string

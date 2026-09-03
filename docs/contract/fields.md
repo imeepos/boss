@@ -568,6 +568,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 地址 | `AddressID` | address_id | BIGINT → addresses；**归属判定源**（见下行） |
 | 当前环节 | `Stage` | stage | 1~12（见 terms.md 第 1 节） |
 | 状态 | `Status` | status | PENDING/RESERVED/INSTALLING/DONE（见 terms.md 第 3 节） |
+| 下单时间 | `CreatedAt` | created_at | 下单时刻；admin 订单列表列（fmtTime 上海墙钟展示） |
 | 区域 | `RegionPath` | region_path | LTREE；下单时由地址推导快照 |
 | 归属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities；由安装地址推导（address→region→最近覆盖祖先，migrations/000076），下单快照不可变；未匹配子公司覆盖时兜底平台总公司（is_platform，migrations/000077）；调用方直传值仅做冲突校验（adopted note 2026-08-20-order-legal-entity-by-address） |
 | 成交价 | `PriceSnapshot` | price_snapshot | 下单时生效价快照（账单金额以此为准） |
@@ -591,6 +592,8 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 耗时 | `Duration` | duration | 可派生 |
 | 重试 | `Retries` | retries | INT |
 | 结果 | `Result` | result | DONE/DOING/PENDING（见 order.html） |
+
+> 完成时间缺失（finished_at 为 NULL：环节进行中或未回填）时，admin 时间轴显示 i18n 占位文案（zh「未完成」），不显示裸 —。
 
 ### 3.3 bills（账单，源自 billing.html）
 
