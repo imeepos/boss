@@ -1681,3 +1681,8 @@
 - 哪个坑浪费了最多时间？红线 11 新变体(台账 10→11):程序体里出现 反斜杠+引号 序列(测试内容嵌 JSON 双引号)破坏宿主模板,报 is not a function;改零反斜杠形态(JSON 体用字节切片构造,含双引号行用单引号 JS 串)一次过。连带:git commit --amend 打到 merge 提交上(HEAD 是合并非目标提交),reflog 定位原 merge 后 soft reset 拆成独立 docs 小提交。pgxmock 小坑:NewPool 返回 PgxPoolIface;ExpectExec 不带 WithArgs 即要求 0 参。
 - skill 有没有提前警告？红线 11 只点名反引号/插值/反斜杠n,反斜杠+引号变体靠同族台账举一反三定位很快。
 - 重来一次怎么做？①写含嵌引号文件先想零反斜杠形态;②amend 前必看 git log -1 是否 merge 提交;③门禁窗口期冻结仓库,不再中途提交(本次靠事后对最终 HEAD 复验三包补证)。
+## 2026-09-05 装维链路缺陷修复任务A(专属 worktree,8 项 9 提交)
+- 哪个坑浪费了最多时间？新坑登记:run_code 里 edit 调用漏 new_string(只有 old_string 的半成品调用)发了 4 次,每次废一轮;另红线 1 路径变体再中(+1):主树读过不等于 worktree 副本已读,scanerr/pg_scan_test/portal_test 三连拒后才形成批量预读习惯。红线 11 引号变体(+1):Go 源码里 rune 字面量(单引号 f)嵌进 JS 单引号串直接 parse error,改 fmt.Sprintf 免 rune;JSON 体内嵌双引号用 string(rune(34)) 构造免转义。
+- skill 有没有提前警告？红线 11/红线 1 全命中且预案有效(行数组/fromCharCode/批量预读);「漏 new_string」是全新坑——调用模板不完整,skill 无法预警,只能靠发车前自检参数键成对。
+- 重来一次怎么做？①每个 edit 调用发车前默念 old+new 成对齐全,删类也要显式给 new_string;②worktree 轮开工先把待改文件按 worktree 绝对路径批量 read;③Go 源码嵌 JS 字符串先扫单引号/反引号/反斜杠三件套;④pgxmock 时间列扫到 *time.Time 双指针不支持,用 pgtype.Timestamptz 中转(先例 pg_ledger.go);⑤接口加方法先 grep 全仓 fake 桩补齐,不等 make check 兜底。
+

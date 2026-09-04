@@ -487,3 +487,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 | 当门禁命令需要 tail/head 截取输出时,退出码取的是管道尾(No projects found in "/Users/imeepos/ext512/ymm-001/boss"
 [ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND] No package.json (or package.yaml, or package.json5) was found in "/Users/imeepos/ext512/ymm-001/boss". 的 test 失败被吞, 照打假绿) | 修复:门禁一律裸跑看退出码,或 set -o pipefail;「OK 标记」只能由真退出码守卫的分支打印(2026-09-05 T20,build 前置 test 假绿,靠 make check 后 web test 显红才发现) |\n
 - 当 worktree 目录尚在但 gitdir 注册失联(目录内 git 报 not a git repository),「能否合并」不能看目录猜——走主仓侧三方核对:git worktree list 注册表、本地+远端分支 refs、diff -rq 对主树找独有文件;独有文件只剩构建缓存且 mtime 全冻结在 checkout 时刻=无未提交工作,再抽一个差异文件用 git log --all --find-object=<blob> 确认内容在历史里,即可安全 rm -rf(2026-09-05 wt-chain-contract 实证:分支本地远端均不存在,快照为 8/29 已并入时代的旧 checkout,gitdir 早被删)。
+- 当 pgxmock 单测要扫 timestamptz 到 *time.Time(双指针)报 destination kind 'ptr' not supported 时,修复是域代码用 pgtype.Timestamptz 中转再转指针(先例 pg_ledger.go effTo),测试 AddRow 直填 time.Time 即可(2026-09-05 quadfixa)。
+- 当域接口加方法导致全仓 fake 桩编译失败时,修复是接口变更同一提交里 grep『实现该接口的 struct 名』逐个补零值方法,不等 make check 兜底(2026-09-05 quadfixa:LatestActivationCallback/ResolveFactSnapshot 连累 admin 两桩)。
+- 当上游查询要判断『同资源活跃行是否存在』且唯一索引只约束活跃态时,修复是置状态前先 SELECT 活跃行判同客户(刷新复用)或跨客户(业务冲突码),而不是等 23505 裸唯一键错变 50000(2026-09-05 任务A:uq_quad_links_address 部分唯一索引)。
+- 当依赖宿主把 run_code 程序体包进模板字符串时,修复是程序体内禁现美元符花括号序列本身也要动态构造(fromCharCode(36)+'{'),连改红线 11 条目都能被红线 11 咬(2026-09-05 实证)。

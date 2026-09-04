@@ -11,7 +11,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 
 > 完整计数台账:`references/recidivism.md`。每次反思同步 +1;≥2 次的坑必须登在这里。
 
-1. **【已犯 19 次】编辑文件前必须用 read 工具读最新内容** —— bash 的 cat/sed 输出不算"已观察",edit 会直接拒绝;同一会话第二轮编辑凭记忆拼 old_string 必 not found;共享工作区文件可能被并行进程改掉,edit 报 file changed since read 也要重读。
+1. **【已犯 20 次】编辑文件前必须用 read 工具读最新内容** —— bash 的 cat/sed 输出不算"已观察",edit 会直接拒绝;同一会话第二轮编辑凭记忆拼 old_string 必 not found;共享工作区文件可能被并行进程改掉,edit 报 file changed since read 也要重读。
 2. **【已犯 2 次】浏览器自测调试必须用 cdp-capture.mjs，playwright 只用于项目 E2E 自动化脚本** —— cdp-capture 零依赖、截图+console 报错+失败请求响应体+网络采集+自动填表，是调试排查的首选工具；playwright 只放 `e2e/` 目录做 CI 自动化冒烟，不做日常调试。混用时用户会再次点名纠正。
 2a. **【已犯 2 次】修复前端后用户报"看不到变化"应先自检 bundle/缓存,而不是反复改代码** —— assets/*.js 命中 `max-age=31536000, immutable` 时 index.html 引用是 hash 名,旧 index.html 缓存会让浏览器认知中的 chunk 与服务器上已替换的 chunk 错位;修完代码必须 `curl` 远端 bundle 验证新代码文本已在内(`grep -c newFunction index-*.js`),再让用户硬刷新。同源坑见 recidivism #51(smsconfig hover 才出现)。
 2. **【已犯 2 次】浏览器自测调试必须用 cdp-capture.mjs，playwright 只用于项目 E2E 自动化脚本** —— cdp-capture 零依赖、截图+console 报错+失败请求响应体+网络采集+自动填表，是调试排查的首选工具；playwright 只放 `e2e/` 目录做 CI 自动化冒烟，不做日常调试。混用时用户会再次点名纠正。
@@ -24,7 +24,8 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 9. **【已犯 3 次】worktree 收尾 ff-merge 失败时严禁删 worktree + branch -D** —— 并行会话推新 commit → 本地 main 前进 → worktree 分支 ff-merge 失败是常态(diverging 分支)。唯一允许操作:`git rebase main` 在 worktree 内 → 重试 ff-merge;**绝不允许**"`merge` 失败就算没合并上,直接 worktree remove + branch -D"——commit 在 worktree + refs/heads/<branch> 里安全,但 worktree remove 会触发 GC 不可逆丢失。落入此坑 3 次,A2/A4/A5 都丢过 commit;**下次再犯立刻停手重读本文**。
 9a. **【已犯 6 次】禁止经 ssh+psql/嵌套 bash 执行 SQL 时叠引号** —— 外层 bash 把引号吞掉,`-c "..."` 里再叠双引号必报 column does not exist/syntax error(2026-08-26 同会话两连炸);一律 `ssh host 'docker exec -i pg psql -U u -d d' <<'SQL'` 单引号 heredoc 传 stdin,SQL 字符串字面量用单引号。
 10. **【已犯 2 次】写文件/跑命令前必须核对 worktree 的真实磁盘路径** —— `git worktree add ../name` 建的是**兄弟目录**(仓库外侧),不是仓库内的 `./name`;把文件写进仓库内同名嵌套目录后在该目录 `git commit`,git 会向上解析到主仓库,commit **静默落在 main**(输出标记 `[main xxx]` 即事故);写前 `git worktree list` 核对绝对路径 + commit 后看输出方括号里的分支名。
-11. **【已犯 11 次】run_code 程序传给 edit/write 的字符串里严禁出现裸反引号或 ${** —— 宿主把程序体包进模板字符串,这两个序列会提前闭合/插值,报 parse error(Expected ',' / got 'ident'),不像代码错像工具坏,白耗两轮才定位到工具层。含这些字符的 old_string 用 String.fromCharCode(96) + 字符串拼接逐字节构造,或改选不含它们的锚点;bash heredoc 里同样注意;JSON 双引号串里的反斜杠转义(如 \n)会被宿主解析成真实换行截断程序体——多行 bash 用反引号模板体,多段提交信息用 printf 逐行数组 + commit -F,heredoc 结束符后不得在同一命令里再写行(会落回本地执行)。
+11. **【已犯 12 次】run_code 程序传给 edit/write 的字符串里严禁出现裸反引号或 ${** —— 宿主把程序体包进模板字符串,这两个序列会提前闭合/插值,报 parse error(Expected ',' / got 'ident'),不像代码错像工具坏,白耗两轮才定位到工具层。含这些字符的 old_string 用 String.fromCharCode(96) + 字符串拼接逐字节构造,或改选不含它们的锚点;bash heredoc 里同样注意;JSON 双引号串里的反斜杠转义(如 \n)会被宿主解析成真实换行截断程序体——多行 bash 用反引号模板体,多段提交信息用 printf 逐行数组 + commit -F,heredoc 结束符后不得在同一命令里再写行(会落回本地执行)。变体(2026-09-05):Go 源码的 rune 字面量(单引号字符)嵌进 JS 单引号串同样炸 parse error——用 fmt.Sprintf/免 rune 形态;含双引号的 JSON 体用 string(rune(34)) 构造免转义;本条目自身的美元符花括号序列也要用 fromCharCode 动态构造才能写进来。
+14. **【已犯 4 次】run_code 里 edit/write 调用发车前必须自检参数成对齐全(old_string+new_string 缺一即 invalid arguments)** —— 起草到一半就发车的半成品调用连发 4 次(2026-09-05 quadfixa 轮),每次废一轮;发车前默念 old+new 双键,纯删除也要显式给 new_string。
 12. **【已犯 2 次】bash set -u 下可缺省变量必须给默认值** —— 位置参数与环境变量读取一律写 ${VAR:-default}(函数可选参数如 b=${3:-}、环境变量如 HOST=${OLTSIM_HOST:-xxx});裸 $3/裸 $ENV 在未传/未设时直接 unbound variable 崩溃(2026-09-02 verify-oltsim 脚本两次运行中断,第二次发生在夹具已建之后,白耗一轮)。
 13. **【已犯 2 次】大仓 worktree add / 全仓 build 等长耗时命令必须后台跑,worktree 挂载用 --no-checkout 两段式** —— 前台跑必被 bash 超时杀半路(2026-09-04 T18 六连败、T19 两连败);标准动作:`git worktree add --no-checkout ../wt feat/branch`(秒级)→ 后台 job `git reset --hard HEAD` 补文件 → job_output 收尾;全仓 build/test 同理 run_in_background + 轮询日志。
 
