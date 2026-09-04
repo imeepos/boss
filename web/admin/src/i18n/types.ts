@@ -1973,6 +1973,50 @@ export interface Translations {
       overviewMaint: string
       roiFmt: string
     }
+    monthlyPage: {
+      title: string
+      desc: string
+      tabs: string[]
+      filterMonth: string
+      filterMonthInvalid: string
+      filterRegion: string
+      filterAll: string
+      kpi: {
+        closingActive: string
+        totalRevenue: string
+        ontimeRate: string
+        portUtilization: string
+        collectionRate: string
+        arpu: string
+      }
+      derivedBadge: string
+      import: string
+      importing: string
+      importFail: string
+      export: string
+      exporting: string
+      exportFail: string
+      exportSaved: string
+      importSummary: string
+      importPartial: string
+      errorLine: string
+      edit: string
+      editTitle: string
+      save: string
+      saving: string
+      saveFail: string
+      empty: string
+      loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+      columnsUserRevenue: string[]
+      columnsNetwork: string[]
+      columnsFinance: string[]
+    }
     reportPage: {
       title: string
       desc: string

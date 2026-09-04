@@ -98,6 +98,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'gis', label: 'GIS 地图', path: '/intel/gis' },
     { key: 'analytics', label: '经营分析', path: '/intel/analytics' },
     { key: 'report', label: '报告中心', path: '/intel/report' },
+    { key: 'monthly', label: '月度填报', path: '/intel/monthly' },
   ]},
   { id: 'org', label: '组织与权限', items: [
     { key: 'account', label: '账号与角色', path: '/base/account' },
