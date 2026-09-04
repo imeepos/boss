@@ -3,11 +3,13 @@ package userapi
 // 用户端门户 Misc 域:首页聚合/消息中心/优惠券/用量/自助排障/协议。
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -77,7 +79,20 @@ func portalRedeemCoupon(a *app.Application) gin.HandlerFunc {
 		}
 		couponID, err := a.Promotion.RedeemCode(c.Request.Context(), req.Code, cid)
 		if err != nil {
-			respondErr(c, err)
+			// promotion 域错误在本 handler 边界收口映射(不动共享 httpx/error.go,
+			// 避免与并行修复会话 A 的文件域冲突):明确业务码替代一律 50000。
+			switch {
+			case errors.Is(err, promotion.ErrCodeNotFound):
+				respond(c, apitypes.CodeNotFound, gin.H{"reason": "兑换码不存在"})
+			case errors.Is(err, promotion.ErrCodeUsedOrDisabled):
+				respond(c, apitypes.CodeConflict, gin.H{"reason": "兑换码已被使用或已停用"})
+			case errors.Is(err, promotion.ErrTemplateDisabled):
+				respond(c, apitypes.CodeConflict, gin.H{"reason": "券模板已停用"})
+			case errors.Is(err, promotion.ErrConflict):
+				respond(c, apitypes.CodeConflict, gin.H{"reason": promotion.ConflictReason(err)})
+			default:
+				respondErr(c, err)
+			}
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"couponId": couponID})
