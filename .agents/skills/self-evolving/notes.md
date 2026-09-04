@@ -347,6 +347,12 @@
 - 新坑(重试已成功的 edit 导致双重插入):一次消息里发了两次同样的 edit,第一次成功第二次把 Push 装配块插了两遍,靠 grep 发现。重试前先确认上次是否已生效。
 - skill 提前预警了:menu.def 新增项必须补 items/<key>.svg(docs/boss-admin-web.md 记录),这次靠它躲过无图标坑;红线#3(禁原生 select)第一次写就踩了,靠红线记忆当场改 Dropdown。
 
+## 2026-09-05 W-0907 负责人协调轮(月度填报三会话:派发/验收/归档)
+
+- 哪个坑浪费了最多时间？并行执行会话的 go build 门禁与负责人验收自测撞 Go 构建缓存锁,tl1 自测两次 60s 超时被 SIGTERM,输出全丢误判两次;后改「范围收窄验证(只 build/vet 相关包)+ 空闲窗口复跑拿退出码」才闭环。另 read_image 再犯(红线#7 第 5 次),以及 devloop_accept 对 status=done 拒收——复核只能直接 bash 跑 selftest。
+- skill 有没有提前预警？红线#7 有预警仍顺手试了读图(侥幸心理);构建锁竞争是新坑,skill 无预警;102 push 后自动部署管道(约 25 分钟容器更新)是本轮实证的新环境事实,此前负责人不知情,差点手工部署做重复功。
+- 重来一次怎么做？①多会话并行期,负责人的验收统一放会话空闲窗口,或验收命令加 `wait-for-quiet`(轮询 ps 无 go build/test 再跑);②读图前先想红线#7;③部署事实先 ssh 容器看 uptime+healthz commit 再决定要不要手工部署。
+
 ## 2026-09-05 排查 admin 页 console 报错(reportAllChanges/startTime,定性为扩展注入)
 - 哪个坑浪费了最多时间:cdp-admin-capture 首次调用参数形状记错(--out 当位置参数、base 留默认 localhost:5173),白跑一轮采集,输出 eval: http://localhost:5173/ 才发现;重来一次会先 head -60 看脚本用法行再拼命令。
 - skill 有没有提前预警:红线#2(cdp-capture 优先)与 docs/boss-admin-web.md(5180 部署地址/servers 注入顺序/免登录)直接复用,第二轮即采集成功;本次教训补进 knowledge/前端.md 与 known-issues。

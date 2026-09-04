@@ -19,7 +19,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 4. **【已犯 5 次】edit 的 new_string 必须与 old_string 范围严格对称** —— 不顺手带函数头/注释(会重复定义),不做"只删换行"的 no-op(会并行致语法错);改完立刻 build 验证。
 5. **【已犯 5 次】任务完成必须 git commit,`git status` 干净才算收尾** —— 门禁 = typecheck + test + build + commit;反思流程第 0 步先 `git status`,有产物先提交再反思。
 6. **【已犯 3 次】禁止在总结里声称"已适配/已验证"而没有验证动作** —— 引用每个 CSS 令牌前 grep 它的定义；UI 交互必须在真实业务 DOM 中断言点击后的控件文本、筛选结果和 URL；没有双主题截图/build 或真实点击断言时一律明确写"未验证"。
-7. **【已犯 4 次】禁止假设模型支持图像输入** —— Kimi-k3 不支持图像分析，需要图像分析时应使用专门的工具（如 cdp-capture.mjs + 代码审查）或明确说明"未验证"。
+7. **【已犯 5 次】禁止假设模型支持图像输入** —— Kimi-k3 不支持图像分析，需要图像分析时应使用专门的工具（如 cdp-capture.mjs + 代码审查）或明确说明"未验证"。2026-09-05 W-0907 再犯:负责人验收读 t20 截图被拒,改用部署特征串+截图文件尺寸+DOM 断言佐证。
 8. **【已犯 1 次】禁止在未检查环境依赖时使用工具** —— 使用 Playwright/Puppeteer 等工具前必须先检查是否已安装，避免运行时报错浪费时间。
 9. **【已犯 3 次】worktree 收尾 ff-merge 失败时严禁删 worktree + branch -D** —— 并行会话推新 commit → 本地 main 前进 → worktree 分支 ff-merge 失败是常态(diverging 分支)。唯一允许操作:`git rebase main` 在 worktree 内 → 重试 ff-merge;**绝不允许**"`merge` 失败就算没合并上,直接 worktree remove + branch -D"——commit 在 worktree + refs/heads/<branch> 里安全,但 worktree remove 会触发 GC 不可逆丢失。落入此坑 3 次,A2/A4/A5 都丢过 commit;**下次再犯立刻停手重读本文**。
 9a. **【已犯 6 次】禁止经 ssh+psql/嵌套 bash 执行 SQL 时叠引号** —— 外层 bash 把引号吞掉,`-c "..."` 里再叠双引号必报 column does not exist/syntax error(2026-08-26 同会话两连炸);一律 `ssh host 'docker exec -i pg psql -U u -d d' <<'SQL'` 单引号 heredoc 传 stdin,SQL 字符串字面量用单引号。
