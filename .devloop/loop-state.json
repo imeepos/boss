@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "boss-主链路持续优化",
-  "updatedAt": "2026-09-04T17:36:20.581Z",
+  "updatedAt": "2026-09-04T18:45:44.834Z",
   "tasks": [
     {
       "id": "T10",
@@ -90,8 +90,9 @@
       "priority": "P1",
       "title": "admin 月度填报页面(S10 会话执行,依赖 T19 上 102)",
       "goal": "intel 分组新增月度填报页:三页签对齐三事实表,月份/区域筛选,派生列只读,CSV 导入导出按钮,月度汇总 KPI 卡片(期末在用/总收入/及时完工率/端口利用率/回款率/ARPU);菜单/路由/i18n 中央登记独立小提交;禁原生 select 用 Dropdown.tsx;102 线上实测截图留档",
-      "status": "todo",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/monthly-admin-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/monthly-admin-selftest.sh'"
+      "status": "done",
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/monthly-admin-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/monthly-admin-selftest.sh'",
+      "failCount": 0
     }
   ],
   "note": "W-0907 月度填报波次过半:T18 done(S8 已归档,dfdba439/8f558148 在 main);T19 done(S9 已归档,迁移 000181 GENERATED 派生列+51 白名单+14 条 /monthly/* 路由,自测十项 PASS,102 已上线 abd8f7d);T20 admin 前端进行中(S10=session-e70ed98a,验收=scripts/ops/monthly-admin-selftest.sh 退出码 0)。S9 移交契约要点:envelope/PageResult、派生列只读、导入 42200 行级错误、导出裸 CSV window.open、KPI 先判 null、menu key=monthly。push main 后自动部署管道约 25 分钟更新 102,verify-deploy 自证。主树另有他会话的 meeting-minutes 未跟踪文件,不代管。"
