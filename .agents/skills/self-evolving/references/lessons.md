@@ -38,6 +38,9 @@
 - 当用户报"某菜单/按钮缺图标"时,修复是先同时 `ls` 资源目录 + `grep` 渲染点,判定"资产缺"(补 SVG)还是"渲染缺"(补引用)——同一症状两种病因,曾连续两轮分别是这两种。skill 没提前警告我。
 - 当新增菜单遮罩图标 SVG 时,修复是拷贝同目录现有图标的规格(24 viewBox/stroke 1.8/round cap),stroke 色值随意——mask 方案下实色由 background:currentColor 决定,与文件内颜色无关。skill 没提前警告我。
 - 当顶栏空间紧张要做收展式搜索框时,修复是收起态复用 shell-tool-btn(与相邻工具按钮同排同规格),展开态切回 shell-search 椭圆;Esc 全清收起/空值失焦收起/提交成功收起三路径一次写全。skill 没提前警告我。
+- 当多会话编排(DSH session_link_talk)目标连续返回空回复时,修复是不再反复 talk——空回复多为目标会话正处于纯工具轮;改查外部权威数据(102 接口/DB)判进度,既省墙钟又避免给目标会话注入噪音消息。
+- 当编排多角色并行模拟时,修复是 Promise.all 并行发 talk(各 480s 超时,程序总墙钟≤600s),轮间等待用 bash sleep;曾一轮三会话并行 7m26s 完成,较串行省一半以上。
+- 当批量归档会话后,修复是用 session_link_list 复核剩余列表——archiveSession 返回的 archivedSessionIds 是工作区累计归档清单而非本次提交集,曾险些误判;本次另发现一个历史会话被连带归档(单向不可逆)。
 - 当用户嫌 gitea secret 配置麻烦时,修复是评估"内网私有仓库直接把 env 文件入库"(固定密钥+注释公网风险)——homelab 场景标准 secret 流程是过度设计,简单性优先;skill 之前推的 secret 方案被现场驳回。
 - 当 app.env 配了超管口令但登录仍 40100 时,修复是查该账号 created_at/real_name:历史遗留账号(如开发期手建的 admin)会被 EnsureSuperAdmin 的 ON CONFLICT DO NOTHING 正确跳过,口令不会同步——直接 UPDATE password_hash(bcrypt 新哈希)对齐即可。
 - 当 pgx/simple protocol 报 42P18 "could not determine data type of parameter $1" 时,修复是检查占位符编号:必须从 $1 连续编号($2 起头会报 $1 类型不明),必要时补 ::text 显式类型。
