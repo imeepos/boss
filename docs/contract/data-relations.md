@@ -1,6 +1,7 @@
 # 数据从属关系总览（contract/data-relations）
 
-> 版本 V1.3（2026-08-21）｜权威源：migrations/*.up.sql（87 个迁移，130 张活表，已全部对账）
+> 版本 V1.4（2026-09-04）｜权威源：migrations/*.up.sql（迁移对账随波次滚动，ER 图脚本生成）
+> V1.4 变更：补 000181 月度填报三事实表+区域白名单（BI 经营分析，internal/domain/monthly，见 §2.14）；
 > 定位：锁死「谁包含谁、谁归属于谁」的完整实体关系清单。详情页设计、数据权限裁剪一律以本表为准。
 > V1.3 变更：补 000061-089——attachments、师傅考勤/安检/换签、物料工具主档、ODN 无源网络 8 表；
 > orders 加硬 FK（000076）、payments 双挂（000068）、customers.customer_code（000085）、quad_links 部分唯一改版（000086/000088）、
@@ -233,6 +234,19 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 
 > **企业锚点铁律**：归属到企业的业务事实/主单冗余 `legal_entity_id` + `legal_entity_name` 快照，跨企业对比 O(1)；
 > 集团共享数据与纯时间轴子记录不冗余（见 fields.md 8.1）。
+
+### 2.14 月度填报事实（000181，BI 经营分析，internal/domain/monthly）
+
+| 实体 | 主键 | 关系 |
+|:-----|:-----|:-----|
+| monthly_regions ✚ | region(UQ TEXT) | 白名单字典（51 Barangay 种子，active 标记）；■三事实表均 FK 挂靠 |
+| monthly_user_revenue ✚ | PK(month,region) | ▲region(FK)；closing_active/total_revenue 为 GENERATED 派生存储列 |
+| monthly_network_delivery ✚ | PK(month,region) | ▲region(FK) |
+| monthly_finance_cost ✚ | PK(month,region) | ▲region(FK) |
+
+> **月度填报铁律**：粒度=月×区域，UNIQUE(month,region)；派生列（期末在用/主营总收入）服务端计算
+> （库端 GENERATED ALWAYS，导入/接口无外部写入入口）；CSV 对接表头与 docs/books 模板逐字节一致
+> （UTF-8 BOM+CRLF），导入导出字节级闭环，导入留痕走 import_tasks。
 
 ## 3. 归属维度枚举（下钻视角的"锁定条件"）
 

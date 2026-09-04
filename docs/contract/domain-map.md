@@ -38,7 +38,7 @@
 | 四码合一/一致性 | QUAD | （横切 CONS） | `quadlink` | 阶段6 | quad | quadlink/check/scanlog |
 | GIS | GIS | AG-11 | `gis` | 阶段8 | intel | gis |
 | 国际地理基础数据 | — | — | `geo` | 阶段1 | base（web/admin `/base/geo`；docs/admin menu.js 未列） | geo（国家/行政区划/译名，ISO 3166；服务 addresses 国际化，与 gis 分立见 note 2026-08-18-geo-vs-gis-split） |
-| 经营分析 BI | BI | AG-12 | `analytics`(+`report`) | 阶段9 | intel | analytics/report |
+| 经营分析 BI | BI | AG-12 | `analytics`(+`report`+`monthly`，000181 月度填报) | 阶段9 | intel | analytics/report；monthly 页面待建(T20) |
 | 客服工单 | CS | AG-07 | `cs`（000118 基础） | 增量(Q1) | boss(报障) | complaint/客服工作台 |
 | 应收信用 | AR | AG-09 | `ar`（000118 基础） | 增量(Q1) | billing(欠费) | arrears/催收队列 |
 | 渠道经销商 | CH | AG-10 | `partner`(入驻先行) | 阶段1(000098) | org(审核页 partner)+企业工作台 | partner 入驻申请审核/我的企业/员工管理/企业订单 |
@@ -83,7 +83,7 @@ menu.js 共 13 分组 49 菜单页（另 `login.html` 为登录散页，不进�
 | provision 配置下发 | PROV | `provision` | 阶段7 | provision/template/provlog |
 | alarm 告警中心 | MON | `device` | 阶段7 | alarm |
 | aaa 认证计费 | AAA | `aaa` | 阶段7 | aaalog |
-| intel 数字孪生与经营 | GIS + BI | `gis`/`analytics` | 阶段8/9 | gis/analytics/report |
+| intel 数字孪生与经营 | GIS + BI | `gis`/`analytics`/`monthly`(000181) | 阶段8/9 | gis/analytics/report；monthly 页面待建(T20) |
 
 ### 2.1 跨域归属的页面（边界标注，Agent 不得越界实现）
 

@@ -1494,3 +1494,74 @@ claims 并非本地权威事实，仅展示）。门禁语义见 adopted/2026-09
 `POST /v1/activations` 兑码 + `POST /v1/licenses/{id}/offline-token` 取令牌 →
 本地落盘 `/var/lib/boss/license.json`。门禁豁免路径：`/license/status`、
 `/license/activate`、各端 `/auth/*`（登录/注册/登出）与 `/client/latest`（版检）。
+## 8H. 月度填报事实域(internal/domain/monthly,迁移 000181,BI 经营分析)
+
+> 权威输入:docs/books/模板_月度填报.xlsx(_RegionList 51 个标准 Barangay)+ 同目录 3 个标准 CSV
+(UTF-8 with BOM,CRLF 行尾,表头带单位后缀)。粒度均为 月×区域,UNIQUE(month,region);
+派生列=模板灰色列「公式-勿填」,服务端计算(库端 GENERATED ALWAYS 存储列),导入/接口传入一律无效。
+admin API 前缀 /api/admin/v1/monthly/*,权限码 menu:monthly;导入留痕复用 import_tasks(kind=monthly-<table>)。
+
+### 8H.1 monthly_regions(区域白名单)
+
+| 页面列名 | 字段名 | DB 列 | 类型/枚举 |
+|:---------|:-------|:------|:----------|
+| 区域 | `Region` | region | TEXT PK;51 Barangay 种子(xlsx _RegionList 提取) |
+| 状态 | `Active` | active | BOOLEAN 停用即拒绝导入 |
+
+### 8H.2 monthly_user_revenue(用户与收入)
+
+| 页面列名 | 字段名 | DB 列 | 类型/枚举 |
+|:---------|:-------|:------|:----------|
+| 月份 | `Month` | month | TEXT,CHECK `^[0-9]{4}-(0[1-9]|1[0-2])$` |
+| 区域 | `Region` | region | TEXT FK monthly_regions |
+| 期初在用 (户) | `OpeningActive` | opening_active | BIGINT ≥0 |
+| 当月新增 (户) | `NewUsers` | new_users | BIGINT ≥0 |
+| 当月离网 (户) | `ChurnedUsers` | churned_users | BIGINT ≥0 |
+| 数据调整 (户) | `AdjustedUsers` | adjusted_users | BIGINT ≥0 |
+| 期末在用 (户) | `ClosingActive` | closing_active | 派生=期初+新增-离网+调整(GENERATED) |
+| 宽带收入 (₱) | `BroadbandRevenue` | broadband_revenue | BIGINT ≥0 |
+| 增值收入 (₱) | `ValueAddedRevenue` | value_added_revenue | BIGINT ≥0 |
+| 一次性收费 (₱) | `OnetimeCharge` | onetime_charge | BIGINT ≥0 |
+| 优惠减免 (₱) | `DiscountAmount` | discount_amount | BIGINT ≥0 |
+| 退款冲销 (₱) | `RefundReversal` | refund_reversal | BIGINT ≥0 |
+| 主营总收入 (₱) | `TotalRevenue` | total_revenue | 派生=宽带+增值+一次性-优惠-退款(GENERATED) |
+
+### 8H.3 monthly_network_delivery(网络与交付)
+
+| 页面列名 | 字段名 | DB 列 | 类型/枚举 |
+|:---------|:-------|:------|:----------|
+| 月份 | `Month` | month | 同 8H.2 |
+| 区域 | `Region` | region | TEXT FK monthly_regions |
+| 装机申请 (件) | `InstallRequests` | install_requests | BIGINT ≥0 |
+| 及时完工 (件) | `OntimeCompletions` | ontime_completions | BIGINT ≥0 |
+| 部署端口 (个) | `PortsDeployed` | ports_deployed | BIGINT ≥0 |
+| 在用端口 (个) | `PortsActive` | ports_active | BIGINT ≥0 |
+| 故障申报 (件) | `FaultReports` | fault_reports | BIGINT ≥0 |
+| 修复工时 (小时) | `RepairHours` | repair_hours | BIGINT ≥0 |
+
+### 8H.4 monthly_finance_cost(财务与成本)
+
+| 页面列名 | 字段名 | DB 列 | 类型/枚举 |
+|:---------|:-------|:------|:----------|
+| 月份 | `Month` | month | 同 8H.2 |
+| 区域 | `Region` | region | TEXT FK monthly_regions |
+| 开票金额 (₱) | `InvoicedAmount` | invoiced_amount | BIGINT ≥0 |
+| 实际回款 (₱) | `CollectedAmount` | collected_amount | BIGINT ≥0 |
+| 期末应收 (₱) | `ReceivableEnding` | receivable_ending | BIGINT ≥0 |
+| 直接成本 (₱) | `DirectCost` | direct_cost | BIGINT ≥0 |
+| 固定费用 (₱) | `FixedCost` | fixed_cost | BIGINT ≥0 |
+| CAPEX投入 (₱) | `CapexInvest` | capex_invest | BIGINT ≥0 |
+
+### 8H.5 汇总 KPI(GET /monthly/summary?month=)
+
+| 指标 | JSON 字段 | 口径 |
+|:-----|:----------|:-----|
+| 期末在用合计 | `closingActiveTotal` | SUM(closing_active) |
+| 主营总收入合计 | `totalRevenueTotal` | SUM(total_revenue) |
+| 及时完工率 | `ontimeRate` | SUM(ontime_completions)÷SUM(install_requests) |
+| 端口利用率 | `portUtilization` | SUM(ports_active)÷SUM(ports_deployed) |
+| 回款率 | `collectionRate` | SUM(collected_amount)÷SUM(invoiced_amount) |
+| ARPU | `arpu` | SUM(total_revenue)÷SUM(closing_active) |
+
+> 四个比率的分母为 0 时该字段返回 null(不报错);month 为空=全部月份合计。
+
