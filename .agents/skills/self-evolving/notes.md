@@ -346,6 +346,12 @@
 - 最大的坑:共享工作区有另一个并行 agent 同步开发(backup 功能),我的新文件(jpush.go)被其中途重构、wiring.go 被连环改写、我的半成品被对方打包进两个巨石提交。教训:大粒度 write 后立刻 build 验证;提交前必须重新 diff 确认哪些是自己的产物;不要基于记忆断言文件内容。
 - 新坑(重试已成功的 edit 导致双重插入):一次消息里发了两次同样的 edit,第一次成功第二次把 Push 装配块插了两遍,靠 grep 发现。重试前先确认上次是否已生效。
 - skill 提前预警了:menu.def 新增项必须补 items/<key>.svg(docs/boss-admin-web.md 记录),这次靠它躲过无图标坑;红线#3(禁原生 select)第一次写就踩了,靠红线记忆当场改 Dropdown。
+
+## 2026-09-05 排查 admin 页 console 报错(reportAllChanges/startTime,定性为扩展注入)
+- 哪个坑浪费了最多时间:cdp-admin-capture 首次调用参数形状记错(--out 当位置参数、base 留默认 localhost:5173),白跑一轮采集,输出 eval: http://localhost:5173/ 才发现;重来一次会先 head -60 看脚本用法行再拼命令。
+- skill 有没有提前预警:红线#2(cdp-capture 优先)与 docs/boss-admin-web.md(5180 部署地址/servers 注入顺序/免登录)直接复用,第二轮即采集成功;本次教训补进 knowledge/前端.md 与 known-issues。
+- 有效路径:用户报错→先 grep 标识符定性(源码 0 命中)→再验线上 chunk(337 个 0 命中)→干净浏览器复现(0 错误)→web 搜签名锁定 web-vitals;全程未改一行应用代码,避免无的放矢。
+
 - UI 验证新姿势:AuthGuard 需要 boss.servers JSON 含 id 字段且 boss.server.active 指向该 id;vite 无代理禁用,API 直连绝对地址;DOM 断言用 --eval "JSON.stringify({path,text})" 比截图更硬。
 
 ## 2026-08-21 附件管理组件(web/admin 前后端)

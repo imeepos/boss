@@ -453,3 +453,10 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 规避:免登录核对改用 .agents/skills/bossctl-cli/test-accounts.json 凭证换新 JWT 走原始 curl;或从 cmd/bossctl 重新编译安装对齐线上路由后再用。
 - 来源:W-0904-UI U4 地图选点会话 2026-09-04 实测(其 notes 同条目,委托统一入库)。
 - **已修复(2026-09-04, W-0905-T13)｜bossctl 重编译对齐**:S3 会话从 cmd/bossctl 重编译安装并合入 scripts/ops/bossctl-acceptance.sh(commit 40a0d2ef,机械断言 auth/me code=0 + admin routes 509 与 102 一致 + saved api-key 免登录正常);二进制解析优先级 env > PATH > ~/bin > 源码临时编译,不回落过期 assets 产物。
+
+## 2026-09-05 console 报 reportAllChanges/startTime TypeError——浏览器扩展注入,非应用代码
+- 症状:admin 各页面(用户列表/营销与积分规则)console 弹 Uncaught TypeError: Cannot read properties of undefined (reading `startTime`) at et.reportAllChanges (<anonymous>:2:…),堆栈帧全在 VM109:2/anonymous,用户以为页面故障报修。
+- 原因:reportAllChanges 是 web-vitals 库选项(上游同签名 issue GoogleChrome/web-vitals#274、getsentry/sentry#41066),startTime 读 PerformanceEntry;VM 编号/anonymous = eval 注入脚本。时间统计/埋点类浏览器扩展常打包 web-vitals,SPA 路由切换时注入脚本拿空 entries 即抛此错,故跨页面复现;应用 bundle 零关联。
+- 排查四步定性:①grep 全仓源码 reportAllChanges/startTime(0 命中)→ ②从线上 entry js 提取全部 chunk 名逐个 grep(337 个 0 命中)→ ③cdp-admin-capture 干净 Chrome 打开目标页把全部 tab 点一遍,--logs 收 console/网络(0 error/warn、0 非 2xx,页面数据完整渲染)→ ④web 搜错误签名定位上游库。
+- 修法:应用侧无错可修;用户侧无痕窗口(禁扩展)复测或逐个禁用扩展定位元凶;若页面另有可见故障(白屏/缺数据)再按独立症状排查,勿把 console 噪音当 bug 修。
+
