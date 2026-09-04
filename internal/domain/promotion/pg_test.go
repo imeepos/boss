@@ -3,6 +3,7 @@ package promotion
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -54,23 +55,12 @@ func TestPromotion_Integration(t *testing.T) {
 		t.Fatalf("database.Open: %v", err)
 	}
 	defer pool.Close()
-	if err := database.Migrate(ctx, pool, "../../migrations"); err != nil {
+	if err := database.Migrate(ctx, pool, "../../../migrations"); err != nil {
 		t.Fatalf("database.Migrate: %v", err)
 	}
 	s := NewPGStore(pool)
 
 	var le, custID, custID2 int64
-	if err := pool.QueryRow(ctx,
-		`INSERT INTO legal_entities(code,name) VALUES('PROMO-T','促销测试主体') RETURNING id`).Scan(&le); err != nil {
-		t.Fatalf("seed entity: %v", err)
-	}
-	for _, c := range []*int64{&custID, &custID2} {
-		if err := pool.QueryRow(ctx, `
-			INSERT INTO customers(legal_entity_id, name, phone, address_id, code)
-			VALUES($1,'促销测试客户','1390000000',NULL,'PROMO-T') RETURNING id`, le).Scan(c); err != nil {
-			t.Fatalf("seed customer: %v", err)
-		}
-	}
 	cleanup := func() {
 		pool.Exec(ctx, `DELETE FROM coupon_redemptions WHERE coupon_id LIKE 'CPN-%'`)
 		pool.Exec(ctx, `DELETE FROM coupons WHERE customer_id IN ($1,$2)`, custID, custID2)
@@ -78,11 +68,23 @@ func TestPromotion_Integration(t *testing.T) {
 		pool.Exec(ctx, `DELETE FROM coupon_templates WHERE legal_entity_id=$1`, le)
 		pool.Exec(ctx, `DELETE FROM gift_records WHERE customer_id IN ($1,$2)`, custID, custID2)
 		pool.Exec(ctx, `DELETE FROM gift_rules WHERE legal_entity_id=$1`, le)
-		pool.Exec(ctx, `DELETE FROM customers WHERE legal_entity_id=$1 AND code='PROMO-T'`, le)
+		pool.Exec(ctx, `DELETE FROM customers WHERE legal_entity_id=$1`, le)
 		pool.Exec(ctx, `DELETE FROM legal_entities WHERE id=$1`, le)
 	}
 	cleanup()
 	defer cleanup()
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO legal_entities(code,name) VALUES('PROMO-T','促销测试主体') RETURNING id`).Scan(&le); err != nil {
+		t.Fatalf("seed entity: %v", err)
+	}
+	for i, c := range []*int64{&custID, &custID2} {
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO customers(legal_entity_id, name, phone, id_type, address_id, region_id, region_name, customer_code)
+			VALUES($1,'促销测试客户',$2,'身份证',NULL,1,'马尼拉',$3) RETURNING id`, le,
+			fmt.Sprintf("139000000%d", i), fmt.Sprintf("PROMO-T%d", i)).Scan(c); err != nil {
+			t.Fatalf("seed customer: %v", err)
+		}
+	}
 
 	tplID, err := s.CreateTemplate(ctx, Template{
 		LegalEntityID: le, Name: "满100减20", Type: TypeFullCut,
