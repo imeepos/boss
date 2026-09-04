@@ -26,6 +26,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 10. **【已犯 2 次】写文件/跑命令前必须核对 worktree 的真实磁盘路径** —— `git worktree add ../name` 建的是**兄弟目录**(仓库外侧),不是仓库内的 `./name`;把文件写进仓库内同名嵌套目录后在该目录 `git commit`,git 会向上解析到主仓库,commit **静默落在 main**(输出标记 `[main xxx]` 即事故);写前 `git worktree list` 核对绝对路径 + commit 后看输出方括号里的分支名。
 11. **【已犯 7 次】run_code 程序传给 edit/write 的字符串里严禁出现裸反引号或 ${** —— 宿主把程序体包进模板字符串,这两个序列会提前闭合/插值,报 parse error(Expected ',' / got 'ident'),不像代码错像工具坏,白耗两轮才定位到工具层。含这些字符的 old_string 用 String.fromCharCode(96) + 字符串拼接逐字节构造,或改选不含它们的锚点;bash heredoc 里同样注意;JSON 双引号串里的反斜杠转义(如 \n)会被宿主解析成真实换行截断程序体——多行 bash 用反引号模板体,多段提交信息用 printf 逐行数组 + commit -F,heredoc 结束符后不得在同一命令里再写行(会落回本地执行)。
 12. **【已犯 2 次】bash set -u 下可缺省变量必须给默认值** —— 位置参数与环境变量读取一律写 ${VAR:-default}(函数可选参数如 b=${3:-}、环境变量如 HOST=${OLTSIM_HOST:-xxx});裸 $3/裸 $ENV 在未传/未设时直接 unbound variable 崩溃(2026-09-02 verify-oltsim 脚本两次运行中断,第二次发生在夹具已建之后,白耗一轮)。
+13. **【已犯 2 次】大仓 worktree add / 全仓 build 等长耗时命令必须后台跑,worktree 挂载用 --no-checkout 两段式** —— 前台跑必被 bash 超时杀半路(2026-09-04 T18 六连败、T19 两连败);标准动作:`git worktree add --no-checkout ../wt feat/branch`(秒级)→ 后台 job `git reset --hard HEAD` 补文件 → job_output 收尾;全仓 build/test 同理 run_in_background + 轮询日志。
 
 
 # 上级叮嘱

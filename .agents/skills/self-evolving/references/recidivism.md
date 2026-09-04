@@ -124,3 +124,6 @@
 | read 分页截断(单次约 600+ 行)后按已读片段整写文件 | 1 | 2026-09-03(fields.md 整写丢 1430 行,git checkout 恢复后循环读齐 totalLines 再写;根因:read 单次返回行数有上限,与 limit 请求值无关) | 整文件重写前必须循环 read 拼齐 totalLines 行并核对;能用 edit 锚点的绝不整写 |
 | 前台跑长耗时 git/go 操作被 bash 超时杀半路(worktree add/remove 大仓 checkout、全仓 build) | 1 | 2026-09-04(T18:worktree add 连环 6 轮失败) | 登记缺失+半 checkout 残目录挡路反复 already exists;修复:一律 run_in_background + job_output 等待 |
 
+| 前台跑长耗时 git/go 操作被 bash 超时杀半路(worktree add/remove 大仓 checkout、全仓 build) | 2 | 2026-09-04(T18:worktree add 连环 6 轮失败); 2026-09-04(T19:worktree add 连续两轮 60s/180s 超时,元数据未注册半成品目录;改用 `git worktree add --no-checkout ../wt feat/branch`(秒级只挂元数据)+ 后台 job `git reset --hard HEAD` 补 checkout 才稳) | 登记缺失+半 checkout 残目录挡路反复 already exists;修复:一律 run_in_background + job_output 等待;**先 --no-checkout 挂元数据再后台补 checkout**,裸 add 大仓必撞超时 |
+| 新增 admin 路由只跑了 gen-bossctl-routes 再生,漏 genrouteperms 投影 | 1 | 2026-09-04(T19:make check 首轮 TestAdminCatalogRoutesAllRegistered 判 14 条目录路由 404,返工一轮) | 契约 yaml 变更后的机械产物有**两个**:routes_gen.go(routes 目录)与 admin_perms_gen.go(权限投影);再生口诀 `node scripts/gen-bossctl-routes.mjs && go run ./scripts/genrouteperms`,缺一即挂 |
+| read 返回的行对象用 `l.text || l` 兜底写回文件 | 1 | 2026-09-04(T19:空行 l.text 为空串走 falsy 分支,整行落成 [object Object] 污染 pg_test.go,编译报 expected declaration) | 行文本一律 `String(l.text)`,禁止 `||` 兜底;写回前 grep 抽查关键行 |
