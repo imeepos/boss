@@ -135,14 +135,19 @@ func portalListMessages(a *app.Application) gin.HandlerFunc {
 		items := make([]gin.H, 0)
 		for _, m := range msgs {
 			if cat == "all" || m.Payload["category"] == cat {
-				item := gin.H{
-					"messageId": strconv.FormatInt(m.ID, 10),
-					"read":      m.Read,
-					"createdAt": m.CreatedAt,
-				}
+				// payload 快照先铺,表列权威值后写覆盖:read/createdAt 以表列为准
+				// (此前快照覆盖导致 read-all 后列表仍全 false);快照展示编号
+				// (MSG-xx)降级为 messageNo,messageId 恒为数字主键(已读寻址键)。
+				item := gin.H{}
 				for key, value := range m.Payload {
 					item[key] = value
 				}
+				if no, ok := item["messageId"]; ok {
+					item["messageNo"] = no
+				}
+				item["messageId"] = strconv.FormatInt(m.ID, 10)
+				item["read"] = m.Read
+				item["createdAt"] = m.CreatedAt
 				items = append(items, item)
 			}
 		}
