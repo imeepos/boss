@@ -20,9 +20,7 @@ func registerWorkerTicketActions(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/tickets/:ticketNo/accept", func(c *gin.Context) {
 		assignTicketToMe(c, a, c.Param("ticketNo"), false)
 	})
-	g.POST("/tickets/:ticketNo/checkin", func(c *gin.Context) {
-		respond(c, apitypes.CodeOK, gin.H{"checkedInAt": nowHM()})
-	})
+	g.POST("/tickets/:ticketNo/checkin", workerCheckinHandler(a))
 	g.GET("/tickets/:ticketNo/navi", func(c *gin.Context) {
 		respond(c, apitypes.CodeOK, gin.H{
 			"address": "", "distanceKm": 0, "etaMinutes": 0, "entrance": "",
