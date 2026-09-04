@@ -2,7 +2,7 @@
 
 ## 后端·TL1 会话层(2026-09-02 T3 tl1sim 联测发现)
 
-- **未修(记录边界)｜行为限制｜session.login 不消化 DELAY**:`internal/domain/provision/tl1/session.go::login`(T2 交付)只读一次响应即判 COMPLD/DENY,收到 DELAY 直接落 ErrAuth;而 `Session.Do` 对 DELAY 有追帧循环。真实 U2000 对 LOGIN 也可能回 DELAY(PDF §11 未承诺 LOGIN 免延迟),届时鉴权路径会误报。T3 任务约束不改既有接口,已在 cmd/tl1sim/sim 对 LOGIN 豁免 delay 注入绕开(state.go 有注释)。真实网管联调前建议把 login 改为与 Do 同款的追帧循环(一处 ~6 行改动,归 T2/T6 责任面)。
+- **已修复(2026-09-04, dfdba439)｜行为限制｜session.login 不消化 DELAY**:login 已改为与 `Session.Do` 同款 DELAY 追帧循环(收到 DELAY 继续等同 ctag 最终帧,异 ctag 残帧丢弃,总时长仍受 CmdTimeout 与 ctx 截止约束),真实 U2000 对 LOGIN 回 DELAY 不再误报 ErrAuth;cmd/tl1sim/sim 对 LOGIN 的 delay 注入豁免同步解除,测试路径与真实路径一致。回归三例 internal/domain/provision/tl1/session_login_test.go;机械自测 scripts/ops/tl1-login-delay-selftest.sh(单元证据+静态断言+build/vet,FAIL 即 exit 1)。
 
 ## 后端·order 12 环节全流程模拟(2026-08-22 bossctl CLI 演示发现)
 

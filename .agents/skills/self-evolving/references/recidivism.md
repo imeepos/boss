@@ -122,3 +122,5 @@
 | heredoc 块结束后在同一命令里继续写行,后续行落回本地执行 | 2 | 2026-09-02(取证 docker/systemctl 跑在本地报 command not found;DELETE 批次整段没到 psql,无输出空返回) | heredoc 块必须是 bash 命令的最后一段;远端多步操作拆成多次 ssh 调用,每步独立验证输出 |
 - edit 前未按 worktree 绝对路径 read(红线#1 守卫再拦)(2026-09-01,1 次):worktree 轮开工对将 edit 的每个文件先 read worktree 路径;计数并入红线#1。
 | read 分页截断(单次约 600+ 行)后按已读片段整写文件 | 1 | 2026-09-03(fields.md 整写丢 1430 行,git checkout 恢复后循环读齐 totalLines 再写;根因:read 单次返回行数有上限,与 limit 请求值无关) | 整文件重写前必须循环 read 拼齐 totalLines 行并核对;能用 edit 锚点的绝不整写 |
+| 前台跑长耗时 git/go 操作被 bash 超时杀半路(worktree add/remove 大仓 checkout、全仓 build) | 1 | 2026-09-04(T18:worktree add 连环 6 轮失败) | 登记缺失+半 checkout 残目录挡路反复 already exists;修复:一律 run_in_background + job_output 等待 |
+

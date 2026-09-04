@@ -74,6 +74,7 @@ type Session struct {
 }
 
 // login 发 LOGIN 并要求 COMPLD 且 EN=0,否则 ErrAuth(PDF §11.1)。
+// DELAY 追帧与 Do 同款:真实 U2000 对 LOGIN 也可能先回 DELAY,直接判帧会误报鉴权失败。
 func (s *Session) login(ctx context.Context) error {
 	line, err := Build(Command{Verb: "LOGIN", Payload: []KV{{"UN", s.cfg.User}, {"PWD", s.cfg.Pass}}}, "1")
 	if err != nil {
@@ -82,14 +83,25 @@ func (s *Session) login(ctx context.Context) error {
 	if err := s.write(line); err != nil {
 		return err
 	}
-	resp, err := s.readResponse(ctx, time.Now().Add(s.cfg.CmdTimeout))
-	if err != nil {
-		return err
+	deadline := time.Now().Add(s.cfg.CmdTimeout)
+	for {
+		resp, err := s.readResponse(ctx, deadline)
+		if err != nil {
+			return err
+		}
+		if resp.CTag != "1" {
+			continue // 异 ctag 残帧丢弃,与 Do 口径一致
+		}
+		switch resp.Completion {
+		case "DELAY":
+			continue
+		case "COMPLD":
+			if resp.EN == 0 {
+				return nil
+			}
+		}
+		return fmt.Errorf("%w: ctag=%s completion=%s EN=%d ENDESC=%s", ErrAuth, resp.CTag, resp.Completion, resp.EN, resp.ENDESC)
 	}
-	if resp.Completion == "COMPLD" && resp.EN == 0 {
-		return nil
-	}
-	return fmt.Errorf("%w: ctag=%s completion=%s EN=%d ENDESC=%s", ErrAuth, resp.CTag, resp.Completion, resp.EN, resp.ENDESC)
 }
 
 // write 带写超时写出一条已构建报文。
