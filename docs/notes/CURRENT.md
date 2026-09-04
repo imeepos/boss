@@ -57,6 +57,7 @@
 - 审计写入改同步落库(PGWriter),崩溃不丢关键留痕;写失败 [audit] WRITE FAILED 告警(2026-08-30, audit-sync-persistence)
 - 数据核查红线:先查库再接口复核;验收造数 acc_ 不过夜+孤儿巡检三通道(2026-08-29, audit-closeout-rulings)
 - 开户工作台聚合页 /bss/onboarding:建档→实名→下单→派单一页完成(2026-08-29, onboarding-workbench)
+- 新建 worktree .env 自动接入:post-checkout 钩子补齐(主 .env 优先,example 兜底,绝不覆盖);clone 后一次性引导 sh scripts/env-hooks-init.sh(2026-09-04, worktree-env-auto-provision)
 
 ## 已代谢(勿再引用原文裁定)
 
