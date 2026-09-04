@@ -29,7 +29,8 @@
 | 7 | scan-abnormal 无师傅侧反馈 | 8d12e284 站内消息回执 | — |
 | 8 | 兑换码 SQL 歧义列(42702)全链 500 | b77a7ca8 消歧+三态业务码 | 无效码 40400,日志无 42702 |
 | 9 | 消息 messageId 双口径(单条已读永 404/read 状态三处不一) | c5e51563 表列单一事实源 | 单条已读 200,列表/home/红点三方一致 |
-| 10 | quadlink 语义裁定 | 26b9d3dd+adopted note | 契约文档同步 |
+| 10 | promotion 集成测试基建缺陷(迁移路径少一级/seed 列漂移/cleanup 注册过晚)——DSN 环境从未跑通,系 42702 漏网根因 | ddc71957(102 真库一次性库全链路验证) | TestPromotion_Integration 含兑换码三态/转赠/真库核销全过 |
+| 11 | quadlink 语义裁定 | 26b9d3dd+adopted note | 契约文档同步 |
 
 ## 三、遗留 backlog(按优先级,证据已量化存档)
 
