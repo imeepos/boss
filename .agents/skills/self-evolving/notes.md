@@ -1645,3 +1645,9 @@
 - 哪个坑最耗时:验收环节三连——①模型 GLM-5.3-Flash 无图像输入,cdp 截图后 read_image 被拒(台账 3→4);②两个实例数据目录搞混(~/.dsh 与 ~/.dsh/dsh012-clean),差点拿错数据下结论;③解析 workspace.json 时把结构猜成 global.state,实际归档集在 global.archivedSessionIds,多耗一轮。另 session_link_list 无参调用报 lossless JSON 错,须传 {}。
 - skill 有没有提前警告:红线 7 已有但截图前没想起模型能力;其余红线全部生效——node -e 双引号嵌套静默无输出后立即改临时 .mjs 脚本,零纠缠;sed 改过的文件再 write 报 file changed,立即换新文件名绕开。
 - 重来一次会怎么做:验收宿主侧操作先想「数据在哪、谁能机械读」——lsof 定端口进程 + ps -wwE 拿 DSH_HOME 直读持久化文件是通用路径;模型不支持图像时不试错,直接换登记表 grep 类机械证据。
+## 2026-09-04 worktree .env 自动接入(方案3)
+
+- 哪个坑浪费了最多时间？无大坑,两处小坑各耗一轮:①bash chmod 只改元数据后对同文件 write 被 file changed since read 拒(红线1类,台账 18 到 19);②自测脚本从错误 cwd 调用 cwd 敏感的引导脚本,把 core.hooksPath 配进真仓库、.env 拷进 feature worktree——结果无害(机制本来就该这么做)但暴露设计缺陷,返工为按脚本自身位置解析仓库。
+- 这个 skill 有没有提前警告我？红线1直接命中,按流程重读即过,零纠缠;worktree 红线(兄弟目录/commit 看方括号分支名/从主树收尾/ff 失败不删树)全程生效,收尾零失误;台账第 101 条"技能喂食也走 worktree"避免了一次直接 main 提交。
+- 重来一次会怎么做？开工就把「用户直调脚本禁止依赖调用方 cwd」当设计约束:钩子类 cwd 敏感逻辑(其 cwd 由 git 保证)与用户入口脚本($0 定位仓库)分开;自测跨目录调用恰恰是最好的暴露方式,保留在用例里。
+- 其他沉淀:git worktree add 实测触发 post-checkout;core.hooksPath 相对路径按钩子执行 cwd 解析(每个 worktree 用自己检出的 .githooks);git config 不随 clone 传播(全新 clone 必须一次性引导)。已写入 knowledge/实施.md;本轮 reflect worktree 的 .env 由新钩子自动补齐,dogfood 通过。
