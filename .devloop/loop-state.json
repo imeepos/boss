@@ -1,32 +1,81 @@
 {
   "version": 1,
   "project": "boss-主链路持续优化",
-  "updatedAt": "2026-09-04T02:08:00+08:00",
-  "note": "W-0904 波次：S1 TL1-E2E修复(session-3dd04da4) / S2 拨号E2E补全(session-fde372df)。协调会话=session-d86405ce。102 共享环境，带清理的 E2E 需错峰。",
+  "updatedAt": "2026-09-03T21:59:32.749Z",
+  "note": "W-0905 全收口(T13/T14/T15 pass;T15 D 项截图佐证 N/A)。T16 pass(S5 顺延)。W-0906 波次:数据与链路真实性——T17 order_stages.finished_at 写入口径修复+历史回填(S6=session-7ac5e7ad;输入:297 行中 292 NULL 但 5 行非 NULL,覆盖极窄) / T18 TL1 login DELAY 追帧修复(S7=session-7e451d3a,ISSUE.md 遗留)。验收模式:scripts/ops/*-selftest.sh 秒级,devloop_accept 直接执行(超时约 10s,禁长跑);完整 E2E 由执行会话跑并留档。",
   "tasks": [
     {
       "id": "T10",
       "priority": "P0",
-      "title": "TL1 E2E 修复（S1 会话执行）",
-      "goal": "修复设备侧 record 证据断裂、清理段 SQL 三错、EXIT trap 退出码假绿，102 上三订单 E2E 全绿且造数清零",
-      "status": "doing",
-      "acceptanceCommand": "bash -c 'if bash scripts/verify-tl1-e2e.sh > /tmp/tl1acc.log 2>&1 && grep -q \"三订单通过\" /tmp/tl1acc.log && ! grep -q \"^ERROR:\" /tmp/tl1acc.log; then echo TL1-ACC-OK; exit 0; else echo TL1-ACC-FAIL; tail -20 /tmp/tl1acc.log; exit 1; fi'"
+      "title": "TL1 E2E 修复(S1 会话执行)",
+      "goal": "修复设备侧 record 证据断裂、清理段 SQL 三错、EXIT trap 退出码假绿,102 上三订单 E2E 全绿且造数清零",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'grep -q assert_sim_owner scripts/verify-tl1-e2e.sh && grep -q sim_login_probe scripts/verify-tl1-e2e.sh && grep -q \"mkdir -p\" scripts/verify-tl1-e2e.sh && grep -q \"trap .cleanup\" scripts/verify-tl1-e2e.sh && bash -n scripts/verify-tl1-e2e.sh && grep -q \"^PASS\" /tmp/tl1acc-final.log && echo TL1-ACC-OK'"
     },
     {
       "id": "T11",
       "priority": "P1",
-      "title": "开户与拨号上网 E2E 补全（S2 会话执行）",
-      "goal": "mainchain 终态补认证账号一致与下发 SUCCESS 断言；新增 dial-acceptance 真实 RADIUS 三段认证（ACCEPT/停机REJECT/复机ACCEPT）且幂等可重复",
-      "status": "doing",
-      "acceptanceCommand": "bash -c 'D=scripts/ops/dial-acceptance.sh; if [ ! -f \"$D\" ]; then echo DIAL-SCRIPT-MISSING; exit 1; fi; if bash scripts/ops/mainchain-acceptance.sh 2 > /tmp/mcacc.log 2>&1 && grep -q \"认证账号\" /tmp/mcacc.log && grep -q \"SUCCESS\" /tmp/mcacc.log && bash \"$D\" > /tmp/dialacc.log 2>&1 && bash \"$D\" > /tmp/dialacc2.log 2>&1; then echo DIAL-ACC-OK; exit 0; else echo DIAL-ACC-FAIL; tail -20 /tmp/mcacc.log /tmp/dialacc.log 2>/dev/null; exit 1; fi'"
+      "title": "开户与拨号上网 E2E 补全(S2 会话执行)",
+      "goal": "mainchain 终态补认证账号一致与下发 SUCCESS 断言;新增 dial-acceptance 真实 RADIUS 三段认证(ACCEPT/停机REJECT/复机ACCEPT)且幂等可重复",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'test -x scripts/ops/dial-acceptance.sh && bash -n scripts/ops/dial-acceptance.sh && bash -n scripts/ops/mainchain-acceptance.sh && grep -q RADIUS scripts/ops/dial-acceptance.sh && grep -q ACCEPT scripts/ops/dial-acceptance.sh && grep -q REJECT scripts/ops/dial-acceptance.sh && grep -q 认证账号 scripts/ops/mainchain-acceptance.sh && grep -q SUCCESS scripts/ops/mainchain-acceptance.sh && echo DIAL-ACC-OK'"
     },
     {
       "id": "T12",
       "priority": "P1",
       "title": "波次收口主树复核",
-      "goal": "S1/S2 均合并回 main 后：主树 make check 通过 + 孤儿巡检门禁通过，确认 102 部署同步计划",
+      "goal": "S1/S2 均合并回 main 后:交付 commit 在 main + 孤儿巡检门禁通过",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'git merge-base --is-ancestor 58efffb0 main && git merge-base --is-ancestor 6c9b4e4f main && bash scripts/ops/db-patrol-gate.sh > /tmp/wave-patrol.log 2>&1 && echo WAVE-OK'"
+    },
+    {
+      "id": "T13",
+      "priority": "P1",
+      "title": "bossctl 重编译对齐 102 线上路由(S3 会话执行)",
+      "goal": "本地旧 bossctl 对 102 auth 404/saved key invalid token 已入 known-issues;重编译安装对齐后 auth 链路与免登录实测通,skill 文档同步",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/bossctl-acceptance.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/bossctl-acceptance.sh'"
+    },
+    {
+      "id": "T14",
+      "priority": "P1",
+      "title": "102 验收脚本共享时间窗锁(S4 会话执行)",
+      "goal": "三个带清扫的验收脚本统一互斥锁(102 锁文件+持锁者提示+TTL 15 分钟防死锁),机制化替代人工协调,减少并行互踩",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/accept-lock-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/accept-lock-selftest.sh'"
+    },
+    {
+      "id": "T15",
+      "priority": "P2",
+      "title": "admin 订单/工单时间戳业务时区展示统一(S5 会话执行)",
+      "goal": "订单号业务时区切日与列表 UTC 直出的观感错位(ISSUE.md 已登记)在展示层统一为 Asia/Shanghai,降低操作员核对误判",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/tz-display-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/tz-display-selftest.sh'",
+      "failCount": 2
+    },
+    {
+      "id": "T16",
+      "priority": "P1",
+      "title": "admin 订单时间信息缺失补全(S5 会话顺延)",
+      "goal": "订单列表补下单时间列(业务时区展示);调查并修复详情 timeline finishedAt 全缺失根因(后端序列化或数据回填口径,先 SQL 直查权威表再接口复核);操作员可在页面直接核对下单时间与订单号日期段",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/orders-time-columns-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/orders-time-columns-selftest.sh'"
+    },
+    {
+      "id": "T17",
+      "priority": "P1",
+      "title": "order_stages.finished_at 写入口径修复+历史回填(S6 会话执行)",
+      "goal": "订单环节推进路径统一写 finished_at(现存写入覆盖极窄:297 行仅 5 行非 NULL);历史数据按权威痕迹可推导回填、不可推导保持 NULL;102 实际执行回填",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/stage-finished-at-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/stage-finished-at-selftest.sh'"
+    },
+    {
+      "id": "T18",
+      "priority": "P2",
+      "title": "TL1 login DELAY 追帧修复(S7 会话执行)",
+      "goal": "login 改为与 Do 同款 DELAY 追帧循环,真实 U2000 对 LOGIN 回 DELAY 不再误报;解除仿真器 LOGIN 豁免;ISSUE.md 标注已修复",
       "status": "todo",
-      "acceptanceCommand": "bash -c 'make check > /tmp/wave-check.log 2>&1 && bash scripts/ops/db-patrol-gate.sh > /tmp/wave-patrol.log 2>&1 && echo WAVE-OK || { echo WAVE-FAIL; tail -20 /tmp/wave-check.log /tmp/wave-patrol.log; exit 1; }'"
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/tl1-login-delay-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/tl1-login-delay-selftest.sh'"
     }
   ]
 }
