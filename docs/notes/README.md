@@ -97,6 +97,7 @@
 | 2026-09-06 | API 在线文档 = 契约运行时聚合(embed+openapidoc)+ Swagger UI 入驻 /base/apidocs(menu:apidocs);Try-it-out 带登录态真实调接口;附带修复契约 YAML 存量债 | adopted/2026-09-06-api-docs-openapidoc.md |
 | 2026-09-06 | MCP 接入 = 本地 stdio server(cmd/bossmcp):3 工具(目录/调用/身份)覆盖用户端+师傅端全部端点,路由目录 openapi 生成同门禁;admin 端/HTTP transport/每接口一 tool/复用 bossctl 代码均被否决 | adopted/2026-09-06-mcp-server-user-worker.md |
 | 2026-09-07 | payments.method='card' 双语义(柜面 POS/Stripe 线上)对账口径:柜面三要素非空即剔除渠道对账;拆枚举/加 source 列被否决留契约后续 | adopted/2026-09-07-payment-method-card-dual-semantics.md |
+| 2026-09-04 | 四码同客户同地址重装→scan-bind 刷新复用既有活跃 quad_link 行(更新端口/资产/状态并留审计),跨客户→40920 拒绝;旧行置 UNLINKED 双行并存/先删后插/DB 触发器被否决 | adopted/2026-09-04-quadlink-reinstall-reuse.md |
 | 2026-09-01 | customers.address_id 放开可空(000176):新建客户轻量建档(仅主体+区域/主体),地址走档案页"地址"动作内联建址回填,"开户"直达工作台;占位地址/放开实体区域可空/新端点被否决 | adopted/2026-09-01-customer-address-nullable.md |
 | 2026-09-01 | 位置/地址统一落地:坐标为唯一空间锚点(geom 写入+KNN 逆地理)、工单坐标派单时刻快照(000174)、区域匹配升级子树语义、radiusKm 半径闸门启用;H3 索引/外部 geocoding/派单打分被否决 | adopted/2026-09-01-location-unify-rollout.md |
 | 2026-09-04 | 新建 worktree .env 自动接入:post-checkout 钩子(主 worktree 真实 .env 优先,.env.example 兜底,已存在绝不覆盖)+ 一次性引导 core.hooksPath;symlink/手工复制/第三方工具/.git/hooks 被否决 | adopted/2026-09-04-worktree-env-auto-provision.md |

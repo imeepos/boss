@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -16,6 +17,10 @@ var ErrScanMismatch = errors.New("quadlink: scan mismatch")
 
 // ErrScanRequired 拆机必须扫码(不扫码拦截)。
 var ErrScanRequired = errors.New("quadlink: scan required")
+
+// ErrAddressConflict 地址存在他客活跃链路(重装复用守卫,2026-09-04 任务A):
+// 同地址 LINKED/CONFLICT 行归属其他客户时拒绝改绑,映射 40920 族。
+var ErrAddressConflict = errors.New("quadlink: address active link conflict")
 
 // ErrNotPrebound 订单尚未预绑定四码(applyTag 未执行)。
 var ErrNotPrebound = errors.New("quadlink: not prebound")
@@ -73,11 +78,46 @@ func (s *PGStore) VerifyScan(ctx context.Context, req ScanReq) (string, error) {
 		result = "MISMATCH"
 	}
 	if result == "MATCH" {
+		// 重装复用守卫(2026-09-04 任务A):置 LINKED 前查同地址活跃链路。
+		// 同客户重装 → 刷新复用既有行(更新端口/资产/状态并留审计);
+		// 跨客户 → ErrAddressConflict(40920 族),不再裸 23505。
+		var otherID, otherCustomer int64
+		err := s.db.QueryRow(ctx,
+			`SELECT id, customer_id FROM quad_links
+			  WHERE address_id = $1 AND status IN ('LINKED','CONFLICT') AND id <> $2
+			  ORDER BY id DESC LIMIT 1`, link.AddressID, link.ID).
+			Scan(&otherID, &otherCustomer)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return "", fmt.Errorf("quadlink: scan active check: %w", err)
+		}
+		if err == nil {
+			if otherCustomer != link.CustomerID {
+				return "", fmt.Errorf("%w: address %d 链路 %d 归属客户 %d",
+					ErrAddressConflict, link.AddressID, otherID, otherCustomer)
+			}
+			if _, err := s.db.Exec(ctx,
+				`UPDATE quad_links SET port_id = $2, asset_id = $3, status = 'LINKED' WHERE id = $1`,
+				otherID, link.PortID, assetID); err != nil {
+				return "", fmt.Errorf("quadlink: scan relink: %w", err)
+			}
+			if _, err := s.db.Exec(ctx,
+				`DELETE FROM quad_links WHERE id = $1`, link.ID); err != nil {
+				return "", fmt.Errorf("quadlink: scan relink cleanup: %w", err)
+			}
+			log.Printf("[quadlink] LINK REUSE address=%d relinked=%d removed_prebind=%d port=%d asset=%d order=%d worker=%d",
+				link.AddressID, otherID, link.ID, link.PortID, assetID, req.OrderID, req.WorkerID)
+			return s.logScanAndResult(ctx, req, tagID, result)
+		}
 		if _, err := s.db.Exec(ctx,
 			`UPDATE quad_links SET status = 'LINKED' WHERE id = $1`, link.ID); err != nil {
 			return "", fmt.Errorf("quadlink: scan link: %w", err)
 		}
 	}
+	return s.logScanAndResult(ctx, req, tagID, result)
+}
+
+// logScanAndResult 落扫码日志并返回最终结果(OFFLINE_CACHED 归一 + MISMATCH 判定)。
+func (s *PGStore) logScanAndResult(ctx context.Context, req ScanReq, tagID int64, result string) (string, error) {
 	if req.OfflineCalc {
 		result = "OFFLINE_CACHED"
 	}

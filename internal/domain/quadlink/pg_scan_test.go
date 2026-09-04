@@ -28,6 +28,10 @@ func TestPGStore_VerifyScan(t *testing.T) {
 		mock.ExpectQuery(`FROM tags`).
 			WithArgs("EPC-OK").
 			WillReturnRows(mock.NewRows([]string{"id", "bound_asset_id"}).AddRow(int64(9), int64(5)))
+		// 重装复用守卫:无同地址活跃链路(空集 → ErrNoRows 放行)。
+		mock.ExpectQuery(`FROM quad_links`).
+			WithArgs(int64(21), int64(1)).
+			WillReturnRows(mock.NewRows([]string{"id", "customer_id"}))
 		mock.ExpectExec(`UPDATE quad_links SET status = 'LINKED'`).
 			WithArgs(int64(1)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -157,6 +161,10 @@ func TestPGStore_VerifyScan(t *testing.T) {
 		mock.ExpectExec(`UPDATE quad_links SET asset_id`).
 			WithArgs(int64(1), int64(5)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		// 重装复用守卫:无同地址活跃链路(空集 → ErrNoRows 放行)。
+		mock.ExpectQuery(`FROM quad_links`).
+			WithArgs(int64(21), int64(1)).
+			WillReturnRows(mock.NewRows([]string{"id", "customer_id"}))
 		mock.ExpectExec(`UPDATE quad_links SET status = 'LINKED'`).
 			WithArgs(int64(1)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
