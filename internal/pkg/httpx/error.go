@@ -17,6 +17,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/geo"
+	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/metric"
 	"github.com/ymm-001/boss/internal/domain/monthly"
 	"github.com/ymm-001/boss/internal/domain/odn"
@@ -158,6 +159,18 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrRealNameConflict),
 		errors.Is(err, worker.ErrInvalidReviewFields):
 		Respond(c, apitypes.CodeInvalidParam, nil)
+	case errors.Is(err, worker.ErrScanBindRequired):
+		// 状态机前置缺失(未扫码绑定不可激活,2026-09-04 任务A):40910,不再裸 50000。
+		Respond(c, apitypes.CodeStateInvalid, nil)
+	case errors.Is(err, worker.ErrGroupInvalid):
+		// 班组快照不可用(工具借还等事实落库前置):40400 + 原因,操作员可自查归属。
+		Respond(c, apitypes.CodeNotFound, gin.H{"reason": err.Error()})
+	case errors.Is(err, loy.ErrConflict):
+		// 积分域冲突(任务周期内已完成等):40900,不再裸 50000。
+		Respond(c, apitypes.CodeConflict, nil)
+	case errors.Is(err, quadlink.ErrAddressConflict):
+		// 同地址活跃链路归属他客(重装复用守卫):40920 族 + 原因透传。
+		Respond(c, apitypes.CodeScanMismatch, gin.H{"reason": err.Error()})
 	case errors.Is(err, ai.ErrNotConfigured),
 		errors.Is(err, ai.ErrInvalidInput):
 		Respond(c, apitypes.CodeInvalidParam, nil)

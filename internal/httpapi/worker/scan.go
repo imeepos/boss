@@ -4,12 +4,11 @@ package workerapi
 // 激活检测字段只反映已确认的订单状态，未接入网元/AAA 时不得伪造成功。
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/worker"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
@@ -129,7 +128,8 @@ func activateWorkerOrder(c *gin.Context, a *app.Application, orderID int64) erro
 		return err
 	}
 	if ord.Stage < 9 {
-		return fmt.Errorf("worker: scan bind required before activation")
+		// 未扫码绑定(环节9)不可激活:httpx 映射 40910(此前裸 error → 50000)。
+		return worker.ErrScanBindRequired
 	}
 	if a.Automation != nil {
 		return a.Automation.AutoPostScan(c.Request.Context(), orderID)

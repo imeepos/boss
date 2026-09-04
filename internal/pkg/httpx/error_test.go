@@ -12,9 +12,11 @@ import (
 	"github.com/ymm-001/boss/internal/domain/customer"
 	"github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/geo"
+	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/portal"
 	"github.com/ymm-001/boss/internal/domain/provision"
+	"github.com/ymm-001/boss/internal/domain/quadlink"
 	"github.com/ymm-001/boss/internal/domain/resource"
 	"github.com/ymm-001/boss/internal/domain/user"
 	"github.com/ymm-001/boss/internal/domain/worker"
@@ -75,11 +77,26 @@ func TestRespondErrMapping(t *testing.T) {
 		{portal.ErrSmsCooldown, apitypes.CodeResourceBusy},
 		{sms.ErrUnsupportedRegion, apitypes.CodeInvalidParam},
 		{asset.ErrBindingConflict, apitypes.CodeConflict},
+		// 任务A(2026-09-04)错误映射补齐:此前全部裸 50000。
+		{worker.ErrScanBindRequired, apitypes.CodeStateInvalid},
+		{worker.ErrGroupInvalid, apitypes.CodeNotFound},
+		{loy.ErrConflict, apitypes.CodeConflict},
+		{quadlink.ErrAddressConflict, apitypes.CodeScanMismatch},
 		{errors.New("boom"), apitypes.CodeInternal},
 	}
 	for _, tc := range cases {
 		if got := respondCode(func(c *gin.Context) { RespondErr(c, tc.err) }); got != tc.code {
 			t.Errorf("err %v: code = %d, want %d", tc.err, got, tc.code)
 		}
+	}
+}
+
+// TestRespondScanErrAddressConflict 回归:同地址活跃链路跨客户 → 40920 族 + reason 透传。
+func TestRespondScanErrAddressConflict(t *testing.T) {
+	code := respondCode(func(c *gin.Context) {
+		RespondScanErr(c, quadlink.ErrAddressConflict)
+	})
+	if code != apitypes.CodeScanMismatch {
+		t.Fatalf("code = %d, want %d", code, apitypes.CodeScanMismatch)
 	}
 }

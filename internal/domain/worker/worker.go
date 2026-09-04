@@ -15,6 +15,12 @@ var ErrDuplicate = errors.New("worker: duplicate staff no or phone")
 // ErrInvalidPassword 登录密码长度不合法。
 var ErrInvalidPassword = errors.New("worker: invalid password")
 
+// ErrScanBindRequired 激活/签收前置缺失:未扫码绑定(环节9)不可推进。
+var ErrScanBindRequired = errors.New("worker: scan bind required")
+
+// ErrGroupInvalid 师傅班组快照不可用(主档缺失/无有效班组归属)。
+var ErrGroupInvalid = errors.New("worker: group invalid")
+
 // Group 师傅班组(UI 别名"装维队",运营主体自定义组织,公司内 code 唯一)。
 type Group struct {
 	ID            int64  `json:"id"`
