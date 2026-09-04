@@ -104,14 +104,11 @@ func (r *ReportService) List(ctx context.Context) ([]Snapshot, error) {
 	return r.St.ListSnapshots(ctx)
 }
 
-// windowOf 周期窗口:返回 [窗口起点, 窗口终点)。
+// windowOf 周期窗口:返回 [窗口起点, 窗口终点)。长度口径与 periodWindow 同源。
 func windowOf(period string, at time.Time) (time.Time, time.Time, error) {
-	d := map[string]time.Duration{
-		"daily": 24 * time.Hour, "weekly": 7 * 24 * time.Hour,
-		"monthly": 30 * 24 * time.Hour, "quarterly": 90 * 24 * time.Hour,
-	}[period]
-	if d == 0 {
-		return time.Time{}, time.Time{}, fmt.Errorf("report: unknown period %q", period)
+	d, err := periodWindow(period)
+	if err != nil {
+		return time.Time{}, time.Time{}, err
 	}
 	return at.Add(-d), at, nil
 }

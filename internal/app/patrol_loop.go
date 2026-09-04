@@ -11,6 +11,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/order"
+	"github.com/ymm-001/boss/internal/domain/report"
 )
 
 // patrolInterval 巡检周期;整点对齐只是观感,错过由下一轮补上。
@@ -55,6 +56,22 @@ func runPatrolOnce(ctx context.Context, a *Application) {
 	}
 	patrolOverdueComplaints(cctx, a)
 	patrolEscalateOverdueTodos(cctx, a)
+	ensurePeriodicReports(cctx, a)
+}
+
+// ensurePeriodicReports 周/月/季报到期补生成(报告中心"查看"数据源)。
+// 单周期失败记 [report] 告警日志继续,不拖垮整轮巡检。
+func ensurePeriodicReports(ctx context.Context, a *Application) {
+	for _, p := range report.AutoPeriods {
+		ok, err := a.Report.EnsureFresh(ctx, p, time.Now())
+		if err != nil {
+			log.Printf("[report] PERIODIC GENERATE FAILED period=%s: %v", p, err)
+			continue
+		}
+		if ok {
+			log.Printf("[report] periodic snapshot generated period=%s", p)
+		}
+	}
 }
 
 // patrolEscalateOverdueTodos P1 待办超时升级:超时未办就地升 URGENT(000115);
