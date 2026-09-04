@@ -101,16 +101,28 @@ func (s *PGStore) RedeemCode(ctx context.Context, code string, customerID int64)
 		return "", fmt.Errorf("promotion: redeem gift: %w", err)
 	}
 
-	// 再试兑换码批次。
+	// 再试兑换码批次:分步限定列引用(coupon_codes/coupon_templates 两表均有
+	// template_id 与 status,JOIN 裸引用必撞 42702 歧义),并区分三态业务错误。
+	var codeStatus string
+	var tplID int64
+	err = tx.QueryRow(ctx, `
+		SELECT cc.status, cc.template_id FROM coupon_codes cc
+		WHERE cc.code=$1 FOR UPDATE`, code).Scan(&codeStatus, &tplID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrCodeNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("promotion: scan redeem code: %w", err)
+	}
+	if codeStatus != "UNUSED" {
+		return "", ErrCodeUsedOrDisabled
+	}
 	var t Template
-	row := tx.QueryRow(ctx, `
-		SELECT `+templateCols+` FROM coupon_templates tt
-		JOIN coupon_codes cc ON cc.template_id=tt.template_id
-		WHERE cc.code=$1 AND cc.status='UNUSED' AND tt.status='ENABLED' FOR UPDATE OF cc`, code)
-	tp, err := scanTemplate(row)
+	tp, err := scanTemplate(tx.QueryRow(ctx, `SELECT `+templateCols+` FROM coupon_templates
+		WHERE template_id=$1 AND status='ENABLED' FOR UPDATE`, tplID))
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			return "", &conflictError{reason: "兑换码无效或已被使用"}
+			return "", ErrTemplateDisabled
 		}
 		return "", err
 	}

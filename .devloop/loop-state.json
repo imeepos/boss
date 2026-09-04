@@ -95,5 +95,5 @@
       "failCount": 0
     }
   ],
-  "note": "W-0907 月度填报波次过半:T18 done(S8 已归档,dfdba439/8f558148 在 main);T19 done(S9 已归档,迁移 000181 GENERATED 派生列+51 白名单+14 条 /monthly/* 路由,自测十项 PASS,102 已上线 abd8f7d);T20 admin 前端进行中(S10=session-e70ed98a,验收=scripts/ops/monthly-admin-selftest.sh 退出码 0)。S9 移交契约要点:envelope/PageResult、派生列只读、导入 42200 行级错误、导出裸 CSV window.open、KPI 先判 null、menu key=monthly。push main 后自动部署管道约 25 分钟更新 102,verify-deploy 自证。主树另有他会话的 meeting-minutes 未跟踪文件,不代管。"
+  "note": "W-0907 月度填报波次全收口(2026-09-05):T18 done(S8 归档);T19 done(S9 归档,000181+51 白名单+14 路由,102 上线);T20 done(S10 归档,三页签+KPI+导入导出+i18n 三语言,自测 27 PASS/0 FAIL,102 bundle 特征 monthly 上线,双主题截图 docs/ops/evidence/t20-monthly-{light,dark}.png)。三会话均已验收归档,无遗留 worktree/分支。下一波次候选(待用户定夺):基于月度事实的同比环比趋势页、月度填报定时巡检告警、报表导出 xlsx 分发版。"
 }

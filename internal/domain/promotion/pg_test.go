@@ -2,6 +2,7 @@ package promotion
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 
@@ -146,6 +147,29 @@ func TestPromotion_Integration(t *testing.T) {
 	}
 	if _, err := s.RedeemCode(ctx, codes[0].Code, custID2); err != nil {
 		t.Fatalf("RedeemCode: %v", err)
+	}
+	// 兑换码三态业务码(2026-09-04 客户端链路修复):已用/不存在/模板停用。
+	if _, err := s.RedeemCode(ctx, codes[0].Code, custID2); !errors.Is(err, ErrCodeUsedOrDisabled) {
+		t.Fatalf("re-redeem want ErrCodeUsedOrDisabled, got %v", err)
+	}
+	if _, err := s.RedeemCode(ctx, "RDM-not-exist", custID2); !errors.Is(err, ErrCodeNotFound) {
+		t.Fatalf("unknown code want ErrCodeNotFound, got %v", err)
+	}
+	tpl2, err := s.CreateTemplate(ctx, Template{
+		LegalEntityID: le, Name: "停用态模板", Type: TypeCash, FaceValue: 500,
+	})
+	if err != nil {
+		t.Fatalf("CreateTemplate tpl2: %v", err)
+	}
+	codes2, err := s.CreateCodes(ctx, tpl2, 1)
+	if err != nil || len(codes2) != 1 {
+		t.Fatalf("CreateCodes tpl2: err=%v codes=%v", err, codes2)
+	}
+	if err := s.DisableTemplate(ctx, tpl2); err != nil {
+		t.Fatalf("DisableTemplate: %v", err)
+	}
+	if _, err := s.RedeemCode(ctx, codes2[0].Code, custID2); !errors.Is(err, ErrTemplateDisabled) {
+		t.Fatalf("disabled template want ErrTemplateDisabled, got %v", err)
 	}
 	gifts, err := s.ListCustomerCoupons(ctx, custID2, "all", 0)
 	if err != nil || len(gifts) != 1 {

@@ -1676,3 +1676,8 @@
 - 哪个坑浪费了最多时间？红线 11 又中一枪(台账 9→10):i18n edit 的 new_string 用反斜杠 n 拼多行,宿主解析成真实换行截断程序体,parse error 浪费一轮;行数组 join(fromCharCode(10)) 一次过。另:本轮门禁命令自己也犯了同日 T20 刚登记的管道 tail 吞退出码坑(tsc 接 tail 再 echo OK),靠收尾裸跑真退出码复核(TSC_EXIT=0/VITEST_EXIT=0)才坐实——门禁裸跑要长在手上,不是收尾补救。read_image 在 GLM-5.3-Flash 直接被拒(红线 7 应验),改 CDP DOM 断言完成验证,零图照样闭环。
 - skill 有没有提前警告？全中:红线 11(转义)、红线 7(图像)、速查手册免登录注入/Drawer 等于 aside[role=dialog]/验收造数不过夜(acc_ 建完即 SQL 清,顺带证实 5 元入库存 500 分换算正确)——零摸索。
 - 重来一次怎么做？①edit/write 多行内容一律行数组+join(NL),写前先扫一眼串里有无反斜杠转义;②门禁从第一跑就裸命令看退出码,输出截取交给单独 grep 步骤;③模型不支持读图时直接上 VERIFY 断言链,不试 read_image。
+
+## 2026-09-05 客户端链路双缺陷修复(兑换码 42702 + 消息 id 双口径)
+- 哪个坑浪费了最多时间？红线 11 新变体(台账 10→11):程序体里出现 反斜杠+引号 序列(测试内容嵌 JSON 双引号)破坏宿主模板,报 is not a function;改零反斜杠形态(JSON 体用字节切片构造,含双引号行用单引号 JS 串)一次过。连带:git commit --amend 打到 merge 提交上(HEAD 是合并非目标提交),reflog 定位原 merge 后 soft reset 拆成独立 docs 小提交。pgxmock 小坑:NewPool 返回 PgxPoolIface;ExpectExec 不带 WithArgs 即要求 0 参。
+- skill 有没有提前警告？红线 11 只点名反引号/插值/反斜杠n,反斜杠+引号变体靠同族台账举一反三定位很快。
+- 重来一次怎么做？①写含嵌引号文件先想零反斜杠形态;②amend 前必看 git log -1 是否 merge 提交;③门禁窗口期冻结仓库,不再中途提交(本次靠事后对最终 HEAD 复验三包补证)。

@@ -9,9 +9,10 @@ import (
 )
 
 type fakePromo struct {
-	items  []map[string]any
-	gift   string
-	redeem string
+	items     []map[string]any
+	gift      string
+	redeem    string
+	redeemErr error
 	// 续费赠送断言:match 非空时 MatchGiftRule 命中;recorded 落痕记录。
 	match    *promotion.GiftRule
 	recorded []promotion.GiftRecord
@@ -39,7 +40,7 @@ func (f *fakePromo) ListCodes(context.Context, int64) ([]promotion.CouponCode, e
 	return nil, nil
 }
 func (f *fakePromo) RedeemCode(_ context.Context, code string, _ int64) (string, error) {
-	return f.redeem, nil
+	return f.redeem, f.redeemErr
 }
 func (f *fakePromo) CreateGift(_ context.Context, _ string, _ int64) (string, error) {
 	return f.gift, nil

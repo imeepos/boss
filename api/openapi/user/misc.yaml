@@ -108,7 +108,7 @@ paths:
                 code: { type: string }
       responses:
         '200':
-          description: 领取成功,返回券号
+          description: 领取成功,返回券号;业务码:40400 兑换码不存在 / 40900 兑换码已被使用或已停用 / 40900 券模板已停用 / 40900 限领或超发冲突(reason 透传)
           content:
             application/json:
               schema:

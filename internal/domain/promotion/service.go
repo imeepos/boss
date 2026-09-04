@@ -1,6 +1,9 @@
 package promotion
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 // 券类型。
 const (
@@ -37,6 +40,28 @@ func (e *conflictError) Error() string {
 	}
 	return "promotion: conflict: " + e.reason
 }
+
+// Is 令任意 conflictError 实例与哨兵 ErrConflict 匹配(handler 据此统一映射 40900)。
+func (e *conflictError) Is(target error) bool { return target == ErrConflict }
+
+// ConflictReason 提取冲突原因文案(非冲突错误回退 Error()),供 reason 透传。
+func ConflictReason(err error) string {
+	var ce *conflictError
+	if errors.As(err, &ce) && ce.reason != "" {
+		return ce.reason
+	}
+	return err.Error()
+}
+
+// 兑换码链路明确业务错误(客户端 /coupons/redeem 映射 40400/40900,替代一律 50000)。
+var (
+	// ErrCodeNotFound 兑换码不存在。
+	ErrCodeNotFound = errors.New("promotion: redeem code not found")
+	// ErrCodeUsedOrDisabled 兑换码已被使用或已停用。
+	ErrCodeUsedOrDisabled = errors.New("promotion: redeem code used or disabled")
+	// ErrTemplateDisabled 码有效但模板不存在或已停用。
+	ErrTemplateDisabled = errors.New("promotion: coupon template disabled")
+)
 
 // Template 券模板。
 type Template struct {

@@ -3,11 +3,13 @@ package userapi
 // 用户端门户 Misc 域:首页聚合/消息中心/优惠券/用量/自助排障/协议。
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/promotion"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
@@ -77,7 +79,20 @@ func portalRedeemCoupon(a *app.Application) gin.HandlerFunc {
 		}
 		couponID, err := a.Promotion.RedeemCode(c.Request.Context(), req.Code, cid)
 		if err != nil {
-			respondErr(c, err)
+			// promotion 域错误在本 handler 边界收口映射(不动共享 httpx/error.go,
+			// 避免与并行修复会话 A 的文件域冲突):明确业务码替代一律 50000。
+			switch {
+			case errors.Is(err, promotion.ErrCodeNotFound):
+				respond(c, apitypes.CodeNotFound, gin.H{"reason": "兑换码不存在"})
+			case errors.Is(err, promotion.ErrCodeUsedOrDisabled):
+				respond(c, apitypes.CodeConflict, gin.H{"reason": "兑换码已被使用或已停用"})
+			case errors.Is(err, promotion.ErrTemplateDisabled):
+				respond(c, apitypes.CodeConflict, gin.H{"reason": "券模板已停用"})
+			case errors.Is(err, promotion.ErrConflict):
+				respond(c, apitypes.CodeConflict, gin.H{"reason": promotion.ConflictReason(err)})
+			default:
+				respondErr(c, err)
+			}
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"couponId": couponID})
@@ -120,14 +135,19 @@ func portalListMessages(a *app.Application) gin.HandlerFunc {
 		items := make([]gin.H, 0)
 		for _, m := range msgs {
 			if cat == "all" || m.Payload["category"] == cat {
-				item := gin.H{
-					"messageId": strconv.FormatInt(m.ID, 10),
-					"read":      m.Read,
-					"createdAt": m.CreatedAt,
-				}
+				// payload 快照先铺,表列权威值后写覆盖:read/createdAt 以表列为准
+				// (此前快照覆盖导致 read-all 后列表仍全 false);快照展示编号
+				// (MSG-xx)降级为 messageNo,messageId 恒为数字主键(已读寻址键)。
+				item := gin.H{}
 				for key, value := range m.Payload {
 					item[key] = value
 				}
+				if no, ok := item["messageId"]; ok {
+					item["messageNo"] = no
+				}
+				item["messageId"] = strconv.FormatInt(m.ID, 10)
+				item["read"] = m.Read
+				item["createdAt"] = m.CreatedAt
 				items = append(items, item)
 			}
 		}
