@@ -1,5 +1,9 @@
 # ISSUE.md（上游/工具问题清单）
 
+## 前端·web/admin 测试(2026-09-05,T20 月度填报轮发现)
+
+- **环境限制｜bss/user/filter.test.ts「注册时间本地时区格式化」绑定进程时区**:fmtTime(src/lib/format.ts)按业务裁定固定渲染上海墙钟,但断言输入 '2026-08-21T10:00:00' 无时区后缀,按**进程本地时区**解析,期望 '2026-08-21 10:00:00' 仅在进程 TZ=Asia/Shanghai 时成立。本机(TZ=America/Los_Angeles)必挂(received 2026-08-22 01:00:00),102 CI(上海时区)绿。实测 TZ=Asia/Shanghai pnpm vitest run src/pages/bss/user/filter.test.ts 5/5 过。→ 建议:输入显式带后缀 '2026-08-21T10:00:00+08:00' 并断言上海墙钟,消除对进程 TZ 的依赖。非 T20 引入(T20 全量 413 用例在上海时区下全绿)。
+
 ## 后端·TL1 会话层(2026-09-02 T3 tl1sim 联测发现)
 
 - **已修复(2026-09-04, dfdba439)｜行为限制｜session.login 不消化 DELAY**:login 已改为与 `Session.Do` 同款 DELAY 追帧循环(收到 DELAY 继续等同 ctag 最终帧,异 ctag 残帧丢弃,总时长仍受 CmdTimeout 与 ctx 截止约束),真实 U2000 对 LOGIN 回 DELAY 不再误报 ErrAuth;cmd/tl1sim/sim 对 LOGIN 的 delay 注入豁免同步解除,测试路径与真实路径一致。回归三例 internal/domain/provision/tl1/session_login_test.go;机械自测 scripts/ops/tl1-login-delay-selftest.sh(单元证据+静态断言+build/vet,FAIL 即 exit 1)。

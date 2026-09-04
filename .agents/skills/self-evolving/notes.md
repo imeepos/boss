@@ -1659,3 +1659,9 @@
 - devloop_accept 顺序坑:先把账本 status 翻 done 再调 accept 会被拒(已是 done 无需重复验收);正确顺序是先机械验收拿退出码,后翻状态。
 - buildvcs 隐性成本:merge commit 改 HEAD 后 go build 全仓缓存失效(VCS 戳重盖),并行负载下数分钟;自测脚本把 build/vet 放最后是对的。
 
+
+## 2026-09-05 T20 admin 月度填报页(worktree 高负载轮)
+
+- 哪个坑浪费了最多时间？宿主插值两连(台账 7→9):write 长脚本内容含 shell 默认值展开语法、bash 命令串截 token 子串同语法被静默吞——第二轮才发现 token 法/行数组/ cut -c 三个替代形态。另 pipefail 假绿:`pnpm test | tail -8 && echo OK` 退出码取 tail,test 失败仍打 BUILD_TEST_OK,差点带着假绿去合并。
+- skill 有没有提前警告？红线 11(插值)与红线 13(后台长命令)、menu.def 中央登记小提交、菜单图标必须补 SVG、i18n 三语言同键(keys.test 兜底一次抓全)、menu-sync 基线 MENU_REGEN=1 刷新+fetch-menu-perms.mjs 重采——全部有预案,零摸索。
+- 重来一次怎么做？①凡是 shell 片段一律先过一遍"有无美元符花括号/反引号"再进程序体,默认行数组组装;②门禁命令绝不接管道,要看真退出码(set -o pipefail 或直接 if pnpm test);③i18n/基线类登记改动,先 grep 既有先例(87 页总数断言、漂移基线)再动手。

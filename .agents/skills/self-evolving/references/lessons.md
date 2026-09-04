@@ -484,3 +484,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当验收/自测脚本要解析工具二进制时,非登录 shell 的 PATH 常不含 ~/bin,command -v 找不到即静默回落到技能 assets 里过期的预编译产物(bossctl 464 vs 线上 509 误判实证 2026-09-04);修复是指定解析链 env > PATH > 显式安装目录 > 源码临时编译,并显式禁止回落过期资产。
 - 当 run_code 里调无参工具(如 session_link_list)报 binding arguments must be lossless JSON 时,修复是显式传 {}。skill 没提前警告我。
 - 当 node -e 的双层引号命令静默无输出且 exit 0 时,修复是写临时 .mjs 文件再 node 执行,不在 -e 里叠引号(2026-09-04 实证)。
+| 当门禁命令需要 tail/head 截取输出时,退出码取的是管道尾(No projects found in "/Users/imeepos/ext512/ymm-001/boss"
+[ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND] No package.json (or package.yaml, or package.json5) was found in "/Users/imeepos/ext512/ymm-001/boss". 的 test 失败被吞, 照打假绿) | 修复:门禁一律裸跑看退出码,或 set -o pipefail;「OK 标记」只能由真退出码守卫的分支打印(2026-09-05 T20,build 前置 test 假绿,靠 make check 后 web test 显红才发现) |\n
