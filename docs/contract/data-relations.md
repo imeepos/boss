@@ -1,6 +1,10 @@
 # 数据从属关系总览（contract/data-relations）
 
-> 版本 V1.4（2026-09-04）｜权威源：migrations/*.up.sql（迁移对账随波次滚动，ER 图脚本生成）
+> 版本 V1.5（2026-09-05）｜权威源：migrations/*.up.sql（迁移对账随波次滚动，ER 图脚本生成）
+> V1.5 变更：全量机械对账（102 库 information_schema × Go 生产 SQL × 迁移链）：唯一建表 196，链内已 DROP 3
+> （real_name 三兄弟，000059），留存 193 全部在库；净业务表 191（剔 audit_logs 分区子表 6、schema_migrations、
+> spatial_ref_sys）；留存未用 9 张（user_* 双胞胎 6 + service_metric_snapshots + odn 前缀 2，评估见
+> docs/review/orphan-tables-2026-09-05.md）。对外报数用净口径 191，弃用 117/68/130/189。
 > V1.4 变更：补 000181 月度填报三事实表+区域白名单（BI 经营分析，internal/domain/monthly，见 §2.14）；
 > 定位：锁死「谁包含谁、谁归属于谁」的完整实体关系清单。详情页设计、数据权限裁剪一律以本表为准。
 > V1.3 变更：补 000061-089——attachments、师傅考勤/安检/换签、物料工具主档、ODN 无源网络 8 表；
@@ -173,9 +177,10 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 
 | 实体 | 主键 | 关系 |
 |:-----|:-----|:-----|
-| user_accounts ✚ user_addresses ✚ user_plans ✚ user_usages ✚ user_verify_records ✚ user_bill_items ✚ | id | ▲customer_id(FK)，门户用户侧聚合 |
+| user_accounts ✚ user_addresses ✚ user_plans ✚ user_usages ✚ user_bill_items ✚ | id | ▲customer_id(FK)，门户用户侧聚合 |
 | ~~user_messages ✚~~ / ~~user_invoices ✚~~ / ~~user_complaints ✚~~ | id | ▲customer_id(FK)，**deprecated（裁定 D1，2026-08-20）**：双胞胎停用，读写走权威表 portal_messages / invoices / complaints |
 | ~~user_notify_settings ✚~~ / ~~user_balances ✚~~ | customer_id | ▲customers(1:1, FK)，**deprecated（裁定 D1）**：读写走 portal_prefs.notify / portal_wallets；user_accounts.auto_pay 列停用（走 portal_billing_prefs） |
+| ~~user_verify_records ✚~~ | id | ▲customer_id(FK)，**deprecated（000059 归一，2026-09-05 对账补标）**：无写入方，列表/聚合改读权威表 verifications(subject_type='customer') |
 | addons ✚ / addon_subscriptions ✚ | id/addon_id | subscriptions ▲customer_id+addon_id(FK) |
 | coupons ✚ | coupon_id | ▲customer_id(可空 FK) |
 | user_faqs/invite_config/diy_guides/agreements/topup_denominations/product_specs ✚ | id | 全局目录，无外键 |
@@ -209,8 +214,8 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 
 | 实体 | 主键 | 关系 | 基数 |
 |:-----|:-----|:-----|:-----|
-| odn_region_code ✚ | prv_code(PHL001) | ▲psgc_code(FK geo_subdivision) ■city_codes | 省 1:N 城市前缀 |
-| odn_city_code ✚ | (prv_code,city_prefix) | ▲prv_code(FK odn_region_code) ▲psgc_code(FK geo_subdivision) ■grids ■facilities ■sites ■devices | 城市 1:N 网格/设施/局点/设备 |
+| odn_region_code ✚ | prv_code(PHL001) | ▲psgc_code(FK geo_subdivision) ■city_codes | 省 1:N 城市前缀；**留存未用**：生产代码零读写，仅种子/测试引用（2026-09-05 对账，见 docs/review/orphan-tables-2026-09-05.md） |
+| odn_city_code ✚ | (prv_code,city_prefix) | ▲prv_code(FK odn_region_code) ▲psgc_code(FK geo_subdivision) ■grids ■facilities ■sites ■devices | 城市 1:N 网格/设施/局点/设备；**留存未用**：生产代码零读写，行数据仅由迁移种子供给（2026-09-05 对账，见 docs/review/orphan-tables-2026-09-05.md） |
 | odn_grid ✚ | (prv,city,grid_code 1~99) | ▲(prv,city) 复合 FK odn_city_code ■facilities(P/MH) | 网格 1:N 设施 |
 | odn_facility ✚ | code(P/MH/TW/CLS/TBX+5位) | ▲(prv,city) 复合 FK ▲grid(复合 FK，TW/CLS/TBX 为 NULL 市域设施) ■cable_segments(A/B 端按码软引用) | 设施 1:N 光缆端 |
 | odn_cable_segment ✚ | id / UQ(a_code,b_code) | ▲a/b_code(软引用：设施码或核心设备码，CHECK 正则约束码型) ■fibers | 段落 1:N 纤芯 |
