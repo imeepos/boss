@@ -85,7 +85,7 @@
 | AR 信用等级 ar_credit_profiles.credit_level | STANDARD / WATCH / RESTRICTED / SUSPENDED | 可解释规则等级；停机仍经既有 stop_resume_tasks 编排 |
 | 官网内容 cms_posts.status | DRAFT / PUBLISHED / OFFLINE | 草稿 / 已发布（公开读可见）/ 已下线；置 PUBLISHED 落 published_at |
 | 官网内容 cms_posts.category | NEWS / ARTICLE | 动态新闻 / 文章 |
-| 税局轨迹 invoice_tax_event.event | RECEIPT / BACKFILL / VOID / REISSUE | 网关回执 / 人工回填票号 / 发票作废 / 原票作废重开；轨迹与 invoice.status、tax_status 正交，时间正序回放，见 docs/design/q3-tax-trail.md |
+| 税局轨迹 invoice_tax_events.event | RECEIPT / BACKFILL / VOID / REISSUE | 网关回执 / 人工回填票号 / 发票作废 / 原票作废重开；轨迹与 invoice.status、tax_status 正交，时间正序回放，见 docs/design/q3-tax-trail.md |
 | 客户端发版 client_releases.status | DRAFT / GRAY / PUBLISHED / ROLLED_BACK | 草稿 / 灰度（按比例+白名单分桶投放）/ 全量（公开可下载）/ 已回滚（不可再投放） |
 | 客户端发版 client_releases.app | user / worker | 用户端 App / 师傅端 App |
 | 师傅 workers.status | 1 / 0 | 1在职 / 0离职（后台师傅管理页 active/left 文案；`workerAssignable` 要求 status=1 且 left_at 为空才可接单） |
