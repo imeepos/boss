@@ -74,7 +74,7 @@
       "priority": "P2",
       "title": "TL1 login DELAY 追帧修复(S7 会话执行)",
       "goal": "login 改为与 Do 同款 DELAY 追帧循环,真实 U2000 对 LOGIN 回 DELAY 不再误报;解除仿真器 LOGIN 豁免;ISSUE.md 标注已修复",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/tl1-login-delay-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/tl1-login-delay-selftest.sh'"
     },
     {
