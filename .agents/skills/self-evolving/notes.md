@@ -1651,3 +1651,11 @@
 - 这个 skill 有没有提前警告我？红线1直接命中,按流程重读即过,零纠缠;worktree 红线(兄弟目录/commit 看方括号分支名/从主树收尾/ff 失败不删树)全程生效,收尾零失误;台账第 101 条"技能喂食也走 worktree"避免了一次直接 main 提交。
 - 重来一次会怎么做？开工就把「用户直调脚本禁止依赖调用方 cwd」当设计约束:钩子类 cwd 敏感逻辑(其 cwd 由 git 保证)与用户入口脚本($0 定位仓库)分开;自测跨目录调用恰恰是最好的暴露方式,保留在用例里。
 - 其他沉淀:git worktree add 实测触发 post-checkout;core.hooksPath 相对路径按钩子执行 cwd 解析(每个 worktree 用自己检出的 .githooks);git config 不随 clone 传播(全新 clone 必须一次性引导)。已写入 knowledge/实施.md;本轮 reflect worktree 的 .env 由新钩子自动补齐,dogfood 通过。
+
+## 2026-09-04 T18 TL1 login DELAY 追帧(worktree 高负载轮)
+
+- 最大的坑:前台 bash 有超时,git worktree add 大仓(3130 文件)在并行会话抢 CPU 时 checkout 要 2-12 分钟,被超时杀在半路——登记缺失(.git/worktrees 无记录)+ 残留半 checkout 目录,反复 add 报 already exists / GITDIR-MISSING,疑似幻影消失,浪费约 6 轮。
+- 正解:长耗时 git/go 操作(worktree add/remove、全仓 go build)一律 run_in_background 跑,job_output wait 收结果;配 .worktrees/ 仓内路径 + .git/info/exclude 避开并行会话在仓外目录的竞争。
+- devloop_accept 顺序坑:先把账本 status 翻 done 再调 accept 会被拒(已是 done 无需重复验收);正确顺序是先机械验收拿退出码,后翻状态。
+- buildvcs 隐性成本:merge commit 改 HEAD 后 go build 全仓缓存失效(VCS 戳重盖),并行负载下数分钟;自测脚本把 build/vet 放最后是对的。
+
