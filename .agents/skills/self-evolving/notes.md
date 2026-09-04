@@ -1671,3 +1671,8 @@
 - 哪个坑浪费了最多时间？宿主插值两连(台账 7→9):write 长脚本内容含 shell 默认值展开语法、bash 命令串截 token 子串同语法被静默吞——第二轮才发现 token 法/行数组/ cut -c 三个替代形态。另 pipefail 假绿:`pnpm test | tail -8 && echo OK` 退出码取 tail,test 失败仍打 BUILD_TEST_OK,差点带着假绿去合并。
 - skill 有没有提前警告？红线 11(插值)与红线 13(后台长命令)、menu.def 中央登记小提交、菜单图标必须补 SVG、i18n 三语言同键(keys.test 兜底一次抓全)、menu-sync 基线 MENU_REGEN=1 刷新+fetch-menu-perms.mjs 重采——全部有预案,零摸索。
 - 重来一次怎么做？①凡是 shell 片段一律先过一遍"有无美元符花括号/反引号"再进程序体,默认行数组组装;②门禁命令绝不接管道,要看真退出码(set -o pipefail 或直接 if pnpm test);③i18n/基线类登记改动,先 grep 既有先例(87 页总数断言、漂移基线)再动手。
+
+## 2026-09-05 券新建表单 UX(placeholder/tip/toast/按钮微反馈)
+- 哪个坑浪费了最多时间？红线 11 又中一枪(台账 9→10):i18n edit 的 new_string 用反斜杠 n 拼多行,宿主解析成真实换行截断程序体,parse error 浪费一轮;行数组 join(fromCharCode(10)) 一次过。另:本轮门禁命令自己也犯了同日 T20 刚登记的管道 tail 吞退出码坑(tsc 接 tail 再 echo OK),靠收尾裸跑真退出码复核(TSC_EXIT=0/VITEST_EXIT=0)才坐实——门禁裸跑要长在手上,不是收尾补救。read_image 在 GLM-5.3-Flash 直接被拒(红线 7 应验),改 CDP DOM 断言完成验证,零图照样闭环。
+- skill 有没有提前警告？全中:红线 11(转义)、红线 7(图像)、速查手册免登录注入/Drawer 等于 aside[role=dialog]/验收造数不过夜(acc_ 建完即 SQL 清,顺带证实 5 元入库存 500 分换算正确)——零摸索。
+- 重来一次怎么做？①edit/write 多行内容一律行数组+join(NL),写前先扫一眼串里有无反斜杠转义;②门禁从第一跑就裸命令看退出码,输出截取交给单独 grep 步骤;③模型不支持读图时直接上 VERIFY 断言链,不试 read_image。
