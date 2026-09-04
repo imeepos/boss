@@ -144,7 +144,7 @@ paths:
   /tickets/{ticketNo}/sign:
     post:
       tags: [ScanBind]
-      summary: 客户电子签收(留痕回执,工单流转为完成)
+      summary: 客户电子签收(留痕回执,工单流转为完成;前置闸门=扫码绑定+上报+激活成功,未满足回 40910+reason)
       operationId: signTicket
       parameters:
         - $ref: './schemas.yaml#/components/parameters/TicketNo'

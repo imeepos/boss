@@ -92,6 +92,7 @@ paths:
                 type: object
                 properties:
                   checkedInAt: { type: string, example: '10:05' }
+                  gpsCheck: { type: string, enum: [OK, SKIPPED_NO_SITE_COORDS], description: GPS 闸门口径;无坐标工单显式降级,不静默放行(2026-09-04 任务A) }
 
   /tickets/{ticketNo}/navi:
     get:

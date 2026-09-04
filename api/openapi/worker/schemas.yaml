@@ -175,7 +175,7 @@ components:
         loid: { type: string, example: LOID-88A1 }
         status: { type: string, enum: [PENDING, SUCCESS, FAILED] }
         statusLabel: { type: string, example: 未生效 }
-        lastTry: { type: string, example: 08-17 10:32 · 回调超时 }
+        lastTry: { type: string, description: 最近一次激活尝试时刻(RFC3339;空=无尝试记录),000182 起真实回执 tried_at,失败亦留痕 }
 
     Charge:
       type: object
