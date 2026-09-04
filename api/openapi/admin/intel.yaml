@@ -155,3 +155,169 @@ paths:
       operationId: getLatestDbPatrol
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Item' }
+  # ---------- Monthly 月度填报(BI 经营分析,迁移 000181,permCode menu:monthly) ----------
+  /monthly/regions:
+    get:
+      tags: [Intel]
+      summary: 月度填报区域白名单(51 个标准 Barangay,含 active 标记)
+      operationId: listMonthlyRegions
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /monthly/summary:
+    get:
+      tags: [Intel]
+      summary: 月度汇总 KPI(期末在用/主营总收入合计、及时完工率、端口利用率、回款率、ARPU;分母 0 该率为 null)
+      operationId: getMonthlySummary
+      parameters:
+        - { name: month, in: query, schema: { type: string, description: 'YYYY-MM;空=全部月份' } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /monthly/user-revenue:
+    get:
+      tags: [Intel]
+      summary: 月度用户与收入列表(month/region 筛选+分页;响应含派生列 期末在用/主营总收入)
+      operationId: listMonthlyUserRevenue
+      parameters:
+        - { name: month, in: query, schema: { type: string } }
+        - { name: region, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 200 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+    put:
+      tags: [Intel]
+      summary: 月度用户与收入单行 upsert(校验同导入;派生列服务端计算,传入无效)
+      operationId: upsertMonthlyUserRevenue
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /monthly/user-revenue/import:
+    post:
+      tags: [Intel]
+      summary: 月度用户与收入 CSV 导入(multipart file;UTF-8 BOM,表头与 docs/books 模板逐字节一致,幂等 upsert,行级错误报告)
+      operationId: importMonthlyUserRevenue
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /monthly/user-revenue/export:
+    get:
+      tags: [Intel]
+      summary: 月度用户与收入 CSV 导出(与导入同格式同表头,BOM+CRLF,行序 month,region)
+      operationId: exportMonthlyUserRevenue
+      parameters:
+        - { name: month, in: query, schema: { type: string, description: 'YYYY-MM;空=全量' } }
+      responses:
+        '200':
+          description: CSV(UTF-8 with BOM)
+          content:
+            text/csv:
+              schema: { type: string, format: binary }
+
+  /monthly/network-delivery:
+    get:
+      tags: [Intel]
+      summary: 月度网络与交付列表(month/region 筛选+分页;响应含派生列 期末在用/主营总收入)
+      operationId: listMonthlyNetworkDelivery
+      parameters:
+        - { name: month, in: query, schema: { type: string } }
+        - { name: region, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 200 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+    put:
+      tags: [Intel]
+      summary: 月度网络与交付单行 upsert(校验同导入;派生列服务端计算,传入无效)
+      operationId: upsertMonthlyNetworkDelivery
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /monthly/network-delivery/import:
+    post:
+      tags: [Intel]
+      summary: 月度网络与交付 CSV 导入(multipart file;UTF-8 BOM,表头与 docs/books 模板逐字节一致,幂等 upsert,行级错误报告)
+      operationId: importMonthlyNetworkDelivery
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /monthly/network-delivery/export:
+    get:
+      tags: [Intel]
+      summary: 月度网络与交付 CSV 导出(与导入同格式同表头,BOM+CRLF,行序 month,region)
+      operationId: exportMonthlyNetworkDelivery
+      parameters:
+        - { name: month, in: query, schema: { type: string, description: 'YYYY-MM;空=全量' } }
+      responses:
+        '200':
+          description: CSV(UTF-8 with BOM)
+          content:
+            text/csv:
+              schema: { type: string, format: binary }
+
+  /monthly/finance-cost:
+    get:
+      tags: [Intel]
+      summary: 月度财务与成本列表(month/region 筛选+分页;响应含派生列 期末在用/主营总收入)
+      operationId: listMonthlyFinanceCost
+      parameters:
+        - { name: month, in: query, schema: { type: string } }
+        - { name: region, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 200 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+    put:
+      tags: [Intel]
+      summary: 月度财务与成本单行 upsert(校验同导入;派生列服务端计算,传入无效)
+      operationId: upsertMonthlyFinanceCost
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /monthly/finance-cost/import:
+    post:
+      tags: [Intel]
+      summary: 月度财务与成本 CSV 导入(multipart file;UTF-8 BOM,表头与 docs/books 模板逐字节一致,幂等 upsert,行级错误报告)
+      operationId: importMonthlyFinanceCost
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /monthly/finance-cost/export:
+    get:
+      tags: [Intel]
+      summary: 月度财务与成本 CSV 导出(与导入同格式同表头,BOM+CRLF,行序 month,region)
+      operationId: exportMonthlyFinanceCost
+      parameters:
+        - { name: month, in: query, schema: { type: string, description: 'YYYY-MM;空=全量' } }
+      responses:
+        '200':
+          description: CSV(UTF-8 with BOM)
+          content:
+            text/csv:
+              schema: { type: string, format: binary }
+

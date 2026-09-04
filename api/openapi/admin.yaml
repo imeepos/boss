@@ -418,6 +418,17 @@ paths:
   /analytics/indicators: { $ref: './admin/intel.yaml#/paths/~1analytics~1indicators' }
   /analytics/heatmap: { $ref: './admin/intel.yaml#/paths/~1analytics~1heatmap' }
   /analytics/maintenance: { $ref: './admin/intel.yaml#/paths/~1analytics~1maintenance' }
+  /monthly/regions: { $ref: './admin/intel.yaml#/paths/~1monthly~1regions' }
+  /monthly/summary: { $ref: './admin/intel.yaml#/paths/~1monthly~1summary' }
+  /monthly/user-revenue: { $ref: './admin/intel.yaml#/paths/~1monthly~1user-revenue' }
+  /monthly/user-revenue/import: { $ref: './admin/intel.yaml#/paths/~1monthly~1user-revenue~1import' }
+  /monthly/user-revenue/export: { $ref: './admin/intel.yaml#/paths/~1monthly~1user-revenue~1export' }
+  /monthly/network-delivery: { $ref: './admin/intel.yaml#/paths/~1monthly~1network-delivery' }
+  /monthly/network-delivery/import: { $ref: './admin/intel.yaml#/paths/~1monthly~1network-delivery~1import' }
+  /monthly/network-delivery/export: { $ref: './admin/intel.yaml#/paths/~1monthly~1network-delivery~1export' }
+  /monthly/finance-cost: { $ref: './admin/intel.yaml#/paths/~1monthly~1finance-cost' }
+  /monthly/finance-cost/import: { $ref: './admin/intel.yaml#/paths/~1monthly~1finance-cost~1import' }
+  /monthly/finance-cost/export: { $ref: './admin/intel.yaml#/paths/~1monthly~1finance-cost~1export' }
   /reports: { $ref: './admin/intel.yaml#/paths/~1reports' }
   /reports/history: { $ref: './admin/intel.yaml#/paths/~1reports~1history' }
   /reports/latest: { $ref: './admin/intel.yaml#/paths/~1reports~1latest' }
