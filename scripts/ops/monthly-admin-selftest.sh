@@ -54,9 +54,10 @@ for f in zh-CN en-US ms-MY; do
 done
 
 echo "== 4. typecheck/build =="
+# CI=true:pnpm verify-deps 的 TTY 确认在无终端环境必挂(ER_TTY),与门禁无关。
 if [ "$SKIP_BUILD" != "--skip-build" ]; then
-  if (cd "$WEB" && pnpm typecheck >/dev/null 2>&1); then ok "pnpm typecheck"; else bad "pnpm typecheck"; fi
-  if (cd "$WEB" && pnpm build >/dev/null 2>&1); then ok "pnpm build"; else bad "pnpm build"; fi
+  if (cd "$WEB" && CI=true pnpm typecheck >/dev/null 2>&1); then ok "pnpm typecheck"; else bad "pnpm typecheck"; fi
+  if (cd "$WEB" && CI=true pnpm build >/dev/null 2>&1); then ok "pnpm build"; else bad "pnpm build"; fi
 else
   echo "(--skip-build 跳过)"
 fi
