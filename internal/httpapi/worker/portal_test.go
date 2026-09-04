@@ -144,13 +144,14 @@ func (f *fakePortalWorkOrder) GetTicketItemByNo(_ context.Context, _ string) (*o
 
 type fakePortalOrder struct {
 	order.OrderService
-	stage      int8 // Track 回执环节(签收/激活闸门回归用;0=未设走默认 9)
-	updated    int64
-	noEffect   bool // UpdateMap 零作用桩(签收假成功守卫回归用)
-	activated  int64
-	rolledBack int64
-	rbFrom     int8 // RollbackStage 回执桩:from→to;相等即模拟 0 行生效
-	rbTo       int8
+	stage       int8 // Track 回执环节(签收/激活闸门回归用;0=未设走默认 9)
+	updated     int64
+	noEffect    bool  // UpdateMap 零作用桩(签收假成功守卫回归用)
+	activateErr error // ActivateUser 注入失败(激活落痕回归用)
+	activated   int64
+	rolledBack  int64
+	rbFrom      int8 // RollbackStage 回执桩:from→to;相等即模拟 0 行生效
+	rbTo        int8
 }
 
 // fakePortalQuad 四码桩:详情页 quad 视图按未绑定兜底。
@@ -174,6 +175,9 @@ func (f *fakePortalOrder) Track(context.Context, int64) (*order.Order, []order.S
 }
 
 func (f *fakePortalOrder) ActivateUser(_ context.Context, id int64) error {
+	if f.activateErr != nil {
+		return f.activateErr
+	}
 	f.activated = id
 	return nil
 }

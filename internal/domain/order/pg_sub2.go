@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ListDismantles 列出全部拆机单。
@@ -74,18 +75,43 @@ func (s *PGStore) ListActivationCallbacks(ctx context.Context) ([]ActivationCall
 
 // AppendActivationCallback 追加激活回调,返回自增 id。
 // 幂等(000154):同订单唯一行(uq_activation_callbacks_order),重复确认/重试
-// 只更新 result/retries,不新增行——保证环节11 可反复重放不产生重复回执。
+// 只更新 result/retries/tried_at,不新增行——保证环节11 可反复重放不产生重复回执。
+// tried_at 随每次尝试刷新(000182,任务A-d:lastTry 可见)。
 func (s *PGStore) AppendActivationCallback(ctx context.Context, c ActivationCallback) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
 		INSERT INTO activation_callbacks(order_id, result, retries) VALUES($1,$2,$3)
-		ON CONFLICT (order_id) DO UPDATE SET result = EXCLUDED.result, retries = EXCLUDED.retries
+		ON CONFLICT (order_id) DO UPDATE SET
+			result = EXCLUDED.result, retries = EXCLUDED.retries, tried_at = now()
 		RETURNING id`,
 		c.OrderID, c.Result, c.Retries).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("order: append activation callback: %w", err)
 	}
 	return id, nil
+}
+
+// LatestActivationCallback 取订单最近一次激活尝试(000182,任务A-d:lastTry)。
+// 无记录返回 (nil, nil),调用方以空串口径呈现。
+func (s *PGStore) LatestActivationCallback(ctx context.Context, orderID int64) (*ActivationCallback, error) {
+	var c ActivationCallback
+	var tried pgtype.Timestamptz
+	err := s.db.QueryRow(ctx, `
+		SELECT id, order_id, result, retries, tried_at
+		FROM activation_callbacks WHERE order_id = $1
+		ORDER BY id DESC LIMIT 1`, orderID).
+		Scan(&c.ID, &c.OrderID, &c.Result, &c.Retries, &tried)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("order: latest activation callback: %w", err)
+	}
+	if tried.Valid {
+		t := tried.Time
+		c.TriedAt = &t
+	}
+	return &c, nil
 }
 
 // RetryActivationCallback 回调重试:重放环节11 确认(而非仅计数)。

@@ -4,10 +4,53 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 )
+
+// 回归(000182,任务A-d):最近一次激活尝试可查,tried_at 随尝试刷新。
+func TestPGStore_LatestActivationCallback(t *testing.T) {
+	t.Run("有记录 → 返回最近一行含 tried_at", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		tried := time.Now()
+		mock.ExpectQuery(`SELECT id, order_id, result, retries, tried_at`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"id", "order_id", "result", "retries", "tried_at"}).
+				AddRow(int64(9), int64(7), "FAILED", int16(2), tried))
+
+		s := NewPGStore(mock, stubExists{})
+		cb, err := s.LatestActivationCallback(context.Background(), 7)
+		if err != nil {
+			t.Fatalf("LatestActivationCallback: %v", err)
+		}
+		if cb == nil || cb.Result != "FAILED" || cb.TriedAt == nil {
+			t.Fatalf("cb=%+v, want FAILED with tried_at", cb)
+		}
+	})
+
+	t.Run("无记录 → nil,nil", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mock.Close()
+		mock.ExpectQuery(`SELECT id, order_id, result, retries, tried_at`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"id", "order_id", "result", "retries", "tried_at"}))
+
+		s := NewPGStore(mock, stubExists{})
+		cb, err := s.LatestActivationCallback(context.Background(), 7)
+		if err != nil || cb != nil {
+			t.Fatalf("cb=%v err=%v, want nil,nil", cb, err)
+		}
+	})
+}
 
 func TestPGStore_ListDismantles(t *testing.T) {
 	mock, err := pgxmock.NewPool()

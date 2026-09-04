@@ -4,6 +4,10 @@ package workerapi
 // 激活检测字段只反映已确认的订单状态，未接入网元/AAA 时不得伪造成功。
 
 import (
+	"log"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -132,21 +136,64 @@ func activateWorkerOrder(c *gin.Context, a *app.Application, orderID int64) erro
 		return worker.ErrScanBindRequired
 	}
 	if a.Automation != nil {
-		return a.Automation.AutoPostScan(c.Request.Context(), orderID)
+		err := a.Automation.AutoPostScan(c.Request.Context(), orderID)
+		if err == nil {
+			return nil
+		}
+		if activationLegFailed(err) {
+			recordFailedAttempt(c, a, orderID) // 失败尝试落痕(任务A-d)
+		}
+		return err
 	}
 	if ord.Stage == 9 {
-		return a.Order.ActivateUser(c.Request.Context(), orderID)
+		if err := a.Order.ActivateUser(c.Request.Context(), orderID); err != nil {
+			recordFailedAttempt(c, a, orderID)
+			return err
+		}
 	}
 	return nil
 }
 
+// activationLegFailed 自动段失败是否发生在激活腿(10 激活/11 回执)——
+// updateMap(12)失败不代表激活失败,不计 FAILED 回执。
+func activationLegFailed(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "automation: activateUser:") ||
+		strings.Contains(msg, "automation: notifyActivation:")
+}
+
+// recordFailedAttempt 激活失败尝试落痕(任务A-d):FAILED 回执幂等 upsert。
+// 尽力而为,写失败只留 ALERT 不阻断原错误返回。
+func recordFailedAttempt(c *gin.Context, a *app.Application, orderID int64) {
+	if a.OrderLedger == nil {
+		return
+	}
+	if _, err := a.OrderLedger.AppendActivationCallback(c.Request.Context(),
+		order.ActivationCallback{OrderID: orderID, Result: "FAILED"}); err != nil {
+		log.Printf("[worker-activation] ATTEMPT RECORD FAILED order=%d err=%v", orderID, err)
+	}
+}
+
+// latestActivationTry 最近一次激活尝试时刻(任务A-d lastTry);无记录返回空串。
+func latestActivationTry(c *gin.Context, a *app.Application, orderID int64) string {
+	if a.OrderLedger == nil {
+		return ""
+	}
+	cb, err := a.OrderLedger.LatestActivationCallback(c.Request.Context(), orderID)
+	if err != nil || cb == nil || cb.TriedAt == nil {
+		return ""
+	}
+	return cb.TriedAt.Format(time.RFC3339)
+}
+
 // activationState 激活状态视图：只有环节11完成才代表订单侧回调成功。
-func activationState(ticketNo string, stage int8, loid string) gin.H {
+// lastTry 为最近一次激活尝试时刻(RFC3339;空=无尝试记录)。
+func activationState(ticketNo string, stage int8, loid string, lastTry string) gin.H {
 	status := "PENDING"
 	if stage >= 11 {
 		status = "SUCCESS"
 	}
-	return gin.H{"ticketNo": ticketNo, "loid": loid, "status": status, "statusLabel": "", "lastTry": ""}
+	return gin.H{"ticketNo": ticketNo, "loid": loid, "status": status, "statusLabel": "", "lastTry": lastTry}
 }
 
 // workerOrderLoid 按客户查 LOID;未建档或不可用时返回空串。
@@ -170,7 +217,7 @@ func workerActivationGetHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		loid := workerOrderLoid(c, a, ord.CustomerID)
-		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage, loid))
+		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage, loid, latestActivationTry(c, a, tk.OrderID)))
 	}
 }
 
@@ -195,7 +242,7 @@ func workerActivateHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		loid := workerOrderLoid(c, a, ord.CustomerID)
-		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage, loid))
+		respond(c, apitypes.CodeOK, activationState(tk.TicketNo, ord.Stage, loid, latestActivationTry(c, a, tk.OrderID)))
 	}
 }
 

@@ -18,11 +18,13 @@ type Dismantle struct {
 }
 
 // ActivationCallback 激活回调(订单第11环节的系统间回执)。
+// TriedAt 最近尝试时刻(000182):同订单唯一行 upsert 随每次尝试刷新,lastTry 可见。
 type ActivationCallback struct {
-	ID      int64  `json:"id"`
-	OrderID int64  `json:"orderId"`
-	Result  string `json:"result"` // SUCCESS/FAILED
-	Retries int16  `json:"retries"`
+	ID      int64      `json:"id"`
+	OrderID int64      `json:"orderId"`
+	Result  string     `json:"result"` // SUCCESS/FAILED
+	Retries int16      `json:"retries"`
+	TriedAt *time.Time `json:"triedAt,omitempty"`
 }
 
 // DispatchTransfer 派单改派台账(工单师傅每次改派)。
@@ -44,6 +46,9 @@ type OrderLedgerService interface {
 	CreateDismantle(ctx context.Context, d Dismantle) (int64, error)
 	ListActivationCallbacks(ctx context.Context) ([]ActivationCallback, error)
 	AppendActivationCallback(ctx context.Context, c ActivationCallback) (int64, error)
+	// LatestActivationCallback 取订单最近一次激活尝试(任务A-d lastTry);
+	// 无记录返回 (nil, nil)。
+	LatestActivationCallback(ctx context.Context, orderID int64) (*ActivationCallback, error)
 	// RetryActivationCallback 回调重试:重放环节11 确认(幂等落账,FAILED 可转 SUCCESS)。
 	RetryActivationCallback(ctx context.Context, id int64) error
 	ListDispatchTransfers(ctx context.Context, ticketID int64) ([]DispatchTransfer, error)
