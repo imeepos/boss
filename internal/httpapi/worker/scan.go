@@ -22,7 +22,7 @@ func registerWorkerPortalScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/tickets/:ticketNo/report", workerReportSubmitHandler(a))
 	g.GET("/tickets/:ticketNo/activation", workerActivationGetHandler(a))
 	g.POST("/tickets/:ticketNo/activate", workerActivateHandler(a))
-	g.POST("/tickets/:ticketNo/sign", workerAuditOK(a, "sign"))
+	g.POST("/tickets/:ticketNo/sign", workerSignHandler(a))
 	g.GET("/tickets/:ticketNo/charge", workerChargeGetHandler(a))
 	g.POST("/tickets/:ticketNo/charge", workerChargePostHandler(a))
 }

@@ -144,6 +144,9 @@ func (f *fakePortalWorkOrder) GetTicketItemByNo(_ context.Context, _ string) (*o
 
 type fakePortalOrder struct {
 	order.OrderService
+	stage      int8 // Track 回执环节(签收/激活闸门回归用;0=未设走默认 9)
+	updated    int64
+	noEffect   bool // UpdateMap 零作用桩(签收假成功守卫回归用)
 	activated  int64
 	rolledBack int64
 	rbFrom     int8 // RollbackStage 回执桩:from→to;相等即模拟 0 行生效
@@ -160,7 +163,14 @@ func (f *fakePortalQuad) GetByAddress(context.Context, int64) (*quadlink.QuadLin
 }
 
 func (f *fakePortalOrder) Track(context.Context, int64) (*order.Order, []order.StageLog, error) {
-	return &order.Order{ID: 1, OrderNo: "ORD-1", Stage: 9, Status: "INSTALLING"}, nil, nil
+	stage := f.stage
+	if stage == 0 {
+		stage = 9 // 既有用例默认工单在环节9
+	}
+	if f.updated != 0 {
+		stage = 12 // UpdateMap 生效后订单到终态环节
+	}
+	return &order.Order{ID: 1, OrderNo: "ORD-1", Stage: stage, Status: "INSTALLING"}, nil, nil
 }
 
 func (f *fakePortalOrder) ActivateUser(_ context.Context, id int64) error {
@@ -169,7 +179,14 @@ func (f *fakePortalOrder) ActivateUser(_ context.Context, id int64) error {
 }
 
 func (f *fakePortalOrder) NotifyActivation(_ context.Context, _ int64) error { return nil }
-func (f *fakePortalOrder) UpdateMap(_ context.Context, _ int64) error        { return nil }
+
+func (f *fakePortalOrder) UpdateMap(_ context.Context, id int64) error {
+	if f.noEffect {
+		return nil // 模拟推进 0 行生效
+	}
+	f.updated = id
+	return nil
+}
 
 // RollbackStage 桩:默认回执 9→8;rbFrom/rbTo 相等可模拟 0 行生效(假成功守卫回归)。
 func (f *fakePortalOrder) RollbackStage(_ context.Context, id int64) (int8, int8, error) {
@@ -493,6 +510,21 @@ func TestActivateEnforcesOwnership(t *testing.T) {
 	res = portalWorkerDo(r, "POST", "/api/worker/v1/tickets/ORD-1/activate", `{}`, tok)
 	if res["code"].(float64) != 0 {
 		t.Fatalf("own ticket activate should succeed, got %v", res)
+	}
+}
+
+// TestActivateRequiresScanBind 回归(2026-09-04 任务A-b):未扫码绑定(环节9 前)
+// 激活必须回 40910 状态码,不再裸 error→50000。
+func TestActivateRequiresScanBind(t *testing.T) {
+	tok := portalGrabToken(t)
+	fw := &fakePortalWorkOrder{tickets: []order.DispatchTicket{
+		{TicketNo: "ORD-1", OrderID: 1, WorkerID: 7, Status: "DOING"},
+	}}
+	fo := &fakePortalOrder{stage: 8} // 环节8:未扫码绑定
+	r := portalTestRouter(t, fw, fo)
+	res := portalWorkerDo(r, "POST", "/api/worker/v1/tickets/ORD-1/activate", "", tok)
+	if res["code"].(float64) != 40910 {
+		t.Fatalf("pre-bind activate should 40910, got %v", res)
 	}
 }
 
