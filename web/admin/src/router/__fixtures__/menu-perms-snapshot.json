@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-08-29T08:36:11.529Z",
+  "capturedAt": "2026-09-04T18:30:10.802Z",
   "base": "http://192.168.0.102:28080",
   "roles": {
     "technician": {
@@ -121,6 +121,7 @@
         "menu:marketing-recon",
         "menu:menuperm",
         "menu:message",
+        "menu:monthly",
         "menu:odn",
         "menu:onboarding",
         "menu:openplat",

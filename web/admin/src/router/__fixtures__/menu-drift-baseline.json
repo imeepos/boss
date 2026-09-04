@@ -1,6 +1,6 @@
 {
   "note": "采集日已接受漂移;门禁=只减不增;修复后重跑 fetch-menu-perms.mjs + MENU_REGEN=1 刷新",
-  "capturedAt": "2026-08-29T08:36:11.529Z",
+  "capturedAt": "2026-09-04T18:30:10.802Z",
   "drift": {
     "technician": {
       "feOnly": [],
@@ -39,6 +39,7 @@
         "marketing",
         "marketing-recon",
         "message",
+        "monthly",
         "provision",
         "provlog",
         "quadlink",
@@ -61,7 +62,8 @@
     "analyst": {
       "feOnly": [
         "aaalog",
-        "alarm"
+        "alarm",
+        "monthly"
       ],
       "beOnly": []
     },
