@@ -1,0 +1,4 @@
+#!/bin/sh
+# git post-checkout 钩子入口:checkout/switch/worktree add 后自动补齐 .env。
+# 启用方式(一次性): sh scripts/env-hooks-init.sh
+exec "$(git rev-parse --show-toplevel 2>/dev/null)/scripts/env-provision.sh" "$@"
