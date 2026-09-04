@@ -103,8 +103,7 @@ func (st *state) handle(line string) ([]string, bool) {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	var frames []string
-	// LOGIN 豁免:Session.login 只读一次响应,不循环等同 ctag 最终帧(PDF §11.1)。
-	if st.opt.DelayMs > 0 && cmd.verb != "LOGIN" {
+	if st.opt.DelayMs > 0 {
 		frames = append(frames, delayFrame(cmd.ctag))
 		time.Sleep(time.Duration(st.opt.DelayMs) * time.Millisecond)
 	}
