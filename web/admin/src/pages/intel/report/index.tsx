@@ -4,6 +4,7 @@
 // 下方报告列表+正文 Drawer。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { ApiError } from '../../../api/envelope'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
@@ -17,6 +18,8 @@ import { formatCurrency, formatIndicatorDetail, formatIndicatorValue } from '../
 import { buildTrendSeries, type TrendSnap } from './trend'
 
 const PERIODS = ['daily', 'weekly', 'monthly', 'quarterly'] as const
+// 业务 code 40400 = 该周期尚无快照(后端 reportLatestHandler ErrNoSnapshot)。
+const CODE_NOT_FOUND = 40400
 
 export default function ReportPage() {
   const t = useT()
@@ -29,6 +32,7 @@ export default function ReportPage() {
   const [busy, setBusy] = useState(false)
   const [view, setView] = useState<ReportPayload | null>(null)
   const [viewError, setViewError] = useState('')
+  const [viewOpen, setViewOpen] = useState(false)
   const [notice, setNotice] = useState('')
   // trend 曲线(B1+B6):选周期 + 取 history
   const [trendPeriod, setTrendPeriod] = useState<string>('daily')
@@ -48,9 +52,14 @@ export default function ReportPage() {
   const viewLatest = (period: string) => {
     setView(null)
     setViewError('')
+    setViewOpen(true)
     apiFetch<{ payload: ReportPayload }>('/reports/latest', { query: { period } })
       .then((d) => setView(d?.payload ?? null))
-      .catch(() => setViewError(r.viewFail))
+      .catch((e) => {
+        // 尚无该周期快照是空态不是故障:展示"暂无报告正文"。
+        if (e instanceof ApiError && e.code === CODE_NOT_FOUND) setView(null)
+        else setViewError(r.viewFail)
+      })
   }
 
   // trend 曲线数据拉取(后端 /reports/history?period&limit)
@@ -182,9 +191,9 @@ export default function ReportPage() {
         </div>
       </CardShell>
 
-      {(view || viewError) && (
-        <Drawer title={r.viewTitle} onClose={() => { setView(null); setViewError('') }}
-          footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setView(null); setViewError('') }}>
+      {viewOpen && (
+        <Drawer title={r.viewTitle} onClose={() => { setView(null); setViewError(''); setViewOpen(false) }}
+          footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setView(null); setViewError(''); setViewOpen(false) }}>
             {t.pages.company.cancel}
           </button>}>
           {viewError ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{viewError}</div> : !view ? (
