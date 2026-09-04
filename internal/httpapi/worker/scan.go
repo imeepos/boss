@@ -19,7 +19,7 @@ import (
 // registerWorkerPortalScanRoutes 扫码绑定域路由(wauth 组)。
 func registerWorkerPortalScanRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/tickets/:ticketNo/scan-bind", workerScanBindHandler(a))
-	g.POST("/tickets/:ticketNo/scan-abnormal", workerAuditOK(a, "scan-abnormal"))
+	g.POST("/tickets/:ticketNo/scan-abnormal", workerScanAbnormalHandler(a))
 	g.GET("/tickets/:ticketNo/photos", workerPhotoListHandler)
 	g.POST("/tickets/:ticketNo/photos", workerPhotoUploadHandler(a))
 	g.GET("/tickets/:ticketNo/report", workerReportGetHandler(a))
