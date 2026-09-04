@@ -1,8 +1,8 @@
 {
   "version": 1,
   "project": "boss-主链路持续优化",
-  "updatedAt": "2026-09-03T21:59:32.749Z",
-  "note": "W-0905 全收口(T13/T14/T15 pass;T15 D 项截图佐证 N/A)。T16 pass(S5 顺延)。W-0906 波次:数据与链路真实性——T17 order_stages.finished_at 写入口径修复+历史回填(S6=session-7ac5e7ad;输入:297 行中 292 NULL 但 5 行非 NULL,覆盖极窄) / T18 TL1 login DELAY 追帧修复(S7=session-7e451d3a,ISSUE.md 遗留)。验收模式:scripts/ops/*-selftest.sh 秒级,devloop_accept 直接执行(超时约 10s,禁长跑);完整 E2E 由执行会话跑并留档。",
+  "updatedAt": "2026-09-04T12:50:02.270Z",
+  "note": "W-0906 波次收口后新波次 W-0907:月度填报能力落地(输入:用户收集的 docs/books 月度填报模板族 xlsx+3 CSV,51 Barangay×月×三事实表,CSV UTF-8 BOM 为系统对接标准)。T18 TL1 login DELAY(S8=session 新建);T19 月度填报后端事实域(S9=session 新建,P0);T20 admin 月度填报页面(S10 待 T19 合并并部署 102 后创建)。验收模式:scripts/ops/*-selftest.sh 秒级机械自测,devloop_accept 直接执行;完整 E2E 由执行会话跑并留档。",
   "tasks": [
     {
       "id": "T10",
@@ -76,6 +76,22 @@
       "goal": "login 改为与 Do 同款 DELAY 追帧循环,真实 U2000 对 LOGIN 回 DELAY 不再误报;解除仿真器 LOGIN 豁免;ISSUE.md 标注已修复",
       "status": "todo",
       "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/tl1-login-delay-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/tl1-login-delay-selftest.sh'"
+    },
+    {
+      "id": "T19",
+      "priority": "P0",
+      "title": "月度填报后端事实域(S9 会话执行)",
+      "goal": "落地月度事实填报:迁移 000181(编号现场复核)三事实表(用户与收入/网络与交付/财务与成本,粒度月×区域,UNIQUE(month,region))+51 Barangay 区域白名单种子(xlsx _RegionList 提取);CSV 导入(UTF-8 BOM,表头与 docs/books 模板逐字节一致,幂等 upsert,派生列服务端计算:期末在用=期初+新增-离网+调整,主营总收入=宽带+增值+一次性-优惠-退款)+CSV 导出闭环;admin API /api/admin/v1/monthly/*(regions/列表/upsert/import/export/summary KPI);fields.md+data-relations.md 契约同步;make check 全绿",
+      "status": "todo",
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/monthly-report-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/monthly-report-selftest.sh'"
+    },
+    {
+      "id": "T20",
+      "priority": "P1",
+      "title": "admin 月度填报页面(S10 会话执行,依赖 T19 上 102)",
+      "goal": "intel 分组新增月度填报页:三页签对齐三事实表,月份/区域筛选,派生列只读,CSV 导入导出按钮,月度汇总 KPI 卡片(期末在用/总收入/及时完工率/端口利用率/回款率/ARPU);菜单/路由/i18n 中央登记独立小提交;禁原生 select 用 Dropdown.tsx;102 线上实测截图留档",
+      "status": "todo",
+      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/monthly-admin-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/monthly-admin-selftest.sh'"
     }
   ]
 }
