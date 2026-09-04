@@ -94,6 +94,7 @@ const ProvlogPage = lazy(() => import('./pages/provision/provlog'))
 const GisPage = lazy(() => import('./pages/intel/gis'))
 const AnalyticsPage = lazy(() => import('./pages/intel/analytics'))
 const ReportPage = lazy(() => import('./pages/intel/report'))
+const MonthlyPage = lazy(() => import('./pages/intel/monthly'))
 const ProfilePage = lazy(() => import('./pages/profile'))
 const PartnerApplyPage = lazy(() => import('./pages/partner/apply'))
 const ForbiddenPage = lazy(() => import('./pages/error').then((m) => ({ default: m.ForbiddenPage })))
@@ -216,6 +217,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'gis') return <GisPage />
   if (pageKey === 'analytics') return <AnalyticsPage />
   if (pageKey === 'report') return <ReportPage />
+  if (pageKey === 'monthly') return <MonthlyPage />
   return <PlaceholderPage title={label} />
 }
 
