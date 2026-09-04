@@ -18,6 +18,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/customer/userdata"
 	"github.com/ymm-001/boss/internal/domain/geo"
 	"github.com/ymm-001/boss/internal/domain/metric"
+	"github.com/ymm-001/boss/internal/domain/monthly"
 	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
@@ -83,7 +84,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, billing.ErrForeignKeyViolation),
 		errors.Is(err, ErrGeoInvalidParam),
 		errors.Is(err, cms.ErrInvalidPost),
-		errors.Is(err, cms.ErrInvalidCategory):
+		errors.Is(err, cms.ErrInvalidCategory),
+		errors.Is(err, monthly.ErrInvalidInput):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
@@ -110,7 +112,9 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, metric.ErrNotFound),
 		errors.Is(err, metric.ErrETLNotFound),
 		errors.Is(err, cms.ErrPostNotFound),
-		errors.Is(err, cms.ErrCategoryNotFound):
+		errors.Is(err, cms.ErrCategoryNotFound),
+		errors.Is(err, monthly.ErrUnknownTable),
+		errors.Is(err, monthly.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, backup.ErrBusy):
 		Respond(c, apitypes.CodeResourceBusy, nil)

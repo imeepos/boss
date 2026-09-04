@@ -108,6 +108,7 @@ func registerAdminDomainRoutes(authed *gin.RouterGroup, a *app.Application) {
 	registerODNRoutes(authed, a)
 	registerGisRoutes(authed, a)
 	registerAnalyticsRoutes(authed, a)
+	registerMonthlyRoutes(authed, a)
 	registerReportRoutes(authed, a)
 	registerCompTaskRoutes(authed, a)
 	registerMetricRoutes(authed, a)

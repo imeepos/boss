@@ -15,6 +15,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/device"
 	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/metric"
+	"github.com/ymm-001/boss/internal/domain/monthly"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/partner"
 	"github.com/ymm-001/boss/internal/domain/portal"
@@ -150,6 +151,7 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 		Device:    dev,
 		Analytics: anaStore,
+		Monthly:   monthly.NewPGStore(pool),
 		Alarm:     dev,
 
 		// Backup 数据备份迁移(运维工具);归档目录 env BOSS_BACKUP_DIR,默认 data/backups。

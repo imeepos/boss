@@ -26,6 +26,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/license"
 	"github.com/ymm-001/boss/internal/domain/loy"
 	"github.com/ymm-001/boss/internal/domain/metric"
+	"github.com/ymm-001/boss/internal/domain/monthly"
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/odn"
 	"github.com/ymm-001/boss/internal/domain/openplat"
@@ -130,7 +131,9 @@ type Application struct {
 	Gis       gis.GISService
 	ODN       odn.ODNService
 	Analytics analytics.AnalyticsService
-	Report    *report.ReportService
+	// Monthly 月度填报事实域(BI,迁移 000181):三事实表/CSV 导入导出/汇总 KPI。
+	Monthly monthly.Service
+	Report  *report.ReportService
 
 	// Metric 指标目录与数据质量规则(S5 基础):指标 key/定义/公式/负责人/版本/血缘占位;
 	// 质量异常经 ScanQuality 发现后投递到 CompTask 补偿任务中心。
