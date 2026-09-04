@@ -2825,6 +2825,10 @@ export interface Translations {
       couponName: string; couponType: string; couponFaceYuan: string; couponThresholdYuan: string
       couponValidDays: string; couponTotalQty: string; couponIssued: string
       couponTypeCash: string; couponTypeFullCut: string; couponTypeDiscount: string
+      couponNamePh: string; couponFacePh: string; couponThresholdPh: string
+      couponValidDaysPh: string; couponTotalQtyPh: string
+      couponTypeTipCash: string; couponTypeTipFullCut: string; couponTypeTipDiscount: string
+      couponCreated: string; couponCreateFailed: string; couponFaceInvalid: string; couponNumInvalid: string
       giftBuyMonths: string; giftGiftMonths: string
       earnCurrent: string; earnPerYuan: string; earnMin: string; earnExpire: string; earnNever: string
       earnNone: string; earnPointsPerYuan: string; earnPointsPerYuanHint: string; earnMinYuan: string

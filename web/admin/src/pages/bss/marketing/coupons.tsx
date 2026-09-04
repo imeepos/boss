@@ -1,5 +1,6 @@
-// 券模板管理 Tab:列表 + 抽屉式新建 + 停用。券类型/门槛/面值单位见 promotion.yaml。
-import { useEffect, useState } from 'react'
+// 券模板管理 Tab:列表 + 抽屉式新建(placeholder/类型 tip/toast/按钮微反馈) + 停用。单位见 promotion.yaml。
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import {
   listCouponTemplates, createCouponTemplate, disableCouponTemplate, type CouponTemplate,
 } from '../../../api/marketing'
@@ -7,7 +8,7 @@ import { useT } from '../../../i18n'
 import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
-import { ErrorBanner, EmptyState, ToolbarButton, FormField } from '../../../components/business'
+import { ErrorBanner, EmptyState, ToolbarButton, FormField, SubmitButton, type SubmitState } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { Input } from '../../../components/ui/input'
@@ -29,6 +30,20 @@ function yuan(cents: number): string {
   return (cents / 100).toFixed(2)
 }
 
+/** 元字符串转分;空串视为 0,非法或负数返回 null(导出仅供单测)。 */
+export function toCents(v: string): number | null {
+  if (v.trim() === '') return 0
+  const n = Number(v)
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null
+}
+
+/** 计数字符串转整数;空串视为 0,非法/负数/小数返回 null(导出仅供单测)。 */
+export function toCount(v: string): number | null {
+  if (v.trim() === '') return 0
+  const n = Number(v)
+  return Number.isInteger(n) && n >= 0 ? n : null
+}
+
 export default function CouponTemplatesTab() {
   const t = useT()
   const m = t.pages.marketing
@@ -36,9 +51,15 @@ export default function CouponTemplatesTab() {
   const [items, setItems] = useState<CouponTemplate[]>([])
   const [error, setError] = useState('')
   const [open, setOpen] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [formError, setFormError] = useState('')
+  const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [form, setForm] = useState(EMPTY_FORM)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  /** 微反馈停留:success/failed 短暂可见后复位/收起。 */
+  const armTimer = (fn: () => void, ms: number) => {
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(fn, ms)
+  }
 
   const load = () => {
     setError('')
@@ -49,35 +70,37 @@ export default function CouponTemplatesTab() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const closeForm = () => {
+    if (timer.current) clearTimeout(timer.current)
     setOpen(false)
+    setSubmitState('idle')
     setForm(EMPTY_FORM)
-    setFormError('')
   }
 
-  const submit = async () => {
-    if (creating) return
-    setFormError('')
-    if (!form.name.trim() || !form.faceValueYuan) {
-      setFormError(m.formIncomplete); return
-    }
-    setCreating(true)
-    try {
-      await createCouponTemplate({
-        legalEntityId: 1,
-        name: form.name.trim(),
-        type: form.type as CouponTemplate['type'],
-        faceValue: Math.round(Number(form.faceValueYuan) * 100),
-        threshold: Math.round(Number(form.thresholdYuan || 0) * 100),
-        validDays: Number(form.validDays || 0),
-        totalQty: Number(form.totalQty || 0),
-      })
-      closeForm()
+  const submit = () => {
+    if (submitState !== 'idle') return
+    if (!form.name.trim()) { toast.error(m.formIncomplete); return }
+    const face = toCents(form.faceValueYuan)
+    if (face === null || face <= 0) { toast.error(m.couponFaceInvalid); return }
+    const threshold = toCents(form.thresholdYuan)
+    const validDays = toCount(form.validDays)
+    const totalQty = toCount(form.totalQty)
+    if (threshold === null || validDays === null || totalQty === null) { toast.error(m.couponNumInvalid); return }
+    setSubmitState('loading')
+    createCouponTemplate({
+      legalEntityId: 1,
+      name: form.name.trim(),
+      type: form.type as CouponTemplate['type'],
+      faceValue: face, threshold, validDays, totalQty,
+    }).then(() => {
+      toast.success(m.couponCreated)
+      setSubmitState('success')
       load()
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : m.loadFail)
-    } finally {
-      setCreating(false)
-    }
+      armTimer(closeForm, 800)
+    }).catch((e: unknown) => {
+      toast.error(e instanceof Error ? e.message : m.couponCreateFailed)
+      setSubmitState('failed')
+      armTimer(() => setSubmitState('idle'), 1500)
+    })
   }
 
   const disable = async (id: number) => {
@@ -85,6 +108,8 @@ export default function CouponTemplatesTab() {
       setError(e instanceof Error ? e.message : m.loadFail)
     }
   }
+
+  const typeTip = { CASH: m.couponTypeTipCash, FULL_CUT: m.couponTypeTipFullCut, DISCOUNT: m.couponTypeTipDiscount }[form.type]
 
   return (
     <div>
@@ -114,7 +139,7 @@ export default function CouponTemplatesTab() {
                   <TableCell>{yuan(r.faceValue)}</TableCell>
                   <TableCell>{r.threshold > 0 ? yuan(r.threshold) : '-'}</TableCell>
                   <TableCell>{r.validDays > 0 ? r.validDays : '-'}</TableCell>
-                  <TableCell>{r.totalQty > 0 ? `${r.issuedQty}/${r.totalQty}` : r.issuedQty}</TableCell>
+                  <TableCell>{r.totalQty > 0 ? r.issuedQty + '/' + r.totalQty : r.issuedQty}</TableCell>
                   <TableCell>
                     <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{r.status}</Badge>
                   </TableCell>
@@ -140,38 +165,36 @@ export default function CouponTemplatesTab() {
               <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={closeForm}>
                 {t.common.confirmDialog.cancel}
               </button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={creating} onClick={submit}>
-                {creating ? m.creating : m.create}
-              </button>
+              <SubmitButton state={submitState} onClick={submit}
+                labels={{ idle: m.create, loading: m.creating, success: m.couponCreated, failed: m.couponCreateFailed }} />
             </>
           }>
           <div className="grid grid-cols-2 gap-3">
             <FormField label={m.couponName} required>
-              <Input value={form.name}
+              <Input value={form.name} placeholder={m.couponNamePh}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </FormField>
-            <FormField label={m.couponType}>
+            <FormField label={m.couponType} hint={typeTip}>
               <Dropdown value={form.type} options={typeOpts} ariaLabel={m.couponType}
                 onChange={(v) => setForm({ ...form, type: v })} />
             </FormField>
             <FormField label={m.couponFaceYuan} required>
-              <Input inputMode="decimal" value={form.faceValueYuan}
+              <Input inputMode="decimal" value={form.faceValueYuan} placeholder={m.couponFacePh}
                 onChange={(e) => setForm({ ...form, faceValueYuan: e.target.value })} />
             </FormField>
             <FormField label={m.couponThresholdYuan}>
-              <Input inputMode="decimal" value={form.thresholdYuan}
+              <Input inputMode="decimal" value={form.thresholdYuan} placeholder={m.couponThresholdPh}
                 onChange={(e) => setForm({ ...form, thresholdYuan: e.target.value })} />
             </FormField>
             <FormField label={m.couponValidDays}>
-              <Input inputMode="numeric" value={form.validDays}
+              <Input inputMode="numeric" value={form.validDays} placeholder={m.couponValidDaysPh}
                 onChange={(e) => setForm({ ...form, validDays: e.target.value })} />
             </FormField>
             <FormField label={m.couponTotalQty}>
-              <Input inputMode="numeric" value={form.totalQty}
+              <Input inputMode="numeric" value={form.totalQty} placeholder={m.couponTotalQtyPh}
                 onChange={(e) => setForm({ ...form, totalQty: e.target.value })} />
             </FormField>
           </div>
-          {formError && <div className="mt-3"><ErrorBanner message={formError} /></div>}
         </Drawer>
       )}
     </div>

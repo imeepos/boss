@@ -2,6 +2,8 @@
 export { PageHead, pagerTexts, ErrorBanner, ActionLinks, ActionLink, ActionSep, SearchBar, ToolbarButton } from './page-head'
 export { Spinner, LoadingState, EmptyState, TableStateRow, CopyButton } from './feedback'
 export { FormField } from './form-field'
+export { SubmitButton } from './submit-button'
+export type { SubmitState } from './submit-button'
 export { DetailDrawer } from './detail-drawer'
 export type { DetailDrawerProps } from './detail-drawer'
 export { DataTable, TableFooter } from './data-table'
