@@ -1114,6 +1114,11 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 > - 待办通知：PENDING 落单（用户端自助 `POST /auth/verify`、后台代录 customer、师傅代录 worker）Emit 消息中心 todo，refType=`realname`、refID=`{subjectType}/{subjectId}`（同一主体多条 PENDING 共享一个待办，Link `/base/realname-review`）；审核终态 Resolve；已办结后同主体再次落单 → Emit 复活该待办（重置未办/刷新标题/清读回执，行数不增）。自动通道即时判定（PASS/FAIL）不落待办。
 > - 审核回执：人工审核终态向客户 portal_messages 写 category=`system` 站内消息（PASS「实名认证已通过」/ FAIL「实名认证未通过」含驳回原因），App 端未知分类回退默认图标并展示于"全部"页签；师傅侧同终态写 worker_messages（INFO/WARN，§7.4，无驳回原因字段故用通用指引文案）。
 > - 后台代录入口：客户档案页行操作「实名代录」抽屉——回显 `GET /customers/:id/real-name` 最新单（40410=暂无核验单，含证件照预览），以 `{realName,idCardNo,method}` 提交同端点落 PENDING/自动判定；客户核验记录抽屉结果列三态 PASS/FAIL/PENDING（PENDING 不再渲染为不通过）。
+>
+> 2026-09-04 消息列表口径（客户端链路修复）：用户端 `GET /messages` 的 `messageId` 恒为
+> portal_messages 数字主键（单条已读 `PUT /messages/{messageId}/read` 的寻址键），payload
+> 快照的 MSG- 展示编号降级为 `messageNo` 展示；`read`/`createdAt` 以表列为单一事实源，
+> 快照同名键不覆盖（单条已读/read-all/home 红点三者一致）。
 
 ## 8B. Q1 客服与应收信用基础（internal/domain/cs + internal/domain/ar，000118）
 
@@ -1186,6 +1191,10 @@ ISSUED/USED/EXPIRED/DISABLED。
 
 `coupon_codes`（兑换码批次）：`code_id` PK、`code` UNIQUE、`template_id`、`status`
 （UNUSED/REDEEMED/DISABLED）、`redeemed_by` → customers、`redeemed_at`。
+
+> 2026-09-04 兑换码业务码口径（客户端链路修复）：`POST /coupons/redeem` 码不存在 →
+> 40400「兑换码不存在」；码已用/停用 → 40900「兑换码已被使用或已停用」；模板停用 →
+> 40900「券模板已停用」；限领/超发冲突 → 40900 透传原因（替代修复前一律 50000）。
 
 `coupon_redemptions`（核销记录，缴费同事务写入）：`redemption_id` PK、`coupon_id` → coupons、
 `payment_id`（逻辑关联 payments）、`customer_id`、`deducted_amount`（实际抵扣分）、`created_at`。
