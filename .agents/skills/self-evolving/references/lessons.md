@@ -482,3 +482,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 OpenAPI yaml flow mapping {} 内的 plain scalar 含 ASCII 逗号或以 > 开头的片段时,修复是用单引号包裹 scalar,否则解析报 "found character that cannot start any token"。skill 没提前警告我。
 - 当要改 SQL 拼装逻辑时,修复是抽成纯函数先写纯单测再接 DB——本次纯单测先于集成抓出 FROM 出现在 WHERE 之后的真 bug。skill 有可测性预告,无此具体坑。
 - 当验收/自测脚本要解析工具二进制时,非登录 shell 的 PATH 常不含 ~/bin,command -v 找不到即静默回落到技能 assets 里过期的预编译产物(bossctl 464 vs 线上 509 误判实证 2026-09-04);修复是指定解析链 env > PATH > 显式安装目录 > 源码临时编译,并显式禁止回落过期资产。
+- 当 run_code 里调无参工具(如 session_link_list)报 binding arguments must be lossless JSON 时,修复是显式传 {}。skill 没提前警告我。
+- 当 node -e 的双层引号命令静默无输出且 exit 0 时,修复是写临时 .mjs 文件再 node 执行,不在 -e 里叠引号(2026-09-04 实证)。

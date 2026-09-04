@@ -629,3 +629,9 @@ SQL
 - 正解:先 `grep -o 'assets/[A-Za-z0-9_-]*\.js' index.js | sort -u` 拉分片清单,再逐片 grep 特征串;或直接用 `bash scripts/ops/verify-deploy.sh --expect-sha <sha>`(文件名一致性口径)+ 分片内容 grep 双确认。
 - 注意 grep 结果里的文件名有语义:命中分片名可能与特性所在页面组件不同名(共享 chunk 按任一成员命名,如 customer 抽屉代码在 RegistrationQueueDrawer-*.js),文件名不像≠没部署。
 查 102 上服务真实运行配置:先 ps 拿 pid,再 ssh 执行 tr '\0' '\n' < /proc/<pid>/environ 看 true env——systemctl status/cat 可能显示 inactive 或与实况不符(进程另有启动来源),部署文档也可能滞后(2026-09-03 验证有效)。
+
+## DSH 宿主数据目录与持久化登记排查(2026-09-04 实证)
+
+场景 → 验证 workspace_session_manage archiveSession 这类宿主侧操作是否真实生效;workspace_list/session_link_list 均不过滤归档态,GUI 截图受模型图像输入限制时不可依赖。
+怎么用 → ① lsof -nP -iTCP:18181 -sTCP:LISTEN 拿 pid;② ps -p <pid> -wwE -o command= 看 DSH_HOME(18181 实例是 /Users/imeepos/.dsh/dsh012-clean,不是默认 ~/.dsh,后者是另一实例的旧数据);③ 直读 $DSH_HOME/storages/workspace.json 验收,结构 {unit, global:{initialized,workspaceIds,archivedSessionIds}, tables:{workspaces:{<id>:record}}},归档登记在 global.archivedSessionIds(跨工作区全局集合)。
+注意 → archiveSession 响应的 archivedSessionIds 是全局登记表全集(含历史归档约 250 条),不是本次影响集;逐个归档 N 个会话就发 N 次调用,每次只带一个 sessionId,别试图一次传数组。

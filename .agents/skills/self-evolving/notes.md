@@ -1641,3 +1641,7 @@
 - skill 是否提前警告:#11 已警告美元花括号与反引号,但未覆盖「bash 命令串整体也被模板化」与「token 重放后转义形态需机械对照」;已喂回 recidivism #11(5→6)并补 known-issues fail-in-subshell 条。
 - 重来一次怎么做:含特殊字符的长内容第一步就写 token 法生成器;生成后立即对关键行(造数 body、sql()、trap)printf 原样对照;造数 API 在完整 E2E 前先单点冒烟;清扫口径一开始就用固定业务前缀(acc_tl1_)而非本轮 stamp——assert 与造数口径解耦,否则自查自嗨假绿(本轮真实踩中并返工一次)。
 - 其他沉淀:102 野实例处置走「协调广播+预声明兜底语义+SIGTERM+文档留痕」零冲突;main 已前进时按协议 worktree 反向 merge 再门禁再 ff,一次通过。
+## 2026-09-04 DSH 工作区会话清理(31 会话归档)
+- 哪个坑最耗时:验收环节三连——①模型 GLM-5.3-Flash 无图像输入,cdp 截图后 read_image 被拒(台账 3→4);②两个实例数据目录搞混(~/.dsh 与 ~/.dsh/dsh012-clean),差点拿错数据下结论;③解析 workspace.json 时把结构猜成 global.state,实际归档集在 global.archivedSessionIds,多耗一轮。另 session_link_list 无参调用报 lossless JSON 错,须传 {}。
+- skill 有没有提前警告:红线 7 已有但截图前没想起模型能力;其余红线全部生效——node -e 双引号嵌套静默无输出后立即改临时 .mjs 脚本,零纠缠;sed 改过的文件再 write 报 file changed,立即换新文件名绕开。
+- 重来一次会怎么做:验收宿主侧操作先想「数据在哪、谁能机械读」——lsof 定端口进程 + ps -wwE 拿 DSH_HOME 直读持久化文件是通用路径;模型不支持图像时不试错,直接换登记表 grep 类机械证据。
