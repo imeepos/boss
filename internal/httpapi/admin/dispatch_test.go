@@ -131,6 +131,9 @@ func (f *fakeOrderLedger) ListActivationCallbacks(context.Context) ([]order.Acti
 func (f *fakeOrderLedger) AppendActivationCallback(context.Context, order.ActivationCallback) (int64, error) {
 	return 0, nil
 }
+func (f *fakeOrderLedger) LatestActivationCallback(context.Context, int64) (*order.ActivationCallback, error) {
+	return nil, nil
+}
 func (f *fakeOrderLedger) RetryActivationCallback(context.Context, int64) error {
 	return nil
 }

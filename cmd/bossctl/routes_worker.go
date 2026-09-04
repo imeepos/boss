@@ -53,7 +53,7 @@ var workerRoutes = []routeEntry{
 	{"POST", "/tickets/:ticketNo/report", "提交装维结果上报(环节 10)"},
 	{"GET", "/tickets/:ticketNo/activation", "激活状态(LOID / 激活结果 / 上次尝试)"},
 	{"POST", "/tickets/:ticketNo/activate", "重新激活(环节 10,失败可反复重试,连续失败转告警派单)"},
-	{"POST", "/tickets/:ticketNo/sign", "客户电子签收(留痕回执,工单流转为完成)"},
+	{"POST", "/tickets/:ticketNo/sign", "客户电子签收(留痕回执,工单流转为完成;前置闸门=扫码绑定+上报+激活成功,未满足回 40910+reason)"},
 	{"GET", "/tickets/:ticketNo/charge", "现场收款预取(应收金额/方式;额度=预付费订单月数x月费,额度按 stripe 通道配置动态下发)"},
 	{"POST", "/tickets/:ticketNo/charge", "确认现场收款(pay_no 落账 payments 流水,同步生成电子收据)"},
 	{"GET", "/home", "工作台首页(今日业绩 + 进行中工单)"},

@@ -124,6 +124,9 @@ func (f *fakeWorkerOps) ListTools(context.Context, int64) ([]worker.Tool, error)
 func (f *fakeWorkerOps) AppendTool(context.Context, worker.Tool) (int64, error) {
 	return 0, nil
 }
+func (f *fakeWorkerOps) ResolveFactSnapshot(context.Context, int64) (*worker.FactSnapshot, error) {
+	return nil, worker.ErrGroupInvalid
+}
 func (f *fakeWorkerOps) ListFeedbacks(context.Context, int64) ([]worker.Feedback, error) {
 	return nil, nil
 }
