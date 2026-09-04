@@ -97,7 +97,12 @@ func workerReplacePostHandler(a *app.Application) gin.HandlerFunc {
 func workerAssetReturnHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		workerID, _ := portalWorker(c)
-		_, err := a.WorkerEvent.AppendAssetReturn(c.Request.Context(), workerAssetReturnOf(c, workerID))
+		snap, err := a.WorkerEvent.ResolveFactSnapshot(c.Request.Context(), workerID)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		_, err = a.WorkerEvent.AppendAssetReturn(c.Request.Context(), workerAssetReturnOf(c, snap))
 		if err != nil {
 			respondErr(c, err)
 			return

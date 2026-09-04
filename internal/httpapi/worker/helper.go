@@ -1,6 +1,6 @@
 package workerapi
 
-// W 师傅端门户辅助构造:领料/工具/旧件返库记录(名称来自主档,归属快照由域内默认)。
+// W 师傅端门户辅助构造:领料/工具/旧件返库记录(名称来自主档,归属快照服务端解析)。
 
 import (
 	"github.com/gin-gonic/gin"
@@ -45,10 +45,13 @@ func lookupToolItem(c *gin.Context, a *app.Application) *worker.ToolItem {
 	return tool
 }
 
-// workerAssetReturnOf 旧件返库登记:asset 待 EPC 反查(PENDING 确认流)。
-func workerAssetReturnOf(c *gin.Context, workerID int64) worker.AssetReturn {
+// workerAssetReturnOf 旧件返库登记:asset 待 EPC 反查(PENDING 确认流);快照取自师傅主档。
+func workerAssetReturnOf(c *gin.Context, snap *worker.FactSnapshot) worker.AssetReturn {
 	return worker.AssetReturn{
-		WorkerID: workerID, AssetID: 0, Reason: "旧件返库",
+		WorkerID: snap.WorkerID, GroupID: snap.GroupID, GroupName: snap.GroupName,
+		LegalEntityID: snap.LegalEntityID, LegalEntityName: snap.LegalEntityName,
+		RegionID: snap.RegionID, RegionName: snap.RegionName,
+		AssetID: 0, Reason: "旧件返库",
 		Status: "PENDING",
 	}
 }

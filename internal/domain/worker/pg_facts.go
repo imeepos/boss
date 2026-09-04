@@ -2,10 +2,35 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 const factSnap = `worker_id, group_id, group_name, legal_entity_id, legal_entity_name, region_id, region_name`
+
+// ResolveFactSnapshot 解析师傅当前班组/法人/区域快照。
+// 2026-09-04 任务A:工具借还/物料领用此前由 handler 传零值 group_id,稳定撞
+// worker_tools_group_id_fkey(23505)→ 50000;现改服务端解析,主档不可用回 40400。
+func (s *PGStore) ResolveFactSnapshot(ctx context.Context, workerID int64) (*FactSnapshot, error) {
+	var f FactSnapshot
+	err := s.db.QueryRow(ctx, `
+		SELECT w.id, w.group_id, g.name, g.legal_entity_id, le.name, w.region_id, COALESCE(r.name, '')
+		FROM workers w
+		JOIN worker_groups g ON g.id = w.group_id
+		JOIN legal_entities le ON le.id = g.legal_entity_id
+		LEFT JOIN regions r ON r.id = w.region_id
+		WHERE w.id = $1`, workerID).
+		Scan(&f.WorkerID, &f.GroupID, &f.GroupName, &f.LegalEntityID, &f.LegalEntityName, &f.RegionID, &f.RegionName)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrGroupInvalid
+	}
+	if err != nil {
+		return nil, fmt.Errorf("worker: resolve fact snapshot: %w", err)
+	}
+	return &f, nil
+}
 
 // ListPerformances 列出师傅绩效;workerID=0 返回全部。
 func (s *PGStore) ListPerformances(ctx context.Context, workerID int64) ([]Performance, error) {

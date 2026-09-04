@@ -77,8 +77,16 @@ func workerMaterialOutHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		workerID, _ := portalWorker(c)
-		_, err := a.WorkerEvent.AppendMaterial(c.Request.Context(), worker.Material{
-			WorkerID: workerID, ItemID: item.ID, Name: item.Name + " " + item.Spec, Qty: 1,
+		snap, err := a.WorkerEvent.ResolveFactSnapshot(c.Request.Context(), workerID)
+		if err != nil {
+			respondErr(c, err) // ErrGroupInvalid → 40400+reason,不再裸 FK 23505
+			return
+		}
+		_, err = a.WorkerEvent.AppendMaterial(c.Request.Context(), worker.Material{
+			WorkerID: snap.WorkerID, GroupID: snap.GroupID, GroupName: snap.GroupName,
+			LegalEntityID: snap.LegalEntityID, LegalEntityName: snap.LegalEntityName,
+			RegionID: snap.RegionID, RegionName: snap.RegionName,
+			ItemID: item.ID, Name: item.Name + " " + item.Spec, Qty: 1,
 		})
 		if err != nil {
 			respondErr(c, err)
@@ -145,8 +153,16 @@ func workerToolBorrowHandler(a *app.Application, borrowed bool) gin.HandlerFunc 
 			return
 		}
 		workerID, _ := portalWorker(c)
-		_, err := a.WorkerEvent.AppendTool(c.Request.Context(), worker.Tool{
-			WorkerID: workerID, ToolID: tool.ID, Name: tool.Name, Borrowed: borrowed,
+		snap, err := a.WorkerEvent.ResolveFactSnapshot(c.Request.Context(), workerID)
+		if err != nil {
+			respondErr(c, err) // ErrGroupInvalid → 40400+reason,不再裸 FK 23505
+			return
+		}
+		_, err = a.WorkerEvent.AppendTool(c.Request.Context(), worker.Tool{
+			WorkerID: snap.WorkerID, GroupID: snap.GroupID, GroupName: snap.GroupName,
+			LegalEntityID: snap.LegalEntityID, LegalEntityName: snap.LegalEntityName,
+			RegionID: snap.RegionID, RegionName: snap.RegionName,
+			ToolID: tool.ID, Name: tool.Name, Borrowed: borrowed,
 		})
 		if err != nil {
 			respondErr(c, err)

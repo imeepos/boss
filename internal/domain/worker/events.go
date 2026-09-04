@@ -74,6 +74,9 @@ type WorkerEventService interface {
 	AppendMaterial(ctx context.Context, m Material) (int64, error)
 	ListTools(ctx context.Context, workerID int64) ([]Tool, error)
 	AppendTool(ctx context.Context, t Tool) (int64, error)
+	// ResolveFactSnapshot 解析师傅当前班组/法人/区域快照(事实表落库前置;
+	// 师傅主档/班组不可用返回 ErrGroupInvalid)。
+	ResolveFactSnapshot(ctx context.Context, workerID int64) (*FactSnapshot, error)
 	ListFeedbacks(ctx context.Context, workerID int64) ([]Feedback, error)
 	AppendFeedback(ctx context.Context, f Feedback) (int64, error)
 	// ReviewFeedback 差评复核:need_review → false;未命中返回 ErrNotFound。
@@ -92,6 +95,18 @@ type WorkerEventService interface {
 	// AppendReplaceLog/ListReplaceLogs 换件登记流水(师傅端换机页)。
 	AppendReplaceLog(ctx context.Context, r ReplaceLog) (int64, error)
 	ListReplaceLogs(ctx context.Context, ticketNo string) ([]ReplaceLog, error)
+}
+
+// FactSnapshot 师傅事实快照(workers⨝worker_groups⨝legal_entities⨝regions):
+// worker_materials/worker_tools/asset_returns 等事实表 NOT NULL 快照列的取值来源。
+type FactSnapshot struct {
+	WorkerID        int64
+	GroupID         int64
+	GroupName       string
+	LegalEntityID   int64
+	LegalEntityName string
+	RegionID        int64
+	RegionName      string
 }
 
 // ReplaceLog 换件登记流水。
