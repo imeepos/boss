@@ -1702,3 +1702,23 @@
 - 坑: 给 S11 一个会话派「8 角色 17 场景模拟套件+修缺陷+收尾」的大包任务,执行近 6 小时才收敛;用户点名「你下发的任务太大了,责任在你」。大任务导致:负责人只能盲等轮询、无法中途机械验收、失败重做代价高。
 - 教训: 派发颗粒度=单会话 1-2 小时能闭环的事。套件类需求先由负责人在账本里拆成「骨架+分角色场景+证据归档+文档同步」多个小任务,每个带独立机械验收;依赖链显式标注(谁先谁后、谁可并行)。长任务必须在派发时写明范围冻结点(不许自由扩范围)。
 - 顺: devloop_accept 验收器超时上限兜不住 4 分钟级脚本(exit null),长验收命令由负责人手动实跑取退出码并在账本记录证据,验收器只留给秒级自检。
+
+## 2026-09-05 PP1-B 执行轮(bss/billing/intel 打磨)
+- 坑: run_code 顶层调用两连漏 description 参数(与红线 14 半成品调用同根),另两连发 no-op 占位 edit(old_string==new_string 被拒)。根因:起草到一半先发车,后补参数忘了补全。
+- 坑: 复合 bash 里 cd web/admin 跑完门禁后再 git add web/admin/...,相对路径按新 cwd 解析成 web/admin/web/admin 连错两次。修复:workdir 钉仓库根 + pnpm --dir 代替裸 cd,或 cd 后全程绝对路径。
+- 坑: 长 markdown 落盘试 bash heredoc 两连败(误写三箭头语法错;引号定界符又让反斜杠 n 不展开)。修复:tools.write + JS 行数组 join,内容先扫单引号/反引号/美元符花括号三件套。
+- 顺: 102 探测「假过滤」用反例判定(customerId=999999 返回全量=参数被忽略,首行同值纯属巧合),避免把巧合当功能;范围冻结下 StatusTag registry 等范围外缺口全部登记债务不修,零越界文件。
+
+## 2026-09-05 PP1-C 执行轮(boss/ams/oss 页面打磨)
+- 坑: cdp-admin-capture.mjs 的 --no-proxy 等布尔旗标在 parseArgs 里仍按「旗标+值」消耗两格,后置的 --logs/--eval 值被吞,静默丢功能(--logs 没落文件、eval 断言没执行,三连)。修复:--eval/--logs 一律放 --no-proxy 之前,布尔旗标永远放最后。
+- 坑: bss/user/filter.test.ts 注册时间用例按 +08:00 本地时区断言,本机 PDT 必红;门禁用 TZ=Asia/Shanghai 跑(与 102 同时区)——环境问题不是代码问题,别去改测试。
+- 坑: 并行会话推进 main 后,git diff main..HEAD 会把别人的新提交算进自己的变更文件数(23 vs 实际 21);统计与验收一律对自己的分支基线(merge-base)做。
+- 顺: 102「假 ID 探测路由」(POST /procurement/orders/99999999/cancel 返业务错 42200 而非 404)既证明路由在又不落库;admin 无 order_stages 读 API 时关联链选 asset 批次链(order 链无数据源,链口径以 data-relations §2.6 为准)。
+- 顺: run_code 里 tools.write 整文件落盘,内容含反引号时在双引号 JS 串用 \u0060 构造;${ 只在模板串里才炸,双引号串里是安全字面量——381 行 purchase 拆分用此法零回退。
+
+## 2026-09-05 PP1-A 执行轮(org/base/backup/profile/news/home/login/error/placeholder/partner 页面打磨)
+- 坑: bash 不带 workdir 时默认会话工作区(主树)——校验性 grep/od 连续 3 枪跑在主树上看到旧内容,一度误判「worktree 被并发回滚」,浪费两轮排查;recidivism 首行第 4 次登记。教训内化:worktree 轮的每一条 bash(哪怕只读 grep)都显式 workdir。
+- 坑: heredoc 写 TSX 时正则 \d 经 TS 串转义后落盘成单反斜杠(对),但 markdown 证据文档里的行内码反引号让宿主模板串直接 parse error——带反引号的内容一律先去掉反引号或用 String.fromCharCode(96),长文档直接以无反引号 markdown 落盘。
+- 坑: 长数组逐行拼文件内容会随机丢元素间逗号(两次),且容易混入占位残句;改为「tools.write 手术脚本 + 先 read 自校验再 node 执行」,或干脆全文件 heredoc 重写,零手工转录。
+- 顺: 能力对齐先读 api/openapi/admin/*.yaml 建能力矩阵再 curl 102 实测;DELETE /accounts 实测为软删(status=0 且列表仍返回),与页面停用等价 → 不补重复按钮,决策+实测证据进验收文档,避免同效双按钮。
+- 顺: 六页冒烟一次过(cdp-admin-capture + logs 过滤 + DOM 断言三重佐证);模型不吃图时用文件尺寸+断言+日志替代目检并如实标注「未目检像素」。
