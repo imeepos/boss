@@ -35,10 +35,10 @@ sc_customer_order() {
 	echo "[debug] orderresp=" + "$out" >&2
   ORDER_IDLE_NO=$(printf '%s' "$out2" | jno)
   if expect_ok "$scene" "$rc" "$out" && [ -n "$ORDER_MAIN_NO" ] && [ -n "$ORDER_MAIN_ID" ] && expect_ok "$scene" "$rc2" "$out2" && [ -n "$ORDER_IDLE_NO" ]; then
-    sim_pass customer "$scene"
+    sim_pass ROLE:customer "$scene"
   else
     [ -n "$EXPECT_FAIL_REASON" ] && reason="$EXPECT_FAIL_REASON"
-    sim_fail customer "$scene" "$reason"
+    sim_fail ROLE:customer "$scene" "$reason"
   fi
 }
 
@@ -47,9 +47,9 @@ sc_customer_cancel() {
   out=$(bc "$K_CUST" call POST user:/orders/$ORDER_IDLE_NO/cancel --data '{}'); rc=$?
   state=$(order_state "$ORDER_IDLE_NO")
   if expect_ok "$scene" "$rc" "$out" && printf '%s' "$state" | grep -q CANCELLED && ! bc "$K_CUST" call POST user:/orders/$ORDER_IDLE_NO/cancel --data '{}' >/dev/null 2>&1; then
-    sim_pass customer "$scene"
+    sim_pass ROLE:customer "$scene"
   else
-    sim_fail customer "$scene" "state=$state 或重复取消未被拒"
+    sim_fail ROLE:customer "$scene" "state=$state 或重复取消未被拒"
   fi
 }
 
@@ -59,9 +59,9 @@ sc_customer_change_addr() {
   printf -v ordbody '{"addressId":%s}' "$baid"
   out=$(bc "$K_CUST" call POST user:/orders/$ORDER_MAIN_NO/change-address --data "$ordbody"); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
-    sim_pass customer "$scene"
+    sim_pass ROLE:customer "$scene"
   else
-    sim_fail customer "$scene" "$EXPECT_FAIL_REASON"
+    sim_fail ROLE:customer "$scene" "$EXPECT_FAIL_REASON"
   fi
 }
 
@@ -89,9 +89,9 @@ sc_dispatch_assign() {
 sc_dispatch_report() {
   local scene="资源核查预占与派单(段2/3/8)"
   if [ "$DISP_R1" = "1" ] && [ "$DISP_R2" = "2" ]; then
-    sim_pass dispatch "$scene"
+    sim_pass ROLE:dispatch "$scene"
   else
-    sim_fail dispatch "$scene" "check_reserve=$DISP_R1 assign=$DISP_R2 ticket=$TICKET_NO"
+    sim_fail ROLE:dispatch "$scene" "check_reserve=$DISP_R1 assign=$DISP_R2 ticket=$TICKET_NO"
   fi
 }
 
@@ -103,9 +103,9 @@ sc_dispatch_shortage() {
 	echo "[debug] orderresp=" + "$out" >&2
   out=$(bc "$K_DISP" call POST /orders/$ORDER_EMPTY_NO/check-resource --data '{}'); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
-    sim_pass dispatch "$scene"
+    sim_pass ROLE:dispatch "$scene"
   else
-    sim_fail dispatch "$scene" "$EXPECT_FAIL_REASON"
+    sim_fail ROLE:dispatch "$scene" "$EXPECT_FAIL_REASON"
   fi
 }
 
@@ -114,9 +114,9 @@ sc_cashier_charge() {
   out=$(bc "$K_CASH" call POST /orders/$ORDER_MAIN_NO/charge --data '{}'); rc=$?
   stage=$(order_state "$ORDER_MAIN_NO" | awk -F/ '{print $1}')
   if expect_ok "$scene" "$rc" "$out" && [ -n "$stage" ] && [ "$stage" -ge 4 ] 2>/dev/null; then
-    sim_pass cashier "$scene"
+    sim_pass ROLE:cashier "$scene"
   else
-    sim_fail cashier "$scene" "stage=$stage $(printf '%s' "$EXPECT_LAST_OUT" | head -1)"
+    sim_fail ROLE:cashier "$scene" "stage=$stage $(printf '%s' "$EXPECT_LAST_OUT" | head -1)"
   fi
 }
 
@@ -124,16 +124,16 @@ sc_cashier_abnormal() {
   local scene="重复收费不落账与前置不符被拒" out rc before after
   out=$(bc "$K_CASH" call POST /orders/$ORDER_IDLE2_NO/charge --data '{}'); rc=$?
   if ! expect_fail "前置不符" "$rc" "$out"; then
-    sim_fail cashier "$scene" "$EXPECT_FAIL_REASON"
+    sim_fail ROLE:cashier "$scene" "$EXPECT_FAIL_REASON"
     return 0
   fi
   before=$(order_state "$ORDER_MAIN_NO")
   out=$(bc "$K_CASH" call POST /orders/$ORDER_MAIN_NO/charge --data '{}'); rc=$?
   after=$(order_state "$ORDER_MAIN_NO")
   if [ "$rc" -eq 0 ] && [ "$before" = "$after" ]; then
-    sim_pass cashier "$scene"
+    sim_pass ROLE:cashier "$scene"
   else
-    sim_fail cashier "$scene" "重复收费状态漂移 $before -> $after"
+    sim_fail ROLE:cashier "$scene" "重复收费状态漂移 $before -> $after"
   fi
 }
 
@@ -151,9 +151,9 @@ sc_reviewer_approve_reject() {
   WREG_REJECT_ID=$(printf '%s' "$out" | jid)
   bc "$K_REV" call POST /worker-registrations/$WREG_REJECT_ID/reject --data '{"note":"acc_ 模拟驳回:证件照模糊"}' >/dev/null; rc2=$?
   if [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ] && [ -n "$REG_REJECT_ID" ] && [ -n "$WREG_REJECT_ID" ]; then
-    sim_pass reviewer "$scene"
+    sim_pass ROLE:reviewer "$scene"
   else
-    sim_fail reviewer "$scene" "approve=$rc1 reject=$rc2 reg=$REG_REJECT_ID/$WREG_REJECT_ID"
+    sim_fail ROLE:reviewer "$scene" "approve=$rc1 reject=$rc2 reg=$REG_REJECT_ID/$WREG_REJECT_ID"
   fi
 }
 
@@ -173,9 +173,9 @@ sc_reviewer_resubmit_loop() {
   CUST_REG_IDS="$REG_REJECT_ID $REG_LOOP_ID"
   WORKER_REG_IDS="$WREG_REJECT_ID $WREG_LOOP_ID"
   if [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ] && [ -n "$REG_LOOP_ID" ] && [ -n "$WREG_LOOP_ID" ]; then
-    sim_pass reviewer "$scene"
+    sim_pass ROLE:reviewer "$scene"
   else
-    sim_fail reviewer "$scene" "重审 approve=$rc1/$rc2 reg=$REG_LOOP_ID/$WREG_LOOP_ID"
+    sim_fail ROLE:reviewer "$scene" "重审 approve=$rc1/$rc2 reg=$REG_LOOP_ID/$WREG_LOOP_ID"
   fi
 }
 
@@ -185,7 +185,7 @@ sc_admin_account_key() {
   out=$(curl -sS -m 15 -X POST "$SERVER/api/admin/v1/accounts" -H "X-API-Key: $K_ADMIN" -H "Content-Type: application/json" -d "$accbody"); rc=$?
   SIM_ACCOUNT_ID=$(printf '%s' "$out" | jid)
   if [ -z "$SIM_ACCOUNT_ID" ]; then
-    sim_fail admin "$scene" "建号失败 $out"
+    sim_fail ROLE:admin "$scene" "建号失败 $out"
     return 0
   fi
   aout=$(bc "$K_ADMIN" apikey create account/$SIM_ACCOUNT_ID rolesim-key); rc=$?
@@ -193,13 +193,13 @@ sc_admin_account_key() {
   if [ -n "$newkey" ]; then
     out=$(bc "$newkey" call GET /auth/me); rc=$?
     if [ "$rc" -eq 0 ]; then
-      sim_pass admin "$scene"
+      sim_pass ROLE:admin "$scene"
       return 0
     fi
-    sim_fail admin "$scene" "新 key 鉴权失败 $out"
+    sim_fail ROLE:admin "$scene" "新 key 鉴权失败 $out"
     return 0
   fi
-  sim_fail admin "$scene" "签发失败 $aout"
+  sim_fail ROLE:admin "$scene" "签发失败 $aout"
 }
 
 sc_admin_boundary() {
@@ -207,9 +207,9 @@ sc_admin_boundary() {
   out1=$(bc "$K_CUST" call GET /orders); rc1=$?
   out2=$(bc "$K_WORKER" call GET /orders); rc2=$?
   if expect_fail "$scene" "$rc1" "$out1" && expect_fail "$scene" "$rc2" "$out2"; then
-    sim_pass admin "$scene"
+    sim_pass ROLE:admin "$scene"
   else
-    sim_fail admin "$scene" "$EXPECT_FAIL_REASON"
+    sim_fail ROLE:admin "$scene" "$EXPECT_FAIL_REASON"
   fi
 }
 

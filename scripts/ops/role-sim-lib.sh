@@ -83,11 +83,11 @@ FAIL_COUNT=0
 
 sim_pass() {
   PASS_COUNT=$((PASS_COUNT + 1))
-  echo "PASS ROLE:$1 $2"
+  echo "PASS $1 $2"
 }
 sim_fail() {
   FAIL_COUNT=$((FAIL_COUNT + 1))
-  echo "FAIL ROLE:$1 $2 $3"
+  echo "FAIL $1 $2 $3"
 }
 
 EXPECT_LAST_OUT=""
@@ -194,27 +194,27 @@ SQL
 sc_worker_accept() {
   local scene="接单扫码激活签收" out rc
   out=$(bc "$K_WORKER" call POST worker:/tickets/$TICKET_NO/accept --data '{}'); rc=$?
-  expect_ok "$scene-accept" "$rc" "$out" || { sim_fail worker "$scene" "$EXPECT_FAIL_REASON"; return 0; }
+  expect_ok "$scene-accept" "$rc" "$out" || { sim_fail ROLE:worker "$scene" "$EXPECT_FAIL_REASON"; return 0; }
 }
 
 sc_worker_preactivate() {
   local scene="未扫码先激活被拒(时序异常)" out rc
   out=$(bc "$K_WORKER" call POST worker:/tickets/$TICKET_NO/activate --data '{}'); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
-    sim_pass worker "$scene"
+    sim_pass ROLE:worker "$scene"
   else
-    sim_fail worker "$scene" "$EXPECT_FAIL_REASON"
+    sim_fail ROLE:worker "$scene" "$EXPECT_FAIL_REASON"
   fi
 }
 
 sc_worker_finish() {
   local scene="接单扫码激活签收" out rc stage tasks_open waited=0
   out=$(bc "$K_WORKER" call POST worker:/tickets/$TICKET_NO/scan-bind --data '{"epc":"EPC-RLS-'"$GLOBAL_SFX"'"}'); rc=$?
-  expect_ok "$scene-scan" "$rc" "$out" || { sim_fail worker "$scene" "$EXPECT_FAIL_REASON"; return 0; }
+  expect_ok "$scene-scan" "$rc" "$out" || { sim_fail ROLE:worker "$scene" "$EXPECT_FAIL_REASON"; return 0; }
   out=$(bc "$K_WORKER" call POST worker:/tickets/$TICKET_NO/activate --data '{}'); rc=$?
-  expect_ok "$scene-activate" "$rc" "$out" || { sim_fail worker "$scene" "$EXPECT_FAIL_REASON"; return 0; }
+  expect_ok "$scene-activate" "$rc" "$out" || { sim_fail ROLE:worker "$scene" "$EXPECT_FAIL_REASON"; return 0; }
   out=$(bc "$K_WORKER" call POST worker:/tickets/$TICKET_NO/sign --data '{}'); rc=$?
-  expect_ok "$scene-sign" "$rc" "$out" || { sim_fail worker "$scene" "$EXPECT_FAIL_REASON"; return 0; }
+  expect_ok "$scene-sign" "$rc" "$out" || { sim_fail ROLE:worker "$scene" "$EXPECT_FAIL_REASON"; return 0; }
   stage=$(order_state "$ORDER_MAIN_NO")
   while [ $waited -lt 45 ]; do
     tasks_open=$(sql <<SQL
@@ -228,9 +228,9 @@ SQL
     if [ "$tasks_open" != "0" ]; then
       echo "[worker] INFO 下发任务未完结(tl1sim 环境暴露): $tasks_open 项" >&2
     fi
-    sim_pass worker "$scene"
+    sim_pass ROLE:worker "$scene"
   else
-    sim_fail worker "$scene" "stage=$stage 未完结下发任务=$tasks_open"
+    sim_fail ROLE:worker "$scene" "stage=$stage 未完结下发任务=$tasks_open"
   fi
 }
 
@@ -243,21 +243,21 @@ SELECT ticket_no FROM complaints WHERE description LIKE 'acc/_%' ESCAPE '/' ORDE
 SQL
 )
   if ! expect_ok "$scene" "$rc" "$out" || [ -z "$CMP_TICKET" ]; then
-    sim_fail kefu "$scene" "订单查询或投诉创建失败"
+    sim_fail ROLE:kefu "$scene" "订单查询或投诉创建失败"
     return 0
   fi
   bc "$K_KEFU" call POST /complaints/$CMP_TICKET/status --data '{"status":"PROCESSING"}' >/dev/null || {
-    sim_fail kefu "$scene" "受理失败"; return 0; }
+    sim_fail ROLE:kefu "$scene" "受理失败"; return 0; }
   bc "$K_KEFU" call POST /complaints/$CMP_TICKET/close --data '{}' >/dev/null || {
-    sim_fail kefu "$scene" "办结失败"; return 0; }
+    sim_fail ROLE:kefu "$scene" "办结失败"; return 0; }
   st=$(sql <<SQL
 SELECT status FROM complaints WHERE ticket_no='$CMP_TICKET';
 SQL
 )
   if [ "$st" = "CLOSED" ]; then
-    sim_pass kefu "$scene"
+    sim_pass ROLE:kefu "$scene"
   else
-    sim_fail kefu "$scene" "终态=$st"
+    sim_fail ROLE:kefu "$scene" "终态=$st"
   fi
 }
 
@@ -265,9 +265,9 @@ sc_kefu_no_order() {
   local scene="越权下单被拒(账号主体不可冒客户)" out rc
   out=$(bc "$K_KEFU" call POST user:/orders --data '{}'); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
-    sim_pass kefu "$scene"
+    sim_pass ROLE:kefu "$scene"
   else
-    sim_fail kefu "$scene" "$EXPECT_FAIL_REASON"
+    sim_fail ROLE:kefu "$scene" "$EXPECT_FAIL_REASON"
   fi
 }
 
@@ -275,9 +275,9 @@ sc_noc_provision() {
   local scene="端口查询与置备" out rc
   out=$(bc "$K_NOC" call GET /ports --query pageSize=50); rc=$?
   if expect_ok "$scene" "$rc" "$out" && [ -n "$OLT_ID" ] && printf '%s' "$out" | grep -q "P-RLS-"; then
-    sim_pass noc "$scene"
+    sim_pass ROLE:noc "$scene"
   else
-    sim_fail noc "$scene" "置备olt=$OLT_ID 或端口清单缺 P-RLS 标记"
+    sim_fail ROLE:noc "$scene" "置备olt=$OLT_ID 或端口清单缺 P-RLS 标记"
   fi
 }
 
@@ -285,8 +285,8 @@ sc_noc_cross_domain() {
   local scene="跨域调财务接口被拒" out rc
   out=$(bc "$K_NOC" call POST /orders/$ORDER_MAIN_NO/charge --data '{}'); rc=$?
   if expect_fail "$scene" "$rc" "$out" && printf '%s' "$out" | grep -qE '403|no permission'; then
-    sim_pass noc "$scene"
+    sim_pass ROLE:noc "$scene"
   else
-    sim_fail noc "$scene" "$EXPECT_FAIL_REASON"
+    sim_fail ROLE:noc "$scene" "$EXPECT_FAIL_REASON"
   fi
 }
