@@ -26,13 +26,19 @@ func TestPGStore_CreateAsset_BackfillTagBinding(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
 		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+	// 入账轨迹首行:建档即留痕
+	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
+		WithArgs(int64(3), "IN_STOCK").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	// 回填:未绑定标签 → bound_asset_id + BOUND。
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
 		WithArgs(int64(9), int64(3)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateAsset(context.Background(), Asset{
@@ -64,13 +70,19 @@ func TestPGStore_CreateAsset_TagAlreadyBound(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
 		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
-	// 标签已绑另一资产,UPDATE 影响 0 行 → ErrBindingConflict。
+	// 入账轨迹首行:建档即留痕
+	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
+		WithArgs(int64(3), "IN_STOCK").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// 标签已绑另一资产,UPDATE 影响 0 行 → ErrBindingConflict(整单回滚,不留孤儿资产)。
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
 		WithArgs(int64(9), int64(3)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+	mock.ExpectRollback()
 
 	s := NewPGStore(mock)
 	_, err = s.CreateAsset(context.Background(), Asset{
@@ -122,7 +134,8 @@ func TestPGStore_CreateTag_BackfillAssetBinding(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
-	// INSERT tag,bound_asset_id=5 → NULL 转换
+	// INSERT tag,bound_asset_id=5 → NULL 转换(事务化:CreateTag 全程包 tx)
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "TAG-0005", "EPC-0005", "UHF", int64(5), "BOUND", "95%").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(10)))
@@ -130,6 +143,7 @@ func TestPGStore_CreateTag_BackfillAssetBinding(t *testing.T) {
 	mock.ExpectExec(`UPDATE assets SET tag_id`).
 		WithArgs(int64(5), int64(10)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateTag(context.Background(), Tag{
@@ -158,13 +172,15 @@ func TestPGStore_CreateTag_AssetAlreadyBound(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "TAG-0006", "EPC-0006", "UHF", int64(5), "BOUND", "95%").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
-	// 资产.tag_id 已被另一标签占用 → UPDATE 0 行 → ErrBindingConflict。
+	// 资产.tag_id 已被另一标签占用 → UPDATE 0 行 → ErrBindingConflict(整单回滚)。
 	mock.ExpectExec(`UPDATE assets SET tag_id`).
 		WithArgs(int64(5), int64(11)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+	mock.ExpectRollback()
 
 	s := NewPGStore(mock)
 	_, err = s.CreateTag(context.Background(), Tag{
@@ -190,6 +206,7 @@ func TestPGStore_CreateTag_DBUniqueViolation_AssetBound(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "TAG-DUP", "EPC-DUP", "UHF", int64(5), "BOUND", "95%").
 		WillReturnError(&pgconn.PgError{
@@ -197,6 +214,7 @@ func TestPGStore_CreateTag_DBUniqueViolation_AssetBound(t *testing.T) {
 			ConstraintName: "uq_tags_bound_asset_notnull",
 			Message:        "duplicate key value violates unique constraint",
 		})
+	mock.ExpectRollback()
 
 	s := NewPGStore(mock)
 	_, err = s.CreateTag(context.Background(), Tag{
@@ -225,6 +243,7 @@ func TestPGStore_CreateAsset_DBUniqueViolation_TagBound(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
 		WithArgs("A-DUP", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
 		WillReturnError(&pgconn.PgError{
@@ -232,6 +251,7 @@ func TestPGStore_CreateAsset_DBUniqueViolation_TagBound(t *testing.T) {
 			ConstraintName: "uq_assets_tag_notnull",
 			Message:        "duplicate key value violates unique constraint",
 		})
+	mock.ExpectRollback()
 
 	s := NewPGStore(mock)
 	_, err = s.CreateAsset(context.Background(), Asset{
@@ -254,6 +274,7 @@ func TestPGStore_CreateTag_DBUniqueViolation_TagNoDup(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "DUP-NO", "EPC-NEW", "UHF", nil, "UNBOUND", "95%").
 		WillReturnError(&pgconn.PgError{
@@ -261,6 +282,7 @@ func TestPGStore_CreateTag_DBUniqueViolation_TagNoDup(t *testing.T) {
 			ConstraintName: "tags_tag_no_key",
 			Message:        "duplicate key value violates unique constraint",
 		})
+	mock.ExpectRollback()
 
 	s := NewPGStore(mock)
 	_, err = s.CreateTag(context.Background(), Tag{

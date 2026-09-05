@@ -125,6 +125,17 @@ func (s *PGStore) ConfirmReceipt(ctx context.Context, receiptID, accountID int64
 					"material", it.MaterialCode, "seq", i, "err", err)
 				return fmt.Errorf("procurement: insert asset: %w", err)
 			}
+			// 入账轨迹首行:与 asset.CreateAsset 同口径(adopted note
+			// 2026-09-06-asset-tag-quality-gate),靠 asset_code 唯一性反查。
+			_, err = tx.Exec(ctx,
+				`INSERT INTO asset_lifecycles(asset_id, status, changed_at)
+				 SELECT id, status, now() FROM assets WHERE asset_code = $1`, code)
+			if err != nil {
+				slog.ErrorContext(ctx, "[procurement] CONFIRM RECEIPT FAILED",
+					"stage", "insert_lifecycle", "receipt_id", receiptID, "batch_id", batchID,
+					"material", it.MaterialCode, "seq", i, "err", err)
+				return fmt.Errorf("procurement: insert asset lifecycle: %w", err)
+			}
 		}
 		// 同步 order_items.received_qty(累加)
 		_, err = tx.Exec(ctx,

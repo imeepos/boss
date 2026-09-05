@@ -35,13 +35,13 @@ func (s *PGStore) CreateBatch(ctx context.Context, b AssetBatch) (int64, error) 
 	return id, nil
 }
 
-// ListTags 列出全部电子标签。
-
 // CreateTag 新建电子标签,返回自增 id。
-// 预绑定资产时同步回填 assets.tag_id,并校验双绑一致性:
+// 事务内完成:INSERT tags + 预绑定时反向回填 assets.tag_id,任一步失败整单回滚,
+// 不再产生"标签已建但回填失败"的孤儿(2026-09-06 质量闸门, adopted note
+// 2026-09-06-asset-tag-quality-gate)。双绑一致性口径:
 // - 资产不存在 → ErrForeignKeyViolation(置备侧孤儿防御)
-// - 资产已被其他标签绑定 → ErrBindingConflict(阻断隐性双绑)
-// - 资产已被本标签占用 → 静幂等(回填 0 行,ALERT 留痕便于人工核对)
+// - 资产已被其他标签绑定 → ErrBindingConflict(回滚整单)
+// - 资产已被本标签占用 → 幂等(PG 16 命中同值仍返 1 行)
 func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 	// 预绑定前先校验资产存在(防孤儿标签)
 	if t.BoundAssetID > 0 {
@@ -54,8 +54,14 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 		}
 	}
 
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("asset: begin create tag: %w", err)
+	}
+	defer tx.Rollback(ctx) // 提交后 Rollback 为 no-op;失败路径负责回收半成品
+
 	var id int64
-	err := s.db.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		`INSERT INTO tags(legal_entity_id, tag_no, epc_code, band, bound_asset_id, status, battery)
 		 VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
 		t.LegalEntityID, t.TagNo, t.EpcCode, t.Band, idOrNil(t.BoundAssetID), t.Status, t.Battery).Scan(&id)
@@ -63,9 +69,9 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 		return 0, fmt.Errorf("asset: create tag: %w", classifyTagInsertErr(ctx, err, t))
 	}
 
-	// 预绑定时回填 assets.tag_id;冲突即返 ErrBindingConflict 让上层显式拒绝。
+	// 预绑定时回填 assets.tag_id;冲突即返 ErrBindingConflict 并整体回滚。
 	if t.BoundAssetID > 0 {
-		tag, err := s.db.Exec(ctx,
+		tag, err := tx.Exec(ctx,
 			`UPDATE assets SET tag_id = $2
 			 WHERE id = $1 AND (tag_id IS NULL OR tag_id = $2)`,
 			t.BoundAssetID, id)
@@ -81,13 +87,18 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 				t.BoundAssetID, ErrBindingConflict)
 		}
 	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("asset: commit create tag: %w", err)
+	}
 	return id, nil
 }
 
-// ListAssets 列出全部资产台账。
-
 // CreateAsset 新建资产,返回自增 id。
-// 校验 batch_id 和 legal_entity_id 存在性,防止孤儿资产。
+// 事务内完成:INSERT assets + 入账轨迹首行 + tag 双向绑定回填,任一步失败
+// 整单回滚,杜绝"资产已建但绑定失败"的中间态(2026-09-06 质量闸门):
+// - batch/legal entity 不存在 → ErrForeignKeyViolation
+// - 标签已被其他资产绑定 → ErrBindingConflict(回滚,不留孤儿资产)
 func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 	// 关联完整性校验
 	if a.BatchID > 0 {
@@ -109,8 +120,14 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 		}
 	}
 
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("asset: begin create asset: %w", err)
+	}
+	defer tx.Rollback(ctx) // 提交后 Rollback 为 no-op;失败路径负责回收半成品
+
 	var id int64
-	err := s.db.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		`INSERT INTO assets(asset_code, batch_id, legal_entity_id, legal_entity_name,
 		                    tag_id, address_id, region_id, region_name, type, status)
 		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
@@ -119,12 +136,21 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("asset: create asset: %w", classifyAssetInsertErr(ctx, err, a))
 	}
+
+	// 入账轨迹首行:资产生命周期从建档起完整(ITAM 惯例;历史 206 资产仅 6 条
+	// 轨迹的缺口即"建档不留痕",见 adopted note 2026-09-06-asset-tag-quality-gate)。
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO asset_lifecycles(asset_id, status, changed_at)
+		 VALUES($1, $2, now())`,
+		id, a.Status); err != nil {
+		return 0, fmt.Errorf("asset: initial lifecycle: %w", err)
+	}
+
 	// tag 双向绑定回填:assets.tag_id 写入时同步 tags.bound_asset_id/status,
 	// 与环节9 扫码核对(VerifyScan 要求 bound_asset_id 非空)口径对齐。
-	// 历史修复(d397e40)用 `bound_asset_id IS NULL` 哑条件会在标签侧先建并填 bound 时
-	// 静默跳过回填 → 资产变孤儿。改为显式比对目标值,冲突即返 ErrBindingConflict。
+	// 显式比对目标值,冲突即返 ErrBindingConflict 并整体回滚。
 	if a.TagID > 0 {
-		tag, err := s.db.Exec(ctx,
+		tag, err := tx.Exec(ctx,
 			`UPDATE tags SET bound_asset_id = $2, status = 'BOUND'
 			 WHERE id = $1 AND (bound_asset_id IS NULL OR bound_asset_id = $2)`,
 			a.TagID, id)
@@ -139,16 +165,18 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 				a.TagID, ErrBindingConflict)
 		}
 	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("asset: commit create asset: %w", err)
+	}
 	return id, nil
 }
-
-// GetAsset 按 id 查资产;未命中返回 ErrNotFound。
 
 // AppendLifecycle 记录一次状态/位置变更,返回自增 id。
 func (s *PGStore) AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64, error) {
 	var id int64
-	err := s.db.QueryRow(ctx, `
-		INSERT INTO asset_lifecycles(asset_id, status, address_id, address_name, worker_id, worker_name, changed_at)
+	err := s.db.QueryRow(ctx,
+		`INSERT INTO asset_lifecycles(asset_id, status, address_id, address_name, worker_id, worker_name, changed_at)
 		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
 		l.AssetID, l.Status, idOrNil(l.AddressID), l.AddressName, idOrNil(l.WorkerID), l.WorkerName, l.ChangedAt).Scan(&id)
 	if err != nil {
@@ -156,8 +184,6 @@ func (s *PGStore) AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64,
 	}
 	return id, nil
 }
-
-// ListReplacements 列出全部换新单。
 
 // SetAssetStatus 直改资产当前状态(换新完成联动:旧件→MAINTENANCE/新件→DEPLOYED);
 // 历史轨迹由调用方 AppendLifecycle 另行落行。
@@ -172,16 +198,11 @@ func (s *PGStore) SetAssetStatus(ctx context.Context, assetID int64, status stri
 	return nil
 }
 
-// ListStocktakes 列出全部盘点任务。
-// CreateStocktake / HandleStocktakeDiff 见 pg_stocktake.go(S10 盘点差异闭环)。
-
-// ListAssignments 列出资产持有台账,按生效时间升序。
-
 // AssignAsset 记录一次持有(领用/部署),返回自增 id。
 func (s *PGStore) AssignAsset(ctx context.Context, a AssetAssignment) (int64, error) {
 	var id int64
-	err := s.db.QueryRow(ctx, `
-		INSERT INTO asset_assignments(asset_id, worker_id, worker_name, address_id, address_name,
+	err := s.db.QueryRow(ctx,
+		`INSERT INTO asset_assignments(asset_id, worker_id, worker_name, address_id, address_name,
 		                              reason, operator_account_id, effective_from, effective_to)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
 		a.AssetID, idOrNil(a.WorkerID), a.WorkerName, idOrNil(a.AddressID), a.AddressName,

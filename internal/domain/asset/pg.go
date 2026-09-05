@@ -27,10 +27,12 @@ var ErrDiffPending = errors.New("asset: stocktake diff items pending")
 var ErrStocktakeState = errors.New("asset: stocktake state invalid")
 
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
+// Begin 供 CreateAsset/CreateTag 事务化写侧使用(失败整单回滚)。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 // PGStore 是 AssetService 接口的 PostgreSQL 实现(阶段3)。

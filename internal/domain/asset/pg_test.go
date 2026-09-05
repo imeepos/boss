@@ -96,10 +96,12 @@ func TestPGStore_CreateTag(t *testing.T) {
 	}
 	defer mock.Close()
 
-	// bound_asset_id=0 → nil
+	// bound_asset_id=0 → nil(事务化:CreateTag 全程包 tx)
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "TAG-0003", "EPC-0003", "UHF", nil, "UNBOUND", "95%").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateTag(context.Background(), Tag{
@@ -158,9 +160,15 @@ func TestPGStore_CreateAsset(t *testing.T) {
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
 		WithArgs("A-20260002", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
+	// 入账轨迹首行:建档即留痕
+	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
+		WithArgs(int64(2), "IN_STOCK").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateAsset(context.Background(), Asset{
@@ -381,13 +389,19 @@ func TestPGStore_CreateAsset_ResubmitIdempotent(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(1)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
 		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
+	// 入账轨迹首行:建档即留痕
+	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
+		WithArgs(int64(3), "IN_STOCK").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	// PG 16 行为:条件命中且值已相等仍返 1 行(并非 0 行)。
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
 		WithArgs(int64(9), int64(3)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateAsset(context.Background(), Asset{
@@ -416,12 +430,14 @@ func TestPGStore_CreateTag_ResubmitIdempotent(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "TAG-0007", "EPC-0007", "UHF", int64(5), "BOUND", "95%").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(12)))
 	mock.ExpectExec(`UPDATE assets SET tag_id`).
 		WithArgs(int64(5), int64(12)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateTag(context.Background(), Tag{

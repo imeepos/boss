@@ -686,6 +686,12 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 页面 asset.html 的「标签编号/EPC 码」经 `tag_id → tags` 反查展示，「位置」= `address_id`，「生命周期」= `status`。
 > 状态轨迹（TS 实体）：`asset_lifecycles`，资产每次状态/位置变更一行，含事发时 `address_id` + `address_name` 快照 + `changed_at`，历史不随当前状态漂移。
 > 区域/企业锚点（TS 实体）：`region_id`/`region_name`（部署地址所在经营区域，未部署为空）、`legal_entity_id`/`legal_entity_name`（企业），按地区/企业统计资产。
+> 数据质量闸门（000184，adopted 2026-09-06-asset-tag-quality-gate）：`status` 列 DB CHECK 枚举兜底
+> （assets 四态 / tags 三态，terms.md §4 为权威）；`assets.type` 仅拦空串（受控字典为 P1 路线，
+> 见 docs/design/asset-tag-research-mature-designs.md）。
+> 建档即留痕（000184 同批）：CreateAsset 与采购入库确认（ConfirmReceipt）同事务落
+> `asset_lifecycles` 首行（初始 status，changed_at=now()）；CreateAsset/CreateTag 写侧事务化，
+> 双绑回填冲突（ErrBindingConflict）时整单回滚，不再产生半成品孤儿。
 
 ### 4.2 ports（端口，源自 resource.html + 全案 4.2 Port）
 
