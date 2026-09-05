@@ -1,0 +1,47 @@
+[acceptance-lock] LOCK_ACQUIRED owner=role-demand-sim.sh pid=28305 ts=2026-09-05T13:54:49Z path=/tmp/boss-102-acceptance.lock
+全角色诉求模拟: 102=http://192.168.0.102:28080 后缀=06544928595
+[fixture] region4 entity prev=1 -> 1
+PASS ROLE:customer 客户自助下单
+PASS ROLE:customer 取消未受理订单
+PASS ROLE:cashier 合同收费(段4)
+PASS ROLE:cashier 重复收费不落账与前置不符被拒
+PASS ROLE:dispatch 资源核查预占与派单(段2/3/8)
+PASS ROLE:customer 施工段改地址被拒
+PASS ROLE:worker 未扫码先激活被拒(时序异常)
+[worker] INFO 下发任务未完结(tl1sim 环境暴露): 1 项
+PASS ROLE:worker 接单扫码激活签收
+PASS ROLE:dispatch 资源不足失败可观测
+PASS ROLE:kefu 订单查询与投诉受理办结
+PASS ROLE:kefu 越权下单被拒(账号主体不可冒客户)
+PASS ROLE:noc 端口查询与置备
+PASS ROLE:noc 跨域调财务接口被拒
+[debug] regsubmit={"code":0,"data":{"id":82,"status":"PENDING"},"msg":"ok"}
+PASS ROLE:reviewer 注册审批通过与驳回
+[debug] wapprove-out: {
+  "status": "APPROVED",
+  "workerId": 26
+}
+PASS ROLE:reviewer 驳回后重新提交再审闭环
+PASS ROLE:admin 受权建号与签发APIKey
+PASS ROLE:admin 客户师傅key调admin被拒(三表边界)
+收尾: 专项造数清理 + RLS 造数清理 + 孤儿巡检门禁
+[fixture] region4 entity restored
+  orders.customer_id -> customers: 0
+  orders.offer_id -> product_offers: 0
+  orders.channel_id -> channels: 0
+  lo_accounts.customer_id -> customers: 0
+  lo_accounts.qos_template_id -> qos_templates: 0
+  reserve_records.port_id -> ports: 0
+  reserve_records.order_id -> orders: 0
+  transfers.resource_id -> resources: 0
+  alarms.resource_id -> resources: 0
+  invoices.customer_id -> customers: 0
+  provision_logs.task_id -> provision_tasks: 0
+  provision_tasks.order_id -> orders: 0
+  orders.stage vs order_stages rows: 0
+  assets.tag_id -> tags: 0
+  tags.bound_asset_id -> assets: 0
+ORPHAN-GATE OK: 15 checks, all <= 0
+结果: PASS=17 FAIL=0
+ROLESIM-ALL-PASS
+[acceptance-lock] LOCK_RELEASED path=/tmp/boss-102-acceptance.lock
