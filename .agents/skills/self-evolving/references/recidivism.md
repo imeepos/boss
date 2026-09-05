@@ -31,7 +31,7 @@
 | 外部并行修改文件后未重新Read就edit("file changed since read") | 1 | 2026-08-20(ProfileScreen被僵尸进程回退后edit被拒) | 废一轮重读;与高频红线#1同源,计数并入其教训 |
 | 端口被陈旧进程 IPv4/IPv6 双绑导致"假 404/假路由缺失"(lsof 不在默认 PATH 需用 /usr/sbin 全路径) | 1 | 2026-08-19(后端冒烟:orphan ./server-new 占 127.0.0.1:18080,curl 打偏) | 空耗多轮误判自己路由没注册 |
 | 测试 fake 桩未完整实现 Go 接口全部方法(go vet 报缺方法) | 2 | 2026-08-19(fakeTaxStub 只写 ListInvoices、fakeUserData 缺 ListUserVerifyRecords 等); 2026-09-05(quadfixa 轮:order.OrderLedgerService 加 LatestActivationCallback、worker.WorkerEventService 加 ResolveFactSnapshot,admin 侧 fakeOrderLedger/fakeWorkerOps 缺方法编译失败——接口加方法先 grep 全仓 struct 实现/fake 补桩,不等 make check 兜底) | 编译期逐个撞,多轮修正 |
-| run_code 里 edit 调用漏 new_string(半成品调用发车) | 4 | 2026-09-05(quadfixa 轮四连:均为起草未完成就发车,只有 old_string 无 new_string,invalid arguments 废四轮) | edit 必须 old+new 成对齐全,删类显式给 new_string 空串;发车前默念双键 |
+| run_code 里 edit 调用漏 new_string(半成品调用发车) | 5 | 2026-09-05(quadfixa 轮四连:均为起草未完成就发车,只有 old_string 无 new_string,invalid arguments 废四轮); 2026-09-05(PP1 负责人轮:内层 tools.bash 漏必填 description 连炸 3 次,报错不指明哪层极易误判) | edit 必须 old+new 成对齐全,删类显式给 new_string 空串;内层工具调用同样逐项核对必填键(bash 要 description、devloop_ledger 要 ledgerJson);报错只说 missing 属性不说哪层,先数清是哪次调用缺键 |
 | Go 单测 `:=` 单值赋给返回多值的 helper 编译错 | 1 | 2026-08-19(signCustomerToken 返回 (string,error),`tok :=` 报 mismatch) | 一轮编译错误 |
 | 本机启动 boss 服务做冒烟(测试服务器只有 102 一台,提交后自动部署,本机配置低) | 1 | 2026-08-19(本地 go run /tmp/boss-new 冒烟,撞端口双绑假 404,用户明令"尽量不要本机启动") | 浪费多轮;应等 102 自动部署后用部署地址验证 |
 | git add 提交前不查暂存区,并行会话已 stage 的文件被扫进提交 | 1 | 2026-05-25(user端布局修复混入 gen-er-drawio 等 5 文件,soft reset 重来) | 提交污染,需拆分返工;add 前先 git diff --cached 复核 |
