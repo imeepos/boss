@@ -2100,6 +2100,8 @@ columns: ['Kod', 'Nama', 'Susunan', 'Aktif'],
       rangeText: '{from}-{to} daripada {count}',
       jumpText: 'Lompat ke',
       pageUnit: 'halaman',
+      statusLabel: 'Status',
+      contentLabel: 'Kandungan JSON',
     },
     provlogPage: {
       title: 'Log Provision',

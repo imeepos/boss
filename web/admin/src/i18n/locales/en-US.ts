@@ -2100,6 +2100,8 @@ columns: ['Code', 'Name', 'Sort', 'Enabled'],
       rangeText: '{from}-{to} of {count}',
       jumpText: 'Jump to',
       pageUnit: 'page',
+      statusLabel: 'Status',
+      contentLabel: 'Content JSON',
     },
     provlogPage: {
       title: 'Provision Logs',

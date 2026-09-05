@@ -2100,6 +2100,8 @@ columns: ['标识码', '名称', '排序', '启用'],
       rangeText: '第 {from}-{to} 条,共 {count} 条',
       jumpText: '跳至',
       pageUnit: '页',
+      statusLabel: '状态',
+      contentLabel: '内容 JSON',
     },
     provlogPage: {
       title: '下发日志',

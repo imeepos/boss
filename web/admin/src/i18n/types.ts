@@ -1901,6 +1901,8 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      statusLabel: string
+      contentLabel: string
     }
     provlogPage: {
       title: string

@@ -1,6 +1,7 @@
 // 盘点差异明细抽屉:扫码回填 + 逐条处置(CONFIRM/FIX/ESCALATE)。
 // 契约 GET /stocktakes/:taskId/items、POST .../scans、POST .../items/:itemId/handle。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
@@ -21,7 +22,6 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
   const s = t.pages.stock
   const [items, setItems] = useState<StocktakeItemRow[]>([])
   const [error, setError] = useState('')
-  const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [assetId, setAssetId] = useState('')
   const [scanStatus, setScanStatus] = useState('IN_STOCK')
@@ -41,13 +41,12 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
     if (busy || !assetId) return
     setBusy(true)
     setError('')
-    setMsg('')
     try {
       await apiFetch(`/stocktakes/${taskId}/scans`, {
         method: 'POST',
         body: { assetId: Number(assetId), status: scanStatus },
       })
-      setMsg(s.scanOk)
+      toast.success(s.scanOk)
       setAssetId('')
       load()
       onChanged()
@@ -66,13 +65,11 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
     }
     setBusy(true)
     setError('')
-    setMsg('')
     try {
       await apiFetch(`/stocktakes/${taskId}/items/${item.id}/handle`, {
         method: 'POST',
         body: { action, note: note.trim() },
       })
-      setMsg('')
       setNote('')
       load()
       onChanged()
@@ -143,7 +140,6 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
             <input className={input} value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
         )}
-        {msg && <div className="text-xs text-[var(--color-success)]">{msg}</div>}
         {error && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
       </div>
     </Drawer>
