@@ -494,3 +494,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当域接口加方法导致全仓 fake 桩编译失败时,修复是接口变更同一提交里 grep『实现该接口的 struct 名』逐个补零值方法,不等 make check 兜底(2026-09-05 quadfixa:LatestActivationCallback/ResolveFactSnapshot 连累 admin 两桩)。
 - 当上游查询要判断『同资源活跃行是否存在』且唯一索引只约束活跃态时,修复是置状态前先 SELECT 活跃行判同客户(刷新复用)或跨客户(业务冲突码),而不是等 23505 裸唯一键错变 50000(2026-09-05 任务A:uq_quad_links_address 部分唯一索引)。
 - 当依赖宿主把 run_code 程序体包进模板字符串时,修复是程序体内禁现美元符花括号序列本身也要动态构造(fromCharCode(36)+'{'),连改红线 11 条目都能被红线 11 咬(2026-09-05 实证)。
+- 当复合 bash 里 cd 子目录后还要操作仓库根文件时,修复是 workdir 钉仓库根 + pnpm --dir 代替裸 cd,或 cd 后全程绝对路径——cd 后相对路径按新 cwd 解析,git add 会静默找错目录报 fatal(2026-09-05 pp1b 两连)。
+- 当长 markdown 要落盘时,修复是 tools.write + JS 行数组 join 换行,不走 bash heredoc(三箭头手滑与引号定界符吃掉转义两连败,2026-09-05 pp1b)。
+- 当怀疑 API 查询参数是否生效时,修复是用不存在的资源值打反例(999999):返回空=真过滤,返回全量=参数被忽略;只看默认排序首行同值会误判巧合为功能(2026-09-05 pp1b:payments customerId 假过滤)。
