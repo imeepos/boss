@@ -1,15 +1,16 @@
 // 登录页:规格对齐 visual-design-prompts.md §3.4 登录页纵向参考,文本走 i18n。
 // 服务端选择器在账号密码上方:不自动弹框;未配置时选择器提示并拦截提交,由用户点"管理服务端"手动配置。
-import { useState, type CSSProperties, type FormEvent } from 'react'
+// 样式:令牌走 --color-* 静态色板(品牌面不随主题翻转);表单控件复用 auth-shell 体系。
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminLogin } from '../../api/auth'
 import logoFull from '../../assets/brand/logo-mark-gradient.png'
 import ornamentShield from '../../assets/brand/ornament-shield.png'
-import { AuthShell, BrandAside, inputStyle, buttonStyle, BRAND_NAVY } from '../auth-shell'
+import { AuthShell, BrandAside, inputStyle, buttonStyle } from '../auth-shell'
 import { AdCarousel } from '../auth-ads'
 import { useT } from '../../i18n'
 import { ServerManagerDialog } from '../../components/ServerManagerDialog'
-import { Dropdown } from '../../components/Dropdown'
+import { SimplePicker } from '../../components/pickers/SimplePicker'
 import { initialPickerState, pickServer, type ServerPickerState } from './serverPicker'
 
 export default function LoginPage() {
@@ -54,12 +55,12 @@ export default function LoginPage() {
         </BrandAside>
       }
     >
-      <div style={loginFormStyle}>
-        <img src={logoFull} alt="Sphere Boss" style={logoStyle} />
-        <h2 style={titleStyle}>{t.auth.login.title}</h2>
-        <p style={subStyle}>{t.auth.login.subtitle}</p>
-        <form onSubmit={onSubmit} style={{ marginTop: 12 }}>
-          <Dropdown
+      <div className="flex w-[274px] flex-col items-center pt-[38px]">
+        <img src={logoFull} alt="Sphere Boss" className="block h-10 w-10" />
+        <h2 className="m-0 mt-4 text-center text-[20px] font-bold leading-7 text-[var(--color-brand-navy-950)]">{t.auth.login.title}</h2>
+        <p className="m-0 mt-1.5 text-center text-xs leading-[18px] text-[var(--color-text-secondary)]">{t.auth.login.subtitle}</p>
+        <form onSubmit={onSubmit} className="mt-3">
+          <SimplePicker
             value={picker.activeId}
             options={[
               ...(!picker.servers.length ? [{ value: '', label: t.auth.login.serverNone }] : []),
@@ -67,11 +68,11 @@ export default function LoginPage() {
             ]}
             onChange={onPick}
             ariaLabel={t.auth.login.serverNone}
-            triggerStyle={{ width: 274 }}
+            minWidth={274}
           />
-          <span style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <a onClick={() => setManageOpen(true)} style={addLinkStyle}>{t.auth.login.serverManage}</a>
-            <a onClick={() => nav('/partner/apply')} style={addLinkStyle}>{t.auth.login.partnerApply}</a>
+          <span className="mb-3 flex items-center justify-between">
+            <a onClick={() => setManageOpen(true)} className="mb-3 block cursor-pointer text-[11px] text-[var(--color-text-link)]">{t.auth.login.serverManage}</a>
+            <a onClick={() => nav('/partner/apply')} className="mb-3 block cursor-pointer text-[11px] text-[var(--color-text-link)]">{t.auth.login.partnerApply}</a>
           </span>
           <input
             placeholder={t.auth.login.usernamePlaceholder}
@@ -84,56 +85,20 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ ...inputStyle, marginBottom: 0 }}
+            style={inputStyle}
+            className="!mb-0"
           />
-          {error && <div style={errStyle}>{error}</div>}
-          <button type="submit" disabled={busy} style={{ ...buttonStyle, marginTop: 12 }}>
+          {error && <div className="mt-2 text-[11px] leading-4 text-[var(--color-danger)]">{error}</div>}
+          <button type="submit" disabled={busy} style={buttonStyle} className="!mt-3">
             {busy ? t.auth.login.submitting : t.auth.login.submit}
           </button>
         </form>
-        <div style={linkRowStyle}>
-          <img src={ornamentShield} alt="" style={shieldStyle} />
-          <span style={{ color: '#7C8799' }}>{t.auth.login.assignedByAdmin}</span>
+        <div className="mt-5 flex items-center justify-center gap-1.5 text-xs">
+          <img src={ornamentShield} alt="" className="h-3.5 w-3.5" />
+          <span className="text-[var(--color-text-secondary)]">{t.auth.login.assignedByAdmin}</span>
         </div>
       </div>
       {manageOpen && <ServerManagerDialog onClose={() => { setManageOpen(false); setPicker(initialPickerState()) }} />}
     </AuthShell>
   )
-}
-
-const loginFormStyle: CSSProperties = {
-  width: 274,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  paddingTop: 38,
-}
-
-const logoStyle: CSSProperties = {
-  width: 40, height: 40, display: 'block',
-}
-
-const titleStyle: CSSProperties = {
-  margin: '16px 0 0', fontSize: 20, lineHeight: '28px', fontWeight: 700,
-  color: BRAND_NAVY, textAlign: 'center',
-}
-
-const subStyle: CSSProperties = {
-  margin: '6px 0 0', fontSize: 12, lineHeight: '18px', fontWeight: 400,
-  color: '#7C8799', textAlign: 'center',
-}
-
-const errStyle: CSSProperties = {
-  color: '#D94B4B', fontSize: 11, lineHeight: '16px', marginTop: 8,
-}
-
-const linkRowStyle: CSSProperties = {
-  marginTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-  gap: 6, fontSize: 12,
-}
-
-const shieldStyle: CSSProperties = { width: 14, height: 14 }
-
-const addLinkStyle: CSSProperties = {
-  display: 'block', marginBottom: 12, fontSize: 11, color: '#3D7EFF', cursor: 'pointer',
 }

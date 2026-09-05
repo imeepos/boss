@@ -1,7 +1,8 @@
 // 企业入驻申请页(公开,免登录):分步表单(企业信息→联系方式→合作意向)。
 // 每步本地校验(必填/格式),全部通过才允许提交;双主题/三语言。
 // 契约:POST /partner/applications(公开端点);提交成功展示回执号。
-import { useState, type CSSProperties, type ReactNode } from 'react'
+// 样式:令牌走 --color-* 静态色板(品牌面不随主题翻转),禁内联裸色值。
+import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { submitPartnerApplication } from '../../api/partner'
 import { useT } from '../../i18n'
@@ -19,17 +20,9 @@ const creditCodeRe = /^[0-9A-Z]{18}$/i
 const phoneRe = /^(1\d{10}|0\d{2,3}-?\d{7,8})$/
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-const labelStyle: CSSProperties = {
-  display: 'block', marginBottom: 4, fontSize: 12, color: 'var(--shell-content-text)',
-}
-const errStyle: CSSProperties = {
-  margin: '4px 0 0', fontSize: 12, color: 'var(--color-danger)',
-}
-const secondaryBtn: CSSProperties = {
-  ...buttonStyle, letterSpacing: 0,
-  background: 'transparent', color: 'var(--shell-content-text)',
-  border: '1px solid var(--shell-content-text)',
-}
+const LABEL_CLS = 'mb-1 block text-xs text-[var(--shell-content-text)]'
+const ERR_CLS = 'mt-1 text-xs text-[var(--color-danger)]'
+const SECONDARY_BTN_CLS = 'h-[37px] w-full cursor-pointer rounded-[5px] border border-[var(--shell-content-text)] bg-transparent text-sm font-semibold text-[var(--shell-content-text)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60'
 
 export default function PartnerApplyPage() {
   const t = useT()
@@ -96,7 +89,7 @@ export default function PartnerApplyPage() {
   const p = t.pages.partnerApply
   return (
     <AuthShell aside={<BrandAside tip={p.subtitle} />}>
-      <div style={{ padding: '56px 40px 0' }}>
+      <div className="px-10 pt-14">
       <h2 className="m-0 mb-1 text-xl font-bold text-[var(--shell-heading)]">{p.title}</h2>
       <p className="m-0 mb-5 text-xs text-[var(--shell-crumb-text)]">{p.subtitle}</p>
       {receiptId !== null ? <Receipt id={receiptId} onBack={() => navigate('/login')} /> : (
@@ -135,18 +128,18 @@ export default function PartnerApplyPage() {
           )}
           {step === 2 && (
             <Field label={p.businessDesc} required error={errors.businessDesc}>
-              <textarea style={{ ...inputStyle, height: 72, paddingTop: 8, resize: 'vertical' }}
+              <textarea style={inputStyle} className="h-[72px] resize-y !pt-2"
                 placeholder={p.businessDescPlaceholder} value={form.businessDesc}
                 onChange={(e) => set('businessDesc', e.target.value)} />
             </Field>
           )}
           {error && <p className="m-0 mb-3 text-xs text-[var(--color-danger)]">{error}</p>}
           <div className="flex items-center gap-3">
-            {step > 0 && <button style={secondaryBtn} onClick={goPrev}>{p.prev}</button>}
+            {step > 0 && <button className={SECONDARY_BTN_CLS} onClick={goPrev}>{p.prev}</button>}
             {step < STEP_FIELDS.length - 1 ? (
               <button style={buttonStyle} onClick={goNext}>{p.next}</button>
             ) : (
-              <button style={{ ...buttonStyle, letterSpacing: 4 }} disabled={submitting} onClick={submit}>
+              <button style={buttonStyle} className="!tracking-[4px]" disabled={submitting} onClick={submit}>
                 {submitting ? p.submitting : p.submit}
               </button>
             )}
@@ -169,11 +162,11 @@ function Field({ label, required, error, children }: {
 }) {
   return (
     <div className="mb-3">
-      <label style={labelStyle}>
-        {label}{required && <span style={{ color: 'var(--color-danger)' }}> *</span>}
+      <label className={LABEL_CLS}>
+        {label}{required && <span className="text-[var(--color-danger)]"> *</span>}
       </label>
       {children}
-      {error && <p style={errStyle}>{error}</p>}
+      {error && <p className={'m-0 ' + ERR_CLS}>{error}</p>}
     </div>
   )
 }
@@ -188,24 +181,21 @@ function StepBar({ step, labels }: { step: number; labels: string[] }) {
           <div key={label} className="flex flex-1 items-center gap-2" role="listitem">
             <span
               data-step={i}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
-              style={{
-                background: reached ? 'var(--color-brand-blue-700)' : 'transparent',
-                color: reached ? '#fff' : 'var(--shell-content-text)',
-                border: reached ? 'none' : '1px solid var(--shell-content-text)',
-              }}
+              className={'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ' + (reached
+                ? 'border-none bg-[var(--color-brand-blue-700)] text-[var(--color-text-on-dark)]'
+                : 'border border-[var(--shell-content-text)] bg-transparent text-[var(--shell-content-text)]')}
             >
               {i < step ? '✓' : i + 1}
             </span>
             <span
-              className="text-xs"
-              style={{ color: active ? 'var(--shell-heading)' : 'var(--shell-crumb-text)',
-                fontWeight: active ? 600 : 400 }}
+              className={'text-xs ' + (active
+                ? 'font-semibold text-[var(--shell-heading)]'
+                : 'text-[var(--shell-crumb-text)]')}
             >
               {label}
             </span>
             {i < labels.length - 1 && (
-              <span className="h-px flex-1" style={{ background: 'var(--shell-crumb-text)', opacity: 0.4 }} />
+              <span className="h-px flex-1 bg-[var(--shell-crumb-text)] opacity-40" />
             )}
           </div>
         )

@@ -6,7 +6,7 @@ export function PlaceholderPage({ title }: { title: string }) {
   return (
     <div>
       <h2>{title}</h2>
-      <p style={{ color: '#888' }}>{t.pages.placeholder.building}</p>
+      <p className="text-[var(--color-text-tertiary)]">{t.pages.placeholder.building}</p>
     </div>
   )
 }

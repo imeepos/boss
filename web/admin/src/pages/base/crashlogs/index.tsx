@@ -1,18 +1,15 @@
 // 客户端崩溃日志:GET /crash-logs 列表 + 单条堆栈展开排查。
 // 契约 admin/sys.yaml /crash-logs (menu:crash_logs);迁移 000140 授 sysadmin。
-import { useEffect, useState } from 'react'
+// 样式统一走 shell-* 令牌;堆栈面板主题中性底色,禁内联裸色值。
+import { Fragment, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { PageHead } from '../../../components/business/page-head'
+import { PageHead, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { EmptyState } from '../../../components/business/feedback'
 
-type CrashLog = {
-  id: number
-  subjectType: string
-  subjectId: number
-  app: string
-  log: string
-  createdAt: string
-}
+const TH = 'h-9 px-3 text-left text-xs font-semibold whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
+const TD = 'px-3 py-2.5 align-top text-[13px] whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
+const EXPAND_BTN = 'cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 py-1 text-xs text-[var(--shell-content-text)] hover:border-[var(--shell-input-border-hover)] hover:text-[var(--shell-heading)]'
 
 export default function CrashLogsPage() {
   const t = useT()
@@ -32,59 +29,61 @@ export default function CrashLogsPage() {
   return (
     <div>
       <PageHead title={t.pages.crashlogs.title} desc={t.pages.crashlogs.desc} />
-      <div style={{ marginBottom: 12 }}>
-        <button
-          style={{ padding: '6px 14px', border: '1px solid #d9d9d9', background: '#fff', borderRadius: 6, cursor: 'pointer' }}
-          onClick={load}
-        >
-          {t.pages.crashlogs.refresh}
-        </button>
+      <div className="mb-3">
+        <ToolbarButton onClick={load}>{t.pages.crashlogs.refresh}</ToolbarButton>
       </div>
       {error ? (
-        <div style={{ color: '#e54545', fontSize: 13, padding: '12px 0' }}>{error}</div>
+        <ErrorBanner message={error} className="!mx-0" />
       ) : logs.length === 0 ? (
-        <div style={{ color: '#999', padding: '24px 0' }}>{t.pages.crashlogs.empty}</div>
+        <EmptyState text={t.pages.crashlogs.empty} />
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
-              <th style={th}>{t.pages.crashlogs.colTime}</th>
-              <th style={th}>{t.pages.crashlogs.colApp}</th>
-              <th style={th}>{t.pages.crashlogs.colSubject}</th>
-              <th style={th}>{t.pages.crashlogs.colOp}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((l) => (
-              <>
-                <tr key={l.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                  <td style={td}>{new Date(l.createdAt).toLocaleString()}</td>
-                  <td style={td}>{l.app || '—'}</td>
-                  <td style={td}>
-                    {l.subjectType}/{l.subjectId || 0}
-                  </td>
-                  <td style={td}>
-                    <button style={btn} onClick={() => setOpenId(openId === l.id ? null : l.id)}>
-                      {openId === l.id ? t.pages.crashlogs.collapse : t.pages.crashlogs.expand}
-                    </button>
-                  </td>
-                </tr>
-                {openId === l.id ? (
-                  <tr>
-                    <td colSpan={4} style={{ background: '#1e1e1e', color: '#eaeaea', padding: 12, fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                      {l.log}
+        <div className="overflow-x-auto rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr>
+                <th className={TH}>{t.pages.crashlogs.colTime}</th>
+                <th className={TH}>{t.pages.crashlogs.colApp}</th>
+                <th className={TH}>{t.pages.crashlogs.colSubject}</th>
+                <th className={TH}>{t.pages.crashlogs.colOp}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((l) => (
+                <Fragment key={l.id}>
+                  <tr className="border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
+                    <td className={TD}>{new Date(l.createdAt).toLocaleString()}</td>
+                    <td className={TD}>{l.app || '—'}</td>
+                    <td className={TD}>
+                      {l.subjectType}/{l.subjectId || 0}
+                    </td>
+                    <td className={TD}>
+                      <button className={EXPAND_BTN} onClick={() => setOpenId(openId === l.id ? null : l.id)}>
+                        {openId === l.id ? t.pages.crashlogs.collapse : t.pages.crashlogs.expand}
+                      </button>
                     </td>
                   </tr>
-                ) : null}
-              </>
-            ))}
-          </tbody>
-        </table>
+                  {openId === l.id ? (
+                    <tr>
+                      <td colSpan={4} className="whitespace-pre-wrap break-words border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] p-3 font-mono text-xs text-[var(--shell-content-text)]">
+                        {l.log}
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
 }
 
-const th: React.CSSProperties = { textAlign: 'left', padding: '10px 12px', fontWeight: 600, color: '#555' }
-const td: React.CSSProperties = { padding: '10px 12px', verticalAlign: 'top' }
-const btn: React.CSSProperties = { padding: '4px 10px', border: '1px solid #d9d9d9', background: '#fff', borderRadius: 4, cursor: 'pointer', fontSize: 12 }
+type CrashLog = {
+  id: number
+  subjectType: string
+  subjectId: number
+  app: string
+  log: string
+  createdAt: string
+}
