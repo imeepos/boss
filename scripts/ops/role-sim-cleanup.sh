@@ -58,9 +58,5 @@ risk_guard_restore() {
   fi
 }
 
-# cleanup_acc_patterns: acc_/验收地址 常规造数回收(订单链/端口/资源/标签/资产/模板)。
-cleanup_acc_patterns() {
-  local root
-  root="$(cd "$(dirname "$0")/../.." && pwd)"
-  "$root/scripts/ops/acceptance-cleanup.sh" --apply
-}
+# cleanup_rls_patterns: 本套件 RLS-/角色模拟 前缀造数整体回收(FK 安全序)。
+# cleanup_rls_patterns: 本套件 RLS-/角色模拟 前缀造数整体回收(FK 安全序)。

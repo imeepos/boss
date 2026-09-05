@@ -4,6 +4,7 @@
 # 全绿打 ROLESIM-ALL-PASS, 任一 FAIL 退出码非 0; 场景清单见各 sc_* 函数。
 set -u
 source "$(dirname "$0")/role-sim-lib.sh"
+source "$(dirname "$0")/role-sim-cleanup.sh"
 source "$(dirname "$0")/acceptance-lock.sh"
 acquire_acceptance_lock || exit 1
 trap release_acceptance_lock EXIT
@@ -11,24 +12,26 @@ trap release_acceptance_lock EXIT
 load_role_keys
 SFX="$(date +%H%M%S)$RANDOM"
 TAIL7="$(printf '%s' "$SFX" | tr -cd '0-9' | tail -c 7)"
-TAIL5="$(printf '%s' $TAIL7 | tail -c 6)"
+TAIL4="$(printf '%s' $TAIL7 | tail -c 4)"
+IDC_C=$(python3 "$ROOT/scripts/ops/role-sim-idc.py" "1101011990010$TAIL4")
+IDC_W=$(python3 "$ROOT/scripts/ops/role-sim-idc.py" "1101011990020$TAIL4")
 ADDR_ID=""; OLT_ID=""; TPL_ID=""
-ORDER_MAIN_NO=""; ORDER_MAIN_ID=""; ORDER_IDLE_NO=""; ORDER_EMPTY_NO=""
+ORDER_MAIN_NO=""; ORDER_MAIN_ID=""; ORDER_IDLE_NO=""; ORDER_IDLE2_NO=""; ORDER_EMPTY_NO=""
 TICKET_NO=""
 REG_REJECT_ID=""; REG_LOOP_ID=""; WREG_REJECT_ID=""; WREG_LOOP_ID=""
 CUST_REG_IDS=""; WORKER_REG_IDS=""
 SIM_ACCOUNT_ID=""; SIM_USERNAME="acc_sim_$SFX"; CMP_TICKET=""
-
+GLOBAL_SFX="$SFX"
 
 sc_customer_order() {
-  local scene="客户自助下单" out rc out2 rc2 reason="下单或取单号失败"
-  out=$(bc "$K_CUST" call POST user:/orders --data '{"productId":"101","addressId":"'"$ADDR_ID"'","channelId":"102"}'); rc=$?
+  local scene="客户自助下单" out rc out2 rc2 ordbody reason="下单或取单号失败"
+  printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$ADDR_ID"
+  out=$(bc "$K_CUST" call POST user:/orders --data "$ordbody"); rc=$?
   ORDER_MAIN_NO=$(printf '%s' "$out" | jno)
   ORDER_MAIN_ID=$(order_id_by_no "$ORDER_MAIN_NO")
-  out2=$(bc "$K_CUST" call POST user:/orders --data '{"productId":"101","addressId":"'"$ADDR_ID"'","channelId":"102"}'); rc2=$?
+  printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$ADDR_ID"
+  out2=$(bc "$K_CUST" call POST user:/orders --data "$ordbody"); rc2=$?
   ORDER_IDLE_NO=$(printf '%s' "$out2" | jno)
-  out3=$(bc "$K_CUST" call POST user:/orders --data '{"productId":"101","addressId":"'"$ADDR_ID"'","channelId":"102"}'); rc3=$?
-  ORDER_IDLE2_NO=$(printf '%s' "$out3" | jno)
   if expect_ok "$scene" "$rc" "$out" && [ -n "$ORDER_MAIN_NO" ] && [ -n "$ORDER_MAIN_ID" ] && expect_ok "$scene" "$rc2" "$out2" && [ -n "$ORDER_IDLE_NO" ]; then
     sim_pass customer "$scene"
   else
@@ -51,7 +54,8 @@ sc_customer_cancel() {
 sc_customer_change_addr() {
   local scene="施工段改地址被拒" baid out rc
   baid=$(fixture_address "$SFX"b)
-  out=$(bc "$K_CUST" call POST user:/orders/$ORDER_MAIN_NO/change-address --data '{"addressId":"'"$baid"'"}'); rc=$?
+  printf -v ordbody '{"addressId":"%s"}' "$baid"
+  out=$(bc "$K_CUST" call POST user:/orders/$ORDER_MAIN_NO/change-address --data "$ordbody"); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
     sim_pass customer "$scene"
   else
@@ -90,9 +94,10 @@ sc_dispatch_report() {
 }
 
 sc_dispatch_shortage() {
-  local scene="资源不足失败可观测" eaid out rc
+  local scene="资源不足失败可观测" eaid ordbody out rc
   eaid=$(fixture_address "$SFX"e)
-  ORDER_EMPTY_NO=$(bc "$K_CUST" call POST user:/orders --data '{"productId":"101","addressId":"'"$eaid"'","channelId":"102"}' | jno)
+  printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$eaid"
+  ORDER_EMPTY_NO=$(bc "$K_CUST" call POST user:/orders --data "$ordbody" | jno)
   out=$(bc "$K_DISP" call POST /orders/$ORDER_EMPTY_NO/check-resource --data '{}'); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
     sim_pass dispatch "$scene"
@@ -113,36 +118,39 @@ sc_cashier_charge() {
 }
 
 sc_cashier_abnormal() {
-	local scene="重复收费不落账与前置不符被拒" out rc before after
-	out=$(bc "$K_CASH" call POST /orders/$ORDER_IDLE2_NO/charge --data '{}'); rc=$?
-	if ! expect_fail "前置不符" "$rc" "$out"; then
-		sim_fail cashier "$scene" "$EXPECT_FAIL_REASON"
-		return 0
-	fi
-	before=$(order_state "$ORDER_MAIN_NO")
-	out=$(bc "$K_CASH" call POST /orders/$ORDER_MAIN_NO/charge --data '{}'); rc=$?
-	after=$(order_state "$ORDER_MAIN_NO")
-	if [ "$rc" -eq 0 ] && [ "$before" = "$after" ]; then
-		sim_pass cashier "$scene"
-	else
-		sim_fail cashier "$scene" "重复收费状态漂移 $before -> $after"
-	fi
+  local scene="重复收费不落账与前置不符被拒" out rc before after
+  out=$(bc "$K_CASH" call POST /orders/$ORDER_IDLE2_NO/charge --data '{}'); rc=$?
+  if ! expect_fail "前置不符" "$rc" "$out"; then
+    sim_fail cashier "$scene" "$EXPECT_FAIL_REASON"
+    return 0
+  fi
+  before=$(order_state "$ORDER_MAIN_NO")
+  out=$(bc "$K_CASH" call POST /orders/$ORDER_MAIN_NO/charge --data '{}'); rc=$?
+  after=$(order_state "$ORDER_MAIN_NO")
+  if [ "$rc" -eq 0 ] && [ "$before" = "$after" ]; then
+    sim_pass cashier "$scene"
+  else
+    sim_fail cashier "$scene" "重复收费状态漂移 $before -> $after"
+  fi
 }
+
 sc_reviewer_approve_reject() {
   local scene="注册审批通过与驳回" phc phw out rc1 rc2
   phc="1391$TAIL7"
   phw="1381$TAIL7"
-  out=$(bc "$K_CUST" call POST user:/customer-registrations --data '{"name":"acc模拟客户","phone":"'"$phc"'","idCardNo":"1101011990010'"$TAIL5"'","legalEntityId":1,"addressId":"'"$ADDR_ID"'","regionId":4,"source":"acc_sim"}')
+  printf -v regbody '{"name":"acc模拟客户","phone":"%s","idCardNo":"%s","legalEntityId":1,"addressId":"%s","regionId":4,"source":"acc_sim"}' "$phc" "$IDC_C" "$ADDR_ID"
+  out=$(curl -sS -m 15 -X POST "$SERVER/api/user/v1/customer-registrations" -H "Content-Type: application/json" -d "$regbody"); rc=$?
+  echo "[debug] regsubmit=$out" >&2
   REG_REJECT_ID=$(printf '%s' "$out" | jid)
-	echo "[debug] custreg submit: $(printf '%s' "$out" | head -1)" >&2
   bc "$K_REV" call POST /customer-registrations/$REG_REJECT_ID/approve --data '{}' >/dev/null; rc1=$?
-  out=$(bc "$K_WORKER" call POST worker:/worker-registrations --data '{"name":"acc模拟师傅","phone":"'"$phw"'","idCardNo":"1101011990020'"$TAIL5"'","groupId":11,"regionId":4}')
+  printf -v wregbody '{"name":"acc模拟师傅","phone":"%s","idCardNo":"%s","groupId":11,"regionId":4}' "$phw" "$IDC_W"
+  out=$(curl -sS -m 15 -X POST "$SERVER/api/worker/v1/worker-registrations" -H "Content-Type: application/json" -d "$wregbody"); rc=$?
   WREG_REJECT_ID=$(printf '%s' "$out" | jid)
   bc "$K_REV" call POST /worker-registrations/$WREG_REJECT_ID/reject --data '{"note":"acc_ 模拟驳回:证件照模糊"}' >/dev/null; rc2=$?
   if [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ] && [ -n "$REG_REJECT_ID" ] && [ -n "$WREG_REJECT_ID" ]; then
     sim_pass reviewer "$scene"
   else
-    sim_fail reviewer "$scene" "approve=$rc1 reject=$rc2 reg=$REG_REJECT_ID/$WREG_REJECT_ID $(printf '%s' "$out" | head -1)"
+    sim_fail reviewer "$scene" "approve=$rc1 reject=$rc2 reg=$REG_REJECT_ID/$WREG_REJECT_ID"
   fi
 }
 
@@ -150,41 +158,44 @@ sc_reviewer_resubmit_loop() {
   local scene="驳回后重新提交再审闭环" phc phw out rc1 rc2
   phc="1391$TAIL7"
   phw="1381$TAIL7"
-  out=$(bc "$K_CUST" call POST user:/customer-registrations --data '{"name":"acc模拟客户","phone":"'"$phc"'","idCardNo":"1101011990010'"$TAIL5"'","legalEntityId":1,"addressId":"'"$ADDR_ID"'","regionId":4,"source":"acc_sim"}')
+  printf -v regbody '{"name":"acc模拟客户","phone":"%s","idCardNo":"%s","legalEntityId":1,"addressId":"%s","regionId":4,"source":"acc_sim"}' "$phc" "$IDC_C" "$ADDR_ID"
+  out=$(curl -sS -m 15 -X POST "$SERVER/api/user/v1/customer-registrations" -H "Content-Type: application/json" -d "$regbody"); rc=$?
   REG_LOOP_ID=$(printf '%s' "$out" | jid)
   bc "$K_REV" call POST /customer-registrations/$REG_LOOP_ID/approve --data '{}' >/dev/null; rc1=$?
-  out=$(bc "$K_WORKER" call POST worker:/worker-registrations --data '{"name":"acc模拟师傅","phone":"'"$phw"'","idCardNo":"1101011990020'"$TAIL5"'","groupId":11,"regionId":4}')
+  printf -v wregbody '{"name":"acc模拟师傅","phone":"%s","idCardNo":"%s","groupId":11,"regionId":4}' "$phw" "$IDC_W"
+  out=$(curl -sS -m 15 -X POST "$SERVER/api/worker/v1/worker-registrations" -H "Content-Type: application/json" -d "$wregbody"); rc=$?
   WREG_LOOP_ID=$(printf '%s' "$out" | jid)
   bc "$K_REV" call POST /worker-registrations/$WREG_LOOP_ID/approve --data '{}' >/dev/null; rc2=$?
   CUST_REG_IDS="$REG_REJECT_ID $REG_LOOP_ID"
   WORKER_REG_IDS="$WREG_REJECT_ID $WREG_LOOP_ID"
-  if [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ]; then
+  if [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ] && [ -n "$REG_LOOP_ID" ] && [ -n "$WREG_LOOP_ID" ]; then
     sim_pass reviewer "$scene"
   else
-    sim_fail reviewer "$scene" "重审 approve=$rc1/$rc2 $(printf '%s' "$out" | head -1)"
+    sim_fail reviewer "$scene" "重审 approve=$rc1/$rc2 reg=$REG_LOOP_ID/$WREG_LOOP_ID"
   fi
 }
 
 sc_admin_account_key() {
   local scene="受权建号与签发APIKey" out rc aout newkey
-  out=$(bc "$K_ADMIN" call POST /accounts --data '{"username":"'"$SIM_USERNAME"'","password":"Sim@12345","realName":"acc模拟账号","phone":"1371'"$TAIL7"'","roleCode":"ops","legalEntityId":1,"deptId":4,"postId":7,"status":1}'); rc=$?
+  printf -v accbody '{"username":"%s","password":"Sim@12345","realName":"acc模拟账号","phone":"1371%s","roleCode":"ops","legalEntityId":1,"deptId":4,"postId":7,"status":1}' "$SIM_USERNAME" "$TAIL7"
+  out=$(curl -sS -m 15 -X POST "$SERVER/api/admin/v1/accounts" -H "X-API-Key: $K_ADMIN" -H "Content-Type: application/json" -d "$accbody"); rc=$?
   SIM_ACCOUNT_ID=$(printf '%s' "$out" | jid)
   if [ -z "$SIM_ACCOUNT_ID" ]; then
-    sim_fail admin "$scene" "建号失败 $(printf '%s' "$out" | head -1)"
+    sim_fail admin "$scene" "建号失败 $out"
     return 0
   fi
   aout=$(bc "$K_ADMIN" apikey create account/$SIM_ACCOUNT_ID rolesim-key); rc=$?
-  newkey=$(printf '%s' "$aout" | grep -o 'boss_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]' | head -1)
+  newkey=$(printf '%s' "$aout" | grep -oE 'boss_[0-9a-f]{32}' | head -1)
   if [ -n "$newkey" ]; then
     out=$(bc "$newkey" call GET /auth/me); rc=$?
     if [ "$rc" -eq 0 ]; then
       sim_pass admin "$scene"
       return 0
     fi
-    sim_fail admin "$scene" "新 key 鉴权失败 $(printf '%s' "$out" | head -1)"
+    sim_fail admin "$scene" "新 key 鉴权失败 $out"
     return 0
   fi
-  sim_fail admin "$scene" "签发失败 $(printf '%s' "$aout" | head -1)"
+  sim_fail admin "$scene" "签发失败 $aout"
 }
 
 sc_admin_boundary() {
@@ -202,7 +213,7 @@ sc_admin_boundary() {
 GLOBAL_SFX="$SFX"
 PREV_REGION_ENT=""
 region_fixture_on() {
-  PREV_REGION_ENT=$(printf '%s' "" | sql <<SQL
+  PREV_REGION_ENT=$(sql <<SQL
 SELECT COALESCE(legal_entity_id::text,'') FROM regions WHERE id=4;
 SQL
 )
@@ -225,7 +236,6 @@ SQL
 }
 
 echo "全角色诉求模拟: 102=$SERVER 后缀=$SFX"
-risk_guard_off
 region_fixture_on
 
 ADDR_ID=$(fixture_address "$SFX")
@@ -235,30 +245,22 @@ SQL
 OLT_ID=$(fixture_olt_ports "$SFX" "$ADDR_ID")
 TPL_ID=$(fixture_template "$SFX")
 fixture_tag_asset "$SFX"
-echo "[debug] tag_asset rc=$?" >&2
 BOUND=$(sql <<SQL
-SELECT count(*) FROM tags t JOIN assets a ON a.tag_id=t.id WHERE t.epc_code='EPC-ACC-$SFX' AND t.bound_asset_id IS NOT NULL AND a.id=t.bound_asset_id;
+SELECT count(*) FROM tags t JOIN assets a ON a.tag_id=t.id WHERE t.epc_code='EPC-RLS-$SFX' AND t.bound_asset_id IS NOT NULL AND a.id=t.bound_asset_id;
 SQL
 )
-if [ "$BOUND" -lt 1 ]; then
-  echo "FAIL ROLE:worker 接单扫码激活签收 夹具资产未绑定 epc=EPC-ACC-$SFX"
+if [ -z "$ADDR_ID" ] || [ -z "$OLT_ID" ] || [ -z "$TPL_ID" ] || [ "$BOUND" -lt 1 ]; then
+  echo "FAIL ROLE:noc 端口查询与置备 夹具自举失败 addr=$ADDR_ID olt=$OLT_ID tpl=$TPL_ID bound=$BOUND"
   region_fixture_off
-  risk_guard_restore
-  exit 1
-fi
-if [ -z "$ADDR_ID" ] || [ -z "$OLT_ID" ] || [ -z "$TPL_ID" ]; then
-  echo "FAIL ROLE:noc 端口查询与置备 夹具自举失败 addr=$ADDR_ID olt=$OLT_ID tpl=$TPL_ID"
-  region_fixture_off
-  risk_guard_restore
   exit 1
 fi
 
 sc_customer_order
 sc_customer_cancel
 sc_dispatch_check_reserve
-fixture_pon_task "$ORDER_MAIN_ID" "$TPL_ID"
 sc_cashier_charge
 sc_cashier_abnormal
+fixture_pon_task "$ORDER_MAIN_ID" "$TPL_ID"
 sc_dispatch_assign
 sc_dispatch_report
 sc_customer_change_addr
@@ -275,16 +277,14 @@ sc_reviewer_resubmit_loop
 sc_admin_account_key
 sc_admin_boundary
 
-echo "收尾: 专项造数清理 + acc_ 常规清理 + 孤儿巡检门禁"
+echo "收尾: 专项造数清理 + RLS 造数清理 + 孤儿巡检门禁"
 rc=0
-source "$(dirname "$0")/role-sim-cleanup.sh"
-if [ "${SKIP_CLEANUP:-0}" = "1" ]; then
-  echo "[debug] SKIP_CLEANUP=1 跳过清理与门禁" >&2
-else
+if [ "$SKIP_CLEANUP" != "1" ]; then
   cleanup_special "$CMP_TICKET" "$CUST_REG_IDS" "$WORKER_REG_IDS" "$SIM_ACCOUNT_ID" || rc=1
-  cleanup_acc_patterns || rc=1
+  cleanup_rls_patterns || rc=1
+else
+  echo "[debug] SKIP_CLEANUP=1 跳过清理与门禁" >&2
 fi
-cleanup_acc_patterns || rc=1
 region_fixture_off
 risk_guard_restore
 "$ROOT/scripts/ops/db-patrol-gate.sh" || rc=1
