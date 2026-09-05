@@ -82,7 +82,7 @@ export default function AssetPage() {
             onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
         </div>
       </div>
-      {trail && <AssetTrailDrawer asset={trail} onClose={() => setTrail(null)} />}
+      {trail && <AssetTrailDrawer asset={trail} tag={tagOf(trail.tagId)} onClose={() => setTrail(null)} />}
     </div>
   )
 }

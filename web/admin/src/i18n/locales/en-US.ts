@@ -1123,6 +1123,11 @@ const enUS: Translations = {
       rangeText: '{from}-{to} of {count}',
       jumpText: 'Jump to',
       pageUnit: 'page',
+      relTitle: 'Relations',
+      relBatch: 'Batch',
+      relReceipt: 'Purchase receipt',
+      relOrder: 'Purchase order',
+      relTag: 'Bound tag',
     },
     tagPage: {
       title: 'E-Tags',

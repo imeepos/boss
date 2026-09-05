@@ -1,21 +1,39 @@
-// 资产状态轨迹 + 持有台账双页签抽屉:GET /assets/:assetId/lifecycle、/assets/:assetId/assignments。
-import { useEffect, useState } from 'react'
+// 资产详情抽屉:顶部关联区块(批次-采购入库单-标签链,data-relations §2.6)+ 状态轨迹/持有台账页签。
+// 契约 GET /assets/batches、/procurement/receipts(小表全量,客户端按 batchId 过滤)、
+// /assets/:assetId/lifecycle、/assets/:assetId/assignments;页签复用 business TabBar。
+import { useEffect, useState, type ReactNode } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
+import { TabBar } from '../../../components/business/tab-bar'
 import { useT } from '../../../i18n'
 import { fmtTime } from '../../../lib/format'
-import type { AssetRow, AssignmentRow, LifecycleRow } from '../types'
+import type { AssetRow, AssignmentRow, LifecycleRow, TagRow } from '../types'
 import { EmptyState } from '../../../components/business'
 
+type BatchRow = { id: number; code: string; name: string }
+type ReceiptLite = { id: number; receiptNo: string; orderNo: string; batchId: number; status: string }
+type RelTab = 'lifecycle' | 'assignment'
+
+function RelItem({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5 text-[13px]">
+      <span className="text-xs text-[var(--shell-group-title)]">{label}</span>
+      <span className="truncate text-[var(--shell-content-text)]">{children}</span>
+    </div>
+  )
+}
+
 export function AssetTrailDrawer({
-  asset, onClose,
-}: { asset: AssetRow; onClose: () => void }) {
+  asset, tag, onClose,
+}: { asset: AssetRow; tag?: TagRow; onClose: () => void }) {
   const t = useT()
   const a = t.pages.assetPage
-  const [tab, setTab] = useState<'lifecycle' | 'assignment'>('lifecycle')
+  const [tab, setTab] = useState<RelTab>('lifecycle')
   const [lifecycle, setLifecycle] = useState<LifecycleRow[] | null>(null)
   const [assignments, setAssignments] = useState<AssignmentRow[] | null>(null)
+  const [batch, setBatch] = useState<BatchRow | null>(null)
+  const [receipt, setReceipt] = useState<ReceiptLite | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -25,37 +43,45 @@ export function AssetTrailDrawer({
     apiFetch<{ items: AssignmentRow[] }>(`/assets/${asset.assetId}/assignments`)
       .then((d) => setAssignments(d?.items ?? []))
       .catch(() => setAssignments([]))
-  }, [asset.assetId]) // eslint-disable-line react-hooks/exhaustive-deps
+    // 关联链(批次-采购入库单):receipts/batches 为小表全量接口,客户端按 batchId 命中。
+    apiFetch<{ items: BatchRow[] }>('/assets/batches')
+      .then((d) => setBatch((d?.items ?? []).find((x) => x.id === asset.batchId) ?? null))
+      .catch(() => setBatch(null))
+    apiFetch<{ items: ReceiptLite[] }>('/procurement/receipts')
+      .then((d) => setReceipt((d?.items ?? []).find((x) => x.batchId === asset.batchId) ?? null))
+      .catch(() => setReceipt(null))
+  }, [asset.assetId, asset.batchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const head = (key: string, label: string) => (
-    <button key={key} onClick={() => setTab(key as 'lifecycle' | 'assignment')}
-      style={{
-        padding: '8px 16px', fontSize: 14, cursor: 'pointer', background: 'none', border: 'none',
-        borderBottom: tab === key ? '2px solid #1677ff' : '2px solid transparent',
-        color: tab === key ? '#1677ff' : '#666', fontWeight: tab === key ? 600 : 400,
-      }}>
-      {label}
-    </button>
-  )
+  const tabs = [
+    { key: 'lifecycle' as RelTab, label: a.lifecycle },
+    { key: 'assignment' as RelTab, label: a.assignment },
+  ]
 
   return (
-    <Drawer title={`${a.lifecycleTitle} · ${asset.assetCode}`} onClose={onClose}
+    <Drawer title={`${a.lifecycleTitle} · ${asset.assetCode}`} onClose={onClose} width={680}
       footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{t.pages.company.cancel}</button>}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
-        {head('lifecycle', a.lifecycle)}
-        {head('assignment', a.assignment)}
+      {/* 关联区块:批次 → 采购入库单 → 采购订单;标签经 /tags 联表传入。 */}
+      <div className="mx-4 mt-4 mb-3 rounded-sm border border-[var(--shell-side-border)] p-3">
+        <div className="mb-2 text-xs font-medium text-[var(--shell-group-title)]">{a.relTitle}</div>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          <RelItem label={a.relBatch}>{batch ? `#${batch.id} ${batch.code} ${batch.name}` : `#${asset.batchId}`}</RelItem>
+          <RelItem label={a.relReceipt}>{receipt ? receipt.receiptNo : '—'}</RelItem>
+          <RelItem label={a.relOrder}>{receipt?.orderNo || '—'}</RelItem>
+          <RelItem label={a.relTag}>{tag ? `${tag.tagNo} · ${tag.epcCode}` : asset.tagId ? `#${asset.tagId}` : '—'}</RelItem>
+        </div>
       </div>
+      <TabBar tabs={tabs} value={tab} onChange={setTab} />
       {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'lifecycle' ? (
         <div className="overflow-x-auto px-4 pb-4">
           <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.lifecycleColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
+            <thead><tr>{a.lifecycleColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
             <tbody>
               {(lifecycle ?? []).map((r) => (
                 <tr key={r.id}>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.changedAt)}</td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="asset" value={r.status} /></td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? `#${r.addressId}` : '—')}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? `#${r.workerId}` : '—')}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? '#' + r.addressId : '—')}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? '#' + r.workerId : '—')}</td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || '—'}</td>
                 </tr>
               ))}
@@ -68,12 +94,12 @@ export function AssetTrailDrawer({
       ) : (
         <div className="overflow-x-auto px-4 pb-4">
           <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.assignmentColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
+            <thead><tr>{a.assignmentColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
             <tbody>
               {(assignments ?? []).map((r) => (
                 <tr key={r.id}>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? `#${r.workerId}` : '—')}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? `#${r.addressId}` : '—')}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? '#' + r.workerId : '—')}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? '#' + r.addressId : '—')}</td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.reason || '—'}</td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.effectiveFrom)}</td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.effectiveTo ? fmtTime(r.effectiveTo) : '至今'}</td>

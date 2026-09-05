@@ -1123,6 +1123,11 @@ const msMY: Translations = {
       rangeText: '{from}-{to} daripada {count}',
       jumpText: 'Lompat ke',
       pageUnit: 'halaman',
+      relTitle: 'Hubungan',
+      relBatch: 'Kelompok',
+      relReceipt: 'Penerimaan pembelian',
+      relOrder: 'Pesanan pembelian',
+      relTag: 'Tag terikat',
     },
     tagPage: {
       title: 'Tag Elektronik',

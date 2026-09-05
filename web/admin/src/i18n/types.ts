@@ -897,6 +897,11 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      relTitle: string
+      relBatch: string
+      relReceipt: string
+      relOrder: string
+      relTag: string
     }
     tagPage: {
       title: string

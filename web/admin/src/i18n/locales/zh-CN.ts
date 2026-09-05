@@ -1123,6 +1123,11 @@ const zhCN: Translations = {
       rangeText: '第 {from}-{to} 条,共 {count} 条',
       jumpText: '跳至',
       pageUnit: '页',
+      relTitle: '关联关系',
+      relBatch: '所属批次',
+      relReceipt: '采购入库单',
+      relOrder: '采购订单',
+      relTag: '绑定标签',
     },
     tagPage: {
       title: '电子标签',
