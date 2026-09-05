@@ -1,157 +1,41 @@
 {
   "version": 1,
-  "project": "boss-主链路持续优化",
-  "updatedAt": "2026-09-05T15:42:15.831Z",
+  "updatedAt": "2026-09-05T23:14:27.325Z",
+  "project": "boss 资产与标签 P1 波次(调研报告 asset-tag-research-mature-designs.md + 计划 asset-tag-p1-plan.md)",
   "tasks": [
     {
-      "id": "T10",
-      "priority": "P0",
-      "title": "TL1 E2E 修复(S1 会话执行)",
-      "goal": "修复设备侧 record 证据断裂、清理段 SQL 三错、EXIT trap 退出码假绿,102 上三订单 E2E 全绿且造数清零",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'grep -q assert_sim_owner scripts/verify-tl1-e2e.sh && grep -q sim_login_probe scripts/verify-tl1-e2e.sh && grep -q \"mkdir -p\" scripts/verify-tl1-e2e.sh && grep -q \"trap .cleanup\" scripts/verify-tl1-e2e.sh && bash -n scripts/verify-tl1-e2e.sh && grep -q \"^PASS\" /tmp/tl1acc-final.log && echo TL1-ACC-OK'"
-    },
-    {
-      "id": "T11",
+      "id": "T1",
+      "title": "装机/拆机资产联动",
+      "goal": "quadlink 声明 AssetStateSink 窄接口,asset.PGStore 实现 MarkDeployed/MarkReleased(幂等轨迹);VerifyScan 三联动点+UnbindRequireScan;000185 存量补账;wiring 注入",
       "priority": "P1",
-      "title": "开户与拨号上网 E2E 补全(S2 会话执行)",
-      "goal": "mainchain 终态补认证账号一致与下发 SUCCESS 断言;新增 dial-acceptance 真实 RADIUS 三段认证(ACCEPT/停机REJECT/复机ACCEPT)且幂等可重复",
       "status": "done",
-      "acceptanceCommand": "bash -c 'test -x scripts/ops/dial-acceptance.sh && bash -n scripts/ops/dial-acceptance.sh && bash -n scripts/ops/mainchain-acceptance.sh && grep -q RADIUS scripts/ops/dial-acceptance.sh && grep -q ACCEPT scripts/ops/dial-acceptance.sh && grep -q REJECT scripts/ops/dial-acceptance.sh && grep -q 认证账号 scripts/ops/mainchain-acceptance.sh && grep -q SUCCESS scripts/ops/mainchain-acceptance.sh && echo DIAL-ACC-OK'"
+      "acceptanceCommand": "go build ./... && go vet ./internal/domain/quadlink/... ./internal/domain/asset/... && go test ./internal/domain/quadlink/... ./internal/domain/asset/... && test -z \"$(gofmt -l internal/domain)\""
     },
     {
-      "id": "T12",
+      "id": "T2",
+      "title": "标签回收闭环+事件流+报废路径",
+      "goal": "tag_events(000186)+报废端点 POST /assets/{assetId}/scrap+解绑端点 POST /tags/{tagId}/unbind;CreateTag/CreateAsset 同事务写 BIND 事件;openapi+两生成器重跑",
       "priority": "P1",
-      "title": "波次收口主树复核",
-      "goal": "S1/S2 均合并回 main 后:交付 commit 在 main + 孤儿巡检门禁通过",
       "status": "done",
-      "acceptanceCommand": "bash -c 'git merge-base --is-ancestor 58efffb0 main && git merge-base --is-ancestor 6c9b4e4f main && bash scripts/ops/db-patrol-gate.sh > /tmp/wave-patrol.log 2>&1 && echo WAVE-OK'"
-    },
-    {
-      "id": "T13",
-      "priority": "P1",
-      "title": "bossctl 重编译对齐 102 线上路由(S3 会话执行)",
-      "goal": "本地旧 bossctl 对 102 auth 404/saved key invalid token 已入 known-issues;重编译安装对齐后 auth 链路与免登录实测通,skill 文档同步",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/bossctl-acceptance.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/bossctl-acceptance.sh'"
-    },
-    {
-      "id": "T14",
-      "priority": "P1",
-      "title": "102 验收脚本共享时间窗锁(S4 会话执行)",
-      "goal": "三个带清扫的验收脚本统一互斥锁(102 锁文件+持锁者提示+TTL 15 分钟防死锁),机制化替代人工协调,减少并行互踩",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/accept-lock-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/accept-lock-selftest.sh'"
-    },
-    {
-      "id": "T15",
-      "priority": "P2",
-      "title": "admin 订单/工单时间戳业务时区展示统一(S5 会话执行)",
-      "goal": "订单号业务时区切日与列表 UTC 直出的观感错位(ISSUE.md 已登记)在展示层统一为 Asia/Shanghai,降低操作员核对误判",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/tz-display-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/tz-display-selftest.sh'",
-      "failCount": 2
-    },
-    {
-      "id": "T16",
-      "priority": "P1",
-      "title": "admin 订单时间信息缺失补全(S5 会话顺延)",
-      "goal": "订单列表补下单时间列(业务时区展示);调查并修复详情 timeline finishedAt 全缺失根因(后端序列化或数据回填口径,先 SQL 直查权威表再接口复核);操作员可在页面直接核对下单时间与订单号日期段",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/orders-time-columns-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/orders-time-columns-selftest.sh'"
-    },
-    {
-      "id": "T17",
-      "priority": "P1",
-      "title": "order_stages.finished_at 写入口径修复+历史回填(S6 会话执行)",
-      "goal": "订单环节推进路径统一写 finished_at(现存写入覆盖极窄:297 行仅 5 行非 NULL);历史数据按权威痕迹可推导回填、不可推导保持 NULL;102 实际执行回填",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/stage-finished-at-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/stage-finished-at-selftest.sh'"
-    },
-    {
-      "id": "T18",
-      "priority": "P2",
-      "title": "TL1 login DELAY 追帧修复(S7 会话执行)",
-      "goal": "login 改为与 Do 同款 DELAY 追帧循环,真实 U2000 对 LOGIN 回 DELAY 不再误报;解除仿真器 LOGIN 豁免;ISSUE.md 标注已修复",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/tl1-login-delay-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/tl1-login-delay-selftest.sh'"
-    },
-    {
-      "id": "T19",
-      "priority": "P0",
-      "title": "月度填报后端事实域(S9 会话执行)",
-      "goal": "落地月度事实填报:迁移 000181(编号现场复核)三事实表(用户与收入/网络与交付/财务与成本,粒度月×区域,UNIQUE(month,region))+51 Barangay 区域白名单种子(xlsx _RegionList 提取);CSV 导入(UTF-8 BOM,表头与 docs/books 模板逐字节一致,幂等 upsert,派生列服务端计算:期末在用=期初+新增-离网+调整,主营总收入=宽带+增值+一次性-优惠-退款)+CSV 导出闭环;admin API /api/admin/v1/monthly/*(regions/列表/upsert/import/export/summary KPI);fields.md+data-relations.md 契约同步;make check 全绿",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/monthly-report-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/monthly-report-selftest.sh'",
+      "acceptanceCommand": "go build ./... && go test ./internal/domain/asset/... ./internal/httpapi/admin/... && node scripts/gen-bossctl-routes.mjs --check && go run ./scripts/genrouteperms --check",
       "failCount": 1
     },
     {
-      "id": "T20",
+      "id": "T3",
+      "title": "型号字典 asset_models",
+      "goal": "000187:UNIQUE(vendor,model)+assets.model_id+存量播种回填;CreateAsset 支持 ModelID(Type 空取 category);GET/POST /asset-models;fields.md 同步",
       "priority": "P1",
-      "title": "admin 月度填报页面(S10 会话执行,依赖 T19 上 102)",
-      "goal": "intel 分组新增月度填报页:三页签对齐三事实表,月份/区域筛选,派生列只读,CSV 导入导出按钮,月度汇总 KPI 卡片(期末在用/总收入/及时完工率/端口利用率/回款率/ARPU);菜单/路由/i18n 中央登记独立小提交;禁原生 select 用 Dropdown.tsx;102 线上实测截图留档",
       "status": "done",
-      "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/monthly-admin-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/monthly-admin-selftest.sh'",
-      "failCount": 0
-    },
-    {
-      "id": "T21",
-      "priority": "P0",
-      "title": "全角色诉求模拟套件(S11 新会话执行)",
-      "goal": "以 8 类角色账号核心诉求为出发点,新建 scripts/ops/role-demand-sim.sh:每角色至少 1 正常+1 异常/边界场景(>=16),全部经 bossctl 对 102 真实执行,复用验收锁,acc_ 造数收尾清理,输出 PASS ROLE:<角色> 行与 ROLESIM-ALL-PASS ｜ 完成记录:2026-09-05 手动机械验收 exit 0 ROLESIM-ACC-OK(17 场景全绿,4.3 分钟);devloop 验收器超时上限低于脚本时长故 exit null,以实跑退出码为准;S11 修复缺陷 rbac menu:provision(0b68e7f7)/施工段改地址(3b8be8f1)",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'test -x scripts/ops/role-demand-sim.sh && bash -n scripts/ops/role-demand-sim.sh && grep -q \"ROLE:customer\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:worker\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:kefu\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:dispatch\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:cashier\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:noc\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:reviewer\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:admin\" scripts/ops/role-demand-sim.sh && bash scripts/ops/role-demand-sim.sh > /tmp/role-sim-acc.log 2>&1 && test \"$(grep -c \"^PASS ROLE:\" /tmp/role-sim-acc.log)\" -ge 16 && grep -q ROLESIM-ALL-PASS /tmp/role-sim-acc.log && echo ROLESIM-ACC-OK'",
+      "acceptanceCommand": "go build ./... && go test ./internal/domain/asset/... ./internal/httpapi/admin/... && node scripts/gen-bossctl-routes.mjs --check && go run ./scripts/genrouteperms --check",
       "failCount": 1
     },
     {
-      "id": "T23",
+      "id": "T4",
+      "title": "巡检扩展两查",
+      "goal": "quad_links.LINKED 但资产非 DEPLOYED;资产 SCRAPPED 但标签仍绑;复用 orphanChecks 注册表形状",
       "priority": "P1",
-      "title": "波次收口:主树干净+远端同步+会话归档(负责人执行)",
-      "goal": "T21/T22 均合并回 main 后:主树工作区干净,本地 main 与 gitea/main 一致,S11/S12 会话归档",
       "status": "done",
-      "acceptanceCommand": "bash -c 'test -z \"$(git status --porcelain)\" && [ \"$(git rev-parse main)\" = \"$(git rev-parse gitea/main)\" ] && echo WAVE-CLOSED-OK'",
-      "failCount": 1
-    },
-    {
-      "id": "T24",
-      "priority": "P2",
-      "title": "bossctl skill 文档同步 role-demand-sim(S13 新会话执行,与 T22 可并行)",
-      "goal": "在 .agents/skills/bossctl-cli/SKILL.md 增补 role-demand-sim 使用一节(用途/运行/角色覆盖/日志解读),test-accounts.json 的 role_audit 同步 17 场景覆盖结论 ｜ 完成记录:2026-09-05 机械验收全过(grep role-demand-sim/17/JSON 解析/SYNC yes),commit 00dc65fe 已入 main 并推 gitea",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'grep -q role-demand-sim .agents/skills/bossctl-cli/SKILL.md && grep -q \"17\" .agents/skills/bossctl-cli/SKILL.md && test -s .agents/skills/bossctl-cli/test-accounts.json && git log --oneline -1 && echo SKILLDOC-OK'"
-    },
-    {
-      "id": "T22",
-      "priority": "P1",
-      "title": "全角色模拟实跑留档+证据文档(S12 新会话执行,依赖 T21)",
-      "goal": "跑一轮 role-demand-sim 全量留档,写 docs/ops/role-demand-sim-evidence.md:8 角色 x 17 场景结果表+核心诉求判据+缺陷清单(T21 已修 rbac/施工段改地址等)+结论段,db-patrol-gate 绿 ｜ 完成记录:2026-09-05 机械验收 exit 0 ROLESIM-DOC-OK,commit 79e682f0",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'test -s docs/ops/role-demand-sim-evidence.md && grep -q 结论 docs/ops/role-demand-sim-evidence.md && for r in customer worker kefu dispatch cashier noc reviewer admin; do grep -q \"$r\" docs/ops/role-demand-sim-evidence.md || exit 1; done && bash scripts/ops/db-patrol-gate.sh > /tmp/role-sim-patrol.log 2>&1 && echo ROLESIM-DOC-OK'"
-    },
-    {
-      "id": "T25",
-      "priority": "P1",
-      "title": "PP1-A 组织与基础域页面打磨(专属会话执行)",
-      "goal": "原生 select 清零、authconfig/EntityImportPanel 拆分≤300 行、内联 style 收敛、删除确认核实、account 详情归属链;门禁全绿+102 冒烟",
-      "status": "done",
-      "acceptanceCommand": "bash -c \"git merge-base --is-ancestor 1fff3022 main && test -f docs/acceptance/2026-09-05-pp1a-page-polish.md && ! git grep -q .<select. -- web/admin/src/pages/org web/admin/src/pages/base && echo PP1A-OK\""
-    },
-    {
-      "id": "T26",
-      "priority": "P1",
-      "title": "PP1-B 客户计费经营域页面打磨(专属会话执行)",
-      "goal": "marketing 七页接入 business 骨架、intel/report select 换 Dropdown、停用确认补齐、customer 详情关联区块;门禁全绿+102 冒烟",
-      "status": "done",
-      "acceptanceCommand": "bash -c \"git merge-base --is-ancestor 6ae30759 main && test -f docs/acceptance/2026-09-05-pp1b-page-polish.md && ! git grep -q .<select. -- web/admin/src/pages/bss web/admin/src/pages/billing web/admin/src/pages/intel && git grep -q DataTable -- web/admin/src/pages/bss/marketing/coupons.tsx && echo PP1B-OK\""
-    },
-    {
-      "id": "T27",
-      "priority": "P1",
-      "title": "PP1-C 订单资产域页面打磨(专属会话执行)",
-      "goal": "裸 alert 清零、message 内联 style 收敛、purchase 拆分、供应商管理/订单取消入口对齐 102 API、asset 详情关联链;门禁全绿+102 冒烟",
-      "status": "done",
-      "acceptanceCommand": "bash -c 'git merge-base --is-ancestor 913318d1 main && test -f docs/acceptance/2026-09-05-pp1c-page-polish.md && ! git grep -qE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/pages/boss && echo PP1C-OK'"
+      "acceptanceCommand": "go build ./... && go test ./internal/domain/report/..."
     }
-  ],
-  "note": "W-0907 月度填报波次全收口(2026-09-05):T18 done(S8 归档);T19 done(S9 归档,000181+51 白名单+14 路由,102 上线);T20 done(S10 归档,三页签+KPI+导入导出+i18n 三语言,自测 27 PASS/0 FAIL,102 bundle 特征 monthly 上线,双主题截图 docs/ops/evidence/t20-monthly-{light,dark}.png)。三会话均已验收归档,无遗留 worktree/分支。下一波次候选(待用户定夺):基于月度事实的同比环比趋势页、月度填报定时巡检告警、报表导出 xlsx 分发版。"
+  ]
 }
