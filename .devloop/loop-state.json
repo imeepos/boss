@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "boss-主链路持续优化",
-  "updatedAt": "2026-09-04T18:45:44.834Z",
+  "updatedAt": "2026-09-05T13:53:47.554Z",
   "tasks": [
     {
       "id": "T10",
@@ -93,6 +93,39 @@
       "status": "done",
       "acceptanceCommand": "bash -c 'if [ ! -x scripts/ops/monthly-admin-selftest.sh ]; then echo SELFTEST-MISSING; exit 1; fi; bash scripts/ops/monthly-admin-selftest.sh'",
       "failCount": 0
+    },
+    {
+      "id": "T21",
+      "priority": "P0",
+      "title": "全角色诉求模拟套件(S11 新会话执行)",
+      "goal": "以 8 类角色账号核心诉求为出发点,新建 scripts/ops/role-demand-sim.sh:每角色至少 1 正常+1 异常/边界场景(>=16),全部经 bossctl 对 102 真实执行,复用验收锁,acc_ 造数收尾清理,输出 PASS ROLE:<角色> 行与 ROLESIM-ALL-PASS ｜ 完成记录:2026-09-05 手动机械验收 exit 0 ROLESIM-ACC-OK(17 场景全绿,4.3 分钟);devloop 验收器超时上限低于脚本时长故 exit null,以实跑退出码为准;S11 修复缺陷 rbac menu:provision(0b68e7f7)/施工段改地址(3b8be8f1)",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'test -x scripts/ops/role-demand-sim.sh && bash -n scripts/ops/role-demand-sim.sh && grep -q \"ROLE:customer\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:worker\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:kefu\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:dispatch\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:cashier\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:noc\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:reviewer\" scripts/ops/role-demand-sim.sh && grep -q \"ROLE:admin\" scripts/ops/role-demand-sim.sh && bash scripts/ops/role-demand-sim.sh > /tmp/role-sim-acc.log 2>&1 && test \"$(grep -c \"^PASS ROLE:\" /tmp/role-sim-acc.log)\" -ge 16 && grep -q ROLESIM-ALL-PASS /tmp/role-sim-acc.log && echo ROLESIM-ACC-OK'",
+      "failCount": 1
+    },
+    {
+      "id": "T23",
+      "priority": "P1",
+      "title": "波次收口:主树干净+远端同步+会话归档(负责人执行)",
+      "goal": "T21/T22 均合并回 main 后:主树工作区干净,本地 main 与 gitea/main 一致,S11/S12 会话归档",
+      "status": "todo",
+      "acceptanceCommand": "bash -c 'test -z \"$(git status --porcelain)\" && [ \"$(git rev-parse main)\" = \"$(git rev-parse gitea/main)\" ] && echo WAVE-CLOSED-OK'"
+    },
+    {
+      "id": "T24",
+      "priority": "P2",
+      "title": "bossctl skill 文档同步 role-demand-sim(S13 新会话执行,与 T22 可并行)",
+      "goal": "在 .agents/skills/bossctl-cli/SKILL.md 增补 role-demand-sim 使用一节(用途/运行/角色覆盖/日志解读),test-accounts.json 的 role_audit 同步 17 场景覆盖结论",
+      "status": "todo",
+      "acceptanceCommand": "bash -c 'grep -q role-demand-sim .agents/skills/bossctl-cli/SKILL.md && grep -q \"17\" .agents/skills/bossctl-cli/SKILL.md && test -s .agents/skills/bossctl-cli/test-accounts.json && git log --oneline -1 && echo SKILLDOC-OK'"
+    },
+    {
+      "id": "T22",
+      "priority": "P1",
+      "title": "全角色模拟实跑留档+证据文档(S12 新会话执行,依赖 T21)",
+      "goal": "跑一轮 role-demand-sim 全量留档,写 docs/ops/role-demand-sim-evidence.md:8 角色 x 17 场景结果表+核心诉求判据+缺陷清单(T21 已修 rbac/施工段改地址等)+结论段,db-patrol-gate 绿",
+      "status": "todo",
+      "acceptanceCommand": "bash -c 'test -s docs/ops/role-demand-sim-evidence.md && grep -q 结论 docs/ops/role-demand-sim-evidence.md && for r in customer worker kefu dispatch cashier noc reviewer admin; do grep -q \"$r\" docs/ops/role-demand-sim-evidence.md || exit 1; done && bash scripts/ops/db-patrol-gate.sh > /tmp/role-sim-patrol.log 2>&1 && echo ROLESIM-DOC-OK'"
     }
   ],
   "note": "W-0907 月度填报波次全收口(2026-09-05):T18 done(S8 归档);T19 done(S9 归档,000181+51 白名单+14 路由,102 上线);T20 done(S10 归档,三页签+KPI+导入导出+i18n 三语言,自测 27 PASS/0 FAIL,102 bundle 特征 monthly 上线,双主题截图 docs/ops/evidence/t20-monthly-{light,dark}.png)。三会话均已验收归档,无遗留 worktree/分支。下一波次候选(待用户定夺):基于月度事实的同比环比趋势页、月度填报定时巡检告警、报表导出 xlsx 分发版。"
