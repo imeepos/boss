@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "boss-主链路持续优化",
-  "updatedAt": "2026-09-05T14:05:34.612Z",
+  "updatedAt": "2026-09-05T15:42:15.831Z",
   "tasks": [
     {
       "id": "T10",
@@ -127,6 +127,30 @@
       "goal": "跑一轮 role-demand-sim 全量留档,写 docs/ops/role-demand-sim-evidence.md:8 角色 x 17 场景结果表+核心诉求判据+缺陷清单(T21 已修 rbac/施工段改地址等)+结论段,db-patrol-gate 绿 ｜ 完成记录:2026-09-05 机械验收 exit 0 ROLESIM-DOC-OK,commit 79e682f0",
       "status": "done",
       "acceptanceCommand": "bash -c 'test -s docs/ops/role-demand-sim-evidence.md && grep -q 结论 docs/ops/role-demand-sim-evidence.md && for r in customer worker kefu dispatch cashier noc reviewer admin; do grep -q \"$r\" docs/ops/role-demand-sim-evidence.md || exit 1; done && bash scripts/ops/db-patrol-gate.sh > /tmp/role-sim-patrol.log 2>&1 && echo ROLESIM-DOC-OK'"
+    },
+    {
+      "id": "T25",
+      "priority": "P1",
+      "title": "PP1-A 组织与基础域页面打磨(专属会话执行)",
+      "goal": "原生 select 清零、authconfig/EntityImportPanel 拆分≤300 行、内联 style 收敛、删除确认核实、account 详情归属链;门禁全绿+102 冒烟",
+      "status": "done",
+      "acceptanceCommand": "bash -c \"git merge-base --is-ancestor 1fff3022 main && test -f docs/acceptance/2026-09-05-pp1a-page-polish.md && ! git grep -q .<select. -- web/admin/src/pages/org web/admin/src/pages/base && echo PP1A-OK\""
+    },
+    {
+      "id": "T26",
+      "priority": "P1",
+      "title": "PP1-B 客户计费经营域页面打磨(专属会话执行)",
+      "goal": "marketing 七页接入 business 骨架、intel/report select 换 Dropdown、停用确认补齐、customer 详情关联区块;门禁全绿+102 冒烟",
+      "status": "done",
+      "acceptanceCommand": "bash -c \"git merge-base --is-ancestor 6ae30759 main && test -f docs/acceptance/2026-09-05-pp1b-page-polish.md && ! git grep -q .<select. -- web/admin/src/pages/bss web/admin/src/pages/billing web/admin/src/pages/intel && git grep -q DataTable -- web/admin/src/pages/bss/marketing/coupons.tsx && echo PP1B-OK\""
+    },
+    {
+      "id": "T27",
+      "priority": "P1",
+      "title": "PP1-C 订单资产域页面打磨(专属会话执行)",
+      "goal": "裸 alert 清零、message 内联 style 收敛、purchase 拆分、供应商管理/订单取消入口对齐 102 API、asset 详情关联链;门禁全绿+102 冒烟",
+      "status": "done",
+      "acceptanceCommand": "bash -c 'git merge-base --is-ancestor 913318d1 main && test -f docs/acceptance/2026-09-05-pp1c-page-polish.md && ! git grep -qE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/pages/boss && echo PP1C-OK'"
     }
   ],
   "note": "W-0907 月度填报波次全收口(2026-09-05):T18 done(S8 归档);T19 done(S9 归档,000181+51 白名单+14 路由,102 上线);T20 done(S10 归档,三页签+KPI+导入导出+i18n 三语言,自测 27 PASS/0 FAIL,102 bundle 特征 monthly 上线,双主题截图 docs/ops/evidence/t20-monthly-{light,dark}.png)。三会话均已验收归档,无遗留 worktree/分支。下一波次候选(待用户定夺):基于月度事实的同比环比趋势页、月度填报定时巡检告警、报表导出 xlsx 分发版。"
