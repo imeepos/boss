@@ -22,17 +22,16 @@ REG_REJECT_ID=""; REG_LOOP_ID=""; WREG_REJECT_ID=""; WREG_LOOP_ID=""
 CUST_REG_IDS=""; WORKER_REG_IDS=""
 SIM_ACCOUNT_ID=""; SIM_USERNAME="acc_sim_$SFX"; CMP_TICKET=""
 GLOBAL_SFX="$SFX"
+SKIP_CLEANUP="0"
 
 sc_customer_order() {
   local scene="客户自助下单" out rc out2 rc2 ordbody reason="下单或取单号失败"
   printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$ADDR_ID"
   out=$(bc "$K_CUST" call POST user:/orders --data "$ordbody"); rc=$?
-	echo "[debug] orderresp=" + "$out" >&2
   ORDER_MAIN_NO=$(printf '%s' "$out" | jno)
   ORDER_MAIN_ID=$(order_id_by_no "$ORDER_MAIN_NO")
   printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$ADDR_ID"
   out2=$(bc "$K_CUST" call POST user:/orders --data "$ordbody"); rc2=$?
-	echo "[debug] orderresp=" + "$out" >&2
   ORDER_IDLE_NO=$(printf '%s' "$out2" | jno)
   if expect_ok "$scene" "$rc" "$out" && [ -n "$ORDER_MAIN_NO" ] && [ -n "$ORDER_MAIN_ID" ] && expect_ok "$scene" "$rc2" "$out2" && [ -n "$ORDER_IDLE_NO" ]; then
     sim_pass ROLE:customer "$scene"
@@ -100,7 +99,6 @@ sc_dispatch_shortage() {
   eaid=$(fixture_address "$SFX"e)
   printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$eaid"
   ORDER_EMPTY_NO=$(bc "$K_CUST" call POST user:/orders --data "$ordbody" | jno)
-	echo "[debug] orderresp=" + "$out" >&2
   out=$(bc "$K_DISP" call POST /orders/$ORDER_EMPTY_NO/check-resource --data '{}'); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
     sim_pass ROLE:dispatch "$scene"

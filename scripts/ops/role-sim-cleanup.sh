@@ -58,5 +58,51 @@ risk_guard_restore() {
   fi
 }
 
-# cleanup_rls_patterns: 本套件 RLS-/角色模拟 前缀造数整体回收(FK 安全序)。
-# cleanup_rls_patterns: 本套件 RLS-/角色模拟 前缀造数整体回收(FK 安全序)。
+
+
+
+# cleanup_rls_patterns: RLS 前缀造数回收(角色模拟地址/资源/端口/标签/资产/模板)。
+cleanup_rls_patterns() {
+	ssh -o ConnectTimeout=10 -o BatchMode=yes "$SSH_HOST" "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -v ON_ERROR_STOP=1 -q" <<'SQL'
+BEGIN;
+CREATE TEMP TABLE rls_addr AS SELECT id FROM addresses WHERE name LIKE '角色模拟-%';
+CREATE TEMP TABLE rls_orders AS SELECT id FROM orders WHERE address_id IN (SELECT id FROM rls_addr);
+CREATE TEMP TABLE rls_ports AS SELECT id FROM ports WHERE order_id IN (SELECT id FROM rls_orders) OR port_code LIKE 'P-RLS-%';
+CREATE TEMP TABLE rls_complaints AS SELECT id FROM complaints WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM scan_logs WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM dispatch_tickets WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM order_stages WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM activation_callbacks WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM provision_logs WHERE task_id IN (SELECT id FROM provision_tasks WHERE order_id IN (SELECT id FROM rls_orders));
+DELETE FROM provision_tasks WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM reserve_records WHERE order_id IN (SELECT id FROM rls_orders) OR port_id IN (SELECT id FROM rls_ports);
+DELETE FROM port_change_history WHERE port_id IN (SELECT id FROM rls_ports);
+DELETE FROM quad_links WHERE address_id IN (SELECT id FROM rls_addr) OR port_id IN (SELECT id FROM rls_ports);
+DELETE FROM dismantles WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM install_logs WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM partner_commission_ledger WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM cs_callbacks WHERE ticket_id IN (SELECT id FROM complaints WHERE order_id IN (SELECT id FROM rls_orders));
+DELETE FROM cs_ticket_events WHERE ticket_id IN (SELECT id FROM complaints WHERE order_id IN (SELECT id FROM rls_orders));
+DELETE FROM cs_ticket_extensions WHERE ticket_id IN (SELECT id FROM complaints WHERE order_id IN (SELECT id FROM rls_orders));
+DELETE FROM complaints WHERE order_id IN (SELECT id FROM rls_orders);
+DELETE FROM orders WHERE id IN (SELECT id FROM rls_orders);
+DELETE FROM ports WHERE id IN (SELECT id FROM rls_ports);
+DELETE FROM asset_assignments WHERE asset_id IN (SELECT id FROM assets WHERE asset_code LIKE 'A-RLS-%');
+DELETE FROM asset_lifecycles WHERE asset_id IN (SELECT id FROM assets WHERE asset_code LIKE 'A-RLS-%');
+DELETE FROM worker_replace_logs WHERE old_tag_id IN (SELECT id FROM tags WHERE tag_no LIKE 'T-RLS-%' OR epc_code LIKE 'EPC-RLS-%')
+  OR new_tag_id IN (SELECT id FROM tags WHERE tag_no LIKE 'T-RLS-%' OR epc_code LIKE 'EPC-RLS-%');
+DELETE FROM assets WHERE asset_code LIKE 'A-RLS-%';
+DELETE FROM tags WHERE tag_no LIKE 'T-RLS-%' OR epc_code LIKE 'EPC-RLS-%';
+DELETE FROM asset_batches WHERE code LIKE 'RK-RLS-%';
+DELETE FROM pon_onu_alloc WHERE olt_resource_id IN (SELECT id FROM resources WHERE code LIKE 'OLT-RLS-%');
+DELETE FROM resources WHERE code LIKE 'OLT-RLS-%' OR code LIKE 'SPL-RLS-%';
+DELETE FROM provision_templates WHERE code LIKE 'TPL-RLS-%';
+DELETE FROM customers WHERE address_id IN (SELECT id FROM rls_addr) OR id IN (SELECT customer_id FROM customer_registrations WHERE source='acc_sim' AND customer_id IS NOT NULL);
+DELETE FROM customer_registrations WHERE source='acc_sim' OR address_id IN (SELECT id FROM rls_addr);
+DELETE FROM workers WHERE id IN (SELECT worker_id FROM worker_registrations WHERE review_note LIKE 'acc_%' AND worker_id IS NOT NULL);
+DELETE FROM worker_registrations WHERE review_note LIKE 'acc_%' OR phone LIKE '1382%';
+DELETE FROM addresses WHERE id IN (SELECT id FROM rls_addr);
+COMMIT;
+SQL
+}
+
