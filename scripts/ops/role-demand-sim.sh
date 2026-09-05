@@ -19,20 +19,6 @@ REG_REJECT_ID=""; REG_LOOP_ID=""; WREG_REJECT_ID=""; WREG_LOOP_ID=""
 CUST_REG_IDS=""; WORKER_REG_IDS=""
 SIM_ACCOUNT_ID=""; SIM_USERNAME="acc_sim_$SFX"; CMP_TICKET=""
 
-RISK_WAS_ON=0  # 直营风控与验收共存(同客户高频下单会被 phoneCap 拦)
-risk_guard_off() {
-  if curl -sS -m 10 "$API/params/risk.direct.enabled" -H "X-API-Key: $K_ADMIN" 2>/dev/null | grep -q true; then
-    curl -sS -m 10 -X PUT "$API/params/risk.direct.enabled" -H "X-API-Key: $K_ADMIN" -H "Content-Type: application/json" -d '{"value":"false"}' >/dev/null
-    RISK_WAS_ON=1
-    echo "[risk] 直营风控已临时关停(收官恢复)" >&2
-  fi
-}
-risk_guard_restore() {
-  if [ "$RISK_WAS_ON" = "1" ]; then
-    curl -sS -m 10 -X PUT "$API/params/risk.direct.enabled" -H "X-API-Key: $K_ADMIN" -H "Content-Type: application/json" -d '{"value":"true"}' >/dev/null
-    echo "[risk] 直营风控已恢复" >&2
-  fi
-}
 
 sc_customer_order() {
   local scene="客户自助下单" out rc out2 rc2 reason="下单或取单号失败"

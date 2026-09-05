@@ -42,6 +42,22 @@ COMMIT;
 SQL
 }
 
+# risk_guard_off/restore: 直营风控与验收共存(同客户高频下单会被 phoneCap 拦)。
+RISK_WAS_ON=0  # 直营风控与验收共存(同客户高频下单会被 phoneCap 拦)
+risk_guard_off() {
+  if curl -sS -m 10 "$API/params/risk.direct.enabled" -H "X-API-Key: $K_ADMIN" 2>/dev/null | grep -q true; then
+    curl -sS -m 10 -X PUT "$API/params/risk.direct.enabled" -H "X-API-Key: $K_ADMIN" -H "Content-Type: application/json" -d '{"value":"false"}' >/dev/null
+    RISK_WAS_ON=1
+    echo "[risk] 直营风控已临时关停(收官恢复)" >&2
+  fi
+}
+risk_guard_restore() {
+  if [ "$RISK_WAS_ON" = "1" ]; then
+    curl -sS -m 10 -X PUT "$API/params/risk.direct.enabled" -H "X-API-Key: $K_ADMIN" -H "Content-Type: application/json" -d '{"value":"true"}' >/dev/null
+    echo "[risk] 直营风控已恢复" >&2
+  fi
+}
+
 # cleanup_acc_patterns: acc_/验收地址 常规造数回收(订单链/端口/资源/标签/资产/模板)。
 cleanup_acc_patterns() {
   local root
