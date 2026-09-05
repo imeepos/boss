@@ -1,5 +1,6 @@
 // 消息中心 · 师傅消息页签:查询(GET /worker-messages?workerId=) + 抽屉式下发(POST /worker-messages)。
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
@@ -14,13 +15,13 @@ import { fmtTime, filterMessages, toId, MESSAGE_LEVELS, type WorkerMessageEntry 
 
 type Ns = Translations['pages']['message']
 
-export const ctl: CSSProperties = {
-  height: 30, padding: '0 8px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 13, boxSizing: 'border-box',
-}
-export const th: CSSProperties = {
-  textAlign: 'left', padding: '8px 10px', background: '#fafafa', borderBottom: '1px solid #f0f0f0', fontWeight: 600,
-}
-export const td: CSSProperties = { padding: '8px 10px', borderBottom: '1px solid #f0f0f0' }
+// 筛选控件/按钮统一令牌化 className(收敛原内联 style,禁裸色值);NoticesTab 复用 ctl/primaryBtn。
+export const ctl = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
+export const ctlBtn = 'h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
+export const primaryBtn = 'h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]'
+const formLabel = 'text-[13px] text-[var(--shell-group-title)]'
+const fieldInput = ctl + ' mt-1 w-full'
+const errBanner = 'mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function WorkerMessagesTab({ t }: { t: Ns }) {
   const p = useT().pages.pickers
@@ -83,20 +84,17 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
     })
       .then(() => {
         setSending(false)
-        setSendOpen(false)
-        setSendWorker('')
-        setSendTitle('')
-        setSendContent('')
-        setHint(t.sent)
+        closeSend()
+        toast.success(t.sent)
         load()
       })
       .catch(() => { setSending(false); setHint(t.sendFail) })
   }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 8, padding: 16 }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <input style={ctl} placeholder={t.searchPlaceholder} value={keyword}
+    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
+      <div className="mb-3 flex flex-wrap gap-2">
+        <input className={ctl} placeholder={t.searchPlaceholder} value={keyword}
           onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
         <Dropdown
           value={level}
@@ -124,21 +122,19 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
           searchPlaceholder={p.common.placeholder}
           errorText={t.loadFail}
         />
-        <span style={{ flex: 1 }} />
-        <button style={{ ...ctl, cursor: 'pointer' }} onClick={load}>{t.refresh}</button>
+        <span className="spacer" />
+        <button className={ctlBtn} onClick={load}>{t.refresh}</button>
       </div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button style={{ ...ctl, cursor: 'pointer', background: '#1677ff', borderColor: '#1677ff', color: '#fff' }}
-          onClick={() => setSendOpen(true)}>+ {t.send}</button>
-        {hint && <span style={{ fontSize: 12, color: hint === t.sent ? '#52c41a' : '#e54545' }}>{hint}</span>}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <button className={primaryBtn} onClick={() => setSendOpen(true)}>+ {t.send}</button>
       </div>
-      <div style={{ fontWeight: 600, marginBottom: 12 }}>
+      <div className="mb-3 text-sm font-semibold text-[var(--shell-heading)]">
         {t.cardTitle}
-        <span style={{ marginLeft: 8, fontWeight: 400, fontSize: 12, color: '#999' }}>
+        <span className="ml-2 text-xs font-normal text-[var(--shell-group-title)]">
           {filtered.length ? t.matched.replace('{count}', String(filtered.length)) : ''}
         </span>
       </div>
-      {error ? <div style={{ color: '#e54545', fontSize: 13, padding: '12px 0' }}>{error}</div> : (
+      {error ? <div className={errBanner}>{error}</div> : (
         <>
           <DataTable
             emptyText={t.empty}
@@ -147,7 +143,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
               { key: 'level', label: t.msgColumns[0], render: (r) => <StatusTag domain="message" value={String(r.level)} /> },
               { key: 'workerId', label: t.msgColumns[1], render: (r) => `#${r.workerId}` },
               { key: 'title', label: t.msgColumns[2], render: (r) => String(r.title ?? '') },
-              { key: 'content', label: t.msgColumns[3], render: (r) => <span style={{ color: '#666' }}>{String(r.content ?? '')}</span> },
+              { key: 'content', label: t.msgColumns[3], render: (r) => <span className="text-[var(--shell-group-title)]">{String(r.content ?? '')}</span> },
               { key: 'sentAt', label: t.msgColumns[4], render: (r) => fmtTime(String(r.sentAt)) },
               { key: 'read', label: t.msgColumns[5], render: (r) => (r.read ? t.read : t.unread) },
             ]}
@@ -169,10 +165,10 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
               </button>
             </>
           }>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <label style={{ fontSize: 13, color: '#666' }}>
+          <div className="grid gap-3">
+            <label className={formLabel}>
               {t.msgColumns[1]}
-              <div style={{ marginTop: 4 }}>
+              <div className="mt-1">
                 <ResourcePicker
                   value={sendWorker}
                   onChange={setSendWorker}
@@ -185,9 +181,9 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
                 />
               </div>
             </label>
-            <label style={{ fontSize: 13, color: '#666' }}>
+            <label className={formLabel}>
               {t.sendLevel}
-              <div style={{ marginTop: 4 }}>
+              <div className="mt-1">
                 <Dropdown
                   value={sendLevel}
                   options={MESSAGE_LEVELS.map((lv) => ({ value: lv, label: lv }))}
@@ -196,19 +192,17 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
                 />
               </div>
             </label>
-            <label style={{ fontSize: 13, color: '#666' }}>
+            <label className={formLabel}>
               {t.msgColumns[2]}
-              <input style={{ ...ctl, width: '100%', marginTop: 4 }} placeholder={t.sendTitlePlaceholder} value={sendTitle}
+              <input className={fieldInput} placeholder={t.sendTitlePlaceholder} value={sendTitle}
                 onChange={(e) => setSendTitle(e.target.value)} />
             </label>
-            <label style={{ fontSize: 13, color: '#666' }}>
+            <label className={formLabel}>
               {t.msgColumns[3]}
-              <input style={{ ...ctl, width: '100%', marginTop: 4 }} placeholder={t.sendContentPlaceholder} value={sendContent}
+              <input className={fieldInput} placeholder={t.sendContentPlaceholder} value={sendContent}
                 onChange={(e) => setSendContent(e.target.value)} />
             </label>
-            {hint && hint !== t.sent && (
-              <span style={{ fontSize: 12, color: '#e54545' }}>{hint}</span>
-            )}
+            {hint && <span className="text-xs text-[var(--color-danger)]">{hint}</span>}
           </div>
         </Drawer>
       )}

@@ -1,14 +1,16 @@
 // 消息中心 · 公告页签:列表含已下架(GET /notices) + 抽屉式发布(POST) + 上下架(PUT /notices/{id}/toggle)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { DataTable } from '../../../components/business/data-table'
+import { ActionLink } from '../../../components/business/page-head'
 import { Drawer } from '../../../components/Drawer'
 import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
 import { filterNotices, fmtTime, type NoticeEntry } from './logic'
-import { ctl } from './WorkerMessagesTab'
+import { ctl, primaryBtn } from './WorkerMessagesTab'
 
 type Ns = Translations['pages']['message']
 
@@ -52,32 +54,30 @@ export function NoticesTab({ t }: { t: Ns }) {
     setBusy(true)
     setHint('')
     apiFetch('/notices', { method: 'POST', body: { title: title.trim(), category: category.trim() } })
-      .then(() => { setBusy(false); closeForm(); setHint(t.published); load() })
+      .then(() => { setBusy(false); closeForm(); toast.success(t.published); load() })
       .catch(() => { setBusy(false); setHint(t.publishFail) })
   }
 
   const toggle = (id: number) => {
     apiFetch(`/notices/${id}/toggle`, { method: 'PUT' })
       .then(load)
-      .catch(() => setHint(t.toggleFail))
+      .catch(() => toast.error(t.toggleFail))
   }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 8, padding: 16 }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input style={{ ...ctl, width: 200 }} placeholder={t.searchPlaceholder} value={keyword}
+    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <input className={ctl + ' w-[200px]'} placeholder={t.searchPlaceholder} value={keyword}
           onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-        <label style={{ fontSize: 13, color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <label className="flex items-center gap-1 text-[13px] text-[var(--shell-group-title)]">
           <input type="checkbox" checked={activeOnly}
             onChange={(e) => { setActiveOnly(e.target.checked); setPage(1) }} />
           {t.onShelf}
         </label>
-        <span style={{ flex: 1 }} />
-        <button style={{ ...ctl, cursor: 'pointer', background: '#1677ff', borderColor: '#1677ff', color: '#fff' }}
-          onClick={() => setOpen(true)}>+ {t.publish}</button>
-        {hint && <span style={{ fontSize: 12, color: hint === t.published ? '#52c41a' : '#e54545' }}>{hint}</span>}
+        <span className="spacer" />
+        <button className={primaryBtn} onClick={() => setOpen(true)}>+ {t.publish}</button>
       </div>
-      {error ? <div style={{ color: '#e54545', fontSize: 13, padding: '12px 0' }}>{error}</div> : (
+      {error ? <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
         <>
           <DataTable
             emptyText={t.empty}
@@ -90,9 +90,7 @@ export function NoticesTab({ t }: { t: Ns }) {
               ) },
               { key: 'publishedAt', label: t.noticeColumns[3], render: (r) => fmtTime(String(r.publishedAt)) },
               { key: 'op', label: t.noticeColumns[4], render: (r) => (
-                <a style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => toggle(Number(r.id))}>
-                  {r.active ? t.offShelf : t.onShelf}
-                </a>
+                <ActionLink onClick={() => toggle(Number(r.id))} label={r.active ? t.offShelf : t.onShelf} />
               ) },
             ]}
           />
@@ -113,20 +111,18 @@ export function NoticesTab({ t }: { t: Ns }) {
               </button>
             </>
           }>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <label style={{ fontSize: 13, color: '#666' }}>
+          <div className="grid gap-3">
+            <label className="text-[13px] text-[var(--shell-group-title)]">
               {t.noticeColumns[0]}
-              <input style={{ ...ctl, width: '100%', marginTop: 4 }} placeholder={t.noticeTitlePlaceholder} value={title}
+              <input className={ctl + ' mt-1 w-full'} placeholder={t.noticeTitlePlaceholder} value={title}
                 onChange={(e) => setTitle(e.target.value)} />
             </label>
-            <label style={{ fontSize: 13, color: '#666' }}>
+            <label className="text-[13px] text-[var(--shell-group-title)]">
               {t.noticeColumns[1]}
-              <input style={{ ...ctl, width: '100%', marginTop: 4 }} placeholder={t.noticeCategoryPlaceholder} value={category}
+              <input className={ctl + ' mt-1 w-full'} placeholder={t.noticeCategoryPlaceholder} value={category}
                 onChange={(e) => setCategory(e.target.value)} />
             </label>
-            {hint && hint !== t.published && (
-              <span style={{ fontSize: 12, color: '#e54545' }}>{hint}</span>
-            )}
+            {hint && <span className="text-xs text-[var(--color-danger)]">{hint}</span>}
           </div>
         </Drawer>
       )}
