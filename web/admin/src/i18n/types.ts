@@ -2189,6 +2189,7 @@ export interface Translations {
       evHint: string
       evLoadFail: string
       delSub: string
+      delSubConfirm: string
       noSubs: string
       dlvTitle: string
       dlvPending: string
