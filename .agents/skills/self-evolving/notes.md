@@ -1708,3 +1708,10 @@
 - 坑: 复合 bash 里 cd web/admin 跑完门禁后再 git add web/admin/...,相对路径按新 cwd 解析成 web/admin/web/admin 连错两次。修复:workdir 钉仓库根 + pnpm --dir 代替裸 cd,或 cd 后全程绝对路径。
 - 坑: 长 markdown 落盘试 bash heredoc 两连败(误写三箭头语法错;引号定界符又让反斜杠 n 不展开)。修复:tools.write + JS 行数组 join,内容先扫单引号/反引号/美元符花括号三件套。
 - 顺: 102 探测「假过滤」用反例判定(customerId=999999 返回全量=参数被忽略,首行同值纯属巧合),避免把巧合当功能;范围冻结下 StatusTag registry 等范围外缺口全部登记债务不修,零越界文件。
+
+## 2026-09-05 PP1-C 执行轮(boss/ams/oss 页面打磨)
+- 坑: cdp-admin-capture.mjs 的 --no-proxy 等布尔旗标在 parseArgs 里仍按「旗标+值」消耗两格,后置的 --logs/--eval 值被吞,静默丢功能(--logs 没落文件、eval 断言没执行,三连)。修复:--eval/--logs 一律放 --no-proxy 之前,布尔旗标永远放最后。
+- 坑: bss/user/filter.test.ts 注册时间用例按 +08:00 本地时区断言,本机 PDT 必红;门禁用 TZ=Asia/Shanghai 跑(与 102 同时区)——环境问题不是代码问题,别去改测试。
+- 坑: 并行会话推进 main 后,git diff main..HEAD 会把别人的新提交算进自己的变更文件数(23 vs 实际 21);统计与验收一律对自己的分支基线(merge-base)做。
+- 顺: 102「假 ID 探测路由」(POST /procurement/orders/99999999/cancel 返业务错 42200 而非 404)既证明路由在又不落库;admin 无 order_stages 读 API 时关联链选 asset 批次链(order 链无数据源,链口径以 data-relations §2.6 为准)。
+- 顺: run_code 里 tools.write 整文件落盘,内容含反引号时在双引号 JS 串用 \u0060 构造;${ 只在模板串里才炸,双引号串里是安全字面量——381 行 purchase 拆分用此法零回退。
