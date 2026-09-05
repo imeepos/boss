@@ -4,7 +4,7 @@ import { useT } from '../../i18n'
 export function ForbiddenPage() {
   const t = useT()
   return (
-    <div style={{ textAlign: 'center', padding: 64 }}>
+    <div className="p-16 text-center">
       <h1>403</h1>
       <p>{t.pages.error.forbidden}</p>
     </div>
@@ -14,7 +14,7 @@ export function ForbiddenPage() {
 export function NotFoundPage() {
   const t = useT()
   return (
-    <div style={{ textAlign: 'center', padding: 64 }}>
+    <div className="p-16 text-center">
       <h1>404</h1>
       <p>{t.pages.error.notFound}</p>
     </div>

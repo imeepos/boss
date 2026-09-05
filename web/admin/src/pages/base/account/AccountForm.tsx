@@ -165,7 +165,7 @@ export function AccountFormDrawer({
         </>
       }>
       <AccountForm values={values} onChange={onChange} errors={validateAccount(values, isEdit)} />
-      {submitError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ marginTop: 12 }}>{submitError}</div>}
+      {submitError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)] !mt-3">{submitError}</div>}
     </Drawer>
   )
 }
