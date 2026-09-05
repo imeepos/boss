@@ -2,8 +2,11 @@ package order
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Rating 订单服务评价(用户端 /orders/{orderNo}/rate)。
@@ -41,8 +44,21 @@ func (s *PGStore) RatingExists(ctx context.Context, orderNo string) (bool, error
 }
 
 // ChangeAddress 变更安装地址(用户端 change-address)。
+// 仅限 PENDING(未进资源流程):RESERVED 起端口锁定安装地址,INSTALLING 起派单工单站点
+// 坐标已在派单时刻物化,静默改地址会造成工单/端口与订单地址漂移(2026-09-05 S11/T21 实测发现)。
 func (s *PGStore) ChangeAddress(ctx context.Context, orderID, addressID int64) error {
-	tag, err := s.db.Exec(ctx, `UPDATE orders SET address_id = $2 WHERE id = $1`, orderID, addressID)
+	var status string
+	err := s.db.QueryRow(ctx, "`SELECT status FROM orders WHERE id = $1`", orderID).Scan(&status)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrOrderNotFound
+		}
+		return fmt.Errorf("order: change address: %w", err)
+	}
+	if status != "PENDING" {
+		return fmt.Errorf("order: change address at %s: %w", status, ErrIllegalTransition)
+	}
+	tag, err := s.db.Exec(ctx, "`UPDATE orders SET address_id = $2 WHERE id = $1`", orderID, addressID)
 	if err != nil {
 		return fmt.Errorf("order: change address: %w", err)
 	}
