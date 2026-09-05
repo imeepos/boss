@@ -65,9 +65,9 @@ bc() {
   local key="$1"; shift
   local out rc att
   out=$("$BOSSCTL" --server "$SERVER" --api-key "$key" "$@" 2>&1); rc=$?
-  for att in 2 3; do
+  for att in 2 3 4 5 6; do
     [ "$rc" -eq 0 ] && break
-    sleep 2
+    sleep 4
     out=$("$BOSSCTL" --server "$SERVER" --api-key "$key" "$@" 2>&1); rc=$?
   done
   printf '%s' "$out"
@@ -129,6 +129,19 @@ if isinstance(d, dict):
     if isinstance(dd, dict) and "id" in dd:
         print(dd["id"]); sys.exit(0)
 print("")'; }
+
+jno() { python3 -c 'import json,sys
+try:
+    print(json.loads(sys.stdin.read())["orderNo"])
+except Exception:
+    print("")' ; }
+jpick() { python3 -c 'import json,sys
+mf, mv, rf = sys.argv[1], sys.argv[2], sys.argv[3]
+d = json.load(sys.stdin)
+items = d.get("items") if isinstance(d, dict) else d
+for t in items or []:
+    if str(t.get(mf, "")) == mv:
+        print(t.get(rf, "")); break' "$1" "$2" "$3" ; }
 
 order_id_by_no() { sql <<SQL
 SELECT id FROM orders WHERE order_no='$1';

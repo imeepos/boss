@@ -27,10 +27,12 @@ sc_customer_order() {
   local scene="客户自助下单" out rc out2 rc2 ordbody reason="下单或取单号失败"
   printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$ADDR_ID"
   out=$(bc "$K_CUST" call POST user:/orders --data "$ordbody"); rc=$?
+	echo "[debug] orderresp=" + "$out" >&2
   ORDER_MAIN_NO=$(printf '%s' "$out" | jno)
   ORDER_MAIN_ID=$(order_id_by_no "$ORDER_MAIN_NO")
   printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$ADDR_ID"
   out2=$(bc "$K_CUST" call POST user:/orders --data "$ordbody"); rc2=$?
+	echo "[debug] orderresp=" + "$out" >&2
   ORDER_IDLE_NO=$(printf '%s' "$out2" | jno)
   if expect_ok "$scene" "$rc" "$out" && [ -n "$ORDER_MAIN_NO" ] && [ -n "$ORDER_MAIN_ID" ] && expect_ok "$scene" "$rc2" "$out2" && [ -n "$ORDER_IDLE_NO" ]; then
     sim_pass customer "$scene"
@@ -54,7 +56,7 @@ sc_customer_cancel() {
 sc_customer_change_addr() {
   local scene="施工段改地址被拒" baid out rc
   baid=$(fixture_address "$SFX"b)
-  printf -v ordbody '{"addressId":"%s"}' "$baid"
+  printf -v ordbody '{"addressId":%s}' "$baid"
   out=$(bc "$K_CUST" call POST user:/orders/$ORDER_MAIN_NO/change-address --data "$ordbody"); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
     sim_pass customer "$scene"
@@ -98,6 +100,7 @@ sc_dispatch_shortage() {
   eaid=$(fixture_address "$SFX"e)
   printf -v ordbody '{"productId":"101","addressId":"%s","channelId":"102"}' "$eaid"
   ORDER_EMPTY_NO=$(bc "$K_CUST" call POST user:/orders --data "$ordbody" | jno)
+	echo "[debug] orderresp=" + "$out" >&2
   out=$(bc "$K_DISP" call POST /orders/$ORDER_EMPTY_NO/check-resource --data '{}'); rc=$?
   if expect_fail "$scene" "$rc" "$out"; then
     sim_pass dispatch "$scene"
@@ -138,7 +141,7 @@ sc_reviewer_approve_reject() {
   local scene="注册审批通过与驳回" phc phw out rc1 rc2
   phc="1391$TAIL7"
   phw="1381$TAIL7"
-  printf -v regbody '{"name":"acc模拟客户","phone":"%s","idCardNo":"%s","legalEntityId":1,"addressId":"%s","regionId":4,"source":"acc_sim"}' "$phc" "$IDC_C" "$ADDR_ID"
+  printf -v regbody '{"name":"acc模拟客户","phone":"%s","idCardNo":"%s","legalEntityId":1,"addressId":%s,"regionId":4,"source":"acc_sim"}' "$phc" "$IDC_C" "$ADDR_ID"
   out=$(curl -sS -m 15 -X POST "$SERVER/api/user/v1/customer-registrations" -H "Content-Type: application/json" -d "$regbody"); rc=$?
   echo "[debug] regsubmit=$out" >&2
   REG_REJECT_ID=$(printf '%s' "$out" | jid)
@@ -156,16 +159,16 @@ sc_reviewer_approve_reject() {
 
 sc_reviewer_resubmit_loop() {
   local scene="驳回后重新提交再审闭环" phc phw out rc1 rc2
-  phc="1391$TAIL7"
-  phw="1381$TAIL7"
-  printf -v regbody '{"name":"acc模拟客户","phone":"%s","idCardNo":"%s","legalEntityId":1,"addressId":"%s","regionId":4,"source":"acc_sim"}' "$phc" "$IDC_C" "$ADDR_ID"
+  phc="1392$TAIL7"
+  phw="1382$TAIL7"
+  printf -v regbody '{"name":"acc模拟客户","phone":"%s","idCardNo":"%s","legalEntityId":1,"addressId":%s,"regionId":4,"source":"acc_sim"}' "$phc" "$IDC_W" "$ADDR_ID"
   out=$(curl -sS -m 15 -X POST "$SERVER/api/user/v1/customer-registrations" -H "Content-Type: application/json" -d "$regbody"); rc=$?
   REG_LOOP_ID=$(printf '%s' "$out" | jid)
   bc "$K_REV" call POST /customer-registrations/$REG_LOOP_ID/approve --data '{}' >/dev/null; rc1=$?
   printf -v wregbody '{"name":"acc模拟师傅","phone":"%s","idCardNo":"%s","groupId":11,"regionId":4}' "$phw" "$IDC_W"
   out=$(curl -sS -m 15 -X POST "$SERVER/api/worker/v1/worker-registrations" -H "Content-Type: application/json" -d "$wregbody"); rc=$?
   WREG_LOOP_ID=$(printf '%s' "$out" | jid)
-  bc "$K_REV" call POST /worker-registrations/$WREG_LOOP_ID/approve --data '{}' >/dev/null; rc2=$?
+	bc "$K_REV" call POST /worker-registrations/$WREG_LOOP_ID/approve --data "{"groupId":11,"regionId":4}" >/dev/null; rc2=$?
   CUST_REG_IDS="$REG_REJECT_ID $REG_LOOP_ID"
   WORKER_REG_IDS="$WREG_REJECT_ID $WREG_LOOP_ID"
   if [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ] && [ -n "$REG_LOOP_ID" ] && [ -n "$WREG_LOOP_ID" ]; then
