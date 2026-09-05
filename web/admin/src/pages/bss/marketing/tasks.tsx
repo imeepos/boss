@@ -4,8 +4,11 @@ import { listTasks, createTask, disableTask, type LoyTask } from '../../../api/m
 import { useT } from '../../../i18n'
 import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
-import { ErrorBanner, EmptyState, ToolbarButton, FormField } from '../../../components/business'
+import {
+  PageHead, pagerTexts, ErrorBanner, ToolbarButton, FormField, ActionLink,
+  DataTable, type ColumnDef,
+} from '../../../components/business'
+import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { Input } from '../../../components/ui/input'
@@ -26,6 +29,8 @@ export default function TasksTab() {
   const periodOpts = periodOptions(m)
   const [items, setItems] = useState<LoyTask[]>([])
   const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [formError, setFormError] = useState('')
@@ -72,47 +77,36 @@ export default function TasksTab() {
     }
   }
 
+  const columns: ColumnDef[] = [
+    { key: 'code', label: m.taskCode, render: (r) => <span className="font-medium">{String(r.code ?? '—')}</span> },
+    { key: 'name', label: m.colName, render: (r) => String(r.name ?? '—') },
+    { key: 'points', label: m.taskPoints, render: (r) => String(r.points ?? '—') },
+    { key: 'period', label: m.taskPeriod, render: (r) => periodOpts.find((o) => o.value === r.period)?.label ?? String(r.period) },
+    { key: 'status', label: m.colStatus, render: (r) => (
+      <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{String(r.status)}</Badge>
+    ) },
+    { key: 'op', label: m.colOp, render: (r) => (r.status === 'ENABLED'
+      ? <ActionLink onClick={() => disable(Number(r.taskId))} label={m.disable} />
+      : null) },
+  ]
+
+  const paged = items.slice((page - 1) * pageSize, page * pageSize)
+
   return (
     <div>
+      <PageHead title={m.tabTasks} desc={m.desc} />
       <Card className="p-4">
         <div className="mb-3 flex justify-end">
           <ToolbarButton primary onClick={() => setOpen(true)}>+ {m.create}</ToolbarButton>
         </div>
         {error ? <ErrorBanner message={error} /> : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{m.taskCode}</TableHead>
-                <TableHead>{m.colName}</TableHead>
-                <TableHead>{m.taskPoints}</TableHead>
-                <TableHead>{m.taskPeriod}</TableHead>
-                <TableHead>{m.colStatus}</TableHead>
-                <TableHead>{m.colOp}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((r) => (
-                <TableRow key={r.taskId}>
-                  <TableCell className="font-medium">{r.code}</TableCell>
-                  <TableCell>{r.name}</TableCell>
-                  <TableCell>{r.points}</TableCell>
-                  <TableCell>{periodOpts.find((o) => o.value === r.period)?.label ?? r.period}</TableCell>
-                  <TableCell>
-                    <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{r.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {r.status === 'ENABLED' && (
-                      <button className="text-xs text-[var(--color-text-link)] hover:underline"
-                        onClick={() => disable(r.taskId)}>{m.disable}</button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!items.length && (
-                <TableRow><TableCell colSpan={6}><EmptyState text={m.empty} /></TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <DataTable columns={columns} rows={paged.map((r) => ({ ...r }))} emptyText={m.empty} />
+        )}
+        {!error && items.length > 0 && (
+          <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
+            <Pagination total={items.length} page={page} pageSize={pageSize}
+              onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(m)} />
+          </div>
         )}
       </Card>
       {open && (

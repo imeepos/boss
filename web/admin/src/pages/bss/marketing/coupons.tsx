@@ -7,8 +7,11 @@ import {
 import { useT } from '../../../i18n'
 import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
-import { ErrorBanner, EmptyState, ToolbarButton, FormField, SubmitButton, type SubmitState } from '../../../components/business'
+import {
+  PageHead, pagerTexts, ErrorBanner, ToolbarButton, FormField, SubmitButton,
+  ActionLink, DataTable, type ColumnDef, type SubmitState,
+} from '../../../components/business'
+import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { Input } from '../../../components/ui/input'
@@ -50,6 +53,8 @@ export default function CouponTemplatesTab() {
   const typeOpts = typeOptions(m)
   const [items, setItems] = useState<CouponTemplate[]>([])
   const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [open, setOpen] = useState(false)
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [form, setForm] = useState(EMPTY_FORM)
@@ -109,53 +114,39 @@ export default function CouponTemplatesTab() {
     }
   }
 
+  const columns: ColumnDef[] = [
+    { key: 'name', label: m.colName, render: (r) => <span className="font-medium">{String(r.name ?? '—')}</span> },
+    { key: 'type', label: m.couponType, render: (r) => typeOpts.find((o) => o.value === r.type)?.label ?? String(r.type) },
+    { key: 'faceValue', label: m.couponFaceYuan, render: (r) => yuan(Number(r.faceValue)) },
+    { key: 'threshold', label: m.couponThresholdYuan, render: (r) => (Number(r.threshold) > 0 ? yuan(Number(r.threshold)) : '-') },
+    { key: 'validDays', label: m.couponValidDays, render: (r) => (Number(r.validDays) > 0 ? String(r.validDays) : '-') },
+    { key: 'issued', label: m.couponIssued, render: (r) => (Number(r.totalQty) > 0 ? Number(r.issuedQty) + '/' + Number(r.totalQty) : String(r.issuedQty)) },
+    { key: 'status', label: m.colStatus, render: (r) => (
+      <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{String(r.status)}</Badge>
+    ) },
+    { key: 'op', label: m.colOp, render: (r) => (r.status === 'ENABLED'
+      ? <ActionLink onClick={() => disable(Number(r.templateId))} label={m.disable} />
+      : null) },
+  ]
+
+  const paged = items.slice((page - 1) * pageSize, page * pageSize)
   const typeTip = { CASH: m.couponTypeTipCash, FULL_CUT: m.couponTypeTipFullCut, DISCOUNT: m.couponTypeTipDiscount }[form.type]
 
   return (
     <div>
+      <PageHead title={m.tabCoupons} desc={m.desc} />
       <Card className="p-4">
         <div className="mb-3 flex justify-end">
           <ToolbarButton primary onClick={() => setOpen(true)}>+ {m.create}</ToolbarButton>
         </div>
         {error ? <ErrorBanner message={error} /> : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{m.colName}</TableHead>
-                <TableHead>{m.couponType}</TableHead>
-                <TableHead>{m.couponFaceYuan}</TableHead>
-                <TableHead>{m.couponThresholdYuan}</TableHead>
-                <TableHead>{m.couponValidDays}</TableHead>
-                <TableHead>{m.couponIssued}</TableHead>
-                <TableHead>{m.colStatus}</TableHead>
-                <TableHead>{m.colOp}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((r) => (
-                <TableRow key={r.templateId}>
-                  <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>{typeOpts.find((o) => o.value === r.type)?.label ?? r.type}</TableCell>
-                  <TableCell>{yuan(r.faceValue)}</TableCell>
-                  <TableCell>{r.threshold > 0 ? yuan(r.threshold) : '-'}</TableCell>
-                  <TableCell>{r.validDays > 0 ? r.validDays : '-'}</TableCell>
-                  <TableCell>{r.totalQty > 0 ? r.issuedQty + '/' + r.totalQty : r.issuedQty}</TableCell>
-                  <TableCell>
-                    <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{r.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {r.status === 'ENABLED' && (
-                      <button className="text-xs text-[var(--color-text-link)] hover:underline"
-                        onClick={() => disable(r.templateId)}>{m.disable}</button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!items.length && (
-                <TableRow><TableCell colSpan={8}><EmptyState text={m.empty} /></TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <DataTable columns={columns} rows={paged.map((r) => ({ ...r }))} emptyText={m.empty} />
+        )}
+        {!error && items.length > 0 && (
+          <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
+            <Pagination total={items.length} page={page} pageSize={pageSize}
+              onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(m)} />
+          </div>
         )}
       </Card>
       {open && (

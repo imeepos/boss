@@ -1,10 +1,12 @@
-// 缴费送积分规则 Tab:当前规则摘要 + 抽屉式编辑保存(每元积分/起缴门槛/有效期天数)。
+// 缴费送积分规则 Tab:当前规则摘要(单行 DataTable)+ 抽屉式编辑保存(每元积分/起缴门槛/有效期天数)。
 import { useEffect, useState } from 'react'
 import { getEarnRule, saveEarnRule, type EarnRule } from '../../../api/marketing'
 import { useT } from '../../../i18n'
-import { Card } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
-import { ErrorBanner, ToolbarButton, FormField } from '../../../components/business'
+import { Card } from '../../../components/ui/card'
+import {
+  PageHead, ErrorBanner, ToolbarButton, FormField, DataTable, type ColumnDef,
+} from '../../../components/business'
 import { Drawer } from '../../../components/Drawer'
 import { Input } from '../../../components/ui/input'
 
@@ -65,27 +67,28 @@ export default function EarnRuleTab() {
     }
   }
 
+  const columns: ColumnDef[] = [
+    { key: 'status', label: m.colStatus, render: () => (rule
+      ? <Badge variant="success">{rule.status}</Badge>
+      : null) },
+    { key: 'pointsPerYuan', label: m.earnPointsPerYuan, render: () => (rule ? String(rule.pointsPerYuan) + ' ' + m.earnPerYuan : '—') },
+    { key: 'minCents', label: m.earnMinYuan, render: () => (rule ? (rule.minCents / 100).toFixed(2) : '—') },
+    { key: 'expireDays', label: m.earnExpireDays, render: () => (rule ? (rule.expireDays > 0 ? String(rule.expireDays) : m.earnNever) : '—') },
+  ]
+
   return (
     <div>
+      <PageHead title={m.tabEarn} desc={m.desc} />
       <Card className="p-4">
-        {error && <div className="mb-3"><ErrorBanner message={error} /></div>}
-        <div className="flex items-center gap-2 text-xs text-[var(--shell-crumb-text)]">
+        <div className="mb-3 flex items-center gap-2 text-xs text-[var(--shell-crumb-text)]">
           {m.earnCurrent}
-          {rule ? (
-            <>
-              <Badge variant="success">{rule.status}</Badge>
-              <span>
-                {rule.pointsPerYuan} {m.earnPerYuan} / {m.earnMin} {(rule.minCents / 100).toFixed(2)} /
-                {' '}{m.earnExpire} {rule.expireDays > 0 ? rule.expireDays : m.earnNever}
-              </span>
-            </>
-          ) : (
-            <span>{m.earnNone}</span>
-          )}
           <span className="flex-1" />
           {saved && <span className="text-xs text-[var(--color-success)]">{m.earnSaved}</span>}
           <ToolbarButton primary onClick={() => { setSaved(false); setOpen(true) }}>{m.earnSave}</ToolbarButton>
         </div>
+        {error ? <ErrorBanner message={error} /> : (
+          <DataTable columns={columns} rows={rule ? [{ ...rule }] : []} emptyText={m.earnNone} />
+        )}
       </Card>
       {open && (
         <Drawer title={m.earnSave} onClose={closeForm}

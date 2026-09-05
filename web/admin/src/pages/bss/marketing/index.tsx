@@ -2,7 +2,6 @@
 // 契约:api/openapi/admin/promotion.yaml、loy.yaml;接口门禁 menu:userdata。
 import { useState } from 'react'
 import { useT } from '../../../i18n'
-import { PageHead } from '../../../components/business'
 import { TabBar } from '../../../components/business'
 import CouponTemplatesTab from './coupons'
 import GiftRulesTab from './gift'
@@ -18,7 +17,6 @@ export default function MarketingRulesPage() {
   const [tab, setTab] = useState<TabKey>('coupons')
   return (
     <div>
-      <PageHead title={m.title} desc={m.desc} />
       <TabBar<TabKey>
         value={tab}
         onChange={setTab}
