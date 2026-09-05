@@ -692,6 +692,11 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 建档即留痕（000184 同批）：CreateAsset 与采购入库确认（ConfirmReceipt）同事务落
 > `asset_lifecycles` 首行（初始 status，changed_at=now()）；CreateAsset/CreateTag 写侧事务化，
 > 双绑回填冲突（ErrBindingConflict）时整单回滚，不再产生半成品孤儿。
+> 装机/拆机资产联动（000185+P1-T1，adopted 2026-09-06-asset-tag-p1-wave）：环节9 扫码 MATCH
+> 时资产原子置 DEPLOYED+绑地址+落轨迹（与四码 LINKED/扫码日志同事务，失败回滚阻断扫码）；
+> 拆机（UnbindRequireScan）置 IN_STOCK+清地址；重装复用时旧件释放/新件部署；SCRAPPED 终态
+> 拒绝自动联动（ErrAssetScrapped 转人工）。存量漂移由 000185 补账 + 巡检「LINKED but asset
+> not DEPLOYED」「SCRAPPED but tag still bound」两查兜底（只报不修）。
 
 ### 4.2 ports（端口，源自 resource.html + 全案 4.2 Port）
 

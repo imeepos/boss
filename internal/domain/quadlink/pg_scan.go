@@ -1,7 +1,9 @@
 package quadlink
 
-// W5 写侧:扫码绑定校验(强制扫码)、拆机必扫码、四码对账任务。
+// W5 写侧:扫码绑定校验(强制扫码)、四码对账任务;拆机必扫码见 pg_linkage.go。
 // 契约:terms.md §2 扫码 result = MATCH/MISMATCH/OFFLINE_CACHED;预绑定与现场扫码必须一致。
+// 资产联动(P1-T1,adopted 2026-09-06-asset-tag-p1-wave):MATCH 原子联动资产 DEPLOYED+绑地址,
+// 拆机联动回 IN_STOCK——同库强一致(R1 调研裁定),链路/扫码日志/资产联动同生共死。
 
 import (
 	"context"
@@ -10,6 +12,8 @@ import (
 	"log"
 
 	"github.com/jackc/pgx/v5"
+
+	"github.com/ymm-001/boss/internal/domain/asset"
 )
 
 // ErrScanMismatch 扫码与预绑定不一致(拒绝推进,换机/重绑流程)。
@@ -44,7 +48,8 @@ type ReconcileReport struct {
 }
 
 // VerifyScan 扫码绑定(环节9 强制):实物 EPC ↔ 预绑定资产核对。
-// MATCH → 四码置 LINKED + 写 scan_logs;MISMATCH → 写日志并返回 ErrScanMismatch(调用方拒绝推进)。
+// MATCH → 四码置 LINKED + 资产联动 DEPLOYED + 写 scan_logs(同一事务);
+// MISMATCH → 写日志并返回 ErrScanMismatch(调用方拒绝推进;日志随事务提交留痕)。
 func (s *PGStore) VerifyScan(ctx context.Context, req ScanReq) (string, error) {
 	link, err := s.linkByOrder(ctx, req.OrderID)
 	if err != nil {
@@ -59,19 +64,25 @@ func (s *PGStore) VerifyScan(ctx context.Context, req ScanReq) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("quadlink: scan tag: %w", err)
 	}
+	// 幂等重放:已 LINKED 且同一资产的重扫直接 MATCH,不重复写 scan_logs。
+	// 写路径同事务提交(链路态+资产态+日志原子),能走到重放即三方已一致,无需补联动。
+	if link.Status == "LINKED" && assetID == link.AssetID && !req.OfflineCalc {
+		return "MATCH", nil
+	}
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return "", fmt.Errorf("quadlink: begin scan: %w", err)
+	}
+	defer tx.Rollback(ctx) // 提交后 no-op;MISMATCH 先提交日志再返回错误,留痕不丢
+
 	// 自动化链路兜底:applyTag 未选资产(asset_id=0,terms.md Amended 资产可空),
 	// 扫码时以实物标签绑定的资产回填四码,而非判 MISMATCH。
 	if link.AssetID == 0 {
-		if _, err := s.db.Exec(ctx,
+		if _, err := tx.Exec(ctx,
 			`UPDATE quad_links SET asset_id = $2 WHERE id = $1`, link.ID, assetID); err != nil {
 			return "", fmt.Errorf("quadlink: scan backfill asset: %w", err)
 		}
 		link.AssetID = assetID
-	}
-	// 幂等重放:已 LINKED 且同一资产的重扫直接 MATCH,不重复写 scan_logs
-	// (客户端超时重试场景;重复日志会让对账/审计口径翻倍)。
-	if link.Status == "LINKED" && assetID == link.AssetID && !req.OfflineCalc {
-		return "MATCH", nil
 	}
 	result := "MATCH"
 	if assetID != link.AssetID {
@@ -81,12 +92,12 @@ func (s *PGStore) VerifyScan(ctx context.Context, req ScanReq) (string, error) {
 		// 重装复用守卫(2026-09-04 任务A):置 LINKED 前查同地址活跃链路。
 		// 同客户重装 → 刷新复用既有行(更新端口/资产/状态并留审计);
 		// 跨客户 → ErrAddressConflict(40920 族),不再裸 23505。
-		var otherID, otherCustomer int64
-		err := s.db.QueryRow(ctx,
-			`SELECT id, customer_id FROM quad_links
+		var otherID, otherCustomer, otherAsset int64
+		err := tx.QueryRow(ctx,
+			`SELECT id, customer_id, COALESCE(asset_id, 0) FROM quad_links
 			  WHERE address_id = $1 AND status IN ('LINKED','CONFLICT') AND id <> $2
 			  ORDER BY id DESC LIMIT 1`, link.AddressID, link.ID).
-			Scan(&otherID, &otherCustomer)
+			Scan(&otherID, &otherCustomer, &otherAsset)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return "", fmt.Errorf("quadlink: scan active check: %w", err)
 		}
@@ -95,70 +106,62 @@ func (s *PGStore) VerifyScan(ctx context.Context, req ScanReq) (string, error) {
 				return "", fmt.Errorf("%w: address %d 链路 %d 归属客户 %d",
 					ErrAddressConflict, link.AddressID, otherID, otherCustomer)
 			}
-			if _, err := s.db.Exec(ctx,
+			if _, err := tx.Exec(ctx,
 				`UPDATE quad_links SET port_id = $2, asset_id = $3, status = 'LINKED' WHERE id = $1`,
 				otherID, link.PortID, assetID); err != nil {
 				return "", fmt.Errorf("quadlink: scan relink: %w", err)
 			}
-			if _, err := s.db.Exec(ctx,
+			if _, err := tx.Exec(ctx,
 				`DELETE FROM quad_links WHERE id = $1`, link.ID); err != nil {
 				return "", fmt.Errorf("quadlink: scan relink cleanup: %w", err)
 			}
+			// 资产联动(P1-T1):旧件释放回库存、新件部署;任一失败整单回滚阻断 MATCH。
+			if err := s.releaseAsset(ctx, tx, otherAsset); err != nil {
+				return "", err
+			}
+			if err := s.linkAsset(ctx, tx, assetID, link.AddressID, req.WorkerID, req.WorkerName); err != nil {
+				return "", err
+			}
 			log.Printf("[quadlink] LINK REUSE address=%d relinked=%d removed_prebind=%d port=%d asset=%d order=%d worker=%d",
 				link.AddressID, otherID, link.ID, link.PortID, assetID, req.OrderID, req.WorkerID)
-			return s.logScanAndResult(ctx, req, tagID, result)
-		}
-		if _, err := s.db.Exec(ctx,
-			`UPDATE quad_links SET status = 'LINKED' WHERE id = $1`, link.ID); err != nil {
-			return "", fmt.Errorf("quadlink: scan link: %w", err)
+		} else {
+			if _, err := tx.Exec(ctx,
+				`UPDATE quad_links SET status = 'LINKED' WHERE id = $1`, link.ID); err != nil {
+				return "", fmt.Errorf("quadlink: scan link: %w", err)
+			}
+			// 资产联动(P1-T1):装机置 DEPLOYED+绑地址;失败整单回滚阻断 MATCH。
+			if err := s.linkAsset(ctx, tx, assetID, link.AddressID, req.WorkerID, req.WorkerName); err != nil {
+				return "", err
+			}
 		}
 	}
-	return s.logScanAndResult(ctx, req, tagID, result)
+	final, err := s.logScan(ctx, tx, req, tagID, result)
+	if err != nil {
+		return "", err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return "", fmt.Errorf("quadlink: commit scan: %w", err)
+	}
+	if final == "MISMATCH" {
+		return final, ErrScanMismatch
+	}
+	return final, nil
 }
 
-// logScanAndResult 落扫码日志并返回最终结果(OFFLINE_CACHED 归一 + MISMATCH 判定)。
-func (s *PGStore) logScanAndResult(ctx context.Context, req ScanReq, tagID int64, result string) (string, error) {
+// logScan 落扫码日志并返回最终结果(OFFLINE_CACHED 归一);
+// MISMATCH 错误由调用方在事务提交后返回,日志留痕不丢。
+func (s *PGStore) logScan(ctx context.Context, ex asset.ExecQuerier, req ScanReq, tagID int64, result string) (string, error) {
 	if req.OfflineCalc {
 		result = "OFFLINE_CACHED"
 	}
 	var scanID int64
-	if err := s.db.QueryRow(ctx,
+	if err := ex.QueryRow(ctx,
 		`INSERT INTO scan_logs(order_id, worker_id, worker_name, tag_id, result)
 		 VALUES($1,$2,$3,$4,$5) RETURNING id`,
 		req.OrderID, req.WorkerID, req.WorkerName, tagID, result).Scan(&scanID); err != nil {
 		return "", fmt.Errorf("quadlink: scan log: %w", err)
 	}
-	if result == "MISMATCH" {
-		return result, ErrScanMismatch
-	}
 	return result, nil
-}
-
-// UnbindRequireScan 拆机必扫码:不扫码直接拒;扫码与已关联资产 EPC 不一致拒;一致则四码解绑(UNLINKED)。
-func (s *PGStore) UnbindRequireScan(ctx context.Context, orderID int64, scannedEPC string) error {
-	if scannedEPC == "" {
-		return ErrScanRequired
-	}
-	link, err := s.linkByOrderCustomer(ctx, orderID)
-	if err != nil {
-		return err
-	}
-	var epc string
-	err = s.db.QueryRow(ctx, `SELECT epc_code FROM tags WHERE bound_asset_id = $1`, link.AssetID).Scan(&epc)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return fmt.Errorf("%w: asset %d 无标签", ErrScanMismatch, link.AssetID)
-	}
-	if err != nil {
-		return fmt.Errorf("quadlink: unbind tag: %w", err)
-	}
-	if epc != scannedEPC {
-		return ErrScanMismatch
-	}
-	if _, err := s.db.Exec(ctx,
-		`UPDATE quad_links SET status = 'UNLINKED' WHERE id = $1`, link.ID); err != nil {
-		return fmt.Errorf("quadlink: unbind: %w", err)
-	}
-	return nil
 }
 
 // Reconcile 四码对账任务:成员缺失置 CONFLICT → 自动清理孤儿行 → 返回统计。

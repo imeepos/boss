@@ -23,8 +23,11 @@ import (
 func wireAAAInfra(app *Application, pool *pgxpool.Pool, aaastore *aaa.PGStore, pushSender push.Sender, provStore *provision.PGStore) {
 	app.Aaa = aaastore
 	app.Provision = provStore
-	app.QuadLink = quadlink.NewPGStore(pool)
-	app.Asset = asset.NewPGStore(pool)
+	assetStore := asset.NewPGStore(pool)
+	app.Asset = assetStore
+	qlStore := quadlink.NewPGStore(pool)
+	qlStore.UseAssetSink(assetStore) // P1-T1:装机/拆机资产联动(同库强一致,adopted 2026-09-06-asset-tag-p1-wave)
+	app.QuadLink = qlStore
 	app.APIKey = apikey.NewPGStore(pool)
 	openstore := openplat.NewPGStore(pool)
 	app.OpenPlat = openstore

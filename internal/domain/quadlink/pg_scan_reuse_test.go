@@ -33,14 +33,16 @@ func TestPGStore_VerifyScan_ReinstallReuse(t *testing.T) {
 		mock.ExpectQuery(`FROM tags`).
 			WithArgs("EPC-OK").
 			WillReturnRows(mock.NewRows([]string{"id", "bound_asset_id"}).AddRow(int64(9), int64(5)))
+		// 写路径事务化(P1-T1)。
+		mock.ExpectBegin()
 		// 预绑定无资产(asset_id=0)→ 扫码回填。
 		mock.ExpectExec(`UPDATE quad_links SET asset_id`).
 			WithArgs(int64(2), int64(5)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-		// 重装复用守卫:同地址历史活跃行(id=379,同客户 3)。
+		// 重装复用守卫:同地址历史活跃行(id=379,同客户 3;第三列为既有行资产快照)。
 		mock.ExpectQuery(`ORDER BY id DESC LIMIT 1`).
 			WithArgs(int64(21), int64(2)).
-			WillReturnRows(mock.NewRows([]string{"id", "customer_id"}).AddRow(int64(379), int64(3)))
+			WillReturnRows(mock.NewRows([]string{"id", "customer_id", "asset_id"}).AddRow(int64(379), int64(3), int64(5)))
 		// 刷新复用:既有行改绑新端口/资产并置 LINKED。
 		mock.ExpectExec(`UPDATE quad_links SET port_id`).
 			WithArgs(int64(379), int64(11), int64(5)).
@@ -52,6 +54,7 @@ func TestPGStore_VerifyScan_ReinstallReuse(t *testing.T) {
 		mock.ExpectQuery(`INSERT INTO scan_logs`).
 			WithArgs(int64(7), int64(2), "张师傅", int64(9), "MATCH").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(100)))
+		mock.ExpectCommit()
 
 		s := NewPGStore(mock)
 		res, err := s.VerifyScan(context.Background(), ScanReq{
@@ -85,6 +88,8 @@ func TestPGStore_VerifyScan_ReinstallReuse(t *testing.T) {
 		mock.ExpectQuery(`FROM tags`).
 			WithArgs("EPC-OK").
 			WillReturnRows(mock.NewRows([]string{"id", "bound_asset_id"}).AddRow(int64(9), int64(5)))
+		// 写路径事务化(P1-T1)。
+		mock.ExpectBegin()
 		// 预绑定无资产(asset_id=0)→ 扫码回填。
 		mock.ExpectExec(`UPDATE quad_links SET asset_id`).
 			WithArgs(int64(2), int64(5)).
@@ -92,7 +97,9 @@ func TestPGStore_VerifyScan_ReinstallReuse(t *testing.T) {
 		// 同地址活跃行归属其他客户 999。
 		mock.ExpectQuery(`ORDER BY id DESC LIMIT 1`).
 			WithArgs(int64(21), int64(2)).
-			WillReturnRows(mock.NewRows([]string{"id", "customer_id"}).AddRow(int64(379), int64(999)))
+			WillReturnRows(mock.NewRows([]string{"id", "customer_id", "asset_id"}).AddRow(int64(379), int64(999), int64(0)))
+		// 冲突在提交前抛出 → 整单回滚(回填一并撤销)。
+		mock.ExpectRollback()
 
 		s := NewPGStore(mock)
 		_, err := s.VerifyScan(context.Background(), ScanReq{

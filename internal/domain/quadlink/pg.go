@@ -19,20 +19,30 @@ var ErrForeignKeyViolation = errors.New("quadlink: foreign key violation")
 var ErrPortAddressMismatch = errors.New("quadlink: port-address mismatch")
 
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
+// Begin 供扫码/拆机写侧事务化(P1-T1 资产联动同库强一致)使用。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 // PGStore 是 QuadLinkService 接口的 PostgreSQL 实现(阶段6)。
+// assets 为可选资产状态联动口(UseAssetSink 装配);nil 时扫码/拆机不联动资产。
 type PGStore struct {
-	db dbtx
+	db     dbtx
+	assets AssetStateSink
 }
 
 // NewPGStore 构造 PGStore;db 传 *pgxpool.Pool 或测试 mock。
 func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
+}
+
+// UseAssetSink 装配资产状态联动口(P1-T1);返回接收器便于链式装配。
+func (s *PGStore) UseAssetSink(sink AssetStateSink) *PGStore {
+	s.assets = sink
+	return s
 }
 
 const linkCols = `id, COALESCE(asset_id, 0), customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status`

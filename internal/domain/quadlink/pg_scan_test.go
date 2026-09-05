@@ -28,16 +28,19 @@ func TestPGStore_VerifyScan(t *testing.T) {
 		mock.ExpectQuery(`FROM tags`).
 			WithArgs("EPC-OK").
 			WillReturnRows(mock.NewRows([]string{"id", "bound_asset_id"}).AddRow(int64(9), int64(5)))
-		// 重装复用守卫:无同地址活跃链路(空集 → ErrNoRows 放行)。
+		// 写路径事务化(P1-T1):链路翻转/扫码日志/资产联动同事务。
+		mock.ExpectBegin()
+		// 重装复用守卫:无同地址活跃链路(空集 → ErrNoRows 放行;第三列为既有行资产快照)。
 		mock.ExpectQuery(`FROM quad_links`).
 			WithArgs(int64(21), int64(1)).
-			WillReturnRows(mock.NewRows([]string{"id", "customer_id"}))
+			WillReturnRows(mock.NewRows([]string{"id", "customer_id", "asset_id"}))
 		mock.ExpectExec(`UPDATE quad_links SET status = 'LINKED'`).
 			WithArgs(int64(1)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectQuery(`INSERT INTO scan_logs`).
 			WithArgs(int64(7), int64(2), "张师傅", int64(9), "MATCH").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(100)))
+		mock.ExpectCommit()
 
 		s := NewPGStore(mock)
 		res, err := s.VerifyScan(context.Background(), ScanReq{
@@ -101,9 +104,12 @@ func TestPGStore_VerifyScan(t *testing.T) {
 		mock.ExpectQuery(`FROM tags`).
 			WithArgs("EPC-BAD").
 			WillReturnRows(mock.NewRows([]string{"id", "bound_asset_id"}).AddRow(int64(9), int64(99)))
+		// MISMATCH 日志仍随事务提交留痕,提交后才返回 ErrScanMismatch(P1-T1)。
+		mock.ExpectBegin()
 		mock.ExpectQuery(`INSERT INTO scan_logs`).
 			WithArgs(int64(7), int64(2), "张师傅", int64(9), "MISMATCH").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(101)))
+		mock.ExpectCommit()
 
 		s := NewPGStore(mock)
 		_, err := s.VerifyScan(context.Background(), ScanReq{
@@ -157,20 +163,23 @@ func TestPGStore_VerifyScan(t *testing.T) {
 		mock.ExpectQuery(`FROM tags`).
 			WithArgs("EPC-OK").
 			WillReturnRows(mock.NewRows([]string{"id", "bound_asset_id"}).AddRow(int64(9), int64(5)))
+		// 写路径事务化(P1-T1)。
+		mock.ExpectBegin()
 		// 回填扫码实物资产。
 		mock.ExpectExec(`UPDATE quad_links SET asset_id`).
 			WithArgs(int64(1), int64(5)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-		// 重装复用守卫:无同地址活跃链路(空集 → ErrNoRows 放行)。
+		// 重装复用守卫:无同地址活跃链路(空集 → ErrNoRows 放行;第三列为既有行资产快照)。
 		mock.ExpectQuery(`FROM quad_links`).
 			WithArgs(int64(21), int64(1)).
-			WillReturnRows(mock.NewRows([]string{"id", "customer_id"}))
+			WillReturnRows(mock.NewRows([]string{"id", "customer_id", "asset_id"}))
 		mock.ExpectExec(`UPDATE quad_links SET status = 'LINKED'`).
 			WithArgs(int64(1)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectQuery(`INSERT INTO scan_logs`).
 			WithArgs(int64(7), int64(2), "张师傅", int64(9), "MATCH").
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(100)))
+		mock.ExpectCommit()
 
 		s := NewPGStore(mock)
 		res, err := s.VerifyScan(context.Background(), ScanReq{
@@ -203,9 +212,12 @@ func TestPGStore_UnbindRequireScan(t *testing.T) {
 		mock.ExpectQuery(`FROM tags`).
 			WithArgs(int64(5)).
 			WillReturnRows(mock.NewRows([]string{"epc_code"}).AddRow("EPC-OK"))
+		// 拆机写路径事务化+资产释放联动(P1-T1;未装配 sink 时不产生资产侧期望)。
+		mock.ExpectBegin()
 		mock.ExpectExec(`UPDATE quad_links SET status = 'UNLINKED'`).
 			WithArgs(int64(1)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectCommit()
 
 		s := NewPGStore(mock)
 		if err := s.UnbindRequireScan(context.Background(), 7, "EPC-OK"); err != nil {
