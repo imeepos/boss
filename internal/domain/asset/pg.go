@@ -16,6 +16,9 @@ var ErrNotFound = errors.New("asset: not found")
 // ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
 var ErrForeignKeyViolation = errors.New("asset: foreign key violation")
 
+// ErrTagUnbound 标签当前未绑定任何资产(P1-T2 解绑前置校验)。
+var ErrTagUnbound = errors.New("asset: tag not bound")
+
 // ErrBindingConflict 资产/标签双绑冲突:目标已被另一方绑定。
 // 用于 POST /provision/{assets,tags} 同步回填时,反向记录已被占用的场景。
 var ErrBindingConflict = errors.New("asset: tag-asset binding conflict")

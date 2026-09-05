@@ -16,8 +16,10 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	ams.GET("/assets/:assetId/lifecycle", assetListLifecyclesHandler(a))
 	ams.GET("/assets/batches", assetListBatchesHandler(a))
 	ams.GET("/assets/assignments", assetListAssignmentsHandler(a))
+	ams.POST("/assets/:assetId/scrap", assetScrapHandler(a)) // P1-T2 报废(标签强回收+事件流)
 
 	g.GET("/tags", requirePerm(a.User, "menu:tag"), tagListHandler(a))
+	g.POST("/tags/:tagId/unbind", requirePerm(a.User, "menu:tag"), tagUnbindHandler(a)) // P1-T2 解绑回收
 
 	g.POST("/stocktakes", requirePerm(a.User, "menu:stock"), stocktakeCreateHandler(a))
 	g.POST("/stocktakes/:taskId/diff-handle", requirePerm(a.User, "menu:stock"), stocktakeHandleDiffHandler(a))

@@ -25,6 +25,20 @@ type Tag struct {
 	Battery       string `json:"battery"`
 }
 
+// TagEvent 标签绑定事件(append-only 审计流,P1-T2):BIND/UNBIND/RECYCLE,
+// 形态依据 R2 调研(Snipe-IT action_logs / bk-cmdb cc_AuditLog)。
+type TagEvent struct {
+	ID             int64          `json:"id"`
+	EventID        string         `json:"eventId"`
+	TagID          int64          `json:"tagId"`
+	AssetID        int64          `json:"assetId"`
+	Action         string         `json:"action"`
+	ActorAccountID int64          `json:"actorAccountId"`
+	Detail         string         `json:"detail"`
+	Changed        map[string]any `json:"changed,omitempty"`
+	CreatedAt      time.Time      `json:"createdAt"`
+}
+
 // Asset 资产台账(光猫/ONU 等装维物资的全生命周期)。
 type Asset struct {
 	AssetID         int64  `json:"assetId"`
@@ -147,4 +161,11 @@ type AssetService interface {
 
 	ListAssignments(ctx context.Context, assetID int64) ([]AssetAssignment, error)
 	AssignAsset(ctx context.Context, a AssetAssignment) (int64, error)
+
+	// UnbindTag 解绑标签(P1-T2):置 bound_asset_id=NULL+status=UNBOUND 并写 UNBIND 事件;
+	// expectedAssetID>0 时校验当前绑定一致;未绑定/预期不符返回 ErrTagUnbound/ErrBindingConflict。
+	UnbindTag(ctx context.Context, tagID, expectedAssetID, actorAccountID int64, detail string) error
+	// ScrapAsset 报废资产(P1-T2):任意非终态 → SCRAPPED(终态幂等 no-op),强制解绑标签写
+	// RECYCLE 事件(软回收禁硬删),轨迹落行;同一事务,失败整单回滚。
+	ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string) error
 }

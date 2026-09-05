@@ -43,6 +43,43 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /tags/{tagId}/unbind:
+    post:
+      tags: [Asset]
+      summary: 解绑标签(P1-T2;标签回 UNBOUND 可复用,写 UNBIND 事件;expectedAssetId 传入时校验当前绑定一致)
+      operationId: unbindTag
+      parameters:
+        - { name: tagId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedAssetId: { type: integer, format: int64, description: 预期当前绑定资产 ID(可选,防误解绑) }
+                reason: { type: string, maxLength: 255, description: 解绑原因(入事件流 detail) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /assets/{assetId}/scrap:
+    post:
+      tags: [Asset]
+      summary: 报废资产(P1-T2;任意非终态→SCRAPPED 终态幂等,标签强解绑写 RECYCLE 事件,轨迹落行,同事务)
+      operationId: scrapAsset
+      parameters:
+        - { name: assetId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, maxLength: 64, description: 报废原因(必填,入审计与事件流) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /stocktakes:
     get:
       tags: [Asset]

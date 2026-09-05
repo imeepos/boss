@@ -697,6 +697,11 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 拆机（UnbindRequireScan）置 IN_STOCK+清地址；重装复用时旧件释放/新件部署；SCRAPPED 终态
 > 拒绝自动联动（ErrAssetScrapped 转人工）。存量漂移由 000185 补账 + 巡检「LINKED but asset
 > not DEPLOYED」「SCRAPPED but tag still bound」两查兜底（只报不修）。
+> 标签绑定事件流（000186+P1-T2）：`tag_events`（tag_id,asset_id,action
+> BIND/UNBIND/RECYCLE,actor_account_id,detail,changed JSONB;event_id UUID 唯一,append-only）。
+> CreateTag/CreateAsset 绑定成功即写 BIND；端点 POST /tags/{tagId}/unbind（预期不符 40900、
+> 未绑定 ErrTagUnbound→40000 族）写 UNBIND；POST /assets/{assetId}/scrap（reason 必填,终态
+> 幂等）强制解绑写 RECYCLE——报废软回收禁硬删（adopted 2026-09-06-asset-tag-p1-wave）。
 
 ### 4.2 ports（端口，源自 resource.html + 全案 4.2 Port）
 

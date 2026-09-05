@@ -401,6 +401,10 @@ func TestPGStore_CreateAsset_ResubmitIdempotent(t *testing.T) {
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
 		WithArgs(int64(9), int64(3)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	// 绑定事件流(P1-T2)。
+	mock.ExpectExec(`INSERT INTO tag_events`).
+		WithArgs(int64(9), int64(3), pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
@@ -437,6 +441,10 @@ func TestPGStore_CreateTag_ResubmitIdempotent(t *testing.T) {
 	mock.ExpectExec(`UPDATE assets SET tag_id`).
 		WithArgs(int64(5), int64(12)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	// 绑定事件流(P1-T2)。
+	mock.ExpectExec(`INSERT INTO tag_events`).
+		WithArgs(int64(12), int64(5), pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
 	s := NewPGStore(mock)

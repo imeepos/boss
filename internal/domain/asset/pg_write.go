@@ -86,6 +86,8 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 			return 0, fmt.Errorf("asset: asset %d already bound to another tag: %w",
 				t.BoundAssetID, ErrBindingConflict)
 		}
+		// 绑定事件流(P1-T2):BIND 随主事务落库,失败 ALERT 不阻断。
+		s.bindTagEvent(ctx, tx, id, t.BoundAssetID)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -164,6 +166,8 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 			return 0, fmt.Errorf("asset: tag %d already bound to another asset: %w",
 				a.TagID, ErrBindingConflict)
 		}
+		// 绑定事件流(P1-T2):BIND 随主事务落库,失败 ALERT 不阻断。
+		s.bindTagEvent(ctx, tx, a.TagID, id)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
