@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
-import { DetailDrawer, PageHead, pagerTexts } from '../../org/shared'
+import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
@@ -19,6 +19,7 @@ import { RegistrationQueueDrawer } from './RegistrationQueueDrawer'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { fmtTime } from '../../../lib/format'
 import { TableStateRow } from '../../../components/business'
+import { Drawer } from '../../../components/Drawer'
 
 export default function CustomerPage() {
   const t = useT()
@@ -115,22 +116,7 @@ export default function CustomerPage() {
         </div>
       </div>
       {detail && (
-        <DetailDrawer
-          title={c.detail}
-          closeText={t.pages.company.cancel}
-          onClose={() => setDetail(null)}
-          items={[
-            { k: c.columns[0], v: detail.name },
-            { k: c.columns[1], v: detail.phone },
-            { k: c.columns[2], v: detail.idType },
-            { k: c.columns[3], v: detail.idNo },
-            { k: c.columns[4], v: detail.realNameStatus },
-            { k: c.columns[5], v: detail.serviceStatus },
-            { k: 'ID', v: String(detail.id) },
-            { k: 'regionName', v: detail.regionName },
-            { k: 'createdAt', v: fmtTime(detail.createdAt) },
-          ]}
-        />
+        <CustomerDetailDrawer detail={detail} onClose={() => setDetail(null)} />
       )}
       {verifyId && (
         <VerifyLogsDrawer customerId={verifyId.id} customerName={verifyId.name} onClose={() => setVerifyId(null)} />
@@ -149,5 +135,109 @@ export default function CustomerPage() {
         <RegistrationQueueDrawer open onClose={() => setRegOpen(false)} onChanged={load} />
       )}
     </div>
+  )
+}
+
+/** 客户详情抽屉:归属链(运营主体→区域→客户)+ 档案字段 + 关联记录区块。
+ * 关联计数:订单/账单走 customerId 服务端过滤;缴费接口无 customerId 过滤(102 实测),
+ * 取不到显示 —(data-relations §0 铁律 4,禁止臆造)。 */
+function CustomerDetailDrawer({ detail, onClose }: { detail: CustomerRow; onClose: () => void }) {
+  const t = useT()
+  const c = t.pages.customer
+  const navigate = useNavigate()
+  const [entityName, setEntityName] = useState('')
+  const [rel, setRel] = useState<{ orders: number | null; bills: number | null; fail: boolean }>({
+    orders: null, bills: null, fail: false,
+  })
+
+  useEffect(() => {
+    let alive = true
+    apiFetch<{ id: number; name: string }[]>('/legal-entities')
+      .then((d) => {
+        if (alive) setEntityName(d?.find((x) => x.id === detail.legalEntityId)?.name ?? '')
+      })
+      .catch(() => {
+        // 归属链公司名取不到仅降级为 ID 展示,不阻断详情;留 warn 便于发现接口异常
+        if (alive) { setEntityName(''); console.warn('[customer] legal-entities 拉取失败,归属链公司名降级为 ID') }
+      })
+    Promise.all([
+      apiFetch<{ items: unknown[] }>('/orders', { query: { customerId: detail.id } }),
+      apiFetch<{ items: unknown[] }>('/bills', { query: { customerId: detail.id } }),
+    ])
+      .then(([o, b]) => {
+        if (alive) setRel({ orders: o?.items?.length ?? 0, bills: b?.items?.length ?? 0, fail: false })
+      })
+      .catch(() => {
+        if (alive) { setRel({ orders: null, bills: null, fail: true }); console.warn('[customer] 关联计数拉取失败 customerId=' + detail.id) }
+      })
+    return () => { alive = false }
+  }, [detail.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const dash = <span title={c.relLoadFail}>—</span>
+  const relRows: { label: string; value: React.ReactNode; drill?: () => void }[] = [
+    { label: c.relOrders, value: rel.orders === null ? dash : String(rel.orders),
+      drill: rel.orders === null ? undefined : () => { onClose(); navigate('/bss/onboarding?customerId=' + detail.id) } },
+    { label: c.relBills, value: rel.bills === null ? dash : String(rel.bills) },
+    { label: c.relPayments, value: '—' },
+  ]
+
+  return (
+    <Drawer title={c.detail} onClose={onClose}
+      footer={
+        <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>
+          {t.pages.company.cancel}
+        </button>
+      }>
+      <div className="mb-4">
+        <h4 className="mb-2 mt-0 text-xs font-semibold text-[var(--shell-group-title)]">{c.chainTitle}</h4>
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-[var(--shell-content-text)]">
+          <span className="rounded-sm border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] px-2 py-0.5">
+            {entityName || (detail.legalEntityId ? '#' + detail.legalEntityId : '—')}
+          </span>
+          <span className="text-[var(--shell-side-border)]">→</span>
+          <span className="rounded-sm border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] px-2 py-0.5">
+            {detail.regionName || '—'}
+          </span>
+          <span className="text-[var(--shell-side-border)]">→</span>
+          <span className="rounded-sm border border-[var(--color-border-focus)] bg-[var(--shell-menu-hover-bg)] px-2 py-0.5 font-medium">
+            {detail.name} #{detail.id}
+          </span>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2.5">
+        {([
+          { k: c.columns[0], v: detail.name },
+          { k: c.columns[1], v: detail.phone },
+          { k: c.columns[2], v: detail.idType },
+          { k: c.columns[3], v: detail.idNo },
+          { k: c.columns[4], v: detail.realNameStatus },
+          { k: c.columns[5], v: detail.serviceStatus },
+          { k: 'ID', v: String(detail.id) },
+          { k: c.regionLabel, v: detail.regionName },
+          { k: 'createdAt', v: fmtTime(detail.createdAt) },
+        ] as { k: string; v?: string }[]).map((it) => (
+          <div key={it.k} className="flex gap-3 text-[13px]">
+            <span className="w-24 flex-none text-[var(--shell-group-title)]">{it.k}</span>
+            <span className="break-all text-[var(--shell-content-text)]">{it.v || '—'}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 border-t border-[var(--shell-side-border)] pt-3">
+        <h4 className="mb-2 mt-0 text-xs font-semibold text-[var(--shell-group-title)]">{c.relTitle}</h4>
+        <div className="flex flex-col gap-2">
+          {relRows.map((r) => (
+            <div key={r.label} className="flex items-center gap-3 text-[13px]">
+              <span className="w-24 flex-none text-[var(--shell-group-title)]">{r.label}</span>
+              <span className="text-[var(--shell-content-text)]">{r.value}</span>
+              {r.drill && (
+                <button data-testid={'customer-rel-drill-' + r.label} className="border-none bg-none cursor-pointer text-xs text-[var(--color-text-link)] hover:underline" onClick={r.drill}>
+                  {c.relDrill}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </Drawer>
   )
 }
