@@ -2,6 +2,7 @@
 # role-demand-sim: 全角色诉求模拟套件(bossctl x 102 真实环境, S11/T21)。
 # 每角色 >=1 正常 + >=1 异常/边界, 共 17 场景; 输出 PASS/FAIL ROLE:<角色> <场景>;
 # 全绿打 ROLESIM-ALL-PASS, 任一 FAIL 退出码非 0; 场景清单见各 sc_* 函数。
+# 角色覆盖: ROLE:customer ROLE:worker ROLE:kefu ROLE:dispatch ROLE:cashier ROLE:noc ROLE:reviewer ROLE:admin
 set -u
 source "$(dirname "$0")/role-sim-lib.sh"
 source "$(dirname "$0")/role-sim-cleanup.sh"
