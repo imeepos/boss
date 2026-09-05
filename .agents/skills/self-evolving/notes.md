@@ -1729,3 +1729,8 @@
 - 顺: 审计 grep 启发式(delete 无 ConfirmDialog)误报率高——确认逻辑常在父组件(useConfirm)或实为软停用/无删除路径;定flag后必须逐个读实现甄别,14 个旗标实测 10 误报 4 疑点全排除,零真实缺口。
 - 顺: 派发颗粒度=冻结文件目录+定点清单+机械验收命令+停止点(只 push 不合并),三会话零范围冲突零返工;串行合并用 merge-base --is-ancestor 进账本验收,分支删除后哈希仍可判。
 - 顺: 会话首轮 talk 回空串是常态(首条消息可能为空对象),重发一次即拿到完整报告;勿当故障。
+## 2026-09-05 调研子代理轮(电信 BOSS 资产/标签系统 web 调研)
+- 坑: tmforum.org 全站 Cloudflare 403,SID 可浏览 HTML 与 TMF634/TMF639 官方页抓不到正文;替代路径=Oracle UIM 文档(自证符合 TMF639)+tmforum-apis GitHub 镜像+第三方 PDF,目录侧结论仍可引用官方 URL。
+- 坑: web_fetch 抓 raw.githubusercontent 大型 OpenAPI(v5 yaml 数百 KB)稳定超时 30s,且 run_code 内 Promise.all 多抓取叠加也会撞 30s 预算;教训=单次批量抓取控制在 3-4 个、大文件抓前先掂量体积,抓不到就换小文件(README/swagger v4)或放弃原文改引摘要。
+- 顺: chainway 案例页正文是 JS 渲染,剥标签后只剩导航;判据=关键字(China Tower)在正文锚点搜索落空,此时换来源,不在同一页上反复剥。
+
