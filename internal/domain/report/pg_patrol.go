@@ -81,6 +81,15 @@ var orphanChecks = []struct {
 		FROM assets a WHERE a.tag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM tags WHERE id = a.tag_id AND bound_asset_id = a.id)`},
 	{"tags.bound_asset_id -> assets", `SELECT count(*), COALESCE((array_agg(t.id ORDER BY t.id))[1:10], '{}'::bigint[])
 		FROM tags t WHERE t.bound_asset_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM assets WHERE id = t.bound_asset_id AND tag_id = t.id)`},
+	// 装机/拆机资产联动漂移巡检(P1-T4,asset-tag-p1-plan):扫码 LINKED 后资产必须 DEPLOYED
+	// (联动失败/历史遗留由此告警;联动写入在 internal/domain/quadlink/pg_scan.go)。
+	{"quad_links.LINKED but asset not DEPLOYED", `SELECT count(*), COALESCE((array_agg(q.id ORDER BY q.id))[1:10], '{}'::bigint[])
+		FROM quad_links q WHERE q.status = 'LINKED' AND q.asset_id IS NOT NULL
+		AND NOT EXISTS (SELECT 1 FROM assets a WHERE a.id = q.asset_id AND a.status = 'DEPLOYED')`},
+	// 报废未回收标签巡检(P1-T2 报废路径的兜底防线):SCRAPPED 终态资产的标签必须已解绑回收。
+	{"assets.SCRAPPED but tag still bound", `SELECT count(*), COALESCE((array_agg(a.id ORDER BY a.id))[1:10], '{}'::bigint[])
+		FROM assets a WHERE a.status = 'SCRAPPED' AND a.tag_id IS NOT NULL
+		AND EXISTS (SELECT 1 FROM tags t WHERE t.id = a.tag_id AND t.bound_asset_id = a.id)`},
 }
 
 // PatrolOrphans 逐项跑巡检;单项 SQL 失败即中止(巡检只读,失败=连接问题)。
