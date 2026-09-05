@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "boss-主链路持续优化",
-  "updatedAt": "2026-09-05T13:53:47.554Z",
+  "updatedAt": "2026-09-05T14:04:11.995Z",
   "tasks": [
     {
       "id": "T10",
@@ -115,16 +115,16 @@
       "id": "T24",
       "priority": "P2",
       "title": "bossctl skill 文档同步 role-demand-sim(S13 新会话执行,与 T22 可并行)",
-      "goal": "在 .agents/skills/bossctl-cli/SKILL.md 增补 role-demand-sim 使用一节(用途/运行/角色覆盖/日志解读),test-accounts.json 的 role_audit 同步 17 场景覆盖结论",
-      "status": "todo",
+      "goal": "在 .agents/skills/bossctl-cli/SKILL.md 增补 role-demand-sim 使用一节(用途/运行/角色覆盖/日志解读),test-accounts.json 的 role_audit 同步 17 场景覆盖结论 ｜ 完成记录:2026-09-05 机械验收全过(grep role-demand-sim/17/JSON 解析/SYNC yes),commit 00dc65fe 已入 main 并推 gitea",
+      "status": "done",
       "acceptanceCommand": "bash -c 'grep -q role-demand-sim .agents/skills/bossctl-cli/SKILL.md && grep -q \"17\" .agents/skills/bossctl-cli/SKILL.md && test -s .agents/skills/bossctl-cli/test-accounts.json && git log --oneline -1 && echo SKILLDOC-OK'"
     },
     {
       "id": "T22",
       "priority": "P1",
       "title": "全角色模拟实跑留档+证据文档(S12 新会话执行,依赖 T21)",
-      "goal": "跑一轮 role-demand-sim 全量留档,写 docs/ops/role-demand-sim-evidence.md:8 角色 x 17 场景结果表+核心诉求判据+缺陷清单(T21 已修 rbac/施工段改地址等)+结论段,db-patrol-gate 绿",
-      "status": "todo",
+      "goal": "跑一轮 role-demand-sim 全量留档,写 docs/ops/role-demand-sim-evidence.md:8 角色 x 17 场景结果表+核心诉求判据+缺陷清单(T21 已修 rbac/施工段改地址等)+结论段,db-patrol-gate 绿 ｜ 完成记录:2026-09-05 机械验收 exit 0 ROLESIM-DOC-OK,commit 79e682f0",
+      "status": "done",
       "acceptanceCommand": "bash -c 'test -s docs/ops/role-demand-sim-evidence.md && grep -q 结论 docs/ops/role-demand-sim-evidence.md && for r in customer worker kefu dispatch cashier noc reviewer admin; do grep -q \"$r\" docs/ops/role-demand-sim-evidence.md || exit 1; done && bash scripts/ops/db-patrol-gate.sh > /tmp/role-sim-patrol.log 2>&1 && echo ROLESIM-DOC-OK'"
     }
   ],
