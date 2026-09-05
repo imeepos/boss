@@ -1,5 +1,6 @@
 // 装维队管理对话框集(000141):新建/编辑队伍、解散确认、成员调队;业绩统计走右侧抽屉。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
@@ -208,7 +209,7 @@ export function TeamDialogs({ mode, groups, workers, onClose, onDone }: DialogsP
       await apiFetch(`/worker-groups/${id}`, { method: 'DELETE' })
       onClose(); onDone()
     } catch (e) {
-      alert(e instanceof Error ? e.message : w.actionFail)
+      toast.error(e instanceof Error ? e.message : w.actionFail)
     }
   }
 

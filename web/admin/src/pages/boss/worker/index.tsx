@@ -1,6 +1,7 @@
 // 师傅管理页(装维队视图,000141):左侧队伍卡片(操作下拉) + 右侧成员表;
 // 头部添加装维队按钮;业绩统计走右侧抽屉;选择师傅添加到当前装维队。
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
@@ -66,9 +67,10 @@ export default function WorkerPage() {
   const setCaptain = async (r: WorkerRow) => {
     try {
       await apiFetch(`/worker-groups/${r.groupId}`, { method: 'PUT', body: { name: groupName(r.groupId), leaderId: r.id } })
+      toast.success(w.captainSet)
       load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : w.actionFail)
+      toast.error(e instanceof Error ? e.message : w.actionFail)
     }
   }
 
@@ -77,11 +79,12 @@ export default function WorkerPage() {
     if (!selGroup || !wid) return
     try {
       await apiFetch(`/workers/${wid}/transfer`, { method: 'POST', body: { groupId: selGroup, reason: w.addToGroupHint } })
+      toast.success(w.addedToGroup)
       setPickWorker('')
       load()
     } catch (e) {
+      toast.error(e instanceof Error ? e.message : w.actionFail)
       setPickWorker('')
-      alert(e instanceof Error ? e.message : w.actionFail)
     }
   }
 
