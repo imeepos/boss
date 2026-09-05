@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "boss-主链路持续优化",
-  "updatedAt": "2026-09-05T14:04:17.675Z",
+  "updatedAt": "2026-09-05T14:05:34.612Z",
   "tasks": [
     {
       "id": "T10",
@@ -108,7 +108,7 @@
       "priority": "P1",
       "title": "波次收口:主树干净+远端同步+会话归档(负责人执行)",
       "goal": "T21/T22 均合并回 main 后:主树工作区干净,本地 main 与 gitea/main 一致,S11/S12 会话归档",
-      "status": "review",
+      "status": "done",
       "acceptanceCommand": "bash -c 'test -z \"$(git status --porcelain)\" && [ \"$(git rev-parse main)\" = \"$(git rev-parse gitea/main)\" ] && echo WAVE-CLOSED-OK'",
       "failCount": 1
     },
