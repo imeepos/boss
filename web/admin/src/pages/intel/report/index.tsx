@@ -8,6 +8,7 @@ import { ApiError } from '../../../api/envelope'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
+import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
@@ -128,10 +129,9 @@ export default function ReportPage() {
           <h3 className="m-0 text-base font-semibold text-[var(--shell-heading)]">{r.trendTitle}</h3>
           <div className="flex items-center gap-2">
             <span className="text-[12px] text-[var(--shell-group-title)]">{r.trendDesc}</span>
-            <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[13px] text-[var(--shell-content-text)]"
-              value={trendPeriod} onChange={(e) => setTrendPeriod(e.target.value)} disabled={trendBusy}>
-              {PERIODS.map((p, i) => <option key={p} value={p}>{r.periods[i]}</option>)}
-            </select>
+            <Dropdown value={trendPeriod} ariaLabel={r.trendDesc} disabled={trendBusy}
+              options={PERIODS.map((p, i) => ({ value: p, label: r.periods[i] }))}
+              onChange={(v) => setTrendPeriod(v)} />
           </div>
         </div>
         {trendSnaps.length >= 2 ? (
