@@ -1715,3 +1715,10 @@
 - 坑: 并行会话推进 main 后,git diff main..HEAD 会把别人的新提交算进自己的变更文件数(23 vs 实际 21);统计与验收一律对自己的分支基线(merge-base)做。
 - 顺: 102「假 ID 探测路由」(POST /procurement/orders/99999999/cancel 返业务错 42200 而非 404)既证明路由在又不落库;admin 无 order_stages 读 API 时关联链选 asset 批次链(order 链无数据源,链口径以 data-relations §2.6 为准)。
 - 顺: run_code 里 tools.write 整文件落盘,内容含反引号时在双引号 JS 串用 \u0060 构造;${ 只在模板串里才炸,双引号串里是安全字面量——381 行 purchase 拆分用此法零回退。
+
+## 2026-09-05 PP1-A 执行轮(org/base/backup/profile/news/home/login/error/placeholder/partner 页面打磨)
+- 坑: bash 不带 workdir 时默认会话工作区(主树)——校验性 grep/od 连续 3 枪跑在主树上看到旧内容,一度误判「worktree 被并发回滚」,浪费两轮排查;recidivism 首行第 4 次登记。教训内化:worktree 轮的每一条 bash(哪怕只读 grep)都显式 workdir。
+- 坑: heredoc 写 TSX 时正则 \d 经 TS 串转义后落盘成单反斜杠(对),但 markdown 证据文档里的行内码反引号让宿主模板串直接 parse error——带反引号的内容一律先去掉反引号或用 String.fromCharCode(96),长文档直接以无反引号 markdown 落盘。
+- 坑: 长数组逐行拼文件内容会随机丢元素间逗号(两次),且容易混入占位残句;改为「tools.write 手术脚本 + 先 read 自校验再 node 执行」,或干脆全文件 heredoc 重写,零手工转录。
+- 顺: 能力对齐先读 api/openapi/admin/*.yaml 建能力矩阵再 curl 102 实测;DELETE /accounts 实测为软删(status=0 且列表仍返回),与页面停用等价 → 不补重复按钮,决策+实测证据进验收文档,避免同效双按钮。
+- 顺: 六页冒烟一次过(cdp-admin-capture + logs 过滤 + DOM 断言三重佐证);模型不吃图时用文件尺寸+断言+日志替代目检并如实标注「未目检像素」。
