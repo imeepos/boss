@@ -995,6 +995,21 @@ export interface Translations {
       cancel: string
       save: string
       submitting: string
+      cancelOrder: string
+      cancelConfirmText: string
+      suppliersManage: string
+      suppliersTitle: string
+      supName: string
+      supCode: string
+      supContact: string
+      supPhone: string
+      supEntity: string
+      supCreate: string
+      supDisable: string
+      supEnabled: string
+      supDisabled: string
+      supDisableConfirm: string
+      supErrName: string
     }
     inventoryPage: {
       title: string

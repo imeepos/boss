@@ -4,16 +4,19 @@
 // 样式对齐 stock:大卡片 + TableStateRow + Drawer footer + CSS 变量主题适配。
 // 创建/入库确认抽屉见 ./CreateOrderDrawer 与 ./ConfirmReceiptDrawer。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
+import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow } from '../../../components/business'
 import { pageSlice, type OrderRow, type SupplierRow } from '../types'
 import { CreateOrderDrawer } from './CreateOrderDrawer'
 import { ConfirmReceiptDrawer } from './ConfirmReceiptDrawer'
+import { SuppliersDrawer } from './SuppliersDrawer'
 
 const STATUS_FILTERS = ['DRAFT', 'SUBMITTED', 'PARTIAL', 'RECEIVED', 'CANCELLED'] as const
 
@@ -28,7 +31,9 @@ export default function PurchasePage() {
   const [busy, setBusy] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
+  const [supOpen, setSupOpen] = useState(false)
   const [confirming, setConfirming] = useState<OrderRow | null>(null)
+  const confirm = useConfirm()
 
   const load = () => {
     setError('')
@@ -50,6 +55,21 @@ export default function PurchasePage() {
     setBusy(true)
     try {
       await apiFetch(`/procurement/orders/${id}/submit`, { method: 'POST' })
+      load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : d.opFail)
+      setBusy(false)
+    }
+  }
+
+  // cancelOrder 状态机终止:契约 000163 任意非 RECEIVED 状态可 CANCELLED;走 ConfirmDialog,禁物理删除。
+  const cancelOrder = async (o: OrderRow) => {
+    const ok = await confirm(d.cancelConfirmText, { danger: true, title: d.cancelOrder })
+    if (!ok) return
+    setBusy(true)
+    try {
+      await apiFetch(`/procurement/orders/${o.id}/cancel`, { method: 'POST' })
+      toast.success(d.cancelOrder)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : d.opFail)
@@ -83,6 +103,13 @@ export default function PurchasePage() {
             className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
           >
             {t.pages.audit.refresh}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSupOpen(true)}
+            className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
+          >
+            {d.suppliersManage}
           </button>
           <button
             type="button"
@@ -123,6 +150,9 @@ export default function PurchasePage() {
                         {(o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
                           <button type="button" disabled={busy} onClick={() => setConfirming(o)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.confirmReceipt}</button>
                         )}
+                        {(o.status === 'DRAFT' || o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
+                          <button type="button" disabled={busy} onClick={() => cancelOrder(o)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--color-danger)] hover:border-[var(--color-border-hover)]">{d.cancelOrder}</button>
+                        )}
                       </span>
                     </td>
                   </tr>
@@ -159,6 +189,8 @@ export default function PurchasePage() {
           onSaved={() => { setConfirming(null); load() }}
         />
       )}
+
+      {supOpen && <SuppliersDrawer onClose={() => setSupOpen(false)} onSaved={load} />}
     </div>
   )
 }
