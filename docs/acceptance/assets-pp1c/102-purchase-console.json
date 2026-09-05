@@ -1,0 +1,1220 @@
+[
+  {
+    "kind": "browser",
+    "level": "verbose",
+    "text": "recommendation: [DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+    "at": 1788621166756.363
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/login",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/index-DCPIKGhb.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-router-BfkD1xh7.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/vendor-ryRRiAc4.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-primitive-Df4SqoBz.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-compose-refs-DkC2G0sU.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-context-BVroN3fD.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-use-layout-effect-L3tcnRfc.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-id-DLY0u4qC.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-use-effect-event-BP64LkZd.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-use-controllable-state-CZRtXAId.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-slot-5RX76Z2m.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-primitive-X9eeU_hU.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-use-callback-ref-BiF6WqR1.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-dismissable-layer-D_m0Fuhu.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-focus-scope-BMhBTXhw.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-portal-DKYHiGbs.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-presence-DDScNhLJ.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-focus-guards-t14_3s0b.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-tslib-CMwweBXX.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-get-nonce-C-Z93AgS.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-style-singleton-Bx2QTPk8.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-remove-scroll-bar-CbTnb7lJ.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-use-sidecar-Di1feCG9.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-use-callback-ref-L3xFt8I7.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-remove-scroll-DXXfzEn5.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-aria-hidden-DvXkyWUv.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-dialog-CWljPq7l.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-clsx-B-dksMZM.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-tailwind-merge-D43wmME5.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-lucide-react-CtXW7vQY.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-cmdk-CaUm8YTs.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-next-themes-D_j1UUOj.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-sonner-BlQHQXqm.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/index-B50N1kvZ.css",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/index-Ct47PF0y.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/logo-mark-gradient-BvzfY7aM.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/auth-shell-BwkOELxr.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/badge-IHg4oSGC.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/favicon.png",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/ornament-ring-CyskAf8C.png",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/logo-mark-gradient-Bx3gOzuv.png",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/ad-network-BLPAD-pZ.png",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/ornament-ribbon-xAZvzmD4.png",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/ornament-shield-M5TPgt10.png",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/login-bg-full-QjZfKtQi.png",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/ams/purchase?theme=light&lang=zh-CN",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/index-DCPIKGhb.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-router-BfkD1xh7.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/vendor-ryRRiAc4.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-primitive-Df4SqoBz.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-compose-refs-DkC2G0sU.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-context-BVroN3fD.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-use-layout-effect-L3tcnRfc.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-id-DLY0u4qC.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-use-effect-event-BP64LkZd.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-use-controllable-state-CZRtXAId.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-slot-5RX76Z2m.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-primitive-X9eeU_hU.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-use-callback-ref-BiF6WqR1.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-dismissable-layer-D_m0Fuhu.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-focus-scope-BMhBTXhw.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-portal-DKYHiGbs.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-presence-DDScNhLJ.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-focus-guards-t14_3s0b.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-tslib-CMwweBXX.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-get-nonce-C-Z93AgS.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-style-singleton-Bx2QTPk8.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-remove-scroll-bar-CbTnb7lJ.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-use-sidecar-Di1feCG9.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-use-callback-ref-L3xFt8I7.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-remove-scroll-DXXfzEn5.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-aria-hidden-DvXkyWUv.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-dialog-CWljPq7l.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-clsx-B-dksMZM.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-tailwind-merge-D43wmME5.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-lucide-react-CtXW7vQY.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-cmdk-CaUm8YTs.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-next-themes-D_j1UUOj.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-sonner-BlQHQXqm.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/index-B50N1kvZ.css",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:28080/api/admin/v1/auth/me",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:28080/healthz",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "OPTIONS",
+    "url": "http://192.168.0.102:28080/api/admin/v1/auth/me",
+    "status": 204
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/index-TrGQz-1e.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/shared-COfB017I.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/Drawer-DcDkylDn.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/label-DGMQYi_c.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-react-label-D5OAGO2B.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/np-class-variance-authority-BGAj6wdr.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/card-DLWXdC7n.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/index-BUcEqUQY.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/types-BXm2dQn7.js",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:28080/api/admin/v1/notifications/unread-count",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "POST",
+    "url": "http://192.168.0.102:28080/api/admin/v1/auth/refresh",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/overview.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/dashboard.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/bss.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/customer.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/onboarding.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/user.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/userdata.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/realname-review.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/product.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/marketing.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/marketing-recon.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/billing.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/billing.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/payment.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/arrears.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/collection-tasks.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/stopsrv.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/paycheck.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/daily-close.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/boss.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/order.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/dispatch.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/dismantle.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/callback.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/complaint.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/feedback.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/service-metrics.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/install-board.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/worker.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/worker.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/worker-reg.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/worker-ops.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/ams.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/asset.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/tag.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/stock.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/replace.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/purchase.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/inventory.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/oss.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/resource.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/odn.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/device.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/reserve.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/transfer.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/expand.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/loaccount.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/provision.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/provision.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/template.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/provlog.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/quad.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/quadlink.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/check.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/scanlog.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/aaa.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/aaadashboard.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/aaalog.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/alarm.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/cms.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/site.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/site-cats.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/knowledge.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/release.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/message.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/intel.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/gis.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/analytics.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/report.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/monthly.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/org.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/account.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/company.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/staff.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/department.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/post.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/region.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/menuperm.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/datascope.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/partner.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/channel.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/authconfig.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/smsconfig.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/pushconfig.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/realidconfig.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/stripeconfig.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/storageconfig.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/apikey.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/openplat.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/apidocs.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/system.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/license.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/params.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/servers.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/address.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/geo.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/audit.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/crashlogs.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/importer.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/icons/items/backup.svg",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:5180/assets/logo-mark-navy-BjVwLK4M.png",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "OPTIONS",
+    "url": "http://192.168.0.102:28080/api/admin/v1/notifications/unread-count",
+    "status": 204
+  },
+  {
+    "kind": "network",
+    "method": "OPTIONS",
+    "url": "http://192.168.0.102:28080/api/admin/v1/auth/refresh",
+    "status": 204
+  },
+  {
+    "kind": "network",
+    "method": "OPTIONS",
+    "url": "http://192.168.0.102:28080/api/admin/v1/procurement/orders",
+    "status": 204
+  },
+  {
+    "kind": "network",
+    "method": "OPTIONS",
+    "url": "http://192.168.0.102:28080/api/admin/v1/procurement/suppliers",
+    "status": 204
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:28080/api/admin/v1/procurement/orders",
+    "status": 200
+  },
+  {
+    "kind": "network",
+    "method": "GET",
+    "url": "http://192.168.0.102:28080/api/admin/v1/procurement/suppliers",
+    "status": 200
+  }
+]
