@@ -274,3 +274,18 @@ curl -X POST "http://192.168.0.102:28080/api/user/v1/orders" -H "X-API-Key: $CUS
 - **不要用 admin API key 调 `/orders` POST** —— 这是 customer 的本职,admin 调等于绕过 RBAC。真正"代客下单"仅限极少数线下场景,不是 demo 主路径。
 - **不要用一个 API key 跑完整流程** —— 每一步用对应角色(段2/3/8 用调度,段4 用财务,段9-12 用师傅),这才是平台的真实分工;用一个 key 全干等于把 RBAC 设计意图架空。
 - **不要在新单接口 body 里编 customerId** —— user 端 `/orders` 的 CustomerID 是服务端从 token 取的,body 里传了也不会用;admin 端 `POST /orders` body 才传 customerId,但那是给极少数代客场景用的,不要当主路径。
+
+## role-demand-sim 全角色诉求模拟
+
+**脚本**:`scripts/ops/role-demand-sim.sh`(S11/T21 交付;依赖同目录 role-sim-lib.sh / role-sim-cleanup.sh / acceptance-lock.sh)
+
+- **用途**:模拟系统正常运行中各角色碰到的问题并验证处理能力。8 类角色各覆盖正常路径 + 异常/边界场景(重复取消、施工段改地址被拒、库存不足、重复收费被拒、跨域置备被拒等),全程走 102 真实环境,端到端验证业务流转与 RBAC 边界。
+- **运行方式**:直接执行 `bash scripts/ops/role-demand-sim.sh`。服务端缺省 102(`http://192.168.0.102:28080`);bossctl 二进制不在 PATH 时回退 `$HOME/bin/bossctl`,再没有就用 go 现编。各角色 API key 从本目录 `test-accounts.json` 读取,免登录。
+- **角色覆盖**:customer / worker / kefu / dispatch / cashier / noc / reviewer / admin 共 8 类角色、17 个场景,每类角色至少 1 个正常 + 1 个异常/边界。
+- **输出契约与日志解读**:
+  - 每个场景一行:`PASS ROLE:<角色> <场景>` 或 `FAIL ROLE:<角色> <场景> <原因>`;FAIL 行自带失败原因(接口输出首行或状态漂移前后值),据此定位。
+  - 结尾汇总 `结果: PASS=N FAIL=M`;仅当 FAIL=0 且收尾专项清理、孤儿巡检门禁(db-patrol-gate.sh)都通过,才打 `ROLESIM-ALL-PASS` 并退出 0,否则退出码非 0,可直接当 CI 门禁。
+- **注意事项**:
+  - **锁互斥**:启动即抢 acceptance-lock(与 mainchain-acceptance 等验收脚本共用一把锁),锁被占直接退出不跑;不要并行会话同时触发两轮模拟。
+  - **acc_ 清理**:造数带唯一时间戳后缀,正常跑完自动做专项清理(投诉工单/注册单/admin 临时账号)+ RLS 模式清理 + 孤儿巡检;中途被打断的,补跑 `scripts/ops/acceptance-cleanup.sh` 或按 `acc_sim_<SFX>` / `EPC-RLS-<SFX>` 后缀手工巡检,验收造数不过夜。
+  - **耗时**:跑一轮约 5 分钟(真实推进订单 12 环节 + 清理门禁),是验收级跑法不是快速冒烟,不要在高频循环里反复触发。
