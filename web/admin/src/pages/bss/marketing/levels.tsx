@@ -10,6 +10,7 @@ import {
 } from '../../../components/business'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
+import { useConfirm } from '../../../components/ConfirmDialog'
 import { Input } from '../../../components/ui/input'
 
 const EMPTY_FORM = { name: '', minPoints: '' }
@@ -17,6 +18,7 @@ const EMPTY_FORM = { name: '', minPoints: '' }
 export default function LevelsTab() {
   const t = useT()
   const m = t.pages.marketing
+  const confirmDialog = useConfirm()
   const [items, setItems] = useState<LoyLevel[]>([])
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
@@ -58,7 +60,8 @@ export default function LevelsTab() {
     }
   }
 
-  const disable = async (id: number) => {
+  const disable = async (id: number, name: string) => {
+    if (!(await confirmDialog(m.disableConfirm.replace('{name}', name), { danger: true }))) return
     try { await disableLevel(id); load() } catch (e) {
       setError(e instanceof Error ? e.message : m.loadFail)
     }
@@ -71,7 +74,7 @@ export default function LevelsTab() {
       <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{String(r.status)}</Badge>
     ) },
     { key: 'op', label: m.colOp, render: (r) => (r.status === 'ENABLED'
-      ? <ActionLink onClick={() => disable(Number(r.levelId))} label={m.disable} />
+      ? <ActionLink onClick={() => disable(Number(r.levelId), String(r.name))} label={m.disable} />
       : null) },
   ]
 

@@ -13,6 +13,7 @@ import {
 } from '../../../components/business'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
+import { useConfirm } from '../../../components/ConfirmDialog'
 import { Drawer } from '../../../components/Drawer'
 import { Input } from '../../../components/ui/input'
 
@@ -50,6 +51,7 @@ export function toCount(v: string): number | null {
 export default function CouponTemplatesTab() {
   const t = useT()
   const m = t.pages.marketing
+  const confirmDialog = useConfirm()
   const typeOpts = typeOptions(m)
   const [items, setItems] = useState<CouponTemplate[]>([])
   const [error, setError] = useState('')
@@ -108,7 +110,8 @@ export default function CouponTemplatesTab() {
     })
   }
 
-  const disable = async (id: number) => {
+  const disable = async (id: number, name: string) => {
+    if (!(await confirmDialog(m.disableConfirm.replace('{name}', name), { danger: true }))) return
     try { await disableCouponTemplate(id); load() } catch (e) {
       setError(e instanceof Error ? e.message : m.loadFail)
     }
@@ -125,7 +128,7 @@ export default function CouponTemplatesTab() {
       <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{String(r.status)}</Badge>
     ) },
     { key: 'op', label: m.colOp, render: (r) => (r.status === 'ENABLED'
-      ? <ActionLink onClick={() => disable(Number(r.templateId))} label={m.disable} />
+      ? <ActionLink onClick={() => disable(Number(r.templateId), String(r.name))} label={m.disable} />
       : null) },
   ]
 
