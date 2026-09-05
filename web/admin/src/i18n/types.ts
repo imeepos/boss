@@ -658,6 +658,14 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      chainTitle: string
+      regionLabel: string
+      relTitle: string
+      relOrders: string
+      relBills: string
+      relPayments: string
+      relDrill: string
+      relLoadFail: string
     }
     product: {
       title: string
@@ -2841,6 +2849,9 @@ export interface Translations {
       reconUsed: string; reconRedeemedAmount: string; reconFaceValueTotal: string; reconDiff: string
       reconAllMatch: string; reconCustomer: string; reconBalance: string; reconEntriesSum: string
       reconLifetimeEarn: string; reconExpiredTotal: string
+      prev: string; next: string; perPage: string
+      rangeText: string; jumpText: string; pageUnit: string
+      disableConfirm: string
     }
     error: {
       forbidden: string
