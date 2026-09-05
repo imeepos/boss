@@ -2,7 +2,7 @@
 // 契约:GET /coupon-recon、GET /loy/points-recon(diff=drift 只看差异行)。
 import { useState } from 'react'
 import { useT } from '../../../i18n'
-import { PageHead, TabBar } from '../../../components/business'
+import { TabBar } from '../../../components/business'
 import CouponReconTab from './recon-coupons'
 import PointsReconTab from './recon-points'
 
@@ -14,7 +14,6 @@ export default function MarketingReconPage() {
   const [tab, setTab] = useState<TabKey>('coupons')
   return (
     <div>
-      <PageHead title={m.reconTitle} desc={m.reconDesc} />
       <TabBar<TabKey>
         value={tab}
         onChange={setTab}

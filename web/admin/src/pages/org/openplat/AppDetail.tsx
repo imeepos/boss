@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { useConfirm } from '../../../components/ConfirmDialog'
 import { formatTime } from '../../base/audit/logic'
 import { EmptyState, TabBar } from '../../../components/business'
 import { Drawer } from '../../../components/Drawer'
@@ -44,6 +45,7 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
   onClose: () => void
 }) {
   const t = useT()
+  const confirmDialog = useConfirm()
   const [tab, setTab] = useState<DetailTab>('subs')
   const [subs, setSubs] = useState<SubRow[]>([])
   const [deliveries, setDeliveries] = useState<DeliveryRow[]>([])
@@ -66,10 +68,13 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
 
   const delSub = async (id: number) => {
     if (busy) return
+    if (!(await confirmDialog(t.pages.openplat.delSubConfirm, { danger: true }))) return
     setBusy(true)
     try {
       await apiFetch(`/openplat/subscriptions/${id}`, { method: 'DELETE' })
       load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t.pages.openplat.loadFail)
     } finally {
       setBusy(false)
     }
@@ -95,6 +100,8 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
     try {
       await apiFetch(`/openplat/deliveries/${id}/requeue`, { method: 'POST' })
       load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t.pages.openplat.loadFail)
     } finally {
       setBusy(false)
     }

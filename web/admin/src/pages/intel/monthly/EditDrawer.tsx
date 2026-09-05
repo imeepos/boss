@@ -5,6 +5,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Input } from '../../../components/ui/input'
+import { FormField, SubmitButton } from '../../../components/business'
 import type { MonthlyRow, TableMeta } from './types'
 
 interface EditDrawerProps {
@@ -58,9 +59,8 @@ export function EditDrawer({ meta, row, onClose, onSaved }: EditDrawerProps) {
   return (
     <Drawer title={m.editTitle} onClose={onClose} footer={
       <div className="flex items-center gap-3">
-        <button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={() => { void save() }}>
-          {busy ? m.saving : m.save}
-        </button>
+        <SubmitButton state={busy ? 'loading' : 'idle'} onClick={() => { void save() }}
+          labels={{ idle: m.save, loading: m.saving, success: m.save, failed: m.save }} />
         {err && <span className="text-xs text-[var(--color-danger)]">{err}</span>}
       </div>
     }>
@@ -70,15 +70,14 @@ export function EditDrawer({ meta, row, onClose, onSaved }: EditDrawerProps) {
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {editable.map((f) => (
-          <label key={f.key} className="flex flex-col gap-1 text-xs text-[var(--shell-group-title)]">
-            {m[meta.columnsKey][meta.fields.indexOf(f)]}
+          <FormField key={f.key} label={m[meta.columnsKey][meta.fields.indexOf(f)]}>
             <Input
               aria-label={m[meta.columnsKey][meta.fields.indexOf(f)]}
               inputMode="numeric"
               value={values[f.key] ?? ''}
               onChange={(e) => setField(f.key, e.target.value)}
             />
-          </label>
+          </FormField>
         ))}
       </div>
     </Drawer>

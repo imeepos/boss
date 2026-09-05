@@ -10,10 +10,10 @@ import { Dropdown } from '../../components/Dropdown'
 import { Pagination } from '../../components/Pagination'
 import { StatusTag } from '../../components/StatusTag'
 import { useConfirm } from '../../components/ConfirmDialog'
-import { TableStateRow } from '../../components/business'
+import { DataTable } from '../../components/business/data-table'
 import { BackupCreateDrawer, RestoreDrawer } from './BackupDrawers'
 import { downloadArchive, formatBytes, formatTime, toJob, type BackupJobEntry } from './logic'
-import { BTN, BTN_PRIMARY, BTN_LINK, TH, TD } from './styles'
+import { BTN, BTN_PRIMARY, BTN_LINK } from './styles'
 
 export default function BackupPage() {
   const t = useT()
@@ -109,45 +109,35 @@ export default function BackupPage() {
           <button className={BTN} onClick={() => setShowRestore(true)}>{b.restore}</button>
         </div>
         {error && <p className="m-0 mt-3 text-[13px] text-[var(--color-danger)]">{error}</p>}
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-[var(--shell-side-border)]">
-                {b.columns.map((c) => <th key={c} className={TH}>{c}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-[var(--shell-side-border)] last:border-none hover:bg-[var(--shell-menu-hover-bg)]">
-                  <td className={TD}>{r.id}</td>
-                  <td className={TD}>{r.kind === 'backup' ? b.kindBackup : b.kindRestore}</td>
-                  <td className={TD}>{r.scope === 'all' ? b.scopeAll : `${b.scopeTables}(${r.tables.length})`}</td>
-                  <td className={TD}><StatusTag domain="backupStatus" value={r.status} /></td>
-                  <td className={TD} title={r.fileName}>{r.fileName ? (r.fileName.length > 28 ? `${r.fileName.slice(0, 25)}...` : r.fileName) : '-'}</td>
-                  <td className={TD}>{formatBytes(r.sizeBytes)}</td>
-                  <td className={TD}>{r.tableCount}</td>
-                  <td className={TD}>{r.rowCount}</td>
-                  <td className={TD}>{r.operator || '-'}</td>
-                  <td className={TD}>{formatTime(r.createdAt)}</td>
-                  <td className={TD}>{formatTime(r.finishedAt ?? '') || '-'}</td>
-                  <td className={TD}>
-                    <span className="flex items-center gap-1">
-                      {r.kind === 'backup' && r.status === 'succeeded' && (
-                        <button className={BTN_LINK} onClick={() => handleDownload(r)}>{b.download}</button>
-                      )}
-                      {r.status !== 'running' && (
-                        <button className={BTN_LINK} onClick={() => handleDelete(r)}>{b.del}</button>
-                      )}
-                      {r.error && <span className="cursor-help text-[var(--shell-crumb-text)]" title={r.error}>?</span>}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && !error && (
-                <TableStateRow colSpan={b.columns.length} text={b.empty} />
-              )}
-            </tbody>
-          </table>
+        <div className="mt-3">
+          <DataTable
+            emptyText={b.empty}
+            rows={rows as unknown as Record<string, unknown>[]}
+            columns={[
+              { key: 'id', label: b.columns[0] },
+              { key: 'kind', label: b.columns[1], render: (r) => { const j = r as unknown as BackupJobEntry; return j.kind === 'backup' ? b.kindBackup : b.kindRestore } },
+              { key: 'scope', label: b.columns[2], render: (r) => { const j = r as unknown as BackupJobEntry; return j.scope === 'all' ? b.scopeAll : `${b.scopeTables}(${j.tables.length})` } },
+              { key: 'status', label: b.columns[3], render: (r) => <StatusTag domain="backupStatus" value={String((r as unknown as BackupJobEntry).status)} /> },
+              { key: 'fileName', label: b.columns[4], render: (r) => { const j = r as unknown as BackupJobEntry; return <span title={j.fileName}>{j.fileName ? (j.fileName.length > 28 ? `${j.fileName.slice(0, 25)}...` : j.fileName) : '-'}</span> } },
+              { key: 'sizeBytes', label: b.columns[5], render: (r) => formatBytes(Number((r as unknown as BackupJobEntry).sizeBytes)) },
+              { key: 'tableCount', label: b.columns[6] },
+              { key: 'rowCount', label: b.columns[7] },
+              { key: 'operator', label: b.columns[8], render: (r) => String((r as unknown as BackupJobEntry).operator || '-') },
+              { key: 'createdAt', label: b.columns[9], render: (r) => formatTime(String((r as unknown as BackupJobEntry).createdAt)) },
+              { key: 'finishedAt', label: b.columns[10], render: (r) => formatTime(String((r as unknown as BackupJobEntry).finishedAt ?? '')) || '-' },
+              { key: 'op', label: b.columns[11], render: (r) => { const j = r as unknown as BackupJobEntry; return (
+                <span className="flex items-center gap-1">
+                  {j.kind === 'backup' && j.status === 'succeeded' && (
+                    <button className={BTN_LINK} onClick={() => handleDownload(j)}>{b.download}</button>
+                  )}
+                  {j.status !== 'running' && (
+                    <button className={BTN_LINK} onClick={() => handleDelete(j)}>{b.del}</button>
+                  )}
+                  {j.error && <span className="cursor-help text-[var(--shell-crumb-text)]" title={j.error}>?</span>}
+                </span>
+              ) } },
+            ]}
+          />
         </div>
         <Pagination
           page={page} pageSize={pageSize} total={total}

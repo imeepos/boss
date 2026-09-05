@@ -4,8 +4,10 @@ import { pointsRecon, type PointReconRow, type PointReconSummary } from '../../.
 import { useT } from '../../../i18n'
 import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
-import { ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business'
+import {
+  PageHead, pagerTexts, ErrorBanner, ToolbarButton, DataTable, type ColumnDef,
+} from '../../../components/business'
+import { Pagination } from '../../../components/Pagination'
 
 export default function PointsReconTab() {
   const t = useT()
@@ -14,6 +16,8 @@ export default function PointsReconTab() {
   const [summary, setSummary] = useState<PointReconSummary | null>(null)
   const [driftOnly, setDriftOnly] = useState(false)
   const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const load = () => {
     setError('')
@@ -26,8 +30,22 @@ export default function PointsReconTab() {
   }
   useEffect(load, [driftOnly]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const columns: ColumnDef[] = [
+    { key: 'customerId', label: m.reconCustomer, render: (r) => <span className="font-medium">{String(r.customerId ?? '—')}</span> },
+    { key: 'balance', label: m.reconBalance, render: (r) => String(r.balance ?? '—') },
+    { key: 'entriesSum', label: m.reconEntriesSum, render: (r) => String(r.entriesSum ?? '—') },
+    { key: 'lifetimeEarn', label: m.reconLifetimeEarn, render: (r) => String(r.lifetimeEarn ?? '—') },
+    { key: 'expiredTotal', label: m.reconExpiredTotal, render: (r) => String(r.expiredTotal ?? '—') },
+    { key: 'diff', label: m.reconDiff, render: (r) => (
+      <Badge variant={r.diffKind === 'MATCH' ? 'success' : 'danger'}>{String(r.diffKind)}</Badge>
+    ) },
+  ]
+
+  const paged = rows.slice((page - 1) * pageSize, page * pageSize)
+
   return (
     <div>
+      <PageHead title={m.reconTitle} desc={m.reconDesc} />
       <div className="mb-3 flex items-center gap-3">
         {summary && (
           <div className="flex-1 text-xs text-[var(--shell-crumb-text)]">
@@ -39,42 +57,20 @@ export default function PointsReconTab() {
           </div>
         )}
         <label className="flex cursor-pointer items-center gap-1 text-xs text-[var(--shell-content-text)]">
-          <input type="checkbox" checked={driftOnly} onChange={(e) => setDriftOnly(e.target.checked)} />
+          <input type="checkbox" checked={driftOnly} onChange={(e) => { setDriftOnly(e.target.checked); setPage(1) }} />
           {m.reconDriftOnly}
         </label>
         <ToolbarButton onClick={load}>{m.reconRefresh}</ToolbarButton>
       </div>
       <Card className="p-4">
         {error ? <ErrorBanner message={error} /> : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{m.reconCustomer}</TableHead>
-                <TableHead>{m.reconBalance}</TableHead>
-                <TableHead>{m.reconEntriesSum}</TableHead>
-                <TableHead>{m.reconLifetimeEarn}</TableHead>
-                <TableHead>{m.reconExpiredTotal}</TableHead>
-                <TableHead>{m.reconDiff}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.customerId}>
-                  <TableCell className="font-medium">{r.customerId}</TableCell>
-                  <TableCell>{r.balance}</TableCell>
-                  <TableCell>{r.entriesSum}</TableCell>
-                  <TableCell>{r.lifetimeEarn}</TableCell>
-                  <TableCell>{r.expiredTotal}</TableCell>
-                  <TableCell>
-                    <Badge variant={r.diffKind === 'MATCH' ? 'success' : 'danger'}>{r.diffKind}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!rows.length && (
-                <TableRow><TableCell colSpan={6}><EmptyState text={m.reconAllMatch} /></TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <DataTable columns={columns} rows={paged.map((r) => ({ ...r }))} emptyText={m.reconAllMatch} />
+        )}
+        {!error && rows.length > 0 && (
+          <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
+            <Pagination total={rows.length} page={page} pageSize={pageSize}
+              onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(m)} />
+          </div>
         )}
       </Card>
     </div>

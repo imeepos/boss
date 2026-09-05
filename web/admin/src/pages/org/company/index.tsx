@@ -8,6 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { PageHead, pagerTexts } from '../shared'
 import { filterLegalEntities, pageSlice, type LegalEntityRow } from './filter'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { EntityStaffPanel } from './EntityStaffPanel'
 import { TableStateRow } from '../../../components/business'
 
@@ -135,23 +136,27 @@ export default function CompanyPage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label>{t.pages.company.taxLabel}</label>
-              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]"
-                value={form.taxJurisdiction} onChange={(e) => setForm({ ...form, taxJurisdiction: e.target.value })}>
-                <option value="">{t.pages.company.taxUndetermined}</option>
-                <option value="CN">{t.pages.company.taxCN}</option>
-                <option value="PH">{t.pages.company.taxPH}</option>
-              </select>
+              <SimplePicker value={form.taxJurisdiction}
+                onChange={(v) => setForm({ ...form, taxJurisdiction: v })}
+                options={[
+                  { value: 'CN', label: t.pages.company.taxCN },
+                  { value: 'PH', label: t.pages.company.taxPH },
+                ]}
+                emptyLabel={t.pages.company.taxUndetermined}
+                ariaLabel={t.pages.company.taxLabel} />
             </div>
             <div className="flex flex-col gap-1.5">
               <label>{t.pages.company.channelLabel}</label>
-              <select className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]"
-                value={form.taxChannel} onChange={(e) => setForm({ ...form, taxChannel: e.target.value })}>
-                <option value="manual">{t.pages.company.channelManual}</option>
-                <option value="leqi">{t.pages.company.channelLeqi}</option>
-                <option value="bir_eis">{t.pages.company.channelBIR}</option>
-              </select>
+              <SimplePicker value={form.taxChannel}
+                onChange={(v) => setForm({ ...form, taxChannel: v })}
+                options={[
+                  { value: 'manual', label: t.pages.company.channelManual },
+                  { value: 'leqi', label: t.pages.company.channelLeqi },
+                  { value: 'bir_eis', label: t.pages.company.channelBIR },
+                ]}
+                ariaLabel={t.pages.company.channelLabel} />
             </div>
-            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{formError}</div>}
           </div>
         </Drawer>
       )}

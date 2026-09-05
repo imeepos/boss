@@ -10,6 +10,8 @@ import { useT } from '../../../i18n'
 import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { CustomerPicker } from '../../../components/pickers/CustomerPicker'
+import { FormField, SubmitButton, ToolbarButton } from '../../../components/business'
+import { Input } from '../../../components/ui/input'
 import { fmtFee } from '../../../lib/format'
 
 interface Props {
@@ -18,9 +20,6 @@ interface Props {
 }
 
 interface BillOption { billId: number; billNo: string; period: string; amount: number; status: string }
-
-const inputCls = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-const labelCls = 'mb-1 block text-xs text-[var(--shell-group-title)]'
 
 export function CounterPaymentForm({ onDone, onClose }: Props) {
   const t = useT()
@@ -52,7 +51,7 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
       .then((d) => setBillOptions([
         { value: '0', label: f.noBill },
         ...(d?.items ?? []).filter((b) => b.status !== 'PAID').map((b) => ({
-          value: String(b.billId), label: `${b.billNo} ${b.period} ${fmtFee(b.amount)} ${b.status}`,
+          value: String(b.billId), label: b.billNo + ' ' + b.period + ' ' + fmtFee(b.amount) + ' ' + b.status,
         })),
       ]))
       .catch(() => setBillOptions([]))
@@ -88,44 +87,44 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
         {error && <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
           <div className="col-span-2">
-            <label className={labelCls}>{f.customer}</label>
-            <CustomerPicker value={customer} onChange={setCustomer} />
+            <FormField label={f.customer}>
+              <CustomerPicker value={customer} onChange={setCustomer} />
+            </FormField>
           </div>
           <div className="col-span-2">
-            <label className={labelCls}>{f.bill}</label>
-            <Dropdown
-              value={bill}
-              options={billOptions}
-              onChange={setBill}
-              ariaLabel={f.bill}
-              disabled={customer === ''}
-            />
+            <FormField label={f.bill}>
+              <Dropdown
+                value={bill}
+                options={billOptions}
+                onChange={setBill}
+                ariaLabel={f.bill}
+                disabled={customer === ''}
+              />
+            </FormField>
           </div>
-          <div>
-            <label className={labelCls}>{f.amount}</label>
-            <input className={inputCls} type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
-          </div>
-          <div>
-            <label className={labelCls}>{f.method}</label>
+          <FormField label={f.amount}>
+            <Input inputMode="decimal" value={amount}
+              onChange={(e) => setAmount(e.target.value)} />
+          </FormField>
+          <FormField label={f.method}>
             <Dropdown value={method} ariaLabel={f.method} onChange={setMethod} options={[
               { value: 'cash', label: f.methods.cash ?? 'cash' },
               { value: 'wechat', label: f.methods.wechat ?? 'wechat' },
               { value: 'alipay', label: f.methods.alipay ?? 'alipay' },
               { value: 'card', label: f.methods.card ?? 'card' },
             ]} />
-          </div>
-          <div>
-            <label className={labelCls}>{f.site}</label>
+          </FormField>
+          <FormField label={f.site}>
             <Dropdown value={site} options={siteOptions} onChange={setSite} ariaLabel={f.site} />
-          </div>
-          <div>
-            <label className={labelCls}>{f.counter}</label>
-            <input className={inputCls} value={counter} onChange={(e) => setCounter(e.target.value)} />
-          </div>
+          </FormField>
+          <FormField label={f.counter}>
+            <Input value={counter} onChange={(e) => setCounter(e.target.value)} />
+          </FormField>
         </div>
         <div className="mt-5 flex justify-center gap-3">
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-5 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]" onClick={onClose}>{t.common.confirmDialog.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm bg-[var(--color-brand-bg)] px-5 text-[13px] text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60" disabled={busy} onClick={submit}>{busy ? f.submitting : f.submit}</button>
+          <ToolbarButton onClick={onClose}>{t.common.confirmDialog.cancel}</ToolbarButton>
+          <SubmitButton state={busy ? 'loading' : 'idle'} onClick={submit}
+            labels={{ idle: f.submit, loading: f.submitting, success: f.submit, failed: f.submit }} />
         </div>
       </div>
     </div>

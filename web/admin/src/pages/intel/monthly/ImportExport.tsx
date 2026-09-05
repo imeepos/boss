@@ -3,10 +3,9 @@
 // 按 Content-Disposition filename 落盘。
 import { useRef, useState } from 'react'
 import { useT } from '../../../i18n'
+import { ToolbarButton } from '../../../components/business'
 import { exportMonthlyCsv, importMonthlyCsv } from './api'
 import type { ImportResult, TableKey } from './types'
-
-const BTN = 'h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] text-center hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
 
 function fmt(tpl: string, kv: Record<string, string | number>): string {
   return Object.entries(kv).reduce((s, [k, v]) => s.replaceAll('{' + k + '}', String(v)), tpl)
@@ -61,12 +60,12 @@ export function ImportExport({ table, month, onImported }: ImportExportProps) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className={BTN} disabled={busy !== ''} onClick={() => fileRef.current?.click()}>
+        <ToolbarButton disabled={busy !== ''} onClick={() => fileRef.current?.click()}>
           {busy === 'import' ? m.importing : m.import}
-        </button>
-        <button type="button" className={BTN} disabled={busy !== ''} onClick={() => { void doExport() }}>
+        </ToolbarButton>
+        <ToolbarButton disabled={busy !== ''} onClick={() => { void doExport() }}>
           {busy === 'export' ? m.exporting : m.export}
-        </button>
+        </ToolbarButton>
         {result && !partial && (
           <span className="text-xs text-[var(--shell-group-title)]">
             {fmt(m.importSummary, { total: result.total, imported: result.imported, failed: result.failed })}

@@ -635,3 +635,8 @@ SQL
 场景 → 验证 workspace_session_manage archiveSession 这类宿主侧操作是否真实生效;workspace_list/session_link_list 均不过滤归档态,GUI 截图受模型图像输入限制时不可依赖。
 怎么用 → ① lsof -nP -iTCP:18181 -sTCP:LISTEN 拿 pid;② ps -p <pid> -wwE -o command= 看 DSH_HOME(18181 实例是 /Users/imeepos/.dsh/dsh012-clean,不是默认 ~/.dsh,后者是另一实例的旧数据);③ 直读 $DSH_HOME/storages/workspace.json 验收,结构 {unit, global:{initialized,workspaceIds,archivedSessionIds}, tables:{workspaces:{<id>:record}}},归档登记在 global.archivedSessionIds(跨工作区全局集合)。
 注意 → archiveSession 响应的 archivedSessionIds 是全局登记表全集(含历史归档约 250 条),不是本次影响集;逐个归档 N 个会话就发 N 次调用,每次只带一个 sessionId,别试图一次传数组。
+
+## cdp-admin-capture.mjs 布尔旗标吞参
+症状 → --logs 不落文件、--eval 断言静默不执行,截图本身正常,极易误判「脚本坏了」。根因:parseArgs 对 --no-proxy 这类布尔旗标不做特判,固定按「旗标+值」i+=2 消耗两格,把下一个旗标的值吃掉。
+场景 → cdp-admin-capture.mjs / cdp-capture.mjs 组合采集 console+断言时。
+怎么用 → 参数顺序固定:位置参数(out.png) → --path/--base/--theme/--lang → --eval(可重复) → --logs → --settle → --no-proxy(永远放最后);跑完核对 stdout 必须有一行 eval: {"..."} 断言回显,没有即断言未执行,重跑而非改代码。
