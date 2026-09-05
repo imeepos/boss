@@ -23,6 +23,7 @@ REG_REJECT_ID=""; REG_LOOP_ID=""; WREG_REJECT_ID=""; WREG_LOOP_ID=""
 CUST_REG_IDS=""; WORKER_REG_IDS=""
 SIM_ACCOUNT_ID=""; SIM_USERNAME="acc_sim_$SFX"; CMP_TICKET=""
 GLOBAL_SFX="$SFX"
+SKIP_CLEANUP=""
 
 sc_customer_order() {
   local scene="客户自助下单" out rc out2 rc2 ordbody reason="下单或取单号失败"
