@@ -1,20 +1,25 @@
 // 账号与角色页:Pro 惯例列表(筛选/分页/状态列/行操作) + 新建/编辑 Drawer 表单。
 // 契约: GET/POST /accounts、PUT /accounts/{id}(sys.yaml;列名对照 docs/admin/account.html)。
+// 停用确认走 ConfirmDialog;DELETE /accounts/{id} 经 102 实测为软删(等价停用),
+// 不另设重复删除入口(结论见 docs/acceptance/2026-09-05-pp1a-page-polish.md 清单5)。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
+import { useConfirm } from '../../../components/ConfirmDialog'
+import { DataTable } from '../../../components/business/data-table'
+import { ActionLinks, ActionLink, ActionSep } from '../../../components/business/page-head'
 import { DetailDrawer } from '../../org/shared'
 import { filterAccounts, pageSlice, type AccountRow } from './list'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from './form'
 import { AccountFormDrawer } from './AccountForm'
 import { BatchImportEntry } from '../importer/BatchImportEntry'
-import { TableStateRow } from '../../../components/business'
 
 export default function AccountListPage() {
   const t = useT()
+  const confirmDialog = useConfirm()
   const [rows, setRows] = useState<AccountRow[]>([])
   const [roles, setRoles] = useState<string[]>([])
   const [error, setError] = useState('')
@@ -27,7 +32,6 @@ export default function AccountListPage() {
   const [form, setForm] = useState<AccountFormValues | null>(null)
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [confirmDisable, setConfirmDisable] = useState<AccountRow | null>(null)
 
   const load = () => {
     setError('')
@@ -62,24 +66,23 @@ export default function AccountListPage() {
     }
   }
 
-  const disable = async () => {
-    if (!confirmDisable || busy) return
+  const disable = async (row: AccountRow) => {
+    if (busy) return
+    if (!(await confirmDialog(t.pages.account.disableConfirm.replace('{name}', row.username), { danger: true }))) return
     setBusy(true)
     try {
       // PUT 为全量语义(域层校验 username/realName/roleCode):禁用=全字段 + status 翻转。
-      const f = rowToForm(confirmDisable)
-      await apiFetch(`/accounts/${confirmDisable.id}`, {
+      const f = rowToForm(row)
+      await apiFetch(`/accounts/${row.id}`, {
         method: 'PUT',
         body: {
           ...buildAccountPayload(f, true),
-          status: confirmDisable.status === 1 ? 0 : 1,
+          status: row.status === 1 ? 0 : 1,
         },
       })
-      setConfirmDisable(null)
       load()
     } catch (e) {
       setFormError(e instanceof Error ? e.message : t.pages.account.saveFail)
-      setConfirmDisable(null)
     } finally {
       setBusy(false)
     }
@@ -121,38 +124,34 @@ export default function AccountListPage() {
           </button>
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.account.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.username}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.realName}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.roleName}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.legalEntityName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.deptName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.postName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{scopeText(r)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="accountStatus" value={String(r.status)} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => setDetail(r)}>{t.pages.account.detail}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button onClick={() => setForm(rowToForm(r))}>{t.pages.account.edit}</button>
-                        {r.status === 1 && (
-                          <>
-                            <span className="text-[var(--shell-side-border)]">|</span>
-                            <button onClick={() => setConfirmDisable(r)}>{t.pages.account.disable}</button>
-                          </>
-                        )}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={9} loading={busy} text={t.pages.account.empty} />}
-              </tbody>
-            </table>
+          <div className="px-4 pb-4">
+            <DataTable
+              emptyText={t.pages.account.empty}
+              rows={slice as unknown as Record<string, unknown>[]}
+              columns={[
+                { key: 'username', label: t.pages.account.columns[0] },
+                { key: 'realName', label: t.pages.account.columns[1] },
+                { key: 'roleName', label: t.pages.account.columns[2] },
+                { key: 'legalEntityName', label: t.pages.account.columns[3], render: (r) => String((r as unknown as AccountRow).legalEntityName || '—') },
+                { key: 'deptName', label: t.pages.account.columns[4], render: (r) => String((r as unknown as AccountRow).deptName || '—') },
+                { key: 'postName', label: t.pages.account.columns[5], render: (r) => String((r as unknown as AccountRow).postName || '—') },
+                { key: 'scope', label: t.pages.account.columns[6], render: (r) => scopeText(r as unknown as AccountRow) },
+                { key: 'status', label: t.pages.account.columns[7], render: (r) => <StatusTag domain="accountStatus" value={String((r as unknown as AccountRow).status)} /> },
+                { key: 'op', label: t.pages.account.columns[8], render: (r) => { const row = r as unknown as AccountRow; return (
+                  <ActionLinks>
+                    <ActionLink label={t.pages.account.detail} onClick={() => setDetail(row)} />
+                    <ActionSep />
+                    <ActionLink label={t.pages.account.edit} onClick={() => setForm(rowToForm(row))} />
+                    {row.status === 1 && (
+                      <>
+                        <ActionSep />
+                        <ActionLink label={t.pages.account.disable} onClick={() => void disable(row)} />
+                      </>
+                    )}
+                  </ActionLinks>
+                ) } },
+              ]}
+            />
           </div>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
@@ -189,18 +188,6 @@ export default function AccountListPage() {
         busy={busy}
         submitError={formError}
       />
-
-      {confirmDisable && (
-        <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/45" onClick={() => setConfirmDisable(null)}>
-          <div className="w-90 rounded-md bg-[var(--shell-card-bg)] p-5" onClick={(e) => e.stopPropagation()}>
-            <p className="m-0 mb-4 text-sm text-[var(--shell-content-text)]">{t.pages.account.disableConfirm.replace('{name}', confirmDisable.username)}</p>
-            <div className="flex justify-end gap-2">
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setConfirmDisable(null)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={disable}>{t.pages.account.disable}</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
