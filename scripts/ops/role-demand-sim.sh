@@ -168,7 +168,8 @@ sc_reviewer_resubmit_loop() {
   printf -v wregbody '{"name":"acc模拟师傅","phone":"%s","idCardNo":"%s","groupId":11,"regionId":4}' "$phw" "$IDC_W"
   out=$(curl -sS -m 15 -X POST "$SERVER/api/worker/v1/worker-registrations" -H "Content-Type: application/json" -d "$wregbody"); rc=$?
   WREG_LOOP_ID=$(printf '%s' "$out" | jid)
-	bc "$K_REV" call POST /worker-registrations/$WREG_LOOP_ID/approve --data "{"groupId":11,"regionId":4}" >/dev/null; rc2=$?
+	bc "$K_REV" call POST /worker-registrations/$WREG_LOOP_ID/approve --data '{"groupId":11,"regionId":4}' > /tmp/rolesim-wapprove.txt 2>&1; rc2=$?
+	echo "[debug] wapprove-out: $(head -c 200 /tmp/rolesim-wapprove.txt)" >&2
   CUST_REG_IDS="$REG_REJECT_ID $REG_LOOP_ID"
   WORKER_REG_IDS="$WREG_REJECT_ID $WREG_LOOP_ID"
   if [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ] && [ -n "$REG_LOOP_ID" ] && [ -n "$WREG_LOOP_ID" ]; then
