@@ -50,11 +50,11 @@ func TestPGStore_CreateReplacement_BackfillsLegalEntity(t *testing.T) {
 	defer mock.Close()
 
 	assetCols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name",
-		"tag_id", "address_id", "region_id", "region_name", "type", "status"}
+		"tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id"}
 	mock.ExpectQuery(`FROM assets WHERE id`).
 		WithArgs(int64(6)).
 		WillReturnRows(mock.NewRows(assetCols).
-			AddRow(int64(6), "A-20260006", int64(1), int64(2), "副品牌·家宽", nil, nil, nil, "", "光猫", "DEPLOYED"))
+			AddRow(int64(6), "A-20260006", int64(1), int64(2), "副品牌·家宽", nil, nil, nil, "", "光猫", "DEPLOYED", int64(0)))
 	mock.ExpectQuery(`INSERT INTO replacements`).
 		WithArgs("RPL-20260817-002", int64(6), int64(2), "副品牌·家宽", "光猫故障", "MEDIUM", "PENDING").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))

@@ -255,3 +255,37 @@ func tagUnbindHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, nil)
 	}
 }
+
+// modelListHandler GET /asset-models:型号字典(P1-T3,含停用,下拉与列表)。
+func modelListHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		list, err := a.Asset.ListModels(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	}
+}
+
+// modelCreateHandler POST /asset-models:建型号(四元组唯一,冲突 40900)。
+func modelCreateHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var m asset.AssetModel
+		if !httpx.BindAndValidate(c, &m, func() error {
+			return httpx.CollectErrors(
+				httpx.RequireString(m.Model, "model", 128),
+				httpx.RequireString(m.Category, "category", 32),
+			)
+		}) {
+			return
+		}
+		id, err := a.Asset.CreateModel(c.Request.Context(), m)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "数据变更", "asset_model", fmt.Sprint(id), map[string]any{"model": m.Model, "category": m.Category})
+		respond(c, apitypes.CodeOK, gin.H{"id": id})
+	}
+}

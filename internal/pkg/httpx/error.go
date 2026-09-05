@@ -55,6 +55,9 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, cms.ErrCategoryTaken),
 		errors.Is(err, cms.ErrCategoryInUse),
 		errors.Is(err, asset.ErrBindingConflict),
+		errors.Is(err, asset.ErrTagUnbound),
+		errors.Is(err, asset.ErrAssetScrapped),
+		errors.Is(err, asset.ErrModelExists),
 		errors.Is(err, worker.ErrDuplicate):
 		// 资产/标签双绑冲突:40900 + 透传 err.Error()(含具体资产/标签 id),
 		// 调用方能区分"标签已绑"vs"资产已绑",与 40920 扫码不一致明确区分。

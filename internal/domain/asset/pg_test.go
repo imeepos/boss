@@ -125,10 +125,10 @@ func TestPGStore_ListAssets(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status"}
+	cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id"}
 	mock.ExpectQuery(`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(0), int64(0), int64(0), "", "光猫", "IN_STOCK"))
+			AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(0), int64(0), int64(0), "", "光猫", "IN_STOCK", int64(0)))
 
 	s := NewPGStore(mock)
 	got, err := s.ListAssets(context.Background())
@@ -162,7 +162,7 @@ func TestPGStore_CreateAsset(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-20260002", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK").
+		WithArgs("A-20260002", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK", nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 	// 入账轨迹首行:建档即留痕
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
@@ -194,11 +194,11 @@ func TestPGStore_GetAsset(t *testing.T) {
 		}
 		defer mock.Close()
 
-		cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status"}
+		cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id"}
 		mock.ExpectQuery(`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name`).
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows(cols).
-				AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(2), int64(100), int64(11), "马尼拉市", "光猫", "DEPLOYED"))
+				AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(2), int64(100), int64(11), "马尼拉市", "光猫", "DEPLOYED", int64(0)))
 
 		s := NewPGStore(mock)
 		a, err := s.GetAsset(context.Background(), 1)
@@ -391,7 +391,7 @@ func TestPGStore_CreateAsset_ResubmitIdempotent(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
+		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 	// 入账轨迹首行:建档即留痕
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).

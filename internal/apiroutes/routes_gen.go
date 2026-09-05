@@ -37,6 +37,8 @@ var Portals = []Portal{
 		{"GET", "/tags", "电子标签列表(status: UNBOUND/BOUND/DISABLED)"},
 		{"POST", "/tags/{tagId}/unbind", "解绑标签(P1-T2;标签回 UNBOUND 可复用,写 UNBIND 事件;expectedAssetId 传入时校验当前绑定一致)"},
 		{"POST", "/assets/{assetId}/scrap", "报废资产(P1-T2;任意非终态→SCRAPPED 终态幂等,标签强解绑写 RECYCLE 事件,轨迹落行,同事务)"},
+		{"GET", "/asset-models", "型号字典(P1-T3;含停用,管理端下拉与列表;UNIQUE vendor+model+category+partNumber)"},
+		{"POST", "/asset-models", "建型号(P1-T3;冲突 40900;停用不物理删,引用由 assets.model_id 承载)"},
 		{"GET", "/stocktakes", "盘点任务列表"},
 		{"POST", "/stocktakes", "发起盘点任务"},
 		{"POST", "/stocktakes/{taskId}/diff-handle", "盘点关单(未处置差异非 0 → 40900;全处置完置 DONE)"},

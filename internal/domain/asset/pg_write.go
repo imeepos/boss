@@ -121,6 +121,21 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 			return 0, fmt.Errorf("asset: legal entity %d: %w", a.LegalEntityID, ErrForeignKeyViolation)
 		}
 	}
+	// 型号字典(P1-T3):model_id 必须存在且未停用;Type 未显式给定时取 model.category 派生。
+	if a.ModelID > 0 {
+		var category string
+		var active bool
+		err := s.db.QueryRow(ctx, `SELECT category, is_active FROM asset_models WHERE id = $1`, a.ModelID).Scan(&category, &active)
+		if err != nil {
+			return 0, fmt.Errorf("asset: model %d: %w", a.ModelID, ErrForeignKeyViolation)
+		}
+		if !active {
+			return 0, fmt.Errorf("asset: model %d deactivated: %w", a.ModelID, ErrForeignKeyViolation)
+		}
+		if a.Type == "" {
+			a.Type = category
+		}
+	}
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -131,10 +146,11 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 	var id int64
 	err = tx.QueryRow(ctx,
 		`INSERT INTO assets(asset_code, batch_id, legal_entity_id, legal_entity_name,
-		                    tag_id, address_id, region_id, region_name, type, status)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+		                    tag_id, address_id, region_id, region_name, type, status, model_id)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
 		a.AssetCode, a.BatchID, a.LegalEntityID, a.LegalEntityName,
-		idOrNil(a.TagID), idOrNil(a.AddressID), idOrNil(a.RegionID), a.RegionName, a.Type, a.Status).Scan(&id)
+		idOrNil(a.TagID), idOrNil(a.AddressID), idOrNil(a.RegionID), a.RegionName, a.Type, a.Status,
+		idOrNil(a.ModelID)).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("asset: create asset: %w", classifyAssetInsertErr(ctx, err, a))
 	}

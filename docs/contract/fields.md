@@ -678,7 +678,8 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 |:---------|:-------|:--------------|:----------|
 | 资产编码 | `AssetCode` | asset_code | 如 A-20260001 |
 | 绑定标签 | `TagID` | tag_id | BIGINT → tags（可空） |
-| 类型 | `Type` | type | 光猫/ONU/路由器等 |
+| 类型 | `Type` | type | 光猫/ONU/路由器等（展示冗余；权威=model_id→asset_models.category） |
+| 型号 | `ModelID` | model_id | BIGINT → asset_models（可空，000187+P1-T3） |
 | 入库批次 | `BatchID` | batch_id | BIGINT → asset_batches |
 | 部署地址 | `AddressID` | address_id | BIGINT → addresses（可空，未部署为空） |
 | 状态 | `Status` | status | IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED（见 terms.md 第 4 节） |

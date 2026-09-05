@@ -19,6 +19,9 @@ var ErrForeignKeyViolation = errors.New("asset: foreign key violation")
 // ErrTagUnbound 标签当前未绑定任何资产(P1-T2 解绑前置校验)。
 var ErrTagUnbound = errors.New("asset: tag not bound")
 
+// ErrModelExists 型号字典重复(vendor+model+category+part_number 已存在,P1-T3)。
+var ErrModelExists = errors.New("asset: model already exists")
+
 // ErrBindingConflict 资产/标签双绑冲突:目标已被另一方绑定。
 // 用于 POST /provision/{assets,tags} 同步回填时,反向记录已被占用的场景。
 var ErrBindingConflict = errors.New("asset: tag-asset binding conflict")
@@ -114,7 +117,7 @@ func (s *PGStore) ListAssets(ctx context.Context) ([]Asset, error) {
 	rows, err := s.db.Query(ctx,
 		`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name,
 		        COALESCE(tag_id, 0), COALESCE(address_id, 0), COALESCE(region_id, 0),
-		        COALESCE(region_name, ''), type, status
+		        COALESCE(region_name, ''), type, status, COALESCE(model_id, 0)
 		 FROM assets ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("asset: list assets: %w", err)
@@ -124,7 +127,7 @@ func (s *PGStore) ListAssets(ctx context.Context) ([]Asset, error) {
 	for rows.Next() {
 		var a Asset
 		if err := rows.Scan(&a.AssetID, &a.AssetCode, &a.BatchID, &a.LegalEntityID, &a.LegalEntityName,
-			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status); err != nil {
+			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status, &a.ModelID); err != nil {
 			return nil, fmt.Errorf("asset: scan asset: %w", err)
 		}
 		out = append(out, a)
@@ -140,10 +143,10 @@ func (s *PGStore) GetAsset(ctx context.Context, id int64) (*Asset, error) {
 	err := s.db.QueryRow(ctx,
 		`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name,
 		        COALESCE(tag_id, 0), COALESCE(address_id, 0), COALESCE(region_id, 0),
-		        COALESCE(region_name, ''), type, status
+		        COALESCE(region_name, ''), type, status, COALESCE(model_id, 0)
 		 FROM assets WHERE id = $1`, id).
 		Scan(&a.AssetID, &a.AssetCode, &a.BatchID, &a.LegalEntityID, &a.LegalEntityName,
-			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status)
+			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status, &a.ModelID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

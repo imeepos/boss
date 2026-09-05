@@ -39,6 +39,19 @@ type TagEvent struct {
 	CreatedAt      time.Time      `json:"createdAt"`
 }
 
+// AssetModel 资产型号字典(P1-T3,R3 调研:NetBox DeviceType/GLPI models 同款形态):
+// UNIQUE(vendor,model,category,part_number) 防重;is_active 停用不物理删(引用保护)。
+type AssetModel struct {
+	ID         int64          `json:"id"`
+	Vendor     string         `json:"vendor"`
+	Model      string         `json:"model"`
+	Category   string         `json:"category"`
+	PartNumber string         `json:"partNumber"`
+	Spec       map[string]any `json:"spec,omitempty"`
+	IsActive   bool           `json:"isActive"`
+	CreatedAt  time.Time      `json:"createdAt"`
+}
+
 // Asset 资产台账(光猫/ONU 等装维物资的全生命周期)。
 type Asset struct {
 	AssetID         int64  `json:"assetId"`
@@ -50,8 +63,9 @@ type Asset struct {
 	AddressID       int64  `json:"addressId"` // 0=未部署
 	RegionID        int64  `json:"regionId"`  // 0=未部署
 	RegionName      string `json:"regionName"`
-	Type            string `json:"type"`   // 光猫/ONU/路由器
-	Status          string `json:"status"` // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
+	Type            string `json:"type"`    // 光猫/ONU/路由器(展示冗余;权威=model_id→asset_models.category)
+	ModelID         int64  `json:"modelId"` // 0=未挂型号(P1-T3)
+	Status          string `json:"status"`  // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
 }
 
 // AssetLifecycle 资产状态轨迹(每次状态/位置变更一行,历史不随当前状态漂移)。
@@ -168,4 +182,9 @@ type AssetService interface {
 	// ScrapAsset 报废资产(P1-T2):任意非终态 → SCRAPPED(终态幂等 no-op),强制解绑标签写
 	// RECYCLE 事件(软回收禁硬删),轨迹落行;同一事务,失败整单回滚。
 	ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string) error
+
+	// ListModels 型号字典(含停用,管理端下拉与列表)。
+	ListModels(ctx context.Context) ([]AssetModel, error)
+	// CreateModel 建型号:UNIQUE(vendor,model,category,part_number) 冲突返回 ErrModelExists。
+	CreateModel(ctx context.Context, m AssetModel) (int64, error)
 }

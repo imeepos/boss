@@ -28,7 +28,7 @@ func TestPGStore_CreateAsset_BackfillTagBinding(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
+		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 	// 入账轨迹首行:建档即留痕
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
@@ -76,7 +76,7 @@ func TestPGStore_CreateAsset_TagAlreadyBound(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
+		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 	// 入账轨迹首行:建档即留痕
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
@@ -253,7 +253,7 @@ func TestPGStore_CreateAsset_DBUniqueViolation_TagBound(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-DUP", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK").
+		WithArgs("A-DUP", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil).
 		WillReturnError(&pgconn.PgError{
 			Code:           "23505",
 			ConstraintName: "uq_assets_tag_notnull",
