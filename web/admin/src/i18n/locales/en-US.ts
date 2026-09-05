@@ -1606,6 +1606,8 @@ const enUS: Translations = {
         dSeeAll: 'View all {count}', dCollapse: 'Collapse',
       },
       loading: 'Loading…',
+      captainSet: 'Set as captain',
+      addedToGroup: 'Added to team',
     },
     workerRegPage: {
       title: 'Worker Registration',

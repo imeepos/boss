@@ -1606,6 +1606,8 @@ const zhCN: Translations = {
         dSeeAll: '查看全部 {count} 条', dCollapse: '收起',
       },
       loading: '加载中…',
+      captainSet: '已设为队长',
+      addedToGroup: '已加入装维队',
     },
     workerRegPage: {
       title: '师傅注册审核',

@@ -1606,6 +1606,8 @@ const msMY: Translations = {
         dSeeAll: 'Lihat semua {count}', dCollapse: 'Tutup',
       },
       loading: 'Memuat…',
+      captainSet: 'Dilantik sebagai ketua',
+      addedToGroup: 'Ditambah ke pasukan',
     },
     workerRegPage: {
       title: 'Semakan Pendaftaran Pekerja',

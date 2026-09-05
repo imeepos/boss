@@ -1402,6 +1402,8 @@ export interface Translations {
       }
       d: Record<string, string>
       loading: string
+      captainSet: string
+      addedToGroup: string
     }
     workerRegPage: {
       title: string
