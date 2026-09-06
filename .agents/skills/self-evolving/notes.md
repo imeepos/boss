@@ -2,6 +2,11 @@
 
 > 2026-08-24 盘点压缩：原 919 行逐任务反思已去重提炼。
 
+## 2026-09-06 装机联动端到端实测(P2-T3)
+
+- 哪个坑浪费了最多时间?run_code 内联内容三连:(1)bash 行内含单引号塞 JS 单引号串被内容 ' 截断(L2 行漏闭合逗号);(2)tools.edit 多行 new_string 用双引号串塞裸换行,Expected ',' got '#';(3)edit 后用预计算索引连续 splice,前一步改了尺寸后索引错位,文件碎片化到不可修补,只能整体重写。前两条并累犯 #11(13 次),第三条新登记。
+- skill 有没有提前警告?红线 11 已在案但只写了反引号/${,没写'内容单引号'与'裸换行'两个变体,本次补全;13 行两段式 worktree/后台长命令全部命中规避。环境类坑无预警:并行会话在验收跑分中途重部署 boss-server(容器 Up 1 minute),S7/patrol 空响应全由它起——验收前后应查 docker ps uptime。
+- 重来一次怎么做?大文件编辑一律:整体重写 or 每编辑一步重读重算锚点,绝不批量预计算索引;JS 串构造 bash 内容统一用行数组+join,含单引号的行先转义。环境发现三件(bindTagEvent json bug/TL1 端点漂移/addresses.label 拒连字符)当天进 known-issues+ISSUE.md。
 ## 2026-09-05 资产台账 admin CRUD(P2-W1-T1)
 
 - 哪个坑浪费了最多时间?run_code 引号边界两连:(1)Go 源码行内双引号("+g.table+")放进 JS 双引号串,内容引号截断串边界报 g is not defined,排查一轮;(2)多行 bash(含 heredoc commit message)塞 JS 双引号串直接 Expected ',' got ident——多行命令必须模板体,含双引号行必须 JS 单引号串。已并累犯 #11。
