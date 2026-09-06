@@ -146,4 +146,6 @@
 23. **【已犯 1 次】领域 patch 结构注释宣称 0=不改,实现却裸比较把 0 当目标值** —— 2026-09-06 资产 UpdateAsset type-only 编辑误入批次换绑查批次 0(FK 42200);值类型 patch 的 0/空串语义必须显式归一(eff 值)再比较/写库,fake 桩单测测不出,须有真库/集成路径。
 24. **【已犯 1 次】run_code 单引号 JS 串里内联 bash JSON 体(转义引号被 JS 解码成裸引号)** —— 2026-09-06 P3-F 轮:e2e 脚本 14 行 scrap_try/api POST 的 JSON 体引号全丢、载荷成非法 JSON,而 bash -n 对引号重排照样过,grep 抽查转义符字面才逮住。正解=json.split(quote).join(BS+quote) 统一转义再拼行,写入后必须 grep 验证转义符在位,不能只依赖 bash -n。
 25. **【已犯 1 次】e2e 造数编码逃离 acceptance-cleanup 的 LIKE 回收模式** —— 2026-09-06 P3-F 轮:资产2 编码 A-ACC2- 不匹配 cleanup 的 A-ACC-% 模式,资产漏删→删批次撞 FK 整事务回滚→残留四类(102 实测复现)。正解=造数编码恒用回收模式内前缀、用尾缀区分(A-ACC-$SUFFIX-B);新增造数类别必先核对 cleanup.sh 的 DELETE 模式清单。
+26. **【已犯 3 次】run_code 程序内工具调用引用了未声明的程序变量(如 workdir: w 而 const w 声明缺失/顺序在后)** —— 2026-09-06 P3-E 轮三犯(复制上轮程序段改内容时丢声明行),整段 ReferenceError 全不执行。正解=发车前把程序当函数读一遍:每个标识符先声明后使用;复制旧程序时优先保留头部声明区不动。
+27. **【已犯 1 次】长命令输出经管道(2>&1 | tail)让后台 job 误报 completed/exit 0** —— 2026-09-06 P3-E 轮:make check 全红但 tail 吞了退出码,job 通知 exit 0 差点当全绿收口。正解=长命令重定向到日志文件再单独 echo [exit $?](退出码来自命令而非管道尾),收尾时 grep 日志计数 FAIL 复核。
 

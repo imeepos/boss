@@ -322,6 +322,11 @@
 ## 2026-08-21 表结构对账与 ER 图同步
 
 - 坑:用 bash sed 读 data-relations.md 后直接 edit,4 个编辑全被拒(第 5 次犯红线#1);排查脚本规格时凭 grep 记忆写 worker_replace_logs 的"UQ ticket_no+epc",核对 DDL 后才改掉,险些把臆造约束写进 ER 图。
+
+## 2026-09-06 P3 收尾波 T2/T4(身份列+EPC+事件回填,feat/p3-e)
+- 哪个坑浪费了最多时间?三处:①共享 go-build 缓存被并行会话竞争损坏,make check 全包 build failed 还误报 exit 0(管道吞退出码叠加),定位后私有 GOCACHE 一次全绿;②run_code 里用未声明变量(workdir: w 忘带 const w)三犯,整程序不执行;③e2e 脚本生成时引号层级反复——bash -n 过了但 $ROOT 落单引号不展开(401)、资产载荷缺 type 触 CHECK 约束,靠真机冒烟两轮才抓全。
+- skill 有没有提前警告?红线 11(反引号/美元花括号)全程规避成功,行数组 join 也照做了;但它只防『宿主炸』,防不了『生成物语义错』(引号反转、变量不展开)——本次补的判读法是:生成 shell 后除了 bash -n 必须真跑一次最短路径;红线 26/27 为本次新增。
+- 重来一次怎么做?①发车前把程序当函数通读:标识符先声明、内层调用必填键默念;②make/长构建一律『日志文件+显式 echo [exit $?]+grep FAIL 计数』三件套,不信管道尾部退出码;③迁移类任务先起本地 PG18 临时集群(techniques 有四步法),迁移写完立即真库自检,不等部署;④改表加列的任务,开工先 grep 全库 pgxmock WithArgs/NewRows 列数波及面,一次列清单逐文件修,不要跑一轮测试修一个文件。
 - skill 有预警:红线#1 原文就写了 cat/sed 不算已读。
 - 重来:凡是要 edit 的文件,一律先 read 工具;ER 规格里每条 UQ/FK 注记必须回 grep 对应 DDL 再落笔。
 

@@ -497,3 +497,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当复合 bash 里 cd 子目录后还要操作仓库根文件时,修复是 workdir 钉仓库根 + pnpm --dir 代替裸 cd,或 cd 后全程绝对路径——cd 后相对路径按新 cwd 解析,git add 会静默找错目录报 fatal(2026-09-05 pp1b 两连)。
 - 当长 markdown 要落盘时,修复是 tools.write + JS 行数组 join 换行,不走 bash heredoc(三箭头手滑与引号定界符吃掉转义两连败,2026-09-05 pp1b)。
 - 当怀疑 API 查询参数是否生效时,修复是用不存在的资源值打反例(999999):返回空=真过滤,返回全量=参数被忽略;只看默认排序首行同值会误判巧合为功能(2026-09-05 pp1b:payments customerId 假过滤)。
+- 当并行会话共享同一台机构建时,修复是给 make/长构建钉私有缓存(GOCACHE=/tmp/<会话名>-gocache make check),绝不去 go clean -cache 清共享缓存——既修不了竞争(unlinkat directory not empty)还会打断别人正在跑的构建(2026-09-06 P3-E:共享缓存条目损坏致全包 build failed,私有缓存一次全绿)。
+- 当本地无 docker 但要真库验证迁移 SQL 时,修复是用 homebrew postgres 全套二进制(initdb --no-locale -E UTF8 + pg_ctl 起 55432 高位端口 + 停后 rm -rf 数据目录)起一次性集群;pg_ctl 报 FATAL postmaster became multithreaded 就是没给 LC_ALL,启动前 export LC_ALL=en_US.UTF-8(2026-09-06 P3-E:000188/000189 全链真库自检零 docker 依赖)。
+- 当新特性的 e2e 只能在部署后才能全绿时,修复是先在旧部署上真机冒烟并按『FAIL 断言与新特性一一对应、清理/残留类断言必须全绿』判读——红得其所即脚本机制已被证明,部署后重跑转绿(2026-09-06 P3-E:sn 列不存在/无唯一索引/无 EPC 校验各断言恰好逐条变红)。

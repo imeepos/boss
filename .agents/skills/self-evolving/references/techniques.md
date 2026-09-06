@@ -441,6 +441,13 @@ suspend fun current(ctx: Context): Location? {
 ## CDP 定位表单控件:语义锚点+作用域,禁盲选下标
 
 - 场景:页面有多个 aria-haspopup="listbox"/aria-label 按钮(顶栏语言切换、菜单、业务下拉)时,querySelector('button[aria-label]') 或 .at(-1) 会点错。
+
+## 本地 PG18 一次性集群验证迁移 SQL(无 docker,2026-09-06 P3-E 轮)
+
+- 场景:迁移文件(up/down/幂等)要真库语法+行为自检,本地无 docker、102 boss 库禁碰;
+- 四步:/opt/homebrew/opt/postgresql/bin/initdb -D /tmp/x-pgdata -U checker --auth=trust --no-locale -E UTF8 → pg_ctl -D ... -o '-p 55432 -k /tmp -c fsync=off' -l log start(前 export LC_ALL=en_US.UTF-8,否则 FATAL postmaster became multithreaded)→ createdb + psql -v ON_ERROR_STOP=1 逐文件跑迁移与断言 → pg_ctl stop -m fast + rm -rf 数据目录;
+- 迁移依赖的表结构可从最小夹具 SQL 重建(只建本迁移触碰的表+约束),不必全链应用 190 个迁移;
+- 幂等断言=同文件 up 跑两遍,断言计数不变;down 断言=只删标记行。
 - 手法:先 dump 候选 `[...document.querySelectorAll('button')].map((b,i)=>i+':'+b.textContent.trim())` 核对,再用组合锚点定位,如 `[...document.querySelectorAll('button[aria-haspopup="listbox"]')].find(b=>b.closest('label')?.textContent.includes('订阅事件'))`。
 
 ## CDP 双主题×双语言矩阵断言(2026-08-27,营销弹框适配)
