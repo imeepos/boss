@@ -58,3 +58,16 @@ action 白名单多值过滤。UI:一行一事件(时间/操作人/徽标/对象
 转待命,待 P2-W1 合入 main 后以增量方式重派(复用其操作列/表单成果,只做 events 查询端点+
 事件抽屉);会话 A(端到端联动实测)与 B(CI 守护)文件面无冲突,继续并行。
 合并顺序:B、A 先行合入;P2-W1 合入后再重派 C。
+
+### R-A3 端到端实测落地(会话 A,2026-09-06)
+脚本:scripts/ops/e2e-asset-linkage.sh(+伴生 e2e-asset-linkage-residue.sql),102 真实部署
+可重复执行(acceptance-lock 防并行)。断言集:L0 基线/S1-S12 环节(order.stage、
+order_stages、四码、认证账号)/L1-L4 装机联动(资产 DEPLOYED+绑地址、asset_lifecycles
+DEPLOYED 行、scan_logs MATCH、quad_links LINKED)/D1-D3 拆机联动(IN_STOCK+清地址、
+IN_STOCK 轨迹行、UNLINKED;不可达输出 SKIP+原因)。收尾 acceptance-cleanup --apply+
+残留 SQL 逐类为零+db-patrol-gate。102 实测:连续两轮 exit 0(40 断言/轮,约 46s/轮),
+E2E_INJECT_FAIL=1 注入变红可定位。环境发现(移交处置):1)runtime bindTagEvent 以
+[]byte 写 json 列(tag_events 22P02),CreateTag/Asset 绑定路径 500,标签资产预绑定暂走
+夹具 SQL;2)TL1 端点 env 172.26.0.1:13027 拒连(oltsim 在 2323/23333),09-03 后零下发
+SUCCESS,provisioner 完成度降为 S7b WARN 留痕;3)addresses.label 拒绝连字符,造数后缀
+必须纯数字。
