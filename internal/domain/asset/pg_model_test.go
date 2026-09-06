@@ -55,7 +55,7 @@ func TestPGStore_CreateModel(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()
 		mock.ExpectQuery(`INSERT INTO asset_models`).
-			WithArgs("华为", "EchoLife", "ONU", "", map[string]any{}).
+			WithArgs("华为", "EchoLife", "ONU", "", []byte("{}")).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
 
 		s := NewPGStore(mock)
@@ -145,7 +145,7 @@ func TestPGStore_UpdateModel(t *testing.T) {
 			WithArgs(int64(3)).
 			WillReturnRows(mock.NewRows([]string{"is_active"}).AddRow(true))
 		mock.ExpectExec("UPDATE asset_models SET vendor").
-			WithArgs(int64(3), in.Vendor, in.Model, in.Category, in.PartNumber, in.Spec).
+			WithArgs(int64(3), in.Vendor, in.Model, in.Category, in.PartNumber, []byte(`{"ports":2}`)).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		s := NewPGStore(mock)
 		if err := s.UpdateModel(ctx, 3, in); err != nil {
@@ -159,7 +159,7 @@ func TestPGStore_UpdateModel(t *testing.T) {
 			WithArgs(int64(3)).
 			WillReturnRows(mock.NewRows([]string{"is_active"}).AddRow(true))
 		mock.ExpectExec("UPDATE asset_models SET vendor").
-			WithArgs(int64(3), in.Vendor, in.Model, in.Category, in.PartNumber, in.Spec).
+			WithArgs(int64(3), in.Vendor, in.Model, in.Category, in.PartNumber, []byte(`{"ports":2}`)).
 			WillReturnError(&pgconn.PgError{Code: "23505", ConstraintName: "uq_asset_models"})
 		s := NewPGStore(mock)
 		if err := s.UpdateModel(ctx, 3, in); !errors.Is(err, ErrModelExists) {
