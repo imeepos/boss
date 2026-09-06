@@ -48,12 +48,14 @@ func (s *PGStore) CreateModel(ctx context.Context, m AssetModel) (int64, error) 
 		return 0, fmt.Errorf("asset: model spec marshal: %w", err)
 	}
 	var id int64
+	// 传 string 而非 []byte:pgx 对 []byte 走 bytea 十六进制编码,jsonb 列报 22P02。
+	specText := string(specJSON)
 	err = s.db.QueryRow(ctx,
 		`INSERT INTO asset_models(vendor, model, category, part_number, spec)
 		 VALUES($1,$2,$3,$4,$5)
 		 ON CONFLICT (vendor, model, category, part_number) DO NOTHING
 		 RETURNING id`,
-		m.Vendor, m.Model, m.Category, m.PartNumber, specJSON).Scan(&id)
+		m.Vendor, m.Model, m.Category, m.PartNumber, specText).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, ErrModelExists
 	}
@@ -93,7 +95,7 @@ func (s *PGStore) UpdateModel(ctx context.Context, id int64, m AssetModel) error
 	_, err = s.db.Exec(ctx,
 		`UPDATE asset_models SET vendor = $2, model = $3, category = $4, part_number = $5, spec = $6
 		 WHERE id = $1`,
-		id, m.Vendor, m.Model, m.Category, m.PartNumber, specJSON)
+		id, m.Vendor, m.Model, m.Category, m.PartNumber, string(specJSON))
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "uq_asset_models" {
