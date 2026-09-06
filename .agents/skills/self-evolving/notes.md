@@ -1884,3 +1884,12 @@
 - 哪个坑浪费了最多时间?三次并行竞态:①ff 合并两次被并行会话推进 main 挡住(7db0cfbf/db8b20b3/069dafc1 三次外漂),②第二次 ff 失败后我仍按旧习惯在同一批跑 worktree remove+push --delete,幸 branch -d 安全拒保住 commit(红线 9 第 4 犯,教训已入台账:清理必须等合并复核后的独立步骤);③收尾时主树又出现别人未提交文件,git add 必须点名文件。
 - skill 有没有提前警告?红线 9/24 全程在手边但仍把清理链和合并链打包发车——警告存在≠流程拆分,以后「合并成功」必须落成独立工具调用再谈清理。新沉淀:heredoc 脚本内 docker exec -i 吞 stdin(静默 RC=0 全空输出)、共享仓库 stash 是全局共享禁 pop、镜像 USER app 使 root 0600 文件容器不可读(bind mount 密钥属主必须对齐容器 UID)。
 - 重来一次会怎么做?每一步收口动作先拆「验证步骤」与「变更步骤」两个工具调用;长脚本写完先 echo 冒烟首尾行;对并行会话的领域文件(A5 的 NAS 门)变更保持只读+上报,不代做决策。
+
+## 2026-09-07 dashboard 工作台打磨轮(feat/dashboard-polish)
+
+- 最耗时坑:cdp-capture 的第一个 eval(localStorage seed + location.href 跳转)与页面导航竞态,Runtime.evaluate 的响应永不返回 → 整个采集脚本静默永挂(W2 挂了 4 分钟才发现)。skill 无预警;已修脚本(pending 在 ws close 时拒绝 + send 30s 超时)并记 known-issues。
+- 自伤:诊断脚本把 JWT 经双重 JSON.stringify 连引号存进 localStorage → Bearer "eyJ..." → /auth/me 401 假象,差点误判为应用 bug。正解:出现 401 先用 Network.requestWillBeSent 看实际 Authorization 头,再谈应用层。
+- 合成 .click() 不触发 mousedown:Dropdown 的选项选中在 onMouseDown(触发器才是 onClick),自动化要 dispatchEvent(new MouseEvent("mousedown",{bubbles:true}))。全局 querySelector("[aria-haspopup=listbox]") 还会撞上顶栏服务端切换器——交互断言必须限定最近容器作用域。
+- 102 后端会因并行会话 CI 部署崩循环(本轮实证:000197_address_coverage 迁移撞已存在表,boss-server Restarting)。走查前先 curl 探活;「失败横幅出现」本身可能恰好是失败链路的真实验收,先分辨再判 FAIL。
+- 修文件时 " 转义被宿主预解码成裸引号再次炸 parse error(红线 22 变体):生成脚本一律「外层单引号+内层双引号」,程序串里零反斜杠;\\d 这类正则转义在单引号串里写 \\d。
+- 收获:工作台打磨的验收走查(8 场景 20 断言)全部基于真实 102 数据,点击/跳转/失败注入(fetch 替换)都在真实业务 DOM 断言;截图仅存档供人工复核(当前模型不吃图)。

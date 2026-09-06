@@ -10,7 +10,7 @@ const TREND_CLASS = {
 export type Trend = keyof typeof TREND_CLASS
 
 export function StatCard({
-  label, value, delta, trend, icon, onClick,
+  label, value, delta, trend, icon, onClick, title,
 }: {
   label: string
   value: ReactNode
@@ -18,12 +18,15 @@ export function StatCard({
   trend?: Trend
   icon?: ReactNode
   onClick?: () => void
+  /** 悬停提示(如可下钻说明);可选。 */
+  title?: string
 }) {
   const interactive = Boolean(onClick)
   const activate = () => onClick?.()
 
   return (
     <div
+      title={title}
       className={'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]' + (interactive ? ' cursor-pointer transition-colors hover:bg-[var(--shell-menu-hover-bg)]' : '')}
       onClick={activate}
       onKeyDown={(e) => {
