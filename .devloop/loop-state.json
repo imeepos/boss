@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-07T01:07:30.000+08:00",
+  "updatedAt": "2026-09-06T10:26:00.000-07:00",
   "project": "boss",
   "tasks": [
     {
@@ -54,7 +54,7 @@
     {
       "id": "T7",
       "title": "ODN P1 覆盖关联:102 端到端验收(T7)",
-      "goal": "第 4 次尝试(部署窗口后)RESULT: PASS——保存/回读/就近 31m/远点/列表/幂等/非法拒绝全过,清尾残留为零",
+      "goal": "部署窗口后 RESULT: PASS 全过,清尾残留为零",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/e2e/verify-odn-coverage-e2e.sh"
@@ -62,9 +62,9 @@
     {
       "id": "T8",
       "title": "ODN P6 设计-施工:设施状态机(T8)",
-      "goal": "lifecycle_status PLANNED/IN_BUILD/IN_SERVICE/RETIRED+变更审计;详见 docs/plan/odn-lifecycle-roadmap.md",
+      "goal": "lifecycle_status 四态(000198)+CAS 转移+RETIRED 双列同步+RecordAudit;make check 全绿,已合 main af425671",
       "priority": "P2",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
     },
     {
