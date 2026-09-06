@@ -37,6 +37,8 @@ type fakeTagAdmin struct {
 	assignErr    error
 	returnedID   int64
 	returnErr    error
+	cancelledID  int64
+	cancelErr    error
 	modelErr     error
 	disableErr   error
 	tagEvents    []asset.TagEvent
@@ -537,6 +539,63 @@ func TestAssignmentReturnHandler(t *testing.T) {
 		_ = json.NewDecoder(w.Body).Decode(&out)
 		if out.Code != int(apitypes.CodeConflict) {
 			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeConflict)
+		}
+	})
+}
+
+func (f *fakeTagAdmin) CancelReplacement(_ context.Context, id int64) (*asset.Replacement, error) {
+	if f.cancelErr != nil {
+		return nil, f.cancelErr
+	}
+	f.cancelledID = id
+	return &asset.Replacement{ID: id, ReplacementNo: "RPL-1", Status: "CANCELLED"}, nil
+}
+
+func TestReplacementCancelHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST /replacements/15/cancel 成功+审计", func(t *testing.T) {
+		au := &recAudit{}
+		fa := &fakeTagAdmin{}
+		eng := tagAdminRouter(fa, au)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/replacements/15/cancel", "")
+		var out struct {
+			Code int `json:"code"`
+			Data struct {
+				ID     int64  `json:"id"`
+				Status string `json:"status"`
+			} `json:"data"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || out.Data.ID != 15 || out.Data.Status != "CANCELLED" {
+			t.Fatalf("code=%d data=%+v", out.Code, out.Data)
+		}
+		if len(au.events) != 1 || au.events[0].TargetType != "replacement" || au.events[0].Detail["op"] != "cancel" {
+			t.Fatalf("events=%+v", au.events)
+		}
+	})
+
+	t.Run("POST /replacements/15/cancel 非PENDING→40900", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{cancelErr: fmt.Errorf("asset: replacement 15 not PENDING: %w", asset.ErrReplacementNotCancellable)}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/replacements/15/cancel", "")
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeConflict) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeConflict)
+		}
+	})
+
+	t.Run("POST /replacements/99/cancel 未命中→40400", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{cancelErr: asset.ErrNotFound}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/replacements/99/cancel", "")
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeNotFound) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeNotFound)
 		}
 	})
 }

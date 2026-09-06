@@ -82,7 +82,8 @@ type AssetLifecycle struct {
 
 // Replacement 换新单(故障资产换新流程)。
 // 状态机: PENDING --Assign--> DOING --Complete--> DONE/FAILED(adopted note
-// 2026-08-27-replacement-ticket-flow);终态不可再流转,重做走新单。
+// 2026-08-27-replacement-ticket-flow);PENDING 另可 --Cancel--> CANCELLED
+// (P2-W2-T1,终态);终态不可再流转,重做走新单。
 type Replacement struct {
 	ID              int64      `json:"id"`
 	ReplacementNo   string     `json:"replacementNo"`
@@ -91,7 +92,7 @@ type Replacement struct {
 	LegalEntityName string     `json:"legalEntityName"`
 	Reason          string     `json:"reason"`
 	Priority        string     `json:"priority"` // HIGH/MEDIUM/LOW
-	Status          string     `json:"status"`   // PENDING/DOING/DONE/FAILED
+	Status          string     `json:"status"`   // PENDING/DOING/DONE/FAILED/CANCELLED
 	WorkerID        int64      `json:"workerId"` // 0=未派
 	WorkerName      string     `json:"workerName"`
 	FinishedAt      *time.Time `json:"finishedAt,omitempty"` // nil=未完成
@@ -167,6 +168,9 @@ type AssetService interface {
 	// AssignReplacement 派单:回填师傅快照并 PENDING→DOING;
 	// 单不存在返回 ErrNotFound,状态非 PENDING 返回 ErrInvalidTransition。
 	AssignReplacement(ctx context.Context, id, workerID int64, workerName string) (*Replacement, error)
+	// CancelReplacement 取消(P2-W2-T1):仅 PENDING → CANCELLED 终态;
+	// 非 PENDING ErrReplacementNotCancellable(40900);未命中 ErrNotFound。
+	CancelReplacement(ctx context.Context, id int64) (*Replacement, error)
 	// CompleteReplacement 完成/失败:DOING→DONE|FAILED 并回填 finished_at;
 	// 状态非 DOING 返回 ErrInvalidTransition。result 仅接受 DONE/FAILED。
 	CompleteReplacement(ctx context.Context, id int64, result string) (*Replacement, error)

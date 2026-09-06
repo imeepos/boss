@@ -62,3 +62,23 @@ func assignmentReturnHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, gin.H{"id": id, "effectiveTo": closedAt.Format(time.RFC3339)})
 	}
 }
+
+// replacementCancelHandler POST /replacements/{id}/cancel:取消换新单(P2-W2-T1 I)。
+// 仅 PENDING 可取消 → CANCELLED 终态;非 PENDING 40900;写审计。
+func replacementCancelHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		r, err := a.Asset.CancelReplacement(c.Request.Context(), id)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "状态变更", "replacement", r.ReplacementNo, map[string]any{
+			"op": "cancel", "from": "PENDING", "to": "CANCELLED",
+		})
+		respond(c, apitypes.CodeOK, r)
+	}
+}
