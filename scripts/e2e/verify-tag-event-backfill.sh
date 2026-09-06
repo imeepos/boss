@@ -6,11 +6,15 @@
 #       零新增,重复执行本脚本不产生重复事件。
 # 只读为主: 唯一写动作是 B4 的幂等重放(NOT EXISTS 守卫,重跑零新增),不造数不清理。
 # 信号: 收尾 "E2E-TAG-EVENT-BACKFILL RESULT: ..." 可 grep。
-# 用法: scripts/e2e/verify-tag-event-backfill.sh   环境: SSH_HOST(默认 102) 依赖: ssh
+# 用法: scripts/e2e/verify-tag-event-backfill.sh   环境: SSH_HOST(默认 102) 依赖: ssh acceptance-lock
 set -u
 
 env_or() { local v; v=$(printenv "$1" 2>/dev/null); if [ -n "$v" ]; then echo "$v"; else echo "$2"; fi; }
 SSH_HOST=$(env_or SSH_HOST "imeepos@192.168.0.102")
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+source "$ROOT/scripts/ops/acceptance-lock.sh"
+acquire_acceptance_lock || exit 1
+trap release_acceptance_lock EXIT
 
 sql() { ssh -o ConnectTimeout=10 -o BatchMode=yes "$SSH_HOST" "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -v ON_ERROR_STOP=1 -q -tA"; }
 

@@ -14,6 +14,8 @@ acquire_acceptance_lock || exit 1
 trap release_acceptance_lock EXIT
 
 env_or() { local v; v=$(printenv "$1" 2>/dev/null); if [ -n "$v" ]; then echo "$v"; else echo "$2"; fi; }
+# md5hex: macOS md5 / Linux md5sum 双通(102 宿主 cron 本机执行依赖,行为不变)。
+md5hex() { if command -v md5 > /dev/null 2>&1; then md5; else md5sum | cut -d" " -f1; fi; }
 ARG1=""; if [ $# -ge 1 ]; then ARG1="$1"; fi
 BASE_URL=$(env_or BASE_URL "http://192.168.0.102:28080")
 case "$ARG1" in http*) BASE_URL="$ARG1" ;; esac
@@ -83,7 +85,7 @@ boot_fixtures() {
 t_identity() { # I1-I4
   local out sn h mac1 row1
   sn="$PREFIX-SN-$SUFFIX"
-  h=$(printf %s "$SUFFIX" | md5 | tr -d " -" | cut -c1-8 | tr "a-f" "A-F")
+  h=$(printf %s "$SUFFIX" | md5hex | tr -d " -" | cut -c1-8 | tr "a-f" "A-F")
   mac1="AC:AC:${h:0:2}:${h:2:2}:${h:4:2}:${h:6:2}"
   out=$(api POST /assets "{\"assetCode\":\"$PREFIX-AS-$SUFFIX\",\"batchId\":$BATCH_ID,\"type\":\"ONU\",\"sn\":\"  $sn  \",\"mac\":\"$mac1\",\"loid\":\"$PREFIX-LOID-$SUFFIX\"}") || return 1
   AID1=$(j "$out" id)
@@ -103,9 +105,9 @@ SQL
 t_epc() { # E1-E3
   local hex out stored want_up
   expect_reject "E1" /tags "{\"tagNo\":\"$PREFIX-T1-$SUFFIX\",\"epcCode\":\"30ABC\",\"legalEntityId\":1,\"band\":\"UHF\"}" "42200" ""
-  hex="31$(printf %s "$SUFFIX" | md5 | tr -d " -" | cut -c1-22 | tr "a-f" "A-F")"
+  hex="31$(printf %s "$SUFFIX" | md5hex | tr -d " -" | cut -c1-22 | tr "a-f" "A-F")"
   expect_reject "E2" /tags "{\"tagNo\":\"$PREFIX-T2-$SUFFIX\",\"epcCode\":\"$hex\",\"legalEntityId\":1,\"band\":\"UHF\"}" "42200" ""
-  hex="30$(printf %s "$SUFFIX-x" | md5 | tr -d " -" | cut -c1-22)"
+  hex="30$(printf %s "$SUFFIX-x" | md5hex | tr -d " -" | cut -c1-22)"
   want_up=$(echo "$hex" | tr "a-f" "A-F")
   out=$(api POST /tags "{\"tagNo\":\"$PREFIX-T3-$SUFFIX\",\"epcCode\":\"$hex\",\"legalEntityId\":1,\"band\":\"UHF\"}") || return 1
   TAGID3=$(j "$out" id)
