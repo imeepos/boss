@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T12:42:00.000-07:00",
+  "updatedAt": "2026-09-06T12:44:00.000-07:00",
   "project": "boss",
   "tasks": [
     {
@@ -30,7 +30,7 @@
     {
       "id": "T4",
       "title": "ODN P1 覆盖关联:迁移与契约同步(T4)",
-      "goal": "address_coverage 迁移 000197+fields.md/data-relations V1.6",
+      "goal": "address_coverage 迁移 000197+契约 V1.6",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "make check"
@@ -70,7 +70,7 @@
     {
       "id": "T9",
       "title": "ODN P6 设计-施工:施工项目与竣工回填(T9)",
-      "goal": "construction 单+批量竣工回填;102 e2e RESULT: PASS(含崩溃循环根因修复:手工 apply 未登记迁移)",
+      "goal": "construction 单+批量竣工回填;102 e2e RESULT: PASS",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/e2e/verify-odn-construction-e2e.sh"
@@ -78,22 +78,30 @@
     {
       "id": "T10",
       "title": "ODN P7 运维影响面(T10)",
-      "goal": "impact 接口设施→覆盖→客户清单;102 e2e RESULT: PASS(断言 contains 修正)",
+      "goal": "impact 接口设施→覆盖→客户清单;102 e2e RESULT: PASS",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/e2e/verify-odn-impact-e2e.sh"
     },
     {
       "id": "T11",
-      "title": "ODN P2 端口占用态+下单硬校验(T11)",
-      "goal": "物理端口状态机 IDLE/RESERVED/IN_SERVICE;订单预占迁移到物理口;SERVED+余量门控下单",
-      "priority": "P2",
-      "status": "todo",
-      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
+      "title": "ODN P2 端口占用态+按地址分配(T11)",
+      "goal": "odn_port(000200) IDLE/RESERVED/IN_SERVICE+SKIP LOCKED 分配+AllocateForAddress;102 e2e RESULT: PASS",
+      "priority": "P1",
+      "status": "done",
+      "acceptanceCommand": "bash scripts/e2e/verify-odn-port-e2e.sh"
     },
     {
       "id": "T12",
-      "title": "ODN P3 逻辑-物理绑定+售后挂接(T12)",
+      "title": "ODN P2 下单硬校验接线(T12)",
+      "goal": "订单创建接 coverage SERVED+端口余量门控(配置开关);前端下单页可装性展示强化",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/... ./internal/domain/order/..."
+    },
+    {
+      "id": "T13",
+      "title": "ODN P3 逻辑-物理绑定+售后挂接(T13)",
       "goal": "激活写绑定表;GIS 点位反查在用订单;售后工单挂设施(届时 Amended 2026-08-25 note)",
       "priority": "P2",
       "status": "todo",
