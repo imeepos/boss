@@ -6,7 +6,9 @@ set -u
 cd "$(dirname "$0")/.."
 export BOSS_SERVER="${BOSS_SERVER:-http://192.168.0.102:28080}"
 
-if [ -x ./bossctl ]; then B=./bossctl; elif command -v bossctl >/dev/null 2>&1; then B=bossctl; else go build -o bossctl ./cmd/bossctl && B=./bossctl; fi
+# 二进制一律现构建:仓库根曾残留旧 bossctl,业务错退出码语义不同导致脚本误判(2026-09-06 实证);
+# BOSSCTL_BIN 环境变量可显式指定已有二进制跳过构建。
+if [ -n "$BOSSCTL_BIN" ] && [ -x "$BOSSCTL_BIN" ]; then B="$BOSSCTL_BIN"; else B=$(mktemp -d)/bossctl && go build -o "$B" ./cmd/bossctl; fi
 export BOSS_API_KEY="${BOSS_API_KEY:-$(python3 -c "import json;print(json.load(open('.agents/skills/bossctl-cli/test-accounts.json'))['admin']['apiKeys'][0]['key'])")}"
 
 TS=$(date +%s)
