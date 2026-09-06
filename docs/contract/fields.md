@@ -1721,3 +1721,42 @@ admin API 前缀 /api/admin/v1/monthly/*,权限码 menu:monthly;导入留痕复�
 
 > 四个比率的分母为 0 时该字段返回 null(不报错);month 为空=全部月份合计。
 
+## 8I. AAA 在线会话域(internal/domain/aaa,迁移 000194,AAA-A2)
+
+radacct 模式在线会话:计账 Start 建(重复 Start 幂等去重)/Interim 累加流量/Stop 关闭;
+承载并发会话上限(G4)、CoA 强制下线(G5,RFC 5176)与僵尸清理(G6)。admin 页面挂
+`oss/loaccount.html` 会话抽屉(权限码沿用 `menu:loaccount`),路由 `GET /aaa/sessions`、
+`POST /aaa/sessions/{sessionId}/disconnect`。
+
+### 8I.1 aaa_online_sessions(在线会话)
+
+| 页面列名 | 字段名 | DB 列 | 类型/枚举 |
+|:---------|:-------|:------|:----------|
+| 会话ID | `SessionID` | session_id | VARCHAR(64);(loid, session_id) 唯一 |
+| LOID | `Loid` | loid | VARCHAR(32) → lo_accounts |
+| NAS IP | `NasIP` | nas_ip | VARCHAR(64);CoA 下发目标 |
+| 开始时间 | `StartedAt` | started_at | TIMESTAMPTZ |
+| 最近更新 | `LastUpdate` | last_update | TIMESTAMPTZ;僵尸判定依据(超 2h 可配) |
+| 下行流量 | `InputOctets` | input_octets | BIGINT;Interim 累加 |
+| 上行流量 | `OutputOctets` | output_octets | BIGINT;Interim 累加 |
+| 状态 | `Status` | status | **ONLINE 在线 / PENDING_OFFLINE 下线待确认(重试中) / OFFLINE 已下线(终态) / OFFLINE_FAILED 下线失败(重试耗尽,终态)** |
+| 重试次数 | `DisconnectAttempts` | disconnect_attempts | INT;Disconnect 已重试次数(上限默认 3) |
+| 关闭原因 | `CloseReason` | close_reason | ACCT_STOP / COA_DISCONNECT / ZOMBIE_REAP / OFFLINE_FAILED;空=在途 |
+| 关闭时间 | `ClosedAt` | closed_at | TIMESTAMPTZ 可空 |
+
+### 8I.2 关联增列(迁移 000194 同对)
+
+| 表 | 字段名 | DB 列 | 枚举/说明 |
+|:---|:-------|:------|:----------|
+| cdrs | `CloseReason` | close_reason | VARCHAR(32) 可空;本地补录话单原因标记(僵尸清理=ZOMBIE_REAP) |
+| auth_logs | `Reason` | reason | VARCHAR(64) 可空;认证失败原因,并发超限=CONCURRENT_LIMIT |
+
+### 8I.3 配置项(全局,env)
+
+| 配置 | env | 默认 | 说明 |
+|:-----|:----|:-----|:-----|
+| 并发会话上限 | `BOSS_AAA_SESSION_LIMIT` | 1 | 同一 LOID 在线占用上限(ONLINE+PENDING_OFFLINE 计入) |
+| CoA/DM 端口 | `BOSS_AAA_COA_PORT` | 3799 | NAS 动态授权端口(RFC 5176) |
+| 重试上限 | `BOSS_AAA_OFFLINE_RETRY_MAX` | 3 | Disconnect 不可达重试次数,耗尽转 OFFLINE_FAILED |
+| 僵尸阈值 | `BOSS_AAA_ZOMBIE_AFTER` | 2h | last_update 超时判僵尸并补录 Stop 话单 |
+

@@ -62,6 +62,7 @@
 | 认证日志 auth_log.result | SUCCESS / FAILED | 成功 / 失败 |
 | 设备 resource.status | ONLINE / OFFLINE / FAULT | 在线 / 离线 / 故障 |
 | 认证账号 lo_account.status | ACTIVE / SUSPENDED / CLOSED | 在服 / 停服 / 注销 |
+| 在线会话 aaa_online_sessions.status | ONLINE / PENDING_OFFLINE / OFFLINE / OFFLINE_FAILED | 在线 / 下线待确认(Disconnect 未确认,重试中) / 已下线(终态) / 下线失败(重试耗尽,终态);迁移 000194(AAA-A2,fields.md §8I) |
 | 产品 product_offer.status | DRAFT / PUBLISHED / OFFLINE | 草稿 / 在售 / 下架 |
 | 客户 service_status | ACTIVE / ARREARS / SUSPENDED | 在网 / 欠费 / 停机 |
 | 客户 real_name_status | VERIFIED / PENDING | 已实名 / 待补登 |
