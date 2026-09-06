@@ -512,3 +512,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 
 - 当验收运行器有硬超时(如 8s)而脚本因 N 次独立 ssh+docker exec 往返超时,修复是合并为 1-2 次批量连接:同段多条 SQL 合一个 heredoc 一次连接执行;模板取值内联进 SQL(INSERT..SELECT 带常量标记,免 shell 变量拼接);条件分支改 CASE WHEN EXISTS 内联;标量回执用 SELECT 'LABEL=' || value 单行输出、脚本端 sed -n 按行解析;改完必须连续两轮计时实测并回报数字(2026-09-06 P5-W3:15 次往返 8.4s 被杀 -> 3 次 2.28s/2.49s 双绿)。
 
+- 当 run_code 里要用 session_link_talk 等待执行会话回复,等待窗口必须小于宿主 run_code 程序墙钟上限(600s):talkTimeoutMs 给满 600000 会连程序一起被掐,claimToken 拿不到、事后 collect 报凭证无法识别;给 420-540s 留返回余量,长等待改为磁盘观察(git worktree list / ls-remote)轮替(2026-09-06 AAA 负责人轮:600000 顶满被杀,10 分钟白等)。

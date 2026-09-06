@@ -1837,3 +1837,8 @@
 - 哪个坑浪费了最多时间? ①契约门禁 D 项撞号——开工时 a1 分支还没占号,中途它提交了 000194,make check 才拦下,让号改名+四处引用同步+重跑门禁一轮;②run_code 程序体一处语法错致 handlers 没写盘,误判已执行,build 才暴露;③14 个生成的 Go 文件没跑 gofmt,make lint 挂一轮+补 style 提交;④worktree 副本 terms.md 凭主树 read 直接 edit 被拒。
 - skill 有没有提前警告? 撞号是任务单点名+协议设计内(让号规则一次过);红线 1(跨树 read)、11/14(引号/键名自检)在案仍犯变体;gofmt 与「parse 失败=零执行」是全新坑,已回填 recidivism 33/34。
 - 重来一次怎么做? ①Go 文件写完立刻 gofmt -w 再 build/test/commit(写文件的 run_code 程序收尾统一带上);②run_code parse 失败后,该程序全部工具调用视为未发生,整体重跑;③迁移号在最终 commit 前再 fetch 核对一次,把「让号」当必经路径而非意外;④迁移上真库前用 BEGIN+ROLLBACK 剥壳演练(本次 102 实库验证通过零残留),比部署时发现语法错便宜得多。
+
+## 2026-09-06 AAA P0 波负责人轮(差距分析+双会话派发+合并归档)
+- 哪个坑浪费了最多时间? session_link_talk 的 talkTimeoutMs 给满 600000,顶满宿主 run_code 600s 程序上限被整体掐断:claimToken 拿不到,事后 collect 报凭证无法识别,一轮白等 10 分钟。
+- skill 有没有提前警告? 没有。宿主程序上限与 talk 等待窗口的关系是新坑,已回填 lessons。
+- 重来一次怎么做? ①执行会话在干活时,先用磁盘观察(git worktree list / 分支 log / git ls-remote)判进度,零成本且不打扰;②只在需要正式回复时才 talk,且等待窗口给 420-540s,给程序返回留余量;③双会话并行时合并顺序一开始就宣布(先合者保号),A2 自觉让号证明任务单里写明让号规则有效。
