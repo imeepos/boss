@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T13:58:00.000-07:00",
+  "updatedAt": "2026-09-06T14:20:30.000-07:00",
   "project": "boss",
   "tasks": [
     {
@@ -86,7 +86,7 @@
     {
       "id": "T11",
       "title": "ODN P2 端口占用态+按地址分配(T11)",
-      "goal": "odn_port(000200) IDLE/RESERVED/IN_SERVICE+SKIP LOCKED 分配+AllocateForAddress;102 e2e RESULT: PASS",
+      "goal": "odn_port(000200)+SKIP LOCKED 分配+AllocateForAddress;102 e2e RESULT: PASS",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/e2e/verify-odn-port-e2e.sh"
@@ -94,18 +94,26 @@
     {
       "id": "T12",
       "title": "ODN P2 下单硬校验接线(T12)",
-      "goal": "CoverageGate 灰度接线+ErrNotServable 40900 透传;单测三态+make check 全绿;已合 main f9f0e12c",
-      "priority": "P2",
+      "goal": "CoverageGate 灰度接线(BOSS_ODN_COVERAGE_GATE)+ErrNotServable 40900;已合 main",
+      "priority": "P1",
       "status": "done",
       "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/... ./internal/domain/order/..."
     },
     {
       "id": "T13",
-      "title": "ODN P3 逻辑-物理绑定+售后挂接(T13)",
-      "goal": "激活写绑定表;GIS 点位反查在用订单;售后工单挂设施(届时 Amended 2026-08-25 note)",
+      "title": "ODN P3 逻辑-物理绑定+售后反查(T13)",
+      "goal": "odn_bindings(000201) 一口一绑定+按口/按单反查;102 e2e RESULT: PASS(拒绝码 40900/40400 已收敛)",
+      "priority": "P1",
+      "status": "done",
+      "acceptanceCommand": "bash scripts/e2e/verify-odn-bindings-e2e.sh"
+    },
+    {
+      "id": "T14",
+      "title": "ODN 生命周期打磨(GIS 前端点击反查弹窗+下单页可装性展示强化)",
+      "goal": "后端数据链全通(T4-T13);前端 GIS 点位点击反查绑定/订单弹窗、下单页徽标接 allocate-for-address 实时判定",
       "priority": "P2",
       "status": "todo",
-      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
+      "acceptanceCommand": "make web-admin-check"
     }
   ]
 }
