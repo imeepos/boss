@@ -40,13 +40,22 @@ func main() {
 	})
 
 	// AAA-A2:计账链路维护在线会话 + 并发会话闸口(上限全局可配,默认 1)。
+	// AAA-A5:per-NAS 注册表密钥校验(SecretSource)+ 厂商 VSA 限速下发(Handler)。
+	vsaSpec, err := aaa.BuildVSASpec(aaa.VSAConfig{HuaweiSpec: cfg.AAA.VSAHuawei, ZTESpec: cfg.AAA.VSAZTE})
+	if err != nil {
+		log.Fatalf("[aaa] vsa spec: %v", err)
+	}
 	handler := &radius.Handler{
 		Auth: auth, CDR: buildEmitter(cfg, store), Log: store,
 		Sessions: store, Gate: store, SessionLimit: cfg.AAA.SessionLimit,
+		Nas: store, VSA: vsaSpec,
 	}
 
-	authSrv := radius.New(cfg.AAA.AuthAddr, []byte(cfg.AAA.Secret), handler)
-	acctSrv := radius.New(cfg.AAA.AcctAddr, []byte(cfg.AAA.Secret), handler)
+	source := &radius.RegistrySecretSource{
+		Registry: store, Global: []byte(cfg.AAA.Secret), Compat: cfg.AAA.GlobalSecretCompat,
+	}
+	authSrv := radius.NewWithSource(cfg.AAA.AuthAddr, source, handler)
+	acctSrv := radius.NewWithSource(cfg.AAA.AcctAddr, source, handler)
 
 	go serve(authSrv, "auth")
 	go serve(acctSrv, "acct")
@@ -55,15 +64,10 @@ func main() {
 	log.Println("aaa: shutting down")
 }
 
-// buildCodec 凭据编解码器:BOSS_AAA_CRED_KEY 显式配置优先;空则从 AAA.Secret 派生
-// (开发兜底;派生时打 ALERT 供运维感知,生产必须显式设置独立密钥)。
+// buildCodec 凭据编解码器:CRED_KEY 显式优先,空则从 Secret 派生(域内 BuildCodec 统一口径,
+// cmd/aaa 与 app 装配共用;派生为开发兜底,生产必须显式设置独立密钥)。
 func buildCodec(cfg *config.Config) *credential.Codec {
-	material := cfg.AAA.CredKey
-	if material == "" {
-		material = "boss-aaa-cred-key|" + cfg.AAA.Secret
-		log.Println("[aaa] CRED KEY ALERT: BOSS_AAA_CRED_KEY 未设置,使用 Secret 派生密钥(生产必须显式配置)")
-	}
-	codec, err := credential.New(material)
+	codec, err := aaa.BuildCodec(cfg.AAA.CredKey, cfg.AAA.Secret)
 	if err != nil {
 		log.Fatalf("[aaa] credential codec: %v", err)
 	}
