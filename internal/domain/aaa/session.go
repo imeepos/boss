@@ -9,7 +9,7 @@ import (
 // ErrSessionNotFound 在线会话不存在(admin 按 id 强制下线未命中)。
 var ErrSessionNotFound = errors.New("aaa: session not found")
 
-// 在线会话状态枚举(迁移 000194 CHECK 约束;fields.md 同步)。
+// 在线会话状态枚举(迁移 000195 CHECK 约束;fields.md 同步)。
 const (
 	SessionOnline         = "ONLINE"          // 在线
 	SessionPendingOffline = "PENDING_OFFLINE" // 已下发下线未确认,重试中

@@ -1721,7 +1721,7 @@ admin API 前缀 /api/admin/v1/monthly/*,权限码 menu:monthly;导入留痕复�
 
 > 四个比率的分母为 0 时该字段返回 null(不报错);month 为空=全部月份合计。
 
-## 8I. AAA 在线会话域(internal/domain/aaa,迁移 000194,AAA-A2)
+## 8I. AAA 在线会话域(internal/domain/aaa,迁移 000195,AAA-A2)
 
 radacct 模式在线会话:计账 Start 建(重复 Start 幂等去重)/Interim 累加流量/Stop 关闭;
 承载并发会话上限(G4)、CoA 强制下线(G5,RFC 5176)与僵尸清理(G6)。admin 页面挂
@@ -1744,7 +1744,7 @@ radacct 模式在线会话:计账 Start 建(重复 Start 幂等去重)/Interim �
 | 关闭原因 | `CloseReason` | close_reason | ACCT_STOP / COA_DISCONNECT / ZOMBIE_REAP / OFFLINE_FAILED;空=在途 |
 | 关闭时间 | `ClosedAt` | closed_at | TIMESTAMPTZ 可空 |
 
-### 8I.2 关联增列(迁移 000194 同对)
+### 8I.2 关联增列(迁移 000195 同对)
 
 | 表 | 字段名 | DB 列 | 枚举/说明 |
 |:---|:-------|:------|:----------|
