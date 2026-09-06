@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -83,9 +84,14 @@ func RespondErr(c *gin.Context, err error) {
 		// 身份/EPC 格式非法(P3-T2):42200 + 原因透传,操作员可见哪个字段不合规范。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
 	case errors.As(err, new(*asset.ErrTypeNotAllowed)):
-		// 类型白名单外写入(P4-T2 类型归一):42200 + 原因透传(含合法集合),
-		// 操作员/调用方能直接改用权威类型码。
-		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
+		// 类型白名单外写入(P4-T2 类型归一):字面 HTTP 400 + 42200,与列表 sort
+		// 白名单越界(adminapi respondBadRequest)同一线上形态;reason 透传合法集合,
+		// 操作员/调用方能直接改用权威类型码。不走 Respond(恒 200),裁定口径是白名单外 400。
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": apitypes.CodeInvalidParam,
+			"msg":  apitypes.CodeInvalidParam.Message(),
+			"data": gin.H{"reason": err.Error()},
+		})
 	case errors.Is(err, asset.ErrInvalidSort):
 		// 列表排序白名单越界(P3-T1):42200;正常路径由 adminapi 解析层 400 拦截,此处兜底。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
