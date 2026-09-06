@@ -1,6 +1,12 @@
 # Notes
 
 > 2026-08-24 盘点压缩：原 919 行逐任务反思已去重提炼。
+
+## 2026-09-05 资产台账 admin CRUD(P2-W1-T1)
+
+- 哪个坑浪费了最多时间?run_code 引号边界两连:(1)Go 源码行内双引号("+g.table+")放进 JS 双引号串,内容引号截断串边界报 g is not defined,排查一轮;(2)多行 bash(含 heredoc commit message)塞 JS 双引号串直接 Expected ',' got ident——多行命令必须模板体,含双引号行必须 JS 单引号串。已并累犯 #11。
+- skill 有没有提前警告?红线 11/13/14 都在案(两段式 worktree/后台长命令/发车前参数自检全部命中规避);pgxmock「无 WithArgs 即期望 0 参」是新坑,锁行查询漏 WithArgs 八个测试连红,pgxmock 报错文案 expected 0 but got 1 arguments 指向清晰,一轮修。
+- 重来一次会怎么做?①openapi yaml 内联 flow map 的 description 先想特殊字符({} , :)该不该引号,写前查既有行风格;②域测试先跑单包再进 make check,别让全量门禁当第一道试金石;③本次 worktree 两段式+后台 reset+兄弟目录核对全部一次过,流程红线吃透了。
 ## 2026-09-06 资产/标签成熟方案调研+数据质量闸门
 
 ## 2026-09-06 P1 波次(联动/回收/字典/巡检)+ 部署排障
