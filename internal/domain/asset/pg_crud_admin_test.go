@@ -316,6 +316,11 @@ func TestPGStore_DeleteAsset_OK(t *testing.T) {
 			WithArgs(int64(3)).
 			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
 	}
+	// 建档即留痕(000184):删除主档前必须同事务清理自有轨迹行,
+	// 否则 FK asset_lifecycles_asset_id_fkey 使硬删必败(23503,102 E2E 实证)。
+	mock.ExpectExec(`DELETE FROM asset_lifecycles WHERE asset_id = \$1`).
+		WithArgs(int64(3)).
+		WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	mock.ExpectExec(`DELETE FROM assets`).
 		WithArgs(int64(3)).
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))

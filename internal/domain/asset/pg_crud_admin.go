@@ -231,6 +231,11 @@ func (s *PGStore) DeleteAsset(ctx context.Context, assetID int64) (string, error
 	if len(blockers) > 0 {
 		return "", &ErrAssetReferenced{Blockers: blockers}
 	}
+	// 建档即留痕(000184):初始轨迹行是资产自有子数据,随主档同事务清理;
+	// 不清则 FK asset_lifecycles_asset_id_fkey 使任何硬删必败(23503,102 E2E 实证)。
+	if _, err := tx.Exec(ctx, `DELETE FROM asset_lifecycles WHERE asset_id = $1`, assetID); err != nil {
+		return "", fmt.Errorf("asset: delete asset %d lifecycles: %w", assetID, err)
+	}
 	tag, err := tx.Exec(ctx, `DELETE FROM assets WHERE id = $1`, assetID)
 	if err != nil {
 		return "", fmt.Errorf("asset: delete asset %d: %w", assetID, err)
