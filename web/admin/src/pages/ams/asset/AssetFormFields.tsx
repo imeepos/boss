@@ -16,7 +16,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 
 export interface AssetFormFieldsProps {
-  form: { batchId: number; modelId: number; type: string; tagId: number }
+  form: { batchId: number; modelId: number; type: string; tagId: number; sn: string; mac: string; loid: string }
   batchOptions: { value: string; label: string }[]
   modelOptions: { value: string; label: string }[]
   tagOptions: { value: string; label: string }[]
@@ -29,6 +29,9 @@ export interface AssetFormFieldsProps {
   onModel: (id: number) => void
   onType: (v: string) => void
   onTag: (id: number) => void
+  onSn: (v: string) => void
+  onMac: (v: string) => void
+  onLoid: (v: string) => void
 }
 
 export function AssetFormFields(p: AssetFormFieldsProps) {
@@ -47,6 +50,18 @@ export function AssetFormFields(p: AssetFormFieldsProps) {
       <Field label={a.fType}>
         <input className={input} value={p.typeValue} placeholder={a.pType} readOnly={p.typeReadonly}
           onChange={(e) => p.onType(e.target.value)} />
+      </Field>
+      <Field label={a.fSn}>
+        <input className={input} value={p.form.sn} placeholder={a.pSn}
+          onChange={(e) => p.onSn(e.target.value)} />
+      </Field>
+      <Field label={a.fMac}>
+        <input className={input} value={p.form.mac} placeholder={a.pMac}
+          onChange={(e) => p.onMac(e.target.value)} />
+      </Field>
+      <Field label={a.fLoid}>
+        <input className={input} value={p.form.loid} placeholder={a.pLoid}
+          onChange={(e) => p.onLoid(e.target.value)} />
       </Field>
       <Field label={a.fTag}>
         <Dropdown value={p.form.tagId ? String(p.form.tagId) : ''} options={p.tagOptions}

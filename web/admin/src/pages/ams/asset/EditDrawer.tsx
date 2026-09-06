@@ -20,7 +20,7 @@ export function EditDrawer({ asset, onClose, onSaved }: {
 }) {
   const t = useT()
   const a = t.pages.assetPage
-  const [form, setForm] = useState<AssetFormState>({ batchId: asset.batchId, modelId: asset.modelId, type: asset.type, tagId: asset.tagId })
+  const [form, setForm] = useState<AssetFormState>({ batchId: asset.batchId, modelId: asset.modelId, type: asset.type, tagId: asset.tagId, sn: asset.sn, mac: asset.mac, loid: asset.loid })
   const [batches, setBatches] = useState<AssetBatchRow[]>([])
   const [models, setModels] = useState<AssetModelRow[]>([])
   const [tags, setTags] = useState<TagRow[]>([])
@@ -87,7 +87,10 @@ export function EditDrawer({ asset, onClose, onSaved }: {
         onBatch={(batchId) => { setForm((f) => ({ ...f, batchId })) }}
         onModel={(modelId) => { setForm((f) => ({ ...f, modelId })) }}
         onType={(type) => { setForm((f) => ({ ...f, type })) }}
-        onTag={(tagId) => { setForm((f) => ({ ...f, tagId })) }} />
+        onTag={(tagId) => { setForm((f) => ({ ...f, tagId })) }}
+        onSn={(sn) => { setForm((f) => ({ ...f, sn })) }}
+        onMac={(mac) => { setForm((f) => ({ ...f, mac })) }}
+        onLoid={(loid) => { setForm((f) => ({ ...f, loid })) }} />
       {apiError && <div className="mt-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{apiError}</div>}
     </Drawer>
   )

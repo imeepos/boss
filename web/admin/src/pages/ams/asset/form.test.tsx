@@ -10,23 +10,24 @@ const base = {
   modelOptions: [{ value: '7', label: '华为 · ONU' }],
   tagOptions: [{ value: '3', label: 'T-0001' }],
   onBatch: () => {}, onModel: () => {}, onType: () => {}, onTag: () => {},
+  onSn: () => {}, onMac: () => {}, onLoid: () => {},
 }
 
 const render = (over: Partial<AssetFormFieldsProps>) => renderToStaticMarkup(
   <LocaleProvider>
-    <AssetFormFields {...base} form={{ batchId: 9, modelId: 0, type: '', tagId: 0 }} typeValue=""
+    <AssetFormFields {...base} form={{ batchId: 9, modelId: 0, type: '', tagId: 0, sn: '', mac: '', loid: '' }} typeValue=""
       typeReadonly={false} batchDisabled={false} batchHint="" error="" {...over} />
   </LocaleProvider>,
 )
 
 describe('AssetFormFields', () => {
   it('批次为必填项(红星标记),校验失败展示 eBatch 文案', () => {
-    const html = render({ form: { batchId: 0, modelId: 0, type: '', tagId: 0 }, error: 'batch' })
+    const html = render({ form: { batchId: 0, modelId: 0, type: '', tagId: 0, sn: '', mac: '', loid: '' }, error: 'batch' })
     expect(html).toContain('*')
     expect(html).toContain('入库批次必填')
   })
   it('型号选定后类型只读并回显 category', () => {
-    const html = render({ form: { batchId: 9, modelId: 7, type: '', tagId: 0 }, typeValue: 'ONU', typeReadonly: true })
+    const html = render({ form: { batchId: 9, modelId: 7, type: '', tagId: 0, sn: '', mac: '', loid: '' }, typeValue: 'ONU', typeReadonly: true })
     expect(html).toContain('readonly')
     expect(html).toContain('ONU')
   })
@@ -38,5 +39,11 @@ describe('AssetFormFields', () => {
     expect(html).toContain('disabled')
     expect(html).toContain('cursor-not-allowed')
     expect(html).toContain('业务流转')
+  })
+  it('身份三要素 SN/MAC/LOID 输入框带用途占位说明(P3-T2,均选填)', () => {
+    const html = render({})
+    expect(html).toContain('placeholder="设备序列号,全网唯一(选填)"')
+    expect(html).toContain('placeholder="六组十六进制,冒号或横杠分隔(选填)"')
+    expect(html).toContain('placeholder="电信 LOID 鉴权标识,全网唯一(选填)"')
   })
 })

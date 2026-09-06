@@ -7,9 +7,12 @@ export interface AssetFormState {
   modelId: number
   type: string
   tagId: number
+  sn: string
+  mac: string
+  loid: string
 }
 
-export const emptyForm: AssetFormState = { batchId: 0, modelId: 0, type: '', tagId: 0 }
+export const emptyForm: AssetFormState = { batchId: 0, modelId: 0, type: '', tagId: 0, sn: '', mac: '', loid: ''}
 
 export type FormErr = '' | 'batch' | 'type'
 
@@ -37,6 +40,9 @@ export interface CreatePayload {
   modelId?: number
   type?: string
   tagId?: number
+  sn?: string
+  mac?: string
+  loid?: string
 }
 
 export function buildCreatePayload(f: AssetFormState): CreatePayload {
@@ -44,6 +50,10 @@ export function buildCreatePayload(f: AssetFormState): CreatePayload {
   if (f.modelId) p.modelId = f.modelId
   else if (f.type.trim()) p.type = f.type.trim()
   if (f.tagId) p.tagId = f.tagId
+  // 身份三要素(P3-T2):空=不传,非空去首尾空格(服务端再校验/归一,空串存 NULL)。
+  if (f.sn.trim()) p.sn = f.sn.trim()
+  if (f.mac.trim()) p.mac = f.mac.trim()
+  if (f.loid.trim()) p.loid = f.loid.trim()
   return p
 }
 
@@ -52,15 +62,22 @@ export interface EditPayload {
   modelId?: number
   tagId?: number
   batchId?: number
+  sn?: string
+  mac?: string
+  loid?: string
 }
 
-// 编辑载荷:仅传改动字段;tagId 允许传 0 表示解绑;批次仅 IN_STOCK 态提交。
+// 编辑载荷:仅传改动字段;tagId 允许传 0 表示解绑;批次仅 IN_STOCK 态提交;
+// 身份三要素(P3-T2)有变才传,清空传空串(服务端语义=清除存 NULL)。
 export function buildEditPayload(f: AssetFormState, origin: AssetRow): EditPayload {
   const p: EditPayload = {}
   if (f.batchId && f.batchId !== origin.batchId && origin.status === 'IN_STOCK') p.batchId = f.batchId
   if (f.modelId && f.modelId !== origin.modelId) p.modelId = f.modelId
   else if (!f.modelId && f.type.trim() && f.type.trim() !== origin.type) p.type = f.type.trim()
   if (f.tagId !== origin.tagId) p.tagId = f.tagId
+  if (f.sn.trim() !== origin.sn) p.sn = f.sn.trim()
+  if (f.mac.trim() !== origin.mac) p.mac = f.mac.trim()
+  if (f.loid.trim() !== origin.loid) p.loid = f.loid.trim()
   return p
 }
 
