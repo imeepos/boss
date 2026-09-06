@@ -500,3 +500,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当并行会话共享同一台机构建时,修复是给 make/长构建钉私有缓存(GOCACHE=/tmp/<会话名>-gocache make check),绝不去 go clean -cache 清共享缓存——既修不了竞争(unlinkat directory not empty)还会打断别人正在跑的构建(2026-09-06 P3-E:共享缓存条目损坏致全包 build failed,私有缓存一次全绿)。
 - 当本地无 docker 但要真库验证迁移 SQL 时,修复是用 homebrew postgres 全套二进制(initdb --no-locale -E UTF8 + pg_ctl 起 55432 高位端口 + 停后 rm -rf 数据目录)起一次性集群;pg_ctl 报 FATAL postmaster became multithreaded 就是没给 LC_ALL,启动前 export LC_ALL=en_US.UTF-8(2026-09-06 P3-E:000188/000189 全链真库自检零 docker 依赖)。
 - 当新特性的 e2e 只能在部署后才能全绿时,修复是先在旧部署上真机冒烟并按『FAIL 断言与新特性一一对应、清理/残留类断言必须全绿』判读——红得其所即脚本机制已被证明,部署后重跑转绿(2026-09-06 P3-E:sn 列不存在/无唯一索引/无 EPC 校验各断言恰好逐条变红)。
+- 当轮询「部署是否完成」时,修复是排除**全部已知旧 hash** 而非「与上次采样不同」——并行会话部署会让 5180 的 index.html 在多个旧 bundle 间翻转,hash 一变就当部署完成会在旧包上白验一轮(2026-09-06 采购白屏轮:10 秒假阳性);且 hash 命中后必须再做行为断言(点详情开抽屉)才算数。
+- 当列表页正常而点开单条(详情/编辑)白屏时,修复是先 curl 单条接口看 data 第一层 key 是否又包了一层(单资源 {item} vs 列表 {items}),再对照前端取用形态——TypeError 定位到的 toFixed/属性读取处就是信封错位点(2026-09-06 采购单)。

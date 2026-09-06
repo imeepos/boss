@@ -504,3 +504,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 症状 → make check 的 lint 阶段(gofmt -l)持续报某 .go 文件;gofmt -d 显示注释里的两个连续单引号(如 SQL 的正则替换参数)被改成右弯引号,注释内容失真。仅命中紧跟声明的 doc comment,普通行注释不受影响。
 原因 → go 1.19 起 gofmt 按 doc comment 规范化排版,直引号对被智能引号化。
 修法 → 注释措辞避开引号对(如省略替换函数的空串实参,只写『去分隔符后取 upper』),或把字面量挪到普通注释/代码常量;已发生时改写注释文本再 gofmt -w,不要试图恢复原字符(下次还会被转)。
+
+## 2026-09-06 admin 单资源 GET 信封 {item} 被当裸对象用 → 点「详情」整页白屏
+- 症状:采购单列表正常渲染,点行内「详情」整页白屏(root innerHTML 归零),console 唯一报错 TypeError: Cannot read properties of undefined (reading 'toFixed')。
+- 原因:GET /procurement/orders/{id} 响应 data 为 {item: 订单},OrderDetailDrawer 把信封整体 setDetail 后 undefined.totalAmount.toFixed 抛错;应用无 ErrorBoundary,React 树整树卸载。OrderEditDrawer 同源缺陷(回填全空但不崩)。列表接口 data 直接是 {items},列表正常渲染掩盖了单条信封差异。
+- 修法:purchaseLogic.unwrapOrderDetail 统一解包(兼容裸对象/空值归 null)+ fmtAmount 兜底空金额;回归用例进 purchaseLogic.test.tsx(commit 0adeb60e)。
+- 排查线索:cdp-admin-capture --logs 一次定位 TypeError 栈;curl 单条接口看 data 第一层 key(item/items/裸对象)。其余域单资源 GET(suppliers/{id} 等)同款风险,新增页面按 unwrap helper 消费。

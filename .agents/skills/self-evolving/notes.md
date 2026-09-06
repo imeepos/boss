@@ -1,5 +1,11 @@
 # Notes
 
+## 2026-09-06 采购单详情白屏(采购域,fix/purchase-detail-white-screen)
+
+- 哪个坑浪费了最多时间?线上部署验证:轮询用「与上次 hash 不同」当信号,撞上并行部署 hash 翻转(Dv1VgrCR 与 DCXW1E89 互相换位),10 秒假阳性,误在旧包上白验一轮还把旧包崩溃误判成「修复无效」。
+- skill 有没有提前警告?红线 14(发车前必检必填键)已预警,本轮仍漏一次 bash description 整程序 rejected;红线 7(无图模型)在案,仍在 Promise.all 批里发 read_image。两处台账如实 +1。
+- 重来一次怎么做?①部署完成判定=排除全部已知旧 hash + 新 hash 上行为断言(点详情)双确认,hash 相等性永远不可靠;②发车前逐调用默念必填键(edit: old+new,bash: command+description);③本模型截图一律 cdp --eval DOM 断言,read_image 不进任何批。
+
 ## 2026-09-06 类型归一+巡检扩展(P4-B,feat/p4-b)
 
 - 哪个坑浪费了最多时间?(1)e2e 脚本 cleanup_data 的 echo 进 stdout,seed_data 被命令替换捕获后 batchId 变成多行脏值,造数直奔服务端自动编码全漏 cleanup 前缀——两坑叠加一次跑出真实造数泄漏(102 上四个孤儿资产+FK 卡批次删除),手工清场后才修;教训:e2e 造数必须显式带业务侧唯一编码前缀,不能指望回收模式兜住服务端生成编码。(2)main 在会话中途前进(P4-A 合入),make check 与 merge 并发差点互踩——先 job_kill 再合并,合并后重跑全套。

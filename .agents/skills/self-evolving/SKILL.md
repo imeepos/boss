@@ -29,6 +29,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 12. **【已犯 3 次】bash set -u 下可缺省变量必须给默认值** —— 位置参数与环境变量读取一律写 ${VAR:-default}(函数可选参数如 b=${3:-}、环境变量如 HOST=${OLTSIM_HOST:-xxx});裸 $3/裸 $ENV 在未传/未设时直接 unbound variable 崩溃(2026-09-02 verify-oltsim 脚本两次运行中断,第二次发生在夹具已建之后,白耗一轮);2026-09-06 CI 守护轮第三犯(deploy-guard-alert.sh --selftest 零输出 exit 1)——经 run_code 生成的脚本里 VAR:-default 花括号默认值本身写不出来(红线11),正解=printenv VAR >/dev/null 先探测再引用,必至 env(如 GITHUB_SHA)再补空值档。
 13. **【已犯 2 次】大仓 worktree add / 全仓 build 等长耗时命令必须后台跑,worktree 挂载用 --no-checkout 两段式** —— 前台跑必被 bash 超时杀半路(2026-09-04 T18 六连败、T19 两连败);标准动作:`git worktree add --no-checkout ../wt feat/branch`(秒级)→ 后台 job `git reset --hard HEAD` 补文件 → job_output 收尾;全仓 build/test 同理 run_in_background + 轮询日志。
 22. **【已犯 2 次】run_code 程序串里严禁反斜杠转义引号(宿主 JSON 预解码成裸引号提前闭合字符串)** —— 2026-09-06 CI 守护轮 ssh format 串与 cron 文档块两犯,报 Expected ',' got ';'/ident;引号一律裸写(宿主对裸引号宽容)或 String.fromCharCode(34) 拼接,反斜杠只留真正转义需求;红线11 的 ${ 与裸反引号禁令同源同防。
+23. **【已犯 2 次】消费接口前必须核对真实信封形状(列表 {items} vs 单资源 {item} vs 裸对象)** —— 2026-08-20 worker/user 端 token 从顶层取全端 401;2026-09-06 采购单详情抽屉把 {item} 信封当订单用,undefined.toFixed 整页白屏。新页面单条详情/回填一律走 unwrap helper 并 curl 单条接口核对第一层 key。
 
 
 # 上级叮嘱
