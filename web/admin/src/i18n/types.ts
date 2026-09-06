@@ -889,6 +889,7 @@ export interface Translations {
       title: string
       desc: string
       searchPlaceholder: string
+      filterAll: string
       columns: string[]
       lifecycle: string
       lifecycleTitle: string
@@ -976,6 +977,7 @@ export interface Translations {
       title: string
       desc: string
       searchPlaceholder: string
+      filterAll: string
       columns: string[]
       total: string
       empty: string
