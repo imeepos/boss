@@ -16,7 +16,7 @@
 
 ## 门禁
 
-- `pnpm typecheck && pnpm test && pnpm build`（vitest 4 文件 20 用例；build 含 tsc --noEmit）
+- `TZ=Asia/Shanghai pnpm typecheck && TZ=Asia/Shanghai pnpm test && pnpm build`（vitest 4 文件 20 用例；build 含 tsc --noEmit）。**TZ 必须显式置 Asia/Shanghai**：lib/format fmtTime 用 shanghaiParts 渲染，但 `new Date('2026-08-21T10:00:00')` 这类无时区后缀字符串按**机器本地时区**解析（2026-09-06 实证：本机 America/Los_Angeles 下 filter.test「注册时间」假失败，期望 10:00 实得次日 01:00）；CI 时区与开发机不一致时同炸。
 
 ## 设计资料位置
 

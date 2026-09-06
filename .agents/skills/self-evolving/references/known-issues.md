@@ -460,3 +460,8 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 排查四步定性:①grep 全仓源码 reportAllChanges/startTime(0 命中)→ ②从线上 entry js 提取全部 chunk 名逐个 grep(337 个 0 命中)→ ③cdp-admin-capture 干净 Chrome 打开目标页把全部 tab 点一遍,--logs 收 console/网络(0 error/warn、0 非 2xx,页面数据完整渲染)→ ④web 搜错误签名定位上游库。
 - 修法:应用侧无错可修;用户侧无痕窗口(禁扩展)复测或逐个禁用扩展定位元凶;若页面另有可见故障(白屏/缺数据)再按独立症状排查,勿把 console 噪音当 bug 修。
 
+## 2026-09-06 cdp-admin-capture 参数顺序错 → eval 报 localStorage SecurityError,截图存成怪名
+- 症状:调用 cdp-admin-capture.mjs 时把 --path/--theme 等旗标放在第一位、out.png 用 --out= 传,输出 "saved --path" 且 eval 报 SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied。
+- 原因:脚本约定 **out.png 是第一个位置参数**(usage: cdp-admin-capture.mjs <out.png> [--path p] ...),没有 --out 旗标;argv[0] 被当成文件名,旗标整体错位,脚本回落到 base/login 页面执行 eval——about:blank/受限文档读 localStorage 即 SecurityError。
+- 修法:out.png 永远放第一位,目标页路径用 --path,远端用 --base http://192.168.0.102:5180;看到 SecurityError+怪名文件先查参数顺序,不是浏览器问题。
+

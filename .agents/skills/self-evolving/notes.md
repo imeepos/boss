@@ -1745,3 +1745,8 @@
 - 坑: web_fetch 抓 raw.githubusercontent 大型 OpenAPI(v5 yaml 数百 KB)稳定超时 30s,且 run_code 内 Promise.all 多抓取叠加也会撞 30s 预算;教训=单次批量抓取控制在 3-4 个、大文件抓前先掂量体积,抓不到就换小文件(README/swagger v4)或放弃原文改引摘要。
 - 顺: chainway 案例页正文是 JS 渲染,剥标签后只剩导航;判据=关键字(China Tower)在正文锚点搜索落空,此时换来源,不在同一页上反复剥。
 
+## 2026-09-06 采购单操作列空占位修复
+- 哪个坑浪费了最多时间?(1)门禁 vitest 在本机 America/Los_Angeles 时区下「注册时间」用例假失败——fmtTime 按 shanghaiParts 渲染但无时区后缀字符串按机器本地时区解析;正解 TZ=Asia/Shanghai pnpm test(已喂 boss-admin-web.md 门禁节)。排查走「先证伪与自己改动有关」路径:干净 main 复跑同炸,才免了修无关代码。(2)cdp-admin-capture 把 out.png 放旗标后面,argv[0] 成了 '--path',eval 落在 login 页报 localStorage SecurityError——已记 known-issues。
+- skill 有没有提前警告?部分有:红线 2(cdp 工具用法)在,但参数顺序细节只在 usage 行里;TZ 敏感零预警,已补。
+- 重来一次会怎么做?①新脚本先读 usage 行再拼命令;②跑前端门禁一律显式 TZ=Asia/Shanghai;③部署验证直接 ssh docker ps 找 commit-sha 镜像 tag,比查 gitea action 状态表直观。
+
