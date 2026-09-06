@@ -59,6 +59,7 @@ const ReplacePage = lazy(() => import('./pages/ams/replace'))
 const PurchasePage = lazy(() => import('./pages/ams/purchase'))
 const InventoryPage = lazy(() => import('./pages/ams/inventory'))
 const ResourcePage = lazy(() => import('./pages/oss/resource'))
+const CapacityPage = lazy(() => import('./pages/oss/capacity'))
 const ODNPage = lazy(() => import('./pages/oss/odn'))
 const ReservePage = lazy(() => import('./pages/oss/reserve'))
 const TransferPage = lazy(() => import('./pages/oss/transfer'))
@@ -183,6 +184,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'purchase') return <PurchasePage />
   if (pageKey === 'inventory') return <InventoryPage />
   if (pageKey === 'resource') return <ResourcePage />
+  if (pageKey === 'capacity') return <CapacityPage />
   if (pageKey === 'odn') return <ODNPage />
   if (pageKey === 'reserve') return <ReservePage />
   if (pageKey === 'transfer') return <TransferPage />

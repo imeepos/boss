@@ -25,6 +25,17 @@ export interface PortRow {
   status: string // IDLE/RESERVED/USED/DISABLED
 }
 
+// 容量聚合行(fields.md §4.2.2):usageRate=USED/(USED+IDLE) 百分比两位小数。
+export interface CapacityRow {
+  resourceId: number
+  code: string
+  name: string
+  type: string // OLT/SPLITTER
+  totalPorts: number
+  usedPorts: number
+  usageRate: number
+}
+
 export interface PortHistoryRow {
   id: number
   portId: number
