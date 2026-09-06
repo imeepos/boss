@@ -1626,8 +1626,6 @@ const zhCN: Translations = {
       resetConfirm: '确认重置该账号的接入密码?原密码立即失效,同时清除防爆破锁定。',
       resetTitle: '密码已重置',
       resetOnceHint: '新密码仅本次展示,关闭后不再可见,请立即复制保存(一次性语义)。',
-      resetCopy: '复制密码',
-      resetCopied: '已复制',
       resetClose: '我已保存',
       resetFail: '重置失败',
     },

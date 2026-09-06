@@ -1410,8 +1410,6 @@ export interface Translations {
       resetConfirm: string
       resetTitle: string
       resetOnceHint: string
-      resetCopy: string
-      resetCopied: string
       resetClose: string
       resetFail: string
     }

@@ -8,6 +8,8 @@ import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { type LoAccountRow } from '../types'
 import { TableStateRow } from '../../../components/business'
+import { useConfirm } from '../../../components/ConfirmDialog'
+import { ResetPasswordDialog } from './ResetPasswordDialog'
 
 export default function LoAccountPage() {
   const t = useT()
@@ -20,6 +22,9 @@ export default function LoAccountPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
+  const [resetBusyLoid, setResetBusyLoid] = useState('')
+  const [resetResult, setResetResult] = useState<{ loid: string; password: string } | null>(null)
+  const confirmDialog = useConfirm()
 
   const load = () => {
     setError('')
@@ -32,6 +37,21 @@ export default function LoAccountPage() {
       .finally(() => setBusy(false))
   }
   useEffect(load, [page, pageSize, keyword, status])
+
+  // 重置接入密码:二次确认 → POST reset-password → 弹层一次性展示随机密码(明文仅本次返回)。
+  const handleReset = async (loid: string) => {
+    if (!(await confirmDialog(l.resetConfirm, { title: l.resetPwd, danger: true }))) return
+    setResetBusyLoid(loid)
+    try {
+      const d = await apiFetch<{ loid: string; password: string }>('/lo-accounts/' + encodeURIComponent(loid) + '/reset-password', { method: 'POST' })
+      if (!d?.password) throw new Error(l.resetFail)
+      setResetResult({ loid, password: d.password })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : l.resetFail)
+    } finally {
+      setResetBusyLoid('')
+    }
+  }
 
   const slice = rows
 
@@ -59,7 +79,7 @@ export default function LoAccountPage() {
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{l.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
+              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{[...l.columns, l.colActions].map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((r) => (
                   <tr key={r.id}>
@@ -70,9 +90,15 @@ export default function LoAccountPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.qosTemplateId ? `#${r.qosTemplateId}` : '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.billingMode === 'PREPAID' ? l.prepaid : l.postpaid}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="loAccount" value={r.status} /></td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <button type="button" data-testid={'reset-pwd-' + r.loid}
+                        className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={resetBusyLoid === r.loid}
+                        onClick={() => handleReset(r.loid)}>{l.resetPwd}</button>
+                    </td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={l.empty} />}
+                {!slice.length && <TableStateRow colSpan={8} loading={busy} text={l.empty} />}
               </tbody>
             </table>
           </div>
@@ -82,6 +108,7 @@ export default function LoAccountPage() {
             onPage={setPage} onSize={setPageSize} {...pagerTexts(l)} />
         </div>
       </div>
+      {resetResult && <ResetPasswordDialog loid={resetResult.loid} password={resetResult.password} onClose={() => setResetResult(null)} />}
     </div>
   )
 }

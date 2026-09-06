@@ -1617,8 +1617,6 @@ const enUS: Translations = {
       resetConfirm: 'Reset the access password for this account? The old password becomes invalid immediately and the brute-force lock is cleared.',
       resetTitle: 'Password Reset',
       resetOnceHint: 'The new password is shown only once and cannot be viewed again after closing. Copy and store it now (one-time).',
-      resetCopy: 'Copy Password',
-      resetCopied: 'Copied',
       resetClose: 'Saved',
       resetFail: 'Reset failed',
       total: '{count} records',

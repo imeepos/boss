@@ -1617,8 +1617,6 @@ const msMY: Translations = {
       resetConfirm: 'Set semula kata laluan akses akaun ini? Kata laluan lama terus tidak sah dan sekatan brute-force dikosongkan.',
       resetTitle: 'Kata Laluan Ditetapkan Semula',
       resetOnceHint: 'Kata laluan baharu hanya dipaparkan sekali dan tidak dapat dilihat lagi selepas ditutup. Salin dan simpan sekarang (sekali guna).',
-      resetCopy: 'Salin Kata Laluan',
-      resetCopied: 'Disalin',
       resetClose: 'Sudah Disimpan',
       resetFail: 'Set semula gagal',
       total: '{count} rekod',
