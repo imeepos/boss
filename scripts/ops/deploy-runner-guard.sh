@@ -10,9 +10,10 @@
 #   重建路径:本机缺 → 用 scripts/deploy-runner.Dockerfile 就地重建(构建上下文 =
 #     scripts/ops/,compose 二进制与凭据 JSON 均固化在仓库内,不再依赖 /tmp 与宿主文件)
 #     并推回注册表;基座镜像缺失时用凭据自动补拉。
-# 守护 job 刻意跑在 ubuntu-latest 标签(= runner:bookworm 基座,与 deploy-runner 互不
-# 依赖),deploy-runner 本地+注册表双缺时守护仍能拉起;bookworm 无 docker CLI,慢路径
-# 现装 docker.io——与重建 Dockerfile 自身的 RUN apt-get 同一依赖面,不引入新外部依赖。
+# 守护 job 刻意跑在 windows-latest 标签(= daocloud 公网源 node:20-bookworm,本地被
+# 周清后可匿名重拉,不撞私有仓库 401 墙;见 workflow 注释),与 deploy-runner、
+# runner:bookworm 双双解耦,双缺场景守护仍能拉起;镜像无 docker CLI,慢路径现装
+# docker.io——与重建 Dockerfile 自身的 RUN apt-get 同一依赖面,不引入新外部依赖。
 # 失败一律输出 "[deploy-guard] FAILED ..." 并退出非零(禁止静默,可 grep 留痕)。
 # 用法: scripts/ops/deploy-runner-guard.sh [--force-rebuild] [--no-push]
 #   --force-rebuild 跳过自检强制重建(A1 演练/测试用);--no-push 只构建不推注册表(测试用)。
@@ -77,11 +78,14 @@ if [ "$FORCE" = 0 ] && [ "$LOCAL" = 1 ] && [ "$REGOK" = 1 ]; then
   exit 0
 fi
 
-# 慢路径前置:基座无 docker CLI 则现装(仅重建/补推时付出此成本,快路径零开销)
+# 慢路径前置:基座无 docker CLI 则现装(仅重建/补推时付出此成本,快路径零开销)。
+# 注意:apt 不加 -qq 静默标志并配 timeout 兜底——2026-09-06 在 102 实测 -qq 模式下
+# apt 安装会概率性挂在 _apt http 方法(3/3 复现,全量输出 2/2 且 <45s 完成),
+# timeout 保证最坏情况是大声红而非 job 挂死到 3h 超时。
 if ! command -v docker >/dev/null 2>&1; then
   echo "[deploy-guard] docker CLI missing, installing docker.io via apt (same dep as rebuild)..."
-  apt-get update -qq
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends docker.io >/dev/null
+  timeout 180 apt-get update
+  DEBIAN_FRONTEND=noninteractive timeout 300 apt-get install -y --no-install-recommends docker.io
 fi
 if ! command -v docker >/dev/null 2>&1; then
   echo "[deploy-guard] FAILED docker CLI still missing after apt install" >&2
@@ -91,8 +95,8 @@ mkdir -p "$ROOT/.guard-docker-config"
 cp "$CREDS" "$ROOT/.guard-docker-config/config.json"
 export DOCKER_CONFIG="$ROOT/.guard-docker-config"
 
-if [ "$LOCAL" = 1 ]; then
-  # 本机在而注册表缺:补推即可,无需重建
+if [ "$FORCE" = 0 ] && [ "$LOCAL" = 1 ]; then
+  # 本机在而注册表缺:补推即可,无需重建(--force-rebuild 时不走此捷径,走重建)
   if [ "$NOPUSH" = 0 ]; then docker push "$IMG"; fi
   echo "[deploy-guard] OK registry copy restored (local image was intact): $IMG"
   exit 0

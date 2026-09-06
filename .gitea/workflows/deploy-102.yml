@@ -14,12 +14,17 @@ concurrency:
 jobs:
   # 镜像守护(2026-09-06 事故固化,ISSUE.md CI/deploy-102):deploy-runner job 镜像被
   # prune 后 runner 拉 job 容器即失败且 runner 日志无错误行(act_runner 0.2.11 缺陷),
-  # 部署通道整体静默停摆。守护 job 刻意跑在 ubuntu-latest 标签(= runner:bookworm 基座,
-  # 与 deploy-runner 互不依赖),即使 deploy-runner 本地+注册表双缺也能拉起并就地重建,
-  # 阻断「镜像没了→守护也起不来」的鸡蛋互锁;自检幂等零副作用,重建细节见
+  # 部署通道整体静默停摆。102 每周日 04:00 docker-clean.sh 跑 docker image prune -af,
+  # 未被容器引用的镜像全灭——deploy-runner 和基座 runner:bookworm 都会被周清掉。
+  # 守护 job 刻意跑在 windows-latest 标签:该标签映射到公网镜像源 daocloud 的
+  # node:20-bookworm,本地被清后 runner 可匿名重拉,不撞私有仓库 401 鉴权墙,
+  # 是全部注册标签里唯一 prune 自愈的锚点;镜像名含 windows 纯属历史标签名,
+  # 实际是 linux node 容器(curl/python3/node/apt 齐备,已实测)。由此守护 job 与
+  # deploy-runner、runner:bookworm 双双解耦,双缺场景仍能拉起并就地重建,阻断
+  # 「镜像没了→守护也起不来」的鸡蛋互锁;自检幂等零副作用,重建细节见
   # scripts/ops/deploy-runner-guard.sh(构建上下文固化在 scripts/ops/,不再依赖 /tmp)。
   runner-image-guard:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Clone
         run: |
