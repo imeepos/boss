@@ -51,6 +51,23 @@ func TestPGStore_CreateModel(t *testing.T) {
 		}
 	})
 
+	t.Run("spec 缺省归一为空对象(回归:nil 直插 23502)", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(`INSERT INTO asset_models`).
+			WithArgs("华为", "EchoLife", "ONU", "", map[string]any{}).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(9)))
+
+		s := NewPGStore(mock)
+		id, err := s.CreateModel(context.Background(), AssetModel{Vendor: "华为", Model: "EchoLife", Category: "ONU"})
+		if err != nil || id != 9 {
+			t.Fatalf("id=%d err=%v", id, err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+
 	t.Run("四元组重复 → ErrModelExists", func(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
 		defer mock.Close()

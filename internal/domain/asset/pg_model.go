@@ -34,7 +34,12 @@ func (s *PGStore) ListModels(ctx context.Context) ([]AssetModel, error) {
 }
 
 // CreateModel 建型号;四元组唯一,冲突返回 ErrModelExists。
+// spec 列 NOT NULL:缺省归一为空对象(契约 spec 可空,空=无规格键值;
+// 曾因 nil map 直插报 23502,102 E2E 实证)。
 func (s *PGStore) CreateModel(ctx context.Context, m AssetModel) (int64, error) {
+	if m.Spec == nil {
+		m.Spec = map[string]any{}
+	}
 	var id int64
 	err := s.db.QueryRow(ctx,
 		`INSERT INTO asset_models(vendor, model, category, part_number, spec)
@@ -59,6 +64,9 @@ var ErrModelInactive = errors.New("asset: model inactive")
 // 停用型号不可编辑 → ErrModelInactive(40900,先启用)。停用闸门用
 // FOR UPDATE 行锁,防编辑与停用并发交错。
 func (s *PGStore) UpdateModel(ctx context.Context, id int64, m AssetModel) error {
+	if m.Spec == nil {
+		m.Spec = map[string]any{}
+	}
 	var active bool
 	err := s.db.QueryRow(ctx,
 		`SELECT is_active FROM asset_models WHERE id = $1 FOR UPDATE`, id).Scan(&active)
