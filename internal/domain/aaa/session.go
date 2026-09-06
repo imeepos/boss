@@ -32,7 +32,7 @@ const (
 	AcctStatusInterim = 3
 )
 
-// SessionRecord 在线会话(radacct 模式):计账 Start 建/Interim 累加/Stop 关。
+// SessionRecord 在线会话(radacct 模式):计账 Start 建/Interim 覆盖累计/Stop 关。
 type SessionRecord struct {
 	ID                 int64      `json:"id"`
 	Loid               string     `json:"loid"`
@@ -52,7 +52,8 @@ type SessionRecord struct {
 type SessionMaintainer interface {
 	// StartSession 建 ONLINE 会话;(loid, session_id) 重复 Start 幂等去重,返回是否新建。
 	StartSession(ctx context.Context, rec SessionRecord) (bool, error)
-	// TouchSessionTraffic Interim:累加上下行流量并刷新最近更新时间。
+	// TouchSessionTraffic Interim:覆盖式更新累计流量(RFC 2866:Interim 上报为会话累计值)。
+	// 新值小于已存值不回写(计数器回退护栏);0 值或等值仅刷新最近更新时间。
 	TouchSessionTraffic(ctx context.Context, loid, sessionID string, inputOctets, outputOctets int64) error
 	// StopSession 关闭会话;返回会话是否存在(孤儿 Stop 返回 false 不报错)。
 	StopSession(ctx context.Context, loid, sessionID, closeReason string) (bool, error)

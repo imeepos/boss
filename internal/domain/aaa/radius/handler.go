@@ -146,7 +146,7 @@ func (h *Handler) serveAccounting(w radius.ResponseWriter, r *radius.Request) {
 	w.Write(r.Response(radius.CodeAccountingResponse))
 }
 
-// maintainSession 按 Acct-Status-Type 维护在线会话(A2):Start 幂等建/Interim 累加/Stop 关闭。
+// maintainSession 按 Acct-Status-Type 维护在线会话(A2):Start 幂等建/Interim 覆盖累计/Stop 关闭。
 func (h *Handler) maintainSession(ctx context.Context, cdr aaability.CDR) {
 	if h.Sessions == nil {
 		return

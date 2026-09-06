@@ -78,7 +78,7 @@ func TestServeAccountingSessions(t *testing.T) {
 	w = &responseStub{}
 	h.ServeRADIUS(w, acctRequest(rfc2866.AcctStatusType_Value_InterimUpdate))
 	if len(sess.touched) != 1 || sess.touched[0][0] != "LOID-1" || sess.touched[0][2] != int64(11) {
-		t.Fatalf("Interim 累加参数不符: %v", sess.touched)
+		t.Fatalf("Interim 覆盖参数不符(应原样透传累计值): %v", sess.touched)
 	}
 	w = &responseStub{}
 	h.ServeRADIUS(w, acctRequest(rfc2866.AcctStatusType_Value_Stop))
