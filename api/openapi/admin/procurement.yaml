@@ -39,6 +39,37 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /procurement/suppliers/{id}:
+    put:
+      tags: [Procurement]
+      summary: 编辑供应商(P2-W2-T2:名称/联系人/电话/备注可改,编码不可改;部分更新 null=保持;禁用态可改;未命中 40400)
+      operationId: updateSupplier
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:         { type: string, maxLength: 128, nullable: true }
+                contactName:  { type: string, maxLength: 64, nullable: true }
+                contactPhone: { type: string, maxLength: 32, nullable: true }
+                remark:       { type: string, maxLength: 255, nullable: true }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/suppliers/{id}/enable:
+    post:
+      tags: [Procurement]
+      summary: 启用供应商(P2-W2-T2:DISABLED→ENABLED;已启用幂等成功;写审计)
+      operationId: enableSupplier
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /procurement/orders:
     get:
       tags: [Procurement]
@@ -96,6 +127,44 @@ paths:
       operationId: cancelOrder
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/orders/{id}:
+    get:
+      tags: [Procurement]
+      summary: 采购单详情(P2-W2-T2:单头+明细行+状态;未命中 40400)
+      operationId: getOrder
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+    put:
+      tags: [Procurement]
+      summary: 采购单草稿编辑(P2-W2-T2:仅 DRAFT 否则 40900;备注/期望日期可改;items 非 null 整体替换行数量>0;总金额重算;审计记前后键值)
+      operationId: updateOrderDraft
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remark:       { type: string, nullable: true }
+                expectedDate: { type: string, format: date, nullable: true }
+                items:
+                  type: array
+                  nullable: true
+                  items:
+                    type: object
+                    required: [materialCode, quantity]
+                    properties:
+                      materialCode: { type: string }
+                      spec:         { type: string }
+                      quantity:     { type: integer }
+                      unitAmount:   { type: number, format: float }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
@@ -162,6 +231,24 @@ paths:
                       spec:         { type: string }
                       quantity:     { type: integer }
                       unitAmount:   { type: number, format: float }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /procurement/receipts/{id}/reject:
+    post:
+      tags: [Procurement]
+      summary: 入库驳回(P2-W2-T2:仅 DRAFT→REJECTED,CONFIRMED 等 40900;原因≤255 可空缺省文案;写审计)
+      operationId: rejectReceipt
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 255 }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 

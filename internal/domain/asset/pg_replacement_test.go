@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	pgxmock "github.com/pashagolub/pgxmock/v4"
 )
 
@@ -201,4 +202,57 @@ func TestPGStore_ListReplacementsByWorker_OnlyDoing(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)
 	}
+}
+
+// CancelReplacement(P2-W2-T1 I):PENDING → CANCELLED / 非 PENDING 40900 / 不存在 404。
+func TestPGStore_CancelReplacement(t *testing.T) {
+	ctx := context.Background()
+	cols := []string{"id", "replacement_no", "asset_id", "legal_entity_id", "legal_entity_name", "reason", "priority", "status", "worker_id", "worker_name", "finished_at"}
+	row := func(status string) []any {
+		return []any{int64(15), "RPL-1", int64(5), int64(1), "企业", "光猫故障", "HIGH", status, int64(0), "", nil}
+	}
+	t.Run("PENDING 取消成功", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("UPDATE replacements SET status = 'CANCELLED'").
+			WithArgs(int64(15)).
+			WillReturnRows(mock.NewRows(cols).AddRow(row("CANCELLED")...))
+		s := NewPGStore(mock)
+		r, err := s.CancelReplacement(ctx, 15)
+		if err != nil {
+			t.Fatalf("err=%v", err)
+		}
+		if r.Status != "CANCELLED" {
+			t.Fatalf("status=%s, want CANCELLED", r.Status)
+		}
+	})
+	t.Run("非PENDING拒绝", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("UPDATE replacements SET status = 'CANCELLED'").
+			WithArgs(int64(15)).
+			WillReturnError(pgx.ErrNoRows)
+		mock.ExpectQuery("SELECT id, replacement_no").
+			WithArgs(int64(15)).
+			WillReturnRows(mock.NewRows(cols).AddRow(row("DOING")...))
+		s := NewPGStore(mock)
+		_, err := s.CancelReplacement(ctx, 15)
+		if !errors.Is(err, ErrReplacementNotCancellable) {
+			t.Fatalf("err=%v, want ErrReplacementNotCancellable", err)
+		}
+	})
+	t.Run("不存在404", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("UPDATE replacements SET status = 'CANCELLED'").
+			WithArgs(int64(15)).
+			WillReturnError(pgx.ErrNoRows)
+		mock.ExpectQuery("SELECT id, replacement_no").
+			WithArgs(int64(15)).
+			WillReturnError(pgx.ErrNoRows)
+		s := NewPGStore(mock)
+		if _, err := s.CancelReplacement(ctx, 15); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("err=%v, want ErrNotFound", err)
+		}
+	})
 }

@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import type { OrderItemRow, SupplierRow } from '../types'
+import { OrderItemsEditor } from './OrderItemsEditor'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
@@ -82,46 +83,7 @@ export function CreateOrderDrawer({
             className={input}
           />
         </div>
-        <div>
-          <div className="mb-2 text-[13px] text-[var(--shell-content-text)]">{d.items}</div>
-          {items.map((it, idx) => (
-            <div key={idx} className="mb-2 grid grid-cols-12 gap-2">
-              <input
-                placeholder="MI-ONU"
-                value={it.materialCode}
-                onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, materialCode: e.target.value } : x))}
-                className={input + ' col-span-4'}
-              />
-              <input
-                placeholder={d.spec}
-                value={it.spec}
-                onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, spec: e.target.value } : x))}
-                className={input + ' col-span-3'}
-              />
-              <input
-                type="number"
-                placeholder={d.qty}
-                value={it.quantity}
-                onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value) } : x))}
-                className={input + ' col-span-2'}
-              />
-              <input
-                type="number"
-                placeholder={d.unitAmount}
-                value={it.unitAmount}
-                onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, unitAmount: Number(e.target.value) } : x))}
-                className={input + ' col-span-3'}
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-            onClick={() => setItems([...items, { materialCode: '', spec: '', quantity: 1, unitAmount: 0 }])}
-          >
-            {d.addItem}
-          </button>
-        </div>
+        <OrderItemsEditor items={items} onChange={setItems} />
       </div>
     </Drawer>
   )

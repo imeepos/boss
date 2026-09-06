@@ -59,7 +59,12 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, asset.ErrTagUnbound),
 		errors.Is(err, asset.ErrAssetScrapped),
 		errors.Is(err, asset.ErrModelExists),
+		errors.Is(err, asset.ErrModelInactive),
 		errors.Is(err, asset.ErrCodeDuplicate),
+		errors.Is(err, asset.ErrTagDisabled),
+		errors.Is(err, asset.ErrAssetNotInStock),
+		errors.Is(err, asset.ErrAssignmentClosed),
+		errors.Is(err, asset.ErrReplacementNotCancellable),
 		errors.Is(err, worker.ErrDuplicate):
 		// 资产/标签双绑冲突:40900 + 透传 err.Error()(含具体资产/标签 id),
 		// 调用方能区分"标签已绑"vs"资产已绑",与 40920 扫码不一致明确区分。
@@ -75,6 +80,9 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, provision.ErrBoundTemplateDisabled):
 		// 环节7 模板不可解析(配置缺失/绑定模板停用):40900 + 透传原因,运营可见为什么开不了。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
+	case errors.Is(err, procurement.ErrStateConflict):
+		// 采购域状态冲突(P2-W2-T2 草稿编辑/入库驳回非 DRAFT):40900 + 透传当前状态。
+		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, user.ErrInvalidInput),
 		errors.Is(err, user.ErrRoleNotFound),
 		errors.Is(err, user.ErrFKViolation),
@@ -87,6 +95,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, asset.ErrForeignKeyViolation),
 		errors.Is(err, asset.ErrBatchNotEditable),
 		errors.Is(err, procurement.ErrForeignKey),
+		errors.Is(err, procurement.ErrInvalidInput),
 		errors.Is(err, procurement.ErrInvalidTransition),
 		errors.Is(err, order.ErrInstallInput),
 		errors.Is(err, backup.ErrInvalidInput),

@@ -82,7 +82,8 @@ type AssetLifecycle struct {
 
 // Replacement 换新单(故障资产换新流程)。
 // 状态机: PENDING --Assign--> DOING --Complete--> DONE/FAILED(adopted note
-// 2026-08-27-replacement-ticket-flow);终态不可再流转,重做走新单。
+// 2026-08-27-replacement-ticket-flow);PENDING 另可 --Cancel--> CANCELLED
+// (P2-W2-T1,终态);终态不可再流转,重做走新单。
 type Replacement struct {
 	ID              int64      `json:"id"`
 	ReplacementNo   string     `json:"replacementNo"`
@@ -91,7 +92,7 @@ type Replacement struct {
 	LegalEntityName string     `json:"legalEntityName"`
 	Reason          string     `json:"reason"`
 	Priority        string     `json:"priority"` // HIGH/MEDIUM/LOW
-	Status          string     `json:"status"`   // PENDING/DOING/DONE/FAILED
+	Status          string     `json:"status"`   // PENDING/DOING/DONE/FAILED/CANCELLED
 	WorkerID        int64      `json:"workerId"` // 0=未派
 	WorkerName      string     `json:"workerName"`
 	FinishedAt      *time.Time `json:"finishedAt,omitempty"` // nil=未完成
@@ -167,6 +168,9 @@ type AssetService interface {
 	// AssignReplacement 派单:回填师傅快照并 PENDING→DOING;
 	// 单不存在返回 ErrNotFound,状态非 PENDING 返回 ErrInvalidTransition。
 	AssignReplacement(ctx context.Context, id, workerID int64, workerName string) (*Replacement, error)
+	// CancelReplacement 取消(P2-W2-T1):仅 PENDING → CANCELLED 终态;
+	// 非 PENDING ErrReplacementNotCancellable(40900);未命中 ErrNotFound。
+	CancelReplacement(ctx context.Context, id int64) (*Replacement, error)
 	// CompleteReplacement 完成/失败:DOING→DONE|FAILED 并回填 finished_at;
 	// 状态非 DOING 返回 ErrInvalidTransition。result 仅接受 DONE/FAILED。
 	CompleteReplacement(ctx context.Context, id int64, result string) (*Replacement, error)
@@ -183,16 +187,39 @@ type AssetService interface {
 
 	ListAssignments(ctx context.Context, assetID int64) ([]AssetAssignment, error)
 	AssignAsset(ctx context.Context, a AssetAssignment) (int64, error)
+	// CreateAssignment 领用(P2-W2-T1):仅 IN_STOCK 可领用(ErrAssetNotInStock
+	// 40900);资产不存在/师傅不存在 ErrForeignKeyViolation;落台账开段,不改资产状态
+	// (装机扫码才置 DEPLOYED,fields.md §4.1 口径)。
+	CreateAssignment(ctx context.Context, a AssetAssignment) (int64, error)
+	// ReturnAssignment 归还(P2-W2-T1):闭合持有段 effective_to=now;重复归还
+	// ErrAssignmentClosed(40900);未命中 ErrNotFound。返回闭合时间供审计展示。
+	ReturnAssignment(ctx context.Context, id int64) (*time.Time, error)
 
 	// UnbindTag 解绑标签(P1-T2):置 bound_asset_id=NULL+status=UNBOUND 并写 UNBIND 事件;
 	// expectedAssetID>0 时校验当前绑定一致;未绑定/预期不符返回 ErrTagUnbound/ErrBindingConflict。
 	UnbindTag(ctx context.Context, tagID, expectedAssetID, actorAccountID int64, detail string) error
+	// DisableTag 停用标签(P2-W2-T1):仅 UNBOUND 可停用(BOUND 必须先解绑,
+	// ErrBindingConflict 40900);已 DISABLED 幂等成功;未命中 ErrNotFound。
+	DisableTag(ctx context.Context, tagID int64, reason string) error
+	// EnableTag 启用标签(P2-W2-T1):仅对 DISABLED 生效(DISABLED → UNBOUND);
+	// UNBOUND/BOUND 幂等 no-op 成功;未命中 ErrNotFound。
+	EnableTag(ctx context.Context, tagID int64) error
 	// ScrapAsset 报废资产(P1-T2):任意非终态 → SCRAPPED(终态幂等 no-op),强制解绑标签写
 	// RECYCLE 事件(软回收禁硬删),轨迹落行;同一事务,失败整单回滚。
 	ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string) error
+	// ListTagEvents 标签事件流查询(P2-T4 消费面):id 倒序+limit(服务层兜底上限 100),
+	// actions 白名单过滤,beforeID>0 只取更小 id(游标预留);标签不存在返回 ErrNotFound。
+	ListTagEvents(ctx context.Context, tagID, limit, beforeID int64, actions []string) ([]TagEvent, error)
+	// ListAssetEvents 资产事件流查询(P2-T4 消费面):口径同 ListTagEvents;资产不存在返回 ErrNotFound。
+	ListAssetEvents(ctx context.Context, assetID, limit, beforeID int64, actions []string) ([]TagEvent, error)
 
 	// ListModels 型号字典(含停用,管理端下拉与列表)。
 	ListModels(ctx context.Context) ([]AssetModel, error)
 	// CreateModel 建型号:UNIQUE(vendor,model,category,part_number) 冲突返回 ErrModelExists。
 	CreateModel(ctx context.Context, m AssetModel) (int64, error)
+	// UpdateModel 编辑型号(P2-W2-T1):厂商/型号名/类别/料号/规格可改;唯一冲突
+	// ErrModelExists(40900);停用型号拒绝编辑 ErrModelInactive(40900,先启用)。
+	UpdateModel(ctx context.Context, id int64, m AssetModel) error
+	// SetModelActive 型号停用/启用(P2-W2-T1):is_active 直改,幂等;未命中 ErrNotFound。
+	SetModelActive(ctx context.Context, id int64, active bool) error
 }

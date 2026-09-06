@@ -6,10 +6,12 @@ package asset
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // ListModels 全量型号(含停用;管理端下拉与列表用,量级小不分页)。
@@ -33,14 +35,27 @@ func (s *PGStore) ListModels(ctx context.Context) ([]AssetModel, error) {
 }
 
 // CreateModel 建型号;四元组唯一,冲突返回 ErrModelExists。
+// spec 列 NOT NULL:缺省归一为空对象(契约 spec 可空,空=无规格键值;
+// 曾因 nil map 直插报 23502,102 E2E 实证)。
 func (s *PGStore) CreateModel(ctx context.Context, m AssetModel) (int64, error) {
+	if m.Spec == nil {
+		m.Spec = map[string]any{}
+	}
+	// jsonb 参数走字节流文本通道(pgx 对无类型空 map 报 cannot find encode plan,
+	// 与 rebindTagTx 的 tag_events 写入同款正解)。
+	specJSON, err := json.Marshal(m.Spec)
+	if err != nil {
+		return 0, fmt.Errorf("asset: model spec marshal: %w", err)
+	}
 	var id int64
-	err := s.db.QueryRow(ctx,
+	// 传 string 而非 []byte:pgx 对 []byte 走 bytea 十六进制编码,jsonb 列报 22P02。
+	specText := string(specJSON)
+	err = s.db.QueryRow(ctx,
 		`INSERT INTO asset_models(vendor, model, category, part_number, spec)
 		 VALUES($1,$2,$3,$4,$5)
 		 ON CONFLICT (vendor, model, category, part_number) DO NOTHING
 		 RETURNING id`,
-		m.Vendor, m.Model, m.Category, m.PartNumber, m.Spec).Scan(&id)
+		m.Vendor, m.Model, m.Category, m.PartNumber, specText).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, ErrModelExists
 	}
@@ -48,4 +63,60 @@ func (s *PGStore) CreateModel(ctx context.Context, m AssetModel) (int64, error) 
 		return 0, fmt.Errorf("asset: create model: %w", err)
 	}
 	return id, nil
+}
+
+// ErrModelInactive 型号已停用,拒绝编辑(P2-W2-T1 D:先启用再改)。
+var ErrModelInactive = errors.New("asset: model inactive")
+
+// UpdateModel 编辑型号(P2-W2-T1 D):厂商/型号名/类别/料号/规格可改;
+// 四元组 UNIQUE(uq_asset_models) 冲突 23505 → ErrModelExists(40900);
+// 停用型号不可编辑 → ErrModelInactive(40900,先启用)。停用闸门用
+// FOR UPDATE 行锁,防编辑与停用并发交错。
+func (s *PGStore) UpdateModel(ctx context.Context, id int64, m AssetModel) error {
+	if m.Spec == nil {
+		m.Spec = map[string]any{}
+	}
+	specJSON, err := json.Marshal(m.Spec)
+	if err != nil {
+		return fmt.Errorf("asset: model spec marshal: %w", err)
+	}
+	var active bool
+	err = s.db.QueryRow(ctx,
+		`SELECT is_active FROM asset_models WHERE id = $1 FOR UPDATE`, id).Scan(&active)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("asset: update model %d lock: %w", id, err)
+	}
+	if !active {
+		return fmt.Errorf("asset: model %d deactivated, enable first: %w", id, ErrModelInactive)
+	}
+	_, err = s.db.Exec(ctx,
+		`UPDATE asset_models SET vendor = $2, model = $3, category = $4, part_number = $5, spec = $6
+		 WHERE id = $1`,
+		id, m.Vendor, m.Model, m.Category, m.PartNumber, string(specJSON))
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "uq_asset_models" {
+			return fmt.Errorf("asset: model %s/%s: %w", m.Vendor, m.Model, ErrModelExists)
+		}
+		return fmt.Errorf("asset: update model %d: %w", id, err)
+	}
+	return nil
+}
+
+// SetModelActive 型号停用/启用(P2-W2-T1 E):is_active 置否/置真。
+// 停用不物理删,已被资产引用由 assets.model_id 承载(P1-T3 契约);
+// 同值重复置位幂等成功;未命中 ErrNotFound。
+func (s *PGStore) SetModelActive(ctx context.Context, id int64, active bool) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE asset_models SET is_active = $2 WHERE id = $1`, id, active)
+	if err != nil {
+		return fmt.Errorf("asset: set model %d active=%v: %w", id, active, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }

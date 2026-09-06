@@ -92,10 +92,10 @@ func TestPGStore_UpdateAsset_RebindTagEvents(t *testing.T) {
 	mock.ExpectExec(`INSERT INTO tag_events`).
 		WithArgs(int64(9), int64(3), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	// 新绑 7 存在性校验 + 绑定。
-	mock.ExpectQuery(`SELECT EXISTS`).
+	// 新绑 7 状态校验(DISABLED 闸门,P2-W2-T1)+ 绑定。
+	mock.ExpectQuery(`SELECT status FROM tags`).
 		WithArgs(int64(7)).
-		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		WillReturnRows(mock.NewRows([]string{"status"}).AddRow("UNBOUND"))
 	mock.ExpectExec(`status = 'BOUND'`).
 		WithArgs(int64(7), int64(3)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -136,9 +136,9 @@ func TestPGStore_UpdateAsset_RebindConflictRollback(t *testing.T) {
 	mock.ExpectExec(`INSERT INTO tag_events`).
 		WithArgs(int64(9), int64(3), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	mock.ExpectQuery(`SELECT EXISTS`).
+	mock.ExpectQuery(`SELECT status FROM tags`).
 		WithArgs(int64(7)).
-		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		WillReturnRows(mock.NewRows([]string{"status"}).AddRow("UNBOUND"))
 	// 新签 7 已绑另一资产,UPDATE 0 行 → 冲突回滚(旧绑解绑一并回滚)。
 	mock.ExpectExec(`status = 'BOUND'`).
 		WithArgs(int64(7), int64(3)).

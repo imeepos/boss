@@ -156,3 +156,35 @@ func (s *PGStore) transitionFailReason(ctx context.Context, id int64, expect str
 	}
 	return fmt.Errorf("asset: replacement %d status is not %s: %w", id, expect, ErrIllegalTransition)
 }
+
+// ErrReplacementNotCancellable 换新单非 PENDING,不可取消(P2-W2-T1 I,40900)。
+var ErrReplacementNotCancellable = errors.New("asset: replacement not cancellable")
+
+// CancelReplacement 取消换新单(P2-W2-T1 I):仅 PENDING 可取消 → CANCELLED
+// 终态(不回填 finished_at,取消属管理动作非执行完成);非 PENDING
+// ErrReplacementNotCancellable(40900);未命中 ErrNotFound。守卫 UPDATE 防并发越态。
+func (s *PGStore) CancelReplacement(ctx context.Context, id int64) (*Replacement, error) {
+	r, err := scanReplacement(s.db.QueryRow(ctx, `
+		UPDATE replacements SET status = 'CANCELLED'
+		WHERE id = $1 AND status = 'PENDING'
+		RETURNING `+replacementCols, id))
+	if errors.Is(err, ErrNotFound) {
+		return nil, s.cancelFailReason(ctx, id)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+// cancelFailReason 守卫 UPDATE 0 行时区分"单不存在"与"状态非 PENDING"。
+func (s *PGStore) cancelFailReason(ctx context.Context, id int64) error {
+	_, err := s.GetReplacement(ctx, id)
+	if errors.Is(err, ErrNotFound) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	return fmt.Errorf("asset: replacement %d not PENDING: %w", id, ErrReplacementNotCancellable)
+}

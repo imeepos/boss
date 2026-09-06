@@ -152,6 +152,36 @@ paths:
       operationId: listTags
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Asset]
+      summary: 建标签(P2-W2-T1 A;编号+EPC+频段必填且唯一,冲突 40900;状态缺省 UNBOUND;法人必填且须存在)
+      operationId: createTag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legalEntityId, tagNo, epcCode, band]
+              properties:
+                legalEntityId: { type: integer, format: int64, description: 法人主体 ID(必填) }
+                tagNo: { type: string, maxLength: 32, description: 标签编号(必填且唯一) }
+                epcCode: { type: string, maxLength: 32, description: EPC 码(必填且唯一) }
+                band: { type: string, maxLength: 8, description: 频段(必填,如 UHF) }
+                battery: { type: string, maxLength: 8, description: 电量(可选) }
+      responses:
+        '200':
+          description: 标签已建(data 返回新 id;编号/EPC 重复 40900;法人不存在 42200)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
 
   /tags/{tagId}/unbind:
     post:
@@ -170,6 +200,33 @@ paths:
                 reason: { type: string, maxLength: 255, description: 解绑原因(入事件流 detail) }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tags/{tagId}/events:
+    get:
+      tags: [Asset]
+      summary: 标签事件流(P2-T4 消费面;id 倒序,limit 默认 50 上限 100;action 多值白名单 BIND/UNBIND/RECYCLE,白名单外 42200;标签不存在 40400)
+      operationId: listTagEvents
+      parameters:
+        - { name: tagId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 100 }, description: 页大小(缺省 50,超限取 100) }
+        - { name: before_id, in: query, schema: { type: integer, format: int64 }, description: 游标(只取 id 小于该值的事件;首版 UI 不用,翻页预留) }
+        - { name: action, in: query, schema: { type: string, enum: [BIND, UNBIND, RECYCLE] }, description: 动作过滤(可重复传多值,缺省不过滤) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+
+  /assets/{assetId}/events:
+    get:
+      tags: [Asset]
+      summary: 资产事件流(P2-T4 消费面;口径同 /tags/{tagId}/events,资产不存在 40400)
+      operationId: listAssetEvents
+      parameters:
+        - { name: assetId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 100 }, description: 页大小(缺省 50,超限取 100) }
+        - { name: before_id, in: query, schema: { type: integer, format: int64 }, description: 游标(只取 id 小于该值的事件;首版 UI 不用,翻页预留) }
+        - { name: action, in: query, schema: { type: string, enum: [BIND, UNBIND, RECYCLE] }, description: 动作过滤(可重复传多值,缺省不过滤) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
 
   /assets/{assetId}/scrap:
     post:
@@ -409,3 +466,178 @@ paths:
                       status: { type: string, description: DOING }
                       workerId: { type: integer, format: int64 }
                       workerName: { type: string }
+  /tags/{tagId}/disable:
+    post:
+      tags: [Asset]
+      summary: 停用标签(P2-W2-T1 B;仅 UNBOUND 可停用,BOUND 必须先解绑 40900;已停用幂等;DISABLED 不可被绑定)
+      operationId: disableTag
+      parameters:
+        - { name: tagId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, description: 停用原因(入审计) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /tags/{tagId}/enable:
+    post:
+      tags: [Asset]
+      summary: 启用标签(P2-W2-T1 B;仅对 DISABLED 生效回 UNBOUND,非停用态幂等成功)
+      operationId: enableTag
+      parameters:
+        - { name: tagId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+  /asset-models/{id}:
+    put:
+      tags: [Asset]
+      summary: 编辑型号(P2-W2-T1 D;厂商/型号名/类别/料号/规格可改;四元组唯一冲突 40900;停用型号不可编辑 40900 先启用)
+      operationId: updateAssetModel
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [model, category]
+              properties:
+                vendor: { type: string, maxLength: 64, description: 厂商 }
+                model: { type: string, maxLength: 128, description: 型号名(必填) }
+                category: { type: string, maxLength: 32, description: 类别(必填) }
+                partNumber: { type: string, maxLength: 64, description: 料号 }
+                spec: { type: object, description: 规格键值(JSONB) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /asset-models/{id}/disable:
+    post:
+      tags: [Asset]
+      summary: 停用型号(P2-W2-T1 E;is_active 置否,不物理删,引用由 model_id 承载;幂等)
+      operationId: disableAssetModel
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /asset-models/{id}/enable:
+    post:
+      tags: [Asset]
+      summary: 启用型号(P2-W2-T1 E;is_active 置真;幂等)
+      operationId: enableAssetModel
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /asset-batches:
+    post:
+      tags: [Asset]
+      summary: 建批次(P2-W2-T1 F;名称+法人主体必填;批次编码缺省自动生成 RK-YYYYMMDD-NNNNN;法人不存在 42200)
+      operationId: createAssetBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legalEntityId, name]
+              properties:
+                legalEntityId: { type: integer, format: int64, description: 法人主体 ID(必填,不存在 42200) }
+                name: { type: string, maxLength: 64, description: 批次名称(必填) }
+                code: { type: string, maxLength: 32, description: 批次编码(可选,缺省 RK-YYYYMMDD-NNNNN 自动生成) }
+      responses:
+        '200':
+          description: 批次已建(data 返回 id 与编码)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      code: { type: string }
+
+  /asset-assignments:
+    post:
+      tags: [Asset]
+      summary: 领用(P2-W2-T1 G;资产+师傅+事由必填;仅 IN_STOCK 可领用否则 40900;落持有台账开段;资产状态不变,装机扫码才置 DEPLOYED)
+      operationId: createAssetAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetId, workerId, reason]
+              properties:
+                assetId: { type: integer, format: int64, description: 资产 ID(必填,须 IN_STOCK) }
+                workerId: { type: integer, format: int64, description: 师傅 ID(必填,须在职) }
+                reason: { type: string, maxLength: 128, description: 领用事由(必填) }
+      responses:
+        '200':
+          description: 已领用(data 返回台账 id 与 effectiveFrom)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      effectiveFrom: { type: string, format: date-time }
+
+  /asset-assignments/{id}/return:
+    post:
+      tags: [Asset]
+      summary: 归还(P2-W2-T1 H;闭合持有段 effective_to=now;重复归还 40900;写审计)
+      operationId: returnAssetAssignment
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 已归还(data 返回台账 id 与 effectiveTo)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      effectiveTo: { type: string, format: date-time }
+
+  /replacements/{id}/cancel:
+    post:
+      tags: [Asset]
+      summary: 取消换新单(P2-W2-T1 I;仅 PENDING 可取消 → CANCELLED 终态;非 PENDING 40900;写审计)
+      operationId: cancelReplacement
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 已取消(data 返回取消后的更换单)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+                      replacementNo: { type: string }
+                      status: { type: string, description: CANCELLED }

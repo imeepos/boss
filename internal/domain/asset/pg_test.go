@@ -97,6 +97,10 @@ func TestPGStore_CreateTag(t *testing.T) {
 	defer mock.Close()
 
 	// bound_asset_id=0 → nil(事务化:CreateTag 全程包 tx)
+	// 法人存在性校验(P2-W2-T1 建标签端点)。
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "TAG-0003", "EPC-0003", "UHF", nil, "UNBOUND", "95%").
@@ -397,15 +401,20 @@ func TestPGStore_CreateAsset_ResubmitIdempotent(t *testing.T) {
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
 		WithArgs(int64(3), "IN_STOCK").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// DISABLED 绑定闸门(P2-W2-T1 B):绑定前查标签状态。
+	mock.ExpectQuery(`SELECT status FROM tags`).
+		WithArgs(int64(9)).
+		WillReturnRows(mock.NewRows([]string{"status"}).AddRow("UNBOUND"))
 	// PG 16 行为:条件命中且值已相等仍返 1 行(并非 0 行)。
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
 		WithArgs(int64(9), int64(3)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	// 绑定事件流(P1-T2)。
+	mock.ExpectCommit()
+	// 绑定事件:提交后尽力而为(P2-T2 热修)
 	mock.ExpectExec(`INSERT INTO tag_events`).
 		WithArgs(int64(9), int64(3), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateAsset(context.Background(), Asset{
@@ -432,6 +441,9 @@ func TestPGStore_CreateTag_ResubmitIdempotent(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
@@ -442,10 +454,11 @@ func TestPGStore_CreateTag_ResubmitIdempotent(t *testing.T) {
 		WithArgs(int64(5), int64(12)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	// 绑定事件流(P1-T2)。
+	mock.ExpectCommit()
+	// 绑定事件:提交后尽力而为(P2-T2 热修)
 	mock.ExpectExec(`INSERT INTO tag_events`).
 		WithArgs(int64(12), int64(5), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateTag(context.Background(), Tag{

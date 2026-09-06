@@ -11,6 +11,11 @@ var (
 	ErrNotFound          = errors.New("procurement: not found")
 	ErrInvalidTransition = errors.New("procurement: invalid status transition")
 	ErrForeignKey        = errors.New("procurement: foreign key violation")
+	// ErrStateConflict 状态不允许该操作(草稿编辑非 DRAFT/驳回非 DRAFT 等):HTTP 40900。
+	// 与既有 ErrInvalidTransition(映射 42200)区分,不改变既有 submit/cancel 端点行为。
+	ErrStateConflict = errors.New("procurement: state conflict")
+	// ErrInvalidInput 入参不合法(明细行数量<=0/驳回原因超 255 字等):HTTP 42200。
+	ErrInvalidInput = errors.New("procurement: invalid input")
 )
 
 // Supplier 供应商(L1.5 公司自定义基础数据)。
@@ -125,6 +130,17 @@ type Service interface {
 
 	// 库存查询(实时聚合)
 	ListInventory(ctx context.Context, legalEntityID int64, materialCode string) ([]InventoryRow, error)
+
+	// 供应商编辑/启用(P2-W2-T2):编辑部分更新(编码不可改,禁用态可改);启用幂等
+	UpdateSupplier(ctx context.Context, id int64, in SupplierUpdate) error
+	EnableSupplier(ctx context.Context, id int64) error
+
+	// 采购单草稿编辑/详情(P2-W2-T2):仅 DRAFT 可编辑;详情含明细行
+	UpdateOrderDraft(ctx context.Context, id int64, in OrderDraftUpdate) error
+	GetOrderDetail(ctx context.Context, id int64) (*Order, error)
+
+	// 入库驳回(P2-W2-T2):仅 DRAFT 可驳回,置 REJECTED;审计由 admin handler 层补记
+	RejectReceipt(ctx context.Context, receiptID int64, reason string) error
 
 	// 库存事务钩子(供 cmd/gis 消费器调,广播 inventory.changed 事件):
 	// 业务侧不必调用,ConfirmReceipt 内部已发。

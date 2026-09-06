@@ -156,19 +156,16 @@ func (s *PGStore) rebindTagTx(ctx context.Context, tx pgx.Tx, assetID, oldTagID,
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO tag_events(tag_id, asset_id, action, actor_account_id, changed)
 			  VALUES($1, $2, 'UNBIND', $3, $4)`,
-			oldTagID, assetID, idOrNil(actorAccountID), changed); err != nil {
+			oldTagID, assetID, idOrNil(actorAccountID), string(changed)); err != nil {
 			slog.ErrorContext(ctx, "[asset] TAG EVENT FAILED",
 				"action", "UNBIND", "tag_id", oldTagID, "asset_id", assetID, "err", err)
 		}
 	}
 	if newTagID > 0 {
-		var ok bool
-		if err := tx.QueryRow(ctx,
-			`SELECT EXISTS(SELECT 1 FROM tags WHERE id = $1)`, newTagID).Scan(&ok); err != nil {
-			return fmt.Errorf("asset: check tag %d: %w", newTagID, err)
-		}
-		if !ok {
-			return fmt.Errorf("asset: tag %d: %w", newTagID, ErrForeignKeyViolation)
+		// 存在性 + DISABLED 校验合一(P2-W2-T1;ensureTagBindable 未命中同样返
+		// ErrForeignKeyViolation,与原 EXISTS 检查口径一致)。
+		if err := s.ensureTagBindable(ctx, tx, newTagID); err != nil {
+			return err
 		}
 		tag, err := tx.Exec(ctx,
 			`UPDATE tags SET bound_asset_id = $2, status = 'BOUND'
@@ -182,7 +179,7 @@ func (s *PGStore) rebindTagTx(ctx context.Context, tx pgx.Tx, assetID, oldTagID,
 			return fmt.Errorf("asset: tag %d already bound to another asset: %w", newTagID, ErrBindingConflict)
 		}
 		// BIND 事件随主事务落库,失败 ALERT 不阻断(与建档绑定同口径)。
-		s.bindTagEvent(ctx, tx, newTagID, assetID)
+		s.bindTagEventEx(ctx, tx, newTagID, assetID, "")
 	}
 	return nil
 }

@@ -2,6 +2,7 @@
 // (单号后端自动生成 RPL-*;派单 PENDING→DOING,adopted note 2026-08-27-replacement-ticket-flow)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { useConfirm } from '../../../components/ConfirmDialog'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
@@ -12,6 +13,7 @@ import { Drawer } from '../../../components/Drawer'
 import { pageSlice, PRIORITIES, type AssetRow, type ReplacementRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { WorkerPicker, type PickedWorker } from '../../boss/dispatch/WorkerPicker'
+import { canCancelReplacement, cancelPath } from './logic'
 
 export default function ReplacePage() {
   const t = useT()
@@ -30,6 +32,7 @@ export default function ReplacePage() {
   const [picked, setPicked] = useState<PickedWorker | null>(null)
   const [dispatchError, setDispatchError] = useState('')
   const [toast, setToast] = useState('')
+  const confirm = useConfirm()
 
   const load = () => {
     setError('')
@@ -82,6 +85,22 @@ export default function ReplacePage() {
     }
   }
 
+  // 取消:PENDING 行专属,确认后 POST /replacements/{id}/cancel,终态不可再流转。
+  const cancelRow = async (x: ReplacementRow) => {
+    const no = x.replacementNo || '#' + x.id
+    if (!(await confirm(r.cancelConfirm.replace('{no}', no), { danger: true, title: r.cancel }))) return
+    setBusy(true)
+    try {
+      await apiFetch(cancelPath(x.id), { method: 'POST' })
+      setToast(r.cancelOk)
+      setTimeout(() => setToast(''), 3000)
+      load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : r.cancelFail)
+      setBusy(false)
+    }
+  }
+
   const slice = pageSlice(rows, page, pageSize)
   const priorityLabel = (v: string) => r.priorities[PRIORITIES.indexOf(v as typeof PRIORITIES[number])] ?? v
   const assetOk = /^\d+$/.test(assetId) && Number(assetId) > 0
@@ -110,8 +129,14 @@ export default function ReplacePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {x.status === 'PENDING' && (
-                        <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-xs text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-                          onClick={() => { setDispatchRow(x); setPicked(null); setDispatchError('') }}>{r.dispatch}</button>
+                        <>
+                          <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-xs text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
+                            onClick={() => { setDispatchRow(x); setPicked(null); setDispatchError('') }}>{r.dispatch}</button>
+                          {canCancelReplacement(x.status) && (
+                            <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-xs text-[var(--color-danger)] hover:border-[var(--color-border-hover)]"
+                              disabled={busy} onClick={() => cancelRow(x)}>{r.cancel}</button>
+                          )}
+                        </>
                       )}
                       {x.status !== 'PENDING' && <span>—</span>}
                     </td>

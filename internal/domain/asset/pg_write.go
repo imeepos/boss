@@ -44,6 +44,13 @@ func (s *PGStore) CreateBatch(ctx context.Context, b AssetBatch) (int64, error) 
 // - 资产已被其他标签绑定 → ErrBindingConflict(回滚整单)
 // - 资产已被本标签占用 → 幂等(PG 16 命中同值仍返 1 行)
 func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
+	// 法人存在性校验(P2-W2-T1 建标签端点):tags.legal_entity_id NOT NULL FK,
+	// 0 或不存在一律拒绝,防 23503 裸 500。
+	if ok, err := s.exists(ctx, "legal_entities", t.LegalEntityID); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, fmt.Errorf("asset: legal entity %d: %w", t.LegalEntityID, ErrForeignKeyViolation)
+	}
 	// 预绑定前先校验资产存在(防孤儿标签)
 	if t.BoundAssetID > 0 {
 		ok, err := s.exists(ctx, "assets", t.BoundAssetID)
@@ -71,6 +78,7 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 	}
 
 	// 预绑定时回填 assets.tag_id;冲突即返 ErrBindingConflict 并整体回滚。
+	bound := false
 	if t.BoundAssetID > 0 {
 		tag, err := tx.Exec(ctx,
 			`UPDATE assets SET tag_id = $2
@@ -87,12 +95,15 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 			return 0, fmt.Errorf("asset: asset %d already bound to another tag: %w",
 				t.BoundAssetID, ErrBindingConflict)
 		}
-		// 绑定事件流(P1-T2):BIND 随主事务落库,失败 ALERT 不阻断。
-		s.bindTagEvent(ctx, tx, id, t.BoundAssetID)
+		bound = true
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, fmt.Errorf("asset: commit create tag: %w", err)
+	}
+	// 绑定事件流(P2-T2 热修):提交后尽力而为,失败 ALERT 不阻断。
+	if bound {
+		s.bindTagEvent(ctx, id, t.BoundAssetID)
 	}
 	return id, nil
 }
@@ -185,7 +196,12 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 	// tag 双向绑定回填:assets.tag_id 写入时同步 tags.bound_asset_id/status,
 	// 与环节9 扫码核对(VerifyScan 要求 bound_asset_id 非空)口径对齐。
 	// 显式比对目标值,冲突即返 ErrBindingConflict 并整体回滚。
+	bindEvent := false
 	if a.TagID > 0 {
+		// DISABLED 标签不可被绑定(P2-W2-T1;事务内以 tx 校验,失败整单回滚)。
+		if err := s.ensureTagBindable(ctx, tx, a.TagID); err != nil {
+			return 0, err
+		}
 		tag, err := tx.Exec(ctx,
 			`UPDATE tags SET bound_asset_id = $2, status = 'BOUND'
 			 WHERE id = $1 AND (bound_asset_id IS NULL OR bound_asset_id = $2)`,
@@ -200,12 +216,15 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 			return 0, fmt.Errorf("asset: tag %d already bound to another asset: %w",
 				a.TagID, ErrBindingConflict)
 		}
-		// 绑定事件流(P1-T2):BIND 随主事务落库,失败 ALERT 不阻断。
-		s.bindTagEvent(ctx, tx, a.TagID, id)
+		bindEvent = true
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, fmt.Errorf("asset: commit create asset: %w", err)
+	}
+	// 绑定事件流(P2-T2 热修):提交后尽力而为,失败 ALERT 不阻断。
+	if bindEvent {
+		s.bindTagEvent(ctx, a.TagID, id)
 	}
 	return id, nil
 }
@@ -249,28 +268,6 @@ func (s *PGStore) AssignAsset(ctx context.Context, a AssetAssignment) (int64, er
 		return 0, fmt.Errorf("asset: assign asset: %w", err)
 	}
 	return id, nil
-}
-
-// classifyTagInsertErr 把 tags INSERT 23505 拆解为双绑冲突或普通唯一冲突:
-//   - uq_tags_bound_asset_notnull → 双绑冲突(ErrBindingConflict)
-//   - uq_tags_tag_no_key / uq_tags_epc_code_key → tag_no/epc_code 重复(原 error 透传,
-//     httpx.RespondErr 不映射 23505,返回 50000;若需精确业务码后续在 httpx 增加 23505 通用映射)
-//
-// 其他错误原样返回。
-func classifyTagInsertErr(ctx context.Context, err error, t Tag) error {
-	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
-		return err
-	}
-	switch pgErr.ConstraintName {
-	case "uq_tags_bound_asset_notnull":
-		slog.WarnContext(ctx, "[asset] TAG BIND CONFLICT",
-			"asset_id", t.BoundAssetID, "new_tag_no", t.TagNo,
-			"reason", "DB uq_tags_bound_asset_notnull violation")
-		return fmt.Errorf("asset: bound asset %d already bound to another tag: %w",
-			t.BoundAssetID, ErrBindingConflict)
-	}
-	return err
 }
 
 // classifyAssetInsertErr 把 assets INSERT 23505 拆解为双绑冲突或普通唯一冲突:
