@@ -164,6 +164,7 @@
 34. **【已犯 1 次】生成的 Go 文件未 gofmt 就提交,make lint 的 gofmt -l 拦截** —— 2026-09-06 AAA-A2 轮:14 个新/改文件全挂 gofmt(注释缩进与结构体对齐),多跑一轮 make check + 补 style 提交;run_code 写 Go 文件的程序收尾统一对刚写的文件清单 gofmt -w,再 build/test/commit
 35. **【已犯 1 次】i18n locale 大文件用通用尾锚(pageUnit/jumpText+下节名)edit,锚全仓几十处重复** —— 2026-09-06 AAA-A6 轮:matched-2-times 后 zh-CN 出现幽灵 provisionPage 段+aaaLogPage 尾部键丢失,靠 git diff 全量盘点修复;大文件锚点必须取目标页独有行(columns/billed/title),edit 前 grep -c 验全仓恰 1 次
 36. **【已犯 1 次】cdp 断言期望字符串凭记忆写,与 i18n 实值/运行时覆盖值不符致假阴性** —— 2026-09-06 AAA-A6 轮:ConfirmDialog 标题被 opts.title 覆盖成页面文案('重置密码'),按默认 '操作确认' 断言连错一轮;断言串先 grep locale 源码取实值
-37. **【已犯 1 次】以 HTTP 200 判定接口可用,不看信封 code** —— 2026-09-06 AAA-A6 轮:102 reset-password 返回 200+code=50000 内部错误(凭据编解码运行时未配置,等 A3 部署收口),前端流程正常却被误判为断言问题;可用性结论必须解析信封 code/msg 层无效。正解=排除全部已知旧 hash + 新包行为断言(点详情开抽屉)双确认。
+37. **【已犯 1 次】以 HTTP 200 判定接口可用,不看信封 code** —— 2026-09-06 AAA-A6 轮:102 reset-password 返回 200+code=50000 内部错误(凭据编解码运行时未配置,等 A3 部署收口),前端流程正常却被误判为断言问题;可用性结论必须解析信封 code/msg 层
+38. **【已犯 1 次】~/.nvm/current 指向的 node 挂起(疑似并行 nvm 操作),pnpm/vite/node 全部静默挂死空输出** —— 2026-09-06 AAA-A6 补验轮:node --version 超时、pnpm dev 空日志不监听、vite 不起,像工具坏了;正解=用显式版本路径(如 ~/.nvm/versions/node/v24.14.1/bin/node)直接跑 vite.js/脚本绕过 shim;诊断特征=od/cat 等 shell 命令正常而一切 node 入口超时无效。正解=排除全部已知旧 hash + 新包行为断言(点详情开抽屉)双确认。
 
 | 程序串转义层级算错(双引号串写 \\\\d 想 file 里落 \\d,实际落 \\d 层级算错 → old_string not found)及数组元素漏逗号 parse error | 1 | 2026-09-07(dashboard 轮:改 verify 脚本时 old_string 用四重反斜杠而文件实为单反斜杠 not found 废一轮;同轮脚本数组漏逗号 Expected , 全段不执行废一轮) | 生成/匹配文件内容时先在纸上写下目标字节,再按宿主+JS 两层解码倒推写法;数组字面量发车前逐元素查逗号 |
