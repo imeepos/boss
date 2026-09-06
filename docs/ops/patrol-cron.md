@@ -43,6 +43,23 @@ internal/domain/report/pg_patrol.go 巡检清单新增两项:
 或未来回归仍可能产生——本巡检作为每日 cron + db-patrol-gate 兜底,任一 >0 即
 ORPHAN-GATE FAIL 拦截验收/部署。
 
+## 资产数据质量两查(P4-T3,2026-09-06 追加,只暴露不修改)
+
+db-patrol-gate.sh 在孤儿门禁之外新增两项资产数据质量暴露(固定前缀可 grep,
+不影响退出码;`--asset` 可只跑这两项):
+
+- `[db-patrol] ASSET-EPC-INVALID count=N`(+SAMPLE 前 20 行):tags.epc_code 非
+  24-hex,口径=贴标待回填/待清理;物理 EPC 与实物一致,严禁程序生成重写;
+- `[db-patrol] ASSET-TYPE-UNKNOWN count=N`(+BREAKDOWN):assets.type 非白名单
+  ONU/ROUTER/OLT 计数,防新方言;白名单与 internal/domain/asset/type_whitelist.go
+  同步维护。
+
+SQL 通道:开发机/CI 经 ssh 到 102 容器;102 本机 cron 自连 ssh 无免密,脚本自动
+回退本机 docker exec(imeepos 具备 docker 权限,已实测),两形态输出一致。
+配套残留清理:SMOKE-P3-*/A-RK-E2E-001-MI-ONU-* 六行 e2e 造数残留由
+`scripts/ops/clean-asset-type-residue.sh` 按「无引用才删、有引用只暴露」清理
+(2026-09-06 已执行,6→0);验收脚本 `scripts/ops/verify-patrol-extended.sh`。
+
 ## 部署静默停摆巡检(deploy-guard-alert,2026-09-06 追加)
 
 来源:deploy-runner job 镜像被 prune 后 6 次 push 零部署且无任何可见错误(ISSUE.md
