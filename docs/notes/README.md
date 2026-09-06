@@ -101,5 +101,6 @@
 | 2026-09-01 | customers.address_id 放开可空(000176):新建客户轻量建档(仅主体+区域/主体),地址走档案页"地址"动作内联建址回填,"开户"直达工作台;占位地址/放开实体区域可空/新端点被否决 | adopted/2026-09-01-customer-address-nullable.md |
 | 2026-09-01 | 位置/地址统一落地:坐标为唯一空间锚点(geom 写入+KNN 逆地理)、工单坐标派单时刻快照(000174)、区域匹配升级子树语义、radiusKm 半径闸门启用;H3 索引/外部 geocoding/派单打分被否决 | adopted/2026-09-01-location-unify-rollout.md |
 | 2026-09-04 | 新建 worktree .env 自动接入:post-checkout 钩子(主 worktree 真实 .env 优先,.env.example 兜底,已存在绝不覆盖)+ 一次性引导 core.hooksPath;symlink/手工复制/第三方工具/.git/hooks 被否决 | adopted/2026-09-04-worktree-env-auto-provision.md |
+| 2026-09-06 | AAA LOID 凭据落库 AES-256-GCM 密钥外置:CHAP(RFC 1994)要求可还原口令,单工哈希被否决,明文落库被否决;未设密默认 Reject+迁移开关;连续失败 5 次锁 15 分钟(可配) | adopted/2026-09-06-aaa-credential-storage.md |
 
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。

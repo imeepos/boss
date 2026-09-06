@@ -38,6 +38,7 @@
 - 实名二要素:阿里云 Id2MetaVerify 提交即核验,凭据未配保持人工(2026-08-24, realid-channel-aliyun-cloudauth)
 - 开放平台密钥:AppId+Secret HMAC,Secret 原文落库(验签必需)(2026-08-22, open-platform-secret)
 - 认证配置 secret:复用 biz_params + AES-256-GCM;解密失败必须显性报错(2026-08-21, auth-config-secret-storage)
+- AAA LOID 凭据:lo_accounts.password_credential 密文落库(AES-256-GCM 密钥外置,CHAP 需可还原口令故单工哈希被否);未设密默认 Reject,BOSS_AAA_ALLOW_NO_CRED 迁移缓冲默认关;连续失败 5 次锁 15 分钟可配(2026-09-06, aaa-credential-storage)
 - 菲律宾行政区划 PSGC 以 migration 全量内置,PSGC 事实优先于甲方规范笔误(2026-08-18, psgc-builtin-migration)
 
 ## 端与发布
