@@ -51,6 +51,7 @@ except Exception as e:
 cleanup_data() {
   echo "清尾: 造数自清理($DEV,幂等)" >&2
   sql <<SQL
+DELETE FROM address_coverage WHERE device_id IN (SELECT id FROM odn_device WHERE code='OLT001') OR note LIKE 'acc_opn%';
 DELETE FROM odn_port WHERE device_id IN (SELECT id FROM odn_device WHERE code='OLT001');
 DELETE FROM odn_device WHERE code='OLT001';
 SELECT 'ports=' || count(*) FROM odn_port WHERE device_id NOT IN (SELECT id FROM odn_device)
@@ -75,6 +76,11 @@ seed_data() {
   if [ -z "$city" ]; then FAIL_REASON=no_city; return 1; fi
   local prv="${city%%,*}" cpre="${city##*,}"
   local devid
+  sql <<SQL
+DELETE FROM address_coverage WHERE device_id IN (SELECT id FROM odn_device WHERE code='$DEV') OR note LIKE '$MARK%';
+DELETE FROM odn_port WHERE device_id IN (SELECT id FROM odn_device WHERE code='$DEV');
+DELETE FROM odn_device WHERE code='$DEV';
+SQL
   devid=$(sqlval "INSERT INTO odn_device(code, kind, prv_code, city_prefix) VALUES ('$DEV','OLT','$prv','$cpre') RETURNING id;")
   [ -z "$devid" ] && { FAIL_REASON=seed_device; return 1; }
   sql <<SQL
