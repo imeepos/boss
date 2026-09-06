@@ -79,6 +79,11 @@ func (c *Codec) decode(stored string) (string, error) {
 	return string(plain), nil
 }
 
+// Decode 还原落库凭据明文(A5:NAS 共享密钥等运行期需明文的协议场景;损坏/异代际=ErrMalformed)。
+func (c *Codec) Decode(stored string) (string, error) {
+	return c.decode(stored)
+}
+
 // Equal PAP 校验:常数时间比对落库口令与请求口令。
 func (c *Codec) Equal(stored, password string) bool {
 	plain, err := c.decode(stored)
