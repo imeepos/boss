@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T12:44:00.000-07:00",
+  "updatedAt": "2026-09-06T13:58:00.000-07:00",
   "project": "boss",
   "tasks": [
     {
@@ -94,9 +94,9 @@
     {
       "id": "T12",
       "title": "ODN P2 下单硬校验接线(T12)",
-      "goal": "订单创建接 coverage SERVED+端口余量门控(配置开关);前端下单页可装性展示强化",
+      "goal": "CoverageGate 灰度接线+ErrNotServable 40900 透传;单测三态+make check 全绿;已合 main f9f0e12c",
       "priority": "P2",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/... ./internal/domain/order/..."
     },
     {
