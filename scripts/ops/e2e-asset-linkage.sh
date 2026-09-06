@@ -268,7 +268,7 @@ r=0
 while [ "$r" -lt "$RUNS" ]; do
   r=$((r+1))
   t0=$(date +%s)
-  SUFFIX="$(date +%s)-$r-$RANDOM"
+  SUFFIX="$(date +%s)$r$RANDOM"  # 纯数字后缀: addresses.label 拒绝连字符(42200 实测)
   echo "== run $r suffix=$SUFFIX =="
   if boot_fixtures "$SUFFIX" && walk_order && walk_auto && walk_scan && walk_finish && walk_dismantle; then
     echo "  run $r 断言完成 ($(( $(date +%s) - t0 ))s)"
