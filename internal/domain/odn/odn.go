@@ -118,6 +118,12 @@ type ODNService interface {
 	CreateDevice(ctx context.Context, d Device) error
 	ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error)
 	RetireDevice(ctx context.Context, id int64) error
+
+	// 覆盖关联(P1,迁移 000197;odn↔业务首桥)。
+	UpsertCoverage(ctx context.Context, c Coverage) error
+	GetCoverageByAddress(ctx context.Context, addressID int64) (*Coverage, error)
+	ListCoverage(ctx context.Context, limit int) ([]Coverage, error)
+	ResolveLatLng(ctx context.Context, lat, lng float64) (*CoverageResolved, error)
 }
 
 // GridRef 网格定位(城市 + 网格码)。
