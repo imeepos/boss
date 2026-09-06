@@ -193,7 +193,7 @@ if req GET "/inventory-audit" && [ "$HTTP_CODE" = "200" ]; then
   GOT=$(jget "','.join(sorted(set(i['check'] for i in d['data']['items'])))")
   MISS=""
   for c in $CHECKS; do
-    case ",$GOT," in *",$c,*") ;; *) MISS="$MISS $c" ;; esac
+    case ",$GOT," in *$c,*) ;; *) MISS="$MISS $c" ;; esac
   done
   assert_eq "P3" "" "$MISS" "六检查码全部命中"
 else
