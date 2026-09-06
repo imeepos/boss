@@ -15,8 +15,9 @@ describe('用户列表列渲染兜底', () => {
     expect(createdAtCell({ ...base, createdAt: undefined })).toBe('—')
     expect(createdAtCell({ ...base, createdAt: '' })).toBe('—')
   })
-  it('注册时间本地时区格式化', () => {
-    expect(createdAtCell({ ...base, createdAt: '2026-08-21T10:00:00' })).toBe('2026-08-21 10:00:00')
+  it('注册时间按业务时区(Asia/Shanghai)格式化:显式 UTC 输入跨 runner 时区确定', () => {
+    // 02:00Z 在 +08 业务时区墙钟为 10:00;无时区串按 runner 本地解析,断言会随环境漂移(2026-09-07 修复)。
+    expect(createdAtCell({ ...base, createdAt: '2026-08-21T02:00:00Z' })).toBe('2026-08-21 10:00:00')
   })
 })
 
