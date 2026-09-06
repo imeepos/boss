@@ -2,6 +2,11 @@
 
 > 2026-08-24 盘点压缩：原 919 行逐任务反思已去重提炼。
 
+## 2026-09-06 装机联动端到端实测(P2-T3)
+
+- 哪个坑浪费了最多时间?run_code 内联内容三连:(1)bash 行内含单引号塞 JS 单引号串被内容 ' 截断(L2 行漏闭合逗号);(2)tools.edit 多行 new_string 用双引号串塞裸换行,Expected ',' got '#';(3)edit 后用预计算索引连续 splice,前一步改了尺寸后索引错位,文件碎片化到不可修补,只能整体重写。前两条并累犯 #11(13 次),第三条新登记。
+- skill 有没有提前警告?红线 11 已在案但只写了反引号/${,没写'内容单引号'与'裸换行'两个变体,本次补全;13 行两段式 worktree/后台长命令全部命中规避。环境类坑无预警:并行会话在验收跑分中途重部署 boss-server(容器 Up 1 minute),S7/patrol 空响应全由它起——验收前后应查 docker ps uptime。
+- 重来一次怎么做?大文件编辑一律:整体重写 or 每编辑一步重读重算锚点,绝不批量预计算索引;JS 串构造 bash 内容统一用行数组+join,含单引号的行先转义。环境发现三件(bindTagEvent json bug/TL1 端点漂移/addresses.label 拒连字符)当天进 known-issues+ISSUE.md。
 ## 2026-09-05 资产台账 admin CRUD(P2-W1-T1)
 
 - 哪个坑浪费了最多时间?run_code 引号边界两连:(1)Go 源码行内双引号("+g.table+")放进 JS 双引号串,内容引号截断串边界报 g is not defined,排查一轮;(2)多行 bash(含 heredoc commit message)塞 JS 双引号串直接 Expected ',' got ident——多行命令必须模板体,含双引号行必须 JS 单引号串。已并累犯 #11。
@@ -1762,3 +1767,8 @@
 - skill 有没有提前警告?红线 11(裸反引号/美元符花括号)全程用 fromCharCode 构造,零触发;但出现新变体:含中点·的行做 edit old_string,即便动态构造精确还原也不匹配,换不含特殊字符的更短锚点一次成功。
 - 新坑(差点丢数据):read 工具 lines 数组有单次返回上限,totalLines 与 lines.length 不一致时全文件重写会静默截断——本次 notes.md 重写丢了 1407 行,靠 commit stat 复查逮住,checkout HEAD~1 恢复后改用追加式。教训:整文件重写前必须核对 lines.length === totalLines,不一致就改用追加(cat >>)或分段读全。
 - 重来一次怎么做?①worktree 分支不存在就 -b 显式建,先 for-each-ref 探测;②后台 dev server 一律 nohup+日志文件+curl 探活,不走管道;③edit 锚点先 grep 精确行内容,选最短且无花哨 Unicode 的片段;④截图放重构定稿后重采,git 无 diff 即『截图=最终代码』的机械证明(本轮重采零 diff)。
+
+## 2026-09-06 资产台账 CRUD 负责人轮(P2-W1 合并/部署/E2E/三缺陷修复)
+- 哪个坑浪费了最多时间?(1)E2E 连续三轮失败但每轮都是新信息:我自己的 split/join 补丁把 json.load 叠两遍(一轮)、FK 23503 缺生命周期清理(真缺陷一轮)、PUT 42200 双缺陷(域层 0 语义+handler 校验,各一轮)——真缺陷与我方笔误交织,靠服务端日志+裸 curl 控制变量才切干净。(2)devloop accept 通道约 20s 就杀命令,长门禁永远 exit null,和测试失败完全同貌。
+- skill 有没有提前警告?红线 9a/12(set -u 默认值)有,仍中一次 BOSSCTL_BIN;红线 11 反引号/美元符全程规避零触发;新自伤=对象键名多引号(3 次),已登红线 14 变体。模型无图输入红线 7 应验:read_image 被拒,转 DOM 断言。
+- 重来一次怎么做?①验收脚本先杀陈旧二进制(现构建);②门禁一律 TZ=Asia/Shanghai 显式带;③负责人验收顺序=机械门禁→部署指纹→裸 curl 控制变量→DOM 断言,不混 guessed 因素;④长命令永远猜管道会吃退出码,用临时文件落盘再断言。

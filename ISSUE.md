@@ -160,3 +160,9 @@
 ## 2026-09-02 provision_tasks 孤儿任务堆积(巡检未覆盖,复发)
 - `provision_tasks` 对 `orders` 无外键,订单删除后任务残留;任务又把 `provision_templates` 钉死(DELETE 守卫查"任何任务引用",含 DONE),垃圾模板永远删不掉。2026-08-30 note 已记"验收清理漏删 14 条孤儿,巡检脚本覆盖待后续",2026-09-02 复发积到 158 条(158 任务/275 日志已手工清理)。
 - 建议:订单删除路径级联删任务+日志,或验收巡检 SQL 加"孤儿 provision_tasks/provision_logs 计数"门禁(docs/ops/patrol-cron.md)。
+
+## runtime/102 环境(2026-09-06,P2-T3 端到端实测轮发现,移交 Lead 处置)
+
+- **runtime bug｜标签↔资产绑定建档 500（tag_events json 22P02）**:internal/domain/asset/pg_tag_events.go bindTagEvent 把 json.Marshal 的 []byte 直接经 pgx 传参（[]byte 按 bytea 发送），INSERT tag_events.changed(json 列)报 invalid input syntax for type json;同事务被 abort,主流程回滚,POST /provision/tags 带 boundAssetId 与 POST /provision/assets 带 tagId 均返 50000。代码注释称「失败仅 ALERT 不回滚」与同事务事实相悖。修法:string(changed) 或显式 ::jsonb。102 复现:boss-server 日志 2026-09-06 02:28。影响:verify-asset-tag-binding.sh 场景 1 现必红;e2e-asset-linkage.sh 造数暂以夹具 SQL 直更 tags.bound_asset_id+assets.tag_id 绕行,runtime 修复后可收回。
+- **102 环境配置｜TL1 下发自 2026-09-03 起零 SUCCESS（端点脱节）**:boss-provisioner env BOSS_PROVISION_TL1_ADDR=172.26.0.1:13027 无监听(连接拒),oltsim 实际监听 2323/23333;provision_nms 表 0 行,表行优先逻辑落空。provision_logs 最新 SUCCESS=2026-09-03 17:41。影响所有依赖环节7 下发终态的验收(mainchain-acceptance assert_provision_success 同样会挂);e2e-asset-linkage.sh 已把该项降为 S7b WARN 留痕。修法:env 指向 oltsim 实际端口或补 provision_nms 行(pass_cipher 需 config secret 加密)。
+- **接口契约盲区｜addresses.label 拒绝连字符**:POST /api/admin/v1/addresses label 含 `-` 一律 42200 参数非法(纯数字/字母不限长),与 fields.md/terms.md 均未记载;造数后缀须纯数字。建议契约补一条或在校验处放宽。

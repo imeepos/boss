@@ -40,6 +40,8 @@ type AssetUpdate struct {
 // UpdateAsset 受限编辑(P2-W1-T1):仅 类型/型号/标签/批次 四键,同一事务完成
 // 标签换绑(旧绑 UNBIND + 新绑 BIND,冲突 ErrBindingConflict 整单回滚不留双绑)
 // 与批次企业归属快照同步;批次仅 IN_STOCK 态可改;四键均无变化时零写入幂等成功。
+// 零值=保持语义:0/空串即未传,不得把 0 当目标值写库(曾因裸比较把 type-only
+// 编辑误入批次换绑分支查批次 0 → FK 错 42200;带型号/标签资产同理会清引用)。
 func (s *PGStore) UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate, actorAccountID int64) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -60,18 +62,32 @@ func (s *PGStore) UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate
 		return fmt.Errorf("asset: update asset lock: %w", err)
 	}
 
+	// 有效值归一:0=保持现值,后续比较与写库一律用 eff 值。
+	effBatchID := in.BatchID
+	if effBatchID == 0 {
+		effBatchID = batchID
+	}
+	effModelID := in.ModelID
+	if effModelID == 0 {
+		effModelID = modelID
+	}
+	effTagID := in.TagID
+	if effTagID == 0 {
+		effTagID = tagID
+	}
+
 	// 类型定稿:显式给定优先;新型号且未给定时由型号类别派生(与建档同口径);否则保持现值。
 	newType := in.Type
-	if newType == "" && in.ModelID != modelID && in.ModelID > 0 {
+	if newType == "" && effModelID != modelID && effModelID > 0 {
 		var category string
 		var active bool
 		err := tx.QueryRow(ctx,
-			`SELECT category, is_active FROM asset_models WHERE id = $1`, in.ModelID).Scan(&category, &active)
+			`SELECT category, is_active FROM asset_models WHERE id = $1`, effModelID).Scan(&category, &active)
 		if err != nil {
-			return fmt.Errorf("asset: model %d: %w", in.ModelID, ErrForeignKeyViolation)
+			return fmt.Errorf("asset: model %d: %w", effModelID, ErrForeignKeyViolation)
 		}
 		if !active {
-			return fmt.Errorf("asset: model %d deactivated: %w", in.ModelID, ErrForeignKeyViolation)
+			return fmt.Errorf("asset: model %d deactivated: %w", effModelID, ErrForeignKeyViolation)
 		}
 		newType = category
 	} else if newType == "" {
@@ -79,31 +95,31 @@ func (s *PGStore) UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate
 	}
 
 	// 批次换绑:仅 IN_STOCK 可改;企业归属快照随新批次回填(与建档同口径)。
-	if in.BatchID != batchID {
+	if effBatchID != batchID {
 		if status != "IN_STOCK" {
 			return fmt.Errorf("asset: asset %d status %s: %w", assetID, status, ErrBatchNotEditable)
 		}
 		err := tx.QueryRow(ctx,
 			`SELECT b.legal_entity_id, COALESCE(le.name, '')
 			  FROM asset_batches b LEFT JOIN legal_entities le ON le.id = b.legal_entity_id
-			  WHERE b.id = $1`, in.BatchID).Scan(&leID, &leName)
+			  WHERE b.id = $1`, effBatchID).Scan(&leID, &leName)
 		if errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("asset: batch %d: %w", in.BatchID, ErrForeignKeyViolation)
+			return fmt.Errorf("asset: batch %d: %w", effBatchID, ErrForeignKeyViolation)
 		}
 		if err != nil {
-			return fmt.Errorf("asset: update asset batch %d: %w", in.BatchID, err)
+			return fmt.Errorf("asset: update asset batch %d: %w", effBatchID, err)
 		}
 	}
 
 	// 标签换绑:先解旧绑(UNBIND)再绑新签(BIND),任一步冲突即整单回滚。
-	if in.TagID != tagID {
-		if err := s.rebindTagTx(ctx, tx, assetID, tagID, in.TagID, actorAccountID); err != nil {
+	if effTagID != tagID {
+		if err := s.rebindTagTx(ctx, tx, assetID, tagID, effTagID, actorAccountID); err != nil {
 			return err
 		}
 	}
 
 	// 幂等闸门:四键均无变化时零写入成功(不触发 UPDATE 与事件)。
-	if in.BatchID == batchID && in.ModelID == modelID && in.TagID == tagID && newType == atype {
+	if effBatchID == batchID && effModelID == modelID && effTagID == tagID && newType == atype {
 		return nil
 	}
 
@@ -112,7 +128,7 @@ func (s *PGStore) UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate
 		   SET type = $2, model_id = $3, tag_id = $4, batch_id = $5,
 		       legal_entity_id = $6, legal_entity_name = $7, updated_at = now()
 		 WHERE id = $1`,
-		assetID, newType, idOrNil(in.ModelID), idOrNil(in.TagID), in.BatchID, leID, leName); err != nil {
+		assetID, newType, idOrNil(effModelID), idOrNil(effTagID), effBatchID, leID, leName); err != nil {
 		return fmt.Errorf("asset: update asset %d: %w", assetID, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
