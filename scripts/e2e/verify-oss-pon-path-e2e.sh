@@ -18,6 +18,8 @@
 # 环境: BASE_URL ADMIN_API_KEY SSH_HOST SKIP_CLEANUP=1
 # 依赖: curl python3 ssh(102 免密);鉴权 X-API-Key(test-accounts.json admin key)。
 # 注意: 依赖 P5-W2 链路反查 API(GET /ports/:portId/path)已随部署生效(Lead 统一收口后验收)。
+#       若断言 FAIL 且 body 出现 "404 page not found" 明文 = 路由未在服务上(CI 重新部署过渡窗口,
+#       并行分支合并 push 会触发),等部署完成重跑即可,非断言语义问题;jf 失败会带 body 现场。
 set -u
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -47,7 +49,14 @@ req() {
   BODY=$(printf '%s\n' "$out" | sed '$d')
 }
 
-jf() { python3 -c "import json,sys;d=json.loads(sys.argv[1]);print(eval(sys.argv[2]))" "$1" "$2"; }
+jf() { python3 -c '
+import json, sys
+try:
+    d = json.loads(sys.argv[1])
+    print(eval(sys.argv[2]))
+except Exception as e:
+    print("<JF-FAIL " + repr(e)[:70] + " body=" + repr(sys.argv[1][:120]) + ">")
+' "$1" "$2"; }
 
 PASS_N=0; FAIL_N=0; FAILED_IDS=""
 ok() { PASS_N=$((PASS_N+1)); echo "PASS: [$1] $2"; }
@@ -56,7 +65,7 @@ bad() {
   echo "FAIL: [$1] $2" >&2
   echo "[e2e-oss-pon-path] ASSERTION FAILED id=$1 detail=$2" >&2
 }
-assert_eq() { if [ "$2" = "$3" ]; then ok "$1" "$2 ($4)"; else bad "$1" "期望=$2 实际=$3 上下文=$4"; fi; }
+assert_eq() { if [ "$2" = "$3" ]; then ok "$1" "$2 ($4)"; else bad "$1" "期望=$2 实际=$3 上下文=$4 body=${BODY:0:100}"; fi; }
 
 cleanup_data() {
   echo "清尾: 造数自清理(acc_ppath 前缀,幂等)" >&2
