@@ -68,6 +68,15 @@ type Asset struct {
 	Status          string `json:"status"`  // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
 }
 
+// ScrapConfirm 报废三要素确认(P3-F,防绕过前端的服务端强校验载荷):
+// confirmAssetCode 须与资产现值精确相等;资产有 SN 时 confirmSn 必填且相等、无 SN 须空串;
+// 已绑标签时 confirmTagNo 必填且等于标签号、未绑须空串。任一不符 422(ErrScrapConfirmMismatch)。
+type ScrapConfirm struct {
+	AssetCode string `json:"confirmAssetCode"`
+	SN        string `json:"confirmSn"`
+	TagNo     string `json:"confirmTagNo"`
+}
+
 // AssetLifecycle 资产状态轨迹(每次状态/位置变更一行,历史不随当前状态漂移)。
 type AssetLifecycle struct {
 	ID          int64     `json:"id"`
@@ -204,9 +213,11 @@ type AssetService interface {
 	// EnableTag 启用标签(P2-W2-T1):仅对 DISABLED 生效(DISABLED → UNBOUND);
 	// UNBOUND/BOUND 幂等 no-op 成功;未命中 ErrNotFound。
 	EnableTag(ctx context.Context, tagID int64) error
-	// ScrapAsset 报废资产(P1-T2):任意非终态 → SCRAPPED(终态幂等 no-op),强制解绑标签写
-	// RECYCLE 事件(软回收禁硬删),轨迹落行;同一事务,失败整单回滚。
-	ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string) error
+	// ScrapAsset 报废资产(P1-T2+P3-F 三要素):任意非终态 → SCRAPPED(终态幂等 no-op),
+	// 强制解绑标签写 RECYCLE 事件(软回收禁硬删),轨迹落行;同一事务,失败整单回滚。
+	// confirm 三要素与现值不符(或该填不填/该空不空)返回 ErrScrapConfirmMismatch(422);
+	// 终态重放先于校验短路,同请求重放恒成功且无二次副作用。
+	ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string, confirm ScrapConfirm) error
 	// ListTagEvents 标签事件流查询(P2-T4 消费面):id 倒序+limit(服务层兜底上限 100),
 	// actions 白名单过滤,beforeID>0 只取更小 id(游标预留);标签不存在返回 ErrNotFound。
 	ListTagEvents(ctx context.Context, tagID, limit, beforeID int64, actions []string) ([]TagEvent, error)

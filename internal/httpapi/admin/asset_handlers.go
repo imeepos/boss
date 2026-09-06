@@ -205,33 +205,6 @@ func replacementListHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// assetScrapHandler POST /assets/{assetId}/scrap:报废资产(P1-T2)。
-// 终态幂等;标签仍绑时强制解绑写 RECYCLE 事件,轨迹落 SCRAP 行(同事务)。
-func assetScrapHandler(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id, ok := httpx.ParsePathParamInt64(c, "assetId")
-		if !ok {
-			return
-		}
-		var req struct {
-			Reason string `json:"reason"`
-		}
-		if !httpx.BindAndValidate(c, &req, func() error {
-			return httpx.CollectErrors(
-				httpx.RequireString(req.Reason, "reason", 64),
-			)
-		}) {
-			return
-		}
-		if err := a.Asset.ScrapAsset(c.Request.Context(), id, httpx.ClaimsAccountID(c), req.Reason); err != nil {
-			respondErr(c, err)
-			return
-		}
-		httpx.RecordAudit(a, c, "状态变更", "asset", c.Param("assetId"), map[string]any{"op": "scrap", "reason": req.Reason})
-		respond(c, apitypes.CodeOK, nil)
-	}
-}
-
 // tagUnbindHandler POST /tags/{tagId}/unbind:解绑标签(P1-T2)。
 // expectedAssetId>0 时校验当前绑定一致;成功后标签回 UNBOUND 可复用,写 UNBIND 事件。
 func tagUnbindHandler(a *app.Application) gin.HandlerFunc {

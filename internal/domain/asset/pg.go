@@ -26,6 +26,10 @@ var ErrModelExists = errors.New("asset: model already exists")
 // 用于 POST /provision/{assets,tags} 同步回填时,反向记录已被占用的场景。
 var ErrBindingConflict = errors.New("asset: tag-asset binding conflict")
 
+// ErrScrapConfirmMismatch 报废三要素确认不符(P3-F):资产编码/SN/标签号任一不匹配、
+// 该填不填或该空不空。422 语义:错误信息只指明哪个要素不符,不回显服务端现值(防状态探测)。
+var ErrScrapConfirmMismatch = errors.New("asset: scrap confirm mismatch")
+
 // ErrDiffPending 盘点存在未处置差异,禁止关单。
 var ErrDiffPending = errors.New("asset: stocktake diff items pending")
 

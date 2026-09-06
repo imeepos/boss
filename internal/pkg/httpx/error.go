@@ -76,6 +76,10 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, provision.ErrBindingInvalid):
 		// 绑定校验失败(跨法人/模板停用):42200 + 透传原因,管理员可见为什么绑不上。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
+	case errors.Is(err, asset.ErrScrapConfirmMismatch):
+		// 报废三要素确认不符(P3-F 防绕过前端):42200 + 透传只指明要素的原因,
+		// 不回显服务端现值(防状态探测),操作员按提示重新核对实物铭牌。
+		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
 	case errors.Is(err, provision.ErrTemplateUnresolved),
 		errors.Is(err, provision.ErrBoundTemplateDisabled):
 		// 环节7 模板不可解析(配置缺失/绑定模板停用):40900 + 透传原因,运营可见为什么开不了。
