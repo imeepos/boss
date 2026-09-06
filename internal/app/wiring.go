@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
@@ -66,7 +65,11 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
-	aaastore := aaa.NewPGStore(pool)
+	aaastore, err := newAAAStoreWithCred(pool, cfg)
+	if err != nil {
+		pool.Close()
+		return nil, err
+	}
 	// 审计必须与业务请求同步落库，避免进程崩溃或队列满时丢失关键操作留痕。
 	aw := audit.NewPGWriter(pool)
 	// E14:预建当月起 2 个月的审计分区(见 wiring_events.go)。
@@ -219,12 +222,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 
 	// AAA-A2 在线会话控制:CoA 下发器 + 有限次重试 + 僵尸清理。
 	// AAA-A5:CoA 改用目标 NAS 注册表自己的密钥与端口;全局密钥经兼容开关(默认关)
-	// 仅对未注册 NAS 回退。注册表编解码器复用 AAA 凭据密文体系(重置密码同源)。
-	if nasCodec, err := aaa.BuildCodec(cfg.AAA.CredKey, cfg.AAA.Secret); err != nil {
-		log.Printf("[aaa] ALERT credential codec: %v", err)
-	} else {
-		aaastore.WithCredentialCodec(nasCodec)
-	}
+	// 仅对未注册 NAS 回退。注册表编解码器复用 AAA 凭据密文体系(aaastore 已由
+	// newAAAStoreWithCred 注入,server 与 cmd/aaa 同一密钥材料)。
 	app.SessCtl = aaa.NewSessionControlService(aaastore,
 		radius.NewNasCoAClient(aaastore, []byte(cfg.AAA.Secret), cfg.AAA.CoAPort, 5*time.Second, cfg.AAA.GlobalSecretCompat),
 		cfg.AAA.OfflineRetryMax)

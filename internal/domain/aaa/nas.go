@@ -7,10 +7,7 @@ package aaa
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
-
-	"github.com/ymm-001/boss/internal/domain/aaa/credential"
 )
 
 // NasVendor NAS 厂商类型(VSA 限速属性下发依据;GENERIC/未知走字符串属性兜底)。
@@ -82,22 +79,4 @@ type NasPage struct {
 	Keyword  string
 	Vendor   string
 	Enabled  string
-}
-
-// CredentialMaterial 密钥材料归一:CRED_KEY 非空直用;空=从全局 Secret 派生
-// (derived=true,开发兜底,调用方必须打 ALERT;与 A1 cmd/aaa 口径一致)。
-func CredentialMaterial(credKey, secret string) (string, bool) {
-	if credKey != "" {
-		return credKey, false
-	}
-	return "boss-aaa-cred-key|" + secret, true
-}
-
-// BuildCodec 凭据编解码器构建(NAS 密钥落库/还原复用既有密文体系,A1 同源)。
-func BuildCodec(credKey, secret string) (*credential.Codec, error) {
-	material, derived := CredentialMaterial(credKey, secret)
-	if derived {
-		log.Println("[aaa] CRED KEY ALERT: BOSS_AAA_CRED_KEY 未设置,使用 Secret 派生密钥(生产必须显式配置)")
-	}
-	return credential.New(material)
 }

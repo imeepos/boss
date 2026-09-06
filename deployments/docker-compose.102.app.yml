@@ -28,6 +28,9 @@ services:
       BOSS_HOSTCTL_URL: "http://172.26.0.1:39093"
       # HMAC key 通过 bind mount 注入,不进 git/env/process
       BOSS_HOSTCTL_HMAC_KEY_FILE: "/run/hostctl-hmac/hmac.key"
+
+      # AAA 凭据密钥文件(admin 重置 LOID 密码 AES-GCM 密文落库);值在宿主机文件,与 aaa 共用同一密钥
+      BOSS_AAA_CRED_KEY_FILE: "/run/aaa-cred/cred.key"
       # 数据备份迁移归档目录(迁移 000095,/backup/* API);命名卷持久化
       BOSS_BACKUP_DIR: "/data/backups"
       # 系统授权激活链路(release-platform):rpat_ operator token,兑码+取离线令牌专用;
@@ -39,6 +42,8 @@ services:
     volumes:
       # hostctl HMAC key:宿主机 /etc/boss-host-ctl/hmac.key(0600)
       - /etc/boss-host-ctl/hmac.key:/run/hostctl-hmac/hmac.key:ro
+      # AAA 凭据密钥:宿主机 /etc/boss-aaa/cred.key(0600,root);server 与 aaa 必须同一密钥
+      - /etc/boss-aaa/cred.key:/run/aaa-cred/cred.key:ro
       - boss_backup_data:/data/backups
       # 系统授权证书(激活后离线令牌落盘);命名卷持久化,跨部署重建不丢授权
       - boss_license_data:/var/lib/boss
@@ -62,7 +67,13 @@ services:
       BOSS_AAA_AUTH_ADDR: ":1812"
       BOSS_AAA_ACCT_ADDR: ":1813"
       BOSS_AAA_SECRET: "boss-aaa-secret"
+      # 凭据密钥经宿主机文件注入(值不进仓库);ALLOW_NO_CRED 灰度开关:存量重置完成后必须关回 false
+      BOSS_AAA_CRED_KEY_FILE: "/run/aaa-cred/cred.key"
+      BOSS_AAA_ALLOW_NO_CRED: "true"
       BOSS_AAA_CDR_TOPIC: "boss-cdr"
+    volumes:
+      # AAA 凭据密钥:宿主机 /etc/boss-aaa/cred.key(0600,root),值不进仓库/env/process
+      - /etc/boss-aaa/cred.key:/run/aaa-cred/cred.key:ro
 
   report:
     image: 192.168.0.102:5000/boss/server:latest

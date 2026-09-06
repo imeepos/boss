@@ -124,3 +124,18 @@ func Random(n int) (string, error) {
 	}
 	return string(out), nil
 }
+
+// NewResolved 按配置装配编解码器:credKey(BOSS_AAA_CRED_KEY/FILE)显式优先;
+// 空则从 NAS Secret 派生(开发兜底)。derived=true 表示走了派生路径,调用方必须
+// 输出 [aaa] CRED KEY ALERT 留痕(生产必须显式配置独立密钥)。派生式与既有
+// cmd/aaa 口径逐字一致,否则历史密文不可解。
+func NewResolved(credKey, secret string) (*Codec, bool, error) {
+	material := credKey
+	derived := false
+	if material == "" {
+		material = "boss-aaa-cred-key|" + secret
+		derived = true
+	}
+	c, err := New(material)
+	return c, derived, err
+}
