@@ -111,6 +111,9 @@ type Application struct {
 	Resource       resource.ResourceService
 	ResourceSub    resource.ResourceSubService
 	ResourceAssign resource.ResourceAssignService
+	// 容量视图聚合与阈值预警口(P5-W1);Sink 为告警域适配器(capacity_alert.go)。
+	ResourceCapacity  resource.CapacityService
+	CapacityAlarmSink resource.CapacityAlarmSink
 
 	Order           order.OrderService
 	WorkOrder       order.WorkOrderService

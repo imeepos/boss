@@ -808,6 +808,33 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 > （CONFIRM=MISMATCH 时按实盘修正 assets.status 并落 asset_lifecycles；FIX=台账为准；ESCALATE=上报转人工）→全处置完才可关单
 > （`POST /stocktakes/{taskId}/diff-handle`,存在 OPEN 差异返回 40900）。
 
+### 4.2.2 资源容量视图与阈值预警（P5-W1，迁移 000192，对标 NRM C6）
+
+> admin 页面 `/oss/capacity`（oss 分组，权限复用 `menu:resource`——任务书裁定容量视图对齐端口台账权限，不新增权限码，check-contract-sync E 项 baseline 豁免登记）。
+> API：`GET /api/admin/v1/resources/capacity?dim=OLT|SPLITTER&order=usageDesc|usageAsc`（dim 空=全部类型；order 缺省 usageDesc，即任务书「按使用率倒序」）；
+> `POST /api/admin/v1/resources/capacity/alert-scan`（手动跑一轮阈值预警，响应 `{scanned,created,resolved}`）。
+
+容量聚合行（页面列名 ↔ API 字段，来源 resources LEFT JOIN ports）：
+
+| 页面列名 | 字段名 | 口径 |
+|:---------|:-------|:-----|
+| 对象 | `code` / `name` | resources.code + resources.name |
+| 类型 | `type` | OLT / SPLITTER（复用 resources.type 枚举） |
+| 总端口 | `totalPorts` | 该对象 ports 全部行数（含 DISABLED） |
+| 占用 | `usedPorts` | status='USED' 行数 |
+| 使用率 | `usageRate` | USED/(USED+IDLE)×100，百分比两位小数；DISABLED/RESERVED 不计入分母；分母为 0 时=0.00 |
+
+阈值预警语义（复用告警体系，terms.md §4 alarm.level=WARNING 不新增枚举）：
+
+| 项 | 值 | 说明 |
+|:---|:---|:-----|
+| 告警来源 | `alarms.source='capacity'` | source 枚举新增第四值（device/quadlink/aaa/capacity），常量 device.AlarmSourceCapacity |
+| 阈值 | 使用率 >= 80% | resource.CapacityWarnThresholdPct=80.0 |
+| 级别/状态 | WARNING / OPEN | 越限且无 OPEN 容量告警才产生 |
+| 状态变化 | 越限产生 / 回落自动关闭 | 同一对象同一阈值状态变化才重复告警；周期重跑幂等不重复 |
+| 判重反查 | 部分索引 idx_alarms_capacity_open | 迁移 000192：alarms(resource_id) WHERE source='capacity' AND status='OPEN' |
+| 触发入口 | 巡检循环（每小时）+ POST alert-scan | 失败路径落 `[resource-capacity] ALERT SCAN FAILED` 可 grep 日志，禁静默 |
+
 ### 4.3 replacements（换新单/设备更换单，000007 + 000159 派单三列）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |

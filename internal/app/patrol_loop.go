@@ -12,6 +12,7 @@ import (
 	"github.com/ymm-001/boss/internal/domain/notify"
 	"github.com/ymm-001/boss/internal/domain/order"
 	"github.com/ymm-001/boss/internal/domain/report"
+	"github.com/ymm-001/boss/internal/domain/resource"
 )
 
 // patrolInterval 巡检周期;整点对齐只是观感,错过由下一轮补上。
@@ -57,6 +58,7 @@ func runPatrolOnce(ctx context.Context, a *Application) {
 	patrolOverdueComplaints(cctx, a)
 	patrolEscalateOverdueTodos(cctx, a)
 	ensurePeriodicReports(cctx, a)
+	patrolCapacityAlerts(cctx, a)
 }
 
 // ensurePeriodicReports 周/月/季报到期补生成(报告中心"查看"数据源)。
@@ -114,6 +116,22 @@ func patrolOverdueComplaints(ctx context.Context, a *Application) {
 		if err != nil {
 			log.Printf("patrol complaints: emit %s: %v", c.TicketNo, err)
 		}
+	}
+}
+
+// patrolCapacityAlerts 周期容量预警(>=80% WARNING,状态变化才重复告警,幂等);
+// 失败仅记日志不中断整轮巡检,信号可 grep([resource-capacity] FAILED)。
+func patrolCapacityAlerts(ctx context.Context, a *Application) {
+	if a.ResourceCapacity == nil || a.CapacityAlarmSink == nil {
+		return
+	}
+	res, err := a.ResourceCapacity.CapacityAlertScan(ctx, resource.CapacityWarnThresholdPct, a.CapacityAlarmSink)
+	if err != nil {
+		log.Printf("[resource-capacity] ALERT SCAN FAILED: %v", err)
+		return
+	}
+	if res.Created > 0 || res.Resolved > 0 {
+		log.Printf("[resource-capacity] alert scan scanned=%d created=%d resolved=%d", res.Scanned, res.Created, res.Resolved)
 	}
 }
 

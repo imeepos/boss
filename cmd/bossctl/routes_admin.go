@@ -313,6 +313,8 @@ var adminRoutes = []routeEntry{
 	{"GET", "/data-scopes", "数据权限清单(账号级授权策略)"},
 	{"PUT", "/regions/:regionId/coverage", "区域覆盖主体划分(子公司划经营区域;legalEntityId=0 摘除回落祖先/总公司兜底)"},
 	{"GET", "/resources", "网络资源清单(OSS/OLT/分光器;对齐 Go 实现 GET /resources,permCode menu:resource)"},
+	{"GET", "/resources/capacity", "端口容量聚合(OLT/分光器维度;usageRate=USED/(USED+IDLE) 百分比两位小数,DISABLED/RESERVED 不入分母;对齐 Go 实现 GET /resources/capacity,permCode menu:resource)"},
+	{"POST", "/resources/capacity/alert-scan", "容量阈值预警扫描(使用率>=80% 产生 WARNING 容量告警入告警体系;同一对象阈值状态变化才重复告警,周期重跑幂等;对齐 Go 实现 POST /resources/capacity/alert-scan,permCode menu:resource)"},
 	{"GET", "/ports", "端口台账(status: IDLE/RESERVED/USED/DISABLED;对齐 Go 实现 GET /ports,按 resourceId 过滤)"},
 	{"GET", "/ports/:portId/change-history", "端口变更历史(变更前后/触发来源;对齐 Go 实现 :portId)"},
 	{"GET", "/reserves", "端口预占记录(预占中/已超时/已释放)"},

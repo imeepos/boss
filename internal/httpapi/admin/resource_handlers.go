@@ -3,6 +3,9 @@ package adminapi
 // 网络资源域 handler 实现(从 resource.go 抽出,registerResourceRoutes 只剩扁平路由表)。
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
@@ -48,6 +51,34 @@ func listPortHistoryHandler(a *app.Application) gin.HandlerFunc {
 			return
 		}
 		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	}
+}
+
+// capacityHandler GET /resources/capacity?dim=&order=:端口容量聚合(OLT/分光器维度)。
+// 口径 fields.md §4.2.2:usageRate=USED/(USED+IDLE) 百分比两位小数;order 缺省 usageDesc。
+func capacityHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		list, err := a.ResourceCapacity.Capacity(c.Request.Context(), c.Query("dim"), c.Query("order"))
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, gin.H{"items": list})
+	}
+}
+
+// capacityAlertScanHandler POST /resources/capacity/alert-scan:跑一轮 >=80% 阈值预警
+// (WARNING 入告警体系;状态变化才重复告警,周期重跑幂等)。失败留 [resource-capacity] FAILED 日志。
+func capacityAlertScanHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := a.ResourceCapacity.CapacityAlertScan(c.Request.Context(), resource.CapacityWarnThresholdPct, a.CapacityAlarmSink)
+		if err != nil {
+			log.Printf("[resource-capacity] ALERT SCAN FAILED: %v", err)
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "状态变更", "capacity_alert_scan", fmt.Sprintf("created=%d resolved=%d scanned=%d", res.Created, res.Resolved, res.Scanned), nil)
+		respond(c, apitypes.CodeOK, gin.H{"scanned": res.Scanned, "created": res.Created, "resolved": res.Resolved})
 	}
 }
 

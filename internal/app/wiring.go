@@ -136,6 +136,9 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		ResourceSub:    res,
 		ResourceAssign: res,
 
+		ResourceCapacity:  res,
+		CapacityAlarmSink: newCapacityAlarmSink(dev),
+
 		Order:           ord,
 		WorkOrder:       ord,
 		CSMetrics:       ord,

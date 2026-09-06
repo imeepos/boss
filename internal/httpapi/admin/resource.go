@@ -19,6 +19,8 @@ func genNo(prefix string) string {
 func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	res := g.Group("", requirePerm(a.User, "menu:resource"))
 	res.GET("/resources", listResourcesHandler(a))
+	res.GET("/resources/capacity", capacityHandler(a))
+	res.POST("/resources/capacity/alert-scan", capacityAlertScanHandler(a))
 	res.GET("/ports", listPortsHandler(a))
 	res.GET("/ports/:portId/change-history", listPortHistoryHandler(a))
 	res.POST("/reserves/:reserveId/release", releaseReserveHandler(a))

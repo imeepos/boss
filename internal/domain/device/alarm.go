@@ -5,12 +5,15 @@ import (
 	"time"
 )
 
-// Alarm 网络告警(网络设备/四码对账/认证异常)。
+// AlarmSourceCapacity 容量预警告警来源(P5-W1:端口使用率 >=80% 阈值,resource 域经 app 适配器写入)。
+const AlarmSourceCapacity = "capacity"
+
+// Alarm 网络告警(网络设备/四码对账/认证异常/资源容量)。
 type Alarm struct {
 	ID         int64     `json:"id"`
 	AlarmNo    string    `json:"alarmNo"` // ALM-001
 	Level      string    `json:"level"`   // CRITICAL/WARNING/INFO
-	Source     string    `json:"source"`  // device/quadlink/aaa
+	Source     string    `json:"source"`  // device/quadlink/aaa/capacity
 	Content    string    `json:"content"`
 	ResourceID int64     `json:"resourceId"` // 0=空(软引用 resources.id)
 	Status     string    `json:"status"`     // OPEN/ACKED/CLOSED
