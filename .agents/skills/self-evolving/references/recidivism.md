@@ -132,3 +132,6 @@
 | run_code 有 600s 墙钟硬顶,bash timeoutMs 设得再大也会整轮被杀(输出全丢) | 1 | 2026-09-05(报告周期修复轮:healthz 部署轮询 timeoutMs 840000,10 分钟整被宿主砍,白等一轮) | 轮询/长等待类命令总时长必须 < 600s,或改 run_in_background + job_output(wait) 收割;轮询步进 20s × 上限 25 次内 |
 | web/admin vitest 用例依赖本地时区,非 +08 环境跑门禁必假红 | 1 | 2026-09-05(filter.test.ts 注册时间格式化 expected '01:00:00' got '10:00:00',与本次改动无关,排查耗一轮;TZ=Asia/Shanghai 全绿 413) | web 门禁 test 统一前置 TZ=Asia/Shanghai;遇单测失败先判是否时区/环境假红再怀疑改动 |
 | run_code 程序体里拼 bash 长命令用 + 串接多段字符串,漏逗号/引号 parse error | 1 | 2026-09-05(报告周期修复轮:printf 参数用 "..."+"..." 串接漏续行符,Expected ',' got string literal,整轮作废) | 行数组 join 已是成熟范式仍会手滑;多行载荷一律先 tools.write 落 /tmp 再引用,不在命令串里内联大段文本 |
+15. **【已犯 1 次】read 工具 lines 数组有单次返回上限,与 totalLines 不符时全文件重写会静默截断** —— 2026-09-06 notes.md 整文件重写丢 1407 行(1752→349),commit stat 的 deletions 远大于预期才逮住,checkout HEAD~1 恢复。整文件重写前必须核对 lines.length === totalLines;不一致改用 cat >> 追加式或分段读全再拼。
+16. **【已犯 1 次】git worktree add <path> <branch> 在分支不存在时 fatal invalid reference** —— 2026-09-06 任务书口径默认分支可建;先 for-each-ref 探测,不存在就 `git worktree add -b <branch> <path>` 一并创建。
+17. **【已犯 1 次】后台 dev server 用管道(如 | head)启动会吞输出且可能根本未监听** —— 2026-09-06 vite 连探三轮 http 000;正解=nohup 重定向日志文件,cat 日志 + curl 探活;macOS 另注意无 timeout 命令。
