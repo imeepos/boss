@@ -12,4 +12,6 @@ func registerAaaRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/lo-accounts", requirePerm(a.User, "menu:loaccount"), aaaLoAccountsPageHandler(a))
 	g.GET("/cdrs", requirePerm(a.User, "menu:aaalog"), aaaCdrsPageHandler(a))
 	g.GET("/auth-logs", requirePerm(a.User, "menu:aaalog"), aaaAuthLogsPageHandler(a))
+	g.GET("/aaa/sessions", requirePerm(a.User, "menu:loaccount"), aaaSessionsPageHandler(a))
+	g.POST("/aaa/sessions/:sessionId/disconnect", requirePerm(a.User, "menu:loaccount"), aaaSessionDisconnectHandler(a))
 }

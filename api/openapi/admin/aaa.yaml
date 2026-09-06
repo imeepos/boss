@@ -21,6 +21,30 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /aaa/sessions:
+    get:
+      tags: [Aaa]
+      summary: '在线会话分页(AAA-A2,LOID/NAS IP/状态过滤,permCode menu:loaccount)'
+      operationId: listAaaSessions
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: loid, in: query, schema: { type: string }, description: 按 LO 账号过滤 }
+        - { name: nasIp, in: query, schema: { type: string }, description: 按 NAS IP 过滤 }
+        - { name: status, in: query, schema: { type: string }, description: 会话状态 ONLINE/PENDING_OFFLINE/OFFLINE/OFFLINE_FAILED }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+  /aaa/sessions/{sessionId}/disconnect:
+    post:
+      tags: [Aaa]
+      summary: '会话强制下线(AAA-A2,向 NAS 发 RFC 5176 Disconnect,permCode menu:loaccount)'
+      operationId: disconnectAaaSession
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
   /auth-logs:
     get:
       tags: [Aaa]

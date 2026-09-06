@@ -22,6 +22,8 @@ var Portals = []Portal{
 	{Name: "admin", Prefix: "/api/admin/v1", Routes: []Route{
 		{"GET", "/aaa/summary", "AAA 运行总览(真实 LO 账号、话单、认证日志聚合)"},
 		{"GET", "/cdrs", "AAA 话单列表(对齐 Go 实现 GET /cdrs,permCode menu:aaalog)"},
+		{"GET", "/aaa/sessions", "在线会话分页(AAA-A2,LOID/NAS IP/状态过滤,permCode menu:loaccount)"},
+		{"POST", "/aaa/sessions/{sessionId}/disconnect", "会话强制下线(AAA-A2,向 NAS 发 RFC 5176 Disconnect,permCode menu:loaccount)"},
 		{"GET", "/auth-logs", "认证日志(对齐 Go 实现 GET /auth-logs,permCode menu:aaalog)"},
 		{"GET", "/ai/openai/config", "OpenAI 集中配置视图(apiKey 脱敏;permCode menu:ai)"},
 		{"PUT", "/ai/openai/config", "变更 OpenAI 集中配置(逐键更新,nil 跳过;permCode menu:ai;审计\"数据变更\")"},

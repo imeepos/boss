@@ -408,6 +408,8 @@ paths:
   /aaa/summary: { $ref: './admin/aaa.yaml#/paths/~1aaa~1summary' }
   /cdrs: { $ref: './admin/aaa.yaml#/paths/~1cdrs' }
   /auth-logs: { $ref: './admin/aaa.yaml#/paths/~1auth-logs' }
+  /aaa/sessions: { $ref: './admin/aaa.yaml#/paths/~1aaa~1sessions' }
+  /aaa/sessions/{sessionId}/disconnect: { $ref: './admin/aaa.yaml#/paths/~1aaa~1sessions~1{sessionId}~1disconnect' }
 
   # ---------- Intel ----------
   /gis/levels: { $ref: './admin/intel.yaml#/paths/~1gis~1levels' }
