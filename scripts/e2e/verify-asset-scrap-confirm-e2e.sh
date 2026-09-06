@@ -21,6 +21,8 @@ acquire_acceptance_lock || exit 1
 trap release_acceptance_lock EXIT
 
 env_or() { local v; v=$(printenv "$1" 2>/dev/null); if [ -n "$v" ]; then echo "$v"; else echo "$2"; fi; }
+# md5hex: macOS md5 / Linux md5sum 双通(102 宿主 cron 本机执行依赖,行为不变)。
+md5hex() { if command -v md5 > /dev/null 2>&1; then md5; else md5sum | cut -d" " -f1; fi; }
 ARG1=""; if [ $# -ge 1 ]; then ARG1="$1"; fi
 BASE_URL=$(env_or BASE_URL "http://192.168.0.102:28080")
 case "$ARG1" in http*) BASE_URL="$ARG1" ;; esac
@@ -91,7 +93,7 @@ boot_fixtures() { # 自举: 批次/标签/资产1(有SN绑标签)/资产2(无SN�
   local batch tag asset sn b1 b2
   batch=$(api POST /provision/asset-batches "{\"code\":\"RK-ACC-$SUFFIX\",\"name\":\"验收批次-$SUFFIX\",\"legalEntityId\":1}") || return 1
   BATCH_ID=$(j "$batch" id)
-  EPC="30$(printf %s "$SUFFIX" | md5 | tr -d " -" | cut -c1-22 | tr "a-f" "A-F")"
+  EPC="30$(printf %s "$SUFFIX" | md5hex | tr -d " -" | cut -c1-22 | tr "a-f" "A-F")"
   tag=$(api POST /provision/tags "{\"tagNo\":\"T-ACC-$SUFFIX\",\"epcCode\":\"$EPC\",\"legalEntityId\":1,\"band\":\"UHF\",\"status\":\"UNBOUND\",\"battery\":\"100%\"}") || return 1
   TAG_ID=$(j "$tag" id)
   asset=$(api POST /provision/assets "{\"assetCode\":\"A-ACC-$SUFFIX\",\"batchId\":$BATCH_ID,\"legalEntityId\":1,\"legalEntityName\":\"验收主体\",\"type\":\"ONU\",\"status\":\"IN_STOCK\"}") || return 1
