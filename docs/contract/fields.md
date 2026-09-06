@@ -708,7 +708,10 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 来源标记（down 仅删回填行；NOT EXISTS 守卫幂等重跑零新增）；查询 action 白名单含 CREATE。
 > CreateTag/CreateAsset 绑定成功即写 BIND；端点 POST /tags/{tagId}/unbind（预期不符 40900、
 > 未绑定 ErrTagUnbound→40000 族）写 UNBIND；POST /assets/{assetId}/scrap（reason 必填,终态
-> 幂等）强制解绑写 RECYCLE——报废软回收禁硬删（adopted 2026-09-06-asset-tag-p1-wave）。
+> 幂等；P3-F 起另收 confirmAssetCode/confirmSn/confirmTagNo 三要素,服务端强校验防绕过前端:
+> 编码须精确相等;有 SN 时 confirmSn 必填相等、无 SN 须空串;已绑标签时 confirmTagNo 必填
+> 等于标签号、未绑须空串;任一不符 42200 且信息只指明要素不回显现值;审计只落 SN 尾 4 位）
+> 强制解绑写 RECYCLE——报废软回收禁硬删（adopted 2026-09-06-asset-tag-p1-wave、P3-F 同日）。
 
 > 标签事件消费面（P2-T4，2026-09-06）：查询端点 GET /tags/{tagId}/events 与
 > GET /assets/{assetId}/events（id 倒序；limit 缺省 50 上限 100；action 多值白名单
@@ -716,7 +719,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 标签/资产不存在 40400，统一信封 items 返回）。前端：标签页操作列（既有 Dropdown 组件
 > 体系，禁用原生 select）提供 解绑/报废绑定资产/事件记录，资产页操作列提供 状态轨迹/
 > 事件记录/报废；解绑/报废二次确认三要素=影响面清单+不可逆/恢复路径说明+红色确认键默认
-> 禁用（原因必填；报废另需输入资产编码精确匹配）；确认框影响面口径与事后可查回的事件字段
+> 禁用（原因必填；P3-F 起报废升级三要素确认=资产编码+SN/标签号按有无动态必填,弹窗展示三要素参考值核对实物铭牌且参考值不可复制,提交前本地预校验,服务端同规则强校验）；确认框影响面口径与事后可查回的事件字段
 > 对齐（解绑→UNBIND 事件、报废→RECYCLE 事件+SCRAPPED 轨迹行，原因均入事件 detail）；
 > 事件时间轴抽屉一行一事件（时间/操作人/动作徽标/对象），changed JSONB 只渲染实际变化键
 > （键: 旧值 → 新值，等宽字体），不 dump 全量 JSON、不引 diff 库。明确不做：全局事件

@@ -82,19 +82,26 @@ func (s *PGStore) UnbindTag(ctx context.Context, tagID, expectedAssetID, actorAc
 	return nil
 }
 
-// ScrapAsset 报废资产:任意非终态 → SCRAPPED(终态幂等 no-op),轨迹落行;
-// 标签仍绑时强制解绑并写 RECYCLE 事件(软回收禁硬删)。同一事务,失败整单回滚。
-func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string) error {
+// ScrapAsset 报废资产(P1-T2+P3-F 三要素确认):任意非终态 → SCRAPPED(终态幂等 no-op),
+// 轨迹落行;标签仍绑时强制解绑并写 RECYCLE 事件(软回收禁硬删)。同一事务,失败整单回滚。
+// 三要素强校验防绕过前端:confirmAssetCode 须与现值精确相等;有 SN 时 confirmSn 必填相等、
+// 无 SN 须空串;已绑标签时 confirmTagNo 必填相等、未绑须空串;任一不符返回
+// ErrScrapConfirmMismatch(422,只指明要素不回显现值)。终态重放先于校验短路。
+func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string, confirm ScrapConfirm) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("asset: begin scrap: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	var status string
+	var status, assetCode, sn string
 	var tagID int64
+	var tagNo *string
 	err = tx.QueryRow(ctx,
-		`SELECT status, COALESCE(tag_id, 0) FROM assets WHERE id = $1 FOR UPDATE`, assetID).Scan(&status, &tagID)
+		`SELECT a.status, a.asset_code, COALESCE(a.sn, ''), COALESCE(a.tag_id, 0), t.tag_no
+		 FROM assets a LEFT JOIN tags t ON t.id = a.tag_id
+		 WHERE a.id = $1 FOR UPDATE OF a`, assetID).
+		Scan(&status, &assetCode, &sn, &tagID, &tagNo)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -102,7 +109,10 @@ func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64,
 		return fmt.Errorf("asset: scrap lock: %w", err)
 	}
 	if status == "SCRAPPED" {
-		return nil // 幂等重放
+		return nil // 幂等重放:先于三要素校验短路,同请求重放恒成功且无二次副作用
+	}
+	if err := verifyScrapConfirm(confirm, assetCode, sn, tagID, tagNo); err != nil {
+		return err
 	}
 	if _, err := tx.Exec(ctx,
 		`UPDATE assets SET status = 'SCRAPPED', updated_at = now() WHERE id = $1`, assetID); err != nil {
@@ -134,6 +144,36 @@ func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64,
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("asset: commit scrap: %w", err)
+	}
+	return nil
+}
+
+// verifyScrapConfirm 三要素逐项核对:不符时返回包装 ErrScrapConfirmMismatch 的错误,
+// 信息只指明不符要素与期望形态(必填/须空串),绝不回显服务端现值(防状态探测)。
+func verifyScrapConfirm(confirm ScrapConfirm, assetCode, sn string, tagID int64, tagNo *string) error {
+	const kind = "asset: scrap confirm 要素不符"
+	if confirm.AssetCode != assetCode {
+		return fmt.Errorf("%s: confirmAssetCode 与资产现值不一致: %w", kind, ErrScrapConfirmMismatch)
+	}
+	switch {
+	case sn != "" && confirm.SN == "":
+		return fmt.Errorf("%s: confirmSn 必填(该资产已登记 SN): %w", kind, ErrScrapConfirmMismatch)
+	case sn == "" && confirm.SN != "":
+		return fmt.Errorf("%s: confirmSn 须为空串(该资产未登记 SN): %w", kind, ErrScrapConfirmMismatch)
+	case confirm.SN != sn:
+		return fmt.Errorf("%s: confirmSn 与资产现值不一致: %w", kind, ErrScrapConfirmMismatch)
+	}
+	if tagID > 0 {
+		if confirm.TagNo == "" {
+			return fmt.Errorf("%s: confirmTagNo 必填(该资产已绑标签): %w", kind, ErrScrapConfirmMismatch)
+		}
+		if tagNo == nil || confirm.TagNo != *tagNo {
+			return fmt.Errorf("%s: confirmTagNo 与标签现值不一致: %w", kind, ErrScrapConfirmMismatch)
+		}
+		return nil
+	}
+	if confirm.TagNo != "" {
+		return fmt.Errorf("%s: confirmTagNo 须为空串(该资产未绑标签): %w", kind, ErrScrapConfirmMismatch)
 	}
 	return nil
 }

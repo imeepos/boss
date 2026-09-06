@@ -122,31 +122,6 @@ func TestPGStore_CreateTag(t *testing.T) {
 	}
 }
 
-func TestPGStore_ListAssets(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer mock.Close()
-
-	cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id", "sn", "mac", "loid"}
-	mock.ExpectQuery(`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name`).
-		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(0), int64(0), int64(0), "", "光猫", "IN_STOCK", int64(0), "", "", ""))
-
-	s := NewPGStore(mock)
-	got, err := s.ListAssets(context.Background())
-	if err != nil {
-		t.Fatalf("ListAssets: %v", err)
-	}
-	if len(got) != 1 || got[0].AssetCode != "A-20260001" || got[0].Status != "IN_STOCK" {
-		t.Fatalf("got=%+v", got)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("unmet: %v", err)
-	}
-}
-
 func TestPGStore_CreateAsset(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {

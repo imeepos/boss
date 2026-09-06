@@ -51,16 +51,16 @@ export function AssetFormFields(p: AssetFormFieldsProps) {
         <input className={input} value={p.typeValue} placeholder={a.pType} readOnly={p.typeReadonly}
           onChange={(e) => p.onType(e.target.value)} />
       </Field>
-      <Field label={a.fSn}>
-        <input className={input} value={p.form.sn} placeholder={a.pSn}
+      <Field label={a.fIdentitySn}>
+        <input className={input} value={p.form.sn} placeholder={a.pIdentitySn}
           onChange={(e) => p.onSn(e.target.value)} />
       </Field>
-      <Field label={a.fMac}>
-        <input className={input} value={p.form.mac} placeholder={a.pMac}
+      <Field label={a.fIdentityMac}>
+        <input className={input} value={p.form.mac} placeholder={a.pIdentityMac}
           onChange={(e) => p.onMac(e.target.value)} />
       </Field>
-      <Field label={a.fLoid}>
-        <input className={input} value={p.form.loid} placeholder={a.pLoid}
+      <Field label={a.fIdentityLoid}>
+        <input className={input} value={p.form.loid} placeholder={a.pIdentityLoid}
           onChange={(e) => p.onLoid(e.target.value)} />
       </Field>
       <Field label={a.fTag}>

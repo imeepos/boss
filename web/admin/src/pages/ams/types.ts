@@ -13,7 +13,7 @@ export interface AssetRow {
   type: string // 光猫/ONU/路由器
   modelId: number // 0=未挂型号(P1-T3)
   status: string // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
-  sn: string // 序列号,''=未登记(P3-T2,全网唯一)
+  sn: string // 序列号,''=未登记(P3-T2 全网唯一;P3-F 报废三要素核对其一)
   mac: string // MAC 地址,''=未登记(P3-T2,全网唯一)
   loid: string // 电信 LOID,''=未登记(P3-T2,全网唯一)
 }

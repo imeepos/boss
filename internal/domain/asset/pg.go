@@ -26,6 +26,10 @@ var ErrModelExists = errors.New("asset: model already exists")
 // 用于 POST /provision/{assets,tags} 同步回填时,反向记录已被占用的场景。
 var ErrBindingConflict = errors.New("asset: tag-asset binding conflict")
 
+// ErrScrapConfirmMismatch 报废三要素确认不符(P3-F):资产编码/SN/标签号任一不匹配、
+// 该填不填或该空不空。422 语义:错误信息只指明哪个要素不符,不回显服务端现值(防状态探测)。
+var ErrScrapConfirmMismatch = errors.New("asset: scrap confirm mismatch")
+
 // ErrDiffPending 盘点存在未处置差异,禁止关单。
 var ErrDiffPending = errors.New("asset: stocktake diff items pending")
 
@@ -112,30 +116,7 @@ func (s *PGStore) ListTags(ctx context.Context) ([]Tag, error) {
 
 // CreateTag 新建电子标签,返回自增 id。
 
-// ListAssets 列出全部资产台账。
-func (s *PGStore) ListAssets(ctx context.Context) ([]Asset, error) {
-	rows, err := s.db.Query(ctx,
-		`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name,
-		        COALESCE(tag_id, 0), COALESCE(address_id, 0), COALESCE(region_id, 0),
-		        COALESCE(region_name, ''), type, status, COALESCE(model_id, 0),
-		        COALESCE(sn, ''), COALESCE(mac, ''), COALESCE(loid, '')
-		 FROM assets ORDER BY id`)
-	if err != nil {
-		return nil, fmt.Errorf("asset: list assets: %w", err)
-	}
-	defer rows.Close()
-	out := make([]Asset, 0)
-	for rows.Next() {
-		var a Asset
-		if err := rows.Scan(&a.AssetID, &a.AssetCode, &a.BatchID, &a.LegalEntityID, &a.LegalEntityName,
-			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status, &a.ModelID,
-			&a.SN, &a.MAC, &a.LOID); err != nil {
-			return nil, fmt.Errorf("asset: scan asset: %w", err)
-		}
-		out = append(out, a)
-	}
-	return out, rows.Err()
-}
+// ListAssetsPage/ListTagsPage 分页列表见 pg_page.go(P3-T1,取代全量 ListAssets)。
 
 // CreateAsset 新建资产,返回自增 id。
 

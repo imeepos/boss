@@ -1,14 +1,16 @@
-// 电子标签页:契约 GET /tags、POST /tags、POST /:id/disable|enable、/:id/unbind、GET /:id/events。
-// 状态枚举 terms.md §4:UNBOUND/BOUND/DISABLED;操作显隐见 ./logic。
-import { useEffect, useMemo, useState } from 'react'
+// 电子标签页:契约 GET /tags(P3-T1 服务端分页+status/q 筛选)、POST /tags、
+// POST /:id/disable|enable、/:id/unbind、GET /:id/events。状态枚举 terms.md §4:
+// UNBOUND/BOUND/DISABLED;操作显隐见 ./logic。翻页/条数/筛选变更均触发服务端请求。
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
-import { StatusTag } from '../../../components/StatusTag'
+import { StatusTag, statusTagLabel } from '../../../components/StatusTag'
+import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { pageSlice, type TagRow } from '../types'
+import type { TagRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { tagActionsOf } from './logic'
 import { CreateTagDrawer } from './CreateTagDrawer'
@@ -18,28 +20,61 @@ const td = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border
 const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
 const actBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
 
+const ALL = ''
+const TAG_STATUSES = ['UNBOUND', 'BOUND', 'DISABLED']
+const Q_DEBOUNCE_MS = 300
+
 export default function TagPage() {
   const t = useT()
   const g = t.pages.tagPage
   const confirm = useConfirm()
   const [rows, setRows] = useState<TagRow[]>([])
+  const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
+  const [q, setQ] = useState('')
+  const [status, setStatus] = useState(ALL)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [eventsTag, setEventsTag] = useState<TagRow | null>(null)
 
-  const load = () => {
+  const load = useCallback(() => {
     setError('')
     setBusy(true)
-    apiFetch<{ items: TagRow[] }>('/tags')
-      .then((d) => setRows(d?.items ?? []))
+    apiFetch<{ items: TagRow[]; total: number }>('/tags', {
+      query: {
+        offset: (page - 1) * pageSize,
+        limit: pageSize,
+        status: status || undefined,
+        q: q.trim() || undefined,
+      },
+    })
+      .then((d) => { setRows(d?.items ?? []); setTotal(d?.total ?? 0) })
       .catch((e) => setError(e instanceof Error ? e.message : g.loadFail))
       .finally(() => setBusy(false))
-  }
-  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, status, q])
+  useEffect(() => { load() }, [load])
+
+  // q 防抖:输入停顿后下发服务端,并回第一页(挂载时同值回写不触发请求)。
+  useEffect(() => {
+    const h = setTimeout(() => { setQ(keyword.trim()); setPage(1) }, Q_DEBOUNCE_MS)
+    return () => clearTimeout(h)
+  }, [keyword])
+
+  // 服务端 total 收缩导致当前页空:回缩到最后非空页。
+  useEffect(() => {
+    if (!busy && total > 0 && rows.length === 0 && page > 1) {
+      setPage(Math.max(1, Math.ceil(total / pageSize)))
+    }
+  }, [busy, total, rows.length, page, pageSize])
+
+  const pickStatus = (v: string) => { setStatus(v); setPage(1) }
+  const pickSize = (n: number) => { setPageSize(n); setPage(1) }
+  const statusOptions = [{ value: ALL, label: g.filterAll }].concat(
+    TAG_STATUSES.map((s) => ({ value: s, label: statusTagLabel('tag', s, t.common.statusTags) })))
 
   const runOp = async (row: TagRow, path: string, okMsg: string, body?: unknown) => {
     setBusy(true)
@@ -78,12 +113,6 @@ export default function TagPage() {
     setEventsTag(r)
   }
 
-  const filtered = useMemo(() => {
-    const k = keyword.trim().toLowerCase()
-    if (!k) return rows
-    return rows.filter((r) => r.tagNo.toLowerCase().includes(k) || r.epcCode.toLowerCase().includes(k))
-  }, [rows, keyword])
-  const slice = pageSlice(filtered, page, pageSize)
   const cols = [...g.columns, g.colActions]
 
   return (
@@ -92,7 +121,8 @@ export default function TagPage() {
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={g.searchPlaceholder}
-            value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
+            value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+          <Dropdown value={status} ariaLabel={g.columns[5]} onChange={pickStatus} options={statusOptions} />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{g.create}</button>
@@ -102,7 +132,7 @@ export default function TagPage() {
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead><tr>{cols.map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
               <tbody>
-                {slice.map((r) => (
+                {rows.map((r) => (
                   <tr key={r.tagId}>
                     <td className={td}>{r.tagNo}</td>
                     <td className={td}>{r.epcCode}</td>
@@ -119,14 +149,14 @@ export default function TagPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={g.empty} />}
+                {!rows.length && <TableStateRow colSpan={7} loading={busy} text={g.empty} />}
               </tbody>
             </table>
           </div>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
-          <Pagination total={filtered.length} page={page} pageSize={pageSize}
-            onPage={setPage} onSize={setPageSize} {...pagerTexts(g)} />
+          <Pagination total={total} page={page} pageSize={pageSize}
+            onPage={setPage} onSize={pickSize} {...pagerTexts(g)} />
         </div>
       </div>
       {createOpen && <CreateTagDrawer onClose={() => setCreateOpen(false)} onSaved={load} />}

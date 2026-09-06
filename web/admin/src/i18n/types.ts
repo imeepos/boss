@@ -889,6 +889,7 @@ export interface Translations {
       title: string
       desc: string
       searchPlaceholder: string
+      filterAll: string
       columns: string[]
       lifecycle: string
       lifecycleTitle: string
@@ -922,12 +923,12 @@ export interface Translations {
       eType: string
       fTag: string
       pTag: string
-      fSn: string
-      pSn: string
-      fMac: string
-      pMac: string
-      fLoid: string
-      pLoid: string
+      fIdentitySn: string
+      pIdentitySn: string
+      fIdentityMac: string
+      pIdentityMac: string
+      fIdentityLoid: string
+      pIdentityLoid: string
       createOk: string
       detailTitle: string
       mainTitle: string
@@ -950,6 +951,14 @@ export interface Translations {
       pReason: string
       eReason: string
       scrapOk: string
+      scrapRefTitle: string
+      fSn: string
+      pConfirmCode: string
+      pConfirmSn: string
+      pConfirmTag: string
+      eConfirmCode: string
+      eConfirmSn: string
+      eConfirmTag: string
       deleteAction: string
       deleteConfirm: string
       deleteOk: string
@@ -982,6 +991,7 @@ export interface Translations {
       title: string
       desc: string
       searchPlaceholder: string
+      filterAll: string
       columns: string[]
       total: string
       empty: string
