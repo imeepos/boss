@@ -26,13 +26,16 @@ describe('AssetFormFields', () => {
     expect(html).toContain('*')
     expect(html).toContain('入库批次必填')
   })
-  it('型号选定后类型只读并回显 category', () => {
+  it('型号选定后类型禁用(由型号类别权威派生)并回显 category', () => {
     const html = render({ form: { batchId: 9, modelId: 7, type: '', tagId: 0, sn: '', mac: '', loid: '' }, typeValue: 'ONU', typeReadonly: true })
-    expect(html).toContain('readonly')
+    // 锚点=类型下拉按钮属性序(aria-label 后紧跟 disabled),避免误匹配输入框 CSS 类名。
+    expect(html).toContain('aria-label="类型" disabled')
     expect(html).toContain('ONU')
   })
-  it('未选型号时类型可编辑', () => {
-    expect(render({})).not.toContain('readonly')
+  it('未选型号时类型为白名单下拉可编辑(P4-T2)', () => {
+    const html = render({})
+    expect(html).not.toContain('aria-label="类型" disabled')
+    expect(html).toContain('aria-label="类型"')
   })
   it('非 IN_STOCK 批次控件禁用并展示业务流转提示', () => {
     const html = render({ batchDisabled: true, batchHint: '仅入库(IN_STOCK)状态可更换批次,其余状态请走业务流转' })

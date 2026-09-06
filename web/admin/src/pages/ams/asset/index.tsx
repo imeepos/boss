@@ -6,7 +6,7 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { statusTagLabel } from '../../../components/StatusTag'
-import { SCAN_STATUSES, type AssetRow } from '../types'
+import { ASSET_TYPES, SCAN_STATUSES, type AssetRow } from '../types'
 import { AssetTable } from './AssetTable'
 import { AssetTrailDrawer } from './TrailDrawer'
 import { CreateDrawer } from './CreateDrawer'
@@ -25,6 +25,7 @@ export default function AssetPage() {
   const [keyword, setKeyword] = useState('')
   const [q, setQ] = useState('')
   const [status, setStatus] = useState(ALL)
+  const [typeF, setTypeF] = useState(ALL)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [trail, setTrail] = useState<AssetRow | null>(null)
@@ -34,7 +35,7 @@ export default function AssetPage() {
   const [scrapRow, setScrapRow] = useState<AssetRow | null>(null)
   const [modelsOpen, setModelsOpen] = useState(false)
   const [batchesOpen, setBatchesOpen] = useState(false)
-  const { rows, total, error, busy, load, tagOf, delRow } = useAssetList({ page, pageSize, status, q })
+  const { rows, total, error, busy, load, tagOf, delRow } = useAssetList({ page, pageSize, status, typeF, q })
 
   // q 防抖:输入停顿后下发服务端,并回第一页(挂载时同值回写不触发请求)。
   useEffect(() => {
@@ -50,9 +51,13 @@ export default function AssetPage() {
   }, [busy, total, rows.length, page, pageSize])
 
   const pickStatus = (v: string) => { setStatus(v); setPage(1) }
+  const pickType = (v: string) => { setTypeF(v); setPage(1) }
   const pickSize = (n: number) => { setPageSize(n); setPage(1) }
   const statusOptions = [{ value: ALL, label: a.filterAll }].concat(
     SCAN_STATUSES.map((s) => ({ value: s, label: statusTagLabel('asset', s, t.common.statusTags) })))
+  // 类型筛选=P4-T2 白名单(权威码直出);服务端 type 精确匹配(ListAssetsPage)。
+  const typeOptions = [{ value: ALL, label: a.filterAll }].concat(
+    ASSET_TYPES.map((v) => ({ value: v, label: v })))
 
   return (
     <div>
@@ -62,6 +67,7 @@ export default function AssetPage() {
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={a.searchPlaceholder}
             value={keyword} onChange={(e) => setKeyword(e.target.value)} />
           <Dropdown value={status} ariaLabel={a.dStatus} onChange={pickStatus} options={statusOptions} />
+          <Dropdown value={typeF} ariaLabel={a.fType} onChange={pickType} options={typeOptions} />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setModelsOpen(true)}>{a.modelsManage}</button>

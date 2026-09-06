@@ -12,6 +12,7 @@ export interface AssetListParams {
   page: number
   pageSize: number
   status: string
+  typeF: string
   q: string
 }
 
@@ -32,6 +33,7 @@ export function useAssetList(params: AssetListParams) {
       offset: (params.page - 1) * params.pageSize,
       limit: params.pageSize,
       status: params.status || undefined,
+      type: params.typeF || undefined,
       q: params.q.trim() || undefined,
     }
     Promise.all([
@@ -48,7 +50,7 @@ export function useAssetList(params: AssetListParams) {
       .finally(() => setBusy(false))
     // loadFail 文案随语言包加载,非请求参数,不入依赖(挂载后恒稳定)。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.page, params.pageSize, params.status, params.q])
+  }, [params.page, params.pageSize, params.status, params.typeF, params.q])
 
   useEffect(() => { load() }, [load])
 

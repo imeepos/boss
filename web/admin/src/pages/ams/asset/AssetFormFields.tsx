@@ -1,7 +1,9 @@
 // 建档/编辑共用表单字段区:批次/型号/类型/标签四控件(纯展示,状态由抽屉持有)。
-// 下拉一律 Dropdown 组件;类型选中型号后只读;批次可由调用方禁用(非 IN_STOCK 态)。
+// 下拉一律 Dropdown 组件;类型=白名单下拉(P4-T2,选中型号后禁用由型号类别派生);
+// 批次可由调用方禁用(非 IN_STOCK 态)。
 import { Dropdown } from '../../../components/Dropdown'
 import { useT } from '../../../i18n'
+import { ASSET_TYPES } from '../types'
 import type { FormErr } from './logic'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)] disabled:cursor-not-allowed disabled:bg-[var(--shell-input-disabled-bg)] disabled:text-[var(--shell-input-placeholder)]'
@@ -48,8 +50,10 @@ export function AssetFormFields(p: AssetFormFieldsProps) {
           onChange={(v) => p.onModel(Number(v) || 0)} ariaLabel={a.fModel} placeholder={a.pModel} />
       </Field>
       <Field label={a.fType}>
-        <input className={input} value={p.typeValue} placeholder={a.pType} readOnly={p.typeReadonly}
-          onChange={(e) => p.onType(e.target.value)} />
+        <Dropdown value={p.typeValue} ariaLabel={a.fType} placeholder={a.pType}
+          disabled={p.typeReadonly}
+          options={ASSET_TYPES.map((v) => ({ value: v, label: v }))}
+          onChange={(v) => p.onType(v)} />
       </Field>
       <Field label={a.fIdentitySn}>
         <input className={input} value={p.form.sn} placeholder={a.pIdentitySn}

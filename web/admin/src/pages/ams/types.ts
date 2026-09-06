@@ -162,6 +162,9 @@ export interface InventoryRow {
 
 export const SCAN_STATUSES = ['IN_STOCK', 'DEPLOYED', 'MAINTENANCE', 'SCRAPPED'] as const
 export const STOCKTAKE_ACTIONS = ['CONFIRM', 'FIX', 'ESCALATE'] as const
+// 资产类型受控字典(P4-T2 白名单):权威码 ONU;'光猫'方言经迁移 000191 归一,
+// MI-ONU/SMOKE 系 e2e 残留不入门。与服务端 internal/domain/asset/type_whitelist.go 同步维护。
+export const ASSET_TYPES = ['ONU', 'ROUTER', 'OLT'] as const
 
 export interface ReplacementRow {
   id: number
