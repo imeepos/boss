@@ -15,11 +15,10 @@ import { DataTable } from './DataTable'
 import { EditDrawer } from './EditDrawer'
 import { ImportExport } from './ImportExport'
 import { MONTHLY_TABLES } from './types'
+import { monthlyTabClass } from './tabClass'
 import type { MonthlyRegion, MonthlyRow, MonthlySummary } from './types'
 
 const MONTH_RE = /^[0-9]{4}-(0[1-9]|1[0-2])$/
-const TAB_BTN = 'h-8 cursor-pointer rounded-t-sm border border-b-0 border-[var(--shell-side-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:text-[var(--shell-heading)]'
-const TAB_ACTIVE = 'border-b-0 border-[var(--shell-fab-bg)] bg-[var(--shell-fab-bg)] font-medium text-[var(--shell-fab-icon)] hover:text-[var(--shell-fab-icon)]'
 
 export default function MonthlyPage() {
   const t = useT()
@@ -89,7 +88,7 @@ export default function MonthlyPage() {
               key={x.key}
               type="button"
               aria-current={x.key === meta.key ? 'page' : undefined}
-              className={TAB_BTN + (x.key === meta.key ? ' ' + TAB_ACTIVE : '')}
+              className={monthlyTabClass(x.key === meta.key)}
               onClick={() => setTab(x.key)}
             >
               {m.tabs[i]}

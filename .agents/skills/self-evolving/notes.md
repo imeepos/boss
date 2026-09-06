@@ -1,5 +1,12 @@
 # Notes
 
+## 2026-09-06 Interim 累计口径修正(AAA-A4,feat/aaa-a4-interim)
+
+- 哪个坑浪费了最多时间?三次自伤全是红线 4 变体:重写 import 块漏抄既有 fmt 行(vet 红)、接口注释第二行漏 tab(gofmt 红)、修 tab 时又给原本有 tab 的第一行多加一个(二次红)。均在一次 gofmt/vet 验证轮内定位,约 3 分钟,零扩散。
+- skill 有没有提前警告?红线 4(对称性+改完立刻验证)与红线 1(编辑前先读)全程应验,按约定验证所以当场逮住;红线 11/14 的行数组+charCode 构造一次过,无炸程序。
+- 重来一次怎么做?imports/注释这类局部重写,new_string 逐行与旧块对齐:既有行只能原样保留或原样搬移,新增行先想好缩进层级;改完第一动作 gofmt -l + go vet(本轮顺序正确,未带病提交)。
+- 本轮正解沉淀:Interim 覆盖语义用单条 SQL CASE 取大 + RETURNING 已存值驱动告警,SQL 提常量供测试 QuoteMeta 精确匹配,实现与断言零漂移;pgxmock 层做『精确值断言』的标准姿势。
+
 ## 2026-09-06 采购单详情白屏(采购域,fix/purchase-detail-white-screen)
 
 - 哪个坑浪费了最多时间?线上部署验证:轮询用「与上次 hash 不同」当信号,撞上并行部署 hash 翻转(Dv1VgrCR 与 DCXW1E89 互相换位),10 秒假阳性,误在旧包上白验一轮还把旧包崩溃误判成「修复无效」。
@@ -1842,3 +1849,9 @@
 - 哪个坑浪费了最多时间? session_link_talk 的 talkTimeoutMs 给满 600000,顶满宿主 run_code 600s 程序上限被整体掐断:claimToken 拿不到,事后 collect 报凭证无法识别,一轮白等 10 分钟。
 - skill 有没有提前警告? 没有。宿主程序上限与 talk 等待窗口的关系是新坑,已回填 lessons。
 - 重来一次怎么做? ①执行会话在干活时,先用磁盘观察(git worktree list / 分支 log / git ls-remote)判进度,零成本且不打扰;②只在需要正式回复时才 talk,且等待窗口给 420-540s,给程序返回留余量;③双会话并行时合并顺序一开始就宣布(先合者保号),A2 自觉让号证明任务单里写明让号规则有效。
+
+## 2026-09-06 月度填报页签双主题适配修复(fix/monthly-tab-theme)
+
+- 哪个坑浪费了最多时间?静态审计(i18n 三语闭环+令牌 grep 全定义+无裸色值)全绿,差点直接报「已适配」——幸而按红线 6 先跑 CDP 计算样式断言,逮住激活页签亮色白字白底/暗色深底深字(TAB_BTN+TAB_ACTIVE 同元素 bg-*/text-* 重复,Tailwind 按产物顺序裁决,bg 与 text 各被对方赢走)。
+- skill 有没有提前警告?红线 6(无断言不得声称已适配)直接救命;knowledge「颜色问题同时检查全部主题」在案,但「冲突 utility 由 CSS 产物顺序裁决」机制是新坑,已回填 lessons/known-issues。
+- 重来一次怎么做?①页面适配任务的证伪步骤必须是 getComputedStyle 断言,grep 三连通过不等于视觉正确;②同一元素的状态类切换,互斥类组纯函数(monthlyTabClass)+互斥回归测试是标准姿势;③修完在 dev 双主题断言 bg/color 等于令牌字面值,再走部署 marker 轮询确认线上。

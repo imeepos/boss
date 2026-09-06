@@ -1,8 +1,12 @@
 package aaa
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,7 +14,7 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-// 在线会话存储形状回归(pgxmock):Start 幂等去重 / Interim 累加 / Stop 关闭 / 并发闸口。
+// 在线会话存储形状回归(pgxmock):Start 幂等去重 / Interim 覆盖累计 / Stop 关闭 / 并发闸口。
 
 func TestPGStore_StartSession(t *testing.T) {
 	t.Run("新建返回 created", func(t *testing.T) {
@@ -42,19 +46,76 @@ func TestPGStore_StartSession(t *testing.T) {
 	})
 }
 
+// A4 Interim 语义回归:覆盖式更新(RFC 2866 累计口径),QuoteMeta 精确匹配实现 SQL——
+// SET 为 CASE 取大形态即结构上不回退,回写值=上报累计值(非累加);回退护栏留 [aaa] ALERT;
+// 孤儿 Interim no-op。
 func TestPGStore_TouchSessionTraffic(t *testing.T) {
-	mock, _ := pgxmock.NewPool()
-	defer mock.Close()
-	// Interim 语义:在既有累计上做累加(SQL 侧 input_octets = input_octets + $3),仅 ONLINE 生效。
-	mock.ExpectExec(`input_octets = input_octets \+ \$3, output_octets = output_octets \+ \$4`).
-		WithArgs("LOID-1", "S-1", int64(100), int64(200), SessionOnline).
-		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-	if err := NewPGStore(mock).TouchSessionTraffic(context.Background(), "LOID-1", "S-1", 100, 200); err != nil {
-		t.Fatalf("TouchSessionTraffic: %v", err)
+	var logBuf bytes.Buffer
+	origOut := log.Writer()
+	log.SetOutput(&logBuf)
+	t.Cleanup(func() { log.SetOutput(origOut) })
+	mockExpect := func(mock pgxmock.PgxPoolIface, loid, session string, in, out, keptIn, keptOut int64) {
+		mock.ExpectQuery(regexp.QuoteMeta(interimTouchSQL)).
+			WithArgs(loid, session, in, out, SessionOnline).
+			WillReturnRows(mock.NewRows([]string{"input_octets", "output_octets"}).AddRow(keptIn, keptOut))
 	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatal(err)
-	}
+	t.Run("累计值覆盖更新", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		// 已存 100/200 < 上报 300/400:回写值=上报累计值 300/400(CASE 取大),而非 100+300 累加。
+		mockExpect(mock, "LOID-1", "S-1", 300, 400, 300, 400)
+		if err := NewPGStore(mock).TouchSessionTraffic(context.Background(), "LOID-1", "S-1", 300, 400); err != nil {
+			t.Fatalf("TouchSessionTraffic: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("等值与零值仅刷新时间不写流量", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		n := logBuf.Len()
+		mockExpect(mock, "LOID-1", "S-1", 100, 200, 100, 200) // 等值:kept==reported 无告警
+		if err := NewPGStore(mock).TouchSessionTraffic(context.Background(), "LOID-1", "S-1", 100, 200); err != nil {
+			t.Fatalf("TouchSessionTraffic: %v", err)
+		}
+		mockExpect(mock, "LOID-2", "S-2", 0, 0, 0, 0) // 零值:不把累计清成 0,仅刷 last_update
+		if err := NewPGStore(mock).TouchSessionTraffic(context.Background(), "LOID-2", "S-2", 0, 0); err != nil {
+			t.Fatalf("TouchSessionTraffic: %v", err)
+		}
+		if logBuf.Len() != n {
+			t.Fatalf("等值/零值不得触发回退告警: %s", logBuf.String()[n:])
+		}
+	})
+	t.Run("回退值触发护栏不回写且日志含[aaa]", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		n := logBuf.Len()
+		// 已存 300/400 > 上报 50/60:SQL CASE 取大保留已存值(结构上不回写),留 ALERT 供 grep。
+		mockExpect(mock, "LOID-1", "S-1", 50, 60, 300, 400)
+		if err := NewPGStore(mock).TouchSessionTraffic(context.Background(), "LOID-1", "S-1", 50, 60); err != nil {
+			t.Fatalf("护栏是保序而非报错: %v", err)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatal(err)
+		}
+		line := logBuf.String()[n:]
+		for _, want := range []string{"[aaa]", "ALERT", "loid=LOID-1", "session=S-1", "kept_in=300", "reported_in=50"} {
+			if !strings.Contains(line, want) {
+				t.Fatalf("回退告警缺 %q: %s", want, line)
+			}
+		}
+	})
+	t.Run("孤儿 Interim no-op", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery(regexp.QuoteMeta(interimTouchSQL)).
+			WithArgs("LOID-X", "S-404", int64(1), int64(2), SessionOnline).
+			WillReturnError(pgx.ErrNoRows)
+		if err := NewPGStore(mock).TouchSessionTraffic(context.Background(), "LOID-X", "S-404", 1, 2); err != nil {
+			t.Fatalf("孤儿 Interim 属协议语义不得报错: %v", err)
+		}
+	})
 }
 
 func TestPGStore_StopSession(t *testing.T) {
