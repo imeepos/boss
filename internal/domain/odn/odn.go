@@ -125,6 +125,15 @@ type ODNService interface {
 	SetSiteLifecycle(ctx context.Context, prvCode, cityPrefix string, siteNo int16, to string) error
 	SetDeviceLifecycle(ctx context.Context, id int64, to string) error
 
+	// 施工项目与竣工回填(P6,迁移 000199;线性 PENDING→BUILDING→ACCEPTED)。
+	CreateProject(ctx context.Context, p Construction) error
+	GetProject(ctx context.Context, id int64) (*Construction, error)
+	ListProjects(ctx context.Context, limit int) ([]Construction, error)
+	AddProjectItem(ctx context.Context, projectID int64, facilityCode string) error
+	StartProject(ctx context.Context, id int64) (int64, error)
+	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, error)
+	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
+
 	// 覆盖关联(P1,迁移 000197;odn↔业务首桥)。
 	UpsertCoverage(ctx context.Context, c Coverage) error
 	GetCoverageByAddress(ctx context.Context, addressID int64) (*Coverage, error)
