@@ -25,6 +25,29 @@ export interface PortRow {
   status: string // IDLE/RESERVED/USED/DISABLED
 }
 
+export interface PortPathOccupant {
+  kind: string // order
+  id: number
+  orderNo?: string
+}
+
+export interface PortPathHop {
+  seq: number
+  kind: string // PORT/SPLITTER/PON_PORT/OLT
+  code: string
+  name?: string
+  status: string // PON_PORT 无独立状态恒空
+  occupiedBy?: PortPathOccupant
+  missing: boolean
+  reason?: string // 断点原因码,仅 missing=true 时非空
+}
+
+export interface PortPath {
+  portCode: string
+  complete: boolean
+  hops: PortPathHop[]
+}
+
 export interface PortHistoryRow {
   id: number
   portId: number
