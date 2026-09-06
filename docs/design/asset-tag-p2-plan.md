@@ -36,5 +36,25 @@ openapi/生成器/fields.md/i18n 同步。明确不做:全局事件大屏、游�
 - 每任务=独立可 revert 提交;契约变更 fields.md 随提交同步;
 - 主会话负责按序合并(T1→T4→T3 部署后终验)、冲突消化协调、102 终验、会话归档。
 
-## 检索结论回填
-(R-A runner 镜像守护 / R-C 事件消费面:子代理回传后补充本节)
+## 检索结论回填与协作冲突处置
+
+### R-A runner 镜像守护(已补发会话 B)
+事故机理坐实:job 镜像本地存在时零 registry 交互;被 prune 后拉取读 act_runner 进程用户的
+~/.docker/config.json(宿主 docker login 不自动传递),401 秒取消且默认日志级别无错误行。
+社区最稳组合=「本地标签+定时保活」:label 改指无前缀本地镜像,cron 定期 pull+tag 保活,
+runner 用户写 auths 兜底;prune 用 --filter label!=ci-keep 防误伤。告警走 dead-man-switch
+(部署成功写 last_success,超 26h 告警),不对错误计数。分工:仓库内文件由会话 B 提交;
+runner label 与宿主 cron 属宿主操作,由会话 B 产出脚本+操作清单,Lead 在 102 执行。
+
+### R-C 事件消费面(已补发会话 C,后因 P2-W1 冲突转待命)
+端点:按聚合 id 倒序+limit(上限 100)即够,append-only 且 id 单调,首版不需要游标;
+action 白名单多值过滤。UI:一行一事件(时间/操作人/徽标/对象),changed 只渲染变化键,
+不 dump 全量 JSON;危险确认三要素=影响面+不可逆说明+红色确认键默认禁用且原因必填
+(报废要求输入资产编码)。明确不做:全局大屏/全文搜索/SSE 推送/导出。
+
+### 协作冲突处置(2026-09-06 09:55)
+发现并行波次 P2-W1(资产台账 CRUD 补全:后端 CRUD+前端操作列含报废/删除+verify-asset-crud-e2e)
+正在同一批文件施工(loop-state.json 已由该波次接管,状态 doing)。处置:本波会话 C(事件消费面)
+转待命,待 P2-W1 合入 main 后以增量方式重派(复用其操作列/表单成果,只做 events 查询端点+
+事件抽屉);会话 A(端到端联动实测)与 B(CI 守护)文件面无冲突,继续并行。
+合并顺序:B、A 先行合入;P2-W1 合入后再重派 C。
