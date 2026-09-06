@@ -1805,3 +1805,8 @@
 - 哪个坑浪费了最多时间?两处编译期反复:①JS 拼的 JSON 体用单引号落进 Go 源变成 rune 字面量(illegal rune literal 六处连炸)——正解=Go 反引号原始字符串;②pgxmock 期望正则括号当分组符,SUM(x) 匹配不上要写 SUM[(]x[)]。加上 t0 与既有回归测试 helper 重名、%w 包装错误用 == 断言失败,共四轮返工。
 - skill 有没有提前警告?红线 11 的 rune 字面量变体预警的是宿主 parse error,本次是生成 Go 源非法,新形态已回填红线 11;红线 10/13/14 全程规避(worktree 显式 workdir、--no-checkout 两段式后台 reset、长测试后台跑)。
 - 重来一次怎么做?①写 Go 生成类内容前先定字符策略表(反引号=BT、JSON 体=Go raw string、正则特殊符=字符类),预检再发车;②新增测试文件先 grep 包内既有 helper 名防重名;③域层单测断言一律 errors.Is,不给 %w 留 == 雷;④验收期 go test ./internal/... 与 make check 并行后台跑,等待窗口核验生成目录,零空转。
+
+## 2026-09-06 P4-T1 MAC 规范化存储+表达式唯一约束(feat/p4-a,迁移 000190)
+- 哪个坑浪费了最多时间?gofmt 1.19+ 把 doc comment 里的引号对('' 两连单引号)智能转换成右弯引号,注释里的 SQL 字面量展示被毁且是 make check lint 阶段(gofmt -l)才暴露;另 ssh 'bash -s' heredoc 里不重定向的 docker exec -i 抢占外层 stdin,186 个迁移循环脚本被静默截断(无报错,只有 NOTICE),排查一轮才定位是 stdin 抢占不是 psql 失败。
+- skill 有没有提前警告?红线 1(编辑前 read)、9a(heredoc 防叠引号)、10(worktree 路径核对)、11(程序体禁反引号/美元符花括号,全程行数组+JS 单引号串裸双引号,零触发)、13(长门禁后台跑)、14(必填参数自检,仍手滑一次 description 键名多引号,即红线 14 登记的变体)全部命中预警。新坑(gofmt doc comment 智能引号、GET STACKED DIAGNOSTICS 项名是 CONSTRAINT_NAME 不是 PG_EXCEPTION_CONSTRAINT_NAME)已回填 known-issues.md。
+- 重来一次怎么做?①注释里写 SQL 字面量先想 gofmt doc comment 规范化,引号对改措辞绕开;②ssh 批量跑 docker exec:单命令用无 -i 的 docker exec,stdin 重定向才用 -i 且必须显式 < file;③PG PL/pgSQL 捕获唯一冲突取约束名用 GET STACKED DIAGNOSTICS var = CONSTRAINT_NAME;④e2e 脚本里共享断言变量(如 LAST_BODY)的赋值点要全链路盘点,直接 curl 绕过 api() 包装函数时变量不会自动更新。

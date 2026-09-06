@@ -498,3 +498,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 症状 → POST /addresses 的 label 含 `-` 一律 42200,如 acc_1788661451-1-23918;纯数字/字母再长都过。
 原因 → admin 侧 label 校验字符集不含连字符(契约未写进 fields/terms,实体在 httpx.RequireString 之外另有校验)。
 修法 → 造数后缀用纯数字拼接(date +%s+$RANDOM 形态);其他 code 类字段(P-ACC- 等)不受影响。
+
+## gofmt 1.19+ 智能转换 doc comment 中的引号对(毁 SQL 字面量展示)
+
+症状 → make check 的 lint 阶段(gofmt -l)持续报某 .go 文件;gofmt -d 显示注释里的两个连续单引号(如 SQL 的正则替换参数)被改成右弯引号,注释内容失真。仅命中紧跟声明的 doc comment,普通行注释不受影响。
+原因 → go 1.19 起 gofmt 按 doc comment 规范化排版,直引号对被智能引号化。
+修法 → 注释措辞避开引号对(如省略替换函数的空串实参,只写『去分隔符后取 upper』),或把字面量挪到普通注释/代码常量;已发生时改写注释文本再 gofmt -w,不要试图恢复原字符(下次还会被转)。
