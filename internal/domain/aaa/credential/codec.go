@@ -79,6 +79,11 @@ func (c *Codec) decode(stored string) (string, error) {
 	return string(plain), nil
 }
 
+// Decode 还原落库凭据明文(A5:NAS 共享密钥等运行期需明文的协议场景;损坏/异代际=ErrMalformed)。
+func (c *Codec) Decode(stored string) (string, error) {
+	return c.decode(stored)
+}
+
 // Equal PAP 校验:常数时间比对落库口令与请求口令。
 func (c *Codec) Equal(stored, password string) bool {
 	plain, err := c.decode(stored)
@@ -118,4 +123,19 @@ func Random(n int) (string, error) {
 		out[i] = randomAlphabet[int(b)%len(randomAlphabet)]
 	}
 	return string(out), nil
+}
+
+// NewResolved 按配置装配编解码器:credKey(BOSS_AAA_CRED_KEY/FILE)显式优先;
+// 空则从 NAS Secret 派生(开发兜底)。derived=true 表示走了派生路径,调用方必须
+// 输出 [aaa] CRED KEY ALERT 留痕(生产必须显式配置独立密钥)。派生式与既有
+// cmd/aaa 口径逐字一致,否则历史密文不可解。
+func NewResolved(credKey, secret string) (*Codec, bool, error) {
+	material := credKey
+	derived := false
+	if material == "" {
+		material = "boss-aaa-cred-key|" + secret
+		derived = true
+	}
+	c, err := New(material)
+	return c, derived, err
 }

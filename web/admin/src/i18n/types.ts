@@ -170,7 +170,7 @@ export interface Translations {
       statTitle: string
       distTitle: string
       todoTitle: string
-      trendTitle: string
+      trendTitles: { week: string; month: string; quarter: string; year: string; all: string }
       trendUnit: string
       trendTooltip: string
       trendStatusToggle: string
@@ -189,6 +189,15 @@ export interface Translations {
       todoGo: string
       loadFail: string
       empty: string
+      refresh: string
+      refreshing: string
+      updatedAt: string
+      retry: string
+      copyError: string
+      statHint: string
+      distRowHint: string
+      percentHint: string
+      todoEmpty: string
     }
     placeholder: {
       building: string
@@ -284,7 +293,19 @@ export interface Translations {
     odn: {
       title: string
       subtitle: string
-      tabs: { grids: string; facilities: string; sites: string; devices: string }
+      tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string }
+      addressId: string
+      addressName: string
+      covFacility: string
+      covDevice: string
+      covStatus: string
+      covNote: string
+      updatedAt: string
+      resolveBtn: string
+      distance: string
+      covServed: string
+      covPending: string
+      covUnserved: string
       add: string
       cancel: string
       save: string
@@ -2327,13 +2348,28 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      // 列表筛选(客户端过滤,后端 /reports 无服务端筛选)
+      searchPlaceholder: string
+      filterAll: string
+      filterPeriod: string
+      // 统计卡
+      statTotal: string
+      statMonthly: string
+      statQuarterly: string
+      statLatest: string
+      // 推送等待态
+      sending: string
+      // 特殊周期流水(非四周期,人类可读名)
+      periodRecon: string
+      periodOssAudit: string
       // 四周期对比柱状(commit 7)
       compareTitle: string
-      compareDesc: string
+      compareCurrent: string
       compareLegend: string[]
       // 趋势曲线(commit B6)
       trendTitle: string
       trendDesc: string
+      trendPeriodLabel: string
       trendEmpty: string
     }
     serviceMetricsPage: {

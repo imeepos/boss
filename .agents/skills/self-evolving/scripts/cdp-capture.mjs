@@ -52,13 +52,15 @@ async function launchChrome(width, height, userDataDir, noProxy) {
 
 function connectCdp(wsDebuggerUrl) {
   let seq = 0
-  const pending = new Map()
+  const pending = new Map() // id -> { res, rej }
   let onEvent = () => {}
   const ws = new WebSocket(wsDebuggerUrl)
+  // chrome 中途崩溃时必须拒绝在途请求,否则 await cdp.send 永挂(2026-09-07 W2 实测:chrome 退出后 node 静默挂死)。
+  const failPending = (why) => { for (const [, p] of pending) p.rej(new Error(why)); pending.clear() }
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data)
     if (msg.id && pending.has(msg.id)) {
-      pending.get(msg.id)(msg)
+      pending.get(msg.id).res(msg)
       pending.delete(msg.id)
     } else if (msg.method) onEvent(msg)
   }
@@ -66,12 +68,22 @@ function connectCdp(wsDebuggerUrl) {
   const ready = new Promise((res, rej) => {
     ws.onopen = () => res()
     ws.onerror = (e) => rej(new Error('cdp ws error: ' + (e?.message ?? 'unknown')))
-    ws.onclose = (e) => rej(new Error(`cdp ws closed code=${e?.code}`))
+    ws.onclose = (e) => {
+      const why = 'cdp ws closed code=' + (e?.code ?? '?')
+      failPending(why)
+      rej(new Error(why))
+    }
   })
   const send = (method, params = {}) =>
-    new Promise((res) => {
+    new Promise((res, rej) => {
       const id = ++seq
-      pending.set(id, res)
+      // eval 触发 location.href 会撕掉执行上下文,响应可能永不回来(2026-09-07 W2 实测竞态挂死):
+      // 30s 超时兜底,失败方干净退出可重试,不再无限等待。
+      const timer = setTimeout(() => { pending.delete(id); rej(new Error('cdp send timeout: ' + method)) }, 30000)
+      pending.set(id, {
+        res: (v) => { clearTimeout(timer); res(v) },
+        rej: (e2) => { clearTimeout(timer); rej(e2) },
+      })
       ws.send(JSON.stringify({ id, method, params }))
     })
   return { ready, send, close: () => ws.close(), setOnEvent: (fn) => (onEvent = fn) }

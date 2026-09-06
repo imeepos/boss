@@ -36,13 +36,14 @@ var deviceCode = regexp.MustCompile(`^(SNW|OLT|ODF|OCC|ODB|SDB|PRT|TBP)([0-9]{3}
 
 // Site 局点(NodeCode = CityPrefix + 3 位序号)。
 type Site struct {
-	PrvCode    string  `json:"prvCode"`
-	CityPrefix string  `json:"cityPrefix"`
-	SiteNo     int16   `json:"siteNo"` // 001~999
-	Name       string  `json:"name"`
-	Lat        float64 `json:"lat"`
-	Lng        float64 `json:"lng"`
-	Status     string  `json:"status"` // ACTIVE/RETIRED
+	PrvCode         string  `json:"prvCode"`
+	CityPrefix      string  `json:"cityPrefix"`
+	SiteNo          int16   `json:"siteNo"` // 001~999
+	Name            string  `json:"name"`
+	Lat             float64 `json:"lat"`
+	Lng             float64 `json:"lng"`
+	Status          string  `json:"status"`          // ACTIVE/RETIRED
+	LifecycleStatus string  `json:"lifecycleStatus"` // PLANNED/IN_BUILD/IN_SERVICE/RETIRED(000198)
 }
 
 // NodeCode 局点编码,如 MNL001。
@@ -52,17 +53,18 @@ func (s Site) NodeCode() string {
 
 // Device 核心链路设备。
 type Device struct {
-	ID         int64    `json:"id"`
-	Code       string   `json:"code"` // OLT001/ODB001-2
-	Kind       string   `json:"kind"`
-	PrvCode    string   `json:"prvCode"`
-	CityPrefix string   `json:"cityPrefix"`
-	SiteNo     int16    `json:"siteNo"`   // 0=市域设备不挂局点
-	ParentID   int64    `json:"parentId"` // 0=顶层
-	Name       string   `json:"name"`
-	Lat        *float64 `json:"lat"` // 可空;无坐标设备不上地图点位
-	Lng        *float64 `json:"lng"`
-	Status     string   `json:"status"` // IN_USE/RETIRED
+	ID              int64    `json:"id"`
+	Code            string   `json:"code"` // OLT001/ODB001-2
+	Kind            string   `json:"kind"`
+	PrvCode         string   `json:"prvCode"`
+	CityPrefix      string   `json:"cityPrefix"`
+	SiteNo          int16    `json:"siteNo"`   // 0=市域设备不挂局点
+	ParentID        int64    `json:"parentId"` // 0=顶层
+	Name            string   `json:"name"`
+	Lat             *float64 `json:"lat"` // 可空;无坐标设备不上地图点位
+	Lng             *float64 `json:"lng"`
+	Status          string   `json:"status"`          // IN_USE/RETIRED
+	LifecycleStatus string   `json:"lifecycleStatus"` // PLANNED/IN_BUILD/IN_SERVICE/RETIRED(000198)
 }
 
 // ValidateDeviceCode 校验设备码格式并解析 kind(规范 5.1 正则 + 3.1 禁 -1)。

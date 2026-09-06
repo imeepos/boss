@@ -2,6 +2,8 @@ package radius
 
 import (
 	"context"
+	"log"
+	"os"
 
 	"layeh.com/radius"
 )
@@ -12,14 +14,22 @@ type Server struct {
 	done chan struct{}
 }
 
-// New 创建 RADIUS 服务;addr 形如 ":1812"(认证)或 ":1813"(计费)。
+// New 创建 RADIUS 服务;addr 形如 ":1812"(认证)或 ":1813"(计费);
+// secret 为全局共享密钥(兼容单 NAS 部署与测试;A5 生产路径走 NewWithSource)。
 func New(addr string, secret []byte, h radius.Handler) *Server {
+	return NewWithSource(addr, radius.StaticSecretSource(secret), h)
+}
+
+// NewWithSource 以自定义 SecretSource 创建(A5:per-NAS 注册表密钥)。
+// 库层丢包(密钥不符/解析失败)统一经 ErrorLog 带 [aaa] 前缀输出,失败路径可 grep。
+func NewWithSource(addr string, src radius.SecretSource, h radius.Handler) *Server {
 	return &Server{
 		srv: &radius.PacketServer{
 			Addr:         addr,
 			Network:      "udp",
 			Handler:      h,
-			SecretSource: radius.StaticSecretSource(secret),
+			SecretSource: src,
+			ErrorLog:     log.New(os.Stderr, "[aaa] ", log.LstdFlags),
 		},
 		done: make(chan struct{}),
 	}

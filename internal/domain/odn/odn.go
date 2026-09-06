@@ -80,15 +80,16 @@ type GridUsage struct {
 
 // Facility 基础设施(电杆/人井/铁塔/接头盒/终端盒)。
 type Facility struct {
-	Code       string  `json:"code"`       // P01001/MH01001/TW00001/CLS00001/TBX00001
-	Kind       string  `json:"kind"`       // P/MH/TW/CLS/TBX
-	PrvCode    string  `json:"prvCode"`    // 所属网格城市(仅 P/MH)
-	CityPrefix string  `json:"cityPrefix"` // 仅 P/MH
-	GridCode   int16   `json:"gridCode"`   // 仅 P/MH
-	Name       string  `json:"name"`
-	Lat        float64 `json:"lat"`    // 纬度
-	Lng        float64 `json:"lng"`    // 经度
-	Status     string  `json:"status"` // IN_USE/RETIRED
+	Code            string  `json:"code"`       // P01001/MH01001/TW00001/CLS00001/TBX00001
+	Kind            string  `json:"kind"`       // P/MH/TW/CLS/TBX
+	PrvCode         string  `json:"prvCode"`    // 所属网格城市(仅 P/MH)
+	CityPrefix      string  `json:"cityPrefix"` // 仅 P/MH
+	GridCode        int16   `json:"gridCode"`   // 仅 P/MH
+	Name            string  `json:"name"`
+	Lat             float64 `json:"lat"`             // 纬度
+	Lng             float64 `json:"lng"`             // 经度
+	Status          string  `json:"status"`          // IN_USE/RETIRED
+	LifecycleStatus string  `json:"lifecycleStatus"` // PLANNED/IN_BUILD/IN_SERVICE/RETIRED(000198)
 }
 
 // ODNService ODN 无源物理层域服务口。
@@ -118,6 +119,17 @@ type ODNService interface {
 	CreateDevice(ctx context.Context, d Device) error
 	ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error)
 	RetireDevice(ctx context.Context, id int64) error
+
+	// 生命周期状态机(P6,迁移 000198;PLANNED→IN_BUILD→IN_SERVICE→RETIRED,RETIRED 终态)。
+	SetFacilityLifecycle(ctx context.Context, code, to string) error
+	SetSiteLifecycle(ctx context.Context, prvCode, cityPrefix string, siteNo int16, to string) error
+	SetDeviceLifecycle(ctx context.Context, id int64, to string) error
+
+	// 覆盖关联(P1,迁移 000197;odn↔业务首桥)。
+	UpsertCoverage(ctx context.Context, c Coverage) error
+	GetCoverageByAddress(ctx context.Context, addressID int64) (*Coverage, error)
+	ListCoverage(ctx context.Context, limit int) ([]Coverage, error)
+	ResolveLatLng(ctx context.Context, lat, lng float64) (*CoverageResolved, error)
 }
 
 // GridRef 网格定位(城市 + 网格码)。

@@ -2,6 +2,18 @@
 
 <!-- 格式：症状 → 原因 → 修法。排查超过 5 分钟的 bug 才值得记。 -->
 
+## 新 worktree cwd 下 node/vite 静默挂起(零输出、不绑端口)
+
+症状 → 在新建 worktree 的 web/admin 目录里跑 `node --version` 或 `vite dev/preview` 进程活着但永不输出、永不 LISTEN(同一命令在主树 cwd 秒过);后台 job 显示 running 但 output 恒空。
+原因 → /Users/imeepos/.vite-plus/bin/node 垫层按 cwd 解析项目上下文,新 worktree 缺少主树的本地状态时初始化卡死(2026-09-07 报告中心轮,ps 可见进程 + fd 连着 localhost:7890 代理)。
+修法 → 需要长驻服务时改从**主树 cwd** 启动:`cd 主树 && node /tmp/静态服务器.mjs <worktree>/dist <port>`(SPA 需 index.html 回退);或前台短跑验证。pnpm install/test/build 在 worktree cwd 下正常,不受影响。
+
+## cdp-capture/cdp-admin-capture 偶发整命令零输出挂起
+
+症状 → 之前能跑通的截图命令突然零输出返回,bash 工具不报错也不出文件; ps 亦无残存进程。
+原因 → 疑似 Chrome 启动竞态/环境瞬时不可用(2026-09-07 两次,间隔重试即恢复)。
+修法 → 先 `pkill -f 'cdp-capture.mjs'; pkill -f 'type=Headless'` 清场,原样重试;连续失败再降级为无 --eval 的最小截图定位。
+
 ## 新 worktree pnpm install 报 EACCES: permission denied, mkdir '/Volumes/sker'
 
 症状 → worktree 内 `pnpm install --frozen-lockfile` 全部依赖解析完成后死于 `EACCES mkdir '/Volumes/sker'`(主仓库目录能装)。
@@ -516,3 +528,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 原因:TAB_BTN(常挂)与 TAB_ACTIVE(激活才拼)都定义 bg-[var(...)]/text-[var(...)],Tailwind 对同名 utility 不看 className 书写顺序,按 CSS 产物顺序裁决——bg 被 TAB_BTN 赢、text 被 TAB_ACTIVE 赢,两主题各炸一半。
 - 修法:tabClass.ts 导出 monthlyTabClass(active),TAB_BASE 只留无冲突属性,bg-*/text-*/border-[var( 全部进互斥的 TAB_IDLE/TAB_ACTIVE;vitest 断言两组状态类零重叠(commit 2edcd51d)。
 - 排查线索:激活态样式异常先 dump className+getComputedStyle 看 bg 与 color 各来自哪个类;grep 页面常量串里同一 utility 前缀出现两次即嫌疑。
+
+## 2026-09-07 cdp-capture 首个 eval 内含 location.href 跳转 → evaluate 响应永挂,脚本静默卡死
+- 症状:cdp-admin-capture 采集 W1 正常、W2 起零输出不退出;node 进程在、Chrome 进程消失;无任何报错。
+- 原因:第一个 --eval 是「localStorage seed + location.href=目标页」;Runtime.evaluate(awaitPromise:true) 发出后导航撕掉执行上下文,CDP 对该调用的响应永不返回,cdp.send 无超时 → await 永挂(触发与否是竞态,时灵时不灵)。
+- 修法(已落 scripts/cdp-capture.mjs):① ws.onclose 时拒绝全部在途 pending;② send 加 30s 超时,超时干净报错退出可重试。
+- 排查线索:采集脚本卡住先 ps 看 Chrome 是否还在;不在即此类挂死。治本建议:wrapper 把 seed 与跳转拆开,跳转用 CDP Page.navigate 而非页内 location.href。

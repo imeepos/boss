@@ -76,9 +76,9 @@ func (s *PGStore) GetFacility(ctx context.Context, code string) (*Facility, erro
 	var f Facility
 	var lat, lng *float64
 	err := s.db.QueryRow(ctx, `SELECT code, kind, prv_code, city_prefix,
-			COALESCE(grid_code,0), COALESCE(name,''), lat, lng, status
+			COALESCE(grid_code,0), COALESCE(name,''), lat, lng, status, lifecycle_status
 		FROM odn_facility WHERE code=$1`, code).
-		Scan(&f.Code, &f.Kind, &f.PrvCode, &f.CityPrefix, &f.GridCode, &f.Name, &lat, &lng, &f.Status)
+		Scan(&f.Code, &f.Kind, &f.PrvCode, &f.CityPrefix, &f.GridCode, &f.Name, &lat, &lng, &f.Status, &f.LifecycleStatus)
 	if err != nil {
 		return nil, mapErr(err, ErrNotFound)
 	}
@@ -94,7 +94,7 @@ func (s *PGStore) GetFacility(ctx context.Context, code string) (*Facility, erro
 // ListFacilities 设施列表(kind 可空=全部;GridRef 可空=不限网格)。
 func (s *PGStore) ListFacilities(ctx context.Context, kind string, gridFilter GridRef) ([]Facility, error) {
 	sql := `SELECT code, kind, prv_code, city_prefix, COALESCE(grid_code,0),
-			COALESCE(name,''), COALESCE(lat,0), COALESCE(lng,0), status
+			COALESCE(name,''), COALESCE(lat,0), COALESCE(lng,0), status, lifecycle_status
 		FROM odn_facility WHERE ($1='' OR kind=$1) AND ($2='' OR (prv_code=$2 AND city_prefix=$3 AND grid_code=$4))
 		ORDER BY code LIMIT 500`
 	if gridFilter.PrvCode == "" {
@@ -109,7 +109,7 @@ func (s *PGStore) ListFacilities(ctx context.Context, kind string, gridFilter Gr
 	for rows.Next() {
 		var f Facility
 		if err := rows.Scan(&f.Code, &f.Kind, &f.PrvCode, &f.CityPrefix,
-			&f.GridCode, &f.Name, &f.Lat, &f.Lng, &f.Status); err != nil {
+			&f.GridCode, &f.Name, &f.Lat, &f.Lng, &f.Status, &f.LifecycleStatus); err != nil {
 			return nil, fmt.Errorf("odn: scan facility: %w", err)
 		}
 		out = append(out, f)
