@@ -1849,3 +1849,9 @@
 - 哪个坑浪费了最多时间? session_link_talk 的 talkTimeoutMs 给满 600000,顶满宿主 run_code 600s 程序上限被整体掐断:claimToken 拿不到,事后 collect 报凭证无法识别,一轮白等 10 分钟。
 - skill 有没有提前警告? 没有。宿主程序上限与 talk 等待窗口的关系是新坑,已回填 lessons。
 - 重来一次怎么做? ①执行会话在干活时,先用磁盘观察(git worktree list / 分支 log / git ls-remote)判进度,零成本且不打扰;②只在需要正式回复时才 talk,且等待窗口给 420-540s,给程序返回留余量;③双会话并行时合并顺序一开始就宣布(先合者保号),A2 自觉让号证明任务单里写明让号规则有效。
+
+## 2026-09-06 月度填报页签双主题适配修复(fix/monthly-tab-theme)
+
+- 哪个坑浪费了最多时间?静态审计(i18n 三语闭环+令牌 grep 全定义+无裸色值)全绿,差点直接报「已适配」——幸而按红线 6 先跑 CDP 计算样式断言,逮住激活页签亮色白字白底/暗色深底深字(TAB_BTN+TAB_ACTIVE 同元素 bg-*/text-* 重复,Tailwind 按产物顺序裁决,bg 与 text 各被对方赢走)。
+- skill 有没有提前警告?红线 6(无断言不得声称已适配)直接救命;knowledge「颜色问题同时检查全部主题」在案,但「冲突 utility 由 CSS 产物顺序裁决」机制是新坑,已回填 lessons/known-issues。
+- 重来一次怎么做?①页面适配任务的证伪步骤必须是 getComputedStyle 断言,grep 三连通过不等于视觉正确;②同一元素的状态类切换,互斥类组纯函数(monthlyTabClass)+互斥回归测试是标准姿势;③修完在 dev 双主题断言 bg/color 等于令牌字面值,再走部署 marker 轮询确认线上。

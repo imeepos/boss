@@ -510,3 +510,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 原因:GET /procurement/orders/{id} 响应 data 为 {item: 订单},OrderDetailDrawer 把信封整体 setDetail 后 undefined.totalAmount.toFixed 抛错;应用无 ErrorBoundary,React 树整树卸载。OrderEditDrawer 同源缺陷(回填全空但不崩)。列表接口 data 直接是 {items},列表正常渲染掩盖了单条信封差异。
 - 修法:purchaseLogic.unwrapOrderDetail 统一解包(兼容裸对象/空值归 null)+ fmtAmount 兜底空金额;回归用例进 purchaseLogic.test.tsx(commit 0adeb60e)。
 - 排查线索:cdp-admin-capture --logs 一次定位 TypeError 栈;curl 单条接口看 data 第一层 key(item/items/裸对象)。其余域单资源 GET(suppliers/{id} 等)同款风险,新增页面按 unwrap helper 消费。
+
+## 2026-09-06 页签激活态 bg-*/text-* 工具类冲突 → 双主题激活页签不可读
+- 症状:/intel/monthly 三页签激活态,亮色主题白字白底、暗色主题深底深字(getComputedStyle: bg=--shell-input-bg 而 color=--shell-fab-icon);静态 grep(i18n 闭环/令牌定义/裸色值)全绿,极易误判「已适配」。
+- 原因:TAB_BTN(常挂)与 TAB_ACTIVE(激活才拼)都定义 bg-[var(...)]/text-[var(...)],Tailwind 对同名 utility 不看 className 书写顺序,按 CSS 产物顺序裁决——bg 被 TAB_BTN 赢、text 被 TAB_ACTIVE 赢,两主题各炸一半。
+- 修法:tabClass.ts 导出 monthlyTabClass(active),TAB_BASE 只留无冲突属性,bg-*/text-*/border-[var( 全部进互斥的 TAB_IDLE/TAB_ACTIVE;vitest 断言两组状态类零重叠(commit 2edcd51d)。
+- 排查线索:激活态样式异常先 dump className+getComputedStyle 看 bg 与 color 各来自哪个类;grep 页面常量串里同一 utility 前缀出现两次即嫌疑。
