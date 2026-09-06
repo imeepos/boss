@@ -666,3 +666,9 @@ SQL
 - pgxmock 的 ExpectQuery/ExpectExec 是子串正则匹配,锚点选 SQL 中唯一且不含 \\( \\$ 特殊字符的短片段(如 bound_asset_id, 0. FROM tags WHERE id,用点号通配括号),从根上免疫 \\$1/\\( 转义地狱;
 - 若必须含 $1,Go 源文件里要写成 \\$1(单反斜杠),raw string 正则才能按字面匹配;括号要 \\\\(——两者转义级数不同,极易错,不如绕开;
 - 实证:P1 轮 pg_link/pg_tag_events/pg_model 三个测试文件全部改用短锚点后一次通过。
+
+## 合成事件驱动自研 Dropdown:选中在 onMouseDown,触发器在 onClick;断言要限定作用域(2026-09-07 dashboard 轮)
+- Dropdown 触发器 onClick 开合,选项 onMouseDown 选中(setOpen(false) 也在 mousedown)——自动化 .click() 只能开合,选选项必须 o.dispatchEvent(new MouseEvent("mousedown",{bubbles:true}))。
+- 页面常有多个 listbox 触发器(顶栏服务端切换器等),querySelector("[aria-haspopup=listbox]") 全局首个不一定是目标;先定位目标区块(如含标题文本的 section)再在其中找触发器。
+- 401 假象排查:注入 token 时若把 JWT 连引号存入(双重 JSON.stringify),请求头变成 Bearer "eyJ..." 全线 401;用 CDP Network.requestWillBeSent 看实际 Authorization 头,一击定位。
+- 长时序 UI 断言(loading→data)不要单点采样:Node 侧 70ms 轮询取快照,并同 expr 同时采 busy/disabled 等关联状态,避免两次 evaluate 之间状态已翻页。
