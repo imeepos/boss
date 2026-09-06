@@ -205,7 +205,7 @@ func TestPGStore_AppendAuthLog(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO auth_logs`).
-		WithArgs("LOID-88A1", "SUCCESS").
+		WithArgs("LOID-88A1", "SUCCESS", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
 
 	s := NewPGStore(mock)
@@ -228,10 +228,10 @@ func TestPGStore_ListAuthLogs(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, loid, result, created_at FROM auth_logs`).
+	mock.ExpectQuery(`SELECT id, loid, result, fail_reason, created_at FROM auth_logs`).
 		WithArgs("LOID-88A1").
-		WillReturnRows(mock.NewRows([]string{"id", "loid", "result", "created_at"}).
-			AddRow(int64(1), "LOID-88A1", "SUCCESS", ts))
+		WillReturnRows(mock.NewRows([]string{"id", "loid", "result", "fail_reason", "created_at"}).
+			AddRow(int64(1), "LOID-88A1", "SUCCESS", "", ts))
 
 	s := NewPGStore(mock)
 	got, err := s.ListAuthLogs(context.Background(), "LOID-88A1")

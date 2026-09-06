@@ -202,7 +202,7 @@ func (s *PGStore) ListCdrs(ctx context.Context, loid string) ([]CdrRecord, error
 func (s *PGStore) AppendAuthLog(ctx context.Context, l AuthLog) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO auth_logs(loid, result) VALUES($1,$2) RETURNING id`, l.Loid, l.Result).Scan(&id)
+		`INSERT INTO auth_logs(loid, result, fail_reason) VALUES($1,$2,$3) RETURNING id`, l.Loid, l.Result, l.FailReason).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("aaa: append auth log: %w", err)
 	}
@@ -212,7 +212,7 @@ func (s *PGStore) AppendAuthLog(ctx context.Context, l AuthLog) (int64, error) {
 // ListAuthLogs 列出认证日志;loid 为空返回全部,否则按账号过滤。
 func (s *PGStore) ListAuthLogs(ctx context.Context, loid string) ([]AuthLog, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, loid, result, created_at FROM auth_logs WHERE ($1 = '' OR loid = $1) ORDER BY created_at, id`, loid)
+		`SELECT id, loid, result, fail_reason, created_at FROM auth_logs WHERE ($1 = '' OR loid = $1) ORDER BY created_at, id`, loid)
 	if err != nil {
 		return nil, fmt.Errorf("aaa: list auth logs: %w", err)
 	}
@@ -220,7 +220,7 @@ func (s *PGStore) ListAuthLogs(ctx context.Context, loid string) ([]AuthLog, err
 	out := make([]AuthLog, 0)
 	for rows.Next() {
 		var l AuthLog
-		if err := rows.Scan(&l.ID, &l.Loid, &l.Result, &l.CreatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.Loid, &l.Result, &l.FailReason, &l.CreatedAt); err != nil {
 			return nil, fmt.Errorf("aaa: scan auth log: %w", err)
 		}
 		out = append(out, l)
