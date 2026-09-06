@@ -1,5 +1,12 @@
 # Notes
 
+## 2026-09-07 报告中心(intel/report)打磨轮
+
+- 最耗时坑:vite dev/preview 在新 worktree cwd 静默挂起(零输出不绑端口),烧了约 15 分钟才绕道主树 cwd 起静态服务器;skill 无预警,已记 known-issues。
+- skill 有没有预警:红线 4(edit 不对称)与红线 14(缺 new_string)都预警了但仍然犯——两次都发生在赶进度连发编辑的节奏里;必填键默念应在起草时执行,不是发车时。
+- 重来一次:开工先批量 read 全部待改 worktree 文件,编辑全部发车后再统一跑门禁;CDP 驱动 Dropdown 先读组件源码确认事件绑定(onMouseDown),能省两轮试错。
+- 额外收获:测试断言失败揪出一个真 a11y 缺陷(aria-label 撞名)——自动化验证与可达性共用同一份「唯一语义标签」前提。
+
 ## 2026-09-06 Interim 累计口径修正(AAA-A4,feat/aaa-a4-interim)
 
 - 哪个坑浪费了最多时间?三次自伤全是红线 4 变体:重写 import 块漏抄既有 fmt 行(vet 红)、接口注释第二行漏 tab(gofmt 红)、修 tab 时又给原本有 tab 的第一行多加一个(二次红)。均在一次 gofmt/vet 验证轮内定位,约 3 分钟,零扩散。

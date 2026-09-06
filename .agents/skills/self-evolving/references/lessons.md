@@ -2,6 +2,8 @@
 
 <!-- 一条经验一行。格式：当 X 发生时，修复是 Y。skill 没提前警告我。 -->
 
+- 当两个控件共用同一个 aria-label(如趋势周期与列表筛选都叫「周期筛选」),querySelector 与可达性同时受损:屏幕阅读器分不清控件,自动化定位拿到错误元素——断言失败先怀疑「标签不唯一」,修正文案键本身(trendPeriodLabel 拆分),而不是绕道换选择器。2026-09-07 报告中心轮。
+
 - 当需要给"需登录的 Web 页面"截图且没有 Playwright 时，修复是系统 Chrome `--headless=new --remote-debugging-port` + Node>=22 全局 WebSocket 裸 CDP（脚本见 scripts/cdp-capture.mjs）。skill 没提前警告我。
 - 当 CDP 截图要覆盖 localStorage 驱动的状态（如主题）时，修复是每个状态显式 `localStorage.setItem` 后 `Page.navigate` 重载再拍，或每次运行换全新 `--user-data-dir`；不复用上轮 profile。skill 没提前警告我。
 - 当自动化填充 React 受控 input 时，修复是用 `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set` + `dispatchEvent(new Event('input',{bubbles:true}))`，直接 `el.value=` 不触发 React 状态。skill 没提前警告我。
