@@ -16,10 +16,17 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// bindTagEvent 在事务上写一条 BIND 事件(建标签预绑定/建资产绑签成功路径调用);
-// 失败仅 ALERT 留痕不回滚主流程(主状态已落库,事件损失可由巡检口径补录)。
-func (s *PGStore) bindTagEvent(ctx context.Context, ex ExecQuerier, tagID, assetID int64) {
+// bindTagEvent 写一条 BIND 事件:主事务提交【之后】经 s.db 尽力而为,失败仅 ALERT
+// (审计面损失不阻断主流程)。真正的落库由 bindTagEventEx 承担。
+func (s *PGStore) bindTagEvent(ctx context.Context, tagID, assetID int64) {
 	changed, _ := json.Marshal(map[string]any{"bound_asset_id": assetID})
+	s.bindTagEventEx(ctx, s.db, tagID, assetID, string(changed))
+}
+
+// bindTagEventEx 在指定执行器(事务或 s.db)上写 BIND 事件。
+// changed 必须传 string——pgx 将 []byte 按 bytea 发送,JSONB 列拒收(22P02,
+// 2026-09-06 真库冒烟实证,热修见 ISSUE.md)。
+func (s *PGStore) bindTagEventEx(ctx context.Context, ex ExecQuerier, tagID, assetID int64, changed string) {
 	if _, err := ex.Exec(ctx,
 		`INSERT INTO tag_events(tag_id, asset_id, action, changed) VALUES($1, $2, 'BIND', $3)`,
 		tagID, assetID, changed); err != nil {
@@ -65,7 +72,7 @@ func (s *PGStore) UnbindTag(ctx context.Context, tagID, expectedAssetID, actorAc
 	changed, _ := json.Marshal(map[string]any{"bound_asset_id": []int64{bound, 0}})
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO tag_events(tag_id, asset_id, action, actor_account_id, detail, changed) VALUES($1, $2, 'UNBIND', $3, $4, $5)`,
-		tagID, bound, idOrNil(actorAccountID), detail, changed); err != nil {
+		tagID, bound, idOrNil(actorAccountID), detail, string(changed)); err != nil {
 		slog.ErrorContext(ctx, "[asset] TAG EVENT FAILED",
 			"action", "UNBIND", "tag_id", tagID, "asset_id", bound, "err", err)
 	}
@@ -120,7 +127,7 @@ func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64,
 		changed, _ := json.Marshal(map[string]any{"bound_asset_id": []int64{assetID, 0}})
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO tag_events(tag_id, asset_id, action, actor_account_id, detail, changed) VALUES($1, $2, 'RECYCLE', $3, $4, $5)`,
-			tagID, assetID, idOrNil(actorAccountID), reason, changed); err != nil {
+			tagID, assetID, idOrNil(actorAccountID), reason, string(changed)); err != nil {
 			slog.ErrorContext(ctx, "[asset] TAG EVENT FAILED",
 				"action", "RECYCLE", "tag_id", tagID, "asset_id", assetID, "err", err)
 		}
