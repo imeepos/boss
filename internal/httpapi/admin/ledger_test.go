@@ -56,6 +56,8 @@ func (f *fakeResourceSub) ReleaseReserve(_ context.Context, id int64) error {
 // fakeAsset 桩 asset.AssetService。
 type fakeAsset struct {
 	asset.AssetService
+	pagedQ     asset.ListQuery
+	tagQ       asset.ListQuery
 	stocktake  *asset.Stocktake
 	diffTaskID int64
 	diffErr    error

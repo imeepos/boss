@@ -73,6 +73,9 @@ func RespondErr(c *gin.Context, err error) {
 		// 资产删除命中引用(P2-W1-T1):40900 + 全量阻断项清单(message 列明标签绑定/
 		// 持有台账/换新单/盘点明细/四码关联,操作员按单消除)。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": assetRefErr.Error()})
+	case errors.Is(err, asset.ErrInvalidSort):
+		// 列表排序白名单越界(P3-T1):42200;正常路径由 adminapi 解析层 400 拦截,此处兜底。
+		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
 	case errors.Is(err, provision.ErrBindingInvalid):
 		// 绑定校验失败(跨法人/模板停用):42200 + 透传原因,管理员可见为什么绑不上。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
