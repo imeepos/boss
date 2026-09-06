@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // ListModels 全量型号(含停用;管理端下拉与列表用,量级小不分页)。
@@ -48,4 +49,38 @@ func (s *PGStore) CreateModel(ctx context.Context, m AssetModel) (int64, error) 
 		return 0, fmt.Errorf("asset: create model: %w", err)
 	}
 	return id, nil
+}
+
+// ErrModelInactive 型号已停用,拒绝编辑(P2-W2-T1 D:先启用再改)。
+var ErrModelInactive = errors.New("asset: model inactive")
+
+// UpdateModel 编辑型号(P2-W2-T1 D):厂商/型号名/类别/料号/规格可改;
+// 四元组 UNIQUE(uq_asset_models) 冲突 23505 → ErrModelExists(40900);
+// 停用型号不可编辑 → ErrModelInactive(40900,先启用)。停用闸门用
+// FOR UPDATE 行锁,防编辑与停用并发交错。
+func (s *PGStore) UpdateModel(ctx context.Context, id int64, m AssetModel) error {
+	var active bool
+	err := s.db.QueryRow(ctx,
+		`SELECT is_active FROM asset_models WHERE id = $1 FOR UPDATE`, id).Scan(&active)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("asset: update model %d lock: %w", id, err)
+	}
+	if !active {
+		return fmt.Errorf("asset: model %d deactivated, enable first: %w", id, ErrModelInactive)
+	}
+	_, err = s.db.Exec(ctx,
+		`UPDATE asset_models SET vendor = $2, model = $3, category = $4, part_number = $5, spec = $6
+		 WHERE id = $1`,
+		id, m.Vendor, m.Model, m.Category, m.PartNumber, m.Spec)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "uq_asset_models" {
+			return fmt.Errorf("asset: model %s/%s: %w", m.Vendor, m.Model, ErrModelExists)
+		}
+		return fmt.Errorf("asset: update model %d: %w", id, err)
+	}
+	return nil
 }

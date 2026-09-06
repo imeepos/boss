@@ -59,6 +59,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, asset.ErrTagUnbound),
 		errors.Is(err, asset.ErrAssetScrapped),
 		errors.Is(err, asset.ErrModelExists),
+		errors.Is(err, asset.ErrModelInactive),
 		errors.Is(err, asset.ErrCodeDuplicate),
 		errors.Is(err, asset.ErrTagDisabled),
 		errors.Is(err, worker.ErrDuplicate):

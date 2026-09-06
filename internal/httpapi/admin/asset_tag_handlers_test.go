@@ -25,12 +25,14 @@ import (
 // fakeTagAdmin 桩 asset.AssetService(嵌入接口,仅实现标签管理方法)。
 type fakeTagAdmin struct {
 	asset.AssetService
-	created    *asset.Tag
-	createErr  error
-	disabledID int64
-	enabledID  int64
-	disableErr error
-	tagEvents  []asset.TagEvent
+	created      *asset.Tag
+	createErr    error
+	disabledID   int64
+	enabledID    int64
+	modelUpdated int64
+	modelErr     error
+	disableErr   error
+	tagEvents    []asset.TagEvent
 }
 
 func (f *fakeTagAdmin) CreateTag(_ context.Context, t asset.Tag) (int64, error) {
@@ -248,6 +250,60 @@ func TestTagEventsHandler(t *testing.T) {
 		_ = json.NewDecoder(w.Body).Decode(&out)
 		if out.Code != int(apitypes.CodeNotFound) {
 			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeNotFound)
+		}
+	})
+}
+
+func (f *fakeTagAdmin) UpdateModel(_ context.Context, id int64, _ asset.AssetModel) error {
+	if f.modelErr != nil {
+		return f.modelErr
+	}
+	f.modelUpdated = id
+	return nil
+}
+
+func TestModelUpdateHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("PUT /asset-models/3 编辑成功+审计", func(t *testing.T) {
+		au := &recAudit{}
+		fa := &fakeTagAdmin{}
+		eng := tagAdminRouter(fa, au)
+		w := doJSON(eng, http.MethodPut, "/api/admin/v1/asset-models/3", `{"vendor":"华为","model":"X2","category":"ONU","partNumber":"PN"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || fa.modelUpdated != 3 {
+			t.Fatalf("code=%d id=%d", out.Code, fa.modelUpdated)
+		}
+		if len(au.events) != 1 || au.events[0].TargetType != "asset_model" || au.events[0].Detail["op"] != "update" {
+			t.Fatalf("events=%+v", au.events)
+		}
+	})
+
+	t.Run("PUT /asset-models/3 停用型号→40900", func(t *testing.T) {
+		fa := &fakeTagAdmin{modelErr: fmt.Errorf("asset: model 3 deactivated, enable first: %w", asset.ErrModelInactive)}
+		eng := tagAdminRouter(fa, nil)
+		w := doJSON(eng, http.MethodPut, "/api/admin/v1/asset-models/3", `{"model":"X2","category":"ONU"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeConflict) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeConflict)
+		}
+	})
+
+	t.Run("PUT /asset-models/3 缺类别→42200", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{}, nil)
+		w := doJSON(eng, http.MethodPut, "/api/admin/v1/asset-models/3", `{"model":"X2"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeInvalidParam) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeInvalidParam)
 		}
 	})
 }

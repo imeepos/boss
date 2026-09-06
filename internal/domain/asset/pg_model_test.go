@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v4"
 )
 
@@ -112,6 +113,62 @@ func TestPGStore_CreateAsset_WithModel(t *testing.T) {
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet: %v", err)
+		}
+	})
+}
+
+// UpdateModel(P2-W2-T1 D):正常编辑 / 唯一冲突 40900 / 停用拒绝 / 不存在 404。
+func TestPGStore_UpdateModel(t *testing.T) {
+	ctx := context.Background()
+	in := AssetModel{Vendor: "华为", Model: "HN-ONU-X2", Category: "ONU", PartNumber: "PN-2", Spec: map[string]any{"ports": 2}}
+	t.Run("正常编辑", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("SELECT is_active FROM asset_models").
+			WithArgs(int64(3)).
+			WillReturnRows(mock.NewRows([]string{"is_active"}).AddRow(true))
+		mock.ExpectExec("UPDATE asset_models SET vendor").
+			WithArgs(int64(3), in.Vendor, in.Model, in.Category, in.PartNumber, in.Spec).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		s := NewPGStore(mock)
+		if err := s.UpdateModel(ctx, 3, in); err != nil {
+			t.Fatalf("err=%v", err)
+		}
+	})
+	t.Run("四元组冲突40900", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("SELECT is_active FROM asset_models").
+			WithArgs(int64(3)).
+			WillReturnRows(mock.NewRows([]string{"is_active"}).AddRow(true))
+		mock.ExpectExec("UPDATE asset_models SET vendor").
+			WithArgs(int64(3), in.Vendor, in.Model, in.Category, in.PartNumber, in.Spec).
+			WillReturnError(&pgconn.PgError{Code: "23505", ConstraintName: "uq_asset_models"})
+		s := NewPGStore(mock)
+		if err := s.UpdateModel(ctx, 3, in); !errors.Is(err, ErrModelExists) {
+			t.Fatalf("err=%v, want ErrModelExists", err)
+		}
+	})
+	t.Run("停用型号拒绝编辑", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("SELECT is_active FROM asset_models").
+			WithArgs(int64(3)).
+			WillReturnRows(mock.NewRows([]string{"is_active"}).AddRow(false))
+		s := NewPGStore(mock)
+		if err := s.UpdateModel(ctx, 3, in); !errors.Is(err, ErrModelInactive) {
+			t.Fatalf("err=%v, want ErrModelInactive", err)
+		}
+	})
+	t.Run("不存在404", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("SELECT is_active FROM asset_models").
+			WithArgs(int64(3)).
+			WillReturnError(pgx.ErrNoRows)
+		s := NewPGStore(mock)
+		if err := s.UpdateModel(ctx, 3, in); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("err=%v, want ErrNotFound", err)
 		}
 	})
 }
