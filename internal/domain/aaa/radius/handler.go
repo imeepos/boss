@@ -29,6 +29,8 @@ type Handler struct {
 	Sessions     aaa.SessionMaintainer // 计账链路会话维护;nil=跳过(A2)
 	Gate         aaa.SessionGate       // 并发会话闸口;nil 或 SessionLimit<=0 不限制(A2)
 	SessionLimit int                   // 同一 LOID 在线占用上限(全局)
+	Nas          aaa.NasResolver       // NAS 注册表(A5);nil=不按厂商下发,一律字符串兜底
+	VSA          *aaa.VSASpec          // 厂商限速 VSA 映射(A5);nil=同上
 }
 
 // ServeRADIUS 实现 radius.Handler,按 Code 分流认证/计费。
@@ -117,13 +119,33 @@ func rejectReason(err error) string {
 	}
 }
 
-// accept 组装 Access-Accept,下发带宽模板与 Session 超时。
+// accept 组装 Access-Accept:Session 超时 + 带宽限速(厂商 VSA 优先,无映射回退字符串属性)。
 func (h *Handler) accept(w radius.ResponseWriter, r *radius.Request, dec aaa.Decision) {
 	resp := r.Response(radius.CodeAccessAccept)
 	_ = rfc2865.ServiceType_Set(resp, rfc2865.ServiceType_Value_FramedUser)
 	_ = rfc2865.SessionTimeout_Set(resp, rfc2865.SessionTimeout(dec.SessionTTL))
-	_ = rfc2869.FramedPool_SetString(resp, dec.Bandwidth) // 带宽模板,阶段7可替换为厂商 VSA
+	if !h.applyBandwidth(resp, r, dec.Bandwidth) {
+		_ = rfc2869.FramedPool_SetString(resp, dec.Bandwidth) // 现状兜底:带宽模板串
+	}
 	w.Write(resp)
+}
+
+// applyBandwidth 按请求来源 NAS 厂商下发限速 VSA;无注册表/无映射返回 false 走兜底。
+// 厂商查询失败不阻断认证放行(来源密钥已在 SecretSource 层校验并留痕)。
+func (h *Handler) applyBandwidth(resp *radius.Packet, r *radius.Request, bandwidth string) bool {
+	if h.Nas == nil || h.VSA == nil || r.RemoteAddr == nil {
+		return false
+	}
+	nas, err := h.Nas.LookupNas(context.Background(), hostOnly(r.RemoteAddr))
+	if err != nil {
+		return false
+	}
+	attrs := h.VSA.ResolveRateVSA(nas.Client.Vendor, bandwidth)
+	if len(attrs) == 0 {
+		return false
+	}
+	applyRateVSA(resp, attrs)
+	return true
 }
 
 // reject 组装 Access-Reject。
