@@ -95,7 +95,7 @@ boot_fixtures() { # 自举: 批次/标签/资产1(有SN绑标签)/资产2(无SN�
   TAG_ID=$(j "$tag" id)
   asset=$(api POST /provision/assets "{\"assetCode\":\"A-ACC-$SUFFIX\",\"batchId\":$BATCH_ID,\"legalEntityId\":1,\"legalEntityName\":\"验收主体\",\"type\":\"ONU\",\"status\":\"IN_STOCK\"}") || return 1
   ASSET_ID=$(j "$asset" id)
-  asset=$(api POST /provision/assets "{\"assetCode\":\"A-ACC2-$SUFFIX\",\"batchId\":$BATCH_ID,\"legalEntityId\":1,\"legalEntityName\":\"验收主体\",\"type\":\"ONU\",\"status\":\"IN_STOCK\"}") || return 1
+  asset=$(api POST /provision/assets "{\"assetCode\":\"A-ACC-$SUFFIX-B\",\"batchId\":$BATCH_ID,\"legalEntityId\":1,\"legalEntityName\":\"验收主体\",\"type\":\"ONU\",\"status\":\"IN_STOCK\"}") || return 1
   ASSET2_ID=$(j "$asset" id)
   if [ -z "$ASSET_ID" ] || [ "$ASSET_ID" = "None" ] || [ -z "$ASSET2_ID" ] || [ "$ASSET2_ID" = "None" ]; then
     FAIL_REASON="fixture ids incomplete asset1=$ASSET_ID asset2=$ASSET2_ID"; return 1; fi
@@ -126,12 +126,12 @@ negatives() { # 缺任一要素/错要素/该空不空 -> 全部 42200,且零副
   fi
   st=$(cnt "SELECT status FROM assets WHERE id=$ASSET_ID;")
   assert_eq "N0-零副作用" "IN_STOCK" "$st" "全负例后资产1状态不变"
-  expect_422 "$ASSET2_ID" "X1-该空不空" "{\"reason\":\"验收X1\",\"confirmAssetCode\":\"A-ACC2-$SUFFIX\",\"confirmSn\":\"SN-X-$SUFFIX\",\"confirmTagNo\":\"\"}" "confirmSn 须为空串"
+  expect_422 "$ASSET2_ID" "X1-该空不空" "{\"reason\":\"验收X1\",\"confirmAssetCode\":\"A-ACC-$SUFFIX-B\",\"confirmSn\":\"SN-X-$SUFFIX\",\"confirmTagNo\":\"\"}" "confirmSn 须为空串"
 }
 
 positive_bare() { # 资产2(无SN未绑) 空串确认报废成功,且无 RECYCLE
   local code st ev
-  scrap_try "$ASSET2_ID" "{\"reason\":\"验收P1\",\"confirmAssetCode\":\"A-ACC2-$SUFFIX\",\"confirmSn\":\"\",\"confirmTagNo\":\"\"}"
+  scrap_try "$ASSET2_ID" "{\"reason\":\"验收P1\",\"confirmAssetCode\":\"A-ACC-$SUFFIX-B\",\"confirmSn\":\"\",\"confirmTagNo\":\"\"}"
   assert_eq "P1-无SN空串报废" "0" "$SCRAP_CODE" "资产2 空串三要素确认"
   st=$(cnt "SELECT status FROM assets WHERE id=$ASSET2_ID;")
   assert_eq "P2-资产2终态" "SCRAPPED" "$st" "资产2 报废落终态"
