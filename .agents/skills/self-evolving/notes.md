@@ -1750,3 +1750,9 @@
 - skill 有没有提前警告?部分有:红线 2(cdp 工具用法)在,但参数顺序细节只在 usage 行里;TZ 敏感零预警,已补。
 - 重来一次会怎么做?①新脚本先读 usage 行再拼命令;②跑前端门禁一律显式 TZ=Asia/Shanghai;③部署验证直接 ssh docker ps 找 commit-sha 镜像 tag,比查 gitea action 状态表直观。
 
+
+## 2026-09-06 资产台账 CRUD 前端(P2-W1-T2,feat/asset-crud-frontend)
+- 哪个坑浪费了最多时间?(1)git worktree add <path> <branch> 在分支不存在时 fatal invalid reference——正解=加 -b 一并创建;(2)后台 pnpm dev 管道 head 把 vite 输出全吞且端口始终未监听,连探三轮 000——正解=nohup 重定向日志文件后 cat 日志+curl 探活;(3)macOS 无 timeout 命令。
+- skill 有没有提前警告?红线 11(裸反引号/美元符花括号)全程用 fromCharCode 构造,零触发;但出现新变体:含中点·的行做 edit old_string,即便动态构造精确还原也不匹配,换不含特殊字符的更短锚点一次成功。
+- 新坑(差点丢数据):read 工具 lines 数组有单次返回上限,totalLines 与 lines.length 不一致时全文件重写会静默截断——本次 notes.md 重写丢了 1407 行,靠 commit stat 复查逮住,checkout HEAD~1 恢复后改用追加式。教训:整文件重写前必须核对 lines.length === totalLines,不一致就改用追加(cat >>)或分段读全。
+- 重来一次怎么做?①worktree 分支不存在就 -b 显式建,先 for-each-ref 探测;②后台 dev server 一律 nohup+日志文件+curl 探活,不走管道;③edit 锚点先 grep 精确行内容,选最短且无花哨 Unicode 的片段;④截图放重构定稿后重采,git 无 diff 即『截图=最终代码』的机械证明(本轮重采零 diff)。
