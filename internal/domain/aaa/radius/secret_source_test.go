@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -79,23 +80,41 @@ func TestRegistrySecretSourcePaths(t *testing.T) {
 
 func remoteAt(ip string) net.Addr { return &net.TCPAddr{IP: net.ParseIP(ip), Port: 1812} }
 
+// logBuf 线程安全日志缓冲:服务端 goroutine 异步写日志,断言读并发(race 检测要求互斥)。
+type logBuf struct {
+	mu  sync.Mutex
+	buf strings.Builder
+}
+
+func (b *logBuf) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *logBuf) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
+
 // captureStdLog 捕获标准 log 输出(留痕断言用;radius 包本地副本)。
-func captureStdLog(t *testing.T) *strings.Builder {
+func captureStdLog(t *testing.T) *logBuf {
 	t.Helper()
-	var buf strings.Builder
-	log.SetOutput(&buf)
+	buf := &logBuf{}
+	log.SetOutput(buf)
 	t.Cleanup(func() { log.SetOutput(os.Stderr) })
-	return &buf
+	return buf
 }
 
 // startTestRadius 以给定 SecretSource 起真实 UDP 服务(127.0.0.1 随机端口)。
-func startTestRadius(t *testing.T, src radius.SecretSource) (string, *strings.Builder) {
+func startTestRadius(t *testing.T, src radius.SecretSource) (string, *logBuf) {
 	t.Helper()
-	var buf strings.Builder
+	buf := &logBuf{}
 	srv := &radius.PacketServer{
 		Handler: &Handler{Auth: &authStub{decision: aaa.Decision{Authorize: true, Bandwidth: "100M", SessionTTL: 60}}},
 		SecretSource: src,
-		ErrorLog:     log.New(&buf, "", 0),
+		ErrorLog:     log.New(buf, "", 0), // log.Logger 内部互斥,底层 logBuf 并发读安全
 	}
 	conn, err := net.ListenPacket("udp", "127.0.0.1:0")
 	if err != nil {
@@ -103,7 +122,7 @@ func startTestRadius(t *testing.T, src radius.SecretSource) (string, *strings.Bu
 	}
 	go func() { _ = srv.Serve(conn) }()
 	t.Cleanup(func() { conn.Close() })
-	return conn.LocalAddr().String(), &buf
+	return conn.LocalAddr().String(), buf
 }
 
 func exchangeAccess(t *testing.T, addr, secret, loid string) (*radius.Packet, error) {

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -168,11 +169,29 @@ func TestListNasPageFilters(t *testing.T) {
 	}
 }
 
+// logBuf 线程安全日志缓冲(异步 goroutine 写日志时并发断言读,race 检测要求互斥)。
+type logBuf struct {
+	mu  sync.Mutex
+	buf strings.Builder
+}
+
+func (b *logBuf) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *logBuf) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
+
 // captureStdLog 捕获标准 log 输出(留痕断言用)。
-func captureStdLog(t *testing.T) *strings.Builder {
+func captureStdLog(t *testing.T) *logBuf {
 	t.Helper()
-	var buf strings.Builder
-	log.SetOutput(&buf)
+	buf := &logBuf{}
+	log.SetOutput(buf)
 	t.Cleanup(func() { log.SetOutput(os.Stderr) })
-	return &buf
+	return buf
 }
