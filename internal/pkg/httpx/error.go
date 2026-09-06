@@ -188,6 +188,11 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, odn.ErrNoCoverageDevice):
 		// 覆盖未挂设备(下单门控判据):40400,前端提示先补覆盖关联。
 		Respond(c, apitypes.CodeNotFound, nil)
+	case errors.Is(err, odn.ErrPortNotInService):
+		// 绑定要求端口 IN_SERVICE:40900,管理员可见为什么绑不上。
+		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
+	case errors.Is(err, odn.ErrBindingNotFound):
+		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, odn.ErrNotServable):
 		// 下单覆盖门控拒单(T12):40900 + 透传地址/状态,运营可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
