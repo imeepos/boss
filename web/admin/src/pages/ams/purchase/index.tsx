@@ -153,6 +153,9 @@ export default function PurchasePage() {
                         {(o.status === 'DRAFT' || o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
                           <button type="button" disabled={busy} onClick={() => cancelOrder(o)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--color-danger)] hover:border-[var(--color-border-hover)]">{d.cancelOrder}</button>
                         )}
+                        {(o.status === 'RECEIVED' || o.status === 'CANCELLED') && (
+                          <span className="text-[var(--shell-group-title)]">—</span>
+                        )}
                       </span>
                     </td>
                   </tr>
