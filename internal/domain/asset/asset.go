@@ -145,6 +145,14 @@ type AssetService interface {
 	ListAssets(ctx context.Context) ([]Asset, error)
 	CreateAsset(ctx context.Context, a Asset) (int64, error)
 	GetAsset(ctx context.Context, id int64) (*Asset, error)
+	// UpdateAsset 受限编辑(P2-W1-T1):仅 类型/型号/标签/批次 四键;标签换绑同一
+	// 事务写 UNBIND+BIND(冲突 ErrBindingConflict 整单回滚);批次仅 IN_STOCK 可改
+	// (ErrBatchNotEditable)并同步企业归属快照;四键无变化幂等成功。
+	UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate, actorAccountID int64) error
+	// DeleteAsset 守卫删除(P2-W1-T1):仅 IN_STOCK 且无标签绑定/持有台账/换新单/
+	// 盘点明细/四码关联引用可物理删除;命中引用 ErrAssetReferenced(message 全量
+	// 列阻断项);SCRAPPED ErrAssetScrapped 拒硬删。返回资产编码供审计载荷。
+	DeleteAsset(ctx context.Context, assetID int64) (string, error)
 
 	ListLifecycles(ctx context.Context, assetID int64) ([]AssetLifecycle, error)
 	AppendLifecycle(ctx context.Context, l AssetLifecycle) (int64, error)

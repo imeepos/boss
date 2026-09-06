@@ -13,6 +13,10 @@ import (
 func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	ams := g.Group("", requirePerm(a.User, "menu:asset"))
 	ams.GET("/assets", assetListHandler(a))
+	ams.POST("/assets", assetCreateHandler(a))            // P2-W1-T1 建档(批次必填,状态固定 IN_STOCK)
+	ams.GET("/assets/:assetId", assetGetHandler(a))       // P2-W1-T1 详情(含企业/区域快照)
+	ams.PUT("/assets/:assetId", assetUpdateHandler(a))    // P2-W1-T1 受限编辑(四键)
+	ams.DELETE("/assets/:assetId", assetDeleteHandler(a)) // P2-W1-T1 守卫删除
 	ams.GET("/assets/:assetId/lifecycle", assetListLifecyclesHandler(a))
 	ams.GET("/assets/batches", assetListBatchesHandler(a))
 	ams.GET("/assets/assignments", assetListAssignmentsHandler(a))

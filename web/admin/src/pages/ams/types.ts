@@ -11,7 +11,25 @@ export interface AssetRow {
   regionId: number
   regionName: string
   type: string // 光猫/ONU/路由器
+  modelId: number // 0=未挂型号(P1-T3)
   status: string // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
+}
+
+// 型号字典(契约 GET /asset-models,含停用;建档/编辑下拉仅取 isActive 项)。
+export interface AssetModelRow {
+  id: number
+  vendor: string
+  model: string
+  category: string // 类型权威来源:选中型号后 type 派生自 category
+  partNumber: string
+  isActive: boolean
+}
+
+// 入库批次(契约 GET /assets/batches,建档下拉数据源)。
+export interface AssetBatchRow {
+  id: number
+  code: string
+  name: string
 }
 
 export interface TagRow {

@@ -910,6 +910,45 @@ export interface Translations {
       relReceipt: string
       relOrder: string
       relTag: string
+      create: string
+      createTitle: string
+      fBatch: string
+      pBatch: string
+      eBatch: string
+      fModel: string
+      pModel: string
+      fType: string
+      pType: string
+      eType: string
+      fTag: string
+      pTag: string
+      createOk: string
+      detailTitle: string
+      mainTitle: string
+      dCode: string
+      dTagNo: string
+      dEpc: string
+      dType: string
+      dModel: string
+      dBatch: string
+      dAddress: string
+      dStatus: string
+      dEntity: string
+      dRegion: string
+      editTitle: string
+      editOk: string
+      editBatchLocked: string
+      scrapAction: string
+      scrapTitle: string
+      fReason: string
+      pReason: string
+      eReason: string
+      scrapOk: string
+      deleteAction: string
+      deleteConfirm: string
+      deleteOk: string
+      detail: string
+      edit: string
     }
     tagPage: {
       title: string

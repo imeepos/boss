@@ -36,6 +36,7 @@ import (
 
 // RespondErr 领域错误 → 统一错误码。未知错误一律 500。
 func RespondErr(c *gin.Context, err error) {
+	var assetRefErr *asset.ErrAssetReferenced
 	switch {
 	case errors.Is(err, user.ErrUnauthorized):
 		Respond(c, apitypes.CodeUnauthorized, nil)
@@ -58,10 +59,15 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, asset.ErrTagUnbound),
 		errors.Is(err, asset.ErrAssetScrapped),
 		errors.Is(err, asset.ErrModelExists),
+		errors.Is(err, asset.ErrCodeDuplicate),
 		errors.Is(err, worker.ErrDuplicate):
 		// 资产/标签双绑冲突:40900 + 透传 err.Error()(含具体资产/标签 id),
 		// 调用方能区分"标签已绑"vs"资产已绑",与 40920 扫码不一致明确区分。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
+	case errors.As(err, &assetRefErr):
+		// 资产删除命中引用(P2-W1-T1):40900 + 全量阻断项清单(message 列明标签绑定/
+		// 持有台账/换新单/盘点明细/四码关联,操作员按单消除)。
+		Respond(c, apitypes.CodeConflict, gin.H{"reason": assetRefErr.Error()})
 	case errors.Is(err, provision.ErrBindingInvalid):
 		// 绑定校验失败(跨法人/模板停用):42200 + 透传原因,管理员可见为什么绑不上。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
@@ -79,6 +85,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, worker.ErrInvalidPassword),
 		errors.Is(err, provision.ErrForeignKeyViolation),
 		errors.Is(err, asset.ErrForeignKeyViolation),
+		errors.Is(err, asset.ErrBatchNotEditable),
 		errors.Is(err, procurement.ErrForeignKey),
 		errors.Is(err, procurement.ErrInvalidTransition),
 		errors.Is(err, order.ErrInstallInput),

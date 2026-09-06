@@ -703,6 +703,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > CreateTag/CreateAsset 绑定成功即写 BIND；端点 POST /tags/{tagId}/unbind（预期不符 40900、
 > 未绑定 ErrTagUnbound→40000 族）写 UNBIND；POST /assets/{assetId}/scrap（reason 必填,终态
 > 幂等）强制解绑写 RECYCLE——报废软回收禁硬删（adopted 2026-09-06-asset-tag-p1-wave）。
+
 > 标签事件消费面（P2-T4，2026-09-06）：查询端点 GET /tags/{tagId}/events 与
 > GET /assets/{assetId}/events（id 倒序；limit 缺省 50 上限 100；action 多值白名单
 > BIND/UNBIND/RECYCLE 过滤，白名单外 42200；before_id 游标预留只取更小 id，首版 UI 不用；
@@ -714,6 +715,17 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 事件时间轴抽屉一行一事件（时间/操作人/动作徽标/对象），changed JSONB 只渲染实际变化键
 > （键: 旧值 → 新值，等宽字体），不 dump 全量 JSON、不引 diff 库。明确不做：全局事件
 > 大屏、游标分页 UI、全文搜索、SSE/轮询推送、导出。
+> admin 台账 CRUD 四端点（P2-W1-T1）：POST /assets（建档：batchId 必填缺失 42200，
+> 企业归属快照自批次回填与采购入库同口径；状态固定 IN_STOCK；modelId 可选须存在且在用，
+> type 缺省由型号类别派生；tagId 可选绑定写 BIND，已被其他资产占用 40900 整单回滚；
+> assetCode 可空，缺省服务端按 A-{批次8位}-{序号5位} 生成）+ GET /assets/{assetId}
+> （详情含企业/区域快照，未命中 40400）+ PUT /assets/{assetId}（受限编辑：仅
+> 类型/型号/标签/批次 四键，标签换绑同事务 UNBIND+BIND 冲突 40900 整单回滚，批次仅
+> IN_STOCK 态可改并同步企业快照，四键无变化幂等成功；审计记变更前后键值）+
+> DELETE /assets/{assetId}（守卫删除：仅 IN_STOCK 且无标签绑定/持有台账/换新单/
+> 盘点明细/四码关联引用可物理删，命中任一引用 40900 且 message 列全阻断项；
+> SCRAPPED 一律拒绝硬删提示走报废端点；审计附资产编码）。状态与部署地址不经编辑
+> 端点变更，一律走业务流转（装机扫码/报废/换新）。
 
 ### 4.2 ports（端口，源自 resource.html + 全案 4.2 Port）
 
