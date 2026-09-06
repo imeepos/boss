@@ -99,9 +99,9 @@ assert_eq "P1.facility" "$FAC" "$(jf "$BODY" "d['data']['facilityCode']")" "设�
 assert_eq "P1.covCount" "1" "$(jf "$BODY" "len(d['data']['coverages'])")" "受影响覆盖数"
 assert_eq "P1.covStatus" "SERVED" "$(jf "$BODY" "d['data']['coverages'][0]['status']")" "覆盖状态"
 
-# P2 客户清单命中
-assert_eq "P2.custCount" "1" "$(jf "$BODY" "len(d['data']['customers'])")" "受影响客户数"
-assert_eq "P2.custName" "$MARK 客户" "$(jf "$BODY" "d['data']['customers'][0]['name']")" "客户名"
+# P2 客户清单命中(种子 min(id) 地址与真实客户共存:断言造数客户被包含,2026-09-07 修)
+assert_eq "P2.custContains" "True" "$(jf "$BODY" "str(any(x['name']=='$MARK 客户' for x in d['data']['customers']))")" "造数客户命中"
+assert_eq "P2.custCount" "True" "$(jf "$BODY" "str(len(d['data']['customers'])>=1)")" "客户数≥1"
 
 # P3 未知设施报错
 req GET "/odn/impact?facilityCode=CLS99999"
