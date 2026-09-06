@@ -1772,3 +1772,14 @@
 - 哪个坑浪费了最多时间?(1)E2E 连续三轮失败但每轮都是新信息:我自己的 split/join 补丁把 json.load 叠两遍(一轮)、FK 23503 缺生命周期清理(真缺陷一轮)、PUT 42200 双缺陷(域层 0 语义+handler 校验,各一轮)——真缺陷与我方笔误交织,靠服务端日志+裸 curl 控制变量才切干净。(2)devloop accept 通道约 20s 就杀命令,长门禁永远 exit null,和测试失败完全同貌。
 - skill 有没有提前警告?红线 9a/12(set -u 默认值)有,仍中一次 BOSSCTL_BIN;红线 11 反引号/美元符全程规避零触发;新自伤=对象键名多引号(3 次),已登红线 14 变体。模型无图输入红线 7 应验:read_image 被拒,转 DOM 断言。
 - 重来一次怎么做?①验收脚本先杀陈旧二进制(现构建);②门禁一律 TZ=Asia/Shanghai 显式带;③负责人验收顺序=机械门禁→部署指纹→裸 curl 控制变量→DOM 断言,不混 guessed 因素;④长命令永远猜管道会吃退出码,用临时文件落盘再断言。
+
+## 2026-09-06 标签事件消费面(P2-C,feat/tag-events-consumer)
+- 哪个坑浪费了最多时间?bash 修复语法笔误重发时漏带 workdir,连续 6 条命令静默落主树——主树的 gofmt 差异、『asset.yaml 丢失 events 路径』被我误判成并行会话篡改我的 worktree,惊动 lsof/ps 排查,两轮后才从 git branch --show-current=main 反应过来是 cwd 错树。
+- skill 有没有提前警告?红线 10/台账坑 1 都白纸黑字(worktree 每条 bash 显式带 workdir),败在『重发修复版只改 typo 没核对全部参数』。红线 11(反引号/美元符)用 DQ 常量+行数组全程规避零触发;红线 1(worktree 轮先批量 read 待改文件)执行到位,edit 零被拒。
+- 重来一次怎么做?①每条 bash 第一参数就是 workdir,修复重发时逐项核对参数而非手抄;②怀疑被并行篡改时第一反应 pwd + git branch --show-current,而不是 ps 排查;③merge 冲突消化前先读对方新组件(asset-crud 已重写 asset 页,采纳其结构只加事件入口+onEvents prop,冲突十分钟收掉);
+
+## 2026-09-06 资产/采购域逐页操作矩阵补齐(P2-W2-T3,feat/ams-tables-frontend)
+- 哪个坑浪费了最多时间?模型无图输入红线 7 又应验一次(先试 read_image 被拒才转 DOM 断言+文件尺寸)——应开工即默认无图;其余零返工:注册类(locale/types)先独立提交,逐页 logic.ts 纯函数+组件级用例先行,typecheck 每页一停。
+- skill 有没有提前警告?红线 7/10/11/13/14 全程规避零触发(worktree 显式 workdir、无反引号无美元符、内层调用必填参数默念、长命令后台跑);boss-admin-web.md 的 token+servers 注入与 cdp-admin-capture 用法一次过。
+- 顺:供应商抽屉启用按钮在 102 数据无 DISABLED 行时不出现、replace 页无 PENDING 行时不出现取消——视觉缺位是数据态而非缺陷,用 logic.test 断言状态显隐 + eval 打印行状态分布佐证,不造假数据截图。
+- 重来一次怎么做?①涉及状态条件按钮的页面,截图轮先 eval 打印行数与状态分布再断言按钮显隐,一轮拿全证据;②locale 插入锚点用各语言行号对齐特性,一次脚本批量 12 处 edit。
