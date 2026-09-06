@@ -6,6 +6,116 @@ paths:
       operationId: listAssets
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Asset]
+      summary: '资产建档(P2-W1-T1;batchId 必填,企业快照自批次回填;状态固定 IN_STOCK;型号可选须在用,类型缺省由型号类别派生;标签可选绑定写 BIND 事件,已被其他资产占用 40900 整单回滚;assetCode 缺省服务端生成;建档同事务落初始轨迹行)'
+      operationId: createAsset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [batchId]
+              properties:
+                assetCode: { type: string, maxLength: 32, description: 资产编码(可空,缺省 A-{批次8位}-{序号5位} 自动生成) }
+                batchId: { type: integer, format: int64, description: 入库批次 ID(必填,缺失 42200) }
+                modelId: { type: integer, format: int64, description: 型号 ID(可选,须存在且未停用) }
+                tagId: { type: integer, format: int64, description: 标签 ID(可选,绑定成功写 BIND,占用 40900) }
+                type: { type: string, maxLength: 32, description: 类型(可选,未给定时由型号类别派生) }
+      responses:
+        '200':
+          description: 资产已建档(data 返回新 id)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, format: int64 }
+
+  /assets/{assetId}:
+    get:
+      tags: [Asset]
+      summary: 资产详情(按 id 返回单条主档,含企业/区域快照;未命中 40400)
+      operationId: getAsset
+      parameters:
+        - { name: assetId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 资产主档
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      assetId: { type: integer, format: int64 }
+                      assetCode: { type: string }
+                      batchId: { type: integer, format: int64 }
+                      legalEntityId: { type: integer, format: int64 }
+                      legalEntityName: { type: string }
+                      tagId: { type: integer, format: int64 }
+                      addressId: { type: integer, format: int64 }
+                      regionId: { type: integer, format: int64 }
+                      regionName: { type: string }
+                      type: { type: string }
+                      modelId: { type: integer, format: int64 }
+                      status: { type: string, enum: [IN_STOCK, DEPLOYED, MAINTENANCE, SCRAPPED] }
+    put:
+      tags: [Asset]
+      summary: '受限编辑(P2-W1-T1;仅 类型/型号/标签/批次 四键;标签换绑同事务 UNBIND+BIND,冲突 40900 整单回滚;批次仅 IN_STOCK 可改并同步企业快照;状态与部署地址不在编辑范围走业务流转;字段无变化幂等成功)'
+      operationId: updateAsset
+      parameters:
+        - { name: assetId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [batchId]
+              properties:
+                type: { type: string, maxLength: 32, description: 类型(可空=由型号派生或保持现值) }
+                modelId: { type: integer, format: int64, description: 型号 ID(0=不挂型号) }
+                tagId: { type: integer, format: int64, description: 标签 ID(0=解绑,解绑写 UNBIND 事件) }
+                batchId: { type: integer, format: int64, description: 入库批次 ID(必填;仅 IN_STOCK 可改,同步企业归属快照) }
+      responses:
+        '200':
+          description: 编辑成功(data 返回更新后主档;无变化亦 200)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      assetId: { type: integer, format: int64 }
+                      assetCode: { type: string }
+                      status: { type: string }
+    delete:
+      tags: [Asset]
+      summary: '守卫删除(P2-W1-T1;仅 IN_STOCK 且无标签绑定/持有台账/换新单/盘点明细/四码关联可物理删;命中任一引用 40900 且 message 列全阻断项;SCRAPPED 一律拒绝硬删提示走报废端点)'
+      operationId: deleteAsset
+      parameters:
+        - { name: assetId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: 已物理删除
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
 
   /assets/{assetId}/lifecycle:
     get:
