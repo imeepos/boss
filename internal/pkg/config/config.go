@@ -46,11 +46,15 @@ type Config struct {
 
 	// AAA(阶段7 自研 RADIUS,性能服务群独立部署)。
 	AAA struct {
-		AuthAddr string // RADIUS 认证端口(1812)
-		AcctAddr string // RADIUS 计费端口(1813)
-		Secret   string // NAS 共享密钥
-		AuthTTL  int    // 授权缓存 TTL 秒(默认 60)
-		CDRTopic string // 话单 Kafka topic
+		AuthAddr      string        // RADIUS 认证端口(1812)
+		AcctAddr      string        // RADIUS 计费端口(1813)
+		Secret        string        // NAS 共享密钥
+		AuthTTL       int           // 授权缓存 TTL 秒(默认 60)
+		CDRTopic      string        // 话单 Kafka topic
+		CredKey       string        // 凭据落库密钥材料(BOSS_AAA_CRED_KEY/文件;空=从 Secret 派生,生产应显式设置)
+		AllowNoCred   bool          // BOSS_AAA_ALLOW_NO_CRED=true:未设密账号放行(迁移缓冲,默认关)
+		LockThreshold int           // BOSS_AAA_LOCK_THRESHOLD:连续失败锁定阈值(默认 5)
+		LockWindow    time.Duration // BOSS_AAA_LOCK_WINDOW:锁定时长(默认 15m)
 	}
 
 	JWT struct {
@@ -151,6 +155,10 @@ func Load() *Config {
 	c.AAA.AuthTTL = 60
 	c.Kafka.Brokers = getlist("BOSS_KAFKA_BROKERS", []string{"192.168.0.102:29092"})
 	c.AAA.CDRTopic = getenv("BOSS_AAA_CDR_TOPIC", "boss-cdr")
+	c.AAA.CredKey = readEnvOrFile("BOSS_AAA_CRED_KEY", "BOSS_AAA_CRED_KEY_FILE")
+	c.AAA.AllowNoCred = getenv("BOSS_AAA_ALLOW_NO_CRED", "") == "true"
+	c.AAA.LockThreshold = getint("BOSS_AAA_LOCK_THRESHOLD", 5)
+	c.AAA.LockWindow = getdur("BOSS_AAA_LOCK_WINDOW", 15*time.Minute)
 	c.Events.Topic = getenv("BOSS_EVENTS_TOPIC", "boss-order-events")
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
 	c.JWT.TTL = getdur("BOSS_JWT_TTL", 7*24*time.Hour)

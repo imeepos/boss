@@ -9,9 +9,9 @@ import (
 const (
 	FailReasonBadCredential = "BAD_CREDENTIAL" // PAP/CHAP 缺失或不符;未设密且开关关
 	FailReasonLocked        = "LOCKED"         // 连续失败达阈值,锁定窗口内
-	FailReasonNotFound      = "NOT_FOUND"       // LOID 无对应账号
-	FailReasonSuspended     = "SUSPENDED"       // 停服
-	FailReasonClosed        = "CLOSED"          // 注销
+	FailReasonNotFound      = "NOT_FOUND"      // LOID 无对应账号
+	FailReasonSuspended     = "SUSPENDED"      // 停服
+	FailReasonClosed        = "CLOSED"         // 注销
 )
 
 // ErrLocked 防爆破锁定中(连续失败达阈值,窗口内一律拒绝)。

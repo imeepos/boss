@@ -4,6 +4,7 @@ package radius
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"layeh.com/radius"
@@ -22,7 +23,7 @@ type AuthLogWriter interface {
 
 // Handler 处理 RADIUS 认证与计费请求,依赖域接口注入。
 type Handler struct {
-	Auth aaa.Authorizer
+	Auth aaa.CredentialAuthenticator // 凭据校验决策器(A1:PAP/CHAP + 防爆破锁定)
 	CDR  aaability.Emitter
 	Log  AuthLogWriter // 认证日志写口;nil=不记录(降级)
 }
@@ -39,22 +40,55 @@ func (h *Handler) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
 	}
 }
 
-// serveAuth 处理 Access-Request:按 User-Name(即 LOID)授权,放行或拒绝;结果写认证日志。
+// serveAuth 处理 Access-Request:凭据校验决策,放行或拒绝;结果与失败原因写认证日志。
 func (h *Handler) serveAuth(w radius.ResponseWriter, r *radius.Request) {
 	loid := rfc2865.UserName_GetString(r.Packet)
 	if loid == "" {
+		// loid 为空不落日志(auth_logs.loid 非空约束,无上下文可留痕)。
 		h.reject(w, r)
-		h.logAuth(loid, "FAILED")
 		return
 	}
-	dec, err := h.Auth.Decide(context.Background(), loid)
+	dec, err := h.Auth.Authenticate(context.Background(), loid, parseCredentials(r))
 	if err != nil || !dec.Authorize {
 		h.reject(w, r)
-		h.logAuth(loid, "FAILED")
+		h.logAuth(loid, "FAILED", rejectReason(err))
 		return
 	}
 	h.accept(w, r, dec)
-	h.logAuth(loid, "SUCCESS")
+	h.logAuth(loid, "SUCCESS", "")
+}
+
+// parseCredentials 提取 PAP User-Password 与 CHAP(RFC 1994);
+// CHAP-Challenge(60) 缺省时取 Request Authenticator 为 challenge(RFC 2865 §5.3)。
+func parseCredentials(r *radius.Request) aaa.Credentials {
+	var creds aaa.Credentials
+	creds.PAP = rfc2865.UserPassword_GetString(r.Packet)
+	if cp := rfc2865.CHAPPassword_Get(r.Packet); len(cp) == 17 {
+		challenge := rfc2865.CHAPChallenge_Get(r.Packet)
+		if len(challenge) == 0 {
+			challenge = r.Packet.Authenticator[:]
+		}
+		creds.CHAP = &aaa.CHAPCredentials{Ident: cp[0], Challenge: challenge, Response: cp[1:]}
+	}
+	return creds
+}
+
+// rejectReason 认证错误 → 失败原因码(契约:fields.md §8A);nil/放行为空。
+func rejectReason(err error) string {
+	switch {
+	case err == nil:
+		return ""
+	case errors.Is(err, aaa.ErrLocked):
+		return aaa.FailReasonLocked
+	case errors.Is(err, aaa.ErrNotFound):
+		return aaa.FailReasonNotFound
+	case errors.Is(err, aaa.ErrSuspended):
+		return aaa.FailReasonSuspended
+	case errors.Is(err, aaa.ErrClosed):
+		return aaa.FailReasonClosed
+	default:
+		return aaa.FailReasonBadCredential
+	}
 }
 
 // accept 组装 Access-Accept,下发带宽模板与 Session 超时。
@@ -84,12 +118,15 @@ func (h *Handler) serveAccounting(w radius.ResponseWriter, r *radius.Request) {
 	w.Write(r.Response(radius.CodeAccountingResponse))
 }
 
-// logAuth 写认证日志;降级静默失败。
-func (h *Handler) logAuth(loid, result string) {
+// logAuth 写认证日志;写失败必须留痕([aaa] 前缀 FAILED 可 grep),禁止静默降级。
+func (h *Handler) logAuth(loid, result, failReason string) {
 	if h.Log == nil || loid == "" {
 		return
 	}
-	_, _ = h.Log.AppendAuthLog(context.Background(), aaa.AuthLog{Loid: loid, Result: result})
+	l := aaa.AuthLog{Loid: loid, Result: result, FailReason: failReason}
+	if _, err := h.Log.AppendAuthLog(context.Background(), l); err != nil {
+		log.Printf("[aaa] AUTH LOG WRITE FAILED: loid=%s result=%s fail_reason=%s err=%v", loid, result, failReason, err)
+	}
 }
 
 // toCDR 从计费请求提取话单字段。
