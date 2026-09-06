@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T11:00:00.000-07:00",
+  "updatedAt": "2026-09-06T12:42:00.000-07:00",
   "project": "boss",
   "tasks": [
     {
@@ -30,7 +30,7 @@
     {
       "id": "T4",
       "title": "ODN P1 覆盖关联:迁移与契约同步(T4)",
-      "goal": "address_coverage 迁移 000197+fields.md/data-relations V1.6;make check 全绿",
+      "goal": "address_coverage 迁移 000197+fields.md/data-relations V1.6",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "make check"
@@ -38,7 +38,7 @@
     {
       "id": "T5",
       "title": "ODN P1 覆盖关联:coverage 后端域(T5)",
-      "goal": "Upsert/Get/List/Resolve 四端点+单测+[odn-coverage] 留痕;已合 main c26f7e12",
+      "goal": "四端点+单测+留痕;已上线",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
@@ -46,7 +46,7 @@
     {
       "id": "T6",
       "title": "ODN P1 覆盖关联:admin 前端(T6)",
-      "goal": "覆盖页签+三语言 i18n+时区用例修复+gitignore 白名单",
+      "goal": "覆盖页签+三语言 i18n",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "make web-admin-check"
@@ -54,7 +54,7 @@
     {
       "id": "T7",
       "title": "ODN P1 覆盖关联:102 端到端验收(T7)",
-      "goal": "部署窗口后 RESULT: PASS 全过,清尾残留为零",
+      "goal": "RESULT: PASS 全过",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/e2e/verify-odn-coverage-e2e.sh"
@@ -62,26 +62,42 @@
     {
       "id": "T8",
       "title": "ODN P6 设计-施工:设施状态机(T8)",
-      "goal": "lifecycle_status 四态(000198)+CAS 转移+RETIRED 双列同步+RecordAudit;已上线 102(路由 401 验证在位)",
-      "priority": "P2",
+      "goal": "lifecycle_status 四态+CAS 转移+审计;已上线 102",
+      "priority": "P1",
       "status": "done",
       "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
     },
     {
       "id": "T9",
       "title": "ODN P6 设计-施工:施工项目与竣工回填(T9)",
-      "goal": "实现/契约/e2e 脚本已合 main 39014d8d 并过 make check;102 实测等 CI 部署窗口(5 连 404 后诊断确认容器未含新路由),慢速重试循环运行中",
-      "priority": "P2",
-      "status": "doing",
+      "goal": "construction 单+批量竣工回填;102 e2e RESULT: PASS(含崩溃循环根因修复:手工 apply 未登记迁移)",
+      "priority": "P1",
+      "status": "done",
       "acceptanceCommand": "bash scripts/e2e/verify-odn-construction-e2e.sh"
     },
     {
       "id": "T10",
       "title": "ODN P7 运维影响面(T10)",
-      "goal": "impact 接口:故障→链路反查→受影响 coverage→客户清单;报障挂 odn 实体",
+      "goal": "impact 接口设施→覆盖→客户清单;102 e2e RESULT: PASS(断言 contains 修正)",
+      "priority": "P1",
+      "status": "done",
+      "acceptanceCommand": "bash scripts/e2e/verify-odn-impact-e2e.sh"
+    },
+    {
+      "id": "T11",
+      "title": "ODN P2 端口占用态+下单硬校验(T11)",
+      "goal": "物理端口状态机 IDLE/RESERVED/IN_SERVICE;订单预占迁移到物理口;SERVED+余量门控下单",
       "priority": "P2",
       "status": "todo",
-      "acceptanceCommand": "bash scripts/e2e/verify-odn-impact-e2e.sh"
+      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
+    },
+    {
+      "id": "T12",
+      "title": "ODN P3 逻辑-物理绑定+售后挂接(T12)",
+      "goal": "激活写绑定表;GIS 点位反查在用订单;售后工单挂设施(届时 Amended 2026-08-25 note)",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
     }
   ]
 }
