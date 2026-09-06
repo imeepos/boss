@@ -3,6 +3,7 @@ package odn
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 )
 
@@ -23,6 +24,8 @@ var (
 	ErrInvalidCoverage = errors.New("odn: invalid coverage")
 	// ErrCoverageTarget 覆盖目标不存在(设施码/设备 id,FK 23503 归一)。
 	ErrCoverageTarget = errors.New("odn: coverage target missing")
+	// ErrNotServable 地址不可装机(覆盖门控拒单:未登记/未 SERVED;下单硬校验 T12)。
+	ErrNotServable = errors.New("odn: address not servable")
 )
 
 // Coverage 地址覆盖关联(odn↔业务首桥;决策 adopted/2026-09-06-odn-business-linkage)。
@@ -88,4 +91,20 @@ func ResolveStatus(distanceM float64) string {
 		return CovServed
 	}
 	return CovUnserved
+}
+
+// CheckOrderCoverage 下单覆盖门控(P2,T12):地址须已登记且 SERVED 才放行。
+// 无记录/未 SERVED → ErrNotServable(orders 发单号前拒单);由 order.Submit 调用。
+func (s *PGStore) CheckOrderCoverage(ctx context.Context, addressID int64) error {
+	cov, err := s.GetCoverageByAddress(ctx, addressID)
+	if err != nil {
+		return err
+	}
+	if cov == nil {
+		return fmt.Errorf("%w: address=%d 未登记覆盖", ErrNotServable, addressID)
+	}
+	if cov.Status != CovServed {
+		return fmt.Errorf("%w: address=%d status=%s", ErrNotServable, addressID, cov.Status)
+	}
+	return nil
 }

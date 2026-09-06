@@ -288,6 +288,7 @@
 | 更新时间 | `UpdatedAt` | updated_at | TIMESTAMPTZ |
 
 > 校验：`address_coverage_target_chk`——SERVED/PENDING 必须至少挂一个目标（设施或设备），UNSERVED 允许全空。
+> 下单覆盖门控（P2，T12）：`BOSS_ODN_COVERAGE_GATE=on` 时 Submit 前置校验地址 SERVED，未 SERVED 以 40900 拒单（透传原因）；灰度默认关。
 
 ### 1.5.8 construction_projects / construction_items（施工项目与竣工回填，迁移 000199，internal/domain/odn）
 

@@ -102,6 +102,12 @@ type ProvisionTemplateFinder interface {
 	FindTemplateForOffer(ctx context.Context, offerID, legalEntityID int64) (int64, error)
 }
 
+// CoverageGate 下单覆盖门控(P2,路线图 T12;由 odn 域提供,灰度注入 BOSS_ODN_COVERAGE_GATE)。
+// 地址未 SERVED → 返回非 nil 错误,Submit 发单号前拒单(TMF POQ 语义延伸)。
+type CoverageGate interface {
+	CheckOrderCoverage(ctx context.Context, addressID int64) error
+}
+
 // ProvisionTask 下发任务请求(order 域定义,由 app 装配层映射到 provision.Task)。
 type ProvisionTask struct {
 	TaskNo      string

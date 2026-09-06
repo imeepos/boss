@@ -81,6 +81,12 @@ func (s *PGStore) submitRegular(ctx context.Context, req SubmitReq) (*Order, err
 			return nil, fmt.Errorf("order: submit qualification offer=%d: %w", req.OfferID, err)
 		}
 	}
+	// 覆盖门控(P2,路线图 T12;odnGate 未注入=灰度关,注入后地址未 SERVED 即拒单)。
+	if s.odnGate != nil {
+		if err := s.odnGate.CheckOrderCoverage(ctx, req.AddressID); err != nil {
+			return nil, fmt.Errorf("order: submit coverage gate address=%d: %w", req.AddressID, err)
+		}
+	}
 
 	// 订单号由数据库序列发号(migrations/000031):跨进程/重启不重复。
 	// 日期段按业务时区切日(会话时区 UTC,裸 now() 在马尼拉 08:00 前会算前一天)。

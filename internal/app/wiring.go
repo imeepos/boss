@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
@@ -194,6 +195,10 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	}
 
 	wireGeoServices(app, pool)
+	// ODN 覆盖门控灰度(P2,T12;BOSS_ODN_COVERAGE_GATE=on 启用下单硬校验,默认关)。
+	if os.Getenv("BOSS_ODN_COVERAGE_GATE") == "on" {
+		ord.SetCoverageGate(app.ODN)
+	}
 	wireAAAInfra(app, pool, aaastore, pushSender, provStore)
 	// 订单环节推进广播到开放平台 Webhook(000125 outbox;尽力而为,失败不影响推进)。
 	ord.SetStageNotifier(app.OpenWebhook)

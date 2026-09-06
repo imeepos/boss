@@ -141,6 +141,9 @@ type ODNService interface {
 	ReleasePort(ctx context.Context, portID int64) error
 	ActivatePort(ctx context.Context, portID int64) error
 
+	// 下单覆盖门控(P2,T12;灰度 BOSS_ODN_COVERAGE_GATE)。
+	CheckOrderCoverage(ctx context.Context, addressID int64) error
+
 	// 影响面分析(P7,只读聚合;运维侧影响谁)。
 	ImpactByFacility(ctx context.Context, facilityCode string) (*ImpactReport, error)
 

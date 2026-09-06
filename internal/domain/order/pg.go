@@ -36,6 +36,7 @@ type PGStore struct {
 	prof       UserProfileCreator      // 跨域:创建认证账号(环节6)
 	prov       ProvisionTaskCreator    // 跨域:创建下发任务(环节7)
 	tpl        ProvisionTemplateFinder // 跨域:套餐→下发模板解析(环节7)
+	odnGate    CoverageGate            // 可选:ODN 覆盖门控(P2 下单硬校验,未注入=跳过;灰度 BOSS_ODN_COVERAGE_GATE)
 }
 
 // NewPGStore 构造 PGStore;cust 由 app 装配层注入 customer 域实现。
@@ -63,6 +64,8 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 			if f, ok := v.(ProvisionTemplateFinder); ok { // 同一适配器可同时实现两口
 				s.tpl = f
 			}
+		case CoverageGate:
+			s.odnGate = v
 		}
 	}
 	return s
@@ -71,6 +74,10 @@ func NewPGStore(db dbtx, cust CustomerLookup, extras ...any) *PGStore {
 // SetStageNotifier 注入环节推进广播钩子(app 装配层,wireAAAInfra 之后调用);
 // 广播尽力而为,失败不影响环节推进本身。
 func (s *PGStore) SetStageNotifier(n StageNotifier) { s.notifier = n }
+
+// SetCoverageGate 注入 ODN 覆盖门控(app 装配层,wireGeoServices 之后;灰度 BOSS_ODN_COVERAGE_GATE=on)。
+// nil=门控关闭(下单不校验覆盖)。
+func (s *PGStore) SetCoverageGate(g CoverageGate) { s.odnGate = g }
 
 const orderCols = `id, order_no, customer_id, offer_id, address_id, stage, status, channel_id, legal_entity_id, region_path, billing_mode, buy_months, gift_months, created_at`
 
