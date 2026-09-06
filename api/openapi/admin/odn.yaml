@@ -482,3 +482,38 @@ paths:
       operationId: activateOdnPort
       parameters: [ { name: portId, in: path, required: true, schema: { type: integer } } ]
       responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/bindings:
+    get:
+      tags: [ODN]
+      summary: 绑定反查(按物理口或按订单,售后与 GIS 点位数据源)
+      operationId: listOdnBindings
+      parameters:
+        - { name: portId, in: query, schema: { type: integer } }
+        - { name: orderId, in: query, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 写绑定事实(端口须 IN_SERVICE;一口一绑定)
+      operationId: bindOdnPort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [portId, orderId]
+              properties:
+                portId: { type: integer }
+                orderId: { type: integer }
+                resourcePortId: { type: integer, description: 逻辑资源口 id,可空 }
+                note: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/bindings/port/{portId}:
+    delete:
+      tags: [ODN]
+      summary: 解绑(按物理口)
+      operationId: unbindOdnPort
+      parameters: [ { name: portId, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }

@@ -144,6 +144,12 @@ type ODNService interface {
 	// 下单覆盖门控(P2,T12;灰度 BOSS_ODN_COVERAGE_GATE)。
 	CheckOrderCoverage(ctx context.Context, addressID int64) error
 
+	// 逻辑-物理绑定(P3,迁移 000201;售后与 GIS 反查数据源)。
+	BindPort(ctx context.Context, b ODNBinding) error
+	UnbindPort(ctx context.Context, portID int64) error
+	ListBindingsByPort(ctx context.Context, portID int64) ([]ODNBinding, error)
+	ListBindingsByOrder(ctx context.Context, orderID int64) ([]ODNBinding, error)
+
 	// 影响面分析(P7,只读聚合;运维侧影响谁)。
 	ImpactByFacility(ctx context.Context, facilityCode string) (*ImpactReport, error)
 

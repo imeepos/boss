@@ -228,6 +228,7 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 | construction_projects ✚ | id / UQ(proj_no) | ▲(prv_code,city_prefix)(可空 FK odn_city_code) ▲accepted_by(FK accounts) ■construction_items | PENDING→BUILDING→ACCEPTED；竣工批量回填单内设施 IN_SERVICE |
 | construction_items ✚ | id / UQ(project_id,facility_code) | ▲project_id(FK CASCADE) ▲facility_code(FK odn_facility) | 单 1:N 设施；ACCEPTED 后锁定 |
 | odn_port ✚ | id / UQ(device_id,port_no) | ▲device_id(FK odn_device)；order_id 订单软引用(无 FK) | 端口状态机 IDLE/RESERVED/IN_SERVICE；P2 端口占用（下单门控数据基础） |
+| odn_bindings ✚ | id / UQ(port_id) | ▲port_id(FK odn_port) ▲bound_by(FK accounts)；order_id/resource_port_id 软引用 | 订单/逻辑口 ↔ 物理口绑定事实；P3 售后与 GIS 反查数据源 |
 
 ### 2.13 归属台账（跨域通用模式）
 

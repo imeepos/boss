@@ -319,6 +319,18 @@
 
 > 状态机：IDLE→RESERVED（订单预占，SKIP LOCKED 防双占）→IN_SERVICE（开通）→IDLE（拆机释放）；RESERVED→IDLE 可释放。`AllocateForAddress`：地址 → 覆盖设备 → 空闲口，无挂接设备/无空闲口明确报错。
 
+### 1.5.10 odn_bindings（逻辑-物理绑定，迁移 000201，internal/domain/odn）
+
+> P3 售后/反查数据源（路线图 T13）：订单（及可选逻辑资源口）↔ ODN 物理口的绑定事实，一口一绑定；端口须 IN_SERVICE 方可绑定。GIS 点位反查在用订单、售后按单查物理口均以此为准（Amended 2026-08-25-odn-gis-coords-link 的「点位点击不查详情」）。管理面 `menu:odn`，REST `/odn/bindings*`（契约 admin/odn.yaml）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 物理口 | `PortID` | port_id | → odn_port，UNQ 一口一绑定 |
+| 订单 | `OrderID` | order_id | 订单软引用（无 FK） |
+| 逻辑口 | `ResourcePortID` | resource_port_id | 逻辑资源 ports.id，可空软引用 |
+| 备注 | `Note` | note | 可空 |
+| 绑定时间 | `BoundAt` | bound_at | TIMESTAMPTZ |
+
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
