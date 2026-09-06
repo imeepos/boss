@@ -78,6 +78,7 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 	}
 
 	// 预绑定时回填 assets.tag_id;冲突即返 ErrBindingConflict 并整体回滚。
+	bound := false
 	if t.BoundAssetID > 0 {
 		tag, err := tx.Exec(ctx,
 			`UPDATE assets SET tag_id = $2
@@ -94,12 +95,15 @@ func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
 			return 0, fmt.Errorf("asset: asset %d already bound to another tag: %w",
 				t.BoundAssetID, ErrBindingConflict)
 		}
-		// 绑定事件流(P1-T2):BIND 随主事务落库,失败 ALERT 不阻断。
-		s.bindTagEvent(ctx, tx, id, t.BoundAssetID)
+		bound = true
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, fmt.Errorf("asset: commit create tag: %w", err)
+	}
+	// 绑定事件流(P2-T2 热修):提交后尽力而为,失败 ALERT 不阻断。
+	if bound {
+		s.bindTagEvent(ctx, id, t.BoundAssetID)
 	}
 	return id, nil
 }
@@ -192,6 +196,7 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 	// tag 双向绑定回填:assets.tag_id 写入时同步 tags.bound_asset_id/status,
 	// 与环节9 扫码核对(VerifyScan 要求 bound_asset_id 非空)口径对齐。
 	// 显式比对目标值,冲突即返 ErrBindingConflict 并整体回滚。
+	bindEvent := false
 	if a.TagID > 0 {
 		// DISABLED 标签不可被绑定(P2-W2-T1;事务内以 tx 校验,失败整单回滚)。
 		if err := s.ensureTagBindable(ctx, tx, a.TagID); err != nil {
@@ -211,12 +216,15 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 			return 0, fmt.Errorf("asset: tag %d already bound to another asset: %w",
 				a.TagID, ErrBindingConflict)
 		}
-		// 绑定事件流(P1-T2):BIND 随主事务落库,失败 ALERT 不阻断。
-		s.bindTagEvent(ctx, tx, a.TagID, id)
+		bindEvent = true
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, fmt.Errorf("asset: commit create asset: %w", err)
+	}
+	// 绑定事件流(P2-T2 热修):提交后尽力而为,失败 ALERT 不阻断。
+	if bindEvent {
+		s.bindTagEvent(ctx, a.TagID, id)
 	}
 	return id, nil
 }

@@ -24,7 +24,7 @@ jobs:
   # 「镜像没了→守护也起不来」的鸡蛋互锁;自检幂等零副作用,重建细节见
   # scripts/ops/deploy-runner-guard.sh(构建上下文固化在 scripts/ops/,不再依赖 /tmp)。
   runner-image-guard:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Clone
         run: |

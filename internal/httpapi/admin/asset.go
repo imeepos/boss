@@ -24,6 +24,7 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	ams.POST("/asset-assignments", assignmentCreateHandler(a))            // P2-W2-T1 领用(仅 IN_STOCK,落台账开段)
 	ams.POST("/asset-assignments/:id/return", assignmentReturnHandler(a)) // P2-W2-T1 归还(闭合段,重复 40900)
 	ams.POST("/assets/:assetId/scrap", assetScrapHandler(a))              // P1-T2 报废(标签强回收+事件流)
+	ams.GET("/assets/:assetId/events", assetEventsHandler(a))             // P2-T4 事件消费面(组级 menu:asset)
 	ams.GET("/asset-models", modelListHandler(a))                         // P1-T3 型号字典
 	ams.POST("/asset-models", modelCreateHandler(a))
 	ams.PUT("/asset-models/:id", modelUpdateHandler(a))           // P2-W2-T1 编辑(停用不可改,冲突 40900)
@@ -35,7 +36,7 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.POST("/tags/:tagId/unbind", requirePerm(a.User, "menu:tag"), tagUnbindHandler(a))   // P1-T2 解绑回收
 	g.POST("/tags/:tagId/disable", requirePerm(a.User, "menu:tag"), tagDisableHandler(a)) // P2-W2-T1 停用(BOUND 先解绑)
 	g.POST("/tags/:tagId/enable", requirePerm(a.User, "menu:tag"), tagEnableHandler(a))   // P2-W2-T1 启用(仅 DISABLED 生效)
-	g.GET("/tags/:tagId/events", requirePerm(a.User, "menu:tag"), tagEventsHandler(a))    // P2-W2-T1 事件流(倒序只读)
+	g.GET("/tags/:tagId/events", requirePerm(a.User, "menu:tag"), tagEventsHandler(a))    // P2-T4 事件消费面(main 侧实现,P2-W2-T1 与之合流)
 
 	g.POST("/stocktakes", requirePerm(a.User, "menu:stock"), stocktakeCreateHandler(a))
 	g.POST("/stocktakes/:taskId/diff-handle", requirePerm(a.User, "menu:stock"), stocktakeHandleDiffHandler(a))

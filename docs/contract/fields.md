@@ -703,6 +703,18 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > CreateTag/CreateAsset 绑定成功即写 BIND；端点 POST /tags/{tagId}/unbind（预期不符 40900、
 > 未绑定 ErrTagUnbound→40000 族）写 UNBIND；POST /assets/{assetId}/scrap（reason 必填,终态
 > 幂等）强制解绑写 RECYCLE——报废软回收禁硬删（adopted 2026-09-06-asset-tag-p1-wave）。
+
+> 标签事件消费面（P2-T4，2026-09-06）：查询端点 GET /tags/{tagId}/events 与
+> GET /assets/{assetId}/events（id 倒序；limit 缺省 50 上限 100；action 多值白名单
+> BIND/UNBIND/RECYCLE 过滤，白名单外 42200；before_id 游标预留只取更小 id，首版 UI 不用；
+> 标签/资产不存在 40400，统一信封 items 返回）。前端：标签页操作列（既有 Dropdown 组件
+> 体系，禁用原生 select）提供 解绑/报废绑定资产/事件记录，资产页操作列提供 状态轨迹/
+> 事件记录/报废；解绑/报废二次确认三要素=影响面清单+不可逆/恢复路径说明+红色确认键默认
+> 禁用（原因必填；报废另需输入资产编码精确匹配）；确认框影响面口径与事后可查回的事件字段
+> 对齐（解绑→UNBIND 事件、报废→RECYCLE 事件+SCRAPPED 轨迹行，原因均入事件 detail）；
+> 事件时间轴抽屉一行一事件（时间/操作人/动作徽标/对象），changed JSONB 只渲染实际变化键
+> （键: 旧值 → 新值，等宽字体），不 dump 全量 JSON、不引 diff 库。明确不做：全局事件
+> 大屏、游标分页 UI、全文搜索、SSE/轮询推送、导出。
 > admin 台账 CRUD 四端点（P2-W1-T1）：POST /assets（建档：batchId 必填缺失 42200，
 > 企业归属快照自批次回填与采购入库同口径；状态固定 IN_STOCK；modelId 可选须存在且在用，
 > type 缺省由型号类别派生；tagId 可选绑定写 BIND，已被其他资产占用 40900 整单回滚；
@@ -1514,6 +1526,19 @@ API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATC
 | `WarehouseLng` | warehouse_lng | DOUBLE PRECISION 可空，CHECK [-180,180] |
 
 > 入库确认时由 ConfirmReceipt 入参 warehouseLat/Lng 一并写入；GIS `GET /gis/inventory-points?entity=warehouse&bbox` 读此列做聚合图层。
+
+### 9.8 采购域端点口径（P2-W2-T2 增补，零 DDL）
+
+| 端点 | 口径 |
+|:-----|:-----|
+| PUT /procurement/suppliers/{id} | 编辑供应商：名称/联系人/电话/备注可改，编码不可改（入参无 code 字段）；部分更新语义（字段省略=null 保持原值）；禁用态同样可改资料且保持禁用；未命中 40400 |
+| POST /procurement/suppliers/{id}/enable | 启用：DISABLED→ENABLED；已 ENABLED 幂等成功；不存在 40400；写审计（状态变更） |
+| GET /procurement/orders/{id} | 采购单详情：单头+明细行+状态；未命中沿用 40400 |
+| PUT /procurement/orders/{id} | 草稿编辑：仅 DRAFT（否则 40900）；备注/期望日期可改（null=保持）；items 非 null 即整体替换且行 quantity>0（违者 42200）；总金额随明细重算；审计记变更前后键值 |
+| POST /procurement/receipts/{id}/reject | 入库驳回：仅 DRAFT→REJECTED（CONFIRMED 等非 DRAFT 40900）；原因 ≤255 字（42200）可空，空则缺省文案「入库驳回」并回写 receipt.remark；写审计（状态变更+原因） |
+
+> 错误码沿用全局：40400 not found / 40900 状态冲突 / 42200 参数非法。
+> 明细整体替换仅限 DRAFT：SUBMITTED 之后 received_qty 参与收货对账，整行删除会破坏已收数量口径。
 
 ## 10. 字段字典的使用规则（写入 Agent 输入包）
 

@@ -84,20 +84,3 @@ func tagEnableHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, nil)
 	}
 }
-
-// tagEventsHandler GET /tags/{tagId}/events:标签事件流(P2-W2-T1 C)。
-// append-only 审计流只读,BIND/UNBIND/RECYCLE 按时间倒序回放。
-func tagEventsHandler(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id, ok := httpx.ParsePathParamInt64(c, "tagId")
-		if !ok {
-			return
-		}
-		list, err := a.Asset.ListTagEvents(c.Request.Context(), id)
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	}
-}
