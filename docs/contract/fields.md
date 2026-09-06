@@ -678,7 +678,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 |:---------|:-------|:--------------|:----------|
 | 资产编码 | `AssetCode` | asset_code | 如 A-20260001 |
 | 绑定标签 | `TagID` | tag_id | BIGINT → tags（可空） |
-| 类型 | `Type` | type | 光猫/ONU/路由器等（展示冗余；权威=model_id→asset_models.category） |
+| 类型 | `Type` | type | 白名单 ONU/ROUTER/OLT（P4-T2 写入白名单，白名单外 42200；权威码 ONU，`光猫`方言经 000191 归一；展示冗余，权威=model_id→asset_models.category） |
 | 型号 | `ModelID` | model_id | BIGINT → asset_models（可空，000187+P1-T3） |
 | 入库批次 | `BatchID` | batch_id | BIGINT → asset_batches |
 | 部署地址 | `AddressID` | address_id | BIGINT → addresses（可空，未部署为空） |
@@ -691,8 +691,12 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 状态轨迹（TS 实体）：`asset_lifecycles`，资产每次状态/位置变更一行，含事发时 `address_id` + `address_name` 快照 + `changed_at`，历史不随当前状态漂移。
 > 区域/企业锚点（TS 实体）：`region_id`/`region_name`（部署地址所在经营区域，未部署为空）、`legal_entity_id`/`legal_entity_name`（企业），按地区/企业统计资产。
 > 数据质量闸门（000184，adopted 2026-09-06-asset-tag-quality-gate）：`status` 列 DB CHECK 枚举兜底
-> （assets 四态 / tags 三态，terms.md §4 为权威）；`assets.type` 仅拦空串（受控字典为 P1 路线，
-> 见 docs/design/asset-tag-research-mature-designs.md）。
+> （assets 四态 / tags 三态，terms.md §4 为权威）；`assets.type` 000184 仅拦空串，P4-T2（000191+）
+> 起写入走应用层白名单 ONU/ROUTER/OLT（`internal/domain/asset/type_whitelist.go`，白名单外
+> 42200；巡检层同名 SQL 白名单见 `scripts/ops/db-patrol-gate.sh` ASSET-TYPE-UNKNOWN 查，双闸同步维护）。
+> 类型归一（000191，Lead 裁定 2026-09-06）：权威类型码 ONU，存量 49 行 `光猫` UPDATE 归一（down
+> 刻意为空，方言归一不可逆）；MI-ONU/SMOKE 系 e2e 残留不入类型体系，由
+> `scripts/ops/clean-asset-type-residue.sh` 按「无标签绑定/领用/换新/盘点/四码引用才删」清理。
 > 建档即留痕（000184 同批）：CreateAsset 与采购入库确认（ConfirmReceipt）同事务落
 > `asset_lifecycles` 首行（初始 status，changed_at=now()）；CreateAsset/CreateTag 写侧事务化，
 > 双绑回填冲突（ErrBindingConflict）时整单回滚，不再产生半成品孤儿。
