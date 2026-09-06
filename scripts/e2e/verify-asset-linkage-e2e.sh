@@ -247,7 +247,7 @@ walk_dismantle() { # 拆机联动(可达则断言 D1-D3;不可达 SKIP+原因,�
 residue_gate() { # A3: 收尾后库内 acc_ 前缀残留必须为零(SQL 逐类断言,语句在伴生 .sql)
   local q rc cls n
   rc=0; echo "收尾: 前缀残留断言(acceptance-cleanup --apply 后应为零)"
-  q=$(sql < "$ROOT/scripts/ops/e2e-asset-linkage-residue.sql")
+  q=$(sql < "$ROOT/scripts/e2e/verify-asset-linkage-e2e-residue.sql")
   if [ -z "$q" ]; then bad "RES-db" "残留查询失败(ssh/psql 不可达),不能假装干净"; return 1; fi
   while IFS="|" read -r cls n; do
     [ -z "$cls" ] && continue
