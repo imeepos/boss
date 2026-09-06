@@ -684,7 +684,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 部署地址 | `AddressID` | address_id | BIGINT → addresses（可空，未部署为空） |
 | 状态 | `Status` | status | IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED（见 terms.md 第 4 节） |
 | 序列号 | `SN` | sn | 可空 text；全网唯一（部分唯一索引 uq_assets_sn，000188；存量不回填不强制） |
-| MAC 地址 | `MAC` | mac | 可空 text；六组十六进制冒号或横杠分隔（整串一致），入库原样（uq_assets_mac，000188） |
+| MAC 地址 | `MAC` | mac | 可空 text；冒号/横杠/裸 hex 三形态输入，写入归一为大写冒号规范形 `AA:BB:CC:DD:EE:FF`（000190，与应用层 NormalizeMAC 及表达式唯一索引 upper(regexp_replace(mac,'[:. -]','','g')) 同一归一空间；000188 建列） |
 | LOID | `LOID` | loid | 可空 text；电信 LOID 鉴权标识（uq_assets_loid，000188） |
 
 > 页面 asset.html 的「标签编号/EPC 码」经 `tag_id → tags` 反查展示，「位置」= `address_id`，「生命周期」= `status`。
@@ -730,8 +730,8 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > assetCode 可空，缺省服务端按 A-{批次8位}-{序号5位} 生成）+ GET /assets/{assetId}
 > （详情含企业/区域快照，未命中 40400）+ PUT /assets/{assetId}（受限编辑：
 > 类型/型号/标签/批次 四键 + sn/mac/loid 身份三要素（000188+P3-T2：建档接收，空串存 NULL，
-> SN/LOID 去首尾空格，MAC 六组 hex 冒号横杠均可入库原样；编辑指针语义缺省=保持、空串=清除；
-> 部分唯一索引冲突 40900 且 message 含冲突字段名，MAC 非法 42200），标签换绑同事务 UNBIND+BIND 冲突 40900 整单回滚，批次仅
+> SN/LOID 去首尾空格，MAC 冒号/横杠/裸 hex 三形态均可输入、写入归一为大写冒号规范形（000190）；编辑指针语义缺省=保持、空串=清除；
+> 表达式唯一索引冲突 40900 且 message 含冲突字段名，MAC 非法 42200），标签换绑同事务 UNBIND+BIND 冲突 40900 整单回滚，批次仅
 > IN_STOCK 态可改并同步企业快照，四键无变化幂等成功；审计记变更前后键值）+
 > DELETE /assets/{assetId}（守卫删除：仅 IN_STOCK 且无标签绑定/持有台账/换新单/
 > 盘点明细/四码关联引用可物理删，命中任一引用 40900 且 message 列全阻断项；
