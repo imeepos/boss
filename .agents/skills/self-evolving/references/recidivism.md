@@ -135,3 +135,5 @@
 15. **【已犯 1 次】read 工具 lines 数组有单次返回上限,与 totalLines 不符时全文件重写会静默截断** —— 2026-09-06 notes.md 整文件重写丢 1407 行(1752→349),commit stat 的 deletions 远大于预期才逮住,checkout HEAD~1 恢复。整文件重写前必须核对 lines.length === totalLines;不一致改用 cat >> 追加式或分段读全再拼。
 16. **【已犯 1 次】git worktree add <path> <branch> 在分支不存在时 fatal invalid reference** —— 2026-09-06 任务书口径默认分支可建;先 for-each-ref 探测,不存在就 `git worktree add -b <branch> <path>` 一并创建。
 17. **【已犯 1 次】后台 dev server 用管道(如 | head)启动会吞输出且可能根本未监听** —— 2026-09-06 vite 连探三轮 http 000;正解=nohup 重定向日志文件,cat 日志 + curl 探活;macOS 另注意无 timeout 命令。
+18. **【已犯 3 次】run_code 内层工具调用对象键名手滑多引号(description": / new_string":)整程序 parse error** —— 2026-09-06 负责人轮三次(description" 两次、new_string" 一次),整段程序不执行白耗轮次;键名默念并入红线 #14 自检。
+19. **【已犯 1 次】领域 patch 结构注释宣称 0=不改,实现却裸比较把 0 当目标值** —— 2026-09-06 资产 UpdateAsset type-only 编辑误入批次换绑查批次 0(FK 42200);值类型 patch 的 0/空串语义必须显式归一(eff 值)再比较/写库,fake 桩单测测不出,须有真库/集成路径。

@@ -470,3 +470,13 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 原因:deploy-102.yml concurrency cancel-in-progress 取消进行中的旧 run;取消点在 Build 之后 Deploy 之前→镜像进仓库但容器未重建。后续 docs-only run 走 Classify change 的 docs/*|.agents/*|*.md 豁免直接 skip,永远等不来部署;空提交也救不了(diff 为空仍判 docs-only)。
 - 修法:镜像已在仓库时直接手动补 Deploy 步骤——ssh 102 `docker rm -f boss-server boss-aaa boss-report boss-provisioner boss-admin-web` 后用仓库内 compose 管道执行 `docker-compose -p boss-app -f - up -d --force-recreate --remove-orphans`,再过 healthz 指纹+verify-deploy 断言;教训=docs 提交别与 runtime push 同时段抢跑,收尾的 skill 存档等部署验证完成再推。
 
+
+## 2026-09-06 Go 反引号原始串内写 "+var+" 拼接,SQL 原样带占位符上线(42P01)
+- 症状:DELETE /assets/{id} 恒 50000,服务端日志 asset: delete guard tags: relation \"+gr.table+\" does not exist (SQLSTATE 42P01);单测全绿。
+- 原因:守卫查询整句写在反引号原始串里,从双引号串抄来的 \"+gr.table+\" 拼接从未生效;pgxmock 默认宽松正则(SELECT EXISTS)匹配坏 SQL 照样绿,语义错误拦不住。
+- 修法:静态白名单标识符用 fmt.Sprintf 拼接;测试断言收紧到逐表名精确正则(如 FROM tags WHERE bound_asset_id = \\$1),靠真实 PG 的 E2E 兜底语义。
+
+## 2026-09-06 验收脚本优先选仓库根陈旧二进制(./bossctl 8/31 旧版),错误退出码语义不同致脚本误判
+- 症状:E2E 脚本 DELETE 明明 50000 却打印 delete ok;同脚本清理段又判失败,行为自相矛盾。
+- 原因:脚本 if [ -x ./bossctl ] 优先吃了仓库根 8/31 旧二进制,旧版业务错退出码语义与现版不同(现行版有 TestCallBizErrorExit 保证非零)。
+- 修法:验收脚本二进制一律现构建(mktemp 目录),环境变量可显式覆盖;参照 scripts/verify-asset-crud-e2e.sh。
