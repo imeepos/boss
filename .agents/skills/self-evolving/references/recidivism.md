@@ -5,6 +5,7 @@
 
 | 坑 | 次数 | 发生日期 | 后果 |
 |---|---|---|---|
+| 调 workspace_session_manage archiveSession(宿主忽略显式 sessionIds 清空参数展开为全工作区全量归档) | 2 | 2026-09-05(P2 波:空参展开~300), 2026-09-06(P3 波:显式传 3 个 id 仍被清空展开~400,回显 sessionIds:[]) | 两次全工作区会话批量归档(不可逆;数据/日志零损失);红线:本环境严禁再调用该工具,归档需求留给用户 GUI 手工或待宿主修复 |
 | bash 默认 cwd 是主树而非 worktree,python/sed 批量编辑跑错树 | 6 | 2026-09-06(P2-C 轮:bash 修复笔误重发时漏带 workdir,连发 6 条静默落主树,gofmt/yaml 差异被误判为并行会话篡改 worktree,两轮后靠 git branch --show-current 定位); 2026-08-22(改了主树 check-contract-sync/routes.go;另一次 FileNotFound 才发现); 2026-08-26(调研文档写进主树内嵌套目录 boss/boss-wt-addr-research/,git commit 静默落 main,靠输出标记 `[main 71bb240e]` 发现); 2026-09-26(收尾时仍在待删 worktree 的 cwd 里链式执行 `git worktree remove` 自身路径,cwd 失效 fatal "Unable to read current working directory",回主树重跑才清干净) | worktree 内每条 bash 显式带 workdir,heredoc 开头 pwd 自检;`worktree add ../name` 建在仓库外侧,写文件用 `git worktree list` 核对绝对路径,commit 输出方括号看分支名;**收尾清理(worktree remove / branch -d)一律从主树发起**,不在待删目录内执行任何后续命令;2026-09-06(P2-W2-T1 轮:多命令并列时第二条 git commit 漏带 workdir 落主树,`git add -A` 把主树上并行会话未提交的半成品扫成混合提交,且并行会话随后将其推上远端 main——写类命令(commit/add/reset)与读类命令同等对待,逐条显式 workdir,commit 后必看方括号分支名) |
 | 非交互 rebase 的 reword sed 按行号命中错误 pick,把 main 侧提交贴了自己的 message | 1 | 2026-08-22(开放平台 M1 分支,三轮返工) | sed 按 hash 前缀匹配不按行号;改完 git log --graph 验证 |
 | 用原生 `<select>` 写下拉(option 弹层无法随主题定制) | 2 | 2026-08-18(顶栏语言切换), 2026-08-18(geo 分页 size changer+国家筛选) | 两次被用户点名"奇怪",返工 1 轮 |
