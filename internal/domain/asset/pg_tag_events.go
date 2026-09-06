@@ -130,3 +130,28 @@ func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64,
 	}
 	return nil
 }
+
+// ListTagEvents 标签事件流(P2-W2-T1 C):append-only 审计流,只读回放,
+// 按时间倒序(created_at DESC;id DESC 兜底同秒多事件),BIND/UNBIND/RECYCLE 全量。
+// 未命中标签不报错返回空列表(新标签事件流为空是合法态)。
+func (s *PGStore) ListTagEvents(ctx context.Context, tagID int64) ([]TagEvent, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, event_id::text, tag_id, COALESCE(asset_id, 0), action,
+		       COALESCE(actor_account_id, 0), detail, changed, created_at
+		FROM tag_events WHERE tag_id = $1
+		ORDER BY created_at DESC, id DESC`, tagID)
+	if err != nil {
+		return nil, fmt.Errorf("asset: list tag events: %w", err)
+	}
+	defer rows.Close()
+	out := make([]TagEvent, 0)
+	for rows.Next() {
+		var e TagEvent
+		if err := rows.Scan(&e.ID, &e.EventID, &e.TagID, &e.AssetID, &e.Action,
+			&e.ActorAccountID, &e.Detail, &e.Changed, &e.CreatedAt); err != nil {
+			return nil, fmt.Errorf("asset: scan tag event: %w", err)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}

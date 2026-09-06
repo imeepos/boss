@@ -193,6 +193,8 @@ type AssetService interface {
 	// EnableTag 启用标签(P2-W2-T1):仅对 DISABLED 生效(DISABLED → UNBOUND);
 	// UNBOUND/BOUND 幂等 no-op 成功;未命中 ErrNotFound。
 	EnableTag(ctx context.Context, tagID int64) error
+	// ListTagEvents 标签事件流(P2-W2-T1):append-only 审计流只读回放,按时间倒序。
+	ListTagEvents(ctx context.Context, tagID int64) ([]TagEvent, error)
 	// ScrapAsset 报废资产(P1-T2):任意非终态 → SCRAPPED(终态幂等 no-op),强制解绑标签写
 	// RECYCLE 事件(软回收禁硬删),轨迹落行;同一事务,失败整单回滚。
 	ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string) error

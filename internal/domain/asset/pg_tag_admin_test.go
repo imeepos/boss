@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pashagolub/pgxmock/v4"
 )
@@ -200,4 +202,39 @@ func TestPGStore_EnsureTagBindable(t *testing.T) {
 			t.Fatalf("err=%v", err)
 		}
 	})
+}
+
+// ListTagEvents 事件流只读回放:按时间倒序,JSONB changed 映射。
+func TestPGStore_ListTagEvents(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	base := time.Date(2026, 9, 5, 12, 0, 0, 0, time.UTC)
+	mock.ExpectQuery("event_id::text").
+		WithArgs(int64(9)).
+		WillReturnRows(mock.NewRows([]string{"id", "event_id", "tag_id", "asset_id", "action", "actor_account_id", "detail", "changed", "created_at"}).
+			AddRow(int64(2), "uuid-2", int64(9), int64(3), "RECYCLE", int64(1), "报废回收", map[string]any{"bound_asset_id": []int64{3, 0}}, base.Add(time.Second)).
+			AddRow(int64(1), "uuid-1", int64(9), int64(3), "BIND", int64(0), "", map[string]any{"bound_asset_id": 3}, base))
+
+	s := NewPGStore(mock)
+	events, err := s.ListTagEvents(context.Background(), 9)
+	if err != nil {
+		t.Fatalf("ListTagEvents: %v", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("events=%d, want 2", len(events))
+	}
+	// 倒序:最新 RECYCLE 在前。
+	if events[0].Action != "RECYCLE" || events[1].Action != "BIND" {
+		t.Fatalf("order=[%s %s], want [RECYCLE BIND]", events[0].Action, events[1].Action)
+	}
+	if events[0].EventID != "uuid-2" || events[0].AssetID != 3 || events[0].ActorAccountID != 1 {
+		t.Fatalf("event0=%+v", events[0])
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
 }

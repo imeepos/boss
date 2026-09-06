@@ -206,3 +206,48 @@ func TestTagDisableEnableHandlers(t *testing.T) {
 		}
 	})
 }
+
+func (f *fakeTagAdmin) ListTagEvents(_ context.Context, id int64) ([]asset.TagEvent, error) {
+	if id == 5 {
+		return f.tagEvents, nil
+	}
+	return nil, asset.ErrNotFound
+}
+
+func TestTagEventsHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("GET /tags/5/events 倒序只读回放", func(t *testing.T) {
+		fa := &fakeTagAdmin{tagEvents: []asset.TagEvent{
+			{ID: 2, EventID: "uuid-2", TagID: 5, AssetID: 3, Action: "RECYCLE"},
+			{ID: 1, EventID: "uuid-1", TagID: 5, AssetID: 3, Action: "BIND"},
+		}}
+		eng := tagAdminRouter(fa, nil)
+		w := doJSON(eng, http.MethodGet, "/api/admin/v1/tags/5/events", "")
+		var out struct {
+			Code int `json:"code"`
+			Data struct {
+				Items []asset.TagEvent `json:"items"`
+			} `json:"data"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || len(out.Data.Items) != 2 {
+			t.Fatalf("code=%d items=%d", out.Code, len(out.Data.Items))
+		}
+		if out.Data.Items[0].Action != "RECYCLE" {
+			t.Fatalf("order broken: first=%s", out.Data.Items[0].Action)
+		}
+	})
+
+	t.Run("GET /tags/9/events 未命中空列表", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{}, nil)
+		w := doJSON(eng, http.MethodGet, "/api/admin/v1/tags/9/events", "")
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeNotFound) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeNotFound)
+		}
+	})
+}
