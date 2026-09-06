@@ -714,6 +714,22 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 盘点明细/四码关联引用可物理删，命中任一引用 40900 且 message 列全阻断项；
 > SCRAPPED 一律拒绝硬删提示走报废端点；审计附资产编码）。状态与部署地址不经编辑
 > 端点变更，一律走业务流转（装机扫码/报废/换新）。
+> 全表管理端点（P2-W2-T1，2026-09-06）：POST /tags（建标签：编号+EPC+频段必填且唯一
+> （tags_tag_no_key / tags_epc_code_key 冲突 40900），状态缺省 UNBOUND，法人必填且须存在）+
+> POST /tags/{id}/disable（停用：仅 UNBOUND，BOUND 必须先解绑 40900；已停用幂等；
+> DISABLED 标签全绑定链路拒绝——建档绑签/编辑换绑前置查状态）+ POST /tags/{id}/enable
+> （启用：仅对 DISABLED 生效回 UNBOUND，非停用态幂等成功）+ GET /tags/{id}/events
+> （事件流：append-only 只读回放，BIND/UNBIND/RECYCLE 按时间倒序）+ PUT /asset-models/{id}
+> （编辑：vendor/model/category/partNumber/spec 五键；四元组冲突 40900；停用型号拒绝编辑
+> 40900 提示先启用）+ POST /asset-models/{id}/disable|enable（is_active 直改；停用不物理删，
+> 引用由 model_id 承载；幂等）+ POST /asset-batches（建批次：名称+法人必填，批次编码缺省
+> RK-YYYYMMDD-NNNNN 自动生成对齐采购入库；法人不存在 42200）+ POST /asset-assignments
+> （领用：资产+师傅+事由必填；仅 IN_STOCK 可领用 40900；落持有台账开段 effective_to=NULL；
+> 领用【不改】资产状态——装机扫码(000185)才置 DEPLOYED，领用是台账事实）+
+> POST /asset-assignments/{id}/return（归还：闭合段 effective_to=now；重复归还 40900）+
+> POST /replacements/{id}/cancel（取消：仅 PENDING → CANCELLED 终态，非 PENDING 40900）。
+> 以上写操作均写审计（数据变更/状态变更；target=tag/asset_model/asset_batch/
+> asset_assignment/replacement）。
 
 ### 4.2 ports（端口，源自 resource.html + 全案 4.2 Port）
 
@@ -771,11 +787,11 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 | 设备 | `AssetID` | asset_id | BIGINT 软引用 assets（被更换资产） |
 | 原因 | `Reason` | reason | 如 光猫故障 |
 | 优先级 | `Priority` | priority | HIGH/MEDIUM/LOW |
-| 状态 | `Status` | status | PENDING/DOING/DONE/FAILED（见 terms.md 第 4 节） |
+| 状态 | `Status` | status | PENDING/DOING/DONE/FAILED/CANCELLED（见 terms.md 第 4 节；PENDING 可取消，CANCELLED 终态，P2-W2-T1） |
 | 派单师傅 | `WorkerID`/`WorkerName` | worker_id/worker_name | 000159；worker_id FK→workers，name 快照（0/空=未派） |
 | 完成时间 | `FinishedAt` | finished_at | TIMESTAMPTZ 可空；DONE/FAILED 时回填 |
 
-> 状态机：PENDING --assign(派单,POST /admin/replacements/{id}/assign)→ DOING --complete(师傅端 POST /api/worker/v1/replacements/{id}/complete)→ DONE/FAILED；终态不可再流转（adopted note 2026-08-27-replacement-ticket-flow）。
+> 状态机：PENDING --assign(派单,POST /admin/replacements/{id}/assign)→ DOING --complete(师傅端 POST /api/worker/v1/replacements/{id}/complete)→ DONE/FAILED；PENDING --cancel(取消,POST /admin/replacements/{id}/cancel,P2-W2-T1)→ CANCELLED；终态不可再流转（adopted note 2026-08-27-replacement-ticket-flow）。
 > 完成时落 `worker_replace_logs`（ticket_no=更换单号展示快照，dispatch_ticket_id=0）+ 资产联动：旧件→MAINTENANCE、新件（newEpc 反解）→DEPLOYED，各留 `asset_lifecycles`。
 > 企业锚点（fields.md §8.1）：`legal_entity_id`/`legal_entity_name` 建单时自资产主档回填。
 

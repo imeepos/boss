@@ -67,7 +67,7 @@
 | 客户 real_name_status | VERIFIED / PENDING | 已实名 / 待补登 |
 | 派单工单 dispatch_ticket.status | PENDING / DOING / DONE / CANCELED | 待派 / 进行中 / 完成 / 取消 |
 | 任务 task.status | PENDING / DOING / DONE / FAILED | 待执行 / 进行中 / 完成 / 失败 |
-| 换新单 replacement.status | PENDING / DOING / DONE / FAILED | 待执行 / 执行中 / 完成 / 失败（复用 task.status 枚举；PENDING --派单→ DOING --完成→ DONE/FAILED，终态不可再流转，adopted note 2026-08-27-replacement-ticket-flow） |
+| 换新单 replacement.status | PENDING / DOING / DONE / FAILED / CANCELLED | 待执行 / 执行中 / 完成 / 失败 / 已取消（PENDING --派单→ DOING --完成→ DONE/FAILED；PENDING --取消→ CANCELLED(P2-W2-T1,2026-09-06)；终态不可再流转，adopted note 2026-08-27-replacement-ticket-flow） |
 | 缴费流水 payment.status | SUCCESS / FAILED / REFUNDED | 成功 / 失败 / 已退款 |
 | 发票 invoice.status | ISSUED / VOIDED | 已生成 / 已作废（编号保留不回收，TAX-004） |
 | 发票 invoice.tax_status | PENDING / SUBMITTED / ISSUED / FAILED | 税局网关状态：待开具 / 已提交 / 已开具（税局票号回填）/ 失败可重试；与 invoice.status 正交 |
