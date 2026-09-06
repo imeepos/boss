@@ -1499,6 +1499,19 @@ API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATC
 
 > 入库确认时由 ConfirmReceipt 入参 warehouseLat/Lng 一并写入；GIS `GET /gis/inventory-points?entity=warehouse&bbox` 读此列做聚合图层。
 
+### 9.8 采购域端点口径（P2-W2-T2 增补，零 DDL）
+
+| 端点 | 口径 |
+|:-----|:-----|
+| PUT /procurement/suppliers/{id} | 编辑供应商：名称/联系人/电话/备注可改，编码不可改（入参无 code 字段）；部分更新语义（字段省略=null 保持原值）；禁用态同样可改资料且保持禁用；未命中 40400 |
+| POST /procurement/suppliers/{id}/enable | 启用：DISABLED→ENABLED；已 ENABLED 幂等成功；不存在 40400；写审计（状态变更） |
+| GET /procurement/orders/{id} | 采购单详情：单头+明细行+状态；未命中沿用 40400 |
+| PUT /procurement/orders/{id} | 草稿编辑：仅 DRAFT（否则 40900）；备注/期望日期可改（null=保持）；items 非 null 即整体替换且行 quantity>0（违者 42200）；总金额随明细重算；审计记变更前后键值 |
+| POST /procurement/receipts/{id}/reject | 入库驳回：仅 DRAFT→REJECTED（CONFIRMED 等非 DRAFT 40900）；原因 ≤255 字（42200）可空，空则缺省文案「入库驳回」并回写 receipt.remark；写审计（状态变更+原因） |
+
+> 错误码沿用全局：40400 not found / 40900 状态冲突 / 42200 参数非法。
+> 明细整体替换仅限 DRAFT：SUBMITTED 之后 received_qty 参与收货对账，整行删除会破坏已收数量口径。
+
 ## 10. 字段字典的使用规则（写入 Agent 输入包）
 
 1. 实现实体前，先查本文件是否已定其字段；已定则**照抄字段名与枚举**，不得另起别名。
