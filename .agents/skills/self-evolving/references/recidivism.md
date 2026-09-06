@@ -135,3 +135,6 @@
 15. **【已犯 1 次】read 工具 lines 数组有单次返回上限,与 totalLines 不符时全文件重写会静默截断** —— 2026-09-06 notes.md 整文件重写丢 1407 行(1752→349),commit stat 的 deletions 远大于预期才逮住,checkout HEAD~1 恢复。整文件重写前必须核对 lines.length === totalLines;不一致改用 cat >> 追加式或分段读全再拼。
 16. **【已犯 1 次】git worktree add <path> <branch> 在分支不存在时 fatal invalid reference** —— 2026-09-06 任务书口径默认分支可建;先 for-each-ref 探测,不存在就 `git worktree add -b <branch> <path>` 一并创建。
 17. **【已犯 1 次】后台 dev server 用管道(如 | head)启动会吞输出且可能根本未监听** —— 2026-09-06 vite 连探三轮 http 000;正解=nohup 重定向日志文件,cat 日志 + curl 探活;macOS 另注意无 timeout 命令。
+18. **【已犯 2 次】run_code 程序串里严禁反斜杠转义引号(\" 变体)** —— 宿主先 JSON 解码,转义引号落进程序体已成裸引号,提前闭合 JS 字符串,报 parse error(Expected ',' got ';'/ident)。2026-09-06 CI 守护轮两犯:ssh --format 串(转义双引号包 go template)与 patrol-cron 文档块 cron 命令引号。正解=程序串内引号一律裸写(宿主对裸引号宽容)或 String.fromCharCode(34) 拼接;红线11 的 ${ 与裸反引号禁令同源,SKILL.md 红线22。
+19. **【已犯 1 次】共享仓库多会话并行时 remote-tracking ref 会被其他会话的 fetch 移动** —— 2026-09-06 CI 守护轮:diff gitea/main..HEAD 突然冒出 48 文件 2047 删行(并行会话合入的 asset 重构),merge-base 复核才发现 main 已前进多提交。正解=任何基于远端主分支的比对/合并前当场 git fetch + merge-base 复核,不信任数分钟前的快照;分支收尾前反向同步 merge main 并重跑门禁。
+20. **【已犯 1 次】验证声称先落笔后补验(跨环境/跨版本等价类)** —— 2026-09-06 gofmt 提交信息先写「102 go 同样标红」,随后才 ssh 102 用 go1.24 对原文件复跑确认(gofmt -l 于 stdin 管道 diff)。结论侥幸成立但顺序反了:凡跨环境等价声称,先在目标环境复现,再写进提交与报告。
