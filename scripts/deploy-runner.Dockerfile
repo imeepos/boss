@@ -6,6 +6,9 @@
 # 重建由 deploy workflow 首步 runner-image-guard job 自动触发
 # (scripts/ops/deploy-runner-guard.sh,缺失即建、存在即 no-op)。
 FROM 192.168.0.102:5000/runner:bookworm
+# ci-keep 标记:102 周清( docker-clean.sh 的 image prune -af )经 --filter
+# "label!=ci-keep" 豁免本镜像,配合 scripts/ops/deploy-102-runner-harden.sh 使用。
+LABEL ci-keep=true
 RUN apt-get update && apt-get install -y --no-install-recommends docker.io \
     && rm -rf /var/lib/apt/lists/*
 COPY docker-compose-linux-x86_64 /usr/local/bin/docker-compose
