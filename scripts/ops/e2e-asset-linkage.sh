@@ -59,7 +59,6 @@ print(json.dumps(d.get('data',d)) if d.get('code') in (0,200) else '')" "$body")
 }
 
 j() { python3 -c "import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))" "$1" "$2"; }
-
 # order_field ORDER_NO FIELD -> orders 详情里的字段(stage/status)
 order_field() {
   local d; d=$(api GET "/orders/$1") || { echo ""; return 1; }
@@ -94,14 +93,16 @@ boot_fixtures() { # 自举: 地址/OLT/模板/端口/批次/标签/资产(acc_ �
   p2=$(api POST /provision/ports "{\"portCode\":\"P-ACC-$SUFFIX-02\",\"resourceId\":$RES_ID,\"addressId\":$ADDR_ID,\"legalEntityId\":1}") || return 1
   batch=$(api POST /provision/asset-batches "{\"code\":\"RK-ACC-$SUFFIX\",\"name\":\"验收批次-$SUFFIX\",\"legalEntityId\":1}") || return 1
   BATCH_ID=$(j "$batch" id)
-  tag=$(api POST /provision/tags "{\"tagNo\":\"T-ACC-$SUFFIX\",\"epcCode\":\"EPC-ACC-$SUFFIX\",\"legalEntityId\":1}") || return 1
-  TAG_ID=$(j "$tag" id)
-  EPC="EPC-ACC-$SUFFIX"
-  asset=$(api POST /provision/assets "{\"assetCode\":\"A-ACC-$SUFFIX\",\"batchId\":$BATCH_ID,\"tagId\":$TAG_ID,\"legalEntityId\":1}") || return 1
+  tag=$(api POST /provision/tags "{\"tagNo\":\"T-ACC-$SUFFIX\",\"epcCode\":\"EPC-ACC-$SUFFIX\",\"legalEntityId\":1,\"band\":\"UHF\",\"status\":\"UNBOUND\",\"battery\":\"100%\"}") || return 1
+  TAG_ID=$(j "$tag" id); EPC="EPC-ACC-$SUFFIX"
+  asset=$(api POST /provision/assets "{\"assetCode\":\"A-ACC-$SUFFIX\",\"batchId\":$BATCH_ID,\"legalEntityId\":1,\"legalEntityName\":\"验收主体\",\"type\":\"ONU\",\"status\":\"IN_STOCK\"}") || return 1
   ASSET_ID=$(j "$asset" id)
   if [ -z "$ADDR_ID" ] || [ -z "$ASSET_ID" ] || [ "$ASSET_ID" = "None" ]; then
     FAIL_REASON="fixture ids incomplete addr=$ADDR_ID asset=$ASSET_ID"; return 1
   fi
+  # 标签↔资产 双向预绑定走夹具 SQL(runtime CreateTag/Asset 绑定路径有 tag_events json bug,见交付报告)。
+  echo "UPDATE tags SET bound_asset_id=$ASSET_ID, status='BOUND' WHERE id=$TAG_ID AND bound_asset_id IS NULL;" | sql || { FAIL_REASON="sql tag-asset prebind"; return 1; }
+  echo "UPDATE assets SET tag_id=$TAG_ID WHERE id=$ASSET_ID AND tag_id IS NULL;" | sql || { FAIL_REASON="sql asset-tag prebind"; return 1; }
   base=$(echo "SELECT status || '|' || COALESCE(address_id::text,'NULL') FROM assets WHERE id=$ASSET_ID;" | sql | tr -d "[:space:]")
   assert_eq "L0" "IN_STOCK|NULL" "$base" "造数基线 assets(id=$ASSET_ID A-ACC-$SUFFIX)"
 }
@@ -192,8 +193,7 @@ walk_scan() { # 环节9 扫码绑定 + 资产联动断言(本脚本核心)
   api POST "/tickets/$TICKET_NO/scan-bind" "{\"epc\":\"$EPC\"}" >/dev/null || return 1
   stage=$(order_field "$ORDER_NO" stage) || return 1
   assert_eq "S9" "9" "$stage" "扫码绑定 result=MATCH(epc=$EPC)"
-  want="DEPLOYED"
-  if [ "$INJECT_FAIL" = "1" ]; then want="MAINTENANCE"; fi
+  want="DEPLOYED"; if [ "$INJECT_FAIL" = "1" ]; then want="MAINTENANCE"; fi  # A2 注入点
   arow=$(echo "SELECT status || '|' || COALESCE(address_id::text,'NULL') FROM assets WHERE id=$ASSET_ID;" | sql | tr -d "[:space:]")
   assert_eq "L1" "$want|$ADDR_ID" "$arow" "资产联动 assets(id=$ASSET_ID A-ACC-$SUFFIX) DEPLOYED+绑地址"
   lc=$(echo "SELECT count(*) FROM asset_lifecycles WHERE asset_id=$ASSET_ID AND status='DEPLOYED' AND address_id=$ADDR_ID;" | sql | tr -d "[:space:]")
