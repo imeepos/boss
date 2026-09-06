@@ -1,5 +1,11 @@
 # Notes
 
+## 2026-09-06 报废三要素确认(P3-F,feat/p3-f)
+
+- 哪个坑浪费了最多时间?run_code 单引号 JS 串内联 bash JSON 体,转义引号被 JS 解码成裸引号,e2e 脚本 14 行 JSON 载荷全 mangled——bash -n 对引号重排照样过,靠 sed 抽查才逮住(累犯 #24)。另 e2e 造数编码 A-ACC2- 逃离 cleanup 的 A-ACC-% 回收模式,残留四类在 102 实测复现(累犯 #25),手工清场+改尾缀重跑闭环。
+- skill 有没有提前警告?红线 1(pg.go sed 后 edit 被拒,台账 #1 +1)、11 变体再次应验;renderToStaticMarkup 下 Radix Dialog 渲染空、useT 必须在 LocaleProvider 内层组件调,属前端测试新坑,组件拆出 ScrapRefBlock/ScrapFields 导出直测一次过;TZ=Asia/Shanghai 假红已在台账,直接显式带 TZ 零排查成本。
+- 重来一次怎么做?①bash 脚本含 JSON 的行,写入后必 grep 转义符字面,bash -n 不算验证;②新增造数类别先核对 acceptance-cleanup.sh 的 DELETE 模式清单,编码用模式内前缀+尾缀;③React 组件测试优先拆内层纯组件导出直测,Dialog 壳只测挂载;④本库 Respond 恒 HTTP 200,422 语义=业务码 42200,e2e 负例断业务码。
+
 > 2026-08-24 盘点压缩：原 919 行逐任务反思已去重提炼。
 
 ## 2026-09-06 装机联动端到端实测(P2-T3)
