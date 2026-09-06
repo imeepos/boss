@@ -157,5 +157,8 @@
 31. **【已犯 1 次】run_code 内层 bash 调用漏必填 description(红线14 自检跳项)** —— 2026-09-06 采购白屏轮:wc -l 调用只带 command,整程序 rejected 一轮废;发车前逐调用默念必填键(bash: command+description,edit: old_string+new_string)。
 32. **【已犯 1 次】部署轮询用「hash 与上次不同」判完成,撞并行部署 hash 翻转假阳性** —— 2026-09-06 采购白屏轮:5180 index.html 在 Dv1VgrCR 与 DCXW1E89 两个旧包间互相换位,10 秒误报 DEPLOYED,旧包上白验一轮还误判修复
 33. **【已犯 1 次】run_code 程序体一处语法错=整个程序零执行,误以为前半段工具调用已跑** —— 2026-09-06 AAA-A2 轮:同一程序里 write handlers + 留了省略号的坏 edit,parse 失败整体未执行,却按「部分已执行」继续,直到 build 报 undefined 才发现 handlers 没落盘,多耗一轮;程序 parse 失败后重发必须整体重跑该程序的全部调用
-34. **【已犯 1 次】生成的 Go 文件未 gofmt 就提交,make lint 的 gofmt -l 拦截** —— 2026-09-06 AAA-A2 轮:14 个新/改文件全挂 gofmt(注释缩进与结构体对齐),多跑一轮 make check + 补 style 提交;run_code 写 Go 文件的程序收尾统一对刚写的文件清单 gofmt -w,再 build/test/commit无效。正解=排除全部已知旧 hash + 新包行为断言(点详情开抽屉)双确认。
+34. **【已犯 1 次】生成的 Go 文件未 gofmt 就提交,make lint 的 gofmt -l 拦截** —— 2026-09-06 AAA-A2 轮:14 个新/改文件全挂 gofmt(注释缩进与结构体对齐),多跑一轮 make check + 补 style 提交;run_code 写 Go 文件的程序收尾统一对刚写的文件清单 gofmt -w,再 build/test/commit
+35. **【已犯 1 次】i18n locale 大文件用通用尾锚(pageUnit/jumpText+下节名)edit,锚全仓几十处重复** —— 2026-09-06 AAA-A6 轮:matched-2-times 后 zh-CN 出现幽灵 provisionPage 段+aaaLogPage 尾部键丢失,靠 git diff 全量盘点修复;大文件锚点必须取目标页独有行(columns/billed/title),edit 前 grep -c 验全仓恰 1 次
+36. **【已犯 1 次】cdp 断言期望字符串凭记忆写,与 i18n 实值/运行时覆盖值不符致假阴性** —— 2026-09-06 AAA-A6 轮:ConfirmDialog 标题被 opts.title 覆盖成页面文案('重置密码'),按默认 '操作确认' 断言连错一轮;断言串先 grep locale 源码取实值
+37. **【已犯 1 次】以 HTTP 200 判定接口可用,不看信封 code** —— 2026-09-06 AAA-A6 轮:102 reset-password 返回 200+code=50000 内部错误(凭据编解码运行时未配置,等 A3 部署收口),前端流程正常却被误判为断言问题;可用性结论必须解析信封 code/msg 层无效。正解=排除全部已知旧 hash + 新包行为断言(点详情开抽屉)双确认。
 

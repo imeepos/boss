@@ -56,4 +56,7 @@
 - 禁止经 run_code 生成代码时把多行 old_string/new_string 写成内联断行字符串——JS 串在首个换行处截断直接 parse error;一律行数组 + join("\n"),SQL 裸串用 fromCharCode(96) 包裹(2026-09-06 AAA-A1 轮两次踩中)。
 - 禁止让生成器包装函数(q/bt 等)漏进产物——JS 侧拼接辅助名残留在 Go 源里就是未定义函数+括号失衡,写完立刻 gofmt+go build 秒杀(2026-09-06 AAA-A1 轮,漏检靠编译兜底白耗一轮)。
 - 禁止 write 后经 bash 跑 gofmt/sed 改写同一文件再 edit——文件已非工具观察态必报 file changed;凡 bash 动过待编辑文件先 read 再 edit(2026-09-06 AAA-A1 轮三次)。
+- 禁止在多入口大文件(i18n locale/types)用通用尾锚(pageUnit/jumpText+下节名)做 edit 定位——同类锚全仓几十处重复,matched-2 报错甚至错插出幽灵段;锚必须取目标页独有行(columns/billed/title),edit 前 grep -c 验全仓恰 1 次(2026-09-06 AAA-A6 轮,zh-CN 错插靠 git diff 全量盘点才修净)。
+- 禁止 cdp/DOM 断言的期望字符串凭记忆写——标题/按钮文案会被 opts 覆盖或与猜测的 i18n 值不符,假阴性白耗轮次;断言串先 grep locale 源码取实值(2026-09-06 AAA-A6 轮,'操作确认' vs 实际 '重置密码')。
+- 禁止以 HTTP 200 判定接口可用——信封 code=50000 也是 200;可用性探测必须解析信封 code/msg 层再下结论(2026-09-06 AAA-A6 轮,102 reset-password 运行时未就绪被误判为前端断言问题)。
 

@@ -1855,3 +1855,9 @@
 - 哪个坑浪费了最多时间?静态审计(i18n 三语闭环+令牌 grep 全定义+无裸色值)全绿,差点直接报「已适配」——幸而按红线 6 先跑 CDP 计算样式断言,逮住激活页签亮色白字白底/暗色深底深字(TAB_BTN+TAB_ACTIVE 同元素 bg-*/text-* 重复,Tailwind 按产物顺序裁决,bg 与 text 各被对方赢走)。
 - skill 有没有提前警告?红线 6(无断言不得声称已适配)直接救命;knowledge「颜色问题同时检查全部主题」在案,但「冲突 utility 由 CSS 产物顺序裁决」机制是新坑,已回填 lessons/known-issues。
 - 重来一次怎么做?①页面适配任务的证伪步骤必须是 getComputedStyle 断言,grep 三连通过不等于视觉正确;②同一元素的状态类切换,互斥类组纯函数(monthlyTabClass)+互斥回归测试是标准姿势;③修完在 dev 双主题断言 bg/color 等于令牌字面值,再走部署 marker 轮询确认线上。
+
+## 2026-09-06 AAA-A6 admin 前端补齐(feat/aaa-a6-admin-frontend)
+
+- 哪个坑浪费了最多时间?①i18n locale 大文件用「页尾 pageUnit/jumpText+下节名」做 edit 锚,此类尾锚全仓 51 处出现,一次 matched-2-times 把 zh-CN aaaLogPage 尾部键弄丢+幽灵 provisionPage 残段,靠 git diff 机械盘点损伤才修净;②cdp eval 断言串凭记忆写 ConfirmDialog 标题 '操作确认',实际被 opts.title 覆盖成 '重置密码',断言假阴性一轮;③联调只看 HTTP 200 判接口可用,实则信封 code=50000(102 凭据编解码未配置,A3 部署收口未完成),再耗一轮才定位。
+- skill 有没有提前警告?红线 1(worktree 先 read)拦下一次;红线 24(tail 吞退出码)在 pnpm install 'No projects found' 时靠显式 RC 复验兜住;高频尾锚、断言串对照 i18n 实值、信封层探测三坑是新坑,已回填 recidivism 35-37。
+- 重来一次怎么做?①大 locale/types 编辑锚一律选目标页独有行(columns/billed/title 等),edit 前 grep -c 验全仓恰 1 次;②DOM/网络断言的期望字符串先 grep locale 源码拿实值再写;③接口可用性结论必须打到信封 code/msg 层,HTTP 200 ≠ 可用;④联调假阴性先看页面错误横幅与网络日志,再怀疑组件逻辑。
