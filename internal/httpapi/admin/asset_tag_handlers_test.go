@@ -33,6 +33,8 @@ type fakeTagAdmin struct {
 	modelActive  map[int64]bool
 	batch        *asset.AssetBatch
 	batchErr     error
+	assigned     *asset.AssetAssignment
+	assignErr    error
 	modelErr     error
 	disableErr   error
 	tagEvents    []asset.TagEvent
@@ -421,6 +423,69 @@ func TestBatchCreateHandler(t *testing.T) {
 		_ = json.NewDecoder(w.Body).Decode(&out)
 		if out.Code != int(apitypes.CodeInvalidParam) {
 			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeInvalidParam)
+		}
+	})
+}
+
+func (f *fakeTagAdmin) CreateAssignment(_ context.Context, a asset.AssetAssignment) (int64, error) {
+	if f.assignErr != nil {
+		return 0, f.assignErr
+	}
+	f.assigned = &a
+	return 21, nil
+}
+
+func TestAssignmentCreateHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST /asset-assignments 缺事由→42200", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-assignments", `{"assetId":5,"workerId":7}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeInvalidParam) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeInvalidParam)
+		}
+	})
+
+	t.Run("POST /asset-assignments 领用成功+审计+开段", func(t *testing.T) {
+		au := &recAudit{}
+		fa := &fakeTagAdmin{}
+		eng := tagAdminRouter(fa, au)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-assignments", `{"assetId":5,"workerId":7,"reason":"装机备件"}`)
+		var out struct {
+			Code int `json:"code"`
+			Data struct {
+				ID            int64  `json:"id"`
+				EffectiveFrom string `json:"effectiveFrom"`
+			} `json:"data"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || out.Data.ID != 21 {
+			t.Fatalf("code=%d id=%d", out.Code, out.Data.ID)
+		}
+		if out.Data.EffectiveFrom == "" {
+			t.Fatalf("effectiveFrom empty")
+		}
+		if fa.assigned == nil || fa.assigned.AssetID != 5 || fa.assigned.Reason != "装机备件" {
+			t.Fatalf("assigned=%+v", fa.assigned)
+		}
+		if len(au.events) != 1 || au.events[0].TargetType != "asset_assignment" || au.events[0].Detail["op"] != "assign" {
+			t.Fatalf("events=%+v", au.events)
+		}
+	})
+
+	t.Run("POST /asset-assignments 非库存态→40900", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{assignErr: fmt.Errorf("asset: asset 5 status DEPLOYED: %w", asset.ErrAssetNotInStock)}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-assignments", `{"assetId":5,"workerId":7,"reason":"X"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeConflict) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeConflict)
 		}
 	})
 }

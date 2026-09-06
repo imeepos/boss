@@ -257,3 +257,60 @@ func TestPGStore_CreateBatch_LegalEntityMissing(t *testing.T) {
 		t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
 	}
 }
+
+// CreateAssignment 领用(P2-W2-T1 G):仅 IN_STOCK 可领用;领用不改资产状态
+// (无 UPDATE assets 期望=状态口径断言);师傅/资产不存在 FK 拒绝。
+func TestPGStore_CreateAssignment(t *testing.T) {
+	ctx := context.Background()
+	assetCols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id"}
+	in := AssetAssignment{AssetID: 5, WorkerID: 7, Reason: "装机备件领用"}
+	t.Run("IN_STOCK 领用成功且不改资产状态", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("FROM assets WHERE id").
+			WithArgs(int64(5)).
+			WillReturnRows(mock.NewRows(assetCols).AddRow(int64(5), "A-1", int64(1), int64(1), "企业", nil, nil, nil, "", "ONU", "IN_STOCK", nil))
+		mock.ExpectQuery(`SELECT EXISTS`).
+			WithArgs(int64(7)).
+			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+		mock.ExpectQuery("INSERT INTO asset_assignments").
+			WithArgs(int64(5), int64(7), "", nil, "", "装机备件领用", nil, pgxmock.AnyArg(), pgxmock.AnyArg()).
+			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(12)))
+		s := NewPGStore(mock)
+		id, err := s.CreateAssignment(ctx, in)
+		if err != nil {
+			t.Fatalf("err=%v", err)
+		}
+		if id != 12 {
+			t.Fatalf("id=%d", id)
+		}
+		// 无 UPDATE assets 期望:领用不改资产状态(装机才置 DEPLOYED)。
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unmet: %v", err)
+		}
+	})
+	t.Run("非库存态拒绝", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("FROM assets WHERE id").
+			WithArgs(int64(5)).
+			WillReturnRows(mock.NewRows(assetCols).AddRow(int64(5), "A-1", int64(1), int64(1), "企业", nil, nil, nil, "", "ONU", "DEPLOYED", nil))
+		s := NewPGStore(mock)
+		_, err := s.CreateAssignment(ctx, in)
+		if !errors.Is(err, ErrAssetNotInStock) {
+			t.Fatalf("err=%v, want ErrAssetNotInStock", err)
+		}
+	})
+	t.Run("资产不存在FK拒绝", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("FROM assets WHERE id").
+			WithArgs(int64(5)).
+			WillReturnError(pgx.ErrNoRows)
+		s := NewPGStore(mock)
+		_, err := s.CreateAssignment(ctx, in)
+		if !errors.Is(err, ErrForeignKeyViolation) {
+			t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+		}
+	})
+}

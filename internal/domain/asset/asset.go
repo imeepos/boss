@@ -183,6 +183,10 @@ type AssetService interface {
 
 	ListAssignments(ctx context.Context, assetID int64) ([]AssetAssignment, error)
 	AssignAsset(ctx context.Context, a AssetAssignment) (int64, error)
+	// CreateAssignment 领用(P2-W2-T1):仅 IN_STOCK 可领用(ErrAssetNotInStock
+	// 40900);资产不存在/师傅不存在 ErrForeignKeyViolation;落台账开段,不改资产状态
+	// (装机扫码才置 DEPLOYED,fields.md §4.1 口径)。
+	CreateAssignment(ctx context.Context, a AssetAssignment) (int64, error)
 
 	// UnbindTag 解绑标签(P1-T2):置 bound_asset_id=NULL+status=UNBOUND 并写 UNBIND 事件;
 	// expectedAssetID>0 时校验当前绑定一致;未绑定/预期不符返回 ErrTagUnbound/ErrBindingConflict。
