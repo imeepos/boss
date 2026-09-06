@@ -1145,7 +1145,7 @@ const enUS: Translations = {
       fModel: 'Model',
       pModel: 'Select a model (optional)',
       fType: 'Type',
-      pType: 'e.g. ONU (editable when no model)',
+      pType: 'Pick a type (required without model; whitelist ONU/ROUTER/OLT)',
       eType: 'Fill in type or pick a model',
       fTag: 'Bind tag',
       pTag: 'Select an UNBOUND tag (optional)',

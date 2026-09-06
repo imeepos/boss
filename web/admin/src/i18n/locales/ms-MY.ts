@@ -1145,7 +1145,7 @@ const msMY: Translations = {
       fModel: 'Model',
       pModel: 'Pilih model (pilihan)',
       fType: 'Jenis',
-      pType: 'cth. ONU (boleh isi jika tiada model)',
+      pType: 'Pilih jenis (wajib tanpa model; senarai putih ONU/ROUTER/OLT)',
       eType: 'Isi jenis atau pilih model',
       fTag: 'Ikat tag',
       pTag: 'Pilih tag UNBOUND (pilihan)',

@@ -1145,7 +1145,7 @@ const zhCN: Translations = {
       fModel: '型号',
       pModel: '选择型号(可选)',
       fType: '类型',
-      pType: '如 光猫/ONU(未选型号时可填)',
+      pType: '选择类型(未选型号时须选,白名单 ONU/ROUTER/OLT)',
       eType: '类型与型号至少填其一',
       fTag: '绑定标签',
       pTag: '选择 UNBOUND 标签(可选)',
