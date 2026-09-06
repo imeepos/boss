@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   Area, CartesianGrid, Line, LineChart, LabelList,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -129,12 +129,12 @@ export function OrderTrend({ labels, series, valueUnit, tooltipLabel, emptyText,
               formatter={(value, key) => [formatValue(Number(value), valueUnit), series.find((item) => item.key === key)?.label ?? key]}
             />
             {series.filter((item) => visibleKeys.has(item.key)).map((item) => (
-              <>
+              <Fragment key={item.key}>
                 <Area key={`${item.key}-area`} type="monotone" dataKey={item.key} stroke="none" fill={`url(#order-trend-fill-${item.key})`} />
                 <Line key={item.key} type="monotone" dataKey={item.key} stroke={item.color} strokeWidth={2.5} dot={{ r: 4, fill: 'var(--shell-card-bg)', stroke: item.color, strokeWidth: 2 }} activeDot={{ r: 6, fill: item.color, stroke: 'var(--shell-card-bg)', strokeWidth: 2 }} connectNulls>
                   <LabelList dataKey={item.key} position="top" offset={8} fill="var(--shell-heading)" fontSize={11} fontWeight={600} formatter={(value: number) => formatValue(value, valueUnit)} />
                 </Line>
-              </>
+              </Fragment>
             ))}
           </LineChart>
         </ResponsiveContainer>

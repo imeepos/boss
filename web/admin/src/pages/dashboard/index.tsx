@@ -91,9 +91,9 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
   // 分布条按可见集合内最大数量归一(原样渲染会让小占比全部贴 0 不可辨),真实占比以文本列为准。
   const maxDistCount = Math.max(0, ...(data?.orderStatusDist ?? []).map((r) => r.count))
 
-  const refreshButton = (
+  const loadButton = (label: string) => (
     <Button size="sm" disabled={busy} onClick={() => { void load() }}>
-      {busy ? (<span className="inline-flex items-center gap-2"><Spinner size={14} />{d.refreshing}</span>) : d.refresh}
+      {busy ? (<span className="inline-flex items-center gap-2"><Spinner size={14} />{d.refreshing}</span>) : label}
     </Button>
   )
 
@@ -107,14 +107,14 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
               {d.updatedAt.replace('{time}', fmtTime(loadedAt).split(' ')[1] || '')}
             </span>
           )}
-          {refreshButton}
+          {loadButton(d.refresh)}
         </div>
       </div>
       {error ? (
         <div role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <span className="min-w-0 flex-1 break-all">{error}</span>
           <CopyButton text={error} />
-          {refreshButton}
+          {loadButton(d.retry)}
         </div>
       ) : !data ? (
         <LoadingState />
