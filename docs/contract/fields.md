@@ -289,6 +289,20 @@
 
 > 校验：`address_coverage_target_chk`——SERVED/PENDING 必须至少挂一个目标（设施或设备），UNSERVED 允许全空。
 
+### 1.5.8 construction_projects / construction_items（施工项目与竣工回填，迁移 000199，internal/domain/odn）
+
+> P6 设计-施工闭环（路线图 T9）：施工单状态机 PENDING→BUILDING→ACCEPTED（线性，同态 no-op）；ACCEPTED 时单内设施 `lifecycle_status` 批量 PLANNED/IN_BUILD→IN_SERVICE（as-built 回填），记竣工人/时间/备注。明细 ACCEPTED 后锁定；设施须 PLANNED 态方可入单。管理面 `menu:odn`，REST `/odn/constructions*`（契约 admin/odn.yaml）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 施工单号 | `ProjNo` | proj_no | VARCHAR(32) 唯一 |
+| 名称 | `Name` | name | 可空 |
+| 城市 | `PrvCode`/`CityPrefix` | prv_code/city_prefix | 可空复合 FK odn_city_code |
+| 状态 | `Status` | status | PENDING 待开工 / BUILDING 施工中 / ACCEPTED 已竣工（终态） |
+| 竣工备注 | `AsbuiltNote` | asbuilt_note | as-built 记录 |
+| 竣工人/时间 | `AcceptedBy`/`AcceptedAt` | accepted_by/accepted_at | → accounts；验收时落 |
+| 明细数 | `ItemCount` | —（聚合） | construction_items 计数 |
+
 
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 

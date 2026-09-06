@@ -340,3 +340,78 @@ paths:
               properties:
                 lifecycleStatus: { type: string, enum: [PLANNED, IN_BUILD, IN_SERVICE, RETIRED] }
       responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/constructions:
+    get:
+      tags: [ODN]
+      summary: 施工单列表(近单优先,含明细计数)
+      operationId: listOdnConstructions
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 100, maximum: 500 } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 新建施工单(projNo 唯一)
+      operationId: createOdnConstruction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projNo]
+              properties:
+                projNo: { type: string, description: 施工单号,唯一 }
+                name: { type: string }
+                prvCode: { type: string, examples: [PHL001] }
+                cityPrefix: { type: string, examples: [MNL] }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/constructions/{id}:
+    get:
+      tags: [ODN]
+      summary: 施工单详情(含明细清单)
+      operationId: getOdnConstruction
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/constructions/{id}/items:
+    post:
+      tags: [ODN]
+      summary: 追加施工明细(设施须 PLANNED;ACCEPTED 后锁定)
+      operationId: addOdnConstructionItem
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [facilityCode]
+              properties:
+                facilityCode: { type: string, examples: [CLS00001] }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/constructions/{id}/start:
+    post:
+      tags: [ODN]
+      summary: 开工(PENDING→BUILDING,单内 PLANNED 设施批量转 IN_BUILD)
+      operationId: startOdnConstruction
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/constructions/{id}/accept:
+    post:
+      tags: [ODN]
+      summary: 竣工验收(BUILDING→ACCEPTED,设施批量回填 IN_SERVICE,记竣工人/时间/备注)
+      operationId: acceptOdnConstruction
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string, description: as-built 竣工备注 }
+      responses: { '200': { $ref: '#/components/responses/Data' } }

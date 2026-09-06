@@ -2,6 +2,7 @@
 
 > 版本 V1.6（2026-09-07）｜权威源：migrations/*.up.sql（迁移对账随波次滚动，ER 图脚本生成）
 > V1.6 变更：补 000197 address_coverage（ODN P1 覆盖关联，internal/domain/odn，见 §2.12）；落地 adopted note 2026-09-06-odn-business-linkage（网络规划是业务基础）。
+> V1.6b 变更：补 000198 生命周期列（三实体）+000199 construction_projects/items 施工单（P6 设计-施工，见 §2.12）。
 > V1.5 变更：全量机械对账（102 库 information_schema × Go 生产 SQL × 迁移链）：唯一建表 196，链内已 DROP 3
 > （real_name 三兄弟，000059），留存 193 全部在库；净业务表 191（剔 audit_logs 分区子表 6、schema_migrations、
 > spatial_ref_sys）；留存未用 9 张（user_* 双胞胎 6 + service_metric_snapshots + odn 前缀 2，评估见
@@ -208,7 +209,7 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 |:-----|:-----|:-----|
 | report_snapshots ✚ | id | UQ(period,window_start)；payload JSONB 全量快照，不挂业务 FK |
 
-### 2.12 ODN 无源网络（000075/78/79/81/000197，全部✚，internal/domain/odn）
+### 2.12 ODN 无源网络（000075/78/79/81/000197/000198/000199，全部✚，internal/domain/odn）
 
 > 依据《Suniway ODN 地理空间编码规范》；PSGC 权威在 geo_subdivision 不动，ODN 码为派生映射
 > （裁定见 adopted note 2026-08-20-odn-geospatial-encoding-alignment）。域内复合 FK 链是全库最长的硬约束链。
@@ -224,6 +225,8 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 | odn_site ✚ | (prv,city,site_no 1~999) | ▲(prv,city) 复合 FK odn_city_code ■devices(site_no) | 局点 1:N 设备 |
 | odn_device ✚ | id / UQ(prv,city,code)；SNW 全网唯一(部分索引) | ▲(prv,city) 复合 FK ▲parent_id(自引用树: ODB→OCC/SDB→ODB/PRT→SDB/TBP→PRT) ▲site_no(可空,市域设备) | 树 |
 | address_coverage ✚ | id / UQ(address_id) | ▲address_id(FK addresses) ▲facility_code(FK odn_facility,可空) ▲device_id(FK odn_device,可空) | 地址 1:1 覆盖；SERVED/PENDING/UNSERVED；P1 覆盖关联（决策 2026-09-06-odn-business-linkage，odn↔业务首桥） |
+| construction_projects ✚ | id / UQ(proj_no) | ▲(prv_code,city_prefix)(可空 FK odn_city_code) ▲accepted_by(FK accounts) ■construction_items | PENDING→BUILDING→ACCEPTED；竣工批量回填单内设施 IN_SERVICE |
+| construction_items ✚ | id / UQ(project_id,facility_code) | ▲project_id(FK CASCADE) ▲facility_code(FK odn_facility) | 单 1:N 设施；ACCEPTED 后锁定 |
 
 ### 2.13 归属台账（跨域通用模式）
 
