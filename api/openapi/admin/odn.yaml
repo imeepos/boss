@@ -238,3 +238,49 @@ paths:
       operationId: retireOdnDevice
       parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
       responses: { '200': { $ref: '#/components/responses/Ok' } }
+
+  /odn/coverage:
+    get:
+      tags: [ODN]
+      summary: 单地址覆盖查询(未登记返回 null)
+      operationId: getOdnCoverage
+      parameters:
+        - { name: addressId, in: query, required: true, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+    post:
+      tags: [ODN]
+      summary: 保存地址覆盖关联(一址一覆盖幂等;非 UNSERVED 必挂设施或设备)
+      operationId: upsertOdnCoverage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [addressId, status]
+              properties:
+                addressId: { type: integer, description: 地址 id }
+                facilityCode: { type: string, description: 服务设施码,可空 }
+                deviceId: { type: integer, description: 服务核心设备 id,可空 }
+                status: { type: string, enum: [SERVED, PENDING, UNSERVED] }
+                note: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/coverage/list:
+    get:
+      tags: [ODN]
+      summary: 覆盖关联列表(近更优先,联地址名)
+      operationId: listOdnCoverage
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 100, maximum: 500 } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+
+  /odn/coverage/resolve:
+    get:
+      tags: [ODN]
+      summary: 就近设施可装性判定(P1 判据:2km 内 SERVED)
+      operationId: resolveOdnCoverage
+      parameters:
+        - { name: lat, in: query, required: true, schema: { type: number } }
+        - { name: lng, in: query, required: true, schema: { type: number } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }

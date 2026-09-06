@@ -542,7 +542,8 @@ const msMY: Translations = {
     },
     odn: {
       title: 'Rangkaian Pasif ODN', subtitle: 'Grid · Infrastruktur · Tapak & Peranti Teras',
-      tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras' },
+      tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras', coverage: 'Liputan' },
+      addressId: 'ID Alamat', addressName: 'Alamat', covFacility: 'Fasiliti Servis', covDevice: 'ID Peranti Servis', covStatus: 'Status Kebolehpasangan', covNote: 'Nota', updatedAt: 'Dikemas kini', resolveBtn: 'Semak Kebolehpasangan', distance: 'Jarak', covServed: 'Boleh Pasang', covPending: 'Dalam Binaan', covUnserved: 'Tiada Liputan',
       add: 'Tambah', cancel: 'Batal', save: 'Simpan', saving: 'Menyimpan…', loadFail: 'Gagal memuatkan', saveFail: 'Gagal menyimpan', empty: 'Tiada data', retire: 'Lupus', retireConfirm: 'Lupuskan sumber ODN ini? Tindakan ini tidak boleh dibuat asal.', warn: 'Amaran kapasiti',
       gridCode: 'Kod grid', name: 'Nama', coverage: 'Liputan', usage: 'Penggunaan', status: 'Status', actions: 'Tindakan', code: 'Kod', kind: 'Jenis', nodeCode: 'NodeCode', siteNo: 'Nombor tapak', parentId: 'ID induk', deviceCode: 'Kod peranti', deviceKind: 'Jenis peranti', lat: 'Latitud', lng: 'Longitud',
     },

@@ -515,3 +515,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 run_code 里要用 session_link_talk 等待执行会话回复,等待窗口必须小于宿主 run_code 程序墙钟上限(600s):talkTimeoutMs 给满 600000 会连程序一起被掐,claimToken 拿不到、事后 collect 报凭证无法识别;给 420-540s 留返回余量,长等待改为磁盘观察(git worktree list / ls-remote)轮替(2026-09-06 AAA 负责人轮:600000 顶满被杀,10 分钟白等)。
 
 - 当同一元素的激活/空闲状态用「常挂基础类+激活才拼的类」实现且两组都含 bg-*/text-* 同名 utility,修复是抽互斥类组纯函数(monthlyTabClass(active):base+active/idle 二选一)+ vitest 断言两组零重叠:Tailwind 冲突 utility 的生效方由 CSS 产物顺序裁决、与 className 书写顺序无关,曾致激活页签亮色白字白底、暗色深底深字(2026-09-06 月度填报,commit 2edcd51d)。
+- 当 pgxmock(v4) ExpectQuery/ExpectExec 的 SQL 带占位符而不设 WithArgs,修复是必须补 WithArgs(参数用 AnyArg),报错形如 expected 0, but got N arguments;裸 WillReturnRows/WillReturnError 只匹配零参查询(2026-09-06 AAA-A5 nas_pg_test)。
+- 当测试断言异步 goroutine 写入的标准 log/ErrorLog 缓冲,修复是用互斥缓冲(结构体内嵌 sync.Mutex 的 Write/String),strings.Builder 直连必被 -race 拦截;PacketServer.ErrorLog 用 log.New(互斥buf, 完成双保险(2026-09-06 AAA-A5 secret_source_test)。
+- 当 go build ./cmd/xxx 会在 cwd 留下同名二进制污染 git status,修复是验证编译用 go build ./... 或 go vet、或 -o /dev/null;残留二进制(abp 包名场景)会被误当成新目录(2026-09-06 AAA-A5 ./aaa 事故)。
+- 当 RFC 层面某报文「服务端不可验证」(Access-Request 的 Request Authenticator 为随机数),错密钥的可观测面只在可验证报文(Accounting/CoA 的 MD5 验证子)与 PAP 解密垃圾间接暴露——测试造错密钥场景要选可验证报文类型,别对不可验证协议行为硬断言(2026-09-06 AAA-A5,RFC 2865/2866)。

@@ -284,7 +284,19 @@ export interface Translations {
     odn: {
       title: string
       subtitle: string
-      tabs: { grids: string; facilities: string; sites: string; devices: string }
+      tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string }
+      addressId: string
+      addressName: string
+      covFacility: string
+      covDevice: string
+      covStatus: string
+      covNote: string
+      updatedAt: string
+      resolveBtn: string
+      distance: string
+      covServed: string
+      covPending: string
+      covUnserved: string
       add: string
       cancel: string
       save: string

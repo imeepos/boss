@@ -272,6 +272,22 @@
 > 恢复语义 = 只补不删：逐行 `INSERT ... ON CONFLICT DO NOTHING`，冲突行跳过；进程内串行执行（同时至多一条任务）。backup_jobs / schema_migrations 不入备份候选集。
 
 
+### 1.5.7 address_coverage（ODN 覆盖关联，迁移 000197，internal/domain/odn）
+
+> 落地 adopted note 2026-09-06-odn-business-linkage（「网络规划是业务基础」P1 覆盖关联）：地址 ↔ 服务设施/核心设备 1:1 关联 + 可装状态，P1 只「可查可判」不做下单硬校验。管理面 `menu:odn`，REST `/odn/coverage*`（契约 admin/odn.yaml）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 地址 | `AddressID` | address_id | BIGINT → addresses，UNQ 一址一覆盖 |
+| 服务设施 | `FacilityCode` | facility_code | 可空 → odn_facility(code)（ODB/SDB/分纤点） |
+| 服务设备 | `DeviceID` | device_id | 可空 → odn_device(id)（核心链路设备） |
+| 可装状态 | `Status` | status | SERVED 可装 / PENDING 规划在建 / UNSERVED 未覆盖；默认 UNSERVED |
+| 备注 | `Note` | note | 可空 |
+| 更新时间 | `UpdatedAt` | updated_at | TIMESTAMPTZ |
+
+> 校验：`address_coverage_target_chk`——SERVED/PENDING 必须至少挂一个目标（设施或设备），UNSERVED 允许全空。
+
+
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
@@ -1761,3 +1777,51 @@ radacct 模式在线会话:计账 Start 建(重复 Start 幂等去重)/Interim �
 | 重试上限 | `BOSS_AAA_OFFLINE_RETRY_MAX` | 3 | Disconnect 不可达重试次数,耗尽转 OFFLINE_FAILED |
 | 僵尸阈值 | `BOSS_AAA_ZOMBIE_AFTER` | 2h | last_update 超时判僵尸并补录 Stop 话单 |
 
+
+## 8J. AAA per-NAS 注册表与厂商 VSA 限速(internal/domain/aaa,迁移 000196,AAA-A5)
+
+按来源 IP 注册 NAS 客户端(FreeRADIUS clients.conf/nas 表惯例):RADIUS 服务端按请求
+来源 IP 查表校验共享密钥,未注册/停用一律拒绝并留 `[aaa]` 告警;CoA/强制下线
+使用目标 NAS 自己的密钥与端口。admin 路由 `GET/POST /aaa/nas`、`GET/PUT/DELETE /aaa/nas/{id}`
+(权限码沿用 `menu:loaccount`)。
+
+### 8J.1 aaa_nas_clients(NAS 客户端)
+
+| 页面列名 | 字段名 | DB 列 | 类型/枚举 |
+|:---------|:-------|:------|:----------|
+| ID | `ID` | id | BIGSERIAL |
+| 名称 | `Name` | name | VARCHAR(64);告警留痕与列表展示 |
+| NAS IP | `NasIP` | nas_ip | VARCHAR(64);请求来源 IP,唯一约束 uq_aaa_nas_clients_ip |
+| 共享密钥 | `Secret` | secret_enc | TEXT;密文 v1$gcm$(与 A1 凭据同体系),仅写不回显 |
+| 厂商 | `Vendor` | vendor | **HUAWEI 华为 / ZTE 中兴 / GENERIC 通用(不下发 VSA)** |
+| CoA 端口 | `CoAPort` | coa_port | INT;默认 3799(RFC 5176),可按设备改配 |
+| 启用 | `Enabled` | enabled | BOOLEAN;false=认证/计费/CoA 一律拒绝 |
+| 创建/更新时间 | `CreatedAt`/`UpdatedAt` | created_at/updated_at | TIMESTAMPTZ |
+
+### 8J.2 厂商限速 VSA 映射(带宽模板 → Access-Accept 属性)
+
+带宽模板串(product_offers.bandwidth,如 100M/500M/1000M)解析为 kbps,按认证请求来源
+NAS 的厂商下发整数限速 VSA;厂商不匹配/无映射/带宽不可解析一律回退现状 FramedPool
+带宽串(行为不回退)。属性对可配,不写死:
+
+| 厂商 | Vendor-ID | 默认上行/下行属性 | 配置(env,格式=上行属性名,下行属性名) |
+|:-----|:----------|:------------------|:--------------------------------------|
+| HUAWEI | 2011 | 78 Huawei-Input-Average-Rate / 80 Huawei-Output-Average-Rate(kbps) | `BOSS_AAA_VSA_HUAWEI`(默认 input-average-rate,output-average-rate) |
+| ZTE | 3902 | 84 / 86(镜像华为布局;以设备 RADIUS 私有属性规范为准,上线前必须核对) | `BOSS_AAA_VSA_ZTE` |
+
+可选属性名(语义名=类型码):HUAWEI input-average-rate=78 / input-peak-rate=79 /
+output-average-rate=80 / output-peak-rate=81;ZTE input-peak-rate=83 /
+input-average-rate=84 / output-peak-rate=85 / output-average-rate=86。
+
+### 8J.3 全局密钥兼容开关与迁移路径
+
+| 配置 | env | 默认 | 说明 |
+|:-----|:----|:-----|:-----|
+| 全局密钥兼容 | `BOSS_AAA_GLOBAL_SECRET_COMPAT` | 关 | 开启后未注册 NAS 的 RADIUS 报文与 CoA 下发回退全局密钥 `BOSS_AAA_SECRET` 与 `BOSS_AAA_COA_PORT`;**停用(enabled=false)NAS 不回退,一律拒绝** |
+
+迁移路径(全局密钥退役,不中断业务):
+
+1. 逐台登记 NAS(名称/来源 IP/厂商/共享密钥/CoA 端口),设备侧同步换密钥;
+2. 开启兼容开关灰度(存量未登记设备不断),观察 `[aaa] NAS COMPAT GLOBAL SECRET` 与
+   `[aaa] NAS REJECT UNREGISTERED` 日志,逐台登记直至无未注册来源;
+3. 全部登记后关闭兼容开关;`BOSS_AAA_SECRET` 自此仅为兼容开关的回退项,不再作为正式认证凭据。

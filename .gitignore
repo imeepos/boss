@@ -61,3 +61,6 @@ __pycache__/
 server
 server-new
 /bossctl
+
+# 前端组件源码,勿当 Go 覆盖率产物误伤(coverage.* 规则的例外)
+!web/admin/src/pages/oss/odn/coverage.tsx

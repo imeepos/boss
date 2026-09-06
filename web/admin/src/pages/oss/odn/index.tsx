@@ -7,14 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { CoveragePanel } from './coverage'
 
 const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
 const FIELD = 'flex flex-col gap-1'
 const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
-type Tab = 'grids' | 'facilities' | 'sites' | 'devices'
-/** tab → 批量导入实体 kind(与 base/importer/entities.ts 对齐)。 */
-const TAB_KIND: Record<Tab, string> = { grids: 'odn_grid', facilities: 'odn_facility', sites: 'odn_site', devices: 'odn_device' }
+type Tab = 'grids' | 'facilities' | 'sites' | 'devices' | 'coverage'
+/** tab → 批量导入实体 kind(与 base/importer/entities.ts 对齐;coverage 无批量导入)。 */
+const TAB_KIND: Partial<Record<Tab, string>> = { grids: 'odn_grid', facilities: 'odn_facility', sites: 'odn_site', devices: 'odn_device' }
 type Grid = { prvCode: string; cityPrefix: string; gridCode: number; name: string; coverage: string; status: string; facilities: number; warn: boolean }
 type Facility = { code: string; kind: string; prvCode: string; cityPrefix: string; gridCode: number; name: string; lat: number | null; lng: number | null; status: string }
 type Site = { prvCode: string; cityPrefix: string; siteNo: number; name: string; lat: number | null; lng: number | null; status: string }
@@ -73,16 +74,17 @@ export default function ODNPage() {
   }
 
   return <div>
-    <div className="mb-4 flex items-center justify-between"><div><h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{g.title}</h2><p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{g.subtitle}</p></div><div className="flex items-center gap-2"><BatchImportEntry kind={TAB_KIND[tab]} onImported={load} /><ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? g.cancel : g.add}</ToolbarButton></div></div>
-    <div className="mb-4 flex gap-6 border-b border-[var(--shell-side-border)]">{(['grids', 'facilities', 'sites', 'devices'] as Tab[]).map((key) => <button key={key} className={`cursor-pointer border-b-2 px-1 py-3 text-sm ${tab === key ? 'border-[var(--color-brand-gold-500)] font-semibold text-[var(--shell-heading)]' : 'border-transparent text-[var(--shell-content-text)]'}`} onClick={() => { setTab(key); setShowForm(false) }}>{g.tabs[key]}</button>)}</div>
+    <div className="mb-4 flex items-center justify-between"><div><h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{g.title}</h2><p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{g.subtitle}</p></div><div className="flex items-center gap-2">{TAB_KIND[tab] && <BatchImportEntry kind={TAB_KIND[tab]} onImported={load} />}{tab !== 'coverage' && <ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? g.cancel : g.add}</ToolbarButton>}</div></div>
+    <div className="mb-4 flex gap-6 border-b border-[var(--shell-side-border)]">{(['grids', 'facilities', 'sites', 'devices', 'coverage'] as Tab[]).map((key) => <button key={key} className={`cursor-pointer border-b-2 px-1 py-3 text-sm ${tab === key ? 'border-[var(--color-brand-gold-500)] font-semibold text-[var(--shell-heading)]' : 'border-transparent text-[var(--shell-content-text)]'}`} onClick={() => { setTab(key); setShowForm(false) }}>{g.tabs[key]}</button>)}</div>
     <CityFilter prv={prv} city={city} setPrv={setPrv} setCity={setCity} />
     {error && <ErrorBanner message={error} className="mt-3" />}
-    {showForm && <Form tab={tab} busy={busy} submit={submit} prv={prv} city={city} g={g} />}
+    {showForm && tab !== 'coverage' && <Form tab={tab} busy={busy} submit={submit} prv={prv} city={city} g={g} />}
     <section className={`${CARD} mt-4 overflow-hidden`}>
       {tab === 'grids' && <GridTable rows={grids} onRetire={(n) => retire(`/odn/grids/${n}`)} g={g} />}
       {tab === 'facilities' && <FacilityTable rows={facilities} onRetire={(code) => retire(`/odn/facilities/${encodeURIComponent(code)}`)} g={g} />}
       {tab === 'sites' && <SiteTable rows={sites} onRetire={(n) => retire(`/odn/sites/${n}`)} g={g} />}
       {tab === 'devices' && <DeviceTable rows={devices} onRetire={(id) => retire(`/odn/devices/${id}`)} g={g} />}
+      {tab === 'coverage' && <CoveragePanel g={g} />}
     </section>
   </div>
 }
@@ -93,7 +95,7 @@ function Form({ tab, busy, submit, g }: FormProps) {
   const set = (key: string, value: string) => setValues((v) => ({ ...v, [key]: value }))
   const field = (key: string, label: string, placeholder = '') => <label className={FIELD}><span className={LABEL}>{label}</span><Input value={values[key] ?? ''} placeholder={placeholder} onChange={(e) => set(key, e.target.value)} /></label>
   const save = () => {
-    const paths: Record<Tab, string> = { grids: '/odn/grids', facilities: '/odn/facilities', sites: '/odn/sites', devices: '/odn/devices' }
+    const paths: Record<Tab, string> = { grids: '/odn/grids', facilities: '/odn/facilities', sites: '/odn/sites', devices: '/odn/devices', coverage: '' }
     const body = Object.fromEntries(Object.entries(values).map(([k, v]) => {
       if (v === '') return [k, undefined]
       if (/^-?\d+(\.\d+)?$/.test(v)) return [k, Number(v)]

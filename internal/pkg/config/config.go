@@ -44,22 +44,8 @@ type Config struct {
 	OLAP  struct{ StarRocksDSN string }
 	Flink struct{ Jobmanager string }
 
-	// AAA(阶段7 自研 RADIUS,性能服务群独立部署)。
-	AAA struct {
-		AuthAddr        string        // RADIUS 认证端口(1812)
-		AcctAddr        string        // RADIUS 计费端口(1813)
-		Secret          string        // NAS 共享密钥
-		AuthTTL         int           // 授权缓存 TTL 秒(默认 60)
-		CDRTopic        string        // 话单 Kafka topic
-		CredKey         string        // 凭据落库密钥材料(BOSS_AAA_CRED_KEY/文件;空=从 Secret 派生,生产应显式设置)
-		AllowNoCred     bool          // BOSS_AAA_ALLOW_NO_CRED=true:未设密账号放行(迁移缓冲,默认关)
-		LockThreshold   int           // BOSS_AAA_LOCK_THRESHOLD:连续失败锁定阈值(默认 5)
-		LockWindow      time.Duration // BOSS_AAA_LOCK_WINDOW:锁定时长(默认 15m)
-		SessionLimit    int           // 同一 LOID 并发会话上限(全局,默认 1;A2)
-		CoAPort         int           // NAS CoA/DM 端口(RFC 5176,默认 3799;A2)
-		OfflineRetryMax int           // Disconnect 不可达重试上限(默认 3;A2)
-		ZombieAfter     time.Duration // 会话超时未更新判僵尸阈值(默认 2h;A2)
-	}
+	// AAA(阶段7 自研 RADIUS,性能服务群独立部署;A5 起含 per-NAS/VSA 配置)。
+	AAA AAAConfig
 
 	JWT struct {
 		Secret string
@@ -153,20 +139,8 @@ func Load() *Config {
 	c.Observability.JaegerOTLP = getenv("BOSS_JAEGER_OTLP", "192.168.0.102:16831")
 	c.OLAP.StarRocksDSN = getenv("BOSS_STARROCKS_DSN", "root@tcp(192.168.0.102:29030)/")
 	c.Flink.Jobmanager = getenv("BOSS_FLINK_JM", "192.168.0.102:18082")
-	c.AAA.AuthAddr = getenv("BOSS_AAA_AUTH_ADDR", ":1812")
-	c.AAA.AcctAddr = getenv("BOSS_AAA_ACCT_ADDR", ":1813")
-	c.AAA.Secret = getenv("BOSS_AAA_SECRET", "boss-aaa-secret")
-	c.AAA.AuthTTL = 60
-	c.AAA.SessionLimit = getint("BOSS_AAA_SESSION_LIMIT", 1)
-	c.AAA.CoAPort = getint("BOSS_AAA_COA_PORT", 3799)
-	c.AAA.OfflineRetryMax = getint("BOSS_AAA_OFFLINE_RETRY_MAX", 3)
-	c.AAA.ZombieAfter = getdur("BOSS_AAA_ZOMBIE_AFTER", 2*time.Hour)
+	loadAAA(c)
 	c.Kafka.Brokers = getlist("BOSS_KAFKA_BROKERS", []string{"192.168.0.102:29092"})
-	c.AAA.CDRTopic = getenv("BOSS_AAA_CDR_TOPIC", "boss-cdr")
-	c.AAA.CredKey = readEnvOrFile("BOSS_AAA_CRED_KEY", "BOSS_AAA_CRED_KEY_FILE")
-	c.AAA.AllowNoCred = getenv("BOSS_AAA_ALLOW_NO_CRED", "") == "true"
-	c.AAA.LockThreshold = getint("BOSS_AAA_LOCK_THRESHOLD", 5)
-	c.AAA.LockWindow = getdur("BOSS_AAA_LOCK_WINDOW", 15*time.Minute)
 	c.Events.Topic = getenv("BOSS_EVENTS_TOPIC", "boss-order-events")
 	c.JWT.Secret = getenv("BOSS_JWT_SECRET", "change-me")
 	c.JWT.TTL = getdur("BOSS_JWT_TTL", 7*24*time.Hour)
