@@ -43,6 +43,27 @@ internal/domain/report/pg_patrol.go 巡检清单新增两项:
 或未来回归仍可能产生——本巡检作为每日 cron + db-patrol-gate 兜底,任一 >0 即
 ORPHAN-GATE FAIL 拦截验收/部署。
 
+## 部署静默停摆巡检(deploy-guard-alert,2026-09-06 追加)
+
+来源:deploy-runner job 镜像被 prune 后 6 次 push 零部署且无任何可见错误(ISSUE.md
+CI/deploy-102)。机制分两半:
+
+- 写入方(自动,随 deploy-102 workflow 生效):尾步 `scripts/ops/deploy-marker-write.sh`
+  在容器/healthz/指纹/孤儿门禁全过后,把「最近成功部署 ts+sha」经 docker-run 写到 102
+  宿主 `/home/imeepos/boss-deploy-state/last-success.env`;
+- 比对方(本巡检):`scripts/ops/deploy-guard-alert.sh` 读标记算年龄,超 24h(默认,
+  `DEPLOY_GUARD_THRESHOLD_HOURS` 可调)输出 `[deploy-guard] ALERT` 并 exit 1;标记
+  缺失/不可读同样 ALERT。自测:`--selftest`(新鲜/超龄/缺失三态,不读真实标记)。
+
+### 安装(2026-09-06 实录)
+
+```bash
+ssh imeepos@192.168.0.102 'crontab -l 2>/dev/null | grep -v "deploy-guard-alert"; echo "25 8 * * * cd ~/boss && ./scripts/ops/deploy-guard-alert.sh >> /tmp/deploy-guard-alert.log 2>&1 # deploy-guard-daily"' | ssh imeepos@192.168.0.102 'crontab -'
+```
+
+- 种子标记:安装日以当日已部署 sha(7a5bc656)手工落盘一次;此后由 workflow 尾步接管。
+- 巡检只兜底「部署通道整体静默停摆」;单次 run 失败由 gitea Actions UI 侧负责。
+
 ## 放量守夜锚点总表(2026-09 M0 冻结)
 
 > 对齐 `docs/plan/q4-launch-growth-plan.md` 辅线 4.1/4.2(每日轧账 + SLO 巡航)。
@@ -54,6 +75,7 @@ ORPHAN-GATE FAIL 拦截验收/部署。
 | 话单补偿 | 服务端循环 | 周期轮询 | `internal/app/cdr_compensation_loop.go` | 已内建 |
 | ETL 逾期自动派单 | 服务端循环 | 周期轮询 | `internal/app/etl_autodispatch_loop.go` | 已内建 |
 | 孤儿巡检门禁 | 102 cron | 每日 08:10 | `db-patrol-gate.sh`(见上) | 已装 |
+| 部署静默停摆巡检 | 102 cron | 每日 08:25 | `deploy-guard-alert.sh`(见下,新 2026-09) | 本批安装 |
 | 备份 | 102 cron | 每日 03:30 | `/backup/jobs` | 已装 |
 | Stripe 隧道守卫+告警 | 102 cron | 每 3 分钟 | `stripe-tunnel-url.sh`(refType=stripe_tunnel) | 已装 |
 | **SLO 巡航采集+告警** | 102 cron | 每日 03:40 | `slo-cruise.sh`(refType=slo_cruise,新 2026-09) | 本批安装 |
