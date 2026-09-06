@@ -187,6 +187,12 @@ type AssetService interface {
 	// UnbindTag 解绑标签(P1-T2):置 bound_asset_id=NULL+status=UNBOUND 并写 UNBIND 事件;
 	// expectedAssetID>0 时校验当前绑定一致;未绑定/预期不符返回 ErrTagUnbound/ErrBindingConflict。
 	UnbindTag(ctx context.Context, tagID, expectedAssetID, actorAccountID int64, detail string) error
+	// DisableTag 停用标签(P2-W2-T1):仅 UNBOUND 可停用(BOUND 必须先解绑,
+	// ErrBindingConflict 40900);已 DISABLED 幂等成功;未命中 ErrNotFound。
+	DisableTag(ctx context.Context, tagID int64, reason string) error
+	// EnableTag 启用标签(P2-W2-T1):仅对 DISABLED 生效(DISABLED → UNBOUND);
+	// UNBOUND/BOUND 幂等 no-op 成功;未命中 ErrNotFound。
+	EnableTag(ctx context.Context, tagID int64) error
 	// ScrapAsset 报废资产(P1-T2):任意非终态 → SCRAPPED(终态幂等 no-op),强制解绑标签写
 	// RECYCLE 事件(软回收禁硬删),轨迹落行;同一事务,失败整单回滚。
 	ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string) error

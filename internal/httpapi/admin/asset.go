@@ -26,7 +26,9 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	g.GET("/tags", requirePerm(a.User, "menu:tag"), tagListHandler(a))
 	g.POST("/tags", requirePerm(a.User, "menu:tag"), tagCreateHandler(a))               // P2-W2-T1 建标签(编号+EPC+频段必填唯一)
-	g.POST("/tags/:tagId/unbind", requirePerm(a.User, "menu:tag"), tagUnbindHandler(a)) // P1-T2 解绑回收
+	g.POST("/tags/:tagId/unbind", requirePerm(a.User, "menu:tag"), tagUnbindHandler(a))   // P1-T2 解绑回收
+	g.POST("/tags/:tagId/disable", requirePerm(a.User, "menu:tag"), tagDisableHandler(a)) // P2-W2-T1 停用(BOUND 先解绑)
+	g.POST("/tags/:tagId/enable", requirePerm(a.User, "menu:tag"), tagEnableHandler(a))   // P2-W2-T1 启用(仅 DISABLED 生效)
 
 	g.POST("/stocktakes", requirePerm(a.User, "menu:stock"), stocktakeCreateHandler(a))
 	g.POST("/stocktakes/:taskId/diff-handle", requirePerm(a.User, "menu:stock"), stocktakeHandleDiffHandler(a))

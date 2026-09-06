@@ -193,6 +193,10 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 	// 与环节9 扫码核对(VerifyScan 要求 bound_asset_id 非空)口径对齐。
 	// 显式比对目标值,冲突即返 ErrBindingConflict 并整体回滚。
 	if a.TagID > 0 {
+		// DISABLED 标签不可被绑定(P2-W2-T1;事务内以 tx 校验,失败整单回滚)。
+		if err := s.ensureTagBindable(ctx, tx, a.TagID); err != nil {
+			return 0, err
+		}
 		tag, err := tx.Exec(ctx,
 			`UPDATE tags SET bound_asset_id = $2, status = 'BOUND'
 			 WHERE id = $1 AND (bound_asset_id IS NULL OR bound_asset_id = $2)`,

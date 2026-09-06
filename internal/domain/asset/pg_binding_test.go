@@ -34,6 +34,10 @@ func TestPGStore_CreateAsset_BackfillTagBinding(t *testing.T) {
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
 		WithArgs(int64(3), "IN_STOCK").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// DISABLED 绑定闸门(P2-W2-T1 B):绑定前查标签状态。
+	mock.ExpectQuery(`SELECT status FROM tags`).
+		WithArgs(int64(9)).
+		WillReturnRows(mock.NewRows([]string{"status"}).AddRow("UNBOUND"))
 	// 回填:未绑定标签 → bound_asset_id + BOUND。
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
 		WithArgs(int64(9), int64(3)).
@@ -82,6 +86,10 @@ func TestPGStore_CreateAsset_TagAlreadyBound(t *testing.T) {
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
 		WithArgs(int64(3), "IN_STOCK").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// DISABLED 绑定闸门(P2-W2-T1 B):绑定前查标签状态。
+	mock.ExpectQuery(`SELECT status FROM tags`).
+		WithArgs(int64(9)).
+		WillReturnRows(mock.NewRows([]string{"status"}).AddRow("UNBOUND"))
 	// 标签已绑另一资产,UPDATE 影响 0 行 → ErrBindingConflict(整单回滚,不留孤儿资产)。
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
 		WithArgs(int64(9), int64(3)).

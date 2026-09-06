@@ -28,6 +28,7 @@ type fakeTagAdmin struct {
 	created    *asset.Tag
 	createErr  error
 	disabledID int64
+	enabledID  int64
 	disableErr error
 	tagEvents  []asset.TagEvent
 }
@@ -141,6 +142,67 @@ func TestTagCreateHandler(t *testing.T) {
 		_ = json.NewDecoder(w.Body).Decode(&out)
 		if out.Code != int(apitypes.CodeInternal) {
 			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeInternal)
+		}
+	})
+}
+
+func (f *fakeTagAdmin) DisableTag(_ context.Context, id int64, _ string) error {
+	if f.disableErr != nil {
+		return f.disableErr
+	}
+	f.disabledID = id
+	return nil
+}
+
+func (f *fakeTagAdmin) EnableTag(_ context.Context, id int64) error {
+	f.enabledID = id
+	return nil
+}
+
+func TestTagDisableEnableHandlers(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST /tags/5/disable 成功+审计", func(t *testing.T) {
+		au := &recAudit{}
+		fa := &fakeTagAdmin{}
+		eng := tagAdminRouter(fa, au)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/tags/5/disable", `{"reason":"损耗"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || fa.disabledID != 5 {
+			t.Fatalf("code=%d disabledID=%d", out.Code, fa.disabledID)
+		}
+		if len(au.events) != 1 || au.events[0].Action != "状态变更" || au.events[0].TargetType != "tag" {
+			t.Fatalf("events=%+v", au.events)
+		}
+		if au.events[0].Detail["op"] != "disable" {
+			t.Fatalf("detail=%+v", au.events[0].Detail)
+		}
+	})
+
+	t.Run("POST /tags/5/disable 绑定中→40900", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{disableErr: fmt.Errorf("asset: tag 5 bound to asset 7, unbind first: %w", asset.ErrBindingConflict)}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/tags/5/disable", `{}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeConflict) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeConflict)
+		}
+	})
+
+	t.Run("POST /tags/5/enable 幂等成功", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/tags/5/enable", "")
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) {
+			t.Fatalf("code=%d", out.Code)
 		}
 	})
 }

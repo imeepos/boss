@@ -401,6 +401,10 @@ func TestPGStore_CreateAsset_ResubmitIdempotent(t *testing.T) {
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
 		WithArgs(int64(3), "IN_STOCK").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// DISABLED 绑定闸门(P2-W2-T1 B):绑定前查标签状态。
+	mock.ExpectQuery(`SELECT status FROM tags`).
+		WithArgs(int64(9)).
+		WillReturnRows(mock.NewRows([]string{"status"}).AddRow("UNBOUND"))
 	// PG 16 行为:条件命中且值已相等仍返 1 行(并非 0 行)。
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id`).
 		WithArgs(int64(9), int64(3)).

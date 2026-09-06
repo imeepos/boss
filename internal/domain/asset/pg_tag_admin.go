@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -41,4 +42,95 @@ func classifyTagInsertErr(ctx context.Context, err error, t Tag) error {
 		return fmt.Errorf("asset: epcCode %s: %w", t.EpcCode, ErrCodeDuplicate)
 	}
 	return err
+}
+
+// QueryRower 只读查询最小接口:PGStore 主连接与 pgx.Tx 均满足,
+// 供 ensureTagBindable 在库外/事务内两种上下文复用。
+type QueryRower interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+// ErrTagDisabled 标签已停用(DISABLED),拒绝进入绑定链路(P2-W2-T1 B)。
+var ErrTagDisabled = errors.New("asset: tag disabled")
+
+// ensureTagBindable 绑定前置校验:标签须存在且非 DISABLED。
+// 接入 CreateAsset 建档绑签与 UpdateAsset 换绑两条路径(新建标签自身不可能
+// DISABLED,CreateTag 预绑定无需检查);未命中 ErrForeignKeyViolation,
+// DISABLED ErrTagDisabled(40900)。
+func (s *PGStore) ensureTagBindable(ctx context.Context, q QueryRower, tagID int64) error {
+	var status string
+	err := q.QueryRow(ctx, `SELECT status FROM tags WHERE id = $1`, tagID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("asset: tag %d: %w", tagID, ErrForeignKeyViolation)
+	}
+	if err != nil {
+		return fmt.Errorf("asset: check tag %d: %w", tagID, err)
+	}
+	if status == "DISABLED" {
+		slog.WarnContext(ctx, "[asset] TAG BIND REJECTED",
+			"tag_id", tagID, "reason", "tag DISABLED, re-enable before binding")
+		return fmt.Errorf("asset: tag %d disabled: %w", tagID, ErrTagDisabled)
+	}
+	return nil
+}
+
+// DisableTag 停用标签:UNBOUND → DISABLED;已绑定(BOUND)拒绝,必须先解绑
+// (ErrBindingConflict,40900 提示先走 /tags/{id}/unbind);已 DISABLED 幂等成功。
+// 守卫 UPDATE(WHERE status='UNBOUND')+0 行回查区分原因,防并发越态。
+func (s *PGStore) DisableTag(ctx context.Context, tagID int64, reason string) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE tags SET status = 'DISABLED' WHERE id = $1 AND status = 'UNBOUND'`, tagID)
+	if err != nil {
+		return fmt.Errorf("asset: disable tag %d: %w", tagID, err)
+	}
+	if tag.RowsAffected() == 1 {
+		return nil
+	}
+	return s.disableTagFailReason(ctx, tagID, reason)
+}
+
+// disableTagFailReason 守卫 UPDATE 0 行时区分:不存在/已停用(幂等)/仍绑定。
+func (s *PGStore) disableTagFailReason(ctx context.Context, tagID int64, reason string) error {
+	var status string
+	var bound int64
+	err := s.db.QueryRow(ctx,
+		`SELECT status, COALESCE(bound_asset_id, 0) FROM tags WHERE id = $1`, tagID).
+		Scan(&status, &bound)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("asset: disable tag %d lookup: %w", tagID, err)
+	}
+	if status == "DISABLED" {
+		_ = reason // 幂等重放
+		return nil
+	}
+	slog.WarnContext(ctx, "[asset] TAG DISABLE REJECTED",
+		"tag_id", tagID, "status", status, "bound_asset_id", bound,
+		"reason", "bound tag must be unbound before disable")
+	return fmt.Errorf("asset: tag %d bound to asset %d, unbind first: %w", tagID, bound, ErrBindingConflict)
+}
+
+// EnableTag 启用标签:仅对 DISABLED 生效(DISABLED → UNBOUND);
+// 非 DISABLED(UNBOUND/BOUND)幂等 no-op 成功。DISABLED 只能自 UNBOUND 进入
+// (BOUND 先解绑),bound_asset_id 必为 NULL,无需回查绑定。
+func (s *PGStore) EnableTag(ctx context.Context, tagID int64) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE tags SET status = 'UNBOUND' WHERE id = $1 AND status = 'DISABLED'`, tagID)
+	if err != nil {
+		return fmt.Errorf("asset: enable tag %d: %w", tagID, err)
+	}
+	if tag.RowsAffected() == 1 {
+		return nil
+	}
+	var status string
+	err = s.db.QueryRow(ctx, `SELECT status FROM tags WHERE id = $1`, tagID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("asset: enable tag %d lookup: %w", tagID, err)
+	}
+	return nil // UNBOUND/BOUND:启用幂等 no-op
 }
