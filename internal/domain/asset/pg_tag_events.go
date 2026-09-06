@@ -130,3 +130,78 @@ func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64,
 	}
 	return nil
 }
+
+// 事件查询(P2-T4 消费面):供 /tags/{tagId}/events 与 /assets/{assetId}/events 读取,
+// 口径 = id 倒序 + limit(默认 50 上限 100,服务层兜底)+ action 白名单过滤 + before_id 游标。
+const (
+	eventListDefaultLimit = 50
+	eventListMaxLimit     = 100
+)
+
+// ValidEventAction 查询过滤 action 是否在写侧已产出的动作集内(handler 拒收白名单外值)。
+func ValidEventAction(action string) bool {
+	return action == "BIND" || action == "UNBIND" || action == "RECYCLE"
+}
+
+// ListTagEvents 标签事件流(P2-T4):id 倒序 + limit;beforeID>0 只取更小 id(游标翻页
+// 预留);actions 非空时过滤。标签不存在返回 ErrNotFound(与写侧 404 语义一致)。
+func (s *PGStore) ListTagEvents(ctx context.Context, tagID, limit, beforeID int64, actions []string) ([]TagEvent, error) {
+	ok, err := s.exists(ctx, "tags", tagID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return s.listEvents(ctx, "tag_id = $1", []any{tagID}, limit, beforeID, actions)
+}
+
+// ListAssetEvents 资产事件流(P2-T4):口径同 ListTagEvents;资产不存在返回 ErrNotFound。
+func (s *PGStore) ListAssetEvents(ctx context.Context, assetID, limit, beforeID int64, actions []string) ([]TagEvent, error) {
+	ok, err := s.exists(ctx, "assets", assetID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return s.listEvents(ctx, "asset_id = $1", []any{assetID}, limit, beforeID, actions)
+}
+
+// listEvents 事件流共用查询:scope 固定占 $1,action 过滤/游标/limit 占位按序追加。
+func (s *PGStore) listEvents(ctx context.Context, scope string, args []any, limit, beforeID int64, actions []string) ([]TagEvent, error) {
+	if limit <= 0 {
+		limit = eventListDefaultLimit
+	}
+	if limit > eventListMaxLimit {
+		limit = eventListMaxLimit
+	}
+	where := scope
+	if len(actions) > 0 {
+		args = append(args, actions)
+		where += fmt.Sprintf(" AND action = ANY($%d)", len(args))
+	}
+	if beforeID > 0 {
+		args = append(args, beforeID)
+		where += fmt.Sprintf(" AND id < $%d", len(args))
+	}
+	args = append(args, limit)
+	rows, err := s.db.Query(ctx,
+		"SELECT id, event_id, tag_id, COALESCE(asset_id, 0), action,"+
+			" COALESCE(actor_account_id, 0), detail, changed, created_at"+
+			" FROM tag_events WHERE "+where+" ORDER BY id DESC LIMIT $"+fmt.Sprint(len(args)), args...)
+	if err != nil {
+		return nil, fmt.Errorf("asset: list tag events: %w", err)
+	}
+	defer rows.Close()
+	out := make([]TagEvent, 0)
+	for rows.Next() {
+		var e TagEvent
+		if err := rows.Scan(&e.ID, &e.EventID, &e.TagID, &e.AssetID, &e.Action,
+			&e.ActorAccountID, &e.Detail, &e.Changed, &e.CreatedAt); err != nil {
+			return nil, fmt.Errorf("asset: scan tag event: %w", err)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
