@@ -145,3 +145,17 @@ func TestPGStore_ListAssetEvents(t *testing.T) {
 		}
 	})
 }
+
+// ValidEventAction 白名单:写侧三动作 + CREATE(000189 存量回填)可过滤。
+func TestValidEventAction(t *testing.T) {
+	for _, a := range []string{"BIND", "UNBIND", "RECYCLE", "CREATE"} {
+		if !ValidEventAction(a) {
+			t.Errorf("%s should be valid", a)
+		}
+	}
+	for _, a := range []string{"", "bind", "DELETE", "UPDATE"} {
+		if ValidEventAction(a) {
+			t.Errorf("%q should be invalid", a)
+		}
+	}
+}

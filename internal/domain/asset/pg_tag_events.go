@@ -145,9 +145,10 @@ const (
 	eventListMaxLimit     = 100
 )
 
-// ValidEventAction 查询过滤 action 是否在写侧已产出的动作集内(handler 拒收白名单外值)。
+// ValidEventAction 查询过滤 action 是否在已产出动作集内(handler 拒收白名单外值)。
+// CREATE 为 000189 存量回填动作(零事件资产的建档补记),时间轴回放时按此过滤。
 func ValidEventAction(action string) bool {
-	return action == "BIND" || action == "UNBIND" || action == "RECYCLE"
+	return action == "BIND" || action == "UNBIND" || action == "RECYCLE" || action == "CREATE"
 }
 
 // ListTagEvents 标签事件流(P2-T4):id 倒序 + limit;beforeID>0 只取更小 id(游标翻页
