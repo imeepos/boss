@@ -39,10 +39,11 @@ func TestPGStore_CreateAsset_BackfillTagBinding(t *testing.T) {
 		WithArgs(int64(9), int64(3)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	// 绑定事件流(P1-T2):BIND 随主事务落库。
+	mock.ExpectCommit()
+	// 绑定事件:提交后尽力而为(P2-T2 热修)
 	mock.ExpectExec(`INSERT INTO tag_events`).
 		WithArgs(int64(9), int64(3), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateAsset(context.Background(), Asset{
@@ -148,10 +149,11 @@ func TestPGStore_CreateTag_BackfillAssetBinding(t *testing.T) {
 		WithArgs(int64(5), int64(10)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	// 绑定事件流(P1-T2)。
+	mock.ExpectCommit()
+	// 绑定事件:提交后尽力而为(P2-T2 热修)
 	mock.ExpectExec(`INSERT INTO tag_events`).
 		WithArgs(int64(10), int64(5), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateTag(context.Background(), Tag{

@@ -156,7 +156,7 @@ func (s *PGStore) rebindTagTx(ctx context.Context, tx pgx.Tx, assetID, oldTagID,
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO tag_events(tag_id, asset_id, action, actor_account_id, changed)
 			  VALUES($1, $2, 'UNBIND', $3, $4)`,
-			oldTagID, assetID, idOrNil(actorAccountID), changed); err != nil {
+			oldTagID, assetID, idOrNil(actorAccountID), string(changed)); err != nil {
 			slog.ErrorContext(ctx, "[asset] TAG EVENT FAILED",
 				"action", "UNBIND", "tag_id", oldTagID, "asset_id", assetID, "err", err)
 		}
@@ -182,7 +182,7 @@ func (s *PGStore) rebindTagTx(ctx context.Context, tx pgx.Tx, assetID, oldTagID,
 			return fmt.Errorf("asset: tag %d already bound to another asset: %w", newTagID, ErrBindingConflict)
 		}
 		// BIND 事件随主事务落库,失败 ALERT 不阻断(与建档绑定同口径)。
-		s.bindTagEvent(ctx, tx, newTagID, assetID)
+		s.bindTagEventEx(ctx, tx, newTagID, assetID, "")
 	}
 	return nil
 }

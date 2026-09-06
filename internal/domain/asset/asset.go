@@ -190,6 +190,11 @@ type AssetService interface {
 	// ScrapAsset 报废资产(P1-T2):任意非终态 → SCRAPPED(终态幂等 no-op),强制解绑标签写
 	// RECYCLE 事件(软回收禁硬删),轨迹落行;同一事务,失败整单回滚。
 	ScrapAsset(ctx context.Context, assetID, actorAccountID int64, reason string) error
+	// ListTagEvents 标签事件流查询(P2-T4 消费面):id 倒序+limit(服务层兜底上限 100),
+	// actions 白名单过滤,beforeID>0 只取更小 id(游标预留);标签不存在返回 ErrNotFound。
+	ListTagEvents(ctx context.Context, tagID, limit, beforeID int64, actions []string) ([]TagEvent, error)
+	// ListAssetEvents 资产事件流查询(P2-T4 消费面):口径同 ListTagEvents;资产不存在返回 ErrNotFound。
+	ListAssetEvents(ctx context.Context, assetID, limit, beforeID int64, actions []string) ([]TagEvent, error)
 
 	// ListModels 型号字典(含停用,管理端下拉与列表)。
 	ListModels(ctx context.Context) ([]AssetModel, error)

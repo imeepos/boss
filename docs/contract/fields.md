@@ -703,6 +703,18 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > CreateTag/CreateAsset 绑定成功即写 BIND；端点 POST /tags/{tagId}/unbind（预期不符 40900、
 > 未绑定 ErrTagUnbound→40000 族）写 UNBIND；POST /assets/{assetId}/scrap（reason 必填,终态
 > 幂等）强制解绑写 RECYCLE——报废软回收禁硬删（adopted 2026-09-06-asset-tag-p1-wave）。
+
+> 标签事件消费面（P2-T4，2026-09-06）：查询端点 GET /tags/{tagId}/events 与
+> GET /assets/{assetId}/events（id 倒序；limit 缺省 50 上限 100；action 多值白名单
+> BIND/UNBIND/RECYCLE 过滤，白名单外 42200；before_id 游标预留只取更小 id，首版 UI 不用；
+> 标签/资产不存在 40400，统一信封 items 返回）。前端：标签页操作列（既有 Dropdown 组件
+> 体系，禁用原生 select）提供 解绑/报废绑定资产/事件记录，资产页操作列提供 状态轨迹/
+> 事件记录/报废；解绑/报废二次确认三要素=影响面清单+不可逆/恢复路径说明+红色确认键默认
+> 禁用（原因必填；报废另需输入资产编码精确匹配）；确认框影响面口径与事后可查回的事件字段
+> 对齐（解绑→UNBIND 事件、报废→RECYCLE 事件+SCRAPPED 轨迹行，原因均入事件 detail）；
+> 事件时间轴抽屉一行一事件（时间/操作人/动作徽标/对象），changed JSONB 只渲染实际变化键
+> （键: 旧值 → 新值，等宽字体），不 dump 全量 JSON、不引 diff 库。明确不做：全局事件
+> 大屏、游标分页 UI、全文搜索、SSE/轮询推送、导出。
 > admin 台账 CRUD 四端点（P2-W1-T1）：POST /assets（建档：batchId 必填缺失 42200，
 > 企业归属快照自批次回填与采购入库同口径；状态固定 IN_STOCK；modelId 可选须存在且在用，
 > type 缺省由型号类别派生；tagId 可选绑定写 BIND，已被其他资产占用 40900 整单回滚；

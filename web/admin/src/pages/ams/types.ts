@@ -43,6 +43,20 @@ export interface TagRow {
   battery: string
 }
 
+// 标签事件流(契约 GET /tags/{tagId}/events;action: BIND/UNBIND/RECYCLE)。
+// 形状对齐 internal/domain/asset.TagEvent 全量行(append-only 审计流)。
+export interface TagEventRow {
+  id: number
+  eventId: string
+  tagId: number
+  assetId: number
+  action: string
+  actorAccountId: number
+  detail: string
+  changed?: Record<string, unknown>
+  createdAt: string
+}
+
 export interface LifecycleRow {
   id: number
   assetId: number
@@ -107,6 +121,7 @@ export interface OrderItemRow {
   spec: string
   quantity: number
   unitAmount: number
+  receivedQty?: number // PUT /procurement/orders/{id} 整体替换时忽略,详情展示用
 }
 
 export interface OrderRow {
@@ -133,6 +148,7 @@ export interface ReceiptRow {
   legalEntityName: string
   status: 'DRAFT' | 'CONFIRMED' | 'REJECTED'
   receivedAt: string
+  remark?: string
 }
 
 export interface InventoryRow {

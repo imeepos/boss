@@ -15,8 +15,12 @@ import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow } from '../../../components/business'
 import { pageSlice, type OrderRow, type SupplierRow } from '../types'
 import { CreateOrderDrawer } from './CreateOrderDrawer'
+import { OrderEditDrawer } from './OrderEditDrawer'
+import { OrderDetailDrawer } from './OrderDetailDrawer'
 import { ConfirmReceiptDrawer } from './ConfirmReceiptDrawer'
 import { SuppliersDrawer } from './SuppliersDrawer'
+import { ReceiptsPanel } from './ReceiptsPanel'
+import { canEditOrder } from './purchaseLogic'
 
 const STATUS_FILTERS = ['DRAFT', 'SUBMITTED', 'PARTIAL', 'RECEIVED', 'CANCELLED'] as const
 
@@ -33,6 +37,8 @@ export default function PurchasePage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [supOpen, setSupOpen] = useState(false)
   const [confirming, setConfirming] = useState<OrderRow | null>(null)
+  const [editing, setEditing] = useState<OrderRow | null>(null)
+  const [detailId, setDetailId] = useState<number | null>(null)
   const confirm = useConfirm()
 
   const load = () => {
@@ -144,6 +150,10 @@ export default function PurchasePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right">{o.totalAmount.toFixed(2)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
                       <span className="inline-flex items-center gap-2">
+                        <button type="button" disabled={busy} onClick={() => setDetailId(o.id)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.orderDetail}</button>
+                        {canEditOrder(o.status) && (
+                          <button type="button" disabled={busy} onClick={() => setEditing(o)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.orderEdit}</button>
+                        )}
                         {o.status === 'DRAFT' && (
                           <button type="button" disabled={busy} onClick={() => submitOrder(o.id)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.submit}</button>
                         )}
@@ -194,6 +204,14 @@ export default function PurchasePage() {
       )}
 
       {supOpen && <SuppliersDrawer onClose={() => setSupOpen(false)} onSaved={load} />}
+
+      {editing && (
+        <OrderEditDrawer order={editing} suppliers={suppliers}
+          onClose={() => setEditing(null)} onSaved={load} />
+      )}
+      {detailId !== null && <OrderDetailDrawer orderId={detailId} onClose={() => setDetailId(null)} />}
+
+      <ReceiptsPanel />
     </div>
   )
 }
