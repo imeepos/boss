@@ -8,7 +8,7 @@ import (
 // ListSites 局点列表(指定城市)。
 func (s *PGStore) ListSites(ctx context.Context, prvCode, cityPrefix string) ([]Site, error) {
 	rows, err := s.db.Query(ctx, `SELECT prv_code, city_prefix, site_no,
-			COALESCE(name,''), COALESCE(lat,0), COALESCE(lng,0), status
+			COALESCE(name,''), COALESCE(lat,0), COALESCE(lng,0), status, lifecycle_status
 		FROM odn_site WHERE prv_code=$1 AND city_prefix=$2 AND status <> 'RETIRED'
 		ORDER BY site_no`, prvCode, cityPrefix)
 	if err != nil {
@@ -19,7 +19,7 @@ func (s *PGStore) ListSites(ctx context.Context, prvCode, cityPrefix string) ([]
 	for rows.Next() {
 		var st Site
 		if err := rows.Scan(&st.PrvCode, &st.CityPrefix, &st.SiteNo,
-			&st.Name, &st.Lat, &st.Lng, &st.Status); err != nil {
+			&st.Name, &st.Lat, &st.Lng, &st.Status, &st.LifecycleStatus); err != nil {
 			return nil, fmt.Errorf("odn: scan site: %w", err)
 		}
 		out = append(out, st)
@@ -119,7 +119,7 @@ func (s *PGStore) insertChildDevice(ctx context.Context, d Device, wantKind stri
 // ListDevices 设备列表(kind 可空;城市可空=全网)。
 func (s *PGStore) ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error) {
 	rows, err := s.db.Query(ctx, `SELECT id, code, kind, prv_code, city_prefix,
-			COALESCE(site_no,0), COALESCE(parent_id,0), COALESCE(name,''), lat, lng, status
+			COALESCE(site_no,0), COALESCE(parent_id,0), COALESCE(name,''), lat, lng, status, lifecycle_status
 		FROM odn_device WHERE ($1='' OR kind=$1) AND ($2='' OR (prv_code=$2 AND city_prefix=$3))
 		ORDER BY code LIMIT 500`, kind, prvCode, cityPrefix)
 	if err != nil {
@@ -130,7 +130,7 @@ func (s *PGStore) ListDevices(ctx context.Context, kind, prvCode, cityPrefix str
 	for rows.Next() {
 		var d Device
 		if err := rows.Scan(&d.ID, &d.Code, &d.Kind, &d.PrvCode, &d.CityPrefix,
-			&d.SiteNo, &d.ParentID, &d.Name, &d.Lat, &d.Lng, &d.Status); err != nil {
+			&d.SiteNo, &d.ParentID, &d.Name, &d.Lat, &d.Lng, &d.Status, &d.LifecycleStatus); err != nil {
 			return nil, fmt.Errorf("odn: scan device: %w", err)
 		}
 		out = append(out, d)

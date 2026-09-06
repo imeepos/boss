@@ -214,6 +214,7 @@
 | 状态 | `Status` | status | IN_USE / RETIRED（报废永久锁定，禁止复用/删除） |
 
 > 校验：`odn.ValidateFacilityCode`（格式 + 序号 000/00000 预留禁用）；入库校验网格已备案（ErrGridMissing）与容量 999（ErrGridFull）。
+> 生命周期（P6，T8，迁移 000198）：`lifecycle_status` PLANNED/IN_BUILD/IN_SERVICE/RETIRED，存量默认 IN_SERVICE；转移 `PUT /odn/facilities/{code}/lifecycle`；RETIRED 终态与 status 双列同步；规则 internal/domain/odn/lifecycle.go（site/device 同规，见 §1.5.5）。
 
 ### 1.5.4 odn_cable_segment / odn_fiber（光缆段落与纤芯，迁移 000079，规范第 5 章/E8）
 
@@ -230,6 +231,7 @@
 ### 1.5.5 odn_site / odn_device（局点与核心链路设备，迁移 000081/000143，资产编码规范第 2/3 章）
 
 > 管理面同 §1.5.3（`menu:odn`，`/odn/sites|devices`）；000143 起 odn_device 补坐标列（用户要求"所有物料有地理位置 与地图关联"），与 GIS `/gis/odn-points` 图层接通。
+> 生命周期（P6，T8，迁移 000198）：局点/设备同样带 `lifecycle_status` 四态，转移 `PUT /odn/sites/{siteNo}/lifecycle`、`PUT /odn/devices/{id}/lifecycle`；RETIRED 双列同步，终态不可逆。
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
 |:---------|:-------|:------|:----------|

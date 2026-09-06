@@ -284,3 +284,59 @@ paths:
         - { name: lat, in: query, required: true, schema: { type: number } }
         - { name: lng, in: query, required: true, schema: { type: number } }
       responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/facilities/{code}/lifecycle:
+    put:
+      tags: [ODN]
+      summary: 设施生命周期转移(PLANNED→IN_BUILD→IN_SERVICE→RETIRED,终态不可逆)
+      operationId: setOdnFacilityLifecycle
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lifecycleStatus]
+              properties:
+                lifecycleStatus: { type: string, enum: [PLANNED, IN_BUILD, IN_SERVICE, RETIRED] }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/sites/{siteNo}/lifecycle:
+    put:
+      tags: [ODN]
+      summary: 局点生命周期转移
+      operationId: setOdnSiteLifecycle
+      parameters:
+        - { name: siteNo, in: path, required: true, schema: { type: integer } }
+        - { name: prvCode, in: query, required: true, schema: { type: string } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lifecycleStatus]
+              properties:
+                lifecycleStatus: { type: string, enum: [PLANNED, IN_BUILD, IN_SERVICE, RETIRED] }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/devices/{id}/lifecycle:
+    put:
+      tags: [ODN]
+      summary: 设备生命周期转移
+      operationId: setOdnDeviceLifecycle
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lifecycleStatus]
+              properties:
+                lifecycleStatus: { type: string, enum: [PLANNED, IN_BUILD, IN_SERVICE, RETIRED] }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
