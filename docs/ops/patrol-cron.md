@@ -82,6 +82,7 @@ ssh imeepos@192.168.0.102 'crontab -l 2>/dev/null | grep -v "deploy-guard-alert"
 | **SLO 周报** | 102 cron | 每周日 03:50 | `slo-cruise.sh --weekly` | 本批安装 |
 | Gitea 清理 | 102 cron | 每日 03:00 | gitea cleanup.sh | 已装 |
 | 市场对账 | 102 cron | 每月 1 日 04:30 | market-reconciliation-cron.sh | 已装 |
+| **资产域 e2e 冒烟** | 102 cron | 每日 07:30 | `asset-smoke-cron.sh`(见下,新 2026-09) | 本批安装 |
 
 ### SLO 巡航(slo-cruise.sh)要点
 
@@ -110,3 +111,55 @@ ssh imeepos@192.168.0.102 'crontab -l 2>/dev/null | grep -v "slo-cruise"; \
   升级 URGENT(值班红线)。
 - `ops/notify-emit` refType 白名单在 `internal/httpapi/admin/ops_notify.go`
   (stripe_webhook_guard / stripe_tunnel / slo_cruise),新增脚本 refType 必须先登记。
+
+## 资产域每日 e2e 冒烟(asset-smoke-cron,2026-09-06 追加)
+
+102 宿主 crontab 每日 07:30 串行执行资产域四个 e2e 脚本
+(verify-asset-pagination / verify-asset-identity-epc / verify-tag-event-backfill /
+verify-asset-scrap-confirm),输出追加 /tmp/asset-smoke-e2e.log;任一脚本非零退出即输出
+可 grep 的 "[asset-smoke] ALERT <script> rc=<n>",全绿为 "[asset-smoke] OK smoke-suite all-green"。
+跑批器 scripts/ops/asset-smoke-cron.sh;落地检查 scripts/ops/verify-smoke-cron.sh
+(--check 三项实测:crontab smoke 行 / runner compose 凭据卷挂载 / 冒烟日志可写;
+--selftest 离线自检 7 用例双路径,不动宿主状态)。
+
+### 安装(2026-09-06 实录)
+
+前提: 102 上 ~/boss 为导出树,本批同步 scp 八份文件(四 e2e + acceptance-lock.sh +
+acceptance-cleanup.sh + verify-asset-linkage-e2e-residue.sql + 两新脚本);102 自连 ssh
+已打通(2026-09-06 把 102 自身 id_ed25519.pub 补入本机 authorized_keys——e2e 脚本 sql()
+在 102 本机跑时经 ssh 自连 docker exec psql,slo-collect 同款自连坑)。
+
+```bash
+scp scripts/e2e/verify-asset-pagination-e2e.sh scripts/e2e/verify-asset-identity-epc-e2e.sh \
+    scripts/e2e/verify-tag-event-backfill.sh scripts/e2e/verify-asset-scrap-confirm-e2e.sh \
+    scripts/e2e/verify-asset-linkage-e2e-residue.sql imeepos@192.168.0.102:~/boss/scripts/e2e/
+scp scripts/ops/acceptance-lock.sh scripts/ops/acceptance-cleanup.sh \
+    scripts/ops/asset-smoke-cron.sh scripts/ops/verify-smoke-cron.sh \
+    imeepos@192.168.0.102:~/boss/scripts/ops/
+ssh imeepos@192.168.0.102 '(crontab -l 2>/dev/null | grep -v asset-smoke-e2e-daily; \
+  echo "30 7 * * * cd /home/imeepos/boss && ./scripts/ops/asset-smoke-cron.sh >> /tmp/asset-smoke-e2e.log 2>&1 # asset-smoke-e2e-daily") | crontab -'
+```
+
+- 脚本更新后须重新 scp 同步(~/boss 非 git checkout,口径同 db-patrol-gate)。
+- 本批顺带两处 e2e 修复: identity/scrap 的 md5 换 md5hex 双通(macOS/Linux,102 本机执行
+  此前 line 86 md5: command not found);backfill 补 acceptance-lock(原为四脚本中唯一
+  无锁者,实测撞并行验收造数窗口误报 B1/B4)。
+- 手动触发: ssh 102 'cd ~/boss && ./scripts/ops/asset-smoke-cron.sh >> /tmp/asset-smoke-e2e.log 2>&1'。
+
+## gitea-runner 凭据卷持久化(2026-09-06 收殓 P2 遗留)
+
+P2 曾在 runner 容器内手写 /root/.docker/config.json(仅 192.168.0.102:5000 一个 auth,
+volces 云凭据刻意不含)兜底 act_runner 拉私仓 401,容器重建即丢。现固化为宿主文件 + compose 卷挂载:
+
+- 宿主凭据文件 /home/imeepos/gitea/runner/docker-config.json(0600,内容即 P2 遗留容器内
+  文件,与仓库 scripts/ops/deploy-registry-config.json 同源同值);
+- compose(/home/imeepos/gitea/compose.yml) runner 服务 volumes 追加
+  ./runner/docker-config.json:/root/.docker/config.json:ro;
+- 同时把线上实际生效、文件却缺失的 deploy-102 label 补进 GITEA_RUNNER_LABELS(原容器系
+  手工 docker run 创建、无 compose labels,直接按文件重建会丢 deploy-102 通道);
+- 改前备份 /home/imeepos/backup-20260906/(compose.yml + 容器 inspect 全量);重建走
+  docker compose up -d --no-deps runner(容器自此回归 compose 管理);
+- 验证实录: docker inspect 可见 ro 挂载且容器内文件与宿主 cmp 一致;runner labels 声明含
+  deploy-102;.runner 注册存于 runner_data 卷,重建后免重注册直接 declare;以宿主凭据文件
+  为唯一凭据(DOCKER_CONFIG 指向其所在目录)docker pull 私仓镜像成功;
+- ci-keep 口径不变: docker-clean.sh 的 label!=ci-keep 豁免与 keepalive cron 均未动。
