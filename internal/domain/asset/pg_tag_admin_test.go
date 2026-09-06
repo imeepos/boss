@@ -314,3 +314,54 @@ func TestPGStore_CreateAssignment(t *testing.T) {
 		}
 	})
 }
+
+// ReturnAssignment 归还(P2-W2-T1 H):闭合开段 / 重复归还 40900 / 不存在 404。
+func TestPGStore_ReturnAssignment(t *testing.T) {
+	ctx := context.Background()
+	t.Run("闭合开段成功", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		now := time.Now().UTC()
+		mock.ExpectQuery("UPDATE asset_assignments SET effective_to").
+			WithArgs(int64(12)).
+			WillReturnRows(mock.NewRows([]string{"effective_to"}).AddRow(now))
+		s := NewPGStore(mock)
+		closedAt, err := s.ReturnAssignment(ctx, 12)
+		if err != nil {
+			t.Fatalf("err=%v", err)
+		}
+		if closedAt == nil {
+			t.Fatalf("closedAt nil")
+		}
+	})
+	t.Run("重复归还40900", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		closed := time.Now().UTC().Add(-time.Hour)
+		mock.ExpectQuery("UPDATE asset_assignments SET effective_to").
+			WithArgs(int64(12)).
+			WillReturnError(pgx.ErrNoRows)
+		mock.ExpectQuery("SELECT effective_to FROM asset_assignments").
+			WithArgs(int64(12)).
+			WillReturnRows(mock.NewRows([]string{"effective_to"}).AddRow(closed))
+		s := NewPGStore(mock)
+		_, err := s.ReturnAssignment(ctx, 12)
+		if !errors.Is(err, ErrAssignmentClosed) {
+			t.Fatalf("err=%v, want ErrAssignmentClosed", err)
+		}
+	})
+	t.Run("不存在404", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectQuery("UPDATE asset_assignments SET effective_to").
+			WithArgs(int64(12)).
+			WillReturnError(pgx.ErrNoRows)
+		mock.ExpectQuery("SELECT effective_to FROM asset_assignments").
+			WithArgs(int64(12)).
+			WillReturnError(pgx.ErrNoRows)
+		s := NewPGStore(mock)
+		if _, err := s.ReturnAssignment(ctx, 12); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("err=%v, want ErrNotFound", err)
+		}
+	})
+}

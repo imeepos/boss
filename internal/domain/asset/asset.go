@@ -187,6 +187,9 @@ type AssetService interface {
 	// 40900);资产不存在/师傅不存在 ErrForeignKeyViolation;落台账开段,不改资产状态
 	// (装机扫码才置 DEPLOYED,fields.md §4.1 口径)。
 	CreateAssignment(ctx context.Context, a AssetAssignment) (int64, error)
+	// ReturnAssignment 归还(P2-W2-T1):闭合持有段 effective_to=now;重复归还
+	// ErrAssignmentClosed(40900);未命中 ErrNotFound。返回闭合时间供审计展示。
+	ReturnAssignment(ctx context.Context, id int64) (*time.Time, error)
 
 	// UnbindTag 解绑标签(P1-T2):置 bound_asset_id=NULL+status=UNBOUND 并写 UNBIND 事件;
 	// expectedAssetID>0 时校验当前绑定一致;未绑定/预期不符返回 ErrTagUnbound/ErrBindingConflict。

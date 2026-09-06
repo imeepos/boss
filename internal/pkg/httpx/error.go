@@ -63,6 +63,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, asset.ErrCodeDuplicate),
 		errors.Is(err, asset.ErrTagDisabled),
 		errors.Is(err, asset.ErrAssetNotInStock),
+		errors.Is(err, asset.ErrAssignmentClosed),
 		errors.Is(err, worker.ErrDuplicate):
 		// 资产/标签双绑冲突:40900 + 透传 err.Error()(含具体资产/标签 id),
 		// 调用方能区分"标签已绑"vs"资产已绑",与 40920 扫码不一致明确区分。

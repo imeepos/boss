@@ -22,6 +22,7 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	ams.POST("/asset-batches", batchCreateHandler(a)) // P2-W2-T1 建批次(编码缺省 RK 风格自动生成)
 	ams.GET("/assets/assignments", assetListAssignmentsHandler(a))
 	ams.POST("/asset-assignments", assignmentCreateHandler(a)) // P2-W2-T1 领用(仅 IN_STOCK,落台账开段)
+	ams.POST("/asset-assignments/:id/return", assignmentReturnHandler(a)) // P2-W2-T1 归还(闭合段,重复 40900)
 	ams.POST("/assets/:assetId/scrap", assetScrapHandler(a)) // P1-T2 报废(标签强回收+事件流)
 	ams.GET("/asset-models", modelListHandler(a))            // P1-T3 型号字典
 	ams.POST("/asset-models", modelCreateHandler(a))

@@ -35,6 +35,8 @@ type fakeTagAdmin struct {
 	batchErr     error
 	assigned     *asset.AssetAssignment
 	assignErr    error
+	returnedID   int64
+	returnErr    error
 	modelErr     error
 	disableErr   error
 	tagEvents    []asset.TagEvent
@@ -480,6 +482,55 @@ func TestAssignmentCreateHandler(t *testing.T) {
 	t.Run("POST /asset-assignments 非库存态→40900", func(t *testing.T) {
 		eng := tagAdminRouter(&fakeTagAdmin{assignErr: fmt.Errorf("asset: asset 5 status DEPLOYED: %w", asset.ErrAssetNotInStock)}, nil)
 		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-assignments", `{"assetId":5,"workerId":7,"reason":"X"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeConflict) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeConflict)
+		}
+	})
+}
+
+func (f *fakeTagAdmin) ReturnAssignment(_ context.Context, id int64) (*time.Time, error) {
+	if f.returnErr != nil {
+		return nil, f.returnErr
+	}
+	now := time.Now().UTC()
+	f.returnedID = id
+	return &now, nil
+}
+
+func TestAssignmentReturnHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST /asset-assignments/21/return 闭合成功+审计", func(t *testing.T) {
+		au := &recAudit{}
+		fa := &fakeTagAdmin{}
+		eng := tagAdminRouter(fa, au)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-assignments/21/return", "")
+		var out struct {
+			Code int `json:"code"`
+			Data struct {
+				ID          int64  `json:"id"`
+				EffectiveTo string `json:"effectiveTo"`
+			} `json:"data"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || out.Data.ID != 21 || out.Data.EffectiveTo == "" {
+			t.Fatalf("code=%d out=%+v", out.Code, out.Data)
+		}
+		if fa.returnedID != 21 {
+			t.Fatalf("returnedID=%d", fa.returnedID)
+		}
+		if len(au.events) != 1 || au.events[0].Action != "状态变更" || au.events[0].Detail["op"] != "return" {
+			t.Fatalf("events=%+v", au.events)
+		}
+	})
+
+	t.Run("POST /asset-assignments/21/return 重复归还→40900", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{returnErr: fmt.Errorf("asset: assignment 21 closed at 2026-09-05T00:00:00Z: %w", asset.ErrAssignmentClosed)}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-assignments/21/return", "")
 		var out struct {
 			Code int `json:"code"`
 		}

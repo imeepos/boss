@@ -42,3 +42,23 @@ func assignmentCreateHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, gin.H{"id": id, "effectiveFrom": asg.EffectiveFrom.Format(time.RFC3339)})
 	}
 }
+
+// assignmentReturnHandler POST /asset-assignments/{id}/return:归还(P2-W2-T1 H)。
+// 闭合持有段(effective_to=now);重复归还 40900;审计含闭合时间。
+func assignmentReturnHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		closedAt, err := a.Asset.ReturnAssignment(c.Request.Context(), id)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "状态变更", "asset_assignment", c.Param("id"), map[string]any{
+			"op": "return", "effectiveTo": closedAt.Format(time.RFC3339),
+		})
+		respond(c, apitypes.CodeOK, gin.H{"id": id, "effectiveTo": closedAt.Format(time.RFC3339)})
+	}
+}

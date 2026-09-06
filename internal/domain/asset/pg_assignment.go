@@ -8,6 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ErrAssetNotInStock 资产非库存态,禁止领用(P2-W2-T1 G,40900)。
@@ -38,4 +41,40 @@ func (s *PGStore) CreateAssignment(ctx context.Context, a AssetAssignment) (int6
 	}
 	// 复用既有落表(P2 早期 AssignAsset,无业务校验的纯 INSERT)。
 	return s.AssignAsset(ctx, a)
+}
+
+// ErrAssignmentClosed 持有段已闭合,重复归还(P2-W2-T1 H,40900)。
+var ErrAssignmentClosed = errors.New("asset: assignment already closed")
+
+// ReturnAssignment 归还(P2-W2-T1 H):闭合持有段(effective_to=now);
+// 守卫 UPDATE(WHERE effective_to IS NULL)防并发双闭,0 行回查区分
+// 不存在(ErrNotFound)与已闭合(ErrAssignmentClosed,40900)。返回闭合时间供审计。
+func (s *PGStore) ReturnAssignment(ctx context.Context, id int64) (*time.Time, error) {
+	var effTo pgtype.Timestamptz
+	err := s.db.QueryRow(ctx,
+		`UPDATE asset_assignments SET effective_to = now()
+		 WHERE id = $1 AND effective_to IS NULL
+		 RETURNING effective_to`, id).Scan(&effTo)
+	if err == nil {
+		t := effTo.Time
+		return &t, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("asset: return assignment %d: %w", id, err)
+	}
+	// 0 行:区分不存在与已闭合。
+	var probe pgtype.Timestamptz
+	err = s.db.QueryRow(ctx,
+		`SELECT effective_to FROM asset_assignments WHERE id = $1`, id).Scan(&probe)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("asset: return assignment %d lookup: %w", id, err)
+	}
+	if probe.Valid {
+		return nil, fmt.Errorf("asset: assignment %d closed at %s: %w", id, probe.Time.Format(time.RFC3339), ErrAssignmentClosed)
+	}
+	// effective_to 仍 NULL 却 UPDATE 0 行:并发窗口已被他请求闭合,同口径拒绝。
+	return nil, fmt.Errorf("asset: assignment %d concurrently closed: %w", id, ErrAssignmentClosed)
 }
