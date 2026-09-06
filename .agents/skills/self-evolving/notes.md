@@ -317,6 +317,11 @@
 - 2026-08-20 docker prune 事故：镜像内迁移文件 600 + app 用户 = 崩溃循环；宿主 docker login 一次（凭据在 102:~/boss/deploy-image/dotdocker/config.json）；容器崩溃 docker run --rm --entrypoint sh 直接验镜像内权限。
 - 2026-08-20 worker 页面：busyDays 是计数非日期集合，页面字段以实际 handler 返回为准，缺失字段明确回退。
 - 2026-08-20 二级页面 5+1 subagent：多 agent 撞半编辑态文件等 1 分钟重试不改别人文件；跨文件模式问题（尾随 lambda）分工过细没人兜底，复查 agent 全局 grep 一次全抓。
+
+## 2026-09-06 OSS 容量视图与阈值预警(P5-W1,feat/oss-capacity)
+- 哪个坑浪费了最多时间?两个门禁意外:①make check lint 挂在 gofmt(capacity_alert.go struct literal 对齐),收尾才发现——生成类 Go 文件写完应立刻本地 gofmt -l 该文件,别等全仓门禁;②web build 前置 web-ui-audit 要求 public/icons/items/<key>.svg 每菜单键一图标,menu.def 新增键时必须同步补 SVG(资源页 SVG 抄格式即可),否则 build 直接红。
+- skill 有没有提前警告?红线 1 变体应验:edit 只认精确路径,读过主树 alarm.go ≠ 读过 worktree 副本,重读即过;红线 14 应验一次(new_string 键名多引号整程序 parse error)。反直觉发现:本轮宿主对程序体里的裸反引号与 \' 转义**未炸**(与红线 11 台账记录相反),但 token 法(__BT__/perl x60)依旧全程零风险,维持首选。
+- 重来一次怎么做?①并行 P5-W2/W3 worktree 开工前先 ls-tree 三个分支的 migrations 尾号再占号(本轮 000192 无撞,但必须查);②web-admin-check 在 LA 时区本机有存量红(TZ 用例,ISSUE.md 已登记),验收一律 TZ=Asia/Shanghai 跑,并在报告里声明;③menu.def 新增页面的完整清单=menu.def+menu.def.test 页数+drift 基线 feOnly+图标 SVG+i18n 三语+contract-sync E baseline(权限复用场景),一处漏即一门禁红。
 - 2026-08-23 Stripe：handler 在 BindBody 前先查 PayGateway.Get，未配 BOSS_STRIPE_API_KEY 即 42200——先读 handler 校验顺序再怀疑请求体。
 - 2026-08-23 OpenAPI 对账：门禁"0 条路由全部有契约"却 OK = 形同虚设，凡计数先看是否为 0。
 - 2025-XX 覆盖率：不可达分支用包级 var 注入缝，不为覆盖率改生产代码；先可编译再谈覆盖率。
@@ -1816,3 +1821,14 @@
 - 哪个坑浪费了最多时间?gofmt 1.19+ 把 doc comment 里的引号对('' 两连单引号)智能转换成右弯引号,注释里的 SQL 字面量展示被毁且是 make check lint 阶段(gofmt -l)才暴露;另 ssh 'bash -s' heredoc 里不重定向的 docker exec -i 抢占外层 stdin,186 个迁移循环脚本被静默截断(无报错,只有 NOTICE),排查一轮才定位是 stdin 抢占不是 psql 失败。
 - skill 有没有提前警告?红线 1(编辑前 read)、9a(heredoc 防叠引号)、10(worktree 路径核对)、11(程序体禁反引号/美元符花括号,全程行数组+JS 单引号串裸双引号,零触发)、13(长门禁后台跑)、14(必填参数自检,仍手滑一次 description 键名多引号,即红线 14 登记的变体)全部命中预警。新坑(gofmt doc comment 智能引号、GET STACKED DIAGNOSTICS 项名是 CONSTRAINT_NAME 不是 PG_EXCEPTION_CONSTRAINT_NAME)已回填 known-issues.md。
 - 重来一次怎么做?①注释里写 SQL 字面量先想 gofmt doc comment 规范化,引号对改措辞绕开;②ssh 批量跑 docker exec:单命令用无 -i 的 docker exec,stdin 重定向才用 -i 且必须显式 < file;③PG PL/pgSQL 捕获唯一冲突取约束名用 GET STACKED DIAGNOSTICS var = CONSTRAINT_NAME;④e2e 脚本里共享断言变量(如 LAST_BODY)的赋值点要全链路盘点,直接 curl 绕过 api() 包装函数时变量不会自动更新。
+
+## 2026-09-06 P5-W3 资源台账稽核(feat/p5w3-oss-inventory-audit,迁移 000193)
+- 哪个坑浪费了最多时间? 两处:①bash case 模式两连坑——变量夹在引号段间(*",$c,"* 形态)永不匹配,六个检查码只剩排序末位命中;修复替换时又把尾部 * 手写成 ),改完没看真实字节就跑,白耗两轮验收。②run_code 程序串引号红线再踩 4 次(草稿数组忘删裸反引号、双引号串塞 \n、哨兵替换漏一半、edit old_string 手拼引号不匹配)。
+- skill 有没有提前警告? 红线 9a/11/13/14 全部命中预警(尤其 11 的行数组+哨兵方案稳定可用);case 模式引号段坑与「程序化改脚本后不看真实字节」是全新坑,skill 未覆盖,已回填 lessons。
+- 重来一次怎么做? ①shell 新语法片段先写 5 行最小 repro 本地跑通再进主脚本;②程序化替换脚本内容后必须 od -c/cat -A 核对真实字节,Read 渲染和 grep 都看不出单字符级损坏;③对断言逻辑存疑时第一时间插桩(stderr echo)实跑取证,不靠脑内推演 shell 语义。
+
+
+## 2026-09-06 容量验收脚本 8s 提速返工(fix/oss-capacity-e2e-speed)
+- 哪个坑浪费了最多时间?收尾 ff-only 失败被管道 tail 掩码,链式 worktree remove 照跑——管道吞退出码+破坏性清理挂 && 链,recidivism L118 第 2 犯(先 push 过远端,commit 双份无损,重建 worktree rebase 即愈);另 edit 锚点误选 23 号条目开头整段被替换,靠 read 复核当场修复。
+- skill 有没有提前警告?红线 9(删 worktree)、红线 11(引号 token 法)、L118(tail 掩码)全部在案;本轮仍踩 tail——管道命令退出码肉眼不可见,必须制度性禁止在破坏性步骤前用管道看结果。
+- 重来一次怎么做?①收尾合并固定模板:merge 输出写临时文件+显式 mrc 变量+if 判定后才能进清理段;②运行器有硬超时的需求,先问清时限再设计(冷/热指纹分离+ssh 批处理按连接数优化);③验收计时对基线:连续两轮,以第二轮为准报告。

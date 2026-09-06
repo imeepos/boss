@@ -30,7 +30,7 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 13. **【已犯 2 次】大仓 worktree add / 全仓 build 等长耗时命令必须后台跑,worktree 挂载用 --no-checkout 两段式** —— 前台跑必被 bash 超时杀半路(2026-09-04 T18 六连败、T19 两连败);标准动作:`git worktree add --no-checkout ../wt feat/branch`(秒级)→ 后台 job `git reset --hard HEAD` 补文件 → job_output 收尾;全仓 build/test 同理 run_in_background + 轮询日志。
 22. **【已犯 2 次】run_code 程序串里严禁反斜杠转义引号(宿主 JSON 预解码成裸引号提前闭合字符串)** —— 2026-09-06 CI 守护轮 ssh format 串与 cron 文档块两犯,报 Expected ',' got ';'/ident;引号一律裸写(宿主对裸引号宽容)或 String.fromCharCode(34) 拼接,反斜杠只留真正转义需求;红线11 的 ${ 与裸反引号禁令同源同防。
 23. **【已犯 2 次】消费接口前必须核对真实信封形状(列表 {items} vs 单资源 {item} vs 裸对象)** —— 2026-08-20 worker/user 端 token 从顶层取全端 401;2026-09-06 采购单详情抽屉把 {item} 信封当订单用,undefined.toFixed 整页白屏。新页面单条详情/回填一律走 unwrap helper 并 curl 单条接口核对第一层 key。
-
+24. **【已犯 2 次】链式 git 命令严禁用 `| tail` 看结果判定成败(管道吞退出码,失败首行像成功信息)** —— 2026-08-30 ff-merge 被挡,tail 只见"Updating..."当成功;2026-09-06 P5-W1 收尾 ff-only 失败被 `| tail -2` 掩码,链式 worktree remove 照跑(先 push 过远端,commit 双份无损,branch -d 拒才暴露)。关键步骤必须显式 rc 变量或 `echo RC=$?` 独立判定;破坏性清理(worktree remove/branch -d)严禁跟在管道命令的 && 链后面;详见 recidivism.md#L118。
 
 # 上级叮嘱
 1. 按钮文字一定居中，上下左右预留合适的边距
