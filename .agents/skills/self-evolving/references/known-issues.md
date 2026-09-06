@@ -480,3 +480,21 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 症状:E2E 脚本 DELETE 明明 50000 却打印 delete ok;同脚本清理段又判失败,行为自相矛盾。
 - 原因:脚本 if [ -x ./bossctl ] 优先吃了仓库根 8/31 旧二进制,旧版业务错退出码语义与现版不同(现行版有 TestCallBizErrorExit 保证非零)。
 - 修法:验收脚本二进制一律现构建(mktemp 目录),环境变量可显式覆盖;参照 scripts/verify-asset-crud-e2e.sh。
+
+## 102 runtime:CreateTag/CreateAsset 绑定路径 500(tag_events json 22P02)
+
+症状 → POST /provision/tags 带 boundAssetId(或 /provision/assets 带 tagId)返 50000 内部错误,boss-server 日志 `[asset] TAG EVENT FAILED action=BIND ... invalid input syntax for type json (SQLSTATE 22P02)`,随后 commit unexpectedly resulted in rollback。
+原因 → internal/domain/asset/pg_tag_events.go bindTagEvent 把 json.Marshal 的 []byte 直接经 pgx 传参([]byte 按 bytea 发送),插 tag_events.changed(json 列)解析失败;失败语句令整个事务进入 aborted 状态,主流程随之回滚——与注释「失败仅 ALERT 不回滚」相悖。
+修法 → 改为 string(changed)(或显式 ::jsonb 转型)。修复前,E2E/验收造数的标签↔资产绑定用夹具 SQL 直更 tags.bound_asset_id+assets.tag_id(2026-09-06 e2e-asset-linkage.sh 先例)。
+
+## 102 环境:TL1 下发零 SUCCESS(provisioner 端点与 oltsim 端口脱节)
+
+症状 → provision 任务永远不到 DONE,日志 `EXEC FAILED ... dial 172.26.0.1:13027: connect: connection refused`;provision_logs 最新 SUCCESS 停在 2026-09-03。
+原因 → boss-provisioner env BOSS_PROVISION_TL1_ADDR=172.26.0.1:13027(无 port 时代码默认 13027),而 oltsim 实际监听 2323/23333;provision_nms 表 0 行,表行优先逻辑落空走 env。
+修法 → 环境侧改 env 指向 oltsim 实际端口,或给 provision_nms 补行(pass_cipher 需 config secret 加密,手工造难);处置权在 Lead/ops。验收脚本(e2e-asset-linkage S7b)对这类环境问题按 WARN 留痕不阻断。
+
+## 102 接口:addresses.label 拒绝连字符(42200 参数非法)
+
+症状 → POST /addresses 的 label 含 `-` 一律 42200,如 acc_1788661451-1-23918;纯数字/字母再长都过。
+原因 → admin 侧 label 校验字符集不含连字符(契约未写进 fields/terms,实体在 httpx.RequireString 之外另有校验)。
+修法 → 造数后缀用纯数字拼接(date +%s+$RANDOM 形态);其他 code 类字段(P-ACC- 等)不受影响。

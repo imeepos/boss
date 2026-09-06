@@ -3,6 +3,7 @@
 ## CI/deploy-102(2026-09-06 P1 波次发现)
 
 - **已修复(2026-09-06 当日)｜部署静默停摆｜deploy-runner 镜像丢失致全部 run 秒取消**:P1 波次六次 main push 零部署——act_runner 能接单(pickup 日志正常),但 job 容器镜像 192.168.0.102:5000/boss/deploy-runner:latest 已被清(疑似 docker system prune 波及),runner 侧 pull 撞注册表鉴权墙(no basic auth credentials),run 以 cancelled 收场且 runner 日志无错误行(0.2.11 已知缺陷),gitea UI 之外不可见。连锁:镜像没了之后手工重建的 Dockerfile 又缺 docker-compose-linux-x86_64 二进制与 /root/.docker/config.json 注册表凭据(原镜像烤入,重建即失),修镜像分三步才通:①补 compose 二进制 ②烤入 ~/.docker/config.json ③builder prune 清 overlay2 损坏缓存。**根治建议(待办)**:把 deploy-runner 镜像构建固化进 deploy workflow 首步(docker build -f scripts/deploy-runner.Dockerfile 存在性检查+缺失即建,凭据 COPY 进镜像),或改为本地标签 docker://deploy-runner:latest 并有人守护;加密 deploy-run 失败告警(runner pickup 后 N 分钟无镜像 tag 更新即告警)。
+- **已固化(2026-09-06,P2-B 会话分支 feat/ci-deploy-guard)｜根治落地｜按上方根治建议落地两件**:①deploy workflow 首步新增 runner-image-guard job(runs-on: windows-latest=daocloud 公网源 node:20-bookworm——102 每周日 04:00 docker-clean.sh 的 image prune -af 会把未被容器引用的 deploy-runner 和基座 bookworm 全清掉,该标签是唯一可匿名重拉、prune 自愈的锚点,与 deploy-runner 双缺场景守护仍可拉起,阻断鸡蛋互锁):经 docker.sock 引擎 API 只读探活本机镜像+注册表 v2 API 探副本(幂等零副作用,双在即 no-op),本机缺失即用 scripts/deploy-runner.Dockerfile 就地重建并推回注册表,本机在而注册表缺只补推——构建上下文固化入仓库 scripts/ops/(docker-compose 二进制 63MB + 内网注册表凭据 deploy-registry-config.json;凭据只含 192.168.0.102:5000,宿主 ~/.docker/config.json 里的 volces 云凭据刻意剔除,网段边界见 deploy-registry-config.README.md);Dockerfile 补 COPY 凭据行,重建镜像开箱可用。②部署成功标记落盘+每日巡检:workflow 尾步 deploy-marker-write.sh 全门禁通过后写宿主 /home/imeepos/boss-deploy-state/last-success.env(ts+sha),scripts/ops/deploy-guard-alert.sh 每日 08:25 cron 比对标记年龄,超 24h 输出 [deploy-guard] ALERT(挂进口径见 docs/ops/patrol-cron.md)。不动 runtime 代码与既有步骤语义;A1 删镜像自愈/A2 自检幂等/A3 告警三态 selftest 验证记录见分支提交。
 - **附注｜诊断通道**:run 失败真相在 gitea 库 action_task.log_filename → gitea 容器 /var/lib/gitea/actions_log/<path>(zstd),宿主无 zstd 时借任意带 zstd 的容器(如 postgres:17-alpine)解压;gitea-postgres 与 boss-infra-postgres-1 是两个实例,别连错。
 
 ## 前端·web/admin 测试(2026-09-05,T20 月度填报轮发现)
@@ -159,3 +160,9 @@
 ## 2026-09-02 provision_tasks 孤儿任务堆积(巡检未覆盖,复发)
 - `provision_tasks` 对 `orders` 无外键,订单删除后任务残留;任务又把 `provision_templates` 钉死(DELETE 守卫查"任何任务引用",含 DONE),垃圾模板永远删不掉。2026-08-30 note 已记"验收清理漏删 14 条孤儿,巡检脚本覆盖待后续",2026-09-02 复发积到 158 条(158 任务/275 日志已手工清理)。
 - 建议:订单删除路径级联删任务+日志,或验收巡检 SQL 加"孤儿 provision_tasks/provision_logs 计数"门禁(docs/ops/patrol-cron.md)。
+
+## runtime/102 环境(2026-09-06,P2-T3 端到端实测轮发现,移交 Lead 处置)
+
+- **runtime bug｜标签↔资产绑定建档 500（tag_events json 22P02）**:internal/domain/asset/pg_tag_events.go bindTagEvent 把 json.Marshal 的 []byte 直接经 pgx 传参（[]byte 按 bytea 发送），INSERT tag_events.changed(json 列)报 invalid input syntax for type json;同事务被 abort,主流程回滚,POST /provision/tags 带 boundAssetId 与 POST /provision/assets 带 tagId 均返 50000。代码注释称「失败仅 ALERT 不回滚」与同事务事实相悖。修法:string(changed) 或显式 ::jsonb。102 复现:boss-server 日志 2026-09-06 02:28。影响:verify-asset-tag-binding.sh 场景 1 现必红;e2e-asset-linkage.sh 造数暂以夹具 SQL 直更 tags.bound_asset_id+assets.tag_id 绕行,runtime 修复后可收回。
+- **102 环境配置｜TL1 下发自 2026-09-03 起零 SUCCESS（端点脱节）**:boss-provisioner env BOSS_PROVISION_TL1_ADDR=172.26.0.1:13027 无监听(连接拒),oltsim 实际监听 2323/23333;provision_nms 表 0 行,表行优先逻辑落空。provision_logs 最新 SUCCESS=2026-09-03 17:41。影响所有依赖环节7 下发终态的验收(mainchain-acceptance assert_provision_success 同样会挂);e2e-asset-linkage.sh 已把该项降为 S7b WARN 留痕。修法:env 指向 oltsim 实际端口或补 provision_nms 行(pass_cipher 需 config secret 加密)。
+- **接口契约盲区｜addresses.label 拒绝连字符**:POST /api/admin/v1/addresses label 含 `-` 一律 42200 参数非法(纯数字/字母不限长),与 fields.md/terms.md 均未记载;造数后缀须纯数字。建议契约补一条或在校验处放宽。

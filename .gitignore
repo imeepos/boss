@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.*.local
+# deploy-runner-guard.sh 运行期凭据暂存(DOCKER_CONFIG 注入用),防误入库
+.guard-docker-config/
 # deployments/app.env —— 内网私有仓库,固定密钥直接入库简化 CI(转公网前必须移回 ignore)
 *.local
 *.local.*
