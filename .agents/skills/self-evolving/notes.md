@@ -1783,3 +1783,8 @@
 - skill 有没有提前警告?红线 7/10/11/13/14 全程规避零触发(worktree 显式 workdir、无反引号无美元符、内层调用必填参数默念、长命令后台跑);boss-admin-web.md 的 token+servers 注入与 cdp-admin-capture 用法一次过。
 - 顺:供应商抽屉启用按钮在 102 数据无 DISABLED 行时不出现、replace 页无 PENDING 行时不出现取消——视觉缺位是数据态而非缺陷,用 logic.test 断言状态显隐 + eval 打印行状态分布佐证,不造假数据截图。
 - 重来一次怎么做?①涉及状态条件按钮的页面,截图轮先 eval 打印行数与状态分布再断言按钮显隐,一轮拿全证据;②locale 插入锚点用各语言行号对齐特性,一次脚本批量 12 处 edit。
+
+## 2026-09-05 采购域全表操作补齐(P2-W2-T2 后端,feat/proc-tables-backend)
+- 哪个坑浪费了最多时间?两处编译期反复:①JS 拼的 JSON 体用单引号落进 Go 源变成 rune 字面量(illegal rune literal 六处连炸)——正解=Go 反引号原始字符串;②pgxmock 期望正则括号当分组符,SUM(x) 匹配不上要写 SUM[(]x[)]。加上 t0 与既有回归测试 helper 重名、%w 包装错误用 == 断言失败,共四轮返工。
+- skill 有没有提前警告?红线 11 的 rune 字面量变体预警的是宿主 parse error,本次是生成 Go 源非法,新形态已回填红线 11;红线 10/13/14 全程规避(worktree 显式 workdir、--no-checkout 两段式后台 reset、长测试后台跑)。
+- 重来一次怎么做?①写 Go 生成类内容前先定字符策略表(反引号=BT、JSON 体=Go raw string、正则特殊符=字符类),预检再发车;②新增测试文件先 grep 包内既有 helper 名防重名;③域层单测断言一律 errors.Is,不给 %w 留 == 雷;④验收期 go test ./internal/... 与 make check 并行后台跑,等待窗口核验生成目录,零空转。
