@@ -7,6 +7,7 @@ package apiroutes
 // AdminRoutePerms 路由键(方法 空格 路径)→ 权限码全集(须全部持有;空集=仅认证,无菜单门禁)。
 // 同路由多注册分支取并集:任一分支要求某码即保留,防止目录面超发。
 var AdminRoutePerms = map[string][]string{
+	"DELETE /api/admin/v1/aaa/nas/{id}":                                           {"menu:loaccount"},
 	"DELETE /api/admin/v1/accounts/{accountId}":                                   {"menu:account"},
 	"DELETE /api/admin/v1/addresses/{id}":                                         {"menu:address"},
 	"DELETE /api/admin/v1/api-keys/{id}":                                          {"menu:apikey"},
@@ -30,6 +31,8 @@ var AdminRoutePerms = map[string][]string{
 	"DELETE /api/admin/v1/site-categories/{catId}":                                {"menu:site"},
 	"DELETE /api/admin/v1/site-posts/{postId}":                                    {"menu:site"},
 	"DELETE /api/admin/v1/worker-groups/{groupId}":                                {"menu:order"},
+	"GET /api/admin/v1/aaa/nas":                                                   {"menu:loaccount"},
+	"GET /api/admin/v1/aaa/nas/{id}":                                              {"menu:loaccount"},
 	"GET /api/admin/v1/aaa/sessions":                                              {"menu:loaccount"},
 	"GET /api/admin/v1/aaa/summary":                                               {"menu:aaadashboard"},
 	"GET /api/admin/v1/accounts":                                                  {"menu:account"},
@@ -286,6 +289,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/workers/{workerId}/location":                               {"menu:dispatch"},
 	"GET /api/admin/v1/workers/{workerId}/real-name":                              {"menu:dispatch"},
 	"PATCH /api/admin/v1/client-releases/{id}":                                    {"menu:release"},
+	"POST /api/admin/v1/aaa/nas":                                                  {"menu:loaccount"},
 	"POST /api/admin/v1/aaa/sessions/{sessionId}/disconnect":                      {"menu:loaccount"},
 	"POST /api/admin/v1/accounts":                                                 {"menu:account"},
 	"POST /api/admin/v1/activation-callbacks/{callbackId}/retry":                  {"menu:callback"},
@@ -495,6 +499,7 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/workers/{workerId}/real-name":                             {"menu:dispatch"},
 	"POST /api/admin/v1/workers/{workerId}/real-name/verify":                      {"menu:dispatch"},
 	"POST /api/admin/v1/workers/{workerId}/transfer":                              {"menu:order"},
+	"PUT /api/admin/v1/aaa/nas/{id}":                                              {"menu:loaccount"},
 	"PUT /api/admin/v1/accounts/{accountId}":                                      {"menu:account"},
 	"PUT /api/admin/v1/addons/{addonId}/toggle":                                   {"menu:userdata"},
 	"PUT /api/admin/v1/addresses/{id}":                                            {"menu:address"},
