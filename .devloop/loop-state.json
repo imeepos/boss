@@ -1,39 +1,41 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T15:45:00+08:00",
+  "updatedAt": "2026-09-06T09:14:24.867Z",
   "project": "boss",
   "tasks": [
     {
       "id": "T1",
-      "title": "资产/标签列表服务端分页(P3-D)",
-      "goal": "DONE 2026-09-06 devloop_accept PASS 16/16; 合并 0241378e 已部署 102",
+      "title": "MAC 规范化存储+表达式唯一(P4-A, 000190)",
+      "goal": "写入归一大写冒号形;迁移重建表达式唯一索引(防直写绕过);e2e 断言归一/跨格式 409/非法 400",
       "priority": "P1",
       "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-asset-pagination-e2e.sh"
+      "acceptanceCommand": "bash scripts/e2e/verify-asset-mac-normalize-e2e.sh"
     },
     {
       "id": "T2",
-      "title": "身份列 sn/mac/loid + EPC 校验(P3-E, 000188)",
-      "goal": "DONE 2026-09-06 devloop_accept PASS 13/13; 合并 4820f71b 已部署 102",
+      "title": "类型归一 ONU+白名单(P4-B, 000191)",
+      "goal": "49 行光猫 UPDATE 归一;type 写入白名单 400;前端与 fields.md 同步;e2e 断言光猫被拒/ONU 成功/存量无光猫",
       "priority": "P1",
       "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-asset-identity-epc-e2e.sh"
+      "acceptanceCommand": "bash scripts/e2e/verify-asset-type-canonical-e2e.sh"
     },
     {
       "id": "T3",
-      "title": "报废三要素确认(P3-F)",
-      "goal": "DONE 2026-09-06 主树手动实测 REAL-EXIT=0 且 46/46 PASS(三次独立运行+ORPHAN-GATE 17 查全过); devloop_accept 包装器对该脚本连续 4 次超时伪 -1(failCount=4 系包装器伪影,非脚本失败); e2e 造数 EPC 已对齐 000188(842156a9)",
-      "priority": "P1",
+      "title": "巡检两查+造数残留清理(P4-B)",
+      "goal": "patrol 加非法 EPC 计数与非权威 type 计数两查;SMOKE/MI-ONU 残留 6 行确认无引用后清理;verify-patrol-extended.sh 幂等",
+      "priority": "P2",
       "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-asset-scrap-confirm-e2e.sh"
+      "acceptanceCommand": "bash scripts/ops/verify-patrol-extended.sh",
+      "failCount": 1
     },
     {
       "id": "T4",
-      "title": "历史事件回填(P3-E, 000189)",
-      "goal": "DONE 2026-09-06 devloop_accept PASS 6/6(回填 225 CREATE+201 BIND,重放幂等 430 不变)",
+      "title": "102 每日 e2e 冒烟 cron+runner 凭据卷(P4-C)",
+      "goal": "四脚本每日串行 cron 登记 patrol-cron.md;runner compose 凭据卷挂载落地;verify-smoke-cron.sh --check 双过",
       "priority": "P2",
       "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-tag-event-backfill.sh"
+      "acceptanceCommand": "bash scripts/ops/verify-smoke-cron.sh",
+      "failCount": 1
     }
   ]
 }
