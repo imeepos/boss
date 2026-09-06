@@ -18,7 +18,7 @@ ARG1=""; if [ $# -ge 1 ]; then ARG1="$1"; fi
 BASE_URL=$(env_or BASE_URL "http://192.168.0.102:28080")
 case "$ARG1" in http*) BASE_URL="$ARG1" ;; esac
 API="$BASE_URL/api/admin/v1"
-KEY=$(env_or ADMIN_API_KEY "$(python3 -c 'import json;print(json.load(open("$ROOT/.agents/skills/bossctl-cli/test-accounts.json"))["admin"]["apiKeys"][0]["key"])')")
+KEY=$(env_or ADMIN_API_KEY "$(python3 -c "import json;print(json.load(open('$ROOT/.agents/skills/bossctl-cli/test-accounts.json'))['admin']['apiKeys'][0]['key'])")")
 SSH_HOST=$(env_or SSH_HOST "imeepos@192.168.0.102")
 PREFIX="ACC-ID"
 
@@ -85,7 +85,7 @@ t_identity() { # I1-I4
   sn="$PREFIX-SN-$SUFFIX"
   h=$(printf %s "$SUFFIX" | md5 | tr -d " -" | cut -c1-8 | tr "a-f" "A-F")
   mac1="AC:AC:${h:0:2}:${h:2:2}:${h:4:2}:${h:6:2}"
-  out=$(api POST /assets "{\"assetCode\":\"$PREFIX-AS-$SUFFIX\",\"batchId\":$BATCH_ID,\"sn\":\"  $sn  \",\"mac\":\"$mac1\",\"loid\":\"$PREFIX-LOID-$SUFFIX\"}") || return 1
+  out=$(api POST /assets "{\"assetCode\":\"$PREFIX-AS-$SUFFIX\",\"batchId\":$BATCH_ID,\"type\":\"ONU\",\"sn\":\"  $sn  \",\"mac\":\"$mac1\",\"loid\":\"$PREFIX-LOID-$SUFFIX\"}") || return 1
   AID1=$(j "$out" id)
   assert_eq "I1" "ok" "$([ -n "$AID1" ] && echo ok)" "建档带 SN/MAC/LOID 成功 id=$AID1"
   row1=$(sql <<SQL
@@ -93,9 +93,9 @@ SELECT COALESCE(sn,'') || '|' || COALESCE(mac,'') || '|' || COALESCE(loid,'') FR
 SQL
 )
   assert_eq "I1b" "$sn|$mac1|$PREFIX-LOID-$SUFFIX" "$row1" "落库: SN 去空格, MAC 原样入库"
-  expect_reject "I2" /assets "{\"assetCode\":\"$PREFIX-AS-DUP-$SUFFIX\",\"batchId\":$BATCH_ID,\"sn\":\"$sn\"}" "40900" "sn"
-  expect_reject "I3" /assets "{\"assetCode\":\"$PREFIX-AS-BADMAC-$SUFFIX\",\"batchId\":$BATCH_ID,\"mac\":\"AA:BB:CC\"}" "42200" ""
-  out=$(api POST /assets "{\"assetCode\":\"$PREFIX-AS-DASH-$SUFFIX\",\"batchId\":$BATCH_ID,\"mac\":\"AB-AB-01-23-45-67\"}") || return 1
+  expect_reject "I2" /assets "{\"assetCode\":\"$PREFIX-AS-DUP-$SUFFIX\",\"batchId\":$BATCH_ID,\"type\":\"ONU\",\"sn\":\"$sn\"}" "40900" "sn"
+  expect_reject "I3" /assets "{\"assetCode\":\"$PREFIX-AS-BADMAC-$SUFFIX\",\"batchId\":$BATCH_ID,\"type\":\"ONU\",\"mac\":\"AA:BB:CC\"}" "42200" ""
+  out=$(api POST /assets "{\"assetCode\":\"$PREFIX-AS-DASH-$SUFFIX\",\"batchId\":$BATCH_ID,\"type\":\"ONU\",\"mac\":\"AB-AB-01-23-45-67\"}") || return 1
   AID4=$(j "$out" id)
   assert_eq "I4" "ok" "$([ -n "$AID4" ] && echo ok)" "横杠分隔 MAC 亦合法 id=$AID4"
 }
