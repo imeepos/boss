@@ -68,6 +68,10 @@ func (s *aaaGRPC) GetAuthorization(ctx context.Context, req *aaav1.GetAuthorizat
 }
 
 // EmitCDR 实时话单入账(RADIUS Acct → 投递链路)。
+// 口径(A4 核对):旁路只进话单链路逐包入 cdr_records,不参与在线会话维护——在线会话流量的
+// 唯一写入口是 RADIUS 主链路(radius.Handler.maintainSession,覆盖式累计口径),不存在第二套
+// 会话语义。octets 原样透传不换算;假设上报方遵循 RFC 2866 累计口径,验证方法:
+// SessionMaintainer 调用方仅 radius/handler.go 且 aaaGRPC 无 Sessions 依赖(grep 可复核)。
 func (s *aaaGRPC) EmitCDR(ctx context.Context, req *aaav1.CDR) (*aaav1.OpResponse, error) {
 	cdr := aaability.CDR{
 		LOID: req.Loid, Username: req.Loid, SessionID: req.SessionId,

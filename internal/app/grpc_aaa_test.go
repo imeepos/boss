@@ -193,4 +193,35 @@ func TestAaaGRPC_EmitCDR(t *testing.T) {
 			t.Fatalf("code=%v, want DOWNSTREAM_ERR", resp.Code)
 		}
 	})
+
+	t.Run("Interim-Update 旁路口径一致", func(t *testing.T) {
+		em := &stubEmitter{}
+		conn := newBufConnServer(t, func(s *grpc.Server) {
+			aaav1.RegisterAaaServiceServer(s, aaaGRPCWith(&stubAaaSvc{}, &stubAuthorizer{}, em))
+		})
+		resp, err := aaav1.NewAaaServiceClient(conn).EmitCDR(ctx, &aaav1.CDR{
+			Loid: "LOID-1", SessionId: "S-1", EventType: "Interim-Update",
+			InputOctets: 12345, OutputOctets: 67890,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.Code != commonv1.Code_CODE_OK {
+			t.Fatalf("resp=%+v", resp)
+		}
+		// A4 口径核对:旁路只进话单链路,octets 原样透传(无增量换算),事件映射与 RADIUS 主链路同表。
+		if em.got.AcctStatus != 3 || em.got.InputOctets != 12345 || em.got.OutputOctets != 67890 {
+			t.Fatalf("cdr=%+v", em.got)
+		}
+	})
+}
+
+// acctStatusFromEvent 事件映射与 RADIUS Acct-Status-Type 同表(A4 口径核对)。
+func TestAcctStatusFromEvent(t *testing.T) {
+	cases := map[string]int{"Start": 1, "Stop": 2, "Interim-Update": 3, "Unknown": 0}
+	for event, want := range cases {
+		if got := acctStatusFromEvent(event); got != want {
+			t.Fatalf("%s: got=%d want=%d", event, got, want)
+		}
+	}
 }
