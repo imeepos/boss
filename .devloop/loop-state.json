@@ -1,38 +1,38 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T03:28:36.506Z",
+  "updatedAt": "2026-09-06T04:56:43.982Z",
   "project": "boss 后台资产/采购域全表 CRUD 矩阵波次(P2-W2):每表增删改查+操作补齐",
   "tasks": [
     {
       "id": "T1",
       "title": "后端·资产域全表操作补齐",
-      "goal": "POST /tags 建标签;POST /tags/{id}/disable|enable 禁用启用;GET /tags/{id}/events 事件流查询;PUT /asset-models/{id} 编辑;POST /asset-models/{id}/disable|enable 停用启用;POST /asset-batches 建批次;POST /asset-assignments 领用;POST /asset-assignments/{id}/return 归还;POST /replacements/{id}/cancel admin 取消;openapi+fields 同步;全量单测",
+      "goal": "POST /tags 建标签;POST /tags/{id}/disable|enable 禁用启用;GET /tags/{id}/events 事件流查询;PUT /asset-models/{id} 编辑;POST /asset-models/{id}/disable|enable 停用启用;POST /asset-batches 建批次;POST /asset-assignments 领用;POST /asset-assignments/{id}/return 归还;POST /replacements/{id}/cancel admin 取消;openapi+fields 同步;全量单测｜验收: 分支门禁绿+ff 合并 9a3884fe+E2E T-1 链路过;含负责人三连修复(model spec 23502/22P02)",
       "priority": "P1",
-      "status": "doing",
+      "status": "done",
       "acceptanceCommand": "go build ./... && go vet ./internal/domain/asset/... ./internal/httpapi/admin/... && go test ./internal/domain/asset/... ./internal/httpapi/admin/... && node scripts/gen-bossctl-routes.mjs --check && go run ./scripts/genrouteperms --check"
     },
     {
       "id": "T2",
       "title": "后端·采购域全表操作补齐",
-      "goal": "PUT /procurement/suppliers/{id} 编辑;POST /procurement/suppliers/{id}/enable 启用;PUT /procurement/orders/{id} 草稿编辑(仅 DRAFT);GET /procurement/orders/{id} 单据详情含明细;POST /procurement/receipts/{id}/reject 驳回;openapi+fields 同步;全量单测",
+      "goal": "PUT /procurement/suppliers/{id} 编辑;POST /procurement/suppliers/{id}/enable 启用;PUT /procurement/orders/{id} 草稿编辑(仅 DRAFT);GET /procurement/orders/{id} 单据详情含明细;POST /procurement/receipts/{id}/reject 驳回;openapi+fields 同步;全量单测｜验收: 分支门禁绿+经 feat/proc-sync 合并 354e5dcd+E2E T-6/T-7/T-8 链路过",
       "priority": "P1",
-      "status": "doing",
+      "status": "done",
       "acceptanceCommand": "go build ./... && go vet ./internal/domain/procurement/... ./internal/httpapi/admin/... && go test ./internal/domain/procurement/... ./internal/httpapi/admin/... && node scripts/gen-bossctl-routes.mjs --check && go run ./scripts/genrouteperms --check"
     },
     {
       "id": "T3",
       "title": "前端·逐页操作矩阵补齐",
-      "goal": "tag 页:新增标签/禁用启用/解绑/事件流抽屉;asset 页:型号字典管理抽屉(增改停用)+批次管理抽屉(建批次);purchase 页:供应商编辑/启用、订单草稿编辑、入库驳回;replace 页:admin 取消;stock 页:核对发起盘点入口;全部 Dropdown 组件+i18n zh/en+组件测试",
+      "goal": "tag 页:新增标签/禁用启用/解绑/事件流抽屉;asset 页:型号字典管理抽屉(增改停用)+批次管理抽屉(建批次);purchase 页:供应商编辑/启用、订单草稿编辑、入库驳回;replace 页:admin 取消;stock 页:核对发起盘点入口;全部 Dropdown 组件+i18n zh/en+组件测试｜验收: 457 测试绿+合并 4c9bbe6e+生产 DOM 断言五页操作矩阵;逐页对照表见会话终局报告",
       "priority": "P1",
-      "status": "doing",
+      "status": "done",
       "acceptanceCommand": "cd web/admin && TZ=Asia/Shanghai pnpm typecheck && TZ=Asia/Shanghai pnpm test"
     },
     {
       "id": "T4",
       "title": "集成·合并部署+逐表 E2E 冒烟",
-      "goal": "三支分支按 worktree 协议逐支合并;make check;触发 deploy-102;verify-asset-crud-e2e.sh 扩展逐表写链路冒烟(标签建禁/型号停用/批次建/领用归还/换新取消/供应商改启/订单草稿改/入库驳回)全过;清理分支",
+      "goal": "三支分支按 worktree 协议逐支合并;make check;触发 deploy-102;verify-asset-crud-e2e.sh 扩展逐表写链路冒烟(标签建禁/型号停用/批次建/领用归还/换新取消/供应商改启/订单草稿改/入库驳回)全过;清理分支｜验收: ba790fc7 部署指纹绿+双脚本主树终验 E2E-ASSET-CRUD-OK 与 E2E-AMS-TABLES-OK exit0 连续两次",
       "priority": "P1",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "bash scripts/verify-asset-crud-e2e.sh"
     }
   ]
