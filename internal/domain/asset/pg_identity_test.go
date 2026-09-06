@@ -27,7 +27,7 @@ func TestPGStore_CreateAsset_WithIdentity(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
 		WithArgs("A-ID-1", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK", nil,
-			"SN-001", "AA-BB-CC-DD-EE-01", "LOID-001").
+			"SN-001", "AA:BB:CC:DD:EE:01", "LOID-001").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(40)))
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
 		WithArgs(int64(40), "IN_STOCK").
@@ -35,7 +35,7 @@ func TestPGStore_CreateAsset_WithIdentity(t *testing.T) {
 	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
-	// sn/loid 带首尾空格 → 归一;mac 横杠格式合法原样入库。
+	// sn/loid 带首尾空格 → 归一;mac 横杠输入归一为大写冒号规范形(000190)。
 	_, err = s.CreateAsset(context.Background(), Asset{
 		AssetCode: "A-ID-1", BatchID: 1, LegalEntityID: 1, LegalEntityName: "主品牌·企业",
 		Type: "ONU", Status: "IN_STOCK",

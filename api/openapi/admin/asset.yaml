@@ -24,7 +24,7 @@ paths:
                 tagId: { type: integer, format: int64, description: '标签 ID(可选,绑定成功写 BIND,占用 40900)' }
                 type: { type: string, maxLength: 32, description: '类型(可选,未给定时由型号类别派生;白名单 ONU/ROUTER/OLT,P4-T2 白名单外 42200)' }
                 sn: { type: string, description: '序列号(可选,P3-T2;去首尾空格,空串存 NULL;全网唯一 uq_assets_sn,冲突 40900)' }
-                mac: { type: string, description: 'MAC 地址(可选,P3-T2;六组十六进制冒号或横杠分隔,入库原样;全网唯一 uq_assets_mac,格式非法 42200/冲突 40900)' }
+                mac: { type: string, description: 'MAC 地址(可选,P3-T2;冒号/横杠/裸 hex 三形态输入,写入归一为大写冒号规范形 AA:BB:CC:DD:EE:FF,000190;全网唯一 uq_assets_mac 表达式索引,格式非法 42200/冲突 40900)' }
                 loid: { type: string, description: '电信 LOID(可选,P3-T2;去首尾空格,空串存 NULL;全网唯一 uq_assets_loid,冲突 40900)' }
       responses:
         '200':

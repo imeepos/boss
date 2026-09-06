@@ -38,8 +38,8 @@ func assetCreateHandler(a *app.Application) gin.HandlerFunc {
 		}) {
 			return
 		}
-		// 身份三要素归一(P3-T2):SN/LOID 去空格,MAC 校验格式;空串存 NULL,
-		// 唯一冲突由 DB 部分唯一索引兜底(ErrAssetIdentityDuplicate,40900)。
+		// 身份三要素归一(P3-T2/000190):SN/LOID 去空格,MAC 归一为大写冒号规范形;
+		// 空串存 NULL,唯一冲突由 DB 表达式唯一索引兜底(ErrAssetIdentityDuplicate,40900)。
 		sn, mac, loid, idErr := asset.NormalizeIdentity(req.SN, req.MAC, req.LOID)
 		if idErr != nil {
 			respondErr(c, idErr)

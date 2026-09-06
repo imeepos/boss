@@ -132,7 +132,7 @@ func (s *PGStore) UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate
 		}
 	}
 
-	// 身份三要素归一(P3-T2):nil=保持现值,非 nil 生效(MAC 校验格式,空串清除)。
+	// 身份三要素归一(P3-T2/000190):nil=保持现值,非 nil 生效(MAC 归一大写冒号形,空串清除)。
 	effSN := IdentityEffText(curSN, in.SN)
 	effMAC, macErr := IdentityEffMac(curMAC, in.MAC)
 	if macErr != nil {
