@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T10:26:00.000-07:00",
+  "updatedAt": "2026-09-06T11:00:00.000-07:00",
   "project": "boss",
   "tasks": [
     {
@@ -46,7 +46,7 @@
     {
       "id": "T6",
       "title": "ODN P1 覆盖关联:admin 前端(T6)",
-      "goal": "覆盖页签+三语言 i18n+时区用例修复+gitignore 白名单;typecheck/test481/build/oss 90% 过",
+      "goal": "覆盖页签+三语言 i18n+时区用例修复+gitignore 白名单",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "make web-admin-check"
@@ -62,7 +62,7 @@
     {
       "id": "T8",
       "title": "ODN P6 设计-施工:设施状态机(T8)",
-      "goal": "lifecycle_status 四态(000198)+CAS 转移+RETIRED 双列同步+RecordAudit;make check 全绿,已合 main af425671",
+      "goal": "lifecycle_status 四态(000198)+CAS 转移+RETIRED 双列同步+RecordAudit;已上线 102(路由 401 验证在位)",
       "priority": "P2",
       "status": "done",
       "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
@@ -70,9 +70,9 @@
     {
       "id": "T9",
       "title": "ODN P6 设计-施工:施工项目与竣工回填(T9)",
-      "goal": "construction_projects+批量竣工回填+GIS 分色",
+      "goal": "实现/契约/e2e 脚本已合 main 39014d8d 并过 make check;102 实测等 CI 部署窗口(5 连 404 后诊断确认容器未含新路由),慢速重试循环运行中",
       "priority": "P2",
-      "status": "todo",
+      "status": "doing",
       "acceptanceCommand": "bash scripts/e2e/verify-odn-construction-e2e.sh"
     },
     {
