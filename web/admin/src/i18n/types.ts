@@ -944,6 +944,14 @@ export interface Translations {
       pReason: string
       eReason: string
       scrapOk: string
+      scrapRefTitle: string
+      fSn: string
+      pConfirmCode: string
+      pConfirmSn: string
+      pConfirmTag: string
+      eConfirmCode: string
+      eConfirmSn: string
+      eConfirmTag: string
       deleteAction: string
       deleteConfirm: string
       deleteOk: string
