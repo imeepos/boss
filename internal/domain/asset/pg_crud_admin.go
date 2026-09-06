@@ -218,8 +218,9 @@ func (s *PGStore) DeleteAsset(ctx context.Context, assetID int64) (string, error
 	}
 	for _, gr := range deleteRefGuards {
 		var ok bool
-		err := tx.QueryRow(ctx,
-			`SELECT EXISTS(SELECT 1 FROM "+gr.table+" WHERE "+gr.column+" = $1)`, assetID).Scan(&ok)
+		// 表/列名来自包级静态白名单 deleteRefGuards,非用户输入,Sprintf 拼接安全。
+		gq := "SELECT EXISTS(SELECT 1 FROM " + gr.table + " WHERE " + gr.column + " = $1)"
+		err := tx.QueryRow(ctx, gq, assetID).Scan(&ok)
 		if err != nil {
 			return "", fmt.Errorf("asset: delete guard %s: %w", gr.table, err)
 		}

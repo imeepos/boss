@@ -303,8 +303,16 @@ func TestPGStore_DeleteAsset_OK(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(mock.NewRows([]string{"status", "asset_code"}).AddRow("IN_STOCK", "A-00000007-00002"))
-	for range make([]struct{}, 5) {
-		mock.ExpectQuery(`SELECT EXISTS`).
+	// 守卫 SQL 必须落到真实表名。回归兜底:守卫 SQL 曾因原始串内 "+gr.table+" 拼接
+	// 失效而原样带占位符上线,pgxmock 宽松正则(SELECT EXISTS)未拦住,真实 PG 42P01。
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM tags WHERE bound_asset_id = \$1\)`).
+		WithArgs(int64(3)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+	for _, g := range []struct{ table, column string }{
+		{"asset_assignments", "asset_id"}, {"replacements", "asset_id"},
+		{"stocktake_items", "asset_id"}, {"quad_links", "asset_id"},
+	} {
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ` + g.table + ` WHERE ` + g.column + ` = \$1\)`).
 			WithArgs(int64(3)).
 			WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
 	}
