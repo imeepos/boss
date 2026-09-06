@@ -922,6 +922,12 @@ export interface Translations {
       eType: string
       fTag: string
       pTag: string
+      fSn: string
+      pSn: string
+      fMac: string
+      pMac: string
+      fLoid: string
+      pLoid: string
       createOk: string
       detailTitle: string
       mainTitle: string
