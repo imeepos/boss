@@ -2530,13 +2530,28 @@ columns: ['Code', 'Name', 'Sort', 'Enabled'],
       next: 'Next',
       perPage: '/ page',
       rangeText: '{from}-{to} of {count}',
+      // List filters (client-side filtering)
+      searchPlaceholder: 'Search ID or period',
+      filterAll: 'All periods',
+      filterPeriod: 'Filter by period',
+      // Stat cards
+      statTotal: 'Total Reports',
+      statMonthly: 'Monthly Reports',
+      statQuarterly: 'Quarterly Reports',
+      statLatest: 'Latest Generated',
+      // Send in-progress state
+      sending: 'Sending…',
+      // Special pipeline periods (non-4-period, human-readable)
+      periodRecon: 'Recon Daily',
+      periodOssAudit: 'Audit Daily',
       // 4-period comparison (commit 7): explicitly "comparison" not "trend"
       compareTitle: '4-Period Indicator Comparison',
-      compareDesc: 'Snapshot-per-period side-by-side comparison, not a historical trend',
+      compareCurrent: 'Current snapshot: {period} · {time}',
       compareLegend: ['Revenue', 'Investment', 'Composite ROI', 'Alarms', 'Maintenance Queue'],
       // Trend lines (commit B6)
       trendTitle: 'Report Trend Lines',
       trendDesc: 'Real history of latest 12 snapshots for selected period (true trend)',
+      trendPeriodLabel: 'Trend period',
       trendEmpty: 'Need at least 2 snapshots to draw trend',
       jumpText: 'Jump to',
       pageUnit: 'page',

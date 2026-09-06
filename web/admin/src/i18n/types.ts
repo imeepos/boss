@@ -2327,13 +2327,28 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      // 列表筛选(客户端过滤,后端 /reports 无服务端筛选)
+      searchPlaceholder: string
+      filterAll: string
+      filterPeriod: string
+      // 统计卡
+      statTotal: string
+      statMonthly: string
+      statQuarterly: string
+      statLatest: string
+      // 推送等待态
+      sending: string
+      // 特殊周期流水(非四周期,人类可读名)
+      periodRecon: string
+      periodOssAudit: string
       // 四周期对比柱状(commit 7)
       compareTitle: string
-      compareDesc: string
+      compareCurrent: string
       compareLegend: string[]
       // 趋势曲线(commit B6)
       trendTitle: string
       trendDesc: string
+      trendPeriodLabel: string
       trendEmpty: string
     }
     serviceMetricsPage: {

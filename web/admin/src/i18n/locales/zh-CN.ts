@@ -2525,20 +2525,35 @@ columns: ['标识码', '名称', '排序', '启用'],
       empty: '暂无数据',
       loadFail: '加载失败',
       viewFail: '报告加载失败',
-            sent: '报告 {id} 已推送',
+      sent: '报告 {id} 已推送',
       prev: '上一页',
       next: '下一页',
       perPage: '条/页',
       rangeText: '第 {from}-{to} 条,共 {count} 条',
       jumpText: '跳至',
       pageUnit: '页',
+      // 列表筛选(客户端过滤)
+      searchPlaceholder: '搜索 ID 或周期',
+      filterAll: '全部周期',
+      filterPeriod: '周期筛选',
+      // 统计卡
+      statTotal: '报告总数',
+      statMonthly: '月报数量',
+      statQuarterly: '季报数量',
+      statLatest: '最近生成',
+      // 推送等待态
+      sending: '推送中…',
+      // 特殊周期流水(非四周期,人类可读名)
+      periodRecon: '对账日报',
+      periodOssAudit: '稽核日报',
       // 四周期对比柱状(commit 7):明确"对比"非"趋势"
       compareTitle: '四周期指标对比',
-      compareDesc: '以下为单期快照按周期并排对比,非历史趋势曲线',
+      compareCurrent: '当前快照:{period} · {time}',
       compareLegend: ['收入', '投入', '综合 ROI', '告警数', '待维护'],
       // 趋势曲线(commit B6)
       trendTitle: '报告趋势曲线',
       trendDesc: '取所选周期最近 12 个窗口的真实历史快照(真趋势)',
+      trendPeriodLabel: '趋势周期',
       trendEmpty: '快照不足 2 个,无法绘制趋势',
     },
     serviceMetricsPage: {

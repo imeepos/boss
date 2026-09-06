@@ -2530,13 +2530,28 @@ columns: ['Kod', 'Nama', 'Susunan', 'Aktif'],
       next: 'Seterusnya',
       perPage: '/ halaman',
       rangeText: '{from}-{to} daripada {count}',
+      // Penapis senarai (tapisan sisi klien)
+      searchPlaceholder: 'Cari ID atau tempoh',
+      filterAll: 'Semua tempoh',
+      filterPeriod: 'Tapis tempoh',
+      // Kad statistik
+      statTotal: 'Jumlah Laporan',
+      statMonthly: 'Laporan Bulanan',
+      statQuarterly: 'Laporan Suku Tahun',
+      statLatest: 'Dijana Terkini',
+      // Keadaan penghantaran sedang berjalan
+      sending: 'Menghantar…',
+      // Tempoh aliran khas (bukan 4 tempoh, nama mudah dibaca)
+      periodRecon: 'Harian Rekonsiliasi',
+      periodOssAudit: 'Harian Audit',
       // Perbandingan 4 tempoh (commit 7): jelas "perbandingan" bukan "trend"
       compareTitle: 'Perbandingan Penunjuk 4 Tempoh',
-      compareDesc: 'Snapshot per-tempoh bersebelahan, bukan lengkung trend sejarah',
+      compareCurrent: 'Snapshot semasa: {period} · {time}',
       compareLegend: ['Hasil', 'Pelaburan', 'ROI Komposit', 'Alarm', 'Barisan Penyelenggaraan'],
       // Garis trend (commit B6)
       trendTitle: 'Garis Trend Laporan',
       trendDesc: 'Sejarah sebenar 12 snapshot terkini untuk tempoh dipilih (trend sebenar)',
+      trendPeriodLabel: 'Tempoh trend',
       trendEmpty: 'Sekurang-kurangnya 2 snapshot diperlukan untuk lukis trend',
       jumpText: 'Lompat ke',
       pageUnit: 'halaman',
