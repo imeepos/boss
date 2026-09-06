@@ -1,5 +1,10 @@
 # ISSUE.md（上游/工具问题清单）
 
+## CI/deploy-102(2026-09-06 P1 波次发现)
+
+- **已修复(2026-09-06 当日)｜部署静默停摆｜deploy-runner 镜像丢失致全部 run 秒取消**:P1 波次六次 main push 零部署——act_runner 能接单(pickup 日志正常),但 job 容器镜像 192.168.0.102:5000/boss/deploy-runner:latest 已被清(疑似 docker system prune 波及),runner 侧 pull 撞注册表鉴权墙(no basic auth credentials),run 以 cancelled 收场且 runner 日志无错误行(0.2.11 已知缺陷),gitea UI 之外不可见。连锁:镜像没了之后手工重建的 Dockerfile 又缺 docker-compose-linux-x86_64 二进制与 /root/.docker/config.json 注册表凭据(原镜像烤入,重建即失),修镜像分三步才通:①补 compose 二进制 ②烤入 ~/.docker/config.json ③builder prune 清 overlay2 损坏缓存。**根治建议(待办)**:把 deploy-runner 镜像构建固化进 deploy workflow 首步(docker build -f scripts/deploy-runner.Dockerfile 存在性检查+缺失即建,凭据 COPY 进镜像),或改为本地标签 docker://deploy-runner:latest 并有人守护;加密 deploy-run 失败告警(runner pickup 后 N 分钟无镜像 tag 更新即告警)。
+- **附注｜诊断通道**:run 失败真相在 gitea 库 action_task.log_filename → gitea 容器 /var/lib/gitea/actions_log/<path>(zstd),宿主无 zstd 时借任意带 zstd 的容器(如 postgres:17-alpine)解压;gitea-postgres 与 boss-infra-postgres-1 是两个实例,别连错。
+
 ## 前端·web/admin 测试(2026-09-05,T20 月度填报轮发现)
 
 - **环境限制｜bss/user/filter.test.ts「注册时间本地时区格式化」绑定进程时区**:fmtTime(src/lib/format.ts)按业务裁定固定渲染上海墙钟,但断言输入 '2026-08-21T10:00:00' 无时区后缀,按**进程本地时区**解析,期望 '2026-08-21 10:00:00' 仅在进程 TZ=Asia/Shanghai 时成立。本机(TZ=America/Los_Angeles)必挂(received 2026-08-22 01:00:00),102 CI(上海时区)绿。实测 TZ=Asia/Shanghai pnpm vitest run src/pages/bss/user/filter.test.ts 5/5 过。→ 建议:输入显式带后缀 '2026-08-21T10:00:00+08:00' 并断言上海墙钟,消除对进程 TZ 的依赖。非 T20 引入(T20 全量 413 用例在上海时区下全绿)。

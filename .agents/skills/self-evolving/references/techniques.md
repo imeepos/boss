@@ -640,3 +640,9 @@ SQL
 症状 → --logs 不落文件、--eval 断言静默不执行,截图本身正常,极易误判「脚本坏了」。根因:parseArgs 对 --no-proxy 这类布尔旗标不做特判,固定按「旗标+值」i+=2 消耗两格,把下一个旗标的值吃掉。
 场景 → cdp-admin-capture.mjs / cdp-capture.mjs 组合采集 console+断言时。
 怎么用 → 参数顺序固定:位置参数(out.png) → --path/--base/--theme/--lang → --eval(可重复) → --logs → --settle → --no-proxy(永远放最后);跑完核对 stdout 必须有一行 eval: {"..."} 断言回显,没有即断言未执行,重跑而非改代码。
+
+## pgxmock 期望正则:用无特殊字符的子串短锚点(2026-09-06 P1 轮)
+
+- pgxmock 的 ExpectQuery/ExpectExec 是子串正则匹配,锚点选 SQL 中唯一且不含 \\( \\$ 特殊字符的短片段(如 bound_asset_id, 0. FROM tags WHERE id,用点号通配括号),从根上免疫 \\$1/\\( 转义地狱;
+- 若必须含 $1,Go 源文件里要写成 \\$1(单反斜杠),raw string 正则才能按字面匹配;括号要 \\\\(——两者转义级数不同,极易错,不如绕开;
+- 实证:P1 轮 pg_link/pg_tag_events/pg_model 三个测试文件全部改用短锚点后一次通过。
