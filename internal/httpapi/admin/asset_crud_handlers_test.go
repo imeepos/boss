@@ -24,9 +24,9 @@ import (
 // fakeAssetCRUD 桩 asset.AssetService(嵌入接口,仅实现 CRUD 四方法)。
 type fakeAssetCRUD struct {
 	asset.AssetService
-	created    *asset.Asset
-	getAssets  map[int64]*asset.Asset
-	updateReq  struct {
+	created   *asset.Asset
+	getAssets map[int64]*asset.Asset
+	updateReq struct {
 		id int64
 		in asset.AssetUpdate
 	}
@@ -121,7 +121,7 @@ func TestAssetCRUDHandlers(t *testing.T) {
 		eng := assetCRUDRouter(fa)
 		w := doJSON(eng, http.MethodGet, "/api/admin/v1/assets/5", "")
 		var out struct {
-			Code int `json:"code"`
+			Code int         `json:"code"`
 			Data asset.Asset `json:"data"`
 		}
 		_ = json.NewDecoder(w.Body).Decode(&out)
