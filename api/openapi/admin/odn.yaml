@@ -424,3 +424,61 @@ paths:
       parameters:
         - { name: facilityCode, in: query, required: true, schema: { type: string } }
       responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/devices/{id}/ports:
+    get:
+      tags: [ODN]
+      summary: 设备端口列表(端口号序,含占用状态)
+      operationId: listOdnPorts
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+
+  /odn/devices/{id}/ports/allocate:
+    post:
+      tags: [ODN]
+      summary: 设备内分配空闲端口(IDLE→RESERVED,SKIP LOCKED 防双占)
+      operationId: allocateOdnPort
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId: { type: integer, description: 预占订单 id(软引用) }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/ports/allocate-for-address:
+    post:
+      tags: [ODN]
+      summary: 按地址覆盖分配端口(覆盖关联兑现:地址→覆盖设备→空闲口)
+      operationId: allocateOdnPortForAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [addressId, orderId]
+              properties:
+                addressId: { type: integer }
+                orderId: { type: integer }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/ports/{portId}/release:
+    post:
+      tags: [ODN]
+      summary: 释放端口(RESERVED/IN_SERVICE→IDLE)
+      operationId: releaseOdnPort
+      parameters: [ { name: portId, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/ports/{portId}/activate:
+    post:
+      tags: [ODN]
+      summary: 端口开通(RESERVED→IN_SERVICE,保持订单绑定)
+      operationId: activateOdnPort
+      parameters: [ { name: portId, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }

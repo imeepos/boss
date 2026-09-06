@@ -134,6 +134,13 @@ type ODNService interface {
 	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, error)
 	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
 
+	// 物理端口占用态(P2,迁移 000200;下单门控数据基础)。
+	ListPorts(ctx context.Context, deviceID int64) ([]ODNPort, error)
+	AllocatePort(ctx context.Context, deviceID, orderID int64) (*ODNPort, error)
+	AllocateForAddress(ctx context.Context, addressID, orderID int64) (*ODNPort, error)
+	ReleasePort(ctx context.Context, portID int64) error
+	ActivatePort(ctx context.Context, portID int64) error
+
 	// 影响面分析(P7,只读聚合;运维侧影响谁)。
 	ImpactByFacility(ctx context.Context, facilityCode string) (*ImpactReport, error)
 

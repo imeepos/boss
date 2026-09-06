@@ -304,6 +304,20 @@
 | 明细数 | `ItemCount` | —（聚合） | construction_items 计数 |
 
 
+### 1.5.9 odn_port（物理端口占用态，迁移 000200，internal/domain/odn）
+
+> P2 端口占用（路线图 T11）：分光器/终端盒端口级资源，订单预占的物理落地。`order_id` 为订单软引用（E10/E11 独立命名空间，不加 FK）。管理面 `menu:odn`，REST `/odn/devices/{id}/ports`、`/odn/ports/allocate-for-address`（覆盖关联兑现）等。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 设备 | `DeviceID` | device_id | → odn_device，UQ(device_id, port_no) |
+| 端口号 | `PortNo` | port_no | 1~99 |
+| 状态 | `Status` | status | IDLE 空闲 / RESERVED 预占 / IN_SERVICE 在网；默认 IDLE |
+| 预占订单 | `OrderID` | order_id | 订单软引用（无 FK），释放时清空 |
+| 更新时间 | `UpdatedAt` | updated_at | TIMESTAMPTZ |
+
+> 状态机：IDLE→RESERVED（订单预占，SKIP LOCKED 防双占）→IN_SERVICE（开通）→IDLE（拆机释放）；RESERVED→IDLE 可释放。`AllocateForAddress`：地址 → 覆盖设备 → 空闲口，无挂接设备/无空闲口明确报错。
+
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
