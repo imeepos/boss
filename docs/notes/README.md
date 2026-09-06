@@ -102,5 +102,6 @@
 | 2026-09-01 | 位置/地址统一落地:坐标为唯一空间锚点(geom 写入+KNN 逆地理)、工单坐标派单时刻快照(000174)、区域匹配升级子树语义、radiusKm 半径闸门启用;H3 索引/外部 geocoding/派单打分被否决 | adopted/2026-09-01-location-unify-rollout.md |
 | 2026-09-04 | 新建 worktree .env 自动接入:post-checkout 钩子(主 worktree 真实 .env 优先,.env.example 兜底,已存在绝不覆盖)+ 一次性引导 core.hooksPath;symlink/手工复制/第三方工具/.git/hooks 被否决 | adopted/2026-09-04-worktree-env-auto-provision.md |
 | 2026-09-06 | AAA LOID 凭据落库 AES-256-GCM 密钥外置:CHAP(RFC 1994)要求可还原口令,单工哈希被否决,明文落库被否决;未设密默认 Reject+迁移开关;连续失败 5 次锁 15 分钟(可配) | adopted/2026-09-06-aaa-credential-storage.md |
+| 2026-09-06 | AAA per-NAS 注册表按来源 IP 校验密钥(密文复用凭据 codec)+ CoA 用目标 NAS 密钥/端口 + 全局密钥降级默认关兼容开关 + 厂商 VSA 限速(华为 78/80 确定,中兴 84/86 待实机核对可配覆盖);单向哈希/FreeRADIUS nas 表全量建模/厂商字典库被否决 | adopted/2026-09-06-aaa-per-nas-vsa.md |
 
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。

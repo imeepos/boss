@@ -45,8 +45,53 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Item' }
 
-  /auth-logs:
+  /aaa/nas:
     get:
+      tags: [Aaa]
+      summary: 'NAS 客户端注册表分页(AAA-A5,keyword/vendor/enabled 过滤,permCode menu:loaccount)'
+      operationId: listAaaNasClients
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: keyword, in: query, schema: { type: string }, description: 名称或 IP 关键字 }
+        - { name: vendor, in: query, schema: { type: string }, description: HUAWEI/ZTE/GENERIC }
+        - { name: enabled, in: query, schema: { type: string }, description: 'true/false' }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+    post:
+      tags: [Aaa]
+      summary: '新建 NAS 客户端(共享密钥加密落库,仅写不回显,permCode menu:loaccount)'
+      operationId: createAaaNasClient
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /aaa/nas/{id}:
+    get:
+      tags: [Aaa]
+      summary: 'NAS 客户端详情(安全字段,不含密钥)'
+      operationId: getAaaNasClient
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+    put:
+      tags: [Aaa]
+      summary: '更新 NAS 客户端(AAA-A5,secret 空=不改密钥)'
+      operationId: updateAaaNasClient
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+    delete:
+      tags: [Aaa]
+      summary: '删除 NAS 客户端(AAA-A5)'
+      operationId: deleteAaaNasClient
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Item' }
+
+  /auth-logs:    get:
       tags: [Aaa]
       summary: '认证日志(对齐 Go 实现 GET /auth-logs,permCode menu:aaalog)'
       operationId: listAuthLogs
