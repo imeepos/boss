@@ -578,6 +578,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 
 > lo_accounts 同名列 `billing_mode`（000102）：订购关系上的付费模式权威态；PREPAID 客户不进月度出账（GenerateBills 过滤），预付费在环节 4 合同收费当场收款落缴费流水。
 > LO 生效套餐对齐（adopted 2026-09-01-provision-correctness-followup）：`lo_accounts.offer_id`/`billing_mode` 是"当前生效套餐"权威态，环节 6 幂等复用已有 LO 时若与订单套餐不一致，自动对齐到订单套餐（TMF change order 语义）并打 `[order] LO OFFER REALIGN` 留痕——保证环节 7 按新套餐下发模板、RADIUS 按新档限速。
+> LOID 接入凭据（000194，A1）：`lo_accounts.password_credential` 落库密文（`v1$gcm$…` AES-256-GCM、密钥外置；空=未设密，默认 Reject，`BOSS_AAA_ALLOW_NO_CRED` 为迁移缓冲开关默认关）；管理端 `POST /lo-accounts/{loid}/reset-password`（menu:loaccount）重置，明文一次性返回；防爆破锁定表 `lo_auth_lockouts`（fail_count/locked_until，默认 5 次锁 15 分钟，可配）。
 
 > 快照列（TS 实体）：`customer_name`（客户姓名）、`offer_name`（产品名），下单时冻结，改名/调价不影响历史订单（与 `price_snapshot` 同规则）。
 
@@ -1133,7 +1134,7 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 | channels | order/dispatch 下单渠道 | code/name/status（REQ-ORD-006 必填不可改） |
 | alarms | admin/alarm.html 告警 | alarm_no/level/source/content/status |
 | cdrs | admin/aaalog.html 话单 | loid/session_time/input_output_octets/billing_status |
-| auth_logs | admin/aaalog.html 认证日志 | loid/result/created_at |
+| auth_logs | admin/aaalog.html 认证日志 | loid/result/fail_reason/created_at；fail_reason 枚举：BAD_CREDENTIAL/LOCKED/NOT_FOUND/SUSPENDED/CLOSED（空=SUCCESS 或存量行；000194 A1 认证失败原因码，LOCKED=连续失败锁定窗口内） |
 | device_metrics | admin/device.html OLT 监控 | resource_id/optical_power/packet_loss/status |
 | device_maintenances | worker 设备健康 | device_no/health_score/fault_count/priority |
 | report_snapshots | admin/report.html 报告中心 | period/window_start/window_end/payload（唯一键 `(period, window_start)`，同窗口幂等覆盖；payload=派生聚合全文） |
