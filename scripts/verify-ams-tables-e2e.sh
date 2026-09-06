@@ -17,10 +17,10 @@ bad(){ echo "FAIL: $1"; fail=1; }
 idof(){ python3 -c "import json,sys;d=json.load(sys.stdin);print(str(d.get('id') or d.get('data',{}).get('id','')))" 2>/dev/null; }
 
 step 'T-1 tag create/disable/events/enable'
-OUT=$($B call POST /tags --data "{\"tagNo\":\"AMS-E2E-T$TS\",\"epcCode\":\"E280-AMS-E2E-$TS\",\"band\":\"UHF\"}")
+OUT=$($B call POST /tags --data "{\"legalEntityId\":$LE,\"tagNo\":\"AMS-E2E-T$TS\",\"epcCode\":\"E280-AMS-E2E-$TS\",\"band\":\"UHF\"}")
 TID=$(printf '%s' "$OUT" | idof)
 [ -n "$TID" ] || bad "tag create: $OUT"
-$B call POST /tags/$TID/disable >/dev/null 2>&1 && ok 'tag disable ok' || bad 'tag disable'
+$B call POST /tags/$TID/disable --data '{}' >/dev/null 2>&1 && ok 'tag disable ok' || bad 'tag disable'
 $B call GET /tags/$TID/events | python3 -c "import json,sys;items=json.load(sys.stdin).get('items',[]);print('events endpoint ok, items=',len(items))" || bad 'tag events'
 $B call POST /tags/$TID/enable >/dev/null 2>&1 && ok 'tag enable ok' || bad 'tag enable'
 
@@ -40,7 +40,7 @@ step 'T-4 assignment checkout/return'
 OUT=$($B call POST /assets --data "{\"assetCode\":\"AMS-E2E-A$TS\",\"batchId\":1,\"type\":\"光猫\"}")
 AID=$(printf '%s' "$OUT" | idof)
 [ -n "$AID" ] || bad "asset fixture create: $OUT"
-OUT=$($B call POST /asset-assignments --data "{\"assetId\":$AID,\"workerId\":1,\"reason\":\"e2e checkout\"}")
+OUT=$($B call POST /asset-assignments --data "{\"assetId\":$AID,\"workerId\":6,\"reason\":\"e2e checkout\"}")
 ASGID=$(printf '%s' "$OUT" | idof)
 [ -n "$ASGID" ] && ok "assignment checkout id=$ASGID" || bad "assignment checkout: $OUT"
 if [ -n "$ASGID" ]; then
