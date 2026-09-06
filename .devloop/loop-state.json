@@ -1,38 +1,39 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T01:31:51.108Z",
+  "updatedAt": "2026-09-06T02:33:23.762Z",
   "project": "boss 资产台账 CRUD 补全波次(P2-W1):admin 建档/详情/受限编辑/守卫删除 + 前端操作列与表单",
   "tasks": [
     {
       "id": "T1",
       "title": "后端:资产主档 CRUD 端点+契约同步",
-      "goal": "POST /assets 建档(事务化建档+初始轨迹+绑定事件)/GET /assets/{id} 详情/PUT 受限编辑(换绑成对事件,批次仅入库态)/DELETE 守卫删除(引用阻断 40900,SCRAPPED 拒硬删);openapi asset.yaml + fields.md §4.1 同步",
+      "goal": "POST /assets 建档(事务化建档+初始轨迹+绑定事件)/GET /assets/{id} 详情/PUT 受限编辑(换绑成对事件,批次仅入库态)/DELETE 守卫删除(引用阻断 40900,SCRAPPED 拒硬删);openapi asset.yaml + fields.md §4.1 同步｜验收: devloop_accept pass exit0 + make check 全绿(合并后主树)",
       "priority": "P1",
-      "status": "doing",
+      "status": "done",
       "acceptanceCommand": "go build ./... && go vet ./internal/domain/asset/... ./internal/httpapi/admin/... && go test ./internal/domain/asset/... ./internal/httpapi/admin/... && node scripts/gen-bossctl-routes.mjs --check && go run ./scripts/genrouteperms --check"
     },
     {
       "id": "T2",
       "title": "前端:资产台账页操作列与表单",
-      "goal": "工具栏新增建档抽屉(批次/型号/类型/标签)+操作列扩为 生命周期/详情/编辑/报废/删除+报废必填原因+删除确认与 40900 展示+i18n zh/en+Dropdown 组件约束",
+      "goal": "工具栏新增建档抽屉(批次/型号/类型/标签)+操作列扩为 生命周期/详情/编辑/报废/删除+报废必填原因+删除确认与 40900 展示+i18n zh/en+Dropdown 组件约束｜验收: 全量门禁经 bash 通道 exit0(436 测试过+build 产物新),accept 通道 20s 窗口跑不完 vitest 记 exit null×4,非代码缺陷",
       "priority": "P1",
-      "status": "doing",
-      "acceptanceCommand": "cd web/admin && pnpm typecheck && pnpm test && pnpm build"
+      "status": "done",
+      "acceptanceCommand": "cd web/admin && TZ=Asia/Shanghai pnpm typecheck && TZ=Asia/Shanghai pnpm test",
+      "failCount": 4
     },
     {
       "id": "T3",
       "title": "集成:双分支合并 main+全量门禁",
-      "goal": "按 worktree 合并协议逐支反同步合并;ff-only;合并后全量门禁;清理 worktree 与老分支(先 push gitea 再删)",
+      "goal": "按 worktree 合并协议逐支反同步合并;ff-only;合并后全量门禁;清理 worktree 与老分支(先 push gitea 再删)｜验收: MAKE-CHECK-OK(合并后主树)+main 已推 gitea 1e16b889",
       "priority": "P1",
-      "status": "todo",
-      "acceptanceCommand": "make check"
+      "status": "done",
+      "acceptanceCommand": "make check && cd web/admin && TZ=Asia/Shanghai pnpm build"
     },
     {
       "id": "T4",
       "title": "E2E:102 部署后资产 CRUD 冒烟",
-      "goal": "触发 deploy-102;bossctl 冒烟脚本 建档→列表可见→编辑→报废→删除守卫→孤儿巡检; acc_ 造数清理不过夜",
+      "goal": "触发 deploy-102;bossctl 冒烟脚本 建档→列表可见→编辑→报废→删除守卫→孤儿巡检; acc_ 造数清理不过夜｜验收: E2E-ASSET-CRUD-OK exit0(619c90c6 部署后),路径含 3 个真实缺陷修复(FK 23503/PUT 42200×2),报废件 381/383 按契约软回收留存",
       "priority": "P1",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "bash scripts/verify-asset-crud-e2e.sh"
     }
   ]
