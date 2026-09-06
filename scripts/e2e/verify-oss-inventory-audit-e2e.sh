@@ -76,81 +76,36 @@ CLEANSQL
 }
 
 seed_data() {
-  cleanup_data
-  local tpl ent addr entid entname region regionname done_ord inst_ord olt_id spl_id orphan
-  tpl=$(sql < <(cat <<'TPLSQL'
-SELECT address_id || ',' || legal_entity_id || ',' || region_id || ',' || legal_entity_name || ',' || region_name FROM ports ORDER BY id LIMIT 1;
-TPLSQL
-  ) | tr -d '[:space:]')
-  addr=$(echo "$tpl" | cut -d, -f1)
-  entid=$(echo "$tpl" | cut -d, -f2)
-  region=$(echo "$tpl" | cut -d, -f3)
-  entname=$(echo "$tpl" | cut -d, -f4)
-  regionname=$(echo "$tpl" | cut -d, -f5)
-  if [ -z "$addr" ] || [ -z "$entid" ]; then FAIL_REASON="no ports template row"; return 1; fi
-  ent=$entid
-  done_ord=$(sql < <(cat <<'O1SQL'
-SELECT COALESCE(max(id),0) FROM orders WHERE status = 'DONE';
-O1SQL
-  ) | tr -d '[:space:]')
-  inst_ord=$(sql < <(cat <<'O2SQL'
-SELECT COALESCE(max(id),0) FROM orders WHERE status = 'INSTALLING';
-O2SQL
-  ) | tr -d '[:space:]')
-  # 合规种子: OLT(根,无上游不违例) + SPL(parent=OLT)
-  olt_id=$(sql < <(cat <<OLTSQL
+  # 单连接批量(Lead 提速要求): 清残留+六类造数+回执一次 ssh 完成,标量按行解析。
+  SEEDRAW=$(sql < <(cat <<'SEEDSQL'
+DELETE FROM port_change_history WHERE port_id IN (SELECT id FROM ports WHERE port_code IN ('P-SPLACCE2EW3-01','P-SPLACCE2EW3-02','acc_w3ia-P-BADCODE','acc_w3ia-P-ORPHAN'));
+DELETE FROM ports WHERE port_code IN ('P-SPLACCE2EW3-01','P-SPLACCE2EW3-02','acc_w3ia-P-BADCODE','acc_w3ia-P-ORPHAN');
+DELETE FROM resources WHERE code IN ('OLT-ACCE2EW3','SPL-ACCE2EW3','acc_w3ia-BAD');
 INSERT INTO resources(legal_entity_id, code, name, type, parent_id, address_id, status)
-VALUES ($ent, 'OLT-ACCE2EW3', 'acc_w3ia e2e OLT', 'OLT', NULL, $addr, 'ONLINE') RETURNING id;
-OLTSQL
-  ) | tr -d '[:space:]')
-  spl_id=$(sql < <(cat <<SPLSQL
+SELECT p.legal_entity_id, 'OLT-ACCE2EW3', 'acc_w3ia e2e OLT', 'OLT', NULL, p.address_id, 'ONLINE' FROM ports p ORDER BY p.id LIMIT 1;
 INSERT INTO resources(legal_entity_id, code, name, type, parent_id, address_id, status)
-VALUES ($ent, 'SPL-ACCE2EW3', 'acc_w3ia e2e SPL', 'SPLITTER', $olt_id, $addr, 'ONLINE') RETURNING id;
-SPLSQL
-  ) | tr -d '[:space:]')
-  if [ -z "$spl_id" ]; then FAIL_REASON="seed resources insert"; return 1; fi
-  # 归属违例1: 分光器上游缺失(parent NULL)
-  sql < <(cat <<BADSPLSQL
+SELECT p.legal_entity_id, 'SPL-ACCE2EW3', 'acc_w3ia e2e SPL', 'SPLITTER', (SELECT id FROM resources WHERE code='OLT-ACCE2EW3'), p.address_id, 'ONLINE' FROM ports p ORDER BY p.id LIMIT 1;
 INSERT INTO resources(legal_entity_id, code, name, type, parent_id, address_id, status)
-VALUES ($ent, 'acc_w3ia-BAD', 'acc_w3ia e2e bad SPL', 'SPLITTER', NULL, $addr, 'ONLINE');
-BADSPLSQL
-  ) >/dev/null
-  # state 违例1: USED 无四码 LINKED(有 DONE 单则挂单,避让对账 usedPortNoOrder 口径)
-  sql < <(cat <<SEEDP1
+SELECT p.legal_entity_id, 'acc_w3ia-BAD', 'acc_w3ia e2e bad SPL', 'SPLITTER', NULL, p.address_id, 'ONLINE' FROM ports p ORDER BY p.id LIMIT 1;
 INSERT INTO ports(port_code, quad_code, resource_id, legal_entity_id, legal_entity_name, address_id, region_id, region_name, order_id, status)
-SELECT 'P-SPLACCE2EW3-01','P-SPLACCE2EW3-01', (SELECT id FROM resources WHERE code='SPL-ACCE2EW3'), $ent, '$entname', $addr, $region, '$regionname', CASE WHEN $inst_ord > 0 THEN $inst_ord WHEN $done_ord > 0 THEN $done_ord ELSE NULL END, 'USED' FROM ports LIMIT 1;
-SEEDP1
-  ) >/dev/null
-  # state 违例2: RESERVED 72h 未推进未释放(历史行回填 72h 前时间戳)
-  sql < <(cat <<SEEDP2
+SELECT 'P-SPLACCE2EW3-01','P-SPLACCE2EW3-01', (SELECT id FROM resources WHERE code='SPL-ACCE2EW3'), p.legal_entity_id, p.legal_entity_name, p.address_id, p.region_id, p.region_name, CASE WHEN EXISTS(SELECT 1 FROM orders WHERE status='DONE') THEN (SELECT max(id) FROM orders WHERE status='DONE') ELSE NULL END, 'USED' FROM ports p ORDER BY p.id LIMIT 1;
 INSERT INTO ports(port_code, quad_code, resource_id, legal_entity_id, legal_entity_name, address_id, region_id, region_name, order_id, status)
-SELECT 'P-SPLACCE2EW3-02','P-SPLACCE2EW3-02', (SELECT id FROM resources WHERE code='SPL-ACCE2EW3'), $ent, '$entname', $addr, $region, '$regionname', CASE WHEN $inst_ord > 0 THEN $inst_ord ELSE NULL END, 'RESERVED' FROM ports LIMIT 1;
+SELECT 'P-SPLACCE2EW3-02','P-SPLACCE2EW3-02', (SELECT id FROM resources WHERE code='SPL-ACCE2EW3'), p.legal_entity_id, p.legal_entity_name, p.address_id, p.region_id, p.region_name, CASE WHEN EXISTS(SELECT 1 FROM orders WHERE status='INSTALLING') THEN (SELECT max(id) FROM orders WHERE status='INSTALLING') ELSE NULL END, 'RESERVED' FROM ports p ORDER BY p.id LIMIT 1;
 INSERT INTO port_change_history(port_id, status, order_id, changed_at)
 SELECT id, 'RESERVED', NULL, now() - interval '72 hours' FROM ports WHERE port_code='P-SPLACCE2EW3-02';
-SEEDP2
-  ) >/dev/null
-  # coding 违例: 端口编码不合两形态
-  sql < <(cat <<SEEDP3
 INSERT INTO ports(port_code, quad_code, resource_id, legal_entity_id, legal_entity_name, address_id, region_id, region_name, order_id, status)
-SELECT 'acc_w3ia-P-BADCODE','acc_w3ia-P-BADCODE', (SELECT id FROM resources WHERE code='SPL-ACCE2EW3'), $ent, '$entname', $addr, $region, '$regionname', NULL, 'IDLE' FROM ports LIMIT 1;
-SEEDP3
-  ) >/dev/null
-  # 归属违例2: 端口引用不存在的分光器(session_replication_role 绕 FK 直插)
-  sql < <(cat <<SEEDP4
+SELECT 'acc_w3ia-P-BADCODE','acc_w3ia-P-BADCODE', (SELECT id FROM resources WHERE code='SPL-ACCE2EW3'), p.legal_entity_id, p.legal_entity_name, p.address_id, p.region_id, p.region_name, NULL, 'IDLE' FROM ports p ORDER BY p.id LIMIT 1;
 SET session_replication_role = replica;
 INSERT INTO ports(port_code, quad_code, resource_id, legal_entity_id, legal_entity_name, address_id, region_id, region_name, order_id, status)
-SELECT 'acc_w3ia-P-ORPHAN','acc_w3ia-P-ORPHAN', 999999999, $ent, '$entname', $addr, $region, '$regionname', NULL, 'IDLE' FROM ports LIMIT 1;
+SELECT 'acc_w3ia-P-ORPHAN','acc_w3ia-P-ORPHAN', 999999999, p.legal_entity_id, p.legal_entity_name, p.address_id, p.region_id, p.region_name, NULL, 'IDLE' FROM ports p ORDER BY p.id LIMIT 1;
 SET session_replication_role = DEFAULT;
-SEEDP4
-  ) >/dev/null
-  orphan=$(sql < <(cat <<CHKSQL
-SELECT count(*) FROM ports WHERE port_code = 'acc_w3ia-P-ORPHAN';
-CHKSQL
-  ) | tr -d '[:space:]')
-  if [ "$orphan" != "1" ]; then FAIL_REASON="orphan port seed failed(FK bypass)"; return 1; fi
-  echo "seeded olt=$olt_id spl=$spl_id done=$done_ord inst=$inst_ord"
+SELECT 'ORPHAN=' || count(*) FROM ports WHERE port_code = 'acc_w3ia-P-ORPHAN';
+SEEDSQL
+  ) )
+  ORPHAN=$(printf '%s\n' "$SEEDRAW" | sed -n 's/^ORPHAN=//p' | tr -d '[:space:]')
+  if [ "$ORPHAN" != "1" ]; then FAIL_REASON="orphan port seed failed(FK bypass)"; return 1; fi
+  echo "seeded orphan=$ORPHAN"
 }
-
 echo "资源台账稽核端到端实测 @ $BASE_URL"
 
 # P0 基线(先清残留再取,幂等重跑同一基线)
@@ -166,7 +121,6 @@ else
 fi
 OWN_BASE=$(cat_count ownership); STATE_BASE=$(cat_count state); CODING_BASE=$(cat_count coding)
 if [ "$HTTP_CODE" != "200" ]; then cleanup_data; echo "E2E-OSS-INVENTORY-AUDIT RESULT: FAIL(pass=$PASS_N fail=$FAIL_N failed=[$FAILED_IDS ])"; exit 1; fi
-
 # P1 造数三类违例各>=1 并断言计数
 SEED_OUT=$(seed_data) || { bad "P1" "造数失败: $FAIL_REASON"; cleanup_data; echo "E2E-OSS-INVENTORY-AUDIT RESULT: FAIL(pass=$PASS_N fail=$FAIL_N failed=[$FAILED_IDS ])"; exit 1; }
 echo "P1 $SEED_OUT"
@@ -224,11 +178,15 @@ fi
 
 rc=0
 if [ "$(env_or SKIP_CLEANUP 0)" != "1" ]; then
-  cleanup_data
+  # 单连接批量: 清理+残留校验一次 ssh 完成。
+  echo "清尾: 造数自清理(acc_w3ia-/ACCE2EW3 标记,幂等)" >&2
   res=$(sql < <(cat <<'RESSQL'
-SELECT (SELECT count(*) FROM ports WHERE port_code IN ('P-SPLACCE2EW3-01','P-SPLACCE2EW3-02','acc_w3ia-P-BADCODE','acc_w3ia-P-ORPHAN')) || '/' || (SELECT count(*) FROM resources WHERE code IN ('OLT-ACCE2EW3','SPL-ACCE2EW3','acc_w3ia-BAD'));
+DELETE FROM port_change_history WHERE port_id IN (SELECT id FROM ports WHERE port_code IN ('P-SPLACCE2EW3-01','P-SPLACCE2EW3-02','acc_w3ia-P-BADCODE','acc_w3ia-P-ORPHAN'));
+DELETE FROM ports WHERE port_code IN ('P-SPLACCE2EW3-01','P-SPLACCE2EW3-02','acc_w3ia-P-BADCODE','acc_w3ia-P-ORPHAN');
+DELETE FROM resources WHERE code IN ('OLT-ACCE2EW3','SPL-ACCE2EW3','acc_w3ia-BAD');
+SELECT 'RES=' || (SELECT count(*) FROM ports WHERE port_code IN ('P-SPLACCE2EW3-01','P-SPLACCE2EW3-02','acc_w3ia-P-BADCODE','acc_w3ia-P-ORPHAN')) || '/' || (SELECT count(*) FROM resources WHERE code IN ('OLT-ACCE2EW3','SPL-ACCE2EW3','acc_w3ia-BAD'));
 RESSQL
-  ) | tr -d '[:space:]')
+  ) | sed -n 's/^RES=//p' | tr -d '[:space:]')
   assert_eq "RES" "0/0" "$res" "造数清理后残留"
   if [ "$res" != "0/0" ]; then rc=1; fi
 fi
